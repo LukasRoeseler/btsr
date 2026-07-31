@@ -1,3 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bluetooth Simracer - BLE Controller</title>
+<style>
+    :root {
+        --bg-main: #0a0a0c;
+        --bg-card: #151518;
+        --accent: #0088ff;
+        --accent-hover: #0066cc;
+        --text-main: #ffffff;
+        --text-muted: #888890;
+        --border: #2a2a30;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Helvetica Neue', Arial, sans-serif; }
+
+    body { background: var(--bg-main); color: var(--text-main); padding: 2rem; display: flex; flex-direction: column; gap: 1.5rem; }
+
+    header { border-bottom: 2px solid var(--accent); padding-bottom: 1rem; }
+    header h1 { font-weight: 900; text-transform: uppercase; letter-spacing: 1px; }
+
+    .card { background: var(--bg-card); padding: 1.5rem; border: 1px solid var(--border); }
+    .card h2 { font-size: 1rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 1rem; }
+
+    .btn { background: var(--accent); color: #fff; border: none; padding: 0.7rem 1.3rem; cursor: pointer; font-weight: bold; text-transform: uppercase; }
+    .btn:hover { background: var(--accent-hover); }
+    .btn:disabled { background: #333; color: #666; cursor: not-allowed; }
+
+    .status { padding: 0.8rem; background: #000; font-family: monospace; color: #00cc44; margin-top: 1rem; border: 1px solid var(--border); }
+
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    th, td { text-align: left; padding: 0.6rem; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+    th { color: var(--text-muted); text-transform: uppercase; font-size: 0.75rem; }
+
+    select, input[type="range"] { background: #000; color: #fff; border: 1px solid var(--border); padding: 0.4rem; }
+    input[type="range"] { padding: 0; }
+
+    .dot { display: inline-block; width: 10px; height: 10px; margin-right: 6px; background: #00cc44; }
+    .dot.off { background: #e60000; }
+
+    .keymap { font-family: monospace; font-size: 0.85rem; color: var(--text-muted); }
+    .key-active { color: var(--accent); font-weight: bold; }
+
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media (max-width: 800px){ .grid { grid-template-columns: 1fr; } }
+
+    .help { font-size: 0.8rem; color: var(--text-muted); line-height: 1.5; }
+</style>
+</head>
+<body>
+
+<header>
+    <h1>Bluetooth Simracer</h1>
+    <p style="color: var(--text-muted);">BLE Vehicle Control Hub</p>
+</header>
+
+<div class="card">
+    <h2>Vehicle Uplink</h2>
+    <button id="btn-connect" class="btn">+ Connect Bluetooth Car</button>
+    <div id="status-log" class="status">Status: No cars connected.</div>
+    <p class="help" style="margin-top:0.8rem;">
+        Requires a Chromium browser (Chrome / Edge) served over HTTPS or localhost.
+        Each connected car appears below and can be bound to a keyboard scheme or gamepad.
+    </p>
+</div>
+
+<div class="card">
+    <h2>Connected Cars &amp; Controls</h2>
+    <table id="car-table">
+        <thead>
+            <tr>
+                <th>Status</th>
+                <th>Car</th>
+                <th>Bind Control</th>
+                <th>Speed %</th>
+                <th>Live Input</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody id="car-rows">
+            <tr><td colspan="6" style="color:var(--text-muted);">No cars connected yet.</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="grid">
+    <div class="card">
+        <h2>Keyboard Schemes</h2>
+        <p class="help">
+            <strong>WASD</strong> — W=Fwd &nbsp; S=Back &nbsp; A=Left &nbsp; D=Right<br>
+            <strong>Arrows</strong> — ↑=Fwd &nbsp; ↓=Back &nbsp; ←=Left &nbsp; →=Right<br>
+            <strong>IJKL</strong> — I=Fwd &nbsp; K=Back &nbsp; J=Left &nbsp; L=Right<br>
+            Release all keys to send STOP. Assign different schemes to control multiple cars at once.
+        </p>
+    </div>
+    <div class="card">
+        <h2>Gamepad</h2>
+        <p class="help">
+            Connect a controller and press any button to register it. Left stick / D-pad steers &amp; drives.
+            Detected pads appear as bind options automatically.
+        </p>
+        <div id="gamepad-status" class="keymap" style="margin-top:0.8rem;">No gamepads detected.</div>
+    </div>
+</div>
+
+<script>
+/* ---- BLE config: must match your car firmware ---- */
+const SERVICE_UUID = '4fafc201-1fb5-459e-8fcc-c5c9c331914b';
+const CHARACTERISTIC_UUID = 'beb5483e-36e1-4688-b7f5-ea07361b26a8';
+
+const encoder = new TextEncoder();
+let carCounter = 0;
+const cars = []; // { id, name, device, characteristic, binding, speed, lastCmd }
+
+const statusLog = document.getElementById('status-log');
+const carRows    = document.getElementById('car-rows');
+const btnConnect = document.getElementById('btn-connect');
+
+/* Keyboard schemes: key -> command */
+const SCHEMES = {
+    wasd:   { w:'F', s:'B', a:'L', d:'R' },
+    arrows: { arrowup:'F', arrowdown:'B', arrowleft:'L', arrowright:'R' },
+    ijkl:   { i:'F', k:'B', j:'L', l:'R' }
+};
+
+function log(msg){ statusLog.textContent = `Status: ${msg}`; }
+
+/* ---------------- CONNECT ---------------- */
 /* ---- Carrera Hybrid – Nordic UART Service (confirmed from nRF Connect capture) ---- */
 const NUS_SERVICE = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
 const NUS_RX      = '6e400002-b5a3-f393-e0a9-e50e24dcca9e'; // WRITE: phone -> car (commands)
@@ -59,3 +190,153 @@ async function sendCommand(car, throttle, steer) {
     const packet = buildCommand(throttle, steer);      // Uint8Array once known
     await car.rxChar.writeValueWithoutResponse(packet); // WNR is supported per capture
 }
+
+function removeCar(id, disconnected){
+    const i = cars.findIndex(c => c.id === id);
+    if(i === -1) return;
+    const car = cars[i];
+    try { if(!disconnected && car.device.gatt.connected) car.device.gatt.disconnect(); } catch(e){}
+    cars.splice(i, 1);
+    renderCars();
+    log(disconnected ? `${car.name} disconnected.` : `${car.name} removed.`);
+}
+
+/* ---------------- SEND ---------------- */
+async function sendCommand(car, cmd){
+    if(!car.characteristic || cmd === car.lastCmd) return; // avoid spamming duplicate commands
+    car.lastCmd = cmd;
+    try {
+        await car.characteristic.writeValue(encoder.encode(cmd));
+    } catch(e){ /* connection may be busy/dropped */ }
+    updateLiveCell(car, cmd);
+}
+
+async function sendTuning(car){
+    if(!car.characteristic) return;
+    try { await car.characteristic.writeValue(encoder.encode(`TUNE:${car.speed}`)); } catch(e){}
+}
+
+/* ---------------- RENDER TABLE ---------------- */
+function renderCars(){
+    if(cars.length === 0){
+        carRows.innerHTML = `<tr><td colspan="6" style="color:var(--text-muted);">No cars connected yet.</td></tr>`;
+        return;
+    }
+    carRows.innerHTML = '';
+    cars.forEach(car => {
+        const tr = document.createElement('tr');
+
+        const gamepadOpts = getGamepads()
+            .map((g,i)=> g ? `<option value="pad:${i}" ${car.binding===`pad:${i}`?'selected':''}>Gamepad ${i}</option>` : '')
+            .join('');
+
+        tr.innerHTML = `
+            <td><span class="dot"></span></td>
+            <td>${car.name}</td>
+            <td>
+                <select data-act="bind" data-id="${car.id}">
+                    <option value="none"   ${car.binding==='none'?'selected':''}>— none —</option>
+                    <option value="wasd"   ${car.binding==='wasd'?'selected':''}>Keyboard WASD</option>
+                    <option value="arrows" ${car.binding==='arrows'?'selected':''}>Keyboard Arrows</option>
+                    <option value="ijkl"   ${car.binding==='ijkl'?'selected':''}>Keyboard IJKL</option>
+                    ${gamepadOpts}
+                </select>
+            </td>
+            <td>
+                <input type="range" min="10" max="100" value="${car.speed}" data-act="speed" data-id="${car.id}">
+            </td>
+            <td class="keymap" id="live-${car.id}">STOP</td>
+            <td><button class="btn" style="background:#e60000;padding:0.4rem 0.8rem;" data-act="remove" data-id="${car.id}">X</button></td>
+        `;
+        carRows.appendChild(tr);
+    });
+}
+
+/* Event delegation for the table controls */
+carRows.addEventListener('input', e => {
+    const id = +e.target.dataset.id;
+    const car = cars.find(c => c.id === id);
+    if(!car) return;
+    if(e.target.dataset.act === 'bind')  car.binding = e.target.value;
+    if(e.target.dataset.act === 'speed'){ car.speed = e.target.value; sendTuning(car); }
+});
+carRows.addEventListener('click', e => {
+    if(e.target.dataset.act === 'remove') removeCar(+e.target.dataset.id, false);
+});
+
+function updateLiveCell(car, cmd){
+    const cell = document.getElementById(`live-${car.id}`);
+    if(!cell) return;
+    const map = {F:'FORWARD', B:'BACK', L:'LEFT', R:'RIGHT', S:'STOP'};
+    cell.textContent = map[cmd] || cmd;
+    cell.className = 'keymap ' + (cmd === 'S' ? '' : 'key-active');
+}
+
+/* ---------------- KEYBOARD ---------------- */
+const pressed = new Set();
+
+document.addEventListener('keydown', e => {
+    const k = e.key.toLowerCase();
+    if(isBoundKey(k)){ e.preventDefault(); pressed.add(k); applyKeyboard(); }
+});
+document.addEventListener('keyup', e => {
+    const k = e.key.toLowerCase();
+    if(pressed.has(k)){ pressed.delete(k); applyKeyboard(); }
+});
+
+function isBoundKey(k){
+    return cars.some(c => SCHEMES[c.binding] && k in SCHEMES[c.binding]);
+}
+
+function applyKeyboard(){
+    cars.forEach(car => {
+        const scheme = SCHEMES[car.binding];
+        if(!scheme) return;
+        let cmd = 'S';
+        for(const key of pressed){
+            if(key in scheme){ cmd = scheme[key]; break; }
+        }
+        sendCommand(car, cmd);
+    });
+}
+
+/* ---------------- GAMEPAD ---------------- */
+function getGamepads(){ return navigator.getGamepads ? Array.from(navigator.getGamepads()) : []; }
+
+window.addEventListener('gamepadconnected', renderCars);
+window.addEventListener('gamepaddisconnected', renderCars);
+
+function pollGamepads(){
+    const pads = getGamepads().filter(Boolean);
+    document.getElementById('gamepad-status').textContent =
+        pads.length ? pads.map((p,i)=>`Pad ${p.index}: ${p.id.slice(0,30)}`).join(' | ')
+                    : 'No gamepads detected.';
+
+    cars.forEach(car => {
+        if(!car.binding.startsWith('pad:')) return;
+        const idx = +car.binding.split(':')[1];
+        const pad = getGamepads()[idx];
+        if(!pad) return;
+
+        const x = pad.axes[0] || 0;   // left stick horizontal
+        const y = pad.axes[1] || 0;   // left stick vertical
+        const dz = 0.4;               // deadzone
+        let cmd = 'S';
+        if(y < -dz) cmd = 'F';
+        else if(y > dz) cmd = 'B';
+        else if(x < -dz) cmd = 'L';
+        else if(x > dz) cmd = 'R';
+        // D-pad fallback (standard mapping: 12=up,13=down,14=left,15=right)
+        if(pad.buttons[12]?.pressed) cmd = 'F';
+        else if(pad.buttons[13]?.pressed) cmd = 'B';
+        else if(pad.buttons[14]?.pressed) cmd = 'L';
+        else if(pad.buttons[15]?.pressed) cmd = 'R';
+
+        sendCommand(car, cmd);
+    });
+    requestAnimationFrame(pollGamepads);
+}
+requestAnimationFrame(pollGamepads);
+</script>
+</body>
+</html>
