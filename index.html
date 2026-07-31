@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bluetooth Simracer - BLE Controller</title>
+    <style>
+        /* UI THEME */
+        :root {
+            --bg-main: #0a0a0c;
+            --bg-card: #151518;
+            --accent: #0088ff;
+            --accent-hover: #0066cc;
+            --text-main: #ffffff;
+            --text-muted: #888890;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Helvetica Neue', sans-serif; }
+
+        body { background-color: var(--bg-main); color: var(--text-main); padding: 2rem; display: flex; flex-direction: column; gap: 1.5rem; }
+
+        header { border-bottom: 2px solid var(--accent); padding-bottom: 1rem; }
+        header h1 { font-style: italic; font-weight: 900; text-transform: uppercase; }
+        
+        .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        @media (max-width: 800px) { .dashboard { grid-template-columns: 1fr; } }
+
+        .card { background: var(--bg-card); padding: 1.5rem; border-radius: 8px; border: 1px solid #2a2a30; }
+        .card h2 { font-size: 1.1rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 1rem; }
+
+        .btn { background: var(--accent); color: #fff; border: none; padding: 0.8rem 1.5rem; border-radius: 4px; cursor: pointer; font-weight: bold; text-transform: uppercase; transition: 0.2s; }
+        .btn:hover { background: var(--accent-hover); }
+        .btn:disabled { background: #333; color: #666; cursor: not-allowed; }
+
+        .input-group { margin-bottom: 1rem; }
+        .input-group label { display: block; font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem; }
+        input[type="range"] { width: 100%; cursor: pointer; }
+
+        .status { padding: 1rem; background: #000; border-radius: 4px; font-family: monospace; color: #00cc44; margin-top: 1rem; }
+
+        /* A4 PRINTING STYLES (Generates the PDF/Print layout) */
+        .printable-track { display: none; }
+        
+        @media print {
+            @page { size: A4; margin: 0; }
+            body * { visibility: hidden; }
+            .printable-track { 
+                display: flex; 
+                visibility: visible; 
+                position: absolute; 
+                top: 0; left: 0; 
+                width: 210mm; height: 297mm; /* Exact DIN A4 dimensions */
+                background: white;
+                align-items: center;
+                justify-content: center;
+            }
+            .printable-track * { visibility: visible; }
+            
+            /* Line Follower Track Design */
+            .track-path {
+                width: 150mm;
+                height: 230mm;
+                border: 15mm solid black; /* Thick black line for IR sensors */
+                border-radius: 75mm; /* Smooth curves */
+                position: relative;
+            }
+            .start-line {
+                position: absolute;
+                bottom: -15mm;
+                left: 50mm;
+                width: 4mm;
+                height: 15mm;
+                background: white; /* Optical trigger for lap timing */
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Bluetooth Simracer</h1>
+        <p style="color: var(--text-muted);">BLE Vehicle Telemetry & Tuning</p>
+    </header>
+
+    <div class="dashboard">
+        <!-- Connection Card -->
+        <div class="card">
+            <h2>Vehicle Uplink</h2>
+            <button id="btn-connect" class="btn">Connect Bluetooth Car</button>
+            <div id="status-log" class="status">Status: Disconnected. Waiting for pairing...</div>
+            
+            <hr style="border: 0; border-top: 1px solid #2a2a30; margin: 1.5rem 0;">
+            
+            <h2>Track Generation</h2>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+                Click below to open the A4 line-following track. When the print dialog opens, select <strong>"Save as PDF"</strong> or print directly to A4 paper.
+            </p>
+            <button class="btn" style="background: #e60000;" onclick="window.print()">🖨️ Generate A4 Track (PDF)</button>
+        </div>
+
+        <!-- Tuning & Control Card -->
+        <div class="card">
+            <h2>Car-Wise Tuning</h2>
+            
+            <div class="input-group">
+                <label>Max Engine Power / Speed Limit</label>
+                <input type="range" id="tune-speed" min="10" max="100" value="70" onchange="sendTuningData()">
+            </div>
+
+            <div class="input-group">
+                <label>Steering Sensitivity</label>
+                <input type="range" id="tune-steer" min="10" max="100" value="50" onchange="sendTuningData()">
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid #2a2a30; margin: 1.5rem 0;">
+
+            <h2>Auto-Drive Mode</h2>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+                Hands-free autonomous lap mode. Requires onboard line-following sensors.
+            </p>
+            <button id="btn-auto" class="btn" style="width: 100%; background: #00cc44;" disabled onclick="toggleAutoMode()">
+                ▶ PRESS GO (Enable Auto-Drive)
+            </button>
+        </div>
+    </div>
+
+    <!-- Hidden A4 Track for PDF Generation -->
+    <div class="printable-track">
+        <div class="track-path">
+            <div class="start-line"></div>
+        </div>
+    </div>
+
+    <script>
+        // UUIDs would need to match your specific ESP32/Arduino BLE setup
+        const SERVICE_UUID = '4fafc201-1fb5-459e-8fcc-c5c9c331914b';
+        const CHARACTERISTIC_UUID = 'beb5483e-36e1-4688-b7f5-ea07361b26a8';
+        
+        let bleDevice = null;
+        let bleCharacteristic = null;
+        let isAutoDriving = false;
+
+        const btnConnect = document.getElementById('btn-connect');
+        const btnAuto = document.getElementById('btn-auto');
+        const statusLog = document.getElementById('status-log');
+
+        function log(msg) {
+            statusLog.textContent = `Status: ${msg}`;
+        }
+
+        btnConnect.addEventListener('click', async () => {
+            try {
+                log("Requesting Bluetooth Device...");
+                bleDevice = await navigator.bluetooth.requestDevice({
+                    filters: [{ namePrefix: 'Simracer' }], // Change this to your car's BLE name
+                    optionalServices: [SERVICE_UUID]
+                });
+
+                log("Connecting to GATT Server...");
+                const server = await bleDevice.gatt.connect();
+
+                log("Getting Service...");
+                const service = await server.getPrimaryService(SERVICE_UUID);
+
+                log("Getting Characteristic...");
+                bleCharacteristic = await service.getCharacteristic(CHARACTERISTIC_UUID);
+
+                log("CONNECTED. Ready to send telemetry.");
+                btnConnect.textContent = "Car Connected";
+                btnConnect.style.background = "#00cc44";
+                btnAuto.disabled = false;
+
+            } catch (error) {
+                log(`Connection Failed: ${error}`);
+            }
+        });
+
+        async function sendTuningData() {
+            if (!bleCharacteristic) return;
+            
+            const speed = document.getElementById('tune-speed').value;
+            const steer = document.getElementById('tune-steer').value;
+            
+            // Create a simple comma-separated command string, e.g., "TUNE:70,50"
+            const command = `TUNE:${speed},${steer}`;
+            const encoder = new TextEncoder();
+            
+            try {
+                await bleCharacteristic.writeValue(encoder.encode(command));
+                log(`Tuning updated: Power ${speed}%, Steering ${steer}%`);
+            } catch (error) {
+                log(`Failed to send tuning: ${error}`);
+            }
+        }
+
+        async function toggleAutoMode() {
+            if (!bleCharacteristic) return;
+
+            isAutoDriving = !isAutoDriving;
+            const command = isAutoDriving ? "MODE:AUTO" : "MODE:MANUAL";
+            const encoder = new TextEncoder();
+
+            try {
+                await bleCharacteristic.writeValue(encoder.encode(command));
+                if (isAutoDriving) {
+                    btnAuto.textContent = "⏹ STOP (Disable Auto-Drive)";
+                    btnAuto.style.background = "#e60000";
+                    log("AUTO-DRIVE ENGAGED. Car is following line.");
+                } else {
+                    btnAuto.textContent = "▶ PRESS GO (Enable Auto-Drive)";
+                    btnAuto.style.background = "#00cc44";
+                    log("AUTO-DRIVE DISABLED. Waiting for input.");
+                }
+            } catch (error) {
+                log(`Failed to send command: ${error}`);
+            }
+        }
+    </script>
+</body>
+</html>
