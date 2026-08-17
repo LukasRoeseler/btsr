@@ -27,7 +27,7 @@
   }
   * { box-sizing: border-box; }
   html, body {
-    margin: 0; padding: 0; height: 100%;
+    margin: 0; padding: 0; height: 100%; max-width: 100%; overflow-x: hidden;
     background: var(--bg); color: var(--text);
     font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
   }
@@ -68,9 +68,11 @@
   header button.primary { background: #fff; color: var(--navy); border-color: #fff; }
   nav.tabs {
     display: flex; gap: 2px; padding: 0 24px; background: var(--panel-2); border-bottom: 1px solid var(--border);
+    overflow-x: auto; -webkit-overflow-scrolling: touch;
   }
   nav.tabs button {
     background: transparent; border: none; border-bottom: 3px solid transparent;
+    white-space: nowrap; flex-shrink: 0;
     border-radius: 0; padding: 12px 18px; color: var(--muted); font-weight: 500;
   }
   nav.tabs button:hover { background: var(--panel-3); }
@@ -216,6 +218,7 @@
   <button class="tab-btn active" data-tab="explore">Explorer</button>
   <button class="tab-btn" data-tab="control">Steuerung</button>
   <button class="tab-btn" data-tab="controller">Controller</button>
+  <button class="tab-btn" data-tab="track">Strecke</button>
   <button class="tab-btn" data-tab="autonomous">Autonom</button>
   <button class="tab-btn" data-tab="btsr">BTSR</button>
 </nav>
@@ -317,6 +320,65 @@
     </div>
 
     <div class="card">
+      <h2>Fahrzeug &amp; Strecke</h2>
+      <div class="row" style="justify-content:space-between">
+        <div>
+          <div class="muted">Fahrzeug: <b id="dash-vehicle-name">nicht verbunden</b></div>
+          <div class="muted">Akku: <b id="dash-battery">-</b> <span style="font-size:11px">(geschätzt)</span></div>
+          <div class="muted">Status: <span id="dash-offtrack" style="display:inline-block;padding:1px 8px;border-radius:4px;background:var(--panel-2);border:1px solid var(--border)">-</span></div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end">
+          <label style="display:flex;align-items:center;gap:6px" class="muted">
+            <input type="checkbox" id="dash-freeroam"> Frei fahren (ohne Streckenkarte)
+          </label>
+          <label style="display:flex;align-items:center;gap:6px" class="muted">
+            <input type="checkbox" id="sound-enable"> Motorsound (synthetisch)
+          </label>
+        </div>
+      </div>
+      <div class="row" style="margin-top:12px; align-items:flex-start; gap:20px">
+        <div id="dash-minimap"></div>
+        <div style="flex:1; min-width:200px">
+          <p class="muted">Aktuelle Runde: <b id="dash-lap-current">-</b></p>
+          <p class="muted">Beste Runde: <b id="dash-lap-best">-</b></p>
+          <ol class="muted" id="dash-lap-list" style="padding-left:20px; max-height:120px; overflow-y:auto"></ol>
+        </div>
+      </div>
+      <p class="muted" style="margin-top:8px; font-size:11.5px">
+        Die Position auf der Minikarte ist eine Schätzung (Kachel-Zähler + Zeit-Interpolation), keine echte
+        Positionsmessung vom Auto.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>Simulation: Tank &amp; Schäden</h2>
+      <p class="muted" style="font-size:11.5px">
+        Tank, Schaden und Boxenstopp sind eine reine Spielsimulation der App &mdash; das echte Auto hat keinen
+        Tank und meldet keinen Schaden. Die Crash-Erkennung ist zudem <b>experimentell</b>: sie beruht auf
+        Ausschlägen in Sensor-Bytes, deren genaue Bedeutung wir nicht sicher kennen.
+      </p>
+      <div class="row">
+        <div style="flex:1; min-width:150px">
+          <label class="small">Tank</label>
+          <div style="background:var(--panel-2); border:1px solid var(--border); border-radius:4px; height:14px; overflow:hidden">
+            <div id="fuel-bar" style="height:100%; width:100%; background:var(--good); transition:width .3s"></div>
+          </div>
+        </div>
+        <div style="flex:1; min-width:150px">
+          <label class="small">Schaden</label>
+          <div style="background:var(--panel-2); border:1px solid var(--border); border-radius:4px; height:14px; overflow:hidden">
+            <div id="damage-bar" style="height:100%; width:0%; background:var(--bad); transition:width .3s"></div>
+          </div>
+        </div>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button class="primary" id="btn-pitstop">Boxenstopp (Reparatur + Tanken)</button>
+        <span class="muted" id="pitstop-status">bereit</span>
+        <span id="crash-indicator" style="display:none; color:var(--bad); font-weight:700;">💥 Crash erkannt (experimentell)!</span>
+      </div>
+    </div>
+
+    <div class="card">
       <h2>Fahren</h2>
       <div class="control-grid">
         <div class="stick-wrap">
@@ -362,6 +424,23 @@
         <label style="display:flex;align-items:center;gap:6px" id="phys-gyro-wrap">
           <input type="checkbox" id="phys-gyro"> Handy-Neigung für Lenkung nutzen
         </label>
+      </div>
+      <div class="row" style="margin-top:14px">
+        <div>
+          <label class="small">Geschwindigkeit</label>
+          <input type="range" id="setting-topspeed" min="0.2" max="1" step="0.05" value="1">
+          <span class="muted" id="setting-topspeed-val">100%</span>
+        </div>
+        <div>
+          <label class="small">Reifengrip</label>
+          <input type="range" id="setting-grip" min="0" max="1" step="0.05" value="0.6">
+          <span class="muted" id="setting-grip-val">0.60</span>
+        </div>
+        <div>
+          <label class="small">Bremswirkung</label>
+          <input type="range" id="setting-brakepower" min="0.3" max="1.5" step="0.05" value="1">
+          <span class="muted" id="setting-brakepower-val">1.00</span>
+        </div>
       </div>
       <div class="row" style="margin-top:12px">
         <div>
@@ -454,6 +533,54 @@
     </div>
   </section>
 
+  <!-- TRACK TAB -->
+  <section class="tabpage" id="tab-track">
+    <div class="card">
+      <h2>Streckeneditor</h2>
+      <p class="muted">
+        Baue eine Strecke manuell aus Teilen zusammen, oder scanne sie live, während das Auto einmal die
+        Runde fährt (Auto muss verbunden sein). Bekannte Teiltypen: Start/Ziel, Gerade, Rechtskurve
+        (bestätigt aus echten Streckendaten). Linkskurve ist eine <b>unbestätigte Annahme</b> (nicht real
+        getestet).
+      </p>
+      <div class="row">
+        <button id="track-add-start">+ Start/Ziel</button>
+        <button id="track-add-straight">+ Gerade</button>
+        <button id="track-add-right">+ Rechtskurve</button>
+        <button id="track-add-left">+ Linkskurve (?)</button>
+        <button id="track-clear">Alles löschen</button>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button class="primary" id="track-scan-start">Live-Scan starten</button>
+        <button id="track-scan-stop" disabled>Scan stoppen</button>
+        <span class="muted" id="track-scan-status">bereit</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Vorschau</h2>
+      <div class="row" style="align-items:flex-start; gap:20px">
+        <div id="track-preview-svg" style="flex:0 0 auto"></div>
+        <div style="flex:1; min-width:200px">
+          <p class="muted">Status: <b id="track-closed-badge">-</b></p>
+          <ol class="muted" id="track-tile-list" style="padding-left:20px; line-height:1.9; max-height:260px; overflow-y:auto"></ol>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Gespeicherte Strecken</h2>
+      <div class="row">
+        <input type="text" id="track-name" placeholder="Name der Strecke">
+        <button id="track-save">Speichern</button>
+        <select id="track-list"><option value="">-- gespeicherte Strecken --</option></select>
+        <button id="track-load">Laden</button>
+        <button id="track-delete">Löschen</button>
+      </div>
+      <p class="muted" style="margin-top:8px">Strecken werden lokal im Browser gespeichert (localStorage).</p>
+    </div>
+  </section>
+
   <!-- AUTONOMOUS TAB -->
   <section class="tabpage" id="tab-autonomous">
     <div class="card">
@@ -500,19 +627,13 @@
     <div class="card">
       <h2>Überblick</h2>
       <p class="muted">
-        Carrera Hybrid ist eine Mischung aus klassischer Carrera-Rennbahn und freiem Ferngesteuert-Fahren.
-        Bei einer klassischen Carrera-Bahn läuft das Auto in einer Rille auf der Schiene und kann die Spur
-        nicht verlassen.
+        Carrera Hybrid mischt klassische Carrera-Rennbahn mit freiem Ferngesteuert-Fahren. Auf einer
+        klassischen Bahn läuft das Auto in einer Schienenrille und kann nicht abkommen. Bei Carrera Hybrid
+        fahren die Fahrzeuge frei, ohne Schiene. Die Streckenteile tragen eine Markierung, die ein Sensor im
+        Auto liest, damit das Auto trotzdem weiß, wo es ist.
       </p>
       <p class="muted">
-        Bei Carrera Hybrid ist das anders. Die Fahrzeuge fahren frei, ohne Schiene und ohne Rille. Sie
-        erkennen die Strecke trotzdem, weil die Streckenteile eine Markierung tragen. Ein Sensor im Auto
-        liest diese Markierung. So weiß das Auto, wo es sich befindet und was für ein Streckenteil vor ihm liegt.
-      </p>
-      <p class="muted">
-        Gesteuert wird das Auto über eine Smartphone-App per Bluetooth. Es gibt auch einen optionalen
-        Controller, in den man das Handy einklemmen kann. Der Controller hat richtige Knöpfe statt
-        Touchscreen-Tasten.
+        Gesteuert wird per Smartphone-App über Bluetooth, optional mit einem Controller-Aufsatz für das Handy.
       </p>
     </div>
 
@@ -520,70 +641,42 @@
       <h2>Der Aufbau des Autos</h2>
       <ul class="muted" style="padding-left:20px; line-height:1.7">
         <li><b>Motor:</b> treibt die Hinterräder an.</li>
-        <li><b>Lenkservo:</b> dreht die Vorderräder nach links oder rechts.</li>
-        <li><b>Akku:</b> ein wiederaufladbarer Akku im Fahrzeug.</li>
-        <li><b>Bluetooth-Chip:</b> ein kleiner Funk-Chip, der die Verbindung zum Handy hält. Vermutlich ein
-          Chip aus der Nordic-nRF52-Familie.</li>
-        <li><b>Sensor:</b> erkennt die Markierung auf den Streckenteilen. Ob es sich um eine kleine Kamera
-          oder einen einfacheren Infrarot-Sensor handelt, ist nicht sicher bekannt.</li>
-        <li><b>Lichter:</b> mindestens Frontscheinwerfer. Ob es ein separates Bremslicht gibt, ist noch nicht
-          bestätigt.</li>
+        <li><b>Lenkservo:</b> dreht die Vorderräder.</li>
+        <li><b>Akku:</b> wiederaufladbar, im Fahrzeug.</li>
+        <li><b>Bluetooth-Chip:</b> hält die Verbindung zum Handy. Vermutlich Nordic nRF52.</li>
+        <li><b>Sensor:</b> liest die Streckenmarkierung. Kamera oder Infrarot ist nicht sicher bekannt.</li>
+        <li><b>Lichter:</b> mindestens Frontscheinwerfer. Ein Bremslicht ist nicht bestätigt.</li>
       </ul>
       <p class="muted">
-        Die eigentliche Fahrphysik, also wie das Auto auf Gas und Lenkung reagiert, wird im Auto selbst
-        berechnet. Die App schickt nur Zielwerte für Gas und Lenkung. Sie berechnet keine Fahrdynamik.
+        Wie das Auto auf Gas und Lenkung reagiert, berechnet das Auto selbst. Die App schickt nur Zielwerte.
       </p>
     </div>
 
     <div class="card">
-      <h2>Die Streckenteile</h2>
+      <h2>Streckenteile und Streckenscan</h2>
       <p class="muted">
-        Jedes Streckenteil (Gerade, Kurve, Start-Ziel-Linie) hat ein eigenes Muster aufgedruckt. Dieses
-        Muster ist für Menschen kaum sichtbar, aber für den Sensor im Auto lesbar. So kann das Auto erkennen,
-        welche Art von Teil gerade unter ihm liegt und ob es sich noch auf der Strecke befindet oder bereits
-        daneben fährt ("Off-Track").
+        Jedes Streckenteil (Gerade, Kurve, Start-Ziel) trägt ein eigenes, für Menschen kaum sichtbares Muster.
+        So erkennt das Auto den Teiltyp und ob es noch auf der Strecke ist. Die Teile liegen lose, also kann
+        jede Strecke frei gebaut werden, und das Auto darf sie auch komplett verlassen.
       </p>
       <p class="muted">
-        Weil die Teile lose auf dem Boden oder Tisch liegen und keine feste Schiene bilden, kann jede Strecke
-        frei zusammengebaut werden. Das Auto kann die Strecke auch komplett verlassen und irgendwo frei
-        herumfahren.
-      </p>
-    </div>
-
-    <div class="card">
-      <h2>Streckenscan</h2>
-      <p class="muted">
-        Bevor ein Rennen beginnt, kann die App die Strecke einmal abscannen. Dabei fährt das Auto (gesteuert
-        von der App oder von Hand) einmal die ganze Strecke ab. Jedes Mal, wenn ein neues Streckenteil erkannt
-        wird, meldet das Auto das per Bluetooth an die App.
-      </p>
-      <p class="muted">
-        So entsteht Stück für Stück eine digitale Karte der Strecke. Diese Karte kann die App später nutzen,
-        zum Beispiel für eine Renn-Übersicht oder für computergesteuerte Gegner.
+        Vor einem Rennen kann die App die Strecke einmal abscannen: Das Auto fährt sie ab, meldet jedes neu
+        erkannte Teil per Bluetooth, und daraus entsteht Stück für Stück eine digitale Streckenkarte.
       </p>
     </div>
 
     <div class="card">
       <h2>Die Bluetooth-Verbindung</h2>
       <p class="muted">
-        Handy und Auto sprechen über <b>Bluetooth Low Energy</b> (kurz BLE) miteinander. Das ist der
-        stromsparende Bluetooth-Standard, den auch smarte Kopfhörer oder Fitness-Tracker nutzen.
+        Handy und Auto sprechen über <b>Bluetooth Low Energy</b> (BLE), den stromsparenden Standard, den auch
+        Kopfhörer oder Fitness-Tracker nutzen. Der Kanal heißt <b>Nordic UART Service</b>, eine Art virtuelle
+        serielle Leitung über Bluetooth, die viele kleine Elektronikgeräte verwenden.
       </p>
       <p class="muted">
-        Die Verbindung läuft über einen Kanal, der als <b>Nordic UART Service</b> bekannt ist. Das ist eine
-        Art virtuelle serielle Leitung über Bluetooth. Viele kleine Elektronikgeräte nutzen diesen
-        Standardkanal, weil er einfach einzubauen ist.
-      </p>
-      <p class="muted">
-        Wichtig ist: Die App schickt nicht nur einmal ein Kommando, wenn man Gas gibt. Sie schickt stattdessen
-        etwa 20 bis 45 Mal pro Sekunde ein Datenpaket mit dem aktuellen Gas- und Lenkwert. Das Auto erwartet
-        diesen ständigen Strom an Befehlen. Bleibt der Strom aus, geht das Auto vermutlich in einen sicheren
-        Stillstand über.
-      </p>
-      <p class="muted">
-        In die andere Richtung, vom Auto zum Handy, schickt das Auto ebenfalls ständig Statuspakete. Darin
-        stecken unter anderem der Akkustand, welches Streckenteil gerade erkannt wurde, ob das Auto von der
-        Strecke abgekommen ist, und Rohdaten von Bewegungssensoren (vermutlich Beschleunigung oder Drehrate).
+        Die App schickt nicht nur einmal ein Kommando: Sie sendet etwa 20 bis 45 Mal pro Sekunde den
+        aktuellen Gas- und Lenkwert. Bleibt dieser Strom aus, geht das Auto vermutlich in einen sicheren
+        Stillstand über. In die andere Richtung meldet das Auto laufend Statuspakete: Akkustand, erkanntes
+        Streckenteil, Off-Track-Status und rohe Bewegungssensordaten.
       </p>
       <svg viewBox="0 0 620 230" style="width:100%; max-width:620px; margin-top:8px" aria-label="Datenfluss zwischen Handy, Auto und Streckenteil">
         <defs>
@@ -621,59 +714,28 @@
     <div class="card">
       <h2>Wer steuert die Fahrphysik?</h2>
       <p class="muted">
-        Ein wichtiger Punkt, den man leicht falsch einschätzt: Die App ist kein Physik-Simulator. Sie schickt
-        dem Auto nur, was der Fahrer will (wie viel Gas, welche Lenkrichtung). Das Auto selbst entscheidet,
-        wie es darauf reagiert.
-      </p>
-      <p class="muted">
-        Das erklärt auch, warum der Gaswert kein einfacher "Stopp bis Vollgas"-Wert ist. Er wirkt eher wie
-        ein Wert, der sich weich hoch- und runterregelt, ähnlich wie beim Gasgeben in einem echten Auto. Die
-        Feinarbeit passiert in der Firmware des Autos, nicht in der App.
+        Die App ist kein Physik-Simulator. Sie schickt dem Auto nur den Fahrerwunsch (Gas, Lenkrichtung),
+        und das Auto entscheidet selbst, wie es reagiert. Deshalb ist der Gaswert auch kein einfacher
+        "Stopp bis Vollgas"-Schalter, sondern regelt sich weich hoch und runter, ähnlich wie in einem
+        echten Auto. Die Feinarbeit passiert in der Firmware des Autos, nicht in der App.
       </p>
     </div>
 
     <div class="card">
-      <h2>Mehrspieler-Rennen</h2>
+      <h2>Mehrspieler, Updates, offene Fragen</h2>
       <p class="muted">
-        Laut Hersteller können mehrere Spieler gleichzeitig fahren. Jedes Handy verbindet sich dabei über
-        Bluetooth mit seinem eigenen Auto. Für die Renn-Organisation zwischen den Handys, etwa Rundenzeiten
-        oder Startreihenfolge, wird vermutlich zusätzlich WLAN zwischen den Handys genutzt.
-      </p>
-      <p class="muted">Das ergibt zwei getrennte Funkverbindungen:</p>
-      <ol class="muted" style="padding-left:20px; line-height:1.7">
-        <li>Bluetooth: Handy zu seinem eigenen Auto (Steuerung).</li>
-        <li>WLAN: Handy zu Handy (Rennorganisation).</li>
-      </ol>
-    </div>
-
-    <div class="card">
-      <h2>Firmware-Updates</h2>
-      <p class="muted">
-        Das Auto unterstützt Updates seiner eigenen Software über Bluetooth. Das nennt man
-        "Over-the-Air-Update" oder kurz OTA-Update. Dafür wird ein Standardverfahren von Nordic Semiconductor
-        genutzt, das bei sehr vielen Bluetooth-Geräten zum Einsatz kommt.
+        Laut Hersteller können mehrere Spieler gleichzeitig fahren, jedes Handy über Bluetooth mit seinem
+        eigenen Auto verbunden. Für die Renn-Organisation zwischen den Handys (Rundenzeiten,
+        Startreihenfolge) wird vermutlich zusätzlich WLAN zwischen den Handys genutzt: zwei getrennte
+        Funkwege, Bluetooth zum eigenen Auto und WLAN zu den anderen Handys.
       </p>
       <p class="muted">
-        Das bedeutet: Der Hersteller kann über die App neue Firmware auf das Auto spielen, zum Beispiel um
-        Fehler zu beheben oder das Fahrverhalten zu verbessern.
+        Das Auto kann seine Firmware auch per Bluetooth aktualisieren ("Over-the-Air-Update"), über ein
+        Standardverfahren von Nordic Semiconductor.
       </p>
-    </div>
-
-    <div class="card">
-      <h2>Was noch nicht sicher bekannt ist</h2>
-      <p class="muted">
-        Manche Details lassen sich nur aus dem beobachteten Verhalten ableiten, nicht mit letzter Sicherheit
-        belegen. Dazu gehören:
-      </p>
-      <ul class="muted" style="padding-left:20px; line-height:1.7">
-        <li>der genaue Typ des Streckensensors (Kamera oder Infrarot)</li>
-        <li>ob es ein eigenes Bremslicht gibt und wie es angesteuert wird</li>
-        <li>die genaue Bedeutung aller Bytes im Bluetooth-Protokoll</li>
-      </ul>
-      <p class="muted">
-        Diese Lücken ändern nichts am Grundprinzip: Ein Sensor liest die Strecke, ein Funkchip verbindet Auto
-        und Handy, und die eigentliche Fahrphysik läuft im Auto selbst.
-      </p>
+      <p class="muted">Noch nicht sicher bekannt: der genaue Streckensensor-Typ, ob es ein Bremslicht gibt,
+        und die genaue Bedeutung aller Protokoll-Bytes. Das Grundprinzip bleibt davon unberührt: Sensor liest
+        Strecke, Funkchip verbindet Auto und Handy, Fahrphysik läuft im Auto.</p>
     </div>
   </section>
 
@@ -943,6 +1005,9 @@
         ? 'NUS RX/TX gefunden ✓'
         : 'NUS RX/TX nicht gefunden';
     }
+    const vehicleNameEl = $('dash-vehicle-name');
+    if (vehicleNameEl) vehicleNameEl.textContent = device?.name || '-';
+    if (typeof ensureDashboardStatusSubscribed === 'function') ensureDashboardStatusSubscribed();
   }
 
   // ---- UUID input ----
@@ -1019,10 +1084,17 @@
 
   async function sendControlValue(overrideSteer, overrideThrottle) {
     const steer = overrideSteer !== undefined ? overrideSteer : steerX;
-    const throttle = overrideThrottle !== undefined ? overrideThrottle : throttleY;
+    let throttle = overrideThrottle !== undefined ? overrideThrottle : throttleY;
     if (recording) {
       macro.push({ t: Date.now() - recordStartTime, steer, throttle });
     }
+    // "Geschwindigkeit" setting (Settings sliders, Steuerung tab) — a simple top-speed
+    // cap applied at this single choke point so every input source (joystick, keyboard,
+    // gamepad, physics engine, macro playback) respects it consistently. Defaults to 1
+    // (no effect) so existing behavior/tests are unchanged unless the user lowers it.
+    throttle *= topSpeedScale;
+    throttle = applyFuelAndDamage(throttle);
+    updateEngineSound(throttle);
     const uuid = controlSelect.value;
     const payload = buildCommandPacket(steer, throttle);
     if (!uuid) {
@@ -1278,6 +1350,31 @@
     };
     input.addEventListener('input', apply);
     apply();
+  });
+
+  // ---- Settings sliders matching the official app's Geschwindigkeit/Reifengrip/
+  // Bremswirkung concepts, each backed by a real existing lever (no invented settings) ----
+  let topSpeedScale = 1;
+  const BASE_GEAR_BRAKE = physEngine.config.gears.map(g => g.brake);
+
+  $('setting-topspeed').addEventListener('input', (e) => {
+    topSpeedScale = parseFloat(e.target.value);
+    $('setting-topspeed-val').textContent = Math.round(topSpeedScale * 100) + '%';
+  });
+
+  $('setting-grip').addEventListener('input', (e) => {
+    const grip = parseFloat(e.target.value);
+    $('setting-grip-val').textContent = grip.toFixed(2);
+    physEngine.config.speedSteerReduction = 0.7 * (1 - grip);
+    physEngine.config.steeringDamping = 0.30 - (0.30 - 0.10) * grip; // lerp(0.30, 0.10, grip)
+    $('phys-damping').value = physEngine.config.steeringDamping;
+    $('phys-damping-val').textContent = physEngine.config.steeringDamping.toFixed(2);
+  });
+
+  $('setting-brakepower').addEventListener('input', (e) => {
+    const mult = parseFloat(e.target.value);
+    $('setting-brakepower-val').textContent = mult.toFixed(2);
+    physEngine.config.gears.forEach((g, i) => { g.brake = BASE_GEAR_BRAKE[i] * mult; });
   });
 
   function updateDashboard(out) {
@@ -1748,6 +1845,420 @@
   $('lab-subscribe').onclick = labSubscribeTx;
 
   labRenderBytes();
+
+  // ---- Track data model + shared minimap/track-preview renderer ----
+  // Tile type byte matches notify-packet byte 12 exactly, so a scanned track's values
+  // can be stored verbatim. CURVE_LEFT (0x08) follows the powers-of-two pattern of the
+  // other three CONFIRMED values but has never actually been observed/tested — flagged
+  // wherever it's shown in the UI.
+  const TRACK_STORE_KEY = 'carrera-hybrid-tracks';
+  const TILE_TYPE = { START: 0x01, STRAIGHT: 0x02, CURVE_RIGHT: 0x04, CURVE_LEFT: 0x08 };
+  const TILE_LABEL = {
+    [TILE_TYPE.START]: 'Start/Ziel',
+    [TILE_TYPE.STRAIGHT]: 'Gerade',
+    [TILE_TYPE.CURVE_RIGHT]: 'Rechtskurve',
+    [TILE_TYPE.CURVE_LEFT]: 'Linkskurve (?)',
+  };
+
+  function loadTrackStore() {
+    try { return JSON.parse(localStorage.getItem(TRACK_STORE_KEY) || '{}'); }
+    catch { return {}; }
+  }
+  function saveTrackStore(store) { localStorage.setItem(TRACK_STORE_KEY, JSON.stringify(store)); }
+
+  let currentTrackTiles = []; // [{type}]
+
+  // Turtle-graphics walk: each tile is a fixed-length/fixed-turn step. Curve radius/
+  // angle are schematic estimates, not measured from a real track, so the resulting
+  // shape is illustrative rather than geometrically exact.
+  function walkTrack(tiles) {
+    const STEP = 40, RADIUS = 30, TURN_DEG = 45;
+    let x = 0, y = 0, heading = 0;
+    const points = [{ x, y, heading }];
+    for (const tile of tiles) {
+      if (tile.type === TILE_TYPE.CURVE_RIGHT || tile.type === TILE_TYPE.CURVE_LEFT) {
+        const turn = tile.type === TILE_TYPE.CURVE_RIGHT ? TURN_DEG : -TURN_DEG;
+        const midRad = (heading + turn / 2) * Math.PI / 180;
+        const chord = 2 * RADIUS * Math.sin((turn * Math.PI / 180) / 2);
+        x += Math.sin(midRad) * chord;
+        y -= Math.cos(midRad) * chord;
+        heading += turn;
+      } else {
+        const rad = heading * Math.PI / 180;
+        x += Math.sin(rad) * STEP;
+        y -= Math.cos(rad) * STEP;
+      }
+      points.push({ x, y, heading });
+    }
+    return points;
+  }
+
+  function renderTrackPreview(tiles, currentIndex) {
+    const points = walkTrack(tiles);
+    if (points.length < 2) {
+      return { html: '<p class="muted">Keine Streckenteile.</p>', closed: false };
+    }
+    const xs = points.map(p => p.x), ys = points.map(p => p.y);
+    const pad = 30;
+    const minX = Math.min(...xs), maxX = Math.max(...xs);
+    const minY = Math.min(...ys), maxY = Math.max(...ys);
+    const w = Math.max(1, maxX - minX) + pad * 2, h = Math.max(1, maxY - minY) + pad * 2;
+    const ox = pad - minX, oy = pad - minY;
+    let d = `M ${(points[0].x + ox).toFixed(1)} ${(points[0].y + oy).toFixed(1)}`;
+    for (let i = 1; i < points.length; i++) d += ` L ${(points[i].x + ox).toFixed(1)} ${(points[i].y + oy).toFixed(1)}`;
+    const first = points[0], last = points[points.length - 1];
+    const closed = Math.hypot(last.x - first.x, last.y - first.y) < 60;
+    let dot = '';
+    if (currentIndex != null) {
+      const p = points[Math.max(0, Math.min(currentIndex + 1, points.length - 1))];
+      dot = `<circle cx="${(p.x + ox).toFixed(1)}" cy="${(p.y + oy).toFixed(1)}" r="7" fill="#b3131f" stroke="#fff" stroke-width="2"/>`;
+    }
+    const html = `<svg viewBox="0 0 ${w.toFixed(0)} ${h.toFixed(0)}" style="width:220px;height:auto;background:var(--panel-2);border:1px solid var(--border);border-radius:4px">
+      <path d="${d}" fill="none" stroke="#0b1f3f" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="${(first.x + ox).toFixed(1)}" cy="${(first.y + oy).toFixed(1)}" r="5" fill="#1c7a4d"/>
+      ${dot}
+    </svg>`;
+    return { html, closed };
+  }
+
+  function refreshTrackPreview() {
+    const result = renderTrackPreview(currentTrackTiles, typeof getMinimapCurrentIndex === 'function' ? getMinimapCurrentIndex() : null);
+    $('track-preview-svg').innerHTML = result.html;
+    $('track-closed-badge').textContent = currentTrackTiles.length === 0 ? '-' : (result.closed ? 'Geschlossen ✓' : 'Offen');
+    const list = $('track-tile-list');
+    list.innerHTML = currentTrackTiles.map((t, i) =>
+      `<li>${TILE_LABEL[t.type] || ('0x' + t.type.toString(16))}
+        <button data-idx="${i}" class="track-del-btn" style="padding:1px 6px;font-size:11px;margin-left:6px">×</button></li>`
+    ).join('');
+    list.querySelectorAll('.track-del-btn').forEach(btn => {
+      btn.onclick = () => {
+        currentTrackTiles.splice(parseInt(btn.dataset.idx, 10), 1);
+        refreshTrackPreview();
+      };
+    });
+    if (typeof refreshMinimap === 'function') refreshMinimap();
+  }
+
+  function addTile(type) { currentTrackTiles.push({ type }); refreshTrackPreview(); }
+  $('track-add-start').onclick = () => addTile(TILE_TYPE.START);
+  $('track-add-straight').onclick = () => addTile(TILE_TYPE.STRAIGHT);
+  $('track-add-right').onclick = () => addTile(TILE_TYPE.CURVE_RIGHT);
+  $('track-add-left').onclick = () => addTile(TILE_TYPE.CURVE_LEFT);
+  $('track-clear').onclick = () => { currentTrackTiles = []; refreshTrackPreview(); };
+
+  function refreshTrackList() {
+    const store = loadTrackStore();
+    const sel = $('track-list');
+    sel.innerHTML = '<option value="">-- gespeicherte Strecken --</option>';
+    Object.keys(store).forEach(name => {
+      const opt = document.createElement('option');
+      opt.value = name;
+      opt.textContent = `${name} (${store[name].tiles.length} Teile)`;
+      sel.appendChild(opt);
+    });
+  }
+  refreshTrackList();
+
+  $('track-save').onclick = () => {
+    const name = $('track-name').value.trim();
+    if (!name) { alert('Bitte einen Namen für die Strecke eingeben.'); return; }
+    if (currentTrackTiles.length === 0) { alert('Keine Streckenteile vorhanden.'); return; }
+    const store = loadTrackStore();
+    const now = new Date().toISOString();
+    store[name] = { id: name, name, tiles: currentTrackTiles, createdAt: store[name]?.createdAt || now, updatedAt: now };
+    saveTrackStore(store);
+    refreshTrackList();
+    log(`Strecke "${name}" gespeichert (${currentTrackTiles.length} Teile).`, 'info');
+  };
+  $('track-load').onclick = () => {
+    const name = $('track-list').value;
+    if (!name) return;
+    const store = loadTrackStore();
+    if (!store[name]) return;
+    currentTrackTiles = store[name].tiles.slice();
+    $('track-name').value = name;
+    refreshTrackPreview();
+  };
+  $('track-delete').onclick = () => {
+    const name = $('track-list').value;
+    if (!name) return;
+    const store = loadTrackStore();
+    delete store[name];
+    saveTrackStore(store);
+    refreshTrackList();
+  };
+
+  // ---- Live track scan: subscribe to NUS TX, watch byte 11 (tile counter) for
+  // changes, majority-vote byte 12 (tile type) across samples seen during that tile's
+  // dwell to reject transition noise ----
+  let trackScanning = false;
+  let trackScanLastCounter = null;
+  let trackScanTypeVotes = {};
+
+  function trackScanNotifyHandler(e) {
+    if (!trackScanning) return;
+    const bytes = new Uint8Array(e.target.value.buffer);
+    const counter = bytes[9];
+    const type = bytes[12];
+    if (trackScanLastCounter === null) {
+      trackScanLastCounter = counter;
+      trackScanTypeVotes = {};
+    }
+    if (counter !== trackScanLastCounter) {
+      // tile boundary: commit the majority-voted type for the tile we just left
+      let bestType = null, bestCount = -1;
+      for (const [t, c] of Object.entries(trackScanTypeVotes)) {
+        if (c > bestCount) { bestCount = c; bestType = parseInt(t, 10); }
+      }
+      if (bestType != null && Object.values(TILE_TYPE).includes(bestType)) {
+        currentTrackTiles.push({ type: bestType });
+        refreshTrackPreview();
+        $('track-scan-status').textContent = `Scan läuft: ${currentTrackTiles.length} Teile (zuletzt: ${TILE_LABEL[bestType] || bestType})`;
+      }
+      trackScanLastCounter = counter;
+      trackScanTypeVotes = {};
+    }
+    trackScanTypeVotes[type] = (trackScanTypeVotes[type] || 0) + 1;
+  }
+
+  async function startTrackScan() {
+    const entry = charByUuid.get(NUS_TX);
+    if (!entry) { alert('Nicht verbunden / NUS TX nicht gefunden.'); return; }
+    try {
+      if (!entry._trackScanSubscribed) {
+        await entry.char.startNotifications();
+        entry.char.addEventListener('characteristicvaluechanged', trackScanNotifyHandler);
+        entry._trackScanSubscribed = true;
+      }
+    } catch (err) { alert('Notify-Fehler: ' + err.message); return; }
+    currentTrackTiles = [];
+    trackScanLastCounter = null;
+    trackScanTypeVotes = {};
+    trackScanning = true;
+    refreshTrackPreview();
+    $('track-scan-start').disabled = true;
+    $('track-scan-stop').disabled = false;
+    $('track-scan-status').textContent = 'Scan läuft: 0 Teile';
+  }
+  function stopTrackScan() {
+    trackScanning = false;
+    $('track-scan-start').disabled = false;
+    $('track-scan-stop').disabled = true;
+    $('track-scan-status').textContent = `Scan gestoppt (${currentTrackTiles.length} Teile).`;
+  }
+  $('track-scan-start').onclick = startTrackScan;
+  $('track-scan-stop').onclick = stopTrackScan;
+
+  // ---- Race dashboard: live battery/off-track/minimap-position/lap-timing ----
+  // Battery is a rough two-point estimate (0x9b/155≈100%, 0x90/144≈75%, observed in an
+  // earlier session) — not a calibrated formula, just enough for a rough gauge.
+  let dashBattery = null;
+  let dashOffTrack = false;
+  let dashMinimapIndex = null;
+  let dashLastTileCounter = null;
+  let dashLapStart = null;
+  let dashLapTimes = [];
+  let freeRoamMode = false;
+
+  $('dash-freeroam').addEventListener('change', (e) => {
+    freeRoamMode = e.target.checked;
+    refreshMinimap();
+  });
+
+  function formatLapTime(ms) { return (ms / 1000).toFixed(2) + 's'; }
+
+  function batteryPercent(raw) {
+    return Math.max(0, Math.min(100, Math.round((raw - 111) / (155 - 111) * 100)));
+  }
+
+  function renderLapList() {
+    $('dash-lap-list').innerHTML = dashLapTimes.map((ms, i) => `<li>Runde ${i + 1}: ${formatLapTime(ms)}</li>`).join('');
+    if (dashLapTimes.length) $('dash-lap-best').textContent = formatLapTime(Math.min(...dashLapTimes));
+  }
+
+  function dashboardNotifyHandler(e) {
+    const bytes = new Uint8Array(e.target.value.buffer);
+    dashBattery = bytes[10];
+    $('dash-battery').textContent = `${batteryPercent(dashBattery)}% (roh ${dashBattery})`;
+
+    dashOffTrack = bytes[15] !== 0;
+    const badge = $('dash-offtrack');
+    badge.textContent = dashOffTrack ? 'Evtl. abseits der Strecke' : 'Auf Strecke (vermutlich)';
+    badge.style.background = dashOffTrack ? 'rgba(179,19,31,.12)' : 'var(--panel-2)';
+    badge.style.borderColor = dashOffTrack ? 'var(--bad)' : 'var(--border)';
+
+    detectCrash(bytes);
+
+    const counter = bytes[11];
+    const type = bytes[12];
+    if (dashLastTileCounter === null) { dashLastTileCounter = counter; return; }
+    if (counter === dashLastTileCounter) return;
+    dashLastTileCounter = counter;
+    dashMinimapIndex = dashMinimapIndex === null ? 0 : dashMinimapIndex + 1;
+    if (currentTrackTiles.length > 0) dashMinimapIndex = dashMinimapIndex % currentTrackTiles.length;
+
+    if (type === TILE_TYPE.START) {
+      const now = Date.now();
+      if (dashLapStart !== null) { dashLapTimes.push(now - dashLapStart); renderLapList(); }
+      dashLapStart = now;
+    }
+    refreshMinimap();
+  }
+
+  function getMinimapCurrentIndex() { return freeRoamMode ? null : dashMinimapIndex; }
+
+  function refreshMinimap() {
+    if (freeRoamMode || currentTrackTiles.length === 0) {
+      $('dash-minimap').innerHTML = '<p class="muted" style="width:220px">kein Streckenlayout geladen</p>';
+      return;
+    }
+    $('dash-minimap').innerHTML = renderTrackPreview(currentTrackTiles, dashMinimapIndex).html;
+  }
+
+  async function ensureDashboardStatusSubscribed() {
+    const entry = charByUuid.get(NUS_TX);
+    if (!entry || entry._dashSubscribed) return;
+    try {
+      await entry.char.startNotifications();
+      entry.char.addEventListener('characteristicvaluechanged', dashboardNotifyHandler);
+      entry._dashSubscribed = true;
+    } catch (err) { log('Dashboard-Notify-Fehler: ' + err.message, 'err'); }
+  }
+
+  setInterval(() => {
+    if (dashLapStart !== null) $('dash-lap-current').textContent = formatLapTime(Date.now() - dashLapStart);
+  }, 200);
+
+  // ---- Simulated game layer: fuel, damage/crash detection, pit stop ----
+  // None of this reflects real car telemetry: the real car has no fuel gauge and no
+  // confirmed damage sensor. Crash detection is a magnitude-based heuristic on notify
+  // bytes 1/3 (their real meaning is unconfirmed — see BTSR tab) — "something jolted",
+  // not a validated impact reading.
+  let fuel = 100;
+  let damage = 0;
+  let pitStopInProgress = false;
+  let crashRollingAvg1 = null, crashRollingAvg3 = null;
+  let crashIndicatorTimer = null;
+  let lastCrashTime = 0;
+  let fuelLastTickTime = null;
+  const CRASH_THRESHOLD = 40;
+  const CRASH_ROLLING_ALPHA = 0.15;
+  const CRASH_REFRACTORY_MS = 1000; // avoid re-triggering repeatedly off one jolt
+  const FUEL_DRAIN_PER_SEC = 3; // % per second at full throttle magnitude
+
+  function s8signed(b) { return b >= 128 ? b - 256 : b; }
+
+  function detectCrash(bytes) {
+    const v1 = s8signed(bytes[1]), v3 = s8signed(bytes[3]);
+    if (crashRollingAvg1 === null) { crashRollingAvg1 = v1; crashRollingAvg3 = v3; return; }
+    const dev = Math.abs(v1 - crashRollingAvg1) + Math.abs(v3 - crashRollingAvg3);
+    crashRollingAvg1 += (v1 - crashRollingAvg1) * CRASH_ROLLING_ALPHA;
+    crashRollingAvg3 += (v3 - crashRollingAvg3) * CRASH_ROLLING_ALPHA;
+    const now = Date.now();
+    if (dev > CRASH_THRESHOLD && now - lastCrashTime > CRASH_REFRACTORY_MS) {
+      lastCrashTime = now;
+      registerCrash();
+    }
+  }
+
+  function registerCrash() {
+    damage = Math.min(100, damage + 15);
+    updateDamageFuelUI();
+    const ind = $('crash-indicator');
+    ind.style.display = 'inline';
+    clearTimeout(crashIndicatorTimer);
+    crashIndicatorTimer = setTimeout(() => { ind.style.display = 'none'; }, 1500);
+    log('Crash erkannt (experimentell) — Schaden +15%.', 'err');
+  }
+
+  function updateDamageFuelUI() {
+    $('fuel-bar').style.width = Math.max(0, fuel) + '%';
+    $('fuel-bar').style.background = fuel < 20 ? 'var(--warn)' : 'var(--good)';
+    $('damage-bar').style.width = damage + '%';
+  }
+
+  // Called from sendControlValue for every command, right after topSpeedScale — depletes
+  // fuel proportional to real elapsed time and throttle magnitude, caps output near empty
+  // (never a hard stop), and applies a small capped damage penalty.
+  function applyFuelAndDamage(throttle) {
+    const now = Date.now();
+    if (fuelLastTickTime !== null && !pitStopInProgress) {
+      const dt = Math.min(0.5, (now - fuelLastTickTime) / 1000);
+      fuel = Math.max(0, fuel - Math.abs(throttle) * dt * FUEL_DRAIN_PER_SEC);
+      updateDamageFuelUI();
+    }
+    fuelLastTickTime = now;
+
+    let out = throttle;
+    if (fuel <= 0) out = Math.max(-0.15, Math.min(0.15, out));
+    out *= 1 - (damage / 100) * 0.3;
+    return out;
+  }
+
+  $('btn-pitstop').onclick = () => {
+    if (pitStopInProgress) return;
+    if (Math.abs(throttleY) > 0.15) { alert('Für einen Boxenstopp muss das Auto (nahezu) stehen.'); return; }
+    pitStopInProgress = true;
+    $('btn-pitstop').disabled = true;
+    let secondsLeft = 4;
+    $('pitstop-status').textContent = `Boxenstopp läuft… ${secondsLeft}s`;
+    const timer = setInterval(() => {
+      secondsLeft--;
+      if (secondsLeft <= 0) {
+        clearInterval(timer);
+        fuel = 100;
+        damage = 0;
+        updateDamageFuelUI();
+        pitStopInProgress = false;
+        $('btn-pitstop').disabled = false;
+        $('pitstop-status').textContent = 'Fertig: vollgetankt, repariert.';
+      } else {
+        $('pitstop-status').textContent = `Boxenstopp läuft… ${secondsLeft}s`;
+      }
+    }, 1000);
+  };
+
+  updateDamageFuelUI();
+
+  // ---- Synthesized engine sound (Web Audio API, no external audio files — avoids any
+  // question of reusing the real game's actual audio assets) ----
+  let audioCtx = null, engineOsc = null, engineGain = null;
+  let soundEnabled = false;
+
+  function initEngineSound() {
+    if (audioCtx) return;
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    engineOsc = audioCtx.createOscillator();
+    engineOsc.type = 'sawtooth';
+    engineOsc.frequency.value = 55;
+    engineGain = audioCtx.createGain();
+    engineGain.gain.value = 0;
+    engineOsc.connect(engineGain).connect(audioCtx.destination);
+    engineOsc.start();
+  }
+
+  $('sound-enable').addEventListener('change', (e) => {
+    soundEnabled = e.target.checked;
+    if (soundEnabled) {
+      initEngineSound(); // lazy-start on this user gesture, per browser autoplay policy
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+    } else if (engineGain) {
+      engineGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.05);
+    }
+  });
+
+  function updateEngineSound(throttleMagnitude) {
+    if (!soundEnabled || !engineOsc) return;
+    const speedFactor = physicsEnabled ? physEngine.state.virtualSpeed : 0;
+    const level = Math.max(Math.abs(throttleMagnitude), speedFactor);
+    const freq = 55 + level * 220;
+    const gain = level > 0.01 ? 0.02 + level * 0.12 : 0;
+    const t = audioCtx.currentTime;
+    engineOsc.frequency.setTargetAtTime(freq, t, 0.05);
+    engineGain.gain.setTargetAtTime(gain, t, 0.05);
+  }
+
+  refreshTrackPreview();
 
   // ---- Gamepad support with configurable bindings ----
   // Standard Gamepad API mapping (Xbox-style): axes[0]=left-stick X, buttons[6]=LT,
