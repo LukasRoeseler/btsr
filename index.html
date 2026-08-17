@@ -5,18 +5,25 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Carrera Hybrid Control</title>
 <style>
+  /* Palette inspired by the NART Ferrari 412P Le Mans livery: white body, deep navy
+     stripe/roundel, thin pinstripe linework. Red is reserved for danger/stop states only. */
   :root {
-    --bg: #0f1115;
-    --panel: #171a21;
-    --panel-2: #1f2330;
-    --accent: #ff3b30;
-    --accent-2: #2dd4bf;
-    --text: #e8e9ed;
-    --muted: #8b8f9c;
-    --border: #2a2f3a;
-    --good: #2dd4bf;
-    --bad: #ff5c5c;
-    --warn: #f5a623;
+    --bg: #ffffff;
+    --panel: #ffffff;
+    --panel-2: #f2f4f8;
+    --panel-3: #e8ebf1;
+    --navy: #0b1f3f;
+    --navy-2: #14315f;
+    --accent: #0b1f3f;
+    --accent-2: #14315f;
+    --text: #10182b;
+    --muted: #66708a;
+    --border: #d7dce6;
+    --border-strong: #0b1f3f;
+    --good: #1c7a4d;
+    --bad: #b3131f;
+    --warn: #a86400;
+    --stripe: #0b1f3f;
   }
   * { box-sizing: border-box; }
   html, body {
@@ -24,77 +31,104 @@
     background: var(--bg); color: var(--text);
     font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
   }
-  header {
-    display: flex; align-items: center; gap: 12px;
-    padding: 14px 20px; background: var(--panel); border-bottom: 1px solid var(--border);
+  /* Thin racing-stripe rule used to divide sections, reminiscent of a livery pinstripe */
+  .pinstripe {
+    height: 3px; background: linear-gradient(90deg, var(--navy) 0%, var(--navy) 60%, var(--bad) 60%, var(--bad) 64%, var(--navy) 64%);
   }
-  header h1 { font-size: 18px; margin: 0; font-weight: 600; }
+  header {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 24px; background: var(--navy); color: #fff; position: relative; overflow: hidden;
+  }
+  header::after {
+    /* faint concept-sketch style speed lines etched into the header */
+    content: ''; position: absolute; inset: 0; pointer-events: none; opacity: .12;
+    background-image: repeating-linear-gradient(-8deg, transparent 0 22px, #fff 22px 23px);
+  }
+  header .logo { flex-shrink: 0; position: relative; z-index: 1; }
+  header h1 { font-size: 18px; margin: 0; font-weight: 700; letter-spacing: .02em; position: relative; z-index: 1; }
   header .dot {
     width: 10px; height: 10px; border-radius: 50%; background: var(--bad); flex-shrink: 0;
+    box-shadow: 0 0 0 2px rgba(255,255,255,.25);
   }
-  header .dot.connected { background: var(--good); }
-  header .status { font-size: 13px; color: var(--muted); }
+  header .dot.connected { background: #3ddc84; }
+  header .status { font-size: 13px; color: #cfd8ec; position: relative; z-index: 1; }
   header .spacer { flex: 1; }
   button {
-    background: var(--panel-2); color: var(--text); border: 1px solid var(--border);
-    border-radius: 8px; padding: 8px 14px; font-size: 14px; cursor: pointer;
+    background: #fff; color: var(--navy); border: 1.5px solid var(--border-strong);
+    border-radius: 6px; padding: 8px 14px; font-size: 14px; cursor: pointer; font-weight: 500;
   }
-  button:hover { border-color: var(--accent-2); }
+  button:hover { background: var(--panel-2); }
   button:disabled { opacity: .4; cursor: not-allowed; }
-  button.primary { background: var(--accent); border-color: var(--accent); color: white; font-weight: 600; }
-  button.primary:hover { filter: brightness(1.1); }
+  button.primary { background: var(--navy); border-color: var(--navy); color: white; font-weight: 600; }
+  button.primary:hover { background: var(--navy-2); }
+  button.danger { background: var(--bad); border-color: var(--bad); color: white; }
+  button.danger:hover { filter: brightness(1.1); }
+  header button { background: rgba(255,255,255,.08); color: #fff; border-color: rgba(255,255,255,.5); position: relative; z-index: 1; }
+  header button:hover { background: rgba(255,255,255,.18); }
+  header button.primary { background: #fff; color: var(--navy); border-color: #fff; }
   nav.tabs {
-    display: flex; gap: 4px; padding: 10px 20px 0; background: var(--panel); border-bottom: 1px solid var(--border);
+    display: flex; gap: 2px; padding: 0 24px; background: var(--panel-2); border-bottom: 1px solid var(--border);
   }
   nav.tabs button {
-    background: transparent; border: none; border-bottom: 2px solid transparent;
-    border-radius: 0; padding: 10px 16px; color: var(--muted);
+    background: transparent; border: none; border-bottom: 3px solid transparent;
+    border-radius: 0; padding: 12px 18px; color: var(--muted); font-weight: 500;
   }
-  nav.tabs button.active { color: var(--text); border-bottom-color: var(--accent); font-weight: 600; }
-  main { padding: 20px; max-width: 1100px; margin: 0 auto; }
+  nav.tabs button:hover { background: var(--panel-3); }
+  nav.tabs button.active { color: var(--navy); border-bottom-color: var(--bad); font-weight: 700; }
+  main { padding: 24px; max-width: 1100px; margin: 0 auto; }
   .tabpage { display: none; }
   .tabpage.active { display: block; }
   .card {
-    background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
-    padding: 16px 18px; margin-bottom: 16px;
+    background: var(--panel); border: 1px solid var(--border); border-radius: 4px;
+    padding: 18px 20px; margin-bottom: 18px; position: relative;
+    box-shadow: 0 1px 2px rgba(11,31,63,.04);
   }
-  .card h2 { font-size: 14px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 0 0 12px; }
+  .card::before {
+    /* corner tick, like a technical/blueprint drawing frame mark */
+    content: ''; position: absolute; top: 0; left: 0; width: 18px; height: 18px;
+    border-top: 2px solid var(--navy); border-left: 2px solid var(--navy);
+  }
+  .card h2 {
+    font-size: 12.5px; text-transform: uppercase; letter-spacing: .09em; color: var(--navy);
+    margin: 0 0 14px; font-weight: 700; padding-bottom: 8px; border-bottom: 1px solid var(--border);
+  }
   .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
   input[type=text] {
-    background: var(--panel-2); border: 1px solid var(--border); color: var(--text);
-    border-radius: 8px; padding: 8px 10px; font-size: 13px; font-family: monospace;
+    background: #fff; border: 1px solid var(--border); color: var(--text);
+    border-radius: 6px; padding: 8px 10px; font-size: 13px; font-family: monospace;
   }
+  input[type=text]:focus, select:focus { outline: 2px solid var(--navy-2); outline-offset: 1px; }
   .muted { color: var(--muted); font-size: 13px; }
   .service {
-    border: 1px solid var(--border); border-radius: 10px; margin-bottom: 10px; overflow: hidden;
+    border: 1px solid var(--border); border-radius: 4px; margin-bottom: 10px; overflow: hidden;
   }
   .service > .head {
     background: var(--panel-2); padding: 10px 14px; font-family: monospace; font-size: 12.5px;
     display: flex; justify-content: space-between; cursor: pointer;
   }
-  .service > .head .name { color: var(--accent-2); font-weight: 600; font-family: -apple-system, sans-serif; }
+  .service > .head .name { color: var(--navy); font-weight: 700; font-family: -apple-system, sans-serif; }
   .char {
     padding: 10px 14px; border-top: 1px solid var(--border); font-size: 12.5px;
   }
   .char .uuid { font-family: monospace; color: var(--text); word-break: break-all; }
   .char .props { color: var(--muted); margin-top: 2px; }
   .char .props span {
-    display: inline-block; background: var(--panel-2); border-radius: 6px; padding: 1px 6px;
+    display: inline-block; background: var(--panel-2); border: 1px solid var(--border); border-radius: 4px; padding: 1px 6px;
     margin-right: 4px; font-size: 11px;
   }
   .char .actions { margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
   .char .value {
     margin-top: 6px; font-family: monospace; font-size: 12px; padding: 6px 8px;
-    background: #0b0d12; border-radius: 6px; border: 1px solid var(--border); word-break: break-all;
+    background: var(--panel-2); border-radius: 4px; border: 1px solid var(--border); word-break: break-all;
   }
   #log {
-    height: 220px; overflow-y: auto; background: #0b0d12; border: 1px solid var(--border);
-    border-radius: 8px; padding: 10px; font-family: monospace; font-size: 12px; line-height: 1.5;
+    height: 220px; overflow-y: auto; background: #0b1f3f; color: #dfe6f5; border: 1px solid var(--border);
+    border-radius: 4px; padding: 10px; font-family: monospace; font-size: 12px; line-height: 1.5;
   }
-  #log .l-notify { color: var(--good); }
-  #log .l-write { color: var(--warn); }
-  #log .l-err { color: var(--bad); }
-  #log .l-info { color: var(--muted); }
+  #log .l-notify { color: #6fe0a3; }
+  #log .l-write { color: #ffcf6e; }
+  #log .l-err { color: #ff8a8a; }
+  #log .l-info { color: #9fb0d6; }
 
   /* Control tab */
   .control-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
@@ -102,40 +136,57 @@
   .stick-wrap { display: flex; flex-direction: column; align-items: center; gap: 10px; }
   #stick-outer {
     width: 220px; height: 220px; border-radius: 50%; background: var(--panel-2);
-    border: 1px solid var(--border); position: relative; touch-action: none;
+    border: 2px solid var(--navy); position: relative; touch-action: none;
   }
   #stick-inner {
-    width: 70px; height: 70px; border-radius: 50%; background: var(--accent);
-    position: absolute; left: 75px; top: 75px; box-shadow: 0 4px 12px rgba(255,59,48,.4);
+    width: 70px; height: 70px; border-radius: 50%; background: var(--navy);
+    position: absolute; left: 75px; top: 75px; box-shadow: 0 4px 12px rgba(11,31,63,.35);
   }
   .throttle-wrap { display: flex; flex-direction: column; align-items: center; gap: 10px; }
   #throttle-outer {
-    width: 90px; height: 220px; border-radius: 20px; background: var(--panel-2);
-    border: 1px solid var(--border); position: relative; touch-action: none;
+    width: 90px; height: 220px; border-radius: 8px; background: var(--panel-2);
+    border: 2px solid var(--navy); position: relative; touch-action: none;
   }
   #throttle-fill {
-    position: absolute; bottom: 50%; left: 0; right: 0; background: var(--accent-2);
-    border-radius: 0 0 20px 20px; opacity: .5;
+    position: absolute; bottom: 50%; left: 0; right: 0; background: var(--bad);
+    border-radius: 0 0 6px 6px; opacity: .45;
   }
   #throttle-inner {
-    width: 100%; height: 34px; border-radius: 10px; background: var(--accent-2);
+    width: 100%; height: 34px; border-radius: 6px; background: var(--navy);
     position: absolute; left: 0; top: 93px;
   }
   .readout { font-family: monospace; font-size: 13px; color: var(--muted); }
   select {
-    background: var(--panel-2); color: var(--text); border: 1px solid var(--border);
-    border-radius: 8px; padding: 8px 10px; font-size: 13px;
+    background: #fff; color: var(--text); border: 1px solid var(--border);
+    border-radius: 6px; padding: 8px 10px; font-size: 13px;
   }
-  label.small { font-size: 12px; color: var(--muted); display: block; margin-bottom: 4px; }
+  label.small { font-size: 11.5px; color: var(--muted); display: block; margin-bottom: 4px; text-transform: uppercase; letter-spacing: .04em; }
   .kbd {
     display: inline-block; background: var(--panel-2); border: 1px solid var(--border);
     border-radius: 4px; padding: 1px 6px; font-family: monospace; font-size: 12px;
   }
+
+  /* Controller (gamepad) tab */
+  .bind-table { width: 100%; border-collapse: collapse; }
+  .bind-table td, .bind-table th { padding: 8px 10px; border-bottom: 1px solid var(--border); font-size: 13px; text-align: left; }
+  .bind-table th { color: var(--muted); text-transform: uppercase; font-size: 11px; letter-spacing: .05em; }
+  .bind-value { font-family: monospace; background: var(--panel-2); border: 1px solid var(--border); border-radius: 4px; padding: 3px 8px; }
+  .bind-listening { border-color: var(--bad); color: var(--bad); animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+  .pad-dot { display:inline-block; width:9px; height:9px; border-radius:50%; background:#ccc; margin-right:6px; }
+  .pad-dot.on { background: var(--good); }
 </style>
 </head>
 <body>
 
 <header>
+  <svg class="logo" width="40" height="26" viewBox="0 0 40 26" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <!-- Stylized closed-loop track outline, echoing the scanned circuit (start straight, right-hand corners, straights) -->
+    <path d="M4 20 L4 9 Q4 4 9 4 L16 4 Q21 4 21 9 L21 12 Q21 16 25 16 L31 16 Q36 16 36 11 L36 9"
+          stroke="#ffffff" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.95"/>
+    <path d="M4 20 L14 20 Q19 20 19 15" stroke="#ffffff" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.95"/>
+    <circle cx="4" cy="20" r="2" fill="#ffffff"/>
+  </svg>
   <div class="dot" id="conn-dot"></div>
   <h1>Carrera Hybrid Control</h1>
   <span class="status" id="conn-status">nicht verbunden</span>
@@ -143,10 +194,12 @@
   <button class="primary" id="btn-connect">Verbinden</button>
   <button id="btn-disconnect" disabled>Trennen</button>
 </header>
+<div class="pinstripe"></div>
 
 <nav class="tabs">
   <button class="tab-btn active" data-tab="explore">Explorer</button>
   <button class="tab-btn" data-tab="control">Steuerung</button>
+  <button class="tab-btn" data-tab="controller">Controller</button>
   <button class="tab-btn" data-tab="autonomous">Autonom</button>
 </nav>
 
@@ -341,6 +394,46 @@
         <span class="muted" id="calib-status">bereit</span>
       </div>
       <div id="calib-results" style="margin-top:12px; overflow-x:auto"></div>
+    </div>
+  </section>
+
+  <!-- CONTROLLER TAB -->
+  <section class="tabpage" id="tab-controller">
+    <div class="card">
+      <h2>Gamepad-Status</h2>
+      <p class="muted">
+        Verbinde einen Controller per USB/Bluetooth und drücke einen Knopf, damit der Browser ihn erkennt
+        (Web-Gamepad-API meldet sich erst nach der ersten Eingabe).
+      </p>
+      <div class="row" id="pad-status-row">
+        <span class="pad-dot" id="pad-dot"></span>
+        <span class="muted" id="pad-status-text">kein Controller erkannt</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Tastenbelegung</h2>
+      <p class="muted">
+        Standard: rechter Trigger = Gas, linker Trigger = Bremse, linker Stick = Lenkung,
+        X (links) = runterschalten, B (rechts) = hochschalten &mdash; wie bei einem Xbox-Controller. Klicke
+        "Neu zuweisen" und betätige dann den gewünschten Knopf/Stick/Trigger am Controller.
+      </p>
+      <table class="bind-table">
+        <thead><tr><th>Aktion</th><th>Belegung</th><th></th></tr></thead>
+        <tbody id="bind-table-body"></tbody>
+      </table>
+      <div class="row" style="margin-top:12px">
+        <button id="bind-reset">Auf Standard zurücksetzen</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Live-Werte</h2>
+      <div class="row">
+        <span class="muted">Gas: <b id="pad-live-throttle">0.00</b></span>
+        <span class="muted">Bremse: <b id="pad-live-brake">0.00</b></span>
+        <span class="muted">Lenkung: <b id="pad-live-steer">0.00</b></span>
+      </div>
     </div>
   </section>
 
@@ -1456,6 +1549,171 @@
   $('lab-subscribe').onclick = labSubscribeTx;
 
   labRenderBytes();
+
+  // ---- Gamepad support with configurable bindings ----
+  // Standard Gamepad API mapping (Xbox-style): axes[0]=left-stick X, buttons[6]=LT,
+  // buttons[7]=RT (both report analog .value 0..1 even though they're "buttons"),
+  // buttons[1]=B (right face button), buttons[2]=X (left face button).
+  const GAMEPAD_BINDINGS_KEY = 'carrera-hybrid-gamepad-bindings';
+  const DEFAULT_BINDINGS = {
+    throttle: { type: 'button', index: 7, label: 'Rechter Trigger (RT)' },
+    brake: { type: 'button', index: 6, label: 'Linker Trigger (LT)' },
+    steering: { type: 'axis', index: 0, invert: false, label: 'Linker Stick (X-Achse)' },
+    downshift: { type: 'button', index: 2, label: 'X' },
+    upshift: { type: 'button', index: 1, label: 'B' },
+  };
+  const BIND_ACTION_LABELS = {
+    throttle: 'Gas', brake: 'Bremse', steering: 'Lenkung',
+    downshift: 'Runterschalten', upshift: 'Hochschalten',
+  };
+
+  function loadBindings() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(GAMEPAD_BINDINGS_KEY) || 'null');
+      if (!saved) return { ...DEFAULT_BINDINGS };
+      return { ...DEFAULT_BINDINGS, ...saved };
+    } catch { return { ...DEFAULT_BINDINGS }; }
+  }
+  function saveBindings() { localStorage.setItem(GAMEPAD_BINDINGS_KEY, JSON.stringify(bindings)); }
+
+  let bindings = loadBindings();
+  let listeningFor = null; // action key currently waiting for a new input, or null
+  let padConnected = false;
+  let prevDownshift = false, prevUpshift = false;
+
+  function bindingDescription(b) {
+    if (b.label) return b.label;
+    return b.type === 'axis' ? `Achse ${b.index}${b.invert ? ' (invertiert)' : ''}` : `Knopf ${b.index}`;
+  }
+
+  function renderBindTable() {
+    const body = $('bind-table-body');
+    body.innerHTML = '';
+    Object.keys(BIND_ACTION_LABELS).forEach(action => {
+      const tr = document.createElement('tr');
+      const listening = listeningFor === action;
+      tr.innerHTML = `
+        <td>${BIND_ACTION_LABELS[action]}</td>
+        <td><span class="bind-value${listening ? ' bind-listening' : ''}">${listening ? 'Eingabe erwartet…' : bindingDescription(bindings[action])}</span></td>
+        <td><button data-action="${action}" ${listening ? 'disabled' : ''}>Neu zuweisen</button></td>
+      `;
+      body.appendChild(tr);
+    });
+    body.querySelectorAll('button[data-action]').forEach(btn => {
+      btn.onclick = () => { listeningFor = btn.dataset.action; renderBindTable(); };
+    });
+  }
+  renderBindTable();
+
+  $('bind-reset').onclick = () => {
+    bindings = { ...DEFAULT_BINDINGS };
+    saveBindings();
+    renderBindTable();
+    log('Tastenbelegung auf Standard zurückgesetzt.', 'info');
+  };
+
+  const AXIS_CAPTURE_THRESHOLD = 0.6;
+  const BUTTON_CAPTURE_THRESHOLD = 0.5;
+  const DEADZONE = 0.12;
+
+  function applyDeadzone(v) { return Math.abs(v) < DEADZONE ? 0 : v; }
+
+  function tryCaptureBinding(pad) {
+    if (!listeningFor) return;
+    const action = listeningFor;
+    for (let i = 0; i < pad.axes.length; i++) {
+      if (Math.abs(pad.axes[i]) > AXIS_CAPTURE_THRESHOLD) {
+        bindings[action] = { type: 'axis', index: i, invert: pad.axes[i] < 0 };
+        saveBindings();
+        listeningFor = null;
+        renderBindTable();
+        log(`Zuordnung gesetzt: ${BIND_ACTION_LABELS[action]} -> Achse ${i}`, 'info');
+        return;
+      }
+    }
+    for (let i = 0; i < pad.buttons.length; i++) {
+      const val = pad.buttons[i].value ?? (pad.buttons[i].pressed ? 1 : 0);
+      if (val > BUTTON_CAPTURE_THRESHOLD) {
+        bindings[action] = { type: 'button', index: i };
+        saveBindings();
+        listeningFor = null;
+        renderBindTable();
+        log(`Zuordnung gesetzt: ${BIND_ACTION_LABELS[action]} -> Knopf ${i}`, 'info');
+        return;
+      }
+    }
+  }
+
+  function readBindingValue(pad, binding) {
+    if (!binding) return 0;
+    if (binding.type === 'axis') {
+      const raw = pad.axes[binding.index] ?? 0;
+      return binding.invert ? -raw : raw;
+    }
+    const btn = pad.buttons[binding.index];
+    if (!btn) return 0;
+    return btn.value ?? (btn.pressed ? 1 : 0);
+  }
+
+  window.addEventListener('gamepadconnected', (e) => {
+    padConnected = true;
+    $('pad-dot').classList.add('on');
+    $('pad-status-text').textContent = `Verbunden: ${e.gamepad.id}`;
+    log(`Gamepad verbunden: ${e.gamepad.id}`, 'info');
+    requestAnimationFrame(pollGamepad);
+  });
+  window.addEventListener('gamepaddisconnected', () => {
+    const pads = navigator.getGamepads ? navigator.getGamepads() : [];
+    padConnected = Array.from(pads).some(p => p);
+    if (!padConnected) {
+      $('pad-dot').classList.remove('on');
+      $('pad-status-text').textContent = 'kein Controller erkannt';
+    }
+  });
+
+  function pollGamepad() {
+    const pads = navigator.getGamepads ? navigator.getGamepads() : [];
+    const pad = Array.from(pads).find(p => p);
+    if (!pad) { padConnected = false; return; }
+    padConnected = true;
+
+    if (listeningFor) {
+      tryCaptureBinding(pad);
+    } else {
+      const throttleRaw = Math.max(0, readBindingValue(pad, bindings.throttle));
+      const brakeRaw = Math.max(0, readBindingValue(pad, bindings.brake));
+      const steerRaw = applyDeadzone(readBindingValue(pad, bindings.steering));
+
+      $('pad-live-throttle').textContent = throttleRaw.toFixed(2);
+      $('pad-live-brake').textContent = brakeRaw.toFixed(2);
+      $('pad-live-steer').textContent = steerRaw.toFixed(2);
+
+      if (document.getElementById('tab-control').classList.contains('active') ||
+          document.getElementById('tab-controller').classList.contains('active')) {
+        setStick(steerRaw, 0);
+        setThrottle(throttleRaw - brakeRaw);
+        if (!physicsEnabled) sendControlValue();
+      }
+
+      const downshiftNow = readBindingValue(pad, bindings.downshift) > BUTTON_CAPTURE_THRESHOLD;
+      const upshiftNow = readBindingValue(pad, bindings.upshift) > BUTTON_CAPTURE_THRESHOLD;
+      if (downshiftNow && !prevDownshift && physicsEnabled && !physEngine.state.isShifting && physEngine.state.currentGear > 0) {
+        physEngine.triggerShift(-1);
+      }
+      if (upshiftNow && !prevUpshift && physicsEnabled && !physEngine.state.isShifting && physEngine.state.currentGear < physEngine.config.gears.length - 1) {
+        physEngine.triggerShift(1);
+      }
+      prevDownshift = downshiftNow;
+      prevUpshift = upshiftNow;
+    }
+    requestAnimationFrame(pollGamepad);
+  }
+
+  // Some browsers/pads report as already-connected on page load without firing the event.
+  if (navigator.getGamepads && Array.from(navigator.getGamepads()).some(p => p)) {
+    padConnected = true;
+    requestAnimationFrame(pollGamepad);
+  }
 })();
 </script>
 </body>
