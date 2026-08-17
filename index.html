@@ -205,6 +205,14 @@
     background: #3a4a6b; margin: 0 3px; vertical-align: middle;
   }
   .hud-toggle { margin-left: auto; display: flex; align-items: center; gap: 6px; font-size: 12px; color: #cfd8ec; }
+
+  /* Race-mode start lights: off (gray) -> up to 3 reds -> green on "go" */
+  .race-light {
+    display: inline-block; width: 22px; height: 22px; border-radius: 50%;
+    background: var(--panel-2); border: 1px solid var(--border); transition: background .15s, box-shadow .15s;
+  }
+  .race-light.on-red { background: var(--bad); box-shadow: 0 0 10px 2px rgba(179,19,31,.55); }
+  .race-light.on-green { background: var(--good); box-shadow: 0 0 10px 2px rgba(28,122,77,.55); }
 </style>
 </head>
 <body>
@@ -542,6 +550,46 @@
         <label class="hud-toggle"><input type="checkbox" id="dash-head-toggle"> Scheinwerfer</label>
       </div>
       <div id="hud-toast" style="margin-top:10px; color:#ffcf6e; font-family:monospace; font-size:13px; min-height:18px"></div>
+    </div>
+
+    <div class="card" id="race-card">
+      <h2>Rennmodus</h2>
+      <div class="row" style="align-items:center; gap:18px; flex-wrap:wrap">
+        <div style="display:flex; gap:8px">
+          <span class="race-light" id="race-light-1"></span>
+          <span class="race-light" id="race-light-2"></span>
+          <span class="race-light" id="race-light-3"></span>
+          <span class="race-light" id="race-light-go"></span>
+        </div>
+        <div>
+          <div class="muted">Status: <b id="race-status">Bereit</b></div>
+          <div class="muted" style="font-size:11.5px">LB / L1: Rennen starten &middot; RB / R1: Rennen beenden</div>
+          <div class="muted" id="race-lap-current-row" style="display:none">Aktuelle Runde: <b id="race-lap-current">-</b></div>
+        </div>
+      </div>
+      <div class="row" style="margin-top:12px; gap:10px">
+        <button id="race-start-btn">🏁 Rennen starten</button>
+        <button id="race-stop-btn" disabled>Rennen beenden</button>
+      </div>
+      <p class="muted" style="margin-top:8px; font-size:11.5px">
+        Eine Runde zählt, sobald das Auto das Start/Ziel-Muster auf der Strecke überfährt
+        (dasselbe Signal, das auch der Streckenscanner ausliest) — kein eigener Sensor in der App.
+      </p>
+      <div id="race-results" style="display:none; margin-top:14px">
+        <h3 style="margin:0 0 8px 0; font-size:14px">Rundenzeiten (neueste oben)</h3>
+        <div style="max-height:340px; overflow-y:auto; border:1px solid var(--border); border-radius:6px">
+          <table style="width:100%; border-collapse:collapse; font-size:13px">
+            <thead>
+              <tr style="background:var(--panel-2)">
+                <th style="text-align:left; padding:5px 10px; border-bottom:1px solid var(--border)">Runde</th>
+                <th style="text-align:right; padding:5px 10px; border-bottom:1px solid var(--border)">Zeit</th>
+              </tr>
+            </thead>
+            <tbody id="race-results-body"></tbody>
+          </table>
+        </div>
+        <button id="race-export-csv" style="margin-top:10px">Als CSV exportieren</button>
+      </div>
     </div>
 
     <div class="card">
@@ -2253,6 +2301,141 @@
     if (dashLapTimes.length) $('dash-lap-best').textContent = formatLapTime(Math.min(...dashLapTimes));
   }
 
+  // ---- Race mode: LB/L1 arms a countdown ("Ampel"), RB/R1 ends the race after the lap
+  // in progress is finished. A lap counts whenever the car reports crossing the
+  // start/finish tile (byte 12 == TILE_TYPE.START in the notify packet) — that byte
+  // comes from the car's own sensor reading the physical start/finish pattern, so there
+  // is no separate detector in the app; dashboardNotifyHandler below just also feeds it
+  // into the race state machine while a race is active. ----
+  let raceState = 'idle'; // idle | countdown | racing | finishing | finished
+  let raceLapStart = null;
+  let raceLapTimes = []; // [{lap, ms}], oldest first; rendered newest-first
+  let raceCountdownTimer = null;
+
+  // Generic short tone for the countdown lights, distinct from the mellow finish-line
+  // chime below (this one is meant to sound crisp/urgent, like a starting signal).
+  function playTone(freq, dur, type, gainPeak) {
+    if (!soundEnabled || !audioCtx) return;
+    const osc = audioCtx.createOscillator();
+    osc.type = type || 'sine';
+    osc.frequency.value = freq;
+    const g = audioCtx.createGain();
+    const t = audioCtx.currentTime;
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(gainPeak || 0.2, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    osc.connect(g).connect(audioCtx.destination);
+    osc.start(t);
+    osc.stop(t + dur + 0.02);
+  }
+
+  // The finish-line sound: friendly and soft ("dümm"), not a sharp beep — a short sine
+  // tone gliding down in pitch through a lowpass filter, quick attack/decay envelope.
+  function playLapChime() {
+    if (!soundEnabled || !audioCtx) return;
+    const osc = audioCtx.createOscillator();
+    osc.type = 'sine';
+    const t = audioCtx.currentTime;
+    osc.frequency.setValueAtTime(520, t);
+    osc.frequency.exponentialRampToValueAtTime(280, t + 0.16);
+    const lp = audioCtx.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.value = 900;
+    const g = audioCtx.createGain();
+    g.gain.setValueAtTime(0.001, t);
+    g.gain.linearRampToValueAtTime(0.28, t + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
+    osc.connect(lp).connect(g).connect(audioCtx.destination);
+    osc.start(t);
+    osc.stop(t + 0.25);
+  }
+
+  function setRaceLights(step) {
+    // step: 0 = all off, 1-3 = that many reds lit (bottom to top like a real start light
+    // sequence), 'go' = green.
+    ['race-light-1', 'race-light-2', 'race-light-3', 'race-light-go'].forEach(id => {
+      $(id).classList.remove('on-red', 'on-green');
+    });
+    if (step === 'go') { $('race-light-go').classList.add('on-green'); return; }
+    for (let i = 1; i <= step; i++) $(`race-light-${i}`).classList.add('on-red');
+  }
+
+  function renderRaceResults() {
+    const rows = raceLapTimes.slice().reverse(); // newest first, per spec
+    $('race-results-body').innerHTML = rows.map(l =>
+      `<tr><td style="padding:5px 10px">${l.lap}</td><td style="padding:5px 10px; text-align:right; font-family:monospace">${formatLapTime(l.ms)}</td></tr>`
+    ).join('');
+  }
+
+  function startRaceCountdown() {
+    if (raceState !== 'idle' && raceState !== 'finished') return; // ignore while armed/racing
+    raceLapTimes = [];
+    raceLapStart = null;
+    $('race-results').style.display = 'none';
+    $('race-lap-current-row').style.display = '';
+    $('race-lap-current').textContent = '-';
+    raceState = 'countdown';
+    $('race-start-btn').disabled = true;
+    $('race-stop-btn').disabled = true;
+    $('race-status').textContent = 'Countdown…';
+    let step = 3;
+    setRaceLights(step);
+    playTone(440, 0.18, 'square', 0.18);
+    clearInterval(raceCountdownTimer);
+    raceCountdownTimer = setInterval(() => {
+      step--;
+      if (step > 0) {
+        setRaceLights(step);
+        playTone(440 + (3 - step) * 60, 0.18, 'square', 0.18);
+      } else {
+        clearInterval(raceCountdownTimer);
+        setRaceLights('go');
+        playTone(880, 0.35, 'square', 0.22);
+        raceState = 'racing';
+        raceLapStart = Date.now();
+        $('race-status').textContent = 'Rennen läuft — Runde 1';
+        $('race-stop-btn').disabled = false;
+        setTimeout(() => setRaceLights(0), 900);
+      }
+    }, 1000);
+  }
+
+  function requestRaceStop() {
+    if (raceState !== 'racing') return;
+    raceState = 'finishing';
+    $('race-status').textContent = 'Rennen endet nach dieser Runde';
+    $('race-stop-btn').disabled = true;
+  }
+
+  function finishRace() {
+    raceState = 'finished';
+    $('race-status').textContent = `Beendet (${raceLapTimes.length} Runde${raceLapTimes.length === 1 ? '' : 'n'})`;
+    $('race-start-btn').disabled = false;
+    $('race-lap-current-row').style.display = 'none';
+    $('race-results').style.display = '';
+    renderRaceResults();
+  }
+
+  $('race-start-btn').onclick = startRaceCountdown;
+  $('race-stop-btn').onclick = requestRaceStop;
+  $('race-export-csv').onclick = () => {
+    // Semicolon delimiter + comma decimals: opens directly (no import wizard) in a
+    // German-locale Excel, which is the overwhelmingly likely consumer here.
+    const header = 'Runde;Zeit (s)';
+    const lines = raceLapTimes.map(l => `${l.lap};${(l.ms / 1000).toFixed(3).replace('.', ',')}`);
+    const csv = [header, ...lines].join('\r\n') + '\r\n';
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `rundenzeiten-${stamp}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
+
   function dashboardNotifyHandler(e) {
     const bytes = new Uint8Array(e.target.value.buffer);
     dashBattery = bytes[10];
@@ -2278,6 +2461,17 @@
       const now = Date.now();
       if (dashLapStart !== null) { dashLapTimes.push(now - dashLapStart); renderLapList(); }
       dashLapStart = now;
+
+      // Race mode: only count laps while a race is armed. "finishing" means RB/R1 was
+      // pressed already — this crossing completes the last lap, then the race ends.
+      if ((raceState === 'racing' || raceState === 'finishing') && raceLapStart !== null) {
+        const wasFinishing = raceState === 'finishing';
+        raceLapTimes.push({ lap: raceLapTimes.length + 1, ms: now - raceLapStart });
+        raceLapStart = now;
+        playLapChime();
+        if (wasFinishing) finishRace();
+        else $('race-status').textContent = `Rennen läuft — Runde ${raceLapTimes.length + 1}`;
+      }
     }
     refreshMinimap();
   }
@@ -2304,6 +2498,9 @@
 
   setInterval(() => {
     if (dashLapStart !== null) $('dash-lap-current').textContent = formatLapTime(Date.now() - dashLapStart);
+    if ((raceState === 'racing' || raceState === 'finishing') && raceLapStart !== null) {
+      $('race-lap-current').textContent = formatLapTime(Date.now() - raceLapStart);
+    }
   }, 200);
 
   // ---- Simulated game layer: fuel, damage/crash detection, pit stop ----
@@ -2547,11 +2744,14 @@
     upshift: { type: 'button', index: 1, label: 'B / Kreis' },
     handbrake: { type: 'button', index: 0, label: 'A / Cross' },
     pitstop: { type: 'button', index: 3, label: 'Y / Dreieck' },
+    racestart: { type: 'button', index: 4, label: 'LB / L1' },
+    racestop: { type: 'button', index: 5, label: 'RB / R1' },
   };
   const BIND_ACTION_LABELS = {
     throttle: 'Gas', brake: 'Bremse', steering: 'Lenkung',
     downshift: 'Runterschalten', upshift: 'Hochschalten',
     handbrake: 'Handbremse', pitstop: 'Boxenstopp',
+    racestart: 'Rennen starten', racestop: 'Rennen beenden',
   };
 
   function loadBindings() {
@@ -2682,6 +2882,7 @@
   const DPAD = { up: 12, down: 13, left: 14, right: 15 };
   const prevDpad = { up: false, down: false, left: false, right: false };
   let prevHandbrake = false, prevPitstop = false;
+  let prevRaceStart = false, prevRaceStop = false;
 
   function padButtonPressed(pad, index) {
     const btn = pad.buttons[index];
@@ -2751,6 +2952,14 @@
       const pitstopNow = readBindingValue(pad, bindings.pitstop) > BUTTON_CAPTURE_THRESHOLD;
       if (pitstopNow && !prevPitstop) $('btn-pitstop').click();
       prevPitstop = pitstopNow;
+
+      const raceStartNow = readBindingValue(pad, bindings.racestart) > BUTTON_CAPTURE_THRESHOLD;
+      if (raceStartNow && !prevRaceStart) startRaceCountdown();
+      prevRaceStart = raceStartNow;
+
+      const raceStopNow = readBindingValue(pad, bindings.racestop) > BUTTON_CAPTURE_THRESHOLD;
+      if (raceStopNow && !prevRaceStop) requestRaceStop();
+      prevRaceStop = raceStopNow;
 
       const downshiftNow = readBindingValue(pad, bindings.downshift) > BUTTON_CAPTURE_THRESHOLD;
       const upshiftNow = readBindingValue(pad, bindings.upshift) > BUTTON_CAPTURE_THRESHOLD;
