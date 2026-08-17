@@ -217,6 +217,7 @@
   <button class="tab-btn" data-tab="control">Steuerung</button>
   <button class="tab-btn" data-tab="controller">Controller</button>
   <button class="tab-btn" data-tab="autonomous">Autonom</button>
+  <button class="tab-btn" data-tab="btsr">BTSR</button>
 </nav>
 
 <main>
@@ -491,6 +492,188 @@
     <div class="card">
       <h2>Wiedergabe-Log</h2>
       <div id="play-log" class="muted" style="font-family:monospace;font-size:12px;min-height:20px">noch keine Wiedergabe.</div>
+    </div>
+  </section>
+
+  <!-- BTSR TAB: background documentation on how Carrera Hybrid vehicles work -->
+  <section class="tabpage" id="tab-btsr">
+    <div class="card">
+      <h2>Überblick</h2>
+      <p class="muted">
+        Carrera Hybrid ist eine Mischung aus klassischer Carrera-Rennbahn und freiem Ferngesteuert-Fahren.
+        Bei einer klassischen Carrera-Bahn läuft das Auto in einer Rille auf der Schiene und kann die Spur
+        nicht verlassen.
+      </p>
+      <p class="muted">
+        Bei Carrera Hybrid ist das anders. Die Fahrzeuge fahren frei, ohne Schiene und ohne Rille. Sie
+        erkennen die Strecke trotzdem, weil die Streckenteile eine Markierung tragen. Ein Sensor im Auto
+        liest diese Markierung. So weiß das Auto, wo es sich befindet und was für ein Streckenteil vor ihm liegt.
+      </p>
+      <p class="muted">
+        Gesteuert wird das Auto über eine Smartphone-App per Bluetooth. Es gibt auch einen optionalen
+        Controller, in den man das Handy einklemmen kann. Der Controller hat richtige Knöpfe statt
+        Touchscreen-Tasten.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>Der Aufbau des Autos</h2>
+      <ul class="muted" style="padding-left:20px; line-height:1.7">
+        <li><b>Motor:</b> treibt die Hinterräder an.</li>
+        <li><b>Lenkservo:</b> dreht die Vorderräder nach links oder rechts.</li>
+        <li><b>Akku:</b> ein wiederaufladbarer Akku im Fahrzeug.</li>
+        <li><b>Bluetooth-Chip:</b> ein kleiner Funk-Chip, der die Verbindung zum Handy hält. Vermutlich ein
+          Chip aus der Nordic-nRF52-Familie.</li>
+        <li><b>Sensor:</b> erkennt die Markierung auf den Streckenteilen. Ob es sich um eine kleine Kamera
+          oder einen einfacheren Infrarot-Sensor handelt, ist nicht sicher bekannt.</li>
+        <li><b>Lichter:</b> mindestens Frontscheinwerfer. Ob es ein separates Bremslicht gibt, ist noch nicht
+          bestätigt.</li>
+      </ul>
+      <p class="muted">
+        Die eigentliche Fahrphysik, also wie das Auto auf Gas und Lenkung reagiert, wird im Auto selbst
+        berechnet. Die App schickt nur Zielwerte für Gas und Lenkung. Sie berechnet keine Fahrdynamik.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>Die Streckenteile</h2>
+      <p class="muted">
+        Jedes Streckenteil (Gerade, Kurve, Start-Ziel-Linie) hat ein eigenes Muster aufgedruckt. Dieses
+        Muster ist für Menschen kaum sichtbar, aber für den Sensor im Auto lesbar. So kann das Auto erkennen,
+        welche Art von Teil gerade unter ihm liegt und ob es sich noch auf der Strecke befindet oder bereits
+        daneben fährt ("Off-Track").
+      </p>
+      <p class="muted">
+        Weil die Teile lose auf dem Boden oder Tisch liegen und keine feste Schiene bilden, kann jede Strecke
+        frei zusammengebaut werden. Das Auto kann die Strecke auch komplett verlassen und irgendwo frei
+        herumfahren.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>Streckenscan</h2>
+      <p class="muted">
+        Bevor ein Rennen beginnt, kann die App die Strecke einmal abscannen. Dabei fährt das Auto (gesteuert
+        von der App oder von Hand) einmal die ganze Strecke ab. Jedes Mal, wenn ein neues Streckenteil erkannt
+        wird, meldet das Auto das per Bluetooth an die App.
+      </p>
+      <p class="muted">
+        So entsteht Stück für Stück eine digitale Karte der Strecke. Diese Karte kann die App später nutzen,
+        zum Beispiel für eine Renn-Übersicht oder für computergesteuerte Gegner.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>Die Bluetooth-Verbindung</h2>
+      <p class="muted">
+        Handy und Auto sprechen über <b>Bluetooth Low Energy</b> (kurz BLE) miteinander. Das ist der
+        stromsparende Bluetooth-Standard, den auch smarte Kopfhörer oder Fitness-Tracker nutzen.
+      </p>
+      <p class="muted">
+        Die Verbindung läuft über einen Kanal, der als <b>Nordic UART Service</b> bekannt ist. Das ist eine
+        Art virtuelle serielle Leitung über Bluetooth. Viele kleine Elektronikgeräte nutzen diesen
+        Standardkanal, weil er einfach einzubauen ist.
+      </p>
+      <p class="muted">
+        Wichtig ist: Die App schickt nicht nur einmal ein Kommando, wenn man Gas gibt. Sie schickt stattdessen
+        etwa 20 bis 45 Mal pro Sekunde ein Datenpaket mit dem aktuellen Gas- und Lenkwert. Das Auto erwartet
+        diesen ständigen Strom an Befehlen. Bleibt der Strom aus, geht das Auto vermutlich in einen sicheren
+        Stillstand über.
+      </p>
+      <p class="muted">
+        In die andere Richtung, vom Auto zum Handy, schickt das Auto ebenfalls ständig Statuspakete. Darin
+        stecken unter anderem der Akkustand, welches Streckenteil gerade erkannt wurde, ob das Auto von der
+        Strecke abgekommen ist, und Rohdaten von Bewegungssensoren (vermutlich Beschleunigung oder Drehrate).
+      </p>
+      <svg viewBox="0 0 620 230" style="width:100%; max-width:620px; margin-top:8px" aria-label="Datenfluss zwischen Handy, Auto und Streckenteil">
+        <defs>
+          <marker id="btsr-arrow" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+            <path d="M0,0 L8,4 L0,8 Z" fill="#0b1f3f"/>
+          </marker>
+        </defs>
+        <rect x="20" y="80" width="150" height="64" rx="4" fill="#f2f4f8" stroke="#0b1f3f" stroke-width="1.5"/>
+        <text x="95" y="107" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="700" fill="#0b1f3f">Handy</text>
+        <text x="95" y="125" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#66708a">App</text>
+
+        <rect x="245" y="70" width="160" height="84" rx="4" fill="#f2f4f8" stroke="#0b1f3f" stroke-width="1.5"/>
+        <text x="325" y="97" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="700" fill="#0b1f3f">Auto</text>
+        <text x="325" y="114" text-anchor="middle" font-family="Arial, sans-serif" font-size="10.5" fill="#66708a">Bluetooth-Chip</text>
+        <text x="325" y="128" text-anchor="middle" font-family="Arial, sans-serif" font-size="10.5" fill="#66708a">Firmware + Motor</text>
+        <text x="325" y="142" text-anchor="middle" font-family="Arial, sans-serif" font-size="10.5" fill="#66708a">Lenkservo</text>
+
+        <rect x="470" y="80" width="130" height="64" rx="4" fill="#f2f4f8" stroke="#b3131f" stroke-width="1.5"/>
+        <text x="535" y="107" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="700" fill="#b3131f">Streckenteil</text>
+        <text x="535" y="125" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#66708a">mit Muster</text>
+
+        <line x1="170" y1="92" x2="245" y2="92" stroke="#0b1f3f" stroke-width="1.5" marker-end="url(#btsr-arrow)"/>
+        <text x="207" y="82" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#0b1f3f">Gas / Lenkung</text>
+        <text x="207" y="185" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#66708a">~20-45x pro Sekunde</text>
+
+        <line x1="245" y1="130" x2="170" y2="130" stroke="#66708a" stroke-width="1.5" marker-end="url(#btsr-arrow)"/>
+        <text x="207" y="150" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#66708a">Akku, Streckenteil,</text>
+        <text x="207" y="163" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#66708a">Sensorwerte</text>
+
+        <line x1="405" y1="112" x2="470" y2="112" stroke="#b3131f" stroke-width="1.5" marker-end="url(#btsr-arrow)" stroke-dasharray="3 3"/>
+        <text x="437" y="102" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#b3131f">liest Muster</text>
+      </svg>
+    </div>
+
+    <div class="card">
+      <h2>Wer steuert die Fahrphysik?</h2>
+      <p class="muted">
+        Ein wichtiger Punkt, den man leicht falsch einschätzt: Die App ist kein Physik-Simulator. Sie schickt
+        dem Auto nur, was der Fahrer will (wie viel Gas, welche Lenkrichtung). Das Auto selbst entscheidet,
+        wie es darauf reagiert.
+      </p>
+      <p class="muted">
+        Das erklärt auch, warum der Gaswert kein einfacher "Stopp bis Vollgas"-Wert ist. Er wirkt eher wie
+        ein Wert, der sich weich hoch- und runterregelt, ähnlich wie beim Gasgeben in einem echten Auto. Die
+        Feinarbeit passiert in der Firmware des Autos, nicht in der App.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>Mehrspieler-Rennen</h2>
+      <p class="muted">
+        Laut Hersteller können mehrere Spieler gleichzeitig fahren. Jedes Handy verbindet sich dabei über
+        Bluetooth mit seinem eigenen Auto. Für die Renn-Organisation zwischen den Handys, etwa Rundenzeiten
+        oder Startreihenfolge, wird vermutlich zusätzlich WLAN zwischen den Handys genutzt.
+      </p>
+      <p class="muted">Das ergibt zwei getrennte Funkverbindungen:</p>
+      <ol class="muted" style="padding-left:20px; line-height:1.7">
+        <li>Bluetooth: Handy zu seinem eigenen Auto (Steuerung).</li>
+        <li>WLAN: Handy zu Handy (Rennorganisation).</li>
+      </ol>
+    </div>
+
+    <div class="card">
+      <h2>Firmware-Updates</h2>
+      <p class="muted">
+        Das Auto unterstützt Updates seiner eigenen Software über Bluetooth. Das nennt man
+        "Over-the-Air-Update" oder kurz OTA-Update. Dafür wird ein Standardverfahren von Nordic Semiconductor
+        genutzt, das bei sehr vielen Bluetooth-Geräten zum Einsatz kommt.
+      </p>
+      <p class="muted">
+        Das bedeutet: Der Hersteller kann über die App neue Firmware auf das Auto spielen, zum Beispiel um
+        Fehler zu beheben oder das Fahrverhalten zu verbessern.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>Was noch nicht sicher bekannt ist</h2>
+      <p class="muted">
+        Manche Details lassen sich nur aus dem beobachteten Verhalten ableiten, nicht mit letzter Sicherheit
+        belegen. Dazu gehören:
+      </p>
+      <ul class="muted" style="padding-left:20px; line-height:1.7">
+        <li>der genaue Typ des Streckensensors (Kamera oder Infrarot)</li>
+        <li>ob es ein eigenes Bremslicht gibt und wie es angesteuert wird</li>
+        <li>die genaue Bedeutung aller Bytes im Bluetooth-Protokoll</li>
+      </ul>
+      <p class="muted">
+        Diese Lücken ändern nichts am Grundprinzip: Ein Sensor liest die Strecke, ein Funkchip verbindet Auto
+        und Handy, und die eigentliche Fahrphysik läuft im Auto selbst.
+      </p>
     </div>
   </section>
 
