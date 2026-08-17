@@ -742,6 +742,30 @@
           <span class="muted" id="max-steer-deg-val">60°</span>
         </div>
       </div>
+      <div class="row" style="margin-top:14px; align-items:center">
+        <label style="display:flex; align-items:center; gap:6px">
+          <input type="checkbox" id="setting-autoshift" checked> Automatikgetriebe
+        </label>
+        <span class="muted" style="font-size:11.5px">
+          Aus = manuell schalten (Quadrat/X runter, Kreis/B hoch). Der Gang ändert nur, wie
+          schnell das Gas angenommen wird &mdash; nie, wie viel Leistung du bekommst.
+        </span>
+      </div>
+      <div class="row" style="margin-top:14px">
+        <div>
+          <label class="small">Tankverbrauch (%/s bei Vollgas)</label>
+          <input type="range" id="setting-fuel-drain" min="0" max="10" step="0.5" value="3">
+          <span class="muted" id="setting-fuel-drain-val">3.0</span>
+        </div>
+        <div>
+          <label class="small">Crashs bis Schadensbalken voll</label>
+          <input type="range" id="setting-crash-count" min="1" max="5" step="1" value="4">
+          <span class="muted" id="setting-crash-count-val">4</span>
+        </div>
+        <label style="display:flex; align-items:center; gap:6px; align-self:flex-end">
+          <input type="checkbox" id="setting-crash-off"> Crashs ausschalten
+        </label>
+      </div>
       <details style="margin-top:14px">
         <summary class="muted" style="cursor:pointer">Erweitert (Physik-Engine im Detail)</summary>
         <div class="row" style="margin-top:12px">
@@ -901,12 +925,18 @@
   const servicesContainer = $('services-container');
   const controlSelect = $('control-char-select');
 
+  // The 45ms heartbeat logs a line per write (~22/s) whether or not anything changed, so
+  // this has to stay bounded — an unbounded log grew to tens of thousands of nodes within
+  // minutes of driving and the resulting layout work stalled the main thread, which then
+  // showed up as stuttering control.
+  const LOG_MAX_LINES = 400;
   function log(msg, cls) {
     const line = document.createElement('div');
     if (cls) line.className = 'l-' + cls;
     const t = new Date().toLocaleTimeString();
     line.textContent = `[${t}] ${msg}`;
     logEl.appendChild(line);
+    while (logEl.childElementCount > LOG_MAX_LINES) logEl.removeChild(logEl.firstChild);
     logEl.scrollTop = logEl.scrollHeight;
   }
 
@@ -1255,6 +1285,15 @@
   function controlHeartbeat() {
     // The calibration runner drives its own carefully-timed sequence; stay out of its way.
     if (typeof calibRunning !== 'undefined' && calibRunning) return;
+    // Safety watchdog: gamepad sampling runs on rAF, which the browser suspends while the
+    // page isn't composited. If it has stalled while a pad was driving, release the
+    // controls rather than letting the heartbeat re-send the last throttle value forever.
+    if (padConnected && performance.now() - padLastPollTime > PAD_STALE_MS) {
+      setStick(0, 0);
+      setThrottleLogical(0);
+      handbrakeActive = false;
+      if (padLoopRunning) schedulePadTick(); // self-heal if the frame chain ever broke
+    }
     physicsStep();
     let steer = physicsEnabled ? physOutSteer : steerX;
     let throttle = physicsEnabled ? physOutThrottle : throttleY;
@@ -1381,6 +1420,7 @@
     // Zero the simulated momentum too, otherwise the physics engine keeps feeding
     // throttle from its own virtualSpeed after the input is released.
     physEngine.state.virtualSpeed = 0;
+    physEngine.state.commanded = 0; // also clear the slew-rate state, or it ramps back up
     physOutSteer = 0;
     physOutThrottle = 0;
     sendControlValue(0, 0);
@@ -1407,55 +1447,85 @@
         steeringDamping: 0.18,
         speedSteerReduction: 0.5, // up to 50% less steering angle at max virtual speed
         trailBrakingGripBonus: 1.1,
+        drag: 0.5,        // how fast the simulated speed bleeds off when coasting
+        responseScale: 5, // turns a gear's acc/brake figure into units-per-second
+        autoShift: true,
+        // acc/brake are RESPONSE RATES (how quickly the pedal request is followed),
+        // deliberately NOT ceilings — see the long comment in update() for why.
         gears: [
-          { ratio: 0.20, acc: 1.0, brake: 0.8 },
-          { ratio: 0.40, acc: 0.8, brake: 0.6 },
-          { ratio: 0.60, acc: 0.6, brake: 0.4 },
-          { ratio: 0.80, acc: 0.4, brake: 0.2 },
-          { ratio: 1.00, acc: 0.2, brake: 0.1 },
+          { ratio: 0.20, acc: 1.6, brake: 1.6 },
+          { ratio: 0.40, acc: 1.3, brake: 1.4 },
+          { ratio: 0.60, acc: 1.0, brake: 1.2 },
+          { ratio: 0.80, acc: 0.8, brake: 1.0 },
+          { ratio: 1.00, acc: 0.6, brake: 0.9 },
         ],
         shiftShockMs: 150,
       };
       this.state = {
         virtualSpeed: 0,
         currentGear: 0,
+        commanded: 0,
         dampedSteering: 0,
         pitch: 0,
         isShifting: false,
         absActive: false,
+        lastAbsRumble: 0,
       };
       this.outputs = { motorPWM: 0, servoAngle: 0, lights: { head: false, brake: false } };
     }
 
     update(inputs, dt) {
       const gearCfg = this.config.gears[this.state.currentGear];
-      let targetMotor = 0;
       let isBraking = false;
       this.state.absActive = false;
 
-      if (this.state.isShifting) {
-        targetMotor = 0; // shift shock: brief power interruption
-      } else if (inputs.brake > 0) {
+      // What we ask the CAR for. This must stay a faithful driver request, because the
+      // car's own firmware does all the real driving dynamics onboard — our byte is a
+      // pedal position, not a motor PWM. Gears therefore change how fast that request
+      // RAMPS, never how much throttle the driver can ultimately get.
+      // (The previous model multiplied the ceiling by a per-gear factor, so top gear
+      // capped the car at 20% power and every upshift read as the engine cutting out —
+      // that, plus a hard power cut during each shift, was the "stutter + undrivable".)
+      let requested;
+      if (inputs.brake > 0) {
         isBraking = true;
-        if (inputs.brake > 0.8 && this.state.virtualSpeed > 0.1) {
-          this.state.absActive = (Date.now() % 60) < 30;
-          targetMotor = this.state.absActive ? -0.2 : -1.0;
-          if (this.state.absActive) rumbleHaptic([15]);
-        } else {
-          targetMotor = -inputs.brake * gearCfg.brake;
-        }
-      } else if (inputs.throttle > 0) {
-        targetMotor = inputs.throttle * gearCfg.acc;
+        requested = -inputs.brake;
+        if (inputs.brake > 0.8 && this.state.virtualSpeed > 0.15) this.state.absActive = true;
       } else {
-        targetMotor = -gearCfg.brake * 0.1 * this.state.virtualSpeed; // engine braking
+        requested = inputs.throttle; // coasting sends 0 — never an unrequested reverse
       }
 
-      this.state.virtualSpeed += (targetMotor * this.config.accelerationFactor) * dt;
-      this.state.virtualSpeed = Math.max(0, Math.min(this.state.virtualSpeed, 1));
-      this.state.pitch = targetMotor;
+      // Slew-rate limit toward the request: this IS the engine feel. A shift softens the
+      // ramp briefly rather than chopping power to zero, since a hard cut is literally a
+      // stutter. The floor keeps even the tallest gear responsive.
+      let rate = (isBraking ? gearCfg.brake : gearCfg.acc) * this.config.responseScale;
+      if (this.state.isShifting) rate *= 0.4;
+      const maxStep = Math.max(0.6, rate) * dt;
+      const delta = requested - this.state.commanded;
+      this.state.commanded += Math.max(-maxStep, Math.min(maxStep, delta));
 
-      // auto gear shifting with hysteresis
-      if (!this.state.isShifting) {
+      let output = this.state.commanded;
+      if (this.state.absActive) {
+        // A shallow ripple you can feel, NOT the old chop between -20% and -100% every
+        // 30ms — that was an intentional stutter that also made the steering flicker via
+        // the trail-braking bonus below.
+        output *= 0.94 + 0.06 * Math.sin(Date.now() / 40);
+        const now = Date.now();
+        if (now - this.state.lastAbsRumble > 120) { this.state.lastAbsRumble = now; rumbleHaptic([12]); }
+      }
+
+      // Simulated speed, purely for feel/HUD/sound: integrate the commanded pedal, with a
+      // drag term so it actually bleeds off when coasting.
+      const drive = Math.max(0, this.state.commanded);
+      const braking = Math.max(0, -this.state.commanded);
+      this.state.virtualSpeed += (drive * this.config.accelerationFactor
+                                  - braking * this.config.accelerationFactor * 1.5
+                                  - this.state.virtualSpeed * this.config.drag) * dt;
+      this.state.virtualSpeed = Math.max(0, Math.min(this.state.virtualSpeed, 1));
+      this.state.pitch = this.state.commanded;
+
+      // auto gear shifting with hysteresis (skipped entirely in manual mode)
+      if (this.config.autoShift && !this.state.isShifting) {
         if (this.state.currentGear < this.config.gears.length - 1 &&
             this.state.virtualSpeed >= gearCfg.ratio * 0.97 && inputs.throttle > 0.05) {
           this.triggerShift(1);
@@ -1472,20 +1542,26 @@
       maxSteerLimit = Math.min(1, maxSteerLimit);
       const targetSteer = expoSteer * maxSteerLimit;
 
-      this.state.dampedSteering += (targetSteer - this.state.dampedSteering) * this.config.steeringDamping;
+      // Frame-rate-corrected smoothing. The slider value means "lerp factor per 60Hz
+      // frame", so it has to be rescaled for the actual dt — otherwise the exact same
+      // setting feels three times laggier when the loop ticks at 22Hz instead of 60Hz.
+      const alpha = 1 - Math.pow(1 - this.config.steeringDamping, dt * 60);
+      this.state.dampedSteering += (targetSteer - this.state.dampedSteering) * alpha;
       this.state.dampedSteering = Math.max(-1, Math.min(1, this.state.dampedSteering));
 
       this.outputs.servoAngle = this.state.dampedSteering;
-      this.outputs.motorPWM = Math.max(-1, Math.min(1, targetMotor));
+      this.outputs.motorPWM = Math.max(-1, Math.min(1, output));
       this.outputs.lights.head = !!inputs.headlights;
-      this.outputs.lights.brake = isBraking || (targetMotor < -0.05 && inputs.throttle <= 0);
+      this.outputs.lights.brake = isBraking || (output < -0.05 && inputs.throttle <= 0);
 
       return this.outputs;
     }
 
     triggerShift(direction) {
+      const next = this.state.currentGear + direction;
+      if (next < 0 || next >= this.config.gears.length) return;
       this.state.isShifting = true;
-      this.state.currentGear += direction;
+      this.state.currentGear = next;
       rumbleHaptic([30, 20, 50]);
       setTimeout(() => { this.state.isShifting = false; }, this.config.shiftShockMs);
     }
@@ -1505,6 +1581,26 @@
   });
 
   $('dash-head-toggle').addEventListener('change', (e) => { headlightsOn = e.target.checked; });
+
+  $('setting-autoshift').addEventListener('change', (e) => {
+    physEngine.config.autoShift = e.target.checked;
+    showHudToast(e.target.checked ? 'Automatikgetriebe' : 'Manuelles Getriebe');
+  });
+
+  $('setting-fuel-drain').addEventListener('input', (e) => {
+    fuelDrainPerSec = parseFloat(e.target.value);
+    $('setting-fuel-drain-val').textContent = fuelDrainPerSec.toFixed(1);
+  });
+
+  $('setting-crash-count').addEventListener('input', (e) => {
+    crashesToTotal = parseInt(e.target.value, 10);
+    $('setting-crash-count-val').textContent = crashesToTotal;
+  });
+
+  $('setting-crash-off').addEventListener('change', (e) => {
+    crashDetectionEnabled = !e.target.checked;
+    $('setting-crash-count').disabled = e.target.checked;
+  });
 
   ['phys-damping', 'phys-accel', 'phys-trailbrake'].forEach(id => {
     const input = $(id);
@@ -2518,11 +2614,14 @@
   const CRASH_THRESHOLD = 40;
   const CRASH_ROLLING_ALPHA = 0.15;
   const CRASH_REFRACTORY_MS = 1000; // avoid re-triggering repeatedly off one jolt
-  const FUEL_DRAIN_PER_SEC = 3; // % per second at full throttle magnitude
+  let fuelDrainPerSec = 3;       // % per second at full throttle magnitude (slider)
+  let crashesToTotal = 4;        // how many crashes fill the damage bar (slider, 1-5)
+  let crashDetectionEnabled = true;
 
   function s8signed(b) { return b >= 128 ? b - 256 : b; }
 
   function detectCrash(bytes) {
+    if (!crashDetectionEnabled) return;
     const v1 = s8signed(bytes[1]), v3 = s8signed(bytes[3]);
     if (crashRollingAvg1 === null) { crashRollingAvg1 = v1; crashRollingAvg3 = v3; return; }
     const dev = Math.abs(v1 - crashRollingAvg1) + Math.abs(v3 - crashRollingAvg3);
@@ -2536,7 +2635,7 @@
   }
 
   function registerCrash() {
-    damage = Math.min(100, damage + 15);
+    damage = Math.min(100, damage + 100 / crashesToTotal);
     updateDamageFuelUI();
     playCrashSound();
     rumbleHaptic([60, 30, 90]);
@@ -2544,7 +2643,7 @@
     ind.style.display = 'inline';
     clearTimeout(crashIndicatorTimer);
     crashIndicatorTimer = setTimeout(() => { ind.style.display = 'none'; }, 1500);
-    log('Crash erkannt (experimentell) — Schaden +15%.', 'err');
+    log(`Crash erkannt (experimentell) — Schaden +${Math.round(100 / crashesToTotal)}%.`, 'err');
   }
 
   // PLACEHOLDER: the real BLE command for the car's headlights/brake light is still
@@ -2583,12 +2682,16 @@
   // Called from sendControlValue for every command, right after topSpeedScale — depletes
   // fuel proportional to real elapsed time and throttle magnitude, caps output near empty
   // (never a hard stop), and applies a small capped damage penalty.
+  let fuelUiLastPaint = 0;
   function applyFuelAndDamage(throttle) {
     const now = Date.now();
     if (fuelLastTickTime !== null && !pitStopInProgress) {
       const dt = Math.min(0.5, (now - fuelLastTickTime) / 1000);
-      fuel = Math.max(0, fuel - Math.abs(throttle) * dt * FUEL_DRAIN_PER_SEC);
-      updateDamageFuelUI();
+      fuel = Math.max(0, fuel - Math.abs(throttle) * dt * fuelDrainPerSec);
+      // Repaint at ~5Hz, not on every one of the ~22 heartbeats per second: the bars
+      // can't show more detail than that anyway, and the DOM writes were pure overhead
+      // on the same thread that has to keep the send cadence steady.
+      if (now - fuelUiLastPaint > 200) { fuelUiLastPaint = now; updateDamageFuelUI(); }
     }
     fuelLastTickTime = now;
 
@@ -2851,14 +2954,37 @@
     return btn.value ?? (btn.pressed ? 1 : 0);
   }
 
-  // Guard against two concurrent poll loops: the connect event and the already-connected
-  // fallback below could both start one, which double-polled and doubled the send rate.
-  // Uses a timer rather than requestAnimationFrame because rAF is suspended whenever the
-  // page isn't composited — controller input must not silently die when you look away.
-  let padLoopTimer = null;
+  // Gamepad sampling MUST run on requestAnimationFrame. Chrome refreshes the gamepad
+  // snapshot as part of the frame lifecycle, so a decoupled setInterval reads the same
+  // snapshot twice or skips one at random — which showed up as the stick and triggers
+  // visibly twitching back and forth instead of holding a steady value.
+  //
+  // rAF is suspended while the page isn't composited, so padLastPollTime + the watchdog
+  // in controlHeartbeat() take over that safety job: if sampling stalls, the controller's
+  // inputs are treated as released rather than frozen at their last value (otherwise the
+  // heartbeat would happily keep re-sending full throttle after you tab away).
+  let padLoopRunning = false;
+  let padLoopPending = false;
+  let padLastPollTime = 0;
+  const PAD_STALE_MS = 400;
   function startPadLoop() {
-    if (padLoopTimer) return;
-    padLoopTimer = setInterval(pollGamepad, 16);
+    if (padLoopRunning) return;
+    padLoopRunning = true;
+    padLastPollTime = performance.now();
+    schedulePadTick();
+  }
+  // padLoopPending keeps exactly one frame in flight, so re-arming from the watchdog can
+  // never stack up several concurrent loops (which would double the poll rate).
+  function schedulePadTick() {
+    if (padLoopPending) return;
+    padLoopPending = true;
+    requestAnimationFrame(padLoopTick);
+  }
+  function padLoopTick() {
+    padLoopPending = false;
+    if (!padLoopRunning) return;
+    pollGamepad();
+    schedulePadTick();
   }
 
   window.addEventListener('gamepadconnected', (e) => {
@@ -2912,14 +3038,21 @@
 
   function pollGamepad() {
     const pads = navigator.getGamepads ? navigator.getGamepads() : [];
-    const pad = Array.from(pads).find(p => p);
+    // Prefer a standard-mapping pad: Windows often exposes the same physical controller
+    // twice (e.g. a DualSense over Bluetooth showing up as both a mapped and a raw HID
+    // device), and picking the raw one gives meaningless axis/button indices.
+    const list = Array.from(pads).filter(p => p);
+    const pad = list.find(p => p.mapping === 'standard') || list[0];
     if (!pad) {
+      // Do NOT tear the loop down here: a Bluetooth pad can drop out of the snapshot for
+      // a frame or two, and killing the loop on that would need a fresh connect event to
+      // ever come back. Keep polling, just neutralise the inputs meanwhile.
+      if (padConnected) { setStick(0, 0); setThrottleLogical(0); }
       padConnected = false;
-      clearInterval(padLoopTimer);
-      padLoopTimer = null;
       return;
     }
     padConnected = true;
+    padLastPollTime = performance.now();
 
     if (listeningFor) {
       tryCaptureBinding(pad);
@@ -2943,6 +3076,7 @@
       const handbrakeNow = readBindingValue(pad, bindings.handbrake) > BUTTON_CAPTURE_THRESHOLD;
       if (handbrakeNow) {
         physEngine.state.virtualSpeed = 0;
+        physEngine.state.commanded = 0; // clear slew-rate state too, else it ramps back up
         physOutThrottle = 0;
       }
       if (handbrakeNow !== prevHandbrake) showHudToast(handbrakeNow ? 'Handbremse' : '');
