@@ -177,6 +177,34 @@
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
   .pad-dot { display:inline-block; width:9px; height:9px; border-radius:50%; background:#ccc; margin-right:6px; }
   .pad-dot.on { background: var(--good); }
+
+  /* Developer tab sub-navigation */
+  nav.subtabs {
+    display: flex; gap: 6px; margin-bottom: 16px; border-bottom: 1px solid var(--border);
+    overflow-x: auto; -webkit-overflow-scrolling: touch;
+  }
+  nav.subtabs button {
+    background: transparent; border: none; border-bottom: 2px solid transparent;
+    border-radius: 0; padding: 8px 12px; color: var(--muted); font-size: 13px;
+    white-space: nowrap; flex-shrink: 0;
+  }
+  nav.subtabs button.active { color: var(--navy); border-bottom-color: var(--navy); font-weight: 700; }
+  .subtabpage { display: none; }
+  .subtabpage.active { display: block; }
+
+  /* Fahren tab: racing-HUD style cockpit status bar */
+  .hud-card { background: var(--navy); }
+  .hud-card::before { border-color: rgba(255,255,255,.6); }
+  .hud-card h2 { color: #cfd8ec; border-bottom-color: rgba(255,255,255,.15); }
+  .hud-row { display: flex; gap: 28px; align-items: center; flex-wrap: wrap; }
+  .hud-stat { display: flex; flex-direction: column; align-items: center; min-width: 64px; }
+  .hud-value { font-size: 26px; font-weight: 800; font-family: monospace; color: #fff; line-height: 1; }
+  .hud-label { font-size: 10px; text-transform: uppercase; letter-spacing: .05em; color: #9fb0d6; margin-top: 4px; }
+  .hud-light {
+    display: inline-block; width: 14px; height: 14px; border-radius: 50%;
+    background: #3a4a6b; margin: 0 3px; vertical-align: middle;
+  }
+  .hud-toggle { margin-left: auto; display: flex; align-items: center; gap: 6px; font-size: 12px; color: #cfd8ec; }
 </style>
 </head>
 <body>
@@ -215,18 +243,38 @@
 <div class="pinstripe"></div>
 
 <nav class="tabs">
-  <button class="tab-btn active" data-tab="explore">Explorer</button>
-  <button class="tab-btn" data-tab="control">Steuerung</button>
-  <button class="tab-btn" data-tab="controller">Controller</button>
+  <button class="tab-btn active" data-tab="control">Fahren</button>
   <button class="tab-btn" data-tab="track">Strecke</button>
-  <button class="tab-btn" data-tab="autonomous">Autonom</button>
-  <button class="tab-btn" data-tab="btsr">BTSR</button>
+  <button class="tab-btn" data-tab="options">Optionen</button>
+  <button class="tab-btn" data-tab="dev">Entwickler</button>
 </nav>
 
 <main>
 
-  <!-- EXPLORER TAB -->
-  <section class="tabpage active" id="tab-explore">
+  <!-- DEVELOPER TAB (sub-tabbed: BLE-Explorer / Kalibrierung / Makros / Doku) -->
+  <section class="tabpage" id="tab-dev">
+    <nav class="subtabs">
+      <button class="subtab-btn active" data-subtab="explore">BLE-Explorer</button>
+      <button class="subtab-btn" data-subtab="calib">Kalibrierung</button>
+      <button class="subtab-btn" data-subtab="macros">Makros</button>
+      <button class="subtab-btn" data-subtab="docs">Doku</button>
+    </nav>
+
+    <div class="subtabpage active" id="subtab-explore">
+    <div class="card">
+      <h2>Mapping</h2>
+      <p class="muted">
+        Wähle die Characteristic, an die Lenk-/Gas-Kommandos geschrieben werden sollen (wird beim Verbinden
+        automatisch auf NUS RX gesetzt).
+      </p>
+      <div class="row">
+        <div>
+          <label class="small">Ziel-Characteristic</label>
+          <select id="control-char-select"><option value="">-- keine (nur Log) --</option></select>
+        </div>
+      </div>
+    </div>
+
     <div class="card">
       <h2>Verbindung</h2>
       <p class="muted">
@@ -300,181 +348,9 @@
         <button id="btn-clear-log">Log leeren</button>
       </div>
     </div>
-  </section>
-
-  <!-- CONTROL TAB -->
-  <section class="tabpage" id="tab-control">
-    <div class="card">
-      <h2>Mapping</h2>
-      <p class="muted">
-        Wähle die Characteristic, an die Lenk-/Gas-Kommandos geschrieben werden sollen, sobald wir das Protokoll
-        kennen. Bis dahin kannst du hier schon die Bedienoberfläche testen (Werte werden nur geloggt, wenn keine
-        Ziel-Characteristic gewählt ist).
-      </p>
-      <div class="row">
-        <div>
-          <label class="small">Ziel-Characteristic</label>
-          <select id="control-char-select"><option value="">-- keine (nur Log) --</option></select>
-        </div>
-      </div>
     </div>
 
-    <div class="card">
-      <h2>Fahrzeug &amp; Strecke</h2>
-      <div class="row" style="justify-content:space-between">
-        <div>
-          <div class="muted">Fahrzeug: <b id="dash-vehicle-name">nicht verbunden</b></div>
-          <div class="muted">Akku: <b id="dash-battery">-</b> <span style="font-size:11px">(geschätzt)</span></div>
-          <div class="muted">Status: <span id="dash-offtrack" style="display:inline-block;padding:1px 8px;border-radius:4px;background:var(--panel-2);border:1px solid var(--border)">-</span></div>
-        </div>
-        <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end">
-          <label style="display:flex;align-items:center;gap:6px" class="muted">
-            <input type="checkbox" id="dash-freeroam"> Frei fahren (ohne Streckenkarte)
-          </label>
-          <label style="display:flex;align-items:center;gap:6px" class="muted">
-            <input type="checkbox" id="sound-enable"> Motorsound (synthetisch)
-          </label>
-        </div>
-      </div>
-      <div class="row" style="margin-top:12px; align-items:flex-start; gap:20px">
-        <div id="dash-minimap"></div>
-        <div style="flex:1; min-width:200px">
-          <p class="muted">Aktuelle Runde: <b id="dash-lap-current">-</b></p>
-          <p class="muted">Beste Runde: <b id="dash-lap-best">-</b></p>
-          <ol class="muted" id="dash-lap-list" style="padding-left:20px; max-height:120px; overflow-y:auto"></ol>
-        </div>
-      </div>
-      <p class="muted" style="margin-top:8px; font-size:11.5px">
-        Die Position auf der Minikarte ist eine Schätzung (Kachel-Zähler + Zeit-Interpolation), keine echte
-        Positionsmessung vom Auto.
-      </p>
-    </div>
-
-    <div class="card">
-      <h2>Simulation: Tank &amp; Schäden</h2>
-      <p class="muted" style="font-size:11.5px">
-        Tank, Schaden und Boxenstopp sind eine reine Spielsimulation der App &mdash; das echte Auto hat keinen
-        Tank und meldet keinen Schaden. Die Crash-Erkennung ist zudem <b>experimentell</b>: sie beruht auf
-        Ausschlägen in Sensor-Bytes, deren genaue Bedeutung wir nicht sicher kennen.
-      </p>
-      <div class="row">
-        <div style="flex:1; min-width:150px">
-          <label class="small">Tank</label>
-          <div style="background:var(--panel-2); border:1px solid var(--border); border-radius:4px; height:14px; overflow:hidden">
-            <div id="fuel-bar" style="height:100%; width:100%; background:var(--good); transition:width .3s"></div>
-          </div>
-        </div>
-        <div style="flex:1; min-width:150px">
-          <label class="small">Schaden</label>
-          <div style="background:var(--panel-2); border:1px solid var(--border); border-radius:4px; height:14px; overflow:hidden">
-            <div id="damage-bar" style="height:100%; width:0%; background:var(--bad); transition:width .3s"></div>
-          </div>
-        </div>
-      </div>
-      <div class="row" style="margin-top:10px">
-        <button class="primary" id="btn-pitstop">Boxenstopp (Reparatur + Tanken)</button>
-        <span class="muted" id="pitstop-status">bereit</span>
-        <span id="crash-indicator" style="display:none; color:var(--bad); font-weight:700;">💥 Crash erkannt (experimentell)!</span>
-      </div>
-    </div>
-
-    <div class="card">
-      <h2>Fahren</h2>
-      <div class="control-grid">
-        <div class="stick-wrap">
-          <div class="muted">Lenkung</div>
-          <div id="stick-outer"><div id="stick-inner"></div></div>
-          <div class="readout" id="stick-readout">x: 0.00</div>
-        </div>
-        <div class="throttle-wrap">
-          <div class="muted">Gas / Bremse</div>
-          <div id="throttle-outer"><div id="throttle-fill"></div><div id="throttle-inner"></div></div>
-          <div class="readout" id="throttle-readout">y: 0.00</div>
-        </div>
-      </div>
-      <p class="muted" style="margin-top:14px">
-        Tastatur: <span class="kbd">&uarr;</span>/<span class="kbd">&darr;</span> Gas/Bremse,
-        <span class="kbd">&larr;</span>/<span class="kbd">&rarr;</span> Lenkung,
-        <span class="kbd">Leertaste</span> Nothalt.
-      </p>
-      <div class="row" style="margin-top:10px">
-        <div>
-          <label class="small">Maximaler Lenkausschlag (° &mdash; nominell, 90°=voller Byte-Bereich angenommen)</label>
-          <input type="range" id="max-steer-deg" min="10" max="90" step="5" value="60">
-          <span class="muted" id="max-steer-deg-val">60°</span>
-        </div>
-      </div>
-      <div class="row" style="margin-top:10px">
-        <button class="primary" id="btn-estop">NOTHALT</button>
-      </div>
-    </div>
-
-    <div class="card">
-      <h2>Physik-Engine (Gefühl)</h2>
-      <p class="muted">
-        Formt die rohe Joystick-/Tastatur-Eingabe zu einem realistischeren Fahrgefühl (Gänge, Lenkdämpfung,
-        ABS-Bremsgefühl, Haptik), bevor sie ans Auto gesendet wird. Läuft komplett im Handy/PC &mdash; das Auto bekommt
-        wie bisher nur Lenk-/Gaswerte, da wir keine Gyro-/Yaw-Rückmeldung vom Auto haben. Standardmäßig aus
-        (Debug-Modus = direkte, unveränderte Steuerung).
-      </p>
-      <div class="row">
-        <label style="display:flex;align-items:center;gap:6px">
-          <input type="checkbox" id="phys-enable"> Physik-Modus aktivieren
-        </label>
-        <label style="display:flex;align-items:center;gap:6px" id="phys-gyro-wrap">
-          <input type="checkbox" id="phys-gyro"> Handy-Neigung für Lenkung nutzen
-        </label>
-      </div>
-      <div class="row" style="margin-top:14px">
-        <div>
-          <label class="small">Geschwindigkeit</label>
-          <input type="range" id="setting-topspeed" min="0.2" max="1" step="0.05" value="1">
-          <span class="muted" id="setting-topspeed-val">100%</span>
-        </div>
-        <div>
-          <label class="small">Reifengrip</label>
-          <input type="range" id="setting-grip" min="0" max="1" step="0.05" value="0.6">
-          <span class="muted" id="setting-grip-val">0.60</span>
-        </div>
-        <div>
-          <label class="small">Bremswirkung</label>
-          <input type="range" id="setting-brakepower" min="0.3" max="1.5" step="0.05" value="1">
-          <span class="muted" id="setting-brakepower-val">1.00</span>
-        </div>
-      </div>
-      <div class="row" style="margin-top:12px">
-        <div>
-          <label class="small">Lenkdämpfung (0=direkt, 1=sehr träge)</label>
-          <input type="range" id="phys-damping" min="0.05" max="0.6" step="0.01" value="0.18">
-          <span class="muted" id="phys-damping-val">0.18</span>
-        </div>
-        <div>
-          <label class="small">Beschleunigungsfaktor</label>
-          <input type="range" id="phys-accel" min="0.2" max="1.2" step="0.02" value="0.6">
-          <span class="muted" id="phys-accel-val">0.60</span>
-        </div>
-        <div>
-          <label class="small">Trail-Braking-Grip-Bonus</label>
-          <input type="range" id="phys-trailbrake" min="1.0" max="1.3" step="0.01" value="1.1">
-          <span class="muted" id="phys-trailbrake-val">1.10</span>
-        </div>
-      </div>
-      <div class="row" style="margin-top:14px">
-        <span class="muted">Gang: <b id="dash-gear">1</b>/5</span>
-        <span class="muted">Speed: <b id="dash-speed">0%</b></span>
-        <span class="muted">ABS: <b id="dash-abs">-</b></span>
-        <span class="muted">
-          Scheinwerfer: <span id="dash-head" style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#444"></span>
-        </span>
-        <span class="muted">
-          Bremslicht: <span id="dash-brake" style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#444"></span>
-        </span>
-        <label style="display:flex;align-items:center;gap:6px" class="muted">
-          <input type="checkbox" id="dash-head-toggle"> Scheinwerfer (nur Anzeige)
-        </label>
-      </div>
-    </div>
-
+    <div class="subtabpage" id="subtab-calib">
     <div class="card">
       <h2>Automatischer Kalibrierungslauf</h2>
       <p class="muted">
@@ -491,102 +367,13 @@
       </div>
       <div id="calib-results" style="margin-top:12px; overflow-x:auto"></div>
     </div>
-  </section>
-
-  <!-- CONTROLLER TAB -->
-  <section class="tabpage" id="tab-controller">
-    <div class="card">
-      <h2>Gamepad-Status</h2>
-      <p class="muted">
-        Verbinde einen Controller per USB/Bluetooth und drücke einen Knopf, damit der Browser ihn erkennt
-        (Web-Gamepad-API meldet sich erst nach der ersten Eingabe).
-      </p>
-      <div class="row" id="pad-status-row">
-        <span class="pad-dot" id="pad-dot"></span>
-        <span class="muted" id="pad-status-text">kein Controller erkannt</span>
-      </div>
     </div>
 
-    <div class="card">
-      <h2>Tastenbelegung</h2>
-      <p class="muted">
-        Standard: rechter Trigger = Gas, linker Trigger = Bremse, linker Stick = Lenkung,
-        X (links) = runterschalten, B (rechts) = hochschalten &mdash; wie bei einem Xbox-Controller. Klicke
-        "Neu zuweisen" und betätige dann den gewünschten Knopf/Stick/Trigger am Controller.
-      </p>
-      <table class="bind-table">
-        <thead><tr><th>Aktion</th><th>Belegung</th><th></th></tr></thead>
-        <tbody id="bind-table-body"></tbody>
-      </table>
-      <div class="row" style="margin-top:12px">
-        <button id="bind-reset">Auf Standard zurücksetzen</button>
-      </div>
-    </div>
-
-    <div class="card">
-      <h2>Live-Werte</h2>
-      <div class="row">
-        <span class="muted">Gas: <b id="pad-live-throttle">0.00</b></span>
-        <span class="muted">Bremse: <b id="pad-live-brake">0.00</b></span>
-        <span class="muted">Lenkung: <b id="pad-live-steer">0.00</b></span>
-      </div>
-    </div>
-  </section>
-
-  <!-- TRACK TAB -->
-  <section class="tabpage" id="tab-track">
-    <div class="card">
-      <h2>Streckeneditor</h2>
-      <p class="muted">
-        Baue eine Strecke manuell aus Teilen zusammen, oder scanne sie live, während das Auto einmal die
-        Runde fährt (Auto muss verbunden sein). Bekannte Teiltypen: Start/Ziel, Gerade, Rechtskurve
-        (bestätigt aus echten Streckendaten). Linkskurve ist eine <b>unbestätigte Annahme</b> (nicht real
-        getestet).
-      </p>
-      <div class="row">
-        <button id="track-add-start">+ Start/Ziel</button>
-        <button id="track-add-straight">+ Gerade</button>
-        <button id="track-add-right">+ Rechtskurve</button>
-        <button id="track-add-left">+ Linkskurve (?)</button>
-        <button id="track-clear">Alles löschen</button>
-      </div>
-      <div class="row" style="margin-top:10px">
-        <button class="primary" id="track-scan-start">Live-Scan starten</button>
-        <button id="track-scan-stop" disabled>Scan stoppen</button>
-        <span class="muted" id="track-scan-status">bereit</span>
-      </div>
-    </div>
-
-    <div class="card">
-      <h2>Vorschau</h2>
-      <div class="row" style="align-items:flex-start; gap:20px">
-        <div id="track-preview-svg" style="flex:0 0 auto"></div>
-        <div style="flex:1; min-width:200px">
-          <p class="muted">Status: <b id="track-closed-badge">-</b></p>
-          <ol class="muted" id="track-tile-list" style="padding-left:20px; line-height:1.9; max-height:260px; overflow-y:auto"></ol>
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <h2>Gespeicherte Strecken</h2>
-      <div class="row">
-        <input type="text" id="track-name" placeholder="Name der Strecke">
-        <button id="track-save">Speichern</button>
-        <select id="track-list"><option value="">-- gespeicherte Strecken --</option></select>
-        <button id="track-load">Laden</button>
-        <button id="track-delete">Löschen</button>
-      </div>
-      <p class="muted" style="margin-top:8px">Strecken werden lokal im Browser gespeichert (localStorage).</p>
-    </div>
-  </section>
-
-  <!-- AUTONOMOUS TAB -->
-  <section class="tabpage" id="tab-autonomous">
+    <div class="subtabpage" id="subtab-macros">
     <div class="card">
       <h2>Autonomes Fahren: Aufnahme &amp; Wiedergabe</h2>
       <p class="muted">
-        Fahr die Strecke einmal manuell (Tab "Steuerung", Joystick/Gas oder Pfeiltasten). Während der Aufnahme
+        Fahr die Strecke einmal manuell (Tab "Fahren", Joystick/Gas oder Pfeiltasten). Während der Aufnahme
         werden Lenk- und Gaswerte mit Zeitstempel mitgeschrieben. Bei der Wiedergabe sendet die App exakt
         dieselbe Sequenz erneut an die Ziel-Characteristic.
       </p>
@@ -620,10 +407,9 @@
       <h2>Wiedergabe-Log</h2>
       <div id="play-log" class="muted" style="font-family:monospace;font-size:12px;min-height:20px">noch keine Wiedergabe.</div>
     </div>
-  </section>
+    </div>
 
-  <!-- BTSR TAB: background documentation on how Carrera Hybrid vehicles work -->
-  <section class="tabpage" id="tab-btsr">
+    <div class="subtabpage" id="subtab-docs">
     <div class="card">
       <h2>Überblick</h2>
       <p class="muted">
@@ -737,7 +523,250 @@
         und die genaue Bedeutung aller Protokoll-Bytes. Das Grundprinzip bleibt davon unberührt: Sensor liest
         Strecke, Funkchip verbindet Auto und Handy, Fahrphysik läuft im Auto.</p>
     </div>
+        </div>
   </section>
+
+  <!-- FAHREN TAB: redesigned as a racing-HUD style drive screen instead of a form/dashboard -->
+  <section class="tabpage active" id="tab-control">
+    <div class="card hud-card">
+      <h2>Cockpit</h2>
+      <div class="hud-row">
+        <div class="hud-stat"><span class="hud-value" id="dash-speed">0%</span><span class="hud-label">Speed (geschätzt)</span></div>
+        <div class="hud-stat"><span class="hud-value" id="dash-gear">1</span><span class="hud-label">Gang</span></div>
+        <div class="hud-stat"><span class="hud-value" id="dash-abs">-</span><span class="hud-label">ABS</span></div>
+        <div class="hud-stat">
+          <span class="hud-value"><span id="dash-head" class="hud-light"></span><span id="dash-brake" class="hud-light"></span></span>
+          <span class="hud-label">Licht / Bremse</span>
+        </div>
+        <div class="hud-stat"><span class="hud-value" id="dash-battery">-</span><span class="hud-label">Akku</span></div>
+        <label class="hud-toggle"><input type="checkbox" id="dash-head-toggle"> Scheinwerfer</label>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Fahrzeug &amp; Strecke</h2>
+      <div class="row" style="justify-content:space-between">
+        <div>
+          <div class="muted">Fahrzeug: <b id="dash-vehicle-name">nicht verbunden</b></div>
+          <div class="muted">Status: <span id="dash-offtrack" style="display:inline-block;padding:1px 8px;border-radius:4px;background:var(--panel-2);border:1px solid var(--border)">-</span></div>
+        </div>
+        <label style="display:flex;align-items:center;gap:6px" class="muted">
+          <input type="checkbox" id="dash-freeroam"> Frei fahren (ohne Streckenkarte)
+        </label>
+      </div>
+      <div class="row" style="margin-top:12px; align-items:flex-start; gap:20px">
+        <div id="dash-minimap"></div>
+        <div style="flex:1; min-width:200px">
+          <p class="muted">Aktuelle Runde: <b id="dash-lap-current">-</b></p>
+          <p class="muted">Beste Runde: <b id="dash-lap-best">-</b></p>
+          <ol class="muted" id="dash-lap-list" style="padding-left:20px; max-height:120px; overflow-y:auto"></ol>
+        </div>
+      </div>
+      <p class="muted" style="margin-top:8px; font-size:11.5px">
+        Die Position auf der Minikarte ist eine Schätzung (Kachel-Zähler + Zeit-Interpolation), keine echte
+        Positionsmessung vom Auto.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>Boxenstopp</h2>
+      <p class="muted" style="font-size:11.5px">
+        Tank, Schaden und Boxenstopp sind eine reine Spielsimulation der App &mdash; das echte Auto hat keinen
+        Tank und meldet keinen Schaden. Die Crash-Erkennung ist zudem <b>experimentell</b>: sie beruht auf
+        Ausschlägen in Sensor-Bytes, deren genaue Bedeutung wir nicht sicher kennen.
+      </p>
+      <div class="row">
+        <div style="flex:1; min-width:150px">
+          <label class="small">Tank</label>
+          <div style="background:var(--panel-2); border:1px solid var(--border); border-radius:4px; height:14px; overflow:hidden">
+            <div id="fuel-bar" style="height:100%; width:100%; background:var(--good); transition:width .3s"></div>
+          </div>
+        </div>
+        <div style="flex:1; min-width:150px">
+          <label class="small">Schaden</label>
+          <div style="background:var(--panel-2); border:1px solid var(--border); border-radius:4px; height:14px; overflow:hidden">
+            <div id="damage-bar" style="height:100%; width:0%; background:var(--bad); transition:width .3s"></div>
+          </div>
+        </div>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button class="primary" id="btn-pitstop">Boxenstopp (Reparatur + Tanken)</button>
+        <span class="muted" id="pitstop-status">bereit</span>
+        <span id="crash-indicator" style="display:none; color:var(--bad); font-weight:700;">💥 Crash erkannt (experimentell)!</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Steuerung</h2>
+      <div class="control-grid">
+        <div class="stick-wrap">
+          <div class="muted">Lenkung</div>
+          <div id="stick-outer"><div id="stick-inner"></div></div>
+          <div class="readout" id="stick-readout">x: 0.00</div>
+        </div>
+        <div class="throttle-wrap">
+          <div class="muted">Gas / Bremse</div>
+          <div id="throttle-outer"><div id="throttle-fill"></div><div id="throttle-inner"></div></div>
+          <div class="readout" id="throttle-readout">y: 0.00</div>
+        </div>
+      </div>
+      <p class="muted" style="margin-top:14px">
+        Tastatur: <span class="kbd">&uarr;</span>/<span class="kbd">&darr;</span> Gas/Bremse,
+        <span class="kbd">&larr;</span>/<span class="kbd">&rarr;</span> Lenkung,
+        <span class="kbd">Leertaste</span> Nothalt.
+      </p>
+      <div class="row" style="margin-top:10px">
+        <button class="primary" id="btn-estop">NOTHALT</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- OPTIONEN TAB: player-facing settings (feel, sound, controller bindings) -->
+  <section class="tabpage" id="tab-options">
+    <div class="card">
+      <h2>Fahrgefühl</h2>
+      <p class="muted">
+        Formt die rohe Joystick-/Tastatur-Eingabe zu einem realistischeren Fahrgefühl (Gänge, Lenkdämpfung,
+        ABS-Bremsgefühl, Haptik), bevor sie ans Auto gesendet wird. Läuft komplett im Handy/PC &mdash; das Auto bekommt
+        wie bisher nur Lenk-/Gaswerte, da wir keine Gyro-/Yaw-Rückmeldung vom Auto haben. Standardmäßig aus
+        (Debug-Modus = direkte, unveränderte Steuerung).
+      </p>
+      <div class="row">
+        <label style="display:flex;align-items:center;gap:6px">
+          <input type="checkbox" id="phys-enable"> Physik-Modus aktivieren
+        </label>
+        <label style="display:flex;align-items:center;gap:6px" id="phys-gyro-wrap">
+          <input type="checkbox" id="phys-gyro"> Handy-Neigung für Lenkung nutzen
+        </label>
+        <label style="display:flex;align-items:center;gap:6px" class="muted">
+          <input type="checkbox" id="sound-enable"> Motorsound (synthetisch)
+        </label>
+      </div>
+      <div class="row" style="margin-top:14px">
+        <div>
+          <label class="small">Geschwindigkeit</label>
+          <input type="range" id="setting-topspeed" min="0.2" max="1" step="0.05" value="1">
+          <span class="muted" id="setting-topspeed-val">100%</span>
+        </div>
+        <div>
+          <label class="small">Reifengrip</label>
+          <input type="range" id="setting-grip" min="0" max="1" step="0.05" value="0.6">
+          <span class="muted" id="setting-grip-val">0.60</span>
+        </div>
+        <div>
+          <label class="small">Bremswirkung</label>
+          <input type="range" id="setting-brakepower" min="0.3" max="1.5" step="0.05" value="1">
+          <span class="muted" id="setting-brakepower-val">1.00</span>
+        </div>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <div>
+          <label class="small">Maximaler Lenkausschlag (° &mdash; nominell, 90°=voller Byte-Bereich angenommen)</label>
+          <input type="range" id="max-steer-deg" min="10" max="90" step="5" value="60">
+          <span class="muted" id="max-steer-deg-val">60°</span>
+        </div>
+      </div>
+      <details style="margin-top:14px">
+        <summary class="muted" style="cursor:pointer">Erweitert (Physik-Engine im Detail)</summary>
+        <div class="row" style="margin-top:12px">
+          <div>
+            <label class="small">Lenkdämpfung (0=direkt, 1=sehr träge)</label>
+            <input type="range" id="phys-damping" min="0.05" max="0.6" step="0.01" value="0.18">
+            <span class="muted" id="phys-damping-val">0.18</span>
+          </div>
+          <div>
+            <label class="small">Beschleunigungsfaktor</label>
+            <input type="range" id="phys-accel" min="0.2" max="1.2" step="0.02" value="0.6">
+            <span class="muted" id="phys-accel-val">0.60</span>
+          </div>
+          <div>
+            <label class="small">Trail-Braking-Grip-Bonus</label>
+            <input type="range" id="phys-trailbrake" min="1.0" max="1.3" step="0.01" value="1.1">
+            <span class="muted" id="phys-trailbrake-val">1.10</span>
+          </div>
+        </div>
+      </details>
+    </div>
+
+    <div class="card">
+      <h2>Controller</h2>
+      <p class="muted">
+        Verbinde einen Controller per USB/Bluetooth und drücke einen Knopf, damit der Browser ihn erkennt
+        (Web-Gamepad-API meldet sich erst nach der ersten Eingabe).
+      </p>
+      <div class="row" id="pad-status-row">
+        <span class="pad-dot" id="pad-dot"></span>
+        <span class="muted" id="pad-status-text">kein Controller erkannt</span>
+      </div>
+      <p class="muted" style="margin-top:14px">
+        Standard: rechter Trigger = Gas, linker Trigger = Bremse, linker Stick = Lenkung,
+        X (links) = runterschalten, B (rechts) = hochschalten &mdash; wie bei einem Xbox-Controller. Klicke
+        "Neu zuweisen" und betätige dann den gewünschten Knopf/Stick/Trigger am Controller.
+      </p>
+      <table class="bind-table">
+        <thead><tr><th>Aktion</th><th>Belegung</th><th></th></tr></thead>
+        <tbody id="bind-table-body"></tbody>
+      </table>
+      <div class="row" style="margin-top:12px">
+        <button id="bind-reset">Auf Standard zurücksetzen</button>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <span class="muted">Gas: <b id="pad-live-throttle">0.00</b></span>
+        <span class="muted">Bremse: <b id="pad-live-brake">0.00</b></span>
+        <span class="muted">Lenkung: <b id="pad-live-steer">0.00</b></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- TRACK TAB -->
+  <section class="tabpage" id="tab-track">
+    <div class="card">
+      <h2>Streckeneditor</h2>
+      <p class="muted">
+        Baue eine Strecke manuell aus Teilen zusammen, oder scanne sie live, während das Auto einmal die
+        Runde fährt (Auto muss verbunden sein). Bekannte Teiltypen: Start/Ziel, Gerade, Rechtskurve
+        (bestätigt aus echten Streckendaten). Linkskurve ist eine <b>unbestätigte Annahme</b> (nicht real
+        getestet).
+      </p>
+      <div class="row">
+        <button id="track-add-start">+ Start/Ziel</button>
+        <button id="track-add-straight">+ Gerade</button>
+        <button id="track-add-right">+ Rechtskurve</button>
+        <button id="track-add-left">+ Linkskurve (?)</button>
+        <button id="track-clear">Alles löschen</button>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button class="primary" id="track-scan-start">Live-Scan starten</button>
+        <button id="track-scan-stop" disabled>Scan stoppen</button>
+        <span class="muted" id="track-scan-status">bereit</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Vorschau</h2>
+      <div class="row" style="align-items:flex-start; gap:20px">
+        <div id="track-preview-svg" style="flex:0 0 auto"></div>
+        <div style="flex:1; min-width:200px">
+          <p class="muted">Status: <b id="track-closed-badge">-</b></p>
+          <ol class="muted" id="track-tile-list" style="padding-left:20px; line-height:1.9; max-height:260px; overflow-y:auto"></ol>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Gespeicherte Strecken</h2>
+      <div class="row">
+        <input type="text" id="track-name" placeholder="Name der Strecke">
+        <button id="track-save">Speichern</button>
+        <select id="track-list"><option value="">-- gespeicherte Strecken --</option></select>
+        <button id="track-load">Laden</button>
+        <button id="track-delete">Löschen</button>
+      </div>
+      <p class="muted" style="margin-top:8px">Strecken werden lokal im Browser gespeichert (localStorage).</p>
+    </div>
+  </section>
+
+
 
 </main>
 
@@ -1030,6 +1059,16 @@
       document.querySelectorAll('.tabpage').forEach(p => p.classList.remove('active'));
       btn.classList.add('active');
       $('tab-' + btn.dataset.tab).classList.add('active');
+    };
+  });
+
+  // ---- Entwickler tab: secondary sub-navigation (BLE-Explorer/Kalibrierung/Makros/Doku) ----
+  document.querySelectorAll('.subtab-btn').forEach(btn => {
+    btn.onclick = () => {
+      document.querySelectorAll('.subtab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.subtabpage').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      $('subtab-' + btn.dataset.subtab).classList.add('active');
     };
   });
 
@@ -1868,27 +1907,30 @@
 
   let currentTrackTiles = []; // [{type}]
 
-  // Turtle-graphics walk: each tile is a fixed-length/fixed-turn step. Curve radius/
-  // angle are schematic estimates, not measured from a real track, so the resulting
-  // shape is illustrative rather than geometrically exact.
+  // Turtle-graphics walk: each tile is a fixed-length/fixed-turn step, always
+  // continuing from the previous tile's exact end position and heading — so tiles
+  // always connect. Curve turn angle is a fixed, confirmed 60° (matches how the real
+  // curve pieces are built); radius is a schematic estimate (not measured from a real
+  // track), so overall scale is illustrative rather than geometrically exact.
+  const TRACK_STEP = 40, TRACK_RADIUS = 34, TRACK_TURN_DEG = 60;
+
   function walkTrack(tiles) {
-    const STEP = 40, RADIUS = 30, TURN_DEG = 45;
     let x = 0, y = 0, heading = 0;
-    const points = [{ x, y, heading }];
+    const points = [{ x, y, heading, type: null }];
     for (const tile of tiles) {
       if (tile.type === TILE_TYPE.CURVE_RIGHT || tile.type === TILE_TYPE.CURVE_LEFT) {
-        const turn = tile.type === TILE_TYPE.CURVE_RIGHT ? TURN_DEG : -TURN_DEG;
+        const turn = tile.type === TILE_TYPE.CURVE_RIGHT ? TRACK_TURN_DEG : -TRACK_TURN_DEG;
         const midRad = (heading + turn / 2) * Math.PI / 180;
-        const chord = 2 * RADIUS * Math.sin((turn * Math.PI / 180) / 2);
+        const chord = 2 * TRACK_RADIUS * Math.sin((turn * Math.PI / 180) / 2);
         x += Math.sin(midRad) * chord;
         y -= Math.cos(midRad) * chord;
         heading += turn;
       } else {
         const rad = heading * Math.PI / 180;
-        x += Math.sin(rad) * STEP;
-        y -= Math.cos(rad) * STEP;
+        x += Math.sin(rad) * TRACK_STEP;
+        y -= Math.cos(rad) * TRACK_STEP;
       }
-      points.push({ x, y, heading });
+      points.push({ x, y, heading, type: tile.type });
     }
     return points;
   }
@@ -1905,7 +1947,16 @@
     const w = Math.max(1, maxX - minX) + pad * 2, h = Math.max(1, maxY - minY) + pad * 2;
     const ox = pad - minX, oy = pad - minY;
     let d = `M ${(points[0].x + ox).toFixed(1)} ${(points[0].y + oy).toFixed(1)}`;
-    for (let i = 1; i < points.length; i++) d += ` L ${(points[i].x + ox).toFixed(1)} ${(points[i].y + oy).toFixed(1)}`;
+    for (let i = 1; i < points.length; i++) {
+      const p = points[i];
+      const px = (p.x + ox).toFixed(1), py = (p.y + oy).toFixed(1);
+      if (p.type === TILE_TYPE.CURVE_RIGHT || p.type === TILE_TYPE.CURVE_LEFT) {
+        const sweep = p.type === TILE_TYPE.CURVE_RIGHT ? 1 : 0;
+        d += ` A ${TRACK_RADIUS} ${TRACK_RADIUS} 0 0 ${sweep} ${px} ${py}`;
+      } else {
+        d += ` L ${px} ${py}`;
+      }
+    }
     const first = points[0], last = points[points.length - 1];
     const closed = Math.hypot(last.x - first.x, last.y - first.y) < 60;
     let dot = '';
@@ -1998,7 +2049,11 @@
   function trackScanNotifyHandler(e) {
     if (!trackScanning) return;
     const bytes = new Uint8Array(e.target.value.buffer);
-    const counter = bytes[9];
+    // BUGFIX: byte 9 is the free-running per-PACKET counter (changes on ~every notify,
+    // every ~45-70ms) — using it here treated almost every packet as a new tile
+    // boundary, flooding the track with bogus single-sample tiles. Byte 11 is the
+    // actual per-TILE counter (only changes when the car enters a new physical piece).
+    const counter = bytes[11];
     const type = bytes[12];
     if (trackScanLastCounter === null) {
       trackScanLastCounter = counter;
