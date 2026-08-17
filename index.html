@@ -541,6 +541,7 @@
         <div class="hud-stat"><span class="hud-value" id="dash-battery">-</span><span class="hud-label">Akku</span></div>
         <label class="hud-toggle"><input type="checkbox" id="dash-head-toggle"> Scheinwerfer</label>
       </div>
+      <div id="hud-toast" style="margin-top:10px; color:#ffcf6e; font-family:monospace; font-size:13px; min-height:18px"></div>
     </div>
 
     <div class="card">
@@ -633,15 +634,42 @@
       </p>
       <div class="row">
         <label style="display:flex;align-items:center;gap:6px">
-          <input type="checkbox" id="phys-enable"> Physik-Modus aktivieren
+          <input type="checkbox" id="phys-enable" checked> Physik-Modus aktivieren
         </label>
         <label style="display:flex;align-items:center;gap:6px" id="phys-gyro-wrap">
           <input type="checkbox" id="phys-gyro"> Handy-Neigung für Lenkung nutzen
         </label>
         <label style="display:flex;align-items:center;gap:6px" class="muted">
-          <input type="checkbox" id="sound-enable"> Motorsound (synthetisch)
+          <input type="checkbox" id="sound-enable" checked> Motorsound
+        </label>
+        <div>
+          <label class="small">Motorsound-Profil</label>
+          <select id="sound-profile">
+            <option value="v8" selected>GT3 / V8 (kernig)</option>
+            <option value="v10">Formel / V10 (hoch)</option>
+            <option value="ev">Elektro / EV (Pfeifen)</option>
+            <option value="turbo">Turbo (mit Zischen)</option>
+          </select>
+        </div>
+        <label style="display:flex;align-items:center;gap:6px" class="muted">
+          <input type="checkbox" id="setting-invert-throttle"> Gas/Bremse tauschen
         </label>
       </div>
+      <div class="row" style="margin-top:14px">
+        <label style="display:flex;align-items:center;gap:6px" class="muted">
+          <input type="checkbox" id="setting-battery-comp"> Leistung über Akkulaufzeit konstant halten
+        </label>
+        <div>
+          <label class="small">Referenz-Akkustand</label>
+          <input type="range" id="setting-battery-ref" min="0.2" max="1" step="0.05" value="0.5">
+          <span class="muted" id="setting-battery-ref-val">50%</span>
+        </div>
+      </div>
+      <p class="muted" style="font-size:11.5px">
+        Akku-Kompensation drosselt bei vollem Akku, damit sich das Auto über die ganze Ladung gleich anfühlt
+        &mdash; du gibst dafür Spitzentempo auf. <b>Näherung:</b> der Akkuwert ist eine unkalibrierte Schätzung
+        aus einem einzelnen Statusbyte, und ob unser Gas-Byte linear auf die Drehzahl wirkt, ist unbestätigt.
+      </p>
       <div class="row" style="margin-top:14px">
         <div>
           <label class="small">Geschwindigkeit</label>
@@ -734,6 +762,11 @@
         <button id="track-add-right">+ Rechtskurve</button>
         <button id="track-add-left">+ Linkskurve (?)</button>
         <button id="track-clear">Alles löschen</button>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button id="track-rotate-left">↺ 90° links drehen</button>
+        <button id="track-rotate-right">↻ 90° rechts drehen</button>
+        <span class="muted">Ausrichtung: <b id="track-rotation-val">0°</b></span>
       </div>
       <div class="row" style="margin-top:10px">
         <button class="primary" id="track-scan-start">Live-Scan starten</button>
@@ -1121,17 +1154,25 @@
     return new Uint8Array(body);
   }
 
+  // SINGLE WRITER. Every BLE control write in the app funnels through here, and only
+  // one write may be in flight at a time. Previously five independent sources wrote
+  // concurrently (gamepad rAF at ~60Hz unthrottled, keyboard interval, pointer events,
+  // tilt events, physics loop) with no coordination — overlapping writes produced
+  // "GATT operation already in progress", were silently dropped, and the resulting
+  // command gaps made the car stutter and rattle. Input handlers now only update state;
+  // controlHeartbeat() below is what actually transmits, at the car's expected cadence.
+  let writeInFlight = false;
+
   async function sendControlValue(overrideSteer, overrideThrottle) {
     const steer = overrideSteer !== undefined ? overrideSteer : steerX;
     let throttle = overrideThrottle !== undefined ? overrideThrottle : throttleY;
     if (recording) {
       macro.push({ t: Date.now() - recordStartTime, steer, throttle });
     }
-    // "Geschwindigkeit" setting (Settings sliders, Steuerung tab) — a simple top-speed
-    // cap applied at this single choke point so every input source (joystick, keyboard,
-    // gamepad, physics engine, macro playback) respects it consistently. Defaults to 1
-    // (no effect) so existing behavior/tests are unchanged unless the user lowers it.
+    // "Geschwindigkeit" setting — a simple top-speed cap applied at this single choke
+    // point so every input source respects it consistently. Defaults to 1 (no effect).
     throttle *= topSpeedScale;
+    throttle *= batteryCompensationScale();
     throttle = applyFuelAndDamage(throttle);
     updateEngineSound(throttle);
     const uuid = controlSelect.value;
@@ -1142,16 +1183,37 @@
     }
     const entry = charByUuid.get(uuid);
     if (!entry) return;
+    if (writeInFlight) return; // drop this tick rather than pile a second write onto the queue
+    writeInFlight = true;
     try {
       if (entry.char.properties.writeWithoutResponse) await entry.char.writeValueWithoutResponse(payload);
       else await entry.char.writeValueWithResponse(payload);
       log(`WRITE ${uuid}: ${bufToHex(payload)}`, 'write');
     } catch (err) {
       log('Steuer-Schreibfehler: ' + err.message, 'err');
+    } finally {
+      writeInFlight = false;
     }
   }
 
-  let physicsEnabled = false; // when true, the physics loop sends output instead of raw input handlers
+  // Physics mode is on by default now; the loop writes its shaped output into these
+  // vars and the heartbeat transmits them, instead of the loop writing to BLE itself.
+  let physicsEnabled = true;
+  let physOutSteer = 0, physOutThrottle = 0;
+  let handbrakeActive = false;
+
+  const CONTROL_SEND_INTERVAL_MS = 45; // matches the real app's observed command cadence
+
+  function controlHeartbeat() {
+    // The calibration runner drives its own carefully-timed sequence; stay out of its way.
+    if (typeof calibRunning !== 'undefined' && calibRunning) return;
+    physicsStep();
+    let steer = physicsEnabled ? physOutSteer : steerX;
+    let throttle = physicsEnabled ? physOutThrottle : throttleY;
+    if (handbrakeActive) throttle = 0;
+    sendControlValue(steer, throttle);
+  }
+  setInterval(controlHeartbeat, CONTROL_SEND_INTERVAL_MS);
 
   const stickOuter = $('stick-outer'), stickInner = $('stick-inner');
   const R = 75; // usable radius for stick center travel
@@ -1169,12 +1231,10 @@
     let dx = (e.clientX - cx) / R;
     dx = Math.max(-1, Math.min(1, dx));
     setStick(dx, 0);
-    if (!physicsEnabled) sendControlValue();
   }
   function releaseStick() {
     stickDragging = false;
     setStick(0, 0);
-    if (!physicsEnabled) sendControlValue();
   }
   stickOuter.addEventListener('pointerdown', (e) => { stickDragging = true; stickPointer(e); });
   window.addEventListener('pointermove', (e) => {
@@ -1208,18 +1268,27 @@
     }
     $('throttle-readout').textContent = `y: ${throttleY.toFixed(2)}`;
   }
+
+  // Logical-space setter (forward = positive), for input sources that already think in
+  // "throttle" terms rather than screen coordinates: gamepad, keyboard, macro playback.
+  // setThrottle() above takes SCREEN-space (down = positive) because it was written for
+  // the mouse-drag slider — passing a logical value straight into it silently inverts
+  // the direction, which is exactly why gamepad throttle used to drive the car backwards.
+  function setThrottleLogical(v) {
+    setThrottle(invertThrottle ? v : -v);
+  }
+
   function throttlePointer(e) {
     const rect = throttleOuter.getBoundingClientRect();
     const cy = rect.top + rect.height / 2;
     let dy = (e.clientY - cy) / TR;
     dy = Math.max(-1, Math.min(1, dy));
     setThrottle(dy);
-    if (!physicsEnabled) sendControlValue();
   }
   throttleOuter.addEventListener('pointerdown', (e) => { throttleDragging = true; throttlePointer(e); });
   window.addEventListener('pointermove', (e) => { if (throttleDragging) throttlePointer(e); });
   window.addEventListener('pointerup', () => {
-    if (throttleDragging) { throttleDragging = false; setThrottle(0); if (!physicsEnabled) sendControlValue(); }
+    if (throttleDragging) { throttleDragging = false; setThrottle(0); }
   });
 
   setStick(0, 0);
@@ -1233,29 +1302,44 @@
   });
   window.addEventListener('keyup', (e) => { keys.delete(e.key); });
 
+  // Keyboard state is sampled fast (the heartbeat does the actual transmitting) and is
+  // no longer gated on which tab is visible — switching tabs used to silently kill
+  // control mid-drive. The was-active guard means an idle keyboard doesn't continuously
+  // stomp steering/throttle back to zero while a gamepad is driving.
+  let keyboardWasActive = false;
   setInterval(() => {
-    if (!document.getElementById('tab-control').classList.contains('active')) return;
+    if (keys.size === 0 && !keyboardWasActive) return;
     let sx = 0, ty = 0;
     if (keys.has('ArrowLeft')) sx -= 1;
     if (keys.has('ArrowRight')) sx += 1;
     if (keys.has('ArrowUp')) ty += 1;
     if (keys.has('ArrowDown')) ty -= 1;
     if (keys.has(' ')) { sx = 0; ty = 0; }
+    keyboardWasActive = keys.size > 0;
     setStick(sx, 0);
-    setThrottle(-ty);
-    if (!physicsEnabled) sendControlValue();
-  }, 100);
+    setThrottleLogical(ty);
+  }, 30);
 
   $('max-steer-deg').addEventListener('input', (e) => {
     maxSteerDegrees = parseInt(e.target.value, 10);
     $('max-steer-deg-val').textContent = maxSteerDegrees + '°';
   });
 
-  $('btn-estop').onclick = () => {
+  function emergencyStop() {
     keys.clear();
+    keyboardWasActive = false;
     setStick(0, 0);
     setThrottle(0);
-    sendControlValue(0, 0); // always send neutral directly, bypassing physics engine momentum
+    // Zero the simulated momentum too, otherwise the physics engine keeps feeding
+    // throttle from its own virtualSpeed after the input is released.
+    physEngine.state.virtualSpeed = 0;
+    physOutSteer = 0;
+    physOutThrottle = 0;
+    sendControlValue(0, 0);
+  }
+
+  $('btn-estop').onclick = () => {
+    emergencyStop();
     log('NOTHALT ausgelöst.', 'write');
   };
 
@@ -1365,14 +1449,11 @@
 
   const physEngine = new CarreraPhysicsEngine();
   let physLastTime = null;
-  let physLastSendTime = 0;
-  const PHYS_SEND_INTERVAL_MS = 45; // matches the real command cadence observed in the snoop log
   let headlightsOn = false;
 
   $('phys-enable').addEventListener('change', (e) => {
     physicsEnabled = e.target.checked;
     physLastTime = null;
-    if (physicsEnabled) requestAnimationFrame(physicsLoop);
   });
 
   $('dash-head-toggle').addEventListener('change', (e) => { headlightsOn = e.target.checked; });
@@ -1416,6 +1497,31 @@
     physEngine.config.gears.forEach((g, i) => { g.brake = BASE_GEAR_BRAKE[i] * mult; });
   });
 
+  // ---- Constant-power-over-battery-life compensation ----
+  // The motor gets weaker as the pack drains and we cannot add power, so the only way to
+  // make the car feel the same all session is to hold it back while the battery is still
+  // strong. Deliberately OFF by default because it costs peak speed. Both inputs to this
+  // are approximations: the battery percentage comes from an uncalibrated two-point
+  // estimate of one status byte, and we have no proof our throttle byte maps linearly to
+  // motor RPM — so treat this as "feels more even", not as a measured correction.
+  let batteryCompEnabled = false;
+  let batteryCompReference = 0.5;
+
+  $('setting-battery-comp').addEventListener('change', (e) => { batteryCompEnabled = e.target.checked; });
+  $('setting-battery-ref').addEventListener('input', (e) => {
+    batteryCompReference = parseFloat(e.target.value);
+    $('setting-battery-ref-val').textContent = Math.round(batteryCompReference * 100) + '%';
+  });
+
+  function batteryCompensationScale() {
+    if (!batteryCompEnabled || dashBattery === null) return 1;
+    const currentFraction = Math.max(0.05, batteryPercent(dashBattery) / 100);
+    return Math.max(0.2, Math.min(1, batteryCompReference / currentFraction));
+  }
+
+  let invertThrottle = false;
+  $('setting-invert-throttle').addEventListener('change', (e) => { invertThrottle = e.target.checked; });
+
   function updateDashboard(out) {
     $('dash-gear').textContent = (physEngine.state.currentGear + 1).toString();
     $('dash-speed').textContent = Math.round(physEngine.state.virtualSpeed * 100) + '%';
@@ -1424,26 +1530,24 @@
     $('dash-brake').style.background = out.lights.brake ? 'var(--bad)' : '#444';
   }
 
-  function physicsLoop(timestamp) {
+  // Advances the simulation and publishes its shaped output into physOutSteer/
+  // physOutThrottle for controlHeartbeat() to transmit. Driven by the heartbeat itself
+  // (NOT requestAnimationFrame) on purpose: rAF is paused by the browser whenever the
+  // page isn't being composited (hidden/minimised/background tab). With rAF, physics
+  // would freeze while the heartbeat happily kept re-sending the last throttle value —
+  // i.e. the car would keep driving at whatever speed it had when you looked away.
+  // Timer-driven, physics keeps decelerating normally instead.
+  function physicsStep() {
     if (!physicsEnabled) { physLastTime = null; return; }
-    if (!document.getElementById('tab-control').classList.contains('active')) {
-      requestAnimationFrame(physicsLoop);
-      return;
-    }
-    const dt = physLastTime ? Math.min(0.1, (timestamp - physLastTime) / 1000) : 1 / 60;
-    physLastTime = timestamp;
-    const rawThrottle = Math.max(0, throttleY);
-    const rawBrake = Math.max(0, -throttleY);
+    const now = performance.now();
+    const dt = physLastTime ? Math.min(0.25, (now - physLastTime) / 1000) : CONTROL_SEND_INTERVAL_MS / 1000;
+    physLastTime = now;
+    const rawThrottle = handbrakeActive ? 0 : Math.max(0, throttleY);
+    const rawBrake = handbrakeActive ? 1 : Math.max(0, -throttleY);
     const out = physEngine.update({ steering: steerX, throttle: rawThrottle, brake: rawBrake, headlights: headlightsOn }, dt);
     updateDashboard(out);
-    // Physics runs every frame (~60Hz) for smooth simulation/haptics, but BLE sends are
-    // throttled to the real protocol's observed cadence (~45ms) to avoid overwhelming the
-    // GATT write queue ("GATT operation already in progress") for no real-world benefit.
-    if (timestamp - physLastSendTime >= PHYS_SEND_INTERVAL_MS) {
-      physLastSendTime = timestamp;
-      sendControlValue(out.servoAngle, out.motorPWM);
-    }
-    requestAnimationFrame(physicsLoop);
+    physOutSteer = out.servoAngle;
+    physOutThrottle = out.motorPWM;
   }
 
   // ---- Optional phone-tilt steering input (matches how the official app steers) ----
@@ -1467,7 +1571,6 @@
       if (!gyroActive || e.gamma === null) return;
       const tilt = Math.max(-1, Math.min(1, e.gamma / 35)); // ~35° = full lock, deadzone-free
       setStick(tilt, 0);
-      if (!physicsEnabled) sendControlValue();
     });
   } else {
     $('phys-gyro-wrap').style.display = 'none';
@@ -1651,8 +1754,7 @@
     macro.forEach((step, i) => {
       const timer = setTimeout(() => {
         setStick(step.steer, 0);
-        setThrottle(-step.throttle);
-        sendControlValue();
+        setThrottleLogical(step.throttle);
         playLog(`Schritt ${i + 1}/${macro.length}  t=${step.t}ms  steer=${step.steer.toFixed(2)}  throttle=${step.throttle.toFixed(2)}`);
         if (i === macro.length - 1) {
           if ($('chk-loop').checked && playing) {
@@ -1674,7 +1776,6 @@
     $('btn-stop-play').disabled = true;
     setStick(0, 0);
     setThrottle(0);
-    sendControlValue();
     playLog(playLog.lastMsg = 'Wiedergabe beendet.');
   }
 
@@ -1905,7 +2006,11 @@
   }
   function saveTrackStore(store) { localStorage.setItem(TRACK_STORE_KEY, JSON.stringify(store)); }
 
-  let currentTrackTiles = []; // [{type}]
+  // A track always begins with the Start/Finish tile — lap timing keys off it, and a
+  // track without one can never register a lap.
+  function freshTrackTiles() { return [{ type: TILE_TYPE.START }]; }
+  let currentTrackTiles = freshTrackTiles(); // [{type}]
+  let trackRotationDeg = 0; // whole-track orientation, rotatable in 90° steps
 
   // Turtle-graphics walk: each tile is a fixed-length/fixed-turn step, always
   // continuing from the previous tile's exact end position and heading — so tiles
@@ -1915,13 +2020,16 @@
   const TRACK_STEP = 40, TRACK_RADIUS = 34, TRACK_TURN_DEG = 60;
 
   function walkTrack(tiles) {
-    let x = 0, y = 0, heading = 0;
+    let x = 0, y = 0, heading = trackRotationDeg;
     const points = [{ x, y, heading, type: null }];
     for (const tile of tiles) {
       if (tile.type === TILE_TYPE.CURVE_RIGHT || tile.type === TILE_TYPE.CURVE_LEFT) {
         const turn = tile.type === TILE_TYPE.CURVE_RIGHT ? TRACK_TURN_DEG : -TRACK_TURN_DEG;
         const midRad = (heading + turn / 2) * Math.PI / 180;
-        const chord = 2 * TRACK_RADIUS * Math.sin((turn * Math.PI / 180) / 2);
+        // BUGFIX: sin() of a NEGATIVE half-angle (left curves) returned a negative chord,
+        // which flipped the step 180° and sent left curves backwards/right. The chord is
+        // a length and must stay positive; the direction comes from midRad alone.
+        const chord = 2 * TRACK_RADIUS * Math.abs(Math.sin((turn * Math.PI / 180) / 2));
         x += Math.sin(midRad) * chord;
         y -= Math.cos(midRad) * chord;
         heading += turn;
@@ -1977,9 +2085,11 @@
     $('track-preview-svg').innerHTML = result.html;
     $('track-closed-badge').textContent = currentTrackTiles.length === 0 ? '-' : (result.closed ? 'Geschlossen ✓' : 'Offen');
     const list = $('track-tile-list');
+    // The first tile is the Start/Finish anchor and is not deletable.
     list.innerHTML = currentTrackTiles.map((t, i) =>
       `<li>${TILE_LABEL[t.type] || ('0x' + t.type.toString(16))}
-        <button data-idx="${i}" class="track-del-btn" style="padding:1px 6px;font-size:11px;margin-left:6px">×</button></li>`
+        ${i === 0 ? '<span class="muted" style="font-size:11px">(fest)</span>'
+                  : `<button data-idx="${i}" class="track-del-btn" style="padding:1px 6px;font-size:11px;margin-left:6px">×</button>`}</li>`
     ).join('');
     list.querySelectorAll('.track-del-btn').forEach(btn => {
       btn.onclick = () => {
@@ -1987,6 +2097,7 @@
         refreshTrackPreview();
       };
     });
+    $('track-rotation-val').textContent = trackRotationDeg + '°';
     if (typeof refreshMinimap === 'function') refreshMinimap();
   }
 
@@ -1995,7 +2106,14 @@
   $('track-add-straight').onclick = () => addTile(TILE_TYPE.STRAIGHT);
   $('track-add-right').onclick = () => addTile(TILE_TYPE.CURVE_RIGHT);
   $('track-add-left').onclick = () => addTile(TILE_TYPE.CURVE_LEFT);
-  $('track-clear').onclick = () => { currentTrackTiles = []; refreshTrackPreview(); };
+  $('track-clear').onclick = () => { currentTrackTiles = freshTrackTiles(); refreshTrackPreview(); };
+
+  function rotateTrack(deltaDeg) {
+    trackRotationDeg = (trackRotationDeg + deltaDeg + 360) % 360;
+    refreshTrackPreview();
+  }
+  $('track-rotate-left').onclick = () => rotateTrack(-90);
+  $('track-rotate-right').onclick = () => rotateTrack(90);
 
   function refreshTrackList() {
     const store = loadTrackStore();
@@ -2016,7 +2134,7 @@
     if (currentTrackTiles.length === 0) { alert('Keine Streckenteile vorhanden.'); return; }
     const store = loadTrackStore();
     const now = new Date().toISOString();
-    store[name] = { id: name, name, tiles: currentTrackTiles, createdAt: store[name]?.createdAt || now, updatedAt: now };
+    store[name] = { id: name, name, tiles: currentTrackTiles, rotation: trackRotationDeg, createdAt: store[name]?.createdAt || now, updatedAt: now };
     saveTrackStore(store);
     refreshTrackList();
     log(`Strecke "${name}" gespeichert (${currentTrackTiles.length} Teile).`, 'info');
@@ -2027,6 +2145,10 @@
     const store = loadTrackStore();
     if (!store[name]) return;
     currentTrackTiles = store[name].tiles.slice();
+    trackRotationDeg = store[name].rotation || 0;
+    if (!currentTrackTiles.length || currentTrackTiles[0].type !== TILE_TYPE.START) {
+      currentTrackTiles.unshift({ type: TILE_TYPE.START }); // older saves may predate the anchor
+    }
     $('track-name').value = name;
     refreshTrackPreview();
   };
@@ -2086,7 +2208,7 @@
         entry._trackScanSubscribed = true;
       }
     } catch (err) { alert('Notify-Fehler: ' + err.message); return; }
-    currentTrackTiles = [];
+    currentTrackTiles = freshTrackTiles();
     trackScanLastCounter = null;
     trackScanTypeVotes = {};
     trackScanning = true;
@@ -2219,6 +2341,8 @@
   function registerCrash() {
     damage = Math.min(100, damage + 15);
     updateDamageFuelUI();
+    playCrashSound();
+    rumbleHaptic([60, 30, 90]);
     const ind = $('crash-indicator');
     ind.style.display = 'inline';
     clearTimeout(crashIndicatorTimer);
@@ -2226,10 +2350,37 @@
     log('Crash erkannt (experimentell) — Schaden +15%.', 'err');
   }
 
+  // PLACEHOLDER: the real BLE command for the car's headlights/brake light is still
+  // unknown (never observed changing in any captured packet), so this currently only
+  // drives the on-screen indicators. Once the user supplies the real light command,
+  // this is the single place that needs to learn how to send it.
+  function setCarLights(on) {
+    const head = $('dash-head'), brake = $('dash-brake');
+    if (head) head.style.background = on ? '#f5e642' : '#3a4a6b';
+    if (brake) brake.style.background = on ? 'var(--bad)' : '#3a4a6b';
+    // TODO: send real light command over BLE once the protocol byte is known.
+  }
+
+  // At full damage the car limps and its lights flash as a visible warning.
+  let damageBlinkTimer = null;
+  function updateDamageBlink() {
+    const totalled = damage >= 100;
+    if (totalled && !damageBlinkTimer) {
+      let on = false;
+      damageBlinkTimer = setInterval(() => { on = !on; setCarLights(on); }, 350);
+    } else if (!totalled && damageBlinkTimer) {
+      clearInterval(damageBlinkTimer);
+      damageBlinkTimer = null;
+      setCarLights(false);
+    }
+  }
+
   function updateDamageFuelUI() {
     $('fuel-bar').style.width = Math.max(0, fuel) + '%';
     $('fuel-bar').style.background = fuel < 20 ? 'var(--warn)' : 'var(--good)';
     $('damage-bar').style.width = damage + '%';
+    $('damage-bar').style.background = damage >= 100 ? '#ff5c5c' : 'var(--bad)';
+    updateDamageBlink();
   }
 
   // Called from sendControlValue for every command, right after topSpeedScale — depletes
@@ -2247,6 +2398,9 @@
     let out = throttle;
     if (fuel <= 0) out = Math.max(-0.15, Math.min(0.15, out));
     out *= 1 - (damage / 100) * 0.3;
+    // Totalled: limp home. Deliberately still drivable so the car never strands itself
+    // out on the track — a pit stop clears it.
+    if (damage >= 100) out *= 0.5;
     return out;
   }
 
@@ -2278,19 +2432,33 @@
   // ---- Synthesized engine sound (Web Audio API, no external audio files — avoids any
   // question of reusing the real game's actual audio assets) ----
   let audioCtx = null, engineOsc = null, engineGain = null;
-  let soundEnabled = false;
+  let soundEnabled = true; // checkbox is checked by default now
 
   function initEngineSound() {
     if (audioCtx) return;
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     engineOsc = audioCtx.createOscillator();
-    engineOsc.type = 'sawtooth';
-    engineOsc.frequency.value = 55;
+    engineOsc.type = soundProfile.wave;
+    engineOsc.frequency.value = soundProfile.baseFreq;
     engineGain = audioCtx.createGain();
     engineGain.gain.value = 0;
     engineOsc.connect(engineGain).connect(audioCtx.destination);
     engineOsc.start();
   }
+
+  // Browsers refuse to start audio without a user gesture, so even though sound is on by
+  // default we can only actually create the AudioContext once the user interacts. This
+  // one-shot listener does it on the very first click/keypress anywhere in the app.
+  function unlockAudioOnFirstGesture() {
+    if (soundEnabled) {
+      initEngineSound();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+    }
+    document.removeEventListener('pointerdown', unlockAudioOnFirstGesture);
+    document.removeEventListener('keydown', unlockAudioOnFirstGesture);
+  }
+  document.addEventListener('pointerdown', unlockAudioOnFirstGesture);
+  document.addEventListener('keydown', unlockAudioOnFirstGesture);
 
   $('sound-enable').addEventListener('change', (e) => {
     soundEnabled = e.target.checked;
@@ -2302,15 +2470,63 @@
     }
   });
 
+  // Four synthesized engine characters. All are generated live — no external audio
+  // files, which keeps the app dependency-free and avoids reusing the real game's assets.
+  const SOUND_PROFILES = {
+    v8:    { wave: 'sawtooth', baseFreq: 50,  freqSpan: 190, gainBase: 0.03, gainSpan: 0.13 },
+    v10:   { wave: 'sawtooth', baseFreq: 110, freqSpan: 520, gainBase: 0.02, gainSpan: 0.11 },
+    ev:    { wave: 'sine',     baseFreq: 180, freqSpan: 900, gainBase: 0.01, gainSpan: 0.09 },
+    turbo: { wave: 'square',   baseFreq: 60,  freqSpan: 240, gainBase: 0.02, gainSpan: 0.12 },
+  };
+  let soundProfile = SOUND_PROFILES.v8;
+
+  $('sound-profile').addEventListener('change', (e) => {
+    soundProfile = SOUND_PROFILES[e.target.value] || SOUND_PROFILES.v8;
+    if (engineOsc) engineOsc.type = soundProfile.wave;
+  });
+
   function updateEngineSound(throttleMagnitude) {
     if (!soundEnabled || !engineOsc) return;
     const speedFactor = physicsEnabled ? physEngine.state.virtualSpeed : 0;
     const level = Math.max(Math.abs(throttleMagnitude), speedFactor);
-    const freq = 55 + level * 220;
-    const gain = level > 0.01 ? 0.02 + level * 0.12 : 0;
+    const p = soundProfile;
+    const freq = p.baseFreq + level * p.freqSpan;
+    const gain = level > 0.01 ? p.gainBase + level * p.gainSpan : 0;
     const t = audioCtx.currentTime;
     engineOsc.frequency.setTargetAtTime(freq, t, 0.05);
     engineGain.gain.setTargetAtTime(gain, t, 0.05);
+  }
+
+  // Short synthesized impact: a burst of white noise through a fast decay envelope.
+  function playCrashSound() {
+    if (!soundEnabled || !audioCtx) return;
+    const dur = 0.45;
+    const buffer = audioCtx.createBuffer(1, Math.floor(audioCtx.sampleRate * dur), audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < data.length; i++) {
+      data[i] = (Math.random() * 2 - 1) * (1 - i / data.length); // noise, decaying
+    }
+    const src = audioCtx.createBufferSource();
+    src.buffer = buffer;
+    const g = audioCtx.createGain();
+    const t = audioCtx.currentTime;
+    g.gain.setValueAtTime(0.5, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    const lp = audioCtx.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.setValueAtTime(1200, t);
+    src.connect(lp).connect(g).connect(audioCtx.destination);
+    src.start();
+    src.stop(t + dur);
+  }
+
+  let hudToastTimer = null;
+  function showHudToast(msg) {
+    const el = $('hud-toast');
+    if (!el) return;
+    el.textContent = msg;
+    clearTimeout(hudToastTimer);
+    if (msg) hudToastTimer = setTimeout(() => { el.textContent = ''; }, 1500);
   }
 
   refreshTrackPreview();
@@ -2319,17 +2535,23 @@
   // Standard Gamepad API mapping (Xbox-style): axes[0]=left-stick X, buttons[6]=LT,
   // buttons[7]=RT (both report analog .value 0..1 even though they're "buttons"),
   // buttons[1]=B (right face button), buttons[2]=X (left face button).
+  // Face-button indices are the same on Xbox and DualSense in the standard mapping;
+  // only the printed names differ: buttons[0]=A/Cross, [1]=B/Circle, [2]=X/Square,
+  // [3]=Y/Triangle. D-pad is buttons[12..15] (up/down/left/right).
   const GAMEPAD_BINDINGS_KEY = 'carrera-hybrid-gamepad-bindings';
   const DEFAULT_BINDINGS = {
-    throttle: { type: 'button', index: 7, label: 'Rechter Trigger (RT)' },
-    brake: { type: 'button', index: 6, label: 'Linker Trigger (LT)' },
+    throttle: { type: 'button', index: 7, label: 'Rechter Trigger (RT / R2)' },
+    brake: { type: 'button', index: 6, label: 'Linker Trigger (LT / L2)' },
     steering: { type: 'axis', index: 0, invert: false, label: 'Linker Stick (X-Achse)' },
-    downshift: { type: 'button', index: 2, label: 'X' },
-    upshift: { type: 'button', index: 1, label: 'B' },
+    downshift: { type: 'button', index: 2, label: 'X / Quadrat' },
+    upshift: { type: 'button', index: 1, label: 'B / Kreis' },
+    handbrake: { type: 'button', index: 0, label: 'A / Cross' },
+    pitstop: { type: 'button', index: 3, label: 'Y / Dreieck' },
   };
   const BIND_ACTION_LABELS = {
     throttle: 'Gas', brake: 'Bremse', steering: 'Lenkung',
     downshift: 'Runterschalten', upshift: 'Hochschalten',
+    handbrake: 'Handbremse', pitstop: 'Boxenstopp',
   };
 
   function loadBindings() {
@@ -2381,14 +2603,23 @@
   const BUTTON_CAPTURE_THRESHOLD = 0.5;
   const DEADZONE = 0.12;
 
-  function applyDeadzone(v) { return Math.abs(v) < DEADZONE ? 0 : v; }
+  const TRIGGER_DEADZONE = 0.06; // a slightly drifting trigger shouldn't creep the car
+
+  // Rescale rather than hard-cut, so leaving the deadzone eases in from 0 instead of
+  // jumping straight to 0.12 — the hard cut made small steering corrections feel notchy.
+  function applyDeadzone(v, dz = DEADZONE) {
+    const mag = Math.abs(v);
+    if (mag < dz) return 0;
+    return Math.sign(v) * ((mag - dz) / (1 - dz));
+  }
 
   function tryCaptureBinding(pad) {
     if (!listeningFor) return;
     const action = listeningFor;
     for (let i = 0; i < pad.axes.length; i++) {
       if (Math.abs(pad.axes[i]) > AXIS_CAPTURE_THRESHOLD) {
-        bindings[action] = { type: 'axis', index: i, invert: pad.axes[i] < 0 };
+        const invert = pad.axes[i] < 0;
+        bindings[action] = { type: 'axis', index: i, invert, label: `Achse ${i}${invert ? ' (invertiert)' : ''}` };
         saveBindings();
         listeningFor = null;
         renderBindTable();
@@ -2399,7 +2630,7 @@
     for (let i = 0; i < pad.buttons.length; i++) {
       const val = pad.buttons[i].value ?? (pad.buttons[i].pressed ? 1 : 0);
       if (val > BUTTON_CAPTURE_THRESHOLD) {
-        bindings[action] = { type: 'button', index: i };
+        bindings[action] = { type: 'button', index: i, label: `Knopf ${i}` };
         saveBindings();
         listeningFor = null;
         renderBindTable();
@@ -2420,12 +2651,22 @@
     return btn.value ?? (btn.pressed ? 1 : 0);
   }
 
+  // Guard against two concurrent poll loops: the connect event and the already-connected
+  // fallback below could both start one, which double-polled and doubled the send rate.
+  // Uses a timer rather than requestAnimationFrame because rAF is suspended whenever the
+  // page isn't composited — controller input must not silently die when you look away.
+  let padLoopTimer = null;
+  function startPadLoop() {
+    if (padLoopTimer) return;
+    padLoopTimer = setInterval(pollGamepad, 16);
+  }
+
   window.addEventListener('gamepadconnected', (e) => {
     padConnected = true;
     $('pad-dot').classList.add('on');
     $('pad-status-text').textContent = `Verbunden: ${e.gamepad.id}`;
     log(`Gamepad verbunden: ${e.gamepad.id}`, 'info');
-    requestAnimationFrame(pollGamepad);
+    startPadLoop();
   });
   window.addEventListener('gamepaddisconnected', () => {
     const pads = navigator.getGamepads ? navigator.getGamepads() : [];
@@ -2436,29 +2677,80 @@
     }
   });
 
+  // D-pad live tuning (standard mapping): up/down = acceleration factor,
+  // left/right = steering damping (left = direct, right = sluggish).
+  const DPAD = { up: 12, down: 13, left: 14, right: 15 };
+  const prevDpad = { up: false, down: false, left: false, right: false };
+  let prevHandbrake = false, prevPitstop = false;
+
+  function padButtonPressed(pad, index) {
+    const btn = pad.buttons[index];
+    if (!btn) return false;
+    return (btn.value ?? (btn.pressed ? 1 : 0)) > BUTTON_CAPTURE_THRESHOLD;
+  }
+
+  function nudgeAccel(delta) {
+    const input = $('phys-accel');
+    const v = Math.max(0.2, Math.min(1.2, parseFloat(input.value) + delta));
+    input.value = v;
+    $('phys-accel-val').textContent = v.toFixed(2);
+    physEngine.config.accelerationFactor = v;
+    showHudToast(`Beschleunigung ${v.toFixed(2)}`);
+  }
+
+  function nudgeDamping(delta) {
+    // Mirror what the Reifengrip slider does: write the value into the advanced slider
+    // and its readout directly (that slider's handler is not re-dispatched).
+    const input = $('phys-damping');
+    const v = Math.max(0.05, Math.min(0.6, parseFloat(input.value) + delta));
+    input.value = v;
+    $('phys-damping-val').textContent = v.toFixed(2);
+    physEngine.config.steeringDamping = v;
+    showHudToast(`Lenkdämpfung ${v.toFixed(2)}`);
+  }
+
   function pollGamepad() {
     const pads = navigator.getGamepads ? navigator.getGamepads() : [];
     const pad = Array.from(pads).find(p => p);
-    if (!pad) { padConnected = false; return; }
+    if (!pad) {
+      padConnected = false;
+      clearInterval(padLoopTimer);
+      padLoopTimer = null;
+      return;
+    }
     padConnected = true;
 
     if (listeningFor) {
       tryCaptureBinding(pad);
     } else {
-      const throttleRaw = Math.max(0, readBindingValue(pad, bindings.throttle));
-      const brakeRaw = Math.max(0, readBindingValue(pad, bindings.brake));
+      const throttleRaw = applyDeadzone(Math.max(0, readBindingValue(pad, bindings.throttle)), TRIGGER_DEADZONE);
+      const brakeRaw = applyDeadzone(Math.max(0, readBindingValue(pad, bindings.brake)), TRIGGER_DEADZONE);
       const steerRaw = applyDeadzone(readBindingValue(pad, bindings.steering));
 
       $('pad-live-throttle').textContent = throttleRaw.toFixed(2);
       $('pad-live-brake').textContent = brakeRaw.toFixed(2);
       $('pad-live-steer').textContent = steerRaw.toFixed(2);
 
-      if (document.getElementById('tab-control').classList.contains('active') ||
-          document.getElementById('tab-controller').classList.contains('active')) {
-        setStick(steerRaw, 0);
-        setThrottle(throttleRaw - brakeRaw);
-        if (!physicsEnabled) sendControlValue();
+      // No tab gate any more, and setThrottleLogical (not setThrottle) so that pressing
+      // the throttle actually goes FORWARD — setThrottle takes screen-space and was
+      // silently inverting the gamepad's logical value.
+      setStick(steerRaw, 0);
+      setThrottleLogical(throttleRaw - brakeRaw);
+
+      // Handbrake: force throttle to zero AND kill the simulated momentum, so the car
+      // doesn't roll on from the physics engine's own virtualSpeed after release.
+      const handbrakeNow = readBindingValue(pad, bindings.handbrake) > BUTTON_CAPTURE_THRESHOLD;
+      if (handbrakeNow) {
+        physEngine.state.virtualSpeed = 0;
+        physOutThrottle = 0;
       }
+      if (handbrakeNow !== prevHandbrake) showHudToast(handbrakeNow ? 'Handbremse' : '');
+      handbrakeActive = handbrakeNow;
+      prevHandbrake = handbrakeNow;
+
+      const pitstopNow = readBindingValue(pad, bindings.pitstop) > BUTTON_CAPTURE_THRESHOLD;
+      if (pitstopNow && !prevPitstop) $('btn-pitstop').click();
+      prevPitstop = pitstopNow;
 
       const downshiftNow = readBindingValue(pad, bindings.downshift) > BUTTON_CAPTURE_THRESHOLD;
       const upshiftNow = readBindingValue(pad, bindings.upshift) > BUTTON_CAPTURE_THRESHOLD;
@@ -2470,14 +2762,27 @@
       }
       prevDownshift = downshiftNow;
       prevUpshift = upshiftNow;
+
+      const dUp = padButtonPressed(pad, DPAD.up), dDown = padButtonPressed(pad, DPAD.down);
+      const dLeft = padButtonPressed(pad, DPAD.left), dRight = padButtonPressed(pad, DPAD.right);
+      if (dUp && !prevDpad.up) nudgeAccel(+0.05);
+      if (dDown && !prevDpad.down) nudgeAccel(-0.05);
+      if (dLeft && !prevDpad.left) nudgeDamping(-0.03);
+      if (dRight && !prevDpad.right) nudgeDamping(+0.03);
+      prevDpad.up = dUp; prevDpad.down = dDown; prevDpad.left = dLeft; prevDpad.right = dRight;
     }
-    requestAnimationFrame(pollGamepad);
+    // Keep prev-flags fresh even while rebinding, otherwise they go stale and the first
+    // press after a rebind is swallowed (or fires twice).
+    if (listeningFor) {
+      prevDownshift = readBindingValue(pad, bindings.downshift) > BUTTON_CAPTURE_THRESHOLD;
+      prevUpshift = readBindingValue(pad, bindings.upshift) > BUTTON_CAPTURE_THRESHOLD;
+    }
   }
 
   // Some browsers/pads report as already-connected on page load without firing the event.
   if (navigator.getGamepads && Array.from(navigator.getGamepads()).some(p => p)) {
     padConnected = true;
-    requestAnimationFrame(pollGamepad);
+    startPadLoop();
   }
 })();
 </script>
