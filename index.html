@@ -539,7 +539,7 @@
     <div class="card hud-card">
       <h2>Cockpit</h2>
       <div class="hud-row">
-        <div class="hud-stat"><span class="hud-value" id="dash-speed">0%</span><span class="hud-label">Speed (geschätzt)</span></div>
+        <div class="hud-stat"><span class="hud-value" id="dash-speed">0.0</span><span class="hud-label">km/h (simuliert)</span></div>
         <div class="hud-stat"><span class="hud-value" id="dash-gear">1</span><span class="hud-label">Gang</span></div>
         <div class="hud-stat"><span class="hud-value" id="dash-abs">-</span><span class="hud-label">ABS</span></div>
         <div class="hud-stat">
@@ -742,15 +742,40 @@
           <span class="muted" id="max-steer-deg-val">60°</span>
         </div>
       </div>
-      <div class="row" style="margin-top:14px; align-items:center">
-        <label style="display:flex; align-items:center; gap:6px">
+      <h3 style="margin:22px 0 8px 0; font-size:14px; border-top:1px solid var(--border); padding-top:14px">
+        Getriebe &amp; Fahrleistung
+      </h3>
+      <div class="row" style="align-items:center; gap:14px">
+        <label style="display:flex; align-items:center; gap:8px; font-weight:600">
           <input type="checkbox" id="setting-autoshift" checked> Automatikgetriebe
         </label>
         <span class="muted" style="font-size:11.5px">
-          Aus = manuell schalten (Quadrat/X runter, Kreis/B hoch). Der Gang ändert nur, wie
-          schnell das Gas angenommen wird &mdash; nie, wie viel Leistung du bekommst.
+          Aus = manuell schalten (Quadrat/X runter, Kreis/B hoch). Ein höherer Gang zieht
+          schwächer an, erreicht aber <b>dieselbe</b> Höchstgeschwindigkeit &mdash; nur später.
         </span>
       </div>
+      <div class="row" style="margin-top:12px">
+        <div>
+          <label class="small">Höchstgeschwindigkeit (km/h)</label>
+          <input type="range" id="setting-topspeed-kmh" min="2" max="8" step="0.5" value="4">
+          <span class="muted" id="setting-topspeed-kmh-val">4.0</span>
+        </div>
+        <div>
+          <label class="small">0 &rarr; Vollgas in (s)</label>
+          <input type="range" id="setting-zero-to-top" min="1" max="8" step="0.5" value="3">
+          <span class="muted" id="setting-zero-to-top-val">3.0</span>
+        </div>
+        <div>
+          <label class="small">Ausrollen (0 = rollt lange, 2 = bremst stark)</label>
+          <input type="range" id="setting-coast-drag" min="0.1" max="2" step="0.05" value="0.55">
+          <span class="muted" id="setting-coast-drag-val">0.55</span>
+        </div>
+      </div>
+      <p class="muted" style="font-size:11.5px">
+        Die km/h sind eine <b>Annahme</b>: das Auto meldet keine Geschwindigkeit zurück. Die App
+        simuliert die Beschleunigung und leitet daraus den Gaswert ab &mdash; deshalb zieht das Auto
+        über die eingestellte Zeit hoch, statt sofort auf Vollgas zu springen.
+      </p>
       <div class="row" style="margin-top:14px">
         <div>
           <label class="small">Tankverbrauch (%/s bei Vollgas)</label>
@@ -775,9 +800,9 @@
             <span class="muted" id="phys-damping-val">0.18</span>
           </div>
           <div>
-            <label class="small">Beschleunigungsfaktor</label>
-            <input type="range" id="phys-accel" min="0.2" max="1.2" step="0.02" value="0.6">
-            <span class="muted" id="phys-accel-val">0.60</span>
+            <label class="small">Beschleunigungsfaktor (Feinabstimmung, 1.0 = eingestellte Zeit)</label>
+            <input type="range" id="phys-accel" min="0.4" max="2.0" step="0.05" value="1">
+            <span class="muted" id="phys-accel-val">1.00</span>
           </div>
           <div>
             <label class="small">Trail-Braking-Grip-Bonus</label>
@@ -1419,8 +1444,9 @@
     setThrottle(0);
     // Zero the simulated momentum too, otherwise the physics engine keeps feeding
     // throttle from its own virtualSpeed after the input is released.
+    physEngine.state.speedKmh = 0;
     physEngine.state.virtualSpeed = 0;
-    physEngine.state.commanded = 0; // also clear the slew-rate state, or it ramps back up
+    physEngine.state.commanded = 0;
     physOutSteer = 0;
     physOutThrottle = 0;
     sendControlValue(0, 0);
@@ -1443,27 +1469,40 @@
   class CarreraPhysicsEngine {
     constructor() {
       this.config = {
-        accelerationFactor: 0.6,
+        accelerationFactor: 1.0, // fine-tune multiplier on top of zeroToTopS
         steeringDamping: 0.18,
         speedSteerReduction: 0.5, // up to 50% less steering angle at max virtual speed
         trailBrakingGripBonus: 1.1,
-        drag: 0.5,        // how fast the simulated speed bleeds off when coasting
-        responseScale: 5, // turns a gear's acc/brake figure into units-per-second
         autoShift: true,
-        // acc/brake are RESPONSE RATES (how quickly the pedal request is followed),
-        // deliberately NOT ceilings — see the long comment in update() for why.
+
+        // Anchored to real-world numbers instead of abstract 0..1 units, so the feel can
+        // be reasoned about: the car tops out around 4 km/h and should take about 3s to
+        // get there. Speed is simulated in km/h and the throttle byte is derived from it
+        // (see update()), which is what stops the car slamming to full power instantly.
+        topSpeedKmh: 4.0,
+        zeroToTopS: 3.0,
+        coastDragPerS: 0.55,   // fraction of current speed shed per second when coasting
+        brakeDecelKmhPerS: 6,  // how hard the brake pulls speed down
+        minMoveThrottle: 0.16, // smallest byte that actually breaks the car away from rest
+        shiftDragFactor: 0.25, // drag during a shift: a slight lull, not a full coast-down
+        accelCalibration: 1,   // solved for in calibrateAccel(), see there
+
+        // A gear is a speed band (as a fraction of top speed) plus how much pull it has.
+        // Low gears pull hard over a narrow band, tall gears pull gently over a wide one.
         gears: [
-          { ratio: 0.20, acc: 1.6, brake: 1.6 },
-          { ratio: 0.40, acc: 1.3, brake: 1.4 },
-          { ratio: 0.60, acc: 1.0, brake: 1.2 },
-          { ratio: 0.80, acc: 0.8, brake: 1.0 },
-          { ratio: 1.00, acc: 0.6, brake: 0.9 },
+          { topFrac: 0.20, pull: 2.05 },
+          { topFrac: 0.40, pull: 1.55 },
+          { topFrac: 0.62, pull: 1.15 },
+          { topFrac: 0.82, pull: 0.88 },
+          { topFrac: 1.00, pull: 0.70 },
         ],
-        shiftShockMs: 150,
+        shiftMs: 180,
       };
       this.state = {
-        virtualSpeed: 0,
+        speedKmh: 0,
+        virtualSpeed: 0, // speedKmh normalised to 0..1, kept for HUD/sound/steering
         currentGear: 0,
+        rpmFrac: 0,
         commanded: 0,
         dampedSteering: 0,
         pitch: 0,
@@ -1472,65 +1511,79 @@
         lastAbsRumble: 0,
       };
       this.outputs = { motorPWM: 0, servoAngle: 0, lights: { head: false, brake: false } };
+      this.calibrateAccel();
     }
 
     update(inputs, dt) {
-      const gearCfg = this.config.gears[this.state.currentGear];
+      const cfg = this.config, st = this.state;
+      const gearCfg = cfg.gears[st.currentGear];
       let isBraking = false;
-      this.state.absActive = false;
+      st.absActive = false;
 
-      // What we ask the CAR for. This must stay a faithful driver request, because the
-      // car's own firmware does all the real driving dynamics onboard — our byte is a
-      // pedal position, not a motor PWM. Gears therefore change how fast that request
-      // RAMPS, never how much throttle the driver can ultimately get.
-      // (The previous model multiplied the ceiling by a per-gear factor, so top gear
-      // capped the car at 20% power and every upshift read as the engine cutting out —
-      // that, plus a hard power cut during each shift, was the "stutter + undrivable".)
-      let requested;
+      // Speed is simulated in real km/h, and the throttle byte is DERIVED from it rather
+      // than being the driver's pedal position. That is the key point: the car reaches its
+      // top speed almost instantly if you hand it a full-throttle byte, so sending the raw
+      // pedal made it slam to 100% at once. Ramping a simulated speed and sending
+      // speed/topSpeed instead is what produces a real 0-to-top pull over a few seconds.
+      const accelScale = (cfg.topSpeedKmh / cfg.zeroToTopS) * cfg.accelerationFactor * cfg.accelCalibration;
+
+      // Position within this gear's speed band — the rev counter.
+      const bandBottom = st.currentGear === 0 ? 0 : cfg.gears[st.currentGear - 1].topFrac * cfg.topSpeedKmh;
+      const bandTop = gearCfg.topFrac * cfg.topSpeedKmh;
+      st.rpmFrac = bandTop > bandBottom
+        ? Math.max(0, Math.min(1.2, (st.speedKmh - bandBottom) / (bandTop - bandBottom)))
+        : 0;
+      // Torque curve: soft just off idle, strongest mid-band, tailing off near the limiter.
+      const torque = 0.62 + 0.38 * Math.sin(Math.PI * Math.min(1, st.rpmFrac));
+
+      let accel = 0;
       if (inputs.brake > 0) {
         isBraking = true;
-        requested = -inputs.brake;
-        if (inputs.brake > 0.8 && this.state.virtualSpeed > 0.15) this.state.absActive = true;
+        accel = -cfg.brakeDecelKmhPerS * inputs.brake;
+        if (inputs.brake > 0.8 && st.speedKmh > cfg.topSpeedKmh * 0.15) st.absActive = true;
+      } else if (inputs.throttle > 0) {
+        if (st.isShifting) {
+          // Only a slight lull while the gear swaps. Applying the full coast drag here
+          // made the car visibly LOSE speed at every upshift.
+          accel = -st.speedKmh * cfg.coastDragPerS * cfg.shiftDragFactor;
+        } else {
+          // Taller gears pull less hard — but only on ACCELERATION, never on top speed.
+          // Every gear still reaches the same top speed; a taller one just takes longer.
+          accel = inputs.throttle * gearCfg.pull * torque * accelScale;
+        }
       } else {
-        requested = inputs.throttle; // coasting sends 0 — never an unrequested reverse
+        accel = -st.speedKmh * cfg.coastDragPerS; // lift off and it rolls out
       }
 
-      // Slew-rate limit toward the request: this IS the engine feel. A shift softens the
-      // ramp briefly rather than chopping power to zero, since a hard cut is literally a
-      // stutter. The floor keeps even the tallest gear responsive.
-      let rate = (isBraking ? gearCfg.brake : gearCfg.acc) * this.config.responseScale;
-      if (this.state.isShifting) rate *= 0.4;
-      const maxStep = Math.max(0.6, rate) * dt;
-      const delta = requested - this.state.commanded;
-      this.state.commanded += Math.max(-maxStep, Math.min(maxStep, delta));
+      st.speedKmh = Math.max(0, Math.min(cfg.topSpeedKmh, st.speedKmh + accel * dt));
+      st.virtualSpeed = st.speedKmh / cfg.topSpeedKmh;
 
-      let output = this.state.commanded;
-      if (this.state.absActive) {
-        // A shallow ripple you can feel, NOT the old chop between -20% and -100% every
-        // 30ms — that was an intentional stutter that also made the steering flicker via
-        // the trail-braking bonus below.
-        output *= 0.94 + 0.06 * Math.sin(Date.now() / 40);
-        const now = Date.now();
-        if (now - this.state.lastAbsRumble > 120) { this.state.lastAbsRumble = now; rumbleHaptic([12]); }
+      // The byte we actually send: the throttle that should hold the speed we've reached.
+      let output;
+      if (isBraking) {
+        output = -inputs.brake;
+        if (st.absActive) {
+          // A shallow ripple you can feel, NOT a chop between -20% and -100% every 30ms
+          // (that was an intentional stutter, and it flickered the steering too via the
+          // trail-braking bonus below).
+          output *= 0.94 + 0.06 * Math.sin(Date.now() / 40);
+          const now = Date.now();
+          if (now - st.lastAbsRumble > 120) { st.lastAbsRumble = now; rumbleHaptic([12]); }
+        }
+      } else {
+        output = st.virtualSpeed;
+        // A real car needs a minimum shove to break away from standstill; without this
+        // the first moments of a launch send a byte too small to move the car at all.
+        if (inputs.throttle > 0.02) output = Math.max(output, cfg.minMoveThrottle * inputs.throttle);
       }
-
-      // Simulated speed, purely for feel/HUD/sound: integrate the commanded pedal, with a
-      // drag term so it actually bleeds off when coasting.
-      const drive = Math.max(0, this.state.commanded);
-      const braking = Math.max(0, -this.state.commanded);
-      this.state.virtualSpeed += (drive * this.config.accelerationFactor
-                                  - braking * this.config.accelerationFactor * 1.5
-                                  - this.state.virtualSpeed * this.config.drag) * dt;
-      this.state.virtualSpeed = Math.max(0, Math.min(this.state.virtualSpeed, 1));
-      this.state.pitch = this.state.commanded;
+      st.commanded = output;
+      st.pitch = output;
 
       // auto gear shifting with hysteresis (skipped entirely in manual mode)
-      if (this.config.autoShift && !this.state.isShifting) {
-        if (this.state.currentGear < this.config.gears.length - 1 &&
-            this.state.virtualSpeed >= gearCfg.ratio * 0.97 && inputs.throttle > 0.05) {
+      if (cfg.autoShift && !st.isShifting) {
+        if (st.currentGear < cfg.gears.length - 1 && st.rpmFrac >= 0.98 && inputs.throttle > 0.05) {
           this.triggerShift(1);
-        } else if (this.state.currentGear > 0 &&
-                   this.state.virtualSpeed < this.config.gears[this.state.currentGear - 1].ratio * 0.55) {
+        } else if (st.currentGear > 0 && st.speedKmh < bandBottom * 0.85) {
           this.triggerShift(-1);
         }
       }
@@ -1557,13 +1610,47 @@
       return this.outputs;
     }
 
+    // Solves for the accel scale that makes a full-throttle launch actually take
+    // zeroToTopS. Doing this numerically rather than by hand-tuned constants means the
+    // slider stays honest when the gear pulls, the shift time, or the top speed change —
+    // the fixed dead-time of the shifts is part of the budget, so it can't be derived in
+    // closed form. Converges in a couple of iterations.
+    calibrateAccel() {
+      const cfg = this.config;
+      const launchTime = (scale) => {
+        const dt = 0.01;
+        let v = 0, g = 0, t = 0, shiftUntil = -1;
+        while (v < cfg.topSpeedKmh * 0.999 && t < 60) {
+          const bottom = g === 0 ? 0 : cfg.gears[g - 1].topFrac * cfg.topSpeedKmh;
+          const top = cfg.gears[g].topFrac * cfg.topSpeedKmh;
+          const rpm = top > bottom ? Math.max(0, Math.min(1, (v - bottom) / (top - bottom))) : 0;
+          if (t < shiftUntil) {
+            v -= v * cfg.coastDragPerS * cfg.shiftDragFactor * dt;
+          } else {
+            const torque = 0.62 + 0.38 * Math.sin(Math.PI * rpm);
+            v += cfg.gears[g].pull * torque * (cfg.topSpeedKmh / cfg.zeroToTopS) * scale * dt;
+            if (rpm >= 0.98 && g < cfg.gears.length - 1) { g++; shiftUntil = t + cfg.shiftMs / 1000; }
+          }
+          t += dt;
+        }
+        return t;
+      };
+      let scale = 1;
+      for (let i = 0; i < 8; i++) {
+        const t = launchTime(scale);
+        if (!isFinite(t) || t <= 0) break;
+        scale *= t / cfg.zeroToTopS;
+      }
+      cfg.accelCalibration = Math.max(0.05, Math.min(20, scale));
+    }
+
     triggerShift(direction) {
       const next = this.state.currentGear + direction;
       if (next < 0 || next >= this.config.gears.length) return;
       this.state.isShifting = true;
       this.state.currentGear = next;
       rumbleHaptic([30, 20, 50]);
-      setTimeout(() => { this.state.isShifting = false; }, this.config.shiftShockMs);
+      setTimeout(() => { this.state.isShifting = false; }, this.config.shiftMs);
     }
   }
 
@@ -1585,6 +1672,25 @@
   $('setting-autoshift').addEventListener('change', (e) => {
     physEngine.config.autoShift = e.target.checked;
     showHudToast(e.target.checked ? 'Automatikgetriebe' : 'Manuelles Getriebe');
+  });
+
+  // All three feed the launch model, so each one has to re-solve the calibration.
+  $('setting-topspeed-kmh').addEventListener('input', (e) => {
+    physEngine.config.topSpeedKmh = parseFloat(e.target.value);
+    $('setting-topspeed-kmh-val').textContent = physEngine.config.topSpeedKmh.toFixed(1);
+    physEngine.calibrateAccel();
+  });
+
+  $('setting-zero-to-top').addEventListener('input', (e) => {
+    physEngine.config.zeroToTopS = parseFloat(e.target.value);
+    $('setting-zero-to-top-val').textContent = physEngine.config.zeroToTopS.toFixed(1);
+    physEngine.calibrateAccel();
+  });
+
+  $('setting-coast-drag').addEventListener('input', (e) => {
+    physEngine.config.coastDragPerS = parseFloat(e.target.value);
+    $('setting-coast-drag-val').textContent = physEngine.config.coastDragPerS.toFixed(2);
+    physEngine.calibrateAccel();
   });
 
   $('setting-fuel-drain').addEventListener('input', (e) => {
@@ -1619,7 +1725,7 @@
   // ---- Settings sliders matching the official app's Geschwindigkeit/Reifengrip/
   // Bremswirkung concepts, each backed by a real existing lever (no invented settings) ----
   let topSpeedScale = 1;
-  const BASE_GEAR_BRAKE = physEngine.config.gears.map(g => g.brake);
+  const BASE_BRAKE_DECEL = physEngine.config.brakeDecelKmhPerS;
 
   $('setting-topspeed').addEventListener('input', (e) => {
     topSpeedScale = parseFloat(e.target.value);
@@ -1638,7 +1744,7 @@
   $('setting-brakepower').addEventListener('input', (e) => {
     const mult = parseFloat(e.target.value);
     $('setting-brakepower-val').textContent = mult.toFixed(2);
-    physEngine.config.gears.forEach((g, i) => { g.brake = BASE_GEAR_BRAKE[i] * mult; });
+    physEngine.config.brakeDecelKmhPerS = BASE_BRAKE_DECEL * mult;
   });
 
   // ---- Constant-power-over-battery-life compensation ----
@@ -1667,8 +1773,9 @@
   $('setting-invert-throttle').addEventListener('change', (e) => { invertThrottle = e.target.checked; });
 
   function updateDashboard(out) {
-    $('dash-gear').textContent = (physEngine.state.currentGear + 1).toString();
-    $('dash-speed').textContent = Math.round(physEngine.state.virtualSpeed * 100) + '%';
+    const st = physEngine.state;
+    $('dash-gear').textContent = (st.currentGear + 1) + (physEngine.config.autoShift ? '' : 'M');
+    $('dash-speed').textContent = st.speedKmh.toFixed(1);
     $('dash-abs').textContent = physEngine.state.absActive ? 'AKTIV' : '-';
     $('dash-head').style.background = out.lights.head ? '#f5e642' : '#444';
     $('dash-brake').style.background = out.lights.brake ? 'var(--bad)' : '#444';
@@ -2636,6 +2743,9 @@
 
   function registerCrash() {
     damage = Math.min(100, damage + 100 / crashesToTotal);
+    // An impact scrubs off most of the speed at once — the one case where the car should
+    // NOT roll out gently. Everything else decays via the coast drag in the engine.
+    physEngine.state.speedKmh *= 0.3;
     updateDamageFuelUI();
     playCrashSound();
     rumbleHaptic([60, 30, 90]);
@@ -3075,8 +3185,9 @@
       // doesn't roll on from the physics engine's own virtualSpeed after release.
       const handbrakeNow = readBindingValue(pad, bindings.handbrake) > BUTTON_CAPTURE_THRESHOLD;
       if (handbrakeNow) {
+        physEngine.state.speedKmh = 0; // user spec: handbrake kills the momentum outright
         physEngine.state.virtualSpeed = 0;
-        physEngine.state.commanded = 0; // clear slew-rate state too, else it ramps back up
+        physEngine.state.commanded = 0;
         physOutThrottle = 0;
       }
       if (handbrakeNow !== prevHandbrake) showHudToast(handbrakeNow ? 'Handbremse' : '');
