@@ -547,6 +547,7 @@
           <span class="hud-label">Licht / Bremse</span>
         </div>
         <div class="hud-stat"><span class="hud-value" id="dash-battery">-</span><span class="hud-label">Akku</span></div>
+        <div class="hud-stat"><span class="hud-value" id="dash-pit">-</span><span class="hud-label">Box</span></div>
         <label class="hud-toggle"><input type="checkbox" id="dash-head-toggle"> Scheinwerfer</label>
       </div>
       <div id="hud-toast" style="margin-top:10px; color:#ffcf6e; font-family:monospace; font-size:13px; min-height:18px"></div>
@@ -870,6 +871,33 @@
         <button id="track-scan-stop" disabled>Scan stoppen</button>
         <span class="muted" id="track-scan-status">bereit</span>
       </div>
+    </div>
+
+    <div class="card">
+      <h2>Boxengasse</h2>
+      <p class="muted">
+        Fährt das Auto über das Boxen-Muster, greift ein Tempolimit von 40&nbsp;%. Bleibt es dann
+        stehen, läuft der Service &mdash; je länger du stehst, desto mehr Sprit und Reparatur.
+        Beim Losfahren ist das Limit wieder weg.
+      </p>
+      <div class="row" style="align-items:center; gap:16px">
+        <label style="display:flex; align-items:center; gap:6px">
+          <input type="checkbox" id="pit-enable" checked> Boxengasse aktiv
+        </label>
+        <div>
+          <label class="small">Auslöse-Code (Byte 12)</label>
+          <input type="text" id="pit-marker-code" value="0x08" style="width:80px; font-family:monospace">
+        </div>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <span class="muted">Zuletzt überfahrenes Muster: <b id="tile-probe" style="font-family:monospace">-</b></span>
+      </div>
+      <p class="muted" style="font-size:11.5px">
+        <b>Muster-Sonde:</b> fahr über ein beliebiges ausgedrucktes Muster &mdash; hier steht sofort,
+        welchen Code das Auto meldet. Sicher bekannt sind nur <code>0x01</code> Start/Ziel,
+        <code>0x02</code> Gerade und <code>0x04</code> Rechtskurve; alles andere ist unbestätigt.
+        Trag hier den Code ein, den dein gedrucktes Boxen-Muster tatsächlich auslöst.
+      </p>
     </div>
 
     <div class="card">
@@ -1320,6 +1348,7 @@
       if (padLoopRunning) schedulePadTick(); // self-heal if the frame chain ever broke
     }
     physicsStep();
+    pitLaneTick();
     let steer = physicsEnabled ? physOutSteer : steerX;
     let throttle = physicsEnabled ? physOutThrottle : throttleY;
     if (handbrakeActive) throttle = 0;
@@ -1486,6 +1515,7 @@
         minMoveThrottle: 0.16, // smallest byte that actually breaks the car away from rest
         shiftDragFactor: 0.25, // drag during a shift: a slight lull, not a full coast-down
         accelCalibration: 1,   // solved for in calibrateAccel(), see there
+        speedLimitFactor: 1,   // pit lane sets this to 0.4; caps speed, so the byte caps too
 
         // A gear is a speed band (as a fraction of top speed) plus how much pull it has.
         // Low gears pull hard over a narrow band, tall gears pull gently over a wide one.
@@ -1555,7 +1585,11 @@
         accel = -st.speedKmh * cfg.coastDragPerS; // lift off and it rolls out
       }
 
-      st.speedKmh = Math.max(0, Math.min(cfg.topSpeedKmh, st.speedKmh + accel * dt));
+      // Capping the simulated SPEED (rather than the byte) is what makes the pit-lane
+      // limiter behave like a real one: the HUD, the engine note and the transmitted
+      // throttle all agree, and the car eases down to the limit instead of clipping.
+      const speedCeiling = cfg.topSpeedKmh * cfg.speedLimitFactor;
+      st.speedKmh = Math.max(0, Math.min(speedCeiling, st.speedKmh + accel * dt));
       st.virtualSpeed = st.speedKmh / cfg.topSpeedKmh;
 
       // The byte we actually send: the throttle that should hold the speed we've reached.
@@ -2486,6 +2520,7 @@
   let dashLastTileCounter = null;
   let dashLapStart = null;
   let dashLapTimes = [];
+  let lastTileCode = null;
   let freeRoamMode = false;
 
   $('dash-freeroam').addEventListener('change', (e) => {
@@ -2660,6 +2695,14 @@
     dashMinimapIndex = dashMinimapIndex === null ? 0 : dashMinimapIndex + 1;
     if (currentTrackTiles.length > 0) dashMinimapIndex = dashMinimapIndex % currentTrackTiles.length;
 
+    // Surface the raw code so an unknown printed pattern can be identified by driving
+    // over it once — this is the only way to learn a code we don't already know.
+    lastTileCode = type;
+    const probe = $('tile-probe');
+    if (probe) probe.textContent = `0x${type.toString(16).padStart(2, '0')} (${TILE_LABEL[type] || 'unbekannt'})`;
+
+    if (type === pitMarkerCode) onPitMarkerCrossed();
+
     if (type === TILE_TYPE.START) {
       const now = Date.now();
       if (dashLapStart !== null) { dashLapTimes.push(now - dashLapStart); renderLapList(); }
@@ -2705,6 +2748,98 @@
       $('race-lap-current').textContent = formatLapTime(Date.now() - raceLapStart);
     }
   }, 200);
+
+  // ---- Pit lane ----
+  // Driving over the marker sheet arms a 40% limiter. Come to a stand while limited and
+  // servicing begins; it accrues for as long as you keep still, so a longer stop buys
+  // more fuel and more repair. Drive off and the limiter lifts.
+  //
+  // The marker is identified by the tile-type byte the car reports (byte 12). We only
+  // know three of those codes for certain (01 start/finish, 02 straight, 04 right curve)
+  // and we cannot derive a NEW one from the printed pattern, so the trigger code is a
+  // setting rather than a constant — see the note in the Strecke tab.
+  let pitLaneEnabled = true;
+  let pitMarkerCode = 0x08;
+  const PIT_SPEED_FACTOR = 0.4;
+  let pitState = 'off';        // off | limited | servicing
+  let pitServiceStart = null;
+  let pitFuelGained = 0, pitDamageRepaired = 0;
+  const PIT_FUEL_PER_SEC = 22;
+  const PIT_REPAIR_PER_SEC = 18;
+  const PIT_STANDSTILL_KMH = 0.12;
+
+  function setPitState(next) {
+    if (pitState === next) return;
+    pitState = next;
+    physEngine.config.speedLimitFactor = (next === 'off') ? 1 : PIT_SPEED_FACTOR;
+    if (next === 'servicing') {
+      pitServiceStart = Date.now();
+      pitFuelGained = 0; pitDamageRepaired = 0;
+      log('Boxengasse: Service läuft — stehen bleiben für mehr Sprit und Reparatur.', 'info');
+    } else if (next === 'limited') {
+      log(`Boxengasse: Tempolimit ${Math.round(PIT_SPEED_FACTOR * 100)}% aktiv.`, 'info');
+    } else {
+      if (pitServiceStart !== null) {
+        log(`Boxenstopp beendet nach ${((Date.now() - pitServiceStart) / 1000).toFixed(1)}s: ` +
+            `+${Math.round(pitFuelGained)}% Sprit, -${Math.round(pitDamageRepaired)}% Schaden.`, 'info');
+      }
+      pitServiceStart = null;
+    }
+    updatePitUI();
+  }
+
+  function onPitMarkerCrossed() {
+    if (!pitLaneEnabled || pitState !== 'off') return;
+    setPitState('limited');
+    showHudToast('Boxengasse — Tempolimit');
+  }
+
+  // Driven from the control heartbeat so it advances at a steady rate regardless of how
+  // often the car happens to send notifications.
+  let pitLastTick = null;
+  function pitLaneTick() {
+    const now = Date.now();
+    const dt = pitLastTick ? Math.min(0.5, (now - pitLastTick) / 1000) : 0;
+    pitLastTick = now;
+    if (pitState === 'off') return;
+
+    const stopped = physEngine.state.speedKmh < PIT_STANDSTILL_KMH && Math.abs(throttleY) < 0.1;
+    if (pitState === 'limited' && stopped) { setPitState('servicing'); return; }
+
+    if (pitState === 'servicing') {
+      if (!stopped) { setPitState('off'); showHudToast('Boxengasse verlassen'); return; }
+      const addFuel = Math.min(100 - fuel, PIT_FUEL_PER_SEC * dt);
+      const fixDamage = Math.min(damage, PIT_REPAIR_PER_SEC * dt);
+      fuel += addFuel; damage -= fixDamage;
+      pitFuelGained += addFuel; pitDamageRepaired += fixDamage;
+      updateDamageFuelUI();
+      updatePitUI();
+    }
+  }
+
+  $('pit-enable').addEventListener('change', (e) => {
+    pitLaneEnabled = e.target.checked;
+    if (!pitLaneEnabled) setPitState('off');
+  });
+  $('pit-marker-code').addEventListener('change', (e) => {
+    const v = parseInt(e.target.value.trim(), e.target.value.trim().startsWith('0x') ? 16 : 10);
+    if (Number.isFinite(v) && v >= 0 && v <= 255) {
+      pitMarkerCode = v;
+      e.target.value = '0x' + v.toString(16).padStart(2, '0');
+    } else {
+      e.target.value = '0x' + pitMarkerCode.toString(16).padStart(2, '0');
+    }
+  });
+
+  function updatePitUI() {
+    const el = $('dash-pit');
+    if (!el) return;
+    if (pitState === 'off') { el.textContent = '-'; el.style.color = ''; return; }
+    el.style.color = '#ffcf6e';
+    if (pitState === 'limited') { el.textContent = 'LIMIT'; return; }
+    const secs = pitServiceStart ? ((Date.now() - pitServiceStart) / 1000).toFixed(1) : '0.0';
+    el.textContent = `${secs}s`;
+  }
 
   // ---- Simulated game layer: fuel, damage/crash detection, pit stop ----
   // None of this reflects real car telemetry: the real car has no fuel gauge and no

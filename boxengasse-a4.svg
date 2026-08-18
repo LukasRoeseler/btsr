@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="210mm" height="297mm" viewBox="0 0 210 297">
+  <!--
+    Boxengassen-Markierung, DIN A4 hochkant, 1 SVG-Einheit = 1 mm.
+    Drucken: 100 % / "Tatsächliche Größe", NICHT "an Seite anpassen" — sonst stimmen die
+    Balkenbreiten nicht mehr und der Sensor liest das Muster gar nicht.
+
+    WICHTIG, ehrlich gesagt: dass das Auto GENAU diesen Code meldet, ist nicht
+    garantiert. Die Kodierung der Muster ist nicht bekannt (siehe Antwort im Chat) —
+    dieses Blatt ist ein Kandidat, dessen Balkengrammatik sich klar von Start/Ziel
+    unterscheidet. Fahr nach dem Drucken einmal darüber und lies in der App unter
+    Strecke → Boxengasse ab, welchen Code die "Muster-Sonde" anzeigt; trag genau den
+    dann als Auslöse-Code ein. Meldet die Sonde nichts, erkennt das Auto das Muster
+    nicht — dann brauchen wir echte Musterproben, um die Kodierung zu knacken.
+
+    Fahrtrichtung: der Pfeil zeigt in die Richtung, in die das Auto fährt.
+  -->
+
+  <rect x="0" y="0" width="210" height="297" fill="#ffffff"/>
+
+  <!-- Balkenband. Balken laufen quer zur Fahrtrichtung, damit der Sensor beim
+       Überfahren eine Hell-Dunkel-Folge sieht. Breite wie beim Start/Ziel-Blatt:
+       fast über die volle Blattbreite, damit die Spur nicht danebenliegt. -->
+  <g fill="#000000">
+    <!-- Gruppe A: 3 enge Balken (Start/Ziel beginnt mit 2 — bewusst anders) -->
+    <rect x="10" y="78"  width="190" height="6"/>
+    <rect x="10" y="89"  width="190" height="6"/>
+    <rect x="10" y="100" width="190" height="6"/>
+
+    <!-- breite Lücke -->
+
+    <!-- Gruppe B: 1 einzelner Balken -->
+    <rect x="10" y="119" width="190" height="6"/>
+
+    <!-- breite Lücke -->
+
+    <!-- Gruppe C: 3 enge Balken -->
+    <rect x="10" y="138" width="190" height="6"/>
+    <rect x="10" y="149" width="190" height="6"/>
+    <rect x="10" y="160" width="190" height="6"/>
+
+    <!-- breite Lücke -->
+
+    <!-- Gruppe D: 2 enge Balken als Abschluss -->
+    <rect x="10" y="179" width="190" height="6"/>
+    <rect x="10" y="190" width="190" height="6"/>
+  </g>
+
+  <!-- Fahrtrichtungspfeil, wie auf dem Start/Ziel-Blatt unterhalb des Bandes -->
+  <g fill="#000000">
+    <path d="M 105 210 L 91 231 L 99 231 L 99 250 L 111 250 L 111 231 L 119 231 Z"/>
+  </g>
+
+  <text x="105" y="268" text-anchor="middle"
+        font-family="Arial, Helvetica, sans-serif" font-size="5" fill="#000000">
+    BOXENGASSE — 100 % drucken, nicht skalieren
+  </text>
+</svg>
