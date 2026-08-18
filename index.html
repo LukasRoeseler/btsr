@@ -542,6 +542,7 @@
       <div class="hud-row">
         <div class="hud-stat"><span class="hud-value" id="dash-speed">0.0</span><span class="hud-label">km/h (simuliert)</span></div>
         <div class="hud-stat"><span class="hud-value" id="dash-gear">1</span><span class="hud-label">Gang</span></div>
+        <div class="hud-stat"><span class="hud-value" id="dash-rpm">1500</span><span class="hud-label">1/min</span></div>
         <div class="hud-stat"><span class="hud-value" id="dash-abs">-</span><span class="hud-label">ABS</span></div>
         <div class="hud-stat">
           <span class="hud-value"><span id="dash-head" class="hud-light"></span><span id="dash-brake" class="hud-light"></span></span>
@@ -764,7 +765,7 @@
         </div>
         <div>
           <label class="small">0 &rarr; Vollgas in (s)</label>
-          <input type="range" id="setting-zero-to-top" min="1" max="8" step="0.5" value="3">
+          <input type="range" id="setting-zero-to-top" min="1.5" max="8" step="0.5" value="3">
           <span class="muted" id="setting-zero-to-top-val">3.0</span>
         </div>
         <div>
@@ -1381,8 +1382,9 @@
     // page isn't composited. If it has stalled while a pad was driving, release the
     // controls rather than letting the heartbeat re-send the last throttle value forever.
     if (padConnected && performance.now() - padLastPollTime > PAD_STALE_MS) {
-      setStick(0, 0);
-      setThrottleLogical(0);
+      // Release only the PAD's claim, and at most once. Zeroing everything here would
+      // also wipe a value the keyboard is legitimately holding.
+      releaseInput(SRC.PAD);
       handbrakeActive = false;
       if (padLoopRunning) schedulePadTick(); // self-heal if the frame chain ever broke
     }
@@ -1410,11 +1412,11 @@
     const cx = rect.left + rect.width / 2;
     let dx = (e.clientX - cx) / R;
     dx = Math.max(-1, Math.min(1, dx));
-    setStick(dx, 0);
+    applySteerInput(SRC.MOUSE, dx);
   }
   function releaseStick() {
     stickDragging = false;
-    setStick(0, 0);
+    releaseSteerInput(SRC.MOUSE);
   }
   stickOuter.addEventListener('pointerdown', (e) => { stickDragging = true; stickPointer(e); });
   window.addEventListener('pointermove', (e) => {
@@ -1429,7 +1431,14 @@
   });
   window.addEventListener('pointerup', () => { if (stickDragging) releaseStick(); });
   window.addEventListener('pointercancel', () => { if (stickDragging) releaseStick(); });
-  window.addEventListener('blur', () => { if (stickDragging) releaseStick(); });
+  window.addEventListener('blur', () => {
+    if (stickDragging) releaseStick();
+    // keyup does NOT fire when the window loses focus (alt-tab, clicking another app), so
+    // a held ArrowUp would otherwise stay in the set and command full throttle forever
+    // with the user looking somewhere else entirely.
+    keys.clear();
+    releaseInput(SRC.KEY);
+  });
 
   const throttleOuter = $('throttle-outer'), throttleInner = $('throttle-inner'), throttleFill = $('throttle-fill');
   const TR = 93; // travel range in px from center
@@ -1458,18 +1467,89 @@
     setThrottle(invertThrottle ? v : -v);
   }
 
+  // ---- Input arbitration ----
+  // Five sources (keyboard, gamepad, mouse stick/slider, phone tilt, macro playback) all
+  // write the same steerX/throttleY. Rule: a source writes only while it is actually
+  // deflected, plus EXACTLY ONCE on the falling edge back to neutral. An idle source is
+  // silent, so it cannot stomp the source the user is really holding — while a released
+  // source still reliably returns to zero.
+  //
+  // This is why the keyboard stopped working once a pad was connected: pollGamepad wrote
+  // 0/0 on every animation frame (~60Hz) while the keyboard interval writes at ~33Hz, so
+  // the idle pad simply overwrote every keypress within one frame.
+  //
+  // Arbitrated PER AXIS because some sources own only one: the mouse stick and the phone
+  // tilt steer only, the mouse slider throttles only.
+  const SRC = { KEY: 'key', PAD: 'pad', MOUSE: 'mouse', TILT: 'tilt', MACRO: 'macro' };
+  const INPUT_NEUTRAL_EPS = 0.001;
+  const steerClaim = Object.create(null);
+  const throttleClaim = Object.create(null);
+
+  function playbackLocked(source) {
+    return typeof playing !== 'undefined' && playing && source !== SRC.MACRO;
+  }
+
+  function applySteerInput(source, value) {
+    if (playbackLocked(source)) return; // playback is an explicit hands-off mode
+    const live = Math.abs(value) > INPUT_NEUTRAL_EPS;
+    if (!live && !steerClaim[source]) return;
+    steerClaim[source] = live;
+    setStick(live ? value : 0, 0);
+  }
+
+  // Takes a LOGICAL throttle (forward positive), same convention as setThrottleLogical().
+  function applyThrottleInput(source, value) {
+    if (playbackLocked(source)) return;
+    const live = Math.abs(value) > INPUT_NEUTRAL_EPS;
+    if (!live && !throttleClaim[source]) return;
+    throttleClaim[source] = live;
+    setThrottleLogical(live ? value : 0);
+  }
+
+  function releaseSteerInput(source) {
+    if (!steerClaim[source]) return;
+    steerClaim[source] = false;
+    setStick(0, 0);
+  }
+  function releaseThrottleInput(source) {
+    if (!throttleClaim[source]) return;
+    throttleClaim[source] = false;
+    setThrottleLogical(0);
+  }
+  function releaseInput(source) { releaseSteerInput(source); releaseThrottleInput(source); }
+
+  function releaseAllInputs() {
+    for (const k in steerClaim) steerClaim[k] = false;
+    for (const k in throttleClaim) throttleClaim[k] = false;
+    setStick(0, 0);
+    setThrottle(0);
+  }
+
   function throttlePointer(e) {
     const rect = throttleOuter.getBoundingClientRect();
     const cy = rect.top + rect.height / 2;
     let dy = (e.clientY - cy) / TR;
     dy = Math.max(-1, Math.min(1, dy));
-    setThrottle(dy);
+    // Convert screen-space to logical here so there is exactly one arbiter, in one
+    // coordinate convention (mirrors what setThrottleLogical does internally).
+    applyThrottleInput(SRC.MOUSE, invertThrottle ? dy : -dy);
   }
   throttleOuter.addEventListener('pointerdown', (e) => { throttleDragging = true; throttlePointer(e); });
-  window.addEventListener('pointermove', (e) => { if (throttleDragging) throttlePointer(e); });
-  window.addEventListener('pointerup', () => {
-    if (throttleDragging) { throttleDragging = false; setThrottle(0); }
+  function releaseThrottleDrag() {
+    if (!throttleDragging) return;
+    throttleDragging = false;
+    releaseThrottleInput(SRC.MOUSE);
+  }
+  window.addEventListener('pointermove', (e) => {
+    if (!throttleDragging) return;
+    // Same stuck-drag self-heal the steering stick already had: releasing the button
+    // outside the window never fires pointerup here, and stray THROTTLE is worse than
+    // stray steering.
+    if ((e.buttons & 1) === 0) { releaseThrottleDrag(); return; }
+    throttlePointer(e);
   });
+  window.addEventListener('pointerup', releaseThrottleDrag);
+  window.addEventListener('pointercancel', releaseThrottleDrag);
 
   setStick(0, 0);
   setThrottle(0);
@@ -1483,21 +1563,18 @@
   window.addEventListener('keyup', (e) => { keys.delete(e.key); });
 
   // Keyboard state is sampled fast (the heartbeat does the actual transmitting) and is
-  // no longer gated on which tab is visible — switching tabs used to silently kill
-  // control mid-drive. The was-active guard means an idle keyboard doesn't continuously
-  // stomp steering/throttle back to zero while a gamepad is driving.
-  let keyboardWasActive = false;
+  // not gated on which tab is visible — switching tabs used to silently kill control
+  // mid-drive. The idle-suppression that used to live here (keyboardWasActive) is now
+  // handled generically by applySteerInput/applyThrottleInput for every source.
   setInterval(() => {
-    if (keys.size === 0 && !keyboardWasActive) return;
     let sx = 0, ty = 0;
     if (keys.has('ArrowLeft')) sx -= 1;
     if (keys.has('ArrowRight')) sx += 1;
     if (keys.has('ArrowUp')) ty += 1;
     if (keys.has('ArrowDown')) ty -= 1;
     if (keys.has(' ')) { sx = 0; ty = 0; }
-    keyboardWasActive = keys.size > 0;
-    setStick(sx, 0);
-    setThrottleLogical(ty);
+    applySteerInput(SRC.KEY, sx);
+    applyThrottleInput(SRC.KEY, ty);
   }, 30);
 
   $('max-steer-deg').addEventListener('input', (e) => {
@@ -1507,14 +1584,10 @@
 
   function emergencyStop() {
     keys.clear();
-    keyboardWasActive = false;
-    setStick(0, 0);
-    setThrottle(0);
+    releaseAllInputs();
     // Zero the simulated momentum too, otherwise the physics engine keeps feeding
     // throttle from its own virtualSpeed after the input is released.
-    physEngine.state.speedKmh = 0;
-    physEngine.state.virtualSpeed = 0;
-    physEngine.state.commanded = 0;
+    physEngine.reset(); // also clears reverse — an E-stop in R must not leave R selected
     physOutSteer = 0;
     physOutThrottle = 0;
     sendControlValue(0, 0);
@@ -1534,6 +1607,41 @@
   // Output (servoAngle/motorPWM, both -1..1) feeds straight into the existing
   // buildCommandPacket()/sendControlValue() pipeline, which already clamps to the
   // confirmed-safe reverse depth — so this layer cannot bypass that safety limit.
+  // ---- GT3 drivetrain constants ----
+  // Real gear ratios and top speeds of a 9000rpm naturally-aspirated GT3 racer with a
+  // 6-speed sequential. The absolute speeds (82…325 km/h) are NOT used — only their
+  // ratios to top gear — because the car has a configurable top speed (default 4 km/h)
+  // and the feel comes from the SPACING, not the absolute numbers.
+  const IDLE_RPM = 1500, REDLINE_RPM = 9000, LIMITER_SOFT_RPM = 400;
+  const GT3_GEARS = [
+    { ratio: 3.75, topFrac: 0.2523 }, //  82/325 — 1st tops out at ~25% of Vmax
+    { ratio: 2.38, topFrac: 0.4000 }, // 130/325
+    { ratio: 1.72, topFrac: 0.5538 }, // 180/325
+    { ratio: 1.34, topFrac: 0.7108 }, // 231/325
+    { ratio: 1.08, topFrac: 0.8800 }, // 286/325
+    { ratio: 0.88, topFrac: 1.0000 }, // 325/325
+  ];
+
+  // Normalised engine torque, 1.0 = peak. Deliberately a TABLE rather than a formula:
+  // update(), calibrateAccel() AND the Doku charts all read it, so there must be exactly
+  // one definition that cannot drift. Weak low down, peak arriving late (~6200), then
+  // held nearly flat to the limiter with a slight fall-off — a naturally-aspirated
+  // racing engine, not a turbo.
+  const TORQUE_CURVE = [
+    [1500, 0.42], [2500, 0.52], [3500, 0.62], [4500, 0.72], [5500, 0.88],
+    [6200, 1.00], [7000, 0.985], [8000, 0.955], [9000, 0.90],
+  ];
+  function torqueAt(rpm) {
+    const last = TORQUE_CURVE.length - 1;
+    if (rpm <= TORQUE_CURVE[0][0]) return TORQUE_CURVE[0][1];
+    if (rpm >= TORQUE_CURVE[last][0]) return TORQUE_CURVE[last][1];
+    for (let i = 1; i <= last; i++) {
+      const [r0, t0] = TORQUE_CURVE[i - 1], [r1, t1] = TORQUE_CURVE[i];
+      if (rpm <= r1) return t0 + (t1 - t0) * ((rpm - r0) / (r1 - r0));
+    }
+    return TORQUE_CURVE[last][1];
+  }
+
   class CarreraPhysicsEngine {
     constructor() {
       this.config = {
@@ -1556,22 +1664,35 @@
         accelCalibration: 1,   // solved for in calibrateAccel(), see there
         speedLimitFactor: 1,   // pit lane sets this to 0.4; caps speed, so the byte caps too
 
-        // A gear is a speed band (as a fraction of top speed) plus how much pull it has.
-        // Low gears pull hard over a narrow band, tall gears pull gently over a wide one.
-        gears: [
-          { topFrac: 0.20, pull: 2.05 },
-          { topFrac: 0.40, pull: 1.55 },
-          { topFrac: 0.62, pull: 1.15 },
-          { topFrac: 0.82, pull: 0.88 },
-          { topFrac: 1.00, pull: 0.70 },
-        ],
-        shiftMs: 180,
+        gears: GT3_GEARS,
+        rpmScale: 0,      // derived in rebuildGearModel()
+        ratioRef: 0.88,   // top gear's ratio, so 6th has a force factor of exactly 1.0
+        aeroDragK: 0.12,      // quadratic (aero) drag at top speed, in units of accelScale
+        onPowerDragFactor: 0.35, // share of the rolling drag that applies under load
+        upshiftRpm: 8800,
+        downshiftRpm: 4200,
+        shiftMs: 120,     // a sequential swaps far quicker than the old 180ms
+
+        // Reverse: pulls a little weaker than 1st and is capped well below it. At its cap
+        // the byte reaches exactly -0.5 = delta -64, the ONLY reverse depth ever confirmed
+        // on the real car.
+        reverseArmDelayS: 0.5,
+        reverseStandstillKmh: 0.05,
+        reverseTopFrac: 0.22,
+        reverseRatio: 3.00,
+        reverseOutputSpan: 0.50,
       };
       this.state = {
-        speedKmh: 0,
-        virtualSpeed: 0, // speedKmh normalised to 0..1, kept for HUD/sound/steering
+        speedKmh: 0,          // SIGNED: negative means reversing
+        virtualSpeed: 0,      // |speedKmh| / topSpeedKmh — deliberately UNSIGNED, because
+                              // sound, steering limit and HUD all expect a 0..1 magnitude
+        driveMode: 'forward', // 'forward' | 'reverse'
+        reverseArmT: 0,
         currentGear: 0,
-        rpmFrac: 0,
+        rpm: IDLE_RPM,
+        rpmFrac: 0,           // (rpm - idle) / (redline - idle)
+        onLimiter: false,
+        engineLoad: 0,        // pedal opening actually applied — drives sound VOLUME
         commanded: 0,
         dampedSteering: 0,
         pitch: 0,
@@ -1580,83 +1701,192 @@
         lastAbsRumble: 0,
       };
       this.outputs = { motorPWM: 0, servoAngle: 0, lights: { head: false, brake: false } };
+      this.rebuildGearModel(); // must run BEFORE calibrateAccel — it needs rpmScale
       this.calibrateAccel();
+    }
+
+    // Central reset shared by the E-stop, the handbrake and the pit stop, so those three
+    // can't drift apart on which fields they remember to clear.
+    reset() {
+      const st = this.state;
+      st.speedKmh = 0; st.virtualSpeed = 0; st.commanded = 0;
+      st.driveMode = 'forward'; st.reverseArmT = 0;
+      st.currentGear = 0; st.rpm = IDLE_RPM; st.rpmFrac = 0;
+      st.isShifting = false; st.engineLoad = 0; st.onLimiter = false;
+    }
+
+    // rpm comes from the gear RATIO, not from the band edges. Consequence straight out of
+    // the real data: gears 1-5 hit the limiter at their top speed, 6th tops out at
+    // ~8300rpm because it is drag-limited. That asymmetry is genuine, so it is preserved.
+    rebuildGearModel() {
+      let maxProduct = 0;
+      for (const g of this.config.gears) maxProduct = Math.max(maxProduct, g.ratio * g.topFrac);
+      this.config.rpmScale = REDLINE_RPM / maxProduct;
+    }
+
+    gearRatio(gearIdx) {
+      return gearIdx < 0 ? this.config.reverseRatio : this.config.gears[gearIdx].ratio;
+    }
+
+    rpmRawAt(v, gearIdx) { // gearIdx -1 == reverse
+      const cfg = this.config;
+      return cfg.rpmScale * this.gearRatio(gearIdx) * (Math.abs(v) / cfg.topSpeedKmh);
+    }
+
+    // Always positive, always opposes motion. Linear term = the "Ausrollen" slider
+    // (rolling resistance), quadratic term = aero. The aero term is expressed in units of
+    // accelScale so that scaling the drivetrain scales thrust and drag together — that is
+    // what keeps calibrateAccel solvable for any reachable target time.
+    // onPower: under load only a fraction of the ROLLING term applies. Without this split
+    // the "Ausrollen" slider doubles as an acceleration brake — at its default it ate so
+    // much thrust that no calibration could make a launch last 3s at all, and the solver
+    // sat permanently on its feasibility floor. Coasting still gets the full value, which
+    // is what that slider is actually for.
+    resistAt(v, accelScale, onPower) {
+      const cfg = this.config;
+      const u = Math.abs(v) / cfg.topSpeedKmh;
+      const rolling = cfg.coastDragPerS * Math.abs(v) * (onPower ? cfg.onPowerDragFactor : 1);
+      return rolling + cfg.aeroDragK * u * u * accelScale;
+    }
+
+    // Wheel thrust as an acceleration in km/h/s: torque(rpm) x gear ratio, with a soft
+    // rev limiter. The limiter is what caps each gear's top speed — no artificial clamp.
+    thrustAt(v, gearIdx, throttle, accelScale) {
+      const cfg = this.config;
+      const raw = this.rpmRawAt(v, gearIdx);
+      const limiterCut = raw > REDLINE_RPM
+        ? Math.max(0, Math.min(1, 1 - (raw - REDLINE_RPM) / LIMITER_SOFT_RPM))
+        : 1;
+      return throttle * torqueAt(Math.min(raw, REDLINE_RPM)) * limiterCut
+             * (this.gearRatio(gearIdx) / cfg.ratioRef) * accelScale;
+    }
+
+    accelScale() {
+      const c = this.config;
+      return (c.topSpeedKmh / c.zeroToTopS) * c.accelerationFactor * c.accelCalibration;
+    }
+
+    gearBand(i) {
+      const cfg = this.config;
+      return {
+        bottom: i === 0 ? 0 : cfg.gears[i - 1].topFrac * cfg.topSpeedKmh,
+        top: cfg.gears[i].topFrac * cfg.topSpeedKmh,
+      };
     }
 
     update(inputs, dt) {
       const cfg = this.config, st = this.state;
-      const gearCfg = cfg.gears[st.currentGear];
       let isBraking = false;
       st.absActive = false;
+      st.onLimiter = false;
 
-      // Speed is simulated in real km/h, and the throttle byte is DERIVED from it rather
-      // than being the driver's pedal position. That is the key point: the car reaches its
-      // top speed almost instantly if you hand it a full-throttle byte, so sending the raw
-      // pedal made it slam to 100% at once. Ramping a simulated speed and sending
-      // speed/topSpeed instead is what produces a real 0-to-top pull over a few seconds.
-      const accelScale = (cfg.topSpeedKmh / cfg.zeroToTopS) * cfg.accelerationFactor * cfg.accelCalibration;
+      // Speed is simulated in real km/h and the throttle byte is DERIVED from it, rather
+      // than being the driver's pedal position. That is the key point: the car reaches top
+      // speed almost instantly if handed a full-throttle byte, so sending the raw pedal
+      // made it slam to 100% at once. Ramping a simulated speed and sending
+      // speed/topSpeed produces a real multi-second pull instead.
+      const A = this.accelScale();
+      const revTopKmh = cfg.reverseTopFrac * cfg.topSpeedKmh;
+      const stopped = Math.abs(st.speedKmh) < cfg.reverseStandstillKmh;
 
-      // Position within this gear's speed band — the rev counter.
-      const bandBottom = st.currentGear === 0 ? 0 : cfg.gears[st.currentGear - 1].topFrac * cfg.topSpeedKmh;
-      const bandTop = gearCfg.topFrac * cfg.topSpeedKmh;
-      st.rpmFrac = bandTop > bandBottom
-        ? Math.max(0, Math.min(1.2, (st.speedKmh - bandBottom) / (bandTop - bandBottom)))
-        : 0;
-      // Torque curve: soft just off idle, strongest mid-band, tailing off near the limiter.
-      const torque = 0.62 + 0.38 * Math.sin(Math.PI * Math.min(1, st.rpmFrac));
-
-      let accel = 0;
-      if (inputs.brake > 0) {
-        isBraking = true;
-        accel = -cfg.brakeDecelKmhPerS * inputs.brake;
-        if (inputs.brake > 0.8 && st.speedKmh > cfg.topSpeedKmh * 0.15) st.absActive = true;
-      } else if (inputs.throttle > 0) {
-        if (st.isShifting) {
-          // Only a slight lull while the gear swaps. Applying the full coast drag here
-          // made the car visibly LOSE speed at every upshift.
-          accel = -st.speedKmh * cfg.coastDragPerS * cfg.shiftDragFactor;
-        } else {
-          // Taller gears pull less hard — but only on ACCELERATION, never on top speed.
-          // Every gear still reaches the same top speed; a taller one just takes longer.
-          accel = inputs.throttle * gearCfg.pull * torque * accelScale;
+      // Reverse selection, AUTOMATIC mode: holding the brake at a standstill toggles
+      // between D and R, like an automatic's lever. Manual mode uses the shift buttons
+      // instead (see triggerShift). The handbrake is explicitly excluded — physicsStep
+      // reports brake=1 while it is held, which would otherwise silently select R.
+      if (cfg.autoShift && stopped && inputs.brake > 0.02 && !inputs.handbrake) {
+        st.reverseArmT += dt;
+        if (st.reverseArmT >= cfg.reverseArmDelayS) {
+          st.reverseArmT = 0;
+          st.speedKmh = 0;
+          st.currentGear = 0;
+          st.driveMode = st.driveMode === 'reverse' ? 'forward' : 'reverse';
+          showHudToast(st.driveMode === 'reverse' ? 'Rückwärtsgang' : 'Vorwärts');
+          padRumble(0.3, 0.2, 90);
         }
       } else {
-        accel = -st.speedKmh * cfg.coastDragPerS; // lift off and it rolls out
+        st.reverseArmT = 0;
       }
+      const reversing = st.driveMode === 'reverse';
+      const gearIdx = reversing ? -1 : st.currentGear;
 
-      // Capping the simulated SPEED (rather than the byte) is what makes the pit-lane
-      // limiter behave like a real one: the HUD, the engine note and the transmitted
-      // throttle all agree, and the car eases down to the limit instead of clipping.
-      const speedCeiling = cfg.topSpeedKmh * cfg.speedLimitFactor;
-      st.speedKmh = Math.max(0, Math.min(speedCeiling, st.speedKmh + accel * dt));
-      st.virtualSpeed = st.speedKmh / cfg.topSpeedKmh;
+      // Rev counter, from the speed we entered this tick with.
+      const rpmRaw = this.rpmRawAt(st.speedKmh, gearIdx);
+      st.rpm = Math.max(IDLE_RPM, Math.min(REDLINE_RPM, rpmRaw));
+      st.rpmFrac = (st.rpm - IDLE_RPM) / (REDLINE_RPM - IDLE_RPM);
+      st.onLimiter = rpmRaw > REDLINE_RPM - 60;
 
-      // The byte we actually send: the throttle that should hold the speed we've reached.
-      let output;
-      if (isBraking) {
-        output = -inputs.brake;
-        if (st.absActive) {
-          // A shallow ripple you can feel, NOT a chop between -20% and -100% every 30ms
-          // (that was an intentional stutter, and it flickered the steering too via the
-          // trail-braking bonus below).
-          output *= 0.94 + 0.06 * Math.sin(Date.now() / 40);
-          const now = Date.now();
-          if (now - st.lastAbsRumble > 120) { st.lastAbsRumble = now; rumbleHaptic([12]); }
+      // Under load the rolling term is reduced (see resistAt); coasting gets it in full.
+      const onPower = inputs.throttle > 0.02 || inputs.brake > 0.02;
+      const resist = this.resistAt(st.speedKmh, A, onPower); // always >= 0
+      let accel = 0;
+      let output = 0;
+
+      if (reversing) {
+        // In R the THROTTLE drives backwards and the brake slows down.
+        st.engineLoad = inputs.throttle;
+        const revCeiling = revTopKmh * cfg.speedLimitFactor;
+        if (inputs.brake > 0.02) {
+          isBraking = true;
+          accel = +(cfg.brakeDecelKmhPerS * inputs.brake + resist); // back toward zero
+        } else if (inputs.throttle > 0.02 && !st.isShifting) {
+          accel = -this.thrustAt(st.speedKmh, -1, inputs.throttle, A) + resist;
+        } else {
+          accel = +resist; // coast back toward standstill
         }
+        st.speedKmh = Math.max(-revCeiling, Math.min(0, st.speedKmh + accel * dt));
+        const m = -st.speedKmh;
+        output = -cfg.reverseOutputSpan * (revTopKmh > 0 ? m / revTopKmh : 0);
+        if (inputs.throttle > 0.02) {
+          output = Math.min(output, -cfg.minMoveThrottle * inputs.throttle * cfg.reverseOutputSpan);
+        }
+        output = Math.max(-cfg.reverseOutputSpan, Math.min(0, output));
+
       } else {
-        output = st.virtualSpeed;
+        // Braking is deliberately NOT a command of its own: it only bleeds the simulated
+        // speed off faster than coasting does. Because the byte stays speed/topSpeed it
+        // simply falls toward zero more quickly and is NEVER negative — which is exactly
+        // why the left trigger no longer spins the wheels backwards.
+        if (inputs.brake > 0.02) {
+          isBraking = true;
+          st.engineLoad = 0;
+          accel = -(resist + cfg.brakeDecelKmhPerS * inputs.brake);
+          // ABS is now only an indicator plus a haptic pulse. Modulating the byte here
+          // would reintroduce precisely the stutter that took so long to remove.
+          if (inputs.brake > 0.8 && st.speedKmh > cfg.topSpeedKmh * 0.15) {
+            st.absActive = true;
+            const now = Date.now();
+            if (now - st.lastAbsRumble > 140) { st.lastAbsRumble = now; padRumble(0.18, 0.1, 60); }
+          }
+        } else if (inputs.throttle > 0.02) {
+          st.engineLoad = st.isShifting ? 0 : inputs.throttle;
+          accel = st.isShifting
+            ? -resist * cfg.shiftDragFactor // a brief lull, not a full coast-down
+            : this.thrustAt(st.speedKmh, gearIdx, inputs.throttle, A) - resist;
+        } else {
+          st.engineLoad = 0;
+          accel = -resist; // lift off and it rolls out
+        }
+
+        const ceiling = cfg.topSpeedKmh * cfg.speedLimitFactor;
+        if (st.speedKmh >= ceiling && accel > 0) accel = 0; // pit limiter eases in
+        st.speedKmh = Math.max(0, Math.min(ceiling, st.speedKmh + accel * dt));
+
+        output = st.speedKmh / cfg.topSpeedKmh;
         // A real car needs a minimum shove to break away from standstill; without this
         // the first moments of a launch send a byte too small to move the car at all.
         if (inputs.throttle > 0.02) output = Math.max(output, cfg.minMoveThrottle * inputs.throttle);
       }
+
+      st.virtualSpeed = Math.abs(st.speedKmh) / cfg.topSpeedKmh;
       st.commanded = output;
       st.pitch = output;
 
-      // auto gear shifting with hysteresis (skipped entirely in manual mode)
-      if (cfg.autoShift && !st.isShifting) {
-        if (st.currentGear < cfg.gears.length - 1 && st.rpmFrac >= 0.98 && inputs.throttle > 0.05) {
+      // Automatic gearbox, now on RPM rather than band fraction.
+      if (cfg.autoShift && !st.isShifting && !reversing) {
+        const r = this.rpmRawAt(st.speedKmh, st.currentGear);
+        if (st.currentGear < cfg.gears.length - 1 && r >= cfg.upshiftRpm && inputs.throttle > 0.05) {
           this.triggerShift(1);
-        } else if (st.currentGear > 0 && st.speedKmh < bandBottom * 0.85) {
+        } else if (st.currentGear > 0 && r <= cfg.downshiftRpm) {
           this.triggerShift(-1);
         }
       }
@@ -1664,7 +1894,9 @@
       // steering: expo curve for a softer center, speed-sensitivity, trail-braking grip bonus
       const expoSteer = Math.sign(inputs.steering) * Math.pow(Math.abs(inputs.steering), 1.5);
       let maxSteerLimit = 1.0 - (this.state.virtualSpeed * this.config.speedSteerReduction);
-      if (this.state.pitch < -0.2) maxSteerLimit *= this.config.trailBrakingGripBonus;
+      // Gate on forward braking: pitch is negative in reverse too, which would otherwise
+      // hand reverse an unintended grip bonus.
+      if (!reversing && isBraking) maxSteerLimit *= this.config.trailBrakingGripBonus;
       maxSteerLimit = Math.min(1, maxSteerLimit);
       const targetSteer = expoSteer * maxSteerLimit;
 
@@ -1678,58 +1910,121 @@
       this.outputs.servoAngle = this.state.dampedSteering;
       this.outputs.motorPWM = Math.max(-1, Math.min(1, output));
       this.outputs.lights.head = !!inputs.headlights;
-      this.outputs.lights.brake = isBraking || (output < -0.05 && inputs.throttle <= 0);
+      this.outputs.lights.brake = !reversing && isBraking; // reversing must not light it
 
       return this.outputs;
     }
 
-    // Solves for the accel scale that makes a full-throttle launch actually take
-    // zeroToTopS. Doing this numerically rather than by hand-tuned constants means the
-    // slider stays honest when the gear pulls, the shift time, or the top speed change —
-    // the fixed dead-time of the shifts is part of the budget, so it can't be derived in
-    // closed form. Converges in a couple of iterations.
+    // Integrates a full-throttle launch through the SAME helpers update() uses, so the
+    // number the slider promises and the behaviour on track cannot drift apart. Optionally
+    // returns the trace, which the Doku launch chart draws.
+    simulateLaunch(calib, collectTrace) {
+      const cfg = this.config;
+      const A = (cfg.topSpeedKmh / cfg.zeroToTopS) * calib; // accelerationFactor excluded on purpose
+      // Integrate at the SAME step the live loop uses. Forward Euler overshoots at coarse
+      // steps, so calibrating at a fine 5ms while the car actually runs at 45ms made the
+      // real launch a full second quicker than the slider promised.
+      const dt = CONTROL_SEND_INTERVAL_MS / 1000, tMax = 30;
+      const vTarget = cfg.topSpeedKmh * 0.995;
+      let v = 0, g = 0, t = 0, shiftUntil = -1;
+      const trace = collectTrace ? [{ t: 0, v: 0, gear: 0 }] : null;
+      while (v < vTarget && t < tMax) {
+        if (t < shiftUntil) {
+          v -= this.resistAt(v, A, true) * cfg.shiftDragFactor * dt;
+        } else {
+          v += (this.thrustAt(v, g, 1, A) - this.resistAt(v, A, true)) * dt;
+          if (g < cfg.gears.length - 1 && this.rpmRawAt(v, g) >= cfg.upshiftRpm) {
+            g++; shiftUntil = t + cfg.shiftMs / 1000;
+          }
+        }
+        if (v < 0) v = 0;
+        t += dt;
+        if (trace && trace.length < 4000) trace.push({ t, v, gear: g, shifting: t < shiftUntil });
+      }
+      return { time: t, trace, reached: v >= vTarget };
+    }
+
+    // Smallest calibration for which top speed is reachable at all: below it the quadratic
+    // drag beats the thrust in top gear and the integrator just runs to its time cap.
+    minFeasibleCalibration() {
+      const cfg = this.config, last = cfg.gears.length - 1;
+      const tauTop = torqueAt(Math.min(REDLINE_RPM, this.rpmRawAt(cfg.topSpeedKmh, last)));
+      const netPerScale = tauTop * (cfg.gears[last].ratio / cfg.ratioRef) - cfg.aeroDragK;
+      if (netPerScale <= 0) return Infinity;
+      const needScale = (cfg.coastDragPerS * cfg.onPowerDragFactor * cfg.topSpeedKmh) / netPerScale;
+      return needScale / (cfg.topSpeedKmh / cfg.zeroToTopS);
+    }
+
+    // Solves for the accel scale that makes a full-throttle launch really take zeroToTopS.
+    // Numerically, because the fixed dead-time of the shifts is part of the budget and so
+    // it cannot be derived in closed form. BISECTION rather than the old proportional
+    // update: that assumed time is inversely proportional to the scale, which stopped
+    // being true once drag entered the model, and it would overshoot and ring.
     calibrateAccel() {
       const cfg = this.config;
-      const launchTime = (scale) => {
-        const dt = 0.01;
-        let v = 0, g = 0, t = 0, shiftUntil = -1;
-        while (v < cfg.topSpeedKmh * 0.999 && t < 60) {
-          const bottom = g === 0 ? 0 : cfg.gears[g - 1].topFrac * cfg.topSpeedKmh;
-          const top = cfg.gears[g].topFrac * cfg.topSpeedKmh;
-          const rpm = top > bottom ? Math.max(0, Math.min(1, (v - bottom) / (top - bottom))) : 0;
-          if (t < shiftUntil) {
-            v -= v * cfg.coastDragPerS * cfg.shiftDragFactor * dt;
-          } else {
-            const torque = 0.62 + 0.38 * Math.sin(Math.PI * rpm);
-            v += cfg.gears[g].pull * torque * (cfg.topSpeedKmh / cfg.zeroToTopS) * scale * dt;
-            if (rpm >= 0.98 && g < cfg.gears.length - 1) { g++; shiftUntil = t + cfg.shiftMs / 1000; }
-          }
-          t += dt;
-        }
-        return t;
-      };
-      let scale = 1;
-      for (let i = 0; i < 8; i++) {
-        const t = launchTime(scale);
-        if (!isFinite(t) || t <= 0) break;
-        scale *= t / cfg.zeroToTopS;
+      const rawFloor = this.minFeasibleCalibration();
+      const lo = isFinite(rawFloor) ? rawFloor * 1.15 : 0.05; // at the floor exactly, it takes forever
+      const hi = Math.max(lo * 200, 500);
+      if (this.simulateLaunch(lo, false).time <= cfg.zeroToTopS) { cfg.accelCalibration = lo; return; }
+      let a = lo, b = hi;
+      for (let i = 0; i < 22; i++) {
+        const mid = Math.sqrt(a * b); // geometric bisection: the scale spans orders of magnitude
+        if (this.simulateLaunch(mid, false).time > cfg.zeroToTopS) a = mid; else b = mid;
+        if (b / a < 1.001) break;
       }
-      cfg.accelCalibration = Math.max(0.05, Math.min(20, scale));
+      cfg.accelCalibration = Math.max(lo, Math.min(hi, b));
     }
 
+    // direction -1/+1. Below 1st gear at a standstill this selects reverse, and out of
+    // reverse it returns to 1st — that is how manual mode engages R (the user's spec).
     triggerShift(direction) {
-      const next = this.state.currentGear + direction;
-      if (next < 0 || next >= this.config.gears.length) return;
-      this.state.isShifting = true;
-      this.state.currentGear = next;
-      rumbleHaptic([30, 20, 50]);
-      setTimeout(() => { this.state.isShifting = false; }, this.config.shiftMs);
+      const st = this.state, cfg = this.config;
+      const stopped = Math.abs(st.speedKmh) < cfg.reverseStandstillKmh;
+      if (st.driveMode === 'reverse') {
+        if (direction > 0 && stopped) {
+          st.driveMode = 'forward'; st.speedKmh = 0; st.currentGear = 0;
+          showHudToast('Vorwärts'); padRumble(0.3, 0.2, 90);
+        }
+        return;
+      }
+      if (direction < 0 && st.currentGear === 0) {
+        if (stopped) {
+          st.driveMode = 'reverse'; st.speedKmh = 0;
+          showHudToast('Rückwärtsgang'); padRumble(0.3, 0.2, 90);
+        }
+        return;
+      }
+      const next = st.currentGear + direction;
+      if (next < 0 || next >= cfg.gears.length) return;
+      st.isShifting = true;
+      st.currentGear = next;
+      // Short and light: six shifts inside three seconds with a long pattern is a
+      // pneumatic drill in the hand.
+      padRumble(0.15, 0.1, 40);
+      setTimeout(() => { st.isShifting = false; }, cfg.shiftMs);
     }
   }
 
-  function rumbleHaptic(pattern) {
-    if (navigator.vibrate) navigator.vibrate(pattern);
+  // Real CONTROLLER rumble via the Gamepad API. The old rumbleHaptic() drove
+  // navigator.vibrate, which is the PHONE's vibration motor — on a laptop with a pad it
+  // did nothing at all. navigator.vibrate is kept as the phone fallback.
+  function padRumble(strong, weak, ms) {
+    try {
+      const pads = navigator.getGamepads ? navigator.getGamepads() : [];
+      for (const p of pads) {
+        if (p && p.vibrationActuator && typeof p.vibrationActuator.playEffect === 'function') {
+          p.vibrationActuator.playEffect('dual-rumble', {
+            duration: ms, startDelay: 0,
+            strongMagnitude: Math.max(0, Math.min(1, strong)),
+            weakMagnitude: Math.max(0, Math.min(1, weak)),
+          }).catch(() => {}); // some browsers reject while the pad is busy; harmless
+          break;
+        }
+      }
+    } catch { /* pad vanished mid-call — nothing to do */ }
+    if (navigator.vibrate) navigator.vibrate(Math.round(ms));
   }
+  function rumbleHaptic(pattern) { if (navigator.vibrate) navigator.vibrate(pattern); }
 
   const physEngine = new CarreraPhysicsEngine();
   let physLastTime = null;
@@ -1847,8 +2142,11 @@
 
   function updateDashboard(out) {
     const st = physEngine.state;
-    $('dash-gear').textContent = (st.currentGear + 1) + (physEngine.config.autoShift ? '' : 'M');
-    $('dash-speed').textContent = st.speedKmh.toFixed(1);
+    $('dash-gear').textContent = st.driveMode === 'reverse'
+      ? 'R'
+      : (st.currentGear + 1) + (physEngine.config.autoShift ? '' : 'M');
+    $('dash-speed').textContent = Math.abs(st.speedKmh).toFixed(1); // signed while reversing
+    $('dash-rpm').textContent = Math.round(st.rpm);
     $('dash-abs').textContent = physEngine.state.absActive ? 'AKTIV' : '-';
     $('dash-head').style.background = out.lights.head ? '#f5e642' : '#444';
     $('dash-brake').style.background = out.lights.brake ? 'var(--bad)' : '#444';
@@ -1868,7 +2166,10 @@
     physLastTime = now;
     const rawThrottle = handbrakeActive ? 0 : Math.max(0, throttleY);
     const rawBrake = handbrakeActive ? 1 : Math.max(0, -throttleY);
-    const out = physEngine.update({ steering: steerX, throttle: rawThrottle, brake: rawBrake, headlights: headlightsOn }, dt);
+    // handbrake is passed through so the engine can EXCLUDE it from arming reverse —
+    // otherwise simply holding the handbrake at a standstill would select R after 0.5s.
+    const out = physEngine.update({ steering: steerX, throttle: rawThrottle, brake: rawBrake,
+                                    handbrake: handbrakeActive, headlights: headlightsOn }, dt);
     updateDashboard(out);
     physOutSteer = out.servoAngle;
     physOutThrottle = out.motorPWM;
@@ -1889,12 +2190,18 @@
         log('Handy-Neigung für Lenkung aktiviert.', 'info');
       } else {
         gyroActive = false;
+        releaseSteerInput(SRC.TILT); // otherwise the last tilt value sticks after unchecking
       }
     });
+    const TILT_DEADZONE = 0.06;
     window.addEventListener('deviceorientation', (e) => {
       if (!gyroActive || e.gamma === null) return;
-      const tilt = Math.max(-1, Math.min(1, e.gamma / 35)); // ~35° = full lock, deadzone-free
-      setStick(tilt, 0);
+      let tilt = Math.max(-1, Math.min(1, e.gamma / 35)); // ~35° = full lock
+      // The deadzone is load-bearing for arbitration, not cosmetic: a phone is never
+      // exactly level, so without it this source would hold its claim permanently and
+      // become the new unconditional writer — the very bug being fixed, just relocated.
+      if (Math.abs(tilt) < TILT_DEADZONE) tilt = 0;
+      applySteerInput(SRC.TILT, tilt);
     });
   } else {
     $('phys-gyro-wrap').style.display = 'none';
@@ -2077,8 +2384,8 @@
     const startedAt = Date.now();
     macro.forEach((step, i) => {
       const timer = setTimeout(() => {
-        setStick(step.steer, 0);
-        setThrottleLogical(step.throttle);
+        applySteerInput(SRC.MACRO, step.steer);
+        applyThrottleInput(SRC.MACRO, step.throttle);
         playLog(`Schritt ${i + 1}/${macro.length}  t=${step.t}ms  steer=${step.steer.toFixed(2)}  throttle=${step.throttle.toFixed(2)}`);
         if (i === macro.length - 1) {
           if ($('chk-loop').checked && playing) {
@@ -2095,11 +2402,10 @@
   function stopPlayback() {
     playTimers.forEach(clearTimeout);
     playTimers = [];
-    playing = false;
+    playing = false; // must be cleared BEFORE releasing, or playbackLocked blocks it
     $('btn-play').disabled = macro.length === 0;
     $('btn-stop-play').disabled = true;
-    setStick(0, 0);
-    setThrottle(0);
+    releaseInput(SRC.MACRO);
     playLog(playLog.lastMsg = 'Wiedergabe beendet.');
   }
 
@@ -2814,10 +3120,18 @@
     if (next === 'servicing') {
       pitServiceStart = Date.now();
       pitFuelGained = 0; pitDamageRepaired = 0;
+      playTone(300, 0.14, 'sine', 0.16);
+      setTimeout(() => playTone(220, 0.20, 'sine', 0.16), 150); // low two-tone: service starts
+      padRumble(0.25, 0.15, 120);
       log('Boxengasse: Service läuft — stehen bleiben für mehr Sprit und Reparatur.', 'info');
     } else if (next === 'limited') {
       log(`Boxengasse: Tempolimit ${Math.round(PIT_SPEED_FACTOR * 100)}% aktiv.`, 'info');
     } else {
+      if (pitServiceStart !== null) {
+        playTone(440, 0.12, 'sine', 0.18);
+        setTimeout(() => playTone(660, 0.22, 'sine', 0.18), 120); // rising: throttle released
+        padRumble(0.25, 0.15, 120);
+      }
       if (pitServiceStart !== null) {
         log(`Boxenstopp beendet nach ${((Date.now() - pitServiceStart) / 1000).toFixed(1)}s: ` +
             `+${Math.round(pitFuelGained)}% Sprit, -${Math.round(pitDamageRepaired)}% Schaden.`, 'info');
@@ -2842,7 +3156,9 @@
     pitLastTick = now;
     if (pitState === 'off') return;
 
-    const stopped = physEngine.state.speedKmh < PIT_STANDSTILL_KMH && Math.abs(throttleY) < 0.1;
+    // Absolute value: any NEGATIVE speed would otherwise satisfy this and start a pit
+    // service while the car is reversing away.
+    const stopped = Math.abs(physEngine.state.speedKmh) < PIT_STANDSTILL_KMH && Math.abs(throttleY) < 0.1;
     if (pitState === 'limited' && stopped) { setPitState('servicing'); return; }
 
     if (pitState === 'servicing') {
@@ -2922,7 +3238,7 @@
     physEngine.state.speedKmh *= 0.3;
     updateDamageFuelUI();
     playCrashSound();
-    rumbleHaptic([60, 30, 90]);
+    padRumble(0.6, 0.4, 220); // medium, per user spec
     const ind = $('crash-indicator');
     ind.style.display = 'inline';
     clearTimeout(crashIndicatorTimer);
@@ -2971,7 +3287,13 @@
     const now = Date.now();
     if (fuelLastTickTime !== null && !pitStopInProgress) {
       const dt = Math.min(0.5, (now - fuelLastTickTime) / 1000);
+      const fuelBefore = fuel;
       fuel = Math.max(0, fuel - Math.abs(throttle) * dt * fuelDrainPerSec);
+      // Edge-triggered: without this it would rumble again on every 45ms heartbeat.
+      if (fuelBefore > 0 && fuel <= 0) {
+        padRumble(0.2, 0.12, 160);
+        log('Tank leer.', 'err');
+      }
       // Repaint at ~5Hz, not on every one of the ~22 heartbeats per second: the bars
       // can't show more detail than that anyway, and the DOM writes were pure overhead
       // on the same thread that has to keep the send cadence steady.
@@ -3069,15 +3391,34 @@
     if (engineOsc) engineOsc.type = soundProfile.wave;
   });
 
+  // Pitch follows engine RPM, volume follows pedal opening. Because triggerShift() moves
+  // the gear immediately while isShifting only clears later, the revs drop on the very
+  // same tick — so the note audibly falls at each upshift and climbs again, instead of
+  // rising monotonically with road speed as it used to.
+  let engineIdleSince = null;
   function updateEngineSound(throttleMagnitude) {
     if (!soundEnabled || !engineOsc) return;
-    const speedFactor = physicsEnabled ? physEngine.state.virtualSpeed : 0;
-    const level = Math.max(Math.abs(throttleMagnitude), speedFactor);
-    const p = soundProfile;
-    const freq = p.baseFreq + level * p.freqSpan;
-    const gain = level > 0.01 ? p.gainBase + level * p.gainSpan : 0;
+    const st = physEngine.state, p = soundProfile;
+    let pitchNorm, load;
+    if (physicsEnabled) {
+      pitchNorm = st.rpmFrac;
+      load = st.engineLoad;
+    } else {
+      pitchNorm = load = Math.abs(throttleMagnitude); // raw mode: unchanged behaviour
+    }
+    // RPM never drops below idle, so without this the engine would hum forever after load.
+    const busy = load > 0.01 || st.virtualSpeed > 0.01;
+    const now = Date.now();
+    if (busy) engineIdleSince = null;
+    else if (engineIdleSince === null) engineIdleSince = now;
+    const silent = !busy && engineIdleSince !== null && now - engineIdleSince > 4000;
+
+    const freq = p.baseFreq + Math.max(0, Math.min(1, pitchNorm)) * p.freqSpan;
+    let gain = p.gainBase * (0.35 + 0.65 * pitchNorm) + load * p.gainSpan;
+    if (st.onLimiter) gain *= 0.75 + 0.25 * Math.sign(Math.sin(now / 18)); // limiter flutter
+    if (silent) gain = 0;
     const t = audioCtx.currentTime;
-    engineOsc.frequency.setTargetAtTime(freq, t, 0.05);
+    engineOsc.frequency.setTargetAtTime(freq, t, 0.03); // 0.03: don't smear the shift drop
     engineGain.gain.setTargetAtTime(gain, t, 0.05);
   }
 
@@ -3331,7 +3672,14 @@
       // Do NOT tear the loop down here: a Bluetooth pad can drop out of the snapshot for
       // a frame or two, and killing the loop on that would need a fresh connect event to
       // ever come back. Keep polling, just neutralise the inputs meanwhile.
-      if (padConnected) { setStick(0, 0); setThrottleLogical(0); }
+      if (padConnected) {
+        releaseInput(SRC.PAD);
+        // Clear the handbrake on EVERY pad-loss path. Otherwise a pad that drops out of
+        // the snapshot while the handbrake is held leaves handbrakeActive latched true,
+        // and the heartbeat then forces throttle to 0 forever with no way to clear it.
+        handbrakeActive = false;
+        prevHandbrake = false;
+      }
       padConnected = false;
       return;
     }
@@ -3352,16 +3700,16 @@
       // No tab gate any more, and setThrottleLogical (not setThrottle) so that pressing
       // the throttle actually goes FORWARD — setThrottle takes screen-space and was
       // silently inverting the gamepad's logical value.
-      setStick(steerRaw, 0);
-      setThrottleLogical(throttleRaw - brakeRaw);
+      // applyDeadzone already returns exactly 0 inside the deadzone, so a pad at rest is
+      // silent here and no longer overwrites whatever the keyboard is holding.
+      applySteerInput(SRC.PAD, steerRaw);
+      applyThrottleInput(SRC.PAD, throttleRaw - brakeRaw);
 
       // Handbrake: force throttle to zero AND kill the simulated momentum, so the car
       // doesn't roll on from the physics engine's own virtualSpeed after release.
       const handbrakeNow = readBindingValue(pad, bindings.handbrake) > BUTTON_CAPTURE_THRESHOLD;
       if (handbrakeNow) {
-        physEngine.state.speedKmh = 0; // user spec: handbrake kills the momentum outright
-        physEngine.state.virtualSpeed = 0;
-        physEngine.state.commanded = 0;
+        physEngine.reset(); // user spec: handbrake kills the momentum outright
         physOutThrottle = 0;
       }
       if (handbrakeNow !== prevHandbrake) showHudToast(handbrakeNow ? 'Handbremse' : '');
@@ -3382,10 +3730,13 @@
 
       const downshiftNow = readBindingValue(pad, bindings.downshift) > BUTTON_CAPTURE_THRESHOLD;
       const upshiftNow = readBindingValue(pad, bindings.upshift) > BUTTON_CAPTURE_THRESHOLD;
-      if (downshiftNow && !prevDownshift && physicsEnabled && !physEngine.state.isShifting && physEngine.state.currentGear > 0) {
+      // No gear-range guards here any more: triggerShift() does its own bounds checking
+      // and needs to see a downshift AT gear 0 (that is how manual mode selects reverse)
+      // and an upshift while in reverse (how it comes back out).
+      if (downshiftNow && !prevDownshift && physicsEnabled && !physEngine.state.isShifting) {
         physEngine.triggerShift(-1);
       }
-      if (upshiftNow && !prevUpshift && physicsEnabled && !physEngine.state.isShifting && physEngine.state.currentGear < physEngine.config.gears.length - 1) {
+      if (upshiftNow && !prevUpshift && physicsEnabled && !physEngine.state.isShifting) {
         physEngine.triggerShift(1);
       }
       prevDownshift = downshiftNow;
