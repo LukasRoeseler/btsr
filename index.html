@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CH Control</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
 <style>
   /* Palette inspired by the NART Ferrari 412P Le Mans livery: white body, deep navy
      stripe/roundel, thin pinstripe linework. Red is reserved for danger/stop states only. */
@@ -870,6 +871,44 @@
         <button class="primary" id="track-scan-start">Live-Scan starten</button>
         <button id="track-scan-stop" disabled>Scan stoppen</button>
         <span class="muted" id="track-scan-status">bereit</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Druckvorlagen</h2>
+      <p class="muted">
+        Muster zum Ausdrucken und Auslegen. <b>Wichtig beim Drucken:</b> A4 <b>quer</b>,
+        Skalierung <b>100 % / „Tatsächliche Größe"</b> &mdash; auf keinen Fall „an Seite anpassen",
+        sonst stimmen die Balkenabstände nicht mehr und der Sensor liest gar nichts.
+        Der Pfeil zeigt in die Fahrtrichtung.
+      </p>
+      <div class="row" style="gap:22px; align-items:flex-start; flex-wrap:wrap">
+        <div style="flex:1 1 260px; min-width:240px">
+          <img src="startziel-a4.svg" alt="Vorschau Start/Ziel-Muster"
+               style="width:100%; max-width:300px; border:1px solid var(--border); border-radius:4px; display:block">
+          <p style="margin:8px 0 4px 0"><b>Start / Ziel</b></p>
+          <p class="muted" style="font-size:11.5px; margin:0 0 8px 0">
+            Zählt Runden und löst im Rennmodus die Rundenzeit aus. Erwarteter Code
+            <code>0x01</code>. <b>Rekonstruktion</b> aus einem Foto &mdash; wenn du das
+            Original-PDF hast, nimm lieber das.
+          </p>
+          <a href="startziel-a4.svg" download="startziel-a4.svg">
+            <button>Start/Ziel herunterladen (SVG)</button>
+          </a>
+        </div>
+        <div style="flex:1 1 260px; min-width:240px">
+          <img src="boxengasse-a4.svg" alt="Vorschau Boxengassen-Muster"
+               style="width:100%; max-width:300px; border:1px solid var(--border); border-radius:4px; display:block">
+          <p style="margin:8px 0 4px 0"><b>Boxengasse</b></p>
+          <p class="muted" style="font-size:11.5px; margin:0 0 8px 0">
+            Löst Tempolimit und Boxenstopp aus. Welchen Code das Auto dafür meldet, ist
+            <b>unbestätigt</b> &mdash; nach dem Drucken einmal überfahren und unten mit der
+            Muster-Sonde ablesen.
+          </p>
+          <a href="boxengasse-a4.svg" download="boxengasse-a4.svg">
+            <button>Boxengasse herunterladen (SVG)</button>
+          </a>
+        </div>
       </div>
     </div>
 

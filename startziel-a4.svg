@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="297mm" height="210mm" viewBox="0 0 297 210">
+  <!--
+    Start/Ziel-Markierung. DIN A4 QUER, 1 SVG-Einheit = 1 mm.
+    Drucken: 100 % / "Tatsächliche Größe", Querformat, NICHT "an Seite anpassen".
+
+    ACHTUNG — das hier ist eine REKONSTRUKTION, nachgemessen aus einem Foto des
+    Originalblatts, nicht das Original selbst. Seitenverhältnis (1,42 = A4 quer),
+    Balkenlänge und Lückenabfolge stimmen, die Balkendicken konnten aber nur auf etwa
+    ein halbes Millimeter genau abgelesen werden. Für einen optischen Sensor kann das
+    zu ungenau sein.
+
+    Wenn du das Original-PDF noch hast: nimm das. Diese Datei ist als Ersatz gedacht,
+    falls das Original nicht greifbar ist — und muss dann einmal mit der Muster-Sonde
+    (App -> Strecke -> Boxengasse) geprüft werden. Erwarteter Code: 0x01.
+
+    Nachgemessene Lückenabfolge: schmal breit breit schmal breit schmal schmal schmal
+    (schmal ~4 mm, breit ~7,2 mm)
+
+    Der Pfeil zeigt in die Fahrtrichtung.
+  -->
+
+  <rect x="0" y="0" width="297" height="210" fill="#ffffff"/>
+
+  <g fill="#000000">
+    <rect x="10" y="49.4"  width="277" height="4.4"/>
+    <rect x="10" y="57.8"  width="277" height="4.4"/>
+    <rect x="10" y="69.4"  width="277" height="3.7"/>
+    <rect x="10" y="80.0"  width="277" height="3.7"/>
+    <rect x="10" y="88.4"  width="277" height="4.4"/>
+    <rect x="10" y="100.3" width="277" height="3.2"/>
+    <rect x="10" y="107.5" width="277" height="3.4"/>
+    <rect x="10" y="114.7" width="277" height="3.4"/>
+    <rect x="10" y="121.9" width="277" height="3.2"/>
+  </g>
+
+  <g fill="#000000">
+    <path d="M 148.5 134 L 134 156 L 142 156 L 142 174 L 155 174 L 155 156 L 163 156 Z"/>
+  </g>
+
+  <text x="148.5" y="192" text-anchor="middle"
+        font-family="Arial, Helvetica, sans-serif" font-size="4.5" fill="#000000">
+    START / ZIEL (Rekonstruktion) — A4 quer, 100 % drucken, nicht skalieren
+  </text>
+</svg>
