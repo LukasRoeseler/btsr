@@ -238,6 +238,9 @@
   .gt3-bar { height: clamp(7px, 1.5vw, 13px); background: #060810; border-radius: 2px;
     overflow: hidden; margin-top: 3px; }
   .gt3-bar > i { display: block; height: 100%; width: 0; transition: width .15s linear; }
+  .gt3-gplot { margin-top: 4px; }
+  .gt3-gplot svg { width: clamp(52px, 9vw, 86px); height: auto; display: block;
+    margin: 0 auto; }
   .gt3-ico { width: clamp(14px, 2.3vw, 21px); height: auto; color: #7c8aa6;
     display: block; margin-bottom: 2px; }
   .gt3-ok { color: #46d17f; } .gt3-warn { color: #ffb02e; } .gt3-bad { color: #ff5252; }
@@ -333,6 +336,21 @@
         <div class="gt3-tell"><svg class="gt3-lamp" id="race-light" viewBox="0 0 30 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-label="Scheinwerfer"><path d="M13 3H8a7 7 0 0 0 0 14h5a7 7 0 0 0 0-14z" fill="currentColor" stroke="none" opacity=".95"/><path d="M18 5h9M18 10h9M18 15h9" stroke-linecap="round"/></svg></div>
         <div class="gt3-tell" style="margin-top:6px"><svg class="gt3-ico" id="race-wx-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-label="Trocken"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.4M12 19.6V22M2 12h2.4M19.6 12H22M4.9 4.9l1.7 1.7M17.4 17.4l1.7 1.7M19.1 4.9l-1.7 1.7M6.6 17.4l-1.7 1.7"/></svg><svg class="gt3-ico" id="race-wx-rain" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-label="Regen" style="display:none"><path d="M6.5 14a4 4 0 0 1 .4-8 5.5 5.5 0 0 1 10.5 1.4A3.6 3.6 0 0 1 17.5 14z"/><path d="M8 17.5l-1 2.5M12 17.5l-1 2.5M16 17.5l-1 2.5"/></svg><span class="gt3-lbl" id="race-tyres">Slicks</span></div>
         <div class="gt3-val sm" id="race-track">&ndash;</div>
+        <div class="gt3-gplot" id="race-gplot">
+          <svg viewBox="0 0 100 100" aria-label="Querkraft und Längskraft">
+            <circle cx="50" cy="50" r="46" fill="#080b12" stroke="#2a3346"/>
+            <circle cx="50" cy="50" r="31" fill="none" stroke="#1e2634"/>
+            <circle cx="50" cy="50" r="16" fill="none" stroke="#1e2634"/>
+            <path d="M50 4V96M4 50H96" stroke="#1e2634"/>
+            <circle id="race-g-real" cx="50" cy="50" r="4.5" fill="#2ee06a" opacity=".85"/>
+            <circle id="race-g-sim" cx="50" cy="50" r="5" fill="#ff4d4d"/>
+          </svg>
+          <div class="gt3-lbl" style="text-align:center">
+            <span style="color:#ff4d4d">sim</span> &middot;
+            <span style="color:#2ee06a">roh</span>
+          </div>
+        </div>
+
       </div>
 
       <div class="gt3-gear gt3-box" style="display:flex;flex-direction:column;justify-content:center">
@@ -892,12 +910,23 @@
       <div class="opt-row"><div class="opt-label">Physik-Modus aktivieren<small>Aus = die App sendet die rohe Stickstellung, ohne Gänge und Drehmoment.</small></div><label class="tgl"><input type="checkbox" id="phys-enable" checked><span></span></label></div>
       <div class="opt-row" id="phys-gyro-wrap"><div class="opt-label">Handy-Neigung für Lenkung nutzen</div><label class="tgl"><input type="checkbox" id="phys-gyro"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Motorsound</div><label class="tgl"><input type="checkbox" id="sound-enable" checked><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Umgebungslautstärke<small>Strecken-Ambience, Regen und Donner &mdash; getrennt vom Motor.</small></div>
+      <div class="opt-row"><div class="opt-label">Regen<small>Wie die Select-Taste bzw. W. Passende Reifen kommen beim Boxenstopp automatisch.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-rain"><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Strecken-Ambience<small>Hintergrundgeräusche, Vorbeifahrten, Regen und Donner.</small></div>
+        <label class="tgl"><input type="checkbox" id="amb-enable" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Streckenlautstärke<small>Hintergrund und Vorbeifahrten &mdash; absichtlich leise, damit der Motor vorne bleibt.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="amb-volume" min="0" max="1" step="0.05" value="0.35">
+          <input type="range" id="amb-volume" min="0" max="1" step="0.05" value="0.2">
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="amb-volume-val">35%</span>
+          <span class="opt-val" id="amb-volume-val">20%</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Regenlautstärke<small>Regenteppich und Donner, unabhängig regelbar.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="rain-volume" min="0" max="1" step="0.05" value="0.4">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="rain-volume-val">40%</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Motorsound-Profil</div>
         <select id="sound-profile">
@@ -1935,6 +1964,26 @@
         // driving dynamics, this is what the road is doing. Set from the weather/tyre pair.
         gripScale: 1.0,
         aquaplaning: 0,       // 0 = dry grip, 1 = slicks in standing water
+
+        // ---- Longitudinal weight transfer ----
+        // Under braking the mass pitches onto the front axle, under power onto the rear.
+        // TWO time constants on purpose, and the difference between them is the whole
+        // point: the body pitches quickly (loadTau) while the tyre actually building the
+        // braking force lags behind (useTau). So for the first moments of a brake
+        // application the fronts are already loaded but not yet busy — which is exactly the
+        // brief turn-in advantage a driver feels — and only afterwards does the brake force
+        // eat that grip up again.
+        transferK: 0.30,      // share of the load that moves at 1g
+        loadTau: 0.08,        // body pitch (squat and dive): fast
+        useTau: 0.45,         // longitudinal tyre force build-up: distinctly slower
+        loadGain: 0.40,       // how much front load changes lateral capacity
+        brakeUseGain: 1.15,   // how much of that capacity the brake eats
+        coastPitch: 0.15,     // engine braking pitches the nose down a little
+        // Full-throttle equilibrium of loadFront. Traction is normalised to THIS state, not
+        // to static 50/50, so the measured launch time stays exactly as calibrated and the
+        // model can only ever take grip away, never invent some.
+        loadFrontOnPower: 0.20,
+        loadFrontOnBrake: 0.80,   // same idea for the brake, see below
         upshiftRpm: 8800,
         downshiftRpm: 4200,
         shiftMs: 120,     // a sequential swaps far quicker than the old 180ms
@@ -1961,6 +2010,10 @@
         onLimiter: false,
         gripLong: 1, // longitudinal share of the grip budget — see the friction circle
         aquaFactor: 1,
+        loadFront: 0.5,   // static 50/50; >0.5 means nose-down
+        longUse: 0,       // lagging longitudinal demand, signed: + drive, - brake
+        steerGrip: 1,     // front lateral capacity left over, 1 = static baseline
+        gLat: 0, gLong: 0, // for the G plot
         engineLoad: 0,        // pedal opening actually applied — drives sound VOLUME
         commanded: 0,
         dampedSteering: 0,
@@ -2115,6 +2168,29 @@
       // effects stay legible: gripLong is how hard you are cornering, gripScale is rain.
       const surf = cfg.gripScale;
 
+      // Signed longitudinal demand: + on throttle, - on brake. Fed through two lags (see
+      // config) so pitch leads and tyre force follows.
+      const rolling = Math.abs(st.speedKmh) > cfg.topSpeedKmh * 0.02;
+      const demand = (inputs.brake > 0.02) ? -inputs.brake
+                   : (inputs.throttle > 0.02 ? inputs.throttle
+                   : (rolling ? -cfg.coastPitch : 0));   // coasting: engine braking
+      const aL = 1 - Math.exp(-dt / cfg.loadTau);
+      const aU = 1 - Math.exp(-dt / cfg.useTau);
+      st.loadFront += ((0.5 - demand * cfg.transferK) - st.loadFront) * aL;
+      st.longUse += (demand - st.longUse) * aU;
+
+      // Front axle: capacity scales with the load actually on it; what the brake is already
+      // using is taken out of the circle, leaving the lateral share for steering.
+      const frontCap = 1 + cfg.loadGain * (st.loadFront - 0.5) * 2;
+      const frontUse = Math.max(0, -st.longUse) * cfg.brakeUseGain;
+      st.steerGrip = Math.max(0.12, Math.min(1.25,
+        Math.sqrt(Math.max(0, frontCap * frontCap - frontUse * frontUse))));
+      // Rear axle drives. Normalised to the on-power equilibrium (see config), so this term
+      // is 1 once the car has squatted and below 1 only while the rear is still light — the
+      // soft first moments of a throttle application, not a free performance bonus.
+      const rearGrip = Math.max(0.35, Math.min(1,
+        (1 - st.loadFront) / (1 - cfg.loadFrontOnPower)));
+
       const resist = this.resistAt(st.speedKmh, A, onPower); // always >= 0
       let accel = 0;
       let output = 0;
@@ -2149,8 +2225,13 @@
           isBraking = true;
           st.engineLoad = 0;
           const uB = Math.abs(st.speedKmh) / cfg.topSpeedKmh;
+          // Braking capacity follows the loaded front axle — but normalised to the
+          // full-braking equilibrium, so the deceleration fitted to the real GT3 braking
+          // table stays exactly that. The term can only bite less, during the moment
+          // before the nose is down, never more.
+          const dive = Math.max(0.5, Math.min(1, st.loadFront / cfg.loadFrontOnBrake));
           accel = -(resist + (cfg.brakeDecelBase + cfg.brakeDecelAero * uB)
-                             * inputs.brake * st.gripLong * surf);
+                             * inputs.brake * st.gripLong * surf * dive);
           // ABS is now only an indicator plus a haptic pulse. Modulating the byte here
           // would reintroduce precisely the stutter that took so long to remove.
           if (inputs.brake > 0.8 && st.speedKmh > cfg.topSpeedKmh * 0.15) {
@@ -2162,7 +2243,8 @@
           st.engineLoad = st.isShifting ? 0 : inputs.throttle;
           accel = st.isShifting
             ? -resist * cfg.shiftDragFactor // a brief lull, not a full coast-down
-            : this.thrustAt(st.speedKmh, gearIdx, inputs.throttle, A) * st.gripLong * surf - resist;
+            : this.thrustAt(st.speedKmh, gearIdx, inputs.throttle, A)
+                * st.gripLong * surf * rearGrip - resist;
         } else {
           st.engineLoad = 0;
           accel = -resist; // lift off and it rolls out
@@ -2214,7 +2296,16 @@
       const uA = Math.abs(st.speedKmh) / cfg.topSpeedKmh;
       const over = Math.max(0, Math.min(1, (uA - 0.6) / 0.4));
       st.aquaFactor = 1 - cfg.aquaplaning * over * over;
-      this.outputs.servoAngle = this.state.dampedSteering * st.aquaFactor;
+      // Steering is scaled by what the front axle has left. This is where "cannot steer
+      // under heavy braking or full throttle, but turns in nicely at the moment you first
+      // hit the brakes" actually comes from.
+      this.outputs.servoAngle = Math.max(-1, Math.min(1,
+        this.state.dampedSteering * st.aquaFactor * st.steerGrip));
+
+      // Values for the G plot. Lateral force rises with steer angle and speed; longitudinal
+      // is the lagged demand, which is what the body actually feels.
+      st.gLat = this.state.dampedSteering * (Math.abs(st.speedKmh) / cfg.topSpeedKmh);
+      st.gLong = st.longUse;
       this.outputs.motorPWM = Math.max(-1, Math.min(1, output));
       this.outputs.lights.head = !!inputs.headlights;
       this.outputs.lights.brake = !reversing && isBraking; // reversing must not light it
@@ -2513,6 +2604,17 @@
     $('race-wx-rain').style.color = wet ? '#5aa9ff' : '';
     $('race-tyres').textContent = tyres === 'wet' ? 'Regen' : 'Slicks';
     $('race-tyres').style.color = (wet !== (tyres === 'wet')) ? '#ffb02e' : '';
+    // G plot. Red is the simulation, green the car's own raw motion bytes — the two are
+    // scaled independently on purpose: the real numbers are far noisier and much larger
+    // relative to their range, so a shared scale would push one of them off the dial.
+    const R = 42;
+    $('race-g-sim').setAttribute('cx', (50 + Math.max(-1, Math.min(1, st.gLat)) * R).toFixed(1));
+    $('race-g-sim').setAttribute('cy', (50 + Math.max(-1, Math.min(1, -st.gLong)) * R).toFixed(1));
+    const gx = Math.max(-1, Math.min(1, gyroRaw.x / gyroRaw.span));
+    const gy = Math.max(-1, Math.min(1, gyroRaw.y / gyroRaw.span));
+    $('race-g-real').setAttribute('cx', (50 + gx * R).toFixed(1));
+    $('race-g-real').setAttribute('cy', (50 + gy * R).toFixed(1));
+
     $('race-track').textContent = dashOffTrack ? 'ABSEITS' : 'auf Strecke';
     $('race-track').className = 'gt3-val sm ' + (dashOffTrack ? 'gt3-bad' : 'gt3-ok');
 
@@ -3394,6 +3496,10 @@
   let dashLapStart = null;
   let dashLapTimes = [];
   let lastTileCode = null;
+  // Raw motion-ish bytes from the notify packet. Their meaning was NEVER confirmed — an
+  // earlier calibration run was inconclusive — so these are raw sensor numbers, not
+  // measured G. Kept smoothed only lightly, because the noise is the honest part.
+  let gyroRaw = { x: 0, y: 0, span: 8 };
   let freeRoamMode = false;
 
   $('dash-freeroam').addEventListener('change', (e) => {
@@ -3558,6 +3664,15 @@
     badge.style.background = dashOffTrack ? 'rgba(179,19,31,.12)' : 'var(--panel-2)';
     badge.style.borderColor = dashOffTrack ? 'var(--bad)' : 'var(--border)';
 
+    // Bytes 1 and 3 fluctuate only once the car moves and byte 3 flipped sign with turn
+    // direction in one capture — hence "motion-ish". Unconfirmed.
+    const g1 = s8signed(bytes[1]), g3 = s8signed(bytes[3]);
+    gyroRaw.x += (g3 - gyroRaw.x) * 0.35;
+    gyroRaw.y += (g1 - gyroRaw.y) * 0.35;
+    // Auto-range so the dot stays readable whatever the real amplitude turns out to be.
+    gyroRaw.span = Math.max(8, gyroRaw.span * 0.995,
+                            Math.abs(gyroRaw.x) * 1.2, Math.abs(gyroRaw.y) * 1.2);
+
     detectCrash(bytes);
 
     const counter = bytes[11];
@@ -3645,6 +3760,8 @@
   function setWeather(next) {
     if (weather === next) return;
     weather = next;
+    const cb = $('setting-rain');
+    if (cb) cb.checked = (weather === 'rain'); // keep the options switch in step
     applySurface();
     const need = (weather === 'rain' && tyres === 'slick') || (weather === 'dry' && tyres === 'wet');
     showHudToast(weather === 'rain' ? 'Regen' : 'Trocken');
@@ -4106,7 +4223,9 @@
   const ambience = { bed: null, rainBed: null, passby: [], thunder: [],
                      bedNode: null, bedGain: null, rainNode: null, rainGain: null,
                      ready: false, rainOn: false, busy: false };
-  let ambienceVolume = 0.35;
+  let ambienceVolume = 0.20;   // track bed and pass-bys: quiet, the engine leads
+  let rainVolume = 0.40;       // rain and thunder: own control, weather should be loud
+  let ambienceEnabled = true; // default on, switchable
 
   async function loadAmbience() {
     if (ambience.ready || !audioCtx) return;
@@ -4162,10 +4281,12 @@
   function refreshAmbienceGains() {
     if (!audioCtx) return;
     const t = audioCtx.currentTime;
-    const on = soundEnabled ? ambienceVolume : 0;
+    const live = soundEnabled && ambienceEnabled;
+    const on = live ? ambienceVolume : 0;
+    const wet = live ? rainVolume : 0;
     if (ambience.bedGain) ambience.bedGain.gain.setTargetAtTime(on * 0.7, t, 0.4);
     if (ambience.rainGain) {
-      ambience.rainGain.gain.setTargetAtTime(ambience.rainOn ? on : 0, t, 0.6);
+      ambience.rainGain.gain.setTargetAtTime(ambience.rainOn ? wet : 0, t, 0.6);
     }
   }
 
@@ -4174,13 +4295,13 @@
     refreshAmbienceGains();
   }
 
-  function playAmbienceOneShot(buffer, gain) {
-    if (!buffer || !audioCtx || !soundEnabled || ambience.busy) return;
+  function playAmbienceOneShot(buffer, gain, wet) {
+    if (!buffer || !audioCtx || !soundEnabled || !ambienceEnabled || ambience.busy) return;
     ambience.busy = true;                      // never let an event overlap itself
     const src = audioCtx.createBufferSource();
     src.buffer = buffer;
     const g = audioCtx.createGain();
-    g.gain.value = gain * ambienceVolume;
+    g.gain.value = gain * (wet ? rainVolume : ambienceVolume);
     const pan = audioCtx.createStereoPanner
       ? audioCtx.createStereoPanner() : null;
     if (pan) {
@@ -4201,7 +4322,7 @@
       if (ambience.ready) {
         if (ambience.rainOn && ambience.thunder.length) {
           playAmbienceOneShot(ambience.thunder[Math.floor(Math.random() * ambience.thunder.length)],
-                              0.55 + Math.random() * 0.45);
+                              0.55 + Math.random() * 0.45, true);
         } else if (ambience.passby.length) {
           playAmbienceOneShot(ambience.passby[Math.floor(Math.random() * ambience.passby.length)],
                               0.35 + Math.random() * 0.45);
@@ -4288,9 +4409,24 @@
     if (engineOsc) engineOsc.type = soundProfile.wave;
   });
 
+  $('setting-rain').addEventListener('change', (e) => {
+    setWeather(e.target.checked ? 'rain' : 'dry');
+  });
+
+  $('amb-enable').addEventListener('change', (e) => {
+    ambienceEnabled = e.target.checked;
+    refreshAmbienceGains();
+  });
+
   $('amb-volume').addEventListener('input', (e) => {
     ambienceVolume = parseFloat(e.target.value);
     $('amb-volume-val').textContent = Math.round(ambienceVolume * 100) + '%';
+    refreshAmbienceGains();
+  });
+
+  $('rain-volume').addEventListener('input', (e) => {
+    rainVolume = parseFloat(e.target.value);
+    $('rain-volume-val').textContent = Math.round(rainVolume * 100) + '%';
     refreshAmbienceGains();
   });
 
