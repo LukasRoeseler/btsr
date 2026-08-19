@@ -331,7 +331,7 @@
         <div class="gt3-lbl">km/h</div>
         <div class="gt3-val" id="race-speed">0</div>
         <div class="gt3-tell"><svg class="gt3-lamp" id="race-light" viewBox="0 0 30 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-label="Scheinwerfer"><path d="M13 3H8a7 7 0 0 0 0 14h5a7 7 0 0 0 0-14z" fill="currentColor" stroke="none" opacity=".95"/><path d="M18 5h9M18 10h9M18 15h9" stroke-linecap="round"/></svg></div>
-        <div class="gt3-lbl" style="margin-top:6px">Strecke</div>
+        <div class="gt3-tell" style="margin-top:6px"><svg class="gt3-ico" id="race-wx-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-label="Trocken"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.4M12 19.6V22M2 12h2.4M19.6 12H22M4.9 4.9l1.7 1.7M17.4 17.4l1.7 1.7M19.1 4.9l-1.7 1.7M6.6 17.4l-1.7 1.7"/></svg><svg class="gt3-ico" id="race-wx-rain" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-label="Regen" style="display:none"><path d="M6.5 14a4 4 0 0 1 .4-8 5.5 5.5 0 0 1 10.5 1.4A3.6 3.6 0 0 1 17.5 14z"/><path d="M8 17.5l-1 2.5M12 17.5l-1 2.5M16 17.5l-1 2.5"/></svg><span class="gt3-lbl" id="race-tyres">Slicks</span></div>
         <div class="gt3-val sm" id="race-track">&ndash;</div>
       </div>
 
@@ -892,6 +892,13 @@
       <div class="opt-row"><div class="opt-label">Physik-Modus aktivieren<small>Aus = die App sendet die rohe Stickstellung, ohne Gänge und Drehmoment.</small></div><label class="tgl"><input type="checkbox" id="phys-enable" checked><span></span></label></div>
       <div class="opt-row" id="phys-gyro-wrap"><div class="opt-label">Handy-Neigung für Lenkung nutzen</div><label class="tgl"><input type="checkbox" id="phys-gyro"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Motorsound</div><label class="tgl"><input type="checkbox" id="sound-enable" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Umgebungslautstärke<small>Strecken-Ambience, Regen und Donner &mdash; getrennt vom Motor.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="amb-volume" min="0" max="1" step="0.05" value="0.35">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="amb-volume-val">35%</span>
+        </div></div>
       <div class="opt-row"><div class="opt-label">Motorsound-Profil</div>
         <select id="sound-profile">
           <option value="mustang" selected>Mustang &mdash; V8, Cross-Plane</option>
@@ -1793,6 +1800,7 @@
       physEngine.triggerShift(k === 'i' ? 1 : -1);
     }
     if (k === 'l' && !e.repeat) triggerHeadlightFlash();
+    if (k === 'w' && !e.repeat) setWeather(weather === 'rain' ? 'dry' : 'rain');
   });
   window.addEventListener('keydown', (e) => {
     if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)) e.preventDefault();
@@ -1923,6 +1931,10 @@
         // meaningful cornering already eats a real share, and hard cornering at speed
         // leaves nothing for acceleration.
         corneringLoad: 1.8,
+        // Track-surface grip, SEPARATE from the friction circle on purpose: the circle is
+        // driving dynamics, this is what the road is doing. Set from the weather/tyre pair.
+        gripScale: 1.0,
+        aquaplaning: 0,       // 0 = dry grip, 1 = slicks in standing water
         upshiftRpm: 8800,
         downshiftRpm: 4200,
         shiftMs: 120,     // a sequential swaps far quicker than the old 180ms
@@ -1948,6 +1960,7 @@
         rpmFrac: 0,           // (rpm - idle) / (redline - idle)
         onLimiter: false,
         gripLong: 1, // longitudinal share of the grip budget — see the friction circle
+        aquaFactor: 1,
         engineLoad: 0,        // pedal opening actually applied — drives sound VOLUME
         commanded: 0,
         dampedSteering: 0,
@@ -2098,6 +2111,9 @@
                                  * (Math.abs(st.speedKmh) / cfg.topSpeedKmh)
                                  * cfg.corneringLoad);
       st.gripLong = Math.sqrt(Math.max(0, 1 - latUse * latUse));
+      // Surface grip multiplies on top of the circle. Kept as its own factor so the two
+      // effects stay legible: gripLong is how hard you are cornering, gripScale is rain.
+      const surf = cfg.gripScale;
 
       const resist = this.resistAt(st.speedKmh, A, onPower); // always >= 0
       let accel = 0;
@@ -2112,7 +2128,7 @@
           const uR = Math.abs(st.speedKmh) / cfg.topSpeedKmh;
           accel = +((cfg.brakeDecelBase + cfg.brakeDecelAero * uR) * inputs.brake + resist);
         } else if (inputs.throttle > 0.02 && !st.isShifting) {
-          accel = -this.thrustAt(st.speedKmh, -1, inputs.throttle, A) * st.gripLong + resist;
+          accel = -this.thrustAt(st.speedKmh, -1, inputs.throttle, A) * st.gripLong * surf + resist;
         } else {
           accel = +resist; // coast back toward standstill
         }
@@ -2134,7 +2150,7 @@
           st.engineLoad = 0;
           const uB = Math.abs(st.speedKmh) / cfg.topSpeedKmh;
           accel = -(resist + (cfg.brakeDecelBase + cfg.brakeDecelAero * uB)
-                             * inputs.brake * st.gripLong);
+                             * inputs.brake * st.gripLong * surf);
           // ABS is now only an indicator plus a haptic pulse. Modulating the byte here
           // would reintroduce precisely the stutter that took so long to remove.
           if (inputs.brake > 0.8 && st.speedKmh > cfg.topSpeedKmh * 0.15) {
@@ -2146,7 +2162,7 @@
           st.engineLoad = st.isShifting ? 0 : inputs.throttle;
           accel = st.isShifting
             ? -resist * cfg.shiftDragFactor // a brief lull, not a full coast-down
-            : this.thrustAt(st.speedKmh, gearIdx, inputs.throttle, A) * st.gripLong - resist;
+            : this.thrustAt(st.speedKmh, gearIdx, inputs.throttle, A) * st.gripLong * surf - resist;
         } else {
           st.engineLoad = 0;
           accel = -resist; // lift off and it rolls out
@@ -2192,7 +2208,13 @@
       this.state.dampedSteering += (targetSteer - this.state.dampedSteering) * alpha;
       this.state.dampedSteering = Math.max(-1, Math.min(1, this.state.dampedSteering));
 
-      this.outputs.servoAngle = this.state.dampedSteering;
+      // Aquaplaning: above a speed threshold the fronts stop biting and the car simply
+      // runs on. Applied to the transmitted angle, not just the simulation — otherwise the
+      // real car would keep turning in and the effect would be pure decoration.
+      const uA = Math.abs(st.speedKmh) / cfg.topSpeedKmh;
+      const over = Math.max(0, Math.min(1, (uA - 0.6) / 0.4));
+      st.aquaFactor = 1 - cfg.aquaplaning * over * over;
+      this.outputs.servoAngle = this.state.dampedSteering * st.aquaFactor;
       this.outputs.motorPWM = Math.max(-1, Math.min(1, output));
       this.outputs.lights.head = !!inputs.headlights;
       this.outputs.lights.brake = !reversing && isBraking; // reversing must not light it
@@ -2483,6 +2505,14 @@
     const live = !!(device && device.gatt && device.gatt.connected);
     $('race-conn').textContent = live ? 'verbunden' : 'getrennt';
     $('race-conn').className = 'gt3-val sm ' + (live ? 'gt3-ok' : 'gt3-bad');
+    // Weather icon plus the fitted tyres. The tyres matter more than the weather here:
+    // they are what tells you whether the pit stop is still outstanding.
+    const wet = weather === 'rain';
+    $('race-wx-sun').style.display = wet ? 'none' : '';
+    $('race-wx-rain').style.display = wet ? '' : 'none';
+    $('race-wx-rain').style.color = wet ? '#5aa9ff' : '';
+    $('race-tyres').textContent = tyres === 'wet' ? 'Regen' : 'Slicks';
+    $('race-tyres').style.color = (wet !== (tyres === 'wet')) ? '#ffb02e' : '';
     $('race-track').textContent = dashOffTrack ? 'ABSEITS' : 'auf Strecke';
     $('race-track').className = 'gt3-val sm ' + (dashOffTrack ? 'gt3-bad' : 'gt3-ok');
 
@@ -3592,6 +3622,48 @@
     }
   }, 200);
 
+  // ---- Weather and tyres ----
+  // The four states the user described, as a 2x2. Wets on a dry track are deliberately
+  // WORSE than slicks on a dry track: they overheat and grease over, which is why a second
+  // pit stop is needed to get back to the baseline rather than the weather clearing alone.
+  const GRIP_MATRIX = {
+    'dry|slick': 1.00,
+    'dry|wet':   0.88,
+    'rain|wet':  0.80,
+    'rain|slick': 0.45,
+  };
+  let weather = 'dry';
+  let tyres = 'slick';
+
+  function applySurface() {
+    physEngine.config.gripScale = GRIP_MATRIX[weather + '|' + tyres] ?? 1.0;
+    // Only slicks aquaplane; wets are cut to move water.
+    physEngine.config.aquaplaning = (weather === 'rain' && tyres === 'slick') ? 1 : 0;
+    setAmbienceRain(weather === 'rain');
+  }
+
+  function setWeather(next) {
+    if (weather === next) return;
+    weather = next;
+    applySurface();
+    const need = (weather === 'rain' && tyres === 'slick') || (weather === 'dry' && tyres === 'wet');
+    showHudToast(weather === 'rain' ? 'Regen' : 'Trocken');
+    log('Wetter: ' + (weather === 'rain' ? 'Regen' : 'trocken') + ' — Reifen: '
+        + (tyres === 'wet' ? 'Regen' : 'Slicks')
+        + (need ? ' (Boxenstopp für passende Reifen)' : ''), 'info');
+    padRumble(0.2, 0.15, 120);
+  }
+
+  function fitTyresForWeather() {
+    const want = weather === 'rain' ? 'wet' : 'slick';
+    if (tyres === want) return false;
+    tyres = want;
+    applySurface();
+    showHudToast(want === 'wet' ? 'Regenreifen montiert' : 'Slicks montiert');
+    log('Boxenstopp: ' + (want === 'wet' ? 'Regenreifen' : 'Slicks') + ' montiert.', 'info');
+    return true;
+  }
+
   // ---- Pit lane ----
   // Driving over the marker sheet arms a 40% limiter. Come to a stand while limited and
   // servicing begins; it accrues for as long as you keep still, so a longer stop buys
@@ -3616,6 +3688,7 @@
     pitState = next;
     physEngine.config.speedLimitFactor = (next === 'off') ? 1 : PIT_SPEED_FACTOR;
     if (next === 'servicing') {
+      fitTyresForWeather(); // automatic, as requested
       pitServiceStart = Date.now();
       pitFuelGained = 0; pitDamageRepaired = 0;
       if (!playFx(fxBuffers.pit, 0.8)) {
@@ -3883,6 +3956,7 @@
       if (audioCtx.state === 'suspended') audioCtx.resume();
       loadEngineSamples(); // needs the AudioContext, so it can only start from here
       loadFxSamples();
+      loadAmbience();
     }
     document.removeEventListener('pointerdown', unlockAudioOnFirstGesture);
     document.removeEventListener('keydown', unlockAudioOnFirstGesture);
@@ -3897,7 +3971,10 @@
       if (audioCtx.state === 'suspended') audioCtx.resume();
       loadEngineSamples();
       loadFxSamples();
+      loadAmbience();
+      refreshAmbienceGains();
     } else if (engineGain) {
+      refreshAmbienceGains();
       engineGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.05);
       if (sampleEngine.master) sampleEngine.master.gain.setTargetAtTime(0, audioCtx.currentTime, 0.05);
     }
@@ -4022,6 +4099,118 @@
     }
   }
 
+  // ---- Ambience: a quiet bed plus scattered one-off events ----
+  // Two beds (trackside, rain) loop continuously behind their own gains, and a single timer
+  // sprinkles pass-bys and thunder at random intervals. A lone loop, however long, becomes
+  // recognisable within minutes; scattered distinct events do not.
+  const ambience = { bed: null, rainBed: null, passby: [], thunder: [],
+                     bedNode: null, bedGain: null, rainNode: null, rainGain: null,
+                     ready: false, rainOn: false, busy: false };
+  let ambienceVolume = 0.35;
+
+  async function loadAmbience() {
+    if (ambience.ready || !audioCtx) return;
+    try {
+      const res = await fetch('audio/ambience.json');
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const m = await res.json();
+      const grab = async (file) => {
+        const r = await fetch('audio/' + file);
+        if (!r.ok) throw new Error(file);
+        return audioCtx.decodeAudioData(await r.arrayBuffer());
+      };
+      ambience.bed = await grab(m.bed.file);
+      ambience.passby = await Promise.all((m.passby || []).map(p => grab(p.file)));
+      if (m.rain && m.rain.bed) {
+        ambience.rainBed = await grab(m.rain.bed.file);
+        ambience.thunder = await Promise.all((m.rain.thunder || []).map(t => grab(t.file)));
+      }
+      ambience.ready = true;
+      startAmbienceBeds();
+      scheduleAmbienceEvent();
+      log('Ambience geladen (' + ambience.passby.length + ' Vorbeifahrten, '
+          + ambience.thunder.length + ' Donner).', 'info');
+    } catch (err) {
+      // Expected wherever audio/ is not deployed — stay silent, exactly like the engines.
+      ambience.ready = false;
+      log('Keine Ambience gefunden.', 'info');
+    }
+  }
+
+  function loopBed(buffer, gainVal) {
+    const src = audioCtx.createBufferSource();
+    src.buffer = buffer;
+    src.loop = true;
+    const g = audioCtx.createGain();
+    g.gain.value = gainVal;
+    src.connect(g).connect(audioCtx.destination);
+    src.start();
+    return { src, g };
+  }
+
+  function startAmbienceBeds() {
+    if (!ambience.ready || ambience.bedNode) return;
+    const a = loopBed(ambience.bed, 0);
+    ambience.bedNode = a.src; ambience.bedGain = a.g;
+    if (ambience.rainBed) {
+      const b = loopBed(ambience.rainBed, 0);
+      ambience.rainNode = b.src; ambience.rainGain = b.g;
+    }
+    refreshAmbienceGains();
+  }
+
+  function refreshAmbienceGains() {
+    if (!audioCtx) return;
+    const t = audioCtx.currentTime;
+    const on = soundEnabled ? ambienceVolume : 0;
+    if (ambience.bedGain) ambience.bedGain.gain.setTargetAtTime(on * 0.7, t, 0.4);
+    if (ambience.rainGain) {
+      ambience.rainGain.gain.setTargetAtTime(ambience.rainOn ? on : 0, t, 0.6);
+    }
+  }
+
+  function setAmbienceRain(on) {
+    ambience.rainOn = on;
+    refreshAmbienceGains();
+  }
+
+  function playAmbienceOneShot(buffer, gain) {
+    if (!buffer || !audioCtx || !soundEnabled || ambience.busy) return;
+    ambience.busy = true;                      // never let an event overlap itself
+    const src = audioCtx.createBufferSource();
+    src.buffer = buffer;
+    const g = audioCtx.createGain();
+    g.gain.value = gain * ambienceVolume;
+    const pan = audioCtx.createStereoPanner
+      ? audioCtx.createStereoPanner() : null;
+    if (pan) {
+      pan.pan.value = Math.random() * 1.6 - 0.8;
+      src.connect(g).connect(pan).connect(audioCtx.destination);
+    } else {
+      src.connect(g).connect(audioCtx.destination);
+    }
+    src.onended = () => { ambience.busy = false; };
+    src.start();
+  }
+
+  function scheduleAmbienceEvent() {
+    // Thunder every 20-30s while it rains (user's spec); otherwise a pass-by every 8-25s.
+    const rain = ambience.rainOn && ambience.thunder.length;
+    const wait = rain ? 20000 + Math.random() * 10000 : 8000 + Math.random() * 17000;
+    setTimeout(() => {
+      if (ambience.ready) {
+        if (ambience.rainOn && ambience.thunder.length) {
+          playAmbienceOneShot(ambience.thunder[Math.floor(Math.random() * ambience.thunder.length)],
+                              0.55 + Math.random() * 0.45);
+        } else if (ambience.passby.length) {
+          playAmbienceOneShot(ambience.passby[Math.floor(Math.random() * ambience.passby.length)],
+                              0.35 + Math.random() * 0.45);
+        }
+      }
+      scheduleAmbienceEvent();
+    }, wait);
+  }
+
   function stopSampleEngine() {
     if (!sampleEngine.nodes) return;
     for (const n of sampleEngine.nodes) { try { n.src.stop(); } catch (e) { /* already stopped */ } }
@@ -4097,6 +4286,12 @@
     stopSampleEngine();
     soundProfile = SOUND_PROFILES[v] || SOUND_PROFILES.v8;
     if (engineOsc) engineOsc.type = soundProfile.wave;
+  });
+
+  $('amb-volume').addEventListener('input', (e) => {
+    ambienceVolume = parseFloat(e.target.value);
+    $('amb-volume-val').textContent = Math.round(ambienceVolume * 100) + '%';
+    refreshAmbienceGains();
   });
 
   $('sound-volume').addEventListener('input', (e) => {
@@ -4197,12 +4392,14 @@
     pitstop: { type: 'button', index: 3, label: 'Y / Dreieck' },
     racestart: { type: 'button', index: 4, label: 'LB / L1' },
     racestop: { type: 'button', index: 5, label: 'RB / R1' },
+    weather: { type: 'button', index: 8, label: 'Select / Share' },
   };
   const BIND_ACTION_LABELS = {
     throttle: 'Gas', brake: 'Bremse', steering: 'Lenkung',
     downshift: 'Runterschalten', upshift: 'Hochschalten',
     lightflash: 'Lichthupe', pitstop: 'Boxenstopp',
     racestart: 'Rennen starten', racestop: 'Rennen beenden',
+    weather: 'Wetter umschalten',
   };
 
   function loadBindings() {
@@ -4355,7 +4552,7 @@
   // left/right = steering damping (left = direct, right = sluggish).
   const DPAD = { up: 12, down: 13, left: 14, right: 15 };
   const prevDpad = { up: false, down: false, left: false, right: false };
-  let prevLightFlash = false, prevPitstop = false;
+  let prevLightFlash = false, prevPitstop = false, prevWeather = false;
   let prevRaceStart = false, prevRaceStop = false;
 
   function padButtonPressed(pad, index) {
@@ -4430,6 +4627,10 @@
       const flashNow = readBindingValue(pad, bindings.lightflash) > BUTTON_CAPTURE_THRESHOLD;
       if (flashNow && !prevLightFlash) triggerHeadlightFlash();
       prevLightFlash = flashNow;
+
+      const wxNow = readBindingValue(pad, bindings.weather) > BUTTON_CAPTURE_THRESHOLD;
+      if (wxNow && !prevWeather) setWeather(weather === 'rain' ? 'dry' : 'rain');
+      prevWeather = wxNow;
 
       const pitstopNow = readBindingValue(pad, bindings.pitstop) > BUTTON_CAPTURE_THRESHOLD;
       if (pitstopNow && !prevPitstop) $('btn-pitstop').click();
