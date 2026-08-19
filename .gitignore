@@ -1,0 +1,8 @@
+# Raw source recordings: ~46MB of long-form YouTube rips used only as analysis input.
+# They must never enter git history — once committed, large binaries cannot practically
+# be removed again, and republishing third-party recordings is not the intent.
+# Only the heavily-processed short loops in audio/ are published, with attribution.
+sounds/
+
+# Intermediate analysis output: candidate clips, metrics, the local audition page.
+audio-work/
