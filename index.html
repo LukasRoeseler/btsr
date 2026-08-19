@@ -205,67 +205,58 @@
     display: inline-block; width: 14px; height: 14px; border-radius: 50%;
     background: #3a4a6b; margin: 0 3px; vertical-align: middle;
   }
-  /* Racing screen: one glance, landscape, nothing to operate. Sizes use clamp() so the
-     same grid works from a phone held sideways up to a laptop without media queries. */
-  .race-screen { background: var(--navy); border-radius: 8px; padding: clamp(8px, 2vw, 20px);
-    color: #fff; display: grid; gap: clamp(6px, 1.4vw, 16px);
-    grid-template-columns: minmax(0,1.15fr) minmax(0,2fr) minmax(0,1.25fr); align-items: stretch; }
-  .race-cell { background: rgba(255,255,255,.06); border-radius: 6px; padding: clamp(6px,1.2vw,14px);
-    display: flex; flex-direction: column; justify-content: center; min-width: 0; }
-  .race-big { font-family: monospace; font-weight: 800; line-height: 1;
-    font-size: clamp(46px, 13vw, 130px); text-align: center; }
-  .race-val { font-family: monospace; font-weight: 800; line-height: 1.05;
-    font-size: clamp(20px, 4.4vw, 44px); }
-  .race-lbl { font-size: clamp(8px, 1.15vw, 11px); text-transform: uppercase;
-    letter-spacing: .06em; color: #9fb0d6; margin-top: 3px; }
-  .race-bar { height: clamp(10px, 2.2vw, 20px); background: rgba(0,0,0,.35); border-radius: 3px;
-    overflow: hidden; margin-top: 4px; }
-  .race-bar > i { display: block; height: 100%; width: 0; transition: width .12s linear; }
-  .race-lights { display: flex; gap: clamp(3px,.7vw,6px); margin-bottom: 6px; }
-  .race-lights > span { flex: 1; height: clamp(7px,1.5vw,14px); border-radius: 2px; background: #2b3a5c; }
-  .race-laps { list-style: none; margin: 4px 0 0 0; padding: 0; overflow-y: auto;
-    max-height: clamp(70px, 17vw, 150px); font-family: monospace;
-    font-size: clamp(11px, 1.5vw, 15px); }
-  .race-laps li { display: flex; justify-content: space-between; padding: 1px 0;
-    border-bottom: 1px solid rgba(255,255,255,.08); }
-  .race-warn { color: var(--warn); }
-  #race-rotate { display: none; }
-  @media (orientation: portrait) and (max-width: 900px) {
-    #race-rotate { display: block; }
-  }
+  /* ---- Racing screen: modelled on a GT3 steering-wheel dash ----
+     Deliberately shows ONLY values that exist. A real Porsche dash also carries oil and
+     water temperature, oil pressure, tyre pressures and brake bias; this car has no sensor
+     for any of them, so those fields are absent rather than filled with invented numbers. */
+  .gt3 { background: #0a0d14; border: 1px solid #232a3a; border-radius: 10px;
+    padding: clamp(6px, 1.3vw, 14px); color: #eef2fa; display: grid; gap: clamp(5px, 1vw, 11px);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr) minmax(0, 1.25fr);
+    grid-template-areas: "shift shift shift" "left gear right" "strip strip strip"; }
+  .gt3-shift { grid-area: shift; display: flex; gap: clamp(2px, .5vw, 5px); }
+  .gt3-shift > span { flex: 1; height: clamp(9px, 1.9vw, 17px); border-radius: 2px;
+    background: #161c28; box-shadow: inset 0 0 0 1px #232a3a; }
+  .gt3-left { grid-area: left; } .gt3-gear { grid-area: gear; } .gt3-right { grid-area: right; }
+  .gt3-strip { grid-area: strip; display: grid; gap: clamp(4px, .9vw, 10px);
+    grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .gt3-box { background: #121722; border: 1px solid #232a3a; border-radius: 5px;
+    padding: clamp(4px, .9vw, 9px); min-width: 0; }
+  .gt3-lbl { font-size: clamp(7.5px, 1.05vw, 10px); letter-spacing: .08em;
+    text-transform: uppercase; color: #7c8aa6; }
+  .gt3-val { font-family: monospace; font-weight: 700; line-height: 1.05;
+    font-size: clamp(15px, 2.9vw, 30px); }
+  .gt3-val.sm { font-size: clamp(12px, 2vw, 20px); }
+  .gt3-gearnum { font-family: monospace; font-weight: 800; text-align: center; line-height: .95;
+    font-size: clamp(52px, 14vw, 132px); }
+  .gt3-rpm { font-family: monospace; font-weight: 700; text-align: center;
+    font-size: clamp(15px, 2.6vw, 28px); color: #cfe0ff; }
+  .gt3-laps { list-style: none; margin: 3px 0 0 0; padding: 0; overflow-y: auto;
+    max-height: clamp(46px, 11vw, 96px); font-family: monospace;
+    font-size: clamp(10px, 1.35vw, 13px); }
+  .gt3-laps li { display: flex; justify-content: space-between; padding: 1px 0;
+    border-bottom: 1px solid #1b212e; }
+  .gt3-bar { height: clamp(7px, 1.5vw, 13px); background: #060810; border-radius: 2px;
+    overflow: hidden; margin-top: 3px; }
+  .gt3-bar > i { display: block; height: 100%; width: 0; transition: width .15s linear; }
+  .gt3-ok { color: #46d17f; } .gt3-warn { color: #ffb02e; } .gt3-bad { color: #ff5252; }
+  /* The standard green headlamp tell-tale: a lamp body with beams, exactly the ISO glyph a
+     real dash uses, so it reads instantly rather than needing a caption. */
+  .gt3-tell { display: flex; align-items: center; gap: clamp(4px, .8vw, 8px); margin-top: 3px; }
+  .gt3-lamp { width: clamp(20px, 3.4vw, 32px); height: auto; color: #1e2634; }
+  .gt3-lamp.on { color: #2ee06a; filter: drop-shadow(0 0 5px rgba(46,224,106,.75)); }
+  #gt3-pit { grid-area: shift; display: none; align-items: center; justify-content: center;
+    gap: 14px; background: #3a2a06; border: 1px solid #ffb02e; border-radius: 4px;
+    padding: clamp(3px, .7vw, 7px); font-family: monospace; font-weight: 700;
+    color: #ffd479; font-size: clamp(11px, 1.9vw, 19px); letter-spacing: .05em; }
+  #gt3-pit.on { display: flex; }
   /* On the racing screen the header and page padding are pure overhead: on a phone held
-     sideways they push the grid below the fold, which defeats "everything at a glance".
-     Collapse them while that tab is showing. */
+     sideways they push the dash below the fold, which defeats "everything at a glance". */
   body.race-mode header, body.race-mode .pinstripe { display: none; }
   body.race-mode nav.tabs { padding: 0 8px; }
   body.race-mode nav.tabs button { padding: 4px 9px; font-size: 12px; }
   body.race-mode main { padding: 6px 8px 8px 8px; }
-  /* Options list: one setting per row, caption left, control right. A grid rather than
-     the old flex .row so every control lines up in the same column regardless of how long
-     its caption is. */
-  .opt-row { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 14px;
-    align-items: center; padding: 9px 0; border-bottom: 1px solid var(--border); }
-  .opt-row:last-child { border-bottom: none; }
-  .opt-label { font-size: 13px; }
-  .opt-label small { display: block; color: var(--muted); font-size: 11px; margin-top: 2px; }
-  .opt-slider { display: flex; align-items: center; gap: 6px; }
-  .opt-slider input[type=range] { width: clamp(100px, 20vw, 190px); }
-  .opt-slider button { width: 26px; height: 26px; padding: 0; font-size: 15px; line-height: 1;
-    flex: 0 0 auto; }
-  .opt-val { min-width: 54px; text-align: right; font-family: monospace; font-size: 12px;
-    color: var(--muted); }
-  /* Toggle switch drawn on top of a real checkbox, so every existing change handler and
-     .checked read keeps working untouched. */
-  .tgl { position: relative; display: inline-block; width: 44px; height: 24px; flex: 0 0 auto; }
-  .tgl input { position: absolute; opacity: 0; width: 0; height: 0; }
-  .tgl span { position: absolute; inset: 0; cursor: pointer; border-radius: 999px;
-    background: var(--panel-3); border: 1px solid var(--border); transition: background .15s; }
-  .tgl span::after { content: ''; position: absolute; top: 2px; left: 2px; width: 18px;
-    height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.3);
-    transition: transform .15s; }
-  .tgl input:checked + span { background: var(--good); border-color: var(--good); }
-  .tgl input:checked + span::after { transform: translateX(20px); }
-  .tgl input:focus-visible + span { outline: 2px solid var(--navy); outline-offset: 2px; }
+  #race-rotate { display: none; }
+  @media (orientation: portrait) and (max-width: 900px) { #race-rotate { display: block; } }
   .hud-toggle { margin-left: auto; display: flex; align-items: center; gap: 6px; font-size: 12px; color: #cfd8ec; }
 
   /* Race-mode start lights: off (gray) -> up to 3 reds -> green on "go" */
@@ -324,51 +315,49 @@
 
   <!-- DEVELOPER TAB (sub-tabbed: BLE-Explorer / Kalibrierung / Makros / Doku) -->
   <section class="tabpage" id="tab-race">
-    <p class="muted" id="race-rotate" style="margin-bottom:10px">
+    <p class="muted" id="race-rotate" style="margin-bottom:8px">
       📱 Gerät quer halten &mdash; dieser Bildschirm ist fürs Querformat gebaut.
     </p>
-    <div class="race-screen">
-      <div class="race-cell" style="align-items:center">
-        <div class="race-big" id="race-gear">1</div>
-        <div class="race-lbl" style="text-align:center">Gang</div>
+    <div class="gt3">
+      <div class="gt3-shift" id="race-shift">
+        <span></span><span></span><span></span><span></span>
+        <span></span><span></span><span></span><span></span>
+      </div>
+      <div id="gt3-pit"><span id="race-pit-text">BOXENGASSE</span></div>
+
+      <div class="gt3-left gt3-box">
+        <div class="gt3-lbl">km/h simuliert</div>
+        <div class="gt3-val" id="race-speed">0.0</div>
+        <div class="gt3-tell"><svg class="gt3-lamp" id="race-light" viewBox="0 0 30 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-label="Scheinwerfer"><path d="M13 3H8a7 7 0 0 0 0 14h5a7 7 0 0 0 0-14z" fill="currentColor" stroke="none" opacity=".95"/><path d="M18 5h9M18 10h9M18 15h9" stroke-linecap="round"/></svg><span class="gt3-lbl" id="race-light-lbl">Licht</span></div>
+        <div class="gt3-lbl" style="margin-top:6px">Strecke</div>
+        <div class="gt3-val sm" id="race-track">&ndash;</div>
       </div>
 
-      <div class="race-cell">
-        <div class="race-lights" id="race-shift">
-          <span></span><span></span><span></span><span></span><span></span>
-          <span></span><span></span><span></span>
-        </div>
-        <div class="race-val" id="race-rpm">1500</div>
-        <div class="race-lbl">1/min</div>
-        <div class="race-val" style="margin-top:8px" id="race-speed">0.0</div>
-        <div class="race-lbl">km/h (simuliert)</div>
+      <div class="gt3-gear gt3-box" style="display:flex;flex-direction:column;justify-content:center">
+        <div class="gt3-rpm" id="race-rpm">1500</div>
+        <div class="gt3-gearnum" id="race-gear">1</div>
+        <div class="gt3-lbl" style="text-align:center">Gang</div>
       </div>
 
-      <div class="race-cell">
-        <div class="race-lbl">Aktuelle Runde</div>
-        <div class="race-val" id="race-lap-now">-</div>
-        <ul class="race-laps" id="race-lap-list"></ul>
+      <div class="gt3-right gt3-box">
+        <div class="gt3-lbl">Aktuelle Runde</div>
+        <div class="gt3-val" id="race-lap-now">&ndash;</div>
+        <div class="gt3-lbl" style="margin-top:4px">Beste <span id="race-lap-best">&ndash;</span>
+          &nbsp;&middot;&nbsp; Runde <span id="race-lap-count">0</span></div>
+        <ul class="gt3-laps" id="race-lap-list"></ul>
       </div>
 
-      <div class="race-cell">
-        <div class="race-lbl">Tank</div>
-        <div class="race-bar"><i id="race-fuel-bar" style="background:var(--good)"></i></div>
-        <div class="race-lbl" style="margin-top:8px">Schaden</div>
-        <div class="race-bar"><i id="race-dmg-bar" style="background:var(--bad)"></i></div>
-      </div>
-
-      <div class="race-cell">
-        <div class="race-lbl">Akku Auto</div>
-        <div class="race-val" id="race-batt">-</div>
-        <div class="race-lbl" style="margin-top:8px">Boxengasse</div>
-        <div class="race-val" id="race-pit">-</div>
-      </div>
-
-      <div class="race-cell">
-        <div class="race-lbl">Verbindung</div>
-        <div class="race-val" id="race-conn">getrennt</div>
-        <div class="race-lbl" style="margin-top:8px">Strecke</div>
-        <div class="race-val" id="race-track" style="font-size:clamp(13px,2.2vw,22px)">-</div>
+      <div class="gt3-strip">
+        <div class="gt3-box"><div class="gt3-lbl">Tank</div>
+          <div class="gt3-val sm" id="race-fuel">100%</div>
+          <div class="gt3-bar"><i id="race-fuel-bar"></i></div></div>
+        <div class="gt3-box"><div class="gt3-lbl">Schaden</div>
+          <div class="gt3-val sm" id="race-dmg">0%</div>
+          <div class="gt3-bar"><i id="race-dmg-bar"></i></div></div>
+        <div class="gt3-box"><div class="gt3-lbl">Akku Auto</div>
+          <div class="gt3-val sm" id="race-batt">&ndash;</div></div>
+        <div class="gt3-box"><div class="gt3-lbl">Verbindung</div>
+          <div class="gt3-val sm" id="race-conn">getrennt</div></div>
       </div>
     </div>
   </section>
@@ -2437,41 +2426,62 @@
     $('race-rpm').textContent = Math.round(st.rpm);
     $('race-speed').textContent = Math.abs(st.speedKmh).toFixed(1);
 
-    // Shift light: fills across the band and turns red near the limiter, so the manual
-    // gearbox is actually usable without staring at the number.
+    // Shift light: green through amber to red, the way a real bar walks up to the limiter.
     const frac = Math.max(0, Math.min(1, st.rpmFrac));
     const lamps = $('race-shift').children;
     for (let i = 0; i < lamps.length; i++) {
       const lit = frac >= (i + 1) / lamps.length;
-      const hot = i >= lamps.length - 2;
-      lamps[i].style.background = !lit ? '#2b3a5c'
-        : (st.onLimiter ? '#ff5c5c' : (hot ? 'var(--warn)' : 'var(--good)'));
+      let col = '#161c28';
+      if (lit) col = st.onLimiter ? '#ff5252'
+        : (i >= lamps.length - 2 ? '#ff5252' : (i >= lamps.length - 4 ? '#ffb02e' : '#2ee06a'));
+      lamps[i].style.background = col;
     }
 
-    $('race-fuel-bar').style.width = Math.max(0, fuel) + '%';
-    $('race-fuel-bar').style.background = fuel < 20 ? 'var(--warn)' : 'var(--good)';
-    $('race-dmg-bar').style.width = damage + '%';
-    $('race-batt').textContent = dashBattery === null ? '-' : batteryPercent(dashBattery) + '%';
+    // Headlight tell-tale. Reads the real state rather than sniffing the lamp's CSS
+    // colour: there are two different "off" colours in this file (#3a4a6b and #444), so a
+    // colour comparison silently matched the wrong one and the indicator never went out.
+    // flashLampOn is set by the flash routine, so a flash blinks this too.
+    $('race-light').classList.toggle('on', !!(out.lights.head || flashLampOn));
 
-    $('race-pit').textContent = pitState === 'off' ? '-'
-      : (pitState === 'limited' ? 'LIMIT'
-        : ((Date.now() - (pitServiceStart || Date.now())) / 1000).toFixed(1) + 's');
-    $('race-pit').className = 'race-val' + (pitState === 'off' ? '' : ' race-warn');
+    $('race-fuel').textContent = Math.round(Math.max(0, fuel)) + '%';
+    $('race-fuel-bar').style.width = Math.max(0, fuel) + '%';
+    $('race-fuel-bar').style.background = fuel < 20 ? '#ffb02e' : '#2ee06a';
+    $('race-dmg').textContent = Math.round(damage) + '%';
+    $('race-dmg-bar').style.width = damage + '%';
+    $('race-dmg-bar').style.background = damage >= 100 ? '#ff5252' : '#e0603a';
+    $('race-batt').textContent = dashBattery === null ? '\u2013' : batteryPercent(dashBattery) + '%';
 
     const live = !!(device && device.gatt && device.gatt.connected);
     $('race-conn').textContent = live ? 'verbunden' : 'getrennt';
-    $('race-conn').className = 'race-val' + (live ? '' : ' race-warn');
-    $('race-track').textContent = dashOffTrack ? 'ABSEITS!' : 'auf Strecke';
-    $('race-track').className = 'race-val' + (dashOffTrack ? ' race-warn' : '');
+    $('race-conn').className = 'gt3-val sm ' + (live ? 'gt3-ok' : 'gt3-bad');
+    $('race-track').textContent = dashOffTrack ? 'ABSEITS' : 'auf Strecke';
+    $('race-track').className = 'gt3-val sm ' + (dashOffTrack ? 'gt3-bad' : 'gt3-ok');
+
+    // Pit banner replaces the shift bar while the pit lane is active — impossible to miss,
+    // which the old small field was not.
+    const pit = $('gt3-pit');
+    if (pitState === 'off') {
+      pit.classList.remove('on');
+      $('race-shift').style.display = '';
+    } else {
+      pit.classList.add('on');
+      $('race-shift').style.display = 'none';
+      $('race-pit-text').textContent = pitState === 'limited'
+        ? 'BOXENGASSE \u00b7 LIMIT ' + Math.round(PIT_SPEED_FACTOR * 100) + '%'
+        : 'SERVICE ' + ((Date.now() - (pitServiceStart || Date.now())) / 1000).toFixed(1) + 's'
+          + ' \u00b7 TANK +' + Math.round(pitFuelGained) + '%'
+          + ' \u00b7 REP -' + Math.round(pitDamageRepaired) + '%';
+    }
 
     $('race-lap-now').textContent = raceLapStart !== null
       ? formatLapTime(Date.now() - raceLapStart)
-      : (dashLapStart !== null ? formatLapTime(Date.now() - dashLapStart) : '-');
-
+      : (dashLapStart !== null ? formatLapTime(Date.now() - dashLapStart) : '\u2013');
     const laps = raceLapTimes.length ? raceLapTimes : dashLapTimes.map((ms, i) => ({ lap: i + 1, ms }));
     const best = laps.length ? Math.min(...laps.map(l => l.ms)) : null;
-    $('race-lap-list').innerHTML = laps.slice().reverse().slice(0, 12).map(l =>
-      `<li><span>${l.lap}</span><span${l.ms === best ? ' style="color:#7ee0a8"' : ''}>${formatLapTime(l.ms)}</span></li>`
+    $('race-lap-best').textContent = best === null ? '\u2013' : formatLapTime(best);
+    $('race-lap-count').textContent = laps.length;
+    $('race-lap-list').innerHTML = laps.slice().reverse().slice(0, 10).map(l =>
+      `<li><span>${l.lap}</span><span${l.ms === best ? ' class="gt3-ok"' : ''}>${formatLapTime(l.ms)}</span></li>`
     ).join('');
   }
 
@@ -3723,15 +3733,18 @@
   // Three ~90ms pulses with ~70ms gaps — the GT3 pass signal. Restores the previous lamp
   // state afterwards, so it also works while the damage warning is blinking.
   let flashTimer = null;
+  let flashLampOn = false;
   function triggerHeadlightFlash() {
     if (flashTimer) return; // already flashing; ignore a double tap
     let n = 0;
     const wasOn = headlightsOn;
     flashTimer = setInterval(() => {
-      setCarLights(n % 2 === 0);
+      flashLampOn = n % 2 === 0;
+      setCarLights(flashLampOn);
       if (++n >= 6) {
         clearInterval(flashTimer);
         flashTimer = null;
+        flashLampOn = false;
         setCarLights(wasOn);
         updateDamageBlink(); // hand the lamps back to the damage warning if it is running
       }
