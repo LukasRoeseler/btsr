@@ -507,13 +507,107 @@
     </div>
 
     <div class="card">
-      <h2>Wer steuert die Fahrphysik?</h2>
+      <h2>Wer bestimmt das Fahrverhalten?</h2>
       <p class="muted">
-        Die App ist kein Physik-Simulator. Sie schickt dem Auto nur den Fahrerwunsch (Gas, Lenkrichtung),
-        und das Auto entscheidet selbst, wie es reagiert. Deshalb ist der Gaswert auch kein einfacher
-        "Stopp bis Vollgas"-Schalter, sondern regelt sich weich hoch und runter, ähnlich wie in einem
-        echten Auto. Die Feinarbeit passiert in der Firmware des Autos, nicht in der App.
+        Beide, aber an verschiedenen Stellen. Die App formt zuerst den Fahrerwunsch: Gänge, Drehmoment
+        und eine simulierte Geschwindigkeit &mdash; und sendet dann das <b>Ergebnis</b>. Der entscheidende
+        Punkt dabei: der Gaswert wird aus der simulierten Geschwindigkeit abgeleitet, nicht aus der
+        Pedalstellung. Bekommt das Auto einen Vollgas-Wert, ist es fast sofort auf Höchsttempo; deshalb
+        zieht es nur dann realistisch hoch, wenn die App den Wert über die Zeit hochrampt.
       </p>
+      <p class="muted">
+        Danach greifen noch drei Multiplikatoren an derselben Stelle: Geschwindigkeitsbegrenzung,
+        Akku-Ausgleich sowie Tank und Schaden. Was das Auto aus dem fertigen Wert macht &mdash; wie es
+        einlenkt, wie es Grip findet &mdash; entscheidet weiterhin seine eigene Firmware.
+      </p>
+      <p class="muted">
+        Schaltet man die Physik in den Optionen ab, sendet die App wirklich nur noch die rohe
+        Stickstellung. Dann ist sie die dumme Leitung, als die sie hier früher beschrieben war.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>Was ist echt gemessen, was rechnet die App?</h2>
+      <p class="muted" style="border-left:3px solid #1c7a4d; padding-left:10px; font-weight:600; color:#1c7a4d">
+        Echt aus dem Auto gemessen
+      </p>
+      <ul class="muted" style="padding-left:20px; line-height:1.7">
+        <li><b>Akkustand</b> &mdash; Byte 10 <i>(Schätzung, nicht kalibriert)</i></li>
+        <li><b>Teile-Zähler</b> &mdash; Byte 11, erhöht sich bei jedem neuen Streckenteil</li>
+        <li><b>Typ des Streckenteils</b> &mdash; Byte 12 (Start/Ziel, Gerade, Rechtskurve)</li>
+        <li><b>Off-Track-Flag</b> &mdash; Byte 15</li>
+        <li><b>Rohe Bewegungswerte</b> &mdash; Bytes 1 und 3, verrauscht, <i>Bedeutung unbestätigt</i></li>
+      </ul>
+      <p class="muted" style="border-left:3px solid #66708a; padding-left:10px; font-weight:600; margin-top:16px">
+        Nur in der App gerechnet
+      </p>
+      <ul class="muted" style="padding-left:20px; line-height:1.7">
+        <li><b>km/h, Drehzahl und Gangwahl</b> &mdash; das Auto meldet keine Geschwindigkeit zurück</li>
+        <li><b>Lenkverhalten</b> &mdash; Dämpfung, Expo-Kennlinie, Grip-Bonus beim Anbremsen</li>
+        <li><b>ABS</b>, <b>Tank</b>, <b>Schaden</b> und die <b>Crash-Erkennung</b> <i>(Schwellwert auf
+          Bytes 1/3, deren Bedeutung unbestätigt ist)</i></li>
+        <li><b>Boxengasse</b> &mdash; Tempolimit und Service, der mit der Standzeit wächst</li>
+        <li><b>Akku-Leistungsausgleich</b>, <b>Motorsound</b> und alle Töne</li>
+        <li><b>Rundenzeiten</b> &mdash; ausgelöst vom echten Byte 12, gestoppt aber im Gerät</li>
+        <li><b>Position auf der Minikarte</b> &mdash; aus dem Teile-Zähler geschätzt
+          <i>(keine echte Ortung)</i></li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2>Wie der simulierte Antrieb klingt</h2>
+      <p class="muted">
+        Ein voller Vollgas-Start von 0 auf die eingestellte Höchstgeschwindigkeit, mit allen fünf
+        Hochschaltvorgängen. Beim Schalten fällt die Drehzahl hörbar ab und zieht wieder hoch &mdash;
+        genau das, was die rote Linie im letzten Diagramm zeigt.
+      </p>
+      <div class="row" style="gap:18px; flex-wrap:wrap">
+        <div><p class="muted" style="margin:0 0 4px 0"><b>Porsche</b> &mdash; Boxer-6, gleichmäßig zündend</p>
+          <audio controls preload="none" src="audio/porsche_accel.ogg" style="height:32px"></audio></div>
+        <div><p class="muted" style="margin:0 0 4px 0"><b>BMW</b> &mdash; Reihen-6, Turbo</p>
+          <audio controls preload="none" src="audio/bmw_accel.ogg" style="height:32px"></audio></div>
+        <div><p class="muted" style="margin:0 0 4px 0"><b>Mustang</b> &mdash; V8, Cross-Plane</p>
+          <audio controls preload="none" src="audio/mustang_accel.ogg" style="height:32px"></audio></div>
+      </div>
+      <p class="muted" style="font-size:11.5px; margin-top:10px">
+        Alle Klänge sind <b>vollständig synthetisch</b> &mdash; Zündimpulse, gefaltet mit der Resonanz des
+        Auspuffkrümmers, nach dem Vorbild von ange-yaghi/engine-sim (MIT). Der Unterschied zwischen den
+        Fahrzeugen kommt nicht aus der Tonhöhe, sondern aus den <b>Zündabständen</b>: die beiden
+        Sechszylinder zünden gleichmäßig alle 120°, der Cross-Plane-V8 dagegen ungleichmäßig innerhalb
+        jeder Bank &mdash; daher das Blubbern. Siehe <code>audio/CREDITS.md</code>.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>Die Kennlinien des simulierten Antriebs</h2>
+      <p class="muted">
+        Alle vier Bilder werden beim Öffnen dieses Tabs aus den <b>aktuell eingestellten</b> Werten
+        berechnet &mdash; sie können also nicht von dem abweichen, was das Auto gerade tut.
+      </p>
+      <div id="doku-chart-torque"></div>
+      <p class="muted" style="font-size:11.5px">
+        Das Drehmoment steigt spät an und erreicht sein Maximum erst bei rund 6200/min &mdash; typisch für
+        einen hochdrehenden Saugmotor. Unten heraus zieht er deutlich schwächer.
+      </p>
+      <div id="doku-chart-thrust"></div>
+      <p class="muted" style="font-size:11.5px">
+        Radzugkraft je Gang. Jeder höhere Gang zieht schwächer, weil die Übersetzung kleiner wird &mdash;
+        deshalb beschleunigt der 1. Gang brachial, endet aber schon bei rund einem Viertel der
+        Höchstgeschwindigkeit. Als <b>relativer Faktor</b> beschriftet, nicht in Newton: das Modell kennt
+        weder Masse noch Radradius, eine Newton-Achse wäre erfundene Physik.
+      </p>
+      <div id="doku-chart-accel"></div>
+      <p class="muted" style="font-size:11.5px">
+        Dieselben Kurven abzüglich Roll- und Luftwiderstand &mdash; das ist die Beschleunigung, die
+        tatsächlich übrig bleibt. Sie flacht nach oben hin ab. Die graue Linie ist der Verlauf ohne Gas.
+      </p>
+      <div id="doku-chart-launch"></div>
+      <p class="muted" style="font-size:11.5px">
+        Der Anfahrtsverlauf, gezeichnet aus <b>demselben</b> Integrator, der auch den
+        „0 → Vollgas"-Regler löst. Die rote Linie ist die Drehzahl: ihr Sägezahn sind die
+        Schaltvorgänge, die man in den Hörbeispielen oben hört.
+      </p>
+      <p class="muted" id="doku-chart-params" style="font-size:11.5px; margin-top:12px"></p>
     </div>
 
     <div class="card">
@@ -1079,6 +1173,8 @@
       device.addEventListener('gattserverdisconnected', onDisconnected);
       server = await device.gatt.connect();
       setConnected(true);
+      // Exactly one starter sound per successful connection.
+      playFx(fxBuffers.start[$('sound-profile').value] || fxBuffers.start.porsche, 0.85);
       log('GATT-Server verbunden.', 'info');
       await exploreServices();
     } catch (err) {
@@ -1274,6 +1370,12 @@
     };
   });
 
+  // Declared up here on purpose: the sub-tab switcher below reads it while the script is
+  // still executing, and a `let` further down would be in its temporal dead zone — which
+  // threw and aborted the rest of the IIFE, taking every later declaration with it.
+  let drivetrainChartsDirty = true;
+  function markDrivetrainChartsDirty() { drivetrainChartsDirty = true; }
+
   // ---- Entwickler tab: secondary sub-navigation (BLE-Explorer/Kalibrierung/Makros/Doku) ----
   document.querySelectorAll('.subtab-btn').forEach(btn => {
     btn.onclick = () => {
@@ -1281,6 +1383,9 @@
       document.querySelectorAll('.subtabpage').forEach(p => p.classList.remove('active'));
       btn.classList.add('active');
       $('subtab-' + btn.dataset.subtab).classList.add('active');
+      // Redraw lazily on open rather than on every slider event: the sliders already
+      // re-run the launch calibration, and the charts are invisible while they move.
+      if (btn.dataset.subtab === 'docs' && drivetrainChartsDirty) renderDrivetrainCharts();
     };
   });
 
@@ -2055,18 +2160,21 @@
     physEngine.config.topSpeedKmh = parseFloat(e.target.value);
     $('setting-topspeed-kmh-val').textContent = physEngine.config.topSpeedKmh.toFixed(1);
     physEngine.calibrateAccel();
+    markDrivetrainChartsDirty();
   });
 
   $('setting-zero-to-top').addEventListener('input', (e) => {
     physEngine.config.zeroToTopS = parseFloat(e.target.value);
     $('setting-zero-to-top-val').textContent = physEngine.config.zeroToTopS.toFixed(1);
     physEngine.calibrateAccel();
+    markDrivetrainChartsDirty();
   });
 
   $('setting-coast-drag').addEventListener('input', (e) => {
     physEngine.config.coastDragPerS = parseFloat(e.target.value);
     $('setting-coast-drag-val').textContent = physEngine.config.coastDragPerS.toFixed(2);
     physEngine.calibrateAccel();
+    markDrivetrainChartsDirty();
   });
 
   $('setting-fuel-drain').addEventListener('input', (e) => {
@@ -2093,6 +2201,7 @@
       if (id === 'phys-damping') physEngine.config.steeringDamping = v;
       if (id === 'phys-accel') physEngine.config.accelerationFactor = v;
       if (id === 'phys-trailbrake') physEngine.config.trailBrakingGripBonus = v;
+      markDrivetrainChartsDirty();
     };
     input.addEventListener('input', apply);
     apply();
@@ -2121,6 +2230,7 @@
     const mult = parseFloat(e.target.value);
     $('setting-brakepower-val').textContent = mult.toFixed(2);
     physEngine.config.brakeDecelKmhPerS = BASE_BRAKE_DECEL * mult;
+    markDrivetrainChartsDirty();
   });
 
   // ---- Constant-power-over-battery-life compensation ----
@@ -2681,6 +2791,125 @@
     return points;
   }
 
+  // ---- Generic line chart -> SVG string ----
+  // Same contract as renderTrackPreview below: build a template string, let the caller
+  // inject it, size the viewBox to the data and NEVER measure the DOM. Not measuring is
+  // what makes it safe to render into the Doku tab while that tab is still hidden.
+  function renderLineChart(o) {
+    const W = 640, H = o.height || 250, L = 58, R = 16, T = 14, B = 34;
+    const xs = o.series.flatMap(s => s.points.map(p => p[0]));
+    const ys = o.series.flatMap(s => s.points.map(p => p[1]));
+    const x0 = o.xMin !== undefined ? o.xMin : Math.min(...xs);
+    const x1 = o.xMax !== undefined ? o.xMax : Math.max(...xs);
+    const y0 = o.yMin !== undefined ? o.yMin : Math.min(0, Math.min(...ys));
+    const y1 = o.yMax !== undefined ? o.yMax : Math.max(...ys) * 1.08;
+    const sx = v => L + (v - x0) / ((x1 - x0) || 1) * (W - L - R);
+    const sy = v => H - B - (v - y0) / ((y1 - y0) || 1) * (H - T - B);
+    let g = '';
+    for (let i = 0; i <= 4; i++) {
+      const v = x0 + (x1 - x0) * i / 4, X = sx(v);
+      g += `<line x1="${X.toFixed(1)}" y1="${T}" x2="${X.toFixed(1)}" y2="${H - B}" stroke="#d7dce6" stroke-width="1"/>`
+         + `<text x="${X.toFixed(1)}" y="${H - B + 15}" text-anchor="middle" font-size="10" fill="#66708a">${(+v.toFixed(1))}</text>`;
+      const w = y0 + (y1 - y0) * i / 4, Y = sy(w);
+      g += `<line x1="${L}" y1="${Y.toFixed(1)}" x2="${W - R}" y2="${Y.toFixed(1)}" stroke="#d7dce6" stroke-width="1"/>`
+         + `<text x="${L - 6}" y="${(Y + 3).toFixed(1)}" text-anchor="end" font-size="10" fill="#66708a">${(+w.toFixed(2))}</text>`;
+    }
+    let paths = '';
+    for (const s of o.series) {
+      const d = s.points.map((p, i) => `${i ? 'L' : 'M'} ${sx(p[0]).toFixed(1)} ${sy(p[1]).toFixed(1)}`).join(' ');
+      paths += `<path d="${d}" fill="none" stroke="${s.color}" stroke-width="${s.width || 2}"`
+             + `${s.dash ? ` stroke-dasharray="${s.dash}"` : ''} stroke-linejoin="round"/>`;
+      if (s.label) {
+        const last = s.points[s.points.length - 1];
+        paths += `<text x="${(sx(last[0]) + 4).toFixed(1)}" y="${(sy(last[1]) + 3).toFixed(1)}"`
+               + ` font-size="10" font-weight="700" fill="${s.color}">${s.label}</text>`;
+      }
+    }
+    return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;max-width:640px;height:auto" aria-label="${o.ariaLabel || ''}">`
+      + `<rect x="${L}" y="${T}" width="${W - L - R}" height="${H - T - B}" fill="#f2f4f8"/>${g}${paths}`
+      + `<text x="${(L + (W - R)) / 2}" y="${H - 4}" text-anchor="middle" font-size="10.5" fill="#0b1f3f">${o.xLabel}</text>`
+      + `<text x="12" y="${(T + H - B) / 2}" text-anchor="middle" font-size="10.5" fill="#0b1f3f"`
+      + ` transform="rotate(-90 12 ${(T + H - B) / 2})">${o.yLabel}</text></svg>`;
+  }
+
+  // Gears are an ORDINAL quantity, so they get a lightness ramp rather than five unrelated
+  // hues, and each line is labelled at its end instead of needing a separate legend.
+  function gearColor(i, n) {
+    const l = 18 + (i / Math.max(1, n - 1)) * 46;
+    return `hsl(219 62% ${l}%)`;
+  }
+
+
+  function renderDrivetrainCharts() {
+    if (!$('doku-chart-torque')) return;
+    const e = physEngine, cfg = e.config;
+    const A = e.accelScale();
+
+    // 1) Engine torque against RPM — read straight from the live table.
+    const tq = [];
+    for (let r = 1500; r <= 9000; r += 100) tq.push([r, torqueAt(r)]);
+    $('doku-chart-torque').innerHTML = renderLineChart({
+      series: [{ points: tq, color: '#0b1f3f' }],
+      xLabel: 'Motordrehzahl (1/min)', yLabel: 'Drehmoment (Faktor)',
+      yMin: 0, yMax: 1.1, ariaLabel: 'Drehmoment über Drehzahl',
+    });
+
+    // 2) Wheel thrust per gear against road speed, and 3) the acceleration that leaves
+    // once the resistances are subtracted. Both are sampled from the SAME functions the
+    // car is driven by, so they cannot drift away from actual behaviour.
+    const thrust = [], accel = [];
+    cfg.gears.forEach((g, i) => {
+      const pts = [], apts = [];
+      const band = e.gearBand(i);
+      for (let v = 0; v <= cfg.topSpeedKmh; v += cfg.topSpeedKmh / 80) {
+        const th = e.thrustAt(v, i, 1, A);
+        pts.push([v, th / A]);
+        apts.push([v, th - e.resistAt(v, A, true)]);
+      }
+      const col = gearColor(i, cfg.gears.length);
+      thrust.push({ points: pts, color: col, label: String(i + 1) });
+      accel.push({ points: apts, color: col, label: String(i + 1) });
+    });
+    const coast = [];
+    for (let v = 0; v <= cfg.topSpeedKmh; v += cfg.topSpeedKmh / 40) coast.push([v, -e.resistAt(v, A, false)]);
+    accel.push({ points: coast, color: '#66708a', dash: '4 3', width: 1.5, label: 'Rollen' });
+
+    $('doku-chart-thrust').innerHTML = renderLineChart({
+      series: thrust, xLabel: 'Geschwindigkeit (km/h)', yLabel: 'Radzugkraft (relativ)',
+      yMin: 0, ariaLabel: 'Radzugkraft je Gang über Geschwindigkeit',
+    });
+    $('doku-chart-accel').innerHTML = renderLineChart({
+      series: accel, xLabel: 'Geschwindigkeit (km/h)', yLabel: 'Beschleunigung (km/h pro s)',
+      ariaLabel: 'Beschleunigung je Gang über Geschwindigkeit',
+    });
+
+    // 4) The launch itself, from the very integrator that solves the 0-auf-Vmax slider.
+    const sim = e.simulateLaunch(cfg.accelCalibration, true);
+    if (sim.trace && sim.trace.length > 1) {
+      const step = Math.max(1, Math.floor(sim.trace.length / 220));
+      const v = [], rp = [];
+      for (let i = 0; i < sim.trace.length; i += step) {
+        const p = sim.trace[i];
+        v.push([p.t, p.v]);
+        rp.push([p.t, e.rpmRawAt(p.v, p.gear) / 1000]);
+      }
+      $('doku-chart-launch').innerHTML = renderLineChart({
+        series: [{ points: v, color: '#0b1f3f', label: 'km/h' },
+                 { points: rp, color: '#b3131f', dash: '3 3', label: '1000/min' }],
+        xLabel: 'Zeit seit Vollgas (s)', yLabel: 'km/h  bzw.  Drehzahl / 1000',
+        yMin: 0, ariaLabel: 'Geschwindigkeit und Drehzahl über der Zeit',
+      });
+    }
+
+    $('doku-chart-params').textContent =
+      `Gezeichnet aus den aktuellen Einstellungen: Vmax ${cfg.topSpeedKmh.toFixed(1)} km/h, `
+      + `0-auf-Vmax ${cfg.zeroToTopS.toFixed(1)} s (gemessen ${sim.time.toFixed(2)} s), `
+      + `Ausrollen ${cfg.coastDragPerS.toFixed(2)}, Bremse ${cfg.brakeDecelKmhPerS.toFixed(1)} km/h/s, `
+      + `Kalibrierfaktor ${cfg.accelCalibration.toFixed(3)}. Gangbaender: `
+      + cfg.gears.map((g, i) => `${i + 1}. bis ${(g.topFrac * cfg.topSpeedKmh).toFixed(2)}`).join(', ') + ' km/h.';
+    drivetrainChartsDirty = false;
+  }
+
   function renderTrackPreview(tiles, currentIndex) {
     const points = walkTrack(tiles);
     if (points.length < 2) {
@@ -3128,8 +3357,10 @@
     if (next === 'servicing') {
       pitServiceStart = Date.now();
       pitFuelGained = 0; pitDamageRepaired = 0;
-      playTone(300, 0.14, 'sine', 0.16);
-      setTimeout(() => playTone(220, 0.20, 'sine', 0.16), 150); // low two-tone: service starts
+      if (!playFx(fxBuffers.pit, 0.8)) {
+        playTone(300, 0.14, 'sine', 0.16);
+        setTimeout(() => playTone(220, 0.20, 'sine', 0.16), 150);
+      }
       padRumble(0.25, 0.15, 120);
       log('Boxengasse: Service läuft — stehen bleiben für mehr Sprit und Reparatur.', 'info');
     } else if (next === 'limited') {
@@ -3245,7 +3476,7 @@
     // NOT roll out gently. Everything else decays via the coast drag in the engine.
     physEngine.state.speedKmh *= 0.3;
     updateDamageFuelUI();
-    playCrashSound();
+    if (!playCrashFx()) playCrashSound(); // sample variants first, synth burst as fallback
     padRumble(0.6, 0.4, 220); // medium, per user spec
     const ind = $('crash-indicator');
     ind.style.display = 'inline';
@@ -3368,6 +3599,7 @@
       initEngineSound();
       if (audioCtx.state === 'suspended') audioCtx.resume();
       loadEngineSamples(); // needs the AudioContext, so it can only start from here
+      loadFxSamples();
     }
     document.removeEventListener('pointerdown', unlockAudioOnFirstGesture);
     document.removeEventListener('keydown', unlockAudioOnFirstGesture);
@@ -3381,6 +3613,7 @@
       initEngineSound(); // lazy-start on this user gesture, per browser autoplay policy
       if (audioCtx.state === 'suspended') audioCtx.resume();
       loadEngineSamples();
+      loadFxSamples();
     } else if (engineGain) {
       engineGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.05);
       if (sampleEngine.master) sampleEngine.master.gain.setTargetAtTime(0, audioCtx.currentTime, 0.05);
@@ -3437,6 +3670,73 @@
       log('Keine Motorsamples gefunden — synthetischer Motor bleibt aktiv.', 'info');
     }
     sampleEngine.loading = false;
+  }
+
+  // ---- One-shot and looping effect samples ----
+  const fxBuffers = { crash: [], brake: null, pit: null, start: {} };
+  let brakeNode = null, brakeGain = null;
+
+  async function loadFxSamples() {
+    if (!audioCtx) return;
+    try {
+      const res = await fetch('audio/fx.json');
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const fx = await res.json();
+      const grab = async (file) => {
+        const r = await fetch('audio/' + file);
+        if (!r.ok) throw new Error(file);
+        return audioCtx.decodeAudioData(await r.arrayBuffer());
+      };
+      fxBuffers.crash = await Promise.all(fx.crash.map(c => grab(c.file)));
+      fxBuffers.brake = await grab(fx.brake.file);
+      fxBuffers.pit = await grab(fx.pit.file);
+      for (const car of Object.keys(fx.start)) fxBuffers.start[car] = await grab(fx.start[car].file);
+      log('Effektsounds geladen (' + fxBuffers.crash.length + ' Crash-Varianten).', 'info');
+    } catch (err) {
+      log('Keine Effektsounds gefunden — synthetische Töne bleiben aktiv.', 'info');
+    }
+  }
+
+  function playFx(buffer, gainVal) {
+    if (!buffer || !audioCtx || !soundEnabled) return false;
+    const src = audioCtx.createBufferSource();
+    src.buffer = buffer;
+    const g = audioCtx.createGain();
+    g.gain.value = gainVal === undefined ? 0.9 : gainVal;
+    src.connect(g).connect(audioCtx.destination);
+    src.start();
+    return true;
+  }
+
+  // Picking at random matters: a series of contacts with one identical sample reads as a
+  // glitch rather than as several separate impacts.
+  function playCrashFx() {
+    if (!fxBuffers.crash.length) return false;
+    const i = Math.floor(Math.random() * fxBuffers.crash.length);
+    return playFx(fxBuffers.crash[i], 0.95);
+  }
+
+  // The brake squeal is a sustained loop faded by pressure, the way a real squeal swells
+  // and dies rather than being retriggered.
+  function setBrakeSqueal(amount) {
+    if (!fxBuffers.brake || !audioCtx || !soundEnabled) return;
+    if (amount > 0.01 && !brakeNode) {
+      brakeNode = audioCtx.createBufferSource();
+      brakeNode.buffer = fxBuffers.brake;
+      brakeNode.loop = true;
+      brakeGain = audioCtx.createGain();
+      brakeGain.gain.value = 0;
+      brakeNode.connect(brakeGain).connect(audioCtx.destination);
+      brakeNode.start();
+    }
+    if (!brakeGain) return;
+    brakeGain.gain.setTargetAtTime(Math.min(0.5, amount * 0.5) * engineVolume,
+                                   audioCtx.currentTime, 0.06);
+    if (amount <= 0.01 && brakeNode) {
+      const node = brakeNode;
+      brakeNode = null; brakeGain = null;
+      setTimeout(() => { try { node.stop(); } catch (e) { /* already stopped */ } }, 400);
+    }
   }
 
   function stopSampleEngine() {
@@ -3545,6 +3845,12 @@
 
     // Sample engine takes over when a car is loaded and playing; the oscillator path below
     // stays intact as the fallback for the synthetic profiles and for missing audio/.
+    // Squeal only under real braking above walking pace, so it does not chirp on every
+    // light touch of the trigger.
+    const brakeAmt = (physicsEnabled && st.speedKmh > physEngine.config.topSpeedKmh * 0.12)
+      ? Math.max(0, Math.min(1, (Math.max(0, -throttleY) - 0.25) / 0.55)) : 0;
+    setBrakeSqueal(brakeAmt);
+
     if (sampleEngine.nodes && physicsEnabled) { updateSampleEngine(st.rpm, load, silent); return; }
 
     const freq = p.baseFreq + Math.max(0, Math.min(1, pitchNorm)) * p.freqSpan;
