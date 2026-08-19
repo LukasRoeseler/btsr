@@ -953,7 +953,7 @@
       </h3>
       <div class="row" style="align-items:center; gap:14px">
         <label style="display:flex; align-items:center; gap:8px; font-weight:600">
-          <input type="checkbox" id="setting-autoshift" checked> Automatikgetriebe
+          <input type="checkbox" id="setting-autoshift"> Automatikgetriebe
         </label>
         <span class="muted" style="font-size:11.5px">
           Aus = manuell schalten (Quadrat/X runter, Kreis/B hoch). Ein höherer Gang zieht
@@ -967,8 +967,8 @@
           <span class="muted" id="setting-topspeed-kmh-val">4.0</span>
         </div>
         <div>
-          <label class="small">0 &rarr; Vollgas in (s)</label>
-          <input type="range" id="setting-zero-to-top" min="1.5" max="8" step="0.5" value="3">
+          <label class="small">0 &rarr; halbe Höchstgeschwindigkeit in (s)</label>
+          <input type="range" id="setting-zero-to-top" min="1" max="8" step="0.5" value="3">
           <span class="muted" id="setting-zero-to-top-val">3.0</span>
         </div>
         <div>
@@ -1863,18 +1863,20 @@
   class CarreraPhysicsEngine {
     constructor() {
       this.config = {
-        accelerationFactor: 1.0, // fine-tune multiplier on top of zeroToTopS
+        accelerationFactor: 1.0, // fine-tune multiplier on top of halfSpeedTimeS
         steeringDamping: 0.18,
         speedSteerReduction: 0.5, // up to 50% less steering angle at max virtual speed
         trailBrakingGripBonus: 1.1,
-        autoShift: true,
+        autoShift: false, // manual by default, per user
 
         // Anchored to real-world numbers instead of abstract 0..1 units, so the feel can
         // be reasoned about: the car tops out around 4 km/h and should take about 3s to
         // get there. Speed is simulated in km/h and the throttle byte is derived from it
         // (see update()), which is what stops the car slamming to full power instantly.
         topSpeedKmh: 4.0,
-        zeroToTopS: 3.0,
+        halfSpeedTimeS: 3.0,  // 0 -> HALF of top speed. Full speed is drag-limited and
+                              // only approached asymptotically, so anchoring on 100%
+                              // could never be honoured; half is the honest promise.
         coastDragPerS: 0.55,   // fraction of current speed shed per second when coasting
         brakeDecelKmhPerS: 6,  // how hard the brake pulls speed down
         minMoveThrottle: 0.16, // smallest byte that actually breaks the car away from rest
@@ -1885,8 +1887,11 @@
         gears: GT3_GEARS,
         rpmScale: 0,      // derived in rebuildGearModel()
         ratioRef: 0.88,   // top gear's ratio, so 6th has a force factor of exactly 1.0
-        aeroDragK: 0.12,      // quadratic (aero) drag at top speed, in units of accelScale
-        onPowerDragFactor: 0.35, // share of the rolling drag that applies under load
+        // Fitted numerically against the user's real GT3 acceleration table (0-50km/h
+        // 1.5s ... 0-285km/h 22s) normalised to fractions of top speed. Reproduces its
+        // SHAPE to within 4% on the ratio of full-speed to half-speed time.
+        aeroDragK: 0.62,
+        onPowerRollK: 0.08,   // rolling term under load, ALSO in units of accelScale
         upshiftRpm: 8800,
         downshiftRpm: 4200,
         shiftMs: 120,     // a sequential swaps far quicker than the old 180ms
@@ -1906,6 +1911,7 @@
                               // sound, steering limit and HUD all expect a 0..1 magnitude
         driveMode: 'forward', // 'forward' | 'reverse'
         reverseArmT: 0,
+        reverseLatched: false,
         currentGear: 0,
         rpm: IDLE_RPM,
         rpmFrac: 0,           // (rpm - idle) / (redline - idle)
@@ -1928,7 +1934,7 @@
     reset() {
       const st = this.state;
       st.speedKmh = 0; st.virtualSpeed = 0; st.commanded = 0;
-      st.driveMode = 'forward'; st.reverseArmT = 0;
+      st.driveMode = 'forward'; st.reverseArmT = 0; st.reverseLatched = false;
       st.currentGear = 0; st.rpm = IDLE_RPM; st.rpmFrac = 0;
       st.isShifting = false; st.engineLoad = 0; st.onLimiter = false;
     }
@@ -1963,8 +1969,15 @@
     resistAt(v, accelScale, onPower) {
       const cfg = this.config;
       const u = Math.abs(v) / cfg.topSpeedKmh;
-      const rolling = cfg.coastDragPerS * Math.abs(v) * (onPower ? cfg.onPowerDragFactor : 1);
-      return rolling + cfg.aeroDragK * u * u * accelScale;
+      if (onPower) {
+        // Both terms scale with accelScale so the whole drivetrain scales as one system.
+        // With an ABSOLUTE rolling term the constant drag swallowed the thrust as soon as
+        // the calibration got small, and "half speed in 3s AND reach top speed" became
+        // mathematically impossible — which is exactly what the fit ran into.
+        return accelScale * (cfg.onPowerRollK * u + cfg.aeroDragK * u * u);
+      }
+      // Coasting keeps the absolute term, because that is what the "Ausrollen" slider means.
+      return cfg.coastDragPerS * Math.abs(v);
     }
 
     // Wheel thrust as an acceleration in km/h/s: torque(rpm) x gear ratio, with a soft
@@ -1981,7 +1994,7 @@
 
     accelScale() {
       const c = this.config;
-      return (c.topSpeedKmh / c.zeroToTopS) * c.accelerationFactor * c.accelCalibration;
+      return (c.topSpeedKmh / c.halfSpeedTimeS) * c.accelerationFactor * c.accelCalibration;
     }
 
     gearBand(i) {
@@ -2011,10 +2024,16 @@
       // between D and R, like an automatic's lever. Manual mode uses the shift buttons
       // instead (see triggerShift). The handbrake is explicitly excluded — physicsStep
       // reports brake=1 while it is held, which would otherwise silently select R.
-      if (cfg.autoShift && stopped && inputs.brake > 0.02 && !inputs.handbrake) {
+      // EDGE-triggered, not level-triggered. The previous version kept counting for as
+      // long as the brake was held at a standstill, so it flipped D/R every 0.5s forever —
+      // you got out of reverse and were thrown straight back in. The latch forces the
+      // brake to be RELEASED before another change can arm.
+      if (inputs.brake <= 0.02) st.reverseLatched = false;
+      if (cfg.autoShift && stopped && inputs.brake > 0.02 && !st.reverseLatched) {
         st.reverseArmT += dt;
         if (st.reverseArmT >= cfg.reverseArmDelayS) {
           st.reverseArmT = 0;
+          st.reverseLatched = true;
           st.speedKmh = 0;
           st.currentGear = 0;
           st.driveMode = st.driveMode === 'reverse' ? 'forward' : 'reverse';
@@ -2138,12 +2157,12 @@
     // returns the trace, which the Doku launch chart draws.
     simulateLaunch(calib, collectTrace) {
       const cfg = this.config;
-      const A = (cfg.topSpeedKmh / cfg.zeroToTopS) * calib; // accelerationFactor excluded on purpose
+      const A = (cfg.topSpeedKmh / cfg.halfSpeedTimeS) * calib; // accelerationFactor excluded on purpose
       // Integrate at the SAME step the live loop uses. Forward Euler overshoots at coarse
       // steps, so calibrating at a fine 5ms while the car actually runs at 45ms made the
       // real launch a full second quicker than the slider promised.
       const dt = CONTROL_SEND_INTERVAL_MS / 1000, tMax = 30;
-      const vTarget = cfg.topSpeedKmh * 0.995;
+      const vTarget = cfg.topSpeedKmh * 0.5; // the anchor is half speed now
       let v = 0, g = 0, t = 0, shiftUntil = -1;
       const trace = collectTrace ? [{ t: 0, v: 0, gear: 0 }] : null;
       while (v < vTarget && t < tMax) {
@@ -2162,35 +2181,19 @@
       return { time: t, trace, reached: v >= vTarget };
     }
 
-    // Smallest calibration for which top speed is reachable at all: below it the quadratic
-    // drag beats the thrust in top gear and the integrator just runs to its time cap.
-    minFeasibleCalibration() {
-      const cfg = this.config, last = cfg.gears.length - 1;
-      const tauTop = torqueAt(Math.min(REDLINE_RPM, this.rpmRawAt(cfg.topSpeedKmh, last)));
-      const netPerScale = tauTop * (cfg.gears[last].ratio / cfg.ratioRef) - cfg.aeroDragK;
-      if (netPerScale <= 0) return Infinity;
-      const needScale = (cfg.coastDragPerS * cfg.onPowerDragFactor * cfg.topSpeedKmh) / netPerScale;
-      return needScale / (cfg.topSpeedKmh / cfg.zeroToTopS);
-    }
-
-    // Solves for the accel scale that makes a full-throttle launch really take zeroToTopS.
-    // Numerically, because the fixed dead-time of the shifts is part of the budget and so
-    // it cannot be derived in closed form. BISECTION rather than the old proportional
-    // update: that assumed time is inversely proportional to the scale, which stopped
-    // being true once drag entered the model, and it would overshoot and ring.
+    // Solves for the accel scale that makes 0 -> HALF top speed take halfSpeedTimeS.
+    // Bisection, because the drag term broke the inverse proportionality the old
+    // proportional update assumed. Since every under-power term now scales with the same
+    // factor, any target time is reachable and no feasibility floor is needed.
     calibrateAccel() {
       const cfg = this.config;
-      const rawFloor = this.minFeasibleCalibration();
-      const lo = isFinite(rawFloor) ? rawFloor * 1.15 : 0.05; // at the floor exactly, it takes forever
-      const hi = Math.max(lo * 200, 500);
-      if (this.simulateLaunch(lo, false).time <= cfg.zeroToTopS) { cfg.accelCalibration = lo; return; }
-      let a = lo, b = hi;
-      for (let i = 0; i < 22; i++) {
-        const mid = Math.sqrt(a * b); // geometric bisection: the scale spans orders of magnitude
-        if (this.simulateLaunch(mid, false).time > cfg.zeroToTopS) a = mid; else b = mid;
+      let a = 0.01, b = 60;
+      for (let i = 0; i < 30; i++) {
+        const mid = Math.sqrt(a * b); // geometric: the scale spans orders of magnitude
+        if (this.simulateLaunch(mid, false).time > cfg.halfSpeedTimeS) a = mid; else b = mid;
         if (b / a < 1.001) break;
       }
-      cfg.accelCalibration = Math.max(lo, Math.min(hi, b));
+      cfg.accelCalibration = Math.max(0.01, Math.min(60, b));
     }
 
     // direction -1/+1. Below 1st gear at a standstill this selects reverse, and out of
@@ -2201,6 +2204,8 @@
       if (st.driveMode === 'reverse') {
         if (direction > 0 && stopped) {
           st.driveMode = 'forward'; st.speedKmh = 0; st.currentGear = 0;
+          // Latch as well, or a still-held brake would flip it back within half a second.
+          st.reverseLatched = true;
           showHudToast('Vorwärts'); padRumble(0.3, 0.2, 90);
         }
         return;
@@ -2208,6 +2213,7 @@
       if (direction < 0 && st.currentGear === 0) {
         if (stopped) {
           st.driveMode = 'reverse'; st.speedKmh = 0;
+          st.reverseLatched = true;
           showHudToast('Rückwärtsgang'); padRumble(0.3, 0.2, 90);
         }
         return;
@@ -2226,6 +2232,13 @@
   // Real CONTROLLER rumble via the Gamepad API. The old rumbleHaptic() drove
   // navigator.vibrate, which is the PHONE's vibration motor — on a laptop with a pad it
   // did nothing at all. navigator.vibrate is kept as the phone fallback.
+  // Chrome logs a console error for every navigator.vibrate call made before the user
+  // has actually tapped the page. Gate on the same first-gesture signal the audio uses,
+  // so the console stays clean enough that a REAL error still stands out.
+  let hadUserGesture = false;
+  document.addEventListener('pointerdown', () => { hadUserGesture = true; }, { once: true });
+  document.addEventListener('keydown', () => { hadUserGesture = true; }, { once: true });
+
   function padRumble(strong, weak, ms) {
     try {
       const pads = navigator.getGamepads ? navigator.getGamepads() : [];
@@ -2240,9 +2253,9 @@
         }
       }
     } catch { /* pad vanished mid-call — nothing to do */ }
-    if (navigator.vibrate) navigator.vibrate(Math.round(ms));
+    if (hadUserGesture && navigator.vibrate) navigator.vibrate(Math.round(ms));
   }
-  function rumbleHaptic(pattern) { if (navigator.vibrate) navigator.vibrate(pattern); }
+  function rumbleHaptic(pattern) { if (hadUserGesture && navigator.vibrate) navigator.vibrate(pattern); }
 
   const physEngine = new CarreraPhysicsEngine();
   let physLastTime = null;
@@ -2269,8 +2282,8 @@
   });
 
   $('setting-zero-to-top').addEventListener('input', (e) => {
-    physEngine.config.zeroToTopS = parseFloat(e.target.value);
-    $('setting-zero-to-top-val').textContent = physEngine.config.zeroToTopS.toFixed(1);
+    physEngine.config.halfSpeedTimeS = parseFloat(e.target.value);
+    $('setting-zero-to-top-val').textContent = physEngine.config.halfSpeedTimeS.toFixed(1);
     physEngine.calibrateAccel();
     markDrivetrainChartsDirty();
   });
@@ -3070,7 +3083,7 @@
 
     $('doku-chart-params').textContent =
       `Gezeichnet aus den aktuellen Einstellungen: Vmax ${cfg.topSpeedKmh.toFixed(1)} km/h, `
-      + `0-auf-Vmax ${cfg.zeroToTopS.toFixed(1)} s (gemessen ${sim.time.toFixed(2)} s), `
+      + `0-auf-halbe-Vmax ${cfg.halfSpeedTimeS.toFixed(1)} s (gemessen ${sim.time.toFixed(2)} s), `
       + `Ausrollen ${cfg.coastDragPerS.toFixed(2)}, Bremse ${cfg.brakeDecelKmhPerS.toFixed(1)} km/h/s, `
       + `Kalibrierfaktor ${cfg.accelCalibration.toFixed(3)}. Gangbaender: `
       + cfg.gears.map((g, i) => `${i + 1}. bis ${(g.topFrac * cfg.topSpeedKmh).toFixed(2)}`).join(', ') + ' km/h.';
