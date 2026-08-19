@@ -218,7 +218,9 @@
     background: #161c28; box-shadow: inset 0 0 0 1px #232a3a; }
   .gt3-left { grid-area: left; } .gt3-gear { grid-area: gear; } .gt3-right { grid-area: right; }
   .gt3-strip { grid-area: strip; display: grid; gap: clamp(4px, .9vw, 10px);
-    grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .gt3-tyre { display: flex; align-items: center; gap: 6px; }
+  .gt3-tyre svg { width: clamp(20px, 3vw, 30px); height: auto; flex: none; }
   .gt3-box { background: #121722; border: 1px solid #232a3a; border-radius: 5px;
     padding: clamp(4px, .9vw, 9px); min-width: 0; }
   .gt3-lbl { font-size: clamp(7.5px, 1.05vw, 10px); letter-spacing: .08em;
@@ -260,8 +262,48 @@
   body.race-mode nav.tabs { padding: 0 8px; }
   body.race-mode nav.tabs button { padding: 4px 9px; font-size: 12px; }
   body.race-mode main { padding: 6px 8px 8px 8px; }
-  #race-rotate { display: none; }
-  @media (orientation: portrait) and (max-width: 900px) { #race-rotate { display: block; } }
+  /* Touch sizing. Keyed on the POINTER, not on the viewport width: a small window on a
+     desktop still has a mouse and does not need 44px targets, while a large tablet does.
+     34px buttons and 16px sliders are fine with a cursor and fiddly with a thumb. */
+  @media (pointer: coarse) {
+    button, select { min-height: 44px; }
+    input[type="range"] { height: 32px; }
+    input[type="checkbox"]:not(.tgl input) { width: 22px; height: 22px; }
+    .tab-btn { min-height: 48px; }
+    .opt-slider button { min-width: 44px; }
+    label { display: inline-flex; align-items: center; min-height: 44px; }
+  }
+
+  /* Documentation tables: they carry byte offsets, so they must stay readable on a phone
+     without the page itself scrolling sideways. The wrapper scrolls, not the body. */
+  .doc-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 10px 0; }
+  .doc-table { border-collapse: collapse; font-size: 12.5px; min-width: 460px; width: 100%; }
+  .doc-table th, .doc-table td { border: 1px solid var(--border); padding: 5px 8px;
+    text-align: left; vertical-align: top; }
+  .doc-table th { background: var(--panel-2); font-weight: 600; }
+  .doc-table code { font-size: 12px; }
+  .doc-sure { color: var(--good); font-weight: 600; }
+  .doc-guess { color: var(--warn); font-weight: 600; }
+  .doc-unknown { color: var(--bad); font-weight: 600; }
+  .race-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .race-fs-btn { padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--panel-2); color: inherit; font: inherit; cursor: pointer;
+    min-height: 40px; }
+  #race-rotate { display: none; font-size: 12px; }
+  @media (orientation: portrait) and (max-width: 900px) { #race-rotate { display: inline; } }
+
+  /* Fullscreen on a phone held upright. Orientation lock is refused by iOS Safari and by
+     any desktop browser, so when it fails we rotate the dash ourselves rather than leave
+     the driver with a letterboxed strip. The wrapper takes the SWAPPED viewport size
+     because the rotated child measures its own width along the screen's height. */
+  body.race-fs #race-dash { position: fixed; inset: 0; z-index: 200; border-radius: 0;
+    display: grid; align-content: center; }
+  body.race-fs.race-turn #race-dash {
+    width: 100vh; height: 100vw;
+    top: 50%; left: 50%; inset: auto;
+    transform: translate(-50%, -50%) rotate(90deg); transform-origin: center; }
+  body.race-fs .race-bar { position: fixed; z-index: 201; top: 8px; left: 8px; }
+  body.race-fs.race-turn .race-bar { top: auto; bottom: 8px; left: 8px; }
   .hud-toggle { margin-left: auto; display: flex; align-items: center; gap: 6px; font-size: 12px; color: #cfd8ec; }
 
   /* Race-mode start lights: off (gray) -> up to 3 reds -> green on "go" */
@@ -313,6 +355,7 @@
   <button class="tab-btn" data-tab="track">Strecke</button>
   <button class="tab-btn" data-tab="options">Optionen</button>
   <button class="tab-btn" data-tab="race">Rennen</button>
+  <button class="tab-btn" data-tab="doc">Doku</button>
   <button class="tab-btn" data-tab="dev">Entwickler</button>
 </nav>
 
@@ -320,10 +363,12 @@
 
   <!-- DEVELOPER TAB (sub-tabbed: BLE-Explorer / Kalibrierung / Makros / Doku) -->
   <section class="tabpage" id="tab-race">
-    <p class="muted" id="race-rotate" style="margin-bottom:8px">
-      📱 Gerät quer halten &mdash; dieser Bildschirm ist fürs Querformat gebaut.
-    </p>
-    <div class="gt3">
+    <div class="race-bar">
+      <button type="button" id="race-fs" class="race-fs-btn">Vollbild</button>
+      <button type="button" id="race-fs-exit" class="race-fs-btn" hidden>Verlassen</button>
+      <span class="muted" id="race-rotate">Hochkant &mdash; die Anzeige wird gedreht.</span>
+    </div>
+    <div class="gt3" id="race-dash">
       <div class="gt3-shift" id="race-shift">
         <span></span><span></span><span></span><span></span>
         <span></span><span></span><span></span><span></span>
@@ -378,168 +423,25 @@
           <div class="gt3-val sm" id="race-batt">&ndash;</div></div>
         <div class="gt3-box"><div class="gt3-lbl">Verbindung</div>
           <div class="gt3-val sm" id="race-conn">getrennt</div></div>
+        <div class="gt3-box"><div class="gt3-lbl">Reifen</div>
+          <div class="gt3-tyre">
+            <svg viewBox="0 0 24 24" aria-label="Reifentemperatur">
+              <circle cx="12" cy="12" r="10" fill="none" stroke-width="4" id="race-tyre-ring"/>
+              <circle cx="12" cy="12" r="4.5" fill="#2a3346"/>
+            </svg>
+            <div>
+              <div class="gt3-val sm" id="race-tyre-temp">&ndash;</div>
+              <div class="gt3-lbl" id="race-tyre-wear">&ndash;</div>
+            </div>
+          </div></div>
+        <div class="gt3-box"><div class="gt3-lbl">Gas / Lenkung</div>
+          <div class="gt3-val sm"><span id="race-trim-accel">100%</span>
+            <span style="color:#7c8aa6">·</span> <span id="race-trim-steer">100%</span></div></div>
       </div>
     </div>
   </section>
 
-  <section class="tabpage" id="tab-dev">
-    <nav class="subtabs">
-      <button class="subtab-btn active" data-subtab="explore">BLE-Explorer</button>
-      <button class="subtab-btn" data-subtab="calib">Kalibrierung</button>
-      <button class="subtab-btn" data-subtab="macros">Makros</button>
-      <button class="subtab-btn" data-subtab="docs">Doku</button>
-    </nav>
-
-    <div class="subtabpage active" id="subtab-explore">
-    <div class="card">
-      <h2>Mapping</h2>
-      <p class="muted">
-        Wähle die Characteristic, an die Lenk-/Gas-Kommandos geschrieben werden sollen (wird beim Verbinden
-        automatisch auf NUS RX gesetzt).
-      </p>
-      <div class="row">
-        <div>
-          <label class="small">Ziel-Characteristic</label>
-          <select id="control-char-select"><option value="">-- keine (nur Log) --</option></select>
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <h2>Verbindung</h2>
-      <p class="muted">
-        Web Bluetooth erlaubt standardmäßig nur Zugriff auf Services, die vorab bekannt sind. Da wir das genaue
-        Carrera-Protokoll noch nicht kennen, versuchen wir es unten mit einer Liste gängiger Custom-Service-UUIDs
-        (Nordic UART, HM-10/FFE0, FFF0 etc.) &mdash; falls dein Auto eine andere UUID benutzt, füge sie manuell hinzu.
-      </p>
-      <div class="row">
-        <input type="text" id="custom-uuid" placeholder="eigene Service-UUID (z.B. 0000ffe0-0000-1000-8000-00805f9b34fb)" style="width:360px">
-        <button id="btn-add-uuid">Hinzufügen</button>
-      </div>
-      <p class="muted" style="margin-top:10px">
-        Tipp: Öffne in Chrome <span class="kbd">chrome://bluetooth-internals/#devices</span> &mdash; dort siehst du
-        <b>alle</b> Services/Characteristics deines Autos ohne diese Einschränkung. Wenn du mir die dort
-        angezeigten UUIDs (Service + Characteristics + Eigenschaften: read/write/notify) gibst, kann ich die
-        Steuerung direkt korrekt verdrahten.
-      </p>
-    </div>
-
-    <div class="card">
-      <h2>GATT-Baum</h2>
-      <div id="services-container"><p class="muted">Noch keine Verbindung.</p></div>
-    </div>
-
-    <div class="card">
-      <h2>Protokoll-Labor (NUS RX/TX)</h2>
-      <p class="muted">
-        Schreibt frei konfigurierbare Byte-Pakete an NUS RX (<code>6e400002</code>) und zeigt gleichzeitig alle
-        Notify-Werte von NUS TX (<code>6e400003</code>) an &mdash; damit du live sehen kannst, was das Auto zurückmeldet,
-        während du Kombinationen ausprobierst.
-      </p>
-      <p class="muted">
-        Bekannt (aus einer unabhängigen Reverse-Engineering-Runde zum selben Auto, per BLE-Sniffer ermittelt):
-        echte Kommando-Pakete sind <b>20 Byte</b> lang (2 Byte Präfix + 17 Datenbytes + 1 Prüfsumme), gesendet alle
-        ~45ms. Byte-Offset 6 = Gas/Bremse (<code>0xDF</code>=Leerlauf, größer=Gas, kleiner=Bremse). Die Prüfsumme
-        ist noch nicht geknackt &mdash; deshalb unten zuerst das <b>echte, garantiert gültige</b> Leerlauf-Paket laden
-        und unverändert wiederholt senden (reproduziert dieselbe gültige Prüfsumme, ohne sie berechnen zu müssen).
-      </p>
-      <div class="row">
-        <button id="lab-load-idle">Bekanntes Idle-Paket laden (20 Byte)</button>
-      </div>
-      <div class="row" style="margin-top:10px">
-        <label class="small" style="margin:0">Paketlänge:</label>
-        <select id="lab-len"><option>1</option><option selected>2</option><option>3</option><option>4</option><option>6</option><option>8</option><option>20</option></select>
-        <button id="lab-subscribe">TX abonnieren</button>
-        <span class="muted" id="lab-status">nicht verbunden</span>
-      </div>
-      <div id="lab-bytes" class="row" style="margin-top:12px"></div>
-      <div class="row" style="margin-top:10px">
-        <span class="muted">Paket: <code id="lab-preview">80 80</code></span>
-        <button class="primary" id="lab-send">Einmal senden</button>
-        <label style="display:flex;align-items:center;gap:6px" class="muted">
-          <input type="checkbox" id="lab-continuous"> kontinuierlich alle
-        </label>
-        <input type="text" id="lab-interval" value="45" style="width:50px"> ms
-      </div>
-      <div class="row" style="margin-top:10px">
-        <label class="small" style="margin:0">Sweep Byte#:</label>
-        <select id="lab-sweep-idx"></select>
-        <input type="text" id="lab-sweep-speed" value="30" style="width:50px"> ms/Schritt
-        <button id="lab-sweep-start">Sweep 0→255 starten</button>
-        <button id="lab-sweep-stop" disabled>Sweep stoppen</button>
-      </div>
-      <div id="lab-tx-log" style="margin-top:12px; height:140px; overflow-y:auto; background:#0b0d12; border:1px solid var(--border); border-radius:8px; padding:8px; font-family:monospace; font-size:12px;"></div>
-    </div>
-
-    <div class="card">
-      <h2>Live-Log</h2>
-      <div id="log"></div>
-      <div class="row" style="margin-top:8px">
-        <button id="btn-clear-log">Log leeren</button>
-      </div>
-    </div>
-    </div>
-
-    <div class="subtabpage" id="subtab-calib">
-    <div class="card">
-      <h2>Automatischer Kalibrierungslauf</h2>
-      <p class="muted">
-        Sendet eine feste Testsequenz (Lenkung im Stand 0/25/50/75/100% links &amp; rechts, dazu 3 sehr kurze
-        Mini-Vorwärtsschübe bei niedrigem Tempo, eine sanfte Bremse) und wertet parallel die Notify-Bytes 1-3
-        aus &mdash; um zu prüfen, ob das wirklich Gier-/Beschleunigungsdaten vom Auto sind.
-        <b>Läuft komplett automatisch, ohne Physik-Engine (direkte Werte).</b> Passt in ca. 50×20cm &mdash; am besten
-        das Auto mittig auf die Fläche stellen oder aufbocken, falls möglich.
-      </p>
-      <div class="row">
-        <button class="primary" id="calib-start">Testlauf starten</button>
-        <button id="calib-stop" disabled>Stoppen</button>
-        <span class="muted" id="calib-status">bereit</span>
-      </div>
-      <div id="calib-results" style="margin-top:12px; overflow-x:auto"></div>
-    </div>
-    </div>
-
-    <div class="subtabpage" id="subtab-macros">
-    <div class="card">
-      <h2>Autonomes Fahren: Aufnahme &amp; Wiedergabe</h2>
-      <p class="muted">
-        Fahr die Strecke einmal manuell (Tab "Fahren", Joystick/Gas oder Pfeiltasten). Während der Aufnahme
-        werden Lenk- und Gaswerte mit Zeitstempel mitgeschrieben. Bei der Wiedergabe sendet die App exakt
-        dieselbe Sequenz erneut an die Ziel-Characteristic.
-      </p>
-      <div class="row">
-        <button class="primary" id="btn-record">Aufnahme starten</button>
-        <button id="btn-play" disabled>Wiedergabe</button>
-        <button id="btn-stop-play" disabled>Stop</button>
-        <label style="display:flex;align-items:center;gap:6px" class="muted">
-          <input type="checkbox" id="chk-loop"> Endlosschleife
-        </label>
-        <span class="muted" id="record-status">bereit</span>
-      </div>
-    </div>
-
-    <div class="card">
-      <h2>Gespeicherte Fahrten</h2>
-      <div class="row">
-        <input type="text" id="macro-name" placeholder="Name der Aufnahme">
-        <button id="btn-save-macro">Aktuelle Aufnahme speichern</button>
-        <select id="macro-list"><option value="">-- gespeicherte Fahrten --</option></select>
-        <button id="btn-load-macro">Laden</button>
-        <button id="btn-delete-macro">Löschen</button>
-        <button id="btn-export-macro">Export (JSON)</button>
-        <input type="file" id="macro-import" accept="application/json" style="display:none">
-        <button id="btn-import-macro">Import (JSON)</button>
-      </div>
-      <p class="muted" style="margin-top:8px">Aufnahmen werden lokal im Browser gespeichert (localStorage).</p>
-    </div>
-
-    <div class="card">
-      <h2>Wiedergabe-Log</h2>
-      <div id="play-log" class="muted" style="font-family:monospace;font-size:12px;min-height:20px">noch keine Wiedergabe.</div>
-    </div>
-    </div>
-
-    <div class="subtabpage" id="subtab-docs">
+  <section class="tabpage" id="tab-doc">
     <div class="card">
       <h2>Überblick</h2>
       <p class="muted">
@@ -758,11 +660,404 @@
         Das Auto kann seine Firmware auch per Bluetooth aktualisieren ("Over-the-Air-Update"), über ein
         Standardverfahren von Nordic Semiconductor.
       </p>
-      <p class="muted">Noch nicht sicher bekannt: der genaue Streckensensor-Typ, ob es ein Bremslicht gibt,
-        und die genaue Bedeutung aller Protokoll-Bytes. Das Grundprinzip bleibt davon unberührt: Sensor liest
+      <p class="muted">Noch nicht sicher bekannt: der genaue Streckensensor-Typ und die Bedeutung einiger
+        Protokoll-Bytes (siehe die Tabellen weiter unten). Das Bremslicht ist seit dem 19.08.2026
+        entschl&uuml;sselt und wird angesteuert. Das Grundprinzip bleibt davon unberührt: Sensor liest
         Strecke, Funkchip verbindet Auto und Handy, Fahrphysik läuft im Auto.</p>
     </div>
+
+    <div class="card">
+      <h2>Protokoll: was gesendet wird</h2>
+      <p class="muted">
+        20&nbsp;Byte, geschrieben auf das Nordic-UART-Merkmal (Handle <code>0x11</code> im Mitschnitt),
+        alle 45&nbsp;ms. Rekonstruiert aus HCI-Snoop-Aufzeichnungen der Original-App.
+        <span class="doc-sure">Gr&uuml;n</span> = aus Mitschnitten belegt,
+        <span class="doc-guess">gelb</span> = plausibel abgeleitet,
+        <span class="doc-unknown">rot</span> = unbekannt.
+      </p>
+      <div class="doc-table-wrap"><table class="doc-table">
+        <tr><th>Byte</th><th>Inhalt</th><th>Bedeutung</th><th>Status</th></tr>
+        <tr><td>0</td><td><code>0xAF</code></td><td>Rahmenkennung, in jedem Paket gleich</td><td class="doc-sure">belegt</td></tr>
+        <tr><td>1&ndash;5</td><td><code>0x00</code></td><td>ungenutzt</td><td class="doc-sure">belegt</td></tr>
+        <tr><td>6</td><td><code>0xDF + d</code></td><td>Gas. <code>d</code> von &minus;64 bis +127, umlaufend gerechnet &mdash; kein um <code>0x80</code> zentriertes Byte</td><td class="doc-sure">belegt</td></tr>
+        <tr><td>7</td><td>int8</td><td>Lenkung, positiv = rechts. Voller Bereich &plusmn;127</td><td class="doc-sure">belegt</td></tr>
+        <tr><td>8</td><td><code>0x80</code></td><td>konstant</td><td class="doc-sure">belegt</td></tr>
+        <tr><td>9</td><td>int8</td><td>Lenkung, <em>identische Kopie von Byte 7</em></td><td class="doc-sure">belegt</td></tr>
+        <tr><td>10</td><td><code>0x60</code></td><td>konstant</td><td class="doc-sure">belegt</td></tr>
+        <tr><td>11&ndash;13</td><td><code>00 01 00</code></td><td>konstant</td><td class="doc-sure">belegt</td></tr>
+        <tr><td><strong>14</strong></td><td>Bitfeld</td><td><strong>Licht.</strong> Bit&nbsp;1 (<code>0x02</code>) = Standlicht, Bit&nbsp;0 (<code>0x01</code>) = Bremslicht, Bit&nbsp;7 immer gesetzt</td><td class="doc-sure">belegt</td></tr>
+        <tr><td></td><td><code>0x20/0x40/0x60</code></td><td>die Original-App setzt zus&auml;tzlich obere Bits &mdash; wof&uuml;r, wissen wir nicht. Wir lassen sie auf&nbsp;0</td><td class="doc-unknown">unbekannt</td></tr>
+        <tr><td>15</td><td><code>0x04</code></td><td>konstant</td><td class="doc-sure">belegt</td></tr>
+        <tr><td>16&ndash;18</td><td><code>0x00</code></td><td>ungenutzt</td><td class="doc-sure">belegt</td></tr>
+        <tr><td>19</td><td>CRC-8</td><td>Polynom <code>0x31</code>, Startwert <code>0xFF</code>, &uuml;ber Byte&nbsp;0&ndash;18</td><td class="doc-sure">belegt</td></tr>
+      </table></div>
+      <p class="muted">
+        Die Lichtzust&auml;nde stammen aus einem Mitschnitt, in dem nacheinander Licht aus, Licht an und
+        Bremse gedr&uuml;ckt wurde: <code>0x80</code>, <code>0x82</code>, <code>0x83</code>. Der Beweis, dass
+        die Lesart stimmt, ist die Pr&uuml;fsumme &mdash; unsere CRC-Berechnung liefert f&uuml;r diese drei
+        Bytes genau <code>0xA4</code>, <code>0x33</code> und <code>0xE0</code>, also exakt die aufgezeichneten
+        Werte. Eine falsche Deutung von Byte&nbsp;14 h&auml;tte hier nicht gepasst.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>Protokoll: was das Auto meldet</h2>
+      <p class="muted">19&nbsp;Byte als Benachrichtigung (Handle <code>0x13</code>), etwa alle 45&ndash;60&nbsp;ms.</p>
+      <div class="doc-table-wrap"><table class="doc-table">
+        <tr><th>Byte</th><th>Bedeutung</th><th>Status</th></tr>
+        <tr><td>0</td><td><code>0xAF</code>, Rahmenkennung</td><td class="doc-sure">belegt</td></tr>
+        <tr><td>1, 3</td><td>&auml;ndern sich nur, wenn das Auto f&auml;hrt; vorzeichenbehaftet. Wir zeigen sie als gr&uuml;nen Punkt im G-Diagramm &mdash; als <em>rohe</em> Sensorwerte, nicht als gemessene G-Kr&auml;fte</td><td class="doc-unknown">unbest&auml;tigt</td></tr>
+        <tr><td>2</td><td>schwankt um <code>0x9C</code></td><td class="doc-unknown">unbest&auml;tigt</td></tr>
+        <tr><td>4&ndash;8</td><td><code>0x00</code></td><td class="doc-sure">belegt</td></tr>
+        <tr><td>9</td><td>freilaufender Paketz&auml;hler, 0&ndash;255, &auml;ndert sich in <em>jedem</em> Paket</td><td class="doc-sure">belegt</td></tr>
+        <tr><td>10</td><td>Akkustand</td><td class="doc-sure">belegt</td></tr>
+        <tr><td><strong>11</strong></td><td><strong>Z&auml;hler der Muster&uuml;berfahrten.</strong> Erh&ouml;ht sich um 1, sobald das Auto ein gedrucktes Muster &uuml;berf&auml;hrt &mdash; die Rundenz&auml;hlung passiert also in der Hardware</td><td class="doc-sure">belegt</td></tr>
+        <tr><td><strong>12</strong></td><td><strong>Mustercode.</strong> <code>0x01</code> = Start/Ziel (best&auml;tigt), <code>0x02</code> und <code>0x04</code> ebenfalls beobachtet. <code>0xFF</code> hei&szlig;t &bdquo;noch nie eins gesehen&ldquo;. Der Wert bleibt <em>stehen</em>, er zeigt das zuletzt gelesene Muster</td><td class="doc-sure">belegt</td></tr>
+        <tr><td>13</td><td><code>0x00</code></td><td class="doc-sure">belegt</td></tr>
+        <tr><td>14</td><td>rollender Z&auml;hler (l&auml;uft &uuml;ber). Nicht zu verwechseln mit Byte&nbsp;14 der <em>Senderichtung</em>, das ist das Licht</td><td class="doc-sure">belegt</td></tr>
+        <tr><td><strong>15</strong></td><td><code>0x08</code>, solange das Auto k&ouml;rperlich &uuml;ber einem Muster steht (~1&nbsp;s bei Fahrt), sonst <code>0x00</code></td><td class="doc-sure">belegt</td></tr>
+        <tr><td>16&ndash;17</td><td><code>0x00</code></td><td class="doc-sure">belegt</td></tr>
+        <tr><td>18</td><td>Pr&uuml;fsumme</td><td class="doc-guess">angenommen</td></tr>
+      </table></div>
+      <p class="muted">
+        Byte&nbsp;15 wurde in dieser App fr&uuml;her als &bdquo;abseits der Strecke&ldquo; ausgewertet. Die
+        Mitschnitte widerlegen das: es steht auf <code>0x08</code> in genau dem Paket, in dem auch der
+        &Uuml;berfahrtsz&auml;hler springt. Die Warnung leuchtete also ausgerechnet beim Passieren von
+        Start/Ziel.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>Geradeausfahren ohne Zustandswissen</h2>
+      <p class="muted">
+        Das Auto meldet <em>keine</em> Ist-Geschwindigkeit. Es gibt kein Byte, aus dem hervorginge, wie
+        schnell es gerade f&auml;hrt. Das Gasbyte ist ein Sollwert, kein Regelkreis &mdash; es gibt keine
+        R&uuml;ckmeldung, gegen die geregelt werden k&ouml;nnte.
+      </p>
+      <p class="muted">
+        Daraus folgt der zentrale Kunstgriff dieser App: <strong>das gesendete Byte wird aus der
+        simulierten Geschwindigkeit abgeleitet, nicht aus der Pedalstellung.</strong> W&uuml;rde man das
+        Pedal direkt durchreichen, s&auml;&szlig;e bei Vollgas sofort der volle Wert an und das Auto
+        schie&szlig;t los. Stattdessen l&auml;uft im Handy ein Fahrzeugmodell mit Motorkennlinie, Getriebe,
+        Roll- und Luftwiderstand; dessen Geschwindigkeit wird auf den Bytebereich abgebildet. Das Auto
+        bekommt also laufend den Wert, den ein echtes Fahrzeug in diesem Moment h&auml;tte.
+      </p>
+      <p class="muted">
+        Zwei Feinheiten, die aus dem fehlenden R&uuml;ckkanal folgen: erstens braucht ein stehendes Auto
+        eine Mindestansteuerung (<code>minMoveThrottle</code>), um &uuml;berhaupt loszubrechen &mdash; ohne
+        sie w&auml;re der erste Moment einer Beschleunigung zu schwach, um sich zu bewegen. Zweitens gibt es
+        unterhalb von 10&nbsp;km/h Anzeige <em>kein Mittelding</em>: entweder wird bewusst &uuml;ber der
+        Losbrechschwelle gefahren, oder das Byte geht sauber auf&nbsp;0. Dazwischen liegt genau der Bereich,
+        in dem das Auto kriecht, stehenbleibt und wieder anruckt.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>Wie die Bremskraft gerechnet wird</h2>
+      <p class="muted">
+        Die Verz&ouml;gerung ist <em>geschwindigkeitsabh&auml;ngig</em>, weil ein GT3 bei hohem Tempo durch
+        Abtrieb deutlich st&auml;rker verz&ouml;gert als kurz vor dem Stillstand:
+      </p>
+      <p class="muted" style="font-family:monospace; font-size:12px">
+        a<sub>Brems</sub> = (0,98 + 1,00 &middot; v/v<sub>max</sub>) &middot; Bremspedal &middot; Reibungskreis
+        &middot; Fahrbahn &middot; Einfedern
+      </p>
+      <p class="muted">
+        Die beiden Zahlen sind an eine reale GT3-Bremstabelle angepasst, mittlerer Fehler 1,5&nbsp;%; aus
+        H&ouml;chstgeschwindigkeit bis Stillstand ergeben sich 2,74&nbsp;s. Die Faktoren dahinter:
+      </p>
+      <ul class="muted">
+        <li><strong>Reibungskreis</strong> &mdash; ein Reifen kann seine Haftung nur einmal vergeben.
+          L&auml;ngs bleibt <code>&radic;(1 &minus; quer&sup2;)</code>, also kostet Lenken beim Bremsen
+          Verz&ouml;gerung und umgekehrt.</li>
+        <li><strong>Fahrbahn</strong> &mdash; eine 2&times;2-Matrix aus Wetter und Reifen: trocken auf Slicks
+          1,00, trocken auf Regenreifen 0,88, Regen auf Regenreifen 0,80, Regen auf Slicks 0,45.</li>
+        <li><strong>Einfedern</strong> &mdash; die Radlast wandert beim Bremsen nach vorn. Wichtig ist die
+          Normierung: der Faktor ist auf den <em>eingefederten</em> Zustand bezogen, nicht auf 50/50. Er
+          kann also nur w&auml;hrend des Einnickens Bremskraft wegnehmen, nie welche hinzuerfinden &mdash;
+          sonst w&auml;re die an echten Daten gefittete Verz&ouml;gerung nicht mehr das, was sie verspricht.</li>
+      </ul>
+      <p class="muted">
+        Die Radlastverlagerung hat <strong>zwei</strong> Zeitkonstanten: die Karosserie nickt in 80&nbsp;ms
+        ein, der Kraftaufbau am Reifen folgt in 450&nbsp;ms. Genau diese Differenz erzeugt den kurzen
+        Einlenkvorteil zu Beginn eines Bremsvorgangs. Gemessene Lenkwirkung bei vollem Einschlag:
+        Vollgas 0,76 &middot; Ausrollen 1,03 &middot; Bremse nach 45&nbsp;ms 1,09 &middot; nach 135&nbsp;ms
+        1,12 &middot; Dauerbremsung 0,50.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>Audio-Engine</h2>
+      <p class="muted">
+        Die drei Hauptmotoren sind <strong>vollst&auml;ndig synthetisch</strong> &mdash; es wird keine
+        Aufnahme wiedergegeben. Modelliert nach dem Ansatz von <em>ange-yaghi/engine-sim</em> (MIT-Lizenz):
+      </p>
+      <ul class="muted">
+        <li><strong>Z&uuml;ndereignisse</strong> statt Klangfarbe: pro Arbeitstakt ein Druckimpuls. Beim
+          V8 mit ebener Kurbelwelle z&uuml;nden die B&auml;nke ungleichm&auml;&szlig;ig &mdash; daraus
+          entsteht das typische Blubbern von selbst, es wird nicht nachgebaut.</li>
+        <li><strong>Faltung mit einer Auspuff-Impulsantwort.</strong> Die Faltung ist zyklisch gerechnet,
+          damit die Schleife am Ende exakt wieder auf den Anfang passt.</li>
+        <li><strong>Ventiltriebger&auml;usch</strong> im Nockenwellentakt, mit Streuung in Zeit und
+          St&auml;rke, plus weiche S&auml;ttigung und Fehlz&uuml;ndungen im Schiebebetrieb.</li>
+      </ul>
+      <p class="muted">
+        In der App laufen drei Schleifen (Leerlauf, Mitte, hoch) gleichzeitig und werden &uuml;berblendet;
+        die Tonh&ouml;he kommt aus <code>playbackRate</code>, die Gewichte summieren sich exakt auf&nbsp;1,
+        damit die Lautst&auml;rke beim &Uuml;berblenden nicht atmet.
+      </p>
+      <p class="muted">
+        Corvette C6, Strecken-Ambience, Regen und Donner sind dagegen aus lizenzfreien Pixabay-Aufnahmen
+        geschnitten. Welche Datei woher stammt, steht in <code>audio/CREDITS.md</code>.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>Ein einziger Schreiber</h2>
+      <p class="muted">
+        Alle Bluetooth-Schreibvorg&auml;nge laufen &uuml;ber <em>einen</em> Takt von 45&nbsp;ms mit einer
+        Sperre, die immer nur einen Schreibvorgang gleichzeitig zul&auml;sst. Das ist keine Stilfrage:
+        vorher schrieben f&uuml;nf Quellen unabh&auml;ngig voneinander &mdash; Gamepad, Tastatur,
+        Zeigeger&auml;t, Neigungssensor und die Fahrphysik. &Uuml;berlappende Schreibvorg&auml;nge quittiert
+        der Browser mit &bdquo;GATT operation already in progress&ldquo;, verwirft sie stillschweigend, und
+        das Auto ruckelt.
+      </p>
+      <p class="muted">
+        Praktische Folge f&uuml;r Weiterentwicklungen: <strong>eine neue Funktion darf niemals selbst
+        senden.</strong> Sie setzt einen Zustand, den der Takt beim n&auml;chsten Paket mitnimmt. Die
+        Lichtsteuerung ist daf&uuml;r das Musterbeispiel &mdash; sie schreibt kein eigenes Paket, sie setzt
+        Byte&nbsp;14.
+      </p>
+      <p class="muted">
+        Ebenso gibt es <em>eine</em> Eingabeschlichtung: jede Quelle meldet sich pro Achse an und darf nur
+        schreiben, solange sie ausgelenkt ist, plus genau einmal beim Loslassen. Sonst &uuml;berschreibt ein
+        mit 60&nbsp;Hz laufendes Gamepad st&auml;ndig die Tastatur mit Nullen.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>Tankgewicht und Reifen</h2>
+      <p class="muted">
+        Beide Modelle h&auml;ngen an je einem Regler in den Optionen, dessen linkes Ende sie
+        <em>vollst&auml;ndig</em> abschaltet &mdash; nicht &bdquo;ein bisschen&ldquo;, sondern rechnerisch
+        exakt auf den Faktor&nbsp;1, also auf das Verhalten ohne Simulation. Das ist Absicht: nur so
+        l&auml;sst sich beurteilen, was das Modell &uuml;berhaupt beitr&auml;gt.
+      </p>
+
+      <h3 style="font-size:14px; margin:16px 0 6px 0">Tankgewicht</h3>
+      <p class="muted">
+        Ein voller Tank ist totes Gewicht und kostet Beschleunigung <em>und</em> Bremsleistung
+        gleicherma&szlig;en: <code>Massefaktor = 1 + Regler &middot; 0,30 &middot; F&uuml;llstand</code>.
+        Bei vollem Regler und vollem Tank ist das Auto also 30&nbsp;% tr&auml;ger; gemessener Bremsweg aus
+        H&ouml;chstgeschwindigkeit 3,46&nbsp;s statt 2,70&nbsp;s.
+      </p>
+      <p class="muted">
+        Wichtig f&uuml;r alle, die den Code weiterentwickeln: der Faktor wird auf die
+        <em>fertige</em> Beschleunigung in <code>update()</code> angewandt, <strong>nicht</strong> innerhalb
+        von <code>thrustAt()</code>. Die Startkalibrierung integriert durch <code>thrustAt()</code> und
+        m&uuml;sste sonst bei jedem Tankf&uuml;llstand neu gel&ouml;st werden. Die kalibrierte Zeit gilt
+        damit f&uuml;r das <em>leere</em> Auto, und Sprit macht es langsamer &mdash; die ehrliche
+        Richtung, denn erfinden darf ein Zusatzmodell nichts.
+      </p>
+
+      <h3 style="font-size:14px; margin:16px 0 6px 0">Reifentemperatur</h3>
+      <p class="muted">
+        W&auml;rme entsteht aus der Arbeit, die die Reifen tats&auml;chlich leisten: Querkraft plus
+        L&auml;ngskraft, beides nur solange das Auto rollt. Die K&uuml;hlung w&auml;chst mit dem Abstand zur
+        Umgebungstemperatur, deshalb pendelt sich eine Temperatur ein statt davonzulaufen:
+        <code>T = 20&nbsp;&deg;C + 65 &middot; (5,0/3,4) &middot; Arbeit</code>, Zeitkonstante etwa 19&nbsp;s.
+      </p>
+      <div class="doc-table-wrap"><table class="doc-table">
+        <tr><th>Fahrweise</th><th>bei 80&nbsp;&deg;C nach</th><th>Beharrungstemperatur</th><th>Verschlei&szlig; nach 10&nbsp;min</th></tr>
+        <tr><td>sanft</td><td><em>nie</em></td><td>49&nbsp;&deg;C &mdash; bleibt kalt</td><td>33&nbsp;%</td></tr>
+        <tr><td>z&uuml;gig</td><td>48&nbsp;s</td><td>85&nbsp;&deg;C &mdash; Betriebsfenster</td><td>74&nbsp;%</td></tr>
+        <tr><td>Vollattacke</td><td>19&nbsp;s</td><td>116&nbsp;&deg;C &mdash; &uuml;berhitzt</td><td>100&nbsp;% (nach 6,5&nbsp;min)</td></tr>
+      </table></div>
+      <p class="muted">
+        Dass sanftes Fahren die Betriebstemperatur <em>gar nicht</em> erreicht, ist kein Fehler, sondern
+        genau der Zielkonflikt: wer schont, hat weniger Grip. Der erste Versuch mit anderen Raten lief bei
+        ganz normalem Fahren auf 171&nbsp;&deg;C ein &mdash; dauerhaft im roten Bereich, was das Modell wie
+        einen Defekt h&auml;tte aussehen lassen.
+      </p>
+
+      <h3 style="font-size:14px; margin:16px 0 6px 0">Grip und Verschlei&szlig;</h3>
+      <p class="muted">
+        Kalte Reifen rutschen, &uuml;berhitzte rutschen, abgefahrene rutschen. Unterhalb des
+        Betriebsfensters ist die Kennlinie quadratisch, damit die letzten Grad weniger z&auml;hlen als die
+        ersten. Gemessene Griffigkeit bei vollem Regler: kalt&nbsp;(20&nbsp;&deg;C) 0,65 &middot;
+        Betrieb&nbsp;(85&nbsp;&deg;C) 1,00 &middot; &uuml;berhitzt&nbsp;(110&nbsp;&deg;C) 0,70 &middot;
+        abgefahren 0,70.
+      </p>
+      <p class="muted">
+        Der Verschlei&szlig; l&auml;uft mit derselben Arbeit und beschleunigt sich, sobald die Reifen
+        hei&szlig; sind &mdash; ein harter Stint kostet also doppelt. Zur&uuml;ckgesetzt wird beim
+        Boxenstopp und beim Rennstart, also genau dann, wenn ein echtes Auto auf neuen oder
+        ausgek&uuml;hlten Reifen losf&auml;hrt. Der Grip wirkt auf Antrieb, Bremse <em>und</em> Lenkung.
+      </p>
+      <p class="muted">
+        Auf dem Racing-Display zeigt der Reifenring die Temperatur: blau kalt, gr&uuml;n im Betriebsfenster,
+        rot zu hei&szlig;. Bei abgeschaltetem Modell bleibt er grau und die Anzeige sagt &bdquo;aus&ldquo; &mdash;
+        eine Anzeige soll keine Simulation vort&auml;uschen, die gar nicht l&auml;uft.
+      </p>
+    </div>
+  </section>
+
+  <section class="tabpage" id="tab-dev">
+    <nav class="subtabs">
+      <button class="subtab-btn active" data-subtab="explore">BLE-Explorer</button>
+      <button class="subtab-btn" data-subtab="calib">Kalibrierung</button>
+      <button class="subtab-btn" data-subtab="macros">Makros</button>
+    </nav>
+
+    <div class="subtabpage active" id="subtab-explore">
+    <div class="card">
+      <h2>Mapping</h2>
+      <p class="muted">
+        Wähle die Characteristic, an die Lenk-/Gas-Kommandos geschrieben werden sollen (wird beim Verbinden
+        automatisch auf NUS RX gesetzt).
+      </p>
+      <div class="row">
+        <div>
+          <label class="small">Ziel-Characteristic</label>
+          <select id="control-char-select"><option value="">-- keine (nur Log) --</option></select>
         </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Verbindung</h2>
+      <p class="muted">
+        Web Bluetooth erlaubt standardmäßig nur Zugriff auf Services, die vorab bekannt sind. Da wir das genaue
+        Carrera-Protokoll noch nicht kennen, versuchen wir es unten mit einer Liste gängiger Custom-Service-UUIDs
+        (Nordic UART, HM-10/FFE0, FFF0 etc.) &mdash; falls dein Auto eine andere UUID benutzt, füge sie manuell hinzu.
+      </p>
+      <div class="row">
+        <input type="text" id="custom-uuid" placeholder="eigene Service-UUID (z.B. 0000ffe0-0000-1000-8000-00805f9b34fb)" style="width:360px">
+        <button id="btn-add-uuid">Hinzufügen</button>
+      </div>
+      <p class="muted" style="margin-top:10px">
+        Tipp: Öffne in Chrome <span class="kbd">chrome://bluetooth-internals/#devices</span> &mdash; dort siehst du
+        <b>alle</b> Services/Characteristics deines Autos ohne diese Einschränkung. Wenn du mir die dort
+        angezeigten UUIDs (Service + Characteristics + Eigenschaften: read/write/notify) gibst, kann ich die
+        Steuerung direkt korrekt verdrahten.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>GATT-Baum</h2>
+      <div id="services-container"><p class="muted">Noch keine Verbindung.</p></div>
+    </div>
+
+    <div class="card">
+      <h2>Protokoll-Labor (NUS RX/TX)</h2>
+      <p class="muted">
+        Schreibt frei konfigurierbare Byte-Pakete an NUS RX (<code>6e400002</code>) und zeigt gleichzeitig alle
+        Notify-Werte von NUS TX (<code>6e400003</code>) an &mdash; damit du live sehen kannst, was das Auto zurückmeldet,
+        während du Kombinationen ausprobierst.
+      </p>
+      <p class="muted">
+        Bekannt (aus einer unabhängigen Reverse-Engineering-Runde zum selben Auto, per BLE-Sniffer ermittelt):
+        echte Kommando-Pakete sind <b>20 Byte</b> lang (2 Byte Präfix + 17 Datenbytes + 1 Prüfsumme), gesendet alle
+        ~45ms. Byte-Offset 6 = Gas/Bremse (<code>0xDF</code>=Leerlauf, größer=Gas, kleiner=Bremse). Die Prüfsumme
+        ist noch nicht geknackt &mdash; deshalb unten zuerst das <b>echte, garantiert gültige</b> Leerlauf-Paket laden
+        und unverändert wiederholt senden (reproduziert dieselbe gültige Prüfsumme, ohne sie berechnen zu müssen).
+      </p>
+      <div class="row">
+        <button id="lab-load-idle">Bekanntes Idle-Paket laden (20 Byte)</button>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <label class="small" style="margin:0">Paketlänge:</label>
+        <select id="lab-len"><option>1</option><option selected>2</option><option>3</option><option>4</option><option>6</option><option>8</option><option>20</option></select>
+        <button id="lab-subscribe">TX abonnieren</button>
+        <span class="muted" id="lab-status">nicht verbunden</span>
+      </div>
+      <div id="lab-bytes" class="row" style="margin-top:12px"></div>
+      <div class="row" style="margin-top:10px">
+        <span class="muted">Paket: <code id="lab-preview">80 80</code></span>
+        <button class="primary" id="lab-send">Einmal senden</button>
+        <label style="display:flex;align-items:center;gap:6px" class="muted">
+          <input type="checkbox" id="lab-continuous"> kontinuierlich alle
+        </label>
+        <input type="text" id="lab-interval" value="45" style="width:50px"> ms
+      </div>
+      <div class="row" style="margin-top:10px">
+        <label class="small" style="margin:0">Sweep Byte#:</label>
+        <select id="lab-sweep-idx"></select>
+        <input type="text" id="lab-sweep-speed" value="30" style="width:50px"> ms/Schritt
+        <button id="lab-sweep-start">Sweep 0→255 starten</button>
+        <button id="lab-sweep-stop" disabled>Sweep stoppen</button>
+      </div>
+      <div id="lab-tx-log" style="margin-top:12px; height:140px; overflow-y:auto; background:#0b0d12; border:1px solid var(--border); border-radius:8px; padding:8px; font-family:monospace; font-size:12px;"></div>
+    </div>
+
+    <div class="card">
+      <h2>Live-Log</h2>
+      <div id="log"></div>
+      <div class="row" style="margin-top:8px">
+        <button id="btn-clear-log">Log leeren</button>
+      </div>
+    </div>
+    </div>
+
+    <div class="subtabpage" id="subtab-calib">
+    <div class="card">
+      <h2>Automatischer Kalibrierungslauf</h2>
+      <p class="muted">
+        Sendet eine feste Testsequenz (Lenkung im Stand 0/25/50/75/100% links &amp; rechts, dazu 3 sehr kurze
+        Mini-Vorwärtsschübe bei niedrigem Tempo, eine sanfte Bremse) und wertet parallel die Notify-Bytes 1-3
+        aus &mdash; um zu prüfen, ob das wirklich Gier-/Beschleunigungsdaten vom Auto sind.
+        <b>Läuft komplett automatisch, ohne Physik-Engine (direkte Werte).</b> Passt in ca. 50×20cm &mdash; am besten
+        das Auto mittig auf die Fläche stellen oder aufbocken, falls möglich.
+      </p>
+      <div class="row">
+        <button class="primary" id="calib-start">Testlauf starten</button>
+        <button id="calib-stop" disabled>Stoppen</button>
+        <span class="muted" id="calib-status">bereit</span>
+      </div>
+      <div id="calib-results" style="margin-top:12px; overflow-x:auto"></div>
+    </div>
+    </div>
+
+    <div class="subtabpage" id="subtab-macros">
+    <div class="card">
+      <h2>Autonomes Fahren: Aufnahme &amp; Wiedergabe</h2>
+      <p class="muted">
+        Fahr die Strecke einmal manuell (Tab "Fahren", Joystick/Gas oder Pfeiltasten). Während der Aufnahme
+        werden Lenk- und Gaswerte mit Zeitstempel mitgeschrieben. Bei der Wiedergabe sendet die App exakt
+        dieselbe Sequenz erneut an die Ziel-Characteristic.
+      </p>
+      <div class="row">
+        <button class="primary" id="btn-record">Aufnahme starten</button>
+        <button id="btn-play" disabled>Wiedergabe</button>
+        <button id="btn-stop-play" disabled>Stop</button>
+        <label style="display:flex;align-items:center;gap:6px" class="muted">
+          <input type="checkbox" id="chk-loop"> Endlosschleife
+        </label>
+        <span class="muted" id="record-status">bereit</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Gespeicherte Fahrten</h2>
+      <div class="row">
+        <input type="text" id="macro-name" placeholder="Name der Aufnahme">
+        <button id="btn-save-macro">Aktuelle Aufnahme speichern</button>
+        <select id="macro-list"><option value="">-- gespeicherte Fahrten --</option></select>
+        <button id="btn-load-macro">Laden</button>
+        <button id="btn-delete-macro">Löschen</button>
+        <button id="btn-export-macro">Export (JSON)</button>
+        <input type="file" id="macro-import" accept="application/json" style="display:none">
+        <button id="btn-import-macro">Import (JSON)</button>
+      </div>
+      <p class="muted" style="margin-top:8px">Aufnahmen werden lokal im Browser gespeichert (localStorage).</p>
+    </div>
+
+    <div class="card">
+      <h2>Wiedergabe-Log</h2>
+      <div id="play-log" class="muted" style="font-family:monospace;font-size:12px;min-height:20px">noch keine Wiedergabe.</div>
+    </div>
+    </div>
+
   </section>
 
   <!-- FAHREN TAB: redesigned as a racing-HUD style drive screen instead of a form/dashboard -->
@@ -913,20 +1208,20 @@
       <div class="opt-row"><div class="opt-label">Regen<small>Wie die Select-Taste bzw. W. Passende Reifen kommen beim Boxenstopp automatisch.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-rain"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Strecken-Ambience<small>Hintergrundgeräusche, Vorbeifahrten, Regen und Donner.</small></div>
-        <label class="tgl"><input type="checkbox" id="amb-enable"><span></span></label></div>
+        <label class="tgl"><input type="checkbox" id="amb-enable" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Streckenlautstärke<small>Hintergrund und Vorbeifahrten &mdash; absichtlich leise, damit der Motor vorne bleibt.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="amb-volume" min="0" max="1" step="0.05" value="0.2">
+          <input type="range" id="amb-volume" min="0" max="1" step="0.05" value="0.1">
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="amb-volume-val">20%</span>
+          <span class="opt-val" id="amb-volume-val">10%</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Regenlautstärke<small>Regenteppich und Donner, unabhängig regelbar.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="rain-volume" min="0" max="1" step="0.05" value="0.4">
+          <input type="range" id="rain-volume" min="0" max="1" step="0.05" value="0.25">
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="rain-volume-val">40%</span>
+          <span class="opt-val" id="rain-volume-val">25%</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Motorsound-Profil</div>
         <select id="sound-profile">
@@ -976,13 +1271,6 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-brakepower-val">1.00</span>
         </div></div>
-      <div class="opt-row"><div class="opt-label">Maximaler Lenkausschlag<small>Nominell &mdash; 90° = voller Byte-Bereich, angenommen.</small></div>
-        <div class="opt-slider">
-          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="max-steer-deg" min="10" max="90" step="5" value="60">
-          <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="max-steer-deg-val">60°</span>
-        </div></div>
       <h3 style="margin:22px 0 8px 0; font-size:14px; border-top:1px solid var(--border); padding-top:14px">
         Getriebe &amp; Fahrleistung
       </h3>
@@ -1008,12 +1296,26 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-coast-drag-val">0.55</span>
         </div></div>
-      <div class="opt-row"><div class="opt-label">Lenkdämpfung<small>0 = direkt, 1 = sehr träge.</small></div>
+      <div class="opt-row"><div class="opt-label">Tankgewicht<small>Voller Tank macht das Auto tr&auml;ger. Ganz links = keine Simulation.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="phys-damping" min="0.05" max="0.6" step="0.05" value="0.2">
+          <input type="range" id="setting-fuelweight" min="0" max="1" step="0.05" value="0">
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="phys-damping-val">0.20</span>
+          <span class="opt-val" id="setting-fuelweight-val">aus</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Reifen: Temperatur &amp; Verschlei&szlig;<small>Kalt nach Start und Boxenstopp, abgenutzt nach hartem Stint. Ganz links = keine Simulation.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="setting-tyres" min="0" max="1" step="0.05" value="0">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-tyres-val">aus</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Lenkansprechen<small>Wie stark und wie schnell die Lenkung antwortet. Auch auf dem Steuerkreuz links/rechts.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="phys-steerresp" min="0.5" max="2" step="0.1" value="1">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="phys-steerresp-val">100%</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Beschleunigungsfaktor<small>Feinabstimmung, 1.0 = die eingestellte Zeit.</small></div>
         <div class="opt-slider">
@@ -1501,6 +1803,9 @@
       // Only hold the screen awake while the racing screen is actually the one on show.
       keepScreenAwake(btn.dataset.tab === 'race');
       document.body.classList.toggle('race-mode', btn.dataset.tab === 'race');
+      // Charts are drawn lazily when the documentation is actually opened: the sliders
+      // that invalidate them fire constantly and the canvases are invisible meanwhile.
+      if (btn.dataset.tab === 'doc' && drivetrainChartsDirty) renderDrivetrainCharts();
     };
   });
 
@@ -1539,7 +1844,6 @@
       $('subtab-' + btn.dataset.subtab).classList.add('active');
       // Redraw lazily on open rather than on every slider event: the sliders already
       // re-run the launch calibration, and the charts are invisible while they move.
-      if (btn.dataset.subtab === 'docs' && drivetrainChartsDirty) renderDrivetrainCharts();
       keepScreenAwake(false);
     };
   });
@@ -1576,19 +1880,27 @@
   // boundary is measured, clamp reverse to this confirmed-safe depth only.
   const MIN_THROTTLE_DELTA = -64;
 
-  // Nominal degree scale for the steering slider: byte 127 (full lock) is ASSUMED to
-  // correspond to ~90° — this is not empirically calibrated (we don't know the real
-  // mechanical lock angle), it just gives the "Maximaler Lenkausschlag" slider an
-  // intuitive unit. Functionally, what matters is it proportionally caps steerByte.
-  let maxSteerDegrees = 60;
+  // ---- Byte 14: the light field ----
+  // Decoded from an HCI snoop log (2026-08-19) in which the user switched the headlights
+  // off, then on, then pressed the brake. The three states captured were 0x80, 0x82 and
+  // 0x83, and crc8() below reproduces all three recorded checksums exactly (0xA4, 0x33,
+  // 0xE0), which is what confirms the reading.
+  const LIGHT_BASE  = 0x80;  // bit 7 was set in every captured packet
+  const LIGHT_HEAD  = 0x02;  // bit 1 = headlights
+  const LIGHT_BRAKE = 0x01;  // bit 0 = brake light
+  // The original app also sends 0x22, 0x42 and 0x62 — the upper bits carry something we
+  // have NOT decoded. We deliberately leave them at zero rather than imitate them.
+  let lightBits = LIGHT_BASE;
 
   function buildCommandPacket(steerFloat, throttleFloat) {
-    const steerLimit = Math.round(127 * (maxSteerDegrees / 90));
-    const steerDelta = Math.max(-steerLimit, Math.min(steerLimit, Math.round(steerFloat * steerLimit)));
+    // Full mechanical lock. The old "Maximaler Lenkausschlag" option scaled this down to
+    // 85 of 127 steps by default, i.e. the car was never asked for more than two thirds
+    // of the steering it has.
+    const steerDelta = Math.max(-127, Math.min(127, Math.round(steerFloat * 127)));
     const throttleDelta = Math.max(MIN_THROTTLE_DELTA, Math.min(127, Math.round(throttleFloat * 127)));
     const steerByte = steerDelta & 0xff;
     const throttleByte = (0xdf + throttleDelta) & 0xff;
-    const body = [0xaf, 0x00, 0x00, 0x00, 0x00, 0x00, throttleByte, steerByte, 0x80, steerByte, 0x60, 0x00, 0x01, 0x00, 0x82, 0x04, 0x00, 0x00, 0x00];
+    const body = [0xaf, 0x00, 0x00, 0x00, 0x00, 0x00, throttleByte, steerByte, 0x80, steerByte, 0x60, 0x00, 0x01, 0x00, lightBits & 0xff, 0x04, 0x00, 0x00, 0x00];
     body.push(crc8(body));
     return new Uint8Array(body);
   }
@@ -1852,11 +2164,6 @@
     applyThrottleInput(SRC.KEY, ty);
   }, 30);
 
-  $('max-steer-deg').addEventListener('input', (e) => {
-    maxSteerDegrees = parseInt(e.target.value, 10);
-    $('max-steer-deg-val').textContent = maxSteerDegrees + '°';
-  });
-
   function emergencyStop() {
     keys.clear();
     releaseAllInputs();
@@ -1921,8 +2228,10 @@
     constructor() {
       this.config = {
         accelerationFactor: 1.0, // fine-tune multiplier on top of halfSpeedTimeS
-        steeringDamping: 0.18,
-        speedSteerReduction: 0.5, // up to 50% less steering angle at max virtual speed
+        steerRatePerS: 6.0,      // full lock in ~1/6 s; the servo's speed, not its lag
+        steerExpo: 1.15,         // near-linear: 1.5 made the car feel unwilling to turn
+        steerResponse: 1.0,      // live trim on the D-pad, 0.5 .. 2.0 in 10% steps
+        speedSteerReduction: 0.35, // and only weighted by gear, see update()
         trailBrakingGripBonus: 1.1,
         autoShift: false, // manual by default, per user
 
@@ -1943,6 +2252,36 @@
         brakeDecelBase: 0.98,
         brakeDecelAero: 1.00,
         minMoveThrottle: 0.16, // smallest byte that actually breaks the car away from rest
+        // 10 km/h on the racing display, which reads speedKmh * REAL_SCALE (71.25).
+        // Below this the car is walking pace and should simply stop.
+        crawlCutoffKmh: 10 / (285 / 4),
+        crawlStopDecel: 1.2,   // km/h per second; clears the cutoff in about 0.12 s
+
+        // ---- Fuel mass ----
+        // A full tank is dead weight: it costs acceleration and braking alike. Both effects
+        // are applied to the finished acceleration in update(), NOT inside thrustAt() —
+        // the launch calibration integrates through thrustAt and must keep meaning exactly
+        // what it says. The calibrated figure therefore holds for an empty car, and fuel
+        // makes it slower, which is the honest way round.
+        fuelWeightEffect: 0,   // 0 = off, identical to no simulation at all; 1 = full
+        fuelMassSpan: 0.30,    // a full tank is up to 30% more sluggish at effect 1
+
+        // ---- Tyre temperature and wear ----
+        tyreEffect: 0,         // 0 = off; 1 = full
+        tyreAmbientC: 20,
+        tyreOptimalC: 85,
+        // Balanced so the equilibrium temperature lands where it should: with
+        // T = ambient + span * (heat/cool) * work, brisk driving (work ~0.65) settles at
+        // 82°C and full attack (~0.95) at 111°C, just into the overheating range. The first
+        // pair tried, 4.0/1.5, ran to 171°C on ordinary driving — permanently in the red,
+        // which would have made the whole model read as broken.
+        tyreHeatRate: 5.0,     // °C/s at full work
+        tyreCoolRate: 3.4,     // °C/s at optimum; time constant ~19 s
+        tyreOverheatC: 110,
+        tyreColdPenalty: 0.35, // grip lost on stone-cold tyres
+        tyreHotPenalty: 0.30,  // grip lost when thoroughly overheated
+        tyreWearRate: 0.0018,  // worn out after ~8 min of full attack, longer if driven tidily
+        tyreWearPenalty: 0.30, // grip lost on completely worn tyres
         shiftDragFactor: 0.25, // drag during a shift: a slight lull, not a full coast-down
         accelCalibration: 1,   // solved for in calibrateAccel(), see there
         speedLimitFactor: 1,   // pit lane sets this to 0.4; caps speed, so the byte caps too
@@ -2010,6 +2349,11 @@
         onLimiter: false,
         gripLong: 1, // longitudinal share of the grip budget — see the friction circle
         aquaFactor: 1,
+        fuelLoad: 0,      // 0..1, written from outside each tick; 0 keeps the car light
+        massFactor: 1,    // >1 = heavier than the calibrated car
+        tyreTempC: 20,
+        tyreWear: 0,      // 0..1
+        tyreGrip: 1,      // combined temperature and wear factor, 1 = nothing simulated
         loadFront: 0.5,   // static 50/50; >0.5 means nose-down
         longUse: 0,       // lagging longitudinal demand, signed: + drive, - brake
         steerGrip: 1,     // front lateral capacity left over, 1 = static baseline
@@ -2184,12 +2528,45 @@
       const frontCap = 1 + cfg.loadGain * (st.loadFront - 0.5) * 2;
       const frontUse = Math.max(0, -st.longUse) * cfg.brakeUseGain;
       st.steerGrip = Math.max(0.12, Math.min(1.25,
-        Math.sqrt(Math.max(0, frontCap * frontCap - frontUse * frontUse))));
+        Math.sqrt(Math.max(0, frontCap * frontCap - frontUse * frontUse))))
+        * st.tyreGrip;   // cold or worn tyres will not turn the car either
       // Rear axle drives. Normalised to the on-power equilibrium (see config), so this term
       // is 1 once the car has squatted and below 1 only while the rear is still light — the
       // soft first moments of a throttle application, not a free performance bonus.
       const rearGrip = Math.max(0.35, Math.min(1,
         (1 - st.loadFront) / (1 - cfg.loadFrontOnPower)));
+
+      // ---- Fuel mass ----
+      st.massFactor = 1 + cfg.fuelWeightEffect * cfg.fuelMassSpan * st.fuelLoad;
+
+      // ---- Tyre temperature ----
+      // Heat comes from the work the tyres are actually doing: cornering load plus
+      // longitudinal demand, both only counting once the car is moving. Cooling scales with
+      // how far above ambient they already are, so they settle rather than run away.
+      const work = Math.min(1, (Math.abs(latUse) + Math.abs(st.longUse))
+                               * (Math.abs(st.speedKmh) / cfg.topSpeedKmh));
+      const span = cfg.tyreOptimalC - cfg.tyreAmbientC;
+      st.tyreTempC += (cfg.tyreHeatRate * work
+                       - cfg.tyreCoolRate * (st.tyreTempC - cfg.tyreAmbientC) / span) * dt;
+      st.tyreTempC = Math.max(cfg.tyreAmbientC, st.tyreTempC);
+
+      // Wear accumulates with the same work, and faster once they are hot — which is what
+      // makes an aggressive stint cost more than a tidy one.
+      const hotFactor = 1 + Math.max(0, (st.tyreTempC - cfg.tyreOptimalC) / span);
+      st.tyreWear = Math.min(1, st.tyreWear + cfg.tyreWearRate * work * hotFactor * dt);
+
+      // Grip: cold tyres slide, overheated tyres slide, worn tyres slide. Quadratic below
+      // the working range so the last few degrees matter less than the first few.
+      const warm = Math.max(0, Math.min(1, (st.tyreTempC - cfg.tyreAmbientC) / span));
+      let tGrip = 1 - cfg.tyreColdPenalty * (1 - warm) * (1 - warm);
+      if (st.tyreTempC > cfg.tyreOptimalC) {
+        const over = Math.min(1, (st.tyreTempC - cfg.tyreOptimalC)
+                                 / (cfg.tyreOverheatC - cfg.tyreOptimalC));
+        tGrip *= 1 - cfg.tyreHotPenalty * over * over;
+      }
+      tGrip *= 1 - cfg.tyreWearPenalty * st.tyreWear;
+      // The slider fades the whole model out: at 0 this is exactly 1, i.e. no simulation.
+      st.tyreGrip = 1 + cfg.tyreEffect * (tGrip - 1);
 
       const resist = this.resistAt(st.speedKmh, A, onPower); // always >= 0
       let accel = 0;
@@ -2231,7 +2608,8 @@
           // before the nose is down, never more.
           const dive = Math.max(0.5, Math.min(1, st.loadFront / cfg.loadFrontOnBrake));
           accel = -(resist + (cfg.brakeDecelBase + cfg.brakeDecelAero * uB)
-                             * inputs.brake * st.gripLong * surf * dive);
+                             * inputs.brake * st.gripLong * surf * dive
+                             * st.tyreGrip / st.massFactor);
           // ABS is now only an indicator plus a haptic pulse. Modulating the byte here
           // would reintroduce precisely the stutter that took so long to remove.
           if (inputs.brake > 0.8 && st.speedKmh > cfg.topSpeedKmh * 0.15) {
@@ -2244,7 +2622,7 @@
           accel = st.isShifting
             ? -resist * cfg.shiftDragFactor // a brief lull, not a full coast-down
             : this.thrustAt(st.speedKmh, gearIdx, inputs.throttle, A)
-                * st.gripLong * surf * rearGrip - resist;
+                * st.gripLong * surf * rearGrip * st.tyreGrip / st.massFactor - resist;
         } else {
           st.engineLoad = 0;
           accel = -resist; // lift off and it rolls out
@@ -2258,6 +2636,22 @@
         // A real car needs a minimum shove to break away from standstill; without this
         // the first moments of a launch send a byte too small to move the car at all.
         if (inputs.throttle > 0.02) output = Math.max(output, cfg.minMoveThrottle * inputs.throttle);
+
+        // No man's land. Rolling out, `output` walks the whole way down to zero, and the
+        // stretch below minMoveThrottle is a byte too small to overcome stiction but too
+        // large to be nothing: the car creeps, stalls, creeps again. Below the cutoff there
+        // is therefore no middle ground — either the driver is asking for movement, and the
+        // line above already lifted the byte clear of the break-away point, or nothing is
+        // being asked and both byte and speed go cleanly to zero.
+        if (inputs.throttle <= 0.02 && st.speedKmh < cfg.crawlCutoffKmh) {
+          output = 0;
+          // Coasting only. Under braking the deceleration fitted to the real GT3 table is
+          // already stronger than this and must not be overridden.
+          if (inputs.brake <= 0.02) {
+            st.speedKmh = Math.max(0, st.speedKmh - cfg.crawlStopDecel * dt);
+          }
+          if (st.speedKmh < cfg.crawlCutoffKmh * 0.1) st.speedKmh = 0;
+        }
       }
 
       st.virtualSpeed = Math.abs(st.speedKmh) / cfg.topSpeedKmh;
@@ -2274,20 +2668,30 @@
         }
       }
 
-      // steering: expo curve for a softer center, speed-sensitivity, trail-braking grip bonus
-      const expoSteer = Math.sign(inputs.steering) * Math.pow(Math.abs(inputs.steering), 1.5);
-      let maxSteerLimit = 1.0 - (this.state.virtualSpeed * this.config.speedSteerReduction);
+      // Expo curve for a softer centre. Kept mild: a strong expo is what made the car feel
+      // reluctant to turn, and more angle was explicitly wanted.
+      const expoSteer = Math.sign(inputs.steering)
+                      * Math.pow(Math.abs(inputs.steering), cfg.steerExpo);
+
+      // Authority falls off with speed, but only in the higher gears. In 1st gear the car
+      // keeps everything it has, because that is where the tight stuff gets driven.
+      const gearFrac = cfg.gears.length > 1
+        ? Math.min(1, st.currentGear / (cfg.gears.length - 1)) : 0;
+      let maxSteerLimit = 1.0 - this.state.virtualSpeed * cfg.speedSteerReduction * gearFrac;
       // Gate on forward braking: pitch is negative in reverse too, which would otherwise
       // hand reverse an unintended grip bonus.
-      if (!reversing && isBraking) maxSteerLimit *= this.config.trailBrakingGripBonus;
+      if (!reversing && isBraking) maxSteerLimit *= cfg.trailBrakingGripBonus;
       maxSteerLimit = Math.min(1, maxSteerLimit);
-      const targetSteer = expoSteer * maxSteerLimit;
+      const targetSteer = Math.max(-1, Math.min(1,
+        expoSteer * maxSteerLimit * cfg.steerResponse));
 
-      // Frame-rate-corrected smoothing. The slider value means "lerp factor per 60Hz
-      // frame", so it has to be rescaled for the actual dt — otherwise the exact same
-      // setting feels three times laggier when the loop ticks at 22Hz instead of 60Hz.
-      const alpha = 1 - Math.pow(1 - this.config.steeringDamping, dt * 60);
-      this.state.dampedSteering += (targetSteer - this.state.dampedSteering) * alpha;
+      // RATE LIMIT, not exponential smoothing. An exponential lag moves slowest at the very
+      // start of a movement — precisely the moment that has to feel immediate. A rate limit
+      // moves at full speed from the first tick and only caps how quickly full lock is
+      // reached, which separates "how fast does it answer" from "how far does it go".
+      const maxStep = cfg.steerRatePerS * cfg.steerResponse * dt;
+      const dS = targetSteer - this.state.dampedSteering;
+      this.state.dampedSteering += Math.max(-maxStep, Math.min(maxStep, dS));
       this.state.dampedSteering = Math.max(-1, Math.min(1, this.state.dampedSteering));
 
       // Aquaplaning: above a speed threshold the fronts stop biting and the car simply
@@ -2421,6 +2825,7 @@
   const physEngine = new CarreraPhysicsEngine();
   let physLastTime = null;
   let headlightsOn = false;
+  let raceLampHead = false;  // resolved headlight state, for the racing screen
 
   $('phys-enable').addEventListener('change', (e) => {
     physicsEnabled = e.target.checked;
@@ -2471,13 +2876,16 @@
     $('setting-crash-count').disabled = e.target.checked;
   });
 
-  ['phys-damping', 'phys-accel', 'phys-trailbrake'].forEach(id => {
+  ['phys-steerresp', 'phys-accel', 'phys-trailbrake'].forEach(id => {
     const input = $(id);
     const readout = $(id + '-val');
     const apply = () => {
       const v = parseFloat(input.value);
       readout.textContent = v.toFixed(2);
-      if (id === 'phys-damping') physEngine.config.steeringDamping = v;
+      if (id === 'phys-steerresp') {
+        physEngine.config.steerResponse = v;
+        $('phys-steerresp-val').textContent = Math.round(v * 100) + '%';
+      }
       if (id === 'phys-accel') physEngine.config.accelerationFactor = v;
       if (id === 'phys-trailbrake') physEngine.config.trailBrakingGripBonus = v;
       markDrivetrainChartsDirty();
@@ -2500,10 +2908,13 @@
   $('setting-grip').addEventListener('input', (e) => {
     const grip = parseFloat(e.target.value);
     $('setting-grip-val').textContent = grip.toFixed(2);
-    physEngine.config.speedSteerReduction = 0.7 * (1 - grip);
-    physEngine.config.steeringDamping = 0.30 - (0.30 - 0.10) * grip; // lerp(0.30, 0.10, grip)
-    $('phys-damping').value = physEngine.config.steeringDamping;
-    $('phys-damping-val').textContent = physEngine.config.steeringDamping.toFixed(2);
+    // Less grip = authority falls off sooner with speed. The old 0.7*(1-grip) collapsed to
+    // 0.07 at the default grip, i.e. no falloff worth feeling — the sluggishness came from
+    // the damping instead, which is gone. This keeps a real floor so the higher gears
+    // actually go flatter, and grip still moves it.
+    physEngine.config.speedSteerReduction = 0.20 + 0.30 * (1 - grip);
+    // Steering RESPONSE is deliberately not touched here: that is the driver's trim on the
+    // D-pad, not a property of the tyres.
   });
 
   $('setting-brakepower').addEventListener('input', (e) => {
@@ -2556,6 +2967,52 @@
 
   const REAL_SCALE = 285 / 4; // 71.25 — see the note in updateRaceScreen
 
+  // Fullscreen for the racing screen. Three things can fail independently and all three
+  // are handled rather than assumed: the Fullscreen API (older iOS), the Orientation Lock
+  // API (iOS Safari and desktop always refuse), and the user leaving fullscreen with the
+  // system gesture instead of our button.
+  function raceIsPortrait() { return window.innerHeight > window.innerWidth; }
+
+  function syncRaceRotation() {
+    const fs = document.body.classList.contains('race-fs');
+    document.body.classList.toggle('race-turn', fs && raceIsPortrait());
+  }
+
+  async function enterRaceFullscreen() {
+    const el = document.documentElement;
+    try {
+      if (el.requestFullscreen) await el.requestFullscreen();
+      else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+    } catch (e) { /* refused: we still lay out as if fullscreen */ }
+    try {
+      if (screen.orientation && screen.orientation.lock) await screen.orientation.lock('landscape');
+    } catch (e) { /* refused on iOS and desktop; the CSS rotation covers it */ }
+    document.body.classList.add('race-fs');
+    syncRaceRotation();
+    $('race-fs').hidden = true; $('race-fs-exit').hidden = false;
+  }
+
+  async function exitRaceFullscreen() {
+    try {
+      if (document.fullscreenElement && document.exitFullscreen) await document.exitFullscreen();
+      else if (document.webkitFullscreenElement) document.webkitExitFullscreen();
+    } catch (e) { /* already out */ }
+    try { if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); }
+    catch (e) { /* never locked */ }
+    document.body.classList.remove('race-fs', 'race-turn');
+    $('race-fs').hidden = false; $('race-fs-exit').hidden = true;
+  }
+
+  $('race-fs').addEventListener('click', enterRaceFullscreen);
+  $('race-fs-exit').addEventListener('click', exitRaceFullscreen);
+  window.addEventListener('resize', syncRaceRotation);
+  // Leaving fullscreen by swipe or Escape must put the buttons back too.
+  document.addEventListener('fullscreenchange', () => {
+    if (!document.fullscreenElement && document.body.classList.contains('race-fs')) {
+      exitRaceFullscreen();
+    }
+  });
+
   function updateRaceScreen(st, out) {
     const gearEl = $('race-gear');
     if (!gearEl) return;
@@ -2582,8 +3039,9 @@
     // Headlight tell-tale. Reads the real state rather than sniffing the lamp's CSS
     // colour: there are two different "off" colours in this file (#3a4a6b and #444), so a
     // colour comparison silently matched the wrong one and the indicator never went out.
-    // flashLampOn is set by the flash routine, so a flash blinks this too.
-    $('race-light').classList.toggle('on', !!(out.lights.head || flashLampOn));
+    // raceLampHead is whatever resolveLights() settled on, so a flash, the damage
+    // flicker and the empty-tank blink all show up here too.
+    $('race-light').classList.toggle('on', !!raceLampHead);
 
     $('race-fuel').textContent = Math.round(Math.max(0, fuel)) + '%';
     $('race-fuel-bar').style.width = Math.max(0, fuel) + '%';
@@ -2615,8 +3073,36 @@
     $('race-g-real').setAttribute('cx', (50 + gx * R).toFixed(1));
     $('race-g-real').setAttribute('cy', (50 + gy * R).toFixed(1));
 
-    $('race-track').textContent = dashOffTrack ? 'ABSEITS' : 'auf Strecke';
-    $('race-track').className = 'gt3-val sm ' + (dashOffTrack ? 'gt3-bad' : 'gt3-ok');
+    // Tyre gauge. The ring runs blue (cold) through green (working range) to red (too hot),
+    // because those are the three states a driver actually has to act on. Grey when the
+    // model is switched off, so the dial never implies a simulation that is not running.
+    const ring = $('race-tyre-ring');
+    if (physEngine.config.tyreEffect === 0) {
+      ring.setAttribute('stroke', '#2a3346');
+      $('race-tyre-temp').textContent = 'aus';
+      $('race-tyre-wear').textContent = '';
+    } else {
+      const cfgT = physEngine.config;
+      const t = st.tyreTempC;
+      const warm = Math.max(0, Math.min(1, (t - cfgT.tyreAmbientC)
+                                           / (cfgT.tyreOptimalC - cfgT.tyreAmbientC)));
+      let col;
+      if (t > cfgT.tyreOptimalC) {
+        const over = Math.min(1, (t - cfgT.tyreOptimalC)
+                                 / (cfgT.tyreOverheatC - cfgT.tyreOptimalC));
+        col = `rgb(${Math.round(70 + 185 * over)}, ${Math.round(209 - 130 * over)}, ${Math.round(127 - 100 * over)})`;
+      } else {
+        col = `rgb(${Math.round(60 + 10 * warm)}, ${Math.round(140 + 69 * warm)}, ${Math.round(230 - 103 * warm)})`;
+      }
+      ring.setAttribute('stroke', col);
+      $('race-tyre-temp').textContent = Math.round(t) + '\u00b0';
+      $('race-tyre-wear').textContent = 'Abnutzung ' + Math.round(st.tyreWear * 100) + '%';
+    }
+
+    $('race-trim-accel').textContent = Math.round(physEngine.config.accelerationFactor * 100) + '%';
+    $('race-trim-steer').textContent = Math.round(physEngine.config.steerResponse * 100) + '%';
+    $('race-track').textContent = dashOnMarker ? 'MUSTER' : 'auf Strecke';
+    $('race-track').className = 'gt3-val sm ' + (dashOnMarker ? 'gt3-warn' : 'gt3-ok');
 
     // Pit banner replaces the shift bar while the pit lane is active — impossible to miss,
     // which the old small field was not.
@@ -2655,8 +3141,10 @@
     $('dash-rpm').textContent = Math.round(st.rpm);
     updateRaceScreen(st, out);
     $('dash-abs').textContent = physEngine.state.absActive ? 'AKTIV' : '-';
-    $('dash-head').style.background = out.lights.head ? '#f5e642' : '#444';
-    $('dash-brake').style.background = out.lights.brake ? 'var(--bad)' : '#444';
+    const lamp = resolveLights(out.lights.head, out.lights.brake);
+    $('dash-head').style.background = lamp.head ? '#f5e642' : '#444';
+    $('dash-brake').style.background = lamp.brake ? 'var(--bad)' : '#444';
+    raceLampHead = lamp.head;
   }
 
   // Advances the simulation and publishes its shaped output into physOutSteer/
@@ -3490,7 +3978,7 @@
   // Battery is a rough two-point estimate (0x9b/155≈100%, 0x90/144≈75%, observed in an
   // earlier session) — not a calibrated formula, just enough for a rough gauge.
   let dashBattery = null;
-  let dashOffTrack = false;
+  let dashOnMarker = false;   // byte 15 bit 3: the car is physically over a marker
   let dashMinimapIndex = null;
   let dashLastTileCounter = null;
   let dashLapStart = null;
@@ -3586,6 +4074,7 @@
 
   function startRaceCountdown() {
     if (raceState !== 'idle' && raceState !== 'finished') return; // ignore while armed/racing
+    resetTyres();   // a race starts on cold tyres, same as leaving the pits
     raceLapTimes = [];
     raceLapStart = null;
     $('race-results').style.display = 'none';
@@ -3658,11 +4147,16 @@
     dashBattery = bytes[10];
     $('dash-battery').textContent = `${batteryPercent(dashBattery)}% (roh ${dashBattery})`;
 
-    dashOffTrack = bytes[15] !== 0;
+    // Byte 15 was read as "off track". The 2026-08-19 snoop logs disprove that: it is 0x08
+    // for exactly as long as the car sits on a printed marker (~1s at driving speed), in the
+    // same packet in which the crossing counter increments, in every capture. So the old
+    // warning lit up precisely when the car crossed start/finish. It is a marker-contact
+    // flag, and that is what it now says.
+    dashOnMarker = (bytes[15] & 0x08) !== 0;
     const badge = $('dash-offtrack');
-    badge.textContent = dashOffTrack ? 'Evtl. abseits der Strecke' : 'Auf Strecke (vermutlich)';
-    badge.style.background = dashOffTrack ? 'rgba(179,19,31,.12)' : 'var(--panel-2)';
-    badge.style.borderColor = dashOffTrack ? 'var(--bad)' : 'var(--border)';
+    badge.textContent = dashOnMarker ? 'Über Muster' : 'Kein Muster';
+    badge.style.background = dashOnMarker ? 'rgba(70,209,127,.12)' : 'var(--panel-2)';
+    badge.style.borderColor = dashOnMarker ? 'var(--good)' : 'var(--border)';
 
     // Bytes 1 and 3 fluctuate only once the car moves and byte 3 flipped sign with turn
     // direction in one capture — hence "motion-ish". Unconfirmed.
@@ -3755,6 +4249,7 @@
     // Only slicks aquaplane; wets are cut to move water.
     physEngine.config.aquaplaning = (weather === 'rain' && tyres === 'slick') ? 1 : 0;
     setAmbienceRain(weather === 'rain');
+    lightFx.rain = (weather === 'rain');   // FIA-style rain light on the rear lamp
   }
 
   function setWeather(next) {
@@ -3763,6 +4258,15 @@
     const cb = $('setting-rain');
     if (cb) cb.checked = (weather === 'rain'); // keep the options switch in step
     applySurface();
+    // Audible confirmation: the switch lives on a controller button, where there is nothing
+    // to look at. Rain announces itself with a thunder clap, dry with a short two-tone.
+    if (weather === 'rain' && ambience.thunder && ambience.thunder.length) {
+      playAmbienceOneShot(ambience.thunder[0], 0.7, true);
+    } else if (weather === 'dry') {
+      playTone(520, 0.10, 'sine', 0.14);
+      setTimeout(() => playTone(780, 0.16, 'sine', 0.14), 110);
+    }
+
     const need = (weather === 'rain' && tyres === 'slick') || (weather === 'dry' && tyres === 'wet');
     showHudToast(weather === 'rain' ? 'Regen' : 'Trocken');
     log('Wetter: ' + (weather === 'rain' ? 'Regen' : 'trocken') + ' — Reifen: '
@@ -3798,7 +4302,9 @@
   let pitFuelGained = 0, pitDamageRepaired = 0;
   const PIT_FUEL_PER_SEC = 22;
   const PIT_REPAIR_PER_SEC = 18;
-  const PIT_STANDSTILL_KMH = 0.12;
+  // Same number the drivetrain calls walking pace, so "the car is standing" means one
+  // thing everywhere: 10 km/h on the racing display.
+  const PIT_STANDSTILL_KMH = 10 / (285 / 4);
 
   function setPitState(next) {
     if (pitState === next) return;
@@ -3806,6 +4312,7 @@
     physEngine.config.speedLimitFactor = (next === 'off') ? 1 : PIT_SPEED_FACTOR;
     if (next === 'servicing') {
       fitTyresForWeather(); // automatic, as requested
+      resetTyres();         // new tyres come out of the blankets cold and unworn
       pitServiceStart = Date.now();
       pitFuelGained = 0; pitDamageRepaired = 0;
       if (!playFx(fxBuffers.pit, 0.8)) {
@@ -3827,6 +4334,8 @@
             `+${Math.round(pitFuelGained)}% Sprit, -${Math.round(pitDamageRepaired)}% Schaden.`, 'info');
       }
       pitServiceStart = null;
+      const st = $('pitstop-status');
+      if (st) st.textContent = 'Bereit.';
     }
     updatePitUI();
   }
@@ -3853,6 +4362,9 @@
 
     if (pitState === 'servicing') {
       if (!stopped) { setPitState('off'); showHudToast('Boxengasse verlassen'); return; }
+      const st = $('pitstop-status');
+      if (st) st.textContent = `Service… +${Math.round(pitFuelGained)}% Sprit, `
+                             + `-${Math.round(pitDamageRepaired)}% Schaden`;
       const addFuel = Math.min(100 - fuel, PIT_FUEL_PER_SEC * dt);
       const fixDamage = Math.min(damage, PIT_REPAIR_PER_SEC * dt);
       fuel += addFuel; damage -= fixDamage;
@@ -3893,7 +4405,6 @@
   // not a validated impact reading.
   let fuel = 100;
   let damage = 0;
-  let pitStopInProgress = false;
   let crashRollingAvg1 = null, crashRollingAvg3 = null;
   let crashIndicatorTimer = null;
   let lastCrashTime = 0;
@@ -3940,47 +4451,47 @@
   // unknown (never observed changing in any captured packet), so this currently only
   // drives the on-screen indicators. Once the user supplies the real light command,
   // this is the single place that needs to learn how to send it.
-  function setCarLights(on) {
-    const head = $('dash-head'), brake = $('dash-brake');
-    if (head) head.style.background = on ? '#f5e642' : '#3a4a6b';
-    if (brake) brake.style.background = on ? 'var(--bad)' : '#3a4a6b';
-    // TODO: send real light command over BLE once the protocol byte is known.
+  // ---- One resolver, one truth ----
+  // Four things want to drive the lamps: the driver's switch, a light flash, the damage
+  // warning, the empty-tank warning, plus the rain light. They used to be four separate
+  // intervals each calling setCarLights(bool), so whichever fired last won and the state
+  // drifted apart from what the car was actually being told. Now every effect only sets a
+  // FLAG, and this function derives both the on-screen lamps and byte 14 from them in a
+  // fixed priority order. Blink phases come from the clock rather than from timers, so
+  // nothing can fall out of step.
+  const lightFx = { flashUntil: 0, damage: false, fuel: false, rain: false };
+  const FLASH_MS = 480;   // three ~80ms pulses: the GT3 pass signal
+
+  function resolveLights(baseHead, baseBrake) {
+    const now = Date.now();
+    let head = baseHead, brake = baseBrake;
+    if (now < lightFx.flashUntil) {
+      head = Math.floor((lightFx.flashUntil - now) / 80) % 2 === 0;
+    } else if (lightFx.damage) {
+      head = Math.floor(now / 90) % 2 === 0;    // fast, agitated flicker
+    } else if (lightFx.fuel) {
+      head = Math.floor(now / 350) % 2 === 0;   // slow, deliberate blink
+    }
+    // Rain light: the FIA-style double pulse on the rear lamp. An actual brake application
+    // takes precedence — a rain light must never be mistaken for braking, or the other way
+    // round.
+    if (!brake && lightFx.rain) {
+      const ph = now % 1100;
+      brake = (ph < 90) || (ph >= 200 && ph < 290);
+    }
+    lightBits = LIGHT_BASE | (head ? LIGHT_HEAD : 0) | (brake ? LIGHT_BRAKE : 0);
+    return { head, brake };
   }
 
-  // At full damage the car limps and its lights flash as a visible warning.
-  let damageBlinkTimer = null;
-  // Three ~90ms pulses with ~70ms gaps — the GT3 pass signal. Restores the previous lamp
-  // state afterwards, so it also works while the damage warning is blinking.
-  let flashTimer = null;
-  let flashLampOn = false;
   function triggerHeadlightFlash() {
-    if (flashTimer) return; // already flashing; ignore a double tap
-    let n = 0;
-    const wasOn = headlightsOn;
-    flashTimer = setInterval(() => {
-      flashLampOn = n % 2 === 0;
-      setCarLights(flashLampOn);
-      if (++n >= 6) {
-        clearInterval(flashTimer);
-        flashTimer = null;
-        flashLampOn = false;
-        setCarLights(wasOn);
-        updateDamageBlink(); // hand the lamps back to the damage warning if it is running
-      }
-    }, 80);
+    if (Date.now() < lightFx.flashUntil) return;   // already flashing; ignore a double tap
+    lightFx.flashUntil = Date.now() + FLASH_MS;
     showHudToast('Lichthupe');
   }
 
   function updateDamageBlink() {
-    const totalled = damage >= 100;
-    if (totalled && !damageBlinkTimer) {
-      let on = false;
-      damageBlinkTimer = setInterval(() => { on = !on; setCarLights(on); }, 350);
-    } else if (!totalled && damageBlinkTimer) {
-      clearInterval(damageBlinkTimer);
-      damageBlinkTimer = null;
-      setCarLights(false);
-    }
+    lightFx.damage = damage >= 100;
+    lightFx.fuel = fuel <= 0;
   }
 
   function updateDamageFuelUI() {
@@ -3997,7 +4508,7 @@
   let fuelUiLastPaint = 0;
   function applyFuelAndDamage(throttle) {
     const now = Date.now();
-    if (fuelLastTickTime !== null && !pitStopInProgress) {
+    if (fuelLastTickTime !== null && pitState !== 'servicing') {
       const dt = Math.min(0.5, (now - fuelLastTickTime) / 1000);
       const fuelBefore = fuel;
       fuel = Math.max(0, fuel - Math.abs(throttle) * dt * fuelDrainPerSec);
@@ -4011,6 +4522,8 @@
       // on the same thread that has to keep the send cadence steady.
       if (now - fuelUiLastPaint > 200) { fuelUiLastPaint = now; updateDamageFuelUI(); }
     }
+    // Hand the tank level to the physics: the engine must not reach out for globals.
+    physEngine.state.fuelLoad = Math.max(0, Math.min(1, fuel / 100));
     fuelLastTickTime = now;
 
     let out = throttle;
@@ -4022,28 +4535,32 @@
     return out;
   }
 
-  $('btn-pitstop').onclick = () => {
-    if (pitStopInProgress) return;
-    if (Math.abs(throttleY) > 0.15) { alert('Für einen Boxenstopp muss das Auto (nahezu) stehen.'); return; }
-    pitStopInProgress = true;
-    $('btn-pitstop').disabled = true;
-    let secondsLeft = 4;
-    $('pitstop-status').textContent = `Boxenstopp läuft… ${secondsLeft}s`;
-    const timer = setInterval(() => {
-      secondsLeft--;
-      if (secondsLeft <= 0) {
-        clearInterval(timer);
-        fuel = 100;
-        damage = 0;
-        updateDamageFuelUI();
-        pitStopInProgress = false;
-        $('btn-pitstop').disabled = false;
-        $('pitstop-status').textContent = 'Fertig: vollgetankt, repariert.';
-      } else {
-        $('pitstop-status').textContent = `Boxenstopp läuft… ${secondsLeft}s`;
-      }
-    }, 1000);
-  };
+  // There used to be TWO pit stops: a fixed four-second one on this button that simply set
+  // fuel to 100 and damage to 0, and the pit-lane service reached by driving over the
+  // marker, which scales with how long you actually stand there and changes tyres. Keeping
+  // both meant the button quietly handed out a better result than driving in properly. The
+  // button now enters the same service, so there is one pit stop with two ways in.
+  // Fresh rubber: cold and unworn. Called when the crew fits tyres and at the green light,
+  // which is exactly when a real car leaves on new or cooled-down tyres.
+  function resetTyres() {
+    physEngine.state.tyreTempC = physEngine.config.tyreAmbientC;
+    physEngine.state.tyreWear = 0;
+    physEngine.state.tyreGrip = 1;
+  }
+
+  function requestPitStop() {
+    if (pitState === 'servicing') {          // second press releases the car
+      setPitState('off');
+      showHudToast('Boxengasse verlassen');
+      return;
+    }
+    if (Math.abs(physEngine.state.speedKmh) >= PIT_STANDSTILL_KMH || Math.abs(throttleY) > 0.1) {
+      showHudToast('Boxenstopp nur im Stand');
+      return;
+    }
+    setPitState('servicing');
+  }
+  $('btn-pitstop').onclick = requestPitStop;
 
   updateDamageFuelUI();
 
@@ -4207,7 +4724,8 @@
       brakeNode.start();
     }
     if (!brakeGain) return;
-    brakeGain.gain.setTargetAtTime(Math.min(0.5, amount * 0.5) * engineVolume,
+    // Halved: at 0.5 the squeal sat on top of the engine instead of under it.
+    brakeGain.gain.setTargetAtTime(Math.min(0.25, amount * 0.25) * engineVolume,
                                    audioCtx.currentTime, 0.06);
     if (amount <= 0.01 && brakeNode) {
       const node = brakeNode;
@@ -4223,10 +4741,9 @@
   const ambience = { bed: null, rainBed: null, passby: [], thunder: [],
                      bedNode: null, bedGain: null, rainNode: null, rainGain: null,
                      ready: false, rainOn: false, busy: false };
-  let ambienceVolume = 0.20;   // track bed and pass-bys: quiet, the engine leads
-  let rainVolume = 0.40;       // rain and thunder: own control, weather should be loud
-  let ambienceEnabled = false;  // starts OFF on purpose: nothing should make noise
-                                // until it is asked for
+  let ambienceVolume = 0.10;   // track bed and pass-bys: quiet, the engine leads
+  let rainVolume = 0.25;       // rain and thunder: own control, weather stays audible
+  let ambienceEnabled = true;   // on, but quiet enough to sit under the engine
 
   async function loadAmbience() {
     if (ambience.ready || !audioCtx) return;
@@ -4446,6 +4963,21 @@
     refreshAmbienceGains();
   });
 
+  // Both models fade to nothing at the left end, so "off" is genuinely the old behaviour
+  // rather than a very small amount of the new one.
+  $('setting-fuelweight').addEventListener('input', (e) => {
+    const v = parseFloat(e.target.value);
+    physEngine.config.fuelWeightEffect = v;
+    $('setting-fuelweight-val').textContent = v === 0 ? 'aus' : Math.round(v * 100) + '%';
+  });
+
+  $('setting-tyres').addEventListener('input', (e) => {
+    const v = parseFloat(e.target.value);
+    physEngine.config.tyreEffect = v;
+    $('setting-tyres-val').textContent = v === 0 ? 'aus' : Math.round(v * 100) + '%';
+    if (v === 0) resetTyres();   // leave nothing stale behind when switching off
+  });
+
   $('rain-volume').addEventListener('input', (e) => {
     rainVolume = parseFloat(e.target.value);
     $('rain-volume-val').textContent = Math.round(rainVolume * 100) + '%';
@@ -4539,15 +5071,18 @@
   // Face-button indices are the same on Xbox and DualSense in the standard mapping;
   // only the printed names differ: buttons[0]=A/Cross, [1]=B/Circle, [2]=X/Square,
   // [3]=Y/Triangle. D-pad is buttons[12..15] (up/down/left/right).
-  const GAMEPAD_BINDINGS_KEY = 'carrera-hybrid-gamepad-bindings';
+  // Bumped when the default layout changes: a saved set from the old layout would keep
+  // Boxenstopp on Y and collide with the headlight button that now lives there.
+  const GAMEPAD_BINDINGS_KEY = 'carrera-hybrid-gamepad-bindings-v2';
   const DEFAULT_BINDINGS = {
     throttle: { type: 'button', index: 7, label: 'Rechter Trigger (RT / R2)' },
     brake: { type: 'button', index: 6, label: 'Linker Trigger (LT / L2)' },
     steering: { type: 'axis', index: 0, invert: false, label: 'Linker Stick (X-Achse)' },
     downshift: { type: 'button', index: 2, label: 'X / Quadrat' },
     upshift: { type: 'button', index: 1, label: 'B / Kreis' },
-    lightflash: { type: 'button', index: 0, label: 'A / Cross' },
-    pitstop: { type: 'button', index: 3, label: 'Y / Dreieck' },
+    headlights: { type: 'button', index: 3, label: 'Y / Dreieck' },
+    lightflash: { type: 'button', index: 11, label: 'R3 (rechter Stick drücken)' },
+    pitstop: { type: 'button', index: 9, label: 'Start / Options' },
     racestart: { type: 'button', index: 4, label: 'LB / L1' },
     racestop: { type: 'button', index: 5, label: 'RB / R1' },
     weather: { type: 'button', index: 8, label: 'Select / Share' },
@@ -4555,7 +5090,7 @@
   const BIND_ACTION_LABELS = {
     throttle: 'Gas', brake: 'Bremse', steering: 'Lenkung',
     downshift: 'Runterschalten', upshift: 'Hochschalten',
-    lightflash: 'Lichthupe', pitstop: 'Boxenstopp',
+    headlights: 'Licht an/aus', lightflash: 'Lichthupe', pitstop: 'Boxenstopp',
     racestart: 'Rennen starten', racestop: 'Rennen beenden',
     weather: 'Wetter umschalten',
   };
@@ -4572,7 +5107,7 @@
   let bindings = loadBindings();
   let listeningFor = null; // action key currently waiting for a new input, or null
   let padConnected = false;
-  let prevDownshift = false, prevUpshift = false;
+  let prevDownshift = false, prevUpshift = false, prevHeadlights = false;
 
   function bindingDescription(b) {
     if (b.label) return b.label;
@@ -4721,22 +5256,23 @@
 
   function nudgeAccel(delta) {
     const input = $('phys-accel');
-    const v = Math.max(0.2, Math.min(1.2, parseFloat(input.value) + delta));
+    // Round to one decimal: repeated float addition of 0.1 otherwise lands on 0.7000000001
+    // and the readout starts showing noise.
+    const v = Math.round(Math.max(0.2, Math.min(1.2, parseFloat(input.value) + delta)) * 10) / 10;
     input.value = v;
     $('phys-accel-val').textContent = v.toFixed(2);
     physEngine.config.accelerationFactor = v;
-    showHudToast(`Beschleunigung ${v.toFixed(2)}`);
+    showHudToast(`Beschleunigung ${Math.round(v * 100)}%`);
   }
 
-  function nudgeDamping(delta) {
-    // Mirror what the Reifengrip slider does: write the value into the advanced slider
-    // and its readout directly (that slider's handler is not re-dispatched).
-    const input = $('phys-damping');
-    const v = Math.max(0.05, Math.min(0.6, parseFloat(input.value) + delta));
+  function nudgeSteerResponse(delta) {
+    // Keep the options slider in step, otherwise menu and controller drift apart.
+    const input = $('phys-steerresp');
+    const v = Math.round(Math.max(0.5, Math.min(2, parseFloat(input.value) + delta)) * 10) / 10;
     input.value = v;
-    $('phys-damping-val').textContent = v.toFixed(2);
-    physEngine.config.steeringDamping = v;
-    showHudToast(`Lenkdämpfung ${v.toFixed(2)}`);
+    $('phys-steerresp-val').textContent = Math.round(v * 100) + '%';
+    physEngine.config.steerResponse = v;
+    showHudToast(`Lenkansprechen ${Math.round(v * 100)}%`);
   }
 
   function pollGamepad() {
@@ -4786,12 +5322,24 @@
       if (flashNow && !prevLightFlash) triggerHeadlightFlash();
       prevLightFlash = flashNow;
 
+      // Headlights on/off, edge-triggered. Drives the same checkbox the options menu uses
+      // so the two can never disagree.
+      const headNow = readBindingValue(pad, bindings.headlights) > BUTTON_CAPTURE_THRESHOLD;
+      if (headNow && !prevHeadlights) {
+        headlightsOn = !headlightsOn;
+        const cb = $('dash-head-toggle');
+        if (cb) cb.checked = headlightsOn;
+        showHudToast(headlightsOn ? 'Licht an' : 'Licht aus');
+      }
+      prevHeadlights = headNow;
+
       const wxNow = readBindingValue(pad, bindings.weather) > BUTTON_CAPTURE_THRESHOLD;
       if (wxNow && !prevWeather) setWeather(weather === 'rain' ? 'dry' : 'rain');
       prevWeather = wxNow;
 
+      // Pit stop only from a standstill — a real crew does not service a moving car.
       const pitstopNow = readBindingValue(pad, bindings.pitstop) > BUTTON_CAPTURE_THRESHOLD;
-      if (pitstopNow && !prevPitstop) $('btn-pitstop').click();
+      if (pitstopNow && !prevPitstop) requestPitStop();
       prevPitstop = pitstopNow;
 
       const raceStartNow = readBindingValue(pad, bindings.racestart) > BUTTON_CAPTURE_THRESHOLD;
@@ -4818,10 +5366,10 @@
 
       const dUp = padButtonPressed(pad, DPAD.up), dDown = padButtonPressed(pad, DPAD.down);
       const dLeft = padButtonPressed(pad, DPAD.left), dRight = padButtonPressed(pad, DPAD.right);
-      if (dUp && !prevDpad.up) nudgeAccel(+0.05);
-      if (dDown && !prevDpad.down) nudgeAccel(-0.05);
-      if (dLeft && !prevDpad.left) nudgeDamping(-0.03);
-      if (dRight && !prevDpad.right) nudgeDamping(+0.03);
+      if (dUp && !prevDpad.up) nudgeAccel(+0.1);
+      if (dDown && !prevDpad.down) nudgeAccel(-0.1);
+      if (dLeft && !prevDpad.left) nudgeSteerResponse(-0.1);
+      if (dRight && !prevDpad.right) nudgeSteerResponse(+0.1);
       prevDpad.up = dUp; prevDpad.down = dDown; prevDpad.left = dLeft; prevDpad.right = dRight;
     }
     // Keep prev-flags fresh even while rebinding, otherwise they go stale and the first
