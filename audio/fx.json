@@ -42,19 +42,22 @@
  },
  "accel": {
   "porsche": {
-   "file": "porsche_accel.ogg",
-   "seconds": 3.6,
-   "shifts": 5
+   "file": "porsche_demo.ogg",
+   "seconds": 9.77,
+   "upshifts": 5,
+   "downshifts": 5
   },
   "bmw": {
-   "file": "bmw_accel.ogg",
-   "seconds": 3.6,
-   "shifts": 5
+   "file": "bmw_demo.ogg",
+   "seconds": 9.77,
+   "upshifts": 5,
+   "downshifts": 5
   },
   "mustang": {
-   "file": "mustang_accel.ogg",
-   "seconds": 3.6,
-   "shifts": 5
+   "file": "mustang_demo.ogg",
+   "seconds": 9.77,
+   "upshifts": 5,
+   "downshifts": 5
   }
  },
  "launch_curve": {

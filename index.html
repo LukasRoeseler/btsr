@@ -205,6 +205,41 @@
     display: inline-block; width: 14px; height: 14px; border-radius: 50%;
     background: #3a4a6b; margin: 0 3px; vertical-align: middle;
   }
+  /* Racing screen: one glance, landscape, nothing to operate. Sizes use clamp() so the
+     same grid works from a phone held sideways up to a laptop without media queries. */
+  .race-screen { background: var(--navy); border-radius: 8px; padding: clamp(8px, 2vw, 20px);
+    color: #fff; display: grid; gap: clamp(6px, 1.4vw, 16px);
+    grid-template-columns: minmax(0,1.15fr) minmax(0,2fr) minmax(0,1.25fr); align-items: stretch; }
+  .race-cell { background: rgba(255,255,255,.06); border-radius: 6px; padding: clamp(6px,1.2vw,14px);
+    display: flex; flex-direction: column; justify-content: center; min-width: 0; }
+  .race-big { font-family: monospace; font-weight: 800; line-height: 1;
+    font-size: clamp(46px, 13vw, 130px); text-align: center; }
+  .race-val { font-family: monospace; font-weight: 800; line-height: 1.05;
+    font-size: clamp(20px, 4.4vw, 44px); }
+  .race-lbl { font-size: clamp(8px, 1.15vw, 11px); text-transform: uppercase;
+    letter-spacing: .06em; color: #9fb0d6; margin-top: 3px; }
+  .race-bar { height: clamp(10px, 2.2vw, 20px); background: rgba(0,0,0,.35); border-radius: 3px;
+    overflow: hidden; margin-top: 4px; }
+  .race-bar > i { display: block; height: 100%; width: 0; transition: width .12s linear; }
+  .race-lights { display: flex; gap: clamp(3px,.7vw,6px); margin-bottom: 6px; }
+  .race-lights > span { flex: 1; height: clamp(7px,1.5vw,14px); border-radius: 2px; background: #2b3a5c; }
+  .race-laps { list-style: none; margin: 4px 0 0 0; padding: 0; overflow-y: auto;
+    max-height: clamp(70px, 17vw, 150px); font-family: monospace;
+    font-size: clamp(11px, 1.5vw, 15px); }
+  .race-laps li { display: flex; justify-content: space-between; padding: 1px 0;
+    border-bottom: 1px solid rgba(255,255,255,.08); }
+  .race-warn { color: var(--warn); }
+  #race-rotate { display: none; }
+  @media (orientation: portrait) and (max-width: 900px) {
+    #race-rotate { display: block; }
+  }
+  /* On the racing screen the header and page padding are pure overhead: on a phone held
+     sideways they push the grid below the fold, which defeats "everything at a glance".
+     Collapse them while that tab is showing. */
+  body.race-mode header, body.race-mode .pinstripe { display: none; }
+  body.race-mode nav.tabs { padding: 0 8px; }
+  body.race-mode nav.tabs button { padding: 4px 9px; font-size: 12px; }
+  body.race-mode main { padding: 6px 8px 8px 8px; }
   .hud-toggle { margin-left: auto; display: flex; align-items: center; gap: 6px; font-size: 12px; color: #cfd8ec; }
 
   /* Race-mode start lights: off (gray) -> up to 3 reds -> green on "go" */
@@ -255,12 +290,63 @@
   <button class="tab-btn active" data-tab="control">Fahren</button>
   <button class="tab-btn" data-tab="track">Strecke</button>
   <button class="tab-btn" data-tab="options">Optionen</button>
+  <button class="tab-btn" data-tab="race">Rennen</button>
   <button class="tab-btn" data-tab="dev">Entwickler</button>
 </nav>
 
 <main>
 
   <!-- DEVELOPER TAB (sub-tabbed: BLE-Explorer / Kalibrierung / Makros / Doku) -->
+  <section class="tabpage" id="tab-race">
+    <p class="muted" id="race-rotate" style="margin-bottom:10px">
+      📱 Gerät quer halten &mdash; dieser Bildschirm ist fürs Querformat gebaut.
+    </p>
+    <div class="race-screen">
+      <div class="race-cell" style="align-items:center">
+        <div class="race-big" id="race-gear">1</div>
+        <div class="race-lbl" style="text-align:center">Gang</div>
+      </div>
+
+      <div class="race-cell">
+        <div class="race-lights" id="race-shift">
+          <span></span><span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span>
+        </div>
+        <div class="race-val" id="race-rpm">1500</div>
+        <div class="race-lbl">1/min</div>
+        <div class="race-val" style="margin-top:8px" id="race-speed">0.0</div>
+        <div class="race-lbl">km/h (simuliert)</div>
+      </div>
+
+      <div class="race-cell">
+        <div class="race-lbl">Aktuelle Runde</div>
+        <div class="race-val" id="race-lap-now">-</div>
+        <ul class="race-laps" id="race-lap-list"></ul>
+      </div>
+
+      <div class="race-cell">
+        <div class="race-lbl">Tank</div>
+        <div class="race-bar"><i id="race-fuel-bar" style="background:var(--good)"></i></div>
+        <div class="race-lbl" style="margin-top:8px">Schaden</div>
+        <div class="race-bar"><i id="race-dmg-bar" style="background:var(--bad)"></i></div>
+      </div>
+
+      <div class="race-cell">
+        <div class="race-lbl">Akku Auto</div>
+        <div class="race-val" id="race-batt">-</div>
+        <div class="race-lbl" style="margin-top:8px">Boxengasse</div>
+        <div class="race-val" id="race-pit">-</div>
+      </div>
+
+      <div class="race-cell">
+        <div class="race-lbl">Verbindung</div>
+        <div class="race-val" id="race-conn">getrennt</div>
+        <div class="race-lbl" style="margin-top:8px">Strecke</div>
+        <div class="race-val" id="race-track" style="font-size:clamp(13px,2.2vw,22px)">-</div>
+      </div>
+    </div>
+  </section>
+
   <section class="tabpage" id="tab-dev">
     <nav class="subtabs">
       <button class="subtab-btn active" data-subtab="explore">BLE-Explorer</button>
@@ -557,24 +643,39 @@
     <div class="card">
       <h2>Wie der simulierte Antrieb klingt</h2>
       <p class="muted">
-        Ein voller Vollgas-Start von 0 auf die eingestellte Höchstgeschwindigkeit, mit allen fünf
-        Hochschaltvorgängen. Beim Schalten fällt die Drehzahl hörbar ab und zieht wieder hoch &mdash;
-        genau das, was die rote Linie im letzten Diagramm zeigt.
+        Ein kompletter Fahrzyklus: Anlasser, Leerlauf, Vollgas-Start durch alle sechs Gänge,
+        dann Anbremsen mit fünf Rückschaltungen und zurück in den Leerlauf &mdash; rund 10 Sekunden.
+        Beim Hochschalten fällt die Drehzahl, beim <b>Runterschalten springt sie hoch</b>, weil der
+        kürzere Gang den Motor bei gleicher Geschwindigkeit schneller dreht. Das kurze Bellen dabei
+        ist Zwischengas: echte GT3-Getriebe gleichen die Drehzahl beim Runterschalten an.
       </p>
       <div class="row" style="gap:18px; flex-wrap:wrap">
         <div><p class="muted" style="margin:0 0 4px 0"><b>Porsche</b> &mdash; Boxer-6, gleichmäßig zündend</p>
-          <audio controls preload="none" src="audio/porsche_accel.ogg" style="height:32px"></audio></div>
+          <audio controls preload="none" src="audio/porsche_demo.ogg" style="height:32px"></audio></div>
         <div><p class="muted" style="margin:0 0 4px 0"><b>BMW</b> &mdash; Reihen-6, Turbo</p>
-          <audio controls preload="none" src="audio/bmw_accel.ogg" style="height:32px"></audio></div>
+          <audio controls preload="none" src="audio/bmw_demo.ogg" style="height:32px"></audio></div>
         <div><p class="muted" style="margin:0 0 4px 0"><b>Mustang</b> &mdash; V8, Cross-Plane</p>
-          <audio controls preload="none" src="audio/mustang_accel.ogg" style="height:32px"></audio></div>
+          <audio controls preload="none" src="audio/mustang_demo.ogg" style="height:32px"></audio></div>
+      </div>
+      <h3 style="margin:20px 0 6px 0; font-size:14px">Die übrigen Effekte</h3>
+      <div class="row" style="gap:18px; flex-wrap:wrap">
+        <div><p class="muted" style="margin:0 0 4px 0"><b>Bremse</b> &mdash; tonal, ACC-Charakter</p>
+          <audio controls preload="none" src="audio/brake_squeal.ogg" style="height:32px"></audio></div>
+        <div><p class="muted" style="margin:0 0 4px 0"><b>Crash</b> &mdash; 2 von 4 Varianten</p>
+          <audio controls preload="none" src="audio/crash_0.ogg" style="height:32px"></audio>
+          <audio controls preload="none" src="audio/crash_2.ogg" style="height:32px"></audio></div>
+        <div><p class="muted" style="margin:0 0 4px 0"><b>Boxenstopp</b> &mdash; Schlagschrauber</p>
+          <audio controls preload="none" src="audio/pit_wrench.ogg" style="height:32px"></audio></div>
+        <div><p class="muted" style="margin:0 0 4px 0"><b>Motorstart</b> &mdash; nur der Startvorgang</p>
+          <audio controls preload="none" src="audio/porsche_start.ogg" style="height:32px"></audio></div>
       </div>
       <p class="muted" style="font-size:11.5px; margin-top:10px">
         Alle Klänge sind <b>vollständig synthetisch</b> &mdash; Zündimpulse, gefaltet mit der Resonanz des
         Auspuffkrümmers, nach dem Vorbild von ange-yaghi/engine-sim (MIT). Der Unterschied zwischen den
         Fahrzeugen kommt nicht aus der Tonhöhe, sondern aus den <b>Zündabständen</b>: die beiden
         Sechszylinder zünden gleichmäßig alle 120°, der Cross-Plane-V8 dagegen ungleichmäßig innerhalb
-        jeder Bank &mdash; daher das Blubbern. Siehe <code>audio/CREDITS.md</code>.
+        jeder Bank &mdash; daher das Blubbern. Der Crash ist bewusst dumpf gehalten: ein GT3-Kontakt ist
+        Carbon, das den Stoß schluckt, kein splitterndes Glas. Siehe <code>audio/CREDITS.md</code>.
       </p>
     </div>
 
@@ -1367,6 +1468,9 @@
       document.querySelectorAll('.tabpage').forEach(p => p.classList.remove('active'));
       btn.classList.add('active');
       $('tab-' + btn.dataset.tab).classList.add('active');
+      // Only hold the screen awake while the racing screen is actually the one on show.
+      keepScreenAwake(btn.dataset.tab === 'race');
+      document.body.classList.toggle('race-mode', btn.dataset.tab === 'race');
     };
   });
 
@@ -1386,6 +1490,7 @@
       // Redraw lazily on open rather than on every slider event: the sliders already
       // re-run the launch calibration, and the charts are invisible while they move.
       if (btn.dataset.subtab === 'docs' && drivetrainChartsDirty) renderDrivetrainCharts();
+      keepScreenAwake(false);
     };
   });
 
@@ -2258,6 +2363,67 @@
   let invertThrottle = false;
   $('setting-invert-throttle').addEventListener('change', (e) => { invertThrottle = e.target.checked; });
 
+  // Racing screen. Reads only state that already exists and is fed from updateDashboard,
+  // i.e. the exact same source as the cockpit — the two cannot drift apart.
+  let wakeLock = null;
+  async function keepScreenAwake(on) {
+    try {
+      if (on && !wakeLock && navigator.wakeLock) {
+        wakeLock = await navigator.wakeLock.request('screen');
+        wakeLock.addEventListener('release', () => { wakeLock = null; });
+      } else if (!on && wakeLock) {
+        await wakeLock.release();
+        wakeLock = null;
+      }
+    } catch (e) { /* unsupported or refused — the screen just dims as usual */ }
+  }
+
+  function updateRaceScreen(st, out) {
+    const gearEl = $('race-gear');
+    if (!gearEl) return;
+    gearEl.textContent = st.driveMode === 'reverse'
+      ? 'R' : (st.currentGear + 1) + (physEngine.config.autoShift ? '' : 'M');
+    $('race-rpm').textContent = Math.round(st.rpm);
+    $('race-speed').textContent = Math.abs(st.speedKmh).toFixed(1);
+
+    // Shift light: fills across the band and turns red near the limiter, so the manual
+    // gearbox is actually usable without staring at the number.
+    const frac = Math.max(0, Math.min(1, st.rpmFrac));
+    const lamps = $('race-shift').children;
+    for (let i = 0; i < lamps.length; i++) {
+      const lit = frac >= (i + 1) / lamps.length;
+      const hot = i >= lamps.length - 2;
+      lamps[i].style.background = !lit ? '#2b3a5c'
+        : (st.onLimiter ? '#ff5c5c' : (hot ? 'var(--warn)' : 'var(--good)'));
+    }
+
+    $('race-fuel-bar').style.width = Math.max(0, fuel) + '%';
+    $('race-fuel-bar').style.background = fuel < 20 ? 'var(--warn)' : 'var(--good)';
+    $('race-dmg-bar').style.width = damage + '%';
+    $('race-batt').textContent = dashBattery === null ? '-' : batteryPercent(dashBattery) + '%';
+
+    $('race-pit').textContent = pitState === 'off' ? '-'
+      : (pitState === 'limited' ? 'LIMIT'
+        : ((Date.now() - (pitServiceStart || Date.now())) / 1000).toFixed(1) + 's');
+    $('race-pit').className = 'race-val' + (pitState === 'off' ? '' : ' race-warn');
+
+    const live = !!(device && device.gatt && device.gatt.connected);
+    $('race-conn').textContent = live ? 'verbunden' : 'getrennt';
+    $('race-conn').className = 'race-val' + (live ? '' : ' race-warn');
+    $('race-track').textContent = dashOffTrack ? 'ABSEITS!' : 'auf Strecke';
+    $('race-track').className = 'race-val' + (dashOffTrack ? ' race-warn' : '');
+
+    $('race-lap-now').textContent = raceLapStart !== null
+      ? formatLapTime(Date.now() - raceLapStart)
+      : (dashLapStart !== null ? formatLapTime(Date.now() - dashLapStart) : '-');
+
+    const laps = raceLapTimes.length ? raceLapTimes : dashLapTimes.map((ms, i) => ({ lap: i + 1, ms }));
+    const best = laps.length ? Math.min(...laps.map(l => l.ms)) : null;
+    $('race-lap-list').innerHTML = laps.slice().reverse().slice(0, 12).map(l =>
+      `<li><span>${l.lap}</span><span${l.ms === best ? ' style="color:#7ee0a8"' : ''}>${formatLapTime(l.ms)}</span></li>`
+    ).join('');
+  }
+
   function updateDashboard(out) {
     const st = physEngine.state;
     $('dash-gear').textContent = st.driveMode === 'reverse'
@@ -2265,6 +2431,7 @@
       : (st.currentGear + 1) + (physEngine.config.autoShift ? '' : 'M');
     $('dash-speed').textContent = Math.abs(st.speedKmh).toFixed(1); // signed while reversing
     $('dash-rpm').textContent = Math.round(st.rpm);
+    updateRaceScreen(st, out);
     $('dash-abs').textContent = physEngine.state.absActive ? 'AKTIV' : '-';
     $('dash-head').style.background = out.lights.head ? '#f5e642' : '#444';
     $('dash-brake').style.background = out.lights.brake ? 'var(--bad)' : '#444';
