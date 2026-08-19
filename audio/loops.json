@@ -1,0 +1,77 @@
+{
+ "porsche": {
+  "label": "Porsche 992 GT3 (Boxer-6, Saugmotor)",
+  "cylinders": 6,
+  "source": "vollst\u00e4ndig synthetisiert (Modell nach engine-sim, MIT)",
+  "loops": {
+   "idle": {
+    "file": "porsche_idle.ogg",
+    "baseRpm": 1500,
+    "firingHz": 75.0,
+    "seconds": 2.0
+   },
+   "mid": {
+    "file": "porsche_mid.ogg",
+    "baseRpm": 4500,
+    "firingHz": 225.0,
+    "seconds": 2.0
+   },
+   "high": {
+    "file": "porsche_high.ogg",
+    "baseRpm": 8200,
+    "firingHz": 410.0,
+    "seconds": 2.0049
+   }
+  }
+ },
+ "bmw": {
+  "label": "BMW M4 GT3 (Reihen-6, Turbo)",
+  "cylinders": 6,
+  "source": "vollst\u00e4ndig synthetisiert (Modell nach engine-sim, MIT)",
+  "loops": {
+   "idle": {
+    "file": "bmw_idle.ogg",
+    "baseRpm": 1400,
+    "firingHz": 70.0,
+    "seconds": 1.9714
+   },
+   "mid": {
+    "file": "bmw_mid.ogg",
+    "baseRpm": 4200,
+    "firingHz": 210.0,
+    "seconds": 2.0
+   },
+   "high": {
+    "file": "bmw_high.ogg",
+    "baseRpm": 7200,
+    "firingHz": 360.0,
+    "seconds": 2.0
+   }
+  }
+ },
+ "mustang": {
+  "label": "Ford Mustang GT3 (V8, Cross-Plane)",
+  "cylinders": 8,
+  "source": "vollst\u00e4ndig synthetisiert (Modell nach engine-sim, MIT)",
+  "loops": {
+   "idle": {
+    "file": "mustang_idle.ogg",
+    "baseRpm": 1200,
+    "firingHz": 80.0,
+    "seconds": 2.0
+   },
+   "mid": {
+    "file": "mustang_mid.ogg",
+    "baseRpm": 3900,
+    "firingHz": 260.0,
+    "seconds": 2.0
+   },
+   "high": {
+    "file": "mustang_high.ogg",
+    "baseRpm": 7000,
+    "firingHz": 466.7,
+    "seconds": 2.0057
+   }
+  }
+ }
+}
