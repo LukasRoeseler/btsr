@@ -240,6 +240,32 @@
   body.race-mode nav.tabs { padding: 0 8px; }
   body.race-mode nav.tabs button { padding: 4px 9px; font-size: 12px; }
   body.race-mode main { padding: 6px 8px 8px 8px; }
+  /* Options list: one setting per row, caption left, control right. A grid rather than
+     the old flex .row so every control lines up in the same column regardless of how long
+     its caption is. */
+  .opt-row { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 14px;
+    align-items: center; padding: 9px 0; border-bottom: 1px solid var(--border); }
+  .opt-row:last-child { border-bottom: none; }
+  .opt-label { font-size: 13px; }
+  .opt-label small { display: block; color: var(--muted); font-size: 11px; margin-top: 2px; }
+  .opt-slider { display: flex; align-items: center; gap: 6px; }
+  .opt-slider input[type=range] { width: clamp(100px, 20vw, 190px); }
+  .opt-slider button { width: 26px; height: 26px; padding: 0; font-size: 15px; line-height: 1;
+    flex: 0 0 auto; }
+  .opt-val { min-width: 54px; text-align: right; font-family: monospace; font-size: 12px;
+    color: var(--muted); }
+  /* Toggle switch drawn on top of a real checkbox, so every existing change handler and
+     .checked read keeps working untouched. */
+  .tgl { position: relative; display: inline-block; width: 44px; height: 24px; flex: 0 0 auto; }
+  .tgl input { position: absolute; opacity: 0; width: 0; height: 0; }
+  .tgl span { position: absolute; inset: 0; cursor: pointer; border-radius: 999px;
+    background: var(--panel-3); border: 1px solid var(--border); transition: background .15s; }
+  .tgl span::after { content: ''; position: absolute; top: 2px; left: 2px; width: 18px;
+    height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.3);
+    transition: transform .15s; }
+  .tgl input:checked + span { background: var(--good); border-color: var(--good); }
+  .tgl input:checked + span::after { transform: translateX(20px); }
+  .tgl input:focus-visible + span { outline: 2px solid var(--navy); outline-offset: 2px; }
   .hud-toggle { margin-left: auto; display: flex; align-items: center; gap: 6px; font-size: 12px; color: #cfd8ec; }
 
   /* Race-mode start lights: off (gray) -> up to 3 reds -> green on "go" */
@@ -872,151 +898,127 @@
   <section class="tabpage" id="tab-options">
     <div class="card">
       <h2>Fahrgefühl</h2>
-      <p class="muted">
-        Formt die rohe Joystick-/Tastatur-Eingabe zu einem realistischeren Fahrgefühl (Gänge, Lenkdämpfung,
-        ABS-Bremsgefühl, Haptik), bevor sie ans Auto gesendet wird. Läuft komplett im Handy/PC &mdash; das Auto bekommt
-        wie bisher nur Lenk-/Gaswerte, da wir keine Gyro-/Yaw-Rückmeldung vom Auto haben. Standardmäßig aus
-        (Debug-Modus = direkte, unveränderte Steuerung).
-      </p>
-      <div class="row">
-        <label style="display:flex;align-items:center;gap:6px">
-          <input type="checkbox" id="phys-enable" checked> Physik-Modus aktivieren
-        </label>
-        <label style="display:flex;align-items:center;gap:6px" id="phys-gyro-wrap">
-          <input type="checkbox" id="phys-gyro"> Handy-Neigung für Lenkung nutzen
-        </label>
-        <label style="display:flex;align-items:center;gap:6px" class="muted">
-          <input type="checkbox" id="sound-enable" checked> Motorsound
-        </label>
-        <div>
-          <label class="small">Motorsound-Profil</label>
-          <select id="sound-profile">
-            <option value="porsche" selected>Porsche — Boxer-6, Saugmotor</option>
-            <option value="bmw">BMW — Reihen-6, Turbo</option>
-            <option value="mustang">Mustang — V8, Cross-Plane</option>
-            <option value="v8">Einfach: V8 (kernig)</option>
-            <option value="v10">Einfach: V10 (hoch)</option>
-            <option value="ev">Einfach: Elektro</option>
-            <option value="turbo">Einfach: Turbo</option>
-          </select>
-        </div>
-        <div>
-          <label class="small">Motorlautstärke</label>
+      <div class="opt-row"><div class="opt-label">Physik-Modus aktivieren<small>Aus = die App sendet die rohe Stickstellung, ohne Gänge und Drehmoment.</small></div><label class="tgl"><input type="checkbox" id="phys-enable" checked><span></span></label></div>
+      <div class="opt-row" id="phys-gyro-wrap"><div class="opt-label">Handy-Neigung für Lenkung nutzen</div><label class="tgl"><input type="checkbox" id="phys-gyro"><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Motorsound</div><label class="tgl"><input type="checkbox" id="sound-enable" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Motorsound-Profil</div>
+        <select id="sound-profile">
+          <option value="mustang" selected>Mustang &mdash; V8, Cross-Plane</option>
+          <option value="porsche">Porsche &mdash; Boxer-6, Saugmotor</option>
+          <option value="bmw">BMW &mdash; Reihen-6, Turbo</option>
+          <option value="v8">Einfach: V8 (kernig)</option>
+          <option value="v10">Einfach: V10 (hoch)</option>
+          <option value="ev">Einfach: Elektro</option>
+          <option value="turbo">Einfach: Turbo</option>
+        </select></div>
+      <div class="opt-row"><div class="opt-label">Motorlautstärke</div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
           <input type="range" id="sound-volume" min="0" max="1" step="0.05" value="0.7">
-          <span class="muted" id="sound-volume-val">70%</span>
-        </div>
-        <label style="display:flex;align-items:center;gap:6px" class="muted">
-          <input type="checkbox" id="setting-invert-throttle"> Gas/Bremse tauschen
-        </label>
-      </div>
-      <div class="row" style="margin-top:14px">
-        <label style="display:flex;align-items:center;gap:6px" class="muted">
-          <input type="checkbox" id="setting-battery-comp"> Leistung über Akkulaufzeit konstant halten
-        </label>
-        <div>
-          <label class="small">Referenz-Akkustand</label>
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="sound-volume-val">70%</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Gas/Bremse tauschen</div><label class="tgl"><input type="checkbox" id="setting-invert-throttle"><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Leistung über Akkulaufzeit konstant halten<small>Drosselt bei vollem Akku, damit es sich über die Ladung gleich anfährt. Näherung: der Akkuwert ist eine unkalibrierte Schätzung.</small></div><label class="tgl"><input type="checkbox" id="setting-battery-comp"><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Referenz-Akkustand</div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
           <input type="range" id="setting-battery-ref" min="0.2" max="1" step="0.05" value="0.5">
-          <span class="muted" id="setting-battery-ref-val">50%</span>
-        </div>
-      </div>
-      <p class="muted" style="font-size:11.5px">
-        Akku-Kompensation drosselt bei vollem Akku, damit sich das Auto über die ganze Ladung gleich anfühlt
-        &mdash; du gibst dafür Spitzentempo auf. <b>Näherung:</b> der Akkuwert ist eine unkalibrierte Schätzung
-        aus einem einzelnen Statusbyte, und ob unser Gas-Byte linear auf die Drehzahl wirkt, ist unbestätigt.
-      </p>
-      <div class="row" style="margin-top:14px">
-        <div>
-          <label class="small">Geschwindigkeit</label>
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-battery-ref-val">50%</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Geschwindigkeit</div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
           <input type="range" id="setting-topspeed" min="0.2" max="1" step="0.05" value="1">
-          <span class="muted" id="setting-topspeed-val">100%</span>
-        </div>
-        <div>
-          <label class="small">Reifengrip</label>
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-topspeed-val">100%</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Reifengrip</div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
           <input type="range" id="setting-grip" min="0" max="1" step="0.05" value="0.6">
-          <span class="muted" id="setting-grip-val">0.60</span>
-        </div>
-        <div>
-          <label class="small">Bremswirkung</label>
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-grip-val">0.60</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Bremswirkung</div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
           <input type="range" id="setting-brakepower" min="0.3" max="1.5" step="0.05" value="1">
-          <span class="muted" id="setting-brakepower-val">1.00</span>
-        </div>
-      </div>
-      <div class="row" style="margin-top:12px">
-        <div>
-          <label class="small">Maximaler Lenkausschlag (° &mdash; nominell, 90°=voller Byte-Bereich angenommen)</label>
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-brakepower-val">1.00</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Maximaler Lenkausschlag<small>Nominell &mdash; 90° = voller Byte-Bereich, angenommen.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
           <input type="range" id="max-steer-deg" min="10" max="90" step="5" value="60">
-          <span class="muted" id="max-steer-deg-val">60°</span>
-        </div>
-      </div>
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="max-steer-deg-val">60°</span>
+        </div></div>
       <h3 style="margin:22px 0 8px 0; font-size:14px; border-top:1px solid var(--border); padding-top:14px">
         Getriebe &amp; Fahrleistung
       </h3>
-      <div class="row" style="align-items:center; gap:14px">
-        <label style="display:flex; align-items:center; gap:8px; font-weight:600">
-          <input type="checkbox" id="setting-autoshift"> Automatikgetriebe
-        </label>
-        <span class="muted" style="font-size:11.5px">
-          Aus = manuell schalten (Quadrat/X runter, Kreis/B hoch). Ein höherer Gang zieht
-          schwächer an, erreicht aber <b>dieselbe</b> Höchstgeschwindigkeit &mdash; nur später.
-        </span>
-      </div>
-      <div class="row" style="margin-top:12px">
-        <div>
-          <label class="small">Höchstgeschwindigkeit (km/h)</label>
+      <div class="opt-row"><div class="opt-label">Automatikgetriebe<small>Aus = manuell (Quadrat/X runter, Kreis/B hoch). Im Stand unter den 1. Gang schalten legt den Rückwärtsgang ein.</small></div><label class="tgl"><input type="checkbox" id="setting-autoshift"><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Höchstgeschwindigkeit (km/h)</div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
           <input type="range" id="setting-topspeed-kmh" min="2" max="8" step="0.5" value="4">
-          <span class="muted" id="setting-topspeed-kmh-val">4.0</span>
-        </div>
-        <div>
-          <label class="small">0 &rarr; halbe Höchstgeschwindigkeit in (s)</label>
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-topspeed-kmh-val">4.0</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">0 &rarr; halbe Höchstgeschwindigkeit (s)<small>Die volle Endgeschwindigkeit ist luftwiderstandsbegrenzt und wird nur asymptotisch erreicht &mdash; deshalb der Anker auf der Hälfte.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
           <input type="range" id="setting-zero-to-top" min="1" max="8" step="0.5" value="3">
-          <span class="muted" id="setting-zero-to-top-val">3.0</span>
-        </div>
-        <div>
-          <label class="small">Ausrollen (0 = rollt lange, 2 = bremst stark)</label>
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-zero-to-top-val">3.0</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Ausrollen<small>0 = rollt lange, 2 = bremst stark.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
           <input type="range" id="setting-coast-drag" min="0.1" max="2" step="0.05" value="0.55">
-          <span class="muted" id="setting-coast-drag-val">0.55</span>
-        </div>
-      </div>
-      <p class="muted" style="font-size:11.5px">
-        Die km/h sind eine <b>Annahme</b>: das Auto meldet keine Geschwindigkeit zurück. Die App
-        simuliert die Beschleunigung und leitet daraus den Gaswert ab &mdash; deshalb zieht das Auto
-        über die eingestellte Zeit hoch, statt sofort auf Vollgas zu springen.
-      </p>
-      <div class="row" style="margin-top:14px">
-        <div>
-          <label class="small">Tankverbrauch (%/s bei Vollgas)</label>
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-coast-drag-val">0.55</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Lenkdämpfung<small>0 = direkt, 1 = sehr träge.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="phys-damping" min="0.05" max="0.6" step="0.05" value="0.2">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="phys-damping-val">0.20</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Beschleunigungsfaktor<small>Feinabstimmung, 1.0 = die eingestellte Zeit.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="phys-accel" min="0.4" max="2.0" step="0.05" value="1">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="phys-accel-val">1.00</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Trail-Braking-Grip-Bonus</div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="phys-trailbrake" min="1.0" max="1.3" step="0.05" value="1.1">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="phys-trailbrake-val">1.10</span>
+        </div></div>
+      <h3 style="margin:22px 0 8px 0; font-size:14px; border-top:1px solid var(--border); padding-top:14px">
+        Tank &amp; Schaden
+      </h3>
+      <div class="opt-row"><div class="opt-label">Tankverbrauch (%/s bei Vollgas)</div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
           <input type="range" id="setting-fuel-drain" min="0" max="10" step="0.5" value="3">
-          <span class="muted" id="setting-fuel-drain-val">3.0</span>
-        </div>
-        <div>
-          <label class="small">Crashs bis Schadensbalken voll</label>
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-fuel-drain-val">3.0</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Crashs bis Schadensbalken voll</div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
           <input type="range" id="setting-crash-count" min="1" max="5" step="1" value="4">
-          <span class="muted" id="setting-crash-count-val">4</span>
-        </div>
-        <label style="display:flex; align-items:center; gap:6px; align-self:flex-end">
-          <input type="checkbox" id="setting-crash-off"> Crashs ausschalten
-        </label>
-      </div>
-      <details style="margin-top:14px">
-        <summary class="muted" style="cursor:pointer">Erweitert (Physik-Engine im Detail)</summary>
-        <div class="row" style="margin-top:12px">
-          <div>
-            <label class="small">Lenkdämpfung (0=direkt, 1=sehr träge)</label>
-            <input type="range" id="phys-damping" min="0.05" max="0.6" step="0.01" value="0.18">
-            <span class="muted" id="phys-damping-val">0.18</span>
-          </div>
-          <div>
-            <label class="small">Beschleunigungsfaktor (Feinabstimmung, 1.0 = eingestellte Zeit)</label>
-            <input type="range" id="phys-accel" min="0.4" max="2.0" step="0.05" value="1">
-            <span class="muted" id="phys-accel-val">1.00</span>
-          </div>
-          <div>
-            <label class="small">Trail-Braking-Grip-Bonus</label>
-            <input type="range" id="phys-trailbrake" min="1.0" max="1.3" step="0.01" value="1.1">
-            <span class="muted" id="phys-trailbrake-val">1.10</span>
-          </div>
-        </div>
-      </details>
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-crash-count-val">4</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Crashs ausschalten</div><label class="tgl"><input type="checkbox" id="setting-crash-off"><span></span></label></div>
     </div>
 
     <div class="card">
@@ -1480,6 +1482,26 @@
   let drivetrainChartsDirty = true;
   function markDrivetrainChartsDirty() { drivetrainChartsDirty = true; }
 
+  // +/- steppers on every options slider. They write value +/- step and then dispatch the
+  // SAME input/change events dragging produces, so each control keeps exactly one code
+  // path and mouse dragging is unaffected.
+  document.querySelectorAll('.opt-slider').forEach(wrap => {
+    const range = wrap.querySelector('input[type=range]');
+    if (!range) return;
+    wrap.querySelectorAll('button[data-step]').forEach(btn => {
+      btn.onclick = () => {
+        const step = parseFloat(range.step) || 1;
+        const min = parseFloat(range.min), max = parseFloat(range.max);
+        const raw = parseFloat(range.value) + parseFloat(btn.dataset.step) * step;
+        // Snap back onto the step grid, or repeated clicks drift off it over time.
+        const snapped = Math.round((raw - min) / step) * step + min;
+        range.value = String(Math.min(max, Math.max(min, snapped)));
+        range.dispatchEvent(new Event('input', { bubbles: true }));
+        range.dispatchEvent(new Event('change', { bubbles: true }));
+      };
+    });
+  });
+
   // ---- Entwickler tab: secondary sub-navigation (BLE-Explorer/Kalibrierung/Makros/Doku) ----
   document.querySelectorAll('.subtab-btn').forEach(btn => {
     btn.onclick = () => {
@@ -1589,7 +1611,6 @@
   // vars and the heartbeat transmits them, instead of the loop writing to BLE itself.
   let physicsEnabled = true;
   let physOutSteer = 0, physOutThrottle = 0;
-  let handbrakeActive = false;
 
   const CONTROL_SEND_INTERVAL_MS = 45; // matches the real app's observed command cadence
 
@@ -1603,14 +1624,12 @@
       // Release only the PAD's claim, and at most once. Zeroing everything here would
       // also wipe a value the keyboard is legitimately holding.
       releaseInput(SRC.PAD);
-      handbrakeActive = false;
       if (padLoopRunning) schedulePadTick(); // self-heal if the frame chain ever broke
     }
     physicsStep();
     pitLaneTick();
     let steer = physicsEnabled ? physOutSteer : steerX;
     let throttle = physicsEnabled ? physOutThrottle : throttleY;
-    if (handbrakeActive) throttle = 0;
     sendControlValue(steer, throttle);
   }
   setInterval(controlHeartbeat, CONTROL_SEND_INTERVAL_MS);
@@ -1774,6 +1793,15 @@
 
   // ---- Keyboard control ----
   const keys = new Set();
+  // Keyboard shifting, for testing without a controller: I up, K down. Edge-triggered via
+  // the keydown listener rather than the polling interval, so one tap is one shift.
+  window.addEventListener('keydown', (e) => {
+    const k = (e.key || '').toLowerCase();
+    if ((k === 'i' || k === 'k') && !e.repeat && physicsEnabled && !physEngine.state.isShifting) {
+      physEngine.triggerShift(k === 'i' ? 1 : -1);
+    }
+    if (k === 'l' && !e.repeat) triggerHeadlightFlash();
+  });
   window.addEventListener('keydown', (e) => {
     if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)) e.preventDefault();
     keys.add(e.key);
@@ -1878,7 +1906,13 @@
                               // only approached asymptotically, so anchoring on 100%
                               // could never be honoured; half is the honest promise.
         coastDragPerS: 0.55,   // fraction of current speed shed per second when coasting
-        brakeDecelKmhPerS: 6,  // how hard the brake pulls speed down
+        // Fitted against the user's real GT3 braking table (50km/h in ~1.0s up to
+        // 280km/h in ~4.3s, i.e. 1.4g rising to 1.85g as downforce builds). Speed
+        // dependent, because a GT3 brakes far harder when it is fast:
+        // decel = base + aero*(v/Vmax). Mean error against the scaled table 1.5%.
+        // The old flat 6 km/h/s stopped the car in 0.67s — about four times too hard.
+        brakeDecelBase: 0.98,
+        brakeDecelAero: 1.00,
         minMoveThrottle: 0.16, // smallest byte that actually breaks the car away from rest
         shiftDragFactor: 0.25, // drag during a shift: a slight lull, not a full coast-down
         accelCalibration: 1,   // solved for in calibrateAccel(), see there
@@ -1929,7 +1963,7 @@
       this.calibrateAccel();
     }
 
-    // Central reset shared by the E-stop, the handbrake and the pit stop, so those three
+    // Central reset shared by the E-stop and the pit stop, so the two
     // can't drift apart on which fields they remember to clear.
     reset() {
       const st = this.state;
@@ -2022,8 +2056,8 @@
 
       // Reverse selection, AUTOMATIC mode: holding the brake at a standstill toggles
       // between D and R, like an automatic's lever. Manual mode uses the shift buttons
-      // instead (see triggerShift). The handbrake is explicitly excluded — physicsStep
-      // reports brake=1 while it is held, which would otherwise silently select R.
+      // instead (see triggerShift). Nothing needs excluding here any more: physicsStep
+      // no longer forces brake=1, because the handbrake is gone.
       // EDGE-triggered, not level-triggered. The previous version kept counting for as
       // long as the brake was held at a standstill, so it flipped D/R every 0.5s forever —
       // you got out of reverse and were thrown straight back in. The latch forces the
@@ -2064,7 +2098,8 @@
         const revCeiling = revTopKmh * cfg.speedLimitFactor;
         if (inputs.brake > 0.02) {
           isBraking = true;
-          accel = +(cfg.brakeDecelKmhPerS * inputs.brake + resist); // back toward zero
+          const uR = Math.abs(st.speedKmh) / cfg.topSpeedKmh;
+          accel = +((cfg.brakeDecelBase + cfg.brakeDecelAero * uR) * inputs.brake + resist);
         } else if (inputs.throttle > 0.02 && !st.isShifting) {
           accel = -this.thrustAt(st.speedKmh, -1, inputs.throttle, A) + resist;
         } else {
@@ -2086,7 +2121,8 @@
         if (inputs.brake > 0.02) {
           isBraking = true;
           st.engineLoad = 0;
-          accel = -(resist + cfg.brakeDecelKmhPerS * inputs.brake);
+          const uB = Math.abs(st.speedKmh) / cfg.topSpeedKmh;
+          accel = -(resist + (cfg.brakeDecelBase + cfg.brakeDecelAero * uB) * inputs.brake);
           // ABS is now only an indicator plus a haptic pulse. Modulating the byte here
           // would reintroduce precisely the stutter that took so long to remove.
           if (inputs.brake > 0.8 && st.speedKmh > cfg.topSpeedKmh * 0.15) {
@@ -2328,7 +2364,8 @@
   // ---- Settings sliders matching the official app's Geschwindigkeit/Reifengrip/
   // Bremswirkung concepts, each backed by a real existing lever (no invented settings) ----
   let topSpeedScale = 1;
-  const BASE_BRAKE_DECEL = physEngine.config.brakeDecelKmhPerS;
+  const BASE_BRAKE = { base: physEngine.config.brakeDecelBase,
+                       aero: physEngine.config.brakeDecelAero };
 
   $('setting-topspeed').addEventListener('input', (e) => {
     topSpeedScale = parseFloat(e.target.value);
@@ -2347,7 +2384,8 @@
   $('setting-brakepower').addEventListener('input', (e) => {
     const mult = parseFloat(e.target.value);
     $('setting-brakepower-val').textContent = mult.toFixed(2);
-    physEngine.config.brakeDecelKmhPerS = BASE_BRAKE_DECEL * mult;
+    physEngine.config.brakeDecelBase = BASE_BRAKE.base * mult;
+    physEngine.config.brakeDecelAero = BASE_BRAKE.aero * mult;
     markDrivetrainChartsDirty();
   });
 
@@ -2462,12 +2500,10 @@
     const now = performance.now();
     const dt = physLastTime ? Math.min(0.25, (now - physLastTime) / 1000) : CONTROL_SEND_INTERVAL_MS / 1000;
     physLastTime = now;
-    const rawThrottle = handbrakeActive ? 0 : Math.max(0, throttleY);
-    const rawBrake = handbrakeActive ? 1 : Math.max(0, -throttleY);
-    // handbrake is passed through so the engine can EXCLUDE it from arming reverse —
-    // otherwise simply holding the handbrake at a standstill would select R after 0.5s.
+    const rawThrottle = Math.max(0, throttleY);
+    const rawBrake = Math.max(0, -throttleY);
     const out = physEngine.update({ steering: steerX, throttle: rawThrottle, brake: rawBrake,
-                                    handbrake: handbrakeActive, headlights: headlightsOn }, dt);
+                                    headlights: headlightsOn }, dt);
     updateDashboard(out);
     physOutSteer = out.servoAngle;
     physOutThrottle = out.motorPWM;
@@ -3053,6 +3089,11 @@
     const coast = [];
     for (let v = 0; v <= cfg.topSpeedKmh; v += cfg.topSpeedKmh / 40) coast.push([v, -e.resistAt(v, A, false)]);
     accel.push({ points: coast, color: '#66708a', dash: '4 3', width: 1.5, label: 'Rollen' });
+    const brake = [];
+    for (let v = 0; v <= cfg.topSpeedKmh; v += cfg.topSpeedKmh / 40) {
+      brake.push([v, -(cfg.brakeDecelBase + cfg.brakeDecelAero * (v / cfg.topSpeedKmh))]);
+    }
+    accel.push({ points: brake, color: '#b3131f', dash: '4 3', width: 1.5, label: 'Bremse' });
 
     $('doku-chart-thrust').innerHTML = renderLineChart({
       series: thrust, xLabel: 'Geschwindigkeit (km/h)', yLabel: 'Radzugkraft (relativ)',
@@ -3084,7 +3125,8 @@
     $('doku-chart-params').textContent =
       `Gezeichnet aus den aktuellen Einstellungen: Vmax ${cfg.topSpeedKmh.toFixed(1)} km/h, `
       + `0-auf-halbe-Vmax ${cfg.halfSpeedTimeS.toFixed(1)} s (gemessen ${sim.time.toFixed(2)} s), `
-      + `Ausrollen ${cfg.coastDragPerS.toFixed(2)}, Bremse ${cfg.brakeDecelKmhPerS.toFixed(1)} km/h/s, `
+      + `Ausrollen ${cfg.coastDragPerS.toFixed(2)}, `
+      + `Bremse ${cfg.brakeDecelBase.toFixed(2)}+${cfg.brakeDecelAero.toFixed(2)}·v km/h/s, `
       + `Kalibrierfaktor ${cfg.accelCalibration.toFixed(3)}. Gangbaender: `
       + cfg.gears.map((g, i) => `${i + 1}. bis ${(g.topFrac * cfg.topSpeedKmh).toFixed(2)}`).join(', ') + ' km/h.';
     drivetrainChartsDirty = false;
@@ -3678,6 +3720,25 @@
 
   // At full damage the car limps and its lights flash as a visible warning.
   let damageBlinkTimer = null;
+  // Three ~90ms pulses with ~70ms gaps — the GT3 pass signal. Restores the previous lamp
+  // state afterwards, so it also works while the damage warning is blinking.
+  let flashTimer = null;
+  function triggerHeadlightFlash() {
+    if (flashTimer) return; // already flashing; ignore a double tap
+    let n = 0;
+    const wasOn = headlightsOn;
+    flashTimer = setInterval(() => {
+      setCarLights(n % 2 === 0);
+      if (++n >= 6) {
+        clearInterval(flashTimer);
+        flashTimer = null;
+        setCarLights(wasOn);
+        updateDamageBlink(); // hand the lamps back to the damage warning if it is running
+      }
+    }, 80);
+    showHudToast('Lichthupe');
+  }
+
   function updateDamageBlink() {
     const totalled = damage >= 100;
     if (totalled && !damageBlinkTimer) {
@@ -4090,7 +4151,7 @@
     steering: { type: 'axis', index: 0, invert: false, label: 'Linker Stick (X-Achse)' },
     downshift: { type: 'button', index: 2, label: 'X / Quadrat' },
     upshift: { type: 'button', index: 1, label: 'B / Kreis' },
-    handbrake: { type: 'button', index: 0, label: 'A / Cross' },
+    lightflash: { type: 'button', index: 0, label: 'A / Cross' },
     pitstop: { type: 'button', index: 3, label: 'Y / Dreieck' },
     racestart: { type: 'button', index: 4, label: 'LB / L1' },
     racestop: { type: 'button', index: 5, label: 'RB / R1' },
@@ -4098,7 +4159,7 @@
   const BIND_ACTION_LABELS = {
     throttle: 'Gas', brake: 'Bremse', steering: 'Lenkung',
     downshift: 'Runterschalten', upshift: 'Hochschalten',
-    handbrake: 'Handbremse', pitstop: 'Boxenstopp',
+    lightflash: 'Lichthupe', pitstop: 'Boxenstopp',
     racestart: 'Rennen starten', racestop: 'Rennen beenden',
   };
 
@@ -4252,7 +4313,7 @@
   // left/right = steering damping (left = direct, right = sluggish).
   const DPAD = { up: 12, down: 13, left: 14, right: 15 };
   const prevDpad = { up: false, down: false, left: false, right: false };
-  let prevHandbrake = false, prevPitstop = false;
+  let prevLightFlash = false, prevPitstop = false;
   let prevRaceStart = false, prevRaceStop = false;
 
   function padButtonPressed(pad, index) {
@@ -4294,11 +4355,7 @@
       // ever come back. Keep polling, just neutralise the inputs meanwhile.
       if (padConnected) {
         releaseInput(SRC.PAD);
-        // Clear the handbrake on EVERY pad-loss path. Otherwise a pad that drops out of
-        // the snapshot while the handbrake is held leaves handbrakeActive latched true,
-        // and the heartbeat then forces throttle to 0 forever with no way to clear it.
-        handbrakeActive = false;
-        prevHandbrake = false;
+        prevLightFlash = false;
       }
       padConnected = false;
       return;
@@ -4325,16 +4382,12 @@
       applySteerInput(SRC.PAD, steerRaw);
       applyThrottleInput(SRC.PAD, throttleRaw - brakeRaw);
 
-      // Handbrake: force throttle to zero AND kill the simulated momentum, so the car
-      // doesn't roll on from the physics engine's own virtualSpeed after release.
-      const handbrakeNow = readBindingValue(pad, bindings.handbrake) > BUTTON_CAPTURE_THRESHOLD;
-      if (handbrakeNow) {
-        physEngine.reset(); // user spec: handbrake kills the momentum outright
-        physOutThrottle = 0;
-      }
-      if (handbrakeNow !== prevHandbrake) showHudToast(handbrakeNow ? 'Handbremse' : '');
-      handbrakeActive = handbrakeNow;
-      prevHandbrake = handbrakeNow;
+      // Headlight flash, edge-triggered: one press = one three-blink burst, the way GT3
+      // drivers signal a pass. The handbrake that used to sit on this button is gone, and
+      // with it the special case that had to exclude it from selecting reverse.
+      const flashNow = readBindingValue(pad, bindings.lightflash) > BUTTON_CAPTURE_THRESHOLD;
+      if (flashNow && !prevLightFlash) triggerHeadlightFlash();
+      prevLightFlash = flashNow;
 
       const pitstopNow = readBindingValue(pad, bindings.pitstop) > BUTTON_CAPTURE_THRESHOLD;
       if (pitstopNow && !prevPitstop) $('btn-pitstop').click();
