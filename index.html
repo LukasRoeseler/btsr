@@ -913,7 +913,7 @@
       <div class="opt-row"><div class="opt-label">Regen<small>Wie die Select-Taste bzw. W. Passende Reifen kommen beim Boxenstopp automatisch.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-rain"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Strecken-Ambience<small>Hintergrundgeräusche, Vorbeifahrten, Regen und Donner.</small></div>
-        <label class="tgl"><input type="checkbox" id="amb-enable" checked><span></span></label></div>
+        <label class="tgl"><input type="checkbox" id="amb-enable"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Streckenlautstärke<small>Hintergrund und Vorbeifahrten &mdash; absichtlich leise, damit der Motor vorne bleibt.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
@@ -4225,7 +4225,8 @@
                      ready: false, rainOn: false, busy: false };
   let ambienceVolume = 0.20;   // track bed and pass-bys: quiet, the engine leads
   let rainVolume = 0.40;       // rain and thunder: own control, weather should be loud
-  let ambienceEnabled = true; // default on, switchable
+  let ambienceEnabled = false;  // starts OFF on purpose: nothing should make noise
+                                // until it is asked for
 
   async function loadAmbience() {
     if (ambience.ready || !audioCtx) return;
@@ -4267,8 +4268,22 @@
     return { src, g };
   }
 
+  function stopAmbienceBeds() {
+    // Muting is not enough — a looping source keeps running for as long as the page lives,
+    // and a page can easily outlive the user's attention in a background tab. So tear the
+    // nodes down; startAmbienceBeds() rebuilds them when the switch goes back on.
+    for (const key of ['bedNode', 'rainNode']) {
+      if (ambience[key]) {
+        try { ambience[key].stop(); } catch (e) { /* already stopped */ }
+        try { ambience[key].disconnect(); } catch (e) { /* not connected */ }
+        ambience[key] = null;
+      }
+    }
+    ambience.bedGain = ambience.rainGain = null;
+  }
+
   function startAmbienceBeds() {
-    if (!ambience.ready || ambience.bedNode) return;
+    if (!ambience.ready || !ambienceEnabled || ambience.bedNode) return;
     const a = loopBed(ambience.bed, 0);
     ambience.bedNode = a.src; ambience.bedGain = a.g;
     if (ambience.rainBed) {
@@ -4289,6 +4304,12 @@
       ambience.rainGain.gain.setTargetAtTime(ambience.rainOn ? wet : 0, t, 0.6);
     }
   }
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) stopAmbienceBeds();
+    else if (ambienceEnabled) startAmbienceBeds();
+    refreshAmbienceGains();
+  });
 
   function setAmbienceRain(on) {
     ambience.rainOn = on;
@@ -4319,7 +4340,7 @@
     const rain = ambience.rainOn && ambience.thunder.length;
     const wait = rain ? 20000 + Math.random() * 10000 : 8000 + Math.random() * 17000;
     setTimeout(() => {
-      if (ambience.ready) {
+      if (ambience.ready && ambienceEnabled) {
         if (ambience.rainOn && ambience.thunder.length) {
           playAmbienceOneShot(ambience.thunder[Math.floor(Math.random() * ambience.thunder.length)],
                               0.55 + Math.random() * 0.45, true);
@@ -4415,6 +4436,7 @@
 
   $('amb-enable').addEventListener('change', (e) => {
     ambienceEnabled = e.target.checked;
+    if (ambienceEnabled) startAmbienceBeds(); else stopAmbienceBeds();
     refreshAmbienceGains();
   });
 
