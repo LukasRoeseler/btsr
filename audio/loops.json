@@ -73,5 +73,30 @@
     "seconds": 2.0057
    }
   }
+ },
+ "corvette": {
+  "label": "Chevrolet Corvette C6 (V8)",
+  "cylinders": 8,
+  "source": "Pixabay (lizenzfrei), Ausschnitte",
+  "loops": {
+   "idle": {
+    "file": "corvette_idle.ogg",
+    "baseRpm": 1776,
+    "f0": 118.4,
+    "seconds": 1.88
+   },
+   "mid": {
+    "file": "corvette_mid.ogg",
+    "baseRpm": 4037,
+    "f0": 269.2,
+    "seconds": 1.88
+   },
+   "high": {
+    "file": "corvette_high.ogg",
+    "baseRpm": 4522,
+    "f0": 301.5,
+    "seconds": 1.88
+   }
+  }
  }
 }

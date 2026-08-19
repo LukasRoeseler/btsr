@@ -238,6 +238,8 @@
   .gt3-bar { height: clamp(7px, 1.5vw, 13px); background: #060810; border-radius: 2px;
     overflow: hidden; margin-top: 3px; }
   .gt3-bar > i { display: block; height: 100%; width: 0; transition: width .15s linear; }
+  .gt3-ico { width: clamp(14px, 2.3vw, 21px); height: auto; color: #7c8aa6;
+    display: block; margin-bottom: 2px; }
   .gt3-ok { color: #46d17f; } .gt3-warn { color: #ffb02e; } .gt3-bad { color: #ff5252; }
   /* The standard green headlamp tell-tale: a lamp body with beams, exactly the ISO glyph a
      real dash uses, so it reads instantly rather than needing a caption. */
@@ -326,9 +328,9 @@
       <div id="gt3-pit"><span id="race-pit-text">BOXENGASSE</span></div>
 
       <div class="gt3-left gt3-box">
-        <div class="gt3-lbl">km/h simuliert</div>
-        <div class="gt3-val" id="race-speed">0.0</div>
-        <div class="gt3-tell"><svg class="gt3-lamp" id="race-light" viewBox="0 0 30 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-label="Scheinwerfer"><path d="M13 3H8a7 7 0 0 0 0 14h5a7 7 0 0 0 0-14z" fill="currentColor" stroke="none" opacity=".95"/><path d="M18 5h9M18 10h9M18 15h9" stroke-linecap="round"/></svg><span class="gt3-lbl" id="race-light-lbl">Licht</span></div>
+        <div class="gt3-lbl">km/h</div>
+        <div class="gt3-val" id="race-speed">0</div>
+        <div class="gt3-tell"><svg class="gt3-lamp" id="race-light" viewBox="0 0 30 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-label="Scheinwerfer"><path d="M13 3H8a7 7 0 0 0 0 14h5a7 7 0 0 0 0-14z" fill="currentColor" stroke="none" opacity=".95"/><path d="M18 5h9M18 10h9M18 15h9" stroke-linecap="round"/></svg></div>
         <div class="gt3-lbl" style="margin-top:6px">Strecke</div>
         <div class="gt3-val sm" id="race-track">&ndash;</div>
       </div>
@@ -348,13 +350,13 @@
       </div>
 
       <div class="gt3-strip">
-        <div class="gt3-box"><div class="gt3-lbl">Tank</div>
+        <div class="gt3-box"><svg class="gt3-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-label="Tank"><path d="M4 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16"/><path d="M3 21h13"/><path d="M4 10h10"/><path d="M18 21v-9a3 3 0 0 0-3-3"/><path d="M18 12h2a1 1 0 0 0 1-1V8l-3-3"/></svg>
           <div class="gt3-val sm" id="race-fuel">100%</div>
           <div class="gt3-bar"><i id="race-fuel-bar"></i></div></div>
-        <div class="gt3-box"><div class="gt3-lbl">Schaden</div>
+        <div class="gt3-box"><svg class="gt3-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-label="Schaden"><path d="M3 14l1.6-4.2A2 2 0 0 1 6.5 8.5h4"/><path d="M13.5 8.5h4a2 2 0 0 1 1.9 1.3L21 14"/><path d="M2 14h20v3a1 1 0 0 1-1 1h-1"/><path d="M4 18H3a1 1 0 0 1-1-1"/><circle cx="7" cy="18" r="1.9"/><circle cx="17" cy="18" r="1.9"/><path d="M12 5.5l-1.6 3 3.2 1.2-1.8 3.3"/></svg>
           <div class="gt3-val sm" id="race-dmg">0%</div>
           <div class="gt3-bar"><i id="race-dmg-bar"></i></div></div>
-        <div class="gt3-box"><div class="gt3-lbl">Akku Auto</div>
+        <div class="gt3-box"><svg class="gt3-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-label="Akku"><rect x="2" y="7" width="17" height="10" rx="2"/><path d="M22 11v2"/><path d="M6 10v4M9.5 10v4M13 10v4"/></svg>
           <div class="gt3-val sm" id="race-batt">&ndash;</div></div>
         <div class="gt3-box"><div class="gt3-lbl">Verbindung</div>
           <div class="gt3-val sm" id="race-conn">getrennt</div></div>
@@ -893,6 +895,7 @@
       <div class="opt-row"><div class="opt-label">Motorsound-Profil</div>
         <select id="sound-profile">
           <option value="mustang" selected>Mustang &mdash; V8, Cross-Plane</option>
+          <option value="corvette">Corvette C6 &mdash; V8 (Aufnahme)</option>
           <option value="porsche">Porsche &mdash; Boxer-6, Saugmotor</option>
           <option value="bmw">BMW &mdash; Reihen-6, Turbo</option>
           <option value="v8">Einfach: V8 (kernig)</option>
@@ -1915,6 +1918,11 @@
         // SHAPE to within 4% on the ratio of full-speed to half-speed time.
         aeroDragK: 0.62,
         onPowerRollK: 0.08,   // rolling term under load, ALSO in units of accelScale
+        // Deliberately >1: at 1.0 full lock at top speed would consume exactly the whole
+        // budget, but a real GT3 at full lock near Vmax is long past the limit. 1.8 means
+        // meaningful cornering already eats a real share, and hard cornering at speed
+        // leaves nothing for acceleration.
+        corneringLoad: 1.8,
         upshiftRpm: 8800,
         downshiftRpm: 4200,
         shiftMs: 120,     // a sequential swaps far quicker than the old 180ms
@@ -1939,6 +1947,7 @@
         rpm: IDLE_RPM,
         rpmFrac: 0,           // (rpm - idle) / (redline - idle)
         onLimiter: false,
+        gripLong: 1, // longitudinal share of the grip budget — see the friction circle
         engineLoad: 0,        // pedal opening actually applied — drives sound VOLUME
         commanded: 0,
         dampedSteering: 0,
@@ -2077,6 +2086,19 @@
 
       // Under load the rolling term is reduced (see resistAt); coasting gets it in full.
       const onPower = inputs.throttle > 0.02 || inputs.brake > 0.02;
+      // ---- Tyre friction circle ----
+      // A tyre has ONE grip budget. Whatever is spent generating lateral force in a corner
+      // is no longer available to accelerate or brake, which is why you cannot floor it
+      // mid-corner. Cornering demand rises with both steer angle and speed, so this uses
+      // last tick's damped steering (a one-frame lag, 45ms, imperceptible) times the speed
+      // fraction. Longitudinal grip is the remaining leg of the circle: sqrt(1 - lat^2).
+      // Straight ahead lat = 0 and nothing changes; at full lock near top speed it falls to
+      // almost nothing and the car simply will not accelerate — the real behaviour.
+      const latUse = Math.min(1, Math.abs(st.dampedSteering)
+                                 * (Math.abs(st.speedKmh) / cfg.topSpeedKmh)
+                                 * cfg.corneringLoad);
+      st.gripLong = Math.sqrt(Math.max(0, 1 - latUse * latUse));
+
       const resist = this.resistAt(st.speedKmh, A, onPower); // always >= 0
       let accel = 0;
       let output = 0;
@@ -2090,7 +2112,7 @@
           const uR = Math.abs(st.speedKmh) / cfg.topSpeedKmh;
           accel = +((cfg.brakeDecelBase + cfg.brakeDecelAero * uR) * inputs.brake + resist);
         } else if (inputs.throttle > 0.02 && !st.isShifting) {
-          accel = -this.thrustAt(st.speedKmh, -1, inputs.throttle, A) + resist;
+          accel = -this.thrustAt(st.speedKmh, -1, inputs.throttle, A) * st.gripLong + resist;
         } else {
           accel = +resist; // coast back toward standstill
         }
@@ -2111,7 +2133,8 @@
           isBraking = true;
           st.engineLoad = 0;
           const uB = Math.abs(st.speedKmh) / cfg.topSpeedKmh;
-          accel = -(resist + (cfg.brakeDecelBase + cfg.brakeDecelAero * uB) * inputs.brake);
+          accel = -(resist + (cfg.brakeDecelBase + cfg.brakeDecelAero * uB)
+                             * inputs.brake * st.gripLong);
           // ABS is now only an indicator plus a haptic pulse. Modulating the byte here
           // would reintroduce precisely the stutter that took so long to remove.
           if (inputs.brake > 0.8 && st.speedKmh > cfg.topSpeedKmh * 0.15) {
@@ -2123,7 +2146,7 @@
           st.engineLoad = st.isShifting ? 0 : inputs.throttle;
           accel = st.isShifting
             ? -resist * cfg.shiftDragFactor // a brief lull, not a full coast-down
-            : this.thrustAt(st.speedKmh, gearIdx, inputs.throttle, A) - resist;
+            : this.thrustAt(st.speedKmh, gearIdx, inputs.throttle, A) * st.gripLong - resist;
         } else {
           st.engineLoad = 0;
           accel = -resist; // lift off and it rolls out
@@ -2418,13 +2441,19 @@
     } catch (e) { /* unsupported or refused — the screen just dims as usual */ }
   }
 
+  const REAL_SCALE = 285 / 4; // 71.25 — see the note in updateRaceScreen
+
   function updateRaceScreen(st, out) {
     const gearEl = $('race-gear');
     if (!gearEl) return;
     gearEl.textContent = st.driveMode === 'reverse'
       ? 'R' : (st.currentGear + 1) + (physEngine.config.autoShift ? '' : 'M');
     $('race-rpm').textContent = Math.round(st.rpm);
-    $('race-speed').textContent = Math.abs(st.speedKmh).toFixed(1);
+    // Shown as the real-world equivalent. The scale is NOT 1/50: the acceleration and
+    // braking models were both calibrated against a real GT3 topping out at 285 km/h,
+    // and the car's simulated maximum is 4 km/h — so the honest factor is 285/4 = 71.25.
+    // At 1/50 the dash would read 200 km/h flat out, contradicting the data behind it.
+    $('race-speed').textContent = Math.round(Math.abs(st.speedKmh) * REAL_SCALE);
 
     // Shift light: green through amber to red, the way a real bar walks up to the limiter.
     const frac = Math.max(0, Math.min(1, st.rpmFrac));
@@ -3888,7 +3917,7 @@
   // Three looping buffers per car (idle/mid/high), pitch-shifted by playbackRate and
   // crossfaded by RPM. The loops are fully synthetic — generated by tools/engine_synth.py
   // from a firing-event model, no recorded material — see audio/CREDITS.md.
-  const SAMPLE_CARS = ['porsche', 'bmw', 'mustang'];
+  const SAMPLE_CARS = ['porsche', 'bmw', 'mustang', 'corvette'];
   const BANDS = ['idle', 'mid', 'high'];
   let engineVolume = 0.7;
   const sampleEngine = { buffers: {}, nodes: null, car: null, master: null,
