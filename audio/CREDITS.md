@@ -6,8 +6,15 @@ Gruppe fremdes Aufnahmematerial enthaelt.
 ## Vollstaendig synthetisch — kein Aufnahmematerial
 
 Porsche, BMW und Mustang sowie alle Effekte (Bremsenquietschen, Crash-Varianten,
-Schlagschrauber, Motorstart) sind von Grund auf gerechnet. Es wird nichts aus
-einer Aufnahme abgespielt.
+Schlagschrauber, Motorstart, Schaltgeraeusch) sind von Grund auf gerechnet. Es
+wird nichts aus einer Aufnahme abgespielt.
+
+Das Schaltgeraeusch (shift_up.ogg, shift_down.ogg) besteht aus drei getrennt
+platzierten Ereignissen innerhalb von etwa 80 ms: Schaltklaue (unharmonische
+Teiltoene, sehr schnelles Abklingen), Entlueftung des Stellers (hochpassgefiltertes
+Rauschen) und Lastaufnahme im Antriebsstrang (dumpfer Anteil um 128 Hz). Runter-
+schalten sitzt tiefer und entlueftet laenger, weil der Steller gegen Motormoment
+haelt.
 
 Das Modell folgt dem Ansatz von ange-yaghi/engine-sim (MIT-Lizenz):
 Zuendereignisse als Druckimpulse, gefaltet mit der Resonanz des
