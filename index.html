@@ -1346,6 +1346,49 @@
         verlorene Darstellung nicht.
       </p>
     </div>
+
+    <div class="card">
+      <h2>Streckengeometrie und Ideallinie</h2>
+      <p class="muted">
+        <strong>Gemessene Ma&szlig;e:</strong> ein Streckenteil ist <b>25&nbsp;cm breit</b> und
+        <b>43&nbsp;cm lang</b>; eine Gerade plus eine 60&deg;-Rechtskurve nehmen zusammen
+        <b>37&times;86&nbsp;cm</b> ein. L&ouml;st man den Fu&szlig;abdruck nach dem Kurvenradius auf,
+        ergibt sich <b>37&nbsp;cm</b> &mdash; das reproduziert 37,2&times;85,9&nbsp;cm. Die
+        Zeichenkonstanten sind daraus <em>abgeleitet</em>, nicht gew&auml;hlt. Der zuvor per Hand
+        gesetzte Radius von 34 Einheiten entspricht 36,5&nbsp;cm und liefert 37,0&times;85,5&nbsp;cm,
+        war also bereits richtig; er steht jetzt in Zentimetern da, damit er nachpr&uuml;fbar bleibt.
+      </p>
+      <p class="muted">
+        Die <strong>Ideallinie</strong> entsteht durch Kr&uuml;mmungsgl&auml;ttung: jeder Punkt
+        wandert wiederholt in Richtung der Mitte seiner Nachbarn, aber nur <em>quer</em> zur
+        Fahrtrichtung, und wird nach jedem Durchlauf auf die Fahrbahn geklemmt. Sie kann die
+        Bahn also nicht verlassen &mdash; nachgemessen: gr&ouml;&szlig;te Abweichung 9,3&nbsp;cm bei
+        12,5&nbsp;cm Halbbreite.
+      </p>
+      <p class="muted">
+        Ein Abbruchkriterium &uuml;ber die Schrittweite war hier <em>falsch</em>, und die Messung
+        zeigte es: bei 14 Abtastpunkten je Teil liegen die Nachbarn 2,9&nbsp;Einheiten
+        auseinander, die Mitte liegt fast auf dem Punkt selbst, und ein Durchlauf verschiebt
+        um Bruchteile eines Millimeters. Eine 0,5-mm-Schwelle meldete deshalb nach
+        <em>einer</em> Iteration Konvergenz &mdash; und die fertige &bdquo;Ideallinie&ldquo; nutzte
+        1,1&nbsp;cm einer 25&nbsp;cm breiten Bahn, war also die Mittellinie mit einer Delle. Der
+        Versatz baut sich erst &uuml;ber viele Durchl&auml;ufe auf, also wird eine feste Anzahl
+        gerechnet, und ausgegeben wird nicht ein Restwert, sondern <strong>wie viel Versatz die
+        Linie tats&auml;chlich nutzt</strong> &mdash; die Zahl, an der man sieht, ob die Rechnung
+        etwas getan hat.
+      </p>
+      <p class="muted">
+        <strong>Was die Linie nicht ist:</strong> eine Vorgabe, deren Einhaltung die App
+        pr&uuml;fen kann. Kein Byte meldet die Querlage des Autos. Die Linie sagt, wo gefahren
+        werden <em>sollte</em>; ob es geschieht, wei&szlig; niemand.
+      </p>
+      <p class="muted">
+        Der <strong>Streckencode</strong> (z.&nbsp;B. <code>SG2R3G2R3B@90</code>) ist ein Buchstabe
+        je Element mit Wiederholungszahl, dazu die Ausrichtung: S&nbsp;Start, G&nbsp;Gerade,
+        R&nbsp;rechts, L&nbsp;links, B&nbsp;Boxengasse. Absichtlich kein Base64 &mdash; einen Code,
+        den man nicht lesen kann, kann man auch nicht pr&uuml;fen.
+      </p>
+    </div>
   </section>
 
   <section class="tabpage" id="tab-dev">
@@ -1913,6 +1956,7 @@
         <button id="track-add-straight">+ Gerade</button>
         <button id="track-add-right">+ Rechtskurve</button>
         <button id="track-add-left">+ Linkskurve (?)</button>
+        <button id="track-add-pit">+ Boxengasse</button>
         <button id="track-clear">Alles löschen</button>
       </div>
       <div class="row" style="margin-top:10px">
@@ -1925,6 +1969,37 @@
         <button id="track-scan-stop" disabled>Scan stoppen</button>
         <span class="muted" id="track-scan-status">bereit</span>
       </div>
+      <div id="track-preview-svg" style="margin-top:14px"></div>
+      <p class="muted" style="font-size:11.5px; margin-top:6px">
+        Schwarz ist die Fahrbahn, wei&szlig;e Striche trennen die Streckenteile. Randsteine in
+        Fahrtrichtung: <b style="color:#1565c0">links blau-wei&szlig;</b>,
+        <b style="color:#b3131f">rechts rot-wei&szlig;</b>. Die
+        <b style="color:#b8860b">gelbe gestrichelte Linie</b> ist die berechnete Ideallinie
+        &mdash; krümmungsärmster Verlauf innerhalb der Fahrbahn. Sie ist eine
+        <em>Rechnung</em>, keine Messung: dass ein Auto sie einh&auml;lt, kann die App nicht
+        pr&uuml;fen, weil kein Byte die Querlage meldet.
+      </p>
+      <div class="row" style="align-items:center; gap:10px; margin-top:10px">
+        <span class="muted">Status: <b id="track-closed-badge">-</b></span>
+        <span class="muted" id="track-line-info"></span>
+      </div>
+
+      <div class="row" style="align-items:center; gap:8px; margin-top:14px">
+        <label class="small" style="white-space:nowrap">Streckencode</label>
+        <input type="text" id="track-code" readonly style="flex:1; min-width:120px; font-family:monospace">
+        <button id="track-code-copy">Kopieren</button>
+      </div>
+      <div class="row" style="align-items:center; gap:8px; margin-top:6px">
+        <input type="text" id="track-code-in" placeholder="Code von einem anderen Ger&auml;t einf&uuml;gen" style="flex:1; min-width:120px; font-family:monospace">
+        <button id="track-code-apply">&Uuml;bernehmen</button>
+      </div>
+      <p class="muted" style="font-size:11.5px">
+        Der Code beschreibt die Reihenfolge der Teile und die Ausrichtung. Damit stellst du
+        auf einem anderen Ger&auml;t dieselbe Strecke ein, ohne sie neu zu klicken.
+      </p>
+
+      <ol class="muted" id="track-tile-list" style="padding-left:20px; line-height:1.9; max-height:200px; overflow-y:auto; margin-top:12px"></ol>
+
     </div>
 
     <div class="card">
@@ -1990,17 +2065,6 @@
         <code>0x02</code> Gerade und <code>0x04</code> Rechtskurve; alles andere ist unbestätigt.
         Trag hier den Code ein, den dein gedrucktes Boxen-Muster tatsächlich auslöst.
       </p>
-    </div>
-
-    <div class="card">
-      <h2>Vorschau</h2>
-      <div class="row" style="align-items:flex-start; gap:20px">
-        <div id="track-preview-svg" style="flex:0 0 auto"></div>
-        <div style="flex:1; min-width:200px">
-          <p class="muted">Status: <b id="track-closed-badge">-</b></p>
-          <ol class="muted" id="track-tile-list" style="padding-left:20px; line-height:1.9; max-height:260px; overflow-y:auto"></ol>
-        </div>
-      </div>
     </div>
 
     <div class="card">
@@ -4413,12 +4477,18 @@
   // other three CONFIRMED values but has never actually been observed/tested — flagged
   // wherever it's shown in the UI.
   const TRACK_STORE_KEY = 'carrera-hybrid-tracks';
-  const TILE_TYPE = { START: 0x01, STRAIGHT: 0x02, CURVE_RIGHT: 0x04, CURVE_LEFT: 0x08 };
+  // The first four values double as PROTOCOL codes (byte 12 of the notify packet). PIT is
+  // different: it is a layout element only, and no printed pattern is known to report it.
+  // It therefore gets a value OUTSIDE the byte range, so it can never be mistaken for
+  // something the car actually sent — bytes[12] is 0..255 and can never equal 0x100.
+  const TILE_TYPE = { START: 0x01, STRAIGHT: 0x02, CURVE_RIGHT: 0x04, CURVE_LEFT: 0x08,
+                      PIT: 0x100 };
   const TILE_LABEL = {
     [TILE_TYPE.START]: 'Start/Ziel',
     [TILE_TYPE.STRAIGHT]: 'Gerade',
     [TILE_TYPE.CURVE_RIGHT]: 'Rechtskurve',
     [TILE_TYPE.CURVE_LEFT]: 'Linkskurve (?)',
+    [TILE_TYPE.PIT]: 'Boxengasse',
   };
 
   function loadTrackStore() {
@@ -4438,7 +4508,18 @@
   // always connect. Curve turn angle is a fixed, confirmed 60° (matches how the real
   // curve pieces are built); radius is a schematic estimate (not measured from a real
   // track), so overall scale is illustrative rather than geometrically exact.
-  const TRACK_STEP = 40, TRACK_RADIUS = 34, TRACK_TURN_DEG = 60;
+  // ---- Real track dimensions, measured by the user ----
+  // A piece is 25 cm wide and 43 cm long, and one straight plus one 60-degree right curve
+  // together occupy 37 x 86 cm. Solving the footprint for the curve radius gives 37 cm,
+  // which reproduces 37.2 x 85.9 cm - so the drawing constants below are derived from real
+  // measurements rather than chosen to look right. The previously hand-picked radius of 34
+  // units turns out to be 36.5 cm and yields 37.0 x 85.5 cm, i.e. it was already correct;
+  // it is now expressed in centimetres so it stays checkable.
+  const TRACK_TILE_CM = 43, TRACK_WIDTH_CM = 25, TRACK_RADIUS_CM = 37;
+  const TRACK_STEP = 40;                                   // drawing units per tile length
+  const TRACK_UNITS_PER_CM = TRACK_STEP / TRACK_TILE_CM;   // 0.930
+  const TRACK_RADIUS = TRACK_RADIUS_CM * TRACK_UNITS_PER_CM;
+  const TRACK_TURN_DEG = 60;
 
   function walkTrack(tiles) {
     let x = 0, y = 0, heading = trackRotationDeg;
@@ -4455,13 +4536,125 @@
         y -= Math.cos(midRad) * chord;
         heading += turn;
       } else {
+        // The pit element is two straights long; the bulge to the right is drawn, not
+        // walked, because it does not change where the racing line continues.
+        const len = tile.type === TILE_TYPE.PIT ? TRACK_STEP * 2 : TRACK_STEP;
         const rad = heading * Math.PI / 180;
-        x += Math.sin(rad) * TRACK_STEP;
-        y -= Math.cos(rad) * TRACK_STEP;
+        x += Math.sin(rad) * len;
+        y -= Math.cos(rad) * len;
       }
       points.push({ x, y, heading, type: tile.type });
     }
     return points;
+  }
+
+
+  // ---- Sampled centreline ----
+  // walkTrack() returns one point per tile BOUNDARY, which is enough to draw a thin line but
+  // not enough for a roadway, kerbs or a racing line. This samples along each tile and is the
+  // single source of geometry for all of them — the map and the driving line must not come
+  // from two different calculations, or they will disagree.
+  // Half the roadway width, derived from the measured 25 cm. Was 13 by guess, which drew
+  // the track 12 % too wide.
+  const TRACK_HALF_W = (TRACK_WIDTH_CM / 2) * TRACK_UNITS_PER_CM;
+  const TRACK_SAMPLES_PER_TILE = 14;
+
+  function trackCenterline(tiles) {
+    const out = [];
+    let x = 0, y = 0, heading = trackRotationDeg;
+    const push = (px, py, ph, idx) => out.push({ x: px, y: py, heading: ph, tile: idx });
+    push(x, y, heading, -1);
+    tiles.forEach((tile, idx) => {
+      const n = TRACK_SAMPLES_PER_TILE;
+      if (tile.type === TILE_TYPE.CURVE_RIGHT || tile.type === TILE_TYPE.CURVE_LEFT) {
+        const turn = tile.type === TILE_TYPE.CURVE_RIGHT ? TRACK_TURN_DEG : -TRACK_TURN_DEG;
+        // Walk the arc in n small steps around the instantaneous centre.
+        const sgn = Math.sign(turn);
+        const cx = x + Math.cos(heading * Math.PI / 180) * TRACK_RADIUS * sgn;
+        const cy = y + Math.sin(heading * Math.PI / 180) * TRACK_RADIUS * sgn;
+        const a0 = Math.atan2(y - cy, x - cx);
+        for (let i = 1; i <= n; i++) {
+          const a = a0 + (turn * Math.PI / 180) * (i / n);
+          const px = cx + Math.cos(a) * TRACK_RADIUS;
+          const py = cy + Math.sin(a) * TRACK_RADIUS;
+          push(px, py, heading + turn * (i / n), idx);
+        }
+        heading += turn;
+        x = out[out.length - 1].x; y = out[out.length - 1].y;
+      } else {
+        const len = tile.type === TILE_TYPE.PIT ? TRACK_STEP * 2 : TRACK_STEP;
+        const rad = heading * Math.PI / 180;
+        for (let i = 1; i <= n; i++) {
+          push(x + Math.sin(rad) * len * (i / n), y - Math.cos(rad) * len * (i / n),
+               heading, idx);
+        }
+        x += Math.sin(rad) * len; y -= Math.cos(rad) * len;
+      }
+    });
+    return out;
+  }
+
+  // Unit normal pointing to the RIGHT of the direction of travel.
+  function trackNormals(pts) {
+    return pts.map((p, i) => {
+      const a = pts[Math.max(0, i - 1)], b = pts[Math.min(pts.length - 1, i + 1)];
+      const dx = b.x - a.x, dy = b.y - a.y;
+      const L = Math.hypot(dx, dy) || 1;
+      return { x: -dy / L * -1, y: dx / L * -1 };   // rotate the tangent by -90 deg
+    });
+  }
+
+  function offsetPath(pts, nrm, dist) {
+    return pts.map((p, i) => [p.x + nrm[i].x * dist, p.y + nrm[i].y * dist]);
+  }
+
+  // ---- Ideal line: minimise curvature ----
+  // Each point may slide sideways within the roadway. Repeatedly nudging every point toward
+  // the midpoint of its neighbours — along the normal only — is curvature smoothing, and it
+  // converges to a minimum-curvature line. Clamped to the roadway on every pass, so the
+  // result can never leave the track.
+  function idealLine(pts, nrm, opts) {
+    const o = opts || {};
+    const limit = (o.limit !== undefined ? o.limit : TRACK_HALF_W - 3);
+    // A movement-based stop criterion is the WRONG one at this sampling density, and the
+    // measurements showed why. With 14 samples per tile, neighbouring points sit ~2.9 units
+    // apart, so the midpoint of the neighbours is almost exactly on the current point and
+    // each pass moves it by a fraction of a millimetre. A 0.5 mm threshold therefore
+    // declared victory after ONE iteration, and the resulting "ideal line" used 1.1 cm of a
+    // 25 cm wide track - i.e. it was the centreline with a wobble.
+    // The displacement accumulates over many passes, so the answer is simply to run enough
+    // of them. 140 points x 2000 passes is a few hundred thousand operations, which is
+    // nothing, and the meaningful output is not a residual but HOW MUCH of the track width
+    // the finished line actually uses.
+    const iters = o.iters || 2000;
+    const relax = o.relax || 0.35;
+    const closed = o.closed;
+    const n = pts.length;
+    const alpha = new Array(n).fill(0);
+    const at = (i) => {
+      const k = closed ? ((i % n) + n) % n : Math.max(0, Math.min(n - 1, i));
+      return { x: pts[k].x + nrm[k].x * alpha[k], y: pts[k].y + nrm[k].y * alpha[k] };
+    };
+    let moved = 0;
+    for (let it = 0; it < iters; it++) {
+      moved = 0;
+      for (let i = 0; i < n; i++) {
+        if (!closed && (i === 0 || i === n - 1)) continue;
+        const prev = at(i - 1), next = at(i + 1), cur = at(i);
+        const midX = (prev.x + next.x) / 2, midY = (prev.y + next.y) / 2;
+        // Only the component along the normal is available to us; the point cannot move
+        // along the track, or the sampling would bunch up.
+        const d = (midX - cur.x) * nrm[i].x + (midY - cur.y) * nrm[i].y;
+        const before = alpha[i];
+        alpha[i] = Math.max(-limit, Math.min(limit, alpha[i] + relax * d));
+        moved = Math.max(moved, Math.abs(alpha[i] - before));
+      }
+      if (moved === 0) break;   // nothing left to move at all
+    }
+    // Report the excursion, which is what tells the reader whether the optimisation did
+    // anything: a line that never leaves the middle has not found a racing line.
+    const span = Math.max(...alpha.map(Math.abs));
+    return { alpha, iterations: iters, residual: moved, limit, span };
   }
 
   // ---- Generic line chart -> SVG string ----
@@ -4589,46 +4782,190 @@
     drivetrainChartsDirty = false;
   }
 
-  function renderTrackPreview(tiles, currentIndex) {
-    const points = walkTrack(tiles);
-    if (points.length < 2) {
+  // ---- Track drawing ----
+  // Two modes from one function. `detailed` draws a real roadway for the editor: black
+  // surface, white joints between elements, kerbs, ideal line. Without it you get the thin
+  // line the dashboard minimap needs, where a 220px map has no room for any of that.
+  //
+  // Kerb colours follow the direction of travel: LEFT is blue/white, RIGHT is red/white.
+  // They are drawn as a solid white line with a dashed coloured line on top, which is how a
+  // real kerb alternates, and it needs no per-block geometry.
+  function renderTrackPreview(tiles, currentIndex, opts) {
+    const o = opts || {};
+    if (!tiles || tiles.length === 0) {
       return { html: '<p class="muted">Keine Streckenteile.</p>', closed: false };
     }
-    const xs = points.map(p => p.x), ys = points.map(p => p.y);
-    const pad = 30;
+    const pts = trackCenterline(tiles);
+    if (pts.length < 2) {
+      return { html: '<p class="muted">Keine Streckenteile.</p>', closed: false };
+    }
+    const nrm = trackNormals(pts);
+    const first = pts[0], last = pts[pts.length - 1];
+    const closed = Math.hypot(last.x - first.x, last.y - first.y) < 60;
+
+    const half = TRACK_HALF_W;
+    const pad = o.detailed ? half + 14 : 30;
+    const all = [...pts.map(p => [p.x, p.y])];
+    if (o.detailed) {
+      all.push(...offsetPath(pts, nrm, half + 6), ...offsetPath(pts, nrm, -(half + 6)));
+    }
+    const xs = all.map(p => p[0]), ys = all.map(p => p[1]);
     const minX = Math.min(...xs), maxX = Math.max(...xs);
     const minY = Math.min(...ys), maxY = Math.max(...ys);
     const w = Math.max(1, maxX - minX) + pad * 2, h = Math.max(1, maxY - minY) + pad * 2;
     const ox = pad - minX, oy = pad - minY;
-    let d = `M ${(points[0].x + ox).toFixed(1)} ${(points[0].y + oy).toFixed(1)}`;
-    for (let i = 1; i < points.length; i++) {
-      const p = points[i];
-      const px = (p.x + ox).toFixed(1), py = (p.y + oy).toFixed(1);
-      if (p.type === TILE_TYPE.CURVE_RIGHT || p.type === TILE_TYPE.CURVE_LEFT) {
-        const sweep = p.type === TILE_TYPE.CURVE_RIGHT ? 1 : 0;
-        d += ` A ${TRACK_RADIUS} ${TRACK_RADIUS} 0 0 ${sweep} ${px} ${py}`;
-      } else {
-        d += ` L ${px} ${py}`;
+    const P2 = (p) => `${(p[0] + ox).toFixed(1)} ${(p[1] + oy).toFixed(1)}`;
+    const poly = (arr) => 'M ' + arr.map(P2).join(' L ');
+    const centre = pts.map(p => [p.x, p.y]);
+
+    let body = '';
+    if (o.detailed) {
+      // 1) The roadway itself: one very wide black stroke along the centreline.
+      body += `<path d="${poly(centre)}" fill="none" stroke="#14181f" stroke-width="${half * 2}" stroke-linecap="butt" stroke-linejoin="round"/>`;
+
+      // 2) Pit bulge: a widening to the RIGHT over the length of the element, drawn as a
+      //    closed shape between the right edge and a further-out offset.
+      tiles.forEach((t, idx) => {
+        if (t.type !== TILE_TYPE.PIT) return;
+        const seg = pts.map((p, i) => ({ p, i })).filter(q => q.p.tile === idx);
+        if (seg.length < 3) return;
+        const inner = seg.map(q => [q.p.x + nrm[q.i].x * half, q.p.y + nrm[q.i].y * half]);
+        const outer = seg.map((q, k) => {
+          // A smooth bulge: zero at both ends, widest in the middle.
+          const u = k / (seg.length - 1);
+          const bulge = Math.sin(u * Math.PI) * half * 1.15;
+          return [q.p.x + nrm[q.i].x * (half + bulge), q.p.y + nrm[q.i].y * (half + bulge)];
+        });
+        body += `<path d="${poly(inner)} L ${outer.slice().reverse().map(P2).join(' L ')} Z" fill="#14181f" stroke="none"/>`;
+        const mid = outer[Math.floor(outer.length / 2)];
+        body += `<text x="${(mid[0] + ox).toFixed(1)}" y="${(mid[1] + oy).toFixed(1)}" fill="#ffb02e" font-size="9" font-weight="700" text-anchor="middle">BOX</text>`;
+      });
+
+      // 3) Joints: a white tick across the roadway at every element boundary, so the
+      //    individual pieces are visible instead of one continuous ribbon.
+      const perTile = TRACK_SAMPLES_PER_TILE;
+      for (let k = 0; k <= tiles.length; k++) {
+        const i = Math.min(pts.length - 1, k * perTile);
+        const A = [pts[i].x + nrm[i].x * half, pts[i].y + nrm[i].y * half];
+        const B = [pts[i].x - nrm[i].x * half, pts[i].y - nrm[i].y * half];
+        body += `<path d="M ${P2(A)} L ${P2(B)}" stroke="#ffffff" stroke-width="1.6" opacity=".85"/>`;
       }
+
+      // 4) Kerbs. Right = red/white, left = blue/white, both relative to travel direction.
+      const right = offsetPath(pts, nrm, half + 2.5);
+      const left = offsetPath(pts, nrm, -(half + 2.5));
+      [[right, '#b3131f'], [left, '#1565c0']].forEach(([path, col]) => {
+        body += `<path d="${poly(path)}" fill="none" stroke="#ffffff" stroke-width="5" stroke-linecap="butt"/>`;
+        body += `<path d="${poly(path)}" fill="none" stroke="${col}" stroke-width="5" stroke-linecap="butt" stroke-dasharray="7 7"/>`;
+      });
+
+      // 5) The ideal line, from the same geometry.
+      const line = idealLine(pts, nrm, { closed });
+      const ideal = pts.map((p, i) => [p.x + nrm[i].x * line.alpha[i],
+                                       p.y + nrm[i].y * line.alpha[i]]);
+      body += `<path d="${poly(ideal)}" fill="none" stroke="#ffd23f" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="9 5" opacity=".95"/>`;
+      o.lineInfo = line;
+    } else {
+      body += `<path d="${poly(centre)}" fill="none" stroke="#0b1f3f" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>`;
     }
-    const first = points[0], last = points[points.length - 1];
-    const closed = Math.hypot(last.x - first.x, last.y - first.y) < 60;
-    let dot = '';
+
+    // Start line and the live position marker.
+    const i0 = 0;
+    const sA = [pts[i0].x + nrm[i0].x * half, pts[i0].y + nrm[i0].y * half];
+    const sB = [pts[i0].x - nrm[i0].x * half, pts[i0].y - nrm[i0].y * half];
+    body += o.detailed
+      ? `<path d="M ${P2(sA)} L ${P2(sB)}" stroke="#1c7a4d" stroke-width="4"/>`
+      : `<circle cx="${(first.x + ox).toFixed(1)}" cy="${(first.y + oy).toFixed(1)}" r="5" fill="#1c7a4d"/>`;
     if (currentIndex != null) {
-      const p = points[Math.max(0, Math.min(currentIndex + 1, points.length - 1))];
-      dot = `<circle cx="${(p.x + ox).toFixed(1)}" cy="${(p.y + oy).toFixed(1)}" r="7" fill="#b3131f" stroke="#fff" stroke-width="2"/>`;
+      const i = Math.max(0, Math.min((currentIndex + 1) * (o.detailed ? TRACK_SAMPLES_PER_TILE : 1), pts.length - 1));
+      const p = pts[i];
+      body += `<circle cx="${(p.x + ox).toFixed(1)}" cy="${(p.y + oy).toFixed(1)}" r="6" fill="#b3131f" stroke="#fff" stroke-width="2"/>`;
     }
-    const html = `<svg viewBox="0 0 ${w.toFixed(0)} ${h.toFixed(0)}" style="width:220px;height:auto;background:var(--panel-2);border:1px solid var(--border);border-radius:4px">
-      <path d="${d}" fill="none" stroke="#0b1f3f" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
-      <circle cx="${(first.x + ox).toFixed(1)}" cy="${(first.y + oy).toFixed(1)}" r="5" fill="#1c7a4d"/>
-      ${dot}
-    </svg>`;
-    return { html, closed };
+
+    const style = o.detailed
+      ? 'width:100%;max-width:520px;height:auto;background:#e8ebf1;border:1px solid var(--border);border-radius:6px'
+      : 'width:220px;height:auto;background:var(--panel-2);border:1px solid var(--border);border-radius:4px';
+    const html = `<svg viewBox="0 0 ${w.toFixed(0)} ${h.toFixed(0)}" style="${style}">${body}</svg>`;
+    return { html, closed, lineInfo: o.lineInfo };
   }
 
+
+  // ---- Short track code ----
+  // One letter per element with a run-length count, plus the orientation. Short enough to
+  // type over the phone, and readable enough to check by eye: "S G3 R2" is a start, three
+  // straights, two right-handers. Deliberately not JSON in base64 — a code you cannot read
+  // is a code you cannot verify.
+  const TRACK_CODE_LETTER = { [TILE_TYPE.START]: 'S', [TILE_TYPE.STRAIGHT]: 'G',
+                              [TILE_TYPE.CURVE_RIGHT]: 'R', [TILE_TYPE.CURVE_LEFT]: 'L',
+                              [TILE_TYPE.PIT]: 'B' };
+  const TRACK_CODE_TYPE = Object.fromEntries(
+    Object.entries(TRACK_CODE_LETTER).map(([k, v]) => [v, Number(k)]));
+
+  function trackToCode(tiles, rotation) {
+    let out = '', i = 0;
+    while (i < tiles.length) {
+      const letter = TRACK_CODE_LETTER[tiles[i].type];
+      if (!letter) { i++; continue; }
+      let n = 1;
+      while (i + n < tiles.length && tiles[i + n].type === tiles[i].type) n++;
+      out += letter + (n > 1 ? n : '');
+      i += n;
+    }
+    const rot = ((rotation % 360) + 360) % 360;
+    return out + (rot ? '@' + rot : '');
+  }
+
+  function codeToTrack(code) {
+    const m = String(code).trim().toUpperCase().match(/^([SGRLB\d]*)(?:@(\d{1,3}))?$/);
+    if (!m || !m[1]) return null;
+    const tiles = [];
+    const re = /([SGRLB])(\d*)/g;
+    let hit;
+    while ((hit = re.exec(m[1])) !== null) {
+      const type = TRACK_CODE_TYPE[hit[1]];
+      const n = hit[2] ? parseInt(hit[2], 10) : 1;
+      if (!type || !(n >= 1 && n <= 99)) return null;
+      for (let k = 0; k < n; k++) tiles.push({ type });
+    }
+    if (!tiles.length) return null;
+    // A layout always starts at start/finish; the anchor is not optional elsewhere in the
+    // app, so importing something without it would break the lap counting.
+    if (tiles[0].type !== TILE_TYPE.START) tiles.unshift({ type: TILE_TYPE.START });
+    const rot = m[2] ? parseInt(m[2], 10) : 0;
+    return { tiles, rotation: (Math.round(rot / 90) * 90) % 360 };
+  }
+
+  $('track-code-copy').onclick = async () => {
+    const v = $('track-code').value;
+    try { await navigator.clipboard.writeText(v); showHudToast('Code kopiert'); }
+    catch (e) { $('track-code').select(); showHudToast('Bitte manuell kopieren'); }
+  };
+
+  $('track-code-apply').onclick = () => {
+    const parsed = codeToTrack($('track-code-in').value);
+    if (!parsed) { alert('Code nicht lesbar. Erwartet z. B. SG3R2G2R2@90'); return; }
+    currentTrackTiles = parsed.tiles;
+    trackRotationDeg = parsed.rotation;
+    const rv = $('track-rotation-val');
+    if (rv) rv.textContent = trackRotationDeg + '\u00b0';
+    refreshTrackPreview();
+    log(`Strecke aus Code übernommen: ${parsed.tiles.length} Teile, ${parsed.rotation}°`, 'info');
+    showHudToast('Strecke übernommen');
+  };
+
   function refreshTrackPreview() {
-    const result = renderTrackPreview(currentTrackTiles, typeof getMinimapCurrentIndex === 'function' ? getMinimapCurrentIndex() : null);
+    const result = renderTrackPreview(currentTrackTiles, null, { detailed: true });
     $('track-preview-svg').innerHTML = result.html;
+    $('track-code').value = trackToCode(currentTrackTiles, trackRotationDeg);
+    const info = $('track-line-info');
+    if (info) {
+      // Residual in millimetres: a bare number in drawing units means nothing to a reader.
+      const li = result.lineInfo;
+      info.textContent = li
+        ? `Ideallinie nutzt ${(li.span / TRACK_UNITS_PER_CM).toFixed(1)} cm `
+          + `von ${(li.limit / TRACK_UNITS_PER_CM).toFixed(1)} cm möglichem Versatz`
+        : '';
+    }
     $('track-closed-badge').textContent = currentTrackTiles.length === 0 ? '-' : (result.closed ? 'Geschlossen ✓' : 'Offen');
     const list = $('track-tile-list');
     // The first tile is the Start/Finish anchor and is not deletable.
@@ -4652,6 +4989,7 @@
   $('track-add-straight').onclick = () => addTile(TILE_TYPE.STRAIGHT);
   $('track-add-right').onclick = () => addTile(TILE_TYPE.CURVE_RIGHT);
   $('track-add-left').onclick = () => addTile(TILE_TYPE.CURVE_LEFT);
+  $('track-add-pit').onclick = () => addTile(TILE_TYPE.PIT);
   $('track-clear').onclick = () => { currentTrackTiles = freshTrackTiles(); refreshTrackPreview(); };
 
   function rotateTrack(deltaDeg) {
