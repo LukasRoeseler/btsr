@@ -289,6 +289,59 @@
     font-size: clamp(11px, 2vw, 20px); font-family: monospace; }
   .gt3-banner.on { display: block; }
 
+  /* ---- Options rows, in the manner of a sim racing options menu ----
+     These rules were silently deleted by an earlier patch that replaced a whole CSS block
+     between two markers; the options markup and its JavaScript survived, so every
+     functional test kept passing while the tab had no styling at all. That is exactly why
+     label and control looked unpaired: without a row grid they simply stacked.
+
+     The pairing is now unmistakable: one BAND per setting, label hard left, control hard
+     right, both vertically centred on the same line, alternating shades so each band reads
+     as one unit, and a hover highlight across the whole row. */
+  .opt-row { display: grid; grid-template-columns: minmax(0, 1fr) auto;
+    gap: 18px; align-items: center; padding: 11px 14px;
+    border-bottom: 1px solid rgba(255,255,255,.05); }
+  .opt-row:nth-of-type(odd) { background: rgba(255,255,255,.022); }
+  .opt-row:hover { background: rgba(120,170,255,.075); }
+  .opt-row:last-child { border-bottom: none; }
+  .opt-label { font-size: 13.5px; line-height: 1.35; min-width: 0; }
+  .opt-label small { display: block; color: var(--muted); font-size: 11px;
+    margin-top: 3px; line-height: 1.4; }
+  /* Section headers: a bar, not just bigger text, so the eye can find the groups. */
+  .opt-head { margin: 20px 0 0 0; padding: 8px 14px; font-size: 11.5px; font-weight: 700;
+    letter-spacing: .14em; text-transform: uppercase; color: #cddcf7;
+    background: linear-gradient(90deg, rgba(90,140,220,.28), rgba(90,140,220,.04));
+    border-left: 3px solid #5a8cdc; }
+
+  .opt-slider { display: flex; align-items: center; gap: 8px; }
+  .opt-slider input[type=range] { width: clamp(90px, 18vw, 180px); }
+  .opt-slider button { width: 28px; height: 28px; padding: 0; font-size: 16px;
+    line-height: 1; border-radius: 4px; }
+  .opt-val { min-width: 58px; text-align: right; font-family: monospace;
+    font-size: 12.5px; color: #dce7fb; }
+
+  /* Sliding switch. The native checkbox stays in the DOM for keyboard and forms, but is
+     visually replaced, so the control on the right of a row is obviously a switch. */
+  .tgl { position: relative; display: inline-block; width: 46px; height: 25px;
+    flex: 0 0 auto; }
+  .tgl input { position: absolute; opacity: 0; width: 0; height: 0; }
+  .tgl span { position: absolute; inset: 0; cursor: pointer; border-radius: 999px;
+    background: #2a3244; border: 1px solid #3b465c; transition: background .15s,
+    border-color .15s; }
+  .tgl span::after { content: ''; position: absolute; top: 2px; left: 2px; width: 19px;
+    height: 19px; border-radius: 50%; background: #9fb0cc; transition: transform .15s,
+    background .15s; }
+  .tgl input:checked + span { background: #2f8f52; border-color: #46d17f; }
+  .tgl input:checked + span::after { transform: translateX(21px); background: #eafff1; }
+  .tgl input:focus-visible + span { outline: 2px solid #5a8cdc; outline-offset: 2px; }
+
+  @media (max-width: 560px) {
+    /* Narrow screens: the control drops under its label, but stays inside the same shaded
+       band, so the pairing survives the reflow. */
+    .opt-row { grid-template-columns: 1fr; gap: 8px; }
+    .opt-row > :last-child { justify-self: start; }
+  }
+
   /* Touch sizing. Keyed on the POINTER, not on the viewport width: a small window on a
      desktop still has a mouse and does not need 44px targets, while a large tablet does.
      34px buttons and 16px sliders are fine with a cursor and fiddly with a thumb. */
@@ -328,27 +381,27 @@
   body.race-wet .race-rain { opacity: 1; }
   .race-rain > i { position: absolute; inset: -30% -30%; display: block;
     will-change: transform; }
-  /* Front sheet: short, brightest, fastest. */
-  .race-rain > i:nth-child(1) {
-    background: repeating-linear-gradient(105deg,
-      rgba(190,215,255,0) 0 7px, rgba(190,215,255,.34) 7px 8px, rgba(190,215,255,0) 8px 15px);
-    animation: race-rain-a 0.42s linear infinite; }
-  /* Middle sheet. */
-  .race-rain > i:nth-child(2) {
-    background: repeating-linear-gradient(101deg,
-      rgba(170,200,245,0) 0 13px, rgba(170,200,245,.20) 13px 14px, rgba(170,200,245,0) 14px 26px);
-    animation: race-rain-b 0.66s linear infinite; }
-  /* Back sheet: long, palest, slowest — this is the one that creates the depth. */
-  .race-rain > i:nth-child(3) {
-    background: repeating-linear-gradient(98deg,
-      rgba(150,180,225,0) 0 23px, rgba(150,180,225,.12) 23px 24px, rgba(150,180,225,0) 24px 44px);
-    animation: race-rain-c 1.05s linear infinite; }
-  @keyframes race-rain-a { from { transform: translate3d(0,0,0); }
-                           to   { transform: translate3d(-56px, 210px, 0); } }
-  @keyframes race-rain-b { from { transform: translate3d(0,0,0); }
-                           to   { transform: translate3d(-64px, 300px, 0); } }
-  @keyframes race-rain-c { from { transform: translate3d(0,0,0); }
-                           to   { transform: translate3d(-70px, 380px, 0); } }
+  /* Three sheets of DROPS. repeating-linear-gradient was the wrong tool: it paints bands
+     across the whole layer, so the result was long stripes rather than rain. A tiled
+     background instead — one short, fading streak per tile — gives discrete drops, and
+     rotating the sheet tilts them. Because the rotation comes before the translation, each
+     drop travels along its own long axis, which is what falling rain does.
+     Three incommensurate tile sizes keep the grid from reading as a grid. */
+  .race-rain > i { background-repeat: repeat;
+    background-image: linear-gradient(to bottom,
+      rgba(200,222,255,0) 0%, rgba(200,222,255,.55) 45%, rgba(200,222,255,0) 100%); }
+  .race-rain > i:nth-child(1) { background-size: 1.6px 13px; opacity: .85;
+    animation: race-rain-a .40s linear infinite; }
+  .race-rain > i:nth-child(2) { background-size: 1.3px 19px; opacity: .55;
+    animation: race-rain-b .62s linear infinite; }
+  .race-rain > i:nth-child(3) { background-size: 1.1px 27px; opacity: .32;
+    animation: race-rain-c 1.00s linear infinite; }
+  @keyframes race-rain-a { from { transform: rotate(13deg) translate3d(0, -13px, 0); }
+                           to   { transform: rotate(13deg) translate3d(0, 247px, 0); } }
+  @keyframes race-rain-b { from { transform: rotate(11deg) translate3d(0, -19px, 0); }
+                           to   { transform: rotate(11deg) translate3d(0, 361px, 0); } }
+  @keyframes race-rain-c { from { transform: rotate(9deg)  translate3d(0, -27px, 0); }
+                           to   { transform: rotate(9deg)  translate3d(0, 513px, 0); } }
   /* A full-screen animation is exactly what this setting exists for. */
   @media (prefers-reduced-motion: reduce) {
     .race-rain > i { animation: none; }
@@ -374,6 +427,35 @@
   .gar-roles button.on.ghost { background: #7a6bd0; color: #0b0718; }
   .gar-blink { font-size: 11px; color: var(--muted); }
   .race-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  /* Fullscreen sits top right ON the dash, as an icon: on a racing screen a word is
+     wasted space, and the arrows-apart glyph is universally understood. */
+  .race-corner { position: absolute; top: 6px; right: 6px; z-index: 6; display: flex;
+    gap: 6px; }
+  .race-corner button { width: 34px; height: 34px; padding: 0; display: grid;
+    place-items: center; border-radius: 4px; background: rgba(10,14,22,.75);
+    border: 1px solid #2c3547; color: #cddcf7; cursor: pointer; }
+  .race-corner button:hover { background: rgba(30,44,70,.9); }
+  /* display:grid above outranks the UA rule for [hidden], so the hidden exit button
+     kept reserving 40px and pushed the fullscreen icon away from the corner. */
+  .race-corner button[hidden] { display: none; }
+  .race-corner svg { width: 18px; height: 18px; }
+
+  /* Key-binding overlay. */
+  #help-btn { position: fixed; right: 14px; bottom: 14px; z-index: 60; width: 42px;
+    height: 42px; border-radius: 50%; font-size: 19px; font-weight: 700;
+    background: var(--panel-2); color: #cddcf7; border: 1px solid var(--border);
+    cursor: pointer; }
+  body.race-mode #help-btn { display: none; }
+  #help-panel { position: fixed; inset: 0; z-index: 61; background: rgba(4,6,11,.82);
+    display: none; overflow: auto; padding: 24px 14px; }
+  #help-panel.on { display: block; }
+  .help-card { max-width: 760px; margin: 0 auto; background: var(--panel);
+    border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; }
+  .help-grid { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px;
+    font-size: 13px; margin: 8px 0 18px 0; }
+  .help-grid kbd { font-family: monospace; font-size: 12px; background: #1b2231;
+    border: 1px solid #33405a; border-bottom-width: 2px; border-radius: 4px;
+    padding: 2px 7px; white-space: nowrap; justify-self: start; }
   .race-fs-btn { padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border);
     background: var(--panel-2); color: inherit; font: inherit; cursor: pointer;
     min-height: 40px; }
@@ -438,6 +520,46 @@
 </header>
 <div class="pinstripe"></div>
 
+  <button type="button" id="help-btn" title="Tastenbelegung" aria-label="Tastenbelegung">?</button>
+  <div id="help-panel" role="dialog" aria-label="Tastenbelegung">
+    <div class="help-card">
+      <div class="row" style="justify-content:space-between; align-items:center">
+        <h2 style="margin:0">Tastenbelegung</h2>
+        <button type="button" id="help-close">Schlie&szlig;en</button>
+      </div>
+
+      <div class="opt-head" style="margin-top:16px">Tastatur &mdash; Fahren</div>
+      <div class="help-grid">
+        <kbd>&uarr;</kbd><span>Gas</span>
+        <kbd>&darr;</kbd><span>Bremse</span>
+        <kbd>&larr;</kbd> <span>lenken links</span>
+        <kbd>&rarr;</kbd><span>lenken rechts</span>
+        <kbd>Leertaste</kbd><span>Not-Halt &mdash; alle Eingaben los, Momentum auf null</span>
+        <kbd>I</kbd><span>hochschalten</span>
+        <kbd>K</kbd><span>runterschalten (aus dem 1. Gang in N, aus N in R)</span>
+        <kbd>L</kbd><span>Lichthupe</span>
+      </div>
+
+      <div class="opt-head">Tastatur &mdash; Test und Fehlersuche am PC</div>
+      <div class="help-grid">
+        <kbd>W</kbd><span>Wetter umschalten (Regen / trocken)</span>
+        <kbd>P</kbd><span>Boxenstopp &mdash; erneut zweimal kurz dr&uuml;cken bricht ab</span>
+        <kbd>C</kbd><span>Crash ausl&ouml;sen: Schaden, Ger&auml;usch und Rumble wie im Betrieb</span>
+        <kbd>F</kbd><span>Tank auf 5&nbsp;% setzen, um den Notlauf zu pr&uuml;fen</span>
+        <kbd>R</kbd><span>Tank und Zustand zur&uuml;cksetzen</span>
+        <kbd>?</kbd><span>diese &Uuml;bersicht</span>
+      </div>
+
+      <div class="opt-head">Controller</div>
+      <div class="help-grid" id="help-pad"></div>
+
+      <p class="muted" style="font-size:12px">
+        Die Controller-Belegung ist frei zuweisbar &mdash; Optionen &rarr; Controller. Hier steht,
+        was gerade eingestellt ist.
+      </p>
+    </div>
+  </div>
+
 <nav class="tabs">
   <button class="tab-btn" data-tab="garage">Garage</button>
   <button class="tab-btn active" data-tab="control">Fahren</button>
@@ -453,8 +575,6 @@
   <!-- DEVELOPER TAB (sub-tabbed: BLE-Explorer / Kalibrierung / Makros / Doku) -->
   <section class="tabpage" id="tab-race">
     <div class="race-bar">
-      <button type="button" id="race-fs" class="race-fs-btn">Vollbild</button>
-      <button type="button" id="race-fs-exit" class="race-fs-btn" hidden>Verlassen</button>
       <span class="muted" id="race-rotate">Hochkant &mdash; die Anzeige wird gedreht.</span>
     </div>
     <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -468,6 +588,21 @@
     </svg>
     <div class="gt3" id="race-dash" style="position:relative">
       <div class="race-rain" aria-hidden="true"><i></i><i></i><i></i></div>
+      <div class="race-corner">
+        <button type="button" id="race-fs" title="Vollbild" aria-label="Vollbild">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>
+            <path d="M9.5 14.5 4.5 19.5M14.5 9.5 19.5 4.5M14.5 14.5 19.5 19.5M9.5 9.5 4.5 4.5"/>
+          </svg></button>
+        <button type="button" id="race-fs-exit" hidden title="Vollbild verlassen"
+                aria-label="Vollbild verlassen">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/>
+            <path d="M4.5 4.5 9 9M19.5 4.5 15 9M4.5 19.5 9 15M19.5 19.5 15 15"/>
+          </svg></button>
+      </div>
       <div class="gt3-shift" id="race-shift">
         <span></span><span></span><span></span><span></span><span></span>
         <span></span><span></span><span></span><span></span><span></span>
@@ -1462,9 +1597,9 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-brakepower-val">1.00</span>
         </div></div>
-      <h3 style="margin:22px 0 8px 0; font-size:14px; border-top:1px solid var(--border); padding-top:14px">
+      <div class="opt-head">
         Getriebe &amp; Fahrleistung
-      </h3>
+      </div>
       <div class="opt-row"><div class="opt-label">Automatikgetriebe<small>Aus = manuell (Quadrat/X runter, Kreis/B hoch). Im Stand unter den 1. Gang schalten legt den Rückwärtsgang ein.</small></div><label class="tgl"><input type="checkbox" id="setting-autoshift"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Höchstgeschwindigkeit (km/h)</div>
         <div class="opt-slider">
@@ -1545,9 +1680,9 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="phys-trailbrake-val">1.10</span>
         </div></div>
-      <h3 style="margin:22px 0 8px 0; font-size:14px; border-top:1px solid var(--border); padding-top:14px">
+      <div class="opt-head">
         Tank &amp; Schaden
-      </h3>
+      </div>
       <div class="opt-row"><div class="opt-label">Tankverbrauch (%/s bei Vollgas)</div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
@@ -2359,6 +2494,34 @@
   setStick(0, 0);
   setThrottle(0);
 
+  // ---- Key-binding overlay ----
+  // Reads the LIVE binding table rather than a hard-coded list: a help panel that drifts
+  // out of step with the actual assignment is worse than none at all.
+  function renderHelpPad() {
+    const grid = $('help-pad');
+    if (!grid) return;
+    const extra = {
+      'D-Pad hoch / runter': 'Beschleunigung +/- 10 %',
+      'D-Pad links / rechts': 'Lenkansprechen -/+ 10 %',
+    };
+    grid.innerHTML = Object.keys(BIND_ACTION_LABELS).map(a =>
+      `<kbd>${bindingDescription(bindings[a])}</kbd><span>${BIND_ACTION_LABELS[a]}</span>`
+    ).join('') + Object.entries(extra).map(([k, v]) =>
+      `<kbd>${k}</kbd><span>${v}</span>`).join('');
+  }
+
+  function toggleHelp(force) {
+    const p = $('help-panel');
+    const on = force === undefined ? !p.classList.contains('on') : force;
+    if (on) renderHelpPad();
+    p.classList.toggle('on', on);
+  }
+  $('help-btn').onclick = () => toggleHelp(true);
+  $('help-close').onclick = () => toggleHelp(false);
+  $('help-panel').addEventListener('click', (e) => {
+    if (e.target === $('help-panel')) toggleHelp(false);   // click the backdrop to dismiss
+  });
+
   // ---- Keyboard control ----
   const keys = new Set();
   // Keyboard shifting, for testing without a controller: I up, K down. Edge-triggered via
@@ -2370,6 +2533,15 @@
     }
     if (k === 'l' && !e.repeat) triggerHeadlightFlash();
     if (k === 'w' && !e.repeat) setWeather(weather === 'rain' ? 'dry' : 'rain');
+    // Test keys. Everything the pad can do should be reachable from a keyboard, otherwise
+    // half the app can only be exercised with a controller plugged in.
+    if (k === 'p' && !e.repeat) requestPitStop();
+    if (k === 'c' && !e.repeat) { registerCrash(); showHudToast('Testcrash'); }
+    if (k === 'f' && !e.repeat) { fuel = 5; updateDamageFuelUI(); showHudToast('Tank 5 %'); }
+    if (k === 'r' && !e.repeat) { fuel = 100; damage = 0; updateDamageFuelUI();
+                                  showHudToast('Tank und Zustand zurückgesetzt'); }
+    if (k === '?' || (k === '/' && e.shiftKey)) { if (!e.repeat) toggleHelp(); }
+    if (k === 'escape') toggleHelp(false);
   });
   window.addEventListener('keydown', (e) => {
     if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)) e.preventDefault();
@@ -3290,6 +3462,8 @@
 
   $('race-fs').addEventListener('click', enterRaceFullscreen);
   $('race-fs-exit').addEventListener('click', exitRaceFullscreen);
+  // The buttons now live inside #race-dash, which the rotation transform also moves, so
+  // they stay in the top-right corner of the ROTATED view rather than of the screen.
   window.addEventListener('resize', syncRaceRotation);
   // Leaving fullscreen by swipe or Escape must put the buttons back too.
   document.addEventListener('fullscreenchange', () => {
@@ -4303,6 +4477,10 @@
   // earlier session) — not a calibrated formula, just enough for a rough gauge.
   let dashBattery = null;
   let dashOnMarker = false;   // byte 15 bit 3: the car is physically over a marker
+  // Debounce state for the tile code. See dashboardNotifyHandler for why both guards exist.
+  const TILE_REPEAT_BLOCK_MS = 1000;
+  let dashPendingCode = null, dashPendingSeen = 0;
+  let dashLastActedCode = null, dashLastActedAt = 0;
   let dashMinimapIndex = null;
   let dashLastTileCounter = null;
   let dashLapStart = null;
@@ -4500,6 +4678,19 @@
 
     const counter = bytes[11];
     const type = bytes[12];
+
+    // ---- Two guards against misread patterns ----
+    // 1) CONFIRMATION. A code has to arrive twice in a row before it is believed. The cost
+    //    of this is one packet of latency and nothing else: the logs show a tile stays under
+    //    the sensor for 0.4 to 2.7 s, which at the ~45-60 ms notify rate is 8 to 60 packets,
+    //    so a genuine reading is never a single packet. A one-off wrong byte now cannot
+    //    count a lap or drag the car into the pit lane.
+    // 2) NO IMMEDIATE REPEAT. After a start/finish or pit marker has been acted on, the same
+    //    code is ignored for a second. The counter alone was the only protection before, and
+    //    a stuttering counter therefore produced double laps.
+    if (type !== dashPendingCode) { dashPendingCode = type; dashPendingSeen = 1; return; }
+    if (++dashPendingSeen < 2) return;
+
     if (dashLastTileCounter === null) { dashLastTileCounter = counter; return; }
     if (counter === dashLastTileCounter) return;
     dashLastTileCounter = counter;
@@ -4511,6 +4702,20 @@
     lastTileCode = type;
     const probe = $('tile-probe');
     if (probe) probe.textContent = `0x${type.toString(16).padStart(2, '0')} (${TILE_LABEL[type] || 'unbekannt'})`;
+
+    // Guard 2 applies only to the two codes that trigger something irreversible; the
+    // ordinary straight and curve codes may repeat as often as the track says.
+    const nowCode = Date.now();
+    const repeatBlocked = (type === TILE_TYPE.START || type === pitMarkerCode)
+      && dashLastActedCode === type
+      && nowCode - dashLastActedAt < TILE_REPEAT_BLOCK_MS;
+    if (repeatBlocked) {
+      log(`Mustercode 0x${type.toString(16)} innerhalb von ${TILE_REPEAT_BLOCK_MS} ms wiederholt — ignoriert.`, 'info');
+      return;
+    }
+    if (type === TILE_TYPE.START || type === pitMarkerCode) {
+      dashLastActedCode = type; dashLastActedAt = nowCode;
+    }
 
     if (type === pitMarkerCode) onPitMarkerCrossed();
 
