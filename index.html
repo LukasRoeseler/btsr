@@ -2023,19 +2023,6 @@
         <span class="muted" id="track-line-info"></span>
       </div>
 
-      <div class="row" style="align-items:center; gap:10px; margin-top:12px">
-        <label class="small" style="white-space:nowrap">Kurvenausgang gewichten</label>
-        <input type="range" id="track-exit-bias" min="0" max="1" step="0.05" value="0.6" style="flex:1; max-width:200px">
-        <span class="opt-val" id="track-exit-bias-val">60&nbsp;%</span>
-      </div>
-      <p class="muted" style="font-size:11.5px; margin:2px 0 0 0">
-        0&nbsp;% = reine Kr&uuml;mmungsminimierung, symmetrisch in der Zeit. H&ouml;her zieht
-        die Linie am <b>Kurvenausgang nach au&szlig;en</b> und l&auml;sst sie erst auf der
-        folgenden Gerade zur&uuml;ckdriften &mdash; gewichtet danach, wie viel Gerade
-        tats&auml;chlich folgt. Grund: Tempo am Ausgang wirkt sich auf alles Folgende aus,
-        Tempo am Eingang nur auf die Kurve selbst. Eine <em>Heuristik</em>, keine
-        Rundenzeitoptimierung: die App kann nicht messen, ob das Auto die Linie einh&auml;lt.
-      </p>
       <div class="row" style="align-items:center; gap:8px; margin-top:14px">
         <label class="small" style="white-space:nowrap">Streckencode</label>
         <input type="text" id="track-code" readonly style="flex:1; min-width:120px; font-family:monospace">
@@ -4615,10 +4602,6 @@
   // Half the roadway width, derived from the measured 25 cm. Was 13 by guess, which drew
   // the track 12 % too wide.
   const TRACK_HALF_W = (TRACK_WIDTH_CM / 2) * TRACK_UNITS_PER_CM;
-  // Declared HERE, next to the other geometry constants, not down with its slider.
-  // renderTrackPreview() reads it, and that function is called during load; a `let`
-  // further down the file would be in its temporal dead zone and abort the whole IIFE.
-  let idealExitBias = 0.6;
   const TRACK_SAMPLES_PER_TILE = 14;
 
   function trackCenterline(tiles) {
@@ -4675,22 +4658,6 @@
   // the midpoint of its neighbours — along the normal only — is curvature smoothing, and it
   // converges to a minimum-curvature line. Clamped to the roadway on every pass, so the
   // result can never leave the track.
-  // How many tile lengths of NON-curve follow each tile. This is what makes a corner
-  // worth sacrificing: a hairpin onto a long straight is a completely different problem
-  // from one corner in the middle of an esses.
-  function straightAfterPerTile(tiles) {
-    const n = tiles.length;
-    const out = new Array(n).fill(0);
-    const isCurve = (t) => t && (t.type === TILE_TYPE.CURVE_LEFT || t.type === TILE_TYPE.CURVE_RIGHT);
-    for (let i = 0; i < n; i++) {
-      let k = 0;
-      // Wrap around: a closed circuit has no last corner.
-      while (k < n && !isCurve(tiles[(i + 1 + k) % n])) k++;
-      out[i] = k;
-    }
-    return out;
-  }
-
   function idealLine(pts, nrm, opts) {
     const o = opts || {};
     const limit = (o.limit !== undefined ? o.limit : TRACK_HALF_W - 3);
@@ -4709,70 +4676,22 @@
     const closed = o.closed;
     const n = pts.length;
     const alpha = new Array(n).fill(0);
-    // ---- Exit priority, second attempt ----
-    // The first attempt weighted the NEXT neighbour more than the previous one, on the theory
-    // that this shifts the line later through a corner. Measured, it did the opposite of what
-    // was wanted: on the straight after the corner the offset FELL from 5.3 cm to 1.2 cm, so
-    // the line went to the middle. The reason is simple in hindsight — on a straight the
-    // midpoint of the neighbours already lies on the line, so a weighting has almost no
-    // purchase there, and what little it has pulls toward the centre.
-    //
-    // What produces "run wide on the way out" is not a smoothing tweak but an explicit
-    // TARGET: at the exit of a corner that leads onto a straight, the line belongs at the
-    // OUTER edge, and it should only drift back over the following straight. So each point
-    // gets a target offset and a spring toward it, and the curvature smoothing then rounds
-    // the result off.
-    const exitW = Math.max(0, Math.min(1, o.exitBias !== undefined ? o.exitBias : 0.6));
-    const straightAfter = o.straightAfter || [];
-    const tiles = o.tiles || [];
-    // How far through its own tile each point sits, and how many samples that tile has.
-    const perTile = TRACK_SAMPLES_PER_TILE;
-    // For every straight tile: which corner preceded this run, how long the run is, and how
-    // far into it we are. Computed once per render, not per iteration.
-    const straightRun = (() => {
-      const isCurve = (t) => t && (t.type === TILE_TYPE.CURVE_LEFT || t.type === TILE_TYPE.CURVE_RIGHT);
-      const out = new Array(tiles.length).fill(null);
-      let i = 0;
-      while (i < tiles.length) {
-        if (isCurve(tiles[i])) { i++; continue; }
-        let j = i;
-        while (j < tiles.length && !isCurve(tiles[j])) j++;
-        const before = tiles[i - 1];
-        const dir = before && before.type === TILE_TYPE.CURVE_RIGHT ? 1
-                  : before && before.type === TILE_TYPE.CURVE_LEFT ? -1 : 0;
-        for (let k = i; k < j; k++) out[k] = { dir, len: j - i, index: k - i };
-        i = j;
-      }
-      return out;
-    })();
-
-    const target = pts.map((p, i) => {
-      const t = tiles[p.tile];
-      const after = straightAfter[p.tile] !== undefined ? straightAfter[p.tile] : 0;
-      const dir = t && t.type === TILE_TYPE.CURVE_RIGHT ? 1
-                : t && t.type === TILE_TYPE.CURVE_LEFT ? -1 : 0;
-      // The outside of a right-hand corner is to the LEFT of travel, and the normal points
-      // right, so the outer edge is -dir.
-      if (dir !== 0) {
-        const frac = ((i - 1) % perTile) / perTile;          // 0 at entry, 1 at exit
-        if (frac < 0.45) return null;                        // entry is left to the smoother
-        const ramp = (frac - 0.45) / 0.55;
-        const worth = Math.min(1, after / 2);                // no straight after: not worth it
-        return -dir * limit * ramp * worth;
-      }
-      // On a straight: hold the outside where the corner left us and drift back over the
-      // WHOLE run, not over the first tile of it. The first attempt released after ~0.7 of
-      // one tile, so on a four-tile main straight the line was back in the middle almost
-      // immediately - measured 1.0 cm where it should have been near the edge. Carrying
-      // speed out means staying out there while the car accelerates.
-      const run = straightRun[p.tile];
-      if (run && run.dir !== 0 && run.len > 0) {
-        const frac = ((i - 1) % perTile) / perTile;
-        const along = (run.index + frac) / run.len;         // 0 at the corner exit, 1 at the end
-        return -run.dir * limit * Math.max(0, 1 - along);
-      }
-      return null;
-    });
+    // ---- Why there is no exit heuristic here ----
+    // There were two attempts and both were wrong, and the second one taught the real lesson.
+    // Attempt 1 weighted the next neighbour more, to shift the line later through a corner.
+    // Measured, it did the opposite: on the straight after the corner the offset fell from
+    // 5.3 to 1.2 cm. On a straight the midpoint of the neighbours already lies on the line,
+    // so a weighting has no purchase there.
+    // Attempt 2 prescribed a target offset along the following straight, decaying from the
+    // outer edge to the centre. That produced the S-shape the user saw: out at the exit, back
+    // to the middle along the straight, and out again for the next exit.
+    // Removing that target - prescribing NOTHING on the straights - fixed it, and then the
+    // measurements showed the pull was not merely unnecessary but harmful: at the corner exit
+    // it gave 7.4 cm where pure minimum curvature gives 8.5 cm of 9.3 available, because a
+    // spring toward a fixed target CAPS an excursion the smoother would otherwise push
+    // further. The whole heuristic existed to compensate for a defect it had introduced.
+    // So: pure minimum curvature, which is the standard method, and it produces the wide exit
+    // and the straight straight on its own.
     const at = (i) => {
       const k = closed ? ((i % n) + n) % n : Math.max(0, Math.min(n - 1, i));
       return { x: pts[k].x + nrm[k].x * alpha[k], y: pts[k].y + nrm[k].y * alpha[k] };
@@ -4783,26 +4702,12 @@
       for (let i = 0; i < n; i++) {
         if (!closed && (i === 0 || i === n - 1)) continue;
         const prev = at(i - 1), next = at(i + 1), cur = at(i);
-        // ---- Exit priority ----
-        // Pure curvature minimisation is symmetric in time: it treats the entry and the exit
-        // of a corner as equally valuable. A real lap is not symmetric. Speed carried out of
-        // a corner is multiplied by everything that follows, so a corner onto a long straight
-        // is worth compromising on the way in to be quick on the way out.
-        // Weighting the NEXT neighbour more than the previous one shifts the line later
-        // through the corner: a late apex, running wide on exit. One parameter does it, and
-        // it is scaled by how much straight actually follows.
         const midX = (prev.x + next.x) / 2, midY = (prev.y + next.y) / 2;
         // Only the component along the normal is available to us; the point cannot move
         // along the track, or the sampling would bunch up.
         const d = (midX - cur.x) * nrm[i].x + (midY - cur.y) * nrm[i].y;
         const before = alpha[i];
-        let next2 = alpha[i] + relax * d;
-        // Spring toward the exit target where one exists. Strength scales with the setting,
-        // so 0 leaves pure curvature minimisation untouched.
-        if (target[i] !== null && exitW > 0) {
-          next2 += exitW * 0.30 * (target[i] - alpha[i]);
-        }
-        alpha[i] = Math.max(-limit, Math.min(limit, next2));
+        alpha[i] = Math.max(-limit, Math.min(limit, alpha[i] + relax * d));
         moved = Math.max(moved, Math.abs(alpha[i] - before));
       }
       if (moved === 0) break;   // nothing left to move at all
@@ -5016,8 +4921,7 @@
       });
 
       // 5) The ideal line, from the same geometry.
-      const line = idealLine(pts, nrm, { closed, exitBias: idealExitBias, tiles,
-                                         straightAfter: straightAfterPerTile(tiles) });
+      const line = idealLine(pts, nrm, { closed });
       const ideal = pts.map((p, i) => [p.x + nrm[i].x * line.alpha[i],
                                        p.y + nrm[i].y * line.alpha[i]]);
       body += `<path d="${poly(ideal)}" fill="none" stroke="#ffd23f" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="9 5" opacity=".95"/>`;
@@ -5147,12 +5051,6 @@
   $('track-add-right').onclick = () => addTile(TILE_TYPE.CURVE_RIGHT);
   $('track-add-left').onclick = () => addTile(TILE_TYPE.CURVE_LEFT);
   $('track-add-pit').onclick = () => addTile(TILE_TYPE.PIT);
-  $('track-exit-bias').addEventListener('input', (e) => {
-    idealExitBias = parseFloat(e.target.value);
-    $('track-exit-bias-val').textContent = Math.round(idealExitBias * 100) + ' %';
-    refreshTrackPreview();
-  });
-
   $('track-undo').onclick = () => {
     // The first tile is the start/finish anchor and is not removable — the lap counting
     // depends on it existing.
