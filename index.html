@@ -300,25 +300,25 @@
      as one unit, and a hover highlight across the whole row. */
   .opt-row { display: grid; grid-template-columns: minmax(0, 1fr) auto;
     gap: 18px; align-items: center; padding: 11px 14px;
-    border-bottom: 1px solid rgba(255,255,255,.05); }
-  .opt-row:nth-of-type(odd) { background: rgba(255,255,255,.022); }
-  .opt-row:hover { background: rgba(120,170,255,.075); }
+    border-bottom: 1px solid var(--border); color: var(--text); }
+  .opt-row:nth-of-type(odd) { background: rgba(11, 31, 63, .035); }
+  .opt-row:hover { background: rgba(11, 31, 63, .07); }
   .opt-row:last-child { border-bottom: none; }
   .opt-label { font-size: 13.5px; line-height: 1.35; min-width: 0; }
   .opt-label small { display: block; color: var(--muted); font-size: 11px;
     margin-top: 3px; line-height: 1.4; }
   /* Section headers: a bar, not just bigger text, so the eye can find the groups. */
   .opt-head { margin: 20px 0 0 0; padding: 8px 14px; font-size: 11.5px; font-weight: 700;
-    letter-spacing: .14em; text-transform: uppercase; color: #cddcf7;
-    background: linear-gradient(90deg, rgba(90,140,220,.28), rgba(90,140,220,.04));
-    border-left: 3px solid #5a8cdc; }
+    letter-spacing: .14em; text-transform: uppercase; color: var(--navy);
+    background: linear-gradient(90deg, rgba(11,31,63,.10), rgba(11,31,63,.01));
+    border-left: 3px solid var(--navy); }
 
   .opt-slider { display: flex; align-items: center; gap: 8px; }
   .opt-slider input[type=range] { width: clamp(90px, 18vw, 180px); }
   .opt-slider button { width: 28px; height: 28px; padding: 0; font-size: 16px;
     line-height: 1; border-radius: 4px; }
   .opt-val { min-width: 58px; text-align: right; font-family: monospace;
-    font-size: 12.5px; color: #dce7fb; }
+    font-size: 12.5px; color: var(--text); }
 
   /* Sliding switch. The native checkbox stays in the DOM for keyboard and forms, but is
      visually replaced, so the control on the right of a row is obviously a switch. */
@@ -326,14 +326,15 @@
     flex: 0 0 auto; }
   .tgl input { position: absolute; opacity: 0; width: 0; height: 0; }
   .tgl span { position: absolute; inset: 0; cursor: pointer; border-radius: 999px;
-    background: #2a3244; border: 1px solid #3b465c; transition: background .15s,
+    background: var(--panel-3); border: 1px solid var(--border); transition: background .15s,
     border-color .15s; }
   .tgl span::after { content: ''; position: absolute; top: 2px; left: 2px; width: 19px;
-    height: 19px; border-radius: 50%; background: #9fb0cc; transition: transform .15s,
-    background .15s; }
-  .tgl input:checked + span { background: #2f8f52; border-color: #46d17f; }
-  .tgl input:checked + span::after { transform: translateX(21px); background: #eafff1; }
-  .tgl input:focus-visible + span { outline: 2px solid #5a8cdc; outline-offset: 2px; }
+    height: 19px; border-radius: 50%; background: #fff;
+    box-shadow: 0 1px 2px rgba(11,31,63,.35);
+    transition: transform .15s, background .15s; }
+  .tgl input:checked + span { background: var(--good); border-color: var(--good); }
+  .tgl input:checked + span::after { transform: translateX(21px); }
+  .tgl input:focus-visible + span { outline: 2px solid var(--navy); outline-offset: 2px; }
 
   @media (max-width: 560px) {
     /* Narrow screens: the control drops under its label, but stays inside the same shaded
@@ -381,27 +382,48 @@
   body.race-wet .race-rain { opacity: 1; }
   .race-rain > i { position: absolute; inset: -30% -30%; display: block;
     will-change: transform; }
-  /* Three sheets of DROPS. repeating-linear-gradient was the wrong tool: it paints bands
-     across the whole layer, so the result was long stripes rather than rain. A tiled
-     background instead — one short, fading streak per tile — gives discrete drops, and
-     rotating the sheet tilts them. Because the rotation comes before the translation, each
-     drop travels along its own long axis, which is what falling rain does.
-     Three incommensurate tile sizes keep the grid from reading as a grid. */
-  .race-rain > i { background-repeat: repeat;
-    background-image: linear-gradient(to bottom,
-      rgba(200,222,255,0) 0%, rgba(200,222,255,.55) 45%, rgba(200,222,255,0) 100%); }
-  .race-rain > i:nth-child(1) { background-size: 1.6px 13px; opacity: .85;
-    animation: race-rain-a .40s linear infinite; }
-  .race-rain > i:nth-child(2) { background-size: 1.3px 19px; opacity: .55;
-    animation: race-rain-b .62s linear infinite; }
-  .race-rain > i:nth-child(3) { background-size: 1.1px 27px; opacity: .32;
-    animation: race-rain-c 1.00s linear infinite; }
-  @keyframes race-rain-a { from { transform: rotate(13deg) translate3d(0, -13px, 0); }
-                           to   { transform: rotate(13deg) translate3d(0, 247px, 0); } }
-  @keyframes race-rain-b { from { transform: rotate(11deg) translate3d(0, -19px, 0); }
-                           to   { transform: rotate(11deg) translate3d(0, 361px, 0); } }
-  @keyframes race-rain-c { from { transform: rotate(9deg)  translate3d(0, -27px, 0); }
-                           to   { transform: rotate(9deg)  translate3d(0, 513px, 0); } }
+  /* Three sheets of DROPS.
+     Two wrong attempts before this one, and the reason is worth recording because it is a
+     units mistake, not a taste one:
+       1. repeating-linear-gradient paints bands across the entire layer -> long stripes.
+       2. A tiled `linear-gradient(to bottom)` with background-size: 1.6px 13px -> still
+          stripes, because background-size is the size of the TILE, not of the drop. A tile
+          1.6px wide means a mark every 1.6px horizontally, i.e. a solid field of lines;
+          about 50% of the area ends up painted.
+     What actually gives drops is a LARGE tile with a SMALL ellipse in it, drawn with a
+     radial-gradient. 0.9 x 7px inside a 24 x 46px cell paints 1.8% of the area instead of
+     50%, which is the difference between rain and hatching. Two gradients per sheet at
+     different offsets break up the grid, and the three sheets use incommensurate cell sizes
+     so their patterns never line up.
+     The rotation stays BEFORE the translation so every drop travels along its own long
+     axis, which is what falling rain does. */
+  .race-rain > i { background-repeat: repeat; }
+  .race-rain > i:nth-child(1) {
+    background-image:
+      radial-gradient(0.9px 7px at 50% 30%, rgba(205,226,255,.80), rgba(205,226,255,0)),
+      radial-gradient(0.8px 6px at 50% 70%, rgba(205,226,255,.55), rgba(205,226,255,0));
+    background-size: 24px 46px, 37px 71px;
+    background-position: 0 0, 11px 23px;
+    animation: race-rain-a .46s linear infinite; }
+  .race-rain > i:nth-child(2) {
+    background-image:
+      radial-gradient(0.8px 9px at 50% 40%, rgba(190,214,250,.55), rgba(190,214,250,0)),
+      radial-gradient(0.7px 7px at 50% 80%, rgba(190,214,250,.38), rgba(190,214,250,0));
+    background-size: 31px 62px, 47px 95px;
+    background-position: 7px 0, 25px 31px;
+    animation: race-rain-b .72s linear infinite; }
+  .race-rain > i:nth-child(3) {
+    background-image:
+      radial-gradient(0.7px 12px at 50% 50%, rgba(175,200,238,.34), rgba(175,200,238,0));
+    background-size: 43px 88px;
+    background-position: 19px 0;
+    animation: race-rain-c 1.15s linear infinite; }
+  @keyframes race-rain-a { from { transform: rotate(13deg) translate3d(0, 0, 0); }
+                           to   { transform: rotate(13deg) translate3d(0, 284px, 0); } }
+  @keyframes race-rain-b { from { transform: rotate(11deg) translate3d(0, 0, 0); }
+                           to   { transform: rotate(11deg) translate3d(0, 380px, 0); } }
+  @keyframes race-rain-c { from { transform: rotate(9deg)  translate3d(0, 0, 0); }
+                           to   { transform: rotate(9deg)  translate3d(0, 528px, 0); } }
   /* A full-screen animation is exactly what this setting exists for. */
   @media (prefers-reduced-motion: reduce) {
     .race-rain > i { animation: none; }
@@ -443,9 +465,9 @@
   /* Key-binding overlay. */
   #help-btn { position: fixed; right: 14px; bottom: 14px; z-index: 60; width: 42px;
     height: 42px; border-radius: 50%; font-size: 19px; font-weight: 700;
-    background: var(--panel-2); color: #cddcf7; border: 1px solid var(--border);
-    cursor: pointer; }
-  body.race-mode #help-btn { display: none; }
+    background: var(--panel-2); color: var(--navy); border: 1px solid var(--border-strong);
+    box-shadow: 0 2px 8px rgba(11,31,63,.22); cursor: pointer; }
+  body.race-fs #help-btn { display: none; }
   #help-panel { position: fixed; inset: 0; z-index: 61; background: rgba(4,6,11,.82);
     display: none; overflow: auto; padding: 24px 14px; }
   #help-panel.on { display: block; }
@@ -453,8 +475,9 @@
     border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; }
   .help-grid { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px;
     font-size: 13px; margin: 8px 0 18px 0; }
-  .help-grid kbd { font-family: monospace; font-size: 12px; background: #1b2231;
-    border: 1px solid #33405a; border-bottom-width: 2px; border-radius: 4px;
+  .help-grid kbd { font-family: monospace; font-size: 12px; background: var(--panel-3);
+    color: var(--navy); border: 1px solid var(--border); border-bottom-width: 2px;
+    border-bottom-color: var(--border-strong); border-radius: 4px;
     padding: 2px 7px; white-space: nowrap; justify-self: start; }
   .race-fs-btn { padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border);
     background: var(--panel-2); color: inherit; font: inherit; cursor: pointer;
@@ -1200,6 +1223,111 @@
         <code>0,16</code> liegt. Das Auto fuhr dort nicht langsam, es zuckte &mdash; dieselbe Totzone
         wie beim Kriechen kurz vor dem Stillstand, nur an anderer Stelle. Der Notlauf hat jetzt eine
         <em>Untergrenze</em> statt nur Multiplikationen nach unten: gemessen <code>0,168</code>.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>Mehrere Autos, Ghosts, Mustererkennung</h2>
+
+      <h3 style="font-size:14px; margin:0 0 6px 0">Garage und Rollen</h3>
+      <p class="muted">
+        Jedes Auto braucht eine eigene Nutzergeste zum Verbinden &mdash; Web Bluetooth
+        verlangt das je <code>requestDevice()</code>, das ist nicht umgehbar. Klick auf eine
+        Zeile l&auml;sst die Lichter <em>dieses</em> Autos blinken (Byte&nbsp;14 wechselweise
+        <code>0x82</code>/<code>0x80</code>), damit Liste und Tisch zuzuordnen sind.
+      </p>
+      <p class="muted">
+        Die Architektur ist <strong>absichtlich unsymmetrisch</strong>. Das Spielerauto
+        beh&auml;lt den bestehenden Pfad vollst&auml;ndig: <code>sendControlValue()</code>,
+        den einen 45-ms-Takt, Optionen, HUD. Dieser Zustand steckt in etwa 20
+        Modulvariablen mit &uuml;ber hundert Verwendungen; ein Umbau auf ein Fahrzeugobjekt
+        h&auml;tte jede davon angefasst. Ghosts sind stattdessen Objekte mit eigener
+        Verbindung, eigener Schreibsperre und <strong>eigener
+        <code>CarreraPhysicsEngine</code>-Instanz</strong>. Letzteres erledigt
+        &bdquo;gleich stark beschleunigen wie das Spielerauto&ldquo; von selbst &mdash;
+        gleiche Klasse, gleiche Kalibrierung &mdash; und bringt Gangschaltung,
+        Byte-Herleitung und Bremslicht mit, statt sie nachzubauen.
+      </p>
+
+      <h3 style="font-size:14px; margin:16px 0 6px 0">Wie ein Ghost f&auml;hrt</h3>
+      <p class="muted">
+        Byte&nbsp;12 sagt <em>Kurve</em>, aber <strong>nicht in welche Richtung</strong>, und
+        das Vorzeichen von Byte&nbsp;3 h&auml;ngt an der Fahrtrichtung &uuml;ber das
+        Streckenteil. Ein falsch geratenes Vorzeichen lenkt den Ghost sofort von der Bahn.
+        Die Richtung kommt deshalb aus dem <strong>Streckenlayout</strong> im Strecke-Tab,
+        wo Links- und Rechtskurven unterschieden sind; Byte&nbsp;11 sagt, auf welchem Teil
+        man ist. <em>Ohne Layout kann ein Ghost nur geradeaus halten</em> und wird an der
+        ersten Kurve von der Abschaltregel gestoppt. Das ist eine echte Grenze, kein Fehler.
+      </p>
+      <div class="doc-table-wrap"><table class="doc-table">
+        <tr><th>Verhalten</th><th>Quelle</th><th>Gemessen</th></tr>
+        <tr><td>Lenkrichtung</td><td>Layout (Links-/Rechtskurve)</td><td>Gerade 0, rechts +112, links &minus;114</td></tr>
+        <tr><td>Lenkfeinkorrektur</td><td>Byte&nbsp;3 (Drehrate)</td><td>Regelverst&auml;rkung noch nicht am Auto kalibriert</td></tr>
+        <tr><td>Kurvendrosselung</td><td>Byte&nbsp;12, mit Layout vorausschauend</td><td>vor der Kurve 0,36 statt 0,55 Solltempo</td></tr>
+        <tr><td>Bremslicht</td><td>Byte&nbsp;14 Bit&nbsp;0</td><td>beim Bremsen <code>0x83</code></td></tr>
+        <tr><td>Abschaltung</td><td>Byte&nbsp;12 = <code>0xff</code> &gt; 1,5&nbsp;s</td><td>Gasbyte exakt 0</td></tr>
+      </table></div>
+      <p class="muted">
+        Die 1,5&nbsp;s sind aus den Mitschnitten begr&uuml;ndet: auf der Strecke folgt Code
+        auf Code ohne <code>0xff</code> dazwischen, und ein Teil liegt 0,4 bis 2,7&nbsp;s
+        unter dem Sensor. L&auml;nger als 1,5&nbsp;s ohne Code hei&szlig;t also wirklich
+        &bdquo;nicht auf der Strecke&ldquo;. <strong>Nur Ghosts halten dann an</strong> &mdash;
+        das vom Spieler gesteuerte Auto f&auml;hrt weiter, wohin gelenkt wird.
+      </p>
+
+      <h3 style="font-size:14px; margin:16px 0 6px 0">Mustercode entprellen</h3>
+      <p class="muted">
+        Zwei Regeln gegen Fehllesungen. <strong>Erstens Best&auml;tigung:</strong> ein Code
+        muss zweimal hintereinander kommen, bevor er geglaubt wird. Das kostet ein Paket
+        Latenz und nichts weiter &mdash; bei 8 bis 60 Paketen je Streckenteil ist eine echte
+        Lesung nie ein Einzelpaket. <strong>Zweitens keine Sofortwiederholung:</strong> nach
+        einem Start/Ziel- oder Boxengassen-Code wird derselbe Code f&uuml;r 1&nbsp;s
+        ignoriert. Vorher war der Teilz&auml;hler der einzige Schutz, und ein stotternder
+        Z&auml;hler ergab Doppelrunden.
+      </p>
+
+      <h3 style="font-size:14px; margin:16px 0 6px 0">Regen und Blitz auf dem Dash</h3>
+      <p class="muted">
+        Bewusst CSS und kein Canvas: ein Canvas mit hunderten Tropfen br&auml;uchte eine
+        rAF-Schleife auf demselben Hauptthread, der alle 45&nbsp;ms das Steuerpaket
+        schreibt &mdash; dort sind die zwei schlimmsten Regressionen dieses Projekts
+        entstanden. Drei Schichten mit <code>translate3d</code> laufen auf der GPU und
+        kosten den Sendetakt nichts.
+      </p>
+      <p class="muted">
+        Zwei Fehlversuche, und der Grund ist ein <em>Einheitenfehler</em>, kein
+        Geschmacksfehler. <code>repeating-linear-gradient</code> malt B&auml;nder &uuml;ber
+        die ganze Fl&auml;che, also Streifen. Der zweite Versuch mit
+        <code>background-size: 1.6px 13px</code> ergab wieder Streifen, weil
+        <code>background-size</code> die <strong>Kachel</strong> bemisst und nicht den
+        Tropfen: eine 1,6&nbsp;px breite Kachel hei&szlig;t ein Strich alle 1,6&nbsp;px, rund
+        50&nbsp;% der Fl&auml;che bemalt. Tropfen entstehen erst durch eine <em>gro&szlig;e</em>
+        Kachel mit einer <em>kleinen</em> Ellipse aus <code>radial-gradient</code>:
+        0,9&times;7&nbsp;px in 24&times;46&nbsp;px bemalt <strong>1,8&nbsp;%</strong> statt
+        50&nbsp;%. Die drei Bl&auml;tter bemalen 1,79&nbsp;%, 1,18&nbsp;% und 0,70&nbsp;%.
+        Die Drehung steht <em>vor</em> der Verschiebung, damit jeder Tropfen entlang seiner
+        eigenen L&auml;ngsachse f&auml;llt.
+      </p>
+      <p class="muted">
+        Der Blitz ist echtes Gamma (<code>feComponentTransfer type="gamma"</code>), nicht
+        <code>brightness()</code>: eine Multiplikation brennt die Lichter aus, Gamma hebt
+        die Mitten und l&auml;sst Schwarz schwarz &mdash; das sieht nach kurzem Fremdlicht
+        aus statt nach Wei&szlig;blitz. Zwei Blitze, der zweite schw&auml;cher, dann der
+        Donner 200&nbsp;ms sp&auml;ter. Der Blitz h&auml;ngt am <strong>Wetter</strong>, nicht
+        an der Lautst&auml;rke: eine stumme Ambience darf kein unsichtbares Gewitter ergeben.
+      </p>
+
+      <h3 style="font-size:14px; margin:16px 0 6px 0">Eine verlorene Formatierung</h3>
+      <p class="muted">
+        Ehrlichkeitsvermerk, weil es erkl&auml;rt, warum das Optionsmen&uuml;
+        l&auml;ngere Zeit unbrauchbar aussah: Commit <code>7cd71e6</code> hat einen
+        CSS-Block zwischen zwei Markern ersetzt und dabei die Regeln f&uuml;r
+        <code>.opt-row</code>, <code>.opt-label</code>, <code>.opt-val</code> und
+        <code>.tgl</code> mitgel&ouml;scht. Markup und JavaScript blieben, deshalb liefen
+        alle Funktionstests weiter durch, w&auml;hrend der Tab gar keine Formatierung
+        hatte &mdash; ohne Zeilenraster stapeln sich Beschriftung und Bedienelement
+        einfach untereinander. Lehre: Tests, die nur Verhalten pr&uuml;fen, bemerken
+        verlorene Darstellung nicht.
       </p>
     </div>
   </section>
