@@ -4529,6 +4529,8 @@
 
   function onPitMarkerCrossed() {
     if (!pitLaneEnabled || pitState !== 'off') return;
+    // Just aborted: do not drag the car straight back in while it is still on the marker.
+    if (Date.now() < pitRearmBlockedUntil) return;
     setPitState('limited');
     showHudToast('Boxengasse — Tempolimit');
   }
@@ -4751,13 +4753,36 @@
   // driving over the marker does, and pitLaneTick() takes it from there:
   //   off --(button)--> limited --(car stops)--> servicing --(drive away)--> off
   // That is how a real pit entry works, and it means one state machine serves both ways in.
+  // Aborting takes TWO presses in quick succession. A single press used to cancel, which
+  // is the wrong default for a button you reach for while driving: one stray press in the
+  // pit lane threw away the stop. Two presses inside the window is a deliberate act.
+  const PIT_CANCEL_WINDOW_MS = 700;
+  // After an abort the pit marker must stay quiet for a moment, or cancelling while still
+  // standing on the marker would immediately re-arm the limiter.
+  const PIT_REARM_BLOCK_MS = 2500;
+  let pitLastPress = 0;
+  let pitRearmBlockedUntil = 0;
+
   function requestPitStop() {
+    const now = Date.now();
+    const doubleTap = now - pitLastPress <= PIT_CANCEL_WINDOW_MS;
+    pitLastPress = now;
+
     if (pitState === 'off') {
       setPitState('limited');
       return;
     }
-    setPitState('off');                      // pressing again waves the car off
-    showHudToast('Boxengasse verlassen');
+    if (!doubleTap) {
+      showHudToast('Nochmal drücken zum Abbrechen');
+      return;
+    }
+    // Abort. Whatever the crew had started is discarded: no fuel, no repair, and stopping
+    // afterwards does nothing, because the state machine is back to off.
+    const wasServicing = pitState === 'servicing';
+    pitRearmBlockedUntil = now + PIT_REARM_BLOCK_MS;
+    setPitState('off');
+    showHudToast(wasServicing ? 'Boxenstopp abgebrochen' : 'Boxengasse abgebrochen');
+    log('Boxenstopp abgebrochen — kein Sprit, keine Reparatur.', 'info');
   }
   $('btn-pitstop').onclick = requestPitStop;
 
