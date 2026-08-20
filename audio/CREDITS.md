@@ -10,11 +10,18 @@ Schlagschrauber, Motorstart, Schaltgeraeusch) sind von Grund auf gerechnet. Es
 wird nichts aus einer Aufnahme abgespielt.
 
 Das Schaltgeraeusch (shift_up.ogg, shift_down.ogg) besteht aus drei getrennt
-platzierten Ereignissen innerhalb von etwa 80 ms: Schaltklaue (unharmonische
-Teiltoene, sehr schnelles Abklingen), Entlueftung des Stellers (hochpassgefiltertes
-Rauschen) und Lastaufnahme im Antriebsstrang (dumpfer Anteil um 128 Hz). Runter-
-schalten sitzt tiefer und entlueftet laenger, weil der Steller gegen Motormoment
-haelt.
+platzierten Ereignissen: mechanischer Eingriff (unharmonische Teiltoene um 410-640
+Hz), Entlueftung des Stellers (tiefpassgefiltertes Rauschen) und Lastaufnahme im
+Antriebsstrang (um 104 Hz) - letztere ist der LAUTESTE Anteil. Runterschalten sitzt
+tiefer und entlueftet laenger, weil der Steller gegen Motormoment haelt.
+
+Die erste Fassung hatte 92 Prozent ihrer Energie unter 500 Hz und klang trotzdem
+nach Klacken. Das zeigt, wo die Ursache liegt: nicht im Spektrum, sondern im
+EINSCHWINGEN. Ein Einsatz, der binnen weniger Abtastwerte die Vollamplitude
+erreicht, wird als Klick gehoert, egal wie wenig Hochtonenergie er traegt. Jeder
+Anteil bekommt daher eine Anstiegszeit von 7-12 ms. Gemessen: Schwerpunkt von 610
+bzw. 1249 Hz auf 106 bzw. 81 Hz, Anteil ueber 2 kHz von 7,4 bzw. 17,5 Prozent auf
+0,01 Prozent, Anstiegszeit auf 25 bzw. 29 ms, Spitzenpegel von 0,80 auf 0,55.
 
 Das Modell folgt dem Ansatz von ange-yaghi/engine-sim (MIT-Lizenz):
 Zuendereignisse als Druckimpulse, gefaltet mit der Resonanz des

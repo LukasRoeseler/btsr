@@ -216,7 +216,7 @@
      brake bias, delta to a reference lap and gaps to other cars; this car has no sensor and
      this app no session for any of them, so those cells are absent rather than filled with
      invented numbers. */
-  .gt3 { background: #05070c; border: 1px solid #232a3a; border-radius: 10px;
+  .gt3 { background: #05070c; border: 0; border-radius: 0;
     padding: clamp(5px, 1vw, 11px); color: #eef2fa; display: grid;
     gap: clamp(4px, .8vw, 9px);
     grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr) minmax(0, 1.15fr);
@@ -239,8 +239,11 @@
   .gt3-strip { grid-area: strip; display: grid; gap: clamp(3px, .7vw, 8px);
     grid-template-columns: repeat(8, minmax(0, 1fr)); }
 
-  /* The captioned box. */
-  .gt3-box { background: #0b0f17; border: 1px solid #2c3547; border-radius: 3px;
+  /* The captioned tile. Square and borderless: the reference dashes separate cells by
+     contrast and spacing alone, and an outline around every cell turns a dash into a
+     spreadsheet. The tile ground is lifted a little instead, so the gap reads as the
+     divider. */
+  .gt3-box { background: #131925; border: 0; border-radius: 0;
     padding: clamp(3px, .7vw, 7px) clamp(4px, .8vw, 8px); min-width: 0; }
   .gt3-lbl { font-size: clamp(7px, 1vw, 9.5px); letter-spacing: .1em;
     text-transform: uppercase; color: #8b99b4; line-height: 1.3; white-space: nowrap;
@@ -260,14 +263,17 @@
     font-size: clamp(9px, 1.2vw, 12px); }
   .gt3-laps li { display: flex; justify-content: space-between; padding: 1px 0;
     border-bottom: 1px solid #1b212e; }
-  .gt3-bar { height: clamp(5px, 1.2vw, 10px); background: #04060b; border-radius: 2px;
+  .gt3-bar { height: clamp(5px, 1.2vw, 10px); background: #04060b; border-radius: 0;
     overflow: hidden; margin-top: 3px; }
   .gt3-bar > i { display: block; height: 100%; width: 0; transition: width .15s linear; }
   .gt3-ok { color: #46d17f; } .gt3-warn { color: #ffb02e; } .gt3-bad { color: #ff5252; }
 
   /* Green headlamp tell-tale: the ISO glyph a real dash uses, so it reads without a caption. */
   .gt3-tell { display: flex; align-items: center; gap: clamp(3px, .7vw, 7px); }
-  .gt3-lamp { width: clamp(17px, 2.9vw, 27px); height: auto; color: #1e2634; }
+  /* The headlamp tell-tale carries no caption: the ISO glyph IS the label, so it gets the
+     whole tile instead of sharing it with a word. */
+  .gt3-lamp { width: 100%; max-width: clamp(38px, 6.5vw, 74px); height: auto;
+    color: #1e2634; display: block; margin: 0 auto; }
   .gt3-lamp.on { color: #2ee06a; filter: drop-shadow(0 0 5px rgba(46,224,106,.75)); }
   .gt3-ico { width: clamp(13px, 2.1vw, 19px); height: auto; color: #9fb0cc; flex: none; }
   .gt3-gplot svg { width: 100%; max-width: clamp(44px, 7vw, 72px); height: auto;
@@ -279,7 +285,7 @@
      not noticing costs a penalty. */
   .gt3-banner { grid-area: banner; display: none; text-align: center;
     background: #b8860b; color: #100c02; font-weight: 800; letter-spacing: .12em;
-    border-radius: 3px; padding: clamp(3px, .8vw, 8px);
+    border-radius: 0; padding: clamp(3px, .8vw, 8px);
     font-size: clamp(11px, 2vw, 20px); font-family: monospace; }
   .gt3-banner.on { display: block; }
 
@@ -306,6 +312,52 @@
   .doc-sure { color: var(--good); font-weight: 600; }
   .doc-guess { color: var(--warn); font-weight: 600; }
   .doc-unknown { color: var(--bad); font-weight: 600; }
+  /* ---- Rain over the racing screen ----
+     Deliberately CSS and not a canvas. A canvas with a few hundred drops needs a
+     requestAnimationFrame loop on the same main thread that writes the control packet every
+     45 ms, and main-thread contention is what caused the two worst regressions in this
+     project (the gamepad cadence and the ABS modulation). Layered gradients moved with
+     translate3d are composited on the GPU and cost the send loop nothing.
+
+     The realism comes from the LAYERS, not from individual drops: three sheets at slightly
+     different angles, speeds, densities and opacities. Different speeds give parallax,
+     which is what the eye reads as depth; slightly different angles stop it looking like a
+     ruled grid. */
+  .race-rain { position: absolute; inset: -20%; pointer-events: none; opacity: 0;
+    transition: opacity .8s ease; overflow: hidden; z-index: 3; }
+  body.race-wet .race-rain { opacity: 1; }
+  .race-rain > i { position: absolute; inset: -30% -30%; display: block;
+    will-change: transform; }
+  /* Front sheet: short, brightest, fastest. */
+  .race-rain > i:nth-child(1) {
+    background: repeating-linear-gradient(105deg,
+      rgba(190,215,255,0) 0 7px, rgba(190,215,255,.34) 7px 8px, rgba(190,215,255,0) 8px 15px);
+    animation: race-rain-a 0.42s linear infinite; }
+  /* Middle sheet. */
+  .race-rain > i:nth-child(2) {
+    background: repeating-linear-gradient(101deg,
+      rgba(170,200,245,0) 0 13px, rgba(170,200,245,.20) 13px 14px, rgba(170,200,245,0) 14px 26px);
+    animation: race-rain-b 0.66s linear infinite; }
+  /* Back sheet: long, palest, slowest — this is the one that creates the depth. */
+  .race-rain > i:nth-child(3) {
+    background: repeating-linear-gradient(98deg,
+      rgba(150,180,225,0) 0 23px, rgba(150,180,225,.12) 23px 24px, rgba(150,180,225,0) 24px 44px);
+    animation: race-rain-c 1.05s linear infinite; }
+  @keyframes race-rain-a { from { transform: translate3d(0,0,0); }
+                           to   { transform: translate3d(-56px, 210px, 0); } }
+  @keyframes race-rain-b { from { transform: translate3d(0,0,0); }
+                           to   { transform: translate3d(-64px, 300px, 0); } }
+  @keyframes race-rain-c { from { transform: translate3d(0,0,0); }
+                           to   { transform: translate3d(-70px, 380px, 0); } }
+  /* A full-screen animation is exactly what this setting exists for. */
+  @media (prefers-reduced-motion: reduce) {
+    .race-rain > i { animation: none; }
+  }
+
+  /* Lightning. NOT a white overlay and NOT brightness(): brightness is a multiplication and
+     blows the highlights out. feComponentTransfer with type="gamma" lifts the midtones and
+     leaves black black, which is what brief outside light actually looks like. */
+  #race-dash.race-flash { filter: url(#race-gamma); }
   .race-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
   .race-fs-btn { padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border);
     background: var(--panel-2); color: inherit; font: inherit; cursor: pointer;
@@ -389,7 +441,17 @@
       <button type="button" id="race-fs-exit" class="race-fs-btn" hidden>Verlassen</button>
       <span class="muted" id="race-rotate">Hochkant &mdash; die Anzeige wird gedreht.</span>
     </div>
-    <div class="gt3" id="race-dash">
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+      <filter id="race-gamma" color-interpolation-filters="sRGB">
+        <feComponentTransfer>
+          <feFuncR type="gamma" exponent="0.55" amplitude="1.18"/>
+          <feFuncG type="gamma" exponent="0.55" amplitude="1.18"/>
+          <feFuncB type="gamma" exponent="0.52" amplitude="1.22"/>
+        </feComponentTransfer>
+      </filter>
+    </svg>
+    <div class="gt3" id="race-dash" style="position:relative">
+      <div class="race-rain" aria-hidden="true"><i></i><i></i><i></i></div>
       <div class="gt3-shift" id="race-shift">
         <span></span><span></span><span></span><span></span><span></span>
         <span></span><span></span><span></span><span></span><span></span>
@@ -433,14 +495,14 @@
         <div class="gt3-box"><svg class="gt3-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-label="Tank"><path d="M4 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16"/><path d="M3 21h13"/><path d="M4 10h10"/><path d="M18 21v-9a3 3 0 0 0-3-3"/><path d="M18 12h2a1 1 0 0 0 1-1V8l-3-3"/></svg>
           <div class="gt3-val sm" id="race-fuel">100%</div>
           <div class="gt3-bar"><i id="race-fuel-bar"></i></div></div>
-        <div class="gt3-box"><svg class="gt3-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-label="Zustand"><path d="M14.7 6.3a3.6 3.6 0 0 0 4.8 4.8l1.9 1.9a1 1 0 0 1 0 1.4l-3.9 3.9a1 1 0 0 1-1.4 0l-1.9-1.9a3.6 3.6 0 0 0-4.8-4.8L7.5 9.7a1 1 0 0 1 0-1.4l3.9-3.9a1 1 0 0 1 1.4 0z"/><path d="M6.8 17.2l-3 3"/></svg>
+        <div class="gt3-box"><svg class="gt3-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-label="Zustand"><path d="M19.3 8.2 L19.2 9.3 L18.8 10.3 L18.0 11.2 L17.1 11.8 L16.0 12.1 L14.9 12.0 L13.9 11.7 L13.0 11.0 L12.3 10.1 L12.0 9.1 L11.9 8.0 L12.2 6.9 L12.8 6.0 L13.7 5.2 L14.7 4.8 L15.8 4.7"/><path d="M13.0 11.0 L8.5 15.5"/></svg>
           <div class="gt3-val sm" id="race-dmg">100%</div>
           <div class="gt3-bar"><i id="race-dmg-bar"></i></div></div>
         <div class="gt3-box"><svg class="gt3-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-label="Akku"><rect x="2" y="7" width="17" height="10" rx="2"/><path d="M22 11v2"/><path d="M6 10v4M9.5 10v4M13 10v4"/></svg>
           <div class="gt3-val sm" id="race-batt">&ndash;</div></div>
-        <div class="gt3-box"><div class="gt3-lbl">Licht</div>
-          <div class="gt3-tell"><svg class="gt3-lamp" id="race-light" viewBox="0 0 30 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-label="Scheinwerfer"><path d="M13 3H8a7 7 0 0 0 0 14h5a7 7 0 0 0 0-14z" fill="currentColor" stroke="none" opacity=".95"/><path d="M18 5h9M18 10h9M18 15h9" stroke-linecap="round"/></svg></div></div>
-        <div class="gt3-box"><div class="gt3-lbl">Wetter</div>
+        <div class="gt3-box" style="display:flex;align-items:center;justify-content:center">
+          <div class="gt3-tell" style="width:100%"><svg class="gt3-lamp" id="race-light" viewBox="0 0 30 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-label="Scheinwerfer"><path d="M13 3H8a7 7 0 0 0 0 14h5a7 7 0 0 0 0-14z" fill="currentColor" stroke="none" opacity=".95"/><path d="M18 5h9M18 10h9M18 15h9" stroke-linecap="round"/></svg></div></div>
+        <div class="gt3-box">
           <div class="gt3-tell"><svg class="gt3-ico" id="race-wx-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-label="Trocken"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.4M12 19.6V22M2 12h2.4M19.6 12H22M4.9 4.9l1.7 1.7M17.4 17.4l1.7 1.7M19.1 4.9l-1.7 1.7M6.6 17.4l-1.7 1.7"/></svg><svg class="gt3-ico" id="race-wx-rain" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-label="Regen" style="display:none"><path d="M6.5 14a4 4 0 0 1 .4-8 5.5 5.5 0 0 1 10.5 1.4A3.6 3.6 0 0 1 17.5 14z"/><path d="M8 17.5l-1 2.5M12 17.5l-1 2.5M16 17.5l-1 2.5"/></svg><span class="gt3-lbl" id="race-tyres">Slicks</span></div></div>
         <div class="gt3-box"><div class="gt3-lbl">Strecke</div>
           <div class="gt3-val sm" id="race-track">&ndash;</div>
@@ -4435,6 +4497,7 @@
     physEngine.config.aquaplaning = (weather === 'rain' && tyres === 'slick') ? 1 : 0;
     setAmbienceRain(weather === 'rain');
     lightFx.rain = (weather === 'rain');   // FIA-style rain light on the rear lamp
+    setRainVisuals(weather === 'rain');
   }
 
   function setWeather(next) {
@@ -4946,7 +5009,7 @@
   // missing, a two-tone stands in rather than nothing happening at all.
   function playShiftSound(direction) {
     const buf = direction >= 0 ? fxBuffers.shift.up : fxBuffers.shift.down;
-    if (playFx(buf, 0.55)) return;
+    if (playFx(buf, 0.35)) return;   // quieter: the shift should be felt, not announced
     const f = direction >= 0 ? 900 : 620;
     playTone(f, 0.05, 'square', 0.06);
     setTimeout(() => playTone(f * 0.6, 0.05, 'triangle', 0.05), 35);
@@ -5068,6 +5131,26 @@
     refreshAmbienceGains();
   });
 
+  // The visual side of the weather. Tied to the WEATHER, not to the volume: muting the
+  // ambience must not also stop the rain from being visible, or a silent storm becomes an
+  // invisible one.
+  function setRainVisuals(on) {
+    document.body.classList.toggle('race-wet', !!on);
+  }
+
+  // Lightning: two flashes, the second weaker, because real strikes usually double up.
+  // Kept very short — 90 ms and 55 ms — so it registers without washing the dash out.
+  function triggerLightning() {
+    const dash = $('race-dash');
+    if (!dash) return;
+    const flash = (ms) => {
+      dash.classList.add('race-flash');
+      setTimeout(() => dash.classList.remove('race-flash'), ms);
+    };
+    flash(90);
+    setTimeout(() => flash(55), 190);
+  }
+
   function setAmbienceRain(on) {
     ambience.rainOn = on;
     refreshAmbienceGains();
@@ -5094,17 +5177,25 @@
 
   function scheduleAmbienceEvent() {
     // Thunder every 20-30s while it rains (user's spec); otherwise a pass-by every 8-25s.
-    const rain = ambience.rainOn && ambience.thunder.length;
-    const wait = rain ? 20000 + Math.random() * 10000 : 8000 + Math.random() * 17000;
+    // Timing follows the WEATHER, not the audio: the storm exists whether or not the
+    // ambience is audible, so the interval must not depend on loaded buffers either.
+    const storm = weather === 'rain';
+    const wait = storm ? 20000 + Math.random() * 10000 : 8000 + Math.random() * 17000;
     setTimeout(() => {
-      if (ambience.ready && ambienceEnabled) {
-        if (ambience.rainOn && ambience.thunder.length) {
-          playAmbienceOneShot(ambience.thunder[Math.floor(Math.random() * ambience.thunder.length)],
-                              0.55 + Math.random() * 0.45, true);
-        } else if (ambience.passby.length) {
-          playAmbienceOneShot(ambience.passby[Math.floor(Math.random() * ambience.passby.length)],
-                              0.35 + Math.random() * 0.45);
+      if (storm) {
+        // Light before sound, the way it actually arrives: the flash fires now, the clap
+        // about 200 ms later. The FLASH is outside the audio gate on purpose — muting the
+        // ambience must not turn the lightning off as well, or a silent storm becomes an
+        // invisible one.
+        triggerLightning();
+        if (ambience.ready && ambienceEnabled && ambience.thunder.length) {
+          const clap = ambience.thunder[Math.floor(Math.random() * ambience.thunder.length)];
+          const gain = 0.55 + Math.random() * 0.45;
+          setTimeout(() => playAmbienceOneShot(clap, gain, true), 200);
         }
+      } else if (ambience.ready && ambienceEnabled && ambience.passby.length) {
+        playAmbienceOneShot(ambience.passby[Math.floor(Math.random() * ambience.passby.length)],
+                            0.35 + Math.random() * 0.45);
       }
       scheduleAmbienceEvent();
     }, wait);

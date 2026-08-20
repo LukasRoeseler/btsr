@@ -1123,11 +1123,11 @@
  "shift": {
   "down": {
    "file": "shift_down.ogg",
-   "seconds": 0.26
+   "seconds": 0.3
   },
   "up": {
    "file": "shift_up.ogg",
-   "seconds": 0.2
+   "seconds": 0.24
   }
  },
  "start": {
