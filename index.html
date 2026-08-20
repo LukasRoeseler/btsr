@@ -283,6 +283,17 @@
 
   /* Full-width banner. Amber, wide, unmissable — the pit limiter is the one state where
      not noticing costs a penalty. */
+  /* Touch controls on the dash. Big enough for a thumb, and they sit in the columns
+     rather than floating, so nothing covers a reading. */
+  .gt3-act { width: 100%; margin-top: 4px; padding: 9px 6px; border: 0; border-radius: 0;
+    background: #1f2a3d; color: #dce7fb; font-weight: 700; font-family: inherit;
+    font-size: clamp(10px, 1.6vw, 14px); letter-spacing: .04em; cursor: pointer;
+    min-height: 40px; }
+  .gt3-act:hover { background: #2b3a55; }
+  .gt3-act.armed { background: #1c7a4d; color: #eafff1; }
+  .gt3-act.warn { background: #b8860b; color: #100c02; }
+  .gt3-click { cursor: pointer; }
+  .gt3-click:hover { background: #1b2231; }
   .gt3-banner { grid-area: banner; display: none; text-align: center;
     background: #b8860b; color: #100c02; font-weight: 800; letter-spacing: .12em;
     border-radius: 0; padding: clamp(3px, .8vw, 8px);
@@ -652,7 +663,8 @@
           <div class="gt3-val sm" id="race-lap-count">0</div></div>
         <div class="gt3-box"><div class="gt3-lbl">ABS</div>
           <div class="gt3-val sm" id="race-abs">0</div></div>
-        <div class="gt3-box"><div class="gt3-lbl">Reifen</div>
+        <button type="button" class="gt3-act" id="race-act-pit">Boxenstopp</button>
+        <div class="gt3-box gt3-click" id="race-tyre-box" title="Reifensimulation an/aus"><div class="gt3-lbl">Reifen</div>
           <div class="gt3-tyre">
             <svg viewBox="0 0 24 24" aria-label="Reifentemperatur">
               <circle cx="12" cy="12" r="10" fill="none" stroke-width="4" id="race-tyre-ring"/>
@@ -679,6 +691,7 @@
         <div class="gt3-box"><div class="gt3-lbl">Beste Zeit</div>
           <div class="gt3-val sm gt3-ok" id="race-lap-best">&ndash;</div>
           <ul class="gt3-laps" id="race-lap-list"></ul></div>
+        <button type="button" class="gt3-act" id="race-act-start">Rennen starten</button>
       </div>
 
       <div class="gt3-strip">
@@ -690,9 +703,9 @@
           <div class="gt3-bar"><i id="race-dmg-bar"></i></div></div>
         <div class="gt3-box"><svg class="gt3-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-label="Akku"><rect x="2" y="7" width="17" height="10" rx="2"/><path d="M22 11v2"/><path d="M6 10v4M9.5 10v4M13 10v4"/></svg>
           <div class="gt3-val sm" id="race-batt">&ndash;</div></div>
-        <div class="gt3-box" style="display:flex;align-items:center;justify-content:center">
+        <div class="gt3-box gt3-click" id="race-light-box" title="Licht an/aus" style="display:flex;align-items:center;justify-content:center">
           <div class="gt3-tell" style="width:100%"><svg class="gt3-lamp" id="race-light" viewBox="0 0 30 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-label="Scheinwerfer"><path d="M13 3H8a7 7 0 0 0 0 14h5a7 7 0 0 0 0-14z" fill="currentColor" stroke="none" opacity=".95"/><path d="M18 5h9M18 10h9M18 15h9" stroke-linecap="round"/></svg></div></div>
-        <div class="gt3-box">
+        <div class="gt3-box gt3-click" id="race-wx-box" title="Wetter umschalten">
           <div class="gt3-tell"><svg class="gt3-ico" id="race-wx-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-label="Trocken"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.4M12 19.6V22M2 12h2.4M19.6 12H22M4.9 4.9l1.7 1.7M17.4 17.4l1.7 1.7M19.1 4.9l-1.7 1.7M6.6 17.4l-1.7 1.7"/></svg><svg class="gt3-ico" id="race-wx-rain" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-label="Regen" style="display:none"><path d="M6.5 14a4 4 0 0 1 .4-8 5.5 5.5 0 0 1 10.5 1.4A3.6 3.6 0 0 1 17.5 14z"/><path d="M8 17.5l-1 2.5M12 17.5l-1 2.5M16 17.5l-1 2.5"/></svg><span class="gt3-lbl" id="race-tyres">Slicks</span></div></div>
         <div class="gt3-box"><div class="gt3-lbl">Strecke</div>
           <div class="gt3-val sm" id="race-track">&ndash;</div>
@@ -1632,26 +1645,51 @@
           <div class="muted" id="race-lap-current-row" style="display:none">Aktuelle Runde: <b id="race-lap-current">-</b></div>
         </div>
       </div>
+      <div class="row" style="margin-top:12px; gap:10px; align-items:flex-end">
+        <div>
+          <label class="small">Modus</label>
+          <select id="race-mode">
+            <option value="endurance" selected>Endurance &mdash; meiste Runden in der Zeit</option>
+            <option value="qualifying">Qualifying &mdash; schnellste Runde in der Zeit</option>
+            <option value="laps">Runden &mdash; wer zuerst die Rundenzahl hat</option>
+          </select>
+        </div>
+        <div>
+          <label class="small"><span id="race-limit-label">Minuten</span></label>
+          <input type="number" id="race-limit" value="2" min="1" max="120" step="1" style="width:80px">
+        </div>
+        <span class="muted" id="race-mode-hint" style="font-size:11.5px"></span>
+      </div>
       <div class="row" style="margin-top:12px; gap:10px">
         <button id="race-start-btn">🏁 Rennen starten</button>
         <button id="race-stop-btn" disabled>Rennen beenden</button>
+        <span class="muted" id="race-clock" style="font-family:monospace"></span>
       </div>
       <p class="muted" style="margin-top:8px; font-size:11.5px">
         Eine Runde zählt, sobald das Auto das Start/Ziel-Muster auf der Strecke überfährt
         (dasselbe Signal, das auch der Streckenscanner ausliest) — kein eigener Sensor in der App.
       </p>
       <div id="race-results" style="display:none; margin-top:14px">
-        <h3 style="margin:0 0 8px 0; font-size:14px">Rundenzeiten (neueste oben)</h3>
-        <div style="max-height:340px; overflow-y:auto; border:1px solid var(--border); border-radius:6px">
+        <h3 style="margin:0 0 8px 0; font-size:14px">Ergebnis &mdash; alle verbundenen Autos</h3>
+        <div class="doc-table-wrap" style="max-height:280px; overflow-y:auto; border:1px solid var(--border); border-radius:6px">
           <table style="width:100%; border-collapse:collapse; font-size:13px">
             <thead>
               <tr style="background:var(--panel-2)">
-                <th style="text-align:left; padding:5px 10px; border-bottom:1px solid var(--border)">Runde</th>
-                <th style="text-align:right; padding:5px 10px; border-bottom:1px solid var(--border)">Zeit</th>
+                <th style="text-align:left; padding:5px 10px; border-bottom:1px solid var(--border)">#</th>
+                <th style="text-align:left; padding:5px 10px; border-bottom:1px solid var(--border)">Auto</th>
+                <th style="text-align:right; padding:5px 10px; border-bottom:1px solid var(--border)">Runden</th>
+                <th style="text-align:right; padding:5px 10px; border-bottom:1px solid var(--border)">Beste</th>
+                <th style="text-align:right; padding:5px 10px; border-bottom:1px solid var(--border)">Mittel</th>
+                <th style="text-align:right; padding:5px 10px; border-bottom:1px solid var(--border)">Schlechteste</th>
+                <th style="text-align:right; padding:5px 10px; border-bottom:1px solid var(--border)">Streuung</th>
               </tr>
             </thead>
             <tbody id="race-results-body"></tbody>
           </table>
+        </div>
+        <h3 style="margin:14px 0 8px 0; font-size:14px">Alle Rundenzeiten</h3>
+        <div class="doc-table-wrap" style="max-height:280px; overflow-y:auto; border:1px solid var(--border); border-radius:6px">
+          <table style="width:100%; border-collapse:collapse; font-size:13px" id="race-results-laps"></table>
         </div>
         <button id="race-export-csv" style="margin-top:10px">Als CSV exportieren</button>
       </div>
@@ -1957,6 +1995,7 @@
         <button id="track-add-right">+ Rechtskurve</button>
         <button id="track-add-left">+ Linkskurve (?)</button>
         <button id="track-add-pit">+ Boxengasse</button>
+        <button id="track-undo">&#8630; Letztes Teil</button>
         <button id="track-clear">Alles löschen</button>
       </div>
       <div class="row" style="margin-top:10px">
@@ -1984,6 +2023,19 @@
         <span class="muted" id="track-line-info"></span>
       </div>
 
+      <div class="row" style="align-items:center; gap:10px; margin-top:12px">
+        <label class="small" style="white-space:nowrap">Kurvenausgang gewichten</label>
+        <input type="range" id="track-exit-bias" min="0" max="1" step="0.05" value="0.6" style="flex:1; max-width:200px">
+        <span class="opt-val" id="track-exit-bias-val">60&nbsp;%</span>
+      </div>
+      <p class="muted" style="font-size:11.5px; margin:2px 0 0 0">
+        0&nbsp;% = reine Kr&uuml;mmungsminimierung, symmetrisch in der Zeit. H&ouml;her zieht
+        die Linie am <b>Kurvenausgang nach au&szlig;en</b> und l&auml;sst sie erst auf der
+        folgenden Gerade zur&uuml;ckdriften &mdash; gewichtet danach, wie viel Gerade
+        tats&auml;chlich folgt. Grund: Tempo am Ausgang wirkt sich auf alles Folgende aus,
+        Tempo am Eingang nur auf die Kurve selbst. Eine <em>Heuristik</em>, keine
+        Rundenzeitoptimierung: die App kann nicht messen, ob das Auto die Linie einh&auml;lt.
+      </p>
       <div class="row" style="align-items:center; gap:8px; margin-top:14px">
         <label class="small" style="white-space:nowrap">Streckencode</label>
         <input type="text" id="track-code" readonly style="flex:1; min-width:120px; font-family:monospace">
@@ -3845,6 +3897,7 @@
     return String(st.currentGear + 1);
   }
 
+
   function updateRaceScreen(st, out) {
     const gearEl = $('race-gear');
     if (!gearEl) return;
@@ -3988,6 +4041,11 @@
     const laps = raceLapTimes.length ? raceLapTimes : dashLapTimes.map((ms, i) => ({ lap: i + 1, ms }));
     const best = laps.length ? Math.min(...laps.map(l => l.ms)) : null;
     $('race-lap-best').textContent = best === null ? '\u2013' : formatLapTime(best);
+    // Mode and remaining time/laps belong on the dash: that is where they are read.
+    const modeEl = $('race-clock');
+    if (modeEl && raceState !== 'racing') {
+      modeEl.textContent = raceState === 'finished' ? 'beendet' : RACE_MODES[raceMode].label;
+    }
     $('race-lap-last').textContent = laps.length
       ? formatLapTime(laps[laps.length - 1].ms) : '\u2013';
     $('race-lap-count').textContent = laps.length;
@@ -4557,6 +4615,10 @@
   // Half the roadway width, derived from the measured 25 cm. Was 13 by guess, which drew
   // the track 12 % too wide.
   const TRACK_HALF_W = (TRACK_WIDTH_CM / 2) * TRACK_UNITS_PER_CM;
+  // Declared HERE, next to the other geometry constants, not down with its slider.
+  // renderTrackPreview() reads it, and that function is called during load; a `let`
+  // further down the file would be in its temporal dead zone and abort the whole IIFE.
+  let idealExitBias = 0.6;
   const TRACK_SAMPLES_PER_TILE = 14;
 
   function trackCenterline(tiles) {
@@ -4613,6 +4675,22 @@
   // the midpoint of its neighbours — along the normal only — is curvature smoothing, and it
   // converges to a minimum-curvature line. Clamped to the roadway on every pass, so the
   // result can never leave the track.
+  // How many tile lengths of NON-curve follow each tile. This is what makes a corner
+  // worth sacrificing: a hairpin onto a long straight is a completely different problem
+  // from one corner in the middle of an esses.
+  function straightAfterPerTile(tiles) {
+    const n = tiles.length;
+    const out = new Array(n).fill(0);
+    const isCurve = (t) => t && (t.type === TILE_TYPE.CURVE_LEFT || t.type === TILE_TYPE.CURVE_RIGHT);
+    for (let i = 0; i < n; i++) {
+      let k = 0;
+      // Wrap around: a closed circuit has no last corner.
+      while (k < n && !isCurve(tiles[(i + 1 + k) % n])) k++;
+      out[i] = k;
+    }
+    return out;
+  }
+
   function idealLine(pts, nrm, opts) {
     const o = opts || {};
     const limit = (o.limit !== undefined ? o.limit : TRACK_HALF_W - 3);
@@ -4631,6 +4709,70 @@
     const closed = o.closed;
     const n = pts.length;
     const alpha = new Array(n).fill(0);
+    // ---- Exit priority, second attempt ----
+    // The first attempt weighted the NEXT neighbour more than the previous one, on the theory
+    // that this shifts the line later through a corner. Measured, it did the opposite of what
+    // was wanted: on the straight after the corner the offset FELL from 5.3 cm to 1.2 cm, so
+    // the line went to the middle. The reason is simple in hindsight — on a straight the
+    // midpoint of the neighbours already lies on the line, so a weighting has almost no
+    // purchase there, and what little it has pulls toward the centre.
+    //
+    // What produces "run wide on the way out" is not a smoothing tweak but an explicit
+    // TARGET: at the exit of a corner that leads onto a straight, the line belongs at the
+    // OUTER edge, and it should only drift back over the following straight. So each point
+    // gets a target offset and a spring toward it, and the curvature smoothing then rounds
+    // the result off.
+    const exitW = Math.max(0, Math.min(1, o.exitBias !== undefined ? o.exitBias : 0.6));
+    const straightAfter = o.straightAfter || [];
+    const tiles = o.tiles || [];
+    // How far through its own tile each point sits, and how many samples that tile has.
+    const perTile = TRACK_SAMPLES_PER_TILE;
+    // For every straight tile: which corner preceded this run, how long the run is, and how
+    // far into it we are. Computed once per render, not per iteration.
+    const straightRun = (() => {
+      const isCurve = (t) => t && (t.type === TILE_TYPE.CURVE_LEFT || t.type === TILE_TYPE.CURVE_RIGHT);
+      const out = new Array(tiles.length).fill(null);
+      let i = 0;
+      while (i < tiles.length) {
+        if (isCurve(tiles[i])) { i++; continue; }
+        let j = i;
+        while (j < tiles.length && !isCurve(tiles[j])) j++;
+        const before = tiles[i - 1];
+        const dir = before && before.type === TILE_TYPE.CURVE_RIGHT ? 1
+                  : before && before.type === TILE_TYPE.CURVE_LEFT ? -1 : 0;
+        for (let k = i; k < j; k++) out[k] = { dir, len: j - i, index: k - i };
+        i = j;
+      }
+      return out;
+    })();
+
+    const target = pts.map((p, i) => {
+      const t = tiles[p.tile];
+      const after = straightAfter[p.tile] !== undefined ? straightAfter[p.tile] : 0;
+      const dir = t && t.type === TILE_TYPE.CURVE_RIGHT ? 1
+                : t && t.type === TILE_TYPE.CURVE_LEFT ? -1 : 0;
+      // The outside of a right-hand corner is to the LEFT of travel, and the normal points
+      // right, so the outer edge is -dir.
+      if (dir !== 0) {
+        const frac = ((i - 1) % perTile) / perTile;          // 0 at entry, 1 at exit
+        if (frac < 0.45) return null;                        // entry is left to the smoother
+        const ramp = (frac - 0.45) / 0.55;
+        const worth = Math.min(1, after / 2);                // no straight after: not worth it
+        return -dir * limit * ramp * worth;
+      }
+      // On a straight: hold the outside where the corner left us and drift back over the
+      // WHOLE run, not over the first tile of it. The first attempt released after ~0.7 of
+      // one tile, so on a four-tile main straight the line was back in the middle almost
+      // immediately - measured 1.0 cm where it should have been near the edge. Carrying
+      // speed out means staying out there while the car accelerates.
+      const run = straightRun[p.tile];
+      if (run && run.dir !== 0 && run.len > 0) {
+        const frac = ((i - 1) % perTile) / perTile;
+        const along = (run.index + frac) / run.len;         // 0 at the corner exit, 1 at the end
+        return -run.dir * limit * Math.max(0, 1 - along);
+      }
+      return null;
+    });
     const at = (i) => {
       const k = closed ? ((i % n) + n) % n : Math.max(0, Math.min(n - 1, i));
       return { x: pts[k].x + nrm[k].x * alpha[k], y: pts[k].y + nrm[k].y * alpha[k] };
@@ -4641,12 +4783,26 @@
       for (let i = 0; i < n; i++) {
         if (!closed && (i === 0 || i === n - 1)) continue;
         const prev = at(i - 1), next = at(i + 1), cur = at(i);
+        // ---- Exit priority ----
+        // Pure curvature minimisation is symmetric in time: it treats the entry and the exit
+        // of a corner as equally valuable. A real lap is not symmetric. Speed carried out of
+        // a corner is multiplied by everything that follows, so a corner onto a long straight
+        // is worth compromising on the way in to be quick on the way out.
+        // Weighting the NEXT neighbour more than the previous one shifts the line later
+        // through the corner: a late apex, running wide on exit. One parameter does it, and
+        // it is scaled by how much straight actually follows.
         const midX = (prev.x + next.x) / 2, midY = (prev.y + next.y) / 2;
         // Only the component along the normal is available to us; the point cannot move
         // along the track, or the sampling would bunch up.
         const d = (midX - cur.x) * nrm[i].x + (midY - cur.y) * nrm[i].y;
         const before = alpha[i];
-        alpha[i] = Math.max(-limit, Math.min(limit, alpha[i] + relax * d));
+        let next2 = alpha[i] + relax * d;
+        // Spring toward the exit target where one exists. Strength scales with the setting,
+        // so 0 leaves pure curvature minimisation untouched.
+        if (target[i] !== null && exitW > 0) {
+          next2 += exitW * 0.30 * (target[i] - alpha[i]);
+        }
+        alpha[i] = Math.max(-limit, Math.min(limit, next2));
         moved = Math.max(moved, Math.abs(alpha[i] - before));
       }
       if (moved === 0) break;   // nothing left to move at all
@@ -4860,7 +5016,8 @@
       });
 
       // 5) The ideal line, from the same geometry.
-      const line = idealLine(pts, nrm, { closed });
+      const line = idealLine(pts, nrm, { closed, exitBias: idealExitBias, tiles,
+                                         straightAfter: straightAfterPerTile(tiles) });
       const ideal = pts.map((p, i) => [p.x + nrm[i].x * line.alpha[i],
                                        p.y + nrm[i].y * line.alpha[i]]);
       body += `<path d="${poly(ideal)}" fill="none" stroke="#ffd23f" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="9 5" opacity=".95"/>`;
@@ -4990,6 +5147,19 @@
   $('track-add-right').onclick = () => addTile(TILE_TYPE.CURVE_RIGHT);
   $('track-add-left').onclick = () => addTile(TILE_TYPE.CURVE_LEFT);
   $('track-add-pit').onclick = () => addTile(TILE_TYPE.PIT);
+  $('track-exit-bias').addEventListener('input', (e) => {
+    idealExitBias = parseFloat(e.target.value);
+    $('track-exit-bias-val').textContent = Math.round(idealExitBias * 100) + ' %';
+    refreshTrackPreview();
+  });
+
+  $('track-undo').onclick = () => {
+    // The first tile is the start/finish anchor and is not removable — the lap counting
+    // depends on it existing.
+    if (currentTrackTiles.length <= 1) { showHudToast('Nichts zu entfernen'); return; }
+    currentTrackTiles.pop();
+    refreshTrackPreview();
+  };
   $('track-clear').onclick = () => { currentTrackTiles = freshTrackTiles(); refreshTrackPreview(); };
 
   function rotateTrack(deltaDeg) {
@@ -5157,6 +5327,90 @@
   let raceLapTimes = []; // [{lap, ms}], oldest first; rendered newest-first
   let raceCountdownTimer = null;
 
+  // ---- Race modes ----
+  // All three end the same way: the race goes to 'finishing' and the CURRENT lap is allowed
+  // to complete before the flag. A race that stops mid-lap would throw away a lap somebody
+  // has already half driven.
+  const RACE_MODES = {
+    endurance:  { label: 'Endurance', unit: 'Minuten', hint: 'Wer in der Zeit die meisten Runden fährt.' },
+    qualifying: { label: 'Qualifying', unit: 'Minuten', hint: 'Wer in der Zeit die schnellste Einzelrunde fährt.' },
+    laps:       { label: 'Runden', unit: 'Runden', hint: 'Wer die Rundenzahl zuerst erreicht.' },
+  };
+  let raceMode = 'endurance';
+  let raceLimit = 2;              // minutes, or laps in 'laps' mode
+  let raceStartedAt = null;
+  let raceClockTimer = null;
+
+  function raceLimitReached() {
+    if (raceState !== 'racing') return false;
+    if (raceMode === 'laps') {
+      return raceAllCars().some(c => c.laps.length >= raceLimit);
+    }
+    return raceStartedAt !== null && (Date.now() - raceStartedAt) >= raceLimit * 60000;
+  }
+
+  function raceClockTick() {
+    if (raceState !== 'racing') return;
+    const el = $('race-clock');
+    if (el) {
+      if (raceMode === 'laps') {
+        const best = Math.max(0, ...raceAllCars().map(c => c.laps.length));
+        el.textContent = `Runde ${best} / ${raceLimit}`;
+      } else {
+        const left = Math.max(0, raceLimit * 60000 - (Date.now() - raceStartedAt));
+        el.textContent = formatLapTime(left) + ' übrig';
+      }
+    }
+    if (raceLimitReached()) {
+      raceState = 'finishing';
+      $('race-status').textContent = 'Zeit/Runden erreicht — laufende Runde zählt noch';
+      showHudToast('Letzte Runde');
+    }
+  }
+
+  // ---- Per-car lap recording ----
+  // Same two guards as the dashboard: a code must be seen twice before it is believed, and
+  // an immediate repeat of start/finish is ignored. Without them a stuttering counter
+  // produces phantom laps, and here it would corrupt the results table of every car.
+  function carRaceNotify(car, b) {
+    if (!car.race) car.race = { laps: [], lapStart: null, pending: null, seen: 0,
+                                lastActed: 0, lastCount: null };
+    const r = car.race;
+    const code = b[12], count = b[11];
+    if (code !== r.pending) { r.pending = code; r.seen = 1; return; }
+    if (++r.seen < 2) return;
+    if (r.lastCount === null) { r.lastCount = count; return; }
+    if (count === r.lastCount) return;
+    r.lastCount = count;
+    if (code !== TILE_TYPE.START) return;
+    const now = Date.now();
+    if (now - r.lastActed < TILE_REPEAT_BLOCK_MS) return;
+    r.lastActed = now;
+    if (raceState !== 'racing' && raceState !== 'finishing') { r.lapStart = now; return; }
+    if (r.lapStart !== null) r.laps.push({ lap: r.laps.length + 1, ms: now - r.lapStart });
+    r.lapStart = now;
+  }
+
+  // Every car that was connected when the race started, plus the player's own lap list so a
+  // session without the Garage still produces a table.
+  function raceAllCars() {
+    const out = garage.map(c => ({ name: garageLabel(c), role: c.role,
+                                   laps: (c.race && c.race.laps) || [] }));
+    if (!garage.some(c => c === playerCar) && raceLapTimes.length) {
+      out.unshift({ name: 'Spielerauto', role: 'player', laps: raceLapTimes });
+    }
+    return out;
+  }
+
+  function raceStats(laps) {
+    if (!laps.length) return null;
+    const ms = laps.map(l => l.ms);
+    const best = Math.min(...ms), worst = Math.max(...ms);
+    const mean = ms.reduce((a, b) => a + b, 0) / ms.length;
+    const sd = Math.sqrt(ms.reduce((a, b) => a + (b - mean) ** 2, 0) / ms.length);
+    return { n: ms.length, best, worst, mean, sd, total: ms.reduce((a, b) => a + b, 0) };
+  }
+
   // Generic short tone for the countdown lights, distinct from the mellow finish-line
   // chime below (this one is meant to sound crisp/urgent, like a starting signal).
   function playTone(freq, dur, type, gainPeak) {
@@ -5205,17 +5459,64 @@
     for (let i = 1; i <= step; i++) $(`race-light-${i}`).classList.add('on-red');
   }
 
+  // Results for EVERY car that was connected, which is what was asked for and what did not
+  // exist: the old table held only the player's laps.
   function renderRaceResults() {
-    const rows = raceLapTimes.slice().reverse(); // newest first, per spec
-    $('race-results-body').innerHTML = rows.map(l =>
-      `<tr><td style="padding:5px 10px">${l.lap}</td><td style="padding:5px 10px; text-align:right; font-family:monospace">${formatLapTime(l.ms)}</td></tr>`
-    ).join('');
+    const cars = raceAllCars().filter(c => c.laps.length);
+    const td = 'padding:5px 10px';
+    const tdr = td + '; text-align:right; font-family:monospace';
+
+    if (!cars.length) {
+      $('race-results-body').innerHTML =
+        `<tr><td colspan="7" style="${td}" class="muted">Keine Runden aufgezeichnet.</td></tr>`;
+      return;
+    }
+
+    // Ranking depends on the mode. Endurance and Runden: most laps, then quickest to get
+    // there. Qualifying: the single fastest lap, nothing else.
+    const scored = cars.map(c => ({ c, st: raceStats(c.laps) }));
+    scored.sort((a, b) => raceMode === 'qualifying'
+      ? a.st.best - b.st.best
+      : (b.st.n - a.st.n) || (a.st.total - b.st.total));
+
+    const fastest = Math.min(...scored.map(x => x.st.best));
+    $('race-results-body').innerHTML = scored.map((x, i) => {
+      const st = x.st, isBest = st.best === fastest;
+      return `<tr>
+        <td style="${td}">${i + 1}</td>
+        <td style="${td}">${x.c.name}${x.c.role === 'ghost' ? ' <span class="muted">(Ghost)</span>' : ''}</td>
+        <td style="${tdr}">${st.n}</td>
+        <td style="${tdr}${isBest ? '; color:var(--good); font-weight:700' : ''}">${formatLapTime(st.best)}</td>
+        <td style="${tdr}">${formatLapTime(Math.round(st.mean))}</td>
+        <td style="${tdr}">${formatLapTime(st.worst)}</td>
+        <td style="${tdr}">${(st.sd / 1000).toFixed(2)} s</td>
+      </tr>`;
+    }).join('');
+
+    // Every individual lap underneath, so nothing is hidden behind an average.
+    const detail = $('race-results-laps');
+    if (detail) {
+      const maxLaps = Math.max(...cars.map(c => c.laps.length));
+      const head = '<tr style="background:var(--panel-2)"><th style="' + td + '">Runde</th>'
+        + cars.map(c => `<th style="${tdr}">${c.name}</th>`).join('') + '</tr>';
+      let body = '';
+      for (let k = 0; k < maxLaps; k++) {
+        body += `<tr><td style="${td}">${k + 1}</td>`
+          + cars.map(c => `<td style="${tdr}">${c.laps[k] ? formatLapTime(c.laps[k].ms) : '–'}</td>`).join('')
+          + '</tr>';
+      }
+      detail.innerHTML = head + body;
+    }
   }
 
   function startRaceCountdown() {
     // launchGhosts() is called from the green-light step below, not here.
     if (raceState !== 'idle' && raceState !== 'finished') return; // ignore while armed/racing
     resetTyres();   // a race starts on cold tyres, same as leaving the pits
+    // Everyone starts from zero, including cars with no role: they still cross the line and
+    // their times belong in the table.
+    garage.forEach(c => { c.race = { laps: [], lapStart: null, pending: null, seen: 0,
+                                     lastActed: 0, lastCount: null }; });
     raceLapTimes = [];
     raceLapStart = null;
     $('race-results').style.display = 'none';
@@ -5241,7 +5542,10 @@
         raceState = 'racing';
         raceLapStart = Date.now();
         launchGhosts();   // green means green for everyone
-        $('race-status').textContent = 'Rennen läuft — Runde 1';
+        raceStartedAt = Date.now();
+        if (raceClockTimer) clearInterval(raceClockTimer);
+        raceClockTimer = setInterval(raceClockTick, 250);
+        $('race-status').textContent = `${RACE_MODES[raceMode].label} läuft`;
         $('race-stop-btn').disabled = false;
         setTimeout(() => setRaceLights(0), 900);
       }
@@ -5258,6 +5562,8 @@
 
   function finishRace() {
     raceState = 'finished';
+    if (raceClockTimer) { clearInterval(raceClockTimer); raceClockTimer = null; }
+    raceStartedAt = null;
     // Chequered flag: the ghosts stop too, and their lights go back to plain headlights.
     garage.forEach(c => { if (c.role === 'ghost') stopGhost(c); });
     $('race-status').textContent = `Beendet (${raceLapTimes.length} Runde${raceLapTimes.length === 1 ? '' : 'n'})`;
@@ -5267,20 +5573,118 @@
     renderRaceResults();
   }
 
+  // ---- Race mode selector ----
+  function applyRaceModeUi() {
+    const m = RACE_MODES[raceMode];
+    $('race-limit-label').textContent = m.unit;
+    $('race-mode-hint').textContent = m.hint;
+    $('race-start-btn').textContent = `\u{1F3C1} ${m.label} starten`;
+  }
+  $('race-mode').addEventListener('change', (e) => {
+    raceMode = e.target.value;
+    // Sensible default per mode rather than carrying a minute count over into a lap count.
+    raceLimit = raceMode === 'laps' ? 10 : 2;
+    $('race-limit').value = raceLimit;
+    applyRaceModeUi();
+  });
+  $('race-limit').addEventListener('input', (e) => {
+    const v = parseInt(e.target.value, 10);
+    if (Number.isFinite(v) && v >= 1) raceLimit = v;
+  });
+  applyRaceModeUi();
+
+  // ---- Touch controls on the racing screen ----
+  // Everything reachable from the pad or the keyboard should also be reachable with a
+  // thumb: on a phone clipped to a wheel there is no keyboard and possibly no pad.
+  $('race-act-start').onclick = () => {
+    if (raceState === 'racing' || raceState === 'countdown') {
+      // Abort outright, which is NOT the same as requestRaceStop(): that one lets the
+      // current lap finish. A button labelled "abbrechen" has to mean stop now.
+      raceState = 'finished';
+      if (raceClockTimer) { clearInterval(raceClockTimer); raceClockTimer = null; }
+      if (raceCountdownTimer) { clearInterval(raceCountdownTimer); raceCountdownTimer = null; }
+      setRaceLights(0);
+      garage.forEach(c => { if (c.role === 'ghost') stopGhost(c); });
+      $('race-status').textContent = 'Abgebrochen';
+      $('race-start-btn').disabled = false;
+      $('race-stop-btn').disabled = true;
+      renderRaceResults();
+      $('race-results').style.display = '';
+      showHudToast('Rennen abgebrochen');
+    } else {
+      startRaceCountdown();
+    }
+    updateRaceActButtons();
+  };
+
+  $('race-act-pit').onclick = () => { requestPitStop(); updateRaceActButtons(); };
+
+  $('race-light-box').onclick = () => {
+    headlightsOn = !headlightsOn;
+    const cb = $('dash-head-toggle');
+    if (cb) cb.checked = headlightsOn;
+    showHudToast(headlightsOn ? 'Licht an' : 'Licht aus');
+  };
+
+  $('race-wx-box').onclick = () => setWeather(weather === 'rain' ? 'dry' : 'rain');
+
+  $('race-tyre-box').onclick = () => {
+    // Toggle between off and the last non-zero setting, so a click does not lose the value
+    // that was dialled in on the slider.
+    const input = $('setting-tyres');
+    const cur = physEngine.config.tyreEffect;
+    const restore = tyreLastNonZero || 1;
+    const next = cur === 0 ? restore : 0;
+    if (cur !== 0) tyreLastNonZero = cur;
+    input.value = next;
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    showHudToast(next === 0 ? 'Reifensimulation aus' : `Reifensimulation ${Math.round(next * 100)} %`);
+  };
+  let tyreLastNonZero = 0;
+
+  function updateRaceActButtons() {
+    const a = $('race-act-start');
+    if (a) {
+      const live = raceState === 'racing' || raceState === 'countdown' || raceState === 'finishing';
+      a.textContent = live ? 'Rennen abbrechen' : 'Rennen starten';
+      a.classList.toggle('warn', live);
+    }
+    const p = $('race-act-pit');
+    if (p) {
+      p.textContent = pitState === 'off' ? 'Boxenstopp'
+                    : pitState === 'limited' ? 'Limiter aktiv \u00b7 2\u00d7 = Abbruch'
+                    : 'Service \u00b7 2\u00d7 = Abbruch';
+      p.classList.toggle('armed', pitState !== 'off');
+    }
+  }
+  setInterval(updateRaceActButtons, 400);
+
   $('race-start-btn').onclick = startRaceCountdown;
   $('race-stop-btn').onclick = requestRaceStop;
   $('race-export-csv').onclick = () => {
     // Semicolon delimiter + comma decimals: opens directly (no import wizard) in a
     // German-locale Excel, which is the overwhelmingly likely consumer here.
-    const header = 'Runde;Zeit (s)';
-    const lines = raceLapTimes.map(l => `${l.lap};${(l.ms / 1000).toFixed(3).replace('.', ',')}`);
+    // All cars, not just the player's: the table shows every connected car, and an export
+    // that silently held less than the screen would be worse than none.
+    const cars = raceAllCars().filter(c => c.laps.length);
+    const num = (ms) => (ms / 1000).toFixed(3).replace('.', ',');
+    const header = 'Auto;Rolle;Runde;Zeit (s)';
+    const lines = [];
+    cars.forEach(c => c.laps.forEach(l =>
+      lines.push(`${c.name};${c.role || '-'};${l.lap};${num(l.ms)}`)));
+    // Summary block underneath, matching the statistics column for column.
+    lines.push('');
+    lines.push('Auto;Runden;Beste (s);Mittel (s);Schlechteste (s);Streuung (s)');
+    cars.forEach(c => { const st = raceStats(c.laps);
+      lines.push(`${c.name};${st.n};${num(st.best)};${num(Math.round(st.mean))};`
+               + `${num(st.worst)};${num(Math.round(st.sd))}`); });
     const csv = [header, ...lines].join('\r\n') + '\r\n';
     const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
     const a = document.createElement('a');
     a.href = url;
-    a.download = `rundenzeiten-${stamp}.csv`;
+    a.download = `rennergebnis-${stamp}.csv`;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -5288,7 +5692,10 @@
   };
 
   function dashboardNotifyHandler(e) {
-    const bytes = new Uint8Array(e.target.value.buffer);
+    handleDashboardBytes(new Uint8Array(e.target.value.buffer));
+  }
+
+  function handleDashboardBytes(bytes) {
     recNotify(bytes);
     dashBattery = bytes[10];
     $('dash-battery').textContent = `${batteryPercent(dashBattery)}% (roh ${dashBattery})`;
@@ -6696,6 +7103,13 @@
     const b = new Uint8Array(e.target.value.buffer);
     if (b.length < 16) return;
     recNotify(b, garageLabel(car));
+    // Lap timing for EVERY connected car, whatever its role: the start/finish code arrives
+    // on its own notify stream, so there is no reason to only count the player's laps.
+    carRaceNotify(car, b);
+    // The player's car also drives the dashboard. Without this a car connected through the
+    // Garage alone had no telemetry at all, because the dashboard subscription hangs off
+    // the BLE explorer's discovery, which the Garage does not use.
+    if (car === playerCar) handleDashboardBytes(b);
     const code = b[12];
     if (code !== 0xff) car.lastCodeAt = Date.now();
     if (code !== car.tileCode) { car.tileCode = code; }
