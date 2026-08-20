@@ -1404,81 +1404,115 @@
     </div>
 
     <div class="card">
-      <h2>Leitplanken-Modus &mdash; und warum die Ghosts nur Gas brauchen</h2>
+      <h2>Leitplanken-Modus: das Auto lenkt, die App sagt ihm was kommt</h2>
       <p class="muted">
-        Der Mitschnitt vom 20.08. (1,9&nbsp;MB, 46&nbsp;min, 1268 Sendungen, 1260 Meldungen) ist
-        der erste, in dem der Streckencode-Strom reichlich fliesst. Er kl&auml;rt drei Fragen und
-        beendet eine vierte.
+        Der Mitschnitt vom 20.08. ist der erste mit reichlich Streckencodes. Er
+        enth&auml;lt <b>67&nbsp;Sekunden</b> Verkehr zum Auto (2528 Datens&auml;tze); die
+        2755&nbsp;s Spanne der Datei geh&ouml;ren zum gesamten Bluetooth-Verkehr des Telefons,
+        19&nbsp;873 Datens&auml;tze. Der Leitplanken-Modus war darin nur die <b>zweite
+        H&auml;lfte</b> eingeschaltet, und genau diese Trennung macht die Auswertung erst
+        brauchbar.
       </p>
 
-      <h3 style="font-size:14px; margin:16px 0 6px 0">Die Mustercodes sind entschl&uuml;sselt</h3>
+      <h3 style="font-size:14px; margin:16px 0 6px 0">Der Schalter: Byte&nbsp;14, Bit&nbsp;5</h3>
       <p class="muted">
-        Die gelesene Codefolge auf der Bahn lautet
-        <code>04 02 02 04 &middot; 04 02 02 04 &middot; 04 02 02 04 &middot; 01</code> auf einer
-        Strecke aus <code>S R2 G2 R2 G</code>. Kurve, Gerade, Gerade, Kurve &mdash; das passt
-        genau, und damit ist <b><code>0x04</code> = Kurve</b> und <b><code>0x02</code> =
-        Gerade</b>, <code>0x01</code> = Start/Ziel wie bisher.
-      </p>
-      <p class="muted">
-        Neu ist <b><code>0x00</code> = abseits der Bahn</b>. Bei jeder Abfahrt stand dieser Code
-        an, begleitet von einem durchdrehenden Teilz&auml;hler (6&rarr;8&rarr;9&rarr;15&rarr;18
-        innerhalb von drei Sekunden); 16 von 38 Teilwechseln der Sitzung waren dieser Art. Das
-        ist ein <em>sofortiges</em> Signal und ersetzt die vorher gesch&auml;tzte
-        1,5-Sekunden-Wartezeit auf <code>0xff</code> als Haupterkennung. Die Wartezeit bleibt
-        nur als Auffangnetz f&uuml;r den Fall, dass gar keine Meldungen mehr kommen &mdash; das
-        kann <code>0x00</code> nicht abdecken.
+        Bei <b>37,8&nbsp;s</b> springt Byte&nbsp;14 von <code>0x02</code> auf <code>0x22</code>
+        und bleibt so bis zum Ende. Im <em>selben</em> Paket werden <b>Bytes&nbsp;16&ndash;18
+        erstmals ungleich null</b> &mdash; 552 Pakete, beide Merkmale auf die Millisekunde
+        deckungsgleich, und in keinem anderen Mitschnitt vorhanden. Es ist also ein Merkmal,
+        nicht zwei.
       </p>
 
-      <h3 style="font-size:14px; margin:16px 0 6px 0">Das Auto h&auml;lt sich selbst auf der Bahn</h3>
+      <h3 style="font-size:14px; margin:16px 0 6px 0">Bytes 16&ndash;18: die n&auml;chsten drei Streckenteile</h3>
+      <p class="muted">
+        Ihre Werte sind ausschlie&szlig;lich <code>{1,&nbsp;2,&nbsp;4}</code> &mdash; das
+        Alphabet der Streckencodes. Alle neun beobachteten Fenster sind aufeinanderfolgende
+        Tripel <em>eines</em> Rings:
+      </p>
       <div class="doc-table-wrap"><table class="doc-table">
-        <tr><th>Streckenteil-Wechsel</th><th>mittlerer |Lenkwert| davor</th><th>ohne Lenkbefehl</th></tr>
-        <tr><td>auf der Bahn</td><td>30,4</td><td><b>40,9&nbsp;%</b></td></tr>
-        <tr><td>Code <code>0x00</code> (Abfahrt)</td><td>52,7</td><td>12,5&nbsp;%</td></tr>
+        <tr><th>Ring aus dem Vorausblick</th><th colspan="5">Start &rarr; Kurve &rarr; Kurve &rarr; Gerade &rarr; Gerade &rarr; Kurve</th></tr>
+        <tr><td>gesendete Fenster</td><td><code>1,4,4</code></td><td><code>4,2,2</code></td>
+            <td><code>2,2,4</code></td><td><code>2,4,1</code></td><td><code>4,1,4</code></td></tr>
       </table></div>
       <p class="muted">
-        41&nbsp;% der Teilwechsel auf der Bahn passierten <em>ohne jeden Lenkbefehl</em> &mdash;
-        auf einer Strecke mit vier Kurven. Und die Abfahrten folgten auf <b>mehr</b> Lenken, nicht
-        weniger. Das Lenken des Fahrers war die Ursache der Abfl&uuml;ge, nicht das Mittel dagegen.
-      </p>
-      <p class="muted">
-        Daraus folgt der ganze Ghost-Entwurf: <strong>ein Ghost sendet Lenkwert 0 und regelt nur
-        das Tempo.</strong> Kein Streckenlayout n&ouml;tig, kein Drehratenregler, keine blinde
-        Querf&uuml;hrung. Das ist einfacher <em>und</em> belastbarer als alles, was vorher geplant
-        war &mdash; der vorherige Entwurf musste die Kurvenrichtung aus dem Layout raten, weil
-        Byte&nbsp;12 nur &bdquo;Kurve&ldquo; sagt und nicht wohin.
+        Das Fenster r&uuml;ckt bei jedem Streckenteil weiter (38,6&nbsp;s, 45,0&nbsp;s,
+        47,7&nbsp;s &mdash; genau die gemeldeten Codewechsel). Zuf&auml;llig w&auml;re dieses
+        Muster mit Wahrscheinlichkeit <b>1,3&nbsp;&middot;&nbsp;10<sup>&minus;6</sup></b>.
+        <strong>Die App schickt dem Auto also die n&auml;chsten drei Streckenteile</strong> aus
+        dem eingescannten Layout.
       </p>
 
-      <h3 style="font-size:14px; margin:16px 0 6px 0">Die Modus-Bytes</h3>
+      <h3 style="font-size:14px; margin:16px 0 6px 0">Damit l&ouml;st sich der Widerspruch auf</h3>
       <p class="muted">
-        In dieser Sitzung sendete die Original-App durchg&auml;ngig <b>Byte&nbsp;10 =
-        <code>0x30</code></b> (wir hatten immer nur <code>0x60</code> gesendet) und
-        <b>Byte&nbsp;14 mit gel&ouml;schtem Bit&nbsp;7</b> (<code>0x02</code>/<code>0x22</code>,
-        beim Bremsen <code>0x03</code>/<code>0x23</code>), w&auml;hrend wir Bit&nbsp;7 immer
-        setzen. Ghosts senden jetzt genau diese Werte.
+        &bdquo;Es gibt keine Querablage&ldquo; galt immer nur f&uuml;r das <em>Funkpaket</em>,
+        nicht f&uuml;r das Auto. Das Telefon muss die Querlage nie erfahren, weil das Telefon
+        nicht lenkt: das Auto liest das Muster unter dem eigenen Sensor, wei&szlig; aus dem
+        Vorausblick, ob eine Kurve kommt, und korrigiert an Ort und Stelle. &Uuml;ber Funk
+        w&auml;re das ohnehin unm&ouml;glich &mdash; es meldet nur mit <b>14,6&nbsp;Hz</b>
+        (Median 69&nbsp;ms), und unsere Sendeschleife l&auml;uft mit 45&nbsp;ms. Die
+        Information flie&szlig;t in die andere Richtung als zuerst gesucht: nicht die Position
+        zur App, sondern das <em>Layout</em> zum Auto.
       </p>
       <p class="muted">
-        <b>Was noch offen ist:</b> welches der beiden Bytes den Modus tats&auml;chlich schaltet.
-        Beide Werte sind in unseren eigenen sieben Aufnahmen nie vorgekommen, und in denen hat das
-        Auto <em>keinen einzigen</em> Code gemeldet &mdash; das ist der plausibelste Grund
-        daf&uuml;r, aber bewiesen ist er nicht. Die Paketvarianten-Probe im Entwickler-Tab
-        entscheidet das in zwei Minuten; die drei neuen Schaltfl&auml;chen dort senden genau
-        diese Kombinationen.
+        Das erkl&auml;rt auch die <b>Dreiecke auf der Bahn</b>. Das Protokoll kennt vier Codes
+        (<code>0x01</code> Start, <code>0x02</code> Gerade, <code>0x04</code> Kurve,
+        <code>0x00</code> abseits). Vier Symbole brauchen kein Dreieck, daf&uuml;r
+        gen&uuml;gen Striche. Ein Keil dagegen &uuml;bersetzt <em>Querposition in Zeit</em>: die
+        L&auml;nge der Marke in Fahrtrichtung h&auml;ngt davon ab, wo quer der Sensor sie
+        kreuzt &mdash; an der Basis lang, an der Spitze kurz. Ein Keil allein verwechselt
+        Position mit Geschwindigkeit; ein Keil neben einem gleich breiten Strich hebt das auf,
+        weil nur noch das <em>Verh&auml;ltnis</em> z&auml;hlt.
+        <b>Das ist ein Schluss aus der Geometrie, nicht aus dem Funkverkehr</b> &mdash; der
+        Zwischenwert wird nie gesendet. Ein Foto einer Kachel von oben w&uuml;rde es
+        best&auml;tigen: steht neben dem Dreieck ein Strich konstanter Breite, ist die
+        Verh&auml;ltnismessung so gut wie sicher.
       </p>
 
-      <h3 style="font-size:14px; margin:16px 0 6px 0">Endg&uuml;ltig: es gibt keine Querablage</h3>
+      <h3 style="font-size:14px; margin:16px 0 6px 0">Wirkt es? Die zwei H&auml;lften im Vergleich</h3>
+      <div class="doc-table-wrap"><table class="doc-table">
+        <tr><th></th><th>ohne Leitplanke<br><small>0&ndash;37,8&nbsp;s</small></th>
+            <th>mit Leitplanke<br><small>37,8&ndash;67,2&nbsp;s</small></th></tr>
+        <tr><td>Zeit abseits der Bahn</td><td>18,2&nbsp;%</td><td><b>3,1&nbsp;%</b></td></tr>
+        <tr><td>Abfl&uuml;ge</td><td>13 &mdash; einer je 2,9&nbsp;s</td><td>3 &mdash; einer je 9,8&nbsp;s</td></tr>
+        <tr><td>mittl. |Lenkwert| beim Abflug</td><td>63,0</td><td>119,7 von 127</td></tr>
+        <tr><td>Teilwechsel ohne Lenkbefehl</td><td>61,5&nbsp;% <small>(n=13)</small></td><td>75,0&nbsp;% <small>(n=8)</small></td></tr>
+      </table></div>
       <p class="muted">
-        Sieben Telemetrie-Aufnahmen mit gezielten Fahrten am linken Rand und mittig, je rund 300
-        Fahrpakete: alle Effektst&auml;rken |d|&nbsp;&lt;&nbsp;0,2 f&uuml;r Byte&nbsp;1, 2 und 3.
-        Im Leitplanken-Mitschnitt zus&auml;tzlich gepr&uuml;ft &mdash; Byte&nbsp;2 trennt nicht nach
-        dem Leitplanken-Bit und korreliert nicht mit dem Lenkwert (r&nbsp;=&nbsp;&minus;0,07), und
-        Byte&nbsp;12 ist je Streckenteil konstant (0 von 38 Z&auml;hlerwerten trug zwei Codes),
-        kann also keine Position innerhalb eines Teils sein.
+        Der sechsfache Unterschied in der Zeit abseits der Bahn steht auf 1260 Meldungen und ist
+        belastbar; im Leitplanken-Modus flog das Auto nur bei nahezu Vollausschlag ab, kein
+        einziges Mal ohne Lenkbefehl. Die Wechselzahlen n=13 und n=8 sind dagegen zu klein, um
+        allein etwas zu tragen &mdash; sie stehen hier als Hinweis, nicht als Beweis.
+      </p>
+
+      <h3 style="font-size:14px; margin:16px 0 6px 0">Was der Ghost daraus sendet</h3>
+      <p class="muted">
+        Lenkwert&nbsp;0, Byte&nbsp;14 mit Bit&nbsp;5 (Bit&nbsp;7 bleibt <em>gel&ouml;scht</em>,
+        so wie im Mitschnitt), und in Bytes&nbsp;16&ndash;18 den Vorausblick aus
+        <code>currentTrackTiles</code>. Jede Kurve geht als <code>0x04</code> hinaus: ein
+        eigener Code f&uuml;r Linkskurven ist in <em>keinem</em> Mitschnitt aufgetreten, auch
+        nicht in den Sitzungen mit Linkskurven, und <code>0x08</code> zu senden hie&szlig;e
+        einen Wert zu erfinden. Ohne eingescannte Strecke gibt es keinen Vorausblick; das
+        Modus-Bit geht trotzdem hinaus, und das Protokoll sagt es.
+      </p>
+
+      <h3 style="font-size:14px; margin:16px 0 6px 0">Korrekturen an der vorherigen Fassung</h3>
+      <p class="muted">
+        Drei Aussagen von zuvor waren falsch und sind hier ersetzt. <b>Erstens</b> die Dauer:
+        67&nbsp;s, nicht 46&nbsp;min &mdash; verwechselt mit der Spanne des gesamten
+        HCI-Mitschnitts. <b>Zweitens</b> Byte&nbsp;10: es erkl&auml;rt <em>nicht</em>, warum
+        unsere App keine Codes sieht. Im Mitschnitt von 19:21 sendete die Original-App
+        Byte&nbsp;10&nbsp;=&nbsp;<code>0x60</code> und Byte&nbsp;14 mit gesetztem Bit&nbsp;7
+        &mdash; unser Paket, Feld f&uuml;r Feld in allen vierzehn festen Bytes &mdash; und
+        empfing 463 Codes. Das Schreibpaket ist also nicht die Ursache. <b>Drittens</b> die
+        Lenkstatistik (41&nbsp;%, 52,7 gegen 30,4): sie war &uuml;ber beide Modi gemischt
+        gerechnet und ist durch die Tabelle oben ersetzt.
       </p>
       <p class="muted">
-        <b>Das ist kein Verlust.</b> Die Querablage w&auml;re n&ouml;tig gewesen, um selbst zu
-        lenken. Da das Auto das im Leitplanken-Modus &uuml;bernimmt, braucht sie niemand. Nur der
-        seitliche Versatz gegen gegenseitiges Rammen bleibt ein kleiner Anstoss ohne
-        R&uuml;ckmeldung &mdash; und das steht so auch in den Optionen.
+        <b>Was noch offen ist:</b> ob unsere App mit Bit&nbsp;5 und Vorausblick tats&auml;chlich
+        Codes zu sehen bekommt. Die Paketvarianten-Probe im Entwickler-Tab hat daf&uuml;r die
+        Schaltfl&auml;chen &bdquo;Byte&nbsp;14 Bit&nbsp;5&ldquo; und &bdquo;Bit&nbsp;5 +
+        Vorausblick&ldquo;; jede Variante beh&auml;lt eine g&uuml;ltige Pr&uuml;fsumme, ein
+        Fehlschlag ist also ein echtes Ergebnis.
       </p>
     </div>
   </section>
@@ -1509,9 +1543,9 @@
         <button data-probe="tail">Byte&nbsp;16-18 = 01 04 04</button>
         <button data-probe="b9">Byte&nbsp;9 = &plusmn;127</button>
         <button data-probe="combo">0x20 + 0x62 + 01 04 04</button>
-        <button data-probe="rail" class="primary">Leitplanke: b10=0x30 + b14=0x02</button>
-        <button data-probe="rail10">nur b10 = 0x30</button>
-        <button data-probe="rail14">nur b14 = 0x02</button>
+        <button data-probe="rail" class="primary">Leitplanke: Byte&nbsp;14 Bit&nbsp;5</button>
+        <button data-probe="raillook">Bit&nbsp;5 + Vorausblick 01&nbsp;04&nbsp;04</button>
+        <button data-probe="rail10">nur Byte&nbsp;10 = 0x30</button>
       </div>
       <p class="muted" id="probe-status" style="font-family:monospace">keine Variante aktiv</p>
       <p class="muted" style="font-size:11.5px">
@@ -2920,11 +2954,13 @@
     b9:      { label: 'Byte 9 = +-127', bytes: { 9: 0x7f } },
     combo:   { label: '0x20 + 0x62 + 01 04 04',
                bytes: { 10: 0x20, 14: 0x62, 16: 0x01, 17: 0x04, 18: 0x04 } },
-    // From the guard-rail capture: these are the values the original app actually sent while
-    // the code stream was flowing richly and the car held the track on its own.
-    rail:    { label: 'Leitplanke: b10=0x30, b14=0x02', bytes: { 10: 0x30, 14: 0x02 } },
-    rail10:  { label: 'nur b10 = 0x30', bytes: { 10: 0x30 } },
-    rail14:  { label: 'nur b14 = 0x02', bytes: { 14: 0x02 } },
+    // From the guard-rail capture: bit 5 of byte 14 is the mode, and bytes 16-18 carry the
+    // three-tile lookahead. Byte 10 = 0x30 came with it but is not the gate for code
+    // reporting - 0x60 produced 463 codes in the capture of 19:21.
+    rail:    { label: 'Leitplanke: Byte 14 Bit 5', bytes: { 14: LIGHT_HEAD | 0x20 } },
+    raillook:{ label: 'Bit 5 + Vorausblick 01 04 04',
+               bytes: { 14: LIGHT_HEAD | 0x20, 16: 0x01, 17: 0x04, 18: 0x04 } },
+    rail10:  { label: 'nur Byte 10 = 0x30', bytes: { 10: 0x30 } },
   };
 
   function setProbe(key) {
@@ -2954,6 +2990,7 @@
     b.onclick = () => setProbe(b.dataset.probe);
   });
   setInterval(updateProbeStatus, 500);
+
 
   // ===================== Telemetry recorder =====================
   // Why this exists: the btsnoop logs were hard to use, not because the data was bad but
@@ -4722,12 +4759,27 @@
   // transitions in that session were of this kind. It is an immediate signal, which makes the
   // old 1.5 s timeout on 0xff unnecessary as the primary detector.
   const TILE_OFFTRACK = 0x00;
-  // Mode bytes the ORIGINAL app used in guard-rail mode, where the car keeps itself on the
-  // track. Measured in that capture: byte 10 = 0x30 throughout (we had only ever sent 0x60),
-  // and byte 14 with bit 7 CLEAR (0x02/0x22, plus 0x03/0x23 while braking) where we always
-  // set bit 7. Which of the two actually switches the mode is not yet established — the probe
-  // in the developer tab settles that in two minutes.
-  const RAIL_MODE = { b10: 0x30, b14base: 0x02 };
+  // What the original app sent in guard-rail mode, and ONLY there. From the capture of
+  // 20.08, which holds 67 s of traffic to the car: at 37.8 s byte 14 went 0x02 -> 0x22 and
+  // stayed that way, and in the SAME packet bytes 16-18 became non-zero for the first time.
+  // 552 packets, the two features coincident to the millisecond, and both absent from every
+  // other capture. So they are one feature:
+  //   bit 5 of byte 14 = guard-rail mode on
+  //   bytes 16-18      = the next three tile types, a sliding window over the scanned layout
+  // The nine distinct windows observed are all consecutive triples of a single ring,
+  // Start-Kurve-Kurve-Gerade-Gerade-Kurve; by chance that would be 1.3e-6. The window steps
+  // on at each tile boundary (38.6 s, 45.0 s, 47.7 s - exactly the reported code changes).
+  //
+  // That is the whole answer to "how does it steer with no lateral report": the lateral
+  // reading never leaves the car. It reads the wedge under its own sensor, the app tells it
+  // which way the track bends next, and it corrects on board - necessarily, since the report
+  // rate is only 14.6 Hz (69 ms median) and our own send loop is 45 ms.
+  //
+  // Byte 10 is 0x30 here and 0x60 everywhere else, but it is NOT what gates code reporting:
+  // in the capture of 19:21 the original app sent 0x60 and byte 14 with bit 7 set - our
+  // packet, field for field in all fourteen fixed bytes - and received 463 codes. It is sent
+  // as 0x30 only to reproduce this mode exactly, not because it is known to matter.
+  const RAIL_MODE = { b10: 0x30, b14bit: 0x20 };
   const TILE_LABEL = {
     [TILE_TYPE.START]: 'Start/Ziel',
     [TILE_TYPE.STRAIGHT]: 'Gerade',
@@ -7303,6 +7355,22 @@
     return 0;
   }
 
+  // The three tile types the car is about to meet, in the form the original app sent them.
+  // Only 0x01, 0x02 and 0x04 have ever appeared in any capture, so ANY curve goes out as
+  // 0x04: a left curve has never produced a code of its own - the sessions with left curves
+  // reported 0x04 like the rest - and sending 0x08 would mean inventing a value the car may
+  // not recognise. The pit tile goes out as a straight, which is what it is.
+  function ghostLookahead(car) {
+    const tiles = currentTrackTiles;
+    const i0 = car.ghost ? car.ghost.tileIndex : null;
+    if (!tiles || tiles.length < 3 || i0 === null || i0 === undefined) return null;
+    const code = (t) => t === TILE_TYPE.START ? 0x01
+                      : (t === TILE_TYPE.CURVE_RIGHT || t === TILE_TYPE.CURVE_LEFT) ? 0x04
+                      : 0x02;
+    const at = (k) => code(tiles[(i0 + k) % tiles.length].type);
+    return { 16: at(0), 17: at(1), 18: at(2) };
+  }
+
   function startGhost(car) {
     stopGhost(car);
     const e = new CarreraPhysicsEngine();
@@ -7373,11 +7441,15 @@
       brake = Math.max(0, Math.min(1, -err * 3));
 
       // ---- steering ----
-      // In guard-rail mode the CAR steers itself, and the measurement says so plainly: in the
-      // 20.08 capture 41 % of on-track tile transitions happened with no steering command at
-      // all, while departures followed MORE steering (mean |steer| 52.7 against 30.4), not
-      // less. The driver's input is what threw it off. So a ghost sends zero steering and
-      // lets the car do the work — no layout needed, no yaw loop, no blind offset.
+      // In guard-rail mode the CAR steers itself. Comparing the two halves of the 20.08
+      // capture - before and after bit 5 came on at 37.8 s - the time spent off the track
+      // fell from 18.2 % to 3.1 % (130 of 713 notifies against 17 of 547), and departures
+      // from one every 2.9 s to one every 9.8 s. All three departures under guard rail
+      // happened at close to full lock (mean |steer| 119.7 of 127), none with no steering
+      // at all. So a ghost sends zero steering and lets the car do the work; the layout goes
+      // to the car as a lookahead instead of into a steering command here.
+      // The transition counts behind the percentages are small (n=8 and n=3) and are not
+      // load-bearing; the six-fold difference in time off track rests on 1260 notifies.
       // The offset against ramming stays available, because two cars on one line still
       // collide; it is a small nudge on top of zero, not a control loop.
       if (ghostCfg.railMode) {
@@ -7393,11 +7465,21 @@
     }
 
     const out = e.update({ steering: steer, throttle, brake, headlights: true }, dt);
-    // Put the car into the mode where it keeps itself on the track. Replicates what the
-    // original app sent, rather than guessing: byte 10 = 0x30 and byte 14 with bit 7 clear.
+    // Put the car into the mode where it keeps itself on the track: bit 5 of byte 14, plus
+    // the three-tile lookahead in bytes 16-18. Bit 7 stays CLEAR, because it was clear
+    // throughout the guard-rail capture; the headlight bit and the brake bit are as sent
+    // there. Without a scanned layout there is no lookahead to send - the mode bit still
+    // goes out, since the car may well hold the track on the pattern alone, but that is
+    // untested and the log says so rather than pretending otherwise.
     if (ghostCfg.railMode) {
-      car.modeBytes = { 10: RAIL_MODE.b10 };
-      car.railLight = RAIL_MODE.b14base | (brake > 0.05 ? LIGHT_BRAKE : 0);
+      const la = ghostLookahead(car);
+      car.modeBytes = Object.assign({ 10: RAIL_MODE.b10 }, la || {});
+      car.railLight = LIGHT_HEAD | RAIL_MODE.b14bit | (brake > 0.05 ? LIGHT_BRAKE : 0);
+      if (!la && !g.warnedNoLayout) {
+        g.warnedNoLayout = true;
+        log(`${garageLabel(car)}: Leitplanken-Modus ohne eingescannte Strecke \u2014 `
+            + 'Vorausblick fehlt, das Auto bekommt nur das Modus-Bit', 'err');
+      }
     } else {
       car.modeBytes = null; car.railLight = null;
     }
@@ -7561,6 +7643,7 @@
     padConnected = true;
     startPadLoop();
   }
+
 })();
 </script>
 </body>
