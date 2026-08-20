@@ -462,6 +462,20 @@
   .race-corner button[hidden] { display: none; }
   .race-corner svg { width: 18px; height: 18px; }
 
+  /* Recorder. The badge has to be visible while DRIVING, including on the racing
+     screen, otherwise it is far too easy to do a whole run with the recorder off. */
+  #rec-badge { position: fixed; left: 14px; bottom: 14px; z-index: 60; display: none;
+    align-items: center; gap: 8px; padding: 7px 12px; border-radius: 999px;
+    background: #b3131f; color: #fff; font-size: 12.5px; font-weight: 700;
+    box-shadow: 0 2px 10px rgba(11,31,63,.35); }
+  #rec-badge.on { display: flex; }
+  #rec-badge i { width: 9px; height: 9px; border-radius: 50%; background: #fff;
+    animation: rec-pulse 1s ease-in-out infinite; }
+  @keyframes rec-pulse { 0%,100% { opacity: 1; } 50% { opacity: .25; } }
+  .rec-sections { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
+  .rec-sections button { min-width: 46px; }
+  .rec-sections button.done { background: var(--good); color: #fff; }
+
   /* Key-binding overlay. */
   #help-btn { position: fixed; right: 14px; bottom: 14px; z-index: 60; width: 42px;
     height: 42px; border-radius: 50%; font-size: 19px; font-weight: 700;
@@ -543,6 +557,7 @@
 </header>
 <div class="pinstripe"></div>
 
+  <div id="rec-badge"><i></i><span id="rec-badge-text">Aufnahme</span></div>
   <button type="button" id="help-btn" title="Tastenbelegung" aria-label="Tastenbelegung">?</button>
   <div id="help-panel" role="dialog" aria-label="Tastenbelegung">
     <div class="help-card">
@@ -570,6 +585,7 @@
         <kbd>C</kbd><span>Crash ausl&ouml;sen: Schaden, Ger&auml;usch und Rumble wie im Betrieb</span>
         <kbd>F</kbd><span>Tank auf 5&nbsp;% setzen, um den Notlauf zu pr&uuml;fen</span>
         <kbd>R</kbd><span>Tank und Zustand zur&uuml;cksetzen</span>
+        <kbd>M</kbd><span>Aufnahme: n&auml;chsten Abschnitt markieren</span>
         <kbd>?</kbd><span>diese &Uuml;bersicht</span>
       </div>
 
@@ -1338,6 +1354,30 @@
       <button class="subtab-btn" data-subtab="calib">Kalibrierung</button>
       <button class="subtab-btn" data-subtab="macros">Makros</button>
     </nav>
+
+    <div class="card">
+      <h2>Telemetrie aufzeichnen</h2>
+      <p class="muted">
+        Zeichnet <strong>jedes</strong> Paket in beiden Richtungen auf &mdash; was das Auto
+        meldet und was die App sendet &mdash; mit Zeitstempel, und exportiert es als CSV.
+        Damit ist kein btsnoop n&ouml;tig: die Datei ist bereits beschriftet und
+        entschl&uuml;sselt.
+      </p>
+      <div class="row" style="gap:8px; align-items:center">
+        <button class="primary" id="rec-start">Aufnahme starten</button>
+        <button id="rec-stop" disabled>Stoppen</button>
+        <button id="rec-csv" disabled>Als CSV exportieren</button>
+        <span class="muted" id="rec-status">keine Aufnahme</span>
+      </div>
+      <p class="muted" style="margin:12px 0 4px 0"><b>Abschnitt markieren</b> &mdash;
+        vor jedem Man&ouml;ver den passenden Knopf dr&uuml;cken. Taste <kbd>M</kbd> setzt den
+        n&auml;chsten Abschnitt.</p>
+      <div class="rec-sections" id="rec-marks"></div>
+      <div class="row" style="gap:8px">
+        <input type="text" id="rec-note" placeholder="freie Notiz (optional)" style="flex:1; min-width:0">
+        <button id="rec-note-add">Notiz setzen</button>
+      </div>
+    </div>
 
     <div class="subtabpage active" id="subtab-explore">
     <div class="card">
@@ -2405,6 +2445,7 @@
     throttle = applyFuelAndDamage(throttle);
     updateEngineSound(throttle);
     const payload = buildCommandPacket(steer, throttle);
+    recWrite(payload);
     // A car given the "Steuern" role in the garage becomes the write target. Falls back to
     // the BLE explorer's selection so the developer workflow keeps working untouched.
     if (typeof playerCar !== 'undefined' && playerCar && playerCar.rx) {
@@ -2622,6 +2663,131 @@
   setStick(0, 0);
   setThrottle(0);
 
+
+  // ===================== Telemetry recorder =====================
+  // Why this exists: the btsnoop logs were hard to use, not because the data was bad but
+  // because nothing in them said WHEN the driver did what. Pairing writes to notifies by
+  // timestamp worked, but every interpretation still rested on guessing which stretch of the
+  // log was which manoeuvre. Here the section markers are IN the file.
+  //
+  // Cost per packet is one array push, so the 45 ms send cadence is untouched. A hard row
+  // cap keeps a forgotten recording from eating the tab.
+  const REC_MAX_ROWS = 400000;   // ~2.5 hours at 44 rows/s
+  const REC_SECTIONS = [
+    'Gerade: links',
+    'Gerade: mitte',
+    'Gerade: rechts',
+    'Linkskurve',
+    'Rechtskurve',
+    'Haarnadel',
+    'von der Bahn',
+    'Boxengassen-Muster',
+    'still stehen',
+    'aufheben/absetzen',
+  ];
+  const rec = { on: false, rows: [], t0: 0, next: 0 };
+
+  function recRow(dir, name, bytes, note) {
+    if (!rec.on) return;
+    if (rec.rows.length >= REC_MAX_ROWS) { recStop(); log('Aufnahme: Zeilengrenze erreicht, gestoppt.', 'err'); return; }
+    rec.rows.push({ t: Math.round(performance.now() - rec.t0), dir, name,
+                    b: bytes ? Array.from(bytes) : null, note: note || '' });
+  }
+  function recNotify(bytes, name) { recRow('rx', name || 'Spielerauto', bytes); }
+  function recWrite(bytes, name) { recRow('tx', name || 'Spielerauto', bytes); }
+
+  function recMark(label) {
+    if (!rec.on) { showHudToast('Keine Aufnahme läuft'); return; }
+    recRow('mark', '', null, label);
+    log(`Aufnahme-Markierung: ${label}`, 'info');
+    showHudToast('Markiert: ' + label);
+    renderRecMarks();
+    recStatus();
+  }
+
+  function renderRecMarks() {
+    const wrap = $('rec-marks');
+    if (!wrap) return;
+    wrap.innerHTML = '';
+    REC_SECTIONS.forEach((label, i) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = `${i + 1}. ${label}`;
+      // Green once used, so a long session does not lose track of what is still missing.
+      if (rec.rows.some(r => r.dir === 'mark' && r.note === label)) b.className = 'done';
+      b.onclick = () => { rec.next = i + 1; recMark(label); };
+      wrap.appendChild(b);
+    });
+  }
+
+  function recStatus() {
+    const el = $('rec-status');
+    if (!el) return;
+    if (!rec.on && !rec.rows.length) { el.textContent = 'keine Aufnahme'; return; }
+    const secs = rec.rows.length ? (rec.rows[rec.rows.length - 1].t / 1000).toFixed(0) : 0;
+    const marks = rec.rows.filter(r => r.dir === 'mark').length;
+    el.textContent = `${rec.on ? 'läuft' : 'gestoppt'} — ${rec.rows.length} Zeilen, `
+                   + `${secs} s, ${marks} Markierungen`;
+    $('rec-badge-text').textContent = `Aufnahme ${secs}s · ${marks} Mark.`;
+  }
+
+  function recStart() {
+    rec.on = true; rec.rows = []; rec.t0 = performance.now(); rec.next = 0;
+    $('rec-start').disabled = true; $('rec-stop').disabled = false; $('rec-csv').disabled = true;
+    $('rec-badge').classList.add('on');
+    renderRecMarks(); recStatus();
+    log('Telemetrie-Aufnahme gestartet.', 'info');
+  }
+  function recStop() {
+    rec.on = false;
+    $('rec-start').disabled = false; $('rec-stop').disabled = true;
+    $('rec-csv').disabled = rec.rows.length === 0;
+    $('rec-badge').classList.remove('on');
+    recStatus();
+    log(`Telemetrie-Aufnahme gestoppt: ${rec.rows.length} Zeilen.`, 'info');
+  }
+
+  function recExport() {
+    // Raw hex AND decoded columns. The hex is the ground truth; the decoded columns make
+    // the file readable in a spreadsheet without knowing the protocol, and let mistakes be
+    // spotted by eye rather than only in analysis.
+    const head = ['t_ms', 'richtung', 'auto', 'notiz', 'bytes_hex',
+                  'rx_b1_dreh?', 'rx_b2', 'rx_b3_drehrate', 'rx_b10_akku',
+                  'rx_b11_teilzaehler', 'rx_b12_mustercode', 'rx_b15_ueber_muster',
+                  'tx_b6_gas', 'tx_b7_lenkung', 'tx_b14_licht'].join(';');
+    const s8 = (v) => (v > 127 ? v - 256 : v);
+    const lines = rec.rows.map(r => {
+      const b = r.b, hex = b ? b.map(x => x.toString(16).padStart(2, '0')).join(' ') : '';
+      const c = new Array(10).fill('');
+      if (r.dir === 'rx' && b) {
+        c[0] = s8(b[1]); c[1] = b[2]; c[2] = s8(b[3]); c[3] = b[10];
+        c[4] = b[11]; c[5] = '0x' + b[12].toString(16).padStart(2, '0'); c[6] = b[15];
+      } else if (r.dir === 'tx' && b) {
+        c[7] = s8((b[6] - 0xdf) & 0xff); c[8] = s8(b[7]);
+        c[9] = '0x' + b[14].toString(16).padStart(2, '0');
+      }
+      return [r.t, r.dir, r.name, r.note.replace(/;/g, ','), hex, ...c].join(';');
+    });
+    const csv = [head, ...lines].join('\r\n') + '\r\n';
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const stamp = new Date().toISOString().slice(0, 16).replace(/[:T-]/g, '');
+    const a = document.createElement('a');
+    a.href = url; a.download = `ch-telemetrie-${stamp}.csv`;
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  $('rec-start').onclick = recStart;
+  $('rec-stop').onclick = recStop;
+  $('rec-csv').onclick = recExport;
+  $('rec-note-add').onclick = () => {
+    const v = $('rec-note').value.trim();
+    if (v) { recMark(v); $('rec-note').value = ''; }
+  };
+  renderRecMarks();
+  setInterval(() => { if (rec.on) recStatus(); }, 1000);
+
   // ---- Key-binding overlay ----
   // Reads the LIVE binding table rather than a hard-coded list: a help panel that drifts
   // out of step with the actual assignment is worse than none at all.
@@ -2668,6 +2834,12 @@
     if (k === 'f' && !e.repeat) { fuel = 5; updateDamageFuelUI(); showHudToast('Tank 5 %'); }
     if (k === 'r' && !e.repeat) { fuel = 100; damage = 0; updateDamageFuelUI();
                                   showHudToast('Tank und Zustand zurückgesetzt'); }
+    if (k === 'm' && !e.repeat) {
+      // Next unused section, so one key walks the whole protocol in order.
+      const label = REC_SECTIONS[rec.next] || ('Markierung ' + (rec.next + 1));
+      rec.next = Math.min(rec.next + 1, REC_SECTIONS.length);
+      recMark(label);
+    }
     if (k === '?' || (k === '/' && e.shiftKey)) { if (!e.repeat) toggleHelp(); }
     if (k === 'escape') toggleHelp(false);
   });
@@ -4779,6 +4951,7 @@
 
   function dashboardNotifyHandler(e) {
     const bytes = new Uint8Array(e.target.value.buffer);
+    recNotify(bytes);
     dashBattery = bytes[10];
     $('dash-battery').textContent = `${batteryPercent(dashBattery)}% (roh ${dashBattery})`;
 
@@ -6062,6 +6235,7 @@
     car.writeInFlight = true;
     try {
       const pkt = buildCommandPacket(steer, throttle, lightBits);
+      recWrite(pkt, garageLabel(car));
       if (car.rx.properties.writeWithoutResponse) await car.rx.writeValueWithoutResponse(pkt);
       else await car.rx.writeValueWithResponse(pkt);
     } catch (err) {
@@ -6183,6 +6357,7 @@
   function onCarNotify(car, e) {
     const b = new Uint8Array(e.target.value.buffer);
     if (b.length < 16) return;
+    recNotify(b, garageLabel(car));
     const code = b[12];
     if (code !== 0xff) car.lastCodeAt = Date.now();
     if (code !== car.tileCode) { car.tileCode = code; }
