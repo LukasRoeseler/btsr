@@ -1412,6 +1412,37 @@
     </nav>
 
     <div class="card">
+      <h2>Mustererkennung: Paketvarianten testen</h2>
+      <p class="muted">
+        In sieben aufgezeichneten Fahrten hat das Auto <b>keinen einzigen</b> Streckencode
+        gemeldet, w&auml;hrend der Mitschnitt der Original-App voll davon ist. Das Schreibpaket
+        im Moment des ersten Codes dort ist byteweise die Form, die wir senden &mdash; im
+        Dauerbetrieb unterscheidet uns also nichts. Was die Original-App aber
+        <em>zus&auml;tzlich</em> gesendet hat und wir nie:
+      </p>
+      <div class="row" style="gap:6px; flex-wrap:wrap; margin:10px 0">
+        <button data-probe="off" class="primary">Normal senden</button>
+        <button data-probe="b10">Byte&nbsp;10 = 0x20</button>
+        <button data-probe="b14_02">Byte&nbsp;14 = 0x02</button>
+        <button data-probe="b14_22">Byte&nbsp;14 = 0x22</button>
+        <button data-probe="b14_42">Byte&nbsp;14 = 0x42</button>
+        <button data-probe="b14_62">Byte&nbsp;14 = 0x62</button>
+        <button data-probe="tail">Byte&nbsp;16-18 = 01 04 04</button>
+        <button data-probe="b9">Byte&nbsp;9 = &plusmn;127</button>
+        <button data-probe="combo">0x20 + 0x62 + 01 04 04</button>
+      </div>
+      <p class="muted" id="probe-status" style="font-family:monospace">keine Variante aktiv</p>
+      <p class="muted" style="font-size:11.5px">
+        <b>So testen:</b> Variante w&auml;hlen, dann <b>langsam &uuml;ber ein Muster fahren</b>
+        &mdash; Start/Ziel, ein Streckenteil oder den Boxengassen-Ausdruck. Die Anzeige
+        z&auml;hlt, ob Byte&nbsp;12 den Wert <code>0xff</code> verl&auml;sst. Sobald irgendwo eine
+        Zahl gr&ouml;&szlig;er null steht, ist die Ursache gefunden. Jede Variante beh&auml;lt eine
+        g&uuml;ltige Pr&uuml;fsumme, ein Fehlschlag ist also ein echtes Ergebnis und kein
+        verworfenes Paket.
+      </p>
+    </div>
+
+    <div class="card">
       <h2>Telemetrie aufzeichnen</h2>
       <p class="muted">
         Zeichnet <strong>jedes</strong> Paket in beiden Richtungen auf &mdash; was das Auto
@@ -2512,6 +2543,22 @@
   // have NOT decoded. We deliberately leave them at zero rather than imitate them.
   let lightBits = LIGHT_BASE;
 
+  // ---- Packet-variant probe ----
+  // Seven recorded sessions produced not a single track code, while a snoop of the original
+  // app is full of them. The write packet at the exact moment the original app got its first
+  // code is byte-for-byte the form we send, so nothing in the steady state explains it. What
+  // the original app DID send and we never do:
+  //   byte 10 = 0x20 (we always send 0x60)
+  //   byte 14 with bit 7 clear and upper bits set: 0x02, 0x22, 0x42, 0x62
+  //   bytes 16-18 = 01 04 04
+  //   byte 9 independent of byte 7 (we duplicate byte 7 into it)
+  // Any of those could be a mode the car has to be put into. This probe sends one variant at
+  // a time and watches whether byte 12 ever leaves 0xff, which turns the question into a
+  // two-minute experiment instead of another snoop capture.
+  // Declared HERE because buildCommandPacket() below reads it.
+  let probeOverride = null;   // e.g. { 10: 0x20 } — byte index -> value
+  let probeStats = { since: 0, sent: 0, codes: 0, lastCode: null, label: '' };
+
   function buildCommandPacket(steerFloat, throttleFloat, lightOverride) {
     // Full mechanical lock. The old "Maximaler Lenkausschlag" option scaled this down to
     // 85 of 127 steps by default, i.e. the car was never asked for more than two thirds
@@ -2522,6 +2569,13 @@
     const throttleByte = (0xdf + throttleDelta) & 0xff;
     const lb = (lightOverride === undefined ? lightBits : lightOverride) & 0xff;
     const body = [0xaf, 0x00, 0x00, 0x00, 0x00, 0x00, throttleByte, steerByte, 0x80, steerByte, 0x60, 0x00, 0x01, 0x00, lb, 0x04, 0x00, 0x00, 0x00];
+    // The probe rewrites individual bytes BEFORE the checksum, so every variant still
+    // carries a valid CRC — otherwise the car would simply drop the packet and the
+    // experiment would look like a negative result.
+    if (probeOverride) {
+      for (const k in probeOverride) body[k | 0] = probeOverride[k] & 0xff;
+      probeStats.sent++;
+    }
     body.push(crc8(body));
     return new Uint8Array(body);
   }
@@ -2766,6 +2820,49 @@
   setStick(0, 0);
   setThrottle(0);
 
+
+
+  // ---- Packet-variant probe wiring ----
+  const PROBE_VARIANTS = {
+    off:     { label: 'normal', bytes: null },
+    b10:     { label: 'Byte 10 = 0x20', bytes: { 10: 0x20 } },
+    b14_02:  { label: 'Byte 14 = 0x02', bytes: { 14: 0x02 } },
+    b14_22:  { label: 'Byte 14 = 0x22', bytes: { 14: 0x22 } },
+    b14_42:  { label: 'Byte 14 = 0x42', bytes: { 14: 0x42 } },
+    b14_62:  { label: 'Byte 14 = 0x62', bytes: { 14: 0x62 } },
+    tail:    { label: 'Byte 16-18 = 01 04 04', bytes: { 16: 0x01, 17: 0x04, 18: 0x04 } },
+    b9:      { label: 'Byte 9 = +-127', bytes: { 9: 0x7f } },
+    combo:   { label: '0x20 + 0x62 + 01 04 04',
+               bytes: { 10: 0x20, 14: 0x62, 16: 0x01, 17: 0x04, 18: 0x04 } },
+  };
+
+  function setProbe(key) {
+    const v = PROBE_VARIANTS[key];
+    if (!v) return;
+    probeOverride = v.bytes;
+    probeStats = { since: Date.now(), sent: 0, codes: 0, lastCode: null, label: v.label };
+    document.querySelectorAll('button[data-probe]').forEach(b =>
+      b.classList.toggle('primary', b.dataset.probe === key));
+    updateProbeStatus();
+    log(`Paketvariante: ${v.label}`, 'info');
+  }
+
+  function updateProbeStatus() {
+    const el = $('probe-status');
+    if (!el) return;
+    if (!probeOverride) { el.textContent = 'keine Variante aktiv (normales Paket)'; return; }
+    const secs = ((Date.now() - probeStats.since) / 1000).toFixed(0);
+    el.textContent = `${probeStats.label} — ${secs} s, ${probeStats.sent} Pakete gesendet, `
+      + `Mustercodes empfangen: ${probeStats.codes}`
+      + (probeStats.lastCode !== null
+         ? ` (zuletzt 0x${probeStats.lastCode.toString(16).padStart(2,'0')})` : '');
+    el.style.color = probeStats.codes > 0 ? 'var(--good)' : '';
+  }
+
+  document.querySelectorAll('button[data-probe]').forEach(b => {
+    b.onclick = () => setProbe(b.dataset.probe);
+  });
+  setInterval(updateProbeStatus, 500);
 
   // ===================== Telemetry recorder =====================
   // Why this exists: the btsnoop logs were hard to use, not because the data was bad but
@@ -5595,6 +5692,10 @@
 
   function handleDashboardBytes(bytes) {
     recNotify(bytes);
+    if (probeOverride && bytes[12] !== 0xff) {
+      probeStats.codes++;
+      probeStats.lastCode = bytes[12];
+    }
     dashBattery = bytes[10];
     $('dash-battery').textContent = `${batteryPercent(dashBattery)}% (roh ${dashBattery})`;
 
