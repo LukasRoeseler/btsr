@@ -358,6 +358,21 @@
      blows the highlights out. feComponentTransfer with type="gamma" lifts the midtones and
      leaves black black, which is what brief outside light actually looks like. */
   #race-dash.race-flash { filter: url(#race-gamma); }
+  /* ---- Garage ---- */
+  .gar-row { display: grid; gap: 10px; align-items: center;
+    grid-template-columns: minmax(0,1fr) auto auto;
+    padding: 10px 12px; background: var(--panel-2); border: 1px solid var(--border);
+    border-radius: 8px; margin-bottom: 8px; cursor: pointer; }
+  .gar-row:hover { border-color: #4a5b7d; }
+  .gar-row.is-player { border-color: var(--good); }
+  .gar-row.is-ghost { border-color: #7a6bd0; }
+  .gar-name { font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .gar-id { font-size: 11px; color: var(--muted); font-family: monospace; }
+  .gar-roles { display: flex; gap: 6px; flex-wrap: wrap; }
+  .gar-roles button { font-size: 12px; padding: 6px 10px; }
+  .gar-roles button.on { background: var(--good); color: #06210f; font-weight: 700; }
+  .gar-roles button.on.ghost { background: #7a6bd0; color: #0b0718; }
+  .gar-blink { font-size: 11px; color: var(--muted); }
   .race-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
   .race-fs-btn { padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border);
     background: var(--panel-2); color: inherit; font: inherit; cursor: pointer;
@@ -424,6 +439,7 @@
 <div class="pinstripe"></div>
 
 <nav class="tabs">
+  <button class="tab-btn" data-tab="garage">Garage</button>
   <button class="tab-btn active" data-tab="control">Fahren</button>
   <button class="tab-btn" data-tab="track">Strecke</button>
   <button class="tab-btn" data-tab="options">Optionen</button>
@@ -1212,6 +1228,30 @@
   </section>
 
   <!-- FAHREN TAB: redesigned as a racing-HUD style drive screen instead of a form/dashboard -->
+  <section class="tabpage" id="tab-garage">
+    <div class="card">
+      <h2>Garage</h2>
+      <p class="muted">
+        Jedes Auto braucht einen eigenen Klick auf &bdquo;Auto verbinden&ldquo; &mdash; Web Bluetooth
+        verlangt f&uuml;r jede Verbindung eine eigene Nutzergeste, das l&auml;sst sich nicht umgehen.
+        <strong>Klick auf eine Zeile l&auml;sst die Lichter dieses Autos blinken</strong>, damit du
+        siehst, welches Auto in der Liste welches auf dem Tisch ist.
+      </p>
+      <div class="row" style="gap:8px; margin-bottom:14px">
+        <button class="primary" id="gar-connect">Auto verbinden</button>
+        <button id="gar-disconnect-all">Alle trennen</button>
+        <span class="muted" id="gar-count">keine Autos verbunden</span>
+      </div>
+      <div id="gar-list"></div>
+      <p class="muted" style="font-size:12px; margin-top:10px">
+        <b>Steuern</b> &mdash; dieses Auto folgt Gamepad und Tastatur. Genau eines kann das sein;
+        Standard ist das zuerst verbundene.<br>
+        <b>Ghost</b> &mdash; f&auml;hrt beim Rennstart selbst&auml;ndig los und h&auml;lt sich an der
+        Strecke. Tank und Schaden werden f&uuml;r Ghosts nicht simuliert.
+      </p>
+    </div>
+  </section>
+
   <section class="tabpage active" id="tab-control">
     <div class="card hud-card">
       <h2>Cockpit</h2>
@@ -1447,6 +1487,29 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-coast-drag-val">0.55</span>
         </div></div>
+      <div class="opt-row"><div class="opt-label">Ghost-Tempo<small>Rundentempo der autonomen Autos, zum Ausprobieren von Schwierigkeitsgraden.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="ghost-speed" min="0.2" max="1" step="0.05" value="0.55">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="ghost-speed-val">55%</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Ghost: Kurvendrosselung<small>Wie viel Tempo in Kurven abgegeben wird.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="ghost-curve" min="0" max="0.6" step="0.05" value="0.35">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="ghost-curve-val">35%</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Ghost: seitlicher Versatz<small>Gegen gegenseitiges Rammen. Blind &mdash; kein Byte meldet die Querlage. Ganz links = aus.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="ghost-lateral" min="0" max="1" step="0.1" value="0">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="ghost-lateral-val">aus</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Ghost: F&uuml;hrenden bremsen<small>Der Erstplatzierte f&auml;hrt etwas langsamer, damit &Uuml;berholen wahrscheinlicher wird.</small></div>
+        <label class="tgl"><input type="checkbox" id="ghost-leader"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Tankgewicht<small>Voller Tank macht das Auto tr&auml;ger. Ganz links = keine Simulation.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
@@ -2043,7 +2106,7 @@
   // have NOT decoded. We deliberately leave them at zero rather than imitate them.
   let lightBits = LIGHT_BASE;
 
-  function buildCommandPacket(steerFloat, throttleFloat) {
+  function buildCommandPacket(steerFloat, throttleFloat, lightOverride) {
     // Full mechanical lock. The old "Maximaler Lenkausschlag" option scaled this down to
     // 85 of 127 steps by default, i.e. the car was never asked for more than two thirds
     // of the steering it has.
@@ -2051,7 +2114,8 @@
     const throttleDelta = Math.max(MIN_THROTTLE_DELTA, Math.min(127, Math.round(throttleFloat * 127)));
     const steerByte = steerDelta & 0xff;
     const throttleByte = (0xdf + throttleDelta) & 0xff;
-    const body = [0xaf, 0x00, 0x00, 0x00, 0x00, 0x00, throttleByte, steerByte, 0x80, steerByte, 0x60, 0x00, 0x01, 0x00, lightBits & 0xff, 0x04, 0x00, 0x00, 0x00];
+    const lb = (lightOverride === undefined ? lightBits : lightOverride) & 0xff;
+    const body = [0xaf, 0x00, 0x00, 0x00, 0x00, 0x00, throttleByte, steerByte, 0x80, steerByte, 0x60, 0x00, 0x01, 0x00, lb, 0x04, 0x00, 0x00, 0x00];
     body.push(crc8(body));
     return new Uint8Array(body);
   }
@@ -2077,8 +2141,21 @@
     throttle *= batteryCompensationScale();
     throttle = applyFuelAndDamage(throttle);
     updateEngineSound(throttle);
-    const uuid = controlSelect.value;
     const payload = buildCommandPacket(steer, throttle);
+    // A car given the "Steuern" role in the garage becomes the write target. Falls back to
+    // the BLE explorer's selection so the developer workflow keeps working untouched.
+    if (typeof playerCar !== 'undefined' && playerCar && playerCar.rx) {
+      if (writeInFlight) return;
+      writeInFlight = true;
+      try {
+        if (playerCar.rx.properties.writeWithoutResponse) await playerCar.rx.writeValueWithoutResponse(payload);
+        else await playerCar.rx.writeValueWithResponse(payload);
+      } catch (err) {
+        log('Steuer-Schreibfehler: ' + err.message, 'err');
+      } finally { writeInFlight = false; }
+      return;
+    }
+    const uuid = controlSelect.value;
     if (!uuid) {
       log(`(kein Ziel) steer=${steer.toFixed(2)} throttle=${throttle.toFixed(2)} bytes=${bufToHex(payload)}`, 'info');
       return;
@@ -4320,6 +4397,7 @@
   }
 
   function startRaceCountdown() {
+    // launchGhosts() is called from the green-light step below, not here.
     if (raceState !== 'idle' && raceState !== 'finished') return; // ignore while armed/racing
     resetTyres();   // a race starts on cold tyres, same as leaving the pits
     raceLapTimes = [];
@@ -4346,6 +4424,7 @@
         playTone(880, 0.35, 'square', 0.22);
         raceState = 'racing';
         raceLapStart = Date.now();
+        launchGhosts();   // green means green for everyone
         $('race-status').textContent = 'Rennen läuft — Runde 1';
         $('race-stop-btn').disabled = false;
         setTimeout(() => setRaceLights(0), 900);
@@ -4355,6 +4434,7 @@
 
   function requestRaceStop() {
     if (raceState !== 'racing') return;
+    // Ghosts keep running until the race actually ends in finishRace(); nothing to do here.
     raceState = 'finishing';
     $('race-status').textContent = 'Rennen endet nach dieser Runde';
     $('race-stop-btn').disabled = true;
@@ -4362,6 +4442,8 @@
 
   function finishRace() {
     raceState = 'finished';
+    // Chequered flag: the ghosts stop too, and their lights go back to plain headlights.
+    garage.forEach(c => { if (c.role === 'ghost') stopGhost(c); });
     $('race-status').textContent = `Beendet (${raceLapTimes.length} Runde${raceLapTimes.length === 1 ? '' : 'n'})`;
     $('race-start-btn').disabled = false;
     $('race-lap-current-row').style.display = 'none';
@@ -5296,6 +5378,23 @@
 
   // Both models fade to nothing at the left end, so "off" is genuinely the old behaviour
   // rather than a very small amount of the new one.
+  $('ghost-speed').addEventListener('input', (e) => {
+    ghostCfg.speed = parseFloat(e.target.value);
+    $('ghost-speed-val').textContent = Math.round(ghostCfg.speed * 100) + '%';
+  });
+  $('ghost-curve').addEventListener('input', (e) => {
+    ghostCfg.curveSlow = parseFloat(e.target.value);
+    $('ghost-curve-val').textContent = Math.round(ghostCfg.curveSlow * 100) + '%';
+  });
+  $('ghost-lateral').addEventListener('input', (e) => {
+    ghostCfg.lateral = parseFloat(e.target.value);
+    $('ghost-lateral-val').textContent = ghostCfg.lateral === 0
+      ? 'aus' : Math.round(ghostCfg.lateral * 100) + '%';
+  });
+  $('ghost-leader').addEventListener('change', (e) => {
+    ghostCfg.leaderBrake = e.target.checked;
+  });
+
   $('setting-fuelweight').addEventListener('input', (e) => {
     const v = parseFloat(e.target.value);
     physEngine.config.fuelWeightEffect = v;
@@ -5604,6 +5703,358 @@
     $('phys-steerresp-val').textContent = Math.round(v * 100) + '%';
     physEngine.config.steerResponse = v;
     showHudToast(`Lenkansprechen ${Math.round(v * 100)}%`);
+  }
+
+
+  // ================= Garage: several cars, and what each one does =================
+  // Deliberately asymmetric. The PLAYER car keeps the whole existing path — sendControlValue,
+  // the single 45 ms heartbeat, the options UI, the HUD — because that state lives in ~20
+  // module variables with over a hundred references, and moving it into a vehicle object
+  // would touch every one of them. Ghosts are objects with their own connection, their own
+  // write lock and their own physics instance, which is far less code than the refactor
+  // would have been.
+  const NUS_SERVICE = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
+
+  const garage = [];        // every connected car, in connection order
+  let playerCar = null;     // the one the gamepad drives; sendControlValue writes here
+
+  function garageLabel(car) {
+    return car.device.name || ('Auto ' + String(car.device.id).slice(0, 6));
+  }
+
+  // One write path for every non-player purpose: ghost driving and the identify blink.
+  // Same single-writer discipline as the player car, just per car.
+  async function writeToCar(car, steer, throttle, lightBits) {
+    if (!car.rx || car.writeInFlight) return;
+    car.writeInFlight = true;
+    try {
+      const pkt = buildCommandPacket(steer, throttle, lightBits);
+      if (car.rx.properties.writeWithoutResponse) await car.rx.writeValueWithoutResponse(pkt);
+      else await car.rx.writeValueWithResponse(pkt);
+    } catch (err) {
+      // A disconnect mid-drive is normal; do not spam the log from a 22 Hz loop.
+      car.writeErrors = (car.writeErrors || 0) + 1;
+    } finally {
+      car.writeInFlight = false;
+    }
+  }
+
+  // Identify: blink the headlights of ONE car so it can be matched to its row.
+  function blinkCar(car) {
+    if (car.blinking) return;
+    car.blinking = true;
+    let n = 0;
+    const iv = setInterval(() => {
+      const on = n % 2 === 0;
+      writeToCar(car, 0, 0, LIGHT_BASE | (on ? LIGHT_HEAD : 0));
+      if (++n >= 10) {
+        clearInterval(iv);
+        car.blinking = false;
+        writeToCar(car, 0, 0, LIGHT_BASE | LIGHT_HEAD);
+        renderGarage();
+      }
+      renderGarage();
+    }, 150);
+  }
+
+  function setCarRole(car, role) {
+    if (role === 'player') {
+      // Exactly one player. Anything that was the player falls back to no role rather than
+      // silently becoming a ghost.
+      garage.forEach(c => { if (c !== car && c.role === 'player') c.role = 'none'; });
+      playerCar = car;
+    } else if (playerCar === car) {
+      playerCar = null;
+    }
+    car.role = role;
+    if (role !== 'ghost') stopGhost(car);
+    renderGarage();
+    log(`${garageLabel(car)}: Rolle ${role === 'player' ? 'Steuern' : role === 'ghost' ? 'Ghost' : 'keine'}`, 'info');
+  }
+
+  function renderGarage() {
+    const list = $('gar-list');
+    if (!list) return;
+    $('gar-count').textContent = garage.length
+      ? `${garage.length} Auto${garage.length === 1 ? '' : 's'} verbunden`
+      : 'keine Autos verbunden';
+    list.innerHTML = '';
+    garage.forEach((car, i) => {
+      const row = document.createElement('div');
+      row.className = 'gar-row' + (car.role === 'player' ? ' is-player'
+                                 : car.role === 'ghost' ? ' is-ghost' : '');
+      row.innerHTML = `
+        <div><div class="gar-name">${garageLabel(car)}</div>
+          <div class="gar-id">${String(car.device.id).slice(0, 12)}
+            ${car.blinking ? '<span class="gar-blink">&nbsp;blinkt&hellip;</span>' : ''}</div></div>
+        <div class="gar-roles">
+          <button data-role="player" class="${car.role === 'player' ? 'on' : ''}">Steuern</button>
+          <button data-role="ghost" class="${car.role === 'ghost' ? 'on ghost' : ''}">Ghost</button>
+          <button data-role="none" class="${car.role === 'none' ? 'on' : ''}">&mdash;</button>
+        </div>
+        <button data-act="drop">Trennen</button>`;
+      // Clicking the row itself identifies the car; the buttons must not also blink it.
+      row.onclick = (e) => { if (!e.target.closest('button')) blinkCar(car); };
+      row.querySelectorAll('button[data-role]').forEach(b => {
+        b.onclick = () => setCarRole(car, b.dataset.role);
+      });
+      row.querySelector('button[data-act="drop"]').onclick = () => disconnectCar(car);
+      list.appendChild(row);
+    });
+  }
+
+  async function garageConnect() {
+    if (!navigator.bluetooth) {
+      alert('Web Bluetooth wird hier nicht unterstützt. Bitte in Chrome/Edge öffnen.');
+      return;
+    }
+    try {
+      const dev = await navigator.bluetooth.requestDevice({
+        filters: [{ namePrefix: 'HYBRID' }],
+        optionalServices: [NUS_SERVICE],
+      });
+      if (garage.some(c => c.device.id === dev.id)) {
+        log('Dieses Auto ist bereits verbunden.', 'info');
+        return;
+      }
+      const srv = await dev.gatt.connect();
+      const nus = await srv.getPrimaryService(NUS_SERVICE);
+      const rx = await nus.getCharacteristic(NUS_RX);
+      const tx = await nus.getCharacteristic(NUS_TX);
+      const car = {
+        device: dev, server: srv, rx, tx,
+        role: 'none', writeInFlight: false, blinking: false,
+        // Live telemetry, filled by the notify handler below.
+        tileCode: 0xff, tileCount: null, lastCodeAt: 0, yaw: 0,
+        ghost: null, timer: null,
+      };
+      await tx.startNotifications();
+      tx.addEventListener('characteristicvaluechanged', (e) => onCarNotify(car, e));
+      dev.addEventListener('gattserverdisconnected', () => {
+        log(`${garageLabel(car)} getrennt.`, 'err');
+        removeCar(car);
+      });
+      garage.push(car);
+      // First car connected takes the wheel, as requested.
+      if (!playerCar) setCarRole(car, 'player'); else renderGarage();
+      log(`${garageLabel(car)} verbunden (${garage.length} insgesamt).`, 'info');
+      playFx(fxBuffers.start[$('sound-profile').value] || fxBuffers.start.porsche, 0.85);
+    } catch (err) {
+      if (err && err.name === 'NotFoundError') log('Keine Auswahl getroffen.', 'info');
+      else log('Verbinden fehlgeschlagen: ' + (err && err.message), 'err');
+    }
+  }
+
+  // Per-car telemetry. Byte 12 is the tile code, byte 11 the tile counter, byte 3 a
+  // rotation signal. lastCodeAt is what the ghost's off-track cut-out is built on.
+  function onCarNotify(car, e) {
+    const b = new Uint8Array(e.target.value.buffer);
+    if (b.length < 16) return;
+    const code = b[12];
+    if (code !== 0xff) car.lastCodeAt = Date.now();
+    if (code !== car.tileCode) { car.tileCode = code; }
+    if (car.tileCount !== b[11]) { car.tileCount = b[11]; car.tileAt = Date.now(); }
+    car.yaw = b[3] > 127 ? b[3] - 256 : b[3];
+    car.battery = b[10];
+  }
+
+  function stopGhost(car) {
+    if (car.timer) { clearInterval(car.timer); car.timer = null; }
+    if (car.rx) writeToCar(car, 0, 0, LIGHT_BASE | LIGHT_HEAD);
+  }
+
+  function removeCar(car) {
+    stopGhost(car);
+    const i = garage.indexOf(car);
+    if (i >= 0) garage.splice(i, 1);
+    if (playerCar === car) playerCar = null;
+    renderGarage();
+  }
+
+  async function disconnectCar(car) {
+    stopGhost(car);
+    try { if (car.device.gatt.connected) car.device.gatt.disconnect(); } catch (e) { /* gone */ }
+    removeCar(car);
+  }
+
+  $('gar-connect').onclick = garageConnect;
+  $('gar-disconnect-all').onclick = () => { [...garage].forEach(disconnectCar); };
+  renderGarage();
+
+
+  // ===================== The ghost driver =====================
+  // Signals it can actually rely on, all confirmed from the HCI logs:
+  //   byte 12 = the tile under the sensor right now, 0xff = nothing being read
+  //   byte 11 = tile counter, one step per tile
+  //   byte  3 = a rotation signal
+  //
+  // The one thing the car does NOT report is which WAY a curve turns: 0x04 means "curve",
+  // and the sign of byte 3 depends on the direction of travel over the piece, which no byte
+  // reveals. Guessing it would send the ghost off the track at the first corner. The turn
+  // direction therefore comes from the TRACK LAYOUT the user builds in the Strecke tab,
+  // where left and right curves are distinct, and byte 11 says which piece we are on.
+  //
+  // Consequence, stated plainly: WITHOUT a layout a ghost can only hold a straight line. It
+  // will run wide at the first curve and the cut-out below will stop it. That is a real
+  // limitation, not a bug.
+  const GHOST_OFFTRACK_MS = 1500;   // measured: tiles last 0.4-2.7 s with no 0xff between
+  const GHOST_YAW_GAIN = 0.045;     // rotation units -> steering; refined on the real car
+  const GHOST_STEER_CURVE = 0.55;   // feed-forward lock in a curve, before the yaw loop
+
+  const ghostCfg = {
+    speed: 0.55,        // fraction of top speed on a straight
+    curveSlow: 0.35,    // how much of that is given up in a curve
+    lateral: 0,         // blind side-by-side offset, 0 = off
+    leaderBrake: false, // hold the leader back for a while
+    leaderBrakePct: 0.10,
+  };
+
+  // Per-tile behaviour, data-driven on purpose: the hairpin and left-curve codes are not
+  // known yet, and adding them must not require touching code.
+  const GHOST_TILE = {
+    0x01: { curve: 0 },   // start/finish, behaves like a straight
+    0x02: { curve: 0 },   // straight
+    0x04: { curve: 1 },   // curve — direction comes from the layout, not from here
+  };
+
+  function ghostTileInfo(code) { return GHOST_TILE[code] || { curve: 0 }; }
+
+  // Which way does the piece we are on turn? Only the layout knows.
+  // Returns -1 (left), +1 (right) or 0 (straight / unknown).
+  function ghostTurnDir(car, lookahead) {
+    const tiles = currentTrackTiles;
+    if (!tiles || tiles.length < 2 || car.ghost.tileIndex === null) return 0;
+    const i = (car.ghost.tileIndex + (lookahead || 0)) % tiles.length;
+    const t = tiles[i] && tiles[i].type;
+    if (t === TILE_TYPE.CURVE_RIGHT) return 1;
+    if (t === TILE_TYPE.CURVE_LEFT) return -1;
+    return 0;
+  }
+
+  function startGhost(car) {
+    stopGhost(car);
+    const e = new CarreraPhysicsEngine();
+    // Same acceleration as the player's car — same class, same calibration. Steering is
+    // left completely free, as requested: no speed falloff, no expo curve.
+    e.config.autoShift = true;
+    e.config.speedSteerReduction = 0;
+    e.config.steerExpo = 1;
+    e.config.steerResponse = 1;
+    e.config.fuelWeightEffect = 0;   // ghosts carry no fuel and take no damage for now
+    e.config.tyreEffect = 0;
+    e.state.driveMode = 'forward';
+    e.state.currentGear = 0;
+    car.ghost = { engine: e, tileIndex: null, lastCount: car.tileCount,
+                  lastTick: 0, bias: 0, laps: 0, cutOut: false };
+    // Stagger against the player's heartbeat and against each other, so four cars do not
+    // all transmit in the same millisecond.
+    const slot = garage.indexOf(car) + 1;
+    setTimeout(() => {
+      if (car.role !== 'ghost') return;
+      car.timer = setInterval(() => ghostTick(car), CONTROL_SEND_INTERVAL_MS);
+    }, Math.round(CONTROL_SEND_INTERVAL_MS * slot / (garage.length + 1)));
+  }
+
+  function ghostTick(car) {
+    const g = car.ghost;
+    if (!g) return;
+    const now = Date.now();
+    const dt = g.lastTick ? Math.min(0.25, (now - g.lastTick) / 1000)
+                          : CONTROL_SEND_INTERVAL_MS / 1000;
+    g.lastTick = now;
+    const e = g.engine, cfg = e.config;
+
+    // Follow the tile counter so we know where on the layout we are.
+    if (car.tileCount !== null && car.tileCount !== g.lastCount) {
+      g.lastCount = car.tileCount;
+      g.tileIndex = g.tileIndex === null ? 0 : g.tileIndex + 1;
+      if (currentTrackTiles.length) {
+        g.tileIndex %= currentTrackTiles.length;
+        if (g.tileIndex === 0) g.laps++;
+      }
+    }
+
+    // Cut-out: no pattern under the sensor means the car is not on the track. Stop rather
+    // than drive on blindly.
+    const offTrack = !car.lastCodeAt || (now - car.lastCodeAt > GHOST_OFFTRACK_MS);
+    const armed = raceState === 'racing' || raceState === 'finishing';
+    if (offTrack !== g.cutOut) {
+      g.cutOut = offTrack;
+      log(`${garageLabel(car)}: ${offTrack ? 'kein Streckencode — Ghost hält' : 'Streckencode wieder da'}`,
+          offTrack ? 'err' : 'info');
+    }
+
+    let steer = 0, throttle = 0, brake = 0;
+    if (armed && !offTrack) {
+      // ---- speed ----
+      let target = ghostCfg.speed;
+      const here = ghostTileInfo(car.tileCode).curve;
+      const ahead = ghostTurnDir(car, 1) !== 0;   // only meaningful with a layout
+      if (here || ahead) target *= (1 - ghostCfg.curveSlow);
+      if (ghostCfg.leaderBrake && ghostLeader() === car) target *= (1 - ghostCfg.leaderBrakePct);
+
+      const v = Math.abs(e.state.speedKmh) / cfg.topSpeedKmh;
+      const err = target - v;
+      throttle = Math.max(0, Math.min(1, err * 4));
+      brake = Math.max(0, Math.min(1, -err * 3));
+
+      // ---- steering ----
+      // Feed-forward from the layout (which way), corrected by the rotation signal (how
+      // much). Without a layout the direction is 0 and this holds a straight line.
+      const dir = ghostTurnDir(car, 0);
+      const yawTarget = dir * 8;          // magnitude seen on curve tiles in the logs
+      steer = dir * GHOST_STEER_CURVE + (yawTarget - car.yaw) * GHOST_YAW_GAIN;
+      steer += g.bias * ghostCfg.lateral * 0.25;
+      steer = Math.max(-1, Math.min(1, steer));
+    }
+
+    const out = e.update({ steering: steer, throttle, brake, headlights: true }, dt);
+    // Off the track or before the green light, send a HARD zero. Letting the physics coast
+    // down would keep a byte on the motor for another second or two, and "stops driving"
+    // has to mean stops, not eases off — the car is somewhere it should not be.
+    const drive = (armed && !offTrack) ? out.motorPWM : 0;
+    if (!armed || offTrack) { e.state.speedKmh = 0; e.state.virtualSpeed = 0; }
+    const lights = LIGHT_BASE | LIGHT_HEAD | (brake > 0.05 ? LIGHT_BRAKE : 0);
+    writeToCar(car, (armed && !offTrack) ? out.servoAngle : 0, drive, lights);
+  }
+
+  // The leader among the ghosts, by laps then tile index. Used for the hold-back setting.
+  function ghostLeader() {
+    let best = null;
+    garage.forEach(c => {
+      if (c.role !== 'ghost' || !c.ghost) return;
+      if (!best) { best = c; return; }
+      const a = c.ghost, b = best.ghost;
+      if (a.laps > b.laps || (a.laps === b.laps && (a.tileIndex || 0) > (b.tileIndex || 0))) best = c;
+    });
+    return best;
+  }
+
+  // Side by side? Then split them: one a little left, the other a little right. This is a
+  // guess, not a measurement — nothing reports where on the track width a car is — so it
+  // only ever applies a small offset.
+  function ghostAssignBias() {
+    const gs = garage.filter(c => c.role === 'ghost' && c.ghost);
+    gs.forEach(c => { c.ghost.bias = 0; });
+    for (let i = 0; i < gs.length; i++) {
+      for (let j = i + 1; j < gs.length; j++) {
+        const a = gs[i].ghost, b = gs[j].ghost;
+        if (a.laps === b.laps && Math.abs((a.tileIndex || 0) - (b.tileIndex || 0)) <= 1) {
+          a.bias = -1; b.bias = 1;
+        }
+      }
+    }
+  }
+  setInterval(ghostAssignBias, 500);
+
+  // Ghosts launch on green, not before.
+  function launchGhosts() {
+    garage.forEach(c => { if (c.role === 'ghost') startGhost(c); });
+    const n = garage.filter(c => c.role === 'ghost').length;
+    if (n && !currentTrackTiles.some(t => t.type === TILE_TYPE.CURVE_LEFT
+                                       || t.type === TILE_TYPE.CURVE_RIGHT)) {
+      log('Warnung: kein Streckenlayout mit Kurven geladen — Ghosts können nur geradeaus halten.', 'err');
+    }
   }
 
   function pollGamepad() {
