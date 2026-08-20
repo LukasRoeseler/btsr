@@ -1402,6 +1402,85 @@
         den man nicht lesen kann, kann man auch nicht pr&uuml;fen.
       </p>
     </div>
+
+    <div class="card">
+      <h2>Leitplanken-Modus &mdash; und warum die Ghosts nur Gas brauchen</h2>
+      <p class="muted">
+        Der Mitschnitt vom 20.08. (1,9&nbsp;MB, 46&nbsp;min, 1268 Sendungen, 1260 Meldungen) ist
+        der erste, in dem der Streckencode-Strom reichlich fliesst. Er kl&auml;rt drei Fragen und
+        beendet eine vierte.
+      </p>
+
+      <h3 style="font-size:14px; margin:16px 0 6px 0">Die Mustercodes sind entschl&uuml;sselt</h3>
+      <p class="muted">
+        Die gelesene Codefolge auf der Bahn lautet
+        <code>04 02 02 04 &middot; 04 02 02 04 &middot; 04 02 02 04 &middot; 01</code> auf einer
+        Strecke aus <code>S R2 G2 R2 G</code>. Kurve, Gerade, Gerade, Kurve &mdash; das passt
+        genau, und damit ist <b><code>0x04</code> = Kurve</b> und <b><code>0x02</code> =
+        Gerade</b>, <code>0x01</code> = Start/Ziel wie bisher.
+      </p>
+      <p class="muted">
+        Neu ist <b><code>0x00</code> = abseits der Bahn</b>. Bei jeder Abfahrt stand dieser Code
+        an, begleitet von einem durchdrehenden Teilz&auml;hler (6&rarr;8&rarr;9&rarr;15&rarr;18
+        innerhalb von drei Sekunden); 16 von 38 Teilwechseln der Sitzung waren dieser Art. Das
+        ist ein <em>sofortiges</em> Signal und ersetzt die vorher gesch&auml;tzte
+        1,5-Sekunden-Wartezeit auf <code>0xff</code> als Haupterkennung. Die Wartezeit bleibt
+        nur als Auffangnetz f&uuml;r den Fall, dass gar keine Meldungen mehr kommen &mdash; das
+        kann <code>0x00</code> nicht abdecken.
+      </p>
+
+      <h3 style="font-size:14px; margin:16px 0 6px 0">Das Auto h&auml;lt sich selbst auf der Bahn</h3>
+      <div class="doc-table-wrap"><table class="doc-table">
+        <tr><th>Streckenteil-Wechsel</th><th>mittlerer |Lenkwert| davor</th><th>ohne Lenkbefehl</th></tr>
+        <tr><td>auf der Bahn</td><td>30,4</td><td><b>40,9&nbsp;%</b></td></tr>
+        <tr><td>Code <code>0x00</code> (Abfahrt)</td><td>52,7</td><td>12,5&nbsp;%</td></tr>
+      </table></div>
+      <p class="muted">
+        41&nbsp;% der Teilwechsel auf der Bahn passierten <em>ohne jeden Lenkbefehl</em> &mdash;
+        auf einer Strecke mit vier Kurven. Und die Abfahrten folgten auf <b>mehr</b> Lenken, nicht
+        weniger. Das Lenken des Fahrers war die Ursache der Abfl&uuml;ge, nicht das Mittel dagegen.
+      </p>
+      <p class="muted">
+        Daraus folgt der ganze Ghost-Entwurf: <strong>ein Ghost sendet Lenkwert 0 und regelt nur
+        das Tempo.</strong> Kein Streckenlayout n&ouml;tig, kein Drehratenregler, keine blinde
+        Querf&uuml;hrung. Das ist einfacher <em>und</em> belastbarer als alles, was vorher geplant
+        war &mdash; der vorherige Entwurf musste die Kurvenrichtung aus dem Layout raten, weil
+        Byte&nbsp;12 nur &bdquo;Kurve&ldquo; sagt und nicht wohin.
+      </p>
+
+      <h3 style="font-size:14px; margin:16px 0 6px 0">Die Modus-Bytes</h3>
+      <p class="muted">
+        In dieser Sitzung sendete die Original-App durchg&auml;ngig <b>Byte&nbsp;10 =
+        <code>0x30</code></b> (wir hatten immer nur <code>0x60</code> gesendet) und
+        <b>Byte&nbsp;14 mit gel&ouml;schtem Bit&nbsp;7</b> (<code>0x02</code>/<code>0x22</code>,
+        beim Bremsen <code>0x03</code>/<code>0x23</code>), w&auml;hrend wir Bit&nbsp;7 immer
+        setzen. Ghosts senden jetzt genau diese Werte.
+      </p>
+      <p class="muted">
+        <b>Was noch offen ist:</b> welches der beiden Bytes den Modus tats&auml;chlich schaltet.
+        Beide Werte sind in unseren eigenen sieben Aufnahmen nie vorgekommen, und in denen hat das
+        Auto <em>keinen einzigen</em> Code gemeldet &mdash; das ist der plausibelste Grund
+        daf&uuml;r, aber bewiesen ist er nicht. Die Paketvarianten-Probe im Entwickler-Tab
+        entscheidet das in zwei Minuten; die drei neuen Schaltfl&auml;chen dort senden genau
+        diese Kombinationen.
+      </p>
+
+      <h3 style="font-size:14px; margin:16px 0 6px 0">Endg&uuml;ltig: es gibt keine Querablage</h3>
+      <p class="muted">
+        Sieben Telemetrie-Aufnahmen mit gezielten Fahrten am linken Rand und mittig, je rund 300
+        Fahrpakete: alle Effektst&auml;rken |d|&nbsp;&lt;&nbsp;0,2 f&uuml;r Byte&nbsp;1, 2 und 3.
+        Im Leitplanken-Mitschnitt zus&auml;tzlich gepr&uuml;ft &mdash; Byte&nbsp;2 trennt nicht nach
+        dem Leitplanken-Bit und korreliert nicht mit dem Lenkwert (r&nbsp;=&nbsp;&minus;0,07), und
+        Byte&nbsp;12 ist je Streckenteil konstant (0 von 38 Z&auml;hlerwerten trug zwei Codes),
+        kann also keine Position innerhalb eines Teils sein.
+      </p>
+      <p class="muted">
+        <b>Das ist kein Verlust.</b> Die Querablage w&auml;re n&ouml;tig gewesen, um selbst zu
+        lenken. Da das Auto das im Leitplanken-Modus &uuml;bernimmt, braucht sie niemand. Nur der
+        seitliche Versatz gegen gegenseitiges Rammen bleibt ein kleiner Anstoss ohne
+        R&uuml;ckmeldung &mdash; und das steht so auch in den Optionen.
+      </p>
+    </div>
   </section>
 
   <section class="tabpage" id="tab-dev">
@@ -1430,6 +1509,9 @@
         <button data-probe="tail">Byte&nbsp;16-18 = 01 04 04</button>
         <button data-probe="b9">Byte&nbsp;9 = &plusmn;127</button>
         <button data-probe="combo">0x20 + 0x62 + 01 04 04</button>
+        <button data-probe="rail" class="primary">Leitplanke: b10=0x30 + b14=0x02</button>
+        <button data-probe="rail10">nur b10 = 0x30</button>
+        <button data-probe="rail14">nur b14 = 0x02</button>
       </div>
       <p class="muted" id="probe-status" style="font-family:monospace">keine Variante aktiv</p>
       <p class="muted" style="font-size:11.5px">
@@ -1902,6 +1984,8 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-coast-drag-val">0.55</span>
         </div></div>
+      <div class="opt-row"><div class="opt-label">Ghost: Leitplanken-Modus<small>Das Auto h&auml;lt sich selbst auf der Bahn, der Ghost gibt nur Gas. Aus = alter Regler aus Layout und Drehrate.</small></div>
+        <label class="tgl"><input type="checkbox" id="ghost-rail" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Ghost-Tempo<small>Rundentempo der autonomen Autos, zum Ausprobieren von Schwierigkeitsgraden.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
@@ -2559,7 +2643,7 @@
   let probeOverride = null;   // e.g. { 10: 0x20 } — byte index -> value
   let probeStats = { since: 0, sent: 0, codes: 0, lastCode: null, label: '' };
 
-  function buildCommandPacket(steerFloat, throttleFloat, lightOverride) {
+  function buildCommandPacket(steerFloat, throttleFloat, lightOverride, byteOverride) {
     // Full mechanical lock. The old "Maximaler Lenkausschlag" option scaled this down to
     // 85 of 127 steps by default, i.e. the car was never asked for more than two thirds
     // of the steering it has.
@@ -2576,6 +2660,8 @@
       for (const k in probeOverride) body[k | 0] = probeOverride[k] & 0xff;
       probeStats.sent++;
     }
+    // Per-car mode bytes (a ghost in guard-rail mode). Same rule: before the checksum.
+    if (byteOverride) for (const k in byteOverride) body[k | 0] = byteOverride[k] & 0xff;
     body.push(crc8(body));
     return new Uint8Array(body);
   }
@@ -2834,6 +2920,11 @@
     b9:      { label: 'Byte 9 = +-127', bytes: { 9: 0x7f } },
     combo:   { label: '0x20 + 0x62 + 01 04 04',
                bytes: { 10: 0x20, 14: 0x62, 16: 0x01, 17: 0x04, 18: 0x04 } },
+    // From the guard-rail capture: these are the values the original app actually sent while
+    // the code stream was flowing richly and the car held the track on its own.
+    rail:    { label: 'Leitplanke: b10=0x30, b14=0x02', bytes: { 10: 0x30, 14: 0x02 } },
+    rail10:  { label: 'nur b10 = 0x30', bytes: { 10: 0x30 } },
+    rail14:  { label: 'nur b14 = 0x02', bytes: { 14: 0x02 } },
   };
 
   function setProbe(key) {
@@ -4625,12 +4716,25 @@
   // something the car actually sent — bytes[12] is 0..255 and can never equal 0x100.
   const TILE_TYPE = { START: 0x01, STRAIGHT: 0x02, CURVE_RIGHT: 0x04, CURVE_LEFT: 0x08,
                       PIT: 0x100 };
+  // Code 0x00 means the sensor is reading NOTHING VALID, i.e. the car has left the track.
+  // From the guard-rail capture of 20.08: every departure showed up as 0x00 together with the
+  // tile counter racing (6 -> 8 -> 9 -> 15 -> 18 within three seconds), and 16 of 38
+  // transitions in that session were of this kind. It is an immediate signal, which makes the
+  // old 1.5 s timeout on 0xff unnecessary as the primary detector.
+  const TILE_OFFTRACK = 0x00;
+  // Mode bytes the ORIGINAL app used in guard-rail mode, where the car keeps itself on the
+  // track. Measured in that capture: byte 10 = 0x30 throughout (we had only ever sent 0x60),
+  // and byte 14 with bit 7 CLEAR (0x02/0x22, plus 0x03/0x23 while braking) where we always
+  // set bit 7. Which of the two actually switches the mode is not yet established — the probe
+  // in the developer tab settles that in two minutes.
+  const RAIL_MODE = { b10: 0x30, b14base: 0x02 };
   const TILE_LABEL = {
     [TILE_TYPE.START]: 'Start/Ziel',
     [TILE_TYPE.STRAIGHT]: 'Gerade',
     [TILE_TYPE.CURVE_RIGHT]: 'Rechtskurve',
     [TILE_TYPE.CURVE_LEFT]: 'Linkskurve (?)',
     [TILE_TYPE.PIT]: 'Boxengasse',
+    [TILE_OFFTRACK]: 'abseits der Bahn',
   };
 
   function loadTrackStore() {
@@ -6628,6 +6732,10 @@
 
   // Both models fade to nothing at the left end, so "off" is genuinely the old behaviour
   // rather than a very small amount of the new one.
+  $('ghost-rail').addEventListener('change', (e) => {
+    ghostCfg.railMode = e.target.checked;
+  });
+
   $('ghost-speed').addEventListener('input', (e) => {
     ghostCfg.speed = parseFloat(e.target.value);
     $('ghost-speed-val').textContent = Math.round(ghostCfg.speed * 100) + '%';
@@ -6974,11 +7082,11 @@
 
   // One write path for every non-player purpose: ghost driving and the identify blink.
   // Same single-writer discipline as the player car, just per car.
-  async function writeToCar(car, steer, throttle, lightBits) {
+  async function writeToCar(car, steer, throttle, lightBits, modeBytes) {
     if (!car.rx || car.writeInFlight) return;
     car.writeInFlight = true;
     try {
-      const pkt = buildCommandPacket(steer, throttle, lightBits);
+      const pkt = buildCommandPacket(steer, throttle, lightBits, modeBytes);
       recWrite(pkt, garageLabel(car));
       if (car.rx.properties.writeWithoutResponse) await car.rx.writeValueWithoutResponse(pkt);
       else await car.rx.writeValueWithResponse(pkt);
@@ -7110,7 +7218,9 @@
     // the BLE explorer's discovery, which the Garage does not use.
     if (car === playerCar) handleDashboardBytes(b);
     const code = b[12];
-    if (code !== 0xff) car.lastCodeAt = Date.now();
+    // 0x00 is a valid REPORT but not a valid READING, so it must not refresh the
+    // last-seen-code timestamp — otherwise a car sitting beside the track looks alive.
+    if (code !== 0xff && code !== TILE_OFFTRACK) car.lastCodeAt = Date.now();
     if (code !== car.tileCode) { car.tileCode = code; }
     if (car.tileCount !== b[11]) { car.tileCount = b[11]; car.tileAt = Date.now(); }
     car.yaw = b[3] > 127 ? b[3] - 256 : b[3];
@@ -7166,6 +7276,9 @@
     lateral: 0,         // blind side-by-side offset, 0 = off
     leaderBrake: false, // hold the leader back for a while
     leaderBrakePct: 0.10,
+    // Default ON: the measurement says this is the mode in which the car holds the track by
+    // itself, which is the only configuration in which a ghost works at all today.
+    railMode: true,
   };
 
   // Per-tile behaviour, data-driven on purpose: the hairpin and left-curve codes are not
@@ -7233,9 +7346,11 @@
       }
     }
 
-    // Cut-out: no pattern under the sensor means the car is not on the track. Stop rather
-    // than drive on blindly.
-    const offTrack = !car.lastCodeAt || (now - car.lastCodeAt > GHOST_OFFTRACK_MS);
+    // Cut-out. Two detectors, and the first one is new: code 0x00 IS the off-track report,
+    // so there is no need to wait for a timeout. The timeout stays as a backstop for the case
+    // where notifications stop arriving altogether, which 0x00 cannot cover.
+    const offTrack = car.tileCode === TILE_OFFTRACK
+                  || !car.lastCodeAt || (now - car.lastCodeAt > GHOST_OFFTRACK_MS);
     const armed = raceState === 'racing' || raceState === 'finishing';
     if (offTrack !== g.cutOut) {
       g.cutOut = offTrack;
@@ -7258,23 +7373,43 @@
       brake = Math.max(0, Math.min(1, -err * 3));
 
       // ---- steering ----
-      // Feed-forward from the layout (which way), corrected by the rotation signal (how
-      // much). Without a layout the direction is 0 and this holds a straight line.
-      const dir = ghostTurnDir(car, 0);
-      const yawTarget = dir * 8;          // magnitude seen on curve tiles in the logs
-      steer = dir * GHOST_STEER_CURVE + (yawTarget - car.yaw) * GHOST_YAW_GAIN;
-      steer += g.bias * ghostCfg.lateral * 0.25;
+      // In guard-rail mode the CAR steers itself, and the measurement says so plainly: in the
+      // 20.08 capture 41 % of on-track tile transitions happened with no steering command at
+      // all, while departures followed MORE steering (mean |steer| 52.7 against 30.4), not
+      // less. The driver's input is what threw it off. So a ghost sends zero steering and
+      // lets the car do the work — no layout needed, no yaw loop, no blind offset.
+      // The offset against ramming stays available, because two cars on one line still
+      // collide; it is a small nudge on top of zero, not a control loop.
+      if (ghostCfg.railMode) {
+        steer = g.bias * ghostCfg.lateral * 0.25;
+      } else {
+        // Fallback for cars not in guard-rail mode: the old layout-plus-yaw controller.
+        const dir = ghostTurnDir(car, 0);
+        const yawTarget = dir * 8;
+        steer = dir * GHOST_STEER_CURVE + (yawTarget - car.yaw) * GHOST_YAW_GAIN;
+        steer += g.bias * ghostCfg.lateral * 0.25;
+      }
       steer = Math.max(-1, Math.min(1, steer));
     }
 
     const out = e.update({ steering: steer, throttle, brake, headlights: true }, dt);
+    // Put the car into the mode where it keeps itself on the track. Replicates what the
+    // original app sent, rather than guessing: byte 10 = 0x30 and byte 14 with bit 7 clear.
+    if (ghostCfg.railMode) {
+      car.modeBytes = { 10: RAIL_MODE.b10 };
+      car.railLight = RAIL_MODE.b14base | (brake > 0.05 ? LIGHT_BRAKE : 0);
+    } else {
+      car.modeBytes = null; car.railLight = null;
+    }
     // Off the track or before the green light, send a HARD zero. Letting the physics coast
     // down would keep a byte on the motor for another second or two, and "stops driving"
     // has to mean stops, not eases off — the car is somewhere it should not be.
     const drive = (armed && !offTrack) ? out.motorPWM : 0;
     if (!armed || offTrack) { e.state.speedKmh = 0; e.state.virtualSpeed = 0; }
-    const lights = LIGHT_BASE | LIGHT_HEAD | (brake > 0.05 ? LIGHT_BRAKE : 0);
-    writeToCar(car, (armed && !offTrack) ? out.servoAngle : 0, drive, lights);
+    const lights = car.railLight !== null && car.railLight !== undefined
+      ? car.railLight
+      : (LIGHT_BASE | LIGHT_HEAD | (brake > 0.05 ? LIGHT_BRAKE : 0));
+    writeToCar(car, (armed && !offTrack) ? out.servoAngle : 0, drive, lights, car.modeBytes);
   }
 
   // The leader among the ghosts, by laps then tile index. Used for the hold-back setting.
