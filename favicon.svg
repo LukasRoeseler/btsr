@@ -22,13 +22,13 @@
       <feDropShadow dx="0" dy="-6" stdDeviation="4" flood-color="#000000" flood-opacity="0.5" />
     </filter>
 
-    <!-- Top Kerb (Light Blue & White Chevron Pattern pointing Right) -->
+    <!-- Top Kerb Pattern (Light Blue & White Chevron pointing Right) -->
     <pattern id="top-kerb-pattern" width="80" height="80" patternUnits="userSpaceOnUse">
       <rect width="80" height="80" fill="#FFFFFF" />
       <path d="M 0,0 L 40,40 L 0,80 L 40,80 L 80,40 L 40,0 Z" fill="#0095DA" />
     </pattern>
 
-    <!-- Bottom Kerb (Red & White Chevron Pattern pointing Right) -->
+    <!-- Bottom Kerb Pattern (Red & White Chevron pointing Right) -->
     <pattern id="bottom-kerb-pattern" width="80" height="80" patternUnits="userSpaceOnUse">
       <rect width="80" height="80" fill="#FFFFFF" />
       <path d="M 0,0 L 40,40 L 0,80 L 40,80 L 80,40 L 40,0 Z" fill="#D71921" />
@@ -58,15 +58,15 @@
     <rect x="0" y="504" width="512" height="8" fill="#000000" opacity="0.4" />
   </g>
 
-  <!-- 4. "CHC" TEXT IN CALIBRI (Dark Grey, Centered) -->
+  <!-- 4. "CHC" TEXT IN CALIBRI (Dark Grey, Larger Font Size) -->
   <text 
     x="256" 
-    y="298" 
+    y="322" 
     font-family="Calibri, sans-serif" 
-    font-size="160" 
+    font-size="220" 
     font-weight="bold" 
-    fill="#1c1d21" 
+    fill="#1a1b1f" 
     text-anchor="middle" 
-    letter-spacing="8" 
+    letter-spacing="4" 
     opacity="0.95">CHC</text>
 </svg>
