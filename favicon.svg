@@ -1,9 +1,72 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <!-- CH Control mark: the app's navy/red racing stripes with the CH monogram. -->
-  <rect width="64" height="64" rx="10" fill="#0b1f3f"/>
-  <rect x="0" y="14" width="64" height="5" fill="#ffffff"/>
-  <rect x="0" y="45" width="64" height="5" fill="#b3131f"/>
-  <text x="32" y="40" text-anchor="middle"
-        font-family="Arial, Helvetica, sans-serif" font-weight="bold" font-size="21"
-        fill="#ffffff">CH</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Asphalt Base Texture (Noise Pattern) -->
+    <filter id="asphalt-noise" x="0%" y="0%" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" result="noise" />
+      <feColorMatrix type="matrix" values="0 0 0 0 0.12  0 0 0 0 0.12  0 0 0 0 0.14  0 0 0 0.45 0" />
+      <feComposite in2="SourceGraphic" in="noise" operator="in" />
+    </filter>
+
+    <!-- Asphalt Base Gradient -->
+    <linearGradient id="asphalt-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#222428" />
+      <stop offset="50%" stop-color="#30333a" />
+      <stop offset="100%" stop-color="#222428" />
+    </linearGradient>
+
+    <!-- Kerb Drop Shadows for 3D Depth -->
+    <filter id="shadow-down" x="-10%" y="0%" width="120%" height="200%">
+      <feDropShadow dx="0" dy="6" stdDeviation="4" flood-color="#000000" flood-opacity="0.5" />
+    </filter>
+    <filter id="shadow-up" x="-10%" y="-100%" width="120%" height="200%">
+      <feDropShadow dx="0" dy="-6" stdDeviation="4" flood-color="#000000" flood-opacity="0.5" />
+    </filter>
+
+    <!-- Top Kerb (Light Blue & White Chevron Pattern pointing Right) -->
+    <pattern id="top-kerb-pattern" width="80" height="80" patternUnits="userSpaceOnUse">
+      <rect width="80" height="80" fill="#FFFFFF" />
+      <path d="M 0,0 L 40,40 L 0,80 L 40,80 L 80,40 L 40,0 Z" fill="#0095DA" />
+    </pattern>
+
+    <!-- Bottom Kerb (Red & White Chevron Pattern pointing Right) -->
+    <pattern id="bottom-kerb-pattern" width="80" height="80" patternUnits="userSpaceOnUse">
+      <rect width="80" height="80" fill="#FFFFFF" />
+      <path d="M 0,0 L 40,40 L 0,80 L 40,80 L 80,40 L 40,0 Z" fill="#D71921" />
+    </pattern>
+  </defs>
+
+  <!-- 1. REALISTIC ASPHALT ROADBED -->
+  <rect width="512" height="512" fill="url(#asphalt-grad)" />
+  <rect width="512" height="512" fill="#000000" filter="url(#asphalt-noise)" opacity="0.65" />
+
+  <!-- Subtle Asphalt Grain / Track Wear Lines -->
+  <path d="M 0 160 L 512 160 M 0 352 L 512 352" stroke="#ffffff" stroke-width="1.5" opacity="0.08" stroke-dasharray="30 15 10 15" />
+
+  <!-- 2. TOP KERB (Light Blue & White Arrow Kerb pointing Right) -->
+  <g filter="url(#shadow-down)">
+    <rect x="0" y="0" width="512" height="72" fill="url(#top-kerb-pattern)" />
+    <!-- Bevel / 3D Edge Highlights -->
+    <rect x="0" y="0" width="512" height="8" fill="#FFFFFF" opacity="0.4" />
+    <rect x="0" y="64" width="512" height="8" fill="#000000" opacity="0.35" />
+  </g>
+
+  <!-- 3. BOTTOM KERB (Red & White Arrow Kerb pointing Right) -->
+  <g filter="url(#shadow-up)">
+    <rect x="0" y="440" width="512" height="72" fill="url(#bottom-kerb-pattern)" />
+    <!-- Bevel / 3D Edge Highlights -->
+    <rect x="0" y="440" width="512" height="8" fill="#FFFFFF" opacity="0.4" />
+    <rect x="0" y="504" width="512" height="8" fill="#000000" opacity="0.4" />
+  </g>
+
+  <!-- 4. "CHC" TEXT IN CALIBRI (Dark Grey, Centered) -->
+  <text 
+    x="256" 
+    y="298" 
+    font-family="Calibri, sans-serif" 
+    font-size="160" 
+    font-weight="bold" 
+    fill="#1c1d21" 
+    text-anchor="middle" 
+    letter-spacing="8" 
+    opacity="0.95">CHC</text>
 </svg>
