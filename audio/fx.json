@@ -1153,5 +1153,32 @@
   "file": "pit_repair.ogg",
   "loop": true,
   "seconds": 2.4
+ },
+ "horns": {
+  "horn_car": {
+   "file": "horn_car.ogg",
+   "label": "Autohupe",
+   "seconds": 0.586
+  },
+  "horn_ship": {
+   "file": "horn_ship.ogg",
+   "label": "Schiffshupe",
+   "seconds": 2.043
+  },
+  "horn_donkey": {
+   "file": "horn_donkey.ogg",
+   "label": "Esel",
+   "seconds": 1.501
+  },
+  "horn_goat": {
+   "file": "horn_goat.ogg",
+   "label": "Ziege",
+   "seconds": 1.985
+  },
+  "horn_fart": {
+   "file": "horn_fart.ogg",
+   "label": "Furz",
+   "seconds": 0.524
+  }
  }
 }

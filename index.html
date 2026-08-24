@@ -2385,6 +2385,22 @@
         <div class="snd-row"><audio controls preload="none" src="audio/mustang_start.ogg"></audio><div><b>Motorstart: Mustang</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
       </div>
 
+      <h3 style="font-size:14px; margin:18px 0 6px 0">Hupen f&uuml;r die Lichthupe</h3>
+      <p class="muted" style="font-size:11.5px">
+        W&auml;hlbar in den Optionen, Standard aus. Alle f&uuml;nf sind auf dieselbe
+        <em>Lautheit</em> gebracht und nicht auf dieselbe Spitze: bei Spitzennormalisierung
+        verschwindet der kurze Furz gegen die durchgehend laute Schiffshupe. Und geschnitten
+        wird auf das laute Ereignis, nicht auf die erste Nicht-Stille &mdash; die Ziege
+        meckert in der Quelldatei erst nach 3,3&nbsp;Sekunden.
+      </p>
+      <div class="snd-grid">
+        <div class="snd-row"><audio controls preload="none" src="audio/horn_car.ogg"></audio><div><b>Hupe: Autohupe</b><br><span class="muted" style="font-size:11px">aus einer Pixabay-Aufnahme geschnitten</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/horn_ship.ogg"></audio><div><b>Hupe: Schiffshupe</b><br><span class="muted" style="font-size:11px">aus einer Pixabay-Aufnahme geschnitten</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/horn_donkey.ogg"></audio><div><b>Hupe: Esel</b><br><span class="muted" style="font-size:11px">aus einer Pixabay-Aufnahme geschnitten</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/horn_goat.ogg"></audio><div><b>Hupe: Ziege</b><br><span class="muted" style="font-size:11px">aus einer Pixabay-Aufnahme geschnitten</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/horn_fart.ogg"></audio><div><b>Hupe: Furz</b><br><span class="muted" style="font-size:11px">aus einer Pixabay-Aufnahme geschnitten</span></div></div>
+      </div>
+
       <h3 style="font-size:14px; margin:18px 0 6px 0">Warnt&ouml;ne</h3>
       <p class="muted" style="font-size:11.5px">
         Diese beiden liegen als <em>Code</em> vor, nicht als Datei: sie werden aus zwei
@@ -2983,12 +2999,18 @@
           <span class="opt-val" id="ghost-lateral-val">aus</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Ton bei Lichthupe
-          <small>Selbst gerechnet, keine Aufnahme. Standard aus.</small></div>
+          <small>Standard aus. Die ersten f&uuml;nf sind Aufnahmen, der Rest ist
+          gerechnet.</small></div>
         <select id="flash-sound">
           <option value="none" selected>kein Ton</option>
-          <option value="relay">Relais-Klacken</option>
-          <option value="horn">kurze Hupe</option>
-          <option value="blip">elektronischer Blip</option>
+          <option value="horn_car">Autohupe</option>
+          <option value="horn_ship">Schiffshupe</option>
+          <option value="horn_donkey">Esel</option>
+          <option value="horn_goat">Ziege</option>
+          <option value="horn_fart">Furz</option>
+          <option value="relay">Relais-Klacken (gerechnet)</option>
+          <option value="horn">Zweiklang (gerechnet)</option>
+          <option value="blip">Blip (gerechnet)</option>
         </select></div>
       <div class="opt-row"><div class="opt-label">Ghost braucht Streckencode
           <small>Aus: der Ghost f&auml;hrt auch ohne gedruckte Strecke. Dann h&auml;lt sich
@@ -8338,6 +8360,14 @@
     const sel = $('flash-sound');
     const kind = sel ? sel.value : 'none';
     if (kind === 'none' || !audioCtx || !soundEnabled) return;
+    // Aufnahmen zuerst. Nicht geladen heisst still statt Rueckfall auf einen gerechneten
+    // Ton: wer die Ziege gewaehlt hat, will keinen Blip hoeren.
+    if (kind.startsWith('horn_')) {
+      const buf = fxBuffers.horns[kind];
+      if (buf) playFx(buf, 0.85);
+      else log('Hupe nicht geladen: ' + kind, 'err');
+      return;
+    }
     const t = audioCtx.currentTime + 0.01;
     if (kind === 'relay') {
       // Zwei harte, kurze Klicks: Anzug und Abfall. Rauschen durch einen engen Bandpass,
@@ -8929,7 +8959,7 @@
 
   // ---- One-shot and looping effect samples ----
   const fxBuffers = { crash: [], brake: null, pit: null, pitFuel: null, pitRepair: null,
-                      start: {}, shift: {} };
+                      start: {}, shift: {}, horns: {} };
   let brakeNode = null, brakeGain = null;
 
   async function loadFxSamples() {
@@ -8950,6 +8980,12 @@
       // (grab returns null) and the sound is simply absent rather than the load failing.
       if (fx.pit_fuel) fxBuffers.pitFuel = await grab(fx.pit_fuel.file);
       if (fx.pit_repair) fxBuffers.pitRepair = await grab(fx.pit_repair.file);
+      // Hupen. Optional, wie die Schubschleifen: ein aelteres audio/ hat sie nicht, und ein
+      // fehlender Eintrag darf den ganzen Ladevorgang nicht abbrechen - genau daran hing
+      // schon einmal der Schaltton.
+      if (fx.horns) {
+        for (const k of Object.keys(fx.horns)) fxBuffers.horns[k] = await grab(fx.horns[k].file);
+      }
       // Optional: older audio bundles predate the shift sounds, and a missing file must
       // not take the whole effects load down with it.
       if (fx.shift) {

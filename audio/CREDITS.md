@@ -64,6 +64,14 @@ liefert.
   `fjc_media-sounds-of-nuerburgring-engines-of-classic-race-cars-234929.mp3`.
   Der Teppich ist der Abschnitt mit der geringsten Energieschwankung, die
   Vorbeifahrten sind die mit der hoechsten.
+- **Hupen f&uuml;r die Lichthupe** (`horn_car`, `horn_ship`, `horn_donkey`, `horn_goat`,
+  `horn_fart`) — aus fuenf Pixabay-Aufnahmen, geschnitten von `tools/horn_sounds.py`.
+  Zwei Entscheidungen dabei, beide gemessen begruendet: geschnitten wird auf das LAUTE
+  EREIGNIS und nicht auf die erste Nicht-Stille (die Ziege meckert in der Quelldatei erst
+  nach 3,3 s, ein Schnitt auf 2 s Hoechstdauer behielt also nur den Vorlauf und das Meckern
+  war weg), und angepasst wird auf gleichen RMS statt gleiche Spitze (bei
+  Spitzennormalisierung verschwindet der kurze Furz gegen die durchgehend laute
+  Schiffshupe). Ergebnis: alle fuenf bei RMS 0,130, Anschlagzeiten 59 bis 327 ms.
 - **Regen und Donner** (`rain_bed.ogg`, `thunder_0..2.ogg`) — aus
   `pwlpl-heavy-thunderstorm-sound-effect-473418.mp3`, nach demselben Verfahren.
 
