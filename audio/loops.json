@@ -2,7 +2,7 @@
  "porsche": {
   "label": "Porsche 992 GT3 (Boxer-6, Saugmotor)",
   "cylinders": 6,
-  "source": "vollst\u00e4ndig synthetisiert (Modell nach engine-sim, MIT)",
+  "source": "vollständig synthetisiert (Modell nach engine-sim, MIT)",
   "loops": {
    "idle": {
     "file": "porsche_idle.ogg",
@@ -37,7 +37,7 @@
  "bmw": {
   "label": "BMW M4 GT3 (Reihen-6, Turbo)",
   "cylinders": 6,
-  "source": "vollst\u00e4ndig synthetisiert (Modell nach engine-sim, MIT)",
+  "source": "vollständig synthetisiert (Modell nach engine-sim, MIT)",
   "loops": {
    "idle": {
     "file": "bmw_idle.ogg",
@@ -72,7 +72,7 @@
  "mustang": {
   "label": "Ford Mustang GT3 (V8, Cross-Plane)",
   "cylinders": 8,
-  "source": "vollst\u00e4ndig synthetisiert (Modell nach engine-sim, MIT)",
+  "source": "vollständig synthetisiert (Modell nach engine-sim, MIT)",
   "loops": {
    "idle": {
     "file": "mustang_idle.ogg",
@@ -117,22 +117,24 @@
    },
    "mid": {
     "file": "corvette_mid.ogg",
-    "baseRpm": 4037,
-    "f0": 269.2,
+    "baseRpm": 4545,
+    "f0": 303.0,
     "seconds": 1.88
    },
    "high": {
     "file": "corvette_high.ogg",
-    "baseRpm": 4522,
-    "f0": 301.5,
+    "baseRpm": 4980,
+    "f0": 332.0,
     "seconds": 1.88
    }
-  }
+  },
+  "rpmScale": 0.62,
+  "rpmScaleGrund": "Die Aufnahme reicht nur bis ~4500/min (Strassenwagen), die App dreht bis 9000. Ohne diesen Faktor spielt die App die Schleife am oberen Ende mit Faktor 1.99, also fast doppelter Geschwindigkeit - daher klang die Corvette insgesamt zu hoch. Das ist eine Transposition und keine Messung: 0.62 bringt den Faktor bei 9000/min auf 1.12 statt 1.99."
  },
  "gt3v8": {
   "label": "GT3 V8, Flat-Plane (nach Ferrari F136)",
   "cylinders": 8,
-  "source": "vollst\u00e4ndig synthetisiert (Modell nach engine-sim, MIT)",
+  "source": "vollständig synthetisiert (Modell nach engine-sim, MIT)",
   "loops": {
    "idle": {
     "file": "gt3v8_idle.ogg",
@@ -167,7 +169,7 @@
  "gt3v10": {
   "label": "GT3 V10 (nach Lexus LFA)",
   "cylinders": 10,
-  "source": "vollst\u00e4ndig synthetisiert (Modell nach engine-sim, MIT)",
+  "source": "vollständig synthetisiert (Modell nach engine-sim, MIT)",
   "loops": {
    "idle": {
     "file": "gt3v10_idle.ogg",
@@ -202,7 +204,7 @@
  "bmax": {
   "label": "Ford B-Max 1.0 EcoBoost (Reihen-3, Turbo)",
   "cylinders": 3,
-  "source": "vollst\u00e4ndig synthetisiert (Modell nach engine-sim, MIT)",
+  "source": "vollständig synthetisiert (Modell nach engine-sim, MIT)",
   "loops": {
    "idle": {
     "file": "bmax_idle.ogg",
@@ -237,7 +239,7 @@
  "f1": {
   "label": "F1 V12, 18 000/min (nach Ferrari 412 T2)",
   "cylinders": 12,
-  "source": "vollst\u00e4ndig synthetisiert (Modell nach engine-sim, MIT)",
+  "source": "vollständig synthetisiert (Modell nach engine-sim, MIT)",
   "loops": {
    "idle": {
     "file": "f1_idle.ogg",

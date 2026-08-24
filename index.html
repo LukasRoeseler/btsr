@@ -61,7 +61,12 @@
     height: 3px; background: linear-gradient(90deg, var(--navy) 0%, var(--navy) 60%, var(--bad) 60%, var(--bad) 64%, var(--navy) 64%);
   }
   header {
-    display: flex; align-items: center; gap: 14px;
+    /* block, NOT flex. This one word was the bug: when the tab row moved inside the header,
+       the old flex rule laid .hdr-top and nav.tabs out SIDE BY SIDE. Measured at 375x812 the
+       tab row started at x=554 with 926px of overflow, i.e. entirely off a phone screen -
+       which is why the tabs could not be reached in portrait. They were never hidden, they
+       were parked outside the viewport. */
+    display: block;
     padding: 0; background: var(--brand-bg); color: var(--ink); position: relative;
   }
   header::after {
@@ -72,9 +77,61 @@
   /* Two rows, not one. The tabs belong in the header, but eight of them next to a logo,
      a status line and two buttons cannot share a line on a phone - and the header is the one
      strip that must survive every width. */
+  /* flex, not grid. A grid with a positional 1fr breaks the moment something is hidden:
+     display:none removes an item from the grid entirely, so hiding the wordmark on a phone
+     shifted every later item one column left and the 1fr landed on the connect button,
+     stretching it to 225px. flex has no positional columns to slip, and nowrap (the default)
+     already guarantees the row cannot break and push the tabs off screen. */
   .hdr-top {
-    display: flex; align-items: center; gap: 14px; padding: 12px 24px 10px 24px;
-    position: relative; z-index: 1;
+    display: flex; flex-wrap: nowrap; align-items: center; gap: 12px;
+    padding: 10px 16px 8px 16px; position: relative; z-index: 1;
+  }
+  .hdr-top .spacer { flex: 1 1 auto; min-width: 0; }
+  /* The logo is the way back to the home screen, so it has to be a real button. */
+  .hdr-logo {
+    background: none; border: 0; padding: 0; margin: 0; cursor: pointer;
+    display: flex; align-items: center; min-height: 0; border-radius: 4px;
+  }
+  .hdr-logo:hover { background: var(--tint-2); }
+  .hdr-btn {
+    display: inline-flex; align-items: center; gap: 7px; padding: 7px 12px;
+    font-weight: 700; letter-spacing: .04em; white-space: nowrap;
+  }
+  .hdr-btn svg { width: 16px; height: 16px; flex: none; }
+  #btn-connect { background: var(--good); border-color: var(--good); color: #04170c; }
+  #btn-connect:hover:not(:disabled) { background: #5ce89b; border-color: #5ce89b; }
+  #btn-disconnect { background: var(--bad); border-color: var(--bad); color: #1a0406; }
+  #btn-disconnect:hover:not(:disabled) { background: #ff7b7b; border-color: #ff7b7b; }
+
+  @media (max-width: 700px) {
+    /* The wordmark goes, the logo carries the brand. The connection state was a word and a
+       dot saying the same thing twice; on a phone only the dot survives, and the word moves
+       into the button's accessible name so nothing is lost for a screen reader. */
+    header h1 { display: none; }
+    .hdr-btn .lbl { display: none; }
+    .hdr-btn { padding: 7px 10px; }
+    .hdr-top { gap: 9px; padding: 8px 12px 6px 12px; }
+  }
+
+  /* Landscape on a phone: every pixel of height belongs to the track, not to the chrome. */
+  @media (orientation: landscape) and (max-height: 520px) {
+    .hdr-top { padding: 4px 12px; gap: 8px; }
+    .hdr-logo svg { width: 26px; height: 26px; }
+    nav.tabs button { padding: 6px 12px; min-height: 34px; }
+  }
+
+  /* In the cockpit the header shrinks to its smallest useful form. body.race-mode was
+     already being toggled on every tab switch but had no rule at all - dead code until now. */
+  body.race-mode .hdr-top { padding: 4px 12px; }
+  body.race-mode header h1 { display: none; }
+  body.race-mode header::after { display: none; }
+  /* Driving on a phone held sideways: the header was taking 21 % of the screen height for a
+     logo and two buttons. In the cockpit it gets the minimum that still lets you leave. */
+  @media (orientation: landscape) and (max-height: 520px) {
+    body.race-mode .hdr-top { padding: 2px 10px; gap: 6px; }
+    body.race-mode .hdr-logo svg { width: 22px; height: 22px; }
+    body.race-mode .hdr-btn { padding: 4px 8px; min-height: 30px; }
+    body.race-mode nav.tabs button { padding: 3px 10px; min-height: 26px; font-size: 10.5px; }
   }
   header .logo { flex-shrink: 0; position: relative; z-index: 1; }
   header h1 {
@@ -103,7 +160,7 @@
   header button:hover { background: var(--tint-3); }
   header button.primary { background: var(--ink); color: var(--brand-bg); border-color: var(--ink); }
   nav.tabs {
-    display: flex; gap: 2px; padding: 0 24px; background: transparent;
+    display: flex; gap: 2px; padding: 0 12px; background: transparent;
     border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
     overflow-x: auto; -webkit-overflow-scrolling: touch;
     position: relative; z-index: 1;
@@ -112,6 +169,14 @@
     scrollbar-width: none;
   }
   nav.tabs::-webkit-scrollbar { display: none; }
+  /* A fade at the right edge, because with the scrollbar hidden there is otherwise nothing
+     to say that the row continues past the screen - which on a phone it always does. */
+  .tabs-wrap { position: relative; }
+  .tabs-wrap::after {
+    content: ''; position: absolute; right: 0; top: 0; bottom: 0; width: 26px;
+    pointer-events: none; z-index: 2;
+    background: linear-gradient(90deg, transparent, var(--brand-bg));
+  }
   nav.tabs button {
     background: transparent; border: none; border-bottom: 3px solid transparent;
     white-space: nowrap; flex-shrink: 0;
@@ -714,6 +779,7 @@
   <!-- PLATZHALTER. Das Omega-SVG aus der Nachricht liegt nicht im Projekt; dieses hier ist
        selbst gezeichnet, mit demselben Kanalversatz wie die Kopfzeile, damit die Marke schon
        stimmt. Zum Austauschen genau dieses <svg> ersetzen - sonst haengt nichts daran. -->
+  <button class="hdr-logo" id="btn-home" aria-label="Startseite" title="Startseite">
   <svg class="logo" width="34" height="34" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"
        aria-label="OmegaSim">
     <g font-family="Georgia, 'Times New Roman', serif" font-size="34" font-weight="700"
@@ -723,14 +789,24 @@
       <text x="20" y="21" fill="#f4f6fb">&#937;</text>
     </g>
   </svg>
-  <div class="dot" id="conn-dot"></div>
+  </button>
+  <div class="dot" id="conn-dot" title="nicht verbunden"
+       role="status" aria-label="nicht verbunden"></div>
   <h1>OmegaSim</h1>
-  <span class="status" id="conn-status">nicht verbunden</span>
   <div class="spacer"></div>
-  <button class="primary" id="btn-connect">Verbinden</button>
-  <button id="btn-disconnect" disabled>Trennen</button>
+  <button class="hdr-btn" id="btn-connect" aria-label="Auto verbinden">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M12 3v18M12 8l6-4M12 8L6 4M12 16l6 4M12 16l-6-4"/>
+    </svg><span class="lbl">Verbinden</span></button>
+  <button class="hdr-btn" id="btn-disconnect" disabled aria-label="Auto trennen">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M12 3v18M12 8l6-4M12 16l6 4M12 16l-6-4M4 4l16 16"/>
+    </svg><span class="lbl">Trennen</span></button>
   </div>
   <!-- The tab row lives inside the header now, so the whole navigation is one block. -->
+  <div class="tabs-wrap">
   <nav class="tabs">
   <button class="tab-btn" data-tab="garage">Garage</button>
   <button class="tab-btn active" data-tab="control">Renneinstellungen</button>
@@ -741,6 +817,7 @@
   <button class="tab-btn" data-tab="doc">Doku</button>
   <button class="tab-btn" data-tab="dev">Entwickler</button>
   </nav>
+  </div>
 </header>
 <div class="pinstripe"></div>
 
@@ -920,6 +997,9 @@
         <div>
           <div class="muted">Fahrzeug: <b id="dash-vehicle-name">nicht verbunden</b></div>
           <div class="muted">Status: <span id="dash-offtrack" style="display:inline-block;padding:1px 8px;border-radius:4px;background:var(--panel-2);border:1px solid var(--border)">-</span></div>
+          <div class="muted" style="margin-top:4px">Tats&auml;chlich:
+            <b id="dash-real-kmh">&ndash;</b> km/h
+            <span class="muted" id="dash-real-ratio" style="font-size:11px"></span></div>
           <div class="muted" style="margin-top:4px">Auf der Strecke:
             <b id="dash-time-on">0:00</b> &middot; abseits:
             <b id="dash-time-off">0:00</b>
@@ -1291,25 +1371,25 @@
         </defs>
         <rect x="20" y="80" width="150" height="64" rx="4" fill="#14161c" stroke="#7d8698" stroke-width="1.5"/>
         <text x="95" y="107" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="700" fill="#f4f6fb">Handy</text>
-        <text x="95" y="125" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#66708a">App</text>
+        <text x="95" y="125" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#a9b2c4">App</text>
 
         <rect x="245" y="70" width="160" height="84" rx="4" fill="#14161c" stroke="#7d8698" stroke-width="1.5"/>
         <text x="325" y="97" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="700" fill="#f4f6fb">Auto</text>
-        <text x="325" y="114" text-anchor="middle" font-family="Arial, sans-serif" font-size="10.5" fill="#66708a">Bluetooth-Chip</text>
-        <text x="325" y="128" text-anchor="middle" font-family="Arial, sans-serif" font-size="10.5" fill="#66708a">Firmware + Motor</text>
-        <text x="325" y="142" text-anchor="middle" font-family="Arial, sans-serif" font-size="10.5" fill="#66708a">Lenkservo</text>
+        <text x="325" y="114" text-anchor="middle" font-family="Arial, sans-serif" font-size="10.5" fill="#a9b2c4">Bluetooth-Chip</text>
+        <text x="325" y="128" text-anchor="middle" font-family="Arial, sans-serif" font-size="10.5" fill="#a9b2c4">Firmware + Motor</text>
+        <text x="325" y="142" text-anchor="middle" font-family="Arial, sans-serif" font-size="10.5" fill="#a9b2c4">Lenkservo</text>
 
         <rect x="470" y="80" width="130" height="64" rx="4" fill="#14161c" stroke="#ff5c5c" stroke-width="1.5"/>
         <text x="535" y="107" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="700" fill="#ff5c5c">Streckenteil</text>
-        <text x="535" y="125" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#66708a">mit Muster</text>
+        <text x="535" y="125" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#a9b2c4">mit Muster</text>
 
         <line x1="170" y1="92" x2="245" y2="92" stroke="#7d8698" stroke-width="1.5" marker-end="url(#btsr-arrow)"/>
         <text x="207" y="82" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#f4f6fb">Gas / Lenkung</text>
-        <text x="207" y="185" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#66708a">~20-45x pro Sekunde</text>
+        <text x="207" y="185" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#a9b2c4">~20-45x pro Sekunde</text>
 
-        <line x1="245" y1="130" x2="170" y2="130" stroke="#66708a" stroke-width="1.5" marker-end="url(#btsr-arrow)"/>
-        <text x="207" y="150" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#66708a">Akku, Streckenteil,</text>
-        <text x="207" y="163" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#66708a">Sensorwerte</text>
+        <line x1="245" y1="130" x2="170" y2="130" stroke="#a9b2c4" stroke-width="1.5" marker-end="url(#btsr-arrow)"/>
+        <text x="207" y="150" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#a9b2c4">Akku, Streckenteil,</text>
+        <text x="207" y="163" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#a9b2c4">Sensorwerte</text>
 
         <line x1="405" y1="112" x2="470" y2="112" stroke="#ff5c5c" stroke-width="1.5" marker-end="url(#btsr-arrow)" stroke-dasharray="3 3"/>
         <text x="437" y="102" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#ff5c5c">liest Muster</text>
@@ -1665,7 +1745,7 @@
         <li><b>Off-Track-Flag</b> &mdash; Byte 15</li>
         <li><b>Rohe Bewegungswerte</b> &mdash; Bytes 1 und 3, verrauscht, <i>Bedeutung unbestätigt</i></li>
       </ul>
-      <p class="muted" style="border-left:3px solid #66708a; padding-left:10px; font-weight:600; margin-top:16px">
+      <p class="muted" style="border-left:3px solid #a9b2c4; padding-left:10px; font-weight:600; margin-top:16px">
         Nur in der App gerechnet
       </p>
       <ul class="muted" style="padding-left:20px; line-height:1.7">
@@ -2939,7 +3019,13 @@
   const $ = (id) => document.getElementById(id);
   const logEl = $('log');
   const dot = $('conn-dot');
-  const statusEl = $('conn-status');
+  // The dot IS the connection status now. The word next to it said the same thing a second
+  // time and cost the width of a button on a phone. It is not deleted, it moves into title
+  // and aria-label - a screen reader still announces it and a hover still shows it.
+  const statusEl = {
+    set textContent(v) { dot.title = String(v); dot.setAttribute('aria-label', String(v)); },
+    get textContent() { return dot.title; },
+  };
   const servicesContainer = $('services-container');
   const controlSelect = $('control-char-select');
 
@@ -5045,7 +5131,9 @@
     const now = performance.now();
     const dt = physLastTime ? Math.min(0.25, (now - physLastTime) / 1000) : CONTROL_SEND_INTERVAL_MS / 1000;
     physLastTime = now;
-    const rawThrottle = Math.max(0, throttleY);
+    // Derated, not raw. Braking is left alone: brakes do not care how much fuel is left,
+    // and a damaged car that cannot slow down would be the opposite of a limp mode.
+    const rawThrottle = fuelDamageDerate(Math.max(0, throttleY));
     const rawBrake = Math.max(0, -throttleY);
     const out = physEngine.update({ steering: steerX, throttle: rawThrottle, brake: rawBrake,
                                     headlights: headlightsOn }, dt);
@@ -5818,11 +5906,11 @@
     let g = '';
     for (let i = 0; i <= 4; i++) {
       const v = x0 + (x1 - x0) * i / 4, X = sx(v);
-      g += `<line x1="${X.toFixed(1)}" y1="${T}" x2="${X.toFixed(1)}" y2="${H - B}" stroke="#d7dce6" stroke-width="1"/>`
-         + `<text x="${X.toFixed(1)}" y="${H - B + 15}" text-anchor="middle" font-size="10" fill="#66708a">${(+v.toFixed(1))}</text>`;
+      g += `<line x1="${X.toFixed(1)}" y1="${T}" x2="${X.toFixed(1)}" y2="${H - B}" stroke="#454d5e" stroke-width="1"/>`
+         + `<text x="${X.toFixed(1)}" y="${H - B + 15}" text-anchor="middle" font-size="10" fill="#a9b2c4">${(+v.toFixed(1))}</text>`;
       const w = y0 + (y1 - y0) * i / 4, Y = sy(w);
-      g += `<line x1="${L}" y1="${Y.toFixed(1)}" x2="${W - R}" y2="${Y.toFixed(1)}" stroke="#d7dce6" stroke-width="1"/>`
-         + `<text x="${L - 6}" y="${(Y + 3).toFixed(1)}" text-anchor="end" font-size="10" fill="#66708a">${(+w.toFixed(2))}</text>`;
+      g += `<line x1="${L}" y1="${Y.toFixed(1)}" x2="${W - R}" y2="${Y.toFixed(1)}" stroke="#454d5e" stroke-width="1"/>`
+         + `<text x="${L - 6}" y="${(Y + 3).toFixed(1)}" text-anchor="end" font-size="10" fill="#a9b2c4">${(+w.toFixed(2))}</text>`;
     }
     let paths = '';
     for (const s of o.series) {
@@ -5844,9 +5932,12 @@
 
   // Gears are an ORDINAL quantity, so they get a lightness ramp rather than five unrelated
   // hues, and each line is labelled at its end instead of needing a separate legend.
+  // Lightness runs 48..86 %, not 18..64. The plot area is #14161c, i.e. about 9 % lightness,
+  // so the old first gear was almost exactly the background: dark lines on a dark field. The
+  // charts were not broken, they were invisible.
   function gearColor(i, n) {
-    const l = 18 + (i / Math.max(1, n - 1)) * 46;
-    return `hsl(219 62% ${l}%)`;
+    const l = 48 + (i / Math.max(1, n - 1)) * 38;
+    return `hsl(212 85% ${l}%)`;
   }
 
 
@@ -5859,7 +5950,7 @@
     const tq = [];
     for (let r = 1500; r <= 9000; r += 100) tq.push([r, torqueAt(r)]);
     $('doku-chart-torque').innerHTML = renderLineChart({
-      series: [{ points: tq, color: '#0b1f3f' }],
+      series: [{ points: tq, color: '#5aa9ff' }],
       xLabel: 'Motordrehzahl (1/min)', yLabel: 'Drehmoment (Faktor)',
       yMin: 0, yMax: 1.1, ariaLabel: 'Drehmoment über Drehzahl',
     });
@@ -5882,7 +5973,7 @@
     });
     const coast = [];
     for (let v = 0; v <= cfg.topSpeedKmh; v += cfg.topSpeedKmh / 40) coast.push([v, -e.resistAt(v, A, false)]);
-    accel.push({ points: coast, color: '#66708a', dash: '4 3', width: 1.5, label: 'Rollen' });
+    accel.push({ points: coast, color: '#a9b2c4', dash: '4 3', width: 1.5, label: 'Rollen' });
     const brake = [];
     for (let v = 0; v <= cfg.topSpeedKmh; v += cfg.topSpeedKmh / 40) {
       brake.push([v, -(cfg.brakeDecelBase + cfg.brakeDecelAero * (v / cfg.topSpeedKmh))]);
@@ -5909,7 +6000,7 @@
         rp.push([p.t, e.rpmRawAt(p.v, p.gear) / 1000]);
       }
       $('doku-chart-launch').innerHTML = renderLineChart({
-        series: [{ points: v, color: '#0b1f3f', label: 'km/h' },
+        series: [{ points: v, color: '#5aa9ff', label: 'km/h' },
                  { points: rp, color: '#ff5c5c', dash: '3 3', label: '1000/min' }],
         xLabel: 'Zeit seit Vollgas (s)', yLabel: 'km/h  bzw.  Drehzahl / 1000',
         yMin: 0, ariaLabel: 'Geschwindigkeit und Drehzahl über der Zeit',
@@ -6119,7 +6210,7 @@
     }
 
     const style = o.detailed
-      ? 'width:100%;max-width:520px;height:auto;background:#e8ebf1;border:1px solid var(--border);border-radius:6px'
+      ? 'width:100%;max-width:520px;height:auto;background:var(--panel-2);border:1px solid var(--border);border-radius:6px'
       : 'width:220px;height:auto;background:var(--panel-2);border:1px solid var(--border);border-radius:4px';
     const html = `<svg viewBox="0 0 ${w.toFixed(0)} ${h.toFixed(0)}" style="${style}">${body}</svg>`;
     return { html, closed, lineInfo: o.lineInfo };
@@ -6776,7 +6867,10 @@
   //
   // A car that has not yet completed lap k has no position on lap k: its line simply stops.
   // Inventing a value there (last place, say) would draw a fact that never happened.
-  const RACE_PLOT_COLORS = ['#0b1f3f', '#b3131f', '#1c7a4d', '#a86400', '#5b2d8e', '#0f6f8c'];
+  // Every one of these was a dark-theme-era colour on what is now a dark panel. Replaced
+  // with a palette measured against #14161c: all six at 4.5:1 or better, and distinguishable
+  // from each other rather than merely from the background.
+  const RACE_PLOT_COLORS = ['#5aa9ff', '#ff5c5c', '#3ddc84', '#ffb02e', '#c08cff', '#4ad9d9'];
 
   function renderPositionPlot() {
     const host = $('race-position-plot');
@@ -6952,6 +7046,7 @@
     // Same moment as the lap times: on/off-track is a statistic about THIS race, and
     // carrying a previous session's minutes into it would make the share meaningless.
     trackTimeReset();
+    realSpeedReset();
     raceLapStart = null;
     $('race-results').style.display = 'none';
     $('race-lap-current-row').style.display = '';
@@ -7252,6 +7347,7 @@
     // now that only ever stopped the ghosts. Nothing recorded it for the driver, so a lap
     // driven half across the carpet looked exactly like a clean one in the lap list.
     trackTimeTick((bytes[12] & 0xff) !== TILE_OFFTRACK);
+    realSpeedTick(bytes[11], bytes[12] & 0xff);
 
     const counter = bytes[11];
     const type = bytes[12];
@@ -7749,6 +7845,78 @@
   // packets would weight a slow stretch differently from a fast one.
   let trackTimeOn = 0, trackTimeOff = 0, trackTimeLast = null, trackTimeUiLast = 0;
 
+  // ---- Actual ground speed, measured rather than scaled ----
+  // The displayed speed is simulated: internal units times REAL_SCALE (71.25), a factor
+  // chosen so full throttle reads 285 km/h. It was never checked against the car. Measuring
+  // the btsnoop logs says a lap of 3 straights and 8 curves is 4.39 m and takes 7.2 s, i.e.
+  // the car really does about 2.2 km/h, and roughly 2 km/h at the moment the display says
+  // 100. So a fixed divisor would be somewhere around 1:50 - but the two are not
+  // proportional, because the real car saturates with throttle while the simulation does
+  // not. Hence no divisor: the tile crossings give the true speed directly and calibrate
+  // themselves, and any future drift in REAL_SCALE shows up here instead of hiding.
+  const TILE_LEN_M = { 0x01: 0.43, 0x02: 0.43 };     // start/finish and straight
+  const CURVE_LEN_M = TRACK_RADIUS_CM / 100 * (TRACK_TURN_DEG * Math.PI / 180);
+  const REAL_SPEED_WINDOW = 3;                       // tiles to average over
+  let realTileCount = null, realTileTime = null, realTileType = null;
+  let realSpeedSamples = [], realSpeedKmh = null;
+
+  function tileLengthM(type) {
+    if (TILE_LEN_M[type] !== undefined) return TILE_LEN_M[type];
+    if (type === TILE_TYPE.CURVE_LEFT || type === TILE_TYPE.CURVE_RIGHT) return CURVE_LEN_M;
+    if (type === TILE_TYPE.HAIRPIN) {
+      return TRACK_HAIRPIN_RADIUS_CM / 100 * (TRACK_HAIRPIN_DEG * Math.PI / 180);
+    }
+    return null;                                     // off track, or a code we cannot size
+  }
+
+  function realSpeedTick(counter, type) {
+    const now = Date.now();
+    if (realTileCount === null) {
+      realTileCount = counter; realTileTime = now; realTileType = type;
+      return;
+    }
+    if (counter === realTileCount) return;
+    const step = (counter - realTileCount + 256) % 256;
+    const dt = (now - realTileTime) / 1000;
+    // The length belongs to the tile just LEFT, whose type was read at the previous
+    // increment - the type in this packet is the tile now being entered. Getting that one
+    // step wrong is what first gave me a wrong answer when analysing the logs.
+    const len = tileLengthM(realTileType);
+    realTileCount = counter; realTileTime = now; realTileType = type;
+    // A dropped packet makes two tiles look like one and reports double the speed. In the
+    // raw log data exactly that produced an apparent 14.25 km/h against a true 2.8. So a
+    // step of more than one is thrown away rather than divided by the step count: we do not
+    // know WHEN the missed crossing happened, so the average would be a guess.
+    if (step !== 1 || len === null || dt <= 0.02 || dt > 6) return;
+    realSpeedSamples.push(len / dt * 3.6);
+    while (realSpeedSamples.length > REAL_SPEED_WINDOW) realSpeedSamples.shift();
+    realSpeedKmh = realSpeedSamples.reduce((a, b) => a + b, 0) / realSpeedSamples.length;
+    paintRealSpeed();
+  }
+
+  function realSpeedReset() {
+    realTileCount = null; realTileTime = null; realTileType = null;
+    realSpeedSamples = []; realSpeedKmh = null;
+    paintRealSpeed();
+  }
+
+  function paintRealSpeed() {
+    const el = $('dash-real-kmh');
+    if (!el) return;
+    if (realSpeedKmh === null) {
+      el.textContent = '\u2013';
+      $('dash-real-ratio').textContent = '';
+      return;
+    }
+    el.textContent = realSpeedKmh.toFixed(2);
+    // The ratio against the simulated figure, so the calibration is readable at any moment
+    // instead of being an assumption buried in a constant.
+    const sim = Math.abs(physEngine.state.speedKmh) * REAL_SCALE;
+    $('dash-real-ratio').textContent = sim > 5 && realSpeedKmh > 0.05
+      ? '(simuliert ' + Math.round(sim) + ', Faktor ' + Math.round(sim / realSpeedKmh) + ')'
+      : '';
+  }
+
   function trackTimeTick(onTrack) {
     const now = Date.now();
     if (trackTimeLast !== null) {
@@ -7816,6 +7984,15 @@
     physEngine.state.fuelLoad = Math.max(0, Math.min(1, fuel / 100));
     fuelLastTickTime = now;
 
+    return fuelDamageDerate(throttle);
+  }
+
+  // The derate ALONE, with no side effects, so it can be asked twice per tick without
+  // draining the tank twice. That split is the whole point: physicsStep() was feeding the
+  // RAW stick value into the simulation while this reduction only ever reached the car, so
+  // an empty tank still read 200 km/h on the display and still set lap times as if nothing
+  // were wrong. The car crawled, the simulation did not know.
+  function fuelDamageDerate(throttle) {
     let out = throttle;
     if (fuel <= 0) out = Math.max(-0.15, Math.min(0.15, out));
     out *= 1 - (damage / 100) * 0.3;
@@ -8112,8 +8289,8 @@
                        'gt3v8', 'gt3v10', 'bmax', 'f1'];
   const BANDS = ['idle', 'mid', 'high'];
   let engineVolume = 0.7;
-  const sampleEngine = { buffers: {}, nodes: null, over: null, car: null, master: null,
-                         ready: false, loading: false };
+  const sampleEngine = { buffers: {}, rpmScale: {}, nodes: null, over: null, car: null,
+                         master: null, ready: false, loading: false };
 
   async function loadEngineSamples() {
     if (sampleEngine.ready || sampleEngine.loading || !audioCtx) return;
@@ -8124,6 +8301,12 @@
       const manifest = await res.json();
       for (const car of Object.keys(manifest)) {
         sampleEngine.buffers[car] = {};
+        // Optional per-car transposition. Needed for the sampled cars: the Corvette
+        // recording only reaches about 4500/min, while the app revs to 9000, so without a
+        // factor the top loop was played back at 1.99x - right against the clamp - and the
+        // whole engine sounded an octave too high. A synthesised engine does not need this
+        // because its loops are generated at whatever rpm is asked for.
+        sampleEngine.rpmScale[car] = manifest[car].rpmScale || 1;
         // 'over' is the closed-throttle loop and is OPTIONAL: the Corvette profile is cut
         // from a recording that has no overrun material, so its absence must not fail the
         // load. Everything the generator makes has one.
@@ -8197,36 +8380,51 @@
     return true;
   }
 
-  // Cockpit chime for the fuel warnings. Synthesised rather than sampled: it is two sine
-  // sweeps and an envelope, so a file would be larger than the code that makes it and would
-  // have to be fetched before the first warning could sound.
-  function fuelChime(when, gainVal) {
+  // Fuel warning, built like a modern seatbelt reminder rather than like a falling chime.
+  // The difference is not decoration: a seatbelt reminder is two SHORT pulses at a FIXED
+  // pitch, and that is why it reads as a reminder instead of as an alarm or as a jingle. A
+  // falling glide - what this was - reads as "something is winding down", which is wrong for
+  // a level that will keep dropping until you do something.
+  const FUEL_TONE_HZ = 660;       // squarely in the band a small speaker reproduces
+  const FUEL_PULSE_S = 0.075;     // short. A long pulse turns into a note.
+  const FUEL_GAP_S = 0.115;
+  function fuelPulse(when, gainVal) {
     if (!audioCtx) return;
     const o1 = audioCtx.createOscillator();
     const o2 = audioCtx.createOscillator();
     const g = audioCtx.createGain();
-    o1.type = 'sine'; o2.type = 'sine';
-    // A falling interval, not a steady beep: a rising or level tone reads as "ready", a
-    // falling one as "something is running out". Same reason aircraft warnings fall.
-    o1.frequency.setValueAtTime(700, when);
-    o1.frequency.exponentialRampToValueAtTime(430, when + 0.17);
-    o2.frequency.setValueAtTime(1402, when);          // slightly off the octave, for body
-    o2.frequency.exponentialRampToValueAtTime(862, when + 0.17);
     const g2 = audioCtx.createGain();
-    g2.gain.value = 0.25;
+    o1.type = 'sine';
+    o2.type = 'sine';
+    o1.frequency.value = FUEL_TONE_HZ;
+    // A fifth above, quietly. One sine alone sounds like a test tone; the interval is what
+    // makes it read as a fitted buzzer.
+    o2.frequency.value = FUEL_TONE_HZ * 1.5;
+    g2.gain.value = 0.3;
+    // Soft edges on purpose. A rectangular gate on a sine clicks, and the click is the part
+    // people find unpleasant - not the tone.
     g.gain.setValueAtTime(0.0001, when);
-    g.gain.exponentialRampToValueAtTime(gainVal, when + 0.012);
-    g.gain.exponentialRampToValueAtTime(0.0001, when + 0.26);
-    o1.connect(g); o2.connect(g2).connect(g);
+    g.gain.exponentialRampToValueAtTime(gainVal, when + 0.008);
+    g.gain.setValueAtTime(gainVal, when + FUEL_PULSE_S - 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, when + FUEL_PULSE_S);
+    o1.connect(g);
+    o2.connect(g2).connect(g);
     g.connect(audioCtx.destination);
     o1.start(when); o2.start(when);
-    o1.stop(when + 0.3); o2.stop(when + 0.3);
+    o1.stop(when + FUEL_PULSE_S + 0.02);
+    o2.stop(when + FUEL_PULSE_S + 0.02);
   }
 
+  // One double pulse at 20 %, two at 10 %. The COUNT carries the urgency, so the driver does
+  // not have to look away from the track to learn which mark went by.
   function playFuelWarning(count) {
     if (!audioCtx || !soundEnabled) return;
-    const t = audioCtx.currentTime + 0.02;
-    for (let i = 0; i < count; i++) fuelChime(t + i * 0.22, 0.30);
+    let t = audioCtx.currentTime + 0.02;
+    for (let i = 0; i < count; i++) {
+      fuelPulse(t, 0.26);
+      fuelPulse(t + FUEL_PULSE_S + FUEL_GAP_S, 0.26);
+      t += 2 * (FUEL_PULSE_S + FUEL_GAP_S) + 0.16;   // a beat of silence between groups
+    }
   }
 
   // Picking at random matters: a series of contacts with one identical sample reads as a
@@ -8520,7 +8718,10 @@
 
   function updateSampleEngine(rpm, load, silent) {
     const nodes = sampleEngine.nodes;
-    const w = sampleWeights(rpm, nodes.map(n => n.baseRpm));
+    const scale = sampleEngine.rpmScale[sampleEngine.car] || 1;
+    // The crossfade has to see the same scaled rpm as the playback rate does, otherwise the
+    // band boundaries and the pitch disagree and you hear the wrong loop at the wrong speed.
+    const w = sampleWeights(rpm * scale, nodes.map(n => n.baseRpm));
     const t = audioCtx.currentTime;
     // How much of the power sound against the overrun sound. Closed at a trace of throttle
     // rather than at exactly zero, because a real engine is back on the gas well before the
@@ -8533,12 +8734,12 @@
       // A loop generated at baseRpm played back at rpm/baseRpm IS that engine speed.
       // Clamped because resampling much beyond an octave stops sounding like an engine —
       // past that the neighbouring loop has taken over anyway.
-      const rate = Math.max(0.5, Math.min(2.0, rpm / n.baseRpm * dop));
+      const rate = Math.max(0.5, Math.min(2.0, rpm * scale / n.baseRpm * dop));
       n.src.playbackRate.setTargetAtTime(rate, t, 0.04);
       n.gain.gain.setTargetAtTime(w[i] * powerMix, t, 0.05);
     });
     if (over) {
-      const rate = Math.max(0.5, Math.min(2.0, rpm / over.baseRpm * dop));
+      const rate = Math.max(0.5, Math.min(2.0, rpm * scale / over.baseRpm * dop));
       over.src.playbackRate.setTargetAtTime(rate, t, 0.04);
       over.gain.gain.setTargetAtTime(1 - powerMix, t, 0.05);
     }

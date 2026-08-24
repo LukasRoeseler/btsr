@@ -26,6 +26,16 @@
   "file": "pit_wrench.ogg",
   "seconds": 1.1
  },
+ "shift": {
+  "up": {
+   "file": "shift_up.ogg",
+   "seconds": 0.2
+  },
+  "down": {
+   "file": "shift_down.ogg",
+   "seconds": 0.26
+  }
+ },
  "start": {
   "porsche": {
    "file": "porsche_start.ogg",

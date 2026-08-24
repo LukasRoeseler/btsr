@@ -80,33 +80,90 @@ def refuel(seconds=2.0, seed=21):
     return (out / (np.max(np.abs(out)) + 1e-9) * 0.80).astype(np.float32)
 
 
-def body_repair(seconds=2.4, seed=31):
-    """Bodywork being worked on: irregular panel taps over a low rumble.
+def strike_decay_ms(x, floor=0.30):
+    """Decay time of each strike, in ms: how long from the peak down to 1/e of it.
 
-    Deliberately unlike the wrench, which is a fast even hammer train at ~26 Hz. This is
-    slow and uneven — a few taps a second at varying pitch — so that with both playing at
-    once (tyres and repair can overlap) the ear can still separate them.
+    This measures the CAUSE of the melody problem rather than a proxy for the percept, after
+    two attempts at the proxy both measured something else. Spectral flatness reported 0.000
+    for the refuelling loop because the geometric mean collapses as soon as any bin is empty,
+    i.e. it was measuring bandwidth. Peak-over-median then reported 164 for a signal whose
+    strikes had already been shortened to 6 ms, because in a 50 ms window even band-limited
+    noise has peaky statistics.
+
+    Decay time is unambiguous and it is the thing that decides the question: pitch needs
+    several cycles to be heard, so at 150-240 Hz a strike that is down to 1/e within about
+    6 ms (one cycle) cannot carry a note, whatever its spectrum looks like. The first version
+    of this sound decayed over 22 ms, which is ten to twenty cycles - a clear note, and
+    twelve of them in a repeating 2.4 s loop is a tune.
+    """
+    env = np.abs(x)
+    k = max(4, int(0.0008 * SR))
+    env = np.convolve(env, np.ones(k) / k, mode='same')
+    peak = float(np.max(env))
+    out = []
+    i = 0
+    n = len(env)
+    while i < n:
+        if env[i] < floor * peak:
+            i += 1
+            continue
+        # local maximum of this strike
+        j = i
+        while j + 1 < n and env[j + 1] >= env[j]:
+            j += 1
+        top = env[j]
+        m = j
+        while m < n and env[m] > top / np.e:
+            m += 1
+        out.append((m - j) / SR * 1000.0)
+        # skip to the end of this strike
+        while i < n and env[i] >= floor * peak:
+            i += 1
+    return out
+
+
+def body_repair(seconds=2.4, seed=31):
+    """Bodywork being worked on: dead panel thuds over a low rumble.
+
+    The first version sounded like a melody, and the reason was NOT the partials - those
+    were already inharmonic (1.0 / 2.37 / 3.91). It was the decay: exp(-t*46) is a 22 ms
+    time constant, so every strike rang for ten to twenty cycles and was heard as a definite
+    note. Twelve random pitches inside a 2.4 s loop that then repeats forever is a
+    twelve-note tune, and no amount of inharmonicity fixes that.
+
+    So the decay drops to ~6 ms, which is a thud rather than a note, the pitch spread
+    narrows so no interval can be heard between neighbouring strikes, and there are more
+    strikes so none of them stands out. A real body panel behind a wheel arch is stiff,
+    damped by sealant and the arch liner, and mounted to something heavy - it does not ring.
+    Spectral flatness per strike is printed as the check: a thud is well above 0.1, a bell
+    is under 0.05.
     """
     rng = np.random.default_rng(seed)
     n = int(seconds * SR)
     out = np.zeros(n, dtype=np.float32)
 
-    # Panel taps. Positions are jittered rather than evenly spaced: an even train is what
-    # makes the wrench sound mechanical, and this must not.
-    n_taps = int(seconds * 5)
+    # More strikes, jittered. An even train is what makes the wrench sound mechanical and
+    # this must not; but too few strikes and each one becomes an event with a pitch.
+    n_taps = int(seconds * 9)
     for i in range(n_taps):
-        pos = int(((i + rng.uniform(-0.35, 0.35)) / n_taps) * n) % n
-        ln = min(n - pos, int(0.09 * SR))
+        pos = int(((i + rng.uniform(-0.42, 0.42)) / n_taps) * n) % n
+        ln = min(n - pos, int(0.05 * SR))
         if ln <= 8:
             continue
         lt = np.arange(ln) / SR
-        f0 = rng.uniform(230.0, 520.0)          # panel size varies, so does the note
+        # Narrower band than before (230..520 Hz was over an octave, wide enough to hear
+        # melody). Rectangular-plate modes, none an integer multiple of another.
+        f0 = rng.uniform(150.0, 240.0)
         ring = np.zeros(ln, dtype=np.float32)
-        for mult, amp in ((1.0, 1.0), (2.37, 0.42), (3.91, 0.2)):
-            ring += (amp * np.exp(-lt * 46.0) * np.sin(2 * np.pi * f0 * mult * lt)).astype(np.float32)
-        # A little contact noise at the strike, or it sounds like a tuned bell.
-        ring += 0.35 * np.exp(-lt * 220.0) * rng.normal(0, 1, ln).astype(np.float32)
-        out[pos:pos + ln] += ring * rng.uniform(0.55, 1.0)
+        for mult, amp in ((1.0, 1.0), (1.59, 0.7), (2.14, 0.55), (2.65, 0.4), (3.27, 0.28)):
+            # ~6 ms decay, and the higher modes die faster still, as they do on real metal.
+            dec = 170.0 * (1.0 + 0.5 * (mult - 1.0))
+            ring += (amp * np.exp(-lt * dec)
+                     * np.sin(2 * np.pi * f0 * mult * lt + rng.uniform(0, 6.28))).astype(np.float32)
+        # The strike itself: broadband contact, louder than the ring. This is most of what
+        # a damped panel actually produces.
+        ring += 0.9 * np.exp(-lt * 260.0) * rng.normal(0, 1, ln).astype(np.float32)
+        out[pos:pos + ln] += ring * rng.uniform(0.5, 1.0)
 
     # Low rumble: the car on its jacks, tools on the floor.
     out += band_noise(n, 45.0, 190.0, np.random.default_rng(seed + 1)) * 0.30
@@ -131,10 +188,34 @@ def main():
         x = fn(seconds=secs)
         sz = to_ogg(x, name)
         manifest[name] = {'file': name + '.ogg', 'loop': True, 'seconds': secs}
-        print('%-12s %4d KB  %.1fs  Nahtsprung %.2f (klein = loopbar)'
-              % (name, sz // 1024, secs, seam_jump(x)))
-    print('\nIn audio/fx.json einzutragen:')
-    print(json.dumps(manifest, indent=1, ensure_ascii=False))
+        # Flatness of the loudest strikes, not of the whole loop: the rumble bed would
+        # flatten the average and hide exactly what we are looking for.
+        # Only for the impact sound. On a continuous sound like refuelling the detector
+        # fires on ripple and the number means nothing - printing it anyway next to a
+        # meaningful one just invites misreading.
+        if name == 'pit_repair':
+            dec = strike_decay_ms(x)
+            fl_txt = ('%d Schlaege, Abklingzeit Median %.1f ms (max %.1f) - eine Schwingung '
+                      'bei 150-240 Hz dauert 4-7 ms, darunter ist keine Tonhoehe hoerbar'
+                      % (len(dec), float(np.median(dec)), max(dec))) if dec else 'keine Schlaege'
+        else:
+            fl_txt = ''
+        print('%-12s %4d KB  %.1fs  Nahtsprung %.2f  %s'
+              % (name, sz // 1024, secs, seam_jump(x), fl_txt))
+    # Written, not printed. This used to print the JSON for hand-copying into fx.json,
+    # which is exactly how entries go missing: the shift sounds were absent from the
+    # shipped file even though both .ogg were present, so every gearchange beeped instead
+    # of clunking. Merging, so nothing else in the file is lost either.
+    path = os.path.join(OUT, 'fx.json')
+    merged = {}
+    if os.path.exists(path):
+        with open(path) as f:
+            merged = json.load(f)
+    merged.update(manifest)
+    with open(path, 'w') as f:
+        json.dump(merged, f, indent=1)
+    print('')
+    print('audio/fx.json aktualisiert: ' + ', '.join(manifest))
 
 
 if __name__ == '__main__':
