@@ -1226,6 +1226,7 @@
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h3l2-6 3 12 3-9 2 5 2-2h3"/></svg><span>Simulierte Motoren und eigene Sounds über Engine-Sim</span></div>
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="8" width="20" height="10" rx="4"/><path d="M7 13h2M8 12v2M16 13h.01"/></svg><span>Gamepad-Vibration</span></div>
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 11V8a5 5 0 0 1 9-3"/><rect x="5" y="11" width="14" height="9" rx="2"/></svg><span>Open Source, offene Lizenz</span></div>
+        <div><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg><span class="feat-1line"><b>Und vieles mehr &hellip;</b></span></div>
     </div>
   </section>
 
@@ -1847,7 +1848,8 @@
       <h3 style="font-size:14px; margin:16px 0 6px 0">Was wir nicht wissen</h3>
       <p class="muted">
         Die belegten Codes sind <code>0x01</code> Start/Ziel, <code>0x02</code> Gerade,
-        <code>0x03</code> Linkskurve, <code>0x04</code> Rechtskurve und <code>0x00</code>
+        <code>0x03</code> Linkskurve, <code>0x04</code> Rechtskurve, <code>0x05</code>
+        Haarnadel links, <code>0x06</code> Haarnadel rechts und <code>0x00</code>
         abseits der Bahn. <b>Die Kodierungsregel selbst kennen wir nicht.</b> Aus
         <em>einem</em> exakt ausgemessenen Muster l&auml;sst sich nicht ableiten, wie die 17
         Elemente in die Zahl <code>0x01</code> &uuml;bersetzt werden &mdash; daf&uuml;r
@@ -1961,7 +1963,7 @@
         <tr><td>9</td><td>freilaufender Paketz&auml;hler, 0&ndash;255, &auml;ndert sich in <em>jedem</em> Paket</td><td class="doc-sure">belegt</td></tr>
         <tr><td>10</td><td>Akkustand</td><td class="doc-sure">belegt</td></tr>
         <tr><td><strong>11</strong></td><td><strong>Z&auml;hler der Muster&uuml;berfahrten.</strong> Erh&ouml;ht sich um 1, sobald das Auto ein gedrucktes Muster &uuml;berf&auml;hrt &mdash; die Rundenz&auml;hlung passiert also in der Hardware</td><td class="doc-sure">belegt</td></tr>
-        <tr><td><strong>12</strong></td><td><strong>Mustercode.</strong> <code>0x01</code> Start/Ziel, <code>0x02</code> Gerade, <code>0x03</code> Linkskurve, <code>0x04</code> Rechtskurve, <code>0x00</code> abseits der Bahn. <code>0xFF</code> hei&szlig;t &bdquo;noch nie eins gesehen&ldquo;. Der Wert bleibt <em>stehen</em>, er zeigt das zuletzt gelesene Muster</td><td class="doc-sure">belegt</td></tr>
+        <tr><td><strong>12</strong></td><td><strong>Mustercode.</strong> <code>0x01</code> Start/Ziel, <code>0x02</code> Gerade, <code>0x03</code> Linkskurve, <code>0x04</code> Rechtskurve, <code>0x05</code> Haarnadel links, <code>0x06</code> Haarnadel rechts, <code>0x00</code> abseits der Bahn. <code>0xFF</code> hei&szlig;t &bdquo;noch nie eins gesehen&ldquo;. Der Wert bleibt <em>stehen</em>, er zeigt das zuletzt gelesene Muster</td><td class="doc-sure">belegt</td></tr>
         <tr><td>13</td><td><code>0x00</code></td><td class="doc-sure">belegt</td></tr>
         <tr><td>14</td><td>rollender Z&auml;hler (l&auml;uft &uuml;ber). Nicht zu verwechseln mit Byte&nbsp;14 der <em>Senderichtung</em>, das ist das Licht</td><td class="doc-sure">belegt</td></tr>
         <tr><td><strong>15</strong></td><td><code>0x08</code>, solange das Auto k&ouml;rperlich &uuml;ber einem Muster steht (~1&nbsp;s bei Fahrt), sonst <code>0x00</code></td><td class="doc-sure">belegt</td></tr>
@@ -2138,9 +2140,19 @@
         <tr><td><code>0x02</code></td><td>Gerade</td><td class="doc-sure">belegt</td></tr>
         <tr><td><code>0x03</code></td><td><b>Linkskurve</b></td><td class="doc-sure">belegt (21.08.)</td></tr>
         <tr><td><code>0x04</code></td><td>Rechtskurve</td><td class="doc-sure">belegt</td></tr>
+        <tr><td><code>0x05</code></td><td><b>Haarnadel links</b></td><td class="doc-sure">belegt (24.08.)</td></tr>
+        <tr><td><code>0x06</code></td><td><b>Haarnadel rechts</b></td><td class="doc-sure">belegt (24.08.)</td></tr>
         <tr><td><code>0x00</code></td><td>abseits der Bahn</td><td class="doc-sure">belegt</td></tr>
         <tr><td><code>0xff</code></td><td>noch nie ein Muster gesehen</td><td class="doc-sure">belegt</td></tr>
       </table></div>
+      <p class="muted">
+        <code>0x05</code> und <code>0x06</code> kamen am 24.08. hinzu, unmittelbar nachdem
+        Byte&nbsp;14 richtig gesetzt war (siehe &bdquo;Auf der Bahn oder ohne Bahn&ldquo;).
+        Vorher stand hier die Vermutung, die Haarnadel trage denselben Barcode wie eine
+        normale Kurve und sei nicht unterscheidbar. Sie war nicht pr&uuml;fbar, solange das
+        Auto &uuml;berhaupt nichts las &mdash; und sie war falsch. Die Codes ordnen sich
+        paarweise: gerade Zahl rechts, ungerade links, und die Enge steigt mit dem Wert.
+      </p>
       <p class="muted">
         <code>0x03</code> war der letzte Unbekannte. Die gemeldete Codefolge lautete in
         <b>allen 16 Runden</b> identisch <code>S R G R ? R</code>, und &uuml;ber den
@@ -3553,11 +3565,14 @@
           Interessant ist alles andere.
         </p>
         <p class="muted" style="font-size:11.5px">
-          <b>Was gut m&ouml;glich ist:</b> die Haarnadel meldet <code>0x03</code> oder
-          <code>0x04</code>, also dasselbe wie eine normale Kurve. Dann hat sie keinen
-          eigenen Code, das Auto kann beide nicht unterscheiden, und sie muss im Editor von
-          Hand gesetzt werden. Auch das ist ein Ergebnis &mdash; die Tabelle zeigt es
-          entweder so oder mit einem Wert, den wir noch nicht kennen.
+          <b>Womit dieses Werkzeug die Haarnadel gefunden hat.</b> Hier stand die Vermutung,
+          sie melde <code>0x03</code> oder <code>0x04</code> wie eine normale Kurve und habe
+          gar keinen eigenen Code. Am 24.08. wurde sie &uuml;berfahren und meldete
+          <code>0x06</code> rechts und <code>0x05</code> links &mdash; sie hat sehr wohl
+          eigene Codes, und sie f&uuml;gen sich in das Muster der anderen:
+          <code>0x03</code>/<code>0x04</code> links/rechts f&uuml;r die 60-Grad-Kurve,
+          <code>0x05</code>/<code>0x06</code> links/rechts f&uuml;r die Haarnadel. Ein Wert
+          in <span class="cm-new">dieser Farbe</span> hei&szlig;t: den kennen wir noch nicht.
         </p>
       </div>
 
@@ -3701,7 +3716,8 @@
       <p class="muted" style="font-size:11.5px">
         <b>Muster-Sonde:</b> fahr über ein beliebiges ausgedrucktes Muster &mdash; hier steht sofort,
         welchen Code das Auto meldet. Sicher bekannt sind <code>0x01</code> Start/Ziel,
-        <code>0x02</code> Gerade, <code>0x03</code> Linkskurve und <code>0x04</code> Rechtskurve;
+        <code>0x02</code> Gerade, <code>0x03</code> Linkskurve, <code>0x04</code> Rechtskurve,
+        <code>0x05</code> Haarnadel links und <code>0x06</code> Haarnadel rechts;
         alles andere ist unbestätigt. Trag hier den Code ein, den dein gedrucktes Boxen-Muster
         tatsächlich auslöst &mdash; <code>0x08</code> war nie ein reales Signal und ist deshalb
         nicht mehr die Vorgabe.
@@ -6511,16 +6527,20 @@
   // different: it is a layout element only, and no printed pattern is known to report it.
   // It therefore gets a value OUTSIDE the byte range, so it can never be mistaken for
   // something the car actually sent — bytes[12] is 0..255 and can never equal 0x100.
-  // PIT and HAIRPIN sit OUTSIDE the byte range on purpose: bytes[12] is 0..255, so they can
-  // never be mistaken for something the car actually reported. The hairpin's real wire code
-  // is not known yet — it can be read off with the Muster-Sonde in the Strecke tab by
-  // driving over the piece once.
-  // HAIRPIN_LEFT und HAIRPIN sind zwei Bauteile, aber auf dem Draht dasselbe: die
-  // Haarnadel tr&auml;gt denselben Barcode wie eine normale Kurve, das Auto meldet also 0x03
-  // oder 0x04 und kann eine Haarnadel von einer 60-Grad-Kurve nicht unterscheiden. Die
-  // Unterscheidung existiert nur in unserer Karte, damit die Geometrie stimmt.
+  // PIT sitzt OUTSIDE the byte range on purpose: bytes[12] is 0..255, so it can never be
+  // mistaken for something the car actually reported.
+  //
+  // Die Haarnadel dagegen HAT eigene Codes, und sie sind gemessen (24.08.2026, mit dem
+  // Rohcode-Monitor auf der Original-Bahn ueberfahren): 0x05 links, 0x06 rechts. Hier stand
+  // vorher, sie trage denselben Barcode wie eine normale Kurve und die Unterscheidung
+  // existiere nur in unserer Karte - das war eine Annahme, und sie war falsch. Sie konnte
+  // auch nie geprueft werden, solange Byte 14 Bit 7 den Sensor abschaltete.
+  //
+  // Die Werte fuegen sich in das Muster der anderen: 0x03/0x04 links/rechts fuer die
+  // 60-Grad-Kurve, 0x05/0x06 links/rechts fuer die Haarnadel.
   const TILE_TYPE = { START: 0x01, STRAIGHT: 0x02, CURVE_RIGHT: 0x04, CURVE_LEFT: 0x03,
-                      PIT: 0x100, HAIRPIN: 0x101, HAIRPIN_LEFT: 0x102 };
+                      HAIRPIN_LEFT: 0x05, HAIRPIN: 0x06,
+                      PIT: 0x100 };
   // Code 0x00 means the sensor is reading NOTHING VALID, i.e. the car has left the track.
   // From the guard-rail capture of 20.08: every departure showed up as 0x00 together with the
   // tile counter racing (6 -> 8 -> 9 -> 15 -> 18 within three seconds), and 16 of 38
@@ -6576,7 +6596,8 @@
     [TILE_TYPE.CURVE_RIGHT]: 'Rechtskurve',
     [TILE_TYPE.CURVE_LEFT]: 'Linkskurve',
     [TILE_TYPE.PIT]: 'Boxengasse',
-    [TILE_TYPE.HAIRPIN]: 'Haarnadelkurve',
+    [TILE_TYPE.HAIRPIN]: 'Haarnadel rechts',
+    [TILE_TYPE.HAIRPIN_LEFT]: 'Haarnadel links',
     [TILE_OFFTRACK]: 'abseits der Bahn',
   };
 
@@ -7177,12 +7198,22 @@
   }
 
   function codeToTrack(code) {
-    // H for the hairpin belongs in BOTH patterns. Adding a letter to the encoder without
-    // adding it here would produce codes the app itself cannot read back.
-    const m = String(code).trim().toUpperCase().match(/^([SGRLBH\d]*)(?:@(\d{1,3}))?$/);
+    // Jeder Buchstabe muss in BEIDE Ausdruecke, und genau davor warnt der Kommentar hier
+    // seit der Haarnadel R - und genau das ist mit der Haarnadel L trotzdem passiert: der
+    // Kodierer schrieb J, der Leser kannte es nicht, also fiel jede Linkshaarnadel beim
+    // Einlesen still heraus und wurde beim naechsten Kopieren ueberschrieben. Die Menge
+    // steht deshalb jetzt an EINER Stelle und wird aus TRACK_CODE_LETTER gebildet, statt
+    // zweimal von Hand aufgezaehlt zu werden.
+    const letters = Object.values(TRACK_CODE_LETTER).join('');
+    // 0-9 statt \d, weil der Ausdruck hier aus einer Zeichenkette gebaut wird: in einer
+    // JS-Zeichenkette muesste die Rueckwaertsschraege verdoppelt werden, und eine einfache
+    // ergibt stillschweigend nur den Buchstaben d - dann faellt jede Zahl im Code durch und
+    // "SG2HG2J" gilt als unlesbar. Ein Zeichenbereich braucht keine Maskierung.
+    const m = String(code).trim().toUpperCase()
+      .match(new RegExp('^([' + letters + '0-9]*)(?:@([0-9]{1,3}))?$'));
     if (!m || !m[1]) return null;
     const tiles = [];
-    const re = /([SGRLBH])(\d*)/g;
+    const re = new RegExp('([' + letters + '])([0-9]*)', 'g');
     let hit;
     while ((hit = re.exec(m[1])) !== null) {
       const type = TRACK_CODE_TYPE[hit[1]];
@@ -7542,7 +7573,9 @@
   // dieses Teil" ist gerade das Verwerfen das Problem - ein Wert, den wir nicht kennen, ist
   // genau der, den man sucht.
   const CODE_NAMES = { 0x00: 'kein Muster', 0x01: 'Start/Ziel', 0x02: 'Gerade',
-                       0x03: 'Kurve links', 0x04: 'Kurve rechts', 0xff: 'keine Lesung' };
+                       0x03: 'Kurve links', 0x04: 'Kurve rechts',
+                       0x05: 'Haarnadel links', 0x06: 'Haarnadel rechts',
+                       0xff: 'keine Lesung' };
   let cmOn = false, cmCounts = {}, cmTotal = 0, cmPaint = 0;
 
   // Drei weitere Signale, weil Byte 12 allein die Frage nicht beantwortet, ob der Sensor
@@ -11028,13 +11061,26 @@
 
   // Per-tile behaviour, data-driven on purpose: the hairpin and left-curve codes are not
   // known yet, and adding them must not require touching code.
+  // curve: 0 = gerade, 1 = 60-Grad-Kurve, 2 = Haarnadel. Die Zahl ist keine Kennung,
+  // sondern ein Mass fuer die Enge - das Tempoprofil unten rechnet damit.
   const GHOST_TILE = {
     0x01: { curve: 0 },   // start/finish, behaves like a straight
     0x02: { curve: 0 },   // straight
-    0x04: { curve: 1 },   // curve — direction comes from the layout, not from here
+    0x03: { curve: 1 },   // 60-Grad-Kurve links
+    0x04: { curve: 1 },   // 60-Grad-Kurve rechts
+    0x05: { curve: 2 },   // Haarnadel links  (gemessen 24.08.)
+    0x06: { curve: 2 },   // Haarnadel rechts (gemessen 24.08.)
   };
 
   function ghostTileInfo(code) { return GHOST_TILE[code] || { curve: 0 }; }
+
+  // Wie eng ist ein Kachel-TYP aus der Karte? Dieselbe Skala wie GHOST_TILE.curve, nur aus
+  // dem Layout statt aus dem gemeldeten Code - der Vorausblick kennt nur das Layout.
+  function tileTightness(t) {
+    if (t === TILE_TYPE.HAIRPIN || t === TILE_TYPE.HAIRPIN_LEFT) return 2;
+    if (t === TILE_TYPE.CURVE_LEFT || t === TILE_TYPE.CURVE_RIGHT) return 1;
+    return 0;
+  }
 
   // Which way does the piece we are on turn? Only the layout knows.
   // Returns -1 (left), +1 (right) or 0 (straight / unknown).
@@ -11043,25 +11089,44 @@
     if (!tiles || tiles.length < 2 || car.ghost.tileIndex === null) return 0;
     const i = (car.ghost.tileIndex + (lookahead || 0)) % tiles.length;
     const t = tiles[i] && tiles[i].type;
-    if (t === TILE_TYPE.CURVE_RIGHT) return 1;
-    if (t === TILE_TYPE.CURVE_LEFT) return -1;
+    if (t === TILE_TYPE.CURVE_RIGHT || t === TILE_TYPE.HAIRPIN) return 1;
+    if (t === TILE_TYPE.CURVE_LEFT || t === TILE_TYPE.HAIRPIN_LEFT) return -1;
     return 0;
   }
 
+  // Die engste Kachel in den naechsten n Schritten, und wie weit sie weg ist. Daraus baut
+  // ghostTick sein Tempoprofil: vor einer Haarnadel muss frueher und tiefer verzoegert
+  // werden als vor einer 60-Grad-Kurve, und danach darf frueher wieder Gas kommen.
+  function ghostAheadTightest(car, depth) {
+    const tiles = currentTrackTiles;
+    const out = { tight: 0, dist: 99 };
+    if (!tiles || tiles.length < 2 || !car.ghost || car.ghost.tileIndex === null) return out;
+    for (let k = 0; k <= depth; k++) {
+      const t = tiles[(car.ghost.tileIndex + k) % tiles.length];
+      const tg = tileTightness(t && t.type);
+      if (tg > out.tight) { out.tight = tg; out.dist = k; }
+    }
+    return out;
+  }
+
   // The three tile types the car is about to meet, in the form the original app sent them.
-  // The alphabet is now complete and measured: 0x01 start, 0x02 straight, 0x03 LEFT curve,
-  // 0x04 right curve. The app sent exactly these four in its lookahead during the 21.08 race
-  // (0x01, 0x02, 0x03, 0x04 - never 0x08, which we had once guessed at for left curves).
-  // The pit tile goes out as a straight, which is what it is.
+  // Gemessenes Alphabet: 0x01 Start, 0x02 Gerade, 0x03 Kurve links, 0x04 Kurve rechts,
+  // 0x05 Haarnadel links, 0x06 Haarnadel rechts. Die Boxengasse geht als Gerade hinaus,
+  // was sie auch ist.
+  // ACHTUNG, hier lag ein stiller Fehler: solange HAIRPIN = 0x101 war, ging eine Haarnadel
+  // im Vorausblick als (0x101 & 0xff) = 0x01 hinaus, also als START/ZIEL. Das Auto bekam
+  // vor jeder Haarnadel die Ansage "Ziellinie". Mit den gemessenen Codes ist es ein
+  // Durchreicher, und der Fehler kann nicht wiederkommen.
   function ghostLookahead(car) {
     const tiles = currentTrackTiles;
     const i0 = car.ghost ? car.ghost.tileIndex : null;
     if (!tiles || tiles.length < 3 || i0 === null || i0 === undefined) return null;
     // Every TILE_TYPE value already IS its own wire code (see the constant above), so
     // this is now a plain pass-through for the three tile types that can appear here.
-    const code = (t) => t === TILE_TYPE.START ? 0x01
-                      : (t === TILE_TYPE.CURVE_RIGHT || t === TILE_TYPE.CURVE_LEFT) ? t
-                      : 0x02;
+    const code = (t) => (t === TILE_TYPE.START || t === TILE_TYPE.STRAIGHT
+                         || t === TILE_TYPE.CURVE_LEFT || t === TILE_TYPE.CURVE_RIGHT
+                         || t === TILE_TYPE.HAIRPIN_LEFT || t === TILE_TYPE.HAIRPIN)
+                        ? t : 0x02;
     const at = (k) => code(tiles[(i0 + k) % tiles.length].type);
     return { 16: at(0), 17: at(1), 18: at(2) };
   }
@@ -11171,9 +11236,29 @@
       // unterschiedlich schnellen Gegnern aufstellen, statt dass alle gleich schnell fahren.
       let target = (car.ghostSpeed === undefined || car.ghostSpeed === null)
         ? ghostCfg.speed : car.ghostSpeed;
+      // ---- Tempoprofil statt eines einzigen Kurvenabschlags ----
+      // Vorher gab es genau zwei Zustaende: "Kurve in Sicht" oder nicht, und beide bekamen
+      // denselben Abschlag. Mit den gemessenen Haarnadelcodes geht es genauer, und das ist
+      // der Teil einer Ideallinie, den wir ueberhaupt beeinflussen koennen (siehe unten):
+      // das LAENGSprofil - wann verzoegert wird, wie tief, und ab wann wieder Gas kommt.
+      //
+      //   Haarnadel: doppelter Abschlag, und die Verzoegerung beginnt zwei Kacheln vorher
+      //   60-Grad:   einfacher Abschlag, eine Kachel vorher
+      //   Gerade:    voll, sobald die engste Kachel in Sicht hinter uns liegt
       const here = ghostTileInfo(car.tileCode).curve;
-      const ahead = ghostTurnDir(car, 1) !== 0;   // only meaningful with a layout
-      if (here || ahead) target *= (1 - ghostCfg.curveSlow);
+      const ahead = ghostAheadTightest(car, 2);
+      // Was gilt: die Kachel unter dem Auto, oder die naechste enge in Reichweite. Die
+      // Reichweite haengt von der Enge ab - vor einer Haarnadel zwei Kacheln, vor einer
+      // normalen Kurve eine.
+      const reach = ahead.tight >= 2 ? 2 : 1;
+      const tight = Math.max(here, ahead.dist <= reach ? ahead.tight : 0);
+      if (tight > 0) {
+        // Der Regler curveSlow bleibt der Bezug: er beschreibt weiter die 60-Grad-Kurve.
+        // Die Haarnadel bekommt das Doppelte, auf hoechstens 85 Prozent begrenzt, damit ein
+        // hoch eingestellter Regler den Ghost nicht zum Stehen bringt.
+        const slow = Math.min(0.85, ghostCfg.curveSlow * tight);
+        target *= (1 - slow);
+      }
       if (ghostCfg.leaderBrake && ghostLeader() === car) target *= (1 - ghostCfg.leaderBrakePct);
       // Formation lap: everyone rolls at pit-lane pace, whatever their speed setting says.
       if (raceFormationLap) target = Math.min(target, PIT_SPEED_FACTOR);
