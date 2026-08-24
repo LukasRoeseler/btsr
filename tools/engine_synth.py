@@ -213,6 +213,15 @@ def exhaust_ir(n, cfg, rng):
         amp = (cfg['bright'] ** (k - 1)) / k
         body += (amp * decay * np.sin(2 * np.pi * f * t + rng.uniform(0, 2 * np.pi))).astype(np.float32)
     body[:8] += np.linspace(1.0, 0.0, 8)  # the initial crack of the pulse itself
+    # Zero mean, and not as a nicety: a pipe cannot radiate a standing pressure offset, only
+    # changes in pressure. Every partial here starts at a random phase and decays, so none of
+    # them integrates to zero on its own, and the initial crack is one-sided by construction.
+    # Convolving a one-sided pulse train with a positive-mean response builds a pedestal that
+    # grows with the number of pulses; it then eats the headroom that the normalisation is
+    # supposed to give the waveform, worst on the engines with the most cylinders. The same
+    # defect made the browser port render pure silence from ten cylinders up, which is how it
+    # was found.
+    body -= float(np.mean(body))
     ir[:ln] = body / (np.max(np.abs(body)) + 1e-9)
     return ir
 
