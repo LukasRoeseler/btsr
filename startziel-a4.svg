@@ -1,45 +1,55 @@
 <svg xmlns="http://www.w3.org/2000/svg"
-     width="297mm" height="210mm" viewBox="0 0 297 210">
+     width="297.01mm" height="210.02mm" viewBox="0 0 297.01 210.02">
   <!--
-    Start/Ziel-Markierung. DIN A4 QUER, 1 SVG-Einheit = 1 mm.
-    Drucken: 100 % / "Tatsächliche Größe", Querformat, NICHT "an Seite anpassen".
+    Start/Ziel-Muster. DIN A4 QUER, 1 SVG-Einheit = 1 mm.
 
-    ACHTUNG — das hier ist eine REKONSTRUKTION, nachgemessen aus einem Foto des
-    Originalblatts, nicht das Original selbst. Seitenverhältnis (1,42 = A4 quer),
-    Balkenlänge und Lückenabfolge stimmen, die Balkendicken konnten aber nur auf etwa
-    ein halbes Millimeter genau abgelesen werden. Für einen optischen Sensor kann das
-    zu ungenau sein.
+    ERZEUGT AUS DEM ORIGINAL, nicht nachgemessen: alle Koordinaten stammen direkt aus
+    target_finish.pdf (Vektor, aus Excel, 9 Rechtecke), umgerechnet mit 1 pt = 25,4/72 mm.
+    Erzeuger: tools/make_pattern.py — bei Zweifeln neu erzeugen statt hier editieren.
 
-    Wenn du das Original-PDF noch hast: nimm das. Diese Datei ist als Ersatz gedacht,
-    falls das Original nicht greifbar ist — und muss dann einmal mit der Muster-Sonde
-    (App -> Strecke -> Boxengasse) geprüft werden. Erwarteter Code: 0x01.
+    Die vorherige Fassung war eine Rekonstruktion aus einem Foto und durchgehend 10 bis
+    22 Prozent zu breit (duenner Balken 4,4 statt 3.598 mm). Sie hat ausserdem nur die
+    Lueckenfolge nachgebildet — Balken UND Luecken tragen aber beide Information.
 
-    Nachgemessene Lückenabfolge: schmal breit breit schmal breit schmal schmal schmal
-    (schmal ~4 mm, breit ~7,2 mm)
+    Gemessen aus dem Original:
+      duenner Balken 3.598 mm      dicker Balken 6.604 mm
+      duenne Luecke  3.514 mm      dicke Luecke  6.530 mm
+      Balkenbreite quer 275.9 mm (x = 6.5 bis 282.4)
+      Musterlaenge in Fahrtrichtung 75.5 mm
+      Balken in Leserichtung 000010010   (1 = dick)
+      Luecken in Leserichtung  00010110
 
-    Der Pfeil zeigt in die Fahrtrichtung.
+    DRUCKEN: A4 quer, 100 % / "Tatsaechliche Groesse". NICHT "an Seite anpassen" — das
+    verkleinert um mehrere Prozent und macht das Muster unlesbar. Zur Kontrolle ist unten
+    eine 100-mm-Strecke aufgedruckt: nachmessen, bevor das Blatt ausgelegt wird.
+
+    Der Pfeil zeigt in die Fahrtrichtung; gelesen wird von der Pfeilseite her. Ein
+    rueckwaerts ueberfahrenes Muster ist eine andere Folge und damit ein anderer Code.
   -->
 
-  <rect x="0" y="0" width="297" height="210" fill="#ffffff"/>
+  <rect x="0" y="0" width="297.01" height="210.02" fill="#ffffff"/>
 
   <g fill="#000000">
-    <rect x="10" y="49.4"  width="277" height="4.4"/>
-    <rect x="10" y="57.8"  width="277" height="4.4"/>
-    <rect x="10" y="69.4"  width="277" height="3.7"/>
-    <rect x="10" y="80.0"  width="277" height="3.7"/>
-    <rect x="10" y="88.4"  width="277" height="4.4"/>
-    <rect x="10" y="100.3" width="277" height="3.2"/>
-    <rect x="10" y="107.5" width="277" height="3.4"/>
-    <rect x="10" y="114.7" width="277" height="3.4"/>
-    <rect x="10" y="121.9" width="277" height="3.2"/>
+    <rect x="6.519" y="49.960" width="275.929" height="3.598"/>
+    <rect x="6.519" y="57.072" width="275.929" height="6.604"/>
+    <rect x="6.519" y="70.206" width="275.929" height="3.598"/>
+    <rect x="6.519" y="80.324" width="275.929" height="3.598"/>
+    <rect x="6.519" y="87.436" width="275.929" height="6.604"/>
+    <rect x="6.519" y="100.558" width="275.929" height="3.607"/>
+    <rect x="6.519" y="107.678" width="275.929" height="3.598"/>
+    <rect x="6.519" y="114.790" width="275.929" height="3.598"/>
+    <rect x="6.519" y="121.902" width="275.929" height="3.598"/>
   </g>
 
-  <g fill="#000000">
-    <path d="M 148.5 134 L 134 156 L 142 156 L 142 174 L 155 174 L 155 156 L 163 156 Z"/>
-  </g>
+  <path d="M 132.55 143.81 L 144.48 131.87 L 156.42 143.81 L 150.45 143.81 L 150.45 156.63 L 138.51 156.63 L 138.51 143.81 Z" fill="#000000" stroke="#000000" stroke-width="0.353"/>
 
-  <text x="148.5" y="192" text-anchor="middle"
-        font-family="Arial, Helvetica, sans-serif" font-size="4.5" fill="#000000">
-    START / ZIEL (Rekonstruktion) — A4 quer, 100 % drucken, nicht skalieren
-  </text>
+  <!-- Maßstabsprobe: exakt 100 mm zwischen den Innenkanten der beiden Striche -->
+  <g stroke="#000000" stroke-width="0.25" fill="none">
+    <path d="M 98.51 167.50 L 98.51 171.50"/>
+    <path d="M 198.51 167.50 L 198.51 171.50"/>
+    <path d="M 98.51 169.50 L 198.51 169.50"/>
+  </g>
+  <text x="148.51" y="176.50" text-anchor="middle"
+        font-family="Arial, Helvetica, sans-serif" font-size="3.2" fill="#000000"
+        >100 mm — nachmessen: stimmt es nicht, ist der Ausdruck skaliert und unbrauchbar</text>
 </svg>
