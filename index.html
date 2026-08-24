@@ -660,21 +660,21 @@
     border-radius: 8px; }
   .tp-btn svg { width: 26px; height: 26px; }
   .tp-btn.sel { border-color: var(--accent); border-width: 3px; background: var(--panel-3); }
+  .tp-actions .tp-btn.sel { border-color: var(--info); }
   .tp-btn .tp-cap { font-size: 8.5px; letter-spacing: .04em; text-transform: uppercase;
     color: var(--muted); margin-top: 1px; }
   /* Etwas Abstand zwischen Teilen und Aktionen, damit "Leeren" nicht neben "Haarnadel"
      steht und aussieht wie ein weiteres Streckenteil. */
-  .tp-actions { margin-top: 4px; }
+  .tp-actions { margin-bottom: 4px; }
   .tp-actions .tp-btn { border-color: var(--border); }
-  body.track-fs #track-fs-host { grid-template-rows: 1fr auto auto; }
+  /* Aktionen oben, Karte in der Mitte, Teile unten - so liegt das Steuerkreuz auf dem
+     Bildschirm genauso wie in der Hand: hoch zu den Aktionen, runter zu den Teilen. */
+  body.track-fs #track-fs-host { grid-template-rows: auto 1fr auto; }
   body.track-fs .tp-btn { width: 46px; height: 46px; }
   /* Space usage, subtle, in a corner as asked. */
   /* The gamepad moves the REAL focus rather than a painted marker of its own, so keyboard,
      controller and screen reader all agree on where you are. That only works if focus is
      actually visible, which by default on a black background it barely is. */
-  .pad-nav :focus { outline: 2px solid var(--info); outline-offset: 2px; }
-  .pad-nav :focus:not(:focus-visible) { outline: 2px solid var(--info); }
-  body.pad-nav { scroll-behavior: smooth; }
 
   /* Glitch bands behind everything. Deliberately STATIC: horizontal noise that moves behind
      text makes the text unreadable, and this has to sit under twelve tabs of dense
@@ -1382,10 +1382,10 @@
       </div>
 
       <p class="muted" style="font-size:11.5px; margin-top:12px">
-        <b>Mit Gamepad:</b> D-Pad links/rechts w&auml;hlt einen Punkt, hoch/runter
-        verschiebt ihn, <kbd>X</kbd> f&auml;hrt die Simulation. Funktioniert nur, solange
-        dieser Tab offen ist &mdash; sonst w&uuml;rde das D-Pad seine Fahrbelegung
-        verlieren.
+        Bedienung mit Maus oder Finger. Das Gamepad ist hier ausgebaut: es griff
+        vorher auf jedem Tab und auf jedes Bedienelement, und daraus kamen
+        Fehlbedienungen. Es steuert jetzt nur noch das Auto, den Streckeneditor im
+        Vollbild und das Boxenstopp-Men&uuml;.
       </p>
     </div>
 
@@ -3230,16 +3230,15 @@
       </div>
       <div class="row" style="margin-top:10px">
         <button id="track-fs">&#9974; Vollbild</button>
-        <span class="muted" style="font-size:11.5px">Im Vollbild: D-Pad w&auml;hlt,
-          X baut, O r&uuml;ckg&auml;ngig, Dreieck Reset, Quadrat dreht 90&deg;</span>
+        <span class="muted" style="font-size:11.5px">Im Vollbild: hoch/runter wechselt
+          zwischen Aktionen (oben) und Teilen (unten), links/rechts w&auml;hlt, X l&ouml;st
+          aus. O r&uuml;ckg&auml;ngig, Dreieck Reset, Quadrat dreht.</span>
       </div>
 
       <!-- Alles, was im Vollbild erreichbar sein muss, liegt IM Host. Ausserhalb verdeckt
            ihn das fixierte Layout, und dann kann man bauen, aber nicht zurueckdrehen,
            leeren oder verlassen. -->
       <div id="track-fs-host">
-        <div id="track-preview-svg"></div>
-        <div class="tp-bar" id="track-palette"></div>
         <div class="tp-bar tp-actions">
           <button class="tp-btn" id="track-undo" title="Letztes Teil entfernen"
                   aria-label="Letztes Teil entfernen">
@@ -3266,6 +3265,8 @@
               <path d="M9 4H4v5M15 4h5v5M9 20H4v-5M15 20h5v-5"/></svg>
             <span class="tp-cap">Schlie&szlig;en</span></button>
         </div>
+        <div id="track-preview-svg"></div>
+        <div class="tp-bar" id="track-palette"></div>
         <span class="tp-space" id="track-space"></span>
       </div>
       <p class="muted" style="font-size:11.5px; margin-top:6px">
@@ -6906,16 +6907,55 @@
   // Gated on the fullscreen class rather than on the tab being visible: the same buttons
   // mean throttle and shifting while driving, and stealing them because a tab happens to be
   // open would be a nasty surprise. Returns true when a press was consumed.
+  // Zwei Reihen, so wie sie auf dem Schirm liegen: oben die Aktionen, unten die Teile.
+  // Hoch und runter wechselt die Reihe, links und rechts waehlt darin, X loest aus. Vorher
+  // sprang hoch/runter auf das erste bzw. letzte Teil, was niemand erraten kann.
+  const TRACK_ACTIONS = [
+    { id: 'track-undo', cap: 'Zurueck' },
+    { id: 'track-rotate-right', cap: 'Drehen' },
+    { id: 'track-clear', cap: 'Leeren' },
+    { id: 'track-fs-exit', cap: 'Schliessen' },
+  ];
+  let trackPadRow = 1;      // 0 = Aktionen oben, 1 = Teile unten
+  let trackActionSel = 0;
+
+  function renderTrackPadFocus() {
+    renderTrackPalette();
+    TRACK_ACTIONS.forEach((a, i) => {
+      const el = $(a.id);
+      if (el) el.classList.toggle('sel', trackPadRow === 0 && i === trackActionSel);
+    });
+  }
+
   function trackEditorPad(button) {
     if (!document.body.classList.contains('track-fs')) return false;
+    const n = trackPadRow === 0 ? TRACK_ACTIONS.length : TRACK_PALETTE.length;
     switch (button) {
-      case 'left':  trackPaletteSel = (trackPaletteSel + TRACK_PALETTE.length - 1) % TRACK_PALETTE.length;
-                    renderTrackPalette(); return true;
-      case 'right': trackPaletteSel = (trackPaletteSel + 1) % TRACK_PALETTE.length;
-                    renderTrackPalette(); return true;
-      case 'up':    trackPaletteSel = 0; renderTrackPalette(); return true;
-      case 'down':  trackPaletteSel = TRACK_PALETTE.length - 1; renderTrackPalette(); return true;
-      case 'confirm': addTile(TRACK_PALETTE[trackPaletteSel].type()); return true;
+      case 'up':
+      case 'down':
+        trackPadRow = trackPadRow === 0 ? 1 : 0;
+        renderTrackPadFocus();
+        return true;
+      case 'left':
+        if (trackPadRow === 0) trackActionSel = (trackActionSel + n - 1) % n;
+        else trackPaletteSel = (trackPaletteSel + n - 1) % n;
+        renderTrackPadFocus();
+        return true;
+      case 'right':
+        if (trackPadRow === 0) trackActionSel = (trackActionSel + 1) % n;
+        else trackPaletteSel = (trackPaletteSel + 1) % n;
+        renderTrackPadFocus();
+        return true;
+      case 'confirm':
+        if (trackPadRow === 0) {
+          const el = $(TRACK_ACTIONS[trackActionSel].id);
+          if (el && !el.hidden) el.click();
+        } else {
+          addTile(TRACK_PALETTE[trackPaletteSel].type());
+        }
+        return true;
+      // Die drei Direkttasten bleiben, damit man fuer Zurueck nicht erst die Reihe wechseln
+      // muss - das ist die haeufigste Aktion beim Bauen.
       case 'undo':  $('track-undo').click(); return true;
       case 'reset': trackReset(); return true;
       case 'rotate': $('track-rotate-right').click(); return true;
@@ -8422,8 +8462,14 @@
     // Ton: wer die Ziege gewaehlt hat, will keinen Blip hoeren.
     if (kind.startsWith('horn_')) {
       const buf = fxBuffers.horns[kind];
-      if (buf) playFx(buf, 0.85);
-      else log('Hupe nicht geladen: ' + kind, 'err');
+      if (buf) { playFx(buf, 0.85); return; }
+      // Fehlt die Datei, ist fast immer das Verzeichnis veraltet - deshalb steht die Abhilfe
+      // gleich dabei, statt nur "nicht geladen".
+      const known = Object.keys(fxBuffers.horns).length;
+      log('Hupe nicht geladen: ' + kind + (known ? '' : ' — es ist keine einzige Hupe '
+          + 'geladen. Seite neu laden (Strg+Umschalt+R), dann ist audio/fx.json aktuell.'),
+          'err');
+      showHudToast('HUPE NICHT GELADEN');
       return;
     }
     const t = audioCtx.currentTime + 0.01;
@@ -8977,7 +9023,12 @@
     if (sampleEngine.ready || sampleEngine.loading || !audioCtx) return;
     sampleEngine.loading = true;
     try {
-      const res = await fetch('audio/loops.json');
+      // cache: 'reload' nur fuer das Verzeichnis, nicht fuer die Tondateien. Die Datei ist
+      // zwei Kilobyte, die Toene sind Megabytes - und ein veraltetes Verzeichnis laesst
+      // Funktionen still verschwinden, statt einen Fehler zu zeigen. Genau das ist zweimal
+      // passiert: ein zwischengespeichertes loops.json ohne die neuen Motoren und ein
+      // fx.json ohne die Hupen. In beiden Faellen sah es wie ein Fehler im Code aus.
+      const res = await fetch('audio/loops.json', { cache: 'reload' });
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const manifest = await res.json();
       for (const car of Object.keys(manifest)) {
@@ -9023,7 +9074,7 @@
   async function loadFxSamples() {
     if (!audioCtx) return;
     try {
-      const res = await fetch('audio/fx.json');
+      const res = await fetch('audio/fx.json', { cache: 'reload' });
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const fx = await res.json();
       const grab = async (file) => {
@@ -10428,16 +10479,16 @@
       prevWeather = wxNow;
 
       // Pit stop only from a standstill — a real crew does not service a moving car.
-      // LB and RB do car things in the car and menu things in menus. That is not a
-      // compromise between two requests, it is how a real wheel works: the same button that
-      // calls the pit crew during a session pages through the setup screens outside one.
+      // LB und RB machen nur noch Autodinge. Sie blaetterten ausserhalb des Cockpits durch
+      // die Tabs, und das war eine der Quellen der Fehlbedienungen: ein Griff zum
+      // Boxenstopp-Knopf im falschen Moment sprang in einen anderen Tab.
       const pitstopNow = readBindingValue(pad, bindings.pitstop) > BUTTON_CAPTURE_THRESHOLD;
-      if (pitstopNow && !prevPitstop) { if (menuActive()) pageTab(-1); else requestPitStop(); }
+      if (pitstopNow && !prevPitstop) requestPitStop();
       prevPitstop = pitstopNow;
 
       // One button, both directions: start when idle, abort when running.
       const raceStartNow = readBindingValue(pad, bindings.racestart) > BUTTON_CAPTURE_THRESHOLD;
-      if (raceStartNow && !prevRaceStart) { if (menuActive()) pageTab(+1); else toggleRace(); }
+      if (raceStartNow && !prevRaceStart) toggleRace();
       prevRaceStart = raceStartNow;
 
       const trackViewNow = readBindingValue(pad, bindings.trackview) > BUTTON_CAPTURE_THRESHOLD;
@@ -10455,11 +10506,11 @@
       // and an upshift while in reverse (how it comes back out).
       // X / Square and B / Circle are shift buttons while driving and build/undo in the
       // editor. The editor gets first refusal, and only in fullscreen.
-      if (downshiftNow && !prevDownshift && !trackEditorPad('confirm') && !schoolPad('confirm')
-          && !menuPad('confirm') && physicsEnabled && !physEngine.state.isShifting) {
+      if (downshiftNow && !prevDownshift && !trackEditorPad('confirm')
+          && physicsEnabled && !physEngine.state.isShifting) {
         physEngine.triggerShift(-1);
       }
-      if (upshiftNow && !prevUpshift && !trackEditorPad('undo') && !schoolPad('undo')
+      if (upshiftNow && !prevUpshift && !trackEditorPad('undo')
           && physicsEnabled && !physEngine.state.isShifting) {
         physEngine.triggerShift(1);
       }
@@ -10473,23 +10524,18 @@
       // press, so at every other moment the pad keeps its usual job (accel and steering
       // trim) — the meaning is never changed permanently, only while something is
       // genuinely waiting for a decision.
-      // menuPad comes LAST of the consumers, on purpose: the editor, the school and an armed
-      // pit stop are context-specific and must keep first refusal inside their own tabs.
-      // Only if none of them wants the press does generic menu navigation get it, and only
-      // outside the Cockpit - inside it the pad keeps trimming acceleration and steering,
-      // which is what you want with a car moving.
-      if (dUp && !prevDpad.up && !trackEditorPad('up') && !schoolPad('up') && !pitQuickMenu('up') && !menuPad('up')) nudgeAccel(+0.1);
-      if (dDown && !prevDpad.down && !trackEditorPad('down') && !schoolPad('down') && !pitQuickMenu('down') && !menuPad('down')) nudgeAccel(-0.1);
-      if (dLeft && !prevDpad.left && !trackEditorPad('left') && !schoolPad('left') && !pitQuickMenu('left') && !menuPad('left')) nudgeSteerResponse(-0.1);
-      if (dRight && !prevDpad.right && !trackEditorPad('right') && !schoolPad('right') && !pitQuickMenu('right') && !menuPad('right')) nudgeSteerResponse(+0.1);
+      // Nur noch zwei Verbraucher vor der Fahrfunktion: der Streckeneditor im Vollbild und
+      // ein scharfer Boxenstopp. Die allgemeine Menuenavigation ist ausgebaut - sie griff auf
+      // jedem Tab und auf jedes fokussierbare Element, und genau daraus kamen die
+      // Fehlbedienungen: ein Druck aufs Steuerkreuz verstellte irgendeinen Regler, den man
+      // gerade nicht im Blick hatte. Die Programmierschule hing an derselben Kette und ist
+      // mit ausgebaut; sie laesst sich weiterhin mit Maus und Finger bedienen.
+      if (dUp && !prevDpad.up && !trackEditorPad('up') && !pitQuickMenu('up')) nudgeAccel(+0.1);
+      if (dDown && !prevDpad.down && !trackEditorPad('down') && !pitQuickMenu('down')) nudgeAccel(-0.1);
+      if (dLeft && !prevDpad.left && !trackEditorPad('left') && !pitQuickMenu('left')) nudgeSteerResponse(-0.1);
+      if (dRight && !prevDpad.right && !trackEditorPad('right') && !pitQuickMenu('right')) nudgeSteerResponse(+0.1);
       prevDpad.up = dUp; prevDpad.down = dDown; prevDpad.left = dLeft; prevDpad.right = dRight;
 
-      // The right stick scrolls. Documentation pages are long and reaching them with the
-      // D-pad one control at a time is not navigation, it is punishment.
-      if (menuActive()) {
-        const ry = pad.axes.length > 3 ? pad.axes[3] : 0;
-        if (Math.abs(ry) > 0.25) window.scrollBy(0, ry * 26);
-      }
     }
     // Keep prev-flags fresh even while rebinding, otherwise they go stale and the first
     // press after a rebind is swallowed (or fires twice).
@@ -10801,23 +10847,6 @@
   };
 
   // Gamepad, only while this tab is open — otherwise the D-pad would lose its driving job.
-  function schoolPad(button) {
-    const active = document.querySelector('.tabpage.active');
-    if (!active || active.id !== 'tab-school') return false;
-    const data = psActive === 'accel' ? psAccel : psSteer;
-    switch (button) {
-      case 'left':  psSel = Math.max(0, psSel - 1); psRenderEditors(); return true;
-      case 'right': psSel = Math.min(PS_POINTS - 1, psSel + 1); psRenderEditors(); return true;
-      case 'up':    data[psSel] = Math.min(1, data[psSel] + 0.1); psRenderEditors(); return true;
-      case 'down':  data[psSel] = Math.max(-1, data[psSel] - 0.1); psRenderEditors(); return true;
-      case 'confirm': psRun(); return true;
-      // Circle switches which curve the D-pad edits: with two plots and one selection,
-      // there has to be a way to cross over.
-      case 'undo':  psActive = psActive === 'accel' ? 'steer' : 'accel'; psRenderEditors(); return true;
-      default: return false;
-    }
-  }
-
   psRenderEditors();
   psRefreshSendButton();
 
@@ -11604,127 +11633,6 @@
 
   $('preset-json').value = JSON.stringify(presetRead());
 
-  // ============================== CONTROLLER-NAVIGATION ==============================
-  // At the end of the IIFE like the blocks above, and for the same reason.
-
-  const TAB_ORDER = ['garage', 'control', 'track', 'options', 'race', 'school', 'doc', 'dev'];
-
-  function currentTab() {
-    const b = document.querySelector('.tab-btn.active');
-    return b ? b.dataset.tab : 'control';
-  }
-
-  // "Menu" means: not driving. In the Cockpit the pad belongs to the car, and an overlay
-  // takes precedence over everything because it is the thing waiting for an answer.
-  function menuActive() {
-    // '.on', not '.open' - that is the class the panel actually uses, and the wrong one
-    // would have made this test always false: the overlay would have kept navigating the
-    // page behind it.
-    if ($('help-panel').classList.contains('on')) return false;
-    return currentTab() !== 'race';
-  }
-
-  function pageTab(dir) {
-    const i = TAB_ORDER.indexOf(currentTab());
-    const next = TAB_ORDER[(i + dir + TAB_ORDER.length) % TAB_ORDER.length];
-    showTab(next);
-    // Focus the first control of the new page rather than keeping a stale one: leaving the
-    // ring on an element that is no longer visible is how a controller loses its place.
-    navIndex = 0;
-    navFocus(0);
-    return true;
-  }
-
-  let navIndex = 0;
-
-  // Rebuilt on every press instead of cached. The pages grow and shrink while you use them -
-  // the garage list, the lap table, the pit rows - and a cached list would point at elements
-  // that have since been replaced.
-  function navItems() {
-    const page = document.querySelector('.tabpage.active');
-    if (!page) return [];
-    return [...page.querySelectorAll(
-      'button:not([disabled]), input:not([disabled]):not([type=hidden]), ' +
-      'select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])')]
-      .filter(el => el.offsetParent !== null);
-  }
-
-  function navFocus(i) {
-    const items = navItems();
-    if (!items.length) return false;
-    navIndex = ((i % items.length) + items.length) % items.length;
-    const el = items[navIndex];
-    el.focus({ preventScroll: true });
-    // Not scrollIntoView('center'): on a page whose controls are a few pixels apart that
-    // jumps the whole view on every step. Only scroll when the target is actually off screen.
-    const r = el.getBoundingClientRect();
-    if (r.top < 70 || r.bottom > innerHeight - 20) {
-      el.scrollIntoView({ block: 'center', behavior: 'smooth' });
-    }
-    return true;
-  }
-
-  // Left and right adjust the focused control by ONE step of its own definition, rather than
-  // by a fixed amount: a slider that runs 0..1 in steps of 0.05 and one that runs 700..18000
-  // in steps of 50 cannot share a number.
-  function navAdjust(el, dir) {
-    if (el.type === 'range') {
-      const step = +el.step || 1;
-      const v = Math.min(+el.max, Math.max(+el.min, +el.value + dir * step));
-      if (String(v) === String(el.value)) return true;
-      el.value = v;
-      el.dispatchEvent(new Event('input', { bubbles: true }));
-      el.dispatchEvent(new Event('change', { bubbles: true }));
-      return true;
-    }
-    if (el.tagName === 'SELECT') {
-      const n = el.options.length;
-      if (!n) return true;
-      el.selectedIndex = (el.selectedIndex + dir + n) % n;
-      el.dispatchEvent(new Event('change', { bubbles: true }));
-      return true;
-    }
-    if (el.type === 'checkbox') {
-      el.checked = dir > 0;
-      el.dispatchEvent(new Event('change', { bubbles: true }));
-      return true;
-    }
-    // A button has nothing to adjust. Returning true anyway keeps left/right from falling
-    // through to the steering trim while a menu is open, which would silently change the
-    // car's feel from a settings screen.
-    return true;
-  }
-
-  function menuPad(action) {
-    if (!menuActive()) return false;
-    document.body.classList.add('pad-nav');
-    const items = navItems();
-    if (!items.length) return false;
-    // If the focus has drifted elsewhere - a click, a rebuild - pick it up rather than
-    // jumping back to wherever the index last was.
-    const at = items.indexOf(document.activeElement);
-    if (at >= 0) navIndex = at;
-    switch (action) {
-      case 'up':      return navFocus(navIndex - 1);
-      case 'down':    return navFocus(navIndex + 1);
-      case 'left':    return navAdjust(items[navIndex], -1);
-      case 'right':   return navAdjust(items[navIndex], +1);
-      case 'confirm': {
-        const el = items[navIndex];
-        if (!el) return false;
-        if (el.tagName === 'BUTTON') el.click();
-        else if (el.type === 'checkbox') { el.checked = !el.checked;
-                                           el.dispatchEvent(new Event('change', { bubbles: true })); }
-        else el.focus();
-        return true;
-      }
-      default: return false;
-    }
-  }
-
-  // The mouse and the controller must not fight over the ring. Once a pointer is used the
-  // outline goes away again, and the next pad press brings it back.
-  document.addEventListener('pointerdown', () => document.body.classList.remove('pad-nav'));
 })();
 </script>
 </body>
