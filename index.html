@@ -1050,17 +1050,6 @@
       <path d="M5 10.4h14" stroke="#00FF66" stroke-width="1.4" opacity=".9"
             transform="translate(2.6,0)"/>
     </svg><span class="lbl">Verbinden</span></button>
-  <button class="hdr-btn" id="btn-disconnect" disabled aria-label="Auto trennen">
-    <svg viewBox="0 0 24 24" fill="none" stroke-width="2.8" aria-hidden="true">
-      <circle cx="12" cy="12" r="7" stroke="#00E5FF" opacity=".55"
-              transform="translate(-1.6,-1.1)"/>
-      <circle cx="12" cy="12" r="7" stroke="#FF0055" opacity=".6"
-              transform="translate(1.8,1.2)"/>
-      <circle cx="12" cy="12" r="7" stroke="currentColor"/>
-      <path d="M4 10.2h16" stroke="#0b0c0f" stroke-width="2.2"/>
-      <path d="M4 10.2h16" stroke="#00FF66" stroke-width="1.2" opacity=".9"
-            transform="translate(2.4,0)"/>
-    </svg><span class="lbl">Trennen</span></button>
   </div>
   <!-- The tab row lives inside the header now, so the whole navigation is one block. -->
   <div class="tabs-wrap">
@@ -1610,31 +1599,46 @@
         der Bahn das Auto f&auml;hrt.
       </p>
 
-      <h3 style="font-size:14px; margin:16px 0 6px 0">Ohne Licht liest der Sensor nichts</h3>
+      <h3 style="font-size:14px; margin:16px 0 6px 0">Warum diese App keine Streckencodes liest</h3>
       <p class="muted">
-        Der Sensor ist <b>optisch</b>, und der Scheinwerfer ist es, der das gedruckte Muster
-        beleuchtet. Ohne Licht meldet das Auto dauerhaft <code>0xff</code> in Byte&nbsp;12,
-        also &bdquo;keine Lesung&ldquo;. Aus den Mitschnitten der Original-App, ueber alle
-        Aufzeichnungen zusammengez&auml;hlt:
+        Stand der Untersuchung, mit dem was belegt ist und dem was widerlegt wurde. Das Auto
+        meldet in Byte&nbsp;12 dauerhaft <code>0xff</code>, also &bdquo;keine Lesung&ldquo;,
+        w&auml;hrend die Original-App auf derselben Bahn Codes bekommt.
       </p>
-      <div class="doc-table-wrap"><table class="doc-table">
-        <tr><th>Scheinwerfer</th><th>Pakete</th><th>davon mit Streckencode</th></tr>
-        <tr><td>an</td><td>40&thinsp;075</td><td><b>11&thinsp;703 &mdash; 29,2&nbsp;%</b></td></tr>
-        <tr><td>aus</td><td>422</td><td><b>0 &mdash; 0,0&nbsp;%</b></td></tr>
-      </table></div>
       <p class="muted">
-        Kein einziger Code in 422&nbsp;Paketen ohne Licht. Das war die Ursache daf&uuml;r, dass
-        der Streckenscan leer blieb, die Rundenz&auml;hlung nicht ansprang und die Ghosts
-        standen: diese App hatte den Scheinwerfer standardm&auml;&szlig;ig <em>aus</em>, die
-        Original-App hat ihn praktisch immer an. Seitdem ist er hier auch an, und der Scan
-        schaltet ihn ein, falls er es nicht ist.
+        <b>Was ausgeschlossen ist.</b> Das Schreibpaket ist es nicht. In den Mitschnitten gibt
+        es eine Sitzung, die <em>byteweise dieselben</em> festen Felder sendet wie diese App
+        &mdash; Byte&nbsp;10 = <code>0x60</code>, Byte&nbsp;15 = <code>0x04</code>,
+        Byte&nbsp;11 = <code>0x00</code> &mdash; und dabei 463 Streckencodes empf&auml;ngt.
+        Ebenso ausgeschlossen: eine zweite Charakteristik. Alle Meldungen kommen in jeder
+        Aufzeichnung auf ATT-Handle <code>0x0013</code> mit 19&nbsp;Byte L&auml;nge.
       </p>
-      <p class="muted" style="font-size:11.5px">
-        <b>Was die Zahl nicht sagt:</b> 422 Pakete ohne Licht sind wenig gegen 40&thinsp;075
-        mit, und sie liegen vermutlich am Anfang einer Sitzung. Der Zusammenhang ist gut
-        belegt, aber nicht in beide Richtungen gleich stark gemessen &mdash; und dass der
-        Scheinwerfer <em>ursaechlich</em> beleuchtet und nicht nur zufaellig zeitgleich
-        anliegt, ist eine physikalische Annahme, keine Messung.
+      <p class="muted">
+        <b>Ein Irrtum, der hier stand.</b> Eine Auszaehlung ergab: Scheinwerfer an,
+        11&thinsp;703&nbsp;Codes in 40&thinsp;075&nbsp;Paketen; Scheinwerfer aus, 0 in 422.
+        Daraus stand hier, der Sensor brauche das Licht. Das ist <b>widerlegt</b> &mdash; in
+        der Original-App wird die Strecke gelesen, ob das Licht an ist oder aus. Die
+        Korrelation war echt, aber nicht urs&auml;chlich: 422&nbsp;Pakete sind etwa
+        20&nbsp;Sekunden und lagen am Sitzungsanfang, bevor &uuml;berhaupt etwas
+        &uuml;berfahren wurde. Derselbe Fehler unterlief mir zweimal &mdash; aus
+        zusammengeworfenen Sitzungen einen Zusammenhang gelesen, den die einzelne Sitzung
+        nicht hergibt.
+      </p>
+      <p class="muted">
+        <b>Was am wahrscheinlichsten bleibt: die Druckfarbe.</b> Der Sensor unter dem Auto
+        arbeitet mit <b>Infrarot</b>. Viele schwarze Tinten sind
+        <em>infrarotdurchl&auml;ssig</em> &mdash; sie sehen f&uuml;r das Auge tiefschwarz aus
+        und reflektieren Infrarot fast wie das wei&szlig;e Papier daneben. Der Sensor sieht
+        dann nichts, obwohl das Muster ma&szlig;haltig und f&uuml;r das Auge kontrastreich
+        gedruckt ist. Ru&szlig; (Carbon Black), wie im Toner eines Laserdruckers, absorbiert
+        Infrarot; viele Farbstofftinten von Tintenstrahldruckern tun das nicht.
+      </p>
+      <p class="muted">
+        <b>Der Test, der es entscheidet</b> &mdash; und den nur das Ger&auml;t selbst
+        beantworten kann: ein <b>Original-Streckenteil</b> von Carrera gegen den eigenen
+        Ausdruck. Liest das Auto das Original und den Ausdruck nicht, liegt es am Druck und
+        nicht am Code. Dann hilft ein <b>Laserdrucker</b> statt Tintenstrahl, oder das Muster
+        mit einem russhaltigen schwarzen Filzstift nachziehen.
       </p>
 
       <h3 style="font-size:14px; margin:16px 0 6px 0">Lang und kurz, nicht hell und dunkel</h3>
@@ -3375,11 +3379,12 @@
           <tr><td colspan="4" class="muted">noch nichts gez&auml;hlt</td></tr>
         </tbody></table>
         <p class="muted" style="font-size:11.5px">
-          <b>Zuerst der Scheinwerfer.</b> Steht er auf AUS, ist alles andere hier
-          bedeutungslos: der Streckensensor ist optisch, und der Scheinwerfer beleuchtet das
-          gedruckte Muster. Aus den Mitschnitten der Original-App, ueber alle Aufzeichnungen:
-          mit Licht 11&thinsp;703 Streckencodes in 40&thinsp;075 Paketen, ohne Licht
-          <b>0 in 422</b>.
+          <b>Wenn hier nur <code>0xff</code> steht:</b> das Schreibpaket ist nachweislich
+          nicht die Ursache &mdash; eine Sitzung in den Mitschnitten sendet byteweise dieselben
+          festen Felder wie diese App und empf&auml;ngt 463 Codes. Am wahrscheinlichsten ist
+          die <b>Druckfarbe</b>: der Sensor arbeitet mit Infrarot, und viele schwarze Tinten
+          sind infrarotdurchl&auml;ssig. Siehe Doku, &bdquo;Warum diese App keine
+          Streckencodes liest&ldquo;.
         </p>
         <p class="muted" style="font-size:11.5px">
           <b>Wie das Uebrige zu lesen ist.</b> Steht <b>Musterkontakt</b> auf 0, hat der Sensor
@@ -3656,10 +3661,18 @@
   }
 
   function setConnected(isConnected) {
-    dot.classList.toggle('connected', isConnected);
-    statusEl.textContent = isConnected ? `verbunden: ${device?.name || device?.id || ''}` : 'nicht verbunden';
-    $('btn-connect').disabled = isConnected;
-    $('btn-disconnect').disabled = !isConnected;
+    // Jede Anzeige hier einzeln geprueft: der Punkt und der Trennen-Knopf in der Kopfzeile
+    // sind entfernt worden, und ein blinder Zugriff auf einen von beiden wuerde beim
+    // Verbinden eine Ausnahme werfen - also genau in dem Moment, in dem am wenigsten Zeit
+    // ist, sie zu suchen.
+    if (dot) dot.classList.toggle('connected', isConnected);
+    if (statusEl) {
+      statusEl.textContent = isConnected
+        ? `verbunden: ${device?.name || device?.id || ''}` : 'nicht verbunden';
+    }
+    const bc = $('btn-connect'), bd = $('btn-disconnect');
+    if (bc) bc.disabled = isConnected;
+    if (bd) bd.disabled = !isConnected;
   }
 
   async function connect() {
@@ -3867,7 +3880,10 @@
   // aber kein Auto, dem er eine Rolle geben konnte. Zwei Knoepfe mit demselben Wort und
   // verschiedener Wirkung sind eine Falle, keine Auswahl.
   $('btn-connect').onclick = () => garageConnect();
-  $('btn-disconnect').onclick = disconnect;
+  // Der Trennen-Knopf in der Kopfzeile ist entfernt: er rief disconnect() des BLE-Explorers
+  // auf und liess ein ueber die Garage verbundenes Auto unberuehrt - er tat also nichts, genau
+  // wie der Verbinden-Knopf daneben, bevor der umgehaengt wurde. Getrennt wird pro Auto in
+  // der Garage, und das funktioniert.
   $('dev-explore').onclick = connect;
 
   // ---- Tabs ----
@@ -5419,21 +5435,14 @@
 
   const physEngine = new CarreraPhysicsEngine();
   let physLastTime = null;
-  // AN als Standard, und das ist keine Geschmacksfrage: der Streckensensor ist optisch,
-  // und der Scheinwerfer ist es, der das gedruckte Muster beleuchtet. Aus den btsnoop-Logs
-  // der Original-App, ueber alle Aufzeichnungen zusammengezaehlt:
+  // AN als Standard, weil die Original-App es praktisch immer an hat und ein beleuchtetes
+  // Auto auf dem Tisch besser zu sehen ist.
   //
-  //     Scheinwerfer AN    40075 Pakete, 11703 mit Streckencode  = 29.2 %
-  //     Scheinwerfer AUS     422 Pakete,     0 mit Streckencode  =  0.0 %
-  //
-  // Kein einziger Code in 422 Paketen ohne Licht. Mit Licht aus meldet das Auto dauerhaft
-  // 0xff, also "keine Lesung" - und genau das war der Grund, warum der Streckenscan leer
-  // blieb, die Rundenzaehlung nicht ansprang und die Ghosts standen. Die Original-App hat
-  // das Licht praktisch immer an, deshalb funktioniert es dort.
-  //
-  // Einschraenkung, damit die Zahl nicht mehr behauptet als sie kann: 422 Pakete ohne Licht
-  // sind wenig gegen 40075 mit, und sie liegen vermutlich am Anfang einer Sitzung. Der
-  // Zusammenhang ist damit gut belegt, aber nicht in beide Richtungen gleich stark gemessen.
+  // NICHT weil der Streckensensor es braucht. Das stand hier eine Fassung lang, gestuetzt auf
+  // eine Auszaehlung (Licht an: 11703 Codes in 40075 Paketen; Licht aus: 0 in 422), und es
+  // ist widerlegt: in der Original-App wird die Strecke gelesen, ob das Licht an ist oder
+  // aus. Die Korrelation war echt, aber nicht ursaechlich - 422 Pakete sind rund 20 Sekunden
+  // und lagen am Sitzungsanfang, bevor etwas ueberfahren wurde.
   let headlightsOn = true;
   let raceLampHead = false;  // resolved headlight state, for the racing screen
 
@@ -5444,11 +5453,7 @@
 
   $('dash-head-toggle').addEventListener('change', (e) => {
     headlightsOn = e.target.checked;
-    if (!headlightsOn) {
-      log('Scheinwerfer aus. Der Streckensensor ist optisch \u2014 ohne Licht meldet das Auto '
-          + 'dauerhaft 0xff, also keine Lesung. Kein Streckenscan, keine Rundenzaehlung.', 'err');
-      showHudToast('LICHT AUS \u2014 KEINE STRECKENLESUNG');
-    }
+    // Keine Warnung mehr: die Behauptung, ohne Licht werde nicht gelesen, war falsch.
   });
 
   $('setting-autoshift').addEventListener('change', (e) => {
@@ -7525,16 +7530,6 @@
     // braucht also gar keine zweite Anmeldung. Nur wenn keines da ist, wird der Weg ueber
     // den BLE-Explorer versucht - der funktioniert weiterhin, ist aber nicht mehr die
     // Voraussetzung.
-    // Ohne Licht liest der Sensor nichts - gemessen 0 Codes in 422 Paketen. Ein Scan mit
-    // ausgeschaltetem Licht kann also nur leer ausgehen, und ihn stumm laufen zu lassen waere
-    // dasselbe Schweigen, das den Fehler vorher verdeckt hat.
-    if (!headlightsOn) {
-      headlightsOn = true;
-      const cb = $('dash-head-toggle');
-      if (cb) cb.checked = true;
-      log('Scheinwerfer fuer den Scan eingeschaltet: der Sensor ist optisch und liest ohne '
-          + 'Licht nichts.', 'info');
-    }
     trackScanCar = playerCar || garage.find(c => c.tx) || null;
     if (!trackScanCar) {
       const entry = charByUuid.get(NUS_TX);
