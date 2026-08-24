@@ -844,10 +844,28 @@
   .gar-row.is-ghost { border-color: #7a6bd0; }
   .gar-name { font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
   .gar-id { font-size: 11px; color: var(--muted); font-family: monospace; }
-  .gar-roles { display: flex; gap: 6px; flex-wrap: wrap; }
-  .gar-roles button { font-size: 12px; padding: 6px 10px; }
+  /* Ein Segmentschalter statt drei einzelner Knoepfe: die drei Rollen schliessen sich
+     gegenseitig aus, und drei getrennte Knoepfe sagen das nicht. Zusammengeschoben, mit
+     einem durchgehenden Rahmen, liest es sich als eine Wahl. */
+  .gar-roles { display: inline-flex; border: 1px solid var(--border);
+    border-radius: 8px; overflow: hidden; flex: none; }
+  .gar-roles button {
+    font-size: 12px; padding: 8px 13px; border: 0; border-radius: 0; background: none;
+    color: var(--muted); font-weight: 600; letter-spacing: .03em; white-space: nowrap;
+    border-left: 1px solid var(--border); min-height: 38px;
+  }
+  .gar-roles button:first-child { border-left: 0; }
+  .gar-roles button:hover { background: var(--tint-2); color: var(--text); }
   .gar-roles button.on { background: var(--good); color: #04170c; font-weight: 700; }
-  .gar-roles button.on.ghost { background: #7a6bd0; color: #0b0718; }
+  .gar-roles button.on.ghost { background: #7a6bd0; color: #f2eeff; }
+  .gar-roles button.on.off { background: var(--panel-3); color: var(--text); }
+  /* Auf dem Telefon rutscht die Wahl unter den Namen, sonst wird der Name auf zwei
+     Buchstaben gequetscht. */
+  @media (max-width: 620px) {
+    .gar-row { grid-template-columns: minmax(0,1fr) auto; }
+    .gar-roles { grid-column: 1 / -1; width: 100%; }
+    .gar-roles button { flex: 1; padding: 8px 6px; }
+  }
   .gar-blink { font-size: 11px; color: var(--muted); }
   .race-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
   /* Fullscreen sits top right ON the dash, as an icon: on a racing screen a word is
@@ -2593,6 +2611,13 @@
 
     <div class="card">
       <h2>GATT-Baum</h2>
+      <p class="muted" style="font-size:11.5px">
+        Eigener Verbindungsweg, nur zum Erkunden. Er legt <b>kein</b> Auto in der Garage an
+        und wird zum Fahren nicht gebraucht.
+      </p>
+      <div class="row" style="margin-bottom:10px">
+        <button id="dev-explore">Verbinden und Services lesen</button>
+      </div>
       <div id="services-container"><p class="muted">Noch keine Verbindung.</p></div>
     </div>
 
@@ -3012,10 +3037,15 @@
           <option value="horn">Zweiklang (gerechnet)</option>
           <option value="blip">Blip (gerechnet)</option>
         </select></div>
+      <div class="opt-row"><div class="opt-label">Strecke beim Fahren lernen
+          <small>Setzt das Layout aus den gemeldeten Kacheln zusammen und &uuml;bernimmt es
+          nach der ersten geschlossenen Runde &mdash; nur wenn noch keine Strecke liegt.</small></div>
+        <label class="tgl"><input type="checkbox" id="ghost-learn" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Ghost braucht Streckencode
-          <small>Aus: der Ghost f&auml;hrt auch ohne gedruckte Strecke. Dann h&auml;lt sich
-          das Auto nicht selbst auf der Bahn.</small></div>
-        <label class="tgl"><input type="checkbox" id="ghost-needcode" checked><span></span></label></div>
+          <small>Standard aus, damit er auch ohne gedruckte Strecke f&auml;hrt. An: er
+          f&auml;hrt nur mit gelesenem Muster, h&auml;lt sich dann aber selbst auf der
+          Bahn.</small></div>
+        <label class="tgl"><input type="checkbox" id="ghost-needcode"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Ghost: F&uuml;hrenden bremsen<small>Der Erstplatzierte fährt etwas langsamer.</small></div>
         <label class="tgl"><input type="checkbox" id="ghost-leader"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Tankgewicht<small>Voller Tank macht träger. Links = aus.</small></div>
@@ -3685,8 +3715,13 @@
   };
 
   $('btn-clear-log').onclick = () => { logEl.innerHTML = ''; };
-  $('btn-connect').onclick = connect;
+  // Der gruene Knopf oben macht jetzt dasselbe wie der in der Garage. Vorher hing er am
+  // BLE-Explorer, der KEIN Auto in der Garage anlegt - wer ihn benutzte, war verbunden, hatte
+  // aber kein Auto, dem er eine Rolle geben konnte. Zwei Knoepfe mit demselben Wort und
+  // verschiedener Wirkung sind eine Falle, keine Auswahl.
+  $('btn-connect').onclick = () => garageConnect();
   $('btn-disconnect').onclick = disconnect;
+  $('dev-explore').onclick = connect;
 
   // ---- Tabs ----
   // Pulled out of the click handler so the Garage's "Losfahren" and the controller
@@ -7097,6 +7132,80 @@
 
   let trackScanSkipped = 0;
   let trackScanCar = null;
+
+  // ---- Strecke beim Fahren lernen ----
+  // Nicht dasselbe wie der Streckenscan: der laeuft auf Knopfdruck und schreibt sofort in
+  // die Karte. Das hier laeuft nebenbei, waehrend ein Ghost seine Runden dreht, und
+  // uebernimmt erst, wenn eine Runde nachweislich geschlossen ist. Ohne diese Bedingung
+  // landete eine halbe Runde als Strecke in der Karte und der Vorausblick zeigte in die
+  // falsche Richtung.
+  // car: genau EIN Auto speist das Lernen. Mit zwei Autos liefen deren Kachelzaehler in
+  // dasselbe Objekt, mischten sich und das gelernte Layout waere Unsinn gewesen - eine
+  // Kachelfolge aus zwei Fahrzeugen ist keine Runde.
+  const learn = { car: null, seq: [], votes: {}, lastCount: null, started: false, laps: 0 };
+
+  function learnReset() {
+    learn.car = null;
+    learn.seq = []; learn.votes = {}; learn.lastCount = null;
+    learn.started = false; learn.laps = 0;
+  }
+
+  function learnTick(bytes) {
+    if (!ghostCfg.learn) return;
+    const counter = bytes[11], type = bytes[12];
+    if (learn.lastCount === null) { learn.lastCount = counter; learn.votes = {}; return; }
+    if (counter === learn.lastCount) {
+      learn.votes[type] = (learn.votes[type] || 0) + 1;
+      return;
+    }
+    // Kachelgrenze: Mehrheit nur unter echten Codes, aus demselben Grund wie beim Scan -
+    // 0xff heisst "keine Lesung" und ist der haeufigste Wert von allen.
+    let best = null, bestN = -1;
+    for (const [t, c] of Object.entries(learn.votes)) {
+      const ty = parseInt(t, 10);
+      if (ty === 0xff || ty === TILE_OFFTRACK) continue;
+      if (c > bestN) { bestN = c; best = ty; }
+    }
+    learn.lastCount = counter;
+    learn.votes = {};
+    if (best === null) return;
+    // Erst ab der ersten Start/Ziel-Kachel mitschreiben, sonst faengt die Folge irgendwo in
+    // der Runde an und die gelernte Strecke ist gegen die echte verdreht.
+    if (!learn.started) {
+      if (best !== TILE_TYPE.START) return;
+      learn.started = true;
+      learn.seq = [{ type: TILE_TYPE.START }];
+      return;
+    }
+    if (best === TILE_TYPE.START) {
+      learn.laps++;
+      if (learn.seq.length >= 3) learnCommit();
+      learn.seq = [{ type: TILE_TYPE.START }];
+      return;
+    }
+    learn.seq.push({ type: best });
+    // Eine Runde kann nicht beliebig lang sein. Laeuft es davon, ist die Start/Ziel-Kachel
+    // nicht erkannt worden, und weiterzuzaehlen wuerde nur Unsinn ansammeln.
+    if (learn.seq.length > 60) { learnReset(); }
+  }
+
+  function learnCommit() {
+    const got = learn.seq.slice();
+    const had = currentTrackTiles.length;
+    // Nur uebernehmen, wenn noch keine richtige Strecke da ist. Eine von Hand gebaute oder
+    // gescannte Strecke ueberschreibt man nicht ungefragt.
+    if (had > 1) {
+      log('Runde gelernt (' + got.length + ' Teile), aber es liegt schon eine Strecke — '
+          + 'nicht uebernommen.', 'info');
+      return;
+    }
+    currentTrackTiles = got;
+    refreshTrackPreview();
+    log('Strecke beim Fahren gelernt: ' + got.length + ' Teile, '
+        + got.filter(t => tileIsCurve(t.type)).length + ' davon Kurven. Ghosts haben ab '
+        + 'jetzt Vorausblick.', 'info');
+    showHudToast('STRECKE GELERNT: ' + got.length + ' TEILE');
+  }
   async function startTrackScan() {
     trackScanSkipped = 0;
     // Zuerst das Auto aus der Garage: dessen Meldungen laufen schon durch onCarNotify, es
@@ -7645,10 +7754,20 @@
     // carrying a previous session's minutes into it would make the share meaningless.
     trackTimeReset();
     realSpeedReset();
+    learnReset();
     raceLapStart = null;
     $('race-results').style.display = 'none';
     $('race-lap-current-row').style.display = '';
     $('race-lap-current').textContent = '-';
+    // Freies Training braucht keine Ampel: es gibt niemanden, gegen den man gleichzeitig
+    // losfahren muesste. Drei Sekunden Warten vor einer Trainingsrunde sind nur Wartezeit.
+    if (raceMode === 'practice') {
+      raceState = 'racing';
+      $('race-start-btn').disabled = true;
+      $('race-stop-btn').disabled = false;
+      raceGreen();
+      return;
+    }
     raceState = 'countdown';
     $('race-start-btn').disabled = true;
     // Abbrechen muss schon im Countdown gehen: requestRaceStop() raeumt den Zaehler mit
@@ -7668,25 +7787,32 @@
         clearInterval(raceCountdownTimer);
         setRaceLights('go');
         playTone(880, 0.35, 'square', 0.22);
-        // A flying start goes to the formation lap first: the cars roll at pit-lane speed
-        // and no laps count until the field crosses the line.
-        raceFormationLap = raceFlying;
-        raceState = 'racing';
-        raceLapStart = Date.now();
-        launchGhosts();   // green means green for everyone
-        if (raceFormationLap) {
-          physEngine.config.speedLimitFactor = PIT_SPEED_FACTOR;
-          $('race-status').textContent = 'Einführungsrunde — Limit bis Start/Ziel';
-          showHudToast('Einführungsrunde');
-        }
-        raceStartedAt = Date.now();
-        if (raceClockTimer) clearInterval(raceClockTimer);
-        raceClockTimer = setInterval(raceClockTick, 250);
-        $('race-status').textContent = `${RACE_MODES[raceMode].label} läuft`;
-        $('race-stop-btn').disabled = false;
+        raceGreen();
         setTimeout(() => setRaceLights(0), 900);
       }
     }, 1000);
+  }
+
+  // Alles, was beim Gruen passiert. Eine Funktion, zwei Aufrufer: der Countdown und das
+  // freie Training, das ihn ueberspringt.
+  function raceGreen() {
+    // A flying start goes to the formation lap first: the cars roll at pit-lane speed
+    // and no laps count until the field crosses the line.
+    raceFormationLap = raceFlying;
+    raceState = 'racing';
+    raceLapStart = Date.now();
+    launchGhosts();   // green means green for everyone
+    if (raceFormationLap) {
+      physEngine.config.speedLimitFactor = PIT_SPEED_FACTOR;
+      showHudToast('Einführungsrunde');
+    }
+    raceStartedAt = Date.now();
+    if (raceClockTimer) clearInterval(raceClockTimer);
+    raceClockTimer = setInterval(raceClockTick, 250);
+    $('race-status').textContent = raceFormationLap
+      ? 'Einführungsrunde — Limit bis Start/Ziel'
+      : RACE_MODES[raceMode].label + ' läuft';
+    $('race-stop-btn').disabled = false;
   }
 
   // Stops NOW. This used to set 'finishing' and let the current lap complete, which was
@@ -9504,6 +9630,12 @@
     if (engineOsc) engineOsc.type = soundProfile.wave;
   });
 
+  $('ghost-learn').addEventListener('change', (e) => {
+    ghostCfg.learn = e.target.checked;
+    if (!e.target.checked) learnReset();
+    log('Streckenlernen ' + (e.target.checked ? 'an' : 'aus') + '.', 'info');
+  });
+
   $('ghost-needcode').addEventListener('change', (e) => {
     ghostCfg.needCode = e.target.checked;
     log('Ghost ' + (e.target.checked ? 'braucht' : 'braucht keinen') + ' Streckencode.', 'info');
@@ -9974,7 +10106,7 @@
         <div class="gar-roles">
           <button data-role="player" class="${car.role === 'player' ? 'on' : ''}">Steuern</button>
           <button data-role="ghost" class="${car.role === 'ghost' ? 'on ghost' : ''}">Ghost</button>
-          <button data-role="none" class="${car.role === 'none' ? 'on' : ''}">&mdash;</button>
+          <button data-role="none" class="${car.role === 'none' ? 'on off' : ''}">Aus</button>
         </div>
         <button data-act="drop">Trennen</button>`;
       // Clicking the row itself identifies the car; the buttons must not also blink it.
@@ -9995,17 +10127,22 @@
     if (!btn) return;
     const player = garage.find(c => c.role === 'player');
     const ghosts = garage.filter(c => c.role === 'ghost').length;
-    btn.disabled = !player;
-    btn.title = player
-      ? 'Ins Cockpit wechseln' + (ghosts ? ' und ' + ghosts + ' Ghost'
-          + (ghosts === 1 ? '' : 's') + ' starten' : '')
-      : garage.length ? 'Erst ein Auto auf "Steuern" stellen'
-                      : 'Erst ein Auto verbinden';
+    // Ein Fahrer ist NICHT mehr Voraussetzung. Vorher war der Knopf ohne "Steuern"-Auto
+    // gesperrt, also liess sich ein Feld aus reinen Ghosts nicht losschicken - dabei ist
+    // genau das ein sinnvoller Fall: zusehen, wie sie fahren.
+    btn.disabled = !player && !ghosts;
+    btn.title = !player && !ghosts
+      ? (garage.length ? 'Erst ein Auto auf "Steuern" oder "Ghost" stellen'
+                       : 'Erst ein Auto verbinden')
+      : (player ? 'Ins Cockpit' : 'Ghosts starten')
+        + (ghosts ? ', ' + ghosts + ' Ghost' + (ghosts === 1 ? '' : 's') : '');
+    btn.textContent = player ? 'Losfahren' : (ghosts ? 'Ghosts starten' : 'Losfahren');
   }
 
   $('gar-go').onclick = () => {
     const player = garage.find(c => c.role === 'player');
-    if (!player) return;
+    const ghosts = garage.filter(c => c.role === 'ghost');
+    if (!player && !ghosts.length) return;
     showTab('race');
     // The ghosts are started here rather than left to the race start, because "Losfahren"
     // from the Garage is also the way to drive WITHOUT arming a race - free practice with
@@ -10020,7 +10157,7 @@
       c.ghost.freeRun = true;
       n++;
     }
-    log(garageLabel(player) + ' im Cockpit'
+    log((player ? garageLabel(player) + ' im Cockpit' : 'Nur Ghosts')
         + (n ? ', ' + n + ' Ghost' + (n === 1 ? '' : 's') + ' gestartet' : ''), 'info');
   };
 
@@ -10091,6 +10228,16 @@
     // gefunden" ab. Genau derselbe Fehler war beim Armaturenbrett schon einmal gefunden und
     // dort behoben worden (siehe den Kommentar oben), beim Scan blieb er stehen.
     if (trackScanning && trackScanCar === car) trackScanBytes(b);
+    // Lernen laeuft nur, wenn nicht gerade von Hand gescannt wird - beide gleichzeitig in
+    // dieselbe Karte schreiben zu lassen waere ein Wettlauf.
+    if (!trackScanning && (car === playerCar || car.role === 'ghost')) {
+      // Das erste passende Auto bekommt das Lernen und behaelt es, bis zurueckgesetzt wird.
+      // Der Fahrer hat Vorrang: er faehrt die Runde bewusst, ein Ghost faehrt, was er kann.
+      if (!learn.car || (car === playerCar && learn.car !== playerCar)) {
+        if (learn.car !== car) { learnReset(); learn.car = car; }
+      }
+      if (learn.car === car) learnTick(b);
+    }
     car.yaw = b[3] > 127 ? b[3] - 256 : b[3];
     car.battery = b[10];
   }
@@ -10150,10 +10297,18 @@
     // Default ON: the measurement says this is the mode in which the car holds the track by
     // itself, which is the only configuration in which a ghost works at all today.
     railMode: true,
-    // Verlangt der Ghost einen gelesenen Streckencode, um ueberhaupt zu fahren? Standard ja:
-    // ohne Code weiss das Auto nicht, wo es ist, und der Leitplanken-Modus kann nichts
-    // halten. Aus, um ohne gedruckte Strecke ueberhaupt etwas fahren zu sehen.
-    needCode: true,
+    // Lernt der Ghost die Strecke, waehrend er faehrt? Er meldet ohnehin je Kachel ihre Art,
+    // also laesst sich das Layout aus einer gefahrenen Runde zusammensetzen - dasselbe, was
+    // der Streckenscan von Hand macht, nur nebenbei. Sobald eine Runde geschlossen ist, wird
+    // sie als Strecke uebernommen, wenn noch keine da ist, und ab dann hat der Ghost seinen
+    // Vorausblick und bremst vor Kurven.
+    learn: true,
+    // Standard AUS. Anders herum war es die haeufigste Ursache fuer "ich starte das Rennen
+    // und nichts passiert": ohne gedrucktes Muster meldet das Auto nie einen Code, und dann
+    // stand der Ghost. Vorsicht, die nichts faehrt, ist keine Vorsicht. Wer gedruckte
+    // Strecke liegen hat, kann es einschalten - dann haelt sich das Auto selbst auf der Bahn
+    // und faehrt nur dort, wo es weiss, wo es ist.
+    needCode: false,
   };
 
   // Per-tile behaviour, data-driven on purpose: the hairpin and left-curve codes are not
