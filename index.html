@@ -8787,21 +8787,34 @@
   // fixed priority order. Blink phases come from the clock rather than from timers, so
   // nothing can fall out of step.
   const lightFx = { flashUntil: 0, damage: false, fuel: false, rain: false };
-  // EIN Aufblitzen, nicht drei. Vorher waren es 80-ms-Umschlaege ueber 480 ms, also ein
-  // Stroboskop mit 12,5 Hz - das liest sich als Warnblinken und nicht als Lichthupe. In ACC
-  // ist die Lichthupe genau ein festes Aufblitzen, solange die Taste liegt; auf einen
-  // Tastendruck uebersetzt ist das ein einzelner sauberer Impuls.
-  const FLASH_MS = 280;
+  // Drei Impulse in der Taktung, die sich bewaehrt hat. Zwei Anlaeufe davor: zuerst
+  // 80-ms-Umschlaege ueber 480 ms, also ein Stroboskop mit 12,5 Hz, das sich als Warnblinken
+  // liest; dann ein einzelner Impuls von 280 ms, dessen LAENGE stimmte, der aber nur einmal
+  // blitzte. Jetzt beides: 220 ms an, 130 ms aus, dreimal - 2,9 Hz statt 12,5.
+  //
+  // Getrennt notiert und nicht als eine Zahl, weil "wie lang" und "wie oft" zwei
+  // Entscheidungen sind und beim naechsten Mal einzeln nachgezogen werden sollen.
+  const FLASH_ON_MS = 220;
+  const FLASH_OFF_MS = 130;
+  const FLASH_PULSES = 3;
+  const FLASH_PERIOD_MS = FLASH_ON_MS + FLASH_OFF_MS;
+  // Die letzte Pause zaehlt nicht mit: nach dem dritten Impuls ist es vorbei, und eine
+  // Pause am Ende wuerde die Sperre gegen ein erneutes Ausloesen unnoetig verlaengern.
+  const FLASH_MS = FLASH_PULSES * FLASH_PERIOD_MS - FLASH_OFF_MS;
 
   function resolveLights(baseHead, baseBrake) {
     const now = Date.now();
     let head = baseHead, brake = baseBrake;
     if (now < lightFx.flashUntil) {
+      // Verstrichene Zeit seit dem Ausloesen, nicht die restliche: die Phase muss vorwaerts
+      // laufen, sonst kaeme der erste Impuls am Ende.
+      const elapsed = FLASH_MS - (lightFx.flashUntil - now);
+      const on = (elapsed % FLASH_PERIOD_MS) < FLASH_ON_MS;
       // Umgekehrt, wenn das Licht schon an ist. Das Protokoll hat genau ein Bit fuer die
       // Scheinwerfer, also gibt es kein Fernlicht, das man aufblenden koennte - bei
       // eingeschaltetem Licht waere "an" nichts Sichtbares. Ein kurzes Aus ist das, was ein
       // Ein-Bit-System an dieser Stelle zeigen kann.
-      head = !baseHead;
+      head = on ? !baseHead : baseHead;
     } else if (lightFx.damage) {
       head = Math.floor(now / 90) % 2 === 0;    // fast, agitated flicker
     } else if (lightFx.fuel) {
