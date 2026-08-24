@@ -698,6 +698,16 @@
   body.race-mode #glitch-bands { display: none; }
   main, header { position: relative; z-index: 1; }
 
+  /* ---- Rohcode-Monitor ---- */
+  .cm-now { font-family: monospace; font-size: 26px; font-weight: 800; letter-spacing: .04em; }
+  .cm-tab { width: 100%; border-collapse: collapse; font-size: 12.5px; margin-top: 8px; }
+  .cm-tab th, .cm-tab td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--border); }
+  .cm-tab th { color: var(--muted); font-weight: 600; font-size: 11px;
+    text-transform: uppercase; letter-spacing: .06em; }
+  .cm-tab td:first-child { font-family: monospace; }
+  .cm-bar { height: 6px; background: var(--info); border-radius: 3px; min-width: 2px; }
+  .cm-new { color: var(--warn); font-weight: 700; }
+
   /* ---- Toene in der Doku ---- */
   .snd-grid { display: grid; gap: 8px; grid-template-columns: 1fr; }
   @media (min-width: 780px) { .snd-grid { grid-template-columns: 1fr 1fr; } }
@@ -3019,7 +3029,7 @@
       <div class="opt-row"><div class="opt-label">Ghost: seitlicher Versatz<small>Gegen gegenseitiges Rammen. Blind: kein Byte meldet die Querlage. Links = aus.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="ghost-lateral" min="0" max="1" step="0.1" value="0">
+          <input type="range" id="ghost-lateral" min="0" max="1" step="0.1" value="0.5">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="ghost-lateral-val">aus</span>
         </div></div>
@@ -3258,6 +3268,43 @@
         <button id="track-scan-stop" disabled>Scan stoppen</button>
         <span class="muted" id="track-scan-status">bereit</span>
       </div>
+      <div class="card" style="margin-top:14px">
+        <h2>Welchen Code meldet dieses Teil?</h2>
+        <p class="muted">
+          Zum Herausfinden, was ein Streckenteil wirklich sendet &mdash; zum Beispiel die
+          180-Grad-Haarnadel. Auto verbinden, hier auf <b>Z&auml;hlen starten</b>, dann
+          <em>langsam</em> von Hand &uuml;ber genau dieses Teil schieben und ablesen, welcher
+          Wert dabei auftaucht.
+        </p>
+        <div class="row" style="gap:14px; align-items:baseline; flex-wrap:wrap">
+          <div><span class="hud-label">jetzt</span><br>
+            <span class="cm-now" id="cm-now">&ndash;</span></div>
+          <div><span class="hud-label">Pakete</span><br>
+            <span class="cm-now" id="cm-total" style="font-size:18px">0</span></div>
+          <div class="spacer" style="flex:1"></div>
+          <button class="primary" id="cm-start">Z&auml;hlen starten</button>
+          <button id="cm-reset">Zur&uuml;cksetzen</button>
+        </div>
+        <table class="cm-tab"><thead><tr>
+          <th>Byte&nbsp;12</th><th>bekannt als</th><th>Pakete</th><th>Anteil</th>
+        </tr></thead><tbody id="cm-rows">
+          <tr><td colspan="4" class="muted">noch nichts gez&auml;hlt</td></tr>
+        </tbody></table>
+        <p class="muted" style="font-size:11.5px">
+          <code>0xff</code> hei&szlig;t &bdquo;gerade keine Lesung&ldquo; und ist der
+          h&auml;ufigste Wert von allen &mdash; das ist normal und kein Fehler.
+          <code>0x00</code> hei&szlig;t &bdquo;kein Muster erkannt&ldquo;.
+          Interessant ist alles andere.
+        </p>
+        <p class="muted" style="font-size:11.5px">
+          <b>Was gut m&ouml;glich ist:</b> die Haarnadel meldet <code>0x03</code> oder
+          <code>0x04</code>, also dasselbe wie eine normale Kurve. Dann hat sie keinen
+          eigenen Code, das Auto kann beide nicht unterscheiden, und sie muss im Editor von
+          Hand gesetzt werden. Auch das ist ein Ergebnis &mdash; die Tabelle zeigt es
+          entweder so oder mit einem Wert, den wir noch nicht kennen.
+        </p>
+      </div>
+
       <div class="row" style="margin-top:10px">
         <button id="track-fs">&#9974; Vollbild</button>
         <span class="muted" style="font-size:11.5px">Im Vollbild: hoch/runter wechselt
@@ -7133,6 +7180,58 @@
   let trackScanSkipped = 0;
   let trackScanCar = null;
 
+  // ---- Rohcode-Monitor ----
+  // Absichtlich getrennt vom Streckenscan: der Scan interpretiert (Mehrheit je Kachel,
+  // unbekannte Werte verworfen), dieser hier zaehlt nur. Fuer die Frage "welchen Code hat
+  // dieses Teil" ist gerade das Verwerfen das Problem - ein Wert, den wir nicht kennen, ist
+  // genau der, den man sucht.
+  const CODE_NAMES = { 0x00: 'kein Muster', 0x01: 'Start/Ziel', 0x02: 'Gerade',
+                       0x03: 'Kurve links', 0x04: 'Kurve rechts', 0xff: 'keine Lesung' };
+  let cmOn = false, cmCounts = {}, cmTotal = 0, cmPaint = 0;
+
+  function cmTick(code) {
+    if (!cmOn) return;
+    cmCounts[code] = (cmCounts[code] || 0) + 1;
+    cmTotal++;
+    $('cm-now').textContent = '0x' + code.toString(16).padStart(2, '0');
+    $('cm-now').className = 'cm-now' + (CODE_NAMES[code] === undefined ? ' cm-new' : '');
+    // Bei ~22 Paketen je Sekunde ist ein Neuzeichnen pro Paket verschwendet, und es laeuft
+    // auf demselben Thread wie der Sendetakt.
+    const now = Date.now();
+    if (now - cmPaint < 250) return;
+    cmPaint = now;
+    cmRender();
+  }
+
+  function cmRender() {
+    $('cm-total').textContent = cmTotal;
+    const rows = Object.entries(cmCounts)
+      .map(([k, v]) => [parseInt(k, 10), v])
+      .sort((a, b) => b[1] - a[1]);
+    if (!rows.length) {
+      $('cm-rows').innerHTML = '<tr><td colspan="4" class="muted">noch nichts gez\u00e4hlt</td></tr>';
+      return;
+    }
+    const max = rows[0][1];
+    $('cm-rows').innerHTML = rows.map(([code, n]) => {
+      const known = CODE_NAMES[code];
+      const pct = (n / cmTotal * 100).toFixed(1);
+      return '<tr><td>0x' + code.toString(16).padStart(2, '0') + '</td>'
+        + '<td' + (known === undefined ? ' class="cm-new"' : '') + '>'
+        + (known === undefined ? 'UNBEKANNT' : known) + '</td>'
+        + '<td>' + n + '</td>'
+        + '<td><div class="cm-bar" style="width:' + Math.max(2, n / max * 100) + '%"></div>'
+        + '<span class="muted" style="font-size:10.5px">' + pct + ' %</span></td></tr>';
+    }).join('');
+  }
+
+  function cmReset() {
+    cmCounts = {}; cmTotal = 0;
+    $('cm-now').textContent = '\u2013';
+    $('cm-now').className = 'cm-now';
+    cmRender();
+  }
+
   // ---- Strecke beim Fahren lernen ----
   // Nicht dasselbe wie der Streckenscan: der laeuft auf Knopfdruck und schreibt sofort in
   // die Karte. Das hier laeuft nebenbei, waehrend ein Ghost seine Runden dreht, und
@@ -9630,6 +9729,15 @@
     if (engineOsc) engineOsc.type = soundProfile.wave;
   });
 
+  $('cm-start').addEventListener('click', () => {
+    cmOn = !cmOn;
+    $('cm-start').textContent = cmOn ? 'Z\u00e4hlen stoppen' : 'Z\u00e4hlen starten';
+    $('cm-start').classList.toggle('warn', cmOn);
+    if (cmOn) cmReset();
+    log('Rohcode-Monitor ' + (cmOn ? 'an' : 'aus') + '.', 'info');
+  });
+  $('cm-reset').addEventListener('click', cmReset);
+
   $('ghost-learn').addEventListener('change', (e) => {
     ghostCfg.learn = e.target.checked;
     if (!e.target.checked) learnReset();
@@ -10217,6 +10325,9 @@
     // the BLE explorer's discovery, which the Garage does not use.
     if (car === playerCar) handleDashboardBytes(b);
     const code = b[12];
+    // Der Monitor bekommt JEDEN Wert, auch die, die alles andere hier verwirft - er ist
+    // genau dafuer da, einen unbekannten Code zu finden.
+    if (car === playerCar || !playerCar) cmTick(code);
     // 0x00 is a valid REPORT but not a valid READING, so it must not refresh the
     // last-seen-code timestamp — otherwise a car sitting beside the track looks alive.
     if (code !== 0xff && code !== TILE_OFFTRACK) car.lastCodeAt = Date.now();
@@ -10291,7 +10402,11 @@
   const ghostCfg = {
     speed: 0.55,        // fraction of top speed on a straight
     curveSlow: 0.35,    // how much of that is given up in a curve
-    lateral: 0,         // blind side-by-side offset, 0 = off
+    // 0.5 statt 0. Die Naeherungslogik in ghostAssignBias gab es laengst - gleiche Runde
+    // und Kachelindex hoechstens eins auseinander ergibt gegenlaeufige Versaetze - aber sie
+    // wurde mit diesem Faktor multipliziert, und der stand auf Null. Das Feature war da und
+    // konnte nie wirken.
+    lateral: 0.5,
     leaderBrake: false, // hold the leader back for a while
     leaderBrakePct: 0.10,
     // Default ON: the measurement says this is the mode in which the car holds the track by
@@ -10523,19 +10638,46 @@
   // Side by side? Then split them: one a little left, the other a little right. This is a
   // guess, not a measurement — nothing reports where on the track width a car is — so it
   // only ever applies a small offset.
+  // Wer neben wem faehrt, und wer deshalb wohin ausweicht. Der Vergleich ist der
+  // Kachelindex innerhalb der Runde: gleiche Runde und hoechstens eine Kachel Abstand heisst
+  // bei 43 cm Kachellaenge, dass sie sich tatsaechlich beruehren koennen.
+  // 0.25 bei 200 ms Takt heisst voller Versatz nach 0.8 s. Mit 0.18 bei 500 ms waren es
+  // 3 s - und "innerhalb einer Kachel" dauert bei real 2.5 km/h nur ein bis zwei Sekunden,
+  // der Versatz waere also nie angekommen.
+  const GHOST_BIAS_STEP = 0.25;
+  const GHOST_BIAS_MS = 200;
   function ghostAssignBias() {
     const gs = garage.filter(c => c.role === 'ghost' && c.ghost);
-    gs.forEach(c => { c.ghost.bias = 0; });
-    for (let i = 0; i < gs.length; i++) {
-      for (let j = i + 1; j < gs.length; j++) {
-        const a = gs[i].ghost, b = gs[j].ghost;
-        if (a.laps === b.laps && Math.abs((a.tileIndex || 0) - (b.tileIndex || 0)) <= 1) {
-          a.bias = -1; b.bias = 1;
-        }
+    const want = new Map(gs.map(c => [c, 0]));
+    // Erst die Gruppen bilden, dann die Seiten verteilen. Paarweise zuzuweisen war bei drei
+    // Autos auf derselben Kachel falsch: die Paare (A,B), (A,C) und (B,C) schrieben
+    // nacheinander, der letzte gewann, und A und B landeten beide auf derselben Seite - sie
+    // waeren sich weiter in die Quere gekommen.
+    const near = gs.filter(c => gs.some(o => o !== c
+      && o.ghost.laps === c.ghost.laps
+      && Math.abs((o.ghost.tileIndex || 0) - (c.ghost.tileIndex || 0)) <= 1));
+    // Nach Kachelindex sortiert, damit die Seiten stabil bleiben, solange sie
+    // nebeneinander fahren, und nicht bei jedem Aufruf tauschen.
+    near.sort((a, b) => (a.ghost.tileIndex || 0) - (b.ghost.tileIndex || 0)
+                        || String(a.device && a.device.id).localeCompare(String(b.device && b.device.id)));
+    near.forEach((c, k) => want.set(c, k % 2 === 0 ? -1 : 1));
+    // Nachgezogen statt gesetzt. Ein Sprung von 0 auf den vollen Versatz ist ein Ruck am
+    // Lenkservo, und der sieht aus wie ein Fehler statt wie ein Ausweichen.
+    for (const c of gs) {
+      const t = want.get(c) || 0;
+      const cur = c.ghost.bias || 0;
+      const d = t - cur;
+      c.ghost.bias = Math.abs(d) <= GHOST_BIAS_STEP ? t : cur + Math.sign(d) * GHOST_BIAS_STEP;
+      // Einmal melden, wenn es greift - sonst sieht man nicht, ob die Logik ueberhaupt
+      // ausloest, und "die fahren nicht versetzt" bleibt eine Vermutung.
+      const near = t !== 0;
+      if (near !== !!c.ghost.wasNear) {
+        c.ghost.wasNear = near;
+        if (near) log(garageLabel(c) + ': nebeneinander, weicht aus.', 'info');
       }
     }
   }
-  setInterval(ghostAssignBias, 500);
+  setInterval(ghostAssignBias, GHOST_BIAS_MS);
 
   // Ghosts launch on green, not before.
   function launchGhosts() {
