@@ -448,8 +448,34 @@
   .opt-row { display: grid; grid-template-columns: minmax(0, 1fr) auto;
     gap: 18px; align-items: center; padding: 11px 14px;
     border-bottom: 1px solid var(--border); color: var(--text); }
-  .opt-row:nth-of-type(odd) { background: var(--tint-1); }
+  /* Je Gruppe ein eigener, sehr schwacher Farbstich. Die Deckkraft liegt bei 4 bis 5
+     Prozent: genug, dass man die Grenze sieht, zu wenig, um den Kontrast der Schrift zu
+     beruehren - nachgemessen bleiben alle Paare ueber dem WCAG-Mindestwert. Die
+     Gruppennummer stempelt JavaScript beim Laden auf, siehe stampOptionGroups(): so bleibt
+     die Faerbung richtig, wenn eine Zeile umzieht, und ich muss nicht 35 Zeilen von Hand
+     auszeichnen. */
+  .opt-row[data-grp="0"] { background: hsla(212 70% 62% / .045); }
+  .opt-row[data-grp="1"] { background: hsla(158 65% 55% / .045); }
+  .opt-row[data-grp="2"] { background: hsla( 42 85% 60% / .045); }
+  .opt-row[data-grp="3"] { background: hsla(280 60% 68% / .050); }
+  .opt-row[data-grp="4"] { background: hsla(  0 70% 62% / .045); }
+  .opt-row[data-grp="5"] { background: hsla(190 70% 58% / .045); }
+  .opt-row[data-grp="6"] { background: hsla(100 55% 58% / .045); }
+  .opt-row[data-grp="7"] { background: hsla(320 60% 62% / .045); }
+  .opt-row[data-grp="8"] { background: hsla( 20 75% 58% / .045); }
+  /* Der Zebrastreifen bleibt, aber leiser, damit er den Gruppenton nicht uebertoent. */
+  .opt-row:nth-of-type(odd) { box-shadow: inset 0 0 0 999px rgba(255,255,255,.018); }
   .opt-row:hover { background: var(--tint-2); }
+  /* Die Ueberschrift traegt den Ton ihrer Gruppe im Balken links. */
+  .opt-head[data-grp="0"] { border-left-color: hsl(212 70% 62%); }
+  .opt-head[data-grp="1"] { border-left-color: hsl(158 65% 55%); }
+  .opt-head[data-grp="2"] { border-left-color: hsl( 42 85% 60%); }
+  .opt-head[data-grp="3"] { border-left-color: hsl(280 60% 68%); }
+  .opt-head[data-grp="4"] { border-left-color: hsl(  0 70% 62%); }
+  .opt-head[data-grp="5"] { border-left-color: hsl(190 70% 58%); }
+  .opt-head[data-grp="6"] { border-left-color: hsl(100 55% 58%); }
+  .opt-head[data-grp="7"] { border-left-color: hsl(320 60% 62%); }
+  .opt-head[data-grp="8"] { border-left-color: hsl( 20 75% 58%); }
   .opt-row:last-child { border-bottom: none; }
   .opt-label { font-size: 13.5px; line-height: 1.35; min-width: 0; }
   .opt-label small { display: block; color: var(--muted); font-size: 11px;
@@ -607,7 +633,7 @@
      leaves black black, which is what brief outside light actually looks like. */
   #race-dash.race-flash { filter: url(#race-gamma); }
   /* ---- Garage ---- */
-  .gar-row { display: grid; gap: 10px; align-items: center;
+  .gar-row { display: grid; gap: 10px 10px; align-items: center;
     grid-template-columns: minmax(0,1fr) auto auto;
     padding: 10px 12px; background: var(--panel-2); border: 1px solid var(--border);
     border-radius: 8px; margin-bottom: 8px; cursor: pointer; }
@@ -869,6 +895,15 @@
   .gar-roles button.on { background: var(--good); color: #04170c; font-weight: 700; }
   .gar-roles button.on.ghost { background: #7a6bd0; color: #f2eeff; }
   .gar-roles button.on.off { background: var(--panel-3); color: var(--text); }
+  /* Tempo je Ghost, direkt in der Zeile. Eine eigene Rasterzeile, damit der Regler die
+     Breite hat, die er braucht - neben den Rollenknoepfen waere er 40 px schmal. */
+  .gar-speed { grid-column: 1 / -1; display: flex; align-items: center; gap: 10px;
+    padding-top: 8px; margin-top: 6px; border-top: 1px solid var(--border); }
+  .gar-speed label { font-size: 11px; text-transform: uppercase; letter-spacing: .08em;
+    color: var(--muted); font-weight: 700; }
+  .gar-speed input { flex: 1; min-width: 90px; }
+  .gar-speed b { font-family: monospace; font-size: 12.5px; min-width: 46px;
+    text-align: right; color: #7a6bd0; }
   /* Auf dem Telefon rutscht die Wahl unter den Namen, sonst wird der Name auf zwei
      Buchstaben gequetscht. */
   @media (max-width: 620px) {
@@ -2912,8 +2947,10 @@
   <section class="tabpage" id="tab-options">
     <div class="card">
       <h2>Fahrgefühl</h2>
+      <div class="opt-head">Grundlagen</div>
       <div class="opt-row"><div class="opt-label">Physik-Modus aktivieren<small>Aus: rohe Stickstellung, ohne Gänge.</small></div><label class="tgl"><input type="checkbox" id="phys-enable" checked><span></span></label></div>
       <div class="opt-row" id="phys-gyro-wrap"><div class="opt-label">Handy-Neigung für Lenkung nutzen</div><label class="tgl"><input type="checkbox" id="phys-gyro"><span></span></label></div>
+      <div class="opt-head">Ton</div>
       <div class="opt-row"><div class="opt-label">Motorsound</div><label class="tgl"><input type="checkbox" id="sound-enable" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Regen<small>Select oder W. Reifen kommen beim Boxenstopp passend.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-rain"><span></span></label></div>
@@ -2956,6 +2993,21 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="sound-volume-val">70%</span>
         </div></div>
+      <div class="opt-row"><div class="opt-label">Ton bei Lichthupe
+          <small>Standard aus. Die ersten f&uuml;nf sind Aufnahmen, der Rest ist
+          gerechnet.</small></div>
+        <select id="flash-sound">
+          <option value="none" selected>kein Ton</option>
+          <option value="horn_car">Autohupe</option>
+          <option value="horn_ship">Schiffshupe</option>
+          <option value="horn_donkey">Esel</option>
+          <option value="horn_goat">Ziege</option>
+          <option value="horn_fart">Furz</option>
+          <option value="relay">Relais-Klacken (gerechnet)</option>
+          <option value="horn">Zweiklang (gerechnet)</option>
+          <option value="blip">Blip (gerechnet)</option>
+        </select></div>
+      <div class="opt-head">Akku</div>
       <div class="opt-row"><div class="opt-label">Leistung über Akkulaufzeit konstant halten<small>Drosselt bei vollem Akku. Der Akkuwert ist eine unkalibrierte Schätzung.</small></div><label class="tgl"><input type="checkbox" id="setting-battery-comp"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Referenz-Akkustand</div>
         <div class="opt-slider">
@@ -2964,6 +3016,7 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-battery-ref-val">50%</span>
         </div></div>
+      <div class="opt-head">Fahrwerk</div>
       <div class="opt-row"><div class="opt-label">Geschwindigkeit</div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
@@ -3010,6 +3063,7 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-coast-drag-val">1.00</span>
         </div></div>
+      <div class="opt-head">Autonome Gegner</div>
       <div class="opt-row"><div class="opt-label">Ghost: Leitplanken-Modus<small>Das Auto hält sich selbst auf der Bahn, der Ghost gibt nur Gas.</small></div>
         <label class="tgl"><input type="checkbox" id="ghost-rail" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Ghost-Tempo<small>Rundentempo der autonomen Autos.</small></div>
@@ -3033,20 +3087,6 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="ghost-lateral-val">aus</span>
         </div></div>
-      <div class="opt-row"><div class="opt-label">Ton bei Lichthupe
-          <small>Standard aus. Die ersten f&uuml;nf sind Aufnahmen, der Rest ist
-          gerechnet.</small></div>
-        <select id="flash-sound">
-          <option value="none" selected>kein Ton</option>
-          <option value="horn_car">Autohupe</option>
-          <option value="horn_ship">Schiffshupe</option>
-          <option value="horn_donkey">Esel</option>
-          <option value="horn_goat">Ziege</option>
-          <option value="horn_fart">Furz</option>
-          <option value="relay">Relais-Klacken (gerechnet)</option>
-          <option value="horn">Zweiklang (gerechnet)</option>
-          <option value="blip">Blip (gerechnet)</option>
-        </select></div>
       <div class="opt-row"><div class="opt-label">Strecke beim Fahren lernen
           <small>Setzt das Layout aus den gemeldeten Kacheln zusammen und &uuml;bernimmt es
           nach der ersten geschlossenen Runde &mdash; nur wenn noch keine Strecke liegt.</small></div>
@@ -3058,6 +3098,7 @@
         <label class="tgl"><input type="checkbox" id="ghost-needcode"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Ghost: F&uuml;hrenden bremsen<small>Der Erstplatzierte fährt etwas langsamer.</small></div>
         <label class="tgl"><input type="checkbox" id="ghost-leader"><span></span></label></div>
+      <div class="opt-head">Masse &amp; Reifen</div>
       <div class="opt-row"><div class="opt-label">Tankgewicht<small>Voller Tank macht träger. Links = aus.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
@@ -3072,6 +3113,7 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-tyres-val">aus</span>
         </div></div>
+      <div class="opt-head">Lenkung &amp; Feinabstimmung</div>
       <div class="opt-row"><div class="opt-label">Lenkansprechen<small>Auch auf dem Steuerkreuz links/rechts.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
@@ -3285,6 +3327,15 @@
           <button class="primary" id="cm-start">Z&auml;hlen starten</button>
           <button id="cm-reset">Zur&uuml;cksetzen</button>
         </div>
+        <p class="muted" style="font-size:11.5px; margin:10px 0 4px 0">
+          Letztes Paket, Byte f&uuml;r Byte. <b>Byte&nbsp;11</b> ist der Kachelz&auml;hler,
+          <b>Byte&nbsp;12</b> die Kachelart &mdash; wenn hier etwas anderes steht als
+          erwartet, liegt der Fehler nicht bei der Auswertung, sondern beim Aufbau des
+          Pakets.
+        </p>
+        <div id="cm-hex" style="font-family:monospace; font-size:11.5px; line-height:1.7;
+             background:var(--panel-2); border:1px solid var(--border); border-radius:6px;
+             padding:8px 10px; overflow-x:auto">noch kein Paket</div>
         <table class="cm-tab"><thead><tr>
           <th>Byte&nbsp;12</th><th>bekannt als</th><th>Pakete</th><th>Anteil</th>
         </tr></thead><tbody id="cm-rows">
@@ -5770,7 +5821,7 @@
   let calibStepLog = [];
 
   function calibNotifyListener(e) {
-    calibNotifyLog.push({ t: Date.now(), bytes: new Uint8Array(e.target.value.buffer) });
+    calibNotifyLog.push({ t: Date.now(), bytes: notifyBytes(e.target.value) });
   }
 
   async function ensureCalibNotifySubscribed() {
@@ -7130,7 +7181,7 @@
   // Zwei Einspeiser, ein Verarbeiter. Der Ereignis-Weg bleibt fuer den Entwickler-Tab, der
   // Byte-Weg kommt aus onCarNotify - siehe startTrackScan, warum das noetig ist.
   function trackScanNotifyHandler(e) {
-    trackScanBytes(new Uint8Array(e.target.value.buffer));
+    trackScanBytes(notifyBytes(e.target.value));
   }
 
   function trackScanBytes(bytes) {
@@ -7189,8 +7240,10 @@
                        0x03: 'Kurve links', 0x04: 'Kurve rechts', 0xff: 'keine Lesung' };
   let cmOn = false, cmCounts = {}, cmTotal = 0, cmPaint = 0;
 
-  function cmTick(code) {
+  let cmLastBytes = null;
+  function cmTick(code, bytes) {
     if (!cmOn) return;
+    if (bytes) cmLastBytes = bytes;
     cmCounts[code] = (cmCounts[code] || 0) + 1;
     cmTotal++;
     $('cm-now').textContent = '0x' + code.toString(16).padStart(2, '0');
@@ -7201,6 +7254,25 @@
     if (now - cmPaint < 250) return;
     cmPaint = now;
     cmRender();
+    cmRenderHex();
+  }
+
+  function cmRenderHex() {
+    const el = $('cm-hex');
+    if (!el) return;
+    const b = cmLastBytes;
+    if (!b) { el.textContent = 'noch kein Paket'; return; }
+    let idx = '', hex = '';
+    for (let i = 0; i < b.length; i++) {
+      const mark = (i === 11 || i === 12);
+      const cell = String(i).padStart(2, ' ');
+      idx += (mark ? '<b style="color:var(--info)">' + cell + '</b>' : cell) + ' ';
+      const h = b[i].toString(16).padStart(2, '0');
+      hex += (mark ? '<b style="color:var(--info)">' + h + '</b>' : h) + ' ';
+    }
+    el.innerHTML = '<span class="muted">Byte </span>' + idx + '<br>'
+      + '<span class="muted">Wert </span>' + hex
+      + '<br><span class="muted">Laenge ' + b.length + ' Byte</span>';
   }
 
   function cmRender() {
@@ -7226,7 +7298,8 @@
   }
 
   function cmReset() {
-    cmCounts = {}; cmTotal = 0;
+    cmCounts = {}; cmTotal = 0; cmLastBytes = null;
+    cmRenderHex();
     $('cm-now').textContent = '\u2013';
     $('cm-now').className = 'cm-now';
     cmRender();
@@ -8133,7 +8206,7 @@
   };
 
   function dashboardNotifyHandler(e) {
-    handleDashboardBytes(new Uint8Array(e.target.value.buffer));
+    handleDashboardBytes(notifyBytes(e.target.value));
   }
 
   function handleDashboardBytes(bytes) {
@@ -10216,13 +10289,33 @@
           <button data-role="ghost" class="${car.role === 'ghost' ? 'on ghost' : ''}">Ghost</button>
           <button data-role="none" class="${car.role === 'none' ? 'on off' : ''}">Aus</button>
         </div>
-        <button data-act="drop">Trennen</button>`;
+        <button data-act="drop">Trennen</button>
+        ${car.role === 'ghost' ? `
+        <div class="gar-speed">
+          <label>Tempo</label>
+          <input type="range" min="0.2" max="1" step="0.05"
+                 value="${car.ghostSpeed === undefined || car.ghostSpeed === null
+                          ? ghostCfg.speed : car.ghostSpeed}">
+          <b></b>
+        </div>` : ''}`;
       // Clicking the row itself identifies the car; the buttons must not also blink it.
       row.onclick = (e) => { if (!e.target.closest('button')) blinkCar(car); };
       row.querySelectorAll('button[data-role]').forEach(b => {
         b.onclick = () => setCarRole(car, b.dataset.role);
       });
       row.querySelector('button[data-act="drop"]').onclick = () => disconnectCar(car);
+      const sp = row.querySelector('.gar-speed input');
+      if (sp) {
+        const out = row.querySelector('.gar-speed b');
+        const paint = () => { out.textContent = Math.round(sp.value * 100) + ' %'; };
+        paint();
+        // Nur der Wert wird gesetzt, NICHT neu gezeichnet: renderGarage() beim Ziehen
+        // aufzurufen wuerde den Regler unter dem Finger ersetzen und den Zug abbrechen.
+        sp.addEventListener('input', () => { car.ghostSpeed = +sp.value; paint(); });
+        // Der Klick auf die Zeile laesst das Auto blinken - am Regler waere das laestig.
+        sp.addEventListener('click', (e) => e.stopPropagation());
+        sp.addEventListener('pointerdown', (e) => e.stopPropagation());
+      }
       list.appendChild(row);
     });
     refreshGarageGo();
@@ -10313,8 +10406,16 @@
 
   // Per-car telemetry. Byte 12 is the tile code, byte 11 the tile counter, byte 3 a
   // rotation signal. lastCodeAt is what the ghost's off-track cut-out is built on.
+  // e.target.value ist ein DataView, und ein DataView muss NICHT bei 0 seines Puffers
+  // anfangen. new Uint8Array(v.buffer) ignoriert byteOffset und byteLength und liest damit ab
+  // Pufferanfang - bei einem versetzten View sind das die falschen Bytes, und zwar stumm.
+  // Genau dazu passt der Befund "Byte 12 meldet ueber 795 Pakete zu 100 Prozent 0x01".
+  function notifyBytes(v) {
+    return new Uint8Array(v.buffer, v.byteOffset, v.byteLength);
+  }
+
   function onCarNotify(car, e) {
-    const b = new Uint8Array(e.target.value.buffer);
+    const b = notifyBytes(e.target.value);
     if (b.length < 16) return;
     recNotify(b, garageLabel(car));
     // Lap timing for EVERY connected car, whatever its role: the start/finish code arrives
@@ -10327,7 +10428,7 @@
     const code = b[12];
     // Der Monitor bekommt JEDEN Wert, auch die, die alles andere hier verwirft - er ist
     // genau dafuer da, einen unbekannten Code zu finden.
-    if (car === playerCar || !playerCar) cmTick(code);
+    if (car === playerCar || !playerCar) cmTick(code, b);
     // 0x00 is a valid REPORT but not a valid READING, so it must not refresh the
     // last-seen-code timestamp — otherwise a car sitting beside the track looks alive.
     if (code !== 0xff && code !== TILE_OFFTRACK) car.lastCodeAt = Date.now();
@@ -10469,14 +10570,36 @@
   function startGhost(car) {
     stopGhost(car);
     const e = new CarreraPhysicsEngine();
-    // Same acceleration as the player's car — same class, same calibration. Steering is
-    // left completely free, as requested: no speed falloff, no expo curve.
-    e.config.autoShift = true;
+    // Die Abstimmung des gesteuerten Autos UEBERNEHMEN, nicht nur dieselbe Klasse benutzen.
+    // Der Kommentar hier behauptete vorher "same acceleration as the player's car", gemeint
+    // war aber nur "dieselbe Klasse mit Standardwerten": wer 0 auf 100 oder den
+    // Beschleunigungsfaktor verstellte, verstellte damit nur sein eigenes Auto, und die
+    // Ghosts blieben auf den Werkseinstellungen. Zwei Autos derselben Klasse, die anders
+    // beschleunigen, sind kein Rennen.
+    //
+    // Kopiert wird das ganze Konfigurationsobjekt, nicht eine Liste einzelner Felder: eine
+    // Liste veraltet beim naechsten neuen Regler, und dann faellt genau derselbe Fehler
+    // wieder an. Die Ausnahmen stehen darunter und sind einzeln begruendet.
+    Object.assign(e.config, physEngine.config);
+    // gears und der Drehmomentverlauf sind gemeinsame Tabellen, kein Zustand - sie duerfen
+    // nicht kopiert, sondern muessen geteilt werden, sonst rechnet accelScale() zweimal
+    // dieselbe Kalibrierung.
+    e.config.gears = physEngine.config.gears;
+
+    // Ausnahmen, die NICHT vom Fahrer kommen duerfen:
+    e.config.autoShift = true;        // ein Ghost schaltet nicht von Hand
+    // Der Boxenlimiter des Fahrers gilt nur fuer den Fahrer. Kopiert man ihn mit, kriecht
+    // das ganze Feld, sobald der Fahrer in die Box faehrt.
+    e.config.speedLimitFactor = 1;
+    // Lenkung bleibt frei, wie besprochen: keine Abnahme mit dem Tempo, keine Expo-Kurve.
     e.config.speedSteerReduction = 0;
     e.config.steerExpo = 1;
     e.config.steerResponse = 1;
     e.config.fuelWeightEffect = 0;   // ghosts carry no fuel and take no damage for now
     e.config.tyreEffect = 0;
+    // Nach dem Kopieren neu kalibrieren: accelScale() haengt an topSpeedKmh, an der
+    // Anfahrzeit und an den Gaengen, und die kommen jetzt vom Fahrer.
+    if (typeof e.calibrateAccel === 'function') e.calibrateAccel();
     e.state.driveMode = 'forward';
     e.state.currentGear = 0;
     // freeRun: darf dieser Ghost fahren, ohne dass ein Rennen laeuft? "Losfahren" aus der
@@ -10536,7 +10659,10 @@
     let steer = 0, throttle = 0, brake = 0, weave = 0;
     if (armed && !offTrack) {
       // ---- speed ----
-      let target = ghostCfg.speed;
+      // Eigenes Tempo je Auto, sonst das globale. So laesst sich ein Feld mit
+      // unterschiedlich schnellen Gegnern aufstellen, statt dass alle gleich schnell fahren.
+      let target = (car.ghostSpeed === undefined || car.ghostSpeed === null)
+        ? ghostCfg.speed : car.ghostSpeed;
       const here = ghostTileInfo(car.tileCode).curve;
       const ahead = ghostTurnDir(car, 1) !== 0;   // only meaningful with a layout
       if (here || ahead) target *= (1 - ghostCfg.curveSlow);
@@ -11633,6 +11759,24 @@
       if (mwNodes) mwListen();
     });
   }
+
+  // Gruppennummern auf die Optionszeilen stempeln. In CSS gibt es keinen Weg, "alle Zeilen
+  // nach der n-ten Ueberschrift" zu treffen, und 35 Zeilen von Hand auszuzeichnen waere
+  // beim ersten Umsortieren falsch. Also einmal beim Laden durchlaufen.
+  function stampOptionGroups() {
+    for (const card of document.querySelectorAll('#tab-options .card')) {
+      let grp = -1;
+      for (const el of card.children) {
+        if (el.classList.contains('opt-head')) {
+          grp++;
+          el.dataset.grp = String(grp % 9);
+        } else if (el.classList.contains('opt-row') && grp >= 0) {
+          el.dataset.grp = String(grp % 9);
+        }
+      }
+    }
+  }
+  stampOptionGroups();
 
   mwPaint();
   mwRefreshSlots();
