@@ -6396,30 +6396,49 @@
     pitState = next;
     physEngine.config.speedLimitFactor = (next === 'off') ? 1 : PIT_SPEED_FACTOR;
     if (next === 'servicing') {
-      fitTyresForWeather(); // automatic, as requested
-      resetTyres();         // new tyres come out of the blankets cold and unworn
       pitServiceStart = Date.now();
       pitFuelGained = 0; pitDamageRepaired = 0;
-      if (!playFx(fxBuffers.pit, 0.8)) {
-        playTone(300, 0.14, 'sine', 0.16);
-        setTimeout(() => playTone(220, 0.20, 'sine', 0.16), 150);
+      pitDone = { refuel: false, tyres: false, repair: false };
+      pitTyreElapsed = 0; pitEmptyElapsed = 0; pitReady = false;
+      // The plan was chosen while rolling down the pit lane; only now is it locked in.
+      if (!pitPlan) pitPlan = makePitPlan();
+      if (pitPlan.tyres) {
+        fitTyresForWeather();  // automatic, as requested
+        resetTyres();          // new tyres come out of the blankets cold and unworn
+        setPitWrench(true);
       }
       padRumble(0.25, 0.15, 120);
-      log('Boxengasse: Service läuft — stehen bleiben für mehr Sprit und Reparatur.', 'info');
+      log(`Boxenstopp: ${describePitPlan(pitPlan)}.`, 'info');
     } else if (next === 'limited') {
-      log(`Boxengasse: Tempolimit ${Math.round(PIT_SPEED_FACTOR * 100)}% aktiv.`, 'info');
+      // Arm the plan HERE, not at the service: the quick menu is meant to be used while
+      // rolling in, which is the only time there is to think about it.
+      pitPlan = makePitPlan();
+      pitReady = false;
+      log(`Boxengasse: Tempolimit ${Math.round(PIT_SPEED_FACTOR * 100)}% aktiv. `
+          + `Geplant: ${describePitPlan(pitPlan)}.`, 'info');
     } else {
+      setPitWrench(false);
+      // Read before clearing: whether the crew actually finished decides below.
+      const wasReady = pitReady;
+      pitPlan = null; pitDone = null; pitReady = false;
       if (pitServiceStart !== null) {
         playTone(440, 0.12, 'sine', 0.18);
         setTimeout(() => playTone(660, 0.22, 'sine', 0.18), 120); // rising: throttle released
         padRumble(0.25, 0.15, 120);
       }
-      // A service counts as a completed mandatory stop only if a race is actually running.
-      if (pitServiceStart !== null && (raceState === 'racing' || raceState === 'finishing')) {
+      // A mandatory stop counts only if a race is running AND the work was finished.
+      // Driving away halfway through is not a served stop — otherwise the rule could be
+      // satisfied by rolling through the pit lane and leaving again, which is exactly the
+      // thing a mandatory stop exists to prevent.
+      if (pitServiceStart !== null && wasReady
+          && (raceState === 'racing' || raceState === 'finishing')) {
         racePitDone++;
         if (racePitRequired > 0) {
           log(`Pflichtboxenstopp ${Math.min(racePitDone, racePitRequired)} von ${racePitRequired} erledigt.`, 'info');
         }
+      } else if (pitServiceStart !== null && !wasReady && racePitRequired > 0
+                 && (raceState === 'racing' || raceState === 'finishing')) {
+        log('Boxenstopp abgebrochen — zählt nicht als Pflichtstopp.', 'err');
       }
       if (pitServiceStart !== null) {
         log(`Boxenstopp beendet nach ${((Date.now() - pitServiceStart) / 1000).toFixed(1)}s: ` +
@@ -6456,13 +6475,48 @@
 
     if (pitState === 'servicing') {
       if (!stopped) { setPitState('off'); showHudToast('Boxengasse verlassen'); return; }
+      const p = pitPlan || {};
+
+      // --- refuel ---
+      if (p.refuel && !pitDone.refuel) {
+        const addFuel = Math.min(100 - fuel, PIT_FUEL_PER_SEC * dt);
+        fuel += addFuel; pitFuelGained += addFuel;
+        if (fuel >= 99.95) { fuel = 100; pitDone.refuel = true; pitChimeFuel();
+                             showHudToast(`Tank voll — ${fuelLiters(100)} l`); }
+      }
+      // --- repair --- non-linear, see repairRateAt()
+      if (p.repair && !pitDone.repair) {
+        const fixDamage = Math.min(damage, repairRateAt(damage) * dt);
+        damage -= fixDamage; pitDamageRepaired += fixDamage;
+        if (damage <= 0.05) { damage = 0; pitDone.repair = true; pitChimeRepair();
+                              showHudToast('Auto repariert'); }
+      }
+      // --- tyres --- a fixed job, and the rattle is its clock
+      if (p.tyres && !pitDone.tyres) {
+        pitTyreElapsed += dt;
+        if (pitTyreElapsed >= PIT_TYRE_CHANGE_S) {
+          pitDone.tyres = true; setPitWrench(false); pitChimeTyres();
+          showHudToast('Reifen gewechselt');
+        }
+      }
+      // --- nothing to do: a flat standing time, so entering the pits still costs something
+      if (pitPlanEmpty(p)) pitEmptyElapsed += dt;
+
+      const allDone = pitPlanEmpty(p)
+        ? pitEmptyElapsed >= PIT_EMPTY_STOP_S
+        : (!p.refuel || pitDone.refuel) && (!p.tyres || pitDone.tyres) && (!p.repair || pitDone.repair);
+
+      if (allDone && !pitReady) {
+        pitReady = true;
+        setPitWrench(false);
+        pitChimeReady();
+        padRumble(0.35, 0.2, 200);
+        showHudToast('Fertig — losfahren!');
+        log('Boxenstopp fertig.', 'info');
+      }
+
       const st = $('pitstop-status');
-      if (st) st.textContent = `Service… +${fuelLiters(pitFuelGained)} l Sprit, `
-                             + `-${Math.round(pitDamageRepaired)}% Schaden`;
-      const addFuel = Math.min(100 - fuel, PIT_FUEL_PER_SEC * dt);
-      const fixDamage = Math.min(damage, repairRateAt(damage) * dt);
-      fuel += addFuel; damage -= fixDamage;
-      pitFuelGained += addFuel; pitDamageRepaired += fixDamage;
+      if (st) st.textContent = pitReady ? 'Fertig — losfahren!' : pitTaskText();
       updateDamageFuelUI();
       updatePitUI();
     }
@@ -6483,6 +6537,23 @@
       e.target.value = pitMarkerCode === null ? '' : '0x' + pitMarkerCode.toString(16).padStart(2, '0');
     }
   });
+
+  // What is happening RIGHT NOW, task by task, with a tick for the finished ones. The old
+  // text only said how much fuel and repair had accumulated, which does not answer
+  // "what is left".
+  function pitTaskText() {
+    const p = pitPlan;
+    if (pitPlanEmpty(p)) {
+      return `Standzeit ${Math.max(0, PIT_EMPTY_STOP_S - pitEmptyElapsed).toFixed(1)} s`;
+    }
+    const parts = [];
+    if (p.refuel) parts.push(pitDone.refuel ? '✓ Tank voll' : `Tanken ${fuelLiters(fuel)} l`);
+    if (p.tyres) parts.push(pitDone.tyres ? '✓ Reifen neu'
+                            : `Reifen ${Math.max(0, PIT_TYRE_CHANGE_S - pitTyreElapsed).toFixed(1)} s`);
+    if (p.repair) parts.push(pitDone.repair ? '✓ repariert'
+                             : `Reparatur ${Math.round(100 - damage)} %`);
+    return parts.join(' · ');
+  }
 
   function updatePitUI() {
     const el = $('dash-pit');
@@ -6685,6 +6756,106 @@
   const PIT_REARM_BLOCK_MS = 2500;
   let pitLastPress = 0;
   let pitRearmBlockedUntil = 0;
+
+  // ---- What the crew is actually going to do ----
+  // The service used to be open-ended: while the car stood still, fuel went up and damage
+  // went down, for as long as the driver waited. Nothing said what was happening or when it
+  // would be finished, so "when can I go?" had no answer. Now the stop has a PLAN with
+  // tasks that complete, and a clear ready state.
+  //
+  // Tasks are only offered when their simulation is switched on: refuelling makes no sense
+  // with fuel consumption off, and a tyre change makes none with tyre wear off. Repair is
+  // not a choice — a damaged car gets repaired, that is what a pit stop is for. If there is
+  // nothing at all to do, the stop becomes a flat PIT_EMPTY_STOP_S so that entering the pits
+  // still costs something, rather than being free.
+  const PIT_TYRE_CHANGE_S = 4.0;
+  const PIT_EMPTY_STOP_S = 5.0;
+  let pitPlan = null;   // { refuel, tyres, repair } while a stop is armed, else null
+  let pitDone = null;   // { refuel, tyres, repair } completion flags
+  let pitTyreElapsed = 0;
+  let pitEmptyElapsed = 0;
+  let pitReady = false;
+  let pitWrenchNode = null, pitWrenchGain = null;
+
+  function fuelSimOn() { return fuelDrainPerSec > 0; }
+  function tyreSimOn() { return physEngine.config.tyreEffect > 0; }
+
+  function makePitPlan() {
+    return {
+      refuel: fuelSimOn() && fuel < 99.5,
+      tyres: tyreSimOn(),
+      repair: damage > 0.5,
+    };
+  }
+
+  function pitPlanEmpty(p) { return !p || (!p.refuel && !p.tyres && !p.repair); }
+
+  // The rattle runs WHILE the wheels are off, and stops the moment they are back on. It
+  // used to be a single one-shot at the start of the service, which said "something began"
+  // but never "it is over".
+  function setPitWrench(on) {
+    if (!audioCtx || !soundEnabled) return;
+    if (on && !pitWrenchNode && fxBuffers.pit) {
+      pitWrenchNode = audioCtx.createBufferSource();
+      pitWrenchNode.buffer = fxBuffers.pit;
+      pitWrenchNode.loop = true;
+      pitWrenchGain = audioCtx.createGain();
+      pitWrenchGain.gain.value = 0.55;
+      pitWrenchNode.connect(pitWrenchGain).connect(audioCtx.destination);
+      pitWrenchNode.start();
+    } else if (!on && pitWrenchNode) {
+      try { pitWrenchNode.stop(); } catch { /* already stopped */ }
+      pitWrenchNode = null; pitWrenchGain = null;
+    }
+  }
+
+  // Three distinguishable confirmations, so the ear alone tells you which job finished.
+  function pitChimeFuel()   { playTone(520, 0.10, 'sine', 0.16);
+                              setTimeout(() => playTone(780, 0.16, 'sine', 0.16), 90); }
+  function pitChimeTyres()  { playTone(300, 0.12, 'triangle', 0.16);
+                              setTimeout(() => playTone(300, 0.16, 'triangle', 0.14), 130); }
+  function pitChimeRepair() { playTone(660, 0.10, 'sine', 0.15);
+                              setTimeout(() => playTone(880, 0.10, 'sine', 0.15), 80);
+                              setTimeout(() => playTone(1170, 0.18, 'sine', 0.15), 160); }
+  // Deliberately the loudest and most distinct of the four: this is the one that means GO.
+  function pitChimeReady()  { playTone(880, 0.13, 'square', 0.20);
+                              setTimeout(() => playTone(1320, 0.26, 'square', 0.20), 120); }
+
+  function describePitPlan(p) {
+    if (pitPlanEmpty(p)) return `nur ${PIT_EMPTY_STOP_S.toFixed(0)} s Standzeit`;
+    const parts = [];
+    if (p.refuel) parts.push('tanken');
+    if (p.tyres) parts.push('Reifen');
+    if (p.repair) parts.push('reparieren');
+    return parts.join(' + ');
+  }
+
+  // D-pad while a stop is armed. Returns true if the press was consumed, so the caller can
+  // leave the normal D-pad bindings alone the rest of the time — the pad keeps its usual
+  // job except during a pit stop, which is what was asked for.
+  function pitQuickMenu(dir) {
+    if (pitState === 'off' || !pitPlan) return false;
+    const before = describePitPlan(pitPlan);
+    if (dir === 'up') {
+      if (!fuelSimOn()) { showHudToast('Tanksimulation ist aus'); return true; }
+      pitPlan.refuel = true;
+    } else if (dir === 'down') {
+      pitPlan.refuel = false;
+    } else if (dir === 'right') {
+      if (!tyreSimOn()) { showHudToast('Reifensimulation ist aus'); return true; }
+      pitPlan.tyres = true;
+    } else if (dir === 'left') {
+      // Cancelling the tyre change while it is already running means the old tyres stay on,
+      // exactly as specified. Anything already fitted is not un-fitted; the clock simply
+      // stops mattering.
+      pitPlan.tyres = false;
+      if (pitState === 'servicing') { setPitWrench(false); pitTyreElapsed = 0; }
+    } else return false;
+    const after = describePitPlan(pitPlan);
+    if (after !== before) showHudToast(`Boxenstopp: ${after}`);
+    updatePitUI();
+    return true;
+  }
 
   function requestPitStop() {
     const now = Date.now();
@@ -8022,10 +8193,15 @@
 
       const dUp = padButtonPressed(pad, DPAD.up), dDown = padButtonPressed(pad, DPAD.down);
       const dLeft = padButtonPressed(pad, DPAD.left), dRight = padButtonPressed(pad, DPAD.right);
-      if (dUp && !prevDpad.up) nudgeAccel(+0.1);
-      if (dDown && !prevDpad.down) nudgeAccel(-0.1);
-      if (dLeft && !prevDpad.left) nudgeSteerResponse(-0.1);
-      if (dRight && !prevDpad.right) nudgeSteerResponse(+0.1);
+      // While a pit stop is armed the D-pad becomes the quick menu: up/down choose
+      // refuelling, right/left choose the tyre change. pitQuickMenu() returns true when it
+      // consumed the press, so the normal bindings (accel and steering trim) keep working
+      // at every other moment - the pad does not change its meaning permanently, only for
+      // the few seconds when there is actually something to decide.
+      if (dUp && !prevDpad.up && !pitQuickMenu('up')) nudgeAccel(+0.1);
+      if (dDown && !prevDpad.down && !pitQuickMenu('down')) nudgeAccel(-0.1);
+      if (dLeft && !prevDpad.left && !pitQuickMenu('left')) nudgeSteerResponse(-0.1);
+      if (dRight && !prevDpad.right && !pitQuickMenu('right')) nudgeSteerResponse(+0.1);
       prevDpad.up = dUp; prevDpad.down = dDown; prevDpad.left = dLeft; prevDpad.right = dRight;
     }
     // Keep prev-flags fresh even while rebinding, otherwise they go stale and the first
@@ -8041,6 +8217,7 @@
     padConnected = true;
     startPadLoop();
   }
+
 
 
 
