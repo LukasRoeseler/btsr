@@ -798,6 +798,15 @@
   .home-feat b { display: block; font-weight: 700; }
   .home-feat svg { width: 17px; height: 17px; flex: none; margin-top: 1px;
     stroke: var(--info); fill: none; stroke-width: 2; }
+  /* Der Inline-Stil white-space:nowrap allein reichte nicht: als Flex-Element wurde der
+     Text auf 71 px zusammengedrueckt und lief trotzdem dreizeilig. flex-basis auto plus
+     min-width 0 gibt ihm seine Inhaltsbreite zurueck. */
+  .home-feat .feat-1line { white-space: nowrap; flex: 1 1 auto; min-width: 0; }
+  /* DAS war die Ursache der drei Zeilen: .home-feat b steht auf display:block, also war die
+     Zahl ein eigener Block mitten im Satz - "Ueber", "70", "Einstellungen" jeweils auf
+     eigener Zeile. Gegen eine Blockgrenze hilft white-space:nowrap nichts, deshalb blieb der
+     Umbruch nach zwei Anlaeufen stehen. */
+  .home-feat .feat-1line b { display: inline; }
   @media (prefers-reduced-motion: reduce) {
     .home-rain { animation: none; }
   }
@@ -1152,7 +1161,7 @@
       </div>
     </div>
     <div class="home-feat">
-        <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/><circle cx="9" cy="7" r="2"/><circle cx="15" cy="12" r="2"/><circle cx="7" cy="17" r="2"/></svg><span style="white-space:nowrap">&Uuml;ber <b id="home-param-count">50</b> Handling-Parameter</span></div>
+        <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/><circle cx="9" cy="7" r="2"/><circle cx="15" cy="12" r="2"/><circle cx="7" cy="17" r="2"/></svg><span class="feat-1line">&Uuml;ber <b id="home-param-count">70</b> Einstellungen</span></div>
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="13" height="10" rx="1"/><rect x="17" y="9" width="4" height="11" rx="1"/></svg><span>PC und Smartphone, ohne Installation</span></div>
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 17a8 8 0 1 1 16 0"/><path d="M12 17 16 9"/></svg><span>Anzeigen wie auf einem echten GT3-HUD</span></div>
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20V8"/><circle cx="12" cy="5" r="2"/><path d="M6 12h12"/></svg><span>Manuelle Schaltung</span></div>
@@ -3319,10 +3328,16 @@
           Wert dabei auftaucht.
         </p>
         <div class="row" style="gap:14px; align-items:baseline; flex-wrap:wrap">
-          <div><span class="hud-label">jetzt</span><br>
+          <div><span class="hud-label">Byte 12 jetzt</span><br>
             <span class="cm-now" id="cm-now">&ndash;</span></div>
           <div><span class="hud-label">Pakete</span><br>
             <span class="cm-now" id="cm-total" style="font-size:18px">0</span></div>
+          <div><span class="hud-label">Kachelz&auml;hler</span><br>
+            <span class="cm-now" id="cm-steps" style="font-size:18px">0</span></div>
+          <div><span class="hud-label">Musterkontakt</span><br>
+            <span class="cm-now" id="cm-marks" style="font-size:18px">0</span></div>
+          <div><span class="hud-label">Byte 3 Spanne</span><br>
+            <span class="cm-now" id="cm-yaw" style="font-size:18px">&ndash;</span></div>
           <div class="spacer" style="flex:1"></div>
           <button class="primary" id="cm-start">Z&auml;hlen starten</button>
           <button id="cm-reset">Zur&uuml;cksetzen</button>
@@ -3341,6 +3356,15 @@
         </tr></thead><tbody id="cm-rows">
           <tr><td colspan="4" class="muted">noch nichts gez&auml;hlt</td></tr>
         </tbody></table>
+        <p class="muted" style="font-size:11.5px">
+          <b>Wie das zu lesen ist.</b> Steht <b>Musterkontakt</b> auf 0, hat der Sensor
+          w&auml;hrend der ganzen Messung kein gedrucktes Blatt gesehen &mdash; dann liegt es
+          nicht an der Entschl&uuml;sselung, sondern daran, dass nichts zu lesen war. Z&auml;hlt
+          der <b>Kachelz&auml;hler</b> hoch, obwohl Byte&nbsp;12 nur <code>0xff</code> zeigt,
+          erkennt das Auto Teile, meldet aber ihre Art nicht. Und wenn sich
+          <b>Byte&nbsp;3</b> in Kurven deutlich bewegt, l&auml;sst sich eine Kurve daran
+          erkennen, ganz ohne Barcode.
+        </p>
         <p class="muted" style="font-size:11.5px">
           <code>0xff</code> hei&szlig;t &bdquo;gerade keine Lesung&ldquo; und ist der
           h&auml;ufigste Wert von allen &mdash; das ist normal und kein Fehler.
@@ -7240,10 +7264,32 @@
                        0x03: 'Kurve links', 0x04: 'Kurve rechts', 0xff: 'keine Lesung' };
   let cmOn = false, cmCounts = {}, cmTotal = 0, cmPaint = 0;
 
-  let cmLastBytes = null;
+  // Drei weitere Signale, weil Byte 12 allein die Frage nicht beantwortet, ob der Sensor
+  // ueberhaupt etwas sieht:
+  //   Kachelzaehler  Byte 11 aendert sich, sobald das Auto ein neues Teil betritt. Zaehlt er
+  //                  hoch, WERDEN Teile erkannt, auch wenn Byte 12 nur 0xff liefert.
+  //   Musterkontakt  Byte 15 Bit 3 liegt an, solange das Auto auf einem gedruckten Muster
+  //                  steht. Es haengt NICHT an Byte 12 - loest es aus, sieht der Sensor das
+  //                  Blatt, und der Fehler sitzt beim Entschluesseln, nicht beim Lesen.
+  //   Byte 3         kippte in einer Aufzeichnung mit der Kurvenrichtung. Unbestaetigt, aber
+  //                  der einzige Kandidat fuer eine Drehrate - und damit die Grundlage, eine
+  //                  Kurve am Lenkverhalten zu erkennen statt am Barcode.
+  let cmLastBytes = null, cmSteps = 0, cmMarks = 0, cmPrevCount = null, cmPrevMark = false;
+  let cmYawMin = 127, cmYawMax = -128;
+
   function cmTick(code, bytes) {
     if (!cmOn) return;
-    if (bytes) cmLastBytes = bytes;
+    if (bytes) {
+      cmLastBytes = bytes;
+      if (cmPrevCount !== null && bytes[11] !== cmPrevCount) cmSteps++;
+      cmPrevCount = bytes[11];
+      const mark = (bytes[15] & 0x08) !== 0;
+      if (mark && !cmPrevMark) cmMarks++;
+      cmPrevMark = mark;
+      const y = bytes[3] > 127 ? bytes[3] - 256 : bytes[3];
+      if (y < cmYawMin) cmYawMin = y;
+      if (y > cmYawMax) cmYawMax = y;
+    }
     cmCounts[code] = (cmCounts[code] || 0) + 1;
     cmTotal++;
     $('cm-now').textContent = '0x' + code.toString(16).padStart(2, '0');
@@ -7255,6 +7301,16 @@
     cmPaint = now;
     cmRender();
     cmRenderHex();
+    cmRenderExtra();
+  }
+
+  function cmRenderExtra() {
+    if ($('cm-steps')) $('cm-steps').textContent = cmSteps;
+    if ($('cm-marks')) $('cm-marks').textContent = cmMarks;
+    if ($('cm-yaw')) {
+      $('cm-yaw').textContent = cmYawMax >= cmYawMin
+        ? cmYawMin + ' … ' + cmYawMax : '–';
+    }
   }
 
   function cmRenderHex() {
@@ -7299,7 +7355,10 @@
 
   function cmReset() {
     cmCounts = {}; cmTotal = 0; cmLastBytes = null;
+    cmSteps = 0; cmMarks = 0; cmPrevCount = null; cmPrevMark = false;
+    cmYawMin = 127; cmYawMax = -128;
     cmRenderHex();
+    cmRenderExtra();
     $('cm-now').textContent = '\u2013';
     $('cm-now').className = 'cm-now';
     cmRender();
@@ -7940,6 +7999,11 @@
       raceGreen();
       return;
     }
+    // Sofort, nicht erst beim naechsten Intervalltick. Der Knopf im Cockpit wurde von einem
+    // Intervall alle 400 ms nachgezogen, und in diesem Fenster stand dort noch "Rennen
+    // starten", waehrend das Rennen schon lief - ein Druck darauf hat es dann gestoppt. Ein
+    // Knopf, der luegt, was er tun wird, ist schlimmer als einer, der langsam ist.
+    setTimeout(updateRaceActButtons, 0);
     raceState = 'countdown';
     $('race-start-btn').disabled = true;
     // Abbrechen muss schon im Countdown gehen: requestRaceStop() raeumt den Zaehler mit
@@ -7985,6 +8049,7 @@
       ? 'Einführungsrunde — Limit bis Start/Ziel'
       : RACE_MODES[raceMode].label + ' läuft';
     $('race-stop-btn').disabled = false;
+    updateRaceActButtons();
   }
 
   // Stops NOW. This used to set 'finishing' and let the current lap complete, which was
@@ -7998,6 +8063,7 @@
     setRaceLights(0);
     finishRace();
     showHudToast('Rennen abgebrochen');
+    updateRaceActButtons();
   }
 
   // Missed mandatory stops, as a time penalty in whole seconds. Reported separately from
@@ -8143,7 +8209,12 @@
     const a = $('race-act-start');
     if (a) {
       const live = raceState === 'racing' || raceState === 'countdown' || raceState === 'finishing';
-      a.textContent = live ? 'Rennen abbrechen' : 'Rennen starten';
+      // Waehrend des Countdowns zeigt der Knopf, dass er laeuft. Vorher stand dort schon
+      // "Rennen abbrechen", ohne dass sichtbar war, dass ueberhaupt etwas laeuft - ein Druck
+      // in dieser Zeit brach still ab, und das sah aus wie "der Knopf tut nichts".
+      a.textContent = raceState === 'countdown'
+        ? 'Countdown … abbrechen'
+        : (live ? 'Rennen abbrechen' : 'Rennen starten');
       a.classList.toggle('warn', live);
     }
     const p = $('race-act-pit');
@@ -8717,13 +8788,21 @@
   // fixed priority order. Blink phases come from the clock rather than from timers, so
   // nothing can fall out of step.
   const lightFx = { flashUntil: 0, damage: false, fuel: false, rain: false };
-  const FLASH_MS = 480;   // three ~80ms pulses: the GT3 pass signal
+  // EIN Aufblitzen, nicht drei. Vorher waren es 80-ms-Umschlaege ueber 480 ms, also ein
+  // Stroboskop mit 12,5 Hz - das liest sich als Warnblinken und nicht als Lichthupe. In ACC
+  // ist die Lichthupe genau ein festes Aufblitzen, solange die Taste liegt; auf einen
+  // Tastendruck uebersetzt ist das ein einzelner sauberer Impuls.
+  const FLASH_MS = 280;
 
   function resolveLights(baseHead, baseBrake) {
     const now = Date.now();
     let head = baseHead, brake = baseBrake;
     if (now < lightFx.flashUntil) {
-      head = Math.floor((lightFx.flashUntil - now) / 80) % 2 === 0;
+      // Umgekehrt, wenn das Licht schon an ist. Das Protokoll hat genau ein Bit fuer die
+      // Scheinwerfer, also gibt es kein Fernlicht, das man aufblenden koennte - bei
+      // eingeschaltetem Licht waere "an" nichts Sichtbares. Ein kurzes Aus ist das, was ein
+      // Ein-Bit-System an dieser Stelle zeigen kann.
+      head = !baseHead;
     } else if (lightFx.damage) {
       head = Math.floor(now / 90) % 2 === 0;    // fast, agitated flicker
     } else if (lightFx.fuel) {
@@ -11893,10 +11972,12 @@
   function homeStart() {
     homeBuild();
     // Feste Zahl statt gezaehlter. Die gezaehlten 73 brachen die Zeile um und lasen sich
-    // wie eine Praezision, die die Aussage nicht hat - viele der 73 sind interne
-    // Zwischenwerte, keine Regler, die jemand anfasst. "Ueber 50" ist wahr und lesbar.
+    // wie eine Praezision, die die Aussage nicht hat - viele davon sind interne
+    // Zwischenwerte und keine Regler, die jemand anfasst. Der Text sagt jetzt
+    // "Einstellungen" statt "Handling-Parameter": kuerzer, passt in eine Zeile, und stimmt
+    // auch fuer die Regler, die nichts mit dem Fahrverhalten zu tun haben.
     const el = $('home-param-count');
-    if (el) el.textContent = '50';
+    if (el) el.textContent = '70';
     if (homeRaf !== null) return;
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
       // Draw one frame and stop. The rule already freezes the rain; the needle has to be
