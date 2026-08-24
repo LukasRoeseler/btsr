@@ -2953,7 +2953,7 @@
       <div class="opt-head">
         Getriebe &amp; Fahrleistung
       </div>
-      <div class="opt-row"><div class="opt-label">Automatikgetriebe<small>Aus: manuell, Quadrat/X runter, Kreis/B hoch. Im Stand unter den 1. Gang = Rückwärts.</small></div><label class="tgl"><input type="checkbox" id="setting-autoshift"><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Automatikgetriebe<small>Aus: manuell, Quadrat/X runter, Kreis/B hoch. Im Stand unter den 1. Gang = Rückwärts.</small></div><label class="tgl"><input type="checkbox" id="setting-autoshift" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Höchstgeschwindigkeit (km/h)</div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
@@ -4438,7 +4438,7 @@
                                  // raised from 2.0 so the default is not also the limit.
         speedSteerReduction: 0.35, // and only weighted by gear, see update()
         trailBrakingGripBonus: 1.1,
-        autoShift: false, // manual by default, per user
+        autoShift: true,  // Automatik als Standard
 
         // Anchored to real-world numbers instead of abstract 0..1 units, so the feel can
         // be reasoned about: the car tops out around 4 km/h and should take about 3s to
@@ -4687,7 +4687,20 @@
     // much thrust that no calibration could make a launch last 3s at all, and the solver
     // sat permanently on its feasibility floor. Coasting still gets the full value, which
     // is what that slider is actually for.
-    resistAt(v, accelScale, onPower) {
+    // gearIdx ist neu und aendert das Ausrollen erheblich. Vorher kannte diese Funktion den
+    // Gang nicht, also bremste der Motor im ersten Gang genauso schwach wie im sechsten -
+    // physikalisch falsch und der Grund, warum das Ausrollen im ersten Gang gefuehlt nicht
+    // endete. Gerechnet: bei u = 0.126 (Mitte des ersten Gangs) kam eine Verzoegerung von
+    // 3.0 angezeigten km/h pro Sekunde heraus, also rund 25 s bis zum Stillstand.
+    //
+    // Motorbremsung skaliert mit dem QUADRAT der Uebersetzung: einmal, weil die kurze
+    // Uebersetzung den Motor bei gleicher Fahrgeschwindigkeit schneller dreht (und das
+    // Schleppmoment mit der Drehzahl steigt), und einmal, weil dasselbe Moment ueber die
+    // kurze Uebersetzung staerker am Rad ankommt. 3.75 gegen 0.88 sind Faktor 4.26, im
+    // Quadrat 18. Damit kommen im ersten Gang rund 13 angezeigte km/h pro Sekunde heraus,
+    // was fuer einen Rennwagen ohne Gas realistisch ist; im sechsten bleibt es wie vorher,
+    // dort dominiert ohnehin der Luftwiderstand.
+    resistAt(v, accelScale, onPower, gearIdx) {
       const cfg = this.config;
       const u = Math.abs(v) / cfg.topSpeedKmh;
       if (onPower) {
@@ -4701,8 +4714,15 @@
       // Deliberately NOT scaled by accelScale, unlike the on-power branch: coasting is
       // what the car does when the drivetrain is out of the picture, and the slider is
       // meant to be an absolute deceleration the user can reason about.
+      // Nur der Motorbremsanteil haengt am Gang. Rollwiderstand und Luftwiderstand nicht -
+      // die wissen nichts davon, welcher Gang eingelegt ist.
+      const top = cfg.gears[cfg.gears.length - 1].ratio;
+      const r = gearIdx === undefined || gearIdx === null || gearIdx < 0
+        ? top                       // Leerlauf oder Rueckwaerts: keine Verstaerkung
+        : cfg.gears[Math.min(gearIdx, cfg.gears.length - 1)].ratio;
+      const gearAmp = (r / top) * (r / top);
       return cfg.coastDragPerS * (cfg.coastRollDecel
-                                  + cfg.coastEngineDecel * u
+                                  + cfg.coastEngineDecel * gearAmp * u
                                   + cfg.coastAeroDecel * u * u);
     }
 
@@ -4881,7 +4901,7 @@
       // The slider fades the whole model out: at 0 this is exactly 1, i.e. no simulation.
       st.tyreGrip = 1 + cfg.tyreEffect * (tGrip - 1);
 
-      const resist = this.resistAt(st.speedKmh, A, onPower); // always >= 0
+      const resist = this.resistAt(st.speedKmh, A, onPower, st.currentGear); // always >= 0
       let accel = 0;
       let output = 0;
 
@@ -6694,9 +6714,12 @@
   // type over the phone, and readable enough to check by eye: "S G3 R2" is a start, three
   // straights, two right-handers. Deliberately not JSON in base64 — a code you cannot read
   // is a code you cannot verify.
+  // H und J fuer die beiden Haarnadeln. Die Linkskurve hatte keinen Buchstaben, also fiel
+  // sie beim Kopieren einer Strecke stillschweigend heraus.
   const TRACK_CODE_LETTER = { [TILE_TYPE.START]: 'S', [TILE_TYPE.STRAIGHT]: 'G',
                               [TILE_TYPE.CURVE_RIGHT]: 'R', [TILE_TYPE.CURVE_LEFT]: 'L',
-                              [TILE_TYPE.PIT]: 'B', [TILE_TYPE.HAIRPIN]: 'H' };
+                              [TILE_TYPE.PIT]: 'B', [TILE_TYPE.HAIRPIN]: 'H',
+                              [TILE_TYPE.HAIRPIN_LEFT]: 'J' };
   const TRACK_CODE_TYPE = Object.fromEntries(
     Object.entries(TRACK_CODE_LETTER).map(([k, v]) => [v, Number(k)]));
 
@@ -6996,15 +7019,29 @@
       trackScanTypeVotes = {};
     }
     if (counter !== trackScanLastCounter) {
-      // tile boundary: commit the majority-voted type for the tile we just left
-      let bestType = null, bestCount = -1;
+      // Mehrheit NUR unter echten Streckencodes. Das war der Fehler: 0xff heisst "gerade
+      // keine Lesung" und ist der haeufigste Wert von allen - in einem Mitschnitt 16719 von
+      // 16719 Paketen, im Dreiwagenrennen 7066 von 9623. Die Mehrheit war also fast immer
+      // 0xff, fiel durch die Typpruefung, und die Kachel wurde STILL verworfen. Die
+      // Streckenanzeige blieb bei "S", ohne dass irgendwo stand, warum.
+      let bestType = null, bestCount = -1, dropped = 0;
       for (const [t, c] of Object.entries(trackScanTypeVotes)) {
-        if (c > bestCount) { bestCount = c; bestType = parseInt(t, 10); }
+        const ty = parseInt(t, 10);
+        if (ty === 0xff || ty === TILE_OFFTRACK) { dropped += c; continue; }
+        if (c > bestCount) { bestCount = c; bestType = ty; }
       }
       if (bestType != null && Object.values(TILE_TYPE).includes(bestType)) {
         currentTrackTiles.push({ type: bestType });
         refreshTrackPreview();
-        $('track-scan-status').textContent = `Scan läuft: ${currentTrackTiles.length} Teile (zuletzt: ${TILE_LABEL[bestType] || bestType})`;
+        $('track-scan-status').textContent = 'Scan läuft: ' + currentTrackTiles.length
+          + ' Teile (zuletzt: ' + (TILE_LABEL[bestType] || bestType) + ')';
+      } else {
+        // Nicht mehr stumm: eine Kachel ohne einen einzigen echten Code ist eine Auskunft
+        // und kein Nichts. Genau dieses Schweigen hat den Fehler oben verdeckt.
+        trackScanSkipped++;
+        $('track-scan-status').textContent = 'Scan läuft: ' + currentTrackTiles.length
+          + ' Teile, ' + trackScanSkipped + ' ohne lesbaren Code'
+          + (dropped ? ' (' + dropped + ' Pakete ohne Lesung)' : '');
       }
       trackScanLastCounter = counter;
       trackScanTypeVotes = {};
@@ -7012,7 +7049,9 @@
     trackScanTypeVotes[type] = (trackScanTypeVotes[type] || 0) + 1;
   }
 
+  let trackScanSkipped = 0;
   async function startTrackScan() {
+    trackScanSkipped = 0;
     const entry = charByUuid.get(NUS_TX);
     if (!entry) { alert('Nicht verbunden / NUS TX nicht gefunden.'); return; }
     try {
@@ -10271,6 +10310,20 @@
   function launchGhosts() {
     garage.forEach(c => { if (c.role === 'ghost') startGhost(c); });
     const n = garage.filter(c => c.role === 'ghost').length;
+    // Die haeufigste Ursache fuer "ich starte das Rennen und es passiert nichts": ohne
+    // gedruckte Strecke unter dem Auto meldet es NIE einen Streckencode, und mit
+    // "Ghost braucht Streckencode" haelt der Ghost dann still. Das stand bisher nur als
+    // eine Zeile im Protokoll, wo es niemand sucht. Der Streckenscan ist dafuer NICHT
+    // notwendig - der fehlt nur den Vorausblick; entscheidend ist das gedruckte Muster.
+    const blind = garage.filter(c => c.role === 'ghost' && !c.lastCodeAt);
+    if (blind.length && ghostCfg.needCode) {
+      const msg = blind.length === n
+        ? 'Ghosts stehen: kein Streckencode gelesen. Optionen \u2192 "Ghost braucht '
+          + 'Streckencode" ausschalten, dann fahren sie auch ohne gedruckte Strecke.'
+        : blind.length + ' von ' + n + ' Ghosts stehen: kein Streckencode gelesen.';
+      log(msg, 'err');
+      showHudToast('GHOST OHNE STRECKENCODE');
+    }
     if (n && !currentTrackTiles.some(t => tileIsCurve(t.type))) {
       log('Warnung: kein Streckenlayout mit Kurven geladen — Ghosts können nur geradeaus halten.', 'err');
     }
