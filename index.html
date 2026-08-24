@@ -2606,19 +2606,9 @@
         <em>zus&auml;tzlich</em> gesendet hat und wir nie:
       </p>
       <div class="row" style="gap:6px; flex-wrap:wrap; margin:10px 0">
-        <button data-probe="off" class="primary">Normal senden</button>
-        <button data-probe="b10">Byte&nbsp;10 = 0x20</button>
-        <button data-probe="b14_02">Byte&nbsp;14 = 0x02</button>
-        <button data-probe="b14_22">Byte&nbsp;14 = 0x22</button>
-        <button data-probe="b14_42">Byte&nbsp;14 = 0x42</button>
-        <button data-probe="b14_62">Byte&nbsp;14 = 0x62</button>
-        <button data-probe="tail">Byte&nbsp;16-18 = 01 04 04</button>
-        <button data-probe="b9">Byte&nbsp;9 = &plusmn;127</button>
-        <button data-probe="combo">0x20 + 0x62 + 01 04 04</button>
-        <button data-probe="rail" class="primary">Leitplanke: Byte&nbsp;14 Bit&nbsp;5</button>
-        <button data-probe="raillook">Bit&nbsp;5 + Vorausblick 01&nbsp;04&nbsp;04</button>
-        <button data-probe="rail10">nur Byte&nbsp;10 = 0x30</button>
-        <button data-probe="auto">Autonom: b10=0x20 + b15=0x0c</button>
+        <!-- Die Knoepfe werden aus PROBE_VARIANTS erzeugt, siehe renderProbeButtons():
+             zwei Listen von Hand zu pflegen ist genau der Fehler, durch den vier neue
+             Varianten unerreichbar waren, obwohl sie im Code standen. -->
       </div>
       <p class="muted" id="probe-status" style="font-family:monospace">keine Variante aktiv</p>
       <p class="muted" style="font-size:11.5px">
@@ -4291,6 +4281,16 @@
     b14_22:  { label: 'Byte 14 = 0x22', bytes: { 14: 0x22 } },
     b14_42:  { label: 'Byte 14 = 0x42', bytes: { 14: 0x42 } },
     b14_62:  { label: 'Byte 14 = 0x62', bytes: { 14: 0x62 } },
+    // Die Gegenprobe zum Scheinwerfer-Befund. Alle Varianten darueber haben Bit 1 GESETZT
+    // (0x22 = 0x20|0x02 und so weiter), testen also nur die oberen, unentschluesselten Bits
+    // ZUSAETZLICH zum Licht. Diese vier haben Bit 1 ausdruecklich CLEAR: kommt damit ein
+    // Streckencode, hat der Sensor eine eigene Beleuchtung mit eigenem Bit, und sichtbares
+    // Licht laesst sich unabhaengig schalten. Kommt keiner, haengen beide am selben Bit und
+    // "Licht aus" heisst zwangslaeufig "keine Streckenlesung".
+    b14_20:  { label: 'Licht AUS + Bit 5 (0x20)', bytes: { 14: 0x20 } },
+    b14_40:  { label: 'Licht AUS + Bit 6 (0x40)', bytes: { 14: 0x40 } },
+    b14_60:  { label: 'Licht AUS + Bit 5+6 (0x60)', bytes: { 14: 0x60 } },
+    b14_a0:  { label: 'Licht AUS + Bit 7+5 (0xa0)', bytes: { 14: 0xa0 } },
     tail:    { label: 'Byte 16-18 = 01 04 04', bytes: { 16: 0x01, 17: 0x04, 18: 0x04 } },
     b9:      { label: 'Byte 9 = +-127', bytes: { 9: 0x7f } },
     combo:   { label: '0x20 + 0x62 + 01 04 04',
@@ -4307,6 +4307,22 @@
                bytes: { 10: 0x20, 14: LIGHT_HEAD | 0x20, 15: 0x0c } },
   };
 
+  // Knoepfe aus der Variantenliste. Eine Quelle, nicht zwei.
+  function renderProbeButtons() {
+    const host = $('probe-status');
+    if (!host || !host.parentElement) return;
+    const bar = host.previousElementSibling;
+    if (!bar) return;
+    bar.innerHTML = '';
+    for (const [key, v] of Object.entries(PROBE_VARIANTS)) {
+      const b = document.createElement('button');
+      b.dataset.probe = key;
+      b.textContent = v.label;
+      if (key === 'off') b.classList.add('primary');
+      bar.appendChild(b);
+    }
+  }
+
   function setProbe(key) {
     const v = PROBE_VARIANTS[key];
     if (!v) return;
@@ -4317,6 +4333,8 @@
     updateProbeStatus();
     log(`Paketvariante: ${v.label}`, 'info');
   }
+
+  renderProbeButtons();
 
   function updateProbeStatus() {
     const el = $('probe-status');
