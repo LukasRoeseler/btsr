@@ -3247,6 +3247,17 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="ghost-curve-val">35%</span>
         </div></div>
+      <div class="opt-row"><div class="opt-label">Ghost: Ideallinie
+          <small>Vor der Kurve nach au&szlig;en, im Scheitel nach innen, danach wieder
+          heraus. Vorw&auml;rtsgesteuert aus Layout und Kachelphase &mdash; wie viele
+          Zentimeter dabei herauskommen, meldet kein Byte. Ob es hilft, zeigt die
+          Rundenzeit gegen die Abg&auml;nge im Ergebnisfenster. Links = aus.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="ghost-line" min="0" max="1" step="0.05" value="0.35">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="ghost-line-val">35%</span>
+        </div></div>
       <div class="opt-row"><div class="opt-label">Ghost: seitlicher Versatz<small>Gegen gegenseitiges Rammen. Blind: kein Byte meldet die Querlage. Links = aus.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
@@ -7962,7 +7973,10 @@
     if (raceState !== 'racing' && raceState !== 'finishing') { r.lapStart = now; return; }
     // During the formation lap this crossing is the START of the race, not a lap.
     if (raceFormationLap) { endFormationLap(); return; }
-    if (r.lapStart !== null) r.laps.push({ lap: r.laps.length + 1, ms: now - r.lapStart });
+    if (r.lapStart !== null) {
+      r.laps.push({ lap: r.laps.length + 1, ms: now - r.lapStart, off: r.offLap || 0 });
+    }
+    r.offLap = 0;
     r.lapStart = now;
   }
 
@@ -8483,27 +8497,35 @@
       : (b.st.n - a.st.n) || (a.st.total - b.st.total));
     const fastest = Math.min(...scored.map(x => x.st.best));
 
+    // Abgaenge je Runde stehen NEBEN der Rundenzeit, nicht darin verrechnet. Eine schnelle
+    // Runde mit drei Abgaengen ist kein Fortschritt, und ein Mittelwert wuerde das verdecken.
+    const offOf = (c) => c.laps.reduce((a, l) => a + (l.off || 0), 0);
     let html = '<table class="sum-tab"><tr><th>#</th><th>Auto</th><th>Runden</th>'
-      + '<th>Beste</th><th>Mittel</th></tr>';
+      + '<th>Beste</th><th>Mittel</th><th>Abg&auml;nge</th></tr>';
     scored.forEach((x, i) => {
       html += '<tr><td>' + (i + 1) + '</td><td>' + x.c.name
         + (x.c.role === 'ghost' ? ' <span class="muted">(Ghost)</span>' : '') + '</td>'
         + '<td class="num">' + x.st.n + '</td>'
         + '<td class="num' + (x.st.best === fastest ? ' sum-best' : '') + '">'
         + formatLapTime(x.st.best) + '</td>'
-        + '<td class="num">' + formatLapTime(Math.round(x.st.mean)) + '</td></tr>';
+        + '<td class="num">' + formatLapTime(Math.round(x.st.mean)) + '</td>'
+        + '<td class="num">' + offOf(x.c) + '</td></tr>';
     });
     html += '</table>';
 
     // Jede einzelne Runde darunter, damit nichts hinter einem Mittelwert verschwindet -
     // beim freien Training ist das ohnehin das Einzige, was interessiert.
     const maxLaps = Math.max(...cars.map(c => c.laps.length));
+    html += '<p class="muted" style="font-size:11px; margin:12px 0 0 0">Zahl in Klammern: '
+      + 'Abg\u00e4nge in dieser Runde.</p>';
     html += '<table class="sum-tab" style="margin-top:6px"><tr><th>Runde</th>'
       + cars.map(c => '<th style="text-align:right">' + c.name + '</th>').join('') + '</tr>';
     for (let k = 0; k < maxLaps; k++) {
       html += '<tr><td>' + (k + 1) + '</td>'
         + cars.map(c => '<td class="num">'
-            + (c.laps[k] ? formatLapTime(c.laps[k].ms) : '\u2013') + '</td>').join('')
+            + (c.laps[k] ? formatLapTime(c.laps[k].ms)
+                           + (c.laps[k].off ? ' <span class="muted">(' + c.laps[k].off + ')</span>' : '')
+                         : '\u2013') + '</td>').join('')
         + '</tr>';
     }
     html += '</table>';
@@ -10335,6 +10357,12 @@
   });
   $('cm-reset').addEventListener('click', cmReset);
 
+  $('ghost-line').addEventListener('input', (e) => {
+    ghostCfg.line = parseFloat(e.target.value);
+    $('ghost-line-val').textContent = ghostCfg.line === 0
+      ? 'aus' : Math.round(ghostCfg.line * 100) + '%';
+  });
+
   $('ghost-learn').addEventListener('change', (e) => {
     ghostCfg.learn = e.target.checked;
     if (!e.target.checked) learnReset();
@@ -11040,6 +11068,8 @@
     // wurde mit diesem Faktor multipliziert, und der stand auf Null. Das Feature war da und
     // konnte nie wirken.
     lateral: 0.5,
+    // Ideallinie. 0 = wie bisher, gerade Lenkung und nur der Anti-Ramm-Versatz.
+    line: 0.35,
     leaderBrake: false, // hold the leader back for a while
     leaderBrakePct: 0.10,
     // Default ON: the measurement says this is the mode in which the car holds the track by
@@ -11092,6 +11122,158 @@
     if (t === TILE_TYPE.CURVE_RIGHT || t === TILE_TYPE.HAIRPIN) return 1;
     if (t === TILE_TYPE.CURVE_LEFT || t === TILE_TYPE.HAIRPIN_LEFT) return -1;
     return 0;
+  }
+
+  // Wie weit sind wir durch die aktuelle Kachel? 0 am Anfang, 1 am Ende.
+  //
+  // Es gibt kein Byte dafuer, aber die Kachelgrenzen sind bekannt (Byte 11 springt), also
+  // laesst sich die Phase aus der Zeit seit dem Sprung geteilt durch die typische
+  // Kacheldauer schaetzen. Die Dauer wird gleitend mitgefuehrt statt festgelegt: sie
+  // haengt am Tempo, und ein fester Wert waere bei halbem Gas doppelt falsch.
+  //
+  // Warum die Phase ueberhaupt: fuer die eigenen Ghosts der Original-App erklaeren
+  // Kachelindex UND Phase zusammen 85 Prozent der Lenkvarianz (Reststreuung 21.7 gegen
+  // 56.7 bei einem der beiden Autos, 55 Prozent beim anderen). Eine Linie, die nur den
+  // Kachelindex kennt, kann Anstellen, Scheitel und Herausfahren nicht trennen.
+  const GHOST_TILE_MS_MIN = 250;    // schneller ist keine Kachel je gefahren worden
+  const GHOST_TILE_MS_MAX = 4000;
+  function ghostTilePhase(car) {
+    const g = car.ghost;
+    if (!g || !car.tileAt) return 0;
+    const dur = g.tileMs || 800;
+    return Math.max(0, Math.min(1, (Date.now() - car.tileAt) / dur));
+  }
+
+  // Beim Kachelwechsel die gemessene Dauer gleitend nachziehen. Ausreisser werden verworfen
+  // statt eingerechnet: ein verlorenes Paket sieht wie eine doppelt lange Kachel aus, und
+  // genau dieser Fehler hat bei der Geschwindigkeitsmessung schon einmal 14 km/h ergeben.
+  function ghostNoteTileTime(car, ms) {
+    const g = car.ghost;
+    if (!g || !(ms >= GHOST_TILE_MS_MIN && ms <= GHOST_TILE_MS_MAX)) return;
+    g.tileMs = g.tileMs ? g.tileMs * 0.7 + ms * 0.3 : ms;
+  }
+
+  // ---- Die Ideallinie ----
+  // Rueckgabe: -1 ganz links, +1 ganz rechts, 0 Mitte. Die Vorzeichenregel ist dieselbe wie
+  // bei der Lenkung, positiv = rechts.
+  //
+  // Aussen anstellen, innen scheiteln, aussen heraus - der Klassiker, und er braucht nur
+  // Layout und Phase:
+  //     Gerade vor einer Rechtskurve   ->  nach LINKS  (aussen), aufbauend in der 2. Haelfte
+  //     in der Rechtskurve             ->  nach RECHTS (innen) um den Scheitel
+  //     Gerade nach einer Rechtskurve  ->  nach LINKS  (heraustragen), abklingend
+  // Die Haarnadel scheitelt spaeter als die 60-Grad-Kurve: bei 180 Grad wird tief
+  // hineingebremst und der Scheitel liegt hinter der Mitte. 0.62 gegen 0.5.
+  //
+  // Was hier NICHT behauptet wird: dass die Zahl Zentimeter bedeutet. Es gibt keine
+  // Rueckmeldung zur Querlage, also ist das eine offene Steuerung - ein Lenkanteil, den das
+  // Auto gegen seine eigene Bahnfuehrung stellt. Ob und wieviel dabei herauskommt, sagen
+  // Rundenzeit und Abgaenge, nicht diese Funktion.
+  const GHOST_LINE_STEER = 0.5;   // voller Linienversatz = halber Lenkausschlag
+
+  function ghostTurnOf(t) {
+    return t === TILE_TYPE.CURVE_RIGHT || t === TILE_TYPE.HAIRPIN ? 1
+         : t === TILE_TYPE.CURVE_LEFT || t === TILE_TYPE.HAIRPIN_LEFT ? -1 : 0;
+  }
+
+  // Der ZUSAMMENHAENGENDE Kurvenzug, in dem eine Kachel liegt: Anfang, Laenge, Position
+  // darin, und wohin die Kurvenzuege davor und danach drehen.
+  //
+  // Das ist der Kern der Korrektur. Die erste Fassung behandelte jede Kachel als eigene
+  // Kurve, also ging der Ghost in einer Doppelkurve zweimal von aussen nach innen nach
+  // aussen - in einer Kurve, die er in einem Zug fahren soll. Aufgefallen ist es an der
+  // Sprungmessung: bei SRRRLLL sprang der Versatz an der Nahtstelle um 1.9 von einem
+  // Abtastpunkt zum naechsten, und ein Sprung im Versatz ist ein Ruck am Lenkservo.
+  function ghostRun(tiles, idx) {
+    const n = tiles.length;
+    const at = (k) => tiles[((k % n) + n) % n].type;
+    const dir = ghostTurnOf(at(idx));
+    if (dir === 0) return { dir: 0 };
+    let back = 0, fwd = 0;
+    while (back < n - 1 && ghostTurnOf(at(idx - back - 1)) === dir) back++;
+    while (fwd < n - 1 - back && ghostTurnOf(at(idx + fwd + 1)) === dir) fwd++;
+    return {
+      dir,
+      len: back + fwd + 1,
+      pos: back,                                   // Position in diesem Kurvenzug
+      prevDir: ghostTurnOf(at(idx - back - 1)),
+      nextDir: ghostTurnOf(at(idx + fwd + 1)),
+      tight: Math.max.apply(null, Array.from({ length: back + fwd + 1 },
+                                             (_, k) => tileTightness(at(idx - back + k)))),
+    };
+  }
+
+  // Wo soll ein Kurvenzug anfangen und aufhoeren, in Einheiten von -1 (links) bis +1?
+  //
+  // Regel: aussen hinein, aussen heraus - AUSSER die naechste Kurve dreht andersherum. Dann
+  // bleibt man auf der eigenen Innenseite, denn die ist die Aussenseite der naechsten.
+  // Genau das ist eine S-Kurve: die erste wird geopfert, damit die zweite passt.
+  //
+  // Die Ausnahme gehoert NUR an den Ausgang. Am Eingang hatte ich sie auch stehen, und das
+  // war ein Vorzeichenfehler: die Aussenseite dieser Kurve IST schon die Innenseite der
+  // vorigen, wenn die andersherum dreht (bei entgegengesetzter Drehrichtung ist
+  // -dir == prevDir). Der Eingang trifft also von selbst, wo der vorige Kurvenzug endet -
+  // die Ausnahme hat ihn genau auf die falsche Seite gelegt. Aufgefallen an der
+  // Sprungmessung: SRL und SHJ sprangen an der Nahtstelle um 2.000, also ueber die ganze
+  // Bahnbreite, und zwar innerhalb eines Abtastschritts.
+  function ghostRunEnds(run) {
+    const outside = -run.dir, inside = run.dir;
+    return {
+      entry: outside,
+      exit:  (run.nextDir !== 0 && run.nextDir !== run.dir) ? inside : outside,
+    };
+  }
+
+  // ---- Die Ideallinie ----
+  // Rueckgabe: -1 ganz links, +1 ganz rechts, 0 Mitte. Vorzeichen wie bei der Lenkung,
+  // positiv = rechts.
+  //
+  // Aussen anstellen, innen scheiteln, aussen heraus - ueber den GANZEN Kurvenzug, nicht je
+  // Kachel. Die Haarnadel scheitelt spaeter als die 60-Grad-Kurve: bei 180 Grad wird tief
+  // hineingebremst und der Scheitel liegt hinter der Mitte. 0.62 gegen 0.5.
+  //
+  // Was hier NICHT behauptet wird: dass die Zahl Zentimeter bedeutet. Es gibt keine
+  // Rueckmeldung zur Querlage, also ist das eine offene Steuerung - ein Lenkanteil, den das
+  // Auto gegen seine eigene Bahnfuehrung stellt. Die Annahme dahinter, ausgesprochen: ein
+  // kleiner anhaltender Lenkanteil verschiebt, wo das Auto sitzt. Ob und wieviel dabei
+  // herauskommt, sagen Rundenzeit und Abgaenge im Ergebnisfenster, nicht diese Funktion.
+  function ghostLineOffset(car) {
+    const tiles = currentTrackTiles;
+    const g = car.ghost;
+    if (!tiles || tiles.length < 3 || !g || g.tileIndex === null) return 0;
+    const n = tiles.length;
+    const at = (k) => tiles[((g.tileIndex + k) % n + n) % n].type;
+    const ph = ghostTilePhase(car);
+    const run = ghostRun(tiles, g.tileIndex);
+
+    if (run.dir !== 0) {
+      // Ist die ganze Runde eine Kurve, gibt es kein Aussen und kein Innen mehr - dann ist
+      // es ein Kreis, und die schnellste Linie darauf ist die innere. Kein Sonderfall aus
+      // Vorsicht, sondern weil die Formel unten sonst ueber die ganze Runde einmal
+      // durchschwingen wuerde.
+      if (run.len >= n) return run.dir;
+      const ends = ghostRunEnds(run);
+      const apex = run.tight >= 2 ? 0.62 : 0.5;
+      const t = (run.pos + ph) / run.len;          // 0 am Kurveneingang, 1 am Ausgang
+      return t < apex
+        ? ends.entry + (run.dir - ends.entry) * (t / apex)
+        : run.dir + (ends.exit - run.dir) * ((t - apex) / (1 - apex));
+    }
+
+    // Auf der Geraden: heraustragen, was aus der letzten Kurve kommt, und anstellen fuer
+    // die naechste. Beide Anteile liegen in verschiedenen Haelften der Kachel, koennen sich
+    // also nicht widersprechen, und an beiden Kachelgrenzen treffen sie genau den Wert, mit
+    // dem der Kurvenzug endet bzw. anfaengt - deshalb gibt es dort keinen Sprung.
+    let off = 0;
+    if (ghostTurnOf(at(-1)) !== 0) {
+      const prev = ghostRun(tiles, g.tileIndex - 1);
+      off += ghostRunEnds(prev).exit * Math.max(0, 1 - ph / 0.5);
+    }
+    if (ghostTurnOf(at(1)) !== 0) {
+      const next = ghostRun(tiles, g.tileIndex + 1);
+      off += ghostRunEnds(next).entry * Math.max(0, (ph - 0.5) / 0.5);
+    }
+    return Math.max(-1, Math.min(1, off));
   }
 
   // Die engste Kachel in den naechsten n Schritten, und wie weit sie weg ist. Daraus baut
@@ -11193,6 +11375,9 @@
 
     // Follow the tile counter so we know where on the layout we are.
     if (car.tileCount !== null && car.tileCount !== g.lastCount) {
+      // Die Dauer der gerade verlassenen Kachel, fuer die Phasenschaetzung der Linie.
+      if (g.tileStart) ghostNoteTileTime(car, now - g.tileStart);
+      g.tileStart = now;
       g.lastCount = car.tileCount;
       g.tileIndex = g.tileIndex === null ? 0 : g.tileIndex + 1;
       if (currentTrackTiles.length) {
@@ -11223,6 +11408,15 @@
       ? (offConfirmed || noCode)
       : (offConfirmed && !noCode);
     const armed = raceState === 'racing' || raceState === 'finishing' || g.freeRun;
+    // Abgaenge zaehlen, nicht nur melden. Ohne eine Zahl je Runde ist "die Linie hilft"
+    // oder "die Linie schmeisst ihn raus" nicht entscheidbar, und dann wird der Regler nach
+    // Gefuehl gedreht. Gezaehlt wird die FLANKE, nicht das Paket - ein zwei Sekunden langer
+    // Abgang ist ein Abgang, nicht vierzig.
+    if (offTrack && !g.cutOut) {
+      if (!car.race) car.race = { laps: [], lapStart: null, pending: null, seen: 0,
+                                  lastActed: 0, lastCount: null };
+      car.race.offLap = (car.race.offLap || 0) + 1;
+    }
     if (offTrack !== g.cutOut) {
       g.cutOut = offTrack;
       log(`${garageLabel(car)}: ${offTrack ? 'kein Streckencode — Ghost hält' : 'Streckencode wieder da'}`,
@@ -11291,21 +11485,20 @@
         // Zero steering plus the anti-ramming offset. There is no lateral feedback to close
         // a loop with, so this is deliberately the conservative choice rather than a guess.
         //
-        // Worth knowing for the next step: the reference app does NOT send zero here. Its
-        // own ghosts steer actively, and that steering is largely PRE-COMPUTED FROM TRACK
-        // POSITION - for one of the two ghosts in the 21.08 race, 85 % of the steering
-        // variance is explained by tile index and phase within the tile alone (residual
-        // spread 21.7 against 56.7), and 55 % for the other. So a feed-forward trajectory
-        // keyed on (tile index, phase) is both achievable with what we have and demonstrably
-        // what the reference does. That is the evidence-based upgrade from zero; it is not
-        // implemented yet, and until it is, zero beats an invented controller.
-        steer = g.bias * ghostCfg.lateral * 0.25;
+        // Und jetzt ist sie umgesetzt: die vorwaerts gesteuerte Linie aus Kachelindex und
+        // Phase (ghostLineOffset). Genau das Verfahren, das die Original-App nachweislich
+        // benutzt - 85 Prozent der Lenkvarianz ihrer eigenen Ghosts erklaeren sich daraus,
+        // 55 Prozent beim zweiten Auto. Der Regler steht standardmaessig auf 35 Prozent und
+        // auf 0 verhaelt sich der Ghost wie vorher.
+        steer = ghostLineOffset(car) * ghostCfg.line * GHOST_LINE_STEER
+              + g.bias * ghostCfg.lateral * 0.25;
       } else {
         // Fallback for cars not in guard-rail mode: the old layout-plus-yaw controller.
         const dir = ghostTurnDir(car, 0);
         const yawTarget = dir * 8;
         steer = dir * GHOST_STEER_CURVE + (yawTarget - car.yaw) * GHOST_YAW_GAIN;
-        steer += g.bias * ghostCfg.lateral * 0.25;
+        steer += ghostLineOffset(car) * ghostCfg.line * GHOST_LINE_STEER
+               + g.bias * ghostCfg.lateral * 0.25;
       }
       steer = Math.max(-1, Math.min(1, steer + weave));
     }
@@ -11397,6 +11590,43 @@
     }
   }
   setInterval(ghostAssignBias, GHOST_BIAS_MS);
+
+  // ---- Pruefzugang ----
+  // Absichtlich schmal und absichtlich vorhanden. Bis hierher liess sich an dieser Datei
+  // nichts pruefen, ausser von Hand im Browser - die groesste Luecke fuer jeden, der
+  // mitarbeiten will, und die Ursache dafuer, dass Fehler wie der Buchstabe J im
+  // Streckencode-Leser monatelang unentdeckt blieben.
+  //
+  // Nur REINE Funktionen, kein Zustand, kein Schreibzugriff. Was hier steht, kann eine
+  // Pruefung aufrufen, ohne ein Auto zu verbinden oder auf eine Zeitmessung zu warten.
+  window.OMEGA_TEST = {
+    TILE_TYPE, TILE_LABEL,
+    codeToTrack, trackToCode,
+    tileTightness, tileTurnDeg, tileIsCurve,
+    crc8, buildCommandPacket,
+    // Die Ideallinie ueber eine ganze Runde abtasten, ohne Auto: das Layout und die Phase
+    // sind alles, was sie braucht. Rueckgabe je Kachel und Phase der Versatz in [-1, 1].
+    sampleLine(tiles, steps) {
+      const keep = currentTrackTiles;
+      currentTrackTiles = tiles;
+      const out = [];
+      const car = { ghost: { tileIndex: 0, tileMs: 1000 }, tileAt: 0 };
+      try {
+        for (let i = 0; i < tiles.length; i++) {
+          car.ghost.tileIndex = i;
+          for (let k = 0; k < (steps || 5); k++) {
+            // ghostTilePhase rechnet aus Date.now() - tileAt; hier wird tileAt so gesetzt,
+            // dass genau die gewuenschte Phase herauskommt.
+            const ph = k / (steps || 5);
+            car.tileAt = Date.now() - ph * car.ghost.tileMs;
+            out.push({ tile: i, type: tiles[i].type, phase: ph,
+                       off: ghostLineOffset(car) });
+          }
+        }
+      } finally { currentTrackTiles = keep; }
+      return out;
+    },
+  };
 
   // Ghosts launch on green, not before.
   function launchGhosts() {
