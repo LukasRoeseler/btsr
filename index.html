@@ -920,6 +920,10 @@
         <div>
           <div class="muted">Fahrzeug: <b id="dash-vehicle-name">nicht verbunden</b></div>
           <div class="muted">Status: <span id="dash-offtrack" style="display:inline-block;padding:1px 8px;border-radius:4px;background:var(--panel-2);border:1px solid var(--border)">-</span></div>
+          <div class="muted" style="margin-top:4px">Auf der Strecke:
+            <b id="dash-time-on">0:00</b> &middot; abseits:
+            <b id="dash-time-off">0:00</b>
+            <span class="muted" id="dash-time-share">&nbsp;</span></div>
         </div>
         <label style="display:flex;align-items:center;gap:6px" class="muted">
           <input type="checkbox" id="dash-freeroam"> Frei fahren (ohne Streckenkarte)
@@ -6945,6 +6949,9 @@
     garage.forEach(c => { c.race = { laps: [], lapStart: null, pending: null, seen: 0,
                                      lastActed: 0, lastCount: null }; });
     raceLapTimes = [];
+    // Same moment as the lap times: on/off-track is a statistic about THIS race, and
+    // carrying a previous session's minutes into it would make the share meaningless.
+    trackTimeReset();
     raceLapStart = null;
     $('race-results').style.display = 'none';
     $('race-lap-current-row').style.display = '';
@@ -7184,6 +7191,12 @@
     lines.push(`Wetter zu Beginn;${raceWxStart === 'rain' ? 'Regen' : 'trocken'}`);
     lines.push(`Wetterwechsel;${raceWxChange ? 'ja' : 'nein'}`);
     lines.push(`Tank beim Start (l);${raceFuelStartL}`);
+    // On/off track goes into the export because it is the one figure that says whether the
+    // lap times above describe driving on a track at all.
+    lines.push(`Zeit auf der Strecke (s);${num(Math.round(trackTimeOn * 1000))}`);
+    lines.push(`Zeit abseits (s);${num(Math.round(trackTimeOff * 1000))}`);
+    lines.push(`Anteil abseits (%);${(trackTimeOn + trackTimeOff > 0
+      ? (trackTimeOff / (trackTimeOn + trackTimeOff) * 100) : 0).toFixed(1).replace('.', ',')}`);
     lines.push(`Pflichtboxenstopps;${racePitRequired}`);
     lines.push(`Davon gefahren;${racePitDone}`);
     lines.push(`Strafe je verpasstem Stopp (s);${racePitPenaltyS}`);
@@ -7234,7 +7247,11 @@
     gyroRaw.span = Math.max(8, gyroRaw.span * 0.995,
                             Math.abs(gyroRaw.x) * 1.2, Math.abs(gyroRaw.y) * 1.2);
 
-    detectCrash(bytes);
+    // On the track or beside it, counted separately. Byte 12 is 0x00 whenever the sensor
+    // sees no track code at all, which is what "off the track" means to this car - and until
+    // now that only ever stopped the ghosts. Nothing recorded it for the driver, so a lap
+    // driven half across the carpet looked exactly like a clean one in the lap list.
+    trackTimeTick((bytes[12] & 0xff) !== TILE_OFFTRACK);
 
     const counter = bytes[11];
     const type = bytes[12];
@@ -7728,6 +7745,43 @@
   // Called from sendControlValue for every command, right after topSpeedScale — depletes
   // fuel proportional to real elapsed time and throttle magnitude, caps output near empty
   // (never a hard stop), and applies a small capped damage penalty.
+  // Wall-clock seconds, not packet counts: the notify rate is not constant, so counting
+  // packets would weight a slow stretch differently from a fast one.
+  let trackTimeOn = 0, trackTimeOff = 0, trackTimeLast = null, trackTimeUiLast = 0;
+
+  function trackTimeTick(onTrack) {
+    const now = Date.now();
+    if (trackTimeLast !== null) {
+      // Capped like the fuel tick: a tab that was in the background for a minute must not
+      // book that minute as driving.
+      const dt = Math.min(0.5, (now - trackTimeLast) / 1000);
+      if (onTrack) trackTimeOn += dt; else trackTimeOff += dt;
+    }
+    trackTimeLast = now;
+    if (now - trackTimeUiLast > 400) { trackTimeUiLast = now; paintTrackTime(); }
+  }
+
+  function trackTimeReset() {
+    trackTimeOn = 0; trackTimeOff = 0; trackTimeLast = null;
+    paintTrackTime();
+  }
+
+  function mmss(sec) {
+    const m = Math.floor(sec / 60), r = Math.floor(sec % 60);
+    return m + ':' + String(r).padStart(2, '0');
+  }
+
+  function paintTrackTime() {
+    const on = $('dash-time-on'), off = $('dash-time-off'), sh = $('dash-time-share');
+    if (!on) return;
+    on.textContent = mmss(trackTimeOn);
+    off.textContent = mmss(trackTimeOff);
+    const tot = trackTimeOn + trackTimeOff;
+    sh.textContent = tot > 1 ? '(' + Math.round(trackTimeOff / tot * 100) + ' % abseits)' : '';
+    // Coloured only once it is worth looking at. A single lost packet is not a cut.
+    off.style.color = tot > 5 && trackTimeOff / tot > 0.1 ? 'var(--warn)' : '';
+  }
+
   let fuelUiLastPaint = 0;
   // Two beeps at ten per cent, one at twenty: the count carries the urgency, so the driver
   // does not have to look away from the track to learn which mark went by.
