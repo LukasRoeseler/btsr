@@ -7005,9 +7005,15 @@
   let trackScanLastCounter = null;
   let trackScanTypeVotes = {};
 
+  // Zwei Einspeiser, ein Verarbeiter. Der Ereignis-Weg bleibt fuer den Entwickler-Tab, der
+  // Byte-Weg kommt aus onCarNotify - siehe startTrackScan, warum das noetig ist.
   function trackScanNotifyHandler(e) {
+    trackScanBytes(new Uint8Array(e.target.value.buffer));
+  }
+
+  function trackScanBytes(bytes) {
     if (!trackScanning) return;
-    const bytes = new Uint8Array(e.target.value.buffer);
+    if (bytes.length < 16) return;
     // BUGFIX: byte 9 is the free-running per-PACKET counter (changes on ~every notify,
     // every ~45-70ms) — using it here treated almost every packet as a new tile
     // boundary, flooding the track with bogus single-sample tiles. Byte 11 is the
@@ -7050,17 +7056,28 @@
   }
 
   let trackScanSkipped = 0;
+  let trackScanCar = null;
   async function startTrackScan() {
     trackScanSkipped = 0;
-    const entry = charByUuid.get(NUS_TX);
-    if (!entry) { alert('Nicht verbunden / NUS TX nicht gefunden.'); return; }
-    try {
-      if (!entry._trackScanSubscribed) {
-        await entry.char.startNotifications();
-        entry.char.addEventListener('characteristicvaluechanged', trackScanNotifyHandler);
-        entry._trackScanSubscribed = true;
+    // Zuerst das Auto aus der Garage: dessen Meldungen laufen schon durch onCarNotify, es
+    // braucht also gar keine zweite Anmeldung. Nur wenn keines da ist, wird der Weg ueber
+    // den BLE-Explorer versucht - der funktioniert weiterhin, ist aber nicht mehr die
+    // Voraussetzung.
+    trackScanCar = playerCar || garage.find(c => c.tx) || null;
+    if (!trackScanCar) {
+      const entry = charByUuid.get(NUS_TX);
+      if (!entry) {
+        alert('Kein Auto verbunden. Erst in der Garage verbinden, dann scannen.');
+        return;
       }
-    } catch (err) { alert('Notify-Fehler: ' + err.message); return; }
+      try {
+        if (!entry._trackScanSubscribed) {
+          await entry.char.startNotifications();
+          entry.char.addEventListener('characteristicvaluechanged', trackScanNotifyHandler);
+          entry._trackScanSubscribed = true;
+        }
+      } catch (err) { alert('Notify-Fehler: ' + err.message); return; }
+    }
     currentTrackTiles = freshTrackTiles();
     trackScanLastCounter = null;
     trackScanTypeVotes = {};
@@ -7068,10 +7085,12 @@
     refreshTrackPreview();
     $('track-scan-start').disabled = true;
     $('track-scan-stop').disabled = false;
-    $('track-scan-status').textContent = 'Scan läuft: 0 Teile';
+    $('track-scan-status').textContent = 'Scan läuft: 0 Teile'
+      + (trackScanCar ? ' (' + garageLabel(trackScanCar) + ')' : ' (BLE-Explorer)');
   }
   function stopTrackScan() {
     trackScanning = false;
+    trackScanCar = null;
     $('track-scan-start').disabled = false;
     $('track-scan-stop').disabled = true;
     $('track-scan-status').textContent = `Scan gestoppt (${currentTrackTiles.length} Teile).`;
@@ -10015,6 +10034,12 @@
     if (code !== 0xff && code !== TILE_OFFTRACK) car.lastCodeAt = Date.now();
     if (code !== car.tileCode) { car.tileCode = code; }
     if (car.tileCount !== b[11]) { car.tileCount = b[11]; car.tileAt = Date.now(); }
+    // Der Streckenscan haengt jetzt an DIESEM Strom. Er hatte eine eigene Anmeldung ueber
+    // charByUuid, und die wird nur von exploreServices() im Entwickler-Tab gefuellt - nach
+    // einer Verbindung ueber die Garage war sie leer und der Scan brach mit "NUS TX nicht
+    // gefunden" ab. Genau derselbe Fehler war beim Armaturenbrett schon einmal gefunden und
+    // dort behoben worden (siehe den Kommentar oben), beim Scan blieb er stehen.
+    if (trackScanning && trackScanCar === car) trackScanBytes(b);
     car.yaw = b[3] > 127 ? b[3] - 256 : b[3];
     car.battery = b[10];
   }
