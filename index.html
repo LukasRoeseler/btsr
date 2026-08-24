@@ -474,6 +474,22 @@
     padding: 10px 12px; background: var(--panel-2); border: 1px solid var(--border);
     border-radius: 8px; margin-bottom: 8px; cursor: pointer; }
   .gar-row:hover { border-color: #4a5b7d; }
+  /* Starting grid. Drag handles rather than whole-row dragging: the row already has a
+     click action (identify by blinking), and a row that both blinks and drags is a row
+     that does the wrong one half the time. */
+  .grid-row { display: flex; align-items: center; gap: 10px; padding: 8px 10px;
+    border: 1px solid var(--border); border-radius: 6px; margin-bottom: 6px;
+    background: var(--panel); }
+  .grid-row.dragging { opacity: .45; }
+  .grid-row.over { border-color: var(--accent); border-style: dashed; }
+  .grid-pos { font-family: monospace; font-weight: 700; min-width: 26px; color: var(--muted); }
+  .grid-handle { cursor: grab; user-select: none; font-size: 15px; color: var(--muted);
+    padding: 0 4px; }
+  .grid-handle:active { cursor: grabbing; }
+  .grid-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis;
+    white-space: nowrap; }
+  .grid-move { display: flex; gap: 4px; }
+  .grid-move button { width: 30px; height: 30px; padding: 0; font-size: 13px; }
   .gar-row.is-player { border-color: var(--good); }
   .gar-row.is-ghost { border-color: #7a6bd0; }
   .gar-name { font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
@@ -1858,6 +1874,19 @@
           <input type="number" id="race-limit" value="2" min="1" max="120" step="1" style="width:80px">
         </div>
         <span class="muted" id="race-mode-hint" style="font-size:11.5px"></span>
+        <label style="display:flex; align-items:center; gap:6px" title="Einf&uuml;hrungsrunde mit Limiter-Tempo, Freigabe beim ersten &Uuml;berfahren von Start/Ziel">
+          <input type="checkbox" id="race-flying"> Fliegender Start
+        </label>
+      </div>
+
+      <div id="race-grid-wrap" style="display:none; margin-top:12px">
+        <label class="small">Startaufstellung &mdash; ziehen oder mit den Pfeilen sortieren</label>
+        <div id="race-grid"></div>
+        <p class="muted" style="font-size:11.5px; margin:6px 0 0 0">
+          Die Autos fahren in dieser Reihenfolge los. Die Einf&uuml;hrungsrunde l&auml;uft mit
+          Boxengassen-Tempo; sobald das erste Auto Start/Ziel &uuml;berf&auml;hrt, ist das
+          Limit weg.
+        </p>
       </div>
 
       <div class="row" style="margin-top:12px; gap:18px; flex-wrap:wrap; align-items:flex-end">
@@ -5740,6 +5769,14 @@
   let racePitPenaltyS = 10;
   let raceFuelStartL = FUEL_TANK_LITERS;
   let racePitDone = 0;         // completed pit services during THIS race
+
+  // ---- Flying start ----
+  // 'formation' is a fourth live state alongside countdown/racing/finishing: the cars are
+  // moving and laps are NOT being counted yet. It ends when any car crosses start/finish,
+  // which is what "sobald das erste Auto über Start fährt" means literally.
+  let raceFlying = false;
+  let raceGridOrder = [];      // device ids, first = pole
+  let raceFormationLap = false;
   let raceStartedAt = null;
   let raceClockTimer = null;
 
@@ -5779,6 +5816,24 @@
   // Same two guards as the dashboard: a code must be seen twice before it is believed, and
   // an immediate repeat of start/finish is ignored. Without them a stuttering counter
   // produces phantom laps, and here it would corrupt the results table of every car.
+  // The formation lap ends the moment ANY car crosses start/finish. Called from both lap
+  // detectors (the player's dashboard and the per-car one) so it does not matter who gets
+  // there first — including a ghost, which is the usual case.
+  function endFormationLap() {
+    if (!raceFormationLap) return;
+    raceFormationLap = false;
+    // Only lift the limiter if the pit lane is not itself holding it down.
+    if (pitState === 'off') physEngine.config.speedLimitFactor = 1;
+    raceLapStart = Date.now();
+    garage.forEach(c => { if (c.race) c.race.lapStart = Date.now(); });
+    setRaceLights('go');
+    playTone(1046, 0.30, 'square', 0.22);
+    showHudToast('Frei — volle Fahrt!');
+    log('Einführungsrunde beendet, Rennen freigegeben.', 'info');
+    $('race-status').textContent = `${RACE_MODES[raceMode].label} läuft`;
+    setTimeout(() => setRaceLights(0), 900);
+  }
+
   function carRaceNotify(car, b) {
     if (!car.race) car.race = { laps: [], lapStart: null, pending: null, seen: 0,
                                 lastActed: 0, lastCount: null };
@@ -5794,6 +5849,8 @@
     if (now - r.lastActed < TILE_REPEAT_BLOCK_MS) return;
     r.lastActed = now;
     if (raceState !== 'racing' && raceState !== 'finishing') { r.lapStart = now; return; }
+    // During the formation lap this crossing is the START of the race, not a lap.
+    if (raceFormationLap) { endFormationLap(); return; }
     if (r.lapStart !== null) r.laps.push({ lap: r.laps.length + 1, ms: now - r.lapStart });
     r.lapStart = now;
   }
@@ -6018,6 +6075,87 @@
     host.innerHTML = svg + `<div style="margin-top:6px">${legend}</div>`;
   }
 
+  // The grid is stored as device ids, not as indices into `garage`: cars connect and
+  // disconnect between races, and an index would silently point at a different car.
+  function raceGridCars() {
+    const byId = new Map(garage.map(c => [String(c.device.id), c]));
+    const ordered = [];
+    raceGridOrder.forEach(id => { const c = byId.get(id); if (c) { ordered.push(c); byId.delete(id); } });
+    byId.forEach(c => ordered.push(c));   // newly connected cars join at the back
+    return ordered;
+  }
+
+  function syncRaceGridOrder() {
+    raceGridOrder = raceGridCars().map(c => String(c.device.id));
+  }
+
+  function renderRaceGrid() {
+    const wrap = $('race-grid-wrap'), host = $('race-grid');
+    if (!wrap || !host) return;
+    wrap.style.display = raceFlying ? '' : 'none';
+    if (!raceFlying) return;
+    const cars = raceGridCars();
+    if (!cars.length) {
+      host.innerHTML = '<p class="muted" style="margin:0">Keine Autos verbunden.</p>';
+      return;
+    }
+    host.innerHTML = '';
+    cars.forEach((car, i) => {
+      const row = document.createElement('div');
+      row.className = 'grid-row';
+      row.draggable = false;
+      row.dataset.id = String(car.device.id);
+      row.innerHTML = `<span class="grid-pos">${i + 1}.</span>`
+        + `<span class="grid-handle" draggable="true" title="Ziehen zum Umsortieren">&#8942;&#8942;</span>`
+        + `<span class="grid-name">${garageLabel(car)}</span>`
+        + `<span class="grid-move">`
+        + `<button data-mv="up" ${i === 0 ? 'disabled' : ''} aria-label="nach vorn">&#9650;</button>`
+        + `<button data-mv="down" ${i === cars.length - 1 ? 'disabled' : ''} aria-label="nach hinten">&#9660;</button>`
+        + `</span>`;
+      // Arrows as well as dragging: dragging is fiddly on a phone and impossible with a
+      // controller, and this list has to be usable both ways.
+      row.querySelectorAll('button[data-mv]').forEach(b => {
+        b.onclick = () => {
+          const order = raceGridCars().map(c => String(c.device.id));
+          const from = order.indexOf(row.dataset.id);
+          const to = b.dataset.mv === 'up' ? from - 1 : from + 1;
+          if (to < 0 || to >= order.length) return;
+          order.splice(to, 0, order.splice(from, 1)[0]);
+          raceGridOrder = order;
+          renderRaceGrid();
+        };
+      });
+      const handle = row.querySelector('.grid-handle');
+      handle.addEventListener('dragstart', (e) => {
+        e.dataTransfer.setData('text/plain', row.dataset.id);
+        e.dataTransfer.effectAllowed = 'move';
+        row.classList.add('dragging');
+      });
+      handle.addEventListener('dragend', () => row.classList.remove('dragging'));
+      row.addEventListener('dragover', (e) => { e.preventDefault(); row.classList.add('over'); });
+      row.addEventListener('dragleave', () => row.classList.remove('over'));
+      row.addEventListener('drop', (e) => {
+        e.preventDefault();
+        row.classList.remove('over');
+        const dragged = e.dataTransfer.getData('text/plain');
+        if (!dragged || dragged === row.dataset.id) return;
+        const order = raceGridCars().map(c => String(c.device.id));
+        const from = order.indexOf(dragged), to = order.indexOf(row.dataset.id);
+        if (from < 0 || to < 0) return;
+        order.splice(to, 0, order.splice(from, 1)[0]);
+        raceGridOrder = order;
+        renderRaceGrid();
+      });
+      host.appendChild(row);
+    });
+  }
+
+  $('race-flying').addEventListener('change', (e) => {
+    raceFlying = e.target.checked;
+    syncRaceGridOrder();
+    renderRaceGrid();
+  });
+
   function startRaceCountdown() {
     // launchGhosts() is called from the green-light step below, not here.
     if (raceState !== 'idle' && raceState !== 'finished') return; // ignore while armed/racing
@@ -6027,6 +6165,7 @@
     fuel = Math.max(0, Math.min(100, raceFuelStartL / FUEL_TANK_LITERS * 100));
     updateDamageFuelUI();
     racePitDone = 0;
+    syncRaceGridOrder();
     scheduleRaceWeatherChange();
     resetTyres();   // a race starts on cold tyres, same as leaving the pits
     // Everyone starts from zero, including cars with no role: they still cross the line and
@@ -6057,9 +6196,17 @@
         clearInterval(raceCountdownTimer);
         setRaceLights('go');
         playTone(880, 0.35, 'square', 0.22);
+        // A flying start goes to the formation lap first: the cars roll at pit-lane speed
+        // and no laps count until the field crosses the line.
+        raceFormationLap = raceFlying;
         raceState = 'racing';
         raceLapStart = Date.now();
         launchGhosts();   // green means green for everyone
+        if (raceFormationLap) {
+          physEngine.config.speedLimitFactor = PIT_SPEED_FACTOR;
+          $('race-status').textContent = 'Einführungsrunde — Limit bis Start/Ziel';
+          showHudToast('Einführungsrunde');
+        }
         raceStartedAt = Date.now();
         if (raceClockTimer) clearInterval(raceClockTimer);
         raceClockTimer = setInterval(raceClockTick, 250);
@@ -6093,6 +6240,11 @@
 
   function finishRace() {
     raceState = 'finished';
+    // Whatever happened, the formation lap is over and its speed limit goes with it.
+    if (raceFormationLap) {
+      raceFormationLap = false;
+      if (pitState === 'off') physEngine.config.speedLimitFactor = 1;
+    }
     if (raceClockTimer) { clearInterval(raceClockTimer); raceClockTimer = null; }
     raceStartedAt = null;
     // Chequered flag: the ghosts stop too, and their lights go back to plain headlights.
@@ -6360,6 +6512,7 @@
 
       // Race mode: only count laps while a race is armed. "finishing" means RB/R1 was
       // pressed already — this crossing completes the last lap, then the race ends.
+      if (raceFormationLap) { endFormationLap(); refreshMinimap(); return; }
       if ((raceState === 'racing' || raceState === 'finishing') && raceLapStart !== null) {
         const wasFinishing = raceState === 'finishing';
         raceLapTimes.push({ lap: raceLapTimes.length + 1, ms: now - raceLapStart });
@@ -7962,6 +8115,9 @@
   // Consequence, stated plainly: WITHOUT a layout a ghost can only hold a straight line. It
   // will run wide at the first curve and the cut-out below will stop it. That is a real
   // limitation, not a bug.
+  // Amplitude of the formation-lap weave, as a fraction of full lock. Small on purpose:
+  // it should read as warming tyres, not as a car out of control.
+  const GHOST_WEAVE = 0.22;
   const GHOST_OFFTRACK_MS = 1500;   // measured: tiles last 0.4-2.7 s with no 0xff between
   const GHOST_YAW_GAIN = 0.045;     // rotation units -> steering; refined on the real car
   const GHOST_STEER_CURVE = 0.55;   // feed-forward lock in a curve, before the yaw loop
@@ -8072,7 +8228,7 @@
           offTrack ? 'err' : 'info');
     }
 
-    let steer = 0, throttle = 0, brake = 0;
+    let steer = 0, throttle = 0, brake = 0, weave = 0;
     if (armed && !offTrack) {
       // ---- speed ----
       let target = ghostCfg.speed;
@@ -8080,6 +8236,8 @@
       const ahead = ghostTurnDir(car, 1) !== 0;   // only meaningful with a layout
       if (here || ahead) target *= (1 - ghostCfg.curveSlow);
       if (ghostCfg.leaderBrake && ghostLeader() === car) target *= (1 - ghostCfg.leaderBrakePct);
+      // Formation lap: everyone rolls at pit-lane pace, whatever their speed setting says.
+      if (raceFormationLap) target = Math.min(target, PIT_SPEED_FACTOR);
 
       const v = Math.abs(e.state.speedKmh) / cfg.topSpeedKmh;
       const err = target - v;
@@ -8098,6 +8256,13 @@
       // load-bearing; the six-fold difference in time off track rests on 1260 notifies.
       // The offset against ramming stays available, because two cars on one line still
       // collide; it is a small nudge on top of zero, not a control loop.
+      // Warming the tyres on the formation lap: a slow weave, phase-shifted per car so the
+      // field does not swing as one block. Purely cosmetic — the car holds the track by
+      // itself in guard-rail mode, so this is a small offset on top of zero, not steering.
+      if (raceFormationLap) {
+        const phase = (g.weavePhase !== undefined ? g.weavePhase : (g.weavePhase = Math.random() * 6.283));
+        weave = Math.sin(now / 700 + phase) * GHOST_WEAVE;
+      }
       if (ghostCfg.railMode) {
         // Zero steering plus the anti-ramming offset. There is no lateral feedback to close
         // a loop with, so this is deliberately the conservative choice rather than a guess.
@@ -8118,7 +8283,7 @@
         steer = dir * GHOST_STEER_CURVE + (yawTarget - car.yaw) * GHOST_YAW_GAIN;
         steer += g.bias * ghostCfg.lateral * 0.25;
       }
-      steer = Math.max(-1, Math.min(1, steer));
+      steer = Math.max(-1, Math.min(1, steer + weave));
     }
 
     const out = e.update({ steering: steer, throttle, brake, headlights: true }, dt);
@@ -8312,6 +8477,7 @@
     padConnected = true;
     startPadLoop();
   }
+
 
 
 
