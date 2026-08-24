@@ -23,3 +23,12 @@ porschesound/
 # erzeugt (tools/make_pattern.py); die Vorlage selbst ist fremdes Material und wird
 # nicht mitverteilt.
 target_finish.pdf
+
+# Geklontes Fremd-Repo als Nachschlagequelle fuer die Klangsynthese
+# (ange-yaghi/engine-sim, MIT). Ein Repo im Repo waere ohnehin nicht committebar, und
+# es ist Fremdmaterial - die Herkunft steht in audio/CREDITS.md.
+tools/ref/
+
+# Rohausgabe der Protokollanalyse, Zwischenstand wie audio-work/
+tools/parsed_full.txt
+tools/__pycache__/
