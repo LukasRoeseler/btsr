@@ -140,11 +140,10 @@
     text-transform: uppercase; position: relative; z-index: 1;
     text-shadow: 1px 0 0 var(--glitch-r), -1px 0 0 var(--glitch-c);
   }
-  header .dot {
-    width: 10px; height: 10px; border-radius: 50%; background: var(--bad); flex-shrink: 0;
-    box-shadow: 0 0 0 2px var(--tint-3);
-  }
-  header .dot.connected { background: var(--good); }
+  /* Der Verbindungspunkt in der Kopfzeile ist entfernt. Er sagte ohnehin nur etwas ueber
+     die Verbindung des BLE-Explorers, nicht ueber die Autos in der Garage - und die Garage
+     zeigt es pro Auto, wo es hingehoert. setConnected() prueft jede Anzeige einzeln, damit
+     das Fehlen hier nichts wirft. */
   header .status { font-size: 13px; color: var(--muted); position: relative; z-index: 1; }
   header .spacer { flex: 1; }
   button {
@@ -195,6 +194,31 @@
   }
   nav.tabs button:hover { background: var(--panel-3); }
   nav.tabs button.active { color: var(--navy); border-bottom-color: var(--bad); font-weight: 700; }
+  /* ---- Sonstige: drei Kacheln ---- */
+  .misc-grid {
+    display: grid; gap: 14px;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  }
+  .misc-tile {
+    display: flex; flex-direction: column; align-items: flex-start; gap: 10px;
+    text-align: left; padding: 20px 18px; min-height: 150px;
+    background: var(--panel-2); border: 1px solid var(--border-strong); border-radius: 6px;
+    color: inherit; font: inherit; cursor: pointer;
+  }
+  .misc-tile:hover { background: var(--panel-3); border-color: var(--bad); }
+  .misc-tile svg { width: 42px; height: 42px; flex-shrink: 0; }
+  .misc-tile b {
+    font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: .09em;
+    text-shadow: 1px 0 0 var(--glitch-r), -1px 0 0 var(--glitch-c);
+  }
+  .misc-tile span { font-size: 12.5px; color: var(--muted); font-weight: 400; }
+  /* Zurueck-Zeile ueber den drei ausgelagerten Seiten. */
+  .misc-back {
+    background: none; border: none; color: var(--muted); padding: 0 0 12px 0;
+    font-size: 12px; text-transform: uppercase; letter-spacing: .09em; cursor: pointer;
+  }
+  .misc-back:hover { color: var(--ink); background: none; }
+
   main { padding: 24px; max-width: 1100px; margin: 0 auto; }
   .tabpage { display: none; }
   .tabpage.active { display: block; }
@@ -955,6 +979,28 @@
     background: var(--panel-2); color: var(--navy); border: 1px solid var(--border-strong);
     box-shadow: 0 2px 8px var(--shadow); cursor: pointer; }
   body.race-fs #help-btn { display: none; }
+  /* Ergebnisfenster. Dieselbe Bauart wie die Tastenuebersicht - ein fester Vorhang mit
+     einer Karte darin - weil die Ergebnistabelle im Tab "Renneinstellungen" steht und wer
+     im Cockpit auf Stopp drueckt, sie dort nie zu sehen bekommt. Genau das war der Grund,
+     warum nach einem Training scheinbar keine Ergebnisse kamen: sie waren da, nur auf
+     einem anderen Schirm. */
+  #race-summary { position: fixed; inset: 0; z-index: 62; background: rgba(0,0,0,.9);
+    display: none; overflow: auto; padding: 24px 14px; }
+  #race-summary.on { display: block; }
+  .sum-card { max-width: 720px; margin: 0 auto; background: var(--panel);
+    border: 1px solid var(--border-strong); border-radius: 6px; padding: 18px 20px; }
+  .sum-card h3 {
+    margin: 0 0 2px 0; font-size: 16px; text-transform: uppercase; letter-spacing: .10em;
+    text-shadow: 1px 0 0 var(--glitch-r), -1px 0 0 var(--glitch-c);
+  }
+  .sum-tab { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 12px; }
+  .sum-tab th, .sum-tab td { padding: 5px 9px; border-bottom: 1px solid var(--border);
+    text-align: left; }
+  .sum-tab th { color: var(--muted); font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .06em; }
+  .sum-tab td.num { text-align: right; font-family: monospace; }
+  .sum-best { color: var(--good); font-weight: 700; }
+
   #help-panel { position: fixed; inset: 0; z-index: 61; background: rgba(0,0,0,.88);
     display: none; overflow: auto; padding: 24px 14px; }
   #help-panel.on { display: block; }
@@ -1037,8 +1083,6 @@
     </g>
   </svg>
   </button>
-  <div class="dot" id="conn-dot" title="nicht verbunden"
-       role="status" aria-label="nicht verbunden"></div>
   <h1>OmegaSim</h1>
   <div class="spacer"></div>
   <button class="hdr-btn" id="btn-connect" aria-label="Auto verbinden">
@@ -1056,17 +1100,36 @@
   <nav class="tabs">
   <button class="tab-btn active" data-tab="home" hidden style="display:none">Home</button>
   <button class="tab-btn" data-tab="garage">Garage</button>
-  <button class="tab-btn" data-tab="control">Renneinstellungen</button>
-  <button class="tab-btn" data-tab="track">Strecke</button>
-  <button class="tab-btn" data-tab="options">Optionen</button>
   <button class="tab-btn" data-tab="race">Cockpit</button>
-  <button class="tab-btn" data-tab="school">Programmierschule</button>
-  <button class="tab-btn" data-tab="doc">Doku</button>
-  <button class="tab-btn" data-tab="dev">Entwickler</button>
+  <button class="tab-btn" data-tab="options">Optionen</button>
+  <button class="tab-btn" data-tab="track">Strecke</button>
+  <button class="tab-btn" data-tab="control">Renneinstellungen</button>
+  <button class="tab-btn" data-tab="misc">Sonstige</button>
+  <!-- Nicht in der Leiste, aber weiter als Tab-Knopf vorhanden: showTab() sucht genau
+       diese Knoepfe, und die drei Kacheln unter "Sonstige" rufen showTab() auf. Ein
+       data-parent laesst waehrend ihrer Anzeige "Sonstige" markiert bleiben, damit die
+       Leiste nicht ohne Markierung dasteht. -->
+  <button class="tab-btn" data-tab="school" data-parent="misc" hidden style="display:none">Programmierschule</button>
+  <button class="tab-btn" data-tab="doc" data-parent="misc" hidden style="display:none">Doku</button>
+  <button class="tab-btn" data-tab="dev" data-parent="misc" hidden style="display:none">Entwickler</button>
   </nav>
   </div>
 </header>
 
+
+  <div id="race-summary" role="dialog" aria-label="Ergebnis">
+    <div class="sum-card">
+      <div class="row" style="justify-content:space-between; align-items:baseline">
+        <h3 id="sum-title">Ergebnis</h3>
+        <button id="sum-close">Schlie&szlig;en</button>
+      </div>
+      <p class="muted" style="font-size:12px; margin:2px 0 0 0" id="sum-sub"></p>
+      <div id="sum-body"></div>
+      <div class="row" style="gap:8px; margin-top:14px">
+        <button class="goto-tab" data-tab="control" id="sum-details">Alle Rundenzeiten</button>
+      </div>
+    </div>
+  </div>
 
   <div id="rec-badge"><i></i><span id="rec-badge-text">Aufnahme</span></div>
   <button type="button" id="help-btn" title="Tastenbelegung" aria-label="Tastenbelegung">?</button>
@@ -1096,6 +1159,9 @@
         <kbd>C</kbd><span>Crash ausl&ouml;sen: Schaden, Ger&auml;usch und Rumble wie im Betrieb</span>
         <kbd>F</kbd><span>Tank auf 5&nbsp;% setzen, um den Notlauf zu pr&uuml;fen</span>
         <kbd>R</kbd><span>Tank und Zustand zur&uuml;cksetzen</span>
+        <kbd>Q</kbd><span>Runde z&auml;hlen, ohne sie zu fahren &mdash; zum Pr&uuml;fen von
+          Rundenzeiten und Ergebnistabelle. <kbd>Shift</kbd>+<kbd>Q</kbd>: f&uuml;r jedes
+          Auto im Rennen</span>
         <kbd>M</kbd><span>Aufnahme: n&auml;chsten Abschnitt markieren</span>
         <kbd>?</kbd><span>diese &Uuml;bersicht</span>
       </div>
@@ -1390,7 +1456,55 @@
   </section>
 
   <!-- PROGRAMMIERSCHULE -->
+  <!-- SONSTIGE: Sammelstelle fuer die drei Seiten, die keinen eigenen Platz in der
+       Leiste mehr brauchen. Drei Kacheln, keine Verschachtelung - jede fuehrt auf eine
+       Seite, die es schon gibt. -->
+  <section class="tabpage" id="tab-misc">
+    <div class="card">
+      <h2>Sonstige</h2>
+      <div class="misc-grid">
+        <button class="misc-tile goto-tab" data-tab="school">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M5 40V8M5 40h38" stroke-width="2.8"/>
+            <path d="M9 33c5 0 7-15 12-15s6 9 10 9 5-11 12-11" stroke="var(--bad)"/>
+            <circle cx="9" cy="33" r="2.6" fill="currentColor" stroke="none"/>
+            <circle cx="21" cy="18" r="2.6" fill="currentColor" stroke="none"/>
+            <circle cx="31" cy="27" r="2.6" fill="currentColor" stroke="none"/>
+            <circle cx="43" cy="16" r="2.6" fill="currentColor" stroke="none"/>
+          </svg>
+          <b>Programmierschule</b>
+          <span>Kurven ziehen statt Code schreiben &mdash; und sofort sehen, was das Auto
+            daraus macht.</span>
+        </button>
+        <button class="misc-tile goto-tab" data-tab="doc">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M10 6h20l8 8v28H10z" stroke-width="2.8"/>
+            <path d="M30 6v8h8"/>
+            <path d="M16 22h16M16 28h16M16 34h10" stroke="var(--bad)"/>
+          </svg>
+          <b>Doku</b>
+          <span>Protokoll, Streckencodes, Physik, T&ouml;ne &mdash; alles, was gemessen
+            wurde, mit Herkunft.</span>
+        </button>
+        <button class="misc-tile goto-tab" data-tab="dev">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="13" y="13" width="22" height="22" rx="2.5" stroke-width="2.8"/>
+            <path d="M20 21l-3.5 3L20 27M28 21l3.5 3L28 27" stroke="var(--bad)"/>
+            <path d="M19 13V7M29 13V7M19 41v-6M29 41v-6M13 19H7M13 29H7M41 19h-6M41 29h-6"/>
+          </svg>
+          <b>Entwickler</b>
+          <span>BLE-Explorer, Kalibrierung, Makros &mdash; die Werkbank unter der
+            Oberfl&auml;che.</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
   <section class="tabpage" id="tab-school">
+    <button class="misc-back goto-tab" data-tab="misc">&larr; Sonstige</button>
     <div class="card">
       <h2>Programmierschule</h2>
       <p class="muted">
@@ -1490,6 +1604,7 @@
   </section>
 
   <section class="tabpage" id="tab-doc">
+    <button class="misc-back goto-tab" data-tab="misc">&larr; Sonstige</button>
 
     <div class="card">
       <h2>Wozu dient dieses Projekt?</h2>
@@ -1599,46 +1714,65 @@
         der Bahn das Auto f&auml;hrt.
       </p>
 
-      <h3 style="font-size:14px; margin:16px 0 6px 0">Warum diese App keine Streckencodes liest</h3>
+      <h3 style="font-size:14px; margin:16px 0 6px 0">Auf der Bahn oder ohne Bahn: Byte&nbsp;14</h3>
       <p class="muted">
-        Stand der Untersuchung, mit dem was belegt ist und dem was widerlegt wurde. Das Auto
-        meldet in Byte&nbsp;12 dauerhaft <code>0xff</code>, also &bdquo;keine Lesung&ldquo;,
-        w&auml;hrend die Original-App auf derselben Bahn Codes bekommt.
+        Zw&ouml;lf Aufzeichnungen lang hat diese App <b>keine einzige</b> Streckenlesung
+        bekommen: Byte&nbsp;12 stand dauerhaft auf <code>0xff</code>, Byte&nbsp;11 z&auml;hlte
+        keine Kachel, der Scan blieb leer. Die Ursache lag nicht an der Bahn, nicht am Druck
+        und nicht an der Verbindung, sondern <b>in einem Bit, das wir selbst gesendet
+        haben</b>.
       </p>
       <p class="muted">
-        <b>Was ausgeschlossen ist.</b> Das Schreibpaket ist es nicht. In den Mitschnitten gibt
-        es eine Sitzung, die <em>byteweise dieselben</em> festen Felder sendet wie diese App
-        &mdash; Byte&nbsp;10 = <code>0x60</code>, Byte&nbsp;15 = <code>0x04</code>,
-        Byte&nbsp;11 = <code>0x00</code> &mdash; und dabei 463 Streckencodes empf&auml;ngt.
-        Ebenso ausgeschlossen: eine zweite Charakteristik. Alle Meldungen kommen in jeder
-        Aufzeichnung auf ATT-Handle <code>0x0013</code> mit 19&nbsp;Byte L&auml;nge.
+        In Byte&nbsp;14 stand hier eine Konstante <code>LIGHT_BASE = 0x80</code>, mit der
+        Begr&uuml;ndung &bdquo;Bit&nbsp;7 war in jedem aufgezeichneten Paket gesetzt&ldquo;.
+        Sie war aus den fr&uuml;hen Erkundungsmitschnitten abgelesen &mdash; und das waren
+        genau die Sitzungen, in denen nie etwas gelesen wurde. <b>Bit&nbsp;7 schaltet den
+        Sensor unter dem Auto ab.</b>
       </p>
       <p class="muted">
-        <b>Ein Irrtum, der hier stand.</b> Eine Auszaehlung ergab: Scheinwerfer an,
-        11&thinsp;703&nbsp;Codes in 40&thinsp;075&nbsp;Paketen; Scheinwerfer aus, 0 in 422.
-        Daraus stand hier, der Sensor brauche das Licht. Das ist <b>widerlegt</b> &mdash; in
-        der Original-App wird die Strecke gelesen, ob das Licht an ist oder aus. Die
-        Korrelation war echt, aber nicht urs&auml;chlich: 422&nbsp;Pakete sind etwa
-        20&nbsp;Sekunden und lagen am Sitzungsanfang, bevor &uuml;berhaupt etwas
-        &uuml;berfahren wurde. Derselbe Fehler unterlief mir zweimal &mdash; aus
-        zusammengeworfenen Sitzungen einen Zusammenhang gelesen, den die einzelne Sitzung
-        nicht hergibt.
+        Gemessen innerhalb <em>einer</em> Aufzeichnung, und nur Meldungen gez&auml;hlt, deren
+        zuletzt gesendetes Gas mindestens 12&nbsp;Stufen von der Neutralstellung
+        <code>0xdf</code> abweicht &mdash; das Auto fuhr also in jeder Zeile:
+      </p>
+      <div class="doc-table-wrap"><table class="doc-table">
+        <tr><th>Byte&nbsp;14</th><th>Meldungen</th><th>Lesungen</th><th>Kachelschritte</th></tr>
+        <tr><td>Bit&nbsp;7 gesetzt (<code>0x80 0x82 0x83</code>)</td><td>551</td>
+            <td><b>0 (0&nbsp;%)</b></td><td>0 (0&nbsp;%)</td></tr>
+        <tr><td>Bit&nbsp;7 aus, Bit&nbsp;5 aus (<code>0x42</code>)</td><td>178</td>
+            <td>163 (92&nbsp;%)</td><td>12 (7&nbsp;%)</td></tr>
+        <tr><td>Bit&nbsp;7 aus, Bit&nbsp;5 gesetzt (<code>0x22 0x32 0x72</code>)</td><td>1194</td>
+            <td>1103 (92&nbsp;%)</td><td><b>1033 (87&nbsp;%)</b></td></tr>
+      </table></div>
+      <p class="muted">
+        Gleiche Bahn, gleiches Auto, dieselbe Minute. Damit erkl&auml;rt weder &bdquo;das Auto
+        stand&ldquo; noch &bdquo;anderer Tag, andere Bahn&ldquo; den Unterschied &mdash;
+        genau die beiden Erkl&auml;rungen, an denen zwei fr&uuml;here Vermutungen zu diesem
+        Thema gescheitert sind.
       </p>
       <p class="muted">
-        <b>Was am wahrscheinlichsten bleibt: die Druckfarbe.</b> Der Sensor unter dem Auto
-        arbeitet mit <b>Infrarot</b>. Viele schwarze Tinten sind
-        <em>infrarotdurchl&auml;ssig</em> &mdash; sie sehen f&uuml;r das Auge tiefschwarz aus
-        und reflektieren Infrarot fast wie das wei&szlig;e Papier daneben. Der Sensor sieht
-        dann nichts, obwohl das Muster ma&szlig;haltig und f&uuml;r das Auge kontrastreich
-        gedruckt ist. Ru&szlig; (Carbon Black), wie im Toner eines Laserdruckers, absorbiert
-        Infrarot; viele Farbstofftinten von Tintenstrahldruckern tun das nicht.
+        <b>Die Deutung passt auf die zwei Modi der Original-App:</b><br>
+        <code>0x20</code> (Bit&nbsp;5) = <b>Auf der Bahn</b> &mdash; Sensor an, und das Auto
+        h&auml;lt sich selbst auf der Bahn: 87&nbsp;% der Meldungen bringen einen
+        Kachelwechsel, gegen 7&nbsp;% ohne dieses Bit.<br>
+        <code>0x80</code> (Bit&nbsp;7) = <b>Ohne Bahn</b> &mdash; Sensor aus, Byte&nbsp;12
+        bleibt <code>0xff</code>.<br>
+        <code>0x40</code> (Bit&nbsp;6) kommt in beiden Zust&auml;nden vor und geh&ouml;rt zu
+        etwas anderem; es bleibt hier auf&nbsp;0.
       </p>
       <p class="muted">
-        <b>Der Test, der es entscheidet</b> &mdash; und den nur das Ger&auml;t selbst
-        beantworten kann: ein <b>Original-Streckenteil</b> von Carrera gegen den eigenen
-        Ausdruck. Liest das Auto das Original und den Ausdruck nicht, liegt es am Druck und
-        nicht am Code. Dann hilft ein <b>Laserdrucker</b> statt Tintenstrahl, oder das Muster
-        mit einem russhaltigen schwarzen Filzstift nachziehen.
+        Diese App sendet jetzt <code>0x20</code> und der Schalter <b>Auf der Bahn</b> in den
+        Optionen macht den Unterschied umschaltbar. Was vorher wie ein Druckproblem aussah,
+        war ein Modus, in dem das Auto gar nicht lesen soll.
+      </p>
+      <p class="muted">
+        <b>Zwei Vermutungen, die vorher hier standen, und warum sie falsch waren.</b> Erst
+        hie&szlig; es, der Sensor brauche den Scheinwerfer (Licht an: 11&thinsp;703 Codes in
+        40&thinsp;075 Paketen; Licht aus: 0 in 422). Dann hie&szlig; es, die schwarze
+        Druckfarbe sei infrarotdurchl&auml;ssig. Beide beruhten auf Zahlen, die
+        <em>&uuml;ber</em> Sitzungen zusammengeworfen waren, und beide Male steckte der
+        wahre Unterschied in einem Byte, das sich zwischen den Sitzungen mit&auml;nderte.
+        Erst die Bedingung &bdquo;innerhalb einer Sitzung und nur w&auml;hrend der
+        Fahrt&ldquo; hat es freigelegt. Das ist die Lehre, nicht die Bitnummer.
       </p>
 
       <h3 style="font-size:14px; margin:16px 0 6px 0">Lang und kurz, nicht hell und dunkel</h3>
@@ -1790,18 +1924,28 @@
         <tr><td>9</td><td>int8</td><td>Lenkung, <em>identische Kopie von Byte 7</em></td><td class="doc-sure">belegt</td></tr>
         <tr><td>10</td><td><code>0x60</code></td><td>konstant</td><td class="doc-sure">belegt</td></tr>
         <tr><td>11&ndash;13</td><td><code>00 01 00</code></td><td>konstant</td><td class="doc-sure">belegt</td></tr>
-        <tr><td><strong>14</strong></td><td>Bitfeld</td><td><strong>Licht.</strong> Bit&nbsp;1 (<code>0x02</code>) = Standlicht, Bit&nbsp;0 (<code>0x01</code>) = Bremslicht, Bit&nbsp;7 immer gesetzt</td><td class="doc-sure">belegt</td></tr>
-        <tr><td></td><td><code>0x20/0x40/0x60</code></td><td>die Original-App setzt zus&auml;tzlich obere Bits &mdash; wof&uuml;r, wissen wir nicht. Wir lassen sie auf&nbsp;0</td><td class="doc-unknown">unbekannt</td></tr>
+        <tr><td><strong>14</strong></td><td>Bitfeld</td><td><strong>Licht und Betriebsart.</strong> Bit&nbsp;1 (<code>0x02</code>) = Standlicht, Bit&nbsp;0 (<code>0x01</code>) = Bremslicht</td><td class="doc-sure">belegt</td></tr>
+        <tr><td></td><td>Bit&nbsp;5 <code>0x20</code></td><td><strong>Auf der Bahn</strong> &mdash; Streckensensor an, Auto h&auml;lt sich selbst auf der Bahn. 87&nbsp;% Kachelwechsel gegen 7&nbsp;% ohne</td><td class="doc-sure">belegt</td></tr>
+        <tr><td></td><td>Bit&nbsp;7 <code>0x80</code></td><td><strong>Ohne Bahn</strong> &mdash; Sensor AUS, Byte&nbsp;12 bleibt <code>0xff</code>. 0 Lesungen in 551 Fahrmeldungen</td><td class="doc-sure">belegt</td></tr>
+        <tr><td></td><td>Bit&nbsp;6 <code>0x40</code></td><td>kommt in beiden Betriebsarten vor, Bedeutung offen. Wir lassen es auf&nbsp;0</td><td class="doc-unknown">unbekannt</td></tr>
         <tr><td>15</td><td><code>0x04</code></td><td>konstant</td><td class="doc-sure">belegt</td></tr>
         <tr><td>16&ndash;18</td><td><code>0x00</code></td><td>ungenutzt</td><td class="doc-sure">belegt</td></tr>
         <tr><td>19</td><td>CRC-8</td><td>Polynom <code>0x31</code>, Startwert <code>0xFF</code>, &uuml;ber Byte&nbsp;0&ndash;18</td><td class="doc-sure">belegt</td></tr>
       </table></div>
       <p class="muted">
-        Die Lichtzust&auml;nde stammen aus einem Mitschnitt, in dem nacheinander Licht aus, Licht an und
+        Die Lichtbits stammen aus einem Mitschnitt, in dem nacheinander Licht aus, Licht an und
         Bremse gedr&uuml;ckt wurde: <code>0x80</code>, <code>0x82</code>, <code>0x83</code>. Der Beweis, dass
         die Lesart stimmt, ist die Pr&uuml;fsumme &mdash; unsere CRC-Berechnung liefert f&uuml;r diese drei
         Bytes genau <code>0xA4</code>, <code>0x33</code> und <code>0xE0</code>, also exakt die aufgezeichneten
-        Werte. Eine falsche Deutung von Byte&nbsp;14 h&auml;tte hier nicht gepasst.
+        Werte.
+        <br><br>
+        <b>Was dieser Mitschnitt nicht hergab, und was uns lange gekostet hat:</b> er wurde
+        im Modus &bdquo;Ohne Bahn&ldquo; aufgenommen, deshalb war Bit&nbsp;7 in allen drei
+        Zust&auml;nden gesetzt. Aus &bdquo;in jedem Paket gesetzt&ldquo; wurde eine Konstante
+        <code>LIGHT_BASE = 0x80</code> &mdash; und damit hat diese App zw&ouml;lf
+        Aufzeichnungen lang den Streckensensor abgeschaltet. Eine Konstante, die aus
+        <em>einem</em> Mitschnitt kommt, tr&auml;gt dessen Betriebsart mit, ob man will oder
+        nicht.
       </p>
     </div>
 
@@ -2594,6 +2738,7 @@
   </section>
 
   <section class="tabpage" id="tab-dev">
+    <button class="misc-back goto-tab" data-tab="misc">&larr; Sonstige</button>
     <nav class="subtabs">
       <button class="subtab-btn active" data-subtab="explore">BLE-Explorer</button>
       <button class="subtab-btn" data-subtab="calib">Kalibrierung</button>
@@ -2945,31 +3090,6 @@
       </div>
     </div>
 
-        <div class="card">
-      <h2>Voreinstellungen</h2>
-      <p class="muted">
-        Drei fertige Abstimmungen. Sie setzen nur die Regler, die das <em>Fahrgef&uuml;hl</em>
-        betreffen &mdash; nicht die Rennl&auml;nge, nicht das Wetter, nicht die Strecke, denn
-        die geh&ouml;ren zum Rennen und nicht zum Auto.
-      </p>
-      <div class="row" style="gap:8px; flex-wrap:wrap">
-        <button id="preset-arcade">Arcade</button>
-        <button id="preset-pro">Pro</button>
-        <button id="preset-real">Realismus</button>
-        <span class="muted" id="preset-status">&nbsp;</span>
-      </div>
-      <p class="muted" style="font-size:11.5px; margin:10px 0 4px 0">
-        Zum Weitergeben: der Text unten enth&auml;lt <b>alle</b> Regler, auch die, die keine
-        Voreinstellung anfasst. Kopieren, verschicken, einf&uuml;gen,
-        <b>&Uuml;bernehmen</b>.
-      </p>
-      <textarea id="preset-json" spellcheck="false"
-                style="width:100%; min-height:64px; font-family:monospace; font-size:11.5px"></textarea>
-      <div class="row" style="gap:8px; margin-top:6px">
-        <button id="preset-import">&Uuml;bernehmen</button>
-        <button id="preset-export">Aktuelle Werte hineinschreiben</button>
-      </div>
-    </div>
   </section>
 
   <!-- OPTIONEN TAB: player-facing settings (feel, sound, controller bindings) -->
@@ -2977,6 +3097,12 @@
     <div class="card">
       <h2>Fahrgefühl</h2>
       <div class="opt-head">Grundlagen</div>
+      <div class="opt-row"><div class="opt-label">Auf der Bahn
+          <small>Bit&nbsp;5 in Byte&nbsp;14: Streckensensor an, und das Auto h&auml;lt sich
+          selbst auf der Bahn. <b>Aus</b> entspricht &bdquo;Ohne Bahn&ldquo; der
+          Original-App &mdash; dann liest das Auto keine Streckencodes, es gibt also keine
+          Rundenzeiten, keinen Scan und keinen Vorausblick f&uuml;r Ghosts.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-ontrack" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Physik-Modus aktivieren<small>Aus: rohe Stickstellung, ohne Gänge.</small></div><label class="tgl"><input type="checkbox" id="phys-enable" checked><span></span></label></div>
       <div class="opt-row" id="phys-gyro-wrap"><div class="opt-label">Handy-Neigung für Lenkung nutzen</div><label class="tgl"><input type="checkbox" id="phys-gyro"><span></span></label></div>
       <div class="opt-head">Ton</div>
@@ -3308,6 +3434,31 @@
         <button id="mw-export">Aktuelle Werte hineinschreiben</button>
       </div>
     </div>
+    <div class="card">
+      <h2>Voreinstellungen</h2>
+      <p class="muted">
+        Drei fertige Abstimmungen. Sie setzen nur die Regler, die das <em>Fahrgef&uuml;hl</em>
+        betreffen &mdash; nicht die Rennl&auml;nge, nicht das Wetter, nicht die Strecke, denn
+        die geh&ouml;ren zum Rennen und nicht zum Auto.
+      </p>
+      <div class="row" style="gap:8px; flex-wrap:wrap">
+        <button id="preset-arcade">Arcade</button>
+        <button id="preset-pro">Pro</button>
+        <button id="preset-real">Realismus</button>
+        <span class="muted" id="preset-status">&nbsp;</span>
+      </div>
+      <p class="muted" style="font-size:11.5px; margin:10px 0 4px 0">
+        Zum Weitergeben: der Text unten enth&auml;lt <b>alle</b> Regler, auch die, die keine
+        Voreinstellung anfasst. Kopieren, verschicken, einf&uuml;gen,
+        <b>&Uuml;bernehmen</b>.
+      </p>
+      <textarea id="preset-json" spellcheck="false"
+                style="width:100%; min-height:64px; font-family:monospace; font-size:11.5px"></textarea>
+      <div class="row" style="gap:8px; margin-top:6px">
+        <button id="preset-import">&Uuml;bernehmen</button>
+        <button id="preset-export">Aktuelle Werte hineinschreiben</button>
+      </div>
+    </div>
   </section>
 
   <!-- TRACK TAB -->
@@ -3379,12 +3530,12 @@
           <tr><td colspan="4" class="muted">noch nichts gez&auml;hlt</td></tr>
         </tbody></table>
         <p class="muted" style="font-size:11.5px">
-          <b>Wenn hier nur <code>0xff</code> steht:</b> das Schreibpaket ist nachweislich
-          nicht die Ursache &mdash; eine Sitzung in den Mitschnitten sendet byteweise dieselben
-          festen Felder wie diese App und empf&auml;ngt 463 Codes. Am wahrscheinlichsten ist
-          die <b>Druckfarbe</b>: der Sensor arbeitet mit Infrarot, und viele schwarze Tinten
-          sind infrarotdurchl&auml;ssig. Siehe Doku, &bdquo;Warum diese App keine
-          Streckencodes liest&ldquo;.
+          <b>Wenn hier nur <code>0xff</code> steht:</b> zuerst den Schalter
+          <b>Auf der Bahn</b> in den Optionen pr&uuml;fen. Er setzt Bit&nbsp;5 in
+          Byte&nbsp;14; steht er aus, geht Bit&nbsp;7 hinaus und das schaltet den
+          Streckensensor ab &mdash; gemessen 0 Lesungen in 551 Fahrmeldungen. Genau dieses
+          Bit hat diese App zw&ouml;lf Aufzeichnungen lang gesendet, siehe Doku,
+          &bdquo;Auf der Bahn oder ohne Bahn&ldquo;.
         </p>
         <p class="muted" style="font-size:11.5px">
           <b>Wie das Uebrige zu lesen ist.</b> Steht <b>Musterkontakt</b> auf 0, hat der Sensor
@@ -3895,11 +4046,24 @@
     if (btn) btn.onclick();
   }
 
+  // Jeder Knopf mit .goto-tab fuehrt auf den Tab in seinem data-tab: die drei Kacheln
+  // unter "Sonstige" und die Zurueck-Zeilen darauf. Ein Handler statt sechs.
+  document.querySelectorAll('.goto-tab').forEach(el => {
+    el.addEventListener('click', () => { showTab(el.dataset.tab); window.scrollTo(0, 0); });
+  });
+
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.onclick = () => {
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       document.querySelectorAll('.tabpage').forEach(p => p.classList.remove('active'));
       btn.classList.add('active');
+      // Programmierschule, Doku und Entwickler haben keinen eigenen Platz in der Leiste
+      // mehr. Ohne diese Zeile waere waehrend ihrer Anzeige kein Tab markiert, und die
+      // Leiste sieht dann aus, als sei nichts offen.
+      if (btn.dataset.parent) {
+        const p = document.querySelector('.tab-btn[data-tab="' + btn.dataset.parent + '"]');
+        if (p) p.classList.add('active');
+      }
       $('tab-' + btn.dataset.tab).classList.add('active');
       // Only hold the screen awake while the racing screen is actually the one on show.
       keepScreenAwake(btn.dataset.tab === 'race');
@@ -3986,12 +4150,39 @@
   // off, then on, then pressed the brake. The three states captured were 0x80, 0x82 and
   // 0x83, and crc8() below reproduces all three recorded checksums exactly (0xA4, 0x33,
   // 0xE0), which is what confirms the reading.
-  const LIGHT_BASE  = 0x80;  // bit 7 was set in every captured packet
   const LIGHT_HEAD  = 0x02;  // bit 1 = headlights
   const LIGHT_BRAKE = 0x01;  // bit 0 = brake light
-  // The original app also sends 0x22, 0x42 and 0x62 — the upper bits carry something we
-  // have NOT decoded. We deliberately leave them at zero rather than imitate them.
-  let lightBits = LIGHT_BASE;
+
+  // ---- Byte 14 Bit 7 und Bit 5: der Streckensensor ----
+  // Hier stand eine Fassung lang LIGHT_BASE = 0x80, mit der Begruendung "bit 7 was set in
+  // every captured packet". Das war der Fehler, der ein Dutzend Sitzungen lang jede
+  // Streckenlesung verhindert hat: Bit 7 schaltet den Sensor unter dem Auto AB.
+  //
+  // Gemessen innerhalb EINER Aufzeichnung (btsnoop_hci_202608211949_old), nur Meldungen
+  // gezaehlt, deren zuletzt gesendetes Gas mindestens 12 Stufen von der Neutralstellung
+  // 0xdf abwich - das Auto fuhr also in jeder Zeile:
+  //
+  //     Byte 14        Meldungen   Lesungen        Kachelschritte
+  //     Bit 7 gesetzt        551      0   (0 %)       0   (0 %)
+  //     Bit 7 aus, Bit 5 aus 178    163  (92 %)      12   (7 %)
+  //     Bit 7 aus, Bit 5 an 1194   1103  (92 %)    1033  (87 %)
+  //
+  // Gleiche Bahn, gleiches Auto, dieselbe Minute. Damit kann weder "das Auto stand" noch
+  // "andere Bahn, anderer Tag" das Ergebnis erklaeren - genau die beiden Erklaerungen, an
+  // denen die Lichthypothese vorher gescheitert ist.
+  //
+  // Deutung, und sie passt auf die beiden Modi der Original-App:
+  //     Bit 5 (0x20) = "Auf der Bahn"  - Sensor an, und das Auto haelt sich selbst auf der
+  //                                      Bahn (87 % Kachelschritte gegen 7 %)
+  //     Bit 7 (0x80) = "Ohne Bahn"     - Sensor aus, Byte 12 bleibt dauerhaft 0xff
+  // Bit 6 (0x40) kommt in beiden Zustaenden vor und gehoert zu etwas anderem; es bleibt 0.
+  const TRACK_BIT_ON  = 0x20;
+  const TRACK_BIT_OFF = 0x80;
+  // Standard: auf der Bahn. Alles, was diese App interessant macht - Rundenzeiten,
+  // Streckenscan, Ghosts mit Vorausblick - haengt daran.
+  let trackMode = 'on';
+  function trackModeBit() { return trackMode === 'on' ? TRACK_BIT_ON : TRACK_BIT_OFF; }
+  let lightBits = TRACK_BIT_ON;
 
   // ---- Packet-variant probe ----
   // Seven recorded sessions produced not a single track code, while a snoop of the original
@@ -4540,6 +4731,7 @@
     if (k === 'f' && !e.repeat) { fuel = 5; updateDamageFuelUI(); showHudToast(`Tank ${fuelLiters(5)} l`); }
     if (k === 'r' && !e.repeat) { fuel = 100; damage = 0; updateDamageFuelUI();
                                   showHudToast('Tank und Zustand zurückgesetzt'); }
+    if (k === 'q' && !e.repeat) debugCountLap(e.shiftKey);
     if (k === 'm' && !e.repeat) {
       // Next unused section, so one key walks the whole protocol in order.
       const label = REC_SECTIONS[rec.next] || ('Markierung ' + (rec.next + 1));
@@ -4547,7 +4739,7 @@
       recMark(label);
     }
     if (k === '?' || (k === '/' && e.shiftKey)) { if (!e.repeat) toggleHelp(); }
-    if (k === 'escape') toggleHelp(false);
+    if (k === 'escape') { toggleHelp(false); hideRaceSummary(); }
   });
   window.addEventListener('keydown', (e) => {
     if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)) e.preventDefault();
@@ -5445,6 +5637,15 @@
   // und lagen am Sitzungsanfang, bevor etwas ueberfahren wurde.
   let headlightsOn = true;
   let raceLampHead = false;  // resolved headlight state, for the racing screen
+
+  $('setting-ontrack').addEventListener('change', (e) => {
+    trackMode = e.target.checked ? 'on' : 'off';
+    log('Modus: ' + (e.target.checked
+        ? 'Auf der Bahn \u2014 Streckensensor an (Byte 14 Bit 5).'
+        : 'Ohne Bahn \u2014 Streckensensor aus (Byte 14 Bit 7). Keine Streckencodes.'),
+        e.target.checked ? 'info' : 'err');
+    showHudToast(e.target.checked ? 'AUF DER BAHN' : 'OHNE BAHN');
+  });
 
   $('phys-enable').addEventListener('change', (e) => {
     physicsEnabled = e.target.checked;
@@ -7716,11 +7917,42 @@
     const now = Date.now();
     if (now - r.lastActed < TILE_REPEAT_BLOCK_MS) return;
     r.lastActed = now;
+    carLapCrossed(car);
+  }
+
+  // Derselbe Grund wie bei playerLapCrossed(): eine Stelle, die eine Runde zaehlt, und die
+  // Testtaste nimmt sie mit.
+  function carLapCrossed(car) {
+    if (!car.race) car.race = { laps: [], lapStart: null, pending: null, seen: 0,
+                                lastActed: 0, lastCount: null };
+    const r = car.race, now = Date.now();
     if (raceState !== 'racing' && raceState !== 'finishing') { r.lapStart = now; return; }
     // During the formation lap this crossing is the START of the race, not a lap.
     if (raceFormationLap) { endFormationLap(); return; }
     if (r.lapStart !== null) r.laps.push({ lap: r.laps.length + 1, ms: now - r.lapStart });
     r.lapStart = now;
+  }
+
+  // ---- Testtaste Q: eine Runde zaehlen, ohne sie zu fahren ----
+  // Zum Pruefen der Rundenzaehlung, der Ergebnistabelle und des Rennendes, solange das Auto
+  // keine Streckencodes liefert. Bewusst kein eigener Zaehler: Q ruft genau die Funktionen,
+  // die eine echte Ueberfahrt von Start/Ziel auch ruft.
+  //   Q          eine Runde fuer das gesteuerte Auto
+  //   Shift+Q    eine Runde fuer JEDES Auto im Rennen, damit die Tabelle mehrspaltig wird
+  function debugCountLap(all) {
+    if (all) {
+      const cars = garage.filter(c => c.role === 'player' || c.role === 'ghost');
+      cars.forEach(c => { if (c !== playerCar) carLapCrossed(c); });
+      if (playerCar) carLapCrossed(playerCar);
+      playerLapCrossed();
+      showHudToast('TESTRUNDE: ' + (cars.length || 1) + ' AUTO(S)');
+      log('Testtaste: eine Runde fuer alle ' + cars.length + ' Autos im Rennen gezaehlt.', 'info');
+      return;
+    }
+    if (playerCar) carLapCrossed(playerCar);
+    playerLapCrossed();
+    showHudToast('TESTRUNDE GEZAEHLT');
+    log('Testtaste: eine Runde fuer das gesteuerte Auto gezaehlt.', 'info');
   }
 
   // Every car that was connected when the race started, plus the player's own lap list so a
@@ -8182,7 +8414,78 @@
     $('race-results').style.display = '';
     renderRaceResults();
     renderPositionPlot();
+    // Und einmal sichtbar dort, wo gerade gedrueckt wurde. Ohne das erschien das Ergebnis
+    // nur im Tab "Renneinstellungen" - wer im Cockpit auf Stopp drueckt, sah nichts, und
+    // beim freien Training sah es deshalb aus, als gebe es ueberhaupt keine Ergebnisse.
+    showRaceSummary();
   }
+
+  // ---- Ergebnisfenster ----
+  // Eigener, kleiner Aufbau statt eines Klons der grossen Tabelle: die traegt IDs, und
+  // dieselbe ID zweimal im Dokument bricht jeden Zugriff darauf. Gerechnet wird mit
+  // denselben Funktionen, raceAllCars() und raceStats(), damit hier keine zweite Wahrheit
+  // entsteht.
+  function showRaceSummary() {
+    const cars = raceAllCars().filter(c => c.laps.length);
+    const label = (RACE_MODES[raceMode] && RACE_MODES[raceMode].label) || 'Rennen';
+    $('sum-title').textContent = label + ' beendet';
+    const missed = Math.max(0, racePitRequired - racePitDone);
+    $('sum-sub').textContent = missed > 0
+      ? missed + ' Pflichtstopp' + (missed === 1 ? '' : 's') + ' verpasst, +'
+        + (missed * racePitPenaltyS) + ' s Strafe'
+      : '';
+
+    if (!cars.length) {
+      $('sum-body').innerHTML = '<p class="muted" style="margin-top:12px">Keine Runden '
+        + 'aufgezeichnet. Ohne Streckencode gibt es keine Rundenzeit \u2014 Schalter '
+        + '<b>Auf der Bahn</b> in den Optionen pr\u00fcfen, oder Runden mit <kbd>Q</kbd> '
+        + 'z\u00e4hlen, um die Anzeige zu pr\u00fcfen.</p>';
+      $('race-summary').classList.add('on');
+      return;
+    }
+
+    const scored = cars.map(c => ({ c, st: raceStats(c.laps) }));
+    scored.sort((a, b) => raceMode === 'qualifying'
+      ? a.st.best - b.st.best
+      : (b.st.n - a.st.n) || (a.st.total - b.st.total));
+    const fastest = Math.min(...scored.map(x => x.st.best));
+
+    let html = '<table class="sum-tab"><tr><th>#</th><th>Auto</th><th>Runden</th>'
+      + '<th>Beste</th><th>Mittel</th></tr>';
+    scored.forEach((x, i) => {
+      html += '<tr><td>' + (i + 1) + '</td><td>' + x.c.name
+        + (x.c.role === 'ghost' ? ' <span class="muted">(Ghost)</span>' : '') + '</td>'
+        + '<td class="num">' + x.st.n + '</td>'
+        + '<td class="num' + (x.st.best === fastest ? ' sum-best' : '') + '">'
+        + formatLapTime(x.st.best) + '</td>'
+        + '<td class="num">' + formatLapTime(Math.round(x.st.mean)) + '</td></tr>';
+    });
+    html += '</table>';
+
+    // Jede einzelne Runde darunter, damit nichts hinter einem Mittelwert verschwindet -
+    // beim freien Training ist das ohnehin das Einzige, was interessiert.
+    const maxLaps = Math.max(...cars.map(c => c.laps.length));
+    html += '<table class="sum-tab" style="margin-top:6px"><tr><th>Runde</th>'
+      + cars.map(c => '<th style="text-align:right">' + c.name + '</th>').join('') + '</tr>';
+    for (let k = 0; k < maxLaps; k++) {
+      html += '<tr><td>' + (k + 1) + '</td>'
+        + cars.map(c => '<td class="num">'
+            + (c.laps[k] ? formatLapTime(c.laps[k].ms) : '\u2013') + '</td>').join('')
+        + '</tr>';
+    }
+    html += '</table>';
+    $('sum-body').innerHTML = html;
+    $('race-summary').classList.add('on');
+  }
+
+  function hideRaceSummary() { $('race-summary').classList.remove('on'); }
+  $('sum-close').onclick = hideRaceSummary;
+  // Der Knopf "Alle Rundenzeiten" traegt schon .goto-tab und wechselt den Tab; hier muss
+  // nur noch der Vorhang weg, sonst liegt er ueber dem Ziel.
+  $('sum-details').addEventListener('click', hideRaceSummary);
+  $('race-summary').addEventListener('click', (e) => {
+    if (e.target === $('race-summary')) hideRaceSummary();
+  });
 
   // ---- Race mode selector ----
   function applyRaceModeUi() {
@@ -8447,24 +8750,33 @@
     if (type === pitMarkerCode) onPitMarkerCrossed();
 
     if (type === TILE_TYPE.START) {
-      const now = Date.now();
-      if (dashLapStart !== null) { dashLapTimes.push(now - dashLapStart); renderLapList(); }
-      dashLapStart = now;
-      triggerDoppler();
-
-      // Race mode: only count laps while a race is armed. "finishing" means RB/R1 was
-      // pressed already — this crossing completes the last lap, then the race ends.
-      if (raceFormationLap) { endFormationLap(); refreshMinimap(); return; }
-      if ((raceState === 'racing' || raceState === 'finishing') && raceLapStart !== null) {
-        const wasFinishing = raceState === 'finishing';
-        raceLapTimes.push({ lap: raceLapTimes.length + 1, ms: now - raceLapStart });
-        raceLapStart = now;
-        playLapChime();
-        if (wasFinishing) finishRace();
-        else $('race-status').textContent = `Rennen läuft — Runde ${raceLapTimes.length + 1}`;
-      }
+      if (playerLapCrossed()) { refreshMinimap(); return; }
     }
     refreshMinimap();
+  }
+
+  // Was beim Ueberfahren von Start/Ziel fuer den FAHRER passiert. Herausgezogen, damit die
+  // Testtaste Q genau hier hineingeht statt einen zweiten Weg zu nehmen - ein zweiter Weg
+  // prueft den ersten nicht. Rueckgabewert: true, wenn der Aufrufer abbrechen soll (die
+  // Einfuehrungsrunde endete, das war keine gezaehlte Runde).
+  function playerLapCrossed() {
+    const now = Date.now();
+    if (dashLapStart !== null) { dashLapTimes.push(now - dashLapStart); renderLapList(); }
+    dashLapStart = now;
+    triggerDoppler();
+
+    // Race mode: only count laps while a race is armed. "finishing" means RB/R1 was
+    // pressed already — this crossing completes the last lap, then the race ends.
+    if (raceFormationLap) { endFormationLap(); return true; }
+    if ((raceState === 'racing' || raceState === 'finishing') && raceLapStart !== null) {
+      const wasFinishing = raceState === 'finishing';
+      raceLapTimes.push({ lap: raceLapTimes.length + 1, ms: now - raceLapStart });
+      raceLapStart = now;
+      playLapChime();
+      if (wasFinishing) finishRace();
+      else $('race-status').textContent = `Rennen läuft — Runde ${raceLapTimes.length + 1}`;
+    }
+    return false;
   }
 
   function getMinimapCurrentIndex() { return freeRoamMode ? null : dashMinimapIndex; }
@@ -8915,7 +9227,7 @@
       const ph = now % 1100;
       brake = (ph < 90) || (ph >= 200 && ph < 290);
     }
-    lightBits = LIGHT_BASE | (head ? LIGHT_HEAD : 0) | (brake ? LIGHT_BRAKE : 0);
+    lightBits = trackModeBit() | (head ? LIGHT_HEAD : 0) | (brake ? LIGHT_BRAKE : 0);
     return { head, brake };
   }
 
@@ -10422,11 +10734,11 @@
     let n = 0;
     const iv = setInterval(() => {
       const on = n % 2 === 0;
-      writeToCar(car, 0, 0, LIGHT_BASE | (on ? LIGHT_HEAD : 0));
+      writeToCar(car, 0, 0, trackModeBit() | (on ? LIGHT_HEAD : 0));
       if (++n >= 10) {
         clearInterval(iv);
         car.blinking = false;
-        writeToCar(car, 0, 0, LIGHT_BASE | LIGHT_HEAD);
+        writeToCar(car, 0, 0, trackModeBit() | LIGHT_HEAD);
         renderGarage();
       }
       renderGarage();
@@ -10635,7 +10947,7 @@
 
   function stopGhost(car) {
     if (car.timer) { clearInterval(car.timer); car.timer = null; }
-    if (car.rx) writeToCar(car, 0, 0, LIGHT_BASE | LIGHT_HEAD);
+    if (car.rx) writeToCar(car, 0, 0, trackModeBit() | LIGHT_HEAD);
   }
 
   function removeCar(car) {
@@ -10676,6 +10988,14 @@
   // it should read as warming tyres, not as a car out of control.
   const GHOST_WEAVE = 0.22;
   const GHOST_OFFTRACK_MS = 1500;   // measured: tiles last 0.4-2.7 s with no 0xff between
+  // Wie lange 0x00 stehen muss, bevor der Ghost anhaelt. Vorher hielt ein EINZIGES 0x00-Paket
+  // ihn sofort an, und das war die Ursache dafuer, dass Ghosts unterwegs stehen blieben.
+  // Gemessen an den Aufzeichnungen, Dauer zusammenhaengender 0x00-Strecken:
+  //     saubere Runden (202608211949):   Median  32 ms, 90 % <= 104 ms, Maximum  174 ms
+  //     Sitzung mit echten Ausfluegen:   Median 1013 ms,               Maximum 5845 ms
+  // Die beiden Verteilungen ueberschneiden sich nicht. 350 ms liegt dazwischen, doppelt so
+  // weit ueber dem groessten Zwischenkachel-Aussetzer wie unter dem kleinsten echten Ausflug.
+  const GHOST_OFFTRACK_CONFIRM_MS = 350;
   const GHOST_YAW_GAIN = 0.045;     // rotation units -> steering; refined on the real car
   const GHOST_STEER_CURVE = 0.55;   // feed-forward lock in a curve, before the yaw loop
 
@@ -10825,9 +11145,18 @@
     // sieht das aus wie ein kaputtes Feature. Der Schalter erlaubt Fahren ohne Codes; das
     // Auto haelt sich dann nicht selbst auf der Bahn, deshalb ist er standardmaessig an.
     const noCode = !car.lastCodeAt || (now - car.lastCodeAt > GHOST_OFFTRACK_MS);
+    // 0x00 muss STEHEN, nicht nur einmal auftreten. Ohne diese Entprellung hielt ein
+    // einzelnes 0x00-Paket den Ghost sofort an, und weil solche Pakete zwischen zwei
+    // Kacheln regelmaessig vorkommen (Median 32 ms), blieb er unterwegs immer wieder stehen.
+    if (car.tileCode === TILE_OFFTRACK) {
+      if (!g.offSince) g.offSince = now;
+    } else {
+      g.offSince = 0;
+    }
+    const offConfirmed = g.offSince > 0 && (now - g.offSince) >= GHOST_OFFTRACK_CONFIRM_MS;
     const offTrack = ghostCfg.needCode
-      ? (car.tileCode === TILE_OFFTRACK || noCode)
-      : (car.tileCode === TILE_OFFTRACK && !noCode);
+      ? (offConfirmed || noCode)
+      : (offConfirmed && !noCode);
     const armed = raceState === 'racing' || raceState === 'finishing' || g.freeRun;
     if (offTrack !== g.cutOut) {
       g.cutOut = offTrack;
@@ -10924,7 +11253,7 @@
     if (!armed || offTrack) { e.state.speedKmh = 0; e.state.virtualSpeed = 0; }
     const lights = car.railLight !== null && car.railLight !== undefined
       ? car.railLight
-      : (LIGHT_BASE | LIGHT_HEAD | (brake > 0.05 ? LIGHT_BRAKE : 0));
+      : (trackModeBit() | LIGHT_HEAD | (brake > 0.05 ? LIGHT_BRAKE : 0));
     writeToCar(car, (armed && !offTrack) ? out.servoAngle : 0, drive, lights, car.modeBytes);
   }
 
