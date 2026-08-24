@@ -1847,7 +1847,8 @@
         <div>
           <label class="small">Modus</label>
           <select id="race-mode">
-            <option value="endurance" selected>Endurance &mdash; meiste Runden in der Zeit</option>
+            <option value="practice" selected>Freies Training &mdash; l&auml;uft bis du beendest</option>
+            <option value="endurance">Endurance &mdash; meiste Runden in der Zeit</option>
             <option value="qualifying">Qualifying &mdash; schnellste Runde in der Zeit</option>
             <option value="laps">Runden &mdash; wer zuerst die Rundenzahl hat</option>
           </select>
@@ -1858,9 +1859,38 @@
         </div>
         <span class="muted" id="race-mode-hint" style="font-size:11.5px"></span>
       </div>
+
+      <div class="row" style="margin-top:12px; gap:18px; flex-wrap:wrap; align-items:flex-end">
+        <div>
+          <label class="small">Wetter zu Beginn</label>
+          <select id="race-wx-start">
+            <option value="dry" selected>Trocken</option>
+            <option value="rain">Regen</option>
+          </select>
+        </div>
+        <label style="display:flex; align-items:center; gap:6px" title="Wechselt einmalig zu einem zuf&auml;lligen Zeitpunkt im Rennen">
+          <input type="checkbox" id="race-wx-change"> Wetter &auml;ndert sich
+        </label>
+        <div>
+          <label class="small">Pflichtboxenstopps</label>
+          <select id="race-pit-required">
+            <option value="0" selected>keine</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+          </select>
+        </div>
+        <div>
+          <label class="small">Strafe je verpasstem Stopp (s)</label>
+          <input type="number" id="race-pit-penalty" value="10" min="0" max="300" step="1" style="width:80px">
+        </div>
+        <div>
+          <label class="small">Tank beim Start (l)</label>
+          <input type="number" id="race-fuel-start" value="110" min="5" max="110" step="5" style="width:80px">
+        </div>
+      </div>
       <div class="row" style="margin-top:12px; gap:10px">
         <button id="race-start-btn">🏁 Rennen starten</button>
-        <button id="race-stop-btn" disabled>Rennen beenden</button>
+        <button id="race-stop-btn" disabled>Rennen abbrechen</button>
         <span class="muted" id="race-clock" style="font-family:monospace"></span>
       </div>
       <p class="muted" style="margin-top:8px; font-size:11.5px">
@@ -5688,17 +5718,32 @@
   // to complete before the flag. A race that stops mid-lap would throw away a lap somebody
   // has already half driven.
   const RACE_MODES = {
-    endurance:  { label: 'Endurance', unit: 'Minuten', hint: 'Wer in der Zeit die meisten Runden fährt.' },
-    qualifying: { label: 'Qualifying', unit: 'Minuten', hint: 'Wer in der Zeit die schnellste Einzelrunde fährt.' },
-    laps:       { label: 'Runden', unit: 'Runden', hint: 'Wer die Rundenzahl zuerst erreicht.' },
+    // `timed: false` is what makes practice different: no limit is checked, so it runs
+    // until it is stopped. Everything else about it is an ordinary session — the ghosts
+    // drive, laps are recorded, the results table fills.
+    practice:   { label: 'Freies Training', unit: 'Minuten', timed: false,
+                  hint: 'Läuft, bis du beendest. Die autonomen Autos fahren mit.' },
+    endurance:  { label: 'Endurance', unit: 'Minuten', timed: true, hint: 'Wer in der Zeit die meisten Runden fährt.' },
+    qualifying: { label: 'Qualifying', unit: 'Minuten', timed: true, hint: 'Wer in der Zeit die schnellste Einzelrunde fährt.' },
+    laps:       { label: 'Runden', unit: 'Runden', timed: true, hint: 'Wer die Rundenzahl zuerst erreicht.' },
   };
-  let raceMode = 'endurance';
+  let raceMode = 'practice';
   let raceLimit = 2;              // minutes, or laps in 'laps' mode
+
+  // ---- Race options: weather, mandatory stops, starting fuel ----
+  let raceWxStart = 'dry';
+  let raceWxChange = false;
+  let raceWxSwitchAt = null;   // timestamp of the single scheduled change, null = none
+  let racePitRequired = 0;
+  let racePitPenaltyS = 10;
+  let raceFuelStartL = FUEL_TANK_LITERS;
+  let racePitDone = 0;         // completed pit services during THIS race
   let raceStartedAt = null;
   let raceClockTimer = null;
 
   function raceLimitReached() {
     if (raceState !== 'racing') return false;
+    if (!RACE_MODES[raceMode].timed) return false;   // free practice: only a human ends it
     if (raceMode === 'laps') {
       return raceAllCars().some(c => c.laps.length >= raceLimit);
     }
@@ -5707,9 +5752,13 @@
 
   function raceClockTick() {
     if (raceState !== 'racing') return;
+    maybeSwitchRaceWeather();
     const el = $('race-clock');
     if (el) {
-      if (raceMode === 'laps') {
+      if (!RACE_MODES[raceMode].timed) {
+        const up = Date.now() - raceStartedAt;
+        el.textContent = formatLapTime(up) + ' gefahren';
+      } else if (raceMode === 'laps') {
         const best = Math.max(0, ...raceAllCars().map(c => c.laps.length));
         el.textContent = `Runde ${best} / ${raceLimit}`;
       } else {
@@ -5865,9 +5914,37 @@
     }
   }
 
+  // One weather change per race, at a random moment in the middle third — early enough to
+  // matter, late enough not to make the chosen starting weather pointless. In free practice
+  // there is no known end time, so a fixed window from the start is used instead.
+  function scheduleRaceWeatherChange() {
+    raceWxSwitchAt = null;
+    if (!raceWxChange) return;
+    const total = RACE_MODES[raceMode].timed && raceMode !== 'laps'
+      ? raceLimit * 60000
+      : 5 * 60000;   // practice / lap races: assume a five-minute window
+    raceWxSwitchAt = Date.now() + total * (0.35 + Math.random() * 0.3);
+  }
+
+  function maybeSwitchRaceWeather() {
+    if (raceWxSwitchAt === null || Date.now() < raceWxSwitchAt) return;
+    raceWxSwitchAt = null;   // once per race
+    const next = weather === 'rain' ? 'dry' : 'rain';
+    setWeather(next);
+    showHudToast(next === 'rain' ? 'Es fängt an zu regnen' : 'Es trocknet ab');
+    log(`Wetterwechsel im Rennen: ${next === 'rain' ? 'Regen' : 'trocken'}.`, 'info');
+  }
+
   function startRaceCountdown() {
     // launchGhosts() is called from the green-light step below, not here.
     if (raceState !== 'idle' && raceState !== 'finished') return; // ignore while armed/racing
+    // Starting conditions, applied before the lights: weather first, because the tyre
+    // choice follows from it, then the tank, then the pit-stop counter.
+    setWeather(raceWxStart);
+    fuel = Math.max(0, Math.min(100, raceFuelStartL / FUEL_TANK_LITERS * 100));
+    updateDamageFuelUI();
+    racePitDone = 0;
+    scheduleRaceWeatherChange();
     resetTyres();   // a race starts on cold tyres, same as leaving the pits
     // Everyone starts from zero, including cars with no role: they still cross the line and
     // their times belong in the table.
@@ -5880,7 +5957,9 @@
     $('race-lap-current').textContent = '-';
     raceState = 'countdown';
     $('race-start-btn').disabled = true;
-    $('race-stop-btn').disabled = true;
+    // Abbrechen muss schon im Countdown gehen: requestRaceStop() raeumt den Zaehler mit
+    // auf, und ein Countdown, aus dem man nicht herauskommt, ist eine Falle.
+    $('race-stop-btn').disabled = false;
     $('race-status').textContent = 'Countdown…';
     let step = 3;
     setRaceLights(step);
@@ -5908,12 +5987,25 @@
     }, 1000);
   }
 
+  // Stops NOW. This used to set 'finishing' and let the current lap complete, which was
+  // the original spec but reads wrong for a button labelled "abbrechen": pressing stop and
+  // then watching the car carry on for another lap looks like the button did nothing.
+  // The lap in progress is discarded rather than recorded — it was never completed, and
+  // counting a partial lap would poison the fastest-lap column.
   function requestRaceStop() {
-    if (raceState !== 'racing') return;
-    // Ghosts keep running until the race actually ends in finishRace(); nothing to do here.
-    raceState = 'finishing';
-    $('race-status').textContent = 'Rennen endet nach dieser Runde';
-    $('race-stop-btn').disabled = true;
+    if (raceState !== 'racing' && raceState !== 'countdown' && raceState !== 'finishing') return;
+    if (raceCountdownTimer) { clearInterval(raceCountdownTimer); raceCountdownTimer = null; }
+    setRaceLights(0);
+    finishRace();
+    showHudToast('Rennen abgebrochen');
+  }
+
+  // Missed mandatory stops, as a time penalty in whole seconds. Reported separately from
+  // the lap times rather than folded into them: a penalty is not a lap, and hiding it
+  // inside one would make the fastest lap a lie.
+  function racePenaltyMs() {
+    const missed = Math.max(0, racePitRequired - racePitDone);
+    return missed * racePitPenaltyS * 1000;
   }
 
   function finishRace() {
@@ -5922,7 +6014,11 @@
     raceStartedAt = null;
     // Chequered flag: the ghosts stop too, and their lights go back to plain headlights.
     garage.forEach(c => { if (c.role === 'ghost') stopGhost(c); });
-    $('race-status').textContent = `Beendet (${raceLapTimes.length} Runde${raceLapTimes.length === 1 ? '' : 'n'})`;
+    const missed = Math.max(0, racePitRequired - racePitDone);
+    $('race-status').textContent =
+      `Beendet (${raceLapTimes.length} Runde${raceLapTimes.length === 1 ? '' : 'n'})`
+      + (missed > 0 ? ` — ${missed} Pflichtstopp${missed === 1 ? '' : 's'} verpasst, `
+                      + `+${missed * racePitPenaltyS} s Strafe` : '');
     $('race-start-btn').disabled = false;
     $('race-lap-current-row').style.display = 'none';
     $('race-results').style.display = '';
@@ -5935,6 +6031,10 @@
     $('race-limit-label').textContent = m.unit;
     $('race-mode-hint').textContent = m.hint;
     $('race-start-btn').textContent = `\u{1F3C1} ${m.label} starten`;
+    // Free practice has no limit, so the field would be a lie. Disabled, not hidden:
+    // a control that vanishes makes people wonder whether they broke something.
+    $('race-limit').disabled = !m.timed;
+    $('race-limit-label').style.opacity = m.timed ? '' : '0.45';
   }
   $('race-mode').addEventListener('change', (e) => {
     raceMode = e.target.value;
@@ -5947,31 +6047,34 @@
     const v = parseInt(e.target.value, 10);
     if (Number.isFinite(v) && v >= 1) raceLimit = v;
   });
+
+  $('race-wx-start').addEventListener('change', (e) => { raceWxStart = e.target.value; });
+  $('race-wx-change').addEventListener('change', (e) => { raceWxChange = e.target.checked; });
+  $('race-pit-required').addEventListener('change', (e) => {
+    racePitRequired = parseInt(e.target.value, 10) || 0;
+  });
+  $('race-pit-penalty').addEventListener('input', (e) => {
+    const v = parseInt(e.target.value, 10);
+    if (Number.isFinite(v) && v >= 0) racePitPenaltyS = v;   // whole seconds, as asked
+  });
+  $('race-fuel-start').addEventListener('input', (e) => {
+    const v = parseInt(e.target.value, 10);
+    if (Number.isFinite(v) && v >= 1) raceFuelStartL = Math.min(FUEL_TANK_LITERS, v);
+  });
   applyRaceModeUi();
 
   // ---- Touch controls on the racing screen ----
   // Everything reachable from the pad or the keyboard should also be reachable with a
   // thumb: on a phone clipped to a wheel there is no keyboard and possibly no pad.
-  $('race-act-start').onclick = () => {
-    if (raceState === 'racing' || raceState === 'countdown') {
-      // Abort outright, which is NOT the same as requestRaceStop(): that one lets the
-      // current lap finish. A button labelled "abbrechen" has to mean stop now.
-      raceState = 'finished';
-      if (raceClockTimer) { clearInterval(raceClockTimer); raceClockTimer = null; }
-      if (raceCountdownTimer) { clearInterval(raceCountdownTimer); raceCountdownTimer = null; }
-      setRaceLights(0);
-      garage.forEach(c => { if (c.role === 'ghost') stopGhost(c); });
-      $('race-status').textContent = 'Abgebrochen';
-      $('race-start-btn').disabled = false;
-      $('race-stop-btn').disabled = true;
-      renderRaceResults();
-      $('race-results').style.display = '';
-      showHudToast('Rennen abgebrochen');
-    } else {
-      startRaceCountdown();
-    }
+  // One toggle for the whole app: the same action on the touch tile, the settings button
+  // and RB/R1. There used to be a second, near-identical abort path inlined here, which is
+  // how the two could drift apart.
+  function toggleRace() {
+    const live = raceState === 'racing' || raceState === 'countdown' || raceState === 'finishing';
+    if (live) requestRaceStop(); else startRaceCountdown();
     updateRaceActButtons();
-  };
+  }
+  $('race-act-start').onclick = toggleRace;
 
   $('race-act-pit').onclick = () => { requestPitStop(); updateRaceActButtons(); };
 
@@ -5997,6 +6100,36 @@
     showHudToast(next === 0 ? 'Reifensimulation aus' : `Reifensimulation ${Math.round(next * 100)} %`);
   };
   let tyreLastNonZero = 0;
+
+  // Start/Options: jump to the track view and back, so the layout can be checked without
+  // hunting for the tab. Remembers where it came from rather than always returning to the
+  // cockpit, which would be wrong if it was opened from the garage.
+  let trackViewReturnTab = null;
+  function toggleTrackView() {
+    const active = document.querySelector('.tabpage.active');
+    const cur = active ? active.id.replace(/^tab-/, '') : 'control';
+    if (cur === 'track' && trackViewReturnTab) {
+      const back = trackViewReturnTab;
+      trackViewReturnTab = null;
+      const btn = document.querySelector(`[data-tab="${back}"]`);
+      if (btn) btn.click();
+    } else if (cur !== 'track') {
+      trackViewReturnTab = cur;
+      const btn = document.querySelector('[data-tab="track"]');
+      if (btn) btn.click();
+    }
+  }
+
+  // Touchpad: put the car back to a known-good state. Deliberately does NOT touch lap
+  // times or the race state — it is a "get me driving again" button, not a restart.
+  function resetCarState() {
+    damage = 0;
+    fuel = 100;
+    resetTyres();
+    updateDamageFuelUI();
+    showHudToast(`Zurückgesetzt — Tank ${fuelLiters(100)} l, Schaden 0 %, Reifen kalt`);
+    log('Auto zurückgesetzt: Schaden 0, Tank voll, Reifen kalt.', 'info');
+  }
 
   function updateRaceActButtons() {
     const a = $('race-act-start');
@@ -6280,6 +6413,13 @@
         playTone(440, 0.12, 'sine', 0.18);
         setTimeout(() => playTone(660, 0.22, 'sine', 0.18), 120); // rising: throttle released
         padRumble(0.25, 0.15, 120);
+      }
+      // A service counts as a completed mandatory stop only if a race is actually running.
+      if (pitServiceStart !== null && (raceState === 'racing' || raceState === 'finishing')) {
+        racePitDone++;
+        if (racePitRequired > 0) {
+          log(`Pflichtboxenstopp ${Math.min(racePitDone, racePitRequired)} von ${racePitRequired} erledigt.`, 'info');
+        }
       }
       if (pitServiceStart !== null) {
         log(`Boxenstopp beendet nach ${((Date.now() - pitServiceStart) / 1000).toFixed(1)}s: ` +
@@ -7154,17 +7294,23 @@
     upshift: { type: 'button', index: 1, label: 'B / Kreis' },
     headlights: { type: 'button', index: 3, label: 'Y / Dreieck' },
     lightflash: { type: 'button', index: 11, label: 'R3 (rechter Stick drücken)' },
-    pitstop: { type: 'button', index: 9, label: 'Start / Options' },
-    racestart: { type: 'button', index: 4, label: 'LB / L1' },
-    racestop: { type: 'button', index: 5, label: 'RB / R1' },
+    // Left shoulder = pit, right shoulder = race. The triggers are throttle and brake, so
+    // "links / rechts" can only mean the shoulder buttons. Race start and race abort are the
+    // SAME button now (a toggle), which is why racestop is gone rather than rebound.
+    pitstop: { type: 'button', index: 4, label: 'LB / L1' },
+    racestart: { type: 'button', index: 5, label: 'RB / R1' },
     weather: { type: 'button', index: 8, label: 'Select / Share' },
+    trackview: { type: 'button', index: 9, label: 'Start / Options' },
+    resetcar: { type: 'button', index: 17, label: 'Touchpad' },
   };
   const BIND_ACTION_LABELS = {
     throttle: 'Gas', brake: 'Bremse', steering: 'Lenkung',
     downshift: 'Runterschalten', upshift: 'Hochschalten',
     headlights: 'Licht an/aus', lightflash: 'Lichthupe', pitstop: 'Boxenstopp',
-    racestart: 'Rennen starten', racestop: 'Rennen beenden',
+    racestart: 'Rennen starten / abbrechen',
     weather: 'Wetter umschalten',
+    trackview: 'Streckenansicht',
+    resetcar: 'Auto zurücksetzen',
   };
 
   function loadBindings() {
@@ -7318,7 +7464,7 @@
   const DPAD = { up: 12, down: 13, left: 14, right: 15 };
   const prevDpad = { up: false, down: false, left: false, right: false };
   let prevLightFlash = false, prevPitstop = false, prevWeather = false;
-  let prevRaceStart = false, prevRaceStop = false;
+  let prevRaceStart = false, prevTrackView = false, prevResetCar = false;
 
   function padButtonPressed(pad, index) {
     const btn = pad.buttons[index];
@@ -7847,13 +7993,18 @@
       if (pitstopNow && !prevPitstop) requestPitStop();
       prevPitstop = pitstopNow;
 
+      // One button, both directions: start when idle, abort when running.
       const raceStartNow = readBindingValue(pad, bindings.racestart) > BUTTON_CAPTURE_THRESHOLD;
-      if (raceStartNow && !prevRaceStart) startRaceCountdown();
+      if (raceStartNow && !prevRaceStart) toggleRace();
       prevRaceStart = raceStartNow;
 
-      const raceStopNow = readBindingValue(pad, bindings.racestop) > BUTTON_CAPTURE_THRESHOLD;
-      if (raceStopNow && !prevRaceStop) requestRaceStop();
-      prevRaceStop = raceStopNow;
+      const trackViewNow = readBindingValue(pad, bindings.trackview) > BUTTON_CAPTURE_THRESHOLD;
+      if (trackViewNow && !prevTrackView) toggleTrackView();
+      prevTrackView = trackViewNow;
+
+      const resetNow = readBindingValue(pad, bindings.resetcar) > BUTTON_CAPTURE_THRESHOLD;
+      if (resetNow && !prevResetCar) resetCarState();
+      prevResetCar = resetNow;
 
       const downshiftNow = readBindingValue(pad, bindings.downshift) > BUTTON_CAPTURE_THRESHOLD;
       const upshiftNow = readBindingValue(pad, bindings.upshift) > BUTTON_CAPTURE_THRESHOLD;
