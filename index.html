@@ -2951,7 +2951,17 @@
   const TR = 93; // travel range in px from center
   let throttleDragging = false;
 
+  // Set by the pit-stop state machine far below. A plain flag rather than a function that
+  // reads the pit state: setThrottle(0) runs during LOAD, thousands of lines before those
+  // `let` declarations are reached, and calling into them from here aborts the whole IIFE in
+  // the temporal dead zone. That trap has been sprung in this file more than once, so the
+  // dependency is inverted instead of ordered.
+  let pitThrottleLock = false;
+
   function setThrottle(ny) {
+    // Wheels off: the request is dropped rather than damped, and the pedal snaps back to
+    // zero so the display does not show a throttle the car is not getting.
+    if (pitThrottleLock && -ny > 0) { ny = 0; }
     throttleY = -ny; // up = positive
     const topPx = 93 + ny * TR;
     throttleInner.style.top = topPx + 'px';
@@ -6647,14 +6657,17 @@
       pitServiceStart = Date.now();
       pitFuelGained = 0; pitDamageRepaired = 0;
       pitDone = { refuel: false, tyres: false, repair: false };
-      pitTyreElapsed = 0; pitEmptyElapsed = 0; pitReady = false;
+      pitTyreElapsed = 0; pitEmptyElapsed = 0; pitStandElapsed = 0; pitReady = false;
+      pitTyreTarget = Math.max(1.5, gaussian(PIT_TYRE_CHANGE_S, PIT_TYRE_CHANGE_SD));
       // The plan was chosen while rolling down the pit lane; only now is it locked in.
       if (!pitPlan) pitPlan = makePitPlan();
       if (pitPlan.tyres) {
         fitTyresForWeather();  // automatic, as requested
         resetTyres();          // new tyres come out of the blankets cold and unworn
-        setPitWrench(true);
+        setPitLoop('wrench', true);
       }
+      if (pitPlan.refuel) setPitLoop('fuel', true);
+      if (pitPlan.repair) setPitLoop('repair', true);
       padRumble(0.25, 0.15, 120);
       log(`Boxenstopp: ${describePitPlan(pitPlan)}.`, 'info');
     } else if (next === 'limited') {
@@ -6665,28 +6678,30 @@
       log(`Boxengasse: Tempolimit ${Math.round(PIT_SPEED_FACTOR * 100)}% aktiv. `
           + `Geplant: ${describePitPlan(pitPlan)}.`, 'info');
     } else {
-      setPitWrench(false);
-      // Read before clearing: whether the crew actually finished decides below.
-      const wasReady = pitReady;
+      stopAllPitLoops();
+      // Read before clearing: the standing time decides whether the stop was served.
+      const stoodLongEnough = pitStandElapsed >= PIT_MANDATORY_STAND_S;
       pitPlan = null; pitDone = null; pitReady = false;
       if (pitServiceStart !== null) {
         playTone(440, 0.12, 'sine', 0.18);
         setTimeout(() => playTone(660, 0.22, 'sine', 0.18), 120); // rising: throttle released
         padRumble(0.25, 0.15, 120);
       }
-      // A mandatory stop counts only if a race is running AND the work was finished.
-      // Driving away halfway through is not a served stop — otherwise the rule could be
-      // satisfied by rolling through the pit lane and leaving again, which is exactly the
-      // thing a mandatory stop exists to prevent.
-      if (pitServiceStart !== null && wasReady
+      // A mandatory stop counts after PIT_MANDATORY_STAND_S of standing time. Requiring the
+      // whole service to finish would have punished the legitimate choice to take fuel only
+      // and go; requiring nothing at all would let a roll-through satisfy the rule. Standing
+      // time is the thing the rule is actually about.
+      if (pitServiceStart !== null && stoodLongEnough
           && (raceState === 'racing' || raceState === 'finishing')) {
         racePitDone++;
         if (racePitRequired > 0) {
-          log(`Pflichtboxenstopp ${Math.min(racePitDone, racePitRequired)} von ${racePitRequired} erledigt.`, 'info');
+          log(`Pflichtboxenstopp ${Math.min(racePitDone, racePitRequired)} von ${racePitRequired} erledigt `
+              + `(${pitStandElapsed.toFixed(1)} s gestanden).`, 'info');
         }
-      } else if (pitServiceStart !== null && !wasReady && racePitRequired > 0
+      } else if (pitServiceStart !== null && !stoodLongEnough && racePitRequired > 0
                  && (raceState === 'racing' || raceState === 'finishing')) {
-        log('Boxenstopp abgebrochen — zählt nicht als Pflichtstopp.', 'err');
+        log(`Boxenstopp zu kurz (${pitStandElapsed.toFixed(1)} s von `
+            + `${PIT_MANDATORY_STAND_S.toFixed(0)} s) — zählt nicht als Pflichtstopp.`, 'err');
       }
       if (pitServiceStart !== null) {
         log(`Boxenstopp beendet nach ${((Date.now() - pitServiceStart) / 1000).toFixed(1)}s: ` +
@@ -6696,6 +6711,7 @@
       const st = $('pitstop-status');
       if (st) st.textContent = 'Bereit.';
     }
+    refreshPitThrottleLock();
     updatePitUI();
   }
 
@@ -6724,29 +6740,36 @@
     if (pitState === 'servicing') {
       if (!stopped) { setPitState('off'); showHudToast('Boxengasse verlassen'); return; }
       const p = pitPlan || {};
+      pitStandElapsed += dt;
 
       // --- refuel ---
       if (p.refuel && !pitDone.refuel) {
         const addFuel = Math.min(100 - fuel, PIT_FUEL_PER_SEC * dt);
         fuel += addFuel; pitFuelGained += addFuel;
-        if (fuel >= 99.95) { fuel = 100; pitDone.refuel = true; pitChimeFuel();
+        if (fuel >= 99.95) { fuel = 100; pitDone.refuel = true;
+                             setPitLoop('fuel', false); pitChimeFuel();
                              showHudToast(`Tank voll — ${fuelLiters(100)} l`); }
       }
       // --- repair --- non-linear, see repairRateAt()
       if (p.repair && !pitDone.repair) {
         const fixDamage = Math.min(damage, repairRateAt(damage) * dt);
         damage -= fixDamage; pitDamageRepaired += fixDamage;
-        if (damage <= 0.05) { damage = 0; pitDone.repair = true; pitChimeRepair();
+        if (damage <= 0.05) { damage = 0; pitDone.repair = true;
+                              setPitLoop('repair', false); pitChimeRepair();
                               showHudToast('Auto repariert'); }
       }
-      // --- tyres --- a fixed job, and the rattle is its clock
+      // --- tyres --- a fixed job with a per-stop duration, and the rattle is its clock
       if (p.tyres && !pitDone.tyres) {
         pitTyreElapsed += dt;
-        if (pitTyreElapsed >= PIT_TYRE_CHANGE_S) {
-          pitDone.tyres = true; setPitWrench(false); pitChimeTyres();
-          showHudToast('Reifen gewechselt');
+        if (pitTyreElapsed >= pitTyreTarget) {
+          pitDone.tyres = true; setPitLoop('wrench', false); pitChimeTyres();
+          showHudToast(`Reifen gewechselt — ${pitTyreElapsed.toFixed(1)} s`);
         }
       }
+      // The pad keeps buzzing while anything is still being worked on.
+      pitRumbleWhileWorking((p.refuel && !pitDone.refuel)
+                            || (p.repair && !pitDone.repair)
+                            || (p.tyres && !pitDone.tyres));
       // --- nothing to do: a flat standing time, so entering the pits still costs something
       if (pitPlanEmpty(p)) pitEmptyElapsed += dt;
 
@@ -6756,13 +6779,14 @@
 
       if (allDone && !pitReady) {
         pitReady = true;
-        setPitWrench(false);
+        stopAllPitLoops();
         pitChimeReady();
         padRumble(0.35, 0.2, 200);
         showHudToast('Fertig — losfahren!');
         log('Boxenstopp fertig.', 'info');
       }
 
+      refreshPitThrottleLock();
       const st = $('pitstop-status');
       if (st) st.textContent = pitReady ? 'Fertig — losfahren!' : pitTaskText();
       updateDamageFuelUI();
@@ -6797,7 +6821,7 @@
     const parts = [];
     if (p.refuel) parts.push(pitDone.refuel ? '✓ Tank voll' : `Tanken ${fuelLiters(fuel)} l`);
     if (p.tyres) parts.push(pitDone.tyres ? '✓ Reifen neu'
-                            : `Reifen ${Math.max(0, PIT_TYRE_CHANGE_S - pitTyreElapsed).toFixed(1)} s`);
+                            : `Reifen ${Math.max(0, pitTyreTarget - pitTyreElapsed).toFixed(1)} s`);
     if (p.repair) parts.push(pitDone.repair ? '✓ repariert'
                              : `Reparatur ${Math.round(100 - damage)} %`);
     return parts.join(' · ');
@@ -7016,14 +7040,35 @@
   // not a choice — a damaged car gets repaired, that is what a pit stop is for. If there is
   // nothing at all to do, the stop becomes a flat PIT_EMPTY_STOP_S so that entering the pits
   // still costs something, rather than being free.
+  // Mean tyre-change time. The ACTUAL time is drawn per stop with a small spread, because
+  // a crew that always takes exactly 4.00 s is the one thing a real crew never is - and the
+  // variance is what makes a stop feel like an event rather than a timer.
   const PIT_TYRE_CHANGE_S = 4.0;
+  const PIT_TYRE_CHANGE_SD = 0.2;
   const PIT_EMPTY_STOP_S = 5.0;
+  // A mandatory stop is served after this much standing time, whether or not the crew has
+  // finished everything. Serving the stop and choosing to leave early are two decisions,
+  // and only the first is what the rule is about.
+  const PIT_MANDATORY_STAND_S = 3.0;
   let pitPlan = null;   // { refuel, tyres, repair } while a stop is armed, else null
   let pitDone = null;   // { refuel, tyres, repair } completion flags
   let pitTyreElapsed = 0;
+  let pitTyreTarget = PIT_TYRE_CHANGE_S;   // drawn per stop, see PIT_TYRE_CHANGE_SD
   let pitEmptyElapsed = 0;
+  let pitStandElapsed = 0;                 // total standing time this stop
   let pitReady = false;
-  let pitWrenchNode = null, pitWrenchGain = null;
+  // One node per looping sound. They are allowed to overlap: tyres and repair really do
+  // happen at the same time, and the two were written to be separable by ear (an even
+  // hammer train against slow uneven panel taps).
+  const pitLoops = { wrench: null, fuel: null, repair: null };
+
+  // Normal deviate via Box-Muller. Math.random() alone would give a flat spread, which
+  // would make 3.6 s and 4.0 s equally likely - not how a pit crew's timing is
+  // distributed. Clamped so an unlucky draw can never produce a negative duration.
+  function gaussian(mean, sd) {
+    const u = Math.max(1e-9, Math.random()), v = Math.random();
+    return mean + sd * Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+  }
 
   function fuelSimOn() { return fuelDrainPerSec > 0; }
   function tyreSimOn() { return physEngine.config.tyreEffect > 0; }
@@ -7038,23 +7083,59 @@
 
   function pitPlanEmpty(p) { return !p || (!p.refuel && !p.tyres && !p.repair); }
 
-  // The rattle runs WHILE the wheels are off, and stops the moment they are back on. It
-  // used to be a single one-shot at the start of the service, which said "something began"
-  // but never "it is over".
-  function setPitWrench(on) {
-    if (!audioCtx || !soundEnabled) return;
-    if (on && !pitWrenchNode && fxBuffers.pit) {
-      pitWrenchNode = audioCtx.createBufferSource();
-      pitWrenchNode.buffer = fxBuffers.pit;
-      pitWrenchNode.loop = true;
-      pitWrenchGain = audioCtx.createGain();
-      pitWrenchGain.gain.value = 0.55;
-      pitWrenchNode.connect(pitWrenchGain).connect(audioCtx.destination);
-      pitWrenchNode.start();
-    } else if (!on && pitWrenchNode) {
-      try { pitWrenchNode.stop(); } catch { /* already stopped */ }
-      pitWrenchNode = null; pitWrenchGain = null;
+  // Each job gets a sound that runs WHILE it runs and stops when it is done. They used to
+  // be single one-shots at the start of the service, which said "something began" but never
+  // "it is over" - and only the wrench had one at all.
+  const PIT_LOOP_SPEC = {
+    wrench: { buf: () => fxBuffers.pit, gain: 0.55 },
+    fuel:   { buf: () => fxBuffers.pitFuel, gain: 0.40 },
+    repair: { buf: () => fxBuffers.pitRepair, gain: 0.45 },
+  };
+
+  function setPitLoop(which, on) {
+    const spec = PIT_LOOP_SPEC[which];
+    if (!spec) return;
+    if (on) {
+      if (pitLoops[which] || !audioCtx || !soundEnabled) return;
+      const buf = spec.buf();
+      if (!buf) return;                       // sample missing: silence, not a crash
+      const src = audioCtx.createBufferSource();
+      src.buffer = buf;
+      src.loop = true;
+      const g = audioCtx.createGain();
+      g.gain.value = spec.gain;
+      src.connect(g).connect(audioCtx.destination);
+      src.start();
+      pitLoops[which] = src;
+    } else if (pitLoops[which]) {
+      try { pitLoops[which].stop(); } catch { /* already stopped */ }
+      pitLoops[which] = null;
     }
+  }
+
+  function stopAllPitLoops() { Object.keys(PIT_LOOP_SPEC).forEach(k => setPitLoop(k, false)); }
+
+  // Kept as a thin alias: the tyre change is the one loop other code refers to by name.
+  function setPitWrench(on) { setPitLoop('wrench', on); }
+
+  // The pad buzzes for as long as ANY job is running, so the hands know the stop is still
+  // going without looking. Re-armed on a timer because a rumble effect has a fixed
+  // duration - there is no "hold until further notice" in the Gamepad API.
+  let pitRumbleAt = 0;
+  function pitRumbleWhileWorking(anyRunning) {
+    if (!anyRunning) return;
+    const now = Date.now();
+    if (now - pitRumbleAt < 180) return;
+    pitRumbleAt = now;
+    padRumble(0.16, 0.10, 200);
+  }
+
+  // Wheels off means the car cannot move, whatever the driver asks for. Once they are back
+  // on, the throttle is free again - and using it is how you leave, which is exactly what
+  // "sobald das fertig ist bedeutet Gas geben auch Ende" describes.
+  function refreshPitThrottleLock() {
+    pitThrottleLock = pitState === 'servicing' && !!pitPlan && pitPlan.tyres
+                      && !!pitDone && !pitDone.tyres;
   }
 
   // Three distinguishable confirmations, so the ear alone tells you which job finished.
@@ -7097,7 +7178,8 @@
       // exactly as specified. Anything already fitted is not un-fitted; the clock simply
       // stops mattering.
       pitPlan.tyres = false;
-      if (pitState === 'servicing') { setPitWrench(false); pitTyreElapsed = 0; }
+      if (pitState === 'servicing') { setPitLoop('wrench', false); pitTyreElapsed = 0; }
+      refreshPitThrottleLock();
     } else return false;
     const after = describePitPlan(pitPlan);
     if (after !== before) showHudToast(`Boxenstopp: ${after}`);
@@ -7233,7 +7315,8 @@
   }
 
   // ---- One-shot and looping effect samples ----
-  const fxBuffers = { crash: [], brake: null, pit: null, start: {}, shift: {} };
+  const fxBuffers = { crash: [], brake: null, pit: null, pitFuel: null, pitRepair: null,
+                      start: {}, shift: {} };
   let brakeNode = null, brakeGain = null;
 
   async function loadFxSamples() {
@@ -7250,6 +7333,10 @@
       fxBuffers.crash = await Promise.all(fx.crash.map(c => grab(c.file)));
       fxBuffers.brake = await grab(fx.brake.file);
       fxBuffers.pit = await grab(fx.pit.file);
+      // Both are loops: they run for as long as their job does. Missing files are tolerated
+      // (grab returns null) and the sound is simply absent rather than the load failing.
+      if (fx.pit_fuel) fxBuffers.pitFuel = await grab(fx.pit_fuel.file);
+      if (fx.pit_repair) fxBuffers.pitRepair = await grab(fx.pit_repair.file);
       // Optional: older audio bundles predate the shift sounds, and a missing file must
       // not take the whole effects load down with it.
       if (fx.shift) {
@@ -8477,6 +8564,7 @@
     padConnected = true;
     startPadLoop();
   }
+
 
 
 

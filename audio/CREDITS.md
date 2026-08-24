@@ -6,22 +6,9 @@ Gruppe fremdes Aufnahmematerial enthaelt.
 ## Vollstaendig synthetisch — kein Aufnahmematerial
 
 Porsche, BMW und Mustang sowie alle Effekte (Bremsenquietschen, Crash-Varianten,
-Schlagschrauber, Motorstart, Schaltgeraeusch) sind von Grund auf gerechnet. Es
-wird nichts aus einer Aufnahme abgespielt.
-
-Das Schaltgeraeusch (shift_up.ogg, shift_down.ogg) besteht aus drei getrennt
-platzierten Ereignissen: mechanischer Eingriff (unharmonische Teiltoene um 410-640
-Hz), Entlueftung des Stellers (tiefpassgefiltertes Rauschen) und Lastaufnahme im
-Antriebsstrang (um 104 Hz) - letztere ist der LAUTESTE Anteil. Runterschalten sitzt
-tiefer und entlueftet laenger, weil der Steller gegen Motormoment haelt.
-
-Die erste Fassung hatte 92 Prozent ihrer Energie unter 500 Hz und klang trotzdem
-nach Klacken. Das zeigt, wo die Ursache liegt: nicht im Spektrum, sondern im
-EINSCHWINGEN. Ein Einsatz, der binnen weniger Abtastwerte die Vollamplitude
-erreicht, wird als Klick gehoert, egal wie wenig Hochtonenergie er traegt. Jeder
-Anteil bekommt daher eine Anstiegszeit von 7-12 ms. Gemessen: Schwerpunkt von 610
-bzw. 1249 Hz auf 106 bzw. 81 Hz, Anteil ueber 2 kHz von 7,4 bzw. 17,5 Prozent auf
-0,01 Prozent, Anstiegszeit auf 25 bzw. 29 ms, Spitzenpegel von 0,80 auf 0,55.
+Schlagschrauber, Tankgeraeusch, Karosseriereparatur, Motorstart) sind von Grund auf
+gerechnet. Es wird nichts aus
+einer Aufnahme abgespielt.
 
 Das Modell folgt dem Ansatz von ange-yaghi/engine-sim (MIT-Lizenz):
 Zuendereignisse als Druckimpulse, gefaltet mit der Resonanz des
@@ -52,3 +39,16 @@ liefert.
   `pwlpl-heavy-thunderstorm-sound-effect-473418.mp3`, nach demselben Verfahren.
 
 Die unbearbeiteten Quelldateien sind nicht Teil dieses Repos.
+
+### Boxenstopp-Schleifen (`pit_wrench`, `pit_fuel`, `pit_repair`)
+
+Erzeugt von `tools/pit_sounds.py` (Tanken und Reparatur) bzw. `tools/engine_fx.py`
+(Schlagschrauber). Alle drei sind Schleifen, weil sie so lange laufen wie ihre
+Aufgabe. Schleifen werden **zirkular** im Frequenzbereich gebaut, sonst klickt die
+Naht bei jedem Durchlauf; das Skript gibt den gemessenen Nahtsprung mit aus
+(0,74 bzw. 0,25 relativ zum mittleren Schrittbetrag).
+
+Reparatur und Schlagschrauber laufen absichtlich gleichzeitig und wurden deshalb
+unterscheidbar angelegt: der Schrauber ist ein schneller, gleichmaessiger
+Hammerzug (~26 Hz), die Reparatur sind langsame, ungleichmaessige Blechschlaege mit
+wechselnder Tonhoehe.
