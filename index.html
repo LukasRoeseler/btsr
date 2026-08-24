@@ -267,6 +267,12 @@
     overflow: hidden; margin-top: 3px; }
   .gt3-bar > i { display: block; height: 100%; width: 0; transition: width .15s linear; }
   .gt3-ok { color: #46d17f; } .gt3-warn { color: #ffb02e; } .gt3-bad { color: #ff5252; }
+  /* ABS as letters under the speed, not a number in a side box: grey means available-
+     but-idle, red means it is intervening right now — a glance, not a reading. */
+  .gt3-abs { font-family: monospace; font-weight: 800; letter-spacing: .14em;
+    text-align: center; font-size: clamp(10px, 1.6vw, 15px); color: #3a4257;
+    margin-top: 2px; transition: color .1s; }
+  .gt3-abs.active { color: #ff5252; }
 
   /* Green headlamp tell-tale: the ISO glyph a real dash uses, so it reads without a caption. */
   .gt3-tell { display: flex; align-items: center; gap: clamp(3px, .7vw, 7px); }
@@ -333,8 +339,16 @@
 
   /* Sliding switch. The native checkbox stays in the DOM for keyboard and forms, but is
      visually replaced, so the control on the right of a row is obviously a switch. */
+  /* min-height:0 matters: on a touch device the generic `label { min-height: 44px }`
+     rule below (meant for tap targets) would otherwise stretch this 25px-tall switch to
+     44px while its width stays 46px, and a near-square box with the fully-rounded
+     border-radius on .tgl span below renders as a round blob instead of a pill — every
+     toggle in the Options tab is a <label class="tgl">, so this hit all of them on a
+     phone. min-height and height are separate properties; the browser always honours the
+     larger min-height regardless of which rule is more specific, so only re-declaring
+     min-height here (where the class selector outranks the bare tag selector) fixes it. */
   .tgl { position: relative; display: inline-block; width: 46px; height: 25px;
-    flex: 0 0 auto; }
+    min-height: 0; flex: 0 0 auto; }
   .tgl input { position: absolute; opacity: 0; width: 0; height: 0; }
   .tgl span { position: absolute; inset: 0; cursor: pointer; border-radius: 999px;
     background: var(--panel-3); border: 1px solid var(--border); transition: background .15s,
@@ -429,12 +443,22 @@
     background-size: 43px 88px;
     background-position: 19px 0;
     animation: race-rain-c 1.15s linear infinite; }
-  @keyframes race-rain-a { from { transform: rotate(13deg) translate3d(0, 0, 0); }
-                           to   { transform: rotate(13deg) translate3d(0, 284px, 0); } }
-  @keyframes race-rain-b { from { transform: rotate(11deg) translate3d(0, 0, 0); }
-                           to   { transform: rotate(11deg) translate3d(0, 380px, 0); } }
-  @keyframes race-rain-c { from { transform: rotate(9deg)  translate3d(0, 0, 0); }
-                           to   { transform: rotate(9deg)  translate3d(0, 528px, 0); } }
+  /* A drop's rotation now DRIFTS a couple of degrees across the fall instead of holding
+     one fixed angle for the whole loop — three sheets at three constant angles still means
+     every drop within a sheet is perfectly parallel to every other drop in it at any given
+     instant (CSS radial-gradient ellipses cannot be rotated individually, only the whole
+     layer can), so the previous version was orderly in a way real rain never is. Wobbling
+     the angle at a middle waypoint reads as a gust catching the sheet; the three sheets use
+     different wobble sizes and directions so they never move in lockstep. */
+  @keyframes race-rain-a { from  { transform: rotate(13deg) translate3d(0, 0, 0); }
+                           45%   { transform: rotate(14.6deg) translate3d(0, 128px, 0); }
+                           to    { transform: rotate(13deg) translate3d(0, 284px, 0); } }
+  @keyframes race-rain-b { from  { transform: rotate(11deg) translate3d(0, 0, 0); }
+                           55%   { transform: rotate(9.2deg) translate3d(0, 209px, 0); }
+                           to    { transform: rotate(11deg) translate3d(0, 380px, 0); } }
+  @keyframes race-rain-c { from  { transform: rotate(9deg)  translate3d(0, 0, 0); }
+                           40%   { transform: rotate(10.8deg) translate3d(0, 211px, 0); }
+                           to    { transform: rotate(9deg)  translate3d(0, 528px, 0); } }
   /* A full-screen animation is exactly what this setting exists for. */
   @media (prefers-reduced-motion: reduce) {
     .race-rain > i { animation: none; }
@@ -514,6 +538,12 @@
      any desktop browser, so when it fails we rotate the dash ourselves rather than leave
      the driver with a letterboxed strip. The wrapper takes the SWAPPED viewport size
      because the rotated child measures its own width along the screen's height. */
+  #race-dash { position: relative; }
+  /* Fullscreen was silently defeated: the element carried an inline style="position:relative",
+     and an inline style always outranks any selector here regardless of specificity, so the
+     rule below never actually applied and the racing screen just sat inside <main> at its
+     normal in-flow size — padding, max-width, the tab bar and a scrollbar all still visible.
+     The base rule now lives here instead, so the cascade decides normally. */
   body.race-fs #race-dash { position: fixed; inset: 0; z-index: 200; border-radius: 0;
     display: grid; align-content: center; }
   body.race-fs.race-turn #race-dash {
@@ -636,7 +666,7 @@
         </feComponentTransfer>
       </filter>
     </svg>
-    <div class="gt3" id="race-dash" style="position:relative">
+    <div class="gt3" id="race-dash">
       <div class="race-rain" aria-hidden="true"><i></i><i></i><i></i></div>
       <div class="race-corner">
         <button type="button" id="race-fs" title="Vollbild" aria-label="Vollbild">
@@ -661,8 +691,6 @@
       <div class="gt3-left">
         <div class="gt3-box"><div class="gt3-lbl">Runde</div>
           <div class="gt3-val sm" id="race-lap-count">0</div></div>
-        <div class="gt3-box"><div class="gt3-lbl">ABS</div>
-          <div class="gt3-val sm" id="race-abs">0</div></div>
         <button type="button" class="gt3-act" id="race-act-pit">Boxenstopp</button>
         <div class="gt3-box gt3-click" id="race-tyre-box" title="Reifensimulation an/aus"><div class="gt3-lbl">Reifen</div>
           <div class="gt3-tyre">
@@ -680,7 +708,8 @@
         <div class="gt3-gearnum" id="race-gear">N</div>
         <div class="gt3-box" style="text-align:center">
           <div class="gt3-lbl">Speed km/h</div>
-          <div class="gt3-val big" id="race-speed">0</div></div>
+          <div class="gt3-val big" id="race-speed">0</div>
+          <div class="gt3-abs" id="race-abs">ABS</div></div>
       </div>
 
       <div class="gt3-right">
@@ -895,12 +924,20 @@
           <audio controls preload="none" src="audio/porsche_start.ogg" style="height:32px"></audio></div>
       </div>
       <p class="muted" style="font-size:11.5px; margin-top:10px">
-        Alle Klänge sind <b>vollständig synthetisch</b> &mdash; Zündimpulse, gefaltet mit der Resonanz des
-        Auspuffkrümmers, nach dem Vorbild von ange-yaghi/engine-sim (MIT). Der Unterschied zwischen den
-        Fahrzeugen kommt nicht aus der Tonhöhe, sondern aus den <b>Zündabständen</b>: die beiden
-        Sechszylinder zünden gleichmäßig alle 120°, der Cross-Plane-V8 dagegen ungleichmäßig innerhalb
-        jeder Bank &mdash; daher das Blubbern. Der Crash ist bewusst dumpf gehalten: ein GT3-Kontakt ist
-        Carbon, das den Stoß schluckt, kein splitterndes Glas. Siehe <code>audio/CREDITS.md</code>.
+        Porsche, BMW und Mustang sowie alle Effekte oben sind <b>vollständig synthetisch</b> &mdash;
+        Zündimpulse, gefaltet mit der Resonanz des Auspuffkrümmers, nach dem Vorbild von
+        ange-yaghi/engine-sim (MIT). Der Unterschied zwischen den Fahrzeugen kommt nicht aus der
+        Tonhöhe, sondern aus den <b>Zündabständen</b>: die beiden Sechszylinder zünden gleichmäßig
+        alle 120°, der Cross-Plane-V8 dagegen ungleichmäßig innerhalb jeder Bank &mdash; daher das
+        Blubbern. Der Crash ist bewusst dumpf gehalten: ein GT3-Kontakt ist Carbon, das den Stoß
+        schluckt, kein splitterndes Glas.
+      </p>
+      <p class="muted" style="font-size:11.5px">
+        <b>Nicht jeder Klang in der App ist das.</b> Der Corvette-Motor und die Strecken-Ambience sind
+        aus lizenzfreien Pixabay-Aufnahmen geschnitten, nicht gerechnet &mdash; die Pixabay-Lizenz
+        erlaubt das, und es gab keinen Grund, nachzubauen, was eine gute Aufnahme schon liefert. Die
+        unbearbeiteten Quelldateien sind nicht Teil des Repos, nur die geschnittenen Ableitungen.
+        Vollständige Aufschlüsselung, Datei für Datei: <code>audio/CREDITS.md</code>.
       </p>
     </div>
 
@@ -1872,7 +1909,7 @@
       </p>
       <div class="row">
         <div style="flex:1; min-width:150px">
-          <label class="small">Tank</label>
+          <label class="small">Tank <span id="fuel-liters" style="font-family:monospace; text-transform:none"></span></label>
           <div style="background:var(--panel-2); border:1px solid var(--border); border-radius:4px; height:14px; overflow:hidden">
             <div id="fuel-bar" style="height:100%; width:100%; background:var(--good); transition:width .3s"></div>
           </div>
@@ -1959,7 +1996,6 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="sound-volume-val">70%</span>
         </div></div>
-      <div class="opt-row"><div class="opt-label">Gas/Bremse tauschen</div><label class="tgl"><input type="checkbox" id="setting-invert-throttle"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Leistung über Akkulaufzeit konstant halten<small>Drosselt bei vollem Akku, damit es sich über die Ladung gleich anfährt. Näherung: der Akkuwert ist eine unkalibrierte Schätzung.</small></div><label class="tgl"><input type="checkbox" id="setting-battery-comp"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Referenz-Akkustand</div>
         <div class="opt-slider">
@@ -2092,6 +2128,13 @@
           <span class="opt-val" id="setting-crash-count-val">4</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Crashs ausschalten</div><label class="tgl"><input type="checkbox" id="setting-crash-off"><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Vollst&auml;ndige Reparatur dauert (s)<small>Von 100% Schaden auf 0. Nicht linear: die ersten 25% gehen in 1/10 dieser Zeit, die letzten 25% in 4/10 &mdash; ein fast heiles Auto ist schnell fertig, ein Wrack braucht zum Schluss am l&auml;ngsten.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="setting-repair-time" min="2" max="30" step="1" value="10">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-repair-time-val">10 s</span>
+        </div></div>
     </div>
 
     <div class="card">
@@ -2849,7 +2892,7 @@
   // the mouse-drag slider — passing a logical value straight into it silently inverts
   // the direction, which is exactly why gamepad throttle used to drive the car backwards.
   function setThrottleLogical(v) {
-    setThrottle(invertThrottle ? v : -v);
+    setThrottle(-v);
   }
 
   // ---- Input arbitration ----
@@ -2917,7 +2960,7 @@
     dy = Math.max(-1, Math.min(1, dy));
     // Convert screen-space to logical here so there is exactly one arbiter, in one
     // coordinate convention (mirrors what setThrottleLogical does internally).
-    applyThrottleInput(SRC.MOUSE, invertThrottle ? dy : -dy);
+    applyThrottleInput(SRC.MOUSE, -dy);
   }
   throttleOuter.addEventListener('pointerdown', (e) => { throttleDragging = true; throttlePointer(e); });
   function releaseThrottleDrag() {
@@ -3161,7 +3204,7 @@
     // half the app can only be exercised with a controller plugged in.
     if (k === 'p' && !e.repeat) requestPitStop();
     if (k === 'c' && !e.repeat) { registerCrash(); showHudToast('Testcrash'); }
-    if (k === 'f' && !e.repeat) { fuel = 5; updateDamageFuelUI(); showHudToast('Tank 5 %'); }
+    if (k === 'f' && !e.repeat) { fuel = 5; updateDamageFuelUI(); showHudToast(`Tank ${fuelLiters(5)} l`); }
     if (k === 'r' && !e.repeat) { fuel = 100; damage = 0; updateDamageFuelUI();
                                   showHudToast('Tank und Zustand zurückgesetzt'); }
     if (k === 'm' && !e.repeat) {
@@ -3335,6 +3378,10 @@
         shiftDragFactor: 0.25, // drag during a shift: a slight lull, not a full coast-down
         accelCalibration: 1,   // solved for in calibrateAccel(), see there
         speedLimitFactor: 1,   // pit lane sets this to 0.4; caps speed, so the byte caps too
+        // How hard the pit limiter brakes down to that cap when entering above it. Gentler
+        // than a full brake application (brakeDecelBase 0.784) — a real limiter eases the
+        // car down rather than standing it on its nose.
+        pitLimiterDecel: 0.35,
 
         gears: GT3_GEARS,
         rpmScale: 0,      // derived in rebuildGearModel()
@@ -3718,9 +3765,19 @@
           accel = -resist; // lift off and it rolls out
         }
 
+        // Pit limiter: brake DOWN to the ceiling, don't teleport to it. The previous
+        // version clamped speedKmh with Math.min(ceiling, ...) every tick, which snapped
+        // the car from top speed to the limit on the very first physics step after
+        // speedLimitFactor dropped (1 -> ~0.28) — instant, not "runterbremsen". Above the
+        // ceiling it now decelerates at a bounded rate instead; at or under it, the
+        // existing rule (no new positive accel) still keeps it from climbing back over.
         const ceiling = cfg.topSpeedKmh * cfg.speedLimitFactor;
-        if (st.speedKmh >= ceiling && accel > 0) accel = 0; // pit limiter eases in
-        st.speedKmh = Math.max(0, Math.min(ceiling, st.speedKmh + accel * dt));
+        if (st.speedKmh > ceiling) {
+          accel = Math.min(accel, -cfg.pitLimiterDecel);
+        } else if (accel > 0) {
+          accel = 0; // pit limiter eases in
+        }
+        st.speedKmh = Math.max(0, st.speedKmh + accel * dt);
 
         output = st.speedKmh / cfg.topSpeedKmh;
         // A real car needs a minimum shove to break away from standstill; without this
@@ -3916,16 +3973,12 @@
     }
   }
 
-  // Real CONTROLLER rumble via the Gamepad API. The old rumbleHaptic() drove
-  // navigator.vibrate, which is the PHONE's vibration motor — on a laptop with a pad it
-  // did nothing at all. navigator.vibrate is kept as the phone fallback.
-  // Chrome logs a console error for every navigator.vibrate call made before the user
-  // has actually tapped the page. Gate on the same first-gesture signal the audio uses,
-  // so the console stays clean enough that a REAL error still stands out.
-  let hadUserGesture = false;
-  document.addEventListener('pointerdown', () => { hadUserGesture = true; }, { once: true });
-  document.addEventListener('keydown', () => { hadUserGesture = true; }, { once: true });
-
+  // Real CONTROLLER rumble via the Gamepad API, ONLY. This used to also fire
+  // navigator.vibrate() — the PHONE's own vibration motor — on every call, so a session
+  // played on a phone buzzed the phone itself on every shift, crash and ABS pulse even
+  // though nothing was asked to vibrate but the gamepad. Removed outright, along with
+  // rumbleHaptic(), the older phone-only helper it had already fully replaced and which
+  // had no remaining callers.
   function padRumble(strong, weak, ms) {
     try {
       const pads = navigator.getGamepads ? navigator.getGamepads() : [];
@@ -3940,9 +3993,7 @@
         }
       }
     } catch { /* pad vanished mid-call — nothing to do */ }
-    if (hadUserGesture && navigator.vibrate) navigator.vibrate(Math.round(ms));
   }
-  function rumbleHaptic(pattern) { if (hadUserGesture && navigator.vibrate) navigator.vibrate(pattern); }
 
   const physEngine = new CarreraPhysicsEngine();
   let physLastTime = null;
@@ -3996,6 +4047,11 @@
   $('setting-crash-off').addEventListener('change', (e) => {
     crashDetectionEnabled = !e.target.checked;
     $('setting-crash-count').disabled = e.target.checked;
+  });
+
+  $('setting-repair-time').addEventListener('input', (e) => {
+    pitFullRepairS = parseInt(e.target.value, 10);
+    $('setting-repair-time-val').textContent = pitFullRepairS + ' s';
   });
 
   ['phys-steerresp', 'phys-accel', 'phys-trailbrake'].forEach(id => {
@@ -4069,8 +4125,6 @@
     return Math.max(0.2, Math.min(1, batteryCompReference / currentFraction));
   }
 
-  let invertThrottle = false;
-  $('setting-invert-throttle').addEventListener('change', (e) => { invertThrottle = e.target.checked; });
 
   // Racing screen. Reads only state that already exists and is fed from updateDashboard,
   // i.e. the exact same source as the cockpit — the two cannot drift apart.
@@ -4088,6 +4142,11 @@
   }
 
   const REAL_SCALE = 285 / 4; // 71.25 — see the note in updateRaceScreen
+  // A real GT3's tank, so "fuel" reads as litres rather than an abstract percentage.
+  // fuel itself STAYS a 0..100 internal quantity everywhere else (bar widths, fuelLoad,
+  // massFactor) — only user-facing text is converted, at the point of display.
+  const FUEL_TANK_LITERS = 110;
+  function fuelLiters(pct) { return Math.round(Math.max(0, pct) / 100 * FUEL_TANK_LITERS); }
 
   // Fullscreen for the racing screen. Three things can fail independently and all three
   // are handled rather than assumed: the Fullscreen API (older iOS), the Orientation Lock
@@ -4188,8 +4247,7 @@
 
     // ABS is a real flag in the model, so it earns a cell. Traction control does not exist
     // in this drivetrain and therefore gets no cell, rather than a permanent zero.
-    $('race-abs').textContent = st.absActive ? '1' : '0';
-    $('race-abs').className = 'gt3-val sm ' + (st.absActive ? 'gt3-warn' : '');
+    $('race-abs').classList.toggle('active', st.absActive);
 
     // Headlight tell-tale. Reads the real state rather than sniffing the lamp's CSS
     // colour: there are two different "off" colours in this file (#3a4a6b and #444), so a
@@ -4198,7 +4256,7 @@
     // flicker and the empty-tank blink all show up here too.
     $('race-light').classList.toggle('on', !!raceLampHead);
 
-    $('race-fuel').textContent = Math.round(Math.max(0, fuel)) + '%';
+    $('race-fuel').textContent = fuelLiters(fuel) + ' l';
     $('race-fuel-bar').style.width = Math.max(0, fuel) + '%';
     $('race-fuel-bar').style.background = fuel < 20 ? '#ffb02e' : '#2ee06a';
     // Condition, not damage: full green at the start, and every crash takes a piece out.
@@ -4280,7 +4338,7 @@
         ? 'PIT LIMITER ENGAGED \u00b7 '
           + Math.round(PIT_SPEED_FACTOR * physEngine.config.topSpeedKmh * REAL_SCALE) + ' KM/H'
         : 'PIT STOP \u00b7 ' + ((Date.now() - (pitServiceStart || Date.now())) / 1000).toFixed(1) + 's'
-          + ' \u00b7 TANK +' + Math.round(pitFuelGained) + '%'
+          + ' \u00b7 TANK +' + fuelLiters(pitFuelGained) + 'l'
           + ' \u00b7 REP +' + Math.round(pitDamageRepaired) + '%';
     }
 
@@ -6112,7 +6170,8 @@
   let pitServiceStart = null;
   let pitFuelGained = 0, pitDamageRepaired = 0;
   const PIT_FUEL_PER_SEC = 22;
-  const PIT_REPAIR_PER_SEC = 18;
+  // Repair speed used to be this flat 18%/s constant; replaced by repairRateAt() above,
+  // which is non-linear and driven by the "Vollstaendige Reparatur dauert" setting.
   // Same number the drivetrain calls walking pace, so "the car is standing" means one
   // thing everywhere: 10 km/h on the racing display.
   const PIT_STANDSTILL_KMH = 10 / (285 / 4);
@@ -6142,7 +6201,7 @@
       }
       if (pitServiceStart !== null) {
         log(`Boxenstopp beendet nach ${((Date.now() - pitServiceStart) / 1000).toFixed(1)}s: ` +
-            `+${Math.round(pitFuelGained)}% Sprit, -${Math.round(pitDamageRepaired)}% Schaden.`, 'info');
+            `+${fuelLiters(pitFuelGained)} l Sprit, -${Math.round(pitDamageRepaired)}% Schaden.`, 'info');
       }
       pitServiceStart = null;
       const st = $('pitstop-status');
@@ -6176,10 +6235,10 @@
     if (pitState === 'servicing') {
       if (!stopped) { setPitState('off'); showHudToast('Boxengasse verlassen'); return; }
       const st = $('pitstop-status');
-      if (st) st.textContent = `Service… +${Math.round(pitFuelGained)}% Sprit, `
+      if (st) st.textContent = `Service… +${fuelLiters(pitFuelGained)} l Sprit, `
                              + `-${Math.round(pitDamageRepaired)}% Schaden`;
       const addFuel = Math.min(100 - fuel, PIT_FUEL_PER_SEC * dt);
-      const fixDamage = Math.min(damage, PIT_REPAIR_PER_SEC * dt);
+      const fixDamage = Math.min(damage, repairRateAt(damage) * dt);
       fuel += addFuel; damage -= fixDamage;
       pitFuelGained += addFuel; pitDamageRepaired += fixDamage;
       updateDamageFuelUI();
@@ -6230,6 +6289,21 @@
   let fuelDrainPerSec = 3;       // % per second at full throttle magnitude (slider)
   let crashesToTotal = 4;        // how many crashes fill the damage bar (slider, 1-5)
   let crashDetectionEnabled = true;
+  // Total time (s) to repair 100% damage down to 0, non-linear: the schedule is fixed
+  // proportions of that total (1/10, 2/10, 3/10, 4/10 for the four 25%-damage quarters,
+  // fast-to-slow as the car gets more whole), so changing the total scales every quarter
+  // together rather than only the last one. At the default 10 s this is exactly 1/2/3/4 s.
+  let pitFullRepairS = 10;
+  const REPAIR_QUARTER_SHARE = [1, 2, 3, 4]; // sums to 10; the schedule's raw proportions
+
+  // %/s repair rate for the quarter the CURRENT damage value sits in. Called every tick
+  // with the damage BEFORE this tick's repair, so the rate changes exactly at the 75/50/25
+  // boundaries rather than drifting with dt.
+  function repairRateAt(damagePct) {
+    const scale = pitFullRepairS / 10;
+    const idx = damagePct > 75 ? 0 : damagePct > 50 ? 1 : damagePct > 25 ? 2 : 3;
+    return 25 / (REPAIR_QUARTER_SHARE[idx] * scale);
+  }
 
   function s8signed(b) { return b >= 128 ? b - 256 : b; }
 
@@ -6312,6 +6386,7 @@
   function updateDamageFuelUI() {
     $('fuel-bar').style.width = Math.max(0, fuel) + '%';
     $('fuel-bar').style.background = fuel < 20 ? 'var(--warn)' : 'var(--good)';
+    $('fuel-liters').textContent = `${fuelLiters(fuel)} / ${FUEL_TANK_LITERS} l`;
     // Condition, matching the racing screen: full green, shrinking with each crash.
     const health = Math.max(0, Math.min(100, 100 - damage));
     $('damage-bar').style.width = health + '%';
@@ -7733,6 +7808,8 @@
     padConnected = true;
     startPadLoop();
   }
+
+
 
 
 
