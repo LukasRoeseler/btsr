@@ -6,3 +6,20 @@ sounds/
 
 # Intermediate analysis output: candidate clips, metrics, the local audition page.
 audio-work/
+
+# Bluetooth-HCI-Mitschnitte. Ausdrueckliche Anweisung: nirgendwo hochladen. Sie liegen
+# ohnehin ausserhalb dieses Ordners, aber ein versehentliches Hineinkopieren soll nicht
+# committebar sein - einmal in der Historie sind sie praktisch nicht mehr entfernbar,
+# und sie enthalten Geraeteadressen und den vollstaendigen Funkverkehr des Telefons.
+*.cfa
+btsnoop*/
+btsnoop*
+
+# Rohmaterial fuer die Motorklaenge, wie sounds/ - nur die geschnittenen Ableitungen
+# in audio/ werden veroeffentlicht.
+porschesound/
+
+# Original-Druckvorlage von Carrera (target_finish.pdf). Aus ihr wird startziel-a4.svg
+# erzeugt (tools/make_pattern.py); die Vorlage selbst ist fremdes Material und wird
+# nicht mitverteilt.
+target_finish.pdf

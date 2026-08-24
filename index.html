@@ -3771,13 +3771,22 @@
         // speedLimitFactor dropped (1 -> ~0.28) — instant, not "runterbremsen". Above the
         // ceiling it now decelerates at a bounded rate instead; at or under it, the
         // existing rule (no new positive accel) still keeps it from climbing back over.
+        // Two different jobs, and conflating them broke acceleration entirely once:
+        //   ABOVE the cap (just entered the pit lane at speed) -> bleed off at a bounded
+        //     rate, so the limiter brakes the car down instead of snapping it to the cap.
+        //   AT the cap -> ordinary ceiling, no climbing past it.
+        //   BELOW the cap -> nothing to do at all. This is the case that was missed: an
+        //     `else if (accel > 0) accel = 0` fired whenever speed was under the ceiling,
+        //     which without a limiter (speedLimitFactor 1, ceiling = topSpeedKmh) is ALWAYS,
+        //     so every positive acceleration was zeroed and the car never moved from 0.
         const ceiling = cfg.topSpeedKmh * cfg.speedLimitFactor;
         if (st.speedKmh > ceiling) {
-          accel = Math.min(accel, -cfg.pitLimiterDecel);
-        } else if (accel > 0) {
-          accel = 0; // pit limiter eases in
+          const eased = st.speedKmh + Math.min(accel, -cfg.pitLimiterDecel) * dt;
+          st.speedKmh = Math.max(ceiling, eased); // never undershoot the cap on the way down
+        } else {
+          if (accel > 0 && st.speedKmh >= ceiling) accel = 0;
+          st.speedKmh = Math.max(0, Math.min(ceiling, st.speedKmh + accel * dt));
         }
-        st.speedKmh = Math.max(0, st.speedKmh + accel * dt);
 
         output = st.speedKmh / cfg.topSpeedKmh;
         // A real car needs a minimum shove to break away from standstill; without this
@@ -7808,6 +7817,7 @@
     padConnected = true;
     startPadLoop();
   }
+
 
 
 
