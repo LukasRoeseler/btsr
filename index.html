@@ -184,8 +184,12 @@
     border-radius: 0; padding: 11px 15px; color: var(--muted); font-weight: 700;
     text-transform: uppercase; letter-spacing: .09em; font-size: 11.5px;
   }
-  /* The weaker glitch, and only on the tab that is actually current: on all eight at once it
-     stops being an accent and becomes a blur. */
+  /* Every tab gets a hint of the channel offset, the active one gets it at full strength.
+     Sub-pixel on the inactive ones, so the row reads as one glitched object rather than as
+     seven clean labels next to one broken one. */
+  nav.tabs button {
+    text-shadow: 0.5px 0 0 var(--glitch-r), -0.5px 0 0 var(--glitch-c);
+  }
   nav.tabs button.active {
     text-shadow: 1px 0 0 var(--glitch-r), -1px 0 0 var(--glitch-c);
   }
@@ -631,6 +635,15 @@
      Deliberately NOT reusing the racing screen's .race-fs rules: that one rotates the dash
      on a portrait phone, which would rotate the palette out from under the map. */
   #track-fs-host { position: relative; }
+  /* Feste Hoehe. Vorher wuchs und schrumpfte der Kasten mit dem Streckenumriss: jedes
+     hinzugefuegte Teil aenderte die viewBox, damit das Seitenverhaeltnis und damit die
+     gerenderte Hoehe - die halbe Seite sprang bei jedem Klick. Jetzt skaliert die Karte
+     INNERHALB eines stabilen Kastens. */
+  #track-preview-svg {
+    height: clamp(240px, 42vh, 460px);
+    display: grid; place-items: center; overflow: hidden;
+  }
+  #track-preview-svg svg { max-height: 100%; max-width: 100%; width: auto; height: auto; }
   body.track-fs #track-fs-host { position: fixed; inset: 0; z-index: 200;
     background: var(--bg); display: grid; grid-template-rows: 1fr auto;
     align-items: center; padding: 8px; gap: 6px; }
@@ -649,8 +662,12 @@
   .tp-btn.sel { border-color: var(--accent); border-width: 3px; background: var(--panel-3); }
   .tp-btn .tp-cap { font-size: 8.5px; letter-spacing: .04em; text-transform: uppercase;
     color: var(--muted); margin-top: 1px; }
-  body.track-fs .tp-btn { width: 44px; height: 44px; }
-  body.track-fs .tp-btn .tp-cap { display: none; }
+  /* Etwas Abstand zwischen Teilen und Aktionen, damit "Leeren" nicht neben "Haarnadel"
+     steht und aussieht wie ein weiteres Streckenteil. */
+  .tp-actions { margin-top: 4px; }
+  .tp-actions .tp-btn { border-color: var(--border); }
+  body.track-fs #track-fs-host { grid-template-rows: 1fr auto auto; }
+  body.track-fs .tp-btn { width: 46px; height: 46px; }
   /* Space usage, subtle, in a corner as asked. */
   /* The gamepad moves the REAL focus rather than a painted marker of its own, so keyboard,
      controller and screen reader all agree on where you are. That only works if focus is
@@ -667,12 +684,14 @@
     position: fixed; inset: 0; z-index: 0; pointer-events: none;
     background-image:
       linear-gradient(180deg, transparent 0, var(--glitch-c) 0, var(--glitch-c) 1px, transparent 1px),
-      linear-gradient(180deg, transparent 0, var(--glitch-r) 0, var(--glitch-r) 2px, transparent 2px),
       linear-gradient(180deg, transparent 0, rgba(0,255,102,.30) 0, rgba(0,255,102,.30) 1px, transparent 1px),
-      linear-gradient(180deg, transparent 0, var(--glitch-c) 0, var(--glitch-c) 3px, transparent 3px);
+      linear-gradient(180deg, transparent 0, var(--glitch-c) 0, var(--glitch-c) 2px, transparent 2px);
     background-repeat: no-repeat;
-    background-position: 0 14vh, 0 37vh, 0 61vh, 0 86vh;
-    background-size: 62% 100%, 100% 100%, 44% 100%, 78% 100%;
+    /* Der durchgehende rote Streifen ist raus: ueber die ganze Breite gezogen liest er sich
+       als Warnung und nicht als Gestaltung. Die schmalen Cyan- und Gruenstreifen bleiben und
+       reichen nicht ueber die volle Breite. */
+    background-position: 0 14vh, 0 61vh, 0 86vh;
+    background-size: 62% 100%, 44% 100%, 78% 100%;
     opacity: .5;
   }
   /* Not in the cockpit: a coloured line across a dash reads as a warning, not as style. */
@@ -951,14 +970,24 @@
   <h1>OmegaSim</h1>
   <div class="spacer"></div>
   <button class="hdr-btn" id="btn-connect" aria-label="Auto verbinden">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
-         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-      <path d="M12 3v18M12 8l6-4M12 8L6 4M12 16l6 4M12 16l-6-4"/>
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="square"
+         aria-hidden="true">
+      <path d="M12 5v14M5 12h14" stroke="#00E5FF" opacity=".55" transform="translate(-1.6,-1.1)"/>
+      <path d="M12 5v14M5 12h14" stroke="#FF0055" opacity=".6" transform="translate(1.8,1.2)"/>
+      <path d="M12 5v14M5 12h14" stroke="currentColor"/>
+      <path d="M5 10.4h14" stroke="#00FF66" stroke-width="1.4" opacity=".9"
+            transform="translate(2.6,0)"/>
     </svg><span class="lbl">Verbinden</span></button>
   <button class="hdr-btn" id="btn-disconnect" disabled aria-label="Auto trennen">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
-         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-      <path d="M12 3v18M12 8l6-4M12 16l6 4M12 16l-6-4M4 4l16 16"/>
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="2.8" aria-hidden="true">
+      <circle cx="12" cy="12" r="7" stroke="#00E5FF" opacity=".55"
+              transform="translate(-1.6,-1.1)"/>
+      <circle cx="12" cy="12" r="7" stroke="#FF0055" opacity=".6"
+              transform="translate(1.8,1.2)"/>
+      <circle cx="12" cy="12" r="7" stroke="currentColor"/>
+      <path d="M4 10.2h16" stroke="#0b0c0f" stroke-width="2.2"/>
+      <path d="M4 10.2h16" stroke="#00FF66" stroke-width="1.2" opacity=".9"
+            transform="translate(2.4,0)"/>
     </svg><span class="lbl">Trennen</span></button>
   </div>
   <!-- The tab row lives inside the header now, so the whole navigation is one block. -->
@@ -1055,11 +1084,12 @@
         mit deinem eigenen Streckenaufbau.</p>
       <div class="home-cta">
         <button class="primary" id="home-go">Losfahren</button>
+        <button id="home-fs">Vollbild</button>
         <button id="home-doc">Doku</button>
       </div>
     </div>
     <div class="home-feat">
-        <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/><circle cx="9" cy="7" r="2"/><circle cx="15" cy="12" r="2"/><circle cx="7" cy="17" r="2"/></svg><span>Über <b id="home-param-count">…</b> Handling-Parameter</span></div>
+        <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/><circle cx="9" cy="7" r="2"/><circle cx="15" cy="12" r="2"/><circle cx="7" cy="17" r="2"/></svg><span style="white-space:nowrap">&Uuml;ber <b id="home-param-count">50</b> Handling-Parameter</span></div>
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="13" height="10" rx="1"/><rect x="17" y="9" width="4" height="11" rx="1"/></svg><span>PC und Smartphone, ohne Installation</span></div>
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 17a8 8 0 1 1 16 0"/><path d="M12 17 16 9"/></svg><span>Anzeigen wie auf einem echten GT3-HUD</span></div>
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20V8"/><circle cx="12" cy="5" r="2"/><path d="M6 12h12"/></svg><span>Manuelle Schaltung</span></div>
@@ -2952,6 +2982,18 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="ghost-lateral-val">aus</span>
         </div></div>
+      <div class="opt-row"><div class="opt-label">Ton bei Lichthupe
+          <small>Selbst gerechnet, keine Aufnahme. Standard aus.</small></div>
+        <select id="flash-sound">
+          <option value="none" selected>kein Ton</option>
+          <option value="relay">Relais-Klacken</option>
+          <option value="horn">kurze Hupe</option>
+          <option value="blip">elektronischer Blip</option>
+        </select></div>
+      <div class="opt-row"><div class="opt-label">Ghost braucht Streckencode
+          <small>Aus: der Ghost f&auml;hrt auch ohne gedruckte Strecke. Dann h&auml;lt sich
+          das Auto nicht selbst auf der Bahn.</small></div>
+        <label class="tgl"><input type="checkbox" id="ghost-needcode" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Ghost: F&uuml;hrenden bremsen<small>Der Erstplatzierte fährt etwas langsamer.</small></div>
         <label class="tgl"><input type="checkbox" id="ghost-leader"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Tankgewicht<small>Voller Tank macht träger. Links = aus.</small></div>
@@ -3006,7 +3048,7 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-crash-count-val">4</span>
         </div></div>
-      <div class="opt-row"><div class="opt-label">Crashs ausschalten</div><label class="tgl"><input type="checkbox" id="setting-crash-off"><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Schaden</div><label class="tgl"><input type="checkbox" id="setting-crash-damage" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Vollst&auml;ndige Reparatur dauert (s)<small>Von 100 % auf 0. Nicht linear: die ersten 25 % in 1/10 der Zeit, die letzten 25 % in 4/10.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
@@ -3042,6 +3084,8 @@
         <span class="muted">Gas: <b id="pad-live-throttle">0.00</b></span>
         <span class="muted">Bremse: <b id="pad-live-brake">0.00</b></span>
         <span class="muted">Lenkung: <b id="pad-live-steer">0.00</b></span>
+        <span class="muted">Steuerkreuz: <b id="pad-live-dpad">&ndash;</b></span>
+        <span class="muted" style="font-size:11px">Achsen: <b id="pad-live-axes">&ndash;</b></span>
       </div>
     </div>
 
@@ -3150,12 +3194,11 @@
         <button id="track-add-left">+ Linkskurve (?)</button>
         <button id="track-add-hairpin">+ Haarnadel (180&deg;)</button>
         <button id="track-add-pit">+ Boxengasse</button>
-        <button id="track-undo">&#8630; Letztes Teil</button>
-        <button id="track-clear">Alles löschen</button>
+        <span class="muted" style="font-size:11.5px">Zur&uuml;ck, Drehen und Leeren stehen
+          unter der Karte &mdash; auch im Vollbild.</span>
       </div>
       <div class="row" style="margin-top:10px">
-        <button id="track-rotate-left">↺ 90° links drehen</button>
-        <button id="track-rotate-right">↻ 90° rechts drehen</button>
+        <button id="track-rotate-left">&#8634; 90&deg; links drehen</button>
         <span class="muted">Ausrichtung: <b id="track-rotation-val">0°</b></span>
       </div>
       <div class="row" style="margin-top:10px">
@@ -3165,14 +3208,42 @@
       </div>
       <div class="row" style="margin-top:10px">
         <button id="track-fs">&#9974; Vollbild</button>
-        <button id="track-fs-exit" hidden>Vollbild verlassen</button>
         <span class="muted" style="font-size:11.5px">Im Vollbild: D-Pad w&auml;hlt,
           X baut, O r&uuml;ckg&auml;ngig, Dreieck Reset, Quadrat dreht 90&deg;</span>
       </div>
 
+      <!-- Alles, was im Vollbild erreichbar sein muss, liegt IM Host. Ausserhalb verdeckt
+           ihn das fixierte Layout, und dann kann man bauen, aber nicht zurueckdrehen,
+           leeren oder verlassen. -->
       <div id="track-fs-host">
-        <div id="track-preview-svg" style="margin-top:14px"></div>
+        <div id="track-preview-svg"></div>
         <div class="tp-bar" id="track-palette"></div>
+        <div class="tp-bar tp-actions">
+          <button class="tp-btn" id="track-undo" title="Letztes Teil entfernen"
+                  aria-label="Letztes Teil entfernen">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                 stroke-linecap="round" aria-hidden="true"><path d="M9 14 4 9l5-5"/>
+              <path d="M4 9h9a7 7 0 0 1 0 14H8"/></svg>
+            <span class="tp-cap">Zur&uuml;ck</span></button>
+          <button class="tp-btn" id="track-rotate-right" title="90&deg; rechts drehen"
+                  aria-label="90 Grad rechts drehen">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                 stroke-linecap="round" aria-hidden="true"><path d="M15 6 20 11 15 16"/>
+              <path d="M20 11H9a5 5 0 0 0 0 10h3"/></svg>
+            <span class="tp-cap">Drehen</span></button>
+          <button class="tp-btn" id="track-clear" title="Alles l&ouml;schen"
+                  aria-label="Alles loeschen">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                 stroke-linecap="round" aria-hidden="true"><path d="M5 7h14M9 7V4h6v3"/>
+              <path d="M7 7l1 13h8l1-13"/></svg>
+            <span class="tp-cap">Leeren</span></button>
+          <button class="tp-btn" id="track-fs-exit" hidden title="Vollbild verlassen"
+                  aria-label="Vollbild verlassen">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                 stroke-linecap="round" aria-hidden="true">
+              <path d="M9 4H4v5M15 4h5v5M9 20H4v-5M15 20h5v-5"/></svg>
+            <span class="tp-cap">Schlie&szlig;en</span></button>
+        </div>
         <span class="tp-space" id="track-space"></span>
       </div>
       <p class="muted" style="font-size:11.5px; margin-top:6px">
@@ -5142,9 +5213,14 @@
     $('setting-crash-count-val').textContent = crashesToTotal;
   });
 
-  $('setting-crash-off').addEventListener('change', (e) => {
-    crashDetectionEnabled = !e.target.checked;
-    $('setting-crash-count').disabled = e.target.checked;
+  $('setting-crash-damage').addEventListener('change', (e) => {
+    // Umgedreht gegenueber vorher: der Schalter hiess "Crashs ausschalten" und war damit
+    // eine doppelte Negation - angehakt bedeutete "kein Schaden". Jetzt heisst er "Schaden"
+    // und angehakt bedeutet, dass es welchen gibt. Standard an.
+    crashDetectionEnabled = e.target.checked;
+    // Der Zaehler "Crashs bis Schadensbalken voll" ist ohne Schadensmodell bedeutungslos.
+    $('setting-crash-count').disabled = !e.target.checked;
+    log('Schadensmodell ' + (e.target.checked ? 'an' : 'aus') + '.', 'info');
   });
 
   $('setting-repair-time').addEventListener('input', (e) => {
@@ -5958,8 +6034,12 @@
   // never be mistaken for something the car actually reported. The hairpin's real wire code
   // is not known yet — it can be read off with the Muster-Sonde in the Strecke tab by
   // driving over the piece once.
+  // HAIRPIN_LEFT und HAIRPIN sind zwei Bauteile, aber auf dem Draht dasselbe: die
+  // Haarnadel tr&auml;gt denselben Barcode wie eine normale Kurve, das Auto meldet also 0x03
+  // oder 0x04 und kann eine Haarnadel von einer 60-Grad-Kurve nicht unterscheiden. Die
+  // Unterscheidung existiert nur in unserer Karte, damit die Geometrie stimmt.
   const TILE_TYPE = { START: 0x01, STRAIGHT: 0x02, CURVE_RIGHT: 0x04, CURVE_LEFT: 0x03,
-                      PIT: 0x100, HAIRPIN: 0x101 };
+                      PIT: 0x100, HAIRPIN: 0x101, HAIRPIN_LEFT: 0x102 };
   // Code 0x00 means the sensor is reading NOTHING VALID, i.e. the car has left the track.
   // From the guard-rail capture of 20.08: every departure showed up as 0x00 together with the
   // tile counter racing (6 -> 8 -> 9 -> 15 -> 18 within three seconds), and 16 of 38
@@ -6045,6 +6125,12 @@
   // it is now expressed in centimetres so it stays checkable.
   const TRACK_TILE_CM = 43, TRACK_WIDTH_CM = 25, TRACK_RADIUS_CM = 37;
   const TRACK_STEP = 40;                                   // drawing units per tile length
+  // Das Bauteil hat vor dem Bogen noch ein Geradenstueck - auf dem Foto deutlich zu sehen.
+  // Ohne das setzt der Bogen unmittelbar am vorigen Teil an, und die Karte zeigt eine
+  // engere Kehre als tatsaechlich liegt. Ein Drittel einer Kachellaenge ist eine ANNAHME,
+  // gemessen ist sie nicht; sobald der Grundriss eines Haarnadelteils vorliegt, gehoert hier
+  // die echte Zahl hin.
+  const TRACK_HAIRPIN_LEAD = TRACK_STEP / 3;
   const TRACK_UNITS_PER_CM = TRACK_STEP / TRACK_TILE_CM;   // 0.930
   const TRACK_RADIUS = TRACK_RADIUS_CM * TRACK_UNITS_PER_CM;
   const TRACK_TURN_DEG = 60;
@@ -6056,22 +6142,31 @@
     if (type === TILE_TYPE.CURVE_RIGHT) return TRACK_TURN_DEG;
     if (type === TILE_TYPE.CURVE_LEFT) return -TRACK_TURN_DEG;
     if (type === TILE_TYPE.HAIRPIN) return TRACK_HAIRPIN_DEG;
+    if (type === TILE_TYPE.HAIRPIN_LEFT) return -TRACK_HAIRPIN_DEG;
     return 0;
   }
   function tileRadius(type) {
-    return type === TILE_TYPE.HAIRPIN ? TRACK_HAIRPIN_RADIUS : TRACK_RADIUS;
+    return (type === TILE_TYPE.HAIRPIN || type === TILE_TYPE.HAIRPIN_LEFT)
+      ? TRACK_HAIRPIN_RADIUS : TRACK_RADIUS;
   }
   function tileIsCurve(type) {
     return type === TILE_TYPE.CURVE_RIGHT || type === TILE_TYPE.CURVE_LEFT
-        || type === TILE_TYPE.HAIRPIN;
+        || type === TILE_TYPE.HAIRPIN || type === TILE_TYPE.HAIRPIN_LEFT;
   }
 
   function walkTrack(tiles) {
     let x = 0, y = 0, heading = trackRotationDeg;
     const points = [{ x, y, heading, type: null }];
     for (const tile of tiles) {
-      if (tile.type === TILE_TYPE.CURVE_RIGHT || tile.type === TILE_TYPE.CURVE_LEFT
-          || tile.type === TILE_TYPE.HAIRPIN) {
+      if (tileIsCurve(tile.type)) {
+        // Die Haarnadel beginnt mit einem geraden Stueck. Es wird VOR dem Bogen gegangen und
+        // aendert die Richtung nicht, verschiebt den Bogenanfang also nur nach vorne.
+        if (tile.type === TILE_TYPE.HAIRPIN || tile.type === TILE_TYPE.HAIRPIN_LEFT) {
+          const r0 = heading * Math.PI / 180;
+          x += Math.sin(r0) * TRACK_HAIRPIN_LEAD;
+          y -= Math.cos(r0) * TRACK_HAIRPIN_LEAD;
+          points.push({ x, y, heading, type: TILE_TYPE.STRAIGHT, lead: true });
+        }
         const turn = tileTurnDeg(tile.type);
         const radius = tileRadius(tile.type);
         const midRad = (heading + turn / 2) * Math.PI / 180;
@@ -6687,8 +6782,12 @@
           + '<path d="M16 20 L16 9 A5 5 0 0 1 21 4" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="3 2.5" stroke-linecap="round"/>' },
     { key: 'right', type: () => TILE_TYPE.CURVE_RIGHT, cap: 'Rechts',
       icon: '<path d="M6 22 L6 13 A7 7 0 0 1 13 6 L20 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>' },
-    { key: 'hairpin', type: () => TILE_TYPE.HAIRPIN, cap: 'Haarnadel',
-      icon: '<path d="M8 22 L8 11 A5 5 0 0 1 18 11 L18 22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>' },
+    { key: 'hairpin-left', type: () => TILE_TYPE.HAIRPIN_LEFT, cap: 'Haarnadel L',
+      icon: '<path d="M16 22 L16 14 A5 5 0 0 0 6 14 L6 22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>'
+          + '<path d="M16 22 L16 19" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>' },
+    { key: 'hairpin', type: () => TILE_TYPE.HAIRPIN, cap: 'Haarnadel R',
+      icon: '<path d="M8 22 L8 14 A5 5 0 0 1 18 14 L18 22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>'
+          + '<path d="M8 22 L8 19" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>' },
   ];
   let trackPaletteSel = 1;   // the straight: the most common piece, so the default costs least
 
@@ -8227,6 +8326,63 @@
     if (Date.now() < lightFx.flashUntil) return;   // already flashing; ignore a double tap
     lightFx.flashUntil = Date.now() + FLASH_MS;
     showHudToast('Lichthupe');
+    playFlashSound();
+  }
+
+  // Drei Toene zur Wahl, alle gerechnet und keine Aufnahme. Pixabay-Material haette ich
+  // herunterladen muessen, und das ist ein Schritt nach draussen, den ich nicht ohne
+  // Rueckfrage gehe - dazu kommt die Anweisung, Toene selbst zu erzeugen. Standard aus: ein
+  // Auto macht bei der Lichthupe kein Geraeusch, das hier ist eine Rueckmeldung fuer den
+  // Fahrer und keine Simulation.
+  function playFlashSound() {
+    const sel = $('flash-sound');
+    const kind = sel ? sel.value : 'none';
+    if (kind === 'none' || !audioCtx || !soundEnabled) return;
+    const t = audioCtx.currentTime + 0.01;
+    if (kind === 'relay') {
+      // Zwei harte, kurze Klicks: Anzug und Abfall. Rauschen durch einen engen Bandpass,
+      // weil ein Relaisklick fast nur Anschlag und kaum Ton ist.
+      for (const [dt, amp] of [[0, 0.5], [0.055, 0.32]]) {
+        const n = audioCtx.createBufferSource();
+        const len = Math.floor(audioCtx.sampleRate * 0.02);
+        const buf = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
+        const d = buf.getChannelData(0);
+        for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (len * 0.16));
+        n.buffer = buf;
+        const bp = audioCtx.createBiquadFilter();
+        bp.type = 'bandpass'; bp.frequency.value = 2600; bp.Q.value = 1.4;
+        const g = audioCtx.createGain(); g.gain.value = amp;
+        n.connect(bp).connect(g).connect(audioCtx.destination);
+        n.start(t + dt);
+      }
+      return;
+    }
+    if (kind === 'horn') {
+      // Zwei Teiltoene in einer kleinen Terz, wie eine Zweiklanghupe, 140 ms.
+      for (const f of [370, 440]) {
+        const o = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        o.type = 'sawtooth';
+        o.frequency.value = f;
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.14, t + 0.015);
+        g.gain.setValueAtTime(0.14, t + 0.11);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.14);
+        o.connect(g).connect(audioCtx.destination);
+        o.start(t); o.stop(t + 0.16);
+      }
+      return;
+    }
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.type = 'square';
+    o.frequency.setValueAtTime(880, t);
+    o.frequency.exponentialRampToValueAtTime(1760, t + 0.05);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.10, t + 0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.07);
+    o.connect(g).connect(audioCtx.destination);
+    o.start(t); o.stop(t + 0.09);
   }
 
   function updateDamageBlink() {
@@ -9203,6 +9359,11 @@
     if (engineOsc) engineOsc.type = soundProfile.wave;
   });
 
+  $('ghost-needcode').addEventListener('change', (e) => {
+    ghostCfg.needCode = e.target.checked;
+    log('Ghost ' + (e.target.checked ? 'braucht' : 'braucht keinen') + ' Streckencode.', 'info');
+  });
+
   $('setting-rain').addEventListener('change', (e) => {
     setWeather(e.target.checked ? 'rain' : 'dry');
   });
@@ -9366,7 +9527,10 @@
     racestart: { type: 'button', index: 5, label: 'RB / R1' },
     weather: { type: 'button', index: 8, label: 'Select / Share' },
     trackview: { type: 'button', index: 9, label: 'Start / Options' },
-    resetcar: { type: 'button', index: 17, label: 'Touchpad' },
+    // Nicht belegt. Das Touchpad wird vom System als Zeiger erkannt, also loest ein Tippen
+    // gleichzeitig einen Klick irgendwo in der Seite aus - eine Belegung darauf kaempft mit
+    // dem Cursor. Frei zuweisbar bleibt es, nur eben nicht ab Werk.
+    resetcar: { type: 'none', index: -1, label: 'nicht belegt' },
   };
   const BIND_ACTION_LABELS = {
     throttle: 'Gas', brake: 'Bremse', steering: 'Lenkung',
@@ -9537,6 +9701,27 @@
     return (btn.value ?? (btn.pressed ? 1 : 0)) > BUTTON_CAPTURE_THRESHOLD;
   }
 
+  // Das Steuerkreuz kommt NICHT auf allen Pads als Knopf. Im Standard-Mapping sind es die
+  // Knoepfe 12 bis 15, aber viele Pads melden es als Hat-Achse - und dann war es hier
+  // unsichtbar, obwohl Trigger und Knoepfe einwandfrei liefen. Genau dazu passt die
+  // Beobachtung "Gamepad im Menue geht nicht, Fahren geht".
+  //
+  // Also beides: erst die Knoepfe, dann als Rueckfall die Achsen ab Index 4 - die Achsen 0
+  // bis 3 sind die beiden Sticks und duerfen das Kreuz nicht ausloesen.
+  const DPAD_AXIS_THRESHOLD = 0.6;
+  function padDpad(pad, dir) {
+    if (padButtonPressed(pad, DPAD[dir])) return true;
+    const ax = pad.axes || [];
+    for (let i = 4; i + 1 < ax.length; i += 2) {
+      const x = ax[i] || 0, y = ax[i + 1] || 0;
+      if (dir === 'left' && x < -DPAD_AXIS_THRESHOLD) return true;
+      if (dir === 'right' && x > DPAD_AXIS_THRESHOLD) return true;
+      if (dir === 'up' && y < -DPAD_AXIS_THRESHOLD) return true;
+      if (dir === 'down' && y > DPAD_AXIS_THRESHOLD) return true;
+    }
+    return false;
+  }
+
   function nudgeAccel(delta) {
     const input = $('phys-accel');
     // Round to one decimal: repeated float addition of 0.1 otherwise lands on 0.7000000001
@@ -9683,7 +9868,13 @@
     // second press resets each ghost to the start of its behaviour rather than stacking a
     // second engine on the same car.
     let n = 0;
-    for (const c of garage) if (c.role === 'ghost') { startGhost(c); n++; }
+    for (const c of garage) if (c.role === 'ghost') {
+      startGhost(c);
+      // Ohne das faehrt der Ghost nicht: ghostTick laesst ihn nur los, wenn ein Rennen
+      // scharf ist. Freies Fahren ist genau der Fall, in dem keines laeuft.
+      c.ghost.freeRun = true;
+      n++;
+    }
     log(garageLabel(player) + ' im Cockpit'
         + (n ? ', ' + n + ' Ghost' + (n === 1 ? '' : 's') + ' gestartet' : ''), 'info');
   };
@@ -9808,6 +9999,10 @@
     // Default ON: the measurement says this is the mode in which the car holds the track by
     // itself, which is the only configuration in which a ghost works at all today.
     railMode: true,
+    // Verlangt der Ghost einen gelesenen Streckencode, um ueberhaupt zu fahren? Standard ja:
+    // ohne Code weiss das Auto nicht, wo es ist, und der Leitplanken-Modus kann nichts
+    // halten. Aus, um ohne gedruckte Strecke ueberhaupt etwas fahren zu sehen.
+    needCode: true,
   };
 
   // Per-tile behaviour, data-driven on purpose: the hairpin and left-curve codes are not
@@ -9863,8 +10058,13 @@
     e.config.tyreEffect = 0;
     e.state.driveMode = 'forward';
     e.state.currentGear = 0;
+    // freeRun: darf dieser Ghost fahren, ohne dass ein Rennen laeuft? "Losfahren" aus der
+    // Garage setzt es. Ohne dieses Flag verlangte ghostTick raceState 'racing' und setzte
+    // Lenkung, Gas UND die Geschwindigkeit auf null - der Knopf startete also nachweislich
+    // einen Ghost, der sich nicht bewegen konnte, obwohl der Kommentar daneben "freies
+    // Fahren mit Begleitung" behauptete.
     car.ghost = { engine: e, tileIndex: null, lastCount: car.tileCount,
-                  lastTick: 0, bias: 0, laps: 0, cutOut: false };
+                  lastTick: 0, bias: 0, laps: 0, cutOut: false, freeRun: false };
     // Stagger against the player's heartbeat and against each other, so four cars do not
     // all transmit in the same millisecond.
     const slot = garage.indexOf(car) + 1;
@@ -9896,9 +10096,16 @@
     // Cut-out. Two detectors, and the first one is new: code 0x00 IS the off-track report,
     // so there is no need to wait for a timeout. The timeout stays as a backstop for the case
     // where notifications stop arriving altogether, which 0x00 cannot cover.
-    const offTrack = car.tileCode === TILE_OFFTRACK
-                  || !car.lastCodeAt || (now - car.lastCodeAt > GHOST_OFFTRACK_MS);
-    const armed = raceState === 'racing' || raceState === 'finishing';
+    // Ohne Streckencode haelt der Ghost an. Das ist die richtige Vorsicht, solange eine
+    // gedruckte Strecke liegt - aber solange keine liegt, hat das Auto NIE einen Code
+    // gemeldet (!car.lastCodeAt), und dann faehrt der Ghost gar nicht erst los. Von aussen
+    // sieht das aus wie ein kaputtes Feature. Der Schalter erlaubt Fahren ohne Codes; das
+    // Auto haelt sich dann nicht selbst auf der Bahn, deshalb ist er standardmaessig an.
+    const noCode = !car.lastCodeAt || (now - car.lastCodeAt > GHOST_OFFTRACK_MS);
+    const offTrack = ghostCfg.needCode
+      ? (car.tileCode === TILE_OFFTRACK || noCode)
+      : (car.tileCode === TILE_OFFTRACK && !noCode);
+    const armed = raceState === 'racing' || raceState === 'finishing' || g.freeRun;
     if (offTrack !== g.cutOut) {
       g.cutOut = offTrack;
       log(`${garageLabel(car)}: ${offTrack ? 'kein Streckencode — Ghost hält' : 'Streckencode wieder da'}`,
@@ -10064,6 +10271,14 @@
       $('pad-live-throttle').textContent = throttleRaw.toFixed(2);
       $('pad-live-brake').textContent = brakeRaw.toFixed(2);
       $('pad-live-steer').textContent = steerRaw.toFixed(2);
+      // Damit sich nicht wieder raten laesst, ob das Kreuz erkannt wird: hier steht, was
+      // ankommt und woher - als Knopf oder als Achse.
+      const dl = ['up', 'down', 'left', 'right'].filter(d => padDpad(pad, d));
+      const asBtn = [12, 13, 14, 15].some(i => padButtonPressed(pad, i));
+      $('pad-live-dpad').textContent = dl.length ? dl.join('+') + (asBtn ? ' (Knopf)' : ' (Achse)')
+        : (pad.buttons.length > 15 ? 'nichts' : 'nichts, Pad hat nur ' + pad.buttons.length + ' Knoepfe');
+      $('pad-live-axes').textContent = (pad.axes || []).length + ': '
+        + [...(pad.axes || [])].map(v => v.toFixed(1)).join(' ');
 
       // No tab gate any more, and setThrottleLogical (not setThrottle) so that pressing
       // the throttle actually goes FORWARD — setThrottle takes screen-space and was
@@ -10137,8 +10352,8 @@
       prevDownshift = downshiftNow;
       prevUpshift = upshiftNow;
 
-      const dUp = padButtonPressed(pad, DPAD.up), dDown = padButtonPressed(pad, DPAD.down);
-      const dLeft = padButtonPressed(pad, DPAD.left), dRight = padButtonPressed(pad, DPAD.right);
+      const dUp = padDpad(pad, 'up'), dDown = padDpad(pad, 'down');
+      const dLeft = padDpad(pad, 'left'), dRight = padDpad(pad, 'right');
       // Two consumers can claim the D-pad before the normal bindings see it: the track
       // editor in fullscreen, and an armed pit stop. Each returns true when it took the
       // press, so at every other moment the pad keeps its usual job (accel and steering
@@ -11033,11 +11248,7 @@
       + '<text id="home-gear" x="110" y="168" text-anchor="middle" font-size="34"'
       + ' font-weight="800" fill="#f4f6fb" font-family="monospace">1</text>'
       + '</g>'
-      // Speed streaks on the left, so the headline still has a quiet field to sit on.
-      + '<g opacity=".16" stroke="#f4f6fb" stroke-width="1">'
-      + [30, 62, 96, 130, 168, 200].map((y, i) =>
-          '<line x1="0" y1="' + y + '" x2="' + (150 - i * 12) + '" y2="' + (y + 5) + '"/>').join('')
-      + '</g></svg>';
+      + '</svg>';
   }
 
   function homeFrame(now) {
@@ -11060,14 +11271,30 @@
       const g = $('home-gear');
       if (g) g.textContent = String(HOME_GEARS[idx]);
     }
+    // Das Omega im Hintergrund glitcht. Die Versaetze springen in Stufen und nicht
+    // kontinuierlich, weil ein weiches Gleiten wie ein Fehler im Rendering aussieht und ein
+    // Sprung wie ein Signalfehler - gemeint ist der Signalfehler. Die Schrittweite haengt an
+    // einer Sinusfunktion mit unrunder Periode, damit sich das Muster nicht hoerbar
+    // wiederholt.
+    const mark = document.querySelector('.home-mark');
+    if (mark) {
+      const step = Math.floor(t * 7.3) % 5;
+      const jump = step === 0 ? 6 : step === 2 ? -4 : step === 3 ? 2 : 0;
+      mark.style.transform = 'translateY(-50%) translateX(' + jump + 'px)';
+      // Und ab und zu ein harter Aussetzer, kurz genug, dass er als Stoerung liest.
+      mark.style.opacity = (Math.floor(t * 11.7) % 23 === 0) ? '0.05' : '';
+    }
+
     // Weather comes and goes on its own, and the lightning only strikes while it is wet -
     // a flash out of a dry sky would read as a rendering glitch rather than as weather.
-    const wet = (t % 17) > 7;
+    // Haeufiger als vorher: 17 s Zyklus mit 10 s trocken hiess, dass man den Regen selten
+    // zu sehen bekam. Jetzt 11 s Zyklus, etwa die Haelfte nass.
+    const wet = (t % 11) > 5;
     const hero = $('home-hero');
     if (hero) hero.classList.toggle('wet', wet);
     const flash = $('home-flash');
     if (flash) {
-      if (wet && now - homeFlashAt > 2600 && Math.random() < 0.012) {
+      if (wet && now - homeFlashAt > 1400 && Math.random() < 0.03) {
         homeFlashAt = now;
         flash.style.transition = 'none';
         flash.style.opacity = '0.5';
@@ -11081,8 +11308,11 @@
 
   function homeStart() {
     homeBuild();
+    // Feste Zahl statt gezaehlter. Die gezaehlten 73 brachen die Zeile um und lasen sich
+    // wie eine Praezision, die die Aussage nicht hat - viele der 73 sind interne
+    // Zwischenwerte, keine Regler, die jemand anfasst. "Ueber 50" ist wahr und lesbar.
     const el = $('home-param-count');
-    if (el) el.textContent = String(countHandlingParams());
+    if (el) el.textContent = '50';
     if (homeRaf !== null) return;
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
       // Draw one frame and stop. The rule already freezes the rain; the needle has to be
@@ -11111,6 +11341,13 @@
   $('btn-home').addEventListener('click', () => showTab('home'));
   $('home-go').addEventListener('click', () => showTab('garage'));
   $('home-doc').addEventListener('click', () => showTab('doc'));
+  // Vollbild direkt von der Startseite. Vorher lag der einzige Knopf dafuer in der Ecke des
+  // Cockpits, und wenn das Gamepad nicht mitspielt, kommt man dort schlecht hin.
+  $('home-fs').addEventListener('click', () => {
+    showTab('race');
+    const b = $('race-fs');
+    if (b) b.click();
+  });
 
   // It is the landing view, so it starts running.
   homeStart();
