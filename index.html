@@ -1307,7 +1307,7 @@
         </div>
         <div class="hud-stat"><span class="hud-value" id="dash-battery">-</span><span class="hud-label">Akku</span></div>
         <div class="hud-stat"><span class="hud-value" id="dash-pit">-</span><span class="hud-label">Box</span></div>
-        <label class="hud-toggle"><input type="checkbox" id="dash-head-toggle"> Scheinwerfer</label>
+        <label class="hud-toggle"><input type="checkbox" id="dash-head-toggle" checked> Scheinwerfer</label>
       </div>
       <div id="hud-toast" style="margin-top:10px; color:#ffcf6e; font-family:monospace; font-size:13px; min-height:18px"></div>
     </div>
@@ -1608,6 +1608,33 @@
         l&auml;uft, liest er sich an jeder Querposition gleich. Das ist der Grund, warum in
         diesem Code grunds&auml;tzlich keine Information dar&uuml;ber steckt, <em>wo</em> auf
         der Bahn das Auto f&auml;hrt.
+      </p>
+
+      <h3 style="font-size:14px; margin:16px 0 6px 0">Ohne Licht liest der Sensor nichts</h3>
+      <p class="muted">
+        Der Sensor ist <b>optisch</b>, und der Scheinwerfer ist es, der das gedruckte Muster
+        beleuchtet. Ohne Licht meldet das Auto dauerhaft <code>0xff</code> in Byte&nbsp;12,
+        also &bdquo;keine Lesung&ldquo;. Aus den Mitschnitten der Original-App, ueber alle
+        Aufzeichnungen zusammengez&auml;hlt:
+      </p>
+      <div class="doc-table-wrap"><table class="doc-table">
+        <tr><th>Scheinwerfer</th><th>Pakete</th><th>davon mit Streckencode</th></tr>
+        <tr><td>an</td><td>40&thinsp;075</td><td><b>11&thinsp;703 &mdash; 29,2&nbsp;%</b></td></tr>
+        <tr><td>aus</td><td>422</td><td><b>0 &mdash; 0,0&nbsp;%</b></td></tr>
+      </table></div>
+      <p class="muted">
+        Kein einziger Code in 422&nbsp;Paketen ohne Licht. Das war die Ursache daf&uuml;r, dass
+        der Streckenscan leer blieb, die Rundenz&auml;hlung nicht ansprang und die Ghosts
+        standen: diese App hatte den Scheinwerfer standardm&auml;&szlig;ig <em>aus</em>, die
+        Original-App hat ihn praktisch immer an. Seitdem ist er hier auch an, und der Scan
+        schaltet ihn ein, falls er es nicht ist.
+      </p>
+      <p class="muted" style="font-size:11.5px">
+        <b>Was die Zahl nicht sagt:</b> 422 Pakete ohne Licht sind wenig gegen 40&thinsp;075
+        mit, und sie liegen vermutlich am Anfang einer Sitzung. Der Zusammenhang ist gut
+        belegt, aber nicht in beide Richtungen gleich stark gemessen &mdash; und dass der
+        Scheinwerfer <em>ursaechlich</em> beleuchtet und nicht nur zufaellig zeitgleich
+        anliegt, ist eine physikalische Annahme, keine Messung.
       </p>
 
       <h3 style="font-size:14px; margin:16px 0 6px 0">Lang und kurz, nicht hell und dunkel</h3>
@@ -3337,6 +3364,8 @@
             <span class="cm-now" id="cm-marks" style="font-size:18px">0</span></div>
           <div><span class="hud-label">Byte 3 Spanne</span><br>
             <span class="cm-now" id="cm-yaw" style="font-size:18px">&ndash;</span></div>
+          <div><span class="hud-label">Scheinwerfer</span><br>
+            <span class="cm-now" id="cm-light" style="font-size:18px">&ndash;</span></div>
           <div class="spacer" style="flex:1"></div>
           <button class="primary" id="cm-start">Z&auml;hlen starten</button>
           <button id="cm-reset">Zur&uuml;cksetzen</button>
@@ -3356,7 +3385,14 @@
           <tr><td colspan="4" class="muted">noch nichts gez&auml;hlt</td></tr>
         </tbody></table>
         <p class="muted" style="font-size:11.5px">
-          <b>Wie das zu lesen ist.</b> Steht <b>Musterkontakt</b> auf 0, hat der Sensor
+          <b>Zuerst der Scheinwerfer.</b> Steht er auf AUS, ist alles andere hier
+          bedeutungslos: der Streckensensor ist optisch, und der Scheinwerfer beleuchtet das
+          gedruckte Muster. Aus den Mitschnitten der Original-App, ueber alle Aufzeichnungen:
+          mit Licht 11&thinsp;703 Streckencodes in 40&thinsp;075 Paketen, ohne Licht
+          <b>0 in 422</b>.
+        </p>
+        <p class="muted" style="font-size:11.5px">
+          <b>Wie das Uebrige zu lesen ist.</b> Steht <b>Musterkontakt</b> auf 0, hat der Sensor
           w&auml;hrend der ganzen Messung kein gedrucktes Blatt gesehen &mdash; dann liegt es
           nicht an der Entschl&uuml;sselung, sondern daran, dass nichts zu lesen war. Z&auml;hlt
           der <b>Kachelz&auml;hler</b> hoch, obwohl Byte&nbsp;12 nur <code>0xff</code> zeigt,
@@ -5365,7 +5401,22 @@
 
   const physEngine = new CarreraPhysicsEngine();
   let physLastTime = null;
-  let headlightsOn = false;
+  // AN als Standard, und das ist keine Geschmacksfrage: der Streckensensor ist optisch,
+  // und der Scheinwerfer ist es, der das gedruckte Muster beleuchtet. Aus den btsnoop-Logs
+  // der Original-App, ueber alle Aufzeichnungen zusammengezaehlt:
+  //
+  //     Scheinwerfer AN    40075 Pakete, 11703 mit Streckencode  = 29.2 %
+  //     Scheinwerfer AUS     422 Pakete,     0 mit Streckencode  =  0.0 %
+  //
+  // Kein einziger Code in 422 Paketen ohne Licht. Mit Licht aus meldet das Auto dauerhaft
+  // 0xff, also "keine Lesung" - und genau das war der Grund, warum der Streckenscan leer
+  // blieb, die Rundenzaehlung nicht ansprang und die Ghosts standen. Die Original-App hat
+  // das Licht praktisch immer an, deshalb funktioniert es dort.
+  //
+  // Einschraenkung, damit die Zahl nicht mehr behauptet als sie kann: 422 Pakete ohne Licht
+  // sind wenig gegen 40075 mit, und sie liegen vermutlich am Anfang einer Sitzung. Der
+  // Zusammenhang ist damit gut belegt, aber nicht in beide Richtungen gleich stark gemessen.
+  let headlightsOn = true;
   let raceLampHead = false;  // resolved headlight state, for the racing screen
 
   $('phys-enable').addEventListener('change', (e) => {
@@ -5373,7 +5424,14 @@
     physLastTime = null;
   });
 
-  $('dash-head-toggle').addEventListener('change', (e) => { headlightsOn = e.target.checked; });
+  $('dash-head-toggle').addEventListener('change', (e) => {
+    headlightsOn = e.target.checked;
+    if (!headlightsOn) {
+      log('Scheinwerfer aus. Der Streckensensor ist optisch \u2014 ohne Licht meldet das Auto '
+          + 'dauerhaft 0xff, also keine Lesung. Kein Streckenscan, keine Rundenzaehlung.', 'err');
+      showHudToast('LICHT AUS \u2014 KEINE STRECKENLESUNG');
+    }
+  });
 
   $('setting-autoshift').addEventListener('change', (e) => {
     physEngine.config.autoShift = e.target.checked;
@@ -7304,6 +7362,13 @@
   }
 
   function cmRenderExtra() {
+    // Der Scheinwerfer steht hier, weil er die haeufigste Ursache fuer "es kommt nichts" ist
+    // und nicht in dieser Ansicht sichtbar war.
+    const l = $('cm-light');
+    if (l) {
+      l.textContent = headlightsOn ? 'an' : 'AUS';
+      l.style.color = headlightsOn ? 'var(--good)' : 'var(--bad)';
+    }
     if ($('cm-steps')) $('cm-steps').textContent = cmSteps;
     if ($('cm-marks')) $('cm-marks').textContent = cmMarks;
     if ($('cm-yaw')) {
@@ -7442,6 +7507,16 @@
     // braucht also gar keine zweite Anmeldung. Nur wenn keines da ist, wird der Weg ueber
     // den BLE-Explorer versucht - der funktioniert weiterhin, ist aber nicht mehr die
     // Voraussetzung.
+    // Ohne Licht liest der Sensor nichts - gemessen 0 Codes in 422 Paketen. Ein Scan mit
+    // ausgeschaltetem Licht kann also nur leer ausgehen, und ihn stumm laufen zu lassen waere
+    // dasselbe Schweigen, das den Fehler vorher verdeckt hat.
+    if (!headlightsOn) {
+      headlightsOn = true;
+      const cb = $('dash-head-toggle');
+      if (cb) cb.checked = true;
+      log('Scheinwerfer fuer den Scan eingeschaltet: der Sensor ist optisch und liest ohne '
+          + 'Licht nichts.', 'info');
+    }
     trackScanCar = playerCar || garage.find(c => c.tx) || null;
     if (!trackScanCar) {
       const entry = charByUuid.get(NUS_TX);
