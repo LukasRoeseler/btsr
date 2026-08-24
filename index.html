@@ -1000,7 +1000,7 @@
         <tr><td>9</td><td>freilaufender Paketz&auml;hler, 0&ndash;255, &auml;ndert sich in <em>jedem</em> Paket</td><td class="doc-sure">belegt</td></tr>
         <tr><td>10</td><td>Akkustand</td><td class="doc-sure">belegt</td></tr>
         <tr><td><strong>11</strong></td><td><strong>Z&auml;hler der Muster&uuml;berfahrten.</strong> Erh&ouml;ht sich um 1, sobald das Auto ein gedrucktes Muster &uuml;berf&auml;hrt &mdash; die Rundenz&auml;hlung passiert also in der Hardware</td><td class="doc-sure">belegt</td></tr>
-        <tr><td><strong>12</strong></td><td><strong>Mustercode.</strong> <code>0x01</code> = Start/Ziel (best&auml;tigt), <code>0x02</code> und <code>0x04</code> ebenfalls beobachtet. <code>0xFF</code> hei&szlig;t &bdquo;noch nie eins gesehen&ldquo;. Der Wert bleibt <em>stehen</em>, er zeigt das zuletzt gelesene Muster</td><td class="doc-sure">belegt</td></tr>
+        <tr><td><strong>12</strong></td><td><strong>Mustercode.</strong> <code>0x01</code> Start/Ziel, <code>0x02</code> Gerade, <code>0x03</code> Linkskurve, <code>0x04</code> Rechtskurve, <code>0x00</code> abseits der Bahn. <code>0xFF</code> hei&szlig;t &bdquo;noch nie eins gesehen&ldquo;. Der Wert bleibt <em>stehen</em>, er zeigt das zuletzt gelesene Muster</td><td class="doc-sure">belegt</td></tr>
         <tr><td>13</td><td><code>0x00</code></td><td class="doc-sure">belegt</td></tr>
         <tr><td>14</td><td>rollender Z&auml;hler (l&auml;uft &uuml;ber). Nicht zu verwechseln mit Byte&nbsp;14 der <em>Senderichtung</em>, das ist das Licht</td><td class="doc-sure">belegt</td></tr>
         <tr><td><strong>15</strong></td><td><code>0x08</code>, solange das Auto k&ouml;rperlich &uuml;ber einem Muster steht (~1&nbsp;s bei Fahrt), sonst <code>0x00</code></td><td class="doc-sure">belegt</td></tr>
@@ -2237,7 +2237,8 @@
         </label>
         <div>
           <label class="small">Auslöse-Code (Byte 12)</label>
-          <input type="text" id="pit-marker-code" value="0x08" style="width:80px; font-family:monospace">
+          <input type="text" id="pit-marker-code" value="" placeholder="mit Sonde ermitteln"
+                 style="width:150px; font-family:monospace">
         </div>
       </div>
       <div class="row" style="margin-top:12px">
@@ -2245,9 +2246,11 @@
       </div>
       <p class="muted" style="font-size:11.5px">
         <b>Muster-Sonde:</b> fahr über ein beliebiges ausgedrucktes Muster &mdash; hier steht sofort,
-        welchen Code das Auto meldet. Sicher bekannt sind nur <code>0x01</code> Start/Ziel,
-        <code>0x02</code> Gerade und <code>0x04</code> Rechtskurve; alles andere ist unbestätigt.
-        Trag hier den Code ein, den dein gedrucktes Boxen-Muster tatsächlich auslöst.
+        welchen Code das Auto meldet. Sicher bekannt sind <code>0x01</code> Start/Ziel,
+        <code>0x02</code> Gerade, <code>0x03</code> Linkskurve und <code>0x04</code> Rechtskurve;
+        alles andere ist unbestätigt. Trag hier den Code ein, den dein gedrucktes Boxen-Muster
+        tatsächlich auslöst &mdash; <code>0x08</code> war nie ein reales Signal und ist deshalb
+        nicht mehr die Vorgabe.
       </p>
     </div>
 
@@ -4777,15 +4780,21 @@
 
   // ---- Track data model + shared minimap/track-preview renderer ----
   // Tile type byte matches notify-packet byte 12 exactly, so a scanned track's values
-  // can be stored verbatim. CURVE_LEFT (0x08) follows the powers-of-two pattern of the
-  // other three CONFIRMED values but has never actually been observed/tested — flagged
-  // wherever it's shown in the UI.
+  // can be stored verbatim. CURVE_LEFT used to be a guessed 0x08 (the next power of two)
+  // "flagged wherever it's shown in the UI" because it had never been observed. It has
+  // been observed since: the 21.08 race capture confirms the real wire code is 0x03
+  // (see the note by TILE_OFFTRACK below), so CURVE_LEFT is 0x03 here too — restoring the
+  // "verbatim" invariant this comment promises. Before this fix, trackScanNotifyHandler's
+  // `Object.values(TILE_TYPE).includes(bestType)` guard silently DROPPED every left-curve
+  // tile scanned from a real track, because 0x03 was not a member of TILE_TYPE's values —
+  // only the ghost's own outgoing lookahead byte used the correct 0x03, via a second,
+  // separate constant. One value now, not two.
   const TRACK_STORE_KEY = 'carrera-hybrid-tracks';
   // The first four values double as PROTOCOL codes (byte 12 of the notify packet). PIT is
   // different: it is a layout element only, and no printed pattern is known to report it.
   // It therefore gets a value OUTSIDE the byte range, so it can never be mistaken for
   // something the car actually sent — bytes[12] is 0..255 and can never equal 0x100.
-  const TILE_TYPE = { START: 0x01, STRAIGHT: 0x02, CURVE_RIGHT: 0x04, CURVE_LEFT: 0x08,
+  const TILE_TYPE = { START: 0x01, STRAIGHT: 0x02, CURVE_RIGHT: 0x04, CURVE_LEFT: 0x03,
                       PIT: 0x100 };
   // Code 0x00 means the sensor is reading NOTHING VALID, i.e. the car has left the track.
   // From the guard-rail capture of 20.08: every departure showed up as 0x00 together with the
@@ -4793,13 +4802,12 @@
   // transitions in that session were of this kind. It is an immediate signal, which makes the
   // old 1.5 s timeout on 0xff unnecessary as the primary detector.
   const TILE_OFFTRACK = 0x00;
-  // The LEFT curve. Established from the race capture of 21.08 on track "az2108": the
-  // reported code sequence per lap is S R G R ? R, identical across all 16 laps, and by
-  // tile counter the lap is 11 tiles long as S R2 G2 R3 L R2 - which is exactly the 11
-  // modules the app itself lists for that track. The single 0x03 per lap sits precisely
-  // where the single left curve is. (The layout was given as SR2G2R2LR2; the data shows
-  // three right curves in that run of the track, not two.)
-  const TILE_CURVE_LEFT_CODE = 0x03;
+  // The LEFT curve is TILE_TYPE.CURVE_LEFT = 0x03. Established from the race capture of
+  // 21.08 on track "az2108": the reported code sequence per lap is S R G R ? R, identical
+  // across all 16 laps, and by tile counter the lap is 11 tiles long as S R2 G2 R3 L R2 -
+  // exactly the 11 modules the app itself lists for that track. The single 0x03 per lap
+  // sits precisely where the single left curve is. (The layout was given as SR2G2R2LR2;
+  // the data shows three right curves in that run of the track, not two.)
   // Notify byte 15, bit 3 is the START/FINISH latch, NOT a lateral signal. Read carefully,
   // because an earlier pass here got this wrong: the block length is nearly constant
   // (median 0.91 and 0.94 s, 10th-90th percentile 0.84-1.01 s), there are 17 blocks against
@@ -4841,10 +4849,9 @@
     [TILE_TYPE.START]: 'Start/Ziel',
     [TILE_TYPE.STRAIGHT]: 'Gerade',
     [TILE_TYPE.CURVE_RIGHT]: 'Rechtskurve',
-    [TILE_TYPE.CURVE_LEFT]: 'Linkskurve (?)',
+    [TILE_TYPE.CURVE_LEFT]: 'Linkskurve',
     [TILE_TYPE.PIT]: 'Boxengasse',
     [TILE_OFFTRACK]: 'abseits der Bahn',
-    [TILE_CURVE_LEFT_CODE]: 'Linkskurve',
   };
 
   function loadTrackStore() {
@@ -6084,12 +6091,20 @@
   // servicing begins; it accrues for as long as you keep still, so a longer stop buys
   // more fuel and more repair. Drive off and the limiter lifts.
   //
-  // The marker is identified by the tile-type byte the car reports (byte 12). We only
-  // know three of those codes for certain (01 start/finish, 02 straight, 04 right curve)
-  // and we cannot derive a NEW one from the printed pattern, so the trigger code is a
-  // setting rather than a constant — see the note in the Strecke tab.
+  // The marker is identified by the tile-type byte the car reports (byte 12). We know
+  // four of those codes for certain now (01 start/finish, 02 straight, 03 left curve,
+  // 04 right curve) and we cannot derive a NEW one for the pit marker from the printed
+  // pattern alone, so the trigger code is a setting rather than a constant — see the note
+  // in the Strecke tab.
+  //
+  // Default is UNSET (null), not a guess. It used to default to 0x08 — which, at the time,
+  // looked like the next plausible code in sequence but has since been PROVEN to never
+  // occur on the wire at all (the confirmed alphabet is 0x00/0x01/0x02/0x03/0x04/0xff).
+  // A wrong-but-plausible-looking default is worse than an obviously empty one: it silently
+  // guarantees the pit lane can never trigger, and nothing in the UI said so. null makes
+  // every comparison against it false until the Muster-Sonde has actually measured a value.
   let pitLaneEnabled = true;
-  let pitMarkerCode = 0x08;
+  let pitMarkerCode = null;
   // 80 km/h on the racing display, the speed a real pit lane limiter holds. The display
   // reads speedKmh * REAL_SCALE (71.25), so 80 / 71.25 / 4.0 top speed = 0.2807.
   const PIT_SPEED_FACTOR = 80 / (285 / 4) / 4.0;
@@ -6177,12 +6192,14 @@
     if (!pitLaneEnabled) setPitState('off');
   });
   $('pit-marker-code').addEventListener('change', (e) => {
-    const v = parseInt(e.target.value.trim(), e.target.value.trim().startsWith('0x') ? 16 : 10);
+    const raw = e.target.value.trim();
+    if (raw === '') { pitMarkerCode = null; return; }
+    const v = parseInt(raw, raw.startsWith('0x') ? 16 : 10);
     if (Number.isFinite(v) && v >= 0 && v <= 255) {
       pitMarkerCode = v;
       e.target.value = '0x' + v.toString(16).padStart(2, '0');
     } else {
-      e.target.value = '0x' + pitMarkerCode.toString(16).padStart(2, '0');
+      e.target.value = pitMarkerCode === null ? '' : '0x' + pitMarkerCode.toString(16).padStart(2, '0');
     }
   });
 
@@ -7422,9 +7439,10 @@
     const tiles = currentTrackTiles;
     const i0 = car.ghost ? car.ghost.tileIndex : null;
     if (!tiles || tiles.length < 3 || i0 === null || i0 === undefined) return null;
+    // Every TILE_TYPE value already IS its own wire code (see the constant above), so
+    // this is now a plain pass-through for the three tile types that can appear here.
     const code = (t) => t === TILE_TYPE.START ? 0x01
-                      : t === TILE_TYPE.CURVE_RIGHT ? 0x04
-                      : t === TILE_TYPE.CURVE_LEFT ? TILE_CURVE_LEFT_CODE
+                      : (t === TILE_TYPE.CURVE_RIGHT || t === TILE_TYPE.CURVE_LEFT) ? t
                       : 0x02;
     const at = (k) => code(tiles[(i0 + k) % tiles.length].type);
     return { 16: at(0), 17: at(1), 18: at(2) };
@@ -7715,6 +7733,7 @@
     padConnected = true;
     startPadLoop();
   }
+
 
 
 
