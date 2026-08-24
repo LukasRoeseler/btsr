@@ -490,6 +490,37 @@
     white-space: nowrap; }
   .grid-move { display: flex; gap: 4px; }
   .grid-move button { width: 30px; height: 30px; padding: 0; font-size: 13px; }
+
+  /* ---- Track editor: fullscreen and the symbol palette ----
+     In fullscreen the map takes the whole screen and the palette sits UNDER it, small, so
+     both are visible at once — the point of the mode is to build while seeing the result.
+     Deliberately NOT reusing the racing screen's .race-fs rules: that one rotates the dash
+     on a portrait phone, which would rotate the palette out from under the map. */
+  #track-fs-host { position: relative; }
+  body.track-fs #track-fs-host { position: fixed; inset: 0; z-index: 200;
+    background: var(--bg); display: grid; grid-template-rows: 1fr auto;
+    align-items: center; padding: 8px; gap: 6px; }
+  body.track-fs #track-fs-host > #track-preview-svg { min-height: 0; overflow: hidden;
+    display: grid; place-items: center; }
+  body.track-fs #track-fs-host > #track-preview-svg svg { max-height: 100%; width: auto; }
+  body.track-fs #help-btn { display: none; }
+  /* Everything outside the editor host is irrelevant while building. */
+  body.track-fs > header, body.track-fs > nav.tabs { display: none; }
+
+  .tp-bar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+    justify-content: center; }
+  .tp-btn { width: 54px; height: 54px; padding: 0; display: grid; place-items: center;
+    border-radius: 8px; }
+  .tp-btn svg { width: 26px; height: 26px; }
+  .tp-btn.sel { border-color: var(--accent); border-width: 3px; background: var(--panel-3); }
+  .tp-btn .tp-cap { font-size: 8.5px; letter-spacing: .04em; text-transform: uppercase;
+    color: var(--muted); margin-top: 1px; }
+  body.track-fs .tp-btn { width: 44px; height: 44px; }
+  body.track-fs .tp-btn .tp-cap { display: none; }
+  /* Space usage, subtle, in a corner as asked. */
+  .tp-space { position: absolute; right: 10px; bottom: 8px; font-family: monospace;
+    font-size: 11px; color: var(--muted); pointer-events: none; }
+  body.track-fs .tp-space { right: 14px; bottom: 68px; }
   .gar-row.is-player { border-color: var(--good); }
   .gar-row.is-ghost { border-color: #7a6bd0; }
   .gar-name { font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
@@ -2275,15 +2306,30 @@
         <button id="track-scan-stop" disabled>Scan stoppen</button>
         <span class="muted" id="track-scan-status">bereit</span>
       </div>
-      <div id="track-preview-svg" style="margin-top:14px"></div>
+      <div class="row" style="margin-top:10px">
+        <button id="track-fs">&#9974; Vollbild</button>
+        <button id="track-fs-exit" hidden>Vollbild verlassen</button>
+        <span class="muted" style="font-size:11.5px">Im Vollbild: D-Pad w&auml;hlt,
+          X baut, O r&uuml;ckg&auml;ngig, Dreieck Reset, Quadrat dreht 90&deg;</span>
+      </div>
+
+      <div id="track-fs-host">
+        <div id="track-preview-svg" style="margin-top:14px"></div>
+        <div class="tp-bar" id="track-palette"></div>
+        <span class="tp-space" id="track-space"></span>
+      </div>
       <p class="muted" style="font-size:11.5px; margin-top:6px">
         Schwarz ist die Fahrbahn, wei&szlig;e Striche trennen die Streckenteile. Randsteine in
         Fahrtrichtung: <b style="color:#1565c0">links blau-wei&szlig;</b>,
         <b style="color:#b3131f">rechts rot-wei&szlig;</b>. Die
-        <b style="color:#b8860b">gelbe gestrichelte Linie</b> ist die berechnete Ideallinie
-        &mdash; krümmungsärmster Verlauf innerhalb der Fahrbahn. Sie ist eine
-        <em>Rechnung</em>, keine Messung: dass ein Auto sie einh&auml;lt, kann die App nicht
-        pr&uuml;fen, weil kein Byte die Querlage meldet.
+        d&uuml;nne farbige Linie ist die berechnete Ideallinie &mdash; kr&uuml;mmungs&auml;rmster
+        Verlauf innerhalb der Fahrbahn. Ihre Farbe zeigt, ob dort gebremst w&uuml;rde:
+        <b style="color:#46d17f">gr&uuml;n am Gas</b>, <b style="color:#d62d2d">rot beim
+        Bremsen</b>, mit flie&szlig;endem &Uuml;bergang. Gebremst wird dort, wo die
+        Kr&uuml;mmung <em>voraus</em> ansteigt &mdash; eine Kurve, die schon mit festem
+        Radius gefahren wird, braucht keine Bremse mehr. Beides ist eine <em>Rechnung</em>,
+        keine Messung: dass ein Auto die Linie einh&auml;lt, kann die App nicht pr&uuml;fen,
+        weil kein Byte die Querlage meldet.
       </p>
       <div class="row" style="align-items:center; gap:10px; margin-top:10px">
         <span class="muted">Status: <b id="track-closed-badge">-</b></span>
@@ -5380,6 +5426,68 @@
   // Kerb colours follow the direction of travel: LEFT is blue/white, RIGHT is red/white.
   // They are drawn as a solid white line with a dashed coloured line on top, which is how a
   // real kerb alternates, and it needs no per-block geometry.
+  // How hard a car would be braking at each sample of a path, 0 = on the power,
+  // 1 = braking hard. Simple by design (first version): look a fixed distance ahead and
+  // compare the curvature there with the curvature here. Getting tighter means brake.
+  //
+  // Curvature from three consecutive points via the circumradius: k = 4A / (a*b*c), with A
+  // the triangle area. That is exact for a circle through the three points and needs no
+  // derivatives, which matters because the samples are not evenly spaced.
+  const BRAKE_LOOKAHEAD = 6;     // samples; ~ half a tile at TRACK_SAMPLES_PER_TILE
+  const BRAKE_SMOOTH = 4;        // samples of moving average, so the colour does not flicker
+
+  function pathCurvature(pathPts, closed) {
+    const n = pathPts.length;
+    const at = (i) => pathPts[closed ? ((i % n) + n) % n : Math.max(0, Math.min(n - 1, i))];
+    const out = new Array(n).fill(0);
+    for (let i = 0; i < n; i++) {
+      const p0 = at(i - 1), p1 = at(i), p2 = at(i + 1);
+      const a = Math.hypot(p1[0] - p0[0], p1[1] - p0[1]);
+      const b = Math.hypot(p2[0] - p1[0], p2[1] - p1[1]);
+      const c = Math.hypot(p2[0] - p0[0], p2[1] - p0[1]);
+      const area2 = Math.abs((p1[0] - p0[0]) * (p2[1] - p0[1]) - (p2[0] - p0[0]) * (p1[1] - p0[1]));
+      out[i] = (a * b * c) < 1e-6 ? 0 : (2 * area2) / (a * b * c);
+    }
+    return out;
+  }
+
+  function brakeProfile(pathPts, closed) {
+    const n = pathPts.length;
+    const k = pathCurvature(pathPts, closed);
+    const kMax = Math.max(1e-9, ...k);
+    const at = (i) => closed ? ((i % n) + n) % n : Math.max(0, Math.min(n - 1, i));
+    const raw = new Array(n).fill(0);
+    for (let i = 0; i < n; i++) {
+      // Braking demand is the RISE in curvature ahead, normalised. A corner already being
+      // held at constant radius needs no braking — that is why this is a difference and
+      // not simply "curvature is high".
+      const rise = k[at(i + BRAKE_LOOKAHEAD)] - k[i];
+      raw[i] = Math.max(0, Math.min(1, rise / (kMax * 0.55)));
+    }
+    // Moving average, or single noisy samples would speckle the line red.
+    const out = new Array(n).fill(0);
+    for (let i = 0; i < n; i++) {
+      let sum = 0;
+      for (let d = -BRAKE_SMOOTH; d <= BRAKE_SMOOTH; d++) sum += raw[at(i + d)];
+      out[i] = sum / (2 * BRAKE_SMOOTH + 1);
+    }
+    return out;
+  }
+
+  // Green through amber to red. Interpolated in RGB, which is crude colour science but
+  // exactly right here: the amber midpoint is what makes the transition read as gradual.
+  function brakeColour(v) {
+    const t = Math.max(0, Math.min(1, v));
+    const stops = [[0, 70, 209, 127], [0.5, 232, 176, 46], [1, 214, 45, 45]];
+    let a = stops[0], b = stops[stops.length - 1];
+    for (let i = 0; i + 1 < stops.length; i++) {
+      if (t >= stops[i][0] && t <= stops[i + 1][0]) { a = stops[i]; b = stops[i + 1]; }
+    }
+    const f = (t - a[0]) / Math.max(1e-9, b[0] - a[0]);
+    const mix = (i) => Math.round(a[i] + (b[i] - a[i]) * f);
+    return `rgb(${mix(1)},${mix(2)},${mix(3)})`;
+  }
+
   function renderTrackPreview(tiles, currentIndex, opts) {
     const o = opts || {};
     if (!tiles || tiles.length === 0) {
@@ -5449,11 +5557,27 @@
         body += `<path d="${poly(path)}" fill="none" stroke="${col}" stroke-width="5" stroke-linecap="butt" stroke-dasharray="7 7"/>`;
       });
 
-      // 5) The ideal line, from the same geometry.
+      // 5) The ideal line, from the same geometry, coloured by whether a car would be
+      //    braking there. Green = on the power, red = braking, and the transition is drawn
+      //    as a gradient rather than a hard switch because braking builds up over metres,
+      //    not at a point.
+      //
+      //    First version deliberately simple, as specified: brake where the curvature AHEAD
+      //    is about to rise. Curvature is read from the ideal line itself, not the
+      //    centreline — the whole point of the line is that it changes the radius, so using
+      //    the centreline would colour a corner the car no longer takes that tightly.
       const line = idealLine(pts, nrm, { closed });
       const ideal = pts.map((p, i) => [p.x + nrm[i].x * line.alpha[i],
                                        p.y + nrm[i].y * line.alpha[i]]);
-      body += `<path d="${poly(ideal)}" fill="none" stroke="#ffd23f" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="9 5" opacity=".95"/>`;
+      const brake = brakeProfile(ideal, closed);
+      // One short segment per sample pair, each with its own colour. A single path with a
+      // gradient cannot follow an arbitrary curve, so the curve is cut instead.
+      const IDEAL_W = 1.1;   // was 2.2; halved on request, the line was heavier than the kerbs
+      for (let i = 0; i + 1 < ideal.length; i++) {
+        const v = (brake[i] + brake[i + 1]) / 2;
+        body += `<path d="M ${P2(ideal[i])} L ${P2(ideal[i + 1])}" fill="none" `
+              + `stroke="${brakeColour(v)}" stroke-width="${IDEAL_W}" stroke-linecap="round"/>`;
+      }
       o.lineInfo = line;
     } else {
       body += `<path d="${poly(centre)}" fill="none" stroke="#0b1f3f" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>`;
@@ -5546,6 +5670,8 @@
   function refreshTrackPreview() {
     const result = renderTrackPreview(currentTrackTiles, null, { detailed: true });
     $('track-preview-svg').innerHTML = result.html;
+    renderTrackPalette();
+    updateTrackSpace();
     $('track-code').value = trackToCode(currentTrackTiles, trackRotationDeg);
     const info = $('track-line-info');
     if (info) {
@@ -5575,6 +5701,119 @@
   }
 
   function addTile(type) { currentTrackTiles.push({ type }); refreshTrackPreview(); }
+  // ---- Symbol palette ----
+  // The same five actions as the text buttons above, as icons, so they still fit under the
+  // map in fullscreen. Order follows the physical layout of a controller's thinking:
+  // left curve, straight, start/finish, pit, right curve — turning left on the left.
+  const TRACK_PALETTE = [
+    { key: 'left',  type: () => TILE_TYPE.CURVE_LEFT,  cap: 'Links',
+      icon: '<path d="M18 22 L18 13 A7 7 0 0 0 11 6 L4 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>' },
+    { key: 'straight', type: () => TILE_TYPE.STRAIGHT, cap: 'Gerade',
+      icon: '<path d="M12 22 L12 2" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>' },
+    { key: 'start', type: () => TILE_TYPE.START, cap: 'Start',
+      icon: '<path d="M4 4h5v5H4zM14 4h5v5h-5zM9 9h5v5H9zM4 14h5v5H4zM14 14h5v5h-5z" fill="currentColor"/>' },
+    { key: 'pit', type: () => TILE_TYPE.PIT, cap: 'Box',
+      icon: '<path d="M8 22 L8 2" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>'
+          + '<path d="M16 20 L16 9 A5 5 0 0 1 21 4" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="3 2.5" stroke-linecap="round"/>' },
+    { key: 'right', type: () => TILE_TYPE.CURVE_RIGHT, cap: 'Rechts',
+      icon: '<path d="M6 22 L6 13 A7 7 0 0 1 13 6 L20 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>' },
+  ];
+  let trackPaletteSel = 1;   // the straight: the most common piece, so the default costs least
+
+  function renderTrackPalette() {
+    const host = $('track-palette');
+    if (!host) return;
+    host.innerHTML = '';
+    TRACK_PALETTE.forEach((p, i) => {
+      const b = document.createElement('button');
+      b.className = 'tp-btn' + (i === trackPaletteSel ? ' sel' : '');
+      b.title = p.cap;
+      b.setAttribute('aria-label', p.cap);
+      b.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${p.icon}</svg>`
+                  + `<span class="tp-cap">${p.cap}</span>`;
+      b.onclick = () => { trackPaletteSel = i; renderTrackPalette(); addTile(p.type()); };
+      host.appendChild(b);
+    });
+  }
+
+  // How much room the layout needs, in centimetres, from the same geometry the map uses —
+  // so the number cannot disagree with the picture. Bounding box of the roadway including
+  // its width, not just the centreline: it is the space on the floor that matters.
+  function updateTrackSpace() {
+    const el = $('track-space');
+    if (!el) return;
+    if (!currentTrackTiles.length) { el.textContent = ''; return; }
+    const pts = trackCenterline(currentTrackTiles);
+    if (pts.length < 2) { el.textContent = ''; return; }
+    const nrm = trackNormals(pts);
+    const all = [];
+    pts.forEach((p, i) => {
+      all.push([p.x + nrm[i].x * TRACK_HALF_W, p.y + nrm[i].y * TRACK_HALF_W]);
+      all.push([p.x - nrm[i].x * TRACK_HALF_W, p.y - nrm[i].y * TRACK_HALF_W]);
+    });
+    const xs = all.map(p => p[0]), ys = all.map(p => p[1]);
+    const wCm = (Math.max(...xs) - Math.min(...xs)) / TRACK_UNITS_PER_CM;
+    const hCm = (Math.max(...ys) - Math.min(...ys)) / TRACK_UNITS_PER_CM;
+    el.textContent = `${Math.round(wCm)} × ${Math.round(hCm)} cm · ${currentTrackTiles.length} Teile`;
+  }
+
+  // ---- Fullscreen for the editor ----
+  async function enterTrackFullscreen() {
+    try {
+      const el = document.documentElement;
+      if (el.requestFullscreen) await el.requestFullscreen();
+      else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+    } catch (e) { /* refused: the CSS layout still applies */ }
+    document.body.classList.add('track-fs');
+    $('track-fs').hidden = true; $('track-fs-exit').hidden = false;
+    refreshTrackPreview();
+  }
+  async function exitTrackFullscreen() {
+    try {
+      if (document.fullscreenElement && document.exitFullscreen) await document.exitFullscreen();
+      else if (document.webkitFullscreenElement) document.webkitExitFullscreen();
+    } catch (e) { /* already out */ }
+    document.body.classList.remove('track-fs');
+    $('track-fs').hidden = false; $('track-fs-exit').hidden = true;
+    refreshTrackPreview();
+  }
+  $('track-fs').onclick = enterTrackFullscreen;
+  $('track-fs-exit').onclick = exitTrackFullscreen;
+  // Leaving by Escape or a system gesture must put the buttons back too.
+  document.addEventListener('fullscreenchange', () => {
+    if (!document.fullscreenElement && document.body.classList.contains('track-fs')) {
+      exitTrackFullscreen();
+    }
+  });
+
+  // ---- Gamepad, only while the editor is in fullscreen ----
+  // Gated on the fullscreen class rather than on the tab being visible: the same buttons
+  // mean throttle and shifting while driving, and stealing them because a tab happens to be
+  // open would be a nasty surprise. Returns true when a press was consumed.
+  function trackEditorPad(button) {
+    if (!document.body.classList.contains('track-fs')) return false;
+    switch (button) {
+      case 'left':  trackPaletteSel = (trackPaletteSel + TRACK_PALETTE.length - 1) % TRACK_PALETTE.length;
+                    renderTrackPalette(); return true;
+      case 'right': trackPaletteSel = (trackPaletteSel + 1) % TRACK_PALETTE.length;
+                    renderTrackPalette(); return true;
+      case 'up':    trackPaletteSel = 0; renderTrackPalette(); return true;
+      case 'down':  trackPaletteSel = TRACK_PALETTE.length - 1; renderTrackPalette(); return true;
+      case 'confirm': addTile(TRACK_PALETTE[trackPaletteSel].type()); return true;
+      case 'undo':  $('track-undo').click(); return true;
+      case 'reset': trackReset(); return true;
+      case 'rotate': $('track-rotate-right').click(); return true;
+      default: return false;
+    }
+  }
+
+  // Reset is destructive and reachable by a single button press on a pad, so it asks first —
+  // but only when there is actually something to lose.
+  function trackReset() {
+    if (currentTrackTiles.length > 1 && !confirm('Strecke wirklich zurücksetzen?')) return;
+    $('track-clear').click();
+  }
+
   $('track-add-start').onclick = () => addTile(TILE_TYPE.START);
   $('track-add-straight').onclick = () => addTile(TILE_TYPE.STRAIGHT);
   $('track-add-right').onclick = () => addTile(TILE_TYPE.CURVE_RIGHT);
@@ -8494,7 +8733,10 @@
       // Headlights on/off, edge-triggered. Drives the same checkbox the options menu uses
       // so the two can never disagree.
       const headNow = readBindingValue(pad, bindings.headlights) > BUTTON_CAPTURE_THRESHOLD;
-      if (headNow && !prevHeadlights) {
+      // Triangle: reset in the editor, headlights otherwise.
+      if (headNow && !prevHeadlights && trackEditorPad('reset')) {
+        // consumed by the editor
+      } else if (headNow && !prevHeadlights) {
         headlightsOn = !headlightsOn;
         const cb = $('dash-head-toggle');
         if (cb) cb.checked = headlightsOn;
@@ -8529,10 +8771,14 @@
       // No gear-range guards here any more: triggerShift() does its own bounds checking
       // and needs to see a downshift AT gear 0 (that is how manual mode selects reverse)
       // and an upshift while in reverse (how it comes back out).
-      if (downshiftNow && !prevDownshift && physicsEnabled && !physEngine.state.isShifting) {
+      // X / Square and B / Circle are shift buttons while driving and build/undo in the
+      // editor. The editor gets first refusal, and only in fullscreen.
+      if (downshiftNow && !prevDownshift && !trackEditorPad('confirm')
+          && physicsEnabled && !physEngine.state.isShifting) {
         physEngine.triggerShift(-1);
       }
-      if (upshiftNow && !prevUpshift && physicsEnabled && !physEngine.state.isShifting) {
+      if (upshiftNow && !prevUpshift && !trackEditorPad('undo')
+          && physicsEnabled && !physEngine.state.isShifting) {
         physEngine.triggerShift(1);
       }
       prevDownshift = downshiftNow;
@@ -8540,15 +8786,15 @@
 
       const dUp = padButtonPressed(pad, DPAD.up), dDown = padButtonPressed(pad, DPAD.down);
       const dLeft = padButtonPressed(pad, DPAD.left), dRight = padButtonPressed(pad, DPAD.right);
-      // While a pit stop is armed the D-pad becomes the quick menu: up/down choose
-      // refuelling, right/left choose the tyre change. pitQuickMenu() returns true when it
-      // consumed the press, so the normal bindings (accel and steering trim) keep working
-      // at every other moment - the pad does not change its meaning permanently, only for
-      // the few seconds when there is actually something to decide.
-      if (dUp && !prevDpad.up && !pitQuickMenu('up')) nudgeAccel(+0.1);
-      if (dDown && !prevDpad.down && !pitQuickMenu('down')) nudgeAccel(-0.1);
-      if (dLeft && !prevDpad.left && !pitQuickMenu('left')) nudgeSteerResponse(-0.1);
-      if (dRight && !prevDpad.right && !pitQuickMenu('right')) nudgeSteerResponse(+0.1);
+      // Two consumers can claim the D-pad before the normal bindings see it: the track
+      // editor in fullscreen, and an armed pit stop. Each returns true when it took the
+      // press, so at every other moment the pad keeps its usual job (accel and steering
+      // trim) — the meaning is never changed permanently, only while something is
+      // genuinely waiting for a decision.
+      if (dUp && !prevDpad.up && !trackEditorPad('up') && !pitQuickMenu('up')) nudgeAccel(+0.1);
+      if (dDown && !prevDpad.down && !trackEditorPad('down') && !pitQuickMenu('down')) nudgeAccel(-0.1);
+      if (dLeft && !prevDpad.left && !trackEditorPad('left') && !pitQuickMenu('left')) nudgeSteerResponse(-0.1);
+      if (dRight && !prevDpad.right && !trackEditorPad('right') && !pitQuickMenu('right')) nudgeSteerResponse(+0.1);
       prevDpad.up = dUp; prevDpad.down = dDown; prevDpad.left = dLeft; prevDpad.right = dRight;
     }
     // Keep prev-flags fresh even while rebinding, otherwise they go stale and the first
@@ -8564,6 +8810,7 @@
     padConnected = true;
     startPadLoop();
   }
+
 
 
 
