@@ -43,7 +43,23 @@ liefert.
 - **Corvette C6** (`corvette_idle/mid/high.ogg`) — aus
   `astonmartinvantagev12-chevrolet-corvette-c6-sound-effect-360531.mp3`.
   Basisdrehzahlen aus der gemessenen Zuendfrequenz abgeleitet (V8, vier
-  Zuendungen je Kurbelwellenumdrehung).
+  Zuendungen je Kurbelwellenumdrehung). Zwei Korrekturen nach einer Rueckmeldung, sie klinge
+  zu hoch: die Zuendfrequenzen von `mid` und `high` waren um rund 10 Prozent zu tief
+  deklariert (gemessen 303 und 332 statt 269 und 301 Hz). Die eigentliche Ursache war aber
+  die Streckung - `high` stand bei 4522/min, also lief die Schleife bei 9000 Redline am
+  2.0-Anschlag. Der Faktor `rpmScale` 0,62 ist eine ausdrueckliche
+  Geschmacksentscheidung und keine Messung; er weicht bewusst von der geometrischen
+  Zentrierung ab, die beim Porsche verwendet wird, weil die Corvette danach immer noch zu
+  hoch klang. Was NICHT zutraf: eine Oktavverwechslung. Gemessen traegt 118,4 Hz bei
+  `idle` allein 40 Prozent der Energie, f0/2 und f0/4 je 0,01 Prozent.
+- **Porsche (Aufnahme)** (`porsche_rec_idle/mid/high.ogg`) — aus einer eigenen Aufnahme
+  des Nutzers (`porschesound/Porsche sounds.m4a`, nicht Teil dieses Repos, nicht Pixabay).
+  Geschnitten von `tools/porsche_rec.py`. Die Aufnahme deckt nur 3230 bis 4522/min ab, also
+  1:1,40 gegen die 1:6 der App; der Faktor `rpmScale` 0,961 zentriert sie geometrisch auf
+  den Bereich der App, damit sie an beiden Enden etwa gleich stark klemmt. Ein erster
+  Versuch nagelte stattdessen das obere Band an die Drehzahlgrenze und schob damit alles
+  nach unten, bis die Schleife am unteren Ende eine Oktave zu tief lief.
+  Steht als eigenes Profil neben dem synthetischen Porsche, damit beide vergleichbar sind.
 - **Strecken-Ambience** (`amb_bed.ogg`, `amb_pass_0..4.ogg`) — aus
   `fjc_media-sounds-of-nuerburgring-engines-of-classic-race-cars-234929.mp3`.
   Der Teppich ist der Abschnitt mit der geringsten Energieschwankung, die

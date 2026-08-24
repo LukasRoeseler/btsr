@@ -679,6 +679,15 @@
   body.race-mode #glitch-bands { display: none; }
   main, header { position: relative; z-index: 1; }
 
+  /* ---- Toene in der Doku ---- */
+  .snd-grid { display: grid; gap: 8px; grid-template-columns: 1fr; }
+  @media (min-width: 780px) { .snd-grid { grid-template-columns: 1fr 1fr; } }
+  .snd-row { display: flex; gap: 10px; align-items: center;
+    background: var(--panel-2); border: 1px solid var(--border); border-radius: 6px;
+    padding: 7px 9px; }
+  .snd-row audio { height: 30px; flex: none; width: 178px; }
+  .snd-row b { font-size: 12.5px; }
+
   /* ---- Home ---- */
   #tab-home { padding: 0; }
   .home-hero {
@@ -1527,6 +1536,28 @@
         Balken&nbsp;&nbsp;<b>0 0 0 0 1 0 0 1 0</b><br>
         L&uuml;cken&nbsp;&nbsp;&nbsp;&nbsp;<b>0 0 0 1 0 1 1 0</b>
       </p>
+
+      <!-- Erzeugt aus startziel-a4.svg, also aus derselben Quelle wie die Druckvorlage:
+           Balkenhoehen und Lueckenabstaende sind ausgelesen, nicht abgezeichnet. Wer die
+           Vorlage neu erzeugt, muss dieses Bild mit erzeugen, sonst driften sie
+           auseinander - tools/make_pattern.py und dieser Block gehoeren zusammen. -->
+      <div style="overflow-x:auto; margin:14px 0 6px 0">
+<svg viewBox="0 0 399 184" style="width:100%;height:auto;max-width:399px" role="img" aria-label="Der Start/Ziel-Barcode, Balken und Luecken einzeln beschriftet"><rect x="0" y="0" width="399.5" height="184.0" fill="#14161c" rx="6"/><rect x="26.00" y="30" width="16.55" height="74" fill="#f4f6fb"/><text x="34.28" y="24" text-anchor="middle" font-size="9.5" fill="#a9b2c4" font-family="monospace">B1</text><text x="34.28" y="119" text-anchor="middle" font-size="11.5" font-weight="700" fill="#a9b2c4" font-family="monospace">0</text><text x="34.28" y="138" text-anchor="middle" font-size="7.5" fill="#6f7a94" font-family="monospace" transform="rotate(-90 34.28 138)">3.60</text><rect x="42.55" y="30" width="16.16" height="74" fill="#0b0c0f"/><text x="50.63" y="24" text-anchor="middle" font-size="9.5" fill="#6f7a94" font-family="monospace">l1</text><text x="50.63" y="119" text-anchor="middle" font-size="11.5" font-weight="700" fill="#6f7a94" font-family="monospace">0</text><text x="50.63" y="138" text-anchor="middle" font-size="7.5" fill="#6f7a94" font-family="monospace" transform="rotate(-90 50.63 138)">3.51</text><rect x="58.72" y="30" width="16.55" height="74" fill="#f4f6fb"/><text x="66.99" y="24" text-anchor="middle" font-size="9.5" fill="#a9b2c4" font-family="monospace">B2</text><text x="66.99" y="119" text-anchor="middle" font-size="11.5" font-weight="700" fill="#a9b2c4" font-family="monospace">0</text><text x="66.99" y="138" text-anchor="middle" font-size="7.5" fill="#6f7a94" font-family="monospace" transform="rotate(-90 66.99 138)">3.60</text><rect x="75.27" y="30" width="16.16" height="74" fill="#0b0c0f"/><text x="83.35" y="24" text-anchor="middle" font-size="9.5" fill="#6f7a94" font-family="monospace">l2</text><text x="83.35" y="119" text-anchor="middle" font-size="11.5" font-weight="700" fill="#6f7a94" font-family="monospace">0</text><text x="83.35" y="138" text-anchor="middle" font-size="7.5" fill="#6f7a94" font-family="monospace" transform="rotate(-90 83.35 138)">3.51</text><rect x="91.43" y="30" width="16.55" height="74" fill="#f4f6fb"/><text x="99.71" y="24" text-anchor="middle" font-size="9.5" fill="#a9b2c4" font-family="monospace">B3</text><text x="99.71" y="119" text-anchor="middle" font-size="11.5" font-weight="700" fill="#a9b2c4" font-family="monospace">0</text><text x="99.71" y="138" text-anchor="middle" font-size="7.5" fill="#6f7a94" font-family="monospace" transform="rotate(-90 99.71 138)">3.60</text><rect x="107.98" y="30" width="16.16" height="74" fill="#0b0c0f"/><text x="116.06" y="24" text-anchor="middle" font-size="9.5" fill="#6f7a94" font-family="monospace">l3</text><text x="116.06" y="119" text-anchor="middle" font-size="11.5" font-weight="700" fill="#6f7a94" font-family="monospace">0</text><text x="116.06" y="138" text-anchor="middle" font-size="7.5" fill="#6f7a94" font-family="monospace" transform="rotate(-90 116.06 138)">3.51</text><rect x="124.14" y="30" width="16.59" height="74" fill="#f4f6fb"/><text x="132.44" y="24" text-anchor="middle" font-size="9.5" fill="#a9b2c4" font-family="monospace">B4</text><text x="132.44" y="119" text-anchor="middle" font-size="11.5" font-weight="700" fill="#a9b2c4" font-family="monospace">0</text><text x="132.44" y="138" text-anchor="middle" font-size="7.5" fill="#6f7a94" font-family="monospace" transform="rotate(-90 132.44 138)">3.61</text><rect x="140.73" y="30" width="29.98" height="74" fill="#0b0c0f"/><text x="155.72" y="24" text-anchor="middle" font-size="9.5" fill="#6f7a94" font-family="monospace">l4</text><text x="155.72" y="119" text-anchor="middle" font-size="11.5" font-weight="700" fill="#ffb02e" font-family="monospace">1</text><text x="155.72" y="138" text-anchor="middle" font-size="7.5" fill="#6f7a94" font-family="monospace" transform="rotate(-90 155.72 138)">6.52</text><rect x="170.72" y="30" width="30.38" height="74" fill="#f4f6fb"/><text x="185.91" y="24" text-anchor="middle" font-size="9.5" fill="#a9b2c4" font-family="monospace">B5</text><text x="185.91" y="119" text-anchor="middle" font-size="11.5" font-weight="700" fill="#5aa9ff" font-family="monospace">1</text><text x="185.91" y="138" text-anchor="middle" font-size="7.5" fill="#6f7a94" font-family="monospace" transform="rotate(-90 185.91 138)">6.60</text><rect x="201.09" y="30" width="16.16" height="74" fill="#0b0c0f"/><text x="209.18" y="24" text-anchor="middle" font-size="9.5" fill="#6f7a94" font-family="monospace">l5</text><text x="209.18" y="119" text-anchor="middle" font-size="11.5" font-weight="700" fill="#6f7a94" font-family="monospace">0</text><text x="209.18" y="138" text-anchor="middle" font-size="7.5" fill="#6f7a94" font-family="monospace" transform="rotate(-90 209.18 138)">3.51</text><rect x="217.26" y="30" width="16.55" height="74" fill="#f4f6fb"/><text x="225.53" y="24" text-anchor="middle" font-size="9.5" fill="#a9b2c4" font-family="monospace">B6</text><text x="225.53" y="119" text-anchor="middle" font-size="11.5" font-weight="700" fill="#a9b2c4" font-family="monospace">0</text><text x="225.53" y="138" text-anchor="middle" font-size="7.5" fill="#6f7a94" font-family="monospace" transform="rotate(-90 225.53 138)">3.60</text><rect x="233.81" y="30" width="29.99" height="74" fill="#0b0c0f"/><text x="248.81" y="24" text-anchor="middle" font-size="9.5" fill="#6f7a94" font-family="monospace">l6</text><text x="248.81" y="119" text-anchor="middle" font-size="11.5" font-weight="700" fill="#ffb02e" font-family="monospace">1</text><text x="248.81" y="138" text-anchor="middle" font-size="7.5" fill="#6f7a94" font-family="monospace" transform="rotate(-90 248.81 138)">6.52</text><rect x="263.80" y="30" width="16.55" height="74" fill="#f4f6fb"/><text x="272.08" y="24" text-anchor="middle" font-size="9.5" fill="#a9b2c4" font-family="monospace">B7</text><text x="272.08" y="119" text-anchor="middle" font-size="11.5" font-weight="700" fill="#a9b2c4" font-family="monospace">0</text><text x="272.08" y="138" text-anchor="middle" font-size="7.5" fill="#6f7a94" font-family="monospace" transform="rotate(-90 272.08 138)">3.60</text><rect x="280.35" y="30" width="30.04" height="74" fill="#0b0c0f"/><text x="295.37" y="24" text-anchor="middle" font-size="9.5" fill="#6f7a94" font-family="monospace">l7</text><text x="295.37" y="119" text-anchor="middle" font-size="11.5" font-weight="700" fill="#ffb02e" font-family="monospace">1</text><text x="295.37" y="138" text-anchor="middle" font-size="7.5" fill="#6f7a94" font-family="monospace" transform="rotate(-90 295.37 138)">6.53</text><rect x="310.39" y="30" width="30.38" height="74" fill="#f4f6fb"/><text x="325.58" y="24" text-anchor="middle" font-size="9.5" fill="#a9b2c4" font-family="monospace">B8</text><text x="325.58" y="119" text-anchor="middle" font-size="11.5" font-weight="700" fill="#5aa9ff" font-family="monospace">1</text><text x="325.58" y="138" text-anchor="middle" font-size="7.5" fill="#6f7a94" font-family="monospace" transform="rotate(-90 325.58 138)">6.60</text><rect x="340.77" y="30" width="16.16" height="74" fill="#0b0c0f"/><text x="348.85" y="24" text-anchor="middle" font-size="9.5" fill="#6f7a94" font-family="monospace">l8</text><text x="348.85" y="119" text-anchor="middle" font-size="11.5" font-weight="700" fill="#6f7a94" font-family="monospace">0</text><text x="348.85" y="138" text-anchor="middle" font-size="7.5" fill="#6f7a94" font-family="monospace" transform="rotate(-90 348.85 138)">3.51</text><rect x="356.93" y="30" width="16.55" height="74" fill="#f4f6fb"/><text x="365.21" y="24" text-anchor="middle" font-size="9.5" fill="#a9b2c4" font-family="monospace">B9</text><text x="365.21" y="119" text-anchor="middle" font-size="11.5" font-weight="700" fill="#a9b2c4" font-family="monospace">0</text><text x="365.21" y="138" text-anchor="middle" font-size="7.5" fill="#6f7a94" font-family="monospace" transform="rotate(-90 365.21 138)">3.60</text><line x1="26.0" y1="158" x2="373.5" y2="158" stroke="#5aa9ff" stroke-width="1"/><line x1="26.0" y1="154" x2="26.0" y2="162" stroke="#5aa9ff" stroke-width="1"/><line x1="373.5" y1="154" x2="373.5" y2="162" stroke="#5aa9ff" stroke-width="1"/><rect x="156.7" y="151" width="86" height="14" fill="#14161c"/><text x="199.7" y="162" text-anchor="middle" font-size="10" fill="#5aa9ff" font-family="monospace">75.5 mm</text><defs><marker id="bc-arrow" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0 0 7 3.5 0 7z" fill="#3ddc84"/></marker></defs><line x1="26.0" y1="16" x2="122.0" y2="16" stroke="#3ddc84" stroke-width="1.6" marker-end="url(#bc-arrow)"/><text x="128.0" y="13" font-size="9.5" fill="#3ddc84">Fahrtrichtung, so wird gelesen</text></svg>
+      </div>
+      <p class="muted" style="font-size:11.5px">
+        Jeder Balken (<code>B1</code>&hellip;<code>B9</code>) und jede L&uuml;cke
+        (<code>l1</code>&hellip;<code>l8</code>) mit ihrem Bit und ihrer gemessenen Breite in
+        Millimetern. <b style="color:var(--info)">Blau</b> ist ein breiter Balken,
+        <b style="color:var(--warn)">gelb</b> eine breite L&uuml;cke, grau ist schmal. Das
+        Bild ist ma&szlig;st&auml;blich und wird aus derselben Datei erzeugt wie die
+        Druckvorlage &mdash; hier steht keine abgeschriebene Zahl.
+      </p>
+      <p class="muted" style="font-size:11.5px">
+        <b>Was hier <em>nicht</em> steht:</b> welche Zahl das Auto aus diesen 17 Bits bildet
+        und wie es sie auf die Streckenart abbildet, ist nicht entschl&uuml;sselt. Bekannt
+        ist nur, was am Ende in Byte&nbsp;12 ankommt (0x01 Start/Ziel, 0x02 Gerade, 0x03
+        Linkskurve, 0x04 Rechtskurve). Das Bild zeigt die Geometrie, nicht die Bedeutung.
+      </p>
       <p class="muted">
         Das ganze Muster ist <b>75,5&nbsp;mm</b> lang in Fahrtrichtung, die Balken sind
         <b>275,9&nbsp;mm</b> breit &mdash; also fast die volle A4-Breite quer zur Fahrbahn.
@@ -2276,18 +2307,6 @@
         <div><p class="muted" style="margin:0 0 4px 0"><b>Mustang</b> &mdash; V8, Cross-Plane</p>
           <audio controls preload="none" src="audio/mustang_demo.ogg" style="height:32px"></audio></div>
       </div>
-      <h3 style="margin:20px 0 6px 0; font-size:14px">Die übrigen Effekte</h3>
-      <div class="row" style="gap:18px; flex-wrap:wrap">
-        <div><p class="muted" style="margin:0 0 4px 0"><b>Bremse</b> &mdash; tonal, ACC-Charakter</p>
-          <audio controls preload="none" src="audio/brake_squeal.ogg" style="height:32px"></audio></div>
-        <div><p class="muted" style="margin:0 0 4px 0"><b>Crash</b> &mdash; 2 von 4 Varianten</p>
-          <audio controls preload="none" src="audio/crash_0.ogg" style="height:32px"></audio>
-          <audio controls preload="none" src="audio/crash_2.ogg" style="height:32px"></audio></div>
-        <div><p class="muted" style="margin:0 0 4px 0"><b>Boxenstopp</b> &mdash; Schlagschrauber</p>
-          <audio controls preload="none" src="audio/pit_wrench.ogg" style="height:32px"></audio></div>
-        <div><p class="muted" style="margin:0 0 4px 0"><b>Motorstart</b> &mdash; nur der Startvorgang</p>
-          <audio controls preload="none" src="audio/porsche_start.ogg" style="height:32px"></audio></div>
-      </div>
       <p class="muted" style="font-size:11.5px; margin-top:10px">
         Porsche, BMW und Mustang sowie alle Effekte oben sind <b>vollständig synthetisch</b> &mdash;
         Zündimpulse, gefaltet mit der Resonanz des Auspuffkrümmers, nach dem Vorbild von
@@ -2305,8 +2324,101 @@
         Vollständige Aufschlüsselung, Datei für Datei: <code>audio/CREDITS.md</code>.
       </p>
     </div>
+      <p class="muted" style="font-size:11.5px">
+        Die einzelnen Effekte &mdash; Bremse, Crash, Schlagschrauber, Anlasser &mdash;
+        stehen vollst&auml;ndig und mit Herkunftsangabe unter <b>T&ouml;ne</b> weiter
+        unten. Hier standen fr&uuml;her fünf von ihnen ein zweites Mal.
+      </p>
 
     <div class="card">
+
+      <h2>T&ouml;ne</h2>
+      <p class="muted">
+        Jeder Ton der App, zum Anh&ouml;ren, mit seiner Herkunft. Der Unterschied ist
+        wichtig: das eine ist gerechnet, das andere ist Aufnahmematerial.
+      </p>
+
+      <h3 style="font-size:14px; margin:16px 0 6px 0">Ereignisse</h3>
+      <div class="snd-grid">
+        <div class="snd-row"><audio controls preload="none" src="audio/shift_up.ogg"></audio><div><b>Hochschalten</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert &mdash; Anstieg 8&ndash;14&nbsp;ms, damit es klunkt statt zu klicken</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/shift_down.ogg"></audio><div><b>Runterschalten</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/brake_squeal.ogg"></audio><div><b>Bremsenquietschen</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, als Schleife nach Bremsdruck eingeblendet</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/crash_0.ogg"></audio><div><b>Crash, Variante 1</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert &mdash; vier Varianten, weil dieselbe Aufnahme bei mehreren Ber&uuml;hrungen als Fehler klingt</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/crash_1.ogg"></audio><div><b>Crash, Variante 2</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/crash_2.ogg"></audio><div><b>Crash, Variante 3</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/crash_3.ogg"></audio><div><b>Crash, Variante 4</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/pit_wrench.ogg"></audio><div><b>Schlagschrauber</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert &mdash; gleichm&auml;&szlig;iger Hammerzug um 26&nbsp;Hz</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/pit_fuel.ogg"></audio><div><b>Tanken</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, Schleife</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/pit_repair.ogg"></audio><div><b>Karosseriereparatur</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert &mdash; Abklingzeit 1,9&nbsp;ms im Median, also D&auml;mpfer statt Note</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/porsche_start.ogg"></audio><div><b>Motorstart: Porsche</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/bmw_start.ogg"></audio><div><b>Motorstart: Bmw</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/mustang_start.ogg"></audio><div><b>Motorstart: Mustang</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+      </div>
+
+      <h3 style="font-size:14px; margin:18px 0 6px 0">Warnt&ouml;ne</h3>
+      <p class="muted" style="font-size:11.5px">
+        Diese beiden liegen als <em>Code</em> vor, nicht als Datei: sie werden aus zwei
+        Sinusschwingungen und einer H&uuml;llkurve gerechnet, was weniger Platz braucht als
+        eine Datei und ohne Laden funktioniert. Die Kn&ouml;pfe spielen genau denselben Pfad
+        wie das Spiel.
+      </p>
+      <div class="row" style="gap:8px; flex-wrap:wrap">
+        <button id="snd-fuel-20">Tank 20&nbsp;% &mdash; ein Doppelimpuls</button>
+        <button id="snd-fuel-10">Tank 10&nbsp;% &mdash; zwei</button>
+        <span class="muted" id="snd-fuel-note" style="font-size:11.5px"></span>
+      </div>
+      <p class="muted" style="font-size:11.5px; margin-top:8px">
+        Gebaut wie ein Gurtwarner im Auto: <b>feste</b> Tonh&ouml;he (660&nbsp;Hz, eine
+        Quinte leise dar&uuml;ber), zwei kurze Impulse von 75&nbsp;ms mit weichen Flanken.
+        Die vorherige Fassung war eine fallende Rutsche, und eine fallende Tonh&ouml;he
+        liest sich als &bdquo;etwas l&auml;uft aus&ldquo; &mdash; falsch f&uuml;r einen
+        Stand, der weiter sinkt, bis man etwas tut. Die <em>Anzahl</em> tr&auml;gt die
+        Dringlichkeit, damit man zum Unterscheiden nicht hinsehen muss.
+      </p>
+
+      <h3 style="font-size:14px; margin:18px 0 6px 0">Motoren</h3>
+      <p class="muted" style="font-size:11.5px">
+        Je Motor drei Drehzahlb&auml;nder, die nach Drehzahl &uuml;berblendet werden, und
+        eine Schubschleife, die parallel dazu nach <em>Last</em> eingeblendet wird. Die
+        Drehzahl in Klammern ist die Basis: dort klingt die Schleife unverstimmt.
+      </p>
+      <div class="snd-grid">
+        <div class="snd-row"><audio controls preload="none" src="audio/porsche_idle.ogg"></audio><div><b>Porsche 992 GT3 (Boxer-6, Saugmotor), Leerlauf (1500/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/porsche_mid.ogg"></audio><div><b>Porsche 992 GT3 (Boxer-6, Saugmotor), Mittelband (4500/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/porsche_high.ogg"></audio><div><b>Porsche 992 GT3 (Boxer-6, Saugmotor), oberes Band (8200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/porsche_over.ogg"></audio><div><b>Porsche 992 GT3 (Boxer-6, Saugmotor), Schub (4500/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/bmw_idle.ogg"></audio><div><b>BMW M4 GT3 (Reihen-6, Turbo), Leerlauf (1400/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/bmw_mid.ogg"></audio><div><b>BMW M4 GT3 (Reihen-6, Turbo), Mittelband (4200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/bmw_high.ogg"></audio><div><b>BMW M4 GT3 (Reihen-6, Turbo), oberes Band (7200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/bmw_over.ogg"></audio><div><b>BMW M4 GT3 (Reihen-6, Turbo), Schub (4200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/mustang_idle.ogg"></audio><div><b>Ford Mustang GT3 (V8, Cross-Plane), Leerlauf (1200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/mustang_mid.ogg"></audio><div><b>Ford Mustang GT3 (V8, Cross-Plane), Mittelband (3900/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/mustang_high.ogg"></audio><div><b>Ford Mustang GT3 (V8, Cross-Plane), oberes Band (7000/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/mustang_over.ogg"></audio><div><b>Ford Mustang GT3 (V8, Cross-Plane), Schub (3900/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/corvette_idle.ogg"></audio><div><b>Chevrolet Corvette C6 (V8), Leerlauf (1776/min)</b><br><span class="muted" style="font-size:11px">aus einer Pixabay-Aufnahme geschnitten</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/corvette_mid.ogg"></audio><div><b>Chevrolet Corvette C6 (V8), Mittelband (4545/min)</b><br><span class="muted" style="font-size:11px">aus einer Pixabay-Aufnahme geschnitten</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/corvette_high.ogg"></audio><div><b>Chevrolet Corvette C6 (V8), oberes Band (4980/min)</b><br><span class="muted" style="font-size:11px">aus einer Pixabay-Aufnahme geschnitten</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/gt3v8_idle.ogg"></audio><div><b>GT3 V8, Flat-Plane (nach Ferrari F136), Leerlauf (1300/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/gt3v8_mid.ogg"></audio><div><b>GT3 V8, Flat-Plane (nach Ferrari F136), Mittelband (5200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/gt3v8_high.ogg"></audio><div><b>GT3 V8, Flat-Plane (nach Ferrari F136), oberes Band (8800/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/gt3v8_over.ogg"></audio><div><b>GT3 V8, Flat-Plane (nach Ferrari F136), Schub (5200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/gt3v10_idle.ogg"></audio><div><b>GT3 V10 (nach Lexus LFA), Leerlauf (1400/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/gt3v10_mid.ogg"></audio><div><b>GT3 V10 (nach Lexus LFA), Mittelband (5400/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/gt3v10_high.ogg"></audio><div><b>GT3 V10 (nach Lexus LFA), oberes Band (8900/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/gt3v10_over.ogg"></audio><div><b>GT3 V10 (nach Lexus LFA), Schub (5400/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/bmax_idle.ogg"></audio><div><b>Ford B-Max 1.0 EcoBoost (Reihen-3, Turbo), Leerlauf (850/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/bmax_mid.ogg"></audio><div><b>Ford B-Max 1.0 EcoBoost (Reihen-3, Turbo), Mittelband (3200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/bmax_high.ogg"></audio><div><b>Ford B-Max 1.0 EcoBoost (Reihen-3, Turbo), oberes Band (6000/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/bmax_over.ogg"></audio><div><b>Ford B-Max 1.0 EcoBoost (Reihen-3, Turbo), Schub (3200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/f1_idle.ogg"></audio><div><b>F1 V12, 18 000/min (nach Ferrari 412 T2), Leerlauf (4000/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/f1_mid.ogg"></audio><div><b>F1 V12, 18 000/min (nach Ferrari 412 T2), Mittelband (11000/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/f1_high.ogg"></audio><div><b>F1 V12, 18 000/min (nach Ferrari 412 T2), oberes Band (17500/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/f1_over.ogg"></audio><div><b>F1 V12, 18 000/min (nach Ferrari 412 T2), Schub (11000/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+      </div>
+      <p class="muted" style="font-size:11.5px">
+        Vollst&auml;ndige Herkunftsangaben in <code>audio/CREDITS.md</code>.
+      </p>
+
       <h2>Audio-Engine</h2>
       <p class="muted">
         Die drei Hauptmotoren sind <strong>vollst&auml;ndig synthetisch</strong> &mdash; es wird keine
@@ -2597,10 +2709,10 @@
         <div>
           <label class="small">Modus</label>
           <select id="race-mode">
-            <option value="practice" selected>Freies Training &mdash; l&auml;uft bis du beendest</option>
-            <option value="endurance">Endurance &mdash; meiste Runden in der Zeit</option>
-            <option value="qualifying">Qualifying &mdash; schnellste Runde in der Zeit</option>
-            <option value="laps">Runden &mdash; wer zuerst die Rundenzahl hat</option>
+            <option value="practice" selected>Freies Training</option>
+            <option value="endurance">Endurance</option>
+            <option value="qualifying">Qualifying</option>
+            <option value="laps">Runden</option>
           </select>
         </div>
         <div>
@@ -2719,21 +2831,21 @@
   <section class="tabpage" id="tab-options">
     <div class="card">
       <h2>Fahrgefühl</h2>
-      <div class="opt-row"><div class="opt-label">Physik-Modus aktivieren<small>Aus = die App sendet die rohe Stickstellung, ohne Gänge und Drehmoment.</small></div><label class="tgl"><input type="checkbox" id="phys-enable" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Physik-Modus aktivieren<small>Aus: rohe Stickstellung, ohne Gänge.</small></div><label class="tgl"><input type="checkbox" id="phys-enable" checked><span></span></label></div>
       <div class="opt-row" id="phys-gyro-wrap"><div class="opt-label">Handy-Neigung für Lenkung nutzen</div><label class="tgl"><input type="checkbox" id="phys-gyro"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Motorsound</div><label class="tgl"><input type="checkbox" id="sound-enable" checked><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Regen<small>Wie die Select-Taste bzw. W. Passende Reifen kommen beim Boxenstopp automatisch.</small></div>
+      <div class="opt-row"><div class="opt-label">Regen<small>Select oder W. Reifen kommen beim Boxenstopp passend.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-rain"><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Strecken-Ambience<small>Hintergrundgeräusche, Vorbeifahrten, Regen und Donner.</small></div>
+      <div class="opt-row"><div class="opt-label">Strecken-Ambience<small>Vorbeifahrten, Regen, Donner.</small></div>
         <label class="tgl"><input type="checkbox" id="amb-enable" checked><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Streckenlautstärke<small>Hintergrund und Vorbeifahrten &mdash; absichtlich leise, damit der Motor vorne bleibt.</small></div>
+      <div class="opt-row"><div class="opt-label">Streckenlautstärke<small>Absichtlich leise, damit der Motor vorne bleibt.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
           <input type="range" id="amb-volume" min="0" max="1" step="0.05" value="0.1">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="amb-volume-val">10%</span>
         </div></div>
-      <div class="opt-row"><div class="opt-label">Regenlautstärke<small>Regenteppich und Donner, unabhängig regelbar.</small></div>
+      <div class="opt-row"><div class="opt-label">Regenlautstärke<small>Regen und Donner, eigener Regler.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
           <input type="range" id="rain-volume" min="0" max="1" step="0.05" value="0.25">
@@ -2744,6 +2856,7 @@
         <select id="sound-profile">
           <option value="mustang" selected>Mustang &mdash; V8, Cross-Plane</option>
           <option value="corvette">Corvette C6 &mdash; V8 (Aufnahme)</option>
+          <option value="porsche_rec">Porsche &mdash; Boxer-6 (Aufnahme)</option>
           <option value="porsche">Porsche &mdash; Boxer-6, Saugmotor</option>
           <option value="bmw">BMW &mdash; Reihen-6, Turbo</option>
           <option value="gt3v8">GT3 &mdash; V8, Flat-Plane, 8800/min</option>
@@ -2762,7 +2875,7 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="sound-volume-val">70%</span>
         </div></div>
-      <div class="opt-row"><div class="opt-label">Leistung über Akkulaufzeit konstant halten<small>Drosselt bei vollem Akku, damit es sich über die Ladung gleich anfährt. Näherung: der Akkuwert ist eine unkalibrierte Schätzung.</small></div><label class="tgl"><input type="checkbox" id="setting-battery-comp"><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Leistung über Akkulaufzeit konstant halten<small>Drosselt bei vollem Akku. Der Akkuwert ist eine unkalibrierte Schätzung.</small></div><label class="tgl"><input type="checkbox" id="setting-battery-comp"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Referenz-Akkustand</div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
@@ -2794,7 +2907,7 @@
       <div class="opt-head">
         Getriebe &amp; Fahrleistung
       </div>
-      <div class="opt-row"><div class="opt-label">Automatikgetriebe<small>Aus = manuell (Quadrat/X runter, Kreis/B hoch). Im Stand unter den 1. Gang schalten legt den Rückwärtsgang ein.</small></div><label class="tgl"><input type="checkbox" id="setting-autoshift"><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Automatikgetriebe<small>Aus: manuell, Quadrat/X runter, Kreis/B hoch. Im Stand unter den 1. Gang = Rückwärts.</small></div><label class="tgl"><input type="checkbox" id="setting-autoshift"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Höchstgeschwindigkeit (km/h)</div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
@@ -2802,23 +2915,23 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-topspeed-kmh-val">4.0</span>
         </div></div>
-      <div class="opt-row"><div class="opt-label">0 &rarr; 100 km/h (s)<small>Anzeigewerte, wie im Cockpit. Ein 911 GT3 R braucht daf&uuml;r rund 3,2 s.</small></div>
+      <div class="opt-row"><div class="opt-label">0 &rarr; 100 km/h (s)<small>Angezeigte km/h. Ein 911 GT3 R braucht rund 3,2 s.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
           <input type="range" id="setting-zero-to-top" min="1.5" max="8" step="0.1" value="3.2">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-zero-to-top-val">3.2</span>
         </div></div>
-      <div class="opt-row"><div class="opt-label">Ausrollen (Faktor)<small>Wirkt auf alle drei Anteile zugleich &mdash; Rollwiderstand, Motorbremse, Luftwiderstand. Klein = rollt weit, gro&szlig; = bremst stark.</small></div>
+      <div class="opt-row"><div class="opt-label">Ausrollen (Faktor)<small>Rollwiderstand, Motorbremse und Luftwiderstand zugleich. Klein rollt weit.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
           <input type="range" id="setting-coast-drag" min="0.2" max="2" step="0.05" value="1">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-coast-drag-val">1.00</span>
         </div></div>
-      <div class="opt-row"><div class="opt-label">Ghost: Leitplanken-Modus<small>Das Auto h&auml;lt sich selbst auf der Bahn, der Ghost gibt nur Gas. Aus = alter Regler aus Layout und Drehrate.</small></div>
+      <div class="opt-row"><div class="opt-label">Ghost: Leitplanken-Modus<small>Das Auto hält sich selbst auf der Bahn, der Ghost gibt nur Gas.</small></div>
         <label class="tgl"><input type="checkbox" id="ghost-rail" checked><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Ghost-Tempo<small>Rundentempo der autonomen Autos, zum Ausprobieren von Schwierigkeitsgraden.</small></div>
+      <div class="opt-row"><div class="opt-label">Ghost-Tempo<small>Rundentempo der autonomen Autos.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
           <input type="range" id="ghost-speed" min="0.2" max="1" step="0.05" value="0.55">
@@ -2832,30 +2945,30 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="ghost-curve-val">35%</span>
         </div></div>
-      <div class="opt-row"><div class="opt-label">Ghost: seitlicher Versatz<small>Gegen gegenseitiges Rammen. Blind &mdash; kein Byte meldet die Querlage. Ganz links = aus.</small></div>
+      <div class="opt-row"><div class="opt-label">Ghost: seitlicher Versatz<small>Gegen gegenseitiges Rammen. Blind: kein Byte meldet die Querlage. Links = aus.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
           <input type="range" id="ghost-lateral" min="0" max="1" step="0.1" value="0">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="ghost-lateral-val">aus</span>
         </div></div>
-      <div class="opt-row"><div class="opt-label">Ghost: F&uuml;hrenden bremsen<small>Der Erstplatzierte f&auml;hrt etwas langsamer, damit &Uuml;berholen wahrscheinlicher wird.</small></div>
+      <div class="opt-row"><div class="opt-label">Ghost: F&uuml;hrenden bremsen<small>Der Erstplatzierte fährt etwas langsamer.</small></div>
         <label class="tgl"><input type="checkbox" id="ghost-leader"><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Tankgewicht<small>Voller Tank macht das Auto tr&auml;ger. Ganz links = keine Simulation.</small></div>
+      <div class="opt-row"><div class="opt-label">Tankgewicht<small>Voller Tank macht träger. Links = aus.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
           <input type="range" id="setting-fuelweight" min="0" max="1" step="0.05" value="0">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-fuelweight-val">aus</span>
         </div></div>
-      <div class="opt-row"><div class="opt-label">Reifen: Temperatur &amp; Verschlei&szlig;<small>Kalt nach Start und Boxenstopp, abgenutzt nach hartem Stint. Ganz links = keine Simulation.</small></div>
+      <div class="opt-row"><div class="opt-label">Reifen: Temperatur &amp; Verschlei&szlig;<small>Kalt nach Start und Boxenstopp, abgenutzt nach hartem Stint. Links = aus.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
           <input type="range" id="setting-tyres" min="0" max="1" step="0.05" value="0">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-tyres-val">aus</span>
         </div></div>
-      <div class="opt-row"><div class="opt-label">Lenkansprechen<small>Wie stark und wie schnell die Lenkung antwortet. Auch auf dem Steuerkreuz links/rechts.</small></div>
+      <div class="opt-row"><div class="opt-label">Lenkansprechen<small>Auch auf dem Steuerkreuz links/rechts.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
           <input type="range" id="phys-steerresp" min="0.5" max="3" step="0.1" value="2">
@@ -2894,7 +3007,7 @@
           <span class="opt-val" id="setting-crash-count-val">4</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Crashs ausschalten</div><label class="tgl"><input type="checkbox" id="setting-crash-off"><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Vollst&auml;ndige Reparatur dauert (s)<small>Von 100% Schaden auf 0. Nicht linear: die ersten 25% gehen in 1/10 dieser Zeit, die letzten 25% in 4/10 &mdash; ein fast heiles Auto ist schnell fertig, ein Wrack braucht zum Schluss am l&auml;ngsten.</small></div>
+      <div class="opt-row"><div class="opt-label">Vollst&auml;ndige Reparatur dauert (s)<small>Von 100 % auf 0. Nicht linear: die ersten 25 % in 1/10 der Zeit, die letzten 25 % in 4/10.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
           <input type="range" id="setting-repair-time" min="2" max="30" step="1" value="10">
@@ -6862,10 +6975,10 @@
     // until it is stopped. Everything else about it is an ordinary session — the ghosts
     // drive, laps are recorded, the results table fills.
     practice:   { label: 'Freies Training', unit: 'Minuten', timed: false,
-                  hint: 'Läuft, bis du beendest. Die autonomen Autos fahren mit.' },
-    endurance:  { label: 'Endurance', unit: 'Minuten', timed: true, hint: 'Wer in der Zeit die meisten Runden fährt.' },
-    qualifying: { label: 'Qualifying', unit: 'Minuten', timed: true, hint: 'Wer in der Zeit die schnellste Einzelrunde fährt.' },
-    laps:       { label: 'Runden', unit: 'Runden', timed: true, hint: 'Wer die Rundenzahl zuerst erreicht.' },
+                  hint: 'Läuft, bis du beendest.' },
+    endurance:  { label: 'Endurance', unit: 'Minuten', timed: true, hint: 'Meiste Runden in der Zeit.' },
+    qualifying: { label: 'Qualifying', unit: 'Minuten', timed: true, hint: 'Schnellste Einzelrunde zählt.' },
+    laps:       { label: 'Runden', unit: 'Runden', timed: true, hint: 'Wer zuerst die Rundenzahl hat.' },
   };
   let raceMode = 'practice';
   let raceLimit = 2;              // minutes, or laps in 'laps' mode
@@ -8610,7 +8723,7 @@
   // crossfaded by RPM. The loops are fully synthetic — generated by tools/engine_synth.py
   // from a firing-event model, no recorded material — see audio/CREDITS.md.
   const SAMPLE_CARS = ['porsche', 'bmw', 'mustang', 'corvette',
-                       'gt3v8', 'gt3v10', 'bmax', 'f1'];
+                       'gt3v8', 'gt3v10', 'bmax', 'f1', 'porsche_rec'];
   const BANDS = ['idle', 'mid', 'high'];
   let engineVolume = 0.7;
   const sampleEngine = { buffers: {}, rpmScale: {}, nodes: null, over: null, car: null,
@@ -10929,7 +11042,10 @@
 
   function homeFrame(now) {
     if (!homeT0) homeT0 = now;
-    const t = (now - homeT0) / 1000;
+    // Math.max(0, ...): Math.pow with a fractional exponent returns NaN for a negative base,
+    // and a NaN reaching setAttribute produces a browser error rather than a wrong picture.
+    // My own test harness hit exactly that by calling this with a timestamp before homeT0.
+    const t = Math.max(0, (now - homeT0) / 1000);
     const needle = $('home-needle');
     if (needle) {
       // A shift cycle: revs climb, snap back, next gear. Six gears then round again, which
@@ -10998,6 +11114,21 @@
 
   // It is the landing view, so it starts running.
   homeStart();
+
+  // The two warning tones have no file, so the documentation plays the code. That also means
+  // the page can never demonstrate a sound the game no longer makes.
+  for (const [id, n] of [['snd-fuel-20', 1], ['snd-fuel-10', 2]]) {
+    const b = $(id);
+    if (!b) continue;
+    b.addEventListener('click', () => {
+      if (!audioCtx || !soundEnabled) {
+        $('snd-fuel-note').textContent = 'Ton ist aus \u2014 in den Optionen einschalten.';
+        return;
+      }
+      $('snd-fuel-note').textContent = '';
+      playFuelWarning(n);
+    });
+  }
 
 
   // ============================== VOREINSTELLUNGEN ==============================

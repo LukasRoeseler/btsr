@@ -270,5 +270,32 @@
     "load": 0.0
    }
   }
+ },
+ "porsche_rec": {
+  "label": "Porsche (Aufnahme)",
+  "cylinders": 6,
+  "source": "Aufnahme des Nutzers (porschesound/Porsche sounds.m4a), Ausschnitte",
+  "rpmScale": 0.961,
+  "rpmScaleGrund": "Aufnahme deckt 3230 bis 4522/min ab, die App dreht bis 9000. Ohne Faktor liefe das obere Band am 2.0-Anschlag.",
+  "loops": {
+   "idle": {
+    "file": "porsche_rec_idle.ogg",
+    "baseRpm": 3230,
+    "f0": 161.5,
+    "seconds": 1.84
+   },
+   "mid": {
+    "file": "porsche_rec_mid.ogg",
+    "baseRpm": 3876,
+    "f0": 193.8,
+    "seconds": 1.84
+   },
+   "high": {
+    "file": "porsche_rec_high.ogg",
+    "baseRpm": 4522,
+    "f0": 226.1,
+    "seconds": 1.84
+   }
+  }
  }
 }
