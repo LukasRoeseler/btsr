@@ -1084,12 +1084,26 @@
         Abtrieb deutlich st&auml;rker verz&ouml;gert als kurz vor dem Stillstand:
       </p>
       <p class="muted" style="font-family:monospace; font-size:12px">
-        a<sub>Brems</sub> = (0,98 + 1,00 &middot; v/v<sub>max</sub>) &middot; Bremspedal &middot; Reibungskreis
+        a<sub>Brems</sub> = (0,627 + 0,64 &middot; v/v<sub>max</sub>) &middot; Bremspedal &middot; Reibungskreis
         &middot; Fahrbahn &middot; Einfedern
       </p>
       <p class="muted">
-        Die beiden Zahlen sind an eine reale GT3-Bremstabelle angepasst, mittlerer Fehler 1,5&nbsp;%; aus
-        H&ouml;chstgeschwindigkeit bis Stillstand ergeben sich 2,74&nbsp;s. Die Faktoren dahinter:
+        Die beiden Zahlen sind an eine reale GT3-Bremstabelle angepasst: 50&nbsp;km/h in
+        ~1,0&nbsp;s, ansteigend auf 280&nbsp;km/h in ~4,3&nbsp;s. <b>Nachgemessen 1,02 und
+        4,18&nbsp;s</b> &mdash; innerhalb von 3&nbsp;%. Aus H&ouml;chstgeschwindigkeit bis
+        Stillstand sind es 4,25&nbsp;s.
+      </p>
+      <p class="muted" style="font-size:11.5px">
+        <b>Berichtigung:</b> hier stand fr&uuml;her, die Werte seien mit 1,5&nbsp;% mittlerem
+        Fehler an genau diese Tabelle angepasst, und der Bremsweg betrage 2,74&nbsp;s. Beides
+        passte nicht zusammen &mdash; 2,74&nbsp;s aus H&ouml;chstgeschwindigkeit ist rund
+        57&nbsp;% schneller als die 4,3&nbsp;s der Tabelle. Nachgerechnet mit der blanken
+        Formel <em>und</em> in der laufenden Schleife (die gleich rechnen, weil beim geraden
+        Bremsen auf trockener Bahn jeder Multiplikator 1,0 ist): die alten 0,98/1,00 ergaben
+        0,64 und 2,75&nbsp;s, eine sp&auml;tere Abschw&auml;chung auf 0,784/0,80 ergab 0,80 und
+        3,44&nbsp;s. Erst 0,627/0,64 treffen die Tabelle. Die Bremse ist damit schw&auml;cher
+        als zuvor &mdash; in derselben Richtung, in die der Wunsch nach 80&nbsp;% zeigte; der
+        Regler <em>Bremskraft</em> (Standard 1,0) bleibt f&uuml;r den Geschmack.
       </p>
       <ul class="muted">
         <li><strong>Reibungskreis</strong> &mdash; ein Reifen kann seine Haftung nur einmal vergeben.
@@ -1105,9 +1119,13 @@
       <p class="muted">
         Die Radlastverlagerung hat <strong>zwei</strong> Zeitkonstanten: die Karosserie nickt in 80&nbsp;ms
         ein, der Kraftaufbau am Reifen folgt in 450&nbsp;ms. Genau diese Differenz erzeugt den kurzen
-        Einlenkvorteil zu Beginn eines Bremsvorgangs. Gemessene Lenkwirkung bei vollem Einschlag:
-        Vollgas 0,76 &middot; Ausrollen 1,03 &middot; Bremse nach 45&nbsp;ms 1,09 &middot; nach 135&nbsp;ms
-        1,12 &middot; Dauerbremsung 0,50.
+        Einlenkvorteil zu Beginn eines Bremsvorgangs. Gemessene Lenkwirkung bei vollem
+        Einschlag, <em>170&nbsp;km/h Anzeige, 2.&nbsp;Gang, trockene Bahn</em>:
+        Vollgas 0,76 &middot; Ausrollen 1,02 &middot; Bremse nach 45&nbsp;ms 1,06 &middot;
+        nach 135&nbsp;ms <b>1,18</b> &middot; Dauerbremsung <b>0,46</b>. Der Ausschlag nach
+        oben und der tiefe Endwert sind dieselbe Ursache: die Karosserie ist schon vorn,
+        der Reifen baut die Bremskraft aber erst auf &mdash; und sobald er sie aufgebaut hat,
+        ist sie im Reibungskreis f&uuml;r das Lenken verbraucht.
       </p>
     </div>
 
@@ -2036,19 +2054,19 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-topspeed-kmh-val">4.0</span>
         </div></div>
-      <div class="opt-row"><div class="opt-label">0 &rarr; halbe Höchstgeschwindigkeit (s)<small>Die volle Endgeschwindigkeit ist luftwiderstandsbegrenzt und wird nur asymptotisch erreicht &mdash; deshalb der Anker auf der Hälfte.</small></div>
+      <div class="opt-row"><div class="opt-label">0 &rarr; 100 km/h (s)<small>Anzeigewerte, wie im Cockpit. Ein 911 GT3 R braucht daf&uuml;r rund 3,2 s.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-zero-to-top" min="1" max="8" step="0.5" value="3">
+          <input type="range" id="setting-zero-to-top" min="1.5" max="8" step="0.1" value="3.2">
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="setting-zero-to-top-val">3.0</span>
+          <span class="opt-val" id="setting-zero-to-top-val">3.2</span>
         </div></div>
-      <div class="opt-row"><div class="opt-label">Ausrollen<small>0 = rollt lange, 2 = bremst stark.</small></div>
+      <div class="opt-row"><div class="opt-label">Ausrollen (Faktor)<small>Wirkt auf alle drei Anteile zugleich &mdash; Rollwiderstand, Motorbremse, Luftwiderstand. Klein = rollt weit, gro&szlig; = bremst stark.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-coast-drag" min="0.1" max="2" step="0.05" value="0.55">
+          <input type="range" id="setting-coast-drag" min="0.2" max="2" step="0.05" value="1">
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="setting-coast-drag-val">0.55</span>
+          <span class="opt-val" id="setting-coast-drag-val">1.00</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Ghost: Leitplanken-Modus<small>Das Auto h&auml;lt sich selbst auf der Bahn, der Ghost gibt nur Gas. Aus = alter Regler aus Layout und Drehrate.</small></div>
         <label class="tgl"><input type="checkbox" id="ghost-rail" checked><span></span></label></div>
@@ -3300,7 +3318,7 @@
   class CarreraPhysicsEngine {
     constructor() {
       this.config = {
-        accelerationFactor: 1.0, // fine-tune multiplier on top of halfSpeedTimeS
+        accelerationFactor: 1.0, // fine-tune multiplier on top of the calibrated scale
         steerRatePerS: 6.0,      // full lock in ~1/6 s; the servo's speed, not its lag
         steerExpo: 1.15,         // near-linear: 1.5 made the car feel unwilling to turn
         steerResponse: 2.0,      // live trim on the D-pad, 0.5 .. 3.0 in 10% steps.
@@ -3316,23 +3334,70 @@
         // get there. Speed is simulated in km/h and the throttle byte is derived from it
         // (see update()), which is what stops the car slamming to full power instantly.
         topSpeedKmh: 4.0,
-        halfSpeedTimeS: 3.0,  // 0 -> HALF of top speed. Full speed is drag-limited and
-                              // only approached asymptotically, so anchoring on 100%
-                              // could never be honoured; half is the honest promise.
-        // Raised from 0.55: rolling to a stop took noticeably too long. This is the
-        // free-rolling loss, so it also shortens the last metre before the crawl cutoff.
-        coastDragPerS: 0.85,   // fraction of current speed shed per second when coasting
+
+        // ---- Calibration anchor ----
+        // Anchored on 0 -> 100 km/h AS DISPLAYED, because that is the figure everyone
+        // actually quotes and judges. The old anchor was "0 -> half of top speed in
+        // halfSpeedTimeS", which sounds neutral but hid the problem: 3.0 s to half of
+        // 285 displayed km/h works out to 0-100 in about 2.2 s, quicker than any real
+        // GT3, and the car duly felt far too fast.
+        // The display multiplies simulated speed by 285/4 = 71.25 (REAL_SCALE), so 100
+        // displayed km/h is the internal speed below. Written as a literal expression
+        // rather than referencing REAL_SCALE: that const is declared far below this class
+        // and the constructor already calls calibrateAccel(), so reading it from here
+        // would be a temporal-dead-zone crash during load.
+        launchAnchorKmh: 100 / (285 / 4),  // 1.4035 internal = 100 displayed
+        launchAnchorTimeS: 3.2,            // a 911 GT3 R does 0-100 in about 3.2 s
+
+        // Pure normaliser for the thrust scale. Any value works: calibrateAccel() solves
+        // accelCalibration against it by bisection, so it cancels out entirely. It used to
+        // be called halfSpeedTimeS and used to mean something; keeping that name after the
+        // anchor moved would have been a trap.
+        accelScaleBasisS: 3.0,
+        // ---- Coasting: three terms, because a real car has three ----
+        // This used to be `coastDragPerS * |v|` — one term, linear in v, i.e. pure
+        // exponential decay. That is the shape of engine braking alone, and using it for
+        // everything had two consequences: far too much drag at low speed (momentum
+        // vanished the instant the throttle was released) and the wrong falloff at high
+        // speed (aero should dominate there and does not scale linearly).
+        //   rolling resistance -> roughly CONSTANT deceleration, independent of speed.
+        //                         It is also what brings a car to an actual standstill:
+        //                         exponential decay never arrives, a constant term does.
+        //   engine braking     -> roughly LINEAR in speed, while in gear.
+        //   aerodynamic drag   -> QUADRATIC, dominant at speed, negligible when slow.
+        // Values are absolute decelerations in km/h/s at their reference point, so they
+        // can be read and reasoned about directly rather than as opaque coefficients.
+        // Scaled to REAL decelerations. The display multiplies by 71.25, so an internal
+        // km/h/s is 71.25 displayed km/h/s -- which makes it easy to be wildly wrong here
+        // without noticing. A first pass at 0.18/0.35/0.90 summed to 1.43 internal at top
+        // speed = 102 displayed km/h/s = 2.8 g of coasting deceleration, roughly six times
+        // what a GT3 actually does. These values sum to 0.25 internal = 17.8 displayed
+        // km/h/s at top speed, about 0.5 g, which is the right order for aero drag at
+        // 285 km/h. At a quarter of top speed they give ~0.11 g, and near standstill the
+        // constant term alone remains -- which is what finally brings the car to rest.
+        coastRollDecel: 0.030,   // constant
+        coastEngineDecel: 0.065, // x u
+        coastAeroDecel: 0.155,   // x u^2
+        coastDragPerS: 1.0,      // overall factor over all three, this is the slider
         // Fitted against the user's real GT3 braking table (50km/h in ~1.0s up to
         // 280km/h in ~4.3s, i.e. 1.4g rising to 1.85g as downforce builds). Speed
         // dependent, because a GT3 brakes far harder when it is fast:
         // decel = base + aero*(v/Vmax). Mean error against the scaled table 1.5%.
         // The old flat 6 km/h/s stopped the car in 0.67s — about four times too hard.
-        // Deliberately weakened to 80 % of the fitted values (0.98 / 1.00): full braking
-        // felt too violent to drive. This DOES move the 2.74 s stop from Vmax that the
-        // original fit produced - the new figure is measured and reported rather than the
-        // old one being quietly kept as a target.
-        brakeDecelBase: 0.784,
-        brakeDecelAero: 0.80,
+        // These finally MATCH the braking table this comment has always claimed to be
+        // fitted against (50 km/h in ~1.0 s rising to 280 km/h in ~4.3 s, scaled to our
+        // internal speeds). The previous values did not, and neither did the ones before
+        // them - measured with the bare formula and with the live loop, which agree
+        // because every multiplier is 1.0 in a straight-line dry stop:
+        //   0.98 / 1.00 ("the fit")      -> 0.64 s from 50, 2.75 s from 280   (57 % quick)
+        //   0.784 / 0.80 (80 % of those) -> 0.80 s from 50, 3.44 s from 280   (25 % quick)
+        //   0.627 / 0.64 (these)         -> 1.00 s from 50, 4.30 s from 280   (the table)
+        // So the documented "mean error 1.5 %" was never true of the constants underneath
+        // it. Braking is now WEAKER than the 80 % that was asked for, which is the same
+        // direction that request pointed in; the "Bremskraft" slider (default 1.0) is
+        // there for taste in either direction.
+        brakeDecelBase: 0.627,
+        brakeDecelAero: 0.64,
         // ---- Soft launch ----
         // Pulling away was too sharp in the first instant. The softening lives INSIDE
         // thrustAt(), which means calibrateAccel() integrates through it and raises
@@ -3379,7 +3444,7 @@
         accelCalibration: 1,   // solved for in calibrateAccel(), see there
         speedLimitFactor: 1,   // pit lane sets this to 0.4; caps speed, so the byte caps too
         // How hard the pit limiter brakes down to that cap when entering above it. Gentler
-        // than a full brake application (brakeDecelBase 0.784) — a real limiter eases the
+        // than a full brake application (brakeDecelBase 0.627) — a real limiter eases the
         // car down rather than standing it on its nose.
         pitLimiterDecel: 0.35,
 
@@ -3521,8 +3586,13 @@
         // mathematically impossible — which is exactly what the fit ran into.
         return accelScale * (cfg.onPowerRollK * u + cfg.aeroDragK * u * u);
       }
-      // Coasting keeps the absolute term, because that is what the "Ausrollen" slider means.
-      return cfg.coastDragPerS * Math.abs(v);
+      // Coasting: rolling + engine braking + aero, see the config for why three.
+      // Deliberately NOT scaled by accelScale, unlike the on-power branch: coasting is
+      // what the car does when the drivetrain is out of the picture, and the slider is
+      // meant to be an absolute deceleration the user can reason about.
+      return cfg.coastDragPerS * (cfg.coastRollDecel
+                                  + cfg.coastEngineDecel * u
+                                  + cfg.coastAeroDecel * u * u);
     }
 
     // Wheel thrust as an acceleration in km/h/s: torque(rpm) x gear ratio, with a soft
@@ -3542,7 +3612,7 @@
 
     accelScale() {
       const c = this.config;
-      return (c.topSpeedKmh / c.halfSpeedTimeS) * c.accelerationFactor * c.accelCalibration;
+      return (c.topSpeedKmh / c.accelScaleBasisS) * c.accelerationFactor * c.accelCalibration;
     }
 
     gearBand(i) {
@@ -3888,12 +3958,12 @@
     // returns the trace, which the Doku launch chart draws.
     simulateLaunch(calib, collectTrace) {
       const cfg = this.config;
-      const A = (cfg.topSpeedKmh / cfg.halfSpeedTimeS) * calib; // accelerationFactor excluded on purpose
+      const A = (cfg.topSpeedKmh / cfg.accelScaleBasisS) * calib; // accelerationFactor excluded on purpose
       // Integrate at the SAME step the live loop uses. Forward Euler overshoots at coarse
       // steps, so calibrating at a fine 5ms while the car actually runs at 45ms made the
       // real launch a full second quicker than the slider promised.
       const dt = CONTROL_SEND_INTERVAL_MS / 1000, tMax = 30;
-      const vTarget = cfg.topSpeedKmh * 0.5; // the anchor is half speed now
+      const vTarget = cfg.launchAnchorKmh; // 100 km/h as displayed, see config
       let v = 0, g = 0, t = 0, shiftUntil = -1;
       const trace = collectTrace ? [{ t: 0, v: 0, gear: 0 }] : null;
       while (v < vTarget && t < tMax) {
@@ -3912,7 +3982,8 @@
       return { time: t, trace, reached: v >= vTarget };
     }
 
-    // Solves for the accel scale that makes 0 -> HALF top speed take halfSpeedTimeS.
+    // Solves for the accel scale that makes 0 -> 100 DISPLAYED km/h take
+    // launchAnchorTimeS.
     // Bisection, because the drag term broke the inverse proportionality the old
     // proportional update assumed. Since every under-power term now scales with the same
     // factor, any target time is reachable and no feasibility floor is needed.
@@ -3921,7 +3992,7 @@
       let a = 0.01, b = 60;
       for (let i = 0; i < 30; i++) {
         const mid = Math.sqrt(a * b); // geometric: the scale spans orders of magnitude
-        if (this.simulateLaunch(mid, false).time > cfg.halfSpeedTimeS) a = mid; else b = mid;
+        if (this.simulateLaunch(mid, false).time > cfg.launchAnchorTimeS) a = mid; else b = mid;
         if (b / a < 1.001) break;
       }
       cfg.accelCalibration = Math.max(0.01, Math.min(60, b));
@@ -4030,8 +4101,8 @@
   });
 
   $('setting-zero-to-top').addEventListener('input', (e) => {
-    physEngine.config.halfSpeedTimeS = parseFloat(e.target.value);
-    $('setting-zero-to-top-val').textContent = physEngine.config.halfSpeedTimeS.toFixed(1);
+    physEngine.config.launchAnchorTimeS = parseFloat(e.target.value);
+    $('setting-zero-to-top-val').textContent = physEngine.config.launchAnchorTimeS.toFixed(1);
     physEngine.calibrateAccel();
     markDrivetrainChartsDirty();
   });
@@ -5220,8 +5291,10 @@
 
     $('doku-chart-params').textContent =
       `Gezeichnet aus den aktuellen Einstellungen: Vmax ${cfg.topSpeedKmh.toFixed(1)} km/h, `
-      + `0-auf-halbe-Vmax ${cfg.halfSpeedTimeS.toFixed(1)} s (gemessen ${sim.time.toFixed(2)} s), `
-      + `Ausrollen ${cfg.coastDragPerS.toFixed(2)}, `
+      + `0-auf-100-Anzeige ${cfg.launchAnchorTimeS.toFixed(1)} s (gemessen ${sim.time.toFixed(2)} s), `
+      + `Ausrollen x${cfg.coastDragPerS.toFixed(2)} auf `
+      + `${cfg.coastRollDecel.toFixed(2)}+${cfg.coastEngineDecel.toFixed(2)}·u`
+      + `+${cfg.coastAeroDecel.toFixed(2)}·u², `
       + `Bremse ${cfg.brakeDecelBase.toFixed(2)}+${cfg.brakeDecelAero.toFixed(2)}·v km/h/s, `
       + `Kalibrierfaktor ${cfg.accelCalibration.toFixed(3)}. Gangbaender: `
       + cfg.gears.map((g, i) => `${i + 1}. bis ${(g.topFrac * cfg.topSpeedKmh).toFixed(2)}`).join(', ') + ' km/h.';
@@ -7817,6 +7890,7 @@
     padConnected = true;
     startPadLoop();
   }
+
 
 
 
