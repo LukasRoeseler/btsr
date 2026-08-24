@@ -1155,9 +1155,8 @@
       <p class="home-sub">Fahren, abstimmen, Rennen fahren. Im Browser, ohne Installation,
         mit deinem eigenen Streckenaufbau.</p>
       <div class="home-cta">
-        <button class="primary" id="home-go">Losfahren</button>
-        <button id="home-fs">Vollbild</button>
-        <button id="home-doc">Doku</button>
+        <button class="primary" id="home-go">Auto verbinden</button>
+        <button id="home-fs">Cockpit</button>
       </div>
     </div>
     <div class="home-feat">
@@ -12004,15 +12003,17 @@
   });
 
   $('btn-home').addEventListener('click', () => showTab('home'));
-  $('home-go').addEventListener('click', () => showTab('garage'));
-  $('home-doc').addEventListener('click', () => showTab('doc'));
-  // Vollbild direkt von der Startseite. Vorher lag der einzige Knopf dafuer in der Ecke des
-  // Cockpits, und wenn das Gamepad nicht mitspielt, kommt man dort schlecht hin.
-  $('home-fs').addEventListener('click', () => {
-    showTab('race');
-    const b = $('race-fs');
-    if (b) b.click();
+  // Der erste Knopf verbindet direkt, statt in die Garage zu schicken: von der Startseite
+  // aus ist "Auto verbinden" das, was man als erstes will, und der Bluetooth-Dialog braucht
+  // ohnehin einen Klick. Danach steht das Auto in der Garage und die Seite wechselt dorthin,
+  // damit man die Rolle setzen kann.
+  $('home-go').addEventListener('click', async () => {
+    showTab('garage');
+    await garageConnect();
   });
+  // Cockpit, nicht Vollbild. Vollbild ist dort in der Ecke einen Klick entfernt, und wer von
+  // der Startseite kommt, will erst einmal sehen, wo er landet.
+  $('home-fs').addEventListener('click', () => showTab('race'));
 
   // It is the landing view, so it starts running.
   homeStart();
