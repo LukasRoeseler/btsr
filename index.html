@@ -2056,9 +2056,9 @@
       <div class="opt-row"><div class="opt-label">Lenkansprechen<small>Wie stark und wie schnell die Lenkung antwortet. Auch auf dem Steuerkreuz links/rechts.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="phys-steerresp" min="0.5" max="2" step="0.1" value="1">
+          <input type="range" id="phys-steerresp" min="0.5" max="3" step="0.1" value="2">
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="phys-steerresp-val">100%</span>
+          <span class="opt-val" id="phys-steerresp-val">200%</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Beschleunigungsfaktor<small>Feinabstimmung, 1.0 = die eingestellte Zeit.</small></div>
         <div class="opt-slider">
@@ -3257,7 +3257,10 @@
         accelerationFactor: 1.0, // fine-tune multiplier on top of halfSpeedTimeS
         steerRatePerS: 6.0,      // full lock in ~1/6 s; the servo's speed, not its lag
         steerExpo: 1.15,         // near-linear: 1.5 made the car feel unwilling to turn
-        steerResponse: 1.0,      // live trim on the D-pad, 0.5 .. 2.0 in 10% steps
+        steerResponse: 2.0,      // live trim on the D-pad, 0.5 .. 3.0 in 10% steps.
+                                 // 200 % is the calibrated default: measured on the real
+                                 // car, that is what answers properly. The ceiling was
+                                 // raised from 2.0 so the default is not also the limit.
         speedSteerReduction: 0.35, // and only weighted by gear, see update()
         trailBrakingGripBonus: 1.1,
         autoShift: false, // manual by default, per user
@@ -3270,19 +3273,36 @@
         halfSpeedTimeS: 3.0,  // 0 -> HALF of top speed. Full speed is drag-limited and
                               // only approached asymptotically, so anchoring on 100%
                               // could never be honoured; half is the honest promise.
-        coastDragPerS: 0.55,   // fraction of current speed shed per second when coasting
+        // Raised from 0.55: rolling to a stop took noticeably too long. This is the
+        // free-rolling loss, so it also shortens the last metre before the crawl cutoff.
+        coastDragPerS: 0.85,   // fraction of current speed shed per second when coasting
         // Fitted against the user's real GT3 braking table (50km/h in ~1.0s up to
         // 280km/h in ~4.3s, i.e. 1.4g rising to 1.85g as downforce builds). Speed
         // dependent, because a GT3 brakes far harder when it is fast:
         // decel = base + aero*(v/Vmax). Mean error against the scaled table 1.5%.
         // The old flat 6 km/h/s stopped the car in 0.67s — about four times too hard.
-        brakeDecelBase: 0.98,
-        brakeDecelAero: 1.00,
+        // Deliberately weakened to 80 % of the fitted values (0.98 / 1.00): full braking
+        // felt too violent to drive. This DOES move the 2.74 s stop from Vmax that the
+        // original fit produced - the new figure is measured and reported rather than the
+        // old one being quietly kept as a target.
+        brakeDecelBase: 0.784,
+        brakeDecelAero: 0.80,
+        // ---- Soft launch ----
+        // Pulling away was too sharp in the first instant. The softening lives INSIDE
+        // thrustAt(), which means calibrateAccel() integrates through it and raises
+        // accelCalibration to compensate: the 0 -> half-speed time is preserved while the
+        // very first moment is gentler and the middle of the pull correspondingly stronger.
+        // That is what "slower at the start" means without also making the car slow.
+        launchSoftFloor: 0.55, // thrust multiplier at a dead stop
+        launchSoftKmh: 0.6,    // ... rising linearly to 1.0 by this road speed
         minMoveThrottle: 0.16, // smallest byte that actually breaks the car away from rest
         // 10 km/h on the racing display, which reads speedKmh * REAL_SCALE (71.25).
         // Below this the car is walking pace and should simply stop.
         crawlCutoffKmh: 10 / (285 / 4),
-        crawlStopDecel: 1.2,   // km/h per second; clears the cutoff in about 0.12 s
+        // Lowered from 1.2: clearing the cutoff in 0.12 s read as the car being yanked to
+        // a halt. 0.45 takes about 0.32 s, which still stops it promptly but lets the last
+        // fraction of a km/h bleed away instead of snapping.
+        crawlStopDecel: 0.45,  // km/h per second; clears the cutoff in about 0.32 s
 
         // ---- Fuel mass ----
         // A full tank is dead weight: it costs acceleration and braking alike. Both effects
@@ -3358,7 +3378,6 @@
         // the byte reaches exactly -0.5 = delta -64, the ONLY reverse depth ever confirmed
         // on the real car.
         neutralRevTau: 0.22,   // free-rev lag out of gear; an engine is not a switch
-        reverseArmDelayS: 0.5,
         reverseStandstillKmh: 0.05,
         // Halved from 0.22: reverse is for manoeuvring on a small floor, so 31 km/h on the
         // display is plenty. reverseOutputSpan below caps the byte on top of this, which
@@ -3375,7 +3394,6 @@
         // nothing engaged, engine free to rev.
         driveMode: 'neutral', // 'neutral' | 'forward' | 'reverse'
         neutralRpm: 0,        // lagged free-rev value, 0..1 of the usable rev range
-        reverseArmT: 0,
         reverseLatched: false,
         currentGear: 0,
         rpm: IDLE_RPM,
@@ -3411,7 +3429,7 @@
       const st = this.state;
       st.speedKmh = 0; st.virtualSpeed = 0; st.commanded = 0;
       st.driveMode = 'neutral'; st.neutralRpm = 0;
-      st.reverseArmT = 0; st.reverseLatched = false;
+      st.reverseLatched = false;
       st.currentGear = 0; st.rpm = IDLE_RPM; st.rpmFrac = 0;
       st.isShifting = false; st.engineLoad = 0; st.onLimiter = false;
     }
@@ -3465,8 +3483,11 @@
       const limiterCut = raw > REDLINE_RPM
         ? Math.max(0, Math.min(1, 1 - (raw - REDLINE_RPM) / LIMITER_SOFT_RPM))
         : 1;
+      // Soft launch: see config. Ramps in from launchSoftFloor at a standstill.
+      const soft = cfg.launchSoftFloor + (1 - cfg.launchSoftFloor)
+                 * Math.min(1, Math.abs(v) / Math.max(1e-6, cfg.launchSoftKmh));
       return throttle * torqueAt(Math.min(raw, REDLINE_RPM)) * limiterCut
-             * (this.gearRatio(gearIdx) / cfg.ratioRef) * accelScale;
+             * (this.gearRatio(gearIdx) / cfg.ratioRef) * accelScale * soft;
     }
 
     accelScale() {
@@ -3497,29 +3518,20 @@
       const revTopKmh = cfg.reverseTopFrac * cfg.topSpeedKmh;
       const stopped = Math.abs(st.speedKmh) < cfg.reverseStandstillKmh;
 
-      // Reverse selection, AUTOMATIC mode: holding the brake at a standstill toggles
-      // between D and R, like an automatic's lever. Manual mode uses the shift buttons
-      // instead (see triggerShift). Nothing needs excluding here any more: physicsStep
-      // no longer forces brake=1, because the handbrake is gone.
-      // EDGE-triggered, not level-triggered. The previous version kept counting for as
-      // long as the brake was held at a standstill, so it flipped D/R every 0.5s forever —
-      // you got out of reverse and were thrown straight back in. The latch forces the
-      // brake to be RELEASED before another change can arm.
+      // Reverse selection: the SHIFT BUTTONS, in automatic exactly as in manual.
+      //
+      // What used to be here: in automatic, holding the brake at a standstill for
+      // a delay timer toggled between D and R, "like an automatic's lever". It was
+      // edge-triggered and latched, and it still fired constantly by accident - because
+      // coming to a halt IS braking, and keeping the brake on at a standstill is what
+      // everyone does. Stop at the line, hold the brake half a second, and the car
+      // silently selected reverse. Reported as "it shifts into R by itself", and it did.
+      //
+      // triggerShift() already owns the whole chain R <- N <- 1 ... <- 6 with its own
+      // standstill guard, and the shift bindings are not gated on gearbox mode, so
+      // reverse stays reachable in automatic: two downshifts from first. No new binding,
+      // one less way to end up in R without asking for it.
       if (inputs.brake <= 0.02) st.reverseLatched = false;
-      if (cfg.autoShift && stopped && inputs.brake > 0.02 && !st.reverseLatched) {
-        st.reverseArmT += dt;
-        if (st.reverseArmT >= cfg.reverseArmDelayS) {
-          st.reverseArmT = 0;
-          st.reverseLatched = true;
-          st.speedKmh = 0;
-          st.currentGear = 0;
-          st.driveMode = st.driveMode === 'reverse' ? 'forward' : 'reverse';
-          showHudToast(st.driveMode === 'reverse' ? 'Rückwärtsgang' : 'Vorwärts');
-          padRumble(0.3, 0.2, 90);
-        }
-      } else {
-        st.reverseArmT = 0;
-      }
       const reversing = st.driveMode === 'reverse';
       const inNeutral = st.driveMode === 'neutral';
       const gearIdx = reversing ? -1 : st.currentGear;
@@ -3570,11 +3582,34 @@
       st.loadFront += ((0.5 - demand * cfg.transferK) - st.loadFront) * aL;
       st.longUse += (demand - st.longUse) * aU;
 
+      // How wet it is, from the surface factor itself rather than from a weather flag:
+      // GRIP_MATRIX runs 1.00 (dry slicks) down to 0.45 (rain on slicks), so this is 0 in
+      // the dry and 1 on slicks in the rain.
+      const wet = Math.max(0, Math.min(1, (1 - surf) / 0.55));
+
       // Front axle: capacity scales with the load actually on it; what the brake is already
       // using is taken out of the circle, leaving the lateral share for steering.
-      const frontCap = 1 + cfg.loadGain * (st.loadFront - 0.5) * 2;
+      //
+      // THE SURFACE MULTIPLIES THE CAPACITY, not the demand. Until now `surf` was applied
+      // only to the longitudinal forces (thrust and braking, see below) and never to
+      // steering at all, so rain changed how the car accelerated and stopped but not
+      // whether it would turn. Shrinking the front axle's capacity with the surface is the
+      // friction circle doing its job: the brake's demand is unchanged, so in the wet it
+      // eats a far larger share of a smaller circle, and past a point there is nothing
+      // left to steer with. In the dry surf is exactly 1.0, so dry behaviour is untouched
+      // - which is the property that makes this safe to change.
+      //
+      // A first attempt amplified `loadGain` in the wet instead. That was wrong by
+      // inspection of the measurement: braking moves load ONTO the front, so a bigger
+      // load gain made wet braking steer BETTER (steerGrip 1.006 against 0.464 dry) -
+      // the exact opposite of what was asked.
+      const frontCap = (1 + cfg.loadGain * (st.loadFront - 0.5) * 2) * surf;
       const frontUse = Math.max(0, -st.longUse) * cfg.brakeUseGain;
-      st.steerGrip = Math.max(0.12, Math.min(1.25,
+      // The 0.12 floor is a dry-weather reserve: it stops the car ever being completely
+      // helpless. In the wet there is no such reserve - once the brake has eaten the front
+      // axle, the friction circle really is empty and the steering does nothing. So the
+      // floor is scaled away with wetness instead of a separate rule being invented.
+      st.steerGrip = Math.max(0.12 * (1 - wet), Math.min(1.25,
         Math.sqrt(Math.max(0, frontCap * frontCap - frontUse * frontUse))))
         * st.tyreGrip;   // cold or worn tyres will not turn the car either
       // Rear axle drives. Normalised to the on-power equilibrium (see config), so this term
@@ -7131,7 +7166,7 @@
   function nudgeSteerResponse(delta) {
     // Keep the options slider in step, otherwise menu and controller drift apart.
     const input = $('phys-steerresp');
-    const v = Math.round(Math.max(0.5, Math.min(2, parseFloat(input.value) + delta)) * 10) / 10;
+    const v = Math.round(Math.max(0.5, Math.min(3, parseFloat(input.value) + delta)) * 10) / 10;
     input.value = v;
     $('phys-steerresp-val').textContent = Math.round(v * 100) + '%';
     physEngine.config.steerResponse = v;
@@ -7680,6 +7715,8 @@
     padConnected = true;
     startPadLoop();
   }
+
+
 
 
 })();
