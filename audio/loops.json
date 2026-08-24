@@ -8,19 +8,29 @@
     "file": "porsche_idle.ogg",
     "baseRpm": 1500,
     "firingHz": 75.0,
-    "seconds": 2.0
+    "seconds": 2.0,
+    "load": 1.0
    },
    "mid": {
     "file": "porsche_mid.ogg",
     "baseRpm": 4500,
     "firingHz": 225.0,
-    "seconds": 2.0
+    "seconds": 2.0,
+    "load": 1.0
    },
    "high": {
     "file": "porsche_high.ogg",
     "baseRpm": 8200,
     "firingHz": 410.0,
-    "seconds": 2.0049
+    "seconds": 2.0049,
+    "load": 1.0
+   },
+   "over": {
+    "file": "porsche_over.ogg",
+    "baseRpm": 4500,
+    "firingHz": 225.0,
+    "seconds": 2.0,
+    "load": 0.0
    }
   }
  },
@@ -33,19 +43,29 @@
     "file": "bmw_idle.ogg",
     "baseRpm": 1400,
     "firingHz": 70.0,
-    "seconds": 1.9714
+    "seconds": 1.9714,
+    "load": 1.0
    },
    "mid": {
     "file": "bmw_mid.ogg",
     "baseRpm": 4200,
     "firingHz": 210.0,
-    "seconds": 2.0
+    "seconds": 2.0,
+    "load": 1.0
    },
    "high": {
     "file": "bmw_high.ogg",
     "baseRpm": 7200,
     "firingHz": 360.0,
-    "seconds": 2.0
+    "seconds": 2.0,
+    "load": 1.0
+   },
+   "over": {
+    "file": "bmw_over.ogg",
+    "baseRpm": 4200,
+    "firingHz": 210.0,
+    "seconds": 2.0,
+    "load": 0.0
    }
   }
  },
@@ -58,19 +78,29 @@
     "file": "mustang_idle.ogg",
     "baseRpm": 1200,
     "firingHz": 80.0,
-    "seconds": 2.0
+    "seconds": 2.0,
+    "load": 1.0
    },
    "mid": {
     "file": "mustang_mid.ogg",
     "baseRpm": 3900,
     "firingHz": 260.0,
-    "seconds": 2.0
+    "seconds": 2.0,
+    "load": 1.0
    },
    "high": {
     "file": "mustang_high.ogg",
     "baseRpm": 7000,
     "firingHz": 466.7,
-    "seconds": 2.0057
+    "seconds": 2.0057,
+    "load": 1.0
+   },
+   "over": {
+    "file": "mustang_over.ogg",
+    "baseRpm": 3900,
+    "firingHz": 260.0,
+    "seconds": 2.0,
+    "load": 0.0
    }
   }
  },
@@ -96,6 +126,146 @@
     "baseRpm": 4522,
     "f0": 301.5,
     "seconds": 1.88
+   }
+  }
+ },
+ "gt3v8": {
+  "label": "GT3 V8, Flat-Plane (nach Ferrari F136)",
+  "cylinders": 8,
+  "source": "vollst\u00e4ndig synthetisiert (Modell nach engine-sim, MIT)",
+  "loops": {
+   "idle": {
+    "file": "gt3v8_idle.ogg",
+    "baseRpm": 1300,
+    "firingHz": 86.7,
+    "seconds": 2.0308,
+    "load": 1.0
+   },
+   "mid": {
+    "file": "gt3v8_mid.ogg",
+    "baseRpm": 5200,
+    "firingHz": 346.7,
+    "seconds": 2.0077,
+    "load": 1.0
+   },
+   "high": {
+    "file": "gt3v8_high.ogg",
+    "baseRpm": 8800,
+    "firingHz": 586.7,
+    "seconds": 2.0045,
+    "load": 1.0
+   },
+   "over": {
+    "file": "gt3v8_over.ogg",
+    "baseRpm": 5200,
+    "firingHz": 346.7,
+    "seconds": 2.0077,
+    "load": 0.0
+   }
+  }
+ },
+ "gt3v10": {
+  "label": "GT3 V10 (nach Lexus LFA)",
+  "cylinders": 10,
+  "source": "vollst\u00e4ndig synthetisiert (Modell nach engine-sim, MIT)",
+  "loops": {
+   "idle": {
+    "file": "gt3v10_idle.ogg",
+    "baseRpm": 1400,
+    "firingHz": 116.7,
+    "seconds": 1.9714,
+    "load": 1.0
+   },
+   "mid": {
+    "file": "gt3v10_mid.ogg",
+    "baseRpm": 5400,
+    "firingHz": 450.0,
+    "seconds": 2.0,
+    "load": 1.0
+   },
+   "high": {
+    "file": "gt3v10_high.ogg",
+    "baseRpm": 8900,
+    "firingHz": 741.7,
+    "seconds": 1.9955,
+    "load": 1.0
+   },
+   "over": {
+    "file": "gt3v10_over.ogg",
+    "baseRpm": 5400,
+    "firingHz": 450.0,
+    "seconds": 2.0,
+    "load": 0.0
+   }
+  }
+ },
+ "bmax": {
+  "label": "Ford B-Max 1.0 EcoBoost (Reihen-3, Turbo)",
+  "cylinders": 3,
+  "source": "vollst\u00e4ndig synthetisiert (Modell nach engine-sim, MIT)",
+  "loops": {
+   "idle": {
+    "file": "bmax_idle.ogg",
+    "baseRpm": 850,
+    "firingHz": 21.2,
+    "seconds": 1.9765,
+    "load": 1.0
+   },
+   "mid": {
+    "file": "bmax_mid.ogg",
+    "baseRpm": 3200,
+    "firingHz": 80.0,
+    "seconds": 1.9875,
+    "load": 1.0
+   },
+   "high": {
+    "file": "bmax_high.ogg",
+    "baseRpm": 6000,
+    "firingHz": 150.0,
+    "seconds": 2.0,
+    "load": 1.0
+   },
+   "over": {
+    "file": "bmax_over.ogg",
+    "baseRpm": 3200,
+    "firingHz": 80.0,
+    "seconds": 1.9875,
+    "load": 0.0
+   }
+  }
+ },
+ "f1": {
+  "label": "F1 V12, 18 000/min (nach Ferrari 412 T2)",
+  "cylinders": 12,
+  "source": "vollst\u00e4ndig synthetisiert (Modell nach engine-sim, MIT)",
+  "loops": {
+   "idle": {
+    "file": "f1_idle.ogg",
+    "baseRpm": 4000,
+    "firingHz": 400.0,
+    "seconds": 2.01,
+    "load": 1.0
+   },
+   "mid": {
+    "file": "f1_mid.ogg",
+    "baseRpm": 11000,
+    "firingHz": 1100.0,
+    "seconds": 1.9964,
+    "load": 1.0
+   },
+   "high": {
+    "file": "f1_high.ogg",
+    "baseRpm": 17500,
+    "firingHz": 1750.0,
+    "seconds": 2.0023,
+    "load": 1.0
+   },
+   "over": {
+    "file": "f1_over.ogg",
+    "baseRpm": 11000,
+    "firingHz": 1100.0,
+    "seconds": 1.9964,
+    "load": 0.0
    }
   }
  }
