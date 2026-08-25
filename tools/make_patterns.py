@@ -145,17 +145,37 @@ def spiegel(bars, gaps):
 
 MUSTER = {}
 
+
+def fuer_id(n):
+    """Balken- und Lueckenfolge fuer die Katalognummer n, nach beiden Regeln zugleich.
+
+    n+1 Balken, der erste und der letzte dick, alle Luecken breit. Damit ist der Abstand der
+    dicken Balken genau n UND die Zahl der breiten Luecken genau n - die beiden Regeln, die
+    von 22 durchgerechneten Schemata als einzige das bekannte Muster erklaeren.
+    """
+    assert n >= 2, 'Katalognummern unter 2 sind vergeben oder unsinnig'
+    bars = 'D' + 'd' * (n - 1) + 'D'
+    gaps = 'L' * n
+    laenge = 2 * THICK + (n - 1) * THIN + n * GAP_L
+    assert laenge <= PAGE_W - 12, (
+        'ID %d braucht %.1f mm und passt nicht auf A4 quer' % (n, laenge))
+    return bars, gaps
+
+
 # ---- Boxengasse ----------------------------------------------------------------------
-# Modulmass des Originals, und eine Folge, die sich von der bekannten deutlich
-# unterscheidet: drei dicke Balken statt zwei, und an anderen Stellen. Welchen Code das
-# ergibt, ist NICHT vorhergesagt - das kann dieses Werkzeug nicht, weil die Kodierregel
-# unbekannt ist. Ueberfahren, ablesen, im Feld "Ausloese-Code" eintragen.
+# Die Katalognummer. Bekannt vergeben sind 2 Gerade, 3 Linkskurve, 4 Rechtskurve,
+# 5/6 Haarnadel und 10 Start/Ziel. Unbekannt sind 1, 7, 8, 9 und alles ab 11 - dort sitzen
+# die Kurven und die Schikane, die noch nie ueberfahren wurden. 14 laesst also Luft nach
+# unten fuer die fehlenden Kurven und liegt trotzdem nicht so hoch, dass das Muster
+# unhandlich wird: fuenfzehn Balken sind 158 mm, das Original hat 76 mm.
+BOX_ID = 14
+_bb, _gg = fuer_id(BOX_ID)
 MUSTER['box'] = (
-    'muster-boxengasse-a4.svg',
-    'DddDddDdd', 'LlLlLlLl',
-    'BOXENGASSE',
-    'Modulmass wie das Original. Welchen Code es ausloest, ist ungemessen: ueberfahren, '
-    'unten mit der Muster-Sonde ablesen, im Feld Ausloese-Code eintragen.')
+    'muster-boxengasse-a4.svg', _bb, _gg,
+    'BOXENGASSE, Katalognummer %d (0x%02x)' % (BOX_ID, BOX_ID),
+    'Gebaut nach beiden Regeln, die das bekannte Muster erklaeren: Abstand der dicken '
+    'Balken = %d, Zahl der breiten Luecken = %d. Modulmass wie das Original. Wenn eine der '
+    'beiden Regeln gilt, meldet das Auto 0x%02x.' % (BOX_ID, BOX_ID, BOX_ID))
 
 # ---- Probemuster ---------------------------------------------------------------------
 MUSTER['p1'] = ('muster-probe-1-a4.svg', 'ddddddddd', 'llllllll',
@@ -185,6 +205,15 @@ MUSTER['p7'] = ('muster-probe-7-a4.svg', 'dDddD', 'lLLl',
 MUSTER['p8'] = ('muster-probe-8-a4.svg', 'dDddDddddDddd', 'lLLlLlllLlll',
                 'PROBE 8: dreizehn Balken statt neun',
                 'Wie Probe 7, in der anderen Richtung.')
+
+# Zwei Ausweichnummern. Eine Fahrt kann damit drei Kandidaten pruefen statt einen, und jeder
+# ist ein moeglicher Endstand und kein blosser Versuch.
+for _n in (18, 22):
+    _b2, _g2 = fuer_id(_n)
+    MUSTER['box%d' % _n] = (
+        'muster-boxengasse-%d-a4.svg' % _n, _b2, _g2,
+        'BOXENGASSE, Katalognummer %d (0x%02x)' % (_n, _n),
+        'Ausweichnummer, falls %d schon vergeben ist. Gleiche Bauart.' % BOX_ID)
 
 
 def main():

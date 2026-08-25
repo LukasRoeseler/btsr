@@ -316,17 +316,15 @@
       `<kbd>${k}</kbd><span>${v}</span>`).join('');
   }
 
-  function toggleHelp(force) {
-    const p = $('help-panel');
-    const on = force === undefined ? !p.classList.contains('on') : force;
-    if (on) renderHelpPad();
-    p.classList.toggle('on', on);
-  }
-  $('help-btn').onclick = () => toggleHelp(true);
-  $('help-close').onclick = () => toggleHelp(false);
-  $('help-panel').addEventListener('click', (e) => {
-    if (e.target === $('help-panel')) toggleHelp(false);   // click the backdrop to dismiss
-  });
+  // Die Tastenbelegung steht jetzt als Karte im Cockpit-Tab statt in einem Vollbildfenster
+  // hinter einem Fragezeichen. Damit gibt es nichts zu oeffnen und nichts zu schliessen.
+  //
+  // Der erste Aufruf von renderHelpPad() steht NICHT hier, sondern in 90-ghosts.js neben
+  // renderBindTable(). Grund: die Funktion liest BIND_ACTION_LABELS, und das const steht in
+  // 90-ghosts.js, also in einer spaeteren Datei. Hier aufgerufen wirft der Zugriff, und die
+  // ganze IIFE bricht ab - gemessen 117 Folgefehler und OMEGA_TEST undefiniert. "Ans Ende
+  // der Datei" reicht dafuer nicht: in einer zusammengesetzten IIFE ist das Ende einer Datei
+  // nicht das Ende des Moduls.
 
   // ---- Keyboard control ----
   const keys = new Set();
@@ -463,4 +461,3 @@
     }
     return TORQUE_CURVE[last][1];
   }
-

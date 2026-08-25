@@ -916,7 +916,6 @@
   body.track-fs #track-fs-host > #track-preview-svg { min-height: 0; overflow: hidden;
     display: grid; place-items: center; }
   body.track-fs #track-fs-host > #track-preview-svg svg { max-height: 100%; width: auto; }
-  body.track-fs #help-btn { display: none; }
   /* Everything outside the editor host is irrelevant while building. */
   body.track-fs > header, body.track-fs > nav.tabs { display: none; }
 
@@ -1306,14 +1305,9 @@
   .rec-sections button { min-width: 46px; }
   .rec-sections button.done { background: var(--good); color: #04170c; }
 
-  /* Key-binding overlay. */
-  #help-btn { position: fixed; right: 14px; bottom: 14px; z-index: 60; width: 42px;
-    height: 42px; border-radius: 50%; font-size: 19px; font-weight: 700;
-    background: var(--panel-2); color: var(--navy); border: 1px solid var(--border-strong);
-    box-shadow: 0 2px 8px var(--shadow); cursor: pointer; }
-  body.race-fs #help-btn { display: none; }
-  /* Ergebnisfenster. Dieselbe Bauart wie die Tastenuebersicht - ein fester Vorhang mit
-     einer Karte darin - weil die Ergebnistabelle im Tab "Renneinstellungen" steht und wer
+  /* Ergebnisfenster: ein fester Vorhang mit einer Karte darin. Diese Bauart hatte auch die
+     Tastenuebersicht, bis sie als Karte in den Cockpit-Tab gewandert ist - hier bleibt sie,
+     weil die Ergebnistabelle im Tab "Renneinstellungen" steht und wer
      im Cockpit auf Stopp drueckt, sie dort nie zu sehen bekommt. Genau das war der Grund,
      warum nach einem Training scheinbar keine Ergebnisse kamen: sie waren da, nur auf
      einem anderen Schirm. */
@@ -1334,11 +1328,6 @@
   .sum-tab td.num { text-align: right; font-family: monospace; }
   .sum-best { color: var(--good); font-weight: 700; }
 
-  #help-panel { position: fixed; inset: 0; z-index: 61; background: rgba(0,0,0,.88);
-    display: none; overflow: auto; padding: 24px 14px; }
-  #help-panel.on { display: block; }
-  .help-card { max-width: 760px; margin: 0 auto; background: var(--panel);
-    border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; }
   .help-grid { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px;
     font-size: 13px; margin: 8px 0 18px 0; }
   .help-grid kbd { font-family: monospace; font-size: 12px; background: var(--panel-3);
@@ -1466,53 +1455,6 @@
   </div>
 
   <div id="rec-badge"><i></i><span id="rec-badge-text">Aufnahme</span></div>
-  <button type="button" id="help-btn" title="Tastenbelegung" aria-label="Tastenbelegung">?</button>
-  <div id="help-panel" role="dialog" aria-label="Tastenbelegung">
-    <div class="help-card">
-      <div class="row" style="justify-content:space-between; align-items:center">
-        <h2 style="margin:0">Tastenbelegung</h2>
-        <button type="button" id="help-close">Schlie&szlig;en</button>
-      </div>
-
-      <div class="opt-head" style="margin-top:16px">Tastatur, Fahren</div>
-      <div class="help-grid">
-        <kbd>&uarr;</kbd><span>Gas</span>
-        <kbd>&darr;</kbd><span>Bremse</span>
-        <kbd>&larr;</kbd> <span>lenken links</span>
-        <kbd>&rarr;</kbd><span>lenken rechts</span>
-        <kbd>Leertaste</kbd><span>Not-Halt, alle Eingaben los, Momentum auf null</span>
-        <kbd>I</kbd><span>hochschalten</span>
-        <kbd>K</kbd><span>runterschalten (aus dem 1. Gang in N, aus N in R)</span>
-        <kbd>L</kbd><span>Lichthupe</span>
-      </div>
-
-      <div class="opt-head">Tastatur: Test und Fehlersuche am PC</div>
-      <div class="help-grid">
-        <kbd>W</kbd><span>Wetter umschalten (Regen / trocken)</span>
-        <kbd>P</kbd><span>Boxenstopp, erneut zweimal kurz dr&uuml;cken bricht ab</span>
-        <kbd>C</kbd><span>Crash ausl&ouml;sen: Schaden, Ger&auml;usch und Rumble wie im Betrieb</span>
-        <kbd>F</kbd><span>Tank auf 5&nbsp;% setzen, um den Notlauf zu pr&uuml;fen</span>
-        <kbd>R</kbd><span>Tank und Zustand zur&uuml;cksetzen</span>
-        <kbd>X</kbd><span>Gelbe Flagge: alles rollt mit
-          <span id="help-yellow-kmh">80</span>&nbsp;km/h mittig weiter, kein
-          &Uuml;berholen, Lichter blinken. Nochmal <kbd>X</kbd> startet die Ampel und gibt
-          wieder frei</span>
-        <kbd>Q</kbd><span>Runde z&auml;hlen, ohne sie zu fahren: zum Pr&uuml;fen von
-          Rundenzeiten und Ergebnistabelle. <kbd>Shift</kbd>+<kbd>Q</kbd>: f&uuml;r jedes
-          Auto im Rennen</span>
-        <kbd>M</kbd><span>Aufnahme: n&auml;chsten Abschnitt markieren</span>
-        <kbd>?</kbd><span>diese &Uuml;bersicht</span>
-      </div>
-
-      <div class="opt-head">Controller</div>
-      <div class="help-grid" id="help-pad"></div>
-
-      <p class="muted" style="font-size:12px">
-        Die Controller-Belegung ist frei zuweisbar, Optionen &rarr; Controller. Hier steht,
-        was gerade eingestellt ist.
-      </p>
-    </div>
-  </div>
 
 <div id="glitch-bands" aria-hidden="true"></div>
 <main>
@@ -1702,6 +1644,46 @@
         <span id="dash-light-dmg" style="color:#ff5252"></span>
       </div>
       <div class="gt3-banner" id="hud-toast-wrap"><span id="hud-toast"></span></div>
+    </div>
+    <div class="card">
+      <h2>Tastenbelegung</h2>
+
+    <div class="opt-head" style="margin-top:16px">Tastatur, Fahren</div>
+    <div class="help-grid">
+      <kbd>&uarr;</kbd><span>Gas</span>
+      <kbd>&darr;</kbd><span>Bremse</span>
+      <kbd>&larr;</kbd> <span>lenken links</span>
+      <kbd>&rarr;</kbd><span>lenken rechts</span>
+      <kbd>Leertaste</kbd><span>Not-Halt, alle Eingaben los, Momentum auf null</span>
+      <kbd>I</kbd><span>hochschalten</span>
+      <kbd>K</kbd><span>runterschalten (aus dem 1. Gang in N, aus N in R)</span>
+      <kbd>L</kbd><span>Lichthupe</span>
+    </div>
+
+    <div class="opt-head">Tastatur: Test und Fehlersuche am PC</div>
+    <div class="help-grid">
+      <kbd>W</kbd><span>Wetter umschalten (Regen / trocken)</span>
+      <kbd>P</kbd><span>Boxenstopp, erneut zweimal kurz dr&uuml;cken bricht ab</span>
+      <kbd>C</kbd><span>Crash ausl&ouml;sen: Schaden, Ger&auml;usch und Rumble wie im Betrieb</span>
+      <kbd>F</kbd><span>Tank auf 5&nbsp;% setzen, um den Notlauf zu pr&uuml;fen</span>
+      <kbd>R</kbd><span>Tank und Zustand zur&uuml;cksetzen</span>
+      <kbd>X</kbd><span>Gelbe Flagge: alles rollt mit
+        <span id="help-yellow-kmh">80</span>&nbsp;km/h mittig weiter, kein
+        &Uuml;berholen, Lichter blinken. Nochmal <kbd>X</kbd> startet die Ampel und gibt
+        wieder frei</span>
+      <kbd>Q</kbd><span>Runde z&auml;hlen, ohne sie zu fahren: zum Pr&uuml;fen von
+        Rundenzeiten und Ergebnistabelle. <kbd>Shift</kbd>+<kbd>Q</kbd>: f&uuml;r jedes
+        Auto im Rennen</span>
+      <kbd>M</kbd><span>Aufnahme: n&auml;chsten Abschnitt markieren</span>
+    </div>
+
+    <div class="opt-head">Controller</div>
+    <div class="help-grid" id="help-pad"></div>
+
+    <p class="muted" style="font-size:12px">
+      Die Controller-Belegung ist frei zuweisbar, Optionen &rarr; Controller. Hier steht,
+      was gerade eingestellt ist.
+    </p>
     </div>
   </section>
 
@@ -4296,7 +4278,7 @@
         <div style="flex:1 1 260px; min-width:240px">
           <img src="muster-boxengasse-a4.svg" alt="Vorschau Boxengassen-Muster"
                style="width:100%; max-width:300px; border:1px solid var(--border); border-radius:4px; display:block">
-          <p style="margin:8px 0 4px 0"><b>Boxengasse</b>, neu</p>
+          <p style="margin:8px 0 4px 0"><b>Boxengasse, Katalognummer 14</b></p>
           <p class="muted" style="font-size:11.5px; margin:0 0 8px 0">
             L&ouml;st Tempolimit und Boxenstopp aus. Das alte Blatt wurde gar nicht erkannt,
             und daf&uuml;r gibt es zwei sichtbare Gr&uuml;nde: alle neun Balken waren gleich
@@ -4304,21 +4286,35 @@
             anderes als beim Original. Das neue Blatt nimmt das Modulma&szlig; des Originals.
           </p>
           <p class="muted" style="font-size:11.5px; margin:0 0 8px 0">
-            Welchen Code es ausl&ouml;st, ist nicht vorhergesagt, und das kann niemand,
-            solange die Kodierregel unbekannt ist. &Uuml;berfahren, unten mit der
-            Muster-Sonde ablesen, im Feld Ausl&ouml;se-Code eintragen.
+            Weil Carrera die Teile ab 1 durchnumeriert, sind die bekannten Codes
+            Katalognummern und keine Bitmuster. Von 22 durchgerechneten Schemata erkl&auml;ren
+            genau zwei das bekannte Muster: der Abstand der dicken Balken, und die Zahl der
+            breiten L&uuml;cken. Dieses Blatt ist so gebaut, dass beide dieselbe Zahl ergeben,
+            n&auml;mlich 14. Trifft eine der beiden Regeln, meldet das Auto 0x0e.
           </p>
-          <a href="muster-boxengasse-a4.svg" download="muster-boxengasse-a4.svg">
-            <button>Boxengasse herunterladen (SVG)</button>
-          </a>
+          <p class="muted" style="font-size:11.5px; margin:0 0 8px 0">
+            Vergeben sind 2 Gerade, 3 Linkskurve, 4 Rechtskurve, 5 und 6 Haarnadel, 10
+            Start/Ziel. 14 l&auml;sst Luft f&uuml;r die Kurven und die Schikane, die noch
+            nie &uuml;berfahren wurden. Sollte 14 doch belegt sein, liegen 18 und 22 daneben.
+          </p>
+          <div class="row" style="gap:6px; flex-wrap:wrap">
+            <a href="muster-boxengasse-a4.svg" download="muster-boxengasse-a4.svg">
+              <button class="primary">Nummer 14 (0x0e)</button>
+            </a>
+            <a href="muster-boxengasse-18-a4.svg" download="muster-boxengasse-18-a4.svg">
+              <button>Nummer 18 (0x12)</button>
+            </a>
+            <a href="muster-boxengasse-22-a4.svg" download="muster-boxengasse-22-a4.svg">
+              <button>Nummer 22 (0x16)</button>
+            </a>
+          </div>
         </div>
       </div>
 
-      <h3 style="margin-top:20px">Acht Probebl&auml;tter, um die Kodierung zu knacken</h3>
+      <h3 style="margin-top:20px">Falls keine der drei Nummern trifft</h3>
       <p class="muted" style="font-size:11.5px">
-        Einen Code auszuw&auml;hlen ist heute nicht m&ouml;glich: ein Muster l&auml;sst sich
-        zeichnen, aber welche Zahl das Auto daf&uuml;r meldet, ist nicht vorhersagbar. Mit
-        einem einzigen bekannten Paar ist die Regel auch nicht zu erschlie&szlig;en.
+        Dann gilt keine der beiden Regeln, und es braucht mehr als ein bekanntes Paar. Die
+        acht Probebl&auml;tter darunter sind daf&uuml;r gebaut.
       </p>
       <p class="muted" style="font-size:11.5px">
         Deshalb &auml;ndert jedes dieser Bl&auml;tter genau einen Faktor gegen das bekannte
@@ -4351,7 +4347,7 @@
         </label>
         <div>
           <label class="small">Auslöse-Code (Byte 12)</label>
-          <input type="text" id="pit-marker-code" value="" placeholder="mit Sonde ermitteln"
+          <input type="text" id="pit-marker-code" value="" placeholder="0x0e bei Nummer 14, erst prüfen"
                  style="width:150px; font-family:monospace">
         </div>
       </div>
@@ -4392,7 +4388,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.3.63</span></span>
+    <span class="foot-ver">v<span id="app-version">0.3.64</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
   </span>
   <span class="foot-right">

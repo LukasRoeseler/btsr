@@ -443,6 +443,7 @@
     "Boxengasse aktiv": "Pit lane active",
     "Boxengasse herunterladen (SVG)": "Download pit lane (SVG)",
     "Boxengasse": "Pit lane",
+    "Boxengasse, Katalognummer 14": "Pit lane, catalogue number 14",
     "Boxenstopp auf Knopfdruck, mit Quick-Menü": "Pit stop at the touch of a button, with a quick menu",
     "Boxenstopp": "Pit stop",
     "Boxenstopp, erneut zweimal kurz drücken bricht ab": "Pit stop, two more short presses abort it",
@@ -459,6 +460,7 @@
     "Crash-Erkennung mit Vibration und Folgen fürs Handling": "Crash detection with rumble and lasting effects on handling",
     "Crashs, bis Fahrzeug ruckelt": "Crashes until the car judders",
     "Cross-Plane (ungleiche Bänke)": "Cross-plane (uneven banks)",
+    "Dann gilt keine der beiden Regeln, und es braucht mehr als ein bekanntes Paar. Die acht Probeblätter darunter sind dafür gebaut.": "Then neither rule holds, and more than one known pair is needed. The eight probe sheets below are built for that.",
     "Das Auto hält sich selbst auf der Bahn, der Ghost gibt nur Gas.": "The car keeps itself on the track; the ghost only works the throttle.",
     "Das Frequenzbild des Rohrs. Die blaue Marke ist die Viertelwellenresonanz": "The frequency picture of the pipe. The blue mark is the quarter-wave resonance",
     "Das ist der ganze Trick: eine": "That is the whole trick: one",
@@ -507,6 +509,7 @@
     "Fahren, abstimmen, Rennen fahren. Im Browser, ohne Installation, mit deinem eigenen Streckenaufbau.": "Drive, tune, race. In the browser, with no installation, on your own track layout.",
     "Fahrgefühl": "Driving feel",
     "Fahrwerk": "Chassis",
+    "Falls keine der drei Nummern trifft": "If none of the three numbers hits",
     "Fehler": "Mistakes",
     "Feinabstimmung, 1.0 = die eingestellte Zeit.": "Fine tuning, 1.0 = the time set above.",
     "Fliegender Start": "Rolling start",
@@ -639,6 +642,9 @@
     "Not-Halt, alle Eingaben los, Momentum auf null": "Emergency stop: release everything, momentum to zero",
     "Nothalt.": "emergency stop.",
     "Notiz setzen": "Add a note",
+    "Nummer 14 (0x0e)": "Number 14 (0x0e)",
+    "Nummer 18 (0x12)": "Number 18 (0x12)",
+    "Nummer 22 (0x16)": "Number 22 (0x16)",
     "Nur die Gaskurve ist einstellbar, die Lenkung macht das Auto selbst. Einzige Rückmeldung ist die Rundenzeit. Genau so haben Rennfahrer es immer gemacht.": "Only the throttle curve is adjustable; the car does the steering itself. The only feedback is the lap time. That is exactly how racing drivers have always done it.",
     "Oben = Vollgas, Mitte = rollen, unten = Vollbremse.": "Up = full throttle, middle = coasting, down = full brake.",
     "Oben = voll rechts, Mitte = gerade, unten = voll links.": "Up = full right, middle = straight, down = full left.",
@@ -789,6 +795,7 @@
     "Verbinden und Services lesen": "Connect and read services",
     "Verbinden": "Connect",
     "Verbindung": "Connection",
+    "Vergeben sind 2 Gerade, 3 Linkskurve, 4 Rechtskurve, 5 und 6 Haarnadel, 10 Start/Ziel. 14 lässt Luft für die Kurven und die Schikane, die noch nie überfahren wurden. Sollte 14 doch belegt sein, liegen 18 und 22 daneben.": "Taken are 2 straight, 3 left curve, 4 right curve, 5 and 6 hairpin, 10 start/finish. 14 leaves room for the curves and the chicane that have never been driven over. Should 14 turn out to be taken after all, 18 and 22 sit next to it.",
     "Vollbild verlassen": "Leave fullscreen",
     "Vollbild": "Fullscreen",
     "Voller Tank macht träger. Links = aus.": "A full tank makes it sluggish. Left = off.",
@@ -804,6 +811,7 @@
     "Was die Zahl bedeutet und was nicht.": "What the number means and what it does not.",
     "Web Bluetooth erlaubt standardmäßig nur Zugriff auf Services, die vorab bekannt sind. Da wir das genaue Carrera-Protokoll noch nicht kennen, versuchen wir es unten mit einer Liste gängiger Custom-Service-UUIDs (Nordic UART, HM-10/FFE0, FFF0 etc.): falls dein Auto eine andere UUID benutzt, füge sie manuell hinzu.": "By default Web Bluetooth only allows access to services known in advance. Since we do not yet know the exact Carrera protocol, below we try a list of common custom service UUIDs (Nordic UART, HM-10/FFE0, FFF0 and so on): if your car uses a different UUID, add it by hand.",
     "Wechselt einmal zu einem zufälligen Zeitpunkt.": "Changes once, at a random moment.",
+    "Weil Carrera die Teile ab 1 durchnumeriert, sind die bekannten Codes Katalognummern und keine Bitmuster. Von 22 durchgerechneten Schemata erklären genau zwei das bekannte Muster: der Abstand der dicken Balken, und die Zahl der breiten Lücken. Dieses Blatt ist so gebaut, dass beide dieselbe Zahl ergeben, nämlich 14. Trifft eine der beiden Regeln, meldet das Auto 0x0e.": "Because Carrera numbers its track pieces from 1 upwards, the known codes are catalogue numbers, not bit patterns. Of 22 schemes computed, exactly two explain the known pattern: the distance between the thick bars, and the number of wide gaps. This sheet is built so that both give the same number, namely 14. If either rule holds, the car reports 0x0e.",
     "Weiter gedacht: Ghostcars selbst programmieren": "Going further: program ghost cars yourself",
     "Welchen Code es auslöst, ist nicht vorhergesagt, und das kann niemand, solange die Kodierregel unbekannt ist. Überfahren, unten mit der Muster-Sonde ablesen, im Feld Auslöse-Code eintragen.": "Which code it triggers is not predicted, and nobody can predict it while the encoding rule is unknown. Drive over it, read it off below with the pattern probe, enter it in the trigger-code field.",
     "Welchen Code meldet dieses Teil?": "Which code does this part report?",
@@ -1008,7 +1016,7 @@
     // blinder Fleck, der sich selbst versteckt. Gefunden hat es ein Abzug ueber das ganze
     // body, nicht ueber diese Liste.
     return [document.querySelector('header'), document.querySelector('main'),
-            $('app-footer'), $('help-panel'), $('race-summary'),
+            $('app-footer'), $('race-summary'),
             $('lb-wrap')].filter(Boolean);
   }
 

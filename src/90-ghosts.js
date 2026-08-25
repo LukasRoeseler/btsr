@@ -85,6 +85,11 @@
     });
   }
   renderBindTable();
+  // Dieselben Daten, zweite Anzeige: die Tastenbelegung als Karte im Cockpit-Tab. Der
+  // Aufruf steht hier und nicht in 30-input.js, wo renderHelpPad definiert ist, weil die
+  // Funktion BIND_ACTION_LABELS liest und das const oben in DIESER Datei steht. In einer
+  // zusammengesetzten IIFE ist das Ende einer Datei nicht das Ende des Moduls.
+  renderHelpPad();
 
   $('bind-reset').onclick = () => {
     bindings = { ...DEFAULT_BINDINGS };
