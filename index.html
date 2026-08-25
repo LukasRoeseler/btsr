@@ -380,10 +380,9 @@
     padding: clamp(5px, 1vw, 11px); color: #eef2fa; display: grid;
     gap: clamp(4px, .8vw, 9px);
     grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr) minmax(0, 1.15fr);
-    grid-template-areas: "shift shift shift" "left gear right" "strip strip strip"
-                         "banner banner banner"
-      "foot foot foot"
-      "toast toast toast"; }
+    grid-template-areas: "flag flag flag" "shift shift shift" "left gear right"
+                         "strip strip strip" "banner banner banner"
+                         "foot foot foot" "toast toast toast"; }
 
   /* Shift lights: round, evenly spaced, green through red to blue. */
   .gt3-shift { grid-area: shift; display: flex; justify-content: center;
@@ -428,6 +427,15 @@
   .gt3-bar { height: clamp(5px, 1.2vw, 10px); background: #04060b; border-radius: 0;
     overflow: hidden; margin-top: 3px; }
   .gt3-bar > i { display: block; height: 100%; width: 0; transition: width .15s linear; }
+  /* Gelbe Flagge. Der Streifen liegt oben im Schirm und ist die einzige Anzeige, die
+     waehrend einer gelben Phase etwas Neues sagt - deshalb gelb und nicht dezent. */
+  #gt3-flag { display: none; grid-area: flag; background: #4a3c00; color: #ffd83d;
+    font-weight: 800; letter-spacing: .16em; text-align: center;
+    padding: clamp(2px, .6vw, 6px) 0; font-size: clamp(9px, 1.5vw, 14px); }
+  body.flag-yellow #gt3-flag { display: block; }
+  /* Und ein Rahmen um den ganzen Schirm, damit es auch aus dem Augenwinkel auffaellt. */
+  body.flag-yellow .gt3 { box-shadow: inset 0 0 0 3px #ffd83d55; }
+
   /* Fusszeile im Schirm: die vier Angaben, die es vorher nur in den Karten unter dem
      Schirm gab. Klein, einzeilig, umbrechend - sie sollen den Fahrer nicht ablenken, aber
      auch nicht verschwinden. */
@@ -1184,6 +1192,10 @@
         <kbd>C</kbd><span>Crash ausl&ouml;sen: Schaden, Ger&auml;usch und Rumble wie im Betrieb</span>
         <kbd>F</kbd><span>Tank auf 5&nbsp;% setzen, um den Notlauf zu pr&uuml;fen</span>
         <kbd>R</kbd><span>Tank und Zustand zur&uuml;cksetzen</span>
+        <kbd>X</kbd><span>Gelbe Flagge: alles rollt mit
+          <span id="help-yellow-kmh">80</span>&nbsp;km/h mittig weiter, kein
+          &Uuml;berholen, Lichter blinken. Nochmal <kbd>X</kbd> startet die Ampel und gibt
+          wieder frei</span>
         <kbd>Q</kbd><span>Runde z&auml;hlen, ohne sie zu fahren &mdash; zum Pr&uuml;fen von
           Rundenzeiten und Ergebnistabelle. <kbd>Shift</kbd>+<kbd>Q</kbd>: f&uuml;r jedes
           Auto im Rennen</span>
@@ -1366,6 +1378,7 @@
           </svg></div>
       </div>
 
+      <div class="gt3-banner" id="gt3-flag"><span id="race-flag"></span></div>
       <div class="gt3-banner" id="gt3-pit"><span id="race-pit-text">PIT LIMITER ENGAGED</span></div>
       <div class="gt3-foot">
         <span><b id="dash-real-kmh">&ndash;</b> km/h echt <i id="dash-real-ratio"></i></span>
@@ -4907,6 +4920,10 @@
     if (k === 'f' && !e.repeat) { fuel = 5; updateDamageFuelUI(); showHudToast(`Tank ${fuelLiters(5)} l`); }
     if (k === 'r' && !e.repeat) { fuel = 100; damage = 0; updateDamageFuelUI();
                                   showHudToast('Tank und Zustand zurückgesetzt'); }
+    if (k === 'x' && !e.repeat) {
+      if (flagState === 'green') setFlag('yellow');
+      else if (flagState === 'yellow') yellowRestart();
+    }
     if (k === 'q' && !e.repeat) debugCountLap(e.shiftKey);
     if (k === 'm' && !e.repeat) {
       // Next unused section, so one key walks the whole protocol in order.
@@ -8090,8 +8107,7 @@
   function endFormationLap() {
     if (!raceFormationLap) return;
     raceFormationLap = false;
-    // Only lift the limiter if the pit lane is not itself holding it down.
-    if (pitState === 'off') physEngine.config.speedLimitFactor = 1;
+    limitFormation = 1; applySpeedLimit();
     raceLapStart = Date.now();
     garage.forEach(c => { if (c.race) c.race.lapStart = Date.now(); });
     setRaceLights('go');
@@ -8213,6 +8229,31 @@
     osc.connect(lp).connect(g).connect(audioCtx.destination);
     osc.start(t);
     osc.stop(t + 0.25);
+  }
+
+  // ---- Tempolimit: eine Stelle, drei Quellen ----
+  // Boxengasse, gelbe Flagge und Einfuehrungsrunde wollen alle das Tempo begrenzen, und
+  // vorher schrieb jede von ihnen direkt in speedLimitFactor. Wer waehrend einer gelben
+  // Phase die Box verliess, bekam dadurch wieder Vollgas: die Boxenlogik setzte auf 1
+  // zurueck, ohne zu wissen, dass gerade Gelb ist. Jetzt gewinnt immer das strengste
+  // Limit, und es gibt nur einen Schreiber.
+  const YELLOW_KMH = 80;
+  // Wie lange der Pit-Limiter hoechstens an bleibt, wenn das Ausfahrtmuster nicht gelesen
+  // wird. Fuenf Sekunden sind bei Boxengassentempo etwa zwei Kacheln - lang genug, um
+  // wirklich hinauszufahren, kurz genug, dass es kein verlorenes Rennen ist.
+  const PIT_LIMITER_MAX_MS = 5000;
+  let pitLimiterTimer = null;
+  let limitPit = 1, limitYellow = 1, limitFormation = 1;
+  function applySpeedLimit() {
+    const f = Math.min(limitPit, limitYellow, limitFormation);
+    physEngine.config.speedLimitFactor = f;
+    // Die Ghosts bekommen ihr Limit nicht ueber die Physik, sondern ueber ihr Zieltempo -
+    // siehe ghostTick. Hier steht nur der Wert, den sie dort lesen.
+    return f;
+  }
+  function yellowFactor() {
+    const top = physEngine.config.topSpeedKmh * REAL_SCALE;
+    return Math.max(0.05, Math.min(1, YELLOW_KMH / top));
   }
 
   function setRaceLights(step) {
@@ -8560,7 +8601,7 @@
     raceLapStart = Date.now();
     launchGhosts();   // green means green for everyone
     if (raceFormationLap) {
-      physEngine.config.speedLimitFactor = PIT_SPEED_FACTOR;
+      limitFormation = PIT_SPEED_FACTOR; applySpeedLimit();
       showHudToast('Einführungsrunde');
     }
     raceStartedAt = Date.now();
@@ -8600,7 +8641,7 @@
     // Whatever happened, the formation lap is over and its speed limit goes with it.
     if (raceFormationLap) {
       raceFormationLap = false;
-      if (pitState === 'off') physEngine.config.speedLimitFactor = 1;
+      limitFormation = 1; applySpeedLimit();
     }
     if (raceClockTimer) { clearInterval(raceClockTimer); raceClockTimer = null; }
     raceStartedAt = null;
@@ -9106,7 +9147,22 @@
   function setPitState(next) {
     if (pitState === next) return;
     pitState = next;
-    physEngine.config.speedLimitFactor = (next === 'off') ? 1 : PIT_SPEED_FACTOR;
+    limitPit = (next === 'off') ? 1 : PIT_SPEED_FACTOR;
+    applySpeedLimit();
+    // Nachlauf-Wecker. Das Ausfahrtmuster wird nicht immer gelesen - ein Muster, das
+    // nicht gelesen wird, laesst den Limiter sonst bis zum Rundenende an, und das ist der
+    // Unterschied zwischen "Boxenstopp" und "Rennen gelaufen". Fuenf Sekunden nach dem
+    // Ende der Arbeit geht er von selbst aus.
+    if (pitLimiterTimer) { clearTimeout(pitLimiterTimer); pitLimiterTimer = null; }
+    if (next === 'limited') {
+      pitLimiterTimer = setTimeout(() => {
+        pitLimiterTimer = null;
+        if (pitState !== 'limited') return;
+        log('Pit-Limiter nach ' + (PIT_LIMITER_MAX_MS / 1000) + ' s von selbst aus \u2014 '
+            + 'das Ausfahrtmuster wurde nicht gelesen.', 'info');
+        setPitState('off');
+      }, PIT_LIMITER_MAX_MS);
+    }
     if (next === 'servicing') {
       pitServiceStart = Date.now();
       pitFuelGained = 0; pitDamageRepaired = 0;
@@ -11251,6 +11307,7 @@
     // genau dafuer da, einen unbekannten Code zu finden.
     if (car === playerCar || !playerCar) cmTick(code, b);
     latNotify(car, b);
+    shakeNotify(car, b);
     // 0x00 is a valid REPORT but not a valid READING, so it must not refresh the
     // last-seen-code timestamp — otherwise a car sitting beside the track looks alive.
     if (code !== 0xff && code !== TILE_OFFTRACK) car.lastCodeAt = Date.now();
@@ -11481,6 +11538,150 @@
       entry: outside,
       exit:  (run.nextDir !== 0 && run.nextDir !== run.dir) ? inside : outside,
     };
+  }
+
+  // ---- Ruetteln erkennen: "ich habe das Auto hochgehoben und zurueckgestellt" ----
+  //
+  // Es gibt keinen Beschleunigungssensor im Protokoll. Was es gibt, sind Byte 1 und Byte 3,
+  // die sich aendern, wenn das Auto bewegt wird. Die Frage war, ab welcher Aenderung man
+  // "wird geschuettelt" von "liegt nur da" unterscheiden kann.
+  //
+  // Die Antwort aus den Mitschnitten: mit einer FESTEN Schwelle gar nicht. Gemessen, Summe
+  // der Betraege von Byte 1 und 3 ueber neun Meldungen (etwa 400 ms):
+  //
+  //                       Median   90 %   99 %    max
+  //     Gas neutral    B1     3     20    106    390
+  //                    B3     0     73    150    569
+  //     Gas offen      B1    14     35    292    581
+  //                    B3    29     66    168    335
+  //
+  // Die Verteilungen ueberlappen fast vollstaendig, und der Grund ist der Datensatz selbst:
+  // "Gas neutral" enthaelt Ausrollen, Hochheben und Herumtragen durcheinander. Kein
+  // Mitschnitt ist mit "liegt still" gegen "wird geschuettelt" beschriftet. Eine feste
+  // Zahl waere hier also geraten, und geraten heisst: entweder faehrt der Ghost von selbst
+  // wieder los, oder er reagiert nie.
+  //
+  // Deshalb RELATIV statt absolut: waehrend ein Auto steht, lernt es seinen eigenen
+  // Ruhewert, und ausgeloest wird bei einem Vielfachen davon. Das braucht keine
+  // Beschriftung und passt sich an, was das einzelne Auto im Ruhezustand meldet. Der
+  // absolute Boden darunter verhindert, dass ein voellig stilles Auto (Ruhewert 0) auf
+  // jedes Rauschen anspringt. Beides ist in den Optionen einstellbar, und der Rohwert
+  // steht im Entwicklertab - schuetteln, ablesen, einstellen.
+  const SHAKE_WIN = 9;              // Meldungen im Fenster, etwa 400 ms
+  const SHAKE_SETTLE_MS = 1200;     // so lange erst zuhoeren, bevor ausgeloest werden kann
+  let shakeFloor = 130;             // absoluter Boden
+  let shakeFactor = 6;              // Vielfaches des gelernten Ruhewerts
+
+  function sgn8(v) { return v > 127 ? v - 256 : v; }
+
+  function shakeNotify(car, b) {
+    if (!car.shake) car.shake = { p1: null, p3: null, win: [], sum: 0, quiet: [], base: null };
+    const sh = car.shake;
+    const v1 = sgn8(b[1]), v3 = sgn8(b[3]);
+    if (sh.p1 !== null) {
+      const d = Math.abs(v1 - sh.p1) + Math.abs(v3 - sh.p3);
+      sh.win.push(d);
+      sh.sum += d;
+      if (sh.win.length > SHAKE_WIN) sh.sum -= sh.win.shift();
+    }
+    sh.p1 = v1; sh.p3 = v3;
+    if (sh.win.length < SHAKE_WIN) return;
+
+    if (!car.parked) { sh.quiet = []; sh.base = null; sh.parkedAt = 0; return; }
+    // Erst zuhoeren, dann urteilen. Der Ruhewert ist der Median der Fenster in der
+    // Lernphase - der Median und nicht der Mittelwert, damit ein einzelner Stoss beim
+    // Abstellen ihn nicht hochzieht.
+    if (!sh.parkedAt) sh.parkedAt = Date.now();
+    if (Date.now() - sh.parkedAt < SHAKE_SETTLE_MS) { sh.quiet.push(sh.sum); return; }
+    if (sh.base === null) {
+      const q = sh.quiet.slice().sort((a, x) => a - x);
+      sh.base = q.length ? q[Math.floor(q.length / 2)] : 0;
+    }
+    const thr = Math.max(shakeFloor, sh.base * shakeFactor);
+    car.shakeValue = sh.sum;
+    car.shakeThreshold = thr;
+    if (sh.sum >= thr) unparkCar(car, 'geruettelt');
+  }
+
+  // ---- Anhalten und wieder losfahren ----
+  // Vorher versuchte ein Ghost, nach einem Abgang weiterzufahren, sobald wieder ein
+  // Streckencode kam. Auf dem Tisch heisst das: er dreht sich neben der Bahn im Kreis, und
+  // wer ihn zurueckstellt, muss ihn im Fahren treffen. Jetzt bleibt er stehen, bis man ihn
+  // schuettelt - dieselbe Handbewegung, mit der man ihn ohnehin zurueckstellt.
+  function parkCar(car, reason) {
+    if (car.parked === reason) return;
+    car.parked = reason;
+    if (car.shake) { car.shake.parkedAt = 0; car.shake.quiet = []; car.shake.base = null; }
+    if (car.ghost) { car.ghost.cutOut = true; car.ghost.attackUntil = 0; }
+    if (car.rx) writeToCar(car, 0, 0, trackModeBit() | LIGHT_HEAD);
+    log(garageLabel(car) + ': steht (' + reason + '). Auto anheben, zur\u00fcckstellen und '
+        + 'kurz sch\u00fctteln \u2014 dann f\u00e4hrt es weiter.', 'err');
+    showHudToast(garageLabel(car).toUpperCase() + ' STEHT \u2014 SCH\u00dcTTELN');
+  }
+
+  function unparkCar(car, why) {
+    if (!car.parked) return;
+    car.parked = null;
+    if (car.ghost) { car.ghost.cutOut = false; car.ghost.offSince = 0; }
+    log(garageLabel(car) + ': ' + why + ', f\u00e4hrt weiter.', 'info');
+    showHudToast(garageLabel(car).toUpperCase() + ' F\u00c4HRT');
+  }
+
+  // ---- Gelbe Flagge ----
+  // Wie in der Original-App: alles rollt langsam und mittig weiter, keiner ueberholt, die
+  // Lichter blinken. Genau die Phase, in der man ein Auto von Hand zurueckstellt.
+  let flagState = 'green';          // green | yellow | restart
+  function setFlag(next) {
+    if (next === flagState) return;
+    flagState = next;
+    if (next === 'yellow') {
+      limitYellow = yellowFactor();
+      applySpeedLimit();
+      // Angriffe abbrechen: waehrend Gelb wird nicht ueberholt.
+      garage.forEach(c => { if (c.ghost) { c.ghost.attackUntil = 0; c.ghost.attackSide = 0; } });
+      log('GELBE FLAGGE. Alle Autos ' + YELLOW_KMH + ' km/h, mittig, kein Ueberholen. '
+          + 'Stehende Autos bleiben stehen, bis sie geschuettelt werden. Nochmal X startet '
+          + 'die Ampel.', 'err');
+      showHudToast('GELBE FLAGGE');
+      setRaceLights(0);
+    } else if (next === 'green') {
+      limitYellow = 1;
+      applySpeedLimit();
+      log('Gr\u00fcn. Volle Kontrolle.', 'info');
+      showHudToast('GR\u00dcN');
+    }
+    updateFlagUi();
+  }
+
+  function updateFlagUi() {
+    document.body.classList.toggle('flag-yellow', flagState !== 'green');
+    const el = $('race-flag');
+    if (el) {
+      el.textContent = flagState === 'yellow' ? 'GELB'
+                     : flagState === 'restart' ? 'ANFAHRT' : '';
+      el.style.display = flagState === 'green' ? 'none' : '';
+    }
+  }
+
+  // Aus Gelb heraus wird nicht einfach umgeschaltet, sondern angefahren: dieselbe Ampel wie
+  // beim Start, damit der Moment, ab dem wieder ueberholt werden darf, fuer alle derselbe
+  // und sichtbar ist.
+  function yellowRestart() {
+    if (flagState !== 'yellow') return;
+    flagState = 'restart';
+    updateFlagUi();
+    let step = 3;
+    setRaceLights(3);
+    playTone(660, 0.18, 'square', 0.18);
+    const t = setInterval(() => {
+      step--;
+      if (step > 0) { setRaceLights(step); playTone(660, 0.18, 'square', 0.18); return; }
+      clearInterval(t);
+      setRaceLights('go');
+      playTone(880, 0.35, 'square', 0.22);
+      setFlag('green');
+      setTimeout(() => setRaceLights(0), 900);
+    }, 1000);
   }
 
   // ---- Rennwuerze ----
@@ -11817,10 +12018,16 @@
       g.offSince = 0;
     }
     const offConfirmed = g.offSince > 0 && (now - g.offSince) >= GHOST_OFFTRACK_CONFIRM_MS;
-    const offTrack = ghostCfg.needCode
-      ? (offConfirmed || noCode)
-      : (offConfirmed && !noCode);
-    const armed = raceState === 'racing' || raceState === 'finishing' || g.freeRun;
+    // Ein bestaetigter Abgang STELLT AB. Vorher war das ein Zustand, der von selbst wieder
+    // wegging, sobald ein Code kam - das Auto fuhr dann neben der Bahn weiter, statt auf
+    // die Hand zu warten, die es zurueckstellt.
+    if ((ghostCfg.needCode ? (offConfirmed || noCode) : (offConfirmed && !noCode))
+        && !car.parked) {
+      parkCar(car, 'Bahn verlassen');
+    }
+    const offTrack = !!car.parked;
+    const armed = (raceState === 'racing' || raceState === 'finishing' || g.freeRun)
+                  && !car.parked;
     // Abgaenge zaehlen, nicht nur melden. Ohne eine Zahl je Runde ist "die Linie hilft"
     // oder "die Linie schmeisst ihn raus" nicht entscheidbar, und dann wird der Regler nach
     // Gefuehl gedreht. Gezaehlt wird die FLANKE, nicht das Paket - ein zwei Sekunden langer
@@ -11843,6 +12050,10 @@
       // unterschiedlich schnellen Gegnern aufstellen, statt dass alle gleich schnell fahren.
       let target = (car.ghostSpeed === undefined || car.ghostSpeed === null)
         ? ghostCfg.speed : car.ghostSpeed;
+      // Gelbe Flagge: alle auf denselben Wert, und zwar bevor irgendetwas anderes daran
+      // dreht. Gleiches Tempo fuer alle heisst von selbst "kein Ueberholen".
+      const underYellow = flagState !== 'green';
+      if (underYellow) target = Math.min(target, yellowFactor());
       // ---- Tempoprofil statt eines einzigen Kurvenabschlags ----
       // Vorher gab es genau zwei Zustaende: "Kurve in Sicht" oder nicht, und beide bekamen
       // denselben Abschlag. Mit den gemessenen Haarnadelcodes geht es genauer, und das ist
@@ -11857,7 +12068,9 @@
       // Kennung der naechsten engen Stelle, damit der Fehlerwurf EINMAL je Kurve faellt und
       // nicht zwanzig Mal pro Sekunde.
       ahead.key = (g.tileIndex === null ? -1 : g.tileIndex) + ':' + ahead.dist;
-      const spice = ghostSpice(car, ahead);
+      // Waehrend Gelb keine Wuerze: kein Windschatten, keine Attacke, kein Gummiband, und
+      // auch keine Tagesform - sonst waere "alle gleich schnell" wieder aufgehoben.
+      const spice = underYellow ? { factor: 1, attack: 0 } : ghostSpice(car, ahead);
       target *= spice.factor;
       // Was gilt: die Kachel unter dem Auto, oder die naechste enge in Reichweite. Die
       // Reichweite haengt von der Enge ab - vor einer Haarnadel zwei Kacheln, vor einer
@@ -11910,7 +12123,11 @@
         // auf 0 verhaelt sich der Ghost wie vorher.
         // Bei einer Attacke die ANDERE Seite fahren, nicht die Ideallinie - sonst klebt
         // der Verfolger auf derselben Spur und kommt nie vorbei.
-        const lineOff = spice.attack ? spice.attack : ghostLineOffset(car);
+        // Mittig fahren unter Gelb: keine Ideallinie, kein Ausweichen. Das ist der Sinn
+        // der Phase - eine vorhersagbare Spur, damit man ein Auto von Hand dazwischen
+        // stellen kann.
+        const lineOff = underYellow ? 0
+                      : (spice.attack ? spice.attack : ghostLineOffset(car));
         steer = lineOff * ghostCfg.line * GHOST_LINE_STEER
               + g.bias * ghostCfg.lateral * 0.25;
       } else {
@@ -11951,9 +12168,16 @@
     // has to mean stops, not eases off — the car is somewhere it should not be.
     const drive = (armed && !offTrack) ? out.motorPWM : 0;
     if (!armed || offTrack) { e.state.speedKmh = 0; e.state.virtualSpeed = 0; }
-    const lights = car.railLight !== null && car.railLight !== undefined
+    let lights = car.railLight !== null && car.railLight !== undefined
       ? car.railLight
       : (trackModeBit() | LIGHT_HEAD | (brake > 0.05 ? LIGHT_BRAKE : 0));
+    // Unter Gelb blinken alle, und ein stehendes Auto blinkt schneller - so findet man auf
+    // dem Tisch sofort, welches gemeint ist.
+    if (flagState !== 'green' || car.parked) {
+      const period = car.parked ? 260 : 520;
+      const on = Math.floor(Date.now() / period) % 2 === 0;
+      lights = trackModeBit() | (on ? LIGHT_HEAD : 0) | (on ? 0 : LIGHT_BRAKE);
+    }
     writeToCar(car, (armed && !offTrack) ? out.servoAngle : 0, drive, lights, car.modeBytes);
   }
 
@@ -13030,6 +13254,11 @@
       }
     }
   }
+  // Die 80 im Hilfetext kommt aus der Konstante, nicht aus dem Text - sonst laeuft die
+  // Tastenuebersicht auseinander, sobald der Wert sich aendert.
+  if ($('help-yellow-kmh')) $('help-yellow-kmh').textContent = String(YELLOW_KMH);
+  updateFlagUi();
+
   stampOptionGroups();
 
   mwPaint();
