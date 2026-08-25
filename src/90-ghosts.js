@@ -2023,7 +2023,12 @@
       const merk = { gs: cfg.gripScale, v: st.speedKmh, dm: st.driveMode,
                      g: st.currentGear, tg: st.tyreGrip, lf: st.loadFront,
                      lu: st.longUse, ds: st.dampedSteering };
+      // Zusaetzliche Konfigurationswerte, damit eine Anpassung messbar ist und nicht nur
+      // ablesbar. Werden wie alles andere zurueckgelegt.
+      const merkP = {};
+      for (const k of Object.keys((o && o.patch) || {})) merkP[k] = cfg[k];
       try {
+        for (const k of Object.keys((o && o.patch) || {})) cfg[k] = o.patch[k];
         cfg.gripScale = o.gripScale === undefined ? 1 : o.gripScale;
         st.speedKmh = o.kmh / REAL_SCALE;
         st.driveMode = 'forward';
@@ -2038,9 +2043,132 @@
         return { steerGrip: st.steerGrip, gripLong: st.gripLong,
                  loadFront: st.loadFront, longUse: st.longUse };
       } finally {
+        for (const k of Object.keys(merkP)) cfg[k] = merkP[k];
         cfg.gripScale = merk.gs; st.speedKmh = merk.v; st.driveMode = merk.dm;
         st.currentGear = merk.g; st.tyreGrip = merk.tg; st.loadFront = merk.lf;
         st.longUse = merk.lu; st.dampedSteering = merk.ds;
+      }
+    },
+    // Werte setzen, neu kalibrieren, messen. Der Kern jeder Kalibrierung: jede Aenderung
+    // an einem Wert verschiebt ALLE Marken, also braucht man die ganze Kurve nach jeder
+    // Aenderung, und das muss in einem Aufruf gehen, damit eine Suche mechanisch laufen kann.
+    //
+    // Die Werte werden danach zurueckgelegt: eine Suche darf die App nicht verstellen.
+    physFit(patch, kurveOpt) {
+      const cfg = physEngine.config;
+      const merk = {};
+      for (const k of Object.keys(patch || {})) merk[k] = cfg[k];
+      const merkCal = cfg.accelCalibration;
+      try {
+        for (const k of Object.keys(patch || {})) cfg[k] = patch[k];
+        if (physEngine.rebuildGearModel) physEngine.rebuildGearModel();
+        physEngine.calibrateAccel();
+        return this.physCurve(kurveOpt);
+      } finally {
+        for (const k of Object.keys(merk)) cfg[k] = merk[k];
+        cfg.accelCalibration = merkCal;
+        if (physEngine.rebuildGearModel) physEngine.rebuildGearModel();
+      }
+    },
+    // Die ganze Fahrleistungskurve: Beschleunigung bis zu mehreren Marken und Bremsen von
+    // mehreren Marken. Alles in ANGEZEIGTEN km/h, weil die Sollwerte so vorliegen.
+    //
+    // Ueber update(), also durch dieselbe Kette wie beim Fahren, mit eigener Uhr fuer die
+    // Schaltpause: triggerShift loescht isShifting per setTimeout, und das feuert in einer
+    // synchronen Schleife nie. Ohne diese Uhr bleibt der Schub nach dem ersten Schalten aus,
+    // und die Messung sagt "wird langsamer" statt "schaltet".
+    physCurve(o) {
+      const opt = o || {};
+      const e = physEngine, st = e.state, cfg = e.config;
+      const marken = opt.marken || [50, 100, 150, 200];
+      const bremsAb = opt.bremsAb || [100, 150, 200, 250];
+      // Der GANZE Zustand, nicht eine Liste von Feldern. Aufgezaehlt hatte ich zwoelf, und
+      // der Zustand hat mehr - rpm, dampedSteering, virtualSpeed, gripLong, pitch,
+      // onLimiter, reverseLatched. Ein Aufruf liess sie stehen, der naechste setzte darauf
+      // auf, und zwei identische Aufrufe lieferten Verschiedenes. Eine Aufzaehlung ist bei
+      // einem Zustandsobjekt immer unvollstaendig.
+      const merkState = Object.assign({}, st);
+      const merk = { as: cfg.autoShift, gs: cfg.gripScale, te: cfg.tyreEffect };
+      // Bezugszustand: RENNSTART. Voller Tank, warme Reifen, trockene Bahn.
+      //
+      // Ohne einen festen Zustand messt diese Funktion die Reihenfolge der Pruefungen und
+      // nicht das Auto: einzeln aufgerufen kam 0-100 in 3,02 s heraus, im Selbsttest nach
+      // anderen Pruefungen 2,38 s. Der erste Versuch normierte dann auf leeren Tank - also
+      // auf den Bestfall, der schneller ist als alles, was ein Fahrer erlebt. Ein Sollwert
+      // wie "0-100 in 3,1 s" gilt fuer ein rennfertiges Auto, und das hat Sprit an Bord.
+      //
+      // massFactor wird bewusst NICHT gesetzt: update() leitet ihn jeden Takt aus fuelLoad
+      // ab, und ihn daneben festzuhalten waere ein zweiter Ort fuer dieselbe Groesse.
+      // tyreEffect auf 0 und nicht tyreGrip auf 1: update() rechnet tyreGrip jeden Takt
+      // aus dem Reifenzustand neu, ein gesetzter Wert haelt also keinen Takt. Stillgelegt
+      // wird der EINGANG, dann sind die Reifen nominal, egal was vorher lief.
+      cfg.tyreEffect = 0;
+      st.fuelLoad = 1;
+      cfg.gripScale = 1;
+      const dt = 0.02;
+      const takt = () => {
+        // Schaltpause auf der eigenen Uhr.
+        if (st.isShifting) {
+          st._simShift = (st._simShift || 0) + dt;
+          if (st._simShift * 1000 >= cfg.shiftMs) { st.isShifting = false; st._simShift = 0; }
+        } else { st._simShift = 0; }
+      };
+      try {
+        cfg.autoShift = true;
+        // ---- Beschleunigen
+        st.driveMode = 'neutral'; st.currentGear = 0; st.speedKmh = 0;
+        st.isShifting = false; st.neutralRpm = 0; st.loadFront = 0.5; st.longUse = 0;
+        const zeit = {};
+        let t = 0, offen = marken.slice();
+        const zwischen = { von: null, t: null };
+        while (t < 40 && offen.length) {
+          takt();
+          e.update({ throttle: 1, brake: 0, steering: 0 }, dt);
+          t += dt;
+          const kmh = st.speedKmh * REAL_SCALE;
+          while (offen.length && kmh >= offen[0]) {
+            zeit[offen[0]] = +t.toFixed(3);
+            if (opt.von && offen[0] === opt.von) { zwischen.von = t; }
+            if (opt.bis && offen[0] === opt.bis && zwischen.von !== null) {
+              zwischen.t = +(t - zwischen.von).toFixed(3);
+            }
+            offen.shift();
+          }
+        }
+        // ---- Bremsen, je Marke ein eigener Lauf
+        const bremsen = {};
+        for (const v0 of bremsAb) {
+          st.driveMode = 'forward';
+          // Gang passend zur Fahrt waehlen, damit die Motorbremse stimmt.
+          st.currentGear = 0;
+          st.speedKmh = v0 / REAL_SCALE;
+          while (st.currentGear < cfg.gears.length - 1
+                 && e.rpmRawAt(st.speedKmh, st.currentGear) >= cfg.upshiftRpm) {
+            st.currentGear++;
+          }
+          st.isShifting = false; st.loadFront = 0.5; st.longUse = 0;
+          let tb = 0, weg = 0;
+          while (tb < 20 && st.speedKmh * REAL_SCALE > 1) {
+            takt();
+            const vVor = st.speedKmh;
+            e.update({ throttle: 0, brake: 1, steering: 0 }, dt);
+            tb += dt;
+            // Weg in ECHTEN Metern: die angezeigte Fahrt ist km/h, also v/3.6 m/s.
+            weg += ((vVor + st.speedKmh) / 2 * REAL_SCALE) / 3.6 * dt;
+          }
+          bremsen[v0] = { s: +tb.toFixed(3), m: +weg.toFixed(1),
+                          g: +((v0 / 3.6) / Math.max(1e-6, tb) / 9.81).toFixed(2) };
+        }
+        return { beschleunigen: zeit, zwischen: zwischen.t, bremsen };
+      } finally {
+        cfg.autoShift = merk.as;
+        cfg.gripScale = merk.gs;
+        cfg.tyreEffect = merk.te;
+        // Erst die eigenen Zutaten weg, dann alles zuruecklegen: sonst bliebe ein Feld
+        // stehen, das es vor dem Aufruf nicht gab.
+        delete st._simShift;
+        for (const k of Object.keys(st)) if (!(k in merkState)) delete st[k];
+        Object.assign(st, merkState);
       }
     },
     // Aus dem Stand Vollgas und die Gaenge mitschreiben. Ueber update(), nicht ueber einen

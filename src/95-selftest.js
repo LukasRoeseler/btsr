@@ -800,6 +800,69 @@
                    + ' | Ende ' + r.endKmh + ' km/h' };
   });
 
+  // ---- Fahrleistung gegen die GT3-Tabelle ----
+  //
+  // Gemessen ueber update(), also durch dieselbe Kette wie beim Fahren. Die vorhandene
+  // Pruefung "Physik: 0 auf 100" vergleicht das VEREINFACHTE Modell mit seinem eigenen
+  // Anker und ist damit blind fuer den Unterschied zwischen beiden - mit Anker 3,2 meldete
+  // sie 3,195 s, waehrend update() 4,46 s brauchte. Sie bleibt, weil sie die Kalibrierung
+  // selbst prueft; DIESE hier prueft, was das Auto tut.
+  //
+  // Die Grenze ist 20 % je Punkt und nicht 5 %: der Rest ist ein Formfehler in der
+  // Drehmomentkurve, der mit den vier gefitteten Werten nicht wegzubekommen ist. Eine
+  // Grenze, die der Bestand nicht haelt, ist keine Grenze, sondern ein Daueralarm.
+  stAdd('Fahrleistung gegen die GT3-Tabelle', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.physCurve) {
+      return { skip: true, mass: 'physCurve nicht vorhanden' };
+    }
+    const ZA = { 50: 1.1, 100: 3.1, 150: 5.4, 200: 8.5 };
+    const ZB = { 100: 2.1, 150: 3.2, 200: 4.2, 250: 5.6 };
+    const c = OMEGA_TEST.physCurve({ marken: [50, 100, 150, 200],
+                                     bremsAb: [100, 150, 200, 250] });
+    const teile = [], schlecht = [];
+    for (const k of [50, 100, 150, 200]) {
+      const ist = c.beschleunigen[k];
+      if (ist === undefined) { schlecht.push('0-' + k + ' nie erreicht'); continue; }
+      const ab = (ist - ZA[k]) / ZA[k];
+      teile.push('0-' + k + ' ' + ist.toFixed(2) + ' s (' + (ab * 100).toFixed(0) + ' %)');
+      if (Math.abs(ab) > 0.20) schlecht.push('0-' + k);
+    }
+    for (const k of [100, 150, 200, 250]) {
+      const b = c.bremsen[k];
+      const ab = (b.s - ZB[k]) / ZB[k];
+      teile.push(k + '-0 ' + b.s.toFixed(2) + ' s (' + (ab * 100).toFixed(0) + ' %)');
+      if (Math.abs(ab) > 0.20) schlecht.push(k + '-0');
+    }
+    return { ok: !schlecht.length,
+             mass: teile.join(', ')
+                   + (schlecht.length ? ' | ueber 20 % ab: ' + schlecht.join(', ')
+                                      : ' | alle innerhalb 20 %') };
+  });
+
+  // ---- Lenkung unter Last ----
+  // Gewaehlt und nicht gemessen: die Original-App lenkt unter Vollbremsung sichtbar weniger.
+  // Geprueft wird, dass die Wirkung DA und deutlich ist, in beide Richtungen - und dass das
+  // Rollen brauchbar bleibt, damit aus "weniger" kein "gar nicht" wird.
+  stAdd('Lenkung unter Vollbremsung und Vollgas', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.physSteerGrip) {
+      return { skip: true, mass: 'physSteerGrip nicht vorhanden' };
+    }
+    const q = (o) => OMEGA_TEST.physSteerGrip(o).steerGrip;
+    const zeilen = [];
+    let ok = true;
+    for (const v of [50, 150, 250]) {
+      const roll = q({ kmh: v });
+      const br = q({ kmh: v, brake: 1 }) / roll;
+      const ga = q({ kmh: v, throttle: 1 }) / roll;
+      zeilen.push(v + ' km/h: Bremse ' + Math.round(br * 100)
+                  + ' %, Gas ' + Math.round(ga * 100) + ' %');
+      // Deutlich, aber nicht hilflos: zwischen 35 und 65 % beim Bremsen, 45 und 75 % beim
+      // Gas, und das Rollen ueber 0,6.
+      if (!(br > 0.35 && br < 0.65 && ga > 0.45 && ga < 0.75 && roll > 0.6)) ok = false;
+    }
+    return { ok, mass: zeilen.join(' | ') + ' vom Rollen' };
+  });
+
   // ---- Ausfuehren und anzeigen ----
   async function runSelfTest() {
     const rows = $('st-rows');

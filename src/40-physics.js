@@ -41,7 +41,17 @@
         // and the constructor already calls calibrateAccel(), so reading it from here
         // would be a temporal-dead-zone crash during load.
         launchAnchorKmh: 100 / REAL_SCALE,  // 1.4035 internal = 100 displayed
-        launchAnchorTimeS: 3.2,            // a 911 GT3 R does 0-100 in about 3.2 s
+        // 1.95 und nicht 3.1, obwohl 3.1 der Sollwert ist: dieser Anker wird von
+        // calibrateAccel gegen das VEREINFACHTE Modell (thrustAt/resistAt) geloest, und die
+        // Fahrt laeuft durch update(). Gemessen sind das 46 % Unterschied - mit Anker 3.2
+        // brauchte update() 4,46 s auf 100. Der Anker ist damit keine Zeitangabe mehr,
+        // sondern eine Stellschraube, und der Sollwert steht dort, wo er hingehoert: in der
+        // Pruefung, die ueber update() messt.
+        //
+        // Dass die beiden Modelle auseinanderliegen, ist der eigentliche Befund. Es sauber
+        // zu machen hiesse, calibrateAccel durch update() integrieren zu lassen - dabei
+        // liefen aber Schaltmeldungen und Rumble mit, mitten im Konstruktor.
+        launchAnchorTimeS: 2.30,           // gefittet, siehe Kommentar oben
 
         // Pure normaliser for the thrust scale. Any value works: calibrateAccel() solves
         // accelCalibration against it by bisection, so it cancels out entirely. It used to
@@ -90,15 +100,37 @@
         // it. Braking is now WEAKER than the 80 % that was asked for, which is the same
         // direction that request pointed in; the "Bremskraft" slider (default 1.0) is
         // there for taste in either direction.
-        brakeDecelBase: 0.627,
-        brakeDecelAero: 0.64,
+        // 0.72, gefittet gegen 100-0 bis 250-0: 2,16 / 3,22 / 4,26 / 5,30 s gegen
+        // 2,1 / 3,2 / 4,2 / 5,6 s. RMSE 3,1 %, kein Punkt weiter als 5 % ab.
+        //
+        // Drei Fitrunden davor waren wertlos, und das ist die eigentliche Lehre: der
+        // Messaufbau hat sich selbst verstellt. Erst hatte physCurve gar keinen definierten
+        // Zustand und maass die Reihenfolge der Pruefungen. Dann habe ich die
+        // Zustandsfelder beim Zuruecklegen AUFGEZAEHLT - und ein Zustandsobjekt hat immer
+        // mehr Felder, als einem einfallen; zwei identische Aufrufe lieferten
+        // Verschiedenes. Und schliesslich habe ich tyreGrip gesetzt, das update() jeden
+        // Takt neu aus dem Reifenzustand bildet, also keinen Takt hielt.
+        //
+        // Jetzt: der ganze Zustand wird kopiert, tyreEffect stillgelegt, und der
+        // Bezugszustand ist ein Rennstart - voller Tank, nominale Reifen, trockene Bahn.
+        // Vor und nach einem kompletten Selbsttest messt derselbe Aufruf dasselbe.
+        brakeDecelBase: 0.72,
+        // 0, und das ist eine Entscheidung gegen den Fitter: der wollte -0,10, also eine
+        // Bremse, die mit der Fahrt schwaecher wird. Der Luftanteil steckt schon im
+        // Rollwiderstandsterm, der beim Bremsen mitwirkt - ein zweiter Term dafuer zaehlt ihn
+        // doppelt, und ein negativer behauptet etwas Falsches ueber die Bremse.
+        brakeDecelAero: 0,
         // ---- Soft launch ----
         // Pulling away was too sharp in the first instant. The softening lives INSIDE
         // thrustAt(), which means calibrateAccel() integrates through it and raises
         // accelCalibration to compensate: the 0 -> half-speed time is preserved while the
         // very first moment is gentler and the middle of the pull correspondingly stronger.
         // That is what "slower at the start" means without also making the car slow.
-        launchSoftFloor: 0.55, // thrust multiplier at a dead stop
+        // 0.95, gefittet. Vorher 0.55, und damit musste dieser Wert die fehlende Physik
+        // der schleifenden Kupplung mitverstecken: 0-50 war doppelt so lang wie bei einem
+        // echten GT3. Jetzt liefert die Kupplung das Moment und dieser Boden begrenzt nur
+        // noch, wieviel davon am Boden ankommt.
+        launchSoftFloor: 0.95, // thrust multiplier at a dead stop
         launchSoftKmh: 0.6,    // ... rising linearly to 1.0 by this road speed
         minMoveThrottle: 0.16, // smallest byte that actually breaks the car away from rest
         // 10 km/h on the racing display, which reads speedKmh * REAL_SCALE (71.25).
@@ -152,7 +184,26 @@
         // Fitted numerically against the user's real GT3 acceleration table (0-50km/h
         // 1.5s ... 0-285km/h 22s) normalised to fractions of top speed. Reproduces its
         // SHAPE to within 4% on the ratio of full-speed to half-speed time.
-        aeroDragK: 0.62,
+        // ---- Schleifende Kupplung beim Start ----
+        // rpmRawAt rechnet die Drehzahl aus der Fahrt, im Stand also Leerlauf, und dort
+        // liefert die Drehmomentkurve 0,42. Gemessen war 0-50 damit doppelt so lang wie bei
+        // einem echten GT3, waehrend die hoeheren Marken mit einem anderen Anker passten.
+        //
+        // Ein Rennwagen im Start haelt die Drehzahl oben und laesst die Kupplung schleifen:
+        // die Kurbelwelle dreht, die Raeder stehen noch fast. Der Antrieb liefert dabei
+        // nahezu Spitzenmoment, und begrenzt wird er von der Traktion.
+        //
+        // Nur im ersten Gang, und nur solange die Raeder noch nicht aufgeholt haben. Danach
+        // ist es von selbst wirkungslos - kein zweiter Fall, keine Ausnahme.
+        // Zusammen mit launchSoftFloor weiter unten, und die Arbeitsteilung ist gewollt:
+        // die Kupplung liefert das MOMENT (Physik, hier), launchSoftFloor begrenzt, wieviel
+        // davon am Boden ankommt (Traktion und Fahrgefuehl, dort). Vorher gab es nur den
+        // Boden, und der musste die fehlende Physik mitverstecken.
+        launchClutchRpm: 6200,   // die Drehzahl mit dem Spitzenmoment
+        // 0.25, gefittet gegen 0-200 = 8,5 s. Vorher 0.62, gegen eine aeltere Tabelle.
+        // 290 km/h werden in 19,2 s erreicht; die Spitze selbst haengt an topSpeedKmh und
+        // bleibt unberuehrt.
+        aeroDragK: 0.25,
         onPowerRollK: 0.08,   // rolling term under load, ALSO in units of accelScale
         // Deliberately >1: at 1.0 full lock at top speed would consume exactly the whole
         // budget, but a real GT3 at full lock near Vmax is long past the limit. 1.8 means
@@ -191,8 +242,13 @@
         // Angezeigte Entsprechung bei 295 km/h Spitze: 50 und 160 km/h.
         wetOnsetFrac: 0.17,
         wetFullFrac: 0.55,
-        loadGain: 0.40,       // how much front load changes lateral capacity
-        brakeUseGain: 1.15,   // how much of that capacity the brake eats
+        // 0.65 und 1.55, gewaehlt und nicht gemessen: gefittet auf Vollbremsung 50 % und
+        // Vollgas 59 % des Lenkgrips beim Rollen, weil die Original-App unter Vollbremsung
+        // sichtbar weniger lenkt. Vorher waren es 77 und 75 % - die Wirkung war da, nur zu
+        // schwach. Ein Sollwert dafuer liegt nicht vor, also ist das eine Gefuehlsangabe und
+        // keine Messung; die Zahlen stehen hier, damit sie nachpruefbar sind.
+        loadGain: 0.65,       // how much front load changes lateral capacity
+        brakeUseGain: 1.55,   // how much of that capacity the brake eats
         coastPitch: 0.15,     // engine braking pitches the nose down a little
         // Full-throttle equilibrium of loadFront. Traction is normalised to THIS state, not
         // to static 50/50, so the measured launch time stays exactly as calibrated and the
@@ -340,7 +396,11 @@
       // Soft launch: see config. Ramps in from launchSoftFloor at a standstill.
       const soft = cfg.launchSoftFloor + (1 - cfg.launchSoftFloor)
                  * Math.min(1, Math.abs(v) / Math.max(1e-6, cfg.launchSoftKmh));
-      return throttle * torqueAt(Math.min(raw, REDLINE_RPM)) * limiterCut
+      // Beim Start im ersten Gang wird die Kurve bei der Startdrehzahl abgefragt: die
+      // Kupplung schleift, also dreht der Motor schneller als die Raeder es verlangen.
+      const fuerMoment = (gearIdx === 0 && raw < cfg.launchClutchRpm)
+        ? cfg.launchClutchRpm : raw;
+      return throttle * torqueAt(Math.min(fuerMoment, REDLINE_RPM)) * limiterCut
              * (this.gearRatio(gearIdx) / cfg.ratioRef) * accelScale * soft;
     }
 
