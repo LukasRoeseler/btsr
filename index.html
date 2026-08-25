@@ -2091,7 +2091,7 @@
       <p class="muted" style="font-size:11.5px">
         <b>Was hier <em>nicht</em> steht:</b> welche Zahl das Auto aus diesen 17 Bits bildet
         und wie es sie auf die Streckenart abbildet, ist nicht entschl&uuml;sselt. Bekannt
-        ist nur, was am Ende in Byte&nbsp;12 ankommt (0x01 Start/Ziel, 0x02 Gerade, 0x03
+        ist nur, was am Ende in Byte&nbsp;12 ankommt (0x0a Start/Ziel, 0x02 Gerade, 0x03
         Linkskurve, 0x04 Rechtskurve). Das Bild zeigt die Geometrie, nicht die Bedeutung.
       </p>
       <p class="muted">
@@ -2116,7 +2116,7 @@
 
       <h3 style="font-size:14px; margin:16px 0 6px 0">Was wir nicht wissen</h3>
       <p class="muted">
-        Die belegten Codes sind <code>0x01</code> Start/Ziel, <code>0x02</code> Gerade,
+        Die belegten Codes sind <code>0x0a</code> Start/Ziel, <code>0x02</code> Gerade,
         <code>0x03</code> Linkskurve, <code>0x04</code> Rechtskurve, <code>0x05</code>
         Haarnadel links, <code>0x06</code> Haarnadel rechts und <code>0x00</code>
         abseits der Bahn. <b>Die Kodierungsregel selbst kennen wir nicht.</b> Aus
@@ -2232,7 +2232,7 @@
         <tr><td>9</td><td>freilaufender Paketz&auml;hler, 0&ndash;255, &auml;ndert sich in <em>jedem</em> Paket</td><td class="doc-sure">belegt</td></tr>
         <tr><td>10</td><td>Akkustand</td><td class="doc-sure">belegt</td></tr>
         <tr><td><strong>11</strong></td><td><strong>Z&auml;hler der Muster&uuml;berfahrten.</strong> Erh&ouml;ht sich um 1, sobald das Auto ein gedrucktes Muster &uuml;berf&auml;hrt, die Rundenz&auml;hlung passiert also in der Hardware</td><td class="doc-sure">belegt</td></tr>
-        <tr><td><strong>12</strong></td><td><strong>Mustercode.</strong> <code>0x01</code> Start/Ziel, <code>0x02</code> Gerade, <code>0x03</code> Linkskurve, <code>0x04</code> Rechtskurve, <code>0x05</code> Haarnadel links, <code>0x06</code> Haarnadel rechts, <code>0x00</code> abseits der Bahn. <code>0xFF</code> hei&szlig;t &bdquo;noch nie eins gesehen&ldquo;. Der Wert bleibt <em>stehen</em>, er zeigt das zuletzt gelesene Muster</td><td class="doc-sure">belegt</td></tr>
+        <tr><td><strong>12</strong></td><td><strong>Mustercode.</strong> <code>0x0a</code> Start/Ziel, <code>0x02</code> Gerade, <code>0x03</code> Linkskurve, <code>0x04</code> Rechtskurve, <code>0x05</code> Haarnadel links, <code>0x06</code> Haarnadel rechts, <code>0x00</code> abseits der Bahn. <code>0xFF</code> hei&szlig;t &bdquo;noch nie eins gesehen&ldquo;. Der Wert bleibt <em>stehen</em>, er zeigt das zuletzt gelesene Muster</td><td class="doc-sure">belegt</td></tr>
         <tr><td>13</td><td><code>0x00</code></td><td class="doc-sure">belegt</td></tr>
         <tr><td>14</td><td>rollender Z&auml;hler (l&auml;uft &uuml;ber). Nicht zu verwechseln mit Byte&nbsp;14 der <em>Senderichtung</em>, das ist das Licht</td><td class="doc-sure">belegt</td></tr>
         <tr><td><strong>15</strong></td><td><code>0x08</code>, solange das Auto k&ouml;rperlich &uuml;ber einem Muster steht (~1&nbsp;s bei Fahrt), sonst <code>0x00</code></td><td class="doc-sure">belegt</td></tr>
@@ -2405,7 +2405,15 @@
       <h3 style="font-size:14px; margin:16px 0 6px 0">Das Code-Alphabet ist vollst&auml;ndig</h3>
       <div class="doc-table-wrap"><table class="doc-table">
         <tr><th>Code</th><th>Bedeutung</th><th>Beleg</th></tr>
-        <tr><td><code>0x01</code></td><td>Start/Ziel</td><td class="doc-sure">belegt</td></tr>
+        <!-- 25.08.: gemessen, nicht mehr geraten. Vorher stand hier 0x01 als "belegt",
+             und das war es nie - es kam aus einem Foto. Die Folge war unsichtbar und
+             erheblich: die Rundenzaehlung prueft diesen Wert und hat auf dem
+             Original-Startziel-Blatt nie ausgeloest, und das Streckenlernen faengt erst ab
+             Start/Ziel an mitzuschreiben, also nie. -->
+        <tr><td><code>0x0a</code></td><td>Start/Ziel</td><td class="doc-sure">belegt, 25.08. gemessen</td></tr>
+        <tr><td><code>0x01</code></td><td>fr&uuml;her f&uuml;r Start/Ziel angenommen, nie
+          belegt; wird weiter akzeptiert, solange nicht gemessen ist, was eine
+          Kunststoffschiene meldet</td><td class="doc-guess">Annahme</td></tr>
         <tr><td><code>0x02</code></td><td>Gerade</td><td class="doc-sure">belegt</td></tr>
         <tr><td><code>0x03</code></td><td><b>Linkskurve</b></td><td class="doc-sure">belegt (21.08.)</td></tr>
         <tr><td><code>0x04</code></td><td>Rechtskurve</td><td class="doc-sure">belegt</td></tr>
@@ -4246,34 +4254,87 @@
         sonst stimmen die Balkenabstände nicht mehr und der Sensor liest gar nichts.
         Der Pfeil zeigt in die Fahrtrichtung.
       </p>
+      <p class="muted" style="font-size:11.5px">
+        Auf den neuen Bl&auml;ttern steht ein 100-mm-Kontrollma&szlig;. Nachmessen ist der
+        einzige Weg, den Druckma&szlig;stab zu pr&uuml;fen, denn eine Druckvorschau sagt
+        dazu nichts.
+      </p>
+      <p class="muted" style="font-size:11.5px; border-left:3px solid var(--bad);
+         padding-left:9px">
+        <b>Messstand vom 25.08.</b>
+      </p>
+      <p class="muted" style="font-size:11.5px; border-left:3px solid var(--bad);
+         padding-left:9px; margin-top:0">
+        &Uuml;ber die Muster gefahren meldet das Auto: eigenes Original-Blatt 0x0a, unsere
+        Rekonstruktion 0x03, Boxengasse gar nichts.
+      </p>
+      <p class="muted" style="font-size:11.5px; border-left:3px solid var(--bad);
+         padding-left:9px; margin-top:0">
+        Die Rekonstruktion ist nachweislich eine treue Kopie des Original-PDF: Balkenzahl,
+        H&ouml;hen auf 0,000 mm und L&uuml;cken auf 0,001 mm stimmen &uuml;berein, und das
+        PDF enth&auml;lt nachgepr&uuml;ft keine weiteren Formen. Also ist dieses PDF nicht
+        die Vorlage, die 0x0a erzeugt; die Druckvorlagen haben sich offenbar ge&auml;ndert.
+        Und 0x03 ist zugleich der gemessene Code der Linkskurve.
+      </p>
       <div class="row" style="gap:22px; align-items:flex-start; flex-wrap:wrap">
         <div style="flex:1 1 260px; min-width:240px">
           <img src="startziel-a4.svg" alt="Vorschau Start/Ziel-Muster"
                style="width:100%; max-width:300px; border:1px solid var(--border); border-radius:4px; display:block">
-          <p style="margin:8px 0 4px 0"><b>Start / Ziel</b></p>
+          <p style="margin:8px 0 4px 0"><b>Start / Ziel, nicht auslegen</b></p>
           <p class="muted" style="font-size:11.5px; margin:0 0 8px 0">
-            Zählt Runden und löst im Rennmodus die Rundenzeit aus. Erwarteter Code
-            <code>0x01</code>. <b>Rekonstruktion</b> aus einem Foto, wenn du das
-            Original-PDF hast, nimm lieber das.
+            Start/Ziel z&auml;hlt Runden und l&ouml;st die Rundenzeit aus, und der Code
+            daf&uuml;r ist gemessen 0x0a. Dieses Blatt liefert ihn nicht: gemessen meldet es
+            0x03, und das ist die Linkskurve. Ausgelegt verdreht es die gelernte Strecke und
+            z&auml;hlt keine Runde. Es bleibt hier, weil es die einzige Vorlage ist, von der
+            belegt ist, dass das Auto sie &uuml;berhaupt liest, und weil die Probebl&auml;tter
+            darauf aufbauen.
           </p>
           <a href="startziel-a4.svg" download="startziel-a4.svg">
             <button>Start/Ziel herunterladen (SVG)</button>
           </a>
         </div>
         <div style="flex:1 1 260px; min-width:240px">
-          <img src="boxengasse-a4.svg" alt="Vorschau Boxengassen-Muster"
+          <img src="muster-boxengasse-a4.svg" alt="Vorschau Boxengassen-Muster"
                style="width:100%; max-width:300px; border:1px solid var(--border); border-radius:4px; display:block">
-          <p style="margin:8px 0 4px 0"><b>Boxengasse</b></p>
+          <p style="margin:8px 0 4px 0"><b>Boxengasse</b>, neu</p>
           <p class="muted" style="font-size:11.5px; margin:0 0 8px 0">
-            Löst Tempolimit und Boxenstopp aus. Welchen Code das Auto dafür meldet, ist
-            <b>unbestätigt</b>: nach dem Drucken einmal überfahren und unten mit der
-            Muster-Sonde ablesen.
+            L&ouml;st Tempolimit und Boxenstopp aus. Das alte Blatt wurde gar nicht erkannt,
+            und daf&uuml;r gibt es zwei sichtbare Gr&uuml;nde: alle neun Balken waren gleich
+            dick, es gab also nur ein Symbol statt zwei, und das Modulma&szlig; war ein
+            anderes als beim Original. Das neue Blatt nimmt das Modulma&szlig; des Originals.
           </p>
-          <a href="boxengasse-a4.svg" download="boxengasse-a4.svg">
+          <p class="muted" style="font-size:11.5px; margin:0 0 8px 0">
+            Welchen Code es ausl&ouml;st, ist nicht vorhergesagt, und das kann niemand,
+            solange die Kodierregel unbekannt ist. &Uuml;berfahren, unten mit der
+            Muster-Sonde ablesen, im Feld Ausl&ouml;se-Code eintragen.
+          </p>
+          <a href="muster-boxengasse-a4.svg" download="muster-boxengasse-a4.svg">
             <button>Boxengasse herunterladen (SVG)</button>
           </a>
         </div>
       </div>
+
+      <h3 style="margin-top:20px">Acht Probebl&auml;tter, um die Kodierung zu knacken</h3>
+      <p class="muted" style="font-size:11.5px">
+        Einen Code auszuw&auml;hlen ist heute nicht m&ouml;glich: ein Muster l&auml;sst sich
+        zeichnen, aber welche Zahl das Auto daf&uuml;r meldet, ist nicht vorhersagbar. Mit
+        einem einzigen bekannten Paar ist die Regel auch nicht zu erschlie&szlig;en.
+      </p>
+      <p class="muted" style="font-size:11.5px">
+        Deshalb &auml;ndert jedes dieser Bl&auml;tter genau einen Faktor gegen das bekannte
+        Muster. Der Reihe nach &uuml;berfahren, den gemeldeten Code notieren, und danach
+        l&auml;sst sich die Regel bestimmen, dann auch ein h&ouml;herer freier Code
+        f&uuml;r die Boxengasse.
+      </p>
+      <p class="muted" style="font-size:11.5px">
+        <b>Probe 5 zuerst.</b>
+      </p>
+      <p class="muted" style="font-size:11.5px; margin-top:0">
+        Sie ist die Kontrolle und reproduziert das bekannte Muster auf 0,032 mm, sie muss
+        also wieder 0x03 ergeben. Wenn nicht, ist die Messung nicht wiederholbar und die
+        anderen Zahlen sind wertlos.
+      </p>
+      <div class="row" style="gap:8px; flex-wrap:wrap" id="probe-links"></div>
     </div>
 
     <div class="card subpage" id="sub-pit">
@@ -4299,7 +4360,7 @@
       </div>
       <p class="muted" style="font-size:11.5px">
         <b>Muster-Sonde:</b> fahr über ein beliebiges ausgedrucktes Muster, hier steht sofort,
-        welchen Code das Auto meldet. Sicher bekannt sind <code>0x01</code> Start/Ziel,
+        welchen Code das Auto meldet. Sicher bekannt sind <code>0x0a</code> Start/Ziel,
         <code>0x02</code> Gerade, <code>0x03</code> Linkskurve, <code>0x04</code> Rechtskurve,
         <code>0x05</code> Haarnadel links und <code>0x06</code> Haarnadel rechts;
         alles andere ist unbestätigt. Trag hier den Code ein, den dein gedrucktes Boxen-Muster
@@ -4331,7 +4392,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.3.62</span></span>
+    <span class="foot-ver">v<span id="app-version">0.3.63</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
   </span>
   <span class="foot-right">
@@ -4730,6 +4791,7 @@
     "Abschnitt markieren": "Mark a section",
     "Absichtlich leise, damit der Motor vorne bleibt.": "Deliberately quiet, so the engine stays in front.",
     "Achsen:": "Axes:",
+    "Acht Probeblätter, um die Kodierung zu knacken": "Eight probe sheets, to crack the encoding",
     "Akku": "Battery",
     "Aktion": "Action",
     "Aktuelle Aufnahme speichern": "Save the current recording",
@@ -4752,6 +4814,7 @@
     "Attacke": "Attack",
     "Auch auf dem Steuerkreuz links/rechts.": "Also left/right on the D-pad.",
     "Auf Standard zurücksetzen": "Reset to defaults",
+    "Auf den neuen Blättern steht ein 100-mm-Kontrollmaß. Nachmessen ist der einzige Weg, den Druckmaßstab zu prüfen, denn eine Druckvorschau sagt dazu nichts.": "The new sheets carry a 100 mm check measure. Measuring it is the only way to verify the print scale, because a print preview says nothing about it.",
     "Auf der Bahn": "On track",
     "Aufgeladen, dieses Modell hat keinen Lader.": "Turbocharged, this model has no turbo.",
     "Aufnahme starten": "Start recording",
@@ -4819,10 +4882,12 @@
     "Der Code beschreibt die Reihenfolge der Teile und die Ausrichtung. Damit stellst du auf einem anderen Gerät dieselbe Strecke ein, ohne sie neu zu klicken.": "The code describes the order of the parts and the orientation. With it you set up the same track on another device without clicking it together again.",
     "Der Erstplatzierte fährt etwas langsamer.": "The leader drives a little slower.",
     "Der Klangcharakter kommt aus den": "The character of the sound comes from the",
+    "Deshalb ändert jedes dieser Blätter genau einen Faktor gegen das bekannte Muster. Der Reihe nach überfahren, den gemeldeten Code notieren, und danach lässt sich die Regel bestimmen, dann auch ein höherer freier Code für die Boxengasse.": "So each of these sheets changes exactly one factor against the known pattern. Drive over them in order, note the reported code, and the rule can then be determined, and with it a higher free code for the pit lane.",
     "Diagramm gross": "Diagram, large",
     "Die Autos fahren in dieser Reihenfolge los. Die Einführungsrunde läuft mit Boxengassen-Tempo; sobald das erste Auto Start/Ziel überfährt, ist das Limit weg.": "The cars set off in this order. The formation lap runs at pit-lane pace; as soon as the first car crosses start/finish, the limit is gone.",
     "Die Controller-Belegung ist frei zuweisbar, Optionen → Controller. Hier steht, was gerade eingestellt ist.": "The controller bindings are freely assignable, Options → Controller. What is set right now is shown here.",
     "Die Ideallinie schickt einen Lenkanteil hinaus und nimmt an, dass das Auto dadurch weiter aussen oder innen sitzt.": "The racing line sends out a steering share and assumes the car therefore sits further out or further in.",
+    "Die Rekonstruktion ist nachweislich eine treue Kopie des Original-PDF: Balkenzahl, Höhen auf 0,000 mm und Lücken auf 0,001 mm stimmen überein, und das PDF enthält nachgeprüft keine weiteren Formen. Also ist dieses PDF nicht die Vorlage, die 0x0a erzeugt; die Druckvorlagen haben sich offenbar geändert. Und 0x03 ist zugleich der gemessene Code der Linkskurve.": "The reconstruction is demonstrably a faithful copy of the original PDF: bar count, heights to 0.000 mm and gaps to 0.001 mm all agree, and the PDF has been checked to contain no further shapes. So this PDF is not the master that produces 0x0a; the print masters have evidently changed. And 0x03 is also the measured code of the left curve.",
     "Die sieben oben sind aus Zylinderzahl, Kurbelwelle und Zündfolge gerechnet. Bei den aufgeladenen Originalen fehlt der Lader.": "The seven at the top are computed from cylinder count, crankshaft and firing order. On the turbocharged originals, the boost is missing.",
     "Dieselbe Idee, eine Stufe größer. Ein autonomes Auto braucht keine Zeitkurve, sondern eine": "The same idea, one size up. An autonomous car does not need a curve over time but one",
     "Dieselben elf Größen, aus denen die mitgelieferten Motoren gerechnet sind, nur direkt zum Drehen. Das Modell läuft hier im Browser, also hörst du jede Änderung sofort, ohne dass eine Datei erzeugt werden muss.": "The same eleven quantities the bundled engines are computed from, only here you turn them directly. The model runs in the browser, so you hear every change at once, with no file to generate.",
@@ -4842,6 +4907,7 @@
     "Ein Zündimpuls mit Nachhall": "One firing pulse with its tail",
     "Ein einzelner Druckimpuls, durch das Rohr geschickt und gesättigt. Seine Breite kommt vom Regler Impulslänge, sein Abklingen vom Regler Abfall, und die gekappten Spitzen sind die Sättigung. Grau der rohe Impuls, orange derselbe nach Rohr und Sättigung.": "A single pressure pulse, sent through the pipe and saturated. Its width comes from the pulse-length slider, its decay from the decay slider, and the clipped peaks are the saturation. Grey is the raw pulse, orange the same one after pipe and saturation.",
     "Eine Runde zählt, sobald das Auto das Start/Ziel-Muster auf der Strecke überfährt (dasselbe Signal, das auch der Streckenscanner ausliest): kein eigener Sensor in der App.": "A lap counts as soon as the car drives over the start/finish pattern on the track (the same signal the track scanner reads), there is no separate sensor in the app.",
+    "Einen Code auszuwählen ist heute nicht möglich: ein Muster lässt sich zeichnen, aber welche Zahl das Auto dafür meldet, ist nicht vorhersagbar. Mit einem einzigen bekannten Paar ist die Regel auch nicht zu erschließen.": "Choosing a code is not possible today: a pattern can be drawn, but which number the car reports for it cannot be predicted. And with a single known pair the rule cannot be derived either.",
     "Einfach: Elektro": "Simple: electric",
     "Einfach: Turbo": "Simple: turbo",
     "Einführungsrunde mit Boxengassen-Tempo, frei beim ersten Überfahren von Start/Ziel.": "Formation lap at pit-lane pace, released the first time start/finish is crossed.",
@@ -4959,11 +5025,13 @@
     "Läuft komplett automatisch, ohne Physik-Engine (direkte Werte).": "Runs fully automatically, without the physics engine (direct values).",
     "Läuft, bis du beendest.": "Runs until you stop it.",
     "Löschen": "Delete",
+    "Löst Tempolimit und Boxenstopp aus. Das alte Blatt wurde gar nicht erkannt, und dafür gibt es zwei sichtbare Gründe: alle neun Balken waren gleich dick, es gab also nur ein Symbol statt zwei, und das Modulmaß war ein anderes als beim Original. Das neue Blatt nimmt das Modulmaß des Originals.": "Triggers the speed limit and the pit stop. The old sheet was not recognised at all, and there are two visible reasons: all nine bars were the same thickness, so there was only one symbol instead of two, and the module size differed from the original. The new sheet takes the original's module size.",
     "Löst Tempolimit und Boxenstopp aus. Welchen Code das Auto dafür meldet, ist": "Triggers the speed limit and the pit stop. Which code the car reports for it is",
     "Makros": "Macros",
     "Manuelle Schaltung": "Manual gearshift",
     "Masse & Reifen": "Mass & tyres",
     "Maß": "Measurement",
+    "Messstand vom 25.08.": "Measurements of 25 Aug.",
     "Messung starten": "Start the measurement",
     "Messungen an der laufenden App. Sie ersetzen keine Fahrt, aber sie sagen, ob eine Änderung etwas kaputt gemacht hat, das man nicht sofort sieht: eine Physik, die nicht mehr trifft, eine Ideallinie mit einem Sprung, eine Tonschleife mit einer Naht, ein deutscher Satz im englischen Modus.": "Measurements on the running app. They do not replace a drive, but they say whether a change broke something you would not notice at once: physics that no longer matches, a racing line with a jump, a sound loop with a seam, a German sentence in English mode.",
     "Minuten": "minutes",
@@ -5005,6 +5073,8 @@
     "Physik-Modus aktivieren": "Enable physics mode",
     "Position über die Runden": "Position over the laps",
     "Primärrohr": "Primary pipe",
+    "Probe 3: eine breite Lücke": "Probe 3: a wide gap",
+    "Probe 5 zuerst.": "Probe 5 first.",
     "Probiert jede Runde eine kleine Änderung an Tempo und Linie und behält sie nur, wenn die Runde schneller war": "Tries a small change to pace and line each lap and keeps it only if the lap was quicker",
     "Programmierschule": "Coding school",
     "Protokoll, Streckencodes, Physik, Töne: alles, was gemessen wurde, mit Herkunft.": "Protocol, track codes, physics, sounds: everything that was measured, with its source.",
@@ -5067,6 +5137,7 @@
     "Sensor an, Auto hält sich selbst auf der Bahn.": "Sensor on, car keeps itself on the track.",
     "Services/Characteristics deines Autos ohne diese Einschränkung. Wenn du mir die dort angezeigten UUIDs (Service + Characteristics + Eigenschaften: read/write/notify) gibst, kann ich die Steuerung direkt korrekt verdrahten.": "services and characteristics of your car without that restriction. If you give me the UUIDs shown there (service + characteristics + properties: read/write/notify), the control path can be wired up correctly straight away.",
     "Setzt das Layout aus den gemeldeten Kacheln zusammen und übernimmt es nach der ersten geschlossenen Runde, nur wenn noch keine Strecke liegt.": "Assembles the layout from the reported tiles and adopts it after the first closed lap, only if no track is loaded yet.",
+    "Sie ist die Kontrolle und reproduziert das bekannte Muster auf 0,032 mm, sie muss also wieder 0x03 ergeben. Wenn nicht, ist die Messung nicht wiederholbar und die anderen Zahlen sind wertlos.": "It is the control and reproduces the known pattern to 0.032 mm, so it must give 0x03 again. If it does not, the measurement is not repeatable and the other numbers are worthless.",
     "Sie sagt, welcher Lenkanteil das Auto gerade noch auf der Bahn hält, nicht, um wie viele Zentimeter es dabei versetzt liegt. Der Zusammenhang zwischen beiden ist nicht gemessen und wird hier nicht behauptet. Brauchbar ist sie trotzdem: die Ideallinie und die Überholmanovör dürfen nie mehr als etwa die Hälfte des Kippwerts anfordern, und das ist eine Grenze, die vorher nicht bekannt war.": "It says which steering share still just keeps the car on the track, not by how many centimetres it is displaced. The relationship between the two is not measured and is not claimed here. It is useful all the same: the racing line and the overtaking moves must never ask for more than about half the tipping value, and that is a limit that was not known before.",
     "Sieben Rennmotoren": "Seven racing engines",
     "Simulation fahren": "Run the simulation",
@@ -5079,8 +5150,10 @@
     "Standard aus. Die ersten fünf sind Aufnahmen, der Rest ist gerechnet.": "Off by default. The first five are recordings, the rest are computed.",
     "Standard: rechter Trigger = Gas, linker Trigger = Bremse, linker Stick = Lenkung, X (links) = runterschalten, B (rechts) = hochschalten: wie bei einem Xbox-Controller. Klicke \"Neu zuweisen\" und betätige dann den gewünschten Knopf/Stick/Trigger am Controller.": "Default: right trigger = throttle, left trigger = brake, left stick = steering, X (left) = shift down, B (right) = shift up: as on an Xbox controller. Click \"Reassign\" and then operate the button, stick or trigger you want on the controller.",
     "Start / Ziel": "Start / finish",
+    "Start / Ziel, nicht auslegen": "Start / finish, do not lay down",
     "Start/Ziel herunterladen (SVG)": "Download start/finish (SVG)",
     "Start/Ziel und Boxengasse maßhaltig als SVG zum Ausdrucken.": "Start/finish and pit lane to scale, as SVG, ready to print.",
+    "Start/Ziel zählt Runden und löst die Rundenzeit aus, und der Code dafür ist gemessen 0x0a. Dieses Blatt liefert ihn nicht: gemessen meldet es 0x03, und das ist die Linkskurve. Ausgelegt verdreht es die gelernte Strecke und zählt keine Runde. Es bleibt hier, weil es die einzige Vorlage ist, von der belegt ist, dass das Auto sie überhaupt liest, und weil die Probeblätter darauf aufbauen.": "Start/finish counts laps and triggers the lap time, and its code is measured as 0x0a. This sheet does not deliver it: measured, it reports 0x03, which is the left curve. Laid down, it garbles the learned track and counts no lap. It stays here because it is the only master proven to be readable by the car at all, and because the probe sheets build on it.",
     "Start/Ziel": "Start/finish",
     "Startaufstellung, ziehen oder mit den Pfeilen sortieren": "Starting grid, drag or sort with the arrows",
     "Startseite": "Home screen",
@@ -5149,6 +5222,7 @@
     "Web Bluetooth erlaubt standardmäßig nur Zugriff auf Services, die vorab bekannt sind. Da wir das genaue Carrera-Protokoll noch nicht kennen, versuchen wir es unten mit einer Liste gängiger Custom-Service-UUIDs (Nordic UART, HM-10/FFE0, FFF0 etc.): falls dein Auto eine andere UUID benutzt, füge sie manuell hinzu.": "By default Web Bluetooth only allows access to services known in advance. Since we do not yet know the exact Carrera protocol, below we try a list of common custom service UUIDs (Nordic UART, HM-10/FFE0, FFF0 and so on): if your car uses a different UUID, add it by hand.",
     "Wechselt einmal zu einem zufälligen Zeitpunkt.": "Changes once, at a random moment.",
     "Weiter gedacht: Ghostcars selbst programmieren": "Going further: program ghost cars yourself",
+    "Welchen Code es auslöst, ist nicht vorhergesagt, und das kann niemand, solange die Kodierregel unbekannt ist. Überfahren, unten mit der Muster-Sonde ablesen, im Feld Auslöse-Code eintragen.": "Which code it triggers is not predicted, and nobody can predict it while the encoding rule is unknown. Drive over it, read it off below with the pattern probe, enter it in the trigger-code field.",
     "Welchen Code meldet dieses Teil?": "Which code does this part report?",
     "Wenn hier nur": "If all you see here is",
     "Wetter umschalten (Regen / trocken)": "Toggle the weather (rain / dry)",
@@ -5210,6 +5284,7 @@
     "drücken.": "press.",
     "echte, garantiert gültige": "real, guaranteed valid",
     "eckige": "square",
+    "eine breite Lücke": "a wide gap",
     "fahr über ein beliebiges ausgedrucktes Muster, hier steht sofort, welchen Code das Auto meldet. Sicher bekannt sind": "drive over any printed pattern, the code the car reports appears here at once. Known for certain are",
     "festen": "fixed",
     "freie Notiz (optional)": "free note (optional)",
@@ -5291,6 +5366,7 @@
     "zusätzlich": "in addition",
     "zweiter": "second",
     "· abseits": "· off track",
+    "Über die Muster gefahren meldet das Auto: eigenes Original-Blatt 0x0a, unsere Rekonstruktion 0x03, Boxengasse gar nichts.": "Driven over the patterns, the car reports: your own original sheet 0x0a, our reconstruction 0x03, pit lane nothing at all.",
     "Über": "Over",
     "Übernehmen": "Apply",
     "← Sonstige": "← More",
@@ -8071,9 +8147,24 @@
   //
   // Die Werte fuegen sich in das Muster der anderen: 0x03/0x04 links/rechts fuer die
   // 60-Grad-Kurve, 0x05/0x06 links/rechts fuer die Haarnadel.
-  const TILE_TYPE = { START: 0x01, STRAIGHT: 0x02, CURVE_RIGHT: 0x04, CURVE_LEFT: 0x03,
+  // START ist 0x0a, gemessen am 25.08. mit dem Original-Startziel-Blatt. Vorher stand hier
+  // 0x01, und das war eine Annahme aus einem Foto - die Doku hat sie auch als solche
+  // gekennzeichnet. Die Folgen der falschen Zahl waren erheblich und beide unsichtbar: die
+  // Rundenzaehlung prueft auf diesen Wert und hat auf dem Originalblatt nie ausgeloest, und
+  // das Streckenlernen faengt erst ab Start/Ziel an mitzuschreiben, also nie.
+  //
+  // 0x01 bleibt in START_CODES gueltig. Nicht aus Bequemlichkeit: es ist nicht
+  // ausgeschlossen, dass eine Kunststoffschiene etwas anderes meldet als das gedruckte
+  // Blatt, und einen Wert wegzunehmen, von dem wir nicht wissen ob er vorkommt, waere ein
+  // Risiko ohne Gegenwert. Sobald eine Messung ihn ausschliesst, kann er weg.
+  const TILE_TYPE = { START: 0x0a, STRAIGHT: 0x02, CURVE_RIGHT: 0x04, CURVE_LEFT: 0x03,
                       HAIRPIN_LEFT: 0x05, HAIRPIN: 0x06,
                       PIT: 0x100 };
+  // Alles, was als Start/Ziel gilt, wenn das AUTO einen Code meldet. Fuer Kacheltypen im
+  // Editor gilt weiter TILE_TYPE.START allein.
+  const START_CODES = [0x0a, 0x01];
+  const START_CODE_LEGACY = 0x01;
+  function isStartCode(c) { return c === 0x0a || c === START_CODE_LEGACY; }
   // Code 0x00 means the sensor is reading NOTHING VALID, i.e. the car has left the track.
   // From the guard-rail capture of 20.08: every departure showed up as 0x00 together with the
   // tile counter racing (6 -> 8 -> 9 -> 15 -> 18 within three seconds), and 16 of 38
@@ -8139,6 +8230,21 @@
     catch { return {}; }
   }
   function saveTrackStore(store) { localStorage.setItem(TRACK_STORE_KEY, JSON.stringify(store)); }
+
+  // Gespeicherte Strecken halten den Kacheltyp als ZAHL fest. Mit START von 0x01 auf 0x0a
+  // waere die erste Kachel einer alten Strecke plötzlich kein Start/Ziel mehr, und die
+  // Ankerlogik weiter unten haette ihr ein zweites davorgesetzt: eine Kachel mehr, still,
+  // in jeder gespeicherten Strecke. Deshalb wird beim Laden gewandert.
+  function migrateTiles(tiles) {
+    if (!Array.isArray(tiles)) return tiles;
+    let n = 0;
+    for (const t of tiles) {
+      if (t && t.type === START_CODE_LEGACY) { t.type = TILE_TYPE.START; n++; }
+    }
+    if (n) log('Gespeicherte Strecke gewandert: ' + n + ' mal Start/Ziel von 0x01 auf 0x0a.',
+               'info');
+    return tiles;
+  }
 
   // A track always begins with the Start/Finish tile — lap timing keys off it, and a
   // track without one can never register a lap.
@@ -9045,6 +9151,40 @@
   // haengt an der Reihenfolge oben - wer dort umsortiert, muss hier mitziehen.
   let trackPaletteSel = 2;
 
+  // ---- Probeblaetter zum Knacken der Kodierung ----
+  //
+  // Erzeugt von tools/make_patterns.py. Was jede Probe fragt, steht hier daneben und nicht
+  // nur im Werkzeug: wer das Blatt in der Hand haelt, soll in der App nachlesen koennen,
+  // wozu es gut ist.
+  const MUSTER_PROBEN = [
+    [1, 'alles schmal', 'Gibt es einen Code fuer ein Muster ohne dicke Elemente?'],
+    [2, 'ein dicker Balken', 'Wieviel wiegt ein einzelner dicker Balken?'],
+    [3, 'eine breite Lücke',
+     'Wiegt eine breite Lücke dasselbe wie ein dicker Balken?'],
+    [4, 'Balken wie bekannt, Luecken schmal', 'Liest der Leser Balken und Luecken getrennt?'],
+    [5, 'KONTROLLE, unveraendert', 'Muss wieder 0x03 ergeben. Diese zuerst fahren.'],
+    [6, 'Reihenfolge umgedreht', 'Haengt der Code an der Fahrtrichtung?'],
+    [7, 'fuenf Balken', 'Zaehlt die Zahl der Balken mit?'],
+    [8, 'dreizehn Balken', 'Wie Probe 7, in der anderen Richtung.'],
+  ];
+
+  if ($('probe-links')) {
+    const host = $('probe-links');
+    for (const [nr, kurz, frage] of MUSTER_PROBEN) {
+      const datei = 'muster-probe-' + nr + '-a4.svg';
+      const a = document.createElement('a');
+      a.href = datei;
+      a.download = datei;
+      const b = document.createElement('button');
+      // Probe 5 hervorheben: sie ist die Kontrolle und gehoert zuerst gefahren.
+      if (nr === 5) b.className = 'primary';
+      b.textContent = 'Probe ' + nr + ': ' + kurz;
+      b.title = frage;
+      a.appendChild(b);
+      host.appendChild(a);
+    }
+  }
+
   function renderTrackPalette() {
     const host = $('track-palette');
     if (!host) return;
@@ -9233,7 +9373,9 @@
     if (!name) return;
     const store = loadTrackStore();
     if (!store[name]) return;
-    currentTrackTiles = store[name].tiles.slice();
+    // Gewandert, weil gespeicherte Strecken den Kacheltyp als Zahl halten und
+    // Start/Ziel von 0x01 auf 0x0a gewechselt ist.
+    currentTrackTiles = migrateTiles(store[name].tiles.slice());
     trackRotationDeg = store[name].rotation || 0;
     if (!currentTrackTiles.length || currentTrackTiles[0].type !== TILE_TYPE.START) {
       currentTrackTiles.unshift({ type: TILE_TYPE.START }); // older saves may predate the anchor
@@ -9471,12 +9613,13 @@
     // Erst ab der ersten Start/Ziel-Kachel mitschreiben, sonst faengt die Folge irgendwo in
     // der Runde an und die gelernte Strecke ist gegen die echte verdreht.
     if (!learn.started) {
-      if (best !== TILE_TYPE.START) return;
+      // Gemeldeter Code, nicht Kacheltyp: hier kommt an, was das Auto sendet.
+      if (!isStartCode(best)) return;
       learn.started = true;
       learn.seq = [{ type: TILE_TYPE.START }];
       return;
     }
-    if (best === TILE_TYPE.START) {
+    if (isStartCode(best)) {
       learn.laps++;
       if (learn.seq.length >= 3) learnCommit();
       learn.seq = [{ type: TILE_TYPE.START }];
@@ -9710,7 +9853,9 @@
     if (r.lastCount === null) { r.lastCount = count; return; }
     if (count === r.lastCount) return;
     r.lastCount = count;
-    if (code !== TILE_TYPE.START) return;
+    // isStartCode und nicht der Vergleich mit einem Wert: das Originalblatt meldet 0x0a,
+    // die frueher angenommene 0x01 bleibt daneben gueltig.
+    if (!isStartCode(code)) return;
     const now = Date.now();
     if (now - r.lastActed < TILE_REPEAT_BLOCK_MS) return;
     r.lastActed = now;
@@ -10652,20 +10797,20 @@
     // Guard 2 applies only to the two codes that trigger something irreversible; the
     // ordinary straight and curve codes may repeat as often as the track says.
     const nowCode = Date.now();
-    const repeatBlocked = (type === TILE_TYPE.START || type === pitMarkerCode)
+    const repeatBlocked = (isStartCode(type) || type === pitMarkerCode)
       && dashLastActedCode === type
       && nowCode - dashLastActedAt < TILE_REPEAT_BLOCK_MS;
     if (repeatBlocked) {
       log(`Mustercode 0x${type.toString(16)} innerhalb von ${TILE_REPEAT_BLOCK_MS} ms wiederholt, ignoriert.`, 'info');
       return;
     }
-    if (type === TILE_TYPE.START || type === pitMarkerCode) {
+    if (isStartCode(type) || type === pitMarkerCode) {
       dashLastActedCode = type; dashLastActedAt = nowCode;
     }
 
     if (type === pitMarkerCode) onPitMarkerCrossed();
 
-    if (type === TILE_TYPE.START) {
+    if (isStartCode(type)) {
       if (playerLapCrossed()) { refreshMinimap(); return; }
     }
     refreshMinimap();
@@ -16656,6 +16801,76 @@
                    + ', Tempo ' + r.spur[2].pace + ' auf ' + nachAbgang.pace
                    + ', danach wieder Bestzeit ' + letzte.best
                    + ', Lenkgrenze ' + r.cap.toFixed(2) };
+  });
+
+  // ---- Start/Ziel-Code zaehlt, Linkskurve nicht ----
+  //
+  // Am 25.08. gemessen: das Original-Startziel-Blatt meldet 0x0a. Vorher stand hier 0x01,
+  // eine Annahme aus einem Foto - und die Rundenzaehlung prueft genau diesen Wert, hat auf
+  // dem Originalblatt also nie ausgeloest. Der Fehler war doppelt unsichtbar: ohne
+  // gedrucktes Blatt kommt ohnehin kein Code, und mit Blatt zaehlt niemand die Runden nach.
+  //
+  // Geprueft wird die WIRKUNG und nicht die Konstante. Eine Pruefung auf "START === 0x0a"
+  // waere mit der Konstante zusammen falsch gewesen und haette nichts gemerkt.
+  stAdd('Start/Ziel-Code zaehlt eine Runde', () => {
+    const gemerkt = { state: raceState, laps: raceLapTimes.slice(),
+                      start: raceLapStart, dash: dashLapStart, part: racePartialMs,
+                      form: raceFormationLap };
+    const anzeige = $('race-status') ? $('race-status').textContent : null;
+    const echterSpieler = playerCar;
+    try {
+      // Ein Fahrpaket bauen und nur Byte 12 austauschen. Byte 11 ist der Kachelzaehler und
+      // muss sich mitbewegen, sonst greift die Wiederholungssperre.
+      const paket = (code, zaehler) => {
+        const a = new Array(19).fill(0);
+        a[11] = zaehler; a[12] = code; a[14] = 0x22;
+        return a;
+      };
+      // Der Testwagen muss das Spielerauto SEIN, nicht bloss die Rolle tragen:
+      // onCarNotify ruft die Schirmauswertung mit car === playerCar auf, und dort sitzt die
+      // Rundenzaehlung. So laeuft die Pruefung durch dieselbe Kette wie eine echte Fahrt.
+      const attrappe = { device: { id: 'st-lap', name: 'Pruefwagen' }, role: 'player',
+                         rx: null, tx: null, tileCode: 0xff, tileCount: null,
+                         lastCodeAt: 0, yaw: 0, ghost: null, timer: null, race: null };
+      const zaehle = (code) => {
+        raceState = 'racing';
+        raceFormationLap = false;
+        raceLapTimes = [];
+        raceLapStart = Date.now() - 5000;
+        dashLapStart = Date.now() - 5000;
+        racePartialMs = null;
+        // Den Erkenner zuruecksetzen, sonst laeuft die zweite Messung unter anderen
+        // Bedingungen als die erste: dashLastTileCounter und die Wiederholungssperre sind
+        // Modulzustand und bleiben sonst stehen.
+        dashPendingCode = null; dashPendingSeen = 0;
+        dashLastTileCounter = null;
+        dashLastActedCode = null; dashLastActedAt = 0;
+        playerCar = attrappe;
+        // VIER Pakete, nicht zwei. Die Kette verlangt der Reihe nach: einmal vormerken,
+        // einmal bestaetigen (dabei wird nur der Kachelzaehler gemerkt), und erst wenn der
+        // Zaehler sich bewegt, wird gehandelt.
+        for (let k = 1; k <= 4; k++) {
+          OMEGA_TEST.feedNotify(paket(code, k), { car: attrappe });
+        }
+        return raceLapTimes.length;
+      };
+      const mit0a = zaehle(0x0a);
+      const mit03 = zaehle(0x03);
+      const mit01 = zaehle(0x01);
+      const mit02 = zaehle(0x02);
+      // 0x0a MUSS zaehlen, 0x03 (Linkskurve) und 0x02 (Gerade) duerfen nicht. 0x01 zaehlt
+      // weiter, weil es als frueher angenommener Wert absichtlich gueltig geblieben ist.
+      const ok = mit0a >= 1 && mit03 === 0 && mit02 === 0 && mit01 >= 1;
+      return { ok,
+               mass: '0x0a -> ' + mit0a + ' Runde(n), 0x03 Linkskurve -> ' + mit03
+                     + ', 0x02 Gerade -> ' + mit02 + ', 0x01 alt -> ' + mit01 };
+    } finally {
+      raceState = gemerkt.state; raceLapTimes = gemerkt.laps;
+      raceLapStart = gemerkt.start; dashLapStart = gemerkt.dash;
+      racePartialMs = gemerkt.part; raceFormationLap = gemerkt.form;
+      playerCar = echterSpieler;
+      if (anzeige !== null) $('race-status').textContent = anzeige;
+    }
   });
 
   // ---- Ausfuehren und anzeigen ----

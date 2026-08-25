@@ -38,9 +38,24 @@
   //
   // Die Werte fuegen sich in das Muster der anderen: 0x03/0x04 links/rechts fuer die
   // 60-Grad-Kurve, 0x05/0x06 links/rechts fuer die Haarnadel.
-  const TILE_TYPE = { START: 0x01, STRAIGHT: 0x02, CURVE_RIGHT: 0x04, CURVE_LEFT: 0x03,
+  // START ist 0x0a, gemessen am 25.08. mit dem Original-Startziel-Blatt. Vorher stand hier
+  // 0x01, und das war eine Annahme aus einem Foto - die Doku hat sie auch als solche
+  // gekennzeichnet. Die Folgen der falschen Zahl waren erheblich und beide unsichtbar: die
+  // Rundenzaehlung prueft auf diesen Wert und hat auf dem Originalblatt nie ausgeloest, und
+  // das Streckenlernen faengt erst ab Start/Ziel an mitzuschreiben, also nie.
+  //
+  // 0x01 bleibt in START_CODES gueltig. Nicht aus Bequemlichkeit: es ist nicht
+  // ausgeschlossen, dass eine Kunststoffschiene etwas anderes meldet als das gedruckte
+  // Blatt, und einen Wert wegzunehmen, von dem wir nicht wissen ob er vorkommt, waere ein
+  // Risiko ohne Gegenwert. Sobald eine Messung ihn ausschliesst, kann er weg.
+  const TILE_TYPE = { START: 0x0a, STRAIGHT: 0x02, CURVE_RIGHT: 0x04, CURVE_LEFT: 0x03,
                       HAIRPIN_LEFT: 0x05, HAIRPIN: 0x06,
                       PIT: 0x100 };
+  // Alles, was als Start/Ziel gilt, wenn das AUTO einen Code meldet. Fuer Kacheltypen im
+  // Editor gilt weiter TILE_TYPE.START allein.
+  const START_CODES = [0x0a, 0x01];
+  const START_CODE_LEGACY = 0x01;
+  function isStartCode(c) { return c === 0x0a || c === START_CODE_LEGACY; }
   // Code 0x00 means the sensor is reading NOTHING VALID, i.e. the car has left the track.
   // From the guard-rail capture of 20.08: every departure showed up as 0x00 together with the
   // tile counter racing (6 -> 8 -> 9 -> 15 -> 18 within three seconds), and 16 of 38
@@ -106,6 +121,21 @@
     catch { return {}; }
   }
   function saveTrackStore(store) { localStorage.setItem(TRACK_STORE_KEY, JSON.stringify(store)); }
+
+  // Gespeicherte Strecken halten den Kacheltyp als ZAHL fest. Mit START von 0x01 auf 0x0a
+  // waere die erste Kachel einer alten Strecke plötzlich kein Start/Ziel mehr, und die
+  // Ankerlogik weiter unten haette ihr ein zweites davorgesetzt: eine Kachel mehr, still,
+  // in jeder gespeicherten Strecke. Deshalb wird beim Laden gewandert.
+  function migrateTiles(tiles) {
+    if (!Array.isArray(tiles)) return tiles;
+    let n = 0;
+    for (const t of tiles) {
+      if (t && t.type === START_CODE_LEGACY) { t.type = TILE_TYPE.START; n++; }
+    }
+    if (n) log('Gespeicherte Strecke gewandert: ' + n + ' mal Start/Ziel von 0x01 auf 0x0a.',
+               'info');
+    return tiles;
+  }
 
   // A track always begins with the Start/Finish tile — lap timing keys off it, and a
   // track without one can never register a lap.
@@ -1012,6 +1042,40 @@
   // haengt an der Reihenfolge oben - wer dort umsortiert, muss hier mitziehen.
   let trackPaletteSel = 2;
 
+  // ---- Probeblaetter zum Knacken der Kodierung ----
+  //
+  // Erzeugt von tools/make_patterns.py. Was jede Probe fragt, steht hier daneben und nicht
+  // nur im Werkzeug: wer das Blatt in der Hand haelt, soll in der App nachlesen koennen,
+  // wozu es gut ist.
+  const MUSTER_PROBEN = [
+    [1, 'alles schmal', 'Gibt es einen Code fuer ein Muster ohne dicke Elemente?'],
+    [2, 'ein dicker Balken', 'Wieviel wiegt ein einzelner dicker Balken?'],
+    [3, 'eine breite Lücke',
+     'Wiegt eine breite Lücke dasselbe wie ein dicker Balken?'],
+    [4, 'Balken wie bekannt, Luecken schmal', 'Liest der Leser Balken und Luecken getrennt?'],
+    [5, 'KONTROLLE, unveraendert', 'Muss wieder 0x03 ergeben. Diese zuerst fahren.'],
+    [6, 'Reihenfolge umgedreht', 'Haengt der Code an der Fahrtrichtung?'],
+    [7, 'fuenf Balken', 'Zaehlt die Zahl der Balken mit?'],
+    [8, 'dreizehn Balken', 'Wie Probe 7, in der anderen Richtung.'],
+  ];
+
+  if ($('probe-links')) {
+    const host = $('probe-links');
+    for (const [nr, kurz, frage] of MUSTER_PROBEN) {
+      const datei = 'muster-probe-' + nr + '-a4.svg';
+      const a = document.createElement('a');
+      a.href = datei;
+      a.download = datei;
+      const b = document.createElement('button');
+      // Probe 5 hervorheben: sie ist die Kontrolle und gehoert zuerst gefahren.
+      if (nr === 5) b.className = 'primary';
+      b.textContent = 'Probe ' + nr + ': ' + kurz;
+      b.title = frage;
+      a.appendChild(b);
+      host.appendChild(a);
+    }
+  }
+
   function renderTrackPalette() {
     const host = $('track-palette');
     if (!host) return;
@@ -1200,7 +1264,9 @@
     if (!name) return;
     const store = loadTrackStore();
     if (!store[name]) return;
-    currentTrackTiles = store[name].tiles.slice();
+    // Gewandert, weil gespeicherte Strecken den Kacheltyp als Zahl halten und
+    // Start/Ziel von 0x01 auf 0x0a gewechselt ist.
+    currentTrackTiles = migrateTiles(store[name].tiles.slice());
     trackRotationDeg = store[name].rotation || 0;
     if (!currentTrackTiles.length || currentTrackTiles[0].type !== TILE_TYPE.START) {
       currentTrackTiles.unshift({ type: TILE_TYPE.START }); // older saves may predate the anchor
@@ -1438,12 +1504,13 @@
     // Erst ab der ersten Start/Ziel-Kachel mitschreiben, sonst faengt die Folge irgendwo in
     // der Runde an und die gelernte Strecke ist gegen die echte verdreht.
     if (!learn.started) {
-      if (best !== TILE_TYPE.START) return;
+      // Gemeldeter Code, nicht Kacheltyp: hier kommt an, was das Auto sendet.
+      if (!isStartCode(best)) return;
       learn.started = true;
       learn.seq = [{ type: TILE_TYPE.START }];
       return;
     }
-    if (best === TILE_TYPE.START) {
+    if (isStartCode(best)) {
       learn.laps++;
       if (learn.seq.length >= 3) learnCommit();
       learn.seq = [{ type: TILE_TYPE.START }];

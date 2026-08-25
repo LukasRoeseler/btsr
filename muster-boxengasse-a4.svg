@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="297.01mm" height="210.02mm" viewBox="0 0 297.01 210.02">
+  <rect width="297.01" height="210.02" fill="#fff"/>
+  <g fill="#000">
+    <rect x="6.520" y="49.960" width="275.930" height="6.600"/>
+    <rect x="6.520" y="63.080" width="275.930" height="3.600"/>
+    <rect x="6.520" y="70.190" width="275.930" height="3.600"/>
+    <rect x="6.520" y="80.310" width="275.930" height="6.600"/>
+    <rect x="6.520" y="90.420" width="275.930" height="3.600"/>
+    <rect x="6.520" y="100.540" width="275.930" height="3.600"/>
+    <rect x="6.520" y="107.650" width="275.930" height="6.600"/>
+    <rect x="6.520" y="120.770" width="275.930" height="3.600"/>
+    <rect x="6.520" y="127.880" width="275.930" height="3.600"/>
+    <path d="M 132.5 151.5 L 144.0 139.5 L 156.4 151.5 L 150.0 151.5 L 150.0 164.2 L 139.0 164.2 L 139.0 151.5 Z"/>
+  </g>
+    <g stroke="#000" stroke-width="0.4"><line x1="98.50" y1="169.48" x2="98.50" y2="177.48"/><line x1="198.50" y1="169.48" x2="198.50" y2="177.48"/><line x1="98.50" y1="173.48" x2="198.50" y2="173.48"/></g>
+  <text x="98.50" y="182.48" font-family="sans-serif" font-size="3.2" fill="#000">100 mm Kontrollmass: nachmessen. Stimmt es nicht, wurde skaliert gedruckt und das Muster ist ungueltig.</text>
+  <text x="8" y="193.48" font-family="sans-serif" font-size="4.2" fill="#000">BOXENGASSE</text>
+  <text x="8" y="199.48" font-family="sans-serif" font-size="3.2" fill="#000">Modulmass wie das Original. Welchen Code es ausloest, ist ungemessen: ueberfahren, unten mit der Muster-Sonde ablesen, im Feld Ausloese-Code eintragen.</text>
+  <text x="8" y="204.48" font-family="sans-serif" font-size="3.2" fill="#000">Balken DddDddDdd   Luecken LlLlLlLl   100 % drucken, nicht skalieren</text>
+</svg>

@@ -158,7 +158,9 @@
     if (r.lastCount === null) { r.lastCount = count; return; }
     if (count === r.lastCount) return;
     r.lastCount = count;
-    if (code !== TILE_TYPE.START) return;
+    // isStartCode und nicht der Vergleich mit einem Wert: das Originalblatt meldet 0x0a,
+    // die frueher angenommene 0x01 bleibt daneben gueltig.
+    if (!isStartCode(code)) return;
     const now = Date.now();
     if (now - r.lastActed < TILE_REPEAT_BLOCK_MS) return;
     r.lastActed = now;
@@ -1100,20 +1102,20 @@
     // Guard 2 applies only to the two codes that trigger something irreversible; the
     // ordinary straight and curve codes may repeat as often as the track says.
     const nowCode = Date.now();
-    const repeatBlocked = (type === TILE_TYPE.START || type === pitMarkerCode)
+    const repeatBlocked = (isStartCode(type) || type === pitMarkerCode)
       && dashLastActedCode === type
       && nowCode - dashLastActedAt < TILE_REPEAT_BLOCK_MS;
     if (repeatBlocked) {
       log(`Mustercode 0x${type.toString(16)} innerhalb von ${TILE_REPEAT_BLOCK_MS} ms wiederholt, ignoriert.`, 'info');
       return;
     }
-    if (type === TILE_TYPE.START || type === pitMarkerCode) {
+    if (isStartCode(type) || type === pitMarkerCode) {
       dashLastActedCode = type; dashLastActedAt = nowCode;
     }
 
     if (type === pitMarkerCode) onPitMarkerCrossed();
 
-    if (type === TILE_TYPE.START) {
+    if (isStartCode(type)) {
       if (playerLapCrossed()) { refreshMinimap(); return; }
     }
     refreshMinimap();

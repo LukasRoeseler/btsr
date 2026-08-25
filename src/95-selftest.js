@@ -587,6 +587,76 @@
                    + ', Lenkgrenze ' + r.cap.toFixed(2) };
   });
 
+  // ---- Start/Ziel-Code zaehlt, Linkskurve nicht ----
+  //
+  // Am 25.08. gemessen: das Original-Startziel-Blatt meldet 0x0a. Vorher stand hier 0x01,
+  // eine Annahme aus einem Foto - und die Rundenzaehlung prueft genau diesen Wert, hat auf
+  // dem Originalblatt also nie ausgeloest. Der Fehler war doppelt unsichtbar: ohne
+  // gedrucktes Blatt kommt ohnehin kein Code, und mit Blatt zaehlt niemand die Runden nach.
+  //
+  // Geprueft wird die WIRKUNG und nicht die Konstante. Eine Pruefung auf "START === 0x0a"
+  // waere mit der Konstante zusammen falsch gewesen und haette nichts gemerkt.
+  stAdd('Start/Ziel-Code zaehlt eine Runde', () => {
+    const gemerkt = { state: raceState, laps: raceLapTimes.slice(),
+                      start: raceLapStart, dash: dashLapStart, part: racePartialMs,
+                      form: raceFormationLap };
+    const anzeige = $('race-status') ? $('race-status').textContent : null;
+    const echterSpieler = playerCar;
+    try {
+      // Ein Fahrpaket bauen und nur Byte 12 austauschen. Byte 11 ist der Kachelzaehler und
+      // muss sich mitbewegen, sonst greift die Wiederholungssperre.
+      const paket = (code, zaehler) => {
+        const a = new Array(19).fill(0);
+        a[11] = zaehler; a[12] = code; a[14] = 0x22;
+        return a;
+      };
+      // Der Testwagen muss das Spielerauto SEIN, nicht bloss die Rolle tragen:
+      // onCarNotify ruft die Schirmauswertung mit car === playerCar auf, und dort sitzt die
+      // Rundenzaehlung. So laeuft die Pruefung durch dieselbe Kette wie eine echte Fahrt.
+      const attrappe = { device: { id: 'st-lap', name: 'Pruefwagen' }, role: 'player',
+                         rx: null, tx: null, tileCode: 0xff, tileCount: null,
+                         lastCodeAt: 0, yaw: 0, ghost: null, timer: null, race: null };
+      const zaehle = (code) => {
+        raceState = 'racing';
+        raceFormationLap = false;
+        raceLapTimes = [];
+        raceLapStart = Date.now() - 5000;
+        dashLapStart = Date.now() - 5000;
+        racePartialMs = null;
+        // Den Erkenner zuruecksetzen, sonst laeuft die zweite Messung unter anderen
+        // Bedingungen als die erste: dashLastTileCounter und die Wiederholungssperre sind
+        // Modulzustand und bleiben sonst stehen.
+        dashPendingCode = null; dashPendingSeen = 0;
+        dashLastTileCounter = null;
+        dashLastActedCode = null; dashLastActedAt = 0;
+        playerCar = attrappe;
+        // VIER Pakete, nicht zwei. Die Kette verlangt der Reihe nach: einmal vormerken,
+        // einmal bestaetigen (dabei wird nur der Kachelzaehler gemerkt), und erst wenn der
+        // Zaehler sich bewegt, wird gehandelt.
+        for (let k = 1; k <= 4; k++) {
+          OMEGA_TEST.feedNotify(paket(code, k), { car: attrappe });
+        }
+        return raceLapTimes.length;
+      };
+      const mit0a = zaehle(0x0a);
+      const mit03 = zaehle(0x03);
+      const mit01 = zaehle(0x01);
+      const mit02 = zaehle(0x02);
+      // 0x0a MUSS zaehlen, 0x03 (Linkskurve) und 0x02 (Gerade) duerfen nicht. 0x01 zaehlt
+      // weiter, weil es als frueher angenommener Wert absichtlich gueltig geblieben ist.
+      const ok = mit0a >= 1 && mit03 === 0 && mit02 === 0 && mit01 >= 1;
+      return { ok,
+               mass: '0x0a -> ' + mit0a + ' Runde(n), 0x03 Linkskurve -> ' + mit03
+                     + ', 0x02 Gerade -> ' + mit02 + ', 0x01 alt -> ' + mit01 };
+    } finally {
+      raceState = gemerkt.state; raceLapTimes = gemerkt.laps;
+      raceLapStart = gemerkt.start; dashLapStart = gemerkt.dash;
+      racePartialMs = gemerkt.part; raceFormationLap = gemerkt.form;
+      playerCar = echterSpieler;
+      if (anzeige !== null) $('race-status').textContent = anzeige;
+    }
+  });
+
   // ---- Ausfuehren und anzeigen ----
   async function runSelfTest() {
     const rows = $('st-rows');
