@@ -212,6 +212,12 @@
     text-shadow: 1px 0 0 var(--glitch-r), -1px 0 0 var(--glitch-c);
   }
   .misc-tile span { font-size: 12.5px; color: var(--muted); font-weight: 400; }
+  /* Unterseiten innerhalb eines Tabs: eine Kachelseite, und je Kachel eine Karte.
+     Dasselbe Muster wie "Sonstige", nur innerhalb eines Tabs statt zwischen Tabs - der
+     Streckentab hatte sechs Karten untereinander, und man musste an fuenf vorbeiscrollen,
+     um an die sechste zu kommen. */
+  .subpage { display: none; }
+  .subpage.on { display: block; }
   /* Zurueck-Zeile ueber den drei ausgelagerten Seiten. */
   .misc-back {
     background: none; border: none; color: var(--muted); padding: 0 0 12px 0;
@@ -375,7 +381,9 @@
     gap: clamp(4px, .8vw, 9px);
     grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr) minmax(0, 1.15fr);
     grid-template-areas: "shift shift shift" "left gear right" "strip strip strip"
-                         "banner banner banner"; }
+                         "banner banner banner"
+      "foot foot foot"
+      "toast toast toast"; }
 
   /* Shift lights: round, evenly spaced, green through red to blue. */
   .gt3-shift { grid-area: shift; display: flex; justify-content: center;
@@ -420,6 +428,23 @@
   .gt3-bar { height: clamp(5px, 1.2vw, 10px); background: #04060b; border-radius: 0;
     overflow: hidden; margin-top: 3px; }
   .gt3-bar > i { display: block; height: 100%; width: 0; transition: width .15s linear; }
+  /* Fusszeile im Schirm: die vier Angaben, die es vorher nur in den Karten unter dem
+     Schirm gab. Klein, einzeilig, umbrechend - sie sollen den Fahrer nicht ablenken, aber
+     auch nicht verschwinden. */
+  .gt3-foot {
+    grid-area: foot; display: flex; flex-wrap: wrap; gap: clamp(6px, 1.6vw, 18px);
+    align-items: baseline; padding: clamp(3px, .7vw, 7px) clamp(4px, 1vw, 10px);
+    background: #0b0f18; font-size: clamp(8px, 1.15vw, 11px); color: #8b97ad;
+    letter-spacing: .04em;
+  }
+  .gt3-foot b { font-family: monospace; color: #dbe3f0; font-weight: 700; }
+  .gt3-foot i { font-style: normal; opacity: .75; }
+  .gt3-foot-name { margin-left: auto; }
+  #hud-toast-wrap {
+    grid-area: toast; min-height: 0; padding: 0 clamp(4px, 1vw, 10px);
+    color: #ffcf6e; font-family: monospace; font-size: clamp(9px, 1.3vw, 13px);
+  }
+  #hud-toast-wrap:empty, #hud-toast:empty { padding: 0; }
   .gt3-ok { color: #46d17f; } .gt3-warn { color: #ffb02e; } .gt3-bad { color: #ff5252; }
   /* ABS as letters under the speed, not a number in a side box: grey means available-
      but-idle, red means it is intervening right now — a glance, not a reading. */
@@ -1015,8 +1040,8 @@
   .race-fs-btn { padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border);
     background: var(--panel-2); color: inherit; font: inherit; cursor: pointer;
     min-height: 40px; }
-  #race-rotate { display: none; font-size: 12px; }
-  @media (orientation: portrait) and (max-width: 900px) { #race-rotate { display: inline; } }
+  /* Die Hochkant-Zeile ueber dem Schirm ist entfernt: sie erklaerte etwas, das man
+     ohnehin sieht, und kostete im Querformat eine Zeile Hoehe. */
 
   /* Fullscreen on a phone held upright. Orientation lock is refused by iOS Safari and by
      any desktop browser, so when it fails we rotate the dash ourselves rather than leave
@@ -1216,7 +1241,7 @@
     </div>
     <div class="home-feat">
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/><circle cx="9" cy="7" r="2"/><circle cx="15" cy="12" r="2"/><circle cx="7" cy="17" r="2"/></svg><span class="feat-1line">&Uuml;ber <b id="home-param-count">70</b> Einstellungen</span></div>
-        <div><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="13" height="10" rx="1"/><rect x="17" y="9" width="4" height="11" rx="1"/></svg><span>PC und Smartphone, ohne Installation</span></div>
+        <div><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="13" height="10" rx="1"/><rect x="17" y="9" width="4" height="11" rx="1"/></svg><span>PC und Android, Chrome-basiert</span></div>
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 17a8 8 0 1 1 16 0"/><path d="M12 17 16 9"/></svg><span>Anzeigen wie auf einem echten GT3-HUD</span></div>
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20V8"/><circle cx="12" cy="5" r="2"/><path d="M6 12h12"/></svg><span>Manuelle Schaltung</span></div>
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3s5 6 5 10a5 5 0 0 1-10 0c0-4 5-10 5-10z"/></svg><span>Wetter, Reifentemperatur, ABS</span></div>
@@ -1243,9 +1268,6 @@
         <div class="gantry-col"><div class="gantry-lamp" data-col="5"></div><div class="gantry-lamp" data-col="5"></div></div>
       </div>
       <div class="gantry-mast"></div>
-    </div>
-    <div class="race-bar">
-      <span class="muted" id="race-rotate">Hochkant &mdash; die Anzeige wird gedreht.</span>
     </div>
     <svg width="0" height="0" style="position:absolute" aria-hidden="true">
       <filter id="race-gamma" color-interpolation-filters="sRGB">
@@ -1345,114 +1367,15 @@
       </div>
 
       <div class="gt3-banner" id="gt3-pit"><span id="race-pit-text">PIT LIMITER ENGAGED</span></div>
-    </div>
-  
-    <!-- Aus den Renneinstellungen hierher: alles Vier ist Fahrzustand,
-         keine Einstellung. -->
-<div class="card hud-card">
-      <h2>Cockpit</h2>
-      <div class="hud-row">
-        <div class="hud-stat"><span class="hud-value" id="dash-speed">0.0</span><span class="hud-label">km/h (simuliert)</span></div>
-        <div class="hud-stat"><span class="hud-value" id="dash-gear">1</span><span class="hud-label">Gang</span></div>
-        <div class="hud-stat"><span class="hud-value" id="dash-rpm">1500</span><span class="hud-label">1/min</span></div>
-        <div class="hud-stat"><span class="hud-value" id="dash-abs">-</span><span class="hud-label">ABS</span></div>
-        <div class="hud-stat">
-          <span class="hud-value"><span id="dash-head" class="hud-light"></span><span id="dash-brake" class="hud-light"></span></span>
-          <span class="hud-label" id="dash-light-dmg" style="color:var(--bad)"></span>
-          <span class="hud-label">Licht / Bremse</span>
-        </div>
-        <div class="hud-stat"><span class="hud-value" id="dash-battery">-</span><span class="hud-label">Akku</span></div>
-        <div class="hud-stat"><span class="hud-value" id="dash-pit">-</span><span class="hud-label">Box</span></div>
-        <label class="hud-toggle"><input type="checkbox" id="dash-head-toggle" checked> Scheinwerfer</label>
+      <div class="gt3-foot">
+        <span><b id="dash-real-kmh">&ndash;</b> km/h echt <i id="dash-real-ratio"></i></span>
+        <span>auf der Bahn <b id="dash-time-on">0:00</b> &middot; abseits
+          <b id="dash-time-off">0:00</b> <i id="dash-time-share"></i></span>
+        <span id="dash-offtrack">&ndash;</span>
+        <span id="dash-vehicle-name" class="gt3-foot-name">nicht verbunden</span>
+        <span id="dash-light-dmg" style="color:#ff5252"></span>
       </div>
-      <div id="hud-toast" style="margin-top:10px; color:#ffcf6e; font-family:monospace; font-size:13px; min-height:18px"></div>
-    </div>
-
-    
-<div class="card">
-      <h2>Fahrzeug &amp; Strecke</h2>
-      <div class="row" style="justify-content:space-between">
-        <div>
-          <div class="muted">Fahrzeug: <b id="dash-vehicle-name">nicht verbunden</b></div>
-          <div class="muted">Status: <span id="dash-offtrack" style="display:inline-block;padding:1px 8px;border-radius:4px;background:var(--panel-2);border:1px solid var(--border)">-</span></div>
-          <div class="muted" style="margin-top:4px">Tats&auml;chlich:
-            <b id="dash-real-kmh">&ndash;</b> km/h
-            <span class="muted" id="dash-real-ratio" style="font-size:11px"></span></div>
-          <div class="muted" style="margin-top:4px">Auf der Strecke:
-            <b id="dash-time-on">0:00</b> &middot; abseits:
-            <b id="dash-time-off">0:00</b>
-            <span class="muted" id="dash-time-share">&nbsp;</span></div>
-        </div>
-        <label style="display:flex;align-items:center;gap:6px" class="muted">
-          <input type="checkbox" id="dash-freeroam"> Frei fahren (ohne Streckenkarte)
-        </label>
-      </div>
-      <div class="row" style="margin-top:12px; align-items:flex-start; gap:20px">
-        <div id="dash-minimap"></div>
-        <div style="flex:1; min-width:200px">
-          <p class="muted">Aktuelle Runde: <b id="dash-lap-current">-</b></p>
-          <p class="muted">Beste Runde: <b id="dash-lap-best">-</b></p>
-          <ol class="muted" id="dash-lap-list" style="padding-left:20px; max-height:120px; overflow-y:auto"></ol>
-        </div>
-      </div>
-      <p class="muted" style="margin-top:8px; font-size:11.5px">
-        Die Position auf der Minikarte ist eine Schätzung (Kachel-Zähler + Zeit-Interpolation), keine echte
-        Positionsmessung vom Auto.
-      </p>
-    </div>
-
-    
-<div class="card">
-      <h2>Boxenstopp</h2>
-      <p class="muted" style="font-size:11.5px">
-        Tank, Schaden und Boxenstopp sind eine reine Spielsimulation der App &mdash; das echte Auto hat keinen
-        Tank und meldet keinen Schaden. Die Crash-Erkennung ist zudem <b>experimentell</b>: sie beruht auf
-        Ausschlägen in Sensor-Bytes, deren genaue Bedeutung wir nicht sicher kennen.
-      </p>
-      <div class="row">
-        <div style="flex:1; min-width:150px">
-          <label class="small">Tank <span id="fuel-liters" style="font-family:monospace; text-transform:none"></span></label>
-          <div style="background:var(--panel-2); border:1px solid var(--border); border-radius:4px; height:14px; overflow:hidden">
-            <div id="fuel-bar" style="height:100%; width:100%; background:var(--good); transition:width .3s"></div>
-          </div>
-        </div>
-        <div style="flex:1; min-width:150px">
-          <label class="small">Zustand</label>
-          <div style="background:var(--panel-2); border:1px solid var(--border); border-radius:4px; height:14px; overflow:hidden">
-            <div id="damage-bar" style="height:100%; width:0%; background:var(--bad); transition:width .3s"></div>
-          </div>
-        </div>
-      </div>
-      <div class="row" style="margin-top:10px">
-        <button class="primary" id="btn-pitstop">Boxenstopp (Reparatur + Tanken)</button>
-        <span class="muted" id="pitstop-status">bereit</span>
-        <span id="crash-indicator" style="display:none; color:var(--bad); font-weight:700;">💥 Crash erkannt (experimentell)!</span>
-      </div>
-    </div>
-
-    
-<div class="card">
-      <h2>Steuerung</h2>
-      <div class="control-grid">
-        <div class="stick-wrap">
-          <div class="muted">Lenkung</div>
-          <div id="stick-outer"><div id="stick-inner"></div></div>
-          <div class="readout" id="stick-readout">x: 0.00</div>
-        </div>
-        <div class="throttle-wrap">
-          <div class="muted">Gas / Bremse</div>
-          <div id="throttle-outer"><div id="throttle-fill"></div><div id="throttle-inner"></div></div>
-          <div class="readout" id="throttle-readout">y: 0.00</div>
-        </div>
-      </div>
-      <p class="muted" style="margin-top:14px">
-        Tastatur: <span class="kbd">&uarr;</span>/<span class="kbd">&darr;</span> Gas/Bremse,
-        <span class="kbd">&larr;</span>/<span class="kbd">&rarr;</span> Lenkung,
-        <span class="kbd">Leertaste</span> Nothalt.
-      </p>
-      <div class="row" style="margin-top:10px">
-        <button class="primary" id="btn-estop">NOTHALT</button>
-      </div>
+      <div class="gt3-banner" id="hud-toast-wrap"><span id="hud-toast"></span></div>
     </div>
   </section>
 
@@ -2924,6 +2847,35 @@
 
     <div class="subtabpage" id="subtab-macros">
     <div class="card">
+      <h2>Direktsteuerung mit der Maus</h2>
+      <p class="muted" style="font-size:11.5px">
+        Aus dem Cockpit hierher gezogen. Am Telefon wird geneigt oder ein Pad benutzt, am
+        Rechner reichen die Pfeiltasten &mdash; aber ohne Pad und ohne Tastatur ist das
+        hier die einzige Mausbedienung, deshalb ist sie nicht gel&ouml;scht.
+      </p>
+      <div class="control-grid">
+        <div class="stick-wrap">
+          <div class="muted">Lenkung</div>
+          <div id="stick-outer"><div id="stick-inner"></div></div>
+          <div class="readout" id="stick-readout">x: 0.00</div>
+        </div>
+        <div class="throttle-wrap">
+          <div class="muted">Gas / Bremse</div>
+          <div id="throttle-outer"><div id="throttle-fill"></div><div id="throttle-inner"></div></div>
+          <div class="readout" id="throttle-readout">y: 0.00</div>
+        </div>
+      </div>
+      <p class="muted" style="margin-top:14px">
+        Tastatur: <span class="kbd">&uarr;</span>/<span class="kbd">&darr;</span> Gas/Bremse,
+        <span class="kbd">&larr;</span>/<span class="kbd">&rarr;</span> Lenkung,
+        <span class="kbd">Leertaste</span> Nothalt.
+      </p>
+      <div class="row" style="margin-top:10px">
+        <button class="primary" id="btn-estop">NOTHALT</button>
+      </div>
+    </div>
+
+    <div class="card">
       <h2>Autonomes Fahren: Aufnahme &amp; Wiedergabe</h2>
       <p class="muted">
         Fahr die Strecke einmal manuell (Tab "Fahren", Joystick/Gas oder Pfeiltasten). Während der Aufnahme
@@ -3109,6 +3061,14 @@
     <div class="card">
       <h2>Fahrgefühl</h2>
       <div class="opt-head">Grundlagen</div>
+      <div class="opt-row"><div class="opt-label">Scheinwerfer
+          <small>Vorne Standlicht, hinten Bremslicht. Taste <b>L</b> ist die
+          Lichthupe.</small></div>
+        <label class="tgl"><input type="checkbox" id="dash-head-toggle" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Frei fahren
+          <small>Ohne Streckenkarte: keine Kachelfolge, keine Rundenz&auml;hlung, kein
+          Vorausblick.</small></div>
+        <label class="tgl"><input type="checkbox" id="dash-freeroam"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Auf der Bahn
           <small>Bit&nbsp;5 in Byte&nbsp;14: Streckensensor an, und das Auto h&auml;lt sich
           selbst auf der Bahn. <b>Aus</b> entspricht &bdquo;Ohne Bahn&ldquo; der
@@ -3486,7 +3446,67 @@
 
   <!-- TRACK TAB -->
   <section class="tabpage" id="tab-track">
-    <div class="card">
+    <div class="card subpage-home" id="sub-home-track">
+      <h2>Strecke</h2>
+      <div class="misc-grid">
+        <button class="misc-tile subpage-open" data-sub="pos">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="24" cy="20" r="7"/><path d="M24 27v14M17 41h14"/><path d="M6 34c4-8 12-12 18-12s14 4 18 12" stroke="var(--bad)"/></svg>
+          <b>Position</b>
+          <span>Minikarte mit der geschätzten Lage des Autos auf der Runde.</span>
+        </button>
+        <button class="misc-tile subpage-open" data-sub="edit">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 40 40 8l6 6L14 46H8z"/><path d="M34 14l6 6" stroke="var(--bad)"/></svg>
+          <b>Editor</b>
+          <span>Strecke aus Teilen bauen, drehen, als Code weitergeben.</span>
+        </button>
+        <button class="misc-tile subpage-open" data-sub="probe">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 10v28M14 10v28M20 10v28M28 10v28M34 10v28M42 10v28" stroke-width="2"/><path d="M6 44h36" stroke="var(--bad)"/></svg>
+          <b>Codeprobe</b>
+          <span>Ein Teil überfahren und ablesen, welchen Wert das Auto meldet.</span>
+        </button>
+        <button class="misc-tile subpage-open" data-sub="print">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 18V8h20v10"/><rect x="8" y="18" width="32" height="14" rx="2"/><path d="M14 32h20v10H14z" stroke="var(--bad)"/></svg>
+          <b>Druckvorlagen</b>
+          <span>Start/Ziel und Boxengasse maßhaltig als SVG zum Ausdrucken.</span>
+        </button>
+        <button class="misc-tile subpage-open" data-sub="pit">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 42V12h16a8 8 0 0 1 0 16H10"/><path d="M34 20h8M38 16v8" stroke="var(--bad)"/></svg>
+          <b>Boxengasse</b>
+          <span>Eigenes Muster für die Box, mit dem Code, den es auslöst.</span>
+        </button>
+        <button class="misc-tile subpage-open" data-sub="saved">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 12h18l4 5h6v22a2 2 0 0 1-2 2H12a2 2 0 0 1-2-2z"/><path d="M18 26h12M18 32h8" stroke="var(--bad)"/></svg>
+          <b>Gespeichert</b>
+          <span>Strecken benennen, laden und wieder löschen.</span>
+        </button>
+      </div>
+    </div>
+    <div class="card subpage" id="sub-pos">
+      <button class="misc-back subpage-back" data-sub="">&larr; Strecke</button>
+      <h2>Wo steht das Auto?</h2>
+      <p class="muted" style="font-size:11.5px">
+        Aus dem Cockpit hierher gezogen: dort war alles unter dem Schirm eine
+        Doppelanzeige, die Minikarte aber nicht &mdash; und sie geh&ouml;rt neben die
+        Strecke, an der sie h&auml;ngt. Die Position ist eine Sch&auml;tzung aus
+        Kachelz&auml;hler und Zeit, keine Positionsmessung vom Auto.
+      </p>
+      <div class="row" style="margin-top:12px; align-items:flex-start; gap:20px">
+        <div id="dash-minimap"></div>
+        <div style="flex:1; min-width:200px">
+          <p class="muted">Aktuelle Runde: <b id="dash-lap-current">-</b></p>
+          <p class="muted">Beste Runde: <b id="dash-lap-best">-</b></p>
+          <ol class="muted" id="dash-lap-list" style="padding-left:20px; max-height:120px; overflow-y:auto"></ol>
+        </div>
+      </div>
+    </div>
+    <div class="card subpage" id="sub-edit">
+      <button class="misc-back subpage-back" data-sub="">&larr; Strecke</button>
       <h2>Streckeneditor</h2>
       <p class="muted">
         Baue eine Strecke manuell aus Teilen zusammen, oder scanne sie live, während das Auto einmal die
@@ -3513,7 +3533,8 @@
         <button id="track-scan-stop" disabled>Scan stoppen</button>
         <span class="muted" id="track-scan-status">bereit</span>
       </div>
-      <div class="card" style="margin-top:14px">
+      <div class="card subpage" style="margin-top:14px" id="sub-probe">
+      <button class="misc-back subpage-back" data-sub="">&larr; Strecke</button>
         <h2>Welchen Code meldet dieses Teil?</h2>
         <p class="muted">
           Zum Herausfinden, was ein Streckenteil wirklich sendet &mdash; zum Beispiel die
@@ -3666,7 +3687,8 @@
 
     </div>
 
-    <div class="card">
+    <div class="card subpage" id="sub-print">
+      <button class="misc-back subpage-back" data-sub="">&larr; Strecke</button>
       <h2>Druckvorlagen</h2>
       <p class="muted">
         Muster zum Ausdrucken und Auslegen. <b>Wichtig beim Drucken:</b> A4 <b>quer</b>,
@@ -3704,7 +3726,8 @@
       </div>
     </div>
 
-    <div class="card">
+    <div class="card subpage" id="sub-pit">
+      <button class="misc-back subpage-back" data-sub="">&larr; Strecke</button>
       <h2>Boxengasse</h2>
       <p class="muted">
         Fährt das Auto über das Boxen-Muster, greift ein Tempolimit von 40&nbsp;%. Bleibt es dann
@@ -3735,7 +3758,8 @@
       </p>
     </div>
 
-    <div class="card">
+    <div class="card subpage" id="sub-saved">
+      <button class="misc-back subpage-back" data-sub="">&larr; Strecke</button>
       <h2>Gespeicherte Strecken</h2>
       <div class="row">
         <input type="text" id="track-name" placeholder="Name der Strecke">
@@ -3796,6 +3820,15 @@
   const charByUuid = new Map(); // uuid -> {char, service}
 
   const $ = (id) => document.getElementById(id);
+  // Setzt nur, wenn das Element noch da ist.
+  //
+  // Das Cockpit zeigt seit dem Aufraeumen nur noch den Schirm; die vier Karten darunter
+  // waren Doppelanzeigen desselben Zustands und sind entfernt. Ihre Kennungen werden aber
+  // noch beschrieben - aus dem Fahrtakt heraus, alle 45 ms. Ein blinder Zugriff auf ein
+  // fehlendes Element wuerde dort eine Ausnahme werfen und den Takt abbrechen, also
+  // waehrend der Fahrt. Deshalb nicht siebzehn Mal `if (el)`, sondern zwei Setzer.
+  const setTxt = (id, v) => { const el = $(id); if (el) el.textContent = v; };
+  const setSty = (id, k, v) => { const el = $(id); if (el) el.style[k] = v; };
   const logEl = $('log');
   const dot = $('conn-dot');
   // The dot IS the connection status now. The word next to it said the same thing a second
@@ -4073,6 +4106,25 @@
     if (btn) btn.onclick();
   }
 
+  // ---- Unterseiten innerhalb eines Tabs ----
+  // Eine Kachelseite plus je Kachel eine Karte. Der Tab selbst bleibt EIN Tab, damit
+  // showTab, die Tastenkuerzel und die Kopfzeile unberuehrt bleiben.
+  function showSubpage(key) {
+    document.querySelectorAll('.subpage').forEach(p => p.classList.remove('on'));
+    document.querySelectorAll('.subpage-home').forEach(h => { h.style.display = key ? 'none' : ''; });
+    if (key) {
+      const p = $('sub-' + key);
+      if (p) p.classList.add('on');
+    }
+    window.scrollTo(0, 0);
+  }
+  document.querySelectorAll('.subpage-open').forEach(el => {
+    el.addEventListener('click', () => showSubpage(el.dataset.sub));
+  });
+  document.querySelectorAll('.subpage-back').forEach(el => {
+    el.addEventListener('click', () => showSubpage(''));
+  });
+
   // Jeder Knopf mit .goto-tab fuehrt auf den Tab in seinem data-tab: die drei Kacheln
   // unter "Sonstige" und die Zurueck-Zeilen darauf. Ein Handler statt sechs.
   document.querySelectorAll('.goto-tab').forEach(el => {
@@ -4095,6 +4147,15 @@
       // Only hold the screen awake while the racing screen is actually the one on show.
       keepScreenAwake(btn.dataset.tab === 'race');
       document.body.classList.toggle('race-mode', btn.dataset.tab === 'race');
+      // Wer das Cockpit verlaesst, will nicht erst dorthin zurueck, um das Vollbild zu
+      // schliessen - der Knopf dafuer liegt IM Vollbild, also auf dem Schirm, den man
+      // gerade verlassen hat. Beim Tabwechsel geht es deshalb von selbst zu.
+      if (btn.dataset.tab !== 'race' && document.body.classList.contains('race-fs')) {
+        exitRaceFullscreen();
+      }
+      // Immer auf der Kachelseite anfangen. Sonst landet man in der Unterseite, die man
+      // vor drei Tabwechseln offen gelassen hat, und haelt sie fuer den ganzen Tab.
+      showSubpage('');
       // Charts are drawn lazily when the documentation is actually opened: the sliders
       // that invalidate them fire constantly and the canvases are invisible meanwhile.
       if (btn.dataset.tab === 'doc' && drivetrainChartsDirty) renderDrivetrainCharts();
@@ -6047,14 +6108,14 @@
 
   function updateDashboard(out) {
     const st = physEngine.state;
-    $('dash-gear').textContent = gearLabel(physEngine.state);
-    $('dash-speed').textContent = Math.abs(st.speedKmh).toFixed(1); // signed while reversing
-    $('dash-rpm').textContent = Math.round(st.rpm);
+    setTxt('dash-gear', gearLabel(physEngine.state));
+    setTxt('dash-speed', Math.abs(st.speedKmh).toFixed(1));   // signed while reversing
+    setTxt('dash-rpm', Math.round(st.rpm));
     updateRaceScreen(st, out);
-    $('dash-abs').textContent = physEngine.state.absActive ? 'AKTIV' : '-';
+    setTxt('dash-abs', physEngine.state.absActive ? 'AKTIV' : '-');
     const lamp = resolveLights(out.lights.head, out.lights.brake);
-    $('dash-head').style.background = lamp.head ? '#f5e642' : '#444';
-    $('dash-brake').style.background = lamp.brake ? 'var(--bad)' : '#444';
+    setSty('dash-head', 'background', lamp.head ? '#f5e642' : '#444');
+    setSty('dash-brake', 'background', lamp.brake ? 'var(--bad)' : '#444');
     raceLampHead = lamp.head;
   }
 
@@ -7842,8 +7903,14 @@
   }
 
   function renderLapList() {
-    $('dash-lap-list').innerHTML = dashLapTimes.map((ms, i) => `<li>Runde ${i + 1}: ${formatLapTime(ms)}</li>`).join('');
-    if (dashLapTimes.length) $('dash-lap-best').textContent = formatLapTime(Math.min(...dashLapTimes));
+    // Die Rundenliste steht im Schirm (race-lap-list); diese hier ist die alte Liste aus
+    // der entfernten Karte und kann fehlen.
+    const el = $('dash-lap-list');
+    if (el) {
+      el.innerHTML = dashLapTimes
+        .map((ms, i) => `<li>Runde ${i + 1}: ${formatLapTime(ms)}</li>`).join('');
+    }
+    if (dashLapTimes.length) setTxt('dash-lap-best', formatLapTime(Math.min(...dashLapTimes)));
   }
 
   // ---- Race mode: LB/L1 arms a countdown ("Ampel"), RB/R1 ends the race after the lap
@@ -8732,7 +8799,7 @@
       probeStats.lastCode = bytes[12];
     }
     dashBattery = bytes[10];
-    $('dash-battery').textContent = `${batteryPercent(dashBattery)}% (roh ${dashBattery})`;
+    setTxt('dash-battery', `${batteryPercent(dashBattery)}% (roh ${dashBattery})`);
 
     // Byte 15 was read as "off track". The 2026-08-19 snoop logs disprove that: it is 0x08
     // for exactly as long as the car sits on a printed marker (~1s at driving speed), in the
@@ -8855,7 +8922,7 @@
   }
 
   setInterval(() => {
-    if (dashLapStart !== null) $('dash-lap-current').textContent = formatLapTime(Date.now() - dashLapStart);
+    if (dashLapStart !== null) setTxt('dash-lap-current', formatLapTime(Date.now() - dashLapStart));
     if ((raceState === 'racing' || raceState === 'finishing') && raceLapStart !== null) {
       $('race-lap-current').textContent = formatLapTime(Date.now() - raceLapStart);
     }
@@ -9223,7 +9290,7 @@
     if (!playCrashFx()) playCrashSound(); // sample variants first, synth burst as fallback
     padRumble(0.6, 0.4, 220); // medium, per user spec
     const ind = $('crash-indicator');
-    ind.style.display = 'inline';
+    if (ind) ind.style.display = 'inline';
     clearTimeout(crashIndicatorTimer);
     crashIndicatorTimer = setTimeout(() => { ind.style.display = 'none'; }, 1500);
     log(`Crash erkannt (experimentell) — Schaden +${Math.round(100 / crashesToTotal)}%.`, 'err');
@@ -9369,14 +9436,14 @@
   }
 
   function updateDamageFuelUI() {
-    $('fuel-bar').style.width = Math.max(0, fuel) + '%';
-    $('fuel-bar').style.background = fuel < 20 ? 'var(--warn)' : 'var(--good)';
-    $('fuel-liters').textContent = `${fuelLiters(fuel)} / ${FUEL_TANK_LITERS} l`;
+    setSty('fuel-bar', 'width', Math.max(0, fuel) + '%');
+    setSty('fuel-bar', 'background', fuel < 20 ? 'var(--warn)' : 'var(--good)');
+    setTxt('fuel-liters', `${fuelLiters(fuel)} / ${FUEL_TANK_LITERS} l`);
     // Condition, matching the racing screen: full green, shrinking with each crash.
     const health = Math.max(0, Math.min(100, 100 - damage));
-    $('damage-bar').style.width = health + '%';
-    $('damage-bar').style.background = health <= 20 ? '#ff5c5c'
-                                     : (health <= 55 ? 'var(--warn)' : 'var(--good)');
+    setSty('damage-bar', 'width', health + '%');
+    setSty('damage-bar', 'background', health <= 20 ? '#ff5c5c'
+                                     : (health <= 55 ? 'var(--warn)' : 'var(--good)'));
     updateDamageBlink();
   }
 
@@ -9788,7 +9855,9 @@
     showHudToast(wasServicing ? 'Boxenstopp abgebrochen' : 'Boxengasse abgebrochen');
     log('Boxenstopp abgebrochen — kein Sprit, keine Reparatur.', 'info');
   }
-  $('btn-pitstop').onclick = requestPitStop;
+  // Der Boxenstopp-Knopf ist im Schirm (race-act-pit); dieser hier stammt aus der
+  // entfernten Karte und kann fehlen.
+  if ($('btn-pitstop')) $('btn-pitstop').onclick = requestPitStop;
 
   updateDamageFuelUI();
 
