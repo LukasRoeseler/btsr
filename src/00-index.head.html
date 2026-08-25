@@ -1037,6 +1037,24 @@
     .gantry-lamp { width: 10px; height: 10px; }
   }
 
+  /* ---- Motorwerkstatt: Presets und Diagramme ---- */
+  .mw-presets { border: 1px solid var(--border); border-radius: 5px;
+    background: var(--panel-2); padding: 10px 12px; margin: 12px 0 4px 0; }
+  .mw-preset-head { font-size: 11px; color: var(--muted); text-transform: uppercase;
+    letter-spacing: .08em; margin-bottom: 7px; }
+  .mw-preset { font-size: 12px; padding: 7px 10px; }
+  /* Der gewaehlte Motor traegt einen Balken links, nicht nur eine Farbe. */
+  .mw-preset.sel { border-color: var(--bad); box-shadow: inset 3px 0 0 var(--bad);
+    color: var(--ink); }
+  .mw-charts { display: grid; gap: 12px; margin-top: 12px;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+  .mw-chart { background: var(--panel-2); border: 1px solid var(--border);
+    border-radius: 5px; padding: 9px 10px; }
+  .mw-chart-t { font-size: 11px; color: var(--muted); text-transform: uppercase;
+    letter-spacing: .07em; margin-bottom: 6px; }
+  .mw-chart svg { width: 100%; height: auto; display: block; }
+  .mw-chart p { font-size: 11px; margin: 7px 0 0 0; }
+
   /* ---- Motorwerkstatt ----
      A grid rather than the opt-row list used elsewhere: eleven parameters in a single
      column would push the listen button off the screen, and the whole point is to change
@@ -3617,6 +3635,27 @@
         <code>c / (4&nbsp;L)</code>.
       </p>
 
+      <div class="mw-presets">
+        <div class="mw-preset-head">Sieben Rennmotoren</div>
+        <div class="row" id="mw-preset-row" style="gap:6px; flex-wrap:wrap"></div>
+        <p class="muted" style="font-size:11px; margin:8px 0 0 0">
+          <b>Was aus den Daten kommt und was nicht.</b>
+        </p>
+        <p class="muted" style="font-size:11px; margin:3px 0 0 0">
+          Zylinderzahl, Bauart, Kurbelwelle und Drehzahl stehen in den technischen Angaben,
+          ebenso die Bankaufteilung, die aus der Z&uuml;ndfolge folgt. Hubraum, Bohrung und
+          Hub gehen in dieses Modell nicht ein: es synthetisiert Z&uuml;ndereignisse und
+          rechnet keine Gasdynamik. Rohrl&auml;nge, Impuls, Abfall, S&auml;ttigung,
+          Klappern, Streuung und Ansauganteil sind nach Geh&ouml;r gew&auml;hlt, nicht
+          abgeleitet.
+        </p>
+        <p class="muted" style="font-size:11px; margin:6px 0 0 0">
+          Drei der sieben sind aufgeladen. Dieses Modell hat keinen Lader: Geometrie,
+          Kurbelwelle und Z&uuml;ndfolge stimmen, der Ladedruck fehlt. Der Charakter der
+          Bauart bleibt, das Pfeifen nicht.
+        </p>
+      </div>
+
       <div class="mw-grid">
         <div class="mw-row"><label for="mw-cyl">Zylinder</label><div class="mw-ctl">
           <input type="range" id="mw-cyl" min="3" max="12" step="1" value="8">
@@ -3662,6 +3701,44 @@
       </div>
 
       <p class="mw-derived" id="mw-derived">&nbsp;</p>
+
+      <!-- Drei Bilder aus demselben Modell, das auch den Ton macht. Sie zeigen, was die
+           Regler bedeuten, und zwar dort wo der Charakter entsteht. -->
+      <div class="mw-charts">
+        <div class="mw-chart">
+          <div class="mw-chart-t">Z&uuml;ndfolge &uuml;ber 720&deg;</div>
+          <div id="mw-chart-fire"></div>
+          <p class="muted">
+            Jeder Strich eine Z&uuml;ndung, obere Reihe die eine Bank, untere die andere.
+            Beim Cross-Plane bleibt der Gesamttakt gleichm&auml;&szlig;ig, die einzelne Bank
+            wird lumpig, und weil jede Bank ihren eigenen Kr&uuml;mmer hat, entsteht daraus
+            das Blubbern. Beim Reihenmotor gibt es nur eine Reihe. Die Zahlen zwischen den
+            Strichen sind die Abst&auml;nde derselben Bank in Grad.
+          </p>
+        </div>
+        <div class="mw-chart">
+          <div class="mw-chart-t">Ein Z&uuml;ndimpuls mit Nachhall</div>
+          <div id="mw-chart-pulse"></div>
+          <p class="muted">
+            Ein einzelner Druckimpuls, durch das Rohr geschickt und ges&auml;ttigt. Seine
+            Breite kommt vom Regler Impulsl&auml;nge, sein Abklingen vom Regler Abfall, und
+            die gekappten Spitzen sind die S&auml;ttigung. Grau der rohe Impuls, orange
+            derselbe nach Rohr und S&auml;ttigung.
+          </p>
+        </div>
+        <div class="mw-chart">
+          <div class="mw-chart-t">Resonanz des Rohrs</div>
+          <div id="mw-chart-spec"></div>
+          <p class="muted">
+            Das Frequenzbild des Rohrs. Die blaue Marke ist die Viertelwellenresonanz
+            <code>c/(4L)</code>, die rote die Z&uuml;ndrate bei der eingestellten Drehzahl.
+            Liegen sie nah beieinander, dr&ouml;hnt es.
+          </p>
+        </div>
+      </div>
+      <p class="muted" style="font-size:11px">
+        Nicht im Bild, weil man sie nur h&ouml;rt: Klappern, Ansauganteil und Last.
+      </p>
 
       <div class="row" style="gap:8px; flex-wrap:wrap; margin-top:10px">
         <button class="primary" id="mw-listen">Anh&ouml;ren</button>
@@ -4061,7 +4138,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.3.59</span></span>
+    <span class="foot-ver">v<span id="app-version">0.3.60</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
   </span>
   <span class="foot-right">

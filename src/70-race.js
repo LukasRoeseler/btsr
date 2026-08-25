@@ -409,7 +409,7 @@
     const maxLap = Math.max(0, ...cars.map(c => c.laps.length));
     if (cars.length < 1 || maxLap < 2) {
       host.innerHTML = '<p class="muted" style="margin:0">Zu wenige Runden f\u00fcr einen Verlauf '
-                     + '\u2014 ab der zweiten Runde wird hier gezeichnet.</p>';
+                     + 'Ab der zweiten Runde wird hier gezeichnet.</p>';
       return;
     }
 
@@ -728,7 +728,7 @@
 
     if (!cars.length) {
       $('sum-body').innerHTML = '<p class="muted" style="margin-top:12px">Keine Runden '
-        + 'aufgezeichnet. Ohne Streckencode gibt es keine Rundenzeit \u2014 Schalter '
+        + 'aufgezeichnet. Ohne Streckencode gibt es keine Rundenzeit, Schalter '
         + '<b>Auf der Bahn</b> in den Optionen pr\u00fcfen, oder Runden mit <kbd>Q</kbd> '
         + 'z\u00e4hlen, um die Anzeige zu pr\u00fcfen.</p>';
       $('race-summary').classList.add('on');
@@ -1125,7 +1125,10 @@
       // Runde 0, nicht 1: das Feld steht auf der Startgeraden und ueberfaehrt Start/Ziel
       // erst am Ende der ersten Runde. Vor der ersten Ueberfahrt ist also noch keine Runde
       // voll, und raceLapTimes.length ist genau diese Zahl.
-      else $('race-status').textContent = `Rennen läuft, Runde ${raceLapTimes.length}`;
+      // Ueber t(), weil die Rundenzahl darin steht: ein fester Woerterbuchschluessel
+      // koennte diesen Satz nie treffen.
+      else $('race-status').textContent =
+        t('Rennen läuft, Runde') + ' ' + raceLapTimes.length;
     }
     return false;
   }
@@ -1262,7 +1265,7 @@
       pitLimiterTimer = setTimeout(() => {
         pitLimiterTimer = null;
         if (pitState !== 'limited') return;
-        log('Pit-Limiter nach ' + (PIT_LIMITER_MAX_MS / 1000) + ' s von selbst aus \u2014 '
+        log('Pit-Limiter nach ' + (PIT_LIMITER_MAX_MS / 1000) + ' s von selbst aus: '
             + 'das Ausfahrtmuster wurde nicht gelesen.', 'info');
         setPitState('off');
       }, PIT_LIMITER_MAX_MS);

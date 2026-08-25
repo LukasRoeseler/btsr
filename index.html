@@ -1037,6 +1037,24 @@
     .gantry-lamp { width: 10px; height: 10px; }
   }
 
+  /* ---- Motorwerkstatt: Presets und Diagramme ---- */
+  .mw-presets { border: 1px solid var(--border); border-radius: 5px;
+    background: var(--panel-2); padding: 10px 12px; margin: 12px 0 4px 0; }
+  .mw-preset-head { font-size: 11px; color: var(--muted); text-transform: uppercase;
+    letter-spacing: .08em; margin-bottom: 7px; }
+  .mw-preset { font-size: 12px; padding: 7px 10px; }
+  /* Der gewaehlte Motor traegt einen Balken links, nicht nur eine Farbe. */
+  .mw-preset.sel { border-color: var(--bad); box-shadow: inset 3px 0 0 var(--bad);
+    color: var(--ink); }
+  .mw-charts { display: grid; gap: 12px; margin-top: 12px;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+  .mw-chart { background: var(--panel-2); border: 1px solid var(--border);
+    border-radius: 5px; padding: 9px 10px; }
+  .mw-chart-t { font-size: 11px; color: var(--muted); text-transform: uppercase;
+    letter-spacing: .07em; margin-bottom: 6px; }
+  .mw-chart svg { width: 100%; height: auto; display: block; }
+  .mw-chart p { font-size: 11px; margin: 7px 0 0 0; }
+
   /* ---- Motorwerkstatt ----
      A grid rather than the opt-row list used elsewhere: eleven parameters in a single
      column would push the listen button off the screen, and the whole point is to change
@@ -3617,6 +3635,27 @@
         <code>c / (4&nbsp;L)</code>.
       </p>
 
+      <div class="mw-presets">
+        <div class="mw-preset-head">Sieben Rennmotoren</div>
+        <div class="row" id="mw-preset-row" style="gap:6px; flex-wrap:wrap"></div>
+        <p class="muted" style="font-size:11px; margin:8px 0 0 0">
+          <b>Was aus den Daten kommt und was nicht.</b>
+        </p>
+        <p class="muted" style="font-size:11px; margin:3px 0 0 0">
+          Zylinderzahl, Bauart, Kurbelwelle und Drehzahl stehen in den technischen Angaben,
+          ebenso die Bankaufteilung, die aus der Z&uuml;ndfolge folgt. Hubraum, Bohrung und
+          Hub gehen in dieses Modell nicht ein: es synthetisiert Z&uuml;ndereignisse und
+          rechnet keine Gasdynamik. Rohrl&auml;nge, Impuls, Abfall, S&auml;ttigung,
+          Klappern, Streuung und Ansauganteil sind nach Geh&ouml;r gew&auml;hlt, nicht
+          abgeleitet.
+        </p>
+        <p class="muted" style="font-size:11px; margin:6px 0 0 0">
+          Drei der sieben sind aufgeladen. Dieses Modell hat keinen Lader: Geometrie,
+          Kurbelwelle und Z&uuml;ndfolge stimmen, der Ladedruck fehlt. Der Charakter der
+          Bauart bleibt, das Pfeifen nicht.
+        </p>
+      </div>
+
       <div class="mw-grid">
         <div class="mw-row"><label for="mw-cyl">Zylinder</label><div class="mw-ctl">
           <input type="range" id="mw-cyl" min="3" max="12" step="1" value="8">
@@ -3662,6 +3701,44 @@
       </div>
 
       <p class="mw-derived" id="mw-derived">&nbsp;</p>
+
+      <!-- Drei Bilder aus demselben Modell, das auch den Ton macht. Sie zeigen, was die
+           Regler bedeuten, und zwar dort wo der Charakter entsteht. -->
+      <div class="mw-charts">
+        <div class="mw-chart">
+          <div class="mw-chart-t">Z&uuml;ndfolge &uuml;ber 720&deg;</div>
+          <div id="mw-chart-fire"></div>
+          <p class="muted">
+            Jeder Strich eine Z&uuml;ndung, obere Reihe die eine Bank, untere die andere.
+            Beim Cross-Plane bleibt der Gesamttakt gleichm&auml;&szlig;ig, die einzelne Bank
+            wird lumpig, und weil jede Bank ihren eigenen Kr&uuml;mmer hat, entsteht daraus
+            das Blubbern. Beim Reihenmotor gibt es nur eine Reihe. Die Zahlen zwischen den
+            Strichen sind die Abst&auml;nde derselben Bank in Grad.
+          </p>
+        </div>
+        <div class="mw-chart">
+          <div class="mw-chart-t">Ein Z&uuml;ndimpuls mit Nachhall</div>
+          <div id="mw-chart-pulse"></div>
+          <p class="muted">
+            Ein einzelner Druckimpuls, durch das Rohr geschickt und ges&auml;ttigt. Seine
+            Breite kommt vom Regler Impulsl&auml;nge, sein Abklingen vom Regler Abfall, und
+            die gekappten Spitzen sind die S&auml;ttigung. Grau der rohe Impuls, orange
+            derselbe nach Rohr und S&auml;ttigung.
+          </p>
+        </div>
+        <div class="mw-chart">
+          <div class="mw-chart-t">Resonanz des Rohrs</div>
+          <div id="mw-chart-spec"></div>
+          <p class="muted">
+            Das Frequenzbild des Rohrs. Die blaue Marke ist die Viertelwellenresonanz
+            <code>c/(4L)</code>, die rote die Z&uuml;ndrate bei der eingestellten Drehzahl.
+            Liegen sie nah beieinander, dr&ouml;hnt es.
+          </p>
+        </div>
+      </div>
+      <p class="muted" style="font-size:11px">
+        Nicht im Bild, weil man sie nur h&ouml;rt: Klappern, Ansauganteil und Last.
+      </p>
 
       <div class="row" style="gap:8px; flex-wrap:wrap; margin-top:10px">
         <button class="primary" id="mw-listen">Anh&ouml;ren</button>
@@ -4061,7 +4138,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.3.59</span></span>
+    <span class="foot-ver">v<span id="app-version">0.3.60</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
   </span>
   <span class="foot-right">
@@ -4413,6 +4490,7 @@
     ", bevor die App es merkt:": ", before the app notices:",
     ", damit du siehst, welches Auto in der Liste welches auf dem Tisch ist.": ", so you can see which car in the list is which one on the table.",
     ", dann": ", then",
+    ", die rote die Zündrate bei der eingestellten Drehzahl. Liegen sie nah beieinander, dröhnt es.": ", the red one the firing rate at the selected engine speed. When they sit close together, it drones.",
     ", keine Messung: dass ein Auto die Linie einhält, kann die App nicht prüfen, weil kein Byte die Querlage meldet.": ", not a measurement: the app cannot check that a car holds the line, because no byte reports lateral position.",
     ", mit fließendem Übergang. Gebremst wird dort, wo die Krümmung": ", with a smooth transition. Braking happens where the curvature",
     ", nicht aus einem Filter: ein gleichmäßig zündender Reihensechser klingt anders als ein V8 mit Cross-Plane-Kurbelwelle, dessen beide Bänke ungleich zünden. Und die Resonanz ist keine Einstellung, sondern folgt aus der Rohrlänge:": ", not from a filter: an evenly firing straight six sounds different from a V8 with a cross-plane crank, whose two banks fire unevenly. And the resonance is not a setting but follows from the pipe length:",
@@ -4470,6 +4548,7 @@
     "Auch auf dem Steuerkreuz links/rechts.": "Also left/right on the D-pad.",
     "Auf Standard zurücksetzen": "Reset to defaults",
     "Auf der Bahn": "On track",
+    "Aufgeladen, dieses Modell hat keinen Lader.": "Turbocharged, this model has no turbo.",
     "Aufnahme starten": "Start recording",
     "Aufnahme": "Recording",
     "Aufnahme: nächsten Abschnitt markieren": "Recording: mark the next section",
@@ -4530,6 +4609,7 @@
     "Crashs, bis Fahrzeug ruckelt": "Crashes until the car judders",
     "Cross-Plane (ungleiche Bänke)": "Cross-plane (uneven banks)",
     "Das Auto hält sich selbst auf der Bahn, der Ghost gibt nur Gas.": "The car keeps itself on the track; the ghost only works the throttle.",
+    "Das Frequenzbild des Rohrs. Die blaue Marke ist die Viertelwellenresonanz": "The frequency picture of the pipe. The blue mark is the quarter-wave resonance",
     "Das ist der ganze Trick: eine": "That is the whole trick: one",
     "Der Code beschreibt die Reihenfolge der Teile und die Ausrichtung. Damit stellst du auf einem anderen Gerät dieselbe Strecke ein, ohne sie neu zu klicken.": "The code describes the order of the parts and the orientation. With it you set up the same track on another device without clicking it together again.",
     "Der Erstplatzierte fährt etwas langsamer.": "The leader drives a little slower.",
@@ -4543,6 +4623,7 @@
     "Doku": "Docs",
     "Drehen": "Rotate",
     "Drehzahl": "Revs",
+    "Drei der sieben sind aufgeladen. Dieses Modell hat keinen Lader: Geometrie, Kurbelwelle und Zündfolge stimmen, der Ladedruck fehlt. Der Charakter der Bauart bleibt, das Pfeifen nicht.": "Three of the seven are turbocharged. This model has no turbo: geometry, crankshaft and firing order are right, the boost is missing. The character of the architecture remains, the whistle does not.",
     "Drei fertige Abstimmungen. Sie setzen nur die Regler, die das": "Three ready-made setups. They only touch the sliders that affect the",
     "Dreizehn Messungen an der laufenden App. Sie ersetzen keine Fahrt, aber sie sagen, ob eine Änderung etwas kaputt gemacht hat, das man nicht sofort sieht: eine Physik, die nicht mehr trifft, eine Ideallinie mit einem Sprung, eine Tonschleife mit einer Naht, ein deutscher Satz im englischen Modus.": "Thirteen measurements on the running app. They do not replace a drive, but they say whether a change broke something you would not notice at once: physics that no longer matches, a racing line with a jump, a sound loop with a seam, a German sentence in English mode.",
     "Drosselt bei vollem Akku. Der Akkuwert ist eine unkalibrierte Schätzung.": "Throttles back on a full battery. The battery value is an uncalibrated estimate.",
@@ -4552,6 +4633,8 @@
     "Eigenes Muster für die Box, mit dem Code, den es auslöst.": "Your own pattern for the pit, with the code it triggers.",
     "Ein Knopf, dreizehn Messungen: lädt alles, rechnet die Physik richtig, passt die Linie, sind die Töne heil.": "One button, thirteen measurements: does it all load, is the physics right, does the line fit, are the sounds intact.",
     "Ein Teil überfahren und ablesen, welchen Wert das Auto meldet.": "Drive over one part and read off the value the car reports.",
+    "Ein Zündimpuls mit Nachhall": "One firing pulse with its tail",
+    "Ein einzelner Druckimpuls, durch das Rohr geschickt und gesättigt. Seine Breite kommt vom Regler Impulslänge, sein Abklingen vom Regler Abfall, und die gekappten Spitzen sind die Sättigung. Grau der rohe Impuls, orange derselbe nach Rohr und Sättigung.": "A single pressure pulse, sent through the pipe and saturated. Its width comes from the pulse-length slider, its decay from the decay slider, and the clipped peaks are the saturation. Grey is the raw pulse, orange the same one after pipe and saturation.",
     "Eine Runde zählt, sobald das Auto das Start/Ziel-Muster auf der Strecke überfährt (dasselbe Signal, das auch der Streckenscanner ausliest): kein eigener Sensor in der App.": "A lap counts as soon as the car drives over the start/finish pattern on the track (the same signal the track scanner reads), there is no separate sensor in the app.",
     "Einfach: Elektro": "Simple: electric",
     "Einfach: Turbo": "Simple: turbo",
@@ -4618,6 +4701,7 @@
     "Im Vollbild: hoch/runter wechselt zwischen Aktionen (oben) und Teilen (unten), links/rechts wählt, X löst aus. O rückgängig, Dreieck Reset, Quadrat dreht.": "In fullscreen: up/down switches between actions (top) and parts (bottom), left/right selects, X activates. O undoes, triangle resets, square rotates.",
     "Impulslänge": "Pulse length",
     "In sieben aufgezeichneten Fahrten hat das Auto": "In seven recorded runs the car",
+    "Jeder Strich eine Zündung, obere Reihe die eine Bank, untere die andere. Beim Cross-Plane bleibt der Gesamttakt gleichmäßig, die einzelne Bank wird lumpig, und weil jede Bank ihren eigenen Krümmer hat, entsteht daraus das Blubbern. Beim Reihenmotor gibt es nur eine Reihe. Die Zahlen zwischen den Strichen sind die Abstände derselben Bank in Grad.": "Each bar is one firing event, the upper row one bank, the lower row the other. On a cross-plane the overall beat stays even while the single bank turns lumpy, and because each bank has its own manifold, that is where the burble comes from. An inline engine has only one row. The numbers between the bars are the intervals within the same bank, in degrees.",
     "Jedes Auto braucht einen eigenen Klick auf „Auto verbinden“, Web Bluetooth verlangt für jede Verbindung eine eigene Nutzergeste, das lässt sich nicht umgehen.": "Every car needs its own click on “Connect a car”, Web Bluetooth requires a separate user gesture for each connection, and there is no way around it.",
     "Kacheln gehalten": "tiles held",
     "Kacheln": "Tiles",
@@ -4686,6 +4770,7 @@
     "Name der Aufnahme": "Recording name",
     "Name der Strecke": "Track name",
     "Neu zuweisen": "Reassign",
+    "Nicht im Bild, weil man sie nur hört: Klappern, Ansauganteil und Last.": "Not in the pictures, because you can only hear them: clatter, intake share and load.",
     "Noch keine Verbindung.": "No connection yet.",
     "Noch nicht gebaut, die drei Punkte stehen hier als Bauplan, damit klar ist, wohin das führt.": "Not built yet: the three points stand here as a blueprint, so it is clear where this leads.",
     "Noch nicht gefahren.": "Not driven yet.",
@@ -4736,11 +4821,14 @@
     "Relais-Klacken (gerechnet)": "Relay click (synthesised)",
     "Renneinstellungen": "Race setup",
     "Rennen abbrechen": "Abort race",
+    "Rennen läuft, Runde": "Race running, lap",
     "Rennen starten / abbrechen": "Start / abort race",
     "Rennen starten": "Start race",
     "Rennmodus": "Race mode",
     "Rennwürze": "Race spice",
     "Resonanz 116 Hz · Zündrate 300 Hz · Zyklusrate 37.5 Hz": "Resonance 116 Hz · firing rate 300 Hz · cycle rate 37.5 Hz",
+    "Resonanz des Rohrs": "Resonance of the pipe",
+    "Resonanz": "Resonance",
     "Richtung": "Direction",
     "Roh": "Raw",
     "Rollwiderstand, Motorbremse und Luftwiderstand zugleich. Klein rollt weit.": "Rolling resistance, engine braking and drag at once. Small rolls far.",
@@ -4766,6 +4854,7 @@
     "Services/Characteristics deines Autos ohne diese Einschränkung. Wenn du mir die dort angezeigten UUIDs (Service + Characteristics + Eigenschaften: read/write/notify) gibst, kann ich die Steuerung direkt korrekt verdrahten.": "services and characteristics of your car without that restriction. If you give me the UUIDs shown there (service + characteristics + properties: read/write/notify), the control path can be wired up correctly straight away.",
     "Setzt das Layout aus den gemeldeten Kacheln zusammen und übernimmt es nach der ersten geschlossenen Runde, nur wenn noch keine Strecke liegt.": "Assembles the layout from the reported tiles and adopts it after the first closed lap, only if no track is loaded yet.",
     "Sie sagt, welcher Lenkanteil das Auto gerade noch auf der Bahn hält, nicht, um wie viele Zentimeter es dabei versetzt liegt. Der Zusammenhang zwischen beiden ist nicht gemessen und wird hier nicht behauptet. Brauchbar ist sie trotzdem: die Ideallinie und die Überholmanovör dürfen nie mehr als etwa die Hälfte des Kippwerts anfordern, und das ist eine Grenze, die vorher nicht bekannt war.": "It says which steering share still just keeps the car on the track, not by how many centimetres it is displaced. The relationship between the two is not measured and is not claimed here. It is useful all the same: the racing line and the overtaking moves must never ask for more than about half the tipping value, and that is a limit that was not known before.",
+    "Sieben Rennmotoren": "Seven racing engines",
     "Simulation fahren": "Run the simulation",
     "Simulierte Motoren und eigene Sounds über Engine-Sim": "Simulated engines and custom sounds via Engine-Sim",
     "Slalom: Lenken im Wechsel": "Slalom: steer alternately",
@@ -4840,6 +4929,7 @@
     "Voreinstellungen": "Presets",
     "Vorgabe führt nicht zu einer eckigen Bewegung. Das Auto hat Masse, die Reifen brauchen Zeit, die Lenkung hat eine Höchstgeschwindigkeit. Wer das einmal gesehen hat, versteht, warum geschmeidige Vorgaben besser fahren: und das gilt für Programme genauso wie für Daumen.": "input does not produce square movement. The car has mass, the tyres need time, the steering has a top speed. Once you have seen that, you understand why smooth inputs drive better, and that holds for programs just as much as for thumbs.",
     "Vorne Standlicht, hinten Bremslicht. Taste": "Front running light, rear brake light. Key",
+    "Was aus den Daten kommt und was nicht.": "What comes from the data and what does not.",
     "Was das Auto daraus macht": "What the car makes of it",
     "Was die Zahl bedeutet und was nicht.": "What the number means and what it does not.",
     "Web Bluetooth erlaubt standardmäßig nur Zugriff auf Services, die vorab bekannt sind. Da wir das genaue Carrera-Protokoll noch nicht kennen, versuchen wir es unten mit einer Liste gängiger Custom-Service-UUIDs (Nordic UART, HM-10/FFE0, FFF0 etc.): falls dein Auto eine andere UUID benutzt, füge sie manuell hinzu.": "By default Web Bluetooth only allows access to services known in advance. Since we do not yet know the exact Carrera protocol, below we try a list of common custom service UUIDs (Nordic UART, HM-10/FFE0, FFF0 and so on): if your car uses a different UUID, add it by hand.",
@@ -4876,10 +4966,15 @@
     "Zwei Kurven, zwei Autos, dieselbe Strecke: und die Rundenzeiten sagen, welche Kurve die bessere war.": "Two curves, two cars, the same track: and the lap times say which curve was the better one.",
     "Zwei eigene Ghosts gegeneinander.": "Two of your own ghosts against each other.",
     "Zweiklang (gerechnet)": "Two-tone (synthesised)",
+    "Zyklusrate": "Cycle rate",
     "Zylinder": "Cylinders",
+    "Zylinderzahl, Bauart, Kurbelwelle und Drehzahl stehen in den technischen Angaben, ebenso die Bankaufteilung, die aus der Zündfolge folgt. Hubraum, Bohrung und Hub gehen in dieses Modell nicht ein: es synthetisiert Zündereignisse und rechnet keine Gasdynamik. Rohrlänge, Impuls, Abfall, Sättigung, Klappern, Streuung und Ansauganteil sind nach Gehör gewählt, nicht abgeleitet.": "Cylinder count, layout, crankshaft and engine speed are given in the technical data, as is the bank split, which follows from the firing order. Displacement, bore and stroke do not enter this model: it synthesises firing events and computes no gas dynamics. Pipe length, pulse, decay, saturation, clatter, scatter and intake share are chosen by ear, not derived.",
     "Zählen starten": "Start counting",
     "Zählt Runden und löst im Rennmodus die Rundenzeit aus. Erwarteter Code": "Counts laps and triggers the lap time in race mode. Expected code",
     "Zündabständen": "firing intervals",
+    "Zündfolge über 720°": "Firing order over 720°",
+    "Zündfolge": "firing order",
+    "Zündrate": "Firing rate",
     "Zündstreuung": "Firing scatter",
     "alle": "all",
     "ansteigt: eine Kurve, die schon mit festem Radius gefahren wird, braucht keine Bremse mehr. Beides ist eine": "rises, a corner already being taken at a constant radius needs no more braking. Both are a",
@@ -6818,8 +6913,8 @@
   $('setting-ontrack').addEventListener('change', (e) => {
     trackMode = e.target.checked ? 'on' : 'off';
     log('Modus: ' + (e.target.checked
-        ? 'Auf der Bahn \u2014 Streckensensor an (Byte 14 Bit 5).'
-        : 'Ohne Bahn \u2014 Streckensensor aus (Byte 14 Bit 7). Keine Streckencodes.'),
+        ? 'Auf der Bahn: Streckensensor an (Byte 14 Bit 5).'
+        : 'Ohne Bahn: Streckensensor aus (Byte 14 Bit 7). Keine Streckencodes.'),
         e.target.checked ? 'info' : 'err');
     showHudToast(e.target.checked ? 'AUF DER BAHN' : 'OHNE BAHN');
   });
@@ -9439,7 +9534,7 @@
     const maxLap = Math.max(0, ...cars.map(c => c.laps.length));
     if (cars.length < 1 || maxLap < 2) {
       host.innerHTML = '<p class="muted" style="margin:0">Zu wenige Runden f\u00fcr einen Verlauf '
-                     + '\u2014 ab der zweiten Runde wird hier gezeichnet.</p>';
+                     + 'Ab der zweiten Runde wird hier gezeichnet.</p>';
       return;
     }
 
@@ -9758,7 +9853,7 @@
 
     if (!cars.length) {
       $('sum-body').innerHTML = '<p class="muted" style="margin-top:12px">Keine Runden '
-        + 'aufgezeichnet. Ohne Streckencode gibt es keine Rundenzeit \u2014 Schalter '
+        + 'aufgezeichnet. Ohne Streckencode gibt es keine Rundenzeit, Schalter '
         + '<b>Auf der Bahn</b> in den Optionen pr\u00fcfen, oder Runden mit <kbd>Q</kbd> '
         + 'z\u00e4hlen, um die Anzeige zu pr\u00fcfen.</p>';
       $('race-summary').classList.add('on');
@@ -10155,7 +10250,10 @@
       // Runde 0, nicht 1: das Feld steht auf der Startgeraden und ueberfaehrt Start/Ziel
       // erst am Ende der ersten Runde. Vor der ersten Ueberfahrt ist also noch keine Runde
       // voll, und raceLapTimes.length ist genau diese Zahl.
-      else $('race-status').textContent = `Rennen läuft, Runde ${raceLapTimes.length}`;
+      // Ueber t(), weil die Rundenzahl darin steht: ein fester Woerterbuchschluessel
+      // koennte diesen Satz nie treffen.
+      else $('race-status').textContent =
+        t('Rennen läuft, Runde') + ' ' + raceLapTimes.length;
     }
     return false;
   }
@@ -10292,7 +10390,7 @@
       pitLimiterTimer = setTimeout(() => {
         pitLimiterTimer = null;
         if (pitState !== 'limited') return;
-        log('Pit-Limiter nach ' + (PIT_LIMITER_MAX_MS / 1000) + ' s von selbst aus \u2014 '
+        log('Pit-Limiter nach ' + (PIT_LIMITER_MAX_MS / 1000) + ' s von selbst aus: '
             + 'das Ausfahrtmuster wurde nicht gelesen.', 'info');
         setPitState('off');
       }, PIT_LIMITER_MAX_MS);
@@ -12851,8 +12949,8 @@
     if (car.ghost) { car.ghost.cutOut = true; car.ghost.attackUntil = 0; }
     if (car.rx) writeToCar(car, 0, 0, trackModeBit() | LIGHT_HEAD);
     log(garageLabel(car) + ': steht (' + reason + '). Auto anheben, zur\u00fcckstellen und '
-        + 'kurz sch\u00fctteln \u2014 dann f\u00e4hrt es weiter.', 'err');
-    showHudToast(garageLabel(car).toUpperCase() + ' STEHT \u2014 SCH\u00dcTTELN');
+        + 'kurz sch\u00fctteln, dann f\u00e4hrt es weiter.', 'err');
+    showHudToast(garageLabel(car).toUpperCase() + ' STEHT, SCH\u00dcTTELN');
   }
 
   function unparkCar(car, why) {
@@ -13494,7 +13592,7 @@
       car.railLight = LIGHT_HEAD | RAIL_MODE.b14bit | (brake > 0.05 ? LIGHT_BRAKE : 0);
       if (!la && !g.warnedNoLayout) {
         g.warnedNoLayout = true;
-        log(`${garageLabel(car)}: Leitplanken-Modus ohne eingescannte Strecke \u2014 `
+        log(`${garageLabel(car)}: Leitplanken-Modus ohne eingescannte Strecke: `
             + 'Vorausblick fehlt, das Auto bekommt nur das Modus-Bit', 'err');
       }
     } else {
@@ -14176,7 +14274,7 @@
     });
     psAccel = sm(psAccel); psSteer = sm(psSteer);
     psRenderEditors();
-    $('ps-status').textContent = 'Gegl\u00e4ttet \u2014 nochmal fahren und vergleichen.';
+    $('ps-status').textContent = 'Gegl\u00e4ttet, nochmal fahren und vergleichen.';
   };
   $('ps-preset').onchange = (ev) => {
     const v = ev.target.value;
@@ -14193,7 +14291,7 @@
     } else return;
     psLastRun = null;
     psRenderEditors(); psRenderResult();
-    $('ps-status').textContent = 'Beispiel geladen \u2014 jetzt fahren.';
+    $('ps-status').textContent = 'Beispiel geladen, jetzt fahren.';
     ev.target.value = '';
   };
 
@@ -14257,6 +14355,96 @@
 
   function mwEl(id) { return document.getElementById('mw-' + id); }
 
+  // ---------------------------------------------------------------- sieben Rennmotoren
+  //
+  // Was aus den technischen Angaben kommt: Zylinderzahl, Bauart, Kurbelwelle, Drehzahl und
+  // die Zuendfolge. Was NICHT: Hubraum, Bohrung und Hub - dieses Modell synthetisiert
+  // Zuendereignisse und rechnet keine Gasdynamik, also gibt es keine Groesse, in die ein
+  // Hubraum eingehen koennte. Die sieben Klangregler sind nach Gehoer gewaehlt; sie stehen
+  // hier unter 'gewaehlt', damit niemand sie fuer abgeleitet haelt.
+  //
+  // 'banking' ist keine Beliebigkeit, sondern die Nummerierung des Herstellers: GM zaehlt
+  // ungerade Zylinder links und gerade rechts, Mercedes und BMW zaehlen die erste Haelfte
+  // links. Unter der falschen Konvention wird aus einer sauberen Zuendfolge Unsinn - beim
+  // Ferrari-V6 ist das der Unterschied zwischen 240 Grad je Bank (gleichmaessig, richtig)
+  // und 120/120/480 (drei Zuendungen derselben Bank hintereinander).
+  //
+  // 'lader' merkt an, wo dieses Modell etwas nicht kann: es hat keinen Lader. Geometrie,
+  // Kurbelwelle und Zuendfolge stimmen, der Ladedruck fehlt.
+  const MW_PRESETS = [
+    { id: 'c6r', name: 'Corvette C6.R', motor: 'LS7.R 7.0 V8, Cross-Plane, OHV',
+      cyl: 8, layout: 'v', crank: 'cross', rpm: 7200,
+      order: [1, 8, 7, 2, 6, 5, 4, 3], banking: 'oddeven', lader: false,
+      // Tiefer Cross-Plane-Bass: langes Rohr, breiter Impuls, viel Saettigung. Der LS ist
+      // ein Stossstangenmotor, also darf der Ventiltrieb hoerbar sein.
+      gewaehlt: { pipe: 30, pulse: 4.2, decay: 165, drive: 3.4, clatter: 0.22,
+                  scatter: 0.014, intake: 0.20, load: 1 } },
+    { id: 'z06gt3r', name: 'Corvette Z06 GT3.R', motor: 'LT6.R 5.5 V8, Flat-Plane, DOHC',
+      cyl: 8, layout: 'v', crank: 'even', rpm: 8600,
+      order: [1, 4, 3, 6, 8, 5, 2, 7], banking: 'oddeven', lader: false,
+      // Flat-Plane heisst hier 'even': beide Baenke zuenden gleichmaessig, daraus kommt das
+      // Kreischen statt des Blubberns. Kurzes Rohr, schmaler Impuls, wenig Saettigung.
+      gewaehlt: { pipe: 19, pulse: 2.4, decay: 105, drive: 2.2, clatter: 0.10,
+                  scatter: 0.010, intake: 0.34, load: 1 } },
+    { id: 'amggt3', name: 'Mercedes-AMG GT3', motor: 'M159 6.2 V8, Cross-Plane, DOHC',
+      cyl: 8, layout: 'v', crank: 'cross', rpm: 7700,
+      order: [1, 5, 4, 2, 6, 3, 7, 8], banking: 'half', lader: false,
+      gewaehlt: { pipe: 27, pulse: 3.8, decay: 150, drive: 3.0, clatter: 0.14,
+                  scatter: 0.012, intake: 0.26, load: 1 } },
+    { id: 'f296gt3', name: 'Ferrari 296 GT3', motor: 'F163CE 3.0 V6 120 Grad, Twin-Turbo',
+      cyl: 6, layout: 'v', crank: 'even', rpm: 8000,
+      order: [1, 2, 3, 4, 5, 6], banking: 'oddeven', lader: true,
+      // Ohne Lader bleibt der schmale, hohe Ton eines gleichmaessig zuendenden V6. Der
+      // Ansauganteil steht hoch, weil beim Original genau dort der Lader sitzt - das ist ein
+      // Zugestaendnis an das fehlende Modell, keine Nachbildung.
+      gewaehlt: { pipe: 17, pulse: 2.2, decay: 95, drive: 2.0, clatter: 0.08,
+                  scatter: 0.009, intake: 0.42, load: 1 } },
+    { id: 'm4gt3', name: 'BMW M4 GT3', motor: 'P58 3.0 Reihensechser, Twin-Turbo',
+      cyl: 6, layout: 'inline', crank: 'even', rpm: 7200,
+      order: [1, 5, 3, 6, 2, 4], banking: 'half', lader: true,
+      // Ein Reihensechser hat einen Kruemmer und zuendet alle 120 Grad. Deshalb klingt er
+      // glatt, und deshalb braucht er kein Klappern, um Charakter zu haben.
+      gewaehlt: { pipe: 21, pulse: 2.8, decay: 120, drive: 2.4, clatter: 0.07,
+                  scatter: 0.008, intake: 0.38, load: 1 } },
+    { id: 'huracan', name: 'Huracan GT3 / R8 LMS', motor: '5.2 V10 90 Grad, Split-Pin, DOHC',
+      cyl: 10, layout: 'v', crank: 'even', rpm: 8700,
+      order: [1, 6, 5, 10, 2, 7, 3, 8, 4, 9], banking: 'half', lader: false,
+      // Zehn Zuendungen auf 720 Grad sind 144 Grad Abstand, und die Split-Pin-Kurbelwelle
+      // verteilt sie sauber auf beide Baenke. Hohe Zuendrate, kurzes Rohr, kaum Saettigung.
+      gewaehlt: { pipe: 16, pulse: 2.0, decay: 90, drive: 1.9, clatter: 0.09,
+                  scatter: 0.008, intake: 0.30, load: 1 } },
+    { id: 'vantagegt3', name: 'Aston Martin Vantage GT3',
+      motor: 'M177 4.0 V8, Cross-Plane, Twin-Turbo',
+      cyl: 8, layout: 'v', crank: 'cross', rpm: 7200,
+      order: [1, 5, 4, 2, 6, 3, 7, 8], banking: 'half', lader: true,
+      // Dieselbe Familie wie der M159, kleiner und aufgeladen. Ohne Lader bleibt der
+      // Cross-Plane-Takt, gedaempfter: engeres Rohr, weniger Saettigung.
+      gewaehlt: { pipe: 24, pulse: 3.4, decay: 135, drive: 2.6, clatter: 0.12,
+                  scatter: 0.011, intake: 0.36, load: 1 } },
+  ];
+
+  // Welche Bank ein Zylinder bedient, nach der Nummerierung des Herstellers.
+  function mwBankOf(nr, cyl, banking) {
+    if (banking === 'oddeven') return (nr % 2) ? 0 : 1;
+    return nr <= cyl / 2 ? 0 : 1;
+  }
+
+  // Die gelieferte Zuendfolge gilt nur, solange die drei Groessen stimmen, die sie
+  // ueberhaupt sinnvoll machen: Zylinderzahl, Bauart und Kurbelwelle. Dreht man eine davon
+  // weiter, faellt das Modell auf seine eigene Ableitung zurueck - sonst wuerde eine
+  // AMG-Zuendfolge auf einem Reihenfuenfer weitergelten. Die Klangregler dagegen aendern
+  // nichts an der Gueltigkeit, man darf am gewaehlten Motor also weiterschrauben.
+  function mwOrderActive(c) {
+    return !!(mwPreset && mwPreset.order && mwPreset.cyl === c.cyl
+              && mwPreset.layout === c.layout && mwPreset.crank === c.crank);
+  }
+
+  // Die Zuendfolge des gewaehlten Motors, oder null wenn von Hand gedreht wird. Sobald ein
+  // Regler angefasst wird, faellt sie weg und das Modell leitet die Baenke wieder selbst ab
+  // - sonst wuerde eine Zuendfolge weitergelten, die zur eingestellten Zylinderzahl nicht
+  // mehr passt.
+  let mwPreset = null;
+
   function mwRead() {
     return {
       cyl: +mwEl('cyl').value, layout: mwEl('layout').value, crank: mwEl('crank').value,
@@ -14276,6 +14464,8 @@
   }
 
   function mwPaint() {
+    mwCharts();
+    mwPresetRow();
     const c = mwRead();
     const set = (id, t) => { const e = mwEl(id + '-val'); if (e) e.textContent = t; };
     set('cyl', c.cyl);
@@ -14292,9 +14482,12 @@
     // The three numbers nobody can work out in their head, and which decide the character.
     const res = MW_C / (4 * c.pipe * 0.0254);
     const fire = c.rpm / 60 * c.cyl / 2;
+    // Kein Woerterbucheintrag moeglich: die Zahlen aendern sich mit jedem Regler, der
+    // Schluessel waere also nie derselbe. Deshalb ueber t() die WOERTER, nicht den Satz.
     mwEl('derived').textContent =
-      'Resonanz ' + res.toFixed(0) + ' Hz  \u00b7  Z\u00fcndrate ' + fire.toFixed(0)
-      + ' Hz  \u00b7  Zyklusrate ' + (c.rpm / 120).toFixed(1) + ' Hz';
+      t('Resonanz') + ' ' + res.toFixed(0) + ' Hz  \u00b7  '
+      + t('Z\u00fcndrate') + ' ' + fire.toFixed(0) + ' Hz  \u00b7  '
+      + t('Zyklusrate') + ' ' + (c.rpm / 120).toFixed(1) + ' Hz';
     // An inline engine has one bank, so there is no cross-plane version of it to choose;
     // and a cross-plane crank needs the cylinders to split into equal banks of pairs.
     const noCross = c.layout === 'inline' || c.cyl % 4 !== 0;
@@ -14319,6 +14512,15 @@
   // Ferrari V8 screams on the same eight cylinders.
   function mwFiringAngles(c) {
     const step = 720 / c.cyl;
+    // Eine echte Zuendfolge schlaegt jede Ableitung. Die WINKEL sind in beiden Faellen
+    // gleichmaessig verteilt - eine Kurbelwelle zuendet alle 720/n Grad, auch die
+    // Cross-Plane. Was die Zuendfolge festlegt, ist die Zuordnung der Baenke, und genau
+    // daraus entsteht der Charakter, weil jede Bank ihren eigenen Kruemmer hat.
+    if (mwOrderActive(c)) {
+      const p = mwPreset;
+      return p.order.map((nr, i) => [i * step,
+        c.layout === 'inline' ? 0 : mwBankOf(nr, p.cyl, p.banking)]);
+    }
     if (c.layout === 'inline') {
       const a = [];
       for (let i = 0; i < c.cyl; i++) a.push([i * step, 0]);   // one bank, one manifold
@@ -14531,6 +14733,134 @@
     return { data: mid, seconds: n / MW_SR };
   }
 
+  // ---------------------------------------------------------------- drei Diagramme
+  //
+  // Gerechnet aus demselben Modell, das auch den Ton macht: dieselbe mwFiringAngles,
+  // dieselbe mwPulseTrain, dieselbe mwExhaustIR. Ein Bild, das seine Zahlen woanders
+  // herholt, wuerde bei jeder Aenderung luegen.
+
+  // Zuendfolge ueber 720 Grad. Kein Liniendiagramm, sondern Striche: der Abstand ist die
+  // Aussage, nicht ein Verlauf.
+  function mwChartFire(c) {
+    const W = 640, H = 118, L = 30, R = 16, T = 22;
+    const ang = mwFiringAngles(c);
+    const eine = c.layout === 'inline' || ang.every(a => a[1] === ang[0][1]);
+    const x = g => L + g / 720 * (W - L - R);
+    const yv = [T + 12, eine ? T + 12 : T + 56];
+    let out = '';
+    for (let g = 0; g <= 720; g += 90) {
+      out += '<line x1="' + x(g).toFixed(1) + '" y1="' + T + '" x2="' + x(g).toFixed(1)
+           + '" y2="' + (H - 22) + '" stroke="#454d5e" stroke-width="1"/>'
+           + '<text x="' + x(g).toFixed(1) + '" y="' + (H - 8)
+           + '" text-anchor="middle" font-size="9.5" fill="#a9b2c4">' + g + '</text>';
+    }
+    for (let b = 0; b < (eine ? 1 : 2); b++) {
+      out += '<text x="4" y="' + (yv[b] + 14) + '" font-size="9.5" fill="#a9b2c4">'
+           + (eine ? 'alle' : (b ? 'B' : 'A')) + '</text>';
+      // Die Abstaende dieser Bank, damit man Gleichmass nicht schaetzen muss.
+      const mine = ang.filter(a => a[1] === b).map(a => a[0]);
+      for (let k = 0; k < mine.length; k++) {
+        const nx = mine[(k + 1) % mine.length] + (k + 1 === mine.length ? 720 : 0);
+        const mid = (mine[k] + nx) / 2;
+        if (nx - mine[k] < 60) continue;         // zu eng fuer eine Zahl
+        out += '<text x="' + x(mid % 720 || mid).toFixed(1) + '" y="' + (yv[b] - 3)
+             + '" text-anchor="middle" font-size="9" fill="#6f7889">'
+             + Math.round(nx - mine[k]) + '</text>';
+      }
+    }
+    for (let i = 0; i < ang.length; i++) {
+      const b = eine ? 0 : ang[i][1], X = x(ang[i][0]);
+      out += '<rect x="' + (X - 2.5).toFixed(1) + '" y="' + yv[b]
+           + '" width="5" height="26" rx="1.5" fill="'
+           + (b ? '#ff9c3a' : '#5aa9ff') + '"/>'
+           + '<text x="' + X.toFixed(1) + '" y="' + (yv[b] + 19)
+           + '" text-anchor="middle" font-size="9" font-weight="700" fill="#14161c">'
+           + (mwOrderActive(c) ? mwPreset.order[i] : i + 1) + '</text>';
+    }
+    return '<svg viewBox="0 0 ' + W + ' ' + H + '" aria-label="Z\u00fcndfolge">'
+         + '<rect x="' + L + '" y="' + T + '" width="' + (W - L - R) + '" height="'
+         + (H - T - 22) + '" fill="#14161c"/>' + out
+         + '<text x="' + L + '" y="12" font-size="9.5" fill="#f4f6fb">Kurbelwinkel, Grad'
+         + '</text></svg>';
+  }
+
+  // Ein einzelner Impuls, durch dasselbe Rohr geschickt und ges\u00e4ttigt wie im Ton.
+  function mwChartPulse(c) {
+    const rnd = mwRng(7);
+    const eins = Object.assign({}, c, { cyl: 1, clatter: 0, scatter: 0 });
+    const n = Math.round(0.055 * MW_SR);
+    const roh = mwPulseTrain(eins, [[0, 0]], n, rnd);
+    const ir = mwExhaustIR(eins, mwRng(7));
+    // Faltung, kurz gehalten: nur so weit wie das Fenster reicht.
+    const nass = new Float32Array(n);
+    for (let i = 0; i < n; i++) {
+      if (!roh[i]) continue;
+      const m = Math.min(ir.length, n - i);
+      for (let k = 0; k < m; k++) nass[i + k] += roh[i] * ir[k];
+    }
+    let sp = 0;
+    for (let i = 0; i < n; i++) sp = Math.max(sp, Math.abs(nass[i]));
+    const pts = [], pts2 = [];
+    const schritt = Math.max(1, Math.floor(n / 320));
+    for (let i = 0; i < n; i += schritt) {
+      const t = i / MW_SR * 1000;
+      pts.push([t, mwSaturate(nass[i] / (sp || 1), c.drive)]);
+      pts2.push([t, roh[i]]);
+    }
+    return renderLineChart({
+      height: 170, xLabel: 'Millisekunden', yLabel: 'Druck', yMin: -1.1, yMax: 1.1,
+      ariaLabel: 'Ein Z\u00fcndimpuls',
+      series: [{ points: pts2, color: '#6f7889', width: 1 },
+               { points: pts, color: '#ff9c3a', width: 2 }] });
+  }
+
+  // Frequenzbild des Rohrs. Eine kleine DFT reicht: es geht um die Lage der Spitze, nicht
+  // um Auflaesung.
+  function mwChartSpec(c) {
+    const ir = mwExhaustIR(c, mwRng(7));
+    const res = MW_C / (4 * c.pipe * 0.0254);
+    const fire = c.rpm / 60 * c.cyl / 2;
+    const fMax = Math.max(res * 3.2, fire * 2.2, 900);
+    const pts = [];
+    let sp = 0;
+    const N = 150;
+    for (let k = 1; k <= N; k++) {
+      const f = fMax * k / N;
+      let re = 0, im = 0;
+      // Jede achte Probe: die Spitzenlage aendert sich dadurch nicht, die Rechenzeit schon.
+      for (let i = 0; i < ir.length; i += 8) {
+        const w = 2 * Math.PI * f * i / MW_SR;
+        re += ir[i] * Math.cos(w);
+        im -= ir[i] * Math.sin(w);
+      }
+      const m = Math.hypot(re, im);
+      sp = Math.max(sp, m);
+      pts.push([f, m]);
+    }
+    for (const p of pts) p[1] /= (sp || 1);
+    // Die zwei Marken als senkrechte Strecken - kein neuer Zeichenbaustein noetig.
+    return renderLineChart({
+      height: 170, xLabel: 'Hertz', yLabel: 'Pegel', yMin: 0, yMax: 1.12,
+      ariaLabel: 'Auspuffresonanz',
+      series: [{ points: pts, color: '#ff9c3a', width: 2 },
+               { points: [[res, 0], [res, 1.06]], color: '#5aa9ff', width: 2, dash: '4 3',
+                 label: Math.round(res) + ' Hz' },
+               { points: [[fire, 0], [fire, 1.06]], color: '#ff5d5d', width: 2, dash: '4 3',
+                 label: Math.round(fire) + '/s' }] });
+  }
+
+  function mwCharts() {
+    const c = mwRead();
+    const put = (id, html) => {
+      const e = document.getElementById('mw-chart-' + id);
+      if (e) e.innerHTML = html;
+    };
+    // Ein Fehler in einem Bild darf nicht den Ton mitnehmen.
+    try { put('fire', mwChartFire(c)); } catch (e) { put('fire', ''); }
+    try { put('pulse', mwChartPulse(c)); } catch (e) { put('pulse', ''); }
+    try { put('spec', mwChartSpec(c)); } catch (e) { put('spec', ''); }
+  }
+
   function mwSay(t) { mwEl('status').textContent = t; }
 
   function mwSilence() {
@@ -14541,7 +14871,7 @@
 
   async function mwListen() {
     if (mwBusy) return;
-    if (!audioCtx) { mwSay('Ton ist aus \u2014 erst oben einschalten.'); return; }
+    if (!audioCtx) { mwSay('Ton ist aus, erst oben einschalten.'); return; }
     mwBusy = true;
     mwSay('rechnet \u2026');
     try {
@@ -14558,7 +14888,7 @@
       src.start();
       g.gain.setTargetAtTime(engineVolume, audioCtx.currentTime, 0.05);
       mwNodes = { src, gain: g };
-      mwSay('l\u00e4uft \u2014 ' + out.seconds.toFixed(2) + ' s Schleife');
+      mwSay('l\u00e4uft: ' + out.seconds.toFixed(2) + ' s Schleife');
     } catch (err) {
       mwSay('ging nicht: ' + err.message);
     }
@@ -14593,13 +14923,39 @@
     if (names.includes(keep)) sel.value = keep;
   }
 
+  function mwPresetRow() {
+    const row = document.getElementById('mw-preset-row');
+    if (!row) return;
+    row.innerHTML = '';
+    for (const p of MW_PRESETS) {
+      const b = document.createElement('button');
+      b.className = 'mw-preset'
+        + (mwPreset && mwPreset.id === p.id && mwOrderActive(mwRead()) ? ' sel' : '');
+      b.textContent = p.name;
+      b.title = p.motor + ', ' + p.rpm + '/min, Zuendfolge ' + p.order.join('-')
+              + (p.lader ? ' (aufgeladen, ohne Ladermodell)' : '');
+      b.addEventListener('click', () => mwPresetLoad(p));
+      row.appendChild(b);
+    }
+  }
+
+  function mwPresetLoad(p) {
+    mwPreset = p;
+    mwWrite(Object.assign({ cyl: p.cyl, layout: p.layout, crank: p.crank, rpm: p.rpm },
+                          p.gewaehlt));
+    mwPresetRow();
+    mwSay(p.name + ': ' + p.motor + ', ' + t('Z\u00fcndfolge') + ' '
+          + p.order.join('-')
+          + (p.lader ? '. ' + t('Aufgeladen, dieses Modell hat keinen Lader.') : ''));
+  }
+
   mwEl('listen').addEventListener('click', mwListen);
   mwEl('stop').addEventListener('click', () => { mwSilence(); mwSay(''); });
 
   // Adopt: install as a session profile alongside the shipped ones. Not written to a file -
   // the engine IS the twelve numbers, and a rendered file would only be a staler copy.
   mwEl('adopt').addEventListener('click', async () => {
-    if (!audioCtx) { mwSay('Ton ist aus \u2014 erst oben einschalten.'); return; }
+    if (!audioCtx) { mwSay('Ton ist aus, erst oben einschalten.'); return; }
     if (mwBusy) return;
     mwBusy = true;
     mwSay('rechnet drei B\u00e4nder \u2026');
@@ -14620,22 +14976,29 @@
         buf.getChannelData(0).set(out.data);
         built[bands[i]] = { buffer: buf, baseRpm: rpms[i] };
       }
-      sampleEngine.buffers.werkstatt = built;
+      // Unter dem Namen des gewaehlten Motors, sonst unter dem freien Werkstattplatz.
+      // Sieben Eintraege gleich beim Laden anzubieten waere ehrlicher aussehend als es
+      // ist: es waeren einundzwanzig Renderlaeufe, bevor die App das erste Mal etwas
+      // anzeigt. So steht im Dropdown genau, was auch gerechnet wurde.
+      const wname = mwOrderActive(c) ? 'mw-' + mwPreset.id : 'werkstatt';
+      const wlabel = mwOrderActive(c) ? mwPreset.name + ' (Werkstatt)'
+                                      : 'Werkstatt, selbst gebaut';
+      sampleEngine.buffers[wname] = built;
       const sel = $('sound-profile');
-      if (!SAMPLE_CARS.includes('werkstatt')) {
-        SAMPLE_CARS.push('werkstatt');
+      if (!SAMPLE_CARS.includes(wname)) {
+        SAMPLE_CARS.push(wname);
         const o = document.createElement('option');
-        o.value = 'werkstatt';
-        o.textContent = 'Werkstatt \u2014 selbst gebaut';
+        o.value = wname;
+        o.textContent = wlabel;
         sel.appendChild(o);
       }
       mwSilence();
-      sel.value = 'werkstatt';
+      sel.value = wname;
       // The sample engine may never have loaded a file (audio/ not deployed). It still has
       // to accept this one, since these buffers were built here and not fetched.
       sampleEngine.ready = true;
-      startSampleEngine('werkstatt');
-      mwSay('\u00fcbernommen \u2014 im Cockpit h\u00f6rbar, ' + rpms.join(' / ') + '/min');
+      startSampleEngine(wname);
+      mwSay(wlabel + ': im Cockpit h\u00f6rbar, ' + rpms.join(' / ') + '/min');
     } catch (err) {
       mwSay('ging nicht: ' + err.message);
     }
@@ -14687,7 +15050,7 @@
 
   mwEl('export').addEventListener('click', () => {
     mwEl('json').value = JSON.stringify(mwRead());
-    mwSay('Werte hineingeschrieben \u2014 jetzt kopieren.');
+    mwSay('Werte hineingeschrieben, jetzt kopieren.');
   });
 
   mwEl('import').addEventListener('click', () => {
@@ -14712,7 +15075,7 @@
     }
     if (bad.length) { mwSay('Unbrauchbar: ' + bad.join(', ')); return; }
     mwWrite(cfg);
-    mwSay('\u00fcbernommen \u2014 jetzt Anh\u00f6ren.');
+    mwSay('\u00fcbernommen, jetzt Anh\u00f6ren.');
   });
 
   for (const k of MW_KEYS) {
@@ -15147,6 +15510,11 @@
   // Statuszeile zaehlte einmal die laufende Runde mit, der Zaehler im Cockpit nicht: zwei
   // Anzeigen derselben Sache, die sich um eins unterschieden.
   stAdd('Rundenzählung fängt bei 0 an', () => {
+    // Auch die ANZEIGE merken, nicht nur die Variablen. Ohne das blieb
+    // "Rennen laeuft, Runde 3" im Schirm stehen, und die Sprachpruefung des naechsten
+    // Laufs meldete es als deutschen Text im englischen Modus - voellig zu Recht. Ein Test,
+    // der die Oberflaeche anfasst, muss sie auch zuruecklegen.
+    const anzeige = $('race-status') ? $('race-status').textContent : null;
     const gemerkt = { state: raceState, laps: raceLapTimes.slice(),
                       start: raceLapStart, dash: dashLapStart, part: racePartialMs };
     try {
@@ -15164,6 +15532,7 @@
       raceState = gemerkt.state; raceLapTimes = gemerkt.laps;
       raceLapStart = gemerkt.start; dashLapStart = gemerkt.dash;
       racePartialMs = gemerkt.part;
+      if (anzeige !== null) $('race-status').textContent = anzeige;
     }
   });
 
@@ -15379,7 +15748,7 @@
     if (!b) continue;
     b.addEventListener('click', () => {
       if (!audioCtx || !soundEnabled) {
-        $('snd-fuel-note').textContent = 'Ton ist aus \u2014 in den Optionen einschalten.';
+        $('snd-fuel-note').textContent = 'Ton ist aus, in den Optionen einschalten.';
         return;
       }
       $('snd-fuel-note').textContent = '';
@@ -15483,7 +15852,7 @@
       if (presetSet(id, val)) n++; else missing.push(id);
     }
     presetSay(p.label + ': ' + n + ' Regler gesetzt'
-              + (missing.length ? ' \u2014 nicht gefunden: ' + missing.join(', ') : ''));
+              + (missing.length ? ', nicht gefunden: ' + missing.join(', ') : ''));
     $('preset-json').value = JSON.stringify(presetRead());
   }
 
@@ -15493,7 +15862,7 @@
 
   $('preset-export').addEventListener('click', () => {
     $('preset-json').value = JSON.stringify(presetRead());
-    presetSay(presetControls().length + ' Regler hineingeschrieben \u2014 jetzt kopieren.');
+    presetSay(presetControls().length + ' Regler hineingeschrieben, jetzt kopieren.');
   });
 
   $('preset-import').addEventListener('click', () => {
@@ -15521,7 +15890,7 @@
     let n = 0;
     for (const [id, val] of Object.entries(cfg)) if (presetSet(id, val)) n++;
     presetSay(n + ' Regler gesetzt'
-              + (unknown.length ? ' \u2014 ' + unknown.length + ' unbekannt \u00fcbergangen' : ''));
+              + (unknown.length ? ', ' + unknown.length + ' unbekannt \u00fcbergangen' : ''));
   });
 
   $('preset-json').value = JSON.stringify(presetRead());

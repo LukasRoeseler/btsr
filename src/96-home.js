@@ -166,7 +166,7 @@
     if (!b) continue;
     b.addEventListener('click', () => {
       if (!audioCtx || !soundEnabled) {
-        $('snd-fuel-note').textContent = 'Ton ist aus \u2014 in den Optionen einschalten.';
+        $('snd-fuel-note').textContent = 'Ton ist aus, in den Optionen einschalten.';
         return;
       }
       $('snd-fuel-note').textContent = '';

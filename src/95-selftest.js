@@ -393,6 +393,11 @@
   // Statuszeile zaehlte einmal die laufende Runde mit, der Zaehler im Cockpit nicht: zwei
   // Anzeigen derselben Sache, die sich um eins unterschieden.
   stAdd('Rundenzählung fängt bei 0 an', () => {
+    // Auch die ANZEIGE merken, nicht nur die Variablen. Ohne das blieb
+    // "Rennen laeuft, Runde 3" im Schirm stehen, und die Sprachpruefung des naechsten
+    // Laufs meldete es als deutschen Text im englischen Modus - voellig zu Recht. Ein Test,
+    // der die Oberflaeche anfasst, muss sie auch zuruecklegen.
+    const anzeige = $('race-status') ? $('race-status').textContent : null;
     const gemerkt = { state: raceState, laps: raceLapTimes.slice(),
                       start: raceLapStart, dash: dashLapStart, part: racePartialMs };
     try {
@@ -410,6 +415,7 @@
       raceState = gemerkt.state; raceLapTimes = gemerkt.laps;
       raceLapStart = gemerkt.start; dashLapStart = gemerkt.dash;
       racePartialMs = gemerkt.part;
+      if (anzeige !== null) $('race-status').textContent = anzeige;
     }
   });
 

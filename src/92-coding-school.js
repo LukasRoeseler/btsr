@@ -223,7 +223,7 @@
     });
     psAccel = sm(psAccel); psSteer = sm(psSteer);
     psRenderEditors();
-    $('ps-status').textContent = 'Gegl\u00e4ttet \u2014 nochmal fahren und vergleichen.';
+    $('ps-status').textContent = 'Gegl\u00e4ttet, nochmal fahren und vergleichen.';
   };
   $('ps-preset').onchange = (ev) => {
     const v = ev.target.value;
@@ -240,7 +240,7 @@
     } else return;
     psLastRun = null;
     psRenderEditors(); psRenderResult();
-    $('ps-status').textContent = 'Beispiel geladen \u2014 jetzt fahren.';
+    $('ps-status').textContent = 'Beispiel geladen, jetzt fahren.';
     ev.target.value = '';
   };
 

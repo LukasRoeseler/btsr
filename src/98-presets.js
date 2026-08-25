@@ -93,7 +93,7 @@
       if (presetSet(id, val)) n++; else missing.push(id);
     }
     presetSay(p.label + ': ' + n + ' Regler gesetzt'
-              + (missing.length ? ' \u2014 nicht gefunden: ' + missing.join(', ') : ''));
+              + (missing.length ? ', nicht gefunden: ' + missing.join(', ') : ''));
     $('preset-json').value = JSON.stringify(presetRead());
   }
 
@@ -103,7 +103,7 @@
 
   $('preset-export').addEventListener('click', () => {
     $('preset-json').value = JSON.stringify(presetRead());
-    presetSay(presetControls().length + ' Regler hineingeschrieben \u2014 jetzt kopieren.');
+    presetSay(presetControls().length + ' Regler hineingeschrieben, jetzt kopieren.');
   });
 
   $('preset-import').addEventListener('click', () => {
@@ -131,7 +131,7 @@
     let n = 0;
     for (const [id, val] of Object.entries(cfg)) if (presetSet(id, val)) n++;
     presetSay(n + ' Regler gesetzt'
-              + (unknown.length ? ' \u2014 ' + unknown.length + ' unbekannt \u00fcbergangen' : ''));
+              + (unknown.length ? ', ' + unknown.length + ' unbekannt \u00fcbergangen' : ''));
   });
 
   $('preset-json').value = JSON.stringify(presetRead());

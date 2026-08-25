@@ -21,8 +21,8 @@
   $('setting-ontrack').addEventListener('change', (e) => {
     trackMode = e.target.checked ? 'on' : 'off';
     log('Modus: ' + (e.target.checked
-        ? 'Auf der Bahn \u2014 Streckensensor an (Byte 14 Bit 5).'
-        : 'Ohne Bahn \u2014 Streckensensor aus (Byte 14 Bit 7). Keine Streckencodes.'),
+        ? 'Auf der Bahn: Streckensensor an (Byte 14 Bit 5).'
+        : 'Ohne Bahn: Streckensensor aus (Byte 14 Bit 7). Keine Streckencodes.'),
         e.target.checked ? 'info' : 'err');
     showHudToast(e.target.checked ? 'AUF DER BAHN' : 'OHNE BAHN');
   });

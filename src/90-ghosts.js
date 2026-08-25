@@ -909,8 +909,8 @@
     if (car.ghost) { car.ghost.cutOut = true; car.ghost.attackUntil = 0; }
     if (car.rx) writeToCar(car, 0, 0, trackModeBit() | LIGHT_HEAD);
     log(garageLabel(car) + ': steht (' + reason + '). Auto anheben, zur\u00fcckstellen und '
-        + 'kurz sch\u00fctteln \u2014 dann f\u00e4hrt es weiter.', 'err');
-    showHudToast(garageLabel(car).toUpperCase() + ' STEHT \u2014 SCH\u00dcTTELN');
+        + 'kurz sch\u00fctteln, dann f\u00e4hrt es weiter.', 'err');
+    showHudToast(garageLabel(car).toUpperCase() + ' STEHT, SCH\u00dcTTELN');
   }
 
   function unparkCar(car, why) {
@@ -1552,7 +1552,7 @@
       car.railLight = LIGHT_HEAD | RAIL_MODE.b14bit | (brake > 0.05 ? LIGHT_BRAKE : 0);
       if (!la && !g.warnedNoLayout) {
         g.warnedNoLayout = true;
-        log(`${garageLabel(car)}: Leitplanken-Modus ohne eingescannte Strecke \u2014 `
+        log(`${garageLabel(car)}: Leitplanken-Modus ohne eingescannte Strecke: `
             + 'Vorausblick fehlt, das Auto bekommt nur das Modus-Bit', 'err');
       }
     } else {
