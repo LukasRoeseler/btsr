@@ -68,6 +68,38 @@ def even_v_banks(n_cyl):
     return [left, right]
 
 
+def banks_from_order(order, n_cyl, banking='half'):
+    """Bank split from a REAL firing order, as [[bank A angles], [bank B angles]].
+
+    The firing ANGLES are always evenly spaced at 720/n: every four-stroke crank fires at
+    that interval, cross-plane ones included. What a firing order actually determines is
+    which BANK each event lands in, and since each bank has its own manifold, that is where
+    the character comes from.
+
+    `banking` is the manufacturer's own cylinder numbering, and it is not a detail. GM counts
+    odd cylinders on the left bank and even on the right; Mercedes and BMW count the first
+    half on the left. Under the wrong convention the Ferrari 296 order 1-2-3-4-5-6 comes out
+    as three consecutive events on one bank (120/120/480 degrees) instead of a clean
+    even-firing 240 each -- the same order, read two ways, gives a broken engine and a
+    correct one.
+    """
+    step = 720.0 / n_cyl
+    left, right = [], []
+    for i, cyl in enumerate(order):
+        if banking == 'oddeven':
+            b = 0 if cyl % 2 else 1
+        else:
+            b = 0 if cyl <= n_cyl // 2 else 1
+        (left if b == 0 else right).append(i * step)
+    return [sorted(left), sorted(right)] if right else [sorted(left)]
+
+
+def inline_from_order(order, n_cyl):
+    """An inline engine has one manifold, so one bank, whatever the firing order."""
+    step = 720.0 / n_cyl
+    return [[i * step for i in range(n_cyl)]]
+
+
 def cross_plane_v8():
     """Firing order 1-5-4-8-6-3-7-2 at 90-degree intervals, split into its two banks.
 
@@ -159,6 +191,93 @@ CARS = {
         'pulse_ms': 4.2, 'bright': 0.38, 'noise': 0.18, 'noise_hz': 1800.0,
         'clatter': 0.22, 'clatter_hz': 2400.0, 'drive': 1.6,
         'scatter_t': 0.010, 'scatter_g': 0.09, 'crackle': 0.30,
+    },
+    # ---- Sieben Rennmotoren aus den gelieferten technischen Angaben ----
+    #
+    # Was aus den Daten kommt: Zylinderzahl, Bauart, Zuendfolge, Bankaufteilung und die
+    # Drehzahl. Hubraum, Bohrung und Hub gehen in dieses Modell NICHT ein - es synthetisiert
+    # Zuendereignisse und rechnet keine Gasdynamik, es gibt also keine Groesse, in die ein
+    # Hubraum eingehen koennte. Rohrlaenge, Impuls, Helligkeit, Rauschen, Klappern und
+    # Saettigung sind nach Gehoer gesetzt, mit einer Regel: aufgeladene Motoren bekommen
+    # weniger Helligkeit und mehr Ansaugrauschen, weil ein Lader im Abgasweg sitzt und wie
+    # ein Daempfer wirkt. Das ist keine Nachbildung eines Laders, sondern das Eingestehen
+    # seines Fehlens.
+    'c6r': {
+        'label': 'Corvette C6.R (LS7.R 7.0 V8, Cross-Plane)',
+        'banks': banks_from_order([1, 8, 7, 2, 6, 5, 4, 3], 8, 'oddeven'), 'cylinders': 8,
+        'rpms': {'idle': 1100, 'mid': 4000, 'high': 7200},
+        # Ein Stossstangenmotor mit langen Kruemmern: tief, viel Saettigung, hoerbarer
+        # Ventiltrieb. 29 Zoll ist die Laenge, die engine-sim fuer den LS ansetzt.
+        'primary_in': 32.0, 'res_q': 6.5, 'partials': 6, 'ir_ms': 62.0,
+        'pulse_ms': 4.2, 'bright': 0.52, 'noise': 0.07, 'noise_hz': 1450.0,
+        'clatter': 0.23, 'clatter_hz': 2100.0, 'drive': 3.2,
+        'scatter_t': 0.008, 'scatter_g': 0.07, 'crackle': 0.45,
+    },
+    'z06gt3r': {
+        'label': 'Corvette Z06 GT3.R (LT6.R 5.5 V8, Flat-Plane)',
+        # Nach der ANGEGEBENEN Kurbelwelle (Flat-Plane, 180 Grad), nicht nach der
+        # angegebenen Zuendfolge: die beiden widersprechen sich.
+        #
+        # 1-4-3-6-8-5-2-7 ergibt unter GM-Nummerierung (ungerade links, gerade rechts)
+        # 180/270/180/90 Grad je Bank, und das ist zeichengleich mit dem Cross-Plane-LS7.R
+        # des C6.R - beide Motoren waeren dann klanglich identisch und der Name "Flat-Plane"
+        # falsch. Die dokumentierte Werksfolge 1-5-4-8-3-7-2-6 ergibt unter
+        # Haelften-Nummerierung genau die gleichmaessigen 180 Grad, die hier gebaut werden.
+        'banks': even_v_banks(8), 'cylinders': 8,
+        'rpms': {'idle': 1300, 'mid': 5200, 'high': 8600},
+        'primary_in': 20.0, 'res_q': 8.5, 'partials': 7, 'ir_ms': 42.0,
+        'pulse_ms': 2.3, 'bright': 0.73, 'noise': 0.05, 'noise_hz': 3300.0,
+        'clatter': 0.11, 'clatter_hz': 3500.0, 'drive': 2.3,
+        'scatter_t': 0.004, 'scatter_g': 0.03, 'crackle': 0.62,
+    },
+    'amggt3': {
+        'label': 'Mercedes-AMG GT3 (M159 6.2 V8, Cross-Plane)',
+        'banks': banks_from_order([1, 5, 4, 2, 6, 3, 7, 8], 8, 'half'), 'cylinders': 8,
+        'rpms': {'idle': 1200, 'mid': 4400, 'high': 7700},
+        'primary_in': 29.0, 'res_q': 6.5, 'partials': 6, 'ir_ms': 54.0,
+        'pulse_ms': 3.7, 'bright': 0.58, 'noise': 0.06, 'noise_hz': 1700.0,
+        'clatter': 0.15, 'clatter_hz': 2500.0, 'drive': 2.9,
+        'scatter_t': 0.007, 'scatter_g': 0.055, 'crackle': 0.50,
+    },
+    'f296gt3': {
+        'label': 'Ferrari 296 GT3 (F163CE 3.0 V6 120 Grad, ohne Lader)',
+        'banks': banks_from_order([1, 2, 3, 4, 5, 6], 6, 'oddeven'), 'cylinders': 6,
+        'rpms': {'idle': 1400, 'mid': 5000, 'high': 8000},
+        'primary_in': 18.0, 'res_q': 5.0, 'partials': 5, 'ir_ms': 40.0,
+        'pulse_ms': 2.6, 'bright': 0.50, 'noise': 0.15, 'noise_hz': 2400.0,
+        'clatter': 0.09, 'clatter_hz': 3000.0, 'drive': 2.0,
+        'scatter_t': 0.005, 'scatter_g': 0.04, 'crackle': 0.55,
+    },
+    'm4gt3': {
+        'label': 'BMW M4 GT3 (P58 3.0 Reihen-6, ohne Lader)',
+        'banks': inline_from_order([1, 5, 3, 6, 2, 4], 6), 'cylinders': 6,
+        'rpms': {'idle': 1300, 'mid': 4300, 'high': 7200},
+        'primary_in': 23.5, 'res_q': 4.8, 'partials': 5, 'ir_ms': 46.0,
+        'pulse_ms': 3.1, 'bright': 0.48, 'noise': 0.13, 'noise_hz': 2200.0,
+        'clatter': 0.08, 'clatter_hz': 2700.0, 'drive': 2.1,
+        'scatter_t': 0.0045, 'scatter_g': 0.035, 'crackle': 0.52,
+    },
+    'huracan': {
+        'label': 'Huracan GT3 EVO2 / R8 LMS (5.2 V10, Split-Pin)',
+        'banks': banks_from_order([1, 6, 5, 10, 2, 7, 3, 8, 4, 9], 10, 'half'),
+        'cylinders': 10,
+        'rpms': {'idle': 1400, 'mid': 5400, 'high': 8700},
+        'primary_in': 46.0, 'res_q': 9.0, 'partials': 8, 'ir_ms': 50.0,
+        'pulse_ms': 1.9, 'bright': 0.76, 'noise': 0.05, 'noise_hz': 3700.0,
+        'clatter': 0.11, 'clatter_hz': 3900.0, 'drive': 2.2,
+        'scatter_t': 0.003, 'scatter_g': 0.028, 'crackle': 0.48,
+    },
+    'vantagegt3': {
+        'label': 'Aston Martin Vantage GT3 (M177 4.0 V8, ohne Lader)',
+        # Dieselbe Familie und dieselbe Zuendfolge wie der M159, kleiner und beim Original
+        # aufgeladen. Ohne Ladermodell bleibt der Cross-Plane-Takt, gedaempfter: engeres
+        # Rohr, weniger Helligkeit, mehr Ansaugrauschen.
+        'banks': banks_from_order([1, 5, 4, 2, 6, 3, 7, 8], 8, 'half'), 'cylinders': 8,
+        'rpms': {'idle': 1200, 'mid': 4200, 'high': 7200},
+        'primary_in': 26.0, 'res_q': 5.5, 'partials': 5, 'ir_ms': 48.0,
+        'pulse_ms': 3.5, 'bright': 0.46, 'noise': 0.14, 'noise_hz': 1900.0,
+        'clatter': 0.13, 'clatter_hz': 2400.0, 'drive': 2.5,
+        'scatter_t': 0.0065, 'scatter_g': 0.05, 'crackle': 0.58,
     },
     'f1': {
         'label': 'F1 V12, 18 000/min (nach Ferrari 412 T2)',
@@ -476,11 +595,21 @@ def dominant_hz(x):
     return float(f[lo + int(np.argmax(m[lo:]))])
 
 
-def main():
+def main(nur=None):
+    """nur: Liste von Motorschluesseln, sonst alle.
+
+    Mit Auswahl aufzurufen ist der Normalfall geworden: die vorhandenen .ogg-Dateien liegen
+    im Repo, und ein anderer ffmpeg-Stand wuerde sie beim Neurechnen ersetzen, ohne dass am
+    Modell etwas anders geworden ist. Die Zusammenfuehrung unten haelt die nicht gerechneten
+    Eintraege ohnehin fest.
+    """
     os.makedirs(OUT, exist_ok=True)
     os.makedirs(WORK, exist_ok=True)
     manifest = {}
-    for key, cfg in CARS.items():
+    auswahl = [(k, v) for k, v in CARS.items() if nur is None or k in nur]
+    fehlend = [k for k in (nur or []) if k not in CARS]
+    assert not fehlend, 'unbekannte Motoren: %s' % ', '.join(fehlend)
+    for key, cfg in auswahl:
         manifest[key] = {'label': cfg['label'], 'cylinders': cfg['cylinders'],
                          'source': 'vollständig synthetisiert (Modell nach engine-sim, MIT)',
                          'loops': {}}
@@ -551,4 +680,5 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    import sys
+    main(sys.argv[1:] or None)

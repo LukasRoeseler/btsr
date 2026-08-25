@@ -5,8 +5,11 @@ Gruppe fremdes Aufnahmematerial enthaelt.
 
 ## Vollstaendig synthetisch — kein Aufnahmematerial
 
-Sieben Motoren — Porsche (Boxer-6), BMW (Reihen-6 Turbo), Mustang (V8 Cross-Plane),
-GT3-V8 (Flat-Plane), GT3-V10, B-Max (Reihen-3 Turbo) und Formel 1 (V12) — sowie alle
+Vierzehn Motoren — Porsche (Boxer-6), BMW (Reihen-6 Turbo), Mustang (V8 Cross-Plane),
+GT3-V8 (Flat-Plane), GT3-V10, B-Max (Reihen-3 Turbo), Formel 1 (V12) und sieben
+Rennmotoren nach technischen Angaben (Corvette C6.R, Corvette Z06 GT3.R,
+Mercedes-AMG GT3, Ferrari 296 GT3, BMW M4 GT3, Huracan GT3 / R8 LMS,
+Aston Martin Vantage GT3) — sowie alle
 Effekte (Bremsenquietschen, Crash-Varianten, Schlagschrauber, Tankgeraeusch,
 Karosseriereparatur, Motorstart) sind von Grund auf gerechnet. Es wird nichts aus einer
 Aufnahme abgespielt.
@@ -22,6 +25,31 @@ bestimmt die Resonanz physikalisch als `c / (4 L)`, und die Zylinderzahlen, Dreh
 und Kurbelwellenwinkel stammen aus den Motordefinitionen von engine-sim. Die drei
 urspruenglichen Motoren behielten ihren Klang: fuer sie wurde die Rohrlaenge so gesetzt,
 dass sie die vorher von Hand eingestellten Resonanzen (148 / 150 / 95 Hz) genau trifft.
+
+### Die sieben Rennmotoren, und was an ihnen Angabe ist und was Wahl
+
+Aus den technischen Angaben kommen Zylinderzahl, Bauart, Kurbelwelle, Drehzahl und die
+Zuendfolge. Aus der Zuendfolge folgt die Bankaufteilung, und daraus kommt der Charakter,
+weil jede Bank ihren eigenen Kruemmer hat. Dabei entscheidet die Nummerierung des
+Herstellers mit: GM zaehlt ungerade Zylinder links, Mercedes und BMW die erste Haelfte.
+Unter der falschen Konvention wird aus der Ferrari-Folge `1-2-3-4-5-6` Unsinn
+(120/120/480 Grad je Bank statt gleichmaessig 240).
+
+**Nicht** aus den Angaben kommen Hubraum, Bohrung und Hub: das Modell synthetisiert
+Zuendereignisse und rechnet keine Gasdynamik, es gibt also keine Groesse, in die ein
+Hubraum eingehen koennte. Rohrlaenge, Impuls, Helligkeit, Rauschen, Klappern und Saettigung
+sind nach Gehoer gesetzt.
+
+Drei der sieben sind im Original aufgeladen (Ferrari 296 GT3, BMW M4 GT3, Aston Martin
+Vantage GT3). Dieses Modell hat **keinen Lader**: Geometrie, Kurbelwelle und Zuendfolge
+stimmen, der Ladedruck fehlt. Der Charakter der Bauart bleibt, das Pfeifen nicht.
+
+Beim Corvette Z06 GT3.R widersprechen sich zwei gelieferte Angaben: die Kurbelwelle ist als
+Flat-Plane (180 Grad) angegeben, die Zuendfolge `1-4-3-6-8-5-2-7` ergibt unter
+GM-Nummerierung aber 180/270/180/90 Grad je Bank — die Signatur einer Cross-Plane, und
+zeichengleich mit dem LS7.R des C6.R. Gebaut ist er nach der **Kurbelwelle**, weil die den
+Klang entscheidet und weil sonst zwei Motoren identisch klingen wuerden und der Name
+„Flat-Plane“ falsch waere.
 
 Das Modell folgt dem Ansatz von ange-yaghi/engine-sim (MIT-Lizenz):
 Zuendereignisse als Druckimpulse, gefaltet mit der Resonanz des

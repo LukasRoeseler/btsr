@@ -592,6 +592,12 @@
   .gt3-act:hover { background: #2b3a55; }
   .gt3-act.armed { background: #1c7a4d; color: #eafff1; }
   .gt3-act.warn { background: #b8860b; color: #100c02; }
+  /* Eigene Klasse statt .warn: die trug ein dunkles Goldbraun (#b8860b), und eine gelbe
+     Flagge, die braun aussieht, ist keine Flagge. Dieselbe satte Fuellung wie der aktive
+     Boxenknopf, nur in Gelb - der Knopf soll aus zwei Metern Entfernung sagen, was los ist.
+     .warn bleibt, sie haengt an anderen Knoepfen. */
+  .gt3-act.flagged { background: #e8c72a; color: #14161c; font-weight: 800; }
+  .gt3-act.flagged:hover { background: #f2d54a; }
   .gt3-click { cursor: pointer; }
   /* ---- Boxenstopp: die drei Kacheln, an denen gearbeitet wird ----
      Gruen und pulsierend heisst "wird gemacht", rot heisst "abgewaehlt", grau heisst "diese
@@ -1084,6 +1090,34 @@
     .gantry-lamp { width: 10px; height: 10px; }
   }
 
+  /* ---- Boxenschild auf dem Tacho ----
+     Nachempfunden dem Schild, das die Mannschaft an der Mauer heraushaelt: eine helle
+     Platte mit dickem Rand und wenigen, sehr grossen Buchstaben. Bewusst KEIN Symbol -
+     ein Schraubenschluessel oder eine Zapfsaeule ist aus dem Augenwinkel nicht zu lesen,
+     drei Grossbuchstaben sind es.
+     Die Platte liegt absolut ueber der Zahl, damit die Kachel ihre Groesse behaelt: waere
+     sie im Fluss, wuerde der ganze Schirm beim Einfahren in die Box springen. */
+  .gt3-speedwrap { position: relative; }
+  .gt3-board { position: absolute; inset: -2% -4%; display: none;
+    align-items: center; justify-content: center;
+    border-radius: 6px; font-weight: 900; letter-spacing: .06em;
+    font-size: clamp(20px, 5.2vw, 46px); line-height: 1;
+    font-family: system-ui, sans-serif; }
+  .gt3-board.on { display: flex; }
+  /* Boxenstopp: weisse Platte, roter Rand, schwarze Schrift. Das ist die Farbgebung der
+     Boxeneinfahrtsschilder und liest sich auch bei Sonne. */
+  .gt3-board.pit { background: #f4f6fb; color: #14161c;
+    box-shadow: inset 0 0 0 4px #d02a2a; }
+  /* Frei: gruene Platte, weisse Schrift, wie das Startsignal. */
+  .gt3-board.go { background: #1e9d4e; color: #ffffff;
+    box-shadow: inset 0 0 0 4px #eafff1; }
+  /* Ein kurzes Aufblitzen beim Umschalten, damit der Wechsel auffaellt, auch wenn man
+     gerade nicht hinsieht. Wer Bewegung abgeschaltet hat, bekommt die Platte ohne. */
+  @keyframes boardPop { 0% { transform: scale(.88); } 60% { transform: scale(1.04); }
+    100% { transform: scale(1); } }
+  .gt3-board.on { animation: boardPop .22s ease-out; }
+  @media (prefers-reduced-motion: reduce) { .gt3-board.on { animation: none; } }
+
   /* ---- Kennung je Auto: Farbe, Buchstabe, Name ----
      Der Farbklecks ist ein Knopf, nicht nur ein Punkt: er ist die Bedienung. 26 px, damit
      er auf dem Telefon zu treffen ist, und mit dem griechischen Buchstaben darin, damit
@@ -1141,7 +1175,12 @@
   .lb-head { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 8px; }
   .lb-title { font-size: 12px; color: var(--muted); text-transform: uppercase;
     letter-spacing: .07em; flex: 1; }
-  .lb-body svg { width: 100%; height: auto; display: block; }
+  /* Waagerecht scrollen im EIGENEN Kasten, nie die Seite: eine breite Zeichnung darf den
+     Schirm nicht mitziehen. */
+  .lb-body { overflow-x: auto; }
+  /* 640 px ist die Breite des viewBox. Darunter schrumpft die Schrift mit, und die ist das,
+     was man lesen will. Auf dem Telefon wird also gescrollt statt geschrumpft. */
+  .lb-body svg { width: 100%; min-width: 640px; height: auto; display: block; }
   .lb-note { font-size: 12px; color: var(--muted); margin: 10px 0 0 0; }
   /* Der Hinweis, dass ein Bild anklickbar ist. Ohne ihn probiert es niemand aus. */
   .mw-chart { position: relative; }
@@ -1581,6 +1620,10 @@
         <button type="button" class="gt3-act" id="race-act-flag">Gelbe Flagge</button>
       </div>
 
+      <!-- Das Schild liegt UEBER der Tachozahl, nicht daneben: waehrend eines
+           Boxenstopps steht das Auto, die Zahl ist also ohnehin 0 und sagt nichts. Sobald
+           der Service fertig ist, wird eine Sekunde lang GO gezeigt und danach die Zahl
+           wieder freigegeben. -->
       <div class="gt3-gear">
         <div class="gt3-rpm" id="race-rpm">1500</div>
         <!-- Die Gangzahl ist jetzt der Schalter fuer Automatik/Manuell. Ein eigener Knopf
@@ -1592,7 +1635,10 @@
                 class="gt3-manual" id="race-gear-m"></span><span id="race-gear-n">N</span></button>
         <div class="gt3-box" style="text-align:center">
           <div class="gt3-lbl">km/h</div>
-          <div class="gt3-val big" id="race-speed">0</div>
+          <div class="gt3-speedwrap">
+            <div class="gt3-val big" id="race-speed">0</div>
+            <div class="gt3-board" id="race-board" aria-live="polite"></div>
+          </div>
           <div class="gt3-abs" id="race-abs">ABS</div></div>
       </div>
 
@@ -3497,8 +3543,19 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="rain-volume-val">25%</span>
         </div></div>
-      <div class="opt-row"><div class="opt-label">Motorsound-Profil</div>
+      <div class="opt-row"><div class="opt-label">Motorsound-Profil<small>Die sieben
+          oben sind aus Zylinderzahl, Kurbelwelle und Z&uuml;ndfolge gerechnet. Bei den
+          aufgeladenen Originalen fehlt der Lader.</small></div>
         <select id="sound-profile">
+          <optgroup label="Rennmotoren, gerechnet">
+          <option value="amggt3">Mercedes-AMG GT3: V8, Cross-Plane</option>
+          <option value="c6r">Corvette C6.R: V8, Cross-Plane, OHV</option>
+          <option value="z06gt3r">Corvette Z06 GT3.R: V8, Flat-Plane</option>
+          <option value="vantagegt3">Aston Martin Vantage GT3: V8, Cross-Plane</option>
+          <option value="m4gt3">BMW M4 GT3: Reihen-6</option>
+          <option value="f296gt3">Ferrari 296 GT3: V6, 120 Grad</option>
+          <option value="huracan">Huracan GT3 / R8 LMS: V10, Split-Pin</option>
+          </optgroup>
           <option value="mustang" selected>Mustang, V8, Cross-Plane</option>
           <option value="corvette">Corvette C6: V8 (Aufnahme)</option>
           <option value="porsche_rec">Porsche, Boxer-6 (Aufnahme)</option>
@@ -3625,6 +3682,19 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="ghost-line-val">35%</span>
         </div></div>
+      <div class="opt-row"><div class="opt-label">Ghost: Linienmodell
+          <small>Kr&uuml;mmung nimmt den gr&ouml;&szlig;ten Radius. Rundenzeit rechnet ein
+          Geschwindigkeitsprofil und ist im Modell 1&ndash;8&nbsp;% schneller; ob auch auf
+          dem Teppich, sagen Rundenzeit und Abg&auml;nge.</small></div>
+        <div class="row" style="gap:6px; flex-wrap:wrap">
+          <button type="button" class="mw-preset sel" data-linemodel="curvature">Kr&uuml;mmung</button>
+          <button type="button" class="mw-preset" data-linemodel="laptime">Rundenzeit</button>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Ghost: lernt von Runde zu Runde
+          <small>Probiert jede Runde eine kleine &Auml;nderung an Tempo und Linie und
+          beh&auml;lt sie nur, wenn die Runde schneller war <b>und</b> kein Abgang dabei.
+          Nach einem Abgang wird zur&uuml;ckgenommen und vorsichtiger weiterprobiert.</small></div>
+        <label class="tgl"><input type="checkbox" id="ghost-learn-pace"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Ghost: seitlicher Versatz<small>Gegen gegenseitiges Rammen. Blind: kein Byte meldet die Querlage. Links = aus.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
@@ -4261,7 +4331,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.3.61</span></span>
+    <span class="foot-ver">v<span id="app-version">0.3.62</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
   </span>
   <span class="foot-right">
@@ -4749,9 +4819,11 @@
     "Der Code beschreibt die Reihenfolge der Teile und die Ausrichtung. Damit stellst du auf einem anderen Gerät dieselbe Strecke ein, ohne sie neu zu klicken.": "The code describes the order of the parts and the orientation. With it you set up the same track on another device without clicking it together again.",
     "Der Erstplatzierte fährt etwas langsamer.": "The leader drives a little slower.",
     "Der Klangcharakter kommt aus den": "The character of the sound comes from the",
+    "Diagramm gross": "Diagram, large",
     "Die Autos fahren in dieser Reihenfolge los. Die Einführungsrunde läuft mit Boxengassen-Tempo; sobald das erste Auto Start/Ziel überfährt, ist das Limit weg.": "The cars set off in this order. The formation lap runs at pit-lane pace; as soon as the first car crosses start/finish, the limit is gone.",
     "Die Controller-Belegung ist frei zuweisbar, Optionen → Controller. Hier steht, was gerade eingestellt ist.": "The controller bindings are freely assignable, Options → Controller. What is set right now is shown here.",
     "Die Ideallinie schickt einen Lenkanteil hinaus und nimmt an, dass das Auto dadurch weiter aussen oder innen sitzt.": "The racing line sends out a steering share and assumes the car therefore sits further out or further in.",
+    "Die sieben oben sind aus Zylinderzahl, Kurbelwelle und Zündfolge gerechnet. Bei den aufgeladenen Originalen fehlt der Lader.": "The seven at the top are computed from cylinder count, crankshaft and firing order. On the turbocharged originals, the boost is missing.",
     "Dieselbe Idee, eine Stufe größer. Ein autonomes Auto braucht keine Zeitkurve, sondern eine": "The same idea, one size up. An autonomous car does not need a curve over time but one",
     "Dieselben elf Größen, aus denen die mitgelieferten Motoren gerechnet sind, nur direkt zum Drehen. Das Modell läuft hier im Browser, also hörst du jede Änderung sofort, ohne dass eine Datei erzeugt werden muss.": "The same eleven quantities the bundled engines are computed from, only here you turn them directly. The model runs in the browser, so you hear every change at once, with no file to generate.",
     "Direktsteuerung mit der Maus": "Direct control with the mouse",
@@ -4818,6 +4890,8 @@
     "Ghost: Ideallinie": "Ghost: racing line",
     "Ghost: Kurvendrosselung": "Ghost: corner slowdown",
     "Ghost: Leitplanken-Modus": "Ghost: guard-rail mode",
+    "Ghost: Linienmodell": "Ghost: line model",
+    "Ghost: lernt von Runde zu Runde": "Ghost: learns lap by lap",
     "Ghost: seitlicher Versatz": "Ghost: lateral offset",
     "Grundlagen": "Basics",
     "Gummiband": "Rubber band",
@@ -4844,6 +4918,8 @@
     "Kalt nach Start und Boxenstopp, abgenutzt nach hartem Stint. Links = aus.": "Cold after the start and after a pit stop, worn after a hard stint. Left = off.",
     "Klick auf eine Zeile lässt die Lichter dieses Autos blinken": "Clicking a row makes that car's lights blink",
     "Kopieren": "Copy",
+    "Krümmung nimmt den größten Radius. Rundenzeit rechnet ein Geschwindigkeitsprofil und ist im Modell 1–8 % schneller; ob auch auf dem Teppich, sagen Rundenzeit und Abgänge.": "Curvature takes the largest possible radius. Lap time computes a speed profile and is 1-8 % quicker in the model; whether it is on the carpet too is answered by lap times and departures.",
+    "Krümmung": "Curvature",
     "Kurbelwelle": "Crankshaft",
     "Kurven an das Auto senden": "Send the curves to the car",
     "Kurven glätten": "Smooth the curves",
@@ -4929,6 +5005,7 @@
     "Physik-Modus aktivieren": "Enable physics mode",
     "Position über die Runden": "Position over the laps",
     "Primärrohr": "Primary pipe",
+    "Probiert jede Runde eine kleine Änderung an Tempo und Linie und behält sie nur, wenn die Runde schneller war": "Tries a small change to pace and line each lap and keeps it only if the lap was quicker",
     "Programmierschule": "Coding school",
     "Protokoll, Streckencodes, Physik, Töne: alles, was gemessen wurde, mit Herkunft.": "Protocol, track codes, physics, sounds: everything that was measured, with its source.",
     "Protokoll-Labor (NUS RX/TX)": "Protocol lab (NUS RX/TX)",
@@ -4960,6 +5037,7 @@
     "Rennen starten / abbrechen": "Start / abort race",
     "Rennen starten": "Start race",
     "Rennmodus": "Race mode",
+    "Rennmotoren, gerechnet": "Racing engines, computed",
     "Rennwürze": "Race spice",
     "Resonanz 116 Hz · Zündrate 300 Hz · Zyklusrate 37.5 Hz": "Resonance 116 Hz · firing rate 300 Hz · cycle rate 37.5 Hz",
     "Resonanz des Rohrs": "Resonance of the pipe",
@@ -4971,6 +5049,7 @@
     "Runde": "Lap",
     "Runden": "Laps",
     "Rundentempo der autonomen Autos.": "Lap pace of the autonomous cars.",
+    "Rundenzeit": "Lap time",
     "Runterschalten": "Shift down",
     "Scan stoppen": "Stop scan",
     "Schaden": "Damage",
@@ -4997,7 +5076,7 @@
     "Sonstige": "More",
     "Speichern und austauschen": "Save and exchange",
     "Speichern": "Save",
-    "Standard aus. Die ersten fünf sind Aufnahmen, der Rest ist gerechnet.": "Off by default. The first five are recordings, the rest are synthesised.",
+    "Standard aus. Die ersten fünf sind Aufnahmen, der Rest ist gerechnet.": "Off by default. The first five are recordings, the rest are computed.",
     "Standard: rechter Trigger = Gas, linker Trigger = Bremse, linker Stick = Lenkung, X (links) = runterschalten, B (rechts) = hochschalten: wie bei einem Xbox-Controller. Klicke \"Neu zuweisen\" und betätige dann den gewünschten Knopf/Stick/Trigger am Controller.": "Default: right trigger = throttle, left trigger = brake, left stick = steering, X (left) = shift down, B (right) = shift up: as on an Xbox controller. Click \"Reassign\" and then operate the button, stick or trigger you want on the controller.",
     "Start / Ziel": "Start / finish",
     "Start/Ziel herunterladen (SVG)": "Download start/finish (SVG)",
@@ -5149,6 +5228,7 @@
     "ist der Kachelzähler,": "is the tile counter,",
     "ist die Lichthupe.": "is the headlight flash.",
     "jedes": "every",
+    "kein Abgang dabei. Nach einem Abgang wird zurückgenommen und vorsichtiger weiterprobiert.": "no departure happened. After a departure it is rolled back and tried again more cautiously.",
     "kein Auto verbunden": "no car connected",
     "kein Controller erkannt": "no controller detected",
     "kein Ton": "no sound",
@@ -5262,8 +5342,15 @@
   }
 
   function i18nRoots() {
+    // lb-wrap gehoert dazu, obwohl es kein Tab ist: die Lightbox steht absichtlich
+    // ausserhalb von main, damit kein ausgeblendeter Tab sie mitnimmt - und stand damit
+    // auch ausserhalb der Uebersetzung. Ihr "Schliessen" blieb im englischen Modus deutsch,
+    // und der Selbsttest konnte es nicht melden, weil er dieselbe Liste benutzt: ein
+    // blinder Fleck, der sich selbst versteckt. Gefunden hat es ein Abzug ueber das ganze
+    // body, nicht ueber diese Liste.
     return [document.querySelector('header'), document.querySelector('main'),
-            $('app-footer'), $('help-panel'), $('race-summary')].filter(Boolean);
+            $('app-footer'), $('help-panel'), $('race-summary'),
+            $('lb-wrap')].filter(Boolean);
   }
 
   // Einen Teilbaum in die aktuelle Sprache bringen. Wird beim Umschalten fuer alles und
@@ -8293,6 +8380,191 @@
     return { alpha, iterations: iters, residual: moved, limit, span };
   }
 
+  // ---------------------------------------------------------------- Rundenzeitmodell
+  //
+  // Die Zielfunktion ist die Rundenzeit, gerechnet aus einem Geschwindigkeitsprofil. Das ist
+  // das uebliche quasistationaere Verfahren:
+  //
+  //   1. Kruemmung entlang der Linie          -> Kurvengrenze  v = sqrt(a_quer / kappa)
+  //   2. Vorwaertslauf, begrenzt durch Zug    -> v(i+1) <= sqrt(v(i)^2 + 2 a_zug ds)
+  //   3. Rueckwaertslauf, begrenzt durch Bremse
+  //   4. Zeit = Summe ds / v
+  //
+  // Und daraus folgt der spaete Scheitel von selbst: eine Kurve vor einer langen Geraden
+  // bekommt eine niedrigere Scheitelgeschwindigkeit, wenn dafuer die Ausfahrt frueher
+  // gerade wird, weil die Zeit auf der Geraden mehr wiegt als die im Bogen. Eine Kurve vor
+  // der naechsten Kurve wird anders gefahren als dieselbe Kurve vor einer Geraden - genau
+  // das war der Wunsch, "je Kurvenkombination", und es ist hier nicht einprogrammiert,
+  // sondern eine Folge der Zielfunktion.
+  //
+  // Die drei Beschleunigungen sind ein VERHAELTNIS, kein Messwert. Absolut kommt es auf sie
+  // nicht an: multipliziert man alle drei mit demselben Faktor, wird die Zeit kleiner und
+  // die LINIE bleibt dieselbe. Was die Linie formt, ist a_quer gegen a_zug und a_brems, und
+  // dafuer sind die Verhaeltnisse eines GT-Fahrzeugs eingesetzt: querbeschleunigen etwa so
+  // stark wie bremsen, antreiben deutlich schwaecher. Das ist eine Modellannahme und keine
+  // Messung an diesem Auto, denn kein Byte meldet die Querbeschleunigung.
+  const LT_A_LAT = 1.0;     // Querbeschleunigung, Bezugsgroesse
+  const LT_A_ACC = 0.45;    // Zug, deutlich schwaecher als Querhaftung
+  const LT_A_BRK = 1.10;    // Bremse, etwas stark
+  const LT_V_MAX = 12.0;    // Deckel, damit eine Gerade nicht unbegrenzt schnell wird
+
+  // Zeit fuer eine gegebene Linie. Gibt auch das Profil zurueck, damit der Editor es
+  // zeichnen kann - dieselbe Zahl, die optimiert wurde, ist dann auch die angezeigte.
+  function lapTimeOf(path, closed, o) {
+    const n = path.length;
+    const k = pathCurvature(path, closed);
+    const aLat = (o && o.aLat) || LT_A_LAT;
+    const aAcc = (o && o.aAcc) || LT_A_ACC;
+    const aBrk = (o && o.aBrk) || LT_A_BRK;
+    const vCap = (o && o.vMax) || LT_V_MAX;
+    const at = (i) => closed ? ((i % n) + n) % n : Math.max(0, Math.min(n - 1, i));
+    // Segmentlaengen: ds[i] ist der Weg von i nach i+1.
+    const ds = new Array(n);
+    for (let i = 0; i < n; i++) {
+      const a = path[i], b = path[at(i + 1)];
+      ds[i] = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    }
+    const v = new Array(n);
+    for (let i = 0; i < n; i++) {
+      v[i] = k[i] > 1e-9 ? Math.min(vCap, Math.sqrt(aLat / k[i])) : vCap;
+    }
+    // Zwei Durchlaeufe je Richtung. Auf einer geschlossenen Runde reicht einer nicht: die
+    // Bremszone vor Kurve eins kann hinter der Ziellinie beginnen, und die Information muss
+    // einmal herumlaufen. Zwei genuegen, weil kein Bremsweg laenger als eine halbe Runde
+    // ist; bei einer offenen Strecke ist der zweite Durchlauf ohne Wirkung und billig.
+    const laeufe = closed ? 2 : 1;
+    for (let r = 0; r < laeufe; r++) {
+      for (let i = 0; i < n; i++) {
+        const j = at(i + 1);
+        const moeglich = Math.sqrt(v[i] * v[i] + 2 * aAcc * ds[i]);
+        if (v[j] > moeglich) v[j] = moeglich;
+      }
+      for (let i = n - 1; i >= 0; i--) {
+        const j = at(i + 1);
+        const moeglich = Math.sqrt(v[j] * v[j] + 2 * aBrk * ds[i]);
+        if (v[i] > moeglich) v[i] = moeglich;
+      }
+    }
+    let t = 0;
+    for (let i = 0; i < n; i++) {
+      // Mittlere Geschwindigkeit im Segment, nicht die am Punkt: bei kraeftigem Bremsen
+      // waere die Punktgeschwindigkeit deutlich daneben.
+      const vm = Math.max(1e-6, (v[i] + v[at(i + 1)]) / 2);
+      t += ds[i] / vm;
+    }
+    return { time: t, v, ds };
+  }
+
+  // Die schnellste Linie, gesucht durch oertliche Suche auf der Rundenzeit.
+  //
+  // Gestoert wird NICHT ein einzelner Punkt, sondern eine glatte Beule (erhobener Kosinus)
+  // ueber ein Fenster. Zwei Gruende, und beide sind praktisch: eine punktweise Suche macht
+  // die Linie zackig, weil jeder Punkt fuer sich ein klitzekleines Zeitgewinnchen findet,
+  // und sie braucht viel mehr Auswertungen fuer dieselbe Bewegung. Eine Beule verschiebt
+  // ein ganzes Kurvenstueck auf einmal, und das ist die Bewegung, um die es geht.
+  function lapTimeLine(pts, nrm, opts) {
+    const o = opts || {};
+    const limit = (o.limit !== undefined ? o.limit : TRACK_HALF_W - 3);
+    const closed = o.closed;
+    const n = pts.length;
+    // Startpunkt ist die kruemmungsaermste Linie. Bei null anzufangen waere ehrlicher
+    // aussehend, aber die oertliche Suche braucht dann viele Male mehr Auswertungen fuer
+    // dasselbe Ergebnis - und die Minimalkruemmung ist eine gute Naeherung, nur eben nicht
+    // das Optimum.
+    const start = idealLine(pts, nrm, { closed, limit });
+    const alpha = start.alpha.slice();
+    const bahn = (a) => pts.map((p, i) => [p.x + nrm[i].x * a[i], p.y + nrm[i].y * a[i]]);
+    let best = lapTimeOf(bahn(alpha), closed, o).time;
+    const startZeit = best;
+
+    // Fensterbreite in Punkten. Bei etwa 14 Punkten je Kachel ist 10 knapp eine
+    // Kachellaenge - die Groessenordnung eines Kurveneingangs.
+    const breiten = o.widths || [18, 10, 6];
+    const runden = o.sweeps || 4;
+    let schritt = o.step || limit * 0.35;
+    let auswertungen = 0, angenommen = 0;
+
+    for (let runde = 0; runde < runden; runde++) {
+      for (const w of breiten) {
+        // Beulenmitten ueberlappend setzen, sonst bleiben die Naehte zwischen zwei Beulen
+        // unangetastet.
+        const versatz = Math.max(1, Math.floor(w / 2));
+        for (let c = 0; c < n; c += versatz) {
+          for (const richtung of [1, -1]) {
+            const probe = alpha.slice();
+            let irgendwas = false;
+            for (let d = -w; d <= w; d++) {
+              const i = closed ? ((c + d) % n + n) % n : c + d;
+              if (i < 0 || i >= n) continue;
+              if (!closed && (i === 0 || i === n - 1)) continue;
+              // Erhobener Kosinus: in der Mitte volle Hoehe, an den Raendern null, also
+              // kein Knick am Uebergang zur unveraenderten Linie.
+              const g = 0.5 * (1 + Math.cos(Math.PI * d / (w + 1)));
+              const v = probe[i] + richtung * schritt * g;
+              probe[i] = Math.max(-limit, Math.min(limit, v));
+              irgendwas = true;
+            }
+            if (!irgendwas) continue;
+            const t = lapTimeOf(bahn(probe), closed, o).time;
+            auswertungen++;
+            if (t < best - 1e-9) {
+              best = t;
+              for (let i = 0; i < n; i++) alpha[i] = probe[i];
+              angenommen++;
+            }
+          }
+        }
+      }
+      // Schrittweite halbieren: grob suchen, dann feiner. Ohne das bleibt die Suche bei
+      // einer Schrittweite haengen, die zu gross ist, um den letzten Zentimeter zu finden.
+      schritt *= 0.5;
+    }
+
+    const prof = lapTimeOf(bahn(alpha), closed, o);
+    const span = Math.max(...alpha.map(Math.abs));
+    return { alpha, limit, span, lapTime: best, startLapTime: startZeit,
+             gain: (startZeit - best) / startZeit, v: prof.v,
+             evals: auswertungen, accepted: angenommen };
+  }
+
+  // ---------------------------------------------------------------- Modellwahl
+  //
+  // 'curvature' ist das bisherige Modell, minimale Kruemmung, also der groesste moegliche
+  // Radius. 'laptime' minimiert die Rundenzeit ueber ein Geschwindigkeitsprofil.
+  //
+  // Was gemessen ist und was nicht, damit die Wahl auf Zahlen steht und nicht auf einem
+  // Versprechen:
+  //
+  //   Gemessen: 'laptime' ist im eigenen Mass auf jedem geprueften Layout schneller, 1,2 bis
+  //   7,8 Prozent (SR6, SG2R2G2R2, SGR2GR2GRG, SHG4R4LG, SJG4L4RG). Kosten 15 bis 55 ms.
+  //
+  //   NICHT belegt: dass der Scheitel dabei spaeter liegt. Ueber zwoelf Kurvenzuege
+  //   verschiebt er sich im Mittel um +0,045 der Kurvenlaenge, zwei spaeter und zwei
+  //   frueher - das ist kein Effekt. Der Grund ist die Groesse der Bahn: bei 25 cm Breite
+  //   und 43 cm Kachellaenge liegt die Linie fast ueber die ganze Kurve am Rand, es ist
+  //   also kaum Platz, einen Scheitel zu verschieben. Der Zeitgewinn ist echt, kommt aber
+  //   nicht aus dem Mechanismus der Lehrbuchbilder.
+  //
+  //   Und beides sind MODELLZAHLEN. Ob die Linie auf dem Teppich schneller ist, sagt nur die
+  //   Rundenzeit gegen die Abgaenge - dafuer ist der Schalter da.
+  let lineModel = 'curvature';
+
+  function setLineModel(m) {
+    if (m !== 'curvature' && m !== 'laptime') return;
+    lineModel = m;
+  }
+  function getLineModel() { return lineModel; }
+
+  // Beide Modelle hinter einem Aufruf. Editor und Ghosts gehen hier durch, damit die
+  // gezeichnete und die gefahrene Linie nicht auseinanderlaufen koennen.
+  function buildLine(pts, nrm, opts) {
+    const o = opts || {};
+    const m = o.model || lineModel;
+    const line = m === 'laptime' ? lapTimeLine(pts, nrm, o) : idealLine(pts, nrm, o);
+    line.model = m;
+    return line;
+  }
+
   // ---- Generic line chart -> SVG string ----
   // Same contract as renderTrackPreview below: build a template string, let the caller
   // inject it, size the viewBox to the data and NEVER measure the DOM. Not measuring is
@@ -8591,7 +8863,7 @@
       //    is about to rise. Curvature is read from the ideal line itself, not the
       //    centreline — the whole point of the line is that it changes the radius, so using
       //    the centreline would colour a corner the car no longer takes that tightly.
-      const line = idealLine(pts, nrm, { closed });
+      const line = buildLine(pts, nrm, { closed });
       const ideal = pts.map((p, i) => [p.x + nrm[i].x * line.alpha[i],
                                        p.y + nrm[i].y * line.alpha[i]]);
       const brake = brakeProfile(ideal, closed);
@@ -9455,7 +9727,11 @@
     // During the formation lap this crossing is the START of the race, not a lap.
     if (raceFormationLap) { endFormationLap(); return; }
     if (r.lapStart !== null) {
-      r.laps.push({ lap: r.laps.length + 1, ms: now - r.lapStart, off: r.offLap || 0 });
+      const ms = now - r.lapStart, offs = r.offLap || 0;
+      r.laps.push({ lap: r.laps.length + 1, ms, off: offs });
+      // Genau hier liegen Rundenzeit und Abgangszahl zusammen vor, und beides braucht die
+      // Annahmeregel des Lernens: schneller UND heil. Eine Runde ist eine Auswertung.
+      learnSettle(car, ms, offs);
     }
     r.offLap = 0;
     r.lapStart = now;
@@ -10696,6 +10972,7 @@
       }
 
       refreshPitThrottleLock();
+      pitBoard();
       const st = $('pitstop-status');
       if (st) st.textContent = pitReady ? 'Fertig, losfahren!' : pitTaskText();
       updateDamageFuelUI();
@@ -10718,6 +10995,42 @@
       e.target.value = pitMarkerCode === null ? '' : '0x' + pitMarkerCode.toString(16).padStart(2, '0');
     }
   });
+
+  // ---- Das Schild auf dem Tacho ----
+  //
+  // Drei Zustaende und nur drei: es wird gearbeitet, es ist gerade fertig geworden, oder
+  // das Schild ist weg. Die eine Sekunde GO haengt an einem Zeitpunkt und nicht an einem
+  // Zaehler, damit sie auch stimmt, wenn zwischendurch ein Bild ausgelassen wird.
+  let pitGoUntil = 0;
+
+  function pitBoard() {
+    const el = $('race-board');
+    if (!el) return;
+    const arbeitet = pitState === 'servicing' && !pitReady;
+    if (arbeitet) {
+      // Solange noch etwas offen ist. pitReady ist genau dann wahr, wenn Tank, Reifen und
+      // Schaden alle abgehakt sind, also braucht es hier keine zweite Bedingung.
+      pitGoUntil = 0;
+      el.className = 'gt3-board on pit';
+      el.textContent = 'PIT';
+      return;
+    }
+    if (pitState === 'servicing' && pitReady) {
+      // Erst beim Umschlag den Zeitpunkt setzen, nicht bei jedem Durchlauf: sonst wuerde
+      // das GO stehen bleiben, solange das Auto in der Box wartet.
+      if (!pitGoUntil) pitGoUntil = Date.now() + 1000;
+    }
+    if (pitGoUntil && Date.now() < pitGoUntil) {
+      el.className = 'gt3-board on go';
+      el.textContent = 'GO';
+      return;
+    }
+    el.className = 'gt3-board';
+    el.textContent = '';
+  }
+  // Eigener Takt, weil die Sekunde GO auch dann ablaufen muss, wenn der Boxenzustand sich
+  // nicht mehr aendert - die Schleife oben laeuft nur waehrend des Service.
+  setInterval(pitBoard, 120);
 
   // What is happening RIGHT NOW, task by task, with a tick for the finished ones. The old
   // text only said how much fuel and repair had accumulated, which does not answer
@@ -11515,7 +11828,13 @@
   // crossfaded by RPM. The loops are fully synthetic — generated by tools/engine_synth.py
   // from a firing-event model, no recorded material — see audio/CREDITS.md.
   const SAMPLE_CARS = ['porsche', 'bmw', 'mustang', 'corvette',
-                       'gt3v8', 'gt3v10', 'bmax', 'f1', 'porsche_rec'];
+                       'gt3v8', 'gt3v10', 'bmax', 'f1', 'porsche_rec',
+                       // Sieben Rennmotoren, aus den technischen Angaben gerechnet: die
+                       // Bankaufteilung folgt aus der Zuendfolge, und daraus kommt der
+                       // Charakter, weil jede Bank ihren eigenen Kruemmer hat. Erzeugt von
+                       // tools/engine_synth.py, kein aufgenommenes Material.
+                       'c6r', 'z06gt3r', 'amggt3', 'f296gt3', 'm4gt3', 'huracan',
+                       'vantagegt3'];
   const BANDS = ['idle', 'mid', 'high'];
   let engineVolume = 0.7;
   const sampleEngine = { buffers: {}, rpmScale: {}, nodes: null, over: null, car: null,
@@ -13012,6 +13331,11 @@
     line: 0.35,
     // Rennwuerze. Ein Regler, fuenf Bausteine - siehe ghostSpice() weiter unten.
     spice: 0.4,
+    // Welches Linienmodell die Ghosts fahren. Der Editor zeichnet dasselbe.
+    lineModel: 'curvature',
+    // Lernen von Runde zu Runde, standardmaessig aus: es aendert das Fahrverhalten ueber
+    // ein Rennen hinweg, und das soll niemand ungefragt bekommen.
+    learnPace: false,
     leaderBrake: false, // hold the leader back for a while
     leaderBrakePct: 0.10,
     // Default ON: the measurement says this is the mode in which the car holds the track by
@@ -13312,7 +13636,7 @@
     if (b) {
       b.textContent = flagState === 'yellow' ? 'Freigeben'
                     : flagState === 'restart' ? 'Anfahrt' : 'Gelbe Flagge';
-      b.classList.toggle('warn', flagState !== 'green');
+      b.classList.toggle('flagged', flagState !== 'green');
       // Waehrend der Anfahrt ist der Knopf gesperrt: die Ampel laeuft, ein zweites
       // Umschalten mitten hinein waere ein Zustand, den niemand gemeint hat.
       b.disabled = flagState === 'restart';
@@ -13576,13 +13900,20 @@
   function ghostLine() {
     const tiles = currentTrackTiles;
     if (!tiles || tiles.length < 3) return null;
-    if (lineCache && lineCache.tiles === tiles) return lineCache;
+    // Das Modell gehoert in den Schluessel: sonst behaelt der Zwischenspeicher die Linie
+    // des alten Modells, und der Schalter waere ohne Wirkung, bis sich das Layout aendert.
+    if (lineCache && lineCache.tiles === tiles
+        && lineCache.model === getLineModel()) return lineCache;
     const pts = trackCenterline(tiles);
     if (pts.length < 8) return null;
     const nrm = trackNormals(pts);
     const first = pts[0], last = pts[pts.length - 1];
-    const closed = Math.hypot(last.x - first.x, last.y - first.y) < 60;
-    const line = idealLine(pts, nrm, { closed });
+    // 2 cm, nicht 60 Zeichnungseinheiten. Die 60 sind 64,5 cm, und eine Kachel ist
+    // 43 cm lang: eine Strecke, bei der genau ein Teil fehlt, galt damit als geschlossen.
+    // Im Editor war dieselbe Zahl schon berichtigt, hier stand sie noch - und hier ist sie
+    // folgenreicher, weil die Ghosts danach im Kreis herum vorausschauen.
+    const closed = Math.hypot(last.x - first.x, last.y - first.y) < 2 * TRACK_UNITS_PER_CM;
+    const line = buildLine(pts, nrm, { closed });
     const path = pts.map((p, i) => [p.x + nrm[i].x * line.alpha[i],
                                     p.y + nrm[i].y * line.alpha[i]]);
     const brake = brakeProfile(path, closed);
@@ -13598,7 +13929,9 @@
       r.count++;
     });
     lineCache = { tiles, alpha: line.alpha, limit: line.limit, span: line.span,
-                  brake, ranges, closed, points: pts.length };
+                  brake, ranges, closed, points: pts.length,
+                  model: line.model, lapTime: line.lapTime || null,
+                  gain: line.gain || 0 };
     return lineCache;
   }
 
@@ -13611,6 +13944,111 @@
     return r.start + k;
   }
 
+  // ---------------------------------------------------------------- Lernen je Runde
+  //
+  // (1+1)-Strategie, das einfachste, was hier funktioniert: ein Elternwert, ein Kind je
+  // Runde, behalten oder verwerfen. Kein Verlauf, keine Population - eine Runde ist eine
+  // Auswertung, und in einem Rennen gibt es davon zwanzig, nicht zwanzigtausend. Alles
+  // Groessere waere ein Verfahren, das nie genug Daten bekommt.
+  //
+  // Zwei Groessen werden gedreht, und zwar genau die zwei, die dieses Auto ueberhaupt hat:
+  //
+  //   pace  - Faktor auf das Grundtempo. Mehr Tempo, mehr Risiko.
+  //   push  - Faktor auf den Ausschlag der Ideallinie. Weiter aussen anstellen und
+  //           weiter innen scheiteln kostet Lenkanteil, und Lenkanteil ist das, was das
+  //           Auto von der Bahn holt.
+  //
+  // Die Annahmeregel ist der eigentliche Inhalt: schneller UND kein Abgang. Ein Abgang
+  // macht den Versuch ungueltig, egal wie schnell die Runde war. Sonst lernt das Verfahren
+  // zuverlaessig, dass Abfliegen sich lohnt, solange man vorher schnell genug war.
+  const LEARN_SIGMA0 = 0.055;   // Anfangsschrittweite, in Anteilen
+  const LEARN_SIGMA_MIN = 0.012;
+  const LEARN_SIGMA_MAX = 0.10;
+  // Harte Deckel. pace nach oben, weil ein Ghost, der schneller faehrt als der Spieler es
+  // koennte, kein Gegner mehr ist, sondern ein Aergernis.
+  const LEARN_PACE = [0.75, 1.30];
+  const LEARN_PUSH = [0.40, 1.25];
+
+  function learnState(car) {
+    if (!car.learn) {
+      car.learn = { pace: 1, push: 1, sigma: LEARN_SIGMA0,
+                    bestMs: null, tryPace: null, tryPush: null,
+                    kept: 0, rejected: 0, offs: 0, tries: 0 };
+    }
+    return car.learn;
+  }
+
+  // Der Kippwert aus der Messung im Entwicklertab, als Obergrenze fuer den Lenkanteil.
+  // Ohne Messung wird NICHT geraten: dann gilt ein vorsichtiger Vorgabewert, und der Grund
+  // steht daneben. Ein erfundener Kippwert waere schlimmer als keiner, weil er wie eine
+  // Messung aussieht.
+  function learnSteerCap() {
+    const zeilen = (typeof lat === 'object' && lat && lat.rows) ? lat.rows : [];
+    const gekippt = zeilen.find(r => !r.ok);
+    if (gekippt) {
+      // Kippwert vorhanden: die Haelfte davon, wie die Doku es fuer die Ideallinie
+      // festhaelt.
+      return Math.max(0.15, Math.min(1, gekippt.steer * 0.5));
+    }
+    const hielten = zeilen.filter(r => r.ok);
+    if (hielten.length) {
+      // Gemessen, aber nie gekippt: dann ist der hoechste haltende Wert selbst die Grenze.
+      // Ihn zu halbieren waere zu vorsichtig, ihn zu ueberschreiten unbelegt - wir wissen
+      // nur, dass es BIS hierhin haelt, und nicht, wo es aufhoert.
+      return Math.max(0.15, Math.min(1, hielten[hielten.length - 1].steer));
+    }
+    // Keine Messung: ein vorsichtiger Vorgabewert, und er ist als solcher gekennzeichnet.
+    // Einen Kippwert zu erfinden waere schlimmer als keinen zu haben, weil er wie eine
+    // Messung aussieht. Messen laesst er sich im Entwicklertab, "Querablage".
+    return 0.55;
+  }
+
+  // Vor jeder Runde einen Versuch ziehen.
+  function learnPropose(car) {
+    if (!ghostCfg.learnPace || !car.ghost) return;
+    const L = learnState(car);
+    const w = () => (Math.random() * 2 - 1 + Math.random() * 2 - 1) / 2;   // grob normal
+    L.tryPace = Math.max(LEARN_PACE[0], Math.min(LEARN_PACE[1], L.pace + w() * L.sigma));
+    L.tryPush = Math.max(LEARN_PUSH[0], Math.min(LEARN_PUSH[1], L.push + w() * L.sigma));
+    L.tries++;
+  }
+
+  // Nach jeder Runde bewerten. ms = Rundenzeit, offs = Abgaenge in DIESER Runde.
+  function learnSettle(car, ms, offs) {
+    if (!ghostCfg.learnPace || !car.ghost) return;
+    const L = learnState(car);
+    if (L.tryPace === null) { L.bestMs = L.bestMs === null ? ms : Math.min(L.bestMs, ms); return; }
+    if (offs > 0) {
+      // Abgang: Versuch verworfen, UND zurueckgenommen. Beides, nicht nur eins: nach einem
+      // Abflug ist die Elternstellung selbst verdaechtig, weil der Versuch von ihr nur
+      // wenig entfernt war. Ein Prozent Tempo weniger ist billig, ein Abflug nicht.
+      L.rejected++; L.offs++;
+      L.pace = Math.max(LEARN_PACE[0], L.pace * 0.97);
+      L.push = Math.max(LEARN_PUSH[0], L.push * 0.95);
+      L.sigma = Math.max(LEARN_SIGMA_MIN, L.sigma * 0.6);
+      log(garageLabel(car) + ': Abgang, Versuch verworfen und vorsichtiger.', 'info');
+    } else if (L.bestMs === null || ms < L.bestMs) {
+      // Schneller und heil: behalten, und den naechsten Schritt etwas groesser wagen.
+      L.pace = L.tryPace; L.push = L.tryPush;
+      L.bestMs = ms; L.kept++;
+      L.sigma = Math.min(LEARN_SIGMA_MAX, L.sigma * 1.15);
+    } else {
+      L.rejected++;
+      L.sigma = Math.max(LEARN_SIGMA_MIN, L.sigma * 0.9);
+    }
+    L.tryPace = null; L.tryPush = null;
+    learnPropose(car);
+  }
+
+  // Die zwei Faktoren, die der Fahrer gerade benutzt: waehrend einer Runde der Versuch,
+  // sonst der Elternwert.
+  function learnFactors(car) {
+    if (!ghostCfg.learnPace || !car.learn) return { pace: 1, push: 1 };
+    const L = car.learn;
+    return { pace: L.tryPace === null ? L.pace : L.tryPace,
+             push: L.tryPush === null ? L.push : L.tryPush };
+  }
+
   function ghostLineOffset(car) {
     const lc = ghostLine();
     const g = car.ghost;
@@ -13621,7 +14059,13 @@
     // und dann waere der Ausschlag der Ghost-Lenkung kuenstlich klein. Der Regler
     // "Ideallinie" soll die ganze gefundene Linie bedeuten, nicht einen Bruchteil davon.
     const ref = Math.max(1e-6, lc.span || lc.limit);
-    return Math.max(-1, Math.min(1, lc.alpha[i] / ref));
+    const roh = Math.max(-1, Math.min(1, lc.alpha[i] / ref));
+    // Lernfaktor und die harte Grenze aus dem Kippwert. Die Grenze steht NACH dem Faktor:
+    // das Lernen darf das Tempo hochtreiben, aber nicht ueber die Lenkung hinaus, bei der
+    // das Auto gemessen die Bahn verlaesst.
+    const f = learnFactors(car);
+    const cap = learnSteerCap();
+    return Math.max(-cap, Math.min(cap, roh * f.push));
   }
 
   // Bremsbedarf an der Stelle, an der das Auto gerade ist: 0 = freie Fahrt, 1 = voll
@@ -13795,6 +14239,10 @@
       // unterschiedlich schnellen Gegnern aufstellen, statt dass alle gleich schnell fahren.
       let target = (car.ghostSpeed === undefined || car.ghostSpeed === null)
         ? ghostCfg.speed : car.ghostSpeed;
+      // Der gelernte Tempofaktor. Er steht VOR der gelben Flagge, damit das Limit unter
+      // Gelb wirklich das Limit ist: ein lernender Ghost darf sich nicht ueber eine
+      // Neutralisierung hinwegsetzen.
+      target = Math.max(0.05, Math.min(1, target * learnFactors(car).pace));
       // Gelbe Flagge: alle auf denselben Wert, und zwar bevor irgendetwas anderes daran
       // dreht. Gleiches Tempo fuer alle heisst von selbst "kein Ueberholen".
       const underYellow = flagState !== 'green';
@@ -14008,27 +14456,101 @@
   //
   // Nur REINE Funktionen, kein Zustand, kein Schreibzugriff. Was hier steht, kann eine
   // Pruefung aufrufen, ohne ein Auto zu verbinden oder auf eine Zeitmessung zu warten.
+  // ---- Linienmodell und Lernen bedienen ----
+  //
+  // Die Modellwahl geht durch setLineModel(), damit der Editor dieselbe Linie zeichnet, die
+  // gefahren wird. Der Zwischenspeicher muss dabei fallen: er haelt sonst die Linie des
+  // alten Modells fest, und der Schalter waere ohne Wirkung.
+  for (const b of document.querySelectorAll('[data-linemodel]')) {
+    b.addEventListener('click', () => {
+      const m = b.dataset.linemodel;
+      ghostCfg.lineModel = m;
+      setLineModel(m);
+      lineCache = null;
+      for (const o of document.querySelectorAll('[data-linemodel]')) {
+        o.classList.toggle('sel', o.dataset.linemodel === m);
+      }
+      // Editor neu zeichnen: die Linie hat sich gerade geaendert, und die gezeichnete muss
+      // die gefahrene sein.
+      try { refreshTrackPreview(); } catch (e) { /* Editor nicht im Dokument */ }
+      const lc = ghostLine();
+      log('Linienmodell: ' + (m === 'laptime' ? 'Rundenzeit' : 'Kr\u00fcmmung')
+          + (lc && lc.lapTime ? ', Modellzeit ' + lc.lapTime.toFixed(2)
+             + ' (' + (lc.gain * 100).toFixed(1) + ' % schneller als Kr\u00fcmmung)' : ''),
+          'info');
+    });
+  }
+
+  if ($('ghost-learn-pace')) {
+    $('ghost-learn-pace').addEventListener('change', (e) => {
+      ghostCfg.learnPace = e.target.checked;
+      if (!ghostCfg.learnPace) {
+        // Ausschalten heisst zurueck auf Werk: sonst bliebe ein gelernter Faktor stehen,
+        // ohne dass irgendwo sichtbar waere, dass er wirkt.
+        garage.forEach(c => { c.learn = null; });
+        log('Ghost-Lernen aus, Faktoren zur\u00fcckgesetzt.', 'info');
+      } else {
+        garage.forEach(c => { if (c.ghost) learnPropose(c); });
+        log('Ghost-Lernen an: je Runde ein Versuch, behalten nur wenn schneller und ohne '
+            + 'Abgang. Lenkgrenze ' + learnSteerCap().toFixed(2)
+            + ((lat.rows && lat.rows.length) ? ' (gemessen).' : ' (Vorgabe, nicht gemessen).'),
+            'info');
+      }
+    });
+  }
+
   window.OMEGA_TEST = {
     TILE_TYPE, TILE_LABEL,
     codeToTrack, trackToCode,
     tileTightness, tileTurnDeg, tileIsCurve, ghostTileLenFactor,
     crc8, buildCommandPacket,
+    // Die zwei Linienmodelle und ihre Bausteine, damit beide gegeneinander messbar sind:
+    // kruemmungsaermste Linie gegen rundenzeitschnellste, auf demselben Layout.
+    idealLine, lapTimeLine, lapTimeOf, trackCenterline, trackNormals, pathCurvature,
+    setLineModel, getLineModel, buildLine,
+    // Das Lernen ohne Auto und ohne Rennen durchspielen: Runden hineingeben, sehen was
+    // angenommen wird. Genau so ist die Annahmeregel pruefbar.
+    learnSim(runden) {
+      const car = { ghost: {}, device: { id: 'sim', name: 'sim' }, tag: 'Sim' };
+      const merk = ghostCfg.learnPace;
+      ghostCfg.learnPace = true;
+      try {
+        learnPropose(car);
+        const spur = [];
+        for (const r of runden) {
+          const f = learnFactors(car);
+          learnSettle(car, r.ms, r.off || 0);
+          spur.push({ ms: r.ms, off: r.off || 0,
+                      probePace: +f.pace.toFixed(4), probePush: +f.push.toFixed(4),
+                      pace: +car.learn.pace.toFixed(4), push: +car.learn.push.toFixed(4),
+                      sigma: +car.learn.sigma.toFixed(4), best: car.learn.bestMs });
+        }
+        return { spur, kept: car.learn.kept, rejected: car.learn.rejected,
+                 offs: car.learn.offs, cap: learnSteerCap() };
+      } finally { ghostCfg.learnPace = merk; }
+    },
     // Die Ideallinie ueber eine ganze Runde abtasten, ohne Auto: das Layout und die Phase
     // sind alles, was sie braucht. Rueckgabe je Kachel und Phase der Versatz in [-1, 1].
     // Boxenstopp von aussen stellen, um die drei Kacheln zu pruefen, ohne ein Auto zu
     // verbinden und ohne echte Standzeit abzuwarten. Gibt zurueck, welche Klasse jede
     // Kachel danach traegt.
-    pitTiles(state, plan) {
+    pitTiles(state, plan, ready) {
       if (state !== undefined) pitState = state;
       if (plan !== undefined) pitPlan = plan === null ? null : Object.assign({}, plan);
+      // pitReady steuert den Umschlag des Tachoschilds von PIT auf GO. Ohne diesen Griff
+      // waere das Schild nur mit echtem Auto und echter Standzeit zu pruefen.
+      if (ready !== undefined) pitReady = ready;
       updatePitUI();
+      pitBoard();
       const out = {};
       for (const el of document.querySelectorAll('.pit-tile')) {
         out[el.dataset.pit] = el.classList.contains('pit-on') ? 'on'
                             : el.classList.contains('pit-off') ? 'off'
                             : el.classList.contains('pit-na') ? 'na' : '-';
       }
-      return { state: pitState, plan: pitPlan, tiles: out,
+      const brd = document.getElementById('race-board');
+      return { state: pitState, plan: pitPlan, tiles: out, ready: pitReady,
+               schild: brd ? { klasse: brd.className, text: brd.textContent } : null,
                beschreibung: pitPlan ? describePitPlan(pitPlan) : null };
     },
     // Eine Kachel antippen, als haette es ein Finger getan.
@@ -16068,6 +16590,72 @@
     } finally {
       for (const id of ids) stelle(id, gemerkt[id]);
     }
+  });
+
+  // ---- Die zwei Linienmodelle ----
+  // Gemessen wird die Zielgroesse des neuen Modells mit seinem eigenen Mass: die
+  // Rundenzeit. Was hier NICHT geprueft wird, ist die Lage des Scheitels - sie verschiebt
+  // sich messbar kaum (Mittel +0,045 der Kurvenlaenge ueber zwoelf Kurvenzuege), und eine
+  // Pruefung auf einen Effekt, den es nicht gibt, waere eine Pruefung, die luegt.
+  stAdd('Linienmodelle: Rundenzeit schlaegt Kruemmung', () => {
+    const proben = ['SG2R2G2R2', 'SGR2GR2GRG', 'SHG4R4LG'];
+    const zeilen = [];
+    let schlimmster = 1;
+    for (const code of proben) {
+      const tiles = codeToTrack(code).tiles;
+      const pts = trackCenterline(tiles);
+      if (pts.length < 8) continue;
+      const nrm = trackNormals(pts);
+      const first = pts[0], last = pts[pts.length - 1];
+      const closed = Math.hypot(last.x - first.x, last.y - first.y) < 2 * TRACK_UNITS_PER_CM;
+      const km = idealLine(pts, nrm, { closed });
+      const lt = lapTimeLine(pts, nrm, { closed });
+      const bahn = (a) => pts.map((p, i) => [p.x + nrm[i].x * a[i], p.y + nrm[i].y * a[i]]);
+      const tKm = lapTimeOf(bahn(km.alpha), closed, {}).time;
+      const q = lt.lapTime / tKm;
+      schlimmster = Math.min(schlimmster, 1 - q);
+      // Und: die Linien muessen sich UNTERSCHEIDEN. Zwei Modelle, die dasselbe liefern,
+      // sind ein Modell mit zwei Namen.
+      let abw = 0;
+      for (let i = 0; i < km.alpha.length; i++) {
+        abw = Math.max(abw, Math.abs(km.alpha[i] - lt.alpha[i]));
+      }
+      zeilen.push(code + ' ' + ((1 - q) * 100).toFixed(1) + ' % schneller, '
+                  + (abw / TRACK_UNITS_PER_CM).toFixed(1) + ' cm Abstand');
+    }
+    return { ok: schlimmster > 0.005,
+             mass: zeilen.join(' | ') + ' (Modellzeit, nicht gefahren)' };
+  });
+
+  // ---- Die Annahmeregel des Lernens ----
+  // Der Kern: eine SCHNELLERE Runde mit einem Abgang darf nicht angenommen werden. Wird das
+  // je umgedreht, lernt das Verfahren, dass Abfliegen sich lohnt.
+  stAdd('Ghost-Lernen nimmt keine Runde mit Abgang', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.learnSim) {
+      return { skip: true, mass: 'learnSim nicht vorhanden' };
+    }
+    // Drei heile Runden mit fallender Zeit, dann die schnellste Runde von allen MIT Abgang.
+    const r = OMEGA_TEST.learnSim([
+      { ms: 9000 }, { ms: 8600 }, { ms: 8400 },
+      { ms: 6000, off: 1 },
+      { ms: 8300 },
+    ]);
+    const nachAbgang = r.spur[3];
+    const letzte = r.spur[4];
+    // Die 6000 duerfen nirgends als Bestzeit stehen, und die Schrittweite muss nach dem
+    // Abgang KLEINER geworden sein statt groesser.
+    const bestNieDerAbflug = r.spur.every(z => z.best !== 6000);
+    const vorsichtiger = nachAbgang.sigma < r.spur[2].sigma;
+    const zurueckgenommen = nachAbgang.pace <= r.spur[2].pace
+                            && nachAbgang.push <= r.spur[2].push;
+    const laeuftWeiter = letzte.best === 8300;
+    return { ok: bestNieDerAbflug && vorsichtiger && zurueckgenommen && laeuftWeiter,
+             mass: 'Bestzeit nach 6000-ms-Abflug ' + nachAbgang.best
+                   + ' (nicht 6000: ' + (bestNieDerAbflug ? 'ok' : 'FALSCH') + ')'
+                   + ', Schrittweite ' + r.spur[2].sigma + ' auf ' + nachAbgang.sigma
+                   + ', Tempo ' + r.spur[2].pace + ' auf ' + nachAbgang.pace
+                   + ', danach wieder Bestzeit ' + letzte.best
+                   + ', Lenkgrenze ' + r.cap.toFixed(2) };
   });
 
   // ---- Ausfuehren und anzeigen ----

@@ -592,6 +592,12 @@
   .gt3-act:hover { background: #2b3a55; }
   .gt3-act.armed { background: #1c7a4d; color: #eafff1; }
   .gt3-act.warn { background: #b8860b; color: #100c02; }
+  /* Eigene Klasse statt .warn: die trug ein dunkles Goldbraun (#b8860b), und eine gelbe
+     Flagge, die braun aussieht, ist keine Flagge. Dieselbe satte Fuellung wie der aktive
+     Boxenknopf, nur in Gelb - der Knopf soll aus zwei Metern Entfernung sagen, was los ist.
+     .warn bleibt, sie haengt an anderen Knoepfen. */
+  .gt3-act.flagged { background: #e8c72a; color: #14161c; font-weight: 800; }
+  .gt3-act.flagged:hover { background: #f2d54a; }
   .gt3-click { cursor: pointer; }
   /* ---- Boxenstopp: die drei Kacheln, an denen gearbeitet wird ----
      Gruen und pulsierend heisst "wird gemacht", rot heisst "abgewaehlt", grau heisst "diese
@@ -1084,6 +1090,34 @@
     .gantry-lamp { width: 10px; height: 10px; }
   }
 
+  /* ---- Boxenschild auf dem Tacho ----
+     Nachempfunden dem Schild, das die Mannschaft an der Mauer heraushaelt: eine helle
+     Platte mit dickem Rand und wenigen, sehr grossen Buchstaben. Bewusst KEIN Symbol -
+     ein Schraubenschluessel oder eine Zapfsaeule ist aus dem Augenwinkel nicht zu lesen,
+     drei Grossbuchstaben sind es.
+     Die Platte liegt absolut ueber der Zahl, damit die Kachel ihre Groesse behaelt: waere
+     sie im Fluss, wuerde der ganze Schirm beim Einfahren in die Box springen. */
+  .gt3-speedwrap { position: relative; }
+  .gt3-board { position: absolute; inset: -2% -4%; display: none;
+    align-items: center; justify-content: center;
+    border-radius: 6px; font-weight: 900; letter-spacing: .06em;
+    font-size: clamp(20px, 5.2vw, 46px); line-height: 1;
+    font-family: system-ui, sans-serif; }
+  .gt3-board.on { display: flex; }
+  /* Boxenstopp: weisse Platte, roter Rand, schwarze Schrift. Das ist die Farbgebung der
+     Boxeneinfahrtsschilder und liest sich auch bei Sonne. */
+  .gt3-board.pit { background: #f4f6fb; color: #14161c;
+    box-shadow: inset 0 0 0 4px #d02a2a; }
+  /* Frei: gruene Platte, weisse Schrift, wie das Startsignal. */
+  .gt3-board.go { background: #1e9d4e; color: #ffffff;
+    box-shadow: inset 0 0 0 4px #eafff1; }
+  /* Ein kurzes Aufblitzen beim Umschalten, damit der Wechsel auffaellt, auch wenn man
+     gerade nicht hinsieht. Wer Bewegung abgeschaltet hat, bekommt die Platte ohne. */
+  @keyframes boardPop { 0% { transform: scale(.88); } 60% { transform: scale(1.04); }
+    100% { transform: scale(1); } }
+  .gt3-board.on { animation: boardPop .22s ease-out; }
+  @media (prefers-reduced-motion: reduce) { .gt3-board.on { animation: none; } }
+
   /* ---- Kennung je Auto: Farbe, Buchstabe, Name ----
      Der Farbklecks ist ein Knopf, nicht nur ein Punkt: er ist die Bedienung. 26 px, damit
      er auf dem Telefon zu treffen ist, und mit dem griechischen Buchstaben darin, damit
@@ -1141,7 +1175,12 @@
   .lb-head { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 8px; }
   .lb-title { font-size: 12px; color: var(--muted); text-transform: uppercase;
     letter-spacing: .07em; flex: 1; }
-  .lb-body svg { width: 100%; height: auto; display: block; }
+  /* Waagerecht scrollen im EIGENEN Kasten, nie die Seite: eine breite Zeichnung darf den
+     Schirm nicht mitziehen. */
+  .lb-body { overflow-x: auto; }
+  /* 640 px ist die Breite des viewBox. Darunter schrumpft die Schrift mit, und die ist das,
+     was man lesen will. Auf dem Telefon wird also gescrollt statt geschrumpft. */
+  .lb-body svg { width: 100%; min-width: 640px; height: auto; display: block; }
   .lb-note { font-size: 12px; color: var(--muted); margin: 10px 0 0 0; }
   /* Der Hinweis, dass ein Bild anklickbar ist. Ohne ihn probiert es niemand aus. */
   .mw-chart { position: relative; }
@@ -1581,6 +1620,10 @@
         <button type="button" class="gt3-act" id="race-act-flag">Gelbe Flagge</button>
       </div>
 
+      <!-- Das Schild liegt UEBER der Tachozahl, nicht daneben: waehrend eines
+           Boxenstopps steht das Auto, die Zahl ist also ohnehin 0 und sagt nichts. Sobald
+           der Service fertig ist, wird eine Sekunde lang GO gezeigt und danach die Zahl
+           wieder freigegeben. -->
       <div class="gt3-gear">
         <div class="gt3-rpm" id="race-rpm">1500</div>
         <!-- Die Gangzahl ist jetzt der Schalter fuer Automatik/Manuell. Ein eigener Knopf
@@ -1592,7 +1635,10 @@
                 class="gt3-manual" id="race-gear-m"></span><span id="race-gear-n">N</span></button>
         <div class="gt3-box" style="text-align:center">
           <div class="gt3-lbl">km/h</div>
-          <div class="gt3-val big" id="race-speed">0</div>
+          <div class="gt3-speedwrap">
+            <div class="gt3-val big" id="race-speed">0</div>
+            <div class="gt3-board" id="race-board" aria-live="polite"></div>
+          </div>
           <div class="gt3-abs" id="race-abs">ABS</div></div>
       </div>
 
@@ -3497,8 +3543,19 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="rain-volume-val">25%</span>
         </div></div>
-      <div class="opt-row"><div class="opt-label">Motorsound-Profil</div>
+      <div class="opt-row"><div class="opt-label">Motorsound-Profil<small>Die sieben
+          oben sind aus Zylinderzahl, Kurbelwelle und Z&uuml;ndfolge gerechnet. Bei den
+          aufgeladenen Originalen fehlt der Lader.</small></div>
         <select id="sound-profile">
+          <optgroup label="Rennmotoren, gerechnet">
+          <option value="amggt3">Mercedes-AMG GT3: V8, Cross-Plane</option>
+          <option value="c6r">Corvette C6.R: V8, Cross-Plane, OHV</option>
+          <option value="z06gt3r">Corvette Z06 GT3.R: V8, Flat-Plane</option>
+          <option value="vantagegt3">Aston Martin Vantage GT3: V8, Cross-Plane</option>
+          <option value="m4gt3">BMW M4 GT3: Reihen-6</option>
+          <option value="f296gt3">Ferrari 296 GT3: V6, 120 Grad</option>
+          <option value="huracan">Huracan GT3 / R8 LMS: V10, Split-Pin</option>
+          </optgroup>
           <option value="mustang" selected>Mustang, V8, Cross-Plane</option>
           <option value="corvette">Corvette C6: V8 (Aufnahme)</option>
           <option value="porsche_rec">Porsche, Boxer-6 (Aufnahme)</option>
@@ -3625,6 +3682,19 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="ghost-line-val">35%</span>
         </div></div>
+      <div class="opt-row"><div class="opt-label">Ghost: Linienmodell
+          <small>Kr&uuml;mmung nimmt den gr&ouml;&szlig;ten Radius. Rundenzeit rechnet ein
+          Geschwindigkeitsprofil und ist im Modell 1&ndash;8&nbsp;% schneller; ob auch auf
+          dem Teppich, sagen Rundenzeit und Abg&auml;nge.</small></div>
+        <div class="row" style="gap:6px; flex-wrap:wrap">
+          <button type="button" class="mw-preset sel" data-linemodel="curvature">Kr&uuml;mmung</button>
+          <button type="button" class="mw-preset" data-linemodel="laptime">Rundenzeit</button>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Ghost: lernt von Runde zu Runde
+          <small>Probiert jede Runde eine kleine &Auml;nderung an Tempo und Linie und
+          beh&auml;lt sie nur, wenn die Runde schneller war <b>und</b> kein Abgang dabei.
+          Nach einem Abgang wird zur&uuml;ckgenommen und vorsichtiger weiterprobiert.</small></div>
+        <label class="tgl"><input type="checkbox" id="ghost-learn-pace"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Ghost: seitlicher Versatz<small>Gegen gegenseitiges Rammen. Blind: kein Byte meldet die Querlage. Links = aus.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
@@ -4261,7 +4331,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.3.61</span></span>
+    <span class="foot-ver">v<span id="app-version">0.3.62</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
   </span>
   <span class="foot-right">

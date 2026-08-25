@@ -521,6 +521,72 @@
     }
   });
 
+  // ---- Die zwei Linienmodelle ----
+  // Gemessen wird die Zielgroesse des neuen Modells mit seinem eigenen Mass: die
+  // Rundenzeit. Was hier NICHT geprueft wird, ist die Lage des Scheitels - sie verschiebt
+  // sich messbar kaum (Mittel +0,045 der Kurvenlaenge ueber zwoelf Kurvenzuege), und eine
+  // Pruefung auf einen Effekt, den es nicht gibt, waere eine Pruefung, die luegt.
+  stAdd('Linienmodelle: Rundenzeit schlaegt Kruemmung', () => {
+    const proben = ['SG2R2G2R2', 'SGR2GR2GRG', 'SHG4R4LG'];
+    const zeilen = [];
+    let schlimmster = 1;
+    for (const code of proben) {
+      const tiles = codeToTrack(code).tiles;
+      const pts = trackCenterline(tiles);
+      if (pts.length < 8) continue;
+      const nrm = trackNormals(pts);
+      const first = pts[0], last = pts[pts.length - 1];
+      const closed = Math.hypot(last.x - first.x, last.y - first.y) < 2 * TRACK_UNITS_PER_CM;
+      const km = idealLine(pts, nrm, { closed });
+      const lt = lapTimeLine(pts, nrm, { closed });
+      const bahn = (a) => pts.map((p, i) => [p.x + nrm[i].x * a[i], p.y + nrm[i].y * a[i]]);
+      const tKm = lapTimeOf(bahn(km.alpha), closed, {}).time;
+      const q = lt.lapTime / tKm;
+      schlimmster = Math.min(schlimmster, 1 - q);
+      // Und: die Linien muessen sich UNTERSCHEIDEN. Zwei Modelle, die dasselbe liefern,
+      // sind ein Modell mit zwei Namen.
+      let abw = 0;
+      for (let i = 0; i < km.alpha.length; i++) {
+        abw = Math.max(abw, Math.abs(km.alpha[i] - lt.alpha[i]));
+      }
+      zeilen.push(code + ' ' + ((1 - q) * 100).toFixed(1) + ' % schneller, '
+                  + (abw / TRACK_UNITS_PER_CM).toFixed(1) + ' cm Abstand');
+    }
+    return { ok: schlimmster > 0.005,
+             mass: zeilen.join(' | ') + ' (Modellzeit, nicht gefahren)' };
+  });
+
+  // ---- Die Annahmeregel des Lernens ----
+  // Der Kern: eine SCHNELLERE Runde mit einem Abgang darf nicht angenommen werden. Wird das
+  // je umgedreht, lernt das Verfahren, dass Abfliegen sich lohnt.
+  stAdd('Ghost-Lernen nimmt keine Runde mit Abgang', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.learnSim) {
+      return { skip: true, mass: 'learnSim nicht vorhanden' };
+    }
+    // Drei heile Runden mit fallender Zeit, dann die schnellste Runde von allen MIT Abgang.
+    const r = OMEGA_TEST.learnSim([
+      { ms: 9000 }, { ms: 8600 }, { ms: 8400 },
+      { ms: 6000, off: 1 },
+      { ms: 8300 },
+    ]);
+    const nachAbgang = r.spur[3];
+    const letzte = r.spur[4];
+    // Die 6000 duerfen nirgends als Bestzeit stehen, und die Schrittweite muss nach dem
+    // Abgang KLEINER geworden sein statt groesser.
+    const bestNieDerAbflug = r.spur.every(z => z.best !== 6000);
+    const vorsichtiger = nachAbgang.sigma < r.spur[2].sigma;
+    const zurueckgenommen = nachAbgang.pace <= r.spur[2].pace
+                            && nachAbgang.push <= r.spur[2].push;
+    const laeuftWeiter = letzte.best === 8300;
+    return { ok: bestNieDerAbflug && vorsichtiger && zurueckgenommen && laeuftWeiter,
+             mass: 'Bestzeit nach 6000-ms-Abflug ' + nachAbgang.best
+                   + ' (nicht 6000: ' + (bestNieDerAbflug ? 'ok' : 'FALSCH') + ')'
+                   + ', Schrittweite ' + r.spur[2].sigma + ' auf ' + nachAbgang.sigma
+                   + ', Tempo ' + r.spur[2].pace + ' auf ' + nachAbgang.pace
+                   + ', danach wieder Bestzeit ' + letzte.best
+                   + ', Lenkgrenze ' + r.cap.toFixed(2) };
+  });
+
   // ---- Ausfuehren und anzeigen ----
   async function runSelfTest() {
     const rows = $('st-rows');

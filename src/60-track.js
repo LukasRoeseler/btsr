@@ -347,6 +347,191 @@
     return { alpha, iterations: iters, residual: moved, limit, span };
   }
 
+  // ---------------------------------------------------------------- Rundenzeitmodell
+  //
+  // Die Zielfunktion ist die Rundenzeit, gerechnet aus einem Geschwindigkeitsprofil. Das ist
+  // das uebliche quasistationaere Verfahren:
+  //
+  //   1. Kruemmung entlang der Linie          -> Kurvengrenze  v = sqrt(a_quer / kappa)
+  //   2. Vorwaertslauf, begrenzt durch Zug    -> v(i+1) <= sqrt(v(i)^2 + 2 a_zug ds)
+  //   3. Rueckwaertslauf, begrenzt durch Bremse
+  //   4. Zeit = Summe ds / v
+  //
+  // Und daraus folgt der spaete Scheitel von selbst: eine Kurve vor einer langen Geraden
+  // bekommt eine niedrigere Scheitelgeschwindigkeit, wenn dafuer die Ausfahrt frueher
+  // gerade wird, weil die Zeit auf der Geraden mehr wiegt als die im Bogen. Eine Kurve vor
+  // der naechsten Kurve wird anders gefahren als dieselbe Kurve vor einer Geraden - genau
+  // das war der Wunsch, "je Kurvenkombination", und es ist hier nicht einprogrammiert,
+  // sondern eine Folge der Zielfunktion.
+  //
+  // Die drei Beschleunigungen sind ein VERHAELTNIS, kein Messwert. Absolut kommt es auf sie
+  // nicht an: multipliziert man alle drei mit demselben Faktor, wird die Zeit kleiner und
+  // die LINIE bleibt dieselbe. Was die Linie formt, ist a_quer gegen a_zug und a_brems, und
+  // dafuer sind die Verhaeltnisse eines GT-Fahrzeugs eingesetzt: querbeschleunigen etwa so
+  // stark wie bremsen, antreiben deutlich schwaecher. Das ist eine Modellannahme und keine
+  // Messung an diesem Auto, denn kein Byte meldet die Querbeschleunigung.
+  const LT_A_LAT = 1.0;     // Querbeschleunigung, Bezugsgroesse
+  const LT_A_ACC = 0.45;    // Zug, deutlich schwaecher als Querhaftung
+  const LT_A_BRK = 1.10;    // Bremse, etwas stark
+  const LT_V_MAX = 12.0;    // Deckel, damit eine Gerade nicht unbegrenzt schnell wird
+
+  // Zeit fuer eine gegebene Linie. Gibt auch das Profil zurueck, damit der Editor es
+  // zeichnen kann - dieselbe Zahl, die optimiert wurde, ist dann auch die angezeigte.
+  function lapTimeOf(path, closed, o) {
+    const n = path.length;
+    const k = pathCurvature(path, closed);
+    const aLat = (o && o.aLat) || LT_A_LAT;
+    const aAcc = (o && o.aAcc) || LT_A_ACC;
+    const aBrk = (o && o.aBrk) || LT_A_BRK;
+    const vCap = (o && o.vMax) || LT_V_MAX;
+    const at = (i) => closed ? ((i % n) + n) % n : Math.max(0, Math.min(n - 1, i));
+    // Segmentlaengen: ds[i] ist der Weg von i nach i+1.
+    const ds = new Array(n);
+    for (let i = 0; i < n; i++) {
+      const a = path[i], b = path[at(i + 1)];
+      ds[i] = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    }
+    const v = new Array(n);
+    for (let i = 0; i < n; i++) {
+      v[i] = k[i] > 1e-9 ? Math.min(vCap, Math.sqrt(aLat / k[i])) : vCap;
+    }
+    // Zwei Durchlaeufe je Richtung. Auf einer geschlossenen Runde reicht einer nicht: die
+    // Bremszone vor Kurve eins kann hinter der Ziellinie beginnen, und die Information muss
+    // einmal herumlaufen. Zwei genuegen, weil kein Bremsweg laenger als eine halbe Runde
+    // ist; bei einer offenen Strecke ist der zweite Durchlauf ohne Wirkung und billig.
+    const laeufe = closed ? 2 : 1;
+    for (let r = 0; r < laeufe; r++) {
+      for (let i = 0; i < n; i++) {
+        const j = at(i + 1);
+        const moeglich = Math.sqrt(v[i] * v[i] + 2 * aAcc * ds[i]);
+        if (v[j] > moeglich) v[j] = moeglich;
+      }
+      for (let i = n - 1; i >= 0; i--) {
+        const j = at(i + 1);
+        const moeglich = Math.sqrt(v[j] * v[j] + 2 * aBrk * ds[i]);
+        if (v[i] > moeglich) v[i] = moeglich;
+      }
+    }
+    let t = 0;
+    for (let i = 0; i < n; i++) {
+      // Mittlere Geschwindigkeit im Segment, nicht die am Punkt: bei kraeftigem Bremsen
+      // waere die Punktgeschwindigkeit deutlich daneben.
+      const vm = Math.max(1e-6, (v[i] + v[at(i + 1)]) / 2);
+      t += ds[i] / vm;
+    }
+    return { time: t, v, ds };
+  }
+
+  // Die schnellste Linie, gesucht durch oertliche Suche auf der Rundenzeit.
+  //
+  // Gestoert wird NICHT ein einzelner Punkt, sondern eine glatte Beule (erhobener Kosinus)
+  // ueber ein Fenster. Zwei Gruende, und beide sind praktisch: eine punktweise Suche macht
+  // die Linie zackig, weil jeder Punkt fuer sich ein klitzekleines Zeitgewinnchen findet,
+  // und sie braucht viel mehr Auswertungen fuer dieselbe Bewegung. Eine Beule verschiebt
+  // ein ganzes Kurvenstueck auf einmal, und das ist die Bewegung, um die es geht.
+  function lapTimeLine(pts, nrm, opts) {
+    const o = opts || {};
+    const limit = (o.limit !== undefined ? o.limit : TRACK_HALF_W - 3);
+    const closed = o.closed;
+    const n = pts.length;
+    // Startpunkt ist die kruemmungsaermste Linie. Bei null anzufangen waere ehrlicher
+    // aussehend, aber die oertliche Suche braucht dann viele Male mehr Auswertungen fuer
+    // dasselbe Ergebnis - und die Minimalkruemmung ist eine gute Naeherung, nur eben nicht
+    // das Optimum.
+    const start = idealLine(pts, nrm, { closed, limit });
+    const alpha = start.alpha.slice();
+    const bahn = (a) => pts.map((p, i) => [p.x + nrm[i].x * a[i], p.y + nrm[i].y * a[i]]);
+    let best = lapTimeOf(bahn(alpha), closed, o).time;
+    const startZeit = best;
+
+    // Fensterbreite in Punkten. Bei etwa 14 Punkten je Kachel ist 10 knapp eine
+    // Kachellaenge - die Groessenordnung eines Kurveneingangs.
+    const breiten = o.widths || [18, 10, 6];
+    const runden = o.sweeps || 4;
+    let schritt = o.step || limit * 0.35;
+    let auswertungen = 0, angenommen = 0;
+
+    for (let runde = 0; runde < runden; runde++) {
+      for (const w of breiten) {
+        // Beulenmitten ueberlappend setzen, sonst bleiben die Naehte zwischen zwei Beulen
+        // unangetastet.
+        const versatz = Math.max(1, Math.floor(w / 2));
+        for (let c = 0; c < n; c += versatz) {
+          for (const richtung of [1, -1]) {
+            const probe = alpha.slice();
+            let irgendwas = false;
+            for (let d = -w; d <= w; d++) {
+              const i = closed ? ((c + d) % n + n) % n : c + d;
+              if (i < 0 || i >= n) continue;
+              if (!closed && (i === 0 || i === n - 1)) continue;
+              // Erhobener Kosinus: in der Mitte volle Hoehe, an den Raendern null, also
+              // kein Knick am Uebergang zur unveraenderten Linie.
+              const g = 0.5 * (1 + Math.cos(Math.PI * d / (w + 1)));
+              const v = probe[i] + richtung * schritt * g;
+              probe[i] = Math.max(-limit, Math.min(limit, v));
+              irgendwas = true;
+            }
+            if (!irgendwas) continue;
+            const t = lapTimeOf(bahn(probe), closed, o).time;
+            auswertungen++;
+            if (t < best - 1e-9) {
+              best = t;
+              for (let i = 0; i < n; i++) alpha[i] = probe[i];
+              angenommen++;
+            }
+          }
+        }
+      }
+      // Schrittweite halbieren: grob suchen, dann feiner. Ohne das bleibt die Suche bei
+      // einer Schrittweite haengen, die zu gross ist, um den letzten Zentimeter zu finden.
+      schritt *= 0.5;
+    }
+
+    const prof = lapTimeOf(bahn(alpha), closed, o);
+    const span = Math.max(...alpha.map(Math.abs));
+    return { alpha, limit, span, lapTime: best, startLapTime: startZeit,
+             gain: (startZeit - best) / startZeit, v: prof.v,
+             evals: auswertungen, accepted: angenommen };
+  }
+
+  // ---------------------------------------------------------------- Modellwahl
+  //
+  // 'curvature' ist das bisherige Modell, minimale Kruemmung, also der groesste moegliche
+  // Radius. 'laptime' minimiert die Rundenzeit ueber ein Geschwindigkeitsprofil.
+  //
+  // Was gemessen ist und was nicht, damit die Wahl auf Zahlen steht und nicht auf einem
+  // Versprechen:
+  //
+  //   Gemessen: 'laptime' ist im eigenen Mass auf jedem geprueften Layout schneller, 1,2 bis
+  //   7,8 Prozent (SR6, SG2R2G2R2, SGR2GR2GRG, SHG4R4LG, SJG4L4RG). Kosten 15 bis 55 ms.
+  //
+  //   NICHT belegt: dass der Scheitel dabei spaeter liegt. Ueber zwoelf Kurvenzuege
+  //   verschiebt er sich im Mittel um +0,045 der Kurvenlaenge, zwei spaeter und zwei
+  //   frueher - das ist kein Effekt. Der Grund ist die Groesse der Bahn: bei 25 cm Breite
+  //   und 43 cm Kachellaenge liegt die Linie fast ueber die ganze Kurve am Rand, es ist
+  //   also kaum Platz, einen Scheitel zu verschieben. Der Zeitgewinn ist echt, kommt aber
+  //   nicht aus dem Mechanismus der Lehrbuchbilder.
+  //
+  //   Und beides sind MODELLZAHLEN. Ob die Linie auf dem Teppich schneller ist, sagt nur die
+  //   Rundenzeit gegen die Abgaenge - dafuer ist der Schalter da.
+  let lineModel = 'curvature';
+
+  function setLineModel(m) {
+    if (m !== 'curvature' && m !== 'laptime') return;
+    lineModel = m;
+  }
+  function getLineModel() { return lineModel; }
+
+  // Beide Modelle hinter einem Aufruf. Editor und Ghosts gehen hier durch, damit die
+  // gezeichnete und die gefahrene Linie nicht auseinanderlaufen koennen.
+  function buildLine(pts, nrm, opts) {
+    const o = opts || {};
+    const m = o.model || lineModel;
+    const line = m === 'laptime' ? lapTimeLine(pts, nrm, o) : idealLine(pts, nrm, o);
+    line.model = m;
+    return line;
+  }
+
   // ---- Generic line chart -> SVG string ----
   // Same contract as renderTrackPreview below: build a template string, let the caller
   // inject it, size the viewBox to the data and NEVER measure the DOM. Not measuring is
@@ -645,7 +830,7 @@
       //    is about to rise. Curvature is read from the ideal line itself, not the
       //    centreline — the whole point of the line is that it changes the radius, so using
       //    the centreline would colour a corner the car no longer takes that tightly.
-      const line = idealLine(pts, nrm, { closed });
+      const line = buildLine(pts, nrm, { closed });
       const ideal = pts.map((p, i) => [p.x + nrm[i].x * line.alpha[i],
                                        p.y + nrm[i].y * line.alpha[i]]);
       const brake = brakeProfile(ideal, closed);

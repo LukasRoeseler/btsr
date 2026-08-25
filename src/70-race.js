@@ -175,7 +175,11 @@
     // During the formation lap this crossing is the START of the race, not a lap.
     if (raceFormationLap) { endFormationLap(); return; }
     if (r.lapStart !== null) {
-      r.laps.push({ lap: r.laps.length + 1, ms: now - r.lapStart, off: r.offLap || 0 });
+      const ms = now - r.lapStart, offs = r.offLap || 0;
+      r.laps.push({ lap: r.laps.length + 1, ms, off: offs });
+      // Genau hier liegen Rundenzeit und Abgangszahl zusammen vor, und beides braucht die
+      // Annahmeregel des Lernens: schneller UND heil. Eine Runde ist eine Auswertung.
+      learnSettle(car, ms, offs);
     }
     r.offLap = 0;
     r.lapStart = now;
@@ -1416,6 +1420,7 @@
       }
 
       refreshPitThrottleLock();
+      pitBoard();
       const st = $('pitstop-status');
       if (st) st.textContent = pitReady ? 'Fertig, losfahren!' : pitTaskText();
       updateDamageFuelUI();
@@ -1438,6 +1443,42 @@
       e.target.value = pitMarkerCode === null ? '' : '0x' + pitMarkerCode.toString(16).padStart(2, '0');
     }
   });
+
+  // ---- Das Schild auf dem Tacho ----
+  //
+  // Drei Zustaende und nur drei: es wird gearbeitet, es ist gerade fertig geworden, oder
+  // das Schild ist weg. Die eine Sekunde GO haengt an einem Zeitpunkt und nicht an einem
+  // Zaehler, damit sie auch stimmt, wenn zwischendurch ein Bild ausgelassen wird.
+  let pitGoUntil = 0;
+
+  function pitBoard() {
+    const el = $('race-board');
+    if (!el) return;
+    const arbeitet = pitState === 'servicing' && !pitReady;
+    if (arbeitet) {
+      // Solange noch etwas offen ist. pitReady ist genau dann wahr, wenn Tank, Reifen und
+      // Schaden alle abgehakt sind, also braucht es hier keine zweite Bedingung.
+      pitGoUntil = 0;
+      el.className = 'gt3-board on pit';
+      el.textContent = 'PIT';
+      return;
+    }
+    if (pitState === 'servicing' && pitReady) {
+      // Erst beim Umschlag den Zeitpunkt setzen, nicht bei jedem Durchlauf: sonst wuerde
+      // das GO stehen bleiben, solange das Auto in der Box wartet.
+      if (!pitGoUntil) pitGoUntil = Date.now() + 1000;
+    }
+    if (pitGoUntil && Date.now() < pitGoUntil) {
+      el.className = 'gt3-board on go';
+      el.textContent = 'GO';
+      return;
+    }
+    el.className = 'gt3-board';
+    el.textContent = '';
+  }
+  // Eigener Takt, weil die Sekunde GO auch dann ablaufen muss, wenn der Boxenzustand sich
+  // nicht mehr aendert - die Schleife oben laeuft nur waehrend des Service.
+  setInterval(pitBoard, 120);
 
   // What is happening RIGHT NOW, task by task, with a tick for the finished ones. The old
   // text only said how much fuel and repair had accumulated, which does not answer

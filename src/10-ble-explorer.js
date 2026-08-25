@@ -463,9 +463,11 @@
     "Der Code beschreibt die Reihenfolge der Teile und die Ausrichtung. Damit stellst du auf einem anderen Gerät dieselbe Strecke ein, ohne sie neu zu klicken.": "The code describes the order of the parts and the orientation. With it you set up the same track on another device without clicking it together again.",
     "Der Erstplatzierte fährt etwas langsamer.": "The leader drives a little slower.",
     "Der Klangcharakter kommt aus den": "The character of the sound comes from the",
+    "Diagramm gross": "Diagram, large",
     "Die Autos fahren in dieser Reihenfolge los. Die Einführungsrunde läuft mit Boxengassen-Tempo; sobald das erste Auto Start/Ziel überfährt, ist das Limit weg.": "The cars set off in this order. The formation lap runs at pit-lane pace; as soon as the first car crosses start/finish, the limit is gone.",
     "Die Controller-Belegung ist frei zuweisbar, Optionen → Controller. Hier steht, was gerade eingestellt ist.": "The controller bindings are freely assignable, Options → Controller. What is set right now is shown here.",
     "Die Ideallinie schickt einen Lenkanteil hinaus und nimmt an, dass das Auto dadurch weiter aussen oder innen sitzt.": "The racing line sends out a steering share and assumes the car therefore sits further out or further in.",
+    "Die sieben oben sind aus Zylinderzahl, Kurbelwelle und Zündfolge gerechnet. Bei den aufgeladenen Originalen fehlt der Lader.": "The seven at the top are computed from cylinder count, crankshaft and firing order. On the turbocharged originals, the boost is missing.",
     "Dieselbe Idee, eine Stufe größer. Ein autonomes Auto braucht keine Zeitkurve, sondern eine": "The same idea, one size up. An autonomous car does not need a curve over time but one",
     "Dieselben elf Größen, aus denen die mitgelieferten Motoren gerechnet sind, nur direkt zum Drehen. Das Modell läuft hier im Browser, also hörst du jede Änderung sofort, ohne dass eine Datei erzeugt werden muss.": "The same eleven quantities the bundled engines are computed from, only here you turn them directly. The model runs in the browser, so you hear every change at once, with no file to generate.",
     "Direktsteuerung mit der Maus": "Direct control with the mouse",
@@ -532,6 +534,8 @@
     "Ghost: Ideallinie": "Ghost: racing line",
     "Ghost: Kurvendrosselung": "Ghost: corner slowdown",
     "Ghost: Leitplanken-Modus": "Ghost: guard-rail mode",
+    "Ghost: Linienmodell": "Ghost: line model",
+    "Ghost: lernt von Runde zu Runde": "Ghost: learns lap by lap",
     "Ghost: seitlicher Versatz": "Ghost: lateral offset",
     "Grundlagen": "Basics",
     "Gummiband": "Rubber band",
@@ -558,6 +562,8 @@
     "Kalt nach Start und Boxenstopp, abgenutzt nach hartem Stint. Links = aus.": "Cold after the start and after a pit stop, worn after a hard stint. Left = off.",
     "Klick auf eine Zeile lässt die Lichter dieses Autos blinken": "Clicking a row makes that car's lights blink",
     "Kopieren": "Copy",
+    "Krümmung nimmt den größten Radius. Rundenzeit rechnet ein Geschwindigkeitsprofil und ist im Modell 1–8 % schneller; ob auch auf dem Teppich, sagen Rundenzeit und Abgänge.": "Curvature takes the largest possible radius. Lap time computes a speed profile and is 1-8 % quicker in the model; whether it is on the carpet too is answered by lap times and departures.",
+    "Krümmung": "Curvature",
     "Kurbelwelle": "Crankshaft",
     "Kurven an das Auto senden": "Send the curves to the car",
     "Kurven glätten": "Smooth the curves",
@@ -643,6 +649,7 @@
     "Physik-Modus aktivieren": "Enable physics mode",
     "Position über die Runden": "Position over the laps",
     "Primärrohr": "Primary pipe",
+    "Probiert jede Runde eine kleine Änderung an Tempo und Linie und behält sie nur, wenn die Runde schneller war": "Tries a small change to pace and line each lap and keeps it only if the lap was quicker",
     "Programmierschule": "Coding school",
     "Protokoll, Streckencodes, Physik, Töne: alles, was gemessen wurde, mit Herkunft.": "Protocol, track codes, physics, sounds: everything that was measured, with its source.",
     "Protokoll-Labor (NUS RX/TX)": "Protocol lab (NUS RX/TX)",
@@ -674,6 +681,7 @@
     "Rennen starten / abbrechen": "Start / abort race",
     "Rennen starten": "Start race",
     "Rennmodus": "Race mode",
+    "Rennmotoren, gerechnet": "Racing engines, computed",
     "Rennwürze": "Race spice",
     "Resonanz 116 Hz · Zündrate 300 Hz · Zyklusrate 37.5 Hz": "Resonance 116 Hz · firing rate 300 Hz · cycle rate 37.5 Hz",
     "Resonanz des Rohrs": "Resonance of the pipe",
@@ -685,6 +693,7 @@
     "Runde": "Lap",
     "Runden": "Laps",
     "Rundentempo der autonomen Autos.": "Lap pace of the autonomous cars.",
+    "Rundenzeit": "Lap time",
     "Runterschalten": "Shift down",
     "Scan stoppen": "Stop scan",
     "Schaden": "Damage",
@@ -711,7 +720,7 @@
     "Sonstige": "More",
     "Speichern und austauschen": "Save and exchange",
     "Speichern": "Save",
-    "Standard aus. Die ersten fünf sind Aufnahmen, der Rest ist gerechnet.": "Off by default. The first five are recordings, the rest are synthesised.",
+    "Standard aus. Die ersten fünf sind Aufnahmen, der Rest ist gerechnet.": "Off by default. The first five are recordings, the rest are computed.",
     "Standard: rechter Trigger = Gas, linker Trigger = Bremse, linker Stick = Lenkung, X (links) = runterschalten, B (rechts) = hochschalten: wie bei einem Xbox-Controller. Klicke \"Neu zuweisen\" und betätige dann den gewünschten Knopf/Stick/Trigger am Controller.": "Default: right trigger = throttle, left trigger = brake, left stick = steering, X (left) = shift down, B (right) = shift up: as on an Xbox controller. Click \"Reassign\" and then operate the button, stick or trigger you want on the controller.",
     "Start / Ziel": "Start / finish",
     "Start/Ziel herunterladen (SVG)": "Download start/finish (SVG)",
@@ -863,6 +872,7 @@
     "ist der Kachelzähler,": "is the tile counter,",
     "ist die Lichthupe.": "is the headlight flash.",
     "jedes": "every",
+    "kein Abgang dabei. Nach einem Abgang wird zurückgenommen und vorsichtiger weiterprobiert.": "no departure happened. After a departure it is rolled back and tried again more cautiously.",
     "kein Auto verbunden": "no car connected",
     "kein Controller erkannt": "no controller detected",
     "kein Ton": "no sound",
@@ -976,8 +986,15 @@
   }
 
   function i18nRoots() {
+    // lb-wrap gehoert dazu, obwohl es kein Tab ist: die Lightbox steht absichtlich
+    // ausserhalb von main, damit kein ausgeblendeter Tab sie mitnimmt - und stand damit
+    // auch ausserhalb der Uebersetzung. Ihr "Schliessen" blieb im englischen Modus deutsch,
+    // und der Selbsttest konnte es nicht melden, weil er dieselbe Liste benutzt: ein
+    // blinder Fleck, der sich selbst versteckt. Gefunden hat es ein Abzug ueber das ganze
+    // body, nicht ueber diese Liste.
     return [document.querySelector('header'), document.querySelector('main'),
-            $('app-footer'), $('help-panel'), $('race-summary')].filter(Boolean);
+            $('app-footer'), $('help-panel'), $('race-summary'),
+            $('lb-wrap')].filter(Boolean);
   }
 
   // Einen Teilbaum in die aktuelle Sprache bringen. Wird beim Umschalten fuer alles und

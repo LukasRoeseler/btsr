@@ -805,6 +805,11 @@
     line: 0.35,
     // Rennwuerze. Ein Regler, fuenf Bausteine - siehe ghostSpice() weiter unten.
     spice: 0.4,
+    // Welches Linienmodell die Ghosts fahren. Der Editor zeichnet dasselbe.
+    lineModel: 'curvature',
+    // Lernen von Runde zu Runde, standardmaessig aus: es aendert das Fahrverhalten ueber
+    // ein Rennen hinweg, und das soll niemand ungefragt bekommen.
+    learnPace: false,
     leaderBrake: false, // hold the leader back for a while
     leaderBrakePct: 0.10,
     // Default ON: the measurement says this is the mode in which the car holds the track by
@@ -1105,7 +1110,7 @@
     if (b) {
       b.textContent = flagState === 'yellow' ? 'Freigeben'
                     : flagState === 'restart' ? 'Anfahrt' : 'Gelbe Flagge';
-      b.classList.toggle('warn', flagState !== 'green');
+      b.classList.toggle('flagged', flagState !== 'green');
       // Waehrend der Anfahrt ist der Knopf gesperrt: die Ampel laeuft, ein zweites
       // Umschalten mitten hinein waere ein Zustand, den niemand gemeint hat.
       b.disabled = flagState === 'restart';
@@ -1369,13 +1374,20 @@
   function ghostLine() {
     const tiles = currentTrackTiles;
     if (!tiles || tiles.length < 3) return null;
-    if (lineCache && lineCache.tiles === tiles) return lineCache;
+    // Das Modell gehoert in den Schluessel: sonst behaelt der Zwischenspeicher die Linie
+    // des alten Modells, und der Schalter waere ohne Wirkung, bis sich das Layout aendert.
+    if (lineCache && lineCache.tiles === tiles
+        && lineCache.model === getLineModel()) return lineCache;
     const pts = trackCenterline(tiles);
     if (pts.length < 8) return null;
     const nrm = trackNormals(pts);
     const first = pts[0], last = pts[pts.length - 1];
-    const closed = Math.hypot(last.x - first.x, last.y - first.y) < 60;
-    const line = idealLine(pts, nrm, { closed });
+    // 2 cm, nicht 60 Zeichnungseinheiten. Die 60 sind 64,5 cm, und eine Kachel ist
+    // 43 cm lang: eine Strecke, bei der genau ein Teil fehlt, galt damit als geschlossen.
+    // Im Editor war dieselbe Zahl schon berichtigt, hier stand sie noch - und hier ist sie
+    // folgenreicher, weil die Ghosts danach im Kreis herum vorausschauen.
+    const closed = Math.hypot(last.x - first.x, last.y - first.y) < 2 * TRACK_UNITS_PER_CM;
+    const line = buildLine(pts, nrm, { closed });
     const path = pts.map((p, i) => [p.x + nrm[i].x * line.alpha[i],
                                     p.y + nrm[i].y * line.alpha[i]]);
     const brake = brakeProfile(path, closed);
@@ -1391,7 +1403,9 @@
       r.count++;
     });
     lineCache = { tiles, alpha: line.alpha, limit: line.limit, span: line.span,
-                  brake, ranges, closed, points: pts.length };
+                  brake, ranges, closed, points: pts.length,
+                  model: line.model, lapTime: line.lapTime || null,
+                  gain: line.gain || 0 };
     return lineCache;
   }
 
@@ -1404,6 +1418,111 @@
     return r.start + k;
   }
 
+  // ---------------------------------------------------------------- Lernen je Runde
+  //
+  // (1+1)-Strategie, das einfachste, was hier funktioniert: ein Elternwert, ein Kind je
+  // Runde, behalten oder verwerfen. Kein Verlauf, keine Population - eine Runde ist eine
+  // Auswertung, und in einem Rennen gibt es davon zwanzig, nicht zwanzigtausend. Alles
+  // Groessere waere ein Verfahren, das nie genug Daten bekommt.
+  //
+  // Zwei Groessen werden gedreht, und zwar genau die zwei, die dieses Auto ueberhaupt hat:
+  //
+  //   pace  - Faktor auf das Grundtempo. Mehr Tempo, mehr Risiko.
+  //   push  - Faktor auf den Ausschlag der Ideallinie. Weiter aussen anstellen und
+  //           weiter innen scheiteln kostet Lenkanteil, und Lenkanteil ist das, was das
+  //           Auto von der Bahn holt.
+  //
+  // Die Annahmeregel ist der eigentliche Inhalt: schneller UND kein Abgang. Ein Abgang
+  // macht den Versuch ungueltig, egal wie schnell die Runde war. Sonst lernt das Verfahren
+  // zuverlaessig, dass Abfliegen sich lohnt, solange man vorher schnell genug war.
+  const LEARN_SIGMA0 = 0.055;   // Anfangsschrittweite, in Anteilen
+  const LEARN_SIGMA_MIN = 0.012;
+  const LEARN_SIGMA_MAX = 0.10;
+  // Harte Deckel. pace nach oben, weil ein Ghost, der schneller faehrt als der Spieler es
+  // koennte, kein Gegner mehr ist, sondern ein Aergernis.
+  const LEARN_PACE = [0.75, 1.30];
+  const LEARN_PUSH = [0.40, 1.25];
+
+  function learnState(car) {
+    if (!car.learn) {
+      car.learn = { pace: 1, push: 1, sigma: LEARN_SIGMA0,
+                    bestMs: null, tryPace: null, tryPush: null,
+                    kept: 0, rejected: 0, offs: 0, tries: 0 };
+    }
+    return car.learn;
+  }
+
+  // Der Kippwert aus der Messung im Entwicklertab, als Obergrenze fuer den Lenkanteil.
+  // Ohne Messung wird NICHT geraten: dann gilt ein vorsichtiger Vorgabewert, und der Grund
+  // steht daneben. Ein erfundener Kippwert waere schlimmer als keiner, weil er wie eine
+  // Messung aussieht.
+  function learnSteerCap() {
+    const zeilen = (typeof lat === 'object' && lat && lat.rows) ? lat.rows : [];
+    const gekippt = zeilen.find(r => !r.ok);
+    if (gekippt) {
+      // Kippwert vorhanden: die Haelfte davon, wie die Doku es fuer die Ideallinie
+      // festhaelt.
+      return Math.max(0.15, Math.min(1, gekippt.steer * 0.5));
+    }
+    const hielten = zeilen.filter(r => r.ok);
+    if (hielten.length) {
+      // Gemessen, aber nie gekippt: dann ist der hoechste haltende Wert selbst die Grenze.
+      // Ihn zu halbieren waere zu vorsichtig, ihn zu ueberschreiten unbelegt - wir wissen
+      // nur, dass es BIS hierhin haelt, und nicht, wo es aufhoert.
+      return Math.max(0.15, Math.min(1, hielten[hielten.length - 1].steer));
+    }
+    // Keine Messung: ein vorsichtiger Vorgabewert, und er ist als solcher gekennzeichnet.
+    // Einen Kippwert zu erfinden waere schlimmer als keinen zu haben, weil er wie eine
+    // Messung aussieht. Messen laesst er sich im Entwicklertab, "Querablage".
+    return 0.55;
+  }
+
+  // Vor jeder Runde einen Versuch ziehen.
+  function learnPropose(car) {
+    if (!ghostCfg.learnPace || !car.ghost) return;
+    const L = learnState(car);
+    const w = () => (Math.random() * 2 - 1 + Math.random() * 2 - 1) / 2;   // grob normal
+    L.tryPace = Math.max(LEARN_PACE[0], Math.min(LEARN_PACE[1], L.pace + w() * L.sigma));
+    L.tryPush = Math.max(LEARN_PUSH[0], Math.min(LEARN_PUSH[1], L.push + w() * L.sigma));
+    L.tries++;
+  }
+
+  // Nach jeder Runde bewerten. ms = Rundenzeit, offs = Abgaenge in DIESER Runde.
+  function learnSettle(car, ms, offs) {
+    if (!ghostCfg.learnPace || !car.ghost) return;
+    const L = learnState(car);
+    if (L.tryPace === null) { L.bestMs = L.bestMs === null ? ms : Math.min(L.bestMs, ms); return; }
+    if (offs > 0) {
+      // Abgang: Versuch verworfen, UND zurueckgenommen. Beides, nicht nur eins: nach einem
+      // Abflug ist die Elternstellung selbst verdaechtig, weil der Versuch von ihr nur
+      // wenig entfernt war. Ein Prozent Tempo weniger ist billig, ein Abflug nicht.
+      L.rejected++; L.offs++;
+      L.pace = Math.max(LEARN_PACE[0], L.pace * 0.97);
+      L.push = Math.max(LEARN_PUSH[0], L.push * 0.95);
+      L.sigma = Math.max(LEARN_SIGMA_MIN, L.sigma * 0.6);
+      log(garageLabel(car) + ': Abgang, Versuch verworfen und vorsichtiger.', 'info');
+    } else if (L.bestMs === null || ms < L.bestMs) {
+      // Schneller und heil: behalten, und den naechsten Schritt etwas groesser wagen.
+      L.pace = L.tryPace; L.push = L.tryPush;
+      L.bestMs = ms; L.kept++;
+      L.sigma = Math.min(LEARN_SIGMA_MAX, L.sigma * 1.15);
+    } else {
+      L.rejected++;
+      L.sigma = Math.max(LEARN_SIGMA_MIN, L.sigma * 0.9);
+    }
+    L.tryPace = null; L.tryPush = null;
+    learnPropose(car);
+  }
+
+  // Die zwei Faktoren, die der Fahrer gerade benutzt: waehrend einer Runde der Versuch,
+  // sonst der Elternwert.
+  function learnFactors(car) {
+    if (!ghostCfg.learnPace || !car.learn) return { pace: 1, push: 1 };
+    const L = car.learn;
+    return { pace: L.tryPace === null ? L.pace : L.tryPace,
+             push: L.tryPush === null ? L.push : L.tryPush };
+  }
+
   function ghostLineOffset(car) {
     const lc = ghostLine();
     const g = car.ghost;
@@ -1414,7 +1533,13 @@
     // und dann waere der Ausschlag der Ghost-Lenkung kuenstlich klein. Der Regler
     // "Ideallinie" soll die ganze gefundene Linie bedeuten, nicht einen Bruchteil davon.
     const ref = Math.max(1e-6, lc.span || lc.limit);
-    return Math.max(-1, Math.min(1, lc.alpha[i] / ref));
+    const roh = Math.max(-1, Math.min(1, lc.alpha[i] / ref));
+    // Lernfaktor und die harte Grenze aus dem Kippwert. Die Grenze steht NACH dem Faktor:
+    // das Lernen darf das Tempo hochtreiben, aber nicht ueber die Lenkung hinaus, bei der
+    // das Auto gemessen die Bahn verlaesst.
+    const f = learnFactors(car);
+    const cap = learnSteerCap();
+    return Math.max(-cap, Math.min(cap, roh * f.push));
   }
 
   // Bremsbedarf an der Stelle, an der das Auto gerade ist: 0 = freie Fahrt, 1 = voll
@@ -1588,6 +1713,10 @@
       // unterschiedlich schnellen Gegnern aufstellen, statt dass alle gleich schnell fahren.
       let target = (car.ghostSpeed === undefined || car.ghostSpeed === null)
         ? ghostCfg.speed : car.ghostSpeed;
+      // Der gelernte Tempofaktor. Er steht VOR der gelben Flagge, damit das Limit unter
+      // Gelb wirklich das Limit ist: ein lernender Ghost darf sich nicht ueber eine
+      // Neutralisierung hinwegsetzen.
+      target = Math.max(0.05, Math.min(1, target * learnFactors(car).pace));
       // Gelbe Flagge: alle auf denselben Wert, und zwar bevor irgendetwas anderes daran
       // dreht. Gleiches Tempo fuer alle heisst von selbst "kein Ueberholen".
       const underYellow = flagState !== 'green';
@@ -1801,27 +1930,101 @@
   //
   // Nur REINE Funktionen, kein Zustand, kein Schreibzugriff. Was hier steht, kann eine
   // Pruefung aufrufen, ohne ein Auto zu verbinden oder auf eine Zeitmessung zu warten.
+  // ---- Linienmodell und Lernen bedienen ----
+  //
+  // Die Modellwahl geht durch setLineModel(), damit der Editor dieselbe Linie zeichnet, die
+  // gefahren wird. Der Zwischenspeicher muss dabei fallen: er haelt sonst die Linie des
+  // alten Modells fest, und der Schalter waere ohne Wirkung.
+  for (const b of document.querySelectorAll('[data-linemodel]')) {
+    b.addEventListener('click', () => {
+      const m = b.dataset.linemodel;
+      ghostCfg.lineModel = m;
+      setLineModel(m);
+      lineCache = null;
+      for (const o of document.querySelectorAll('[data-linemodel]')) {
+        o.classList.toggle('sel', o.dataset.linemodel === m);
+      }
+      // Editor neu zeichnen: die Linie hat sich gerade geaendert, und die gezeichnete muss
+      // die gefahrene sein.
+      try { refreshTrackPreview(); } catch (e) { /* Editor nicht im Dokument */ }
+      const lc = ghostLine();
+      log('Linienmodell: ' + (m === 'laptime' ? 'Rundenzeit' : 'Kr\u00fcmmung')
+          + (lc && lc.lapTime ? ', Modellzeit ' + lc.lapTime.toFixed(2)
+             + ' (' + (lc.gain * 100).toFixed(1) + ' % schneller als Kr\u00fcmmung)' : ''),
+          'info');
+    });
+  }
+
+  if ($('ghost-learn-pace')) {
+    $('ghost-learn-pace').addEventListener('change', (e) => {
+      ghostCfg.learnPace = e.target.checked;
+      if (!ghostCfg.learnPace) {
+        // Ausschalten heisst zurueck auf Werk: sonst bliebe ein gelernter Faktor stehen,
+        // ohne dass irgendwo sichtbar waere, dass er wirkt.
+        garage.forEach(c => { c.learn = null; });
+        log('Ghost-Lernen aus, Faktoren zur\u00fcckgesetzt.', 'info');
+      } else {
+        garage.forEach(c => { if (c.ghost) learnPropose(c); });
+        log('Ghost-Lernen an: je Runde ein Versuch, behalten nur wenn schneller und ohne '
+            + 'Abgang. Lenkgrenze ' + learnSteerCap().toFixed(2)
+            + ((lat.rows && lat.rows.length) ? ' (gemessen).' : ' (Vorgabe, nicht gemessen).'),
+            'info');
+      }
+    });
+  }
+
   window.OMEGA_TEST = {
     TILE_TYPE, TILE_LABEL,
     codeToTrack, trackToCode,
     tileTightness, tileTurnDeg, tileIsCurve, ghostTileLenFactor,
     crc8, buildCommandPacket,
+    // Die zwei Linienmodelle und ihre Bausteine, damit beide gegeneinander messbar sind:
+    // kruemmungsaermste Linie gegen rundenzeitschnellste, auf demselben Layout.
+    idealLine, lapTimeLine, lapTimeOf, trackCenterline, trackNormals, pathCurvature,
+    setLineModel, getLineModel, buildLine,
+    // Das Lernen ohne Auto und ohne Rennen durchspielen: Runden hineingeben, sehen was
+    // angenommen wird. Genau so ist die Annahmeregel pruefbar.
+    learnSim(runden) {
+      const car = { ghost: {}, device: { id: 'sim', name: 'sim' }, tag: 'Sim' };
+      const merk = ghostCfg.learnPace;
+      ghostCfg.learnPace = true;
+      try {
+        learnPropose(car);
+        const spur = [];
+        for (const r of runden) {
+          const f = learnFactors(car);
+          learnSettle(car, r.ms, r.off || 0);
+          spur.push({ ms: r.ms, off: r.off || 0,
+                      probePace: +f.pace.toFixed(4), probePush: +f.push.toFixed(4),
+                      pace: +car.learn.pace.toFixed(4), push: +car.learn.push.toFixed(4),
+                      sigma: +car.learn.sigma.toFixed(4), best: car.learn.bestMs });
+        }
+        return { spur, kept: car.learn.kept, rejected: car.learn.rejected,
+                 offs: car.learn.offs, cap: learnSteerCap() };
+      } finally { ghostCfg.learnPace = merk; }
+    },
     // Die Ideallinie ueber eine ganze Runde abtasten, ohne Auto: das Layout und die Phase
     // sind alles, was sie braucht. Rueckgabe je Kachel und Phase der Versatz in [-1, 1].
     // Boxenstopp von aussen stellen, um die drei Kacheln zu pruefen, ohne ein Auto zu
     // verbinden und ohne echte Standzeit abzuwarten. Gibt zurueck, welche Klasse jede
     // Kachel danach traegt.
-    pitTiles(state, plan) {
+    pitTiles(state, plan, ready) {
       if (state !== undefined) pitState = state;
       if (plan !== undefined) pitPlan = plan === null ? null : Object.assign({}, plan);
+      // pitReady steuert den Umschlag des Tachoschilds von PIT auf GO. Ohne diesen Griff
+      // waere das Schild nur mit echtem Auto und echter Standzeit zu pruefen.
+      if (ready !== undefined) pitReady = ready;
       updatePitUI();
+      pitBoard();
       const out = {};
       for (const el of document.querySelectorAll('.pit-tile')) {
         out[el.dataset.pit] = el.classList.contains('pit-on') ? 'on'
                             : el.classList.contains('pit-off') ? 'off'
                             : el.classList.contains('pit-na') ? 'na' : '-';
       }
-      return { state: pitState, plan: pitPlan, tiles: out,
+      const brd = document.getElementById('race-board');
+      return { state: pitState, plan: pitPlan, tiles: out, ready: pitReady,
+               schild: brd ? { klasse: brd.className, text: brd.textContent } : null,
                beschreibung: pitPlan ? describePitPlan(pitPlan) : null };
     },
     // Eine Kachel antippen, als haette es ein Finger getan.
