@@ -3550,12 +3550,6 @@
     <div class="card subpage-home" id="sub-home-track">
       <h2>Strecke</h2>
       <div class="misc-grid">
-        <button class="misc-tile subpage-open" data-sub="pos">
-          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
-               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="24" cy="20" r="7"/><path d="M24 27v14M17 41h14"/><path d="M6 34c4-8 12-12 18-12s14 4 18 12" stroke="var(--bad)"/></svg>
-          <b>Position</b>
-          <span>Minikarte mit der geschätzten Lage des Autos auf der Runde.</span>
-        </button>
         <button class="misc-tile subpage-open" data-sub="edit">
           <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 40 40 8l6 6L14 46H8z"/><path d="M34 14l6 6" stroke="var(--bad)"/></svg>
@@ -3586,24 +3580,6 @@
           <b>Gespeichert</b>
           <span>Strecken benennen, laden und wieder löschen.</span>
         </button>
-      </div>
-    </div>
-    <div class="card subpage" id="sub-pos">
-      <button class="misc-back subpage-back" data-sub="">&larr; Strecke</button>
-      <h2>Wo steht das Auto?</h2>
-      <p class="muted" style="font-size:11.5px">
-        Aus dem Cockpit hierher gezogen: dort war alles unter dem Schirm eine
-        Doppelanzeige, die Minikarte aber nicht &mdash; und sie geh&ouml;rt neben die
-        Strecke, an der sie h&auml;ngt. Die Position ist eine Sch&auml;tzung aus
-        Kachelz&auml;hler und Zeit, keine Positionsmessung vom Auto.
-      </p>
-      <div class="row" style="margin-top:12px; align-items:flex-start; gap:20px">
-        <div id="dash-minimap"></div>
-        <div style="flex:1; min-width:200px">
-          <p class="muted">Aktuelle Runde: <b id="dash-lap-current">-</b></p>
-          <p class="muted">Beste Runde: <b id="dash-lap-best">-</b></p>
-          <ol class="muted" id="dash-lap-list" style="padding-left:20px; max-height:120px; overflow-y:auto"></ol>
-        </div>
       </div>
     </div>
     <div class="card subpage" id="sub-edit">
@@ -3648,6 +3624,8 @@
             <span class="cm-now" id="cm-now">&ndash;</span></div>
           <div><span class="hud-label">Pakete</span><br>
             <span class="cm-now" id="cm-total" style="font-size:18px">0</span></div>
+          <div><span class="hud-label">von</span><br>
+            <span class="cm-now" id="cm-car" style="font-size:14px">&ndash;</span></div>
           <div><span class="hud-label">Kachelz&auml;hler</span><br>
             <span class="cm-now" id="cm-steps" style="font-size:18px">0</span></div>
           <div><span class="hud-label">Musterkontakt</span><br>
@@ -7753,7 +7731,7 @@
                        0x03: 'Kurve links', 0x04: 'Kurve rechts',
                        0x05: 'Haarnadel links', 0x06: 'Haarnadel rechts',
                        0xff: 'keine Lesung' };
-  let cmOn = false, cmCounts = {}, cmTotal = 0, cmPaint = 0;
+  let cmOn = false, cmCounts = {}, cmTotal = 0, cmPaint = 0, cmLastCar = null;
 
   // Drei weitere Signale, weil Byte 12 allein die Frage nicht beantwortet, ob der Sensor
   // ueberhaupt etwas sieht:
@@ -7768,8 +7746,9 @@
   let cmLastBytes = null, cmSteps = 0, cmMarks = 0, cmPrevCount = null, cmPrevMark = false;
   let cmYawMin = 127, cmYawMax = -128;
 
-  function cmTick(code, bytes) {
+  function cmTick(code, bytes, car) {
     if (!cmOn) return;
+    if (car) cmLastCar = car;
     if (bytes) {
       cmLastBytes = bytes;
       if (cmPrevCount !== null && bytes[11] !== cmPrevCount) cmSteps++;
@@ -7796,6 +7775,9 @@
   }
 
   function cmRenderExtra() {
+    if ($('cm-car')) {
+      $('cm-car').textContent = cmLastCar ? garageLabel(cmLastCar) : '–';
+    }
     // Der Scheinwerfer steht hier, weil er die haeufigste Ursache fuer "es kommt nichts" ist
     // und nicht in dieser Ansicht sichtbar war.
     const l = $('cm-light');
@@ -9033,11 +9015,15 @@
   function getMinimapCurrentIndex() { return freeRoamMode ? null : dashMinimapIndex; }
 
   function refreshMinimap() {
-    if (freeRoamMode || currentTrackTiles.length === 0) {
-      $('dash-minimap').innerHTML = '<p class="muted" style="width:220px">kein Streckenlayout geladen</p>';
-      return;
-    }
-    $('dash-minimap').innerHTML = renderTrackPreview(currentTrackTiles, dashMinimapIndex).html;
+    // Die Minikarte ist entfernt worden. Die Positionsverfolgung dahinter bleibt: sie
+    // speist den Vorausblick der Ghosts und die Rundenzaehlung, und nur die Anzeige war
+    // doppelt. Der Aufruf bleibt deshalb stehen und tut nichts, wenn es kein Element gibt -
+    // ein blinder Zugriff darauf wuerde den Fahrtakt abbrechen.
+    const el = $('dash-minimap');
+    if (!el) return;
+    el.innerHTML = (freeRoamMode || currentTrackTiles.length === 0)
+      ? '<p class="muted" style="width:220px">kein Streckenlayout geladen</p>'
+      : renderTrackPreview(currentTrackTiles, dashMinimapIndex).html;
   }
 
   async function ensureDashboardStatusSubscribed() {
@@ -11305,7 +11291,13 @@
     const code = b[12];
     // Der Monitor bekommt JEDEN Wert, auch die, die alles andere hier verwirft - er ist
     // genau dafuer da, einen unbekannten Code zu finden.
-    if (car === playerCar || !playerCar) cmTick(code, b);
+    //
+    // Und er bekommt sie von JEDEM Auto. Vorher stand hier "nur vom gesteuerten Auto, oder
+    // von allen wenn es keines gibt" - wer ein Auto als Ghost ueber ein Muster schiebt und
+    // gleichzeitig ein anderes steuert, bekam damit nichts zu sehen und musste glauben, der
+    // Monitor sei kaputt. Ein Messwerkzeug, das Pakete nach Rolle verwirft, verwirft genau
+    // die, die man messen wollte.
+    cmTick(code, b, car);
     latNotify(car, b);
     shakeNotify(car, b);
     // 0x00 is a valid REPORT but not a valid READING, so it must not refresh the
@@ -11469,8 +11461,30 @@
   function ghostTilePhase(car) {
     const g = car.ghost;
     if (!g || !car.tileAt) return 0;
-    const dur = g.tileMs || 800;
+    // Die mitgefuehrte Dauer ist ein Mittel ueber ALLE Kacheln. Eine Haarnadel ist aber
+    // dreimal so lang wie eine Gerade, also war die Phase dort nach einem Drittel bei 1 und
+    // blieb dort stehen - und beim Kachelwechsel sprang der Linienversatz. Gemessen an der
+    // Testfolge SGHGH waren das 0.39 quer ueber die Bahn, gegen 0.12 auf einer Strecke ohne
+    // Haarnadel. Die relative Laenge kommt aus der Abtastdichte der Mittellinie, die
+    // trackCenterline() ohnehin nach Drehwinkel vergibt.
+    const dur = (g.tileMs || 800) * ghostTileLenFactor(g.tileIndex);
     return Math.max(0, Math.min(1, (Date.now() - car.tileAt) / dur));
+  }
+
+  // Wie lang ist diese Kachel im Vergleich zum Durchschnitt? 1 fuer Gerade und normale
+  // Kurve, etwa 3 fuer die Haarnadel. Ohne gerechnete Linie gibt es keine Abtastung, dann
+  // uebernimmt der Drehwinkel dieselbe Rolle.
+  function ghostTileLenFactor(tileIndex) {
+    if (tileIndex === null || tileIndex === undefined) return 1;
+    const lc = lineCache && lineCache.tiles === currentTrackTiles ? lineCache : null;
+    if (lc && lc.ranges.length) {
+      const r = lc.ranges[((tileIndex % lc.ranges.length) + lc.ranges.length) % lc.ranges.length];
+      const avg = lc.points / lc.ranges.length;
+      if (r && r.count && avg > 0) return r.count / avg;
+    }
+    const t = currentTrackTiles[tileIndex];
+    if (!t) return 1;
+    return tileTightness(t.type) >= 2 ? TRACK_HAIRPIN_DEG / TRACK_TURN_DEG : 1;
   }
 
   // Beim Kachelwechsel die gemessene Dauer gleitend nachziehen. Ausreisser werden verworfen
@@ -11850,7 +11864,7 @@
   // Auto gegen seine eigene Bahnfuehrung stellt. Die Annahme dahinter, ausgesprochen: ein
   // kleiner anhaltender Lenkanteil verschiebt, wo das Auto sitzt. Ob und wieviel dabei
   // herauskommt, sagen Rundenzeit und Abgaenge im Ergebnisfenster, nicht diese Funktion.
-  function ghostLineOffset(car) {
+  function ghostLineHeuristic(car) {
     const tiles = currentTrackTiles;
     const g = car.ghost;
     if (!tiles || tiles.length < 3 || !g || g.tileIndex === null) return 0;
@@ -11887,6 +11901,89 @@
       off += ghostRunEnds(next).entry * Math.max(0, (ph - 0.5) / 0.5);
     }
     return Math.max(-1, Math.min(1, off));
+  }
+
+  // ---- EINE Ideallinie fuer Bild und Auto ----
+  //
+  // Hier lagen zwei verschiedene Linien im Programm, und das war ein echter Fehler, kein
+  // Schoenheitsproblem: der Editor zeichnete eine Minimalkruemmungslinie (idealLine(),
+  // Relaxation ueber die Mittellinie, 2000 Durchlaeufe, auf die Bahnbreite begrenzt), und
+  // die Ghosts fuhren meine Handregel "aussen, Scheitel, aussen". Wer im Editor eine Linie
+  // sieht und dann zuschaut, wie das Auto eine andere faehrt, kann keiner von beiden
+  // trauen.
+  //
+  // Also: die Ghosts lesen jetzt genau die Linie aus dem Editor. Die Vorzeichen passen ohne
+  // Umrechnung - trackNormals() zeigt nach RECHTS in Fahrtrichtung, und positive Lenkung
+  // ist ebenfalls rechts. Geteilt durch das Limit ergibt das den Bereich -1 bis +1, den die
+  // Ghost-Lenkung erwartet.
+  //
+  // Dazu kommt das Bremsprofil, das der Editor ohnehin schon rechnet und rot einfaerbt:
+  // brakeProfile() misst den ANSTIEG der Kruemmung voraus, nicht die Kruemmung selbst - eine
+  // Kurve, die man schon mit konstantem Radius faehrt, braucht kein Bremsen mehr. Das ist
+  // genau die Groesse, die ein Tempoprofil braucht, und sie war da.
+  //
+  // Die Handregel bleibt als Rueckfall fuer den Fall, dass die Relaxation nichts findet
+  // (zu wenige Kacheln), und weil sie ohne Layout-Geometrie auskommt.
+  let lineCache = null;
+  function ghostLine() {
+    const tiles = currentTrackTiles;
+    if (!tiles || tiles.length < 3) return null;
+    if (lineCache && lineCache.tiles === tiles) return lineCache;
+    const pts = trackCenterline(tiles);
+    if (pts.length < 8) return null;
+    const nrm = trackNormals(pts);
+    const first = pts[0], last = pts[pts.length - 1];
+    const closed = Math.hypot(last.x - first.x, last.y - first.y) < 60;
+    const line = idealLine(pts, nrm, { closed });
+    const path = pts.map((p, i) => [p.x + nrm[i].x * line.alpha[i],
+                                    p.y + nrm[i].y * line.alpha[i]]);
+    const brake = brakeProfile(path, closed);
+    // Abtastpunkte je Kachel. Sie sind NICHT gleich viele: eine Haarnadel dreht dreimal so
+    // weit und bekommt entsprechend mehr Punkte (siehe trackCenterline). Wer hier mit einer
+    // festen Zahl je Kachel rechnet, laeuft auf einer Strecke mit Haarnadel aus dem Takt -
+    // und zwar schleichend, weil es auf einer Strecke ohne Haarnadel stimmt.
+    const ranges = tiles.map(() => ({ start: -1, count: 0 }));
+    pts.forEach((p, i) => {
+      if (p.tile < 0 || p.tile >= ranges.length) return;
+      const r = ranges[p.tile];
+      if (r.start < 0) r.start = i;
+      r.count++;
+    });
+    lineCache = { tiles, alpha: line.alpha, limit: line.limit, span: line.span,
+                  brake, ranges, closed, points: pts.length };
+    return lineCache;
+  }
+
+  // Abtastindex fuer (Kachel, Phase). null, wenn es zu dieser Kachel keine Punkte gibt.
+  function ghostLineIndex(lc, tileIndex, phase) {
+    if (!lc || tileIndex === null || tileIndex === undefined) return null;
+    const r = lc.ranges[((tileIndex % lc.ranges.length) + lc.ranges.length) % lc.ranges.length];
+    if (!r || r.start < 0 || !r.count) return null;
+    const k = Math.min(r.count - 1, Math.max(0, Math.floor(phase * r.count)));
+    return r.start + k;
+  }
+
+  function ghostLineOffset(car) {
+    const lc = ghostLine();
+    const g = car.ghost;
+    if (!lc || !g) return ghostLineHeuristic(car);
+    const i = ghostLineIndex(lc, g.tileIndex, ghostTilePhase(car));
+    if (i === null) return ghostLineHeuristic(car);
+    // span statt limit als Bezug: die Relaxation nutzt die Bahnbreite nicht immer voll aus,
+    // und dann waere der Ausschlag der Ghost-Lenkung kuenstlich klein. Der Regler
+    // "Ideallinie" soll die ganze gefundene Linie bedeuten, nicht einen Bruchteil davon.
+    const ref = Math.max(1e-6, lc.span || lc.limit);
+    return Math.max(-1, Math.min(1, lc.alpha[i] / ref));
+  }
+
+  // Bremsbedarf an der Stelle, an der das Auto gerade ist: 0 = freie Fahrt, 1 = voll
+  // anbremsen. Aus demselben Profil, das der Editor rot zeichnet.
+  function ghostBrakeDemand(car) {
+    const lc = ghostLine();
+    const g = car.ghost;
+    if (!lc || !g) return null;
+    const i = ghostLineIndex(lc, g.tileIndex, ghostTilePhase(car));
+    return i === null ? null : lc.brake[i];
   }
 
   // Die engste Kachel in den naechsten n Schritten, und wie weit sie weg ist. Daraus baut
@@ -12075,9 +12172,18 @@
       // Was gilt: die Kachel unter dem Auto, oder die naechste enge in Reichweite. Die
       // Reichweite haengt von der Enge ab - vor einer Haarnadel zwei Kacheln, vor einer
       // normalen Kurve eine.
+      // Wenn es eine gerechnete Linie gibt, kommt der Bremsbedarf von dort: er ist stetig
+      // und liegt an der richtigen STELLE innerhalb der Kachel, waehrend die Kachelregel nur
+      // "enge Kachel in Sicht" kennt und dann die ganze Kachel gleich behandelt.
+      const bd = ghostBrakeDemand(car);
+      if (bd !== null) {
+        // curveSlow bleibt der Bezug und behaelt seine Bedeutung: voller Bremsbedarf kostet
+        // das Doppelte dessen, was der Regler fuer eine normale Kurve sagt.
+        target *= 1 - Math.min(0.85, 2 * ghostCfg.curveSlow * bd);
+      }
       const reach = ahead.tight >= 2 ? 2 : 1;
       const tight = Math.max(here, ahead.dist <= reach ? ahead.tight : 0);
-      if (tight > 0) {
+      if (bd === null && tight > 0) {
         // Der Regler curveSlow bleibt der Bezug: er beschreibt weiter die 60-Grad-Kurve.
         // Die Haarnadel bekommt das Doppelte, auf hoechstens 85 Prozent begrenzt, damit ein
         // hoch eingestellter Regler den Ghost nicht zum Stehen bringt.
@@ -12257,28 +12363,98 @@
   window.OMEGA_TEST = {
     TILE_TYPE, TILE_LABEL,
     codeToTrack, trackToCode,
-    tileTightness, tileTurnDeg, tileIsCurve,
+    tileTightness, tileTurnDeg, tileIsCurve, ghostTileLenFactor,
     crc8, buildCommandPacket,
     // Die Ideallinie ueber eine ganze Runde abtasten, ohne Auto: das Layout und die Phase
     // sind alles, was sie braucht. Rueckgabe je Kachel und Phase der Versatz in [-1, 1].
+    // Ein synthetisches Meldungspaket durch den ECHTEN Weg schicken: recNotify,
+    // Rundenzaehlung, Armaturenbrett, Rohcode-Monitor, Lernen, Ruetteln. Damit ist
+    // pruefbar, ob ein Paket ankommt, ohne ein Auto zu verbinden - und wenn unterwegs
+    // etwas wirft, sagt der Fehler wo.
+    feedNotify(bytesArray, opts) {
+      const arr = new Uint8Array(19);
+      arr.set(bytesArray.slice(0, 19));
+      const car = (opts && opts.car) || {
+        device: { id: 'test', name: 'Testwagen' }, role: 'player',
+        rx: null, tx: null, tileCode: 0xff, tileCount: null, lastCodeAt: 0, yaw: 0,
+        ghost: null, timer: null, race: null,
+      };
+      const dv = new DataView(arr.buffer, arr.byteOffset, arr.byteLength);
+      onCarNotify(car, { target: { value: dv } });
+      return { code: arr[12], count: arr[11], parked: car.parked || null,
+               shake: car.shakeValue === undefined ? null : car.shakeValue };
+    },
+    // Der Rohcode-Monitor von aussen: an/aus und Stand.
+    codeProbe(on) {
+      if (on !== undefined) { cmOn = !!on; if (cmOn) cmReset(); }
+      return { on: cmOn, total: cmTotal, counts: Object.assign({}, cmCounts),
+               steps: cmSteps };
+    },
+    // Die gerechnete Linie selbst, punktweise. Damit ist pruefbar, ob ein Rest-Sprung in
+    // der Kachel/Phase-Abbildung steckt oder einfach die Auflaesung der Linie ist: der
+    // groesste Schritt zwischen zwei BENACHBARTEN Abtastpunkten ist die Untergrenze, die
+    // keine Abbildung unterbieten kann.
+    lineOf(tiles) {
+      const keep = currentTrackTiles;
+      currentTrackTiles = tiles;
+      try {
+        const lc = ghostLine();
+        if (!lc) return null;
+        const ref = Math.max(1e-6, lc.span || lc.limit);
+        const norm = lc.alpha.map(a => a / ref);
+        let step = 0;
+        for (let i = 0; i < norm.length; i++) {
+          const j = lc.closed ? (i + 1) % norm.length : Math.min(i + 1, norm.length - 1);
+          step = Math.max(step, Math.abs(norm[j] - norm[i]));
+        }
+        return { span: lc.span, limit: lc.limit, points: lc.points, closed: lc.closed,
+                 maxStep: step, ranges: lc.ranges.map(r => r.count) };
+      } finally { currentTrackTiles = keep; lineCache = null; }
+    },
+    // Beide Linien nebeneinander: die gerechnete aus dem Editor und die Handregel.
+    // Damit ist pruefbar, ob sie dasselbe sagen - und wie stark sie sich unterscheiden.
+    compareLines(tiles, steps) {
+      const keep = currentTrackTiles;
+      currentTrackTiles = tiles;
+      const out = [];
+      try {
+        const lc = ghostLine();
+        const car = { ghost: { tileIndex: 0, tileMs: 1000 }, tileAt: 0 };
+        for (let i = 0; i < tiles.length; i++) {
+          car.ghost.tileIndex = i;
+          for (let k = 0; k < (steps || 5); k++) {
+            const ph = k / (steps || 5);
+            car.tileAt = Date.now() - ph * car.ghost.tileMs * ghostTileLenFactor(i);
+            out.push({ tile: i, type: tiles[i].type, phase: ph,
+                       calc: lc ? ghostLineOffset(car) : null,
+                       heur: ghostLineHeuristic(car),
+                       brake: ghostBrakeDemand(car) });
+          }
+        }
+        out.meta = lc ? { span: lc.span, limit: lc.limit, points: lc.points,
+                          closed: lc.closed } : null;
+      } finally { currentTrackTiles = keep; lineCache = null; }
+      return out;
+    },
     sampleLine(tiles, steps) {
       const keep = currentTrackTiles;
       currentTrackTiles = tiles;
       const out = [];
       const car = { ghost: { tileIndex: 0, tileMs: 1000 }, tileAt: 0 };
       try {
+        ghostLine();
         for (let i = 0; i < tiles.length; i++) {
           car.ghost.tileIndex = i;
           for (let k = 0; k < (steps || 5); k++) {
             // ghostTilePhase rechnet aus Date.now() - tileAt; hier wird tileAt so gesetzt,
             // dass genau die gewuenschte Phase herauskommt.
             const ph = k / (steps || 5);
-            car.tileAt = Date.now() - ph * car.ghost.tileMs;
+            car.tileAt = Date.now() - ph * car.ghost.tileMs * ghostTileLenFactor(i);
             out.push({ tile: i, type: tiles[i].type, phase: ph,
                        off: ghostLineOffset(car) });
           }
         }
-      } finally { currentTrackTiles = keep; }
+      } finally { currentTrackTiles = keep; lineCache = null; }
       return out;
     },
   };
