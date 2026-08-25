@@ -7,6 +7,8 @@
   // Es gibt keinen zweiten Detektor in der App, und das ist Absicht.
 
   let dashOnMarker = false;   // byte 15 bit 3: the car is physically over a marker
+  // Vorheriger Stand des Musterkontakts, fuer die Flankenerkennung im Ausdruck-Modus.
+  let dashMarkerPrev = false;
   // Debounce state for the tile code. See dashboardNotifyHandler for why both guards exist.
   const TILE_REPEAT_BLOCK_MS = 1000;
   let dashPendingCode = null, dashPendingSeen = 0;
@@ -1116,7 +1118,42 @@
     // same packet in which the crossing counter increments, in every capture. So the old
     // warning lit up precisely when the car crossed start/finish. It is a marker-contact
     // flag, and that is what it now says.
+    const markerVorher = dashMarkerPrev;
     dashOnMarker = (bytes[15] & 0x08) !== 0;
+    dashMarkerPrev = dashOnMarker;
+
+    // ---- Runde im Ausdruck-Modus: die steigende Flanke des Musterkontakts ----
+    //
+    // Byte 12 rastet ein und zeigt das zuletzt gelesene Muster. Bei der zweiten Ueberfahrt
+    // desselben Blattes aendert sich dort nichts, und die Erkennung weiter unten verlangt,
+    // dass der Kachelzaehler weiterlaeuft - auf einem Blatt neben der Bahn laeuft er nicht.
+    // Ohne diese Flanke wuerde also nur die ERSTE Runde gezaehlt.
+    //
+    // Nur im Ausdruck-Modus: auf der Schiene laeuft der Kachelzaehler, und dort ist er das
+    // bessere Signal, weil er jede Kachel zaehlt und nicht nur die bedruckten.
+    //
+    // Die Sperre ist dieselbe wie unten (TILE_REPEAT_BLOCK_MS) und aus demselben Grund: ein
+    // flackernder Kontakt darf keine Doppelrunde ergeben.
+    // Die Sperre ist DIESELBE, die der Weg ueber den Kachelzaehler weiter unten benutzt
+    // (dashLastActedCode und dashLastActedAt). Zwei Wege mit je eigener Sperre sperren sich
+    // nicht gegenseitig - gemessen kam die erste Ueberfahrt doppelt, weil beide zaehlten.
+    // Wer zuerst kommt, zaehlt; der andere ist fuer TILE_REPEAT_BLOCK_MS still.
+    if (trackMode === 'off' && dashOnMarker && !markerVorher) {
+      const code = bytes[12];
+      const jetzt = Date.now();
+      const frei = !(dashLastActedCode === code
+                     && jetzt - dashLastActedAt < TILE_REPEAT_BLOCK_MS);
+      if (frei && isStartCode(code)) {
+        dashLastActedCode = code; dashLastActedAt = jetzt;
+        log('Start/Ziel im Ausdruck-Modus: Musterkontakt gesetzt, Code 0x'
+            + code.toString(16).padStart(2, '0') + '.', 'info');
+        if (playerLapCrossed()) { refreshMinimap(); }
+      } else if (frei && code === pitMarkerCode) {
+        dashLastActedCode = code; dashLastActedAt = jetzt;
+        onPitMarkerCrossed();
+      }
+    }
+
     const badge = $('dash-offtrack');
     badge.textContent = dashOnMarker ? 'Über Muster' : 'Kein Muster';
     badge.style.background = dashOnMarker ? 'rgba(70,209,127,.12)' : 'var(--panel-2)';

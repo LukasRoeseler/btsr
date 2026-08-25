@@ -4448,7 +4448,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.3.68</span></span>
+    <span class="foot-ver">v<span id="app-version">0.3.69</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
   </span>
   <span class="foot-right">
@@ -9982,6 +9982,8 @@
   // Es gibt keinen zweiten Detektor in der App, und das ist Absicht.
 
   let dashOnMarker = false;   // byte 15 bit 3: the car is physically over a marker
+  // Vorheriger Stand des Musterkontakts, fuer die Flankenerkennung im Ausdruck-Modus.
+  let dashMarkerPrev = false;
   // Debounce state for the tile code. See dashboardNotifyHandler for why both guards exist.
   const TILE_REPEAT_BLOCK_MS = 1000;
   let dashPendingCode = null, dashPendingSeen = 0;
@@ -11091,7 +11093,42 @@
     // same packet in which the crossing counter increments, in every capture. So the old
     // warning lit up precisely when the car crossed start/finish. It is a marker-contact
     // flag, and that is what it now says.
+    const markerVorher = dashMarkerPrev;
     dashOnMarker = (bytes[15] & 0x08) !== 0;
+    dashMarkerPrev = dashOnMarker;
+
+    // ---- Runde im Ausdruck-Modus: die steigende Flanke des Musterkontakts ----
+    //
+    // Byte 12 rastet ein und zeigt das zuletzt gelesene Muster. Bei der zweiten Ueberfahrt
+    // desselben Blattes aendert sich dort nichts, und die Erkennung weiter unten verlangt,
+    // dass der Kachelzaehler weiterlaeuft - auf einem Blatt neben der Bahn laeuft er nicht.
+    // Ohne diese Flanke wuerde also nur die ERSTE Runde gezaehlt.
+    //
+    // Nur im Ausdruck-Modus: auf der Schiene laeuft der Kachelzaehler, und dort ist er das
+    // bessere Signal, weil er jede Kachel zaehlt und nicht nur die bedruckten.
+    //
+    // Die Sperre ist dieselbe wie unten (TILE_REPEAT_BLOCK_MS) und aus demselben Grund: ein
+    // flackernder Kontakt darf keine Doppelrunde ergeben.
+    // Die Sperre ist DIESELBE, die der Weg ueber den Kachelzaehler weiter unten benutzt
+    // (dashLastActedCode und dashLastActedAt). Zwei Wege mit je eigener Sperre sperren sich
+    // nicht gegenseitig - gemessen kam die erste Ueberfahrt doppelt, weil beide zaehlten.
+    // Wer zuerst kommt, zaehlt; der andere ist fuer TILE_REPEAT_BLOCK_MS still.
+    if (trackMode === 'off' && dashOnMarker && !markerVorher) {
+      const code = bytes[12];
+      const jetzt = Date.now();
+      const frei = !(dashLastActedCode === code
+                     && jetzt - dashLastActedAt < TILE_REPEAT_BLOCK_MS);
+      if (frei && isStartCode(code)) {
+        dashLastActedCode = code; dashLastActedAt = jetzt;
+        log('Start/Ziel im Ausdruck-Modus: Musterkontakt gesetzt, Code 0x'
+            + code.toString(16).padStart(2, '0') + '.', 'info');
+        if (playerLapCrossed()) { refreshMinimap(); }
+      } else if (frei && code === pitMarkerCode) {
+        dashLastActedCode = code; dashLastActedAt = jetzt;
+        onPitMarkerCrossed();
+      }
+    }
+
     const badge = $('dash-offtrack');
     badge.textContent = dashOnMarker ? 'Über Muster' : 'Kein Muster';
     badge.style.background = dashOnMarker ? 'rgba(70,209,127,.12)' : 'var(--panel-2)';
@@ -17704,6 +17741,78 @@
       if (!(br > 0.35 && br < 0.65 && ga > 0.45 && ga < 0.75 && roll > 0.6)) ok = false;
     }
     return { ok, mass: zeilen.join(' | ') + ' vom Rollen' };
+  });
+
+  // ---- Wiederholte Ueberfahrt im Ausdruck-Modus ----
+  stAdd('Ausdruck-Modus zaehlt jede Ueberfahrt', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.feedNotify) {
+      return { skip: true, mass: 'feedNotify nicht vorhanden' };
+    }
+    const sw = $('setting-ontrack');
+    const gemerkt = { state: raceState, laps: raceLapTimes.slice(), start: raceLapStart,
+                      dash: dashLapStart, part: racePartialMs, form: raceFormationLap,
+                      rail: sw ? sw.checked : true, sp: playerCar,
+                      mp: dashMarkerPrev, ac: dashLastActedCode, aa: dashLastActedAt,
+                      pc: dashPendingCode, ps: dashPendingSeen, lc: dashLastTileCounter };
+    const anzeige = $('race-status') ? $('race-status').textContent : null;
+    try {
+      // In den Ausdruck-Modus, denn nur dort gilt die Flankenerkennung.
+      if (sw) { sw.checked = false; sw.dispatchEvent(new Event('change', { bubbles: true })); }
+      const attrappe = { device: { id: 'st-mark', name: 'Pruefwagen' }, role: 'player',
+                         rx: null, tx: null, tileCode: 0xff, tileCount: null,
+                         lastCodeAt: 0, yaw: 0, ghost: null, timer: null, race: null };
+      playerCar = attrappe;
+      raceState = 'racing'; raceFormationLap = false; raceLapTimes = [];
+      raceLapStart = Date.now() - 5000; dashLapStart = Date.now() - 5000;
+      racePartialMs = null;
+      // Beide Erkennerwege zuruecksetzen, nicht nur den neuen: sonst zaehlt der Weg ueber
+      // den Kachelzaehler aus einer frueheren Pruefung mit, und die erste Ueberfahrt kommt
+      // doppelt. Genau daran ist der erste Anlauf dieser Pruefung gescheitert.
+      dashMarkerPrev = false;
+      dashLastActedCode = null; dashLastActedAt = 0;
+      dashPendingCode = null; dashPendingSeen = 0; dashLastTileCounter = null;
+      // Byte 12 bleibt 0x0a, Byte 11 bleibt 7: nur der Musterkontakt in Byte 15 wechselt.
+      const paket = (kontakt) => {
+        const a = new Array(19).fill(0);
+        a[11] = 7; a[12] = 0x0a; a[14] = 0x82; a[15] = kontakt ? 0x08 : 0x00;
+        return a;
+      };
+      const fahre = () => {
+        // an, an, aus, aus - eine Ueberfahrt mit Ein- und Ausfahrt.
+        for (const k of [true, true, false, false]) {
+          OMEGA_TEST.feedNotify(paket(k), { car: attrappe });
+        }
+      };
+      fahre();
+      const nach1 = raceLapTimes.length;
+      // Die Sperre gegen Doppelrunden zurueckstellen: eine echte zweite Runde liegt Sekunden
+      // spaeter, und diese Pruefung soll die WIEDERHOLUNG zeigen und nicht die Sperre.
+      // Die Sperre gilt fuer BEIDE Wege gemeinsam. Sie hier zurueckzustellen ist genau das,
+      // was in Wirklichkeit die Zeit tut: eine echte zweite Runde liegt Sekunden spaeter.
+      dashLastActedAt = 0;
+      fahre();
+      const nach2 = raceLapTimes.length;
+      dashLastActedAt = 0;
+      fahre();
+      const nach3 = raceLapTimes.length;
+      return { ok: nach1 === 1 && nach2 === 2 && nach3 === 3,
+               mass: 'Runden nach drei Ueberfahrten: ' + nach1 + ', ' + nach2 + ', ' + nach3
+                     + ' (Code und Kachelzaehler dabei unveraendert)' };
+    } finally {
+      raceState = gemerkt.state; raceLapTimes = gemerkt.laps;
+      raceLapStart = gemerkt.start; dashLapStart = gemerkt.dash;
+      racePartialMs = gemerkt.part; raceFormationLap = gemerkt.form;
+      playerCar = gemerkt.sp;
+      dashMarkerPrev = gemerkt.mp;
+      dashLastActedCode = gemerkt.ac; dashLastActedAt = gemerkt.aa;
+      dashPendingCode = gemerkt.pc; dashPendingSeen = gemerkt.ps;
+      dashLastTileCounter = gemerkt.lc;
+      if (sw && sw.checked !== gemerkt.rail) {
+        sw.checked = gemerkt.rail;
+        sw.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+      if (anzeige !== null) $('race-status').textContent = anzeige;
+    }
   });
 
   // ---- Ausfuehren und anzeigen ----

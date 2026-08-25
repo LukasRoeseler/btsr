@@ -863,6 +863,78 @@
     return { ok, mass: zeilen.join(' | ') + ' vom Rollen' };
   });
 
+  // ---- Wiederholte Ueberfahrt im Ausdruck-Modus ----
+  stAdd('Ausdruck-Modus zaehlt jede Ueberfahrt', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.feedNotify) {
+      return { skip: true, mass: 'feedNotify nicht vorhanden' };
+    }
+    const sw = $('setting-ontrack');
+    const gemerkt = { state: raceState, laps: raceLapTimes.slice(), start: raceLapStart,
+                      dash: dashLapStart, part: racePartialMs, form: raceFormationLap,
+                      rail: sw ? sw.checked : true, sp: playerCar,
+                      mp: dashMarkerPrev, ac: dashLastActedCode, aa: dashLastActedAt,
+                      pc: dashPendingCode, ps: dashPendingSeen, lc: dashLastTileCounter };
+    const anzeige = $('race-status') ? $('race-status').textContent : null;
+    try {
+      // In den Ausdruck-Modus, denn nur dort gilt die Flankenerkennung.
+      if (sw) { sw.checked = false; sw.dispatchEvent(new Event('change', { bubbles: true })); }
+      const attrappe = { device: { id: 'st-mark', name: 'Pruefwagen' }, role: 'player',
+                         rx: null, tx: null, tileCode: 0xff, tileCount: null,
+                         lastCodeAt: 0, yaw: 0, ghost: null, timer: null, race: null };
+      playerCar = attrappe;
+      raceState = 'racing'; raceFormationLap = false; raceLapTimes = [];
+      raceLapStart = Date.now() - 5000; dashLapStart = Date.now() - 5000;
+      racePartialMs = null;
+      // Beide Erkennerwege zuruecksetzen, nicht nur den neuen: sonst zaehlt der Weg ueber
+      // den Kachelzaehler aus einer frueheren Pruefung mit, und die erste Ueberfahrt kommt
+      // doppelt. Genau daran ist der erste Anlauf dieser Pruefung gescheitert.
+      dashMarkerPrev = false;
+      dashLastActedCode = null; dashLastActedAt = 0;
+      dashPendingCode = null; dashPendingSeen = 0; dashLastTileCounter = null;
+      // Byte 12 bleibt 0x0a, Byte 11 bleibt 7: nur der Musterkontakt in Byte 15 wechselt.
+      const paket = (kontakt) => {
+        const a = new Array(19).fill(0);
+        a[11] = 7; a[12] = 0x0a; a[14] = 0x82; a[15] = kontakt ? 0x08 : 0x00;
+        return a;
+      };
+      const fahre = () => {
+        // an, an, aus, aus - eine Ueberfahrt mit Ein- und Ausfahrt.
+        for (const k of [true, true, false, false]) {
+          OMEGA_TEST.feedNotify(paket(k), { car: attrappe });
+        }
+      };
+      fahre();
+      const nach1 = raceLapTimes.length;
+      // Die Sperre gegen Doppelrunden zurueckstellen: eine echte zweite Runde liegt Sekunden
+      // spaeter, und diese Pruefung soll die WIEDERHOLUNG zeigen und nicht die Sperre.
+      // Die Sperre gilt fuer BEIDE Wege gemeinsam. Sie hier zurueckzustellen ist genau das,
+      // was in Wirklichkeit die Zeit tut: eine echte zweite Runde liegt Sekunden spaeter.
+      dashLastActedAt = 0;
+      fahre();
+      const nach2 = raceLapTimes.length;
+      dashLastActedAt = 0;
+      fahre();
+      const nach3 = raceLapTimes.length;
+      return { ok: nach1 === 1 && nach2 === 2 && nach3 === 3,
+               mass: 'Runden nach drei Ueberfahrten: ' + nach1 + ', ' + nach2 + ', ' + nach3
+                     + ' (Code und Kachelzaehler dabei unveraendert)' };
+    } finally {
+      raceState = gemerkt.state; raceLapTimes = gemerkt.laps;
+      raceLapStart = gemerkt.start; dashLapStart = gemerkt.dash;
+      racePartialMs = gemerkt.part; raceFormationLap = gemerkt.form;
+      playerCar = gemerkt.sp;
+      dashMarkerPrev = gemerkt.mp;
+      dashLastActedCode = gemerkt.ac; dashLastActedAt = gemerkt.aa;
+      dashPendingCode = gemerkt.pc; dashPendingSeen = gemerkt.ps;
+      dashLastTileCounter = gemerkt.lc;
+      if (sw && sw.checked !== gemerkt.rail) {
+        sw.checked = gemerkt.rail;
+        sw.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+      if (anzeige !== null) $('race-status').textContent = anzeige;
+    }
+  });
+
   // ---- Ausfuehren und anzeigen ----
   async function runSelfTest() {
     const rows = $('st-rows');
