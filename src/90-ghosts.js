@@ -262,8 +262,93 @@
   const garage = [];        // every connected car, in connection order
   let playerCar = null;     // the one the gamepad drives; sendControlValue writes here
 
+  // ---------------------------------------------------------------- Kennung je Auto
+  //
+  // Reihenfolge wie gewuenscht, vergeben in der Reihenfolge des Verbindens. Die Werte sind
+  // absichtlich kraeftig und nicht "echte" Autofarben: sie sollen sich auf einem dunklen
+  // Schirm und auf einem Wohnzimmertisch unterscheiden, nicht schoen sein. Schwarz und
+  // Weiss tragen je eine eigene Schriftfarbe mit, sonst waere der Buchstabe im Klecks
+  // unlesbar - und eine Kennung, die man nicht liest, ist keine.
+  const CAR_COLORS = [
+    { id: 'weiss',   name: 'Wei\u00df',  hex: '#f2f4f8', ink: '#14161c' },
+    { id: 'schwarz', name: 'Schwarz',    hex: '#15171c', ink: '#f2f4f8' },
+    { id: 'rot',     name: 'Rot',        hex: '#e23b3b', ink: '#ffffff' },
+    { id: 'blau',    name: 'Blau',       hex: '#3b7fe2', ink: '#ffffff' },
+    { id: 'gruen',   name: 'Gr\u00fcn',  hex: '#35b45a', ink: '#0d1015' },
+    { id: 'gelb',    name: 'Gelb',       hex: '#e8c72a', ink: '#14161c' },
+    { id: 'lila',    name: 'Lila',       hex: '#9b5de5', ink: '#ffffff' },
+    { id: 'orange',  name: 'Orange',     hex: '#f08a24', ink: '#14161c' },
+  ];
+  // Ausgeschrieben, nicht als Zeichen: "Alpha" liest sich in einer Ergebnisliste, ein
+  // einzelnes Alpha sieht dort nach einem Tippfehler aus. Das Zeichen steht im Farbklecks,
+  // wo der Platz fuer ein Wort fehlt. Zwoelf, weil acht Farben plus Doppelbelegung.
+  const CAR_TAGS = [
+    { wort: 'Alpha', zeichen: '\u03b1' }, { wort: 'Beta', zeichen: '\u03b2' },
+    { wort: 'Gamma', zeichen: '\u03b3' }, { wort: 'Delta', zeichen: '\u03b4' },
+    { wort: 'Epsilon', zeichen: '\u03b5' }, { wort: 'Zeta', zeichen: '\u03b6' },
+    { wort: 'Eta', zeichen: '\u03b7' }, { wort: 'Theta', zeichen: '\u03b8' },
+    { wort: 'Iota', zeichen: '\u03b9' }, { wort: 'Kappa', zeichen: '\u03ba' },
+    { wort: 'Lambda', zeichen: '\u03bb' }, { wort: 'My', zeichen: '\u03bc' },
+  ];
+  const CAR_STORE = 'chc.cars.v1';
+
+  function carStore() {
+    try { return JSON.parse(localStorage.getItem(CAR_STORE) || '{}'); }
+    catch (e) { return {}; }
+  }
+  // Gemerkt wird je GERAET, nicht je Platz in der Liste: verbindet man in anderer
+  // Reihenfolge, soll dasselbe Auto dieselbe Farbe und denselben Namen haben. Eine
+  // Rennaufstellung einmal einzutragen und dann durch eine Funkstoerung zu verlieren waere
+  // genau das, was diese Kennung verhindern soll.
+  function carRemember(car) {
+    const all = carStore();
+    all[String(car.device.id)] = { color: car.colorId, alias: car.alias || '' };
+    try { localStorage.setItem(CAR_STORE, JSON.stringify(all)); } catch (e) { /* privat */ }
+  }
+
+  // Farbe fuer ein neu verbundenes Auto. Gemerktes hat Vorrang, sonst die naechste noch
+  // freie Farbe der Reihe - zwei Autos in derselben Farbe waeren keine Zuordnung.
+  function carAssign(car) {
+    const merk = carStore()[String(car.device.id)] || {};
+    const belegt = new Set(garage.filter(c => c !== car).map(c => c.colorId));
+    car.colorId = (merk.color && CAR_COLORS.some(c => c.id === merk.color)
+                   && !belegt.has(merk.color))
+      ? merk.color
+      : (CAR_COLORS.find(c => !belegt.has(c.id)) || CAR_COLORS[0]).id;
+    car.alias = merk.alias || '';
+    carRetag();
+  }
+
+  // Der Buchstabe folgt der Position in der Garage und wird deshalb NICHT gespeichert: er
+  // ist die Reihenfolge des Verbindens, keine Eigenschaft des Autos. Trennt man eines aus
+  // der Mitte, ruecken die dahinter auf.
+  function carRetag() {
+    garage.forEach((c, i) => {
+      const t = CAR_TAGS[i] || { wort: 'Auto ' + (i + 1), zeichen: String(i + 1) };
+      c.tag = t.wort;
+      c.tagChar = t.zeichen;
+    });
+  }
+
+  function carColor(car) {
+    return CAR_COLORS.find(c => c.id === car.colorId) || CAR_COLORS[0];
+  }
+
+  // Der eine Name, den die ganze App benutzt - 23 Aufrufstellen haengen daran.
+  // Reihenfolge mit Absicht: der eingetragene Name schlaegt alles, dann der griechische
+  // Buchstabe, und erst wenn beides fehlt der BLE-Geraetename. Vorher stand der Geraetename
+  // vorn, und in einer Rundenuebersicht sagte "Auto a1b2c3" nichts darueber, welches Auto
+  // auf dem Tisch das war.
   function garageLabel(car) {
+    if (car.alias) return car.alias;
+    if (car.tag) return car.tag;
     return car.device.name || ('Auto ' + String(car.device.id).slice(0, 6));
+  }
+
+  // Farbpunkt fuer Listen, in denen die Farbe nur Anzeige und nicht Bedienung ist.
+  function carDot(car) {
+    if (!car || !car.device) return '';
+    return '<span class="car-dot" style="background:' + carColor(car).hex + '"></span>';
   }
 
   // One write path for every non-player purpose: ghost driving and the identify blink.
@@ -397,6 +482,9 @@
   function renderGarage() {
     const list = $('gar-list');
     if (!list) return;
+    // Vor dem Zeichnen: die Buchstaben folgen der Reihenfolge, und die aendert sich, wenn
+    // ein Auto aus der Mitte getrennt wird.
+    carRetag();
     $('gar-count').textContent = garage.length
       ? `${garage.length} Auto${garage.length === 1 ? '' : 's'} verbunden`
       : 'keine Autos verbunden';
@@ -405,9 +493,19 @@
       const row = document.createElement('div');
       row.className = 'gar-row' + (car.role === 'player' ? ' is-player'
                                  : car.role === 'ghost' ? ' is-ghost' : '');
+      const f = carColor(car);
       row.innerHTML = `
-        <div><div class="gar-name">${garageLabel(car)}</div>
-          <div class="gar-id">${String(car.device.id).slice(0, 12)}
+        <div>
+          <div class="car-tag">
+            <button class="car-chip" data-act="color"
+                    style="background:${f.hex};color:${f.ink}"
+                    title="Farbe wählen, gerade ${f.name}">${car.tagChar || ''}</button>
+            <input class="car-name-in" data-act="alias" type="text" maxlength="18"
+                   placeholder="${car.tag || 'Name'}"
+                   value="${(car.alias || '').replace(/"/g, '&quot;')}"
+                   aria-label="Name für die Rundenuebersicht">
+          </div>
+          <div class="gar-id">${car.tag || ''} &middot; ${String(car.device.id).slice(0, 12)}
             ${car.blinking ? '<span class="gar-blink">&nbsp;blinkt&hellip;</span>' : ''}</div></div>
         <div class="gar-roles">
           <button data-role="player" class="${car.role === 'player' ? 'on' : ''}">Steuern</button>
@@ -429,6 +527,59 @@
         b.onclick = () => setCarRole(car, b.dataset.role);
       });
       row.querySelector('button[data-act="drop"]').onclick = () => disconnectCar(car);
+
+      // Name: bei jedem Tastendruck merken, aber NICHT neu zeichnen - renderGarage()
+      // waehrend des Tippens wuerde das Feld ersetzen und den Schreibstand mitnehmen.
+      // Dasselbe Muster wie beim Temporegler eine Zeile weiter unten. Neu gezeichnet wird
+      // erst beim Verlassen des Feldes.
+      const nf = row.querySelector('input[data-act="alias"]');
+      nf.addEventListener('input', () => { car.alias = nf.value.trim(); carRemember(car); });
+      nf.addEventListener('change', () => { renderGarage(); renderRaceGrid(); });
+      nf.addEventListener('click', (e) => e.stopPropagation());
+      nf.addEventListener('pointerdown', (e) => e.stopPropagation());
+
+      // Farbe: die Auswahl klappt unter dem Klecks auf, acht Farben brauchen keinen Dialog.
+      // Schon belegte Farben bleiben waehlbar, sind aber angeschrieben: zwei gleiche Farben
+      // sind eine schlechte Idee, aber es ist deine Entscheidung und nicht meine.
+      const chip = row.querySelector('button[data-act="color"]');
+      chip.onclick = (e) => {
+        e.stopPropagation();
+        const offen = document.querySelector('.car-pal');
+        if (offen) offen.remove();
+        const pal = document.createElement('div');
+        pal.className = 'car-pal on';
+        for (const fb of CAR_COLORS) {
+          const b = document.createElement('button');
+          b.style.background = fb.hex;
+          b.className = fb.id === car.colorId ? 'on' : '';
+          const wer = garage.find(c => c !== car && c.colorId === fb.id);
+          b.title = fb.name + (wer ? ' (schon ' + garageLabel(wer) + ')' : '');
+          b.setAttribute('aria-label', b.title);
+          b.onclick = (ev) => {
+            ev.stopPropagation();
+            car.colorId = fb.id;
+            carRemember(car);
+            pal.remove();
+            renderGarage();
+            renderRaceGrid();
+          };
+          pal.appendChild(b);
+        }
+        document.body.appendChild(pal);
+        const r = chip.getBoundingClientRect();
+        // An den Klecks gesetzt, aber im Schirm gehalten: am rechten Rand waere die
+        // Auswahl sonst zur Haelfte draussen.
+        pal.style.top = (r.bottom + window.scrollY + 4) + 'px';
+        pal.style.left = Math.min(r.left + window.scrollX,
+          window.scrollX + document.documentElement.clientWidth - pal.offsetWidth - 8) + 'px';
+        const zu = (ev) => {
+          if (pal.contains(ev.target)) return;
+          pal.remove();
+          document.removeEventListener('pointerdown', zu, true);
+        };
+        // Erst im naechsten Takt lauschen, sonst schliesst der eigene Klick sofort wieder.
+        setTimeout(() => document.addEventListener('pointerdown', zu, true), 0);
+      };
       const sp = row.querySelector('.gar-speed input');
       if (sp) {
         const out = row.querySelector('.gar-speed b');
@@ -519,6 +670,7 @@
         removeCar(car);
       });
       garage.push(car);
+      carAssign(car);
       // First car connected takes the wheel, as requested.
       if (!playerCar) setCarRole(car, 'player'); else renderGarage();
       log(`${garageLabel(car)} verbunden (${garage.length} insgesamt).`, 'info');

@@ -504,6 +504,13 @@
   .gt3-val.sm { font-size: clamp(11px, 1.8vw, 18px); }
   .gt3-val.big { font-size: clamp(20px, 4.2vw, 44px); }
 
+  /* Als Knopf: keine Knopfoptik, aber ein Zeiger und eine Trefferflaeche. */
+  .gt3-gearnum { border: 0; background: none; color: inherit; cursor: pointer;
+    width: 100%; padding: 0; position: relative; }
+  /* Das M sitzt LINKS neben der Zahl und nicht in ihr: die Gangzahl ist mittig und soll es
+     bleiben, sonst springt sie beim Umschalten zur Seite. */
+  .gt3-manual { position: absolute; left: 6%; top: 50%; transform: translateY(-50%);
+    font-size: 42%; color: var(--warn); letter-spacing: .04em; }
   .gt3-gearnum { font-family: monospace; font-weight: 800; text-align: center;
     line-height: .92; font-size: clamp(46px, 12vw, 118px); }
   .gt3-rpm { font-family: monospace; font-weight: 700; text-align: center;
@@ -677,12 +684,52 @@
 
   .opt-slider { display: flex; align-items: center; gap: 8px; }
   .opt-slider input[type=range] { width: clamp(90px, 18vw, 180px); }
-  /* Der Griff und die gefuellte Spur in der Blendenfarbe der Diagramme. Ohne diese Angabe
-     nimmt der Browser seine Vorgabe, und die war auf schwarzem Grund kaum von der Spur zu
-     unterscheiden: man sah einem Regler nicht an, ob er am Anschlag steht. */
-  .opt-slider input[type=range], .mw-row input[type=range] {
-    accent-color: var(--info);
+  /* Der Griff wird SELBST gezeichnet, nicht dem Browser ueberlassen.
+     accent-color stand hier vorher allein, und gemessen war sie auch gesetzt: 33 von 35
+     Reglern trugen rgb(90,169,255) bei color-scheme dark. Trotzdem blieb der Griff auf dem
+     Bildschirm ein schwarzes Quadrat auf dunklem Grund - ob eine Blendenfarbe am GRIFF
+     ankommt, entscheidet der Browser, und darauf ist kein Verlass. Mit appearance:none ist
+     kein Browservorgabewert mehr beteiligt: Spur und Griff sind eigene Kaesten in eigenen
+     Farben. accent-color bleibt als Rueckfall stehen, falls appearance nicht greift.
+     Gilt fuer ALLE Regler, nicht nur die zwei Gruppen von vorher. */
+  input[type=range] { accent-color: var(--info); }
+  input[type=range] {
+    -webkit-appearance: none; appearance: none;
+    height: 26px; background: transparent; cursor: pointer;
   }
+  /* Spur */
+  input[type=range]::-webkit-slider-runnable-track {
+    height: 6px; border-radius: 3px;
+    background: #2a2f3a; border: 1px solid var(--border);
+  }
+  input[type=range]::-moz-range-track {
+    height: 6px; border-radius: 3px;
+    background: #2a2f3a; border: 1px solid var(--border);
+  }
+  /* Der zurueckgelegte Teil der Spur, damit man den Stand auch ohne den Griff sieht. */
+  input[type=range]::-moz-range-progress {
+    height: 6px; border-radius: 3px; background: var(--info);
+  }
+  /* Griff: blau, mit dunklem Rand, damit er auch auf hellem Grund eine Kante hat.
+     margin-top schiebt ihn auf die Mitte der 6px-Spur (halbe Differenz der Hoehen). */
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 18px; height: 18px; border-radius: 50%;
+    background: var(--info); border: 2px solid #0d1015;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .55);
+    margin-top: -7px;
+  }
+  input[type=range]::-moz-range-thumb {
+    width: 18px; height: 18px; border-radius: 50%;
+    background: var(--info); border: 2px solid #0d1015;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .55);
+  }
+  input[type=range]:focus-visible::-webkit-slider-thumb { outline: 2px solid var(--ink);
+    outline-offset: 1px; }
+  input[type=range]:focus-visible::-moz-range-thumb { outline: 2px solid var(--ink);
+    outline-offset: 1px; }
+  input[type=range]:disabled::-webkit-slider-thumb { background: var(--muted); }
+  input[type=range]:disabled::-moz-range-thumb { background: var(--muted); }
   .opt-slider button { width: 28px; height: 28px; padding: 0; font-size: 16px;
     line-height: 1; border-radius: 4px; }
   .opt-val { min-width: 58px; text-align: right; font-family: monospace;
@@ -1037,6 +1084,71 @@
     .gantry-lamp { width: 10px; height: 10px; }
   }
 
+  /* ---- Kennung je Auto: Farbe, Buchstabe, Name ----
+     Der Farbklecks ist ein Knopf, nicht nur ein Punkt: er ist die Bedienung. 26 px, damit
+     er auf dem Telefon zu treffen ist, und mit dem griechischen Buchstaben darin, damit
+     Schwarz und Lila auch bei schlechtem Licht auseinanderzuhalten sind. Die Farbe allein
+     zu tragen waere fuer Farbenblinde keine Kennung. */
+  .car-tag { display: flex; align-items: center; gap: 7px; }
+  .car-chip { width: 26px; height: 26px; min-width: 26px; border-radius: 50%;
+    border: 2px solid var(--border); padding: 0; cursor: pointer;
+    font-size: 13px; font-weight: 700; line-height: 1;
+    display: inline-flex; align-items: center; justify-content: center; }
+  .car-chip:hover { border-color: var(--ink); }
+  .car-name-in { width: 100%; max-width: 150px; font-size: 13px; padding: 4px 6px; }
+  /* Die Farbauswahl klappt unter dem Klecks auf, statt einen Dialog zu oeffnen: acht
+     Farben brauchen keinen Dialog. */
+  .car-pal { position: absolute; z-index: 60; display: none;
+    background: var(--panel); border: 1px solid var(--border); border-radius: 6px;
+    padding: 7px; gap: 6px; grid-template-columns: repeat(4, 26px); }
+  .car-pal.on { display: grid; }
+  .car-pal button { width: 26px; height: 26px; min-width: 26px; padding: 0;
+    border-radius: 50%; border: 2px solid var(--border); cursor: pointer; }
+  .car-pal button.on { border-color: var(--ink); }
+  /* Der Farbpunkt in den Ergebnislisten, dort nur Anzeige und nicht antippbar. */
+  .car-dot { display: inline-block; width: 11px; height: 11px; border-radius: 50%;
+    border: 1px solid var(--border); margin-right: 6px; vertical-align: -1px; }
+
+  /* Trefferflaechen auf dem Telefon. Dieser Block steht mit Absicht HIER und nicht oben bei
+     den anderen Touch-Regeln: bei gleicher Spezifitaet gewinnt die spaetere Regel, und
+     .car-chip mit seinen 26 px steht direkt darueber. Oben eingesetzt blieb der Klecks
+     gemessen 26x44.
+
+     Rund heisst quadratisch: button { min-height: 44px } machte aus 26x26 ein 26x44, und
+     mit border-radius 50 % ist das eine Ellipse. Dieselbe Falle wie bei den
+     Schiebeschaltern eine Bildschirmhoehe weiter oben, nur andersherum. Ein Texteingabefeld
+     ist ausserdem kein button und kein select, es braucht seine eigene Zeile - mit 33 px war
+     es das kleinste Ziel auf dem ganzen Schirm. */
+  @media (pointer: coarse) {
+    .car-chip, .car-pal button { width: 44px; height: 44px; min-width: 44px;
+      font-size: 17px; }
+    .car-pal { grid-template-columns: repeat(4, 44px); }
+    .car-name-in { min-height: 44px; }
+  }
+
+  /* ---- Lightbox fuer Diagramme ----
+     Ein Diagramm in einer dreispaltigen Kachel ist auf dem Telefon 260 px breit; die
+     Zahlen darin sind dann da, aber nicht lesbar. Antippen legt dasselbe SVG gross auf
+     den Schirm. Kein zweites Zeichnen, derselbe Knoten wird geklont: was gross zu sehen
+     ist, ist damit garantiert dasselbe wie klein. */
+  .lb-wrap { position: fixed; inset: 0; z-index: 5000; display: none;
+    background: rgba(8, 10, 14, .92); padding: 14px;
+    align-items: center; justify-content: center; }
+  .lb-wrap.on { display: flex; }
+  .lb-box { background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
+    padding: 12px; max-width: min(1100px, 96vw); max-height: 92vh; overflow: auto;
+    width: 100%; }
+  .lb-head { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 8px; }
+  .lb-title { font-size: 12px; color: var(--muted); text-transform: uppercase;
+    letter-spacing: .07em; flex: 1; }
+  .lb-body svg { width: 100%; height: auto; display: block; }
+  .lb-note { font-size: 12px; color: var(--muted); margin: 10px 0 0 0; }
+  /* Der Hinweis, dass ein Bild anklickbar ist. Ohne ihn probiert es niemand aus. */
+  .mw-chart { position: relative; }
+  .mw-chart .mw-zoom { position: absolute; top: 6px; right: 8px; font-size: 10px;
+    color: var(--muted); pointer-events: none; }
+  .mw-chart > div[id^="mw-chart-"] { cursor: zoom-in; }
+
   /* ---- Motorwerkstatt: Presets und Diagramme ---- */
   .mw-presets { border: 1px solid var(--border); border-radius: 5px;
     background: var(--panel-2); padding: 10px 12px; margin: 12px 0 4px 0; }
@@ -1054,6 +1166,7 @@
     letter-spacing: .07em; margin-bottom: 6px; }
   .mw-chart svg { width: 100%; height: auto; display: block; }
   .mw-chart p { font-size: 11px; margin: 7px 0 0 0; }
+  .mw-note { display: block; color: var(--warn); font-size: 11px; margin-top: 3px; }
 
   /* ---- Motorwerkstatt ----
      A grid rather than the opt-row list used elsewhere: eleven parameters in a single
@@ -1470,7 +1583,13 @@
 
       <div class="gt3-gear">
         <div class="gt3-rpm" id="race-rpm">1500</div>
-        <div class="gt3-gearnum" id="race-gear">N</div>
+        <!-- Die Gangzahl ist jetzt der Schalter fuer Automatik/Manuell. Ein eigener Knopf
+             daneben haette Platz gekostet, den der Schirm nicht hat, und die Gangzahl ist
+             die Stelle, auf die man beim Schalten ohnehin sieht. -->
+        <button type="button" class="gt3-gearnum" id="race-gear"
+                title="Antippen: Automatik oder manuell schalten"
+                aria-label="Gang, antippen wechselt Automatik und manuell"><span
+                class="gt3-manual" id="race-gear-m"></span><span id="race-gear-n">N</span></button>
         <div class="gt3-box" style="text-align:center">
           <div class="gt3-lbl">km/h</div>
           <div class="gt3-val big" id="race-speed">0</div>
@@ -1593,7 +1712,7 @@
             <path d="M16 34h16"/>
           </svg>
           <b>Selbsttest</b>
-          <span>Ein Knopf, dreizehn Messungen: l&auml;dt alles, rechnet die Physik
+          <span>Ein Knopf, viele Messungen: l&auml;dt alles, rechnet die Physik
             richtig, passt die Linie, sind die T&ouml;ne heil.</span>
         </button>
       </div>
@@ -3670,7 +3789,8 @@
           <select id="mw-crank">
             <option value="even" selected>gleichm&auml;&szlig;ig (Flat-Plane)</option>
             <option value="cross">Cross-Plane (ungleiche B&auml;nke)</option>
-          </select></div></div>
+          </select>
+          <small class="mw-note" id="mw-crank-note"></small></div></div>
         <div class="mw-row"><label for="mw-rpm">Drehzahl</label><div class="mw-ctl">
           <input type="range" id="mw-rpm" min="700" max="18000" step="50" value="4500">
           <span class="mw-val" id="mw-rpm-val">4500/min</span></div></div>
@@ -3707,6 +3827,7 @@
       <div class="mw-charts">
         <div class="mw-chart">
           <div class="mw-chart-t">Z&uuml;ndfolge &uuml;ber 720&deg;</div>
+          <span class="mw-zoom">antippen</span>
           <div id="mw-chart-fire"></div>
           <p class="muted">
             Jeder Strich eine Z&uuml;ndung, obere Reihe die eine Bank, untere die andere.
@@ -3718,6 +3839,7 @@
         </div>
         <div class="mw-chart">
           <div class="mw-chart-t">Ein Z&uuml;ndimpuls mit Nachhall</div>
+          <span class="mw-zoom">antippen</span>
           <div id="mw-chart-pulse"></div>
           <p class="muted">
             Ein einzelner Druckimpuls, durch das Rohr geschickt und ges&auml;ttigt. Seine
@@ -3728,6 +3850,7 @@
         </div>
         <div class="mw-chart">
           <div class="mw-chart-t">Resonanz des Rohrs</div>
+          <span class="mw-zoom">antippen</span>
           <div id="mw-chart-spec"></div>
           <p class="muted">
             Das Frequenzbild des Rohrs. Die blaue Marke ist die Viertelwellenresonanz
@@ -3798,7 +3921,7 @@
     <div class="card">
       <h2>Selbsttest</h2>
       <p class="muted">
-        Dreizehn Messungen an der laufenden App. Sie ersetzen keine Fahrt, aber sie sagen,
+        Messungen an der laufenden App. Sie ersetzen keine Fahrt, aber sie sagen,
         ob eine &Auml;nderung etwas kaputt gemacht hat, das man nicht sofort sieht: eine
         Physik, die nicht mehr trifft, eine Ideallinie mit einem Sprung, eine Tonschleife
         mit einer Naht, ein deutscher Satz im englischen Modus.
@@ -4138,7 +4261,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.3.60</span></span>
+    <span class="foot-ver">v<span id="app-version">0.3.61</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
   </span>
   <span class="foot-right">
@@ -4147,5 +4270,17 @@
     </button>
   </span>
 </footer>
+
+<!-- Lightbox fuer Diagramme. Steht ausserhalb von main, damit kein Tab sie ausblendet. -->
+<div class="lb-wrap" id="lb-wrap" role="dialog" aria-modal="true" aria-label="Diagramm gross">
+  <div class="lb-box">
+    <div class="lb-head">
+      <div class="lb-title" id="lb-title"></div>
+      <button id="lb-close">Schlie&szlig;en</button>
+    </div>
+    <div class="lb-body" id="lb-body"></div>
+    <p class="lb-note" id="lb-note"></p>
+  </div>
+</div>
 
 <script>

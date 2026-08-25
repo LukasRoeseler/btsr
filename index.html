@@ -504,6 +504,13 @@
   .gt3-val.sm { font-size: clamp(11px, 1.8vw, 18px); }
   .gt3-val.big { font-size: clamp(20px, 4.2vw, 44px); }
 
+  /* Als Knopf: keine Knopfoptik, aber ein Zeiger und eine Trefferflaeche. */
+  .gt3-gearnum { border: 0; background: none; color: inherit; cursor: pointer;
+    width: 100%; padding: 0; position: relative; }
+  /* Das M sitzt LINKS neben der Zahl und nicht in ihr: die Gangzahl ist mittig und soll es
+     bleiben, sonst springt sie beim Umschalten zur Seite. */
+  .gt3-manual { position: absolute; left: 6%; top: 50%; transform: translateY(-50%);
+    font-size: 42%; color: var(--warn); letter-spacing: .04em; }
   .gt3-gearnum { font-family: monospace; font-weight: 800; text-align: center;
     line-height: .92; font-size: clamp(46px, 12vw, 118px); }
   .gt3-rpm { font-family: monospace; font-weight: 700; text-align: center;
@@ -677,12 +684,52 @@
 
   .opt-slider { display: flex; align-items: center; gap: 8px; }
   .opt-slider input[type=range] { width: clamp(90px, 18vw, 180px); }
-  /* Der Griff und die gefuellte Spur in der Blendenfarbe der Diagramme. Ohne diese Angabe
-     nimmt der Browser seine Vorgabe, und die war auf schwarzem Grund kaum von der Spur zu
-     unterscheiden: man sah einem Regler nicht an, ob er am Anschlag steht. */
-  .opt-slider input[type=range], .mw-row input[type=range] {
-    accent-color: var(--info);
+  /* Der Griff wird SELBST gezeichnet, nicht dem Browser ueberlassen.
+     accent-color stand hier vorher allein, und gemessen war sie auch gesetzt: 33 von 35
+     Reglern trugen rgb(90,169,255) bei color-scheme dark. Trotzdem blieb der Griff auf dem
+     Bildschirm ein schwarzes Quadrat auf dunklem Grund - ob eine Blendenfarbe am GRIFF
+     ankommt, entscheidet der Browser, und darauf ist kein Verlass. Mit appearance:none ist
+     kein Browservorgabewert mehr beteiligt: Spur und Griff sind eigene Kaesten in eigenen
+     Farben. accent-color bleibt als Rueckfall stehen, falls appearance nicht greift.
+     Gilt fuer ALLE Regler, nicht nur die zwei Gruppen von vorher. */
+  input[type=range] { accent-color: var(--info); }
+  input[type=range] {
+    -webkit-appearance: none; appearance: none;
+    height: 26px; background: transparent; cursor: pointer;
   }
+  /* Spur */
+  input[type=range]::-webkit-slider-runnable-track {
+    height: 6px; border-radius: 3px;
+    background: #2a2f3a; border: 1px solid var(--border);
+  }
+  input[type=range]::-moz-range-track {
+    height: 6px; border-radius: 3px;
+    background: #2a2f3a; border: 1px solid var(--border);
+  }
+  /* Der zurueckgelegte Teil der Spur, damit man den Stand auch ohne den Griff sieht. */
+  input[type=range]::-moz-range-progress {
+    height: 6px; border-radius: 3px; background: var(--info);
+  }
+  /* Griff: blau, mit dunklem Rand, damit er auch auf hellem Grund eine Kante hat.
+     margin-top schiebt ihn auf die Mitte der 6px-Spur (halbe Differenz der Hoehen). */
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 18px; height: 18px; border-radius: 50%;
+    background: var(--info); border: 2px solid #0d1015;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .55);
+    margin-top: -7px;
+  }
+  input[type=range]::-moz-range-thumb {
+    width: 18px; height: 18px; border-radius: 50%;
+    background: var(--info); border: 2px solid #0d1015;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .55);
+  }
+  input[type=range]:focus-visible::-webkit-slider-thumb { outline: 2px solid var(--ink);
+    outline-offset: 1px; }
+  input[type=range]:focus-visible::-moz-range-thumb { outline: 2px solid var(--ink);
+    outline-offset: 1px; }
+  input[type=range]:disabled::-webkit-slider-thumb { background: var(--muted); }
+  input[type=range]:disabled::-moz-range-thumb { background: var(--muted); }
   .opt-slider button { width: 28px; height: 28px; padding: 0; font-size: 16px;
     line-height: 1; border-radius: 4px; }
   .opt-val { min-width: 58px; text-align: right; font-family: monospace;
@@ -1037,6 +1084,71 @@
     .gantry-lamp { width: 10px; height: 10px; }
   }
 
+  /* ---- Kennung je Auto: Farbe, Buchstabe, Name ----
+     Der Farbklecks ist ein Knopf, nicht nur ein Punkt: er ist die Bedienung. 26 px, damit
+     er auf dem Telefon zu treffen ist, und mit dem griechischen Buchstaben darin, damit
+     Schwarz und Lila auch bei schlechtem Licht auseinanderzuhalten sind. Die Farbe allein
+     zu tragen waere fuer Farbenblinde keine Kennung. */
+  .car-tag { display: flex; align-items: center; gap: 7px; }
+  .car-chip { width: 26px; height: 26px; min-width: 26px; border-radius: 50%;
+    border: 2px solid var(--border); padding: 0; cursor: pointer;
+    font-size: 13px; font-weight: 700; line-height: 1;
+    display: inline-flex; align-items: center; justify-content: center; }
+  .car-chip:hover { border-color: var(--ink); }
+  .car-name-in { width: 100%; max-width: 150px; font-size: 13px; padding: 4px 6px; }
+  /* Die Farbauswahl klappt unter dem Klecks auf, statt einen Dialog zu oeffnen: acht
+     Farben brauchen keinen Dialog. */
+  .car-pal { position: absolute; z-index: 60; display: none;
+    background: var(--panel); border: 1px solid var(--border); border-radius: 6px;
+    padding: 7px; gap: 6px; grid-template-columns: repeat(4, 26px); }
+  .car-pal.on { display: grid; }
+  .car-pal button { width: 26px; height: 26px; min-width: 26px; padding: 0;
+    border-radius: 50%; border: 2px solid var(--border); cursor: pointer; }
+  .car-pal button.on { border-color: var(--ink); }
+  /* Der Farbpunkt in den Ergebnislisten, dort nur Anzeige und nicht antippbar. */
+  .car-dot { display: inline-block; width: 11px; height: 11px; border-radius: 50%;
+    border: 1px solid var(--border); margin-right: 6px; vertical-align: -1px; }
+
+  /* Trefferflaechen auf dem Telefon. Dieser Block steht mit Absicht HIER und nicht oben bei
+     den anderen Touch-Regeln: bei gleicher Spezifitaet gewinnt die spaetere Regel, und
+     .car-chip mit seinen 26 px steht direkt darueber. Oben eingesetzt blieb der Klecks
+     gemessen 26x44.
+
+     Rund heisst quadratisch: button { min-height: 44px } machte aus 26x26 ein 26x44, und
+     mit border-radius 50 % ist das eine Ellipse. Dieselbe Falle wie bei den
+     Schiebeschaltern eine Bildschirmhoehe weiter oben, nur andersherum. Ein Texteingabefeld
+     ist ausserdem kein button und kein select, es braucht seine eigene Zeile - mit 33 px war
+     es das kleinste Ziel auf dem ganzen Schirm. */
+  @media (pointer: coarse) {
+    .car-chip, .car-pal button { width: 44px; height: 44px; min-width: 44px;
+      font-size: 17px; }
+    .car-pal { grid-template-columns: repeat(4, 44px); }
+    .car-name-in { min-height: 44px; }
+  }
+
+  /* ---- Lightbox fuer Diagramme ----
+     Ein Diagramm in einer dreispaltigen Kachel ist auf dem Telefon 260 px breit; die
+     Zahlen darin sind dann da, aber nicht lesbar. Antippen legt dasselbe SVG gross auf
+     den Schirm. Kein zweites Zeichnen, derselbe Knoten wird geklont: was gross zu sehen
+     ist, ist damit garantiert dasselbe wie klein. */
+  .lb-wrap { position: fixed; inset: 0; z-index: 5000; display: none;
+    background: rgba(8, 10, 14, .92); padding: 14px;
+    align-items: center; justify-content: center; }
+  .lb-wrap.on { display: flex; }
+  .lb-box { background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
+    padding: 12px; max-width: min(1100px, 96vw); max-height: 92vh; overflow: auto;
+    width: 100%; }
+  .lb-head { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 8px; }
+  .lb-title { font-size: 12px; color: var(--muted); text-transform: uppercase;
+    letter-spacing: .07em; flex: 1; }
+  .lb-body svg { width: 100%; height: auto; display: block; }
+  .lb-note { font-size: 12px; color: var(--muted); margin: 10px 0 0 0; }
+  /* Der Hinweis, dass ein Bild anklickbar ist. Ohne ihn probiert es niemand aus. */
+  .mw-chart { position: relative; }
+  .mw-chart .mw-zoom { position: absolute; top: 6px; right: 8px; font-size: 10px;
+    color: var(--muted); pointer-events: none; }
+  .mw-chart > div[id^="mw-chart-"] { cursor: zoom-in; }
+
   /* ---- Motorwerkstatt: Presets und Diagramme ---- */
   .mw-presets { border: 1px solid var(--border); border-radius: 5px;
     background: var(--panel-2); padding: 10px 12px; margin: 12px 0 4px 0; }
@@ -1054,6 +1166,7 @@
     letter-spacing: .07em; margin-bottom: 6px; }
   .mw-chart svg { width: 100%; height: auto; display: block; }
   .mw-chart p { font-size: 11px; margin: 7px 0 0 0; }
+  .mw-note { display: block; color: var(--warn); font-size: 11px; margin-top: 3px; }
 
   /* ---- Motorwerkstatt ----
      A grid rather than the opt-row list used elsewhere: eleven parameters in a single
@@ -1470,7 +1583,13 @@
 
       <div class="gt3-gear">
         <div class="gt3-rpm" id="race-rpm">1500</div>
-        <div class="gt3-gearnum" id="race-gear">N</div>
+        <!-- Die Gangzahl ist jetzt der Schalter fuer Automatik/Manuell. Ein eigener Knopf
+             daneben haette Platz gekostet, den der Schirm nicht hat, und die Gangzahl ist
+             die Stelle, auf die man beim Schalten ohnehin sieht. -->
+        <button type="button" class="gt3-gearnum" id="race-gear"
+                title="Antippen: Automatik oder manuell schalten"
+                aria-label="Gang, antippen wechselt Automatik und manuell"><span
+                class="gt3-manual" id="race-gear-m"></span><span id="race-gear-n">N</span></button>
         <div class="gt3-box" style="text-align:center">
           <div class="gt3-lbl">km/h</div>
           <div class="gt3-val big" id="race-speed">0</div>
@@ -1593,7 +1712,7 @@
             <path d="M16 34h16"/>
           </svg>
           <b>Selbsttest</b>
-          <span>Ein Knopf, dreizehn Messungen: l&auml;dt alles, rechnet die Physik
+          <span>Ein Knopf, viele Messungen: l&auml;dt alles, rechnet die Physik
             richtig, passt die Linie, sind die T&ouml;ne heil.</span>
         </button>
       </div>
@@ -3670,7 +3789,8 @@
           <select id="mw-crank">
             <option value="even" selected>gleichm&auml;&szlig;ig (Flat-Plane)</option>
             <option value="cross">Cross-Plane (ungleiche B&auml;nke)</option>
-          </select></div></div>
+          </select>
+          <small class="mw-note" id="mw-crank-note"></small></div></div>
         <div class="mw-row"><label for="mw-rpm">Drehzahl</label><div class="mw-ctl">
           <input type="range" id="mw-rpm" min="700" max="18000" step="50" value="4500">
           <span class="mw-val" id="mw-rpm-val">4500/min</span></div></div>
@@ -3707,6 +3827,7 @@
       <div class="mw-charts">
         <div class="mw-chart">
           <div class="mw-chart-t">Z&uuml;ndfolge &uuml;ber 720&deg;</div>
+          <span class="mw-zoom">antippen</span>
           <div id="mw-chart-fire"></div>
           <p class="muted">
             Jeder Strich eine Z&uuml;ndung, obere Reihe die eine Bank, untere die andere.
@@ -3718,6 +3839,7 @@
         </div>
         <div class="mw-chart">
           <div class="mw-chart-t">Ein Z&uuml;ndimpuls mit Nachhall</div>
+          <span class="mw-zoom">antippen</span>
           <div id="mw-chart-pulse"></div>
           <p class="muted">
             Ein einzelner Druckimpuls, durch das Rohr geschickt und ges&auml;ttigt. Seine
@@ -3728,6 +3850,7 @@
         </div>
         <div class="mw-chart">
           <div class="mw-chart-t">Resonanz des Rohrs</div>
+          <span class="mw-zoom">antippen</span>
           <div id="mw-chart-spec"></div>
           <p class="muted">
             Das Frequenzbild des Rohrs. Die blaue Marke ist die Viertelwellenresonanz
@@ -3798,7 +3921,7 @@
     <div class="card">
       <h2>Selbsttest</h2>
       <p class="muted">
-        Dreizehn Messungen an der laufenden App. Sie ersetzen keine Fahrt, aber sie sagen,
+        Messungen an der laufenden App. Sie ersetzen keine Fahrt, aber sie sagen,
         ob eine &Auml;nderung etwas kaputt gemacht hat, das man nicht sofort sieht: eine
         Physik, die nicht mehr trifft, eine Ideallinie mit einem Sprung, eine Tonschleife
         mit einer Naht, ein deutscher Satz im englischen Modus.
@@ -4138,7 +4261,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.3.60</span></span>
+    <span class="foot-ver">v<span id="app-version">0.3.61</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
   </span>
   <span class="foot-right">
@@ -4147,6 +4270,18 @@
     </button>
   </span>
 </footer>
+
+<!-- Lightbox fuer Diagramme. Steht ausserhalb von main, damit kein Tab sie ausblendet. -->
+<div class="lb-wrap" id="lb-wrap" role="dialog" aria-modal="true" aria-label="Diagramm gross">
+  <div class="lb-box">
+    <div class="lb-head">
+      <div class="lb-title" id="lb-title"></div>
+      <button id="lb-close">Schlie&szlig;en</button>
+    </div>
+    <div class="lb-body" id="lb-body"></div>
+    <p class="lb-note" id="lb-note"></p>
+  </div>
+</div>
 
 <script>
   // =========================================================================
@@ -4625,13 +4760,12 @@
     "Drehzahl": "Revs",
     "Drei der sieben sind aufgeladen. Dieses Modell hat keinen Lader: Geometrie, Kurbelwelle und Zündfolge stimmen, der Ladedruck fehlt. Der Charakter der Bauart bleibt, das Pfeifen nicht.": "Three of the seven are turbocharged. This model has no turbo: geometry, crankshaft and firing order are right, the boost is missing. The character of the architecture remains, the whistle does not.",
     "Drei fertige Abstimmungen. Sie setzen nur die Regler, die das": "Three ready-made setups. They only touch the sliders that affect the",
-    "Dreizehn Messungen an der laufenden App. Sie ersetzen keine Fahrt, aber sie sagen, ob eine Änderung etwas kaputt gemacht hat, das man nicht sofort sieht: eine Physik, die nicht mehr trifft, eine Ideallinie mit einem Sprung, eine Tonschleife mit einer Naht, ein deutscher Satz im englischen Modus.": "Thirteen measurements on the running app. They do not replace a drive, but they say whether a change broke something you would not notice at once: physics that no longer matches, a racing line with a jump, a sound loop with a seam, a German sentence in English mode.",
     "Drosselt bei vollem Akku. Der Akkuwert ist eine unkalibrierte Schätzung.": "Throttles back on a full battery. The battery value is an uncalibrated estimate.",
     "Druckvorlagen": "Print templates",
     "Eckig: Vollgas, dann Vollbremse": "Square: full throttle, then full brake",
     "Eigener Verbindungsweg, nur zum Erkunden. Er legt": "A separate connection path, for exploring only. It places",
     "Eigenes Muster für die Box, mit dem Code, den es auslöst.": "Your own pattern for the pit, with the code it triggers.",
-    "Ein Knopf, dreizehn Messungen: lädt alles, rechnet die Physik richtig, passt die Linie, sind die Töne heil.": "One button, thirteen measurements: does it all load, is the physics right, does the line fit, are the sounds intact.",
+    "Ein Knopf, viele Messungen: lädt alles, rechnet die Physik richtig, passt die Linie, sind die Töne heil.": "One button, many measurements: does it all load, is the physics right, does the line fit, are the sounds intact.",
     "Ein Teil überfahren und ablesen, welchen Wert das Auto meldet.": "Drive over one part and read off the value the car reports.",
     "Ein Zündimpuls mit Nachhall": "One firing pulse with its tail",
     "Ein einzelner Druckimpuls, durch das Rohr geschickt und gesättigt. Seine Breite kommt vom Regler Impulslänge, sein Abklingen vom Regler Abfall, und die gekappten Spitzen sind die Sättigung. Grau der rohe Impuls, orange derselbe nach Rohr und Sättigung.": "A single pressure pulse, sent through the pipe and saturated. Its width comes from the pulse-length slider, its decay from the decay slider, and the clipped peaks are the saturation. Grey is the raw pulse, orange the same one after pipe and saturation.",
@@ -4755,6 +4889,7 @@
     "Masse & Reifen": "Mass & tyres",
     "Maß": "Measurement",
     "Messung starten": "Start the measurement",
+    "Messungen an der laufenden App. Sie ersetzen keine Fahrt, aber sie sagen, ob eine Änderung etwas kaputt gemacht hat, das man nicht sofort sieht: eine Physik, die nicht mehr trifft, eine Ideallinie mit einem Sprung, eine Tonschleife mit einer Naht, ein deutscher Satz im englischen Modus.": "Measurements on the running app. They do not replace a drive, but they say whether a change broke something you would not notice at once: physics that no longer matches, a racing line with a jump, a sound loop with a seam, a German sentence in English mode.",
     "Minuten": "minutes",
     "Mittel": "Mean",
     "Modus": "Mode",
@@ -6929,6 +7064,20 @@
     // Keine Warnung mehr: die Behauptung, ohne Licht werde nicht gelesen, war falsch.
   });
 
+  // Die Gangzahl im Cockpit schaltet denselben Schalter, den die Optionen zeigen. Ueber
+  // click() und nicht ueber physEngine.config: so bleibt der Schalter die einzige Wahrheit,
+  // und alles, was an seinem change-Ereignis haengt (Speichern, Anzeige, Voreinstellungen),
+  // laeuft mit. Zwei Orte fuer denselben Zustand waeren zwei Orte, die auseinanderlaufen.
+  if ($('race-gear')) {
+    $('race-gear').addEventListener('click', () => {
+      const sw = $('setting-autoshift');
+      if (!sw) return;
+      sw.checked = !sw.checked;
+      sw.dispatchEvent(new Event('change', { bubbles: true }));
+      showHudToast(sw.checked ? 'AUTOMATIK' : 'MANUELL, I UND K ODER PAD');
+    });
+  }
+
   $('setting-autoshift').addEventListener('change', (e) => {
     physEngine.config.autoShift = e.target.checked;
     showHudToast(e.target.checked ? 'Automatikgetriebe' : 'Manuelles Getriebe');
@@ -7145,7 +7294,13 @@
   function updateRaceScreen(st, out) {
     const gearEl = $('race-gear');
     if (!gearEl) return;
-    gearEl.textContent = gearLabel(st);
+    // Zahl und Kennzeichnung getrennt, weil die Zahl mittig bleiben muss. textContent auf
+    // den Knopf zu schreiben wuerde beide Kindknoten loeschen.
+    const nEl = $('race-gear-n');
+    if (nEl) nEl.textContent = gearLabel(st);
+    else gearEl.textContent = gearLabel(st);
+    const mEl = $('race-gear-m');
+    if (mEl) mEl.textContent = physEngine.config.autoShift ? '' : 'M';
     $('race-rpm').textContent = Math.round(st.rpm);
     // Shown as the real-world equivalent, at the cars' actual 1:50 scale. This comment used
     // to argue the opposite - "the scale is NOT 1/50" - on the grounds that the acceleration
@@ -9330,11 +9485,21 @@
 
   // Every car that was connected when the race started, plus the player's own lap list so a
   // session without the Garage still produces a table.
+  // Farbpunkt aus einem ERGEBNISDATENSATZ. carDot() erwartet ein Auto mit Geraet, und in
+  // den Ergebnissen liegen nur Datensaetze - beim Spielerauto ohne Garage sogar ohne Farbe.
+  function ergDot(c) {
+    return c.farbe ? '<span class="car-dot" style="background:' + c.farbe + '"></span>' : '';
+  }
+
   function raceAllCars() {
     const out = garage.map(c => ({ name: garageLabel(c), role: c.role,
+                                   farbe: carColor(c).hex, kennung: c.tag,
                                    laps: (c.race && c.race.laps) || [] }));
     if (!garage.some(c => c === playerCar) && raceLapTimes.length) {
-      out.unshift({ name: 'Spielerauto', role: 'player', laps: raceLapTimes });
+      // Ohne Garage gibt es kein Geraet und damit keine Farbe: dann bleibt das Feld leer,
+      // statt eine zu erfinden.
+      out.unshift({ name: 'Spielerauto', role: 'player', farbe: null, kennung: null,
+                    laps: raceLapTimes });
     }
     return out;
   }
@@ -9470,7 +9635,7 @@
       const st = x.st, isBest = st.best === fastest;
       return `<tr>
         <td style="${td}">${i + 1}</td>
-        <td style="${td}">${x.c.name}${x.c.role === 'ghost' ? ' <span class="muted">(Ghost)</span>' : ''}</td>
+        <td style="${td}">${ergDot(x.c)}${x.c.name}${x.c.role === 'ghost' ? ' <span class="muted">(Ghost)</span>' : ''}</td>
         <td style="${tdr}">${st.n}</td>
         <td style="${tdr}${isBest ? '; color:var(--good); font-weight:700' : ''}">${formatLapTime(st.best)}</td>
         <td style="${tdr}">${formatLapTime(Math.round(st.mean))}</td>
@@ -9484,7 +9649,7 @@
     if (detail) {
       const maxLaps = Math.max(...cars.map(c => c.laps.length));
       const head = '<tr style="background:var(--panel-2)"><th style="' + td + '">Runde</th>'
-        + cars.map(c => `<th style="${tdr}">${c.name}</th>`).join('') + '</tr>';
+        + cars.map(c => `<th style="${tdr}">${ergDot(c)}${c.name}</th>`).join('') + '</tr>';
       let body = '';
       for (let k = 0; k < maxLaps; k++) {
         body += `<tr><td style="${td}">${k + 1}</td>`
@@ -9575,7 +9740,7 @@
     }
     // One polyline per car, plus a dot on every lap it actually completed.
     cars.forEach((c, i) => {
-      const col = RACE_PLOT_COLORS[i % RACE_PLOT_COLORS.length];
+      const col = c.farbe || RACE_PLOT_COLORS[i % RACE_PLOT_COLORS.length];
       const pts = [];
       for (let k = 0; k < maxLap; k++) {
         if (pos[i][k] === undefined) continue;
@@ -9595,7 +9760,8 @@
     // Legend underneath rather than inside: names can be long and would overlap the lines.
     const legend = cars.map((c, i) =>
       `<span style="display:inline-flex; align-items:center; gap:5px; margin-right:14px">`
-      + `<span style="width:12px; height:3px; background:${RACE_PLOT_COLORS[i % RACE_PLOT_COLORS.length]}"></span>`
+      + `<span style="width:12px; height:3px; background:${cars[i].farbe
+           || RACE_PLOT_COLORS[i % RACE_PLOT_COLORS.length]}"></span>`
       + `<span class="muted" style="font-size:12px">${c.name}</span></span>`).join('');
     host.innerHTML = svg + `<div style="margin-top:6px">${legend}</div>`;
   }
@@ -9632,7 +9798,7 @@
       row.dataset.id = String(car.device.id);
       row.innerHTML = `<span class="grid-pos">${i + 1}.</span>`
         + `<span class="grid-handle" draggable="true" title="Ziehen zum Umsortieren">&#8942;&#8942;</span>`
-        + `<span class="grid-name">${garageLabel(car)}</span>`
+        + `<span class="grid-name">${carDot(car)}${garageLabel(car)}</span>`
         + `<span class="grid-move">`
         + `<button data-mv="up" ${i === 0 ? 'disabled' : ''} aria-label="nach vorn">&#9650;</button>`
         + `<button data-mv="down" ${i === cars.length - 1 ? 'disabled' : ''} aria-label="nach hinten">&#9660;</button>`
@@ -9872,7 +10038,7 @@
     let html = '<table class="sum-tab"><tr><th>#</th><th>Auto</th><th>Runden</th>'
       + '<th>Beste</th><th>Mittel</th><th>Abg&auml;nge</th></tr>';
     scored.forEach((x, i) => {
-      html += '<tr><td>' + (i + 1) + '</td><td>' + x.c.name
+      html += '<tr><td>' + (i + 1) + '</td><td>' + ergDot(x.c) + x.c.name
         + (x.c.role === 'ghost' ? ' <span class="muted">(Ghost)</span>' : '') + '</td>'
         + '<td class="num">' + x.st.n + '</td>'
         + '<td class="num' + (x.st.best === fastest ? ' sum-best' : '') + '">'
@@ -10099,15 +10265,16 @@
     // that silently held less than the screen would be worse than none.
     const cars = raceAllCars().filter(c => c.laps.length);
     const num = (ms) => (ms / 1000).toFixed(3).replace('.', ',');
-    const header = 'Auto;Rolle;Runde;Zeit (s)';
+    const header = 'Auto;Kennung;Rolle;Runde;Zeit (s)';
     const lines = [];
     cars.forEach(c => c.laps.forEach(l =>
-      lines.push(`${c.name};${c.role || '-'};${l.lap};${num(l.ms)}`)));
+      lines.push(`${c.name};${c.kennung || '-'};${c.role || '-'};${l.lap};${num(l.ms)}`)));
     // Summary block underneath, matching the statistics column for column.
     lines.push('');
-    lines.push('Auto;Runden;Beste (s);Mittel (s);Schlechteste (s);Streuung (s)');
+    lines.push('Auto;Kennung;Runden;Beste (s);Mittel (s);Schlechteste (s);Streuung (s)');
     cars.forEach(c => { const st = raceStats(c.laps);
-      lines.push(`${c.name};${st.n};${num(st.best)};${num(Math.round(st.mean))};`
+      lines.push(`${c.name};${c.kennung || '-'};${st.n};${num(st.best)};`
+               + `${num(Math.round(st.mean))};`
                + `${num(st.worst)};${num(Math.round(st.sd))}`); });
     // Race conditions, so an exported file can still be understood a month later.
     lines.push('');
@@ -12302,8 +12469,93 @@
   const garage = [];        // every connected car, in connection order
   let playerCar = null;     // the one the gamepad drives; sendControlValue writes here
 
+  // ---------------------------------------------------------------- Kennung je Auto
+  //
+  // Reihenfolge wie gewuenscht, vergeben in der Reihenfolge des Verbindens. Die Werte sind
+  // absichtlich kraeftig und nicht "echte" Autofarben: sie sollen sich auf einem dunklen
+  // Schirm und auf einem Wohnzimmertisch unterscheiden, nicht schoen sein. Schwarz und
+  // Weiss tragen je eine eigene Schriftfarbe mit, sonst waere der Buchstabe im Klecks
+  // unlesbar - und eine Kennung, die man nicht liest, ist keine.
+  const CAR_COLORS = [
+    { id: 'weiss',   name: 'Wei\u00df',  hex: '#f2f4f8', ink: '#14161c' },
+    { id: 'schwarz', name: 'Schwarz',    hex: '#15171c', ink: '#f2f4f8' },
+    { id: 'rot',     name: 'Rot',        hex: '#e23b3b', ink: '#ffffff' },
+    { id: 'blau',    name: 'Blau',       hex: '#3b7fe2', ink: '#ffffff' },
+    { id: 'gruen',   name: 'Gr\u00fcn',  hex: '#35b45a', ink: '#0d1015' },
+    { id: 'gelb',    name: 'Gelb',       hex: '#e8c72a', ink: '#14161c' },
+    { id: 'lila',    name: 'Lila',       hex: '#9b5de5', ink: '#ffffff' },
+    { id: 'orange',  name: 'Orange',     hex: '#f08a24', ink: '#14161c' },
+  ];
+  // Ausgeschrieben, nicht als Zeichen: "Alpha" liest sich in einer Ergebnisliste, ein
+  // einzelnes Alpha sieht dort nach einem Tippfehler aus. Das Zeichen steht im Farbklecks,
+  // wo der Platz fuer ein Wort fehlt. Zwoelf, weil acht Farben plus Doppelbelegung.
+  const CAR_TAGS = [
+    { wort: 'Alpha', zeichen: '\u03b1' }, { wort: 'Beta', zeichen: '\u03b2' },
+    { wort: 'Gamma', zeichen: '\u03b3' }, { wort: 'Delta', zeichen: '\u03b4' },
+    { wort: 'Epsilon', zeichen: '\u03b5' }, { wort: 'Zeta', zeichen: '\u03b6' },
+    { wort: 'Eta', zeichen: '\u03b7' }, { wort: 'Theta', zeichen: '\u03b8' },
+    { wort: 'Iota', zeichen: '\u03b9' }, { wort: 'Kappa', zeichen: '\u03ba' },
+    { wort: 'Lambda', zeichen: '\u03bb' }, { wort: 'My', zeichen: '\u03bc' },
+  ];
+  const CAR_STORE = 'chc.cars.v1';
+
+  function carStore() {
+    try { return JSON.parse(localStorage.getItem(CAR_STORE) || '{}'); }
+    catch (e) { return {}; }
+  }
+  // Gemerkt wird je GERAET, nicht je Platz in der Liste: verbindet man in anderer
+  // Reihenfolge, soll dasselbe Auto dieselbe Farbe und denselben Namen haben. Eine
+  // Rennaufstellung einmal einzutragen und dann durch eine Funkstoerung zu verlieren waere
+  // genau das, was diese Kennung verhindern soll.
+  function carRemember(car) {
+    const all = carStore();
+    all[String(car.device.id)] = { color: car.colorId, alias: car.alias || '' };
+    try { localStorage.setItem(CAR_STORE, JSON.stringify(all)); } catch (e) { /* privat */ }
+  }
+
+  // Farbe fuer ein neu verbundenes Auto. Gemerktes hat Vorrang, sonst die naechste noch
+  // freie Farbe der Reihe - zwei Autos in derselben Farbe waeren keine Zuordnung.
+  function carAssign(car) {
+    const merk = carStore()[String(car.device.id)] || {};
+    const belegt = new Set(garage.filter(c => c !== car).map(c => c.colorId));
+    car.colorId = (merk.color && CAR_COLORS.some(c => c.id === merk.color)
+                   && !belegt.has(merk.color))
+      ? merk.color
+      : (CAR_COLORS.find(c => !belegt.has(c.id)) || CAR_COLORS[0]).id;
+    car.alias = merk.alias || '';
+    carRetag();
+  }
+
+  // Der Buchstabe folgt der Position in der Garage und wird deshalb NICHT gespeichert: er
+  // ist die Reihenfolge des Verbindens, keine Eigenschaft des Autos. Trennt man eines aus
+  // der Mitte, ruecken die dahinter auf.
+  function carRetag() {
+    garage.forEach((c, i) => {
+      const t = CAR_TAGS[i] || { wort: 'Auto ' + (i + 1), zeichen: String(i + 1) };
+      c.tag = t.wort;
+      c.tagChar = t.zeichen;
+    });
+  }
+
+  function carColor(car) {
+    return CAR_COLORS.find(c => c.id === car.colorId) || CAR_COLORS[0];
+  }
+
+  // Der eine Name, den die ganze App benutzt - 23 Aufrufstellen haengen daran.
+  // Reihenfolge mit Absicht: der eingetragene Name schlaegt alles, dann der griechische
+  // Buchstabe, und erst wenn beides fehlt der BLE-Geraetename. Vorher stand der Geraetename
+  // vorn, und in einer Rundenuebersicht sagte "Auto a1b2c3" nichts darueber, welches Auto
+  // auf dem Tisch das war.
   function garageLabel(car) {
+    if (car.alias) return car.alias;
+    if (car.tag) return car.tag;
     return car.device.name || ('Auto ' + String(car.device.id).slice(0, 6));
+  }
+
+  // Farbpunkt fuer Listen, in denen die Farbe nur Anzeige und nicht Bedienung ist.
+  function carDot(car) {
+    if (!car || !car.device) return '';
+    return '<span class="car-dot" style="background:' + carColor(car).hex + '"></span>';
   }
 
   // One write path for every non-player purpose: ghost driving and the identify blink.
@@ -12437,6 +12689,9 @@
   function renderGarage() {
     const list = $('gar-list');
     if (!list) return;
+    // Vor dem Zeichnen: die Buchstaben folgen der Reihenfolge, und die aendert sich, wenn
+    // ein Auto aus der Mitte getrennt wird.
+    carRetag();
     $('gar-count').textContent = garage.length
       ? `${garage.length} Auto${garage.length === 1 ? '' : 's'} verbunden`
       : 'keine Autos verbunden';
@@ -12445,9 +12700,19 @@
       const row = document.createElement('div');
       row.className = 'gar-row' + (car.role === 'player' ? ' is-player'
                                  : car.role === 'ghost' ? ' is-ghost' : '');
+      const f = carColor(car);
       row.innerHTML = `
-        <div><div class="gar-name">${garageLabel(car)}</div>
-          <div class="gar-id">${String(car.device.id).slice(0, 12)}
+        <div>
+          <div class="car-tag">
+            <button class="car-chip" data-act="color"
+                    style="background:${f.hex};color:${f.ink}"
+                    title="Farbe wählen, gerade ${f.name}">${car.tagChar || ''}</button>
+            <input class="car-name-in" data-act="alias" type="text" maxlength="18"
+                   placeholder="${car.tag || 'Name'}"
+                   value="${(car.alias || '').replace(/"/g, '&quot;')}"
+                   aria-label="Name für die Rundenuebersicht">
+          </div>
+          <div class="gar-id">${car.tag || ''} &middot; ${String(car.device.id).slice(0, 12)}
             ${car.blinking ? '<span class="gar-blink">&nbsp;blinkt&hellip;</span>' : ''}</div></div>
         <div class="gar-roles">
           <button data-role="player" class="${car.role === 'player' ? 'on' : ''}">Steuern</button>
@@ -12469,6 +12734,59 @@
         b.onclick = () => setCarRole(car, b.dataset.role);
       });
       row.querySelector('button[data-act="drop"]').onclick = () => disconnectCar(car);
+
+      // Name: bei jedem Tastendruck merken, aber NICHT neu zeichnen - renderGarage()
+      // waehrend des Tippens wuerde das Feld ersetzen und den Schreibstand mitnehmen.
+      // Dasselbe Muster wie beim Temporegler eine Zeile weiter unten. Neu gezeichnet wird
+      // erst beim Verlassen des Feldes.
+      const nf = row.querySelector('input[data-act="alias"]');
+      nf.addEventListener('input', () => { car.alias = nf.value.trim(); carRemember(car); });
+      nf.addEventListener('change', () => { renderGarage(); renderRaceGrid(); });
+      nf.addEventListener('click', (e) => e.stopPropagation());
+      nf.addEventListener('pointerdown', (e) => e.stopPropagation());
+
+      // Farbe: die Auswahl klappt unter dem Klecks auf, acht Farben brauchen keinen Dialog.
+      // Schon belegte Farben bleiben waehlbar, sind aber angeschrieben: zwei gleiche Farben
+      // sind eine schlechte Idee, aber es ist deine Entscheidung und nicht meine.
+      const chip = row.querySelector('button[data-act="color"]');
+      chip.onclick = (e) => {
+        e.stopPropagation();
+        const offen = document.querySelector('.car-pal');
+        if (offen) offen.remove();
+        const pal = document.createElement('div');
+        pal.className = 'car-pal on';
+        for (const fb of CAR_COLORS) {
+          const b = document.createElement('button');
+          b.style.background = fb.hex;
+          b.className = fb.id === car.colorId ? 'on' : '';
+          const wer = garage.find(c => c !== car && c.colorId === fb.id);
+          b.title = fb.name + (wer ? ' (schon ' + garageLabel(wer) + ')' : '');
+          b.setAttribute('aria-label', b.title);
+          b.onclick = (ev) => {
+            ev.stopPropagation();
+            car.colorId = fb.id;
+            carRemember(car);
+            pal.remove();
+            renderGarage();
+            renderRaceGrid();
+          };
+          pal.appendChild(b);
+        }
+        document.body.appendChild(pal);
+        const r = chip.getBoundingClientRect();
+        // An den Klecks gesetzt, aber im Schirm gehalten: am rechten Rand waere die
+        // Auswahl sonst zur Haelfte draussen.
+        pal.style.top = (r.bottom + window.scrollY + 4) + 'px';
+        pal.style.left = Math.min(r.left + window.scrollX,
+          window.scrollX + document.documentElement.clientWidth - pal.offsetWidth - 8) + 'px';
+        const zu = (ev) => {
+          if (pal.contains(ev.target)) return;
+          pal.remove();
+          document.removeEventListener('pointerdown', zu, true);
+        };
+        // Erst im naechsten Takt lauschen, sonst schliesst der eigene Klick sofort wieder.
+        setTimeout(() => document.addEventListener('pointerdown', zu, true), 0);
+      };
       const sp = row.querySelector('.gar-speed input');
       if (sp) {
         const out = row.querySelector('.gar-speed b');
@@ -12559,6 +12877,7 @@
         removeCar(car);
       });
       garage.push(car);
+      carAssign(car);
       // First car connected takes the wheel, as requested.
       if (!playerCar) setCarRole(car, 'player'); else renderGarage();
       log(`${garageLabel(car)} verbunden (${garage.length} insgesamt).`, 'info');
@@ -14491,11 +14810,28 @@
     // An inline engine has one bank, so there is no cross-plane version of it to choose;
     // and a cross-plane crank needs the cylinders to split into equal banks of pairs.
     const noCross = c.layout === 'inline' || c.cyl % 4 !== 0;
-    mwEl('crank').disabled = noCross;
-    mwEl('crank').title = noCross
-      ? (c.layout === 'inline' ? 'Ein Reihenmotor hat nur eine Bank.'
-         : 'Cross-Plane braucht eine durch vier teilbare Zylinderzahl (8, 12).')
-      : '';
+    // Nur die OPTION sperren, nicht das ganze Auswahlfeld. Vorher war bei einem V6, V10 oder
+    // Reihenmotor das ganze Feld gesperrt: man konnte nichts mehr waehlen und sah auch
+    // nicht, WAS nicht geht. Jetzt bleibt das Feld bedienbar, Cross-Plane ist ausgegraut,
+    // und der Grund steht sichtbar darunter statt in einem title-Attribut, das auf dem
+    // Telefon niemand aufklappt.
+    const opt = mwEl('crank').querySelector('option[value=cross]');
+    if (opt) {
+      opt.disabled = noCross;
+      opt.textContent = noCross ? 'Cross-Plane (hier nicht moeglich)'
+                                : 'Cross-Plane (ungleiche Baenke)';
+    }
+    mwEl('crank').disabled = false;
+    // Steht Cross-Plane und wird gerade unmoeglich, muss der Wert mit: ein Auswahlfeld, das
+    // einen gesperrten Wert anzeigt, luegt ueber das, was gerechnet wird.
+    if (noCross && mwEl('crank').value === 'cross') mwEl('crank').value = 'even';
+    const grund = c.layout === 'inline'
+      ? 'Ein Reihenmotor hat nur eine Bank, also keine ungleichen Baenke.'
+      : 'Cross-Plane braucht Zylinder paarweise je Bank, also eine durch vier teilbare'
+        + ' Zahl (8 oder 12).';
+    mwEl('crank').title = noCross ? grund : '';
+    const hw = mwEl('crank-note');
+    if (hw) hw.textContent = noCross ? grund : '';
   }
 
   // Firing angles over one 720-degree cycle, as [angle, bank]. This is where the character
@@ -14786,10 +15122,24 @@
 
   // Ein einzelner Impuls, durch dasselbe Rohr geschickt und ges\u00e4ttigt wie im Ton.
   function mwChartPulse(c) {
-    const rnd = mwRng(7);
+    // Der Impuls wird hier direkt gebaut, mit DERSELBEN Formel wie in mwPulseTrain: eine
+    // halbe Sinuswelle, quadriert, also ein einseitiger Druckstoss.
+    //
+    // Vorher stand hier mwPulseTrain(eins, [[0, 0]], n, rnd), und das war in zwei Punkten
+    // falsch: das zweite Argument ist eine ZYKLENZAHL, keine Winkelliste, und zurueck kommen
+    // ZWEI Baenke, keine Spur. Gelesen wurde das Ergebnis wie eine Spur, also war jeder Wert
+    // undefiniert und das Bild eine Nulllinie - deshalb aenderte sich beim Drehen der Regler
+    // nichts. Gemessen: der Bildinhalt war ueber pipe, pulse, decay, drive, rpm, cyl und
+    // clatter hinweg zeichengleich. Ein einzelner Impuls braucht die Funktion ohnehin nicht.
     const eins = Object.assign({}, c, { cyl: 1, clatter: 0, scatter: 0 });
     const n = Math.round(0.055 * MW_SR);
-    const roh = mwPulseTrain(eins, [[0, 0]], n, rnd);
+    const pulseLen = Math.max(4, Math.round(c.pulse * 0.001 * MW_SR));
+    const roh = new Float32Array(n);
+    const ab = Math.round(0.004 * MW_SR);      // Vorlauf, damit die Flanke zu sehen ist
+    for (let k = 0; k < pulseLen && ab + k < n; k++) {
+      const w = Math.sin(Math.PI * k / pulseLen);
+      roh[ab + k] = w * w;
+    }
     const ir = mwExhaustIR(eins, mwRng(7));
     // Faltung, kurz gehalten: nur so weit wie das Fenster reicht.
     const nass = new Float32Array(n);
@@ -14798,13 +15148,27 @@
       const m = Math.min(ir.length, n - i);
       for (let k = 0; k < m; k++) nass[i + k] += roh[i] * ir[k];
     }
+    // Erst auf eins normieren, DANN saettigen, und zwar die ganze Spur auf einmal:
+    // mwSaturate arbeitet an Ort und Stelle auf einem Array und gibt nichts zurueck.
+    //
+    // Genau daran lag der zweite Fehler in dieser Funktion, und es war derselbe wie der
+    // erste: eine Signatur angenommen statt nachgelesen. mwSaturate(nass[i], c.drive) bekam
+    // eine ZAHL, x.length war undefiniert, die Schleife darin lief null Mal und heraus kam
+    // undefined - die orange Kurve bestand also aus lauter undefined und war gar nicht da.
+    // Gemessen hat es sich so: von min auf max geaendert wirkte nur der Regler
+    // Impulslaenge, und der ist der einzige, der die GRAUE Rohkurve beeinflusst. Rohr,
+    // Abfall und Saettigung wirken alle drei ausschliesslich auf die orange, und alle drei
+    // meldeten "keine Wirkung". Drei stumme Regler und ein sprechender waren der Hinweis,
+    // welche der beiden Kurven fehlt.
     let sp = 0;
     for (let i = 0; i < n; i++) sp = Math.max(sp, Math.abs(nass[i]));
+    if (sp > 0) for (let i = 0; i < n; i++) nass[i] /= sp;
+    mwSaturate(nass, c.drive);
     const pts = [], pts2 = [];
     const schritt = Math.max(1, Math.floor(n / 320));
     for (let i = 0; i < n; i += schritt) {
       const t = i / MW_SR * 1000;
-      pts.push([t, mwSaturate(nass[i] / (sp || 1), c.drive)]);
+      pts.push([t, nass[i]]);
       pts2.push([t, roh[i]]);
     }
     return renderLineChart({
@@ -14859,6 +15223,74 @@
     try { put('fire', mwChartFire(c)); } catch (e) { put('fire', ''); }
     try { put('pulse', mwChartPulse(c)); } catch (e) { put('pulse', ''); }
     try { put('spec', mwChartSpec(c)); } catch (e) { put('spec', ''); }
+    // Liegt ein Bild gerade gross auf dem Schirm, muss die grosse Fassung mitkommen. Sonst
+    // zeigt die Lightbox einen Stand, den es nicht mehr gibt.
+    lightboxRefresh();
+  }
+
+  // ---------------------------------------------------------------- Lightbox
+  //
+  // Geklont, nicht neu gezeichnet. Ein zweiter Zeichenweg fuer die grosse Fassung waere ein
+  // zweiter Ort, an dem etwas anders sein kann - und genau das soll ein Bild, das man zum
+  // Nachmessen aufzieht, nicht haben.
+  let lbQuelle = null;          // welches Diagramm gerade gross liegt
+
+  function lightboxOpen(id, titel, hinweis) {
+    const q = document.getElementById('mw-chart-' + id);
+    const svg = q && q.querySelector('svg');
+    if (!svg) return;
+    lbQuelle = { id, titel, hinweis };
+    $('lb-title').textContent = titel;
+    $('lb-note').textContent = hinweis || '';
+    const body = $('lb-body');
+    body.innerHTML = '';
+    const gross = svg.cloneNode(true);
+    // Die kleine Fassung ist auf Kachelbreite gerechnet; gross darf sie den Platz nehmen,
+    // den sie bekommt. Das viewBox bleibt, also stimmen alle Verhaeltnisse.
+    gross.removeAttribute('style');
+    gross.setAttribute('width', '100%');
+    body.appendChild(gross);
+    $('lb-wrap').classList.add('on');
+  }
+
+  function lightboxClose() {
+    $('lb-wrap').classList.remove('on');
+    $('lb-body').innerHTML = '';
+    lbQuelle = null;
+  }
+
+  // Beim Drehen eines Reglers wird neu gezeichnet. Liegt das Bild gerade gross auf dem
+  // Schirm, muss es mitkommen, sonst zeigt es einen Stand, den es nicht mehr gibt.
+  function lightboxRefresh() {
+    if (!lbQuelle || !$('lb-wrap').classList.contains('on')) return;
+    const q = lbQuelle;
+    lightboxOpen(q.id, q.titel, q.hinweis);
+  }
+
+  if ($('lb-close')) $('lb-close').addEventListener('click', lightboxClose);
+  if ($('lb-wrap')) {
+    // Klick auf den Hintergrund schliesst, Klick INS Bild nicht.
+    $('lb-wrap').addEventListener('click', (e) => {
+      if (e.target === $('lb-wrap')) lightboxClose();
+    });
+  }
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && $('lb-wrap') && $('lb-wrap').classList.contains('on')) {
+      lightboxClose();
+    }
+  });
+
+  // Die drei Diagramme anklickbar machen. Der Hinweistext ist derselbe, der klein
+  // darunter steht - gross gelesen hilft er mehr.
+  for (const [id, titel] of [['fire', 'Z\u00fcndfolge \u00fcber 720\u00b0'],
+                             ['pulse', 'Ein Z\u00fcndimpuls mit Nachhall'],
+                             ['spec', 'Resonanz des Rohrs']]) {
+    const e = document.getElementById('mw-chart-' + id);
+    if (!e) continue;
+    e.addEventListener('click', () => {
+      const p = e.parentElement.querySelector('p');
+      lightboxOpen(id, titel, p ? p.textContent.replace(/\s+/g, ' ').trim() : '');
+    });
   }
 
   function mwSay(t) { mwEl('status').textContent = t; }
@@ -15533,6 +15965,108 @@
       raceLapStart = gemerkt.start; dashLapStart = gemerkt.dash;
       racePartialMs = gemerkt.part;
       if (anzeige !== null) $('race-status').textContent = anzeige;
+    }
+  });
+
+  // ---- Autokennung: Farbe, Buchstabe, Name ----
+  // Mit erfundenen Autos, weil echte eine Bluetooth-Verbindung brauchen. Geprueft wird die
+  // Logik, nicht die Funkstrecke: dass keine Farbe zweimal vergeben wird, dass die
+  // Buchstaben der Reihenfolge folgen und nach einem Abgang aufruecken, und dass der
+  // eingetragene Name Vorrang vor allem anderen hat.
+  stAdd('Autokennung: Farbe, Buchstabe, Name', () => {
+    const gemerkt = garage.slice();
+    // Auch die ANZEIGE zuruecklegen: ein Test, der die Oberflaeche anfasst, muss sie
+    // aufraeumen. Ohne genau das blieb hier schon einmal Text stehen, den die
+    // Sprachpruefung dann zu Recht gemeldet hat.
+    const listeVorher = $('gar-list') ? $('gar-list').innerHTML : null;
+    const zahlVorher = $('gar-count') ? $('gar-count').textContent : null;
+    try {
+      garage.length = 0;
+      const mach = (id, name) => ({ device: { id, name }, role: 'none' });
+      const drei = [mach('t-1', 'Carrera A'), mach('t-2', 'Carrera B'),
+                    mach('t-3', 'Carrera C')];
+      for (const c of drei) { garage.push(c); carAssign(c); }
+      const farben = drei.map(c => c.colorId);
+      const doppelt = farben.length !== new Set(farben).size;
+      const tags = drei.map(c => c.tag);
+      // Ein Auto aus der Mitte trennen: die dahinter muessen aufruecken.
+      garage.splice(1, 1);
+      carRetag();
+      const nachAbgang = garage.map(c => c.tag);
+      // Namensvorrang: eingetragener Name schlaegt Buchstaben schlaegt Geraetenamen.
+      const a = garage[0];
+      const ohne = garageLabel(a);
+      a.alias = 'Testfahrer';
+      const mit = garageLabel(a);
+      const ok = !doppelt
+                 && tags.join(',') === 'Alpha,Beta,Gamma'
+                 && nachAbgang.join(',') === 'Alpha,Beta'
+                 && ohne === 'Alpha' && mit === 'Testfahrer';
+      return { ok,
+               mass: 'Farben ' + farben.join('/') + (doppelt ? ' DOPPELT' : ' verschieden')
+                     + ', Buchstaben ' + tags.join('/')
+                     + ', nach Abgang ' + nachAbgang.join('/')
+                     + ', Name "' + ohne + '" -> "' + mit + '"' };
+    } finally {
+      garage.length = 0;
+      gemerkt.forEach(c => garage.push(c));
+      carRetag();
+      if (listeVorher !== null) $('gar-list').innerHTML = listeVorher;
+      if (zahlVorher !== null) $('gar-count').textContent = zahlVorher;
+    }
+  });
+
+  // ---- Reagieren die Werkstattbilder? ----
+  // Jeder Regler von Anschlag zu Anschlag, und geprueft wird, WELCHE Bilder sich dabei
+  // aendern. Die Erwartung steht in der Tabelle und folgt aus dem Modell:
+  //
+  //   Rohr      Impuls und Resonanz  (Rohrlaenge geht in die Impulsantwort und die Spitze)
+  //   Impuls    nur Impuls           (die Breite des Druckstosses)
+  //   Abfall    Impuls und Resonanz  (Laenge der Impulsantwort, damit ihre Guete)
+  //   Saettigung nur Impuls          (steckt in keinem Frequenzbild)
+  //   Drehzahl  nur Resonanz         (die rote Marke; ZuendWINKEL haengen nicht an ihr)
+  //   Zylinder  Zuendfolge und Resonanz
+  //
+  // Ein Bild, das auf seinen Regler NICHT reagiert, ist der Fehler, den es hier zweimal
+  // gegeben hat: gezeichnet, plausibel, und in Wahrheit eine Nulllinie.
+  stAdd('Werkstattbilder reagieren auf ihre Regler', () => {
+    const soll = {
+      pipe: 'pulse,spec', pulse: 'pulse', decay: 'pulse,spec',
+      drive: 'pulse', rpm: 'spec', cyl: 'fire,spec',
+    };
+    const bild = (k) => {
+      const e = document.getElementById('mw-chart-' + k);
+      const svg = e && e.querySelector('svg');
+      return svg ? svg.innerHTML : '';
+    };
+    const alle = () => ({ fire: bild('fire'), pulse: bild('pulse'), spec: bild('spec') });
+    if (!alle().pulse) return { skip: true, mass: 'Werkstatt nicht im Dokument' };
+    const ids = Object.keys(soll);
+    const gemerkt = {};
+    for (const id of ids) gemerkt[id] = document.getElementById('mw-' + id).value;
+    const stelle = (id, v) => {
+      const e = document.getElementById('mw-' + id);
+      e.value = v;
+      e.dispatchEvent(new Event('input', { bubbles: true }));
+    };
+    try {
+      const falsch = [];
+      const gemessen = [];
+      for (const id of ids) {
+        const e = document.getElementById('mw-' + id);
+        stelle(id, e.min); const a = alle();
+        stelle(id, e.max); const b = alle();
+        stelle(id, gemerkt[id]);
+        const anders = ['fire', 'pulse', 'spec'].filter(k => a[k] !== b[k]);
+        const ist = anders.join(',');
+        gemessen.push(id + '=' + (ist || 'nichts'));
+        if (ist !== soll[id]) falsch.push(id + ': ' + (ist || 'nichts') + ' statt ' + soll[id]);
+      }
+      return { ok: !falsch.length,
+               mass: gemessen.join(' ') + (falsch.length ? ' | FALSCH: ' + falsch.join('; ')
+                                                         : ' | alle wie erwartet') };
+    } finally {
+      for (const id of ids) stelle(id, gemerkt[id]);
     }
   });
 

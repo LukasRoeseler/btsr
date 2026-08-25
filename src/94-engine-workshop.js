@@ -158,11 +158,28 @@
     // An inline engine has one bank, so there is no cross-plane version of it to choose;
     // and a cross-plane crank needs the cylinders to split into equal banks of pairs.
     const noCross = c.layout === 'inline' || c.cyl % 4 !== 0;
-    mwEl('crank').disabled = noCross;
-    mwEl('crank').title = noCross
-      ? (c.layout === 'inline' ? 'Ein Reihenmotor hat nur eine Bank.'
-         : 'Cross-Plane braucht eine durch vier teilbare Zylinderzahl (8, 12).')
-      : '';
+    // Nur die OPTION sperren, nicht das ganze Auswahlfeld. Vorher war bei einem V6, V10 oder
+    // Reihenmotor das ganze Feld gesperrt: man konnte nichts mehr waehlen und sah auch
+    // nicht, WAS nicht geht. Jetzt bleibt das Feld bedienbar, Cross-Plane ist ausgegraut,
+    // und der Grund steht sichtbar darunter statt in einem title-Attribut, das auf dem
+    // Telefon niemand aufklappt.
+    const opt = mwEl('crank').querySelector('option[value=cross]');
+    if (opt) {
+      opt.disabled = noCross;
+      opt.textContent = noCross ? 'Cross-Plane (hier nicht moeglich)'
+                                : 'Cross-Plane (ungleiche Baenke)';
+    }
+    mwEl('crank').disabled = false;
+    // Steht Cross-Plane und wird gerade unmoeglich, muss der Wert mit: ein Auswahlfeld, das
+    // einen gesperrten Wert anzeigt, luegt ueber das, was gerechnet wird.
+    if (noCross && mwEl('crank').value === 'cross') mwEl('crank').value = 'even';
+    const grund = c.layout === 'inline'
+      ? 'Ein Reihenmotor hat nur eine Bank, also keine ungleichen Baenke.'
+      : 'Cross-Plane braucht Zylinder paarweise je Bank, also eine durch vier teilbare'
+        + ' Zahl (8 oder 12).';
+    mwEl('crank').title = noCross ? grund : '';
+    const hw = mwEl('crank-note');
+    if (hw) hw.textContent = noCross ? grund : '';
   }
 
   // Firing angles over one 720-degree cycle, as [angle, bank]. This is where the character
@@ -453,10 +470,24 @@
 
   // Ein einzelner Impuls, durch dasselbe Rohr geschickt und ges\u00e4ttigt wie im Ton.
   function mwChartPulse(c) {
-    const rnd = mwRng(7);
+    // Der Impuls wird hier direkt gebaut, mit DERSELBEN Formel wie in mwPulseTrain: eine
+    // halbe Sinuswelle, quadriert, also ein einseitiger Druckstoss.
+    //
+    // Vorher stand hier mwPulseTrain(eins, [[0, 0]], n, rnd), und das war in zwei Punkten
+    // falsch: das zweite Argument ist eine ZYKLENZAHL, keine Winkelliste, und zurueck kommen
+    // ZWEI Baenke, keine Spur. Gelesen wurde das Ergebnis wie eine Spur, also war jeder Wert
+    // undefiniert und das Bild eine Nulllinie - deshalb aenderte sich beim Drehen der Regler
+    // nichts. Gemessen: der Bildinhalt war ueber pipe, pulse, decay, drive, rpm, cyl und
+    // clatter hinweg zeichengleich. Ein einzelner Impuls braucht die Funktion ohnehin nicht.
     const eins = Object.assign({}, c, { cyl: 1, clatter: 0, scatter: 0 });
     const n = Math.round(0.055 * MW_SR);
-    const roh = mwPulseTrain(eins, [[0, 0]], n, rnd);
+    const pulseLen = Math.max(4, Math.round(c.pulse * 0.001 * MW_SR));
+    const roh = new Float32Array(n);
+    const ab = Math.round(0.004 * MW_SR);      // Vorlauf, damit die Flanke zu sehen ist
+    for (let k = 0; k < pulseLen && ab + k < n; k++) {
+      const w = Math.sin(Math.PI * k / pulseLen);
+      roh[ab + k] = w * w;
+    }
     const ir = mwExhaustIR(eins, mwRng(7));
     // Faltung, kurz gehalten: nur so weit wie das Fenster reicht.
     const nass = new Float32Array(n);
@@ -465,13 +496,27 @@
       const m = Math.min(ir.length, n - i);
       for (let k = 0; k < m; k++) nass[i + k] += roh[i] * ir[k];
     }
+    // Erst auf eins normieren, DANN saettigen, und zwar die ganze Spur auf einmal:
+    // mwSaturate arbeitet an Ort und Stelle auf einem Array und gibt nichts zurueck.
+    //
+    // Genau daran lag der zweite Fehler in dieser Funktion, und es war derselbe wie der
+    // erste: eine Signatur angenommen statt nachgelesen. mwSaturate(nass[i], c.drive) bekam
+    // eine ZAHL, x.length war undefiniert, die Schleife darin lief null Mal und heraus kam
+    // undefined - die orange Kurve bestand also aus lauter undefined und war gar nicht da.
+    // Gemessen hat es sich so: von min auf max geaendert wirkte nur der Regler
+    // Impulslaenge, und der ist der einzige, der die GRAUE Rohkurve beeinflusst. Rohr,
+    // Abfall und Saettigung wirken alle drei ausschliesslich auf die orange, und alle drei
+    // meldeten "keine Wirkung". Drei stumme Regler und ein sprechender waren der Hinweis,
+    // welche der beiden Kurven fehlt.
     let sp = 0;
     for (let i = 0; i < n; i++) sp = Math.max(sp, Math.abs(nass[i]));
+    if (sp > 0) for (let i = 0; i < n; i++) nass[i] /= sp;
+    mwSaturate(nass, c.drive);
     const pts = [], pts2 = [];
     const schritt = Math.max(1, Math.floor(n / 320));
     for (let i = 0; i < n; i += schritt) {
       const t = i / MW_SR * 1000;
-      pts.push([t, mwSaturate(nass[i] / (sp || 1), c.drive)]);
+      pts.push([t, nass[i]]);
       pts2.push([t, roh[i]]);
     }
     return renderLineChart({
@@ -526,6 +571,74 @@
     try { put('fire', mwChartFire(c)); } catch (e) { put('fire', ''); }
     try { put('pulse', mwChartPulse(c)); } catch (e) { put('pulse', ''); }
     try { put('spec', mwChartSpec(c)); } catch (e) { put('spec', ''); }
+    // Liegt ein Bild gerade gross auf dem Schirm, muss die grosse Fassung mitkommen. Sonst
+    // zeigt die Lightbox einen Stand, den es nicht mehr gibt.
+    lightboxRefresh();
+  }
+
+  // ---------------------------------------------------------------- Lightbox
+  //
+  // Geklont, nicht neu gezeichnet. Ein zweiter Zeichenweg fuer die grosse Fassung waere ein
+  // zweiter Ort, an dem etwas anders sein kann - und genau das soll ein Bild, das man zum
+  // Nachmessen aufzieht, nicht haben.
+  let lbQuelle = null;          // welches Diagramm gerade gross liegt
+
+  function lightboxOpen(id, titel, hinweis) {
+    const q = document.getElementById('mw-chart-' + id);
+    const svg = q && q.querySelector('svg');
+    if (!svg) return;
+    lbQuelle = { id, titel, hinweis };
+    $('lb-title').textContent = titel;
+    $('lb-note').textContent = hinweis || '';
+    const body = $('lb-body');
+    body.innerHTML = '';
+    const gross = svg.cloneNode(true);
+    // Die kleine Fassung ist auf Kachelbreite gerechnet; gross darf sie den Platz nehmen,
+    // den sie bekommt. Das viewBox bleibt, also stimmen alle Verhaeltnisse.
+    gross.removeAttribute('style');
+    gross.setAttribute('width', '100%');
+    body.appendChild(gross);
+    $('lb-wrap').classList.add('on');
+  }
+
+  function lightboxClose() {
+    $('lb-wrap').classList.remove('on');
+    $('lb-body').innerHTML = '';
+    lbQuelle = null;
+  }
+
+  // Beim Drehen eines Reglers wird neu gezeichnet. Liegt das Bild gerade gross auf dem
+  // Schirm, muss es mitkommen, sonst zeigt es einen Stand, den es nicht mehr gibt.
+  function lightboxRefresh() {
+    if (!lbQuelle || !$('lb-wrap').classList.contains('on')) return;
+    const q = lbQuelle;
+    lightboxOpen(q.id, q.titel, q.hinweis);
+  }
+
+  if ($('lb-close')) $('lb-close').addEventListener('click', lightboxClose);
+  if ($('lb-wrap')) {
+    // Klick auf den Hintergrund schliesst, Klick INS Bild nicht.
+    $('lb-wrap').addEventListener('click', (e) => {
+      if (e.target === $('lb-wrap')) lightboxClose();
+    });
+  }
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && $('lb-wrap') && $('lb-wrap').classList.contains('on')) {
+      lightboxClose();
+    }
+  });
+
+  // Die drei Diagramme anklickbar machen. Der Hinweistext ist derselbe, der klein
+  // darunter steht - gross gelesen hilft er mehr.
+  for (const [id, titel] of [['fire', 'Z\u00fcndfolge \u00fcber 720\u00b0'],
+                             ['pulse', 'Ein Z\u00fcndimpuls mit Nachhall'],
+                             ['spec', 'Resonanz des Rohrs']]) {
+    const e = document.getElementById('mw-chart-' + id);
+    if (!e) continue;
+    e.addEventListener('click', () => {
+      const p = e.parentElement.querySelector('p');
+      lightboxOpen(id, titel, p ? p.textContent.replace(/\s+/g, ' ').trim() : '');
+    });
   }
 
   function mwSay(t) { mwEl('status').textContent = t; }

@@ -205,11 +205,21 @@
 
   // Every car that was connected when the race started, plus the player's own lap list so a
   // session without the Garage still produces a table.
+  // Farbpunkt aus einem ERGEBNISDATENSATZ. carDot() erwartet ein Auto mit Geraet, und in
+  // den Ergebnissen liegen nur Datensaetze - beim Spielerauto ohne Garage sogar ohne Farbe.
+  function ergDot(c) {
+    return c.farbe ? '<span class="car-dot" style="background:' + c.farbe + '"></span>' : '';
+  }
+
   function raceAllCars() {
     const out = garage.map(c => ({ name: garageLabel(c), role: c.role,
+                                   farbe: carColor(c).hex, kennung: c.tag,
                                    laps: (c.race && c.race.laps) || [] }));
     if (!garage.some(c => c === playerCar) && raceLapTimes.length) {
-      out.unshift({ name: 'Spielerauto', role: 'player', laps: raceLapTimes });
+      // Ohne Garage gibt es kein Geraet und damit keine Farbe: dann bleibt das Feld leer,
+      // statt eine zu erfinden.
+      out.unshift({ name: 'Spielerauto', role: 'player', farbe: null, kennung: null,
+                    laps: raceLapTimes });
     }
     return out;
   }
@@ -345,7 +355,7 @@
       const st = x.st, isBest = st.best === fastest;
       return `<tr>
         <td style="${td}">${i + 1}</td>
-        <td style="${td}">${x.c.name}${x.c.role === 'ghost' ? ' <span class="muted">(Ghost)</span>' : ''}</td>
+        <td style="${td}">${ergDot(x.c)}${x.c.name}${x.c.role === 'ghost' ? ' <span class="muted">(Ghost)</span>' : ''}</td>
         <td style="${tdr}">${st.n}</td>
         <td style="${tdr}${isBest ? '; color:var(--good); font-weight:700' : ''}">${formatLapTime(st.best)}</td>
         <td style="${tdr}">${formatLapTime(Math.round(st.mean))}</td>
@@ -359,7 +369,7 @@
     if (detail) {
       const maxLaps = Math.max(...cars.map(c => c.laps.length));
       const head = '<tr style="background:var(--panel-2)"><th style="' + td + '">Runde</th>'
-        + cars.map(c => `<th style="${tdr}">${c.name}</th>`).join('') + '</tr>';
+        + cars.map(c => `<th style="${tdr}">${ergDot(c)}${c.name}</th>`).join('') + '</tr>';
       let body = '';
       for (let k = 0; k < maxLaps; k++) {
         body += `<tr><td style="${td}">${k + 1}</td>`
@@ -450,7 +460,7 @@
     }
     // One polyline per car, plus a dot on every lap it actually completed.
     cars.forEach((c, i) => {
-      const col = RACE_PLOT_COLORS[i % RACE_PLOT_COLORS.length];
+      const col = c.farbe || RACE_PLOT_COLORS[i % RACE_PLOT_COLORS.length];
       const pts = [];
       for (let k = 0; k < maxLap; k++) {
         if (pos[i][k] === undefined) continue;
@@ -470,7 +480,8 @@
     // Legend underneath rather than inside: names can be long and would overlap the lines.
     const legend = cars.map((c, i) =>
       `<span style="display:inline-flex; align-items:center; gap:5px; margin-right:14px">`
-      + `<span style="width:12px; height:3px; background:${RACE_PLOT_COLORS[i % RACE_PLOT_COLORS.length]}"></span>`
+      + `<span style="width:12px; height:3px; background:${cars[i].farbe
+           || RACE_PLOT_COLORS[i % RACE_PLOT_COLORS.length]}"></span>`
       + `<span class="muted" style="font-size:12px">${c.name}</span></span>`).join('');
     host.innerHTML = svg + `<div style="margin-top:6px">${legend}</div>`;
   }
@@ -507,7 +518,7 @@
       row.dataset.id = String(car.device.id);
       row.innerHTML = `<span class="grid-pos">${i + 1}.</span>`
         + `<span class="grid-handle" draggable="true" title="Ziehen zum Umsortieren">&#8942;&#8942;</span>`
-        + `<span class="grid-name">${garageLabel(car)}</span>`
+        + `<span class="grid-name">${carDot(car)}${garageLabel(car)}</span>`
         + `<span class="grid-move">`
         + `<button data-mv="up" ${i === 0 ? 'disabled' : ''} aria-label="nach vorn">&#9650;</button>`
         + `<button data-mv="down" ${i === cars.length - 1 ? 'disabled' : ''} aria-label="nach hinten">&#9660;</button>`
@@ -747,7 +758,7 @@
     let html = '<table class="sum-tab"><tr><th>#</th><th>Auto</th><th>Runden</th>'
       + '<th>Beste</th><th>Mittel</th><th>Abg&auml;nge</th></tr>';
     scored.forEach((x, i) => {
-      html += '<tr><td>' + (i + 1) + '</td><td>' + x.c.name
+      html += '<tr><td>' + (i + 1) + '</td><td>' + ergDot(x.c) + x.c.name
         + (x.c.role === 'ghost' ? ' <span class="muted">(Ghost)</span>' : '') + '</td>'
         + '<td class="num">' + x.st.n + '</td>'
         + '<td class="num' + (x.st.best === fastest ? ' sum-best' : '') + '">'
@@ -974,15 +985,16 @@
     // that silently held less than the screen would be worse than none.
     const cars = raceAllCars().filter(c => c.laps.length);
     const num = (ms) => (ms / 1000).toFixed(3).replace('.', ',');
-    const header = 'Auto;Rolle;Runde;Zeit (s)';
+    const header = 'Auto;Kennung;Rolle;Runde;Zeit (s)';
     const lines = [];
     cars.forEach(c => c.laps.forEach(l =>
-      lines.push(`${c.name};${c.role || '-'};${l.lap};${num(l.ms)}`)));
+      lines.push(`${c.name};${c.kennung || '-'};${c.role || '-'};${l.lap};${num(l.ms)}`)));
     // Summary block underneath, matching the statistics column for column.
     lines.push('');
-    lines.push('Auto;Runden;Beste (s);Mittel (s);Schlechteste (s);Streuung (s)');
+    lines.push('Auto;Kennung;Runden;Beste (s);Mittel (s);Schlechteste (s);Streuung (s)');
     cars.forEach(c => { const st = raceStats(c.laps);
-      lines.push(`${c.name};${st.n};${num(st.best)};${num(Math.round(st.mean))};`
+      lines.push(`${c.name};${c.kennung || '-'};${st.n};${num(st.best)};`
+               + `${num(Math.round(st.mean))};`
                + `${num(st.worst)};${num(Math.round(st.sd))}`); });
     // Race conditions, so an exported file can still be understood a month later.
     lines.push('');

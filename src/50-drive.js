@@ -37,6 +37,20 @@
     // Keine Warnung mehr: die Behauptung, ohne Licht werde nicht gelesen, war falsch.
   });
 
+  // Die Gangzahl im Cockpit schaltet denselben Schalter, den die Optionen zeigen. Ueber
+  // click() und nicht ueber physEngine.config: so bleibt der Schalter die einzige Wahrheit,
+  // und alles, was an seinem change-Ereignis haengt (Speichern, Anzeige, Voreinstellungen),
+  // laeuft mit. Zwei Orte fuer denselben Zustand waeren zwei Orte, die auseinanderlaufen.
+  if ($('race-gear')) {
+    $('race-gear').addEventListener('click', () => {
+      const sw = $('setting-autoshift');
+      if (!sw) return;
+      sw.checked = !sw.checked;
+      sw.dispatchEvent(new Event('change', { bubbles: true }));
+      showHudToast(sw.checked ? 'AUTOMATIK' : 'MANUELL, I UND K ODER PAD');
+    });
+  }
+
   $('setting-autoshift').addEventListener('change', (e) => {
     physEngine.config.autoShift = e.target.checked;
     showHudToast(e.target.checked ? 'Automatikgetriebe' : 'Manuelles Getriebe');
@@ -253,7 +267,13 @@
   function updateRaceScreen(st, out) {
     const gearEl = $('race-gear');
     if (!gearEl) return;
-    gearEl.textContent = gearLabel(st);
+    // Zahl und Kennzeichnung getrennt, weil die Zahl mittig bleiben muss. textContent auf
+    // den Knopf zu schreiben wuerde beide Kindknoten loeschen.
+    const nEl = $('race-gear-n');
+    if (nEl) nEl.textContent = gearLabel(st);
+    else gearEl.textContent = gearLabel(st);
+    const mEl = $('race-gear-m');
+    if (mEl) mEl.textContent = physEngine.config.autoShift ? '' : 'M';
     $('race-rpm').textContent = Math.round(st.rpm);
     // Shown as the real-world equivalent, at the cars' actual 1:50 scale. This comment used
     // to argue the opposite - "the scale is NOT 1/50" - on the grounds that the acceleration

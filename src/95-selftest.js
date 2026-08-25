@@ -419,6 +419,108 @@
     }
   });
 
+  // ---- Autokennung: Farbe, Buchstabe, Name ----
+  // Mit erfundenen Autos, weil echte eine Bluetooth-Verbindung brauchen. Geprueft wird die
+  // Logik, nicht die Funkstrecke: dass keine Farbe zweimal vergeben wird, dass die
+  // Buchstaben der Reihenfolge folgen und nach einem Abgang aufruecken, und dass der
+  // eingetragene Name Vorrang vor allem anderen hat.
+  stAdd('Autokennung: Farbe, Buchstabe, Name', () => {
+    const gemerkt = garage.slice();
+    // Auch die ANZEIGE zuruecklegen: ein Test, der die Oberflaeche anfasst, muss sie
+    // aufraeumen. Ohne genau das blieb hier schon einmal Text stehen, den die
+    // Sprachpruefung dann zu Recht gemeldet hat.
+    const listeVorher = $('gar-list') ? $('gar-list').innerHTML : null;
+    const zahlVorher = $('gar-count') ? $('gar-count').textContent : null;
+    try {
+      garage.length = 0;
+      const mach = (id, name) => ({ device: { id, name }, role: 'none' });
+      const drei = [mach('t-1', 'Carrera A'), mach('t-2', 'Carrera B'),
+                    mach('t-3', 'Carrera C')];
+      for (const c of drei) { garage.push(c); carAssign(c); }
+      const farben = drei.map(c => c.colorId);
+      const doppelt = farben.length !== new Set(farben).size;
+      const tags = drei.map(c => c.tag);
+      // Ein Auto aus der Mitte trennen: die dahinter muessen aufruecken.
+      garage.splice(1, 1);
+      carRetag();
+      const nachAbgang = garage.map(c => c.tag);
+      // Namensvorrang: eingetragener Name schlaegt Buchstaben schlaegt Geraetenamen.
+      const a = garage[0];
+      const ohne = garageLabel(a);
+      a.alias = 'Testfahrer';
+      const mit = garageLabel(a);
+      const ok = !doppelt
+                 && tags.join(',') === 'Alpha,Beta,Gamma'
+                 && nachAbgang.join(',') === 'Alpha,Beta'
+                 && ohne === 'Alpha' && mit === 'Testfahrer';
+      return { ok,
+               mass: 'Farben ' + farben.join('/') + (doppelt ? ' DOPPELT' : ' verschieden')
+                     + ', Buchstaben ' + tags.join('/')
+                     + ', nach Abgang ' + nachAbgang.join('/')
+                     + ', Name "' + ohne + '" -> "' + mit + '"' };
+    } finally {
+      garage.length = 0;
+      gemerkt.forEach(c => garage.push(c));
+      carRetag();
+      if (listeVorher !== null) $('gar-list').innerHTML = listeVorher;
+      if (zahlVorher !== null) $('gar-count').textContent = zahlVorher;
+    }
+  });
+
+  // ---- Reagieren die Werkstattbilder? ----
+  // Jeder Regler von Anschlag zu Anschlag, und geprueft wird, WELCHE Bilder sich dabei
+  // aendern. Die Erwartung steht in der Tabelle und folgt aus dem Modell:
+  //
+  //   Rohr      Impuls und Resonanz  (Rohrlaenge geht in die Impulsantwort und die Spitze)
+  //   Impuls    nur Impuls           (die Breite des Druckstosses)
+  //   Abfall    Impuls und Resonanz  (Laenge der Impulsantwort, damit ihre Guete)
+  //   Saettigung nur Impuls          (steckt in keinem Frequenzbild)
+  //   Drehzahl  nur Resonanz         (die rote Marke; ZuendWINKEL haengen nicht an ihr)
+  //   Zylinder  Zuendfolge und Resonanz
+  //
+  // Ein Bild, das auf seinen Regler NICHT reagiert, ist der Fehler, den es hier zweimal
+  // gegeben hat: gezeichnet, plausibel, und in Wahrheit eine Nulllinie.
+  stAdd('Werkstattbilder reagieren auf ihre Regler', () => {
+    const soll = {
+      pipe: 'pulse,spec', pulse: 'pulse', decay: 'pulse,spec',
+      drive: 'pulse', rpm: 'spec', cyl: 'fire,spec',
+    };
+    const bild = (k) => {
+      const e = document.getElementById('mw-chart-' + k);
+      const svg = e && e.querySelector('svg');
+      return svg ? svg.innerHTML : '';
+    };
+    const alle = () => ({ fire: bild('fire'), pulse: bild('pulse'), spec: bild('spec') });
+    if (!alle().pulse) return { skip: true, mass: 'Werkstatt nicht im Dokument' };
+    const ids = Object.keys(soll);
+    const gemerkt = {};
+    for (const id of ids) gemerkt[id] = document.getElementById('mw-' + id).value;
+    const stelle = (id, v) => {
+      const e = document.getElementById('mw-' + id);
+      e.value = v;
+      e.dispatchEvent(new Event('input', { bubbles: true }));
+    };
+    try {
+      const falsch = [];
+      const gemessen = [];
+      for (const id of ids) {
+        const e = document.getElementById('mw-' + id);
+        stelle(id, e.min); const a = alle();
+        stelle(id, e.max); const b = alle();
+        stelle(id, gemerkt[id]);
+        const anders = ['fire', 'pulse', 'spec'].filter(k => a[k] !== b[k]);
+        const ist = anders.join(',');
+        gemessen.push(id + '=' + (ist || 'nichts'));
+        if (ist !== soll[id]) falsch.push(id + ': ' + (ist || 'nichts') + ' statt ' + soll[id]);
+      }
+      return { ok: !falsch.length,
+               mass: gemessen.join(' ') + (falsch.length ? ' | FALSCH: ' + falsch.join('; ')
+                                                         : ' | alle wie erwartet') };
+    } finally {
+      for (const id of ids) stelle(id, gemerkt[id]);
+    }
+  });
+
   // ---- Ausfuehren und anzeigen ----
   async function runSelfTest() {
     const rows = $('st-rows');
