@@ -741,6 +741,31 @@
     }
   });
 
+  // ---- Die Automatik schaltet durch ----
+  //
+  // Diese Pruefung hat gefehlt, und ihr Fehlen hat einen Fehler durchgelassen: der
+  // Rueckwaertsgang-Umbau hat den Automatikblock so gebaut, dass er auch die Aufrufe der
+  // Automatik SELBST abfing - danach blieb das Auto im ersten Gang. Drei Pruefungen fuer die
+  // drei neuen Faelle, keine fuer den alten, der bleiben sollte.
+  //
+  // Gemessen wird ueber update() aus dem Stand mit Vollgas, also durch dieselbe Kette wie
+  // beim Fahren. Ein direkter Aufruf des Getriebes haette den Fehler nicht gefunden, denn er
+  // lag im Weg dorthin.
+  stAdd('Automatik schaltet aus dem Stand durch', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.physAutoGears) {
+      return { skip: true, mass: 'physAutoGears nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.physAutoGears(14);
+    const gaenge = r.folge.filter(x => x.gang > 0);
+    // Mindestens bis in den vierten Gang, und die Gaenge muessen AUFSTEIGEN. Ein Feld, das
+    // nur "1" enthaelt, ist genau der gemeldete Fehler.
+    const aufsteigend = gaenge.every((x, i) => i === 0 || x.gang >= gaenge[i - 1].gang);
+    const ok = r.hoechster >= 4 && aufsteigend && r.endKmh > 150;
+    return { ok,
+             mass: gaenge.map(x => x.gang + '. bei ' + x.kmh + ' km/h').join(', ')
+                   + ' | Ende ' + r.endKmh + ' km/h' };
+  });
+
   // ---- Ausfuehren und anzeigen ----
   async function runSelfTest() {
     const rows = $('st-rows');

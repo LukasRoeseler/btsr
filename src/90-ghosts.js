@@ -26,13 +26,18 @@
     upshift: { type: 'button', index: 1, label: 'B / Kreis' },
     headlights: { type: 'button', index: 3, label: 'Y / Dreieck' },
     lightflash: { type: 'button', index: 11, label: 'R3 (rechter Stick drücken)' },
-    // Left shoulder = pit, right shoulder = race. The triggers are throttle and brake, so
-    // "links / rechts" can only mean the shoulder buttons. Race start and race abort are the
-    // SAME button now (a toggle), which is why racestop is gone rather than rebound.
-    pitstop: { type: 'button', index: 4, label: 'LB / L1' },
+    // Boxenstopp auf Start/Options, Streckenansicht auf die linke Schulter.
+    //
+    // Vorher war es umgekehrt, und das war eine Fehlbedienung mit Ansage: Options hat den
+    // Tab gewechselt und damit das Cockpit verlassen, wo man gerade fuhr. Ein Knopf, der
+    // mitten im Rennen den Bildschirm wegnimmt, gehoert nicht dorthin, wo die Hand ihn im
+    // Vorbeigehen trifft - und ein Boxenstopp ist das, was man an dieser Stelle will.
+    //
+    // Die rechte Schulter bleibt das Rennen, die Trigger bleiben Gas und Bremse.
+    pitstop: { type: 'button', index: 9, label: 'Start / Options' },
     racestart: { type: 'button', index: 5, label: 'RB / R1' },
     weather: { type: 'button', index: 8, label: 'Select / Share' },
-    trackview: { type: 'button', index: 9, label: 'Start / Options' },
+    trackview: { type: 'button', index: 4, label: 'LB / L1' },
     // Nicht belegt. Das Touchpad wird vom System als Zeiger erkannt, also loest ein Tippen
     // gleichzeitig einen Klick irgendwo in der Seite aus - eine Belegung darauf kaempft mit
     // dem Cursor. Frei zuweisbar bleibt es, nur eben nicht ab Werk.
@@ -48,16 +53,40 @@
     resetcar: 'Auto zurücksetzen',
   };
 
+  // Boxenstopp und Streckenansicht haben die Knoepfe getauscht. Gespeichertes liegt UEBER
+  // der Vorgabe, eine neue Vorgabe kommt also bei niemandem an, der schon gefahren ist.
+  //
+  // Getauscht wird deshalb beim Laden, aber NUR wenn beide noch genau auf den alten
+  // Vorgaben stehen (Boxenstopp auf 4, Streckenansicht auf 9). Dann hat sie niemand
+  // angefasst und das Tauschen ist gefahrlos. Wer selbst zugewiesen hat, behaelt seine
+  // Zuweisung - den Speicherschluessel zu erhoehen waere billiger gewesen und haette jede
+  // eigene Zuweisung weggeworfen.
+  function migrateBindings(b) {
+    const ist = (x, i) => x && x.type === 'button' && x.index === i;
+    if (ist(b.pitstop, 4) && ist(b.trackview, 9)) {
+      b.pitstop = { ...DEFAULT_BINDINGS.pitstop };
+      b.trackview = { ...DEFAULT_BINDINGS.trackview };
+      b.__migrated = true;
+    }
+    return b;
+  }
+
   function loadBindings() {
     try {
       const saved = JSON.parse(localStorage.getItem(GAMEPAD_BINDINGS_KEY) || 'null');
       if (!saved) return { ...DEFAULT_BINDINGS };
-      return { ...DEFAULT_BINDINGS, ...saved };
+      return migrateBindings({ ...DEFAULT_BINDINGS, ...saved });
     } catch { return { ...DEFAULT_BINDINGS }; }
   }
   function saveBindings() { localStorage.setItem(GAMEPAD_BINDINGS_KEY, JSON.stringify(bindings)); }
 
   let bindings = loadBindings();
+  if (bindings.__migrated) {
+    delete bindings.__migrated;
+    saveBindings();
+    log('Controller: Boxenstopp liegt jetzt auf Start/Options, Streckenansicht auf LB/L1. '
+        + 'Options hat vorher den Tab gewechselt und damit das Cockpit verlassen.', 'info');
+  }
   let listeningFor = null; // action key currently waiting for a new input, or null
   let padConnected = false;
   let prevDownshift = false, prevUpshift = false, prevHeadlights = false;
@@ -2012,6 +2041,45 @@
         cfg.gripScale = merk.gs; st.speedKmh = merk.v; st.driveMode = merk.dm;
         st.currentGear = merk.g; st.tyreGrip = merk.tg; st.loadFront = merk.lf;
         st.longUse = merk.lu; st.dampedSteering = merk.ds;
+      }
+    },
+    // Aus dem Stand Vollgas und die Gaenge mitschreiben. Ueber update(), nicht ueber einen
+    // direkten Aufruf des Getriebes: der Fehler lag im WEG zum Getriebe, und ein direkter
+    // Aufruf haette ihn nicht gefunden.
+    physAutoGears(sekunden) {
+      const e = physEngine, st = e.state, cfg = e.config;
+      const merk = { as: cfg.autoShift, dm: st.driveMode, g: st.currentGear,
+                     v: st.speedKmh, sh: st.isShifting, nr: st.neutralRpm };
+      try {
+        cfg.autoShift = true;
+        st.driveMode = 'neutral'; st.currentGear = 0; st.speedKmh = 0;
+        st.isShifting = false; st.neutralRpm = 0;
+        const folge = [];
+        const takte = Math.round((sekunden || 12) / 0.02);
+        // Eigene Uhr fuer die Schaltpause. triggerShift setzt isShifting und loescht es per
+        // setTimeout - in einer synchronen Schleife feuert das nie, und dann bleibt der
+        // Schub fuer immer aus. Gemessen sah das aus wie "schaltet in den 2. und wird dann
+        // langsamer", war aber die Messung und nicht die App.
+        let warShifting = false, seitShift = 0;
+        for (let i = 0; i < takte; i++) {
+          if (st.isShifting && !warShifting) { seitShift = 0; }
+          if (st.isShifting) {
+            seitShift += 0.02;
+            if (seitShift * 1000 >= cfg.shiftMs) st.isShifting = false;
+          }
+          warShifting = st.isShifting;
+          e.update({ throttle: 1, brake: 0, steering: 0 }, 0.02);
+          const g = st.driveMode === 'forward' ? st.currentGear + 1 : 0;
+          if (!folge.length || folge[folge.length - 1].gang !== g) {
+            folge.push({ gang: g, kmh: Math.round(st.speedKmh * REAL_SCALE),
+                         s: +(i * 0.02).toFixed(2) });
+          }
+        }
+        return { folge, hoechster: Math.max(...folge.map(x => x.gang)),
+                 endKmh: Math.round(st.speedKmh * REAL_SCALE) };
+      } finally {
+        cfg.autoShift = merk.as; st.driveMode = merk.dm; st.currentGear = merk.g;
+        st.speedKmh = merk.v; st.isShifting = merk.sh; st.neutralRpm = merk.nr;
       }
     },
     // Rueckwaertsgang: schalten und nachsehen, was daraus wurde. Die Automatik ist der

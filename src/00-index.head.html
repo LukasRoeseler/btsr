@@ -4353,6 +4353,40 @@
       </div>
       <div class="row" style="margin-top:12px">
         <span class="muted">Zuletzt überfahrenes Muster: <b id="tile-probe" style="font-family:monospace">-</b></span>
+        <div style="margin-top:10px">
+          <div class="opt-head" style="margin-top:0">Zeitleiste der Codes</div>
+          <p class="muted" style="font-size:11.5px; margin:0 0 6px 0">
+            Jede Zeile ist ein Codewechsel: der Wert, wie viele Pakete er gehalten hat und
+            wie lange. Ein echter Lesevorgang ist ein B&uuml;ndel gleicher Codes
+            w&auml;hrend der &Uuml;berfahrt. Ein Einzelpaket zwischen Nullen ist Rauschen.
+            In einer Anzeige, die nur den letzten Wert zeigt, sieht beides gleich aus.
+          </p>
+          <table style="width:100%; border-collapse:collapse; font-size:12.5px;
+                 font-family:monospace">
+            <thead><tr>
+              <th style="text-align:left; padding:3px 8px; color:var(--muted)">Code</th>
+              <th style="text-align:right; padding:3px 8px; color:var(--muted)">Pakete</th>
+              <th style="text-align:right; padding:3px 8px; color:var(--muted)">Dauer</th>
+              <th style="text-align:right; padding:3px 8px; color:var(--muted)">Kachelz&auml;hler</th>
+            </tr></thead>
+            <tbody id="tile-timeline"><tr><td colspan="4" class="muted">noch nichts</td></tr></tbody>
+          </table>
+          <button id="tile-timeline-clear" style="margin-top:7px">Zeitleiste leeren</button>
+        </div>
+        <p class="muted" style="font-size:11.5px; border-left:3px solid var(--info);
+           padding-left:9px; margin-top:12px">
+          <b>Die n&auml;chste Messung: zwei Betriebsarten vergleichen.</b>
+        </p>
+        <p class="muted" style="font-size:11.5px; border-left:3px solid var(--info);
+           padding-left:9px; margin-top:0">
+          F&uuml;r zwei Scannerbetriebsarten gibt es Belege: Byte 14 Bit 5 hei&szlig;t
+          &bdquo;Auf der Bahn&ldquo;, Bit 7 hei&szlig;t &bdquo;Ohne Bahn&ldquo;, und mit Bit
+          7 wurden 0 Lesungen in 551 Fahrmeldungen gez&auml;hlt. Fahr dasselbe Blatt zweimal
+          &uuml;ber: einmal mit dem Schalter Auf der Bahn an, einmal aus, und vergleich die
+          Zeitleisten. Findet nur eine der beiden Betriebsarten das Muster, ist das die
+          Antwort auf die Frage, ob gedruckte Codes auf der Bahn &uuml;berhaupt gelesen
+          werden.
+        </p>
       </div>
       <p class="muted" style="font-size:11.5px">
         <b>Muster-Sonde:</b> fahr über ein beliebiges ausgedrucktes Muster, hier steht sofort,
@@ -4388,7 +4422,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.3.65</span></span>
+    <span class="foot-ver">v<span id="app-version">0.3.66</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
   </span>
   <span class="foot-right">

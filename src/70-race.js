@@ -1036,6 +1036,72 @@
     handleDashboardBytes(notifyBytes(e.target.value));
   }
 
+  // ---- Zeitleiste der Mustercodes ----
+  // Modulweit, weil die Anzeige aus handleDashboardBytes gefuettert wird und der Knopf zum
+  // Leeren woanders sitzt.
+  const TILE_TL_MAX = 24;
+  let tileTimeline = [];      // [{ code, pakete, von, bis, counter }], neueste zuletzt
+
+  function tileTimelineTick(code, counter) {
+    const jetzt = Date.now();
+    const letzte = tileTimeline[tileTimeline.length - 1];
+    if (letzte && letzte.code === code) {
+      letzte.pakete++;
+      letzte.bis = jetzt;
+      letzte.counterBis = counter;
+    } else {
+      tileTimeline.push({ code, pakete: 1, von: jetzt, bis: jetzt,
+                          counterVon: counter, counterBis: counter });
+      // Nur die letzten paar behalten: eine Fahrt ueber ein Blatt dauert Sekunden, und was
+      // vor einer Minute war, hilft bei der Frage nicht.
+      if (tileTimeline.length > TILE_TL_MAX) tileTimeline.shift();
+    }
+    renderTileTimeline();
+  }
+
+  let tileTlDirty = false;
+  function renderTileTimeline() {
+    // Gebuendelt zeichnen: bei 20 Paketen je Sekunde waere ein Neuaufbau je Paket reine
+    // Verschwendung, und die Zeitleiste soll das Fahren nicht stoeren.
+    if (tileTlDirty) return;
+    tileTlDirty = true;
+    setTimeout(() => {
+      tileTlDirty = false;
+      const host = $('tile-timeline');
+      if (!host) return;
+      if (!tileTimeline.length) {
+        host.innerHTML = '<tr><td colspan="4" class="muted">noch nichts</td></tr>';
+        return;
+      }
+      const td = 'padding:3px 8px';
+      const tdr = td + '; text-align:right';
+      host.innerHTML = tileTimeline.slice().reverse().map(z => {
+        const dauer = Math.max(0, z.bis - z.von);
+        // Ein Einzelpaket ist der interessante Fall und wird angeschrieben, statt dass man
+        // die Eins in der Spalte suchen muss.
+        const einzeln = z.pakete === 1 ? ' <span class="cm-new">einzeln</span>' : '';
+        const zaehler = z.counterVon === z.counterBis
+          ? String(z.counterVon)
+          : z.counterVon + '\u2013' + z.counterBis;
+        return '<tr><td style="' + td + '">0x' + z.code.toString(16).padStart(2, '0')
+             + ' ' + (TILE_LABEL[z.code] || '?') + einzeln + '</td>'
+             + '<td style="' + tdr + '">' + z.pakete + '</td>'
+             + '<td style="' + tdr + '">' + (dauer >= 1000
+                 ? (dauer / 1000).toFixed(1) + ' s' : dauer + ' ms') + '</td>'
+             + '<td style="' + tdr + '">' + zaehler + '</td></tr>';
+      }).join('');
+    }, 120);
+  }
+
+  if ($('tile-timeline-clear')) {
+    $('tile-timeline-clear').addEventListener('click', () => {
+      tileTimeline = [];
+      renderTileTimeline();
+      log('Zeitleiste der Mustercodes geleert.', 'info');
+    });
+  }
+
+
   function handleDashboardBytes(bytes) {
     recNotify(bytes);
     if (probeOverride && bytes[12] !== 0xff) {
@@ -1075,6 +1141,17 @@
     const counter = bytes[11];
     const type = bytes[12];
 
+    // ---- Zeitleiste der Codes ----
+    //
+    // "Nur 0x00 und ab und zu 0x03" ist keine Beobachtung, mit der man arbeiten kann: es
+    // fehlt, WANN. Ein echter Lesevorgang ist ein Buendel gleicher Codes waehrend der
+    // Ueberfahrt - bei 45 bis 60 ms Taktrate sind das mehrere Pakete. Ein Stoerwert ist ein
+    // einzelnes Paket zwischen Nullen. In einer Anzeige, die nur den letzten Wert zeigt,
+    // sieht beides gleich aus, und genau daran ist die Diagnose bisher gescheitert.
+    //
+    // Zusammengefasst wird nach Code, nicht je Paket: zweihundert Zeilen mit 0x00 sind keine
+    // Information, "0x00, 214 Pakete, 11,3 s" ist eine.
+
     // ---- Der Rohcode, VOR allen Wachen ----
     //
     // Hier stand diese Anzeige vorher NICHT: sie sass hinter vier Ruecksprungen, und einer
@@ -1092,12 +1169,14 @@
     // Mitangezeigt wird der Kachelzaehler, denn genau er war die stille Bedingung: bewegt
     // er sich nicht, sieht man das jetzt.
     lastTileCode = type;
+    tileTimelineTick(type, counter);
     const probe = $('tile-probe');
     if (probe) {
       const bewegt = dashLastTileCounter !== null && counter !== dashLastTileCounter;
       probe.textContent = '0x' + type.toString(16).padStart(2, '0')
         + ' (' + (TILE_LABEL[type] || 'unbekannt') + ')'
-        + '  Kachelz\u00e4hler ' + counter + (bewegt ? ' bewegt' : ' steht');
+        + '  ' + t('Kachelz\u00e4hler') + ' ' + counter
+        + ' ' + (bewegt ? t('bewegt') : t('steht'));
     }
 
     // ---- Two guards against misread patterns ----

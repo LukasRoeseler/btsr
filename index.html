@@ -4353,6 +4353,40 @@
       </div>
       <div class="row" style="margin-top:12px">
         <span class="muted">Zuletzt überfahrenes Muster: <b id="tile-probe" style="font-family:monospace">-</b></span>
+        <div style="margin-top:10px">
+          <div class="opt-head" style="margin-top:0">Zeitleiste der Codes</div>
+          <p class="muted" style="font-size:11.5px; margin:0 0 6px 0">
+            Jede Zeile ist ein Codewechsel: der Wert, wie viele Pakete er gehalten hat und
+            wie lange. Ein echter Lesevorgang ist ein B&uuml;ndel gleicher Codes
+            w&auml;hrend der &Uuml;berfahrt. Ein Einzelpaket zwischen Nullen ist Rauschen.
+            In einer Anzeige, die nur den letzten Wert zeigt, sieht beides gleich aus.
+          </p>
+          <table style="width:100%; border-collapse:collapse; font-size:12.5px;
+                 font-family:monospace">
+            <thead><tr>
+              <th style="text-align:left; padding:3px 8px; color:var(--muted)">Code</th>
+              <th style="text-align:right; padding:3px 8px; color:var(--muted)">Pakete</th>
+              <th style="text-align:right; padding:3px 8px; color:var(--muted)">Dauer</th>
+              <th style="text-align:right; padding:3px 8px; color:var(--muted)">Kachelz&auml;hler</th>
+            </tr></thead>
+            <tbody id="tile-timeline"><tr><td colspan="4" class="muted">noch nichts</td></tr></tbody>
+          </table>
+          <button id="tile-timeline-clear" style="margin-top:7px">Zeitleiste leeren</button>
+        </div>
+        <p class="muted" style="font-size:11.5px; border-left:3px solid var(--info);
+           padding-left:9px; margin-top:12px">
+          <b>Die n&auml;chste Messung: zwei Betriebsarten vergleichen.</b>
+        </p>
+        <p class="muted" style="font-size:11.5px; border-left:3px solid var(--info);
+           padding-left:9px; margin-top:0">
+          F&uuml;r zwei Scannerbetriebsarten gibt es Belege: Byte 14 Bit 5 hei&szlig;t
+          &bdquo;Auf der Bahn&ldquo;, Bit 7 hei&szlig;t &bdquo;Ohne Bahn&ldquo;, und mit Bit
+          7 wurden 0 Lesungen in 551 Fahrmeldungen gez&auml;hlt. Fahr dasselbe Blatt zweimal
+          &uuml;ber: einmal mit dem Schalter Auf der Bahn an, einmal aus, und vergleich die
+          Zeitleisten. Findet nur eine der beiden Betriebsarten das Muster, ist das die
+          Antwort auf die Frage, ob gedruckte Codes auf der Bahn &uuml;berhaupt gelesen
+          werden.
+        </p>
       </div>
       <p class="muted" style="font-size:11.5px">
         <b>Muster-Sonde:</b> fahr über ein beliebiges ausgedrucktes Muster, hier steht sofort,
@@ -4388,7 +4422,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.3.65</span></span>
+    <span class="foot-ver">v<span id="app-version">0.3.66</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
   </span>
   <span class="foot-right">
@@ -4877,6 +4911,7 @@
     "Das Auto hält sich selbst auf der Bahn, der Ghost gibt nur Gas.": "The car keeps itself on the track; the ghost only works the throttle.",
     "Das Frequenzbild des Rohrs. Die blaue Marke ist die Viertelwellenresonanz": "The frequency picture of the pipe. The blue mark is the quarter-wave resonance",
     "Das ist der ganze Trick: eine": "That is the whole trick: one",
+    "Dauer": "Duration",
     "Der Code beschreibt die Reihenfolge der Teile und die Ausrichtung. Damit stellst du auf einem anderen Gerät dieselbe Strecke ein, ohne sie neu zu klicken.": "The code describes the order of the parts and the orientation. With it you set up the same track on another device without clicking it together again.",
     "Der Erstplatzierte fährt etwas langsamer.": "The leader drives a little slower.",
     "Der Klangcharakter kommt aus den": "The character of the sound comes from the",
@@ -4886,6 +4921,7 @@
     "Die Controller-Belegung ist frei zuweisbar, Optionen → Controller. Hier steht, was gerade eingestellt ist.": "The controller bindings are freely assignable, Options → Controller. What is set right now is shown here.",
     "Die Ideallinie schickt einen Lenkanteil hinaus und nimmt an, dass das Auto dadurch weiter aussen oder innen sitzt.": "The racing line sends out a steering share and assumes the car therefore sits further out or further in.",
     "Die Rekonstruktion ist nachweislich eine treue Kopie des Original-PDF: Balkenzahl, Höhen auf 0,000 mm und Lücken auf 0,001 mm stimmen überein, und das PDF enthält nachgeprüft keine weiteren Formen. Also ist dieses PDF nicht die Vorlage, die 0x0a erzeugt; die Druckvorlagen haben sich offenbar geändert. Und 0x03 ist zugleich der gemessene Code der Linkskurve.": "The reconstruction is demonstrably a faithful copy of the original PDF: bar count, heights to 0.000 mm and gaps to 0.001 mm all agree, and the PDF has been checked to contain no further shapes. So this PDF is not the master that produces 0x0a; the print masters have evidently changed. And 0x03 is also the measured code of the left curve.",
+    "Die nächste Messung: zwei Betriebsarten vergleichen.": "The next measurement: compare the two operating modes.",
     "Die sieben oben sind aus Zylinderzahl, Kurbelwelle und Zündfolge gerechnet. Bei den aufgeladenen Originalen fehlt der Lader.": "The seven at the top are computed from cylinder count, crankshaft and firing order. On the turbocharged originals, the boost is missing.",
     "Dieselbe Idee, eine Stufe größer. Ein autonomes Auto braucht keine Zeitkurve, sondern eine": "The same idea, one size up. An autonomous car does not need a curve over time but one",
     "Dieselben elf Größen, aus denen die mitgelieferten Motoren gerechnet sind, nur direkt zum Drehen. Das Modell läuft hier im Browser, also hörst du jede Änderung sofort, ohne dass eine Datei erzeugt werden muss.": "The same eleven quantities the bundled engines are computed from, only here you turn them directly. The model runs in the browser, so you hear every change at once, with no file to generate.",
@@ -4930,6 +4966,7 @@
     "Freies Training": "Free practice",
     "Freigeben": "Release",
     "Fährt das Auto über das Boxen-Muster, greift ein Tempolimit von 40 %. Bleibt es dann stehen, läuft der Service: je länger du stehst, desto mehr Sprit und Reparatur. Beim Losfahren ist das Limit wieder weg.": "When the car drives over the pit pattern, a 40 % speed limit takes effect. If it then stops, the service runs: the longer you stand, the more fuel and repair you get. Driving off lifts the limit again.",
+    "Für zwei Scannerbetriebsarten gibt es Belege: Byte 14 Bit 5 heißt „Auf der Bahn“, Bit 7 heißt „Ohne Bahn“, und mit Bit 7 wurden 0 Lesungen in 551 Fahrmeldungen gezählt. Fahr dasselbe Blatt zweimal über: einmal mit dem Schalter Auf der Bahn an, einmal aus, und vergleich die Zeitleisten. Findet nur eine der beiden Betriebsarten das Muster, ist das die Antwort auf die Frage, ob gedruckte Codes auf der Bahn überhaupt gelesen werden.": "There is evidence for two scanner modes: byte 14 bit 5 means „on the track“, bit 7 means „off the track“, and with bit 7, 0 readings were counted in 551 drive reports. Drive the same sheet over twice: once with the on-the-track switch on, once off, and compare the timelines. If only one of the two modes finds the pattern, that answers the question whether printed codes are read on the track at all.",
     "GATT-Baum": "GATT tree",
     "Gamepad-Vibration": "Gamepad rumble",
     "Gas / Bremse": "Throttle / brake",
@@ -4974,6 +5011,7 @@
     "Im Vollbild: hoch/runter wechselt zwischen Aktionen (oben) und Teilen (unten), links/rechts wählt, X löst aus. O rückgängig, Dreieck Reset, Quadrat dreht.": "In fullscreen: up/down switches between actions (top) and parts (bottom), left/right selects, X activates. O undoes, triangle resets, square rotates.",
     "Impulslänge": "Pulse length",
     "In sieben aufgezeichneten Fahrten hat das Auto": "In seven recorded runs the car",
+    "Jede Zeile ist ein Codewechsel: der Wert, wie viele Pakete er gehalten hat und wie lange. Ein echter Lesevorgang ist ein Bündel gleicher Codes während der Überfahrt. Ein Einzelpaket zwischen Nullen ist Rauschen. In einer Anzeige, die nur den letzten Wert zeigt, sieht beides gleich aus.": "Each row is a change of code: the value, how many packets it held and for how long. A genuine read is a bundle of identical codes during the crossing. A single packet between zeros is noise. In a display that shows only the latest value, the two look the same.",
     "Jeder Strich eine Zündung, obere Reihe die eine Bank, untere die andere. Beim Cross-Plane bleibt der Gesamttakt gleichmäßig, die einzelne Bank wird lumpig, und weil jede Bank ihren eigenen Krümmer hat, entsteht daraus das Blubbern. Beim Reihenmotor gibt es nur eine Reihe. Die Zahlen zwischen den Strichen sind die Abstände derselben Bank in Grad.": "Each bar is one firing event, the upper row one bank, the lower row the other. On a cross-plane the overall beat stays even while the single bank turns lumpy, and because each bank has its own manifold, that is where the burble comes from. An inline engine has only one row. The numbers between the bars are the intervals within the same bank, in degrees.",
     "Jedes Auto braucht einen eigenen Klick auf „Auto verbinden“, Web Bluetooth verlangt für jede Verbindung eine eigene Nutzergeste, das lässt sich nicht umgehen.": "Every car needs its own click on “Connect a car”, Web Bluetooth requires a separate user gesture for each connection, and there is no way around it.",
     "Kacheln gehalten": "tiles held",
@@ -5248,6 +5286,8 @@
     "ZU SCHNELL FÜR R": "TOO FAST FOR R",
     "Zeichne den Lenkwinkel über den Kachelindex und lass den Ghost damit fahren. Wie nah kommst du an die 85 %?": "Draw the steering angle against the tile index and let the ghost drive it. How close do you get to the 85 %?",
     "Zeichnet": "Records",
+    "Zeitleiste der Codes": "Timeline of the codes",
+    "Zeitleiste leeren": "Clear the timeline",
     "Zieh die Punkte in den beiden Kurven nach oben oder unten. Links legst du fest, wie stark das Auto über die Zeit Gas gibt oder bremst, rechts wie es lenkt. Dann": "Drag the points in the two curves up or down. On the left you set how hard the car accelerates or brakes over time, on the right how it steers. Then",
     "Ziel-Characteristic": "Target characteristic",
     "Zug": "Bank",
@@ -5280,6 +5320,7 @@
     "bekannt als": "known as",
     "bereit": "ready",
     "betreffen: nicht die Rennlänge, nicht das Wetter, nicht die Strecke, denn die gehören zum Rennen und nicht zum Auto.": ": not the race length, not the weather, not the track, because those belong to the race and not to the car.",
+    "bewegt": "moving",
     "das ist, meldet kein Byte. Diese Messung ersetzt das Raten: sie schickt einen": "that is, no byte reports. This measurement replaces the guessing: it sends a",
     "der Fahrbahnbreite, ausgemessen aus den Streckenkarten der Original-App. Die dünne farbige Linie ist die berechnete Ideallinie, krümmungsärmster Verlauf innerhalb der Fahrbahn. Ihre Farbe zeigt, ob dort gebremst würde:": "of the roadway width, measured from the track maps of the original app. The thin coloured line is the computed racing line, the least-curvature path within the roadway. Its colour shows whether there would be braking:",
     "der Lenkvarianz allein aus Kachelindex und Position innerhalb der Kachel erklärt.": "of the steering variance is explained by tile index and position within the tile alone.",
@@ -5343,6 +5384,7 @@
     "noch nicht gelaufen": "not run yet",
     "noch nichts gemessen": "nothing measured yet",
     "noch nichts gezählt": "nothing counted yet",
+    "noch nichts": "nothing yet",
     "nur Byte 10 = 0x30": "byte 10 = 0x30 only",
     "oder": "or",
     "quer": "landscape",
@@ -5357,6 +5399,7 @@
     "setzt den nächsten Abschnitt.": "sets the next section.",
     "siehst": "see",
     "startet die Ampel und gibt wieder frei": "starts the lights and releases again",
+    "steht": "still",
     "steht:": "stopped:",
     "tatsächliche": "actual",
     "unbestätigt": "unconfirmed",
@@ -7045,9 +7088,9 @@
       if (cfg.autoShift && !st.isShifting && !reversing && !inNeutral) {
         const r = this.rpmRawAt(st.speedKmh, st.currentGear);
         if (st.currentGear < cfg.gears.length - 1 && r >= cfg.upshiftRpm && inputs.throttle > 0.05) {
-          this.triggerShift(1);
+          this.triggerShift(1, 'auto');
         } else if (st.currentGear > 0 && r <= cfg.downshiftRpm) {
-          this.triggerShift(-1);
+          this.triggerShift(-1, 'auto');
         }
       }
 
@@ -7150,9 +7193,20 @@
     // The chain is R <- N <- 1 <- 2 ... <- 6. Neutral may be selected at ANY speed —
     // declutching and rolling is a normal thing to do — while reverse still requires a
     // standstill, because engaging it while moving would be a gearbox-destroying request.
-    triggerShift(direction) {
+    // quelle: 'knopf' (Vorgabe) oder 'auto'. Der Unterschied ist nicht kosmetisch.
+    //
+    // Die Automatik schaltet ihre Gaenge, indem sie diese Funktion selbst aufruft. Ein
+    // Automatikblock, der KNOPFbedeutung durchsetzt, wuerde damit auch die Automatik selbst
+    // lahmlegen - genau das ist passiert: nach der Rueckwaertsgang-Aenderung hat die
+    // Automatik nie wieder hochgeschaltet, weil ihr eigener triggerShift(1) in dem Block auf
+    // ein nacktes return lief.
+    //
+    // Also werden die zwei Bedeutungen getrennt. Vorgabe ist 'knopf', damit alle vorhandenen
+    // Aufrufe von aussen - Tastatur, Pad, Ghosts, Programmierschule - unveraendert bleiben.
+    triggerShift(direction, quelle) {
       const st = this.state, cfg = this.config;
       const stopped = Math.abs(st.speedKmh) < cfg.reverseStandstillKmh;
+      const vomGetriebe = quelle === 'auto';
 
       // ---- Automatik: die beiden Schaltknoepfe machen genau eine Sache ----
       //
@@ -7166,7 +7220,7 @@
       // In der Automatik gibt es ohnehin keine Gaenge zu waehlen. Also tun die beiden
       // Knoepfe hier das Einzige, was sinnvoll bleibt: Viereck legt den Rueckwaertsgang
       // (langsam genug), Kreis holt ihn heraus. In EINEM Druck, ohne Leerlauf dazwischen.
-      if (cfg.autoShift) {
+      if (cfg.autoShift && !vomGetriebe) {
         const langsam = Math.abs(st.speedKmh) < cfg.autoReverseFrac * cfg.topSpeedKmh;
         if (st.driveMode === 'reverse') {
           if (direction > 0) {
@@ -10804,6 +10858,72 @@
     handleDashboardBytes(notifyBytes(e.target.value));
   }
 
+  // ---- Zeitleiste der Mustercodes ----
+  // Modulweit, weil die Anzeige aus handleDashboardBytes gefuettert wird und der Knopf zum
+  // Leeren woanders sitzt.
+  const TILE_TL_MAX = 24;
+  let tileTimeline = [];      // [{ code, pakete, von, bis, counter }], neueste zuletzt
+
+  function tileTimelineTick(code, counter) {
+    const jetzt = Date.now();
+    const letzte = tileTimeline[tileTimeline.length - 1];
+    if (letzte && letzte.code === code) {
+      letzte.pakete++;
+      letzte.bis = jetzt;
+      letzte.counterBis = counter;
+    } else {
+      tileTimeline.push({ code, pakete: 1, von: jetzt, bis: jetzt,
+                          counterVon: counter, counterBis: counter });
+      // Nur die letzten paar behalten: eine Fahrt ueber ein Blatt dauert Sekunden, und was
+      // vor einer Minute war, hilft bei der Frage nicht.
+      if (tileTimeline.length > TILE_TL_MAX) tileTimeline.shift();
+    }
+    renderTileTimeline();
+  }
+
+  let tileTlDirty = false;
+  function renderTileTimeline() {
+    // Gebuendelt zeichnen: bei 20 Paketen je Sekunde waere ein Neuaufbau je Paket reine
+    // Verschwendung, und die Zeitleiste soll das Fahren nicht stoeren.
+    if (tileTlDirty) return;
+    tileTlDirty = true;
+    setTimeout(() => {
+      tileTlDirty = false;
+      const host = $('tile-timeline');
+      if (!host) return;
+      if (!tileTimeline.length) {
+        host.innerHTML = '<tr><td colspan="4" class="muted">noch nichts</td></tr>';
+        return;
+      }
+      const td = 'padding:3px 8px';
+      const tdr = td + '; text-align:right';
+      host.innerHTML = tileTimeline.slice().reverse().map(z => {
+        const dauer = Math.max(0, z.bis - z.von);
+        // Ein Einzelpaket ist der interessante Fall und wird angeschrieben, statt dass man
+        // die Eins in der Spalte suchen muss.
+        const einzeln = z.pakete === 1 ? ' <span class="cm-new">einzeln</span>' : '';
+        const zaehler = z.counterVon === z.counterBis
+          ? String(z.counterVon)
+          : z.counterVon + '\u2013' + z.counterBis;
+        return '<tr><td style="' + td + '">0x' + z.code.toString(16).padStart(2, '0')
+             + ' ' + (TILE_LABEL[z.code] || '?') + einzeln + '</td>'
+             + '<td style="' + tdr + '">' + z.pakete + '</td>'
+             + '<td style="' + tdr + '">' + (dauer >= 1000
+                 ? (dauer / 1000).toFixed(1) + ' s' : dauer + ' ms') + '</td>'
+             + '<td style="' + tdr + '">' + zaehler + '</td></tr>';
+      }).join('');
+    }, 120);
+  }
+
+  if ($('tile-timeline-clear')) {
+    $('tile-timeline-clear').addEventListener('click', () => {
+      tileTimeline = [];
+      renderTileTimeline();
+      log('Zeitleiste der Mustercodes geleert.', 'info');
+    });
+  }
+
+
   function handleDashboardBytes(bytes) {
     recNotify(bytes);
     if (probeOverride && bytes[12] !== 0xff) {
@@ -10843,6 +10963,17 @@
     const counter = bytes[11];
     const type = bytes[12];
 
+    // ---- Zeitleiste der Codes ----
+    //
+    // "Nur 0x00 und ab und zu 0x03" ist keine Beobachtung, mit der man arbeiten kann: es
+    // fehlt, WANN. Ein echter Lesevorgang ist ein Buendel gleicher Codes waehrend der
+    // Ueberfahrt - bei 45 bis 60 ms Taktrate sind das mehrere Pakete. Ein Stoerwert ist ein
+    // einzelnes Paket zwischen Nullen. In einer Anzeige, die nur den letzten Wert zeigt,
+    // sieht beides gleich aus, und genau daran ist die Diagnose bisher gescheitert.
+    //
+    // Zusammengefasst wird nach Code, nicht je Paket: zweihundert Zeilen mit 0x00 sind keine
+    // Information, "0x00, 214 Pakete, 11,3 s" ist eine.
+
     // ---- Der Rohcode, VOR allen Wachen ----
     //
     // Hier stand diese Anzeige vorher NICHT: sie sass hinter vier Ruecksprungen, und einer
@@ -10860,12 +10991,14 @@
     // Mitangezeigt wird der Kachelzaehler, denn genau er war die stille Bedingung: bewegt
     // er sich nicht, sieht man das jetzt.
     lastTileCode = type;
+    tileTimelineTick(type, counter);
     const probe = $('tile-probe');
     if (probe) {
       const bewegt = dashLastTileCounter !== null && counter !== dashLastTileCounter;
       probe.textContent = '0x' + type.toString(16).padStart(2, '0')
         + ' (' + (TILE_LABEL[type] || 'unbekannt') + ')'
-        + '  Kachelz\u00e4hler ' + counter + (bewegt ? ' bewegt' : ' steht');
+        + '  ' + t('Kachelz\u00e4hler') + ' ' + counter
+        + ' ' + (bewegt ? t('bewegt') : t('steht'));
     }
 
     // ---- Two guards against misread patterns ----
@@ -12789,13 +12922,18 @@
     upshift: { type: 'button', index: 1, label: 'B / Kreis' },
     headlights: { type: 'button', index: 3, label: 'Y / Dreieck' },
     lightflash: { type: 'button', index: 11, label: 'R3 (rechter Stick drücken)' },
-    // Left shoulder = pit, right shoulder = race. The triggers are throttle and brake, so
-    // "links / rechts" can only mean the shoulder buttons. Race start and race abort are the
-    // SAME button now (a toggle), which is why racestop is gone rather than rebound.
-    pitstop: { type: 'button', index: 4, label: 'LB / L1' },
+    // Boxenstopp auf Start/Options, Streckenansicht auf die linke Schulter.
+    //
+    // Vorher war es umgekehrt, und das war eine Fehlbedienung mit Ansage: Options hat den
+    // Tab gewechselt und damit das Cockpit verlassen, wo man gerade fuhr. Ein Knopf, der
+    // mitten im Rennen den Bildschirm wegnimmt, gehoert nicht dorthin, wo die Hand ihn im
+    // Vorbeigehen trifft - und ein Boxenstopp ist das, was man an dieser Stelle will.
+    //
+    // Die rechte Schulter bleibt das Rennen, die Trigger bleiben Gas und Bremse.
+    pitstop: { type: 'button', index: 9, label: 'Start / Options' },
     racestart: { type: 'button', index: 5, label: 'RB / R1' },
     weather: { type: 'button', index: 8, label: 'Select / Share' },
-    trackview: { type: 'button', index: 9, label: 'Start / Options' },
+    trackview: { type: 'button', index: 4, label: 'LB / L1' },
     // Nicht belegt. Das Touchpad wird vom System als Zeiger erkannt, also loest ein Tippen
     // gleichzeitig einen Klick irgendwo in der Seite aus - eine Belegung darauf kaempft mit
     // dem Cursor. Frei zuweisbar bleibt es, nur eben nicht ab Werk.
@@ -12811,16 +12949,40 @@
     resetcar: 'Auto zurücksetzen',
   };
 
+  // Boxenstopp und Streckenansicht haben die Knoepfe getauscht. Gespeichertes liegt UEBER
+  // der Vorgabe, eine neue Vorgabe kommt also bei niemandem an, der schon gefahren ist.
+  //
+  // Getauscht wird deshalb beim Laden, aber NUR wenn beide noch genau auf den alten
+  // Vorgaben stehen (Boxenstopp auf 4, Streckenansicht auf 9). Dann hat sie niemand
+  // angefasst und das Tauschen ist gefahrlos. Wer selbst zugewiesen hat, behaelt seine
+  // Zuweisung - den Speicherschluessel zu erhoehen waere billiger gewesen und haette jede
+  // eigene Zuweisung weggeworfen.
+  function migrateBindings(b) {
+    const ist = (x, i) => x && x.type === 'button' && x.index === i;
+    if (ist(b.pitstop, 4) && ist(b.trackview, 9)) {
+      b.pitstop = { ...DEFAULT_BINDINGS.pitstop };
+      b.trackview = { ...DEFAULT_BINDINGS.trackview };
+      b.__migrated = true;
+    }
+    return b;
+  }
+
   function loadBindings() {
     try {
       const saved = JSON.parse(localStorage.getItem(GAMEPAD_BINDINGS_KEY) || 'null');
       if (!saved) return { ...DEFAULT_BINDINGS };
-      return { ...DEFAULT_BINDINGS, ...saved };
+      return migrateBindings({ ...DEFAULT_BINDINGS, ...saved });
     } catch { return { ...DEFAULT_BINDINGS }; }
   }
   function saveBindings() { localStorage.setItem(GAMEPAD_BINDINGS_KEY, JSON.stringify(bindings)); }
 
   let bindings = loadBindings();
+  if (bindings.__migrated) {
+    delete bindings.__migrated;
+    saveBindings();
+    log('Controller: Boxenstopp liegt jetzt auf Start/Options, Streckenansicht auf LB/L1. '
+        + 'Options hat vorher den Tab gewechselt und damit das Cockpit verlassen.', 'info');
+  }
   let listeningFor = null; // action key currently waiting for a new input, or null
   let padConnected = false;
   let prevDownshift = false, prevUpshift = false, prevHeadlights = false;
@@ -14775,6 +14937,45 @@
         cfg.gripScale = merk.gs; st.speedKmh = merk.v; st.driveMode = merk.dm;
         st.currentGear = merk.g; st.tyreGrip = merk.tg; st.loadFront = merk.lf;
         st.longUse = merk.lu; st.dampedSteering = merk.ds;
+      }
+    },
+    // Aus dem Stand Vollgas und die Gaenge mitschreiben. Ueber update(), nicht ueber einen
+    // direkten Aufruf des Getriebes: der Fehler lag im WEG zum Getriebe, und ein direkter
+    // Aufruf haette ihn nicht gefunden.
+    physAutoGears(sekunden) {
+      const e = physEngine, st = e.state, cfg = e.config;
+      const merk = { as: cfg.autoShift, dm: st.driveMode, g: st.currentGear,
+                     v: st.speedKmh, sh: st.isShifting, nr: st.neutralRpm };
+      try {
+        cfg.autoShift = true;
+        st.driveMode = 'neutral'; st.currentGear = 0; st.speedKmh = 0;
+        st.isShifting = false; st.neutralRpm = 0;
+        const folge = [];
+        const takte = Math.round((sekunden || 12) / 0.02);
+        // Eigene Uhr fuer die Schaltpause. triggerShift setzt isShifting und loescht es per
+        // setTimeout - in einer synchronen Schleife feuert das nie, und dann bleibt der
+        // Schub fuer immer aus. Gemessen sah das aus wie "schaltet in den 2. und wird dann
+        // langsamer", war aber die Messung und nicht die App.
+        let warShifting = false, seitShift = 0;
+        for (let i = 0; i < takte; i++) {
+          if (st.isShifting && !warShifting) { seitShift = 0; }
+          if (st.isShifting) {
+            seitShift += 0.02;
+            if (seitShift * 1000 >= cfg.shiftMs) st.isShifting = false;
+          }
+          warShifting = st.isShifting;
+          e.update({ throttle: 1, brake: 0, steering: 0 }, 0.02);
+          const g = st.driveMode === 'forward' ? st.currentGear + 1 : 0;
+          if (!folge.length || folge[folge.length - 1].gang !== g) {
+            folge.push({ gang: g, kmh: Math.round(st.speedKmh * REAL_SCALE),
+                         s: +(i * 0.02).toFixed(2) });
+          }
+        }
+        return { folge, hoechster: Math.max(...folge.map(x => x.gang)),
+                 endKmh: Math.round(st.speedKmh * REAL_SCALE) };
+      } finally {
+        cfg.autoShift = merk.as; st.driveMode = merk.dm; st.currentGear = merk.g;
+        st.speedKmh = merk.v; st.isShifting = merk.sh; st.neutralRpm = merk.nr;
       }
     },
     // Rueckwaertsgang: schalten und nachsehen, was daraus wurde. Die Automatik ist der
@@ -17100,6 +17301,31 @@
       dashLastTileCounter = gemerkt.c;
       feld.textContent = vorher;
     }
+  });
+
+  // ---- Die Automatik schaltet durch ----
+  //
+  // Diese Pruefung hat gefehlt, und ihr Fehlen hat einen Fehler durchgelassen: der
+  // Rueckwaertsgang-Umbau hat den Automatikblock so gebaut, dass er auch die Aufrufe der
+  // Automatik SELBST abfing - danach blieb das Auto im ersten Gang. Drei Pruefungen fuer die
+  // drei neuen Faelle, keine fuer den alten, der bleiben sollte.
+  //
+  // Gemessen wird ueber update() aus dem Stand mit Vollgas, also durch dieselbe Kette wie
+  // beim Fahren. Ein direkter Aufruf des Getriebes haette den Fehler nicht gefunden, denn er
+  // lag im Weg dorthin.
+  stAdd('Automatik schaltet aus dem Stand durch', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.physAutoGears) {
+      return { skip: true, mass: 'physAutoGears nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.physAutoGears(14);
+    const gaenge = r.folge.filter(x => x.gang > 0);
+    // Mindestens bis in den vierten Gang, und die Gaenge muessen AUFSTEIGEN. Ein Feld, das
+    // nur "1" enthaelt, ist genau der gemeldete Fehler.
+    const aufsteigend = gaenge.every((x, i) => i === 0 || x.gang >= gaenge[i - 1].gang);
+    const ok = r.hoechster >= 4 && aufsteigend && r.endKmh > 150;
+    return { ok,
+             mass: gaenge.map(x => x.gang + '. bei ' + x.kmh + ' km/h').join(', ')
+                   + ' | Ende ' + r.endKmh + ' km/h' };
   });
 
   // ---- Ausfuehren und anzeigen ----

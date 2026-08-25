@@ -644,9 +644,9 @@
       if (cfg.autoShift && !st.isShifting && !reversing && !inNeutral) {
         const r = this.rpmRawAt(st.speedKmh, st.currentGear);
         if (st.currentGear < cfg.gears.length - 1 && r >= cfg.upshiftRpm && inputs.throttle > 0.05) {
-          this.triggerShift(1);
+          this.triggerShift(1, 'auto');
         } else if (st.currentGear > 0 && r <= cfg.downshiftRpm) {
-          this.triggerShift(-1);
+          this.triggerShift(-1, 'auto');
         }
       }
 
@@ -749,9 +749,20 @@
     // The chain is R <- N <- 1 <- 2 ... <- 6. Neutral may be selected at ANY speed —
     // declutching and rolling is a normal thing to do — while reverse still requires a
     // standstill, because engaging it while moving would be a gearbox-destroying request.
-    triggerShift(direction) {
+    // quelle: 'knopf' (Vorgabe) oder 'auto'. Der Unterschied ist nicht kosmetisch.
+    //
+    // Die Automatik schaltet ihre Gaenge, indem sie diese Funktion selbst aufruft. Ein
+    // Automatikblock, der KNOPFbedeutung durchsetzt, wuerde damit auch die Automatik selbst
+    // lahmlegen - genau das ist passiert: nach der Rueckwaertsgang-Aenderung hat die
+    // Automatik nie wieder hochgeschaltet, weil ihr eigener triggerShift(1) in dem Block auf
+    // ein nacktes return lief.
+    //
+    // Also werden die zwei Bedeutungen getrennt. Vorgabe ist 'knopf', damit alle vorhandenen
+    // Aufrufe von aussen - Tastatur, Pad, Ghosts, Programmierschule - unveraendert bleiben.
+    triggerShift(direction, quelle) {
       const st = this.state, cfg = this.config;
       const stopped = Math.abs(st.speedKmh) < cfg.reverseStandstillKmh;
+      const vomGetriebe = quelle === 'auto';
 
       // ---- Automatik: die beiden Schaltknoepfe machen genau eine Sache ----
       //
@@ -765,7 +776,7 @@
       // In der Automatik gibt es ohnehin keine Gaenge zu waehlen. Also tun die beiden
       // Knoepfe hier das Einzige, was sinnvoll bleibt: Viereck legt den Rueckwaertsgang
       // (langsam genug), Kreis holt ihn heraus. In EINEM Druck, ohne Leerlauf dazwischen.
-      if (cfg.autoShift) {
+      if (cfg.autoShift && !vomGetriebe) {
         const langsam = Math.abs(st.speedKmh) < cfg.autoReverseFrac * cfg.topSpeedKmh;
         if (st.driveMode === 'reverse') {
           if (direction > 0) {
