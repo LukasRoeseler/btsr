@@ -1560,6 +1560,10 @@
           <div class="gt3-val sm" id="race-lap-count">0</div></div>
         <button type="button" class="gt3-act" id="race-act-pit">Boxenstopp</button>
         <button type="button" class="gt3-act" id="race-act-flag">Gelbe Flagge</button>
+        <!-- Die Leseart gehoert hierher und nicht nur in die Optionen: wer ein gedrucktes
+             Muster auslegt, muss umschalten, und dafuer den Tab zu wechseln ist genau der
+             Weg, den man mitten im Rennen nicht gehen will. -->
+        <button type="button" class="gt3-act" id="race-act-scan">Liest: Bahn</button>
       </div>
 
       <!-- Das Schild liegt UEBER der Tachozahl, nicht daneben: waehrend eines
@@ -2002,19 +2006,34 @@
         Thema gescheitert sind.
       </p>
       <p class="muted">
-        <b>Die Deutung passt auf die zwei Modi der Original-App:</b><br>
-        <code>0x20</code> (Bit&nbsp;5) = <b>Auf der Bahn</b>: Sensor an, und das Auto
-        h&auml;lt sich selbst auf der Bahn: 87&nbsp;% der Meldungen bringen einen
-        Kachelwechsel, gegen 7&nbsp;% ohne dieses Bit.<br>
-        <code>0x80</code> (Bit&nbsp;7) = <b>Ohne Bahn</b>: Sensor aus, Byte&nbsp;12
-        bleibt <code>0xff</code>.<br>
+        <b>Berichtigt am 26.08.: es sind zwei LESEARTEN, kein Sensorschalter.</b><br>
+        <code>0x20</code> (Bit&nbsp;5) = <b>Auf der Bahn</b>: liest die Kodierung der
+        Kunststoffschiene, und das Auto h&auml;lt sich selbst darauf. 87&nbsp;% der
+        Meldungen bringen einen Kachelwechsel, gegen 7&nbsp;% ohne dieses Bit.<br>
+        <code>0x80</code> (Bit&nbsp;7) = <b>Ohne Bahn</b>: liest <b>gedruckte</b> Muster.
+        Auf der Schiene gibt es keine, deshalb kamen dort 0 Lesungen in 551 Fahrmeldungen.<br>
         <code>0x40</code> (Bit&nbsp;6) kommt in beiden Zust&auml;nden vor und geh&ouml;rt zu
         etwas anderem; es bleibt hier auf&nbsp;0.
       </p>
       <p class="muted">
-        Diese App sendet jetzt <code>0x20</code> und der Schalter <b>Auf der Bahn</b> in den
-        Optionen macht den Unterschied umschaltbar. Was vorher wie ein Druckproblem aussah,
-        war ein Modus, in dem das Auto gar nicht lesen soll.
+        Diese App sendet <code>0x20</code> und der Schalter in den Optionen sowie der Knopf
+        im Cockpit machen den Unterschied umschaltbar.
+      </p>
+      <p class="muted" style="border-left:3px solid var(--bad); padding-left:9px">
+        <b>Was hier vorher stand und warum es falsch war.</b> Bit&nbsp;7 hie&szlig; hier
+        &bdquo;Sensor aus&ldquo;. Am 26.08. wurde mit der <b>Original-App</b> gemessen, dass
+        ein gedrucktes Muster <b>nur</b> in der Stellung Ohne Bahn erkannt wird, in der
+        Stellung Auf der Bahn nicht. Beide alten Messungen waren richtig, sie wurden beide
+        auf der <b>echten Bahn</b> gemacht: dort liest Bit&nbsp;7 nichts, weil dort nichts
+        gedruckt ist. Aus &bdquo;liest auf der Bahn nichts&ldquo; wurde &bdquo;Sensor
+        aus&ldquo;, und das war ein Schluss &uuml;ber die Fahrbahn hinaus, den die Daten
+        nicht tragen.
+      </p>
+      <p class="muted" style="border-left:3px solid var(--bad); padding-left:9px">
+        Daraus folgt eine Einschr&auml;nkung der Hardware, die sich nicht wegprogrammieren
+        l&auml;sst: Bit&nbsp;5 ist auch das Bit, mit dem sich das Auto selbst auf der Bahn
+        h&auml;lt. Wer gedruckte Muster lesen will, gibt die Selbstlenkung auf. Beides
+        zugleich gibt es nicht.
       </p>
       <p class="muted">
         <b>Zwei Vermutungen, die vorher hier standen, und warum sie falsch waren.</b> Erst
@@ -2392,10 +2411,14 @@
              erheblich: die Rundenzaehlung prueft diesen Wert und hat auf dem
              Original-Startziel-Blatt nie ausgeloest, und das Streckenlernen faengt erst ab
              Start/Ziel an mitzuschreiben, also nie. -->
-        <tr><td><code>0x0a</code></td><td>Start/Ziel</td><td class="doc-sure">belegt, 25.08. gemessen</td></tr>
+        <tr><td><code>0x0a</code></td><td>Start/Ziel, <b>am gedruckten Blatt</b> im
+          Ausdruck-Modus gemessen. Was die Kunststoffschiene im Bahn-Modus sendet, ist
+          <b>nicht</b> gemessen: es sind zwei Lesearten, und es k&ouml;nnen zwei
+          Codes&auml;tze sein</td><td class="doc-sure">belegt f&uuml;r Ausdruck</td></tr>
         <tr><td><code>0x01</code></td><td>fr&uuml;her f&uuml;r Start/Ziel angenommen, nie
-          belegt; wird weiter akzeptiert, solange nicht gemessen ist, was eine
-          Kunststoffschiene meldet</td><td class="doc-guess">Annahme</td></tr>
+          belegt. Bleibt g&uuml;ltig, und seit dem 26.08. hat es eine plausible Rolle: es
+          k&ouml;nnte der Code sein, den die <b>Schiene</b> im Bahn-Modus meldet. Auch das
+          ist nicht gemessen</td><td class="doc-guess">Annahme</td></tr>
         <tr><td><code>0x02</code></td><td>Gerade</td><td class="doc-sure">belegt</td></tr>
         <tr><td><code>0x03</code></td><td><b>Linkskurve</b></td><td class="doc-sure">belegt (21.08.)</td></tr>
         <tr><td><code>0x04</code></td><td>Rechtskurve</td><td class="doc-sure">belegt</td></tr>
@@ -3508,8 +3531,11 @@
           Vorausblick.</small></div>
         <label class="tgl"><input type="checkbox" id="dash-freeroam"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Auf der Bahn
-          <small>Sensor an, Auto h&auml;lt sich selbst auf der Bahn. <b>Aus</b>: keine
-          Streckencodes, keine Rundenzeiten, kein Scan.</small></div>
+          <small>Zwei Lesearten, kein Sensorschalter. <b>An</b>: das Auto liest die
+          Kodierung der Kunststoffschiene und h&auml;lt sich selbst auf der Bahn.
+          <b>Aus</b>: es liest gedruckte Muster, h&auml;lt sich aber nicht selbst.
+          Am 26.08. mit der Original-App gemessen: ein Ausdruck wird nur in der Stellung Aus
+          erkannt. Beides zugleich gibt es nicht.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-ontrack" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Physik-Modus aktivieren<small>Aus: rohe Stickstellung, ohne Gänge.</small></div><label class="tgl"><input type="checkbox" id="phys-enable" checked><span></span></label></div>
       <div class="opt-row" id="phys-gyro-wrap"><div class="opt-label">Handy-Neigung für Lenkung nutzen</div><label class="tgl"><input type="checkbox" id="phys-gyro"><span></span></label></div>
@@ -4422,7 +4448,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.3.66</span></span>
+    <span class="foot-ver">v<span id="app-version">0.3.67</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
   </span>
   <span class="foot-right">

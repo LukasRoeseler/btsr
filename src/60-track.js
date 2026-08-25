@@ -38,9 +38,18 @@
   //
   // Die Werte fuegen sich in das Muster der anderen: 0x03/0x04 links/rechts fuer die
   // 60-Grad-Kurve, 0x05/0x06 links/rechts fuer die Haarnadel.
-  // START ist 0x0a, gemessen am 25.08. mit dem Original-Startziel-Blatt. Vorher stand hier
-  // 0x01, und das war eine Annahme aus einem Foto - die Doku hat sie auch als solche
-  // gekennzeichnet. Die Folgen der falschen Zahl waren erheblich und beide unsichtbar: die
+  // START ist 0x0a, gemessen am 25.08. mit dem Original-Startziel-Blatt - und zwar am
+  // GEDRUCKTEN BLATT im Ausdruck-Modus (Byte 14 Bit 7). Das ist eine Einschraenkung, die
+  // dazugehoert: am 26.08. wurde mit der Original-App gemessen, dass ein Ausdruck nur in
+  // dieser Leseart erkannt wird. Was die Kunststoffschiene im Bahn-Modus sendet, ist damit
+  // NICHT gemessen, und es koennen zwei Codesaetze sein - einer je Untergrund.
+  //
+  // Genau deshalb bleibt 0x01 in START_CODES: es war die alte Annahme, und seit dem 26.08.
+  // hat es eine plausible Rolle als Code der Schiene. Auch das ist nicht gemessen, aber ein
+  // akzeptierter Wert kostet nichts und ein fehlender kostet die Rundenzaehlung.
+  //
+  // Vorher stand hier 0x01, und das war eine Annahme aus einem Foto - die Doku hat sie auch
+  // als solche gekennzeichnet. Die Folgen der falschen Zahl waren erheblich und beide unsichtbar: die
   // Rundenzaehlung prueft auf diesen Wert und hat auf dem Originalblatt nie ausgeloest, und
   // das Streckenlernen faengt erst ab Start/Ziel an mitzuschreiben, also nie.
   //

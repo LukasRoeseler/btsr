@@ -40,8 +40,27 @@
   //                                      Bahn (87 % Kachelschritte gegen 7 %)
   //     Bit 7 (0x80) = "Ohne Bahn"     - Sensor aus, Byte 12 bleibt dauerhaft 0xff
   // Bit 6 (0x40) kommt in beiden Zustaenden vor und gehoert zu etwas anderem; es bleibt 0.
-  const TRACK_BIT_ON  = 0x20;
-  const TRACK_BIT_OFF = 0x80;
+  // Byte 14 waehlt die LESEART, es schaltet den Sensor nicht ab. Gemessen am 26.08. mit
+  // der Original-App: ein gedrucktes Muster wird nur mit Bit 7 erkannt, mit Bit 5 nicht.
+  //
+  // Die alten Namen ON und OFF standen fuer eine Deutung, die zu weit ging. Beide Messungen,
+  // auf die sie sich stuetzte, waren auf der ECHTEN BAHN gemacht: mit Bit 5 kamen 87 %
+  // Kachelwechsel, mit Bit 7 null Lesungen in 551 Fahrmeldungen. Daraus wurde "Sensor aus" -
+  // ein Schluss ueber die Fahrbahn hinaus, den die Daten nicht tragen.
+  //
+  // Richtig sind zwei Lesearten fuer zwei Untergruende:
+  //   Bit 5  liest die Kodierung der Kunststoffschiene. Ein Blatt Papier darauf ist keine
+  //          Schiene, also kommt 0x00 - genau der Befund "nur 0x00 ueber dem Ausdruck".
+  //   Bit 7  liest gedruckte Muster. Auf der Schiene gibt es keine, also kommt nichts -
+  //          genau die 551er-Messung.
+  //
+  // Die Namen sagen jetzt, was gemeint ist. Die Werte bleiben, sie sind gemessen.
+  const TRACK_BIT_RAIL  = 0x20;   // Schiene lesen, und das Auto haelt sich selbst darauf
+  const TRACK_BIT_PRINT = 0x80;   // gedruckte Muster lesen
+  // Die alten Namen bleiben als Verweis stehen: sie stehen an vielen Stellen im Code und in
+  // der Doku, und ein stiller Umbenennungsdurchlauf wuerde die Herkunft verwischen.
+  const TRACK_BIT_ON  = TRACK_BIT_RAIL;
+  const TRACK_BIT_OFF = TRACK_BIT_PRINT;
   // Standard: auf der Bahn. Alles, was diese App interessant macht - Rundenzeiten,
   // Streckenscan, Ghosts mit Vorausblick - haengt daran.
   let trackMode = 'on';

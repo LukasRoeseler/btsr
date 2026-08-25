@@ -45,13 +45,47 @@
   // Bit 7 in Byte 14 schaltet den Sensor AB. Diese App hat es zwoelf Aufzeichnungen lang
   // gesendet, und niemand hat es gemerkt, weil nichts danach gesehen hat. Jetzt sieht
   // etwas danach.
-  stAdd('Protokoll: Sensor an (Byte 14)', () => {
-    const p = buildCommandPacket(0, 0);
-    const b = p[14];
-    const ok = (b & 0x20) !== 0 && (b & 0x80) === 0 && crc8(p.slice(0, 19)) === p[19];
-    return { ok, mass: 'Byte 14 = 0x' + b.toString(16)
-                       + ', Bit 5 ' + ((b & 0x20) ? 'an' : 'AUS')
-                       + ', Bit 7 ' + ((b & 0x80) ? 'AN' : 'aus') };
+  // Geprueft wird die ZUORDNUNG der beiden Lesearten, nicht eine Wunschstellung.
+  //
+  // Vorher hiess diese Pruefung "Sensor an" und verlangte Bit 5 an und Bit 7 aus. Seit dem
+  // 26.08. ist gemessen, dass beides gleichwertige Lesearten sind: Bit 5 liest die Schiene,
+  // Bit 7 liest gedruckte Muster. Die alte Fassung haette also rot gemeldet, sobald jemand
+  // in den Ausdruck-Modus schaltet - genau dann, wenn alles richtig ist.
+  //
+  // Die pruefbare Zusicherung ist stattdessen: der Schalter setzt in beide Richtungen genau
+  // EIN der beiden Bits, nie beide und nie keins, und die Pruefsumme stimmt in beiden
+  // Stellungen.
+  stAdd('Protokoll: Byte 14 waehlt genau eine Leseart', () => {
+    const sw = $('setting-ontrack');
+    if (!sw) return { skip: true, mass: 'Schalter nicht im Dokument' };
+    const gemerkt = sw.checked;
+    try {
+      const lies = () => {
+        const p = buildCommandPacket(0, 0);
+        return { b: p[14], crc: crc8(p.slice(0, 19)) === p[19] };
+      };
+      sw.checked = true; sw.dispatchEvent(new Event('change', { bubbles: true }));
+      const schiene = lies();
+      sw.checked = false; sw.dispatchEvent(new Event('change', { bubbles: true }));
+      const druck = lies();
+      const nurEins = (b) => (((b & 0x20) ? 1 : 0) + ((b & 0x80) ? 1 : 0)) === 1;
+      // Die Bits ABLESEN und nicht behaupten: die erste Fassung schrieb "(Bit 7)" auch
+      // dahin, wo 0x22 stand, und hat damit den Fehler beschriftet statt ihn zu zeigen.
+      const bits = (b) => '(' + [(b & 0x20) ? 'Bit 5' : null, (b & 0x80) ? 'Bit 7' : null]
+        .filter(Boolean).join(' + ') + ')' || '(kein Modusbit)';
+      const ok = (schiene.b & 0x20) !== 0 && (schiene.b & 0x80) === 0
+                 && (druck.b & 0x80) !== 0 && (druck.b & 0x20) === 0
+                 && nurEins(schiene.b) && nurEins(druck.b)
+                 && schiene.crc && druck.crc;
+      return { ok,
+               mass: 'Schiene 0x' + schiene.b.toString(16) + ' ' + bits(schiene.b)
+                     + ', Ausdruck 0x' + druck.b.toString(16) + ' ' + bits(druck.b)
+                     + ', Pruefsumme beide '
+                     + (schiene.crc && druck.crc ? 'ok' : 'FALSCH') };
+    } finally {
+      sw.checked = gemerkt;
+      sw.dispatchEvent(new Event('change', { bubbles: true }));
+    }
   });
 
   // ---- 4. Streckencode hin und zurueck ----

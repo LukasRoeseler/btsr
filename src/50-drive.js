@@ -18,14 +18,49 @@
   let headlightsOn = true;
   let raceLampHead = false;  // resolved headlight state, for the racing screen
 
-  $('setting-ontrack').addEventListener('change', (e) => {
-    trackMode = e.target.checked ? 'on' : 'off';
-    log('Modus: ' + (e.target.checked
-        ? 'Auf der Bahn: Streckensensor an (Byte 14 Bit 5).'
-        : 'Ohne Bahn: Streckensensor aus (Byte 14 Bit 7). Keine Streckencodes.'),
-        e.target.checked ? 'info' : 'err');
-    showHudToast(e.target.checked ? 'AUF DER BAHN' : 'OHNE BAHN');
+  // Eine Stelle fuer die Leseart, zwei Bedienelemente darauf: der Schalter in den Optionen
+  // und der Knopf im Cockpit. Zwei Orte mit eigener Logik waeren zwei Orte, die
+  // auseinanderlaufen - der Knopf setzt deshalb den Schalter und nichts sonst.
+  function applyScanMode() {
+    const rail = $('setting-ontrack') ? $('setting-ontrack').checked : true;
+    trackMode = rail ? 'on' : 'off';
+    // Sofort in lightBits eintragen. Die Fahrschleife setzt es ohnehin jeden Takt neu
+    // zusammen, aber bis dahin waere der Zustand widerspruechlich: trackMode schon
+    // umgeschaltet, das gesendete Byte noch alt. Nur die zwei Modusbits werden angefasst,
+    // Scheinwerfer und Bremslicht bleiben stehen - daher die Maske.
+    lightBits = (lightBits & ~(TRACK_BIT_RAIL | TRACK_BIT_PRINT)) | trackModeBit();
+    const b = $('race-act-scan');
+    if (b) {
+      b.textContent = rail ? 'Liest: Bahn' : 'Liest: Ausdruck';
+      // Die Ausdruck-Stellung ist die ungewoehnliche und die, in der das Auto sich nicht
+      // selbst haelt. Sie wird angeschrieben, damit man nicht versehentlich darin faehrt.
+      b.classList.toggle('warn', !rail);
+    }
+    return rail;
+  }
+
+  $('setting-ontrack').addEventListener('change', () => {
+    const rail = applyScanMode();
+    // Kein 'err' mehr fuer die Ausdruck-Stellung: sie ist kein Fehler, sondern die einzige
+    // Stellung, in der ein gedrucktes Muster ueberhaupt gelesen wird. Am 26.08. mit der
+    // Original-App gemessen.
+    log(rail
+        ? 'Leseart: Kunststoffschiene (Byte 14 Bit 5). Das Auto haelt sich selbst auf der '
+          + 'Bahn, liest aber keine gedruckten Muster.'
+        : 'Leseart: gedruckte Muster (Byte 14 Bit 7). Nur hier werden Ausdrucke gelesen, '
+          + 'dafuer haelt sich das Auto nicht selbst auf der Bahn.', 'info');
+    showHudToast(rail ? 'LIEST BAHN' : 'LIEST AUSDRUCK');
   });
+
+  if ($('race-act-scan')) {
+    $('race-act-scan').addEventListener('click', () => {
+      const sw = $('setting-ontrack');
+      if (!sw) return;
+      sw.checked = !sw.checked;
+      sw.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+  }
+  applyScanMode();
 
   $('phys-enable').addEventListener('change', (e) => {
     physicsEnabled = e.target.checked;

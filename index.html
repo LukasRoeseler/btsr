@@ -1560,6 +1560,10 @@
           <div class="gt3-val sm" id="race-lap-count">0</div></div>
         <button type="button" class="gt3-act" id="race-act-pit">Boxenstopp</button>
         <button type="button" class="gt3-act" id="race-act-flag">Gelbe Flagge</button>
+        <!-- Die Leseart gehoert hierher und nicht nur in die Optionen: wer ein gedrucktes
+             Muster auslegt, muss umschalten, und dafuer den Tab zu wechseln ist genau der
+             Weg, den man mitten im Rennen nicht gehen will. -->
+        <button type="button" class="gt3-act" id="race-act-scan">Liest: Bahn</button>
       </div>
 
       <!-- Das Schild liegt UEBER der Tachozahl, nicht daneben: waehrend eines
@@ -2002,19 +2006,34 @@
         Thema gescheitert sind.
       </p>
       <p class="muted">
-        <b>Die Deutung passt auf die zwei Modi der Original-App:</b><br>
-        <code>0x20</code> (Bit&nbsp;5) = <b>Auf der Bahn</b>: Sensor an, und das Auto
-        h&auml;lt sich selbst auf der Bahn: 87&nbsp;% der Meldungen bringen einen
-        Kachelwechsel, gegen 7&nbsp;% ohne dieses Bit.<br>
-        <code>0x80</code> (Bit&nbsp;7) = <b>Ohne Bahn</b>: Sensor aus, Byte&nbsp;12
-        bleibt <code>0xff</code>.<br>
+        <b>Berichtigt am 26.08.: es sind zwei LESEARTEN, kein Sensorschalter.</b><br>
+        <code>0x20</code> (Bit&nbsp;5) = <b>Auf der Bahn</b>: liest die Kodierung der
+        Kunststoffschiene, und das Auto h&auml;lt sich selbst darauf. 87&nbsp;% der
+        Meldungen bringen einen Kachelwechsel, gegen 7&nbsp;% ohne dieses Bit.<br>
+        <code>0x80</code> (Bit&nbsp;7) = <b>Ohne Bahn</b>: liest <b>gedruckte</b> Muster.
+        Auf der Schiene gibt es keine, deshalb kamen dort 0 Lesungen in 551 Fahrmeldungen.<br>
         <code>0x40</code> (Bit&nbsp;6) kommt in beiden Zust&auml;nden vor und geh&ouml;rt zu
         etwas anderem; es bleibt hier auf&nbsp;0.
       </p>
       <p class="muted">
-        Diese App sendet jetzt <code>0x20</code> und der Schalter <b>Auf der Bahn</b> in den
-        Optionen macht den Unterschied umschaltbar. Was vorher wie ein Druckproblem aussah,
-        war ein Modus, in dem das Auto gar nicht lesen soll.
+        Diese App sendet <code>0x20</code> und der Schalter in den Optionen sowie der Knopf
+        im Cockpit machen den Unterschied umschaltbar.
+      </p>
+      <p class="muted" style="border-left:3px solid var(--bad); padding-left:9px">
+        <b>Was hier vorher stand und warum es falsch war.</b> Bit&nbsp;7 hie&szlig; hier
+        &bdquo;Sensor aus&ldquo;. Am 26.08. wurde mit der <b>Original-App</b> gemessen, dass
+        ein gedrucktes Muster <b>nur</b> in der Stellung Ohne Bahn erkannt wird, in der
+        Stellung Auf der Bahn nicht. Beide alten Messungen waren richtig, sie wurden beide
+        auf der <b>echten Bahn</b> gemacht: dort liest Bit&nbsp;7 nichts, weil dort nichts
+        gedruckt ist. Aus &bdquo;liest auf der Bahn nichts&ldquo; wurde &bdquo;Sensor
+        aus&ldquo;, und das war ein Schluss &uuml;ber die Fahrbahn hinaus, den die Daten
+        nicht tragen.
+      </p>
+      <p class="muted" style="border-left:3px solid var(--bad); padding-left:9px">
+        Daraus folgt eine Einschr&auml;nkung der Hardware, die sich nicht wegprogrammieren
+        l&auml;sst: Bit&nbsp;5 ist auch das Bit, mit dem sich das Auto selbst auf der Bahn
+        h&auml;lt. Wer gedruckte Muster lesen will, gibt die Selbstlenkung auf. Beides
+        zugleich gibt es nicht.
       </p>
       <p class="muted">
         <b>Zwei Vermutungen, die vorher hier standen, und warum sie falsch waren.</b> Erst
@@ -2392,10 +2411,14 @@
              erheblich: die Rundenzaehlung prueft diesen Wert und hat auf dem
              Original-Startziel-Blatt nie ausgeloest, und das Streckenlernen faengt erst ab
              Start/Ziel an mitzuschreiben, also nie. -->
-        <tr><td><code>0x0a</code></td><td>Start/Ziel</td><td class="doc-sure">belegt, 25.08. gemessen</td></tr>
+        <tr><td><code>0x0a</code></td><td>Start/Ziel, <b>am gedruckten Blatt</b> im
+          Ausdruck-Modus gemessen. Was die Kunststoffschiene im Bahn-Modus sendet, ist
+          <b>nicht</b> gemessen: es sind zwei Lesearten, und es k&ouml;nnen zwei
+          Codes&auml;tze sein</td><td class="doc-sure">belegt f&uuml;r Ausdruck</td></tr>
         <tr><td><code>0x01</code></td><td>fr&uuml;her f&uuml;r Start/Ziel angenommen, nie
-          belegt; wird weiter akzeptiert, solange nicht gemessen ist, was eine
-          Kunststoffschiene meldet</td><td class="doc-guess">Annahme</td></tr>
+          belegt. Bleibt g&uuml;ltig, und seit dem 26.08. hat es eine plausible Rolle: es
+          k&ouml;nnte der Code sein, den die <b>Schiene</b> im Bahn-Modus meldet. Auch das
+          ist nicht gemessen</td><td class="doc-guess">Annahme</td></tr>
         <tr><td><code>0x02</code></td><td>Gerade</td><td class="doc-sure">belegt</td></tr>
         <tr><td><code>0x03</code></td><td><b>Linkskurve</b></td><td class="doc-sure">belegt (21.08.)</td></tr>
         <tr><td><code>0x04</code></td><td>Rechtskurve</td><td class="doc-sure">belegt</td></tr>
@@ -3508,8 +3531,11 @@
           Vorausblick.</small></div>
         <label class="tgl"><input type="checkbox" id="dash-freeroam"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Auf der Bahn
-          <small>Sensor an, Auto h&auml;lt sich selbst auf der Bahn. <b>Aus</b>: keine
-          Streckencodes, keine Rundenzeiten, kein Scan.</small></div>
+          <small>Zwei Lesearten, kein Sensorschalter. <b>An</b>: das Auto liest die
+          Kodierung der Kunststoffschiene und h&auml;lt sich selbst auf der Bahn.
+          <b>Aus</b>: es liest gedruckte Muster, h&auml;lt sich aber nicht selbst.
+          Am 26.08. mit der Original-App gemessen: ein Ausdruck wird nur in der Stellung Aus
+          erkannt. Beides zugleich gibt es nicht.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-ontrack" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Physik-Modus aktivieren<small>Aus: rohe Stickstellung, ohne Gänge.</small></div><label class="tgl"><input type="checkbox" id="phys-enable" checked><span></span></label></div>
       <div class="opt-row" id="phys-gyro-wrap"><div class="opt-label">Handy-Neigung für Lenkung nutzen</div><label class="tgl"><input type="checkbox" id="phys-gyro"><span></span></label></div>
@@ -4422,7 +4448,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.3.66</span></span>
+    <span class="foot-ver">v<span id="app-version">0.3.67</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
   </span>
   <span class="foot-right">
@@ -4804,9 +4830,11 @@
     "90° rechts drehen": "Rotate 90° right",
     ": Start/Ziel, ein Streckenteil oder den Boxengassen-Ausdruck. Die Anzeige zählt, ob Byte 12 den Wert": ": start/finish, a track part or the pit-lane printout. The display counts whether byte 12 ever leaves the value",
     ": auf keinen Fall „an Seite anpassen\", sonst stimmen die Balkenabstände nicht mehr und der Sensor liest gar nichts. Der Pfeil zeigt in die Fahrtrichtung.": ": never “fit to page”, or the bar spacing is wrong and the sensor reads nothing at all. The arrow points in the direction of travel.",
+    ": das Auto liest die Kodierung der Kunststoffschiene und hält sich selbst auf der Bahn.": ": the car reads the coding of the plastic rail and keeps itself on the track.",
     ": die Boxengasse liegt deshalb rechts. Ihre Breite ist": ": which is why the pit lane is on the right. Its width is",
     ": dieses Auto folgt Gamepad und Tastatur. Genau eines kann das sein; Standard ist das zuerst verbundene.": ": this car follows the gamepad and keyboard. Exactly one car can be it; the default is the first one connected.",
     ": dort siehst du": ": there you see",
+    ": es liest gedruckte Muster, hält sich aber nicht selbst. Am 26.08. mit der Original-App gemessen: ein Ausdruck wird nur in der Stellung Aus erkannt. Beides zugleich gibt es nicht.": ": it reads printed patterns but does not keep itself on the track. Measured on 26 Aug with the original app: a printout is only recognised in the off position. There is no having both at once.",
     ": fährt beim Rennstart selbständig los und hält sich an der Strecke. Tank und Schaden werden für Ghosts nicht simuliert.": ": sets off by itself at the race start and follows the track. Fuel and damage are not simulated for ghosts.",
     ": für jedes Auto im Rennen": ": for every car in the race",
     ": keine Streckencodes, keine Rundenzeiten, kein Scan.": ": no track codes, no lap times, no scan.",
@@ -5052,6 +5080,8 @@
     "Licht AUS + Bit 7+5 (0xa0)": "Lights OFF + bits 7+5 (0xa0)",
     "Licht an/aus": "Lights on/off",
     "Lichthupe": "Headlight flash",
+    "Liest: Ausdruck": "Reads: printout",
+    "Liest: Bahn": "Reads: track",
     "Linker Stick (X-Achse)": "Left stick (X axis)",
     "Linker Trigger (LT / L2)": "Left trigger (LT / L2)",
     "Links": "Left",
@@ -5174,7 +5204,6 @@
     "Select oder W. Reifen kommen beim Boxenstopp passend.": "Select or W. Tyres come to match at the pit stop.",
     "Sendet eine feste Testsequenz (Lenkung im Stand 0/25/50/75/100% links & rechts, dazu 3 sehr kurze Mini-Vorwärtsschrübe bei niedrigem Tempo, eine sanfte Bremse) und wertet parallel die Notify-Bytes 1-3 aus, um zu prüfen, ob das wirklich Gier-/Beschleunigungsdaten vom Auto sind.": "Sends a fixed test sequence (steering at a standstill 0/25/50/75/100 % left and right, plus 3 very short forward nudges at low speed and a gentle brake) and evaluates notify bytes 1–3 alongside it, to check whether those really are yaw and acceleration data from the car.",
     "Sendet eine feste Testsequenz (Lenkung im Stand 0/25/50/75/100% links & rechts, dazu 3 sehr kurze Mini-Vorwärtsschübe bei niedrigem Tempo, eine sanfte Bremse) und wertet parallel die Notify-Bytes 1-3 aus, um zu prüfen, ob das wirklich Gier-/Beschleunigungsdaten vom Auto sind.": "Sends a fixed test sequence (steering at a standstill 0/25/50/75/100 % left and right, plus 3 very short forward nudges at low speed and a gentle brake) and evaluates notify bytes 1–3 alongside it, to check whether those really are yaw and acceleration data from the car.",
-    "Sensor an, Auto hält sich selbst auf der Bahn.": "Sensor on, car keeps itself on the track.",
     "Services/Characteristics deines Autos ohne diese Einschränkung. Wenn du mir die dort angezeigten UUIDs (Service + Characteristics + Eigenschaften: read/write/notify) gibst, kann ich die Steuerung direkt korrekt verdrahten.": "services and characteristics of your car without that restriction. If you give me the UUIDs shown there (service + characteristics + properties: read/write/notify), the control path can be wired up correctly straight away.",
     "Setzt das Layout aus den gemeldeten Kacheln zusammen und übernimmt es nach der ersten geschlossenen Runde, nur wenn noch keine Strecke liegt.": "Assembles the layout from the reported tiles and adopts it after the first closed lap, only if no track is loaded yet.",
     "Sie ist die Kontrolle und reproduziert das bekannte Muster auf 0,032 mm, sie muss also wieder 0x03 ergeben. Wenn nicht, ist die Messung nicht wiederholbar und die anderen Zahlen sind wertlos.": "It is the control and reproduces the known pattern to 0.032 mm, so it must give 0x03 again. If it does not, the measurement is not repeatable and the other numbers are worthless.",
@@ -5298,6 +5327,7 @@
     "Zurücksetzen": "Reset",
     "Zustand": "Condition",
     "Zwei Kurven, zwei Autos, dieselbe Strecke: und die Rundenzeiten sagen, welche Kurve die bessere war.": "Two curves, two cars, the same track: and the lap times say which curve was the better one.",
+    "Zwei Lesearten, kein Sensorschalter.": "Two ways of reading, not a sensor switch.",
     "Zwei eigene Ghosts gegeneinander.": "Two of your own ghosts against each other.",
     "Zweiklang (gerechnet)": "Two-tone (synthesised)",
     "Zyklusrate": "Cycle rate",
@@ -5764,8 +5794,27 @@
   //                                      Bahn (87 % Kachelschritte gegen 7 %)
   //     Bit 7 (0x80) = "Ohne Bahn"     - Sensor aus, Byte 12 bleibt dauerhaft 0xff
   // Bit 6 (0x40) kommt in beiden Zustaenden vor und gehoert zu etwas anderem; es bleibt 0.
-  const TRACK_BIT_ON  = 0x20;
-  const TRACK_BIT_OFF = 0x80;
+  // Byte 14 waehlt die LESEART, es schaltet den Sensor nicht ab. Gemessen am 26.08. mit
+  // der Original-App: ein gedrucktes Muster wird nur mit Bit 7 erkannt, mit Bit 5 nicht.
+  //
+  // Die alten Namen ON und OFF standen fuer eine Deutung, die zu weit ging. Beide Messungen,
+  // auf die sie sich stuetzte, waren auf der ECHTEN BAHN gemacht: mit Bit 5 kamen 87 %
+  // Kachelwechsel, mit Bit 7 null Lesungen in 551 Fahrmeldungen. Daraus wurde "Sensor aus" -
+  // ein Schluss ueber die Fahrbahn hinaus, den die Daten nicht tragen.
+  //
+  // Richtig sind zwei Lesearten fuer zwei Untergruende:
+  //   Bit 5  liest die Kodierung der Kunststoffschiene. Ein Blatt Papier darauf ist keine
+  //          Schiene, also kommt 0x00 - genau der Befund "nur 0x00 ueber dem Ausdruck".
+  //   Bit 7  liest gedruckte Muster. Auf der Schiene gibt es keine, also kommt nichts -
+  //          genau die 551er-Messung.
+  //
+  // Die Namen sagen jetzt, was gemeint ist. Die Werte bleiben, sie sind gemessen.
+  const TRACK_BIT_RAIL  = 0x20;   // Schiene lesen, und das Auto haelt sich selbst darauf
+  const TRACK_BIT_PRINT = 0x80;   // gedruckte Muster lesen
+  // Die alten Namen bleiben als Verweis stehen: sie stehen an vielen Stellen im Code und in
+  // der Doku, und ein stiller Umbenennungsdurchlauf wuerde die Herkunft verwischen.
+  const TRACK_BIT_ON  = TRACK_BIT_RAIL;
+  const TRACK_BIT_OFF = TRACK_BIT_PRINT;
   // Standard: auf der Bahn. Alles, was diese App interessant macht - Rundenzeiten,
   // Streckenscan, Ghosts mit Vorausblick - haengt daran.
   let trackMode = 'on';
@@ -7335,14 +7384,49 @@
   let headlightsOn = true;
   let raceLampHead = false;  // resolved headlight state, for the racing screen
 
-  $('setting-ontrack').addEventListener('change', (e) => {
-    trackMode = e.target.checked ? 'on' : 'off';
-    log('Modus: ' + (e.target.checked
-        ? 'Auf der Bahn: Streckensensor an (Byte 14 Bit 5).'
-        : 'Ohne Bahn: Streckensensor aus (Byte 14 Bit 7). Keine Streckencodes.'),
-        e.target.checked ? 'info' : 'err');
-    showHudToast(e.target.checked ? 'AUF DER BAHN' : 'OHNE BAHN');
+  // Eine Stelle fuer die Leseart, zwei Bedienelemente darauf: der Schalter in den Optionen
+  // und der Knopf im Cockpit. Zwei Orte mit eigener Logik waeren zwei Orte, die
+  // auseinanderlaufen - der Knopf setzt deshalb den Schalter und nichts sonst.
+  function applyScanMode() {
+    const rail = $('setting-ontrack') ? $('setting-ontrack').checked : true;
+    trackMode = rail ? 'on' : 'off';
+    // Sofort in lightBits eintragen. Die Fahrschleife setzt es ohnehin jeden Takt neu
+    // zusammen, aber bis dahin waere der Zustand widerspruechlich: trackMode schon
+    // umgeschaltet, das gesendete Byte noch alt. Nur die zwei Modusbits werden angefasst,
+    // Scheinwerfer und Bremslicht bleiben stehen - daher die Maske.
+    lightBits = (lightBits & ~(TRACK_BIT_RAIL | TRACK_BIT_PRINT)) | trackModeBit();
+    const b = $('race-act-scan');
+    if (b) {
+      b.textContent = rail ? 'Liest: Bahn' : 'Liest: Ausdruck';
+      // Die Ausdruck-Stellung ist die ungewoehnliche und die, in der das Auto sich nicht
+      // selbst haelt. Sie wird angeschrieben, damit man nicht versehentlich darin faehrt.
+      b.classList.toggle('warn', !rail);
+    }
+    return rail;
+  }
+
+  $('setting-ontrack').addEventListener('change', () => {
+    const rail = applyScanMode();
+    // Kein 'err' mehr fuer die Ausdruck-Stellung: sie ist kein Fehler, sondern die einzige
+    // Stellung, in der ein gedrucktes Muster ueberhaupt gelesen wird. Am 26.08. mit der
+    // Original-App gemessen.
+    log(rail
+        ? 'Leseart: Kunststoffschiene (Byte 14 Bit 5). Das Auto haelt sich selbst auf der '
+          + 'Bahn, liest aber keine gedruckten Muster.'
+        : 'Leseart: gedruckte Muster (Byte 14 Bit 7). Nur hier werden Ausdrucke gelesen, '
+          + 'dafuer haelt sich das Auto nicht selbst auf der Bahn.', 'info');
+    showHudToast(rail ? 'LIEST BAHN' : 'LIEST AUSDRUCK');
   });
+
+  if ($('race-act-scan')) {
+    $('race-act-scan').addEventListener('click', () => {
+      const sw = $('setting-ontrack');
+      if (!sw) return;
+      sw.checked = !sw.checked;
+      sw.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+  }
+  applyScanMode();
 
   $('phys-enable').addEventListener('change', (e) => {
     physicsEnabled = e.target.checked;
@@ -8274,9 +8358,18 @@
   //
   // Die Werte fuegen sich in das Muster der anderen: 0x03/0x04 links/rechts fuer die
   // 60-Grad-Kurve, 0x05/0x06 links/rechts fuer die Haarnadel.
-  // START ist 0x0a, gemessen am 25.08. mit dem Original-Startziel-Blatt. Vorher stand hier
-  // 0x01, und das war eine Annahme aus einem Foto - die Doku hat sie auch als solche
-  // gekennzeichnet. Die Folgen der falschen Zahl waren erheblich und beide unsichtbar: die
+  // START ist 0x0a, gemessen am 25.08. mit dem Original-Startziel-Blatt - und zwar am
+  // GEDRUCKTEN BLATT im Ausdruck-Modus (Byte 14 Bit 7). Das ist eine Einschraenkung, die
+  // dazugehoert: am 26.08. wurde mit der Original-App gemessen, dass ein Ausdruck nur in
+  // dieser Leseart erkannt wird. Was die Kunststoffschiene im Bahn-Modus sendet, ist damit
+  // NICHT gemessen, und es koennen zwei Codesaetze sein - einer je Untergrund.
+  //
+  // Genau deshalb bleibt 0x01 in START_CODES: es war die alte Annahme, und seit dem 26.08.
+  // hat es eine plausible Rolle als Code der Schiene. Auch das ist nicht gemessen, aber ein
+  // akzeptierter Wert kostet nichts und ein fehlender kostet die Rundenzaehlung.
+  //
+  // Vorher stand hier 0x01, und das war eine Annahme aus einem Foto - die Doku hat sie auch
+  // als solche gekennzeichnet. Die Folgen der falschen Zahl waren erheblich und beide unsichtbar: die
   // Rundenzaehlung prueft auf diesen Wert und hat auf dem Originalblatt nie ausgeloest, und
   // das Streckenlernen faengt erst ab Start/Ziel an mitzuschreiben, also nie.
   //
@@ -16607,13 +16700,47 @@
   // Bit 7 in Byte 14 schaltet den Sensor AB. Diese App hat es zwoelf Aufzeichnungen lang
   // gesendet, und niemand hat es gemerkt, weil nichts danach gesehen hat. Jetzt sieht
   // etwas danach.
-  stAdd('Protokoll: Sensor an (Byte 14)', () => {
-    const p = buildCommandPacket(0, 0);
-    const b = p[14];
-    const ok = (b & 0x20) !== 0 && (b & 0x80) === 0 && crc8(p.slice(0, 19)) === p[19];
-    return { ok, mass: 'Byte 14 = 0x' + b.toString(16)
-                       + ', Bit 5 ' + ((b & 0x20) ? 'an' : 'AUS')
-                       + ', Bit 7 ' + ((b & 0x80) ? 'AN' : 'aus') };
+  // Geprueft wird die ZUORDNUNG der beiden Lesearten, nicht eine Wunschstellung.
+  //
+  // Vorher hiess diese Pruefung "Sensor an" und verlangte Bit 5 an und Bit 7 aus. Seit dem
+  // 26.08. ist gemessen, dass beides gleichwertige Lesearten sind: Bit 5 liest die Schiene,
+  // Bit 7 liest gedruckte Muster. Die alte Fassung haette also rot gemeldet, sobald jemand
+  // in den Ausdruck-Modus schaltet - genau dann, wenn alles richtig ist.
+  //
+  // Die pruefbare Zusicherung ist stattdessen: der Schalter setzt in beide Richtungen genau
+  // EIN der beiden Bits, nie beide und nie keins, und die Pruefsumme stimmt in beiden
+  // Stellungen.
+  stAdd('Protokoll: Byte 14 waehlt genau eine Leseart', () => {
+    const sw = $('setting-ontrack');
+    if (!sw) return { skip: true, mass: 'Schalter nicht im Dokument' };
+    const gemerkt = sw.checked;
+    try {
+      const lies = () => {
+        const p = buildCommandPacket(0, 0);
+        return { b: p[14], crc: crc8(p.slice(0, 19)) === p[19] };
+      };
+      sw.checked = true; sw.dispatchEvent(new Event('change', { bubbles: true }));
+      const schiene = lies();
+      sw.checked = false; sw.dispatchEvent(new Event('change', { bubbles: true }));
+      const druck = lies();
+      const nurEins = (b) => (((b & 0x20) ? 1 : 0) + ((b & 0x80) ? 1 : 0)) === 1;
+      // Die Bits ABLESEN und nicht behaupten: die erste Fassung schrieb "(Bit 7)" auch
+      // dahin, wo 0x22 stand, und hat damit den Fehler beschriftet statt ihn zu zeigen.
+      const bits = (b) => '(' + [(b & 0x20) ? 'Bit 5' : null, (b & 0x80) ? 'Bit 7' : null]
+        .filter(Boolean).join(' + ') + ')' || '(kein Modusbit)';
+      const ok = (schiene.b & 0x20) !== 0 && (schiene.b & 0x80) === 0
+                 && (druck.b & 0x80) !== 0 && (druck.b & 0x20) === 0
+                 && nurEins(schiene.b) && nurEins(druck.b)
+                 && schiene.crc && druck.crc;
+      return { ok,
+               mass: 'Schiene 0x' + schiene.b.toString(16) + ' ' + bits(schiene.b)
+                     + ', Ausdruck 0x' + druck.b.toString(16) + ' ' + bits(druck.b)
+                     + ', Pruefsumme beide '
+                     + (schiene.crc && druck.crc ? 'ok' : 'FALSCH') };
+    } finally {
+      sw.checked = gemerkt;
+      sw.dispatchEvent(new Event('change', { bubbles: true }));
+    }
   });
 
   // ---- 4. Streckencode hin und zurueck ----
