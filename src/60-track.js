@@ -132,11 +132,26 @@
   // engere Kehre als tatsaechlich liegt. Ein Drittel einer Kachellaenge ist eine ANNAHME,
   // gemessen ist sie nicht; sobald der Grundriss eines Haarnadelteils vorliegt, gehoert hier
   // die echte Zahl hin.
-  // Gerade Sektion am Anfang der Haarnadel, 28 cm. NICHT gewaehlt, sondern aus dem
-  // Grundriss der Original-App zurueckgerechnet: eine Haarnadel plus Start/Ziel belegt dort
-  // 0,62 m x 1,02 m, und 43 + L + 18,5 + 12,5 = 102 ergibt L = 28. Vorher stand hier
-  // TRACK_STEP / 3, also 15,4 cm, und das war frei gegriffen.
-  const TRACK_HAIRPIN_LEAD_CM = 28;
+  // Gerade Sektion am Anfang der Haarnadel. EXAKT geloest, nicht abgeschaetzt.
+  //
+  // Die Strecke SHG4R4LG dreht 180 + 4*60 - 60 = 360 Grad und muss sich deshalb schliessen.
+  // Das sind zwei Gleichungen, x und y, mit zwei Unbekannten: Radius und gerade Sektion. Und
+  // sie sind entkoppelt - der Radius wirkt in dieser Strecke nur waagerecht, die gerade
+  // Sektion nur senkrecht:
+  //
+  //     je cm Radius            dx = +2.0000   dy =  0.0000
+  //     je cm gerader Sektion    dx =  0.0000   dy = -1.0000
+  //
+  // Geloest: Radius 18,5000 cm und gerade Sektion 21,9141 cm, Restfehler 0,000000 cm. Die
+  // geschlossene Form ist 2 * (Kachel - Radius * cos 30 Grad) = 2 * (43 - 32,043).
+  //
+  // Vorher stand hier 28 cm, aus dem Grundriss 0,62 m x 1,02 m eines Bildschirmfotos
+  // zurueckgerechnet. Der Radius war daraus richtig, die gerade Sektion um 6,09 cm zu
+  // gross - und das ist genau der Betrag, um den SHG4R4LG nicht zusammenfand. Eine
+  // Schliessbedingung ist eine exakte Identitaet, ein abgelesener Grundriss haengt daran,
+  // welche Teile man auf dem Bild vermutet und was der Kasten ueberhaupt misst. Bei einem
+  // Widerspruch gewinnt die Identitaet.
+  const TRACK_HAIRPIN_LEAD_CM = 2 * (TRACK_TILE_CM - TRACK_RADIUS_CM * Math.cos(Math.PI / 6));
   const TRACK_UNITS_PER_CM = TRACK_STEP / TRACK_TILE_CM;   // 0.930
   const TRACK_HAIRPIN_LEAD = TRACK_HAIRPIN_LEAD_CM * TRACK_UNITS_PER_CM;
   const TRACK_RADIUS = TRACK_RADIUS_CM * TRACK_UNITS_PER_CM;
@@ -543,7 +558,15 @@
     }
     const nrm = trackNormals(pts);
     const first = pts[0], last = pts[pts.length - 1];
-    const closed = Math.hypot(last.x - first.x, last.y - first.y) < 60;
+    // 2 cm statt 60 Zeichnungseinheiten.
+     //
+     // 60 Einheiten sind 64,5 cm, und eine Kachel ist 43 cm lang: sie passte in die
+     // Toleranz. Der Editor meldete deshalb SR6, SL6 und SHGHG als "Geschlossen", obwohl
+     // bei allen dreien genau eine Kachel fehlt - eine Anzeige, die bei einer Luecke von
+     // einer Kachelbreite noch gruen sagt, ist keine Anzeige. 2 cm lassen Rundungsfehler
+     // durch und nichts sonst. Gefunden hat es der Selbsttest.
+    const closed = Math.hypot(last.x - first.x, last.y - first.y)
+                   < 2 * TRACK_UNITS_PER_CM;
 
     const half = TRACK_HALF_W;
     const pad = o.detailed ? half + 14 : 30;

@@ -225,6 +225,18 @@
   .wx-pick button.sel { color: var(--ink); border-color: var(--bad);
     background: var(--panel-3); }
 
+  /* ---- Selbsttest ---- */
+  .st-tab { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 12px; }
+  .st-tab th, .st-tab td { text-align: left; padding: 6px 9px;
+    border-bottom: 1px solid var(--border); vertical-align: top; }
+  .st-tab th { color: var(--muted); font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .06em; }
+  .st-tab td:last-child { font-family: monospace; font-size: 12px; color: var(--muted); }
+  .st-ok { color: var(--good); font-weight: 700; }
+  .st-bad { color: var(--bad); font-weight: 700; }
+  .st-skip { color: var(--warn); font-weight: 700; }
+  .st-run td { opacity: .5; }
+
   /* ---- Sonstige: drei Kacheln ---- */
   .misc-grid {
     display: grid; gap: 14px;
@@ -1263,6 +1275,7 @@
   <button class="tab-btn" data-tab="school" data-parent="misc" hidden style="display:none">Programmierschule</button>
   <button class="tab-btn" data-tab="doc" data-parent="misc" hidden style="display:none">Doku</button>
   <button class="tab-btn" data-tab="dev" data-parent="misc" hidden style="display:none">Entwickler</button>
+  <button class="tab-btn" data-tab="selftest" data-parent="misc" hidden style="display:none">Selbsttest</button>
   </nav>
   </div>
 </header>
@@ -1552,6 +1565,18 @@
           <b>Entwickler</b>
           <span>BLE-Explorer, Kalibrierung, Makros: die Werkbank unter der
             Oberfl&auml;che.</span>
+        </button>
+        <button class="misc-tile goto-tab" data-tab="selftest">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M10 8h20l8 8v26H10z" stroke-width="2.8"/>
+            <path d="M30 8v8h8"/>
+            <path d="M16 24l4 4 8-9" stroke="var(--bad)"/>
+            <path d="M16 34h16"/>
+          </svg>
+          <b>Selbsttest</b>
+          <span>Ein Knopf, dreizehn Messungen: l&auml;dt alles, rechnet die Physik
+            richtig, passt die Linie, sind die T&ouml;ne heil.</span>
         </button>
       </div>
     </div>
@@ -3691,6 +3716,35 @@
   </section>
 
   <!-- TRACK TAB -->
+  <section class="tabpage" id="tab-selftest">
+    <button class="misc-back goto-tab" data-tab="misc">&larr; Sonstige</button>
+    <div class="card">
+      <h2>Selbsttest</h2>
+      <p class="muted">
+        Dreizehn Messungen an der laufenden App. Sie ersetzen keine Fahrt, aber sie sagen,
+        ob eine &Auml;nderung etwas kaputt gemacht hat, das man nicht sofort sieht: eine
+        Physik, die nicht mehr trifft, eine Ideallinie mit einem Sprung, eine Tonschleife
+        mit einer Naht, ein deutscher Satz im englischen Modus.
+      </p>
+      <p class="muted" style="font-size:11.5px">
+        Jede Zeile nennt ihr <b>Ma&szlig;</b>, nicht nur ihr Urteil. Ein Test, der nur
+        gr&uuml;n oder rot sagt, ist beim n&auml;chsten Grenzfall wertlos, weil man nicht
+        sieht, wie knapp es war. Ein <b>?</b> hei&szlig;t: hier ist nichts kaputt, es war
+        nur nicht pr&uuml;fbar &ndash; zum Beispiel T&ouml;ne &uuml;ber
+        <code>file://</code>, wo der Browser das Laden von Dateien verbietet.
+      </p>
+      <div class="row" style="gap:8px; margin-top:6px; flex-wrap:wrap">
+        <button class="primary" id="st-run">Selbsttest starten</button>
+        <span class="muted" id="st-status">bereit</span>
+      </div>
+      <table class="st-tab"><thead><tr>
+        <th>Pr&uuml;fung</th><th>Ergebnis</th><th>Ma&szlig;</th>
+      </tr></thead><tbody id="st-rows">
+        <tr><td colspan="3" class="muted">noch nicht gelaufen</td></tr>
+      </tbody></table>
+    </div>
+  </section>
+
   <section class="tabpage" id="tab-track">
     <div class="card subpage-home" id="sub-home-track">
       <h2>Strecke</h2>
@@ -4007,7 +4061,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.3.58</span></span>
+    <span class="foot-ver">v<span id="app-version">0.3.59</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
   </span>
   <span class="foot-right">

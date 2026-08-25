@@ -225,6 +225,18 @@
   .wx-pick button.sel { color: var(--ink); border-color: var(--bad);
     background: var(--panel-3); }
 
+  /* ---- Selbsttest ---- */
+  .st-tab { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 12px; }
+  .st-tab th, .st-tab td { text-align: left; padding: 6px 9px;
+    border-bottom: 1px solid var(--border); vertical-align: top; }
+  .st-tab th { color: var(--muted); font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .06em; }
+  .st-tab td:last-child { font-family: monospace; font-size: 12px; color: var(--muted); }
+  .st-ok { color: var(--good); font-weight: 700; }
+  .st-bad { color: var(--bad); font-weight: 700; }
+  .st-skip { color: var(--warn); font-weight: 700; }
+  .st-run td { opacity: .5; }
+
   /* ---- Sonstige: drei Kacheln ---- */
   .misc-grid {
     display: grid; gap: 14px;
@@ -1263,6 +1275,7 @@
   <button class="tab-btn" data-tab="school" data-parent="misc" hidden style="display:none">Programmierschule</button>
   <button class="tab-btn" data-tab="doc" data-parent="misc" hidden style="display:none">Doku</button>
   <button class="tab-btn" data-tab="dev" data-parent="misc" hidden style="display:none">Entwickler</button>
+  <button class="tab-btn" data-tab="selftest" data-parent="misc" hidden style="display:none">Selbsttest</button>
   </nav>
   </div>
 </header>
@@ -1552,6 +1565,18 @@
           <b>Entwickler</b>
           <span>BLE-Explorer, Kalibrierung, Makros: die Werkbank unter der
             Oberfl&auml;che.</span>
+        </button>
+        <button class="misc-tile goto-tab" data-tab="selftest">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M10 8h20l8 8v26H10z" stroke-width="2.8"/>
+            <path d="M30 8v8h8"/>
+            <path d="M16 24l4 4 8-9" stroke="var(--bad)"/>
+            <path d="M16 34h16"/>
+          </svg>
+          <b>Selbsttest</b>
+          <span>Ein Knopf, dreizehn Messungen: l&auml;dt alles, rechnet die Physik
+            richtig, passt die Linie, sind die T&ouml;ne heil.</span>
         </button>
       </div>
     </div>
@@ -3691,6 +3716,35 @@
   </section>
 
   <!-- TRACK TAB -->
+  <section class="tabpage" id="tab-selftest">
+    <button class="misc-back goto-tab" data-tab="misc">&larr; Sonstige</button>
+    <div class="card">
+      <h2>Selbsttest</h2>
+      <p class="muted">
+        Dreizehn Messungen an der laufenden App. Sie ersetzen keine Fahrt, aber sie sagen,
+        ob eine &Auml;nderung etwas kaputt gemacht hat, das man nicht sofort sieht: eine
+        Physik, die nicht mehr trifft, eine Ideallinie mit einem Sprung, eine Tonschleife
+        mit einer Naht, ein deutscher Satz im englischen Modus.
+      </p>
+      <p class="muted" style="font-size:11.5px">
+        Jede Zeile nennt ihr <b>Ma&szlig;</b>, nicht nur ihr Urteil. Ein Test, der nur
+        gr&uuml;n oder rot sagt, ist beim n&auml;chsten Grenzfall wertlos, weil man nicht
+        sieht, wie knapp es war. Ein <b>?</b> hei&szlig;t: hier ist nichts kaputt, es war
+        nur nicht pr&uuml;fbar &ndash; zum Beispiel T&ouml;ne &uuml;ber
+        <code>file://</code>, wo der Browser das Laden von Dateien verbietet.
+      </p>
+      <div class="row" style="gap:8px; margin-top:6px; flex-wrap:wrap">
+        <button class="primary" id="st-run">Selbsttest starten</button>
+        <span class="muted" id="st-status">bereit</span>
+      </div>
+      <table class="st-tab"><thead><tr>
+        <th>Pr&uuml;fung</th><th>Ergebnis</th><th>Ma&szlig;</th>
+      </tr></thead><tbody id="st-rows">
+        <tr><td colspan="3" class="muted">noch nicht gelaufen</td></tr>
+      </tbody></table>
+    </div>
+  </section>
+
   <section class="tabpage" id="tab-track">
     <div class="card subpage-home" id="sub-home-track">
       <h2>Strecke</h2>
@@ -4007,7 +4061,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.3.58</span></span>
+    <span class="foot-ver">v<span id="app-version">0.3.59</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
   </span>
   <span class="foot-right">
@@ -4362,6 +4416,8 @@
     ", keine Messung: dass ein Auto die Linie einhält, kann die App nicht prüfen, weil kein Byte die Querlage meldet.": ", not a measurement: the app cannot check that a car holds the line, because no byte reports lateral position.",
     ", mit fließendem Übergang. Gebremst wird dort, wo die Krümmung": ", with a smooth transition. Braking happens where the curvature",
     ", nicht aus einem Filter: ein gleichmäßig zündender Reihensechser klingt anders als ein V8 mit Cross-Plane-Kurbelwelle, dessen beide Bänke ungleich zünden. Und die Resonanz ist keine Einstellung, sondern folgt aus der Rohrlänge:": ", not from a filter: an evenly firing straight six sounds different from a V8 with a cross-plane crank, whose two banks fire unevenly. And the resonance is not a setting but follows from the pipe length:",
+    ", nicht nur ihr Urteil. Ein Test, der nur grün oder rot sagt, ist beim nächsten Grenzfall wertlos, weil man nicht sieht, wie knapp es war. Ein": ", not just its verdict. A test that only says green or red is worthless at the next borderline case, because you cannot see how close it was. A",
+    ", wo der Browser das Laden von Dateien verbietet.": ", where the browser forbids loading files.",
     "-- Beispiel laden --": "-- load an example --",
     "-- abgelegte Motoren --": "-- stored engines --",
     "-- gespeicherte Fahrten --": "-- saved runs --",
@@ -4488,11 +4544,13 @@
     "Drehen": "Rotate",
     "Drehzahl": "Revs",
     "Drei fertige Abstimmungen. Sie setzen nur die Regler, die das": "Three ready-made setups. They only touch the sliders that affect the",
+    "Dreizehn Messungen an der laufenden App. Sie ersetzen keine Fahrt, aber sie sagen, ob eine Änderung etwas kaputt gemacht hat, das man nicht sofort sieht: eine Physik, die nicht mehr trifft, eine Ideallinie mit einem Sprung, eine Tonschleife mit einer Naht, ein deutscher Satz im englischen Modus.": "Thirteen measurements on the running app. They do not replace a drive, but they say whether a change broke something you would not notice at once: physics that no longer matches, a racing line with a jump, a sound loop with a seam, a German sentence in English mode.",
     "Drosselt bei vollem Akku. Der Akkuwert ist eine unkalibrierte Schätzung.": "Throttles back on a full battery. The battery value is an uncalibrated estimate.",
     "Druckvorlagen": "Print templates",
     "Eckig: Vollgas, dann Vollbremse": "Square: full throttle, then full brake",
     "Eigener Verbindungsweg, nur zum Erkunden. Er legt": "A separate connection path, for exploring only. It places",
     "Eigenes Muster für die Box, mit dem Code, den es auslöst.": "Your own pattern for the pit, with the code it triggers.",
+    "Ein Knopf, dreizehn Messungen: lädt alles, rechnet die Physik richtig, passt die Linie, sind die Töne heil.": "One button, thirteen measurements: does it all load, is the physics right, does the line fit, are the sounds intact.",
     "Ein Teil überfahren und ablesen, welchen Wert das Auto meldet.": "Drive over one part and read off the value the car reports.",
     "Eine Runde zählt, sobald das Auto das Start/Ziel-Muster auf der Strecke überfährt (dasselbe Signal, das auch der Streckenscanner ausliest): kein eigener Sensor in der App.": "A lap counts as soon as the car drives over the start/finish pattern on the track (the same signal the track scanner reads), there is no separate sensor in the app.",
     "Einfach: Elektro": "Simple: electric",
@@ -4611,6 +4669,7 @@
     "Makros": "Macros",
     "Manuelle Schaltung": "Manual gearshift",
     "Masse & Reifen": "Mass & tyres",
+    "Maß": "Measurement",
     "Messung starten": "Start the measurement",
     "Minuten": "minutes",
     "Mittel": "Mean",
@@ -4653,6 +4712,7 @@
     "Programmierschule": "Coding school",
     "Protokoll, Streckencodes, Physik, Töne: alles, was gemessen wurde, mit Herkunft.": "Protocol, track codes, physics, sounds: everything that was measured, with its source.",
     "Protokoll-Labor (NUS RX/TX)": "Protocol lab (NUS RX/TX)",
+    "Prüfung": "Check",
     "Querablage messen": "Measure lateral placement",
     "Querkraft und Längskraft": "Lateral and longitudinal force",
     "R3 (rechter Stick drücken)": "R3 (press the right stick)",
@@ -4697,6 +4757,8 @@
     "Schreibt frei konfigurierbare Byte-Pakete an NUS RX (": "Writes freely configurable byte packets to NUS RX (",
     "Schritt: eine steil gezogene Gaskurve lässt ein Auto auf dem Tisch losschießen, und die Simulation kostet nichts.": "step: a steeply drawn throttle curve makes a car shoot off the table, and the simulation costs nothing.",
     "Schwarz ist die Fahrbahn, weiße Striche trennen die Streckenteile. Randsteine in Fahrtrichtung:": "Black is the roadway, white lines separate the parts. Kerbs, in the direction of travel:",
+    "Selbsttest starten": "Start the self-test",
+    "Selbsttest": "Self-test",
     "Select oder W. Reifen kommen beim Boxenstopp passend.": "Select or W. Tyres come to match at the pit stop.",
     "Sendet eine feste Testsequenz (Lenkung im Stand 0/25/50/75/100% links & rechts, dazu 3 sehr kurze Mini-Vorwärtsschrübe bei niedrigem Tempo, eine sanfte Bremse) und wertet parallel die Notify-Bytes 1-3 aus, um zu prüfen, ob das wirklich Gier-/Beschleunigungsdaten vom Auto sind.": "Sends a fixed test sequence (steering at a standstill 0/25/50/75/100 % left and right, plus 3 very short forward nudges at low speed and a gentle brake) and evaluates notify bytes 1–3 alongside it, to check whether those really are yaw and acceleration data from the car.",
     "Sendet eine feste Testsequenz (Lenkung im Stand 0/25/50/75/100% links & rechts, dazu 3 sehr kurze Mini-Vorwärtsschübe bei niedrigem Tempo, eine sanfte Bremse) und wertet parallel die Notify-Bytes 1-3 aus, um zu prüfen, ob das wirklich Gier-/Beschleunigungsdaten vom Auto sind.": "Sends a fixed test sequence (steering at a standstill 0/25/50/75/100 % left and right, plus 3 very short forward nudges at low speed and a gentle brake) and evaluates notify bytes 1–3 alongside it, to check whether those really are yaw and acceleration data from the car.",
@@ -4849,6 +4911,7 @@
     "heißt „gerade keine Lesung“ und ist der häufigste Wert von allen, das ist normal und kein Fehler.": "means “no reading right now” and is the most common value of all, that is normal and not a fault.",
     "heißt „kein Muster erkannt“. Interessant ist alles andere.": "means “no pattern recognised”. Everything else is interesting.",
     "heißt: den kennen wir noch nicht.": "means: we do not know that one yet.",
+    "heißt: hier ist nichts kaputt, es war nur nicht prüfbar – zum Beispiel Töne über": "means: nothing is broken here, it just could not be checked – sound files over",
     "hoch, obwohl Byte 12 nur": "high, although byte 12 only",
     "hochschalten": "shift up",
     "in Kurven deutlich bewegt, lässt sich eine Kurve daran erkennen, ganz ohne Barcode.": "moves noticeably in corners, a corner can be recognised from it, with no barcode at all.",
@@ -4885,6 +4948,7 @@
     "nicht verbunden": "not connected",
     "noch kein Paket": "no packet yet",
     "noch keine Wiedergabe.": "no replay yet.",
+    "noch nicht gelaufen": "not run yet",
     "noch nichts gemessen": "nothing measured yet",
     "noch nichts gezählt": "nothing counted yet",
     "nur Byte 10 = 0x30": "byte 10 = 0x30 only",
@@ -7764,11 +7828,26 @@
   // engere Kehre als tatsaechlich liegt. Ein Drittel einer Kachellaenge ist eine ANNAHME,
   // gemessen ist sie nicht; sobald der Grundriss eines Haarnadelteils vorliegt, gehoert hier
   // die echte Zahl hin.
-  // Gerade Sektion am Anfang der Haarnadel, 28 cm. NICHT gewaehlt, sondern aus dem
-  // Grundriss der Original-App zurueckgerechnet: eine Haarnadel plus Start/Ziel belegt dort
-  // 0,62 m x 1,02 m, und 43 + L + 18,5 + 12,5 = 102 ergibt L = 28. Vorher stand hier
-  // TRACK_STEP / 3, also 15,4 cm, und das war frei gegriffen.
-  const TRACK_HAIRPIN_LEAD_CM = 28;
+  // Gerade Sektion am Anfang der Haarnadel. EXAKT geloest, nicht abgeschaetzt.
+  //
+  // Die Strecke SHG4R4LG dreht 180 + 4*60 - 60 = 360 Grad und muss sich deshalb schliessen.
+  // Das sind zwei Gleichungen, x und y, mit zwei Unbekannten: Radius und gerade Sektion. Und
+  // sie sind entkoppelt - der Radius wirkt in dieser Strecke nur waagerecht, die gerade
+  // Sektion nur senkrecht:
+  //
+  //     je cm Radius            dx = +2.0000   dy =  0.0000
+  //     je cm gerader Sektion    dx =  0.0000   dy = -1.0000
+  //
+  // Geloest: Radius 18,5000 cm und gerade Sektion 21,9141 cm, Restfehler 0,000000 cm. Die
+  // geschlossene Form ist 2 * (Kachel - Radius * cos 30 Grad) = 2 * (43 - 32,043).
+  //
+  // Vorher stand hier 28 cm, aus dem Grundriss 0,62 m x 1,02 m eines Bildschirmfotos
+  // zurueckgerechnet. Der Radius war daraus richtig, die gerade Sektion um 6,09 cm zu
+  // gross - und das ist genau der Betrag, um den SHG4R4LG nicht zusammenfand. Eine
+  // Schliessbedingung ist eine exakte Identitaet, ein abgelesener Grundriss haengt daran,
+  // welche Teile man auf dem Bild vermutet und was der Kasten ueberhaupt misst. Bei einem
+  // Widerspruch gewinnt die Identitaet.
+  const TRACK_HAIRPIN_LEAD_CM = 2 * (TRACK_TILE_CM - TRACK_RADIUS_CM * Math.cos(Math.PI / 6));
   const TRACK_UNITS_PER_CM = TRACK_STEP / TRACK_TILE_CM;   // 0.930
   const TRACK_HAIRPIN_LEAD = TRACK_HAIRPIN_LEAD_CM * TRACK_UNITS_PER_CM;
   const TRACK_RADIUS = TRACK_RADIUS_CM * TRACK_UNITS_PER_CM;
@@ -8175,7 +8254,15 @@
     }
     const nrm = trackNormals(pts);
     const first = pts[0], last = pts[pts.length - 1];
-    const closed = Math.hypot(last.x - first.x, last.y - first.y) < 60;
+    // 2 cm statt 60 Zeichnungseinheiten.
+     //
+     // 60 Einheiten sind 64,5 cm, und eine Kachel ist 43 cm lang: sie passte in die
+     // Toleranz. Der Editor meldete deshalb SR6, SL6 und SHGHG als "Geschlossen", obwohl
+     // bei allen dreien genau eine Kachel fehlt - eine Anzeige, die bei einer Luecke von
+     // einer Kachelbreite noch gruen sagt, ist keine Anzeige. 2 cm lassen Rundungsfehler
+     // durch und nichts sonst. Gefunden hat es der Selbsttest.
+    const closed = Math.hypot(last.x - first.x, last.y - first.y)
+                   < 2 * TRACK_UNITS_PER_CM;
 
     const half = TRACK_HALF_W;
     const pad = o.detailed ? half + 14 : 30;
@@ -12588,20 +12675,38 @@
     return Math.max(0, Math.min(1, (Date.now() - car.tileAt) / dur));
   }
 
-  // Wie lang ist diese Kachel im Vergleich zum Durchschnitt? 1 fuer Gerade und normale
-  // Kurve, etwa 3 fuer die Haarnadel. Ohne gerechnete Linie gibt es keine Abtastung, dann
-  // uebernimmt der Drehwinkel dieselbe Rolle.
+  // Wie lang ist diese Kachel WIRKLICH? In Zeichnungseinheiten, entlang der Mittellinie.
+  //
+  // Vorher wurde mit der Zahl der Abtastpunkte gerechnet, und die vergibt
+  // trackCenterline() nach DREHWINKEL, nicht nach Laenge. Eine Haarnadel dreht dreimal so
+  // weit wie eine 60-Grad-Kurve, hat aber nur den halben Radius - ihr Bogen ist also nur
+  // eineinhalb mal so lang. Gemessen gegen eine Gerade von 43 cm:
+  //
+  //     60-Grad-Kurve   37 * pi/3      = 38,8 cm   gerechnet wurde 43 cm
+  //     Haarnadel       28 + 18,5 * pi = 86,1 cm   gerechnet wurde 129 cm
+  //
+  // Die Phase sagt, welche Stelle der Ideallinie das Auto gerade liest. Sie war damit auf
+  // JEDER Kurve falsch, nicht nur auf der Haarnadel. Gefunden hat es der Selbsttest.
+  function tileLength(type) {
+    if (type === TILE_TYPE.PIT) return TRACK_STEP * 2;
+    if (!tileIsCurve(type)) return TRACK_STEP;
+    const bogen = tileRadius(type) * Math.abs(tileTurnDeg(type)) * Math.PI / 180;
+    const lead = (type === TILE_TYPE.HAIRPIN || type === TILE_TYPE.HAIRPIN_LEFT)
+      ? TRACK_HAIRPIN_LEAD : 0;
+    return bogen + lead;
+  }
+
   function ghostTileLenFactor(tileIndex) {
     if (tileIndex === null || tileIndex === undefined) return 1;
-    const lc = lineCache && lineCache.tiles === currentTrackTiles ? lineCache : null;
-    if (lc && lc.ranges.length) {
-      const r = lc.ranges[((tileIndex % lc.ranges.length) + lc.ranges.length) % lc.ranges.length];
-      const avg = lc.points / lc.ranges.length;
-      if (r && r.count && avg > 0) return r.count / avg;
-    }
-    const t = currentTrackTiles[tileIndex];
+    const tiles = currentTrackTiles;
+    if (!tiles || !tiles.length) return 1;
+    const n = tiles.length;
+    const t = tiles[((tileIndex % n) + n) % n];
     if (!t) return 1;
-    return tileTightness(t.type) >= 2 ? TRACK_HAIRPIN_DEG / TRACK_TURN_DEG : 1;
+    let summe = 0;
+    for (const x of tiles) summe += tileLength(x.type);
+    const mittel = summe / n;
+    return mittel > 0 ? tileLength(t.type) / mittel : 1;
   }
 
   // Beim Kachelwechsel die gemessene Dauer gleitend nachziehen. Ausreisser werden verworfen
@@ -13598,6 +13703,37 @@
                           closed: lc.closed } : null;
       } finally { currentTrackTiles = keep; lineCache = null; }
       return out;
+    },
+    // Die Physik von aussen messbar machen, mit IHREN eigenen Hilfsfunktionen.
+    //
+    // Ein eigener Integrationslauf im Test waere ein Test der eigenen Rechnung: das Modell
+    // hat mit simulateLaunch() bereits den Integrator, an dem die Kalibrierung haengt, und
+    // genau der muss geprueft werden. Ein Nachbau davon kann stimmen, waehrend das Original
+    // falsch ist.
+    physLaunch() {
+      const cfg = physEngine.config;
+      const r = physEngine.simulateLaunch(cfg.accelCalibration, false);
+      return { zeit: r.time, erreicht: r.reached,
+               soll: cfg.launchAnchorTimeS, ankerKmh: cfg.launchAnchorKmh,
+               kalibrierung: cfg.accelCalibration };
+    },
+    // Endgeschwindigkeit: lange genug mit Vollgas integrieren und sehen, wo es stehen
+    // bleibt. Wieder mit thrustAt/resistAt, also mit dem Modell selbst.
+    physTopSpeed(sekunden) {
+      const cfg = physEngine.config;
+      const A = physEngine.accelScale();
+      const dt = CONTROL_SEND_INTERVAL_MS / 1000;
+      let v = 0, g = 0, t = 0;
+      const bis = sekunden || 90;
+      while (t < bis) {
+        v += (physEngine.thrustAt(v, g, 1, A) - physEngine.resistAt(v, A, true)) * dt;
+        if (v < 0) v = 0;
+        if (g < cfg.gears.length - 1 && physEngine.rpmRawAt(v, g) >= cfg.upshiftRpm) g++;
+        t += dt;
+      }
+      return { intern: v, angezeigt: v * REAL_SCALE,
+               sollIntern: cfg.topSpeedKmh, sollAngezeigt: cfg.topSpeedKmh * REAL_SCALE,
+               anteil: v / cfg.topSpeedKmh };
     },
     sampleLine(tiles, steps) {
       const keep = currentTrackTiles;
@@ -14615,6 +14751,465 @@
 
   mwPaint();
   mwRefreshSlots();
+
+  // ============================================================================
+  // Selbsttest
+  // ============================================================================
+  // Dreizehn Messungen an der laufenden App, auf einen Knopfdruck. Bis hierher liess sich
+  // an dieser Datei nichts pruefen, ausser von Hand in der Browserkonsole - und das kann
+  // niemand ausser mir. Genau das war die groesste Luecke fuer Mitarbeit.
+  //
+  // Drei Entscheidungen, die den Unterschied machen:
+  //
+  // 1. Jede Zeile nennt ihr MASS, nicht nur ihr Urteil. Ein Test, der gruen oder rot sagt,
+  //    ist beim naechsten Grenzfall wertlos, weil man nicht sieht, wie knapp es war.
+  // 2. "nicht pruefbar" ist ein eigenes Ergebnis und kein Fehler. Ueber file:// verbietet
+  //    der Browser fetch, also sind die Tonschleifen dort nicht ladbar - das als rot zu
+  //    melden waere ein Alarm, der jedes Mal falsch ist, und nach dem dritten Mal schaut
+  //    niemand mehr hin.
+  // 3. Die Pruefungen benutzen dieselben Funktionen wie die App, nicht nachgebaute. Ein
+  //    Test mit eigener Rechnung prueft seine eigene Rechnung.
+  const ST_TESTS = [];
+
+  function stAdd(name, fn) { ST_TESTS.push({ name, fn }); }
+
+  // ---- 1. Ist der Aufbau durchgelaufen? ----
+  // Wenn diese Zeile ueberhaupt laeuft, ist die IIFE nicht abgebrochen. Interessant ist
+  // deshalb nicht das Ob, sondern wieviel: ein abgebrochener Aufbau hinterlaesst leere
+  // Anzeigen, und die Zahlen unten waeren null.
+  stAdd('Aufbau durchgelaufen', () => {
+    const regler = presetControls().length;
+    const woerter = Object.keys(I18N_EN).length;
+    const ok = regler > 30 && woerter > 400 && $('preset-json').value.length > 100;
+    return { ok, mass: regler + ' Regler, ' + woerter + ' Woerterbucheintraege' };
+  });
+
+  // ---- 2. Protokoll: die Pruefsumme ----
+  // Das Leerlaufpaket der Original-App und seine aufgezeichnete Pruefsumme. Trifft crc8()
+  // sie nicht, ist die Deutung von Byte 19 falsch, und das Auto verwirft jedes Paket.
+  stAdd('Protokoll: CRC-8', () => {
+    const orig = new Uint8Array([0xaf, 0, 0, 0, 0, 0, 0xdf, 0, 0x80, 0,
+                                 0x60, 0, 1, 0, 0x82, 4, 0, 0, 0]);
+    const got = crc8(orig);
+    return { ok: got === 0x33,
+             mass: '0x' + got.toString(16) + ' erwartet 0x33' };
+  });
+
+  // ---- 3. Protokoll: der Streckensensor ----
+  // Bit 7 in Byte 14 schaltet den Sensor AB. Diese App hat es zwoelf Aufzeichnungen lang
+  // gesendet, und niemand hat es gemerkt, weil nichts danach gesehen hat. Jetzt sieht
+  // etwas danach.
+  stAdd('Protokoll: Sensor an (Byte 14)', () => {
+    const p = buildCommandPacket(0, 0);
+    const b = p[14];
+    const ok = (b & 0x20) !== 0 && (b & 0x80) === 0 && crc8(p.slice(0, 19)) === p[19];
+    return { ok, mass: 'Byte 14 = 0x' + b.toString(16)
+                       + ', Bit 5 ' + ((b & 0x20) ? 'an' : 'AUS')
+                       + ', Bit 7 ' + ((b & 0x80) ? 'AN' : 'aus') };
+  });
+
+  // ---- 4. Streckencode hin und zurueck ----
+  // Der Buchstabe J (Haarnadel links) fehlte einmal im Leser, obwohl der Schreiber ihn
+  // erzeugt: jede Linkshaarnadel fiel beim Einlesen still heraus.
+  stAdd('Streckencode hin und zurück', () => {
+    const proben = ['SG2HG2J', 'SRLRL', 'SH', 'SG3', 'SR6', 'SHJ'];
+    const schlecht = [];
+    for (const c of proben) {
+      const p = codeToTrack(c);
+      if (!p) { schlecht.push(c + ' unlesbar'); continue; }
+      const zurueck = trackToCode(p.tiles, 0);
+      if (zurueck !== c) schlecht.push(c + ' -> ' + zurueck);
+    }
+    return { ok: !schlecht.length,
+             mass: schlecht.length ? schlecht.join(', ')
+                                   : proben.length + ' Codes unveraendert' };
+  });
+
+  // ---- 5. Ideallinie stetig ----
+  // Die Abbildung (Kachel, Phase) -> Linie darf nichts hinzufuegen: ihr groesster Schritt
+  // muss dem groessten Schritt der Linie selbst entsprechen. Zwei Fehler in meiner ersten
+  // Fassung sind genau daran aufgefallen, keiner davon beim Lesen.
+  stAdd('Ideallinie stetig', () => {
+    const proben = ['SG2RG2L', 'SRRRLLL', 'SRL', 'SHJ', 'SG2H2G2J2'];
+    let schlimmster = 0, wo = '';
+    for (const c of proben) {
+      const p = codeToTrack(c);
+      const lc = window.OMEGA_TEST.lineOf(p.tiles);
+      const rows = window.OMEGA_TEST.compareLines(p.tiles, 96);
+      const a = rows.map(r => r.calc);
+      let sprung = 0;
+      for (let i = 0; i < a.length; i++) {
+        sprung = Math.max(sprung, Math.abs(a[(i + 1) % a.length] - a[i]));
+      }
+      // Kleine Toleranz auf den Eigenschritt der Linie: die Abtastung liegt nicht genau auf
+      // ihren Punkten, also darf sie ihn um ein paar Prozent verfehlen.
+      const grenze = lc.maxStep * 1.15 + 0.01;
+      if (sprung > grenze) { schlimmster = Math.max(schlimmster, sprung / grenze); wo = c; }
+    }
+    return { ok: !wo,
+             mass: wo ? wo + ': ' + schlimmster.toFixed(2) + ' mal die Eigenschrittweite'
+                      : proben.length + ' Layouts ohne Sprung' };
+  });
+
+  // ---- 6. Kachelphase ----
+  // Eine Haarnadel ist dreimal so lang wie eine Gerade. Rechnet die Phase mit einer
+  // mittleren Kacheldauer, steht sie dort nach einem Drittel auf 1 und der Linienversatz
+  // springt am Kachelwechsel.
+  // Und die Probe, die die Geometrie ueberhaupt festgelegt hat: SHG4R4LG dreht 360 Grad und
+  // muss sich schliessen. Der Abstand zwischen Anfang und Ende ist eine exakte Zahl, keine
+  // Ansichtssache - und sie hat die gerade Sektion der Haarnadel geloest.
+  stAdd('Strecken schließen sich', () => {
+    // Nur Strecken, die sich WIRKLICH schliessen. SR6, SL6 und SHGHG stehen hier
+    // bewusst NICHT: bei ihnen fehlt genau eine Kachel, und der Editor hat sie nur
+    // deshalb als geschlossen gemeldet, weil seine Toleranz 64,5 cm betrug.
+    //
+    // SHG4R4LG ist die aussagekraeftigste: sie reagiert auf die gerade Sektion der
+    // Haarnadel, und aus ihr ist die Geometrie geloest. SHGH und SJGJ pruefen den Radius,
+    // denn dort heben sich die geraden Sektionen gegenseitig auf.
+    const proben = ['SHG4R4LG', 'SJG4L4RG', 'SHGH', 'SJGJ'];
+    const keep = currentTrackTiles;
+    const schlecht = [];
+    let groesster = 0;
+    try {
+      for (const c of proben) {
+        currentTrackTiles = codeToTrack(c).tiles;
+        const pts = trackCenterline(currentTrackTiles);
+        const a = pts[0], b = pts[pts.length - 1];
+        const d = Math.hypot(b.x - a.x, b.y - a.y) / TRACK_UNITS_PER_CM;
+        groesster = Math.max(groesster, d);
+        if (d > 0.5) schlecht.push(c + ' ' + d.toFixed(2) + ' cm');
+      }
+    } finally { currentTrackTiles = keep; lineCache = null; }
+    return { ok: !schlecht.length,
+             mass: schlecht.length ? schlecht.join(', ')
+                                   : proben.length + ' Runden, groesste Luecke '
+                                     + groesster.toFixed(3) + ' cm' };
+  });
+
+  // Verglichen wird gegen die GEMESSENE Laenge des gezeichneten Wegs, nicht gegen dieselbe
+  // Formel: sonst prueft der Test seine eigene Rechnung. Die Abtastpunkte der Mittellinie
+  // aufsummiert ergeben die Weglaenge je Kachel, voellig unabhaengig von tileLength().
+  //
+  // Genau hier lag ein echter Fehler: ghostTileLenFactor rechnete mit der ZAHL der
+  // Abtastpunkte, und die vergibt trackCenterline nach Drehwinkel. Eine Haarnadel dreht
+  // dreimal so weit wie eine 60-Grad-Kurve, hat aber den halben Radius - ihr Bogen ist nur
+  // eineinhalb mal so lang. Die Phase war damit auf JEDER Kurve falsch.
+  stAdd('Kachellänge trifft den Weg', () => {
+    const keep = currentTrackTiles;
+    try {
+      currentTrackTiles = codeToTrack('SGHR').tiles;
+      const lc = ghostLine();
+      const pts = trackCenterline(currentTrackTiles);
+      // Weglaenge je Kachel aus den Abtastpunkten.
+      const laenge = currentTrackTiles.map(() => 0);
+      for (let i = 1; i < pts.length; i++) {
+        const t = pts[i].tile;
+        if (t < 0 || t >= laenge.length) continue;
+        laenge[t] += Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y);
+      }
+      const summe = laenge.reduce((a, b) => a + b, 0);
+      const mittel = summe / laenge.length;
+      let schlimmster = 0, wo = -1;
+      for (let i = 0; i < laenge.length; i++) {
+        const soll = laenge[i] / mittel;
+        const ist = ghostTileLenFactor(i);
+        const abw = Math.abs(ist - soll) / Math.max(1e-9, soll);
+        if (abw > schlimmster) { schlimmster = abw; wo = i; }
+      }
+      return { ok: schlimmster < 0.05,
+               mass: 'groesste Abweichung ' + (schlimmster * 100).toFixed(1)
+                     + ' % bei Kachel ' + wo + ' von ' + laenge.length };
+    } finally { currentTrackTiles = keep; lineCache = null; }
+  });
+
+  // ---- 7. und 8. Physik ----
+  //
+  // Geprueft wird mit dem Integrator des Modells selbst (simulateLaunch, thrustAt,
+  // resistAt), nicht mit einem eigenen Lauf durch update(). Mein erster Versuch tat genau
+  // das und meldete 67 statt 295 km/h - weil ein Lauf durch update() ohne die uebrigen
+  // Eingaben nicht schaltet. Ein Test mit eigener Rechnung prueft seine eigene Rechnung.
+  stAdd('Physik: 0 auf 100', () => {
+    const r = window.OMEGA_TEST.physLaunch();
+    if (!r.erreicht) return { ok: false, mass: 'Ankergeschwindigkeit nie erreicht' };
+    const abw = Math.abs(r.zeit - r.soll) / r.soll;
+    return { ok: abw < 0.03,
+             mass: r.zeit.toFixed(3) + ' s gegen ' + r.soll.toFixed(2) + ' s Vorgabe, '
+                   + (abw * 100).toFixed(2) + ' % ab' };
+  });
+
+  // Die Deckelung in update() ist die bindende Grenze fuer die angezeigte
+  // Hoechstgeschwindigkeit. Der Antrieb muss sie also ERREICHEN oder uebertreffen - sonst
+  // waere der Regler ein Versprechen, das die Physik nicht halten kann. Gemessen liegt die
+  // freie Endgeschwindigkeit 8,7 % darueber, und das ist richtig so.
+  stAdd('Physik: Antrieb erreicht die Deckelung', () => {
+    const r = window.OMEGA_TEST.physTopSpeed(90);
+    return { ok: r.anteil >= 1.0,
+             mass: 'frei ' + r.angezeigt.toFixed(0) + ' km/h, gedeckelt auf '
+                   + r.sollAngezeigt.toFixed(0) + ', Reserve '
+                   + ((r.anteil - 1) * 100).toFixed(1) + ' %' };
+  });
+
+  // ---- 9. Notlauf ----
+  // Leerer Tank muss das Gas absenken, und zwar BEVOR es in die Physik geht. Genau dort
+  // fehlte es einmal: die Anzeige zeigte 200 km/h mit leerem Tank.
+  stAdd('Notlauf bei leerem Tank', () => {
+    const gemerkt = fuel;
+    try {
+      fuel = 0;
+      const leer = fuelDamageDerate(1);
+      fuel = 100;
+      const voll = fuelDamageDerate(1);
+      return { ok: leer < voll * 0.8,
+               mass: 'Gas ' + leer.toFixed(2) + ' leer gegen ' + voll.toFixed(2) + ' voll' };
+    } finally { fuel = gemerkt; }
+  });
+
+  // ---- 10. Tonschleifen ----
+  // Jede Schleife muss ladbar sein, ihr Gleichanteil klein und die Naht stetig: eine
+  // Schleife mit Gleichanteil knackt beim Einsetzen, eine mit Naht klickt bei jeder
+  // Wiederholung. Ueber file:// nicht pruefbar, und das ist kein Fehler.
+  stAdd('Tonschleifen heil', async () => {
+    if (location.protocol === 'file:') {
+      return { skip: true, mass: 'file://, der Browser verbietet das Laden' };
+    }
+    let manifest;
+    try { manifest = await (await fetch('audio/loops.json')).json(); }
+    catch (e) { return { skip: true, mass: 'audio/loops.json nicht ladbar' }; }
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const dateien = [];
+    for (const prof of Object.values(manifest)) {
+      for (const l of Object.values(prof.loops || {})) if (l && l.file) dateien.push(l.file);
+    }
+    let schlimmsterDc = 0, schlimmsteNaht = 0, geprueft = 0;
+    const kaputt = [];
+    for (const name of dateien.slice(0, 40)) {
+      try {
+        const buf = await ctx.decodeAudioData(
+          await (await fetch('audio/' + name)).arrayBuffer());
+        const d = buf.getChannelData(0);
+        let sum = 0;
+        for (let i = 0; i < d.length; i++) sum += d[i];
+        const dc = Math.abs(sum / d.length);
+        // Naht: der Sprung von der letzten Probe zur ersten, gemessen an der typischen
+        // Aenderung im Inneren. Ein absoluter Wert waere bei einem leisen Leerlauf zu
+        // streng und bei Vollgas zu lasch.
+        // Ueber die GANZE Datei mitteln, nicht ueber die ersten 4000 Proben. Beginnt eine
+        // Schleife leise, ist der Innenschritt dort winzig, und das Verhaeltnis explodiert:
+        // meine erste Fassung meldete 23 von 34 Schleifen als kaputt, mit einem Maximum von
+        // 116 - ein Alarm, der fast immer falsch war.
+        let mittel = 0;
+        for (let i = 1; i < d.length; i++) mittel += Math.abs(d[i] - d[i - 1]);
+        mittel /= Math.max(1, d.length - 1);
+        const naht = Math.abs(d[0] - d[d.length - 1]) / Math.max(1e-9, mittel);
+        schlimmsterDc = Math.max(schlimmsterDc, dc);
+        schlimmsteNaht = Math.max(schlimmsteNaht, naht);
+        // Nur der Gleichanteil ist ein Urteil. Die NAHT wird gemessen und berichtet, aber
+        // nicht bewertet, und das hat einen Grund: diese Dateien sind Ogg Vorbis, und
+        // Vorbis ist nicht probengenau. Der Dekoder setzt an Anfang und Ende
+        // Fensterartefakte, also wird aus einer zirkular nahtlos gebauten WAV eine Ogg mit
+        // Sprung an der Naht. Gemessen 0,17 bis 1,53 mal den Effektivwert - das sagt etwas
+        // ueber den Kodierer und nichts ueber die Schleife. Wer die Naht wirklich pruefen
+        // will, muss die WAVs in audio-work/ nehmen.
+        if (dc > 0.01) kaputt.push(name + ' (Gleichanteil ' + dc.toFixed(4) + ')');
+        geprueft++;
+      } catch (e) { kaputt.push(name + ' (nicht dekodierbar)'); }
+    }
+    try { ctx.close(); } catch (e) { /* egal */ }
+    return { ok: !kaputt.length,
+             mass: geprueft + ' Schleifen, Gleichanteil max ' + schlimmsterDc.toFixed(4)
+                   + ' (Grenze 0.01), Naht max ' + schlimmsteNaht.toFixed(1)
+                   + ' mal der Innenschritt (gemessen, nicht bewertet: Ogg ist nicht'
+                   + ' probengenau)'
+                   + (kaputt.length ? ' | ' + kaputt.join(', ') : '') };
+  });
+
+  // ---- 11. Kontrast ----
+  // Deckkraft richtig ueberlagern, sonst liest man rgba(255,255,255,.035) auf Schwarz als
+  // Weiss und meldet 36 Knoepfe als Fehler, die keine sind. Genau das ist mir passiert.
+  function stMix(vorder, hinter) {
+    const a = vorder[3] === undefined ? 1 : vorder[3];
+    return [0, 1, 2].map(i => vorder[i] * a + hinter[i] * (1 - a));
+  }
+
+  function stParse(c) {
+    const m = String(c).match(/[\d.]+/g);
+    if (!m) return null;
+    const v = m.map(Number);
+    return [v[0], v[1], v[2], v.length > 3 ? v[3] : 1];
+  }
+
+  function stLum(rgb) {
+    const f = rgb.slice(0, 3).map(v => {
+      v /= 255;
+      return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+    });
+    return 0.2126 * f[0] + 0.7152 * f[1] + 0.0722 * f[2];
+  }
+
+  function stBackdrop(el) {
+    // Von unten nach oben ueberlagern, bis eine deckende Flaeche kommt. Der erste
+    // nicht-transparente Hintergrund allein genuegt nicht: eine halbdurchsichtige Flaeche
+    // ueber Schwarz ist nicht ihre eigene Farbe.
+    //
+    // Und die Kette beginnt beim Element SELBST, nicht beim Elternteil. Ein Knopf traegt
+    // seine eigene Flaeche, und der Text sitzt darauf. Meine erste Fassung fing beim
+    // Elternteil an und meldete den gruenen Verbinden-Knopf mit 1,13:1 - gemessen gegen
+    // die Karte hinter ihm statt gegen sein eigenes Gruen.
+    const kette = [];
+    for (let n = el; n && n.nodeType === 1; n = n.parentElement) {
+      const bg = stParse(getComputedStyle(n).backgroundColor);
+      if (bg && bg[3] > 0) kette.push(bg);
+      if (bg && bg[3] >= 0.999) break;
+    }
+    let unten = [0, 0, 0];
+    for (let i = kette.length - 1; i >= 0; i--) unten = stMix(kette[i], unten);
+    return unten;
+  }
+
+  stAdd('Kontrast (WCAG)', () => {
+    let schlimmster = 99, wo = '';
+    let geprueft = 0;
+    const sel = 'p, span, b, div.opt-label, label, h1, h2, h3, td, th, li, button';
+    for (const el of document.querySelectorAll(sel)) {
+      if (!el.textContent.trim()) continue;
+      // Unsichtbares und Abgeschaltetes ist ausgenommen: 1.4.3 gilt nicht fuer
+      // deaktivierte Bedienelemente, und was niemand sieht, muss nichts erfuellen.
+      if (el.disabled || el.closest('[hidden]') || el.closest('.tabpage:not(.active)')) continue;
+      const cs = getComputedStyle(el);
+      if (cs.display === 'none' || cs.visibility === 'hidden' || +cs.opacity === 0) continue;
+      const vg = stParse(cs.color);
+      if (!vg) continue;
+      const hg = stBackdrop(el);
+      const l1 = stLum(stMix(vg, hg)), l2 = stLum(hg);
+      const k = (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+      const gross = parseFloat(cs.fontSize) >= 24
+                    || (parseFloat(cs.fontSize) >= 18.66 && +cs.fontWeight >= 700);
+      const grenze = gross ? 3.0 : 4.5;
+      geprueft++;
+      if (k < grenze && k < schlimmster) {
+        schlimmster = k;
+        wo = (el.tagName.toLowerCase() + ' "' + el.textContent.trim().slice(0, 24) + '"');
+      }
+    }
+    return { ok: !wo,
+             mass: geprueft + ' sichtbare Textstellen'
+                   + (wo ? ', schlechteste ' + schlimmster.toFixed(2) + ':1 bei ' + wo
+                         : ', alle ueber dem Mindestwert') };
+  });
+
+  // ---- 12. Sprache ----
+  // Im englischen Modus darf kein deutscher Satz stehen bleiben, ausser in der Doku und im
+  // Arbeitsprotokoll. Jeder neue deutsche Text braucht einen Woerterbucheintrag, sonst
+  // steigt diese Zahl - und genau dann faellt es auf.
+  stAdd('Sprache: nichts Deutsches im Englischen', () => {
+    const vorher = lang;
+    try {
+      if (lang !== 'en') setLang('en');
+      const DE = /[äöüßÄÖÜ]|\b(der|die|und|nicht|eine|mit|für|ist|sind|wird|wenn|auch|über|nach|beim|dann|aber|noch|kann|muss|sich|dem|den|des|zum|zur|aus|bei|nur|schon|sehr)\b/;
+      const rest = new Set();
+      for (const root of i18nRoots()) {
+        const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+          acceptNode(n) {
+            const p = n.parentElement;
+            if (!p) return NodeFilter.FILTER_REJECT;
+            if (['SCRIPT', 'STYLE', 'CODE', 'KBD'].indexOf(p.tagName) >= 0) {
+              return NodeFilter.FILTER_REJECT;
+            }
+            // Ausgenommen: die Doku (bleibt deutsch), das Arbeitsprotokoll, die
+            // Meldungszeile im Schirm und die Messspalte DIESES Tests. Die letzten drei
+            // sind Messwerte und Zustandsmeldungen, kein Oberflaechentext - der Test hat
+            // sonst sich selbst gemeldet ("Byte 14 = 0x22, Bit 5 an, Bit 7 aus").
+            // Der feste Text der Selbsttestseite wird weiter geprueft, er steht ausserhalb
+            // von #st-rows.
+            if (p.closest('[data-i18n-skip]') || p.closest('#tab-doc')
+                || p.closest('#log') || p.closest('#st-rows') || p.closest('#hud-toast')
+                || p.id === 'st-status') {
+              return NodeFilter.FILTER_REJECT;
+            }
+            return n.nodeValue.trim() ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+          },
+        });
+        let n;
+        while ((n = w.nextNode())) {
+          const t = n.nodeValue.replace(/\s+/g, ' ').trim();
+          if (t.length >= 4 && DE.test(t)) rest.add(t);
+        }
+      }
+      const bsp = [...rest][0];
+      return { ok: rest.size === 0,
+               mass: rest.size === 0 ? 'kein deutscher Text'
+                                     : rest.size + ' Stellen, z. B. "' + bsp.slice(0, 46) + '"' };
+    } finally { if (lang !== vorher) setLang(vorher); }
+  });
+
+  // ---- 13. Rundenzaehlung ----
+  // Drei Ueberfahrten muessen drei Runden ergeben, und die Anzeige muss bei 0 anfangen. Die
+  // Statuszeile zaehlte einmal die laufende Runde mit, der Zaehler im Cockpit nicht: zwei
+  // Anzeigen derselben Sache, die sich um eins unterschieden.
+  stAdd('Rundenzählung fängt bei 0 an', () => {
+    const gemerkt = { state: raceState, laps: raceLapTimes.slice(),
+                      start: raceLapStart, dash: dashLapStart, part: racePartialMs };
+    try {
+      raceState = 'racing';
+      raceLapTimes = [];
+      raceLapStart = Date.now();
+      dashLapStart = Date.now();
+      racePartialMs = null;
+      const bei0 = raceLapTimes.length;
+      for (let i = 0; i < 3; i++) playerLapCrossed();
+      return { ok: bei0 === 0 && raceLapTimes.length === 3,
+               mass: 'Start ' + bei0 + ', nach drei Überfahrten '
+                     + raceLapTimes.length };
+    } finally {
+      raceState = gemerkt.state; raceLapTimes = gemerkt.laps;
+      raceLapStart = gemerkt.start; dashLapStart = gemerkt.dash;
+      racePartialMs = gemerkt.part;
+    }
+  });
+
+  // ---- Ausfuehren und anzeigen ----
+  async function runSelfTest() {
+    const rows = $('st-rows');
+    $('st-run').disabled = true;
+    $('st-status').textContent = 'laeuft …';
+    rows.innerHTML = ST_TESTS.map(t =>
+      '<tr class="st-run"><td>' + t.name + '</td><td>…</td><td></td></tr>').join('');
+    let gut = 0, schlecht = 0, offen = 0;
+    for (let i = 0; i < ST_TESTS.length; i++) {
+      const t = ST_TESTS[i];
+      let r;
+      try {
+        r = await t.fn();
+      } catch (e) {
+        // Eine geworfene Ausnahme IST ein Ergebnis, und zwar das wichtigste: der Test
+        // konnte nicht bis zu seinem Urteil kommen.
+        r = { ok: false, mass: 'Ausnahme: ' + (e && e.message ? e.message : String(e)) };
+      }
+      const urteil = r.skip ? ['?', 'st-skip'] : r.ok ? ['ok', 'st-ok'] : ['FEHLER', 'st-bad'];
+      if (r.skip) offen++; else if (r.ok) gut++; else schlecht++;
+      const tr = rows.children[i];
+      tr.className = '';
+      tr.children[1].innerHTML = '<span class="' + urteil[1] + '">' + urteil[0] + '</span>';
+      tr.children[2].textContent = r.mass || '';
+      // Nach jedem Test dem Browser Luft lassen, sonst steht die Tabelle bis zum Ende leer
+      // und man weiss nicht, ob noch etwas passiert.
+      //
+      // setTimeout und NICHT requestAnimationFrame: rAF feuert nur, wenn die Seite
+      // tatsaechlich gezeichnet wird. In einem Hintergrundtab oder einem nicht angezeigten
+      // Fenster kommt es nie, und der Testlauf bleibt nach der ersten Zeile stehen - genau
+      // das ist mir beim Pruefen passiert, und es traefe jeden, der waehrend des Laufs den
+      // Tab wechselt.
+      await new Promise(res => setTimeout(res, 0));
+    }
+    $('st-run').disabled = false;
+    $('st-status').textContent = gut + ' ok, ' + schlecht + ' Fehler'
+                                + (offen ? ', ' + offen + ' nicht prüfbar' : '');
+    log('Selbsttest: ' + gut + ' ok, ' + schlecht + ' Fehler'
+        + (offen ? ', ' + offen + ' nicht pruefbar' : '') + '.',
+        schlecht ? 'err' : 'info');
+  }
+
+  if ($('st-run')) $('st-run').addEventListener('click', runSelfTest);
 
   // ============================== HOME ==============================
   // Der Schirm beim Laden, erreichbar ueber das Logo. Die Zahl der Einstellungen wird

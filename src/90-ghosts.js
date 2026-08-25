@@ -733,20 +733,38 @@
     return Math.max(0, Math.min(1, (Date.now() - car.tileAt) / dur));
   }
 
-  // Wie lang ist diese Kachel im Vergleich zum Durchschnitt? 1 fuer Gerade und normale
-  // Kurve, etwa 3 fuer die Haarnadel. Ohne gerechnete Linie gibt es keine Abtastung, dann
-  // uebernimmt der Drehwinkel dieselbe Rolle.
+  // Wie lang ist diese Kachel WIRKLICH? In Zeichnungseinheiten, entlang der Mittellinie.
+  //
+  // Vorher wurde mit der Zahl der Abtastpunkte gerechnet, und die vergibt
+  // trackCenterline() nach DREHWINKEL, nicht nach Laenge. Eine Haarnadel dreht dreimal so
+  // weit wie eine 60-Grad-Kurve, hat aber nur den halben Radius - ihr Bogen ist also nur
+  // eineinhalb mal so lang. Gemessen gegen eine Gerade von 43 cm:
+  //
+  //     60-Grad-Kurve   37 * pi/3      = 38,8 cm   gerechnet wurde 43 cm
+  //     Haarnadel       28 + 18,5 * pi = 86,1 cm   gerechnet wurde 129 cm
+  //
+  // Die Phase sagt, welche Stelle der Ideallinie das Auto gerade liest. Sie war damit auf
+  // JEDER Kurve falsch, nicht nur auf der Haarnadel. Gefunden hat es der Selbsttest.
+  function tileLength(type) {
+    if (type === TILE_TYPE.PIT) return TRACK_STEP * 2;
+    if (!tileIsCurve(type)) return TRACK_STEP;
+    const bogen = tileRadius(type) * Math.abs(tileTurnDeg(type)) * Math.PI / 180;
+    const lead = (type === TILE_TYPE.HAIRPIN || type === TILE_TYPE.HAIRPIN_LEFT)
+      ? TRACK_HAIRPIN_LEAD : 0;
+    return bogen + lead;
+  }
+
   function ghostTileLenFactor(tileIndex) {
     if (tileIndex === null || tileIndex === undefined) return 1;
-    const lc = lineCache && lineCache.tiles === currentTrackTiles ? lineCache : null;
-    if (lc && lc.ranges.length) {
-      const r = lc.ranges[((tileIndex % lc.ranges.length) + lc.ranges.length) % lc.ranges.length];
-      const avg = lc.points / lc.ranges.length;
-      if (r && r.count && avg > 0) return r.count / avg;
-    }
-    const t = currentTrackTiles[tileIndex];
+    const tiles = currentTrackTiles;
+    if (!tiles || !tiles.length) return 1;
+    const n = tiles.length;
+    const t = tiles[((tileIndex % n) + n) % n];
     if (!t) return 1;
-    return tileTightness(t.type) >= 2 ? TRACK_HAIRPIN_DEG / TRACK_TURN_DEG : 1;
+    let summe = 0;
+    for (const x of tiles) summe += tileLength(x.type);
+    const mittel = summe / n;
+    return mittel > 0 ? tileLength(t.type) / mittel : 1;
   }
 
   // Beim Kachelwechsel die gemessene Dauer gleitend nachziehen. Ausreisser werden verworfen
@@ -1743,6 +1761,37 @@
                           closed: lc.closed } : null;
       } finally { currentTrackTiles = keep; lineCache = null; }
       return out;
+    },
+    // Die Physik von aussen messbar machen, mit IHREN eigenen Hilfsfunktionen.
+    //
+    // Ein eigener Integrationslauf im Test waere ein Test der eigenen Rechnung: das Modell
+    // hat mit simulateLaunch() bereits den Integrator, an dem die Kalibrierung haengt, und
+    // genau der muss geprueft werden. Ein Nachbau davon kann stimmen, waehrend das Original
+    // falsch ist.
+    physLaunch() {
+      const cfg = physEngine.config;
+      const r = physEngine.simulateLaunch(cfg.accelCalibration, false);
+      return { zeit: r.time, erreicht: r.reached,
+               soll: cfg.launchAnchorTimeS, ankerKmh: cfg.launchAnchorKmh,
+               kalibrierung: cfg.accelCalibration };
+    },
+    // Endgeschwindigkeit: lange genug mit Vollgas integrieren und sehen, wo es stehen
+    // bleibt. Wieder mit thrustAt/resistAt, also mit dem Modell selbst.
+    physTopSpeed(sekunden) {
+      const cfg = physEngine.config;
+      const A = physEngine.accelScale();
+      const dt = CONTROL_SEND_INTERVAL_MS / 1000;
+      let v = 0, g = 0, t = 0;
+      const bis = sekunden || 90;
+      while (t < bis) {
+        v += (physEngine.thrustAt(v, g, 1, A) - physEngine.resistAt(v, A, true)) * dt;
+        if (v < 0) v = 0;
+        if (g < cfg.gears.length - 1 && physEngine.rpmRawAt(v, g) >= cfg.upshiftRpm) g++;
+        t += dt;
+      }
+      return { intern: v, angezeigt: v * REAL_SCALE,
+               sollIntern: cfg.topSpeedKmh, sollAngezeigt: cfg.topSpeedKmh * REAL_SCALE,
+               anteil: v / cfg.topSpeedKmh };
     },
     sampleLine(tiles, steps) {
       const keep = currentTrackTiles;
