@@ -229,17 +229,42 @@
   /* ---- Fusszeile ---- */
   #app-footer {
     display: flex; justify-content: space-between; align-items: center;
-    gap: 12px; padding: 10px 24px 16px 24px; max-width: 1100px; margin: 0 auto;
+    gap: 14px; padding: 12px 24px 20px 24px; max-width: 1100px; margin: 0 auto;
     font-size: 11.5px; color: var(--muted); letter-spacing: .04em;
   }
-  #app-footer .foot-left { display: flex; align-items: baseline; gap: 10px; }
+  #app-footer .foot-left { display: flex; align-items: center; gap: 10px; }
   #app-footer .foot-ver { font-family: monospace; color: var(--ink); }
   #app-footer .foot-dim { opacity: .55; }
+  /* Der Sprachschalter braucht eine Flaeche, keine nackte Beschriftung. Gemessen war er
+     36 px breit bei 44 px Hoehe - ein Streifen, den man auf dem Telefon nicht trifft. Die
+     Hoehe kam von der globalen Knopfregel, die Breite von nichts. 44 px ist der Richtwert
+     fuer eine Beruehrflaeche, und zwar in BEIDEN Richtungen. */
   #lang-toggle {
-    background: none; border: none; padding: 2px 0; font: inherit; cursor: pointer;
-    letter-spacing: .1em; color: var(--muted);
+    display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+    white-space: nowrap; flex: none;
+    min-width: 92px; min-height: 44px; padding: 0 12px;
+    background: var(--panel-2); border: 1px solid var(--border-strong); border-radius: 6px;
+    font: inherit; letter-spacing: .1em; color: var(--muted); cursor: pointer;
   }
-  #lang-toggle:hover { background: none; color: var(--ink); }
+  #lang-toggle:hover { background: var(--panel-3); color: var(--ink); }
+  /* Telefon: mehr Luft und groessere Schrift. Die Zierzeile "OmegaSim - MIT" faellt weg -
+     sie ist Dekoration und drueckt auf einem 375er Schirm die zwei Angaben zusammen, auf
+     die es ankommt. */
+  /* Der schwebende Hilfe-Knopf sitzt fest am rechten unteren Rand (gemessen 42 x 44,
+     14 px vom Rand, z-index 60) und lag damit GENAU ueber der rechten Haelfte von DE/EN,
+     dort wo "EN" steht - ein Tipp dort oeffnete die Hilfe statt umzuschalten.
+     Ausgewichen wird WAAGERECHT und nicht senkrecht: eine Reserve nach unten kostete im
+     Querformat 76 px von 375 px Bildhoehe, gemessen 132 px Fusszeile. Der Seitenversatz
+     kostet nichts. Bis 1150 px, weil erst darueber die Fusszeile (max. 1100 breit,
+     zentriert) den rechten Rand nicht mehr erreicht. */
+  @media (max-width: 1150px) {
+    #app-footer .foot-right { margin-right: 58px; }
+  }
+  @media (max-width: 700px) {
+    #app-footer { padding: 14px 16px 22px 16px; font-size: 12.5px; gap: 10px; }
+    #app-footer .foot-brand { display: none; }
+    #lang-toggle { min-width: 104px; }
+  }
   /* Die aktive Sprache steht hell, die andere gedimmt - ein Umschalter, der zeigt, was
      gerade gilt, statt nur was man anklicken kann. */
   #lang-toggle b { font-weight: 700; opacity: .45; }
@@ -3890,8 +3915,8 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.3.49</span></span>
-    <span class="foot-dim" data-i18n-skip>OmegaSim &middot; MIT</span>
+    <span class="foot-ver">v<span id="app-version">0.3.50</span></span>
+    <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
   </span>
   <span class="foot-right">
     <button type="button" id="lang-toggle" aria-label="Sprache wechseln / switch language">
