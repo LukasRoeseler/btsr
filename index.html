@@ -3591,100 +3591,15 @@
         (bestätigt aus echten Streckendaten). Linkskurve ist eine <b>unbestätigte Annahme</b> (nicht real
         getestet).
       </p>
-      <div class="row">
-        <button id="track-add-start">+ Start/Ziel</button>
-        <button id="track-add-straight">+ Gerade</button>
-        <button id="track-add-right">+ Rechtskurve</button>
-        <button id="track-add-left">+ Linkskurve (?)</button>
-        <button id="track-add-hairpin">+ Haarnadel (180&deg;)</button>
-        <button id="track-add-pit">+ Boxengasse</button>
-        <span class="muted" style="font-size:11.5px">Zur&uuml;ck, Drehen und Leeren stehen
-          unter der Karte &mdash; auch im Vollbild.</span>
-      </div>
-      <div class="row" style="margin-top:10px">
-        <button id="track-rotate-left">&#8634; 90&deg; links drehen</button>
-        <span class="muted">Ausrichtung: <b id="track-rotation-val">0°</b></span>
-      </div>
+      <!-- Die Teile- und Aktionsknoepfe standen doppelt da: einmal hier oben als
+           Textknoepfe, einmal unten am Bild als Leiste, die auch im Vollbild erreichbar
+           ist. Nur die unteren sind geblieben - sie liegen dort, wo gebaut wird, und sie
+           funktionieren in beiden Ansichten. Die Ausrichtung bleibt als ANZEIGE, gedreht
+           wird unten. -->
       <div class="row" style="margin-top:10px">
         <button class="primary" id="track-scan-start">Live-Scan starten</button>
         <button id="track-scan-stop" disabled>Scan stoppen</button>
         <span class="muted" id="track-scan-status">bereit</span>
-      </div>
-      <div class="card subpage" style="margin-top:14px" id="sub-probe">
-      <button class="misc-back subpage-back" data-sub="">&larr; Strecke</button>
-        <h2>Welchen Code meldet dieses Teil?</h2>
-        <p class="muted">
-          Zum Herausfinden, was ein Streckenteil wirklich sendet &mdash; zum Beispiel die
-          180-Grad-Haarnadel. Auto verbinden, hier auf <b>Z&auml;hlen starten</b>, dann
-          <em>langsam</em> von Hand &uuml;ber genau dieses Teil schieben und ablesen, welcher
-          Wert dabei auftaucht.
-        </p>
-        <div class="row" style="gap:14px; align-items:baseline; flex-wrap:wrap">
-          <div><span class="hud-label">Byte 12 jetzt</span><br>
-            <span class="cm-now" id="cm-now">&ndash;</span></div>
-          <div><span class="hud-label">Pakete</span><br>
-            <span class="cm-now" id="cm-total" style="font-size:18px">0</span></div>
-          <div><span class="hud-label">von</span><br>
-            <span class="cm-now" id="cm-car" style="font-size:14px">&ndash;</span></div>
-          <div><span class="hud-label">Kachelz&auml;hler</span><br>
-            <span class="cm-now" id="cm-steps" style="font-size:18px">0</span></div>
-          <div><span class="hud-label">Musterkontakt</span><br>
-            <span class="cm-now" id="cm-marks" style="font-size:18px">0</span></div>
-          <div><span class="hud-label">Byte 3 Spanne</span><br>
-            <span class="cm-now" id="cm-yaw" style="font-size:18px">&ndash;</span></div>
-          <div><span class="hud-label">Scheinwerfer</span><br>
-            <span class="cm-now" id="cm-light" style="font-size:18px">&ndash;</span></div>
-          <div class="spacer" style="flex:1"></div>
-          <button class="primary" id="cm-start">Z&auml;hlen starten</button>
-          <button id="cm-reset">Zur&uuml;cksetzen</button>
-        </div>
-        <p class="muted" style="font-size:11.5px; margin:10px 0 4px 0">
-          Letztes Paket, Byte f&uuml;r Byte. <b>Byte&nbsp;11</b> ist der Kachelz&auml;hler,
-          <b>Byte&nbsp;12</b> die Kachelart &mdash; wenn hier etwas anderes steht als
-          erwartet, liegt der Fehler nicht bei der Auswertung, sondern beim Aufbau des
-          Pakets.
-        </p>
-        <div id="cm-hex" style="font-family:monospace; font-size:11.5px; line-height:1.7;
-             background:var(--panel-2); border:1px solid var(--border); border-radius:6px;
-             padding:8px 10px; overflow-x:auto">noch kein Paket</div>
-        <table class="cm-tab"><thead><tr>
-          <th>Byte&nbsp;12</th><th>bekannt als</th><th>Pakete</th><th>Anteil</th>
-        </tr></thead><tbody id="cm-rows">
-          <tr><td colspan="4" class="muted">noch nichts gez&auml;hlt</td></tr>
-        </tbody></table>
-        <p class="muted" style="font-size:11.5px">
-          <b>Wenn hier nur <code>0xff</code> steht:</b> zuerst den Schalter
-          <b>Auf der Bahn</b> in den Optionen pr&uuml;fen. Er setzt Bit&nbsp;5 in
-          Byte&nbsp;14; steht er aus, geht Bit&nbsp;7 hinaus und das schaltet den
-          Streckensensor ab &mdash; gemessen 0 Lesungen in 551 Fahrmeldungen. Genau dieses
-          Bit hat diese App zw&ouml;lf Aufzeichnungen lang gesendet, siehe Doku,
-          &bdquo;Auf der Bahn oder ohne Bahn&ldquo;.
-        </p>
-        <p class="muted" style="font-size:11.5px">
-          <b>Wie das Uebrige zu lesen ist.</b> Steht <b>Musterkontakt</b> auf 0, hat der Sensor
-          w&auml;hrend der ganzen Messung kein gedrucktes Blatt gesehen &mdash; dann liegt es
-          nicht an der Entschl&uuml;sselung, sondern daran, dass nichts zu lesen war. Z&auml;hlt
-          der <b>Kachelz&auml;hler</b> hoch, obwohl Byte&nbsp;12 nur <code>0xff</code> zeigt,
-          erkennt das Auto Teile, meldet aber ihre Art nicht. Und wenn sich
-          <b>Byte&nbsp;3</b> in Kurven deutlich bewegt, l&auml;sst sich eine Kurve daran
-          erkennen, ganz ohne Barcode.
-        </p>
-        <p class="muted" style="font-size:11.5px">
-          <code>0xff</code> hei&szlig;t &bdquo;gerade keine Lesung&ldquo; und ist der
-          h&auml;ufigste Wert von allen &mdash; das ist normal und kein Fehler.
-          <code>0x00</code> hei&szlig;t &bdquo;kein Muster erkannt&ldquo;.
-          Interessant ist alles andere.
-        </p>
-        <p class="muted" style="font-size:11.5px">
-          <b>Womit dieses Werkzeug die Haarnadel gefunden hat.</b> Hier stand die Vermutung,
-          sie melde <code>0x03</code> oder <code>0x04</code> wie eine normale Kurve und habe
-          gar keinen eigenen Code. Am 24.08. wurde sie &uuml;berfahren und meldete
-          <code>0x06</code> rechts und <code>0x05</code> links &mdash; sie hat sehr wohl
-          eigene Codes, und sie f&uuml;gen sich in das Muster der anderen:
-          <code>0x03</code>/<code>0x04</code> links/rechts f&uuml;r die 60-Grad-Kurve,
-          <code>0x05</code>/<code>0x06</code> links/rechts f&uuml;r die Haarnadel. Ein Wert
-          in <span class="cm-new">dieser Farbe</span> hei&szlig;t: den kennen wir noch nicht.
-        </p>
       </div>
 
       <div class="row" style="margin-top:10px">
@@ -3745,8 +3660,18 @@
       </p>
       <div class="row" style="align-items:center; gap:10px; margin-top:10px">
         <span class="muted">Status: <b id="track-closed-badge">-</b></span>
+        <span class="muted">Ausrichtung: <b id="track-rotation-val">0&deg;</b></span>
         <span class="muted" id="track-line-info"></span>
       </div>
+
+      <h3 style="font-size:14px; margin:16px 0 6px 0">Wo steht das Auto?</h3>
+      <p class="muted" style="font-size:11.5px">
+        Aus dem Cockpit hierher: dort war unter dem Schirm alles doppelt, die Position
+        aber nicht &mdash; und sie geh&ouml;rt neben die Strecke, auf die sie sich bezieht.
+        Die Lage ist eine Sch&auml;tzung aus Kachelz&auml;hler und Zeit, keine
+        Positionsmessung vom Auto.
+      </p>
+      <div id="dash-minimap"></div>
 
       <div class="row" style="align-items:center; gap:8px; margin-top:14px">
         <label class="small" style="white-space:nowrap">Streckencode</label>
@@ -3764,6 +3689,83 @@
 
       <ol class="muted" id="track-tile-list" style="padding-left:20px; line-height:1.9; max-height:200px; overflow-y:auto; margin-top:12px"></ol>
 
+    </div>
+
+    <div class="card subpage" id="sub-probe">
+    <button class="misc-back subpage-back" data-sub="">&larr; Strecke</button>
+      <h2>Welchen Code meldet dieses Teil?</h2>
+      <p class="muted">
+      Zum Herausfinden, was ein Streckenteil wirklich sendet &mdash; zum Beispiel die
+      180-Grad-Haarnadel. Auto verbinden, hier auf <b>Z&auml;hlen starten</b>, dann
+      <em>langsam</em> von Hand &uuml;ber genau dieses Teil schieben und ablesen, welcher
+      Wert dabei auftaucht.
+      </p>
+      <div class="row" style="gap:14px; align-items:baseline; flex-wrap:wrap">
+      <div><span class="hud-label">Byte 12 jetzt</span><br>
+        <span class="cm-now" id="cm-now">&ndash;</span></div>
+      <div><span class="hud-label">Pakete</span><br>
+        <span class="cm-now" id="cm-total" style="font-size:18px">0</span></div>
+      <div><span class="hud-label">von</span><br>
+        <span class="cm-now" id="cm-car" style="font-size:14px">&ndash;</span></div>
+      <div><span class="hud-label">Kachelz&auml;hler</span><br>
+        <span class="cm-now" id="cm-steps" style="font-size:18px">0</span></div>
+      <div><span class="hud-label">Musterkontakt</span><br>
+        <span class="cm-now" id="cm-marks" style="font-size:18px">0</span></div>
+      <div><span class="hud-label">Byte 3 Spanne</span><br>
+        <span class="cm-now" id="cm-yaw" style="font-size:18px">&ndash;</span></div>
+      <div><span class="hud-label">Scheinwerfer</span><br>
+        <span class="cm-now" id="cm-light" style="font-size:18px">&ndash;</span></div>
+      <div class="spacer" style="flex:1"></div>
+      <button class="primary" id="cm-start">Z&auml;hlen starten</button>
+      <button id="cm-reset">Zur&uuml;cksetzen</button>
+      </div>
+      <p class="muted" style="font-size:11.5px; margin:10px 0 4px 0">
+      Letztes Paket, Byte f&uuml;r Byte. <b>Byte&nbsp;11</b> ist der Kachelz&auml;hler,
+      <b>Byte&nbsp;12</b> die Kachelart &mdash; wenn hier etwas anderes steht als
+      erwartet, liegt der Fehler nicht bei der Auswertung, sondern beim Aufbau des
+      Pakets.
+      </p>
+      <div id="cm-hex" style="font-family:monospace; font-size:11.5px; line-height:1.7;
+         background:var(--panel-2); border:1px solid var(--border); border-radius:6px;
+         padding:8px 10px; overflow-x:auto">noch kein Paket</div>
+      <table class="cm-tab"><thead><tr>
+      <th>Byte&nbsp;12</th><th>bekannt als</th><th>Pakete</th><th>Anteil</th>
+      </tr></thead><tbody id="cm-rows">
+      <tr><td colspan="4" class="muted">noch nichts gez&auml;hlt</td></tr>
+      </tbody></table>
+      <p class="muted" style="font-size:11.5px">
+      <b>Wenn hier nur <code>0xff</code> steht:</b> zuerst den Schalter
+      <b>Auf der Bahn</b> in den Optionen pr&uuml;fen. Er setzt Bit&nbsp;5 in
+      Byte&nbsp;14; steht er aus, geht Bit&nbsp;7 hinaus und das schaltet den
+      Streckensensor ab &mdash; gemessen 0 Lesungen in 551 Fahrmeldungen. Genau dieses
+      Bit hat diese App zw&ouml;lf Aufzeichnungen lang gesendet, siehe Doku,
+      &bdquo;Auf der Bahn oder ohne Bahn&ldquo;.
+      </p>
+      <p class="muted" style="font-size:11.5px">
+      <b>Wie das Uebrige zu lesen ist.</b> Steht <b>Musterkontakt</b> auf 0, hat der Sensor
+      w&auml;hrend der ganzen Messung kein gedrucktes Blatt gesehen &mdash; dann liegt es
+      nicht an der Entschl&uuml;sselung, sondern daran, dass nichts zu lesen war. Z&auml;hlt
+      der <b>Kachelz&auml;hler</b> hoch, obwohl Byte&nbsp;12 nur <code>0xff</code> zeigt,
+      erkennt das Auto Teile, meldet aber ihre Art nicht. Und wenn sich
+      <b>Byte&nbsp;3</b> in Kurven deutlich bewegt, l&auml;sst sich eine Kurve daran
+      erkennen, ganz ohne Barcode.
+      </p>
+      <p class="muted" style="font-size:11.5px">
+      <code>0xff</code> hei&szlig;t &bdquo;gerade keine Lesung&ldquo; und ist der
+      h&auml;ufigste Wert von allen &mdash; das ist normal und kein Fehler.
+      <code>0x00</code> hei&szlig;t &bdquo;kein Muster erkannt&ldquo;.
+      Interessant ist alles andere.
+      </p>
+      <p class="muted" style="font-size:11.5px">
+      <b>Womit dieses Werkzeug die Haarnadel gefunden hat.</b> Hier stand die Vermutung,
+      sie melde <code>0x03</code> oder <code>0x04</code> wie eine normale Kurve und habe
+      gar keinen eigenen Code. Am 24.08. wurde sie &uuml;berfahren und meldete
+      <code>0x06</code> rechts und <code>0x05</code> links &mdash; sie hat sehr wohl
+      eigene Codes, und sie f&uuml;gen sich in das Muster der anderen:
+      <code>0x03</code>/<code>0x04</code> links/rechts f&uuml;r die 60-Grad-Kurve,
+      <code>0x05</code>/<code>0x06</code> links/rechts f&uuml;r die Haarnadel. Ein Wert
+      in <span class="cm-new">dieser Farbe</span> hei&szlig;t: den kennen wir noch nicht.
+      </p>
     </div>
 
     <div class="card subpage" id="sub-print">
@@ -7594,12 +7596,16 @@
     $('track-clear').click();
   }
 
-  $('track-add-start').onclick = () => addTile(TILE_TYPE.START);
-  $('track-add-straight').onclick = () => addTile(TILE_TYPE.STRAIGHT);
-  $('track-add-right').onclick = () => addTile(TILE_TYPE.CURVE_RIGHT);
-  $('track-add-left').onclick = () => addTile(TILE_TYPE.CURVE_LEFT);
-  $('track-add-hairpin').onclick = () => addTile(TILE_TYPE.HAIRPIN);
-  $('track-add-pit').onclick = () => addTile(TILE_TYPE.PIT);
+  // Die Textknoepfe oben sind entfernt; gebaut wird mit der Leiste am Bild. Die
+  // Bindungen bleiben trotzdem stehen und pruefen auf Vorhandensein - so laesst sich einer
+  // von ihnen wieder einsetzen, ohne dass man diese Stelle sucht.
+  const bindAdd = (id, type) => { const b = $(id); if (b) b.onclick = () => addTile(type); };
+  bindAdd('track-add-start', TILE_TYPE.START);
+  bindAdd('track-add-straight', TILE_TYPE.STRAIGHT);
+  bindAdd('track-add-right', TILE_TYPE.CURVE_RIGHT);
+  bindAdd('track-add-left', TILE_TYPE.CURVE_LEFT);
+  bindAdd('track-add-hairpin', TILE_TYPE.HAIRPIN);
+  bindAdd('track-add-pit', TILE_TYPE.PIT);
   $('track-undo').onclick = () => {
     // The first tile is the start/finish anchor and is not removable — the lap counting
     // depends on it existing.
@@ -7613,7 +7619,7 @@
     trackRotationDeg = (trackRotationDeg + deltaDeg + 360) % 360;
     refreshTrackPreview();
   }
-  $('track-rotate-left').onclick = () => rotateTrack(-90);
+  if ($('track-rotate-left')) $('track-rotate-left').onclick = () => rotateTrack(-90);
   $('track-rotate-right').onclick = () => rotateTrack(90);
 
   function refreshTrackList() {
