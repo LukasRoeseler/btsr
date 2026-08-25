@@ -8,6 +8,10 @@
 <style>
   /* Palette inspired by the NART Ferrari 412P Le Mans livery: white body, deep navy
      stripe/roundel, thin pinstripe linework. Red is reserved for danger/stop states only. */
+  /* color-scheme sagt dem Browser, dass er seine EIGENEN Bauteile dunkel zeichnen soll -
+     Reglerspur, Auswahllisten, Rollbalken. Ohne die Angabe bleiben die hell, und ein heller
+     Reglergriff verschwindet in einer hellen Spur. */
+  :root { color-scheme: dark; }
   /* OmegaSim: one theme, black. No light variant and no prefers-color-scheme branch -
      the cockpit was already dark, because a GT3 dash is, so it was the rest of the app that
      was the outlier rather than the target.
@@ -598,6 +602,12 @@
 
   .opt-slider { display: flex; align-items: center; gap: 8px; }
   .opt-slider input[type=range] { width: clamp(90px, 18vw, 180px); }
+  /* Der Griff und die gefuellte Spur in der Blendenfarbe der Diagramme. Ohne diese Angabe
+     nimmt der Browser seine Vorgabe, und die war auf schwarzem Grund kaum von der Spur zu
+     unterscheiden: man sah einem Regler nicht an, ob er am Anschlag steht. */
+  .opt-slider input[type=range], .mw-row input[type=range] {
+    accent-color: var(--info);
+  }
   .opt-slider button { width: 28px; height: 28px; padding: 0; font-size: 16px;
     line-height: 1; border-radius: 4px; }
   .opt-val { min-width: 58px; text-align: right; font-family: monospace;
@@ -3384,16 +3394,16 @@
       <div class="opt-row"><div class="opt-label">Tankgewicht<small>Voller Tank macht träger. Links = aus.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-fuelweight" min="0" max="1" step="0.05" value="0">
+          <input type="range" id="setting-fuelweight" min="0" max="1" step="0.05" value="0.5">
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="setting-fuelweight-val">aus</span>
+          <span class="opt-val" id="setting-fuelweight-val">50%</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Reifen: Temperatur &amp; Verschlei&szlig;<small>Kalt nach Start und Boxenstopp, abgenutzt nach hartem Stint. Links = aus.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-tyres" min="0" max="1" step="0.05" value="0">
+          <input type="range" id="setting-tyres" min="0" max="1" step="0.05" value="0.5">
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="setting-tyres-val">aus</span>
+          <span class="opt-val" id="setting-tyres-val">50%</span>
         </div></div>
       <div class="opt-head">Lenkung &amp; Feinabstimmung</div>
       <div class="opt-row"><div class="opt-label">Lenkansprechen<small>Auch auf dem Steuerkreuz links/rechts.</small></div>
@@ -3401,7 +3411,7 @@
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
           <input type="range" id="phys-steerresp" min="0.5" max="3" step="0.1" value="2">
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="phys-steerresp-val">200%</span>
+          <span class="opt-val" id="phys-steerresp-val">100%</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Beschleunigungsfaktor<small>Feinabstimmung, 1.0 = die eingestellte Zeit.</small></div>
         <div class="opt-slider">
@@ -3410,7 +3420,9 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="phys-accel-val">1.00</span>
         </div></div>
-      <div class="opt-row"><div class="opt-label">Trail-Braking-Grip-Bonus</div>
+      <div class="opt-row"><div class="opt-label">Trail-Braking-Grip-Bonus
+          <small>Erlaubt beim Anbremsen mehr Lenkung. Nicht die Gewichtsverlagerung, sondern
+          ihr Gegenst&uuml;ck in der Lenkgrenze.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
           <input type="range" id="phys-trailbrake" min="1.0" max="1.3" step="0.05" value="1.1">
@@ -3427,10 +3439,10 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-fuel-drain-val">3.0</span>
         </div></div>
-      <div class="opt-row"><div class="opt-label">Crashs bis Schadensbalken voll</div>
+      <div class="opt-row"><div class="opt-label">Crashs, bis Fahrzeug ruckelt</div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-crash-count" min="1" max="5" step="1" value="4">
+          <input type="range" id="setting-crash-count" min="0" max="7" step="1" value="3">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-crash-count-val">4</span>
         </div></div>
@@ -3905,7 +3917,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.3.51</span></span>
+    <span class="foot-ver">v<span id="app-version">0.3.52</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
   </span>
   <span class="foot-right">
@@ -4358,7 +4370,7 @@
     "Codeprobe": "Code probe",
     "Crash auslösen: Schaden, Geräusch und Rumble wie im Betrieb": "Trigger a crash: damage, sound and rumble just as in normal running",
     "Crash-Erkennung mit Vibration und Folgen fürs Handling": "Crash detection with rumble and lasting effects on handling",
-    "Crashs bis Schadensbalken voll": "Crashes until the damage bar is full",
+    "Crashs, bis Fahrzeug ruckelt": "Crashes until the car judders",
     "Cross-Plane (ungleiche Bänke)": "Cross-plane (uneven banks)",
     "Das Auto hält sich selbst auf der Bahn, der Ghost gibt nur Gas.": "The car keeps itself on the track; the ghost only works the throttle.",
     "Das ist der ganze Trick: eine": "That is the whole trick: one",
@@ -4390,6 +4402,7 @@
     "Entwickler": "Developer",
     "Ergebnis": "Result",
     "Ergebnis, alle verbundenen Autos": "Result, all connected cars",
+    "Erlaubt beim Anbremsen mehr Lenkung. Nicht die Gewichtsverlagerung, sondern ihr Gegenstück in der Lenkgrenze.": "Allows more steering while braking. Not the weight transfer, but its counterpart in the steering limit.",
     "Erst ein Auto verbinden": "Connect a car first",
     "Erst simulieren, dann fahren. Der Knopf schickt die Kurven an ein verbundenes Auto und fährt sie einmal ab. Das ist bewusst ein": "Simulate first, then drive. The button sends the curves to a connected car and runs them once. That is deliberately one",
     "Fahr die Strecke einmal manuell (Tab \"Fahren\", Joystick/Gas oder Pfeiltasten). Während der Aufnahme werden Lenk- und Gaswerte mit Zeitstempel mitgeschrieben. Bei der Wiedergabe sendet die App exakt dieselbe Sequenz erneut an die Ziel-Characteristic.": "Drive the track once by hand (the \"Drive\" tab, joystick/throttle or arrow keys). During recording, steering and throttle values are written down with timestamps. On replay the app sends exactly the same sequence again to the target characteristic.",
@@ -5904,11 +5917,15 @@
         // the launch calibration integrates through thrustAt and must keep meaning exactly
         // what it says. The calibrated figure therefore holds for an empty car, and fuel
         // makes it slower, which is the honest way round.
-        fuelWeightEffect: 0,   // 0 = off, identical to no simulation at all; 1 = full
+        // 0.5 als Standard, weil ein Rennwagen mit vollem Tank sich anders anfuehlt und
+        // das zum Spiel gehoert. Der Regler im Markup steht auf demselben Wert; stuende nur
+        // einer von beiden dort, waere die Anzeige bis zur ersten Beruehrung falsch. Die
+        // Kalibrierung gegen das echte Auto steht noch aus.
+        fuelWeightEffect: 0.5, // 0 = off, identical to no simulation at all; 1 = full
         fuelMassSpan: 0.30,    // a full tank is up to 30% more sluggish at effect 1
 
         // ---- Tyre temperature and wear ----
-        tyreEffect: 0,         // 0 = off; 1 = full
+        tyreEffect: 0.5,       // 0 = off; 1 = full. Standard an, siehe fuelWeightEffect.
         tyreAmbientC: 20,
         tyreOptimalC: 85,
         // Balanced so the equilibrium temperature lands where it should: with
@@ -6642,8 +6659,13 @@
     $('setting-fuel-drain-val').textContent = fuelDrainPerSec.toFixed(1);
   });
 
+  // Der Regler laeuft ueber den INDEX dieser Liste, nicht ueber den Wert: ein
+  // Bereichsregler hat eine feste Schrittweite, und 1 2 3 4 5 10 20 50 hat keine. Die
+  // Liste steht hier und nicht im Markup, damit Regler und Anzeige nicht auseinanderlaufen.
+  const CRASH_STEPS = [1, 2, 3, 4, 5, 10, 20, 50];
   $('setting-crash-count').addEventListener('input', (e) => {
-    crashesToTotal = parseInt(e.target.value, 10);
+    const i = Math.max(0, Math.min(CRASH_STEPS.length - 1, parseInt(e.target.value, 10)));
+    crashesToTotal = CRASH_STEPS[i];
     $('setting-crash-count-val').textContent = crashesToTotal;
   });
 
@@ -6662,6 +6684,9 @@
     $('setting-repair-time-val').textContent = pitFullRepairS + ' s';
   });
 
+  // Die kalibrierte Vorgabe fuer das Lenkansprechen. Sie ist der Bezug fuer die Anzeige,
+  // damit dort 100 % steht, wo der Wert hingehoert - und nicht 200 %.
+  const STEER_RESP_REF = 2.0;
   ['phys-steerresp', 'phys-accel', 'phys-trailbrake'].forEach(id => {
     const input = $(id);
     const readout = $(id + '-val');
@@ -6670,7 +6695,9 @@
       readout.textContent = v.toFixed(2);
       if (id === 'phys-steerresp') {
         physEngine.config.steerResponse = v;
-        $('phys-steerresp-val').textContent = Math.round(v * 100) + '%';
+        // Bezug ist die kalibrierte Vorgabe 2.0, nicht der Rohwert. 200 % zu lesen, wo
+        // die beste Einstellung liegt, laesst sie wie eine Uebertreibung aussehen.
+        $('phys-steerresp-val').textContent = Math.round(v / STEER_RESP_REF * 100) + '%';
       }
       if (id === 'phys-accel') physEngine.config.accelerationFactor = v;
       if (id === 'phys-trailbrake') physEngine.config.trailBrakingGripBonus = v;
@@ -14428,7 +14455,9 @@
       v: { 'setting-grip': 1.0, 'setting-brakepower': 1.4, 'setting-autoshift': true,
            'setting-zero-to-top': 2.6, 'setting-coast-drag': 0.6, 'setting-fuelweight': 0,
            'setting-tyres': 0, 'phys-steerresp': 2.4, 'phys-trailbrake': 1.0,
-           'setting-fuel-drain': 0, 'setting-crash-count': 5, 'setting-crash-off': true,
+           // crash-count ist ein INDEX in [1,2,3,4,5,10,20,50]: 4 = fuenf Crashs.
+           'setting-fuel-drain': 0, 'setting-crash-count': 4,
+           'setting-crash-damage': false,
            'setting-repair-time': 4 },
     },
     pro: {
@@ -14436,7 +14465,8 @@
       v: { 'setting-grip': 0.85, 'setting-brakepower': 1.0, 'setting-autoshift': false,
            'setting-zero-to-top': 3.2, 'setting-coast-drag': 1.0, 'setting-fuelweight': 0.5,
            'setting-tyres': 0.5, 'phys-steerresp': 1.8, 'phys-trailbrake': 1.15,
-           'setting-fuel-drain': 1.5, 'setting-crash-count': 3, 'setting-crash-off': false,
+           'setting-fuel-drain': 1.5, 'setting-crash-count': 2,
+           'setting-crash-damage': true,
            'setting-repair-time': 10 },
     },
     real: {
@@ -14444,7 +14474,8 @@
       v: { 'setting-grip': 0.72, 'setting-brakepower': 0.85, 'setting-autoshift': false,
            'setting-zero-to-top': 3.6, 'setting-coast-drag': 1.25, 'setting-fuelweight': 1.0,
            'setting-tyres': 1.0, 'phys-steerresp': 1.3, 'phys-trailbrake': 1.28,
-           'setting-fuel-drain': 3.0, 'setting-crash-count': 1, 'setting-crash-off': false,
+           'setting-fuel-drain': 3.0, 'setting-crash-count': 0,
+           'setting-crash-damage': true,
            'setting-repair-time': 20 },
     },
   };
