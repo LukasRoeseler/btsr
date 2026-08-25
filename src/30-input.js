@@ -1,3 +1,11 @@
+  // =========================================================================
+  // Eingabe: wer darf steuern, und was wird mitgeschrieben
+  // =========================================================================
+  // Vorrang zwischen Tastatur, Gamepad, Beruehrung und Neigung, die
+  // Telemetrie-Aufnahme und die Tastenkuerzel. Die Tasten sind absichtlich
+  // vollstaendig: was das Pad kann, muss auch die Tastatur koennen, sonst laesst sich
+  // die halbe App ohne angestecktes Pad nicht pruefen.
+
   // ---- Input arbitration ----
   // Five sources (keyboard, gamepad, mouse stick/slider, phone tilt, macro playback) all
   // write the same steerX/throttleY. Rule: a source writes only while it is actually

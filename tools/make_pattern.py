@@ -1,11 +1,24 @@
 # -*- coding: utf-8 -*-
-"""Generate startziel-a4.svg straight from the original PDF, so no number is transcribed."""
+"""startziel-a4.svg direkt aus dem Original-PDF erzeugen, damit keine Zahl abgetippt wird.
+
+    python tools/make_pattern.py [target_finish.pdf] [startziel-a4.svg]
+
+Ohne Argumente werden die Dateien im Wurzelverzeichnis des Repos erwartet. Vorher
+standen hier zwei feste Pfade auf einen Ordner, den es nach dem Aufraeumen nicht mehr
+gibt - auf einem anderen Rechner haben sie ohnehin nie existiert.
+"""
 import io
+import os
 import re
+import sys
 import zlib
 
-PDF = r"C:\Users\lroesele.IVV5NET\Claude_Code\carrera-hybrid\target_finish.pdf"
-OUT = r"C:\Users\lroesele.IVV5NET\Claude_Code\carrera-hybrid\startziel-a4.svg"
+REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+PDF = sys.argv[1] if len(sys.argv) > 1 else os.path.join(REPO, 'target_finish.pdf')
+OUT = sys.argv[2] if len(sys.argv) > 2 else os.path.join(REPO, 'startziel-a4.svg')
+if not os.path.exists(PDF):
+    raise SystemExit('Original-PDF nicht gefunden: %s' % PDF
+                     + chr(10) + 'Es ist fremdes Material und liegt nicht im Repo.')
 
 PT = 25.4 / 72.0          # PDF user units are points
 d = open(PDF, 'rb').read()

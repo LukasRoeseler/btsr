@@ -1,3 +1,14 @@
+  // =========================================================================
+  // Das Protokoll: was hinausgeht
+  // =========================================================================
+  // Das 20-Byte-Kommandopaket, die CRC-8 darueber, und die Bedeutung der Bytes, soweit
+  // sie gemessen ist. Der teuerste Fund dieses Projekts steht hier: Byte 14 Bit 7
+  // schaltet den Streckensensor AB, und diese App hat es zwoelf Aufzeichnungen lang
+  // gesendet. Wer hier etwas aendert, aendert, was das Auto tut.
+  //
+  // Nach aussen braucht dieser Teil fast nichts - er ist der am leichtesten
+  // herausloesbare der ganzen Datei.
+
   // ---- Byte 14: the light field ----
   // Decoded from an HCI snoop log (2026-08-19) in which the user switched the headlights
   // off, then on, then pressed the brake. The three states captured were 0x80, 0x82 and

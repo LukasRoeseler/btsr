@@ -1,3 +1,10 @@
+  // =========================================================================
+  // BLE-Explorer: eigener Verbindungsweg, nur zum Erkunden
+  // =========================================================================
+  // Sucht Dienste und Merkmale eines Autos ab und zeigt den GATT-Baum. Er legt das
+  // Auto in der Garage NICHT an und wird zum Fahren nicht gebraucht - genau deshalb
+  // liegt er im Entwicklertab und nicht im Weg.
+
 (() => {
   'use strict';
 

@@ -1,4 +1,6 @@
   // ============================== HOME ==============================
+  // Der Schirm beim Laden, erreichbar ueber das Logo. Die Zahl der Einstellungen wird
+  // zur Laufzeit gezaehlt, damit sie nicht veraltet.
   // At the end of the IIFE like the blocks above: it reads physEngine.config at load time to
   // count the handling parameters, and anything doing that from the middle of the file trips
   // over a const declared further down.

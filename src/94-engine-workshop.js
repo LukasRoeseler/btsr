@@ -1,4 +1,10 @@
   // ============================== MOTORWERKSTATT ==============================
+  // Elf Groessen, aus denen die mitgelieferten Motoren gerechnet sind, hier direkt zum
+  // Drehen. Das Modell laeuft im Browser, also ist jede Aenderung sofort hoerbar.
+  //
+  // Der Kern ist mwFiringAngles(): auf einer Cross-Plane-Kurbelwelle ist der GESAMTTAKT
+  // gleichmaessig, die einzelne BANK aber lumpig, und weil jede Bank ihren eigenen
+  // Kruemmer hat, entsteht daraus das Blubbern.
   // A port of tools/engine_synth.py's core into Web Audio, so a parameter change can be
   // heard rather than rendered to a file first. Deliberately at the very END of the IIFE,
   // like the Programmierschule above: this block reads DOM state at load time to paint its

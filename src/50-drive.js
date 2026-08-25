@@ -1,3 +1,9 @@
+  // =========================================================================
+  // Fahren: Regler, Kalibrierung, Makros
+  // =========================================================================
+  // Die Instanz der Physik, die Regler aus dem Optionentab, der automatische
+  // Kalibrierungslauf und die Aufnahme/Wiedergabe von Fahrten.
+
 
   const physEngine = new CarreraPhysicsEngine();
   let physLastTime = null;

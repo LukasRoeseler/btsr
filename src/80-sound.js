@@ -1,3 +1,12 @@
+  // =========================================================================
+  // Der Ton
+  // =========================================================================
+  // Motorklang aus Zuendereignissen (nach ange-yaghi/engine-sim, MIT), die
+  // geschnittenen Schleifen, Einmal-Effekte und die Streckenkulisse.
+  //
+  // Woher jede Datei kommt, steht in audio/CREDITS.md - synthetisch gegen aus
+  // Aufnahmen geschnitten, und das wird auseinandergehalten.
+
   // ---- Synthesized engine sound (Web Audio API, no external audio files — avoids any
   // question of reusing the real game's actual audio assets) ----
   let audioCtx = null, engineOsc = null, engineGain = null;

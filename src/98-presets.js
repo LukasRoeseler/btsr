@@ -1,4 +1,7 @@
   // ============================== VOREINSTELLUNGEN ==============================
+  // presetControls() sucht NUR in #tab-options. Die Karte verspricht "nicht die
+  // Rennlaenge, nicht das Wetter, nicht die Strecke", und dieses Versprechen hing einmal
+  // daran, dass es ausserhalb der Optionen zufaellig keine .opt-row gab.
   // At the end of the IIFE for the same reason as the two blocks above: it reads the
   // controls at load time to fill the exchange field.
 

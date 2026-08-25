@@ -1,3 +1,10 @@
+  // =========================================================================
+  // Programmierschule
+  // =========================================================================
+  // Kurven ziehen statt Code schreiben, simulieren, und dann an ein echtes Auto
+  // schicken. Erst simulieren ist bewusst ein Schritt: eine steil gezogene Gaskurve
+  // laesst ein Auto auf dem Tisch losschiessen, und die Simulation kostet nichts.
+
   const PS_SECONDS = 6;          // curve length
   const PS_POINTS = 13;          // control points, so 0.5 s apart at 6 s
   const PS_W = 420, PS_H = 190;  // viewBox of one editor

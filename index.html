@@ -4007,7 +4007,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.3.56</span></span>
+    <span class="foot-ver">v<span id="app-version">0.3.58</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
   </span>
   <span class="foot-right">
@@ -4018,6 +4018,13 @@
 </footer>
 
 <script>
+  // =========================================================================
+  // BLE-Explorer: eigener Verbindungsweg, nur zum Erkunden
+  // =========================================================================
+  // Sucht Dienste und Merkmale eines Autos ab und zeigt den GATT-Baum. Er legt das
+  // Auto in der Garage NICHT an und wird zum Fahren nicht gebraucht - genau deshalb
+  // liegt er im Entwicklertab und nicht im Weg.
+
 (() => {
   'use strict';
 
@@ -5207,6 +5214,17 @@
   // boundary is measured, clamp reverse to this confirmed-safe depth only.
   const MIN_THROTTLE_DELTA = -64;
 
+  // =========================================================================
+  // Das Protokoll: was hinausgeht
+  // =========================================================================
+  // Das 20-Byte-Kommandopaket, die CRC-8 darueber, und die Bedeutung der Bytes, soweit
+  // sie gemessen ist. Der teuerste Fund dieses Projekts steht hier: Byte 14 Bit 7
+  // schaltet den Streckensensor AB, und diese App hat es zwoelf Aufzeichnungen lang
+  // gesendet. Wer hier etwas aendert, aendert, was das Auto tut.
+  //
+  // Nach aussen braucht dieser Teil fast nichts - er ist der am leichtesten
+  // herausloesbare der ganzen Datei.
+
   // ---- Byte 14: the light field ----
   // Decoded from an HCI snoop log (2026-08-19) in which the user switched the headlights
   // off, then on, then pressed the brake. The three states captured were 0x80, 0x82 and
@@ -5452,6 +5470,14 @@
   function setThrottleLogical(v) {
     setThrottle(-v);
   }
+
+  // =========================================================================
+  // Eingabe: wer darf steuern, und was wird mitgeschrieben
+  // =========================================================================
+  // Vorrang zwischen Tastatur, Gamepad, Beruehrung und Neigung, die
+  // Telemetrie-Aufnahme und die Tastenkuerzel. Die Tasten sind absichtlich
+  // vollstaendig: was das Pad kann, muss auch die Tastatur koennen, sonst laesst sich
+  // die halbe App ohne angestecktes Pad nicht pruefen.
 
   // ---- Input arbitration ----
   // Five sources (keyboard, gamepad, mouse stick/slider, phone tilt, macro playback) all
@@ -5910,6 +5936,17 @@
     }
     return TORQUE_CURVE[last][1];
   }
+
+  // =========================================================================
+  // Die Fahrphysik
+  // =========================================================================
+  // Eine Klasse, keine Abhaengigkeit nach draussen ausser REAL_SCALE, clamp,
+  // CONTROL_SEND_INTERVAL_MS und den Ton-Attrappen. Reibkreis, Gewichtsverlagerung mit
+  // zwei Zeitkonstanten, Gaenge, Reifentemperatur, Ausrollen aus drei Anteilen.
+  //
+  // Alle Zahlen sind an reale Groessen gebunden statt an 0..1-Einheiten, damit man
+  // ueber sie reden kann: km/h, Sekunden, Prozent. Wer eine aendert, sollte die
+  // Kalibrierung danach nachrechnen lassen (calibrateAccel).
 
   class CarreraPhysicsEngine {
     constructor() {
@@ -6694,6 +6731,12 @@
       }
     } catch { /* pad vanished mid-call — nothing to do */ }
   }
+  // =========================================================================
+  // Fahren: Regler, Kalibrierung, Makros
+  // =========================================================================
+  // Die Instanz der Physik, die Regler aus dem Optionentab, der automatische
+  // Kalibrierungslauf und die Aufnahme/Wiedergabe von Fahrten.
+
 
   const physEngine = new CarreraPhysicsEngine();
   let physLastTime = null;
@@ -7586,6 +7629,19 @@
   $('lab-subscribe').onclick = labSubscribeTx;
 
   labRenderBytes();
+
+  // =========================================================================
+  // Die Strecke: Modell, Geometrie, Editor, Scan
+  // =========================================================================
+  // Kachelfolge, Mittellinie, Ideallinie (Minimalkruemmung), Bremsprofil, Zeichnung,
+  // Streckencode, Teileleiste, Live-Scan und der Rohcode-Monitor.
+  //
+  // Die Geometrie ist gemessen und nicht gewaehlt: Kachel 43 cm, Bahnbreite 25 cm,
+  // Kurvenradius 37 cm, Haarnadel 18,5 cm mit 28 cm gerader Sektion - letzteres aus
+  // dem Grundriss der Original-App zurueckgerechnet (0,62 m x 1,02 m).
+  //
+  // Hier gab es einmal ZWEI Geometriepfade, und der wirksame war der aermere. Wenn
+  // hier etwas hinzukommt, gehoert es in trackCenterline() und nirgendwo sonst.
 
   // ---- Track data model + shared minimap/track-preview renderer ----
   // Tile type byte matches notify-packet byte 12 exactly, so a scanned track's values
@@ -8885,6 +8941,14 @@
   // Battery is a rough two-point estimate (0x9b/155≈100%, 0x90/144≈75%, observed in an
   // earlier session) — not a calibrated formula, just enough for a rough gauge.
   let dashBattery = null;
+  // =========================================================================
+  // Das Rennen: Armaturenbrett, Modi, Boxengasse, Wetter
+  // =========================================================================
+  // Rundenzaehlung, Ampel, Ergebnisse, Boxenstopp mit Plan und Uhr, Wetter und Reifen.
+  //
+  // Die Rundenzaehlung haengt an EINEM Signal: Byte 12 meldet die Start/Ziel-Kachel.
+  // Es gibt keinen zweiten Detektor in der App, und das ist Absicht.
+
   let dashOnMarker = false;   // byte 15 bit 3: the car is physically over a marker
   // Debounce state for the tile code. See dashboardNotifyHandler for why both guards exist.
   const TILE_REPEAT_BLOCK_MS = 1000;
@@ -11025,6 +11089,15 @@
 
   updateDamageFuelUI();
 
+  // =========================================================================
+  // Der Ton
+  // =========================================================================
+  // Motorklang aus Zuendereignissen (nach ange-yaghi/engine-sim, MIT), die
+  // geschnittenen Schleifen, Einmal-Effekte und die Streckenkulisse.
+  //
+  // Woher jede Datei kommt, steht in audio/CREDITS.md - synthetisch gegen aus
+  // Aufnahmen geschnitten, und das wird auseinandergehalten.
+
   // ---- Synthesized engine sound (Web Audio API, no external audio files — avoids any
   // question of reusing the real game's actual audio assets) ----
   let audioCtx = null, engineOsc = null, engineGain = null;
@@ -11779,6 +11852,16 @@
   }
 
   refreshTrackPreview();
+
+  // =========================================================================
+  // Autonome Gegner, und alles was an ihnen haengt
+  // =========================================================================
+  // Gamepad-Belegung, die Messung der Querablage, die Ruettelerkennung, die gelbe
+  // Flagge, die Rennwuerze und die Ideallinie fuer die Autos.
+  //
+  // Die Linie ist DIESELBE, die der Editor zeichnet. Sie war einmal doppelt und die
+  // beiden Fassungen korrelierten mit r = 0.26 - wer im Editor eine Linie sieht und
+  // zuschaut, wie das Auto eine andere faehrt, kann keiner von beiden trauen.
 
   // ---- Gamepad support with configurable bindings ----
   // Standard Gamepad API mapping (Xbox-style): axes[0]=left-stick X, buttons[6]=LT,
@@ -13732,6 +13815,13 @@
   // movement, because the car has mass, the tyres need time and the steering has a top
   // speed. Everything here reuses the SAME physics instance class the car is driven with —
   // a separate toy model would teach a fiction.
+  // =========================================================================
+  // Programmierschule
+  // =========================================================================
+  // Kurven ziehen statt Code schreiben, simulieren, und dann an ein echtes Auto
+  // schicken. Erst simulieren ist bewusst ein Schritt: eine steil gezogene Gaskurve
+  // laesst ein Auto auf dem Tisch losschiessen, und die Simulation kostet nichts.
+
   const PS_SECONDS = 6;          // curve length
   const PS_POINTS = 13;          // control points, so 0.5 s apart at 6 s
   const PS_W = 420, PS_H = 190;  // viewBox of one editor
@@ -14008,6 +14098,12 @@
   psRefreshSendButton();
 
   // ============================== MOTORWERKSTATT ==============================
+  // Elf Groessen, aus denen die mitgelieferten Motoren gerechnet sind, hier direkt zum
+  // Drehen. Das Modell laeuft im Browser, also ist jede Aenderung sofort hoerbar.
+  //
+  // Der Kern ist mwFiringAngles(): auf einer Cross-Plane-Kurbelwelle ist der GESAMTTAKT
+  // gleichmaessig, die einzelne BANK aber lumpig, und weil jede Bank ihren eigenen
+  // Kruemmer hat, entsteht daraus das Blubbern.
   // A port of tools/engine_synth.py's core into Web Audio, so a parameter change can be
   // heard rather than rendered to a file first. Deliberately at the very END of the IIFE,
   // like the Programmierschule above: this block reads DOM state at load time to paint its
@@ -14521,6 +14617,8 @@
   mwRefreshSlots();
 
   // ============================== HOME ==============================
+  // Der Schirm beim Laden, erreichbar ueber das Logo. Die Zahl der Einstellungen wird
+  // zur Laufzeit gezaehlt, damit sie nicht veraltet.
   // At the end of the IIFE like the blocks above: it reads physEngine.config at load time to
   // count the handling parameters, and anything doing that from the middle of the file trips
   // over a const declared further down.
@@ -14696,6 +14794,9 @@
 
 
   // ============================== VOREINSTELLUNGEN ==============================
+  // presetControls() sucht NUR in #tab-options. Die Karte verspricht "nicht die
+  // Rennlaenge, nicht das Wetter, nicht die Strecke", und dieses Versprechen hing einmal
+  // daran, dass es ausserhalb der Optionen zufaellig keine .opt-row gab.
   // At the end of the IIFE for the same reason as the two blocks above: it reads the
   // controls at load time to fill the exchange field.
 

@@ -1,3 +1,14 @@
+  // =========================================================================
+  // Die Fahrphysik
+  // =========================================================================
+  // Eine Klasse, keine Abhaengigkeit nach draussen ausser REAL_SCALE, clamp,
+  // CONTROL_SEND_INTERVAL_MS und den Ton-Attrappen. Reibkreis, Gewichtsverlagerung mit
+  // zwei Zeitkonstanten, Gaenge, Reifentemperatur, Ausrollen aus drei Anteilen.
+  //
+  // Alle Zahlen sind an reale Groessen gebunden statt an 0..1-Einheiten, damit man
+  // ueber sie reden kann: km/h, Sekunden, Prozent. Wer eine aendert, sollte die
+  // Kalibrierung danach nachrechnen lassen (calibrateAccel).
+
   class CarreraPhysicsEngine {
     constructor() {
       this.config = {

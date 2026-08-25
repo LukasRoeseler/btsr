@@ -1,3 +1,13 @@
+  // =========================================================================
+  // Autonome Gegner, und alles was an ihnen haengt
+  // =========================================================================
+  // Gamepad-Belegung, die Messung der Querablage, die Ruettelerkennung, die gelbe
+  // Flagge, die Rennwuerze und die Ideallinie fuer die Autos.
+  //
+  // Die Linie ist DIESELBE, die der Editor zeichnet. Sie war einmal doppelt und die
+  // beiden Fassungen korrelierten mit r = 0.26 - wer im Editor eine Linie sieht und
+  // zuschaut, wie das Auto eine andere faehrt, kann keiner von beiden trauen.
+
   // ---- Gamepad support with configurable bindings ----
   // Standard Gamepad API mapping (Xbox-style): axes[0]=left-stick X, buttons[6]=LT,
   // buttons[7]=RT (both report analog .value 0..1 even though they're "buttons"),

@@ -9,7 +9,10 @@ Format:  0.<Woche>.<Push>
 
 Vor jedem Commit aufrufen:
 
-    python tools/bump_version.py && git add index.html
+    python tools/bump_version.py
+
+Geschrieben wird in die QUELLE (src/00-index.head.html), danach wird index.html gleich
+mitgebaut.
 
 Warum aus der Historie und nicht von Hand: eine Zahl, die man selbst pflegt, ist nach dem
 dritten Push falsch. Der 7-Tage-Block wird ab dem ERSTEN Commit gezaehlt, nicht ab Montag -
@@ -25,7 +28,13 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(HERE)
-TARGET = os.path.join(REPO, 'index.html')
+# In die QUELLE schreiben, nicht in das Ergebnis.
+#
+# index.html wird von build.py erzeugt. Ein Stempel dort waere beim naechsten Bau
+# wieder weg, und `build.py --check` hat genau das binnen einer Minute gemeldet:
+# "UNTERSCHIED ab Zeichen 263000", weil die Version in der einen Datei stand und in
+# der anderen nicht. Deshalb: Quelle stempeln, dann bauen.
+TARGET = os.path.join(REPO, 'src', '00-index.head.html')
 
 
 def git(*args):
@@ -49,7 +58,8 @@ def main():
     s = io.open(TARGET, encoding='utf-8').read()
     pat = re.compile(r'(<span id="app-version">)[^<]*(</span>)')
     if not pat.search(s):
-        print('FEHLER: <span id="app-version"> nicht in index.html gefunden', file=sys.stderr)
+        print('FEHLER: <span id="app-version"> nicht in %s gefunden' % TARGET,
+              file=sys.stderr)
         return 1
     new = pat.sub(lambda m: m.group(1) + v + m.group(2), s, count=1)
     if new == s:
@@ -57,6 +67,18 @@ def main():
         return 0
     io.open(TARGET, 'w', encoding='utf-8', newline='').write(new)
     print('Version %s  (Projektbeginn %s, Block ab %s)' % (v, start, block))
+    # Gleich mitbauen. Wer nur stempelt und das Bauen vergisst, hinterlaesst eine Quelle und
+    # ein Ergebnis, die auseinanderliegen - und merkt es erst beim naechsten --check.
+    #
+    # HERE in den Suchpfad, damit der Aufruf aus JEDEM Verzeichnis geht. Ohne diese Zeile
+    # fand `python tools/bump_version.py` das Nachbarmodul nicht, und der Fehler kam erst
+    # nach dem Stempeln - also mit halb erledigter Arbeit.
+    if HERE not in sys.path:
+        sys.path.insert(0, HERE)
+    import build
+    io.open(os.path.join(REPO, 'index.html'), 'w', encoding='utf-8',
+            newline='').write(build.build())
+    print('index.html neu gebaut')
     return 0
 
 

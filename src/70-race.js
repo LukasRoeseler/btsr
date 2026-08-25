@@ -1,3 +1,11 @@
+  // =========================================================================
+  // Das Rennen: Armaturenbrett, Modi, Boxengasse, Wetter
+  // =========================================================================
+  // Rundenzaehlung, Ampel, Ergebnisse, Boxenstopp mit Plan und Uhr, Wetter und Reifen.
+  //
+  // Die Rundenzaehlung haengt an EINEM Signal: Byte 12 meldet die Start/Ziel-Kachel.
+  // Es gibt keinen zweiten Detektor in der App, und das ist Absicht.
+
   let dashOnMarker = false;   // byte 15 bit 3: the car is physically over a marker
   // Debounce state for the tile code. See dashboardNotifyHandler for why both guards exist.
   const TILE_REPEAT_BLOCK_MS = 1000;

@@ -1,3 +1,16 @@
+  // =========================================================================
+  // Die Strecke: Modell, Geometrie, Editor, Scan
+  // =========================================================================
+  // Kachelfolge, Mittellinie, Ideallinie (Minimalkruemmung), Bremsprofil, Zeichnung,
+  // Streckencode, Teileleiste, Live-Scan und der Rohcode-Monitor.
+  //
+  // Die Geometrie ist gemessen und nicht gewaehlt: Kachel 43 cm, Bahnbreite 25 cm,
+  // Kurvenradius 37 cm, Haarnadel 18,5 cm mit 28 cm gerader Sektion - letzteres aus
+  // dem Grundriss der Original-App zurueckgerechnet (0,62 m x 1,02 m).
+  //
+  // Hier gab es einmal ZWEI Geometriepfade, und der wirksame war der aermere. Wenn
+  // hier etwas hinzukommt, gehoert es in trackCenterline() und nirgendwo sonst.
+
   // ---- Track data model + shared minimap/track-preview renderer ----
   // Tile type byte matches notify-packet byte 12 exactly, so a scanned track's values
   // can be stored verbatim. CURVE_LEFT used to be a guessed 0x08 (the next power of two)
