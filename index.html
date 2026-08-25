@@ -198,6 +198,33 @@
   }
   nav.tabs button:hover { background: var(--panel-3); }
   nav.tabs button.active { color: var(--navy); border-bottom-color: var(--bad); font-weight: 700; }
+  /* ---- Renneinstellungen: Modus als Kacheln, Wetter als zwei Knoepfe ---- */
+  .mode-grid { display: grid; gap: 8px; margin-top: 12px;
+    grid-template-columns: repeat(auto-fit, minmax(132px, 1fr)); }
+  .mode-tile {
+    display: flex; flex-direction: column; align-items: flex-start; gap: 6px;
+    padding: 11px 12px; min-height: 74px; text-align: left;
+    background: var(--panel-2); border: 1px solid var(--border); border-radius: 5px;
+    color: var(--muted); font: inherit; cursor: pointer;
+  }
+  .mode-tile svg { width: 22px; height: 22px; }
+  .mode-tile b { font-size: 12px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .07em; }
+  .mode-tile:hover { background: var(--panel-3); color: var(--ink); }
+  /* Der gewaehlte Modus ist nicht nur farbig, sondern traegt einen Balken links: Farbe
+     allein ist kein Zustand, wenn jemand sie nicht unterscheiden kann. */
+  .mode-tile.sel { color: var(--ink); border-color: var(--bad);
+    box-shadow: inset 3px 0 0 var(--bad); background: var(--panel-3); }
+  .wx-pick { display: flex; gap: 6px; }
+  .wx-pick button {
+    width: 46px; min-height: 44px; padding: 0; display: grid; place-items: center;
+    background: var(--panel-2); border: 1px solid var(--border); border-radius: 5px;
+    color: var(--muted); cursor: pointer;
+  }
+  .wx-pick button svg { width: 22px; height: 22px; }
+  .wx-pick button.sel { color: var(--ink); border-color: var(--bad);
+    background: var(--panel-3); }
+
   /* ---- Sonstige: drei Kacheln ---- */
   .misc-grid {
     display: grid; gap: 14px;
@@ -3137,25 +3164,50 @@
           <div class="muted" id="race-lap-current-row" style="display:none">Aktuelle Runde: <b id="race-lap-current">-</b></div>
         </div>
       </div>
-      <div class="row" style="margin-top:12px; gap:10px; align-items:flex-end">
-        <div>
-          <label class="small">Modus</label>
-          <select id="race-mode">
-            <option value="practice" selected>Freies Training</option>
-            <option value="endurance">Endurance</option>
-            <option value="qualifying">Qualifying</option>
-            <option value="laps">Runden</option>
-          </select>
-        </div>
-        <div>
-          <label class="small"><span id="race-limit-label">Minuten</span></label>
-          <input type="number" id="race-limit" value="2" min="1" max="120" step="1" style="width:80px">
-        </div>
-        <span class="muted" id="race-mode-hint" style="font-size:11.5px"></span>
-        <label style="display:flex; align-items:center; gap:6px" title="Einf&uuml;hrungsrunde mit Limiter-Tempo, Freigabe beim ersten &Uuml;berfahren von Start/Ziel">
-          <input type="checkbox" id="race-flying"> Fliegender Start
-        </label>
+      <!-- Der Modus als vier antippbare Kacheln. Das <select> bleibt IM Dokument, nur
+           versteckt: applyRaceModeUi(), die Voreinstellungen und die change-Bindung lesen
+           es weiter, die Kacheln setzen nur value und loesen change aus. Ein Umbau der
+           Zustandslogik waere unnoetiges Risiko fuer eine Frage der Bedienung. -->
+      <div class="mode-grid" id="race-mode-tiles">
+        <button type="button" class="mode-tile" data-mode="practice">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+               stroke-linecap="round" aria-hidden="true">
+            <circle cx="12" cy="13" r="8"/><path d="M12 13V8.5M12 2h0M9 3h6"/>
+          </svg><b>Freies Training</b></button>
+        <button type="button" class="mode-tile" data-mode="endurance">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+               stroke-linecap="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"/><path d="M12 12V6M12 12l4.5 3"/>
+          </svg><b>Endurance</b></button>
+        <button type="button" class="mode-tile" data-mode="qualifying">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M5 20V4l14 4-14 4"/><path d="M5 12v8"/>
+          </svg><b>Qualifying</b></button>
+        <button type="button" class="mode-tile" data-mode="laps">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+               stroke-linecap="round" aria-hidden="true">
+            <path d="M4 8a8 5 0 1 0 16 0 8 5 0 1 0-16 0"/><path d="M12 3v3M12 13v-3"/>
+          </svg><b>Runden</b></button>
       </div>
+      <select id="race-mode" hidden style="display:none">
+        <option value="practice" selected>Freies Training</option>
+        <option value="endurance">Endurance</option>
+        <option value="qualifying">Qualifying</option>
+        <option value="laps">Runden</option>
+      </select>
+      <p class="muted" id="race-mode-hint" style="font-size:11.5px; margin:8px 0 0 0"></p>
+
+      <!-- Ab hier senkrecht, in derselben Form wie die Optionen: eine Zeile je Einstellung,
+           Beschriftung links, Bedienelement rechts. Vorher standen acht Einstellungen in
+           zwei waagerechten Reihen, und auf dem Telefon brachen sie unvorhersehbar um. -->
+      <div class="opt-row"><div class="opt-label"><span id="race-limit-label">Minuten</span>
+          <small>Bei freiem Training ohne Bedeutung.</small></div>
+        <input type="number" id="race-limit" value="2" min="1" max="120" step="1" style="width:84px"></div>
+      <div class="opt-row"><div class="opt-label">Fliegender Start
+          <small>Einf&uuml;hrungsrunde mit Boxengassen-Tempo, frei beim ersten
+          &Uuml;berfahren von Start/Ziel.</small></div>
+        <label class="tgl"><input type="checkbox" id="race-flying"><span></span></label></div>
 
       <div id="race-grid-wrap" style="display:none; margin-top:12px">
         <label class="small">Startaufstellung, ziehen oder mit den Pfeilen sortieren</label>
@@ -3167,34 +3219,37 @@
         </p>
       </div>
 
-      <div class="row" style="margin-top:12px; gap:18px; flex-wrap:wrap; align-items:flex-end">
-        <div>
-          <label class="small">Wetter zu Beginn</label>
-          <select id="race-wx-start">
-            <option value="dry" selected>Trocken</option>
-            <option value="rain">Regen</option>
-          </select>
+      <div class="opt-row"><div class="opt-label">Wetter zu Beginn</div>
+        <div class="wx-pick" id="race-wx-pick">
+          <button type="button" data-wx="dry" title="Trocken" aria-label="Trocken">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+                 stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/>
+              <path d="M12 2v2.4M12 19.6V22M2 12h2.4M19.6 12H22M4.9 4.9l1.7 1.7M17.4 17.4l1.7 1.7M19.1 4.9l-1.7 1.7M6.6 17.4l-1.7 1.7"/>
+            </svg></button>
+          <button type="button" data-wx="rain" title="Regen" aria-label="Regen">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+                 stroke-linecap="round" aria-hidden="true">
+              <path d="M6.5 14a4 4 0 0 1 .4-8 5.5 5.5 0 0 1 10.5 1.4A3.6 3.6 0 0 1 17.5 14z"/>
+              <path d="M8 17.5l-1 2.5M12 17.5l-1 2.5M16 17.5l-1 2.5"/>
+            </svg></button>
         </div>
-        <label style="display:flex; align-items:center; gap:6px" title="Wechselt einmalig zu einem zuf&auml;lligen Zeitpunkt im Rennen">
-          <input type="checkbox" id="race-wx-change"> Wetter &auml;ndert sich
-        </label>
-        <div>
-          <label class="small">Pflichtboxenstopps</label>
-          <select id="race-pit-required">
-            <option value="0" selected>keine</option>
-            <option value="1">1</option>
-            <option value="2">2</option>
-          </select>
-        </div>
-        <div>
-          <label class="small">Strafe je verpasstem Stopp (s)</label>
-          <input type="number" id="race-pit-penalty" value="10" min="0" max="300" step="1" style="width:80px">
-        </div>
-        <div>
-          <label class="small">Tank beim Start (l)</label>
-          <input type="number" id="race-fuel-start" value="110" min="5" max="110" step="5" style="width:80px">
-        </div>
-      </div>
+        <select id="race-wx-start" hidden style="display:none">
+          <option value="dry" selected>Trocken</option>
+          <option value="rain">Regen</option>
+        </select></div>
+      <div class="opt-row"><div class="opt-label">Wetter &auml;ndert sich
+          <small>Wechselt einmal zu einem zuf&auml;lligen Zeitpunkt.</small></div>
+        <label class="tgl"><input type="checkbox" id="race-wx-change"><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Pflichtboxenstopps</div>
+        <select id="race-pit-required">
+          <option value="0" selected>keine</option>
+          <option value="1">1</option>
+          <option value="2">2</option>
+        </select></div>
+      <div class="opt-row"><div class="opt-label">Strafe je verpasstem Stopp (s)</div>
+        <input type="number" id="race-pit-penalty" value="10" min="0" max="300" step="1" style="width:84px"></div>
+      <div class="opt-row"><div class="opt-label">Tank beim Start (l)</div>
+        <input type="number" id="race-fuel-start" value="110" min="5" max="110" step="5" style="width:84px"></div>
       <div class="row" style="margin-top:12px; gap:10px">
         <button id="race-start-btn">🏁 Rennen starten</button>
         <button id="race-stop-btn" disabled>Rennen abbrechen</button>
@@ -3945,7 +4000,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.3.54</span></span>
+    <span class="foot-ver">v<span id="app-version">0.3.55</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
   </span>
   <span class="foot-right">
@@ -4373,6 +4428,7 @@
     "Bauart": "Layout",
     "Baue eine Strecke manuell aus Teilen zusammen, oder scanne sie live, während das Auto einmal die Runde fährt (Auto muss verbunden sein). Bekannte Teiltypen: Start/Ziel, Gerade, Rechtskurve (bestätigt aus echten Streckendaten). Linkskurve ist eine": "Build a track by hand from parts, or scan it live while the car drives one lap (a car must be connected). Known part types: start/finish, straight, right curve (confirmed from real track data). The left curve is an",
     "Bedienung mit Maus oder Finger. Das Gamepad ist hier ausgebaut: es griff vorher auf jedem Tab und auf jedes Bedienelement, und daraus kamen Fehlbedienungen. Es steuert jetzt nur noch das Auto, den Streckeneditor im Vollbild und das Boxenstopp-Menü.": "Operated with the mouse or a finger. The gamepad has been removed here: it used to act on every tab and every control, and that caused mis-operation. It now only drives the car, the track editor in fullscreen, and the pit-stop menu.",
+    "Bei freiem Training ohne Bedeutung.": "Has no meaning in free practice.",
     "Beim Boxenstopp: Reparatur an/aus": "During a pit stop: repair on/off",
     "Beim Boxenstopp: Tanken an/aus": "During a pit stop: refuelling on/off",
     "Bekannt (aus einer unabhängigen Reverse-Engineering-Runde zum selben Auto, per BLE-Sniffer ermittelt): echte Kommando-Pakete sind": "Known (from an independent reverse-engineering effort on the same car, obtained with a BLE sniffer): real command packets are",
@@ -4427,6 +4483,7 @@
     "Eine Runde zählt, sobald das Auto das Start/Ziel-Muster auf der Strecke überfährt (dasselbe Signal, das auch der Streckenscanner ausliest): kein eigener Sensor in der App.": "A lap counts as soon as the car drives over the start/finish pattern on the track (the same signal the track scanner reads), there is no separate sensor in the app.",
     "Einfach: Elektro": "Simple: electric",
     "Einfach: Turbo": "Simple: turbo",
+    "Einführungsrunde mit Boxengassen-Tempo, frei beim ersten Überfahren von Start/Ziel.": "Formation lap at pit-lane pace, released the first time start/finish is crossed.",
     "Einmal senden": "Send once",
     "Einstellungen": "settings",
     "Endlosschleife": "Loop forever",
@@ -4710,6 +4767,7 @@
     "Was das Auto daraus macht": "What the car makes of it",
     "Was die Zahl bedeutet und was nicht.": "What the number means and what it does not.",
     "Web Bluetooth erlaubt standardmäßig nur Zugriff auf Services, die vorab bekannt sind. Da wir das genaue Carrera-Protokoll noch nicht kennen, versuchen wir es unten mit einer Liste gängiger Custom-Service-UUIDs (Nordic UART, HM-10/FFE0, FFF0 etc.): falls dein Auto eine andere UUID benutzt, füge sie manuell hinzu.": "By default Web Bluetooth only allows access to services known in advance. Since we do not yet know the exact Carrera protocol, below we try a list of common custom service UUIDs (Nordic UART, HM-10/FFE0, FFF0 and so on): if your car uses a different UUID, add it by hand.",
+    "Wechselt einmal zu einem zufälligen Zeitpunkt.": "Changes once, at a random moment.",
     "Weiter gedacht: Ghostcars selbst programmieren": "Going further: program ghost cars yourself",
     "Welchen Code meldet dieses Teil?": "Which code does this part report?",
     "Wenn hier nur": "If all you see here is",
@@ -8917,7 +8975,7 @@
         el.textContent = formatLapTime(up) + ' gefahren';
       } else if (raceMode === 'laps') {
         const best = Math.max(0, ...raceAllCars().map(c => c.laps.length));
-        el.textContent = `Runde ${best} / ${raceLimit}`;
+        el.textContent = `Runde ${best} / ${raceLimit}`;   // best = vollendete Runden
       } else {
         const left = Math.max(0, raceLimit * 60000 - (Date.now() - raceStartedAt));
         el.textContent = formatLapTime(left) + ' übrig';
@@ -9573,6 +9631,7 @@
 
   // ---- Race mode selector ----
   function applyRaceModeUi() {
+    syncRaceModeTiles();
     const m = RACE_MODES[raceMode];
     $('race-limit-label').textContent = m.unit;
     $('race-mode-hint').textContent = m.hint;
@@ -9584,6 +9643,39 @@
     // and this label still has to be readable while it says which unit is NOT in use.
     $('race-limit-label').style.opacity = m.timed ? '' : '0.7';
   }
+  // Kacheln und Wetterknoepfe schreiben in das versteckte Auswahlfeld und loesen change
+  // aus. Damit gibt es weiter genau EINE Stelle, die auf eine Aenderung reagiert, und die
+  // Voreinstellungen koennen den Modus setzen, ohne die Kacheln zu kennen.
+  function syncRaceModeTiles() {
+    const v = $('race-mode').value;
+    for (const b of document.querySelectorAll('#race-mode-tiles .mode-tile')) {
+      b.classList.toggle('sel', b.dataset.mode === v);
+      b.setAttribute('aria-pressed', b.dataset.mode === v ? 'true' : 'false');
+    }
+  }
+  for (const b of document.querySelectorAll('#race-mode-tiles .mode-tile')) {
+    b.addEventListener('click', () => {
+      $('race-mode').value = b.dataset.mode;
+      $('race-mode').dispatchEvent(new Event('change', { bubbles: true }));
+    });
+  }
+
+  function syncRaceWxPick() {
+    const v = $('race-wx-start').value;
+    for (const b of document.querySelectorAll('#race-wx-pick button')) {
+      b.classList.toggle('sel', b.dataset.wx === v);
+      b.setAttribute('aria-pressed', b.dataset.wx === v ? 'true' : 'false');
+    }
+  }
+  for (const b of document.querySelectorAll('#race-wx-pick button')) {
+    b.addEventListener('click', () => {
+      $('race-wx-start').value = b.dataset.wx;
+      $('race-wx-start').dispatchEvent(new Event('change', { bubbles: true }));
+    });
+  }
+  $('race-wx-start').addEventListener('change', syncRaceWxPick);
+  syncRaceWxPick();
+
   $('race-mode').addEventListener('change', (e) => {
     raceMode = e.target.value;
     // Sensible default per mode rather than carrying a minute count over into a lap count.
@@ -9873,7 +9965,10 @@
       raceLapStart = now;
       playLapChime();
       if (wasFinishing) finishRace();
-      else $('race-status').textContent = `Rennen läuft, Runde ${raceLapTimes.length + 1}`;
+      // Runde 0, nicht 1: das Feld steht auf der Startgeraden und ueberfaehrt Start/Ziel
+      // erst am Ende der ersten Runde. Vor der ersten Ueberfahrt ist also noch keine Runde
+      // voll, und raceLapTimes.length ist genau diese Zahl.
+      else $('race-status').textContent = `Rennen läuft, Runde ${raceLapTimes.length}`;
     }
     return false;
   }
@@ -14606,7 +14701,16 @@
   // hand-kept list would silently omit whatever gets added next, and the omission would only
   // show up as a preset string that quietly drops a setting.
   function presetControls() {
-    return [...document.querySelectorAll('.opt-row input[id], .opt-row select[id]')];
+    // NUR im Optionen-Tab suchen, nicht im ganzen Dokument.
+    //
+    // Die Karte verspricht ausdruecklich: "nicht die Rennlaenge, nicht das Wetter, nicht die
+    // Strecke, denn die gehoeren zum Rennen und nicht zum Auto." Dieses Versprechen hing
+    // vorher daran, dass es ausserhalb der Optionen zufaellig keine .opt-row gab. Sobald die
+    // Renneinstellungen dieselbe Zeilenform bekamen, zog eine Voreinstellung Rennlaenge,
+    // Wetter und Pflichtstopps mit - messbar daran, dass der Ausgabetext von 861 auf 1015
+    // Zeichen wuchs. Jetzt steht das Versprechen im Selektor und nicht im Zufall.
+    return [...document.querySelectorAll('#tab-options .opt-row input[id], '
+                                         + '#tab-options .opt-row select[id]')];
   }
 
   function presetRead() {
