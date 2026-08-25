@@ -1161,6 +1161,13 @@
 
     // Bytes 1 and 3 fluctuate only once the car moves and byte 3 flipped sign with turn
     // direction in one capture — hence "motion-ish". Unconfirmed.
+    //
+    // Und hier gehoert die Crasherkennung hin: sie braucht genau diese zwei Bytes. Der
+    // Aufruf hat GEFEHLT - detectCrash war definiert, die Schwelle war definiert, der
+    // Schalter war da, und niemand rief sie auf. Gemeldet als "Schaden ist angeschaltet,
+    // aber wenn ich am Auto ruettele passiert nichts". Toter Code, der wie ein Merkmal
+    // aussieht, ist schlimmer als ein fehlendes Merkmal.
+    detectCrash(bytes);
     const g1 = s8signed(bytes[1]), g3 = s8signed(bytes[3]);
     gyroRaw.x += (g3 - gyroRaw.x) * 0.35;
     gyroRaw.y += (g1 - gyroRaw.y) * 0.35;
@@ -1653,7 +1660,6 @@
   let fuel = 100;
   let damage = 0;
   let crashRollingAvg1 = null, crashRollingAvg3 = null;
-  let crashIndicatorTimer = null;
   let lastCrashTime = 0;
   let fuelLastTickTime = null;
   // Which end took the hit, and whether that end's lights still work. The protocol has
@@ -1731,11 +1737,17 @@
     updateDamageFuelUI();
     if (!playCrashFx()) playCrashSound(); // sample variants first, synth burst as fallback
     padRumble(0.6, 0.4, 220); // medium, per user spec
-    const ind = $('crash-indicator');
-    if (ind) ind.style.display = 'inline';
-    clearTimeout(crashIndicatorTimer);
-    crashIndicatorTimer = setTimeout(() => { ind.style.display = 'none'; }, 1500);
-    log(`Crash erkannt (experimentell), Schaden +${Math.round(100 / crashesToTotal)}%.`, 'err');
+    // Hier stand ein Crash-Indikator, dessen Element es nicht mehr gibt: #crash-indicator
+    // kam im gebauten Dokument genau einmal vor, naemlich hier. Die Stelle prueft zwar mit
+    // if (ind), griff im Zeitgeber danach aber UNGESCHUETZT auf ind.style zu - der Fehler kam
+    // also 1,5 Sekunden spaeter und nur bei einem erkannten Crash. Und weil detectCrash nie
+    // aufgerufen wurde, konnte er nie auftreten: ein toter Aufruf hat einen anderen toten
+    // Code versteckt.
+    //
+    // Rueckmeldung gibt es genug - Schadensbalken, Geraeusch, Rumble, Protokoll -, nur nicht
+    // auf dem Rennschirm. Also dort eine Meldung.
+    showHudToast('CRASH · SCHADEN ' + Math.round(damage) + ' %');
+    log(`Crash erkannt, Schaden +${Math.round(100 / crashesToTotal)}%.`, 'err');
   }
 
   // PLACEHOLDER: the real BLE command for the car's headlights/brake light is still

@@ -242,13 +242,21 @@
         // Angezeigte Entsprechung bei 295 km/h Spitze: 50 und 160 km/h.
         wetOnsetFrac: 0.17,
         wetFullFrac: 0.55,
+        // ---- Wieviel der Reibkreis ueberhaupt gefuellt wird ----
+        // Dieselbe Ueberlegung wie beim Regen, auf die Laengsanforderung angewandt: bei
+        // Schrittgeschwindigkeit ist eine Vollbremsung ein Bruchteil der verfuegbaren
+        // Haftung, bei Hoechstgeschwindigkeit ist sie alles. Ohne das leert eine Vollbremsung
+        // den Kreis bei JEDER Fahrt, und die Lenkung klebt bis zum Stand am Notboden.
+        // Angezeigte Entsprechung bei 295 km/h Spitze: 30 und 180 km/h.
+        loadOnsetFrac: 0.10,
+        loadFullFrac: 0.61,
         // 0.65 und 1.55, gewaehlt und nicht gemessen: gefittet auf Vollbremsung 50 % und
         // Vollgas 59 % des Lenkgrips beim Rollen, weil die Original-App unter Vollbremsung
         // sichtbar weniger lenkt. Vorher waren es 77 und 75 % - die Wirkung war da, nur zu
         // schwach. Ein Sollwert dafuer liegt nicht vor, also ist das eine Gefuehlsangabe und
         // keine Messung; die Zahlen stehen hier, damit sie nachpruefbar sind.
         loadGain: 0.65,       // how much front load changes lateral capacity
-        brakeUseGain: 1.55,   // how much of that capacity the brake eats
+        brakeUseGain: 1.35,   // how much of that capacity the brake eats
         coastPitch: 0.15,     // engine braking pitches the nose down a little
         // Full-throttle equilibrium of loadFront. Traction is normalised to THIS state, not
         // to static 50/50, so the measured launch time stays exactly as calibrated and the
@@ -529,8 +537,24 @@
       // inspection of the measurement: braking moves load ONTO the front, so a bigger
       // load gain made wet braking steer BETTER (steerGrip 1.006 against 0.464 dry) -
       // the exact opposite of what was asked.
-      const frontCap = (1 + cfg.loadGain * (st.loadFront - 0.5) * 2) * surfSteer;
-      const frontUse = Math.max(0, -st.longUse) * cfg.brakeUseGain;
+      // GEDECKELT auf 1. Die Lastverlagerung kann Grip UMverteilen, nicht erzeugen, und
+      // die Hinterachse wird fuer die Lenkung ohnehin nicht betrachtet - ohne Deckel wurde
+      // der Reibkreis beim Bremsen GROESSER als im Normalzustand. Gemessen: steerGrip 1,25
+      // beim Anbremsen aus 120 km/h, also mehr Lenkung als rollend. Das ist die eine Haelfte
+      // der Beschwerde "erst beim Bremsen kann ich gut lenken".
+      const frontCap = Math.min(1, 1 + cfg.loadGain * (st.loadFront - 0.5) * 2) * surfSteer;
+      // Die Anforderung skaliert mit der Fahrt, und zwar aus demselben Grund wie beim
+      // Regen ein paar Zeilen weiter oben: bei 20 km/h braucht eine Vollbremsung einen
+      // Bruchteil der verfuegbaren Haftung, das Auto steht nach zwei Metern; bei 250 km/h
+      // braucht sie alles. Ohne diese Skalierung uebersteigt die Anforderung die Kapazitaet,
+      // die Wurzel wird null, und die Lenkung klebt vom halben Bremsvorgang bis zum Stand am
+      // Notboden von 0,12. Gemessen: unter 70 km/h durchgehend 0,12.
+      //
+      // Dieselben zwei Schwellen wie beim Regen: unterhalb der ersten gar keine Wirkung,
+      // ab der zweiten voll.
+      const lastFrac = Math.max(0, Math.min(1,
+        (vFrac - cfg.loadOnsetFrac) / Math.max(1e-6, cfg.loadFullFrac - cfg.loadOnsetFrac)));
+      const frontUse = Math.max(0, -st.longUse) * cfg.brakeUseGain * lastFrac;
       // The 0.12 floor is a dry-weather reserve: it stops the car ever being completely
       // helpless. In the wet there is no such reserve - once the brake has eaten the front
       // axle, the friction circle really is empty and the steering does nothing. So the

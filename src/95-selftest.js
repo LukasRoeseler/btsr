@@ -839,28 +839,49 @@
                                       : ' | alle innerhalb 20 %') };
   });
 
-  // ---- Lenkung unter Last ----
-  // Gewaehlt und nicht gemessen: die Original-App lenkt unter Vollbremsung sichtbar weniger.
-  // Geprueft wird, dass die Wirkung DA und deutlich ist, in beide Richtungen - und dass das
-  // Rollen brauchbar bleibt, damit aus "weniger" kein "gar nicht" wird.
-  stAdd('Lenkung unter Vollbremsung und Vollgas', () => {
-    if (!window.OMEGA_TEST || !OMEGA_TEST.physSteerGrip) {
-      return { skip: true, mass: 'physSteerGrip nicht vorhanden' };
+  // ---- Lenkung unter Last, ueber eine gefahrene Bremsung ----
+  //
+  // Die erste Fassung maass den DAUERZUSTAND: Vollbremsung bei festgehaltener Geschwindigkeit,
+  // vierzig Takte lang. Diesen Betriebspunkt gibt es beim Fahren nicht - wer bei 150 km/h
+  // voll bremst, ist eine Sekunde spaeter bei 100. Der statische Wert lag deshalb bei 12 %
+  // (dem Notboden), waehrend die gefahrene Kurve an derselben Stelle 38 % zeigt. Eine
+  // Pruefung, die einen unmoeglichen Betriebspunkt bewertet, misst nicht das Fahrgefuehl.
+  //
+  // Geprueft wird jetzt genau das, was gemeldet war: unter starkem Bremsen bei hoher Fahrt
+  // deutlich weniger Lenkung, bei niedriger Fahrt wieder weitgehend da, im Stand ganz da.
+  // Der letzte Punkt ist der wichtigste - "fast im Stand kann ich nicht mehr lenken" war der
+  // Fehler, und eine Pruefung ohne ihn haette ihn wieder durchgelassen.
+  stAdd('Lenkung ueber eine gefahrene Vollbremsung', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.physSteerTrace) {
+      return { skip: true, mass: 'physSteerTrace nicht vorhanden' };
     }
-    const q = (o) => OMEGA_TEST.physSteerGrip(o).steerGrip;
-    const zeilen = [];
-    let ok = true;
-    for (const v of [50, 150, 250]) {
-      const roll = q({ kmh: v });
-      const br = q({ kmh: v, brake: 1 }) / roll;
-      const ga = q({ kmh: v, throttle: 1 }) / roll;
-      zeilen.push(v + ' km/h: Bremse ' + Math.round(br * 100)
-                  + ' %, Gas ' + Math.round(ga * 100) + ' %');
-      // Deutlich, aber nicht hilflos: zwischen 35 und 65 % beim Bremsen, 45 und 75 % beim
-      // Gas, und das Rollen ueber 0,6.
-      if (!(br > 0.35 && br < 0.65 && ga > 0.45 && ga < 0.75 && roll > 0.6)) ok = false;
+    const r = OMEGA_TEST.physSteerTrace({ bisKmh: 200, brake: 1, steering: 0.6 });
+    const bei = (z) => {
+      let b = null;
+      for (const x of r.bremsspur) {
+        if (!b || Math.abs(x.kmh - z) < Math.abs(b.kmh - z)) b = x;
+      }
+      return b;
+    };
+    const roll = r.rollen.winkel;
+    const hoch = bei(140), mittel = bei(90), tief = bei(30);
+    if (!hoch || !mittel || !tief) {
+      return { skip: true, mass: 'Bremsspur zu kurz, nur '
+                                 + r.bremsspur.length + ' Punkte' };
     }
-    return { ok, mass: zeilen.join(' | ') + ' vom Rollen' };
+    const q = (x) => x.winkel / Math.max(1e-6, roll);
+    // Bei hoher Fahrt hoechstens 70 % - deutlich weniger, aber nicht null. Bei niedriger
+    // Fahrt mindestens 85 %. Und im Stand mindestens 95 %: dort darf die Bremse gar keine
+    // Rolle mehr spielen.
+    const ok = q(hoch) < 0.70 && q(hoch) > 0.10
+               && q(tief) > 0.85
+               && r.imStand / Math.max(1e-6, roll) > 0.95;
+    return { ok,
+             mass: 'rollend ' + roll.toFixed(2) + ' | ' + hoch.kmh + ' km/h '
+                   + Math.round(q(hoch) * 100) + ' %, ' + mittel.kmh + ' km/h '
+                   + Math.round(q(mittel) * 100) + ' %, ' + tief.kmh + ' km/h '
+                   + Math.round(q(tief) * 100) + ' %, Stand '
+                   + Math.round(r.imStand / roll * 100) + ' %' };
   });
 
   // ---- Wiederholte Ueberfahrt im Ausdruck-Modus ----
@@ -932,6 +953,52 @@
         sw.dispatchEvent(new Event('change', { bubbles: true }));
       }
       if (anzeige !== null) $('race-status').textContent = anzeige;
+    }
+  });
+
+  // ---- Ein Stoss erzeugt Schaden ----
+  //
+  // Diese Pruefung haette den Fehler gefunden: detectCrash war definiert und wurde nie
+  // aufgerufen. Ein Merkmal, das nichts tut, sieht von aussen genauso aus wie ein Merkmal,
+  // das nichts zu tun hat - deshalb wird hier nicht die Funktion aufgerufen, sondern der
+  // WEG durch die Paketauswertung gegangen.
+  stAdd('Ein Stoss erzeugt Schaden', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.feedNotify) {
+      return { skip: true, mass: 'feedNotify nicht vorhanden' };
+    }
+    const sw = $('setting-crash-damage');
+    const gemerkt = { sp: playerCar, dmg: damage,
+                      an: crashDetectionEnabled,
+                      a1: crashRollingAvg1, a3: crashRollingAvg3, lt: lastCrashTime };
+    try {
+      crashDetectionEnabled = true;
+      crashRollingAvg1 = null; crashRollingAvg3 = null; lastCrashTime = 0;
+      damage = 0;
+      const attrappe = { device: { id: 'st-crash', name: 'Pruefwagen' }, role: 'player',
+                         rx: null, tx: null, tileCode: 0xff, tileCount: null,
+                         lastCodeAt: 0, yaw: 0, ghost: null, timer: null, race: null };
+      playerCar = attrappe;
+      const paket = (b1, b3) => {
+        const a = new Array(19).fill(0);
+        a[1] = b1 & 0xff; a[3] = b3 & 0xff; a[14] = 0x22;
+        return a;
+      };
+      // Erst ruhig, damit der Mittelwert steht.
+      for (let i = 0; i < 12; i++) OMEGA_TEST.feedNotify(paket(4, 2), { car: attrappe });
+      const ruhig = damage;
+      // Dann ein Stoss: beide Achsen weit weg vom Mittelwert. CRASH_THRESHOLD ist 40, die
+      // Abweichung hier ist deutlich darueber, damit die Pruefung nicht am Rand haengt.
+      OMEGA_TEST.feedNotify(paket(100, 90), { car: attrappe });
+      const nachStoss = damage;
+      return { ok: ruhig === 0 && nachStoss > 0,
+               mass: 'ruhig ' + ruhig.toFixed(1) + ' %, nach einem Stoss '
+                     + nachStoss.toFixed(1) + ' % Schaden' };
+    } finally {
+      playerCar = gemerkt.sp; damage = gemerkt.dmg;
+      crashDetectionEnabled = gemerkt.an;
+      crashRollingAvg1 = gemerkt.a1; crashRollingAvg3 = gemerkt.a3;
+      lastCrashTime = gemerkt.lt;
+      updateDamageFuelUI();
     }
   });
 

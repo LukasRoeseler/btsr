@@ -4448,7 +4448,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.3.69</span></span>
+    <span class="foot-ver">v<span id="app-version">0.3.70</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
   </span>
   <span class="foot-right">
@@ -6735,13 +6735,21 @@
         // Angezeigte Entsprechung bei 295 km/h Spitze: 50 und 160 km/h.
         wetOnsetFrac: 0.17,
         wetFullFrac: 0.55,
+        // ---- Wieviel der Reibkreis ueberhaupt gefuellt wird ----
+        // Dieselbe Ueberlegung wie beim Regen, auf die Laengsanforderung angewandt: bei
+        // Schrittgeschwindigkeit ist eine Vollbremsung ein Bruchteil der verfuegbaren
+        // Haftung, bei Hoechstgeschwindigkeit ist sie alles. Ohne das leert eine Vollbremsung
+        // den Kreis bei JEDER Fahrt, und die Lenkung klebt bis zum Stand am Notboden.
+        // Angezeigte Entsprechung bei 295 km/h Spitze: 30 und 180 km/h.
+        loadOnsetFrac: 0.10,
+        loadFullFrac: 0.61,
         // 0.65 und 1.55, gewaehlt und nicht gemessen: gefittet auf Vollbremsung 50 % und
         // Vollgas 59 % des Lenkgrips beim Rollen, weil die Original-App unter Vollbremsung
         // sichtbar weniger lenkt. Vorher waren es 77 und 75 % - die Wirkung war da, nur zu
         // schwach. Ein Sollwert dafuer liegt nicht vor, also ist das eine Gefuehlsangabe und
         // keine Messung; die Zahlen stehen hier, damit sie nachpruefbar sind.
         loadGain: 0.65,       // how much front load changes lateral capacity
-        brakeUseGain: 1.55,   // how much of that capacity the brake eats
+        brakeUseGain: 1.35,   // how much of that capacity the brake eats
         coastPitch: 0.15,     // engine braking pitches the nose down a little
         // Full-throttle equilibrium of loadFront. Traction is normalised to THIS state, not
         // to static 50/50, so the measured launch time stays exactly as calibrated and the
@@ -7022,8 +7030,24 @@
       // inspection of the measurement: braking moves load ONTO the front, so a bigger
       // load gain made wet braking steer BETTER (steerGrip 1.006 against 0.464 dry) -
       // the exact opposite of what was asked.
-      const frontCap = (1 + cfg.loadGain * (st.loadFront - 0.5) * 2) * surfSteer;
-      const frontUse = Math.max(0, -st.longUse) * cfg.brakeUseGain;
+      // GEDECKELT auf 1. Die Lastverlagerung kann Grip UMverteilen, nicht erzeugen, und
+      // die Hinterachse wird fuer die Lenkung ohnehin nicht betrachtet - ohne Deckel wurde
+      // der Reibkreis beim Bremsen GROESSER als im Normalzustand. Gemessen: steerGrip 1,25
+      // beim Anbremsen aus 120 km/h, also mehr Lenkung als rollend. Das ist die eine Haelfte
+      // der Beschwerde "erst beim Bremsen kann ich gut lenken".
+      const frontCap = Math.min(1, 1 + cfg.loadGain * (st.loadFront - 0.5) * 2) * surfSteer;
+      // Die Anforderung skaliert mit der Fahrt, und zwar aus demselben Grund wie beim
+      // Regen ein paar Zeilen weiter oben: bei 20 km/h braucht eine Vollbremsung einen
+      // Bruchteil der verfuegbaren Haftung, das Auto steht nach zwei Metern; bei 250 km/h
+      // braucht sie alles. Ohne diese Skalierung uebersteigt die Anforderung die Kapazitaet,
+      // die Wurzel wird null, und die Lenkung klebt vom halben Bremsvorgang bis zum Stand am
+      // Notboden von 0,12. Gemessen: unter 70 km/h durchgehend 0,12.
+      //
+      // Dieselben zwei Schwellen wie beim Regen: unterhalb der ersten gar keine Wirkung,
+      // ab der zweiten voll.
+      const lastFrac = Math.max(0, Math.min(1,
+        (vFrac - cfg.loadOnsetFrac) / Math.max(1e-6, cfg.loadFullFrac - cfg.loadOnsetFrac)));
+      const frontUse = Math.max(0, -st.longUse) * cfg.brakeUseGain * lastFrac;
       // The 0.12 floor is a dry-weather reserve: it stops the car ever being completely
       // helpless. In the wet there is no such reserve - once the brake has eaten the front
       // axle, the friction circle really is empty and the steering does nothing. So the
@@ -11136,6 +11160,13 @@
 
     // Bytes 1 and 3 fluctuate only once the car moves and byte 3 flipped sign with turn
     // direction in one capture — hence "motion-ish". Unconfirmed.
+    //
+    // Und hier gehoert die Crasherkennung hin: sie braucht genau diese zwei Bytes. Der
+    // Aufruf hat GEFEHLT - detectCrash war definiert, die Schwelle war definiert, der
+    // Schalter war da, und niemand rief sie auf. Gemeldet als "Schaden ist angeschaltet,
+    // aber wenn ich am Auto ruettele passiert nichts". Toter Code, der wie ein Merkmal
+    // aussieht, ist schlimmer als ein fehlendes Merkmal.
+    detectCrash(bytes);
     const g1 = s8signed(bytes[1]), g3 = s8signed(bytes[3]);
     gyroRaw.x += (g3 - gyroRaw.x) * 0.35;
     gyroRaw.y += (g1 - gyroRaw.y) * 0.35;
@@ -11628,7 +11659,6 @@
   let fuel = 100;
   let damage = 0;
   let crashRollingAvg1 = null, crashRollingAvg3 = null;
-  let crashIndicatorTimer = null;
   let lastCrashTime = 0;
   let fuelLastTickTime = null;
   // Which end took the hit, and whether that end's lights still work. The protocol has
@@ -11706,11 +11736,17 @@
     updateDamageFuelUI();
     if (!playCrashFx()) playCrashSound(); // sample variants first, synth burst as fallback
     padRumble(0.6, 0.4, 220); // medium, per user spec
-    const ind = $('crash-indicator');
-    if (ind) ind.style.display = 'inline';
-    clearTimeout(crashIndicatorTimer);
-    crashIndicatorTimer = setTimeout(() => { ind.style.display = 'none'; }, 1500);
-    log(`Crash erkannt (experimentell), Schaden +${Math.round(100 / crashesToTotal)}%.`, 'err');
+    // Hier stand ein Crash-Indikator, dessen Element es nicht mehr gibt: #crash-indicator
+    // kam im gebauten Dokument genau einmal vor, naemlich hier. Die Stelle prueft zwar mit
+    // if (ind), griff im Zeitgeber danach aber UNGESCHUETZT auf ind.style zu - der Fehler kam
+    // also 1,5 Sekunden spaeter und nur bei einem erkannten Crash. Und weil detectCrash nie
+    // aufgerufen wurde, konnte er nie auftreten: ein toter Aufruf hat einen anderen toten
+    // Code versteckt.
+    //
+    // Rueckmeldung gibt es genug - Schadensbalken, Geraeusch, Rumble, Protokoll -, nur nicht
+    // auf dem Rennschirm. Also dort eine Meldung.
+    showHudToast('CRASH · SCHADEN ' + Math.round(damage) + ' %');
+    log(`Crash erkannt, Schaden +${Math.round(100 / crashesToTotal)}%.`, 'err');
   }
 
   // PLACEHOLDER: the real BLE command for the car's headlights/brake light is still
@@ -15135,6 +15171,69 @@
         st.longUse = merk.lu; st.dampedSteering = merk.ds;
       }
     },
+    // Der uebertragene Lenkwinkel ueber eine echte Fahrt: beschleunigen, dann bremsen, bei
+    // konstanter Lenkvorgabe. servoAngle ist das, was am Auto ankommt, und es haengt an
+    // dampedSteering, aquaFactor und steerGrip zugleich - einzeln gelesen sagt keins davon,
+    // was der Fahrer spuert.
+    physSteerTrace(o) {
+      const opt = o || {};
+      const e = physEngine, st = e.state, cfg = e.config;
+      const lenk = opt.steering === undefined ? 0.6 : opt.steering;
+      const bis = opt.bisKmh || 120;
+      const bremse = opt.brake === undefined ? 1 : opt.brake;
+      const merkState = Object.assign({}, st);
+      const merk = { as: cfg.autoShift, te: cfg.tyreEffect, gs: cfg.gripScale };
+      const dt = 0.02;
+      try {
+        cfg.autoShift = true; cfg.tyreEffect = 0; cfg.gripScale = 1;
+        st.driveMode = 'neutral'; st.currentGear = 0; st.speedKmh = 0;
+        st.isShifting = false; st.neutralRpm = 0; st.fuelLoad = 1;
+        st.loadFront = 0.5; st.longUse = 0; st.dampedSteering = 0;
+        const takt = (inp) => {
+          if (st.isShifting) {
+            st._simShift = (st._simShift || 0) + dt;
+            if (st._simShift * 1000 >= cfg.shiftMs) { st.isShifting = false; st._simShift = 0; }
+          }
+          return e.update(inp, dt);
+        };
+        // Beschleunigen bis zur Marke, Lenkung schon anliegend.
+        let n = 0;
+        while (st.speedKmh * REAL_SCALE < bis && n < 2000) {
+          takt({ throttle: 1, brake: 0, steering: lenk }); n++;
+        }
+        const rollen = [];
+        // Kurz ausrollen lassen, damit der Bezugswert ohne Bremse dasteht.
+        for (let i = 0; i < 25; i++) {
+          const out = takt({ throttle: 0, brake: 0, steering: lenk });
+          rollen.push({ kmh: Math.round(st.speedKmh * REAL_SCALE),
+                        winkel: +out.servoAngle.toFixed(3) });
+        }
+        // Und jetzt bremsen bis zum Stand.
+        const spur = [];
+        n = 0;
+        while (st.speedKmh * REAL_SCALE > 0.5 && n < 2000) {
+          const out = takt({ throttle: 0, brake: bremse, steering: lenk });
+          spur.push({ kmh: +(st.speedKmh * REAL_SCALE).toFixed(1),
+                      winkel: +out.servoAngle.toFixed(3),
+                      grip: +st.steerGrip.toFixed(3),
+                      grenze: +st.dampedSteering.toFixed(3) });
+          n++;
+        }
+        // Und im Stand weiter lenken, ohne Bremse.
+        const stand = [];
+        for (let i = 0; i < 40; i++) {
+          const out = takt({ throttle: 0, brake: 0, steering: lenk });
+          stand.push(+out.servoAngle.toFixed(3));
+        }
+        return { rollen: rollen[rollen.length - 1], bremsspur: spur,
+                 imStand: stand[stand.length - 1] };
+      } finally {
+        cfg.autoShift = merk.as; cfg.tyreEffect = merk.te; cfg.gripScale = merk.gs;
+        delete st._simShift;
+        for (const k of Object.keys(st)) if (!(k in merkState)) delete st[k];
+        Object.assign(st, merkState);
+      }
+    },
     // Werte setzen, neu kalibrieren, messen. Der Kern jeder Kalibrierung: jede Aenderung
     // an einem Wert verschiebt ALLE Marken, also braucht man die ganze Kurve nach jeder
     // Aenderung, und das muss in einem Aufruf gehen, damit eine Suche mechanisch laufen kann.
@@ -17719,28 +17818,49 @@
                                       : ' | alle innerhalb 20 %') };
   });
 
-  // ---- Lenkung unter Last ----
-  // Gewaehlt und nicht gemessen: die Original-App lenkt unter Vollbremsung sichtbar weniger.
-  // Geprueft wird, dass die Wirkung DA und deutlich ist, in beide Richtungen - und dass das
-  // Rollen brauchbar bleibt, damit aus "weniger" kein "gar nicht" wird.
-  stAdd('Lenkung unter Vollbremsung und Vollgas', () => {
-    if (!window.OMEGA_TEST || !OMEGA_TEST.physSteerGrip) {
-      return { skip: true, mass: 'physSteerGrip nicht vorhanden' };
+  // ---- Lenkung unter Last, ueber eine gefahrene Bremsung ----
+  //
+  // Die erste Fassung maass den DAUERZUSTAND: Vollbremsung bei festgehaltener Geschwindigkeit,
+  // vierzig Takte lang. Diesen Betriebspunkt gibt es beim Fahren nicht - wer bei 150 km/h
+  // voll bremst, ist eine Sekunde spaeter bei 100. Der statische Wert lag deshalb bei 12 %
+  // (dem Notboden), waehrend die gefahrene Kurve an derselben Stelle 38 % zeigt. Eine
+  // Pruefung, die einen unmoeglichen Betriebspunkt bewertet, misst nicht das Fahrgefuehl.
+  //
+  // Geprueft wird jetzt genau das, was gemeldet war: unter starkem Bremsen bei hoher Fahrt
+  // deutlich weniger Lenkung, bei niedriger Fahrt wieder weitgehend da, im Stand ganz da.
+  // Der letzte Punkt ist der wichtigste - "fast im Stand kann ich nicht mehr lenken" war der
+  // Fehler, und eine Pruefung ohne ihn haette ihn wieder durchgelassen.
+  stAdd('Lenkung ueber eine gefahrene Vollbremsung', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.physSteerTrace) {
+      return { skip: true, mass: 'physSteerTrace nicht vorhanden' };
     }
-    const q = (o) => OMEGA_TEST.physSteerGrip(o).steerGrip;
-    const zeilen = [];
-    let ok = true;
-    for (const v of [50, 150, 250]) {
-      const roll = q({ kmh: v });
-      const br = q({ kmh: v, brake: 1 }) / roll;
-      const ga = q({ kmh: v, throttle: 1 }) / roll;
-      zeilen.push(v + ' km/h: Bremse ' + Math.round(br * 100)
-                  + ' %, Gas ' + Math.round(ga * 100) + ' %');
-      // Deutlich, aber nicht hilflos: zwischen 35 und 65 % beim Bremsen, 45 und 75 % beim
-      // Gas, und das Rollen ueber 0,6.
-      if (!(br > 0.35 && br < 0.65 && ga > 0.45 && ga < 0.75 && roll > 0.6)) ok = false;
+    const r = OMEGA_TEST.physSteerTrace({ bisKmh: 200, brake: 1, steering: 0.6 });
+    const bei = (z) => {
+      let b = null;
+      for (const x of r.bremsspur) {
+        if (!b || Math.abs(x.kmh - z) < Math.abs(b.kmh - z)) b = x;
+      }
+      return b;
+    };
+    const roll = r.rollen.winkel;
+    const hoch = bei(140), mittel = bei(90), tief = bei(30);
+    if (!hoch || !mittel || !tief) {
+      return { skip: true, mass: 'Bremsspur zu kurz, nur '
+                                 + r.bremsspur.length + ' Punkte' };
     }
-    return { ok, mass: zeilen.join(' | ') + ' vom Rollen' };
+    const q = (x) => x.winkel / Math.max(1e-6, roll);
+    // Bei hoher Fahrt hoechstens 70 % - deutlich weniger, aber nicht null. Bei niedriger
+    // Fahrt mindestens 85 %. Und im Stand mindestens 95 %: dort darf die Bremse gar keine
+    // Rolle mehr spielen.
+    const ok = q(hoch) < 0.70 && q(hoch) > 0.10
+               && q(tief) > 0.85
+               && r.imStand / Math.max(1e-6, roll) > 0.95;
+    return { ok,
+             mass: 'rollend ' + roll.toFixed(2) + ' | ' + hoch.kmh + ' km/h '
+                   + Math.round(q(hoch) * 100) + ' %, ' + mittel.kmh + ' km/h '
+                   + Math.round(q(mittel) * 100) + ' %, ' + tief.kmh + ' km/h '
+                   + Math.round(q(tief) * 100) + ' %, Stand '
+                   + Math.round(r.imStand / roll * 100) + ' %' };
   });
 
   // ---- Wiederholte Ueberfahrt im Ausdruck-Modus ----
@@ -17812,6 +17932,52 @@
         sw.dispatchEvent(new Event('change', { bubbles: true }));
       }
       if (anzeige !== null) $('race-status').textContent = anzeige;
+    }
+  });
+
+  // ---- Ein Stoss erzeugt Schaden ----
+  //
+  // Diese Pruefung haette den Fehler gefunden: detectCrash war definiert und wurde nie
+  // aufgerufen. Ein Merkmal, das nichts tut, sieht von aussen genauso aus wie ein Merkmal,
+  // das nichts zu tun hat - deshalb wird hier nicht die Funktion aufgerufen, sondern der
+  // WEG durch die Paketauswertung gegangen.
+  stAdd('Ein Stoss erzeugt Schaden', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.feedNotify) {
+      return { skip: true, mass: 'feedNotify nicht vorhanden' };
+    }
+    const sw = $('setting-crash-damage');
+    const gemerkt = { sp: playerCar, dmg: damage,
+                      an: crashDetectionEnabled,
+                      a1: crashRollingAvg1, a3: crashRollingAvg3, lt: lastCrashTime };
+    try {
+      crashDetectionEnabled = true;
+      crashRollingAvg1 = null; crashRollingAvg3 = null; lastCrashTime = 0;
+      damage = 0;
+      const attrappe = { device: { id: 'st-crash', name: 'Pruefwagen' }, role: 'player',
+                         rx: null, tx: null, tileCode: 0xff, tileCount: null,
+                         lastCodeAt: 0, yaw: 0, ghost: null, timer: null, race: null };
+      playerCar = attrappe;
+      const paket = (b1, b3) => {
+        const a = new Array(19).fill(0);
+        a[1] = b1 & 0xff; a[3] = b3 & 0xff; a[14] = 0x22;
+        return a;
+      };
+      // Erst ruhig, damit der Mittelwert steht.
+      for (let i = 0; i < 12; i++) OMEGA_TEST.feedNotify(paket(4, 2), { car: attrappe });
+      const ruhig = damage;
+      // Dann ein Stoss: beide Achsen weit weg vom Mittelwert. CRASH_THRESHOLD ist 40, die
+      // Abweichung hier ist deutlich darueber, damit die Pruefung nicht am Rand haengt.
+      OMEGA_TEST.feedNotify(paket(100, 90), { car: attrappe });
+      const nachStoss = damage;
+      return { ok: ruhig === 0 && nachStoss > 0,
+               mass: 'ruhig ' + ruhig.toFixed(1) + ' %, nach einem Stoss '
+                     + nachStoss.toFixed(1) + ' % Schaden' };
+    } finally {
+      playerCar = gemerkt.sp; damage = gemerkt.dmg;
+      crashDetectionEnabled = gemerkt.an;
+      crashRollingAvg1 = gemerkt.a1; crashRollingAvg3 = gemerkt.a3;
+      lastCrashTime = gemerkt.lt;
+      updateDamageFuelUI();
     }
   });
 

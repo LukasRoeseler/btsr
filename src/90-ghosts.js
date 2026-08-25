@@ -2049,6 +2049,69 @@
         st.longUse = merk.lu; st.dampedSteering = merk.ds;
       }
     },
+    // Der uebertragene Lenkwinkel ueber eine echte Fahrt: beschleunigen, dann bremsen, bei
+    // konstanter Lenkvorgabe. servoAngle ist das, was am Auto ankommt, und es haengt an
+    // dampedSteering, aquaFactor und steerGrip zugleich - einzeln gelesen sagt keins davon,
+    // was der Fahrer spuert.
+    physSteerTrace(o) {
+      const opt = o || {};
+      const e = physEngine, st = e.state, cfg = e.config;
+      const lenk = opt.steering === undefined ? 0.6 : opt.steering;
+      const bis = opt.bisKmh || 120;
+      const bremse = opt.brake === undefined ? 1 : opt.brake;
+      const merkState = Object.assign({}, st);
+      const merk = { as: cfg.autoShift, te: cfg.tyreEffect, gs: cfg.gripScale };
+      const dt = 0.02;
+      try {
+        cfg.autoShift = true; cfg.tyreEffect = 0; cfg.gripScale = 1;
+        st.driveMode = 'neutral'; st.currentGear = 0; st.speedKmh = 0;
+        st.isShifting = false; st.neutralRpm = 0; st.fuelLoad = 1;
+        st.loadFront = 0.5; st.longUse = 0; st.dampedSteering = 0;
+        const takt = (inp) => {
+          if (st.isShifting) {
+            st._simShift = (st._simShift || 0) + dt;
+            if (st._simShift * 1000 >= cfg.shiftMs) { st.isShifting = false; st._simShift = 0; }
+          }
+          return e.update(inp, dt);
+        };
+        // Beschleunigen bis zur Marke, Lenkung schon anliegend.
+        let n = 0;
+        while (st.speedKmh * REAL_SCALE < bis && n < 2000) {
+          takt({ throttle: 1, brake: 0, steering: lenk }); n++;
+        }
+        const rollen = [];
+        // Kurz ausrollen lassen, damit der Bezugswert ohne Bremse dasteht.
+        for (let i = 0; i < 25; i++) {
+          const out = takt({ throttle: 0, brake: 0, steering: lenk });
+          rollen.push({ kmh: Math.round(st.speedKmh * REAL_SCALE),
+                        winkel: +out.servoAngle.toFixed(3) });
+        }
+        // Und jetzt bremsen bis zum Stand.
+        const spur = [];
+        n = 0;
+        while (st.speedKmh * REAL_SCALE > 0.5 && n < 2000) {
+          const out = takt({ throttle: 0, brake: bremse, steering: lenk });
+          spur.push({ kmh: +(st.speedKmh * REAL_SCALE).toFixed(1),
+                      winkel: +out.servoAngle.toFixed(3),
+                      grip: +st.steerGrip.toFixed(3),
+                      grenze: +st.dampedSteering.toFixed(3) });
+          n++;
+        }
+        // Und im Stand weiter lenken, ohne Bremse.
+        const stand = [];
+        for (let i = 0; i < 40; i++) {
+          const out = takt({ throttle: 0, brake: 0, steering: lenk });
+          stand.push(+out.servoAngle.toFixed(3));
+        }
+        return { rollen: rollen[rollen.length - 1], bremsspur: spur,
+                 imStand: stand[stand.length - 1] };
+      } finally {
+        cfg.autoShift = merk.as; cfg.tyreEffect = merk.te; cfg.gripScale = merk.gs;
+        delete st._simShift;
+        for (const k of Object.keys(st)) if (!(k in merkState)) delete st[k];
+        Object.assign(st, merkState);
+      }
+    },
     // Werte setzen, neu kalibrieren, messen. Der Kern jeder Kalibrierung: jede Aenderung
     // an einem Wert verschiebt ALLE Marken, also braucht man die ganze Kurve nach jeder
     // Aenderung, und das muss in einem Aufruf gehen, damit eine Suche mechanisch laufen kann.
