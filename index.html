@@ -547,6 +547,13 @@
     color: #1e2634; display: block; margin: 0 auto; }
   .gt3-lamp.on { color: #2ee06a; filter: drop-shadow(0 0 5px rgba(46,224,106,.75)); }
   .gt3-ico { width: clamp(13px, 2.1vw, 19px); height: auto; color: #9fb0cc; flex: none; }
+  /* Die Wetterkachel traegt seit dem Entfernen der Textbeschriftung nur noch das Symbol,
+     also bekommt es die Kachel fuer sich: mittig und deutlich groesser als ein Symbol, das
+     sich eine Zeile mit einem Wort teilt. Dieselbe Ueberlegung wie bei der Fernlicht-Anzeige
+     eine Kachel weiter links. */
+  .gt3-wx { display: grid; place-items: center; }
+  .gt3-wx .gt3-tell { justify-content: center; width: 100%; }
+  .gt3-wx .gt3-ico { width: clamp(24px, 4.4vw, 44px); }
   .gt3-gplot svg { width: 100%; max-width: clamp(44px, 7vw, 72px); height: auto;
     display: block; margin: 0 auto; }
   .gt3-tyre { display: flex; align-items: center; gap: 5px; }
@@ -1471,7 +1478,7 @@
           <div class="gt3-val sm" id="race-batt">&ndash;</div></div>
         <div class="gt3-box gt3-click" id="race-light-box" title="Licht an/aus" style="display:flex;align-items:center;justify-content:center">
           <div class="gt3-tell" style="width:100%"><svg class="gt3-lamp" id="race-light" viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" aria-label="Scheinwerfer"><path d="M 107 43 C 145 43 182 68 182 100 C 182 132 145 157 107 157 Z"/><path d="M28 71 89 52M28 96 89 77M28 121 89 102M28 146 89 127M28 171 89 152"/></svg></div></div>
-        <div class="gt3-box gt3-click" id="race-wx-box" title="Wetter umschalten">
+        <div class="gt3-box gt3-click gt3-wx" id="race-wx-box" title="Wetter umschalten">
           <div class="gt3-tell"><svg class="gt3-ico" id="race-wx-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-label="Trocken"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.4M12 19.6V22M2 12h2.4M19.6 12H22M4.9 4.9l1.7 1.7M17.4 17.4l1.7 1.7M19.1 4.9l-1.7 1.7M6.6 17.4l-1.7 1.7"/></svg><svg class="gt3-ico" id="race-wx-rain" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-label="Regen" style="display:none"><path d="M6.5 14a4 4 0 0 1 .4-8 5.5 5.5 0 0 1 10.5 1.4A3.6 3.6 0 0 1 17.5 14z"/><path d="M8 17.5l-1 2.5M12 17.5l-1 2.5M16 17.5l-1 2.5"/></svg></div></div>
         <div class="gt3-box"><div class="gt3-lbl">Gas / Lenkung</div>
           <div class="gt3-val sm"><span id="race-trim-accel">100%</span>
@@ -4000,7 +4007,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.3.55</span></span>
+    <span class="foot-ver">v<span id="app-version">0.3.56</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
   </span>
   <span class="foot-right">
@@ -4772,6 +4779,7 @@
     "Welchen Code meldet dieses Teil?": "Which code does this part report?",
     "Wenn hier nur": "If all you see here is",
     "Wetter umschalten (Regen / trocken)": "Toggle the weather (rain / dry)",
+    "Wetter umschalten": "Toggle the weather",
     "Wetter zu Beginn": "Weather at the start",
     "Wetter ändert sich": "Weather changes",
     "Wetter, Reifentemperatur, ABS": "Weather, tyre temperature, ABS",
@@ -7077,6 +7085,12 @@
           + ' \u00b7 REP +' + Math.round(pitDamageRepaired) + '%';
     }
 
+    if (raceState === 'finished' && racePartialMs !== null) {
+      // Nach dem Ende steht hier die abgebrochene Runde, mit Klammer als Zeichen dafuer,
+      // dass sie nicht zaehlt.
+      $('race-lap-now').textContent = '(' + formatLapTime(racePartialMs) + ')';
+      return;
+    }
     $('race-lap-now').textContent = raceLapStart !== null
       ? formatLapTime(Date.now() - raceLapStart)
       : (dashLapStart !== null ? formatLapTime(Date.now() - dashLapStart) : '\u2013');
@@ -8916,6 +8930,10 @@
   // is no separate detector in the app; dashboardNotifyHandler below just also feeds it
   // into the race state machine while a race is active. ----
   let raceState = 'idle'; // idle | countdown | racing | finishing | finished
+  // Die angefangene, nicht vollendete Runde beim Beenden. Sie zaehlt nicht als Runde - sonst
+  // waere eine halbe Runde plotzlich eine schnelle - wird aber gezeigt, weil sonst unklar
+  // bleibt, wo das Rennen aufgehoert hat.
+  let racePartialMs = null;
   let raceLapStart = null;
   let raceLapTimes = []; // [{lap, ms}], oldest first; rendered newest-first
   let raceCountdownTimer = null;
@@ -9434,6 +9452,7 @@
     garage.forEach(c => { c.race = { laps: [], lapStart: null, pending: null, seen: 0,
                                      lastActed: 0, lastCount: null }; });
     raceLapTimes = [];
+    racePartialMs = null;
     // Same moment as the lap times: on/off-track is a statistic about THIS race, and
     // carrying a previous session's minutes into it would make the share meaningless.
     trackTimeReset();
@@ -9529,6 +9548,15 @@
 
   function finishRace() {
     raceState = 'finished';
+    // Die laufende Runde festhalten und die Uhr anhalten. Ohne das Nullsetzen von
+    // raceLapStart rechnet die Anzeige weiter gegen Date.now() und die Runde waechst nach
+    // dem Ende einfach weiter.
+    const now = Date.now();
+    racePartialMs = raceLapStart !== null ? now - raceLapStart
+                  : (dashLapStart !== null ? now - dashLapStart : null);
+    raceLapStart = null;
+    dashLapStart = null;
+    garage.forEach(c => { if (c.race) c.race.lapStart = null; });
     // Whatever happened, the formation lap is over and its speed limit goes with it.
     if (raceFormationLap) {
       raceFormationLap = false;
@@ -9541,6 +9569,8 @@
     const missed = Math.max(0, racePitRequired - racePitDone);
     $('race-status').textContent =
       `Beendet (${raceLapTimes.length} Runde${raceLapTimes.length === 1 ? '' : 'n'})`
+      + (racePartialMs !== null
+         ? `, letzte Runde unvollendet nach ${formatLapTime(racePartialMs)}` : '')
       + (missed > 0 ? `, ${missed} Pflichtstopp${missed === 1 ? '' : 's'} verpasst, `
                       + `+${missed * racePitPenaltyS} s Strafe` : '');
     $('race-start-btn').disabled = false;
@@ -9564,10 +9594,16 @@
     const label = (RACE_MODES[raceMode] && RACE_MODES[raceMode].label) || 'Rennen';
     $('sum-title').textContent = label + ' beendet';
     const missed = Math.max(0, racePitRequired - racePitDone);
-    $('sum-sub').textContent = missed > 0
-      ? missed + ' Pflichtstopp' + (missed === 1 ? '' : 's') + ' verpasst, +'
-        + (missed * racePitPenaltyS) + ' s Strafe'
-      : '';
+    const teile = [];
+    if (racePartialMs !== null) {
+      teile.push('letzte Runde unvollendet nach ' + formatLapTime(racePartialMs)
+                 + ', z\u00e4hlt nicht');
+    }
+    if (missed > 0) {
+      teile.push(missed + ' Pflichtstopp' + (missed === 1 ? '' : 's') + ' verpasst, +'
+                 + (missed * racePitPenaltyS) + ' s Strafe');
+    }
+    $('sum-sub').textContent = teile.join(' \u00b7 ');
 
     if (!cars.length) {
       $('sum-body').innerHTML = '<p class="muted" style="margin-top:12px">Keine Runden '
