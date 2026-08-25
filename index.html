@@ -412,7 +412,7 @@
   /* ---- Racing screen, styled after real GT3 wheel dashes ----
      The defining element of those displays is the CAPTIONED BOX: a thin-bordered cell with
      a small uppercase caption and a monospace value under it. Everything is a box, which is
-     what makes such a dash readable at a glance in peripheral vision — the eye finds the
+     what makes such a dash readable at a glance in peripheral vision, the eye finds the
      cell by position, not by reading. Round shift LEDs across the top, one huge gear digit
      in the middle, and a full-width banner at the bottom for states the driver must not
      miss.
@@ -500,7 +500,7 @@
   #hud-toast-wrap:empty, #hud-toast:empty { padding: 0; }
   .gt3-ok { color: #46d17f; } .gt3-warn { color: #ffb02e; } .gt3-bad { color: #ff5252; }
   /* ABS as letters under the speed, not a number in a side box: grey means available-
-     but-idle, red means it is intervening right now — a glance, not a reading. */
+     but-idle, red means it is intervening right now: a glance, not a reading. */
   .gt3-abs { font-family: monospace; font-weight: 800; letter-spacing: .14em;
     text-align: center; font-size: clamp(10px, 1.6vw, 15px); color: var(--border-strong);
     margin-top: 2px; transition: color .1s; }
@@ -519,7 +519,7 @@
   .gt3-tyre { display: flex; align-items: center; gap: 5px; }
   .gt3-tyre svg { width: clamp(18px, 2.7vw, 26px); height: auto; flex: none; }
 
-  /* Full-width banner. Amber, wide, unmissable — the pit limiter is the one state where
+  /* Full-width banner. Amber, wide, unmissable: the pit limiter is the one state where
      not noticing costs a penalty. */
   /* Touch controls on the dash. Big enough for a thumb, and they sit in the columns
      rather than floating, so nothing covers a reading. */
@@ -608,7 +608,7 @@
   /* min-height:0 matters: on a touch device the generic `label { min-height: 44px }`
      rule below (meant for tap targets) would otherwise stretch this 25px-tall switch to
      44px while its width stays 46px, and a near-square box with the fully-rounded
-     border-radius on .tgl span below renders as a round blob instead of a pill — every
+     border-radius on .tgl span below renders as a round blob instead of a pill, every
      toggle in the Options tab is a <label class="tgl">, so this hit all of them on a
      phone. min-height and height are separate properties; the browser always honours the
      larger min-height regardless of which rule is more specific, so only re-declaring
@@ -710,7 +710,7 @@
     background-position: 19px 0;
     animation: race-rain-c 1.15s linear infinite; }
   /* A drop's rotation now DRIFTS a couple of degrees across the fall instead of holding
-     one fixed angle for the whole loop — three sheets at three constant angles still means
+     one fixed angle for the whole loop, three sheets at three constant angles still means
      every drop within a sheet is perfectly parallel to every other drop in it at any given
      instant (CSS radial-gradient ellipses cannot be rotated individually, only the whole
      layer can), so the previous version was orderly in a way real rain never is. Wobbling
@@ -759,7 +759,7 @@
 
   /* ---- Track editor: fullscreen and the symbol palette ----
      In fullscreen the map takes the whole screen and the palette sits UNDER it, small, so
-     both are visible at once — the point of the mode is to build while seeing the result.
+     both are visible at once: the point of the mode is to build while seeing the result.
      Deliberately NOT reusing the racing screen's .race-fs rules: that one rotates the dash
      on a portrait phone, which would rotate the palette out from under the map. */
   #track-fs-host { position: relative; }
@@ -1104,7 +1104,7 @@
   /* Fullscreen was silently defeated: the element carried an inline style="position:relative",
      and an inline style always outranks any selector here regardless of specificity, so the
      rule below never actually applied and the racing screen just sat inside <main> at its
-     normal in-flow size — padding, max-width, the tab bar and a scrollbar all still visible.
+     normal in-flow size, padding, max-width, the tab bar and a scrollbar all still visible.
      The base rule now lives here instead, so the cascade decides normally. */
   body.race-fs #race-dash { position: fixed; inset: 0; z-index: 200; border-radius: 0;
     display: grid; align-content: center; }
@@ -1218,22 +1218,22 @@
         <button type="button" id="help-close">Schlie&szlig;en</button>
       </div>
 
-      <div class="opt-head" style="margin-top:16px">Tastatur &mdash; Fahren</div>
+      <div class="opt-head" style="margin-top:16px">Tastatur, Fahren</div>
       <div class="help-grid">
         <kbd>&uarr;</kbd><span>Gas</span>
         <kbd>&darr;</kbd><span>Bremse</span>
         <kbd>&larr;</kbd> <span>lenken links</span>
         <kbd>&rarr;</kbd><span>lenken rechts</span>
-        <kbd>Leertaste</kbd><span>Not-Halt &mdash; alle Eingaben los, Momentum auf null</span>
+        <kbd>Leertaste</kbd><span>Not-Halt, alle Eingaben los, Momentum auf null</span>
         <kbd>I</kbd><span>hochschalten</span>
         <kbd>K</kbd><span>runterschalten (aus dem 1. Gang in N, aus N in R)</span>
         <kbd>L</kbd><span>Lichthupe</span>
       </div>
 
-      <div class="opt-head">Tastatur &mdash; Test und Fehlersuche am PC</div>
+      <div class="opt-head">Tastatur: Test und Fehlersuche am PC</div>
       <div class="help-grid">
         <kbd>W</kbd><span>Wetter umschalten (Regen / trocken)</span>
-        <kbd>P</kbd><span>Boxenstopp &mdash; erneut zweimal kurz dr&uuml;cken bricht ab</span>
+        <kbd>P</kbd><span>Boxenstopp, erneut zweimal kurz dr&uuml;cken bricht ab</span>
         <kbd>C</kbd><span>Crash ausl&ouml;sen: Schaden, Ger&auml;usch und Rumble wie im Betrieb</span>
         <kbd>F</kbd><span>Tank auf 5&nbsp;% setzen, um den Notlauf zu pr&uuml;fen</span>
         <kbd>R</kbd><span>Tank und Zustand zur&uuml;cksetzen</span>
@@ -1241,7 +1241,7 @@
           <span id="help-yellow-kmh">80</span>&nbsp;km/h mittig weiter, kein
           &Uuml;berholen, Lichter blinken. Nochmal <kbd>X</kbd> startet die Ampel und gibt
           wieder frei</span>
-        <kbd>Q</kbd><span>Runde z&auml;hlen, ohne sie zu fahren &mdash; zum Pr&uuml;fen von
+        <kbd>Q</kbd><span>Runde z&auml;hlen, ohne sie zu fahren: zum Pr&uuml;fen von
           Rundenzeiten und Ergebnistabelle. <kbd>Shift</kbd>+<kbd>Q</kbd>: f&uuml;r jedes
           Auto im Rennen</span>
         <kbd>M</kbd><span>Aufnahme: n&auml;chsten Abschnitt markieren</span>
@@ -1252,7 +1252,7 @@
       <div class="help-grid" id="help-pad"></div>
 
       <p class="muted" style="font-size:12px">
-        Die Controller-Belegung ist frei zuweisbar &mdash; Optionen &rarr; Controller. Hier steht,
+        Die Controller-Belegung ist frei zuweisbar, Optionen &rarr; Controller. Hier steht,
         was gerade eingestellt ist.
       </p>
     </div>
@@ -1456,7 +1456,7 @@
             <circle cx="43" cy="16" r="2.6" fill="currentColor" stroke="none"/>
           </svg>
           <b>Programmierschule</b>
-          <span>Kurven ziehen statt Code schreiben &mdash; und sofort sehen, was das Auto
+          <span>Kurven ziehen statt Code schreiben, und sofort sehen, was das Auto
             daraus macht.</span>
         </button>
         <button class="misc-tile goto-tab" data-tab="doc">
@@ -1467,7 +1467,7 @@
             <path d="M16 22h16M16 28h16M16 34h10" stroke="var(--bad)"/>
           </svg>
           <b>Doku</b>
-          <span>Protokoll, Streckencodes, Physik, T&ouml;ne &mdash; alles, was gemessen
+          <span>Protokoll, Streckencodes, Physik, T&ouml;ne: alles, was gemessen
             wurde, mit Herkunft.</span>
         </button>
         <button class="misc-tile goto-tab" data-tab="dev">
@@ -1478,7 +1478,7 @@
             <path d="M19 13V7M29 13V7M19 41v-6M29 41v-6M13 19H7M13 29H7M41 19h-6M41 29h-6"/>
           </svg>
           <b>Entwickler</b>
-          <span>BLE-Explorer, Kalibrierung, Makros &mdash; die Werkbank unter der
+          <span>BLE-Explorer, Kalibrierung, Makros: die Werkbank unter der
             Oberfl&auml;che.</span>
         </button>
       </div>
@@ -1492,14 +1492,14 @@
       <p class="muted">
         Zieh die Punkte in den beiden Kurven nach oben oder unten. Links legst du fest,
         wie stark das Auto &uuml;ber die Zeit Gas gibt oder bremst, rechts wie es lenkt.
-        Dann <b>Simulation fahren</b> &mdash; und darunter siehst du, was das Auto daraus
+        Dann <b>Simulation fahren</b>: und darunter siehst du, was das Auto daraus
         macht.
       </p>
       <p class="muted">
         Das ist der ganze Trick: eine <em>eckige</em> Vorgabe f&uuml;hrt nicht zu einer
         eckigen Bewegung. Das Auto hat Masse, die Reifen brauchen Zeit, die Lenkung hat
         eine H&ouml;chstgeschwindigkeit. Wer das einmal gesehen hat, versteht, warum
-        geschmeidige Vorgaben besser fahren &mdash; und das gilt f&uuml;r Programme
+        geschmeidige Vorgaben besser fahren: und das gilt f&uuml;r Programme
         genauso wie f&uuml;r Daumen.
       </p>
       <div class="row" style="gap:8px; flex-wrap:wrap">
@@ -1533,7 +1533,7 @@
         <div id="ps-result"></div>
         <p class="ps-hint" id="ps-result-hint">
           Wird nach dem ersten Lauf gezeichnet: Geschwindigkeit und der
-          <em>tats&auml;chliche</em> Lenkeinschlag &mdash; nicht der verlangte.
+          <em>tats&auml;chliche</em> Lenkeinschlag, nicht der verlangte.
         </p>
       </div>
 
@@ -1564,7 +1564,7 @@
       <p class="muted">
         Dieselbe Idee, eine Stufe gr&ouml;&szlig;er. Ein autonomes Auto braucht keine
         Zeitkurve, sondern eine <b>Ortskurve</b>: was tue ich, wenn ich auf Kachel 3 bin?
-        Aus dem Rennmitschnitt der Original-App wissen wir, dass genau das reicht &mdash;
+        Aus dem Rennmitschnitt der Original-App wissen wir, dass genau das reicht:
         bei einem ihrer Ghosts waren <b>85&nbsp;%</b> der Lenkvarianz allein aus
         Kachelindex und Position innerhalb der Kachel erkl&auml;rt.
       </p>
@@ -1573,13 +1573,13 @@
           Kachelindex und lass den Ghost damit fahren. Wie nah kommst du an die
           85&nbsp;%?</li>
         <li><b>Zwei eigene Ghosts gegeneinander.</b> Zwei Kurven, zwei Autos, dieselbe
-          Strecke &mdash; und die Rundenzeiten sagen, welche Kurve die bessere war.</li>
+          Strecke: und die Rundenzeiten sagen, welche Kurve die bessere war.</li>
         <li><b>Bremspunkte finden.</b> Nur die Gaskurve ist einstellbar, die Lenkung macht
           das Auto selbst. Einzige R&uuml;ckmeldung ist die Rundenzeit. Genau so haben
           Rennfahrer es immer gemacht.</li>
       </ul>
       <p class="muted" style="font-size:11.5px">
-        Noch nicht gebaut &mdash; die drei Punkte stehen hier als Bauplan, damit klar ist,
+        Noch nicht gebaut, die drei Punkte stehen hier als Bauplan, damit klar ist,
         wohin das f&uuml;hrt.
       </p>
     </div>
@@ -1590,7 +1590,7 @@
       <p class="muted" style="margin:0" data-i18n-skip>
         <b>English readers:</b> the interface is translated, this documentation is not yet.
         It runs to about 6800 words of measurement write-ups; translating it half-way would
-        be worse than leaving it in one language. &mdash;
+        be worse than leaving it in one language.
         <b>Zur Doku:</b> die Oberfl&auml;che ist zweisprachig, dieser Teil noch nicht.
       </p>
     </div>
@@ -1602,7 +1602,7 @@
         Die Hardware ist gekauft, die Software bestimmt jemand anders. Dieses Projekt dreht
         das um: es steuert ein Carrera-Hybrid-Auto mit eigenem Code &uuml;ber dieselbe
         Bluetooth-Schnittstelle, die die Hersteller-App benutzt. Damit l&auml;uft auf der
-        Hardware, was man selbst darauf laufen lassen will &mdash; unabh&auml;ngig davon, ob
+        Hardware, was man selbst darauf laufen lassen will: unabh&auml;ngig davon, ob
         ein Anbieter eine Funktion vorsieht, eine App weiter pflegt oder einen Server
         abschaltet.
       </p>
@@ -1610,7 +1610,7 @@
         Der zweite Punkt ist die <b>Gemeinschaft</b>. Ein offengelegtes Protokoll kann
         jeder weiterverwenden: f&uuml;r Funktionen, die der Hersteller nicht baut, f&uuml;r
         eine andere Bedienung, f&uuml;r Unterricht. Das hier ist bewusst als Beispiel
-        gebaut, nicht als Produkt &mdash; alles, was herausgefunden wurde, steht in dieser
+        gebaut, nicht als Produkt: alles, was herausgefunden wurde, steht in dieser
         Doku, samt der Stellen, an denen wir uns geirrt haben.
       </p>
 
@@ -1620,7 +1620,7 @@
         Auswertung, die auf einem Programm beruht, in das niemand hineinsehen darf, ist
         genau so weit nachvollziehbar wie das Vertrauen in dessen Hersteller reicht.
         Deshalb wechseln Forschende zunehmend von kommerzieller auf offene Software, und
-        deshalb steigen auch Landesverwaltungen von Windows auf Linux um &mdash; es geht um
+        deshalb steigen auch Landesverwaltungen von Windows auf Linux um, es geht um
         Kontrolle &uuml;ber die eigene Infrastruktur, nicht um Anschaffungskosten.
       </p>
       <p class="muted">
@@ -1630,14 +1630,14 @@
         <em>Verfahrens</em>. Ein Verfahren, das nur funktioniert, solange niemand es kennt,
         ist nicht sicher, sondern unpr&uuml;fbar. Offenlegung ist deshalb kein Risiko,
         sondern die Voraussetzung daf&uuml;r, dass Fehler gefunden werden k&ouml;nnen.
-        <b>Das hei&szlig;t nicht, dass offene Software automatisch sicherer ist</b> &mdash;
+        <b>Das hei&szlig;t nicht, dass offene Software automatisch sicherer ist</b>:
         nur, dass Pr&uuml;fbarkeit und Sicherheit sich nicht widersprechen.
       </p>
 
       <h3 style="font-size:14px; margin:16px 0 6px 0">Zum Weiterlesen und Ausprobieren</h3>
       <p class="muted">
-        <b><em>Ada &amp; Zangemann</em></b> von Matthias Kirschner und Sandra Brandst&auml;tter
-        &mdash; ein Kinderbuch dar&uuml;ber, wem die Software auf einem Ger&auml;t
+        <b><em>Ada &amp; Zangemann</em></b> von Matthias Kirschner und Sandra Brandst&auml;tter,
+        ein Kinderbuch dar&uuml;ber, wem die Software auf einem Ger&auml;t
         eigentlich geh&ouml;rt. Es erkl&auml;rt in einer Geschichte, worum es oben in drei
         Abs&auml;tzen ging.
       </p>
@@ -1662,7 +1662,7 @@
       </p>
     </div>
 
-    <div class="doc-sec">Hardware — Auto und Strecke</div>
+    <div class="doc-sec">Hardware, Auto und Strecke</div>
 
     <div class="card">
       <h2>Der Aufbau des Autos</h2>
@@ -1698,7 +1698,7 @@
         Jedes Streckenteil tr&auml;gt ein gedrucktes Muster, das das Auto beim
         &Uuml;berfahren liest und als Zahl meldet (Byte&nbsp;12 der Statusmeldung). Das
         Muster ist ein <b>Strichcode aus Balken und L&uuml;cken</b>, quer &uuml;ber die
-        ganze Fahrbahn &mdash; und genau <em>weil</em> er quer &uuml;ber die ganze Breite
+        ganze Fahrbahn: und genau <em>weil</em> er quer &uuml;ber die ganze Breite
         l&auml;uft, liest er sich an jeder Querposition gleich. Das ist der Grund, warum in
         diesem Code grunds&auml;tzlich keine Information dar&uuml;ber steckt, <em>wo</em> auf
         der Bahn das Auto f&auml;hrt.
@@ -1715,14 +1715,14 @@
       <p class="muted">
         In Byte&nbsp;14 stand hier eine Konstante <code>LIGHT_BASE = 0x80</code>, mit der
         Begr&uuml;ndung &bdquo;Bit&nbsp;7 war in jedem aufgezeichneten Paket gesetzt&ldquo;.
-        Sie war aus den fr&uuml;hen Erkundungsmitschnitten abgelesen &mdash; und das waren
+        Sie war aus den fr&uuml;hen Erkundungsmitschnitten abgelesen, und das waren
         genau die Sitzungen, in denen nie etwas gelesen wurde. <b>Bit&nbsp;7 schaltet den
         Sensor unter dem Auto ab.</b>
       </p>
       <p class="muted">
         Gemessen innerhalb <em>einer</em> Aufzeichnung, und nur Meldungen gez&auml;hlt, deren
         zuletzt gesendetes Gas mindestens 12&nbsp;Stufen von der Neutralstellung
-        <code>0xdf</code> abweicht &mdash; das Auto fuhr also in jeder Zeile:
+        <code>0xdf</code> abweicht, das Auto fuhr also in jeder Zeile:
       </p>
       <div class="doc-table-wrap"><table class="doc-table">
         <tr><th>Byte&nbsp;14</th><th>Meldungen</th><th>Lesungen</th><th>Kachelschritte</th></tr>
@@ -1735,16 +1735,16 @@
       </table></div>
       <p class="muted">
         Gleiche Bahn, gleiches Auto, dieselbe Minute. Damit erkl&auml;rt weder &bdquo;das Auto
-        stand&ldquo; noch &bdquo;anderer Tag, andere Bahn&ldquo; den Unterschied &mdash;
+        stand&ldquo; noch &bdquo;anderer Tag, andere Bahn&ldquo; den Unterschied:
         genau die beiden Erkl&auml;rungen, an denen zwei fr&uuml;here Vermutungen zu diesem
         Thema gescheitert sind.
       </p>
       <p class="muted">
         <b>Die Deutung passt auf die zwei Modi der Original-App:</b><br>
-        <code>0x20</code> (Bit&nbsp;5) = <b>Auf der Bahn</b> &mdash; Sensor an, und das Auto
+        <code>0x20</code> (Bit&nbsp;5) = <b>Auf der Bahn</b>: Sensor an, und das Auto
         h&auml;lt sich selbst auf der Bahn: 87&nbsp;% der Meldungen bringen einen
         Kachelwechsel, gegen 7&nbsp;% ohne dieses Bit.<br>
-        <code>0x80</code> (Bit&nbsp;7) = <b>Ohne Bahn</b> &mdash; Sensor aus, Byte&nbsp;12
+        <code>0x80</code> (Bit&nbsp;7) = <b>Ohne Bahn</b>: Sensor aus, Byte&nbsp;12
         bleibt <code>0xff</code>.<br>
         <code>0x40</code> (Bit&nbsp;6) kommt in beiden Zust&auml;nden vor und geh&ouml;rt zu
         etwas anderem; es bleibt hier auf&nbsp;0.
@@ -1778,7 +1778,7 @@
       </table></div>
       <p class="muted">
         <b>Balken und L&uuml;cken tragen beide Information.</b> Das ist leicht zu
-        &uuml;bersehen &mdash; eine fr&uuml;here Rekonstruktion dieses Blattes hat nur die
+        &uuml;bersehen, eine fr&uuml;here Rekonstruktion dieses Blattes hat nur die
         L&uuml;ckenfolge nachgebildet und war deshalb unbrauchbar, obwohl sie auf dem Papier
         richtig aussah.
       </p>
@@ -1806,7 +1806,7 @@
         Millimetern. <b style="color:var(--info)">Blau</b> ist ein breiter Balken,
         <b style="color:var(--warn)">gelb</b> eine breite L&uuml;cke, grau ist schmal. Das
         Bild ist ma&szlig;st&auml;blich und wird aus derselben Datei erzeugt wie die
-        Druckvorlage &mdash; hier steht keine abgeschriebene Zahl.
+        Druckvorlage, hier steht keine abgeschriebene Zahl.
       </p>
       <p class="muted" style="font-size:11.5px">
         <b>Was hier <em>nicht</em> steht:</b> welche Zahl das Auto aus diesen 17 Bits bildet
@@ -1816,7 +1816,7 @@
       </p>
       <p class="muted">
         Das ganze Muster ist <b>75,5&nbsp;mm</b> lang in Fahrtrichtung, die Balken sind
-        <b>275,9&nbsp;mm</b> breit &mdash; also fast die volle A4-Breite quer zur Fahrbahn.
+        <b>275,9&nbsp;mm</b> breit: also fast die volle A4-Breite quer zur Fahrbahn.
         Erzeugt wird das Blatt von <code>tools/make_pattern.py</code> direkt aus der
         Original-PDF, damit keine Zahl abgeschrieben wird; die gr&ouml;&szlig;te Abweichung
         zum Original betr&auml;gt 0,0004&nbsp;mm.
@@ -1826,7 +1826,7 @@
       <p class="muted">
         Ein Strichcode ist eine <em>Folge</em>, und eine Folge r&uuml;ckw&auml;rts gelesen ist
         eine andere Folge. <code>0 0 0 0 1 0 0 1 0</code> von hinten ist
-        <code>0 1 0 0 1 0 0 0 0</code> &mdash; ein anderes Muster, also ein anderer Code oder
+        <code>0 1 0 0 1 0 0 0 0</code>: ein anderes Muster, also ein anderer Code oder
         gar keiner. Deshalb tr&auml;gt die Druckvorlage einen <b>Richtungspfeil</b>, und
         deshalb muss das Blatt richtig herum ausgelegt werden. Beim Ausdrucken gilt dasselbe
         f&uuml;r den Ma&szlig;stab: &bdquo;an Seite anpassen&ldquo; verkleinert um mehrere
@@ -1841,14 +1841,14 @@
         Haarnadel links, <code>0x06</code> Haarnadel rechts und <code>0x00</code>
         abseits der Bahn. <b>Die Kodierungsregel selbst kennen wir nicht.</b> Aus
         <em>einem</em> exakt ausgemessenen Muster l&auml;sst sich nicht ableiten, wie die 17
-        Elemente in die Zahl <code>0x01</code> &uuml;bersetzt werden &mdash; daf&uuml;r
+        Elemente in die Zahl <code>0x01</code> &uuml;bersetzt werden, daf&uuml;r
         br&auml;uchte es die Muster der anderen Kacheln, senkrecht von oben fotografiert und
         mit Ma&szlig;stab. Bis dahin gilt: wir k&ouml;nnen Start/Ziel exakt reproduzieren,
         aber kein neues Muster erfinden.
       </p>
     </div>
 
-    <div class="doc-sec">Protokoll — was über Bluetooth läuft</div>
+    <div class="doc-sec">Protokoll: was über Bluetooth läuft</div>
 
     <div class="card">
       <h2>Die Bluetooth-Verbindung</h2>
@@ -1909,15 +1909,15 @@
         <tr><th>Byte</th><th>Inhalt</th><th>Bedeutung</th><th>Status</th></tr>
         <tr><td>0</td><td><code>0xAF</code></td><td>Rahmenkennung, in jedem Paket gleich</td><td class="doc-sure">belegt</td></tr>
         <tr><td>1&ndash;5</td><td><code>0x00</code></td><td>ungenutzt</td><td class="doc-sure">belegt</td></tr>
-        <tr><td>6</td><td><code>0xDF + d</code></td><td>Gas. <code>d</code> von &minus;64 bis +127, umlaufend gerechnet &mdash; kein um <code>0x80</code> zentriertes Byte</td><td class="doc-sure">belegt</td></tr>
+        <tr><td>6</td><td><code>0xDF + d</code></td><td>Gas. <code>d</code> von &minus;64 bis +127, umlaufend gerechnet: kein um <code>0x80</code> zentriertes Byte</td><td class="doc-sure">belegt</td></tr>
         <tr><td>7</td><td>int8</td><td>Lenkung, positiv = rechts. Voller Bereich &plusmn;127</td><td class="doc-sure">belegt</td></tr>
         <tr><td>8</td><td><code>0x80</code></td><td>konstant</td><td class="doc-sure">belegt</td></tr>
         <tr><td>9</td><td>int8</td><td>Lenkung, <em>identische Kopie von Byte 7</em></td><td class="doc-sure">belegt</td></tr>
         <tr><td>10</td><td><code>0x60</code></td><td>konstant</td><td class="doc-sure">belegt</td></tr>
         <tr><td>11&ndash;13</td><td><code>00 01 00</code></td><td>konstant</td><td class="doc-sure">belegt</td></tr>
         <tr><td><strong>14</strong></td><td>Bitfeld</td><td><strong>Licht und Betriebsart.</strong> Bit&nbsp;1 (<code>0x02</code>) = Standlicht, Bit&nbsp;0 (<code>0x01</code>) = Bremslicht</td><td class="doc-sure">belegt</td></tr>
-        <tr><td></td><td>Bit&nbsp;5 <code>0x20</code></td><td><strong>Auf der Bahn</strong> &mdash; Streckensensor an, Auto h&auml;lt sich selbst auf der Bahn. 87&nbsp;% Kachelwechsel gegen 7&nbsp;% ohne</td><td class="doc-sure">belegt</td></tr>
-        <tr><td></td><td>Bit&nbsp;7 <code>0x80</code></td><td><strong>Ohne Bahn</strong> &mdash; Sensor AUS, Byte&nbsp;12 bleibt <code>0xff</code>. 0 Lesungen in 551 Fahrmeldungen</td><td class="doc-sure">belegt</td></tr>
+        <tr><td></td><td>Bit&nbsp;5 <code>0x20</code></td><td><strong>Auf der Bahn</strong>: Streckensensor an, Auto h&auml;lt sich selbst auf der Bahn. 87&nbsp;% Kachelwechsel gegen 7&nbsp;% ohne</td><td class="doc-sure">belegt</td></tr>
+        <tr><td></td><td>Bit&nbsp;7 <code>0x80</code></td><td><strong>Ohne Bahn</strong>: Sensor AUS, Byte&nbsp;12 bleibt <code>0xff</code>. 0 Lesungen in 551 Fahrmeldungen</td><td class="doc-sure">belegt</td></tr>
         <tr><td></td><td>Bit&nbsp;6 <code>0x40</code></td><td>kommt in beiden Betriebsarten vor, Bedeutung offen. Wir lassen es auf&nbsp;0</td><td class="doc-unknown">unbekannt</td></tr>
         <tr><td>15</td><td><code>0x04</code></td><td>konstant</td><td class="doc-sure">belegt</td></tr>
         <tr><td>16&ndash;18</td><td><code>0x00</code></td><td>ungenutzt</td><td class="doc-sure">belegt</td></tr>
@@ -1926,14 +1926,14 @@
       <p class="muted">
         Die Lichtbits stammen aus einem Mitschnitt, in dem nacheinander Licht aus, Licht an und
         Bremse gedr&uuml;ckt wurde: <code>0x80</code>, <code>0x82</code>, <code>0x83</code>. Der Beweis, dass
-        die Lesart stimmt, ist die Pr&uuml;fsumme &mdash; unsere CRC-Berechnung liefert f&uuml;r diese drei
+        die Lesart stimmt, ist die Pr&uuml;fsumme: unsere CRC-Berechnung liefert f&uuml;r diese drei
         Bytes genau <code>0xA4</code>, <code>0x33</code> und <code>0xE0</code>, also exakt die aufgezeichneten
         Werte.
         <br><br>
         <b>Was dieser Mitschnitt nicht hergab, und was uns lange gekostet hat:</b> er wurde
         im Modus &bdquo;Ohne Bahn&ldquo; aufgenommen, deshalb war Bit&nbsp;7 in allen drei
         Zust&auml;nden gesetzt. Aus &bdquo;in jedem Paket gesetzt&ldquo; wurde eine Konstante
-        <code>LIGHT_BASE = 0x80</code> &mdash; und damit hat diese App zw&ouml;lf
+        <code>LIGHT_BASE = 0x80</code>: und damit hat diese App zw&ouml;lf
         Aufzeichnungen lang den Streckensensor abgeschaltet. Eine Konstante, die aus
         <em>einem</em> Mitschnitt kommt, tr&auml;gt dessen Betriebsart mit, ob man will oder
         nicht.
@@ -1946,12 +1946,12 @@
       <div class="doc-table-wrap"><table class="doc-table">
         <tr><th>Byte</th><th>Bedeutung</th><th>Status</th></tr>
         <tr><td>0</td><td><code>0xAF</code>, Rahmenkennung</td><td class="doc-sure">belegt</td></tr>
-        <tr><td>1, 3</td><td>&auml;ndern sich nur, wenn das Auto f&auml;hrt; vorzeichenbehaftet. Wir zeigen sie als gr&uuml;nen Punkt im G-Diagramm &mdash; als <em>rohe</em> Sensorwerte, nicht als gemessene G-Kr&auml;fte</td><td class="doc-unknown">unbest&auml;tigt</td></tr>
+        <tr><td>1, 3</td><td>&auml;ndern sich nur, wenn das Auto f&auml;hrt; vorzeichenbehaftet. Wir zeigen sie als gr&uuml;nen Punkt im G-Diagramm, als <em>rohe</em> Sensorwerte, nicht als gemessene G-Kr&auml;fte</td><td class="doc-unknown">unbest&auml;tigt</td></tr>
         <tr><td>2</td><td>schwankt um <code>0x9C</code></td><td class="doc-unknown">unbest&auml;tigt</td></tr>
         <tr><td>4&ndash;8</td><td><code>0x00</code></td><td class="doc-sure">belegt</td></tr>
         <tr><td>9</td><td>freilaufender Paketz&auml;hler, 0&ndash;255, &auml;ndert sich in <em>jedem</em> Paket</td><td class="doc-sure">belegt</td></tr>
         <tr><td>10</td><td>Akkustand</td><td class="doc-sure">belegt</td></tr>
-        <tr><td><strong>11</strong></td><td><strong>Z&auml;hler der Muster&uuml;berfahrten.</strong> Erh&ouml;ht sich um 1, sobald das Auto ein gedrucktes Muster &uuml;berf&auml;hrt &mdash; die Rundenz&auml;hlung passiert also in der Hardware</td><td class="doc-sure">belegt</td></tr>
+        <tr><td><strong>11</strong></td><td><strong>Z&auml;hler der Muster&uuml;berfahrten.</strong> Erh&ouml;ht sich um 1, sobald das Auto ein gedrucktes Muster &uuml;berf&auml;hrt, die Rundenz&auml;hlung passiert also in der Hardware</td><td class="doc-sure">belegt</td></tr>
         <tr><td><strong>12</strong></td><td><strong>Mustercode.</strong> <code>0x01</code> Start/Ziel, <code>0x02</code> Gerade, <code>0x03</code> Linkskurve, <code>0x04</code> Rechtskurve, <code>0x05</code> Haarnadel links, <code>0x06</code> Haarnadel rechts, <code>0x00</code> abseits der Bahn. <code>0xFF</code> hei&szlig;t &bdquo;noch nie eins gesehen&ldquo;. Der Wert bleibt <em>stehen</em>, er zeigt das zuletzt gelesene Muster</td><td class="doc-sure">belegt</td></tr>
         <tr><td>13</td><td><code>0x00</code></td><td class="doc-sure">belegt</td></tr>
         <tr><td>14</td><td>rollender Z&auml;hler (l&auml;uft &uuml;ber). Nicht zu verwechseln mit Byte&nbsp;14 der <em>Senderichtung</em>, das ist das Licht</td><td class="doc-sure">belegt</td></tr>
@@ -1972,7 +1972,7 @@
       <p class="muted">
         Alle Bluetooth-Schreibvorg&auml;nge laufen &uuml;ber <em>einen</em> Takt von 45&nbsp;ms mit einer
         Sperre, die immer nur einen Schreibvorgang gleichzeitig zul&auml;sst. Das ist keine Stilfrage:
-        vorher schrieben f&uuml;nf Quellen unabh&auml;ngig voneinander &mdash; Gamepad, Tastatur,
+        vorher schrieben f&uuml;nf Quellen unabh&auml;ngig voneinander, Gamepad, Tastatur,
         Zeigeger&auml;t, Neigungssensor und die Fahrphysik. &Uuml;berlappende Schreibvorg&auml;nge quittiert
         der Browser mit &bdquo;GATT operation already in progress&ldquo;, verwirft sie stillschweigend, und
         das Auto ruckelt.
@@ -1980,7 +1980,7 @@
       <p class="muted">
         Praktische Folge f&uuml;r Weiterentwicklungen: <strong>eine neue Funktion darf niemals selbst
         senden.</strong> Sie setzt einen Zustand, den der Takt beim n&auml;chsten Paket mitnimmt. Die
-        Lichtsteuerung ist daf&uuml;r das Musterbeispiel &mdash; sie schreibt kein eigenes Paket, sie setzt
+        Lichtsteuerung ist daf&uuml;r das Musterbeispiel, sie schreibt kein eigenes Paket, sie setzt
         Byte&nbsp;14.
       </p>
       <p class="muted">
@@ -1995,7 +1995,7 @@
 
       <h3 style="font-size:14px; margin:0 0 6px 0">Garage und Rollen</h3>
       <p class="muted">
-        Jedes Auto braucht eine eigene Nutzergeste zum Verbinden &mdash; Web Bluetooth
+        Jedes Auto braucht eine eigene Nutzergeste zum Verbinden, Web Bluetooth
         verlangt das je <code>requestDevice()</code>, das ist nicht umgehbar. Klick auf eine
         Zeile l&auml;sst die Lichter <em>dieses</em> Autos blinken (Byte&nbsp;14 wechselweise
         <code>0x82</code>/<code>0x80</code>), damit Liste und Tisch zuzuordnen sind.
@@ -2008,8 +2008,8 @@
         h&auml;tte jede davon angefasst. Ghosts sind stattdessen Objekte mit eigener
         Verbindung, eigener Schreibsperre und <strong>eigener
         <code>CarreraPhysicsEngine</code>-Instanz</strong>. Letzteres erledigt
-        &bdquo;gleich stark beschleunigen wie das Spielerauto&ldquo; von selbst &mdash;
-        gleiche Klasse, gleiche Kalibrierung &mdash; und bringt Gangschaltung,
+        &bdquo;gleich stark beschleunigen wie das Spielerauto&ldquo; von selbst,
+        gleiche Klasse, gleiche Kalibrierung: und bringt Gangschaltung,
         Byte-Herleitung und Bremslicht mit, statt sie nachzubauen.
       </p>
 
@@ -2035,7 +2035,7 @@
         Die 1,5&nbsp;s sind aus den Mitschnitten begr&uuml;ndet: auf der Strecke folgt Code
         auf Code ohne <code>0xff</code> dazwischen, und ein Teil liegt 0,4 bis 2,7&nbsp;s
         unter dem Sensor. L&auml;nger als 1,5&nbsp;s ohne Code hei&szlig;t also wirklich
-        &bdquo;nicht auf der Strecke&ldquo;. <strong>Nur Ghosts halten dann an</strong> &mdash;
+        &bdquo;nicht auf der Strecke&ldquo;. <strong>Nur Ghosts halten dann an</strong>:
         das vom Spieler gesteuerte Auto f&auml;hrt weiter, wohin gelenkt wird.
       </p>
 
@@ -2043,7 +2043,7 @@
       <p class="muted">
         Zwei Regeln gegen Fehllesungen. <strong>Erstens Best&auml;tigung:</strong> ein Code
         muss zweimal hintereinander kommen, bevor er geglaubt wird. Das kostet ein Paket
-        Latenz und nichts weiter &mdash; bei 8 bis 60 Paketen je Streckenteil ist eine echte
+        Latenz und nichts weiter, bei 8 bis 60 Paketen je Streckenteil ist eine echte
         Lesung nie ein Einzelpaket. <strong>Zweitens keine Sofortwiederholung:</strong> nach
         einem Start/Ziel- oder Boxengassen-Code wird derselbe Code f&uuml;r 1&nbsp;s
         ignoriert. Vorher war der Teilz&auml;hler der einzige Schutz, und ein stotternder
@@ -2054,7 +2054,7 @@
       <p class="muted">
         Bewusst CSS und kein Canvas: ein Canvas mit hunderten Tropfen br&auml;uchte eine
         rAF-Schleife auf demselben Hauptthread, der alle 45&nbsp;ms das Steuerpaket
-        schreibt &mdash; dort sind die zwei schlimmsten Regressionen dieses Projekts
+        schreibt: dort sind die zwei schlimmsten Regressionen dieses Projekts
         entstanden. Drei Schichten mit <code>translate3d</code> laufen auf der GPU und
         kosten den Sendetakt nichts.
       </p>
@@ -2075,7 +2075,7 @@
       <p class="muted">
         Der Blitz ist echtes Gamma (<code>feComponentTransfer type="gamma"</code>), nicht
         <code>brightness()</code>: eine Multiplikation brennt die Lichter aus, Gamma hebt
-        die Mitten und l&auml;sst Schwarz schwarz &mdash; das sieht nach kurzem Fremdlicht
+        die Mitten und l&auml;sst Schwarz schwarz, das sieht nach kurzem Fremdlicht
         aus statt nach Wei&szlig;blitz. Zwei Blitze, der zweite schw&auml;cher, dann der
         Donner 200&nbsp;ms sp&auml;ter. Der Blitz h&auml;ngt am <strong>Wetter</strong>, nicht
         an der Lautst&auml;rke: eine stumme Ambience darf kein unsichtbares Gewitter ergeben.
@@ -2089,7 +2089,7 @@
         <code>.opt-row</code>, <code>.opt-label</code>, <code>.opt-val</code> und
         <code>.tgl</code> mitgel&ouml;scht. Markup und JavaScript blieben, deshalb liefen
         alle Funktionstests weiter durch, w&auml;hrend der Tab gar keine Formatierung
-        hatte &mdash; ohne Zeilenraster stapeln sich Beschriftung und Bedienelement
+        hatte: ohne Zeilenraster stapeln sich Beschriftung und Bedienelement
         einfach untereinander. Lehre: Tests, die nur Verhalten pr&uuml;fen, bemerken
         verlorene Darstellung nicht.
       </p>
@@ -2103,7 +2103,7 @@
         geh&ouml;ren zum gesamten Bluetooth-Verkehr des Telefons). Der vom <b>21.08.</b>
         ist ein Rennen auf &bdquo;az2108&ldquo; mit <b>drei Autos</b>: einem gesteuerten,
         das wegen eines nicht verbundenen Gamepads stand, und <b>zwei von der App selbst
-        gefahrenen</b>. Das macht ihn wertvoll &mdash; bei den Ghosts ist die App der
+        gefahrenen</b>. Das macht ihn wertvoll, bei den Ghosts ist die App der
         Fahrer, die Schreibpakete sind also die Ausgabe des Original-Reglers und nicht die
         eines Daumens. Erkennbar ist das sofort: die Ghost-Lenkung hat 119 bis 126
         verschiedene Werte und nur 2,7&ndash;3,6&nbsp;% Vollausschlag, w&auml;hrend in den
@@ -2118,7 +2118,7 @@
         Bytes auf die Millisekunde genau mit Bit&nbsp;5 von Byte&nbsp;14 (552 Pakete, beide
         Merkmale zugleich, in keinem anderen Mitschnitt vorhanden). Im Rennen umfasste der
         Vorausblick 11 verschiedene Fenster, deren k&uuml;rzester erkl&auml;render Ring die
-        <b>L&auml;nge 11</b> hat &mdash; genau die 11 Module, die die App f&uuml;r
+        <b>L&auml;nge 11</b> hat, genau die 11 Module, die die App f&uuml;r
         &bdquo;az2108&ldquo; angibt.
       </p>
 
@@ -2139,7 +2139,7 @@
         Byte&nbsp;14 richtig gesetzt war (siehe &bdquo;Auf der Bahn oder ohne Bahn&ldquo;).
         Vorher stand hier die Vermutung, die Haarnadel trage denselben Barcode wie eine
         normale Kurve und sei nicht unterscheidbar. Sie war nicht pr&uuml;fbar, solange das
-        Auto &uuml;berhaupt nichts las &mdash; und sie war falsch. Die Codes ordnen sich
+        Auto &uuml;berhaupt nichts las: und sie war falsch. Die Codes ordnen sich
         paarweise: gerade Zahl rechts, ungerade links, und die Enge steigt mit dem Wert.
       </p>
       <p class="muted">
@@ -2148,7 +2148,7 @@
         Kachelz&auml;hler aufgel&ouml;st ist die Runde <b>11 Kacheln</b> lang:
         <code>S R2 G2 R3 L R2</code>. Das einzelne <code>0x03</code> pro Runde sitzt genau
         dort, wo die einzelne Linkskurve liegt. (Die Strecke war als
-        <code>SR2G2R2LR2</code> notiert &mdash; die Daten zeigen an dieser Stelle drei
+        <code>SR2G2R2LR2</code> notiert, die Daten zeigen an dieser Stelle drei
         Rechtskurven, nicht zwei.)
       </p>
 
@@ -2167,7 +2167,7 @@
       <h3 style="font-size:14px; margin:16px 0 6px 0">Berichtigung: Byte&nbsp;15 Bit&nbsp;3 ist kein Kantensignal</h3>
       <p class="muted">
         Eine fr&uuml;here Fassung dieser Karte behauptete, dieses Bit melde, dass das Auto
-        am Bahnrand sei &mdash; also die lange gesuchte Querlage. <b>Das war falsch.</b>
+        am Bahnrand sei: also die lange gesuchte Querlage. <b>Das war falsch.</b>
         Drei Messungen widerlegen es: die Blockdauer ist praktisch konstant (Median 0,91
         und 0,94&nbsp;s, 10.&ndash;90.&nbsp;Perzentil 0,84&ndash;1,01&nbsp;s), was ein
         Zeitglied ist und kein Kontakt; es gibt <b>17 Bl&ouml;cke bei 16 Runden</b>; und
@@ -2180,10 +2180,10 @@
         und &minus;0,32, der st&auml;rkste Wert aller 19 Meldebytes) war ein
         <b>Ortsartefakt</b>: der Riegel markiert immer dieselbe Stelle der Strecke, und dort
         lenkt die App eben konsistent. Wer nach Regelung sucht, muss den Ort
-        herausrechnen &mdash; das ist die Lehre daraus.
+        herausrechnen: das ist die Lehre daraus.
       </p>
 
-      <h3 style="font-size:14px; margin:16px 0 6px 0">Es geht auch ohne Querlage &mdash; die App macht es vor</h3>
+      <h3 style="font-size:14px; margin:16px 0 6px 0">Es geht auch ohne Querlage, die App macht es vor</h3>
       <div class="doc-table-wrap"><table class="doc-table">
         <tr><th>Ghost</th><th>Reststreuung der Lenkung je (Kachelindex, Phase)</th><th>ohne Positionswissen</th><th>erkl&auml;rter Anteil</th></tr>
         <tr><td>0x201</td><td>21,7</td><td>56,7</td><td><b>85&nbsp;%</b></td></tr>
@@ -2192,23 +2192,23 @@
       <p class="muted">
         Bei einem der beiden Ghosts sind <b>85&nbsp;% der Lenkvarianz allein aus der
         Streckenposition</b> erkl&auml;rt. Die App f&auml;hrt ihre autonomen Autos also
-        weitgehend als <em>Vorsteuerung</em> aus Kachelindex und Phase innerhalb der Kachel
-        &mdash; nicht aus einer Rückmeldung, denn sie hat genauso wenig eine wie wir. Im
+        weitgehend als <em>Vorsteuerung</em> aus Kachelindex und Phase innerhalb der Kachel,
+        nicht aus einer Rückmeldung, denn sie hat genauso wenig eine wie wir. Im
         Rest steckt das gegenseitige Reagieren; der zweite Ghost mit 55&nbsp;% war der
         st&auml;rker verwickelte.
       </p>
       <p class="muted">
         <strong>Das ist die Antwort auf &bdquo;dann ist keine Ideallinie m&ouml;glich?&ldquo;</strong>
-        M&ouml;glich ist sie &mdash; als offene Bahnkurve &uuml;ber (Kachelindex, Phase),
+        M&ouml;glich ist sie, als offene Bahnkurve &uuml;ber (Kachelindex, Phase),
         und genau so weit, wie die Original-App auch kommt. Was <em>nicht</em> m&ouml;glich
         ist, ist nachzuweisen, dass das Auto die Linie einh&auml;lt. Daf&uuml;r bräuchte es
-        zus&auml;tzliche Sensorik &mdash; eine Kamera von oben &mdash; und keine weitere
+        zus&auml;tzliche Sensorik, eine Kamera von oben: und keine weitere
         Analyse des Funkverkehrs.
       </p>
       <p class="muted">
         Gegenprobe zum Ganzen: aus Kachelz&auml;hler und Start-Kachel rekonstruiert ergibt
         das Rennen <b>16 Runden je Ghost</b>, nach der Anfangsphase stabil bei
-        7,07&ndash;7,31&nbsp;s, die beiden Autos im Median 0,03&nbsp;s auseinander &mdash;
+        7,07&ndash;7,31&nbsp;s, die beiden Autos im Median 0,03&nbsp;s auseinander:
         was zwei gleich eingestellte Ghosts auch tun sollten.
       </p>
     </div>
@@ -2231,21 +2231,21 @@
         Strecke, Funkchip verbindet Auto und Handy, Fahrphysik läuft im Auto.</p>
     </div>
 
-    <div class="doc-sec">Software — das Fahrmodell</div>
+    <div class="doc-sec">Software: das Fahrmodell</div>
 
     <div class="card">
       <h2>Wer bestimmt das Fahrverhalten?</h2>
       <p class="muted">
         Beide, aber an verschiedenen Stellen. Die App formt zuerst den Fahrerwunsch: Gänge, Drehmoment
-        und eine simulierte Geschwindigkeit &mdash; und sendet dann das <b>Ergebnis</b>. Der entscheidende
+        und eine simulierte Geschwindigkeit, und sendet dann das <b>Ergebnis</b>. Der entscheidende
         Punkt dabei: der Gaswert wird aus der simulierten Geschwindigkeit abgeleitet, nicht aus der
         Pedalstellung. Bekommt das Auto einen Vollgas-Wert, ist es fast sofort auf Höchsttempo; deshalb
         zieht es nur dann realistisch hoch, wenn die App den Wert über die Zeit hochrampt.
       </p>
       <p class="muted">
         Danach greifen noch drei Multiplikatoren an derselben Stelle: Geschwindigkeitsbegrenzung,
-        Akku-Ausgleich sowie Tank und Schaden. Was das Auto aus dem fertigen Wert macht &mdash; wie es
-        einlenkt, wie es Grip findet &mdash; entscheidet weiterhin seine eigene Firmware.
+        Akku-Ausgleich sowie Tank und Schaden. Was das Auto aus dem fertigen Wert macht, wie es
+        einlenkt, wie es Grip findet: entscheidet weiterhin seine eigene Firmware.
       </p>
       <p class="muted">
         Schaltet man die Physik in den Optionen ab, sendet die App wirklich nur noch die rohe
@@ -2259,24 +2259,24 @@
         Echt aus dem Auto gemessen
       </p>
       <ul class="muted" style="padding-left:20px; line-height:1.7">
-        <li><b>Akkustand</b> &mdash; Byte 10 <i>(Schätzung, nicht kalibriert)</i></li>
-        <li><b>Teile-Zähler</b> &mdash; Byte 11, erhöht sich bei jedem neuen Streckenteil</li>
-        <li><b>Typ des Streckenteils</b> &mdash; Byte 12 (Start/Ziel, Gerade, Rechtskurve)</li>
-        <li><b>Off-Track-Flag</b> &mdash; Byte 15</li>
-        <li><b>Rohe Bewegungswerte</b> &mdash; Bytes 1 und 3, verrauscht, <i>Bedeutung unbestätigt</i></li>
+        <li><b>Akkustand</b>: Byte 10 <i>(Schätzung, nicht kalibriert)</i></li>
+        <li><b>Teile-Zähler</b>: Byte 11, erhöht sich bei jedem neuen Streckenteil</li>
+        <li><b>Typ des Streckenteils</b>: Byte 12 (Start/Ziel, Gerade, Rechtskurve)</li>
+        <li><b>Off-Track-Flag</b>: Byte 15</li>
+        <li><b>Rohe Bewegungswerte</b>: Bytes 1 und 3, verrauscht, <i>Bedeutung unbestätigt</i></li>
       </ul>
       <p class="muted" style="border-left:3px solid #a9b2c4; padding-left:10px; font-weight:600; margin-top:16px">
         Nur in der App gerechnet
       </p>
       <ul class="muted" style="padding-left:20px; line-height:1.7">
-        <li><b>km/h, Drehzahl und Gangwahl</b> &mdash; das Auto meldet keine Geschwindigkeit zurück</li>
-        <li><b>Lenkverhalten</b> &mdash; Dämpfung, Expo-Kennlinie, Grip-Bonus beim Anbremsen</li>
+        <li><b>km/h, Drehzahl und Gangwahl</b>: das Auto meldet keine Geschwindigkeit zurück</li>
+        <li><b>Lenkverhalten</b>: Dämpfung, Expo-Kennlinie, Grip-Bonus beim Anbremsen</li>
         <li><b>ABS</b>, <b>Tank</b>, <b>Schaden</b> und die <b>Crash-Erkennung</b> <i>(Schwellwert auf
           Bytes 1/3, deren Bedeutung unbestätigt ist)</i></li>
-        <li><b>Boxengasse</b> &mdash; Tempolimit und Service, der mit der Standzeit wächst</li>
+        <li><b>Boxengasse</b>: Tempolimit und Service, der mit der Standzeit wächst</li>
         <li><b>Akku-Leistungsausgleich</b>, <b>Motorsound</b> und alle Töne</li>
-        <li><b>Rundenzeiten</b> &mdash; ausgelöst vom echten Byte 12, gestoppt aber im Gerät</li>
-        <li><b>Position auf der Minikarte</b> &mdash; aus dem Teile-Zähler geschätzt
+        <li><b>Rundenzeiten</b>: ausgelöst vom echten Byte 12, gestoppt aber im Gerät</li>
+        <li><b>Position auf der Minikarte</b>: aus dem Teile-Zähler geschätzt
           <i>(keine echte Ortung)</i></li>
       </ul>
     </div>
@@ -2285,23 +2285,23 @@
       <h2>Die Kennlinien des simulierten Antriebs</h2>
       <p class="muted">
         Alle vier Bilder werden beim Öffnen dieses Tabs aus den <b>aktuell eingestellten</b> Werten
-        berechnet &mdash; sie können also nicht von dem abweichen, was das Auto gerade tut.
+        berechnet, sie können also nicht von dem abweichen, was das Auto gerade tut.
       </p>
       <div id="doku-chart-torque"></div>
       <p class="muted" style="font-size:11.5px">
-        Das Drehmoment steigt spät an und erreicht sein Maximum erst bei rund 6200/min &mdash; typisch für
+        Das Drehmoment steigt spät an und erreicht sein Maximum erst bei rund 6200/min, typisch für
         einen hochdrehenden Saugmotor. Unten heraus zieht er deutlich schwächer.
       </p>
       <div id="doku-chart-thrust"></div>
       <p class="muted" style="font-size:11.5px">
-        Radzugkraft je Gang. Jeder höhere Gang zieht schwächer, weil die Übersetzung kleiner wird &mdash;
+        Radzugkraft je Gang. Jeder höhere Gang zieht schwächer, weil die Übersetzung kleiner wird:
         deshalb beschleunigt der 1. Gang brachial, endet aber schon bei rund einem Viertel der
         Höchstgeschwindigkeit. Als <b>relativer Faktor</b> beschriftet, nicht in Newton: das Modell kennt
         weder Masse noch Radradius, eine Newton-Achse wäre erfundene Physik.
       </p>
       <div id="doku-chart-accel"></div>
       <p class="muted" style="font-size:11.5px">
-        Dieselben Kurven abzüglich Roll- und Luftwiderstand &mdash; das ist die Beschleunigung, die
+        Dieselben Kurven abzüglich Roll- und Luftwiderstand, das ist die Beschleunigung, die
         tatsächlich übrig bleibt. Sie flacht nach oben hin ab. Die graue Linie ist der Verlauf ohne Gas.
       </p>
       <div id="doku-chart-launch"></div>
@@ -2326,30 +2326,30 @@
       <p class="muted">
         Die beiden Zahlen sind an eine reale GT3-Bremstabelle angepasst: 50&nbsp;km/h in
         ~1,0&nbsp;s, ansteigend auf 280&nbsp;km/h in ~4,3&nbsp;s. <b>Nachgemessen 1,02 und
-        4,18&nbsp;s</b> &mdash; innerhalb von 3&nbsp;%. Aus H&ouml;chstgeschwindigkeit bis
+        4,18&nbsp;s</b>: innerhalb von 3&nbsp;%. Aus H&ouml;chstgeschwindigkeit bis
         Stillstand sind es 4,25&nbsp;s.
       </p>
       <p class="muted" style="font-size:11.5px">
         <b>Berichtigung:</b> hier stand fr&uuml;her, die Werte seien mit 1,5&nbsp;% mittlerem
         Fehler an genau diese Tabelle angepasst, und der Bremsweg betrage 2,74&nbsp;s. Beides
-        passte nicht zusammen &mdash; 2,74&nbsp;s aus H&ouml;chstgeschwindigkeit ist rund
+        passte nicht zusammen: 2,74&nbsp;s aus H&ouml;chstgeschwindigkeit ist rund
         57&nbsp;% schneller als die 4,3&nbsp;s der Tabelle. Nachgerechnet mit der blanken
         Formel <em>und</em> in der laufenden Schleife (die gleich rechnen, weil beim geraden
         Bremsen auf trockener Bahn jeder Multiplikator 1,0 ist): die alten 0,98/1,00 ergaben
         0,64 und 2,75&nbsp;s, eine sp&auml;tere Abschw&auml;chung auf 0,784/0,80 ergab 0,80 und
         3,44&nbsp;s. Erst 0,627/0,64 treffen die Tabelle. Die Bremse ist damit schw&auml;cher
-        als zuvor &mdash; in derselben Richtung, in die der Wunsch nach 80&nbsp;% zeigte; der
+        als zuvor, in derselben Richtung, in die der Wunsch nach 80&nbsp;% zeigte; der
         Regler <em>Bremskraft</em> (Standard 1,0) bleibt f&uuml;r den Geschmack.
       </p>
       <ul class="muted">
-        <li><strong>Reibungskreis</strong> &mdash; ein Reifen kann seine Haftung nur einmal vergeben.
+        <li><strong>Reibungskreis</strong>: ein Reifen kann seine Haftung nur einmal vergeben.
           L&auml;ngs bleibt <code>&radic;(1 &minus; quer&sup2;)</code>, also kostet Lenken beim Bremsen
           Verz&ouml;gerung und umgekehrt.</li>
-        <li><strong>Fahrbahn</strong> &mdash; eine 2&times;2-Matrix aus Wetter und Reifen: trocken auf Slicks
+        <li><strong>Fahrbahn</strong>: eine 2&times;2-Matrix aus Wetter und Reifen: trocken auf Slicks
           1,00, trocken auf Regenreifen 0,88, Regen auf Regenreifen 0,80, Regen auf Slicks 0,45.</li>
-        <li><strong>Einfedern</strong> &mdash; die Radlast wandert beim Bremsen nach vorn. Wichtig ist die
+        <li><strong>Einfedern</strong>: die Radlast wandert beim Bremsen nach vorn. Wichtig ist die
           Normierung: der Faktor ist auf den <em>eingefederten</em> Zustand bezogen, nicht auf 50/50. Er
-          kann also nur w&auml;hrend des Einnickens Bremskraft wegnehmen, nie welche hinzuerfinden &mdash;
+          kann also nur w&auml;hrend des Einnickens Bremskraft wegnehmen, nie welche hinzuerfinden:
           sonst w&auml;re die an echten Daten gefittete Verz&ouml;gerung nicht mehr das, was sie verspricht.</li>
       </ul>
       <p class="muted">
@@ -2360,7 +2360,7 @@
         Vollgas 0,76 &middot; Ausrollen 1,02 &middot; Bremse nach 45&nbsp;ms 1,06 &middot;
         nach 135&nbsp;ms <b>1,18</b> &middot; Dauerbremsung <b>0,46</b>. Der Ausschlag nach
         oben und der tiefe Endwert sind dieselbe Ursache: die Karosserie ist schon vorn,
-        der Reifen baut die Bremskraft aber erst auf &mdash; und sobald er sie aufgebaut hat,
+        der Reifen baut die Bremskraft aber erst auf: und sobald er sie aufgebaut hat,
         ist sie im Reibungskreis f&uuml;r das Lenken verbraucht.
       </p>
     </div>
@@ -2369,7 +2369,7 @@
       <h2>Geradeausfahren ohne Zustandswissen</h2>
       <p class="muted">
         Das Auto meldet <em>keine</em> Ist-Geschwindigkeit. Es gibt kein Byte, aus dem hervorginge, wie
-        schnell es gerade f&auml;hrt. Das Gasbyte ist ein Sollwert, kein Regelkreis &mdash; es gibt keine
+        schnell es gerade f&auml;hrt. Das Gasbyte ist ein Sollwert, kein Regelkreis: es gibt keine
         R&uuml;ckmeldung, gegen die geregelt werden k&ouml;nnte.
       </p>
       <p class="muted">
@@ -2382,7 +2382,7 @@
       </p>
       <p class="muted">
         Zwei Feinheiten, die aus dem fehlenden R&uuml;ckkanal folgen: erstens braucht ein stehendes Auto
-        eine Mindestansteuerung (<code>minMoveThrottle</code>), um &uuml;berhaupt loszubrechen &mdash; ohne
+        eine Mindestansteuerung (<code>minMoveThrottle</code>), um &uuml;berhaupt loszubrechen: ohne
         sie w&auml;re der erste Moment einer Beschleunigung zu schwach, um sich zu bewegen. Zweitens gibt es
         unterhalb von 10&nbsp;km/h Anzeige <em>kein Mittelding</em>: entweder wird bewusst &uuml;ber der
         Losbrechschwelle gefahren, oder das Byte geht sauber auf&nbsp;0. Dazwischen liegt genau der Bereich,
@@ -2394,7 +2394,7 @@
       <h2>Tankgewicht und Reifen</h2>
       <p class="muted">
         Beide Modelle h&auml;ngen an je einem Regler in den Optionen, dessen linkes Ende sie
-        <em>vollst&auml;ndig</em> abschaltet &mdash; nicht &bdquo;ein bisschen&ldquo;, sondern rechnerisch
+        <em>vollst&auml;ndig</em> abschaltet, nicht &bdquo;ein bisschen&ldquo;, sondern rechnerisch
         exakt auf den Faktor&nbsp;1, also auf das Verhalten ohne Simulation. Das ist Absicht: nur so
         l&auml;sst sich beurteilen, was das Modell &uuml;berhaupt beitr&auml;gt.
       </p>
@@ -2411,7 +2411,7 @@
         <em>fertige</em> Beschleunigung in <code>update()</code> angewandt, <strong>nicht</strong> innerhalb
         von <code>thrustAt()</code>. Die Startkalibrierung integriert durch <code>thrustAt()</code> und
         m&uuml;sste sonst bei jedem Tankf&uuml;llstand neu gel&ouml;st werden. Die kalibrierte Zeit gilt
-        damit f&uuml;r das <em>leere</em> Auto, und Sprit macht es langsamer &mdash; die ehrliche
+        damit f&uuml;r das <em>leere</em> Auto, und Sprit macht es langsamer: die ehrliche
         Richtung, denn erfinden darf ein Zusatzmodell nichts.
       </p>
 
@@ -2424,14 +2424,14 @@
       </p>
       <div class="doc-table-wrap"><table class="doc-table">
         <tr><th>Fahrweise</th><th>bei 80&nbsp;&deg;C nach</th><th>Beharrungstemperatur</th><th>Verschlei&szlig; nach 10&nbsp;min</th></tr>
-        <tr><td>sanft</td><td><em>nie</em></td><td>49&nbsp;&deg;C &mdash; bleibt kalt</td><td>33&nbsp;%</td></tr>
-        <tr><td>z&uuml;gig</td><td>48&nbsp;s</td><td>85&nbsp;&deg;C &mdash; Betriebsfenster</td><td>74&nbsp;%</td></tr>
-        <tr><td>Vollattacke</td><td>19&nbsp;s</td><td>116&nbsp;&deg;C &mdash; &uuml;berhitzt</td><td>100&nbsp;% (nach 6,5&nbsp;min)</td></tr>
+        <tr><td>sanft</td><td><em>nie</em></td><td>49&nbsp;&deg;C, bleibt kalt</td><td>33&nbsp;%</td></tr>
+        <tr><td>z&uuml;gig</td><td>48&nbsp;s</td><td>85&nbsp;&deg;C: Betriebsfenster</td><td>74&nbsp;%</td></tr>
+        <tr><td>Vollattacke</td><td>19&nbsp;s</td><td>116&nbsp;&deg;C, &uuml;berhitzt</td><td>100&nbsp;% (nach 6,5&nbsp;min)</td></tr>
       </table></div>
       <p class="muted">
         Dass sanftes Fahren die Betriebstemperatur <em>gar nicht</em> erreicht, ist kein Fehler, sondern
         genau der Zielkonflikt: wer schont, hat weniger Grip. Der erste Versuch mit anderen Raten lief bei
-        ganz normalem Fahren auf 171&nbsp;&deg;C ein &mdash; dauerhaft im roten Bereich, was das Modell wie
+        ganz normalem Fahren auf 171&nbsp;&deg;C ein, dauerhaft im roten Bereich, was das Modell wie
         einen Defekt h&auml;tte aussehen lassen.
       </p>
 
@@ -2445,13 +2445,13 @@
       </p>
       <p class="muted">
         Der Verschlei&szlig; l&auml;uft mit derselben Arbeit und beschleunigt sich, sobald die Reifen
-        hei&szlig; sind &mdash; ein harter Stint kostet also doppelt. Zur&uuml;ckgesetzt wird beim
+        hei&szlig; sind: ein harter Stint kostet also doppelt. Zur&uuml;ckgesetzt wird beim
         Boxenstopp und beim Rennstart, also genau dann, wenn ein echtes Auto auf neuen oder
         ausgek&uuml;hlten Reifen losf&auml;hrt. Der Grip wirkt auf Antrieb, Bremse <em>und</em> Lenkung.
       </p>
       <p class="muted">
         Auf dem Racing-Display zeigt der Reifenring die Temperatur: blau kalt, gr&uuml;n im Betriebsfenster,
-        rot zu hei&szlig;. Bei abgeschaltetem Modell bleibt er grau und die Anzeige sagt &bdquo;aus&ldquo; &mdash;
+        rot zu hei&szlig;. Bei abgeschaltetem Modell bleibt er grau und die Anzeige sagt &bdquo;aus&ldquo;,
         eine Anzeige soll keine Simulation vort&auml;uschen, die gar nicht l&auml;uft.
       </p>
     </div>
@@ -2459,20 +2459,20 @@
     <div class="card">
       <h2>Leerlauf, Schaltvorgang, Boxengasse</h2>
       <p class="muted">
-        <strong>Der Startzustand ist N.</strong> Der Antriebsstrang kennt drei Zust&auml;nde
-        &mdash; <code>neutral</code>, <code>forward</code>, <code>reverse</code> &mdash; und die
+        <strong>Der Startzustand ist N.</strong> Der Antriebsstrang kennt drei Zust&auml;nde,
+        <code>neutral</code>, <code>forward</code>, <code>reverse</code>: und die
         Schaltkette ist <code>R &larr; N &larr; 1 &larr; 2 &hellip; &larr; 6</code>. N ist bei jeder
         Geschwindigkeit w&auml;hlbar, weil Auskuppeln und Rollen normal ist; R nur im Stand.
       </p>
       <p class="muted">
-        In N ist der gesendete Gaswert <strong>exakt 0</strong> &mdash; nachgemessen &mdash; und die
+        In N ist der gesendete Gaswert <strong>exakt 0</strong>: nachgemessen, und die
         Drehzahl h&auml;ngt nicht mehr an der Radgeschwindigkeit, sondern folgt dem Pedal mit einer
         Verz&ouml;gerung von 0,22&nbsp;s. Ein Motor ist kein Schalter.
       </p>
       <p class="muted">
         Eine Falle, die eigens abgefangen ist: im <strong>Automatikmodus</strong> muss N von selbst
         verlassen werden, sobald Gas kommt. Ohne diese Regel startet die App im Leerlauf und die
-        Automatik k&auml;me nie heraus &mdash; dieselbe Fehlerklasse, die den R&uuml;ckw&auml;rtsgang
+        Automatik k&auml;me nie heraus, dieselbe Fehlerklasse, die den R&uuml;ckw&auml;rtsgang
         schon einmal unentrinnbar gemacht hat. Gemessen: Gang&nbsp;1 kommt im ersten Sendetakt.
       </p>
       <p class="muted">
@@ -2494,7 +2494,7 @@
       <p class="muted">
         Hoch- und Runterschalten sind zwei verschiedene Dateien: beim Runterschalten muss der
         Steller gegen Motormoment halten, also ist der Luftauslass l&auml;nger und alles sitzt
-        tiefer. Fehlen die Dateien, springt ein Zweiklang ein &mdash; lieber ein Ersatz als
+        tiefer. Fehlen die Dateien, springt ein Zweiklang ein: lieber ein Ersatz als
         Stille.
       </p>
 
@@ -2508,7 +2508,7 @@
       </p>
       <p class="muted">
         <strong>Zustand statt Schaden:</strong> der Balken startet voll und gr&uuml;n, jeder Crash
-        nimmt ein St&uuml;ck weg. Intern z&auml;hlt <code>damage</code> weiter von 0 nach oben &mdash;
+        nimmt ein St&uuml;ck weg. Intern z&auml;hlt <code>damage</code> weiter von 0 nach oben,
         nur die Darstellung ist gedreht, damit keine Crash-, Reparatur- oder Boxenstopp-Rechnung
         angefasst werden musste. Ein Balken, der w&auml;chst, w&auml;hrend es schlechter wird, liest
         sich auf einen Blick falsch.
@@ -2516,7 +2516,7 @@
       <p class="muted">
         Beim Notlauf steckte ein echter Fehler: leerer Tank <em>und</em> Totalschaden
         multiplizierten sich zu <code>0,0525</code>, w&auml;hrend die Losbrechschwelle bei
-        <code>0,16</code> liegt. Das Auto fuhr dort nicht langsam, es zuckte &mdash; dieselbe Totzone
+        <code>0,16</code> liegt. Das Auto fuhr dort nicht langsam, es zuckte: dieselbe Totzone
         wie beim Kriechen kurz vor dem Stillstand, nur an anderer Stelle. Der Notlauf hat jetzt eine
         <em>Untergrenze</em> statt nur Multiplikationen nach unten: gemessen <code>0,168</code>.
       </p>
@@ -2528,7 +2528,7 @@
         <strong>Gemessene Ma&szlig;e:</strong> ein Streckenteil ist <b>25&nbsp;cm breit</b> und
         <b>43&nbsp;cm lang</b>; eine Gerade plus eine 60&deg;-Rechtskurve nehmen zusammen
         <b>37&times;86&nbsp;cm</b> ein. L&ouml;st man den Fu&szlig;abdruck nach dem Kurvenradius auf,
-        ergibt sich <b>37&nbsp;cm</b> &mdash; das reproduziert 37,2&times;85,9&nbsp;cm. Die
+        ergibt sich <b>37&nbsp;cm</b>: das reproduziert 37,2&times;85,9&nbsp;cm. Die
         Zeichenkonstanten sind daraus <em>abgeleitet</em>, nicht gew&auml;hlt. Der zuvor per Hand
         gesetzte Radius von 34 Einheiten entspricht 36,5&nbsp;cm und liefert 37,0&times;85,5&nbsp;cm,
         war also bereits richtig; er steht jetzt in Zentimetern da, damit er nachpr&uuml;fbar bleibt.
@@ -2537,7 +2537,7 @@
         Die <strong>Ideallinie</strong> entsteht durch Kr&uuml;mmungsgl&auml;ttung: jeder Punkt
         wandert wiederholt in Richtung der Mitte seiner Nachbarn, aber nur <em>quer</em> zur
         Fahrtrichtung, und wird nach jedem Durchlauf auf die Fahrbahn geklemmt. Sie kann die
-        Bahn also nicht verlassen &mdash; nachgemessen: gr&ouml;&szlig;te Abweichung 9,3&nbsp;cm bei
+        Bahn also nicht verlassen, nachgemessen: gr&ouml;&szlig;te Abweichung 9,3&nbsp;cm bei
         12,5&nbsp;cm Halbbreite.
       </p>
       <p class="muted">
@@ -2545,11 +2545,11 @@
         zeigte es: bei 14 Abtastpunkten je Teil liegen die Nachbarn 2,9&nbsp;Einheiten
         auseinander, die Mitte liegt fast auf dem Punkt selbst, und ein Durchlauf verschiebt
         um Bruchteile eines Millimeters. Eine 0,5-mm-Schwelle meldete deshalb nach
-        <em>einer</em> Iteration Konvergenz &mdash; und die fertige &bdquo;Ideallinie&ldquo; nutzte
+        <em>einer</em> Iteration Konvergenz, und die fertige &bdquo;Ideallinie&ldquo; nutzte
         1,1&nbsp;cm einer 25&nbsp;cm breiten Bahn, war also die Mittellinie mit einer Delle. Der
         Versatz baut sich erst &uuml;ber viele Durchl&auml;ufe auf, also wird eine feste Anzahl
         gerechnet, und ausgegeben wird nicht ein Restwert, sondern <strong>wie viel Versatz die
-        Linie tats&auml;chlich nutzt</strong> &mdash; die Zahl, an der man sieht, ob die Rechnung
+        Linie tats&auml;chlich nutzt</strong>: die Zahl, an der man sieht, ob die Rechnung
         etwas getan hat.
       </p>
       <p class="muted">
@@ -2560,7 +2560,7 @@
       <p class="muted">
         Der <strong>Streckencode</strong> (z.&nbsp;B. <code>SG2R3G2R3B@90</code>) ist ein Buchstabe
         je Element mit Wiederholungszahl, dazu die Ausrichtung: S&nbsp;Start, G&nbsp;Gerade,
-        R&nbsp;rechts, L&nbsp;links, B&nbsp;Boxengasse. Absichtlich kein Base64 &mdash; einen Code,
+        R&nbsp;rechts, L&nbsp;links, B&nbsp;Boxengasse. Absichtlich kein Base64: einen Code,
         den man nicht lesen kann, kann man auch nicht pr&uuml;fen.
       </p>
     </div>
@@ -2571,38 +2571,38 @@
       <h2>Wie der simulierte Antrieb klingt</h2>
       <p class="muted">
         Ein kompletter Fahrzyklus: Anlasser, Leerlauf, Vollgas-Start durch alle sechs Gänge,
-        dann Anbremsen mit fünf Rückschaltungen und zurück in den Leerlauf &mdash; rund 10 Sekunden.
+        dann Anbremsen mit fünf Rückschaltungen und zurück in den Leerlauf, rund 10 Sekunden.
         Beim Hochschalten fällt die Drehzahl, beim <b>Runterschalten springt sie hoch</b>, weil der
         kürzere Gang den Motor bei gleicher Geschwindigkeit schneller dreht. Das kurze Bellen dabei
         ist Zwischengas: echte GT3-Getriebe gleichen die Drehzahl beim Runterschalten an.
       </p>
       <div class="row" style="gap:18px; flex-wrap:wrap">
-        <div><p class="muted" style="margin:0 0 4px 0"><b>Porsche</b> &mdash; Boxer-6, gleichmäßig zündend</p>
+        <div><p class="muted" style="margin:0 0 4px 0"><b>Porsche</b>: Boxer-6, gleichmäßig zündend</p>
           <audio controls preload="none" src="audio/porsche_demo.ogg" style="height:32px"></audio></div>
-        <div><p class="muted" style="margin:0 0 4px 0"><b>BMW</b> &mdash; Reihen-6, Turbo</p>
+        <div><p class="muted" style="margin:0 0 4px 0"><b>BMW</b>: Reihen-6, Turbo</p>
           <audio controls preload="none" src="audio/bmw_demo.ogg" style="height:32px"></audio></div>
-        <div><p class="muted" style="margin:0 0 4px 0"><b>Mustang</b> &mdash; V8, Cross-Plane</p>
+        <div><p class="muted" style="margin:0 0 4px 0"><b>Mustang</b>: V8, Cross-Plane</p>
           <audio controls preload="none" src="audio/mustang_demo.ogg" style="height:32px"></audio></div>
       </div>
       <p class="muted" style="font-size:11.5px; margin-top:10px">
-        Porsche, BMW und Mustang sowie alle Effekte oben sind <b>vollständig synthetisch</b> &mdash;
+        Porsche, BMW und Mustang sowie alle Effekte oben sind <b>vollständig synthetisch</b>:
         Zündimpulse, gefaltet mit der Resonanz des Auspuffkrümmers, nach dem Vorbild von
         ange-yaghi/engine-sim (MIT). Der Unterschied zwischen den Fahrzeugen kommt nicht aus der
         Tonhöhe, sondern aus den <b>Zündabständen</b>: die beiden Sechszylinder zünden gleichmäßig
-        alle 120°, der Cross-Plane-V8 dagegen ungleichmäßig innerhalb jeder Bank &mdash; daher das
+        alle 120°, der Cross-Plane-V8 dagegen ungleichmäßig innerhalb jeder Bank, daher das
         Blubbern. Der Crash ist bewusst dumpf gehalten: ein GT3-Kontakt ist Carbon, das den Stoß
         schluckt, kein splitterndes Glas.
       </p>
       <p class="muted" style="font-size:11.5px">
         <b>Nicht jeder Klang in der App ist das.</b> Der Corvette-Motor und die Strecken-Ambience sind
-        aus lizenzfreien Pixabay-Aufnahmen geschnitten, nicht gerechnet &mdash; die Pixabay-Lizenz
+        aus lizenzfreien Pixabay-Aufnahmen geschnitten, nicht gerechnet: die Pixabay-Lizenz
         erlaubt das, und es gab keinen Grund, nachzubauen, was eine gute Aufnahme schon liefert. Die
         unbearbeiteten Quelldateien sind nicht Teil des Repos, nur die geschnittenen Ableitungen.
         Vollständige Aufschlüsselung, Datei für Datei: <code>audio/CREDITS.md</code>.
       </p>
     </div>
       <p class="muted" style="font-size:11.5px">
-        Die einzelnen Effekte &mdash; Bremse, Crash, Schlagschrauber, Anlasser &mdash;
+        Die einzelnen Effekte, Bremse, Crash, Schlagschrauber, Anlasser:
         stehen vollst&auml;ndig und mit Herkunftsangabe unter <b>T&ouml;ne</b> weiter
         unten. Hier standen fr&uuml;her fünf von ihnen ein zweites Mal.
       </p>
@@ -2617,16 +2617,16 @@
 
       <h3 style="font-size:14px; margin:16px 0 6px 0">Ereignisse</h3>
       <div class="snd-grid">
-        <div class="snd-row"><audio controls preload="none" src="audio/shift_up.ogg"></audio><div><b>Hochschalten</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert &mdash; Anstieg 8&ndash;14&nbsp;ms, damit es klunkt statt zu klicken</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/shift_up.ogg"></audio><div><b>Hochschalten</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, Anstieg 8&ndash;14&nbsp;ms, damit es klunkt statt zu klicken</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/shift_down.ogg"></audio><div><b>Runterschalten</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/brake_squeal.ogg"></audio><div><b>Bremsenquietschen</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, als Schleife nach Bremsdruck eingeblendet</span></div></div>
-        <div class="snd-row"><audio controls preload="none" src="audio/crash_0.ogg"></audio><div><b>Crash, Variante 1</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert &mdash; vier Varianten, weil dieselbe Aufnahme bei mehreren Ber&uuml;hrungen als Fehler klingt</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/crash_0.ogg"></audio><div><b>Crash, Variante 1</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert: vier Varianten, weil dieselbe Aufnahme bei mehreren Ber&uuml;hrungen als Fehler klingt</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/crash_1.ogg"></audio><div><b>Crash, Variante 2</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/crash_2.ogg"></audio><div><b>Crash, Variante 3</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/crash_3.ogg"></audio><div><b>Crash, Variante 4</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
-        <div class="snd-row"><audio controls preload="none" src="audio/pit_wrench.ogg"></audio><div><b>Schlagschrauber</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert &mdash; gleichm&auml;&szlig;iger Hammerzug um 26&nbsp;Hz</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/pit_wrench.ogg"></audio><div><b>Schlagschrauber</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, gleichm&auml;&szlig;iger Hammerzug um 26&nbsp;Hz</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/pit_fuel.ogg"></audio><div><b>Tanken</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, Schleife</span></div></div>
-        <div class="snd-row"><audio controls preload="none" src="audio/pit_repair.ogg"></audio><div><b>Karosseriereparatur</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert &mdash; Abklingzeit 1,9&nbsp;ms im Median, also D&auml;mpfer statt Note</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/pit_repair.ogg"></audio><div><b>Karosseriereparatur</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, Abklingzeit 1,9&nbsp;ms im Median, also D&auml;mpfer statt Note</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/porsche_start.ogg"></audio><div><b>Motorstart: Porsche</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/bmw_start.ogg"></audio><div><b>Motorstart: Bmw</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/mustang_start.ogg"></audio><div><b>Motorstart: Mustang</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
@@ -2637,7 +2637,7 @@
         W&auml;hlbar in den Optionen, Standard aus. Alle f&uuml;nf sind auf dieselbe
         <em>Lautheit</em> gebracht und nicht auf dieselbe Spitze: bei Spitzennormalisierung
         verschwindet der kurze Furz gegen die durchgehend laute Schiffshupe. Und geschnitten
-        wird auf das laute Ereignis, nicht auf die erste Nicht-Stille &mdash; die Ziege
+        wird auf das laute Ereignis, nicht auf die erste Nicht-Stille: die Ziege
         meckert in der Quelldatei erst nach 3,3&nbsp;Sekunden.
       </p>
       <div class="snd-grid">
@@ -2656,15 +2656,15 @@
         wie das Spiel.
       </p>
       <div class="row" style="gap:8px; flex-wrap:wrap">
-        <button id="snd-fuel-20">Tank 20&nbsp;% &mdash; ein Doppelimpuls</button>
-        <button id="snd-fuel-10">Tank 10&nbsp;% &mdash; zwei</button>
+        <button id="snd-fuel-20">Tank 20&nbsp;%, ein Doppelimpuls</button>
+        <button id="snd-fuel-10">Tank 10&nbsp;%: zwei</button>
         <span class="muted" id="snd-fuel-note" style="font-size:11.5px"></span>
       </div>
       <p class="muted" style="font-size:11.5px; margin-top:8px">
         Gebaut wie ein Gurtwarner im Auto: <b>feste</b> Tonh&ouml;he (660&nbsp;Hz, eine
         Quinte leise dar&uuml;ber), zwei kurze Impulse von 75&nbsp;ms mit weichen Flanken.
         Die vorherige Fassung war eine fallende Rutsche, und eine fallende Tonh&ouml;he
-        liest sich als &bdquo;etwas l&auml;uft aus&ldquo; &mdash; falsch f&uuml;r einen
+        liest sich als &bdquo;etwas l&auml;uft aus&ldquo;, falsch f&uuml;r einen
         Stand, der weiter sinkt, bis man etwas tut. Die <em>Anzahl</em> tr&auml;gt die
         Dringlichkeit, damit man zum Unterscheiden nicht hinsehen muss.
       </p>
@@ -2714,12 +2714,12 @@
 
       <h2>Audio-Engine</h2>
       <p class="muted">
-        Die drei Hauptmotoren sind <strong>vollst&auml;ndig synthetisch</strong> &mdash; es wird keine
+        Die drei Hauptmotoren sind <strong>vollst&auml;ndig synthetisch</strong>: es wird keine
         Aufnahme wiedergegeben. Modelliert nach dem Ansatz von <em>ange-yaghi/engine-sim</em> (MIT-Lizenz):
       </p>
       <ul class="muted">
         <li><strong>Z&uuml;ndereignisse</strong> statt Klangfarbe: pro Arbeitstakt ein Druckimpuls. Beim
-          V8 mit ebener Kurbelwelle z&uuml;nden die B&auml;nke ungleichm&auml;&szlig;ig &mdash; daraus
+          V8 mit ebener Kurbelwelle z&uuml;nden die B&auml;nke ungleichm&auml;&szlig;ig, daraus
           entsteht das typische Blubbern von selbst, es wird nicht nachgebaut.</li>
         <li><strong>Faltung mit einer Auspuff-Impulsantwort.</strong> Die Faltung ist zyklisch gerechnet,
           damit die Schleife am Ende exakt wieder auf den Anfang passt.</li>
@@ -2751,7 +2751,7 @@
       <p class="muted">
         In sieben aufgezeichneten Fahrten hat das Auto <b>keinen einzigen</b> Streckencode
         gemeldet, w&auml;hrend der Mitschnitt der Original-App voll davon ist. Das Schreibpaket
-        im Moment des ersten Codes dort ist byteweise die Form, die wir senden &mdash; im
+        im Moment des ersten Codes dort ist byteweise die Form, die wir senden: im
         Dauerbetrieb unterscheidet uns also nichts. Was die Original-App aber
         <em>zus&auml;tzlich</em> gesendet hat und wir nie:
       </p>
@@ -2762,8 +2762,8 @@
       </div>
       <p class="muted" id="probe-status" style="font-family:monospace">keine Variante aktiv</p>
       <p class="muted" style="font-size:11.5px">
-        <b>So testen:</b> Variante w&auml;hlen, dann <b>langsam &uuml;ber ein Muster fahren</b>
-        &mdash; Start/Ziel, ein Streckenteil oder den Boxengassen-Ausdruck. Die Anzeige
+        <b>So testen:</b> Variante w&auml;hlen, dann <b>langsam &uuml;ber ein Muster fahren</b>:
+        Start/Ziel, ein Streckenteil oder den Boxengassen-Ausdruck. Die Anzeige
         z&auml;hlt, ob Byte&nbsp;12 den Wert <code>0xff</code> verl&auml;sst. Sobald irgendwo eine
         Zahl gr&ouml;&szlig;er null steht, ist die Ursache gefunden. Jede Variante beh&auml;lt eine
         g&uuml;ltige Pr&uuml;fsumme, ein Fehlschlag ist also ein echtes Ergebnis und kein
@@ -2774,8 +2774,8 @@
     <div class="card">
       <h2>Telemetrie aufzeichnen</h2>
       <p class="muted">
-        Zeichnet <strong>jedes</strong> Paket in beiden Richtungen auf &mdash; was das Auto
-        meldet und was die App sendet &mdash; mit Zeitstempel, und exportiert es als CSV.
+        Zeichnet <strong>jedes</strong> Paket in beiden Richtungen auf, was das Auto
+        meldet und was die App sendet: mit Zeitstempel, und exportiert es als CSV.
         Damit ist kein btsnoop n&ouml;tig: die Datei ist bereits beschriftet und
         entschl&uuml;sselt.
       </p>
@@ -2785,7 +2785,7 @@
         <button id="rec-csv" disabled>Als CSV exportieren</button>
         <span class="muted" id="rec-status">keine Aufnahme</span>
       </div>
-      <p class="muted" style="margin:12px 0 4px 0"><b>Abschnitt markieren</b> &mdash;
+      <p class="muted" style="margin:12px 0 4px 0"><b>Abschnitt markieren</b>:
         vor jedem Man&ouml;ver den passenden Knopf dr&uuml;cken. Taste <kbd>M</kbd> setzt den
         n&auml;chsten Abschnitt.</p>
       <div class="rec-sections" id="rec-marks"></div>
@@ -2815,14 +2815,14 @@
       <p class="muted">
         Web Bluetooth erlaubt standardmäßig nur Zugriff auf Services, die vorab bekannt sind. Da wir das genaue
         Carrera-Protokoll noch nicht kennen, versuchen wir es unten mit einer Liste gängiger Custom-Service-UUIDs
-        (Nordic UART, HM-10/FFE0, FFF0 etc.) &mdash; falls dein Auto eine andere UUID benutzt, füge sie manuell hinzu.
+        (Nordic UART, HM-10/FFE0, FFF0 etc.): falls dein Auto eine andere UUID benutzt, füge sie manuell hinzu.
       </p>
       <div class="row">
         <input type="text" id="custom-uuid" placeholder="eigene Service-UUID (z.B. 0000ffe0-0000-1000-8000-00805f9b34fb)" style="width:360px">
         <button id="btn-add-uuid">Hinzufügen</button>
       </div>
       <p class="muted" style="margin-top:10px">
-        Tipp: Öffne in Chrome <span class="kbd">chrome://bluetooth-internals/#devices</span> &mdash; dort siehst du
+        Tipp: Öffne in Chrome <span class="kbd">chrome://bluetooth-internals/#devices</span>: dort siehst du
         <b>alle</b> Services/Characteristics deines Autos ohne diese Einschränkung. Wenn du mir die dort
         angezeigten UUIDs (Service + Characteristics + Eigenschaften: read/write/notify) gibst, kann ich die
         Steuerung direkt korrekt verdrahten.
@@ -2845,14 +2845,14 @@
       <h2>Protokoll-Labor (NUS RX/TX)</h2>
       <p class="muted">
         Schreibt frei konfigurierbare Byte-Pakete an NUS RX (<code>6e400002</code>) und zeigt gleichzeitig alle
-        Notify-Werte von NUS TX (<code>6e400003</code>) an &mdash; damit du live sehen kannst, was das Auto zurückmeldet,
+        Notify-Werte von NUS TX (<code>6e400003</code>) an, damit du live sehen kannst, was das Auto zurückmeldet,
         während du Kombinationen ausprobierst.
       </p>
       <p class="muted">
         Bekannt (aus einer unabhängigen Reverse-Engineering-Runde zum selben Auto, per BLE-Sniffer ermittelt):
         echte Kommando-Pakete sind <b>20 Byte</b> lang (2 Byte Präfix + 17 Datenbytes + 1 Prüfsumme), gesendet alle
         ~45ms. Byte-Offset 6 = Gas/Bremse (<code>0xDF</code>=Leerlauf, größer=Gas, kleiner=Bremse). Die Prüfsumme
-        ist noch nicht geknackt &mdash; deshalb unten zuerst das <b>echte, garantiert gültige</b> Leerlauf-Paket laden
+        ist noch nicht geknackt, deshalb unten zuerst das <b>echte, garantiert gültige</b> Leerlauf-Paket laden
         und unverändert wiederholt senden (reproduziert dieselbe gültige Prüfsumme, ohne sie berechnen zu müssen).
       </p>
       <div class="row">
@@ -2901,7 +2901,7 @@
           weiter aussen oder innen sitzt. <b>Wieviel</b> das ist, meldet kein Byte. Diese
           Messung ersetzt das Raten: sie schickt einen <em>festen</em> Lenkanteil und
           erh&ouml;ht ihn in Stufen, bis das Auto die Bahn verl&auml;sst. Der letzte Wert,
-          der noch hielt, ist der brauchbare Bereich &mdash; und der Wert, bei dem es kippt,
+          der noch hielt, ist der brauchbare Bereich: und der Wert, bei dem es kippt,
           sagt, wie viel Lenkanteil einer halben Bahnbreite entspricht.
         </p>
         <p class="muted" style="font-size:11.5px">
@@ -2959,7 +2959,7 @@
         </tbody></table>
         <p class="muted" style="font-size:11.5px">
           <b>Was die Zahl bedeutet und was nicht.</b> Sie sagt, welcher Lenkanteil das Auto
-          gerade noch auf der Bahn h&auml;lt &mdash; nicht, um wie viele Zentimeter es dabei
+          gerade noch auf der Bahn h&auml;lt, nicht, um wie viele Zentimeter es dabei
           versetzt liegt. Der Zusammenhang zwischen beiden ist nicht gemessen und wird hier
           nicht behauptet. Brauchbar ist sie trotzdem: die Ideallinie und die
           &Uuml;berholmanov&ouml;r d&uuml;rfen nie mehr als etwa die H&auml;lfte des
@@ -2972,8 +2972,8 @@
       <p class="muted">
         Sendet eine feste Testsequenz (Lenkung im Stand 0/25/50/75/100% links &amp; rechts, dazu 3 sehr kurze
         Mini-Vorwärtsschübe bei niedrigem Tempo, eine sanfte Bremse) und wertet parallel die Notify-Bytes 1-3
-        aus &mdash; um zu prüfen, ob das wirklich Gier-/Beschleunigungsdaten vom Auto sind.
-        <b>Läuft komplett automatisch, ohne Physik-Engine (direkte Werte).</b> Passt in ca. 50×20cm &mdash; am besten
+        aus, um zu prüfen, ob das wirklich Gier-/Beschleunigungsdaten vom Auto sind.
+        <b>Läuft komplett automatisch, ohne Physik-Engine (direkte Werte).</b> Passt in ca. 50×20cm, am besten
         das Auto mittig auf die Fläche stellen oder aufbocken, falls möglich.
       </p>
       <div class="row">
@@ -2990,7 +2990,7 @@
       <h2>Direktsteuerung mit der Maus</h2>
       <p class="muted" style="font-size:11.5px">
         Aus dem Cockpit hierher gezogen. Am Telefon wird geneigt oder ein Pad benutzt, am
-        Rechner reichen die Pfeiltasten &mdash; aber ohne Pad und ohne Tastatur ist das
+        Rechner reichen die Pfeiltasten: aber ohne Pad und ohne Tastatur ist das
         hier die einzige Mausbedienung, deshalb ist sie nicht gel&ouml;scht.
       </p>
       <div class="control-grid">
@@ -3061,7 +3061,7 @@
     <div class="card">
       <h2>Garage</h2>
       <p class="muted">
-        Jedes Auto braucht einen eigenen Klick auf &bdquo;Auto verbinden&ldquo; &mdash; Web Bluetooth
+        Jedes Auto braucht einen eigenen Klick auf &bdquo;Auto verbinden&ldquo;, Web Bluetooth
         verlangt f&uuml;r jede Verbindung eine eigene Nutzergeste, das l&auml;sst sich nicht umgehen.
         <strong>Klick auf eine Zeile l&auml;sst die Lichter dieses Autos blinken</strong>, damit du
         siehst, welches Auto in der Liste welches auf dem Tisch ist.
@@ -3075,9 +3075,9 @@
       </div>
       <div id="gar-list"></div>
       <p class="muted" style="font-size:12px; margin-top:10px">
-        <b>Steuern</b> &mdash; dieses Auto folgt Gamepad und Tastatur. Genau eines kann das sein;
+        <b>Steuern</b>: dieses Auto folgt Gamepad und Tastatur. Genau eines kann das sein;
         Standard ist das zuerst verbundene.<br>
-        <b>Ghost</b> &mdash; f&auml;hrt beim Rennstart selbst&auml;ndig los und h&auml;lt sich an der
+        <b>Ghost</b>: f&auml;hrt beim Rennstart selbst&auml;ndig los und h&auml;lt sich an der
         Strecke. Tank und Schaden werden f&uuml;r Ghosts nicht simuliert.
       </p>
     </div>
@@ -3120,7 +3120,7 @@
       </div>
 
       <div id="race-grid-wrap" style="display:none; margin-top:12px">
-        <label class="small">Startaufstellung &mdash; ziehen oder mit den Pfeilen sortieren</label>
+        <label class="small">Startaufstellung, ziehen oder mit den Pfeilen sortieren</label>
         <div id="race-grid"></div>
         <p class="muted" style="font-size:11.5px; margin:6px 0 0 0">
           Die Autos fahren in dieser Reihenfolge los. Die Einf&uuml;hrungsrunde l&auml;uft mit
@@ -3164,10 +3164,10 @@
       </div>
       <p class="muted" style="margin-top:8px; font-size:11.5px">
         Eine Runde zählt, sobald das Auto das Start/Ziel-Muster auf der Strecke überfährt
-        (dasselbe Signal, das auch der Streckenscanner ausliest) — kein eigener Sensor in der App.
+        (dasselbe Signal, das auch der Streckenscanner ausliest): kein eigener Sensor in der App.
       </p>
       <div id="race-results" style="display:none; margin-top:14px">
-        <h3 style="margin:0 0 8px 0; font-size:14px">Ergebnis &mdash; alle verbundenen Autos</h3>
+        <h3 style="margin:0 0 8px 0; font-size:14px">Ergebnis, alle verbundenen Autos</h3>
         <div class="doc-table-wrap" style="max-height:280px; overflow-y:auto; border:1px solid var(--border); border-radius:6px">
           <table style="width:100%; border-collapse:collapse; font-size:13px">
             <thead>
@@ -3210,10 +3210,8 @@
           Vorausblick.</small></div>
         <label class="tgl"><input type="checkbox" id="dash-freeroam"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Auf der Bahn
-          <small>Bit&nbsp;5 in Byte&nbsp;14: Streckensensor an, und das Auto h&auml;lt sich
-          selbst auf der Bahn. <b>Aus</b> entspricht &bdquo;Ohne Bahn&ldquo; der
-          Original-App &mdash; dann liest das Auto keine Streckencodes, es gibt also keine
-          Rundenzeiten, keinen Scan und keinen Vorausblick f&uuml;r Ghosts.</small></div>
+          <small>Sensor an, Auto h&auml;lt sich selbst auf der Bahn. <b>Aus</b>: keine
+          Streckencodes, keine Rundenzeiten, kein Scan.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-ontrack" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Physik-Modus aktivieren<small>Aus: rohe Stickstellung, ohne Gänge.</small></div><label class="tgl"><input type="checkbox" id="phys-enable" checked><span></span></label></div>
       <div class="opt-row" id="phys-gyro-wrap"><div class="opt-label">Handy-Neigung für Lenkung nutzen</div><label class="tgl"><input type="checkbox" id="phys-gyro"><span></span></label></div>
@@ -3239,15 +3237,15 @@
         </div></div>
       <div class="opt-row"><div class="opt-label">Motorsound-Profil</div>
         <select id="sound-profile">
-          <option value="mustang" selected>Mustang &mdash; V8, Cross-Plane</option>
-          <option value="corvette">Corvette C6 &mdash; V8 (Aufnahme)</option>
-          <option value="porsche_rec">Porsche &mdash; Boxer-6 (Aufnahme)</option>
-          <option value="porsche">Porsche &mdash; Boxer-6, Saugmotor</option>
-          <option value="bmw">BMW &mdash; Reihen-6, Turbo</option>
-          <option value="gt3v8">GT3 &mdash; V8, Flat-Plane, 8800/min</option>
-          <option value="gt3v10">GT3 &mdash; V10, Saugmotor, 8900/min</option>
-          <option value="bmax">B-Max &mdash; Reihen-3, Turbo</option>
-          <option value="f1">Formel 1 &mdash; V12, 17500/min</option>
+          <option value="mustang" selected>Mustang, V8, Cross-Plane</option>
+          <option value="corvette">Corvette C6: V8 (Aufnahme)</option>
+          <option value="porsche_rec">Porsche, Boxer-6 (Aufnahme)</option>
+          <option value="porsche">Porsche: Boxer-6, Saugmotor</option>
+          <option value="bmw">BMW: Reihen-6, Turbo</option>
+          <option value="gt3v8">GT3: V8, Flat-Plane, 8800/min</option>
+          <option value="gt3v10">GT3: V10, Saugmotor, 8900/min</option>
+          <option value="bmax">B-Max: Reihen-3, Turbo</option>
+          <option value="f1">Formel 1: V12, 17500/min</option>
           <option value="v8">Einfach: V8 (kernig)</option>
           <option value="v10">Einfach: V10 (hoch)</option>
           <option value="ev">Einfach: Elektro</option>
@@ -3348,13 +3346,8 @@
           <span class="opt-val" id="ghost-curve-val">35%</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Rennw&uuml;rze
-          <small>Ein Regler f&uuml;r f&uuml;nf Dinge, die ein Rennen zum Rennen machen:
-          <b>Tagesform</b> (die Rundenzeiten schwanken), <b>Fehler</b> (selten, sichtbar,
-          kostet Zehntel), <b>Windschatten</b> (dicht dahinter macht schneller),
-          <b>Attacke</b> (wer lange klebt, versucht es auf der anderen Seite) und
-          <b>Gummiband</b> (der F&uuml;hrende wird gebremst, je gr&ouml;&szlig;er sein
-          Vorsprung). Auf 0 f&auml;hrt jeder Ghost stur seine Zeit &mdash; das ist die
-          Einstellung f&uuml;r Messungen.</small></div>
+          <small>Tagesform, Fehler, Windschatten, Attacke, Gummiband. Auf 0 f&auml;hrt jeder
+          Ghost stur seine Zeit.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
           <input type="range" id="ghost-spice" min="0" max="1" step="0.05" value="0.4">
@@ -3362,10 +3355,8 @@
           <span class="opt-val" id="ghost-spice-val">40%</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Ghost: Ideallinie
-          <small>Vor der Kurve nach au&szlig;en, im Scheitel nach innen, danach wieder
-          heraus. Vorw&auml;rtsgesteuert aus Layout und Kachelphase &mdash; wie viele
-          Zentimeter dabei herauskommen, meldet kein Byte. Ob es hilft, zeigt die
-          Rundenzeit gegen die Abg&auml;nge im Ergebnisfenster. Links = aus.</small></div>
+          <small>Au&szlig;en anstellen, innen scheiteln, au&szlig;en heraus. Ob es hilft, sagen
+          Rundenzeit und Abg&auml;nge. Links = aus.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
           <input type="range" id="ghost-line" min="0" max="1" step="0.05" value="0.35">
@@ -3381,12 +3372,11 @@
         </div></div>
       <div class="opt-row"><div class="opt-label">Strecke beim Fahren lernen
           <small>Setzt das Layout aus den gemeldeten Kacheln zusammen und &uuml;bernimmt es
-          nach der ersten geschlossenen Runde &mdash; nur wenn noch keine Strecke liegt.</small></div>
+          nach der ersten geschlossenen Runde, nur wenn noch keine Strecke liegt.</small></div>
         <label class="tgl"><input type="checkbox" id="ghost-learn" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Ghost braucht Streckencode
-          <small>Standard aus, damit er auch ohne gedruckte Strecke f&auml;hrt. An: er
-          f&auml;hrt nur mit gelesenem Muster, h&auml;lt sich dann aber selbst auf der
-          Bahn.</small></div>
+          <small>Aus: f&auml;hrt auch ohne gedruckte Strecke. An: nur mit gelesenem
+          Muster.</small></div>
         <label class="tgl"><input type="checkbox" id="ghost-needcode"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Ghost: F&uuml;hrenden bremsen<small>Der Erstplatzierte fährt etwas langsamer.</small></div>
         <label class="tgl"><input type="checkbox" id="ghost-leader"><span></span></label></div>
@@ -3466,7 +3456,7 @@
       </div>
       <p class="muted" style="margin-top:14px">
         Standard: rechter Trigger = Gas, linker Trigger = Bremse, linker Stick = Lenkung,
-        X (links) = runterschalten, B (rechts) = hochschalten &mdash; wie bei einem Xbox-Controller. Klicke
+        X (links) = runterschalten, B (rechts) = hochschalten: wie bei einem Xbox-Controller. Klicke
         "Neu zuweisen" und betätige dann den gewünschten Knopf/Stick/Trigger am Controller.
       </p>
       <table class="bind-table">
@@ -3489,7 +3479,7 @@
       <h2>Motorwerkstatt</h2>
       <p class="muted">
         Dieselben elf Gr&ouml;&szlig;en, aus denen die mitgelieferten Motoren gerechnet
-        sind &mdash; nur direkt zum Drehen. Das Modell l&auml;uft hier im Browser, also
+        sind, nur direkt zum Drehen. Das Modell l&auml;uft hier im Browser, also
         h&ouml;rst du jede &Auml;nderung sofort, ohne dass eine Datei erzeugt werden muss.
       </p>
       <p class="muted" style="font-size:11.5px">
@@ -3563,7 +3553,7 @@
       </div>
       <p class="muted" style="font-size:11.5px; margin:8px 0 4px 0">
         Ablegen speichert im Browser, bleibt also auf diesem Ger&auml;t. Zum Weitergeben der
-        Text unten &mdash; kopieren, verschicken, einf&uuml;gen, <b>&Uuml;bernehmen</b>.
+        Text unten, kopieren, verschicken, einf&uuml;gen, <b>&Uuml;bernehmen</b>.
       </p>
       <textarea id="mw-json" spellcheck="false"></textarea>
       <div class="row" style="gap:8px; margin-top:6px">
@@ -3575,7 +3565,7 @@
       <h2>Voreinstellungen</h2>
       <p class="muted">
         Drei fertige Abstimmungen. Sie setzen nur die Regler, die das <em>Fahrgef&uuml;hl</em>
-        betreffen &mdash; nicht die Rennl&auml;nge, nicht das Wetter, nicht die Strecke, denn
+        betreffen: nicht die Rennl&auml;nge, nicht das Wetter, nicht die Strecke, denn
         die geh&ouml;ren zum Rennen und nicht zum Auto.
       </p>
       <div class="row" style="gap:8px; flex-wrap:wrap">
@@ -3699,14 +3689,14 @@
       <p class="muted" style="font-size:11.5px; margin-top:6px">
         Schwarz ist die Fahrbahn, wei&szlig;e Striche trennen die Streckenteile. Randsteine in
         Fahrtrichtung: <b style="color:var(--bad)">links rot-wei&szlig;</b>,
-        <b style="color:var(--info)">rechts blau-wei&szlig;</b> &mdash; die Boxengasse liegt
+        <b style="color:var(--info)">rechts blau-wei&szlig;</b>: die Boxengasse liegt
         deshalb rechts. Ihre Breite ist <b>9,5&nbsp;%</b> der Fahrbahnbreite, ausgemessen aus
         den Streckenkarten der Original-App. Die
-        d&uuml;nne farbige Linie ist die berechnete Ideallinie &mdash; kr&uuml;mmungs&auml;rmster
+        d&uuml;nne farbige Linie ist die berechnete Ideallinie, kr&uuml;mmungs&auml;rmster
         Verlauf innerhalb der Fahrbahn. Ihre Farbe zeigt, ob dort gebremst w&uuml;rde:
         <b style="color:var(--good)">gr&uuml;n am Gas</b>, <b style="color:var(--bad)">rot beim
         Bremsen</b>, mit flie&szlig;endem &Uuml;bergang. Gebremst wird dort, wo die
-        Kr&uuml;mmung <em>voraus</em> ansteigt &mdash; eine Kurve, die schon mit festem
+        Kr&uuml;mmung <em>voraus</em> ansteigt: eine Kurve, die schon mit festem
         Radius gefahren wird, braucht keine Bremse mehr. Beides ist eine <em>Rechnung</em>,
         keine Messung: dass ein Auto die Linie einh&auml;lt, kann die App nicht pr&uuml;fen,
         weil kein Byte die Querlage meldet.
@@ -3720,7 +3710,7 @@
       <h3 style="font-size:14px; margin:16px 0 6px 0">Wo steht das Auto?</h3>
       <p class="muted" style="font-size:11.5px">
         Aus dem Cockpit hierher: dort war unter dem Schirm alles doppelt, die Position
-        aber nicht &mdash; und sie geh&ouml;rt neben die Strecke, auf die sie sich bezieht.
+        aber nicht: und sie geh&ouml;rt neben die Strecke, auf die sie sich bezieht.
         Die Lage ist eine Sch&auml;tzung aus Kachelz&auml;hler und Zeit, keine
         Positionsmessung vom Auto.
       </p>
@@ -3748,7 +3738,7 @@
     <button class="misc-back subpage-back" data-sub="">&larr; Strecke</button>
       <h2>Welchen Code meldet dieses Teil?</h2>
       <p class="muted">
-      Zum Herausfinden, was ein Streckenteil wirklich sendet &mdash; zum Beispiel die
+      Zum Herausfinden, was ein Streckenteil wirklich sendet: zum Beispiel die
       180-Grad-Haarnadel. Auto verbinden, hier auf <b>Z&auml;hlen starten</b>, dann
       <em>langsam</em> von Hand &uuml;ber genau dieses Teil schieben und ablesen, welcher
       Wert dabei auftaucht.
@@ -3774,7 +3764,7 @@
       </div>
       <p class="muted" style="font-size:11.5px; margin:10px 0 4px 0">
       Letztes Paket, Byte f&uuml;r Byte. <b>Byte&nbsp;11</b> ist der Kachelz&auml;hler,
-      <b>Byte&nbsp;12</b> die Kachelart &mdash; wenn hier etwas anderes steht als
+      <b>Byte&nbsp;12</b> die Kachelart: wenn hier etwas anderes steht als
       erwartet, liegt der Fehler nicht bei der Auswertung, sondern beim Aufbau des
       Pakets.
       </p>
@@ -3790,13 +3780,13 @@
       <b>Wenn hier nur <code>0xff</code> steht:</b> zuerst den Schalter
       <b>Auf der Bahn</b> in den Optionen pr&uuml;fen. Er setzt Bit&nbsp;5 in
       Byte&nbsp;14; steht er aus, geht Bit&nbsp;7 hinaus und das schaltet den
-      Streckensensor ab &mdash; gemessen 0 Lesungen in 551 Fahrmeldungen. Genau dieses
+      Streckensensor ab, gemessen 0 Lesungen in 551 Fahrmeldungen. Genau dieses
       Bit hat diese App zw&ouml;lf Aufzeichnungen lang gesendet, siehe Doku,
       &bdquo;Auf der Bahn oder ohne Bahn&ldquo;.
       </p>
       <p class="muted" style="font-size:11.5px">
       <b>Wie das Uebrige zu lesen ist.</b> Steht <b>Musterkontakt</b> auf 0, hat der Sensor
-      w&auml;hrend der ganzen Messung kein gedrucktes Blatt gesehen &mdash; dann liegt es
+      w&auml;hrend der ganzen Messung kein gedrucktes Blatt gesehen, dann liegt es
       nicht an der Entschl&uuml;sselung, sondern daran, dass nichts zu lesen war. Z&auml;hlt
       der <b>Kachelz&auml;hler</b> hoch, obwohl Byte&nbsp;12 nur <code>0xff</code> zeigt,
       erkennt das Auto Teile, meldet aber ihre Art nicht. Und wenn sich
@@ -3805,7 +3795,7 @@
       </p>
       <p class="muted" style="font-size:11.5px">
       <code>0xff</code> hei&szlig;t &bdquo;gerade keine Lesung&ldquo; und ist der
-      h&auml;ufigste Wert von allen &mdash; das ist normal und kein Fehler.
+      h&auml;ufigste Wert von allen, das ist normal und kein Fehler.
       <code>0x00</code> hei&szlig;t &bdquo;kein Muster erkannt&ldquo;.
       Interessant ist alles andere.
       </p>
@@ -3813,7 +3803,7 @@
       <b>Womit dieses Werkzeug die Haarnadel gefunden hat.</b> Hier stand die Vermutung,
       sie melde <code>0x03</code> oder <code>0x04</code> wie eine normale Kurve und habe
       gar keinen eigenen Code. Am 24.08. wurde sie &uuml;berfahren und meldete
-      <code>0x06</code> rechts und <code>0x05</code> links &mdash; sie hat sehr wohl
+      <code>0x06</code> rechts und <code>0x05</code> links, sie hat sehr wohl
       eigene Codes, und sie f&uuml;gen sich in das Muster der anderen:
       <code>0x03</code>/<code>0x04</code> links/rechts f&uuml;r die 60-Grad-Kurve,
       <code>0x05</code>/<code>0x06</code> links/rechts f&uuml;r die Haarnadel. Ein Wert
@@ -3826,7 +3816,7 @@
       <h2>Druckvorlagen</h2>
       <p class="muted">
         Muster zum Ausdrucken und Auslegen. <b>Wichtig beim Drucken:</b> A4 <b>quer</b>,
-        Skalierung <b>100 % / „Tatsächliche Größe"</b> &mdash; auf keinen Fall „an Seite anpassen",
+        Skalierung <b>100 % / „Tatsächliche Größe"</b>: auf keinen Fall „an Seite anpassen",
         sonst stimmen die Balkenabstände nicht mehr und der Sensor liest gar nichts.
         Der Pfeil zeigt in die Fahrtrichtung.
       </p>
@@ -3837,7 +3827,7 @@
           <p style="margin:8px 0 4px 0"><b>Start / Ziel</b></p>
           <p class="muted" style="font-size:11.5px; margin:0 0 8px 0">
             Zählt Runden und löst im Rennmodus die Rundenzeit aus. Erwarteter Code
-            <code>0x01</code>. <b>Rekonstruktion</b> aus einem Foto &mdash; wenn du das
+            <code>0x01</code>. <b>Rekonstruktion</b> aus einem Foto, wenn du das
             Original-PDF hast, nimm lieber das.
           </p>
           <a href="startziel-a4.svg" download="startziel-a4.svg">
@@ -3850,7 +3840,7 @@
           <p style="margin:8px 0 4px 0"><b>Boxengasse</b></p>
           <p class="muted" style="font-size:11.5px; margin:0 0 8px 0">
             Löst Tempolimit und Boxenstopp aus. Welchen Code das Auto dafür meldet, ist
-            <b>unbestätigt</b> &mdash; nach dem Drucken einmal überfahren und unten mit der
+            <b>unbestätigt</b>: nach dem Drucken einmal überfahren und unten mit der
             Muster-Sonde ablesen.
           </p>
           <a href="boxengasse-a4.svg" download="boxengasse-a4.svg">
@@ -3865,7 +3855,7 @@
       <h2>Boxengasse</h2>
       <p class="muted">
         Fährt das Auto über das Boxen-Muster, greift ein Tempolimit von 40&nbsp;%. Bleibt es dann
-        stehen, läuft der Service &mdash; je länger du stehst, desto mehr Sprit und Reparatur.
+        stehen, läuft der Service: je länger du stehst, desto mehr Sprit und Reparatur.
         Beim Losfahren ist das Limit wieder weg.
       </p>
       <div class="row" style="align-items:center; gap:16px">
@@ -3882,12 +3872,12 @@
         <span class="muted">Zuletzt überfahrenes Muster: <b id="tile-probe" style="font-family:monospace">-</b></span>
       </div>
       <p class="muted" style="font-size:11.5px">
-        <b>Muster-Sonde:</b> fahr über ein beliebiges ausgedrucktes Muster &mdash; hier steht sofort,
+        <b>Muster-Sonde:</b> fahr über ein beliebiges ausgedrucktes Muster, hier steht sofort,
         welchen Code das Auto meldet. Sicher bekannt sind <code>0x01</code> Start/Ziel,
         <code>0x02</code> Gerade, <code>0x03</code> Linkskurve, <code>0x04</code> Rechtskurve,
         <code>0x05</code> Haarnadel links und <code>0x06</code> Haarnadel rechts;
         alles andere ist unbestätigt. Trag hier den Code ein, den dein gedrucktes Boxen-Muster
-        tatsächlich auslöst &mdash; <code>0x08</code> war nie ein reales Signal und ist deshalb
+        tatsächlich auslöst, <code>0x08</code> war nie ein reales Signal und ist deshalb
         nicht mehr die Vorgabe.
       </p>
     </div>
@@ -3915,7 +3905,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.3.50</span></span>
+    <span class="foot-ver">v<span id="app-version">0.3.51</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
   </span>
   <span class="foot-right">
@@ -3951,9 +3941,9 @@
     '00002a01-0000-1000-8000-00805f9b34fb': 'Appearance',
     '00002a04-0000-1000-8000-00805f9b34fb': 'Preferred Connection Params',
     '00002aa6-0000-1000-8000-00805f9b34fb': 'Central Address Resolution',
-    '6e400001-b5a3-f393-e0a9-e50e24dcca9e': 'Nordic UART Service — vermutlich Fahrzeugsteuerung',
-    '6e400002-b5a3-f393-e0a9-e50e24dcca9e': 'NUS RX — App → Auto (hier Kommandos schreiben)',
-    '6e400003-b5a3-f393-e0a9-e50e24dcca9e': 'NUS TX — Auto → App (Notify/Telemetrie)',
+    '6e400001-b5a3-f393-e0a9-e50e24dcca9e': 'Nordic UART Service, vermutlich Fahrzeugsteuerung',
+    '6e400002-b5a3-f393-e0a9-e50e24dcca9e': 'NUS RX, App → Auto (hier Kommandos schreiben)',
+    '6e400003-b5a3-f393-e0a9-e50e24dcca9e': 'NUS TX, Auto → App (Notify/Telemetrie)',
     '0000fe59-0000-1000-8000-00805f9b34fb': '⚠️ Nordic Secure DFU (Firmware-Update)',
     '8ec90001-f315-4f60-9fb8-838830daea50': '⚠️ Nordic Secure DFU Service',
     '8ec90003-f315-4f60-9fb8-838830daea50': '⚠️ DFU Bootloader-Trigger',
@@ -4252,14 +4242,9 @@
   // stehen - das ist die Absicht, nicht ein Mangel: ein fehlender Eintrag faellt auf,
   // ein leerer Text nicht.
   const I18N_EN = {
-    "(der Führende wird gebremst, je größer sein Vorsprung). Auf 0 fährt jeder Ghost stur seine Zeit — das ist die Einstellung für Messungen.": "(the leader is slowed, the bigger their lead). At 0 every ghost stubbornly drives its own time — that is the setting for measurements.",
-    "(dicht dahinter macht schneller),": "(sitting close behind makes you faster),",
-    "(die Rundenzeiten schwanken),": "(lap times vary),",
     "(fest)": "(fixed)",
     "(nicht real getestet).": "(not tested for real).",
-    "(selten, sichtbar, kostet Zehntel),": "(rare, visible, costs tenths),",
-    "(wer lange klebt, versucht es auf der anderen Seite) und": "(whoever sits close for long enough tries the other side) and",
-    ") an — damit du live sehen kannst, was das Auto zurückmeldet, während du Kombinationen ausprobierst.": ") — so you can watch live what the car reports back while you try combinations.",
+    ") an, damit du live sehen kannst, was das Auto zurückmeldet, während du Kombinationen ausprobierst.": "): so you can watch live what the car reports back while you try combinations.",
     ") und zeigt gleichzeitig alle Notify-Werte von NUS TX (": ") and at the same time shows every notify value from NUS TX (",
     ", Skalierung": ", scaling",
     ", bevor die App es merkt:": ", before the app notices:",
@@ -4278,11 +4263,21 @@
     "7. von der Bahn": "7. off the track",
     "90 Grad rechts drehen": "Rotate 90 degrees right",
     "90° rechts drehen": "Rotate 90° right",
+    ": Start/Ziel, ein Streckenteil oder den Boxengassen-Ausdruck. Die Anzeige zählt, ob Byte 12 den Wert": ": start/finish, a track part or the pit-lane printout. The display counts whether byte 12 ever leaves the value",
+    ": auf keinen Fall „an Seite anpassen\", sonst stimmen die Balkenabstände nicht mehr und der Sensor liest gar nichts. Der Pfeil zeigt in die Fahrtrichtung.": ": never “fit to page”, or the bar spacing is wrong and the sensor reads nothing at all. The arrow points in the direction of travel.",
+    ": die Boxengasse liegt deshalb rechts. Ihre Breite ist": ": which is why the pit lane is on the right. Its width is",
+    ": dieses Auto folgt Gamepad und Tastatur. Genau eines kann das sein; Standard ist das zuerst verbundene.": ": this car follows the gamepad and keyboard. Exactly one car can be it; the default is the first one connected.",
+    ": dort siehst du": ": there you see",
+    ": fährt beim Rennstart selbständig los und hält sich an der Strecke. Tank und Schaden werden für Ghosts nicht simuliert.": ": sets off by itself at the race start and follows the track. Fuel and damage are not simulated for ghosts.",
     ": für jedes Auto im Rennen": ": for every car in the race",
-    ": was tue ich, wenn ich auf Kachel 3 bin? Aus dem Rennmitschnitt der Original-App wissen wir, dass genau das reicht — bei einem ihrer Ghosts waren": ": what do I do when I am on tile 3? From the race capture of the original app we know that this is enough — for one of its ghosts,",
-    "=Leerlauf, größer=Gas, kleiner=Bremse). Die Prüfsumme ist noch nicht geknackt — deshalb unten zuerst das": "= idle, larger = throttle, smaller = brake). The checksum is not cracked yet — which is why below you first take the",
+    ": keine Streckencodes, keine Rundenzeiten, kein Scan.": ": no track codes, no lap times, no scan.",
+    ": nach dem Drucken einmal überfahren und unten mit der Muster-Sonde ablesen.": ": after printing, drive over it once and read it off below with the pattern probe.",
+    ": und darunter siehst du, was das Auto daraus macht.": ": and below it you see what the car makes of it.",
+    ": vor jedem Manöver den passenden Knopf drücken. Taste": ": press the matching button before each manoeuvre. Key",
+    ": was tue ich, wenn ich auf Kachel 3 bin? Aus dem Rennmitschnitt der Original-App wissen wir, dass genau das reicht: bei einem ihrer Ghosts waren": ": what do I do when I am on tile 3? From the race capture of the original app we know that this is enough, for one of its ghosts,",
+    "=Leerlauf, größer=Gas, kleiner=Bremse). Die Prüfsumme ist noch nicht geknackt, deshalb unten zuerst das": "= idle, larger = throttle, smaller = brake). The checksum is not cracked yet, which is why below you first take the",
     "Ablauf: Auto in der Garage verbinden, unten": "How to run it: connect a car in the Garage, then below on",
-    "Ablegen speichert im Browser, bleibt also auf diesem Gerät. Zum Weitergeben der Text unten — kopieren, verschicken, einfügen,": "Store keeps it in the browser, so it stays on this device. To pass it on, use the text below — copy, send, paste,",
+    "Ablegen speichert im Browser, bleibt also auf diesem Gerät. Zum Weitergeben der Text unten, kopieren, verschicken, einfügen,": "Store keeps it in the browser, so it stays on this device. To pass it on, use the text below: copy, send, paste,",
     "Ablegen": "Store",
     "Abschnitt markieren": "Mark a section",
     "Absichtlich leise, damit der Motor vorne bleibt.": "Deliberately quiet, so the engine stays in front.",
@@ -4312,9 +4307,10 @@
     "Aufnahme starten": "Start recording",
     "Aufnahme": "Recording",
     "Aufnahme: nächsten Abschnitt markieren": "Recording: mark the next section",
-    "Aus dem Cockpit hierher gezogen. Am Telefon wird geneigt oder ein Pad benutzt, am Rechner reichen die Pfeiltasten — aber ohne Pad und ohne Tastatur ist das hier die einzige Mausbedienung, deshalb ist sie nicht gelöscht.": "Moved here from the cockpit. On a phone you tilt or use a pad, on a computer the arrow keys are enough — but without a pad and without a keyboard this is the only mouse control, which is why it was not deleted.",
-    "Aus dem Cockpit hierher: dort war unter dem Schirm alles doppelt, die Position aber nicht — und sie gehört neben die Strecke, auf die sie sich bezieht. Die Lage ist eine Schätzung aus Kachelzähler und Zeit, keine Positionsmessung vom Auto.": "Moved here from the cockpit: everything below the dash was duplicated there, but the position was not — and it belongs next to the track it refers to. The position is an estimate from the tile counter and time, not a measurement from the car.",
+    "Aus dem Cockpit hierher gezogen. Am Telefon wird geneigt oder ein Pad benutzt, am Rechner reichen die Pfeiltasten: aber ohne Pad und ohne Tastatur ist das hier die einzige Mausbedienung, deshalb ist sie nicht gelöscht.": "Moved here from the cockpit. On a phone you tilt or use a pad, on a computer the arrow keys are enough: but without a pad and without a keyboard this is the only mouse control, which is why it was not deleted.",
+    "Aus dem Cockpit hierher: dort war unter dem Schirm alles doppelt, die Position aber nicht: und sie gehört neben die Strecke, auf die sie sich bezieht. Die Lage ist eine Schätzung aus Kachelzähler und Zeit, keine Positionsmessung vom Auto.": "Moved here from the cockpit: everything below the dash was duplicated there, but the position was not: and it belongs next to the track it refers to. The position is an estimate from the tile counter and time, not a measurement from the car.",
     "Aus": "Off",
+    "Aus: fährt auch ohne gedruckte Strecke. An: nur mit gelesenem Muster.": "Off: drives even without a printed track. On: only with a pattern read.",
     "Aus: manuell, Quadrat/X runter, Kreis/B hoch. Im Stand unter den 1. Gang = Rückwärts.": "Off: manual, square/X down, circle/B up. At a standstill, below 1st gear = reverse.",
     "Aus: rohe Stickstellung, ohne Gänge.": "Off: raw stick position, no gears.",
     "Auslöse-Code (Byte 12)": "Trigger code (byte 12)",
@@ -4330,8 +4326,9 @@
     "Autonome Gegner": "Autonomous opponents",
     "Autonome Gegner, fein einstellbar": "Autonomous opponents, finely adjustable",
     "Autonomes Fahren: Aufnahme & Wiedergabe": "Autonomous driving: record & replay",
+    "Außen anstellen, innen scheiteln, außen heraus. Ob es hilft, sagen Rundenzeit und Abgänge. Links = aus.": "Set up wide, apex tight, run out wide. Whether it helps is told by lap time and departures. Left = off.",
     "BLE-Explorer": "BLE explorer",
-    "BLE-Explorer, Kalibrierung, Makros — die Werkbank unter der Oberfläche.": "BLE explorer, calibration, macros — the workbench under the surface.",
+    "BLE-Explorer, Kalibrierung, Makros: die Werkbank unter der Oberfläche.": "BLE explorer, calibration, macros: the workbench under the surface.",
     "Bauart": "Layout",
     "Baue eine Strecke manuell aus Teilen zusammen, oder scanne sie live, während das Auto einmal die Runde fährt (Auto muss verbunden sein). Bekannte Teiltypen: Start/Ziel, Gerade, Rechtskurve (bestätigt aus echten Streckendaten). Linkskurve ist eine": "Build a track by hand from parts, or scan it live while the car drives one lap (a car must be connected). Known part types: start/finish, straight, right curve (confirmed from real track data). The left curve is an",
     "Bedienung mit Maus oder Finger. Das Gamepad ist hier ausgebaut: es griff vorher auf jedem Tab und auf jedes Bedienelement, und daraus kamen Fehlbedienungen. Es steuert jetzt nur noch das Auto, den Streckeneditor im Vollbild und das Boxenstopp-Menü.": "Operated with the mouse or a finger. The gamepad has been removed here: it used to act on every tab and every control, and that caused mis-operation. It now only drives the car, the track editor in fullscreen, and the pit-stop menu.",
@@ -4342,15 +4339,14 @@
     "Beschleunigungsfaktor": "Acceleration factor",
     "Beste Zeit": "Best time",
     "Beste": "Best",
-    "Bit 5 in Byte 14: Streckensensor an, und das Auto hält sich selbst auf der Bahn.": "Bit 5 in byte 14: track sensor on, and the car keeps itself on the track.",
     "Blip (gerechnet)": "Blip (synthesised)",
     "Box": "Pit",
     "Boxengasse aktiv": "Pit lane active",
     "Boxengasse herunterladen (SVG)": "Download pit lane (SVG)",
     "Boxengasse": "Pit lane",
     "Boxenstopp auf Knopfdruck, mit Quick-Menü": "Pit stop at the touch of a button, with a quick menu",
-    "Boxenstopp — erneut zweimal kurz drücken bricht ab": "Pit stop — two more short presses abort it",
     "Boxenstopp": "Pit stop",
+    "Boxenstopp, erneut zweimal kurz drücken bricht ab": "Pit stop, two more short presses abort it",
     "Boxer": "Flat",
     "Bremse": "Brake",
     "Bremse:": "Brake:",
@@ -4370,10 +4366,10 @@
     "Der Erstplatzierte fährt etwas langsamer.": "The leader drives a little slower.",
     "Der Klangcharakter kommt aus den": "The character of the sound comes from the",
     "Die Autos fahren in dieser Reihenfolge los. Die Einführungsrunde läuft mit Boxengassen-Tempo; sobald das erste Auto Start/Ziel überfährt, ist das Limit weg.": "The cars set off in this order. The formation lap runs at pit-lane pace; as soon as the first car crosses start/finish, the limit is gone.",
-    "Die Controller-Belegung ist frei zuweisbar — Optionen → Controller. Hier steht, was gerade eingestellt ist.": "The controller bindings are freely assignable — Options → Controller. What is set right now is shown here.",
+    "Die Controller-Belegung ist frei zuweisbar, Optionen → Controller. Hier steht, was gerade eingestellt ist.": "The controller bindings are freely assignable, Options → Controller. What is set right now is shown here.",
     "Die Ideallinie schickt einen Lenkanteil hinaus und nimmt an, dass das Auto dadurch weiter aussen oder innen sitzt.": "The racing line sends out a steering share and assumes the car therefore sits further out or further in.",
     "Dieselbe Idee, eine Stufe größer. Ein autonomes Auto braucht keine Zeitkurve, sondern eine": "The same idea, one size up. An autonomous car does not need a curve over time but one",
-    "Dieselben elf Größen, aus denen die mitgelieferten Motoren gerechnet sind — nur direkt zum Drehen. Das Modell läuft hier im Browser, also hörst du jede Änderung sofort, ohne dass eine Datei erzeugt werden muss.": "The same eleven quantities the bundled engines are computed from — only here you turn them directly. The model runs in the browser, so you hear every change at once, with no file to generate.",
+    "Dieselben elf Größen, aus denen die mitgelieferten Motoren gerechnet sind, nur direkt zum Drehen. Das Modell läuft hier im Browser, also hörst du jede Änderung sofort, ohne dass eine Datei erzeugt werden muss.": "The same eleven quantities the bundled engines are computed from, only here you turn them directly. The model runs in the browser, so you hear every change at once, with no file to generate.",
     "Direktsteuerung mit der Maus": "Direct control with the mouse",
     "Doku": "Docs",
     "Drehen": "Rotate",
@@ -4384,17 +4380,16 @@
     "Eckig: Vollgas, dann Vollbremse": "Square: full throttle, then full brake",
     "Eigener Verbindungsweg, nur zum Erkunden. Er legt": "A separate connection path, for exploring only. It places",
     "Eigenes Muster für die Box, mit dem Code, den es auslöst.": "Your own pattern for the pit, with the code it triggers.",
-    "Ein Regler für fünf Dinge, die ein Rennen zum Rennen machen:": "One slider for the five things that make a race a race:",
     "Ein Teil überfahren und ablesen, welchen Wert das Auto meldet.": "Drive over one part and read off the value the car reports.",
-    "Eine Runde zählt, sobald das Auto das Start/Ziel-Muster auf der Strecke überfährt (dasselbe Signal, das auch der Streckenscanner ausliest) — kein eigener Sensor in der App.": "A lap counts as soon as the car drives over the start/finish pattern on the track (the same signal the track scanner reads) — there is no separate sensor in the app.",
+    "Eine Runde zählt, sobald das Auto das Start/Ziel-Muster auf der Strecke überfährt (dasselbe Signal, das auch der Streckenscanner ausliest): kein eigener Sensor in der App.": "A lap counts as soon as the car drives over the start/finish pattern on the track (the same signal the track scanner reads), there is no separate sensor in the app.",
     "Einfach: Elektro": "Simple: electric",
     "Einfach: Turbo": "Simple: turbo",
     "Einmal senden": "Send once",
     "Einstellungen": "settings",
     "Endlosschleife": "Loop forever",
     "Entwickler": "Developer",
-    "Ergebnis — alle verbundenen Autos": "Result — all connected cars",
     "Ergebnis": "Result",
+    "Ergebnis, alle verbundenen Autos": "Result, all connected cars",
     "Erst ein Auto verbinden": "Connect a car first",
     "Erst simulieren, dann fahren. Der Knopf schickt die Kurven an ein verbundenes Auto und fährt sie einmal ab. Das ist bewusst ein": "Simulate first, then drive. The button sends the curves to a connected car and runs them once. That is deliberately one",
     "Fahr die Strecke einmal manuell (Tab \"Fahren\", Joystick/Gas oder Pfeiltasten). Während der Aufnahme werden Lenk- und Gaswerte mit Zeitstempel mitgeschrieben. Bei der Wiedergabe sendet die App exakt dieselbe Sequenz erneut an die Ziel-Characteristic.": "Drive the track once by hand (the \"Drive\" tab, joystick/throttle or arrow keys). During recording, steering and throttle values are written down with timestamps. On replay the app sends exactly the same sequence again to the target characteristic.",
@@ -4406,7 +4401,7 @@
     "Fliegender Start": "Rolling start",
     "Frei fahren": "Free roam",
     "Freies Training": "Free practice",
-    "Fährt das Auto über das Boxen-Muster, greift ein Tempolimit von 40 %. Bleibt es dann stehen, läuft der Service — je länger du stehst, desto mehr Sprit und Reparatur. Beim Losfahren ist das Limit wieder weg.": "When the car drives over the pit pattern, a 40 % speed limit takes effect. If it then stops, the service runs — the longer you stand, the more fuel and repair you get. Driving off lifts the limit again.",
+    "Fährt das Auto über das Boxen-Muster, greift ein Tempolimit von 40 %. Bleibt es dann stehen, läuft der Service: je länger du stehst, desto mehr Sprit und Reparatur. Beim Losfahren ist das Limit wieder weg.": "When the car drives over the pit pattern, a 40 % speed limit takes effect. If it then stops, the service runs: the longer you stand, the more fuel and repair you get. Driving off lifts the limit again.",
     "GATT-Baum": "GATT tree",
     "Gamepad-Vibration": "Gamepad rumble",
     "Gas / Bremse": "Throttle / brake",
@@ -4437,7 +4432,7 @@
     "Haarnadel L": "Hairpin L",
     "Haarnadel R": "Hairpin R",
     "Haarnadel links und": "hairpin left and",
-    "Haarnadel rechts; alles andere ist unbestätigt. Trag hier den Code ein, den dein gedrucktes Boxen-Muster tatsächlich auslöst —": "hairpin right; everything else is unconfirmed. Enter here the code your printed pit pattern actually triggers —",
+    "Haarnadel rechts; alles andere ist unbestätigt. Trag hier den Code ein, den dein gedrucktes Boxen-Muster tatsächlich auslöst,": "hairpin right; everything else is unconfirmed. Enter here the code your printed pit pattern actually triggers, ",
     "Haltezeit": "Hold time",
     "Handy-Neigung für Lenkung nutzen": "Use phone tilt for steering",
     "Hier stand die Vermutung, sie melde": "The assumption here was that it reports",
@@ -4448,7 +4443,7 @@
     "Im Vollbild: hoch/runter wechselt zwischen Aktionen (oben) und Teilen (unten), links/rechts wählt, X löst aus. O rückgängig, Dreieck Reset, Quadrat dreht.": "In fullscreen: up/down switches between actions (top) and parts (bottom), left/right selects, X activates. O undoes, triangle resets, square rotates.",
     "Impulslänge": "Pulse length",
     "In sieben aufgezeichneten Fahrten hat das Auto": "In seven recorded runs the car",
-    "Jedes Auto braucht einen eigenen Klick auf „Auto verbinden“ — Web Bluetooth verlangt für jede Verbindung eine eigene Nutzergeste, das lässt sich nicht umgehen.": "Every car needs its own click on “Connect a car” — Web Bluetooth requires a separate user gesture for each connection, and there is no way around it.",
+    "Jedes Auto braucht einen eigenen Klick auf „Auto verbinden“, Web Bluetooth verlangt für jede Verbindung eine eigene Nutzergeste, das lässt sich nicht umgehen.": "Every car needs its own click on “Connect a car”, Web Bluetooth requires a separate user gesture for each connection, and there is no way around it.",
     "Kacheln gehalten": "tiles held",
     "Kacheln": "Tiles",
     "Kachelzähler": "Tile counter",
@@ -4459,7 +4454,7 @@
     "Kurbelwelle": "Crankshaft",
     "Kurven an das Auto senden": "Send the curves to the car",
     "Kurven glätten": "Smooth the curves",
-    "Kurven ziehen statt Code schreiben — und sofort sehen, was das Auto daraus macht.": "Drag curves instead of writing code — and see straight away what the car makes of it.",
+    "Kurven ziehen statt Code schreiben, und sofort sehen, was das Auto daraus macht.": "Drag curves instead of writing code, and see straight away what the car makes of it.",
     "LB / L1: Rennen starten · RB / R1: Rennen beenden": "LB / L1: start the race · RB / R1: end the race",
     "Laden": "Load",
     "Last": "Load",
@@ -4468,9 +4463,9 @@
     "Leertaste": "Space",
     "Leistung über Akkulaufzeit konstant halten": "Hold power constant over battery life",
     "Lenkansprechen": "Steering response",
-    "Lenkanteil und erhöht ihn in Stufen, bis das Auto die Bahn verlässt. Der letzte Wert, der noch hielt, ist der brauchbare Bereich — und der Wert, bei dem es kippt, sagt, wie viel Lenkanteil einer halben Bahnbreite entspricht.": "steering share and raises it in steps until the car leaves the track. The last value that still held is the usable range — and the value at which it tips over says how much steering share corresponds to half a track width.",
+    "Lenkanteil und erhöht ihn in Stufen, bis das Auto die Bahn verlässt. Der letzte Wert, der noch hielt, ist der brauchbare Bereich: und der Wert, bei dem es kippt, sagt, wie viel Lenkanteil einer halben Bahnbreite entspricht.": "steering share and raises it in steps until the car leaves the track. The last value that still held is the usable range, and the value at which it tips over says how much steering share corresponds to half a track width.",
     "Lenkanteil": "Steering share",
-    "Lenkeinschlag — nicht der verlangte.": "steering angle — not the one asked for.",
+    "Lenkeinschlag, nicht der verlangte.": "steering angle, not the one asked for.",
     "Lenkung & Feinabstimmung": "Steering & fine tuning",
     "Lenkung": "Steering",
     "Lenkung,": "steering,",
@@ -4516,9 +4511,9 @@
     "Name der Strecke": "Track name",
     "Neu zuweisen": "Reassign",
     "Noch keine Verbindung.": "No connection yet.",
-    "Noch nicht gebaut — die drei Punkte stehen hier als Bauplan, damit klar ist, wohin das führt.": "Not built yet — the three points stand here as a blueprint, so it is clear where this leads.",
+    "Noch nicht gebaut, die drei Punkte stehen hier als Bauplan, damit klar ist, wohin das führt.": "Not built yet: the three points stand here as a blueprint, so it is clear where this leads.",
     "Noch nicht gefahren.": "Not driven yet.",
-    "Not-Halt — alle Eingaben los, Momentum auf null": "Emergency stop — release everything, momentum to zero",
+    "Not-Halt, alle Eingaben los, Momentum auf null": "Emergency stop: release everything, momentum to zero",
     "Nothalt.": "emergency stop.",
     "Notiz setzen": "Add a note",
     "Nur die Gaskurve ist einstellbar, die Lenkung macht das Auto selbst. Einzige Rückmeldung ist die Rundenzeit. Genau so haben Rennfahrer es immer gemacht.": "Only the throttle curve is adjustable; the car does the steering itself. The only feedback is the lap time. That is exactly how racing drivers have always done it.",
@@ -4529,17 +4524,17 @@
     "Optionen": "Options",
     "Ortskurve": "Locus",
     "PC und Android, Chrome-basiert": "PC and Android, Chrome-based",
-    "Paket in beiden Richtungen auf — was das Auto meldet und was die App sendet — mit Zeitstempel, und exportiert es als CSV. Damit ist kein btsnoop nötig: die Datei ist bereits beschriftet und entschlüsselt.": "packet in both directions — what the car reports and what the app sends — with a timestamp, and exports it as CSV. No btsnoop needed: the file is already labelled and decoded.",
+    "Paket in beiden Richtungen auf, was das Auto meldet und was die App sendet: mit Zeitstempel, und exportiert es als CSV. Damit ist kein btsnoop nötig: die Datei ist bereits beschriftet und entschlüsselt.": "packet in both directions, what the car reports and what the app sends, with a timestamp, and exports it as CSV. No btsnoop needed: the file is already labelled and decoded.",
     "Paket:": "Packet:",
     "Pakete": "Packets",
     "Paketlänge:": "Packet length:",
-    "Passt in ca. 50×20cm — am besten das Auto mittig auf die Fläche stellen oder aufbocken, falls möglich.": "Fits in about 50×20 cm — best to put the car in the middle of the sheet, or up on blocks if you can.",
+    "Passt in ca. 50×20cm, am besten das Auto mittig auf die Fläche stellen oder aufbocken, falls möglich.": "Fits in about 50×20 cm: best to put the car in the middle of the sheet, or up on blocks if you can.",
     "Pflichtboxenstopps": "Mandatory pit stops",
     "Physik-Modus aktivieren": "Enable physics mode",
     "Position über die Runden": "Position over the laps",
     "Primärrohr": "Primary pipe",
     "Programmierschule": "Coding school",
-    "Protokoll, Streckencodes, Physik, Töne — alles, was gemessen wurde, mit Herkunft.": "Protocol, track codes, physics, sounds — everything that was measured, with its source.",
+    "Protokoll, Streckencodes, Physik, Töne: alles, was gemessen wurde, mit Herkunft.": "Protocol, track codes, physics, sounds: everything that was measured, with its source.",
     "Protokoll-Labor (NUS RX/TX)": "Protocol lab (NUS RX/TX)",
     "Querablage messen": "Measure lateral placement",
     "Querkraft und Längskraft": "Lateral and longitudinal force",
@@ -4571,7 +4566,7 @@
     "Richtung": "Direction",
     "Roh": "Raw",
     "Rollwiderstand, Motorbremse und Luftwiderstand zugleich. Klein rollt weit.": "Rolling resistance, engine braking and drag at once. Small rolls far.",
-    "Runde zählen, ohne sie zu fahren — zum Prüfen von Rundenzeiten und Ergebnistabelle.": "Count a lap without driving it — for checking lap times and the results table.",
+    "Runde zählen, ohne sie zu fahren: zum Prüfen von Rundenzeiten und Ergebnistabelle.": "Count a lap without driving it, for checking lap times and the results table.",
     "Runde": "Lap",
     "Runden": "Laps",
     "Rundentempo der autonomen Autos.": "Lap pace of the autonomous cars.",
@@ -4585,11 +4580,12 @@
     "Schritt: eine steil gezogene Gaskurve lässt ein Auto auf dem Tisch losschießen, und die Simulation kostet nichts.": "step: a steeply drawn throttle curve makes a car shoot off the table, and the simulation costs nothing.",
     "Schwarz ist die Fahrbahn, weiße Striche trennen die Streckenteile. Randsteine in Fahrtrichtung:": "Black is the roadway, white lines separate the parts. Kerbs, in the direction of travel:",
     "Select oder W. Reifen kommen beim Boxenstopp passend.": "Select or W. Tyres come to match at the pit stop.",
-    "Sendet eine feste Testsequenz (Lenkung im Stand 0/25/50/75/100% links & rechts, dazu 3 sehr kurze Mini-Vorwärtsschrübe bei niedrigem Tempo, eine sanfte Bremse) und wertet parallel die Notify-Bytes 1-3 aus — um zu prüfen, ob das wirklich Gier-/Beschleunigungsdaten vom Auto sind.": "Sends a fixed test sequence (steering at a standstill 0/25/50/75/100 % left and right, plus 3 very short forward nudges at low speed and a gentle brake) and evaluates notify bytes 1–3 alongside it — to check whether those really are yaw and acceleration data from the car.",
-    "Sendet eine feste Testsequenz (Lenkung im Stand 0/25/50/75/100% links & rechts, dazu 3 sehr kurze Mini-Vorwärtsschübe bei niedrigem Tempo, eine sanfte Bremse) und wertet parallel die Notify-Bytes 1-3 aus — um zu prüfen, ob das wirklich Gier-/Beschleunigungsdaten vom Auto sind.": "Sends a fixed test sequence (steering at a standstill 0/25/50/75/100 % left and right, plus 3 very short forward nudges at low speed and a gentle brake) and evaluates notify bytes 1–3 alongside it — to check whether those really are yaw and acceleration data from the car.",
+    "Sendet eine feste Testsequenz (Lenkung im Stand 0/25/50/75/100% links & rechts, dazu 3 sehr kurze Mini-Vorwärtsschrübe bei niedrigem Tempo, eine sanfte Bremse) und wertet parallel die Notify-Bytes 1-3 aus, um zu prüfen, ob das wirklich Gier-/Beschleunigungsdaten vom Auto sind.": "Sends a fixed test sequence (steering at a standstill 0/25/50/75/100 % left and right, plus 3 very short forward nudges at low speed and a gentle brake) and evaluates notify bytes 1–3 alongside it, to check whether those really are yaw and acceleration data from the car.",
+    "Sendet eine feste Testsequenz (Lenkung im Stand 0/25/50/75/100% links & rechts, dazu 3 sehr kurze Mini-Vorwärtsschübe bei niedrigem Tempo, eine sanfte Bremse) und wertet parallel die Notify-Bytes 1-3 aus, um zu prüfen, ob das wirklich Gier-/Beschleunigungsdaten vom Auto sind.": "Sends a fixed test sequence (steering at a standstill 0/25/50/75/100 % left and right, plus 3 very short forward nudges at low speed and a gentle brake) and evaluates notify bytes 1–3 alongside it, to check whether those really are yaw and acceleration data from the car.",
+    "Sensor an, Auto hält sich selbst auf der Bahn.": "Sensor on, car keeps itself on the track.",
     "Services/Characteristics deines Autos ohne diese Einschränkung. Wenn du mir die dort angezeigten UUIDs (Service + Characteristics + Eigenschaften: read/write/notify) gibst, kann ich die Steuerung direkt korrekt verdrahten.": "services and characteristics of your car without that restriction. If you give me the UUIDs shown there (service + characteristics + properties: read/write/notify), the control path can be wired up correctly straight away.",
-    "Setzt das Layout aus den gemeldeten Kacheln zusammen und übernimmt es nach der ersten geschlossenen Runde — nur wenn noch keine Strecke liegt.": "Assembles the layout from the reported tiles and adopts it after the first closed lap — only if no track is loaded yet.",
-    "Sie sagt, welcher Lenkanteil das Auto gerade noch auf der Bahn hält — nicht, um wie viele Zentimeter es dabei versetzt liegt. Der Zusammenhang zwischen beiden ist nicht gemessen und wird hier nicht behauptet. Brauchbar ist sie trotzdem: die Ideallinie und die Überholmanovör dürfen nie mehr als etwa die Hälfte des Kippwerts anfordern, und das ist eine Grenze, die vorher nicht bekannt war.": "It says which steering share still just keeps the car on the track — not by how many centimetres it is displaced. The relationship between the two is not measured and is not claimed here. It is useful all the same: the racing line and the overtaking moves must never ask for more than about half the tipping value, and that is a limit that was not known before.",
+    "Setzt das Layout aus den gemeldeten Kacheln zusammen und übernimmt es nach der ersten geschlossenen Runde, nur wenn noch keine Strecke liegt.": "Assembles the layout from the reported tiles and adopts it after the first closed lap, only if no track is loaded yet.",
+    "Sie sagt, welcher Lenkanteil das Auto gerade noch auf der Bahn hält, nicht, um wie viele Zentimeter es dabei versetzt liegt. Der Zusammenhang zwischen beiden ist nicht gemessen und wird hier nicht behauptet. Brauchbar ist sie trotzdem: die Ideallinie und die Überholmanovör dürfen nie mehr als etwa die Hälfte des Kippwerts anfordern, und das ist eine Grenze, die vorher nicht bekannt war.": "It says which steering share still just keeps the car on the track, not by how many centimetres it is displaced. The relationship between the two is not measured and is not claimed here. It is useful all the same: the racing line and the overtaking moves must never ask for more than about half the tipping value, and that is a limit that was not known before.",
     "Simulation fahren": "Run the simulation",
     "Simulierte Motoren und eigene Sounds über Engine-Sim": "Simulated engines and custom sounds via Engine-Sim",
     "Slalom: Lenken im Wechsel": "Slalom: steer alternately",
@@ -4597,14 +4593,13 @@
     "Sonstige": "More",
     "Speichern und austauschen": "Save and exchange",
     "Speichern": "Save",
-    "Standard aus, damit er auch ohne gedruckte Strecke fährt. An: er fährt nur mit gelesenem Muster, hält sich dann aber selbst auf der Bahn.": "Off by default, so it drives even without a printed track. On: it only drives with a pattern read, but then keeps itself on the track.",
     "Standard aus. Die ersten fünf sind Aufnahmen, der Rest ist gerechnet.": "Off by default. The first five are recordings, the rest are synthesised.",
-    "Standard: rechter Trigger = Gas, linker Trigger = Bremse, linker Stick = Lenkung, X (links) = runterschalten, B (rechts) = hochschalten — wie bei einem Xbox-Controller. Klicke \"Neu zuweisen\" und betätige dann den gewünschten Knopf/Stick/Trigger am Controller.": "Default: right trigger = throttle, left trigger = brake, left stick = steering, X (left) = shift down, B (right) = shift up — as on an Xbox controller. Click \"Reassign\" and then operate the button, stick or trigger you want on the controller.",
+    "Standard: rechter Trigger = Gas, linker Trigger = Bremse, linker Stick = Lenkung, X (links) = runterschalten, B (rechts) = hochschalten: wie bei einem Xbox-Controller. Klicke \"Neu zuweisen\" und betätige dann den gewünschten Knopf/Stick/Trigger am Controller.": "Default: right trigger = throttle, left trigger = brake, left stick = steering, X (left) = shift down, B (right) = shift up: as on an Xbox controller. Click \"Reassign\" and then operate the button, stick or trigger you want on the controller.",
     "Start / Ziel": "Start / finish",
     "Start/Ziel herunterladen (SVG)": "Download start/finish (SVG)",
     "Start/Ziel und Boxengasse maßhaltig als SVG zum Ausdrucken.": "Start/finish and pit lane to scale, as SVG, ready to print.",
     "Start/Ziel": "Start/finish",
-    "Startaufstellung — ziehen oder mit den Pfeilen sortieren": "Starting grid — drag or sort with the arrows",
+    "Startaufstellung, ziehen oder mit den Pfeilen sortieren": "Starting grid, drag or sort with the arrows",
     "Startseite": "Home screen",
     "Steht": "Stopped",
     "Steuerkreuz:": "D-pad:",
@@ -4617,7 +4612,7 @@
     "Strecken benennen, laden und wieder löschen.": "Name tracks, load them and delete them again.",
     "Strecken-Ambience": "Track ambience",
     "Streckenansicht": "Track view",
-    "Streckencode gemeldet, während der Mitschnitt der Original-App voll davon ist. Das Schreibpaket im Moment des ersten Codes dort ist byteweise die Form, die wir senden — im Dauerbetrieb unterscheidet uns also nichts. Was die Original-App aber": "track code, while the capture of the original app is full of them. The write packet at the moment of its first code is byte for byte the form we send — so nothing distinguishes us in steady state. What the original app does",
+    "Streckencode gemeldet, während der Mitschnitt der Original-App voll davon ist. Das Schreibpaket im Moment des ersten Codes dort ist byteweise die Form, die wir senden: im Dauerbetrieb unterscheidet uns also nichts. Was die Original-App aber": "track code, while the capture of the original app is full of them. The write packet at the moment of its first code is byte for byte the form we send, so nothing distinguishes us in steady state. What the original app does",
     "Streckencode": "Track code",
     "Streckeneditor": "Track editor",
     "Streckenlautstärke": "Track volume",
@@ -4629,6 +4624,7 @@
     "Sättigung": "Saturation",
     "TX abonnieren": "Subscribe to TX",
     "Tagesform": "Form of the day",
+    "Tagesform, Fehler, Windschatten, Attacke, Gummiband. Auf 0 fährt jeder Ghost stur seine Zeit.": "Form of the day, mistakes, slipstream, attack, rubber band. At 0 every ghost stubbornly drives its own time.",
     "Tank & Schaden": "Fuel & damage",
     "Tank auf 5 % setzen, um den Notlauf zu prüfen": "Set the fuel to 5 % to check limp mode",
     "Tank beim Start (l)": "Fuel at the start (l)",
@@ -4636,8 +4632,8 @@
     "Tank": "Fuel",
     "Tankgewicht": "Fuel weight",
     "Tankverbrauch (%/s bei Vollgas)": "Fuel use (%/s at full throttle)",
-    "Tastatur — Fahren": "Keyboard — driving",
-    "Tastatur — Test und Fehlersuche am PC": "Keyboard — testing and debugging on a PC",
+    "Tastatur, Fahren": "Keyboard, driving",
+    "Tastatur: Test und Fehlersuche am PC": "Keyboard, testing and debugging on a PC",
     "Tastatur:": "Keyboard:",
     "Tastenbelegung": "Key bindings",
     "Telemetrie aufzeichnen": "Record telemetry",
@@ -4660,14 +4656,13 @@
     "Vollständige Gestaltungsfreiheit für deine Carrera Hybrid Bahn": "Complete creative freedom for your Carrera Hybrid track",
     "Vollständige Reparatur dauert (s)": "A full repair takes (s)",
     "Von 100 % auf 0. Nicht linear: die ersten 25 % in 1/10 der Zeit, die letzten 25 % in 4/10.": "From 100 % to 0. Not linear: the first 25 % in 1/10 of the time, the last 25 % in 4/10.",
-    "Vor der Kurve nach außen, im Scheitel nach innen, danach wieder heraus. Vorwärtsgesteuert aus Layout und Kachelphase — wie viele Zentimeter dabei herauskommen, meldet kein Byte. Ob es hilft, zeigt die Rundenzeit gegen die Abgänge im Ergebnisfenster. Links = aus.": "Out before the corner, in at the apex, out again afterwards. Fed forward from the layout and the tile phase — how many centimetres come out of it is reported by no byte. Whether it helps is shown by lap time against departures in the result window. Left = off.",
     "Vorbeifahrten, Regen, Donner.": "Cars going past, rain, thunder.",
     "Voreinstellungen": "Presets",
-    "Vorgabe führt nicht zu einer eckigen Bewegung. Das Auto hat Masse, die Reifen brauchen Zeit, die Lenkung hat eine Höchstgeschwindigkeit. Wer das einmal gesehen hat, versteht, warum geschmeidige Vorgaben besser fahren — und das gilt für Programme genauso wie für Daumen.": "input does not produce square movement. The car has mass, the tyres need time, the steering has a top speed. Once you have seen that, you understand why smooth inputs drive better — and that holds for programs just as much as for thumbs.",
+    "Vorgabe führt nicht zu einer eckigen Bewegung. Das Auto hat Masse, die Reifen brauchen Zeit, die Lenkung hat eine Höchstgeschwindigkeit. Wer das einmal gesehen hat, versteht, warum geschmeidige Vorgaben besser fahren: und das gilt für Programme genauso wie für Daumen.": "input does not produce square movement. The car has mass, the tyres need time, the steering has a top speed. Once you have seen that, you understand why smooth inputs drive better, and that holds for programs just as much as for thumbs.",
     "Vorne Standlicht, hinten Bremslicht. Taste": "Front running light, rear brake light. Key",
     "Was das Auto daraus macht": "What the car makes of it",
     "Was die Zahl bedeutet und was nicht.": "What the number means and what it does not.",
-    "Web Bluetooth erlaubt standardmäßig nur Zugriff auf Services, die vorab bekannt sind. Da wir das genaue Carrera-Protokoll noch nicht kennen, versuchen wir es unten mit einer Liste gängiger Custom-Service-UUIDs (Nordic UART, HM-10/FFE0, FFF0 etc.) — falls dein Auto eine andere UUID benutzt, füge sie manuell hinzu.": "By default Web Bluetooth only allows access to services known in advance. Since we do not yet know the exact Carrera protocol, below we try a list of common custom service UUIDs (Nordic UART, HM-10/FFE0, FFF0 and so on) — if your car uses a different UUID, add it by hand.",
+    "Web Bluetooth erlaubt standardmäßig nur Zugriff auf Services, die vorab bekannt sind. Da wir das genaue Carrera-Protokoll noch nicht kennen, versuchen wir es unten mit einer Liste gängiger Custom-Service-UUIDs (Nordic UART, HM-10/FFE0, FFF0 etc.): falls dein Auto eine andere UUID benutzt, füge sie manuell hinzu.": "By default Web Bluetooth only allows access to services known in advance. Since we do not yet know the exact Carrera protocol, below we try a list of common custom service UUIDs (Nordic UART, HM-10/FFE0, FFF0 and so on): if your car uses a different UUID, add it by hand.",
     "Weiter gedacht: Ghostcars selbst programmieren": "Going further: program ghost cars yourself",
     "Welchen Code meldet dieses Teil?": "Which code does this part report?",
     "Wenn hier nur": "If all you see here is",
@@ -4681,7 +4676,6 @@
     "Wiedergabe": "Replay",
     "Wiedergabe-Log": "Replay log",
     "Wieviel": "How much",
-    "Windschatten": "Slipstream",
     "Wird nach dem ersten Lauf gezeichnet: Geschwindigkeit und der": "Drawn after the first run: speed and the",
     "Wo steht das Auto?": "Where is the car?",
     "Womit dieses Werkzeug die Haarnadel gefunden hat.": "How this tool found the hairpin.",
@@ -4692,12 +4686,12 @@
     "Ziel-Characteristic": "Target characteristic",
     "Zug": "Bank",
     "Zuletzt überfahrenes Muster:": "Last pattern driven over:",
-    "Zum Herausfinden, was ein Streckenteil wirklich sendet — zum Beispiel die 180-Grad-Haarnadel. Auto verbinden, hier auf": "For finding out what a track part really sends — the 180-degree hairpin, for instance. Connect a car, press",
+    "Zum Herausfinden, was ein Streckenteil wirklich sendet: zum Beispiel die 180-Grad-Haarnadel. Auto verbinden, hier auf": "For finding out what a track part really sends, the 180-degree hairpin, for instance. Connect a car, press",
     "Zum Weitergeben: der Text unten enthält": "To pass on: the text below contains",
     "Zurück": "Undo",
     "Zurücksetzen": "Reset",
     "Zustand": "Condition",
-    "Zwei Kurven, zwei Autos, dieselbe Strecke — und die Rundenzeiten sagen, welche Kurve die bessere war.": "Two curves, two cars, the same track — and the lap times say which curve was the better one.",
+    "Zwei Kurven, zwei Autos, dieselbe Strecke: und die Rundenzeiten sagen, welche Kurve die bessere war.": "Two curves, two cars, the same track: and the lap times say which curve was the better one.",
     "Zwei eigene Ghosts gegeneinander.": "Two of your own ghosts against each other.",
     "Zweiklang (gerechnet)": "Two-tone (synthesised)",
     "Zylinder": "Cylinders",
@@ -4706,40 +4700,39 @@
     "Zündabständen": "firing intervals",
     "Zündstreuung": "Firing scatter",
     "alle": "all",
-    "ansteigt — eine Kurve, die schon mit festem Radius gefahren wird, braucht keine Bremse mehr. Beides ist eine": "rises — a corner already being taken at a constant radius needs no more braking. Both are a",
-    "auf 0, hat der Sensor während der ganzen Messung kein gedrucktes Blatt gesehen — dann liegt es nicht an der Entschlüsselung, sondern daran, dass nichts zu lesen war. Zählt der": "at 0, the sensor saw no printed sheet at all during the whole measurement — then the problem is not the decoding but that there was nothing to read. If the",
+    "ansteigt: eine Kurve, die schon mit festem Radius gefahren wird, braucht keine Bremse mehr. Beides ist eine": "rises, a corner already being taken at a constant radius needs no more braking. Both are a",
+    "auf 0, hat der Sensor während der ganzen Messung kein gedrucktes Blatt gesehen, dann liegt es nicht an der Entschlüsselung, sondern daran, dass nichts zu lesen war. Zählt der": "at 0, the sensor saw no printed sheet at all during the whole measurement, then the problem is not the decoding but that there was nothing to read. If the",
     "auf Strecke": "on track",
     "auf der Bahn": "on track",
-    "aus einem Foto — wenn du das Original-PDF hast, nimm lieber das.": "from a photograph — if you have the original PDF, use that instead.",
+    "aus einem Foto, wenn du das Original-PDF hast, nimm lieber das.": "from a photograph: if you have the original PDF, use that instead.",
     "aus": "off",
     "bekannt als": "known as",
     "bereit": "ready",
-    "betreffen — nicht die Rennlänge, nicht das Wetter, nicht die Strecke, denn die gehören zum Rennen und nicht zum Auto.": "— not the race length, not the weather, not the track, because those belong to the race and not to the car.",
+    "betreffen: nicht die Rennlänge, nicht das Wetter, nicht die Strecke, denn die gehören zum Rennen und nicht zum Auto.": ": not the race length, not the weather, not the track, because those belong to the race and not to the car.",
     "das ist, meldet kein Byte. Diese Messung ersetzt das Raten: sie schickt einen": "that is, no byte reports. This measurement replaces the guessing: it sends a",
-    "der Fahrbahnbreite, ausgemessen aus den Streckenkarten der Original-App. Die dünne farbige Linie ist die berechnete Ideallinie — krümmungsärmster Verlauf innerhalb der Fahrbahn. Ihre Farbe zeigt, ob dort gebremst würde:": "of the roadway width, measured from the track maps of the original app. The thin coloured line is the computed racing line — the least-curvature path within the roadway. Its colour shows whether there would be braking:",
+    "der Fahrbahnbreite, ausgemessen aus den Streckenkarten der Original-App. Die dünne farbige Linie ist die berechnete Ideallinie, krümmungsärmster Verlauf innerhalb der Fahrbahn. Ihre Farbe zeigt, ob dort gebremst würde:": "of the roadway width, measured from the track maps of the original app. The thin coloured line is the computed racing line, the least-curvature path within the roadway. Its colour shows whether there would be braking:",
     "der Lenkvarianz allein aus Kachelindex und Position innerhalb der Kachel erklärt.": "of the steering variance is explained by tile index and position within the tile alone.",
-    "die Kachelart — wenn hier etwas anderes steht als erwartet, liegt der Fehler nicht bei der Auswertung, sondern beim Aufbau des Pakets.": "the tile type — if something other than expected appears here, the fault is not in the interpretation but in how the packet is built.",
+    "die Kachelart: wenn hier etwas anderes steht als erwartet, liegt der Fehler nicht bei der Auswertung, sondern beim Aufbau des Pakets.": "the tile type, if something other than expected appears here, the fault is not in the interpretation but in how the packet is built.",
     "diese Stufe halten": "hold this step",
     "diese Übersicht": "this overview",
     "dieser Farbe": "this colour",
     "drücken.": "press.",
     "echte, garantiert gültige": "real, guaranteed valid",
     "eckige": "square",
-    "entspricht „Ohne Bahn“ der Original-App — dann liest das Auto keine Streckencodes, es gibt also keine Rundenzeiten, keinen Scan und keinen Vorausblick für Ghosts.": "corresponds to “off track” in the original app — the car then reads no track codes, so there are no lap times, no scan and no lookahead for ghosts.",
-    "fahr über ein beliebiges ausgedrucktes Muster — hier steht sofort, welchen Code das Auto meldet. Sicher bekannt sind": "drive over any printed pattern — the code the car reports appears here at once. Known for certain are",
+    "fahr über ein beliebiges ausgedrucktes Muster, hier steht sofort, welchen Code das Auto meldet. Sicher bekannt sind": "drive over any printed pattern, the code the car reports appears here at once. Known for certain are",
     "festen": "fixed",
     "freie Notiz (optional)": "free note (optional)",
     "gesendet hat und wir nie:": "sent, and we never do:",
     "getrennt": "disconnected",
     "gleichmäßig (Flat-Plane)": "even (flat-plane)",
     "grün am Gas": "green on the throttle",
-    "heißt „gerade keine Lesung“ und ist der häufigste Wert von allen — das ist normal und kein Fehler.": "means “no reading right now” and is the most common value of all — that is normal and not a fault.",
+    "heißt „gerade keine Lesung“ und ist der häufigste Wert von allen, das ist normal und kein Fehler.": "means “no reading right now” and is the most common value of all, that is normal and not a fault.",
     "heißt „kein Muster erkannt“. Interessant ist alles andere.": "means “no pattern recognised”. Everything else is interesting.",
     "heißt: den kennen wir noch nicht.": "means: we do not know that one yet.",
     "hoch, obwohl Byte 12 nur": "high, although byte 12 only",
     "hochschalten": "shift up",
     "in Kurven deutlich bewegt, lässt sich eine Kurve daran erkennen, ganz ohne Barcode.": "moves noticeably in corners, a corner can be recognised from it, with no barcode at all.",
-    "in den Optionen prüfen. Er setzt Bit 5 in Byte 14; steht er aus, geht Bit 7 hinaus und das schaltet den Streckensensor ab — gemessen 0 Lesungen in 551 Fahrmeldungen. Genau dieses Bit hat diese App zwölf Aufzeichnungen lang gesendet, siehe Doku, „Auf der Bahn oder ohne Bahn“.": "in the options. It sets bit 5 in byte 14; with it off, bit 7 goes out and that switches the track sensor off — measured 0 readings in 551 packets while driving. This app sent exactly that bit for twelve captures; see the docs, “on track or off track”.",
+    "in den Optionen prüfen. Er setzt Bit 5 in Byte 14; steht er aus, geht Bit 7 hinaus und das schaltet den Streckensensor ab, gemessen 0 Lesungen in 551 Fahrmeldungen. Genau dieses Bit hat diese App zwölf Aufzeichnungen lang gesendet, siehe Doku, „Auf der Bahn oder ohne Bahn“.": "in the options. It sets bit 5 in byte 14; with it off, bit 7 goes out and that switches the track sensor off, measured 0 readings in 551 packets while driving. This app sent exactly that bit for twelve captures; see the docs, “on track or off track”.",
     "ist der Kachelzähler,": "is the tile counter,",
     "ist die Lichthupe.": "is the headlight flash.",
     "jedes": "every",
@@ -4761,8 +4754,8 @@
     "lenken links": "steer left",
     "lenken rechts": "steer right",
     "links rot-weiß": "left red-and-white",
-    "links — sie hat sehr wohl eigene Codes, und sie fügen sich in das Muster der anderen:": "left — it does have codes of its own, and they fit the pattern of the others:",
     "links": "left",
+    "links, sie hat sehr wohl eigene Codes, und sie fügen sich in das Muster der anderen:": "left, it does have codes of its own, and they fit the pattern of the others:",
     "links/rechts für die 60-Grad-Kurve,": "left/right for the 60-degree curve,",
     "links/rechts für die Haarnadel. Ein Wert in": "left/right for the hairpin. A value in",
     "mehr": "more",
@@ -4806,15 +4799,6 @@
     "· abseits": "· off track",
     "Über": "Over",
     "Übernehmen": "Apply",
-    "— Start/Ziel, ein Streckenteil oder den Boxengassen-Ausdruck. Die Anzeige zählt, ob Byte 12 den Wert": "— start/finish, a track part or the pit-lane printout. The display counts whether byte 12 ever leaves the value",
-    "— auf keinen Fall „an Seite anpassen\", sonst stimmen die Balkenabstände nicht mehr und der Sensor liest gar nichts. Der Pfeil zeigt in die Fahrtrichtung.": "— never “fit to page”, or the bar spacing is wrong and the sensor reads nothing at all. The arrow points in the direction of travel.",
-    "— die Boxengasse liegt deshalb rechts. Ihre Breite ist": "— which is why the pit lane is on the right. Its width is",
-    "— dieses Auto folgt Gamepad und Tastatur. Genau eines kann das sein; Standard ist das zuerst verbundene.": "— this car follows the gamepad and keyboard. Exactly one car can be it; the default is the first one connected.",
-    "— dort siehst du": "— there you see",
-    "— fährt beim Rennstart selbständig los und hält sich an der Strecke. Tank und Schaden werden für Ghosts nicht simuliert.": "— sets off by itself at the race start and follows the track. Fuel and damage are not simulated for ghosts.",
-    "— nach dem Drucken einmal überfahren und unten mit der Muster-Sonde ablesen.": "— after printing, drive over it once and read it off below with the pattern probe.",
-    "— und darunter siehst du, was das Auto daraus macht.": "— and below it you see what the car makes of it.",
-    "— vor jedem Manöver den passenden Knopf drücken. Taste": "— press the matching button before each manoeuvre. Key",
     "← Sonstige": "← More",
     "← Strecke": "← Track",
     "⛶ Vollbild": "⛶ Fullscreen",
@@ -5513,7 +5497,7 @@
     if (!el) return;
     if (!probeOverride) { el.textContent = 'keine Variante aktiv (normales Paket)'; return; }
     const secs = ((Date.now() - probeStats.since) / 1000).toFixed(0);
-    el.textContent = `${probeStats.label} — ${secs} s, ${probeStats.sent} Pakete gesendet, `
+    el.textContent = `${probeStats.label}, ${secs} s, ${probeStats.sent} Pakete gesendet, `
       + `Mustercodes empfangen: ${probeStats.codes}`
       + (probeStats.lastCode !== null
          ? ` (zuletzt 0x${probeStats.lastCode.toString(16).padStart(2,'0')})` : '');
@@ -5588,7 +5572,7 @@
     if (!rec.on && !rec.rows.length) { el.textContent = 'keine Aufnahme'; return; }
     const secs = rec.rows.length ? (rec.rows[rec.rows.length - 1].t / 1000).toFixed(0) : 0;
     const marks = rec.rows.filter(r => r.dir === 'mark').length;
-    el.textContent = `${rec.on ? 'läuft' : 'gestoppt'} — ${rec.rows.length} Zeilen, `
+    el.textContent = `${rec.on ? 'läuft' : 'gestoppt'}, ${rec.rows.length} Zeilen, `
                    + `${secs} s, ${marks} Markierungen`;
     $('rec-badge-text').textContent = `Aufnahme ${secs}s · ${marks} Mark.`;
   }
@@ -8708,7 +8692,7 @@
     // Nur uebernehmen, wenn noch keine richtige Strecke da ist. Eine von Hand gebaute oder
     // gescannte Strecke ueberschreibt man nicht ungefragt.
     if (had > 1) {
-      log('Runde gelernt (' + got.length + ' Teile), aber es liegt schon eine Strecke — '
+      log('Runde gelernt (' + got.length + ' Teile), aber es liegt schon eine Strecke: '
           + 'nicht uebernommen.', 'info');
       return;
     }
@@ -8876,7 +8860,7 @@
     }
     if (raceLimitReached()) {
       raceState = 'finishing';
-      $('race-status').textContent = 'Zeit/Runden erreicht — laufende Runde zählt noch';
+      $('race-status').textContent = 'Zeit/Runden erreicht, laufende Runde zählt noch';
       showHudToast('Letzte Runde');
     }
   }
@@ -8896,7 +8880,7 @@
     garage.forEach(c => { if (c.race) c.race.lapStart = Date.now(); });
     setRaceLights('go');
     playTone(1046, 0.30, 'square', 0.22);
-    showHudToast('Frei — volle Fahrt!');
+    showHudToast('Frei, volle Fahrt!');
     log('Einführungsrunde beendet, Rennen freigegeben.', 'info');
     $('race-status').textContent = `${RACE_MODES[raceMode].label} läuft`;
     setTimeout(() => setRaceLights(0), 900);
@@ -9392,7 +9376,7 @@
     if (raceClockTimer) clearInterval(raceClockTimer);
     raceClockTimer = setInterval(raceClockTick, 250);
     $('race-status').textContent = raceFormationLap
-      ? 'Einführungsrunde — Limit bis Start/Ziel'
+      ? 'Einführungsrunde, Limit bis Start/Ziel'
       : RACE_MODES[raceMode].label + ' läuft';
     $('race-stop-btn').disabled = false;
     updateRaceActButtons();
@@ -9434,7 +9418,7 @@
     const missed = Math.max(0, racePitRequired - racePitDone);
     $('race-status').textContent =
       `Beendet (${raceLapTimes.length} Runde${raceLapTimes.length === 1 ? '' : 'n'})`
-      + (missed > 0 ? ` — ${missed} Pflichtstopp${missed === 1 ? '' : 's'} verpasst, `
+      + (missed > 0 ? `, ${missed} Pflichtstopp${missed === 1 ? '' : 's'} verpasst, `
                       + `+${missed * racePitPenaltyS} s Strafe` : '');
     $('race-start-btn').disabled = false;
     $('race-lap-current-row').style.display = 'none';
@@ -9626,7 +9610,7 @@
     fuel = 100;
     resetTyres();
     updateDamageFuelUI();
-    showHudToast(`Zurückgesetzt — Tank ${fuelLiters(100)} l, Schaden 0 %, Reifen kalt`);
+    showHudToast(`Zurückgesetzt, Tank ${fuelLiters(100)} l, Schaden 0 %, Reifen kalt`);
     log('Auto zurückgesetzt: Schaden 0, Tank voll, Reifen kalt.', 'info');
   }
 
@@ -9775,7 +9759,7 @@
       && dashLastActedCode === type
       && nowCode - dashLastActedAt < TILE_REPEAT_BLOCK_MS;
     if (repeatBlocked) {
-      log(`Mustercode 0x${type.toString(16)} innerhalb von ${TILE_REPEAT_BLOCK_MS} ms wiederholt — ignoriert.`, 'info');
+      log(`Mustercode 0x${type.toString(16)} innerhalb von ${TILE_REPEAT_BLOCK_MS} ms wiederholt, ignoriert.`, 'info');
       return;
     }
     if (type === TILE_TYPE.START || type === pitMarkerCode) {
@@ -9809,7 +9793,7 @@
       raceLapStart = now;
       playLapChime();
       if (wasFinishing) finishRace();
-      else $('race-status').textContent = `Rennen läuft — Runde ${raceLapTimes.length + 1}`;
+      else $('race-status').textContent = `Rennen läuft, Runde ${raceLapTimes.length + 1}`;
     }
     return false;
   }
@@ -9884,7 +9868,7 @@
 
     const need = (weather === 'rain' && tyres === 'slick') || (weather === 'dry' && tyres === 'wet');
     showHudToast(weather === 'rain' ? 'Regen' : 'Trocken');
-    log('Wetter: ' + (weather === 'rain' ? 'Regen' : 'trocken') + ' — Reifen: '
+    log('Wetter: ' + (weather === 'rain' ? 'Regen' : 'trocken') + ': Reifen: '
         + (tyres === 'wet' ? 'Regen' : 'Slicks')
         + (need ? ' (Boxenstopp für passende Reifen)' : ''), 'info');
     padRumble(0.2, 0.15, 120);
@@ -9999,7 +9983,7 @@
       } else if (pitServiceStart !== null && !stoodLongEnough && racePitRequired > 0
                  && (raceState === 'racing' || raceState === 'finishing')) {
         log(`Boxenstopp zu kurz (${pitStandElapsed.toFixed(1)} s von `
-            + `${PIT_MANDATORY_STAND_S.toFixed(0)} s) — zählt nicht als Pflichtstopp.`, 'err');
+            + `${PIT_MANDATORY_STAND_S.toFixed(0)} s), zählt nicht als Pflichtstopp.`, 'err');
       }
       if (pitServiceStart !== null) {
         log(`Boxenstopp beendet nach ${((Date.now() - pitServiceStart) / 1000).toFixed(1)}s: ` +
@@ -10018,7 +10002,7 @@
     // Just aborted: do not drag the car straight back in while it is still on the marker.
     if (Date.now() < pitRearmBlockedUntil) return;
     setPitState('limited');
-    showHudToast('Boxengasse — Tempolimit');
+    showHudToast('Boxengasse, Tempolimit');
   }
 
   // Driven from the control heartbeat so it advances at a steady rate regardless of how
@@ -10046,7 +10030,7 @@
         fuel += addFuel; pitFuelGained += addFuel;
         if (fuel >= 99.95) { fuel = 100; pitDone.refuel = true;
                              setPitLoop('fuel', false); pitChimeFuel();
-                             showHudToast(`Tank voll — ${fuelLiters(100)} l`); }
+                             showHudToast(`Tank voll, ${fuelLiters(100)} l`); }
       }
       // --- repair --- non-linear, see repairRateAt()
       if (p.repair && !pitDone.repair) {
@@ -10061,7 +10045,7 @@
         pitTyreElapsed += dt;
         if (pitTyreElapsed >= pitTyreTarget) {
           pitDone.tyres = true; setPitLoop('wrench', false); pitChimeTyres();
-          showHudToast(`Reifen gewechselt — ${pitTyreElapsed.toFixed(1)} s`);
+          showHudToast(`Reifen gewechselt, ${pitTyreElapsed.toFixed(1)} s`);
         }
       }
       // The pad keeps buzzing while anything is still being worked on.
@@ -10080,13 +10064,13 @@
         stopAllPitLoops();
         pitChimeReady();
         padRumble(0.35, 0.2, 200);
-        showHudToast('Fertig — losfahren!');
+        showHudToast('Fertig, losfahren!');
         log('Boxenstopp fertig.', 'info');
       }
 
       refreshPitThrottleLock();
       const st = $('pitstop-status');
-      if (st) st.textContent = pitReady ? 'Fertig — losfahren!' : pitTaskText();
+      if (st) st.textContent = pitReady ? 'Fertig, losfahren!' : pitTaskText();
       updateDamageFuelUI();
       updatePitUI();
     }
@@ -10225,7 +10209,7 @@
     if (ind) ind.style.display = 'inline';
     clearTimeout(crashIndicatorTimer);
     crashIndicatorTimer = setTimeout(() => { ind.style.display = 'none'; }, 1500);
-    log(`Crash erkannt (experimentell) — Schaden +${Math.round(100 / crashesToTotal)}%.`, 'err');
+    log(`Crash erkannt (experimentell), Schaden +${Math.round(100 / crashesToTotal)}%.`, 'err');
   }
 
   // PLACEHOLDER: the real BLE command for the car's headlights/brake light is still
@@ -10309,7 +10293,7 @@
       // Fehlt die Datei, ist fast immer das Verzeichnis veraltet - deshalb steht die Abhilfe
       // gleich dabei, statt nur "nicht geladen".
       const known = Object.keys(fxBuffers.horns).length;
-      log('Hupe nicht geladen: ' + kind + (known ? '' : ' — es ist keine einzige Hupe '
+      log('Hupe nicht geladen: ' + kind + (known ? '' : ': es ist keine einzige Hupe '
           + 'geladen. Seite neu laden (Strg+Umschalt+R), dann ist audio/fx.json aktuell.'),
           'err');
       showHudToast('HUPE NICHT GELADEN');
@@ -10785,7 +10769,7 @@
     pitRearmBlockedUntil = now + PIT_REARM_BLOCK_MS;
     setPitState('off');
     showHudToast(wasServicing ? 'Boxenstopp abgebrochen' : 'Boxengasse abgebrochen');
-    log('Boxenstopp abgebrochen — kein Sprit, keine Reparatur.', 'info');
+    log('Boxenstopp abgebrochen, kein Sprit, keine Reparatur.', 'info');
   }
   // Der Boxenstopp-Knopf ist im Schirm (race-act-pit); dieser hier stammt aus der
   // entfernten Karte und kann fehlen.
@@ -10906,7 +10890,7 @@
       // Entirely expected wherever audio/ is not deployed. The synthesized engine keeps
       // working, so this must NOT surface as an error the user has to react to.
       sampleEngine.ready = false;
-      log('Keine Motorsamples gefunden — synthetischer Motor bleibt aktiv.', 'info');
+      log('Keine Motorsamples gefunden, synthetischer Motor bleibt aktiv.', 'info');
     }
     sampleEngine.loading = false;
   }
@@ -10948,7 +10932,7 @@
       for (const car of Object.keys(fx.start)) fxBuffers.start[car] = await grab(fx.start[car].file);
       log('Effektsounds geladen (' + fxBuffers.crash.length + ' Crash-Varianten).', 'info');
     } catch (err) {
-      log('Keine Effektsounds gefunden — synthetische Töne bleiben aktiv.', 'info');
+      log('Keine Effektsounds gefunden, synthetische Töne bleiben aktiv.', 'info');
     }
   }
 
@@ -12938,7 +12922,7 @@
     }
     if (offTrack !== g.cutOut) {
       g.cutOut = offTrack;
-      log(`${garageLabel(car)}: ${offTrack ? 'kein Streckencode — Ghost hält' : 'Streckencode wieder da'}`,
+      log(`${garageLabel(car)}: ${offTrack ? 'kein Streckencode, Ghost hält' : 'Streckencode wieder da'}`,
           offTrack ? 'err' : 'info');
     }
 
@@ -13294,7 +13278,7 @@
       showHudToast('GHOST OHNE STRECKENCODE');
     }
     if (n && !currentTrackTiles.some(t => tileIsCurve(t.type))) {
-      log('Warnung: kein Streckenlayout mit Kurven geladen — Ghosts können nur geradeaus halten.', 'err');
+      log('Warnung: kein Streckenlayout mit Kurven geladen, Ghosts können nur geradeaus halten.', 'err');
     }
   }
 
@@ -13665,7 +13649,7 @@
       '<b style="color:#1c7a4d">Gr&uuml;n</b> Geschwindigkeit &middot; '
       + '<b style="color:#8b99b4">grau gestrichelt</b> verlangter Lenkwinkel &middot; '
       + '<b style="color:#b3131f">rot</b> was die Lenkung daraus macht. Der Abstand zwischen '
-      + 'grau und rot ist die Tr&auml;gheit &mdash; genau das, was eine eckige Vorgabe kostet.';
+      + 'grau und rot ist die Tr&auml;gheit, genau das, was eine eckige Vorgabe kostet.';
   }
 
   // ---- Buttons ----
