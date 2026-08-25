@@ -1,0 +1,1189 @@
+(() => {
+  'use strict';
+
+  // ---- Known / guessed BLE service UUIDs commonly used by BLE toys ----
+  const GUESS_SERVICES = [
+    '0000ffe0-0000-1000-8000-00805f9b34fb', // HM-10 style
+    '0000fff0-0000-1000-8000-00805f9b34fb',
+    '6e400001-b5a3-f393-e0a9-e50e24dcca9e', // Nordic UART
+    '0000fe59-0000-1000-8000-00805f9b34fb', // Nordic Secure DFU (legacy alias)
+    '8ec90001-f315-4f60-9fb8-838830daea50', // Nordic Secure DFU
+    'battery_service',
+    'device_information',
+    'generic_access',
+    'generic_attribute',
+  ];
+  const customUuids = new Set();
+
+  // CH (HYBRID-xxxxxxxxxxxx) GATT layout, identified via chrome://bluetooth-internals
+  const KNOWN_UUIDS = {
+    '00001800-0000-1000-8000-00805f9b34fb': 'Generic Access',
+    '00001801-0000-1000-8000-00805f9b34fb': 'Generic Attribute',
+    '00002a00-0000-1000-8000-00805f9b34fb': 'Device Name',
+    '00002a01-0000-1000-8000-00805f9b34fb': 'Appearance',
+    '00002a04-0000-1000-8000-00805f9b34fb': 'Preferred Connection Params',
+    '00002aa6-0000-1000-8000-00805f9b34fb': 'Central Address Resolution',
+    '6e400001-b5a3-f393-e0a9-e50e24dcca9e': 'Nordic UART Service, vermutlich Fahrzeugsteuerung',
+    '6e400002-b5a3-f393-e0a9-e50e24dcca9e': 'NUS RX, App → Auto (hier Kommandos schreiben)',
+    '6e400003-b5a3-f393-e0a9-e50e24dcca9e': 'NUS TX, Auto → App (Notify/Telemetrie)',
+    '0000fe59-0000-1000-8000-00805f9b34fb': '⚠️ Nordic Secure DFU (Firmware-Update)',
+    '8ec90001-f315-4f60-9fb8-838830daea50': '⚠️ Nordic Secure DFU Service',
+    '8ec90003-f315-4f60-9fb8-838830daea50': '⚠️ DFU Bootloader-Trigger',
+  };
+  const DANGER_UUIDS = new Set([
+    '0000fe59-0000-1000-8000-00805f9b34fb',
+    '8ec90001-f315-4f60-9fb8-838830daea50',
+    '8ec90002-f315-4f60-9fb8-838830daea50',
+    '8ec90003-f315-4f60-9fb8-838830daea50',
+  ]);
+
+  let device = null, server = null;
+  const charByUuid = new Map(); // uuid -> {char, service}
+
+  const $ = (id) => document.getElementById(id);
+  // Setzt nur, wenn das Element noch da ist.
+  //
+  // Das Cockpit zeigt seit dem Aufraeumen nur noch den Schirm; die vier Karten darunter
+  // waren Doppelanzeigen desselben Zustands und sind entfernt. Ihre Kennungen werden aber
+  // noch beschrieben - aus dem Fahrtakt heraus, alle 45 ms. Ein blinder Zugriff auf ein
+  // fehlendes Element wuerde dort eine Ausnahme werfen und den Takt abbrechen, also
+  // waehrend der Fahrt. Deshalb nicht siebzehn Mal `if (el)`, sondern zwei Setzer.
+  const setTxt = (id, v) => { const el = $(id); if (el) el.textContent = v; };
+  const setSty = (id, k, v) => { const el = $(id); if (el) el.style[k] = v; };
+  const logEl = $('log');
+  const dot = $('conn-dot');
+  // The dot IS the connection status now. The word next to it said the same thing a second
+  // time and cost the width of a button on a phone. It is not deleted, it moves into title
+  // and aria-label - a screen reader still announces it and a hover still shows it.
+  const statusEl = {
+    set textContent(v) { dot.title = String(v); dot.setAttribute('aria-label', String(v)); },
+    get textContent() { return dot.title; },
+  };
+  const servicesContainer = $('services-container');
+  const controlSelect = $('control-char-select');
+
+  // The 45ms heartbeat logs a line per write (~22/s) whether or not anything changed, so
+  // this has to stay bounded — an unbounded log grew to tens of thousands of nodes within
+  // minutes of driving and the resulting layout work stalled the main thread, which then
+  // showed up as stuttering control.
+  const LOG_MAX_LINES = 400;
+  function log(msg, cls) {
+    const line = document.createElement('div');
+    if (cls) line.className = 'l-' + cls;
+    const t = new Date().toLocaleTimeString();
+    line.textContent = `[${t}] ${msg}`;
+    logEl.appendChild(line);
+    while (logEl.childElementCount > LOG_MAX_LINES) logEl.removeChild(logEl.firstChild);
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+
+  function bufToHex(buf) {
+    const bytes = new Uint8Array(buf);
+    return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join(' ');
+  }
+  function bufToAscii(buf) {
+    const bytes = new Uint8Array(buf);
+    return Array.from(bytes).map(b => (b >= 32 && b < 127) ? String.fromCharCode(b) : '.').join('');
+  }
+  function hexToBuf(hex) {
+    const clean = hex.replace(/0x/gi, '').replace(/[^0-9a-f]/gi, '');
+    const bytes = [];
+    for (let i = 0; i < clean.length; i += 2) bytes.push(parseInt(clean.substr(i, 2), 16));
+    return new Uint8Array(bytes);
+  }
+
+  function setConnected(isConnected) {
+    // Jede Anzeige hier einzeln geprueft: der Punkt und der Trennen-Knopf in der Kopfzeile
+    // sind entfernt worden, und ein blinder Zugriff auf einen von beiden wuerde beim
+    // Verbinden eine Ausnahme werfen - also genau in dem Moment, in dem am wenigsten Zeit
+    // ist, sie zu suchen.
+    if (dot) dot.classList.toggle('connected', isConnected);
+    if (statusEl) {
+      statusEl.textContent = isConnected
+        ? `verbunden: ${device?.name || device?.id || ''}` : 'nicht verbunden';
+    }
+    const bc = $('btn-connect'), bd = $('btn-disconnect');
+    if (bc) bc.disabled = isConnected;
+    if (bd) bd.disabled = !isConnected;
+  }
+
+  async function connect() {
+    if (!navigator.bluetooth) {
+      log('Web Bluetooth wird von diesem Browser nicht unterstützt. Bitte Chrome oder Edge auf Windows/Android/ChromeOS verwenden.', 'err');
+      alert('Web Bluetooth wird hier nicht unterstützt. Bitte in Chrome/Edge öffnen.');
+      return;
+    }
+    try {
+      const optionalServices = [...GUESS_SERVICES, ...customUuids];
+      device = await navigator.bluetooth.requestDevice({
+        filters: [{ namePrefix: 'HYBRID' }],
+        optionalServices,
+      });
+      log(`Gerät ausgewählt: ${device.name} (${device.id})`, 'info');
+      device.addEventListener('gattserverdisconnected', onDisconnected);
+      server = await device.gatt.connect();
+      setConnected(true);
+      // Exactly one starter sound per successful connection.
+      playFx(fxBuffers.start[$('sound-profile').value] || fxBuffers.start.porsche, 0.85);
+      log('GATT-Server verbunden.', 'info');
+      await exploreServices();
+    } catch (err) {
+      log('Verbindungsfehler: ' + err.message, 'err');
+      console.error(err);
+    }
+  }
+
+  function onDisconnected() {
+    setConnected(false);
+    log('Verbindung getrennt.', 'err');
+  }
+
+  async function disconnect() {
+    if (device && device.gatt.connected) device.gatt.disconnect();
+    setConnected(false);
+  }
+
+  function propsToList(props) {
+    const list = [];
+    if (props.read) list.push('read');
+    if (props.write) list.push('write');
+    if (props.writeWithoutResponse) list.push('writeNoResp');
+    if (props.notify) list.push('notify');
+    if (props.indicate) list.push('indicate');
+    if (props.broadcast) list.push('broadcast');
+    return list;
+  }
+
+  async function exploreServices() {
+    servicesContainer.innerHTML = '';
+    charByUuid.clear();
+    controlSelect.innerHTML = '<option value="">-- keine (nur Log) --</option>';
+
+    let services;
+    try {
+      services = await server.getPrimaryServices();
+    } catch (err) {
+      log('Konnte Services nicht laden: ' + err.message, 'err');
+      return;
+    }
+
+    if (services.length === 0) {
+      servicesContainer.innerHTML = '<p class="muted">Keine Services gefunden (evtl. UUID-Whitelist erweitern).</p>';
+    }
+
+    for (const service of services) {
+      const serviceDiv = document.createElement('div');
+      serviceDiv.className = 'service';
+      const head = document.createElement('div');
+      head.className = 'head';
+      const serviceLabel = KNOWN_UUIDS[service.uuid];
+      head.innerHTML = `<span class="name">${serviceLabel ? serviceLabel : 'Service'}</span><span>${service.uuid}</span>`;
+      serviceDiv.appendChild(head);
+
+      let chars = [];
+      try {
+        chars = await service.getCharacteristics();
+      } catch (err) {
+        const errDiv = document.createElement('div');
+        errDiv.className = 'char';
+        errDiv.textContent = 'Fehler beim Laden der Characteristics: ' + err.message;
+        serviceDiv.appendChild(errDiv);
+      }
+
+      for (const ch of chars) {
+        charByUuid.set(ch.uuid, { char: ch, service });
+        const props = propsToList(ch.properties);
+        const isDanger = DANGER_UUIDS.has(ch.uuid);
+        const charLabel = KNOWN_UUIDS[ch.uuid];
+        const chDiv = document.createElement('div');
+        chDiv.className = 'char';
+        if (isDanger) chDiv.style.background = 'rgba(255,92,92,.08)';
+        chDiv.innerHTML = `
+          ${charLabel ? `<div style="font-weight:600;color:${isDanger ? 'var(--bad)' : 'var(--accent-2)'};margin-bottom:2px">${charLabel}</div>` : ''}
+          <div class="uuid">${ch.uuid}</div>
+          <div class="props">${props.map(p => `<span>${p}</span>`).join('')}</div>
+          <div class="actions"></div>
+          <div class="value" style="display:none"></div>
+        `;
+        const actions = chDiv.querySelector('.actions');
+        const valueDiv = chDiv.querySelector('.value');
+
+        if (props.includes('read')) {
+          const btn = document.createElement('button');
+          btn.textContent = 'Lesen';
+          btn.onclick = async () => {
+            try {
+              const v = await ch.readValue();
+              valueDiv.style.display = 'block';
+              valueDiv.textContent = `hex: ${bufToHex(v.buffer)}  |  ascii: ${bufToAscii(v.buffer)}`;
+              log(`READ ${ch.uuid}: ${bufToHex(v.buffer)}`, 'info');
+            } catch (err) { log('Lesefehler: ' + err.message, 'err'); }
+          };
+          actions.appendChild(btn);
+        }
+
+        if (props.includes('write') || props.includes('writeNoResp')) {
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.placeholder = 'Hex, z.B. 01 FF A0';
+          input.style.width = '160px';
+          const btn = document.createElement('button');
+          btn.textContent = 'Senden';
+          if (isDanger) btn.style.borderColor = 'var(--bad)';
+          btn.onclick = async () => {
+            if (isDanger && !confirm(
+              '⚠️ Das ist der Nordic Secure DFU / Bootloader-Kanal für Firmware-Updates, nicht die Fahrzeugsteuerung.\n' +
+              'Ein falscher Schreibzugriff kann das Auto in den Update-Modus versetzen oder die Firmware beschädigen.\n\n' +
+              'Wirklich trotzdem schreiben?'
+            )) return;
+            try {
+              const bytes = hexToBuf(input.value);
+              if (props.includes('write')) await ch.writeValueWithResponse(bytes);
+              else await ch.writeValueWithoutResponse(bytes);
+              log(`WRITE ${ch.uuid}: ${bufToHex(bytes)}`, 'write');
+            } catch (err) { log('Schreibfehler: ' + err.message, 'err'); }
+          };
+          actions.appendChild(input);
+          actions.appendChild(btn);
+
+          if (!isDanger) {
+            const opt = document.createElement('option');
+            opt.value = ch.uuid;
+            opt.textContent = charLabel ? charLabel : `${service.uuid.slice(0, 8)}… / ${ch.uuid.slice(0, 8)}…`;
+            controlSelect.appendChild(opt);
+          }
+        }
+
+        if (props.includes('notify') || props.includes('indicate')) {
+          const btn = document.createElement('button');
+          btn.textContent = 'Notify abonnieren';
+          btn.onclick = async () => {
+            try {
+              await ch.startNotifications();
+              ch.addEventListener('characteristicvaluechanged', (e) => {
+                const buf = e.target.value.buffer;
+                valueDiv.style.display = 'block';
+                valueDiv.textContent = `hex: ${bufToHex(buf)}  |  ascii: ${bufToAscii(buf)}`;
+                log(`NOTIFY ${ch.uuid}: ${bufToHex(buf)}`, 'notify');
+              });
+              log(`Abonniert: ${ch.uuid}`, 'info');
+              btn.disabled = true;
+              btn.textContent = 'abonniert';
+            } catch (err) { log('Notify-Fehler: ' + err.message, 'err'); }
+          };
+          actions.appendChild(btn);
+        }
+
+        serviceDiv.appendChild(chDiv);
+      }
+
+      servicesContainer.appendChild(serviceDiv);
+    }
+
+    const nusRx = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
+    const nusTx = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
+    if (charByUuid.has(nusRx)) {
+      controlSelect.value = nusRx;
+      log('Ziel-Characteristic für Steuerung automatisch auf NUS RX (6e400002) gesetzt.', 'info');
+    }
+    const labStatusEl = $('lab-status');
+    if (labStatusEl) {
+      labStatusEl.textContent = (charByUuid.has(nusRx) && charByUuid.has(nusTx))
+        ? 'NUS RX/TX gefunden ✓'
+        : 'NUS RX/TX nicht gefunden';
+    }
+    const vehicleNameEl = $('dash-vehicle-name');
+    if (vehicleNameEl) vehicleNameEl.textContent = device?.name || '-';
+    if (typeof ensureDashboardStatusSubscribed === 'function') ensureDashboardStatusSubscribed();
+  }
+
+  // ---- UUID input ----
+  $('btn-add-uuid').onclick = () => {
+    const v = $('custom-uuid').value.trim();
+    if (!v) return;
+    customUuids.add(v);
+    log(`Custom-UUID hinzugefügt: ${v} (beim nächsten Verbinden aktiv)`, 'info');
+    $('custom-uuid').value = '';
+  };
+
+  $('btn-clear-log').onclick = () => { logEl.innerHTML = ''; };
+  // Der gruene Knopf oben macht jetzt dasselbe wie der in der Garage. Vorher hing er am
+  // BLE-Explorer, der KEIN Auto in der Garage anlegt - wer ihn benutzte, war verbunden, hatte
+  // aber kein Auto, dem er eine Rolle geben konnte. Zwei Knoepfe mit demselben Wort und
+  // verschiedener Wirkung sind eine Falle, keine Auswahl.
+  $('btn-connect').onclick = () => garageConnect();
+  // Der Trennen-Knopf in der Kopfzeile ist entfernt: er rief disconnect() des BLE-Explorers
+  // auf und liess ein ueber die Garage verbundenes Auto unberuehrt - er tat also nichts, genau
+  // wie der Verbinden-Knopf daneben, bevor der umgehaengt wurde. Getrennt wird pro Auto in
+  // der Garage, und das funktioniert.
+  $('dev-explore').onclick = connect;
+
+
+  // Woerterbuch Deutsch -> Englisch. Schluessel ist der normalisierte deutsche Text
+  // (Mehrfach-Leerzeichen zusammengefasst, getrimmt). Was hier fehlt, bleibt deutsch
+  // stehen - das ist die Absicht, nicht ein Mangel: ein fehlender Eintrag faellt auf,
+  // ein leerer Text nicht.
+  const I18N_EN = {
+    "(fest)": "(fixed)",
+    "(nicht real getestet).": "(not tested for real).",
+    ") an, damit du live sehen kannst, was das Auto zurückmeldet, während du Kombinationen ausprobierst.": "): so you can watch live what the car reports back while you try combinations.",
+    ") und zeigt gleichzeitig alle Notify-Werte von NUS TX (": ") and at the same time shows every notify value from NUS TX (",
+    ", Skalierung": ", scaling",
+    ", bevor die App es merkt:": ", before the app notices:",
+    ", damit du siehst, welches Auto in der Liste welches auf dem Tisch ist.": ", so you can see which car in the list is which one on the table.",
+    ", dann": ", then",
+    ", keine Messung: dass ein Auto die Linie einhält, kann die App nicht prüfen, weil kein Byte die Querlage meldet.": ", not a measurement: the app cannot check that a car holds the line, because no byte reports lateral position.",
+    ", mit fließendem Übergang. Gebremst wird dort, wo die Krümmung": ", with a smooth transition. Braking happens where the curvature",
+    ", nicht aus einem Filter: ein gleichmäßig zündender Reihensechser klingt anders als ein V8 mit Cross-Plane-Kurbelwelle, dessen beide Bänke ungleich zünden. Und die Resonanz ist keine Einstellung, sondern folgt aus der Rohrlänge:": ", not from a filter: an evenly firing straight six sounds different from a V8 with a cross-plane crank, whose two banks fire unevenly. And the resonance is not a setting but follows from the pipe length:",
+    "-- Beispiel laden --": "-- load an example --",
+    "-- abgelegte Motoren --": "-- stored engines --",
+    "-- gespeicherte Fahrten --": "-- saved runs --",
+    "-- gespeicherte Strecken --": "-- saved tracks --",
+    "-- keine (nur Log) --": "-- none (log only) --",
+    ". Das Auto fährt mit festem, langsamem Gas und hält jede Stufe": ". The car drives at a fixed, slow throttle and holds each step for",
+    "100 % / „Tatsächliche Größe\"": "100 % / “Actual size”",
+    "7. von der Bahn": "7. off the track",
+    "90 Grad rechts drehen": "Rotate 90 degrees right",
+    "90° rechts drehen": "Rotate 90° right",
+    ": Start/Ziel, ein Streckenteil oder den Boxengassen-Ausdruck. Die Anzeige zählt, ob Byte 12 den Wert": ": start/finish, a track part or the pit-lane printout. The display counts whether byte 12 ever leaves the value",
+    ": auf keinen Fall „an Seite anpassen\", sonst stimmen die Balkenabstände nicht mehr und der Sensor liest gar nichts. Der Pfeil zeigt in die Fahrtrichtung.": ": never “fit to page”, or the bar spacing is wrong and the sensor reads nothing at all. The arrow points in the direction of travel.",
+    ": die Boxengasse liegt deshalb rechts. Ihre Breite ist": ": which is why the pit lane is on the right. Its width is",
+    ": dieses Auto folgt Gamepad und Tastatur. Genau eines kann das sein; Standard ist das zuerst verbundene.": ": this car follows the gamepad and keyboard. Exactly one car can be it; the default is the first one connected.",
+    ": dort siehst du": ": there you see",
+    ": fährt beim Rennstart selbständig los und hält sich an der Strecke. Tank und Schaden werden für Ghosts nicht simuliert.": ": sets off by itself at the race start and follows the track. Fuel and damage are not simulated for ghosts.",
+    ": für jedes Auto im Rennen": ": for every car in the race",
+    ": keine Streckencodes, keine Rundenzeiten, kein Scan.": ": no track codes, no lap times, no scan.",
+    ": nach dem Drucken einmal überfahren und unten mit der Muster-Sonde ablesen.": ": after printing, drive over it once and read it off below with the pattern probe.",
+    ": und darunter siehst du, was das Auto daraus macht.": ": and below it you see what the car makes of it.",
+    ": vor jedem Manöver den passenden Knopf drücken. Taste": ": press the matching button before each manoeuvre. Key",
+    ": was tue ich, wenn ich auf Kachel 3 bin? Aus dem Rennmitschnitt der Original-App wissen wir, dass genau das reicht: bei einem ihrer Ghosts waren": ": what do I do when I am on tile 3? From the race capture of the original app we know that this is enough, for one of its ghosts,",
+    "=Leerlauf, größer=Gas, kleiner=Bremse). Die Prüfsumme ist noch nicht geknackt, deshalb unten zuerst das": "= idle, larger = throttle, smaller = brake). The checksum is not cracked yet, which is why below you first take the",
+    "Ablauf: Auto in der Garage verbinden, unten": "How to run it: connect a car in the Garage, then below on",
+    "Ablegen speichert im Browser, bleibt also auf diesem Gerät. Zum Weitergeben der Text unten, kopieren, verschicken, einfügen,": "Store keeps it in the browser, so it stays on this device. To pass it on, use the text below: copy, send, paste,",
+    "Ablegen": "Store",
+    "Abschnitt markieren": "Mark a section",
+    "Absichtlich leise, damit der Motor vorne bleibt.": "Deliberately quiet, so the engine stays in front.",
+    "Achsen:": "Axes:",
+    "Akku": "Battery",
+    "Aktion": "Action",
+    "Aktuelle Aufnahme speichern": "Save the current recording",
+    "Aktuelle Runde": "Current lap",
+    "Aktuelle Runde:": "Current lap:",
+    "Aktuelle Werte hineinschreiben": "Write the current values in here",
+    "Alle Rundenzeiten": "All lap times",
+    "Alle trennen": "Disconnect all",
+    "Alles loeschen": "Delete everything",
+    "Alles löschen": "Delete everything",
+    "Als CSV exportieren": "Export as CSV",
+    "Als Profil übernehmen": "Adopt as a profile",
+    "An ein echtes Auto senden": "Send to a real car",
+    "Anfahrt": "Rolling up",
+    "Angezeigte km/h. Ein 911 GT3 R braucht rund 3,2 s.": "Displayed km/h. A 911 GT3 R needs about 3.2 s.",
+    "Anhören": "Listen",
+    "Ansauganteil": "Intake share",
+    "Anteil": "Share",
+    "Anzeigen wie auf einem echten GT3-HUD": "Readouts like a real GT3 dash",
+    "Attacke": "Attack",
+    "Auch auf dem Steuerkreuz links/rechts.": "Also left/right on the D-pad.",
+    "Auf Standard zurücksetzen": "Reset to defaults",
+    "Auf der Bahn": "On track",
+    "Aufnahme starten": "Start recording",
+    "Aufnahme": "Recording",
+    "Aufnahme: nächsten Abschnitt markieren": "Recording: mark the next section",
+    "Aus dem Cockpit hierher gezogen. Am Telefon wird geneigt oder ein Pad benutzt, am Rechner reichen die Pfeiltasten: aber ohne Pad und ohne Tastatur ist das hier die einzige Mausbedienung, deshalb ist sie nicht gelöscht.": "Moved here from the cockpit. On a phone you tilt or use a pad, on a computer the arrow keys are enough: but without a pad and without a keyboard this is the only mouse control, which is why it was not deleted.",
+    "Aus dem Cockpit hierher: dort war unter dem Schirm alles doppelt, die Position aber nicht: und sie gehört neben die Strecke, auf die sie sich bezieht. Die Lage ist eine Schätzung aus Kachelzähler und Zeit, keine Positionsmessung vom Auto.": "Moved here from the cockpit: everything below the dash was duplicated there, but the position was not: and it belongs next to the track it refers to. The position is an estimate from the tile counter and time, not a measurement from the car.",
+    "Aus": "Off",
+    "Aus: fährt auch ohne gedruckte Strecke. An: nur mit gelesenem Muster.": "Off: drives even without a printed track. On: only with a pattern read.",
+    "Aus: manuell, Quadrat/X runter, Kreis/B hoch. Im Stand unter den 1. Gang = Rückwärts.": "Off: manual, square/X down, circle/B up. At a standstill, below 1st gear = reverse.",
+    "Aus: rohe Stickstellung, ohne Gänge.": "Off: raw stick position, no gears.",
+    "Auslöse-Code (Byte 12)": "Trigger code (byte 12)",
+    "Auspuffnachhall": "Exhaust reverb",
+    "Ausrichtung:": "Orientation:",
+    "Ausrollen (Faktor)": "Coasting (factor)",
+    "Auto in der Garage an und wird zum Fahren nicht gebraucht.": "car in the Garage and is not needed for driving.",
+    "Auto verbinden": "Connect a car",
+    "Auto zurücksetzen": "Reset the car",
+    "Auto": "Car",
+    "Automatikgetriebe": "Automatic gearbox",
+    "Automatischer Kalibrierungslauf": "Automatic calibration run",
+    "Autonome Gegner": "Autonomous opponents",
+    "Autonome Gegner, fein einstellbar": "Autonomous opponents, finely adjustable",
+    "Autonomes Fahren: Aufnahme & Wiedergabe": "Autonomous driving: record & replay",
+    "Außen anstellen, innen scheiteln, außen heraus. Ob es hilft, sagen Rundenzeit und Abgänge. Links = aus.": "Set up wide, apex tight, run out wide. Whether it helps is told by lap time and departures. Left = off.",
+    "BLE-Explorer": "BLE explorer",
+    "BLE-Explorer, Kalibrierung, Makros: die Werkbank unter der Oberfläche.": "BLE explorer, calibration, macros: the workbench under the surface.",
+    "Bauart": "Layout",
+    "Baue eine Strecke manuell aus Teilen zusammen, oder scanne sie live, während das Auto einmal die Runde fährt (Auto muss verbunden sein). Bekannte Teiltypen: Start/Ziel, Gerade, Rechtskurve (bestätigt aus echten Streckendaten). Linkskurve ist eine": "Build a track by hand from parts, or scan it live while the car drives one lap (a car must be connected). Known part types: start/finish, straight, right curve (confirmed from real track data). The left curve is an",
+    "Bedienung mit Maus oder Finger. Das Gamepad ist hier ausgebaut: es griff vorher auf jedem Tab und auf jedes Bedienelement, und daraus kamen Fehlbedienungen. Es steuert jetzt nur noch das Auto, den Streckeneditor im Vollbild und das Boxenstopp-Menü.": "Operated with the mouse or a finger. The gamepad has been removed here: it used to act on every tab and every control, and that caused mis-operation. It now only drives the car, the track editor in fullscreen, and the pit-stop menu.",
+    "Bei freiem Training ohne Bedeutung.": "Has no meaning in free practice.",
+    "Beim Boxenstopp: Reparatur an/aus": "During a pit stop: repair on/off",
+    "Beim Boxenstopp: Tanken an/aus": "During a pit stop: refuelling on/off",
+    "Bekannt (aus einer unabhängigen Reverse-Engineering-Runde zum selben Auto, per BLE-Sniffer ermittelt): echte Kommando-Pakete sind": "Known (from an independent reverse-engineering effort on the same car, obtained with a BLE sniffer): real command packets are",
+    "Bekanntes Idle-Paket laden (20 Byte)": "Load a known idle packet (20 bytes)",
+    "Belegung": "Bindings",
+    "Bereit": "Ready",
+    "Beschleunigungsfaktor": "Acceleration factor",
+    "Beste Zeit": "Best time",
+    "Beste": "Best",
+    "Blip (gerechnet)": "Blip (synthesised)",
+    "Box": "Pit",
+    "Boxengasse aktiv": "Pit lane active",
+    "Boxengasse herunterladen (SVG)": "Download pit lane (SVG)",
+    "Boxengasse": "Pit lane",
+    "Boxenstopp auf Knopfdruck, mit Quick-Menü": "Pit stop at the touch of a button, with a quick menu",
+    "Boxenstopp": "Pit stop",
+    "Boxenstopp, erneut zweimal kurz drücken bricht ab": "Pit stop, two more short presses abort it",
+    "Boxer": "Flat",
+    "Bremse": "Brake",
+    "Bremse:": "Brake:",
+    "Bremspunkte finden.": "Find your braking points.",
+    "Bremswirkung": "Braking force",
+    "Byte 12 jetzt": "Byte 12 now",
+    "Byte 3 Spanne": "Byte 3 range",
+    "Code von einem anderen Gerät einfügen": "Paste a code from another device",
+    "Codeprobe": "Code probe",
+    "Crash auslösen: Schaden, Geräusch und Rumble wie im Betrieb": "Trigger a crash: damage, sound and rumble just as in normal running",
+    "Crash-Erkennung mit Vibration und Folgen fürs Handling": "Crash detection with rumble and lasting effects on handling",
+    "Crashs, bis Fahrzeug ruckelt": "Crashes until the car judders",
+    "Cross-Plane (ungleiche Bänke)": "Cross-plane (uneven banks)",
+    "Das Auto hält sich selbst auf der Bahn, der Ghost gibt nur Gas.": "The car keeps itself on the track; the ghost only works the throttle.",
+    "Das ist der ganze Trick: eine": "That is the whole trick: one",
+    "Der Code beschreibt die Reihenfolge der Teile und die Ausrichtung. Damit stellst du auf einem anderen Gerät dieselbe Strecke ein, ohne sie neu zu klicken.": "The code describes the order of the parts and the orientation. With it you set up the same track on another device without clicking it together again.",
+    "Der Erstplatzierte fährt etwas langsamer.": "The leader drives a little slower.",
+    "Der Klangcharakter kommt aus den": "The character of the sound comes from the",
+    "Die Autos fahren in dieser Reihenfolge los. Die Einführungsrunde läuft mit Boxengassen-Tempo; sobald das erste Auto Start/Ziel überfährt, ist das Limit weg.": "The cars set off in this order. The formation lap runs at pit-lane pace; as soon as the first car crosses start/finish, the limit is gone.",
+    "Die Controller-Belegung ist frei zuweisbar, Optionen → Controller. Hier steht, was gerade eingestellt ist.": "The controller bindings are freely assignable, Options → Controller. What is set right now is shown here.",
+    "Die Ideallinie schickt einen Lenkanteil hinaus und nimmt an, dass das Auto dadurch weiter aussen oder innen sitzt.": "The racing line sends out a steering share and assumes the car therefore sits further out or further in.",
+    "Dieselbe Idee, eine Stufe größer. Ein autonomes Auto braucht keine Zeitkurve, sondern eine": "The same idea, one size up. An autonomous car does not need a curve over time but one",
+    "Dieselben elf Größen, aus denen die mitgelieferten Motoren gerechnet sind, nur direkt zum Drehen. Das Modell läuft hier im Browser, also hörst du jede Änderung sofort, ohne dass eine Datei erzeugt werden muss.": "The same eleven quantities the bundled engines are computed from, only here you turn them directly. The model runs in the browser, so you hear every change at once, with no file to generate.",
+    "Direktsteuerung mit der Maus": "Direct control with the mouse",
+    "Doku": "Docs",
+    "Drehen": "Rotate",
+    "Drehzahl": "Revs",
+    "Drei fertige Abstimmungen. Sie setzen nur die Regler, die das": "Three ready-made setups. They only touch the sliders that affect the",
+    "Drosselt bei vollem Akku. Der Akkuwert ist eine unkalibrierte Schätzung.": "Throttles back on a full battery. The battery value is an uncalibrated estimate.",
+    "Druckvorlagen": "Print templates",
+    "Eckig: Vollgas, dann Vollbremse": "Square: full throttle, then full brake",
+    "Eigener Verbindungsweg, nur zum Erkunden. Er legt": "A separate connection path, for exploring only. It places",
+    "Eigenes Muster für die Box, mit dem Code, den es auslöst.": "Your own pattern for the pit, with the code it triggers.",
+    "Ein Teil überfahren und ablesen, welchen Wert das Auto meldet.": "Drive over one part and read off the value the car reports.",
+    "Eine Runde zählt, sobald das Auto das Start/Ziel-Muster auf der Strecke überfährt (dasselbe Signal, das auch der Streckenscanner ausliest): kein eigener Sensor in der App.": "A lap counts as soon as the car drives over the start/finish pattern on the track (the same signal the track scanner reads), there is no separate sensor in the app.",
+    "Einfach: Elektro": "Simple: electric",
+    "Einfach: Turbo": "Simple: turbo",
+    "Einführungsrunde mit Boxengassen-Tempo, frei beim ersten Überfahren von Start/Ziel.": "Formation lap at pit-lane pace, released the first time start/finish is crossed.",
+    "Einmal senden": "Send once",
+    "Einstellungen": "settings",
+    "Endlosschleife": "Loop forever",
+    "Entwickler": "Developer",
+    "Ergebnis": "Result",
+    "Ergebnis, alle verbundenen Autos": "Result, all connected cars",
+    "Erlaubt beim Anbremsen mehr Lenkung. Nicht die Gewichtsverlagerung, sondern ihr Gegenstück in der Lenkgrenze.": "Allows more steering while braking. Not the weight transfer, but its counterpart in the steering limit.",
+    "Erst ein Auto verbinden": "Connect a car first",
+    "Erst simulieren, dann fahren. Der Knopf schickt die Kurven an ein verbundenes Auto und fährt sie einmal ab. Das ist bewusst ein": "Simulate first, then drive. The button sends the curves to a connected car and runs them once. That is deliberately one",
+    "Fahr die Strecke einmal manuell (Tab \"Fahren\", Joystick/Gas oder Pfeiltasten). Während der Aufnahme werden Lenk- und Gaswerte mit Zeitstempel mitgeschrieben. Bei der Wiedergabe sendet die App exakt dieselbe Sequenz erneut an die Ziel-Characteristic.": "Drive the track once by hand (the \"Drive\" tab, joystick/throttle or arrow keys). During recording, steering and throttle values are written down with timestamps. On replay the app sends exactly the same sequence again to the target characteristic.",
+    "Fahren, abstimmen, Rennen fahren. Im Browser, ohne Installation, mit deinem eigenen Streckenaufbau.": "Drive, tune, race. In the browser, with no installation, on your own track layout.",
+    "Fahrgefühl": "Driving feel",
+    "Fahrwerk": "Chassis",
+    "Fehler": "Mistakes",
+    "Feinabstimmung, 1.0 = die eingestellte Zeit.": "Fine tuning, 1.0 = the time set above.",
+    "Fliegender Start": "Rolling start",
+    "Frei fahren": "Free roam",
+    "Freies Training": "Free practice",
+    "Freigeben": "Release",
+    "Fährt das Auto über das Boxen-Muster, greift ein Tempolimit von 40 %. Bleibt es dann stehen, läuft der Service: je länger du stehst, desto mehr Sprit und Reparatur. Beim Losfahren ist das Limit wieder weg.": "When the car drives over the pit pattern, a 40 % speed limit takes effect. If it then stops, the service runs: the longer you stand, the more fuel and repair you get. Driving off lifts the limit again.",
+    "GATT-Baum": "GATT tree",
+    "Gamepad-Vibration": "Gamepad rumble",
+    "Gas / Bremse": "Throttle / brake",
+    "Gas und Bremse über die Zeit": "Throttle and brake over time",
+    "Gas": "Throttle",
+    "Gas/Bremse,": "throttle/brake,",
+    "Gas:": "Throttle:",
+    "Gegen die Referenz antreten.": "Race against the reference.",
+    "Gegen gegenseitiges Rammen. Blind: kein Byte meldet die Querlage. Links = aus.": "Against cars ramming each other. Blind: no byte reports lateral position. Left = off.",
+    "Gelbe Flagge": "Yellow flag",
+    "Gelbe Flagge: alles rollt mit": "Yellow flag: everything rolls at",
+    "Gerade": "Straight",
+    "Geschlossen ✓": "Closed ✓",
+    "Geschmeidig: aufbauen und ausrollen": "Smooth: build up and run out",
+    "Geschwindigkeit": "Speed",
+    "Gespeichert": "Saved",
+    "Gespeicherte Fahrten": "Saved runs",
+    "Gespeicherte Strecken": "Saved tracks",
+    "Getriebe & Fahrleistung": "Gearbox & performance",
+    "Ghost braucht Streckencode": "Ghost needs a track code",
+    "Ghost-Tempo": "Ghost pace",
+    "Ghost: Führenden bremsen": "Ghost: hold the leader back",
+    "Ghost: Ideallinie": "Ghost: racing line",
+    "Ghost: Kurvendrosselung": "Ghost: corner slowdown",
+    "Ghost: Leitplanken-Modus": "Ghost: guard-rail mode",
+    "Ghost: seitlicher Versatz": "Ghost: lateral offset",
+    "Grundlagen": "Basics",
+    "Gummiband": "Rubber band",
+    "Haarnadel L": "Hairpin L",
+    "Haarnadel R": "Hairpin R",
+    "Haarnadel links und": "hairpin left and",
+    "Haarnadel rechts; alles andere ist unbestätigt. Trag hier den Code ein, den dein gedrucktes Boxen-Muster tatsächlich auslöst,": "hairpin right; everything else is unconfirmed. Enter here the code your printed pit pattern actually triggers, ",
+    "Haltezeit": "Hold time",
+    "Handy-Neigung für Lenkung nutzen": "Use phone tilt for steering",
+    "Hier stand die Vermutung, sie melde": "The assumption here was that it reports",
+    "Hinzufügen": "Add",
+    "Hochschalten": "Shift up",
+    "Höchstgeschwindigkeit (km/h)": "Top speed (km/h)",
+    "Ideallinie nutzt 0.0 cm von 9.3 cm möglichem Versatz": "Racing line uses 0.0 cm of 9.3 cm possible offset",
+    "Im Vollbild: hoch/runter wechselt zwischen Aktionen (oben) und Teilen (unten), links/rechts wählt, X löst aus. O rückgängig, Dreieck Reset, Quadrat dreht.": "In fullscreen: up/down switches between actions (top) and parts (bottom), left/right selects, X activates. O undoes, triangle resets, square rotates.",
+    "Impulslänge": "Pulse length",
+    "In sieben aufgezeichneten Fahrten hat das Auto": "In seven recorded runs the car",
+    "Jedes Auto braucht einen eigenen Klick auf „Auto verbinden“, Web Bluetooth verlangt für jede Verbindung eine eigene Nutzergeste, das lässt sich nicht umgehen.": "Every car needs its own click on “Connect a car”, Web Bluetooth requires a separate user gesture for each connection, and there is no way around it.",
+    "Kacheln gehalten": "tiles held",
+    "Kacheln": "Tiles",
+    "Kachelzähler": "Tile counter",
+    "Kalibrierung": "Calibration",
+    "Kalt nach Start und Boxenstopp, abgenutzt nach hartem Stint. Links = aus.": "Cold after the start and after a pit stop, worn after a hard stint. Left = off.",
+    "Klick auf eine Zeile lässt die Lichter dieses Autos blinken": "Clicking a row makes that car's lights blink",
+    "Kopieren": "Copy",
+    "Kurbelwelle": "Crankshaft",
+    "Kurven an das Auto senden": "Send the curves to the car",
+    "Kurven glätten": "Smooth the curves",
+    "Kurven ziehen statt Code schreiben, und sofort sehen, was das Auto daraus macht.": "Drag curves instead of writing code, and see straight away what the car makes of it.",
+    "LB / L1: Rennen starten · RB / R1: Rennen beenden": "LB / L1: start the race · RB / R1: end the race",
+    "Laden": "Load",
+    "Last": "Load",
+    "Leeren": "Clear",
+    "Leerlauf-Paket laden und unverändert wiederholt senden (reproduziert dieselbe gültige Prüfsumme, ohne sie berechnen zu müssen).": "idle packet, loaded and sent again unchanged (which reproduces the same valid checksum without having to compute it).",
+    "Leertaste": "Space",
+    "Leistung über Akkulaufzeit konstant halten": "Hold power constant over battery life",
+    "Lenkansprechen": "Steering response",
+    "Lenkanteil und erhöht ihn in Stufen, bis das Auto die Bahn verlässt. Der letzte Wert, der noch hielt, ist der brauchbare Bereich: und der Wert, bei dem es kippt, sagt, wie viel Lenkanteil einer halben Bahnbreite entspricht.": "steering share and raises it in steps until the car leaves the track. The last value that still held is the usable range, and the value at which it tips over says how much steering share corresponds to half a track width.",
+    "Lenkanteil": "Steering share",
+    "Lenkeinschlag, nicht der verlangte.": "steering angle, not the one asked for.",
+    "Lenkung & Feinabstimmung": "Steering & fine tuning",
+    "Lenkung": "Steering",
+    "Lenkung,": "steering,",
+    "Lenkung:": "Steering:",
+    "Lenkwinkel über die Zeit": "Steering angle over time",
+    "Letzte Zeit": "Last time",
+    "Letztes Paket, Byte für Byte.": "The last packet, byte by byte.",
+    "Letztes Teil entfernen": "Remove the last part",
+    "Licht AUS + Bit 5 (0x20)": "Lights OFF + bit 5 (0x20)",
+    "Licht AUS + Bit 5+6 (0x60)": "Lights OFF + bits 5+6 (0x60)",
+    "Licht AUS + Bit 6 (0x40)": "Lights OFF + bit 6 (0x40)",
+    "Licht AUS + Bit 7+5 (0xa0)": "Lights OFF + bits 7+5 (0xa0)",
+    "Licht an/aus": "Lights on/off",
+    "Lichthupe": "Headlight flash",
+    "Linker Stick (X-Achse)": "Left stick (X axis)",
+    "Linker Trigger (LT / L2)": "Left trigger (LT / L2)",
+    "Links": "Left",
+    "Live-Log": "Live log",
+    "Live-Scan starten": "Start live scan",
+    "Log leeren": "Clear the log",
+    "Losfahren": "Start driving",
+    "Läuft komplett automatisch, ohne Physik-Engine (direkte Werte).": "Runs fully automatically, without the physics engine (direct values).",
+    "Läuft, bis du beendest.": "Runs until you stop it.",
+    "Löschen": "Delete",
+    "Löst Tempolimit und Boxenstopp aus. Welchen Code das Auto dafür meldet, ist": "Triggers the speed limit and the pit stop. Which code the car reports for it is",
+    "Makros": "Macros",
+    "Manuelle Schaltung": "Manual gearshift",
+    "Masse & Reifen": "Mass & tyres",
+    "Messung starten": "Start the measurement",
+    "Minuten": "minutes",
+    "Mittel": "Mean",
+    "Modus": "Mode",
+    "Motorlautstärke": "Engine volume",
+    "Motorsound": "Engine sound",
+    "Motorsound-Profil": "Engine sound profile",
+    "Motorwerkstatt": "Engine workshop",
+    "Muster zum Ausdrucken und Auslegen.": "Patterns to print out and lay down.",
+    "Muster-Sonde:": "Pattern probe:",
+    "Mustererkennung: Paketvarianten testen": "Pattern detection: test packet variants",
+    "Musterkontakt": "Pattern contact",
+    "NOTHALT": "EMERGENCY STOP",
+    "Name der Aufnahme": "Recording name",
+    "Name der Strecke": "Track name",
+    "Neu zuweisen": "Reassign",
+    "Noch keine Verbindung.": "No connection yet.",
+    "Noch nicht gebaut, die drei Punkte stehen hier als Bauplan, damit klar ist, wohin das führt.": "Not built yet: the three points stand here as a blueprint, so it is clear where this leads.",
+    "Noch nicht gefahren.": "Not driven yet.",
+    "Not-Halt, alle Eingaben los, Momentum auf null": "Emergency stop: release everything, momentum to zero",
+    "Nothalt.": "emergency stop.",
+    "Notiz setzen": "Add a note",
+    "Nur die Gaskurve ist einstellbar, die Lenkung macht das Auto selbst. Einzige Rückmeldung ist die Rundenzeit. Genau so haben Rennfahrer es immer gemacht.": "Only the throttle curve is adjustable; the car does the steering itself. The only feedback is the lap time. That is exactly how racing drivers have always done it.",
+    "Oben = Vollgas, Mitte = rollen, unten = Vollbremse.": "Up = full throttle, middle = coasting, down = full brake.",
+    "Oben = voll rechts, Mitte = gerade, unten = voll links.": "Up = full right, middle = straight, down = full left.",
+    "Ohne Streckenkarte: keine Kachelfolge, keine Rundenzählung, kein Vorausblick.": "Without a track map: no tile sequence, no lap counting, no lookahead.",
+    "Open Source, offene Lizenz": "Open source, open licence",
+    "Optionen": "Options",
+    "Ortskurve": "Locus",
+    "PC und Android, Chrome-basiert": "PC and Android, Chrome-based",
+    "Paket in beiden Richtungen auf, was das Auto meldet und was die App sendet: mit Zeitstempel, und exportiert es als CSV. Damit ist kein btsnoop nötig: die Datei ist bereits beschriftet und entschlüsselt.": "packet in both directions, what the car reports and what the app sends, with a timestamp, and exports it as CSV. No btsnoop needed: the file is already labelled and decoded.",
+    "Paket:": "Packet:",
+    "Pakete": "Packets",
+    "Paketlänge:": "Packet length:",
+    "Passt in ca. 50×20cm, am besten das Auto mittig auf die Fläche stellen oder aufbocken, falls möglich.": "Fits in about 50×20 cm: best to put the car in the middle of the sheet, or up on blocks if you can.",
+    "Pflichtboxenstopps": "Mandatory pit stops",
+    "Physik-Modus aktivieren": "Enable physics mode",
+    "Position über die Runden": "Position over the laps",
+    "Primärrohr": "Primary pipe",
+    "Programmierschule": "Coding school",
+    "Protokoll, Streckencodes, Physik, Töne: alles, was gemessen wurde, mit Herkunft.": "Protocol, track codes, physics, sounds: everything that was measured, with its source.",
+    "Protokoll-Labor (NUS RX/TX)": "Protocol lab (NUS RX/TX)",
+    "Querablage messen": "Measure lateral placement",
+    "Querkraft und Längskraft": "Lateral and longitudinal force",
+    "R3 (rechter Stick drücken)": "R3 (press the right stick)",
+    "Realismus": "Realism",
+    "Rechnung": "Calculation",
+    "Rechter Trigger (RT / R2)": "Right trigger (RT / R2)",
+    "Rechts": "Right",
+    "Referenz-Akkustand": "Reference battery level",
+    "Regen und Donner, eigener Regler.": "Rain and thunder, its own slider.",
+    "Regen": "Rain",
+    "Regenlautstärke": "Rain volume",
+    "Regler, auch die, die keine Voreinstellung anfasst. Kopieren, verschicken, einfügen,": "sliders, including the ones no preset touches. Copy, send, paste,",
+    "Reifen": "Tyres",
+    "Reifen: Temperatur & Verschleiß": "Tyres: temperature & wear",
+    "Reifengrip": "Tyre grip",
+    "Reifensimulation an/aus": "Tyre simulation on/off",
+    "Reifensimulation an/aus, beim Boxenstopp: Reifenwechsel an/aus": "Tyre simulation on/off; during a pit stop: tyre change on/off",
+    "Reifentemperatur": "Tyre temperature",
+    "Reihe": "Inline",
+    "Rekonstruktion": "Reconstruction",
+    "Relais-Klacken (gerechnet)": "Relay click (synthesised)",
+    "Renneinstellungen": "Race setup",
+    "Rennen abbrechen": "Abort race",
+    "Rennen starten / abbrechen": "Start / abort race",
+    "Rennen starten": "Start race",
+    "Rennmodus": "Race mode",
+    "Rennwürze": "Race spice",
+    "Resonanz 116 Hz · Zündrate 300 Hz · Zyklusrate 37.5 Hz": "Resonance 116 Hz · firing rate 300 Hz · cycle rate 37.5 Hz",
+    "Richtung": "Direction",
+    "Roh": "Raw",
+    "Rollwiderstand, Motorbremse und Luftwiderstand zugleich. Klein rollt weit.": "Rolling resistance, engine braking and drag at once. Small rolls far.",
+    "Runde zählen, ohne sie zu fahren: zum Prüfen von Rundenzeiten und Ergebnistabelle.": "Count a lap without driving it, for checking lap times and the results table.",
+    "Runde": "Lap",
+    "Runden": "Laps",
+    "Rundentempo der autonomen Autos.": "Lap pace of the autonomous cars.",
+    "Runterschalten": "Shift down",
+    "Scan stoppen": "Stop scan",
+    "Schaden": "Damage",
+    "Scheinwerfer": "Headlights",
+    "Schlechteste": "Worst",
+    "Schließen": "Close",
+    "Schreibt frei konfigurierbare Byte-Pakete an NUS RX (": "Writes freely configurable byte packets to NUS RX (",
+    "Schritt: eine steil gezogene Gaskurve lässt ein Auto auf dem Tisch losschießen, und die Simulation kostet nichts.": "step: a steeply drawn throttle curve makes a car shoot off the table, and the simulation costs nothing.",
+    "Schwarz ist die Fahrbahn, weiße Striche trennen die Streckenteile. Randsteine in Fahrtrichtung:": "Black is the roadway, white lines separate the parts. Kerbs, in the direction of travel:",
+    "Select oder W. Reifen kommen beim Boxenstopp passend.": "Select or W. Tyres come to match at the pit stop.",
+    "Sendet eine feste Testsequenz (Lenkung im Stand 0/25/50/75/100% links & rechts, dazu 3 sehr kurze Mini-Vorwärtsschrübe bei niedrigem Tempo, eine sanfte Bremse) und wertet parallel die Notify-Bytes 1-3 aus, um zu prüfen, ob das wirklich Gier-/Beschleunigungsdaten vom Auto sind.": "Sends a fixed test sequence (steering at a standstill 0/25/50/75/100 % left and right, plus 3 very short forward nudges at low speed and a gentle brake) and evaluates notify bytes 1–3 alongside it, to check whether those really are yaw and acceleration data from the car.",
+    "Sendet eine feste Testsequenz (Lenkung im Stand 0/25/50/75/100% links & rechts, dazu 3 sehr kurze Mini-Vorwärtsschübe bei niedrigem Tempo, eine sanfte Bremse) und wertet parallel die Notify-Bytes 1-3 aus, um zu prüfen, ob das wirklich Gier-/Beschleunigungsdaten vom Auto sind.": "Sends a fixed test sequence (steering at a standstill 0/25/50/75/100 % left and right, plus 3 very short forward nudges at low speed and a gentle brake) and evaluates notify bytes 1–3 alongside it, to check whether those really are yaw and acceleration data from the car.",
+    "Sensor an, Auto hält sich selbst auf der Bahn.": "Sensor on, car keeps itself on the track.",
+    "Services/Characteristics deines Autos ohne diese Einschränkung. Wenn du mir die dort angezeigten UUIDs (Service + Characteristics + Eigenschaften: read/write/notify) gibst, kann ich die Steuerung direkt korrekt verdrahten.": "services and characteristics of your car without that restriction. If you give me the UUIDs shown there (service + characteristics + properties: read/write/notify), the control path can be wired up correctly straight away.",
+    "Setzt das Layout aus den gemeldeten Kacheln zusammen und übernimmt es nach der ersten geschlossenen Runde, nur wenn noch keine Strecke liegt.": "Assembles the layout from the reported tiles and adopts it after the first closed lap, only if no track is loaded yet.",
+    "Sie sagt, welcher Lenkanteil das Auto gerade noch auf der Bahn hält, nicht, um wie viele Zentimeter es dabei versetzt liegt. Der Zusammenhang zwischen beiden ist nicht gemessen und wird hier nicht behauptet. Brauchbar ist sie trotzdem: die Ideallinie und die Überholmanovör dürfen nie mehr als etwa die Hälfte des Kippwerts anfordern, und das ist eine Grenze, die vorher nicht bekannt war.": "It says which steering share still just keeps the car on the track, not by how many centimetres it is displaced. The relationship between the two is not measured and is not claimed here. It is useful all the same: the racing line and the overtaking moves must never ask for more than about half the tipping value, and that is a limit that was not known before.",
+    "Simulation fahren": "Run the simulation",
+    "Simulierte Motoren und eigene Sounds über Engine-Sim": "Simulated engines and custom sounds via Engine-Sim",
+    "Slalom: Lenken im Wechsel": "Slalom: steer alternately",
+    "So testen:": "How to test:",
+    "Sonstige": "More",
+    "Speichern und austauschen": "Save and exchange",
+    "Speichern": "Save",
+    "Standard aus. Die ersten fünf sind Aufnahmen, der Rest ist gerechnet.": "Off by default. The first five are recordings, the rest are synthesised.",
+    "Standard: rechter Trigger = Gas, linker Trigger = Bremse, linker Stick = Lenkung, X (links) = runterschalten, B (rechts) = hochschalten: wie bei einem Xbox-Controller. Klicke \"Neu zuweisen\" und betätige dann den gewünschten Knopf/Stick/Trigger am Controller.": "Default: right trigger = throttle, left trigger = brake, left stick = steering, X (left) = shift down, B (right) = shift up: as on an Xbox controller. Click \"Reassign\" and then operate the button, stick or trigger you want on the controller.",
+    "Start / Ziel": "Start / finish",
+    "Start/Ziel herunterladen (SVG)": "Download start/finish (SVG)",
+    "Start/Ziel und Boxengasse maßhaltig als SVG zum Ausdrucken.": "Start/finish and pit lane to scale, as SVG, ready to print.",
+    "Start/Ziel": "Start/finish",
+    "Startaufstellung, ziehen oder mit den Pfeilen sortieren": "Starting grid, drag or sort with the arrows",
+    "Startseite": "Home screen",
+    "Steht": "Stopped",
+    "Steuerkreuz:": "D-pad:",
+    "Steuern": "Drive",
+    "Stoppen": "Stop",
+    "Strafe je verpasstem Stopp (s)": "Penalty per missed stop (s)",
+    "Strecke aus Teilen bauen, drehen, als Code weitergeben.": "Build a track from parts, rotate it, pass it on as a code.",
+    "Strecke beim Fahren lernen": "Learn the track while driving",
+    "Strecke": "Track",
+    "Strecken benennen, laden und wieder löschen.": "Name tracks, load them and delete them again.",
+    "Strecken-Ambience": "Track ambience",
+    "Streckenansicht": "Track view",
+    "Streckencode gemeldet, während der Mitschnitt der Original-App voll davon ist. Das Schreibpaket im Moment des ersten Codes dort ist byteweise die Form, die wir senden: im Dauerbetrieb unterscheidet uns also nichts. Was die Original-App aber": "track code, while the capture of the original app is full of them. The write packet at the moment of its first code is byte for byte the form we send, so nothing distinguishes us in steady state. What the original app does",
+    "Streckencode": "Track code",
+    "Streckeneditor": "Track editor",
+    "Streckenlautstärke": "Track volume",
+    "Streuung": "Spread",
+    "Stufe": "Step",
+    "Sweep 0→255 starten": "Start sweep 0→255",
+    "Sweep Byte#:": "Sweep byte #:",
+    "Sweep stoppen": "Stop sweep",
+    "Sättigung": "Saturation",
+    "TX abonnieren": "Subscribe to TX",
+    "Tagesform": "Form of the day",
+    "Tagesform, Fehler, Windschatten, Attacke, Gummiband. Auf 0 fährt jeder Ghost stur seine Zeit.": "Form of the day, mistakes, slipstream, attack, rubber band. At 0 every ghost stubbornly drives its own time.",
+    "Tank & Schaden": "Fuel & damage",
+    "Tank auf 5 % setzen, um den Notlauf zu prüfen": "Set the fuel to 5 % to check limp mode",
+    "Tank beim Start (l)": "Fuel at the start (l)",
+    "Tank und Zustand zurücksetzen": "Reset fuel and condition",
+    "Tank": "Fuel",
+    "Tankgewicht": "Fuel weight",
+    "Tankverbrauch (%/s bei Vollgas)": "Fuel use (%/s at full throttle)",
+    "Tastatur, Fahren": "Keyboard, driving",
+    "Tastatur: Test und Fehlersuche am PC": "Keyboard, testing and debugging on a PC",
+    "Tastatur:": "Keyboard:",
+    "Tastenbelegung": "Key bindings",
+    "Telemetrie aufzeichnen": "Record telemetry",
+    "Testlauf starten": "Start the test run",
+    "Tipp: Öffne in Chrome": "Tip: open in Chrome",
+    "Ton bei Lichthupe": "Headlight-flash sound",
+    "Ton": "Sound",
+    "Trail-Braking-Grip-Bonus": "Trail-braking grip bonus",
+    "Trocken": "Dry",
+    "Und vieles mehr …": "And much more …",
+    "Variante wählen, dann": "Choose a variant, then",
+    "Ventiltrieb": "Valvetrain",
+    "Verbinde einen Controller per USB/Bluetooth und drücke einen Knopf, damit der Browser ihn erkennt (Web-Gamepad-API meldet sich erst nach der ersten Eingabe).": "Connect a controller by USB or Bluetooth and press a button so the browser notices it (the Web Gamepad API only reports after the first input).",
+    "Verbinden und Services lesen": "Connect and read services",
+    "Verbinden": "Connect",
+    "Verbindung": "Connection",
+    "Vollbild verlassen": "Leave fullscreen",
+    "Vollbild": "Fullscreen",
+    "Voller Tank macht träger. Links = aus.": "A full tank makes it sluggish. Left = off.",
+    "Vollständige Gestaltungsfreiheit für deine Carrera Hybrid Bahn": "Complete creative freedom for your Carrera Hybrid track",
+    "Vollständige Reparatur dauert (s)": "A full repair takes (s)",
+    "Von 100 % auf 0. Nicht linear: die ersten 25 % in 1/10 der Zeit, die letzten 25 % in 4/10.": "From 100 % to 0. Not linear: the first 25 % in 1/10 of the time, the last 25 % in 4/10.",
+    "Vorbeifahrten, Regen, Donner.": "Cars going past, rain, thunder.",
+    "Voreinstellungen": "Presets",
+    "Vorgabe führt nicht zu einer eckigen Bewegung. Das Auto hat Masse, die Reifen brauchen Zeit, die Lenkung hat eine Höchstgeschwindigkeit. Wer das einmal gesehen hat, versteht, warum geschmeidige Vorgaben besser fahren: und das gilt für Programme genauso wie für Daumen.": "input does not produce square movement. The car has mass, the tyres need time, the steering has a top speed. Once you have seen that, you understand why smooth inputs drive better, and that holds for programs just as much as for thumbs.",
+    "Vorne Standlicht, hinten Bremslicht. Taste": "Front running light, rear brake light. Key",
+    "Was das Auto daraus macht": "What the car makes of it",
+    "Was die Zahl bedeutet und was nicht.": "What the number means and what it does not.",
+    "Web Bluetooth erlaubt standardmäßig nur Zugriff auf Services, die vorab bekannt sind. Da wir das genaue Carrera-Protokoll noch nicht kennen, versuchen wir es unten mit einer Liste gängiger Custom-Service-UUIDs (Nordic UART, HM-10/FFE0, FFF0 etc.): falls dein Auto eine andere UUID benutzt, füge sie manuell hinzu.": "By default Web Bluetooth only allows access to services known in advance. Since we do not yet know the exact Carrera protocol, below we try a list of common custom service UUIDs (Nordic UART, HM-10/FFE0, FFF0 and so on): if your car uses a different UUID, add it by hand.",
+    "Wechselt einmal zu einem zufälligen Zeitpunkt.": "Changes once, at a random moment.",
+    "Weiter gedacht: Ghostcars selbst programmieren": "Going further: program ghost cars yourself",
+    "Welchen Code meldet dieses Teil?": "Which code does this part report?",
+    "Wenn hier nur": "If all you see here is",
+    "Wetter umschalten (Regen / trocken)": "Toggle the weather (rain / dry)",
+    "Wetter umschalten": "Toggle the weather",
+    "Wetter zu Beginn": "Weather at the start",
+    "Wetter ändert sich": "Weather changes",
+    "Wetter, Reifentemperatur, ABS": "Weather, tyre temperature, ABS",
+    "Wichtig beim Drucken:": "Important when printing:",
+    "Wie das Uebrige zu lesen ist.": "How to read the rest.",
+    "Wie viel Tempo in Kurven abgegeben wird.": "How much pace is given up in corners.",
+    "Wiedergabe": "Replay",
+    "Wiedergabe-Log": "Replay log",
+    "Wieviel": "How much",
+    "Wird nach dem ersten Lauf gezeichnet: Geschwindigkeit und der": "Drawn after the first run: speed and the",
+    "Wo steht das Auto?": "Where is the car?",
+    "Womit dieses Werkzeug die Haarnadel gefunden hat.": "How this tool found the hairpin.",
+    "Wähle die Characteristic, an die Lenk-/Gas-Kommandos geschrieben werden sollen (wird beim Verbinden automatisch auf NUS RX gesetzt).": "Choose the characteristic the steering and throttle commands are written to (set to NUS RX automatically on connecting).",
+    "Zeichne den Lenkwinkel über den Kachelindex und lass den Ghost damit fahren. Wie nah kommst du an die 85 %?": "Draw the steering angle against the tile index and let the ghost drive it. How close do you get to the 85 %?",
+    "Zeichnet": "Records",
+    "Zieh die Punkte in den beiden Kurven nach oben oder unten. Links legst du fest, wie stark das Auto über die Zeit Gas gibt oder bremst, rechts wie es lenkt. Dann": "Drag the points in the two curves up or down. On the left you set how hard the car accelerates or brakes over time, on the right how it steers. Then",
+    "Ziel-Characteristic": "Target characteristic",
+    "Zug": "Bank",
+    "Zuletzt überfahrenes Muster:": "Last pattern driven over:",
+    "Zum Herausfinden, was ein Streckenteil wirklich sendet: zum Beispiel die 180-Grad-Haarnadel. Auto verbinden, hier auf": "For finding out what a track part really sends, the 180-degree hairpin, for instance. Connect a car, press",
+    "Zum Weitergeben: der Text unten enthält": "To pass on: the text below contains",
+    "Zurück": "Undo",
+    "Zurücksetzen": "Reset",
+    "Zustand": "Condition",
+    "Zwei Kurven, zwei Autos, dieselbe Strecke: und die Rundenzeiten sagen, welche Kurve die bessere war.": "Two curves, two cars, the same track: and the lap times say which curve was the better one.",
+    "Zwei eigene Ghosts gegeneinander.": "Two of your own ghosts against each other.",
+    "Zweiklang (gerechnet)": "Two-tone (synthesised)",
+    "Zylinder": "Cylinders",
+    "Zählen starten": "Start counting",
+    "Zählt Runden und löst im Rennmodus die Rundenzeit aus. Erwarteter Code": "Counts laps and triggers the lap time in race mode. Expected code",
+    "Zündabständen": "firing intervals",
+    "Zündstreuung": "Firing scatter",
+    "alle": "all",
+    "ansteigt: eine Kurve, die schon mit festem Radius gefahren wird, braucht keine Bremse mehr. Beides ist eine": "rises, a corner already being taken at a constant radius needs no more braking. Both are a",
+    "auf 0, hat der Sensor während der ganzen Messung kein gedrucktes Blatt gesehen, dann liegt es nicht an der Entschlüsselung, sondern daran, dass nichts zu lesen war. Zählt der": "at 0, the sensor saw no printed sheet at all during the whole measurement, then the problem is not the decoding but that there was nothing to read. If the",
+    "auf Strecke": "on track",
+    "auf der Bahn": "on track",
+    "aus einem Foto, wenn du das Original-PDF hast, nimm lieber das.": "from a photograph: if you have the original PDF, use that instead.",
+    "aus": "off",
+    "bekannt als": "known as",
+    "bereit": "ready",
+    "betreffen: nicht die Rennlänge, nicht das Wetter, nicht die Strecke, denn die gehören zum Rennen und nicht zum Auto.": ": not the race length, not the weather, not the track, because those belong to the race and not to the car.",
+    "das ist, meldet kein Byte. Diese Messung ersetzt das Raten: sie schickt einen": "that is, no byte reports. This measurement replaces the guessing: it sends a",
+    "der Fahrbahnbreite, ausgemessen aus den Streckenkarten der Original-App. Die dünne farbige Linie ist die berechnete Ideallinie, krümmungsärmster Verlauf innerhalb der Fahrbahn. Ihre Farbe zeigt, ob dort gebremst würde:": "of the roadway width, measured from the track maps of the original app. The thin coloured line is the computed racing line, the least-curvature path within the roadway. Its colour shows whether there would be braking:",
+    "der Lenkvarianz allein aus Kachelindex und Position innerhalb der Kachel erklärt.": "of the steering variance is explained by tile index and position within the tile alone.",
+    "die Kachelart: wenn hier etwas anderes steht als erwartet, liegt der Fehler nicht bei der Auswertung, sondern beim Aufbau des Pakets.": "the tile type, if something other than expected appears here, the fault is not in the interpretation but in how the packet is built.",
+    "diese Stufe halten": "hold this step",
+    "diese Übersicht": "this overview",
+    "dieser Farbe": "this colour",
+    "drücken.": "press.",
+    "echte, garantiert gültige": "real, guaranteed valid",
+    "eckige": "square",
+    "fahr über ein beliebiges ausgedrucktes Muster, hier steht sofort, welchen Code das Auto meldet. Sicher bekannt sind": "drive over any printed pattern, the code the car reports appears here at once. Known for certain are",
+    "festen": "fixed",
+    "freie Notiz (optional)": "free note (optional)",
+    "gesendet hat und wir nie:": "sent, and we never do:",
+    "getrennt": "disconnected",
+    "gleichmäßig (Flat-Plane)": "even (flat-plane)",
+    "grün am Gas": "green on the throttle",
+    "heißt „gerade keine Lesung“ und ist der häufigste Wert von allen, das ist normal und kein Fehler.": "means “no reading right now” and is the most common value of all, that is normal and not a fault.",
+    "heißt „kein Muster erkannt“. Interessant ist alles andere.": "means “no pattern recognised”. Everything else is interesting.",
+    "heißt: den kennen wir noch nicht.": "means: we do not know that one yet.",
+    "hoch, obwohl Byte 12 nur": "high, although byte 12 only",
+    "hochschalten": "shift up",
+    "in Kurven deutlich bewegt, lässt sich eine Kurve daran erkennen, ganz ohne Barcode.": "moves noticeably in corners, a corner can be recognised from it, with no barcode at all.",
+    "in den Optionen prüfen. Er setzt Bit 5 in Byte 14; steht er aus, geht Bit 7 hinaus und das schaltet den Streckensensor ab, gemessen 0 Lesungen in 551 Fahrmeldungen. Genau dieses Bit hat diese App zwölf Aufzeichnungen lang gesendet, siehe Doku, „Auf der Bahn oder ohne Bahn“.": "in the options. It sets bit 5 in byte 14; with it off, bit 7 goes out and that switches the track sensor off, measured 0 readings in 551 packets while driving. This app sent exactly that bit for twelve captures; see the docs, “on track or off track”.",
+    "ist der Kachelzähler,": "is the tile counter,",
+    "ist die Lichthupe.": "is the headlight flash.",
+    "jedes": "every",
+    "kein Auto verbunden": "no car connected",
+    "kein Controller erkannt": "no controller detected",
+    "kein Ton": "no sound",
+    "kein": "no",
+    "keine Aufnahme": "no recording",
+    "keine Autos verbunden": "no cars connected",
+    "keine Variante aktiv (normales Paket)": "no variant active (normal packet)",
+    "keine": "none",
+    "keinen einzigen": "not a single one",
+    "km/h echt": "km/h actual",
+    "km/h mittig weiter, kein Überholen, Lichter blinken. Nochmal": "km/h down the middle, no overtaking, lights blinking. Pressing",
+    "kontinuierlich alle": "continuously every",
+    "lang (2 Byte Präfix + 17 Datenbytes + 1 Prüfsumme), gesendet alle ~45ms. Byte-Offset 6 = Gas/Bremse (": "long (2 prefix bytes + 17 data bytes + 1 checksum), sent every ~45 ms. Byte offset 6 = throttle/brake (",
+    "langsam über ein Muster fahren": "drive slowly over a pattern",
+    "langsam": "slow",
+    "lenken links": "steer left",
+    "lenken rechts": "steer right",
+    "links rot-weiß": "left red-and-white",
+    "links": "left",
+    "links, sie hat sehr wohl eigene Codes, und sie fügen sich in das Muster der anderen:": "left, it does have codes of its own, and they fit the pattern of the others:",
+    "links/rechts für die 60-Grad-Kurve,": "left/right for the 60-degree curve,",
+    "links/rechts für die Haarnadel. Ein Wert in": "left/right for the hairpin. A value in",
+    "mehr": "more",
+    "mit Sonde ermitteln": "determine with the probe",
+    "ms/Schritt": "ms/step",
+    "nicht belegt": "unbound",
+    "nicht verbunden": "not connected",
+    "noch kein Paket": "no packet yet",
+    "noch keine Wiedergabe.": "no replay yet.",
+    "noch nichts gemessen": "nothing measured yet",
+    "noch nichts gezählt": "nothing counted yet",
+    "nur Byte 10 = 0x30": "byte 10 = 0x30 only",
+    "oder": "or",
+    "quer": "landscape",
+    "rechts blau-weiß": "right blue-and-white",
+    "rechts und": "right and",
+    "rechts": "right",
+    "rot beim Bremsen": "red under braking",
+    "runtergefahren": "went off",
+    "runterschalten (aus dem 1. Gang in N, aus N in R)": "shift down (from 1st to N, from N to R)",
+    "s. Verlässt es die Bahn, wird die Stufe festgehalten und die Messung endet. Wenn du es": "s. If it leaves the track, the step is recorded and the measurement ends. If you",
+    "setzt den nächsten Abschnitt.": "sets the next section.",
+    "siehst": "see",
+    "startet die Ampel und gibt wieder frei": "starts the lights and releases again",
+    "steht:": "stopped:",
+    "tatsächliche": "actual",
+    "unbestätigt": "unconfirmed",
+    "unbestätigte Annahme": "unconfirmed assumption",
+    "verlässt. Sobald irgendwo eine Zahl größer null steht, ist die Ursache gefunden. Jede Variante behält eine gültige Prüfsumme, ein Fehlschlag ist also ein echtes Ergebnis und kein verworfenes Paket.": ". As soon as any number above zero appears, the cause is found. Every variant keeps a valid checksum, so a negative result is a real result and not a discarded packet.",
+    "von 127": "of 127",
+    "von Hand über genau dieses Teil schieben und ablesen, welcher Wert dabei auftaucht.": "push it by hand over exactly that part and read off which value appears.",
+    "von": "from",
+    "voraus": "ahead",
+    "war nie ein reales Signal und ist deshalb nicht mehr die Vorgabe.": "was never a real signal and is therefore no longer the default.",
+    "weniger": "less",
+    "wie eine normale Kurve und habe gar keinen eigenen Code. Am 24.08. wurde sie überfahren und meldete": "like an ordinary curve and had no code of its own. On 24 Aug it was driven over and reported",
+    "zeigt, erkennt das Auto Teile, meldet aber ihre Art nicht. Und wenn sich": "shows, the car does detect parts but does not report their type. And if",
+    "zuerst den Schalter": "check the switch",
+    "zusätzlich": "in addition",
+    "zweiter": "second",
+    "· abseits": "· off track",
+    "Über": "Over",
+    "Übernehmen": "Apply",
+    "← Sonstige": "← More",
+    "← Strecke": "← Track",
+    "⛶ Vollbild": "⛶ Fullscreen",
+    "🏁 Freies Training starten": "🏁 Start free practice",
+  };
+
+  // ============================================================================
+  // Sprachumschaltung DE/EN
+  // ============================================================================
+  //
+  // Der deutsche Text IST der Schluessel. Das ist die entscheidende Entscheidung, und sie
+  // ist gegen die uebliche Empfehlung getroffen - normalerweise vergibt man Schluessel wie
+  // "options.rain.label". Der Grund: diese Datei hat 1460 verschiedene Textstellen. Sie
+  // alle von Hand auszuzeichnen waere ein Umbau von tausend Stellen, bei dem jede einzelne
+  // schiefgehen kann, und beim naechsten neuen Satz vergisst man die Auszeichnung. Mit dem
+  // deutschen Text als Schluessel muss am Markup NICHTS geaendert werden, und ein Satz, den
+  // noch niemand uebersetzt hat, bleibt einfach deutsch stehen statt zu verschwinden.
+  //
+  // Der Preis, ausgesprochen: zwei gleiche deutsche Saetze an verschiedenen Stellen
+  // bekommen dieselbe Uebersetzung. Bei Fliesstext ist das richtig; bei einem Wort wie
+  // "Aus" waere es riskant, weil es je nach Zusammenhang anders lauten kann. Solche Faelle
+  // stehen im Woerterbuch deshalb mit Zusammenhang, oder gar nicht.
+  //
+  // Was NICHT uebersetzt wird und warum:
+  //   - der Protokollteil der Doku, soweit er Bytewerte auffuehrt: Zahlen sind Zahlen
+  //   - Log-Zeilen: sie sind ein Arbeitsprotokoll, kein Oberflaechentext, und sie entstehen
+  //     an ueber zweihundert Stellen im Code
+  //   - alles mit data-i18n-skip
+  const I18N_LANGS = ['de', 'en'];
+  let lang = 'de';
+  // Originaltexte, damit der Weg zurueck nach Deutsch exakt ist und nicht ueber eine
+  // zweite Uebersetzungstabelle laeuft. WeakMap, damit entfernte Knoten nicht festgehalten
+  // werden - bei einer Oberflaeche, die Listen neu aufbaut, waere eine Map ein Leck.
+  const i18nOrig = new WeakMap();
+  const I18N_ATTRS = ['title', 'aria-label', 'placeholder'];
+  let i18nObserver = null;
+  let i18nBusy = false;
+
+  function i18nNorm(t) { return t.replace(/\s+/g, ' ').trim(); }
+
+  function i18nLookup(t) {
+    const d = I18N_EN;
+    const k = i18nNorm(t);
+    if (!k) return null;
+    if (Object.prototype.hasOwnProperty.call(d, k)) return d[k];
+    return null;
+  }
+
+  function i18nRoots() {
+    return [document.querySelector('header'), document.querySelector('main'),
+            $('app-footer'), $('help-panel'), $('race-summary')].filter(Boolean);
+  }
+
+  // Einen Teilbaum in die aktuelle Sprache bringen. Wird beim Umschalten fuer alles und
+  // danach fuer jeden neu eingefuegten Knoten aufgerufen.
+  function i18nApply(root) {
+    if (!root) return;
+    // Textknoten
+    const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode(n) {
+        const p = n.parentElement;
+        if (!p) return NodeFilter.FILTER_REJECT;
+        const tag = p.tagName;
+        if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'CODE' || tag === 'KBD') {
+          return NodeFilter.FILTER_REJECT;
+        }
+        if (p.closest('[data-i18n-skip]')) return NodeFilter.FILTER_REJECT;
+        return n.nodeValue.trim() ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+      },
+    });
+    const nodes = [];
+    let n;
+    while ((n = w.nextNode())) nodes.push(n);
+    for (const node of nodes) {
+      if (!i18nOrig.has(node)) i18nOrig.set(node, node.nodeValue);
+      const de = i18nOrig.get(node);
+      if (lang === 'de') { if (node.nodeValue !== de) node.nodeValue = de; continue; }
+      const en = i18nLookup(de);
+      if (en === null) continue;
+      // Fuehrende und folgende Leerzeichen aus dem Original behalten: sie tragen im
+      // Fliesstext den Abstand zum Nachbarelement, und ohne sie klebt "Taste" am <b>.
+      const lead = de.match(/^\s*/)[0], tail = de.match(/\s*$/)[0];
+      const next = lead + en + tail;
+      if (node.nodeValue !== next) node.nodeValue = next;
+    }
+    // Attribute
+    const els = [root].concat(Array.from(root.querySelectorAll
+      ? root.querySelectorAll('[title],[aria-label],[placeholder]') : []));
+    for (const el of els) {
+      if (!el.getAttribute || (el.closest && el.closest('[data-i18n-skip]'))) continue;
+      for (const a of I18N_ATTRS) {
+        const cur = el.getAttribute(a);
+        if (cur === null) continue;
+        const key = a + '|' + el.tagName;
+        let store = i18nOrig.get(el);
+        if (!store) { store = {}; i18nOrig.set(el, store); }
+        if (!(key in store)) store[key] = cur;
+        const de = store[key];
+        if (lang === 'de') { if (cur !== de) el.setAttribute(a, de); continue; }
+        const en = i18nLookup(de);
+        if (en !== null && cur !== en) el.setAttribute(a, en);
+      }
+    }
+  }
+
+  // Nachgeladene Oberflaeche: Listen, Tabellen, Meldungen. Ohne den Beobachter waere alles,
+  // was JavaScript nach dem Umschalten einfuegt, wieder deutsch - und das ist bei dieser
+  // App die halbe Anzeige.
+  function i18nWatch() {
+    if (i18nObserver) return;
+    i18nObserver = new MutationObserver((recs) => {
+      if (lang === 'de' || i18nBusy) return;
+      i18nBusy = true;
+      try {
+        for (const r of recs) {
+          for (const nd of r.addedNodes) {
+            if (nd.nodeType === 1) i18nApply(nd);
+            else if (nd.nodeType === 3 && nd.parentElement) i18nApply(nd.parentElement);
+          }
+        }
+      } finally { i18nBusy = false; }
+    });
+    for (const r of i18nRoots()) {
+      i18nObserver.observe(r, { childList: true, subtree: true, characterData: false });
+    }
+  }
+
+  function setLang(next) {
+    if (I18N_LANGS.indexOf(next) < 0 || next === lang) return;
+    lang = next;
+    i18nBusy = true;
+    try { i18nRoots().forEach(i18nApply); } finally { i18nBusy = false; }
+    document.documentElement.lang = lang;
+    const de = $('lang-de'), en = $('lang-en');
+    if (de) de.classList.toggle('on', lang === 'de');
+    if (en) en.classList.toggle('on', lang === 'en');
+    try { localStorage.setItem('omegasim-lang', lang); } catch (e) { /* privater Modus */ }
+    i18nWatch();
+  }
+
+  // Fuer Text, der im Code entsteht statt im Markup. Absichtlich dieselbe Tabelle: ein
+  // zweites Woerterbuch waere ein zweiter Ort, an dem etwas fehlen kann.
+  function t(de) {
+    if (lang === 'de') return de;
+    const en = i18nLookup(de);
+    return en === null ? de : en;
+  }
+
+  if ($('lang-toggle')) {
+    $('lang-toggle').addEventListener('click', () => setLang(lang === 'de' ? 'en' : 'de'));
+  }
+  if ($('lang-de')) $('lang-de').classList.add('on');
+  // Gemerkte Sprache. Erst NACH dem Aufbau, damit der Beobachter alles sieht, was die App
+  // beim Laden selbst eingefuegt hat.
+  try {
+    const saved = localStorage.getItem('omegasim-lang');
+    if (saved && saved !== lang) setLang(saved);
+  } catch (e) { /* privater Modus */ }
+
+  // ---- Tabs ----
+  // Pulled out of the click handler so the Garage's "Losfahren" and the controller
+  // navigation can switch tabs too, instead of synthesising a click on a button they would
+  // first have to find.
+  function showTab(name) {
+    const btn = document.querySelector('.tab-btn[data-tab="' + name + '"]');
+    if (btn) btn.onclick();
+  }
+
+  // ---- Unterseiten innerhalb eines Tabs ----
+  // Eine Kachelseite plus je Kachel eine Karte. Der Tab selbst bleibt EIN Tab, damit
+  // showTab, die Tastenkuerzel und die Kopfzeile unberuehrt bleiben.
+  function showSubpage(key) {
+    document.querySelectorAll('.subpage').forEach(p => p.classList.remove('on'));
+    document.querySelectorAll('.subpage-home').forEach(h => { h.style.display = key ? 'none' : ''; });
+    if (key) {
+      const p = $('sub-' + key);
+      if (p) p.classList.add('on');
+    }
+    window.scrollTo(0, 0);
+  }
+  document.querySelectorAll('.subpage-open').forEach(el => {
+    el.addEventListener('click', () => showSubpage(el.dataset.sub));
+  });
+  document.querySelectorAll('.subpage-back').forEach(el => {
+    el.addEventListener('click', () => showSubpage(''));
+  });
+
+  // Jeder Knopf mit .goto-tab fuehrt auf den Tab in seinem data-tab: die drei Kacheln
+  // unter "Sonstige" und die Zurueck-Zeilen darauf. Ein Handler statt sechs.
+  document.querySelectorAll('.goto-tab').forEach(el => {
+    el.addEventListener('click', () => { showTab(el.dataset.tab); window.scrollTo(0, 0); });
+  });
+
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.onclick = () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tabpage').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      // Programmierschule, Doku und Entwickler haben keinen eigenen Platz in der Leiste
+      // mehr. Ohne diese Zeile waere waehrend ihrer Anzeige kein Tab markiert, und die
+      // Leiste sieht dann aus, als sei nichts offen.
+      if (btn.dataset.parent) {
+        const p = document.querySelector('.tab-btn[data-tab="' + btn.dataset.parent + '"]');
+        if (p) p.classList.add('active');
+      }
+      $('tab-' + btn.dataset.tab).classList.add('active');
+      // Only hold the screen awake while the racing screen is actually the one on show.
+      keepScreenAwake(btn.dataset.tab === 'race');
+      document.body.classList.toggle('race-mode', btn.dataset.tab === 'race');
+      // Wer das Cockpit verlaesst, will nicht erst dorthin zurueck, um das Vollbild zu
+      // schliessen - der Knopf dafuer liegt IM Vollbild, also auf dem Schirm, den man
+      // gerade verlassen hat. Beim Tabwechsel geht es deshalb von selbst zu.
+      if (btn.dataset.tab !== 'race' && document.body.classList.contains('race-fs')) {
+        exitRaceFullscreen();
+      }
+      // Immer auf der Kachelseite anfangen. Sonst landet man in der Unterseite, die man
+      // vor drei Tabwechseln offen gelassen hat, und haelt sie fuer den ganzen Tab.
+      showSubpage('');
+      // Charts are drawn lazily when the documentation is actually opened: the sliders
+      // that invalidate them fire constantly and the canvases are invisible meanwhile.
+      if (btn.dataset.tab === 'doc' && drivetrainChartsDirty) renderDrivetrainCharts();
+    };
+  });
+
+  // Declared up here on purpose: the sub-tab switcher below reads it while the script is
+  // still executing, and a `let` further down would be in its temporal dead zone — which
+  // threw and aborted the rest of the IIFE, taking every later declaration with it.
+  let drivetrainChartsDirty = true;
+  function markDrivetrainChartsDirty() { drivetrainChartsDirty = true; }
+
+  // +/- steppers on every options slider. They write value +/- step and then dispatch the
+  // SAME input/change events dragging produces, so each control keeps exactly one code
+  // path and mouse dragging is unaffected.
+  document.querySelectorAll('.opt-slider').forEach(wrap => {
+    const range = wrap.querySelector('input[type=range]');
+    if (!range) return;
+    wrap.querySelectorAll('button[data-step]').forEach(btn => {
+      btn.onclick = () => {
+        const step = parseFloat(range.step) || 1;
+        const min = parseFloat(range.min), max = parseFloat(range.max);
+        const raw = parseFloat(range.value) + parseFloat(btn.dataset.step) * step;
+        // Snap back onto the step grid, or repeated clicks drift off it over time.
+        const snapped = Math.round((raw - min) / step) * step + min;
+        range.value = String(Math.min(max, Math.max(min, snapped)));
+        range.dispatchEvent(new Event('input', { bubbles: true }));
+        range.dispatchEvent(new Event('change', { bubbles: true }));
+      };
+    });
+  });
+
+  // ---- Entwickler tab: secondary sub-navigation (BLE-Explorer/Kalibrierung/Makros/Doku) ----
+  document.querySelectorAll('.subtab-btn').forEach(btn => {
+    btn.onclick = () => {
+      document.querySelectorAll('.subtab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.subtabpage').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      $('subtab-' + btn.dataset.subtab).classList.add('active');
+      // Redraw lazily on open rather than on every slider event: the sliders already
+      // re-run the launch calibration, and the charts are invisible while they move.
+      keepScreenAwake(false);
+    };
+  });
+
+  // ---- Control tab: virtual stick + throttle ----
+  let steerX = 0, throttleY = 0;
+
+  // Real CH command-packet protocol, reverse-engineered from a genuine
+  // Android Bluetooth HCI snoop log of the official app (2026-08-13) and cross-checked
+  // against an independent reverse-engineering effort on a different car.
+  // 20-byte frame written to NUS RX (6e400002): [header(6) | throttle | steer | 0x80 |
+  // steer(dup) | 0x60 | 0x00 | 0x01 | 0x00 | flags(~0x82) | 0x04 | 0x00 0x00 0x00 | crc8 ]
+  // Throttle/steer are (0xDF + signedDelta) mod 256 — a continuously wrapping value, NOT
+  // a simple 0x80-centered byte. Steer: positive = right (confirmed via a held right-turn
+  // in the capture pinning steer at 0x7f), negative = left. Throttle: positive delta =
+  // forward/accelerate, negative = brake/reverse (brake direction inferred by symmetry;
+  // not yet empirically confirmed with a real hard-braking capture).
+  function crc8(bytes) {
+    let crc = 0xff;
+    for (const b of bytes) {
+      crc ^= b;
+      for (let i = 0; i < 8; i++) {
+        crc = (crc & 0x80) ? ((crc << 1) ^ 0x31) & 0xff : (crc << 1) & 0xff;
+      }
+    }
+    return crc;
+  }
+
+  // SAFETY: reverse/brake was never captured in the real snoop log — we only assumed
+  // symmetry with forward. Real-car test (2026-08-20) showed full-reverse input (delta
+  // -127, byte 0x60) unexpectedly drives FORWARD instead (0x60 falls in the same byte
+  // range our own forward-ramp capture already passed through, e.g. 0x58). Half-reverse
+  // (delta -64, byte 0x9F) was confirmed to brake/reverse correctly. Until the exact
+  // boundary is measured, clamp reverse to this confirmed-safe depth only.
+  const MIN_THROTTLE_DELTA = -64;
+
