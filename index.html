@@ -3945,7 +3945,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.3.53</span></span>
+    <span class="foot-ver">v<span id="app-version">0.3.54</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
   </span>
   <span class="foot-right">
@@ -7636,12 +7636,17 @@
   // engere Kehre als tatsaechlich liegt. Ein Drittel einer Kachellaenge ist eine ANNAHME,
   // gemessen ist sie nicht; sobald der Grundriss eines Haarnadelteils vorliegt, gehoert hier
   // die echte Zahl hin.
-  const TRACK_HAIRPIN_LEAD = TRACK_STEP / 3;
+  // Gerade Sektion am Anfang der Haarnadel, 28 cm. NICHT gewaehlt, sondern aus dem
+  // Grundriss der Original-App zurueckgerechnet: eine Haarnadel plus Start/Ziel belegt dort
+  // 0,62 m x 1,02 m, und 43 + L + 18,5 + 12,5 = 102 ergibt L = 28. Vorher stand hier
+  // TRACK_STEP / 3, also 15,4 cm, und das war frei gegriffen.
+  const TRACK_HAIRPIN_LEAD_CM = 28;
   const TRACK_UNITS_PER_CM = TRACK_STEP / TRACK_TILE_CM;   // 0.930
+  const TRACK_HAIRPIN_LEAD = TRACK_HAIRPIN_LEAD_CM * TRACK_UNITS_PER_CM;
   const TRACK_RADIUS = TRACK_RADIUS_CM * TRACK_UNITS_PER_CM;
   const TRACK_TURN_DEG = 60;
 
-  // One place decides how far a curved piece turns and how tight it is, so walkTrack() and
+  // One place decides how far a curved piece turns and how tight it is, so
   // trackCenterline() can never disagree about the geometry — they used to hardcode the same
   // two numbers separately.
   function tileTurnDeg(type) {
@@ -7660,42 +7665,10 @@
         || type === TILE_TYPE.HAIRPIN || type === TILE_TYPE.HAIRPIN_LEFT;
   }
 
-  function walkTrack(tiles) {
-    let x = 0, y = 0, heading = trackRotationDeg;
-    const points = [{ x, y, heading, type: null }];
-    for (const tile of tiles) {
-      if (tileIsCurve(tile.type)) {
-        // Die Haarnadel beginnt mit einem geraden Stueck. Es wird VOR dem Bogen gegangen und
-        // aendert die Richtung nicht, verschiebt den Bogenanfang also nur nach vorne.
-        if (tile.type === TILE_TYPE.HAIRPIN || tile.type === TILE_TYPE.HAIRPIN_LEFT) {
-          const r0 = heading * Math.PI / 180;
-          x += Math.sin(r0) * TRACK_HAIRPIN_LEAD;
-          y -= Math.cos(r0) * TRACK_HAIRPIN_LEAD;
-          points.push({ x, y, heading, type: TILE_TYPE.STRAIGHT, lead: true });
-        }
-        const turn = tileTurnDeg(tile.type);
-        const radius = tileRadius(tile.type);
-        const midRad = (heading + turn / 2) * Math.PI / 180;
-        // BUGFIX: sin() of a NEGATIVE half-angle (left curves) returned a negative chord,
-        // which flipped the step 180° and sent left curves backwards/right. The chord is
-        // a length and must stay positive; the direction comes from midRad alone.
-        const chord = 2 * radius * Math.abs(Math.sin((turn * Math.PI / 180) / 2));
-        x += Math.sin(midRad) * chord;
-        y -= Math.cos(midRad) * chord;
-        heading += turn;
-      } else {
-        // The pit element is two straights long; the bulge to the right is drawn, not
-        // walked, because it does not change where the racing line continues.
-        const len = tile.type === TILE_TYPE.PIT ? TRACK_STEP * 2 : TRACK_STEP;
-        const rad = heading * Math.PI / 180;
-        x += Math.sin(rad) * len;
-        y -= Math.cos(rad) * len;
-      }
-      points.push({ x, y, heading, type: tile.type });
-    }
-    return points;
-  }
-
+  // walkTrack() ist hier entfernt. Sie lief NIE - nichts rief sie auf - und sie war der
+  // einzige Ort, der die gerade Sektion der Haarnadel kannte. Zwei Geometriepfade, von denen
+  // der wirksame der aermere ist, sind schlechter als einer: die Sektion galt als
+  // implementiert und war es nicht. Was sie konnte, kann jetzt trackCenterline().
 
   // ---- Sampled centreline ----
   // walkTrack() returns one point per tile BOUNDARY, which is enough to draw a thin line but
@@ -7721,7 +7694,10 @@
   // an assumption, marked as one in the UI, and a single measured number replaces it (the
   // footprint of one hairpin piece, the way TRACK_RADIUS_CM came from "a straight plus a
   // 60-degree curve occupy 37 x 86 cm").
-  const TRACK_HAIRPIN_RADIUS_CM = TRACK_RADIUS_CM / 2;   // ANNAHME, nicht gemessen
+  // GEMESSEN, nicht mehr angenommen. Der Grundriss aus der Original-App gibt 62 cm
+  // Gesamtbreite fuer eine Haarnadel, und 2 * 18,5 + 25 Bahnbreite = 62 trifft das exakt.
+  // Die alte Herleitung "halber Kurvenradius" war eine Vermutung und stimmt.
+  const TRACK_HAIRPIN_RADIUS_CM = TRACK_RADIUS_CM / 2;   // 18,5 cm, bestaetigt 24.08.
   const TRACK_HAIRPIN_RADIUS = TRACK_HAIRPIN_RADIUS_CM * TRACK_UNITS_PER_CM;
   const TRACK_HAIRPIN_DEG = 180;
   const TRACK_SAMPLES_PER_TILE = 14;
@@ -7734,6 +7710,21 @@
     tiles.forEach((tile, idx) => {
       const n = TRACK_SAMPLES_PER_TILE;
       if (tileIsCurve(tile.type)) {
+        // Die Haarnadel beginnt mit einer geraden Sektion. Sie stand bisher nur in
+        // walkTrack(), und walkTrack() wird nirgends aufgerufen: der wirksame Pfad ist
+        // dieser hier, und er kannte sie nicht. Die Haarnadel sass dadurch 28 cm zu kurz,
+        // und genau deshalb fuehrte eine Strecke am Ende nicht wieder zusammen.
+        if (tile.type === TILE_TYPE.HAIRPIN || tile.type === TILE_TYPE.HAIRPIN_LEFT) {
+          const lead = Math.max(2, Math.round(n * TRACK_HAIRPIN_LEAD / TRACK_STEP));
+          const rad0 = heading * Math.PI / 180;
+          const x0 = x, y0 = y;
+          for (let i = 1; i <= lead; i++) {
+            push(x0 + Math.sin(rad0) * TRACK_HAIRPIN_LEAD * (i / lead),
+                 y0 - Math.cos(rad0) * TRACK_HAIRPIN_LEAD * (i / lead), heading, idx);
+          }
+          x = out[out.length - 1].x;
+          y = out[out.length - 1].y;
+        }
         const turn = tileTurnDeg(tile.type);
         const radius = tileRadius(tile.type);
         // Walk the arc in n small steps around the instantaneous centre. A hairpin turns
@@ -8289,7 +8280,15 @@
   // The same five actions as the text buttons above, as icons, so they still fit under the
   // map in fullscreen. Order follows the physical layout of a controller's thinking:
   // left curve, straight, start/finish, pit, right curve — turning left on the left.
+  // Die Leiste ist wie das Lenkrad angeordnet: was nach LINKS dreht, liegt links, was nach
+  // RECHTS dreht, rechts, die Geraden in der Mitte. Die beiden Haarnadeln stehen ganz
+  // aussen, weil sie die extremste Drehung sind - und weil man sie so am Rand des Schirms
+  // mit dem Daumen trifft. Vorher lagen BEIDE Haarnadeln rechts, eine Linkshaarnadel war
+  // also am falschen Ende zu suchen.
   const TRACK_PALETTE = [
+    { key: 'hairpin-left', type: () => TILE_TYPE.HAIRPIN_LEFT, cap: 'Haarnadel L',
+      icon: '<path d="M16 22 L16 14 A5 5 0 0 0 6 14 L6 22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>'
+          + '<path d="M16 22 L16 19" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>' },
     { key: 'left',  type: () => TILE_TYPE.CURVE_LEFT,  cap: 'Links',
       icon: '<path d="M18 22 L18 13 A7 7 0 0 0 11 6 L4 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>' },
     { key: 'straight', type: () => TILE_TYPE.STRAIGHT, cap: 'Gerade',
@@ -8301,14 +8300,13 @@
           + '<path d="M16 20 L16 9 A5 5 0 0 1 21 4" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="3 2.5" stroke-linecap="round"/>' },
     { key: 'right', type: () => TILE_TYPE.CURVE_RIGHT, cap: 'Rechts',
       icon: '<path d="M6 22 L6 13 A7 7 0 0 1 13 6 L20 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>' },
-    { key: 'hairpin-left', type: () => TILE_TYPE.HAIRPIN_LEFT, cap: 'Haarnadel L',
-      icon: '<path d="M16 22 L16 14 A5 5 0 0 0 6 14 L6 22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>'
-          + '<path d="M16 22 L16 19" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>' },
     { key: 'hairpin', type: () => TILE_TYPE.HAIRPIN, cap: 'Haarnadel R',
       icon: '<path d="M8 22 L8 14 A5 5 0 0 1 18 14 L18 22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>'
           + '<path d="M8 22 L8 19" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>' },
   ];
-  let trackPaletteSel = 1;   // the straight: the most common piece, so the default costs least
+  // Index 2 ist die Gerade: das haeufigste Teil, also die billigste Vorauswahl. Die Zahl
+  // haengt an der Reihenfolge oben - wer dort umsortiert, muss hier mitziehen.
+  let trackPaletteSel = 2;
 
   function renderTrackPalette() {
     const host = $('track-palette');
