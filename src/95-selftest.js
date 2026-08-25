@@ -657,6 +657,90 @@
     }
   });
 
+  // ---- Nasse Lenkung: langsam voll, schnell weniger ----
+  // Gemeldet als "auf Slicks im Regen kann ich nur geradeaus fahren". Ursache war, dass die
+  // Kapazitaet der Vorderachse bei JEDER Fahrt mit dem Nassfaktor multipliziert wurde, das
+  // Motorbremsen aber nicht - der geschrumpfte Reibkreis war schon im Schritttempo leer.
+  stAdd('Nasse Lenkung greift erst mit der Fahrt', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.physSteerGrip) {
+      return { skip: true, mass: 'physSteerGrip nicht vorhanden' };
+    }
+    const q = (kmh) => {
+      const tr = OMEGA_TEST.physSteerGrip({ gripScale: 1.0, kmh }).steerGrip;
+      const na = OMEGA_TEST.physSteerGrip({ gripScale: 0.45, kmh }).steerGrip;
+      return na / Math.max(1e-9, tr);
+    };
+    const bei = {};
+    for (const v of [25, 50, 120, 290]) bei[v] = q(v);
+    // Bis 50 km/h muss Regen die Lenkung praktisch unberuehrt lassen, bei 290 muss der
+    // Verlust wieder voll da sein - sonst waere aus dem Regen ein Schoenwetterregen
+    // geworden, und das war nicht die Bitte.
+    const ok = bei[25] > 0.98 && bei[50] > 0.98 && bei[120] < 0.85 && bei[290] < 0.6;
+    return { ok,
+             mass: [25, 50, 120, 290].map(v => v + ' km/h ' + Math.round(bei[v] * 100) + ' %')
+                   .join(', ') + ' vom Trockenwert' };
+  });
+
+  // ---- Rueckwaertsgang in der Automatik ----
+  stAdd('Automatik: Viereck legt R, nur langsam', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.physShift) {
+      return { skip: true, mass: 'physShift nicht vorhanden' };
+    }
+    const sh = OMEGA_TEST.physShift;
+    const langsam = sh({ auto: true, von: 'forward', gang: 0, kmh: 5, richtung: -1 });
+    const schnell = sh({ auto: true, von: 'forward', gang: 0, kmh: 30, richtung: -1 });
+    const raus = sh({ auto: true, von: 'reverse', gang: 0, kmh: 0, richtung: 1 });
+    // Die Handschaltung muss unberuehrt bleiben: dort fuehrt der Weg weiter ueber den
+    // Leerlauf, und das ist Absicht - ein Handschalter soll den Zwischenschritt sehen.
+    const hand1 = sh({ auto: false, von: 'forward', gang: 0, kmh: 0, richtung: -1 });
+    const hand2 = sh({ auto: false, von: 'neutral', gang: 0, kmh: 0, richtung: -1 });
+    const ok = langsam.driveMode === 'reverse' && schnell.driveMode === 'forward'
+               && raus.driveMode === 'forward' && raus.gear === 0
+               && hand1.driveMode === 'neutral' && hand2.driveMode === 'reverse';
+    return { ok,
+             mass: 'Automatik 5 km/h -> ' + langsam.driveMode + ', 30 km/h -> '
+                   + schnell.driveMode + ', Kreis aus R -> ' + raus.driveMode
+                   + ' Gang ' + raus.gear
+                   + ' | Hand unveraendert: Gang 1 -> ' + hand1.driveMode
+                   + ', Leerlauf -> ' + hand2.driveMode };
+  });
+
+  // ---- Der Rohcode zeigt auch ohne laufenden Kachelzaehler ----
+  // Der Kern des Scannerfehlers: die Anzeige sass hinter vier Ruecksprungen, einer davon
+  // verlangte, dass der Kachelzaehler des Autos weiterlaeuft. Ueber ein Blatt auf dem
+  // Fussboden tut er das nicht, und dann wurde nie etwas angezeigt.
+  stAdd('Musterprobe zeigt auch bei stehendem Kachelzaehler', () => {
+    const feld = $('tile-probe');
+    if (!feld || !window.OMEGA_TEST || !OMEGA_TEST.feedNotify) {
+      return { skip: true, mass: 'Musterprobe nicht im Dokument' };
+    }
+    const vorher = feld.textContent;
+    const echterSpieler = playerCar;
+    const gemerkt = { p: dashPendingCode, s: dashPendingSeen, c: dashLastTileCounter };
+    try {
+      const attrappe = { device: { id: 'st-probe', name: 'Pruefwagen' }, role: 'player',
+                         rx: null, tx: null, tileCode: 0xff, tileCount: null,
+                         lastCodeAt: 0, yaw: 0, ghost: null, timer: null, race: null };
+      playerCar = attrappe;
+      dashPendingCode = null; dashPendingSeen = 0; dashLastTileCounter = null;
+      const paket = (code, zaehler) => {
+        const a = new Array(19).fill(0);
+        a[11] = zaehler; a[12] = code; a[14] = 0x22;
+        return a;
+      };
+      // Byte 11 bleibt FEST: genau der Fall, in dem vorher nichts angezeigt wurde.
+      for (let k = 0; k < 3; k++) OMEGA_TEST.feedNotify(paket(0x14, 7), { car: attrappe });
+      const text = feld.textContent;
+      const ok = text.indexOf('0x14') >= 0 && /steht/.test(text);
+      return { ok, mass: 'angezeigt: "' + text + '"' };
+    } finally {
+      playerCar = echterSpieler;
+      dashPendingCode = gemerkt.p; dashPendingSeen = gemerkt.s;
+      dashLastTileCounter = gemerkt.c;
+      feld.textContent = vorher;
+    }
+  });
+
   // ---- Ausfuehren und anzeigen ----
   async function runSelfTest() {
     const rows = $('st-rows');

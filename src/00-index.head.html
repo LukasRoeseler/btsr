@@ -1655,8 +1655,8 @@
       <kbd>&larr;</kbd> <span>lenken links</span>
       <kbd>&rarr;</kbd><span>lenken rechts</span>
       <kbd>Leertaste</kbd><span>Not-Halt, alle Eingaben los, Momentum auf null</span>
-      <kbd>I</kbd><span>hochschalten</span>
-      <kbd>K</kbd><span>runterschalten (aus dem 1. Gang in N, aus N in R)</span>
+      <kbd>I</kbd><span>hochschalten, und aus dem Rückwärtsgang wieder heraus</span>
+      <kbd>K</kbd><span>runterschalten. In Automatik: unter 10 km/h Rückwärtsgang, von Hand aus dem 1. Gang in N und aus N in R</span>
       <kbd>L</kbd><span>Lichthupe</span>
     </div>
 
@@ -3615,7 +3615,7 @@
       <div class="opt-head">
         Getriebe &amp; Fahrleistung
       </div>
-      <div class="opt-row"><div class="opt-label">Automatikgetriebe<small>Aus: manuell, Quadrat/X runter, Kreis/B hoch. Im Stand unter den 1. Gang = Rückwärts.</small></div><label class="tgl"><input type="checkbox" id="setting-autoshift" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Automatikgetriebe<small>An: Quadrat/X legt unter 10 km/h den Rückwärtsgang, Kreis/B holt ihn heraus. Aus: von Hand schalten, unter dem 1. Gang liegt der Leerlauf und darunter im Stand der Rückwärtsgang.</small></div><label class="tgl"><input type="checkbox" id="setting-autoshift" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Höchstgeschwindigkeit (km/h)</div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
@@ -4388,7 +4388,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.3.64</span></span>
+    <span class="foot-ver">v<span id="app-version">0.3.65</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
   </span>
   <span class="foot-right">

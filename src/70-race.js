@@ -1075,6 +1075,31 @@
     const counter = bytes[11];
     const type = bytes[12];
 
+    // ---- Der Rohcode, VOR allen Wachen ----
+    //
+    // Hier stand diese Anzeige vorher NICHT: sie sass hinter vier Ruecksprungen, und einer
+    // davon verlangt, dass der Kachelzaehler des Autos weiterlaeuft
+    // (counter === dashLastTileCounter -> return). Ueber ein Blatt auf dem Fussboden tut er
+    // das offenbar nicht, und dann wurde nie etwas angezeigt - gemeldet als "beim Scanner
+    // kommt gar nichts mehr". Ihr eigener Kommentar sagte "den Rohcode zeigen, damit ein
+    // unbekanntes Muster durch einmaliges Ueberfahren erkannt wird", und roh war daran
+    // nichts.
+    //
+    // Die Wachen bleiben, wo sie sind: sie sollen Phantomrunden verhindern, und dafuer sind
+    // sie richtig. Eine DIAGNOSEANZEIGE darf nur nicht von der Logik gefiltert werden,
+    // deren Fehler sie sichtbar machen soll.
+    //
+    // Mitangezeigt wird der Kachelzaehler, denn genau er war die stille Bedingung: bewegt
+    // er sich nicht, sieht man das jetzt.
+    lastTileCode = type;
+    const probe = $('tile-probe');
+    if (probe) {
+      const bewegt = dashLastTileCounter !== null && counter !== dashLastTileCounter;
+      probe.textContent = '0x' + type.toString(16).padStart(2, '0')
+        + ' (' + (TILE_LABEL[type] || 'unbekannt') + ')'
+        + '  Kachelz\u00e4hler ' + counter + (bewegt ? ' bewegt' : ' steht');
+    }
+
     // ---- Two guards against misread patterns ----
     // 1) CONFIRMATION. A code has to arrive twice in a row before it is believed. The cost
     //    of this is one packet of latency and nothing else: the logs show a tile stays under
@@ -1092,12 +1117,6 @@
     dashLastTileCounter = counter;
     dashMinimapIndex = dashMinimapIndex === null ? 0 : dashMinimapIndex + 1;
     if (currentTrackTiles.length > 0) dashMinimapIndex = dashMinimapIndex % currentTrackTiles.length;
-
-    // Surface the raw code so an unknown printed pattern can be identified by driving
-    // over it once — this is the only way to learn a code we don't already know.
-    lastTileCode = type;
-    const probe = $('tile-probe');
-    if (probe) probe.textContent = `0x${type.toString(16).padStart(2, '0')} (${TILE_LABEL[type] || 'unbekannt'})`;
 
     // Guard 2 applies only to the two codes that trigger something irreversible; the
     // ordinary straight and curve codes may repeat as often as the track says.

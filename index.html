@@ -1655,8 +1655,8 @@
       <kbd>&larr;</kbd> <span>lenken links</span>
       <kbd>&rarr;</kbd><span>lenken rechts</span>
       <kbd>Leertaste</kbd><span>Not-Halt, alle Eingaben los, Momentum auf null</span>
-      <kbd>I</kbd><span>hochschalten</span>
-      <kbd>K</kbd><span>runterschalten (aus dem 1. Gang in N, aus N in R)</span>
+      <kbd>I</kbd><span>hochschalten, und aus dem Rückwärtsgang wieder heraus</span>
+      <kbd>K</kbd><span>runterschalten. In Automatik: unter 10 km/h Rückwärtsgang, von Hand aus dem 1. Gang in N und aus N in R</span>
       <kbd>L</kbd><span>Lichthupe</span>
     </div>
 
@@ -3615,7 +3615,7 @@
       <div class="opt-head">
         Getriebe &amp; Fahrleistung
       </div>
-      <div class="opt-row"><div class="opt-label">Automatikgetriebe<small>Aus: manuell, Quadrat/X runter, Kreis/B hoch. Im Stand unter den 1. Gang = Rückwärts.</small></div><label class="tgl"><input type="checkbox" id="setting-autoshift" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Automatikgetriebe<small>An: Quadrat/X legt unter 10 km/h den Rückwärtsgang, Kreis/B holt ihn heraus. Aus: von Hand schalten, unter dem 1. Gang liegt der Leerlauf und darunter im Stand der Rückwärtsgang.</small></div><label class="tgl"><input type="checkbox" id="setting-autoshift" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Höchstgeschwindigkeit (km/h)</div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
@@ -4388,7 +4388,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.3.64</span></span>
+    <span class="foot-ver">v<span id="app-version">0.3.65</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
   </span>
   <span class="foot-right">
@@ -4801,6 +4801,7 @@
     "Als CSV exportieren": "Export as CSV",
     "Als Profil übernehmen": "Adopt as a profile",
     "An ein echtes Auto senden": "Send to a real car",
+    "An: Quadrat/X legt unter 10 km/h den Rückwärtsgang, Kreis/B holt ihn heraus. Aus: von Hand schalten, unter dem 1. Gang liegt der Leerlauf und darunter im Stand der Rückwärtsgang.": "On: square/X engages reverse below 10 km/h, circle/B takes it out again. Off: shift by hand, below 1st gear is neutral and below that, at a standstill, reverse.",
     "Anfahrt": "Rolling up",
     "Angezeigte km/h. Ein 911 GT3 R braucht rund 3,2 s.": "Displayed km/h. A 911 GT3 R needs about 3.2 s.",
     "Anhören": "Listen",
@@ -4820,7 +4821,6 @@
     "Aus dem Cockpit hierher: dort war unter dem Schirm alles doppelt, die Position aber nicht: und sie gehört neben die Strecke, auf die sie sich bezieht. Die Lage ist eine Schätzung aus Kachelzähler und Zeit, keine Positionsmessung vom Auto.": "Moved here from the cockpit: everything below the dash was duplicated there, but the position was not: and it belongs next to the track it refers to. The position is an estimate from the tile counter and time, not a measurement from the car.",
     "Aus": "Off",
     "Aus: fährt auch ohne gedruckte Strecke. An: nur mit gelesenem Muster.": "Off: drives even without a printed track. On: only with a pattern read.",
-    "Aus: manuell, Quadrat/X runter, Kreis/B hoch. Im Stand unter den 1. Gang = Rückwärts.": "Off: manual, square/X down, circle/B up. At a standstill, below 1st gear = reverse.",
     "Aus: rohe Stickstellung, ohne Gänge.": "Off: raw stick position, no gears.",
     "Auslöse-Code (Byte 12)": "Trigger code (byte 12)",
     "Auspuffnachhall": "Exhaust reverb",
@@ -5219,6 +5219,7 @@
     "Voreinstellungen": "Presets",
     "Vorgabe führt nicht zu einer eckigen Bewegung. Das Auto hat Masse, die Reifen brauchen Zeit, die Lenkung hat eine Höchstgeschwindigkeit. Wer das einmal gesehen hat, versteht, warum geschmeidige Vorgaben besser fahren: und das gilt für Programme genauso wie für Daumen.": "input does not produce square movement. The car has mass, the tyres need time, the steering has a top speed. Once you have seen that, you understand why smooth inputs drive better, and that holds for programs just as much as for thumbs.",
     "Vorne Standlicht, hinten Bremslicht. Taste": "Front running light, rear brake light. Key",
+    "Vorwärts": "Forward",
     "Was aus den Daten kommt und was nicht.": "What comes from the data and what does not.",
     "Was das Auto daraus macht": "What the car makes of it",
     "Was die Zahl bedeutet und was nicht.": "What the number means and what it does not.",
@@ -5244,6 +5245,7 @@
     "Wo steht das Auto?": "Where is the car?",
     "Womit dieses Werkzeug die Haarnadel gefunden hat.": "How this tool found the hairpin.",
     "Wähle die Characteristic, an die Lenk-/Gas-Kommandos geschrieben werden sollen (wird beim Verbinden automatisch auf NUS RX gesetzt).": "Choose the characteristic the steering and throttle commands are written to (set to NUS RX automatically on connecting).",
+    "ZU SCHNELL FÜR R": "TOO FAST FOR R",
     "Zeichne den Lenkwinkel über den Kachelindex und lass den Ghost damit fahren. Wie nah kommst du an die 85 %?": "Draw the steering angle against the tile index and let the ghost drive it. How close do you get to the 85 %?",
     "Zeichnet": "Records",
     "Zieh die Punkte in den beiden Kurven nach oben oder unten. Links legst du fest, wie stark das Auto über die Zeit Gas gibt oder bremst, rechts wie es lenkt. Dann": "Drag the points in the two curves up or down. On the left you set how hard the car accelerates or brakes over time, on the right how it steers. Then",
@@ -5302,6 +5304,7 @@
     "heißt: hier ist nichts kaputt, es war nur nicht prüfbar – zum Beispiel Töne über": "means: nothing is broken here, it just could not be checked – sound files over",
     "hoch, obwohl Byte 12 nur": "high, although byte 12 only",
     "hochschalten": "shift up",
+    "hochschalten, und aus dem Rückwärtsgang wieder heraus": "upshift, and out of reverse again",
     "in Kurven deutlich bewegt, lässt sich eine Kurve daran erkennen, ganz ohne Barcode.": "moves noticeably in corners, a corner can be recognised from it, with no barcode at all.",
     "in den Optionen prüfen. Er setzt Bit 5 in Byte 14; steht er aus, geht Bit 7 hinaus und das schaltet den Streckensensor ab, gemessen 0 Lesungen in 551 Fahrmeldungen. Genau dieses Bit hat diese App zwölf Aufzeichnungen lang gesendet, siehe Doku, „Auf der Bahn oder ohne Bahn“.": "in the options. It sets bit 5 in byte 14; with it off, bit 7 goes out and that switches the track sensor off, measured 0 readings in 551 packets while driving. This app sent exactly that bit for twelve captures; see the docs, “on track or off track”.",
     "ist der Kachelzähler,": "is the tile counter,",
@@ -5349,6 +5352,7 @@
     "rot beim Bremsen": "red under braking",
     "runtergefahren": "went off",
     "runterschalten (aus dem 1. Gang in N, aus N in R)": "shift down (from 1st to N, from N to R)",
+    "runterschalten. In Automatik: unter 10 km/h Rückwärtsgang, von Hand aus dem 1. Gang in N und aus N in R": "downshift. In automatic: reverse below 10 km/h; by hand, out of 1st into N and out of N into R",
     "s. Verlässt es die Bahn, wird die Stufe festgehalten und die Messung endet. Wenn du es": "s. If it leaves the track, the step is recorded and the measurement ends. If you",
     "setzt den nächsten Abschnitt.": "sets the next section.",
     "siehst": "see",
@@ -6572,6 +6576,22 @@
         transferK: 0.30,      // share of the load that moves at 1g
         loadTau: 0.08,        // body pitch (squat and dive): fast
         useTau: 0.45,         // longitudinal tyre force build-up: distinctly slower
+        // ---- Rueckwaertsgang in der Automatik ----
+        // Bis unter diese Fahrt darf Viereck den Rueckwaertsgang legen, Kreis holt ihn
+        // wieder heraus. Als Bruchteil der Spitze, nicht in km/h: st.speedKmh laeuft in
+        // Modellmass (0 bis topSpeedKmh = 4,0), und der Schirm zeigt es mit 73,75
+        // multipliziert. 0.034 * 4,0 * 73,75 sind die gewuenschten 10 km/h auf der Anzeige.
+        autoReverseFrac: 0.034,
+        // ---- Nasse Lenkung ----
+        // Der Nassverlust greift erst mit der Geschwindigkeit an. Ohne das frisst schon das
+        // Motorbremsen den geschrumpften Reibkreis auf, und zwar bei JEDER Fahrt - auf
+        // Slicks im Regen war deshalb gar keine Lenkung mehr da, auch im Schritttempo.
+        // Physikalisch ist die alte Fassung falsch: ein nasser Reifen traegt seitlich
+        // durchaus, nur ist der Grenzbereich frueher erreicht. Unterhalb von wetOnsetFrac
+        // ist die Anforderung so klein, dass Nass keinen Unterschied macht.
+        // Angezeigte Entsprechung bei 295 km/h Spitze: 50 und 160 km/h.
+        wetOnsetFrac: 0.17,
+        wetFullFrac: 0.55,
         loadGain: 0.40,       // how much front load changes lateral capacity
         brakeUseGain: 1.15,   // how much of that capacity the brake eats
         coastPitch: 0.15,     // engine braking pitches the nose down a little
@@ -6820,7 +6840,19 @@
       // How wet it is, from the surface factor itself rather than from a weather flag:
       // GRIP_MATRIX runs 1.00 (dry slicks) down to 0.45 (rain on slicks), so this is 0 in
       // the dry and 1 on slicks in the rain.
-      const wet = Math.max(0, Math.min(1, (1 - surf) / 0.55));
+      // Wie stark der Nassverlust GERADE wirkt: unter wetOnsetFrac gar nicht, ab
+      // wetFullFrac voll. Der Grund steht bei den Reglern: die alte Fassung hat die
+      // Kapazitaet der Vorderachse bei jeder Fahrt mit 0,45 multipliziert, das Motorbremsen
+      // aber nicht - und damit war der geschrumpfte Reibkreis schon im Schritttempo leer.
+      // Auf Slicks im Regen liess sich nur noch geradeaus fahren.
+      const vFrac = Math.abs(st.speedKmh) / Math.max(1e-6, cfg.topSpeedKmh);
+      const wetBlend = Math.max(0, Math.min(1,
+        (vFrac - cfg.wetOnsetFrac) / Math.max(1e-6, cfg.wetFullFrac - cfg.wetOnsetFrac)));
+      // Die WIRKSAME Oberflaeche fuer die Lenkung. Die Laengskraefte weiter unten benutzen
+      // weiter das ungemilderte surf: dass ein nasser Reifen beim Anfahren durchdreht und
+      // laenger bremst, stimmt auch langsam - was nicht stimmte, war die Lenkung.
+      const surfSteer = 1 - (1 - surf) * wetBlend;
+      const wet = Math.max(0, Math.min(1, (1 - surfSteer) / 0.55));
 
       // Front axle: capacity scales with the load actually on it; what the brake is already
       // using is taken out of the circle, leaving the lateral share for steering.
@@ -6838,7 +6870,7 @@
       // inspection of the measurement: braking moves load ONTO the front, so a bigger
       // load gain made wet braking steer BETTER (steerGrip 1.006 against 0.464 dry) -
       // the exact opposite of what was asked.
-      const frontCap = (1 + cfg.loadGain * (st.loadFront - 0.5) * 2) * surf;
+      const frontCap = (1 + cfg.loadGain * (st.loadFront - 0.5) * 2) * surfSteer;
       const frontUse = Math.max(0, -st.longUse) * cfg.brakeUseGain;
       // The 0.12 floor is a dry-weather reserve: it stops the car ever being completely
       // helpless. In the wet there is no such reserve - once the brake has eaten the front
@@ -7121,6 +7153,46 @@
     triggerShift(direction) {
       const st = this.state, cfg = this.config;
       const stopped = Math.abs(st.speedKmh) < cfg.reverseStandstillKmh;
+
+      // ---- Automatik: die beiden Schaltknoepfe machen genau eine Sache ----
+      //
+      // Vorher war der Rueckwaertsgang in der Automatik NICHT erreichbar, und das lag an
+      // zwei Dingen, die zusammenwirkten: ein Herunterschalten aus dem 1. Gang landet im
+      // Leerlauf und erst ein zweites legt den Rueckwaertsgang - und die Automatikregel
+      // "im Leerlauf und Gas gegeben heisst vorwaerts" hat den Leerlauf im naechsten Takt
+      // sofort wieder verlassen. Zwei Tastendruecke waren also nie moeglich, weil der
+      // Zwischenzustand keinen Takt ueberlebt.
+      //
+      // In der Automatik gibt es ohnehin keine Gaenge zu waehlen. Also tun die beiden
+      // Knoepfe hier das Einzige, was sinnvoll bleibt: Viereck legt den Rueckwaertsgang
+      // (langsam genug), Kreis holt ihn heraus. In EINEM Druck, ohne Leerlauf dazwischen.
+      if (cfg.autoShift) {
+        const langsam = Math.abs(st.speedKmh) < cfg.autoReverseFrac * cfg.topSpeedKmh;
+        if (st.driveMode === 'reverse') {
+          if (direction > 0) {
+            st.driveMode = 'forward'; st.currentGear = 0;
+            st.speedKmh = 0; st.neutralRpm = 0;
+            st.reverseLatched = true;
+            showHudToast('Vorw\u00e4rts'); padRumble(0.3, 0.2, 90);
+            playShiftSound(1);
+          }
+          return;
+        }
+        if (direction < 0) {
+          if (langsam) {
+            st.driveMode = 'reverse'; st.currentGear = 0;
+            st.speedKmh = 0; st.neutralRpm = 0;
+            st.reverseLatched = true;
+            showHudToast('R\u00fcckw\u00e4rtsgang'); padRumble(0.3, 0.2, 90);
+            playShiftSound(-1);
+          } else {
+            // Sagen, WARUM nichts passiert. Ein Knopf, der schweigend nichts tut, sieht
+            // kaputt aus - und genau so ist dieser Fehler gemeldet worden.
+            showHudToast('ZU SCHNELL F\u00dcR R');
+          }
+        }
+        return;
+      }
 
       if (st.driveMode === 'reverse') {
         if (direction > 0 && stopped) {
@@ -10771,6 +10843,31 @@
     const counter = bytes[11];
     const type = bytes[12];
 
+    // ---- Der Rohcode, VOR allen Wachen ----
+    //
+    // Hier stand diese Anzeige vorher NICHT: sie sass hinter vier Ruecksprungen, und einer
+    // davon verlangt, dass der Kachelzaehler des Autos weiterlaeuft
+    // (counter === dashLastTileCounter -> return). Ueber ein Blatt auf dem Fussboden tut er
+    // das offenbar nicht, und dann wurde nie etwas angezeigt - gemeldet als "beim Scanner
+    // kommt gar nichts mehr". Ihr eigener Kommentar sagte "den Rohcode zeigen, damit ein
+    // unbekanntes Muster durch einmaliges Ueberfahren erkannt wird", und roh war daran
+    // nichts.
+    //
+    // Die Wachen bleiben, wo sie sind: sie sollen Phantomrunden verhindern, und dafuer sind
+    // sie richtig. Eine DIAGNOSEANZEIGE darf nur nicht von der Logik gefiltert werden,
+    // deren Fehler sie sichtbar machen soll.
+    //
+    // Mitangezeigt wird der Kachelzaehler, denn genau er war die stille Bedingung: bewegt
+    // er sich nicht, sieht man das jetzt.
+    lastTileCode = type;
+    const probe = $('tile-probe');
+    if (probe) {
+      const bewegt = dashLastTileCounter !== null && counter !== dashLastTileCounter;
+      probe.textContent = '0x' + type.toString(16).padStart(2, '0')
+        + ' (' + (TILE_LABEL[type] || 'unbekannt') + ')'
+        + '  Kachelz\u00e4hler ' + counter + (bewegt ? ' bewegt' : ' steht');
+    }
+
     // ---- Two guards against misread patterns ----
     // 1) CONFIRMATION. A code has to arrive twice in a row before it is believed. The cost
     //    of this is one packet of latency and nothing else: the logs show a tile stays under
@@ -10788,12 +10885,6 @@
     dashLastTileCounter = counter;
     dashMinimapIndex = dashMinimapIndex === null ? 0 : dashMinimapIndex + 1;
     if (currentTrackTiles.length > 0) dashMinimapIndex = dashMinimapIndex % currentTrackTiles.length;
-
-    // Surface the raw code so an unknown printed pattern can be identified by driving
-    // over it once — this is the only way to learn a code we don't already know.
-    lastTileCode = type;
-    const probe = $('tile-probe');
-    if (probe) probe.textContent = `0x${type.toString(16).padStart(2, '0')} (${TILE_LABEL[type] || 'unbekannt'})`;
 
     // Guard 2 applies only to the two codes that trigger something irreversible; the
     // ordinary straight and curve codes may repeat as often as the track says.
@@ -14658,6 +14749,54 @@
     // Die zwei Linienmodelle und ihre Bausteine, damit beide gegeneinander messbar sind:
     // kruemmungsaermste Linie gegen rundenzeitschnellste, auf demselben Layout.
     idealLine, lapTimeLine, lapTimeOf, trackCenterline, trackNormals, pathCurvature,
+    // Lenkgrip bei gegebener Oberflaeche und Fahrt. Einschwingen lassen, nicht einen
+    // einzelnen Takt lesen: loadFront und longUse haengen an Zeitkonstanten, und ein
+    // Momentanwert waere eine andere Groesse als die, die man beim Fahren spuert.
+    physSteerGrip(o) {
+      const e = physEngine, st = e.state, cfg = e.config;
+      const merk = { gs: cfg.gripScale, v: st.speedKmh, dm: st.driveMode,
+                     g: st.currentGear, tg: st.tyreGrip, lf: st.loadFront,
+                     lu: st.longUse, ds: st.dampedSteering };
+      try {
+        cfg.gripScale = o.gripScale === undefined ? 1 : o.gripScale;
+        st.speedKmh = o.kmh / REAL_SCALE;
+        st.driveMode = 'forward';
+        st.currentGear = o.gear === undefined ? 2 : o.gear;
+        st.tyreGrip = 1; st.loadFront = 0.5; st.longUse = 0;
+        const inp = { throttle: o.throttle || 0, brake: o.brake || 0,
+                      steering: o.steering === undefined ? 0.3 : o.steering };
+        for (let i = 0; i < 40; i++) {
+          st.speedKmh = o.kmh / REAL_SCALE;      // Fahrt festhalten, nur den Grip messen
+          e.update(inp, 0.02);
+        }
+        return { steerGrip: st.steerGrip, gripLong: st.gripLong,
+                 loadFront: st.loadFront, longUse: st.longUse };
+      } finally {
+        cfg.gripScale = merk.gs; st.speedKmh = merk.v; st.driveMode = merk.dm;
+        st.currentGear = merk.g; st.tyreGrip = merk.tg; st.loadFront = merk.lf;
+        st.longUse = merk.lu; st.dampedSteering = merk.ds;
+      }
+    },
+    // Rueckwaertsgang: schalten und nachsehen, was daraus wurde. Die Automatik ist der
+    // interessante Fall, weil dort vorher gar nichts ging.
+    physShift(o) {
+      const e = physEngine, st = e.state, cfg = e.config;
+      const merk = { as: cfg.autoShift, dm: st.driveMode, g: st.currentGear,
+                     v: st.speedKmh, sh: st.isShifting };
+      try {
+        cfg.autoShift = !!o.auto;
+        st.driveMode = o.von || 'forward';
+        st.currentGear = o.gang === undefined ? 0 : o.gang;
+        st.speedKmh = (o.kmh || 0) / REAL_SCALE;
+        st.isShifting = false;
+        e.triggerShift(o.richtung);
+        return { driveMode: st.driveMode, gear: st.currentGear,
+                 kmhAnzeige: Math.round(st.speedKmh * REAL_SCALE) };
+      } finally {
+        cfg.autoShift = merk.as; st.driveMode = merk.dm; st.currentGear = merk.g;
+        st.speedKmh = merk.v; st.isShifting = merk.sh;
+      }
+    },
     setLineModel, getLineModel, buildLine,
     // Das Lernen ohne Auto und ohne Rennen durchspielen: Runden hineingeben, sehen was
     // angenommen wird. Genau so ist die Annahmeregel pruefbar.
@@ -16876,6 +17015,90 @@
       racePartialMs = gemerkt.part; raceFormationLap = gemerkt.form;
       playerCar = echterSpieler;
       if (anzeige !== null) $('race-status').textContent = anzeige;
+    }
+  });
+
+  // ---- Nasse Lenkung: langsam voll, schnell weniger ----
+  // Gemeldet als "auf Slicks im Regen kann ich nur geradeaus fahren". Ursache war, dass die
+  // Kapazitaet der Vorderachse bei JEDER Fahrt mit dem Nassfaktor multipliziert wurde, das
+  // Motorbremsen aber nicht - der geschrumpfte Reibkreis war schon im Schritttempo leer.
+  stAdd('Nasse Lenkung greift erst mit der Fahrt', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.physSteerGrip) {
+      return { skip: true, mass: 'physSteerGrip nicht vorhanden' };
+    }
+    const q = (kmh) => {
+      const tr = OMEGA_TEST.physSteerGrip({ gripScale: 1.0, kmh }).steerGrip;
+      const na = OMEGA_TEST.physSteerGrip({ gripScale: 0.45, kmh }).steerGrip;
+      return na / Math.max(1e-9, tr);
+    };
+    const bei = {};
+    for (const v of [25, 50, 120, 290]) bei[v] = q(v);
+    // Bis 50 km/h muss Regen die Lenkung praktisch unberuehrt lassen, bei 290 muss der
+    // Verlust wieder voll da sein - sonst waere aus dem Regen ein Schoenwetterregen
+    // geworden, und das war nicht die Bitte.
+    const ok = bei[25] > 0.98 && bei[50] > 0.98 && bei[120] < 0.85 && bei[290] < 0.6;
+    return { ok,
+             mass: [25, 50, 120, 290].map(v => v + ' km/h ' + Math.round(bei[v] * 100) + ' %')
+                   .join(', ') + ' vom Trockenwert' };
+  });
+
+  // ---- Rueckwaertsgang in der Automatik ----
+  stAdd('Automatik: Viereck legt R, nur langsam', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.physShift) {
+      return { skip: true, mass: 'physShift nicht vorhanden' };
+    }
+    const sh = OMEGA_TEST.physShift;
+    const langsam = sh({ auto: true, von: 'forward', gang: 0, kmh: 5, richtung: -1 });
+    const schnell = sh({ auto: true, von: 'forward', gang: 0, kmh: 30, richtung: -1 });
+    const raus = sh({ auto: true, von: 'reverse', gang: 0, kmh: 0, richtung: 1 });
+    // Die Handschaltung muss unberuehrt bleiben: dort fuehrt der Weg weiter ueber den
+    // Leerlauf, und das ist Absicht - ein Handschalter soll den Zwischenschritt sehen.
+    const hand1 = sh({ auto: false, von: 'forward', gang: 0, kmh: 0, richtung: -1 });
+    const hand2 = sh({ auto: false, von: 'neutral', gang: 0, kmh: 0, richtung: -1 });
+    const ok = langsam.driveMode === 'reverse' && schnell.driveMode === 'forward'
+               && raus.driveMode === 'forward' && raus.gear === 0
+               && hand1.driveMode === 'neutral' && hand2.driveMode === 'reverse';
+    return { ok,
+             mass: 'Automatik 5 km/h -> ' + langsam.driveMode + ', 30 km/h -> '
+                   + schnell.driveMode + ', Kreis aus R -> ' + raus.driveMode
+                   + ' Gang ' + raus.gear
+                   + ' | Hand unveraendert: Gang 1 -> ' + hand1.driveMode
+                   + ', Leerlauf -> ' + hand2.driveMode };
+  });
+
+  // ---- Der Rohcode zeigt auch ohne laufenden Kachelzaehler ----
+  // Der Kern des Scannerfehlers: die Anzeige sass hinter vier Ruecksprungen, einer davon
+  // verlangte, dass der Kachelzaehler des Autos weiterlaeuft. Ueber ein Blatt auf dem
+  // Fussboden tut er das nicht, und dann wurde nie etwas angezeigt.
+  stAdd('Musterprobe zeigt auch bei stehendem Kachelzaehler', () => {
+    const feld = $('tile-probe');
+    if (!feld || !window.OMEGA_TEST || !OMEGA_TEST.feedNotify) {
+      return { skip: true, mass: 'Musterprobe nicht im Dokument' };
+    }
+    const vorher = feld.textContent;
+    const echterSpieler = playerCar;
+    const gemerkt = { p: dashPendingCode, s: dashPendingSeen, c: dashLastTileCounter };
+    try {
+      const attrappe = { device: { id: 'st-probe', name: 'Pruefwagen' }, role: 'player',
+                         rx: null, tx: null, tileCode: 0xff, tileCount: null,
+                         lastCodeAt: 0, yaw: 0, ghost: null, timer: null, race: null };
+      playerCar = attrappe;
+      dashPendingCode = null; dashPendingSeen = 0; dashLastTileCounter = null;
+      const paket = (code, zaehler) => {
+        const a = new Array(19).fill(0);
+        a[11] = zaehler; a[12] = code; a[14] = 0x22;
+        return a;
+      };
+      // Byte 11 bleibt FEST: genau der Fall, in dem vorher nichts angezeigt wurde.
+      for (let k = 0; k < 3; k++) OMEGA_TEST.feedNotify(paket(0x14, 7), { car: attrappe });
+      const text = feld.textContent;
+      const ok = text.indexOf('0x14') >= 0 && /steht/.test(text);
+      return { ok, mass: 'angezeigt: "' + text + '"' };
+    } finally {
+      playerCar = echterSpieler;
+      dashPendingCode = gemerkt.p; dashPendingSeen = gemerkt.s;
+      dashLastTileCounter = gemerkt.c;
+      feld.textContent = vorher;
     }
   });
 

@@ -175,6 +175,22 @@
         transferK: 0.30,      // share of the load that moves at 1g
         loadTau: 0.08,        // body pitch (squat and dive): fast
         useTau: 0.45,         // longitudinal tyre force build-up: distinctly slower
+        // ---- Rueckwaertsgang in der Automatik ----
+        // Bis unter diese Fahrt darf Viereck den Rueckwaertsgang legen, Kreis holt ihn
+        // wieder heraus. Als Bruchteil der Spitze, nicht in km/h: st.speedKmh laeuft in
+        // Modellmass (0 bis topSpeedKmh = 4,0), und der Schirm zeigt es mit 73,75
+        // multipliziert. 0.034 * 4,0 * 73,75 sind die gewuenschten 10 km/h auf der Anzeige.
+        autoReverseFrac: 0.034,
+        // ---- Nasse Lenkung ----
+        // Der Nassverlust greift erst mit der Geschwindigkeit an. Ohne das frisst schon das
+        // Motorbremsen den geschrumpften Reibkreis auf, und zwar bei JEDER Fahrt - auf
+        // Slicks im Regen war deshalb gar keine Lenkung mehr da, auch im Schritttempo.
+        // Physikalisch ist die alte Fassung falsch: ein nasser Reifen traegt seitlich
+        // durchaus, nur ist der Grenzbereich frueher erreicht. Unterhalb von wetOnsetFrac
+        // ist die Anforderung so klein, dass Nass keinen Unterschied macht.
+        // Angezeigte Entsprechung bei 295 km/h Spitze: 50 und 160 km/h.
+        wetOnsetFrac: 0.17,
+        wetFullFrac: 0.55,
         loadGain: 0.40,       // how much front load changes lateral capacity
         brakeUseGain: 1.15,   // how much of that capacity the brake eats
         coastPitch: 0.15,     // engine braking pitches the nose down a little
@@ -423,7 +439,19 @@
       // How wet it is, from the surface factor itself rather than from a weather flag:
       // GRIP_MATRIX runs 1.00 (dry slicks) down to 0.45 (rain on slicks), so this is 0 in
       // the dry and 1 on slicks in the rain.
-      const wet = Math.max(0, Math.min(1, (1 - surf) / 0.55));
+      // Wie stark der Nassverlust GERADE wirkt: unter wetOnsetFrac gar nicht, ab
+      // wetFullFrac voll. Der Grund steht bei den Reglern: die alte Fassung hat die
+      // Kapazitaet der Vorderachse bei jeder Fahrt mit 0,45 multipliziert, das Motorbremsen
+      // aber nicht - und damit war der geschrumpfte Reibkreis schon im Schritttempo leer.
+      // Auf Slicks im Regen liess sich nur noch geradeaus fahren.
+      const vFrac = Math.abs(st.speedKmh) / Math.max(1e-6, cfg.topSpeedKmh);
+      const wetBlend = Math.max(0, Math.min(1,
+        (vFrac - cfg.wetOnsetFrac) / Math.max(1e-6, cfg.wetFullFrac - cfg.wetOnsetFrac)));
+      // Die WIRKSAME Oberflaeche fuer die Lenkung. Die Laengskraefte weiter unten benutzen
+      // weiter das ungemilderte surf: dass ein nasser Reifen beim Anfahren durchdreht und
+      // laenger bremst, stimmt auch langsam - was nicht stimmte, war die Lenkung.
+      const surfSteer = 1 - (1 - surf) * wetBlend;
+      const wet = Math.max(0, Math.min(1, (1 - surfSteer) / 0.55));
 
       // Front axle: capacity scales with the load actually on it; what the brake is already
       // using is taken out of the circle, leaving the lateral share for steering.
@@ -441,7 +469,7 @@
       // inspection of the measurement: braking moves load ONTO the front, so a bigger
       // load gain made wet braking steer BETTER (steerGrip 1.006 against 0.464 dry) -
       // the exact opposite of what was asked.
-      const frontCap = (1 + cfg.loadGain * (st.loadFront - 0.5) * 2) * surf;
+      const frontCap = (1 + cfg.loadGain * (st.loadFront - 0.5) * 2) * surfSteer;
       const frontUse = Math.max(0, -st.longUse) * cfg.brakeUseGain;
       // The 0.12 floor is a dry-weather reserve: it stops the car ever being completely
       // helpless. In the wet there is no such reserve - once the brake has eaten the front
@@ -724,6 +752,46 @@
     triggerShift(direction) {
       const st = this.state, cfg = this.config;
       const stopped = Math.abs(st.speedKmh) < cfg.reverseStandstillKmh;
+
+      // ---- Automatik: die beiden Schaltknoepfe machen genau eine Sache ----
+      //
+      // Vorher war der Rueckwaertsgang in der Automatik NICHT erreichbar, und das lag an
+      // zwei Dingen, die zusammenwirkten: ein Herunterschalten aus dem 1. Gang landet im
+      // Leerlauf und erst ein zweites legt den Rueckwaertsgang - und die Automatikregel
+      // "im Leerlauf und Gas gegeben heisst vorwaerts" hat den Leerlauf im naechsten Takt
+      // sofort wieder verlassen. Zwei Tastendruecke waren also nie moeglich, weil der
+      // Zwischenzustand keinen Takt ueberlebt.
+      //
+      // In der Automatik gibt es ohnehin keine Gaenge zu waehlen. Also tun die beiden
+      // Knoepfe hier das Einzige, was sinnvoll bleibt: Viereck legt den Rueckwaertsgang
+      // (langsam genug), Kreis holt ihn heraus. In EINEM Druck, ohne Leerlauf dazwischen.
+      if (cfg.autoShift) {
+        const langsam = Math.abs(st.speedKmh) < cfg.autoReverseFrac * cfg.topSpeedKmh;
+        if (st.driveMode === 'reverse') {
+          if (direction > 0) {
+            st.driveMode = 'forward'; st.currentGear = 0;
+            st.speedKmh = 0; st.neutralRpm = 0;
+            st.reverseLatched = true;
+            showHudToast('Vorw\u00e4rts'); padRumble(0.3, 0.2, 90);
+            playShiftSound(1);
+          }
+          return;
+        }
+        if (direction < 0) {
+          if (langsam) {
+            st.driveMode = 'reverse'; st.currentGear = 0;
+            st.speedKmh = 0; st.neutralRpm = 0;
+            st.reverseLatched = true;
+            showHudToast('R\u00fcckw\u00e4rtsgang'); padRumble(0.3, 0.2, 90);
+            playShiftSound(-1);
+          } else {
+            // Sagen, WARUM nichts passiert. Ein Knopf, der schweigend nichts tut, sieht
+            // kaputt aus - und genau so ist dieser Fehler gemeldet worden.
+            showHudToast('ZU SCHNELL F\u00dcR R');
+          }
+        }
+        return;
+      }
 
       if (st.driveMode === 'reverse') {
         if (direction > 0 && stopped) {

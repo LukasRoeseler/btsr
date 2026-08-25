@@ -1986,6 +1986,54 @@
     // Die zwei Linienmodelle und ihre Bausteine, damit beide gegeneinander messbar sind:
     // kruemmungsaermste Linie gegen rundenzeitschnellste, auf demselben Layout.
     idealLine, lapTimeLine, lapTimeOf, trackCenterline, trackNormals, pathCurvature,
+    // Lenkgrip bei gegebener Oberflaeche und Fahrt. Einschwingen lassen, nicht einen
+    // einzelnen Takt lesen: loadFront und longUse haengen an Zeitkonstanten, und ein
+    // Momentanwert waere eine andere Groesse als die, die man beim Fahren spuert.
+    physSteerGrip(o) {
+      const e = physEngine, st = e.state, cfg = e.config;
+      const merk = { gs: cfg.gripScale, v: st.speedKmh, dm: st.driveMode,
+                     g: st.currentGear, tg: st.tyreGrip, lf: st.loadFront,
+                     lu: st.longUse, ds: st.dampedSteering };
+      try {
+        cfg.gripScale = o.gripScale === undefined ? 1 : o.gripScale;
+        st.speedKmh = o.kmh / REAL_SCALE;
+        st.driveMode = 'forward';
+        st.currentGear = o.gear === undefined ? 2 : o.gear;
+        st.tyreGrip = 1; st.loadFront = 0.5; st.longUse = 0;
+        const inp = { throttle: o.throttle || 0, brake: o.brake || 0,
+                      steering: o.steering === undefined ? 0.3 : o.steering };
+        for (let i = 0; i < 40; i++) {
+          st.speedKmh = o.kmh / REAL_SCALE;      // Fahrt festhalten, nur den Grip messen
+          e.update(inp, 0.02);
+        }
+        return { steerGrip: st.steerGrip, gripLong: st.gripLong,
+                 loadFront: st.loadFront, longUse: st.longUse };
+      } finally {
+        cfg.gripScale = merk.gs; st.speedKmh = merk.v; st.driveMode = merk.dm;
+        st.currentGear = merk.g; st.tyreGrip = merk.tg; st.loadFront = merk.lf;
+        st.longUse = merk.lu; st.dampedSteering = merk.ds;
+      }
+    },
+    // Rueckwaertsgang: schalten und nachsehen, was daraus wurde. Die Automatik ist der
+    // interessante Fall, weil dort vorher gar nichts ging.
+    physShift(o) {
+      const e = physEngine, st = e.state, cfg = e.config;
+      const merk = { as: cfg.autoShift, dm: st.driveMode, g: st.currentGear,
+                     v: st.speedKmh, sh: st.isShifting };
+      try {
+        cfg.autoShift = !!o.auto;
+        st.driveMode = o.von || 'forward';
+        st.currentGear = o.gang === undefined ? 0 : o.gang;
+        st.speedKmh = (o.kmh || 0) / REAL_SCALE;
+        st.isShifting = false;
+        e.triggerShift(o.richtung);
+        return { driveMode: st.driveMode, gear: st.currentGear,
+                 kmhAnzeige: Math.round(st.speedKmh * REAL_SCALE) };
+      } finally {
+        cfg.autoShift = merk.as; st.driveMode = merk.dm; st.currentGear = merk.g;
+        st.speedKmh = merk.v; st.isShifting = merk.sh;
+      }
+    },
     setLineModel, getLineModel, buildLine,
     // Das Lernen ohne Auto und ohne Rennen durchspielen: Runden hineingeben, sehen was
     // angenommen wird. Genau so ist die Annahmeregel pruefbar.
