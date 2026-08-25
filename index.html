@@ -425,7 +425,7 @@
      this app no session for any of them, so those cells are absent rather than filled with
      invented numbers. */
   #tab-race { position: relative; }
-  .gt3 { background: #05070c; border: 0; border-radius: 0;
+  .gt3 { background: #05070c; border: 0; border-radius: 0; overflow: hidden;
     padding: clamp(5px, 1vw, 11px); color: #eef2fa; display: grid;
     gap: clamp(4px, .8vw, 9px);
     grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr) minmax(0, 1.15fr);
@@ -435,8 +435,10 @@
 
   /* Shift lights: round, evenly spaced, green through red to blue. */
   .gt3-shift { grid-area: shift; display: flex; justify-content: center;
-    gap: clamp(3px, .8vw, 8px); padding: clamp(2px, .5vw, 5px) 0; }
-  .gt3-shift > span { width: clamp(9px, 1.8vw, 16px); height: clamp(9px, 1.8vw, 16px);
+    gap: clamp(5px, 1.4vw, 14px); padding: clamp(3px, .7vw, 7px) 0; }
+  /* Groesser als vorher (war clamp(9px, 1.8vw, 16px)): die Schaltlichter sollen aus dem
+     Augenwinkel erkennbar sein, und dafuer muessen sie Breite ueber den Schirm nehmen. */
+  .gt3-shift > span { width: clamp(14px, 3.2vw, 26px); height: clamp(14px, 3.2vw, 26px);
     border-radius: 50%; flex: none; background: #12161f;
     box-shadow: inset 0 0 0 1px #262e3d; }
 
@@ -530,11 +532,38 @@
   .gt3-act { width: 100%; margin-top: 4px; padding: 9px 6px; border: 0; border-radius: 0;
     background: #1f2a3d; color: #dce7fb; font-weight: 700; font-family: inherit;
     font-size: clamp(10px, 1.6vw, 14px); letter-spacing: .04em; cursor: pointer;
-    min-height: 40px; }
+    /* 44 statt 40: das sind die zwei Knoepfe, die man waehrend der Fahrt trifft, also
+       gehoeren sie auf die volle Beruehrflaeche. Gilt fuer Boxenstopp UND gelbe Flagge,
+       damit die beiden nicht unterschiedlich hoch nebeneinander stehen. */
+    min-height: 44px; }
   .gt3-act:hover { background: #2b3a55; }
   .gt3-act.armed { background: #1c7a4d; color: #eafff1; }
   .gt3-act.warn { background: #b8860b; color: #100c02; }
   .gt3-click { cursor: pointer; }
+  /* ---- Boxenstopp: die drei Kacheln, an denen gearbeitet wird ----
+     Gruen und pulsierend heisst "wird gemacht", rot heisst "abgewaehlt", grau heisst "diese
+     Simulation ist aus, hier gibt es nichts zu waehlen". Der Rand liegt INNEN als
+     box-shadow, damit die Kachel ihre Groesse nicht aendert, wenn der Zustand wechselt -
+     ein Layoutsprung mitten im Boxenstopp waere genau der falsche Moment. */
+  .pit-tile { position: relative; }
+  .pit-tile.pit-on { box-shadow: inset 0 0 0 2px var(--good); animation: pitPulse 1.1s ease-in-out infinite; }
+  .pit-tile.pit-off { box-shadow: inset 0 0 0 2px var(--bad); }
+  .pit-tile.pit-na { opacity: .42; cursor: default; }
+  .pit-tile.pit-on::after, .pit-tile.pit-off::after {
+    content: ''; position: absolute; right: 3px; top: 3px; width: 6px; height: 6px;
+    border-radius: 50%; background: currentColor;
+  }
+  .pit-tile.pit-on::after { background: var(--good); }
+  .pit-tile.pit-off::after { background: var(--bad); }
+  @keyframes pitPulse {
+    0%, 100% { box-shadow: inset 0 0 0 2px var(--good); }
+    50% { box-shadow: inset 0 0 0 4px var(--good); }
+  }
+  /* Bewegtes Blinken direkt neben der Drehzahl kann stoeren; wer das abgeschaltet hat,
+     bekommt den Zustand ueber die Randfarbe allein. */
+  @media (prefers-reduced-motion: reduce) {
+    .pit-tile.pit-on { animation: none; }
+  }
   .gt3-click:hover { background: #1b2231; }
   .gt3-banner { grid-area: banner; display: none; text-align: center;
     background: #b8860b; color: #100c02; font-weight: 800; letter-spacing: .12em;
@@ -1371,22 +1400,14 @@
         <div class="gt3-box"><div class="gt3-lbl">Runde</div>
           <div class="gt3-val sm" id="race-lap-count">0</div></div>
         <button type="button" class="gt3-act" id="race-act-pit">Boxenstopp</button>
-        <div class="gt3-box gt3-click" id="race-tyre-box" title="Reifensimulation an/aus"><div class="gt3-lbl">Reifen</div>
-          <div class="gt3-tyre">
-            <svg viewBox="0 0 24 24" aria-label="Reifentemperatur">
-              <circle cx="12" cy="12" r="10" fill="none" stroke-width="4" id="race-tyre-ring"/>
-              <circle cx="12" cy="12" r="4.5" fill="#2a3346"/>
-            </svg>
-            <div><div class="gt3-val sm" id="race-tyre-temp">&ndash;</div>
-              <div class="gt3-lbl" id="race-tyre-wear">&ndash;</div></div>
-          </div></div>
+        <button type="button" class="gt3-act" id="race-act-flag">Gelbe Flagge</button>
       </div>
 
       <div class="gt3-gear">
         <div class="gt3-rpm" id="race-rpm">1500</div>
         <div class="gt3-gearnum" id="race-gear">N</div>
         <div class="gt3-box" style="text-align:center">
-          <div class="gt3-lbl">Speed km/h</div>
+          <div class="gt3-lbl">km/h</div>
           <div class="gt3-val big" id="race-speed">0</div>
           <div class="gt3-abs" id="race-abs">ABS</div></div>
       </div>
@@ -1403,21 +1424,28 @@
       </div>
 
       <div class="gt3-strip">
-        <div class="gt3-box"><svg class="gt3-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-label="Tank"><path d="M4 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16"/><path d="M3 21h13"/><path d="M4 10h10"/><path d="M18 21v-9a3 3 0 0 0-3-3"/><path d="M18 12h2a1 1 0 0 0 1-1V8l-3-3"/></svg>
+        <div class="gt3-box pit-tile" data-pit="refuel" title="Beim Boxenstopp: Tanken an/aus"><svg class="gt3-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-label="Tank"><path d="M4 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16"/><path d="M3 21h13"/><path d="M4 10h10"/><path d="M18 21v-9a3 3 0 0 0-3-3"/><path d="M18 12h2a1 1 0 0 0 1-1V8l-3-3"/></svg>
           <div class="gt3-val sm" id="race-fuel">100%</div>
           <div class="gt3-bar"><i id="race-fuel-bar"></i></div></div>
-        <div class="gt3-box"><svg class="gt3-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-label="Zustand"><path d="M19.3 8.2 L19.2 9.3 L18.8 10.3 L18.0 11.2 L17.1 11.8 L16.0 12.1 L14.9 12.0 L13.9 11.7 L13.0 11.0 L12.3 10.1 L12.0 9.1 L11.9 8.0 L12.2 6.9 L12.8 6.0 L13.7 5.2 L14.7 4.8 L15.8 4.7"/><path d="M13.0 11.0 L8.5 15.5"/></svg>
+        <div class="gt3-box pit-tile" data-pit="repair" title="Beim Boxenstopp: Reparatur an/aus"><svg class="gt3-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-label="Zustand"><path d="M19.3 8.2 L19.2 9.3 L18.8 10.3 L18.0 11.2 L17.1 11.8 L16.0 12.1 L14.9 12.0 L13.9 11.7 L13.0 11.0 L12.3 10.1 L12.0 9.1 L11.9 8.0 L12.2 6.9 L12.8 6.0 L13.7 5.2 L14.7 4.8 L15.8 4.7"/><path d="M13.0 11.0 L8.5 15.5"/></svg>
           <div class="gt3-val sm" id="race-dmg">100%</div>
           <div class="gt3-bar"><i id="race-dmg-bar"></i></div></div>
+        <div class="gt3-box gt3-click pit-tile" id="race-tyre-box" data-pit="tyres"
+             title="Reifensimulation an/aus, beim Boxenstopp: Reifenwechsel an/aus"><div class="gt3-lbl">Reifen</div>
+          <div class="gt3-tyre">
+            <svg viewBox="0 0 24 24" aria-label="Reifentemperatur">
+              <circle cx="12" cy="12" r="10" fill="none" stroke-width="4" id="race-tyre-ring"/>
+              <circle cx="12" cy="12" r="4.5" fill="#2a3346"/>
+            </svg>
+            <div><div class="gt3-val sm" id="race-tyre-temp">&ndash;</div>
+              <div class="gt3-lbl" id="race-tyre-wear">&ndash;</div></div>
+          </div></div>
         <div class="gt3-box"><svg class="gt3-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-label="Akku"><rect x="2" y="7" width="17" height="10" rx="2"/><path d="M22 11v2"/><path d="M6 10v4M9.5 10v4M13 10v4"/></svg>
           <div class="gt3-val sm" id="race-batt">&ndash;</div></div>
         <div class="gt3-box gt3-click" id="race-light-box" title="Licht an/aus" style="display:flex;align-items:center;justify-content:center">
           <div class="gt3-tell" style="width:100%"><svg class="gt3-lamp" id="race-light" viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" aria-label="Scheinwerfer"><path d="M 107 43 C 145 43 182 68 182 100 C 182 132 145 157 107 157 Z"/><path d="M28 71 89 52M28 96 89 77M28 121 89 102M28 146 89 127M28 171 89 152"/></svg></div></div>
         <div class="gt3-box gt3-click" id="race-wx-box" title="Wetter umschalten">
-          <div class="gt3-tell"><svg class="gt3-ico" id="race-wx-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-label="Trocken"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.4M12 19.6V22M2 12h2.4M19.6 12H22M4.9 4.9l1.7 1.7M17.4 17.4l1.7 1.7M19.1 4.9l-1.7 1.7M6.6 17.4l-1.7 1.7"/></svg><svg class="gt3-ico" id="race-wx-rain" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-label="Regen" style="display:none"><path d="M6.5 14a4 4 0 0 1 .4-8 5.5 5.5 0 0 1 10.5 1.4A3.6 3.6 0 0 1 17.5 14z"/><path d="M8 17.5l-1 2.5M12 17.5l-1 2.5M16 17.5l-1 2.5"/></svg><span class="gt3-lbl" id="race-tyres">Slicks</span></div></div>
-        <div class="gt3-box"><div class="gt3-lbl">Strecke</div>
-          <div class="gt3-val sm" id="race-track">&ndash;</div>
-          <div class="gt3-lbl" id="race-conn">getrennt</div></div>
+          <div class="gt3-tell"><svg class="gt3-ico" id="race-wx-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-label="Trocken"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.4M12 19.6V22M2 12h2.4M19.6 12H22M4.9 4.9l1.7 1.7M17.4 17.4l1.7 1.7M19.1 4.9l-1.7 1.7M6.6 17.4l-1.7 1.7"/></svg><svg class="gt3-ico" id="race-wx-rain" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-label="Regen" style="display:none"><path d="M6.5 14a4 4 0 0 1 .4-8 5.5 5.5 0 0 1 10.5 1.4A3.6 3.6 0 0 1 17.5 14z"/><path d="M8 17.5l-1 2.5M12 17.5l-1 2.5M16 17.5l-1 2.5"/></svg></div></div>
         <div class="gt3-box"><div class="gt3-lbl">Gas / Lenkung</div>
           <div class="gt3-val sm"><span id="race-trim-accel">100%</span>
             <span style="color:#7c8aa6">&middot;</span> <span id="race-trim-steer">100%</span></div></div>
@@ -3917,7 +3945,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.3.52</span></span>
+    <span class="foot-ver">v<span id="app-version">0.3.53</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
   </span>
   <span class="foot-right">
@@ -4307,6 +4335,7 @@
     "Als CSV exportieren": "Export as CSV",
     "Als Profil übernehmen": "Adopt as a profile",
     "An ein echtes Auto senden": "Send to a real car",
+    "Anfahrt": "Rolling up",
     "Angezeigte km/h. Ein 911 GT3 R braucht rund 3,2 s.": "Displayed km/h. A 911 GT3 R needs about 3.2 s.",
     "Anhören": "Listen",
     "Ansauganteil": "Intake share",
@@ -4344,6 +4373,8 @@
     "Bauart": "Layout",
     "Baue eine Strecke manuell aus Teilen zusammen, oder scanne sie live, während das Auto einmal die Runde fährt (Auto muss verbunden sein). Bekannte Teiltypen: Start/Ziel, Gerade, Rechtskurve (bestätigt aus echten Streckendaten). Linkskurve ist eine": "Build a track by hand from parts, or scan it live while the car drives one lap (a car must be connected). Known part types: start/finish, straight, right curve (confirmed from real track data). The left curve is an",
     "Bedienung mit Maus oder Finger. Das Gamepad ist hier ausgebaut: es griff vorher auf jedem Tab und auf jedes Bedienelement, und daraus kamen Fehlbedienungen. Es steuert jetzt nur noch das Auto, den Streckeneditor im Vollbild und das Boxenstopp-Menü.": "Operated with the mouse or a finger. The gamepad has been removed here: it used to act on every tab and every control, and that caused mis-operation. It now only drives the car, the track editor in fullscreen, and the pit-stop menu.",
+    "Beim Boxenstopp: Reparatur an/aus": "During a pit stop: repair on/off",
+    "Beim Boxenstopp: Tanken an/aus": "During a pit stop: refuelling on/off",
     "Bekannt (aus einer unabhängigen Reverse-Engineering-Runde zum selben Auto, per BLE-Sniffer ermittelt): echte Kommando-Pakete sind": "Known (from an independent reverse-engineering effort on the same car, obtained with a BLE sniffer): real command packets are",
     "Bekanntes Idle-Paket laden (20 Byte)": "Load a known idle packet (20 bytes)",
     "Belegung": "Bindings",
@@ -4414,6 +4445,7 @@
     "Fliegender Start": "Rolling start",
     "Frei fahren": "Free roam",
     "Freies Training": "Free practice",
+    "Freigeben": "Release",
     "Fährt das Auto über das Boxen-Muster, greift ein Tempolimit von 40 %. Bleibt es dann stehen, läuft der Service: je länger du stehst, desto mehr Sprit und Reparatur. Beim Losfahren ist das Limit wieder weg.": "When the car drives over the pit pattern, a 40 % speed limit takes effect. If it then stops, the service runs: the longer you stand, the more fuel and repair you get. Driving off lifts the limit again.",
     "GATT-Baum": "GATT tree",
     "Gamepad-Vibration": "Gamepad rumble",
@@ -4424,6 +4456,7 @@
     "Gas:": "Throttle:",
     "Gegen die Referenz antreten.": "Race against the reference.",
     "Gegen gegenseitiges Rammen. Blind: kein Byte meldet die Querlage. Links = aus.": "Against cars ramming each other. Blind: no byte reports lateral position. Left = off.",
+    "Gelbe Flagge": "Yellow flag",
     "Gelbe Flagge: alles rollt mit": "Yellow flag: everything rolls at",
     "Gerade": "Straight",
     "Geschlossen ✓": "Closed ✓",
@@ -4565,6 +4598,7 @@
     "Reifen: Temperatur & Verschleiß": "Tyres: temperature & wear",
     "Reifengrip": "Tyre grip",
     "Reifensimulation an/aus": "Tyre simulation on/off",
+    "Reifensimulation an/aus, beim Boxenstopp: Reifenwechsel an/aus": "Tyre simulation on/off; during a pit stop: tyre change on/off",
     "Reifentemperatur": "Tyre temperature",
     "Reihe": "Inline",
     "Rekonstruktion": "Reconstruction",
@@ -6909,16 +6943,21 @@
     $('race-batt').textContent = dashBattery === null ? '\u2013' : batteryPercent(dashBattery) + '%';
 
     const live = !!(device && device.gatt && device.gatt.connected);
-    $('race-conn').textContent = live ? 'verbunden' : 'getrennt';
-    $('race-conn').className = 'gt3-lbl ' + (live ? 'gt3-ok' : 'gt3-bad');
+    // race-conn und race-track sassen in der entfernten Kachel "Strecke". Der
+    // Verbindungszustand steht jetzt in der Fusszeile des Schirms; die Zeilen bleiben
+    // stehen, damit die Kachel ohne Suche wieder eingesetzt werden kann.
+    setTxt('race-conn', live ? 'verbunden' : 'getrennt');
+    const cn = $('race-conn');
+    if (cn) cn.className = 'gt3-lbl ' + (live ? 'gt3-ok' : 'gt3-bad');
     // Weather icon plus the fitted tyres. The tyres matter more than the weather here:
     // they are what tells you whether the pit stop is still outstanding.
     const wet = weather === 'rain';
     $('race-wx-sun').style.display = wet ? 'none' : '';
     $('race-wx-rain').style.display = wet ? '' : 'none';
     $('race-wx-rain').style.color = wet ? '#5aa9ff' : '';
-    $('race-tyres').textContent = tyres === 'wet' ? 'Regen' : 'Slicks';
-    $('race-tyres').style.color = (wet !== (tyres === 'wet')) ? '#ffb02e' : '';
+    // Die Textbeschriftung an der Wetterkachel ist entfernt, sie zeigt nur noch das
+    // Symbol. Welche Reifen montiert sind, steht in der Reifenkachel.
+    setTxt('race-tyres', tyres === 'wet' ? 'Regen' : 'Slicks');
     // G plot. Red is the simulation, green the car's own raw motion bytes — the two are
     // scaled independently on purpose: the real numbers are far noisier and much larger
     // relative to their range, so a shared scale would push one of them off the dial.
@@ -6958,8 +6997,9 @@
 
     $('race-trim-accel').textContent = Math.round(physEngine.config.accelerationFactor * 100) + '%';
     $('race-trim-steer').textContent = Math.round(physEngine.config.steerResponse * 100) + '%';
-    $('race-track').textContent = dashOnMarker ? 'MUSTER' : 'auf Strecke';
-    $('race-track').className = 'gt3-val sm ' + (dashOnMarker ? 'gt3-warn' : 'gt3-ok');
+    setTxt('race-track', dashOnMarker ? 'MUSTER' : 'auf Strecke');
+    const tk = $('race-track');
+    if (tk) tk.className = 'gt3-val sm ' + (dashOnMarker ? 'gt3-warn' : 'gt3-ok');
 
     // Pit banner replaces the shift bar while the pit lane is active — impossible to miss,
     // which the old small field was not.
@@ -9587,6 +9627,10 @@
   $('race-act-start').onclick = toggleRace;
 
   $('race-act-pit').onclick = () => { requestPitStop(); updateRaceActButtons(); };
+  $('race-act-flag').onclick = () => {
+    if (flagState === 'green') setFlag('yellow');
+    else if (flagState === 'yellow') yellowRestart();
+  };
 
   $('race-light-box').onclick = () => {
     headlightsOn = !headlightsOn;
@@ -9597,7 +9641,18 @@
 
   $('race-wx-box').onclick = () => setWeather(weather === 'rain' ? 'dry' : 'rain');
 
+  // Tank und Zustand sind nur WAEHREND eines Boxenstopps Schalter. Ausserhalb bleibt ein
+  // Tipp wirkungslos, statt versehentlich etwas zu verstellen.
+  for (const el of document.querySelectorAll('.pit-tile[data-pit="refuel"], .pit-tile[data-pit="repair"]')) {
+    el.addEventListener('click', () => {
+      if (pitState === 'servicing' && pitPlan) pitToggle(el.dataset.pit);
+    });
+  }
+
   $('race-tyre-box').onclick = () => {
+    // Waehrend eines Boxenstopps bedeutet ein Tipp auf diese Kachel "Reifenwechsel an/aus",
+    // sonst "Reifensimulation an/aus". Nie beides gleichzeitig, und der Titel nennt beides.
+    if (pitState === 'servicing' && pitPlan) { pitToggle('tyres'); return; }
     // Toggle between off and the last non-zero setting, so a click does not lose the value
     // that was dialled in on the slider.
     const input = $('setting-tyres');
@@ -10137,6 +10192,7 @@
   }
 
   function updatePitUI() {
+    updatePitTiles();
     const el = $('dash-pit');
     if (!el) return;
     if (pitState === 'off') { el.textContent = '-'; el.style.color = ''; return; }
@@ -10752,29 +10808,65 @@
   // D-pad while a stop is armed. Returns true if the press was consumed, so the caller can
   // leave the normal D-pad bindings alone the rest of the time — the pad keeps its usual
   // job except during a pit stop, which is what was asked for.
-  function pitQuickMenu(dir) {
+  // Ist diese Arbeit ueberhaupt simuliert? Ohne Tanksimulation gibt es nichts zu tanken,
+  // und eine Kachel, die man antippen kann, ohne dass etwas passiert, ist schlimmer als
+  // eine graue.
+  function pitJobAvailable(which) {
+    if (which === 'refuel') return fuelSimOn();
+    if (which === 'tyres') return tyreSimOn();
+    if (which === 'repair') return crashDetectionEnabled;
+    return false;
+  }
+
+  // Die EINE Stelle, die den Boxenstopp-Plan aendert. Finger und Steuerkreuz gehen beide
+  // hier durch; vorher hatte nur das Steuerkreuz Zugriff, konnte auch nur Tank und Reifen,
+  // und die Reparatur war ueberhaupt nicht abwaehlbar.
+  function pitToggle(which, force) {
     if (pitState === 'off' || !pitPlan) return false;
+    if (!pitJobAvailable(which)) {
+      showHudToast(which === 'refuel' ? 'Tanksimulation ist aus'
+                   : which === 'tyres' ? 'Reifensimulation ist aus' : 'Schadensmodell ist aus');
+      return true;
+    }
     const before = describePitPlan(pitPlan);
-    if (dir === 'up') {
-      if (!fuelSimOn()) { showHudToast('Tanksimulation ist aus'); return true; }
-      pitPlan.refuel = true;
-    } else if (dir === 'down') {
-      pitPlan.refuel = false;
-    } else if (dir === 'right') {
-      if (!tyreSimOn()) { showHudToast('Reifensimulation ist aus'); return true; }
-      pitPlan.tyres = true;
-    } else if (dir === 'left') {
-      // Cancelling the tyre change while it is already running means the old tyres stay on,
-      // exactly as specified. Anything already fitted is not un-fitted; the clock simply
-      // stops mattering.
-      pitPlan.tyres = false;
-      if (pitState === 'servicing') { setPitLoop('wrench', false); pitTyreElapsed = 0; }
+    const next = force === undefined ? !pitPlan[which] : !!force;
+    pitPlan[which] = next;
+    // Einen laufenden Reifenwechsel abwaehlen heisst: die alten Reifen bleiben drauf. Was
+    // schon montiert ist, wird nicht abmontiert, die Uhr hoert nur auf zu zaehlen.
+    if (which === 'tyres' && !next && pitState === 'servicing') {
+      setPitLoop('wrench', false);
+      pitTyreElapsed = 0;
       refreshPitThrottleLock();
-    } else return false;
+    }
+    if (which === 'refuel' && !next) setPitLoop('fuel', false);
+    if (which === 'repair' && !next) setPitLoop('repair', false);
     const after = describePitPlan(pitPlan);
     if (after !== before) showHudToast(`Boxenstopp: ${after}`);
     updatePitUI();
     return true;
+  }
+
+  function pitQuickMenu(dir) {
+    if (pitState === 'off' || !pitPlan) return false;
+    if (dir === 'up') return pitToggle('refuel', true);
+    if (dir === 'down') return pitToggle('refuel', false);
+    if (dir === 'right') return pitToggle('tyres', true);
+    if (dir === 'left') return pitToggle('tyres', false);
+    return false;
+  }
+
+  // Die drei Kacheln faerben. Gruen = wird gemacht, rot = abgewaehlt, grau = nicht
+  // simuliert. Ausserhalb eines Boxenstopps traegt keine Kachel eine dieser Klassen: die
+  // Faerbung soll nur etwas heissen, wenn gerade tatsaechlich gearbeitet wird.
+  function updatePitTiles() {
+    const active = pitState === 'servicing' && !!pitPlan;
+    for (const el of document.querySelectorAll('.pit-tile')) {
+      const which = el.dataset.pit;
+      el.classList.remove('pit-on', 'pit-off', 'pit-na');
+      if (!active) continue;
+      if (!pitJobAvailable(which)) { el.classList.add('pit-na'); continue; }
+      el.classList.add(pitPlan[which] ? 'pit-on' : 'pit-off');
+    }
   }
 
   function requestPitStop() {
@@ -12482,6 +12574,15 @@
 
   function updateFlagUi() {
     document.body.classList.toggle('flag-yellow', flagState !== 'green');
+    const b = $('race-act-flag');
+    if (b) {
+      b.textContent = flagState === 'yellow' ? 'Freigeben'
+                    : flagState === 'restart' ? 'Anfahrt' : 'Gelbe Flagge';
+      b.classList.toggle('warn', flagState !== 'green');
+      // Waehrend der Anfahrt ist der Knopf gesperrt: die Ampel laeuft, ein zweites
+      // Umschalten mitten hinein waere ein Zustand, den niemand gemeint hat.
+      b.disabled = flagState === 'restart';
+    }
     const el = $('race-flag');
     if (el) {
       el.textContent = flagState === 'yellow' ? 'GELB'
@@ -13180,6 +13281,29 @@
     crc8, buildCommandPacket,
     // Die Ideallinie ueber eine ganze Runde abtasten, ohne Auto: das Layout und die Phase
     // sind alles, was sie braucht. Rueckgabe je Kachel und Phase der Versatz in [-1, 1].
+    // Boxenstopp von aussen stellen, um die drei Kacheln zu pruefen, ohne ein Auto zu
+    // verbinden und ohne echte Standzeit abzuwarten. Gibt zurueck, welche Klasse jede
+    // Kachel danach traegt.
+    pitTiles(state, plan) {
+      if (state !== undefined) pitState = state;
+      if (plan !== undefined) pitPlan = plan === null ? null : Object.assign({}, plan);
+      updatePitUI();
+      const out = {};
+      for (const el of document.querySelectorAll('.pit-tile')) {
+        out[el.dataset.pit] = el.classList.contains('pit-on') ? 'on'
+                            : el.classList.contains('pit-off') ? 'off'
+                            : el.classList.contains('pit-na') ? 'na' : '-';
+      }
+      return { state: pitState, plan: pitPlan, tiles: out,
+               beschreibung: pitPlan ? describePitPlan(pitPlan) : null };
+    },
+    // Eine Kachel antippen, als haette es ein Finger getan.
+    pitTap(which) {
+      const el = document.querySelector('.pit-tile[data-pit="' + which + '"]');
+      if (!el) return { fehler: 'keine Kachel ' + which };
+      el.click();
+      return this.pitTiles();
+    },
     // Was die Sprachumschaltung fuer einen bestimmten Knoten gespeichert hat. Ohne diesen
     // Einblick ist "der Text springt nicht zurueck" nicht zu unterscheiden von "der
     // gespeicherte Originaltext ist schon der falsche".
