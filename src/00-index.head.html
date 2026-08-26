@@ -1970,6 +1970,68 @@
         der Bahn das Auto f&auml;hrt.
       </p>
 
+      <h3 style="font-size:14px; margin:16px 0 6px 0">Woher die Muster kommen, und was ihr
+        Vorlauf ist</h3>
+      <p class="muted">
+        <b>Stand 26.08., und der wichtigste Einzelbefund zur Kodierung.</b>
+      </p>
+      <p class="muted">
+        Carrera Hybrid ist eine Kooperation von Carrera und Sturmkind, urspr&uuml;nglich
+        MODIPLAY, von denselben Leuten, die DR!FT gemacht haben. Ein gedrucktes Muster von
+        Sturmkind DR!FT funktioniert nachgewiesen f&uuml;r <b>beide</b> Fahrzeugfamilien. Die
+        Kodierung ist damit keine Carrera-Eigenheit, sondern das &auml;ltere DR!FT-Verfahren
+        &ndash; und DR!FT ist die Seite mit mehr gedruckten Beispielen in der Welt.
+      </p>
+      <p class="muted">
+        Das &auml;ndert die Richtung der Arbeit. Bisher hie&szlig; sie: Muster zeichnen,
+        drucken, &uuml;berfahren, hoffen. Sie hei&szlig;t jetzt: <b>vorhandene DR!FT-Muster
+        lesen</b>, denn jedes davon ist ein beschriftetes Beispiel mit bekannter Bedeutung.
+        Ein Dutzend solcher Paare entscheidet die Kodierregel, w&auml;hrend ein Dutzend
+        selbst erfundener Muster nur ein Dutzend unbekannte Zahlen liefert.
+      </p>
+      <p class="muted">
+        Der zweite Teil des Befunds ist strukturell: es gab eine Fassung des Musters, bei der
+        die <b>ersten drei d&uuml;nnen Streifen fehlten</b>, und sie wurde erkannt.
+        Nachgerechnet am bekannten Muster, in Fahrtrichtung gelesen:
+      </p>
+      <table class="doc-tab">
+        <thead><tr><th>Fassung</th><th>Balken</th><th>L&uuml;cken</th></tr></thead>
+        <tbody>
+        <tr><td>vollst&auml;ndig</td><td><code>d d d d D d d D d</code></td>
+            <td><code>l l l L l L L l</code></td></tr>
+        <tr><td>ohne drei d&uuml;nne</td><td><code>d D d d D d</code></td>
+            <td><code>L l L L l</code></td></tr>
+        </tbody>
+      </table>
+      <p class="muted">
+        Das Muster beginnt also mit <b>vier</b> d&uuml;nnen Balken, und ohne drei davon
+        bleibt genau einer. Der Vorlauf ist damit <b>kein Nutzdatum</b>, sondern
+        h&ouml;chstwahrscheinlich die Strecke, an der sich der Leser auf die schmale
+        Modulbreite einstellt &ndash; genau das, was ein selbstkalibrierender Strichcodeleser
+        braucht, und es passt dazu, dass kurz und lang <b>relativ</b> gedeutet werden.
+      </p>
+      <p class="muted">
+        Was der Befund ausschlie&szlig;t: jede Regel, deren Wert sich beim Weglassen dieser
+        drei Streifen &auml;ndert. Von den 22 durchgerechneten Schemata sind das acht &ndash;
+        Balkenzahl, L&uuml;ckenzahl, Zahl der d&uuml;nnen Balken, Zahl der schmalen
+        L&uuml;cken, und alle vier Schemata, die eine absolute Position z&auml;hlen.
+      </p>
+      <p class="muted">
+        Was er <b>nicht</b> entscheidet: die zwei Regeln, die als einzige das bekannte Muster
+        erkl&auml;ren, sind gegen das Weglassen f&uuml;hrender Balken beide unempfindlich.
+        Der Abstand der dicken Balken bleibt 3, und die Zahl der breiten L&uuml;cken bleibt
+        3. Der Befund st&uuml;tzt beide und trennt sie nicht.
+      </p>
+      <p class="muted">
+        Und eine Einschr&auml;nkung, die zu jedem alten Befund gehoert: die <b>Firmware hat
+        sich ge&auml;ndert</b>. Welche Auswirkung das hatte, ist unbekannt. Jedes
+        Muster-zu-Code-Paar braucht deshalb ab jetzt eine Datumsangabe &ndash; und es
+        erkl&auml;rt zugleich, warum unsere treue Kopie von
+        <code>target_finish.pdf</code> <code>0x03</code> meldet, w&auml;hrend das aktuelle
+        Original-Blatt etwas anderes sagt: das PDF ist eine Vorlage einer &auml;lteren
+        Generation.
+      </p>
+
       <h3 style="font-size:14px; margin:16px 0 6px 0">Auf der Bahn oder ohne Bahn: Byte&nbsp;14</h3>
       <p class="muted">
         Zw&ouml;lf Aufzeichnungen lang hat diese App <b>keine einzige</b> Streckenlesung
@@ -4337,6 +4399,21 @@
         </div>
       </div>
 
+      <h3 style="margin-top:20px">Vorlauf-Bl&auml;tter: wieviel Anlauf braucht der Leser?</h3>
+      <p class="muted" style="font-size:11.5px">
+        Das bekannte Muster beginnt in Fahrtrichtung mit vier d&uuml;nnen Balken. Von einer
+        Fassung ist berichtet, dass sie auch ohne drei davon erkannt wurde &ndash; der
+        Vorlauf ist also kein Nutzdatum, sondern die Strecke, an der sich der Leser auf die
+        schmale Modulbreite einstellt.
+      </p>
+      <p class="muted" style="font-size:11.5px">
+        Diese f&uuml;nf Bl&auml;tter tragen dieselbe Nutzlast und verschieden lange
+        Vorl&auml;ufe. Melden alle denselben Code, ist der Vorlauf best&auml;tigt kein
+        Nutzdatum, und die k&uuml;rzeste noch gelesene Fassung sagt, wieviel Anlauf gebraucht
+        wird. Das verk&uuml;rzt jedes weitere Muster.
+      </p>
+      <div class="row" style="gap:8px; flex-wrap:wrap" id="vorlauf-links"></div>
+
       <h3 style="margin-top:20px">Falls keine der drei Nummern trifft</h3>
       <p class="muted" style="font-size:11.5px">
         Dann gilt keine der beiden Regeln, und es braucht mehr als ein bekanntes Paar. Die
@@ -4448,7 +4525,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.3.70</span></span>
+    <span class="foot-ver">v<span id="app-version">0.3.71</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
   </span>
   <span class="foot-right">

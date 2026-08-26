@@ -4,6 +4,23 @@
     python tools/make_patterns.py            alle Muster nach ./
     python tools/make_patterns.py --nur box  nur die Boxengasse
 
+Woher die Muster kommen
+=======================
+
+Carrera Hybrid ist eine Kooperation von Carrera und Sturmkind, urspruenglich MODIPLAY, von
+denselben Leuten, die DR!FT gemacht haben. Ein gedrucktes DR!FT-Muster funktioniert
+nachgewiesen fuer beide Fahrzeugfamilien. Die Kodierung ist damit keine Carrera-Eigenheit,
+sondern das aeltere DR!FT-Verfahren.
+
+Das aendert die Richtung: nicht Muster erfinden und ausprobieren, sondern vorhandene
+DR!FT-Muster lesen. Jedes davon ist ein beschriftetes Beispiel mit bekannter Bedeutung, und
+ein Dutzend solcher Paare entscheidet die Regel - waehrend ein Dutzend selbst erfundener
+Muster nur ein Dutzend unbekannte Zahlen liefert.
+
+Und: die Firmware hat sich seit damals geaendert, mit unbekannter Auswirkung. Jedes
+Muster-zu-Code-Paar braucht deshalb eine Datumsangabe.
+
+
 Warum dieses Werkzeug es gibt
 =============================
 
@@ -143,6 +160,37 @@ def spiegel(bars, gaps):
     return bars[::-1], gaps[::-1]
 
 
+# ---- Vorlauf und Nutzlast, in FAHRTRICHTUNG -----------------------------------------
+# Das bekannte Muster liest sich in Fahrtrichtung (der Pfeil zeigt zum Muster hin) als
+#
+#     Balken   d d d d D d d D d        Luecken   l l l L l L L l
+#
+# Vier fuehrende duenne Balken, dann die Nutzlast. Genau davon fehlten in der DR!FT-Fassung
+# drei, und sie wurde trotzdem erkannt - also ist der Vorlauf kein Nutzdatum, sondern
+# hoechstwahrscheinlich die Strecke, an der sich der Leser auf die schmale Modulbreite
+# einstellt.
+#
+# Beides zusammengesetzt reproduziert die zwei bekannten Faelle Zeichen fuer Zeichen:
+#   n = 4  ergibt ddddDddDd / lllLlLLl   (das vollstaendige Original)
+#   n = 1  ergibt dDddDd    / LlLLl      (die Fassung ohne drei duenne)
+NUTZ_BARS = 'DddDd'
+NUTZ_GAPS = 'lLLl'
+
+
+def mit_vorlauf(n):
+    """Fahrtrichtung: n fuehrende duenne Balken, dann die bekannte Nutzlast.
+
+    Die Luecke NACH dem letzten Vorlaufbalken ist breit - so steht es im Original, und so
+    trennt sie den Vorlauf von der Nutzlast.
+    """
+    bars = 'd' * n + NUTZ_BARS
+    gaps = ('l' * (n - 1) + 'L') if n > 0 else ''
+    gaps += NUTZ_GAPS
+    assert len(gaps) == len(bars) - 1, 'Vorlauf %d: %d Balken, %d Luecken' % (
+        n, len(bars), len(gaps))
+    return bars, gaps
+
+
 MUSTER = {}
 
 
@@ -205,6 +253,29 @@ MUSTER['p7'] = ('muster-probe-7-a4.svg', 'dDddD', 'lLLl',
 MUSTER['p8'] = ('muster-probe-8-a4.svg', 'dDddDddddDddd', 'lLLlLlllLlll',
                 'PROBE 8: dreizehn Balken statt neun',
                 'Wie Probe 7, in der anderen Richtung.')
+
+# ---- Vorlauf-Proben ------------------------------------------------------------------
+# Dieselbe Nutzlast, verschieden lange Vorlaeufe. Melden alle denselben Code, ist der Vorlauf
+# kein Nutzdatum; die kuerzeste noch gelesene Fassung sagt, wieviel Vorlauf der Leser braucht.
+#
+# v4 ist das vollstaendige Original und damit die Kontrolle: es MUSS wieder 0x03 ergeben.
+# v1 ist die DR!FT-Fassung, von der berichtet ist, dass sie funktionierte.
+for _n in (0, 1, 2, 4, 8):
+    _b, _g = mit_vorlauf(_n)
+    # In Fahrtrichtung gebaut, aber das Blatt wird von oben nach unten gezeichnet und von
+    # unten nach oben ueberfahren - also gespiegelt ausgeben.
+    _bo, _go = spiegel(_b, _g)
+    _titel = 'VORLAUF %d: %d fuehrende duenne Balken' % (_n, _n)
+    if _n == 4:
+        _hinweis = ('Das vollstaendige Original, Kontrolle. Muss wieder 0x03 ergeben - '
+                    'sonst ist die Messung nicht wiederholbar.')
+    elif _n == 1:
+        _hinweis = ('Die Fassung, von der berichtet ist, dass sie funktionierte: drei '
+                    'fuehrende duenne Balken fehlen gegenueber dem Original.')
+    else:
+        _hinweis = ('Frage: reicht dieser Vorlauf? Melden alle Vorlauf-Blaetter denselben '
+                    'Code, ist der Vorlauf kein Nutzdatum.')
+    MUSTER['v%d' % _n] = ('muster-vorlauf-%d-a4.svg' % _n, _bo, _go, _titel, _hinweis)
 
 # Zwei Ausweichnummern. Eine Fahrt kann damit drei Kandidaten pruefen statt einen, und jeder
 # ist ein moeglicher Endstand und kein blosser Versuch.

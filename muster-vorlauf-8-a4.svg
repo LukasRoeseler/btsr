@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="297.01mm" height="210.02mm" viewBox="0 0 297.01 210.02">
+  <rect width="297.01" height="210.02" fill="#fff"/>
+  <g fill="#000">
+    <rect x="6.520" y="49.960" width="275.930" height="3.600"/>
+    <rect x="6.520" y="57.070" width="275.930" height="6.600"/>
+    <rect x="6.520" y="70.190" width="275.930" height="3.600"/>
+    <rect x="6.520" y="80.310" width="275.930" height="3.600"/>
+    <rect x="6.520" y="87.420" width="275.930" height="6.600"/>
+    <rect x="6.520" y="100.540" width="275.930" height="3.600"/>
+    <rect x="6.520" y="107.650" width="275.930" height="3.600"/>
+    <rect x="6.520" y="114.760" width="275.930" height="3.600"/>
+    <rect x="6.520" y="121.870" width="275.930" height="3.600"/>
+    <rect x="6.520" y="128.980" width="275.930" height="3.600"/>
+    <rect x="6.520" y="136.090" width="275.930" height="3.600"/>
+    <rect x="6.520" y="143.200" width="275.930" height="3.600"/>
+    <rect x="6.520" y="150.310" width="275.930" height="3.600"/>
+    <path d="M 132.5 173.9 L 144.0 161.9 L 156.4 173.9 L 150.0 173.9 L 150.0 186.6 L 139.0 186.6 L 139.0 173.9 Z"/>
+  </g>
+    <g stroke="#000" stroke-width="0.4"><line x1="98.50" y1="191.91" x2="98.50" y2="199.91"/><line x1="198.50" y1="191.91" x2="198.50" y2="199.91"/><line x1="98.50" y1="195.91" x2="198.50" y2="195.91"/></g>
+  <text x="98.50" y="204.91" font-family="sans-serif" font-size="3.2" fill="#000">100 mm Kontrollmass: nachmessen. Stimmt es nicht, wurde skaliert gedruckt und das Muster ist ungueltig.</text>
+  <text x="8" y="215.91" font-family="sans-serif" font-size="4.2" fill="#000">VORLAUF 8: 8 fuehrende duenne Balken</text>
+  <text x="8" y="221.91" font-family="sans-serif" font-size="3.2" fill="#000">Frage: reicht dieser Vorlauf? Melden alle Vorlauf-Blaetter denselben Code, ist der Vorlauf kein Nutzdatum.</text>
+  <text x="8" y="226.91" font-family="sans-serif" font-size="3.2" fill="#000">Balken dDddDdddddddd   Luecken lLLlLlllllll   100 % drucken, nicht skalieren</text>
+</svg>

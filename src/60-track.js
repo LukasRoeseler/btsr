@@ -1068,6 +1068,37 @@
     [8, 'dreizehn Balken', 'Wie Probe 7, in der anderen Richtung.'],
   ];
 
+  // Vorlauf-Proben: dieselbe Nutzlast, verschieden lange Vorlaeufe. Vier ist das
+  // vollstaendige Original und damit die Kontrolle, Eins die Fassung, von der berichtet ist,
+  // dass sie funktionierte.
+  const MUSTER_VORLAUF = [
+    [0, 'kein Vorlauf'], [1, 'ein dünner Balken'], [2, 'zwei'],
+    [4, 'vier, das Original'], [8, 'acht'],
+  ];
+
+  if ($('vorlauf-links')) {
+    const host = $('vorlauf-links');
+    for (const [n, kurz] of MUSTER_VORLAUF) {
+      const datei = 'muster-vorlauf-' + n + '-a4.svg';
+      const a = document.createElement('a');
+      a.href = datei; a.download = datei;
+      const b = document.createElement('button');
+      if (n === 4) b.className = 'primary';
+      // Der GANZE Text ist der Schluessel, nicht die Woerter: diese fuenf Knoepfe werden
+      // einmal beim Laden gebaut und beim Sprachwechsel nicht neu, also greift nur der
+      // Woerterbuchweg ueber den Textknoten - und der braucht den ganzen Text. Bei einer
+      // festen, kleinen Menge ist das auch das Einfachste.
+      b.textContent = 'Vorlauf ' + n + ': ' + kurz;
+      b.title = n === 4
+        ? t('Das vollständige Original, Kontrolle: muss wieder 0x03 ergeben.')
+        : n === 1
+        ? t('Drei führende dünne Balken fehlen. Diese Fassung funktionierte.')
+        : t('Reicht dieser Vorlauf noch?');
+      a.appendChild(b);
+      host.appendChild(a);
+    }
+  }
+
   if ($('probe-links')) {
     const host = $('probe-links');
     for (const [nr, kurz, frage] of MUSTER_PROBEN) {
