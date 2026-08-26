@@ -2023,13 +2023,39 @@
         3. Der Befund st&uuml;tzt beide und trennt sie nicht.
       </p>
       <p class="muted">
-        Und eine Einschr&auml;nkung, die zu jedem alten Befund gehoert: die <b>Firmware hat
-        sich ge&auml;ndert</b>. Welche Auswirkung das hatte, ist unbekannt. Jedes
-        Muster-zu-Code-Paar braucht deshalb ab jetzt eine Datumsangabe &ndash; und es
-        erkl&auml;rt zugleich, warum unsere treue Kopie von
-        <code>target_finish.pdf</code> <code>0x03</code> meldet, w&auml;hrend das aktuelle
-        Original-Blatt etwas anderes sagt: das PDF ist eine Vorlage einer &auml;lteren
-        Generation.
+        Die <b>Firmware hat sich ge&auml;ndert</b>, mit unbekannter Auswirkung. Jedes
+        Muster-zu-Code-Paar braucht deshalb eine Datumsangabe.
+      </p>
+      <p class="muted" style="border-left:3px solid var(--bad); padding-left:9px">
+        <b>Hier stand eine falsche Schlussfolgerung, und sie ist berichtigt.</b>
+      </p>
+      <p class="muted" style="border-left:3px solid var(--bad); padding-left:9px;
+         margin-top:0">
+        Ich hatte geschrieben, <code>target_finish.pdf</code> sei eine Vorlage einer
+        &auml;lteren Generation, und daraus erkl&auml;rt, warum unsere Kopie einen anderen
+        Code meldet als das Original-Blatt. Das ist falsch: das PDF ist die <b>aktuelle</b>
+        Vorlage. Die &auml;ltere DR!FT-Fassung sieht genauso aus, nur ohne die drei
+        f&uuml;hrenden d&uuml;nnen Streifen.
+      </p>
+      <p class="muted" style="border-left:3px solid var(--bad); padding-left:9px;
+         margin-top:0">
+        Damit wird der Schluss <b>einfacher</b>, nicht komplizierter. Die Vorlage ist
+        dieselbe, und unsere Kopie ist nachweislich zeichengleich &ndash; Balkenzahl,
+        H&ouml;hen auf 0,000 mm, L&uuml;cken auf 0,001 mm, keine weiteren Formen im PDF.
+        Wenn das Original gelesen wird und unser Ausdruck nicht, liegt der Unterschied
+        <b>im Druck</b>: Ma&szlig;stab, Strichbreite, Schw&auml;rze, Papier. Das ist eine
+        viel gew&ouml;hnlichere Erkl&auml;rung als eine zweite Generation, und eine, die man
+        mit einem Lineal entscheiden kann.
+      </p>
+      <p class="muted" style="border-left:3px solid var(--bad); padding-left:9px;
+         margin-top:0">
+        Die drei Schritte dazu, in dieser Reihenfolge: erstens das
+        <b>100-mm-Kontrollma&szlig;</b> auf unserem Ausdruck nachmessen &ndash; stimmt es
+        nicht, war es der Ma&szlig;stab und sonst nichts. Zweitens einen d&uuml;nnen und
+        einen dicken Balken auf beiden Bl&auml;ttern vergleichen; unsere sind 3,60 und
+        6,60 mm. Drittens das <b>Vorlauf-1-Blatt</b> drucken: es reproduziert die &auml;ltere
+        DR!FT-Fassung zeichengenau, und von der ist bekannt, dass sie gelesen wird. Wird auch
+        sie nicht gelesen, ist der Druck schuld und nicht das Muster.
       </p>
 
       <h3 style="font-size:14px; margin:16px 0 6px 0">Auf der Bahn oder ohne Bahn: Byte&nbsp;14</h3>
@@ -4342,9 +4368,11 @@
          padding-left:9px; margin-top:0">
         Die Rekonstruktion ist nachweislich eine treue Kopie des Original-PDF: Balkenzahl,
         H&ouml;hen auf 0,000 mm und L&uuml;cken auf 0,001 mm stimmen &uuml;berein, und das
-        PDF enth&auml;lt nachgepr&uuml;ft keine weiteren Formen. Also ist dieses PDF nicht
-        die Vorlage, die 0x0a erzeugt; die Druckvorlagen haben sich offenbar ge&auml;ndert.
-        Und 0x03 ist zugleich der gemessene Code der Linkskurve.
+        PDF enth&auml;lt nachgepr&uuml;ft keine weiteren Formen. Das PDF ist die aktuelle
+        Vorlage. Wenn also das Original gelesen wird und unser Ausdruck nicht, liegt der
+        Unterschied im Druck und nicht in der Zeichnung: Ma&szlig;stab, Strichbreite,
+        Schw&auml;rze, Papier. Erst das 100-mm-Kontrollma&szlig; nachmessen, dann einen
+        d&uuml;nnen und einen dicken Balken auf beiden Bl&auml;ttern vergleichen.
       </p>
       <div class="row" style="gap:22px; align-items:flex-start; flex-wrap:wrap">
         <div style="flex:1 1 260px; min-width:240px">
@@ -4411,6 +4439,15 @@
         Vorl&auml;ufe. Melden alle denselben Code, ist der Vorlauf best&auml;tigt kein
         Nutzdatum, und die k&uuml;rzeste noch gelesene Fassung sagt, wieviel Anlauf gebraucht
         wird. Das verk&uuml;rzt jedes weitere Muster.
+      </p>
+      <p class="muted" style="font-size:11.5px">
+        <b>Vorlauf 1 ist das wichtigste Blatt.</b>
+      </p>
+      <p class="muted" style="font-size:11.5px; margin-top:0">
+        Es reproduziert die &auml;ltere DR!FT-Fassung zeichengenau, und von der ist berichtet,
+        dass sie gelesen wird &ndash; auf beiden Fahrzeugfamilien. Damit ist es das eine
+        Muster, bei dem ein Fehlschlag eindeutig ist: wird es nicht gelesen, kann es nicht am
+        Muster liegen, sondern nur am Druck.
       </p>
       <div class="row" style="gap:8px; flex-wrap:wrap" id="vorlauf-links"></div>
 
@@ -4525,7 +4562,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.3.71</span></span>
+    <span class="foot-ver">v<span id="app-version">0.3.72</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
   </span>
   <span class="foot-right">
@@ -5018,6 +5055,7 @@
     "Das bekannte Muster beginnt in Fahrtrichtung mit vier dünnen Balken. Von einer Fassung ist berichtet, dass sie auch ohne drei davon erkannt wurde – der Vorlauf ist also kein Nutzdatum, sondern die Strecke, an der sich der Leser auf die schmale Modulbreite einstellt.": "In the driving direction, the known pattern begins with four thin bars. One version is reported to have been recognised without three of them, so the lead-in is not payload but the stretch over which the reader settles on the narrow module width.",
     "Das ist der ganze Trick: eine": "That is the whole trick: one",
     "Das vollständige Original, Kontrolle: muss wieder 0x03 ergeben.": "The complete original, the control: it must give 0x03 again.",
+    "Das vollständige aktuelle Original, zeichengenau.": "The complete current original, exactly reproduced.",
     "Dauer": "Duration",
     "Der Code beschreibt die Reihenfolge der Teile und die Ausrichtung. Damit stellst du auf einem anderen Gerät dieselbe Strecke ein, ohne sie neu zu klicken.": "The code describes the order of the parts and the orientation. With it you set up the same track on another device without clicking it together again.",
     "Der Erstplatzierte fährt etwas langsamer.": "The leader drives a little slower.",
@@ -5027,9 +5065,10 @@
     "Die Autos fahren in dieser Reihenfolge los. Die Einführungsrunde läuft mit Boxengassen-Tempo; sobald das erste Auto Start/Ziel überfährt, ist das Limit weg.": "The cars set off in this order. The formation lap runs at pit-lane pace; as soon as the first car crosses start/finish, the limit is gone.",
     "Die Controller-Belegung ist frei zuweisbar, Optionen → Controller. Hier steht, was gerade eingestellt ist.": "The controller bindings are freely assignable, Options → Controller. What is set right now is shown here.",
     "Die Ideallinie schickt einen Lenkanteil hinaus und nimmt an, dass das Auto dadurch weiter aussen oder innen sitzt.": "The racing line sends out a steering share and assumes the car therefore sits further out or further in.",
-    "Die Rekonstruktion ist nachweislich eine treue Kopie des Original-PDF: Balkenzahl, Höhen auf 0,000 mm und Lücken auf 0,001 mm stimmen überein, und das PDF enthält nachgeprüft keine weiteren Formen. Also ist dieses PDF nicht die Vorlage, die 0x0a erzeugt; die Druckvorlagen haben sich offenbar geändert. Und 0x03 ist zugleich der gemessene Code der Linkskurve.": "The reconstruction is demonstrably a faithful copy of the original PDF: bar count, heights to 0.000 mm and gaps to 0.001 mm all agree, and the PDF has been checked to contain no further shapes. So this PDF is not the master that produces 0x0a; the print masters have evidently changed. And 0x03 is also the measured code of the left curve.",
+    "Die Rekonstruktion ist nachweislich eine treue Kopie des Original-PDF: Balkenzahl, Höhen auf 0,000 mm und Lücken auf 0,001 mm stimmen überein, und das PDF enthält nachgeprüft keine weiteren Formen. Das PDF ist die aktuelle Vorlage. Wenn also das Original gelesen wird und unser Ausdruck nicht, liegt der Unterschied im Druck und nicht in der Zeichnung: Maßstab, Strichbreite, Schwärze, Papier. Erst das 100-mm-Kontrollmaß nachmessen, dann einen dünnen und einen dicken Balken auf beiden Blättern vergleichen.": "The reconstruction is demonstrably a faithful copy of the original PDF: bar count, heights to 0.000 mm and gaps to 0.001 mm all agree, and the PDF has been checked to contain no further shapes. The PDF is the current master. So if the original is read and our printout is not, the difference lies in the printing and not in the drawing: scale, line width, blackness, paper. First measure the 100 mm check mark, then compare one thin and one thick bar on both sheets.",
     "Die nächste Messung: zwei Betriebsarten vergleichen.": "The next measurement: compare the two operating modes.",
     "Die sieben oben sind aus Zylinderzahl, Kurbelwelle und Zündfolge gerechnet. Bei den aufgeladenen Originalen fehlt der Lader.": "The seven at the top are computed from cylinder count, crankshaft and firing order. On the turbocharged originals, the boost is missing.",
+    "Die ältere DR!FT-Fassung, zeichengenau. Von ihr ist bekannt, dass sie gelesen wird.": "The older DR!FT version, exactly reproduced. It is known to be read.",
     "Diese fünf Blätter tragen dieselbe Nutzlast und verschieden lange Vorläufe. Melden alle denselben Code, ist der Vorlauf bestätigt kein Nutzdatum, und die kürzeste noch gelesene Fassung sagt, wieviel Anlauf gebraucht wird. Das verkürzt jedes weitere Muster.": "These five sheets carry the same payload with lead-ins of different lengths. If they all report the same code, the lead-in is confirmed not to be payload, and the shortest one still read says how much run-up is needed. That shortens every further pattern.",
     "Dieselbe Idee, eine Stufe größer. Ein autonomes Auto braucht keine Zeitkurve, sondern eine": "The same idea, one size up. An autonomous car does not need a curve over time but one",
     "Dieselben elf Größen, aus denen die mitgelieferten Motoren gerechnet sind, nur direkt zum Drehen. Das Modell läuft hier im Browser, also hörst du jede Änderung sofort, ohne dass eine Datei erzeugt werden muss.": "The same eleven quantities the bundled engines are computed from, only here you turn them directly. The model runs in the browser, so you hear every change at once, with no file to generate.",
@@ -5063,6 +5102,7 @@
     "Erlaubt beim Anbremsen mehr Lenkung. Nicht die Gewichtsverlagerung, sondern ihr Gegenstück in der Lenkgrenze.": "Allows more steering while braking. Not the weight transfer, but its counterpart in the steering limit.",
     "Erst ein Auto verbinden": "Connect a car first",
     "Erst simulieren, dann fahren. Der Knopf schickt die Kurven an ein verbundenes Auto und fährt sie einmal ab. Das ist bewusst ein": "Simulate first, then drive. The button sends the curves to a connected car and runs them once. That is deliberately one",
+    "Es reproduziert die ältere DR!FT-Fassung zeichengenau, und von der ist berichtet, dass sie gelesen wird – auf beiden Fahrzeugfamilien. Damit ist es das eine Muster, bei dem ein Fehlschlag eindeutig ist: wird es nicht gelesen, kann es nicht am Muster liegen, sondern nur am Druck.": "It reproduces the older DR!FT version exactly, and that version is reported to be read on both car families. So it is the one pattern whose failure is unambiguous: if it is not read, the pattern cannot be the cause, only the printing.",
     "Fahr die Strecke einmal manuell (Tab \"Fahren\", Joystick/Gas oder Pfeiltasten). Während der Aufnahme werden Lenk- und Gaswerte mit Zeitstempel mitgeschrieben. Bei der Wiedergabe sendet die App exakt dieselbe Sequenz erneut an die Ziel-Characteristic.": "Drive the track once by hand (the \"Drive\" tab, joystick/throttle or arrow keys). During recording, steering and throttle values are written down with timestamps. On replay the app sends exactly the same sequence again to the target characteristic.",
     "Fahren, abstimmen, Rennen fahren. Im Browser, ohne Installation, mit deinem eigenen Streckenaufbau.": "Drive, tune, race. In the browser, with no installation, on your own track layout.",
     "Fahrgefühl": "Driving feel",
@@ -5368,6 +5408,7 @@
     "Voreinstellungen": "Presets",
     "Vorgabe führt nicht zu einer eckigen Bewegung. Das Auto hat Masse, die Reifen brauchen Zeit, die Lenkung hat eine Höchstgeschwindigkeit. Wer das einmal gesehen hat, versteht, warum geschmeidige Vorgaben besser fahren: und das gilt für Programme genauso wie für Daumen.": "input does not produce square movement. The car has mass, the tyres need time, the steering has a top speed. Once you have seen that, you understand why smooth inputs drive better, and that holds for programs just as much as for thumbs.",
     "Vorlauf 0: kein Vorlauf": "Lead-in 0: none",
+    "Vorlauf 1 ist das wichtigste Blatt.": "Lead-in 1 is the sheet that matters most.",
     "Vorlauf 1: ein dünner Balken": "Lead-in 1: one thin bar",
     "Vorlauf 2: zwei": "Lead-in 2: two",
     "Vorlauf 4: vier, das Original": "Lead-in 4: four, the original",
@@ -5429,6 +5470,7 @@
     "Zündfolge": "firing order",
     "Zündrate": "Firing rate",
     "Zündstreuung": "Firing scatter",
+    "abseits der Bahn": "off the track",
     "acht": "eight",
     "alle": "all",
     "ansteigt: eine Kurve, die schon mit festem Radius gefahren wird, braucht keine Bremse mehr. Beides ist eine": "rises, a corner already being taken at a constant radius needs no more braking. Both are a",
@@ -9581,16 +9623,21 @@
       const a = document.createElement('a');
       a.href = datei; a.download = datei;
       const b = document.createElement('button');
-      if (n === 4) b.className = 'primary';
+      // Vorlauf 1 ist hervorgehoben, nicht 4: es reproduziert die aeltere DR!FT-Fassung
+      // zeichengenau, und von der ist bekannt, dass sie gelesen wird. Ein Fehlschlag dort
+      // ist eindeutig - dann liegt es nicht am Muster. Vorlauf 4 war als Kontrolle gedacht,
+      // kontrolliert aber nichts, solange unser Ausdruck davon ohnehin nicht gelesen wird.
+      if (n === 1) b.className = 'primary';
       // Der GANZE Text ist der Schluessel, nicht die Woerter: diese fuenf Knoepfe werden
       // einmal beim Laden gebaut und beim Sprachwechsel nicht neu, also greift nur der
       // Woerterbuchweg ueber den Textknoten - und der braucht den ganzen Text. Bei einer
       // festen, kleinen Menge ist das auch das Einfachste.
       b.textContent = 'Vorlauf ' + n + ': ' + kurz;
-      b.title = n === 4
-        ? t('Das vollständige Original, Kontrolle: muss wieder 0x03 ergeben.')
-        : n === 1
-        ? t('Drei führende dünne Balken fehlen. Diese Fassung funktionierte.')
+      b.title = n === 1
+        ? t('Die ältere DR!FT-Fassung, zeichengenau. Von ihr ist bekannt, dass sie '
+            + 'gelesen wird.')
+        : n === 4
+        ? t('Das vollständige aktuelle Original, zeichengenau.')
         : t('Reicht dieser Vorlauf noch?');
       a.appendChild(b);
       host.appendChild(a);

@@ -33,8 +33,16 @@ Am 25.08. gemessen, mit dem Auto ueber gedruckte Muster gefahren:
 Der zweite Wert ist der aufschlussreiche. Die Kopie ist NACHWEISLICH treu - Balkenzahl,
 Hoehen auf 0,000 mm und Luecken auf 0,001 mm stimmen mit dem PDF ueberein, und das PDF
 enthaelt nachgeprueft keine weiteren Formen (ein Klipprechteck, neun Balken, ein Pfeil).
-Trotzdem meldet das Original des Benutzers etwas anderes. Also ist target_finish.pdf nicht
-die Vorlage, die 0x0a erzeugt.
+
+Hier stand die Schlussfolgerung, target_finish.pdf sei deshalb nicht die Vorlage des
+Original-Blattes. Das war falsch: das PDF ist die AKTUELLE Vorlage (vom Benutzer berichtigt;
+die aeltere DR!FT-Fassung sieht genauso aus, nur ohne die drei fuehrenden duennen Streifen).
+
+Damit ist der Schluss einfacher. Die Vorlage ist dieselbe, die Zeichnung ist dieselbe - wenn
+das Original gelesen wird und unser Ausdruck nicht, liegt der Unterschied im DRUCK:
+Massstab, Strichbreite, Schwaerze, Papier. Dafuer ist das 100-mm-Kontrollmass auf jedem Blatt
+da, und deshalb ist das Vorlauf-1-Blatt das wichtigste Experiment: es reproduziert die
+aeltere DR!FT-Fassung zeichengenau, und von der ist bekannt, dass sie gelesen wird.
 
 Und 0x03 ist in der gemessenen Tabelle die LINKSKURVE. Es ist gut moeglich, dass dieses PDF
 die Linkskurven-Vorlage ist. Sicher ist nur: als Start/Ziel gedruckt richtet es Schaden an,

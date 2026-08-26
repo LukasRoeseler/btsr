@@ -1083,16 +1083,21 @@
       const a = document.createElement('a');
       a.href = datei; a.download = datei;
       const b = document.createElement('button');
-      if (n === 4) b.className = 'primary';
+      // Vorlauf 1 ist hervorgehoben, nicht 4: es reproduziert die aeltere DR!FT-Fassung
+      // zeichengenau, und von der ist bekannt, dass sie gelesen wird. Ein Fehlschlag dort
+      // ist eindeutig - dann liegt es nicht am Muster. Vorlauf 4 war als Kontrolle gedacht,
+      // kontrolliert aber nichts, solange unser Ausdruck davon ohnehin nicht gelesen wird.
+      if (n === 1) b.className = 'primary';
       // Der GANZE Text ist der Schluessel, nicht die Woerter: diese fuenf Knoepfe werden
       // einmal beim Laden gebaut und beim Sprachwechsel nicht neu, also greift nur der
       // Woerterbuchweg ueber den Textknoten - und der braucht den ganzen Text. Bei einer
       // festen, kleinen Menge ist das auch das Einfachste.
       b.textContent = 'Vorlauf ' + n + ': ' + kurz;
-      b.title = n === 4
-        ? t('Das vollständige Original, Kontrolle: muss wieder 0x03 ergeben.')
-        : n === 1
-        ? t('Drei führende dünne Balken fehlen. Diese Fassung funktionierte.')
+      b.title = n === 1
+        ? t('Die ältere DR!FT-Fassung, zeichengenau. Von ihr ist bekannt, dass sie '
+            + 'gelesen wird.')
+        : n === 4
+        ? t('Das vollständige aktuelle Original, zeichengenau.')
         : t('Reicht dieser Vorlauf noch?');
       a.appendChild(b);
       host.appendChild(a);

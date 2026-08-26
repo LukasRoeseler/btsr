@@ -2023,13 +2023,39 @@
         3. Der Befund st&uuml;tzt beide und trennt sie nicht.
       </p>
       <p class="muted">
-        Und eine Einschr&auml;nkung, die zu jedem alten Befund gehoert: die <b>Firmware hat
-        sich ge&auml;ndert</b>. Welche Auswirkung das hatte, ist unbekannt. Jedes
-        Muster-zu-Code-Paar braucht deshalb ab jetzt eine Datumsangabe &ndash; und es
-        erkl&auml;rt zugleich, warum unsere treue Kopie von
-        <code>target_finish.pdf</code> <code>0x03</code> meldet, w&auml;hrend das aktuelle
-        Original-Blatt etwas anderes sagt: das PDF ist eine Vorlage einer &auml;lteren
-        Generation.
+        Die <b>Firmware hat sich ge&auml;ndert</b>, mit unbekannter Auswirkung. Jedes
+        Muster-zu-Code-Paar braucht deshalb eine Datumsangabe.
+      </p>
+      <p class="muted" style="border-left:3px solid var(--bad); padding-left:9px">
+        <b>Hier stand eine falsche Schlussfolgerung, und sie ist berichtigt.</b>
+      </p>
+      <p class="muted" style="border-left:3px solid var(--bad); padding-left:9px;
+         margin-top:0">
+        Ich hatte geschrieben, <code>target_finish.pdf</code> sei eine Vorlage einer
+        &auml;lteren Generation, und daraus erkl&auml;rt, warum unsere Kopie einen anderen
+        Code meldet als das Original-Blatt. Das ist falsch: das PDF ist die <b>aktuelle</b>
+        Vorlage. Die &auml;ltere DR!FT-Fassung sieht genauso aus, nur ohne die drei
+        f&uuml;hrenden d&uuml;nnen Streifen.
+      </p>
+      <p class="muted" style="border-left:3px solid var(--bad); padding-left:9px;
+         margin-top:0">
+        Damit wird der Schluss <b>einfacher</b>, nicht komplizierter. Die Vorlage ist
+        dieselbe, und unsere Kopie ist nachweislich zeichengleich &ndash; Balkenzahl,
+        H&ouml;hen auf 0,000 mm, L&uuml;cken auf 0,001 mm, keine weiteren Formen im PDF.
+        Wenn das Original gelesen wird und unser Ausdruck nicht, liegt der Unterschied
+        <b>im Druck</b>: Ma&szlig;stab, Strichbreite, Schw&auml;rze, Papier. Das ist eine
+        viel gew&ouml;hnlichere Erkl&auml;rung als eine zweite Generation, und eine, die man
+        mit einem Lineal entscheiden kann.
+      </p>
+      <p class="muted" style="border-left:3px solid var(--bad); padding-left:9px;
+         margin-top:0">
+        Die drei Schritte dazu, in dieser Reihenfolge: erstens das
+        <b>100-mm-Kontrollma&szlig;</b> auf unserem Ausdruck nachmessen &ndash; stimmt es
+        nicht, war es der Ma&szlig;stab und sonst nichts. Zweitens einen d&uuml;nnen und
+        einen dicken Balken auf beiden Bl&auml;ttern vergleichen; unsere sind 3,60 und
+        6,60 mm. Drittens das <b>Vorlauf-1-Blatt</b> drucken: es reproduziert die &auml;ltere
+        DR!FT-Fassung zeichengenau, und von der ist bekannt, dass sie gelesen wird. Wird auch
+        sie nicht gelesen, ist der Druck schuld und nicht das Muster.
       </p>
 
       <h3 style="font-size:14px; margin:16px 0 6px 0">Auf der Bahn oder ohne Bahn: Byte&nbsp;14</h3>
@@ -4342,9 +4368,11 @@
          padding-left:9px; margin-top:0">
         Die Rekonstruktion ist nachweislich eine treue Kopie des Original-PDF: Balkenzahl,
         H&ouml;hen auf 0,000 mm und L&uuml;cken auf 0,001 mm stimmen &uuml;berein, und das
-        PDF enth&auml;lt nachgepr&uuml;ft keine weiteren Formen. Also ist dieses PDF nicht
-        die Vorlage, die 0x0a erzeugt; die Druckvorlagen haben sich offenbar ge&auml;ndert.
-        Und 0x03 ist zugleich der gemessene Code der Linkskurve.
+        PDF enth&auml;lt nachgepr&uuml;ft keine weiteren Formen. Das PDF ist die aktuelle
+        Vorlage. Wenn also das Original gelesen wird und unser Ausdruck nicht, liegt der
+        Unterschied im Druck und nicht in der Zeichnung: Ma&szlig;stab, Strichbreite,
+        Schw&auml;rze, Papier. Erst das 100-mm-Kontrollma&szlig; nachmessen, dann einen
+        d&uuml;nnen und einen dicken Balken auf beiden Bl&auml;ttern vergleichen.
       </p>
       <div class="row" style="gap:22px; align-items:flex-start; flex-wrap:wrap">
         <div style="flex:1 1 260px; min-width:240px">
@@ -4411,6 +4439,15 @@
         Vorl&auml;ufe. Melden alle denselben Code, ist der Vorlauf best&auml;tigt kein
         Nutzdatum, und die k&uuml;rzeste noch gelesene Fassung sagt, wieviel Anlauf gebraucht
         wird. Das verk&uuml;rzt jedes weitere Muster.
+      </p>
+      <p class="muted" style="font-size:11.5px">
+        <b>Vorlauf 1 ist das wichtigste Blatt.</b>
+      </p>
+      <p class="muted" style="font-size:11.5px; margin-top:0">
+        Es reproduziert die &auml;ltere DR!FT-Fassung zeichengenau, und von der ist berichtet,
+        dass sie gelesen wird &ndash; auf beiden Fahrzeugfamilien. Damit ist es das eine
+        Muster, bei dem ein Fehlschlag eindeutig ist: wird es nicht gelesen, kann es nicht am
+        Muster liegen, sondern nur am Druck.
       </p>
       <div class="row" style="gap:8px; flex-wrap:wrap" id="vorlauf-links"></div>
 
@@ -4525,7 +4562,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.3.71</span></span>
+    <span class="foot-ver">v<span id="app-version">0.3.72</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
   </span>
   <span class="foot-right">
