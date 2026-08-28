@@ -1,40 +1,19 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 433" width="250mm" height="433mm">
-  <rect width="250" height="433" fill="white" />
-  <line x1="10" y1="0" x2="10" y2="433" stroke="#ccc" stroke-width="1" />
-  <line x1="240" y1="0" x2="240" y2="433" stroke="#ccc" stroke-width="1" />
-  <g fill="black">
-    <polygon points="15,13.5 235,11 235,19 15,16.5" />
-    <polygon points="15,21 235,23.5 235,26.5 15,29" />
-    <polygon points="15,33.Die Carrera Hybrid Schienen sind für den Maßstab 1:50 konzipiert und nutzen das asymmetrische Strichcodemuster zur präzisen optischen Positionsbestimmung durch die Fahrzeugsensoren. **Wichtiger Hinweis:** Die nachfolgenden SVGs sind rein visuelle Nachbauten der Muster auf deinen Fotos; da die originalen Abstände und Keilformen komplexe Streckendaten codieren, werden die Autos diese selbstgedruckten Versionen sehr wahrscheinlich nicht als gültige Fahrbahn erkennen.
-
-**Schienenmaße & Druck**
-* Die Fahrbahnbreite der Carrera Hybrid Schienen beträgt ca. **20 cm**.
-* Ein DIN A4 Blatt (29,7 x 21,0 cm) eignet sich im Querformat perfekt für den 1:1 Druck: 21 cm Breite für die Schiene, 29,7 cm Länge für das Streckensegment. 
-* Ein Druck über zwei Seiten ist für Standard-Geraden nicht notwendig, lediglich für große Kurvenradien müsstest du mehrere A4-Blätter aneinanderlegen.
-
-**SVG 1: Gerade Fahrbahn (Referenz 21712.jpg)**
-Dieses Muster simuliert die geraden, unregelmäßigen Barcodes, die an den Rändern leicht keilförmig zusammenlaufen, um die Streckenbegrenzung zu markieren. Speichere den Code als `gerade.svg`.
-
-```xml
 <svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" viewBox="0 0 297 210" width="297mm" height="210mm">
   <rect width="297" height="210" fill="#f0f0f0"/>
-  <g fill="#1a1a1a">
-    <polygon points="10,0 22,0 18,210 12,210" />
-    <polygon points="26,0 30,0 28,210 27,210" />
-    <polygon points="35,0 55,0 48,210 40,210" />
-    <polygon points="58,0 62,0 60,210 59,210" />
-    <polygon points="68,0 80,0 75,210 70,210" />
-    <polygon points="85,0 105,0 100,210 90,210" />
-    <polygon points="110,0 115,0 112,210 111,210" />
-    <polygon points="120,0 135,0 130,210 122,210" />
-    <polygon points="140,0 160,0 155,210 145,210" />
-    <polygon points="165,0 168,0 167,210 166,210" />
-    <polygon points="175,0 190,0 185,210 178,210" />
-    <polygon points="195,0 215,0 210,210 200,210" />
-    <polygon points="220,0 225,0 222,210 221,210" />
-    <polygon points="230,0 245,0 240,210 235,210" />
-    <polygon points="250,0 270,0 265,210 255,210" />
-    <polygon points="275,0 280,0 278,210 276,210" />
-    <polygon points="285,0 295,0 290,210 287,210" />
+  <g fill="#1a1a1a" transform="translate(148.5, 400)">
+    <polygon points="-120,-400 -100,-400 -60,-190 -70,-190" />
+    <polygon points="-90,-400 -85,-400 -50,-190 -53,-190" />
+    <polygon points="-75,-400 -50,-400 -30,-190 -42,-190" />
+    <polygon points="-40,-400 -35,-400 -20,-190 -22,-190" />
+    <polygon points="-25,-400 0,-400 0,-190 -10,-190" />
+    <polygon points="10,-400 35,-400 20,-190 10,-190" />
+    <polygon points="45,-400 50,-400 30,-190 28,-190" />
+    <polygon points="60,-400 85,-400 50,-190 40,-190" />
+    <polygon points="95,-400 100,-400 60,-190 58,-190" />
+    <polygon points="110,-400 135,-400 80,-190 70,-190" />
+    <polygon points="145,-400 150,-400 90,-190 88,-190" />
+    <polygon points="160,-400 185,-400 110,-190 100,-190" />
+    <polygon points="195,-400 200,-400 120,-190 118,-190" />
+    <polygon points="210,-400 235,-400 140,-190 130,-190" />
   </g>
 </svg>
