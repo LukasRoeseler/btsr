@@ -1,0 +1,123 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="297.01mm" height="210.02mm" viewBox="0 0 297.01 210.02">
+  <rect width="297.01" height="210.02" fill="#ffffff"/>
+  
+  <!-- Header -->
+  <text x="148.5" y="18" font-family="sans-serif" font-size="5.5" font-weight="bold" text-anchor="middle" fill="#000000">STRECKENCODE-TESTFELD (0x01 bis 0x05)</text>
+  <text x="148.5" y="24" font-family="sans-serif" font-size="3.2" text-anchor="middle" fill="#444444">Vergleichsmuster im Ausdruck-Modus — 100 % unskaliert drucken</text>
+  <line x1="13.5" y1="28" x2="283.5" y2="28" stroke="#cccccc" stroke-width="0.5"/>
+
+  <!-- Balkenmuster Spalten -->
+  <g fill="#000000">
+    <!-- Spalte 1: 0x01 (Start/Ziel) -->
+    <g id="code_0x01">
+      <rect x="13.505" y="38.000" width="46.000" height="3.600"/>
+      <rect x="13.505" y="45.110" width="46.000" height="3.600"/>
+      <rect x="13.505" y="52.220" width="46.000" height="3.600"/>
+      <rect x="13.505" y="59.330" width="46.000" height="3.600"/>
+      <rect x="13.505" y="72.460" width="46.000" height="9.600"/>
+      <rect x="13.505" y="88.580" width="46.000" height="3.600"/>
+      <rect x="13.505" y="101.710" width="46.000" height="9.600"/>
+    </g>
+
+    <!-- Spalte 2: 0x02 (Gerade) -->
+    <g id="code_0x02">
+      <rect x="69.505" y="38.000" width="46.000" height="3.600"/>
+      <rect x="69.505" y="45.110" width="46.000" height="3.600"/>
+      <rect x="69.505" y="52.220" width="46.000" height="3.600"/>
+      <rect x="69.505" y="59.330" width="46.000" height="3.600"/>
+      <rect x="69.505" y="69.450" width="46.000" height="3.600"/>
+      <rect x="69.505" y="76.560" width="46.000" height="6.600"/>
+      <rect x="69.505" y="89.680" width="46.000" height="3.600"/>
+      <rect x="69.505" y="99.800" width="46.000" height="3.600"/>
+      <rect x="69.505" y="106.910" width="46.000" height="6.600"/>
+    </g>
+
+    <!-- Spalte 3: 0x03 (Linkskurve) -->
+    <g id="code_0x03">
+      <rect x="125.505" y="38.000" width="46.000" height="3.600"/>
+      <rect x="125.505" y="45.110" width="46.000" height="3.600"/>
+      <rect x="125.505" y="52.220" width="46.000" height="3.600"/>
+      <rect x="125.505" y="59.330" width="46.000" height="3.600"/>
+      <rect x="125.505" y="69.450" width="46.000" height="6.600"/>
+      <rect x="125.505" y="79.560" width="46.000" height="3.600"/>
+      <rect x="125.505" y="89.680" width="46.000" height="3.600"/>
+      <rect x="125.505" y="99.800" width="46.000" height="6.600"/>
+      <rect x="125.505" y="109.910" width="46.000" height="3.600"/>
+    </g>
+
+    <!-- Spalte 4: 0x04 (Rechtskurve) -->
+    <g id="code_0x04">
+      <rect x="181.505" y="38.000" width="46.000" height="3.600"/>
+      <rect x="181.505" y="45.110" width="46.000" height="3.600"/>
+      <rect x="181.505" y="52.220" width="46.000" height="3.600"/>
+      <rect x="181.505" y="59.330" width="46.000" height="3.600"/>
+      <rect x="181.505" y="66.440" width="46.000" height="3.600"/>
+      <rect x="181.505" y="76.560" width="46.000" height="6.600"/>
+      <rect x="181.505" y="89.680" width="46.000" height="3.600"/>
+      <rect x="181.505" y="96.790" width="46.000" height="3.600"/>
+      <rect x="181.505" y="106.910" width="46.000" height="6.600"/>
+    </g>
+
+    <!-- Spalte 5: 0x05 (Haarnadel links) -->
+    <g id="code_0x05">
+      <rect x="237.505" y="38.000" width="46.000" height="3.600"/>
+      <rect x="237.505" y="45.110" width="46.000" height="3.600"/>
+      <rect x="237.505" y="52.220" width="46.000" height="3.600"/>
+      <rect x="237.505" y="59.330" width="46.000" height="3.600"/>
+      <rect x="237.505" y="66.440" width="46.000" height="3.600"/>
+      <rect x="237.505" y="73.550" width="46.000" height="3.600"/>
+      <rect x="237.505" y="80.660" width="46.000" height="3.600"/>
+      <rect x="237.505" y="90.780" width="46.000" height="3.600"/>
+      <rect x="237.505" y="97.890" width="46.000" height="3.600"/>
+      <rect x="237.505" y="105.000" width="46.000" height="3.600"/>
+      <rect x="237.505" y="112.110" width="46.000" height="3.600"/>
+    </g>
+  </g>
+
+  <!-- Beschriftungen unter den Spalten -->
+  <g id="labels">
+    <!-- 0x01 -->
+    <path d="M 36.505 123 L 34.005 127 L 39.005 127 Z" fill="#000000"/>
+    <text x="36.505" y="135" font-family="sans-serif" font-size="6" font-weight="bold" text-anchor="middle" fill="#000000">0x01</text>
+    <text x="36.505" y="140" font-family="sans-serif" font-size="3.5" font-weight="bold" text-anchor="middle" fill="#1a365d">Start / Ziel</text>
+    <text x="36.505" y="144.5" font-family="monospace" font-size="2.6" text-anchor="middle" fill="#555555">Payload: 1000111</text>
+
+    <!-- 0x02 -->
+    <path d="M 92.505 123 L 90.005 127 L 95.005 127 Z" fill="#000000"/>
+    <text x="92.505" y="135" font-family="sans-serif" font-size="6" font-weight="bold" text-anchor="middle" fill="#000000">0x02</text>
+    <text x="92.505" y="140" font-family="sans-serif" font-size="3.5" font-weight="bold" text-anchor="middle" fill="#1a365d">Gerade</text>
+    <text x="92.505" y="144.5" font-family="monospace" font-size="2.6" text-anchor="middle" fill="#555555">Payload: 1001011</text>
+
+    <!-- 0x03 -->
+    <path d="M 148.505 123 L 146.005 127 L 151.005 127 Z" fill="#000000"/>
+    <text x="148.505" y="135" font-family="sans-serif" font-size="6" font-weight="bold" text-anchor="middle" fill="#000000">0x03</text>
+    <text x="148.505" y="140" font-family="sans-serif" font-size="3.5" font-weight="bold" text-anchor="middle" fill="#1a365d">Linkskurve</text>
+    <text x="148.505" y="144.5" font-family="monospace" font-size="2.6" text-anchor="middle" fill="#555555">Payload: 1001101</text>
+
+    <!-- 0x04 -->
+    <path d="M 204.505 123 L 202.005 127 L 207.005 127 Z" fill="#000000"/>
+    <text x="204.505" y="135" font-family="sans-serif" font-size="6" font-weight="bold" text-anchor="middle" fill="#000000">0x04</text>
+    <text x="204.505" y="140" font-family="sans-serif" font-size="3.5" font-weight="bold" text-anchor="middle" fill="#1a365d">Rechtskurve</text>
+    <text x="204.505" y="144.5" font-family="monospace" font-size="2.6" text-anchor="middle" fill="#555555">Payload: 1010011</text>
+
+    <!-- 0x05 -->
+    <path d="M 260.505 123 L 258.005 127 L 263.005 127 Z" fill="#000000"/>
+    <text x="260.505" y="135" font-family="sans-serif" font-size="6" font-weight="bold" text-anchor="middle" fill="#000000">0x05</text>
+    <text x="260.505" y="140" font-family="sans-serif" font-size="3.5" font-weight="bold" text-anchor="middle" fill="#1a365d">Haarnadel links</text>
+    <text x="260.505" y="144.5" font-family="monospace" font-size="2.6" text-anchor="middle" fill="#555555">Payload: 1010101</text>
+  </g>
+
+  <!-- Fusszeile & Kontrollmass -->
+  <line x1="13.5" y1="162" x2="283.5" y2="162" stroke="#cccccc" stroke-width="0.5"/>
+
+  <g stroke="#000000" stroke-width="0.4">
+    <line x1="98.50" y1="168" x2="98.50" y2="176"/>
+    <line x1="198.50" y1="168" x2="198.50" y2="176"/>
+    <line x1="98.50" y1="172" x2="198.50" y2="172"/>
+  </g>
+  <text x="148.5" y="180" font-family="sans-serif" font-size="3.2" text-anchor="middle" fill="#000000">100 mm Kontrollmaß: nachmessen. Stimmt es nicht, wurde skaliert gedruckt und das Muster ist ungültig.</text>
+
+  <text x="13.5" y="191" font-family="sans-serif" font-size="3.5" font-weight="bold" fill="#000000">Aufbau aller Spalten:</text>
+  <text x="13.5" y="196" font-family="sans-serif" font-size="3.0" fill="#333333">Taktung (101010) + 7-Bit Payload (Start 1 + 4-Bit Daten + Parität + Stop 1) + Trennung (00) + 7-Bit Payload Wiederholung</text>
+  <text x="13.5" y="201" font-family="sans-serif" font-size="3.0" fill="#333333">Wichtig: Beim Drucken "Tatsächliche Größe" / "100 %" wählen (keine Anpassung an Druckbereich).</text>
+</svg>
