@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="297.01mm" height="210.02mm" viewBox="0 0 297.01 210.02">
+  <rect width="297.01" height="210.02" fill="#fff"/>
+  <g fill="#000">
+    <rect x="6.520" y="49.960" width="275.930" height="3.600"/>
+    <rect x="6.520" y="57.070" width="275.930" height="3.600"/>
+    <rect x="6.520" y="64.180" width="275.930" height="3.600"/>
+    <rect x="6.520" y="71.290" width="275.930" height="6.600"/>
+    <rect x="6.520" y="81.400" width="275.930" height="3.600"/>
+    <rect x="6.520" y="91.520" width="275.930" height="3.600"/>
+    <rect x="6.520" y="101.640" width="275.930" height="6.600"/>
+    <rect x="6.520" y="111.750" width="275.930" height="3.600"/>
+    <rect x="6.520" y="121.870" width="275.930" height="3.600"/>
+    <path d="M 132.5 145.5 L 144.0 133.5 L 156.4 145.5 L 150.0 145.5 L 150.0 158.2 L 139.0 158.2 L 139.0 145.5 Z"/>
+  </g>
+    <g stroke="#000" stroke-width="0.4"><line x1="98.50" y1="163.47" x2="98.50" y2="171.47"/><line x1="198.50" y1="163.47" x2="198.50" y2="171.47"/><line x1="98.50" y1="167.47" x2="198.50" y2="167.47"/></g>
+  <text x="98.50" y="176.47" font-family="sans-serif" font-size="3.2" fill="#000">100 mm Kontrollmass: nachmessen. Stimmt es nicht, wurde skaliert gedruckt und das Muster ist ungueltig.</text>
+  <text x="8" y="187.47" font-family="sans-serif" font-size="4.2" fill="#000">PROBE: Muster fuer 0x0A (Start/Ziel Ausdruck)</text>
+  <text x="8" y="193.47" font-family="sans-serif" font-size="3.2" fill="#000">Erwartet wird 0x0A. Taktung 101010 + Payload 1101001 00 1101001.</text>
+  <text x="8" y="198.47" font-family="sans-serif" font-size="3.2" fill="#000">Balken dddDdDDdd   Luecken llllLLlL   100 % drucken, nicht skalieren</text>
+</svg>
