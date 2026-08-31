@@ -798,7 +798,7 @@
     "Simulierte Motoren und eigene Sounds über Engine-Sim": "Simulated engines and custom sounds via Engine-Sim",
     "Slalom: Lenken im Wechsel": "Slalom: steer alternately",
     "So testen:": "How to test:",
-    "Sonstige": "More",
+    "Entwicklertools": "Developer tools",
     "Speichern und austauschen": "Save and exchange",
     "Speichern": "Save",
     "Standard aus. Die ersten fünf sind Aufnahmen, der Rest ist gerechnet.": "Off by default. The first five are recordings, the rest are computed.",
@@ -888,6 +888,42 @@
     "Einführungsrunde mit Boxengassen-Tempo, frei beim ersten Überfahren von Start/Ziel. Noch nicht gebaut – der Schalter ist deshalb gesperrt statt wirkungslos.":
       "Formation lap at pit-lane pace, released on the first crossing of start/finish. Not built yet – the switch is therefore disabled rather than ineffective.",
     "Zurück auf die Vorgabe aus den Optionen": "Back to the default from the options",
+    // v0.4 Block F: die Checkliste auf der Startseite
+    "Was du zum Fahren brauchst": "What you need in order to drive",
+    "Schön, aber nicht nötig": "Nice, but not required",
+    "Chrome": "Chrome",
+    "(oder Edge) auf PC oder Android, mit erteilter Bluetooth-Berechtigung. Web Bluetooth gibt es in Safari und Firefox nicht.":
+      "(or Edge) on PC or Android, with Bluetooth permission granted. Web Bluetooth does not exist in Safari or Firefox.",
+    "Ein": "A",
+    "Carrera-Hybrid-Auto": "Carrera Hybrid car",
+    "mit Firmware ab": "with firmware from",
+    "August 2026": "August 2026",
+    ". Ältere melden andere Bytes.": " onwards. Older ones report different bytes.",
+    "Einen": "A",
+    "Bluetooth-Controller": "Bluetooth controller",
+    ". Getestet mit DualShock 4 und DualSense. Mit der Tastatur geht es auch, aber deutlich schlechter – sie kennt nur ganz oder gar nicht.":
+      ". Tested with DualShock 4 and DualSense. A keyboard works too, but far worse – it only knows all or nothing.",
+    "Eine": "A",
+    "CH-Strecke": "CH track",
+    "– oder der": "– or the",
+    "Start/Ziel-Ausdruck": "start/finish printout",
+    "samt Boxengasse aus dem Tab Strecke. Ohne beides fährt es sich auch, nur zählt dann niemand die Runden.":
+      "with pit lane, from the Track tab. It drives without either, only then nobody counts the laps.",
+    "Weitere Autos": "More cars",
+    "als autonome Gegner.": "as autonomous opponents.",
+    "Und dann in dieser Reihenfolge:": "And then in this order:",
+    "verbinde dein Auto in der": "connect your car in the",
+    "Garage": "Garage",
+    ", stelle die": ", set the",
+    "Optionen": "Options",
+    "nach deinem Geschmack ein, und fahre im": "to your taste, and drive in the",
+    "Cockpit": "Cockpit",
+    ". Einige Optionen lassen sich direkt dort anpassen.":
+      ". Some options can be adjusted right there.",
+    "Targets lesen": "Read targets",
+    // Ein eigenstaendiges <b>und</b> im Ghost-Lerntext, hervorgehoben weil es dort die
+    // Aussage traegt: schneller UND ohne Abgang, nicht das eine oder das andere.
+    "und": "and",
     "Bremsbalance": "Brake bias",
     "Bremsenquietschen": "Brake squeal",
     "Eigener Regler. Es hing vorher am Motorregler und war deshalb nicht getrennt leiser zu bekommen.":
@@ -1099,7 +1135,7 @@
     "Über die Muster gefahren meldet das Auto: eigenes Original-Blatt 0x0a, unsere Rekonstruktion 0x03, Boxengasse gar nichts.": "Driven over the patterns, the car reports: your own original sheet 0x0a, our reconstruction 0x03, pit lane nothing at all.",
     "Über": "Over",
     "Übernehmen": "Apply",
-    "← Sonstige": "← More",
+    "← Entwicklertools": "← Developer tools",
     "← Strecke": "← Track",
     "⛶ Vollbild": "⛶ Fullscreen",
     "🏁 Freies Training starten": "🏁 Start free practice",
@@ -1274,6 +1310,36 @@
     if (btn) btn.onclick();
   }
 
+  // Der aktive Tab muss SICHTBAR sein. Mit sieben Tabs scrollt die Leiste auf einem Telefon
+  // (gemessen 809 px Inhalt auf 375 px Sicht), und nach einem Sprung aus der Garage ins
+  // Cockpit stand die Markierung ausserhalb - die Leiste sah dann aus, als waere nichts
+  // gewaehlt.
+  //
+  // 'nearest' und nicht 'center': zentrieren verschiebt die Leiste auch dann, wenn der Knopf
+  // schon zu sehen ist, und das liest sich als Ruckeln ohne Anlass.
+  function scrollTabIntoView(name) {
+    const btn = document.querySelector('.tab-btn[data-tab="' + name + '"]');
+    if (!btn || btn.hidden || typeof btn.scrollIntoView !== 'function') return;
+    btn.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }
+
+  // Der Farbverlauf am rechten Rand wird nur gezeigt, wenn es wirklich weitergeht - ein
+  // Hinweis auf Scrollbarkeit, wo nichts zu scrollen ist, ist eine Falschaussage.
+  function refreshTabScrollHint() {
+    const wrap = $('tabs-wrap');
+    const nav = document.querySelector('nav.tabs');
+    if (!wrap || !nav) return;
+    wrap.classList.toggle('can-scroll',
+      nav.scrollWidth - nav.clientWidth - nav.scrollLeft > 4);
+  }
+  (function bindeTabScroll() {
+    const nav = document.querySelector('nav.tabs');
+    if (!nav) return;
+    nav.addEventListener('scroll', refreshTabScrollHint, { passive: true });
+    window.addEventListener('resize', refreshTabScrollHint);
+    refreshTabScrollHint();
+  })();
+
   // ---- Unterseiten innerhalb eines Tabs ----
   // Eine Kachelseite plus je Kachel eine Karte. Der Tab selbst bleibt EIN Tab, damit
   // showTab, die Tastenkuerzel und die Kopfzeile unberuehrt bleiben.
@@ -1327,6 +1393,11 @@
       // Charts are drawn lazily when the documentation is actually opened: the sliders
       // that invalidate them fire constantly and the canvases are invisible meanwhile.
       if (btn.dataset.tab === 'doc' && drivetrainChartsDirty) renderDrivetrainCharts();
+      // Den gewaehlten Tab in die Sicht holen, siehe scrollTabIntoView(). Am Ende des
+      // Handlers, weil .active erst darueber gesetzt wird und der Hinweis am Rand den
+      // neuen Scrollstand braucht.
+      scrollTabIntoView(btn.dataset.tab);
+      refreshTabScrollHint();
     };
   });
 

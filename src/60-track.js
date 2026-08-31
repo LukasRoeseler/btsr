@@ -1051,8 +1051,6 @@
       icon: '<path d="M18 22 L18 13 A7 7 0 0 0 11 6 L4 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>' },
     { key: 'straight', type: () => TILE_TYPE.STRAIGHT, cap: 'Gerade',
       icon: '<path d="M12 22 L12 2" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>' },
-    { key: 'start', type: () => TILE_TYPE.START, cap: 'Start',
-      icon: '<path d="M4 4h5v5H4zM14 4h5v5h-5zM9 9h5v5H9zM4 14h5v5H4zM14 14h5v5h-5z" fill="currentColor"/>' },
     { key: 'pit', type: () => TILE_TYPE.PIT, cap: 'Box',
       icon: '<path d="M8 22 L8 2" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>'
           + '<path d="M16 20 L16 9 A5 5 0 0 1 21 4" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="3 2.5" stroke-linecap="round"/>' },
@@ -1062,9 +1060,11 @@
       icon: '<path d="M8 22 L8 14 A5 5 0 0 1 18 14 L18 22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>'
           + '<path d="M8 22 L8 19" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>' },
   ];
-  // Index 2 ist die Gerade: das haeufigste Teil, also die billigste Vorauswahl. Die Zahl
-  // haengt an der Reihenfolge oben - wer dort umsortiert, muss hier mitziehen.
-  let trackPaletteSel = 2;
+  // Die Gerade ist das haeufigste Teil und damit die billigste Vorauswahl. GESUCHT statt
+  // gezaehlt: hier stand eine 2, die an der Reihenfolge oben hing, und beim Entfernen der
+  // Start-Kachel waere sie beinahe still auf ein anderes Teil gezeigt. Ein Index, der an
+  // einer Reihenfolge haengt, wird beim naechsten Umsortieren falsch, ohne dass es auffaellt.
+  let trackPaletteSel = Math.max(0, TRACK_PALETTE.findIndex(p => p.key === 'straight'));
 
   // ---- Probeblaetter zum Knacken der Kodierung ----
   //

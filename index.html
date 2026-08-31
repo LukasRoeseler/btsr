@@ -237,7 +237,7 @@
   .st-skip { color: var(--warn); font-weight: 700; }
   .st-run td { opacity: .5; }
 
-  /* ---- Sonstige: drei Kacheln ---- */
+  /* ---- Entwicklertools: drei Kacheln (die Doku ist ein eigener Tab) ---- */
   /* Die Legende der Voreinstellungen: fuenf kurze Absaetze, keine Tabelle - eine Tabelle
      haette eine Spalte je Kernwert gebraucht, und die Texte sind laenger als jede
      Spaltenbreite, die auf ein Telefon passt. */
@@ -263,6 +263,42 @@
   /* Ausgegraut heisst hier wirklich gesperrt: der fliegende Start ist nicht umgesetzt. */
   .opt-row.opt-off { opacity: .5 }
   .opt-row.opt-off input, .row.opt-off input { pointer-events: none }
+  /* Die Voraussetzungsliste auf der Startseite. Zwei Gruppen, unterschiedlich markiert:
+     ein Haken heisst "muss stimmen", ein Plus heisst "Zugabe". Die Unterscheidung ist der
+     ganze Zweck der Liste - eine einheitliche Aufzaehlung haette wieder nicht gesagt, was
+     davon zwingend ist. */
+  /* margin-bottom, damit der Tipp-Kasten nicht an die Merkmalsliste stoesst - gemessen
+     lag deren Oberkante direkt auf seiner Unterkante. */
+  .home-need { max-width: 1100px; margin: 22px auto 26px auto; padding: 0 24px; }
+  .home-need h3 { font-size: 13px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--muted); margin: 0 0 8px 0; }
+  .need-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 7px; }
+  .need-list li { display: flex; gap: 10px; align-items: flex-start;
+    font-size: 13.5px; line-height: 1.5; }
+  .need-list svg { width: 17px; height: 17px; flex: none; margin-top: 2px;
+    color: var(--good); }
+  .need-opt svg { color: var(--muted); }
+  .need-opt li { color: var(--muted); }
+  .need-tip { margin: 16px 0 0 0; padding: 10px 12px; font-size: 13px; line-height: 1.55;
+    border-left: 3px solid var(--info); background: var(--panel-2); }
+  /* Die Tableiste scrollt waagerecht - mit sieben Tabs auf 375 px unvermeidlich, gemessen
+     809 px Inhalt auf 375 px Sicht. Verloren ist dabei nichts; das Problem ist, dass man es
+     NICHT SIEHT. Also zwei Hilfen, und beide sind billiger als eine zweite Zeile Tabs, die
+     im Cockpit Platz kosten wuerde:
+
+     1. Ein Farbverlauf am rechten Rand, der sagt "hier geht es weiter". Er sitzt am
+        Behaelter und nicht an der Leiste, weil er ueber dem Scrollinhalt stehen bleiben
+        muss. pointer-events: none, damit er den letzten Tab nicht unklickbar macht.
+     2. showTab() scrollt den aktiven Knopf in die Sicht. Ohne das steht man nach einem
+        Sprung aus der Garage ins Cockpit auf einer Leiste, deren Markierung ausserhalb
+        liegt - sie sieht dann aus, als waere nichts gewaehlt. */
+  .tabs-wrap { position: relative; }
+  .tabs-wrap::after {
+    content: ''; position: absolute; right: 0; top: 0; bottom: 0; width: 34px;
+    pointer-events: none; opacity: 0; transition: opacity .2s;
+    background: linear-gradient(90deg, transparent, var(--brand-bg));
+  }
+  .tabs-wrap.can-scroll::after { opacity: 1; }
   .misc-grid {
     display: grid; gap: 14px;
     grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
@@ -1496,6 +1532,7 @@
   </div>
   <!-- The tab row lives inside the header now, so the whole navigation is one block. -->
   <div class="tabs-wrap">
+  <div class="tabs-wrap" id="tabs-wrap">
   <nav class="tabs">
   <button class="tab-btn active" data-tab="home" hidden style="display:none">Home</button>
   <button class="tab-btn" data-tab="garage">Garage</button>
@@ -1503,16 +1540,17 @@
   <button class="tab-btn" data-tab="options">Optionen</button>
   <button class="tab-btn" data-tab="track">Strecke</button>
   <button class="tab-btn" data-tab="control">Renneinstellungen</button>
-  <button class="tab-btn" data-tab="misc">Sonstige</button>
+  <button class="tab-btn" data-tab="doc">Doku</button>
+  <button class="tab-btn" data-tab="misc">Entwicklertools</button>
   <!-- Nicht in der Leiste, aber weiter als Tab-Knopf vorhanden: showTab() sucht genau
        diese Knoepfe, und die drei Kacheln unter "Sonstige" rufen showTab() auf. Ein
        data-parent laesst waehrend ihrer Anzeige "Sonstige" markiert bleiben, damit die
        Leiste nicht ohne Markierung dasteht. -->
   <button class="tab-btn" data-tab="school" data-parent="misc" hidden style="display:none">Programmierschule</button>
-  <button class="tab-btn" data-tab="doc" data-parent="misc" hidden style="display:none">Doku</button>
   <button class="tab-btn" data-tab="dev" data-parent="misc" hidden style="display:none">Entwickler</button>
   <button class="tab-btn" data-tab="selftest" data-parent="misc" hidden style="display:none">Selbsttest</button>
   </nav>
+  </div>
   </div>
 </header>
 
@@ -1570,6 +1608,35 @@
         <button class="primary" id="home-go">Auto verbinden</button>
         <button id="home-fs">Cockpit</button>
       </div>
+    </div>
+    <!-- Was man BRAUCHT, vor dem, was man haben kann. Die App liess sich nicht an einen
+         Fremden uebergeben, weil nirgends stand, welche Voraussetzungen es gibt: wer keinen
+         Chrome hat oder eine alte Firmware, drueckt "Auto verbinden" und es passiert
+         nichts, ohne dass ein Grund sichtbar wird. -->
+    <div class="home-need">
+      <h3>Was du zum Fahren brauchst</h3>
+      <ul class="need-list">
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12.5l5 5L20 6.5"/></svg><span><b>Chrome</b> (oder Edge) auf PC oder Android, mit erteilter
+          Bluetooth-Berechtigung. Web Bluetooth gibt es in Safari und Firefox
+          nicht.</span></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12.5l5 5L20 6.5"/></svg><span>Ein <b>Carrera-Hybrid-Auto</b> mit Firmware ab
+          <b>August&nbsp;2026</b>. &Auml;ltere melden andere Bytes.</span></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12.5l5 5L20 6.5"/></svg><span>Einen <b>Bluetooth-Controller</b>. Getestet mit DualShock&nbsp;4 und
+          DualSense. Mit der Tastatur geht es auch, aber deutlich schlechter &ndash; sie
+          kennt nur ganz oder gar nicht.</span></li>
+      </ul>
+      <h3 style="margin-top:16px">Sch&ouml;n, aber nicht n&ouml;tig</h3>
+      <ul class="need-list need-opt">
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Eine <b>CH-Strecke</b> &ndash; oder der <b>Start/Ziel-Ausdruck</b>
+          samt Boxengasse aus dem Tab Strecke. Ohne beides f&auml;hrt es sich auch, nur
+          z&auml;hlt dann niemand die Runden.</span></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span><b>Weitere Autos</b> als autonome Gegner.</span></li>
+      </ul>
+      <p class="need-tip">
+        <b>Und dann in dieser Reihenfolge:</b> verbinde dein Auto in der <b>Garage</b>,
+        stelle die <b>Optionen</b> nach deinem Geschmack ein, und fahre im
+        <b>Cockpit</b>. Einige Optionen lassen sich direkt dort anpassen.
+      </p>
     </div>
     <div class="home-feat">
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/><circle cx="9" cy="7" r="2"/><circle cx="15" cy="12" r="2"/><circle cx="7" cy="17" r="2"/></svg><span class="feat-1line">&Uuml;ber <b id="home-param-count">70</b> Einstellungen</span></div>
@@ -1797,7 +1864,7 @@
        Seite, die es schon gibt. -->
   <section class="tabpage" id="tab-misc">
     <div class="card">
-      <h2>Sonstige</h2>
+      <h2>Entwicklertools</h2>
       <div class="misc-grid">
         <button class="misc-tile goto-tab" data-tab="school">
           <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
@@ -1812,17 +1879,6 @@
           <b>Programmierschule</b>
           <span>Kurven ziehen statt Code schreiben, und sofort sehen, was das Auto
             daraus macht.</span>
-        </button>
-        <button class="misc-tile goto-tab" data-tab="doc">
-          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
-               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M10 6h20l8 8v28H10z" stroke-width="2.8"/>
-            <path d="M30 6v8h8"/>
-            <path d="M16 22h16M16 28h16M16 34h10" stroke="var(--bad)"/>
-          </svg>
-          <b>Doku</b>
-          <span>Protokoll, Streckencodes, Physik, T&ouml;ne: alles, was gemessen
-            wurde, mit Herkunft.</span>
         </button>
         <button class="misc-tile goto-tab" data-tab="dev">
           <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
@@ -1852,7 +1908,7 @@
   </section>
 
   <section class="tabpage" id="tab-school">
-    <button class="misc-back goto-tab" data-tab="misc">&larr; Sonstige</button>
+    <button class="misc-back goto-tab" data-tab="misc">&larr; Entwicklertools</button>
     <div class="card">
       <h2>Programmierschule</h2>
       <p class="muted">
@@ -1960,7 +2016,7 @@
         <b>Zur Doku:</b> die Oberfl&auml;che ist zweisprachig, dieser Teil noch nicht.
       </p>
     </div>
-    <button class="misc-back goto-tab" data-tab="misc">&larr; Sonstige</button>
+    <button class="misc-back goto-tab" data-tab="misc">&larr; Entwicklertools</button>
 
     <div class="card">
       <h2>Wozu dient dieses Projekt?</h2>
@@ -3220,11 +3276,12 @@
   </section>
 
   <section class="tabpage" id="tab-dev">
-    <button class="misc-back goto-tab" data-tab="misc">&larr; Sonstige</button>
+    <button class="misc-back goto-tab" data-tab="misc">&larr; Entwicklertools</button>
     <nav class="subtabs">
       <button class="subtab-btn active" data-subtab="explore">BLE-Explorer</button>
       <button class="subtab-btn" data-subtab="calib">Kalibrierung</button>
       <button class="subtab-btn" data-subtab="macros">Makros</button>
+      <button class="subtab-btn" data-subtab="targets">Targets lesen</button>
     </nav>
 
     <div class="card">
@@ -3532,6 +3589,84 @@
     <div class="card">
       <h2>Wiedergabe-Log</h2>
       <div id="play-log" class="muted" style="font-family:monospace;font-size:12px;min-height:20px">noch keine Wiedergabe.</div>
+    </div>
+    </div>
+
+    <div class="subtabpage" id="subtab-targets">
+    <div class="card">
+      <h2>Targets lesen</h2>
+      <p class="muted">
+      Zum Herausfinden, was ein Streckenteil wirklich sendet: zum Beispiel die
+      180-Grad-Haarnadel. Auto verbinden, hier auf <b>Z&auml;hlen starten</b>, dann
+      <em>langsam</em> von Hand &uuml;ber genau dieses Teil schieben und ablesen, welcher
+      Wert dabei auftaucht.
+      </p>
+      <div class="row" style="gap:14px; align-items:baseline; flex-wrap:wrap">
+      <div><span class="hud-label">Byte 12 jetzt</span><br>
+        <span class="cm-now" id="cm-now">&ndash;</span></div>
+      <div><span class="hud-label">Pakete</span><br>
+        <span class="cm-now" id="cm-total" style="font-size:18px">0</span></div>
+      <div><span class="hud-label">von</span><br>
+        <span class="cm-now" id="cm-car" style="font-size:14px">&ndash;</span></div>
+      <div><span class="hud-label">Kachelz&auml;hler</span><br>
+        <span class="cm-now" id="cm-steps" style="font-size:18px">0</span></div>
+      <div><span class="hud-label">Musterkontakt</span><br>
+        <span class="cm-now" id="cm-marks" style="font-size:18px">0</span></div>
+      <div><span class="hud-label">Byte 3 Spanne</span><br>
+        <span class="cm-now" id="cm-yaw" style="font-size:18px">&ndash;</span></div>
+      <div><span class="hud-label">Scheinwerfer</span><br>
+        <span class="cm-now" id="cm-light" style="font-size:18px">&ndash;</span></div>
+      <div class="spacer" style="flex:1"></div>
+      <button class="primary" id="cm-start">Z&auml;hlen starten</button>
+      <button id="cm-reset">Zur&uuml;cksetzen</button>
+      </div>
+      <p class="muted" style="font-size:11.5px; margin:10px 0 4px 0">
+      Letztes Paket, Byte f&uuml;r Byte. <b>Byte&nbsp;11</b> ist der Kachelz&auml;hler,
+      <b>Byte&nbsp;12</b> die Kachelart: wenn hier etwas anderes steht als
+      erwartet, liegt der Fehler nicht bei der Auswertung, sondern beim Aufbau des
+      Pakets.
+      </p>
+      <div id="cm-hex" style="font-family:monospace; font-size:11.5px; line-height:1.7;
+         background:var(--panel-2); border:1px solid var(--border); border-radius:6px;
+         padding:8px 10px; overflow-x:auto">noch kein Paket</div>
+      <table class="cm-tab"><thead><tr>
+      <th>Byte&nbsp;12</th><th>bekannt als</th><th>Pakete</th><th>Anteil</th>
+      </tr></thead><tbody id="cm-rows">
+      <tr><td colspan="4" class="muted">noch nichts gez&auml;hlt</td></tr>
+      </tbody></table>
+      <p class="muted" style="font-size:11.5px">
+      <b>Wenn hier nur <code>0xff</code> steht:</b> zuerst den Schalter
+      <b>Auf der Bahn</b> in den Optionen pr&uuml;fen. Er setzt Bit&nbsp;5 in
+      Byte&nbsp;14; steht er aus, geht Bit&nbsp;7 hinaus und das schaltet den
+      Streckensensor ab, gemessen 0 Lesungen in 551 Fahrmeldungen. Genau dieses
+      Bit hat diese App zw&ouml;lf Aufzeichnungen lang gesendet, siehe Doku,
+      &bdquo;Auf der Bahn oder ohne Bahn&ldquo;.
+      </p>
+      <p class="muted" style="font-size:11.5px">
+      <b>Wie das Uebrige zu lesen ist.</b> Steht <b>Musterkontakt</b> auf 0, hat der Sensor
+      w&auml;hrend der ganzen Messung kein gedrucktes Blatt gesehen, dann liegt es
+      nicht an der Entschl&uuml;sselung, sondern daran, dass nichts zu lesen war. Z&auml;hlt
+      der <b>Kachelz&auml;hler</b> hoch, obwohl Byte&nbsp;12 nur <code>0xff</code> zeigt,
+      erkennt das Auto Teile, meldet aber ihre Art nicht. Und wenn sich
+      <b>Byte&nbsp;3</b> in Kurven deutlich bewegt, l&auml;sst sich eine Kurve daran
+      erkennen, ganz ohne Barcode.
+      </p>
+      <p class="muted" style="font-size:11.5px">
+      <code>0xff</code> hei&szlig;t &bdquo;gerade keine Lesung&ldquo; und ist der
+      h&auml;ufigste Wert von allen, das ist normal und kein Fehler.
+      <code>0x00</code> hei&szlig;t &bdquo;kein Muster erkannt&ldquo;.
+      Interessant ist alles andere.
+      </p>
+      <p class="muted" style="font-size:11.5px">
+      <b>Womit dieses Werkzeug die Haarnadel gefunden hat.</b> Hier stand die Vermutung,
+      sie melde <code>0x03</code> oder <code>0x04</code> wie eine normale Kurve und habe
+      gar keinen eigenen Code. Am 24.08. wurde sie &uuml;berfahren und meldete
+      <code>0x06</code> rechts und <code>0x05</code> links, sie hat sehr wohl
+      eigene Codes, und sie f&uuml;gen sich in das Muster der anderen:
+      <code>0x03</code>/<code>0x04</code> links/rechts f&uuml;r die 60-Grad-Kurve,
+      <code>0x05</code>/<code>0x06</code> links/rechts f&uuml;r die Haarnadel. Ein Wert
+      in <span class="cm-new">dieser Farbe</span> hei&szlig;t: den kennen wir noch nicht.
+      </p>
     </div>
     </div>
 
@@ -4302,7 +4437,7 @@
 
   <!-- TRACK TAB -->
   <section class="tabpage" id="tab-selftest">
-    <button class="misc-back goto-tab" data-tab="misc">&larr; Sonstige</button>
+    <button class="misc-back goto-tab" data-tab="misc">&larr; Entwicklertools</button>
     <div class="card">
       <h2>Selbsttest</h2>
       <p class="muted">
@@ -4340,12 +4475,6 @@
           <b>Editor</b>
           <span>Strecke aus Teilen bauen, drehen, als Code weitergeben.</span>
         </button>
-        <button class="misc-tile subpage-open" data-sub="probe">
-          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
-               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 10v28M14 10v28M20 10v28M28 10v28M34 10v28M42 10v28" stroke-width="2"/><path d="M6 44h36" stroke="var(--bad)"/></svg>
-          <b>Codeprobe</b>
-          <span>Ein Teil überfahren und ablesen, welchen Wert das Auto meldet.</span>
-        </button>
         <button class="misc-tile subpage-open" data-sub="print">
           <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 18V8h20v10"/><rect x="8" y="18" width="32" height="14" rx="2"/><path d="M14 32h20v10H14z" stroke="var(--bad)"/></svg>
@@ -4357,12 +4486,6 @@
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 42V12h16a8 8 0 0 1 0 16H10"/><path d="M34 20h8M38 16v8" stroke="var(--bad)"/></svg>
           <b>Boxengasse</b>
           <span>Eigenes Muster für die Box, mit dem Code, den es auslöst.</span>
-        </button>
-        <button class="misc-tile subpage-open" data-sub="saved">
-          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
-               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 12h18l4 5h6v22a2 2 0 0 1-2 2H12a2 2 0 0 1-2-2z"/><path d="M18 26h12M18 32h8" stroke="var(--bad)"/></svg>
-          <b>Gespeichert</b>
-          <span>Strecken benennen, laden und wieder löschen.</span>
         </button>
       </div>
     </div>
@@ -4473,85 +4596,21 @@
 
       <ol class="muted" id="track-tile-list" style="padding-left:20px; line-height:1.9; max-height:200px; overflow-y:auto; margin-top:12px"></ol>
 
-    </div>
-
-    <div class="card subpage" id="sub-probe">
-    <button class="misc-back subpage-back" data-sub="">&larr; Strecke</button>
-      <h2>Welchen Code meldet dieses Teil?</h2>
-      <p class="muted">
-      Zum Herausfinden, was ein Streckenteil wirklich sendet: zum Beispiel die
-      180-Grad-Haarnadel. Auto verbinden, hier auf <b>Z&auml;hlen starten</b>, dann
-      <em>langsam</em> von Hand &uuml;ber genau dieses Teil schieben und ablesen, welcher
-      Wert dabei auftaucht.
-      </p>
-      <div class="row" style="gap:14px; align-items:baseline; flex-wrap:wrap">
-      <div><span class="hud-label">Byte 12 jetzt</span><br>
-        <span class="cm-now" id="cm-now">&ndash;</span></div>
-      <div><span class="hud-label">Pakete</span><br>
-        <span class="cm-now" id="cm-total" style="font-size:18px">0</span></div>
-      <div><span class="hud-label">von</span><br>
-        <span class="cm-now" id="cm-car" style="font-size:14px">&ndash;</span></div>
-      <div><span class="hud-label">Kachelz&auml;hler</span><br>
-        <span class="cm-now" id="cm-steps" style="font-size:18px">0</span></div>
-      <div><span class="hud-label">Musterkontakt</span><br>
-        <span class="cm-now" id="cm-marks" style="font-size:18px">0</span></div>
-      <div><span class="hud-label">Byte 3 Spanne</span><br>
-        <span class="cm-now" id="cm-yaw" style="font-size:18px">&ndash;</span></div>
-      <div><span class="hud-label">Scheinwerfer</span><br>
-        <span class="cm-now" id="cm-light" style="font-size:18px">&ndash;</span></div>
-      <div class="spacer" style="flex:1"></div>
-      <button class="primary" id="cm-start">Z&auml;hlen starten</button>
-      <button id="cm-reset">Zur&uuml;cksetzen</button>
+      <!-- Aus einer eigenen Unterseite hierher. Sie hatte eine eigene Kachel fuer fuenf
+           Bedienelemente, von denen jedes den Editor betrifft - man baut eine Strecke und
+           will sie dann speichern, nicht erst zurueck und in ein anderes Menue. -->
+      <h3 style="font-size:14px; margin:20px 0 6px 0; padding-top:14px;
+                 border-top:1px solid var(--line)">Gespeicherte Strecken</h3>
+      
+      <div class="row">
+        <input type="text" id="track-name" placeholder="Name der Strecke">
+        <button id="track-save">Speichern</button>
+        <select id="track-list"><option value="">-- gespeicherte Strecken --</option></select>
+        <button id="track-load">Laden</button>
+        <button id="track-delete">Löschen</button>
       </div>
-      <p class="muted" style="font-size:11.5px; margin:10px 0 4px 0">
-      Letztes Paket, Byte f&uuml;r Byte. <b>Byte&nbsp;11</b> ist der Kachelz&auml;hler,
-      <b>Byte&nbsp;12</b> die Kachelart: wenn hier etwas anderes steht als
-      erwartet, liegt der Fehler nicht bei der Auswertung, sondern beim Aufbau des
-      Pakets.
-      </p>
-      <div id="cm-hex" style="font-family:monospace; font-size:11.5px; line-height:1.7;
-         background:var(--panel-2); border:1px solid var(--border); border-radius:6px;
-         padding:8px 10px; overflow-x:auto">noch kein Paket</div>
-      <table class="cm-tab"><thead><tr>
-      <th>Byte&nbsp;12</th><th>bekannt als</th><th>Pakete</th><th>Anteil</th>
-      </tr></thead><tbody id="cm-rows">
-      <tr><td colspan="4" class="muted">noch nichts gez&auml;hlt</td></tr>
-      </tbody></table>
-      <p class="muted" style="font-size:11.5px">
-      <b>Wenn hier nur <code>0xff</code> steht:</b> zuerst den Schalter
-      <b>Auf der Bahn</b> in den Optionen pr&uuml;fen. Er setzt Bit&nbsp;5 in
-      Byte&nbsp;14; steht er aus, geht Bit&nbsp;7 hinaus und das schaltet den
-      Streckensensor ab, gemessen 0 Lesungen in 551 Fahrmeldungen. Genau dieses
-      Bit hat diese App zw&ouml;lf Aufzeichnungen lang gesendet, siehe Doku,
-      &bdquo;Auf der Bahn oder ohne Bahn&ldquo;.
-      </p>
-      <p class="muted" style="font-size:11.5px">
-      <b>Wie das Uebrige zu lesen ist.</b> Steht <b>Musterkontakt</b> auf 0, hat der Sensor
-      w&auml;hrend der ganzen Messung kein gedrucktes Blatt gesehen, dann liegt es
-      nicht an der Entschl&uuml;sselung, sondern daran, dass nichts zu lesen war. Z&auml;hlt
-      der <b>Kachelz&auml;hler</b> hoch, obwohl Byte&nbsp;12 nur <code>0xff</code> zeigt,
-      erkennt das Auto Teile, meldet aber ihre Art nicht. Und wenn sich
-      <b>Byte&nbsp;3</b> in Kurven deutlich bewegt, l&auml;sst sich eine Kurve daran
-      erkennen, ganz ohne Barcode.
-      </p>
-      <p class="muted" style="font-size:11.5px">
-      <code>0xff</code> hei&szlig;t &bdquo;gerade keine Lesung&ldquo; und ist der
-      h&auml;ufigste Wert von allen, das ist normal und kein Fehler.
-      <code>0x00</code> hei&szlig;t &bdquo;kein Muster erkannt&ldquo;.
-      Interessant ist alles andere.
-      </p>
-      <p class="muted" style="font-size:11.5px">
-      <b>Womit dieses Werkzeug die Haarnadel gefunden hat.</b> Hier stand die Vermutung,
-      sie melde <code>0x03</code> oder <code>0x04</code> wie eine normale Kurve und habe
-      gar keinen eigenen Code. Am 24.08. wurde sie &uuml;berfahren und meldete
-      <code>0x06</code> rechts und <code>0x05</code> links, sie hat sehr wohl
-      eigene Codes, und sie f&uuml;gen sich in das Muster der anderen:
-      <code>0x03</code>/<code>0x04</code> links/rechts f&uuml;r die 60-Grad-Kurve,
-      <code>0x05</code>/<code>0x06</code> links/rechts f&uuml;r die Haarnadel. Ein Wert
-      in <span class="cm-new">dieser Farbe</span> hei&szlig;t: den kennen wir noch nicht.
-      </p>
+      <p class="muted" style="margin-top:8px">Strecken werden lokal im Browser gespeichert (localStorage).</p>
     </div>
-
     <div class="card subpage" id="sub-print">
       <button class="misc-back subpage-back" data-sub="">&larr; Strecke</button>
       <h2>Druckvorlagen</h2>
@@ -4750,18 +4809,6 @@
       </p>
     </div>
 
-    <div class="card subpage" id="sub-saved">
-      <button class="misc-back subpage-back" data-sub="">&larr; Strecke</button>
-      <h2>Gespeicherte Strecken</h2>
-      <div class="row">
-        <input type="text" id="track-name" placeholder="Name der Strecke">
-        <button id="track-save">Speichern</button>
-        <select id="track-list"><option value="">-- gespeicherte Strecken --</option></select>
-        <button id="track-load">Laden</button>
-        <button id="track-delete">Löschen</button>
-      </div>
-      <p class="muted" style="margin-top:8px">Strecken werden lokal im Browser gespeichert (localStorage).</p>
-    </div>
   </section>
 
 
@@ -4773,7 +4820,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.4.16</span></span>
+    <span class="foot-ver">v<span id="app-version">0.4.17</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -5603,7 +5650,7 @@
     "Simulierte Motoren und eigene Sounds über Engine-Sim": "Simulated engines and custom sounds via Engine-Sim",
     "Slalom: Lenken im Wechsel": "Slalom: steer alternately",
     "So testen:": "How to test:",
-    "Sonstige": "More",
+    "Entwicklertools": "Developer tools",
     "Speichern und austauschen": "Save and exchange",
     "Speichern": "Save",
     "Standard aus. Die ersten fünf sind Aufnahmen, der Rest ist gerechnet.": "Off by default. The first five are recordings, the rest are computed.",
@@ -5693,6 +5740,42 @@
     "Einführungsrunde mit Boxengassen-Tempo, frei beim ersten Überfahren von Start/Ziel. Noch nicht gebaut – der Schalter ist deshalb gesperrt statt wirkungslos.":
       "Formation lap at pit-lane pace, released on the first crossing of start/finish. Not built yet – the switch is therefore disabled rather than ineffective.",
     "Zurück auf die Vorgabe aus den Optionen": "Back to the default from the options",
+    // v0.4 Block F: die Checkliste auf der Startseite
+    "Was du zum Fahren brauchst": "What you need in order to drive",
+    "Schön, aber nicht nötig": "Nice, but not required",
+    "Chrome": "Chrome",
+    "(oder Edge) auf PC oder Android, mit erteilter Bluetooth-Berechtigung. Web Bluetooth gibt es in Safari und Firefox nicht.":
+      "(or Edge) on PC or Android, with Bluetooth permission granted. Web Bluetooth does not exist in Safari or Firefox.",
+    "Ein": "A",
+    "Carrera-Hybrid-Auto": "Carrera Hybrid car",
+    "mit Firmware ab": "with firmware from",
+    "August 2026": "August 2026",
+    ". Ältere melden andere Bytes.": " onwards. Older ones report different bytes.",
+    "Einen": "A",
+    "Bluetooth-Controller": "Bluetooth controller",
+    ". Getestet mit DualShock 4 und DualSense. Mit der Tastatur geht es auch, aber deutlich schlechter – sie kennt nur ganz oder gar nicht.":
+      ". Tested with DualShock 4 and DualSense. A keyboard works too, but far worse – it only knows all or nothing.",
+    "Eine": "A",
+    "CH-Strecke": "CH track",
+    "– oder der": "– or the",
+    "Start/Ziel-Ausdruck": "start/finish printout",
+    "samt Boxengasse aus dem Tab Strecke. Ohne beides fährt es sich auch, nur zählt dann niemand die Runden.":
+      "with pit lane, from the Track tab. It drives without either, only then nobody counts the laps.",
+    "Weitere Autos": "More cars",
+    "als autonome Gegner.": "as autonomous opponents.",
+    "Und dann in dieser Reihenfolge:": "And then in this order:",
+    "verbinde dein Auto in der": "connect your car in the",
+    "Garage": "Garage",
+    ", stelle die": ", set the",
+    "Optionen": "Options",
+    "nach deinem Geschmack ein, und fahre im": "to your taste, and drive in the",
+    "Cockpit": "Cockpit",
+    ". Einige Optionen lassen sich direkt dort anpassen.":
+      ". Some options can be adjusted right there.",
+    "Targets lesen": "Read targets",
+    // Ein eigenstaendiges <b>und</b> im Ghost-Lerntext, hervorgehoben weil es dort die
+    // Aussage traegt: schneller UND ohne Abgang, nicht das eine oder das andere.
+    "und": "and",
     "Bremsbalance": "Brake bias",
     "Bremsenquietschen": "Brake squeal",
     "Eigener Regler. Es hing vorher am Motorregler und war deshalb nicht getrennt leiser zu bekommen.":
@@ -5904,7 +5987,7 @@
     "Über die Muster gefahren meldet das Auto: eigenes Original-Blatt 0x0a, unsere Rekonstruktion 0x03, Boxengasse gar nichts.": "Driven over the patterns, the car reports: your own original sheet 0x0a, our reconstruction 0x03, pit lane nothing at all.",
     "Über": "Over",
     "Übernehmen": "Apply",
-    "← Sonstige": "← More",
+    "← Entwicklertools": "← Developer tools",
     "← Strecke": "← Track",
     "⛶ Vollbild": "⛶ Fullscreen",
     "🏁 Freies Training starten": "🏁 Start free practice",
@@ -6079,6 +6162,36 @@
     if (btn) btn.onclick();
   }
 
+  // Der aktive Tab muss SICHTBAR sein. Mit sieben Tabs scrollt die Leiste auf einem Telefon
+  // (gemessen 809 px Inhalt auf 375 px Sicht), und nach einem Sprung aus der Garage ins
+  // Cockpit stand die Markierung ausserhalb - die Leiste sah dann aus, als waere nichts
+  // gewaehlt.
+  //
+  // 'nearest' und nicht 'center': zentrieren verschiebt die Leiste auch dann, wenn der Knopf
+  // schon zu sehen ist, und das liest sich als Ruckeln ohne Anlass.
+  function scrollTabIntoView(name) {
+    const btn = document.querySelector('.tab-btn[data-tab="' + name + '"]');
+    if (!btn || btn.hidden || typeof btn.scrollIntoView !== 'function') return;
+    btn.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }
+
+  // Der Farbverlauf am rechten Rand wird nur gezeigt, wenn es wirklich weitergeht - ein
+  // Hinweis auf Scrollbarkeit, wo nichts zu scrollen ist, ist eine Falschaussage.
+  function refreshTabScrollHint() {
+    const wrap = $('tabs-wrap');
+    const nav = document.querySelector('nav.tabs');
+    if (!wrap || !nav) return;
+    wrap.classList.toggle('can-scroll',
+      nav.scrollWidth - nav.clientWidth - nav.scrollLeft > 4);
+  }
+  (function bindeTabScroll() {
+    const nav = document.querySelector('nav.tabs');
+    if (!nav) return;
+    nav.addEventListener('scroll', refreshTabScrollHint, { passive: true });
+    window.addEventListener('resize', refreshTabScrollHint);
+    refreshTabScrollHint();
+  })();
+
   // ---- Unterseiten innerhalb eines Tabs ----
   // Eine Kachelseite plus je Kachel eine Karte. Der Tab selbst bleibt EIN Tab, damit
   // showTab, die Tastenkuerzel und die Kopfzeile unberuehrt bleiben.
@@ -6132,6 +6245,11 @@
       // Charts are drawn lazily when the documentation is actually opened: the sliders
       // that invalidate them fire constantly and the canvases are invisible meanwhile.
       if (btn.dataset.tab === 'doc' && drivetrainChartsDirty) renderDrivetrainCharts();
+      // Den gewaehlten Tab in die Sicht holen, siehe scrollTabIntoView(). Am Ende des
+      // Handlers, weil .active erst darueber gesetzt wird und der Hinweis am Rand den
+      // neuen Scrollstand braucht.
+      scrollTabIntoView(btn.dataset.tab);
+      refreshTabScrollHint();
     };
   });
 
@@ -10123,8 +10241,6 @@
       icon: '<path d="M18 22 L18 13 A7 7 0 0 0 11 6 L4 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>' },
     { key: 'straight', type: () => TILE_TYPE.STRAIGHT, cap: 'Gerade',
       icon: '<path d="M12 22 L12 2" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>' },
-    { key: 'start', type: () => TILE_TYPE.START, cap: 'Start',
-      icon: '<path d="M4 4h5v5H4zM14 4h5v5h-5zM9 9h5v5H9zM4 14h5v5H4zM14 14h5v5h-5z" fill="currentColor"/>' },
     { key: 'pit', type: () => TILE_TYPE.PIT, cap: 'Box',
       icon: '<path d="M8 22 L8 2" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>'
           + '<path d="M16 20 L16 9 A5 5 0 0 1 21 4" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="3 2.5" stroke-linecap="round"/>' },
@@ -10134,9 +10250,11 @@
       icon: '<path d="M8 22 L8 14 A5 5 0 0 1 18 14 L18 22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>'
           + '<path d="M8 22 L8 19" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>' },
   ];
-  // Index 2 ist die Gerade: das haeufigste Teil, also die billigste Vorauswahl. Die Zahl
-  // haengt an der Reihenfolge oben - wer dort umsortiert, muss hier mitziehen.
-  let trackPaletteSel = 2;
+  // Die Gerade ist das haeufigste Teil und damit die billigste Vorauswahl. GESUCHT statt
+  // gezaehlt: hier stand eine 2, die an der Reihenfolge oben hing, und beim Entfernen der
+  // Start-Kachel waere sie beinahe still auf ein anderes Teil gezeigt. Ein Index, der an
+  // einer Reihenfolge haengt, wird beim naechsten Umsortieren falsch, ohne dass es auffaellt.
+  let trackPaletteSel = Math.max(0, TRACK_PALETTE.findIndex(p => p.key === 'straight'));
 
   // ---- Probeblaetter zum Knacken der Kodierung ----
   //
