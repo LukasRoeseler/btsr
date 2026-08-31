@@ -146,7 +146,13 @@
     }
     // "Geschwindigkeit" setting — a simple top-speed cap applied at this single choke
     // point so every input source respects it consistently. Defaults to 1 (no effect).
-    throttle *= topSpeedScale;
+    //
+    // NUR nach vorn. throttle ist vorzeichenbehaftet (bis MIN_THROTTLE_DELTA = -64), und
+    // der Faktor drosselte deshalb auch die BREMSE und den Rueckwaertsgang: bei 20 %
+    // Hoechstgeschwindigkeit bremste das Auto mit einem Fuenftel. Das ist nicht, was ein
+    // Regler namens "Geschwindigkeit" verspricht, und es fuehlte sich an, als stimme mit
+    // ihm etwas nicht - was es auch tat, nur nicht in der Richtung.
+    if (throttle > 0) throttle *= topSpeedScale;
     throttle *= batteryCompensationScale();
     throttle = applyFuelAndDamage(throttle);
     updateEngineSound(throttle);

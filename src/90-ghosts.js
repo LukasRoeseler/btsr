@@ -516,6 +516,10 @@
   function renderGarage() {
     const list = $('gar-list');
     if (!list) return;
+    // Ueber das Fenster und nicht direkt: 98-presets.js wird NACH dieser Datei gebaut, die
+    // Funktion existiert zur Deklarationszeit hier also noch nicht. Zur Laufzeit ist sie
+    // da. Genau dieser Unterschied hat in dieser Datei schon fuenf Ladeabbrueche gekostet.
+    if (window.__updateGaragePresetRow) window.__updateGaragePresetRow();
     // Vor dem Zeichnen: die Buchstaben folgen der Reihenfolge, und die aendert sich, wenn
     // ein Auto aus der Mitte getrennt wird.
     carRetag();

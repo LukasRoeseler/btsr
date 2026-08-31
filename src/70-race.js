@@ -22,13 +22,6 @@
   // earlier calibration run was inconclusive — so these are raw sensor numbers, not
   // measured G. Kept smoothed only lightly, because the noise is the honest part.
   let gyroRaw = { x: 0, y: 0, span: 8 };
-  let freeRoamMode = false;
-
-  $('dash-freeroam').addEventListener('change', (e) => {
-    freeRoamMode = e.target.checked;
-    refreshMinimap();
-  });
-
   function formatLapTime(ms) { return (ms / 1000).toFixed(2) + 's'; }
 
   function batteryPercent(raw) {
@@ -1293,7 +1286,7 @@
     return false;
   }
 
-  function getMinimapCurrentIndex() { return freeRoamMode ? null : dashMinimapIndex; }
+  function getMinimapCurrentIndex() { return dashMinimapIndex; }
 
   function refreshMinimap() {
     // Die Minikarte ist entfernt worden. Die Positionsverfolgung dahinter bleibt: sie
@@ -1302,7 +1295,7 @@
     // ein blinder Zugriff darauf wuerde den Fahrtakt abbrechen.
     const el = $('dash-minimap');
     if (!el) return;
-    el.innerHTML = (freeRoamMode || currentTrackTiles.length === 0)
+    el.innerHTML = (currentTrackTiles.length === 0)
       ? '<p class="muted" style="width:220px">kein Streckenlayout geladen</p>'
       : renderTrackPreview(currentTrackTiles, dashMinimapIndex).html;
   }
@@ -1673,7 +1666,7 @@
   const CRASH_ROLLING_ALPHA = 0.15;
   const CRASH_REFRACTORY_MS = 1000; // avoid re-triggering repeatedly off one jolt
   let fuelDrainPerSec = 3;       // % per second at full throttle magnitude (slider)
-  let crashesToTotal = 4;        // how many crashes fill the damage bar (slider, 1-5)
+  let crashesToTotal = 10;       // Crashs bis der Schadensbalken voll ist (Regler, Index in CRASH_STEPS)
   let crashDetectionEnabled = true;
   // Total time (s) to repair 100% damage down to 0, non-linear: the schedule is fixed
   // proportions of that total (1/10, 2/10, 3/10, 4/10 for the four 25%-damage quarters,

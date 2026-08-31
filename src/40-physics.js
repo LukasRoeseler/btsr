@@ -940,7 +940,16 @@
   // though nothing was asked to vibrate but the gamepad. Removed outright, along with
   // rumbleHaptic(), the older phone-only helper it had already fully replaced and which
   // had no remaining callers.
+  // Standardmaessig AUS. Ein Controller, der bei jedem Gangwechsel brummt, ohne dass
+  // jemand danach gefragt hat, ist die Art Voreinstellung, die man einmal sucht und dann
+  // nicht findet - und der Schalter sass bisher nirgends.
+  //
+  // Die Abfrage steht hier und nicht an den 18 Aufrufstellen: eine Stelle kann nicht
+  // vergessen werden, achtzehn schon.
+  let rumbleOn = false;
+
   function padRumble(strong, weak, ms) {
+    if (!rumbleOn) return;
     try {
       const pads = navigator.getGamepads ? navigator.getGamepads() : [];
       for (const p of pads) {

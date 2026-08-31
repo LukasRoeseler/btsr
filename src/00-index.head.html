@@ -238,6 +238,16 @@
   .st-run td { opacity: .5; }
 
   /* ---- Sonstige: drei Kacheln ---- */
+  /* Die Legende der Voreinstellungen: fuenf kurze Absaetze, keine Tabelle - eine Tabelle
+     haette eine Spalte je Kernwert gebraucht, und die Texte sind laenger als jede
+     Spaltenbreite, die auf ein Telefon passt. */
+  .preset-leg { margin-top: 9px; padding-left: 9px; border-left: 2px solid var(--line) }
+  .preset-leg b { font-size: 12.5px }
+  .preset-leg small { display: block; color: var(--muted); font-size: 11.5px;
+                      line-height: 1.45; margin-top: 2px }
+  /* Die Motorwerkstatt sitzt jetzt IN der Tonseite. Sie war eine eigene Karte und braucht
+     deshalb ihre eigene Abgrenzung, sonst laeuft sie in die Lautstaerkeregler. */
+  .mw-block { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line) }
   .misc-grid {
     display: grid; gap: 14px;
     grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
@@ -3455,6 +3465,16 @@
         <button class="primary" id="gar-go" disabled>Losfahren</button>
       </div>
       <div id="gar-list"></div>
+      <!-- Abstimmung direkt hier waehlbar, sobald ein Auto gesteuert wird. Dieselbe
+           Funktion wie in den Optionen, deshalb ziehen die Regler dort automatisch nach. -->
+      <div id="gar-preset" style="display:none; margin-top:14px; padding-top:12px;
+           border-top:1px solid var(--line)">
+        <div class="muted" style="font-size:12px; margin-bottom:6px">
+          Abstimmung f&uuml;r das gesteuerte Auto &ndash; dieselben f&uuml;nf wie in den
+          Optionen, die Regler dort ziehen mit.
+        </div>
+        <div class="row" style="gap:8px; flex-wrap:wrap" id="gar-preset-buttons"></div>
+      </div>
       <p class="muted" style="font-size:12px; margin-top:10px">
         <b>Steuern</b>: dieses Auto folgt Gamepad und Tastatur. Genau eines kann das sein;
         Standard ist das zuerst verbundene.<br>
@@ -3608,16 +3628,85 @@
   <!-- OPTIONEN TAB: player-facing settings (feel, sound, controller bindings) -->
   <section class="tabpage" id="tab-options">
     <div class="card">
-      <h2>Fahrgefühl</h2>
-      <div class="opt-head">Grundlagen</div>
+      <h2>Voreinstellungen</h2>
+      <p class="muted">
+        F&uuml;nf fertige Abstimmungen. Sie setzen nur die Regler, die das
+        <em>Fahrgef&uuml;hl</em> betreffen: nicht die Rennl&auml;nge, nicht das Wetter,
+        nicht die Strecke, denn die geh&ouml;ren zum Rennen und nicht zum Auto.
+      </p>
+      <div class="row" style="gap:8px; flex-wrap:wrap" id="preset-buttons"></div>
+      <div class="muted" id="preset-status" style="margin-top:6px">&nbsp;</div>
+      <div id="preset-legend"></div>
+      <p class="muted" style="font-size:11.5px; margin:10px 0 4px 0">
+        Zum Weitergeben: der Text unten enth&auml;lt <b>alle</b> Regler, auch die, die keine
+        Voreinstellung anfasst. Kopieren, verschicken, einf&uuml;gen,
+        <b>&Uuml;bernehmen</b>.
+      </p>
+      <textarea id="preset-json" spellcheck="false"
+                style="width:100%; min-height:64px; font-family:monospace; font-size:11.5px"></textarea>
+      <div class="row" style="gap:8px; margin-top:6px">
+        <button id="preset-import">&Uuml;bernehmen</button>
+        <button id="preset-export">Aktuelle Werte hineinschreiben</button>
+      </div>
+      <p class="muted" style="font-size:11.5px; margin:14px 0 4px 0">
+        Oder auf diesem Ger&auml;t ablegen. Bleibt im Browser, wird nicht mitgeschickt.
+      </p>
+      <div class="row" style="gap:8px; flex-wrap:wrap">
+        <input type="text" id="preset-store-name" placeholder="Name der Abstimmung"
+               maxlength="40" style="min-width:150px">
+        <button id="preset-store-save">Ablegen</button>
+        <select id="preset-store-list"><option value="">&ndash; abgelegt &ndash;</option></select>
+        <button id="preset-store-load">Laden</button>
+        <button id="preset-store-del">L&ouml;schen</button>
+      </div>
+    </div>
+    <div class="card subpage-home" id="sub-home-options">
+      <h2>Einstellungen</h2>
+      <p class="muted">
+        F&uuml;nf Bereiche. Was das Auto <em>f&auml;hrt</em>, steht unter Fahrgef&uuml;hl;
+        was es <em>hat</em>, unter Allgemein.
+      </p>
+      <div class="misc-grid">
+        <button class="misc-tile subpage-open" data-sub="opt-general">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M24 6v6M24 36v6M6 24h6M36 24h6M11 11l4 4M33 33l4 4M37 11l-4 4M15 33l-4 4"/><circle cx="24" cy="24" r="9"/></svg>
+          <b>Allgemein</b>
+          <span>Licht, Betriebsart, Akku, Tank, Schaden, Vibration.</span>
+        </button>
+        <button class="misc-tile subpage-open" data-sub="opt-feel">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="24" cy="24" r="16"/><circle cx="24" cy="24" r="5"/><path d="M24 8v11M13 33l8-6M35 33l-8-6" stroke="var(--bad)"/></svg>
+          <b>Fahrgef&uuml;hl</b>
+          <span>Fahrwerk, Getriebe, Masse und Reifen, Lenkung.</span>
+        </button>
+        <button class="misc-tile subpage-open" data-sub="opt-sound">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 19h7l9-8v26l-9-8h-7z"/><path d="M32 17a10 10 0 0 1 0 14" stroke="var(--bad)"/><path d="M37 12a17 17 0 0 1 0 24" stroke="var(--bad)"/></svg>
+          <b>Ton</b>
+          <span>Motorsound, Ambience, Lautst&auml;rken &ndash; und die Motorwerkstatt.</span>
+        </button>
+        <button class="misc-tile subpage-open" data-sub="opt-ghosts">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M24 6c-8 0-13 6-13 14v20l5-4 4 4 4-4 4 4 5 4V20c0-8-1-14-9-14z"/><circle cx="19" cy="21" r="2.2" fill="currentColor"/><circle cx="29" cy="21" r="2.2" fill="currentColor"/></svg>
+          <b>Autonome Gegner</b>
+          <span>Ghosts: Tempo, Linie, Rennw&uuml;rze, Lernen. Teilweise noch im Aufbau.</span>
+        </button>
+        <button class="misc-tile subpage-open" data-sub="opt-pad">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="16" width="38" height="18" rx="9"/><path d="M14 22v6M11 25h6"/><circle cx="32" cy="23" r="2"/><circle cx="36" cy="27" r="2"/></svg>
+          <b>Controller</b>
+          <span>Erkennung, Tastenbelegung, eigene Zuordnung.</span>
+        </button>
+      </div>
+    </div>
+    <div class="card subpage" id="sub-opt-general">
+      <button class="misc-back subpage-back" data-sub="">&larr; Einstellungen</button>
+      <h2>Allgemein</h2>
+<div class="opt-head">Allgemein</div>
       <div class="opt-row"><div class="opt-label">Scheinwerfer
           <small>Vorne Standlicht, hinten Bremslicht. Taste <b>L</b> ist die
           Lichthupe.</small></div>
         <label class="tgl"><input type="checkbox" id="dash-head-toggle" checked><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Frei fahren
-          <small>Ohne Streckenkarte: keine Kachelfolge, keine Rundenz&auml;hlung, kein
-          Vorausblick.</small></div>
-        <label class="tgl"><input type="checkbox" id="dash-freeroam"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Auf der Bahn
           <small>Zwei Lesearten, kein Sensorschalter. <b>An</b>: das Auto liest die
           Kodierung der Kunststoffschiene und h&auml;lt sich selbst auf der Bahn.
@@ -3626,8 +3715,147 @@
           erkannt. Beides zugleich gibt es nicht.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-ontrack" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Physik-Modus aktivieren<small>Aus: rohe Stickstellung, ohne Gänge.</small></div><label class="tgl"><input type="checkbox" id="phys-enable" checked><span></span></label></div>
-      <div class="opt-row" id="phys-gyro-wrap"><div class="opt-label">Handy-Neigung für Lenkung nutzen</div><label class="tgl"><input type="checkbox" id="phys-gyro"><span></span></label></div>
-      <div class="opt-head">Ton</div>
+      
+      <div class="opt-row"><div class="opt-label">Vibration
+          <small>R&uuml;ckmeldung im Controller bei Gangwechsel, ABS, Aufprall und im
+          Boxenstopp. Das Handy vibriert nicht mit, das Protokoll kennt daf&uuml;r
+          nichts.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-vibration"><span></span></label></div>
+<div class="opt-head">Akku</div>
+      <div class="opt-row"><div class="opt-label">Leistung über Akkulaufzeit konstant halten<small>Drosselt bei vollem Akku. Der Akkuwert ist eine unkalibrierte Schätzung.</small></div><label class="tgl"><input type="checkbox" id="setting-battery-comp"><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Referenz-Akkustand</div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="setting-battery-ref" min="0.2" max="1" step="0.05" value="0.5">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-battery-ref-val">50%</span>
+        </div></div>
+      
+<div class="opt-head">
+        Tank &amp; Schaden
+      </div>
+      <div class="opt-row"><div class="opt-label">Tankverbrauch (%/s bei Vollgas)</div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="setting-fuel-drain" min="0" max="10" step="0.5" value="3">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-fuel-drain-val">3.0</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Crashs, bis Fahrzeug ruckelt</div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="setting-crash-count" min="0" max="7" step="1" value="5">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-crash-count-val">10</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Schaden</div><label class="tgl"><input type="checkbox" id="setting-crash-damage" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Vollst&auml;ndige Reparatur dauert (s)<small>Von 100 % auf 0. Nicht linear: die ersten 25 % in 1/10 der Zeit, die letzten 25 % in 4/10.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="setting-repair-time" min="2" max="30" step="1" value="10">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-repair-time-val">10 s</span>
+        </div></div>
+    </div>
+    </div>
+    <div class="card subpage" id="sub-opt-feel">
+      <button class="misc-back subpage-back" data-sub="">&larr; Einstellungen</button>
+      <h2>Fahrgef&uuml;hl</h2>
+<div class="opt-head">Fahrwerk</div>
+      <div class="opt-row"><div class="opt-label">Geschwindigkeit</div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="setting-topspeed" min="0.2" max="1" step="0.05" value="1">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-topspeed-val">100%</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Reifengrip</div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="setting-grip" min="0" max="1" step="0.05" value="0.6">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-grip-val">0.60</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Bremswirkung</div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="setting-brakepower" min="0.3" max="1.5" step="0.05" value="1">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-brakepower-val">1.00</span>
+        </div></div>
+      
+<div class="opt-head">
+        Getriebe &amp; Fahrleistung
+      </div>
+      <div class="opt-row"><div class="opt-label">Automatikgetriebe<small>An: Quadrat/X legt unter 10 km/h den Rückwärtsgang, Kreis/B holt ihn heraus. Aus: von Hand schalten, unter dem 1. Gang liegt der Leerlauf und darunter im Stand der Rückwärtsgang.</small></div><label class="tgl"><input type="checkbox" id="setting-autoshift" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Höchstgeschwindigkeit (km/h)</div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="setting-topspeed-kmh" min="2" max="8" step="0.5" value="4">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-topspeed-kmh-val">4.0</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">0 &rarr; 100 km/h (s)<small>Angezeigte km/h. Ein 911 GT3 R braucht rund 3,2 s.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="setting-zero-to-top" min="1.5" max="8" step="0.1" value="3.2">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-zero-to-top-val">3.2</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Ausrollen (Faktor)<small>Rollwiderstand, Motorbremse und Luftwiderstand zugleich. Klein rollt weit.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="setting-coast-drag" min="0.2" max="2" step="0.05" value="1">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-coast-drag-val">1.00</span>
+        </div></div>
+      
+<div class="opt-head">Masse &amp; Reifen</div>
+      <div class="opt-row"><div class="opt-label">Tankgewicht<small>Voller Tank macht träger. Links = aus.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="setting-fuelweight" min="0" max="1" step="0.05" value="1">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-fuelweight-val">100%</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Reifen: Temperatur &amp; Verschlei&szlig;<small>Kalt nach Start und Boxenstopp, abgenutzt nach hartem Stint. Links = aus.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="setting-tyres" min="0" max="2" step="0.05" value="2">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-tyres-val">200%</span>
+        </div></div>
+      
+<div class="opt-head">Lenkung &amp; Feinabstimmung</div>
+      <div class="opt-row"><div class="opt-label">Lenkansprechen<small>Auch auf dem Steuerkreuz links/rechts.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="phys-steerresp" min="0.5" max="3" step="0.1" value="2">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="phys-steerresp-val">100%</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Beschleunigungsfaktor<small>Feinabstimmung, 1.0 = die eingestellte Zeit.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="phys-accel" min="0.4" max="2.0" step="0.05" value="1">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="phys-accel-val">1.00</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Trail-Braking-Grip-Bonus
+          <small>Erlaubt beim Anbremsen mehr Lenkung. Nicht die Gewichtsverlagerung, sondern
+          ihr Gegenst&uuml;ck in der Lenkgrenze.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="phys-trailbrake" min="1.0" max="1.3" step="0.05" value="1.1">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="phys-trailbrake-val">1.10</span>
+        </div></div>
+      
+    </div>
+    <div class="card subpage" id="sub-opt-sound">
+      <button class="misc-back subpage-back" data-sub="">&larr; Einstellungen</button>
+      <h2>Ton</h2>
+<div class="opt-head">Ton</div>
       <div class="opt-row"><div class="opt-label">Motorsound</div><label class="tgl"><input type="checkbox" id="sound-enable" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Regen<small>Select oder W. Reifen kommen beim Boxenstopp passend.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-rain"><span></span></label></div>
@@ -3695,225 +3923,8 @@
           <option value="horn">Zweiklang (gerechnet)</option>
           <option value="blip">Blip (gerechnet)</option>
         </select></div>
-      <div class="opt-head">Akku</div>
-      <div class="opt-row"><div class="opt-label">Leistung über Akkulaufzeit konstant halten<small>Drosselt bei vollem Akku. Der Akkuwert ist eine unkalibrierte Schätzung.</small></div><label class="tgl"><input type="checkbox" id="setting-battery-comp"><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Referenz-Akkustand</div>
-        <div class="opt-slider">
-          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-battery-ref" min="0.2" max="1" step="0.05" value="0.5">
-          <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="setting-battery-ref-val">50%</span>
-        </div></div>
-      <div class="opt-head">Fahrwerk</div>
-      <div class="opt-row"><div class="opt-label">Geschwindigkeit</div>
-        <div class="opt-slider">
-          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-topspeed" min="0.2" max="1" step="0.05" value="1">
-          <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="setting-topspeed-val">100%</span>
-        </div></div>
-      <div class="opt-row"><div class="opt-label">Reifengrip</div>
-        <div class="opt-slider">
-          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-grip" min="0" max="1" step="0.05" value="0.6">
-          <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="setting-grip-val">0.60</span>
-        </div></div>
-      <div class="opt-row"><div class="opt-label">Bremswirkung</div>
-        <div class="opt-slider">
-          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-brakepower" min="0.3" max="1.5" step="0.05" value="1">
-          <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="setting-brakepower-val">1.00</span>
-        </div></div>
-      <div class="opt-head">
-        Getriebe &amp; Fahrleistung
-      </div>
-      <div class="opt-row"><div class="opt-label">Automatikgetriebe<small>An: Quadrat/X legt unter 10 km/h den Rückwärtsgang, Kreis/B holt ihn heraus. Aus: von Hand schalten, unter dem 1. Gang liegt der Leerlauf und darunter im Stand der Rückwärtsgang.</small></div><label class="tgl"><input type="checkbox" id="setting-autoshift" checked><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Höchstgeschwindigkeit (km/h)</div>
-        <div class="opt-slider">
-          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-topspeed-kmh" min="2" max="8" step="0.5" value="4">
-          <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="setting-topspeed-kmh-val">4.0</span>
-        </div></div>
-      <div class="opt-row"><div class="opt-label">0 &rarr; 100 km/h (s)<small>Angezeigte km/h. Ein 911 GT3 R braucht rund 3,2 s.</small></div>
-        <div class="opt-slider">
-          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-zero-to-top" min="1.5" max="8" step="0.1" value="3.2">
-          <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="setting-zero-to-top-val">3.2</span>
-        </div></div>
-      <div class="opt-row"><div class="opt-label">Ausrollen (Faktor)<small>Rollwiderstand, Motorbremse und Luftwiderstand zugleich. Klein rollt weit.</small></div>
-        <div class="opt-slider">
-          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-coast-drag" min="0.2" max="2" step="0.05" value="1">
-          <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="setting-coast-drag-val">1.00</span>
-        </div></div>
-      <div class="opt-head">Autonome Gegner</div>
-      <div class="opt-row"><div class="opt-label">Ghost: Leitplanken-Modus<small>Das Auto hält sich selbst auf der Bahn, der Ghost gibt nur Gas.</small></div>
-        <label class="tgl"><input type="checkbox" id="ghost-rail" checked><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Ghost-Tempo<small>Rundentempo der autonomen Autos.</small></div>
-        <div class="opt-slider">
-          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="ghost-speed" min="0.2" max="1" step="0.05" value="0.55">
-          <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="ghost-speed-val">55%</span>
-        </div></div>
-      <div class="opt-row"><div class="opt-label">Ghost: Kurvendrosselung<small>Wie viel Tempo in Kurven abgegeben wird.</small></div>
-        <div class="opt-slider">
-          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="ghost-curve" min="0" max="0.6" step="0.05" value="0.35">
-          <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="ghost-curve-val">35%</span>
-        </div></div>
-      <div class="opt-row"><div class="opt-label">Rennw&uuml;rze
-          <small>Tagesform, Fehler, Windschatten, Attacke, Gummiband. Auf 0 f&auml;hrt jeder
-          Ghost stur seine Zeit.</small></div>
-        <div class="opt-slider">
-          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="ghost-spice" min="0" max="1" step="0.05" value="0.4">
-          <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="ghost-spice-val">40%</span>
-        </div></div>
-      <div class="opt-row"><div class="opt-label">Ghost: Ideallinie
-          <small>Au&szlig;en anstellen, innen scheiteln, au&szlig;en heraus. Ob es hilft, sagen
-          Rundenzeit und Abg&auml;nge. Links = aus.</small></div>
-        <div class="opt-slider">
-          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="ghost-line" min="0" max="1" step="0.05" value="0.35">
-          <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="ghost-line-val">35%</span>
-        </div></div>
-      <div class="opt-row"><div class="opt-label">Ghost: Linienmodell
-          <small>Kr&uuml;mmung nimmt den gr&ouml;&szlig;ten Radius. Rundenzeit rechnet ein
-          Geschwindigkeitsprofil und ist im Modell 1&ndash;8&nbsp;% schneller; ob auch auf
-          dem Teppich, sagen Rundenzeit und Abg&auml;nge.</small></div>
-        <div class="row" style="gap:6px; flex-wrap:wrap">
-          <button type="button" class="mw-preset sel" data-linemodel="curvature">Kr&uuml;mmung</button>
-          <button type="button" class="mw-preset" data-linemodel="laptime">Rundenzeit</button>
-        </div></div>
-      <div class="opt-row"><div class="opt-label">Ghost: lernt von Runde zu Runde
-          <small>Probiert jede Runde eine kleine &Auml;nderung an Tempo und Linie und
-          beh&auml;lt sie nur, wenn die Runde schneller war <b>und</b> kein Abgang dabei.
-          Nach einem Abgang wird zur&uuml;ckgenommen und vorsichtiger weiterprobiert.</small></div>
-        <label class="tgl"><input type="checkbox" id="ghost-learn-pace"><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Ghost: seitlicher Versatz<small>Gegen gegenseitiges Rammen. Blind: kein Byte meldet die Querlage. Links = aus.</small></div>
-        <div class="opt-slider">
-          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="ghost-lateral" min="0" max="1" step="0.1" value="0.5">
-          <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="ghost-lateral-val">aus</span>
-        </div></div>
-      <div class="opt-row"><div class="opt-label">Strecke beim Fahren lernen
-          <small>Setzt das Layout aus den gemeldeten Kacheln zusammen und &uuml;bernimmt es
-          nach der ersten geschlossenen Runde, nur wenn noch keine Strecke liegt.</small></div>
-        <label class="tgl"><input type="checkbox" id="ghost-learn" checked><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Ghost braucht Streckencode
-          <small>Aus: f&auml;hrt auch ohne gedruckte Strecke. An: nur mit gelesenem
-          Muster.</small></div>
-        <label class="tgl"><input type="checkbox" id="ghost-needcode"><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Ghost: F&uuml;hrenden bremsen<small>Der Erstplatzierte fährt etwas langsamer.</small></div>
-        <label class="tgl"><input type="checkbox" id="ghost-leader"><span></span></label></div>
-      <div class="opt-head">Masse &amp; Reifen</div>
-      <div class="opt-row"><div class="opt-label">Tankgewicht<small>Voller Tank macht träger. Links = aus.</small></div>
-        <div class="opt-slider">
-          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-fuelweight" min="0" max="1" step="0.05" value="0.5">
-          <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="setting-fuelweight-val">50%</span>
-        </div></div>
-      <div class="opt-row"><div class="opt-label">Reifen: Temperatur &amp; Verschlei&szlig;<small>Kalt nach Start und Boxenstopp, abgenutzt nach hartem Stint. Links = aus.</small></div>
-        <div class="opt-slider">
-          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-tyres" min="0" max="1" step="0.05" value="0.5">
-          <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="setting-tyres-val">50%</span>
-        </div></div>
-      <div class="opt-head">Lenkung &amp; Feinabstimmung</div>
-      <div class="opt-row"><div class="opt-label">Lenkansprechen<small>Auch auf dem Steuerkreuz links/rechts.</small></div>
-        <div class="opt-slider">
-          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="phys-steerresp" min="0.5" max="3" step="0.1" value="2">
-          <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="phys-steerresp-val">100%</span>
-        </div></div>
-      <div class="opt-row"><div class="opt-label">Beschleunigungsfaktor<small>Feinabstimmung, 1.0 = die eingestellte Zeit.</small></div>
-        <div class="opt-slider">
-          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="phys-accel" min="0.4" max="2.0" step="0.05" value="1">
-          <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="phys-accel-val">1.00</span>
-        </div></div>
-      <div class="opt-row"><div class="opt-label">Trail-Braking-Grip-Bonus
-          <small>Erlaubt beim Anbremsen mehr Lenkung. Nicht die Gewichtsverlagerung, sondern
-          ihr Gegenst&uuml;ck in der Lenkgrenze.</small></div>
-        <div class="opt-slider">
-          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="phys-trailbrake" min="1.0" max="1.3" step="0.05" value="1.1">
-          <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="phys-trailbrake-val">1.10</span>
-        </div></div>
-      <div class="opt-head">
-        Tank &amp; Schaden
-      </div>
-      <div class="opt-row"><div class="opt-label">Tankverbrauch (%/s bei Vollgas)</div>
-        <div class="opt-slider">
-          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-fuel-drain" min="0" max="10" step="0.5" value="3">
-          <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="setting-fuel-drain-val">3.0</span>
-        </div></div>
-      <div class="opt-row"><div class="opt-label">Crashs, bis Fahrzeug ruckelt</div>
-        <div class="opt-slider">
-          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-crash-count" min="0" max="7" step="1" value="3">
-          <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="setting-crash-count-val">4</span>
-        </div></div>
-      <div class="opt-row"><div class="opt-label">Schaden</div><label class="tgl"><input type="checkbox" id="setting-crash-damage" checked><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Vollst&auml;ndige Reparatur dauert (s)<small>Von 100 % auf 0. Nicht linear: die ersten 25 % in 1/10 der Zeit, die letzten 25 % in 4/10.</small></div>
-        <div class="opt-slider">
-          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-repair-time" min="2" max="30" step="1" value="10">
-          <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="setting-repair-time-val">10 s</span>
-        </div></div>
-    </div>
-
-    <div class="card">
-      <h2>Controller</h2>
-      <p class="muted">
-        Verbinde einen Controller per USB/Bluetooth und drücke einen Knopf, damit der Browser ihn erkennt
-        (Web-Gamepad-API meldet sich erst nach der ersten Eingabe).
-      </p>
-      <div class="row" id="pad-status-row">
-        <span class="pad-dot" id="pad-dot"></span>
-        <span class="muted" id="pad-status-text">kein Controller erkannt</span>
-      </div>
-      <p class="muted" style="margin-top:14px">
-        Standard: rechter Trigger = Gas, linker Trigger = Bremse, linker Stick = Lenkung,
-        X (links) = runterschalten, B (rechts) = hochschalten: wie bei einem Xbox-Controller. Klicke
-        "Neu zuweisen" und betätige dann den gewünschten Knopf/Stick/Trigger am Controller.
-      </p>
-      <table class="bind-table">
-        <thead><tr><th>Aktion</th><th>Belegung</th><th></th></tr></thead>
-        <tbody id="bind-table-body"></tbody>
-      </table>
-      <div class="row" style="margin-top:12px">
-        <button id="bind-reset">Auf Standard zurücksetzen</button>
-      </div>
-      <div class="row" style="margin-top:12px">
-        <span class="muted">Gas: <b id="pad-live-throttle">0.00</b></span>
-        <span class="muted">Bremse: <b id="pad-live-brake">0.00</b></span>
-        <span class="muted">Lenkung: <b id="pad-live-steer">0.00</b></span>
-        <span class="muted">Steuerkreuz: <b id="pad-live-dpad">&ndash;</b></span>
-        <span class="muted" style="font-size:11px">Achsen: <b id="pad-live-axes">&ndash;</b></span>
-      </div>
-    </div>
-
-    <div class="card">
+      
+      <div class="mw-block">
       <h2>Motorwerkstatt</h2>
       <p class="muted">
         Dieselben elf Gr&ouml;&szlig;en, aus denen die mitgelieferten Motoren gerechnet
@@ -4062,31 +4073,109 @@
         <button id="mw-export">Aktuelle Werte hineinschreiben</button>
       </div>
     </div>
-    <div class="card">
-      <h2>Voreinstellungen</h2>
+    </div>
+    <div class="card subpage" id="sub-opt-ghosts">
+      <button class="misc-back subpage-back" data-sub="">&larr; Einstellungen</button>
+      <h2>Autonome Gegner</h2>
+<div class="opt-head">Autonome Gegner</div>
+      <div class="opt-row"><div class="opt-label">Ghost: Leitplanken-Modus<small>Das Auto hält sich selbst auf der Bahn, der Ghost gibt nur Gas.</small></div>
+        <label class="tgl"><input type="checkbox" id="ghost-rail" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Ghost-Tempo<small>Rundentempo der autonomen Autos.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="ghost-speed" min="0.2" max="1" step="0.05" value="0.55">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="ghost-speed-val">55%</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Ghost: Kurvendrosselung<small>Wie viel Tempo in Kurven abgegeben wird.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="ghost-curve" min="0" max="0.6" step="0.05" value="0.35">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="ghost-curve-val">35%</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Rennw&uuml;rze
+          <small>Tagesform, Fehler, Windschatten, Attacke, Gummiband. Auf 0 f&auml;hrt jeder
+          Ghost stur seine Zeit.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="ghost-spice" min="0" max="1" step="0.05" value="0.4">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="ghost-spice-val">40%</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Ghost: Ideallinie
+          <small>Au&szlig;en anstellen, innen scheiteln, au&szlig;en heraus. Ob es hilft, sagen
+          Rundenzeit und Abg&auml;nge. Links = aus.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="ghost-line" min="0" max="1" step="0.05" value="0.35">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="ghost-line-val">35%</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Ghost: Linienmodell
+          <small>Kr&uuml;mmung nimmt den gr&ouml;&szlig;ten Radius. Rundenzeit rechnet ein
+          Geschwindigkeitsprofil und ist im Modell 1&ndash;8&nbsp;% schneller; ob auch auf
+          dem Teppich, sagen Rundenzeit und Abg&auml;nge.</small></div>
+        <div class="row" style="gap:6px; flex-wrap:wrap">
+          <button type="button" class="mw-preset sel" data-linemodel="curvature">Kr&uuml;mmung</button>
+          <button type="button" class="mw-preset" data-linemodel="laptime">Rundenzeit</button>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Ghost: lernt von Runde zu Runde
+          <small>Probiert jede Runde eine kleine &Auml;nderung an Tempo und Linie und
+          beh&auml;lt sie nur, wenn die Runde schneller war <b>und</b> kein Abgang dabei.
+          Nach einem Abgang wird zur&uuml;ckgenommen und vorsichtiger weiterprobiert.</small></div>
+        <label class="tgl"><input type="checkbox" id="ghost-learn-pace"><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Ghost: seitlicher Versatz<small>Gegen gegenseitiges Rammen. Blind: kein Byte meldet die Querlage. Links = aus.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="ghost-lateral" min="0" max="1" step="0.1" value="0.5">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="ghost-lateral-val">aus</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Strecke beim Fahren lernen
+          <small>Setzt das Layout aus den gemeldeten Kacheln zusammen und &uuml;bernimmt es
+          nach der ersten geschlossenen Runde, nur wenn noch keine Strecke liegt.</small></div>
+        <label class="tgl"><input type="checkbox" id="ghost-learn" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Ghost braucht Streckencode
+          <small>Aus: f&auml;hrt auch ohne gedruckte Strecke. An: nur mit gelesenem
+          Muster.</small></div>
+        <label class="tgl"><input type="checkbox" id="ghost-needcode"><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Ghost: F&uuml;hrenden bremsen<small>Der Erstplatzierte fährt etwas langsamer.</small></div>
+        <label class="tgl"><input type="checkbox" id="ghost-leader"><span></span></label></div>
+      
+    </div>
+    <div class="card subpage" id="sub-opt-pad">
+      <button class="misc-back subpage-back" data-sub="">&larr; Einstellungen</button>
+      <h2>Controller</h2>
       <p class="muted">
-        Drei fertige Abstimmungen. Sie setzen nur die Regler, die das <em>Fahrgef&uuml;hl</em>
-        betreffen: nicht die Rennl&auml;nge, nicht das Wetter, nicht die Strecke, denn
-        die geh&ouml;ren zum Rennen und nicht zum Auto.
+        Verbinde einen Controller per USB/Bluetooth und drücke einen Knopf, damit der Browser ihn erkennt
+        (Web-Gamepad-API meldet sich erst nach der ersten Eingabe).
       </p>
-      <div class="row" style="gap:8px; flex-wrap:wrap">
-        <button id="preset-arcade">Arcade</button>
-        <button id="preset-pro">Pro</button>
-        <button id="preset-real">Realismus</button>
-        <span class="muted" id="preset-status">&nbsp;</span>
+      <div class="row" id="pad-status-row">
+        <span class="pad-dot" id="pad-dot"></span>
+        <span class="muted" id="pad-status-text">kein Controller erkannt</span>
       </div>
-      <p class="muted" style="font-size:11.5px; margin:10px 0 4px 0">
-        Zum Weitergeben: der Text unten enth&auml;lt <b>alle</b> Regler, auch die, die keine
-        Voreinstellung anfasst. Kopieren, verschicken, einf&uuml;gen,
-        <b>&Uuml;bernehmen</b>.
+      <p class="muted" style="margin-top:14px">
+        Standard: rechter Trigger = Gas, linker Trigger = Bremse, linker Stick = Lenkung,
+        X (links) = runterschalten, B (rechts) = hochschalten: wie bei einem Xbox-Controller. Klicke
+        "Neu zuweisen" und betätige dann den gewünschten Knopf/Stick/Trigger am Controller.
       </p>
-      <textarea id="preset-json" spellcheck="false"
-                style="width:100%; min-height:64px; font-family:monospace; font-size:11.5px"></textarea>
-      <div class="row" style="gap:8px; margin-top:6px">
-        <button id="preset-import">&Uuml;bernehmen</button>
-        <button id="preset-export">Aktuelle Werte hineinschreiben</button>
+      <table class="bind-table">
+        <thead><tr><th>Aktion</th><th>Belegung</th><th></th></tr></thead>
+        <tbody id="bind-table-body"></tbody>
+      </table>
+      <div class="row" style="margin-top:12px">
+        <button id="bind-reset">Auf Standard zurücksetzen</button>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <span class="muted">Gas: <b id="pad-live-throttle">0.00</b></span>
+        <span class="muted">Bremse: <b id="pad-live-brake">0.00</b></span>
+        <span class="muted">Lenkung: <b id="pad-live-steer">0.00</b></span>
+        <span class="muted">Steuerkreuz: <b id="pad-live-dpad">&ndash;</b></span>
+        <span class="muted" style="font-size:11px">Achsen: <b id="pad-live-axes">&ndash;</b></span>
       </div>
     </div>
+
   </section>
 
   <!-- TRACK TAB -->
@@ -4562,7 +4651,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.4.1</span></span>
+    <span class="foot-ver">v<span id="app-version">0.4.13</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
   </span>
   <span class="foot-right">

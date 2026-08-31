@@ -99,12 +99,24 @@
     markDrivetrainChartsDirty();
   });
 
+  // Der Regler steht in SEKUNDEN, weil die Physik damit rechnet und der Wert gegen eine
+  // gemessene GT3-Reihe gefittet ist. Angezeigt wird trotzdem eine BESCHLEUNIGUNG in
+  // Prozent, denn "weniger ist schneller" liest sich bei einem Regler, der neben
+  // "Hoechstgeschwindigkeit" steht, unweigerlich als Fehler. Die Sekunden stehen zur
+  // Kontrolle daneben - sie sind die Groesse, gegen die kalibriert wurde, und die will man
+  // sehen koennen.
+  const ACCEL_REF_S = 3.2;   // Bezugswert = 100 %
+  function accelLabel(s) {
+    return Math.round(ACCEL_REF_S / s * 100) + ' % ('
+         + s.toFixed(1).replace('.', ',') + ' s auf 100)';
+  }
   $('setting-zero-to-top').addEventListener('input', (e) => {
     physEngine.config.launchAnchorTimeS = parseFloat(e.target.value);
-    $('setting-zero-to-top-val').textContent = physEngine.config.launchAnchorTimeS.toFixed(1);
+    $('setting-zero-to-top-val').textContent = accelLabel(physEngine.config.launchAnchorTimeS);
     physEngine.calibrateAccel();
     markDrivetrainChartsDirty();
   });
+  $('setting-zero-to-top-val').textContent = accelLabel(+$('setting-zero-to-top').value);
 
   $('setting-coast-drag').addEventListener('input', (e) => {
     physEngine.config.coastDragPerS = parseFloat(e.target.value);
@@ -112,6 +124,8 @@
     physEngine.calibrateAccel();
     markDrivetrainChartsDirty();
   });
+
+  $('setting-vibration').addEventListener('change', (e) => { rumbleOn = e.target.checked; });
 
   $('setting-fuel-drain').addEventListener('input', (e) => {
     fuelDrainPerSec = parseFloat(e.target.value);
@@ -168,7 +182,10 @@
 
   // ---- Settings sliders matching the official app's Geschwindigkeit/Reifengrip/
   // Bremswirkung concepts, each backed by a real existing lever (no invented settings) ----
-  let topSpeedScale = 1;
+  // Beim Laden aus dem Markup gelesen statt hart gesetzt: der Wert stand auf 1 und passte
+  // nur zufaellig zum value="1" im Dokument. Eine Aenderung dort waere stillschweigend
+  // wirkungslos geblieben, bis jemand den Regler einmal anfasst.
+  let topSpeedScale = parseFloat(($('setting-topspeed') || {}).value) || 1;
   const BASE_BRAKE = { base: physEngine.config.brakeDecelBase,
                        aero: physEngine.config.brakeDecelAero };
 
@@ -511,37 +528,14 @@
     physOutThrottle = out.motorPWM;
   }
 
-  // ---- Optional phone-tilt steering input (matches how the official app steers) ----
-  if (window.DeviceOrientationEvent) {
-    let gyroActive = false;
-    $('phys-gyro').addEventListener('change', async (e) => {
-      if (e.target.checked) {
-        if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-          try {
-            const perm = await DeviceOrientationEvent.requestPermission();
-            if (perm !== 'granted') { e.target.checked = false; log('Neigungssensor-Zugriff verweigert.', 'err'); return; }
-          } catch (err) { e.target.checked = false; log('Neigungssensor-Fehler: ' + err.message, 'err'); return; }
-        }
-        gyroActive = true;
-        log('Handy-Neigung für Lenkung aktiviert.', 'info');
-      } else {
-        gyroActive = false;
-        releaseSteerInput(SRC.TILT); // otherwise the last tilt value sticks after unchecking
-      }
-    });
-    const TILT_DEADZONE = 0.06;
-    window.addEventListener('deviceorientation', (e) => {
-      if (!gyroActive || e.gamma === null) return;
-      let tilt = Math.max(-1, Math.min(1, e.gamma / 35)); // ~35° = full lock
-      // The deadzone is load-bearing for arbitration, not cosmetic: a phone is never
-      // exactly level, so without it this source would hold its claim permanently and
-      // become the new unconditional writer — the very bug being fixed, just relocated.
-      if (Math.abs(tilt) < TILT_DEADZONE) tilt = 0;
-      applySteerInput(SRC.TILT, tilt);
-    });
-  } else {
-    $('phys-gyro-wrap').style.display = 'none';
-  }
+  // Hier stand die Lenkung ueber den Neigungssensor des Telefons. Sie ist entfernt: mit
+  // einem Controller in der Hand wird sie nie benutzt, und ohne Controller ist ein Telefon,
+  // das man kippt, kein Lenkrad - der Weg ueber den Schieber auf dem Schirm war in jedem
+  // Versuch praeziser. SRC.TILT bleibt in der Quellenliste stehen, die Schiedsstelle in
+  // 30-input.js kennt sie generisch und braucht keine Pflege.
+  //
+  // Nicht zu verwechseln mit gyroRaw in 70-race.js: das sind die rohen Bewegungsbytes des
+  // AUTOS aus dem Meldekanal, und die speisen weiterhin den gruenen Punkt im G-Diagramm.
 
   // ---- Automated calibration test run ----
   // Sends a fixed, short test matrix directly (bypassing the physics engine) and

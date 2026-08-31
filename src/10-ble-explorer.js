@@ -490,7 +490,58 @@
     "Drehen": "Rotate",
     "Drehzahl": "Revs",
     "Drei der sieben sind aufgeladen. Dieses Modell hat keinen Lader: Geometrie, Kurbelwelle und Zündfolge stimmen, der Ladedruck fehlt. Der Charakter der Bauart bleibt, das Pfeifen nicht.": "Three of the seven are turbocharged. This model has no turbo: geometry, crankshaft and firing order are right, the boost is missing. The character of the architecture remains, the whistle does not.",
-    "Drei fertige Abstimmungen. Sie setzen nur die Regler, die das": "Three ready-made setups. They only touch the sliders that affect the",
+    "F\u00fcnf fertige Abstimmungen. Sie setzen nur die Regler, die das": "Five ready-made setups. They only touch the sliders that affect the",
+
+    // ---- v0.4: Voreinstellungen, Kacheln und die neuen Optionenseiten ----
+    // Die Erklaertexte der fuenf Abstimmungen. Sie stehen im Skript (98-presets.js) und
+    // werden von dort in die Legende gerendert, sind aber trotzdem Oberflaechentext -
+    // deshalb gehoeren sie hierher wie jeder andere Satz auch.
+    "Der ursprüngliche Sim-Modus": "The original sim mode",
+    "Automatik, 2,6 s auf 100, voller Grip, kein Reifenverschleiß und kein Tankgewicht. Verzeihende Bremse, weiche Lenkung. Zum Fahren ohne Nachdenken.":
+      "Automatic gearbox, 2.6 s to 100, full grip, no tyre wear and no fuel weight. Forgiving brakes, soft steering. For driving without thinking.",
+    "Halb so weit zwischen Arcade und GT3": "Halfway between Arcade and GT3",
+    "Von Hand schalten, 3,2 s auf 100, Reifen und Tankgewicht wirken zur Hälfte. Schärfere Lenkung als Arcade, aber noch Reserve in der Bremse.":
+      "Manual gearbox, 3.2 s to 100, tyres and fuel weight at half effect. Sharper steering than Arcade, but still reserve in the brakes.",
+    "An einem echten GT3 kalibriert": "Calibrated against a real GT3",
+    "Von Hand schalten, 3,2 s auf 100 (die gemessene Reihe, gegen die die Physik gefittet ist), voller Reifenverschleiß und volles Tankgewicht. Wenig Grip, schwache Bremse, langes Ausrollen. Ein Fahrfehler kostet hier Zeit.":
+      "Manual gearbox, 3.2 s to 100 (the measured series the physics was fitted against), full tyre wear and full fuel weight. Little grip, weak brakes, long coasting. A mistake costs time here.",
+    "Weniger Leistung, mehr Reserve": "Less power, more reserve",
+    "Von Hand schalten, 4,4 s auf 100, Reifenverschleiß und Tankgewicht wie GT3, aber mehr Grip und eine gutmütigere Bremse. Die Klasse darunter fährt sich nicht leichter, weil sie mehr verzeiht, sondern weil sie langsamer ist.":
+      "Manual gearbox, 4.4 s to 100, tyre wear and fuel weight as GT3, but more grip and gentler brakes. The class below is not easier because it forgives more, but because it is slower.",
+    "Das schärfste, was das Modell hergibt": "The sharpest the model has",
+    "Von Hand schalten, 2,4 s auf 100, stärkster Reifenverschleiß, volles Tankgewicht, empfindlichste Lenkung und die kürzeste Bremse. Das Ausrollen ist kurz, weil der Luftwiderstand hier die größte Einzelkraft ist.":
+      "Manual gearbox, 2.4 s to 100, strongest tyre wear, full fuel weight, sharpest steering and the shortest brakes. Coasting is short because drag is the largest single force here.",
+
+    // Die Kachelseite der Optionen
+    "Einstellungen": "Settings",
+    "\u2190 Einstellungen": "\u2190 Settings",
+    "F\u00fcnf Bereiche. Was das Auto": "Five areas. What the car",
+    ", steht unter Fahrgef\u00fchl; was es": "is under Handling; what it",
+    "fährt": "drives",
+    "hat": "has",
+    ", unter Allgemein.": "is under General.",
+    "Licht, Betriebsart, Akku, Tank, Schaden, Vibration.":
+      "Lights, mode, battery, fuel, damage, vibration.",
+    "Fahrwerk, Getriebe, Masse und Reifen, Lenkung.":
+      "Chassis, gearbox, mass and tyres, steering.",
+    "Motorsound, Ambience, Lautst\u00e4rken \u2013 und die Motorwerkstatt.":
+      "Engine sound, ambience, volumes \u2013 and the engine workshop.",
+    "Ghosts: Tempo, Linie, Rennw\u00fcrze, Lernen. Teilweise noch im Aufbau.":
+      "Ghosts: pace, line, race spice, learning. Partly still under construction.",
+    "Erkennung, Tastenbelegung, eigene Zuordnung.":
+      "Detection, key mapping, custom assignment.",
+
+    // Der neue Schalter
+    // Garagen-Abstimmung und die Ablage auf diesem Geraet
+    "Abstimmung für das gesteuerte Auto – dieselben fünf wie in den Optionen, die Regler dort ziehen mit.":
+      "Setup for the car you drive – the same five as in the options; the sliders there follow along.",
+    "Oder auf diesem Gerät ablegen. Bleibt im Browser, wird nicht mitgeschickt.":
+      "Or store it on this device. Stays in the browser, is not sent anywhere.",
+    "Ablegen": "Store",
+    "– abgelegt –": "– stored –",
+    "Vibration": "Vibration",
+    "R\u00fcckmeldung im Controller bei Gangwechsel, ABS, Aufprall und im Boxenstopp. Das Handy vibriert nicht mit, das Protokoll kennt daf\u00fcr nichts.":
+      "Controller feedback on gear changes, ABS, impacts and during a pit stop. The phone does not vibrate along; the protocol has nothing for it.",
     "Drei führende dünne Balken fehlen. Diese Fassung funktionierte.": "Three leading thin bars are missing. This version worked.",
     "Drosselt bei vollem Akku. Der Akkuwert ist eine unkalibrierte Schätzung.": "Throttles back on a full battery. The battery value is an uncalibrated estimate.",
     "Druckvorlagen": "Print templates",
@@ -557,7 +608,7 @@
     "Ghost: Linienmodell": "Ghost: line model",
     "Ghost: lernt von Runde zu Runde": "Ghost: learns lap by lap",
     "Ghost: seitlicher Versatz": "Ghost: lateral offset",
-    "Grundlagen": "Basics",
+    "Allgemein": "General",
     "Gummiband": "Rubber band",
     "Haarnadel L": "Hairpin L",
     "Haarnadel R": "Hairpin R",
