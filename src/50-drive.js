@@ -31,7 +31,11 @@
     lightBits = (lightBits & ~(TRACK_BIT_RAIL | TRACK_BIT_PRINT)) | trackModeBit();
     const b = $('race-act-scan');
     if (b) {
-      b.textContent = rail ? 'Liest: Bahn' : 'Liest: Ausdruck';
+      // NUR die Spanne, nicht der Knopf: er traegt jetzt ein Sensorbild, und textContent
+      // haette es mitgeloescht. Der Fehler faellt beim Lesen nicht auf, weil eine
+      // Zuweisung an textContent harmlos aussieht.
+      const t = $('race-act-scan-txt');
+      if (t) t.textContent = rail ? 'Bahn' : 'Ausdruck';
       // Die Ausdruck-Stellung ist die ungewoehnliche und die, in der das Auto sich nicht
       // selbst haelt. Sie wird angeschrieben, damit man nicht versehentlich darin faehrt.
       b.classList.toggle('warn', !rail);
@@ -51,6 +55,27 @@
           + 'dafuer haelt sich das Auto nicht selbst auf der Bahn.', 'info');
     showHudToast(rail ? 'LIEST BAHN' : 'LIEST AUSDRUCK');
   });
+
+  // Der Fahrmodus im Cockpit. Er schaltet durch die Voreinstellungen und ruft
+  // applyPreset() - dieselbe Funktion wie die Knoepfe in den Optionen und in der Garage.
+  // Es gibt damit genau EINEN Weg, eine Abstimmung zu setzen, und die Regler ziehen
+  // ueberall nach, weil presetSet() 'input' und 'change' mit bubbles feuert.
+  //
+  // Die Liste kommt aus PRESETS und nicht aus einem eigenen Array: ein sechster Eintrag
+  // dort soll hier ohne Nacharbeit erscheinen.
+  let fahrmodusIdx = -1;
+  if ($('race-act-mode')) {
+    $('race-act-mode').addEventListener('click', () => {
+      const keys = window.__presetKeys ? window.__presetKeys() : [];
+      if (!keys.length) return;
+      fahrmodusIdx = (fahrmodusIdx + 1) % keys.length;
+      const key = keys[fahrmodusIdx];
+      window.__applyPreset(key);
+      const txt = $('race-act-mode-txt');
+      if (txt) txt.textContent = window.__presetLabel(key);
+      showHudToast('ABSTIMMUNG ' + window.__presetLabel(key).toUpperCase());
+    });
+  }
 
   if ($('race-act-scan')) {
     $('race-act-scan').addEventListener('click', () => {
@@ -167,6 +192,19 @@
   // Die kalibrierte Vorgabe fuer das Lenkansprechen. Sie ist der Bezug fuer die Anzeige,
   // damit dort 100 % steht, wo der Wert hingehoert - und nicht 200 %.
   const STEER_RESP_REF = 2.0;
+
+  // Die EINE Stelle, an der aus steerResponse eine Prozentzahl wird. Vorher gab es drei, in
+  // zwei Maszstaeben: die Optionen teilten durch den kalibrierten Bezug 2,0 und zeigten
+  // 100 %, das Steuerkreuz und die Cockpitkachel nahmen den Rohwert und zeigten 200 %. Wer
+  // im Menue 100 % einstellt und dann aufs Steuerkreuz sieht, haelt eines von beiden fuer
+  // kaputt.
+  //
+  // Sie steht ABSICHTLICH hier, direkt unter ihrer Konstante, und nicht bei den
+  // Steuerkreuz-Funktionen in 90-ghosts.js. Dort waere sie eine Datei SPAETER als
+  // STEER_RESP_REF, und dieselbe Datei ruft sie zur Aufbauzeit auf - genau die temporale
+  // Todeszone, die in diesem Projekt schon fuenf Ladeabbrueche gekostet hat. In einer
+  // zusammengefuegten IIFE ist das Ende einer Datei nicht das Ende des Moduls.
+  function steerRespPct(v) { return Math.round(v / STEER_RESP_REF * 100); }
   ['phys-steerresp', 'phys-accel'].forEach(id => {
     const input = $(id);
     const readout = $(id + '-val');
@@ -177,7 +215,11 @@
         physEngine.config.steerResponse = v;
         // Bezug ist die kalibrierte Vorgabe 2.0, nicht der Rohwert. 200 % zu lesen, wo
         // die beste Einstellung liegt, laesst sie wie eine Uebertreibung aussehen.
-        $('phys-steerresp-val').textContent = Math.round(v / STEER_RESP_REF * 100) + '%';
+        //
+        // Und was 100 % BEDEUTET, steht jetzt im Modell: steerMaxDeg = 45, der mechanische
+        // Anschlag. Bei 100 % fordert voller Stick genau diesen Anschlag an - darunter
+        // erreicht man ihn nie, darueber schon vor dem Stickende.
+        $('phys-steerresp-val').textContent = steerRespPct(v) + '%';
       }
       if (id === 'phys-accel') physEngine.config.accelerationFactor = v;
       markDrivetrainChartsDirty();
@@ -449,11 +491,10 @@
       $('race-tyre-wear').textContent = 'Abnutzung ' + Math.round(st.tyreWear * 100) + '%';
     }
 
-    $('race-trim-accel').textContent = Math.round(physEngine.config.accelerationFactor * 100) + '%';
-    $('race-trim-steer').textContent = Math.round(physEngine.config.steerResponse * 100) + '%';
-    setTxt('race-track', dashOnMarker ? 'MUSTER' : 'auf Strecke');
-    const tk = $('race-track');
-    if (tk) tk.className = 'gt3-val sm ' + (dashOnMarker ? 'gt3-warn' : 'gt3-ok');
+    // Dieselben zwei Groessen, die auf dem Steuerkreuz liegen - hoch/runter und
+    // links/rechts. Die Kachel zeigt, was das Kreuz verstellt, und nichts anderes.
+    $('race-trim-accel').textContent = Math.round(physEngine.config.brakeBias * 100) + '%';
+    $('race-trim-steer').textContent = steerRespPct(physEngine.config.steerResponse) + '%';
 
     // Pit banner replaces the shift bar while the pit lane is active — impossible to miss,
     // which the old small field was not.
@@ -492,7 +533,11 @@
     }
     $('race-lap-last').textContent = laps.length
       ? formatLapTime(laps[laps.length - 1].ms) : '\u2013';
-    $('race-lap-count').textContent = laps.length;
+    // Das Ziel gehoert in dieselbe Kachel: "Runde 3" allein sagt nicht, ob noch 17 oder
+    // noch 2 kommen. Bei Endurance und Qualifying ist das Ziel eine ZEIT, also steht dort
+    // die verbleibende Zeit - eine Rundenzahl anzuschreiben, die es in diesem Modus nicht
+    // gibt, waere eine erfundene Angabe.
+    $('race-lap-count').textContent = raceLapTarget(laps.length);
     $('race-lap-list').innerHTML = laps.slice().reverse().slice(0, 10).map(l =>
       `<li><span>${l.lap}</span><span${l.ms === best ? ' class="gt3-ok"' : ''}>${formatLapTime(l.ms)}</span></li>`
     ).join('');
@@ -518,6 +563,38 @@
   // would freeze while the heartbeat happily kept re-sending the last throttle value —
   // i.e. the car would keep driving at whatever speed it had when you looked away.
   // Timer-driven, physics keeps decelerating normally instead.
+  // Autopilot fuer das FAHRERAUTO waehrend der gelben Flagge.
+  //
+  // Der Anlass: waehrend Gelb stellt man abgeflogene Ghosts von Hand zurueck auf die Bahn,
+  // hat dabei beide Haende voll und keine am Controller - und das eigene Auto bleibt stehen
+  // oder faehrt in die Bande.
+  //
+  // NUR in der Bahn-Stellung (Byte 14 Bit 5). Das ist keine Vorsicht, sondern eine Aussage
+  // ueber Gemessenes: dort haelt sich das Auto nachgewiesen selbst auf der Strecke, der
+  // Autopilot muss also nur Gas und Bremse stellen. In der Ausdruck-Stellung haelt es sich
+  // nicht selbst, und ein Autopilot ohne Querregelung wuerde es geradeaus in die Bande
+  // fahren - schlimmer als Stehenbleiben.
+  //
+  // Der Regler ist DERSELBE wie bei den Ghosts (Verstaerkung 4 auf Gas, 3 auf die Bremse),
+  // und zwar aus einem inhaltlichen Grund: waehrend Gelb sollen alle Autos dasselbe tun.
+  // Zwei verschiedene Regler, die beide 40 km/h halten wollen, ergeben zwei verschiedene
+  // Geschwindigkeiten, und dann faehrt das Feld nicht geschlossen.
+  //
+  // Nicht waehrend der Anfahrt: sobald die Ampel laeuft, gehoert das Auto wieder dem
+  // Fahrer, denn genau dann faengt das Rennen wieder an.
+  function autopilotYellow() {
+    if (flagState !== 'yellow') return null;
+    // Ausdruck-Stellung: nicht lenkfaehig, siehe oben. trackMode ist ein STRING
+    // ('on'/'off') und kein Boolean - ein !trackMode waere hier immer falsch gewesen.
+    if (trackMode !== 'on') return null;
+    const st = physEngine.state;
+    const ziel = yellowFactor();
+    const v = Math.abs(st.speedKmh) / physEngine.config.topSpeedKmh;
+    const err = ziel - v;
+    return { throttle: Math.max(0, Math.min(1, err * 4)),
+             brake: Math.max(0, Math.min(1, -err * 3)) };
+  }
+
   function physicsStep() {
     if (!physicsEnabled) { physLastTime = null; return; }
     const now = performance.now();
@@ -525,9 +602,14 @@
     physLastTime = now;
     // Derated, not raw. Braking is left alone: brakes do not care how much fuel is left,
     // and a damaged car that cannot slow down would be the opposite of a limp mode.
-    const rawThrottle = fuelDamageDerate(Math.max(0, throttleY));
-    const rawBrake = Math.max(0, -throttleY);
-    const out = physEngine.update({ steering: steerX, throttle: rawThrottle, brake: rawBrake,
+    let rawThrottle = fuelDamageDerate(Math.max(0, throttleY));
+    let rawBrake = Math.max(0, -throttleY);
+    let steer = steerX;
+    // Waehrend der gelben Flagge faehrt das Auto selbst, damit man die Haende frei hat, um
+    // abgeflogene Ghosts zurueckzustellen. Siehe autopilotYellow().
+    const ap = autopilotYellow();
+    if (ap) { rawThrottle = ap.throttle; rawBrake = ap.brake; steer = 0; }
+    const out = physEngine.update({ steering: steer, throttle: rawThrottle, brake: rawBrake,
                                     headlights: headlightsOn }, dt);
     updateDashboard(out);
     physOutSteer = out.servoAngle;

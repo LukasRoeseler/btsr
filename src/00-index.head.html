@@ -288,6 +288,12 @@
   #app-footer .foot-left { display: flex; align-items: center; gap: 10px; }
   #app-footer .foot-ver { font-family: monospace; color: var(--ink); }
   #app-footer .foot-dim { opacity: .55; }
+  /* Der Haftungshinweis darf umbrechen und die Versionsangabe nicht wegdruecken. */
+  #app-footer .foot-legal { max-width: 44ch; line-height: 1.35; }
+  @media (max-width: 700px) {
+    #app-footer .foot-left { flex-wrap: wrap; }
+    #app-footer .foot-legal { max-width: none; flex-basis: 100%; }
+  }
   /* Der Sprachschalter braucht eine Flaeche, keine nackte Beschriftung. Gemessen war er
      36 px breit bei 44 px Hoehe - ein Streifen, den man auf dem Telefon nicht trifft. Die
      Hoehe kam von der globalen Knopfregel, die Breite von nichts. 44 px ist der Richtwert
@@ -482,30 +488,55 @@
                          "strip strip strip" "banner banner banner"
                          "foot foot foot" "toast toast toast"; }
 
-  /* Shift lights: round, evenly spaced, green through red to blue. */
-  .gt3-shift { grid-area: shift; display: flex; justify-content: center;
-    gap: clamp(5px, 1.4vw, 14px); padding: clamp(3px, .7vw, 7px) 0; }
-  /* Groesser als vorher (war clamp(9px, 1.8vw, 16px)): die Schaltlichter sollen aus dem
-     Augenwinkel erkennbar sein, und dafuer muessen sie Breite ueber den Schirm nehmen. */
-  .gt3-shift > span { width: clamp(14px, 3.2vw, 26px); height: clamp(14px, 3.2vw, 26px);
-    border-radius: 50%; flex: none; background: #12161f;
+  /* Shift lights: round, evenly spaced, green through red to blue.
+     RASTER und nicht flex: mit repeat(10, minmax(0,1fr)) und aspect-ratio kann die Reihe
+     per Konstruktion nicht ueberlaufen, egal wie schmal der Schirm wird. Vorher war die
+     Kachelbreite eine geratene Zahl (clamp bis 26px), und auf 375 px stand das letzte Licht
+     unter dem Vollbildknopf.
+     Das Aussenmass in der Breite ist genau dieser Knopf. Symmetrisch, damit die Lichter
+     mittig bleiben - eine einseitige Aussparung waere sichtbar schief. */
+  .gt3-shift { grid-area: shift; display: grid;
+    grid-template-columns: repeat(10, minmax(0, 1fr));
+    gap: clamp(3px, 1.1vw, 14px);
+    padding: clamp(3px, .7vw, 7px) clamp(38px, 11vw, 58px); }
+  .gt3-shift > span { width: 100%; aspect-ratio: 1; max-width: 26px; justify-self: center;
+    border-radius: 50%; background: #12161f;
     box-shadow: inset 0 0 0 1px #262e3d; }
 
   .gt3-left { grid-area: left; display: grid; gap: clamp(4px, .8vw, 9px);
     align-content: start; }
+  /* Zwei Knoepfe auf der Breite von einem. Das Bild darueber und die Beschriftung darunter,
+     damit auf 375 px beide noch lesbar sind - nebeneinander waere der Text vier Zeichen. */
+  .gt3-half { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(3px, .7vw, 8px); }
+  .gt3-half .gt3-act { display: grid; justify-items: center; gap: 2px;
+    padding: clamp(4px, .8vw, 8px) 2px; line-height: 1.15; }
+  .gt3-half .gt3-act svg { width: clamp(15px, 3.4vw, 21px); height: clamp(15px, 3.4vw, 21px); }
+  .gt3-half .gt3-act span { font-size: clamp(9px, 1.5vw, 13px); }
   .gt3-gear { grid-area: gear; display: grid; gap: clamp(3px, .6vw, 7px);
     align-content: center; }
   .gt3-right { grid-area: right; display: grid; gap: clamp(4px, .8vw, 9px);
     align-content: start; }
+  /* Acht Spalten auf 375 px sind 40 px je Kachel, und darin passt keine Beschriftung:
+     gemessen lief der Reifentext ueber die Akkukachel. Unter 560 px deshalb zweireihig. */
   .gt3-strip { grid-area: strip; display: grid; gap: clamp(3px, .7vw, 8px);
     grid-template-columns: repeat(8, minmax(0, 1fr)); }
+  @media (max-width: 560px) {
+    .gt3-strip { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  }
 
   /* The captioned tile. Square and borderless: the reference dashes separate cells by
      contrast and spacing alone, and an outline around every cell turns a dash into a
      spreadsheet. The tile ground is lifted a little instead, so the gap reads as the
      divider. */
-  .gt3-box { background: #131925; border: 0; border-radius: 0;
+  /* FLACH. Vorher hatte jeder Wert seinen eigenen aufgehellten Kasten, und dieses Raster
+     aus abgesetzten Panels ist das, was als Carbon-Umrandung gelesen wird. Jetzt eine
+     Haarlinie als Trenner und sonst der Grund des Schirms. */
+  .gt3-box { background: none; border: 0; border-radius: 0;
+    border-top: 1px solid #1b2230;
     padding: clamp(3px, .7vw, 7px) clamp(4px, .8vw, 8px); min-width: 0; }
+  /* Der aufgehellte Grund bleibt allein an den antippbaren Kacheln: dort ist er keine
+     Zierde, sondern die Aussage "hier kann man draufdruecken". */
+  .gt3-box.gt3-click, .gt3-box.pit-tile { background: #131925; border-top-color: #232c3d; }
   .gt3-lbl { font-size: clamp(7px, 1vw, 9.5px); letter-spacing: .1em;
     text-transform: uppercase; color: #8b99b4; line-height: 1.3; white-space: nowrap;
     overflow: hidden; text-overflow: ellipsis; }
@@ -526,6 +557,17 @@
   .gt3-rpm { font-family: monospace; font-weight: 700; text-align: center;
     font-size: clamp(13px, 2.2vw, 24px); color: #cfe0ff; }
 
+  /* Die drei Zeiten als Raster in einem Feld. Auf schmalen Schirmen untereinander mit
+     Haarlinien, ab 560 px in einer Reihe - dort ist Breite da, und drei Zahlen neben-
+     einander liest man schneller als drei uebereinander. */
+  .gt3-times { display: grid; gap: clamp(2px, .5vw, 5px); }
+  .gt3-times > div + div { border-top: 1px solid #1b2230; padding-top: clamp(2px, .5vw, 5px); }
+  @media (min-width: 560px) {
+    .gt3-times { grid-template-columns: repeat(3, minmax(0, 1fr));
+                 gap: clamp(4px, .8vw, 10px); }
+    .gt3-times > div + div { border-top: 0; border-left: 1px solid #1b2230;
+                             padding-top: 0; padding-left: clamp(4px, .8vw, 10px); }
+  }
   .gt3-laps { list-style: none; margin: 2px 0 0 0; padding: 0; overflow-y: auto;
     max-height: clamp(34px, 8vw, 74px); font-family: monospace;
     font-size: clamp(9px, 1.2vw, 12px); }
@@ -536,6 +578,16 @@
   .gt3-bar > i { display: block; height: 100%; width: 0; transition: width .15s linear; }
   /* Gelbe Flagge. Der Streifen liegt oben im Schirm und ist die einzige Anzeige, die
      waehrend einer gelben Phase etwas Neues sagt - deshalb gelb und nicht dezent. */
+  /* Der Ladebalken der Halten-Geste. Er liegt HINTER der Beschriftung als eigene Schicht,
+     damit der Text nicht verschoben wird und nicht flackert - eine Hintergrundfarbe zu
+     animieren waere billiger, faerbt aber auch die Schrift ein. --hold wird vom Skript
+     gesetzt und ist 0, solange nichts gehalten wird. */
+  #race-act-flag { position: relative; overflow: hidden; }
+  #race-act-flag::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: var(--hold, 0%);
+    background: #ffd83d; opacity: .30; pointer-events: none; transition: none;
+  }
+  #race-act-flag > * { position: relative; }
   #gt3-flag { display: none; grid-area: flag; background: #4a3c00; color: #ffd83d;
     font-weight: 800; letter-spacing: .16em; text-align: center;
     padding: clamp(2px, .6vw, 6px) 0; font-size: clamp(9px, 1.5vw, 14px); }
@@ -1572,8 +1624,23 @@
         <button type="button" class="gt3-act" id="race-act-flag">Gelbe Flagge</button>
         <!-- Die Leseart gehoert hierher und nicht nur in die Optionen: wer ein gedrucktes
              Muster auslegt, muss umschalten, und dafuer den Tab zu wechseln ist genau der
-             Weg, den man mitten im Rennen nicht gehen will. -->
-        <button type="button" class="gt3-act" id="race-act-scan">Liest: Bahn</button>
+             Weg, den man mitten im Rennen nicht gehen will.
+             Auf halber Breite mit Sensorbild, damit daneben der Fahrmodus Platz hat: die
+             Abstimmung ist die zweite Sache, die man mitten im Fahren aendern will. Er ruft
+             applyPreset(), also dieselbe Funktion wie die Knoepfe in den Optionen - die
+             Regler dort ziehen deshalb von selbst nach. -->
+        <div class="gt3-half">
+          <button type="button" class="gt3-act" id="race-act-scan"
+                  title="Leseart: Schienenkodierung oder gedruckte Muster">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                 stroke-linecap="round" aria-hidden="true"><path d="M5 4v16M8 4v16M12 4v16M16 4v16M19 4v16"/><path d="M3 21h18" stroke="var(--bad)"/></svg>
+            <span id="race-act-scan-txt">Bahn</span></button>
+          <button type="button" class="gt3-act" id="race-act-mode"
+                  title="Abstimmung durchschalten, wirkt wie die Voreinstellungen">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.4"/><path d="M12 4v4M6.3 17.7l2.9-2.9M17.7 17.7l-2.9-2.9" stroke="var(--bad)"/></svg>
+            <span id="race-act-mode-txt">GT3</span></button>
+        </div>
       </div>
 
       <!-- Das Schild liegt UEBER der Tachozahl, nicht daneben: waehrend eines
@@ -1598,13 +1665,19 @@
           <div class="gt3-abs" id="race-abs">ABS</div></div>
       </div>
 
+      <!-- Die drei Zeiten standen in drei eigenen Kaesten uebereinander. Sie gehoeren
+           zusammen - man liest sie zusammen -, also stehen sie jetzt in EINEM Feld als
+           Raster, und die Rundenliste haengt darunter. -->
       <div class="gt3-right">
-        <div class="gt3-box"><div class="gt3-lbl">Aktuelle Runde</div>
-          <div class="gt3-val" id="race-lap-now">&ndash;</div></div>
-        <div class="gt3-box"><div class="gt3-lbl">Letzte Zeit</div>
-          <div class="gt3-val sm" id="race-lap-last">&ndash;</div></div>
-        <div class="gt3-box"><div class="gt3-lbl">Beste Zeit</div>
-          <div class="gt3-val sm gt3-ok" id="race-lap-best">&ndash;</div>
+        <div class="gt3-box">
+          <div class="gt3-times">
+            <div><div class="gt3-lbl">Aktuelle Runde</div>
+              <div class="gt3-val" id="race-lap-now">&ndash;</div></div>
+            <div><div class="gt3-lbl">Letzte Zeit</div>
+              <div class="gt3-val sm" id="race-lap-last">&ndash;</div></div>
+            <div><div class="gt3-lbl">Beste Zeit</div>
+              <div class="gt3-val sm gt3-ok" id="race-lap-best">&ndash;</div></div>
+          </div>
           <ul class="gt3-laps" id="race-lap-list"></ul></div>
         <button type="button" class="gt3-act" id="race-act-start">Rennen starten</button>
       </div>
@@ -1632,7 +1705,9 @@
           <div class="gt3-tell" style="width:100%"><svg class="gt3-lamp" id="race-light" viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" aria-label="Scheinwerfer"><path d="M 107 43 C 145 43 182 68 182 100 C 182 132 145 157 107 157 Z"/><path d="M28 71 89 52M28 96 89 77M28 121 89 102M28 146 89 127M28 171 89 152"/></svg></div></div>
         <div class="gt3-box gt3-click gt3-wx" id="race-wx-box" title="Wetter umschalten">
           <div class="gt3-tell"><svg class="gt3-ico" id="race-wx-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-label="Trocken"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.4M12 19.6V22M2 12h2.4M19.6 12H22M4.9 4.9l1.7 1.7M17.4 17.4l1.7 1.7M19.1 4.9l-1.7 1.7M6.6 17.4l-1.7 1.7"/></svg><svg class="gt3-ico" id="race-wx-rain" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-label="Regen" style="display:none"><path d="M6.5 14a4 4 0 0 1 .4-8 5.5 5.5 0 0 1 10.5 1.4A3.6 3.6 0 0 1 17.5 14z"/><path d="M8 17.5l-1 2.5M12 17.5l-1 2.5M16 17.5l-1 2.5"/></svg></div></div>
-        <div class="gt3-box"><div class="gt3-lbl">Gas / Lenkung</div>
+        <!-- Was auf dem Steuerkreuz liegt: hoch/runter Bremsbalance, links/rechts
+             Lenkansprechen. Die Kachel und das Kreuz zeigen dieselben zwei Groessen. -->
+        <div class="gt3-box"><div class="gt3-lbl">Balance / Lenkung</div>
           <div class="gt3-val sm"><span id="race-trim-accel">100%</span>
             <span style="color:#7c8aa6">&middot;</span> <span id="race-trim-steer">100%</span></div></div>
         <div class="gt3-box gt3-gplot" id="race-gplot">
@@ -3827,7 +3902,7 @@
         </div></div>
       
 <div class="opt-head">Lenkung &amp; Feinabstimmung</div>
-      <div class="opt-row"><div class="opt-label">Lenkansprechen<small>Auch auf dem Steuerkreuz links/rechts.</small></div>
+      <div class="opt-row"><div class="opt-label">Lenkansprechen<small>Auch auf dem Steuerkreuz links/rechts. Der volle Lenkeinschlag ist mechanisch 45&nbsp;Grad; bei 100&nbsp;% fordert voller Stick genau ihn an.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
           <input type="range" id="phys-steerresp" min="0.5" max="3" step="0.1" value="2">
@@ -3876,6 +3951,15 @@
           <input type="range" id="rain-volume" min="0" max="1" step="0.05" value="0.25">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="rain-volume-val">25%</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Bremsenquietschen
+          <small>Eigener Regler. Es hing vorher am Motorregler und war deshalb nicht
+          getrennt leiser zu bekommen.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="brake-volume" min="0" max="1" step="0.05" value="0.6">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="brake-volume-val">60%</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Motorsound-Profil<small>Die sieben
           oben sind aus Zylinderzahl, Kurbelwelle und Z&uuml;ndfolge gerechnet. Bei den
@@ -4653,8 +4737,15 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.4.14</span></span>
+    <span class="foot-ver">v<span id="app-version">0.4.15</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
+    <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
+         unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
+         Verbindung. Steht data-i18n-skip, weil der Satz auf Englisch stehen bleibt - er
+         richtet sich an jeden, nicht nur an deutsche Leser. -->
+    <span class="foot-dim foot-legal" data-i18n-skip>Independent project, not affiliated
+      with, endorsed by or connected to Carrera or Stadlbauer Marketing + Vertrieb
+      GmbH.</span>
   </span>
   <span class="foot-right">
     <button type="button" id="lang-toggle" aria-label="Sprache wechseln / switch language">

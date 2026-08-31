@@ -111,13 +111,25 @@
 
   function homeStart() {
     homeBuild();
-    // Feste Zahl statt gezaehlter. Die gezaehlten 73 brachen die Zeile um und lasen sich
-    // wie eine Praezision, die die Aussage nicht hat - viele davon sind interne
-    // Zwischenwerte und keine Regler, die jemand anfasst. Der Text sagt jetzt
-    // "Einstellungen" statt "Handling-Parameter": kuerzer, passt in eine Zeile, und stimmt
-    // auch fuer die Regler, die nichts mit dem Fahrverhalten zu tun haben.
+    // Wieder GEZAEHLT, aber auf einen Zehner abgerundet.
+    //
+    // Hier stand eine feste 70, mit der Begruendung, die gezaehlten 73 haetten die Zeile
+    // umgebrochen. Nachgezaehlt sind es inzwischen 59 - 33 Regler, 17 Ankreuzfelder, 9
+    // Auswahlfelder -, die Behauptung "ueber 70" war also falsch. Eine Zahl, die niemand
+    // nachrechnet, veraltet zwangslaeufig; genau deshalb gehoert sie gezaehlt.
+    //
+    // Das Abrunden loest das ursprungliche Problem sauberer als eine feste Zahl: "ueber 50"
+    // ist kurz, bleibt bei jeder Aenderung wahr, und bricht die Zeile nicht um. Gezaehlt
+    // werden nur Dinge, die man anfasst - Regler, Ankreuzfelder, Auswahlfelder - und keine
+    // Textfelder oder versteckten Hilfsfelder.
     const el = $('home-param-count');
-    if (el) el.textContent = '70';
+    if (el) {
+      const echte = [...document.querySelectorAll(
+        '#tab-options input[id], #tab-options select[id], '
+        + '#tab-control input[id], #tab-control select[id]')]
+        .filter(x => x.type === 'range' || x.type === 'checkbox' || x.tagName === 'SELECT');
+      el.textContent = String(Math.max(10, Math.floor(echte.length / 10) * 10));
+    }
     if (homeRaf !== null) return;
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
       // Draw one frame and stop. The rule already freezes the rain; the needle has to be

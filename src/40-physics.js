@@ -15,6 +15,15 @@
         accelerationFactor: 1.0, // fine-tune multiplier on top of the calibrated scale
         steerRatePerS: 6.0,      // full lock in ~1/6 s; the servo's speed, not its lag
         steerExpo: 1.15,         // near-linear: 1.5 made the car feel unwilling to turn
+        // Der volle Lenkausschlag ist MECHANISCH 45 Grad. Das stand nirgends, und damit
+        // war steerResponse eine Zahl ohne Einheit: der Regler ging von 0,5 bis 3,0, und
+        // was 2,0 bedeutete, wusste nur die Kalibrierung. Jetzt ist die Groesse im Modell,
+        // die Anzeige rechnet in Grad, und der volle Ausschlag ist der Bezug.
+        //
+        // servoAngle bleibt normiert (-1 .. 1) - das Protokoll kennt nur Byte 7 als
+        // int8, und eine Umrechnung in Grad und zurueck waere ein Rundungsfehler ohne
+        // Gegenwert. Die 45 Grad sind die BEDEUTUNG von 1,0, nicht seine Einheit.
+        steerMaxDeg: 45,
         steerResponse: 2.0,      // live trim on the D-pad, 0.5 .. 3.0 in 10% steps.
                                  // 200 % is the calibrated default: measured on the real
                                  // car, that is what answers properly. The ceiling was
@@ -150,11 +159,24 @@
         // das zum Spiel gehoert. Der Regler im Markup steht auf demselben Wert; stuende nur
         // einer von beiden dort, waere die Anzeige bis zur ersten Beruehrung falsch. Die
         // Kalibrierung gegen das echte Auto steht noch aus.
-        fuelWeightEffect: 0.5, // 0 = off, identical to no simulation at all; 1 = full
+        // 1,0, nachgezogen zur Reglervorgabe im Markup - siehe tyreEffect.
+        // ACHTUNG: die GT3-Tabelle im Selbsttest ist gegen 0,5 gefittet. Der Messaufbau
+        // stellt diesen Wert deshalb ausdruecklich her, so wie er auch tyreEffect auf 0
+        // legt: die Reglerstaerke ist eine Spieleinstellung und keine Eigenschaft des
+        // Bezugsautos.
+        fuelWeightEffect: 1.0,
         fuelMassSpan: 0.30,    // a full tank is up to 30% more sluggish at effect 1
 
         // ---- Tyre temperature and wear ----
-        tyreEffect: 0.5,       // 0 = off; 1 = full. Standard an, siehe fuelWeightEffect.
+        // 2,0, nachgezogen zur Reglervorgabe im Markup. Vorher stand hier 0,5 und im
+        // Markup 2,0: die Anzeige sagte 200 %, das Modell rechnete mit 50 %, und ein
+        // einziges Antippen des Reglers liess das Verhalten springen. Dieselbe Fehlerklasse
+        // wie bei topSpeedScale, und die dritte in dieser Sitzung - deshalb prueft der
+        // Selbsttest sie jetzt.
+        //
+        // Ueber 100 % wirken nur die RATEN (Verschleiss, Erwaermung); das Griffdefizit ist
+        // bei einfacher Modellstaerke gedeckelt, siehe update().
+        tyreEffect: 2.0,       // 0 = aus; 1 = volles Modell; darueber schnellere Raten.
         tyreAmbientC: 20,
         tyreOptimalC: 85,
         // Balanced so the equilibrium temperature lands where it should: with
@@ -165,7 +187,10 @@
         tyreHeatRate: 7.0,     // °C/s bei voller Arbeit (v0.4: von 5,0 herauf)
         tyreCoolRate: 3.4,     // °C/s at optimum; time constant ~19 s
         tyreOverheatC: 103,    // v0.4: engeres Fenster, von 110 herunter
-        tyreColdPenalty: 0.42, // Griffverlust auf eiskalten Reifen (v0.4: von 0,35)
+        // Zurueck auf 0,35: die 0,42 waren meine Zutat in Block C, und ein Kaltstart mit
+        // 42 Prozent weniger Grip ist zusammen mit allem anderen zu viel. Der Regler
+        // steigert jetzt die Raten und nicht die Tiefe.
+        tyreColdPenalty: 0.35, // Griffverlust auf eiskalten Reifen
         tyreHotPenalty: 0.38,  // Griffverlust bei durchgeheizten Reifen (v0.4: von 0,30)
         // v0.4 von 0,0018 herauf: bei 100 % war der Verschleiss ueber eine Rennlaenge
         // kaum zu merken. Jetzt abgefahren nach gut vier Minuten voller Attacke.
@@ -327,6 +352,23 @@
       this.outputs = { motorPWM: 0, servoAngle: 0, lights: { head: false, brake: false } };
       this.rebuildGearModel(); // must run BEFORE calibrateAccel — it needs rpmScale
       this.calibrateAccel();
+
+      // Der Zustand, GEGEN DEN GEFITTET WURDE. Die Sollwerte der GT3-Tabelle (0-100 in
+      // 3,1 s, 100-0 in 2,1 s) gelten fuer genau diese Konfiguration und fuer keine andere.
+      // Die Messaufbauten stellen ihn her, bevor sie messen, und legen danach zurueck.
+      //
+      // Er wird GANZ kopiert und nicht aufgezaehlt: eine Liste von Feldern ist bei einem
+      // Konfigurationsobjekt immer unvollstaendig, und die fehlende Zeile faellt erst auf,
+      // wenn eine Messung nicht mehr reproduzierbar ist. gears ist geteilt und wird nie
+      // geaendert.
+      //
+      // Und er steht HIER, am Ende des Konstruktors, nicht vor rebuildGearModel(): rpmScale
+      // und accelCalibration sind ABGELEITETE Groessen, die erst dort entstehen. Weiter oben
+      // aufgenommen traegt der Bezug ihre Startwerte - rpmScale = 0 -, und ein Messaufbau,
+      // der ihn herstellt, schaltet damit das Drehzahlmodell ab. Gemessen sah das aus wie
+      // eine streng lineare Beschleunigung (1,38 / 2,70 / 4,02 / 5,36 s), also wie ein Auto
+      // ohne Luftwiderstand. Am Ende aufgenommen braucht der Aufbau keine Ausnahmeliste.
+      this.calibRef = Object.assign({}, this.config);
     }
 
     // Central reset shared by the E-stop and the pit stop, so the two
@@ -606,14 +648,21 @@
       const work = Math.min(1, (Math.abs(latUse) + Math.abs(st.longUse))
                                * (Math.abs(st.speedKmh) / cfg.topSpeedKmh));
       const span = cfg.tyreOptimalC - cfg.tyreAmbientC;
-      st.tyreTempC += (cfg.tyreHeatRate * work
+      // Auch die Erwaermung skaliert mit dem Regler - aber nur die HEIZseite. Die Kuehlung
+      // ist eine Eigenschaft der Umgebung und nicht der Einstellung; sie mitzuskalieren
+      // haette die Zeitkonstante unveraendert gelassen und damit gar nichts geaendert.
+      st.tyreTempC += (cfg.tyreHeatRate * Math.max(1, cfg.tyreEffect) * work
                        - cfg.tyreCoolRate * (st.tyreTempC - cfg.tyreAmbientC) / span) * dt;
       st.tyreTempC = Math.max(cfg.tyreAmbientC, st.tyreTempC);
 
       // Wear accumulates with the same work, and faster once they are hot — which is what
       // makes an aggressive stint cost more than a tidy one.
       const hotFactor = 1 + Math.max(0, (st.tyreTempC - cfg.tyreOptimalC) / span);
-      st.tyreWear = Math.min(1, st.tyreWear + cfg.tyreWearRate * work * hotFactor * dt);
+      // Die RATE skaliert voll mit dem Regler, auch ueber 100 % hinaus: 200 % heisst
+      // doppelt so schneller Verschleiss. Das ist die Haelfte des Reglers, die oberhalb von
+      // 100 % ueberhaupt eine Bedeutung haben kann - das Griffdefizit ist gedeckelt.
+      st.tyreWear = Math.min(1, st.tyreWear
+        + cfg.tyreWearRate * cfg.tyreEffect * work * hotFactor * dt);
 
       // Grip: cold tyres slide, overheated tyres slide, worn tyres slide. Quadratic below
       // the working range so the last few degrees matter less than the first few.
@@ -625,8 +674,19 @@
         tGrip *= 1 - cfg.tyreHotPenalty * over * over;
       }
       tGrip *= 1 - cfg.tyreWearPenalty * st.tyreWear;
-      // The slider fades the whole model out: at 0 this is exactly 1, i.e. no simulation.
-      st.tyreGrip = 1 + cfg.tyreEffect * (tGrip - 1);
+      // Der Regler blendet das Modell aus: bei 0 ist das genau 1, also keine Simulation.
+      //
+      // GEDECKELT bei einfacher Modellstaerke, und das ist der Fehler aus v0.4.13: der
+      // Regler geht seit Block B bis 200 %, und ohne Deckel verdoppelte diese Zeile das
+      // Griffdefizit. Bei kalten Reifen (und kalt sind sie bei jedem Start) war tGrip 0,58,
+      // also tyreGrip 0,16 - und weil steerGrip damit multipliziert wird, lenkte das Auto
+      // nach einem Klick auf GT3 praktisch nicht mehr.
+      //
+      // Mehr als das Modell hergibt gibt es nicht. Ein Reifen, der doppelt so schlecht ist
+      // wie ein voellig abgefahrener, ist keine Physik, sondern eine Extrapolation ueber den
+      // Rand hinaus. Was der Regler oberhalb von 100 % steigert, sind die RATEN weiter
+      // oben - Verschleiss und Erwaermung -, und die wirken ueber eine Rennlaenge.
+      st.tyreGrip = 1 + Math.min(1, cfg.tyreEffect) * (tGrip - 1);
 
       const resist = this.resistAt(st.speedKmh, A, onPower, st.currentGear); // always >= 0
       let accel = 0;

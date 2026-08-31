@@ -161,6 +161,14 @@
   }
   renderPresetButtons($('preset-buttons'), false);
 
+  // Fuer den Fahrmodus-Knopf im Cockpit. Ueber das Fenster, weil 50-drive.js VOR dieser
+  // Datei gebaut wird und applyPreset dort zur Deklarationszeit noch nicht existiert - zur
+  // Laufzeit schon. Genau dieser Unterschied hat in dieser Datei fuenf Ladeabbrueche
+  // gekostet, deshalb steht er als Kommentar an beiden Enden.
+  window.__applyPreset = applyPreset;
+  window.__presetKeys = () => Object.keys(PRESETS);
+  window.__presetLabel = (k) => (PRESETS[k] || {}).label || k;
+
   // Die Erklaertexte, aus denselben Objekten. Sie stehen unter den Knoepfen statt in einem
   // Tooltip, weil die Wahl zwischen fuenf Abstimmungen genau der Moment ist, in dem man
   // wissen will, was sie unterscheidet - und ein Tooltip auf dem Telefon nicht erscheint.

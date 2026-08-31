@@ -262,15 +262,21 @@
     return false;
   }
 
-  function nudgeAccel(delta) {
-    const input = $('phys-accel');
-    // Round to one decimal: repeated float addition of 0.1 otherwise lands on 0.7000000001
-    // and the readout starts showing noise.
-    const v = Math.round(Math.max(0.2, Math.min(1.2, parseFloat(input.value) + delta)) * 10) / 10;
+  // Hoch/runter auf dem Steuerkreuz ist die BREMSBALANCE. Vorher war es der
+  // Beschleunigungsfaktor, und der ist eine Feinabstimmung, die man einmal setzt und stehen
+  // laesst. Die Balance ist die Groesse, die ein Fahrer WAEHREND der Fahrt nachzieht - dafuer
+  // hat ein GT3 einen Drehregler am Lenkrad.
+  //
+  // Der Weg geht ueber das Bedienelement und sein Ereignis, nicht direkt in die
+  // Konfiguration: dann zieht die Anzeige in den Optionen von selbst nach, und es gibt
+  // keinen zweiten Zustand.
+  function nudgeBrakeBias(delta) {
+    const input = $('setting-brakebias');
+    if (!input) return;
+    const v = Math.max(+input.min, Math.min(+input.max, parseInt(input.value, 10) + delta));
     input.value = v;
-    $('phys-accel-val').textContent = v.toFixed(2);
-    physEngine.config.accelerationFactor = v;
-    showHudToast(`Beschleunigung ${Math.round(v * 100)}%`);
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    showHudToast(`Bremsbalance ${v}% vorn`);
   }
 
   function nudgeSteerResponse(delta) {
@@ -278,9 +284,8 @@
     const input = $('phys-steerresp');
     const v = Math.round(Math.max(0.5, Math.min(3, parseFloat(input.value) + delta)) * 10) / 10;
     input.value = v;
-    $('phys-steerresp-val').textContent = Math.round(v * 100) + '%';
-    physEngine.config.steerResponse = v;
-    showHudToast(`Lenkansprechen ${Math.round(v * 100)}%`);
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    showHudToast(`Lenkansprechen ${steerRespPct(v)}%`);
   }
 
 
@@ -1114,6 +1119,59 @@
     showHudToast(garageLabel(car).toUpperCase() + ' F\u00c4HRT');
   }
 
+  // ---- Gelbe Flagge: eine Sekunde halten ----
+  //
+  // Sie ist die folgenreichste Taste im Cockpit - sie bremst JEDES Auto auf 40 km/h - und
+  // X liegt neben allem anderen. Ein Fehltipper mitten in einer Runde ist teuer. Und die
+  // Taste war doppelt belegt: derselbe kurze Druck hiess je nach Zustand "Gelb" oder
+  // "Anfahrt starten".
+  //
+  // Eine Sekunde halten macht aus einem Versehen eine Absicht. Der Ladebalken laeuft im
+  // Knopf selbst, damit die Rueckmeldung dort ist, wo die Wirkung angeschrieben steht -
+  // und nicht in einer Meldezeile, auf die man beim Fahren nicht sieht.
+  const FLAG_HOLD_MS = 1000;
+  const FLAG_HOLD_TICK_MS = 40;
+  let flagHoldStart = null;
+  let flagHoldTimer = null;
+
+  // ZEITGEBER und nicht requestAnimationFrame. Erster Versuch war rAF, und der zaehlte
+  // nicht: rAF wird vom Browser angehalten, solange die Seite nicht gezeichnet wird
+  // (verdeckt, minimiert, Hintergrundtab). Gemessen blieb der Balken bei 0,0 % stehen und
+  // die Flagge loeste nie aus.
+  //
+  // Dieselbe Falle ist in physicsStep() schon aufgeschrieben, mit demselben Schluss - dort
+  // haette sie ein Auto weiterfahren lassen, waehrend die Physik stand. Eine Geste, deren
+  // Fortschritt an der Bildrate haengt, ist keine Zeitmessung.
+  function flagHoldPaint() {
+    const b = $('race-act-flag');
+    if (!b) return;
+    if (flagHoldStart === null) { b.style.removeProperty('--hold'); return; }
+    const p = Math.min(1, (Date.now() - flagHoldStart) / FLAG_HOLD_MS);
+    b.style.setProperty('--hold', (p * 100).toFixed(1) + '%');
+    if (p >= 1) flagHoldRelease(true);
+  }
+
+  function flagHoldPress() {
+    if (flagHoldStart !== null) return;          // schon am Halten
+    if (flagState === 'restart') return;         // die Ampel laeuft, nichts umschalten
+    flagHoldStart = Date.now();
+    flagHoldPaint();
+    flagHoldTimer = setInterval(flagHoldPaint, FLAG_HOLD_TICK_MS);
+  }
+
+  // ausgeloest = true heisst: die Sekunde ist voll. Sonst wurde zu frueh losgelassen, und
+  // dann passiert ausdruecklich NICHTS - ein halber Druck darf keine halbe Wirkung haben.
+  function flagHoldRelease(ausgeloest) {
+    if (flagHoldStart === null) return;
+    flagHoldStart = null;
+    if (flagHoldTimer !== null) { clearInterval(flagHoldTimer); flagHoldTimer = null; }
+    const b = $('race-act-flag');
+    if (b) b.style.removeProperty('--hold');
+    if (!ausgeloest) return;
+    if (flagState === 'green') setFlag('yellow');
+    else if (flagState === 'yellow') yellowRestart();
+  }
+
   // ---- Gelbe Flagge ----
   // Wie in der Original-App: alles rollt langsam und mittig weiter, keiner ueberholt, die
   // Lichter blinken. Genau die Phase, in der man ein Auto von Hand zurueckstellt.
@@ -1153,7 +1211,16 @@
     }
     const el = $('race-flag');
     if (el) {
-      el.textContent = flagState === 'yellow' ? 'GELB'
+      // Der Autopilot wird HIER angeschrieben und nicht in einer eigenen Kachel: der
+      // Flaggenstreifen ist die einzige Anzeige, die waehrend Gelb etwas Neues sagt, und
+      // ein Auto, das von selbst Gas gibt, ohne dass das irgendwo steht, sieht beim ersten
+      // Mal wie ein durchgehendes Auto aus.
+      //
+      // Die Bedingung ist dieselbe wie in autopilotYellow(), und dass sie zweimal steht,
+      // ist der Preis dafuer, dass die Anzeige in einer anderen Datei liegt als die
+      // Regelung. Waeren es drei Stellen, gehoerte eine Funktion daraus.
+      const apAn = flagState === 'yellow' && trackMode === 'on';
+      el.textContent = flagState === 'yellow' ? (apAn ? 'GELB · AUTOPILOT' : 'GELB')
                      : flagState === 'restart' ? 'ANFAHRT' : '';
       el.style.display = flagState === 'green' ? 'none' : '';
     }
@@ -2064,10 +2131,24 @@
       const bis = opt.bisKmh || 120;
       const bremse = opt.brake === undefined ? 1 : opt.brake;
       const merkState = Object.assign({}, st);
-      const merk = { as: cfg.autoShift, te: cfg.tyreEffect, gs: cfg.gripScale };
+      const merk = Object.assign({}, cfg);
       const dt = 0.02;
       try {
-        cfg.autoShift = true; cfg.tyreEffect = 0; cfg.gripScale = 1;
+        // Kalibrierbezug, siehe physCurve: sonst misst diese Pruefung den Reglerstand.
+        Object.assign(cfg, e.calibRef);
+        // Schubskala neu loesen, siehe physCurve: calibRef traegt den Startwert von
+        // accelCalibration und nicht den geloesten.
+        e.calibrateAccel();
+        cfg.autoShift = true; cfg.tyreEffect = 0;
+        // Und ZULETZT die ausdruecklich abweichenden Werte. Ohne diesen Haken kann man mit
+        // diesem Aufbau keinen Parameter durchfahren: der Kalibrierbezug oben setzt jedes
+        // Feld zurueck, also auch das, dessen Wirkung man messen will. Genau daran ist die
+        // Bremsbalance-Pruefung gescheitert - drei Messungen, dreimal derselbe Wert,
+        // Spanne 0.
+        //
+        // Die Reihenfolge ist die Aussage: Bezug herstellen, dann genau eine Sache
+        // aendern. Das ist der Unterschied zwischen einer Messung und einer Beobachtung.
+        if (opt.cfg) Object.assign(cfg, opt.cfg);
         st.driveMode = 'neutral'; st.currentGear = 0; st.speedKmh = 0;
         st.isShifting = false; st.neutralRpm = 0; st.fuelLoad = 1;
         st.loadFront = 0.5; st.longUse = 0; st.dampedSteering = 0;
@@ -2110,7 +2191,11 @@
         return { rollen: rollen[rollen.length - 1], bremsspur: spur,
                  imStand: stand[stand.length - 1] };
       } finally {
-        cfg.autoShift = merk.as; cfg.tyreEffect = merk.te; cfg.gripScale = merk.gs;
+        Object.assign(cfg, merk);
+        // Die Schubskala haengt an den zurueckgelegten Werten und muss neu geloest
+        // werden - sonst rechnet die App danach mit der Skala des Bezugszustands,
+        // waehrend die Regler etwas anderes anzeigen.
+        e.calibrateAccel();
         delete st._simShift;
         for (const k of Object.keys(st)) if (!(k in merkState)) delete st[k];
         Object.assign(st, merkState);
@@ -2144,6 +2229,25 @@
     // Schaltpause: triggerShift loescht isShifting per setTimeout, und das feuert in einer
     // synchronen Schleife nie. Ohne diese Uhr bleibt der Schub nach dem ersten Schalten aus,
     // und die Messung sagt "wird langsamer" statt "schaltet".
+    // Wo weicht die laufende Konfiguration vom Kalibrierbezug ab?
+    //
+    // Diese Frage hat mich in dieser Sitzung dreimal Zeit gekostet, und jedes Mal war die
+    // Antwort dieselbe Fehlerklasse: ein Regler, dessen Vorgabe im Markup nicht zu der im
+    // Modell passt. Die App rechnet dann mit dem Modellwert, waehrend die Anzeige den
+    // Markup-Wert zeigt - bis jemand den Regler einmal anfasst, und dann springt das
+    // Verhalten. So war es bei topSpeedScale und beim Tankgewicht.
+    //
+    // gears wird uebersprungen: geteilte Referenz, nie geaendert.
+    physConfigDiff() {
+      const cfg = physEngine.config, ref = physEngine.calibRef, out = {};
+      for (const k of Object.keys(ref)) {
+        if (k === 'gears') continue;
+        if (typeof ref[k] === 'object') continue;
+        if (cfg[k] !== ref[k]) out[k] = { jetzt: cfg[k], bezug: ref[k] };
+      }
+      return out;
+    },
+
     physCurve(o) {
       const opt = o || {};
       const e = physEngine, st = e.state, cfg = e.config;
@@ -2155,7 +2259,7 @@
       // auf, und zwei identische Aufrufe lieferten Verschiedenes. Eine Aufzaehlung ist bei
       // einem Zustandsobjekt immer unvollstaendig.
       const merkState = Object.assign({}, st);
-      const merk = { as: cfg.autoShift, gs: cfg.gripScale, te: cfg.tyreEffect };
+      const merk = Object.assign({}, cfg);
       // Bezugszustand: RENNSTART. Voller Tank, warme Reifen, trockene Bahn.
       //
       // Ohne einen festen Zustand messt diese Funktion die Reihenfolge der Pruefungen und
@@ -2169,9 +2273,29 @@
       // tyreEffect auf 0 und nicht tyreGrip auf 1: update() rechnet tyreGrip jeden Takt
       // aus dem Reifenzustand neu, ein gesetzter Wert haelt also keinen Takt. Stillgelegt
       // wird der EINGANG, dann sind die Reifen nominal, egal was vorher lief.
+      // Der Kalibrierbezug, und zwar ALLE Felder daraus. Vorher standen hier drei
+      // Zuweisungen (tyreEffect, gripScale, autoShift), und alles andere blieb, wo der
+      // Benutzer es gelassen hatte: Bremswirkung, Beschleunigung, Ausrollen, Tankgewicht,
+      // Bremsbalance. Ein Klick auf eine Voreinstellung liess diese Pruefung deshalb um 26
+      // bis 62 Prozent danebenliegen, und seit Block B sind die Voreinstellungen von drei
+      // Stellen aus erreichbar.
+      Object.assign(cfg, e.calibRef);
+      // Und die Schubskala neu loesen. calibRef wird im Konstruktor genommen, BEVOR
+      // calibrateAccel() laeuft - accelCalibration steht darin also auf seinem Startwert und
+      // nicht auf dem geloesten. Ohne diese Zeile misst der Aufbau mit einer unkalibrierten
+      // Skala: gemessen 0,32 s auf 100 km/h statt 2,7 s, also um den Faktor acht daneben.
+      //
+      // Der Grund ist allgemeiner und lohnt das Aufschreiben: die Kalibrierung ist eine
+      // ABGELEITETE Groesse und kein Eingabewert. Sie mitzukopieren sieht richtig aus und
+      // ist es nicht - sie muss neu geloest werden, sobald ein Eingabewert sich aendert.
+      e.calibrateAccel();
       cfg.tyreEffect = 0;
+      // Und der Wert, gegen den die GT3-Tabelle gefittet ist. Er steht hier und nicht in
+      // calibRef, weil die Reglerstaerke eine SPIELEINSTELLUNG ist: dass ein voller Tank
+      // traeger macht, gehoert zum Auto, wie STARK es traeger macht, gehoert zum Geschmack.
+      // Der Fit wurde bei halber Staerke gemacht, also messen wir dort.
+      cfg.fuelWeightEffect = 0.5;
       st.fuelLoad = 1;
-      cfg.gripScale = 1;
       const dt = 0.02;
       const takt = () => {
         // Schaltpause auf der eigenen Uhr.
@@ -2228,9 +2352,11 @@
         }
         return { beschleunigen: zeit, zwischen: zwischen.t, bremsen };
       } finally {
-        cfg.autoShift = merk.as;
-        cfg.gripScale = merk.gs;
-        cfg.tyreEffect = merk.te;
+        Object.assign(cfg, merk);
+        // Die Schubskala haengt an den zurueckgelegten Werten und muss neu geloest
+        // werden - sonst rechnet die App danach mit der Skala des Bezugszustands,
+        // waehrend die Regler etwas anderes anzeigen.
+        e.calibrateAccel();
         // Erst die eigenen Zutaten weg, dann alles zuruecklegen: sonst bliebe ein Feld
         // stehen, das es vor dem Aufruf nicht gab.
         delete st._simShift;
@@ -2635,8 +2761,8 @@
       // Fehlbedienungen: ein Druck aufs Steuerkreuz verstellte irgendeinen Regler, den man
       // gerade nicht im Blick hatte. Die Programmierschule hing an derselben Kette und ist
       // mit ausgebaut; sie laesst sich weiterhin mit Maus und Finger bedienen.
-      if (dUp && !prevDpad.up && !trackEditorPad('up') && !pitQuickMenu('up')) nudgeAccel(+0.1);
-      if (dDown && !prevDpad.down && !trackEditorPad('down') && !pitQuickMenu('down')) nudgeAccel(-0.1);
+      if (dUp && !prevDpad.up && !trackEditorPad('up') && !pitQuickMenu('up')) nudgeBrakeBias(+1);
+      if (dDown && !prevDpad.down && !trackEditorPad('down') && !pitQuickMenu('down')) nudgeBrakeBias(-1);
       if (dLeft && !prevDpad.left && !trackEditorPad('left') && !pitQuickMenu('left')) nudgeSteerResponse(-0.1);
       if (dRight && !prevDpad.right && !trackEditorPad('right') && !pitQuickMenu('right')) nudgeSteerResponse(+0.1);
       prevDpad.up = dUp; prevDpad.down = dDown; prevDpad.left = dLeft; prevDpad.right = dRight;

@@ -263,8 +263,10 @@
       brakeNode.start();
     }
     if (!brakeGain) return;
-    // Halved: at 0.5 the squeal sat on top of the engine instead of under it.
-    brakeGain.gain.setTargetAtTime(Math.min(0.25, amount * 0.25) * engineVolume,
+    // Eigener Regler, nicht mehr engineVolume. Es hing am Motorregler, und damit war das
+    // Quietschen nur zusammen mit dem Motor leiser zu bekommen - also gar nicht.
+    // Vorgabe 0,6, also etwas leiser als die 1,0, die es faktisch vorher hatte.
+    brakeGain.gain.setTargetAtTime(Math.min(0.25, amount * 0.25) * brakeVolume,
                                    audioCtx.currentTime, 0.06);
     if (amount <= 0.01 && brakeNode) {
       const node = brakeNode;
@@ -281,7 +283,9 @@
                      bedNode: null, bedGain: null, rainNode: null, rainGain: null,
                      ready: false, rainOn: false, busy: false };
   let ambienceVolume = 0.10;   // track bed and pass-bys: quiet, the engine leads
-  let rainVolume = 0.25;       // rain and thunder: own control, weather stays audible
+  let rainVolume = 0.25;
+  // Eigene Lautstaerke fuer das Bremsenquietschen. Sie hing vorher an engineVolume.
+  let brakeVolume = 0.6;       // rain and thunder: own control, weather stays audible
   let ambienceEnabled = true;   // on, but quiet enough to sit under the engine
 
   async function loadAmbience() {
@@ -680,6 +684,11 @@
     physEngine.config.tyreEffect = v;
     $('setting-tyres-val').textContent = v === 0 ? 'aus' : Math.round(v * 100) + '%';
     if (v === 0) resetTyres();   // leave nothing stale behind when switching off
+  });
+
+  $('brake-volume').addEventListener('input', (e) => {
+    brakeVolume = parseFloat(e.target.value);
+    $('brake-volume-val').textContent = Math.round(brakeVolume * 100) + '%';
   });
 
   $('rain-volume').addEventListener('input', (e) => {

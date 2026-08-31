@@ -344,10 +344,11 @@
     if (k === 'f' && !e.repeat) { fuel = 5; updateDamageFuelUI(); showHudToast(`Tank ${fuelLiters(5)} l`); }
     if (k === 'r' && !e.repeat) { fuel = 100; damage = 0; updateDamageFuelUI();
                                   showHudToast('Tank und Zustand zurückgesetzt'); }
-    if (k === 'x' && !e.repeat) {
-      if (flagState === 'green') setFlag('yellow');
-      else if (flagState === 'yellow') yellowRestart();
-    }
+    // X wird jetzt GEHALTEN, siehe FLAG_HOLD_MS. Der Tastendruck startet nur den Balken;
+    // ausgeloest wird er, wenn die Sekunde voll ist. !e.repeat ist dabei wichtig: eine
+    // gehaltene Taste feuert keydown wiederholt, und jeder Wiederholer wuerde den Balken
+    // neu starten.
+    if (k === 'x' && !e.repeat) flagHoldPress();
     if (k === 'q' && !e.repeat) debugCountLap(e.shiftKey);
     if (k === 'm' && !e.repeat) {
       // Next unused section, so one key walks the whole protocol in order.
@@ -362,7 +363,15 @@
     if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)) e.preventDefault();
     keys.add(e.key);
   });
-  window.addEventListener('keyup', (e) => { keys.delete(e.key); });
+  window.addEventListener('keyup', (e) => {
+    keys.delete(e.key);
+    // Loslassen der Halten-Geste. Zu frueh losgelassen heisst ausdruecklich: nichts
+    // passiert - ein halber Druck darf keine halbe Wirkung haben.
+    if ((e.key || '').toLowerCase() === 'x') flagHoldRelease(false);
+  });
+  // Auch bei blur, sonst haengt der Balken, wenn das Fenster waehrend des Haltens den Fokus
+  // verliert - und der naechste Druck waere wirkungslos, weil flagHoldStart noch belegt ist.
+  window.addEventListener('blur', () => flagHoldRelease(false));
 
   // Keyboard state is sampled fast (the heartbeat does the actual transmitting) and is
   // not gated on which tab is visible — switching tabs used to silently kill control

@@ -1015,11 +1015,14 @@
     if (!window.OMEGA_TEST || !OMEGA_TEST.physSteerTrace) {
       return { skip: true, mass: 'physSteerTrace nicht vorhanden' };
     }
-    const gemerkt = physEngine.config.brakeBias;
-    try {
+    // Die Balance geht als ABWEICHUNG in den Messaufbau, nicht als Zuweisung an die
+    // Konfiguration davor: der Aufbau stellt seinen Kalibrierbezug her und wuerde eine
+    // Zuweisung von aussen ueberschreiben. Genau daran ist diese Pruefung einmal
+    // gescheitert - drei Messungen, dreimal derselbe Wert, Spanne 0.
+    {
       const q = (pct) => {
-        physEngine.config.brakeBias = pct / 100;
-        const r = OMEGA_TEST.physSteerTrace({ bisKmh: 200, brake: 1, steering: 0.6 });
+        const r = OMEGA_TEST.physSteerTrace({ bisKmh: 200, brake: 1, steering: 0.6,
+                                              cfg: { brakeBias: pct / 100 } });
         let b = null;
         for (const x of r.bremsspur) {
           if (!b || Math.abs(x.kmh - 140) < Math.abs(b.kmh - 140)) b = x;
@@ -1043,8 +1046,6 @@
                      + ' %, 80 % vorn ' + Math.round(h.bei140 * 100)
                      + ' % | Spanne ' + Math.round(spanne * 100)
                      + ' Punkte, im Stand ' + Math.round(h.stand * 100) + ' %' };
-    } finally {
-      physEngine.config.brakeBias = gemerkt;
     }
   });
 

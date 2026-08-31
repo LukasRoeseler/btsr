@@ -288,6 +288,12 @@
   #app-footer .foot-left { display: flex; align-items: center; gap: 10px; }
   #app-footer .foot-ver { font-family: monospace; color: var(--ink); }
   #app-footer .foot-dim { opacity: .55; }
+  /* Der Haftungshinweis darf umbrechen und die Versionsangabe nicht wegdruecken. */
+  #app-footer .foot-legal { max-width: 44ch; line-height: 1.35; }
+  @media (max-width: 700px) {
+    #app-footer .foot-left { flex-wrap: wrap; }
+    #app-footer .foot-legal { max-width: none; flex-basis: 100%; }
+  }
   /* Der Sprachschalter braucht eine Flaeche, keine nackte Beschriftung. Gemessen war er
      36 px breit bei 44 px Hoehe - ein Streifen, den man auf dem Telefon nicht trifft. Die
      Hoehe kam von der globalen Knopfregel, die Breite von nichts. 44 px ist der Richtwert
@@ -482,30 +488,55 @@
                          "strip strip strip" "banner banner banner"
                          "foot foot foot" "toast toast toast"; }
 
-  /* Shift lights: round, evenly spaced, green through red to blue. */
-  .gt3-shift { grid-area: shift; display: flex; justify-content: center;
-    gap: clamp(5px, 1.4vw, 14px); padding: clamp(3px, .7vw, 7px) 0; }
-  /* Groesser als vorher (war clamp(9px, 1.8vw, 16px)): die Schaltlichter sollen aus dem
-     Augenwinkel erkennbar sein, und dafuer muessen sie Breite ueber den Schirm nehmen. */
-  .gt3-shift > span { width: clamp(14px, 3.2vw, 26px); height: clamp(14px, 3.2vw, 26px);
-    border-radius: 50%; flex: none; background: #12161f;
+  /* Shift lights: round, evenly spaced, green through red to blue.
+     RASTER und nicht flex: mit repeat(10, minmax(0,1fr)) und aspect-ratio kann die Reihe
+     per Konstruktion nicht ueberlaufen, egal wie schmal der Schirm wird. Vorher war die
+     Kachelbreite eine geratene Zahl (clamp bis 26px), und auf 375 px stand das letzte Licht
+     unter dem Vollbildknopf.
+     Das Aussenmass in der Breite ist genau dieser Knopf. Symmetrisch, damit die Lichter
+     mittig bleiben - eine einseitige Aussparung waere sichtbar schief. */
+  .gt3-shift { grid-area: shift; display: grid;
+    grid-template-columns: repeat(10, minmax(0, 1fr));
+    gap: clamp(3px, 1.1vw, 14px);
+    padding: clamp(3px, .7vw, 7px) clamp(38px, 11vw, 58px); }
+  .gt3-shift > span { width: 100%; aspect-ratio: 1; max-width: 26px; justify-self: center;
+    border-radius: 50%; background: #12161f;
     box-shadow: inset 0 0 0 1px #262e3d; }
 
   .gt3-left { grid-area: left; display: grid; gap: clamp(4px, .8vw, 9px);
     align-content: start; }
+  /* Zwei Knoepfe auf der Breite von einem. Das Bild darueber und die Beschriftung darunter,
+     damit auf 375 px beide noch lesbar sind - nebeneinander waere der Text vier Zeichen. */
+  .gt3-half { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(3px, .7vw, 8px); }
+  .gt3-half .gt3-act { display: grid; justify-items: center; gap: 2px;
+    padding: clamp(4px, .8vw, 8px) 2px; line-height: 1.15; }
+  .gt3-half .gt3-act svg { width: clamp(15px, 3.4vw, 21px); height: clamp(15px, 3.4vw, 21px); }
+  .gt3-half .gt3-act span { font-size: clamp(9px, 1.5vw, 13px); }
   .gt3-gear { grid-area: gear; display: grid; gap: clamp(3px, .6vw, 7px);
     align-content: center; }
   .gt3-right { grid-area: right; display: grid; gap: clamp(4px, .8vw, 9px);
     align-content: start; }
+  /* Acht Spalten auf 375 px sind 40 px je Kachel, und darin passt keine Beschriftung:
+     gemessen lief der Reifentext ueber die Akkukachel. Unter 560 px deshalb zweireihig. */
   .gt3-strip { grid-area: strip; display: grid; gap: clamp(3px, .7vw, 8px);
     grid-template-columns: repeat(8, minmax(0, 1fr)); }
+  @media (max-width: 560px) {
+    .gt3-strip { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  }
 
   /* The captioned tile. Square and borderless: the reference dashes separate cells by
      contrast and spacing alone, and an outline around every cell turns a dash into a
      spreadsheet. The tile ground is lifted a little instead, so the gap reads as the
      divider. */
-  .gt3-box { background: #131925; border: 0; border-radius: 0;
+  /* FLACH. Vorher hatte jeder Wert seinen eigenen aufgehellten Kasten, und dieses Raster
+     aus abgesetzten Panels ist das, was als Carbon-Umrandung gelesen wird. Jetzt eine
+     Haarlinie als Trenner und sonst der Grund des Schirms. */
+  .gt3-box { background: none; border: 0; border-radius: 0;
+    border-top: 1px solid #1b2230;
     padding: clamp(3px, .7vw, 7px) clamp(4px, .8vw, 8px); min-width: 0; }
+  /* Der aufgehellte Grund bleibt allein an den antippbaren Kacheln: dort ist er keine
+     Zierde, sondern die Aussage "hier kann man draufdruecken". */
+  .gt3-box.gt3-click, .gt3-box.pit-tile { background: #131925; border-top-color: #232c3d; }
   .gt3-lbl { font-size: clamp(7px, 1vw, 9.5px); letter-spacing: .1em;
     text-transform: uppercase; color: #8b99b4; line-height: 1.3; white-space: nowrap;
     overflow: hidden; text-overflow: ellipsis; }
@@ -526,6 +557,17 @@
   .gt3-rpm { font-family: monospace; font-weight: 700; text-align: center;
     font-size: clamp(13px, 2.2vw, 24px); color: #cfe0ff; }
 
+  /* Die drei Zeiten als Raster in einem Feld. Auf schmalen Schirmen untereinander mit
+     Haarlinien, ab 560 px in einer Reihe - dort ist Breite da, und drei Zahlen neben-
+     einander liest man schneller als drei uebereinander. */
+  .gt3-times { display: grid; gap: clamp(2px, .5vw, 5px); }
+  .gt3-times > div + div { border-top: 1px solid #1b2230; padding-top: clamp(2px, .5vw, 5px); }
+  @media (min-width: 560px) {
+    .gt3-times { grid-template-columns: repeat(3, minmax(0, 1fr));
+                 gap: clamp(4px, .8vw, 10px); }
+    .gt3-times > div + div { border-top: 0; border-left: 1px solid #1b2230;
+                             padding-top: 0; padding-left: clamp(4px, .8vw, 10px); }
+  }
   .gt3-laps { list-style: none; margin: 2px 0 0 0; padding: 0; overflow-y: auto;
     max-height: clamp(34px, 8vw, 74px); font-family: monospace;
     font-size: clamp(9px, 1.2vw, 12px); }
@@ -536,6 +578,16 @@
   .gt3-bar > i { display: block; height: 100%; width: 0; transition: width .15s linear; }
   /* Gelbe Flagge. Der Streifen liegt oben im Schirm und ist die einzige Anzeige, die
      waehrend einer gelben Phase etwas Neues sagt - deshalb gelb und nicht dezent. */
+  /* Der Ladebalken der Halten-Geste. Er liegt HINTER der Beschriftung als eigene Schicht,
+     damit der Text nicht verschoben wird und nicht flackert - eine Hintergrundfarbe zu
+     animieren waere billiger, faerbt aber auch die Schrift ein. --hold wird vom Skript
+     gesetzt und ist 0, solange nichts gehalten wird. */
+  #race-act-flag { position: relative; overflow: hidden; }
+  #race-act-flag::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: var(--hold, 0%);
+    background: #ffd83d; opacity: .30; pointer-events: none; transition: none;
+  }
+  #race-act-flag > * { position: relative; }
   #gt3-flag { display: none; grid-area: flag; background: #4a3c00; color: #ffd83d;
     font-weight: 800; letter-spacing: .16em; text-align: center;
     padding: clamp(2px, .6vw, 6px) 0; font-size: clamp(9px, 1.5vw, 14px); }
@@ -1572,8 +1624,23 @@
         <button type="button" class="gt3-act" id="race-act-flag">Gelbe Flagge</button>
         <!-- Die Leseart gehoert hierher und nicht nur in die Optionen: wer ein gedrucktes
              Muster auslegt, muss umschalten, und dafuer den Tab zu wechseln ist genau der
-             Weg, den man mitten im Rennen nicht gehen will. -->
-        <button type="button" class="gt3-act" id="race-act-scan">Liest: Bahn</button>
+             Weg, den man mitten im Rennen nicht gehen will.
+             Auf halber Breite mit Sensorbild, damit daneben der Fahrmodus Platz hat: die
+             Abstimmung ist die zweite Sache, die man mitten im Fahren aendern will. Er ruft
+             applyPreset(), also dieselbe Funktion wie die Knoepfe in den Optionen - die
+             Regler dort ziehen deshalb von selbst nach. -->
+        <div class="gt3-half">
+          <button type="button" class="gt3-act" id="race-act-scan"
+                  title="Leseart: Schienenkodierung oder gedruckte Muster">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                 stroke-linecap="round" aria-hidden="true"><path d="M5 4v16M8 4v16M12 4v16M16 4v16M19 4v16"/><path d="M3 21h18" stroke="var(--bad)"/></svg>
+            <span id="race-act-scan-txt">Bahn</span></button>
+          <button type="button" class="gt3-act" id="race-act-mode"
+                  title="Abstimmung durchschalten, wirkt wie die Voreinstellungen">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.4"/><path d="M12 4v4M6.3 17.7l2.9-2.9M17.7 17.7l-2.9-2.9" stroke="var(--bad)"/></svg>
+            <span id="race-act-mode-txt">GT3</span></button>
+        </div>
       </div>
 
       <!-- Das Schild liegt UEBER der Tachozahl, nicht daneben: waehrend eines
@@ -1598,13 +1665,19 @@
           <div class="gt3-abs" id="race-abs">ABS</div></div>
       </div>
 
+      <!-- Die drei Zeiten standen in drei eigenen Kaesten uebereinander. Sie gehoeren
+           zusammen - man liest sie zusammen -, also stehen sie jetzt in EINEM Feld als
+           Raster, und die Rundenliste haengt darunter. -->
       <div class="gt3-right">
-        <div class="gt3-box"><div class="gt3-lbl">Aktuelle Runde</div>
-          <div class="gt3-val" id="race-lap-now">&ndash;</div></div>
-        <div class="gt3-box"><div class="gt3-lbl">Letzte Zeit</div>
-          <div class="gt3-val sm" id="race-lap-last">&ndash;</div></div>
-        <div class="gt3-box"><div class="gt3-lbl">Beste Zeit</div>
-          <div class="gt3-val sm gt3-ok" id="race-lap-best">&ndash;</div>
+        <div class="gt3-box">
+          <div class="gt3-times">
+            <div><div class="gt3-lbl">Aktuelle Runde</div>
+              <div class="gt3-val" id="race-lap-now">&ndash;</div></div>
+            <div><div class="gt3-lbl">Letzte Zeit</div>
+              <div class="gt3-val sm" id="race-lap-last">&ndash;</div></div>
+            <div><div class="gt3-lbl">Beste Zeit</div>
+              <div class="gt3-val sm gt3-ok" id="race-lap-best">&ndash;</div></div>
+          </div>
           <ul class="gt3-laps" id="race-lap-list"></ul></div>
         <button type="button" class="gt3-act" id="race-act-start">Rennen starten</button>
       </div>
@@ -1632,7 +1705,9 @@
           <div class="gt3-tell" style="width:100%"><svg class="gt3-lamp" id="race-light" viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" aria-label="Scheinwerfer"><path d="M 107 43 C 145 43 182 68 182 100 C 182 132 145 157 107 157 Z"/><path d="M28 71 89 52M28 96 89 77M28 121 89 102M28 146 89 127M28 171 89 152"/></svg></div></div>
         <div class="gt3-box gt3-click gt3-wx" id="race-wx-box" title="Wetter umschalten">
           <div class="gt3-tell"><svg class="gt3-ico" id="race-wx-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-label="Trocken"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.4M12 19.6V22M2 12h2.4M19.6 12H22M4.9 4.9l1.7 1.7M17.4 17.4l1.7 1.7M19.1 4.9l-1.7 1.7M6.6 17.4l-1.7 1.7"/></svg><svg class="gt3-ico" id="race-wx-rain" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-label="Regen" style="display:none"><path d="M6.5 14a4 4 0 0 1 .4-8 5.5 5.5 0 0 1 10.5 1.4A3.6 3.6 0 0 1 17.5 14z"/><path d="M8 17.5l-1 2.5M12 17.5l-1 2.5M16 17.5l-1 2.5"/></svg></div></div>
-        <div class="gt3-box"><div class="gt3-lbl">Gas / Lenkung</div>
+        <!-- Was auf dem Steuerkreuz liegt: hoch/runter Bremsbalance, links/rechts
+             Lenkansprechen. Die Kachel und das Kreuz zeigen dieselben zwei Groessen. -->
+        <div class="gt3-box"><div class="gt3-lbl">Balance / Lenkung</div>
           <div class="gt3-val sm"><span id="race-trim-accel">100%</span>
             <span style="color:#7c8aa6">&middot;</span> <span id="race-trim-steer">100%</span></div></div>
         <div class="gt3-box gt3-gplot" id="race-gplot">
@@ -3827,7 +3902,7 @@
         </div></div>
       
 <div class="opt-head">Lenkung &amp; Feinabstimmung</div>
-      <div class="opt-row"><div class="opt-label">Lenkansprechen<small>Auch auf dem Steuerkreuz links/rechts.</small></div>
+      <div class="opt-row"><div class="opt-label">Lenkansprechen<small>Auch auf dem Steuerkreuz links/rechts. Der volle Lenkeinschlag ist mechanisch 45&nbsp;Grad; bei 100&nbsp;% fordert voller Stick genau ihn an.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
           <input type="range" id="phys-steerresp" min="0.5" max="3" step="0.1" value="2">
@@ -3876,6 +3951,15 @@
           <input type="range" id="rain-volume" min="0" max="1" step="0.05" value="0.25">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="rain-volume-val">25%</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Bremsenquietschen
+          <small>Eigener Regler. Es hing vorher am Motorregler und war deshalb nicht
+          getrennt leiser zu bekommen.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="brake-volume" min="0" max="1" step="0.05" value="0.6">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="brake-volume-val">60%</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Motorsound-Profil<small>Die sieben
           oben sind aus Zylinderzahl, Kurbelwelle und Z&uuml;ndfolge gerechnet. Bei den
@@ -4653,8 +4737,15 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.4.14</span></span>
+    <span class="foot-ver">v<span id="app-version">0.4.15</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
+    <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
+         unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
+         Verbindung. Steht data-i18n-skip, weil der Satz auf Englisch stehen bleibt - er
+         richtet sich an jeden, nicht nur an deutsche Leser. -->
+    <span class="foot-dim foot-legal" data-i18n-skip>Independent project, not affiliated
+      with, endorsed by or connected to Carrera or Stadlbauer Marketing + Vertrieb
+      GmbH.</span>
   </span>
   <span class="foot-right">
     <button type="button" id="lang-toggle" aria-label="Sprache wechseln / switch language">
@@ -5076,7 +5167,6 @@
     "Anteil": "Share",
     "Anzeigen wie auf einem echten GT3-HUD": "Readouts like a real GT3 dash",
     "Attacke": "Attack",
-    "Auch auf dem Steuerkreuz links/rechts.": "Also left/right on the D-pad.",
     "Auf Standard zurücksetzen": "Reset to defaults",
     "Auf den neuen Blättern steht ein 100-mm-Kontrollmaß. Nachmessen ist der einzige Weg, den Druckmaßstab zu prüfen, denn eine Druckvorschau sagt dazu nichts.": "The new sheets carry a 100 mm check measure. Measuring it is the only way to verify the print scale, because a print preview says nothing about it.",
     "Auf der Bahn": "On track",
@@ -5534,6 +5624,13 @@
     // auf die Lenkgrenze und wurde dort weggeklemmt; die Balance wirkt auf die Anforderung
     // an die Vorderachse.
     "Bremsbalance": "Brake bias",
+    "Bremsenquietschen": "Brake squeal",
+    "Eigener Regler. Es hing vorher am Motorregler und war deshalb nicht getrennt leiser zu bekommen.":
+      "Its own slider. It used to hang on the engine volume, so it could not be turned down on its own.",
+    "Balance / Lenkung": "Bias / steering",
+    "Auch auf dem Steuerkreuz links/rechts. Der volle Lenkeinschlag ist mechanisch 45 Grad; bei 100 % fordert voller Stick genau ihn an.":
+      "Also on the D-pad, left/right. Full steering lock is mechanically 45 degrees; at 100% a full stick asks for exactly that.",
+    "GELB · AUTOPILOT": "YELLOW · AUTOPILOT",
     "Wieviel der Bremse an der Vorderachse ankommt.": "How much of the brake reaches the front axle.",
     "Nach vorn": "Forward",
     ": das Auto schiebt beim Anbremsen geradeaus.": ": the car pushes straight on under braking.",
@@ -6685,10 +6782,11 @@
     if (k === 'f' && !e.repeat) { fuel = 5; updateDamageFuelUI(); showHudToast(`Tank ${fuelLiters(5)} l`); }
     if (k === 'r' && !e.repeat) { fuel = 100; damage = 0; updateDamageFuelUI();
                                   showHudToast('Tank und Zustand zurückgesetzt'); }
-    if (k === 'x' && !e.repeat) {
-      if (flagState === 'green') setFlag('yellow');
-      else if (flagState === 'yellow') yellowRestart();
-    }
+    // X wird jetzt GEHALTEN, siehe FLAG_HOLD_MS. Der Tastendruck startet nur den Balken;
+    // ausgeloest wird er, wenn die Sekunde voll ist. !e.repeat ist dabei wichtig: eine
+    // gehaltene Taste feuert keydown wiederholt, und jeder Wiederholer wuerde den Balken
+    // neu starten.
+    if (k === 'x' && !e.repeat) flagHoldPress();
     if (k === 'q' && !e.repeat) debugCountLap(e.shiftKey);
     if (k === 'm' && !e.repeat) {
       // Next unused section, so one key walks the whole protocol in order.
@@ -6703,7 +6801,15 @@
     if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)) e.preventDefault();
     keys.add(e.key);
   });
-  window.addEventListener('keyup', (e) => { keys.delete(e.key); });
+  window.addEventListener('keyup', (e) => {
+    keys.delete(e.key);
+    // Loslassen der Halten-Geste. Zu frueh losgelassen heisst ausdruecklich: nichts
+    // passiert - ein halber Druck darf keine halbe Wirkung haben.
+    if ((e.key || '').toLowerCase() === 'x') flagHoldRelease(false);
+  });
+  // Auch bei blur, sonst haengt der Balken, wenn das Fenster waehrend des Haltens den Fokus
+  // verliert - und der naechste Druck waere wirkungslos, weil flagHoldStart noch belegt ist.
+  window.addEventListener('blur', () => flagHoldRelease(false));
 
   // Keyboard state is sampled fast (the heartbeat does the actual transmitting) and is
   // not gated on which tab is visible — switching tabs used to silently kill control
@@ -6819,6 +6925,15 @@
         accelerationFactor: 1.0, // fine-tune multiplier on top of the calibrated scale
         steerRatePerS: 6.0,      // full lock in ~1/6 s; the servo's speed, not its lag
         steerExpo: 1.15,         // near-linear: 1.5 made the car feel unwilling to turn
+        // Der volle Lenkausschlag ist MECHANISCH 45 Grad. Das stand nirgends, und damit
+        // war steerResponse eine Zahl ohne Einheit: der Regler ging von 0,5 bis 3,0, und
+        // was 2,0 bedeutete, wusste nur die Kalibrierung. Jetzt ist die Groesse im Modell,
+        // die Anzeige rechnet in Grad, und der volle Ausschlag ist der Bezug.
+        //
+        // servoAngle bleibt normiert (-1 .. 1) - das Protokoll kennt nur Byte 7 als
+        // int8, und eine Umrechnung in Grad und zurueck waere ein Rundungsfehler ohne
+        // Gegenwert. Die 45 Grad sind die BEDEUTUNG von 1,0, nicht seine Einheit.
+        steerMaxDeg: 45,
         steerResponse: 2.0,      // live trim on the D-pad, 0.5 .. 3.0 in 10% steps.
                                  // 200 % is the calibrated default: measured on the real
                                  // car, that is what answers properly. The ceiling was
@@ -6954,11 +7069,24 @@
         // das zum Spiel gehoert. Der Regler im Markup steht auf demselben Wert; stuende nur
         // einer von beiden dort, waere die Anzeige bis zur ersten Beruehrung falsch. Die
         // Kalibrierung gegen das echte Auto steht noch aus.
-        fuelWeightEffect: 0.5, // 0 = off, identical to no simulation at all; 1 = full
+        // 1,0, nachgezogen zur Reglervorgabe im Markup - siehe tyreEffect.
+        // ACHTUNG: die GT3-Tabelle im Selbsttest ist gegen 0,5 gefittet. Der Messaufbau
+        // stellt diesen Wert deshalb ausdruecklich her, so wie er auch tyreEffect auf 0
+        // legt: die Reglerstaerke ist eine Spieleinstellung und keine Eigenschaft des
+        // Bezugsautos.
+        fuelWeightEffect: 1.0,
         fuelMassSpan: 0.30,    // a full tank is up to 30% more sluggish at effect 1
 
         // ---- Tyre temperature and wear ----
-        tyreEffect: 0.5,       // 0 = off; 1 = full. Standard an, siehe fuelWeightEffect.
+        // 2,0, nachgezogen zur Reglervorgabe im Markup. Vorher stand hier 0,5 und im
+        // Markup 2,0: die Anzeige sagte 200 %, das Modell rechnete mit 50 %, und ein
+        // einziges Antippen des Reglers liess das Verhalten springen. Dieselbe Fehlerklasse
+        // wie bei topSpeedScale, und die dritte in dieser Sitzung - deshalb prueft der
+        // Selbsttest sie jetzt.
+        //
+        // Ueber 100 % wirken nur die RATEN (Verschleiss, Erwaermung); das Griffdefizit ist
+        // bei einfacher Modellstaerke gedeckelt, siehe update().
+        tyreEffect: 2.0,       // 0 = aus; 1 = volles Modell; darueber schnellere Raten.
         tyreAmbientC: 20,
         tyreOptimalC: 85,
         // Balanced so the equilibrium temperature lands where it should: with
@@ -6969,7 +7097,10 @@
         tyreHeatRate: 7.0,     // °C/s bei voller Arbeit (v0.4: von 5,0 herauf)
         tyreCoolRate: 3.4,     // °C/s at optimum; time constant ~19 s
         tyreOverheatC: 103,    // v0.4: engeres Fenster, von 110 herunter
-        tyreColdPenalty: 0.42, // Griffverlust auf eiskalten Reifen (v0.4: von 0,35)
+        // Zurueck auf 0,35: die 0,42 waren meine Zutat in Block C, und ein Kaltstart mit
+        // 42 Prozent weniger Grip ist zusammen mit allem anderen zu viel. Der Regler
+        // steigert jetzt die Raten und nicht die Tiefe.
+        tyreColdPenalty: 0.35, // Griffverlust auf eiskalten Reifen
         tyreHotPenalty: 0.38,  // Griffverlust bei durchgeheizten Reifen (v0.4: von 0,30)
         // v0.4 von 0,0018 herauf: bei 100 % war der Verschleiss ueber eine Rennlaenge
         // kaum zu merken. Jetzt abgefahren nach gut vier Minuten voller Attacke.
@@ -7131,6 +7262,23 @@
       this.outputs = { motorPWM: 0, servoAngle: 0, lights: { head: false, brake: false } };
       this.rebuildGearModel(); // must run BEFORE calibrateAccel — it needs rpmScale
       this.calibrateAccel();
+
+      // Der Zustand, GEGEN DEN GEFITTET WURDE. Die Sollwerte der GT3-Tabelle (0-100 in
+      // 3,1 s, 100-0 in 2,1 s) gelten fuer genau diese Konfiguration und fuer keine andere.
+      // Die Messaufbauten stellen ihn her, bevor sie messen, und legen danach zurueck.
+      //
+      // Er wird GANZ kopiert und nicht aufgezaehlt: eine Liste von Feldern ist bei einem
+      // Konfigurationsobjekt immer unvollstaendig, und die fehlende Zeile faellt erst auf,
+      // wenn eine Messung nicht mehr reproduzierbar ist. gears ist geteilt und wird nie
+      // geaendert.
+      //
+      // Und er steht HIER, am Ende des Konstruktors, nicht vor rebuildGearModel(): rpmScale
+      // und accelCalibration sind ABGELEITETE Groessen, die erst dort entstehen. Weiter oben
+      // aufgenommen traegt der Bezug ihre Startwerte - rpmScale = 0 -, und ein Messaufbau,
+      // der ihn herstellt, schaltet damit das Drehzahlmodell ab. Gemessen sah das aus wie
+      // eine streng lineare Beschleunigung (1,38 / 2,70 / 4,02 / 5,36 s), also wie ein Auto
+      // ohne Luftwiderstand. Am Ende aufgenommen braucht der Aufbau keine Ausnahmeliste.
+      this.calibRef = Object.assign({}, this.config);
     }
 
     // Central reset shared by the E-stop and the pit stop, so the two
@@ -7410,14 +7558,21 @@
       const work = Math.min(1, (Math.abs(latUse) + Math.abs(st.longUse))
                                * (Math.abs(st.speedKmh) / cfg.topSpeedKmh));
       const span = cfg.tyreOptimalC - cfg.tyreAmbientC;
-      st.tyreTempC += (cfg.tyreHeatRate * work
+      // Auch die Erwaermung skaliert mit dem Regler - aber nur die HEIZseite. Die Kuehlung
+      // ist eine Eigenschaft der Umgebung und nicht der Einstellung; sie mitzuskalieren
+      // haette die Zeitkonstante unveraendert gelassen und damit gar nichts geaendert.
+      st.tyreTempC += (cfg.tyreHeatRate * Math.max(1, cfg.tyreEffect) * work
                        - cfg.tyreCoolRate * (st.tyreTempC - cfg.tyreAmbientC) / span) * dt;
       st.tyreTempC = Math.max(cfg.tyreAmbientC, st.tyreTempC);
 
       // Wear accumulates with the same work, and faster once they are hot — which is what
       // makes an aggressive stint cost more than a tidy one.
       const hotFactor = 1 + Math.max(0, (st.tyreTempC - cfg.tyreOptimalC) / span);
-      st.tyreWear = Math.min(1, st.tyreWear + cfg.tyreWearRate * work * hotFactor * dt);
+      // Die RATE skaliert voll mit dem Regler, auch ueber 100 % hinaus: 200 % heisst
+      // doppelt so schneller Verschleiss. Das ist die Haelfte des Reglers, die oberhalb von
+      // 100 % ueberhaupt eine Bedeutung haben kann - das Griffdefizit ist gedeckelt.
+      st.tyreWear = Math.min(1, st.tyreWear
+        + cfg.tyreWearRate * cfg.tyreEffect * work * hotFactor * dt);
 
       // Grip: cold tyres slide, overheated tyres slide, worn tyres slide. Quadratic below
       // the working range so the last few degrees matter less than the first few.
@@ -7429,8 +7584,19 @@
         tGrip *= 1 - cfg.tyreHotPenalty * over * over;
       }
       tGrip *= 1 - cfg.tyreWearPenalty * st.tyreWear;
-      // The slider fades the whole model out: at 0 this is exactly 1, i.e. no simulation.
-      st.tyreGrip = 1 + cfg.tyreEffect * (tGrip - 1);
+      // Der Regler blendet das Modell aus: bei 0 ist das genau 1, also keine Simulation.
+      //
+      // GEDECKELT bei einfacher Modellstaerke, und das ist der Fehler aus v0.4.13: der
+      // Regler geht seit Block B bis 200 %, und ohne Deckel verdoppelte diese Zeile das
+      // Griffdefizit. Bei kalten Reifen (und kalt sind sie bei jedem Start) war tGrip 0,58,
+      // also tyreGrip 0,16 - und weil steerGrip damit multipliziert wird, lenkte das Auto
+      // nach einem Klick auf GT3 praktisch nicht mehr.
+      //
+      // Mehr als das Modell hergibt gibt es nicht. Ein Reifen, der doppelt so schlecht ist
+      // wie ein voellig abgefahrener, ist keine Physik, sondern eine Extrapolation ueber den
+      // Rand hinaus. Was der Regler oberhalb von 100 % steigert, sind die RATEN weiter
+      // oben - Verschleiss und Erwaermung -, und die wirken ueber eine Rennlaenge.
+      st.tyreGrip = 1 + Math.min(1, cfg.tyreEffect) * (tGrip - 1);
 
       const resist = this.resistAt(st.speedKmh, A, onPower, st.currentGear); // always >= 0
       let accel = 0;
@@ -7831,7 +7997,11 @@
     lightBits = (lightBits & ~(TRACK_BIT_RAIL | TRACK_BIT_PRINT)) | trackModeBit();
     const b = $('race-act-scan');
     if (b) {
-      b.textContent = rail ? 'Liest: Bahn' : 'Liest: Ausdruck';
+      // NUR die Spanne, nicht der Knopf: er traegt jetzt ein Sensorbild, und textContent
+      // haette es mitgeloescht. Der Fehler faellt beim Lesen nicht auf, weil eine
+      // Zuweisung an textContent harmlos aussieht.
+      const t = $('race-act-scan-txt');
+      if (t) t.textContent = rail ? 'Bahn' : 'Ausdruck';
       // Die Ausdruck-Stellung ist die ungewoehnliche und die, in der das Auto sich nicht
       // selbst haelt. Sie wird angeschrieben, damit man nicht versehentlich darin faehrt.
       b.classList.toggle('warn', !rail);
@@ -7851,6 +8021,27 @@
           + 'dafuer haelt sich das Auto nicht selbst auf der Bahn.', 'info');
     showHudToast(rail ? 'LIEST BAHN' : 'LIEST AUSDRUCK');
   });
+
+  // Der Fahrmodus im Cockpit. Er schaltet durch die Voreinstellungen und ruft
+  // applyPreset() - dieselbe Funktion wie die Knoepfe in den Optionen und in der Garage.
+  // Es gibt damit genau EINEN Weg, eine Abstimmung zu setzen, und die Regler ziehen
+  // ueberall nach, weil presetSet() 'input' und 'change' mit bubbles feuert.
+  //
+  // Die Liste kommt aus PRESETS und nicht aus einem eigenen Array: ein sechster Eintrag
+  // dort soll hier ohne Nacharbeit erscheinen.
+  let fahrmodusIdx = -1;
+  if ($('race-act-mode')) {
+    $('race-act-mode').addEventListener('click', () => {
+      const keys = window.__presetKeys ? window.__presetKeys() : [];
+      if (!keys.length) return;
+      fahrmodusIdx = (fahrmodusIdx + 1) % keys.length;
+      const key = keys[fahrmodusIdx];
+      window.__applyPreset(key);
+      const txt = $('race-act-mode-txt');
+      if (txt) txt.textContent = window.__presetLabel(key);
+      showHudToast('ABSTIMMUNG ' + window.__presetLabel(key).toUpperCase());
+    });
+  }
 
   if ($('race-act-scan')) {
     $('race-act-scan').addEventListener('click', () => {
@@ -7967,6 +8158,19 @@
   // Die kalibrierte Vorgabe fuer das Lenkansprechen. Sie ist der Bezug fuer die Anzeige,
   // damit dort 100 % steht, wo der Wert hingehoert - und nicht 200 %.
   const STEER_RESP_REF = 2.0;
+
+  // Die EINE Stelle, an der aus steerResponse eine Prozentzahl wird. Vorher gab es drei, in
+  // zwei Maszstaeben: die Optionen teilten durch den kalibrierten Bezug 2,0 und zeigten
+  // 100 %, das Steuerkreuz und die Cockpitkachel nahmen den Rohwert und zeigten 200 %. Wer
+  // im Menue 100 % einstellt und dann aufs Steuerkreuz sieht, haelt eines von beiden fuer
+  // kaputt.
+  //
+  // Sie steht ABSICHTLICH hier, direkt unter ihrer Konstante, und nicht bei den
+  // Steuerkreuz-Funktionen in 90-ghosts.js. Dort waere sie eine Datei SPAETER als
+  // STEER_RESP_REF, und dieselbe Datei ruft sie zur Aufbauzeit auf - genau die temporale
+  // Todeszone, die in diesem Projekt schon fuenf Ladeabbrueche gekostet hat. In einer
+  // zusammengefuegten IIFE ist das Ende einer Datei nicht das Ende des Moduls.
+  function steerRespPct(v) { return Math.round(v / STEER_RESP_REF * 100); }
   ['phys-steerresp', 'phys-accel'].forEach(id => {
     const input = $(id);
     const readout = $(id + '-val');
@@ -7977,7 +8181,11 @@
         physEngine.config.steerResponse = v;
         // Bezug ist die kalibrierte Vorgabe 2.0, nicht der Rohwert. 200 % zu lesen, wo
         // die beste Einstellung liegt, laesst sie wie eine Uebertreibung aussehen.
-        $('phys-steerresp-val').textContent = Math.round(v / STEER_RESP_REF * 100) + '%';
+        //
+        // Und was 100 % BEDEUTET, steht jetzt im Modell: steerMaxDeg = 45, der mechanische
+        // Anschlag. Bei 100 % fordert voller Stick genau diesen Anschlag an - darunter
+        // erreicht man ihn nie, darueber schon vor dem Stickende.
+        $('phys-steerresp-val').textContent = steerRespPct(v) + '%';
       }
       if (id === 'phys-accel') physEngine.config.accelerationFactor = v;
       markDrivetrainChartsDirty();
@@ -8249,11 +8457,10 @@
       $('race-tyre-wear').textContent = 'Abnutzung ' + Math.round(st.tyreWear * 100) + '%';
     }
 
-    $('race-trim-accel').textContent = Math.round(physEngine.config.accelerationFactor * 100) + '%';
-    $('race-trim-steer').textContent = Math.round(physEngine.config.steerResponse * 100) + '%';
-    setTxt('race-track', dashOnMarker ? 'MUSTER' : 'auf Strecke');
-    const tk = $('race-track');
-    if (tk) tk.className = 'gt3-val sm ' + (dashOnMarker ? 'gt3-warn' : 'gt3-ok');
+    // Dieselben zwei Groessen, die auf dem Steuerkreuz liegen - hoch/runter und
+    // links/rechts. Die Kachel zeigt, was das Kreuz verstellt, und nichts anderes.
+    $('race-trim-accel').textContent = Math.round(physEngine.config.brakeBias * 100) + '%';
+    $('race-trim-steer').textContent = steerRespPct(physEngine.config.steerResponse) + '%';
 
     // Pit banner replaces the shift bar while the pit lane is active — impossible to miss,
     // which the old small field was not.
@@ -8292,7 +8499,11 @@
     }
     $('race-lap-last').textContent = laps.length
       ? formatLapTime(laps[laps.length - 1].ms) : '\u2013';
-    $('race-lap-count').textContent = laps.length;
+    // Das Ziel gehoert in dieselbe Kachel: "Runde 3" allein sagt nicht, ob noch 17 oder
+    // noch 2 kommen. Bei Endurance und Qualifying ist das Ziel eine ZEIT, also steht dort
+    // die verbleibende Zeit - eine Rundenzahl anzuschreiben, die es in diesem Modus nicht
+    // gibt, waere eine erfundene Angabe.
+    $('race-lap-count').textContent = raceLapTarget(laps.length);
     $('race-lap-list').innerHTML = laps.slice().reverse().slice(0, 10).map(l =>
       `<li><span>${l.lap}</span><span${l.ms === best ? ' class="gt3-ok"' : ''}>${formatLapTime(l.ms)}</span></li>`
     ).join('');
@@ -8318,6 +8529,38 @@
   // would freeze while the heartbeat happily kept re-sending the last throttle value —
   // i.e. the car would keep driving at whatever speed it had when you looked away.
   // Timer-driven, physics keeps decelerating normally instead.
+  // Autopilot fuer das FAHRERAUTO waehrend der gelben Flagge.
+  //
+  // Der Anlass: waehrend Gelb stellt man abgeflogene Ghosts von Hand zurueck auf die Bahn,
+  // hat dabei beide Haende voll und keine am Controller - und das eigene Auto bleibt stehen
+  // oder faehrt in die Bande.
+  //
+  // NUR in der Bahn-Stellung (Byte 14 Bit 5). Das ist keine Vorsicht, sondern eine Aussage
+  // ueber Gemessenes: dort haelt sich das Auto nachgewiesen selbst auf der Strecke, der
+  // Autopilot muss also nur Gas und Bremse stellen. In der Ausdruck-Stellung haelt es sich
+  // nicht selbst, und ein Autopilot ohne Querregelung wuerde es geradeaus in die Bande
+  // fahren - schlimmer als Stehenbleiben.
+  //
+  // Der Regler ist DERSELBE wie bei den Ghosts (Verstaerkung 4 auf Gas, 3 auf die Bremse),
+  // und zwar aus einem inhaltlichen Grund: waehrend Gelb sollen alle Autos dasselbe tun.
+  // Zwei verschiedene Regler, die beide 40 km/h halten wollen, ergeben zwei verschiedene
+  // Geschwindigkeiten, und dann faehrt das Feld nicht geschlossen.
+  //
+  // Nicht waehrend der Anfahrt: sobald die Ampel laeuft, gehoert das Auto wieder dem
+  // Fahrer, denn genau dann faengt das Rennen wieder an.
+  function autopilotYellow() {
+    if (flagState !== 'yellow') return null;
+    // Ausdruck-Stellung: nicht lenkfaehig, siehe oben. trackMode ist ein STRING
+    // ('on'/'off') und kein Boolean - ein !trackMode waere hier immer falsch gewesen.
+    if (trackMode !== 'on') return null;
+    const st = physEngine.state;
+    const ziel = yellowFactor();
+    const v = Math.abs(st.speedKmh) / physEngine.config.topSpeedKmh;
+    const err = ziel - v;
+    return { throttle: Math.max(0, Math.min(1, err * 4)),
+             brake: Math.max(0, Math.min(1, -err * 3)) };
+  }
+
   function physicsStep() {
     if (!physicsEnabled) { physLastTime = null; return; }
     const now = performance.now();
@@ -8325,9 +8568,14 @@
     physLastTime = now;
     // Derated, not raw. Braking is left alone: brakes do not care how much fuel is left,
     // and a damaged car that cannot slow down would be the opposite of a limp mode.
-    const rawThrottle = fuelDamageDerate(Math.max(0, throttleY));
-    const rawBrake = Math.max(0, -throttleY);
-    const out = physEngine.update({ steering: steerX, throttle: rawThrottle, brake: rawBrake,
+    let rawThrottle = fuelDamageDerate(Math.max(0, throttleY));
+    let rawBrake = Math.max(0, -throttleY);
+    let steer = steerX;
+    // Waehrend der gelben Flagge faehrt das Auto selbst, damit man die Haende frei hat, um
+    // abgeflogene Ghosts zurueckzustellen. Siehe autopilotYellow().
+    const ap = autopilotYellow();
+    if (ap) { rawThrottle = ap.throttle; rawBrake = ap.brake; steer = 0; }
+    const out = physEngine.update({ steering: steer, throttle: rawThrottle, brake: rawBrake,
                                     headlights: headlightsOn }, dt);
     updateDashboard(out);
     physOutSteer = out.servoAngle;
@@ -10484,6 +10732,20 @@
   let raceStartedAt = null;
   let raceClockTimer = null;
 
+  // Was in der Rundenkachel steht. Drei Faelle, und der dritte ist der Grund fuer diese
+  // Funktion: bei einem Zeitlimit gibt es keine Zielrundenzahl, und eine hinzuschreiben
+  // waere erfunden.
+  function raceLapTarget(gefahren) {
+    if (raceMode === 'laps') return gefahren + ' / ' + raceLimit;
+    if (RACE_MODES[raceMode].timed && raceStartedAt !== null) {
+      const restMs = Math.max(0, raceLimit * 60000 - (Date.now() - raceStartedAt));
+      const s = Math.floor(restMs / 1000);
+      return gefahren + ' \u00b7 ' + Math.floor(s / 60) + ':'
+             + String(s % 60).padStart(2, '0');
+    }
+    return String(gefahren);
+  }
+
   function raceLimitReached() {
     if (raceState !== 'racing') return false;
     if (!RACE_MODES[raceMode].timed) return false;   // free practice: only a human ends it
@@ -11280,10 +11542,30 @@
   $('race-act-start').onclick = toggleRace;
 
   $('race-act-pit').onclick = () => { requestPitStop(); updateRaceActButtons(); };
-  $('race-act-flag').onclick = () => {
-    if (flagState === 'green') setFlag('yellow');
-    else if (flagState === 'yellow') yellowRestart();
-  };
+  // Auch der Knopf wird GEHALTEN, nicht getippt - derselbe Riegel wie bei der Taste X, und
+  // der Ladebalken laeuft ohnehin in diesem Knopf. Ein Knopf, der auf Tippen reagiert,
+  // waehrend die Taste eine Sekunde verlangt, waere zwei Bedienungen fuer eine Wirkung.
+  //
+  // pointerdown/up statt mousedown/up: das deckt Finger und Maus mit einem Zuhoerer ab.
+  // pointercancel und pointerleave gehoeren dazu, sonst haengt der Balken, wenn der Finger
+  // vom Knopf rutscht.
+  (function bindeFlaggenknopf() {
+    const b = $('race-act-flag');
+    if (!b) return;
+    b.addEventListener('pointerdown', (e) => { e.preventDefault(); flagHoldPress(); });
+    for (const ev of ['pointerup', 'pointercancel', 'pointerleave']) {
+      b.addEventListener(ev, () => flagHoldRelease(false));
+    }
+    // Und die Tastaturbedienung des Knopfes: Leertaste/Enter loesen click aus, nicht
+    // pointerdown. Ein Knopf, der mit der Tastatur nicht bedienbar ist, ist kaputt.
+    b.addEventListener('click', (e) => {
+      // Nur wenn der Klick NICHT von einem Zeiger kam - sonst haette ein Fingertipp die
+      // Halten-Geste umgangen. e.detail ist 0 bei Tastaturauslösung.
+      if (e.detail !== 0) return;
+      if (flagState === 'green') setFlag('yellow');
+      else if (flagState === 'yellow') yellowRestart();
+    });
+  })();
 
   $('race-light-box').onclick = () => {
     headlightsOn = !headlightsOn;
@@ -11298,8 +11580,37 @@
   // Tipp wirkungslos, statt versehentlich etwas zu verstellen.
   for (const el of document.querySelectorAll('.pit-tile[data-pit="refuel"], .pit-tile[data-pit="repair"]')) {
     el.addEventListener('click', () => {
-      if (pitState === 'servicing' && pitPlan) pitToggle(el.dataset.pit);
+      // Zwei Bedeutungen nach Zustand, wie bei der Reifenkachel: im Boxenstopp der Plan,
+      // sonst die Simulation. Der vorhandene Zuhoerer wird ERWEITERT und nicht ein zweiter
+      // daneben gestellt - sonst feuerten beide auf denselben Tipp.
+      if (pitState === 'servicing' && pitPlan) { pitToggle(el.dataset.pit); return; }
+      if (el.dataset.pit === 'refuel') toggleFuelSim();
+      else if (el.dataset.pit === 'repair') toggleDamageSim();
     });
+  }
+
+  // Tank: der Verbrauch IST der Schalter. 0 %/s heisst, der Tank leert sich nicht, und
+  // das ist genau "Simulation aus" - ein zweites Ankreuzfeld daneben waere ein zweiter
+  // Zustand fuer dieselbe Aussage.
+  let fuelDrainLastNonZero = 0;
+  function toggleFuelSim() {
+    const input = $('setting-fuel-drain');
+    if (!input) return;
+    const cur = parseFloat(input.value);
+    if (cur !== 0) fuelDrainLastNonZero = cur;
+    const next = cur === 0 ? (fuelDrainLastNonZero || 3) : 0;
+    input.value = next;
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    showHudToast(next === 0 ? 'TANKSIMULATION AUS'
+                            : 'TANKSIMULATION ' + next.toFixed(1) + ' %/S');
+  }
+
+  function toggleDamageSim() {
+    const sw = $('setting-crash-damage');
+    if (!sw) return;
+    sw.checked = !sw.checked;
+    sw.dispatchEvent(new Event('change', { bubbles: true }));
+    showHudToast(sw.checked ? 'SCHADENSSIMULATION AN' : 'SCHADENSSIMULATION AUS');
   }
 
   $('race-tyre-box').onclick = () => {
@@ -13028,8 +13339,10 @@
       brakeNode.start();
     }
     if (!brakeGain) return;
-    // Halved: at 0.5 the squeal sat on top of the engine instead of under it.
-    brakeGain.gain.setTargetAtTime(Math.min(0.25, amount * 0.25) * engineVolume,
+    // Eigener Regler, nicht mehr engineVolume. Es hing am Motorregler, und damit war das
+    // Quietschen nur zusammen mit dem Motor leiser zu bekommen - also gar nicht.
+    // Vorgabe 0,6, also etwas leiser als die 1,0, die es faktisch vorher hatte.
+    brakeGain.gain.setTargetAtTime(Math.min(0.25, amount * 0.25) * brakeVolume,
                                    audioCtx.currentTime, 0.06);
     if (amount <= 0.01 && brakeNode) {
       const node = brakeNode;
@@ -13046,7 +13359,9 @@
                      bedNode: null, bedGain: null, rainNode: null, rainGain: null,
                      ready: false, rainOn: false, busy: false };
   let ambienceVolume = 0.10;   // track bed and pass-bys: quiet, the engine leads
-  let rainVolume = 0.25;       // rain and thunder: own control, weather stays audible
+  let rainVolume = 0.25;
+  // Eigene Lautstaerke fuer das Bremsenquietschen. Sie hing vorher an engineVolume.
+  let brakeVolume = 0.6;       // rain and thunder: own control, weather stays audible
   let ambienceEnabled = true;   // on, but quiet enough to sit under the engine
 
   async function loadAmbience() {
@@ -13447,6 +13762,11 @@
     if (v === 0) resetTyres();   // leave nothing stale behind when switching off
   });
 
+  $('brake-volume').addEventListener('input', (e) => {
+    brakeVolume = parseFloat(e.target.value);
+    $('brake-volume-val').textContent = Math.round(brakeVolume * 100) + '%';
+  });
+
   $('rain-volume').addEventListener('input', (e) => {
     rainVolume = parseFloat(e.target.value);
     $('rain-volume-val').textContent = Math.round(rainVolume * 100) + '%';
@@ -13797,15 +14117,21 @@
     return false;
   }
 
-  function nudgeAccel(delta) {
-    const input = $('phys-accel');
-    // Round to one decimal: repeated float addition of 0.1 otherwise lands on 0.7000000001
-    // and the readout starts showing noise.
-    const v = Math.round(Math.max(0.2, Math.min(1.2, parseFloat(input.value) + delta)) * 10) / 10;
+  // Hoch/runter auf dem Steuerkreuz ist die BREMSBALANCE. Vorher war es der
+  // Beschleunigungsfaktor, und der ist eine Feinabstimmung, die man einmal setzt und stehen
+  // laesst. Die Balance ist die Groesse, die ein Fahrer WAEHREND der Fahrt nachzieht - dafuer
+  // hat ein GT3 einen Drehregler am Lenkrad.
+  //
+  // Der Weg geht ueber das Bedienelement und sein Ereignis, nicht direkt in die
+  // Konfiguration: dann zieht die Anzeige in den Optionen von selbst nach, und es gibt
+  // keinen zweiten Zustand.
+  function nudgeBrakeBias(delta) {
+    const input = $('setting-brakebias');
+    if (!input) return;
+    const v = Math.max(+input.min, Math.min(+input.max, parseInt(input.value, 10) + delta));
     input.value = v;
-    $('phys-accel-val').textContent = v.toFixed(2);
-    physEngine.config.accelerationFactor = v;
-    showHudToast(`Beschleunigung ${Math.round(v * 100)}%`);
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    showHudToast(`Bremsbalance ${v}% vorn`);
   }
 
   function nudgeSteerResponse(delta) {
@@ -13813,9 +14139,8 @@
     const input = $('phys-steerresp');
     const v = Math.round(Math.max(0.5, Math.min(3, parseFloat(input.value) + delta)) * 10) / 10;
     input.value = v;
-    $('phys-steerresp-val').textContent = Math.round(v * 100) + '%';
-    physEngine.config.steerResponse = v;
-    showHudToast(`Lenkansprechen ${Math.round(v * 100)}%`);
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    showHudToast(`Lenkansprechen ${steerRespPct(v)}%`);
   }
 
 
@@ -14649,6 +14974,59 @@
     showHudToast(garageLabel(car).toUpperCase() + ' F\u00c4HRT');
   }
 
+  // ---- Gelbe Flagge: eine Sekunde halten ----
+  //
+  // Sie ist die folgenreichste Taste im Cockpit - sie bremst JEDES Auto auf 40 km/h - und
+  // X liegt neben allem anderen. Ein Fehltipper mitten in einer Runde ist teuer. Und die
+  // Taste war doppelt belegt: derselbe kurze Druck hiess je nach Zustand "Gelb" oder
+  // "Anfahrt starten".
+  //
+  // Eine Sekunde halten macht aus einem Versehen eine Absicht. Der Ladebalken laeuft im
+  // Knopf selbst, damit die Rueckmeldung dort ist, wo die Wirkung angeschrieben steht -
+  // und nicht in einer Meldezeile, auf die man beim Fahren nicht sieht.
+  const FLAG_HOLD_MS = 1000;
+  const FLAG_HOLD_TICK_MS = 40;
+  let flagHoldStart = null;
+  let flagHoldTimer = null;
+
+  // ZEITGEBER und nicht requestAnimationFrame. Erster Versuch war rAF, und der zaehlte
+  // nicht: rAF wird vom Browser angehalten, solange die Seite nicht gezeichnet wird
+  // (verdeckt, minimiert, Hintergrundtab). Gemessen blieb der Balken bei 0,0 % stehen und
+  // die Flagge loeste nie aus.
+  //
+  // Dieselbe Falle ist in physicsStep() schon aufgeschrieben, mit demselben Schluss - dort
+  // haette sie ein Auto weiterfahren lassen, waehrend die Physik stand. Eine Geste, deren
+  // Fortschritt an der Bildrate haengt, ist keine Zeitmessung.
+  function flagHoldPaint() {
+    const b = $('race-act-flag');
+    if (!b) return;
+    if (flagHoldStart === null) { b.style.removeProperty('--hold'); return; }
+    const p = Math.min(1, (Date.now() - flagHoldStart) / FLAG_HOLD_MS);
+    b.style.setProperty('--hold', (p * 100).toFixed(1) + '%');
+    if (p >= 1) flagHoldRelease(true);
+  }
+
+  function flagHoldPress() {
+    if (flagHoldStart !== null) return;          // schon am Halten
+    if (flagState === 'restart') return;         // die Ampel laeuft, nichts umschalten
+    flagHoldStart = Date.now();
+    flagHoldPaint();
+    flagHoldTimer = setInterval(flagHoldPaint, FLAG_HOLD_TICK_MS);
+  }
+
+  // ausgeloest = true heisst: die Sekunde ist voll. Sonst wurde zu frueh losgelassen, und
+  // dann passiert ausdruecklich NICHTS - ein halber Druck darf keine halbe Wirkung haben.
+  function flagHoldRelease(ausgeloest) {
+    if (flagHoldStart === null) return;
+    flagHoldStart = null;
+    if (flagHoldTimer !== null) { clearInterval(flagHoldTimer); flagHoldTimer = null; }
+    const b = $('race-act-flag');
+    if (b) b.style.removeProperty('--hold');
+    if (!ausgeloest) return;
+    if (flagState === 'green') setFlag('yellow');
+    else if (flagState === 'yellow') yellowRestart();
+  }
+
   // ---- Gelbe Flagge ----
   // Wie in der Original-App: alles rollt langsam und mittig weiter, keiner ueberholt, die
   // Lichter blinken. Genau die Phase, in der man ein Auto von Hand zurueckstellt.
@@ -14688,7 +15066,16 @@
     }
     const el = $('race-flag');
     if (el) {
-      el.textContent = flagState === 'yellow' ? 'GELB'
+      // Der Autopilot wird HIER angeschrieben und nicht in einer eigenen Kachel: der
+      // Flaggenstreifen ist die einzige Anzeige, die waehrend Gelb etwas Neues sagt, und
+      // ein Auto, das von selbst Gas gibt, ohne dass das irgendwo steht, sieht beim ersten
+      // Mal wie ein durchgehendes Auto aus.
+      //
+      // Die Bedingung ist dieselbe wie in autopilotYellow(), und dass sie zweimal steht,
+      // ist der Preis dafuer, dass die Anzeige in einer anderen Datei liegt als die
+      // Regelung. Waeren es drei Stellen, gehoerte eine Funktion daraus.
+      const apAn = flagState === 'yellow' && trackMode === 'on';
+      el.textContent = flagState === 'yellow' ? (apAn ? 'GELB · AUTOPILOT' : 'GELB')
                      : flagState === 'restart' ? 'ANFAHRT' : '';
       el.style.display = flagState === 'green' ? 'none' : '';
     }
@@ -15599,10 +15986,24 @@
       const bis = opt.bisKmh || 120;
       const bremse = opt.brake === undefined ? 1 : opt.brake;
       const merkState = Object.assign({}, st);
-      const merk = { as: cfg.autoShift, te: cfg.tyreEffect, gs: cfg.gripScale };
+      const merk = Object.assign({}, cfg);
       const dt = 0.02;
       try {
-        cfg.autoShift = true; cfg.tyreEffect = 0; cfg.gripScale = 1;
+        // Kalibrierbezug, siehe physCurve: sonst misst diese Pruefung den Reglerstand.
+        Object.assign(cfg, e.calibRef);
+        // Schubskala neu loesen, siehe physCurve: calibRef traegt den Startwert von
+        // accelCalibration und nicht den geloesten.
+        e.calibrateAccel();
+        cfg.autoShift = true; cfg.tyreEffect = 0;
+        // Und ZULETZT die ausdruecklich abweichenden Werte. Ohne diesen Haken kann man mit
+        // diesem Aufbau keinen Parameter durchfahren: der Kalibrierbezug oben setzt jedes
+        // Feld zurueck, also auch das, dessen Wirkung man messen will. Genau daran ist die
+        // Bremsbalance-Pruefung gescheitert - drei Messungen, dreimal derselbe Wert,
+        // Spanne 0.
+        //
+        // Die Reihenfolge ist die Aussage: Bezug herstellen, dann genau eine Sache
+        // aendern. Das ist der Unterschied zwischen einer Messung und einer Beobachtung.
+        if (opt.cfg) Object.assign(cfg, opt.cfg);
         st.driveMode = 'neutral'; st.currentGear = 0; st.speedKmh = 0;
         st.isShifting = false; st.neutralRpm = 0; st.fuelLoad = 1;
         st.loadFront = 0.5; st.longUse = 0; st.dampedSteering = 0;
@@ -15645,7 +16046,11 @@
         return { rollen: rollen[rollen.length - 1], bremsspur: spur,
                  imStand: stand[stand.length - 1] };
       } finally {
-        cfg.autoShift = merk.as; cfg.tyreEffect = merk.te; cfg.gripScale = merk.gs;
+        Object.assign(cfg, merk);
+        // Die Schubskala haengt an den zurueckgelegten Werten und muss neu geloest
+        // werden - sonst rechnet die App danach mit der Skala des Bezugszustands,
+        // waehrend die Regler etwas anderes anzeigen.
+        e.calibrateAccel();
         delete st._simShift;
         for (const k of Object.keys(st)) if (!(k in merkState)) delete st[k];
         Object.assign(st, merkState);
@@ -15679,6 +16084,25 @@
     // Schaltpause: triggerShift loescht isShifting per setTimeout, und das feuert in einer
     // synchronen Schleife nie. Ohne diese Uhr bleibt der Schub nach dem ersten Schalten aus,
     // und die Messung sagt "wird langsamer" statt "schaltet".
+    // Wo weicht die laufende Konfiguration vom Kalibrierbezug ab?
+    //
+    // Diese Frage hat mich in dieser Sitzung dreimal Zeit gekostet, und jedes Mal war die
+    // Antwort dieselbe Fehlerklasse: ein Regler, dessen Vorgabe im Markup nicht zu der im
+    // Modell passt. Die App rechnet dann mit dem Modellwert, waehrend die Anzeige den
+    // Markup-Wert zeigt - bis jemand den Regler einmal anfasst, und dann springt das
+    // Verhalten. So war es bei topSpeedScale und beim Tankgewicht.
+    //
+    // gears wird uebersprungen: geteilte Referenz, nie geaendert.
+    physConfigDiff() {
+      const cfg = physEngine.config, ref = physEngine.calibRef, out = {};
+      for (const k of Object.keys(ref)) {
+        if (k === 'gears') continue;
+        if (typeof ref[k] === 'object') continue;
+        if (cfg[k] !== ref[k]) out[k] = { jetzt: cfg[k], bezug: ref[k] };
+      }
+      return out;
+    },
+
     physCurve(o) {
       const opt = o || {};
       const e = physEngine, st = e.state, cfg = e.config;
@@ -15690,7 +16114,7 @@
       // auf, und zwei identische Aufrufe lieferten Verschiedenes. Eine Aufzaehlung ist bei
       // einem Zustandsobjekt immer unvollstaendig.
       const merkState = Object.assign({}, st);
-      const merk = { as: cfg.autoShift, gs: cfg.gripScale, te: cfg.tyreEffect };
+      const merk = Object.assign({}, cfg);
       // Bezugszustand: RENNSTART. Voller Tank, warme Reifen, trockene Bahn.
       //
       // Ohne einen festen Zustand messt diese Funktion die Reihenfolge der Pruefungen und
@@ -15704,9 +16128,29 @@
       // tyreEffect auf 0 und nicht tyreGrip auf 1: update() rechnet tyreGrip jeden Takt
       // aus dem Reifenzustand neu, ein gesetzter Wert haelt also keinen Takt. Stillgelegt
       // wird der EINGANG, dann sind die Reifen nominal, egal was vorher lief.
+      // Der Kalibrierbezug, und zwar ALLE Felder daraus. Vorher standen hier drei
+      // Zuweisungen (tyreEffect, gripScale, autoShift), und alles andere blieb, wo der
+      // Benutzer es gelassen hatte: Bremswirkung, Beschleunigung, Ausrollen, Tankgewicht,
+      // Bremsbalance. Ein Klick auf eine Voreinstellung liess diese Pruefung deshalb um 26
+      // bis 62 Prozent danebenliegen, und seit Block B sind die Voreinstellungen von drei
+      // Stellen aus erreichbar.
+      Object.assign(cfg, e.calibRef);
+      // Und die Schubskala neu loesen. calibRef wird im Konstruktor genommen, BEVOR
+      // calibrateAccel() laeuft - accelCalibration steht darin also auf seinem Startwert und
+      // nicht auf dem geloesten. Ohne diese Zeile misst der Aufbau mit einer unkalibrierten
+      // Skala: gemessen 0,32 s auf 100 km/h statt 2,7 s, also um den Faktor acht daneben.
+      //
+      // Der Grund ist allgemeiner und lohnt das Aufschreiben: die Kalibrierung ist eine
+      // ABGELEITETE Groesse und kein Eingabewert. Sie mitzukopieren sieht richtig aus und
+      // ist es nicht - sie muss neu geloest werden, sobald ein Eingabewert sich aendert.
+      e.calibrateAccel();
       cfg.tyreEffect = 0;
+      // Und der Wert, gegen den die GT3-Tabelle gefittet ist. Er steht hier und nicht in
+      // calibRef, weil die Reglerstaerke eine SPIELEINSTELLUNG ist: dass ein voller Tank
+      // traeger macht, gehoert zum Auto, wie STARK es traeger macht, gehoert zum Geschmack.
+      // Der Fit wurde bei halber Staerke gemacht, also messen wir dort.
+      cfg.fuelWeightEffect = 0.5;
       st.fuelLoad = 1;
-      cfg.gripScale = 1;
       const dt = 0.02;
       const takt = () => {
         // Schaltpause auf der eigenen Uhr.
@@ -15763,9 +16207,11 @@
         }
         return { beschleunigen: zeit, zwischen: zwischen.t, bremsen };
       } finally {
-        cfg.autoShift = merk.as;
-        cfg.gripScale = merk.gs;
-        cfg.tyreEffect = merk.te;
+        Object.assign(cfg, merk);
+        // Die Schubskala haengt an den zurueckgelegten Werten und muss neu geloest
+        // werden - sonst rechnet die App danach mit der Skala des Bezugszustands,
+        // waehrend die Regler etwas anderes anzeigen.
+        e.calibrateAccel();
         // Erst die eigenen Zutaten weg, dann alles zuruecklegen: sonst bliebe ein Feld
         // stehen, das es vor dem Aufruf nicht gab.
         delete st._simShift;
@@ -16170,8 +16616,8 @@
       // Fehlbedienungen: ein Druck aufs Steuerkreuz verstellte irgendeinen Regler, den man
       // gerade nicht im Blick hatte. Die Programmierschule hing an derselben Kette und ist
       // mit ausgebaut; sie laesst sich weiterhin mit Maus und Finger bedienen.
-      if (dUp && !prevDpad.up && !trackEditorPad('up') && !pitQuickMenu('up')) nudgeAccel(+0.1);
-      if (dDown && !prevDpad.down && !trackEditorPad('down') && !pitQuickMenu('down')) nudgeAccel(-0.1);
+      if (dUp && !prevDpad.up && !trackEditorPad('up') && !pitQuickMenu('up')) nudgeBrakeBias(+1);
+      if (dDown && !prevDpad.down && !trackEditorPad('down') && !pitQuickMenu('down')) nudgeBrakeBias(-1);
       if (dLeft && !prevDpad.left && !trackEditorPad('left') && !pitQuickMenu('left')) nudgeSteerResponse(-0.1);
       if (dRight && !prevDpad.right && !trackEditorPad('right') && !pitQuickMenu('right')) nudgeSteerResponse(+0.1);
       prevDpad.up = dUp; prevDpad.down = dDown; prevDpad.left = dLeft; prevDpad.right = dRight;
@@ -18411,11 +18857,14 @@
     if (!window.OMEGA_TEST || !OMEGA_TEST.physSteerTrace) {
       return { skip: true, mass: 'physSteerTrace nicht vorhanden' };
     }
-    const gemerkt = physEngine.config.brakeBias;
-    try {
+    // Die Balance geht als ABWEICHUNG in den Messaufbau, nicht als Zuweisung an die
+    // Konfiguration davor: der Aufbau stellt seinen Kalibrierbezug her und wuerde eine
+    // Zuweisung von aussen ueberschreiben. Genau daran ist diese Pruefung einmal
+    // gescheitert - drei Messungen, dreimal derselbe Wert, Spanne 0.
+    {
       const q = (pct) => {
-        physEngine.config.brakeBias = pct / 100;
-        const r = OMEGA_TEST.physSteerTrace({ bisKmh: 200, brake: 1, steering: 0.6 });
+        const r = OMEGA_TEST.physSteerTrace({ bisKmh: 200, brake: 1, steering: 0.6,
+                                              cfg: { brakeBias: pct / 100 } });
         let b = null;
         for (const x of r.bremsspur) {
           if (!b || Math.abs(x.kmh - 140) < Math.abs(b.kmh - 140)) b = x;
@@ -18439,8 +18888,6 @@
                      + ' %, 80 % vorn ' + Math.round(h.bei140 * 100)
                      + ' % | Spanne ' + Math.round(spanne * 100)
                      + ' Punkte, im Stand ' + Math.round(h.stand * 100) + ' %' };
-    } finally {
-      physEngine.config.brakeBias = gemerkt;
     }
   });
 
@@ -18637,13 +19084,25 @@
 
   function homeStart() {
     homeBuild();
-    // Feste Zahl statt gezaehlter. Die gezaehlten 73 brachen die Zeile um und lasen sich
-    // wie eine Praezision, die die Aussage nicht hat - viele davon sind interne
-    // Zwischenwerte und keine Regler, die jemand anfasst. Der Text sagt jetzt
-    // "Einstellungen" statt "Handling-Parameter": kuerzer, passt in eine Zeile, und stimmt
-    // auch fuer die Regler, die nichts mit dem Fahrverhalten zu tun haben.
+    // Wieder GEZAEHLT, aber auf einen Zehner abgerundet.
+    //
+    // Hier stand eine feste 70, mit der Begruendung, die gezaehlten 73 haetten die Zeile
+    // umgebrochen. Nachgezaehlt sind es inzwischen 59 - 33 Regler, 17 Ankreuzfelder, 9
+    // Auswahlfelder -, die Behauptung "ueber 70" war also falsch. Eine Zahl, die niemand
+    // nachrechnet, veraltet zwangslaeufig; genau deshalb gehoert sie gezaehlt.
+    //
+    // Das Abrunden loest das ursprungliche Problem sauberer als eine feste Zahl: "ueber 50"
+    // ist kurz, bleibt bei jeder Aenderung wahr, und bricht die Zeile nicht um. Gezaehlt
+    // werden nur Dinge, die man anfasst - Regler, Ankreuzfelder, Auswahlfelder - und keine
+    // Textfelder oder versteckten Hilfsfelder.
     const el = $('home-param-count');
-    if (el) el.textContent = '70';
+    if (el) {
+      const echte = [...document.querySelectorAll(
+        '#tab-options input[id], #tab-options select[id], '
+        + '#tab-control input[id], #tab-control select[id]')]
+        .filter(x => x.type === 'range' || x.type === 'checkbox' || x.tagName === 'SELECT');
+      el.textContent = String(Math.max(10, Math.floor(echte.length / 10) * 10));
+    }
     if (homeRaf !== null) return;
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
       // Draw one frame and stop. The rule already freezes the rain; the needle has to be
@@ -18863,6 +19322,14 @@
     }
   }
   renderPresetButtons($('preset-buttons'), false);
+
+  // Fuer den Fahrmodus-Knopf im Cockpit. Ueber das Fenster, weil 50-drive.js VOR dieser
+  // Datei gebaut wird und applyPreset dort zur Deklarationszeit noch nicht existiert - zur
+  // Laufzeit schon. Genau dieser Unterschied hat in dieser Datei fuenf Ladeabbrueche
+  // gekostet, deshalb steht er als Kommentar an beiden Enden.
+  window.__applyPreset = applyPreset;
+  window.__presetKeys = () => Object.keys(PRESETS);
+  window.__presetLabel = (k) => (PRESETS[k] || {}).label || k;
 
   // Die Erklaertexte, aus denselben Objekten. Sie stehen unter den Knoepfen statt in einem
   // Tooltip, weil die Wahl zwischen fuenf Abstimmungen genau der Moment ist, in dem man

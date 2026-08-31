@@ -90,6 +90,20 @@
   let raceStartedAt = null;
   let raceClockTimer = null;
 
+  // Was in der Rundenkachel steht. Drei Faelle, und der dritte ist der Grund fuer diese
+  // Funktion: bei einem Zeitlimit gibt es keine Zielrundenzahl, und eine hinzuschreiben
+  // waere erfunden.
+  function raceLapTarget(gefahren) {
+    if (raceMode === 'laps') return gefahren + ' / ' + raceLimit;
+    if (RACE_MODES[raceMode].timed && raceStartedAt !== null) {
+      const restMs = Math.max(0, raceLimit * 60000 - (Date.now() - raceStartedAt));
+      const s = Math.floor(restMs / 1000);
+      return gefahren + ' \u00b7 ' + Math.floor(s / 60) + ':'
+             + String(s % 60).padStart(2, '0');
+    }
+    return String(gefahren);
+  }
+
   function raceLimitReached() {
     if (raceState !== 'racing') return false;
     if (!RACE_MODES[raceMode].timed) return false;   // free practice: only a human ends it
@@ -886,10 +900,30 @@
   $('race-act-start').onclick = toggleRace;
 
   $('race-act-pit').onclick = () => { requestPitStop(); updateRaceActButtons(); };
-  $('race-act-flag').onclick = () => {
-    if (flagState === 'green') setFlag('yellow');
-    else if (flagState === 'yellow') yellowRestart();
-  };
+  // Auch der Knopf wird GEHALTEN, nicht getippt - derselbe Riegel wie bei der Taste X, und
+  // der Ladebalken laeuft ohnehin in diesem Knopf. Ein Knopf, der auf Tippen reagiert,
+  // waehrend die Taste eine Sekunde verlangt, waere zwei Bedienungen fuer eine Wirkung.
+  //
+  // pointerdown/up statt mousedown/up: das deckt Finger und Maus mit einem Zuhoerer ab.
+  // pointercancel und pointerleave gehoeren dazu, sonst haengt der Balken, wenn der Finger
+  // vom Knopf rutscht.
+  (function bindeFlaggenknopf() {
+    const b = $('race-act-flag');
+    if (!b) return;
+    b.addEventListener('pointerdown', (e) => { e.preventDefault(); flagHoldPress(); });
+    for (const ev of ['pointerup', 'pointercancel', 'pointerleave']) {
+      b.addEventListener(ev, () => flagHoldRelease(false));
+    }
+    // Und die Tastaturbedienung des Knopfes: Leertaste/Enter loesen click aus, nicht
+    // pointerdown. Ein Knopf, der mit der Tastatur nicht bedienbar ist, ist kaputt.
+    b.addEventListener('click', (e) => {
+      // Nur wenn der Klick NICHT von einem Zeiger kam - sonst haette ein Fingertipp die
+      // Halten-Geste umgangen. e.detail ist 0 bei Tastaturauslösung.
+      if (e.detail !== 0) return;
+      if (flagState === 'green') setFlag('yellow');
+      else if (flagState === 'yellow') yellowRestart();
+    });
+  })();
 
   $('race-light-box').onclick = () => {
     headlightsOn = !headlightsOn;
@@ -904,8 +938,37 @@
   // Tipp wirkungslos, statt versehentlich etwas zu verstellen.
   for (const el of document.querySelectorAll('.pit-tile[data-pit="refuel"], .pit-tile[data-pit="repair"]')) {
     el.addEventListener('click', () => {
-      if (pitState === 'servicing' && pitPlan) pitToggle(el.dataset.pit);
+      // Zwei Bedeutungen nach Zustand, wie bei der Reifenkachel: im Boxenstopp der Plan,
+      // sonst die Simulation. Der vorhandene Zuhoerer wird ERWEITERT und nicht ein zweiter
+      // daneben gestellt - sonst feuerten beide auf denselben Tipp.
+      if (pitState === 'servicing' && pitPlan) { pitToggle(el.dataset.pit); return; }
+      if (el.dataset.pit === 'refuel') toggleFuelSim();
+      else if (el.dataset.pit === 'repair') toggleDamageSim();
     });
+  }
+
+  // Tank: der Verbrauch IST der Schalter. 0 %/s heisst, der Tank leert sich nicht, und
+  // das ist genau "Simulation aus" - ein zweites Ankreuzfeld daneben waere ein zweiter
+  // Zustand fuer dieselbe Aussage.
+  let fuelDrainLastNonZero = 0;
+  function toggleFuelSim() {
+    const input = $('setting-fuel-drain');
+    if (!input) return;
+    const cur = parseFloat(input.value);
+    if (cur !== 0) fuelDrainLastNonZero = cur;
+    const next = cur === 0 ? (fuelDrainLastNonZero || 3) : 0;
+    input.value = next;
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    showHudToast(next === 0 ? 'TANKSIMULATION AUS'
+                            : 'TANKSIMULATION ' + next.toFixed(1) + ' %/S');
+  }
+
+  function toggleDamageSim() {
+    const sw = $('setting-crash-damage');
+    if (!sw) return;
+    sw.checked = !sw.checked;
+    sw.dispatchEvent(new Event('change', { bubbles: true }));
+    showHudToast(sw.checked ? 'SCHADENSSIMULATION AN' : 'SCHADENSSIMULATION AUS');
   }
 
   $('race-tyre-box').onclick = () => {

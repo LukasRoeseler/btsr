@@ -398,7 +398,6 @@
     "Anteil": "Share",
     "Anzeigen wie auf einem echten GT3-HUD": "Readouts like a real GT3 dash",
     "Attacke": "Attack",
-    "Auch auf dem Steuerkreuz links/rechts.": "Also left/right on the D-pad.",
     "Auf Standard zurücksetzen": "Reset to defaults",
     "Auf den neuen Blättern steht ein 100-mm-Kontrollmaß. Nachmessen ist der einzige Weg, den Druckmaßstab zu prüfen, denn eine Druckvorschau sagt dazu nichts.": "The new sheets carry a 100 mm check measure. Measuring it is the only way to verify the print scale, because a print preview says nothing about it.",
     "Auf der Bahn": "On track",
@@ -856,6 +855,13 @@
     // auf die Lenkgrenze und wurde dort weggeklemmt; die Balance wirkt auf die Anforderung
     // an die Vorderachse.
     "Bremsbalance": "Brake bias",
+    "Bremsenquietschen": "Brake squeal",
+    "Eigener Regler. Es hing vorher am Motorregler und war deshalb nicht getrennt leiser zu bekommen.":
+      "Its own slider. It used to hang on the engine volume, so it could not be turned down on its own.",
+    "Balance / Lenkung": "Bias / steering",
+    "Auch auf dem Steuerkreuz links/rechts. Der volle Lenkeinschlag ist mechanisch 45 Grad; bei 100 % fordert voller Stick genau ihn an.":
+      "Also on the D-pad, left/right. Full steering lock is mechanically 45 degrees; at 100% a full stick asks for exactly that.",
+    "GELB · AUTOPILOT": "YELLOW · AUTOPILOT",
     "Wieviel der Bremse an der Vorderachse ankommt.": "How much of the brake reaches the front axle.",
     "Nach vorn": "Forward",
     ": das Auto schiebt beim Anbremsen geradeaus.": ": the car pushes straight on under braking.",
