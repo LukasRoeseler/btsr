@@ -167,18 +167,72 @@
   // gekostet, deshalb steht er als Kommentar an beiden Enden.
   window.__applyPreset = applyPreset;
   window.__presetKeys = () => Object.keys(PRESETS);
+  // Fuer den Cockpit-Knopf: er soll ab der EINGESTELLTEN Variante weiterschalten und nicht
+  // immer bei der ersten anfangen. Ein Knopf, der aus "GT3" ein "Arcade" macht, wirkt wie
+  // ein Ruecksprung. Als Funktion und nicht als Wert, weil sich die Antwort mit jedem
+  // Reglerzug aendert.
+  window.__presetActive = () => presetAktiv();
+  // Die Sollwerte, fuer die Rasterpruefung im Selbsttest. Als Kopie hinausgegeben, damit
+  // ein Test die Tabelle nicht versehentlich veraendert.
+  window.__presetValues = (k) => (PRESETS[k] ? Object.assign({}, PRESETS[k].v) : null);
   window.__presetLabel = (k) => (PRESETS[k] || {}).label || k;
 
-  // Die Erklaertexte, aus denselben Objekten. Sie stehen unter den Knoepfen statt in einem
-  // Tooltip, weil die Wahl zwischen fuenf Abstimmungen genau der Moment ist, in dem man
-  // wissen will, was sie unterscheidet - und ein Tooltip auf dem Telefon nicht erscheint.
-  (function presetLegende() {
+  // Der Erklaertext der EINGESTELLTEN Variante, aus demselben Objekt. Bis v0.5 standen alle
+  // fuenf untereinander; das war eine Wand aus Text, in der man den eigenen Zustand nicht
+  // fand.
+  //
+  // Der Punkt, an dem es interessant wird, ist nicht das Reduzieren, sondern der Fall
+  // danach: wer nach einem Klick EINEN Regler verstellt, hat keine Variante mehr. Stuende
+  // dann weiter der Text der letzten, waere er ab diesem Moment falsch - und unsichtbar
+  // falsch, denn die Anzeige behauptet "GT3", das Auto faehrt etwas anderes.
+  //
+  // Deshalb wird nicht GEMERKT, was geklickt wurde, sondern GEMESSEN, was eingestellt ist.
+  // Ein gemerkter Zustand kann auseinanderlaufen, ein gemessener nicht.
+  function presetGleich(a, b) {
+    // Toleranz statt ===: presetRead() wandelt nur range-Elemente in Zahlen, und eine
+    // Schrittweite von 0.05 trifft 0.85 nicht zwangslaeufig exakt. 1e-6 ist enger als jede
+    // Schrittweite und weiter als jeder Gleitkommafehler.
+    if (typeof a === 'boolean' || typeof b === 'boolean') return !!a === !!b;
+    const za = +a, zb = +b;
+    if (isFinite(za) && isFinite(zb)) return Math.abs(za - zb) < 1e-6;
+    return String(a) === String(b);
+  }
+
+  function presetAktiv() {
+    const ist = presetRead();
+    for (const [key, p] of Object.entries(PRESETS)) {
+      let passt = true;
+      for (const [id, soll] of Object.entries(p.v)) {
+        // Ein Schluessel, dessen Element es nicht (mehr) gibt, darf die Variante nicht
+        // stillschweigend passend machen: dann waere jede Voreinstellung "aktiv", sobald
+        // genug Regler fehlen.
+        if (!(id in ist) || !presetGleich(ist[id], soll)) { passt = false; break; }
+      }
+      if (passt) return key;
+    }
+    return null;
+  }
+
+  function renderPresetLegende() {
+    const key = presetAktiv();
+    // Der Fahrmodus-Knopf im Cockpit zeigt dieselbe Auskunft und wird deshalb HIER
+    // mitgeschrieben, aus derselben Rechnung. Er stand vorher fest auf "GT3" und log damit
+    // beim Laden: die Markup-Vorgaben entsprechen keiner Variante, GT3 am naechsten mit
+    // 6 von 13 abweichenden Reglern. Zwei Anzeigen derselben Sache, und eine davon falsch.
+    const knopf = $('race-act-mode-txt');
+    if (knopf) knopf.textContent = key ? PRESETS[key].label : 'Eigen';
     const host = $('preset-legend');
     if (!host) return;
-    host.innerHTML = Object.values(PRESETS).map(p =>
-      '<div class="preset-leg"><b>' + p.label + '</b> <span class="muted">' + p.kurz
-      + '</span><small>' + p.text + '</small></div>').join('');
-  })();
+    if (!key) {
+      host.innerHTML = '<div class="preset-leg"><b>Eigene Abstimmung</b> <span class="muted">'
+        + 'kein fertiger Satz</span><small>Mindestens ein Regler weicht von allen f\u00fcnf '
+        + 'Voreinstellungen ab. Ein Klick oben setzt wieder einen ganzen Satz.</small></div>';
+      return;
+    }
+    const p = PRESETS[key];
+    host.innerHTML = '<div class="preset-leg"><b>' + p.label + '</b> <span class="muted">'
+      + p.kurz + '</span><small>' + p.text + '</small></div>';
+  }
 
   $('preset-export').addEventListener('click', () => {
     $('preset-json').value = JSON.stringify(presetRead());
@@ -218,6 +272,7 @@
   });
 
   $('preset-json').value = JSON.stringify(presetRead());
+  renderPresetLegende();
 
   // ---- Eigene Abstimmungen auf diesem Geraet ------------------------------------------
   // Strecken und Motoren haben ihre eigene Ablage schon (carrera-hybrid-tracks,
@@ -299,5 +354,20 @@
   }
   window.__updateGaragePresetRow = updateGaragePresetRow;
   updateGaragePresetRow();
+
+
+  // EIN Zuhoerer am Tab statt einer je Regler: presetControls() findet 45 Elemente, und
+  // 45 Zuhoerer waeren 45 Stellen, an denen einer fehlen kann. Ueber die Blasenphase ist
+  // auch ein Regler abgedeckt, der erst nach dem Laden dazukommt - und applyPreset()
+  // feuert dieselben Ereignisse, also braucht es dort keinen zweiten Aufruf.
+  if ($('tab-options')) {
+    for (const ev of ['input', 'change']) {
+      $('tab-options').addEventListener(ev, (e) => {
+        if (e.target && e.target.closest && e.target.closest('.opt-row')) {
+          renderPresetLegende();
+        }
+      });
+    }
+  }
 
 })();

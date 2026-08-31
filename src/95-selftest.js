@@ -422,6 +422,98 @@
     } finally { if (lang !== vorher) setLang(vorher); }
   });
 
+  // ---- Voreinstellungen gegen die Reglerraster ----
+  //
+  // Eine Voreinstellung darf nur Werte verlangen, die ihr Regler DARSTELLEN kann. Ein
+  // Bereichsregler rastet still ein: setting-grip hatte Raster 0,05, GT3 verlangte 0,72,
+  // gesetzt wurden 0,70. Vier solche Faelle gab es, und keiner war sichtbar, weil nach dem
+  // Setzen nie verglichen wurde. Die Karte sagt "An einem echten GT3 kalibriert", und
+  // gerade der kalibrierte Wert war nicht erreichbar.
+  //
+  // Geprueft wird das Raster und nicht das Ergebnis eines Klicks: so meldet der Test auch
+  // eine Voreinstellung, die gar nicht angeklickt wurde.
+  stAdd('Jede Voreinstellung passt aufs Reglerraster', () => {
+    const keys = window.__presetKeys ? window.__presetKeys() : [];
+    if (!keys.length) return { ok: null, mass: 'keine Voreinstellungen erreichbar' };
+    const schlecht = [];
+    let geprueft = 0;
+    for (const k of keys) {
+      const v = (window.__presetValues || (() => null))(k);
+      if (!v) return { ok: null, mass: 'presetValues nicht erreichbar' };
+      for (const [id, soll] of Object.entries(v)) {
+        const el = $(id);
+        if (!el) { schlecht.push(k + '/' + id + ' fehlt'); continue; }
+        if (el.type !== 'range') continue;
+        geprueft++;
+        const mn = +el.min, st = +el.step || 1;
+        const gerastert = mn + Math.round((+soll - mn) / st) * st;
+        if (Math.abs(gerastert - +soll) > 1e-9) {
+          schlecht.push(k + '/' + id + ' ' + soll + ' -> ' + (+gerastert.toFixed(6)));
+        }
+        if (+soll < mn - 1e-9 || +soll > +el.max + 1e-9) {
+          schlecht.push(k + '/' + id + ' ' + soll + ' ausserhalb ' + el.min + '..' + el.max);
+        }
+      }
+    }
+    return { ok: schlecht.length === 0,
+             mass: geprueft + ' Reglerwerte in ' + keys.length + ' Voreinstellungen'
+                 + (schlecht.length ? ' | NICHT DARSTELLBAR: ' + schlecht.join(', ') : '') };
+  });
+
+  // ---- Motormenue gegen die Schleifenliste ----
+  //
+  // DIESER TEST HAETTE DEN PORSCHE GEFUNDEN. 'p992gt3r' stand im Menue und in
+  // audio/loops.json, aber nicht in SAMPLE_CARS - und der Handler in 80-sound.js prueft
+  // genau diese Liste. Er fand den Wert nicht und fiel STILL auf SOUND_PROFILES.v8
+  // zurueck, einen Saegezahn mit 50 Hz. Zu hoeren war also nicht ein schlecht gerechneter
+  // Boxer-6, sondern der grobe Ersatzmotor; vier Wochen lang.
+  //
+  // Dieselbe Fehlerklasse wie eine tote Element-id: ein Bedienelement, dessen Wert niemand
+  // liest. Und wie dort ist der stille Rueckfall das Schlimmste daran.
+  stAdd('Jeder Motor im Menue hat Schleifen', () => {
+    const sel = $('sound-profile');
+    if (!sel) return { ok: false, mass: 'kein #sound-profile' };
+    const menue = Array.prototype.map.call(sel.options, o => o.value);
+    const ohne = menue.filter(v => SAMPLE_CARS.indexOf(v) < 0);
+    // Gegenrichtung: eine Schleife, die man nicht waehlen kann, ist kein Absturz, aber eine
+    // unerreichbare Datei.
+    const unerreichbar = SAMPLE_CARS.filter(v => menue.indexOf(v) < 0);
+    return {
+      ok: ohne.length === 0 && unerreichbar.length === 0,
+      mass: menue.length + ' Eintraege, ' + SAMPLE_CARS.length + ' Schleifenmotoren'
+          + (ohne.length ? ' | OHNE SCHLEIFEN: ' + ohne.join(', ') : '')
+          + (unerreichbar.length ? ' | nicht waehlbar: ' + unerreichbar.join(', ') : ''),
+    };
+  });
+
+  // ---- Lautsprecher-Knopf ----
+  //
+  // Er soll durch ALLE Eintraege schalten und beim ersten wieder ankommen. Ein Knopf, der
+  // einen Eintrag ueberspringt, ist schwer zu bemerken: man merkt nur, dass ein Motor
+  // "nicht dabei" ist.
+  stAdd('Lautsprecher-Knopf schaltet einmal rundherum', () => {
+    const knopf = $('race-act-sound'), sel = $('sound-profile');
+    if (!knopf || !sel) return { ok: null, mass: 'kein Knopf oder kein Menue' };
+    const gemerkt = sel.value;
+    try {
+      const gesehen = [];
+      const n = sel.options.length;
+      // n+1 Kliks: nach n Kliks muss der Anfangswert wieder stehen.
+      for (let i = 0; i < n; i++) { knopf.click(); gesehen.push(sel.value); }
+      const einmalig = new Set(gesehen);
+      return {
+        ok: einmalig.size === n && sel.value === gemerkt,
+        mass: n + ' Eintraege, ' + einmalig.size + ' verschiedene gesehen, danach wieder '
+            + (sel.value === gemerkt ? 'am Anfang' : 'bei "' + sel.value + '"'),
+      };
+    } finally {
+      if (sel.value !== gemerkt) {
+        sel.value = gemerkt;
+        sel.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    }
+  });
+
   // ---- 13. Rundenzaehlung ----
   // Drei Ueberfahrten muessen drei Runden ergeben, und die Anzeige muss bei 0 anfangen. Die
   // Statuszeile zaehlte einmal die laufende Runde mit, der Zaehler im Cockpit nicht: zwei

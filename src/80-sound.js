@@ -57,8 +57,13 @@
     }
   });
 
-  // Four synthesized engine characters. All are generated live — no external audio
-  // files, which keeps the app dependency-free and avoids reusing the real game's assets.
+  // Der ERSATZMOTOR, seit v0.5 nicht mehr im Menue. Vier Oszillator-Charaktere, live
+  // erzeugt, ohne Datei - und genau deshalb bleiben sie: per file:// ohne den Ordner audio/
+  // sind sie die einzige Tonquelle, und ein Auto, das lautlos fährt, sieht kaputt aus.
+  //
+  // Waehlbar sind sie nicht mehr. Wer sie hoert, hoert einen Rueckfall, und der wird jetzt
+  // protokolliert statt still zu passieren: dass er still war, hat den Porsche-Fehler
+  // vier Wochen lang versteckt.
   const SOUND_PROFILES = {
     v8:    { wave: 'sawtooth', baseFreq: 50,  freqSpan: 190, gainBase: 0.03, gainSpan: 0.13 },
     v10:   { wave: 'sawtooth', baseFreq: 110, freqSpan: 520, gainBase: 0.02, gainSpan: 0.11 },
@@ -77,8 +82,13 @@
                        // Bankaufteilung folgt aus der Zuendfolge, und daraus kommt der
                        // Charakter, weil jede Bank ihren eigenen Kruemmer hat. Erzeugt von
                        // tools/engine_synth.py, kein aufgenommenes Material.
+                       // p992gt3r hat hier bis v0.5 GEFEHLT, und das war der Grund
+                       // fuer "der Porsche klingt kaputt": der Wert stand im Menue und in
+                       // audio/loops.json, aber nicht in dieser Liste. Der Handler unten
+                       // prueft genau sie, fand ihn nicht und fiel still auf den
+                       // Saegezahn-Ersatzmotor zurueck. Der Boxer-6 hat also nie gespielt.
                        'c6r', 'z06gt3r', 'amggt3', 'f296gt3', 'm4gt3', 'huracan',
-                       'vantagegt3'];
+                       'vantagegt3', 'p992gt3r'];
   const BANDS = ['idle', 'mid', 'high'];
   let engineVolume = 0.7;
   const sampleEngine = { buffers: {}, rpmScale: {}, nodes: null, over: null, car: null,
@@ -562,15 +572,22 @@
     const v = e.target.value;
     if (SAMPLE_CARS.includes(v)) {
       if (!startSampleEngine(v)) {
-        // Samples not (yet) available — fall back without complaining.
+        // Schleifen noch nicht geladen: das ist normal und kein Fehler, sie kommen
+        // asynchron. Der Rueckfall ist hier voruebergehend.
         soundProfile = SOUND_PROFILES.v8;
         if (engineOsc) engineOsc.type = soundProfile.wave;
       }
       return;
     }
+    // HIERHER darf ein Menueeintrag nicht mehr kommen. Seit v0.5 sind alle 17 Eintraege
+    // Schleifenmotoren, und wer hier landet, hat einen Wert ohne Schleifen - genau der
+    // Fehler, der den Porsche 911 GT3 R vier Wochen lang als Saegezahn spielen liess.
+    // Still zurueckzufallen hat ihn versteckt, also wird es jetzt gemeldet.
     stopSampleEngine();
     soundProfile = SOUND_PROFILES[v] || SOUND_PROFILES.v8;
     if (engineOsc) engineOsc.type = soundProfile.wave;
+    log('Motorprofil "' + v + '" hat keine Schleifen, Ersatzmotor laeuft. Das ist ein '
+        + 'Fehler, wenn der Eintrag im Menue steht.', 'warn');
   });
 
   $('cm-start').addEventListener('click', () => {

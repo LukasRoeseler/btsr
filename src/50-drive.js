@@ -68,6 +68,14 @@
     $('race-act-mode').addEventListener('click', () => {
       const keys = window.__presetKeys ? window.__presetKeys() : [];
       if (!keys.length) return;
+      // Beim ersten Druck da anfangen, wo die Regler stehen: sonst springt der Knopf von
+      // einer eingestellten GT3-Abstimmung auf Arcade zurueck. Ist gar keine Variante
+      // eingestellt (die Vorgaben sind ein sechster, milderer Satz), bleibt -1 und der
+      // erste Druck gibt die erste Variante.
+      if (fahrmodusIdx < 0 && window.__presetActive) {
+        const aktiv = window.__presetActive();
+        if (aktiv) fahrmodusIdx = keys.indexOf(aktiv);
+      }
       fahrmodusIdx = (fahrmodusIdx + 1) % keys.length;
       const key = keys[fahrmodusIdx];
       window.__applyPreset(key);
@@ -75,6 +83,59 @@
       if (txt) txt.textContent = window.__presetLabel(key);
       showHudToast('ABSTIMMUNG ' + window.__presetLabel(key).toUpperCase());
     });
+  }
+
+  // Der Motorklang, durchgeschaltet. Er geht ueber das Bedienelement in den Optionen und
+  // dessen 'change'-Ereignis, wie die Reifenkachel und der Leseart-Knopf: damit gibt es
+  // keinen zweiten Zustand, und die Optionen ziehen von selbst nach.
+  //
+  // Die Reihenfolge ist die des MENUES und nicht eine eigene Liste - der erste Eintrag ist
+  // damit Mercedes-AMG GT3, und ein neunter Rennmotor erscheint hier ohne Nacharbeit.
+  // Ausgeblendete Eintraege werden uebersprungen: ein Knopf, der auf etwas Unsichtbares
+  // schaltet, sieht wie ein Fehler aus.
+  function motorNamen(opt) {
+    // Nur der Wagenname, nicht die technische Beschreibung dahinter: "Mercedes-AMG GT3"
+    // statt "Mercedes-AMG GT3: V8, Cross-Plane". Im Cockpit ist der Platz eine Zeile.
+    //
+    // Getrennt wird am ERSTEN von Doppelpunkt oder Komma. Nur am Doppelpunkt reicht nicht:
+    // die acht Rennmotoren heissen "Name: Bauart", die aelteren Eintraege aber
+    // "Mustang, V8, Cross-Plane" - dort blieb der ganze Text stehen.
+    const t = opt.textContent.trim();
+    const kandidaten = [t.indexOf(':'), t.indexOf(',')].filter(i => i > 0);
+    let kurz = kandidaten.length ? t.slice(0, Math.min.apply(null, kandidaten)).trim() : t;
+    // "Porsche" gibt es zweimal: als gerechneten Saugmotor und als Aufnahme. Beide auf
+    // denselben Kurznamen zu bringen ist schlechter als ein zu langer Text - dann zeigt der
+    // Knopf zwei verschiedene Motoren gleich an.
+    if (t.indexOf('Aufnahme') >= 0) kurz += ' (Aufn.)';
+    return kurz;
+  }
+
+  function motorAnzeige() {
+    const sel = $('sound-profile'), txt = $('race-act-sound-txt');
+    if (!sel || !txt) return;
+    const opt = sel.options[sel.selectedIndex];
+    if (opt) txt.textContent = motorNamen(opt);
+  }
+
+  if ($('race-act-sound')) {
+    $('race-act-sound').addEventListener('click', () => {
+      const sel = $('sound-profile');
+      if (!sel) return;
+      const brauchbar = Array.prototype.filter.call(sel.options, o => !o.disabled && !o.hidden);
+      if (!brauchbar.length) return;
+      const jetzt = brauchbar.findIndex(o => o.value === sel.value);
+      const naechste = brauchbar[(jetzt + 1) % brauchbar.length];
+      sel.value = naechste.value;
+      sel.dispatchEvent(new Event('change', { bubbles: true }));
+      motorAnzeige();
+      showHudToast(motorNamen(naechste).toUpperCase());
+    });
+    motorAnzeige();
+    // Auch wenn die Aenderung aus den Optionen kommt: sonst zeigt der Knopf einen Motor an,
+    // der nicht spielt, und das ist schlechter als kein Text.
+    if ($('sound-profile')) {
+      $('sound-profile').addEventListener('change', motorAnzeige);
+    }
   }
 
   if ($('race-act-scan')) {

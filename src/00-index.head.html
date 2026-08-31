@@ -589,6 +589,12 @@
   /* Zwei Knoepfe auf der Breite von einem. Das Bild darueber und die Beschriftung darunter,
      damit auf 375 px beide noch lesbar sind - nebeneinander waere der Text vier Zeichen. */
   .gt3-half { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(3px, .7vw, 8px); }
+  /* Symbol und Text NEBENEINANDER, anders als in .gt3-half: dieser Knopf ist volle Breite,
+     und ein zentriertes Symbol ueber einem Wort wirkt dort verloren. */
+  .gt3-act-ico { display: flex; align-items: center; justify-content: center;
+    gap: clamp(4px, 1vw, 9px); }
+  .gt3-act-ico svg { width: clamp(14px, 3vw, 19px); height: clamp(14px, 3vw, 19px);
+    flex: none; }
   .gt3-half .gt3-act { display: grid; justify-items: center; gap: 2px;
     padding: clamp(4px, .8vw, 8px) 2px; line-height: 1.15; }
   .gt3-half .gt3-act svg { width: clamp(15px, 3.4vw, 21px); height: clamp(15px, 3.4vw, 21px); }
@@ -1692,7 +1698,7 @@
           DualSense. Mit der Tastatur geht es auch, aber deutlich schlechter &ndash; sie
           kennt nur ganz oder gar nicht.</span></li>
       </ul>
-      <h3 style="margin-top:16px">Sch&ouml;n, aber nicht n&ouml;tig</h3>
+      <h3 style="margin-top:16px">Optional</h3>
       <ul class="need-list need-opt">
         <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Eine <b>CH-Strecke</b> &ndash; oder der <b>Start/Ziel-Ausdruck</b>
           samt Boxengasse aus dem Tab Strecke. Ohne beides f&auml;hrt es sich auch, nur
@@ -1788,7 +1794,7 @@
                   title="Abstimmung durchschalten, wirkt wie die Voreinstellungen">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.4"/><path d="M12 4v4M6.3 17.7l2.9-2.9M17.7 17.7l-2.9-2.9" stroke="var(--bad)"/></svg>
-            <span id="race-act-mode-txt">GT3</span></button>
+            <span id="race-act-mode-txt">Eigen</span></button>
         </div>
       </div>
 
@@ -1829,6 +1835,15 @@
           </div>
           <ul class="gt3-laps" id="race-lap-list"></ul></div>
         <button type="button" class="gt3-act" id="race-act-start">Rennen starten</button>
+        <!-- Der Motorklang gehoert ins Cockpit, weil man ihn im Fahren wechselt: das ist
+             kein Einrichten, sondern Ausprobieren. MIT Namen und nicht nur mit dem Symbol -
+             ein Knopf, der durch siebzehn Eintraege schaltet, muss sagen wo er steht, sonst
+             drueckt man blind und hoert erst beim Gasgeben, was passiert ist. -->
+        <button type="button" class="gt3-act gt3-act-ico" id="race-act-sound"
+                title="Motorklang durchschalten">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.2L12 5.5v13l-4.8-4H4z"/><path d="M16 9a4.2 4.2 0 0 1 0 6" stroke="var(--bad)"/><path d="M18.6 6.4a7.8 7.8 0 0 1 0 11.2" stroke="var(--bad)"/></svg>
+          <span id="race-act-sound-txt">Motor</span></button>
       </div>
 
       <div class="gt3-strip">
@@ -1927,47 +1942,6 @@
         <span id="dash-light-dmg" style="color:#ff5252"></span>
       </div>
       <div class="gt3-banner" id="hud-toast-wrap"><span id="hud-toast"></span></div>
-    </div>
-    <div class="card">
-      <h2>Tastenbelegung</h2>
-
-    <div class="opt-head" style="margin-top:16px">Tastatur, Fahren</div>
-    <div class="help-grid">
-      <kbd>&uarr;</kbd><span>Gas</span>
-      <kbd>&darr;</kbd><span>Bremse</span>
-      <kbd>&larr;</kbd> <span>lenken links</span>
-      <kbd>&rarr;</kbd><span>lenken rechts</span>
-      <kbd>Leertaste</kbd><span>Not-Halt, alle Eingaben los, Momentum auf null</span>
-      <kbd>I</kbd><span>hochschalten, und aus dem Rückwärtsgang wieder heraus</span>
-      <kbd>K</kbd><span>runterschalten. In Automatik: unter 10 km/h Rückwärtsgang, von Hand aus dem 1. Gang in N und aus N in R</span>
-      <kbd>L</kbd><span>Lichthupe</span>
-    </div>
-
-    <div class="opt-head">Tastatur: Test und Fehlersuche am PC</div>
-    <div class="help-grid">
-      <kbd>W</kbd><span>Wetter umschalten (Regen / trocken)</span>
-      <kbd>P</kbd><span>Boxenstopp, erneut zweimal kurz dr&uuml;cken bricht ab</span>
-      <kbd>C</kbd><span>Crash ausl&ouml;sen: Schaden, Ger&auml;usch und Rumble wie im Betrieb</span>
-      <kbd>F</kbd><span>Tank auf 5&nbsp;% setzen, um den Notlauf zu pr&uuml;fen</span>
-      <kbd>R</kbd><span>Tank und Zustand zur&uuml;cksetzen</span>
-      <kbd>X</kbd><span><b>Eine Sekunde halten</b> f&uuml;r die gelbe Flagge: alles rollt mit
-        <span id="help-yellow-kmh">80</span>&nbsp;km/h mittig weiter, kein
-        &Uuml;berholen, Lichter blinken. Nochmal eine Sekunde halten startet die Ampel und
-        gibt wieder frei. Der Knopf im Cockpit reicht mit einem Tipp &ndash; die Taste liegt
-        neben allem anderen, der Knopf nicht.</span>
-      <kbd>Q</kbd><span>Runde z&auml;hlen, ohne sie zu fahren: zum Pr&uuml;fen von
-        Rundenzeiten und Ergebnistabelle. <kbd>Shift</kbd>+<kbd>Q</kbd>: f&uuml;r jedes
-        Auto im Rennen</span>
-      <kbd>M</kbd><span>Aufnahme: n&auml;chsten Abschnitt markieren</span>
-    </div>
-
-    <div class="opt-head">Controller</div>
-    <div class="help-grid" id="help-pad"></div>
-
-    <p class="muted" style="font-size:12px">
-      Die Controller-Belegung ist frei zuweisbar, Optionen &rarr; Controller. Hier steht,
-      was gerade eingestellt ist.
-    </p>
     </div>
   </section>
 
@@ -4059,8 +4033,12 @@
         Voreinstellung anfasst. Kopieren, verschicken, einf&uuml;gen,
         <b>&Uuml;bernehmen</b>.
       </p>
-      <textarea id="preset-json" spellcheck="false"
-                style="width:100%; min-height:64px; font-family:monospace; font-size:11.5px"></textarea>
+      <!-- Drei Zeilen statt Vollhoehe: der Inhalt ist EINE JSON-Zeile zum Markieren und
+           Kopieren, kein Text zum Lesen. resize:vertical laesst ihn aufziehen, wer doch
+           hineinsehen will. -->
+      <textarea id="preset-json" spellcheck="false" rows="3"
+                style="width:100%; height:3.4em; min-height:0; resize:vertical;
+                       font-family:monospace; font-size:11.5px"></textarea>
       <div class="row" style="gap:8px; margin-top:6px">
         <button id="preset-import">&Uuml;bernehmen</button>
         <button id="preset-export">Aktuelle Werte hineinschreiben</button>
@@ -4154,7 +4132,7 @@
       <div class="opt-row"><div class="opt-label">Tankverbrauch (%/s bei Vollgas)</div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-fuel-drain" min="0" max="10" step="0.5" value="3">
+          <input type="range" id="setting-fuel-drain" min="0" max="10" step="0.1" value="3">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-fuel-drain-val">3.0</span>
         </div></div>
@@ -4222,7 +4200,7 @@
       <div class="opt-row"><div class="opt-label">Reifengrip</div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-grip" min="0" max="1" step="0.05" value="0.6">
+          <input type="range" id="setting-grip" min="0" max="1" step="0.01" value="0.6">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-grip-val">0.60</span>
         </div></div>
@@ -4280,7 +4258,7 @@
       <div class="opt-row"><div class="opt-label">Lenkansprechen<small>Auch auf dem Steuerkreuz links/rechts. Der volle Lenkeinschlag ist mechanisch 45&nbsp;Grad; bei 100&nbsp;% fordert voller Stick genau ihn an.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="phys-steerresp" min="0.5" max="3" step="0.1" value="2">
+          <input type="range" id="phys-steerresp" min="0.5" max="3" step="0.05" value="2">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="phys-steerresp-val">100%</span>
         </div></div>
@@ -4359,10 +4337,6 @@
           <option value="gt3v10">GT3: V10, Saugmotor, 8900/min</option>
           <option value="bmax">B-Max: Reihen-3, Turbo</option>
           <option value="f1">Formel 1: V12, 17500/min</option>
-          <option value="v8">Einfach: V8 (kernig)</option>
-          <option value="v10">Einfach: V10 (hoch)</option>
-          <option value="ev">Einfach: Elektro</option>
-          <option value="turbo">Einfach: Turbo</option>
         </select></div>
       <div class="opt-row"><div class="opt-label">Motorlautstärke</div>
         <div class="opt-slider">
@@ -4653,6 +4627,51 @@
         <span class="muted">Steuerkreuz: <b id="pad-live-dpad">&ndash;</b></span>
         <span class="muted" style="font-size:11px">Achsen: <b id="pad-live-axes">&ndash;</b></span>
       </div>
+
+      <!-- Aus dem Cockpit hierher. Dort war sie eine ganze Karte unter dem Schirm, und
+           eine Tastenbelegung liest man nicht beim Fahren, sondern vorher. Verschoben
+           und nicht neu getippt: an help-pad und help-yellow-kmh haengen zwei
+           Schreiber, und jedes Neutippen ist die Gelegenheit, einen zu verlieren. -->
+      <h3 style="font-size:14px; margin:20px 0 6px 0; padding-top:14px;
+                 border-top:1px solid var(--line)">Tastenbelegung</h3>
+
+    <div class="opt-head" style="margin-top:16px">Tastatur, Fahren</div>
+    <div class="help-grid">
+      <kbd>&uarr;</kbd><span>Gas</span>
+      <kbd>&darr;</kbd><span>Bremse</span>
+      <kbd>&larr;</kbd> <span>lenken links</span>
+      <kbd>&rarr;</kbd><span>lenken rechts</span>
+      <kbd>Leertaste</kbd><span>Not-Halt, alle Eingaben los, Momentum auf null</span>
+      <kbd>I</kbd><span>hochschalten, und aus dem Rückwärtsgang wieder heraus</span>
+      <kbd>K</kbd><span>runterschalten. In Automatik: unter 10 km/h Rückwärtsgang, von Hand aus dem 1. Gang in N und aus N in R</span>
+      <kbd>L</kbd><span>Lichthupe</span>
+    </div>
+
+    <div class="opt-head">Tastatur: Test und Fehlersuche am PC</div>
+    <div class="help-grid">
+      <kbd>W</kbd><span>Wetter umschalten (Regen / trocken)</span>
+      <kbd>P</kbd><span>Boxenstopp, erneut zweimal kurz dr&uuml;cken bricht ab</span>
+      <kbd>C</kbd><span>Crash ausl&ouml;sen: Schaden, Ger&auml;usch und Rumble wie im Betrieb</span>
+      <kbd>F</kbd><span>Tank auf 5&nbsp;% setzen, um den Notlauf zu pr&uuml;fen</span>
+      <kbd>R</kbd><span>Tank und Zustand zur&uuml;cksetzen</span>
+      <kbd>X</kbd><span><b>Eine Sekunde halten</b> f&uuml;r die gelbe Flagge: alles rollt mit
+        <span id="help-yellow-kmh">80</span>&nbsp;km/h mittig weiter, kein
+        &Uuml;berholen, Lichter blinken. Nochmal eine Sekunde halten startet die Ampel und
+        gibt wieder frei. Der Knopf im Cockpit reicht mit einem Tipp &ndash; die Taste liegt
+        neben allem anderen, der Knopf nicht.</span>
+      <kbd>Q</kbd><span>Runde z&auml;hlen, ohne sie zu fahren: zum Pr&uuml;fen von
+        Rundenzeiten und Ergebnistabelle. <kbd>Shift</kbd>+<kbd>Q</kbd>: f&uuml;r jedes
+        Auto im Rennen</span>
+      <kbd>M</kbd><span>Aufnahme: n&auml;chsten Abschnitt markieren</span>
+    </div>
+
+    <div class="opt-head">Controller</div>
+    <div class="help-grid" id="help-pad"></div>
+
+    <p class="muted" style="font-size:12px">
+      Die Controller-Belegung ist frei zuweisbar, Optionen &rarr; Controller. Hier steht,
+      was gerade eingestellt ist.
+    </p>
     </div>
 
   </section>
@@ -5005,7 +5024,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.4.24</span></span>
+    <span class="foot-ver">v<span id="app-version">0.4.25</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine

@@ -1218,6 +1218,11 @@
     "ein Ausdruck meldet aus der Ausdruck-Tabelle, dort ist": "a printout reports from the printout table, where",
     "Haarnadel gehören zur": "hairpin belong to the",
     "-Tabelle; alles andere ist unbestätigt. Trag hier den Code ein, den dein gedrucktes Boxen-Muster tatsächlich auslöst,": " table; everything else is unconfirmed. Enter the code your printed pit pattern actually triggers here,",
+    // Block 2 (v0.5): die Legende zeigt nur die eingestellte Variante.
+    "Eigene Abstimmung": "Custom setup",
+    "kein fertiger Satz": "not a ready-made set",
+    "Mindestens ein Regler weicht von allen fünf Voreinstellungen ab. Ein Klick oben setzt wieder einen ganzen Satz.": "At least one control differs from all five presets. A click above sets a whole set again.",
+    "Eigen": "Custom",
   };
 
   // ============================================================================
