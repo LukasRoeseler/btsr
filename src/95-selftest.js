@@ -422,6 +422,117 @@
     } finally { if (lang !== vorher) setLang(vorher); }
   });
 
+  // ---- Block 4.1: Bremstemperatur und Fading ----
+  //
+  // ZWEI BEDINGUNGEN, und die erste ist die, die schiefgehen kann ohne aufzufallen: eine
+  // EINZELNE Vollbremsung aus kalten Scheiben darf nicht faden. Die gefittete Bremstabelle
+  // (RMSE 3,1 %) ist an genau dieser Bremsung gemessen; wuerde sie faden, waere nicht die
+  // Simulation tiefer, sondern die Kalibrierung kaputt.
+  //
+  // Die zweite: mehrere hintereinander MUESSEN faden, sonst ist der Zusatz Zierde. Dieser
+  // Test hat einen echten Fehler gefunden - die erste Fassung der Kuehlung war um den Faktor
+  // 100 zu stark, und fuenf Vollbremsungen aus 250 km/h erreichten 111 statt 601 Grad.
+  stAdd('Bremsfading: eine Bremsung nicht, acht schon', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.physBrakeHeat) {
+      return { skip: true, mass: 'physBrakeHeat nicht vorhanden' };
+    }
+    const eine = OMEGA_TEST.physBrakeHeat({ kmh: 250, wiederholungen: 1 });
+    const acht = OMEGA_TEST.physBrakeHeat({ kmh: 250, wiederholungen: 8 });
+    const aus = OMEGA_TEST.physBrakeHeat({ kmh: 250, wiederholungen: 8,
+                                          cfg: { brakeFadeEffect: 0 } });
+    const laenger = (acht.letzterWeg - eine.letzterWeg) / eine.letzterWeg;
+    const ok = eine.maxFade === 0            // eine Bremsung fadet nicht
+      && acht.maxFade > 0.05                 // acht schon
+      && laenger > 0.08                      // und das kostet Bremsweg
+      && Math.abs(aus.letzterWeg - eine.letzterWeg) < 3;  // mit Regler aus: kein Unterschied
+    return { ok,
+      mass: '1x: ' + eine.tempF + '\u00b0 vorn, Fading ' + (eine.maxFade * 100).toFixed(1)
+          + ' %, ' + eine.letzterWeg + ' m | 8x: ' + acht.tempF + '\u00b0, '
+          + (acht.maxFade * 100).toFixed(1) + ' %, ' + acht.letzterWeg + ' m ('
+          + (laenger * 100).toFixed(0) + ' % laenger) | Regler aus: ' + aus.letzterWeg + ' m' };
+  });
+
+  // ---- Block 4.3: asymmetrischer Reifenverschleiss ----
+  //
+  // Die richtige Seite muss mehr abnutzen - eine Rechtskurve die LINKE. Und der MITTELWERT
+  // muss derselbe bleiben wie ohne Asymmetrie: sonst waere der Schalter auch ein
+  // Verschleiss-Regler, und dann liesse sich nicht messen, was er tut.
+  stAdd('Reifen links/rechts: richtige Seite, gleicher Mittelwert', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.physTyreAsym) {
+      return { skip: true, mass: 'physTyreAsym nicht vorhanden' };
+    }
+    const re = OMEGA_TEST.physTyreAsym({ steering: 0.7, sekunden: 40 });
+    const li = OMEGA_TEST.physTyreAsym({ steering: -0.7, sekunden: 40 });
+    const sy = OMEGA_TEST.physTyreAsym({ steering: 0.7, sekunden: 40,
+                                         cfg: { tyreAsymEffect: 0 } });
+    const ok = re.wearL > re.wearR * 2          // Rechtskurve nutzt links deutlich mehr
+      && li.wearR > li.wearL * 2                // Linkskurve gespiegelt
+      && Math.abs(re.mittel - sy.mittel) < 1e-4  // Mittelwert unveraendert
+      && Math.abs(li.mittel - sy.mittel) < 1e-4
+      && re.pull > 0 && li.pull < 0;             // und der Zug folgt dem Vorzeichen
+    return { ok,
+      mass: 'rechts L/R ' + re.wearL.toFixed(3) + '/' + re.wearR.toFixed(3)
+          + ', links L/R ' + li.wearL.toFixed(3) + '/' + li.wearR.toFixed(3)
+          + ' | Mittel ' + re.mittel.toFixed(5) + ' gegen symmetrisch '
+          + sy.mittel.toFixed(5) + ' | Zug ' + re.pull.toFixed(4) };
+  });
+
+  // ---- Block 4.4: Reifendruck ----
+  // Monoton, ueber den ganzen Reglerbereich. Ein Regler, der in der Mitte umkehrt, ist keine
+  // Abstimmung, sondern eine Falle.
+  stAdd('Reifendruck: weniger Druck, waermer und mehr Verschleiss', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.physTyreAsym) {
+      return { skip: true, mass: 'physTyreAsym nicht vorhanden' };
+    }
+    const werte = [1.4, 1.6, 1.8, 2.0, 2.2].map(p => ({
+      p, r: OMEGA_TEST.physTyreAsym({ steering: 0.3, sekunden: 40,
+                                      cfg: { tyrePressureBar: p } }) }));
+    let monoton = true;
+    for (let i = 1; i < werte.length; i++) {
+      if (werte[i].r.tempC >= werte[i - 1].r.tempC) monoton = false;
+      if (werte[i].r.mittel >= werte[i - 1].r.mittel) monoton = false;
+    }
+    return { ok: monoton,
+      mass: werte.map(w => w.p.toFixed(1) + ' bar: ' + w.r.tempC.toFixed(0) + '\u00b0, '
+                         + (w.r.mittel * 100).toFixed(1) + ' %').join(' | ') };
+  });
+
+  // ---- Block 4.2: Windschatten ----
+  //
+  // Gemessen ueber physSteerGrip mit gesetztem st.dirtyAir und NICHT ueber die
+  // Ghost-Verwaltung: die braeuchte ein Layout und zwei Autos, und dann prueft der Test die
+  // Messung statt der Wirkung. Was hier zu pruefen ist: senkt der Wert den Kurvengrip, und
+  // laesst der Regler ihn abschalten.
+  stAdd('Windschatten senkt den Kurvengrip', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.physSteerGrip) {
+      return { skip: true, mass: 'physSteerGrip nicht vorhanden' };
+    }
+    const st = physEngine.state;
+    const merk = st.dirtyAir;
+    try {
+      // tyreEffect AUF 0 in allen drei Aufrufen, und das ist der Punkt, an dem die erste
+      // Fassung dieses Tests falsch war: physSteerGrip legt tyreTempC und tyreWear NICHT
+      // zurueck, die Reifen wurden also von Aufruf zu Aufruf waermer. Gemessen kam
+      // 0,595 -> 0,660 heraus, und das war die Aufwaermung und nicht der Windschatten -
+      // der Test meldete einen Fehler, der in ihm selbst lag.
+      const messen = (dirty, effekt) => {
+        st.dirtyAir = dirty;
+        return OMEGA_TEST.physSteerGrip({ kmh: 140, throttle: 0.3, brake: 0, steering: 0.5,
+          patch: { dirtyAirEffect: effekt, tyreEffect: 0 } }).steerGrip;
+      };
+      const frei = messen(0, 1);
+      const nah = messen(1, 1);
+      const ausgeschaltet = messen(1, 0);
+      const verlust = (frei - nah) / Math.max(1e-6, frei);
+      return {
+        ok: verlust > 0.05 && Math.abs(ausgeschaltet - frei) < 1e-6,
+        mass: 'freie Luft ' + frei.toFixed(3) + ', dicht dahinter ' + nah.toFixed(3)
+            + ' (' + (verlust * 100).toFixed(1) + ' % weniger), Regler aus '
+            + ausgeschaltet.toFixed(3),
+      };
+    } finally { st.dirtyAir = merk; }
+  });
+
   // ---- Abseits der Fahrbahn ----
   //
   // Die Bedingung, an der es schiefgeht, wenn sie jemand vergisst: die Drosselung darf NUR

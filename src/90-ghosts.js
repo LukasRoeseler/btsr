@@ -1831,6 +1831,49 @@
     }, Math.round(CONTROL_SEND_INTERVAL_MS * slot / (garage.length + 1)));
   }
 
+  // ---- Windschatten (Block 4.2) ------------------------------------------------------
+  //
+  // Wieviel Nachlauf hat das FAHRERAUTO gerade? 0 = freie Luft, 1 = direkt hinter einem
+  // Auto. Die Physik in 40-physics.js kennt nur st.dirtyAir und soll nicht wissen muessen,
+  // dass es Ghosts gibt; hier steht die Messung, dort die Wirkung.
+  //
+  // Reichweite eine Kachellaenge (43 cm auf dem Teppich, im Massstab rund 32 m). Der Verlauf
+  // ist quadratisch abfallend und nicht linear: Abtrieb im Nachlauf erholt sich mit dem
+  // Abstand schnell, und linear haette eine halbe Kachel noch die halbe Wirkung - zu weit
+  // weg, um es zu spueren.
+  const DIRTY_AIR_REICHWEITE = 1.0;   // in Kachellaengen
+
+  function dirtyAirLevel() {
+    const tiles = currentTrackTiles;
+    // Unter drei Kacheln gibt es keine Kurvenkennung und keinen sinnvollen Abstand. Genau
+    // deshalb ist der Schalter in den Optionen gesperrt und nicht bloss wirkungslos.
+    if (!tiles || tiles.length < 3) return 0;
+    if (dashMinimapIndex === null) return 0;
+
+    // NUR IN DER KURVE. Auf der Geraden ist Windschatten ein VORTEIL, und den zu simulieren
+    // hiesse das Modell in der Gegenrichtung zu erfinden: das Auto beschleunigt in echt
+    // nicht besser, weil eines vorausfaehrt. In der Kurve ist der Abtriebsverlust ein
+    // Nachteil, und den bildet der Reibkreis ehrlich ab. Ein halbes Modell, das seine
+    // Haelfte kennt, ist besser als ein ganzes, das raet.
+    if (!tileIsCurve(tiles[dashMinimapIndex].type)) return 0;
+
+    const n = tiles.length;
+    const meine = dashMinimapIndex + dashTilePhase();
+    let naechster = Infinity;
+    for (const c of garage) {
+      if (c.role !== 'ghost' || !c.ghost || c.ghost.tileIndex === null) continue;
+      const seine = c.ghost.tileIndex + ghostTilePhase(c);
+      // Nur nach VORN, und modulo Rundenlaenge: wer vorn faehrt, hat freie Luft.
+      let d = seine - meine;
+      while (d < 0) d += n;
+      while (d >= n) d -= n;
+      if (d > 0 && d < naechster) naechster = d;
+    }
+    if (!isFinite(naechster) || naechster > DIRTY_AIR_REICHWEITE) return 0;
+    const nah = 1 - naechster / DIRTY_AIR_REICHWEITE;
+    return nah * nah;
+  }
+
   function ghostTick(car) {
     const g = car.ghost;
     if (!g) return;
@@ -2366,6 +2409,106 @@
       return out;
     },
 
+    // Eine Vollbremsung mit Temperaturverlauf. Die Frage, die sie beantwortet: fadet eine
+    // EINZELNE Bremsung aus kalten Scheiben schon? Sie darf es nicht - sonst ist nicht die
+    // Simulation tiefer, sondern die gefittete Bremstabelle kaputt.
+    physBrakeHeat(o) {
+      const opt = o || {};
+      const e = physEngine, st = e.state, cfg = e.config;
+      const merkState = Object.assign({}, st);
+      const merk = Object.assign({}, cfg);
+      try {
+        Object.assign(cfg, e.calibRef);
+        e.calibrateAccel();
+        for (const k of Object.keys(opt.cfg || {})) cfg[k] = opt.cfg[k];
+        cfg.tyreEffect = 0;
+        const dt = 0.02;
+        const v0 = opt.kmh || 250;
+        st.driveMode = 'forward';
+        st.currentGear = cfg.gears.length - 1;
+        st.speedKmh = v0 / REAL_SCALE;
+        st.isShifting = false; st.loadFront = 0.5; st.longUse = 0;
+        st.fuelLoad = 1;
+        st.brakeTempF = cfg.brakeAmbientC;
+        st.brakeTempR = cfg.brakeAmbientC;
+        st.brakeFade = 0;
+        let t = 0, weg = 0, maxFade = 0;
+        const wiederholungen = opt.wiederholungen || 1;
+        let letzteZeit = 0, letzterWeg = 0;
+        for (let i = 0; i < wiederholungen; i++) {
+          st.speedKmh = v0 / REAL_SCALE;
+          st.longUse = 0;
+          let tb = 0, wb = 0;
+          while (tb < 20 && st.speedKmh * REAL_SCALE > 1) {
+            const vVor = st.speedKmh;
+            e.update({ throttle: 0, brake: 1, steering: 0 }, dt);
+            tb += dt;
+            wb += ((vVor + st.speedKmh) / 2 * REAL_SCALE) / 3.6 * dt;
+            maxFade = Math.max(maxFade, st.brakeFade);
+          }
+          t += tb; weg += wb;
+          letzteZeit = tb; letzterWeg = wb;
+          // Zwischen den Wiederholungen mit Vollgas wieder hoch: das ist die Kuehlphase,
+          // und sie gehoert zur Messung. Ohne sie waeren mehrere Bremsungen ein
+          // Dauerbremsvorgang und nicht ein Rennen.
+          if (i < wiederholungen - 1) {
+            let ta = 0;
+            while (ta < 12 && st.speedKmh * REAL_SCALE < v0) {
+              e.update({ throttle: 1, brake: 0, steering: 0 }, dt);
+              ta += dt;
+            }
+          }
+        }
+        return { zeit: +t.toFixed(3), meter: +weg.toFixed(1),
+                 letzteZeit: +letzteZeit.toFixed(3), letzterWeg: +letzterWeg.toFixed(1),
+                 tempF: +st.brakeTempF.toFixed(0), tempR: +st.brakeTempR.toFixed(0),
+                 maxFade: +maxFade.toFixed(4), fadeEnde: +st.brakeFade.toFixed(4) };
+      } finally {
+        Object.assign(cfg, merk);
+        e.calibrateAccel();
+        for (const k of Object.keys(st)) if (!(k in merkState)) delete st[k];
+        Object.assign(st, merkState);
+      }
+    },
+
+    // Kurvenfahrt mit festem Lenkeinschlag: nutzt sie die richtige Seite mehr ab, und bleibt
+    // der MITTELWERT derselbe wie ohne Asymmetrie? Das Zweite ist der eigentliche Punkt -
+    // sonst waere "Asymmetrie an" auch "mehr Verschleiss an", und dann liesse sich nicht
+    // messen, was der Schalter tut.
+    physTyreAsym(o) {
+      const opt = o || {};
+      const e = physEngine, st = e.state, cfg = e.config;
+      const merkState = Object.assign({}, st);
+      const merk = Object.assign({}, cfg);
+      try {
+        Object.assign(cfg, e.calibRef);
+        e.calibrateAccel();
+        for (const k of Object.keys(opt.cfg || {})) cfg[k] = opt.cfg[k];
+        const dt = 0.02;
+        st.driveMode = 'forward';
+        st.currentGear = 3;
+        st.isShifting = false; st.loadFront = 0.5; st.longUse = 0; st.fuelLoad = 1;
+        st.tyreTempC = cfg.tyreOptimalC;
+        st.tyreWear = 0; st.tyreWearL = 0; st.tyreWearR = 0; st.tyrePull = 0;
+        const kmh = opt.kmh || 140;
+        const lenk = opt.steering === undefined ? 0.7 : opt.steering;
+        const sekunden = opt.sekunden || 30;
+        for (let t = 0; t < sekunden; t += dt) {
+          // Fahrt festhalten: gemessen wird der Verschleiss, nicht die Fahrleistung.
+          st.speedKmh = kmh / REAL_SCALE;
+          e.update({ throttle: 0.4, brake: 0, steering: lenk }, dt);
+        }
+        return { wearL: +st.tyreWearL.toFixed(5), wearR: +st.tyreWearR.toFixed(5),
+                 mittel: +st.tyreWear.toFixed(5), pull: +st.tyrePull.toFixed(5),
+                 tempC: +st.tyreTempC.toFixed(1) };
+      } finally {
+        Object.assign(cfg, merk);
+        e.calibrateAccel();
+        for (const k of Object.keys(st)) if (!(k in merkState)) delete st[k];
+        Object.assign(st, merkState);
+      }
+    },
+
     physCurve(o) {
       const opt = o || {};
       const e = physEngine, st = e.state, cfg = e.config;
@@ -2456,6 +2599,15 @@
             st.currentGear++;
           }
           st.isShifting = false; st.loadFront = 0.5; st.longUse = 0;
+          // KALTE SCHEIBEN vor jedem Lauf. Seit Block 4 behalten sie ihre Waerme, und vier
+          // Bremsungen hintereinander wuerden die letzte aus heissen Scheiben fahren - die
+          // Messung haenge dann an der Reihenfolge und nicht am Auto. Dieselbe Falle stand
+          // oben schon fuer den Reifenzustand aufgeschrieben. Die kalibrierte Bremstabelle
+          // ist an EINER Bremsung aus kalten Scheiben gemessen; das ist der Zustand, fuer
+          // den die Sollwerte gelten.
+          st.brakeTempF = cfg.brakeAmbientC;
+          st.brakeTempR = cfg.brakeAmbientC;
+          st.brakeFade = 0;
           let tb = 0, weg = 0;
           while (tb < 20 && st.speedKmh * REAL_SCALE > 1) {
             takt();

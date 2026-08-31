@@ -26,7 +26,14 @@
            // crash-count ist ein INDEX in [1,2,3,4,5,10,20,50]: 4 = fuenf Crashs.
            'setting-fuel-drain': 0, 'setting-crash-count': 4,
            'setting-crash-damage': false,
-           'setting-repair-time': 4 },
+           'setting-repair-time': 4,
+           // Block 4: Bremsfading, Windschatten, Reifenasymmetrie und -druck.
+           'setting-brake-fade': false,
+           'setting-brake-fade-strength': 1.0,
+           'setting-dirtyair': false,
+           'setting-dirtyair-strength': 1.0,
+           'setting-tyre-asym': false,
+           'setting-tyre-pressure': 1.8 },
     },
     pro: {
       label: 'Pro',
@@ -38,7 +45,14 @@
            'setting-tyres': 0.5, 'phys-steerresp': 1.8, 'setting-brakebias': 60,
            'setting-fuel-drain': 1.5, 'setting-crash-count': 2,
            'setting-crash-damage': true,
-           'setting-repair-time': 10 },
+           'setting-repair-time': 10,
+           // Block 4: Bremsfading, Windschatten, Reifenasymmetrie und -druck.
+           'setting-brake-fade': true,
+           'setting-brake-fade-strength': 0.6,
+           'setting-dirtyair': true,
+           'setting-dirtyair-strength': 0.6,
+           'setting-tyre-asym': true,
+           'setting-tyre-pressure': 1.8 },
     },
     gt3: {
       label: 'GT3',
@@ -51,7 +65,14 @@
            'setting-tyres': 2.0, 'phys-steerresp': 1.3, 'setting-brakebias': 62,
            'setting-fuel-drain': 3.0, 'setting-crash-count': 5,
            'setting-crash-damage': true,
-           'setting-repair-time': 20 },
+           'setting-repair-time': 20,
+           // Block 4: Bremsfading, Windschatten, Reifenasymmetrie und -druck.
+           'setting-brake-fade': true,
+           'setting-brake-fade-strength': 1.0,
+           'setting-dirtyair': true,
+           'setting-dirtyair-strength': 1.0,
+           'setting-tyre-asym': true,
+           'setting-tyre-pressure': 1.8 },
     },
     gt4: {
       label: 'GT4',
@@ -64,7 +85,14 @@
            'setting-tyres': 1.5, 'phys-steerresp': 1.5, 'setting-brakebias': 61,
            'setting-fuel-drain': 2.2, 'setting-crash-count': 5,
            'setting-crash-damage': true,
-           'setting-repair-time': 16 },
+           'setting-repair-time': 16,
+           // Block 4: Bremsfading, Windschatten, Reifenasymmetrie und -druck.
+           'setting-brake-fade': true,
+           'setting-brake-fade-strength': 0.8,
+           'setting-dirtyair': true,
+           'setting-dirtyair-strength': 0.8,
+           'setting-tyre-asym': true,
+           'setting-tyre-pressure': 1.85 },
     },
     f1: {
       label: 'F1',
@@ -77,7 +105,14 @@
            'setting-tyres': 2.0, 'phys-steerresp': 1.05, 'setting-brakebias': 66,
            'setting-fuel-drain': 4.5, 'setting-crash-count': 3,
            'setting-crash-damage': true,
-           'setting-repair-time': 24 },
+           'setting-repair-time': 24,
+           // Block 4: Bremsfading, Windschatten, Reifenasymmetrie und -druck.
+           'setting-brake-fade': true,
+           'setting-brake-fade-strength': 1.4,
+           'setting-dirtyair': true,
+           'setting-dirtyair-strength': 1.6,
+           'setting-tyre-asym': true,
+           'setting-tyre-pressure': 1.7 },
     },
   };
   // Bis v0.4 hiess GT3 "real". Aeltere exportierte Abstimmungen und der Knopf im
@@ -273,6 +308,10 @@
 
   $('preset-json').value = JSON.stringify(presetRead());
   renderPresetLegende();
+  // Einmal beim Laden, aus der LETZTEN Quelldatei: hier sind alle let initialisiert.
+  // In 50-drive.js gerufen war es die temporale Todeszone - currentTrackTiles steht in
+  // 60-track.js, und typeof schuetzt dort nicht (bei einem let wirft schon typeof).
+  if (window.__dirtyAirVerfuegbar) window.__dirtyAirVerfuegbar();
 
   // ---- Eigene Abstimmungen auf diesem Geraet ------------------------------------------
   // Strecken und Motoren haben ihre eigene Ablage schon (carrera-hybrid-tracks,

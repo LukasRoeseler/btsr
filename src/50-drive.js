@@ -220,6 +220,85 @@
     $('setting-brakebias-val').textContent = pct + '% vorn';
   });
 
+  // ---- Block 4: Bremstemperatur, Windschatten, Reifen -------------------------------
+  //
+  // Die Schalter setzen den Effekt auf 0 statt ein eigenes Flag zu fuehren. Ein zweiter
+  // Zustand neben dem Wert waere die Gelegenheit, dass beide auseinanderlaufen - und die
+  // Physik muesste dann zwei Sachen abfragen statt einer.
+  function brakeFadeAnwenden() {
+    const an = !$('setting-brake-fade') || $('setting-brake-fade').checked;
+    const st = $('setting-brake-fade-strength');
+    physEngine.config.brakeFadeEffect = an ? parseFloat(st ? st.value : 1) : 0;
+  }
+  if ($('setting-brake-fade')) {
+    $('setting-brake-fade').addEventListener('change', brakeFadeAnwenden);
+  }
+  if ($('setting-brake-fade-strength')) {
+    $('setting-brake-fade-strength').addEventListener('input', (e) => {
+      $('setting-brake-fade-strength-val').textContent =
+        Math.round(parseFloat(e.target.value) * 100) + '%';
+      brakeFadeAnwenden();
+    });
+  }
+  brakeFadeAnwenden();
+
+  function dirtyAirAnwenden() {
+    const an = !$('setting-dirtyair') || $('setting-dirtyair').checked;
+    const st = $('setting-dirtyair-strength');
+    physEngine.config.dirtyAirEffect = an ? parseFloat(st ? st.value : 1) : 0;
+  }
+  if ($('setting-dirtyair')) {
+    $('setting-dirtyair').addEventListener('change', dirtyAirAnwenden);
+  }
+  if ($('setting-dirtyair-strength')) {
+    $('setting-dirtyair-strength').addEventListener('input', (e) => {
+      $('setting-dirtyair-strength-val').textContent =
+        Math.round(parseFloat(e.target.value) * 100) + '%';
+      dirtyAirAnwenden();
+    });
+  }
+  dirtyAirAnwenden();
+
+  // Der Windschatten braucht ein Streckenlayout, sonst multipliziert er eine Null. Der
+  // Schalter wird deshalb GESPERRT und nicht bloss wirkungslos - das ist die Lehre aus dem
+  // Ghost-Kapitel.
+  //
+  // NICHT BEIM LADEN RUFEN. currentTrackTiles steht in 60-track.js, also in einer spaeteren
+  // Datei, und ein Zugriff von hier waere zur Ladezeit die temporale Todeszone. Hier stand
+  // erst ein Schutz "typeof currentTrackTiles !== 'undefined'" - der schuetzt NICHT: bei
+  // einem let in der Todeszone wirft schon typeof, anders als bei var. Die ganze IIFE brach
+  // damit ab, OMEGA_TEST war undefiniert, und ein Zeitgeber warf danach im Sekundentakt
+  // weiter.
+  //
+  // Gerufen wird deshalb von aussen: aus refreshTrackPreview(), wo sich die Kachelzahl
+  // aendert, und einmal beim Laden aus 98-presets.js, der letzten Datei.
+  function dirtyAirVerfuegbar() {
+    const row = $('dirtyair-row');
+    const sw = $('setting-dirtyair');
+    const genug = currentTrackTiles.length >= 3;
+    if (sw) sw.disabled = !genug;
+    if (row) row.classList.toggle('sim-off', !genug);
+  }
+  window.__dirtyAirVerfuegbar = dirtyAirVerfuegbar;
+
+  if ($('setting-tyre-asym')) {
+    const asymAnwenden = () => {
+      physEngine.config.tyreAsymEffect = $('setting-tyre-asym').checked ? 1 : 0;
+    };
+    $('setting-tyre-asym').addEventListener('change', asymAnwenden);
+    asymAnwenden();
+  }
+
+  if ($('setting-tyre-pressure')) {
+    const druckAnwenden = (v) => {
+      physEngine.config.tyrePressureBar = v;
+      $('setting-tyre-pressure-val').textContent = v.toFixed(2) + ' bar';
+    };
+    $('setting-tyre-pressure').addEventListener('input',
+      (e) => druckAnwenden(parseFloat(e.target.value)));
+    druckAnwenden(parseFloat($('setting-tyre-pressure').value));
+  }
+
   $('setting-fuel-drain').addEventListener('input', (e) => {
     fuelDrainPerSec = parseFloat(e.target.value);
     $('setting-fuel-drain-val').textContent = fuelDrainPerSec.toFixed(1);
@@ -547,10 +626,47 @@
       // Restliche Lauffleche, dieselbe Richtung und dieselben Schwellen wie beim Schaden
       // (55 % und 20 %). Eine eigene Schwelle hier waere eine zweite Regel fuer dieselbe
       // Aussage "es wird knapp".
-      const rest = Math.max(0, Math.min(100, 100 - st.tyreWear * 100));
+      // Getrennt, wenn die Asymmetrie an ist: oben links, unten rechts. Sonst zeigt der
+      // obere Balken wie bisher den Mittelwert und der untere ist weg - dann sieht die
+      // Kachel genau aus wie vorher.
+      const asymAn = physEngine.config.tyreAsymEffect > 0;
+      const farbe = (r) => (r <= 20 ? '#ff5c5c' : (r <= 55 ? 'var(--warn)' : 'var(--good)'));
+      const restVon = (w) => Math.max(0, Math.min(100, 100 - w * 100));
+      const rest = restVon(asymAn ? st.tyreWearL : st.tyreWear);
       setSty('race-tyre-bar', 'width', rest + '%');
-      setSty('race-tyre-bar', 'background', rest <= 20 ? '#ff5c5c'
-                                          : (rest <= 55 ? 'var(--warn)' : 'var(--good)'));
+      setSty('race-tyre-bar', 'background', farbe(rest));
+      const wrap = $('race-tyre-bar-r-wrap');
+      if (wrap) wrap.style.display = asymAn ? 'block' : 'none';
+      if (asymAn) {
+        const restR = restVon(st.tyreWearR);
+        setSty('race-tyre-bar-r', 'width', restR + '%');
+        setSty('race-tyre-bar-r', 'background', farbe(restR));
+      }
+    }
+
+    // Bremsscheibentemperatur. Grau wenn das Fading aus ist - genau wie der Reifenring,
+    // damit keine Anzeige eine Simulation behauptet, die nicht laeuft.
+    const bf = $('race-braket-f'), br = $('race-braket-r');
+    if (bf && br) {
+      const cfgB = physEngine.config;
+      if (cfgB.brakeFadeEffect === 0) {
+        bf.textContent = '\u2013';
+        br.textContent = '\u2013';
+        setSty('race-braket-row', 'color', '#4a5568');
+      } else {
+        bf.textContent = Math.round(st.brakeTempF);
+        br.textContent = Math.round(st.brakeTempR);
+        // Die Farbe kommt aus der HEISSEREN der beiden: eine glueende Scheibe ist die
+        // Nachricht, auch wenn die andere kalt ist.
+        const T = Math.max(st.brakeTempF, st.brakeTempR);
+        const ueber = Math.max(0, Math.min(1,
+          (T - cfgB.brakeFadeStartC) / Math.max(1, cfgB.brakeFadeFullC - cfgB.brakeFadeStartC)));
+        const col = ueber > 0
+          ? 'rgb(' + Math.round(255) + ',' + Math.round(178 - 130 * ueber) + ','
+            + Math.round(107 - 92 * ueber) + ')'
+          : (T > cfgB.brakeAmbientC + 60 ? 'var(--good)' : '#8b99b4');
+        setSty('race-braket-row', 'color', col);
+      }
     }
 
     // Abgeschaltete Simulationen kennzeichnen. Hier und nicht in den Umschaltfunktionen:
@@ -778,6 +894,15 @@
         padRumble(0.12, 0.34, OFFTRACK_RUMBLE_MS);
       }
     }
+    // Windschatten: gemessen wird in 90-ghosts.js (nur dort ist bekannt, wo die anderen
+    // Autos sind), uebernommen wird hier. MIT Zeitkonstante - ein Windschatten, der zwischen
+    // zwei Takten von 0 auf 1 springt, ist ein Grip-Sprung, und den spuert man als Ruck.
+    //
+    // Der Aufruf ist defensiv, weil 90-ghosts.js SPAETER gebaut wird: zur Ladezeit waere ein
+    // direkter Zugriff die temporale Todeszone, zur Laufzeit ist er unproblematisch.
+    const ziel = (typeof dirtyAirLevel === 'function') ? dirtyAirLevel() : 0;
+    const ps = physEngine.state;
+    ps.dirtyAir += (ziel - ps.dirtyAir) * Math.min(1, dt * 4);
     const out = physEngine.update({ steering: steer, throttle: rawThrottle, brake: rawBrake,
                                     headlights: headlightsOn }, dt);
     updateDashboard(out);

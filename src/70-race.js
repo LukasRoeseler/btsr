@@ -14,6 +14,11 @@
   let dashPendingCode = null, dashPendingSeen = 0;
   let dashLastActedCode = null, dashLastActedAt = 0;
   let dashMinimapIndex = null;
+  // Zeitpunkt des letzten Kachelwechsels und die geglaettete Kacheldauer. Beides nur fuer
+  // die Positionsschaetzung innerhalb der Kachel; sie ist eine Schaetzung und keine Messung,
+  // das Auto meldet keine Position.
+  let dashTileAt = 0;
+  let dashTileMs = 0;
   let dashLastTileCounter = null;
   let dashLapStart = null;
   let dashLapTimes = [];
@@ -1392,6 +1397,17 @@
     dashLastTileCounter = counter;
     dashMinimapIndex = dashMinimapIndex === null ? 0 : dashMinimapIndex + 1;
     if (currentTrackTiles.length > 0) dashMinimapIndex = dashMinimapIndex % currentTrackTiles.length;
+    // Die Dauer der gerade verlassenen Kachel mitfuehren, geglaettet - dieselbe Rechnung wie
+    // ghostNoteTileTime() fuer die Ghosts. Daraus schaetzt dashTilePhase() die Position
+    // INNERHALB der Kachel, und die braucht der Windschatten: ein Abstand in ganzen Kacheln
+    // ist bei 43 cm Kachellaenge zu grob, um "dicht dahinter" von "eine Laenge dahinter" zu
+    // unterscheiden.
+    const jetztT = Date.now();
+    if (dashTileAt) {
+      const ms = jetztT - dashTileAt;
+      if (ms > 60 && ms < 20000) dashTileMs = dashTileMs ? dashTileMs * 0.7 + ms * 0.3 : ms;
+    }
+    dashTileAt = jetztT;
 
     // Guard 2 applies only to the two codes that trigger something irreversible; the
     // ordinary straight and curve codes may repeat as often as the track says.
@@ -1581,6 +1597,16 @@
 
   // getMinimapCurrentIndex() stand hier und wurde nach dem Entfernen der Minikarte von
   // niemandem mehr gerufen.
+
+  // Position innerhalb der aktuellen Kachel, 0..1. Wie ghostTilePhase(), mit derselben
+  // Laengenkorrektur: eine Haarnadel ist dreimal so lang wie eine Gerade, und ohne die
+  // Korrektur stuende die Phase dort nach einem Drittel auf 1.
+  function dashTilePhase() {
+    if (!dashTileAt || !dashTileMs) return 0;
+    const f = (typeof ghostTileLenFactor === 'function' && dashMinimapIndex !== null)
+      ? ghostTileLenFactor(dashMinimapIndex) : 1;
+    return Math.max(0, Math.min(1, (Date.now() - dashTileAt) / (dashTileMs * f)));
+  }
 
   function refreshMinimap() {
     // Die Minikarte ist entfernt worden. Die Positionsverfolgung dahinter bleibt: sie
@@ -2537,7 +2563,18 @@
   function resetTyres() {
     physEngine.state.tyreTempC = physEngine.config.tyreAmbientC;
     physEngine.state.tyreWear = 0;
+    // Links und rechts MUESSEN mit. Ohne diese zwei Zeilen setzt der Boxenstopp den
+    // Mittelwert auf 0 und die Seiten stehen weiter bei 0,4: das Cockpit zeigt heile Reifen
+    // und das Auto zieht immer noch. Genau so laufen zwei Darstellungen derselben Sache
+    // auseinander.
+    physEngine.state.tyreWearL = 0;
+    physEngine.state.tyreWearR = 0;
+    physEngine.state.tyrePull = 0;
     physEngine.state.tyreGrip = 1;
+    // Die BREMSSCHEIBEN werden hier ausdruecklich NICHT gekuehlt. Ein Boxenstopp dauert
+    // Sekunden, und Scheiben kuehlen darin nicht auf Umgebungstemperatur. Reifen werden
+    // gewechselt, Scheiben nicht - wer nach dem Stopp mit heisser Bremse herausfaehrt, hat
+    // sie auch in echt.
   }
 
   // Pressing the button no longer demands a standstill. It arms the pit lane, exactly as

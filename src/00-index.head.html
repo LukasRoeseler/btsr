@@ -687,6 +687,10 @@
      quadratische Achse waere keine. touch-action: none, sonst scrollt das Telefon die Seite
      statt die Marke zu ziehen. */
   .gt3-bias { cursor: ns-resize; touch-action: none; }
+  /* Zwei Zahlen in einer Zeile, deshalb schmaler als die anderen Trimmwerte. Der Trenner
+     ist gedaempft, damit die Zahlen die Aufmerksamkeit haben und nicht der Schraegstrich. */
+  .gt3-brakeT b { font-size: clamp(9px, 1.9vw, 12px); letter-spacing: 0; }
+  .gt3-dim { opacity: .35; padding: 0 1px; }
   .gt3-bias svg { width: clamp(10px, 2vw, 14px); height: clamp(20px, 4vw, 30px); }
   .gt3-trim-row b { font-family: var(--gt3-font); font-weight: 700;
     font-variant-numeric: tabular-nums;
@@ -1879,7 +1883,13 @@
                RESTLICHE Lauffl&auml;che, nicht die Abnutzung. Drei Balken, die gleich
                leerlaufen, liest man mit einem Blick; einer, der gegenl&auml;ufig f&uuml;llt,
                kostet jedes Mal einen Gedanken. -->
-          <div class="gt3-bar"><i id="race-tyre-bar"></i></div></div>
+          <div class="gt3-bar"><i id="race-tyre-bar"></i></div>
+          <!-- Der zweite Balken ist RECHTS; der obere wird dann der linke. Ist die
+               Asymmetrie aus, verschwindet dieser hier und der obere zeigt wie bisher den
+               Mittelwert - die Kachel sieht dann genau aus wie vorher, und der Unterschied
+               ist die Aussage. -->
+          <div class="gt3-bar" id="race-tyre-bar-r-wrap" style="display:none; margin-top:2px">
+            <i id="race-tyre-bar-r"></i></div></div>
         <div class="gt3-box"><svg class="gt3-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-label="Akku"><rect x="2" y="7" width="17" height="10" rx="2"/><path d="M22 11v2"/><path d="M6 10v4M9.5 10v4M13 10v4"/></svg>
           <div class="gt3-val sm" id="race-batt">&ndash;</div></div>
         <div class="gt3-box gt3-click" id="race-light-box" title="Licht an/aus" style="display:flex;align-items:center;justify-content:center">
@@ -1918,6 +1928,17 @@
                     fill="var(--bad)"/>
             </svg>
             <b id="race-trim-accel">62%</b>
+          </div>
+          <!-- Die Scheibentemperaturen stehen HIER und nicht in einer neunten Kachel: das
+               Band ist ein Achterraster und eine neunte Kachel braeche in eine zweite Reihe
+               mit einem einzelnen Element um. Und sie gehoeren hierher - die Balance
+               entscheidet, welche Scheibe heiss wird, Ursache und Wirkung nebeneinander. -->
+          <div class="gt3-trim-row gt3-brakeT" id="race-braket-row"
+               title="Bremsscheibentemperatur vorn und hinten">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
+                 stroke-linecap="round" aria-label="Bremsscheibe"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3"/><path d="M12 3.5v3M12 17.5v3M3.5 12h3M17.5 12h3"/></svg>
+            <b><span id="race-braket-f">25</span><span class="gt3-dim">/</span><span
+               id="race-braket-r">25</span></b>
           </div>
           <div class="gt3-trim-row" title="Lenkansprechen (Steuerkreuz links/rechts)">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
@@ -4281,6 +4302,61 @@
           <span class="opt-val" id="setting-tyres-val">200%</span>
         </div></div>
       
+
+      <div class="opt-row"><div class="opt-label">Reifen links und rechts getrennt
+          <small>Die kommandierte Lenkrichtung verteilt die Last: eine Strecke mit vielen
+          Rechtskurven nutzt die linken Reifen st&auml;rker ab. Das Cockpit zeigt dann zwei
+          Balken, und das Auto zieht leicht zur st&auml;rker abgenutzten Seite &ndash; die
+          erzeugt weniger Querkraft. Der Mittelwert bleibt derselbe, der Schalter macht also
+          nicht mehr Verschlei&szlig;, sondern ungleichen.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-tyre-asym" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Reifendruck (bar)
+          <small>Wenig Druck hei&szlig;t mehr Walkarbeit: schnellere Erw&auml;rmung, mehr
+          Verschlei&szlig;, besserer Kaltgriff. Viel Druck umgekehrt. Jede Abweichung von
+          1,8 kostet zus&auml;tzlich ein wenig Spitzengriff &ndash; sonst g&auml;be es genau
+          eine beste Stellung und keine Abstimmung. Kein eigener Schalter: 1,8 ist die
+          neutrale Stellung.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="setting-tyre-pressure" min="1.4" max="2.2" step="0.05" value="1.8">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-tyre-pressure-val">1.80 bar</span>
+        </div></div>
+
+<div class="opt-head">Bremsen</div>
+      <div class="opt-row"><div class="opt-label">Bremstemperatur und Fading
+          <small>Bremsarbeit heizt zwei Scheiben, vorn und hinten getrennt nach der
+          Bremsbalance. Ab etwa 520&nbsp;&deg;C sinkt die Bremswirkung, bei 780&nbsp;&deg;C um
+          h&ouml;chstens 35&nbsp;% &ndash; der Bremsweg wird dann wirklich l&auml;nger. Eine
+          einzelne Vollbremsung aus 250&nbsp;km/h erreicht aus kalten Scheiben gemessen
+          183&nbsp;&deg;C vorn und fadet nicht; nach acht Bremsungen sind es 806&nbsp;&deg;C
+          und der Bremsweg ist 23&nbsp;% l&auml;nger.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-brake-fade" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">St&auml;rke des Fadings
+          <small>&Uuml;ber 100&nbsp;% steigt die Heizrate, nicht der maximale Verlust.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="setting-brake-fade-strength" min="0" max="2" step="0.05" value="1">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-brake-fade-strength-val">100%</span>
+        </div></div>
+
+<div class="opt-head">Aerodynamik</div>
+      <div class="opt-row" id="dirtyair-row"><div class="opt-label">Windschatten in Kurven
+          <small>Dicht hinter einem anderen Auto sinkt der Abtrieb, also die
+          Kurvengeschwindigkeit &ndash; auf der Geraden ist er ein Vorteil, in der Kurve ein
+          Nachteil. Braucht eine Strecke mit mindestens drei Teilen und einen Gegner: ohne
+          Streckenlayout wei&szlig; die App nicht, wer vor dir f&auml;hrt.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-dirtyair" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">St&auml;rke des Windschattens
+          <small>100&nbsp;% sind h&ouml;chstens 18&nbsp;% Kurvengrip weniger.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="setting-dirtyair-strength" min="0" max="2" step="0.05" value="1">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-dirtyair-strength-val">100%</span>
+        </div></div>
+
 <div class="opt-head">Lenkung &amp; Feinabstimmung</div>
       <div class="opt-row"><div class="opt-label">Lenkansprechen<small>Auch auf dem Steuerkreuz links/rechts. Der volle Lenkeinschlag ist mechanisch 45&nbsp;Grad; bei 100&nbsp;% fordert voller Stick genau ihn an.</small></div>
         <div class="opt-slider">
@@ -5051,7 +5127,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.4.26</span></span>
+    <span class="foot-ver">v<span id="app-version">0.4.27</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine

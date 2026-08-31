@@ -986,6 +986,10 @@
   };
 
   function refreshTrackPreview() {
+    // Die Kachelzahl entscheidet, ob der Windschatten ueberhaupt rechnen kann. Hier gerufen
+    // und nicht in 50-drive.js beim Laden: dort ist currentTrackTiles noch in der temporalen
+    // Todeszone, siehe den Kommentar bei dirtyAirVerfuegbar().
+    if (typeof dirtyAirVerfuegbar === 'function') dirtyAirVerfuegbar();
     const result = renderTrackPreview(currentTrackTiles, null, { detailed: true });
     $('track-preview-svg').innerHTML = result.html;
     renderTrackPalette();

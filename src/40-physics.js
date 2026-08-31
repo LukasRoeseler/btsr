@@ -302,6 +302,51 @@
         // schwach. Ein Sollwert dafuer liegt nicht vor, also ist das eine Gefuehlsangabe und
         // keine Messung; die Zahlen stehen hier, damit sie nachpruefbar sind.
         brakeUseGain: 1.35,   // how much of that capacity the brake eats
+
+        // ---- Bremstemperatur und Fading (Block 4.1) ----
+        //
+        // DIE HEIZRATE IST GEGEN DIE KALIBRIERUNG GEWAEHLT und nicht nach Gefuehl: eine
+        // Vollbremsung aus 250 km/h aus kalten Scheiben erreicht damit rund 250 °C, und das
+        // Fading beginnt erst bei 520. Die gefittete Bremstabelle (RMSE 3,1 %) ist an EINER
+        // Bremsung aus kalten Scheiben gemessen und bleibt deshalb unangetastet. Erst
+        // mehrere Bremszonen hintereinander ohne genug Kuehlung kommen ins Fading.
+        //
+        // Waere die Rate hoeher, wuerde jede Einzelbremsung faden - und dann waere nicht
+        // die Simulation tiefer, sondern die Kalibrierung kaputt.
+        brakeFadeEffect: 1.0,   // 0 = aus, 1 = Modell, bis 2 = schnellere Raten
+        brakeAmbientC: 25,
+        brakeHeatRate: 62,      // °C/s bei voller Bremsung und voller Fahrt
+        // DIREKT die Kuehlkoeffizienten in 1/s, nicht normiert. Hier stand erst eine
+        // Normierung ueber eine Spanne, und die machte den Koeffizienten 0,59/s - eine
+        // Zeitkonstante von 1,7 s, mit der die Scheiben gar nicht warm werden konnten:
+        // gemessen erreichten FUENF Vollbremsungen aus 250 km/h nur 111 Grad.
+        //
+        // Jetzt: 200 s Zeitkonstante im Stand, 25 s bei voller Fahrt. Das ist die
+        // Groessenordnung, in der eine Rennbremse zwischen zwei Bremszonen abkuehlt - genug,
+        // um sich zu erholen, zu wenig, um kalt zu werden.
+        brakeCoolBase: 0.005,   // 1/s im Stand
+        brakeCoolAir: 0.035,    // 1/s zusaetzlich bei voller Fahrt (Fahrtwind)
+        brakeFadeStartC: 520,
+        brakeFadeFullC: 780,
+        brakeFadeMax: 0.35,     // hoechstens 35 % der Bremskraft
+
+        // ---- Windschatten (Block 4.2) ----
+        // Die WIRKUNG steht hier, die Messung nicht: wer vorn faehrt, weiss nur die
+        // Ghost-Verwaltung. Sie setzt st.dirtyAir von aussen.
+        dirtyAirEffect: 1.0,
+        dirtyAirMax: 0.18,      // hoechstens 18 % Kurvengrip weniger
+
+        // ---- Asymmetrischer Reifenverschleiss (Block 4.3) ----
+        tyreAsymEffect: 1.0,
+        tyreAsymShare: 0.7,     // wie stark die Lenkung die Last verteilt
+        tyreAsymPull: 0.05,     // hoechster Lenk-Offset bei voller Ungleichheit
+
+        // ---- Reifendruck (Block 4.4) ----
+        // Kein neuer Zustand: der Druck bildet auf drei vorhandene Groessen ab. Die
+        // Referenz ist die Mittelstellung des Reglers und aendert dort nichts.
+        tyrePressureBar: 1.8,
+        tyrePressureRef: 1.8,
+        tyrePressurePeakLoss: 0.06,   // Spitzengriff-Einbusse am Reglerrand
         coastPitch: 0.15,     // engine braking pitches the nose down a little
         // Full-throttle equilibrium of loadFront. Traction is normalised to THIS state, not
         // to static 50/50, so the measured launch time stays exactly as calibrated and the
@@ -342,7 +387,18 @@
         fuelLoad: 0,      // 0..1, written from outside each tick; 0 keeps the car light
         massFactor: 1,    // >1 = heavier than the calibrated car
         tyreTempC: 20,
+        // tyreWear bleibt der MITTELWERT aus links und rechts. Alle vorhandenen Leser -
+        // der Balken im Cockpit, der Boxenstopp, die Griffrechnung - lesen weiter dieses
+        // Feld und brauchen keine Aenderung. Die Aufteilung ist ein Zusatz, kein Umbau.
         tyreWear: 0,      // 0..1
+        tyreWearL: 0,
+        tyreWearR: 0,
+        brakeTempF: 25,
+        brakeTempR: 25,
+        brakeFade: 0,     // 0..brakeFadeMax, Anteil verlorener Bremskraft
+        // Von aussen gesetzt, siehe dirtyAirEffect. 0 = freie Luft.
+        dirtyAir: 0,
+        tyrePull: 0,      // Lenk-Offset aus der Ungleichheit, in Servo-Einheiten
         tyreGrip: 1,      // combined temperature and wear factor, 1 = nothing simulated
         loadFront: 0.5,   // static 50/50; >0.5 means nose-down
         longUse: 0,       // lagging longitudinal demand, signed: + drive, - brake
@@ -614,7 +670,12 @@
       // nichts zu holen. Ohne ihn waere der Reibkreis beim Bremsen groesser als im Rollen,
       // gemessen 1,25 beim Anbremsen aus 120 km/h - die eine Haelfte der Beschwerde
       // "erst beim Bremsen kann ich gut lenken".
-      const frontCap = Math.min(1, Math.max(0.15, capRaw)) * surfSteer;
+      // Windschatten: weniger Abtrieb heisst weniger Kapazitaet an der Vorderachse. Er
+      // senkt frontCap und nicht steerGrip direkt - so geht er durch dieselbe Wurzel wie
+      // alles andere und kann die Bremse nicht "gratis" mitverbessern.
+      const luft = 1 - cfg.dirtyAirMax * Math.max(0, Math.min(2, cfg.dirtyAirEffect))
+                       * Math.max(0, Math.min(1, st.dirtyAir));
+      const frontCap = Math.min(1, Math.max(0.15, capRaw)) * surfSteer * luft;
       // Die Anforderung skaliert mit der Fahrt, und zwar aus demselben Grund wie beim
       // Regen ein paar Zeilen weiter oben: bei 20 km/h braucht eine Vollbremsung einen
       // Bruchteil der verfuegbaren Haftung, das Auto steht nach zwei Metern; bei 250 km/h
@@ -659,7 +720,17 @@
       // Auch die Erwaermung skaliert mit dem Regler - aber nur die HEIZseite. Die Kuehlung
       // ist eine Eigenschaft der Umgebung und nicht der Einstellung; sie mitzuskalieren
       // haette die Zeitkonstante unveraendert gelassen und damit gar nichts geaendert.
-      st.tyreTempC += (cfg.tyreHeatRate * Math.max(1, cfg.tyreEffect) * work
+      // ---- Reifendruck ----------------------------------------------------------------
+      // Wenig Druck heisst mehr Walkarbeit: schnellere Erwaermung, mehr Verschleiss,
+      // besserer Kaltgriff. Viel Druck umgekehrt. Kein neuer Zustand, nur drei Faktoren auf
+      // vorhandene Groessen - und bei der Referenzstellung sind alle drei genau 1, der
+      // Regler in der Mitte aendert also nichts.
+      const pRel = Math.max(0.5, cfg.tyrePressureBar / Math.max(1e-6, cfg.tyrePressureRef));
+      const pHeat = 1 / pRel;      // weniger Druck -> waermer
+      const pWear = 1 / pRel;      // weniger Druck -> mehr Verschleiss
+      const pCold = pRel;          // mehr Druck -> kalt schlechter
+
+      st.tyreTempC += (cfg.tyreHeatRate * pHeat * Math.max(1, cfg.tyreEffect) * work
                        - cfg.tyreCoolRate * (st.tyreTempC - cfg.tyreAmbientC) / span) * dt;
       st.tyreTempC = Math.max(cfg.tyreAmbientC, st.tyreTempC);
 
@@ -669,19 +740,46 @@
       // Die RATE skaliert voll mit dem Regler, auch ueber 100 % hinaus: 200 % heisst
       // doppelt so schneller Verschleiss. Das ist die Haelfte des Reglers, die oberhalb von
       // 100 % ueberhaupt eine Bedeutung haben kann - das Griffdefizit ist gedeckelt.
-      st.tyreWear = Math.min(1, st.tyreWear
-        + cfg.tyreWearRate * cfg.tyreEffect * work * hotFactor * dt);
+      // ---- Verschleiss, links und rechts getrennt ------------------------------------
+      // Eine Rechtskurve laestet die LINKEN Reifen. Die Aufteilung kommt aus der
+      // KOMMANDIERTEN Lenkung, weil das die einzige Groesse ist, die wir wirklich kennen -
+      // eine gemessene Querbeschleunigung meldet kein Byte.
+      //
+      // Die Summe der beiden Anteile ist immer 2, also bleibt der Mittelwert genau die
+      // alte Rate. Ohne diese Normierung waere "Asymmetrie an" auch "mehr Verschleiss an",
+      // und dann waere nicht messbar, was der Schalter tut.
+      const zuwachs = cfg.tyreWearRate * pWear * cfg.tyreEffect * work * hotFactor * dt;
+      const asym = Math.max(0, Math.min(2, cfg.tyreAsymEffect));
+      const lenkS = Math.max(-1, Math.min(1, st.dampedSteering || 0));
+      const anteilL = 1 + cfg.tyreAsymShare * Math.min(1, asym) * lenkS;
+      const anteilR = 2 - anteilL;
+      st.tyreWearL = Math.min(1, st.tyreWearL + zuwachs * anteilL);
+      st.tyreWearR = Math.min(1, st.tyreWearR + zuwachs * anteilR);
+      // tyreWear BLEIBT der Mittelwert: alle vorhandenen Leser haengen daran.
+      st.tyreWear = (st.tyreWearL + st.tyreWearR) / 2;
+
+      // Der Aktorteil: die staerker abgenutzte Seite erzeugt weniger Querkraft, also zieht
+      // das Auto dorthin. Das ist die Aussage erster Ordnung; die genaue Groesse braucht das
+      // Einspurmodell und steht in Block 7 als Plan, nicht als Zahl. Deshalb ist der Betrag
+      // klein und der Regler kann ihn abschalten.
+      st.tyrePull = cfg.tyreAsymPull * asym * Math.min(1, cfg.tyreEffect)
+                    * (st.tyreWearL - st.tyreWearR);
 
       // Grip: cold tyres slide, overheated tyres slide, worn tyres slide. Quadratic below
       // the working range so the last few degrees matter less than the first few.
       const warm = Math.max(0, Math.min(1, (st.tyreTempC - cfg.tyreAmbientC) / span));
-      let tGrip = 1 - cfg.tyreColdPenalty * (1 - warm) * (1 - warm);
+      let tGrip = 1 - cfg.tyreColdPenalty * pCold * (1 - warm) * (1 - warm);
       if (st.tyreTempC > cfg.tyreOptimalC) {
         const over = Math.min(1, (st.tyreTempC - cfg.tyreOptimalC)
                                  / (cfg.tyreOverheatC - cfg.tyreOptimalC));
         tGrip *= 1 - cfg.tyreHotPenalty * over * over;
       }
       tGrip *= 1 - cfg.tyreWearPenalty * st.tyreWear;
+      // Eine kleine Einbusse fuer JEDE Abweichung von der Referenz, nach oben wie nach
+      // unten. Ohne sie waere der Druckregler eine Einbahnstrasse: wenig Druck heizt
+      // schneller auf und griffe kalt besser, es gaebe also genau eine beste Stellung und
+      // keine Abstimmung. Ein Regler ohne Nachteil ist keine Entscheidung.
+      tGrip *= 1 - cfg.tyrePressurePeakLoss * Math.min(1, Math.abs(pRel - 1) / 0.25);
       // Der Regler blendet das Modell aus: bei 0 ist das genau 1, also keine Simulation.
       //
       // GEDECKELT bei einfacher Modellstaerke, und das ist der Fehler aus v0.4.13: der
@@ -696,6 +794,36 @@
       // oben - Verschleiss und Erwaermung -, und die wirken ueber eine Rennlaenge.
       st.tyreGrip = 1 + Math.min(1, cfg.tyreEffect) * (tGrip - 1);
 
+      // ---- Bremstemperatur und Fading (Block 4.1) --------------------------------------
+      //
+      // Zwei Scheiben, vorn und hinten getrennt nach der Bremsbalance. Das ist der Punkt,
+      // an dem die Balance eine LANGFRISTIGE Folge bekommt: nach vorn heizt die
+      // Vorderscheibe mehr, und wer die ganze Runde vorn bremst, hat am Rundenende weniger
+      // Bremse. Damit wird die Balance eine Rennentscheidung statt einer Geschmacksfrage.
+      //
+      // Der Faktor 2 auf den Anteil ist die Normierung: bei 50:50 bekommt jede Scheibe
+      // genau die volle Rate, sonst waere "Balance mittig" auch "halb so heiss".
+      const bWork = Math.max(0, -st.longUse)
+                    * Math.min(1, Math.abs(st.speedKmh) / cfg.topSpeedKmh);
+      const bLuft = cfg.brakeCoolBase
+                    + cfg.brakeCoolAir * Math.min(1, Math.abs(st.speedKmh) / cfg.topSpeedKmh);
+      const bRate = cfg.brakeHeatRate * Math.max(1, cfg.brakeFadeEffect);
+      const heizF = bRate * bWork * 2 * cfg.brakeBias;
+      const heizR = bRate * bWork * 2 * (1 - cfg.brakeBias);
+      st.brakeTempF += (heizF - bLuft * (st.brakeTempF - cfg.brakeAmbientC)) * dt;
+      st.brakeTempR += (heizR - bLuft * (st.brakeTempR - cfg.brakeAmbientC)) * dt;
+      st.brakeTempF = Math.max(cfg.brakeAmbientC, st.brakeTempF);
+      st.brakeTempR = Math.max(cfg.brakeAmbientC, st.brakeTempR);
+
+      // Der Verlust je Achse, gewichtet mit ihrem Anteil an der Bremskraft: eine glueende
+      // Hinterscheibe bei 62 % Balance vorn kostet nur 38 % ihres Verlusts.
+      const fadeVon = (T) => Math.max(0, Math.min(1,
+        (T - cfg.brakeFadeStartC) / Math.max(1, cfg.brakeFadeFullC - cfg.brakeFadeStartC)))
+        * cfg.brakeFadeMax;
+      st.brakeFade = Math.min(1, cfg.brakeFadeEffect
+        * (cfg.brakeBias * fadeVon(st.brakeTempF)
+           + (1 - cfg.brakeBias) * fadeVon(st.brakeTempR)));
+
       const resist = this.resistAt(st.speedKmh, A, onPower, st.currentGear); // always >= 0
       let accel = 0;
       let output = 0;
@@ -707,7 +835,8 @@
         if (inputs.brake > 0.02) {
           isBraking = true;
           const uR = Math.abs(st.speedKmh) / cfg.topSpeedKmh;
-          accel = +((cfg.brakeDecelBase + cfg.brakeDecelAero * uR) * inputs.brake + resist);
+          accel = +((cfg.brakeDecelBase + cfg.brakeDecelAero * uR) * inputs.brake
+                    * (1 - st.brakeFade) + resist);
         } else if (inputs.throttle > 0.02 && !st.isShifting) {
           accel = -this.thrustAt(st.speedKmh, -1, inputs.throttle, A) * st.gripLong * surf + resist;
         } else {
@@ -735,9 +864,13 @@
           // table stays exactly that. The term can only bite less, during the moment
           // before the nose is down, never more.
           const dive = Math.max(0.5, Math.min(1, st.loadFront / cfg.loadFrontOnBrake));
+          // (1 - brakeFade) ist der Aktorteil von Block 4.1: heisse Scheiben bremsen
+          // schlechter, und weil wir das Bremsbyte selbst stellen, wird der Bremsweg
+          // wirklich laenger. Der resist-Anteil bleibt unangetastet - Rollwiderstand und
+          // Luftwiderstand haben mit der Bremsscheibe nichts zu tun.
           accel = -(resist + (cfg.brakeDecelBase + cfg.brakeDecelAero * uB)
                              * inputs.brake * st.gripLong * surf * dive
-                             * st.tyreGrip / st.massFactor);
+                             * st.tyreGrip * (1 - st.brakeFade) / st.massFactor);
           // ABS is now only an indicator plus a haptic pulse. Modulating the byte here
           // would reintroduce precisely the stutter that took so long to remove.
           if (inputs.brake > 0.8 && st.speedKmh > cfg.topSpeedKmh * 0.15) {
@@ -867,8 +1000,15 @@
       // Steering is scaled by what the front axle has left. This is where "cannot steer
       // under heavy braking or full throttle, but turns in nicely at the moment you first
       // hit the brakes" actually comes from.
+      // Der Lenk-Offset aus der ungleichen Abnutzung kommt NACH der Griffskalierung und
+      // nicht davor: er ist eine Kraft an der Achse und keine Absicht des Fahrers. Vor der
+      // Skalierung waere er unter Bremsen verschwunden, und genau dort spuert man ihn.
+      //
+      // Nur bei Fahrt: im Stand zieht nichts, und ein Auto, das an der Box von selbst
+      // einschlaegt, sieht nach einem Servofehler aus.
+      const zug = st.tyrePull * Math.min(1, Math.abs(st.speedKmh) / (cfg.topSpeedKmh * 0.15));
       this.outputs.servoAngle = Math.max(-1, Math.min(1,
-        this.state.dampedSteering * st.aquaFactor * st.steerGrip));
+        this.state.dampedSteering * st.aquaFactor * st.steerGrip + zug));
 
       // Values for the G plot. Lateral force rises with steer angle and speed; longitudinal
       // is the lagged demand, which is what the body actually feels.

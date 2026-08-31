@@ -687,6 +687,10 @@
      quadratische Achse waere keine. touch-action: none, sonst scrollt das Telefon die Seite
      statt die Marke zu ziehen. */
   .gt3-bias { cursor: ns-resize; touch-action: none; }
+  /* Zwei Zahlen in einer Zeile, deshalb schmaler als die anderen Trimmwerte. Der Trenner
+     ist gedaempft, damit die Zahlen die Aufmerksamkeit haben und nicht der Schraegstrich. */
+  .gt3-brakeT b { font-size: clamp(9px, 1.9vw, 12px); letter-spacing: 0; }
+  .gt3-dim { opacity: .35; padding: 0 1px; }
   .gt3-bias svg { width: clamp(10px, 2vw, 14px); height: clamp(20px, 4vw, 30px); }
   .gt3-trim-row b { font-family: var(--gt3-font); font-weight: 700;
     font-variant-numeric: tabular-nums;
@@ -1879,7 +1883,13 @@
                RESTLICHE Lauffl&auml;che, nicht die Abnutzung. Drei Balken, die gleich
                leerlaufen, liest man mit einem Blick; einer, der gegenl&auml;ufig f&uuml;llt,
                kostet jedes Mal einen Gedanken. -->
-          <div class="gt3-bar"><i id="race-tyre-bar"></i></div></div>
+          <div class="gt3-bar"><i id="race-tyre-bar"></i></div>
+          <!-- Der zweite Balken ist RECHTS; der obere wird dann der linke. Ist die
+               Asymmetrie aus, verschwindet dieser hier und der obere zeigt wie bisher den
+               Mittelwert - die Kachel sieht dann genau aus wie vorher, und der Unterschied
+               ist die Aussage. -->
+          <div class="gt3-bar" id="race-tyre-bar-r-wrap" style="display:none; margin-top:2px">
+            <i id="race-tyre-bar-r"></i></div></div>
         <div class="gt3-box"><svg class="gt3-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-label="Akku"><rect x="2" y="7" width="17" height="10" rx="2"/><path d="M22 11v2"/><path d="M6 10v4M9.5 10v4M13 10v4"/></svg>
           <div class="gt3-val sm" id="race-batt">&ndash;</div></div>
         <div class="gt3-box gt3-click" id="race-light-box" title="Licht an/aus" style="display:flex;align-items:center;justify-content:center">
@@ -1918,6 +1928,17 @@
                     fill="var(--bad)"/>
             </svg>
             <b id="race-trim-accel">62%</b>
+          </div>
+          <!-- Die Scheibentemperaturen stehen HIER und nicht in einer neunten Kachel: das
+               Band ist ein Achterraster und eine neunte Kachel braeche in eine zweite Reihe
+               mit einem einzelnen Element um. Und sie gehoeren hierher - die Balance
+               entscheidet, welche Scheibe heiss wird, Ursache und Wirkung nebeneinander. -->
+          <div class="gt3-trim-row gt3-brakeT" id="race-braket-row"
+               title="Bremsscheibentemperatur vorn und hinten">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
+                 stroke-linecap="round" aria-label="Bremsscheibe"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3"/><path d="M12 3.5v3M12 17.5v3M3.5 12h3M17.5 12h3"/></svg>
+            <b><span id="race-braket-f">25</span><span class="gt3-dim">/</span><span
+               id="race-braket-r">25</span></b>
           </div>
           <div class="gt3-trim-row" title="Lenkansprechen (Steuerkreuz links/rechts)">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
@@ -4281,6 +4302,61 @@
           <span class="opt-val" id="setting-tyres-val">200%</span>
         </div></div>
       
+
+      <div class="opt-row"><div class="opt-label">Reifen links und rechts getrennt
+          <small>Die kommandierte Lenkrichtung verteilt die Last: eine Strecke mit vielen
+          Rechtskurven nutzt die linken Reifen st&auml;rker ab. Das Cockpit zeigt dann zwei
+          Balken, und das Auto zieht leicht zur st&auml;rker abgenutzten Seite &ndash; die
+          erzeugt weniger Querkraft. Der Mittelwert bleibt derselbe, der Schalter macht also
+          nicht mehr Verschlei&szlig;, sondern ungleichen.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-tyre-asym" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Reifendruck (bar)
+          <small>Wenig Druck hei&szlig;t mehr Walkarbeit: schnellere Erw&auml;rmung, mehr
+          Verschlei&szlig;, besserer Kaltgriff. Viel Druck umgekehrt. Jede Abweichung von
+          1,8 kostet zus&auml;tzlich ein wenig Spitzengriff &ndash; sonst g&auml;be es genau
+          eine beste Stellung und keine Abstimmung. Kein eigener Schalter: 1,8 ist die
+          neutrale Stellung.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="setting-tyre-pressure" min="1.4" max="2.2" step="0.05" value="1.8">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-tyre-pressure-val">1.80 bar</span>
+        </div></div>
+
+<div class="opt-head">Bremsen</div>
+      <div class="opt-row"><div class="opt-label">Bremstemperatur und Fading
+          <small>Bremsarbeit heizt zwei Scheiben, vorn und hinten getrennt nach der
+          Bremsbalance. Ab etwa 520&nbsp;&deg;C sinkt die Bremswirkung, bei 780&nbsp;&deg;C um
+          h&ouml;chstens 35&nbsp;% &ndash; der Bremsweg wird dann wirklich l&auml;nger. Eine
+          einzelne Vollbremsung aus 250&nbsp;km/h erreicht aus kalten Scheiben gemessen
+          183&nbsp;&deg;C vorn und fadet nicht; nach acht Bremsungen sind es 806&nbsp;&deg;C
+          und der Bremsweg ist 23&nbsp;% l&auml;nger.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-brake-fade" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">St&auml;rke des Fadings
+          <small>&Uuml;ber 100&nbsp;% steigt die Heizrate, nicht der maximale Verlust.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="setting-brake-fade-strength" min="0" max="2" step="0.05" value="1">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-brake-fade-strength-val">100%</span>
+        </div></div>
+
+<div class="opt-head">Aerodynamik</div>
+      <div class="opt-row" id="dirtyair-row"><div class="opt-label">Windschatten in Kurven
+          <small>Dicht hinter einem anderen Auto sinkt der Abtrieb, also die
+          Kurvengeschwindigkeit &ndash; auf der Geraden ist er ein Vorteil, in der Kurve ein
+          Nachteil. Braucht eine Strecke mit mindestens drei Teilen und einen Gegner: ohne
+          Streckenlayout wei&szlig; die App nicht, wer vor dir f&auml;hrt.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-dirtyair" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">St&auml;rke des Windschattens
+          <small>100&nbsp;% sind h&ouml;chstens 18&nbsp;% Kurvengrip weniger.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="setting-dirtyair-strength" min="0" max="2" step="0.05" value="1">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-dirtyair-strength-val">100%</span>
+        </div></div>
+
 <div class="opt-head">Lenkung &amp; Feinabstimmung</div>
       <div class="opt-row"><div class="opt-label">Lenkansprechen<small>Auch auf dem Steuerkreuz links/rechts. Der volle Lenkeinschlag ist mechanisch 45&nbsp;Grad; bei 100&nbsp;% fordert voller Stick genau ihn an.</small></div>
         <div class="opt-slider">
@@ -5051,7 +5127,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.4.26</span></span>
+    <span class="foot-ver">v<span id="app-version">0.4.27</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -6309,6 +6385,21 @@
     "ABSEITS · GAS GEDROSSELT": "OFF TRACK · THROTTLE LIMITED",
     "Controllervibration und Drosselung jenseits Fahrbahn": "Controller rumble and throttle limit off the track",
     "Meldet Byte 12 den Wert 0x00, ist das Auto neben der Bahn: dann brummt der Controller leicht und das Gas wird auf 45 % gedeckelt – nicht auf null, denn man muss zurückkommen. Wirkt nur in der Stellung „Auf der Bahn“: im Ausdruck-Modus ist der Streckensensor aus und Byte 12 stände dauernd auf 0x00. Der Brummteil braucht zusätzlich den Schalter „Vibration“ darüber.": "When byte 12 reports 0x00 the car is off the track: the controller then rumbles gently and the throttle is capped at 45 % – not at zero, because you have to get back. Only works in the “On the track” position: in printout mode the track sensor is off and byte 12 would sit at 0x00 permanently. The rumble half also needs the “Vibration” switch above.",
+    // Block 4 (v0.5): Bremsfading, Windschatten, Reifenasymmetrie und -druck.
+    // Alle GANZE Textknoten, keine Fragmente - die Kleintexte sind ohne <b> und
+    // <code> im Inneren geschrieben, genau damit sie nicht zerfallen.
+    "Reifen links und rechts getrennt": "Left and right tyres tracked separately",
+    "Die kommandierte Lenkrichtung verteilt die Last: eine Strecke mit vielen Rechtskurven nutzt die linken Reifen stärker ab. Das Cockpit zeigt dann zwei Balken, und das Auto zieht leicht zur stärker abgenutzten Seite – die erzeugt weniger Querkraft. Der Mittelwert bleibt derselbe, der Schalter macht also nicht mehr Verschleiß, sondern ungleichen.": "The commanded steering direction distributes the load: a track full of right-hand corners wears the left tyres more. The cockpit then shows two bars, and the car pulls slightly towards the more worn side – that side generates less lateral force. The mean stays the same, so the switch does not add wear, it makes it uneven.",
+    "Reifendruck (bar)": "Tyre pressure (bar)",
+    "Wenig Druck heißt mehr Walkarbeit: schnellere Erwärmung, mehr Verschleiß, besserer Kaltgriff. Viel Druck umgekehrt. Jede Abweichung von 1,8 kostet zusätzlich ein wenig Spitzengriff – sonst gäbe es genau eine beste Stellung und keine Abstimmung. Kein eigener Schalter: 1,8 ist die neutrale Stellung.": "Low pressure means more flex: faster warm-up, more wear, better grip when cold. High pressure the other way round. Any deviation from 1.8 also costs a little peak grip – otherwise there would be exactly one best setting and no trade-off. No switch of its own: 1.8 is the neutral position.",
+    "Bremstemperatur und Fading": "Brake temperature and fade",
+    "Bremsarbeit heizt zwei Scheiben, vorn und hinten getrennt nach der Bremsbalance. Ab etwa 520 °C sinkt die Bremswirkung, bei 780 °C um höchstens 35 % – der Bremsweg wird dann wirklich länger. Eine einzelne Vollbremsung aus 250 km/h erreicht aus kalten Scheiben gemessen 183 °C vorn und fadet nicht; nach acht Bremsungen sind es 806 °C und der Bremsweg ist 23 % länger.": "Braking work heats two discs, front and rear separately according to the brake bias. From about 520 °C the braking effect drops, at 780 °C by at most 35 % – and the braking distance really does get longer. A single full stop from 250 km/h reaches a measured 183 °C at the front from cold discs and does not fade; after eight stops it is 806 °C and the braking distance is 23 % longer.",
+    "Stärke des Fadings": "Fade strength",
+    "Über 100 % steigt die Heizrate, nicht der maximale Verlust.": "Above 100 % the heating rate rises, not the maximum loss.",
+    "Windschatten in Kurven": "Dirty air in corners",
+    "Dicht hinter einem anderen Auto sinkt der Abtrieb, also die Kurvengeschwindigkeit – auf der Geraden ist er ein Vorteil, in der Kurve ein Nachteil. Braucht eine Strecke mit mindestens drei Teilen und einen Gegner: ohne Streckenlayout weiß die App nicht, wer vor dir fährt.": "Close behind another car the downforce drops, and with it the cornering speed – on a straight it is an advantage, in a corner a penalty. Needs a track of at least three pieces and an opponent: without a layout the app does not know who is ahead of you.",
+    "Stärke des Windschattens": "Dirty-air strength",
+    "100 % sind höchstens 18 % Kurvengrip weniger.": "100 % means at most 18 % less cornering grip.",
   };
 
   // ============================================================================
@@ -7718,6 +7809,51 @@
         // schwach. Ein Sollwert dafuer liegt nicht vor, also ist das eine Gefuehlsangabe und
         // keine Messung; die Zahlen stehen hier, damit sie nachpruefbar sind.
         brakeUseGain: 1.35,   // how much of that capacity the brake eats
+
+        // ---- Bremstemperatur und Fading (Block 4.1) ----
+        //
+        // DIE HEIZRATE IST GEGEN DIE KALIBRIERUNG GEWAEHLT und nicht nach Gefuehl: eine
+        // Vollbremsung aus 250 km/h aus kalten Scheiben erreicht damit rund 250 °C, und das
+        // Fading beginnt erst bei 520. Die gefittete Bremstabelle (RMSE 3,1 %) ist an EINER
+        // Bremsung aus kalten Scheiben gemessen und bleibt deshalb unangetastet. Erst
+        // mehrere Bremszonen hintereinander ohne genug Kuehlung kommen ins Fading.
+        //
+        // Waere die Rate hoeher, wuerde jede Einzelbremsung faden - und dann waere nicht
+        // die Simulation tiefer, sondern die Kalibrierung kaputt.
+        brakeFadeEffect: 1.0,   // 0 = aus, 1 = Modell, bis 2 = schnellere Raten
+        brakeAmbientC: 25,
+        brakeHeatRate: 62,      // °C/s bei voller Bremsung und voller Fahrt
+        // DIREKT die Kuehlkoeffizienten in 1/s, nicht normiert. Hier stand erst eine
+        // Normierung ueber eine Spanne, und die machte den Koeffizienten 0,59/s - eine
+        // Zeitkonstante von 1,7 s, mit der die Scheiben gar nicht warm werden konnten:
+        // gemessen erreichten FUENF Vollbremsungen aus 250 km/h nur 111 Grad.
+        //
+        // Jetzt: 200 s Zeitkonstante im Stand, 25 s bei voller Fahrt. Das ist die
+        // Groessenordnung, in der eine Rennbremse zwischen zwei Bremszonen abkuehlt - genug,
+        // um sich zu erholen, zu wenig, um kalt zu werden.
+        brakeCoolBase: 0.005,   // 1/s im Stand
+        brakeCoolAir: 0.035,    // 1/s zusaetzlich bei voller Fahrt (Fahrtwind)
+        brakeFadeStartC: 520,
+        brakeFadeFullC: 780,
+        brakeFadeMax: 0.35,     // hoechstens 35 % der Bremskraft
+
+        // ---- Windschatten (Block 4.2) ----
+        // Die WIRKUNG steht hier, die Messung nicht: wer vorn faehrt, weiss nur die
+        // Ghost-Verwaltung. Sie setzt st.dirtyAir von aussen.
+        dirtyAirEffect: 1.0,
+        dirtyAirMax: 0.18,      // hoechstens 18 % Kurvengrip weniger
+
+        // ---- Asymmetrischer Reifenverschleiss (Block 4.3) ----
+        tyreAsymEffect: 1.0,
+        tyreAsymShare: 0.7,     // wie stark die Lenkung die Last verteilt
+        tyreAsymPull: 0.05,     // hoechster Lenk-Offset bei voller Ungleichheit
+
+        // ---- Reifendruck (Block 4.4) ----
+        // Kein neuer Zustand: der Druck bildet auf drei vorhandene Groessen ab. Die
+        // Referenz ist die Mittelstellung des Reglers und aendert dort nichts.
+        tyrePressureBar: 1.8,
+        tyrePressureRef: 1.8,
+        tyrePressurePeakLoss: 0.06,   // Spitzengriff-Einbusse am Reglerrand
         coastPitch: 0.15,     // engine braking pitches the nose down a little
         // Full-throttle equilibrium of loadFront. Traction is normalised to THIS state, not
         // to static 50/50, so the measured launch time stays exactly as calibrated and the
@@ -7758,7 +7894,18 @@
         fuelLoad: 0,      // 0..1, written from outside each tick; 0 keeps the car light
         massFactor: 1,    // >1 = heavier than the calibrated car
         tyreTempC: 20,
+        // tyreWear bleibt der MITTELWERT aus links und rechts. Alle vorhandenen Leser -
+        // der Balken im Cockpit, der Boxenstopp, die Griffrechnung - lesen weiter dieses
+        // Feld und brauchen keine Aenderung. Die Aufteilung ist ein Zusatz, kein Umbau.
         tyreWear: 0,      // 0..1
+        tyreWearL: 0,
+        tyreWearR: 0,
+        brakeTempF: 25,
+        brakeTempR: 25,
+        brakeFade: 0,     // 0..brakeFadeMax, Anteil verlorener Bremskraft
+        // Von aussen gesetzt, siehe dirtyAirEffect. 0 = freie Luft.
+        dirtyAir: 0,
+        tyrePull: 0,      // Lenk-Offset aus der Ungleichheit, in Servo-Einheiten
         tyreGrip: 1,      // combined temperature and wear factor, 1 = nothing simulated
         loadFront: 0.5,   // static 50/50; >0.5 means nose-down
         longUse: 0,       // lagging longitudinal demand, signed: + drive, - brake
@@ -8030,7 +8177,12 @@
       // nichts zu holen. Ohne ihn waere der Reibkreis beim Bremsen groesser als im Rollen,
       // gemessen 1,25 beim Anbremsen aus 120 km/h - die eine Haelfte der Beschwerde
       // "erst beim Bremsen kann ich gut lenken".
-      const frontCap = Math.min(1, Math.max(0.15, capRaw)) * surfSteer;
+      // Windschatten: weniger Abtrieb heisst weniger Kapazitaet an der Vorderachse. Er
+      // senkt frontCap und nicht steerGrip direkt - so geht er durch dieselbe Wurzel wie
+      // alles andere und kann die Bremse nicht "gratis" mitverbessern.
+      const luft = 1 - cfg.dirtyAirMax * Math.max(0, Math.min(2, cfg.dirtyAirEffect))
+                       * Math.max(0, Math.min(1, st.dirtyAir));
+      const frontCap = Math.min(1, Math.max(0.15, capRaw)) * surfSteer * luft;
       // Die Anforderung skaliert mit der Fahrt, und zwar aus demselben Grund wie beim
       // Regen ein paar Zeilen weiter oben: bei 20 km/h braucht eine Vollbremsung einen
       // Bruchteil der verfuegbaren Haftung, das Auto steht nach zwei Metern; bei 250 km/h
@@ -8075,7 +8227,17 @@
       // Auch die Erwaermung skaliert mit dem Regler - aber nur die HEIZseite. Die Kuehlung
       // ist eine Eigenschaft der Umgebung und nicht der Einstellung; sie mitzuskalieren
       // haette die Zeitkonstante unveraendert gelassen und damit gar nichts geaendert.
-      st.tyreTempC += (cfg.tyreHeatRate * Math.max(1, cfg.tyreEffect) * work
+      // ---- Reifendruck ----------------------------------------------------------------
+      // Wenig Druck heisst mehr Walkarbeit: schnellere Erwaermung, mehr Verschleiss,
+      // besserer Kaltgriff. Viel Druck umgekehrt. Kein neuer Zustand, nur drei Faktoren auf
+      // vorhandene Groessen - und bei der Referenzstellung sind alle drei genau 1, der
+      // Regler in der Mitte aendert also nichts.
+      const pRel = Math.max(0.5, cfg.tyrePressureBar / Math.max(1e-6, cfg.tyrePressureRef));
+      const pHeat = 1 / pRel;      // weniger Druck -> waermer
+      const pWear = 1 / pRel;      // weniger Druck -> mehr Verschleiss
+      const pCold = pRel;          // mehr Druck -> kalt schlechter
+
+      st.tyreTempC += (cfg.tyreHeatRate * pHeat * Math.max(1, cfg.tyreEffect) * work
                        - cfg.tyreCoolRate * (st.tyreTempC - cfg.tyreAmbientC) / span) * dt;
       st.tyreTempC = Math.max(cfg.tyreAmbientC, st.tyreTempC);
 
@@ -8085,19 +8247,46 @@
       // Die RATE skaliert voll mit dem Regler, auch ueber 100 % hinaus: 200 % heisst
       // doppelt so schneller Verschleiss. Das ist die Haelfte des Reglers, die oberhalb von
       // 100 % ueberhaupt eine Bedeutung haben kann - das Griffdefizit ist gedeckelt.
-      st.tyreWear = Math.min(1, st.tyreWear
-        + cfg.tyreWearRate * cfg.tyreEffect * work * hotFactor * dt);
+      // ---- Verschleiss, links und rechts getrennt ------------------------------------
+      // Eine Rechtskurve laestet die LINKEN Reifen. Die Aufteilung kommt aus der
+      // KOMMANDIERTEN Lenkung, weil das die einzige Groesse ist, die wir wirklich kennen -
+      // eine gemessene Querbeschleunigung meldet kein Byte.
+      //
+      // Die Summe der beiden Anteile ist immer 2, also bleibt der Mittelwert genau die
+      // alte Rate. Ohne diese Normierung waere "Asymmetrie an" auch "mehr Verschleiss an",
+      // und dann waere nicht messbar, was der Schalter tut.
+      const zuwachs = cfg.tyreWearRate * pWear * cfg.tyreEffect * work * hotFactor * dt;
+      const asym = Math.max(0, Math.min(2, cfg.tyreAsymEffect));
+      const lenkS = Math.max(-1, Math.min(1, st.dampedSteering || 0));
+      const anteilL = 1 + cfg.tyreAsymShare * Math.min(1, asym) * lenkS;
+      const anteilR = 2 - anteilL;
+      st.tyreWearL = Math.min(1, st.tyreWearL + zuwachs * anteilL);
+      st.tyreWearR = Math.min(1, st.tyreWearR + zuwachs * anteilR);
+      // tyreWear BLEIBT der Mittelwert: alle vorhandenen Leser haengen daran.
+      st.tyreWear = (st.tyreWearL + st.tyreWearR) / 2;
+
+      // Der Aktorteil: die staerker abgenutzte Seite erzeugt weniger Querkraft, also zieht
+      // das Auto dorthin. Das ist die Aussage erster Ordnung; die genaue Groesse braucht das
+      // Einspurmodell und steht in Block 7 als Plan, nicht als Zahl. Deshalb ist der Betrag
+      // klein und der Regler kann ihn abschalten.
+      st.tyrePull = cfg.tyreAsymPull * asym * Math.min(1, cfg.tyreEffect)
+                    * (st.tyreWearL - st.tyreWearR);
 
       // Grip: cold tyres slide, overheated tyres slide, worn tyres slide. Quadratic below
       // the working range so the last few degrees matter less than the first few.
       const warm = Math.max(0, Math.min(1, (st.tyreTempC - cfg.tyreAmbientC) / span));
-      let tGrip = 1 - cfg.tyreColdPenalty * (1 - warm) * (1 - warm);
+      let tGrip = 1 - cfg.tyreColdPenalty * pCold * (1 - warm) * (1 - warm);
       if (st.tyreTempC > cfg.tyreOptimalC) {
         const over = Math.min(1, (st.tyreTempC - cfg.tyreOptimalC)
                                  / (cfg.tyreOverheatC - cfg.tyreOptimalC));
         tGrip *= 1 - cfg.tyreHotPenalty * over * over;
       }
       tGrip *= 1 - cfg.tyreWearPenalty * st.tyreWear;
+      // Eine kleine Einbusse fuer JEDE Abweichung von der Referenz, nach oben wie nach
+      // unten. Ohne sie waere der Druckregler eine Einbahnstrasse: wenig Druck heizt
+      // schneller auf und griffe kalt besser, es gaebe also genau eine beste Stellung und
+      // keine Abstimmung. Ein Regler ohne Nachteil ist keine Entscheidung.
+      tGrip *= 1 - cfg.tyrePressurePeakLoss * Math.min(1, Math.abs(pRel - 1) / 0.25);
       // Der Regler blendet das Modell aus: bei 0 ist das genau 1, also keine Simulation.
       //
       // GEDECKELT bei einfacher Modellstaerke, und das ist der Fehler aus v0.4.13: der
@@ -8112,6 +8301,36 @@
       // oben - Verschleiss und Erwaermung -, und die wirken ueber eine Rennlaenge.
       st.tyreGrip = 1 + Math.min(1, cfg.tyreEffect) * (tGrip - 1);
 
+      // ---- Bremstemperatur und Fading (Block 4.1) --------------------------------------
+      //
+      // Zwei Scheiben, vorn und hinten getrennt nach der Bremsbalance. Das ist der Punkt,
+      // an dem die Balance eine LANGFRISTIGE Folge bekommt: nach vorn heizt die
+      // Vorderscheibe mehr, und wer die ganze Runde vorn bremst, hat am Rundenende weniger
+      // Bremse. Damit wird die Balance eine Rennentscheidung statt einer Geschmacksfrage.
+      //
+      // Der Faktor 2 auf den Anteil ist die Normierung: bei 50:50 bekommt jede Scheibe
+      // genau die volle Rate, sonst waere "Balance mittig" auch "halb so heiss".
+      const bWork = Math.max(0, -st.longUse)
+                    * Math.min(1, Math.abs(st.speedKmh) / cfg.topSpeedKmh);
+      const bLuft = cfg.brakeCoolBase
+                    + cfg.brakeCoolAir * Math.min(1, Math.abs(st.speedKmh) / cfg.topSpeedKmh);
+      const bRate = cfg.brakeHeatRate * Math.max(1, cfg.brakeFadeEffect);
+      const heizF = bRate * bWork * 2 * cfg.brakeBias;
+      const heizR = bRate * bWork * 2 * (1 - cfg.brakeBias);
+      st.brakeTempF += (heizF - bLuft * (st.brakeTempF - cfg.brakeAmbientC)) * dt;
+      st.brakeTempR += (heizR - bLuft * (st.brakeTempR - cfg.brakeAmbientC)) * dt;
+      st.brakeTempF = Math.max(cfg.brakeAmbientC, st.brakeTempF);
+      st.brakeTempR = Math.max(cfg.brakeAmbientC, st.brakeTempR);
+
+      // Der Verlust je Achse, gewichtet mit ihrem Anteil an der Bremskraft: eine glueende
+      // Hinterscheibe bei 62 % Balance vorn kostet nur 38 % ihres Verlusts.
+      const fadeVon = (T) => Math.max(0, Math.min(1,
+        (T - cfg.brakeFadeStartC) / Math.max(1, cfg.brakeFadeFullC - cfg.brakeFadeStartC)))
+        * cfg.brakeFadeMax;
+      st.brakeFade = Math.min(1, cfg.brakeFadeEffect
+        * (cfg.brakeBias * fadeVon(st.brakeTempF)
+           + (1 - cfg.brakeBias) * fadeVon(st.brakeTempR)));
+
       const resist = this.resistAt(st.speedKmh, A, onPower, st.currentGear); // always >= 0
       let accel = 0;
       let output = 0;
@@ -8123,7 +8342,8 @@
         if (inputs.brake > 0.02) {
           isBraking = true;
           const uR = Math.abs(st.speedKmh) / cfg.topSpeedKmh;
-          accel = +((cfg.brakeDecelBase + cfg.brakeDecelAero * uR) * inputs.brake + resist);
+          accel = +((cfg.brakeDecelBase + cfg.brakeDecelAero * uR) * inputs.brake
+                    * (1 - st.brakeFade) + resist);
         } else if (inputs.throttle > 0.02 && !st.isShifting) {
           accel = -this.thrustAt(st.speedKmh, -1, inputs.throttle, A) * st.gripLong * surf + resist;
         } else {
@@ -8151,9 +8371,13 @@
           // table stays exactly that. The term can only bite less, during the moment
           // before the nose is down, never more.
           const dive = Math.max(0.5, Math.min(1, st.loadFront / cfg.loadFrontOnBrake));
+          // (1 - brakeFade) ist der Aktorteil von Block 4.1: heisse Scheiben bremsen
+          // schlechter, und weil wir das Bremsbyte selbst stellen, wird der Bremsweg
+          // wirklich laenger. Der resist-Anteil bleibt unangetastet - Rollwiderstand und
+          // Luftwiderstand haben mit der Bremsscheibe nichts zu tun.
           accel = -(resist + (cfg.brakeDecelBase + cfg.brakeDecelAero * uB)
                              * inputs.brake * st.gripLong * surf * dive
-                             * st.tyreGrip / st.massFactor);
+                             * st.tyreGrip * (1 - st.brakeFade) / st.massFactor);
           // ABS is now only an indicator plus a haptic pulse. Modulating the byte here
           // would reintroduce precisely the stutter that took so long to remove.
           if (inputs.brake > 0.8 && st.speedKmh > cfg.topSpeedKmh * 0.15) {
@@ -8283,8 +8507,15 @@
       // Steering is scaled by what the front axle has left. This is where "cannot steer
       // under heavy braking or full throttle, but turns in nicely at the moment you first
       // hit the brakes" actually comes from.
+      // Der Lenk-Offset aus der ungleichen Abnutzung kommt NACH der Griffskalierung und
+      // nicht davor: er ist eine Kraft an der Achse und keine Absicht des Fahrers. Vor der
+      // Skalierung waere er unter Bremsen verschwunden, und genau dort spuert man ihn.
+      //
+      // Nur bei Fahrt: im Stand zieht nichts, und ein Auto, das an der Box von selbst
+      // einschlaegt, sieht nach einem Servofehler aus.
+      const zug = st.tyrePull * Math.min(1, Math.abs(st.speedKmh) / (cfg.topSpeedKmh * 0.15));
       this.outputs.servoAngle = Math.max(-1, Math.min(1,
-        this.state.dampedSteering * st.aquaFactor * st.steerGrip));
+        this.state.dampedSteering * st.aquaFactor * st.steerGrip + zug));
 
       // Values for the G plot. Lateral force rises with steer angle and speed; longitudinal
       // is the lagged demand, which is what the body actually feels.
@@ -8700,6 +8931,85 @@
     $('setting-brakebias-val').textContent = pct + '% vorn';
   });
 
+  // ---- Block 4: Bremstemperatur, Windschatten, Reifen -------------------------------
+  //
+  // Die Schalter setzen den Effekt auf 0 statt ein eigenes Flag zu fuehren. Ein zweiter
+  // Zustand neben dem Wert waere die Gelegenheit, dass beide auseinanderlaufen - und die
+  // Physik muesste dann zwei Sachen abfragen statt einer.
+  function brakeFadeAnwenden() {
+    const an = !$('setting-brake-fade') || $('setting-brake-fade').checked;
+    const st = $('setting-brake-fade-strength');
+    physEngine.config.brakeFadeEffect = an ? parseFloat(st ? st.value : 1) : 0;
+  }
+  if ($('setting-brake-fade')) {
+    $('setting-brake-fade').addEventListener('change', brakeFadeAnwenden);
+  }
+  if ($('setting-brake-fade-strength')) {
+    $('setting-brake-fade-strength').addEventListener('input', (e) => {
+      $('setting-brake-fade-strength-val').textContent =
+        Math.round(parseFloat(e.target.value) * 100) + '%';
+      brakeFadeAnwenden();
+    });
+  }
+  brakeFadeAnwenden();
+
+  function dirtyAirAnwenden() {
+    const an = !$('setting-dirtyair') || $('setting-dirtyair').checked;
+    const st = $('setting-dirtyair-strength');
+    physEngine.config.dirtyAirEffect = an ? parseFloat(st ? st.value : 1) : 0;
+  }
+  if ($('setting-dirtyair')) {
+    $('setting-dirtyair').addEventListener('change', dirtyAirAnwenden);
+  }
+  if ($('setting-dirtyair-strength')) {
+    $('setting-dirtyair-strength').addEventListener('input', (e) => {
+      $('setting-dirtyair-strength-val').textContent =
+        Math.round(parseFloat(e.target.value) * 100) + '%';
+      dirtyAirAnwenden();
+    });
+  }
+  dirtyAirAnwenden();
+
+  // Der Windschatten braucht ein Streckenlayout, sonst multipliziert er eine Null. Der
+  // Schalter wird deshalb GESPERRT und nicht bloss wirkungslos - das ist die Lehre aus dem
+  // Ghost-Kapitel.
+  //
+  // NICHT BEIM LADEN RUFEN. currentTrackTiles steht in 60-track.js, also in einer spaeteren
+  // Datei, und ein Zugriff von hier waere zur Ladezeit die temporale Todeszone. Hier stand
+  // erst ein Schutz "typeof currentTrackTiles !== 'undefined'" - der schuetzt NICHT: bei
+  // einem let in der Todeszone wirft schon typeof, anders als bei var. Die ganze IIFE brach
+  // damit ab, OMEGA_TEST war undefiniert, und ein Zeitgeber warf danach im Sekundentakt
+  // weiter.
+  //
+  // Gerufen wird deshalb von aussen: aus refreshTrackPreview(), wo sich die Kachelzahl
+  // aendert, und einmal beim Laden aus 98-presets.js, der letzten Datei.
+  function dirtyAirVerfuegbar() {
+    const row = $('dirtyair-row');
+    const sw = $('setting-dirtyair');
+    const genug = currentTrackTiles.length >= 3;
+    if (sw) sw.disabled = !genug;
+    if (row) row.classList.toggle('sim-off', !genug);
+  }
+  window.__dirtyAirVerfuegbar = dirtyAirVerfuegbar;
+
+  if ($('setting-tyre-asym')) {
+    const asymAnwenden = () => {
+      physEngine.config.tyreAsymEffect = $('setting-tyre-asym').checked ? 1 : 0;
+    };
+    $('setting-tyre-asym').addEventListener('change', asymAnwenden);
+    asymAnwenden();
+  }
+
+  if ($('setting-tyre-pressure')) {
+    const druckAnwenden = (v) => {
+      physEngine.config.tyrePressureBar = v;
+      $('setting-tyre-pressure-val').textContent = v.toFixed(2) + ' bar';
+    };
+    $('setting-tyre-pressure').addEventListener('input',
+      (e) => druckAnwenden(parseFloat(e.target.value)));
+    druckAnwenden(parseFloat($('setting-tyre-pressure').value));
+  }
+
   $('setting-fuel-drain').addEventListener('input', (e) => {
     fuelDrainPerSec = parseFloat(e.target.value);
     $('setting-fuel-drain-val').textContent = fuelDrainPerSec.toFixed(1);
@@ -9027,10 +9337,47 @@
       // Restliche Lauffleche, dieselbe Richtung und dieselben Schwellen wie beim Schaden
       // (55 % und 20 %). Eine eigene Schwelle hier waere eine zweite Regel fuer dieselbe
       // Aussage "es wird knapp".
-      const rest = Math.max(0, Math.min(100, 100 - st.tyreWear * 100));
+      // Getrennt, wenn die Asymmetrie an ist: oben links, unten rechts. Sonst zeigt der
+      // obere Balken wie bisher den Mittelwert und der untere ist weg - dann sieht die
+      // Kachel genau aus wie vorher.
+      const asymAn = physEngine.config.tyreAsymEffect > 0;
+      const farbe = (r) => (r <= 20 ? '#ff5c5c' : (r <= 55 ? 'var(--warn)' : 'var(--good)'));
+      const restVon = (w) => Math.max(0, Math.min(100, 100 - w * 100));
+      const rest = restVon(asymAn ? st.tyreWearL : st.tyreWear);
       setSty('race-tyre-bar', 'width', rest + '%');
-      setSty('race-tyre-bar', 'background', rest <= 20 ? '#ff5c5c'
-                                          : (rest <= 55 ? 'var(--warn)' : 'var(--good)'));
+      setSty('race-tyre-bar', 'background', farbe(rest));
+      const wrap = $('race-tyre-bar-r-wrap');
+      if (wrap) wrap.style.display = asymAn ? 'block' : 'none';
+      if (asymAn) {
+        const restR = restVon(st.tyreWearR);
+        setSty('race-tyre-bar-r', 'width', restR + '%');
+        setSty('race-tyre-bar-r', 'background', farbe(restR));
+      }
+    }
+
+    // Bremsscheibentemperatur. Grau wenn das Fading aus ist - genau wie der Reifenring,
+    // damit keine Anzeige eine Simulation behauptet, die nicht laeuft.
+    const bf = $('race-braket-f'), br = $('race-braket-r');
+    if (bf && br) {
+      const cfgB = physEngine.config;
+      if (cfgB.brakeFadeEffect === 0) {
+        bf.textContent = '\u2013';
+        br.textContent = '\u2013';
+        setSty('race-braket-row', 'color', '#4a5568');
+      } else {
+        bf.textContent = Math.round(st.brakeTempF);
+        br.textContent = Math.round(st.brakeTempR);
+        // Die Farbe kommt aus der HEISSEREN der beiden: eine glueende Scheibe ist die
+        // Nachricht, auch wenn die andere kalt ist.
+        const T = Math.max(st.brakeTempF, st.brakeTempR);
+        const ueber = Math.max(0, Math.min(1,
+          (T - cfgB.brakeFadeStartC) / Math.max(1, cfgB.brakeFadeFullC - cfgB.brakeFadeStartC)));
+        const col = ueber > 0
+          ? 'rgb(' + Math.round(255) + ',' + Math.round(178 - 130 * ueber) + ','
+            + Math.round(107 - 92 * ueber) + ')'
+          : (T > cfgB.brakeAmbientC + 60 ? 'var(--good)' : '#8b99b4');
+        setSty('race-braket-row', 'color', col);
+      }
     }
 
     // Abgeschaltete Simulationen kennzeichnen. Hier und nicht in den Umschaltfunktionen:
@@ -9258,6 +9605,15 @@
         padRumble(0.12, 0.34, OFFTRACK_RUMBLE_MS);
       }
     }
+    // Windschatten: gemessen wird in 90-ghosts.js (nur dort ist bekannt, wo die anderen
+    // Autos sind), uebernommen wird hier. MIT Zeitkonstante - ein Windschatten, der zwischen
+    // zwei Takten von 0 auf 1 springt, ist ein Grip-Sprung, und den spuert man als Ruck.
+    //
+    // Der Aufruf ist defensiv, weil 90-ghosts.js SPAETER gebaut wird: zur Ladezeit waere ein
+    // direkter Zugriff die temporale Todeszone, zur Laufzeit ist er unproblematisch.
+    const ziel = (typeof dirtyAirLevel === 'function') ? dirtyAirLevel() : 0;
+    const ps = physEngine.state;
+    ps.dirtyAir += (ziel - ps.dirtyAir) * Math.min(1, dt * 4);
     const out = physEngine.update({ steering: steer, throttle: rawThrottle, brake: rawBrake,
                                     headlights: headlightsOn }, dt);
     updateDashboard(out);
@@ -10675,6 +11031,10 @@
   };
 
   function refreshTrackPreview() {
+    // Die Kachelzahl entscheidet, ob der Windschatten ueberhaupt rechnen kann. Hier gerufen
+    // und nicht in 50-drive.js beim Laden: dort ist currentTrackTiles noch in der temporalen
+    // Todeszone, siehe den Kommentar bei dirtyAirVerfuegbar().
+    if (typeof dirtyAirVerfuegbar === 'function') dirtyAirVerfuegbar();
     const result = renderTrackPreview(currentTrackTiles, null, { detailed: true });
     $('track-preview-svg').innerHTML = result.html;
     renderTrackPalette();
@@ -11282,6 +11642,11 @@
   let dashPendingCode = null, dashPendingSeen = 0;
   let dashLastActedCode = null, dashLastActedAt = 0;
   let dashMinimapIndex = null;
+  // Zeitpunkt des letzten Kachelwechsels und die geglaettete Kacheldauer. Beides nur fuer
+  // die Positionsschaetzung innerhalb der Kachel; sie ist eine Schaetzung und keine Messung,
+  // das Auto meldet keine Position.
+  let dashTileAt = 0;
+  let dashTileMs = 0;
   let dashLastTileCounter = null;
   let dashLapStart = null;
   let dashLapTimes = [];
@@ -12660,6 +13025,17 @@
     dashLastTileCounter = counter;
     dashMinimapIndex = dashMinimapIndex === null ? 0 : dashMinimapIndex + 1;
     if (currentTrackTiles.length > 0) dashMinimapIndex = dashMinimapIndex % currentTrackTiles.length;
+    // Die Dauer der gerade verlassenen Kachel mitfuehren, geglaettet - dieselbe Rechnung wie
+    // ghostNoteTileTime() fuer die Ghosts. Daraus schaetzt dashTilePhase() die Position
+    // INNERHALB der Kachel, und die braucht der Windschatten: ein Abstand in ganzen Kacheln
+    // ist bei 43 cm Kachellaenge zu grob, um "dicht dahinter" von "eine Laenge dahinter" zu
+    // unterscheiden.
+    const jetztT = Date.now();
+    if (dashTileAt) {
+      const ms = jetztT - dashTileAt;
+      if (ms > 60 && ms < 20000) dashTileMs = dashTileMs ? dashTileMs * 0.7 + ms * 0.3 : ms;
+    }
+    dashTileAt = jetztT;
 
     // Guard 2 applies only to the two codes that trigger something irreversible; the
     // ordinary straight and curve codes may repeat as often as the track says.
@@ -12849,6 +13225,16 @@
 
   // getMinimapCurrentIndex() stand hier und wurde nach dem Entfernen der Minikarte von
   // niemandem mehr gerufen.
+
+  // Position innerhalb der aktuellen Kachel, 0..1. Wie ghostTilePhase(), mit derselben
+  // Laengenkorrektur: eine Haarnadel ist dreimal so lang wie eine Gerade, und ohne die
+  // Korrektur stuende die Phase dort nach einem Drittel auf 1.
+  function dashTilePhase() {
+    if (!dashTileAt || !dashTileMs) return 0;
+    const f = (typeof ghostTileLenFactor === 'function' && dashMinimapIndex !== null)
+      ? ghostTileLenFactor(dashMinimapIndex) : 1;
+    return Math.max(0, Math.min(1, (Date.now() - dashTileAt) / (dashTileMs * f)));
+  }
 
   function refreshMinimap() {
     // Die Minikarte ist entfernt worden. Die Positionsverfolgung dahinter bleibt: sie
@@ -13805,7 +14191,18 @@
   function resetTyres() {
     physEngine.state.tyreTempC = physEngine.config.tyreAmbientC;
     physEngine.state.tyreWear = 0;
+    // Links und rechts MUESSEN mit. Ohne diese zwei Zeilen setzt der Boxenstopp den
+    // Mittelwert auf 0 und die Seiten stehen weiter bei 0,4: das Cockpit zeigt heile Reifen
+    // und das Auto zieht immer noch. Genau so laufen zwei Darstellungen derselben Sache
+    // auseinander.
+    physEngine.state.tyreWearL = 0;
+    physEngine.state.tyreWearR = 0;
+    physEngine.state.tyrePull = 0;
     physEngine.state.tyreGrip = 1;
+    // Die BREMSSCHEIBEN werden hier ausdruecklich NICHT gekuehlt. Ein Boxenstopp dauert
+    // Sekunden, und Scheiben kuehlen darin nicht auf Umgebungstemperatur. Reifen werden
+    // gewechselt, Scheiben nicht - wer nach dem Stopp mit heisser Bremse herausfaehrt, hat
+    // sie auch in echt.
   }
 
   // Pressing the button no longer demands a standstill. It arms the pit lane, exactly as
@@ -16679,6 +17076,49 @@
     }, Math.round(CONTROL_SEND_INTERVAL_MS * slot / (garage.length + 1)));
   }
 
+  // ---- Windschatten (Block 4.2) ------------------------------------------------------
+  //
+  // Wieviel Nachlauf hat das FAHRERAUTO gerade? 0 = freie Luft, 1 = direkt hinter einem
+  // Auto. Die Physik in 40-physics.js kennt nur st.dirtyAir und soll nicht wissen muessen,
+  // dass es Ghosts gibt; hier steht die Messung, dort die Wirkung.
+  //
+  // Reichweite eine Kachellaenge (43 cm auf dem Teppich, im Massstab rund 32 m). Der Verlauf
+  // ist quadratisch abfallend und nicht linear: Abtrieb im Nachlauf erholt sich mit dem
+  // Abstand schnell, und linear haette eine halbe Kachel noch die halbe Wirkung - zu weit
+  // weg, um es zu spueren.
+  const DIRTY_AIR_REICHWEITE = 1.0;   // in Kachellaengen
+
+  function dirtyAirLevel() {
+    const tiles = currentTrackTiles;
+    // Unter drei Kacheln gibt es keine Kurvenkennung und keinen sinnvollen Abstand. Genau
+    // deshalb ist der Schalter in den Optionen gesperrt und nicht bloss wirkungslos.
+    if (!tiles || tiles.length < 3) return 0;
+    if (dashMinimapIndex === null) return 0;
+
+    // NUR IN DER KURVE. Auf der Geraden ist Windschatten ein VORTEIL, und den zu simulieren
+    // hiesse das Modell in der Gegenrichtung zu erfinden: das Auto beschleunigt in echt
+    // nicht besser, weil eines vorausfaehrt. In der Kurve ist der Abtriebsverlust ein
+    // Nachteil, und den bildet der Reibkreis ehrlich ab. Ein halbes Modell, das seine
+    // Haelfte kennt, ist besser als ein ganzes, das raet.
+    if (!tileIsCurve(tiles[dashMinimapIndex].type)) return 0;
+
+    const n = tiles.length;
+    const meine = dashMinimapIndex + dashTilePhase();
+    let naechster = Infinity;
+    for (const c of garage) {
+      if (c.role !== 'ghost' || !c.ghost || c.ghost.tileIndex === null) continue;
+      const seine = c.ghost.tileIndex + ghostTilePhase(c);
+      // Nur nach VORN, und modulo Rundenlaenge: wer vorn faehrt, hat freie Luft.
+      let d = seine - meine;
+      while (d < 0) d += n;
+      while (d >= n) d -= n;
+      if (d > 0 && d < naechster) naechster = d;
+    }
+    if (!isFinite(naechster) || naechster > DIRTY_AIR_REICHWEITE) return 0;
+    const nah = 1 - naechster / DIRTY_AIR_REICHWEITE;
+    return nah * nah;
+  }
+
   function ghostTick(car) {
     const g = car.ghost;
     if (!g) return;
@@ -17214,6 +17654,106 @@
       return out;
     },
 
+    // Eine Vollbremsung mit Temperaturverlauf. Die Frage, die sie beantwortet: fadet eine
+    // EINZELNE Bremsung aus kalten Scheiben schon? Sie darf es nicht - sonst ist nicht die
+    // Simulation tiefer, sondern die gefittete Bremstabelle kaputt.
+    physBrakeHeat(o) {
+      const opt = o || {};
+      const e = physEngine, st = e.state, cfg = e.config;
+      const merkState = Object.assign({}, st);
+      const merk = Object.assign({}, cfg);
+      try {
+        Object.assign(cfg, e.calibRef);
+        e.calibrateAccel();
+        for (const k of Object.keys(opt.cfg || {})) cfg[k] = opt.cfg[k];
+        cfg.tyreEffect = 0;
+        const dt = 0.02;
+        const v0 = opt.kmh || 250;
+        st.driveMode = 'forward';
+        st.currentGear = cfg.gears.length - 1;
+        st.speedKmh = v0 / REAL_SCALE;
+        st.isShifting = false; st.loadFront = 0.5; st.longUse = 0;
+        st.fuelLoad = 1;
+        st.brakeTempF = cfg.brakeAmbientC;
+        st.brakeTempR = cfg.brakeAmbientC;
+        st.brakeFade = 0;
+        let t = 0, weg = 0, maxFade = 0;
+        const wiederholungen = opt.wiederholungen || 1;
+        let letzteZeit = 0, letzterWeg = 0;
+        for (let i = 0; i < wiederholungen; i++) {
+          st.speedKmh = v0 / REAL_SCALE;
+          st.longUse = 0;
+          let tb = 0, wb = 0;
+          while (tb < 20 && st.speedKmh * REAL_SCALE > 1) {
+            const vVor = st.speedKmh;
+            e.update({ throttle: 0, brake: 1, steering: 0 }, dt);
+            tb += dt;
+            wb += ((vVor + st.speedKmh) / 2 * REAL_SCALE) / 3.6 * dt;
+            maxFade = Math.max(maxFade, st.brakeFade);
+          }
+          t += tb; weg += wb;
+          letzteZeit = tb; letzterWeg = wb;
+          // Zwischen den Wiederholungen mit Vollgas wieder hoch: das ist die Kuehlphase,
+          // und sie gehoert zur Messung. Ohne sie waeren mehrere Bremsungen ein
+          // Dauerbremsvorgang und nicht ein Rennen.
+          if (i < wiederholungen - 1) {
+            let ta = 0;
+            while (ta < 12 && st.speedKmh * REAL_SCALE < v0) {
+              e.update({ throttle: 1, brake: 0, steering: 0 }, dt);
+              ta += dt;
+            }
+          }
+        }
+        return { zeit: +t.toFixed(3), meter: +weg.toFixed(1),
+                 letzteZeit: +letzteZeit.toFixed(3), letzterWeg: +letzterWeg.toFixed(1),
+                 tempF: +st.brakeTempF.toFixed(0), tempR: +st.brakeTempR.toFixed(0),
+                 maxFade: +maxFade.toFixed(4), fadeEnde: +st.brakeFade.toFixed(4) };
+      } finally {
+        Object.assign(cfg, merk);
+        e.calibrateAccel();
+        for (const k of Object.keys(st)) if (!(k in merkState)) delete st[k];
+        Object.assign(st, merkState);
+      }
+    },
+
+    // Kurvenfahrt mit festem Lenkeinschlag: nutzt sie die richtige Seite mehr ab, und bleibt
+    // der MITTELWERT derselbe wie ohne Asymmetrie? Das Zweite ist der eigentliche Punkt -
+    // sonst waere "Asymmetrie an" auch "mehr Verschleiss an", und dann liesse sich nicht
+    // messen, was der Schalter tut.
+    physTyreAsym(o) {
+      const opt = o || {};
+      const e = physEngine, st = e.state, cfg = e.config;
+      const merkState = Object.assign({}, st);
+      const merk = Object.assign({}, cfg);
+      try {
+        Object.assign(cfg, e.calibRef);
+        e.calibrateAccel();
+        for (const k of Object.keys(opt.cfg || {})) cfg[k] = opt.cfg[k];
+        const dt = 0.02;
+        st.driveMode = 'forward';
+        st.currentGear = 3;
+        st.isShifting = false; st.loadFront = 0.5; st.longUse = 0; st.fuelLoad = 1;
+        st.tyreTempC = cfg.tyreOptimalC;
+        st.tyreWear = 0; st.tyreWearL = 0; st.tyreWearR = 0; st.tyrePull = 0;
+        const kmh = opt.kmh || 140;
+        const lenk = opt.steering === undefined ? 0.7 : opt.steering;
+        const sekunden = opt.sekunden || 30;
+        for (let t = 0; t < sekunden; t += dt) {
+          // Fahrt festhalten: gemessen wird der Verschleiss, nicht die Fahrleistung.
+          st.speedKmh = kmh / REAL_SCALE;
+          e.update({ throttle: 0.4, brake: 0, steering: lenk }, dt);
+        }
+        return { wearL: +st.tyreWearL.toFixed(5), wearR: +st.tyreWearR.toFixed(5),
+                 mittel: +st.tyreWear.toFixed(5), pull: +st.tyrePull.toFixed(5),
+                 tempC: +st.tyreTempC.toFixed(1) };
+      } finally {
+        Object.assign(cfg, merk);
+        e.calibrateAccel();
+        for (const k of Object.keys(st)) if (!(k in merkState)) delete st[k];
+        Object.assign(st, merkState);
+      }
+    },
+
     physCurve(o) {
       const opt = o || {};
       const e = physEngine, st = e.state, cfg = e.config;
@@ -17304,6 +17844,15 @@
             st.currentGear++;
           }
           st.isShifting = false; st.loadFront = 0.5; st.longUse = 0;
+          // KALTE SCHEIBEN vor jedem Lauf. Seit Block 4 behalten sie ihre Waerme, und vier
+          // Bremsungen hintereinander wuerden die letzte aus heissen Scheiben fahren - die
+          // Messung haenge dann an der Reihenfolge und nicht am Auto. Dieselbe Falle stand
+          // oben schon fuer den Reifenzustand aufgeschrieben. Die kalibrierte Bremstabelle
+          // ist an EINER Bremsung aus kalten Scheiben gemessen; das ist der Zustand, fuer
+          // den die Sollwerte gelten.
+          st.brakeTempF = cfg.brakeAmbientC;
+          st.brakeTempR = cfg.brakeAmbientC;
+          st.brakeFade = 0;
           let tb = 0, weg = 0;
           while (tb < 20 && st.speedKmh * REAL_SCALE > 1) {
             takt();
@@ -19375,6 +19924,117 @@
     } finally { if (lang !== vorher) setLang(vorher); }
   });
 
+  // ---- Block 4.1: Bremstemperatur und Fading ----
+  //
+  // ZWEI BEDINGUNGEN, und die erste ist die, die schiefgehen kann ohne aufzufallen: eine
+  // EINZELNE Vollbremsung aus kalten Scheiben darf nicht faden. Die gefittete Bremstabelle
+  // (RMSE 3,1 %) ist an genau dieser Bremsung gemessen; wuerde sie faden, waere nicht die
+  // Simulation tiefer, sondern die Kalibrierung kaputt.
+  //
+  // Die zweite: mehrere hintereinander MUESSEN faden, sonst ist der Zusatz Zierde. Dieser
+  // Test hat einen echten Fehler gefunden - die erste Fassung der Kuehlung war um den Faktor
+  // 100 zu stark, und fuenf Vollbremsungen aus 250 km/h erreichten 111 statt 601 Grad.
+  stAdd('Bremsfading: eine Bremsung nicht, acht schon', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.physBrakeHeat) {
+      return { skip: true, mass: 'physBrakeHeat nicht vorhanden' };
+    }
+    const eine = OMEGA_TEST.physBrakeHeat({ kmh: 250, wiederholungen: 1 });
+    const acht = OMEGA_TEST.physBrakeHeat({ kmh: 250, wiederholungen: 8 });
+    const aus = OMEGA_TEST.physBrakeHeat({ kmh: 250, wiederholungen: 8,
+                                          cfg: { brakeFadeEffect: 0 } });
+    const laenger = (acht.letzterWeg - eine.letzterWeg) / eine.letzterWeg;
+    const ok = eine.maxFade === 0            // eine Bremsung fadet nicht
+      && acht.maxFade > 0.05                 // acht schon
+      && laenger > 0.08                      // und das kostet Bremsweg
+      && Math.abs(aus.letzterWeg - eine.letzterWeg) < 3;  // mit Regler aus: kein Unterschied
+    return { ok,
+      mass: '1x: ' + eine.tempF + '\u00b0 vorn, Fading ' + (eine.maxFade * 100).toFixed(1)
+          + ' %, ' + eine.letzterWeg + ' m | 8x: ' + acht.tempF + '\u00b0, '
+          + (acht.maxFade * 100).toFixed(1) + ' %, ' + acht.letzterWeg + ' m ('
+          + (laenger * 100).toFixed(0) + ' % laenger) | Regler aus: ' + aus.letzterWeg + ' m' };
+  });
+
+  // ---- Block 4.3: asymmetrischer Reifenverschleiss ----
+  //
+  // Die richtige Seite muss mehr abnutzen - eine Rechtskurve die LINKE. Und der MITTELWERT
+  // muss derselbe bleiben wie ohne Asymmetrie: sonst waere der Schalter auch ein
+  // Verschleiss-Regler, und dann liesse sich nicht messen, was er tut.
+  stAdd('Reifen links/rechts: richtige Seite, gleicher Mittelwert', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.physTyreAsym) {
+      return { skip: true, mass: 'physTyreAsym nicht vorhanden' };
+    }
+    const re = OMEGA_TEST.physTyreAsym({ steering: 0.7, sekunden: 40 });
+    const li = OMEGA_TEST.physTyreAsym({ steering: -0.7, sekunden: 40 });
+    const sy = OMEGA_TEST.physTyreAsym({ steering: 0.7, sekunden: 40,
+                                         cfg: { tyreAsymEffect: 0 } });
+    const ok = re.wearL > re.wearR * 2          // Rechtskurve nutzt links deutlich mehr
+      && li.wearR > li.wearL * 2                // Linkskurve gespiegelt
+      && Math.abs(re.mittel - sy.mittel) < 1e-4  // Mittelwert unveraendert
+      && Math.abs(li.mittel - sy.mittel) < 1e-4
+      && re.pull > 0 && li.pull < 0;             // und der Zug folgt dem Vorzeichen
+    return { ok,
+      mass: 'rechts L/R ' + re.wearL.toFixed(3) + '/' + re.wearR.toFixed(3)
+          + ', links L/R ' + li.wearL.toFixed(3) + '/' + li.wearR.toFixed(3)
+          + ' | Mittel ' + re.mittel.toFixed(5) + ' gegen symmetrisch '
+          + sy.mittel.toFixed(5) + ' | Zug ' + re.pull.toFixed(4) };
+  });
+
+  // ---- Block 4.4: Reifendruck ----
+  // Monoton, ueber den ganzen Reglerbereich. Ein Regler, der in der Mitte umkehrt, ist keine
+  // Abstimmung, sondern eine Falle.
+  stAdd('Reifendruck: weniger Druck, waermer und mehr Verschleiss', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.physTyreAsym) {
+      return { skip: true, mass: 'physTyreAsym nicht vorhanden' };
+    }
+    const werte = [1.4, 1.6, 1.8, 2.0, 2.2].map(p => ({
+      p, r: OMEGA_TEST.physTyreAsym({ steering: 0.3, sekunden: 40,
+                                      cfg: { tyrePressureBar: p } }) }));
+    let monoton = true;
+    for (let i = 1; i < werte.length; i++) {
+      if (werte[i].r.tempC >= werte[i - 1].r.tempC) monoton = false;
+      if (werte[i].r.mittel >= werte[i - 1].r.mittel) monoton = false;
+    }
+    return { ok: monoton,
+      mass: werte.map(w => w.p.toFixed(1) + ' bar: ' + w.r.tempC.toFixed(0) + '\u00b0, '
+                         + (w.r.mittel * 100).toFixed(1) + ' %').join(' | ') };
+  });
+
+  // ---- Block 4.2: Windschatten ----
+  //
+  // Gemessen ueber physSteerGrip mit gesetztem st.dirtyAir und NICHT ueber die
+  // Ghost-Verwaltung: die braeuchte ein Layout und zwei Autos, und dann prueft der Test die
+  // Messung statt der Wirkung. Was hier zu pruefen ist: senkt der Wert den Kurvengrip, und
+  // laesst der Regler ihn abschalten.
+  stAdd('Windschatten senkt den Kurvengrip', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.physSteerGrip) {
+      return { skip: true, mass: 'physSteerGrip nicht vorhanden' };
+    }
+    const st = physEngine.state;
+    const merk = st.dirtyAir;
+    try {
+      // tyreEffect AUF 0 in allen drei Aufrufen, und das ist der Punkt, an dem die erste
+      // Fassung dieses Tests falsch war: physSteerGrip legt tyreTempC und tyreWear NICHT
+      // zurueck, die Reifen wurden also von Aufruf zu Aufruf waermer. Gemessen kam
+      // 0,595 -> 0,660 heraus, und das war die Aufwaermung und nicht der Windschatten -
+      // der Test meldete einen Fehler, der in ihm selbst lag.
+      const messen = (dirty, effekt) => {
+        st.dirtyAir = dirty;
+        return OMEGA_TEST.physSteerGrip({ kmh: 140, throttle: 0.3, brake: 0, steering: 0.5,
+          patch: { dirtyAirEffect: effekt, tyreEffect: 0 } }).steerGrip;
+      };
+      const frei = messen(0, 1);
+      const nah = messen(1, 1);
+      const ausgeschaltet = messen(1, 0);
+      const verlust = (frei - nah) / Math.max(1e-6, frei);
+      return {
+        ok: verlust > 0.05 && Math.abs(ausgeschaltet - frei) < 1e-6,
+        mass: 'freie Luft ' + frei.toFixed(3) + ', dicht dahinter ' + nah.toFixed(3)
+            + ' (' + (verlust * 100).toFixed(1) + ' % weniger), Regler aus '
+            + ausgeschaltet.toFixed(3),
+      };
+    } finally { st.dirtyAir = merk; }
+  });
+
   // ---- Abseits der Fahrbahn ----
   //
   // Die Bedingung, an der es schiefgeht, wenn sie jemand vergisst: die Drosselung darf NUR
@@ -20976,7 +21636,14 @@
            // crash-count ist ein INDEX in [1,2,3,4,5,10,20,50]: 4 = fuenf Crashs.
            'setting-fuel-drain': 0, 'setting-crash-count': 4,
            'setting-crash-damage': false,
-           'setting-repair-time': 4 },
+           'setting-repair-time': 4,
+           // Block 4: Bremsfading, Windschatten, Reifenasymmetrie und -druck.
+           'setting-brake-fade': false,
+           'setting-brake-fade-strength': 1.0,
+           'setting-dirtyair': false,
+           'setting-dirtyair-strength': 1.0,
+           'setting-tyre-asym': false,
+           'setting-tyre-pressure': 1.8 },
     },
     pro: {
       label: 'Pro',
@@ -20988,7 +21655,14 @@
            'setting-tyres': 0.5, 'phys-steerresp': 1.8, 'setting-brakebias': 60,
            'setting-fuel-drain': 1.5, 'setting-crash-count': 2,
            'setting-crash-damage': true,
-           'setting-repair-time': 10 },
+           'setting-repair-time': 10,
+           // Block 4: Bremsfading, Windschatten, Reifenasymmetrie und -druck.
+           'setting-brake-fade': true,
+           'setting-brake-fade-strength': 0.6,
+           'setting-dirtyair': true,
+           'setting-dirtyair-strength': 0.6,
+           'setting-tyre-asym': true,
+           'setting-tyre-pressure': 1.8 },
     },
     gt3: {
       label: 'GT3',
@@ -21001,7 +21675,14 @@
            'setting-tyres': 2.0, 'phys-steerresp': 1.3, 'setting-brakebias': 62,
            'setting-fuel-drain': 3.0, 'setting-crash-count': 5,
            'setting-crash-damage': true,
-           'setting-repair-time': 20 },
+           'setting-repair-time': 20,
+           // Block 4: Bremsfading, Windschatten, Reifenasymmetrie und -druck.
+           'setting-brake-fade': true,
+           'setting-brake-fade-strength': 1.0,
+           'setting-dirtyair': true,
+           'setting-dirtyair-strength': 1.0,
+           'setting-tyre-asym': true,
+           'setting-tyre-pressure': 1.8 },
     },
     gt4: {
       label: 'GT4',
@@ -21014,7 +21695,14 @@
            'setting-tyres': 1.5, 'phys-steerresp': 1.5, 'setting-brakebias': 61,
            'setting-fuel-drain': 2.2, 'setting-crash-count': 5,
            'setting-crash-damage': true,
-           'setting-repair-time': 16 },
+           'setting-repair-time': 16,
+           // Block 4: Bremsfading, Windschatten, Reifenasymmetrie und -druck.
+           'setting-brake-fade': true,
+           'setting-brake-fade-strength': 0.8,
+           'setting-dirtyair': true,
+           'setting-dirtyair-strength': 0.8,
+           'setting-tyre-asym': true,
+           'setting-tyre-pressure': 1.85 },
     },
     f1: {
       label: 'F1',
@@ -21027,7 +21715,14 @@
            'setting-tyres': 2.0, 'phys-steerresp': 1.05, 'setting-brakebias': 66,
            'setting-fuel-drain': 4.5, 'setting-crash-count': 3,
            'setting-crash-damage': true,
-           'setting-repair-time': 24 },
+           'setting-repair-time': 24,
+           // Block 4: Bremsfading, Windschatten, Reifenasymmetrie und -druck.
+           'setting-brake-fade': true,
+           'setting-brake-fade-strength': 1.4,
+           'setting-dirtyair': true,
+           'setting-dirtyair-strength': 1.6,
+           'setting-tyre-asym': true,
+           'setting-tyre-pressure': 1.7 },
     },
   };
   // Bis v0.4 hiess GT3 "real". Aeltere exportierte Abstimmungen und der Knopf im
@@ -21223,6 +21918,10 @@
 
   $('preset-json').value = JSON.stringify(presetRead());
   renderPresetLegende();
+  // Einmal beim Laden, aus der LETZTEN Quelldatei: hier sind alle let initialisiert.
+  // In 50-drive.js gerufen war es die temporale Todeszone - currentTrackTiles steht in
+  // 60-track.js, und typeof schuetzt dort nicht (bei einem let wirft schon typeof).
+  if (window.__dirtyAirVerfuegbar) window.__dirtyAirVerfuegbar();
 
   // ---- Eigene Abstimmungen auf diesem Geraet ------------------------------------------
   // Strecken und Motoren haben ihre eigene Ablage schon (carrera-hybrid-tracks,
