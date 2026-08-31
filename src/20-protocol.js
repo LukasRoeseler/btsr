@@ -83,6 +83,19 @@
   let probeOverride = null;   // e.g. { 10: 0x20 } — byte index -> value
   let probeStats = { since: 0, sent: 0, codes: 0, lastCode: null, label: '' };
 
+  // Unregelmaessiges Flackern einer defekten Lampe, DETERMINISTISCH aus der Uhrzeit
+  // gerechnet und ausdruecklich nicht aus Math.random(): ein Zufallswert je Paket haengt an
+  // der Senderate, und bei 45 ms Takt ergaebe das ein gleichmaessiges Grau statt eines
+  // Flackerns. Ueber Zeitabschnitte gehasht bleibt die Folge dagegen bei jeder Rate gleich.
+  //
+  // 70 ms je Abschnitt und eine Trefferquote von 14 % - also lange dunkle Strecken mit
+  // vereinzelten kurzen Zuckungen. Ein Rechteck mit fester Periode waere ein Blinker, und
+  // ein Blinker heisst am Auto etwas anderes.
+  function lampFlicker(seed) {
+    const bucket = Math.floor(Date.now() / 70) + seed * 977;
+    return (((bucket * 2654435761) >>> 0) / 4294967296) > 0.86;
+  }
+
   function buildCommandPacket(steerFloat, throttleFloat, lightOverride, byteOverride) {
     // Full mechanical lock. The old "Maximaler Lenkausschlag" option scaled this down to
     // 85 of 127 steps by default, i.e. the car was never asked for more than two thirds
@@ -95,8 +108,13 @@
     // Broken lamps are masked here, at the one place every packet passes through, rather
     // than wherever lightBits happens to be assembled. A light that is out has to be out in
     // every packet, including the ones sent by the ghost driver and the probe.
-    if (lightDamage.front) lb &= ~LIGHT_HEAD & 0xff;
-    if (lightDamage.rear) lb &= ~LIGHT_BRAKE & 0xff;
+    //
+    // Kein hartes Aus mehr, sondern ein Wackelkontakt: ueberwiegend dunkel mit kurzen
+    // Zuckungen. Die Maskierung bleibt an dieser Stelle, und dadurch gilt weiterhin, was
+    // eine UND-Verknuepfung ohnehin leistet - ist das Licht gar nicht eingeschaltet, aendert
+    // das Flackern nichts, weil das Bit dann so oder so nicht gesetzt ist.
+    if (lightDamage.front && !lampFlicker(0)) lb &= ~LIGHT_HEAD & 0xff;
+    if (lightDamage.rear && !lampFlicker(1)) lb &= ~LIGHT_BRAKE & 0xff;
     const body = [0xaf, 0x00, 0x00, 0x00, 0x00, 0x00, throttleByte, steerByte, 0x80, steerByte, 0x60, 0x00, 0x01, 0x00, lb, 0x04, 0x00, 0x00, 0x00];
     // The probe rewrites individual bytes BEFORE the checksum, so every variant still
     // carries a valid CRC — otherwise the car would simply drop the packet and the

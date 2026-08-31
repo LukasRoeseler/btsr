@@ -839,8 +839,6 @@
     line: 0.35,
     // Rennwuerze. Ein Regler, fuenf Bausteine - siehe ghostSpice() weiter unten.
     spice: 0.4,
-    // Welches Linienmodell die Ghosts fahren. Der Editor zeichnet dasselbe.
-    lineModel: 'curvature',
     // Lernen von Runde zu Runde, standardmaessig aus: es aendert das Fahrverhalten ueber
     // ein Rennen hinweg, und das soll niemand ungefragt bekommen.
     learnPace: false,
@@ -1972,7 +1970,9 @@
   for (const b of document.querySelectorAll('[data-linemodel]')) {
     b.addEventListener('click', () => {
       const m = b.dataset.linemodel;
-      ghostCfg.lineModel = m;
+      // ghostCfg.lineModel stand hier bis v0.4 daneben und wurde nie gelesen: der echte
+      // Zustand liegt in 60-track.js hinter setLineModel(). Ein zweiter Speicherort ohne
+      // Leser ist keine Redundanz, sondern eine Falle.
       setLineModel(m);
       lineCache = null;
       for (const o of document.querySelectorAll('[data-linemodel]')) {

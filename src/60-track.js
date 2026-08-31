@@ -1010,7 +1010,11 @@
     ).join('');
     list.querySelectorAll('.track-del-btn').forEach(btn => {
       btn.onclick = () => {
-        currentTrackTiles.splice(parseInt(btn.dataset.idx, 10), 1);
+        // Der Knopf wird fuer Index 0 gar nicht erst gezeichnet; der Riegel steht trotzdem
+        // hier, weil die Liste die einzige Stelle ist, die nach Index loescht.
+        const i = parseInt(btn.dataset.idx, 10);
+        if (!(i > 0)) return;
+        currentTrackTiles.splice(i, 1);
         refreshTrackPreview();
       };
     });
@@ -1018,7 +1022,18 @@
     if (typeof refreshMinimap === 'function') refreshMinimap();
   }
 
-  function addTile(type) { currentTrackTiles.push({ type }); refreshTrackPreview(); }
+  // Genau eine Start/Ziel-Kachel, und sie liegt auf Index 0. freshTrackTiles() legt sie
+  // an, der Import und das Laden stellen sie voran - nur addTile() hatte keinen Schutz, und
+  // der Start-Knopf in der Palette konnte sie beliebig oft hinten anhaengen. Eine zweite
+  // Start-Kachel bricht die Rundenzaehlung, weil sie sich auf die eine Ueberfahrt stuetzt.
+  function addTile(type) {
+    if (type === TILE_TYPE.START && currentTrackTiles.some(t => t.type === TILE_TYPE.START)) {
+      showHudToast('Start/Ziel gibt es nur einmal');
+      return;
+    }
+    currentTrackTiles.push({ type });
+    refreshTrackPreview();
+  }
   // ---- Symbol palette ----
   // The same five actions as the text buttons above, as icons, so they still fit under the
   // map in fullscreen. Order follows the physical layout of a controller's thinking:
@@ -1254,16 +1269,10 @@
     $('track-clear').click();
   }
 
-  // Die Textknoepfe oben sind entfernt; gebaut wird mit der Leiste am Bild. Die
-  // Bindungen bleiben trotzdem stehen und pruefen auf Vorhandensein - so laesst sich einer
-  // von ihnen wieder einsetzen, ohne dass man diese Stelle sucht.
-  const bindAdd = (id, type) => { const b = $(id); if (b) b.onclick = () => addTile(type); };
-  bindAdd('track-add-start', TILE_TYPE.START);
-  bindAdd('track-add-straight', TILE_TYPE.STRAIGHT);
-  bindAdd('track-add-right', TILE_TYPE.CURVE_RIGHT);
-  bindAdd('track-add-left', TILE_TYPE.CURVE_LEFT);
-  bindAdd('track-add-hairpin', TILE_TYPE.HAIRPIN);
-  bindAdd('track-add-pit', TILE_TYPE.PIT);
+  // Hier standen sechs Bindungen auf Knopf-ids, die es seit dem Umbau auf die Bildleiste
+  // nicht mehr gibt (track-add-start und fuenf weitere). Sie prueften auf Vorhandensein und
+  // taten deshalb nie etwas - toter Code, der wie eine Funktion aussieht. Gebaut wird mit
+  // renderTrackPalette().
   $('track-undo').onclick = () => {
     // The first tile is the start/finish anchor and is not removable — the lap counting
     // depends on it existing.

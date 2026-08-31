@@ -1889,7 +1889,31 @@
     lightFx.fuel = fuel <= 0;
   }
 
+  // Der Lichtschaden wurde bisher gesetzt und nie zurueckgenommen: es gab im ganzen
+  // Projekt keine Zuweisung lightDamage.front = false. Boxenstopp-Reparatur,
+  // resetCarState() und die Taste R setzen alle nur damage = 0, waehrend der Tooltip
+  // ausdruecklich "Boxenstopp repariert" verspricht. Nach einem Crash blieben die Lichter
+  // also fuer den Rest der Sitzung aus.
+  //
+  // Statt an den drei Stellen je eine Ruecknahme einzubauen, wird der Zustand hier aus dem
+  // Schaden ABGELEITET. Das ist die eine Stelle, die alle drei Wege ohnehin durchlaufen
+  // (updateDamageFuelUI ruft es), es deckt auch das kontinuierliche Absenken waehrend der
+  // Reparatur ab, und zwei Werte, von denen einer aus dem anderen folgt, koennen so gar
+  // nicht erst auseinanderlaufen.
+  //
+  // Welches ENDE getroffen wurde, folgt nicht aus dem Schaden - das bleibt in
+  // registerCrash(). Hier wird nur geloescht, nie gesetzt.
+  function syncLightDamage() {
+    if (damage >= LIGHT_DEAD_DAMAGE) return;
+    if (!lightDamage.front && !lightDamage.rear) return;
+    lightDamage.front = false;
+    lightDamage.rear = false;
+    updateLightTellTales();
+    log('Beleuchtung wieder in Ordnung (Schaden unter ' + LIGHT_DEAD_DAMAGE + ' %).', 'ok');
+  }
+
   function updateDamageFuelUI() {
+    syncLightDamage();
     setSty('fuel-bar', 'width', Math.max(0, fuel) + '%');
     setSty('fuel-bar', 'background', fuel < 20 ? 'var(--warn)' : 'var(--good)');
     setTxt('fuel-liters', `${fuelLiters(fuel)} / ${FUEL_TANK_LITERS} l`);
@@ -2004,8 +2028,9 @@
       lamp.style.opacity = lightDamage.front ? '0.25' : '';
       lamp.setAttribute('aria-label', lightDamage.front ? 'Scheinwerfer defekt' : 'Scheinwerfer');
       const box = $('race-light-box');
-      if (box) box.title = lightDamage.front ? 'Scheinwerfer defekt \u2013 Boxenstopp repariert'
-                                             : 'Licht an/aus';
+      if (box) box.title = lightDamage.front
+        ? 'Scheinwerfer defekt \u2013 geht unter ' + LIGHT_DEAD_DAMAGE + ' % Schaden wieder'
+        : 'Licht an/aus';
     }
   }
 

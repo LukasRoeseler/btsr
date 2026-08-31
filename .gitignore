@@ -33,6 +33,13 @@ tools/ref/
 tools/parsed_full.txt
 tools/__pycache__/
 
+# Bildschirmfotos der Original-App von Carrera. Fremdmaterial, ausdruecklich nicht auf
+# GitHub. Sie dienen als Vorlage fuer die fehlenden Kurvenkacheln im Streckeneditor.
+app_screenshots/
+
+# Arbeitsdatei zu den Druckvorlagen, nicht Teil der Auslieferung.
+target_practice.pptx
+
 # src/ wird getrackt: es ist die Quelle. index.html ist das Ergebnis von
 # tools/build.py und wird ebenfalls getrackt, damit die Datei per file:// und ueber
 # GitHub Pages ohne Bauschritt laeuft.
