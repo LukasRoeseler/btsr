@@ -78,6 +78,48 @@ Damit sind die fünf Vorlauf- und acht Probeblätter aus dem Repo verschwunden: 
 für das sie gebaut wurden, ist gelaufen. `tools/make_patterns.py` erzeugt sie in einem Aufruf
 wieder, falls doch noch eine Probe gebraucht wird.
 
+### Warum die Schienenmuster (noch) nicht entziffert sind
+
+Am 31.08. wurden fünf Infrarot-Aufnahmen echter Streckenteile ausgemessen — Start/Ziel,
+Gerade und Rechtskurve, aus einem Video. Der Versuch ist **gescheitert**, und zwar messbar:
+
+| Prüfmaß | erwartet | gemessen |
+|---|---|---|
+| Restabstand des Fluchtpunkt-Fits der Balkenlinien | wenige px | **237 bis 579 px** |
+| Verhältnis dicker zu dünner Balken | 1,83 | **1,09 bis 1,68** |
+
+Der erste Wert sagt, dass die Balkenlinien sich nicht in *einem* Punkt treffen — sie sind
+also nicht das Bild parallel liegender Weltlinien, und ohne diese Annahme lässt sich das Bild
+nicht entzerren. Der zweite sagt, dass die beiden Breitenklassen im Rauschen verschwimmen:
+JPEG-Kompression auf 20-Pixel-Merkmale, Weitwinkelverzerrung, ein Lichtfleck in der Bildmitte
+und eine Hand im Bild.
+
+Drei Verfahren wurden probiert und alle drei berichtet, weil das Scheitern jeweils eine
+andere Ursache hat:
+
+1. **Waagerechte Abtastlinie** — falsch, weil ein um θ gekippter Balken um 1/cos θ zu breit
+   erscheint. Die Balken fächern von stark gekippt bis senkrecht, und daraus kamen
+   Breitenverhältnisse bis 1:100. Das war Perspektive, nicht Information.
+2. **Dicke senkrecht zum Balken**, über eine Hauptachsenzerlegung je zusammenhängendem
+   Gebiet — richtig gemessen, aber die Ordnung stimmt nicht: eine globale Fahrtrichtung
+   projiziert Balken aus verschiedenen Radien auf dieselbe Achse, und daraus wurden negative
+   Lücken.
+3. **Kleine Felder mit lokal gemessenem Winkel** — sauber, aber je Feld nur 6 bis 9 Balken.
+   Aus so wenigen lässt sich keine Zweiklassen-Trennung belegen, und ein Median-Schnitt
+   erzwingt eine Trennung auch dort, wo alle Balken gleich breit sind.
+
+**Was die Bilder trotzdem belegen**, und beides geht in die Druckvorlagen ein:
+
+- Die Balken bedecken die **ganze** Kachel, 40 und mehr je sichtbarem Abschnitt. Das Wort
+  wiederholt sich also fortlaufend, damit das Auto es liest, wo immer es auffährt.
+- In Kurven laufen die Balken **radial**. Sie treffen sich im Kurvenmittelpunkt, nicht in
+  einem perspektivischen Fluchtpunkt — genau deshalb schlug der Fluchtpunkt-Fit dort fehl.
+
+**Was es bräuchte:** einen **Flachbett-Scan** eines echten Streckenteils, 300 dpi, flach
+aufgelegt. Dort gibt es keine Perspektive, keinen Lichtfleck und keine Videokompression, und
+die Balkenbreiten sind direkt in Millimetern messbar. Ein einziger Scan einer Geraden und
+einer Kurve würde beide Wörter liefern.
+
 ### Die Maße des Start/Ziel-Musters
 
 Aus `target_finish.pdf` ausgelesen, nicht nachgemessen (`tools/make_pattern.py`):

@@ -5034,6 +5034,57 @@
         </div>
       </div>
 
+      <h3 style="font-size:14px; margin:22px 0 6px 0; padding-top:16px;
+                 border-top:1px solid var(--line)">Schneidebogen: vier Marken je Blatt</h3>
+      <p class="muted" style="font-size:11.5px">
+        A4 hochkant, vier vollst&auml;ndige Start/Ziel-Muster &uuml;bereinander mit
+        Schnittlinien. Das ist die sparsame Fassung: weil ein Wort ohne Vorlauf gen&uuml;gt,
+        sind es 54,2 statt 75,5&nbsp;mm je Marke, und davon passen vier auf ein Blatt. Die
+        Balken sind 176&nbsp;mm breit; das Kontrollma&szlig; steht senkrecht im linken Rand.
+      </p>
+      <div class="row" style="gap:8px; flex-wrap:wrap">
+        <a href="spur-schneidebogen-a4.svg" download="spur-schneidebogen-a4.svg">
+          <button class="primary">Schneidebogen (4 Marken)</button></a>
+      </div>
+
+      <h3 style="font-size:14px; margin:22px 0 6px 0; padding-top:16px;
+                 border-top:1px solid var(--line)">Bahn zum Auslegen
+        <span class="wip-tag">experimentell</span></h3>
+      <p class="muted" style="font-size:11.5px">
+        Durchgehend bedruckte Streckenteile: die Gerade als zwei A4-Bl&auml;tter quer
+        (je 202&nbsp;mm Fahrweg), die 30-Grad-Kurve als zwei Bl&auml;tter mit je 15&nbsp;Grad.
+        Die Kurvenbalken laufen radial mit konstanter Bogenl&auml;nge auf der Mittellinie
+        &ndash; nicht mit konstantem Winkel, sonst w&auml;re das Modulma&szlig; am
+        &auml;u&szlig;eren Rand gr&ouml;&szlig;er als am inneren und der Sensor l&auml;se je
+        nach Linie eine andere Folge. Genau so sehen die Infrarot-Aufnahmen der echten Kurve
+        auch aus.
+      </p>
+      <p class="muted" style="font-size:11.5px; border-left:3px solid var(--warn);
+         padding-left:9px">
+        <b>Warum experimentell, in zwei Punkten.</b>
+      </p>
+      <p class="muted" style="font-size:11.5px; border-left:3px solid var(--warn);
+         padding-left:9px; margin-top:0">
+        Erstens tragen diese Bl&auml;tter das Wort von &bdquo;Start/Ziel&ldquo;. Die
+        W&ouml;rter f&uuml;r Gerade und Rechtskurve sind nicht entziffert &ndash; der
+        Versuch, sie aus Infrarot-Videobildern der echten Schiene zu lesen, ist gescheitert.
+        Eine so ausgelegte Bahn meldet also &uuml;berall Start/Ziel und ist als Strecke
+        falsch; sie ist ein Versuchsblatt. Zweitens ist nicht entschieden, ob eine
+        Papierbahn &uuml;berhaupt wie die echte gelesen wird: das h&auml;ngt an der
+        Infrarot-R&uuml;ckstrahlung von Toner und Papier. Ein Blatt, das gedruckt aussieht
+        wie die Bahn, ist noch keine Bahn.
+      </p>
+      <div class="row" style="gap:8px; flex-wrap:wrap">
+        <a href="spur-gerade-1-a4.svg" download="spur-gerade-1-a4.svg">
+          <button>Gerade, Blatt 1</button></a>
+        <a href="spur-gerade-2-a4.svg" download="spur-gerade-2-a4.svg">
+          <button>Gerade, Blatt 2</button></a>
+        <a href="spur-kurve-1-a4.svg" download="spur-kurve-1-a4.svg">
+          <button>Kurve, Blatt 1</button></a>
+        <a href="spur-kurve-2-a4.svg" download="spur-kurve-2-a4.svg">
+          <button>Kurve, Blatt 2</button></a>
+      </div>
+
       <!-- Boxengasse, vorlaeufig auskommentiert. Das Blatt wurde nicht erkannt, und die
            Nummernwahl 14/18/22 stand auf der Katalognummern-Vermutung, die mit der
            falschen Druck-Diagnose zusammen faellt. Sie kommt zurueck, sobald aus den
@@ -5127,7 +5178,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.4.27</span></span>
+    <span class="foot-ver">v<span id="app-version">0.4.28</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
