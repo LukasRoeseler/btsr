@@ -488,7 +488,16 @@
       }
       ring.setAttribute('stroke', col);
       $('race-tyre-temp').textContent = Math.round(t) + '\u00b0';
-      $('race-tyre-wear').textContent = 'Abnutzung ' + Math.round(st.tyreWear * 100) + '%';
+      // Nur noch die Zahl: das Wort steht im Markup und wird dort per Medienabfrage
+      // ausgeblendet. Es hier mitzuschreiben haette die Abfrage wirkungslos gemacht.
+      $('race-tyre-wear').textContent = Math.round(st.tyreWear * 100) + '%';
+      // Restliche Lauffleche, dieselbe Richtung und dieselben Schwellen wie beim Schaden
+      // (55 % und 20 %). Eine eigene Schwelle hier waere eine zweite Regel fuer dieselbe
+      // Aussage "es wird knapp".
+      const rest = Math.max(0, Math.min(100, 100 - st.tyreWear * 100));
+      setSty('race-tyre-bar', 'width', rest + '%');
+      setSty('race-tyre-bar', 'background', rest <= 20 ? '#ff5c5c'
+                                          : (rest <= 55 ? 'var(--warn)' : 'var(--good)'));
     }
 
     // Dieselben zwei Groessen, die auf dem Steuerkreuz liegen - hoch/runter und

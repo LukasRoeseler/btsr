@@ -814,7 +814,14 @@
     "Steuern": "Drive",
     "Stoppen": "Stop",
     "Strafe je verpasstem Stopp (s)": "Penalty per missed stop (s)",
-    "Strecke aus Teilen bauen, drehen, als Code weitergeben.": "Build a track from parts, rotate it, pass it on as a code.",
+    "Strecke aus Teilen bauen, drehen, als Code weitergeben. Zwei Kurventypen der Original-App fehlen noch – ihre Maße sind nicht bekannt.":
+      "Build a track from pieces, rotate it, pass it on as a code. Two curve types from the original app are still missing – their dimensions are not known.",
+    "Die Palette ist nicht vollständig.": "The palette is incomplete.",
+    "Die Original-App hat neun Kacheltypen, hier sind es sechs: es fehlen eine lange flache Kurve und eine Keilkurve. Ihre Maße stehen nirgends – die Angabe oben im Original-Editor ist der Umriss des":
+      "The original app has nine tile types, this one has six: a long shallow curve and a wedge curve are missing. Their dimensions are written down nowhere – the figure at the top of the original editor is the bounding box of the",
+    "ganzen": "whole",
+    "Layouts und nicht der Kachel. Sie kommen dazu, sobald eine Schließmessung vorliegt: eine kleine geschlossene Runde mit der neuen Kachel, und dann fallen Radius und Winkel eindeutig heraus – so wie bei der Haarnadel.":
+      "layout, not of the tile. They will be added once a closing measurement exists: a small closed loop with the new tile, and radius and angle fall out uniquely – the same way the hairpin was solved.",
     "Strecke beim Fahren lernen": "Learn the track while driving",
     "Strecke": "Track",
     "Strecken benennen, laden und wieder löschen.": "Name tracks, load them and delete them again.",

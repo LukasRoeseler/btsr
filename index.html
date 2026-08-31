@@ -625,6 +625,22 @@
     .gt3-times > div + div { border-top: 0; border-left: 1px solid #1b2230;
                              padding-top: 0; padding-left: clamp(4px, .8vw, 10px); }
   }
+  /* Balance und Lenkansprechen: je Zeile ein Symbol und eine Zahl, mittig in der Kachel.
+     Mittig senkrecht UND waagerecht, weil die Kachel im Streifen so hoch ist wie ihre
+     Nachbarn und der Inhalt sonst oben klebt. */
+  /* Der Reifentext darf die Kachel nicht verlassen - eine Kachel, die ihre Nachbarin
+     ueberschreibt, ist schlimmer als eine abgeschnittene Beschriftung. */
+  .gt3-tyre { min-width: 0; }
+  .gt3-tyre > div { min-width: 0; overflow: hidden; }
+  @media (max-width: 560px) { .tyre-wear-word { display: none; } }
+  .gt3-trim { display: flex; flex-direction: column; justify-content: center;
+    gap: clamp(2px, .5vw, 6px); }
+  .gt3-trim-row { display: flex; align-items: center; justify-content: center;
+    gap: clamp(3px, .7vw, 7px); }
+  .gt3-trim-row svg { width: clamp(13px, 2.6vw, 18px); height: clamp(13px, 2.6vw, 18px);
+    flex: none; color: #8b99b4; }
+  .gt3-trim-row b { font-family: monospace; font-weight: 700;
+    font-size: clamp(11px, 1.8vw, 17px); }
   .gt3-laps { list-style: none; margin: 2px 0 0 0; padding: 0; overflow-y: auto;
     max-height: clamp(34px, 8vw, 74px); font-family: monospace;
     font-size: clamp(9px, 1.2vw, 12px); }
@@ -1785,8 +1801,18 @@
               <circle cx="12" cy="12" r="4.5" fill="#2a3346"/>
             </svg>
             <div><div class="gt3-val sm" id="race-tyre-temp">&ndash;</div>
-              <div class="gt3-lbl" id="race-tyre-wear">&ndash;</div></div>
-          </div></div>
+              <!-- Das Wort steht in einem eigenen Element und faellt unter 560 px weg:
+                   gemessen brauchte "Abnutzung 0%" 83 px in einer 77 px breiten Kachel und
+                   schob sich ueber die Akkukachel. Der Balken darunter sagt dasselbe ohne
+                   Buchstaben, das Wort ist also der verzichtbare Teil. -->
+              <div class="gt3-lbl"><span class="tyre-wear-word">Abnutzung
+                </span><span id="race-tyre-wear">&ndash;</span></div></div>
+          </div>
+          <!-- Wie bei Tank und Schaden, und in derselben Richtung: der Balken zeigt die
+               RESTLICHE Lauffl&auml;che, nicht die Abnutzung. Drei Balken, die gleich
+               leerlaufen, liest man mit einem Blick; einer, der gegenl&auml;ufig f&uuml;llt,
+               kostet jedes Mal einen Gedanken. -->
+          <div class="gt3-bar"><i id="race-tyre-bar"></i></div></div>
         <div class="gt3-box"><svg class="gt3-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-label="Akku"><rect x="2" y="7" width="17" height="10" rx="2"/><path d="M22 11v2"/><path d="M6 10v4M9.5 10v4M13 10v4"/></svg>
           <div class="gt3-val sm" id="race-batt">&ndash;</div></div>
         <div class="gt3-box gt3-click" id="race-light-box" title="Licht an/aus" style="display:flex;align-items:center;justify-content:center">
@@ -1794,10 +1820,27 @@
         <div class="gt3-box gt3-click gt3-wx" id="race-wx-box" title="Wetter umschalten">
           <div class="gt3-tell"><svg class="gt3-ico" id="race-wx-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-label="Trocken"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.4M12 19.6V22M2 12h2.4M19.6 12H22M4.9 4.9l1.7 1.7M17.4 17.4l1.7 1.7M19.1 4.9l-1.7 1.7M6.6 17.4l-1.7 1.7"/></svg><svg class="gt3-ico" id="race-wx-rain" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-label="Regen" style="display:none"><path d="M6.5 14a4 4 0 0 1 .4-8 5.5 5.5 0 0 1 10.5 1.4A3.6 3.6 0 0 1 17.5 14z"/><path d="M8 17.5l-1 2.5M12 17.5l-1 2.5M16 17.5l-1 2.5"/></svg></div></div>
         <!-- Was auf dem Steuerkreuz liegt: hoch/runter Bremsbalance, links/rechts
-             Lenkansprechen. Die Kachel und das Kreuz zeigen dieselben zwei Groessen. -->
-        <div class="gt3-box"><div class="gt3-lbl">Balance / Lenkung</div>
-          <div class="gt3-val sm"><span id="race-trim-accel">100%</span>
-            <span style="color:#7c8aa6">&middot;</span> <span id="race-trim-steer">100%</span></div></div>
+             Lenkansprechen. Die Kachel und das Kreuz zeigen dieselben zwei Groessen.
+
+             Je Zahl ein eigenes Symbol: vorher stand "100% . 100%" unter einer
+             Beschriftung, in der beide Groessen im Text steckten, und man musste wissen,
+             welche Zahl welche ist. Zwei ZEILEN und nicht zwei Spalten, weil die Kachel auf
+             375 px nur rund 85 px breit ist - zwei Spalten waeren 40 px, und darin steht
+             keine dreistellige Prozentzahl.
+
+             Das Lenkrad ist dasselbe wie auf der Optionen-Kachel "Fahrgefuehl": ein neues
+             Symbol fuer eine bekannte Sache waere eine zweite Vokabel. -->
+        <div class="gt3-box gt3-trim">
+          <div class="gt3-trim-row" title="Bremsbalance, Anteil vorn (Steuerkreuz hoch/runter)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+                 stroke-linecap="round" aria-label="Bremsbalance"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.6"/><path d="M12 4v3.2M12 16.8V20" stroke="var(--bad)"/><path d="M18.4 8.6l-2.8 1.6M8.4 13.8l-2.8 1.6"/></svg>
+            <b id="race-trim-accel">62%</b>
+          </div>
+          <div class="gt3-trim-row" title="Lenkansprechen (Steuerkreuz links/rechts)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+                 stroke-linecap="round" aria-label="Lenkansprechen"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="2.4"/><path d="M12 3.5v6M6.2 17.4l4.2-3.1M17.8 17.4l-4.2-3.1" stroke="var(--bad)"/></svg>
+            <b id="race-trim-steer">100%</b>
+          </div></div>
         <div class="gt3-box gt3-gplot" id="race-gplot">
           <div class="gt3-lbl"><span style="color:#ff4d4d">Sim</span> &middot; <span style="color:#2ee06a">Roh</span></div>
           <svg viewBox="0 0 100 100" aria-label="Querkraft und L&auml;ngskraft">
@@ -4553,8 +4596,9 @@
         <button class="misc-tile subpage-open" data-sub="edit">
           <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 40 40 8l6 6L14 46H8z"/><path d="M34 14l6 6" stroke="var(--bad)"/></svg>
-          <b>Editor</b>
-          <span>Strecke aus Teilen bauen, drehen, als Code weitergeben.</span>
+          <b>Editor <span class="wip-tag">WIP</span></b>
+          <span>Strecke aus Teilen bauen, drehen, als Code weitergeben. Zwei Kurventypen
+            der Original-App fehlen noch &ndash; ihre Ma&szlig;e sind nicht bekannt.</span>
         </button>
         <button class="misc-tile subpage-open" data-sub="print">
           <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
@@ -4628,6 +4672,16 @@
             <span class="tp-cap">Schlie&szlig;en</span></button>
         </div>
         <div id="track-preview-svg"></div>
+        <p class="muted" style="border-left:3px solid var(--warn); padding-left:9px;
+           font-size:12px">
+          <b>Die Palette ist nicht vollst&auml;ndig.</b> Die Original-App hat neun
+          Kacheltypen, hier sind es sechs: es fehlen eine lange flache Kurve und eine
+          Keilkurve. Ihre Ma&szlig;e stehen nirgends &ndash; die Angabe oben im
+          Original-Editor ist der Umriss des <em>ganzen</em> Layouts und nicht der Kachel.
+          Sie kommen dazu, sobald eine Schlie&szlig;messung vorliegt: eine kleine
+          geschlossene Runde mit der neuen Kachel, und dann fallen Radius und Winkel
+          eindeutig heraus &ndash; so wie bei der Haarnadel.
+        </p>
         <div class="tp-bar" id="track-palette"></div>
         <span class="tp-space" id="track-space"></span>
       </div>
@@ -4928,7 +4982,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.4.20</span></span>
+    <span class="foot-ver">v<span id="app-version">0.4.21</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -5774,7 +5828,14 @@
     "Steuern": "Drive",
     "Stoppen": "Stop",
     "Strafe je verpasstem Stopp (s)": "Penalty per missed stop (s)",
-    "Strecke aus Teilen bauen, drehen, als Code weitergeben.": "Build a track from parts, rotate it, pass it on as a code.",
+    "Strecke aus Teilen bauen, drehen, als Code weitergeben. Zwei Kurventypen der Original-App fehlen noch – ihre Maße sind nicht bekannt.":
+      "Build a track from pieces, rotate it, pass it on as a code. Two curve types from the original app are still missing – their dimensions are not known.",
+    "Die Palette ist nicht vollständig.": "The palette is incomplete.",
+    "Die Original-App hat neun Kacheltypen, hier sind es sechs: es fehlen eine lange flache Kurve und eine Keilkurve. Ihre Maße stehen nirgends – die Angabe oben im Original-Editor ist der Umriss des":
+      "The original app has nine tile types, this one has six: a long shallow curve and a wedge curve are missing. Their dimensions are written down nowhere – the figure at the top of the original editor is the bounding box of the",
+    "ganzen": "whole",
+    "Layouts und nicht der Kachel. Sie kommen dazu, sobald eine Schließmessung vorliegt: eine kleine geschlossene Runde mit der neuen Kachel, und dann fallen Radius und Winkel eindeutig heraus – so wie bei der Haarnadel.":
+      "layout, not of the tile. They will be added once a closing measurement exists: a small closed loop with the new tile, and radius and angle fall out uniquely – the same way the hairpin was solved.",
     "Strecke beim Fahren lernen": "Learn the track while driving",
     "Strecke": "Track",
     "Strecken benennen, laden und wieder löschen.": "Name tracks, load them and delete them again.",
@@ -8792,7 +8853,16 @@
       }
       ring.setAttribute('stroke', col);
       $('race-tyre-temp').textContent = Math.round(t) + '\u00b0';
-      $('race-tyre-wear').textContent = 'Abnutzung ' + Math.round(st.tyreWear * 100) + '%';
+      // Nur noch die Zahl: das Wort steht im Markup und wird dort per Medienabfrage
+      // ausgeblendet. Es hier mitzuschreiben haette die Abfrage wirkungslos gemacht.
+      $('race-tyre-wear').textContent = Math.round(st.tyreWear * 100) + '%';
+      // Restliche Lauffleche, dieselbe Richtung und dieselben Schwellen wie beim Schaden
+      // (55 % und 20 %). Eine eigene Schwelle hier waere eine zweite Regel fuer dieselbe
+      // Aussage "es wird knapp".
+      const rest = Math.max(0, Math.min(100, 100 - st.tyreWear * 100));
+      setSty('race-tyre-bar', 'width', rest + '%');
+      setSty('race-tyre-bar', 'background', rest <= 20 ? '#ff5c5c'
+                                          : (rest <= 55 ? 'var(--warn)' : 'var(--good)'));
     }
 
     // Dieselben zwei Groessen, die auf dem Steuerkreuz liegen - hoch/runter und
