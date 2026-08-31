@@ -20,7 +20,6 @@
                                  // car, that is what answers properly. The ceiling was
                                  // raised from 2.0 so the default is not also the limit.
         speedSteerReduction: 0.35, // and only weighted by gear, see update()
-        trailBrakingGripBonus: 1.1,
         autoShift: true,  // Automatik als Standard
 
         // Anchored to real-world numbers instead of abstract 0..1 units, so the feel can
@@ -163,13 +162,15 @@
         // 82°C and full attack (~0.95) at 111°C, just into the overheating range. The first
         // pair tried, 4.0/1.5, ran to 171°C on ordinary driving — permanently in the red,
         // which would have made the whole model read as broken.
-        tyreHeatRate: 5.0,     // °C/s at full work
+        tyreHeatRate: 7.0,     // °C/s bei voller Arbeit (v0.4: von 5,0 herauf)
         tyreCoolRate: 3.4,     // °C/s at optimum; time constant ~19 s
-        tyreOverheatC: 110,
-        tyreColdPenalty: 0.35, // grip lost on stone-cold tyres
-        tyreHotPenalty: 0.30,  // grip lost when thoroughly overheated
-        tyreWearRate: 0.0018,  // worn out after ~8 min of full attack, longer if driven tidily
-        tyreWearPenalty: 0.30, // grip lost on completely worn tyres
+        tyreOverheatC: 103,    // v0.4: engeres Fenster, von 110 herunter
+        tyreColdPenalty: 0.42, // Griffverlust auf eiskalten Reifen (v0.4: von 0,35)
+        tyreHotPenalty: 0.38,  // Griffverlust bei durchgeheizten Reifen (v0.4: von 0,30)
+        // v0.4 von 0,0018 herauf: bei 100 % war der Verschleiss ueber eine Rennlaenge
+        // kaum zu merken. Jetzt abgefahren nach gut vier Minuten voller Attacke.
+        tyreWearRate: 0.0032,
+        tyreWearPenalty: 0.35, // Griffverlust auf voellig abgefahrenen Reifen (v0.4: von 0,30)
         shiftDragFactor: 0.25, // drag during a shift: a slight lull, not a full coast-down
         accelCalibration: 1,   // solved for in calibrateAccel(), see there
         speedLimitFactor: 1,   // pit lane sets this to 0.4; caps speed, so the byte caps too
@@ -223,6 +224,18 @@
         // application the fronts are already loaded but not yet busy — which is exactly the
         // brief turn-in advantage a driver feels — and only afterwards does the brake force
         // eat that grip up again.
+        // ---- Bremsbalance ----
+        // Anteil der Bremskraft, der an der VORDERACHSE ankommt. 62 % ist ein
+        // ueblicher GT3-Wert und zugleich der Bezugswert der Kalibrierung: bei genau
+        // diesem Wert rechnet das Modell wie vor v0.4, der Regler ist in Mittelstellung
+        // also ein Nichts-Tun. Das ist Absicht - ein neuer Parameter an einem
+        // kalibrierten Modell darf die Kalibrierung nicht verschieben.
+        brakeBias: 0.62,
+        brakeBiasRef: 0.62,
+        // Reifen-Lastempfindlichkeit k_sens aus C(Fz) = C0*(Fz/Fz0)*[1 - k*((Fz-Fz0)/Fz0)].
+        // Sie ersetzt das lineare loadGain: eine hoeher belastete Achse gewinnt Haftung,
+        // aber unterproportional, und genau diese Kruemmung fehlte vorher.
+        tyreLoadSens: 0.25,
         transferK: 0.30,      // share of the load that moves at 1g
         loadTau: 0.08,        // body pitch (squat and dive): fast
         useTau: 0.45,         // longitudinal tyre force build-up: distinctly slower
@@ -542,7 +555,16 @@
       // der Reibkreis beim Bremsen GROESSER als im Normalzustand. Gemessen: steerGrip 1,25
       // beim Anbremsen aus 120 km/h, also mehr Lenkung als rollend. Das ist die eine Haelfte
       // der Beschwerde "erst beim Bremsen kann ich gut lenken".
-      const frontCap = Math.min(1, 1 + cfg.loadGain * (st.loadFront - 0.5) * 2) * surfSteer;
+      // Lastempfindlichkeit statt linearem Zuwachs. u ist Fz/Fz0, im Stand genau 1,
+      // beim Anbremsen bis etwa 1,6 und unter Zug bis herunter auf 0,4.
+      const uF = st.loadFront / 0.5;
+      const capRaw = uF * (1 - cfg.tyreLoadSens * (uF - 1));
+      // Der Deckel bei 1 bleibt, und er ist eine Aussage ueber das SERVO: steerGrip
+      // skaliert den ausgegebenen Lenkwinkel, und ueber Vollausschlag hinaus gibt es dort
+      // nichts zu holen. Ohne ihn waere der Reibkreis beim Bremsen groesser als im Rollen,
+      // gemessen 1,25 beim Anbremsen aus 120 km/h - die eine Haelfte der Beschwerde
+      // "erst beim Bremsen kann ich gut lenken".
+      const frontCap = Math.min(1, Math.max(0.15, capRaw)) * surfSteer;
       // Die Anforderung skaliert mit der Fahrt, und zwar aus demselben Grund wie beim
       // Regen ein paar Zeilen weiter oben: bei 20 km/h braucht eine Vollbremsung einen
       // Bruchteil der verfuegbaren Haftung, das Auto steht nach zwei Metern; bei 250 km/h
@@ -554,12 +576,18 @@
       // ab der zweiten voll.
       const lastFrac = Math.max(0, Math.min(1,
         (vFrac - cfg.loadOnsetFrac) / Math.max(1e-6, cfg.loadFullFrac - cfg.loadOnsetFrac)));
-      const frontUse = Math.max(0, -st.longUse) * cfg.brakeUseGain * lastFrac;
+      // Die Bremsbalance sitzt HIER und nicht an maxSteerLimit. Das ist der Unterschied
+      // zum alten Trail-Braking-Bonus: der wirkte auf die erlaubte Lenkvorgabe und wurde
+      // von Math.min(1, ...) im 1. Gang und bei niedrigem Tempo vollstaendig weggeschnitten.
+      // Die Balance wirkt auf die ANFORDERUNG an die Vorderachse und damit in jedem Gang
+      // und bei jedem Tempo.
+      const biasK = cfg.brakeBias / Math.max(1e-6, cfg.brakeBiasRef);
+      const frontUse = Math.max(0, -st.longUse) * cfg.brakeUseGain * biasK * lastFrac;
       // The 0.12 floor is a dry-weather reserve: it stops the car ever being completely
       // helpless. In the wet there is no such reserve - once the brake has eaten the front
       // axle, the friction circle really is empty and the steering does nothing. So the
       // floor is scaled away with wetness instead of a separate rule being invented.
-      st.steerGrip = Math.max(0.12 * (1 - wet), Math.min(1.25,
+      st.steerGrip = Math.max(0.12 * (1 - wet), Math.min(1,
         Math.sqrt(Math.max(0, frontCap * frontCap - frontUse * frontUse))))
         * st.tyreGrip;   // cold or worn tyres will not turn the car either
       // Rear axle drives. Normalised to the on-power equilibrium (see config), so this term
@@ -743,11 +771,13 @@
       // keeps everything it has, because that is where the tight stuff gets driven.
       const gearFrac = cfg.gears.length > 1
         ? Math.min(1, st.currentGear / (cfg.gears.length - 1)) : 0;
-      let maxSteerLimit = 1.0 - this.state.virtualSpeed * cfg.speedSteerReduction * gearFrac;
-      // Gate on forward braking: pitch is negative in reverse too, which would otherwise
-      // hand reverse an unintended grip bonus.
-      if (!reversing && isBraking) maxSteerLimit *= cfg.trailBrakingGripBonus;
-      maxSteerLimit = Math.min(1, maxSteerLimit);
+      // Hier stand bis v0.4 ein Trail-Braking-Bonus auf die Lenkgrenze. Er war im 1. Gang
+      // (gearFrac = 0, also maxSteerLimit exakt 1,0) und bei niedrigem Tempo durch das
+      // Math.min(1, ...) darunter vollstaendig weggeschnitten und deshalb nicht spuerbar.
+      // Sein Nachfolger ist die Bremsbalance im Reibkreis weiter oben, die auf die
+      // ANFORDERUNG wirkt statt auf die erlaubte Vorgabe - und damit in jedem Gang.
+      const maxSteerLimit = Math.min(1,
+        1.0 - this.state.virtualSpeed * cfg.speedSteerReduction * gearFrac);
       const targetSteer = Math.max(-1, Math.min(1,
         expoSteer * maxSteerLimit * cfg.steerResponse));
 

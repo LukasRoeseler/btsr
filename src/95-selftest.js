@@ -1002,6 +1002,88 @@
     }
   });
 
+  // ---- Die Bremsbalance wirkt, und in welcher Richtung ----
+  //
+  // Ihr Vorgaenger, ein Bonus auf maxSteerLimit, wurde im 1. Gang (gearFrac = 0, also
+  // maxSteerLimit exakt 1,0) durch das folgende Math.min(1, ...) vollstaendig weggeschnitten
+  // und war deshalb nicht spuerbar. Diese Pruefung faellt genau dann durch.
+  //
+  // Gemessen wird an der GEFAHRENEN Spur und nicht an einem Beharrungspunkt: eine fruehere
+  // Messung bei festen 150 km/h mit Vollbremse ergab 12 %, die gefahrene Spur 38 %. Der
+  // Zustand, an dem sie gemessen hatte, kommt im Fahrbetrieb nie vor.
+  stAdd('Bremsbalance aendert die Lenkung beim Bremsen', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.physSteerTrace) {
+      return { skip: true, mass: 'physSteerTrace nicht vorhanden' };
+    }
+    const gemerkt = physEngine.config.brakeBias;
+    try {
+      const q = (pct) => {
+        physEngine.config.brakeBias = pct / 100;
+        const r = OMEGA_TEST.physSteerTrace({ bisKmh: 200, brake: 1, steering: 0.6 });
+        let b = null;
+        for (const x of r.bremsspur) {
+          if (!b || Math.abs(x.kmh - 140) < Math.abs(b.kmh - 140)) b = x;
+        }
+        if (!b) return null;
+        return { bei140: b.winkel / Math.max(1e-6, r.rollen.winkel),
+                 stand: r.imStand / Math.max(1e-6, r.rollen.winkel) };
+      };
+      const v = q(50), m = q(62), h = q(80);
+      if (!v || !m || !h) return { skip: true, mass: 'Bremsspur zu kurz' };
+      // Erstens streng fallend: mehr Bremse vorn heisst weniger Lenkung. Zweitens ein
+      // deutlicher Abstand, sonst ist der Regler wieder nur nominell da. Und drittens darf
+      // die Balance im STAND nichts aendern - dort spielt die Bremse keine Rolle, und das
+      // war der Fehler, gegen den die Tempoabhaengigkeit ueberhaupt eingebaut wurde.
+      const fallend = v.bei140 > m.bei140 && m.bei140 > h.bei140;
+      const spanne = v.bei140 - h.bei140;
+      const standGleich = Math.abs(v.stand - h.stand) < 0.02 && h.stand > 0.95;
+      return { ok: fallend && spanne > 0.25 && standGleich,
+               mass: '140 km/h: 50 % vorn ' + Math.round(v.bei140 * 100)
+                     + ' %, 62 % vorn ' + Math.round(m.bei140 * 100)
+                     + ' %, 80 % vorn ' + Math.round(h.bei140 * 100)
+                     + ' % | Spanne ' + Math.round(spanne * 100)
+                     + ' Punkte, im Stand ' + Math.round(h.stand * 100) + ' %' };
+    } finally {
+      physEngine.config.brakeBias = gemerkt;
+    }
+  });
+
+  // ---- Der Lichtschaden geht bei der Reparatur wieder weg ----
+  //
+  // Er wurde gesetzt und nie zurueckgenommen: es gab im ganzen Projekt keine Zuweisung
+  // lightDamage.front = false. Boxenstopp-Reparatur, resetCarState() und die Taste R setzen
+  // alle nur damage = 0, waehrend der Tooltip "Boxenstopp repariert" versprach.
+  //
+  // Geprueft wird der Zustand ueber updateDamageFuelUI(), also den Weg, den alle drei
+  // Ruecksetzwege ohnehin nehmen - nicht syncLightDamage() direkt. Eine Pruefung, die die
+  // Funktion selbst aufruft, prueft nur, dass die Funktion existiert.
+  stAdd('Reparatur macht die Beleuchtung wieder heil', () => {
+    const gemerkt = { d: damage, f: lightDamage.front, r: lightDamage.rear };
+    try {
+      damage = 80;
+      lightDamage.front = true;
+      lightDamage.rear = false;
+      updateDamageFuelUI();
+      const kaputt = lightDamage.front;
+      // Ueber der Schwelle darf nichts passieren, sonst waere aus der Ableitung ein
+      // Zuruecksetzen bei jedem Bild geworden.
+      damage = LIGHT_DEAD_DAMAGE - 0.5;
+      updateDamageFuelUI();
+      const heil = !lightDamage.front && !lightDamage.rear;
+      const text = ($('dash-light-dmg') || {}).textContent;
+      return { ok: kaputt && heil && !text,
+               mass: 'bei 80 % Schaden defekt: ' + (kaputt ? 'ja' : 'NEIN')
+                     + ', unter ' + LIGHT_DEAD_DAMAGE + ' % heil: '
+                     + (heil ? 'ja' : 'NEIN') + ', Anzeigetext "' + text + '"' };
+    } finally {
+      damage = gemerkt.d;
+      lightDamage.front = gemerkt.f;
+      lightDamage.rear = gemerkt.r;
+      updateLightTellTales();
+      updateDamageFuelUI();
+    }
+  });
+
   // ---- Ausfuehren und anzeigen ----
   async function runSelfTest() {
     const rows = $('st-rows');

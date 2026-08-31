@@ -3841,14 +3841,16 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="phys-accel-val">1.00</span>
         </div></div>
-      <div class="opt-row"><div class="opt-label">Trail-Braking-Grip-Bonus
-          <small>Erlaubt beim Anbremsen mehr Lenkung. Nicht die Gewichtsverlagerung, sondern
-          ihr Gegenst&uuml;ck in der Lenkgrenze.</small></div>
+      <div class="opt-row"><div class="opt-label">Bremsbalance
+          <small>Wieviel der Bremse an der Vorderachse ankommt. <b>Nach vorn</b>: das Auto
+          schiebt beim Anbremsen geradeaus. <b>Nach hinten</b>: mehr Lenkung beim Anbremsen,
+          also Trail-Braking, daf&uuml;r wird das Heck leicht. 62 % ist die
+          Mittelstellung und &auml;ndert nichts.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="phys-trailbrake" min="1.0" max="1.3" step="0.05" value="1.1">
+          <input type="range" id="setting-brakebias" min="50" max="80" step="1" value="62">
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="phys-trailbrake-val">1.10</span>
+          <span class="opt-val" id="setting-brakebias-val">62% vorn</span>
         </div></div>
       
     </div>
@@ -4651,7 +4653,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.4.13</span></span>
+    <span class="foot-ver">v<span id="app-version">0.4.14</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
   </span>
   <span class="foot-right">
@@ -5528,7 +5530,16 @@
     "Tipp: Öffne in Chrome": "Tip: open in Chrome",
     "Ton bei Lichthupe": "Headlight-flash sound",
     "Ton": "Sound",
-    "Trail-Braking-Grip-Bonus": "Trail-braking grip bonus",
+    // v0.4: aus dem Trail-Braking-Bonus ist die Bremsbalance geworden. Der Bonus wirkte
+    // auf die Lenkgrenze und wurde dort weggeklemmt; die Balance wirkt auf die Anforderung
+    // an die Vorderachse.
+    "Bremsbalance": "Brake bias",
+    "Wieviel der Bremse an der Vorderachse ankommt.": "How much of the brake reaches the front axle.",
+    "Nach vorn": "Forward",
+    ": das Auto schiebt beim Anbremsen geradeaus.": ": the car pushes straight on under braking.",
+    "Nach hinten": "Rearward",
+    ": mehr Lenkung beim Anbremsen, also Trail-Braking, dafür wird das Heck leicht. 62 % ist die Mittelstellung und ändert nichts.":
+      ": more steering under braking, i.e. trail braking, at the cost of a light rear end. 62% is the middle setting and changes nothing.",
     "Trocken": "Dry",
     "Und vieles mehr …": "And much more …",
     "Variante wählen, dann": "Choose a variant, then",
@@ -6813,7 +6824,6 @@
                                  // car, that is what answers properly. The ceiling was
                                  // raised from 2.0 so the default is not also the limit.
         speedSteerReduction: 0.35, // and only weighted by gear, see update()
-        trailBrakingGripBonus: 1.1,
         autoShift: true,  // Automatik als Standard
 
         // Anchored to real-world numbers instead of abstract 0..1 units, so the feel can
@@ -6956,13 +6966,15 @@
         // 82°C and full attack (~0.95) at 111°C, just into the overheating range. The first
         // pair tried, 4.0/1.5, ran to 171°C on ordinary driving — permanently in the red,
         // which would have made the whole model read as broken.
-        tyreHeatRate: 5.0,     // °C/s at full work
+        tyreHeatRate: 7.0,     // °C/s bei voller Arbeit (v0.4: von 5,0 herauf)
         tyreCoolRate: 3.4,     // °C/s at optimum; time constant ~19 s
-        tyreOverheatC: 110,
-        tyreColdPenalty: 0.35, // grip lost on stone-cold tyres
-        tyreHotPenalty: 0.30,  // grip lost when thoroughly overheated
-        tyreWearRate: 0.0018,  // worn out after ~8 min of full attack, longer if driven tidily
-        tyreWearPenalty: 0.30, // grip lost on completely worn tyres
+        tyreOverheatC: 103,    // v0.4: engeres Fenster, von 110 herunter
+        tyreColdPenalty: 0.42, // Griffverlust auf eiskalten Reifen (v0.4: von 0,35)
+        tyreHotPenalty: 0.38,  // Griffverlust bei durchgeheizten Reifen (v0.4: von 0,30)
+        // v0.4 von 0,0018 herauf: bei 100 % war der Verschleiss ueber eine Rennlaenge
+        // kaum zu merken. Jetzt abgefahren nach gut vier Minuten voller Attacke.
+        tyreWearRate: 0.0032,
+        tyreWearPenalty: 0.35, // Griffverlust auf voellig abgefahrenen Reifen (v0.4: von 0,30)
         shiftDragFactor: 0.25, // drag during a shift: a slight lull, not a full coast-down
         accelCalibration: 1,   // solved for in calibrateAccel(), see there
         speedLimitFactor: 1,   // pit lane sets this to 0.4; caps speed, so the byte caps too
@@ -7016,6 +7028,18 @@
         // application the fronts are already loaded but not yet busy — which is exactly the
         // brief turn-in advantage a driver feels — and only afterwards does the brake force
         // eat that grip up again.
+        // ---- Bremsbalance ----
+        // Anteil der Bremskraft, der an der VORDERACHSE ankommt. 62 % ist ein
+        // ueblicher GT3-Wert und zugleich der Bezugswert der Kalibrierung: bei genau
+        // diesem Wert rechnet das Modell wie vor v0.4, der Regler ist in Mittelstellung
+        // also ein Nichts-Tun. Das ist Absicht - ein neuer Parameter an einem
+        // kalibrierten Modell darf die Kalibrierung nicht verschieben.
+        brakeBias: 0.62,
+        brakeBiasRef: 0.62,
+        // Reifen-Lastempfindlichkeit k_sens aus C(Fz) = C0*(Fz/Fz0)*[1 - k*((Fz-Fz0)/Fz0)].
+        // Sie ersetzt das lineare loadGain: eine hoeher belastete Achse gewinnt Haftung,
+        // aber unterproportional, und genau diese Kruemmung fehlte vorher.
+        tyreLoadSens: 0.25,
         transferK: 0.30,      // share of the load that moves at 1g
         loadTau: 0.08,        // body pitch (squat and dive): fast
         useTau: 0.45,         // longitudinal tyre force build-up: distinctly slower
@@ -7335,7 +7359,16 @@
       // der Reibkreis beim Bremsen GROESSER als im Normalzustand. Gemessen: steerGrip 1,25
       // beim Anbremsen aus 120 km/h, also mehr Lenkung als rollend. Das ist die eine Haelfte
       // der Beschwerde "erst beim Bremsen kann ich gut lenken".
-      const frontCap = Math.min(1, 1 + cfg.loadGain * (st.loadFront - 0.5) * 2) * surfSteer;
+      // Lastempfindlichkeit statt linearem Zuwachs. u ist Fz/Fz0, im Stand genau 1,
+      // beim Anbremsen bis etwa 1,6 und unter Zug bis herunter auf 0,4.
+      const uF = st.loadFront / 0.5;
+      const capRaw = uF * (1 - cfg.tyreLoadSens * (uF - 1));
+      // Der Deckel bei 1 bleibt, und er ist eine Aussage ueber das SERVO: steerGrip
+      // skaliert den ausgegebenen Lenkwinkel, und ueber Vollausschlag hinaus gibt es dort
+      // nichts zu holen. Ohne ihn waere der Reibkreis beim Bremsen groesser als im Rollen,
+      // gemessen 1,25 beim Anbremsen aus 120 km/h - die eine Haelfte der Beschwerde
+      // "erst beim Bremsen kann ich gut lenken".
+      const frontCap = Math.min(1, Math.max(0.15, capRaw)) * surfSteer;
       // Die Anforderung skaliert mit der Fahrt, und zwar aus demselben Grund wie beim
       // Regen ein paar Zeilen weiter oben: bei 20 km/h braucht eine Vollbremsung einen
       // Bruchteil der verfuegbaren Haftung, das Auto steht nach zwei Metern; bei 250 km/h
@@ -7347,12 +7380,18 @@
       // ab der zweiten voll.
       const lastFrac = Math.max(0, Math.min(1,
         (vFrac - cfg.loadOnsetFrac) / Math.max(1e-6, cfg.loadFullFrac - cfg.loadOnsetFrac)));
-      const frontUse = Math.max(0, -st.longUse) * cfg.brakeUseGain * lastFrac;
+      // Die Bremsbalance sitzt HIER und nicht an maxSteerLimit. Das ist der Unterschied
+      // zum alten Trail-Braking-Bonus: der wirkte auf die erlaubte Lenkvorgabe und wurde
+      // von Math.min(1, ...) im 1. Gang und bei niedrigem Tempo vollstaendig weggeschnitten.
+      // Die Balance wirkt auf die ANFORDERUNG an die Vorderachse und damit in jedem Gang
+      // und bei jedem Tempo.
+      const biasK = cfg.brakeBias / Math.max(1e-6, cfg.brakeBiasRef);
+      const frontUse = Math.max(0, -st.longUse) * cfg.brakeUseGain * biasK * lastFrac;
       // The 0.12 floor is a dry-weather reserve: it stops the car ever being completely
       // helpless. In the wet there is no such reserve - once the brake has eaten the front
       // axle, the friction circle really is empty and the steering does nothing. So the
       // floor is scaled away with wetness instead of a separate rule being invented.
-      st.steerGrip = Math.max(0.12 * (1 - wet), Math.min(1.25,
+      st.steerGrip = Math.max(0.12 * (1 - wet), Math.min(1,
         Math.sqrt(Math.max(0, frontCap * frontCap - frontUse * frontUse))))
         * st.tyreGrip;   // cold or worn tyres will not turn the car either
       // Rear axle drives. Normalised to the on-power equilibrium (see config), so this term
@@ -7536,11 +7575,13 @@
       // keeps everything it has, because that is where the tight stuff gets driven.
       const gearFrac = cfg.gears.length > 1
         ? Math.min(1, st.currentGear / (cfg.gears.length - 1)) : 0;
-      let maxSteerLimit = 1.0 - this.state.virtualSpeed * cfg.speedSteerReduction * gearFrac;
-      // Gate on forward braking: pitch is negative in reverse too, which would otherwise
-      // hand reverse an unintended grip bonus.
-      if (!reversing && isBraking) maxSteerLimit *= cfg.trailBrakingGripBonus;
-      maxSteerLimit = Math.min(1, maxSteerLimit);
+      // Hier stand bis v0.4 ein Trail-Braking-Bonus auf die Lenkgrenze. Er war im 1. Gang
+      // (gearFrac = 0, also maxSteerLimit exakt 1,0) und bei niedrigem Tempo durch das
+      // Math.min(1, ...) darunter vollstaendig weggeschnitten und deshalb nicht spuerbar.
+      // Sein Nachfolger ist die Bremsbalance im Reibkreis weiter oben, die auf die
+      // ANFORDERUNG wirkt statt auf die erlaubte Vorgabe - und damit in jedem Gang.
+      const maxSteerLimit = Math.min(1,
+        1.0 - this.state.virtualSpeed * cfg.speedSteerReduction * gearFrac);
       const targetSteer = Math.max(-1, Math.min(1,
         expoSteer * maxSteerLimit * cfg.steerResponse));
 
@@ -7886,6 +7927,13 @@
 
   $('setting-vibration').addEventListener('change', (e) => { rumbleOn = e.target.checked; });
 
+  // Der Regler steht in PROZENT vorn, die Physik rechnet mit einem Anteil.
+  $('setting-brakebias').addEventListener('input', (e) => {
+    const pct = parseInt(e.target.value, 10);
+    physEngine.config.brakeBias = pct / 100;
+    $('setting-brakebias-val').textContent = pct + '% vorn';
+  });
+
   $('setting-fuel-drain').addEventListener('input', (e) => {
     fuelDrainPerSec = parseFloat(e.target.value);
     $('setting-fuel-drain-val').textContent = fuelDrainPerSec.toFixed(1);
@@ -7919,7 +7967,7 @@
   // Die kalibrierte Vorgabe fuer das Lenkansprechen. Sie ist der Bezug fuer die Anzeige,
   // damit dort 100 % steht, wo der Wert hingehoert - und nicht 200 %.
   const STEER_RESP_REF = 2.0;
-  ['phys-steerresp', 'phys-accel', 'phys-trailbrake'].forEach(id => {
+  ['phys-steerresp', 'phys-accel'].forEach(id => {
     const input = $(id);
     const readout = $(id + '-val');
     const apply = () => {
@@ -7932,7 +7980,6 @@
         $('phys-steerresp-val').textContent = Math.round(v / STEER_RESP_REF * 100) + '%';
       }
       if (id === 'phys-accel') physEngine.config.accelerationFactor = v;
-      if (id === 'phys-trailbrake') physEngine.config.trailBrakingGripBonus = v;
       markDrivetrainChartsDirty();
     };
     input.addEventListener('input', apply);
@@ -18351,6 +18398,88 @@
     }
   });
 
+  // ---- Die Bremsbalance wirkt, und in welcher Richtung ----
+  //
+  // Ihr Vorgaenger, ein Bonus auf maxSteerLimit, wurde im 1. Gang (gearFrac = 0, also
+  // maxSteerLimit exakt 1,0) durch das folgende Math.min(1, ...) vollstaendig weggeschnitten
+  // und war deshalb nicht spuerbar. Diese Pruefung faellt genau dann durch.
+  //
+  // Gemessen wird an der GEFAHRENEN Spur und nicht an einem Beharrungspunkt: eine fruehere
+  // Messung bei festen 150 km/h mit Vollbremse ergab 12 %, die gefahrene Spur 38 %. Der
+  // Zustand, an dem sie gemessen hatte, kommt im Fahrbetrieb nie vor.
+  stAdd('Bremsbalance aendert die Lenkung beim Bremsen', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.physSteerTrace) {
+      return { skip: true, mass: 'physSteerTrace nicht vorhanden' };
+    }
+    const gemerkt = physEngine.config.brakeBias;
+    try {
+      const q = (pct) => {
+        physEngine.config.brakeBias = pct / 100;
+        const r = OMEGA_TEST.physSteerTrace({ bisKmh: 200, brake: 1, steering: 0.6 });
+        let b = null;
+        for (const x of r.bremsspur) {
+          if (!b || Math.abs(x.kmh - 140) < Math.abs(b.kmh - 140)) b = x;
+        }
+        if (!b) return null;
+        return { bei140: b.winkel / Math.max(1e-6, r.rollen.winkel),
+                 stand: r.imStand / Math.max(1e-6, r.rollen.winkel) };
+      };
+      const v = q(50), m = q(62), h = q(80);
+      if (!v || !m || !h) return { skip: true, mass: 'Bremsspur zu kurz' };
+      // Erstens streng fallend: mehr Bremse vorn heisst weniger Lenkung. Zweitens ein
+      // deutlicher Abstand, sonst ist der Regler wieder nur nominell da. Und drittens darf
+      // die Balance im STAND nichts aendern - dort spielt die Bremse keine Rolle, und das
+      // war der Fehler, gegen den die Tempoabhaengigkeit ueberhaupt eingebaut wurde.
+      const fallend = v.bei140 > m.bei140 && m.bei140 > h.bei140;
+      const spanne = v.bei140 - h.bei140;
+      const standGleich = Math.abs(v.stand - h.stand) < 0.02 && h.stand > 0.95;
+      return { ok: fallend && spanne > 0.25 && standGleich,
+               mass: '140 km/h: 50 % vorn ' + Math.round(v.bei140 * 100)
+                     + ' %, 62 % vorn ' + Math.round(m.bei140 * 100)
+                     + ' %, 80 % vorn ' + Math.round(h.bei140 * 100)
+                     + ' % | Spanne ' + Math.round(spanne * 100)
+                     + ' Punkte, im Stand ' + Math.round(h.stand * 100) + ' %' };
+    } finally {
+      physEngine.config.brakeBias = gemerkt;
+    }
+  });
+
+  // ---- Der Lichtschaden geht bei der Reparatur wieder weg ----
+  //
+  // Er wurde gesetzt und nie zurueckgenommen: es gab im ganzen Projekt keine Zuweisung
+  // lightDamage.front = false. Boxenstopp-Reparatur, resetCarState() und die Taste R setzen
+  // alle nur damage = 0, waehrend der Tooltip "Boxenstopp repariert" versprach.
+  //
+  // Geprueft wird der Zustand ueber updateDamageFuelUI(), also den Weg, den alle drei
+  // Ruecksetzwege ohnehin nehmen - nicht syncLightDamage() direkt. Eine Pruefung, die die
+  // Funktion selbst aufruft, prueft nur, dass die Funktion existiert.
+  stAdd('Reparatur macht die Beleuchtung wieder heil', () => {
+    const gemerkt = { d: damage, f: lightDamage.front, r: lightDamage.rear };
+    try {
+      damage = 80;
+      lightDamage.front = true;
+      lightDamage.rear = false;
+      updateDamageFuelUI();
+      const kaputt = lightDamage.front;
+      // Ueber der Schwelle darf nichts passieren, sonst waere aus der Ableitung ein
+      // Zuruecksetzen bei jedem Bild geworden.
+      damage = LIGHT_DEAD_DAMAGE - 0.5;
+      updateDamageFuelUI();
+      const heil = !lightDamage.front && !lightDamage.rear;
+      const text = ($('dash-light-dmg') || {}).textContent;
+      return { ok: kaputt && heil && !text,
+               mass: 'bei 80 % Schaden defekt: ' + (kaputt ? 'ja' : 'NEIN')
+                     + ', unter ' + LIGHT_DEAD_DAMAGE + ' % heil: '
+                     + (heil ? 'ja' : 'NEIN') + ', Anzeigetext "' + text + '"' };
+    } finally {
+      damage = gemerkt.d;
+      lightDamage.front = gemerkt.f;
+      lightDamage.rear = gemerkt.r;
+      updateLightTellTales();
+      updateDamageFuelUI();
+    }
+  });
+
   // ---- Ausfuehren und anzeigen ----
   async function runSelfTest() {
     const rows = $('st-rows');
@@ -18596,7 +18725,7 @@
           + 'Tankgewicht. Verzeihende Bremse, weiche Lenkung. Zum Fahren ohne Nachdenken.',
       v: { 'setting-grip': 1.0, 'setting-brakepower': 1.4, 'setting-autoshift': true,
            'setting-zero-to-top': 2.6, 'setting-coast-drag': 0.6, 'setting-fuelweight': 0,
-           'setting-tyres': 0, 'phys-steerresp': 2.4, 'phys-trailbrake': 1.0,
+           'setting-tyres': 0, 'phys-steerresp': 2.4, 'setting-brakebias': 58,
            // crash-count ist ein INDEX in [1,2,3,4,5,10,20,50]: 4 = fuenf Crashs.
            'setting-fuel-drain': 0, 'setting-crash-count': 4,
            'setting-crash-damage': false,
@@ -18609,7 +18738,7 @@
           + 'Schärfere Lenkung als Arcade, aber noch Reserve in der Bremse.',
       v: { 'setting-grip': 0.85, 'setting-brakepower': 1.0, 'setting-autoshift': false,
            'setting-zero-to-top': 3.2, 'setting-coast-drag': 1.0, 'setting-fuelweight': 0.5,
-           'setting-tyres': 0.5, 'phys-steerresp': 1.8, 'phys-trailbrake': 1.15,
+           'setting-tyres': 0.5, 'phys-steerresp': 1.8, 'setting-brakebias': 60,
            'setting-fuel-drain': 1.5, 'setting-crash-count': 2,
            'setting-crash-damage': true,
            'setting-repair-time': 10 },
@@ -18622,7 +18751,7 @@
           + 'schwache Bremse, langes Ausrollen. Ein Fahrfehler kostet hier Zeit.',
       v: { 'setting-grip': 0.72, 'setting-brakepower': 0.85, 'setting-autoshift': false,
            'setting-zero-to-top': 3.2, 'setting-coast-drag': 1.25, 'setting-fuelweight': 1.0,
-           'setting-tyres': 2.0, 'phys-steerresp': 1.3, 'phys-trailbrake': 1.28,
+           'setting-tyres': 2.0, 'phys-steerresp': 1.3, 'setting-brakebias': 62,
            'setting-fuel-drain': 3.0, 'setting-crash-count': 5,
            'setting-crash-damage': true,
            'setting-repair-time': 20 },
@@ -18635,7 +18764,7 @@
           + 'nicht leichter, weil sie mehr verzeiht, sondern weil sie langsamer ist.',
       v: { 'setting-grip': 0.82, 'setting-brakepower': 1.0, 'setting-autoshift': false,
            'setting-zero-to-top': 4.4, 'setting-coast-drag': 1.15, 'setting-fuelweight': 1.0,
-           'setting-tyres': 1.5, 'phys-steerresp': 1.5, 'phys-trailbrake': 1.2,
+           'setting-tyres': 1.5, 'phys-steerresp': 1.5, 'setting-brakebias': 61,
            'setting-fuel-drain': 2.2, 'setting-crash-count': 5,
            'setting-crash-damage': true,
            'setting-repair-time': 16 },
@@ -18648,7 +18777,7 @@
           + 'ist kurz, weil der Luftwiderstand hier die größte Einzelkraft ist.',
       v: { 'setting-grip': 0.95, 'setting-brakepower': 1.45, 'setting-autoshift': false,
            'setting-zero-to-top': 2.4, 'setting-coast-drag': 1.6, 'setting-fuelweight': 1.0,
-           'setting-tyres': 2.0, 'phys-steerresp': 1.05, 'phys-trailbrake': 1.3,
+           'setting-tyres': 2.0, 'phys-steerresp': 1.05, 'setting-brakebias': 66,
            'setting-fuel-drain': 4.5, 'setting-crash-count': 3,
            'setting-crash-damage': true,
            'setting-repair-time': 24 },
@@ -18763,6 +18892,10 @@
     const bad = [], unknown = [];
     for (const [id, val] of Object.entries(cfg)) {
       const el = document.getElementById(id);
+      // phys-trailbrake gab es bis v0.3. Es wird bewusst NICHT auf setting-brakebias
+      // umgerechnet: ein Bonus auf die Lenkgrenze und ein Anteil der Bremskraft sind
+      // verschiedene Groessen, und eine erfundene Umrechnung waere schlimmer als ein
+      // ehrliches "uebergangen".
       if (!el) { unknown.push(id); continue; }
       if (el.type === 'checkbox') continue;
       if (el.tagName === 'SELECT') {

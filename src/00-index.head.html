@@ -3841,14 +3841,16 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="phys-accel-val">1.00</span>
         </div></div>
-      <div class="opt-row"><div class="opt-label">Trail-Braking-Grip-Bonus
-          <small>Erlaubt beim Anbremsen mehr Lenkung. Nicht die Gewichtsverlagerung, sondern
-          ihr Gegenst&uuml;ck in der Lenkgrenze.</small></div>
+      <div class="opt-row"><div class="opt-label">Bremsbalance
+          <small>Wieviel der Bremse an der Vorderachse ankommt. <b>Nach vorn</b>: das Auto
+          schiebt beim Anbremsen geradeaus. <b>Nach hinten</b>: mehr Lenkung beim Anbremsen,
+          also Trail-Braking, daf&uuml;r wird das Heck leicht. 62 % ist die
+          Mittelstellung und &auml;ndert nichts.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="phys-trailbrake" min="1.0" max="1.3" step="0.05" value="1.1">
+          <input type="range" id="setting-brakebias" min="50" max="80" step="1" value="62">
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="phys-trailbrake-val">1.10</span>
+          <span class="opt-val" id="setting-brakebias-val">62% vorn</span>
         </div></div>
       
     </div>
@@ -4651,7 +4653,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.4.13</span></span>
+    <span class="foot-ver">v<span id="app-version">0.4.14</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
   </span>
   <span class="foot-right">

@@ -22,7 +22,7 @@
           + 'Tankgewicht. Verzeihende Bremse, weiche Lenkung. Zum Fahren ohne Nachdenken.',
       v: { 'setting-grip': 1.0, 'setting-brakepower': 1.4, 'setting-autoshift': true,
            'setting-zero-to-top': 2.6, 'setting-coast-drag': 0.6, 'setting-fuelweight': 0,
-           'setting-tyres': 0, 'phys-steerresp': 2.4, 'phys-trailbrake': 1.0,
+           'setting-tyres': 0, 'phys-steerresp': 2.4, 'setting-brakebias': 58,
            // crash-count ist ein INDEX in [1,2,3,4,5,10,20,50]: 4 = fuenf Crashs.
            'setting-fuel-drain': 0, 'setting-crash-count': 4,
            'setting-crash-damage': false,
@@ -35,7 +35,7 @@
           + 'Schärfere Lenkung als Arcade, aber noch Reserve in der Bremse.',
       v: { 'setting-grip': 0.85, 'setting-brakepower': 1.0, 'setting-autoshift': false,
            'setting-zero-to-top': 3.2, 'setting-coast-drag': 1.0, 'setting-fuelweight': 0.5,
-           'setting-tyres': 0.5, 'phys-steerresp': 1.8, 'phys-trailbrake': 1.15,
+           'setting-tyres': 0.5, 'phys-steerresp': 1.8, 'setting-brakebias': 60,
            'setting-fuel-drain': 1.5, 'setting-crash-count': 2,
            'setting-crash-damage': true,
            'setting-repair-time': 10 },
@@ -48,7 +48,7 @@
           + 'schwache Bremse, langes Ausrollen. Ein Fahrfehler kostet hier Zeit.',
       v: { 'setting-grip': 0.72, 'setting-brakepower': 0.85, 'setting-autoshift': false,
            'setting-zero-to-top': 3.2, 'setting-coast-drag': 1.25, 'setting-fuelweight': 1.0,
-           'setting-tyres': 2.0, 'phys-steerresp': 1.3, 'phys-trailbrake': 1.28,
+           'setting-tyres': 2.0, 'phys-steerresp': 1.3, 'setting-brakebias': 62,
            'setting-fuel-drain': 3.0, 'setting-crash-count': 5,
            'setting-crash-damage': true,
            'setting-repair-time': 20 },
@@ -61,7 +61,7 @@
           + 'nicht leichter, weil sie mehr verzeiht, sondern weil sie langsamer ist.',
       v: { 'setting-grip': 0.82, 'setting-brakepower': 1.0, 'setting-autoshift': false,
            'setting-zero-to-top': 4.4, 'setting-coast-drag': 1.15, 'setting-fuelweight': 1.0,
-           'setting-tyres': 1.5, 'phys-steerresp': 1.5, 'phys-trailbrake': 1.2,
+           'setting-tyres': 1.5, 'phys-steerresp': 1.5, 'setting-brakebias': 61,
            'setting-fuel-drain': 2.2, 'setting-crash-count': 5,
            'setting-crash-damage': true,
            'setting-repair-time': 16 },
@@ -74,7 +74,7 @@
           + 'ist kurz, weil der Luftwiderstand hier die größte Einzelkraft ist.',
       v: { 'setting-grip': 0.95, 'setting-brakepower': 1.45, 'setting-autoshift': false,
            'setting-zero-to-top': 2.4, 'setting-coast-drag': 1.6, 'setting-fuelweight': 1.0,
-           'setting-tyres': 2.0, 'phys-steerresp': 1.05, 'phys-trailbrake': 1.3,
+           'setting-tyres': 2.0, 'phys-steerresp': 1.05, 'setting-brakebias': 66,
            'setting-fuel-drain': 4.5, 'setting-crash-count': 3,
            'setting-crash-damage': true,
            'setting-repair-time': 24 },
@@ -189,6 +189,10 @@
     const bad = [], unknown = [];
     for (const [id, val] of Object.entries(cfg)) {
       const el = document.getElementById(id);
+      // phys-trailbrake gab es bis v0.3. Es wird bewusst NICHT auf setting-brakebias
+      // umgerechnet: ein Bonus auf die Lenkgrenze und ein Anteil der Bremskraft sind
+      // verschiedene Groessen, und eine erfundene Umrechnung waere schlimmer als ein
+      // ehrliches "uebergangen".
       if (!el) { unknown.push(id); continue; }
       if (el.type === 'checkbox') continue;
       if (el.tagName === 'SELECT') {

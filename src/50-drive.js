@@ -127,6 +127,13 @@
 
   $('setting-vibration').addEventListener('change', (e) => { rumbleOn = e.target.checked; });
 
+  // Der Regler steht in PROZENT vorn, die Physik rechnet mit einem Anteil.
+  $('setting-brakebias').addEventListener('input', (e) => {
+    const pct = parseInt(e.target.value, 10);
+    physEngine.config.brakeBias = pct / 100;
+    $('setting-brakebias-val').textContent = pct + '% vorn';
+  });
+
   $('setting-fuel-drain').addEventListener('input', (e) => {
     fuelDrainPerSec = parseFloat(e.target.value);
     $('setting-fuel-drain-val').textContent = fuelDrainPerSec.toFixed(1);
@@ -160,7 +167,7 @@
   // Die kalibrierte Vorgabe fuer das Lenkansprechen. Sie ist der Bezug fuer die Anzeige,
   // damit dort 100 % steht, wo der Wert hingehoert - und nicht 200 %.
   const STEER_RESP_REF = 2.0;
-  ['phys-steerresp', 'phys-accel', 'phys-trailbrake'].forEach(id => {
+  ['phys-steerresp', 'phys-accel'].forEach(id => {
     const input = $(id);
     const readout = $(id + '-val');
     const apply = () => {
@@ -173,7 +180,6 @@
         $('phys-steerresp-val').textContent = Math.round(v / STEER_RESP_REF * 100) + '%';
       }
       if (id === 'phys-accel') physEngine.config.accelerationFactor = v;
-      if (id === 'phys-trailbrake') physEngine.config.trailBrakingGripBonus = v;
       markDrivetrainChartsDirty();
     };
     input.addEventListener('input', apply);

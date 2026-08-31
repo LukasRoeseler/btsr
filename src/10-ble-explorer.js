@@ -852,7 +852,16 @@
     "Tipp: Öffne in Chrome": "Tip: open in Chrome",
     "Ton bei Lichthupe": "Headlight-flash sound",
     "Ton": "Sound",
-    "Trail-Braking-Grip-Bonus": "Trail-braking grip bonus",
+    // v0.4: aus dem Trail-Braking-Bonus ist die Bremsbalance geworden. Der Bonus wirkte
+    // auf die Lenkgrenze und wurde dort weggeklemmt; die Balance wirkt auf die Anforderung
+    // an die Vorderachse.
+    "Bremsbalance": "Brake bias",
+    "Wieviel der Bremse an der Vorderachse ankommt.": "How much of the brake reaches the front axle.",
+    "Nach vorn": "Forward",
+    ": das Auto schiebt beim Anbremsen geradeaus.": ": the car pushes straight on under braking.",
+    "Nach hinten": "Rearward",
+    ": mehr Lenkung beim Anbremsen, also Trail-Braking, dafür wird das Heck leicht. 62 % ist die Mittelstellung und ändert nichts.":
+      ": more steering under braking, i.e. trail braking, at the cost of a light rear end. 62% is the middle setting and changes nothing.",
     "Trocken": "Dry",
     "Und vieles mehr …": "And much more …",
     "Variante wählen, dann": "Choose a variant, then",
