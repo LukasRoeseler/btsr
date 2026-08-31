@@ -7,19 +7,8 @@
 
   // The claim on the front page has to be TRUE, so it is counted rather than typed. A number
   // written by hand goes stale on the first new slider and then the front page is lying.
-  function countHandlingParams() {
-    const cfg = physEngine.config;
-    let n = 0;
-    for (const k of Object.keys(cfg)) {
-      const v = cfg[k];
-      if (typeof v === 'number' || typeof v === 'boolean') n++;
-      // The gear table is six ratios and six speed fractions, all of them tunable.
-      else if (Array.isArray(v)) {
-        for (const e of v) n += (e && typeof e === 'object') ? Object.keys(e).length : 1;
-      }
-    }
-    return n;
-  }
+  // countHandlingParams() stand hier und wurde von niemandem gerufen: es ist der Rest
+  // der festen Zahl 70 auf der Startseite, die inzwischen gezaehlt wird.
 
   const HOME_GEARS = [1, 2, 3, 4, 5, 6];
   let homeRaf = null, homeT0 = 0, homeFlashAt = 0;

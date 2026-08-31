@@ -9,6 +9,10 @@
   // ueber sie reden kann: km/h, Sekunden, Prozent. Wer eine aendert, sollte die
   // Kalibrierung danach nachrechnen lassen (calibrateAccel).
 
+  // Der volle Lenkausschlag, mechanisch. Eine KONSTANTE und kein Konfigurationsfeld: sie
+  // ist die Bedeutung von servoAngle = 1 und nichts, woran man dreht.
+  const STEER_MAX_DEG = 45;
+
   class CarreraPhysicsEngine {
     constructor() {
       this.config = {
@@ -20,10 +24,14 @@
         // was 2,0 bedeutete, wusste nur die Kalibrierung. Jetzt ist die Groesse im Modell,
         // die Anzeige rechnet in Grad, und der volle Ausschlag ist der Bezug.
         //
+        // Der Wert steht als Konstante STEER_MAX_DEG oben in dieser Datei und NICHT in
+        // config: er ist Dokumentation und keine Stellschraube, und ein Feld in config,
+        // an dem man ohne Wirkung drehen kann, ist genau die Falle, die loadGain und
+        // ghostCfg.lineModel schon einmal gestellt haben.
+        //
         // servoAngle bleibt normiert (-1 .. 1) - das Protokoll kennt nur Byte 7 als
         // int8, und eine Umrechnung in Grad und zurueck waere ein Rundungsfehler ohne
         // Gegenwert. Die 45 Grad sind die BEDEUTUNG von 1,0, nicht seine Einheit.
-        steerMaxDeg: 45,
         steerResponse: 2.0,      // live trim on the D-pad, 0.5 .. 3.0 in 10% steps.
                                  // 200 % is the calibrated default: measured on the real
                                  // car, that is what answers properly. The ceiling was

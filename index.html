@@ -536,8 +536,32 @@
      brake bias, delta to a reference lap and gaps to other cars; this car has no sensor and
      this app no session for any of them, so those cells are absent rather than filled with
      invented numbers. */
+  /* Der Cockpit-Schriftschnitt und die Linienfarben an EINER Stelle. Vorher standen
+     "monospace" und #1b2230 ein Dutzend Mal einzeln im Block, und eine Stiländerung hiess
+     ein Dutzend Suchen.
+
+     Bahnschrift ist die DIN-Verwandte von Windows und gemessen vorhanden; Roboto Condensed
+     steht davor fuer Android, Arial Narrow als letzte Schmalschrift. KEINE externe Schrift:
+     die App laeuft bewusst per file:// ohne Installation, und ein Google-Fonts-Verweis waere
+     dort eine Anfrage ins Leere - der Schirm stuende mit der Ersatzschrift da, und zwar
+     genau bei dem Nutzer ohne Netz. */
+  :root {
+    --gt3-font: "Bahnschrift SemiCondensed", "Bahnschrift", "Roboto Condensed",
+                "Arial Narrow", "Segoe UI Variable Display", system-ui, sans-serif;
+    /* Weiss mit Deckkraft und kein festes Grau: so bleibt der Kontrast auf jedem
+       Untergrund derselbe, auch im Vollbild mit gedrehtem Schirm. */
+    --gt3-line: rgba(255, 255, 255, .34);
+    --gt3-line-soft: rgba(255, 255, 255, .16);
+  }
   #tab-race { position: relative; }
-  .gt3 { background: #05070c; border: 0; border-radius: 0; overflow: hidden;
+  /* Schmale Carbon-Umrandung: ein 45-Grad-Streifenmuster als border-image, 2 px. Kein
+     Bild und kein zusaetzlicher Knoten - ein wiederholter Verlauf im Rahmen kostet nichts
+     und laesst sich in einer Zeile wieder abschalten. */
+  .gt3 { background: #05070c;
+    border: 2px solid transparent;
+    border-image: repeating-linear-gradient(45deg,
+      #2b3547 0 2px, #10151f 2px 4px) 2;
+    border-radius: 0; overflow: hidden;
     padding: clamp(5px, 1vw, 11px); color: #eef2fa; display: grid;
     gap: clamp(4px, .8vw, 9px);
     grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr) minmax(0, 1.15fr);
@@ -589,15 +613,19 @@
      aus abgesetzten Panels ist das, was als Carbon-Umrandung gelesen wird. Jetzt eine
      Haarlinie als Trenner und sonst der Grund des Schirms. */
   .gt3-box { background: none; border: 0; border-radius: 0;
-    border-top: 1px solid #1b2230;
+    border-top: 1px solid var(--gt3-line);
     padding: clamp(3px, .7vw, 7px) clamp(4px, .8vw, 8px); min-width: 0; }
   /* Der aufgehellte Grund bleibt allein an den antippbaren Kacheln: dort ist er keine
      Zierde, sondern die Aussage "hier kann man draufdruecken". */
-  .gt3-box.gt3-click, .gt3-box.pit-tile { background: #131925; border-top-color: #232c3d; }
+  .gt3-box.gt3-click, .gt3-box.pit-tile { background: #131925; border-top-color: var(--gt3-line); }
   .gt3-lbl { font-size: clamp(7px, 1vw, 9.5px); letter-spacing: .1em;
     text-transform: uppercase; color: #8b99b4; line-height: 1.3; white-space: nowrap;
     overflow: hidden; text-overflow: ellipsis; }
-  .gt3-val { font-family: monospace; font-weight: 700; line-height: 1.05;
+  /* tabular-nums ist der Teil, der im Fahrbetrieb zaehlt: ohne ihn haben die Ziffern
+     verschiedene Breiten, und eine Rundenzeit, deren Doppelpunkt bei jedem Zehntel wandert,
+     liest man schlechter als eine, die stillsteht. */
+  .gt3-val { font-family: var(--gt3-font); font-weight: 700; line-height: 1.05;
+    font-variant-numeric: tabular-nums; letter-spacing: .01em;
     font-size: clamp(14px, 2.6vw, 27px); }
   .gt3-val.sm { font-size: clamp(11px, 1.8vw, 18px); }
   .gt3-val.big { font-size: clamp(20px, 4.2vw, 44px); }
@@ -609,20 +637,21 @@
      bleiben, sonst springt sie beim Umschalten zur Seite. */
   .gt3-manual { position: absolute; left: 6%; top: 50%; transform: translateY(-50%);
     font-size: 42%; color: var(--warn); letter-spacing: .04em; }
-  .gt3-gearnum { font-family: monospace; font-weight: 800; text-align: center;
+  .gt3-gearnum { font-family: var(--gt3-font); font-weight: 700; text-align: center;
     line-height: .92; font-size: clamp(46px, 12vw, 118px); }
-  .gt3-rpm { font-family: monospace; font-weight: 700; text-align: center;
+  .gt3-rpm { font-family: var(--gt3-font); font-weight: 700; text-align: center;
+    font-variant-numeric: tabular-nums;
     font-size: clamp(13px, 2.2vw, 24px); color: #cfe0ff; }
 
   /* Die drei Zeiten als Raster in einem Feld. Auf schmalen Schirmen untereinander mit
      Haarlinien, ab 560 px in einer Reihe - dort ist Breite da, und drei Zahlen neben-
      einander liest man schneller als drei uebereinander. */
   .gt3-times { display: grid; gap: clamp(2px, .5vw, 5px); }
-  .gt3-times > div + div { border-top: 1px solid #1b2230; padding-top: clamp(2px, .5vw, 5px); }
+  .gt3-times > div + div { border-top: 1px solid var(--gt3-line); padding-top: clamp(2px, .5vw, 5px); }
   @media (min-width: 560px) {
     .gt3-times { grid-template-columns: repeat(3, minmax(0, 1fr));
                  gap: clamp(4px, .8vw, 10px); }
-    .gt3-times > div + div { border-top: 0; border-left: 1px solid #1b2230;
+    .gt3-times > div + div { border-top: 0; border-left: 1px solid var(--gt3-line);
                              padding-top: 0; padding-left: clamp(4px, .8vw, 10px); }
   }
   /* Balance und Lenkansprechen: je Zeile ein Symbol und eine Zahl, mittig in der Kachel.
@@ -648,13 +677,20 @@
     gap: clamp(3px, .7vw, 7px); }
   .gt3-trim-row svg { width: clamp(13px, 2.6vw, 18px); height: clamp(13px, 2.6vw, 18px);
     flex: none; color: #8b99b4; }
-  .gt3-trim-row b { font-family: monospace; font-weight: 700;
+  /* Die Balance-Skala ist schmaler und hoeher als ein Symbol - sie IST eine Achse, und eine
+     quadratische Achse waere keine. touch-action: none, sonst scrollt das Telefon die Seite
+     statt die Marke zu ziehen. */
+  .gt3-bias { cursor: ns-resize; touch-action: none; }
+  .gt3-bias svg { width: clamp(10px, 2vw, 14px); height: clamp(20px, 4vw, 30px); }
+  .gt3-trim-row b { font-family: var(--gt3-font); font-weight: 700;
+    font-variant-numeric: tabular-nums;
     font-size: clamp(11px, 1.8vw, 17px); }
   .gt3-laps { list-style: none; margin: 2px 0 0 0; padding: 0; overflow-y: auto;
-    max-height: clamp(34px, 8vw, 74px); font-family: monospace;
+    max-height: clamp(34px, 8vw, 74px); font-family: var(--gt3-font);
+    font-variant-numeric: tabular-nums;
     font-size: clamp(9px, 1.2vw, 12px); }
   .gt3-laps li { display: flex; justify-content: space-between; padding: 1px 0;
-    border-bottom: 1px solid #1b212e; }
+    border-bottom: 1px solid var(--gt3-line-soft); }
   .gt3-bar { height: clamp(5px, 1.2vw, 10px); background: #04060b; border-radius: 0;
     overflow: hidden; margin-top: 3px; }
   .gt3-bar > i { display: block; height: 100%; width: 0; transition: width .15s linear; }
@@ -1842,9 +1878,25 @@
              Das Lenkrad ist dasselbe wie auf der Optionen-Kachel "Fahrgefuehl": ein neues
              Symbol fuer eine bekannte Sache waere eine zweite Vokabel. -->
         <div class="gt3-box gt3-trim">
-          <div class="gt3-trim-row" title="Bremsbalance, Anteil vorn (Steuerkreuz hoch/runter)">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
-                 stroke-linecap="round" aria-label="Bremsbalance"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.6"/><path d="M12 4v3.2M12 16.8V20" stroke="var(--bad)"/><path d="M18.4 8.6l-2.8 1.6M8.4 13.8l-2.8 1.6"/></svg>
+          <!-- Eine senkrechte Skala und kein zweiter Kreis: Bremsscheibe und Lenkrad
+               sahen als Kreis mit Speichen gleich aus. Die Skala sagt dreierlei auf einmal -
+               dass es eine Balance zwischen zwei Enden ist, wo sie steht, und dass man sie
+               schiebt. Letzteres entspricht der Geste auf dem Steuerkreuz, man muss die
+               Belegung also nicht wissen, sondern sieht sie.
+
+               OBEN ist VORN, weil "hoch" auf dem Kreuz die Balance nach vorn nimmt. Eine
+               Skala, deren Richtung der Geste widerspricht, waere schlimmer als keine. -->
+          <div class="gt3-trim-row gt3-bias" id="race-bias-row"
+               title="Bremsbalance, Anteil vorn. Ziehen oder Steuerkreuz hoch/runter">
+            <svg viewBox="0 0 14 24" aria-label="Bremsbalance, Anteil vorn"
+                 preserveAspectRatio="none">
+              <path d="M7 2.5V21.5" stroke="rgba(255,255,255,.30)" stroke-width="2.2"
+                    stroke-linecap="round" fill="none"/>
+              <path d="M3.6 4.5h6.8M3.6 12h6.8M3.6 19.5h6.8" stroke="rgba(255,255,255,.22)"
+                    stroke-width="1.1" stroke-linecap="round" fill="none"/>
+              <rect id="race-bias-mark" x="1.4" y="10.6" width="11.2" height="2.8" rx="1.4"
+                    fill="var(--bad)"/>
+            </svg>
             <b id="race-trim-accel">62%</b>
           </div>
           <div class="gt3-trim-row" title="Lenkansprechen (Steuerkreuz links/rechts)">
@@ -5003,7 +5055,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.4.22</span></span>
+    <span class="foot-ver">v<span id="app-version">0.4.23</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -5093,14 +5145,20 @@
   const setTxt = (id, v) => { const el = $(id); if (el) el.textContent = v; };
   const setSty = (id, k, v) => { const el = $(id); if (el) el.style[k] = v; };
   const logEl = $('log');
-  const dot = $('conn-dot');
-  // The dot IS the connection status now. The word next to it said the same thing a second
-  // time and cost the width of a button on a phone. It is not deleted, it moves into title
-  // and aria-label - a screen reader still announces it and a hover still shows it.
-  const statusEl = {
-    set textContent(v) { dot.title = String(v); dot.setAttribute('aria-label', String(v)); },
-    get textContent() { return dot.title; },
-  };
+  // Hier stand ein Wrapper um #conn-dot, und in ihm ein ECHTER FEHLER:
+  //
+  //     const statusEl = { set textContent(v) { dot.title = String(v); ... } };
+  //
+  // #conn-dot gibt es im Dokument nicht mehr - der Punkt in der Kopfzeile ist beim
+  // Verkleinern entfallen, und der Verbindungszustand steht heute in der Fusszeile des
+  // Cockpits. dot war damit null, und der Setter fasste ihn ungeschuetzt an: jeder Aufruf
+  // von setConnected() warf eine Ausnahme, also jedes Verbinden und Trennen ueber den
+  // Erkundungsweg.
+  //
+  // Das Bemerkenswerte daran: der Kommentar in setConnected() warnt genau davor. Geschuetzt
+  // waren dot und die zwei Knoepfe; uebersehen war, dass statusEl KEIN Element ist, sondern
+  // ein Objektliteral. if (statusEl) ist immer wahr - es prueft den Wrapper und nicht das
+  // Element, und sah dadurch aus wie ein Schutz.
   const servicesContainer = $('services-container');
   const controlSelect = $('control-char-select');
 
@@ -5139,14 +5197,11 @@
     // sind entfernt worden, und ein blinder Zugriff auf einen von beiden wuerde beim
     // Verbinden eine Ausnahme werfen - also genau in dem Moment, in dem am wenigsten Zeit
     // ist, sie zu suchen.
-    if (dot) dot.classList.toggle('connected', isConnected);
-    if (statusEl) {
-      statusEl.textContent = isConnected
-        ? `verbunden: ${device?.name || device?.id || ''}` : 'nicht verbunden';
-    }
-    const bc = $('btn-connect'), bd = $('btn-disconnect');
+    // Nur noch der Verbindungsknopf. Der Punkt und der Trennen-Knopf in der Kopfzeile sind
+    // entfallen, und der Verbindungszustand steht in der Fusszeile des Cockpits - eine
+    // zweite Anzeige dafuer waere ohnehin eine zweite Wahrheit.
+    const bc = $('btn-connect');
     if (bc) bc.disabled = isConnected;
-    if (bd) bd.disabled = !isConnected;
   }
 
   async function connect() {
@@ -7350,6 +7405,10 @@
   // ueber sie reden kann: km/h, Sekunden, Prozent. Wer eine aendert, sollte die
   // Kalibrierung danach nachrechnen lassen (calibrateAccel).
 
+  // Der volle Lenkausschlag, mechanisch. Eine KONSTANTE und kein Konfigurationsfeld: sie
+  // ist die Bedeutung von servoAngle = 1 und nichts, woran man dreht.
+  const STEER_MAX_DEG = 45;
+
   class CarreraPhysicsEngine {
     constructor() {
       this.config = {
@@ -7361,10 +7420,14 @@
         // was 2,0 bedeutete, wusste nur die Kalibrierung. Jetzt ist die Groesse im Modell,
         // die Anzeige rechnet in Grad, und der volle Ausschlag ist der Bezug.
         //
+        // Der Wert steht als Konstante STEER_MAX_DEG oben in dieser Datei und NICHT in
+        // config: er ist Dokumentation und keine Stellschraube, und ein Feld in config,
+        // an dem man ohne Wirkung drehen kann, ist genau die Falle, die loadGain und
+        // ghostCfg.lineModel schon einmal gestellt haben.
+        //
         // servoAngle bleibt normiert (-1 .. 1) - das Protokoll kennt nur Byte 7 als
         // int8, und eine Umrechnung in Grad und zurueck waere ein Rundungsfehler ohne
         // Gegenwert. Die 45 Grad sind die BEDEUTUNG von 1,0, nicht seine Einheit.
-        steerMaxDeg: 45,
         steerResponse: 2.0,      // live trim on the D-pad, 0.5 .. 3.0 in 10% steps.
                                  // 200 % is the calibrated default: measured on the real
                                  // car, that is what answers properly. The ceiling was
@@ -8837,20 +8900,12 @@
 
     const live = !!(device && device.gatt && device.gatt.connected);
     // race-conn und race-track sassen in der entfernten Kachel "Strecke". Der
-    // Verbindungszustand steht jetzt in der Fusszeile des Schirms; die Zeilen bleiben
-    // stehen, damit die Kachel ohne Suche wieder eingesetzt werden kann.
-    setTxt('race-conn', live ? 'verbunden' : 'getrennt');
-    const cn = $('race-conn');
-    if (cn) cn.className = 'gt3-lbl ' + (live ? 'gt3-ok' : 'gt3-bad');
     // Weather icon plus the fitted tyres. The tyres matter more than the weather here:
     // they are what tells you whether the pit stop is still outstanding.
     const wet = weather === 'rain';
     $('race-wx-sun').style.display = wet ? 'none' : '';
     $('race-wx-rain').style.display = wet ? '' : 'none';
     $('race-wx-rain').style.color = wet ? '#5aa9ff' : '';
-    // Die Textbeschriftung an der Wetterkachel ist entfernt, sie zeigt nur noch das
-    // Symbol. Welche Reifen montiert sind, steht in der Reifenkachel.
-    setTxt('race-tyres', tyres === 'wet' ? 'Regen' : 'Slicks');
     // G plot. Red is the simulation, green the car's own raw motion bytes — the two are
     // scaled independently on purpose: the real numbers are far noisier and much larger
     // relative to their range, so a shared scale would push one of them off the dial.
@@ -8914,6 +8969,17 @@
     // Dieselben zwei Groessen, die auf dem Steuerkreuz liegen - hoch/runter und
     // links/rechts. Die Kachel zeigt, was das Kreuz verstellt, und nichts anderes.
     $('race-trim-accel').textContent = Math.round(physEngine.config.brakeBias * 100) + '%';
+    // Die Marke auf der Skala. Der Bereich kommt aus dem Bedienelement und nicht aus
+    // Konstanten hier: eine zweite Kopie von min und max liefe beim naechsten Nachziehen
+    // auseinander.
+    const bm = $('race-bias-mark'), bi = $('setting-brakebias');
+    if (bm && bi) {
+      const lo = +bi.min, hi = +bi.max;
+      const t = Math.max(0, Math.min(1,
+        (physEngine.config.brakeBias * 100 - lo) / Math.max(1e-6, hi - lo)));
+      // Oben ist VORN, also wird t umgedreht: viel Balance vorn heisst kleine y-Koordinate.
+      bm.setAttribute('y', (2.5 + (1 - t) * 16.2).toFixed(2));
+    }
     $('race-trim-steer').textContent = steerRespPct(physEngine.config.steerResponse) + '%';
 
     // Pit banner replaces the shift bar while the pit lane is active — impossible to miss,
@@ -8963,16 +9029,17 @@
     ).join('');
   }
 
+  // Hier standen sechs setTxt/setSty auf Elemente der entfernten alten Karte
+  // (dash-gear, dash-speed, dash-rpm, dash-abs, dash-head, dash-brake). Alle geschuetzt
+  // ueber setTxt/setSty, also harmlos - aber die Funktion sah aus, als zeichnete sie ein
+  // Armaturenbrett, und das tut sie nicht: das macht updateRaceScreen().
+  //
+  // resolveLights() bleibt, und zwar nicht als Anzeige: es setzt lightBits und liefert
+  // raceLampHead, die BEIDE ins gesendete Paket gehen.
   function updateDashboard(out) {
     const st = physEngine.state;
-    setTxt('dash-gear', gearLabel(physEngine.state));
-    setTxt('dash-speed', Math.abs(st.speedKmh).toFixed(1));   // signed while reversing
-    setTxt('dash-rpm', Math.round(st.rpm));
     updateRaceScreen(st, out);
-    setTxt('dash-abs', physEngine.state.absActive ? 'AKTIV' : '-');
     const lamp = resolveLights(out.lights.head, out.lights.brake);
-    setSty('dash-head', 'background', lamp.head ? '#f5e642' : '#444');
-    setSty('dash-brake', 'background', lamp.brake ? 'var(--bad)' : '#444');
     raceLampHead = lamp.head;
   }
 
@@ -10746,7 +10813,6 @@
     trackRotationDeg = (trackRotationDeg + deltaDeg + 360) % 360;
     refreshTrackPreview();
   }
-  if ($('track-rotate-left')) $('track-rotate-left').onclick = () => rotateTrack(-90);
   $('track-rotate-right').onclick = () => rotateTrack(90);
 
   function refreshTrackList() {
@@ -11128,16 +11194,12 @@
     return Math.max(0, Math.min(100, Math.round((raw - 111) / (155 - 111) * 100)));
   }
 
-  function renderLapList() {
-    // Die Rundenliste steht im Schirm (race-lap-list); diese hier ist die alte Liste aus
-    // der entfernten Karte und kann fehlen.
-    const el = $('dash-lap-list');
-    if (el) {
-      el.innerHTML = dashLapTimes
-        .map((ms, i) => `<li>Runde ${i + 1}: ${formatLapTime(ms)}</li>`).join('');
-    }
-    if (dashLapTimes.length) setTxt('dash-lap-best', formatLapTime(Math.min(...dashLapTimes)));
-  }
+  // Hier stand renderLapList(), und es tat nichts: es schrieb in #dash-lap-list und
+  // #dash-lap-best, zwei Elemente der entfernten alten Karte. Die Rundenliste im Cockpit
+  // wird von updateRaceScreen() gezeichnet.
+  //
+  // Eine Funktion, die an drei Stellen gerufen wird und nichts tut, ist schlimmer als keine:
+  // wer den Code liest, um die Rundenliste zu finden, landet jedes Mal hier.
 
   // ---- Race mode: LB/L1 arms a countdown ("Ampel"), RB/R1 ends the race after the lap
   // in progress is finished. A lap counts whenever the car reports crossing the
@@ -12110,6 +12172,48 @@
     showHudToast(sw.checked ? 'SCHADENSSIMULATION AN' : 'SCHADENSSIMULATION AUS');
   }
 
+  // Die Bremsbalance-Skala im Cockpit ziehen.
+  //
+  // Ein Ding, das wie ein Regler aussieht und keiner ist, ist schlimmer als ein Symbol: man
+  // zieht daran, nichts passiert, und danach traut man auch dem Rest nicht.
+  //
+  // Der Weg geht ueber das Bedienelement in den Optionen und dessen 'input'-Ereignis, wie
+  // bei allen anderen Cockpit-Kacheln - dadurch ist die Synchronitaet da, ohne dass ein
+  // zweiter Zustand entsteht.
+  (function bindeBiasSkala() {
+    const row = $('race-bias-row');
+    const inp = $('setting-brakebias');
+    if (!row || !inp) return;
+    const lo = +inp.min, hi = +inp.max;
+    let zieht = false;
+
+    const setzen = (clientY) => {
+      const svg = row.querySelector('svg');
+      if (!svg) return;
+      const r = svg.getBoundingClientRect();
+      if (r.height < 4) return;
+      // Oben ist vorn, also von unten gerechnet.
+      const t = Math.max(0, Math.min(1, 1 - (clientY - r.top) / r.height));
+      const wert = Math.round(lo + t * (hi - lo));
+      if (String(wert) === inp.value) return;
+      inp.value = wert;
+      inp.dispatchEvent(new Event('input', { bubbles: true }));
+    };
+
+    row.addEventListener('pointerdown', (e) => {
+      zieht = true;
+      // Der Zeiger wird eingefangen, damit das Ziehen auch weitergeht, wenn der Finger die
+      // schmale Skala verlaesst - sie ist 14 px breit, und ohne das reisst jeder Zug ab.
+      try { row.setPointerCapture(e.pointerId); } catch (err) { /* alter Browser */ }
+      setzen(e.clientY);
+      e.preventDefault();
+    });
+    row.addEventListener('pointermove', (e) => { if (zieht) setzen(e.clientY); });
+    for (const ev of ['pointerup', 'pointercancel']) {
+      row.addEventListener(ev, () => { zieht = false; });
+    }
+  })();
+
   $('race-tyre-box').onclick = () => {
     // Waehrend eines Boxenstopps bedeutet ein Tipp auf diese Kachel "Reifenwechsel an/aus",
     // sonst "Reifensimulation an/aus". Nie beides gleichzeitig, und der Titel nennt beides.
@@ -12307,8 +12411,9 @@
       probeStats.codes++;
       probeStats.lastCode = bytes[12];
     }
+    // dashBattery wird weiter gebraucht: die Akkukachel im Cockpit liest ihn. Die Zeile
+    // darunter schrieb in #dash-battery, ein Element der entfernten alten Karte.
     dashBattery = bytes[10];
-    setTxt('dash-battery', `${batteryPercent(dashBattery)}% (roh ${dashBattery})`);
 
     // Byte 15 was read as "off track". The 2026-08-19 snoop logs disprove that: it is 0x08
     // for exactly as long as the car sits on a printed marker (~1s at driving speed), in the
@@ -12496,7 +12601,6 @@
       const d = dashLapTimes.pop();
       if (dashLapStart !== null) dashLapStart -= d;
     }
-    renderLapList();
     $('race-status').textContent = t('Rennen läuft, Runde') + ' ' + raceLapTimes.length;
     log('Runde zurueckgenommen (' + formatLapTime(weg.ms) + '): ' + warum, 'info');
     showHudToast('KEINE RUNDE, BOXENEINFAHRT');
@@ -12607,7 +12711,7 @@
     // Sektoren zuerst: war das nur eine Sektorgrenze, ist die Runde nicht vorbei und alles
     // Weitere darf nicht laufen - weder die Rundenzeit noch der Ton noch das Rennende.
     if (!sectorCrossed(now)) return false;
-    if (dashLapStart !== null) { dashLapTimes.push(now - dashLapStart); renderLapList(); }
+    if (dashLapStart !== null) dashLapTimes.push(now - dashLapStart);
     dashLapStart = now;
     triggerDoppler();
 
@@ -12638,7 +12742,8 @@
     return false;
   }
 
-  function getMinimapCurrentIndex() { return dashMinimapIndex; }
+  // getMinimapCurrentIndex() stand hier und wurde nach dem Entfernen der Minikarte von
+  // niemandem mehr gerufen.
 
   function refreshMinimap() {
     // Die Minikarte ist entfernt worden. Die Positionsverfolgung dahinter bleibt: sie
@@ -12663,7 +12768,6 @@
   }
 
   setInterval(() => {
-    if (dashLapStart !== null) setTxt('dash-lap-current', formatLapTime(Date.now() - dashLapStart));
     if ((raceState === 'racing' || raceState === 'finishing') && raceLapStart !== null) {
       $('race-lap-current').textContent = formatLapTime(Date.now() - raceLapStart);
     }
@@ -12860,8 +12964,6 @@
             `+${fuelLiters(pitFuelGained)} l Sprit, -${Math.round(pitDamageRepaired)}% Schaden.`, 'info');
       }
       pitServiceStart = null;
-      const st = $('pitstop-status');
-      if (st) st.textContent = 'Bereit.';
     }
     refreshPitThrottleLock();
     updatePitUI();
@@ -12982,8 +13084,6 @@
 
       refreshPitThrottleLock();
       pitBoard();
-      const st = $('pitstop-status');
-      if (st) st.textContent = pitReady ? 'Fertig, losfahren!' : pitTaskText();
       updateDamageFuelUI();
       updatePitUI();
     }
@@ -13103,15 +13203,15 @@
     return parts.join(' · ');
   }
 
+  // Der Rumpf schrieb danach in #dash-pit, ein Element der entfernten alten Karte. Der
+  // Boxenzustand steht heute im Streifen unter dem Tacho, gezeichnet von updateRaceScreen().
+  // Der Rumpf schrieb in #dash-pit, ein Element der entfernten alten Karte, und war damit
+  // bis auf updatePitTiles() vollstaendig wirkungslos. Der Name bleibt, weil er an einem
+  // Dutzend Stellen gerufen wird und "die Boxen-Anzeige auffrischen" weiter die richtige
+  // Beschreibung ist - der Boxenzustand steht heute im Streifen unter dem Tacho und im
+  // Banner, gezeichnet von updateRaceScreen().
   function updatePitUI() {
     updatePitTiles();
-    const el = $('dash-pit');
-    if (!el) return;
-    if (pitState === 'off') { el.textContent = '-'; el.style.color = ''; return; }
-    el.style.color = '#ffcf6e';
-    if (pitState === 'limited') { el.textContent = 'LIMIT'; return; }
-    const secs = pitServiceStart ? ((Date.now() - pitServiceStart) / 1000).toFixed(1) : '0.0';
-    el.textContent = `${secs}s`;
   }
 
   // ---- Simulated game layer: fuel, damage/crash detection, pit stop ----
@@ -13374,16 +13474,16 @@
     log('Beleuchtung wieder in Ordnung (Schaden unter ' + LIGHT_DEAD_DAMAGE + ' %).', 'ok');
   }
 
+  // Hier standen fuenf Schreibvorgaenge auf #fuel-bar, #fuel-liters und #damage-bar -
+  // Balken der entfernten alten Karte. Die Funktion sah aus, als malte sie drei Balken, und
+  // malte keinen einzigen; die echten liegen im Cockpitstreifen und werden von
+  // updateRaceScreen() gezeichnet.
+  //
+  // Was BLEIBT, ist der Grund, warum diese Funktion ueberhaupt existiert: sie ist die eine
+  // Stelle, die alle Wege durchlaufen, die Tank oder Schaden aendern. syncLightDamage()
+  // haengt daran, und updateDamageBlink() auch.
   function updateDamageFuelUI() {
     syncLightDamage();
-    setSty('fuel-bar', 'width', Math.max(0, fuel) + '%');
-    setSty('fuel-bar', 'background', fuel < 20 ? 'var(--warn)' : 'var(--good)');
-    setTxt('fuel-liters', `${fuelLiters(fuel)} / ${FUEL_TANK_LITERS} l`);
-    // Condition, matching the racing screen: full green, shrinking with each crash.
-    const health = Math.max(0, Math.min(100, 100 - damage));
-    setSty('damage-bar', 'width', health + '%');
-    setSty('damage-bar', 'background', health <= 20 ? '#ff5c5c'
-                                     : (health <= 55 ? 'var(--warn)' : 'var(--good)'));
     updateDamageBlink();
   }
 
@@ -13704,7 +13804,8 @@
   function stopAllPitLoops() { Object.keys(PIT_LOOP_SPEC).forEach(k => setPitLoop(k, false)); }
 
   // Kept as a thin alias: the tyre change is the one loop other code refers to by name.
-  function setPitWrench(on) { setPitLoop('wrench', on); }
+  // setPitWrench(on) stand hier und war ein Einzeiler um setPitLoop('wrench', on), den
+  // niemand rief - der Schrauberton wird direkt ueber setPitLoop gestartet.
 
   // The pad buzzes for as long as ANY job is running, so the hands know the stop is still
   // going without looking. Re-armed on a timer because a rumble effect has a fixed
@@ -13832,9 +13933,6 @@
     showHudToast(wasServicing ? 'Boxenstopp abgebrochen' : 'Boxengasse abgebrochen');
     log('Boxenstopp abgebrochen, kein Sprit, keine Reparatur.', 'info');
   }
-  // Der Boxenstopp-Knopf ist im Schirm (race-act-pit); dieser hier stammt aus der
-  // entfernten Karte und kann fehlen.
-  if ($('btn-pitstop')) $('btn-pitstop').onclick = requestPitStop;
 
   updateDamageFuelUI();
 
@@ -20024,7 +20122,6 @@
       merk.lt.forEach(l => raceLapTimes.push(l));
       dashLastActedCode = merk.ac; dashLastActedAt = merk.aa;
       setPitState(merk.ps);
-      renderLapList();
     }
   });
 
@@ -20142,19 +20239,8 @@
 
   // The claim on the front page has to be TRUE, so it is counted rather than typed. A number
   // written by hand goes stale on the first new slider and then the front page is lying.
-  function countHandlingParams() {
-    const cfg = physEngine.config;
-    let n = 0;
-    for (const k of Object.keys(cfg)) {
-      const v = cfg[k];
-      if (typeof v === 'number' || typeof v === 'boolean') n++;
-      // The gear table is six ratios and six speed fractions, all of them tunable.
-      else if (Array.isArray(v)) {
-        for (const e of v) n += (e && typeof e === 'object') ? Object.keys(e).length : 1;
-      }
-    }
-    return n;
-  }
+  // countHandlingParams() stand hier und wurde von niemandem gerufen: es ist der Rest
+  // der festen Zahl 70 auf der Startseite, die inzwischen gezaehlt wird.
 
   const HOME_GEARS = [1, 2, 3, 4, 5, 6];
   let homeRaf = null, homeT0 = 0, homeFlashAt = 0;

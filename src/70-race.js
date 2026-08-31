@@ -28,16 +28,12 @@
     return Math.max(0, Math.min(100, Math.round((raw - 111) / (155 - 111) * 100)));
   }
 
-  function renderLapList() {
-    // Die Rundenliste steht im Schirm (race-lap-list); diese hier ist die alte Liste aus
-    // der entfernten Karte und kann fehlen.
-    const el = $('dash-lap-list');
-    if (el) {
-      el.innerHTML = dashLapTimes
-        .map((ms, i) => `<li>Runde ${i + 1}: ${formatLapTime(ms)}</li>`).join('');
-    }
-    if (dashLapTimes.length) setTxt('dash-lap-best', formatLapTime(Math.min(...dashLapTimes)));
-  }
+  // Hier stand renderLapList(), und es tat nichts: es schrieb in #dash-lap-list und
+  // #dash-lap-best, zwei Elemente der entfernten alten Karte. Die Rundenliste im Cockpit
+  // wird von updateRaceScreen() gezeichnet.
+  //
+  // Eine Funktion, die an drei Stellen gerufen wird und nichts tut, ist schlimmer als keine:
+  // wer den Code liest, um die Rundenliste zu finden, landet jedes Mal hier.
 
   // ---- Race mode: LB/L1 arms a countdown ("Ampel"), RB/R1 ends the race after the lap
   // in progress is finished. A lap counts whenever the car reports crossing the
@@ -1010,6 +1006,48 @@
     showHudToast(sw.checked ? 'SCHADENSSIMULATION AN' : 'SCHADENSSIMULATION AUS');
   }
 
+  // Die Bremsbalance-Skala im Cockpit ziehen.
+  //
+  // Ein Ding, das wie ein Regler aussieht und keiner ist, ist schlimmer als ein Symbol: man
+  // zieht daran, nichts passiert, und danach traut man auch dem Rest nicht.
+  //
+  // Der Weg geht ueber das Bedienelement in den Optionen und dessen 'input'-Ereignis, wie
+  // bei allen anderen Cockpit-Kacheln - dadurch ist die Synchronitaet da, ohne dass ein
+  // zweiter Zustand entsteht.
+  (function bindeBiasSkala() {
+    const row = $('race-bias-row');
+    const inp = $('setting-brakebias');
+    if (!row || !inp) return;
+    const lo = +inp.min, hi = +inp.max;
+    let zieht = false;
+
+    const setzen = (clientY) => {
+      const svg = row.querySelector('svg');
+      if (!svg) return;
+      const r = svg.getBoundingClientRect();
+      if (r.height < 4) return;
+      // Oben ist vorn, also von unten gerechnet.
+      const t = Math.max(0, Math.min(1, 1 - (clientY - r.top) / r.height));
+      const wert = Math.round(lo + t * (hi - lo));
+      if (String(wert) === inp.value) return;
+      inp.value = wert;
+      inp.dispatchEvent(new Event('input', { bubbles: true }));
+    };
+
+    row.addEventListener('pointerdown', (e) => {
+      zieht = true;
+      // Der Zeiger wird eingefangen, damit das Ziehen auch weitergeht, wenn der Finger die
+      // schmale Skala verlaesst - sie ist 14 px breit, und ohne das reisst jeder Zug ab.
+      try { row.setPointerCapture(e.pointerId); } catch (err) { /* alter Browser */ }
+      setzen(e.clientY);
+      e.preventDefault();
+    });
+    row.addEventListener('pointermove', (e) => { if (zieht) setzen(e.clientY); });
+    for (const ev of ['pointerup', 'pointercancel']) {
+      row.addEventListener(ev, () => { zieht = false; });
+    }
+  })();
+
   $('race-tyre-box').onclick = () => {
     // Waehrend eines Boxenstopps bedeutet ein Tipp auf diese Kachel "Reifenwechsel an/aus",
     // sonst "Reifensimulation an/aus". Nie beides gleichzeitig, und der Titel nennt beides.
@@ -1207,8 +1245,9 @@
       probeStats.codes++;
       probeStats.lastCode = bytes[12];
     }
+    // dashBattery wird weiter gebraucht: die Akkukachel im Cockpit liest ihn. Die Zeile
+    // darunter schrieb in #dash-battery, ein Element der entfernten alten Karte.
     dashBattery = bytes[10];
-    setTxt('dash-battery', `${batteryPercent(dashBattery)}% (roh ${dashBattery})`);
 
     // Byte 15 was read as "off track". The 2026-08-19 snoop logs disprove that: it is 0x08
     // for exactly as long as the car sits on a printed marker (~1s at driving speed), in the
@@ -1396,7 +1435,6 @@
       const d = dashLapTimes.pop();
       if (dashLapStart !== null) dashLapStart -= d;
     }
-    renderLapList();
     $('race-status').textContent = t('Rennen läuft, Runde') + ' ' + raceLapTimes.length;
     log('Runde zurueckgenommen (' + formatLapTime(weg.ms) + '): ' + warum, 'info');
     showHudToast('KEINE RUNDE, BOXENEINFAHRT');
@@ -1507,7 +1545,7 @@
     // Sektoren zuerst: war das nur eine Sektorgrenze, ist die Runde nicht vorbei und alles
     // Weitere darf nicht laufen - weder die Rundenzeit noch der Ton noch das Rennende.
     if (!sectorCrossed(now)) return false;
-    if (dashLapStart !== null) { dashLapTimes.push(now - dashLapStart); renderLapList(); }
+    if (dashLapStart !== null) dashLapTimes.push(now - dashLapStart);
     dashLapStart = now;
     triggerDoppler();
 
@@ -1538,7 +1576,8 @@
     return false;
   }
 
-  function getMinimapCurrentIndex() { return dashMinimapIndex; }
+  // getMinimapCurrentIndex() stand hier und wurde nach dem Entfernen der Minikarte von
+  // niemandem mehr gerufen.
 
   function refreshMinimap() {
     // Die Minikarte ist entfernt worden. Die Positionsverfolgung dahinter bleibt: sie
@@ -1563,7 +1602,6 @@
   }
 
   setInterval(() => {
-    if (dashLapStart !== null) setTxt('dash-lap-current', formatLapTime(Date.now() - dashLapStart));
     if ((raceState === 'racing' || raceState === 'finishing') && raceLapStart !== null) {
       $('race-lap-current').textContent = formatLapTime(Date.now() - raceLapStart);
     }
@@ -1760,8 +1798,6 @@
             `+${fuelLiters(pitFuelGained)} l Sprit, -${Math.round(pitDamageRepaired)}% Schaden.`, 'info');
       }
       pitServiceStart = null;
-      const st = $('pitstop-status');
-      if (st) st.textContent = 'Bereit.';
     }
     refreshPitThrottleLock();
     updatePitUI();
@@ -1882,8 +1918,6 @@
 
       refreshPitThrottleLock();
       pitBoard();
-      const st = $('pitstop-status');
-      if (st) st.textContent = pitReady ? 'Fertig, losfahren!' : pitTaskText();
       updateDamageFuelUI();
       updatePitUI();
     }
@@ -2003,15 +2037,15 @@
     return parts.join(' · ');
   }
 
+  // Der Rumpf schrieb danach in #dash-pit, ein Element der entfernten alten Karte. Der
+  // Boxenzustand steht heute im Streifen unter dem Tacho, gezeichnet von updateRaceScreen().
+  // Der Rumpf schrieb in #dash-pit, ein Element der entfernten alten Karte, und war damit
+  // bis auf updatePitTiles() vollstaendig wirkungslos. Der Name bleibt, weil er an einem
+  // Dutzend Stellen gerufen wird und "die Boxen-Anzeige auffrischen" weiter die richtige
+  // Beschreibung ist - der Boxenzustand steht heute im Streifen unter dem Tacho und im
+  // Banner, gezeichnet von updateRaceScreen().
   function updatePitUI() {
     updatePitTiles();
-    const el = $('dash-pit');
-    if (!el) return;
-    if (pitState === 'off') { el.textContent = '-'; el.style.color = ''; return; }
-    el.style.color = '#ffcf6e';
-    if (pitState === 'limited') { el.textContent = 'LIMIT'; return; }
-    const secs = pitServiceStart ? ((Date.now() - pitServiceStart) / 1000).toFixed(1) : '0.0';
-    el.textContent = `${secs}s`;
   }
 
   // ---- Simulated game layer: fuel, damage/crash detection, pit stop ----
@@ -2274,16 +2308,16 @@
     log('Beleuchtung wieder in Ordnung (Schaden unter ' + LIGHT_DEAD_DAMAGE + ' %).', 'ok');
   }
 
+  // Hier standen fuenf Schreibvorgaenge auf #fuel-bar, #fuel-liters und #damage-bar -
+  // Balken der entfernten alten Karte. Die Funktion sah aus, als malte sie drei Balken, und
+  // malte keinen einzigen; die echten liegen im Cockpitstreifen und werden von
+  // updateRaceScreen() gezeichnet.
+  //
+  // Was BLEIBT, ist der Grund, warum diese Funktion ueberhaupt existiert: sie ist die eine
+  // Stelle, die alle Wege durchlaufen, die Tank oder Schaden aendern. syncLightDamage()
+  // haengt daran, und updateDamageBlink() auch.
   function updateDamageFuelUI() {
     syncLightDamage();
-    setSty('fuel-bar', 'width', Math.max(0, fuel) + '%');
-    setSty('fuel-bar', 'background', fuel < 20 ? 'var(--warn)' : 'var(--good)');
-    setTxt('fuel-liters', `${fuelLiters(fuel)} / ${FUEL_TANK_LITERS} l`);
-    // Condition, matching the racing screen: full green, shrinking with each crash.
-    const health = Math.max(0, Math.min(100, 100 - damage));
-    setSty('damage-bar', 'width', health + '%');
-    setSty('damage-bar', 'background', health <= 20 ? '#ff5c5c'
-                                     : (health <= 55 ? 'var(--warn)' : 'var(--good)'));
     updateDamageBlink();
   }
 
@@ -2604,7 +2638,8 @@
   function stopAllPitLoops() { Object.keys(PIT_LOOP_SPEC).forEach(k => setPitLoop(k, false)); }
 
   // Kept as a thin alias: the tyre change is the one loop other code refers to by name.
-  function setPitWrench(on) { setPitLoop('wrench', on); }
+  // setPitWrench(on) stand hier und war ein Einzeiler um setPitLoop('wrench', on), den
+  // niemand rief - der Schrauberton wird direkt ueber setPitLoop gestartet.
 
   // The pad buzzes for as long as ANY job is running, so the hands know the stop is still
   // going without looking. Re-armed on a timer because a rumble effect has a fixed
@@ -2732,9 +2767,6 @@
     showHudToast(wasServicing ? 'Boxenstopp abgebrochen' : 'Boxengasse abgebrochen');
     log('Boxenstopp abgebrochen, kein Sprit, keine Reparatur.', 'info');
   }
-  // Der Boxenstopp-Knopf ist im Schirm (race-act-pit); dieser hier stammt aus der
-  // entfernten Karte und kann fehlen.
-  if ($('btn-pitstop')) $('btn-pitstop').onclick = requestPitStop;
 
   updateDamageFuelUI();
 

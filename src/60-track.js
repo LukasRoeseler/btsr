@@ -1286,7 +1286,6 @@
     trackRotationDeg = (trackRotationDeg + deltaDeg + 360) % 360;
     refreshTrackPreview();
   }
-  if ($('track-rotate-left')) $('track-rotate-left').onclick = () => rotateTrack(-90);
   $('track-rotate-right').onclick = () => rotateTrack(90);
 
   function refreshTrackList() {

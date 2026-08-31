@@ -440,20 +440,12 @@
 
     const live = !!(device && device.gatt && device.gatt.connected);
     // race-conn und race-track sassen in der entfernten Kachel "Strecke". Der
-    // Verbindungszustand steht jetzt in der Fusszeile des Schirms; die Zeilen bleiben
-    // stehen, damit die Kachel ohne Suche wieder eingesetzt werden kann.
-    setTxt('race-conn', live ? 'verbunden' : 'getrennt');
-    const cn = $('race-conn');
-    if (cn) cn.className = 'gt3-lbl ' + (live ? 'gt3-ok' : 'gt3-bad');
     // Weather icon plus the fitted tyres. The tyres matter more than the weather here:
     // they are what tells you whether the pit stop is still outstanding.
     const wet = weather === 'rain';
     $('race-wx-sun').style.display = wet ? 'none' : '';
     $('race-wx-rain').style.display = wet ? '' : 'none';
     $('race-wx-rain').style.color = wet ? '#5aa9ff' : '';
-    // Die Textbeschriftung an der Wetterkachel ist entfernt, sie zeigt nur noch das
-    // Symbol. Welche Reifen montiert sind, steht in der Reifenkachel.
-    setTxt('race-tyres', tyres === 'wet' ? 'Regen' : 'Slicks');
     // G plot. Red is the simulation, green the car's own raw motion bytes — the two are
     // scaled independently on purpose: the real numbers are far noisier and much larger
     // relative to their range, so a shared scale would push one of them off the dial.
@@ -517,6 +509,17 @@
     // Dieselben zwei Groessen, die auf dem Steuerkreuz liegen - hoch/runter und
     // links/rechts. Die Kachel zeigt, was das Kreuz verstellt, und nichts anderes.
     $('race-trim-accel').textContent = Math.round(physEngine.config.brakeBias * 100) + '%';
+    // Die Marke auf der Skala. Der Bereich kommt aus dem Bedienelement und nicht aus
+    // Konstanten hier: eine zweite Kopie von min und max liefe beim naechsten Nachziehen
+    // auseinander.
+    const bm = $('race-bias-mark'), bi = $('setting-brakebias');
+    if (bm && bi) {
+      const lo = +bi.min, hi = +bi.max;
+      const t = Math.max(0, Math.min(1,
+        (physEngine.config.brakeBias * 100 - lo) / Math.max(1e-6, hi - lo)));
+      // Oben ist VORN, also wird t umgedreht: viel Balance vorn heisst kleine y-Koordinate.
+      bm.setAttribute('y', (2.5 + (1 - t) * 16.2).toFixed(2));
+    }
     $('race-trim-steer').textContent = steerRespPct(physEngine.config.steerResponse) + '%';
 
     // Pit banner replaces the shift bar while the pit lane is active — impossible to miss,
@@ -566,16 +569,17 @@
     ).join('');
   }
 
+  // Hier standen sechs setTxt/setSty auf Elemente der entfernten alten Karte
+  // (dash-gear, dash-speed, dash-rpm, dash-abs, dash-head, dash-brake). Alle geschuetzt
+  // ueber setTxt/setSty, also harmlos - aber die Funktion sah aus, als zeichnete sie ein
+  // Armaturenbrett, und das tut sie nicht: das macht updateRaceScreen().
+  //
+  // resolveLights() bleibt, und zwar nicht als Anzeige: es setzt lightBits und liefert
+  // raceLampHead, die BEIDE ins gesendete Paket gehen.
   function updateDashboard(out) {
     const st = physEngine.state;
-    setTxt('dash-gear', gearLabel(physEngine.state));
-    setTxt('dash-speed', Math.abs(st.speedKmh).toFixed(1));   // signed while reversing
-    setTxt('dash-rpm', Math.round(st.rpm));
     updateRaceScreen(st, out);
-    setTxt('dash-abs', physEngine.state.absActive ? 'AKTIV' : '-');
     const lamp = resolveLights(out.lights.head, out.lights.brake);
-    setSty('dash-head', 'background', lamp.head ? '#f5e642' : '#444');
-    setSty('dash-brake', 'background', lamp.brake ? 'var(--bad)' : '#444');
     raceLampHead = lamp.head;
   }
 

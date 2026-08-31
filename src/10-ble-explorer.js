@@ -58,14 +58,20 @@
   const setTxt = (id, v) => { const el = $(id); if (el) el.textContent = v; };
   const setSty = (id, k, v) => { const el = $(id); if (el) el.style[k] = v; };
   const logEl = $('log');
-  const dot = $('conn-dot');
-  // The dot IS the connection status now. The word next to it said the same thing a second
-  // time and cost the width of a button on a phone. It is not deleted, it moves into title
-  // and aria-label - a screen reader still announces it and a hover still shows it.
-  const statusEl = {
-    set textContent(v) { dot.title = String(v); dot.setAttribute('aria-label', String(v)); },
-    get textContent() { return dot.title; },
-  };
+  // Hier stand ein Wrapper um #conn-dot, und in ihm ein ECHTER FEHLER:
+  //
+  //     const statusEl = { set textContent(v) { dot.title = String(v); ... } };
+  //
+  // #conn-dot gibt es im Dokument nicht mehr - der Punkt in der Kopfzeile ist beim
+  // Verkleinern entfallen, und der Verbindungszustand steht heute in der Fusszeile des
+  // Cockpits. dot war damit null, und der Setter fasste ihn ungeschuetzt an: jeder Aufruf
+  // von setConnected() warf eine Ausnahme, also jedes Verbinden und Trennen ueber den
+  // Erkundungsweg.
+  //
+  // Das Bemerkenswerte daran: der Kommentar in setConnected() warnt genau davor. Geschuetzt
+  // waren dot und die zwei Knoepfe; uebersehen war, dass statusEl KEIN Element ist, sondern
+  // ein Objektliteral. if (statusEl) ist immer wahr - es prueft den Wrapper und nicht das
+  // Element, und sah dadurch aus wie ein Schutz.
   const servicesContainer = $('services-container');
   const controlSelect = $('control-char-select');
 
@@ -104,14 +110,11 @@
     // sind entfernt worden, und ein blinder Zugriff auf einen von beiden wuerde beim
     // Verbinden eine Ausnahme werfen - also genau in dem Moment, in dem am wenigsten Zeit
     // ist, sie zu suchen.
-    if (dot) dot.classList.toggle('connected', isConnected);
-    if (statusEl) {
-      statusEl.textContent = isConnected
-        ? `verbunden: ${device?.name || device?.id || ''}` : 'nicht verbunden';
-    }
-    const bc = $('btn-connect'), bd = $('btn-disconnect');
+    // Nur noch der Verbindungsknopf. Der Punkt und der Trennen-Knopf in der Kopfzeile sind
+    // entfallen, und der Verbindungszustand steht in der Fusszeile des Cockpits - eine
+    // zweite Anzeige dafuer waere ohnehin eine zweite Wahrheit.
+    const bc = $('btn-connect');
     if (bc) bc.disabled = isConnected;
-    if (bd) bd.disabled = !isConnected;
   }
 
   async function connect() {

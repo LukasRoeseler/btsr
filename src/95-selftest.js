@@ -1291,7 +1291,6 @@
       merk.lt.forEach(l => raceLapTimes.push(l));
       dashLastActedCode = merk.ac; dashLastActedAt = merk.aa;
       setPitState(merk.ps);
-      renderLapList();
     }
   });
 
