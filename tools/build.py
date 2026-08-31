@@ -53,6 +53,44 @@ def build():
     return ''.join(parts)
 
 
+def local_refs(html):
+    """Alle lokalen src=/href= aus dem Markup, mit Zeilennummer.
+
+    Auch aus KOMMENTAREN. Das ist Absicht und nicht Faulheit: ein auskommentierter
+    Block mit href= auf eine geloeschte Datei ist eine Zeitbombe - er wird eines Tages
+    wieder einkommentiert, und dann fehlt die Datei. Wer einen Block stilllegt, soll
+    die Verweise darin mit stilllegen.
+    """
+    raus = []
+    for nr, zeile in enumerate(html.split(chr(10)), 1):
+        for attr in ('src="', 'href="'):
+            i = 0
+            while True:
+                i = zeile.find(attr, i)
+                if i < 0:
+                    break
+                i += len(attr)
+                j = zeile.find(chr(34), i)
+                if j < 0:
+                    break
+                ziel = zeile[i:j]
+                i = j
+                if not ziel or ziel[0] in '#?':
+                    continue
+                if '://' in ziel or ziel.startswith(('data:', 'mailto:', '//')):
+                    continue
+                raus.append((nr, ziel.split('?')[0].split('#')[0]))
+    return raus
+
+
+def check_refs(html):
+    fehlend = []
+    for nr, ziel in local_refs(html):
+        if not os.path.exists(os.path.join(REPO, ziel)):
+            fehlend.append((nr, ziel))
+    return fehlend
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
     ap.add_argument('--check', action='store_true',
@@ -81,11 +119,26 @@ def main():
         print('  Bau       : %r' % built[i:i + 60], file=sys.stderr)
         return 1
 
+    fehlend = check_refs(built)
+
     with io.open(OUT, 'w', encoding='utf-8', newline='') as f:
         f.write(built)
     print('index.html gebaut: %d Zeichen aus %d Dateien' % (len(built), len(names)))
     for n in names:
         print('  ' + n)
+
+    # Die Pruefung steht NACH dem Schreiben und bricht nicht ab: ein fehlender Verweis
+    # macht die App nicht unbrauchbar, und ein Bau, der gar nichts schreibt, macht das
+    # Suchen schwerer. Aber sie ist laut und gibt einen Fehlerwert zurueck - damit
+    # faellt sie in einer Kette auf.
+    if fehlend:
+        print('', file=sys.stderr)
+        print('FEHLENDE VERWEISE: %d' % len(fehlend), file=sys.stderr)
+        for nr, ziel in fehlend:
+            print('  Zeile %-6d %s' % (nr, ziel), file=sys.stderr)
+        return 2
+    print('  Verweise geprueft: %d lokale src/href, alle vorhanden'
+          % len(local_refs(built)))
     return 0
 
 

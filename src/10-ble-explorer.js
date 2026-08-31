@@ -1195,13 +1195,29 @@
     "zwei": "two",
     "zweiter": "second",
     "· abseits": "· off track",
-    "Über die Muster gefahren meldet das Auto: eigenes Original-Blatt 0x0a, unsere Rekonstruktion 0x03, Boxengasse gar nichts.": "Driven over the patterns, the car reports: your own original sheet 0x0a, our reconstruction 0x03, pit lane nothing at all.",
     "Über": "Over",
     "Übernehmen": "Apply",
     "← Entwicklertools": "← Developer tools",
     "← Strecke": "← Track",
     "⛶ Vollbild": "⛶ Fullscreen",
     "🏁 Freies Training starten": "🏁 Start free practice",
+    // ---- Block 1 (v0.5): Druckvorlagen, zwei Codetabellen, Vorlauf-Ergebnis.
+    // Fuenf davon sind Satzfragmente, weil ein <b> mitten im Satz drei Textknoten
+    // macht und jeder einzeln uebersetzt wird.
+    "100 % / „Tatsächliche Größe“": "100 % / “Actual size”",
+    ", auf keinen Fall „an Seite anpassen“ – sonst stimmen die Balkenabstände nicht mehr und der Sensor liest gar nichts. Der Pfeil zeigt in die Fahrtrichtung.": ", never “fit to page” – otherwise the bar spacing is wrong and the sensor reads nothing at all. The arrow points in the direction of travel.",
+    "Auf jedem Blatt steht ein 100-mm-Kontrollmaß. Nachmessen ist der einzige Weg, den Druckmaßstab zu prüfen, denn eine Druckvorschau sagt dazu nichts.": "Every sheet carries a 100 mm check measure. Measuring it is the only way to verify the print scale – a print preview tells you nothing about it.",
+    "Ausdruck und Schiene haben verschiedene Codetabellen.": "Printout and rail have different code tables.",
+    ". Im Bahn-Modus melden die Schienen 0x02 Gerade, 0x03 Linkskurve, 0x04 Rechtskurve, 0x05 und 0x06 Haarnadel, 0x0a Start/Ziel, 0x00 abseits der Bahn. Dieselbe Zahl bedeutet je Modus etwas anderes – wer Codes vergleicht, muss den Modus mitnennen.": ". In rail mode the rails report 0x02 straight, 0x03 left curve, 0x04 right curve, 0x05 and 0x06 hairpin, 0x0a start/finish, 0x00 off the track. The same number means something different in each mode – whoever compares codes has to name the mode as well.",
+    "Wieviel Anlauf der Leser braucht, ist gemessen und keine Vermutung mehr.": "How much run-up the reader needs has been measured, and is no longer a guess.",
+    "Die drei führenden dünnen Striche lassen sich abschneiden, das Blatt wird weiter gelesen: der Vorlauf ist kein Nutzdatum. Und eines der beiden wiederholten Muster genügt. Die kleinste tragende Nutzlast ist damit ein Wort ohne Vorlauf, etwa 54 mm in Fahrtrichtung. Deshalb sind die Vorlauf- und Probeblätter aus dieser Seite verschwunden – das Experiment ist gelaufen.": "The three leading thin bars can be cut off and the sheet is still read: the run-up carries no payload. And one of the two repeated patterns is enough. The smallest working payload is therefore a single word without run-up, about 54 mm along the direction of travel. That is why the run-up and probe sheets have disappeared from this page – the experiment has been run.",
+    "Nach einem Erkennen bleibt der Leser etwa eine Sekunde stumm. Bei 4 km/h Maßstabstempo sind das 1,1 m Fahrweg, also gut zweieinhalb Kachellängen: ein Muster öfter als etwa jeden Meter zu wiederholen bringt nichts. Dieselbe Sperre ist der Grund für den Mindestabstand von einer Sekunde bei der Boxengasse per Doppel-Ausdruck.": "After a reading the reader stays silent for about one second. At 4 km/h scale speed that is 1.1 m of travel, a good two and a half tile lengths: repeating a pattern more often than roughly every metre gains nothing. The same lockout is the reason for the one-second minimum gap in pit-lane detection via a double printout.",
+    "Zählt Runden und löst die Rundenzeit aus. A4 quer, direkt aus der Original-Vorlage erzeugt und nicht nachgemessen: neun Balken, dünn 3,598 mm und dick 6,604 mm, Lücken 3,514 und 6,530 mm.": "Counts laps and triggers the lap time. A4 landscape, generated directly from the original template rather than measured off it: nine bars, thin 3.598 mm and thick 6.604 mm, gaps 3.514 and 6.530 mm.",
+    "fahr über ein beliebiges ausgedrucktes Muster, hier steht sofort, welchen Code das Auto meldet.": "drive over any printed pattern and the code the car reports appears here at once.",
+    "Achtung auf den Modus:": "Mind the mode:",
+    "ein Ausdruck meldet aus der Ausdruck-Tabelle, dort ist": "a printout reports from the printout table, where",
+    "Haarnadel gehören zur": "hairpin belong to the",
+    "-Tabelle; alles andere ist unbestätigt. Trag hier den Code ein, den dein gedrucktes Boxen-Muster tatsächlich auslöst,": " table; everything else is unconfirmed. Enter the code your printed pit pattern actually triggers here,",
   };
 
   // ============================================================================

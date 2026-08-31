@@ -1066,75 +1066,15 @@
   // einer Reihenfolge haengt, wird beim naechsten Umsortieren falsch, ohne dass es auffaellt.
   let trackPaletteSel = Math.max(0, TRACK_PALETTE.findIndex(p => p.key === 'straight'));
 
-  // ---- Probeblaetter zum Knacken der Kodierung ----
+  // Hier standen bis v0.5 zwei Tabellen und zwei Linkbauer fuer die Probe- und
+  // Vorlaufblaetter zur Musterentzifferung. Sie sind weg, weil die Frage BEANTWORTET
+  // ist: die drei fuehrenden duennen Striche lassen sich abschneiden und das Blatt
+  // wird weiter gelesen, der Vorlauf ist also kein Nutzdatum, und ein Wort genuegt.
+  // Das Ergebnis steht in CARRERA_HYBRID.md und in der Druckvorlagen-Seite.
   //
-  // Erzeugt von tools/make_patterns.py. Was jede Probe fragt, steht hier daneben und nicht
-  // nur im Werkzeug: wer das Blatt in der Hand haelt, soll in der App nachlesen koennen,
-  // wozu es gut ist.
-  const MUSTER_PROBEN = [
-    [1, 'alles schmal', 'Gibt es einen Code fuer ein Muster ohne dicke Elemente?'],
-    [2, 'ein dicker Balken', 'Wieviel wiegt ein einzelner dicker Balken?'],
-    [3, 'eine breite Lücke',
-     'Wiegt eine breite Lücke dasselbe wie ein dicker Balken?'],
-    [4, 'Balken wie bekannt, Luecken schmal', 'Liest der Leser Balken und Luecken getrennt?'],
-    [5, 'KONTROLLE, unveraendert', 'Muss wieder 0x03 ergeben. Diese zuerst fahren.'],
-    [6, 'Reihenfolge umgedreht', 'Haengt der Code an der Fahrtrichtung?'],
-    [7, 'fuenf Balken', 'Zaehlt die Zahl der Balken mit?'],
-    [8, 'dreizehn Balken', 'Wie Probe 7, in der anderen Richtung.'],
-  ];
-
-  // Vorlauf-Proben: dieselbe Nutzlast, verschieden lange Vorlaeufe. Vier ist das
-  // vollstaendige Original und damit die Kontrolle, Eins die Fassung, von der berichtet ist,
-  // dass sie funktionierte.
-  const MUSTER_VORLAUF = [
-    [0, 'kein Vorlauf'], [1, 'ein dünner Balken'], [2, 'zwei'],
-    [4, 'vier, das Original'], [8, 'acht'],
-  ];
-
-  if ($('vorlauf-links')) {
-    const host = $('vorlauf-links');
-    for (const [n, kurz] of MUSTER_VORLAUF) {
-      const datei = 'muster-vorlauf-' + n + '-a4.svg';
-      const a = document.createElement('a');
-      a.href = datei; a.download = datei;
-      const b = document.createElement('button');
-      // Vorlauf 1 ist hervorgehoben, nicht 4: es reproduziert die aeltere DR!FT-Fassung
-      // zeichengenau, und von der ist bekannt, dass sie gelesen wird. Ein Fehlschlag dort
-      // ist eindeutig - dann liegt es nicht am Muster. Vorlauf 4 war als Kontrolle gedacht,
-      // kontrolliert aber nichts, solange unser Ausdruck davon ohnehin nicht gelesen wird.
-      if (n === 1) b.className = 'primary';
-      // Der GANZE Text ist der Schluessel, nicht die Woerter: diese fuenf Knoepfe werden
-      // einmal beim Laden gebaut und beim Sprachwechsel nicht neu, also greift nur der
-      // Woerterbuchweg ueber den Textknoten - und der braucht den ganzen Text. Bei einer
-      // festen, kleinen Menge ist das auch das Einfachste.
-      b.textContent = 'Vorlauf ' + n + ': ' + kurz;
-      b.title = n === 1
-        ? t('Die ältere DR!FT-Fassung, zeichengenau. Von ihr ist bekannt, dass sie '
-            + 'gelesen wird.')
-        : n === 4
-        ? t('Das vollständige aktuelle Original, zeichengenau.')
-        : t('Reicht dieser Vorlauf noch?');
-      a.appendChild(b);
-      host.appendChild(a);
-    }
-  }
-
-  if ($('probe-links')) {
-    const host = $('probe-links');
-    for (const [nr, kurz, frage] of MUSTER_PROBEN) {
-      const datei = 'muster-probe-' + nr + '-a4.svg';
-      const a = document.createElement('a');
-      a.href = datei;
-      a.download = datei;
-      const b = document.createElement('button');
-      // Probe 5 hervorheben: sie ist die Kontrolle und gehoert zuerst gefahren.
-      if (nr === 5) b.className = 'primary';
-      b.textContent = 'Probe ' + nr + ': ' + kurz;
-      b.title = frage;
-      a.appendChild(b);
-      host.appendChild(a);
-    }
-  }
+  // Die Blaetter selbst erzeugt tools/make_patterns.py in einem Aufruf wieder, falls
+  // doch noch eine Probe gebraucht wird. Der Generator ist die Quelle, die SVG waren
+  // das Ergebnis - und 21 Ergebnisse im Wurzelverzeichnis auszuliefern war der Fehler.
 
   function renderTrackPalette() {
     const host = $('track-palette');

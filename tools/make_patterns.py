@@ -21,63 +21,71 @@ Und: die Firmware hat sich seit damals geaendert, mit unbekannter Auswirkung. Je
 Muster-zu-Code-Paar braucht deshalb eine Datumsangabe.
 
 
-Warum dieses Werkzeug es gibt
-=============================
+Was seit v0.5 dazu bekannt ist
+==============================
 
-Am 25.08. gemessen, mit dem Auto ueber gedruckte Muster gefahren:
+DIE FRUEHERE BEGRUENDUNG DIESES WERKZEUGS WAR FALSCH, und sie stand hier ueber sechzig
+Zeilen lang. Sie lautete: dasselbe Blatt meldet 0x0a und unsere treue Kopie 0x03, die
+Zeichnung ist nachweislich identisch, also liegt der Unterschied im DRUCK - Massstab,
+Strichbreite, Schwaerze, Papier. Daraus folgten die acht Probemuster, die Vorlaufreihe und
+die drei Boxengassen-Nummern.
 
-    Original-Blatt des Benutzers      -> 0x0a
-    target_finish.pdf, treu kopiert   -> 0x03
-    boxengasse-a4.svg                 -> nichts erkannt
+Der Unterschied lag am MODUS. Ausdruck-Modus (Byte 14 Bit 7) und Bahn-Modus (Byte 14 Bit 5)
+haben VERSCHIEDENE Codetabellen:
 
-Der zweite Wert ist der aufschlussreiche. Die Kopie ist NACHWEISLICH treu - Balkenzahl,
-Hoehen auf 0,000 mm und Luecken auf 0,001 mm stimmen mit dem PDF ueberein, und das PDF
-enthaelt nachgeprueft keine weiteren Formen (ein Klipprechteck, neun Balken, ein Pfeil).
+    Bahn-Modus                          Ausdruck-Modus
+      0x02 Gerade                         0x01 Start/Ziel
+      0x03 Linkskurve
+      0x04 Rechtskurve
+      0x05 / 0x06 Haarnadel
+      0x0a Start/Ziel
+      0x00 abseits der Bahn
 
-Hier stand die Schlussfolgerung, target_finish.pdf sei deshalb nicht die Vorlage des
-Original-Blattes. Das war falsch: das PDF ist die AKTUELLE Vorlage (vom Benutzer berichtigt;
-die aeltere DR!FT-Fassung sieht genauso aus, nur ohne die drei fuehrenden duennen Streifen).
+Das gedruckte Start/Ziel-Blatt meldet im Ausdruck-Modus 0x01 und wird also gelesen. Die drei
+frueheren Zahlen kamen aus verschiedenen Modi und waren nie ein Widerspruch.
 
-Damit ist der Schluss einfacher. Die Vorlage ist dieselbe, die Zeichnung ist dieselbe - wenn
-das Original gelesen wird und unser Ausdruck nicht, liegt der Unterschied im DRUCK:
-Massstab, Strichbreite, Schwaerze, Papier. Dafuer ist das 100-mm-Kontrollmass auf jedem Blatt
-da, und deshalb ist das Vorlauf-1-Blatt das wichtigste Experiment: es reproduziert die
-aeltere DR!FT-Fassung zeichengenau, und von der ist bekannt, dass sie gelesen wird.
+Damit sind zwei Fragen dieses Werkzeugs BEANTWORTET statt offen, und zwar am Auto gemessen:
 
-Und 0x03 ist in der gemessenen Tabelle die LINKSKURVE. Es ist gut moeglich, dass dieses PDF
-die Linkskurven-Vorlage ist. Sicher ist nur: als Start/Ziel gedruckt richtet es Schaden an,
-weil die App dann eine Linkskurve liest, wo Start/Ziel liegt.
+  - Die drei fuehrenden duennen Striche lassen sich abschneiden, das Blatt wird weiter
+    gelesen. Der Vorlauf ist kein Nutzdatum. Die fuenf Vorlaufblaetter haben ihre Frage
+    beantwortet.
+  - Eines der beiden wiederholten Muster genuegt. Die kleinste tragende Nutzlast ist ein Wort
+    ohne Vorlauf, etwa 54 mm.
+  - Nach einem Erkennen bleibt der Leser etwa eine Sekunde stumm.
+
+Offen bleibt allein die Kodierregel, also welche Balkenfolge welche Zahl ergibt. Dafuer sind
+die acht Probemuster weiter da - aber der Weg ueber die Infrarot-Aufnahmen der ECHTEN
+Streckenteile ist besser, weil dort Wort und Bedeutung beide bekannt sind. Ein selbst
+erfundenes Muster liefert eine unbekannte Zahl; ein abgelesenes Bahnmuster liefert ein Paar.
+
+Die erzeugten SVG liegen deshalb seit v0.5 NICHT mehr im Repo. Dieses Werkzeug erzeugt sie
+auf Zuruf wieder; ausgeliefert wird nur startziel-a4.svg.
 
 Was die Boxengasse betrifft: ihr altes Muster hatte NEUN GLEICH DICKE Balken (4,00 mm) und
-nur unterschiedliche Luecken, dazu ein anderes Modulmass als das Original (4,00/7,20 gegen
-3,60/6,60 und 3,51/6,52). Zwei unabhaengige Gruende, warum ein Leser damit nicht
-synchronisiert - und beide werden hier behoben, indem das Modulmass des Originals uebernommen
-wird. Ob das reicht, sagt eine Fahrt darueber.
+nur unterschiedliche Luecken, dazu ein anderes Modulmass als das Original. Zwei unabhaengige
+Gruende, warum ein Leser damit nicht synchronisiert, und beide werden hier behoben, indem das
+Modulmass des Originals uebernommen wird. Die WAHL der Nummer 14 stand dagegen auf der
+Katalognummern-Vermutung, die mit der falschen Diagnose zusammen faellt - sie ist geraten und
+wird hier nicht mehr als begruendet ausgegeben.
 
 Die Probemuster
 ===============
 
-Einen Code auszuwaehlen ("nimm etwas Hoeheres") ist ohne die Kodierregel nicht moeglich: wir
-koennen ein Muster zeichnen, aber nicht vorhersagen, welche Zahl das Auto dafuer meldet. Die
-Regel ist mit einem einzigen bekannten Paar auch nicht zu erschliessen - dafuer braucht es
-mehrere.
-
-Die acht Probemuster sind darum so gebaut, dass jedes GENAU EINEN Faktor gegen das bekannte
-Muster aendert. Wer sie der Reihe nach ueberfaehrt und die gemeldeten Codes notiert, hat
-danach acht Paare, und daraus faellt die Regel heraus:
+Jedes aendert GENAU EINEN Faktor gegen das bekannte Muster, damit aus einer Fahrt darueber
+ein verwertbares Paar wird:
 
     p1  alles schmal                       gibt es ueberhaupt ein "leeres" Muster?
     p2  ein dicker Balken an Stelle 2      wiegt ein dicker Balken etwas, und wieviel?
     p3  eine breite Luecke an Stelle 2     wiegt eine breite Luecke etwas?
     p4  dicke Balken wie im Original,      trennt der Leser Balken und Luecken?
         aber alle Luecken schmal
-    p5  Original, unveraendert             Kontrolle: kommt wieder 0x03?
+    p5  Original, unveraendert             Kontrolle: kommt wieder 0x01?
     p6  Original, Reihenfolge umgedreht    haengt der Code an der Fahrtrichtung?
     p7  fuenf Balken statt neun            zaehlt die Balkenzahl mit?
     p8  dreizehn Balken statt neun         dito, in der anderen Richtung
 
-p5 ist die wichtigste: ergibt sie nicht wieder 0x03, ist die Messung selbst nicht
-wiederholbar, und dann sind alle anderen Zahlen wertlos. Sie zuerst fahren.
+p5 ist die wichtigste: ergibt sie im Ausdruck-Modus nicht wieder 0x01, ist die Messung selbst
+nicht wiederholbar, und dann sind alle anderen Zahlen wertlos. Sie zuerst fahren.
 """
 
 import argparse

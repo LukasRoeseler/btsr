@@ -2123,10 +2123,7 @@
   <section class="tabpage" id="tab-doc">
     <div class="card" style="border-color:var(--warn)">
       <p class="muted" style="margin:0" data-i18n-skip>
-        <b>English readers:</b> the interface is translated, this documentation is not yet.
-        It runs to about 6800 words of measurement write-ups; translating it half-way would
-        be worse than leaving it in one language.
-        <b>Zur Doku:</b> die Oberfl&auml;che ist zweisprachig, dieser Teil noch nicht.
+        <b>This is available in German only, at the moment.</b>
       </p>
     </div>
     <button class="misc-back goto-tab" data-tab="misc">&larr; Entwicklertools</button>
@@ -2473,8 +2470,10 @@
       <p class="muted" style="font-size:11.5px">
         <b>Was hier <em>nicht</em> steht:</b> welche Zahl das Auto aus diesen 17 Bits bildet
         und wie es sie auf die Streckenart abbildet, ist nicht entschl&uuml;sselt. Bekannt
-        ist nur, was am Ende in Byte&nbsp;12 ankommt (0x0a Start/Ziel, 0x02 Gerade, 0x03
-        Linkskurve, 0x04 Rechtskurve). Das Bild zeigt die Geometrie, nicht die Bedeutung.
+        ist nur, was am Ende in Byte&nbsp;12 ankommt &ndash; und das h&auml;ngt am Modus:
+        im Bahn-Modus 0x0a Start/Ziel, 0x02 Gerade, 0x03 Linkskurve, 0x04 Rechtskurve, im
+        Ausdruck-Modus 0x01 f&uuml;r Start/Ziel. Das Bild zeigt die Geometrie, nicht die
+        Bedeutung.
       </p>
       <p class="muted">
         Das ganze Muster ist <b>75,5&nbsp;mm</b> lang in Fahrtrichtung, die Balken sind
@@ -2498,10 +2497,11 @@
 
       <h3 style="font-size:14px; margin:16px 0 6px 0">Was wir nicht wissen</h3>
       <p class="muted">
-        Die belegten Codes sind <code>0x0a</code> Start/Ziel, <code>0x02</code> Gerade,
-        <code>0x03</code> Linkskurve, <code>0x04</code> Rechtskurve, <code>0x05</code>
-        Haarnadel links, <code>0x06</code> Haarnadel rechts und <code>0x00</code>
-        abseits der Bahn. <b>Die Kodierungsregel selbst kennen wir nicht.</b> Aus
+        Die belegten Codes im <b>Bahn-Modus</b> sind <code>0x0a</code> Start/Ziel,
+        <code>0x02</code> Gerade, <code>0x03</code> Linkskurve, <code>0x04</code>
+        Rechtskurve, <code>0x05</code> Haarnadel links, <code>0x06</code> Haarnadel rechts
+        und <code>0x00</code> abseits der Bahn; im <b>Ausdruck-Modus</b> ist
+        <code>0x01</code> Start/Ziel. <b>Die Kodierungsregel selbst kennen wir nicht.</b> Aus
         <em>einem</em> exakt ausgemessenen Muster l&auml;sst sich nicht ableiten, wie die 17
         Elemente in die Zahl <code>0x01</code> &uuml;bersetzt werden, daf&uuml;r
         br&auml;uchte es die Muster der anderen Kacheln, senkrecht von oben fotografiert und
@@ -2787,19 +2787,20 @@
       <h3 style="font-size:14px; margin:16px 0 6px 0">Das Code-Alphabet ist vollst&auml;ndig</h3>
       <div class="doc-table-wrap"><table class="doc-table">
         <tr><th>Code</th><th>Bedeutung</th><th>Beleg</th></tr>
-        <!-- 25.08.: gemessen, nicht mehr geraten. Vorher stand hier 0x01 als "belegt",
-             und das war es nie - es kam aus einem Foto. Die Folge war unsichtbar und
-             erheblich: die Rundenzaehlung prueft diesen Wert und hat auf dem
-             Original-Startziel-Blatt nie ausgeloest, und das Streckenlernen faengt erst ab
-             Start/Ziel an mitzuschreiben, also nie. -->
-        <tr><td><code>0x0a</code></td><td>Start/Ziel, <b>am gedruckten Blatt</b> im
-          Ausdruck-Modus gemessen. Was die Kunststoffschiene im Bahn-Modus sendet, ist
-          <b>nicht</b> gemessen: es sind zwei Lesearten, und es k&ouml;nnen zwei
-          Codes&auml;tze sein</td><td class="doc-sure">belegt f&uuml;r Ausdruck</td></tr>
-        <tr><td><code>0x01</code></td><td>fr&uuml;her f&uuml;r Start/Ziel angenommen, nie
-          belegt. Bleibt g&uuml;ltig, und seit dem 26.08. hat es eine plausible Rolle: es
-          k&ouml;nnte der Code sein, den die <b>Schiene</b> im Bahn-Modus meldet. Auch das
-          ist nicht gemessen</td><td class="doc-guess">Annahme</td></tr>
+        <!-- Die Vermutung vom 26.08. hatte es fast: "es koennten zwei Codesaetze sein,
+             und 0x01 koennte der der Schiene sein". Richtig war der erste Teil, falsch die
+             Richtung. 0x01 ist der AUSDRUCK, 0x0a die SCHIENE.
+             Die alte Zeile behauptete, 0x0a sei am gedruckten Blatt gemessen - das ist
+             genau die Messung, die inzwischen als unbrauchbar verworfen ist. Der
+             Belegstatus wird deshalb getrennt gehalten: ein Rennmitschnitt und eine
+             Beobachtung sind nicht dasselbe. -->
+        <tr><td><code>0x01</code></td><td>Start/Ziel <b>im Ausdruck-Modus</b>, also am
+          gedruckten Blatt. Der Ausdruck hat seine eigene Codetabelle &ndash; dieselbe Zahl
+          bedeutet im Bahn-Modus etwas anderes</td><td class="doc-sure">am Auto
+          beobachtet</td></tr>
+        <tr><td><code>0x0a</code></td><td>Start/Ziel <b>im Bahn-Modus</b>, also von der
+          Kunststoffschiene. Belegt aus dem Rennmitschnitt, aus dem auch 0x02 bis 0x06
+          stammen</td><td class="doc-sure">belegt</td></tr>
         <tr><td><code>0x02</code></td><td>Gerade</td><td class="doc-sure">belegt</td></tr>
         <tr><td><code>0x03</code></td><td><b>Linkskurve</b></td><td class="doc-sure">belegt (21.08.)</td></tr>
         <tr><td><code>0x04</code></td><td>Rechtskurve</td><td class="doc-sure">belegt</td></tr>
@@ -4847,132 +4848,80 @@
       <button class="misc-back subpage-back" data-sub="">&larr; Strecke</button>
       <h2>Druckvorlagen</h2>
       <p class="muted">
-        Muster zum Ausdrucken und Auslegen. <b>Wichtig beim Drucken:</b> A4 <b>quer</b>,
-        Skalierung <b>100 % / „Tatsächliche Größe"</b>: auf keinen Fall „an Seite anpassen",
-        sonst stimmen die Balkenabstände nicht mehr und der Sensor liest gar nichts.
-        Der Pfeil zeigt in die Fahrtrichtung.
+        Muster zum Ausdrucken und Auslegen. <b>Wichtig beim Drucken:</b> Skalierung
+        <b>100 % / &bdquo;Tats&auml;chliche Gr&ouml;&szlig;e&ldquo;</b>, auf keinen Fall
+        &bdquo;an Seite anpassen&ldquo; &ndash; sonst stimmen die Balkenabst&auml;nde nicht
+        mehr und der Sensor liest gar nichts. Der Pfeil zeigt in die Fahrtrichtung.
       </p>
       <p class="muted" style="font-size:11.5px">
-        Auf den neuen Bl&auml;ttern steht ein 100-mm-Kontrollma&szlig;. Nachmessen ist der
-        einzige Weg, den Druckma&szlig;stab zu pr&uuml;fen, denn eine Druckvorschau sagt
-        dazu nichts.
+        Auf jedem Blatt steht ein 100-mm-Kontrollma&szlig;. Nachmessen ist der einzige Weg,
+        den Druckma&szlig;stab zu pr&uuml;fen, denn eine Druckvorschau sagt dazu nichts.
       </p>
-      <p class="muted" style="font-size:11.5px; border-left:3px solid var(--bad);
+
+      <!-- Hier stand bis v0.4 eine Diagnose, die falsch war: dasselbe Blatt hatte 0x0a,
+           0x03 und 0x01 gemeldet, und daraus wurde geschlossen, der Unterschied liege im
+           Druck. Er liegt am MODUS - Ausdruck und Schiene haben verschiedene Codetabellen.
+           Auf derselben Fehlannahme stand der Katalognummern-Absatz und die Begruendung
+           der drei Boxengassen-Nummern; beides ist mit weg. -->
+      <p class="muted" style="font-size:11.5px; border-left:3px solid var(--good);
          padding-left:9px">
-        <b>Messstand vom 25.08.</b>
+        <b>Ausdruck und Schiene haben verschiedene Codetabellen.</b>
       </p>
-      <p class="muted" style="font-size:11.5px; border-left:3px solid var(--bad);
+      <p class="muted" style="font-size:11.5px; border-left:3px solid var(--good);
          padding-left:9px; margin-top:0">
-        &Uuml;ber die Muster gefahren meldet das Auto: eigenes Original-Blatt 0x0a, unsere
-        Rekonstruktion 0x03, Boxengasse gar nichts.
+        Im Ausdruck-Modus meldet das Start/Ziel-Blatt <b>0x01</b>. Im Bahn-Modus melden die
+        Schienen 0x02 Gerade, 0x03 Linkskurve, 0x04 Rechtskurve, 0x05 und 0x06 Haarnadel,
+        0x0a Start/Ziel, 0x00 abseits der Bahn. Dieselbe Zahl bedeutet je Modus etwas
+        anderes &ndash; wer Codes vergleicht, muss den Modus mitnennen.
       </p>
-      <p class="muted" style="font-size:11.5px; border-left:3px solid var(--bad);
+      <p class="muted" style="font-size:11.5px; border-left:3px solid var(--good);
          padding-left:9px; margin-top:0">
-        Die Rekonstruktion ist nachweislich eine treue Kopie des Original-PDF: Balkenzahl,
-        H&ouml;hen auf 0,000 mm und L&uuml;cken auf 0,001 mm stimmen &uuml;berein, und das
-        PDF enth&auml;lt nachgepr&uuml;ft keine weiteren Formen. Das PDF ist die aktuelle
-        Vorlage. Wenn also das Original gelesen wird und unser Ausdruck nicht, liegt der
-        Unterschied im Druck und nicht in der Zeichnung: Ma&szlig;stab, Strichbreite,
-        Schw&auml;rze, Papier. Erst das 100-mm-Kontrollma&szlig; nachmessen, dann einen
-        d&uuml;nnen und einen dicken Balken auf beiden Bl&auml;ttern vergleichen.
+        <b>Wieviel Anlauf der Leser braucht, ist gemessen und keine Vermutung mehr.</b>
       </p>
+      <p class="muted" style="font-size:11.5px; border-left:3px solid var(--good);
+         padding-left:9px; margin-top:0">
+        Die drei f&uuml;hrenden d&uuml;nnen Striche lassen sich abschneiden, das Blatt wird
+        weiter gelesen: der Vorlauf ist kein Nutzdatum. Und eines der beiden wiederholten
+        Muster gen&uuml;gt. Die kleinste tragende Nutzlast ist damit ein Wort ohne Vorlauf,
+        etwa 54 mm in Fahrtrichtung. Deshalb sind die Vorlauf- und Probebl&auml;tter aus
+        dieser Seite verschwunden &ndash; das Experiment ist gelaufen.
+      </p>
+      <p class="muted" style="font-size:11.5px; border-left:3px solid var(--good);
+         padding-left:9px; margin-top:0">
+        Nach einem Erkennen bleibt der Leser etwa eine Sekunde stumm. Bei 4 km/h
+        Ma&szlig;stabstempo sind das 1,1 m Fahrweg, also gut zweieinhalb Kachell&auml;ngen:
+        ein Muster &ouml;fter als etwa jeden Meter zu wiederholen bringt nichts. Dieselbe
+        Sperre ist der Grund f&uuml;r den Mindestabstand von einer Sekunde bei der
+        Boxengasse per Doppel-Ausdruck.
+      </p>
+
       <div class="row" style="gap:22px; align-items:flex-start; flex-wrap:wrap">
         <div style="flex:1 1 260px; min-width:240px">
           <img src="startziel-a4.svg" alt="Vorschau Start/Ziel-Muster"
-               style="width:100%; max-width:300px; border:1px solid var(--border); border-radius:4px; display:block">
-          <p style="margin:8px 0 4px 0"><b>Start / Ziel, nicht auslegen</b></p>
+               style="width:100%; max-width:300px; border:1px solid var(--border);
+                      border-radius:4px; display:block">
+          <p style="margin:8px 0 4px 0"><b>Start / Ziel</b></p>
           <p class="muted" style="font-size:11.5px; margin:0 0 8px 0">
-            Start/Ziel z&auml;hlt Runden und l&ouml;st die Rundenzeit aus, und der Code
-            daf&uuml;r ist gemessen 0x0a. Dieses Blatt liefert ihn nicht: gemessen meldet es
-            0x03, und das ist die Linkskurve. Ausgelegt verdreht es die gelernte Strecke und
-            z&auml;hlt keine Runde. Es bleibt hier, weil es die einzige Vorlage ist, von der
-            belegt ist, dass das Auto sie &uuml;berhaupt liest, und weil die Probebl&auml;tter
-            darauf aufbauen.
+            Z&auml;hlt Runden und l&ouml;st die Rundenzeit aus. A4 quer, direkt aus der
+            Original-Vorlage erzeugt und nicht nachgemessen: neun Balken, d&uuml;nn
+            3,598 mm und dick 6,604 mm, L&uuml;cken 3,514 und 6,530 mm.
           </p>
           <a href="startziel-a4.svg" download="startziel-a4.svg">
-            <button>Start/Ziel herunterladen (SVG)</button>
+            <button class="primary">Start/Ziel herunterladen (SVG)</button>
           </a>
-        </div>
-        <div style="flex:1 1 260px; min-width:240px">
-          <img src="muster-boxengasse-a4.svg" alt="Vorschau Boxengassen-Muster"
-               style="width:100%; max-width:300px; border:1px solid var(--border); border-radius:4px; display:block">
-          <p style="margin:8px 0 4px 0"><b>Boxengasse, Katalognummer 14</b></p>
-          <p class="muted" style="font-size:11.5px; margin:0 0 8px 0">
-            L&ouml;st Tempolimit und Boxenstopp aus. Das alte Blatt wurde gar nicht erkannt,
-            und daf&uuml;r gibt es zwei sichtbare Gr&uuml;nde: alle neun Balken waren gleich
-            dick, es gab also nur ein Symbol statt zwei, und das Modulma&szlig; war ein
-            anderes als beim Original. Das neue Blatt nimmt das Modulma&szlig; des Originals.
-          </p>
-          <p class="muted" style="font-size:11.5px; margin:0 0 8px 0">
-            Weil Carrera die Teile ab 1 durchnumeriert, sind die bekannten Codes
-            Katalognummern und keine Bitmuster. Von 22 durchgerechneten Schemata erkl&auml;ren
-            genau zwei das bekannte Muster: der Abstand der dicken Balken, und die Zahl der
-            breiten L&uuml;cken. Dieses Blatt ist so gebaut, dass beide dieselbe Zahl ergeben,
-            n&auml;mlich 14. Trifft eine der beiden Regeln, meldet das Auto 0x0e.
-          </p>
-          <p class="muted" style="font-size:11.5px; margin:0 0 8px 0">
-            Vergeben sind 2 Gerade, 3 Linkskurve, 4 Rechtskurve, 5 und 6 Haarnadel, 10
-            Start/Ziel. 14 l&auml;sst Luft f&uuml;r die Kurven und die Schikane, die noch
-            nie &uuml;berfahren wurden. Sollte 14 doch belegt sein, liegen 18 und 22 daneben.
-          </p>
-          <div class="row" style="gap:6px; flex-wrap:wrap">
-            <a href="muster-boxengasse-a4.svg" download="muster-boxengasse-a4.svg">
-              <button class="primary">Nummer 14 (0x0e)</button>
-            </a>
-            <a href="muster-boxengasse-18-a4.svg" download="muster-boxengasse-18-a4.svg">
-              <button>Nummer 18 (0x12)</button>
-            </a>
-            <a href="muster-boxengasse-22-a4.svg" download="muster-boxengasse-22-a4.svg">
-              <button>Nummer 22 (0x16)</button>
-            </a>
-          </div>
         </div>
       </div>
 
-      <h3 style="margin-top:20px">Vorlauf-Bl&auml;tter: wieviel Anlauf braucht der Leser?</h3>
-      <p class="muted" style="font-size:11.5px">
-        Das bekannte Muster beginnt in Fahrtrichtung mit vier d&uuml;nnen Balken. Von einer
-        Fassung ist berichtet, dass sie auch ohne drei davon erkannt wurde &ndash; der
-        Vorlauf ist also kein Nutzdatum, sondern die Strecke, an der sich der Leser auf die
-        schmale Modulbreite einstellt.
-      </p>
-      <p class="muted" style="font-size:11.5px">
-        Diese f&uuml;nf Bl&auml;tter tragen dieselbe Nutzlast und verschieden lange
-        Vorl&auml;ufe. Melden alle denselben Code, ist der Vorlauf best&auml;tigt kein
-        Nutzdatum, und die k&uuml;rzeste noch gelesene Fassung sagt, wieviel Anlauf gebraucht
-        wird. Das verk&uuml;rzt jedes weitere Muster.
-      </p>
-      <p class="muted" style="font-size:11.5px">
-        <b>Vorlauf 1 ist das wichtigste Blatt.</b>
-      </p>
-      <p class="muted" style="font-size:11.5px; margin-top:0">
-        Es reproduziert die &auml;ltere DR!FT-Fassung zeichengenau, und von der ist berichtet,
-        dass sie gelesen wird &ndash; auf beiden Fahrzeugfamilien. Damit ist es das eine
-        Muster, bei dem ein Fehlschlag eindeutig ist: wird es nicht gelesen, kann es nicht am
-        Muster liegen, sondern nur am Druck.
-      </p>
-      <div class="row" style="gap:8px; flex-wrap:wrap" id="vorlauf-links"></div>
-
-      <h3 style="margin-top:20px">Falls keine der drei Nummern trifft</h3>
-      <p class="muted" style="font-size:11.5px">
-        Dann gilt keine der beiden Regeln, und es braucht mehr als ein bekanntes Paar. Die
-        acht Probebl&auml;tter darunter sind daf&uuml;r gebaut.
-      </p>
-      <p class="muted" style="font-size:11.5px">
-        Deshalb &auml;ndert jedes dieser Bl&auml;tter genau einen Faktor gegen das bekannte
-        Muster. Der Reihe nach &uuml;berfahren, den gemeldeten Code notieren, und danach
-        l&auml;sst sich die Regel bestimmen, dann auch ein h&ouml;herer freier Code
-        f&uuml;r die Boxengasse.
-      </p>
-      <p class="muted" style="font-size:11.5px">
-        <b>Probe 5 zuerst.</b>
-      </p>
-      <p class="muted" style="font-size:11.5px; margin-top:0">
-        Sie ist die Kontrolle und reproduziert das bekannte Muster auf 0,032 mm, sie muss
-        also wieder 0x03 ergeben. Wenn nicht, ist die Messung nicht wiederholbar und die
-        anderen Zahlen sind wertlos.
-      </p>
-      <div class="row" style="gap:8px; flex-wrap:wrap" id="probe-links"></div>
+      <!-- Boxengasse, vorlaeufig auskommentiert. Das Blatt wurde nicht erkannt, und die
+           Nummernwahl 14/18/22 stand auf der Katalognummern-Vermutung, die mit der
+           falschen Druck-Diagnose zusammen faellt. Sie kommt zurueck, sobald aus den
+           Infrarot-Aufnahmen ein zweites Wort gelesen ist und die Nummer begruendet statt
+           geraten werden kann.
+        Es war eine Kachel mit Vorschaubild und drei Knoepfen auf die Blaetter
+        muster-boxengasse-a4, -18- und -22-, erzeugt von tools/make_patterns.py.
+        Absichtlich ohne src= und href= aufgeschrieben: die Dateien gibt es nicht mehr,
+        und der Selbsttest sucht solche Verweise mit Zeichensuche - auch in Kommentaren.
+      -->
     </div>
 
     <div class="card subpage" id="sub-pit">
@@ -5035,10 +4984,11 @@
       </div>
       <p class="muted" style="font-size:11.5px">
         <b>Muster-Sonde:</b> fahr über ein beliebiges ausgedrucktes Muster, hier steht sofort,
-        welchen Code das Auto meldet. Sicher bekannt sind <code>0x0a</code> Start/Ziel,
-        <code>0x02</code> Gerade, <code>0x03</code> Linkskurve, <code>0x04</code> Rechtskurve,
-        <code>0x05</code> Haarnadel links und <code>0x06</code> Haarnadel rechts;
-        alles andere ist unbestätigt. Trag hier den Code ein, den dein gedrucktes Boxen-Muster
+        welchen Code das Auto meldet. <b>Achtung auf den Modus:</b> ein Ausdruck meldet
+        aus der Ausdruck-Tabelle, dort ist <code>0x01</code> Start/Ziel. Die Werte
+        <code>0x0a</code> Start/Ziel, <code>0x02</code> Gerade, <code>0x03</code>
+        Linkskurve, <code>0x04</code> Rechtskurve, <code>0x05</code> und <code>0x06</code>
+        Haarnadel geh&ouml;ren zur <b>Bahn</b>-Tabelle; alles andere ist unbest&auml;tigt. Trag hier den Code ein, den dein gedrucktes Boxen-Muster
         tatsächlich auslöst, <code>0x08</code> war nie ein reales Signal und ist deshalb
         nicht mehr die Vorgabe.
       </p>
@@ -5055,15 +5005,14 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.4.23</span></span>
+    <span class="foot-ver">v<span id="app-version">0.4.24</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
          Verbindung. Steht data-i18n-skip, weil der Satz auf Englisch stehen bleibt - er
          richtet sich an jeden, nicht nur an deutsche Leser. -->
     <span class="foot-dim foot-legal" data-i18n-skip>Independent project, not affiliated
-      with, endorsed by or connected to Carrera or Stadlbauer Marketing + Vertrieb
-      GmbH.</span>
+      with, endorsed by or connected to Carrera.</span>
   </span>
   <span class="foot-right">
     <button type="button" id="lang-toggle" aria-label="Sprache wechseln / switch language">
@@ -6282,13 +6231,29 @@
     "zwei": "two",
     "zweiter": "second",
     "· abseits": "· off track",
-    "Über die Muster gefahren meldet das Auto: eigenes Original-Blatt 0x0a, unsere Rekonstruktion 0x03, Boxengasse gar nichts.": "Driven over the patterns, the car reports: your own original sheet 0x0a, our reconstruction 0x03, pit lane nothing at all.",
     "Über": "Over",
     "Übernehmen": "Apply",
     "← Entwicklertools": "← Developer tools",
     "← Strecke": "← Track",
     "⛶ Vollbild": "⛶ Fullscreen",
     "🏁 Freies Training starten": "🏁 Start free practice",
+    // ---- Block 1 (v0.5): Druckvorlagen, zwei Codetabellen, Vorlauf-Ergebnis.
+    // Fuenf davon sind Satzfragmente, weil ein <b> mitten im Satz drei Textknoten
+    // macht und jeder einzeln uebersetzt wird.
+    "100 % / „Tatsächliche Größe“": "100 % / “Actual size”",
+    ", auf keinen Fall „an Seite anpassen“ – sonst stimmen die Balkenabstände nicht mehr und der Sensor liest gar nichts. Der Pfeil zeigt in die Fahrtrichtung.": ", never “fit to page” – otherwise the bar spacing is wrong and the sensor reads nothing at all. The arrow points in the direction of travel.",
+    "Auf jedem Blatt steht ein 100-mm-Kontrollmaß. Nachmessen ist der einzige Weg, den Druckmaßstab zu prüfen, denn eine Druckvorschau sagt dazu nichts.": "Every sheet carries a 100 mm check measure. Measuring it is the only way to verify the print scale – a print preview tells you nothing about it.",
+    "Ausdruck und Schiene haben verschiedene Codetabellen.": "Printout and rail have different code tables.",
+    ". Im Bahn-Modus melden die Schienen 0x02 Gerade, 0x03 Linkskurve, 0x04 Rechtskurve, 0x05 und 0x06 Haarnadel, 0x0a Start/Ziel, 0x00 abseits der Bahn. Dieselbe Zahl bedeutet je Modus etwas anderes – wer Codes vergleicht, muss den Modus mitnennen.": ". In rail mode the rails report 0x02 straight, 0x03 left curve, 0x04 right curve, 0x05 and 0x06 hairpin, 0x0a start/finish, 0x00 off the track. The same number means something different in each mode – whoever compares codes has to name the mode as well.",
+    "Wieviel Anlauf der Leser braucht, ist gemessen und keine Vermutung mehr.": "How much run-up the reader needs has been measured, and is no longer a guess.",
+    "Die drei führenden dünnen Striche lassen sich abschneiden, das Blatt wird weiter gelesen: der Vorlauf ist kein Nutzdatum. Und eines der beiden wiederholten Muster genügt. Die kleinste tragende Nutzlast ist damit ein Wort ohne Vorlauf, etwa 54 mm in Fahrtrichtung. Deshalb sind die Vorlauf- und Probeblätter aus dieser Seite verschwunden – das Experiment ist gelaufen.": "The three leading thin bars can be cut off and the sheet is still read: the run-up carries no payload. And one of the two repeated patterns is enough. The smallest working payload is therefore a single word without run-up, about 54 mm along the direction of travel. That is why the run-up and probe sheets have disappeared from this page – the experiment has been run.",
+    "Nach einem Erkennen bleibt der Leser etwa eine Sekunde stumm. Bei 4 km/h Maßstabstempo sind das 1,1 m Fahrweg, also gut zweieinhalb Kachellängen: ein Muster öfter als etwa jeden Meter zu wiederholen bringt nichts. Dieselbe Sperre ist der Grund für den Mindestabstand von einer Sekunde bei der Boxengasse per Doppel-Ausdruck.": "After a reading the reader stays silent for about one second. At 4 km/h scale speed that is 1.1 m of travel, a good two and a half tile lengths: repeating a pattern more often than roughly every metre gains nothing. The same lockout is the reason for the one-second minimum gap in pit-lane detection via a double printout.",
+    "Zählt Runden und löst die Rundenzeit aus. A4 quer, direkt aus der Original-Vorlage erzeugt und nicht nachgemessen: neun Balken, dünn 3,598 mm und dick 6,604 mm, Lücken 3,514 und 6,530 mm.": "Counts laps and triggers the lap time. A4 landscape, generated directly from the original template rather than measured off it: nine bars, thin 3.598 mm and thick 6.604 mm, gaps 3.514 and 6.530 mm.",
+    "fahr über ein beliebiges ausgedrucktes Muster, hier steht sofort, welchen Code das Auto meldet.": "drive over any printed pattern and the code the car reports appears here at once.",
+    "Achtung auf den Modus:": "Mind the mode:",
+    "ein Ausdruck meldet aus der Ausdruck-Tabelle, dort ist": "a printout reports from the printout table, where",
+    "Haarnadel gehören zur": "hairpin belong to the",
+    "-Tabelle; alles andere ist unbestätigt. Trag hier den Code ein, den dein gedrucktes Boxen-Muster tatsächlich auslöst,": " table; everything else is unconfirmed. Enter the code your printed pit pattern actually triggers here,",
   };
 
   // ============================================================================
@@ -10593,75 +10558,15 @@
   // einer Reihenfolge haengt, wird beim naechsten Umsortieren falsch, ohne dass es auffaellt.
   let trackPaletteSel = Math.max(0, TRACK_PALETTE.findIndex(p => p.key === 'straight'));
 
-  // ---- Probeblaetter zum Knacken der Kodierung ----
+  // Hier standen bis v0.5 zwei Tabellen und zwei Linkbauer fuer die Probe- und
+  // Vorlaufblaetter zur Musterentzifferung. Sie sind weg, weil die Frage BEANTWORTET
+  // ist: die drei fuehrenden duennen Striche lassen sich abschneiden und das Blatt
+  // wird weiter gelesen, der Vorlauf ist also kein Nutzdatum, und ein Wort genuegt.
+  // Das Ergebnis steht in CARRERA_HYBRID.md und in der Druckvorlagen-Seite.
   //
-  // Erzeugt von tools/make_patterns.py. Was jede Probe fragt, steht hier daneben und nicht
-  // nur im Werkzeug: wer das Blatt in der Hand haelt, soll in der App nachlesen koennen,
-  // wozu es gut ist.
-  const MUSTER_PROBEN = [
-    [1, 'alles schmal', 'Gibt es einen Code fuer ein Muster ohne dicke Elemente?'],
-    [2, 'ein dicker Balken', 'Wieviel wiegt ein einzelner dicker Balken?'],
-    [3, 'eine breite Lücke',
-     'Wiegt eine breite Lücke dasselbe wie ein dicker Balken?'],
-    [4, 'Balken wie bekannt, Luecken schmal', 'Liest der Leser Balken und Luecken getrennt?'],
-    [5, 'KONTROLLE, unveraendert', 'Muss wieder 0x03 ergeben. Diese zuerst fahren.'],
-    [6, 'Reihenfolge umgedreht', 'Haengt der Code an der Fahrtrichtung?'],
-    [7, 'fuenf Balken', 'Zaehlt die Zahl der Balken mit?'],
-    [8, 'dreizehn Balken', 'Wie Probe 7, in der anderen Richtung.'],
-  ];
-
-  // Vorlauf-Proben: dieselbe Nutzlast, verschieden lange Vorlaeufe. Vier ist das
-  // vollstaendige Original und damit die Kontrolle, Eins die Fassung, von der berichtet ist,
-  // dass sie funktionierte.
-  const MUSTER_VORLAUF = [
-    [0, 'kein Vorlauf'], [1, 'ein dünner Balken'], [2, 'zwei'],
-    [4, 'vier, das Original'], [8, 'acht'],
-  ];
-
-  if ($('vorlauf-links')) {
-    const host = $('vorlauf-links');
-    for (const [n, kurz] of MUSTER_VORLAUF) {
-      const datei = 'muster-vorlauf-' + n + '-a4.svg';
-      const a = document.createElement('a');
-      a.href = datei; a.download = datei;
-      const b = document.createElement('button');
-      // Vorlauf 1 ist hervorgehoben, nicht 4: es reproduziert die aeltere DR!FT-Fassung
-      // zeichengenau, und von der ist bekannt, dass sie gelesen wird. Ein Fehlschlag dort
-      // ist eindeutig - dann liegt es nicht am Muster. Vorlauf 4 war als Kontrolle gedacht,
-      // kontrolliert aber nichts, solange unser Ausdruck davon ohnehin nicht gelesen wird.
-      if (n === 1) b.className = 'primary';
-      // Der GANZE Text ist der Schluessel, nicht die Woerter: diese fuenf Knoepfe werden
-      // einmal beim Laden gebaut und beim Sprachwechsel nicht neu, also greift nur der
-      // Woerterbuchweg ueber den Textknoten - und der braucht den ganzen Text. Bei einer
-      // festen, kleinen Menge ist das auch das Einfachste.
-      b.textContent = 'Vorlauf ' + n + ': ' + kurz;
-      b.title = n === 1
-        ? t('Die ältere DR!FT-Fassung, zeichengenau. Von ihr ist bekannt, dass sie '
-            + 'gelesen wird.')
-        : n === 4
-        ? t('Das vollständige aktuelle Original, zeichengenau.')
-        : t('Reicht dieser Vorlauf noch?');
-      a.appendChild(b);
-      host.appendChild(a);
-    }
-  }
-
-  if ($('probe-links')) {
-    const host = $('probe-links');
-    for (const [nr, kurz, frage] of MUSTER_PROBEN) {
-      const datei = 'muster-probe-' + nr + '-a4.svg';
-      const a = document.createElement('a');
-      a.href = datei;
-      a.download = datei;
-      const b = document.createElement('button');
-      // Probe 5 hervorheben: sie ist die Kontrolle und gehoert zuerst gefahren.
-      if (nr === 5) b.className = 'primary';
-      b.textContent = 'Probe ' + nr + ': ' + kurz;
-      b.title = frage;
-      a.appendChild(b);
-      host.appendChild(a);
-    }
-  }
+  // Die Blaetter selbst erzeugt tools/make_patterns.py in einem Aufruf wieder, falls
+  // doch noch eine Probe gebraucht wird. Der Generator ist die Quelle, die SVG waren
+  // das Ergebnis - und 21 Ergebnisse im Wurzelverzeichnis auszuliefern war der Fehler.
 
   function renderTrackPalette() {
     const host = $('track-palette');

@@ -34,6 +34,65 @@ So kann das Auto erkennen:
 
 Weil die Teile lose auf dem Boden oder Tisch liegen und keine feste Schiene bilden, kann jede Strecke frei zusammengebaut werden. Das Auto kann die Strecke auch komplett verlassen und irgendwo frei herumfahren.
 
+### Zwei getrennte Codetabellen
+
+Der Sensor arbeitet in zwei Betriebsarten, und **jede hat ihre eigene Codetabelle**. Das ist
+der Punkt, an dem die Musterentzifferung monatelang falsch lief: dasselbe gedruckte Blatt hat
+0x0a, 0x03 und 0x01 gemeldet, und daraus wurde geschlossen, der Unterschied liege im Druck —
+Maßstab, Strichbreite, Schwärze, Papier. Er lag am Modus.
+
+| Bahn-Modus (Byte 14, Bit 5) | Ausdruck-Modus (Byte 14, Bit 7) |
+|---|---|
+| `0x02` Gerade | `0x01` Start/Ziel |
+| `0x03` Linkskurve | |
+| `0x04` Rechtskurve | |
+| `0x05` / `0x06` Haarnadel | |
+| `0x0a` Start/Ziel | |
+| `0x00` abseits der Bahn | |
+
+Die beiden Bits schließen sich aus. Wer Codes vergleicht, muss also den Modus mitnennen —
+`0x01` heißt auf Papier Start/Ziel, und auf der Schiene ist `0x0a` dasselbe.
+
+Offen ist damit nur noch, welche Balkenfolgen `0x02` (Gerade) und `0x04` (Rechtskurve)
+tragen. Die Folge für `0x01` liegt vektorgenau vor, weil sie aus der Original-Druckvorlage
+stammt (siehe unten).
+
+### Wieviel Anlauf der Leser braucht — gemessen
+
+Drei Messungen am gedruckten Start/Ziel-Blatt, alle am Auto gemacht:
+
+1. **Die drei führenden dünnen Striche lassen sich abschneiden**, das Blatt wird weiter
+   gelesen. Der Vorlauf ist damit **kein Nutzdatum**, sondern die Strecke, auf der sich der
+   Leser auf die Modulbreite einstellt — und dafür genügt weniger als das Original bietet.
+2. **Eines der beiden wiederholten Muster genügt.** Zusammen mit Punkt 1 ist die kleinste
+   tragende Nutzlast ein einzelnes Wort ohne Vorlauf, etwa **54 mm** in Fahrtrichtung statt
+   der 75,5 mm der Vorlage.
+3. **Nach einem Erkennen bleibt der Leser etwa eine Sekunde stumm.** Bei 4 km/h
+   Maßstabstempo sind das 1,1 m Fahrweg, also gut zweieinhalb Kachellängen. Ein Muster öfter
+   als etwa jeden Meter zu wiederholen bringt deshalb nichts — und dieselbe Sperre ist der
+   Grund, warum die Boxengassen-Erkennung per Doppel-Ausdruck einen Mindestabstand von einer
+   Sekunde zwischen den beiden Kontakten fordert (`PIT_DOUBLE_MIN_MS`). Der Wert war
+   ursprünglich geschätzt; er ist damit bestätigt.
+
+Damit sind die fünf Vorlauf- und acht Probeblätter aus dem Repo verschwunden: das Experiment,
+für das sie gebaut wurden, ist gelaufen. `tools/make_patterns.py` erzeugt sie in einem Aufruf
+wieder, falls doch noch eine Probe gebraucht wird.
+
+### Die Maße des Start/Ziel-Musters
+
+Aus `target_finish.pdf` ausgelesen, nicht nachgemessen (`tools/make_pattern.py`):
+
+```
+dünner Balken   3,598 mm      dicker Balken   6,604 mm
+dünne Lücke     3,514 mm      dicke Lücke     6,530 mm
+Balkenbreite quer 275,9 mm    Musterlänge in Fahrtrichtung 75,5 mm
+9 Balken, 8 Lücken:  Balken 000010010   Lücken 00010110   (1 = dick, in Leserichtung)
+```
+
+Balken **und** Lücken tragen Information, das Verhältnis dick/dünn ist 1,83 — die Bauform
+eines Strichcodes mit schmalen und breiten Elementen, 17 Elemente je Wort. Die Balkenbreite
+von 275,9 mm ist volle A4-Querbreite, bei 250 mm Bahnbreite.
+
 ## Streckenscan
 
 Bevor ein Rennen beginnt, kann die App die Strecke einmal abscannen. Dabei fährt das Auto (gesteuert von der App oder von Hand) einmal die ganze Strecke ab. Jedes Mal, wenn ein neues Streckenteil erkannt wird, meldet das Auto das per Bluetooth an die App.
