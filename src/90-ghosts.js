@@ -2509,6 +2509,65 @@
       }
     },
 
+    // Der Zeitverlauf dessen, was WIRKLICH zum Auto geht: das Motorbyte, normiert auf
+    // -1..1. Keine der anderen Messungen zeigt es - physCurve misst Zeiten bis zu
+    // ANGEZEIGTEN Geschwindigkeitsmarken, physTopSpeed die Endgeschwindigkeit. Die Frage
+    // "fuehlt sich das Auto traege an" haengt aber am Byte, und das ist Tempo geteilt durch
+    // Hoechstgeschwindigkeit.
+    physOutTrace(o) {
+      const opt = o || {};
+      const e = physEngine, st = e.state, cfg = e.config;
+      const merkState = Object.assign({}, st);
+      const merk = Object.assign({}, cfg);
+      try {
+        Object.assign(cfg, e.calibRef);
+        for (const k of Object.keys(opt.cfg || {})) cfg[k] = opt.cfg[k];
+        // NACH dem Setzen kalibrieren: die Schubskala ist eine abgeleitete Groesse, und mit
+        // einer anderen Hoechstgeschwindigkeit oder Beschleunigungszeit ist sie eine andere.
+        e.calibrateAccel();
+        cfg.autoShift = true;
+        cfg.tyreEffect = 0;
+        const dt = 0.02;
+        st.driveMode = 'neutral'; st.currentGear = 0; st.speedKmh = 0;
+        st.isShifting = false; st.neutralRpm = 0; st.loadFront = 0.5; st.longUse = 0;
+        st.fuelLoad = 1;
+        st.brakeTempF = cfg.brakeAmbientC; st.brakeTempR = cfg.brakeAmbientC;
+        st.brakeFade = 0;
+        const marken = opt.marken || [0.25, 0.5, 0.75, 0.9, 0.99];
+        const offen = marken.slice();
+        const bei = {};
+        let t = 0, pwmMax = 0;
+        const bis = opt.sekunden || 30;
+        while (t < bis) {
+          // Schaltpause auf der eigenen Uhr, wie in physCurve: triggerShift loescht
+          // isShifting per setTimeout, und das feuert in einer synchronen Schleife nie.
+          if (st.isShifting) {
+            st._simShift = (st._simShift || 0) + dt;
+            if (st._simShift * 1000 >= cfg.shiftMs) { st.isShifting = false; st._simShift = 0; }
+          } else { st._simShift = 0; }
+          const out = e.update({ throttle: 1, brake: 0, steering: 0 }, dt);
+          t += dt;
+          const pwm = out.motorPWM;
+          if (pwm > pwmMax) pwmMax = pwm;
+          while (offen.length && pwm >= offen[0]) {
+            bei[offen[0]] = +t.toFixed(3);
+            offen.shift();
+          }
+          if (!offen.length) break;
+        }
+        return { bei, pwmMax: +pwmMax.toFixed(4),
+                 kmhEnde: +(st.speedKmh * REAL_SCALE).toFixed(1),
+                 topKmhAnzeige: +(cfg.topSpeedKmh * REAL_SCALE).toFixed(0),
+                 sekunden: +t.toFixed(2) };
+      } finally {
+        Object.assign(cfg, merk);
+        e.calibrateAccel();
+        delete st._simShift;
+        for (const k of Object.keys(st)) if (!(k in merkState)) delete st[k];
+        Object.assign(st, merkState);
+      }
+    },
+
     physCurve(o) {
       const opt = o || {};
       const e = physEngine, st = e.state, cfg = e.config;

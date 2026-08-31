@@ -597,75 +597,51 @@
     $('race-g-real').setAttribute('cx', (50 + gx * R).toFixed(1));
     $('race-g-real').setAttribute('cy', (50 + gy * R).toFixed(1));
 
-    // Tyre gauge. The ring runs blue (cold) through green (working range) to red (too hot),
-    // because those are the three states a driver actually has to act on. Grey when the
-    // model is switched off, so the dial never implies a simulation that is not running.
-    const ring = $('race-tyre-ring');
-    if (physEngine.config.tyreEffect === 0) {
-      ring.setAttribute('stroke', '#2a3346');
-      $('race-tyre-temp').textContent = 'aus';
-      $('race-tyre-wear').textContent = '';
-    } else {
+    // ---- Reifen: vier Felder, paarweise gleichlaufend ------------------------------
+    //
+    // Farbe = Temperatur (blau kalt, gruen im Fenster, rot zu heiss), Fuellhoehe = restliche
+    // Lauffleche. Dieselben zwei Rechnungen wie bisher fuer Ring und Balken, nur in EIN
+    // Element gelegt: zwei Anzeigen fuer die Temperatur waren eine zu viel.
+    //
+    // Die beiden Reifen einer Seite bekommen denselben Wert, weil das Modell nur links und
+    // rechts trennt. Sie kuenstlich zu spreizen waere eine Erfindung, und eine Anzeige, die
+    // mehr behauptet als das Modell weiss, ist schlimmer als eine grobe.
+    {
+      const felder = [['race-tyre-fl', 'L'], ['race-tyre-rl', 'L'],
+                      ['race-tyre-fr', 'R'], ['race-tyre-rr', 'R']];
       const cfgT = physEngine.config;
-      const t = st.tyreTempC;
-      const warm = Math.max(0, Math.min(1, (t - cfgT.tyreAmbientC)
-                                           / (cfgT.tyreOptimalC - cfgT.tyreAmbientC)));
-      let col;
-      if (t > cfgT.tyreOptimalC) {
-        const over = Math.min(1, (t - cfgT.tyreOptimalC)
-                                 / (cfgT.tyreOverheatC - cfgT.tyreOptimalC));
-        col = `rgb(${Math.round(70 + 185 * over)}, ${Math.round(209 - 130 * over)}, ${Math.round(127 - 100 * over)})`;
-      } else {
-        col = `rgb(${Math.round(60 + 10 * warm)}, ${Math.round(140 + 69 * warm)}, ${Math.round(230 - 103 * warm)})`;
+      const aus = cfgT.tyreEffect === 0;
+      let col = '#4a5568';
+      if (!aus) {
+        const t = st.tyreTempC;
+        const warm = Math.max(0, Math.min(1, (t - cfgT.tyreAmbientC)
+                                             / (cfgT.tyreOptimalC - cfgT.tyreAmbientC)));
+        if (t > cfgT.tyreOptimalC) {
+          const over = Math.min(1, (t - cfgT.tyreOptimalC)
+                                   / (cfgT.tyreOverheatC - cfgT.tyreOptimalC));
+          col = 'rgb(' + Math.round(70 + 185 * over) + ', ' + Math.round(209 - 130 * over)
+              + ', ' + Math.round(127 - 100 * over) + ')';
+        } else {
+          col = 'rgb(' + Math.round(60 + 10 * warm) + ', ' + Math.round(140 + 69 * warm)
+              + ', ' + Math.round(230 - 103 * warm) + ')';
+        }
       }
-      ring.setAttribute('stroke', col);
-      $('race-tyre-temp').textContent = Math.round(t) + '\u00b0';
-      // Nur noch die Zahl: das Wort steht im Markup und wird dort per Medienabfrage
-      // ausgeblendet. Es hier mitzuschreiben haette die Abfrage wirkungslos gemacht.
-      $('race-tyre-wear').textContent = Math.round(st.tyreWear * 100) + '%';
-      // Restliche Lauffleche, dieselbe Richtung und dieselben Schwellen wie beim Schaden
-      // (55 % und 20 %). Eine eigene Schwelle hier waere eine zweite Regel fuer dieselbe
-      // Aussage "es wird knapp".
-      // Getrennt, wenn die Asymmetrie an ist: oben links, unten rechts. Sonst zeigt der
-      // obere Balken wie bisher den Mittelwert und der untere ist weg - dann sieht die
-      // Kachel genau aus wie vorher.
-      const asymAn = physEngine.config.tyreAsymEffect > 0;
-      const farbe = (r) => (r <= 20 ? '#ff5c5c' : (r <= 55 ? 'var(--warn)' : 'var(--good)'));
-      const restVon = (w) => Math.max(0, Math.min(100, 100 - w * 100));
-      const rest = restVon(asymAn ? st.tyreWearL : st.tyreWear);
-      setSty('race-tyre-bar', 'width', rest + '%');
-      setSty('race-tyre-bar', 'background', farbe(rest));
-      const wrap = $('race-tyre-bar-r-wrap');
-      if (wrap) wrap.style.display = asymAn ? 'block' : 'none';
-      if (asymAn) {
-        const restR = restVon(st.tyreWearR);
-        setSty('race-tyre-bar-r', 'width', restR + '%');
-        setSty('race-tyre-bar-r', 'background', farbe(restR));
+      // Ohne Asymmetrie tragen alle vier den Mittelwert - dann sieht die Kachel gleichmaessig
+      // aus, und genau das ist die Aussage.
+      const asymAn = cfgT.tyreAsymEffect > 0;
+      const wL = aus ? 0 : (asymAn ? st.tyreWearL : st.tyreWear);
+      const wR = aus ? 0 : (asymAn ? st.tyreWearR : st.tyreWear);
+      for (const [id, seite] of felder) {
+        const el = $(id);
+        if (!el || !el.firstChild) continue;
+        const rest = aus ? 100 : Math.max(0, Math.min(100, 100 - (seite === 'L' ? wL : wR) * 100));
+        el.firstChild.style.height = rest + '%';
+        el.firstChild.style.background = col;
       }
-    }
-
-    // Bremsscheibentemperatur. Grau wenn das Fading aus ist - genau wie der Reifenring,
-    // damit keine Anzeige eine Simulation behauptet, die nicht laeuft.
-    const bf = $('race-braket-f'), br = $('race-braket-r');
-    if (bf && br) {
-      const cfgB = physEngine.config;
-      if (cfgB.brakeFadeEffect === 0) {
-        bf.textContent = '\u2013';
-        br.textContent = '\u2013';
-        setSty('race-braket-row', 'color', '#4a5568');
-      } else {
-        bf.textContent = Math.round(st.brakeTempF);
-        br.textContent = Math.round(st.brakeTempR);
-        // Die Farbe kommt aus der HEISSEREN der beiden: eine glueende Scheibe ist die
-        // Nachricht, auch wenn die andere kalt ist.
-        const T = Math.max(st.brakeTempF, st.brakeTempR);
-        const ueber = Math.max(0, Math.min(1,
-          (T - cfgB.brakeFadeStartC) / Math.max(1, cfgB.brakeFadeFullC - cfgB.brakeFadeStartC)));
-        const col = ueber > 0
-          ? 'rgb(' + Math.round(255) + ',' + Math.round(178 - 130 * ueber) + ','
-            + Math.round(107 - 92 * ueber) + ')'
-          : (T > cfgB.brakeAmbientC + 60 ? 'var(--good)' : '#8b99b4');
-        setSty('race-braket-row', 'color', col);
+      const tt = $('race-tyre-temp');
+      if (tt) {
+        tt.textContent = aus ? 'aus' : (Math.round(st.tyreTempC) + '\u00b0 '
+          + Math.round(Math.max(wL, wR) * 100) + '%');
       }
     }
 

@@ -499,11 +499,7 @@
     // werden von dort in die Legende gerendert, sind aber trotzdem Oberflaechentext -
     // deshalb gehoeren sie hierher wie jeder andere Satz auch.
     "Der ursprüngliche Sim-Modus": "The original sim mode",
-    "Automatik, 2,6 s auf 100, voller Grip, kein Reifenverschleiß und kein Tankgewicht. Verzeihende Bremse, weiche Lenkung. Zum Fahren ohne Nachdenken.":
-      "Automatic gearbox, 2.6 s to 100, full grip, no tyre wear and no fuel weight. Forgiving brakes, soft steering. For driving without thinking.",
     "Halb so weit zwischen Arcade und GT3": "Halfway between Arcade and GT3",
-    "Von Hand schalten, 3,2 s auf 100, Reifen und Tankgewicht wirken zur Hälfte. Schärfere Lenkung als Arcade, aber noch Reserve in der Bremse.":
-      "Manual gearbox, 3.2 s to 100, tyres and fuel weight at half effect. Sharper steering than Arcade, but still reserve in the brakes.",
     "An einem echten GT3 kalibriert": "Calibrated against a real GT3",
     "Von Hand schalten, 3,2 s auf 100 (die gemessene Reihe, gegen die die Physik gefittet ist), voller Reifenverschleiß und volles Tankgewicht. Wenig Grip, schwache Bremse, langes Ausrollen. Ein Fahrfehler kostet hier Zeit.":
       "Manual gearbox, 3.2 s to 100 (the measured series the physics was fitted against), full tyre wear and full fuel weight. Little grip, weak brakes, long coasting. A mistake costs time here.",
@@ -511,8 +507,6 @@
     "Von Hand schalten, 4,4 s auf 100, Reifenverschleiß und Tankgewicht wie GT3, aber mehr Grip und eine gutmütigere Bremse. Die Klasse darunter fährt sich nicht leichter, weil sie mehr verzeiht, sondern weil sie langsamer ist.":
       "Manual gearbox, 4.4 s to 100, tyre wear and fuel weight as GT3, but more grip and gentler brakes. The class below is not easier because it forgives more, but because it is slower.",
     "Das schärfste, was das Modell hergibt": "The sharpest the model has",
-    "Von Hand schalten, 2,4 s auf 100, stärkster Reifenverschleiß, volles Tankgewicht, empfindlichste Lenkung und die kürzeste Bremse. Das Ausrollen ist kurz, weil der Luftwiderstand hier die größte Einzelkraft ist.":
-      "Manual gearbox, 2.4 s to 100, strongest tyre wear, full fuel weight, sharpest steering and the shortest brakes. Coasting is short because drag is the largest single force here.",
 
     // Die Kachelseite der Optionen
     "Einstellungen": "Settings",
@@ -1254,6 +1248,13 @@
     "Gerade, Blatt 2": "Straight, sheet 2",
     "Kurve, Blatt 1": "Curve, sheet 1",
     "Kurve, Blatt 2": "Curve, sheet 2",
+    // Pro als Vorgabe (v0.5): geaenderte Preset-Texte, Gasfaktor, vier Reifen.
+    "Automatik, 2,6 s auf 100, voller Grip, kein Reifenverschleiß und kein Tankgewicht. Verzeihende Bremse, und die direkteste Lenkung von allen: voller Stick fordert 120 % des mechanischen Anschlags, man ist also schon vor dem Stickende am Limit. Zum Fahren ohne Nachdenken.": "Automatic, 2.6 s to 100, full grip, no tyre wear and no fuel weight. Forgiving brakes, and the most direct steering of all: full stick asks for 120 % of the mechanical lock, so you are at the limit before the end of the stick travel. For driving without thinking.",
+    "Von Hand schalten, 2,6 s auf 100, Reifen und Tankgewicht wirken zur Hälfte. Die Lenkung ist so direkt wie bei Arcade (120 % des Anschlags bei vollem Stick), in der Bremse ist aber noch Reserve.": "Manual shifting, 2.6 s to 100, tyres and fuel weight at half effect. The steering is as direct as in Arcade (120 % of the lock at full stick), but there is still reserve in the brakes.",
+    "Von Hand schalten, 2,4 s auf 100, stärkster Reifenverschleiß, volles Tankgewicht, die am feinsten dosierbare Lenkung (52 % des Anschlags bei vollem Stick, man muss also weit ziehen) und die kürzeste Bremse. Das Ausrollen ist kurz, weil der Luftwiderstand hier die größte Einzelkraft ist.": "Manual shifting, 2.4 s to 100, the strongest tyre wear, full fuel weight, the most finely metered steering (52 % of the lock at full stick, so you have to pull a long way) and the shortest braking. The coast-down is short because drag is the largest single force here.",
+    "Gasfaktor": "Throttle factor",
+    "Faktor auf das Motorbyte, das zum Auto geht. Das Byte ist Tempo geteilt durch Simulations-Höchstgeschwindigkeit; bei 100 % bekommt das Auto also erst volle Leistung, wenn die Simulation ihre Höchstgeschwindigkeit erreicht hat, und das dauert gemessen fast 25 Sekunden Vollgas. Über 100 % erreicht es die volle Leistung früher, ohne dass der Tacho anders skaliert. Das ist auch ehrlicher als es klingt: das Modellauto fährt real 5,9 km/h, egal was die Simulation glaubt – dieser Faktor ist die Abbildung zwischen beidem, und dass er früher genau 1 war, war eine Annahme und keine Messung.": "Factor applied to the motor byte that goes to the car. The byte is speed divided by the simulated top speed, so at 100 % the car only gets full power once the simulation has reached its top speed – and that takes a measured 25 seconds of full throttle. Above 100 % it reaches full power sooner without the speedometer scaling differently. That is also more honest than it sounds: the model car really does 5.9 km/h whatever the simulation believes – this factor is the mapping between the two, and the fact that it used to be exactly 1 was an assumption, not a measurement.",
+    "Reifen: Füllhöhe ist Restprofil, Farbe die Temperatur. Links und rechts werden getrennt gerechnet, vorn und hinten nicht – die beiden einer Seite laufen deshalb gleich. Antippen schaltet die Reifensimulation aus, beim Boxenstopp den Reifenwechsel.": "Tyres: fill height is remaining tread, colour is temperature. Left and right are tracked separately, front and rear are not – the two on one side therefore move together. Tapping switches the tyre simulation off, and during a pit stop the tyre change.",
   };
 
   // ============================================================================

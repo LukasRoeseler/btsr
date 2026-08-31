@@ -83,6 +83,63 @@ def local_refs(html):
     return raus
 
 
+def check_dict(quelle):
+    # Das Anfuehrungszeichen als Zeichencode, damit diese Datei selbst keine
+    # verschachtelten Anfuehrungszeichen braucht.
+    Q = chr(34)
+    """Waisen im Woerterbuch I18N_EN finden.
+
+    Es hat zwei Schreibweisen: ein Paar auf einer Zeile, oder Schluessel und Wert auf
+    zwei. Loescht man bei der zweiten nur die Schluesselzeile, bleibt die Wertzeile als
+    nackte Zeichenkette stehen - ein SyntaxError, der die ganze IIFE abbricht. Dann
+    existiert OMEGA_TEST nicht, und der Selbsttest kann nichts melden: man sieht eine
+    leere App und "Unexpected string" in der Konsole.
+
+    Deshalb hier und nicht im Selbsttest - der laeuft erst NACH dem Parsen.
+    """
+    zeilen = quelle.split(chr(10))
+    start = None
+    for n, z in enumerate(zeilen):
+        if 'I18N_EN' in z and '=' in z:
+            start = n
+            break
+    if start is None:
+        return []
+    ende = len(zeilen)
+    for n in range(start + 1, len(zeilen)):
+        if zeilen[n] == '  };':
+            ende = n
+            break
+
+    def art(z):
+        t = z.strip()
+        if not t or t.startswith('//'):
+            return 'kommentar'
+        if Q + ': ' + Q in t:
+            return 'paar'
+        if t.endswith(Q + ':'):
+            return 'schluessel'
+        if t.startswith(Q) and (t.endswith(Q + ',') or t.endswith(Q)):
+            return 'wert'
+        return 'unklar'
+
+    fehler = []
+    vorige = None
+    for n in range(start + 1, ende):
+        a = art(zeilen[n])
+        if a == 'kommentar':
+            continue
+        if a == 'wert' and vorige != 'schluessel':
+            fehler.append((n + 1, 'Wert ohne Schluessel davor', zeilen[n].strip()[:70]))
+        if a == 'schluessel' and vorige == 'schluessel':
+            fehler.append((n, 'Schluessel ohne Wert danach', zeilen[n - 1].strip()[:70]))
+        if a == 'unklar':
+            fehler.append((n + 1, 'weder Paar noch Schluessel noch Wert',
+                           zeilen[n].strip()[:70]))
+        vorige = a
+    return fehler
+
+
 def check_refs(html):
     fehlend = []
     for nr, ziel in local_refs(html):
@@ -120,6 +177,7 @@ def main():
         return 1
 
     fehlend = check_refs(built)
+    dictfehler = check_dict(built)
 
     with io.open(OUT, 'w', encoding='utf-8', newline='') as f:
         f.write(built)
@@ -137,6 +195,16 @@ def main():
         for nr, ziel in fehlend:
             print('  Zeile %-6d %s' % (nr, ziel), file=sys.stderr)
         return 2
+
+    if dictfehler:
+        print('', file=sys.stderr)
+        print('WOERTERBUCH KAPUTT: %d Stellen' % len(dictfehler), file=sys.stderr)
+        for nr, warum, text in dictfehler:
+            print('  Zeile %-6d %-32s %s' % (nr, warum, text), file=sys.stderr)
+        print('  Eine Waise ist ein SyntaxError: die IIFE bricht ab, OMEGA_TEST fehlt,'
+              ' und der Selbsttest kann nichts melden.', file=sys.stderr)
+        return 2
+    print('  Woerterbuch geprueft: keine Waisen')
     print('  Verweise geprueft: %d lokale src/href, alle vorhanden'
           % len(local_refs(built)))
     return 0

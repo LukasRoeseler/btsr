@@ -674,9 +674,6 @@
      sagt "diese Zahl bewegt sich nicht mehr". Nur eins von beiden waere zu leise. */
   .gt3-box.sim-off { opacity: .45; }
   .gt3-box.sim-off .gt3-bar > i { background: #4a5568 !important; }
-  .gt3-tyre { min-width: 0; }
-  .gt3-tyre > div { min-width: 0; overflow: hidden; }
-  @media (max-width: 560px) { .tyre-wear-word { display: none; } }
   .gt3-trim { display: flex; flex-direction: column; justify-content: center;
     gap: clamp(2px, .5vw, 6px); }
   .gt3-trim-row { display: flex; align-items: center; justify-content: center;
@@ -686,6 +683,17 @@
   /* Die Balance-Skala ist schmaler und hoeher als ein Symbol - sie IST eine Achse, und eine
      quadratische Achse waere keine. touch-action: none, sonst scrollt das Telefon die Seite
      statt die Marke zu ziehen. */
+  /* Vier Reifen in Fahrzeuganordnung. aspect-ratio statt fester Hoehe, damit die Felder
+     auf 375 px nicht zu Strichen werden; der Zwischenraum in der Mitte ist die Spur. */
+  .gt3-tyres4 { display: grid; grid-template-columns: 1fr 1fr;
+    gap: clamp(2px, .5vw, 4px) clamp(5px, 1.6vw, 12px);
+    margin: 3px 0 2px 0; }
+  .gt3-t4 { display: block; position: relative; aspect-ratio: 1 / 1.6;
+    background: #04060b; border-radius: 1px; overflow: hidden; }
+  /* Die Fuellung waechst von UNTEN, wie ein Vorrat. Dieselbe Richtung wie Tank und Schaden:
+     drei Anzeigen, die gleich leerlaufen, liest man mit einem Blick. */
+  .gt3-t4 > b { position: absolute; left: 0; right: 0; bottom: 0; height: 0;
+    background: #4a5568; transition: height .15s linear, background .3s linear; }
   .gt3-bias { cursor: ns-resize; touch-action: none; }
   /* Zwei Zahlen in einer Zeile, deshalb schmaler als die anderen Trimmwerte. Der Trenner
      ist gedaempft, damit die Zahlen die Aufmerksamkeit haben und nicht der Schraegstrich. */
@@ -770,8 +778,6 @@
   .gt3-wx .gt3-ico { width: clamp(24px, 4.4vw, 44px); }
   .gt3-gplot svg { width: 100%; max-width: clamp(44px, 7vw, 72px); height: auto;
     display: block; margin: 0 auto; }
-  .gt3-tyre { display: flex; align-items: center; gap: 5px; }
-  .gt3-tyre svg { width: clamp(18px, 2.7vw, 26px); height: auto; flex: none; }
 
   /* Full-width banner. Amber, wide, unmissable: the pit limiter is the one state where
      not noticing costs a penalty. */
@@ -1864,32 +1870,28 @@
              title="Schadenssimulation an/aus, beim Boxenstopp: Reparatur an/aus"><svg class="gt3-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-label="Zustand"><path d="M19.3 8.2 L19.2 9.3 L18.8 10.3 L18.0 11.2 L17.1 11.8 L16.0 12.1 L14.9 12.0 L13.9 11.7 L13.0 11.0 L12.3 10.1 L12.0 9.1 L11.9 8.0 L12.2 6.9 L12.8 6.0 L13.7 5.2 L14.7 4.8 L15.8 4.7"/><path d="M13.0 11.0 L8.5 15.5"/></svg>
           <div class="gt3-val sm" id="race-dmg">100%</div>
           <div class="gt3-bar"><i id="race-dmg-bar"></i></div></div>
+        <!-- VIER Felder in Fahrzeuganordnung statt Ring und Balken. Zwei Balken
+             uebereinander liest niemand als "links und rechts": ein Balken ist ein Vorrat,
+             kein Ort.
+
+             Die beiden Reifen einer SEITE laufen gleich, und das ist keine Auslassung: das
+             Modell trennt nur links und rechts. Vorn und hinten getrennt zu verschleissen
+             braeuchte eine Achslastverteilung, die es noch nicht gibt - vier unabhaengig
+             wackelnde Felder waeren eine Erfindung. Der Tooltip sagt das auch, denn wer vier
+             Felder sieht, nimmt vier Werte an.
+
+             Jedes Feld traegt BEIDE Groessen: Fuellhoehe von unten die restliche
+             Lauffleche, Farbe die Temperatur. Der frueher separate Ring sagte die Temperatur
+             schon, und zweimal dasselbe in einer 77-px-Kachel ist Platzverschwendung. -->
         <div class="gt3-box gt3-click pit-tile" id="race-tyre-box" data-pit="tyres"
-             title="Reifensimulation an/aus, beim Boxenstopp: Reifenwechsel an/aus"><div class="gt3-lbl">Reifen</div>
-          <div class="gt3-tyre">
-            <svg viewBox="0 0 24 24" aria-label="Reifentemperatur">
-              <circle cx="12" cy="12" r="10" fill="none" stroke-width="4" id="race-tyre-ring"/>
-              <circle cx="12" cy="12" r="4.5" fill="#2a3346"/>
-            </svg>
-            <div><div class="gt3-val sm" id="race-tyre-temp">&ndash;</div>
-              <!-- Das Wort steht in einem eigenen Element und faellt unter 560 px weg:
-                   gemessen brauchte "Abnutzung 0%" 83 px in einer 77 px breiten Kachel und
-                   schob sich ueber die Akkukachel. Der Balken darunter sagt dasselbe ohne
-                   Buchstaben, das Wort ist also der verzichtbare Teil. -->
-              <div class="gt3-lbl"><span class="tyre-wear-word">Abnutzung
-                </span><span id="race-tyre-wear">&ndash;</span></div></div>
+             title="Reifen: F&uuml;llh&ouml;he ist Restprofil, Farbe die Temperatur. Links und rechts werden getrennt gerechnet, vorn und hinten nicht &ndash; die beiden einer Seite laufen deshalb gleich. Antippen schaltet die Reifensimulation aus, beim Boxenstopp den Reifenwechsel."><div class="gt3-lbl">Reifen</div>
+          <div class="gt3-tyres4">
+            <i class="gt3-t4" id="race-tyre-fl"><b></b></i>
+            <i class="gt3-t4" id="race-tyre-fr"><b></b></i>
+            <i class="gt3-t4" id="race-tyre-rl"><b></b></i>
+            <i class="gt3-t4" id="race-tyre-rr"><b></b></i>
           </div>
-          <!-- Wie bei Tank und Schaden, und in derselben Richtung: der Balken zeigt die
-               RESTLICHE Lauffl&auml;che, nicht die Abnutzung. Drei Balken, die gleich
-               leerlaufen, liest man mit einem Blick; einer, der gegenl&auml;ufig f&uuml;llt,
-               kostet jedes Mal einen Gedanken. -->
-          <div class="gt3-bar"><i id="race-tyre-bar"></i></div>
-          <!-- Der zweite Balken ist RECHTS; der obere wird dann der linke. Ist die
-               Asymmetrie aus, verschwindet dieser hier und der obere zeigt wie bisher den
-               Mittelwert - die Kachel sieht dann genau aus wie vorher, und der Unterschied
-               ist die Aussage. -->
-          <div class="gt3-bar" id="race-tyre-bar-r-wrap" style="display:none; margin-top:2px">
-            <i id="race-tyre-bar-r"></i></div></div>
+          <div class="gt3-val sm" id="race-tyre-temp">&ndash;</div></div>
         <div class="gt3-box"><svg class="gt3-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-label="Akku"><rect x="2" y="7" width="17" height="10" rx="2"/><path d="M22 11v2"/><path d="M6 10v4M9.5 10v4M13 10v4"/></svg>
           <div class="gt3-val sm" id="race-batt">&ndash;</div></div>
         <div class="gt3-box gt3-click" id="race-light-box" title="Licht an/aus" style="display:flex;align-items:center;justify-content:center">
@@ -4180,7 +4182,7 @@
       <div class="opt-row"><div class="opt-label">Tankverbrauch (%/s bei Vollgas)</div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-fuel-drain" min="0" max="10" step="0.1" value="3">
+          <input type="range" id="setting-fuel-drain" min="0" max="10" step="0.1" value="1.5">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-fuel-drain-val">3.0</span>
         </div></div>
@@ -4220,7 +4222,7 @@
       <div class="opt-row"><div class="opt-label">Crashs, bis Fahrzeug ruckelt</div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-crash-count" min="0" max="7" step="1" value="5">
+          <input type="range" id="setting-crash-count" min="0" max="7" step="1" value="2">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-crash-count-val">10</span>
         </div></div>
@@ -4238,17 +4240,25 @@
       <button class="misc-back subpage-back" data-sub="">&larr; Einstellungen</button>
       <h2>Fahrgef&uuml;hl</h2>
 <div class="opt-head">Fahrwerk</div>
-      <div class="opt-row"><div class="opt-label">Geschwindigkeit</div>
+      <div class="opt-row"><div class="opt-label">Gasfaktor
+          <small>Faktor auf das Motorbyte, das zum Auto geht. Das Byte ist Tempo geteilt
+          durch Simulations-H&ouml;chstgeschwindigkeit; bei 100 % bekommt das Auto also erst
+          volle Leistung, wenn die Simulation ihre H&ouml;chstgeschwindigkeit erreicht hat,
+          und das dauert gemessen fast 25 Sekunden Vollgas. &Uuml;ber 100 % erreicht es die
+          volle Leistung fr&uuml;her, ohne dass der Tacho anders skaliert. Das ist auch
+          ehrlicher als es klingt: das Modellauto f&auml;hrt real 5,9 km/h, egal was die
+          Simulation glaubt &ndash; dieser Faktor ist die Abbildung zwischen beidem, und dass
+          er fr&uuml;her genau 1 war, war eine Annahme und keine Messung.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-topspeed" min="0.2" max="1" step="0.05" value="1">
+          <input type="range" id="setting-topspeed" min="0.2" max="2" step="0.05" value="1.6">
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="setting-topspeed-val">100%</span>
+          <span class="opt-val" id="setting-topspeed-val">160%</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Reifengrip</div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-grip" min="0" max="1" step="0.01" value="0.6">
+          <input type="range" id="setting-grip" min="0" max="1" step="0.01" value="0.85">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-grip-val">0.60</span>
         </div></div>
@@ -4263,7 +4273,7 @@
 <div class="opt-head">
         Getriebe &amp; Fahrleistung
       </div>
-      <div class="opt-row"><div class="opt-label">Automatikgetriebe<small>An: Quadrat/X legt unter 10 km/h den Rückwärtsgang, Kreis/B holt ihn heraus. Aus: von Hand schalten, unter dem 1. Gang liegt der Leerlauf und darunter im Stand der Rückwärtsgang.</small></div><label class="tgl"><input type="checkbox" id="setting-autoshift" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Automatikgetriebe<small>An: Quadrat/X legt unter 10 km/h den Rückwärtsgang, Kreis/B holt ihn heraus. Aus: von Hand schalten, unter dem 1. Gang liegt der Leerlauf und darunter im Stand der Rückwärtsgang.</small></div><label class="tgl"><input type="checkbox" id="setting-autoshift"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Höchstgeschwindigkeit (km/h)</div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
@@ -4274,7 +4284,7 @@
       <div class="opt-row"><div class="opt-label">0 &rarr; 100 km/h (s)<small>Angezeigte km/h. Ein 911 GT3 R braucht rund 3,2 s.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-zero-to-top" min="1.5" max="8" step="0.1" value="3.2">
+          <input type="range" id="setting-zero-to-top" min="1.5" max="8" step="0.1" value="2.6">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-zero-to-top-val">3.2</span>
         </div></div>
@@ -4290,14 +4300,14 @@
       <div class="opt-row"><div class="opt-label">Tankgewicht<small>Voller Tank macht träger. Links = aus.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-fuelweight" min="0" max="1" step="0.05" value="1">
+          <input type="range" id="setting-fuelweight" min="0" max="1" step="0.05" value="0.5">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-fuelweight-val">100%</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Reifen: Temperatur &amp; Verschlei&szlig;<small>Kalt nach Start und Boxenstopp, abgenutzt nach hartem Stint. Links = aus.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-tyres" min="0" max="2" step="0.05" value="2">
+          <input type="range" id="setting-tyres" min="0" max="2" step="0.05" value="0.5">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-tyres-val">200%</span>
         </div></div>
@@ -4336,7 +4346,7 @@
           <small>&Uuml;ber 100&nbsp;% steigt die Heizrate, nicht der maximale Verlust.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-brake-fade-strength" min="0" max="2" step="0.05" value="1">
+          <input type="range" id="setting-brake-fade-strength" min="0" max="2" step="0.05" value="0.6">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-brake-fade-strength-val">100%</span>
         </div></div>
@@ -4352,7 +4362,7 @@
           <small>100&nbsp;% sind h&ouml;chstens 18&nbsp;% Kurvengrip weniger.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-dirtyair-strength" min="0" max="2" step="0.05" value="1">
+          <input type="range" id="setting-dirtyair-strength" min="0" max="2" step="0.05" value="0.6">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-dirtyair-strength-val">100%</span>
         </div></div>
@@ -4361,7 +4371,7 @@
       <div class="opt-row"><div class="opt-label">Lenkansprechen<small>Auch auf dem Steuerkreuz links/rechts. Der volle Lenkeinschlag ist mechanisch 45&nbsp;Grad; bei 100&nbsp;% fordert voller Stick genau ihn an.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="phys-steerresp" min="0.5" max="3" step="0.05" value="2">
+          <input type="range" id="phys-steerresp" min="0.5" max="3" step="0.05" value="2.4">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="phys-steerresp-val">100%</span>
         </div></div>
@@ -4379,7 +4389,7 @@
           Mittelstellung und &auml;ndert nichts.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-brakebias" min="50" max="80" step="1" value="62">
+          <input type="range" id="setting-brakebias" min="50" max="80" step="1" value="60">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-brakebias-val">62% vorn</span>
         </div></div>
@@ -5178,7 +5188,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.4.28</span></span>
+    <span class="foot-ver">v<span id="app-version">0.4.29</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -5708,11 +5718,7 @@
     // werden von dort in die Legende gerendert, sind aber trotzdem Oberflaechentext -
     // deshalb gehoeren sie hierher wie jeder andere Satz auch.
     "Der ursprüngliche Sim-Modus": "The original sim mode",
-    "Automatik, 2,6 s auf 100, voller Grip, kein Reifenverschleiß und kein Tankgewicht. Verzeihende Bremse, weiche Lenkung. Zum Fahren ohne Nachdenken.":
-      "Automatic gearbox, 2.6 s to 100, full grip, no tyre wear and no fuel weight. Forgiving brakes, soft steering. For driving without thinking.",
     "Halb so weit zwischen Arcade und GT3": "Halfway between Arcade and GT3",
-    "Von Hand schalten, 3,2 s auf 100, Reifen und Tankgewicht wirken zur Hälfte. Schärfere Lenkung als Arcade, aber noch Reserve in der Bremse.":
-      "Manual gearbox, 3.2 s to 100, tyres and fuel weight at half effect. Sharper steering than Arcade, but still reserve in the brakes.",
     "An einem echten GT3 kalibriert": "Calibrated against a real GT3",
     "Von Hand schalten, 3,2 s auf 100 (die gemessene Reihe, gegen die die Physik gefittet ist), voller Reifenverschleiß und volles Tankgewicht. Wenig Grip, schwache Bremse, langes Ausrollen. Ein Fahrfehler kostet hier Zeit.":
       "Manual gearbox, 3.2 s to 100 (the measured series the physics was fitted against), full tyre wear and full fuel weight. Little grip, weak brakes, long coasting. A mistake costs time here.",
@@ -5720,8 +5726,6 @@
     "Von Hand schalten, 4,4 s auf 100, Reifenverschleiß und Tankgewicht wie GT3, aber mehr Grip und eine gutmütigere Bremse. Die Klasse darunter fährt sich nicht leichter, weil sie mehr verzeiht, sondern weil sie langsamer ist.":
       "Manual gearbox, 4.4 s to 100, tyre wear and fuel weight as GT3, but more grip and gentler brakes. The class below is not easier because it forgives more, but because it is slower.",
     "Das schärfste, was das Modell hergibt": "The sharpest the model has",
-    "Von Hand schalten, 2,4 s auf 100, stärkster Reifenverschleiß, volles Tankgewicht, empfindlichste Lenkung und die kürzeste Bremse. Das Ausrollen ist kurz, weil der Luftwiderstand hier die größte Einzelkraft ist.":
-      "Manual gearbox, 2.4 s to 100, strongest tyre wear, full fuel weight, sharpest steering and the shortest brakes. Coasting is short because drag is the largest single force here.",
 
     // Die Kachelseite der Optionen
     "Einstellungen": "Settings",
@@ -6463,6 +6467,13 @@
     "Gerade, Blatt 2": "Straight, sheet 2",
     "Kurve, Blatt 1": "Curve, sheet 1",
     "Kurve, Blatt 2": "Curve, sheet 2",
+    // Pro als Vorgabe (v0.5): geaenderte Preset-Texte, Gasfaktor, vier Reifen.
+    "Automatik, 2,6 s auf 100, voller Grip, kein Reifenverschleiß und kein Tankgewicht. Verzeihende Bremse, und die direkteste Lenkung von allen: voller Stick fordert 120 % des mechanischen Anschlags, man ist also schon vor dem Stickende am Limit. Zum Fahren ohne Nachdenken.": "Automatic, 2.6 s to 100, full grip, no tyre wear and no fuel weight. Forgiving brakes, and the most direct steering of all: full stick asks for 120 % of the mechanical lock, so you are at the limit before the end of the stick travel. For driving without thinking.",
+    "Von Hand schalten, 2,6 s auf 100, Reifen und Tankgewicht wirken zur Hälfte. Die Lenkung ist so direkt wie bei Arcade (120 % des Anschlags bei vollem Stick), in der Bremse ist aber noch Reserve.": "Manual shifting, 2.6 s to 100, tyres and fuel weight at half effect. The steering is as direct as in Arcade (120 % of the lock at full stick), but there is still reserve in the brakes.",
+    "Von Hand schalten, 2,4 s auf 100, stärkster Reifenverschleiß, volles Tankgewicht, die am feinsten dosierbare Lenkung (52 % des Anschlags bei vollem Stick, man muss also weit ziehen) und die kürzeste Bremse. Das Ausrollen ist kurz, weil der Luftwiderstand hier die größte Einzelkraft ist.": "Manual shifting, 2.4 s to 100, the strongest tyre wear, full fuel weight, the most finely metered steering (52 % of the lock at full stick, so you have to pull a long way) and the shortest braking. The coast-down is short because drag is the largest single force here.",
+    "Gasfaktor": "Throttle factor",
+    "Faktor auf das Motorbyte, das zum Auto geht. Das Byte ist Tempo geteilt durch Simulations-Höchstgeschwindigkeit; bei 100 % bekommt das Auto also erst volle Leistung, wenn die Simulation ihre Höchstgeschwindigkeit erreicht hat, und das dauert gemessen fast 25 Sekunden Vollgas. Über 100 % erreicht es die volle Leistung früher, ohne dass der Tacho anders skaliert. Das ist auch ehrlicher als es klingt: das Modellauto fährt real 5,9 km/h, egal was die Simulation glaubt – dieser Faktor ist die Abbildung zwischen beidem, und dass er früher genau 1 war, war eine Annahme und keine Messung.": "Factor applied to the motor byte that goes to the car. The byte is speed divided by the simulated top speed, so at 100 % the car only gets full power once the simulation has reached its top speed – and that takes a measured 25 seconds of full throttle. Above 100 % it reaches full power sooner without the speedometer scaling differently. That is also more honest than it sounds: the model car really does 5.9 km/h whatever the simulation believes – this factor is the mapping between the two, and the fact that it used to be exactly 1 was an assumption, not a measurement.",
+    "Reifen: Füllhöhe ist Restprofil, Farbe die Temperatur. Links und rechts werden getrennt gerechnet, vorn und hinten nicht – die beiden einer Seite laufen deshalb gleich. Antippen schaltet die Reifensimulation aus, beim Boxenstopp den Reifenwechsel.": "Tyres: fill height is remaining tread, colour is temperature. Left and right are tracked separately, front and rear are not – the two on one side therefore move together. Tapping switches the tyre simulation off, and during a pit stop the tyre change.",
   };
 
   // ============================================================================
@@ -9371,75 +9382,51 @@
     $('race-g-real').setAttribute('cx', (50 + gx * R).toFixed(1));
     $('race-g-real').setAttribute('cy', (50 + gy * R).toFixed(1));
 
-    // Tyre gauge. The ring runs blue (cold) through green (working range) to red (too hot),
-    // because those are the three states a driver actually has to act on. Grey when the
-    // model is switched off, so the dial never implies a simulation that is not running.
-    const ring = $('race-tyre-ring');
-    if (physEngine.config.tyreEffect === 0) {
-      ring.setAttribute('stroke', '#2a3346');
-      $('race-tyre-temp').textContent = 'aus';
-      $('race-tyre-wear').textContent = '';
-    } else {
+    // ---- Reifen: vier Felder, paarweise gleichlaufend ------------------------------
+    //
+    // Farbe = Temperatur (blau kalt, gruen im Fenster, rot zu heiss), Fuellhoehe = restliche
+    // Lauffleche. Dieselben zwei Rechnungen wie bisher fuer Ring und Balken, nur in EIN
+    // Element gelegt: zwei Anzeigen fuer die Temperatur waren eine zu viel.
+    //
+    // Die beiden Reifen einer Seite bekommen denselben Wert, weil das Modell nur links und
+    // rechts trennt. Sie kuenstlich zu spreizen waere eine Erfindung, und eine Anzeige, die
+    // mehr behauptet als das Modell weiss, ist schlimmer als eine grobe.
+    {
+      const felder = [['race-tyre-fl', 'L'], ['race-tyre-rl', 'L'],
+                      ['race-tyre-fr', 'R'], ['race-tyre-rr', 'R']];
       const cfgT = physEngine.config;
-      const t = st.tyreTempC;
-      const warm = Math.max(0, Math.min(1, (t - cfgT.tyreAmbientC)
-                                           / (cfgT.tyreOptimalC - cfgT.tyreAmbientC)));
-      let col;
-      if (t > cfgT.tyreOptimalC) {
-        const over = Math.min(1, (t - cfgT.tyreOptimalC)
-                                 / (cfgT.tyreOverheatC - cfgT.tyreOptimalC));
-        col = `rgb(${Math.round(70 + 185 * over)}, ${Math.round(209 - 130 * over)}, ${Math.round(127 - 100 * over)})`;
-      } else {
-        col = `rgb(${Math.round(60 + 10 * warm)}, ${Math.round(140 + 69 * warm)}, ${Math.round(230 - 103 * warm)})`;
+      const aus = cfgT.tyreEffect === 0;
+      let col = '#4a5568';
+      if (!aus) {
+        const t = st.tyreTempC;
+        const warm = Math.max(0, Math.min(1, (t - cfgT.tyreAmbientC)
+                                             / (cfgT.tyreOptimalC - cfgT.tyreAmbientC)));
+        if (t > cfgT.tyreOptimalC) {
+          const over = Math.min(1, (t - cfgT.tyreOptimalC)
+                                   / (cfgT.tyreOverheatC - cfgT.tyreOptimalC));
+          col = 'rgb(' + Math.round(70 + 185 * over) + ', ' + Math.round(209 - 130 * over)
+              + ', ' + Math.round(127 - 100 * over) + ')';
+        } else {
+          col = 'rgb(' + Math.round(60 + 10 * warm) + ', ' + Math.round(140 + 69 * warm)
+              + ', ' + Math.round(230 - 103 * warm) + ')';
+        }
       }
-      ring.setAttribute('stroke', col);
-      $('race-tyre-temp').textContent = Math.round(t) + '\u00b0';
-      // Nur noch die Zahl: das Wort steht im Markup und wird dort per Medienabfrage
-      // ausgeblendet. Es hier mitzuschreiben haette die Abfrage wirkungslos gemacht.
-      $('race-tyre-wear').textContent = Math.round(st.tyreWear * 100) + '%';
-      // Restliche Lauffleche, dieselbe Richtung und dieselben Schwellen wie beim Schaden
-      // (55 % und 20 %). Eine eigene Schwelle hier waere eine zweite Regel fuer dieselbe
-      // Aussage "es wird knapp".
-      // Getrennt, wenn die Asymmetrie an ist: oben links, unten rechts. Sonst zeigt der
-      // obere Balken wie bisher den Mittelwert und der untere ist weg - dann sieht die
-      // Kachel genau aus wie vorher.
-      const asymAn = physEngine.config.tyreAsymEffect > 0;
-      const farbe = (r) => (r <= 20 ? '#ff5c5c' : (r <= 55 ? 'var(--warn)' : 'var(--good)'));
-      const restVon = (w) => Math.max(0, Math.min(100, 100 - w * 100));
-      const rest = restVon(asymAn ? st.tyreWearL : st.tyreWear);
-      setSty('race-tyre-bar', 'width', rest + '%');
-      setSty('race-tyre-bar', 'background', farbe(rest));
-      const wrap = $('race-tyre-bar-r-wrap');
-      if (wrap) wrap.style.display = asymAn ? 'block' : 'none';
-      if (asymAn) {
-        const restR = restVon(st.tyreWearR);
-        setSty('race-tyre-bar-r', 'width', restR + '%');
-        setSty('race-tyre-bar-r', 'background', farbe(restR));
+      // Ohne Asymmetrie tragen alle vier den Mittelwert - dann sieht die Kachel gleichmaessig
+      // aus, und genau das ist die Aussage.
+      const asymAn = cfgT.tyreAsymEffect > 0;
+      const wL = aus ? 0 : (asymAn ? st.tyreWearL : st.tyreWear);
+      const wR = aus ? 0 : (asymAn ? st.tyreWearR : st.tyreWear);
+      for (const [id, seite] of felder) {
+        const el = $(id);
+        if (!el || !el.firstChild) continue;
+        const rest = aus ? 100 : Math.max(0, Math.min(100, 100 - (seite === 'L' ? wL : wR) * 100));
+        el.firstChild.style.height = rest + '%';
+        el.firstChild.style.background = col;
       }
-    }
-
-    // Bremsscheibentemperatur. Grau wenn das Fading aus ist - genau wie der Reifenring,
-    // damit keine Anzeige eine Simulation behauptet, die nicht laeuft.
-    const bf = $('race-braket-f'), br = $('race-braket-r');
-    if (bf && br) {
-      const cfgB = physEngine.config;
-      if (cfgB.brakeFadeEffect === 0) {
-        bf.textContent = '\u2013';
-        br.textContent = '\u2013';
-        setSty('race-braket-row', 'color', '#4a5568');
-      } else {
-        bf.textContent = Math.round(st.brakeTempF);
-        br.textContent = Math.round(st.brakeTempR);
-        // Die Farbe kommt aus der HEISSEREN der beiden: eine glueende Scheibe ist die
-        // Nachricht, auch wenn die andere kalt ist.
-        const T = Math.max(st.brakeTempF, st.brakeTempR);
-        const ueber = Math.max(0, Math.min(1,
-          (T - cfgB.brakeFadeStartC) / Math.max(1, cfgB.brakeFadeFullC - cfgB.brakeFadeStartC)));
-        const col = ueber > 0
-          ? 'rgb(' + Math.round(255) + ',' + Math.round(178 - 130 * ueber) + ','
-            + Math.round(107 - 92 * ueber) + ')'
-          : (T > cfgB.brakeAmbientC + 60 ? 'var(--good)' : '#8b99b4');
-        setSty('race-braket-row', 'color', col);
+      const tt = $('race-tyre-temp');
+      if (tt) {
+        tt.textContent = aus ? 'aus' : (Math.round(st.tyreTempC) + '\u00b0 '
+          + Math.round(Math.max(wL, wR) * 100) + '%');
       }
     }
 
@@ -17817,6 +17804,65 @@
       }
     },
 
+    // Der Zeitverlauf dessen, was WIRKLICH zum Auto geht: das Motorbyte, normiert auf
+    // -1..1. Keine der anderen Messungen zeigt es - physCurve misst Zeiten bis zu
+    // ANGEZEIGTEN Geschwindigkeitsmarken, physTopSpeed die Endgeschwindigkeit. Die Frage
+    // "fuehlt sich das Auto traege an" haengt aber am Byte, und das ist Tempo geteilt durch
+    // Hoechstgeschwindigkeit.
+    physOutTrace(o) {
+      const opt = o || {};
+      const e = physEngine, st = e.state, cfg = e.config;
+      const merkState = Object.assign({}, st);
+      const merk = Object.assign({}, cfg);
+      try {
+        Object.assign(cfg, e.calibRef);
+        for (const k of Object.keys(opt.cfg || {})) cfg[k] = opt.cfg[k];
+        // NACH dem Setzen kalibrieren: die Schubskala ist eine abgeleitete Groesse, und mit
+        // einer anderen Hoechstgeschwindigkeit oder Beschleunigungszeit ist sie eine andere.
+        e.calibrateAccel();
+        cfg.autoShift = true;
+        cfg.tyreEffect = 0;
+        const dt = 0.02;
+        st.driveMode = 'neutral'; st.currentGear = 0; st.speedKmh = 0;
+        st.isShifting = false; st.neutralRpm = 0; st.loadFront = 0.5; st.longUse = 0;
+        st.fuelLoad = 1;
+        st.brakeTempF = cfg.brakeAmbientC; st.brakeTempR = cfg.brakeAmbientC;
+        st.brakeFade = 0;
+        const marken = opt.marken || [0.25, 0.5, 0.75, 0.9, 0.99];
+        const offen = marken.slice();
+        const bei = {};
+        let t = 0, pwmMax = 0;
+        const bis = opt.sekunden || 30;
+        while (t < bis) {
+          // Schaltpause auf der eigenen Uhr, wie in physCurve: triggerShift loescht
+          // isShifting per setTimeout, und das feuert in einer synchronen Schleife nie.
+          if (st.isShifting) {
+            st._simShift = (st._simShift || 0) + dt;
+            if (st._simShift * 1000 >= cfg.shiftMs) { st.isShifting = false; st._simShift = 0; }
+          } else { st._simShift = 0; }
+          const out = e.update({ throttle: 1, brake: 0, steering: 0 }, dt);
+          t += dt;
+          const pwm = out.motorPWM;
+          if (pwm > pwmMax) pwmMax = pwm;
+          while (offen.length && pwm >= offen[0]) {
+            bei[offen[0]] = +t.toFixed(3);
+            offen.shift();
+          }
+          if (!offen.length) break;
+        }
+        return { bei, pwmMax: +pwmMax.toFixed(4),
+                 kmhEnde: +(st.speedKmh * REAL_SCALE).toFixed(1),
+                 topKmhAnzeige: +(cfg.topSpeedKmh * REAL_SCALE).toFixed(0),
+                 sekunden: +t.toFixed(2) };
+      } finally {
+        Object.assign(cfg, merk);
+        e.calibrateAccel();
+        delete st._simShift;
+        for (const k of Object.keys(st)) if (!(k in merkState)) delete st[k];
+        Object.assign(st, merkState);
+      }
+    },
+
     physCurve(o) {
       const opt = o || {};
       const e = physEngine, st = e.state, cfg = e.config;
@@ -20155,6 +20201,41 @@
     }
   });
 
+  // ---- Alle fuenf Voreinstellungstexte haben eine englische Fassung ----
+  //
+  // WARUM DAS EINE EIGENE PRUEFUNG BRAUCHT: die Sprachpruefung liest das DOKUMENT, und die
+  // Legende zeigt seit v0.5 nur noch die eingestellte Variante. Vier der fuenf Texte stehen
+  // beim Pruefen also nicht da - ein geaenderter Arcade-Text bliebe unbemerkt deutsch, bis
+  // jemand Arcade anklickt. Genau so ist es passiert: gemeldet wurden 2 von 5 Stellen.
+  //
+  // Eine Verbesserung an der Oberflaeche hat eine Pruefung blind gemacht. Diese hier geht
+  // deshalb direkt an die Tabelle und nicht an das Dokument.
+  stAdd('Alle Voreinstellungstexte sind uebersetzt', () => {
+    const keys = window.__presetKeys ? window.__presetKeys() : [];
+    if (!keys.length || !window.__presetTexts) {
+      return { ok: null, mass: 'presetTexts nicht erreichbar' };
+    }
+    const fehlt = [];
+    let geprueft = 0;
+    for (const k of keys) {
+      const t = window.__presetTexts(k);
+      if (!t) { fehlt.push(k + ' fehlt'); continue; }
+      for (const feld of ['label', 'kurz', 'text']) {
+        geprueft++;
+        // Der Name darf gleich bleiben (Arcade, GT3, F1 heissen auf Englisch genauso) -
+        // geprueft wird, dass ein Eintrag EXISTIERT oder der Text gar nichts Deutsches hat.
+        const de = t[feld];
+        const en = i18nLookup(de);
+        const hatDeutsch = /[\u00e4\u00f6\u00fc\u00df\u00c4\u00d6\u00dc]|\b(der|die|und|nicht|eine|mit|ist|wird|von|bei|zur|aus|dem|den)\b/.test(de);
+        if (en === null && hatDeutsch) fehlt.push(k + '.' + feld);
+      }
+    }
+    return { ok: fehlt.length === 0,
+             mass: geprueft + ' Texte in ' + keys.length + ' Voreinstellungen'
+                 + (fehlt.length ? ' | OHNE ENGLISCHE FASSUNG: ' + fehlt.join(', ')
+                                 : ' | alle uebersetzt') };
+  });
+
   // ---- Voreinstellungen gegen die Reglerraster ----
   //
   // Eine Voreinstellung darf nur Werte verlangen, die ihr Regler DARSTELLEN kann. Ein
@@ -21692,7 +21773,9 @@
       label: 'Arcade',
       kurz: 'Der ursprüngliche Sim-Modus',
       text: 'Automatik, 2,6 s auf 100, voller Grip, kein Reifenverschleiß und kein '
-          + 'Tankgewicht. Verzeihende Bremse, weiche Lenkung. Zum Fahren ohne Nachdenken.',
+          + 'Tankgewicht. Verzeihende Bremse, und die direkteste Lenkung von allen: '
+          + 'voller Stick fordert 120 % des mechanischen Anschlags, man ist also schon '
+          + 'vor dem Stickende am Limit. Zum Fahren ohne Nachdenken.',
       v: { 'setting-grip': 1.0, 'setting-brakepower': 1.4, 'setting-autoshift': true,
            'setting-zero-to-top': 2.6, 'setting-coast-drag': 0.6, 'setting-fuelweight': 0,
            'setting-tyres': 0, 'phys-steerresp': 2.4, 'setting-brakebias': 58,
@@ -21706,16 +21789,23 @@
            'setting-dirtyair': false,
            'setting-dirtyair-strength': 1.0,
            'setting-tyre-asym': false,
-           'setting-tyre-pressure': 1.8 },
+           'setting-tyre-pressure': 1.8,
+           // Gasfaktor: wie frueh das Auto volle Motorleistung bekommt. 1,0 ist
+           // das Byte genau proportional zum Tacho, also die kalibrierte Fassung.
+           'setting-topspeed': 1.8 },
     },
     pro: {
       label: 'Pro',
       kurz: 'Halb so weit zwischen Arcade und GT3',
-      text: 'Von Hand schalten, 3,2 s auf 100, Reifen und Tankgewicht wirken zur Hälfte. '
-          + 'Schärfere Lenkung als Arcade, aber noch Reserve in der Bremse.',
+      text: 'Von Hand schalten, 2,6 s auf 100, Reifen und Tankgewicht wirken zur Hälfte. '
+          + 'Die Lenkung ist so direkt wie bei Arcade (120 % des Anschlags bei vollem '
+          + 'Stick), in der Bremse ist aber noch Reserve.',
       v: { 'setting-grip': 0.85, 'setting-brakepower': 1.0, 'setting-autoshift': false,
-           'setting-zero-to-top': 3.2, 'setting-coast-drag': 1.0, 'setting-fuelweight': 0.5,
-           'setting-tyres': 0.5, 'phys-steerresp': 1.8, 'setting-brakebias': 60,
+           // 2,6 statt 3,2 s und Lenkansprechen 2,4 statt 1,8: gemessen brauchte das
+           // Motorbyte mit den alten Werten 24,9 s Vollgas bis 90 %. Pro ist die Vorgabe und
+           // muss sich wie ein Auto anfuehlen, nicht wie ein Anfahrversuch.
+           'setting-zero-to-top': 2.6, 'setting-coast-drag': 1.0, 'setting-fuelweight': 0.5,
+           'setting-tyres': 0.5, 'phys-steerresp': 2.4, 'setting-brakebias': 60,
            'setting-fuel-drain': 1.5, 'setting-crash-count': 2,
            'setting-crash-damage': true,
            'setting-repair-time': 10,
@@ -21725,7 +21815,10 @@
            'setting-dirtyair': true,
            'setting-dirtyair-strength': 0.6,
            'setting-tyre-asym': true,
-           'setting-tyre-pressure': 1.8 },
+           'setting-tyre-pressure': 1.8,
+           // Gasfaktor: wie frueh das Auto volle Motorleistung bekommt. 1,0 ist
+           // das Byte genau proportional zum Tacho, also die kalibrierte Fassung.
+           'setting-topspeed': 1.6 },
     },
     gt3: {
       label: 'GT3',
@@ -21745,7 +21838,10 @@
            'setting-dirtyair': true,
            'setting-dirtyair-strength': 1.0,
            'setting-tyre-asym': true,
-           'setting-tyre-pressure': 1.8 },
+           'setting-tyre-pressure': 1.8,
+           // Gasfaktor: wie frueh das Auto volle Motorleistung bekommt. 1,0 ist
+           // das Byte genau proportional zum Tacho, also die kalibrierte Fassung.
+           'setting-topspeed': 1.0 },
     },
     gt4: {
       label: 'GT4',
@@ -21765,13 +21861,18 @@
            'setting-dirtyair': true,
            'setting-dirtyair-strength': 0.8,
            'setting-tyre-asym': true,
-           'setting-tyre-pressure': 1.85 },
+           'setting-tyre-pressure': 1.85,
+           // Gasfaktor: wie frueh das Auto volle Motorleistung bekommt. 1,0 ist
+           // das Byte genau proportional zum Tacho, also die kalibrierte Fassung.
+           'setting-topspeed': 1.2 },
     },
     f1: {
       label: 'F1',
       kurz: 'Das schärfste, was das Modell hergibt',
       text: 'Von Hand schalten, 2,4 s auf 100, stärkster Reifenverschleiß, volles '
-          + 'Tankgewicht, empfindlichste Lenkung und die kürzeste Bremse. Das Ausrollen '
+          + 'Tankgewicht, die am feinsten dosierbare Lenkung (52 % des Anschlags bei '
+          + 'vollem Stick, man muss also weit ziehen) und die kürzeste Bremse. Das '
+          + 'Ausrollen '
           + 'ist kurz, weil der Luftwiderstand hier die größte Einzelkraft ist.',
       v: { 'setting-grip': 0.95, 'setting-brakepower': 1.45, 'setting-autoshift': false,
            'setting-zero-to-top': 2.4, 'setting-coast-drag': 1.6, 'setting-fuelweight': 1.0,
@@ -21785,7 +21886,10 @@
            'setting-dirtyair': true,
            'setting-dirtyair-strength': 1.6,
            'setting-tyre-asym': true,
-           'setting-tyre-pressure': 1.7 },
+           'setting-tyre-pressure': 1.7,
+           // Gasfaktor: wie frueh das Auto volle Motorleistung bekommt. 1,0 ist
+           // das Byte genau proportional zum Tacho, also die kalibrierte Fassung.
+           'setting-topspeed': 1.5 },
     },
   };
   // Bis v0.4 hiess GT3 "real". Aeltere exportierte Abstimmungen und der Knopf im
@@ -21883,6 +21987,11 @@
   // Die Sollwerte, fuer die Rasterpruefung im Selbsttest. Als Kopie hinausgegeben, damit
   // ein Test die Tabelle nicht versehentlich veraendert.
   window.__presetValues = (k) => (PRESETS[k] ? Object.assign({}, PRESETS[k].v) : null);
+  // Die drei Texte je Voreinstellung, fuer die Sprachpruefung. Sie kann nicht ueber das
+  // Dokument gehen: die Legende zeigt nur die EINGESTELLTE Variante, vier von fuenf Texten
+  // stehen beim Pruefen also gar nicht da.
+  window.__presetTexts = (k) => (PRESETS[k]
+    ? { label: PRESETS[k].label, kurz: PRESETS[k].kurz, text: PRESETS[k].text } : null);
   window.__presetLabel = (k) => (PRESETS[k] || {}).label || k;
 
   // Der Erklaertext der EINGESTELLTEN Variante, aus demselben Objekt. Bis v0.5 standen alle

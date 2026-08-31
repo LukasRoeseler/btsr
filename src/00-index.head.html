@@ -674,9 +674,6 @@
      sagt "diese Zahl bewegt sich nicht mehr". Nur eins von beiden waere zu leise. */
   .gt3-box.sim-off { opacity: .45; }
   .gt3-box.sim-off .gt3-bar > i { background: #4a5568 !important; }
-  .gt3-tyre { min-width: 0; }
-  .gt3-tyre > div { min-width: 0; overflow: hidden; }
-  @media (max-width: 560px) { .tyre-wear-word { display: none; } }
   .gt3-trim { display: flex; flex-direction: column; justify-content: center;
     gap: clamp(2px, .5vw, 6px); }
   .gt3-trim-row { display: flex; align-items: center; justify-content: center;
@@ -686,6 +683,17 @@
   /* Die Balance-Skala ist schmaler und hoeher als ein Symbol - sie IST eine Achse, und eine
      quadratische Achse waere keine. touch-action: none, sonst scrollt das Telefon die Seite
      statt die Marke zu ziehen. */
+  /* Vier Reifen in Fahrzeuganordnung. aspect-ratio statt fester Hoehe, damit die Felder
+     auf 375 px nicht zu Strichen werden; der Zwischenraum in der Mitte ist die Spur. */
+  .gt3-tyres4 { display: grid; grid-template-columns: 1fr 1fr;
+    gap: clamp(2px, .5vw, 4px) clamp(5px, 1.6vw, 12px);
+    margin: 3px 0 2px 0; }
+  .gt3-t4 { display: block; position: relative; aspect-ratio: 1 / 1.6;
+    background: #04060b; border-radius: 1px; overflow: hidden; }
+  /* Die Fuellung waechst von UNTEN, wie ein Vorrat. Dieselbe Richtung wie Tank und Schaden:
+     drei Anzeigen, die gleich leerlaufen, liest man mit einem Blick. */
+  .gt3-t4 > b { position: absolute; left: 0; right: 0; bottom: 0; height: 0;
+    background: #4a5568; transition: height .15s linear, background .3s linear; }
   .gt3-bias { cursor: ns-resize; touch-action: none; }
   /* Zwei Zahlen in einer Zeile, deshalb schmaler als die anderen Trimmwerte. Der Trenner
      ist gedaempft, damit die Zahlen die Aufmerksamkeit haben und nicht der Schraegstrich. */
@@ -770,8 +778,6 @@
   .gt3-wx .gt3-ico { width: clamp(24px, 4.4vw, 44px); }
   .gt3-gplot svg { width: 100%; max-width: clamp(44px, 7vw, 72px); height: auto;
     display: block; margin: 0 auto; }
-  .gt3-tyre { display: flex; align-items: center; gap: 5px; }
-  .gt3-tyre svg { width: clamp(18px, 2.7vw, 26px); height: auto; flex: none; }
 
   /* Full-width banner. Amber, wide, unmissable: the pit limiter is the one state where
      not noticing costs a penalty. */
@@ -1864,32 +1870,28 @@
              title="Schadenssimulation an/aus, beim Boxenstopp: Reparatur an/aus"><svg class="gt3-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-label="Zustand"><path d="M19.3 8.2 L19.2 9.3 L18.8 10.3 L18.0 11.2 L17.1 11.8 L16.0 12.1 L14.9 12.0 L13.9 11.7 L13.0 11.0 L12.3 10.1 L12.0 9.1 L11.9 8.0 L12.2 6.9 L12.8 6.0 L13.7 5.2 L14.7 4.8 L15.8 4.7"/><path d="M13.0 11.0 L8.5 15.5"/></svg>
           <div class="gt3-val sm" id="race-dmg">100%</div>
           <div class="gt3-bar"><i id="race-dmg-bar"></i></div></div>
+        <!-- VIER Felder in Fahrzeuganordnung statt Ring und Balken. Zwei Balken
+             uebereinander liest niemand als "links und rechts": ein Balken ist ein Vorrat,
+             kein Ort.
+
+             Die beiden Reifen einer SEITE laufen gleich, und das ist keine Auslassung: das
+             Modell trennt nur links und rechts. Vorn und hinten getrennt zu verschleissen
+             braeuchte eine Achslastverteilung, die es noch nicht gibt - vier unabhaengig
+             wackelnde Felder waeren eine Erfindung. Der Tooltip sagt das auch, denn wer vier
+             Felder sieht, nimmt vier Werte an.
+
+             Jedes Feld traegt BEIDE Groessen: Fuellhoehe von unten die restliche
+             Lauffleche, Farbe die Temperatur. Der frueher separate Ring sagte die Temperatur
+             schon, und zweimal dasselbe in einer 77-px-Kachel ist Platzverschwendung. -->
         <div class="gt3-box gt3-click pit-tile" id="race-tyre-box" data-pit="tyres"
-             title="Reifensimulation an/aus, beim Boxenstopp: Reifenwechsel an/aus"><div class="gt3-lbl">Reifen</div>
-          <div class="gt3-tyre">
-            <svg viewBox="0 0 24 24" aria-label="Reifentemperatur">
-              <circle cx="12" cy="12" r="10" fill="none" stroke-width="4" id="race-tyre-ring"/>
-              <circle cx="12" cy="12" r="4.5" fill="#2a3346"/>
-            </svg>
-            <div><div class="gt3-val sm" id="race-tyre-temp">&ndash;</div>
-              <!-- Das Wort steht in einem eigenen Element und faellt unter 560 px weg:
-                   gemessen brauchte "Abnutzung 0%" 83 px in einer 77 px breiten Kachel und
-                   schob sich ueber die Akkukachel. Der Balken darunter sagt dasselbe ohne
-                   Buchstaben, das Wort ist also der verzichtbare Teil. -->
-              <div class="gt3-lbl"><span class="tyre-wear-word">Abnutzung
-                </span><span id="race-tyre-wear">&ndash;</span></div></div>
+             title="Reifen: F&uuml;llh&ouml;he ist Restprofil, Farbe die Temperatur. Links und rechts werden getrennt gerechnet, vorn und hinten nicht &ndash; die beiden einer Seite laufen deshalb gleich. Antippen schaltet die Reifensimulation aus, beim Boxenstopp den Reifenwechsel."><div class="gt3-lbl">Reifen</div>
+          <div class="gt3-tyres4">
+            <i class="gt3-t4" id="race-tyre-fl"><b></b></i>
+            <i class="gt3-t4" id="race-tyre-fr"><b></b></i>
+            <i class="gt3-t4" id="race-tyre-rl"><b></b></i>
+            <i class="gt3-t4" id="race-tyre-rr"><b></b></i>
           </div>
-          <!-- Wie bei Tank und Schaden, und in derselben Richtung: der Balken zeigt die
-               RESTLICHE Lauffl&auml;che, nicht die Abnutzung. Drei Balken, die gleich
-               leerlaufen, liest man mit einem Blick; einer, der gegenl&auml;ufig f&uuml;llt,
-               kostet jedes Mal einen Gedanken. -->
-          <div class="gt3-bar"><i id="race-tyre-bar"></i></div>
-          <!-- Der zweite Balken ist RECHTS; der obere wird dann der linke. Ist die
-               Asymmetrie aus, verschwindet dieser hier und der obere zeigt wie bisher den
-               Mittelwert - die Kachel sieht dann genau aus wie vorher, und der Unterschied
-               ist die Aussage. -->
-          <div class="gt3-bar" id="race-tyre-bar-r-wrap" style="display:none; margin-top:2px">
-            <i id="race-tyre-bar-r"></i></div></div>
+          <div class="gt3-val sm" id="race-tyre-temp">&ndash;</div></div>
         <div class="gt3-box"><svg class="gt3-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-label="Akku"><rect x="2" y="7" width="17" height="10" rx="2"/><path d="M22 11v2"/><path d="M6 10v4M9.5 10v4M13 10v4"/></svg>
           <div class="gt3-val sm" id="race-batt">&ndash;</div></div>
         <div class="gt3-box gt3-click" id="race-light-box" title="Licht an/aus" style="display:flex;align-items:center;justify-content:center">
@@ -4180,7 +4182,7 @@
       <div class="opt-row"><div class="opt-label">Tankverbrauch (%/s bei Vollgas)</div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-fuel-drain" min="0" max="10" step="0.1" value="3">
+          <input type="range" id="setting-fuel-drain" min="0" max="10" step="0.1" value="1.5">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-fuel-drain-val">3.0</span>
         </div></div>
@@ -4220,7 +4222,7 @@
       <div class="opt-row"><div class="opt-label">Crashs, bis Fahrzeug ruckelt</div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-crash-count" min="0" max="7" step="1" value="5">
+          <input type="range" id="setting-crash-count" min="0" max="7" step="1" value="2">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-crash-count-val">10</span>
         </div></div>
@@ -4238,17 +4240,25 @@
       <button class="misc-back subpage-back" data-sub="">&larr; Einstellungen</button>
       <h2>Fahrgef&uuml;hl</h2>
 <div class="opt-head">Fahrwerk</div>
-      <div class="opt-row"><div class="opt-label">Geschwindigkeit</div>
+      <div class="opt-row"><div class="opt-label">Gasfaktor
+          <small>Faktor auf das Motorbyte, das zum Auto geht. Das Byte ist Tempo geteilt
+          durch Simulations-H&ouml;chstgeschwindigkeit; bei 100 % bekommt das Auto also erst
+          volle Leistung, wenn die Simulation ihre H&ouml;chstgeschwindigkeit erreicht hat,
+          und das dauert gemessen fast 25 Sekunden Vollgas. &Uuml;ber 100 % erreicht es die
+          volle Leistung fr&uuml;her, ohne dass der Tacho anders skaliert. Das ist auch
+          ehrlicher als es klingt: das Modellauto f&auml;hrt real 5,9 km/h, egal was die
+          Simulation glaubt &ndash; dieser Faktor ist die Abbildung zwischen beidem, und dass
+          er fr&uuml;her genau 1 war, war eine Annahme und keine Messung.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-topspeed" min="0.2" max="1" step="0.05" value="1">
+          <input type="range" id="setting-topspeed" min="0.2" max="2" step="0.05" value="1.6">
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="setting-topspeed-val">100%</span>
+          <span class="opt-val" id="setting-topspeed-val">160%</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Reifengrip</div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-grip" min="0" max="1" step="0.01" value="0.6">
+          <input type="range" id="setting-grip" min="0" max="1" step="0.01" value="0.85">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-grip-val">0.60</span>
         </div></div>
@@ -4263,7 +4273,7 @@
 <div class="opt-head">
         Getriebe &amp; Fahrleistung
       </div>
-      <div class="opt-row"><div class="opt-label">Automatikgetriebe<small>An: Quadrat/X legt unter 10 km/h den Rückwärtsgang, Kreis/B holt ihn heraus. Aus: von Hand schalten, unter dem 1. Gang liegt der Leerlauf und darunter im Stand der Rückwärtsgang.</small></div><label class="tgl"><input type="checkbox" id="setting-autoshift" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Automatikgetriebe<small>An: Quadrat/X legt unter 10 km/h den Rückwärtsgang, Kreis/B holt ihn heraus. Aus: von Hand schalten, unter dem 1. Gang liegt der Leerlauf und darunter im Stand der Rückwärtsgang.</small></div><label class="tgl"><input type="checkbox" id="setting-autoshift"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Höchstgeschwindigkeit (km/h)</div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
@@ -4274,7 +4284,7 @@
       <div class="opt-row"><div class="opt-label">0 &rarr; 100 km/h (s)<small>Angezeigte km/h. Ein 911 GT3 R braucht rund 3,2 s.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-zero-to-top" min="1.5" max="8" step="0.1" value="3.2">
+          <input type="range" id="setting-zero-to-top" min="1.5" max="8" step="0.1" value="2.6">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-zero-to-top-val">3.2</span>
         </div></div>
@@ -4290,14 +4300,14 @@
       <div class="opt-row"><div class="opt-label">Tankgewicht<small>Voller Tank macht träger. Links = aus.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-fuelweight" min="0" max="1" step="0.05" value="1">
+          <input type="range" id="setting-fuelweight" min="0" max="1" step="0.05" value="0.5">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-fuelweight-val">100%</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Reifen: Temperatur &amp; Verschlei&szlig;<small>Kalt nach Start und Boxenstopp, abgenutzt nach hartem Stint. Links = aus.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-tyres" min="0" max="2" step="0.05" value="2">
+          <input type="range" id="setting-tyres" min="0" max="2" step="0.05" value="0.5">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-tyres-val">200%</span>
         </div></div>
@@ -4336,7 +4346,7 @@
           <small>&Uuml;ber 100&nbsp;% steigt die Heizrate, nicht der maximale Verlust.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-brake-fade-strength" min="0" max="2" step="0.05" value="1">
+          <input type="range" id="setting-brake-fade-strength" min="0" max="2" step="0.05" value="0.6">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-brake-fade-strength-val">100%</span>
         </div></div>
@@ -4352,7 +4362,7 @@
           <small>100&nbsp;% sind h&ouml;chstens 18&nbsp;% Kurvengrip weniger.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-dirtyair-strength" min="0" max="2" step="0.05" value="1">
+          <input type="range" id="setting-dirtyair-strength" min="0" max="2" step="0.05" value="0.6">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-dirtyair-strength-val">100%</span>
         </div></div>
@@ -4361,7 +4371,7 @@
       <div class="opt-row"><div class="opt-label">Lenkansprechen<small>Auch auf dem Steuerkreuz links/rechts. Der volle Lenkeinschlag ist mechanisch 45&nbsp;Grad; bei 100&nbsp;% fordert voller Stick genau ihn an.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="phys-steerresp" min="0.5" max="3" step="0.05" value="2">
+          <input type="range" id="phys-steerresp" min="0.5" max="3" step="0.05" value="2.4">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="phys-steerresp-val">100%</span>
         </div></div>
@@ -4379,7 +4389,7 @@
           Mittelstellung und &auml;ndert nichts.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-brakebias" min="50" max="80" step="1" value="62">
+          <input type="range" id="setting-brakebias" min="50" max="80" step="1" value="60">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-brakebias-val">62% vorn</span>
         </div></div>
@@ -5178,7 +5188,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.4.28</span></span>
+    <span class="foot-ver">v<span id="app-version">0.4.29</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine

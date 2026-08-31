@@ -19,7 +19,9 @@
       label: 'Arcade',
       kurz: 'Der ursprüngliche Sim-Modus',
       text: 'Automatik, 2,6 s auf 100, voller Grip, kein Reifenverschleiß und kein '
-          + 'Tankgewicht. Verzeihende Bremse, weiche Lenkung. Zum Fahren ohne Nachdenken.',
+          + 'Tankgewicht. Verzeihende Bremse, und die direkteste Lenkung von allen: '
+          + 'voller Stick fordert 120 % des mechanischen Anschlags, man ist also schon '
+          + 'vor dem Stickende am Limit. Zum Fahren ohne Nachdenken.',
       v: { 'setting-grip': 1.0, 'setting-brakepower': 1.4, 'setting-autoshift': true,
            'setting-zero-to-top': 2.6, 'setting-coast-drag': 0.6, 'setting-fuelweight': 0,
            'setting-tyres': 0, 'phys-steerresp': 2.4, 'setting-brakebias': 58,
@@ -33,16 +35,23 @@
            'setting-dirtyair': false,
            'setting-dirtyair-strength': 1.0,
            'setting-tyre-asym': false,
-           'setting-tyre-pressure': 1.8 },
+           'setting-tyre-pressure': 1.8,
+           // Gasfaktor: wie frueh das Auto volle Motorleistung bekommt. 1,0 ist
+           // das Byte genau proportional zum Tacho, also die kalibrierte Fassung.
+           'setting-topspeed': 1.8 },
     },
     pro: {
       label: 'Pro',
       kurz: 'Halb so weit zwischen Arcade und GT3',
-      text: 'Von Hand schalten, 3,2 s auf 100, Reifen und Tankgewicht wirken zur Hälfte. '
-          + 'Schärfere Lenkung als Arcade, aber noch Reserve in der Bremse.',
+      text: 'Von Hand schalten, 2,6 s auf 100, Reifen und Tankgewicht wirken zur Hälfte. '
+          + 'Die Lenkung ist so direkt wie bei Arcade (120 % des Anschlags bei vollem '
+          + 'Stick), in der Bremse ist aber noch Reserve.',
       v: { 'setting-grip': 0.85, 'setting-brakepower': 1.0, 'setting-autoshift': false,
-           'setting-zero-to-top': 3.2, 'setting-coast-drag': 1.0, 'setting-fuelweight': 0.5,
-           'setting-tyres': 0.5, 'phys-steerresp': 1.8, 'setting-brakebias': 60,
+           // 2,6 statt 3,2 s und Lenkansprechen 2,4 statt 1,8: gemessen brauchte das
+           // Motorbyte mit den alten Werten 24,9 s Vollgas bis 90 %. Pro ist die Vorgabe und
+           // muss sich wie ein Auto anfuehlen, nicht wie ein Anfahrversuch.
+           'setting-zero-to-top': 2.6, 'setting-coast-drag': 1.0, 'setting-fuelweight': 0.5,
+           'setting-tyres': 0.5, 'phys-steerresp': 2.4, 'setting-brakebias': 60,
            'setting-fuel-drain': 1.5, 'setting-crash-count': 2,
            'setting-crash-damage': true,
            'setting-repair-time': 10,
@@ -52,7 +61,10 @@
            'setting-dirtyair': true,
            'setting-dirtyair-strength': 0.6,
            'setting-tyre-asym': true,
-           'setting-tyre-pressure': 1.8 },
+           'setting-tyre-pressure': 1.8,
+           // Gasfaktor: wie frueh das Auto volle Motorleistung bekommt. 1,0 ist
+           // das Byte genau proportional zum Tacho, also die kalibrierte Fassung.
+           'setting-topspeed': 1.6 },
     },
     gt3: {
       label: 'GT3',
@@ -72,7 +84,10 @@
            'setting-dirtyair': true,
            'setting-dirtyair-strength': 1.0,
            'setting-tyre-asym': true,
-           'setting-tyre-pressure': 1.8 },
+           'setting-tyre-pressure': 1.8,
+           // Gasfaktor: wie frueh das Auto volle Motorleistung bekommt. 1,0 ist
+           // das Byte genau proportional zum Tacho, also die kalibrierte Fassung.
+           'setting-topspeed': 1.0 },
     },
     gt4: {
       label: 'GT4',
@@ -92,13 +107,18 @@
            'setting-dirtyair': true,
            'setting-dirtyair-strength': 0.8,
            'setting-tyre-asym': true,
-           'setting-tyre-pressure': 1.85 },
+           'setting-tyre-pressure': 1.85,
+           // Gasfaktor: wie frueh das Auto volle Motorleistung bekommt. 1,0 ist
+           // das Byte genau proportional zum Tacho, also die kalibrierte Fassung.
+           'setting-topspeed': 1.2 },
     },
     f1: {
       label: 'F1',
       kurz: 'Das schärfste, was das Modell hergibt',
       text: 'Von Hand schalten, 2,4 s auf 100, stärkster Reifenverschleiß, volles '
-          + 'Tankgewicht, empfindlichste Lenkung und die kürzeste Bremse. Das Ausrollen '
+          + 'Tankgewicht, die am feinsten dosierbare Lenkung (52 % des Anschlags bei '
+          + 'vollem Stick, man muss also weit ziehen) und die kürzeste Bremse. Das '
+          + 'Ausrollen '
           + 'ist kurz, weil der Luftwiderstand hier die größte Einzelkraft ist.',
       v: { 'setting-grip': 0.95, 'setting-brakepower': 1.45, 'setting-autoshift': false,
            'setting-zero-to-top': 2.4, 'setting-coast-drag': 1.6, 'setting-fuelweight': 1.0,
@@ -112,7 +132,10 @@
            'setting-dirtyair': true,
            'setting-dirtyair-strength': 1.6,
            'setting-tyre-asym': true,
-           'setting-tyre-pressure': 1.7 },
+           'setting-tyre-pressure': 1.7,
+           // Gasfaktor: wie frueh das Auto volle Motorleistung bekommt. 1,0 ist
+           // das Byte genau proportional zum Tacho, also die kalibrierte Fassung.
+           'setting-topspeed': 1.5 },
     },
   };
   // Bis v0.4 hiess GT3 "real". Aeltere exportierte Abstimmungen und der Knopf im
@@ -210,6 +233,11 @@
   // Die Sollwerte, fuer die Rasterpruefung im Selbsttest. Als Kopie hinausgegeben, damit
   // ein Test die Tabelle nicht versehentlich veraendert.
   window.__presetValues = (k) => (PRESETS[k] ? Object.assign({}, PRESETS[k].v) : null);
+  // Die drei Texte je Voreinstellung, fuer die Sprachpruefung. Sie kann nicht ueber das
+  // Dokument gehen: die Legende zeigt nur die EINGESTELLTE Variante, vier von fuenf Texten
+  // stehen beim Pruefen also gar nicht da.
+  window.__presetTexts = (k) => (PRESETS[k]
+    ? { label: PRESETS[k].label, kurz: PRESETS[k].kurz, text: PRESETS[k].text } : null);
   window.__presetLabel = (k) => (PRESETS[k] || {}).label || k;
 
   // Der Erklaertext der EINGESTELLTEN Variante, aus demselben Objekt. Bis v0.5 standen alle

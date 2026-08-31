@@ -590,6 +590,41 @@
     }
   });
 
+  // ---- Alle fuenf Voreinstellungstexte haben eine englische Fassung ----
+  //
+  // WARUM DAS EINE EIGENE PRUEFUNG BRAUCHT: die Sprachpruefung liest das DOKUMENT, und die
+  // Legende zeigt seit v0.5 nur noch die eingestellte Variante. Vier der fuenf Texte stehen
+  // beim Pruefen also nicht da - ein geaenderter Arcade-Text bliebe unbemerkt deutsch, bis
+  // jemand Arcade anklickt. Genau so ist es passiert: gemeldet wurden 2 von 5 Stellen.
+  //
+  // Eine Verbesserung an der Oberflaeche hat eine Pruefung blind gemacht. Diese hier geht
+  // deshalb direkt an die Tabelle und nicht an das Dokument.
+  stAdd('Alle Voreinstellungstexte sind uebersetzt', () => {
+    const keys = window.__presetKeys ? window.__presetKeys() : [];
+    if (!keys.length || !window.__presetTexts) {
+      return { ok: null, mass: 'presetTexts nicht erreichbar' };
+    }
+    const fehlt = [];
+    let geprueft = 0;
+    for (const k of keys) {
+      const t = window.__presetTexts(k);
+      if (!t) { fehlt.push(k + ' fehlt'); continue; }
+      for (const feld of ['label', 'kurz', 'text']) {
+        geprueft++;
+        // Der Name darf gleich bleiben (Arcade, GT3, F1 heissen auf Englisch genauso) -
+        // geprueft wird, dass ein Eintrag EXISTIERT oder der Text gar nichts Deutsches hat.
+        const de = t[feld];
+        const en = i18nLookup(de);
+        const hatDeutsch = /[\u00e4\u00f6\u00fc\u00df\u00c4\u00d6\u00dc]|\b(der|die|und|nicht|eine|mit|ist|wird|von|bei|zur|aus|dem|den)\b/.test(de);
+        if (en === null && hatDeutsch) fehlt.push(k + '.' + feld);
+      }
+    }
+    return { ok: fehlt.length === 0,
+             mass: geprueft + ' Texte in ' + keys.length + ' Voreinstellungen'
+                 + (fehlt.length ? ' | OHNE ENGLISCHE FASSUNG: ' + fehlt.join(', ')
+                                 : ' | alle uebersetzt') };
+  });
+
   // ---- Voreinstellungen gegen die Reglerraster ----
   //
   // Eine Voreinstellung darf nur Werte verlangen, die ihr Regler DARSTELLEN kann. Ein
