@@ -293,7 +293,6 @@
         // sichtbar weniger lenkt. Vorher waren es 77 und 75 % - die Wirkung war da, nur zu
         // schwach. Ein Sollwert dafuer liegt nicht vor, also ist das eine Gefuehlsangabe und
         // keine Messung; die Zahlen stehen hier, damit sie nachpruefbar sind.
-        loadGain: 0.65,       // how much front load changes lateral capacity
         brakeUseGain: 1.35,   // how much of that capacity the brake eats
         coastPitch: 0.15,     // engine braking pitches the nose down a little
         // Full-throttle equilibrium of loadFront. Traction is normalised to THIS state, not
@@ -588,7 +587,8 @@
       // left to steer with. In the dry surf is exactly 1.0, so dry behaviour is untouched
       // - which is the property that makes this safe to change.
       //
-      // A first attempt amplified `loadGain` in the wet instead. That was wrong by
+      // A first attempt amplified `loadGain` in the wet instead (der Wert ist inzwischen
+      // weg, die Lastempfindlichkeit hat seine Rolle uebernommen). That was wrong by
       // inspection of the measurement: braking moves load ONTO the front, so a bigger
       // load gain made wet braking steer BETTER (steerGrip 1.006 against 0.464 dry) -
       // the exact opposite of what was asked.

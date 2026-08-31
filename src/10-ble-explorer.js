@@ -587,7 +587,6 @@
     "Gegen die Referenz antreten.": "Race against the reference.",
     "Gegen gegenseitiges Rammen. Blind: kein Byte meldet die Querlage. Links = aus.": "Against cars ramming each other. Blind: no byte reports lateral position. Left = off.",
     "Gelbe Flagge": "Yellow flag",
-    "Gelbe Flagge: alles rollt mit": "Yellow flag: everything rolls at",
     "Gerade": "Straight",
     "Geschlossen ✓": "Closed ✓",
     "Geschmeidig: aufbauen und ausrollen": "Smooth: build up and run out",
@@ -930,6 +929,10 @@
     "und": "and",
     // v0.4 Block H: Sitzungsdaten
     // v0.4 Block H: Sektoren und Boxengassen-Varianten
+    "Eine Sekunde halten": "Hold for one second",
+    "für die gelbe Flagge: alles rollt mit": "for the yellow flag: everything rolls on at",
+    "km/h mittig weiter, kein Überholen, Lichter blinken. Nochmal eine Sekunde halten startet die Ampel und gibt wieder frei. Der Knopf im Cockpit reicht mit einem Tipp – die Taste liegt neben allem anderen, der Knopf nicht.":
+      "km/h in the middle, no overtaking, lights flashing. Holding for another second starts the lights and releases. The cockpit button needs only a tap – the key sits next to everything else, the button does not.",
     "Sektoren": "Sectors",
     "Überfahrten je Runde. Nur": "Crossings per lap. Only",
     "experimentell": "experimental",
@@ -945,6 +948,18 @@
     "wo": "where",
     "Zeit verlorengeht.": "time is being lost.",
     "Wo ist die Boxengasse?": "Where is the pit lane?",
+    "Aus: kein Tempolimit, kein Service, auch nicht über einen Ausdruck.":
+      "Off: no speed limit, no service, not even via a printout.",
+    "Runde beim Boxeneinfahren trotzdem zählen": "Count the lap on pit entry anyway",
+    "Sinnvoll, wenn die Boxengasse parallel zu Start/Ziel liegt. Nur bei „Doppelter Start-Ausdruck“.":
+      "Useful when the pit lane runs parallel to start/finish. Only with “Double start printout”.",
+    "Wo die Boxengasse liegt": "Where the pit lane is",
+    "und ob sie überhaupt aktiv ist, steht in den":
+      "and whether it is active at all is set under",
+    ", direkt unter dem Tankverbrauch: das sind Einstellungen. Hier stehen die Angaben zum":
+      ", right below fuel consumption – those are settings. What lives here are the details of the",
+    "– welchen Code es auslöst und wie man es druckt.":
+      "– which code it triggers and how to print it.",
     "Überall halten": "Stop anywhere",
     "Neben der Strecke": "Beside the track",
     "Neben der Strecke (Byte 12 = 0x00)": "Beside the track (byte 12 = 0x00)",
@@ -958,8 +973,6 @@
       ": two printouts 50 cm apart. Two pattern contacts within 3 s and at least 1 s apart are a pit entry, not a lap. Then it beeps, the 60 km/h limit holds for 4 s, and stopping within that time starts the service. The minimum gap is the more important half of the condition: a single printout holds contact for about a second at speed, and without it the flutter of",
     "eines": "a single",
     "Musters als Paar gelesen.": "pattern would be read as a pair.",
-    "Runde beim Boxeneinfahren trotzdem zählen":
-      "Count the lap on pit entry anyway",
     "Gefahrene Sitzungen": "Sessions driven",
     "Nach jedem beendeten Rennen abgelegt, auf diesem Gerät. Gespeichert werden Rundenzeiten, Datum, Streckencode, Modus, die verwendete Abstimmung und die gefahrene Strecke – und zwar":
       "Stored after every finished race, on this device. Lap times, date, track code, mode, the setup used and the distance driven – and that",
@@ -1124,7 +1137,6 @@
     "keine": "none",
     "keinen einzigen": "not a single one",
     "km/h echt": "km/h actual",
-    "km/h mittig weiter, kein Überholen, Lichter blinken. Nochmal": "km/h down the middle, no overtaking, lights blinking. Pressing",
     "kontinuierlich alle": "continuously every",
     "lang (2 Byte Präfix + 17 Datenbytes + 1 Prüfsumme), gesendet alle ~45ms. Byte-Offset 6 = Gas/Bremse (": "long (2 prefix bytes + 17 data bytes + 1 checksum), sent every ~45 ms. Byte offset 6 = throttle/brake (",
     "langsam über ein Muster fahren": "drive slowly over a pattern",
@@ -1160,7 +1172,6 @@
     "s. Verlässt es die Bahn, wird die Stufe festgehalten und die Messung endet. Wenn du es": "s. If it leaves the track, the step is recorded and the measurement ends. If you",
     "setzt den nächsten Abschnitt.": "sets the next section.",
     "siehst": "see",
-    "startet die Ampel und gibt wieder frei": "starts the lights and releases again",
     "steht": "still",
     "steht:": "stopped:",
     "tatsächliche": "actual",

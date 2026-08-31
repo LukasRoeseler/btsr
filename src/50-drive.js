@@ -500,6 +500,20 @@
                                           : (rest <= 55 ? 'var(--warn)' : 'var(--good)'));
     }
 
+    // Abgeschaltete Simulationen kennzeichnen. Hier und nicht in den Umschaltfunktionen:
+    // die Regler lassen sich auch in den Optionen bewegen, und dann muesste die Kachel dort
+    // ebenfalls nachgezogen werden. Ein Ort, der jeden Takt aus dem Zustand liest, kann
+    // nicht auseinanderlaufen.
+    const tankAus = fuelDrainPerSec <= 0;
+    const schadenAus = !crashDetectionEnabled;
+    const tankKachel = document.querySelector('[data-pit="refuel"]');
+    const schadenKachel = document.querySelector('[data-pit="repair"]');
+    if (tankKachel) tankKachel.classList.toggle('sim-off', tankAus);
+    if (schadenKachel) schadenKachel.classList.toggle('sim-off', schadenAus);
+    const reifenKachel = $('race-tyre-box');
+    if (reifenKachel) reifenKachel.classList.toggle('sim-off',
+      physEngine.config.tyreEffect <= 0);
+
     // Dieselben zwei Groessen, die auf dem Steuerkreuz liegen - hoch/runter und
     // links/rechts. Die Kachel zeigt, was das Kreuz verstellt, und nichts anderes.
     $('race-trim-accel').textContent = Math.round(physEngine.config.brakeBias * 100) + '%';

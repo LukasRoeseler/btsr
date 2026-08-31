@@ -949,30 +949,20 @@
   $('race-act-start').onclick = toggleRace;
 
   $('race-act-pit').onclick = () => { requestPitStop(); updateRaceActButtons(); };
-  // Auch der Knopf wird GEHALTEN, nicht getippt - derselbe Riegel wie bei der Taste X, und
-  // der Ladebalken laeuft ohnehin in diesem Knopf. Ein Knopf, der auf Tippen reagiert,
-  // waehrend die Taste eine Sekunde verlangt, waere zwei Bedienungen fuer eine Wirkung.
+  // Der KNOPF loest direkt aus, ein Tipp reicht.
   //
-  // pointerdown/up statt mousedown/up: das deckt Finger und Maus mit einem Zuhoerer ab.
-  // pointercancel und pointerleave gehoeren dazu, sonst haengt der Balken, wenn der Finger
-  // vom Knopf rutscht.
-  (function bindeFlaggenknopf() {
-    const b = $('race-act-flag');
-    if (!b) return;
-    b.addEventListener('pointerdown', (e) => { e.preventDefault(); flagHoldPress(); });
-    for (const ev of ['pointerup', 'pointercancel', 'pointerleave']) {
-      b.addEventListener(ev, () => flagHoldRelease(false));
-    }
-    // Und die Tastaturbedienung des Knopfes: Leertaste/Enter loesen click aus, nicht
-    // pointerdown. Ein Knopf, der mit der Tastatur nicht bedienbar ist, ist kaputt.
-    b.addEventListener('click', (e) => {
-      // Nur wenn der Klick NICHT von einem Zeiger kam - sonst haette ein Fingertipp die
-      // Halten-Geste umgangen. e.detail ist 0 bei Tastaturauslösung.
-      if (e.detail !== 0) return;
-      if (flagState === 'green') setFlag('yellow');
-      else if (flagState === 'yellow') yellowRestart();
-    });
-  })();
+  // Hier stand vorher dieselbe Halten-Geste wie auf der Taste X, und die Begruendung war der
+  // Fehltipper. Die gilt fuer die TASTE - sie liegt neben allem anderen, und ein Streifer
+  // kostet 40 km/h fuer jedes Auto im Feld. Sie gilt NICHT fuer einen beschrifteten Knopf,
+  // den man mit dem Finger sucht und trifft: dort ist der Griff selbst schon die Absicht,
+  // und eine Sekunde Warten mitten im Rennen ist genau die Sekunde, in der man hinsieht
+  // statt zu fahren.
+  //
+  // Das Halten bleibt auf X, samt Ladebalken in diesem Knopf.
+  $('race-act-flag').onclick = () => {
+    if (flagState === 'green') setFlag('yellow');
+    else if (flagState === 'yellow') yellowRestart();
+  };
 
   $('race-light-box').onclick = () => {
     headlightsOn = !headlightsOn;
@@ -1933,7 +1923,10 @@
     // Ankreuzfeld, das in der gewaehlten Variante nichts bedeutet, ist eine Frage ohne
     // Antwort.
     const wrap = $('pit-double-lap-wrap');
-    if (wrap) wrap.style.display = pitTrigger === 'double' ? 'flex' : 'none';
+    // '' und nicht 'flex': die Zeile ist jetzt eine .opt-row und traegt ihr display
+    // aus dem Stilblock. Ein festes 'flex' waere die dritte Stelle, an der dieses
+    // Layout steht.
+    if (wrap) wrap.style.display = pitTrigger === 'double' ? '' : 'none';
     log('Boxengasse: ' + (pitTrigger === 'anywhere' ? 'ueberall halten'
         : pitTrigger === 'offtrack' ? 'neben der Strecke (Byte 12 = 0x00)'
         : 'doppelter Start-Ausdruck, 2 Kontakte in ' + (PIT_DOUBLE_WINDOW_MS / 1000)

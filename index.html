@@ -630,6 +630,15 @@
      Nachbarn und der Inhalt sonst oben klebt. */
   /* Der Reifentext darf die Kachel nicht verlassen - eine Kachel, die ihre Nachbarin
      ueberschreibt, ist schlimmer als eine abgeschnittene Beschriftung. */
+  /* Eine abgeschaltete Simulation MUSS man sehen. Gemessen war die Kachel vorher und
+     nachher identisch - Deckkraft 1, Balken gruen -, und dann glaubt man dem, was man
+     sieht, und nicht dem Toast. Dieselbe Regel, die der Reifenring von Anfang an befolgte:
+     keine Anzeige, die eine Simulation behauptet, die nicht laeuft.
+
+     Gedaempft UND der Balken grau: die Daempfung sagt "abgeschaltet", der graue Balken
+     sagt "diese Zahl bewegt sich nicht mehr". Nur eins von beiden waere zu leise. */
+  .gt3-box.sim-off { opacity: .45; }
+  .gt3-box.sim-off .gt3-bar > i { background: #4a5568 !important; }
   .gt3-tyre { min-width: 0; }
   .gt3-tyre > div { min-width: 0; overflow: hidden; }
   @media (max-width: 560px) { .tyre-wear-word { display: none; } }
@@ -1787,10 +1796,12 @@
       </div>
 
       <div class="gt3-strip">
-        <div class="gt3-box pit-tile" data-pit="refuel" title="Beim Boxenstopp: Tanken an/aus"><svg class="gt3-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-label="Tank"><path d="M4 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16"/><path d="M3 21h13"/><path d="M4 10h10"/><path d="M18 21v-9a3 3 0 0 0-3-3"/><path d="M18 12h2a1 1 0 0 0 1-1V8l-3-3"/></svg>
+        <div class="gt3-box gt3-click pit-tile" data-pit="refuel"
+             title="Tanksimulation an/aus, beim Boxenstopp: Tanken an/aus"><svg class="gt3-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-label="Tank"><path d="M4 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16"/><path d="M3 21h13"/><path d="M4 10h10"/><path d="M18 21v-9a3 3 0 0 0-3-3"/><path d="M18 12h2a1 1 0 0 0 1-1V8l-3-3"/></svg>
           <div class="gt3-val sm" id="race-fuel">100%</div>
           <div class="gt3-bar"><i id="race-fuel-bar"></i></div></div>
-        <div class="gt3-box pit-tile" data-pit="repair" title="Beim Boxenstopp: Reparatur an/aus"><svg class="gt3-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-label="Zustand"><path d="M19.3 8.2 L19.2 9.3 L18.8 10.3 L18.0 11.2 L17.1 11.8 L16.0 12.1 L14.9 12.0 L13.9 11.7 L13.0 11.0 L12.3 10.1 L12.0 9.1 L11.9 8.0 L12.2 6.9 L12.8 6.0 L13.7 5.2 L14.7 4.8 L15.8 4.7"/><path d="M13.0 11.0 L8.5 15.5"/></svg>
+        <div class="gt3-box gt3-click pit-tile" data-pit="repair"
+             title="Schadenssimulation an/aus, beim Boxenstopp: Reparatur an/aus"><svg class="gt3-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-label="Zustand"><path d="M19.3 8.2 L19.2 9.3 L18.8 10.3 L18.0 11.2 L17.1 11.8 L16.0 12.1 L14.9 12.0 L13.9 11.7 L13.0 11.0 L12.3 10.1 L12.0 9.1 L11.9 8.0 L12.2 6.9 L12.8 6.0 L13.7 5.2 L14.7 4.8 L15.8 4.7"/><path d="M13.0 11.0 L8.5 15.5"/></svg>
           <div class="gt3-val sm" id="race-dmg">100%</div>
           <div class="gt3-bar"><i id="race-dmg-bar"></i></div></div>
         <div class="gt3-box gt3-click pit-tile" id="race-tyre-box" data-pit="tyres"
@@ -1887,10 +1898,11 @@
       <kbd>C</kbd><span>Crash ausl&ouml;sen: Schaden, Ger&auml;usch und Rumble wie im Betrieb</span>
       <kbd>F</kbd><span>Tank auf 5&nbsp;% setzen, um den Notlauf zu pr&uuml;fen</span>
       <kbd>R</kbd><span>Tank und Zustand zur&uuml;cksetzen</span>
-      <kbd>X</kbd><span>Gelbe Flagge: alles rollt mit
+      <kbd>X</kbd><span><b>Eine Sekunde halten</b> f&uuml;r die gelbe Flagge: alles rollt mit
         <span id="help-yellow-kmh">80</span>&nbsp;km/h mittig weiter, kein
-        &Uuml;berholen, Lichter blinken. Nochmal <kbd>X</kbd> startet die Ampel und gibt
-        wieder frei</span>
+        &Uuml;berholen, Lichter blinken. Nochmal eine Sekunde halten startet die Ampel und
+        gibt wieder frei. Der Knopf im Cockpit reicht mit einem Tipp &ndash; die Taste liegt
+        neben allem anderen, der Knopf nicht.</span>
       <kbd>Q</kbd><span>Runde z&auml;hlen, ohne sie zu fahren: zum Pr&uuml;fen von
         Rundenzeiten und Ergebnistabelle. <kbd>Shift</kbd>+<kbd>Q</kbd>: f&uuml;r jedes
         Auto im Rennen</span>
@@ -4093,6 +4105,39 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-fuel-drain-val">3.0</span>
         </div></div>
+      <!-- Boxengasse. Sie steht HIER und nicht im Streckentab, obwohl dort die
+           Musterangaben liegen: die Frage "woran erkennt die App eine Boxengasse" ist eine
+           Einstellung und gehoert neben den Tankverbrauch, weil beide zusammen entscheiden,
+           ob ein Boxenstopp ueberhaupt eine Rolle spielt. Im Streckentab bleibt, was dort
+           hingehoert - der Ausloese-Code und die Druckvorlage. -->
+      <div class="opt-row"><div class="opt-label">Boxengasse aktiv
+          <small>Aus: kein Tempolimit, kein Service, auch nicht &uuml;ber einen
+          Ausdruck.</small></div>
+        <label class="tgl"><input type="checkbox" id="pit-enable" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Wo ist die Boxengasse?
+          <small><b>&Uuml;berall halten</b> ist die Vorgabe: ein angeforderter Boxenstopp
+          wird durch Anhalten bedient, egal wo. Braucht keinen Ausdruck und keine
+          Schiene.<br>
+          <b>Neben der Strecke</b> nimmt Byte&nbsp;12&nbsp;=&nbsp;0x00 als Boxengasse. Nur
+          auf der CH-Schiene sinnvoll &ndash; ohne Schiene ist das Auto praktisch immer
+          &bdquo;abseits&ldquo;, und dann w&auml;re die ganze Strecke Boxengasse.<br>
+          <b>Doppelter Start-Ausdruck</b>: zwei Ausdrucke im Abstand von 50&nbsp;cm. Zwei
+          Musterkontakte innerhalb von 3&nbsp;s bei mindestens 1&nbsp;s Abstand sind eine
+          Boxeneinfahrt und keine Runde. Danach piept es, das Tempolimit von 60&nbsp;km/h
+          gilt 4&nbsp;s, und ein Anhalten in dieser Zeit startet den Service. Der
+          Mindestabstand ist der wichtigere Teil der Bedingung: ein einzelner Ausdruck
+          h&auml;lt bei Fahrt etwa eine Sekunde Kontakt, und ohne ihn w&uuml;rde das
+          Flattern <em>eines</em> Musters als Paar gelesen.</small></div>
+        <select id="pit-trigger">
+          <option value="anywhere" selected>&Uuml;berall halten</option>
+          <option value="offtrack">Neben der Strecke (Byte 12 = 0x00)</option>
+          <option value="double">Doppelter Start-Ausdruck (experimentell)</option>
+        </select></div>
+      <div class="opt-row" id="pit-double-lap-wrap"><div class="opt-label">Runde beim
+          Boxeneinfahren trotzdem z&auml;hlen
+          <small>Sinnvoll, wenn die Boxengasse parallel zu Start/Ziel liegt. Nur bei
+          &bdquo;Doppelter Start-Ausdruck&ldquo;.</small></div>
+        <label class="tgl"><input type="checkbox" id="pit-double-lap"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Crashs, bis Fahrzeug ruckelt</div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
@@ -4887,36 +4932,12 @@
         Beim Losfahren ist das Limit wieder weg.
       </p>
       <p class="muted" style="font-size:12px">
-        <b>&Uuml;berall halten</b> ist die Vorgabe: ein angeforderter Boxenstopp wird durch
-        Anhalten bedient, egal wo. Braucht keinen Ausdruck und keine Schiene.<br>
-        <b>Neben der Strecke</b> nimmt Byte&nbsp;12&nbsp;=&nbsp;0x00 als Boxengasse. Nur auf
-        der CH-Schiene sinnvoll &ndash; ohne Schiene ist das Auto praktisch immer
-        &bdquo;abseits&ldquo;, und dann w&auml;re die ganze Strecke Boxengasse.<br>
-        <b>Doppelter Start-Ausdruck</b> <span class="wip-tag">experimentell</span>: zwei
-        Ausdrucke im Abstand von 50&nbsp;cm. Zwei Musterkontakte innerhalb von 3&nbsp;s bei
-        mindestens 1&nbsp;s Abstand sind eine Boxeneinfahrt und keine Runde. Danach piept es,
-        das Tempolimit von 60&nbsp;km/h gilt 4&nbsp;s, und ein Anhalten in dieser Zeit startet
-        den Service. Der Mindestabstand ist der wichtigere Teil der Bedingung: ein einzelner
-        Ausdruck h&auml;lt bei Fahrt etwa eine Sekunde Kontakt, und ohne ihn w&uuml;rde das
-        Flattern <em>eines</em> Musters als Paar gelesen.
+        <b>Wo die Boxengasse liegt</b> und ob sie &uuml;berhaupt aktiv ist, steht in den
+        <b>Optionen &rarr; Allgemein</b>, direkt unter dem Tankverbrauch: das sind
+        Einstellungen. Hier stehen die Angaben zum <em>Muster</em> &ndash; welchen Code es
+        ausl&ouml;st und wie man es druckt.
       </p>
-      <label style="display:flex; align-items:center; gap:6px; font-size:12.5px;
-             margin-bottom:10px" id="pit-double-lap-wrap">
-        <input type="checkbox" id="pit-double-lap"> Runde beim Boxeneinfahren trotzdem
-        z&auml;hlen
-      </label>
       <div class="row" style="align-items:center; gap:16px">
-        <label style="display:flex; align-items:center; gap:6px">
-          <input type="checkbox" id="pit-enable" checked> Boxengasse aktiv
-        </label>
-        <div>
-          <label class="small">Wo ist die Boxengasse?</label>
-          <select id="pit-trigger">
-            <option value="anywhere" selected>&Uuml;berall halten</option>
-            <option value="offtrack">Neben der Strecke (Byte 12 = 0x00)</option>
-            <option value="double">Doppelter Start-Ausdruck (experimentell)</option>
-          </select>
-        </div>
         <div>
           <label class="small">Auslöse-Code (Byte 12)</label>
           <input type="text" id="pit-marker-code" value="" placeholder="0x0e bei Nummer 14, erst prüfen"
@@ -4982,7 +5003,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.4.21</span></span>
+    <span class="foot-ver">v<span id="app-version">0.4.22</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -5601,7 +5622,6 @@
     "Gegen die Referenz antreten.": "Race against the reference.",
     "Gegen gegenseitiges Rammen. Blind: kein Byte meldet die Querlage. Links = aus.": "Against cars ramming each other. Blind: no byte reports lateral position. Left = off.",
     "Gelbe Flagge": "Yellow flag",
-    "Gelbe Flagge: alles rollt mit": "Yellow flag: everything rolls at",
     "Gerade": "Straight",
     "Geschlossen ✓": "Closed ✓",
     "Geschmeidig: aufbauen und ausrollen": "Smooth: build up and run out",
@@ -5944,6 +5964,10 @@
     "und": "and",
     // v0.4 Block H: Sitzungsdaten
     // v0.4 Block H: Sektoren und Boxengassen-Varianten
+    "Eine Sekunde halten": "Hold for one second",
+    "für die gelbe Flagge: alles rollt mit": "for the yellow flag: everything rolls on at",
+    "km/h mittig weiter, kein Überholen, Lichter blinken. Nochmal eine Sekunde halten startet die Ampel und gibt wieder frei. Der Knopf im Cockpit reicht mit einem Tipp – die Taste liegt neben allem anderen, der Knopf nicht.":
+      "km/h in the middle, no overtaking, lights flashing. Holding for another second starts the lights and releases. The cockpit button needs only a tap – the key sits next to everything else, the button does not.",
     "Sektoren": "Sectors",
     "Überfahrten je Runde. Nur": "Crossings per lap. Only",
     "experimentell": "experimental",
@@ -5959,6 +5983,18 @@
     "wo": "where",
     "Zeit verlorengeht.": "time is being lost.",
     "Wo ist die Boxengasse?": "Where is the pit lane?",
+    "Aus: kein Tempolimit, kein Service, auch nicht über einen Ausdruck.":
+      "Off: no speed limit, no service, not even via a printout.",
+    "Runde beim Boxeneinfahren trotzdem zählen": "Count the lap on pit entry anyway",
+    "Sinnvoll, wenn die Boxengasse parallel zu Start/Ziel liegt. Nur bei „Doppelter Start-Ausdruck“.":
+      "Useful when the pit lane runs parallel to start/finish. Only with “Double start printout”.",
+    "Wo die Boxengasse liegt": "Where the pit lane is",
+    "und ob sie überhaupt aktiv ist, steht in den":
+      "and whether it is active at all is set under",
+    ", direkt unter dem Tankverbrauch: das sind Einstellungen. Hier stehen die Angaben zum":
+      ", right below fuel consumption – those are settings. What lives here are the details of the",
+    "– welchen Code es auslöst und wie man es druckt.":
+      "– which code it triggers and how to print it.",
     "Überall halten": "Stop anywhere",
     "Neben der Strecke": "Beside the track",
     "Neben der Strecke (Byte 12 = 0x00)": "Beside the track (byte 12 = 0x00)",
@@ -5972,8 +6008,6 @@
       ": two printouts 50 cm apart. Two pattern contacts within 3 s and at least 1 s apart are a pit entry, not a lap. Then it beeps, the 60 km/h limit holds for 4 s, and stopping within that time starts the service. The minimum gap is the more important half of the condition: a single printout holds contact for about a second at speed, and without it the flutter of",
     "eines": "a single",
     "Musters als Paar gelesen.": "pattern would be read as a pair.",
-    "Runde beim Boxeneinfahren trotzdem zählen":
-      "Count the lap on pit entry anyway",
     "Gefahrene Sitzungen": "Sessions driven",
     "Nach jedem beendeten Rennen abgelegt, auf diesem Gerät. Gespeichert werden Rundenzeiten, Datum, Streckencode, Modus, die verwendete Abstimmung und die gefahrene Strecke – und zwar":
       "Stored after every finished race, on this device. Lap times, date, track code, mode, the setup used and the distance driven – and that",
@@ -6138,7 +6172,6 @@
     "keine": "none",
     "keinen einzigen": "not a single one",
     "km/h echt": "km/h actual",
-    "km/h mittig weiter, kein Überholen, Lichter blinken. Nochmal": "km/h down the middle, no overtaking, lights blinking. Pressing",
     "kontinuierlich alle": "continuously every",
     "lang (2 Byte Präfix + 17 Datenbytes + 1 Prüfsumme), gesendet alle ~45ms. Byte-Offset 6 = Gas/Bremse (": "long (2 prefix bytes + 17 data bytes + 1 checksum), sent every ~45 ms. Byte offset 6 = throttle/brake (",
     "langsam über ein Muster fahren": "drive slowly over a pattern",
@@ -6174,7 +6207,6 @@
     "s. Verlässt es die Bahn, wird die Stufe festgehalten und die Messung endet. Wenn du es": "s. If it leaves the track, the step is recorded and the measurement ends. If you",
     "setzt den nächsten Abschnitt.": "sets the next section.",
     "siehst": "see",
-    "startet die Ampel und gibt wieder frei": "starts the lights and releases again",
     "steht": "still",
     "steht:": "stopped:",
     "tatsächliche": "actual",
@@ -7602,7 +7634,6 @@
         // sichtbar weniger lenkt. Vorher waren es 77 und 75 % - die Wirkung war da, nur zu
         // schwach. Ein Sollwert dafuer liegt nicht vor, also ist das eine Gefuehlsangabe und
         // keine Messung; die Zahlen stehen hier, damit sie nachpruefbar sind.
-        loadGain: 0.65,       // how much front load changes lateral capacity
         brakeUseGain: 1.35,   // how much of that capacity the brake eats
         coastPitch: 0.15,     // engine braking pitches the nose down a little
         // Full-throttle equilibrium of loadFront. Traction is normalised to THIS state, not
@@ -7897,7 +7928,8 @@
       // left to steer with. In the dry surf is exactly 1.0, so dry behaviour is untouched
       // - which is the property that makes this safe to change.
       //
-      // A first attempt amplified `loadGain` in the wet instead. That was wrong by
+      // A first attempt amplified `loadGain` in the wet instead (der Wert ist inzwischen
+      // weg, die Lastempfindlichkeit hat seine Rolle uebernommen). That was wrong by
       // inspection of the measurement: braking moves load ONTO the front, so a bigger
       // load gain made wet braking steer BETTER (steerGrip 1.006 against 0.464 dry) -
       // the exact opposite of what was asked.
@@ -8864,6 +8896,20 @@
       setSty('race-tyre-bar', 'background', rest <= 20 ? '#ff5c5c'
                                           : (rest <= 55 ? 'var(--warn)' : 'var(--good)'));
     }
+
+    // Abgeschaltete Simulationen kennzeichnen. Hier und nicht in den Umschaltfunktionen:
+    // die Regler lassen sich auch in den Optionen bewegen, und dann muesste die Kachel dort
+    // ebenfalls nachgezogen werden. Ein Ort, der jeden Takt aus dem Zustand liest, kann
+    // nicht auseinanderlaufen.
+    const tankAus = fuelDrainPerSec <= 0;
+    const schadenAus = !crashDetectionEnabled;
+    const tankKachel = document.querySelector('[data-pit="refuel"]');
+    const schadenKachel = document.querySelector('[data-pit="repair"]');
+    if (tankKachel) tankKachel.classList.toggle('sim-off', tankAus);
+    if (schadenKachel) schadenKachel.classList.toggle('sim-off', schadenAus);
+    const reifenKachel = $('race-tyre-box');
+    if (reifenKachel) reifenKachel.classList.toggle('sim-off',
+      physEngine.config.tyreEffect <= 0);
 
     // Dieselben zwei Groessen, die auf dem Steuerkreuz liegen - hoch/runter und
     // links/rechts. Die Kachel zeigt, was das Kreuz verstellt, und nichts anderes.
@@ -12003,30 +12049,20 @@
   $('race-act-start').onclick = toggleRace;
 
   $('race-act-pit').onclick = () => { requestPitStop(); updateRaceActButtons(); };
-  // Auch der Knopf wird GEHALTEN, nicht getippt - derselbe Riegel wie bei der Taste X, und
-  // der Ladebalken laeuft ohnehin in diesem Knopf. Ein Knopf, der auf Tippen reagiert,
-  // waehrend die Taste eine Sekunde verlangt, waere zwei Bedienungen fuer eine Wirkung.
+  // Der KNOPF loest direkt aus, ein Tipp reicht.
   //
-  // pointerdown/up statt mousedown/up: das deckt Finger und Maus mit einem Zuhoerer ab.
-  // pointercancel und pointerleave gehoeren dazu, sonst haengt der Balken, wenn der Finger
-  // vom Knopf rutscht.
-  (function bindeFlaggenknopf() {
-    const b = $('race-act-flag');
-    if (!b) return;
-    b.addEventListener('pointerdown', (e) => { e.preventDefault(); flagHoldPress(); });
-    for (const ev of ['pointerup', 'pointercancel', 'pointerleave']) {
-      b.addEventListener(ev, () => flagHoldRelease(false));
-    }
-    // Und die Tastaturbedienung des Knopfes: Leertaste/Enter loesen click aus, nicht
-    // pointerdown. Ein Knopf, der mit der Tastatur nicht bedienbar ist, ist kaputt.
-    b.addEventListener('click', (e) => {
-      // Nur wenn der Klick NICHT von einem Zeiger kam - sonst haette ein Fingertipp die
-      // Halten-Geste umgangen. e.detail ist 0 bei Tastaturauslösung.
-      if (e.detail !== 0) return;
-      if (flagState === 'green') setFlag('yellow');
-      else if (flagState === 'yellow') yellowRestart();
-    });
-  })();
+  // Hier stand vorher dieselbe Halten-Geste wie auf der Taste X, und die Begruendung war der
+  // Fehltipper. Die gilt fuer die TASTE - sie liegt neben allem anderen, und ein Streifer
+  // kostet 40 km/h fuer jedes Auto im Feld. Sie gilt NICHT fuer einen beschrifteten Knopf,
+  // den man mit dem Finger sucht und trifft: dort ist der Griff selbst schon die Absicht,
+  // und eine Sekunde Warten mitten im Rennen ist genau die Sekunde, in der man hinsieht
+  // statt zu fahren.
+  //
+  // Das Halten bleibt auf X, samt Ladebalken in diesem Knopf.
+  $('race-act-flag').onclick = () => {
+    if (flagState === 'green') setFlag('yellow');
+    else if (flagState === 'yellow') yellowRestart();
+  };
 
   $('race-light-box').onclick = () => {
     headlightsOn = !headlightsOn;
@@ -12987,7 +13023,10 @@
     // Ankreuzfeld, das in der gewaehlten Variante nichts bedeutet, ist eine Frage ohne
     // Antwort.
     const wrap = $('pit-double-lap-wrap');
-    if (wrap) wrap.style.display = pitTrigger === 'double' ? 'flex' : 'none';
+    // '' und nicht 'flex': die Zeile ist jetzt eine .opt-row und traegt ihr display
+    // aus dem Stilblock. Ein festes 'flex' waere die dritte Stelle, an der dieses
+    // Layout steht.
+    if (wrap) wrap.style.display = pitTrigger === 'double' ? '' : 'none';
     log('Boxengasse: ' + (pitTrigger === 'anywhere' ? 'ueberall halten'
         : pitTrigger === 'offtrack' ? 'neben der Strecke (Byte 12 = 0x00)'
         : 'doppelter Start-Ausdruck, 2 Kontakte in ' + (PIT_DOUBLE_WINDOW_MS / 1000)

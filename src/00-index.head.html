@@ -630,6 +630,15 @@
      Nachbarn und der Inhalt sonst oben klebt. */
   /* Der Reifentext darf die Kachel nicht verlassen - eine Kachel, die ihre Nachbarin
      ueberschreibt, ist schlimmer als eine abgeschnittene Beschriftung. */
+  /* Eine abgeschaltete Simulation MUSS man sehen. Gemessen war die Kachel vorher und
+     nachher identisch - Deckkraft 1, Balken gruen -, und dann glaubt man dem, was man
+     sieht, und nicht dem Toast. Dieselbe Regel, die der Reifenring von Anfang an befolgte:
+     keine Anzeige, die eine Simulation behauptet, die nicht laeuft.
+
+     Gedaempft UND der Balken grau: die Daempfung sagt "abgeschaltet", der graue Balken
+     sagt "diese Zahl bewegt sich nicht mehr". Nur eins von beiden waere zu leise. */
+  .gt3-box.sim-off { opacity: .45; }
+  .gt3-box.sim-off .gt3-bar > i { background: #4a5568 !important; }
   .gt3-tyre { min-width: 0; }
   .gt3-tyre > div { min-width: 0; overflow: hidden; }
   @media (max-width: 560px) { .tyre-wear-word { display: none; } }
@@ -1787,10 +1796,12 @@
       </div>
 
       <div class="gt3-strip">
-        <div class="gt3-box pit-tile" data-pit="refuel" title="Beim Boxenstopp: Tanken an/aus"><svg class="gt3-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-label="Tank"><path d="M4 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16"/><path d="M3 21h13"/><path d="M4 10h10"/><path d="M18 21v-9a3 3 0 0 0-3-3"/><path d="M18 12h2a1 1 0 0 0 1-1V8l-3-3"/></svg>
+        <div class="gt3-box gt3-click pit-tile" data-pit="refuel"
+             title="Tanksimulation an/aus, beim Boxenstopp: Tanken an/aus"><svg class="gt3-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-label="Tank"><path d="M4 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16"/><path d="M3 21h13"/><path d="M4 10h10"/><path d="M18 21v-9a3 3 0 0 0-3-3"/><path d="M18 12h2a1 1 0 0 0 1-1V8l-3-3"/></svg>
           <div class="gt3-val sm" id="race-fuel">100%</div>
           <div class="gt3-bar"><i id="race-fuel-bar"></i></div></div>
-        <div class="gt3-box pit-tile" data-pit="repair" title="Beim Boxenstopp: Reparatur an/aus"><svg class="gt3-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-label="Zustand"><path d="M19.3 8.2 L19.2 9.3 L18.8 10.3 L18.0 11.2 L17.1 11.8 L16.0 12.1 L14.9 12.0 L13.9 11.7 L13.0 11.0 L12.3 10.1 L12.0 9.1 L11.9 8.0 L12.2 6.9 L12.8 6.0 L13.7 5.2 L14.7 4.8 L15.8 4.7"/><path d="M13.0 11.0 L8.5 15.5"/></svg>
+        <div class="gt3-box gt3-click pit-tile" data-pit="repair"
+             title="Schadenssimulation an/aus, beim Boxenstopp: Reparatur an/aus"><svg class="gt3-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-label="Zustand"><path d="M19.3 8.2 L19.2 9.3 L18.8 10.3 L18.0 11.2 L17.1 11.8 L16.0 12.1 L14.9 12.0 L13.9 11.7 L13.0 11.0 L12.3 10.1 L12.0 9.1 L11.9 8.0 L12.2 6.9 L12.8 6.0 L13.7 5.2 L14.7 4.8 L15.8 4.7"/><path d="M13.0 11.0 L8.5 15.5"/></svg>
           <div class="gt3-val sm" id="race-dmg">100%</div>
           <div class="gt3-bar"><i id="race-dmg-bar"></i></div></div>
         <div class="gt3-box gt3-click pit-tile" id="race-tyre-box" data-pit="tyres"
@@ -1887,10 +1898,11 @@
       <kbd>C</kbd><span>Crash ausl&ouml;sen: Schaden, Ger&auml;usch und Rumble wie im Betrieb</span>
       <kbd>F</kbd><span>Tank auf 5&nbsp;% setzen, um den Notlauf zu pr&uuml;fen</span>
       <kbd>R</kbd><span>Tank und Zustand zur&uuml;cksetzen</span>
-      <kbd>X</kbd><span>Gelbe Flagge: alles rollt mit
+      <kbd>X</kbd><span><b>Eine Sekunde halten</b> f&uuml;r die gelbe Flagge: alles rollt mit
         <span id="help-yellow-kmh">80</span>&nbsp;km/h mittig weiter, kein
-        &Uuml;berholen, Lichter blinken. Nochmal <kbd>X</kbd> startet die Ampel und gibt
-        wieder frei</span>
+        &Uuml;berholen, Lichter blinken. Nochmal eine Sekunde halten startet die Ampel und
+        gibt wieder frei. Der Knopf im Cockpit reicht mit einem Tipp &ndash; die Taste liegt
+        neben allem anderen, der Knopf nicht.</span>
       <kbd>Q</kbd><span>Runde z&auml;hlen, ohne sie zu fahren: zum Pr&uuml;fen von
         Rundenzeiten und Ergebnistabelle. <kbd>Shift</kbd>+<kbd>Q</kbd>: f&uuml;r jedes
         Auto im Rennen</span>
@@ -4093,6 +4105,39 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-fuel-drain-val">3.0</span>
         </div></div>
+      <!-- Boxengasse. Sie steht HIER und nicht im Streckentab, obwohl dort die
+           Musterangaben liegen: die Frage "woran erkennt die App eine Boxengasse" ist eine
+           Einstellung und gehoert neben den Tankverbrauch, weil beide zusammen entscheiden,
+           ob ein Boxenstopp ueberhaupt eine Rolle spielt. Im Streckentab bleibt, was dort
+           hingehoert - der Ausloese-Code und die Druckvorlage. -->
+      <div class="opt-row"><div class="opt-label">Boxengasse aktiv
+          <small>Aus: kein Tempolimit, kein Service, auch nicht &uuml;ber einen
+          Ausdruck.</small></div>
+        <label class="tgl"><input type="checkbox" id="pit-enable" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Wo ist die Boxengasse?
+          <small><b>&Uuml;berall halten</b> ist die Vorgabe: ein angeforderter Boxenstopp
+          wird durch Anhalten bedient, egal wo. Braucht keinen Ausdruck und keine
+          Schiene.<br>
+          <b>Neben der Strecke</b> nimmt Byte&nbsp;12&nbsp;=&nbsp;0x00 als Boxengasse. Nur
+          auf der CH-Schiene sinnvoll &ndash; ohne Schiene ist das Auto praktisch immer
+          &bdquo;abseits&ldquo;, und dann w&auml;re die ganze Strecke Boxengasse.<br>
+          <b>Doppelter Start-Ausdruck</b>: zwei Ausdrucke im Abstand von 50&nbsp;cm. Zwei
+          Musterkontakte innerhalb von 3&nbsp;s bei mindestens 1&nbsp;s Abstand sind eine
+          Boxeneinfahrt und keine Runde. Danach piept es, das Tempolimit von 60&nbsp;km/h
+          gilt 4&nbsp;s, und ein Anhalten in dieser Zeit startet den Service. Der
+          Mindestabstand ist der wichtigere Teil der Bedingung: ein einzelner Ausdruck
+          h&auml;lt bei Fahrt etwa eine Sekunde Kontakt, und ohne ihn w&uuml;rde das
+          Flattern <em>eines</em> Musters als Paar gelesen.</small></div>
+        <select id="pit-trigger">
+          <option value="anywhere" selected>&Uuml;berall halten</option>
+          <option value="offtrack">Neben der Strecke (Byte 12 = 0x00)</option>
+          <option value="double">Doppelter Start-Ausdruck (experimentell)</option>
+        </select></div>
+      <div class="opt-row" id="pit-double-lap-wrap"><div class="opt-label">Runde beim
+          Boxeneinfahren trotzdem z&auml;hlen
+          <small>Sinnvoll, wenn die Boxengasse parallel zu Start/Ziel liegt. Nur bei
+          &bdquo;Doppelter Start-Ausdruck&ldquo;.</small></div>
+        <label class="tgl"><input type="checkbox" id="pit-double-lap"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Crashs, bis Fahrzeug ruckelt</div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
@@ -4887,36 +4932,12 @@
         Beim Losfahren ist das Limit wieder weg.
       </p>
       <p class="muted" style="font-size:12px">
-        <b>&Uuml;berall halten</b> ist die Vorgabe: ein angeforderter Boxenstopp wird durch
-        Anhalten bedient, egal wo. Braucht keinen Ausdruck und keine Schiene.<br>
-        <b>Neben der Strecke</b> nimmt Byte&nbsp;12&nbsp;=&nbsp;0x00 als Boxengasse. Nur auf
-        der CH-Schiene sinnvoll &ndash; ohne Schiene ist das Auto praktisch immer
-        &bdquo;abseits&ldquo;, und dann w&auml;re die ganze Strecke Boxengasse.<br>
-        <b>Doppelter Start-Ausdruck</b> <span class="wip-tag">experimentell</span>: zwei
-        Ausdrucke im Abstand von 50&nbsp;cm. Zwei Musterkontakte innerhalb von 3&nbsp;s bei
-        mindestens 1&nbsp;s Abstand sind eine Boxeneinfahrt und keine Runde. Danach piept es,
-        das Tempolimit von 60&nbsp;km/h gilt 4&nbsp;s, und ein Anhalten in dieser Zeit startet
-        den Service. Der Mindestabstand ist der wichtigere Teil der Bedingung: ein einzelner
-        Ausdruck h&auml;lt bei Fahrt etwa eine Sekunde Kontakt, und ohne ihn w&uuml;rde das
-        Flattern <em>eines</em> Musters als Paar gelesen.
+        <b>Wo die Boxengasse liegt</b> und ob sie &uuml;berhaupt aktiv ist, steht in den
+        <b>Optionen &rarr; Allgemein</b>, direkt unter dem Tankverbrauch: das sind
+        Einstellungen. Hier stehen die Angaben zum <em>Muster</em> &ndash; welchen Code es
+        ausl&ouml;st und wie man es druckt.
       </p>
-      <label style="display:flex; align-items:center; gap:6px; font-size:12.5px;
-             margin-bottom:10px" id="pit-double-lap-wrap">
-        <input type="checkbox" id="pit-double-lap"> Runde beim Boxeneinfahren trotzdem
-        z&auml;hlen
-      </label>
       <div class="row" style="align-items:center; gap:16px">
-        <label style="display:flex; align-items:center; gap:6px">
-          <input type="checkbox" id="pit-enable" checked> Boxengasse aktiv
-        </label>
-        <div>
-          <label class="small">Wo ist die Boxengasse?</label>
-          <select id="pit-trigger">
-            <option value="anywhere" selected>&Uuml;berall halten</option>
-            <option value="offtrack">Neben der Strecke (Byte 12 = 0x00)</option>
-            <option value="double">Doppelter Start-Ausdruck (experimentell)</option>
-          </select>
-        </div>
         <div>
           <label class="small">Auslöse-Code (Byte 12)</label>
           <input type="text" id="pit-marker-code" value="" placeholder="0x0e bei Nummer 14, erst prüfen"
@@ -4982,7 +5003,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.4.21</span></span>
+    <span class="foot-ver">v<span id="app-version">0.4.22</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
