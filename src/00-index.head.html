@@ -3751,7 +3751,12 @@
           <span class="race-light" id="race-light-go"></span>
         </div>
         <div>
-          <div class="muted">Status: <b id="race-status">Bereit</b></div>
+          <!-- data-i18n-skip, wie #log und #hud-toast: der Text wird zur LAUFZEIT
+               zusammengesetzt (t('Rennen laeuft, Runde') + ' 3'), und die i18n-Schicht
+               schlaegt Textknoten als Ganzes nach. Ein zusammengesetzter Knoten hat keinen
+               Eintrag und bleibt daher beim Sprachwechsel stehen, bis er sich das naechste
+               Mal neu bildet - dann steht er richtig da. Veraltet, nicht falsch. -->
+          <div class="muted">Status: <b data-i18n-skip id="race-status">Bereit</b></div>
           <div class="muted" style="font-size:11.5px">LB / L1: Rennen starten &middot; RB / R1: Rennen beenden</div>
           <div class="muted" id="race-lap-current-row" style="display:none">Aktuelle Runde: <b id="race-lap-current">-</b></div>
         </div>
@@ -4865,7 +4870,7 @@
         </div>
       </div>
       <div class="row" style="margin-top:12px">
-        <span class="muted">Zuletzt überfahrenes Muster: <b id="tile-probe" style="font-family:monospace">-</b></span>
+        <span class="muted">Zuletzt überfahrenes Muster: <b data-i18n-skip id="tile-probe" style="font-family:monospace">-</b></span>
         <div style="margin-top:10px">
           <div class="opt-head" style="margin-top:0">Zeitleiste der Codes</div>
           <p class="muted" style="font-size:11.5px; margin:0 0 6px 0">
@@ -4882,7 +4887,7 @@
               <th style="text-align:right; padding:3px 8px; color:var(--muted)">Dauer</th>
               <th style="text-align:right; padding:3px 8px; color:var(--muted)">Kachelz&auml;hler</th>
             </tr></thead>
-            <tbody id="tile-timeline"><tr><td colspan="4" class="muted">noch nichts</td></tr></tbody>
+            <tbody data-i18n-skip id="tile-timeline"><tr><td colspan="4" class="muted">noch nichts</td></tr></tbody>
           </table>
           <button id="tile-timeline-clear" style="margin-top:7px">Zeitleiste leeren</button>
         </div>
@@ -4923,7 +4928,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.4.19</span></span>
+    <span class="foot-ver">v<span id="app-version">0.4.20</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine

@@ -924,6 +924,7 @@
     // v0.4 Block H: Sitzungsdaten
     // v0.4 Block H: Sektoren und Boxengassen-Varianten
     "Sektoren": "Sectors",
+    "Überfahrten je Runde. Nur": "Crossings per lap. Only",
     "experimentell": "experimental",
     "Überfahrten je Runde": "Crossings per lap",
     "1 (aus)": "1 (off)",
