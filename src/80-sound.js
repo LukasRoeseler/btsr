@@ -656,9 +656,13 @@
     ghostCfg.railMode = e.target.checked;
   });
 
+  // renderGarage() wird mitgerufen: sonst zeigt die Garagenzeile weiter die alte Zahl,
+  // obwohl die Vorgabe sich geaendert hat - und die Zeile ist genau die Stelle, an der man
+  // nachsieht, ob es gewirkt hat.
   $('ghost-speed').addEventListener('input', (e) => {
     ghostCfg.speed = parseFloat(e.target.value);
     $('ghost-speed-val').textContent = Math.round(ghostCfg.speed * 100) + '%';
+    if (typeof renderGarage === 'function') renderGarage();
   });
   $('ghost-curve').addEventListener('input', (e) => {
     ghostCfg.curveSlow = parseFloat(e.target.value);
@@ -671,6 +675,11 @@
   });
   $('ghost-leader').addEventListener('change', (e) => {
     ghostCfg.leaderBrake = e.target.checked;
+  });
+
+  $('ghost-leader-pct').addEventListener('input', (e) => {
+    ghostCfg.leaderBrakePct = parseFloat(e.target.value);
+    $('ghost-leader-pct-val').textContent = Math.round(ghostCfg.leaderBrakePct * 100) + '%';
   });
 
   $('setting-fuelweight').addEventListener('input', (e) => {

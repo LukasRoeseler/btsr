@@ -559,10 +559,12 @@
         ${car.role === 'ghost' ? `
         <div class="gar-speed">
           <label>Tempo</label>
-          <input type="range" min="0.2" max="1" step="0.05"
+          <input type="range" min="0.3" max="1" step="0.05"
                  value="${car.ghostSpeed === undefined || car.ghostSpeed === null
                           ? ghostCfg.speed : car.ghostSpeed}">
           <b></b>
+          <button class="gar-speed-reset" data-act="speedreset"
+                  title="Zurueck auf die Vorgabe aus den Optionen">&#8635;</button>
         </div>` : ''}`;
       // Clicking the row itself identifies the car; the buttons must not also blink it.
       row.onclick = (e) => { if (!e.target.closest('button')) blinkCar(car); };
@@ -626,11 +628,32 @@
       const sp = row.querySelector('.gar-speed input');
       if (sp) {
         const out = row.querySelector('.gar-speed b');
-        const paint = () => { out.textContent = Math.round(sp.value * 100) + ' %'; };
+        const rst = row.querySelector('.gar-speed-reset');
+        // Die Zeile sagt jetzt, WOHER ihr Wert kommt. Vorher war sie mit dem globalen Wert
+        // vorbelegt und sah damit aus wie eine Anzeige desselben Werts - waehrend ein
+        // einziges Antippen sie dauerhaft davon abkoppelte, ohne dass das irgendwo stand.
+        const paint = () => {
+          const eigen = car.ghostSpeed !== undefined && car.ghostSpeed !== null;
+          out.textContent = Math.round(sp.value * 100) + ' %'
+                            + (eigen ? '' : '\u00a0(Vorgabe)');
+          out.classList.toggle('gar-speed-own', eigen);
+          if (rst) rst.style.visibility = eigen ? '' : 'hidden';
+        };
         paint();
         // Nur der Wert wird gesetzt, NICHT neu gezeichnet: renderGarage() beim Ziehen
         // aufzurufen wuerde den Regler unter dem Finger ersetzen und den Zug abbrechen.
         sp.addEventListener('input', () => { car.ghostSpeed = +sp.value; paint(); });
+        if (rst) {
+          rst.onclick = (ev) => {
+            ev.stopPropagation();
+            // Der Weg zurueck. Ohne ihn war das Einrasten endgueltig - es gab im ganzen
+            // Projekt keine Stelle, die car.ghostSpeed wieder auf null setzt.
+            car.ghostSpeed = null;
+            sp.value = ghostCfg.speed;
+            paint();
+            showHudToast(garageLabel(car).toUpperCase() + ' FOLGT DER VORGABE');
+          };
+        }
         // Der Klick auf die Zeile laesst das Auto blinken - am Regler waere das laestig.
         sp.addEventListener('click', (e) => e.stopPropagation());
         sp.addEventListener('pointerdown', (e) => e.stopPropagation());
@@ -837,7 +860,10 @@
   const GHOST_STEER_CURVE = 0.55;   // feed-forward lock in a curve, before the yaw loop
 
   const ghostCfg = {
-    speed: 0.55,        // fraction of top speed on a straight
+    // 0,35, nachgezogen zur Reglervorgabe im Markup. Der Bereich beginnt bei 0,3: darunter
+    // kommt ein Ghost aus dem Stand nicht zuverlaessig los, weil minMoveThrottle den
+    // Losbrechpunkt setzt und ein zu kleines Ziel ihn nie erreicht.
+    speed: 0.35,        // fraction of top speed on a straight
     curveSlow: 0.35,    // how much of that is given up in a curve
     // 0.5 statt 0. Die Naeherungslogik in ghostAssignBias gab es laengst - gleiche Runde
     // und Kachelindex hoechstens eins auseinander ergibt gegenlaeufige Versaetze - aber sie
@@ -1111,10 +1137,72 @@
     showHudToast(garageLabel(car).toUpperCase() + ' STEHT, SCH\u00dcTTELN');
   }
 
+  // Ueber diese Zeit fuehrt das Ziel-Tempo nach dem Entparken von 0 hoch.
+  //
+  // Warum ueberhaupt: solange geparkt, wird jede Runde speedKmh = 0 erzwungen. Im ersten
+  // Takt danach ist v = 0, also err = target, und wegen throttle = err * GHOST_KP_GAS stand
+  // die Gasanforderung ab einem Ziel von etwa einem Viertel sofort auf 1,0. Wer ein
+  // abgeflogenes Auto zurueckstellt und schuettelt, bekam es mit Vollgas aus der Hand
+  // gerissen.
+  //
+  // Die Rampe liegt auf dem ZIEL und nicht auf dem Gas. Das Gas ist die Antwort des
+  // Reglers; eine Rampe darauf waere ein zweiter Regler, der gegen den ersten arbeitet.
+  const GHOST_UNPARK_RAMP_MS = 2500;
+
+  // Der Tempo-Regler der Ghosts. Vorher standen die Verstaerkungen 4 und 3 hart im Code und
+  // waren nirgends benannt - man konnte sie nicht diskutieren, ohne die Zeile zu suchen.
+  //
+  // GHOST_DEADBAND ist der Teil, der das Pendeln beendet: ein P-Regler ohne Totband
+  // ueberschwingt immer, und bei diesen Verstaerkungen sichtbar. 1,5 Prozent vom
+  // Tempobereich sind bei 4 km/h Modellhoechstgeschwindigkeit rund 4 km/h auf dem Tacho.
+  const GHOST_DEADBAND = 0.015;
+  const GHOST_KP_GAS = 2.2;      // war 4: eine Abweichung von einem Viertel gab Vollgas
+  const GHOST_KP_BREMSE = 3.0;   // hoeher als Gas: gebremst wird entschlossen
+  const GHOST_SLEW_GAS = 1.6;    // Anteil je Sekunde; voll durchtreten dauert 0,6 s
+  const GHOST_SLEW_BREMSE = 4.0; // Bremse darf schneller kommen, 0,25 s auf voll
+
+  // Der Tempo-Regler, AUSGELAGERT damit er pruefbar ist.
+  //
+  // Vorher stand er als sechs Zeilen mitten in ghostTick, und dort ist er nur mit einem
+  // vollstaendigen Ghost samt Bluetooth-Verbindung erreichbar - also gar nicht. Eine
+  // Behauptung wie "nach dem Entparken gibt er nicht sofort Vollgas" war damit nicht
+  // nachweisbar, sondern nur lesbar. Jetzt ist sie messbar.
+  //
+  // Er ist absichtlich ZUSTANDSBEHAFTET (g.lastThrottle/lastBrake) und nicht rein: die
+  // Ratenbegrenzung braucht den letzten Ausgang. Der Zustand liegt am Ghost, nicht in der
+  // Funktion, damit mehrere Autos sich nicht gegenseitig stoeren.
+  //
+  // TOTBAND: vorher waren die Verstaerkungen 4 und 3, und damit ergab eine Abweichung von
+  // einem Viertel schon Vollgas beziehungsweise ein Drittel Vollbremsung - der Ghost
+  // pendelte zwischen beidem statt zu fahren. Ohne Totband findet ein P-Regler keine Ruhe.
+  //
+  // ASYMMETRISCH, und das ist eine Aussage ueber Autos: Gas nimmt man weich, gebremst wird
+  // entschlossen. Deshalb die hoehere Bremsverstaerkung und die lockerere Ratenbegrenzung
+  // fuer die Bremse.
+  function ghostSpeedControl(g, target, v, dtG) {
+    const err = target - v;
+    const roh = Math.abs(err) < GHOST_DEADBAND
+      ? { t: 0, b: 0 }
+      : { t: Math.max(0, Math.min(1, err * GHOST_KP_GAS)),
+          b: Math.max(0, Math.min(1, -err * GHOST_KP_BREMSE)) };
+    const zieh = (ist, soll, rate) => {
+      const max = rate * dtG;
+      return soll > ist ? Math.min(soll, ist + max) : Math.max(soll, ist - max);
+    };
+    const throttle = zieh(g.lastThrottle || 0, roh.t, GHOST_SLEW_GAS);
+    const brake = zieh(g.lastBrake || 0, roh.b, GHOST_SLEW_BREMSE);
+    g.lastThrottle = throttle;
+    g.lastBrake = brake;
+    return { throttle, brake };
+  }
+
   function unparkCar(car, why) {
     if (!car.parked) return;
     car.parked = null;
-    if (car.ghost) { car.ghost.cutOut = false; car.ghost.offSince = 0; }
+    if (car.ghost) {
+      car.ghost.cutOut = false; car.ghost.offSince = 0;
+      car.ghost.unparkAt = Date.now();
+    }
     log(garageLabel(car) + ': ' + why + ', f\u00e4hrt weiter.', 'info');
     showHudToast(garageLabel(car).toUpperCase() + ' F\u00c4HRT');
   }
@@ -1814,6 +1902,10 @@
       // ---- speed ----
       // Eigenes Tempo je Auto, sonst das globale. So laesst sich ein Feld mit
       // unterschiedlich schnellen Gegnern aufstellen, statt dass alle gleich schnell fahren.
+      // Eigenes Tempo, wenn eines gesetzt ist, sonst die Vorgabe. Der Unterschied ist in
+      // der Garage jetzt sichtbar und zuruecknehmbar - er rastete vorher beim ersten
+      // Antippen dauerhaft ein und machte den globalen Regler fuer dieses Auto stumm, ohne
+      // dass irgendwo stand, dass das passiert ist.
       let target = (car.ghostSpeed === undefined || car.ghostSpeed === null)
         ? ghostCfg.speed : car.ghostSpeed;
       // Der gelernte Tempofaktor. Er steht VOR der gelben Flagge, damit das Limit unter
@@ -1867,10 +1959,35 @@
       // Formation lap: everyone rolls at pit-lane pace, whatever their speed setting says.
       if (raceFormationLap) target = Math.min(target, PIT_SPEED_FACTOR);
 
+      // Die Anfahrrampe: sie greift NUR nach einem Entparken und laeuft von selbst aus.
+      if (g.unparkAt) {
+        const seit = now - g.unparkAt;
+        if (seit >= GHOST_UNPARK_RAMP_MS) g.unparkAt = 0;
+        else target *= seit / GHOST_UNPARK_RAMP_MS;
+      }
+
       const v = Math.abs(e.state.speedKmh) / cfg.topSpeedKmh;
-      const err = target - v;
-      throttle = Math.max(0, Math.min(1, err * 4));
-      brake = Math.max(0, Math.min(1, -err * 3));
+      const dtG = Math.max(0.01, Math.min(0.5, (now - (g.lastTick || now)) / 1000));
+      g.lastTick = now;
+      const st2 = ghostSpeedControl(g, target, v, dtG);
+      throttle = st2.throttle;
+      brake = st2.brake;
+      // VORSTEUERUNG aus dem Bremsprofil der Linie. Das Profil weiss, dass eine Kurve kommt,
+      // BEVOR der Regler eine Abweichung sieht - genau das ist der Unterschied zwischen
+      // Bremsen und Hinterherbremsen.
+      //
+      // Sie ist ausdruecklich ein BODEN auf dem Bremsbefehl und kein zweiter Regler. Ein
+      // zweiter Regler auf derselben Groesse arbeitet gegen den ersten; Vorsteuerung plus
+      // Rueckfuehrung ist EIN Regler mit zwei Eingaengen, und das ist die uebliche Bauform.
+      //
+      // Sie greift nur, wo es ein Bremsprofil gibt, also mit gelernter oder gebauter
+      // Strecke - deshalb traegt die Kurvendrosselung ihr WIP-Zeichen.
+      if (bd !== null && bd > 0) {
+        brake = Math.max(brake, Math.min(1, bd * ghostCfg.curveSlow * 1.5));
+        if (brake > 0.02) throttle = 0;   // nicht gleichzeitig Gas und Bremse
+        g.lastBrake = brake;
+        g.lastThrottle = throttle;
+      }
 
       // ---- steering ----
       // In guard-rail mode the CAR steers itself. Comparing the two halves of the 20.08
@@ -2079,6 +2196,7 @@
   }
 
   window.OMEGA_TEST = {
+    ghostSpeedControl, GHOST_UNPARK_RAMP_MS,
     TILE_TYPE, TILE_LABEL,
     codeToTrack, trackToCode,
     tileTightness, tileTurnDeg, tileIsCurve, ghostTileLenFactor,

@@ -1085,6 +1085,105 @@
     }
   });
 
+  // ---- Autopilot waehrend der gelben Flagge ----
+  //
+  // Ein Merkmal, das das Auto von SELBST fahren laesst, gehoert geprueft - und zwar an der
+  // Eigenschaft, die es gefaehrlich machen wuerde: dass es in der falschen Betriebsart
+  // greift. In der Ausdruck-Stellung haelt sich das Auto nicht selbst auf der Bahn, und ein
+  // Autopilot ohne Querregelung wuerde es geradeaus in die Bande fahren.
+  //
+  // Geprueft wird der Regler, nicht die Anzeige: der Rueckgabewert bei zu langsam muss Gas
+  // sein, bei zu schnell Bremse, und bei richtigem Tempo beides nahe null. Ohne den letzten
+  // Punkt waere ein Regler, der dauerhaft Vollgas gibt, ebenfalls "gruen".
+  stAdd('Autopilot nur auf der Bahn, und er regelt', () => {
+    if (typeof autopilotYellow !== 'function') {
+      return { skip: true, mass: 'autopilotYellow nicht vorhanden' };
+    }
+    const merk = { flag: flagState, tm: trackMode, v: physEngine.state.speedKmh };
+    try {
+      const bei = (kmh) => {
+        physEngine.state.speedKmh = kmh / REAL_SCALE;
+        return autopilotYellow();
+      };
+      // 1. Gruen: gar kein Eingriff, egal wie schnell.
+      flagState = 'green'; trackMode = 'on';
+      const gruen = bei(20);
+      // 2. Gelb, aber Ausdruck-Stellung: ebenfalls kein Eingriff.
+      flagState = 'yellow'; trackMode = 'off';
+      const ausdruck = bei(20);
+      // 3. Gelb auf der Bahn: regeln. YELLOW_KMH ist das Ziel.
+      trackMode = 'on';
+      const langsam = bei(YELLOW_KMH * 0.4);
+      const schnell = bei(YELLOW_KMH * 2.5);
+      const passend = bei(YELLOW_KMH);
+      if (!langsam || !schnell || !passend) {
+        return { ok: false, mass: 'greift auf der Bahn nicht' };
+      }
+      const ok = gruen === null && ausdruck === null
+                 && langsam.throttle > 0.2 && langsam.brake === 0
+                 && schnell.brake > 0.2 && schnell.throttle === 0
+                 && passend.throttle < 0.15 && passend.brake < 0.15;
+      return { ok,
+               mass: 'gruen ' + (gruen === null ? 'aus' : 'AN')
+                     + ', Ausdruck ' + (ausdruck === null ? 'aus' : 'AN')
+                     + ' | bei ' + Math.round(YELLOW_KMH * 0.4) + ' km/h Gas '
+                     + langsam.throttle.toFixed(2)
+                     + ', bei ' + Math.round(YELLOW_KMH * 2.5) + ' km/h Bremse '
+                     + schnell.brake.toFixed(2)
+                     + ', bei ' + YELLOW_KMH + ' km/h Gas ' + passend.throttle.toFixed(2)
+                     + ' Bremse ' + passend.brake.toFixed(2) };
+    } finally {
+      flagState = merk.flag;
+      trackMode = merk.tm;
+      physEngine.state.speedKmh = merk.v;
+    }
+  });
+
+  // ---- Der Tempo-Regler der Ghosts ----
+  //
+  // Vier Behauptungen, die vorher nur im Kommentar standen. Die erste ist die, die der
+  // Benutzer gemeldet hat: nach dem Zurueckstellen eines abgeflogenen Autos wurde es ihm
+  // mit Vollgas aus der Hand gerissen. Ursache war throttle = err * 4 bei v = 0.
+  stAdd('Ghost-Regler: Rampe, Totband, Ratenbegrenzung', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.ghostSpeedControl) {
+      return { skip: true, mass: 'ghostSpeedControl nicht vorhanden' };
+    }
+    const C = OMEGA_TEST.ghostSpeedControl;
+    const teile = [], schlecht = [];
+
+    // 1. Erster Takt aus dem Stand: kein Vollgas. Die Ratenbegrenzung allein garantiert
+    //    das, unabhaengig von der Rampe - deshalb ist es hier pruefbar.
+    const g1 = {};
+    const t1 = C(g1, 0.5, 0, 0.045).throttle;
+    teile.push('erster Takt Gas ' + t1.toFixed(2));
+    if (!(t1 < 0.15)) schlecht.push('erster Takt gibt ' + t1.toFixed(2) + ' Gas');
+
+    // 2. Und nach einer Sekunde Takten ist es voll da - eine Begrenzung, die das Gas
+    //    dauerhaft klein haelt, waere ein lahmes Auto und kein sanftes.
+    const g2 = {};
+    let t2 = 0;
+    for (let i = 0; i < 25; i++) t2 = C(g2, 0.5, 0, 0.045).throttle;
+    teile.push('nach 1,1 s ' + t2.toFixed(2));
+    if (!(t2 > 0.9)) schlecht.push('kommt nicht auf Vollgas (' + t2.toFixed(2) + ')');
+
+    // 3. Totband: am Ziel wird weder Gas gegeben noch gebremst. Ohne das pendelt der
+    //    Regler, und ein pendelnder Ghost fuehlt sich kaputt an.
+    const g3 = { lastThrottle: 0, lastBrake: 0 };
+    const am = C(g3, 0.5, 0.5, 0.045);
+    teile.push('am Ziel Gas ' + am.throttle.toFixed(2) + ' Bremse ' + am.brake.toFixed(2));
+    if (am.throttle !== 0 || am.brake !== 0) schlecht.push('kein Totband am Ziel');
+
+    // 4. Zu schnell: es wird gebremst, und zwar SCHNELLER als Gas aufgebaut wird. Gas nimmt
+    //    man weich, gebremst wird entschlossen.
+    const g4 = {};
+    const b4 = C(g4, 0.3, 0.9, 0.045).brake;
+    teile.push('zu schnell Bremse ' + b4.toFixed(2));
+    if (!(b4 > t1)) schlecht.push('Bremse kommt nicht schneller als Gas');
+
+    return { ok: !schlecht.length,
+             mass: teile.join(', ') + (schlecht.length ? ' | ' + schlecht.join('; ') : '') };
+  });
+
   // ---- Ausfuehren und anzeigen ----
   async function runSelfTest() {
     const rows = $('st-rows');

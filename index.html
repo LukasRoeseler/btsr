@@ -248,6 +248,21 @@
   /* Die Motorwerkstatt sitzt jetzt IN der Tonseite. Sie war eine eigene Karte und braucht
      deshalb ihre eigene Abgrenzung, sonst laeuft sie in die Lautstaerkeregler. */
   .mw-block { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line) }
+  /* Der Rueckstellknopf der Ghost-Tempozeile. Er ist unsichtbar, solange die Zeile der
+     Vorgabe folgt - dann gibt es nichts zurueckzunehmen -, behaelt aber seinen Platz,
+     damit die Zeile beim Erscheinen nicht springt. */
+  .gar-speed-reset { min-width: 32px; min-height: 32px; padding: 0 6px; font-size: 15px;
+                     line-height: 1; flex: none; }
+  .gar-speed-own { color: var(--info) }
+  /* Kennzeichen fuer Regler, die nachgerechnet nicht wirken. Es steht IN der Beschriftung
+     und nicht als Farbe der ganzen Zeile: eine ausgegraute Zeile liest sich wie "gesperrt",
+     und diese Regler sind nicht gesperrt - sie brauchen nur etwas, das fehlt. */
+  .wip-tag { display: inline-block; font-size: 9.5px; letter-spacing: .1em;
+    padding: 1px 5px; border-radius: 3px; vertical-align: 2px;
+    background: #4a3c00; color: #ffd83d; font-weight: 700; }
+  /* Ausgegraut heisst hier wirklich gesperrt: der fliegende Start ist nicht umgesetzt. */
+  .opt-row.opt-off { opacity: .5 }
+  .opt-row.opt-off input, .row.opt-off input { pointer-events: none }
   .misc-grid {
     display: grid; gap: 14px;
     grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
@@ -1560,11 +1575,11 @@
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/><circle cx="9" cy="7" r="2"/><circle cx="15" cy="12" r="2"/><circle cx="7" cy="17" r="2"/></svg><span class="feat-1line">&Uuml;ber <b id="home-param-count">70</b> Einstellungen</span></div>
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="13" height="10" rx="1"/><rect x="17" y="9" width="4" height="11" rx="1"/></svg><span>PC und Android, Chrome-basiert</span></div>
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 17a8 8 0 1 1 16 0"/><path d="M12 17 16 9"/></svg><span>Anzeigen wie auf einem echten GT3-HUD</span></div>
-        <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20V8"/><circle cx="12" cy="5" r="2"/><path d="M6 12h12"/></svg><span>Manuelle Schaltung</span></div>
+        <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20V8"/><circle cx="12" cy="5" r="2"/><path d="M6 12h12"/></svg><span>Automatische oder manuelle Schaltung</span></div>
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3s5 6 5 10a5 5 0 0 1-10 0c0-4 5-10 5-10z"/></svg><span>Wetter, Reifentemperatur, ABS</span></div>
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4 3 20h18z"/><path d="M12 10v5"/></svg><span>Crash-Erkennung mit Vibration und Folgen fürs Handling</span></div>
-        <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4a4 4 0 1 0 4 5l-2 2-3-3 2-2a4 4 0 0 0-1-2z"/><path d="M13 11 4 20"/></svg><span>Boxenstopp auf Knopfdruck, mit Quick-Menü</span></div>
-        <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V10a7 7 0 0 1 14 0v10l-3-2-2 2-2-2-2 2z"/><circle cx="9.5" cy="10" r="1"/><circle cx="14.5" cy="10" r="1"/></svg><span>Autonome Gegner, fein einstellbar</span></div>
+        <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4a4 4 0 1 0 4 5l-2 2-3-3 2-2a4 4 0 0 0-1-2z"/><path d="M13 11 4 20"/></svg><span>Boxenstopp auf Knopfdruck</span></div>
+        <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V10a7 7 0 0 1 14 0v10l-3-2-2 2-2-2-2 2z"/><circle cx="9.5" cy="10" r="1"/><circle cx="14.5" cy="10" r="1"/></svg><span>Autonome Gegner</span></div>
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h3l2-6 3 12 3-9 2 5 2-2h3"/></svg><span>Simulierte Motoren und eigene Sounds über Engine-Sim</span></div>
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="8" width="20" height="10" rx="4"/><path d="M7 13h2M8 12v2M16 13h.01"/></svg><span>Gamepad-Vibration</span></div>
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 11V8a5 5 0 0 1 9-3"/><rect x="5" y="11" width="14" height="9" rx="2"/></svg><span>Open Source, offene Lizenz</span></div>
@@ -3615,10 +3630,15 @@
       <div class="opt-row"><div class="opt-label"><span id="race-limit-label">Minuten</span>
           <small>Bei freiem Training ohne Bedeutung.</small></div>
         <input type="number" id="race-limit" value="2" min="1" max="120" step="1" style="width:84px"></div>
-      <div class="opt-row"><div class="opt-label">Fliegender Start
+      <!-- Ausgegraut: nicht umgesetzt. Ein Ankreuzfeld, das man setzen kann und das
+           nichts bewirkt, ist eine Falschaussage der Oberflaeche - und dieses hier
+           versprach eine Einfuehrungsrunde, die es nicht gibt. -->
+      <div class="opt-row opt-off"><div class="opt-label">Fliegender Start
+          <span class="wip-tag">nicht umgesetzt</span>
           <small>Einf&uuml;hrungsrunde mit Boxengassen-Tempo, frei beim ersten
-          &Uuml;berfahren von Start/Ziel.</small></div>
-        <label class="tgl"><input type="checkbox" id="race-flying"><span></span></label></div>
+          &Uuml;berfahren von Start/Ziel. <b>Noch nicht gebaut</b> &ndash; der Schalter ist
+          deshalb gesperrt statt wirkungslos.</small></div>
+        <label class="tgl"><input type="checkbox" id="race-flying" disabled><span></span></label></div>
 
       <div id="race-grid-wrap" style="display:none; margin-top:12px">
         <label class="small">Startaufstellung, ziehen oder mit den Pfeilen sortieren</label>
@@ -4163,17 +4183,24 @@
     <div class="card subpage" id="sub-opt-ghosts">
       <button class="misc-back subpage-back" data-sub="">&larr; Einstellungen</button>
       <h2>Autonome Gegner</h2>
+      <p class="muted" style="border-left:3px solid var(--warn); padding-left:9px;
+         font-size:12px">
+        <b>Teilweise im Aufbau.</b> Drei der Regler hier wirken nur, wenn eine Strecke mit
+        mindestens drei Teilen vorliegt &ndash; entweder im Editor gebaut oder beim Fahren
+        gelernt. Ohne Streckenlayout rechnen sie mit einer Null. Sie sind unten mit
+        <span class="wip-tag">WIP</span> gekennzeichnet, samt dem, was ihnen fehlt.
+      </p>
 <div class="opt-head">Autonome Gegner</div>
       <div class="opt-row"><div class="opt-label">Ghost: Leitplanken-Modus<small>Das Auto hält sich selbst auf der Bahn, der Ghost gibt nur Gas.</small></div>
         <label class="tgl"><input type="checkbox" id="ghost-rail" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Ghost-Tempo<small>Rundentempo der autonomen Autos.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="ghost-speed" min="0.2" max="1" step="0.05" value="0.55">
+          <input type="range" id="ghost-speed" min="0.3" max="1" step="0.05" value="0.35">
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="ghost-speed-val">55%</span>
+          <span class="opt-val" id="ghost-speed-val">35%</span>
         </div></div>
-      <div class="opt-row"><div class="opt-label">Ghost: Kurvendrosselung<small>Wie viel Tempo in Kurven abgegeben wird.</small></div>
+      <div class="opt-row"><div class="opt-label">Ghost: Kurvendrosselung <span class="wip-tag">WIP</span><small>Wie viel Tempo in Kurven abgegeben wird. <b>Braucht ein Streckenlayout</b>: ohne gelesene oder gebaute Kacheln wei&szlig; der Ghost nicht, wo eine Kurve ist, und der Regler multipliziert eine Null.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
           <input type="range" id="ghost-curve" min="0" max="0.6" step="0.05" value="0.35">
@@ -4189,9 +4216,9 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="ghost-spice-val">40%</span>
         </div></div>
-      <div class="opt-row"><div class="opt-label">Ghost: Ideallinie
+      <div class="opt-row"><div class="opt-label">Ghost: Ideallinie <span class="wip-tag">WIP</span>
           <small>Au&szlig;en anstellen, innen scheiteln, au&szlig;en heraus. Ob es hilft, sagen
-          Rundenzeit und Abg&auml;nge. Links = aus.</small></div>
+          Rundenzeit und Abg&auml;nge. Links = aus. <b>Braucht ein Streckenlayout</b>, und selbst dann sind es gemessen nur 12 von 127 Lenkschritten &ndash; im Leitplanken-Modus h&auml;lt sich das Auto ohnehin selbst.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
           <input type="range" id="ghost-line" min="0" max="1" step="0.05" value="0.35">
@@ -4211,12 +4238,12 @@
           beh&auml;lt sie nur, wenn die Runde schneller war <b>und</b> kein Abgang dabei.
           Nach einem Abgang wird zur&uuml;ckgenommen und vorsichtiger weiterprobiert.</small></div>
         <label class="tgl"><input type="checkbox" id="ghost-learn-pace"><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Ghost: seitlicher Versatz<small>Gegen gegenseitiges Rammen. Blind: kein Byte meldet die Querlage. Links = aus.</small></div>
+      <div class="opt-row"><div class="opt-label">Ghost: seitlicher Versatz <span class="wip-tag">WIP</span><small>Gegen gegenseitiges Rammen. Blind: kein Byte meldet die Querlage. Links = aus. <b>Braucht mindestens zwei Ghosts</b> nahe beieinander, sonst bleibt der Versatz null.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
           <input type="range" id="ghost-lateral" min="0" max="1" step="0.1" value="0.5">
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="ghost-lateral-val">aus</span>
+          <span class="opt-val" id="ghost-lateral-val">50%</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Strecke beim Fahren lernen
           <small>Setzt das Layout aus den gemeldeten Kacheln zusammen und &uuml;bernimmt es
@@ -4228,6 +4255,15 @@
         <label class="tgl"><input type="checkbox" id="ghost-needcode"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Ghost: F&uuml;hrenden bremsen<small>Der Erstplatzierte fährt etwas langsamer.</small></div>
         <label class="tgl"><input type="checkbox" id="ghost-leader"><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Ghost: Abschlag f&uuml;r den F&uuml;hrenden
+          <small>Um wie viel langsamer. Stand bis v0.4 als Konstante im Code &ndash; eine
+          Einstellung, die niemand einstellen konnte.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="ghost-leader-pct" min="0" max="0.3" step="0.01" value="0.1">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="ghost-leader-pct-val">10%</span>
+        </div></div>
       
     </div>
     <div class="card subpage" id="sub-opt-pad">
@@ -4737,7 +4773,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.4.15</span></span>
+    <span class="foot-ver">v<span id="app-version">0.4.16</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -5623,6 +5659,40 @@
     // v0.4: aus dem Trail-Braking-Bonus ist die Bremsbalance geworden. Der Bonus wirkte
     // auf die Lenkgrenze und wurde dort weggeklemmt; die Balance wirkt auf die Anforderung
     // an die Vorderachse.
+    // v0.4 Block E: die ehrliche Kennzeichnung der Ghost-Regler
+    "WIP": "WIP",
+    // Die <b>-Auszeichnungen zerlegen diese Saetze in eigene Textknoten, das Woerterbuch
+    // ist also je BRUCHSTUECK geschluesselt und nicht je Satz. Genau in dieser Form stehen
+    // sie im Dokument - abgeschrieben statt getippt, weil ein Zeichen Unterschied reicht.
+    "Noch nicht gebaut": "Not built yet",
+    "– der Schalter ist deshalb gesperrt statt wirkungslos.":
+      "– the switch is therefore disabled rather than ineffective.",
+    ": ohne gelesene oder gebaute Kacheln weiß der Ghost nicht, wo eine Kurve ist, und der Regler multipliziert eine Null.":
+      ": without read or built tiles the ghost does not know where a corner is, and the slider multiplies by zero.",
+    ", und selbst dann sind es gemessen nur 12 von 127 Lenkschritten – im Leitplanken-Modus hält sich das Auto ohnehin selbst.":
+      ", and even then it is a measured 12 of 127 steering steps – in guard-rail mode the car holds the track by itself anyway.",
+    "nahe beieinander, sonst bleibt der Versatz null.":
+      "close together, otherwise the offset stays zero.",
+    "Braucht ein Streckenlayout": "Needs a track layout",
+    "Braucht mindestens zwei Ghosts": "Needs at least two ghosts",
+    "Ghost: Abschlag für den Führenden": "Ghost: leader handicap",
+    "Um wie viel langsamer. Stand bis v0.4 als Konstante im Code – eine Einstellung, die niemand einstellen konnte.":
+      "By how much slower. Was a constant in the code until v0.4 – a setting nobody could set.",
+    "nicht umgesetzt": "not implemented",
+    "Teilweise im Aufbau.": "Partly under construction.",
+    "Drei der Regler hier wirken nur, wenn eine Strecke mit mindestens drei Teilen vorliegt – entweder im Editor gebaut oder beim Fahren gelernt. Ohne Streckenlayout rechnen sie mit einer Null. Sie sind unten mit":
+      "Three of the sliders here only work once a track of at least three pieces exists – either built in the editor or learned while driving. Without a layout they multiply by zero. They are marked below with",
+    "gekennzeichnet, samt dem, was ihnen fehlt.":
+      "along with what each of them is missing.",
+    "Wie viel Tempo in Kurven abgegeben wird. Braucht ein Streckenlayout: ohne gelesene oder gebaute Kacheln weiß der Ghost nicht, wo eine Kurve ist, und der Regler multipliziert eine Null.":
+      "How much pace is given up in corners. Needs a track layout: without read or built tiles the ghost does not know where a corner is, and the slider multiplies by zero.",
+    "Außen anstellen, innen scheiteln, außen heraus. Braucht ein Streckenlayout, und selbst dann sind es gemessen nur 12 von 127 Lenkschritten – im Leitplanken-Modus hält sich das Auto ohnehin selbst. Links = aus.":
+      "Set up wide, clip the apex, exit wide. Needs a track layout, and even then it is a measured 12 of 127 steering steps – in guard-rail mode the car holds the track by itself anyway. Left = off.",
+    "Gegen gegenseitiges Rammen. Braucht mindestens zwei Ghosts nahe beieinander, sonst bleibt der Versatz null. Blind: kein Byte meldet die Querlage. Links = aus.":
+      "Against cars ramming each other. Needs at least two ghosts close together, otherwise the offset stays zero. Blind: no byte reports lateral position. Left = off.",
+    "Einführungsrunde mit Boxengassen-Tempo, frei beim ersten Überfahren von Start/Ziel. Noch nicht gebaut – der Schalter ist deshalb gesperrt statt wirkungslos.":
+      "Formation lap at pit-lane pace, released on the first crossing of start/finish. Not built yet – the switch is therefore disabled rather than ineffective.",
+    "Zurück auf die Vorgabe aus den Optionen": "Back to the default from the options",
     "Bremsbalance": "Brake bias",
     "Bremsenquietschen": "Brake squeal",
     "Eigener Regler. Es hing vorher am Motorregler und war deshalb nicht getrennt leiser zu bekommen.":
@@ -11916,7 +11986,10 @@
     if (probe) {
       const bewegt = dashLastTileCounter !== null && counter !== dashLastTileCounter;
       probe.textContent = '0x' + type.toString(16).padStart(2, '0')
-        + ' (' + (TILE_LABEL[type] || 'unbekannt') + ')'
+        // Durch t() wie der Rest der Zeile. Er war die eine Stelle darin, die roh
+        // deutsch blieb, und dadurch faerbte der ganze zusammengesetzte Messwert
+        // im englischen Modus deutsch - der Sprachtest hat ihn gemeldet.
+        + ' (' + t(TILE_LABEL[type] || 'unbekannt') + ')'
         + '  ' + t('Kachelz\u00e4hler') + ' ' + counter
         + ' ' + (bewegt ? t('bewegt') : t('steht'));
     }
@@ -13732,9 +13805,13 @@
     ghostCfg.railMode = e.target.checked;
   });
 
+  // renderGarage() wird mitgerufen: sonst zeigt die Garagenzeile weiter die alte Zahl,
+  // obwohl die Vorgabe sich geaendert hat - und die Zeile ist genau die Stelle, an der man
+  // nachsieht, ob es gewirkt hat.
   $('ghost-speed').addEventListener('input', (e) => {
     ghostCfg.speed = parseFloat(e.target.value);
     $('ghost-speed-val').textContent = Math.round(ghostCfg.speed * 100) + '%';
+    if (typeof renderGarage === 'function') renderGarage();
   });
   $('ghost-curve').addEventListener('input', (e) => {
     ghostCfg.curveSlow = parseFloat(e.target.value);
@@ -13747,6 +13824,11 @@
   });
   $('ghost-leader').addEventListener('change', (e) => {
     ghostCfg.leaderBrake = e.target.checked;
+  });
+
+  $('ghost-leader-pct').addEventListener('input', (e) => {
+    ghostCfg.leaderBrakePct = parseFloat(e.target.value);
+    $('ghost-leader-pct-val').textContent = Math.round(ghostCfg.leaderBrakePct * 100) + '%';
   });
 
   $('setting-fuelweight').addEventListener('input', (e) => {
@@ -14414,10 +14496,12 @@
         ${car.role === 'ghost' ? `
         <div class="gar-speed">
           <label>Tempo</label>
-          <input type="range" min="0.2" max="1" step="0.05"
+          <input type="range" min="0.3" max="1" step="0.05"
                  value="${car.ghostSpeed === undefined || car.ghostSpeed === null
                           ? ghostCfg.speed : car.ghostSpeed}">
           <b></b>
+          <button class="gar-speed-reset" data-act="speedreset"
+                  title="Zurueck auf die Vorgabe aus den Optionen">&#8635;</button>
         </div>` : ''}`;
       // Clicking the row itself identifies the car; the buttons must not also blink it.
       row.onclick = (e) => { if (!e.target.closest('button')) blinkCar(car); };
@@ -14481,11 +14565,32 @@
       const sp = row.querySelector('.gar-speed input');
       if (sp) {
         const out = row.querySelector('.gar-speed b');
-        const paint = () => { out.textContent = Math.round(sp.value * 100) + ' %'; };
+        const rst = row.querySelector('.gar-speed-reset');
+        // Die Zeile sagt jetzt, WOHER ihr Wert kommt. Vorher war sie mit dem globalen Wert
+        // vorbelegt und sah damit aus wie eine Anzeige desselben Werts - waehrend ein
+        // einziges Antippen sie dauerhaft davon abkoppelte, ohne dass das irgendwo stand.
+        const paint = () => {
+          const eigen = car.ghostSpeed !== undefined && car.ghostSpeed !== null;
+          out.textContent = Math.round(sp.value * 100) + ' %'
+                            + (eigen ? '' : '\u00a0(Vorgabe)');
+          out.classList.toggle('gar-speed-own', eigen);
+          if (rst) rst.style.visibility = eigen ? '' : 'hidden';
+        };
         paint();
         // Nur der Wert wird gesetzt, NICHT neu gezeichnet: renderGarage() beim Ziehen
         // aufzurufen wuerde den Regler unter dem Finger ersetzen und den Zug abbrechen.
         sp.addEventListener('input', () => { car.ghostSpeed = +sp.value; paint(); });
+        if (rst) {
+          rst.onclick = (ev) => {
+            ev.stopPropagation();
+            // Der Weg zurueck. Ohne ihn war das Einrasten endgueltig - es gab im ganzen
+            // Projekt keine Stelle, die car.ghostSpeed wieder auf null setzt.
+            car.ghostSpeed = null;
+            sp.value = ghostCfg.speed;
+            paint();
+            showHudToast(garageLabel(car).toUpperCase() + ' FOLGT DER VORGABE');
+          };
+        }
         // Der Klick auf die Zeile laesst das Auto blinken - am Regler waere das laestig.
         sp.addEventListener('click', (e) => e.stopPropagation());
         sp.addEventListener('pointerdown', (e) => e.stopPropagation());
@@ -14692,7 +14797,10 @@
   const GHOST_STEER_CURVE = 0.55;   // feed-forward lock in a curve, before the yaw loop
 
   const ghostCfg = {
-    speed: 0.55,        // fraction of top speed on a straight
+    // 0,35, nachgezogen zur Reglervorgabe im Markup. Der Bereich beginnt bei 0,3: darunter
+    // kommt ein Ghost aus dem Stand nicht zuverlaessig los, weil minMoveThrottle den
+    // Losbrechpunkt setzt und ein zu kleines Ziel ihn nie erreicht.
+    speed: 0.35,        // fraction of top speed on a straight
     curveSlow: 0.35,    // how much of that is given up in a curve
     // 0.5 statt 0. Die Naeherungslogik in ghostAssignBias gab es laengst - gleiche Runde
     // und Kachelindex hoechstens eins auseinander ergibt gegenlaeufige Versaetze - aber sie
@@ -14966,10 +15074,72 @@
     showHudToast(garageLabel(car).toUpperCase() + ' STEHT, SCH\u00dcTTELN');
   }
 
+  // Ueber diese Zeit fuehrt das Ziel-Tempo nach dem Entparken von 0 hoch.
+  //
+  // Warum ueberhaupt: solange geparkt, wird jede Runde speedKmh = 0 erzwungen. Im ersten
+  // Takt danach ist v = 0, also err = target, und wegen throttle = err * GHOST_KP_GAS stand
+  // die Gasanforderung ab einem Ziel von etwa einem Viertel sofort auf 1,0. Wer ein
+  // abgeflogenes Auto zurueckstellt und schuettelt, bekam es mit Vollgas aus der Hand
+  // gerissen.
+  //
+  // Die Rampe liegt auf dem ZIEL und nicht auf dem Gas. Das Gas ist die Antwort des
+  // Reglers; eine Rampe darauf waere ein zweiter Regler, der gegen den ersten arbeitet.
+  const GHOST_UNPARK_RAMP_MS = 2500;
+
+  // Der Tempo-Regler der Ghosts. Vorher standen die Verstaerkungen 4 und 3 hart im Code und
+  // waren nirgends benannt - man konnte sie nicht diskutieren, ohne die Zeile zu suchen.
+  //
+  // GHOST_DEADBAND ist der Teil, der das Pendeln beendet: ein P-Regler ohne Totband
+  // ueberschwingt immer, und bei diesen Verstaerkungen sichtbar. 1,5 Prozent vom
+  // Tempobereich sind bei 4 km/h Modellhoechstgeschwindigkeit rund 4 km/h auf dem Tacho.
+  const GHOST_DEADBAND = 0.015;
+  const GHOST_KP_GAS = 2.2;      // war 4: eine Abweichung von einem Viertel gab Vollgas
+  const GHOST_KP_BREMSE = 3.0;   // hoeher als Gas: gebremst wird entschlossen
+  const GHOST_SLEW_GAS = 1.6;    // Anteil je Sekunde; voll durchtreten dauert 0,6 s
+  const GHOST_SLEW_BREMSE = 4.0; // Bremse darf schneller kommen, 0,25 s auf voll
+
+  // Der Tempo-Regler, AUSGELAGERT damit er pruefbar ist.
+  //
+  // Vorher stand er als sechs Zeilen mitten in ghostTick, und dort ist er nur mit einem
+  // vollstaendigen Ghost samt Bluetooth-Verbindung erreichbar - also gar nicht. Eine
+  // Behauptung wie "nach dem Entparken gibt er nicht sofort Vollgas" war damit nicht
+  // nachweisbar, sondern nur lesbar. Jetzt ist sie messbar.
+  //
+  // Er ist absichtlich ZUSTANDSBEHAFTET (g.lastThrottle/lastBrake) und nicht rein: die
+  // Ratenbegrenzung braucht den letzten Ausgang. Der Zustand liegt am Ghost, nicht in der
+  // Funktion, damit mehrere Autos sich nicht gegenseitig stoeren.
+  //
+  // TOTBAND: vorher waren die Verstaerkungen 4 und 3, und damit ergab eine Abweichung von
+  // einem Viertel schon Vollgas beziehungsweise ein Drittel Vollbremsung - der Ghost
+  // pendelte zwischen beidem statt zu fahren. Ohne Totband findet ein P-Regler keine Ruhe.
+  //
+  // ASYMMETRISCH, und das ist eine Aussage ueber Autos: Gas nimmt man weich, gebremst wird
+  // entschlossen. Deshalb die hoehere Bremsverstaerkung und die lockerere Ratenbegrenzung
+  // fuer die Bremse.
+  function ghostSpeedControl(g, target, v, dtG) {
+    const err = target - v;
+    const roh = Math.abs(err) < GHOST_DEADBAND
+      ? { t: 0, b: 0 }
+      : { t: Math.max(0, Math.min(1, err * GHOST_KP_GAS)),
+          b: Math.max(0, Math.min(1, -err * GHOST_KP_BREMSE)) };
+    const zieh = (ist, soll, rate) => {
+      const max = rate * dtG;
+      return soll > ist ? Math.min(soll, ist + max) : Math.max(soll, ist - max);
+    };
+    const throttle = zieh(g.lastThrottle || 0, roh.t, GHOST_SLEW_GAS);
+    const brake = zieh(g.lastBrake || 0, roh.b, GHOST_SLEW_BREMSE);
+    g.lastThrottle = throttle;
+    g.lastBrake = brake;
+    return { throttle, brake };
+  }
+
   function unparkCar(car, why) {
     if (!car.parked) return;
     car.parked = null;
-    if (car.ghost) { car.ghost.cutOut = false; car.ghost.offSince = 0; }
+    if (car.ghost) {
+      car.ghost.cutOut = false; car.ghost.offSince = 0;
+      car.ghost.unparkAt = Date.now();
+    }
     log(garageLabel(car) + ': ' + why + ', f\u00e4hrt weiter.', 'info');
     showHudToast(garageLabel(car).toUpperCase() + ' F\u00c4HRT');
   }
@@ -15669,6 +15839,10 @@
       // ---- speed ----
       // Eigenes Tempo je Auto, sonst das globale. So laesst sich ein Feld mit
       // unterschiedlich schnellen Gegnern aufstellen, statt dass alle gleich schnell fahren.
+      // Eigenes Tempo, wenn eines gesetzt ist, sonst die Vorgabe. Der Unterschied ist in
+      // der Garage jetzt sichtbar und zuruecknehmbar - er rastete vorher beim ersten
+      // Antippen dauerhaft ein und machte den globalen Regler fuer dieses Auto stumm, ohne
+      // dass irgendwo stand, dass das passiert ist.
       let target = (car.ghostSpeed === undefined || car.ghostSpeed === null)
         ? ghostCfg.speed : car.ghostSpeed;
       // Der gelernte Tempofaktor. Er steht VOR der gelben Flagge, damit das Limit unter
@@ -15722,10 +15896,35 @@
       // Formation lap: everyone rolls at pit-lane pace, whatever their speed setting says.
       if (raceFormationLap) target = Math.min(target, PIT_SPEED_FACTOR);
 
+      // Die Anfahrrampe: sie greift NUR nach einem Entparken und laeuft von selbst aus.
+      if (g.unparkAt) {
+        const seit = now - g.unparkAt;
+        if (seit >= GHOST_UNPARK_RAMP_MS) g.unparkAt = 0;
+        else target *= seit / GHOST_UNPARK_RAMP_MS;
+      }
+
       const v = Math.abs(e.state.speedKmh) / cfg.topSpeedKmh;
-      const err = target - v;
-      throttle = Math.max(0, Math.min(1, err * 4));
-      brake = Math.max(0, Math.min(1, -err * 3));
+      const dtG = Math.max(0.01, Math.min(0.5, (now - (g.lastTick || now)) / 1000));
+      g.lastTick = now;
+      const st2 = ghostSpeedControl(g, target, v, dtG);
+      throttle = st2.throttle;
+      brake = st2.brake;
+      // VORSTEUERUNG aus dem Bremsprofil der Linie. Das Profil weiss, dass eine Kurve kommt,
+      // BEVOR der Regler eine Abweichung sieht - genau das ist der Unterschied zwischen
+      // Bremsen und Hinterherbremsen.
+      //
+      // Sie ist ausdruecklich ein BODEN auf dem Bremsbefehl und kein zweiter Regler. Ein
+      // zweiter Regler auf derselben Groesse arbeitet gegen den ersten; Vorsteuerung plus
+      // Rueckfuehrung ist EIN Regler mit zwei Eingaengen, und das ist die uebliche Bauform.
+      //
+      // Sie greift nur, wo es ein Bremsprofil gibt, also mit gelernter oder gebauter
+      // Strecke - deshalb traegt die Kurvendrosselung ihr WIP-Zeichen.
+      if (bd !== null && bd > 0) {
+        brake = Math.max(brake, Math.min(1, bd * ghostCfg.curveSlow * 1.5));
+        if (brake > 0.02) throttle = 0;   // nicht gleichzeitig Gas und Bremse
+        g.lastBrake = brake;
+        g.lastThrottle = throttle;
+      }
 
       // ---- steering ----
       // In guard-rail mode the CAR steers itself. Comparing the two halves of the 20.08
@@ -15934,6 +16133,7 @@
   }
 
   window.OMEGA_TEST = {
+    ghostSpeedControl, GHOST_UNPARK_RAMP_MS,
     TILE_TYPE, TILE_LABEL,
     codeToTrack, trackToCode,
     tileTightness, tileTurnDeg, tileIsCurve, ghostTileLenFactor,
@@ -18925,6 +19125,105 @@
       updateLightTellTales();
       updateDamageFuelUI();
     }
+  });
+
+  // ---- Autopilot waehrend der gelben Flagge ----
+  //
+  // Ein Merkmal, das das Auto von SELBST fahren laesst, gehoert geprueft - und zwar an der
+  // Eigenschaft, die es gefaehrlich machen wuerde: dass es in der falschen Betriebsart
+  // greift. In der Ausdruck-Stellung haelt sich das Auto nicht selbst auf der Bahn, und ein
+  // Autopilot ohne Querregelung wuerde es geradeaus in die Bande fahren.
+  //
+  // Geprueft wird der Regler, nicht die Anzeige: der Rueckgabewert bei zu langsam muss Gas
+  // sein, bei zu schnell Bremse, und bei richtigem Tempo beides nahe null. Ohne den letzten
+  // Punkt waere ein Regler, der dauerhaft Vollgas gibt, ebenfalls "gruen".
+  stAdd('Autopilot nur auf der Bahn, und er regelt', () => {
+    if (typeof autopilotYellow !== 'function') {
+      return { skip: true, mass: 'autopilotYellow nicht vorhanden' };
+    }
+    const merk = { flag: flagState, tm: trackMode, v: physEngine.state.speedKmh };
+    try {
+      const bei = (kmh) => {
+        physEngine.state.speedKmh = kmh / REAL_SCALE;
+        return autopilotYellow();
+      };
+      // 1. Gruen: gar kein Eingriff, egal wie schnell.
+      flagState = 'green'; trackMode = 'on';
+      const gruen = bei(20);
+      // 2. Gelb, aber Ausdruck-Stellung: ebenfalls kein Eingriff.
+      flagState = 'yellow'; trackMode = 'off';
+      const ausdruck = bei(20);
+      // 3. Gelb auf der Bahn: regeln. YELLOW_KMH ist das Ziel.
+      trackMode = 'on';
+      const langsam = bei(YELLOW_KMH * 0.4);
+      const schnell = bei(YELLOW_KMH * 2.5);
+      const passend = bei(YELLOW_KMH);
+      if (!langsam || !schnell || !passend) {
+        return { ok: false, mass: 'greift auf der Bahn nicht' };
+      }
+      const ok = gruen === null && ausdruck === null
+                 && langsam.throttle > 0.2 && langsam.brake === 0
+                 && schnell.brake > 0.2 && schnell.throttle === 0
+                 && passend.throttle < 0.15 && passend.brake < 0.15;
+      return { ok,
+               mass: 'gruen ' + (gruen === null ? 'aus' : 'AN')
+                     + ', Ausdruck ' + (ausdruck === null ? 'aus' : 'AN')
+                     + ' | bei ' + Math.round(YELLOW_KMH * 0.4) + ' km/h Gas '
+                     + langsam.throttle.toFixed(2)
+                     + ', bei ' + Math.round(YELLOW_KMH * 2.5) + ' km/h Bremse '
+                     + schnell.brake.toFixed(2)
+                     + ', bei ' + YELLOW_KMH + ' km/h Gas ' + passend.throttle.toFixed(2)
+                     + ' Bremse ' + passend.brake.toFixed(2) };
+    } finally {
+      flagState = merk.flag;
+      trackMode = merk.tm;
+      physEngine.state.speedKmh = merk.v;
+    }
+  });
+
+  // ---- Der Tempo-Regler der Ghosts ----
+  //
+  // Vier Behauptungen, die vorher nur im Kommentar standen. Die erste ist die, die der
+  // Benutzer gemeldet hat: nach dem Zurueckstellen eines abgeflogenen Autos wurde es ihm
+  // mit Vollgas aus der Hand gerissen. Ursache war throttle = err * 4 bei v = 0.
+  stAdd('Ghost-Regler: Rampe, Totband, Ratenbegrenzung', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.ghostSpeedControl) {
+      return { skip: true, mass: 'ghostSpeedControl nicht vorhanden' };
+    }
+    const C = OMEGA_TEST.ghostSpeedControl;
+    const teile = [], schlecht = [];
+
+    // 1. Erster Takt aus dem Stand: kein Vollgas. Die Ratenbegrenzung allein garantiert
+    //    das, unabhaengig von der Rampe - deshalb ist es hier pruefbar.
+    const g1 = {};
+    const t1 = C(g1, 0.5, 0, 0.045).throttle;
+    teile.push('erster Takt Gas ' + t1.toFixed(2));
+    if (!(t1 < 0.15)) schlecht.push('erster Takt gibt ' + t1.toFixed(2) + ' Gas');
+
+    // 2. Und nach einer Sekunde Takten ist es voll da - eine Begrenzung, die das Gas
+    //    dauerhaft klein haelt, waere ein lahmes Auto und kein sanftes.
+    const g2 = {};
+    let t2 = 0;
+    for (let i = 0; i < 25; i++) t2 = C(g2, 0.5, 0, 0.045).throttle;
+    teile.push('nach 1,1 s ' + t2.toFixed(2));
+    if (!(t2 > 0.9)) schlecht.push('kommt nicht auf Vollgas (' + t2.toFixed(2) + ')');
+
+    // 3. Totband: am Ziel wird weder Gas gegeben noch gebremst. Ohne das pendelt der
+    //    Regler, und ein pendelnder Ghost fuehlt sich kaputt an.
+    const g3 = { lastThrottle: 0, lastBrake: 0 };
+    const am = C(g3, 0.5, 0.5, 0.045);
+    teile.push('am Ziel Gas ' + am.throttle.toFixed(2) + ' Bremse ' + am.brake.toFixed(2));
+    if (am.throttle !== 0 || am.brake !== 0) schlecht.push('kein Totband am Ziel');
+
+    // 4. Zu schnell: es wird gebremst, und zwar SCHNELLER als Gas aufgebaut wird. Gas nimmt
+    //    man weich, gebremst wird entschlossen.
+    const g4 = {};
+    const b4 = C(g4, 0.3, 0.9, 0.045).brake;
+    teile.push('zu schnell Bremse ' + b4.toFixed(2));
+    if (!(b4 > t1)) schlecht.push('Bremse kommt nicht schneller als Gas');
+
+    return { ok: !schlecht.length,
+             mass: teile.join(', ') + (schlecht.length ? ' | ' + schlecht.join('; ') : '') };
   });
 
   // ---- Ausfuehren und anzeigen ----

@@ -248,6 +248,21 @@
   /* Die Motorwerkstatt sitzt jetzt IN der Tonseite. Sie war eine eigene Karte und braucht
      deshalb ihre eigene Abgrenzung, sonst laeuft sie in die Lautstaerkeregler. */
   .mw-block { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line) }
+  /* Der Rueckstellknopf der Ghost-Tempozeile. Er ist unsichtbar, solange die Zeile der
+     Vorgabe folgt - dann gibt es nichts zurueckzunehmen -, behaelt aber seinen Platz,
+     damit die Zeile beim Erscheinen nicht springt. */
+  .gar-speed-reset { min-width: 32px; min-height: 32px; padding: 0 6px; font-size: 15px;
+                     line-height: 1; flex: none; }
+  .gar-speed-own { color: var(--info) }
+  /* Kennzeichen fuer Regler, die nachgerechnet nicht wirken. Es steht IN der Beschriftung
+     und nicht als Farbe der ganzen Zeile: eine ausgegraute Zeile liest sich wie "gesperrt",
+     und diese Regler sind nicht gesperrt - sie brauchen nur etwas, das fehlt. */
+  .wip-tag { display: inline-block; font-size: 9.5px; letter-spacing: .1em;
+    padding: 1px 5px; border-radius: 3px; vertical-align: 2px;
+    background: #4a3c00; color: #ffd83d; font-weight: 700; }
+  /* Ausgegraut heisst hier wirklich gesperrt: der fliegende Start ist nicht umgesetzt. */
+  .opt-row.opt-off { opacity: .5 }
+  .opt-row.opt-off input, .row.opt-off input { pointer-events: none }
   .misc-grid {
     display: grid; gap: 14px;
     grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
@@ -1560,11 +1575,11 @@
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/><circle cx="9" cy="7" r="2"/><circle cx="15" cy="12" r="2"/><circle cx="7" cy="17" r="2"/></svg><span class="feat-1line">&Uuml;ber <b id="home-param-count">70</b> Einstellungen</span></div>
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="13" height="10" rx="1"/><rect x="17" y="9" width="4" height="11" rx="1"/></svg><span>PC und Android, Chrome-basiert</span></div>
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 17a8 8 0 1 1 16 0"/><path d="M12 17 16 9"/></svg><span>Anzeigen wie auf einem echten GT3-HUD</span></div>
-        <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20V8"/><circle cx="12" cy="5" r="2"/><path d="M6 12h12"/></svg><span>Manuelle Schaltung</span></div>
+        <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20V8"/><circle cx="12" cy="5" r="2"/><path d="M6 12h12"/></svg><span>Automatische oder manuelle Schaltung</span></div>
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3s5 6 5 10a5 5 0 0 1-10 0c0-4 5-10 5-10z"/></svg><span>Wetter, Reifentemperatur, ABS</span></div>
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4 3 20h18z"/><path d="M12 10v5"/></svg><span>Crash-Erkennung mit Vibration und Folgen fürs Handling</span></div>
-        <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4a4 4 0 1 0 4 5l-2 2-3-3 2-2a4 4 0 0 0-1-2z"/><path d="M13 11 4 20"/></svg><span>Boxenstopp auf Knopfdruck, mit Quick-Menü</span></div>
-        <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V10a7 7 0 0 1 14 0v10l-3-2-2 2-2-2-2 2z"/><circle cx="9.5" cy="10" r="1"/><circle cx="14.5" cy="10" r="1"/></svg><span>Autonome Gegner, fein einstellbar</span></div>
+        <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4a4 4 0 1 0 4 5l-2 2-3-3 2-2a4 4 0 0 0-1-2z"/><path d="M13 11 4 20"/></svg><span>Boxenstopp auf Knopfdruck</span></div>
+        <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V10a7 7 0 0 1 14 0v10l-3-2-2 2-2-2-2 2z"/><circle cx="9.5" cy="10" r="1"/><circle cx="14.5" cy="10" r="1"/></svg><span>Autonome Gegner</span></div>
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h3l2-6 3 12 3-9 2 5 2-2h3"/></svg><span>Simulierte Motoren und eigene Sounds über Engine-Sim</span></div>
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="8" width="20" height="10" rx="4"/><path d="M7 13h2M8 12v2M16 13h.01"/></svg><span>Gamepad-Vibration</span></div>
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 11V8a5 5 0 0 1 9-3"/><rect x="5" y="11" width="14" height="9" rx="2"/></svg><span>Open Source, offene Lizenz</span></div>
@@ -3615,10 +3630,15 @@
       <div class="opt-row"><div class="opt-label"><span id="race-limit-label">Minuten</span>
           <small>Bei freiem Training ohne Bedeutung.</small></div>
         <input type="number" id="race-limit" value="2" min="1" max="120" step="1" style="width:84px"></div>
-      <div class="opt-row"><div class="opt-label">Fliegender Start
+      <!-- Ausgegraut: nicht umgesetzt. Ein Ankreuzfeld, das man setzen kann und das
+           nichts bewirkt, ist eine Falschaussage der Oberflaeche - und dieses hier
+           versprach eine Einfuehrungsrunde, die es nicht gibt. -->
+      <div class="opt-row opt-off"><div class="opt-label">Fliegender Start
+          <span class="wip-tag">nicht umgesetzt</span>
           <small>Einf&uuml;hrungsrunde mit Boxengassen-Tempo, frei beim ersten
-          &Uuml;berfahren von Start/Ziel.</small></div>
-        <label class="tgl"><input type="checkbox" id="race-flying"><span></span></label></div>
+          &Uuml;berfahren von Start/Ziel. <b>Noch nicht gebaut</b> &ndash; der Schalter ist
+          deshalb gesperrt statt wirkungslos.</small></div>
+        <label class="tgl"><input type="checkbox" id="race-flying" disabled><span></span></label></div>
 
       <div id="race-grid-wrap" style="display:none; margin-top:12px">
         <label class="small">Startaufstellung, ziehen oder mit den Pfeilen sortieren</label>
@@ -4163,17 +4183,24 @@
     <div class="card subpage" id="sub-opt-ghosts">
       <button class="misc-back subpage-back" data-sub="">&larr; Einstellungen</button>
       <h2>Autonome Gegner</h2>
+      <p class="muted" style="border-left:3px solid var(--warn); padding-left:9px;
+         font-size:12px">
+        <b>Teilweise im Aufbau.</b> Drei der Regler hier wirken nur, wenn eine Strecke mit
+        mindestens drei Teilen vorliegt &ndash; entweder im Editor gebaut oder beim Fahren
+        gelernt. Ohne Streckenlayout rechnen sie mit einer Null. Sie sind unten mit
+        <span class="wip-tag">WIP</span> gekennzeichnet, samt dem, was ihnen fehlt.
+      </p>
 <div class="opt-head">Autonome Gegner</div>
       <div class="opt-row"><div class="opt-label">Ghost: Leitplanken-Modus<small>Das Auto hält sich selbst auf der Bahn, der Ghost gibt nur Gas.</small></div>
         <label class="tgl"><input type="checkbox" id="ghost-rail" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Ghost-Tempo<small>Rundentempo der autonomen Autos.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="ghost-speed" min="0.2" max="1" step="0.05" value="0.55">
+          <input type="range" id="ghost-speed" min="0.3" max="1" step="0.05" value="0.35">
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="ghost-speed-val">55%</span>
+          <span class="opt-val" id="ghost-speed-val">35%</span>
         </div></div>
-      <div class="opt-row"><div class="opt-label">Ghost: Kurvendrosselung<small>Wie viel Tempo in Kurven abgegeben wird.</small></div>
+      <div class="opt-row"><div class="opt-label">Ghost: Kurvendrosselung <span class="wip-tag">WIP</span><small>Wie viel Tempo in Kurven abgegeben wird. <b>Braucht ein Streckenlayout</b>: ohne gelesene oder gebaute Kacheln wei&szlig; der Ghost nicht, wo eine Kurve ist, und der Regler multipliziert eine Null.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
           <input type="range" id="ghost-curve" min="0" max="0.6" step="0.05" value="0.35">
@@ -4189,9 +4216,9 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="ghost-spice-val">40%</span>
         </div></div>
-      <div class="opt-row"><div class="opt-label">Ghost: Ideallinie
+      <div class="opt-row"><div class="opt-label">Ghost: Ideallinie <span class="wip-tag">WIP</span>
           <small>Au&szlig;en anstellen, innen scheiteln, au&szlig;en heraus. Ob es hilft, sagen
-          Rundenzeit und Abg&auml;nge. Links = aus.</small></div>
+          Rundenzeit und Abg&auml;nge. Links = aus. <b>Braucht ein Streckenlayout</b>, und selbst dann sind es gemessen nur 12 von 127 Lenkschritten &ndash; im Leitplanken-Modus h&auml;lt sich das Auto ohnehin selbst.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
           <input type="range" id="ghost-line" min="0" max="1" step="0.05" value="0.35">
@@ -4211,12 +4238,12 @@
           beh&auml;lt sie nur, wenn die Runde schneller war <b>und</b> kein Abgang dabei.
           Nach einem Abgang wird zur&uuml;ckgenommen und vorsichtiger weiterprobiert.</small></div>
         <label class="tgl"><input type="checkbox" id="ghost-learn-pace"><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Ghost: seitlicher Versatz<small>Gegen gegenseitiges Rammen. Blind: kein Byte meldet die Querlage. Links = aus.</small></div>
+      <div class="opt-row"><div class="opt-label">Ghost: seitlicher Versatz <span class="wip-tag">WIP</span><small>Gegen gegenseitiges Rammen. Blind: kein Byte meldet die Querlage. Links = aus. <b>Braucht mindestens zwei Ghosts</b> nahe beieinander, sonst bleibt der Versatz null.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
           <input type="range" id="ghost-lateral" min="0" max="1" step="0.1" value="0.5">
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="ghost-lateral-val">aus</span>
+          <span class="opt-val" id="ghost-lateral-val">50%</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Strecke beim Fahren lernen
           <small>Setzt das Layout aus den gemeldeten Kacheln zusammen und &uuml;bernimmt es
@@ -4228,6 +4255,15 @@
         <label class="tgl"><input type="checkbox" id="ghost-needcode"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Ghost: F&uuml;hrenden bremsen<small>Der Erstplatzierte fährt etwas langsamer.</small></div>
         <label class="tgl"><input type="checkbox" id="ghost-leader"><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Ghost: Abschlag f&uuml;r den F&uuml;hrenden
+          <small>Um wie viel langsamer. Stand bis v0.4 als Konstante im Code &ndash; eine
+          Einstellung, die niemand einstellen konnte.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="ghost-leader-pct" min="0" max="0.3" step="0.01" value="0.1">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="ghost-leader-pct-val">10%</span>
+        </div></div>
       
     </div>
     <div class="card subpage" id="sub-opt-pad">
@@ -4737,7 +4773,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.4.15</span></span>
+    <span class="foot-ver">v<span id="app-version">0.4.16</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine

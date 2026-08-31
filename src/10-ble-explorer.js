@@ -854,6 +854,40 @@
     // v0.4: aus dem Trail-Braking-Bonus ist die Bremsbalance geworden. Der Bonus wirkte
     // auf die Lenkgrenze und wurde dort weggeklemmt; die Balance wirkt auf die Anforderung
     // an die Vorderachse.
+    // v0.4 Block E: die ehrliche Kennzeichnung der Ghost-Regler
+    "WIP": "WIP",
+    // Die <b>-Auszeichnungen zerlegen diese Saetze in eigene Textknoten, das Woerterbuch
+    // ist also je BRUCHSTUECK geschluesselt und nicht je Satz. Genau in dieser Form stehen
+    // sie im Dokument - abgeschrieben statt getippt, weil ein Zeichen Unterschied reicht.
+    "Noch nicht gebaut": "Not built yet",
+    "– der Schalter ist deshalb gesperrt statt wirkungslos.":
+      "– the switch is therefore disabled rather than ineffective.",
+    ": ohne gelesene oder gebaute Kacheln weiß der Ghost nicht, wo eine Kurve ist, und der Regler multipliziert eine Null.":
+      ": without read or built tiles the ghost does not know where a corner is, and the slider multiplies by zero.",
+    ", und selbst dann sind es gemessen nur 12 von 127 Lenkschritten – im Leitplanken-Modus hält sich das Auto ohnehin selbst.":
+      ", and even then it is a measured 12 of 127 steering steps – in guard-rail mode the car holds the track by itself anyway.",
+    "nahe beieinander, sonst bleibt der Versatz null.":
+      "close together, otherwise the offset stays zero.",
+    "Braucht ein Streckenlayout": "Needs a track layout",
+    "Braucht mindestens zwei Ghosts": "Needs at least two ghosts",
+    "Ghost: Abschlag für den Führenden": "Ghost: leader handicap",
+    "Um wie viel langsamer. Stand bis v0.4 als Konstante im Code – eine Einstellung, die niemand einstellen konnte.":
+      "By how much slower. Was a constant in the code until v0.4 – a setting nobody could set.",
+    "nicht umgesetzt": "not implemented",
+    "Teilweise im Aufbau.": "Partly under construction.",
+    "Drei der Regler hier wirken nur, wenn eine Strecke mit mindestens drei Teilen vorliegt – entweder im Editor gebaut oder beim Fahren gelernt. Ohne Streckenlayout rechnen sie mit einer Null. Sie sind unten mit":
+      "Three of the sliders here only work once a track of at least three pieces exists – either built in the editor or learned while driving. Without a layout they multiply by zero. They are marked below with",
+    "gekennzeichnet, samt dem, was ihnen fehlt.":
+      "along with what each of them is missing.",
+    "Wie viel Tempo in Kurven abgegeben wird. Braucht ein Streckenlayout: ohne gelesene oder gebaute Kacheln weiß der Ghost nicht, wo eine Kurve ist, und der Regler multipliziert eine Null.":
+      "How much pace is given up in corners. Needs a track layout: without read or built tiles the ghost does not know where a corner is, and the slider multiplies by zero.",
+    "Außen anstellen, innen scheiteln, außen heraus. Braucht ein Streckenlayout, und selbst dann sind es gemessen nur 12 von 127 Lenkschritten – im Leitplanken-Modus hält sich das Auto ohnehin selbst. Links = aus.":
+      "Set up wide, clip the apex, exit wide. Needs a track layout, and even then it is a measured 12 of 127 steering steps – in guard-rail mode the car holds the track by itself anyway. Left = off.",
+    "Gegen gegenseitiges Rammen. Braucht mindestens zwei Ghosts nahe beieinander, sonst bleibt der Versatz null. Blind: kein Byte meldet die Querlage. Links = aus.":
+      "Against cars ramming each other. Needs at least two ghosts close together, otherwise the offset stays zero. Blind: no byte reports lateral position. Left = off.",
+    "Einführungsrunde mit Boxengassen-Tempo, frei beim ersten Überfahren von Start/Ziel. Noch nicht gebaut – der Schalter ist deshalb gesperrt statt wirkungslos.":
+      "Formation lap at pit-lane pace, released on the first crossing of start/finish. Not built yet – the switch is therefore disabled rather than ineffective.",
+    "Zurück auf die Vorgabe aus den Optionen": "Back to the default from the options",
     "Bremsbalance": "Brake bias",
     "Bremsenquietschen": "Brake squeal",
     "Eigener Regler. Es hing vorher am Motorregler und war deshalb nicht getrennt leiser zu bekommen.":

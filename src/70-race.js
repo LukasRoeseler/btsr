@@ -1274,7 +1274,10 @@
     if (probe) {
       const bewegt = dashLastTileCounter !== null && counter !== dashLastTileCounter;
       probe.textContent = '0x' + type.toString(16).padStart(2, '0')
-        + ' (' + (TILE_LABEL[type] || 'unbekannt') + ')'
+        // Durch t() wie der Rest der Zeile. Er war die eine Stelle darin, die roh
+        // deutsch blieb, und dadurch faerbte der ganze zusammengesetzte Messwert
+        // im englischen Modus deutsch - der Sprachtest hat ihn gemeldet.
+        + ' (' + t(TILE_LABEL[type] || 'unbekannt') + ')'
         + '  ' + t('Kachelz\u00e4hler') + ' ' + counter
         + ' ' + (bewegt ? t('bewegt') : t('steht'));
     }
