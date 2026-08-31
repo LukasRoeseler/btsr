@@ -46,6 +46,10 @@ HORNS = [
     ('horn_donkey', 'stu9-donkey-1-352697.mp3',               'Esel',        2.2),
     ('horn_goat', 'playdown-suara-goat-berteriak-367222.mp3',  'Ziege',       2.0),
     ('horn_fart', 'apebble-fart-4-228244.mp3',                 'Furz',        1.6),
+    # Zweiter Furz, vom Benutzer geliefert. Er ist mit 0,648 s kuerzer als der erste und
+    # klingt anders - deshalb ein eigener Eintrag und nicht ein Ersatz: eine Hupe waehlt man
+    # nach Geschmack, und zwei Geschmaecker sind besser als einer.
+    ('horn_fart2', 'freesound_community-fart-83471.mp3',       'Furz 2',      1.6),
 ]
 
 
@@ -137,15 +141,36 @@ def attack_ms(x):
     return 0.0
 
 
-def main():
+def main(nur=None):
+    """nur: Liste von Hupenschluesseln, sonst alle.
+
+    Mit Auswahl aufzurufen ist der Normalfall, aus demselben Grund wie bei
+    engine_synth.py: libvorbis stempelt eine ZUFAELLIGE Bitstrom-Seriennummer in den
+    Container, also ist jede neu gerechnete .ogg byteverschieden, auch wenn der Klang
+    identisch ist.
+
+    Gemessen beim Hinzufuegen der zweiten Furzhupe: alle fuenf vorhandenen wurden
+    mitgerechnet und waren danach byteverschieden, aber bit-identisch dekodiert - maximale
+    Abweichung 0,000000 bei gleicher Laenge. Das sind 100 KB Diff ohne eine einzige
+    Aenderung am Klang, und ein Diff, der nichts sagt, verdeckt die, die etwas sagen.
+
+    Die Zusammenfuehrung von fx.json unten liest die vorhandenen Eintraege und behaelt sie,
+    es faellt also nichts weg, was nicht gerechnet wurde.
+    """
     if not os.path.isdir(SRC):
         print('sounds/ fehlt: %s' % SRC)
         return 1
     os.makedirs(WORK, exist_ok=True)
     manifest = {}
+    fehlend = [k for k in (nur or []) if k not in [h[0] for h in HORNS]]
+    if fehlend:
+        print('unbekannte Schluessel: %s' % ', '.join(fehlend))
+        return 1
     print('Name        | roh    | geschnitten | Anschlag | RMS   | KB')
     print('-' * 66)
     for key, fn, label, maxs in HORNS:
+        if nur is not None and key not in nur:
+            continue
         path = os.path.join(SRC, fn)
         if not os.path.exists(path):
             print('%-11s | FEHLT: %s' % (label, fn))
@@ -167,13 +192,23 @@ def main():
     if os.path.exists(path):
         with open(path) as f:
             fx = json.load(f)
-    fx['horns'] = manifest
+    # MISCHEND, nicht ersetzend: bei einem Lauf mit Auswahl stehen im manifest nur die
+    # gerechneten, und die anderen wuerden sonst aus fx.json verschwinden - die Dateien
+    # lagen weiter in audio/, aber die App haette sie nicht mehr gefunden.
+    vorhanden = fx.get('horns') or {}
+    vorhanden.update(manifest)
+    fx['horns'] = vorhanden
     with open(path, 'w') as f:
         json.dump(fx, f, indent=1, ensure_ascii=False)
     print()
-    print('audio/fx.json: horns mit %d Eintraegen' % len(manifest))
+    # Beide Zahlen, sonst liest man bei einem Lauf mit Auswahl "1 Eintrag" und denkt, die
+    # anderen fuenf seien verlorengegangen.
+    print('audio/fx.json: %d neu gerechnet, %d Hupen insgesamt'
+          % (len(manifest), len(vorhanden)))
     return 0
 
 
 if __name__ == '__main__':
-    sys.exit(main())
+    # Ohne Argumente alles, mit Argumenten nur die genannten Schluessel:
+    #   python tools/horn_sounds.py horn_fart2
+    sys.exit(main(sys.argv[1:] or None))

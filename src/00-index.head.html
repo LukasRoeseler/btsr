@@ -3183,6 +3183,7 @@
         <div class="snd-row"><audio controls preload="none" src="audio/horn_donkey.ogg"></audio><div><b>Hupe: Esel</b><br><span class="muted" style="font-size:11px">aus einer Pixabay-Aufnahme geschnitten</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/horn_goat.ogg"></audio><div><b>Hupe: Ziege</b><br><span class="muted" style="font-size:11px">aus einer Pixabay-Aufnahme geschnitten</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/horn_fart.ogg"></audio><div><b>Hupe: Furz</b><br><span class="muted" style="font-size:11px">aus einer Pixabay-Aufnahme geschnitten</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/horn_fart2.ogg"></audio><div><b>Hupe: Furz 2</b><br><span class="muted" style="font-size:11px">aus einer Pixabay-Aufnahme geschnitten (freesound community). Die Rohdatei hatte 0,24&nbsp;s Vorlaufstille; gemessen liegt die gesamte Energie zwischen 0,244 und 0,41&nbsp;s, der Schnitt auf 0,163&nbsp;s enth&auml;lt also alles davon</span></div></div>
       </div>
 
       <h3 style="font-size:14px; margin:18px 0 6px 0">Warnt&ouml;ne</h3>
@@ -4116,7 +4117,7 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="brake-volume-val">60%</span>
         </div></div>
-      <div class="opt-row"><div class="opt-label">Motorsound-Profil<small>Die sieben
+      <div class="opt-row"><div class="opt-label">Motorsound-Profil<small>Die acht
           oben sind aus Zylinderzahl, Kurbelwelle und Z&uuml;ndfolge gerechnet. Bei den
           aufgeladenen Originalen fehlt der Lader.</small></div>
         <select id="sound-profile">
@@ -4128,6 +4129,7 @@
           <option value="m4gt3">BMW M4 GT3: Reihen-6</option>
           <option value="f296gt3">Ferrari 296 GT3: V6, 120 Grad</option>
           <option value="huracan">Huracan GT3 / R8 LMS: V10, Split-Pin</option>
+          <option value="p992gt3r">Porsche 911 GT3 R: Boxer-6, Einzeldrosseln</option>
           </optgroup>
           <option value="mustang" selected>Mustang, V8, Cross-Plane</option>
           <option value="corvette">Corvette C6: V8 (Aufnahme)</option>
@@ -4151,7 +4153,7 @@
           <span class="opt-val" id="sound-volume-val">70%</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Ton bei Lichthupe
-          <small>Standard aus. Die ersten f&uuml;nf sind Aufnahmen, der Rest ist
+          <small>Standard aus. Die ersten sechs sind Aufnahmen, der Rest ist
           gerechnet.</small></div>
         <select id="flash-sound">
           <option value="none" selected>kein Ton</option>
@@ -4160,6 +4162,7 @@
           <option value="horn_donkey">Esel</option>
           <option value="horn_goat">Ziege</option>
           <option value="horn_fart">Furz</option>
+          <option value="horn_fart2">Furz 2</option>
           <option value="relay">Relais-Klacken (gerechnet)</option>
           <option value="horn">Zweiklang (gerechnet)</option>
           <option value="blip">Blip (gerechnet)</option>
@@ -4820,7 +4823,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.4.17</span></span>
+    <span class="foot-ver">v<span id="app-version">0.4.18</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine

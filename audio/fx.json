@@ -1179,6 +1179,11 @@
    "file": "horn_fart.ogg",
    "label": "Furz",
    "seconds": 0.524
+  },
+  "horn_fart2": {
+   "file": "horn_fart2.ogg",
+   "label": "Furz 2",
+   "seconds": 0.159
   }
  }
 }

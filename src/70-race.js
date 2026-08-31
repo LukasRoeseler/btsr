@@ -265,25 +265,67 @@
     osc.stop(t + dur + 0.02);
   }
 
-  // The finish-line sound: friendly and soft ("dümm"), not a sharp beep — a short sine
-  // tone gliding down in pitch through a lowpass filter, quick attack/decay envelope.
-  function playLapChime() {
+  // Der Ton an der Ziellinie. "Dueuet", nicht "Blip".
+  //
+  // Vorher war es ein GLEITTON von 520 auf 280 Hz ueber die ganzen 160 ms, und ein Gleitton
+  // ohne stehenden Grundton hat keine Tonhoehe, die man behalten kann - er liest sich als
+  // "blip" oder "wupp". Die Rundenzeit ist aber die Sache, auf die man beim Fahren hoert.
+  //
+  // Jetzt: ein kurzer Anlauf HINEIN (30 ms von einer Quinte darunter), dann 170 ms auf der
+  // Zieltonhoehe STEHEN, dann ausklingen. Das Stehen ist der Teil, der aus einem Blip einen
+  // Ton macht.
+  const LAP_TONE_HZ = 392;          // G4, der Grundton der normalen Runde
+  const LAP_BEST_RATIO = 1.1892;    // kleine Terz nach oben, 2^(3/12)
+
+  // beste = true macht denselben Ton eine kleine Terz hoeher, mit einem zweiten Teilton
+  // eine Oktave darueber.
+  //
+  // Warum eine kleine Terz und nicht irgendein Abstand: sie ist der kleinste Schritt, den
+  // man ohne Vergleich als "anders" hoert, und sie klingt nach oben offen statt nach
+  // Fehlermeldung. Ein groesserer Sprung waere ein Signal, und eine Bestzeit ist kein Alarm,
+  // sondern eine gute Nachricht.
+  //
+  // Der Teilton ist LEISER als der Grundton, nicht lauter. Die Bestzeit soll heller klingen,
+  // nicht lauter - lauter waere die naheliegende Wahl und die falsche.
+  function playLapChime(beste) {
     if (!soundEnabled || !audioCtx) return;
-    const osc = audioCtx.createOscillator();
-    osc.type = 'sine';
     const t = audioCtx.currentTime;
-    osc.frequency.setValueAtTime(520, t);
-    osc.frequency.exponentialRampToValueAtTime(280, t + 0.16);
+    const f0 = beste ? LAP_TONE_HZ * LAP_BEST_RATIO : LAP_TONE_HZ;
+
     const lp = audioCtx.createBiquadFilter();
     lp.type = 'lowpass';
-    lp.frequency.value = 900;
-    const g = audioCtx.createGain();
-    g.gain.setValueAtTime(0.001, t);
-    g.gain.linearRampToValueAtTime(0.28, t + 0.02);
-    g.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
-    osc.connect(lp).connect(g).connect(audioCtx.destination);
-    osc.start(t);
-    osc.stop(t + 0.25);
+    // Hoeher als die alten 900 Hz. Bei 900 saesse der Filter UNTER dem zweiten Teilton und
+    // haette ihn weggenommen - die Bestzeit waere dann nur hoeher und nicht heller.
+    lp.frequency.value = beste ? 2600 : 1600;
+
+    // Der Spitzenpegel wird fuer die Bestzeit ABGESENKT, damit sie nicht lauter wird.
+    //
+    // Gemessen ohne diese Absenkung: 0,36 gegen 0,31 Spitze, also 16 Prozent lauter - der
+    // zweite Teilton addiert sich eben auf. Und lauter war ausdruecklich nicht gemeint: eine
+    // Bestzeit soll HELLER klingen. 0,26 bringt beide auf dieselbe Spitze, und dann bleibt
+    // als Unterschied genau das, was der Unterschied sein soll - die Tonhoehe und der
+    // Oberton.
+    const pegel = beste ? 0.26 : 0.30;
+    const summe = audioCtx.createGain();
+    summe.gain.setValueAtTime(0.001, t);
+    summe.gain.linearRampToValueAtTime(pegel, t + 0.03);
+    summe.gain.setValueAtTime(pegel, t + 0.20);
+    summe.gain.exponentialRampToValueAtTime(0.001, t + 0.34);
+    summe.connect(lp).connect(audioCtx.destination);
+
+    const stimme = (hz, pegel) => {
+      const o = audioCtx.createOscillator();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(hz / 1.5, t);
+      o.frequency.exponentialRampToValueAtTime(hz, t + 0.03);
+      const g = audioCtx.createGain();
+      g.gain.value = pegel;
+      o.connect(g).connect(summe);
+      o.start(t);
+      o.stop(t + 0.36);
+    };
+    stimme(f0, 1.0);
+    if (beste) stimme(f0 * 2, 0.34);
   }
 
   // ---- Tempolimit: eine Stelle, drei Quellen ----
@@ -1337,9 +1379,16 @@
     if (raceFormationLap) { endFormationLap(); return true; }
     if ((raceState === 'racing' || raceState === 'finishing') && raceLapStart !== null) {
       const wasFinishing = raceState === 'finishing';
-      raceLapTimes.push({ lap: raceLapTimes.length + 1, ms: now - raceLapStart });
+      const rundeMs = now - raceLapStart;
+      // Beste Zeit? VOR dem Einfuegen geprueft, sonst vergleicht die Runde sich mit sich
+      // selbst und jede waere die beste.
+      const besteBisher = raceLapTimes.length
+        ? Math.min.apply(null, raceLapTimes.map(l => l.ms)) : Infinity;
+      raceLapTimes.push({ lap: raceLapTimes.length + 1, ms: rundeMs });
       raceLapStart = now;
-      playLapChime();
+      // Die erste Runde ist nicht "die beste" - sie ist die einzige, und ein Bestzeit-Ton
+      // beim ersten Mal nimmt ihm die Bedeutung fuer alle weiteren.
+      playLapChime(raceLapTimes.length > 1 && rundeMs < besteBisher);
       if (wasFinishing) finishRace();
       // Runde 0, nicht 1: das Feld steht auf der Startgeraden und ueberfaehrt Start/Ziel
       // erst am Ende der ersten Runde. Vor der ersten Ueberfahrt ist also noch keine Runde

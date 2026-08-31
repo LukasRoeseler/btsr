@@ -257,6 +257,46 @@ CARS = {
         'clatter': 0.08, 'clatter_hz': 2700.0, 'drive': 2.1,
         'scatter_t': 0.0045, 'scatter_g': 0.035, 'crackle': 0.52,
     },
+    # ---- Porsche 911 GT3 R (v0.4) ----
+    # Geliefert: Boxer-6, 4194 cm3, 104,5 x 81,5 mm, CR 13,2:1, Begrenzer 9250-9400/min,
+    # Zuendfolge 1-6-2-4-3-5, sechs Einzeldrosseln, 3-in-1-Faecherkruemmer je Bank.
+    #
+    # Porsche zaehlt 1-2-3 auf der einen und 4-5-6 auf der anderen Bank, also 'half'.
+    # Nachgerechnet ergibt das zwei EXAKT gleichmaessige Baenke im strengen Wechsel:
+    #
+    #     Bank A   0 / 240 / 480 Grad      Abstaende 240 / 240 / 240
+    #     Bank B   120 / 360 / 600 Grad    Abstaende 240 / 240 / 240
+    #
+    # Und genau das ist der Charakter: ein Boxer-6 klingt hart und sauber, weil es nichts
+    # Ungleiches zu mischen gibt. Beim Cross-Plane-V8 sind BEIDE Baenke lumpig, und aus der
+    # Mischung entsteht das Blubbern.
+    #
+    # Gegenprobe, weil die Zaehlkonvention kein Beiwerk ist: unter 'oddeven', der
+    # GM-Zaehlweise, ergaebe dieselbe Zuendfolge 480/120/120 Grad je Bank - ein Motor, der
+    # dreimal kurz hintereinander auf einer Bank zuendet und dann eine dreiviertel Umdrehung
+    # schweigt. Zweiter bestaetigter Fall dieser Falle nach dem Ferrari 296.
+    #
+    # Hubraum, Bohrung, Hub und Verdichtung gehen NICHT ein: das Modell synthetisiert
+    # Zuendereignisse und rechnet keine Gasdynamik. Sie stehen nachrichtlich im Namen.
+    'p992gt3r': {
+        'label': 'Porsche 911 GT3 R (4.2 Boxer-6, Einzeldrosseln)',
+        'banks': banks_from_order([1, 6, 2, 4, 3, 5], 6, 'half'), 'cylinders': 6,
+        # high 8800: der Begrenzer liegt bei 9250-9400, und das obere Band soll darunter
+        # liegen - eine Schleife AM Begrenzer laesst keinen Platz fuer den Anschlag selbst.
+        'rpms': {'idle': 1200, 'mid': 5500, 'high': 8800},
+        # 20,5 Zoll ergibt 165 Hz. Hoeher als der vorhandene synthetische Porsche mit 22,81
+        # Zoll und 148 Hz, weil DAS ein Strassenmotor ist: ein Rennkruemmer ist kuerzer, und
+        # kuerzer heisst hoeher. 165 Hz liegt noch unter der Zuendrate bei 5500/min
+        # (275 Hz), es droehnt also nicht.
+        'primary_in': 20.5, 'res_q': 6.5, 'partials': 6, 'ir_ms': 38.0,
+        'pulse_ms': 2.4, 'bright': 0.66,
+        # 0,17 ist der hoechste Rauschanteil aller acht: das sind die sechs Einzeldrosseln.
+        # Sie haben keinen gemeinsamen Sammler, der das Ansauggeraeusch daempft - das
+        # Zischen IST bei diesem Motor ein Merkmal und kein Nebengeraeusch.
+        'noise': 0.17, 'noise_hz': 2900.0,
+        'clatter': 0.14, 'clatter_hz': 3200.0, 'drive': 2.5,
+        'scatter_t': 0.005, 'scatter_g': 0.045, 'crackle': 0.42,
+    },
     'huracan': {
         'label': 'Huracan GT3 EVO2 / R8 LMS (5.2 V10, Split-Pin)',
         'banks': banks_from_order([1, 6, 5, 10, 2, 7, 3, 8, 4, 9], 10, 'half'),

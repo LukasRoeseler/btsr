@@ -5,11 +5,11 @@ Gruppe fremdes Aufnahmematerial enthaelt.
 
 ## Vollstaendig synthetisch — kein Aufnahmematerial
 
-Vierzehn Motoren — Porsche (Boxer-6), BMW (Reihen-6 Turbo), Mustang (V8 Cross-Plane),
-GT3-V8 (Flat-Plane), GT3-V10, B-Max (Reihen-3 Turbo), Formel 1 (V12) und sieben
+Fuenfzehn Motoren — Porsche (Boxer-6), BMW (Reihen-6 Turbo), Mustang (V8 Cross-Plane),
+GT3-V8 (Flat-Plane), GT3-V10, B-Max (Reihen-3 Turbo), Formel 1 (V12) und acht
 Rennmotoren nach technischen Angaben (Corvette C6.R, Corvette Z06 GT3.R,
 Mercedes-AMG GT3, Ferrari 296 GT3, BMW M4 GT3, Huracan GT3 / R8 LMS,
-Aston Martin Vantage GT3) — sowie alle
+Aston Martin Vantage GT3, Porsche 911 GT3 R) — sowie alle
 Effekte (Bremsenquietschen, Crash-Varianten, Schlagschrauber, Tankgeraeusch,
 Karosseriereparatur, Motorstart) sind von Grund auf gerechnet. Es wird nichts aus einer
 Aufnahme abgespielt.
@@ -26,7 +26,7 @@ und Kurbelwellenwinkel stammen aus den Motordefinitionen von engine-sim. Die dre
 urspruenglichen Motoren behielten ihren Klang: fuer sie wurde die Rohrlaenge so gesetzt,
 dass sie die vorher von Hand eingestellten Resonanzen (148 / 150 / 95 Hz) genau trifft.
 
-### Die sieben Rennmotoren, und was an ihnen Angabe ist und was Wahl
+### Die acht Rennmotoren, und was an ihnen Angabe ist und was Wahl
 
 Aus den technischen Angaben kommen Zylinderzahl, Bauart, Kurbelwelle, Drehzahl und die
 Zuendfolge. Aus der Zuendfolge folgt die Bankaufteilung, und daraus kommt der Charakter,
@@ -40,7 +40,25 @@ Zuendereignisse und rechnet keine Gasdynamik, es gibt also keine Groesse, in die
 Hubraum eingehen koennte. Rohrlaenge, Impuls, Helligkeit, Rauschen, Klappern und Saettigung
 sind nach Gehoer gesetzt.
 
-Drei der sieben sind im Original aufgeladen (Ferrari 296 GT3, BMW M4 GT3, Aston Martin
+Der achte, der Porsche 911 GT3 R, kam mit v0.4 dazu. An ihm ist die Bankaufteilung der
+ganze Charakter, und sie ist nachgerechnet: Porsche zaehlt 1-2-3 auf der einen und 4-5-6 auf
+der anderen Bank, und die Zuendfolge 1-6-2-4-3-5 ergibt damit zwei EXAKT gleichmaessige
+Baenke im strengen Wechsel (0/240/480 gegen 120/360/600, Abstaende jeweils 240 Grad). Genau
+deshalb klingt ein Boxer-6 hart und sauber und blubbert nicht - es gibt nichts Ungleiches zu
+mischen. Unter der GM-Zaehlweise ergaebe dieselbe Zuendfolge 480/120/120 Grad je Bank, also
+einen Motor, der dreimal kurz hintereinander auf einer Bank zuendet und dann eine
+dreiviertel Umdrehung schweigt: zweiter bestaetigter Fall dieser Falle nach dem Ferrari 296.
+
+Bei ihm sind zwei der gewaehlten Werte begruendet und nicht nur nach Gehoer gesetzt. Die
+Rohrlaenge 20,5 Zoll (165 Hz) ist kuerzer als beim vorhandenen synthetischen Porsche mit
+22,81 Zoll (148 Hz), weil DER ein Strassenmotor ist - ein Rennkruemmer ist kuerzer, und
+kuerzer heisst hoeher; 165 Hz liegt dabei noch unter der Zuendrate bei 5500/min (275 Hz), es
+droehnt also nicht. Und der Rauschanteil 0,17 ist der hoechste aller acht: das sind die
+sechs Einzeldrosseln, die keinen gemeinsamen Sammler haben, der das Ansauggeraeusch daempft.
+Hubraum, Bohrung, Hub und Verdichtung (4194 cm3, 104,5 x 81,5 mm, 13,2:1) gehen wie bei allen
+anderen NICHT ein und stehen nur nachrichtlich im Namen.
+
+Drei der sieben aelteren sind im Original aufgeladen (Ferrari 296 GT3, BMW M4 GT3, Aston Martin
 Vantage GT3). Dieses Modell hat **keinen Lader**: Geometrie, Kurbelwelle und Zuendfolge
 stimmen, der Ladedruck fehlt. Der Charakter der Bauart bleibt, das Pfeifen nicht.
 
@@ -93,13 +111,21 @@ liefert.
   Der Teppich ist der Abschnitt mit der geringsten Energieschwankung, die
   Vorbeifahrten sind die mit der hoechsten.
 - **Hupen f&uuml;r die Lichthupe** (`horn_car`, `horn_ship`, `horn_donkey`, `horn_goat`,
-  `horn_fart`) — aus fuenf Pixabay-Aufnahmen, geschnitten von `tools/horn_sounds.py`.
+  `horn_fart`, `horn_fart2`) — aus sechs Pixabay-Aufnahmen, geschnitten von
+  `tools/horn_sounds.py`.
   Zwei Entscheidungen dabei, beide gemessen begruendet: geschnitten wird auf das LAUTE
   EREIGNIS und nicht auf die erste Nicht-Stille (die Ziege meckert in der Quelldatei erst
   nach 3,3 s, ein Schnitt auf 2 s Hoechstdauer behielt also nur den Vorlauf und das Meckern
   war weg), und angepasst wird auf gleichen RMS statt gleiche Spitze (bei
   Spitzennormalisierung verschwindet der kurze Furz gegen die durchgehend laute
-  Schiffshupe). Ergebnis: alle fuenf bei RMS 0,130, Anschlagzeiten 59 bis 327 ms.
+  Schiffshupe). Ergebnis: alle sechs bei RMS 0,130, Anschlagzeiten 60 bis 648 ms.
+
+  Der sechste, `horn_fart2`, kam mit v0.4 dazu und wurde vom Nutzer geliefert
+  (`freesound_community-fart-83471.mp3`, freesound community ueber Pixabay). Dieselbe
+  Behandlung. Er ist mit 0,163 s der kuerzeste von allen, und das ist geprueft und kein
+  Schnittfehler: die Rohdatei hat 0,24 s Vorlaufstille, und die gesamte Energie liegt
+  gemessen zwischen 0,244 und 0,41 s. Der Schnitt enthaelt also 100 Prozent davon - der Ton
+  IST so kurz.
 - **Regen und Donner** (`rain_bed.ogg`, `thunder_0..2.ogg`) — aus
   `pwlpl-heavy-thunderstorm-sound-effect-473418.mp3`, nach demselben Verfahren.
 

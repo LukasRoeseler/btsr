@@ -542,5 +542,40 @@
     "load": 0.0
    }
   }
+ },
+ "p992gt3r": {
+  "label": "Porsche 911 GT3 R (4.2 Boxer-6, Einzeldrosseln)",
+  "cylinders": 6,
+  "source": "vollst\u00e4ndig synthetisiert (Modell nach engine-sim, MIT)",
+  "loops": {
+   "idle": {
+    "file": "p992gt3r_idle.ogg",
+    "baseRpm": 1200,
+    "firingHz": 60.0,
+    "seconds": 2.0,
+    "load": 1.0
+   },
+   "mid": {
+    "file": "p992gt3r_mid.ogg",
+    "baseRpm": 5500,
+    "firingHz": 275.0,
+    "seconds": 2.0073,
+    "load": 1.0
+   },
+   "high": {
+    "file": "p992gt3r_high.ogg",
+    "baseRpm": 8800,
+    "firingHz": 440.0,
+    "seconds": 2.0045,
+    "load": 1.0
+   },
+   "over": {
+    "file": "p992gt3r_over.ogg",
+    "baseRpm": 5500,
+    "firingHz": 275.0,
+    "seconds": 2.0073,
+    "load": 0.0
+   }
+  }
  }
 }

@@ -3183,6 +3183,7 @@
         <div class="snd-row"><audio controls preload="none" src="audio/horn_donkey.ogg"></audio><div><b>Hupe: Esel</b><br><span class="muted" style="font-size:11px">aus einer Pixabay-Aufnahme geschnitten</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/horn_goat.ogg"></audio><div><b>Hupe: Ziege</b><br><span class="muted" style="font-size:11px">aus einer Pixabay-Aufnahme geschnitten</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/horn_fart.ogg"></audio><div><b>Hupe: Furz</b><br><span class="muted" style="font-size:11px">aus einer Pixabay-Aufnahme geschnitten</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/horn_fart2.ogg"></audio><div><b>Hupe: Furz 2</b><br><span class="muted" style="font-size:11px">aus einer Pixabay-Aufnahme geschnitten (freesound community). Die Rohdatei hatte 0,24&nbsp;s Vorlaufstille; gemessen liegt die gesamte Energie zwischen 0,244 und 0,41&nbsp;s, der Schnitt auf 0,163&nbsp;s enth&auml;lt also alles davon</span></div></div>
       </div>
 
       <h3 style="font-size:14px; margin:18px 0 6px 0">Warnt&ouml;ne</h3>
@@ -4116,7 +4117,7 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="brake-volume-val">60%</span>
         </div></div>
-      <div class="opt-row"><div class="opt-label">Motorsound-Profil<small>Die sieben
+      <div class="opt-row"><div class="opt-label">Motorsound-Profil<small>Die acht
           oben sind aus Zylinderzahl, Kurbelwelle und Z&uuml;ndfolge gerechnet. Bei den
           aufgeladenen Originalen fehlt der Lader.</small></div>
         <select id="sound-profile">
@@ -4128,6 +4129,7 @@
           <option value="m4gt3">BMW M4 GT3: Reihen-6</option>
           <option value="f296gt3">Ferrari 296 GT3: V6, 120 Grad</option>
           <option value="huracan">Huracan GT3 / R8 LMS: V10, Split-Pin</option>
+          <option value="p992gt3r">Porsche 911 GT3 R: Boxer-6, Einzeldrosseln</option>
           </optgroup>
           <option value="mustang" selected>Mustang, V8, Cross-Plane</option>
           <option value="corvette">Corvette C6: V8 (Aufnahme)</option>
@@ -4151,7 +4153,7 @@
           <span class="opt-val" id="sound-volume-val">70%</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Ton bei Lichthupe
-          <small>Standard aus. Die ersten f&uuml;nf sind Aufnahmen, der Rest ist
+          <small>Standard aus. Die ersten sechs sind Aufnahmen, der Rest ist
           gerechnet.</small></div>
         <select id="flash-sound">
           <option value="none" selected>kein Ton</option>
@@ -4160,6 +4162,7 @@
           <option value="horn_donkey">Esel</option>
           <option value="horn_goat">Ziege</option>
           <option value="horn_fart">Furz</option>
+          <option value="horn_fart2">Furz 2</option>
           <option value="relay">Relais-Klacken (gerechnet)</option>
           <option value="horn">Zweiklang (gerechnet)</option>
           <option value="blip">Blip (gerechnet)</option>
@@ -4820,7 +4823,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.4.17</span></span>
+    <span class="foot-ver">v<span id="app-version">0.4.18</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -5331,7 +5334,7 @@
     "Die Ideallinie schickt einen Lenkanteil hinaus und nimmt an, dass das Auto dadurch weiter aussen oder innen sitzt.": "The racing line sends out a steering share and assumes the car therefore sits further out or further in.",
     "Die Rekonstruktion ist nachweislich eine treue Kopie des Original-PDF: Balkenzahl, Höhen auf 0,000 mm und Lücken auf 0,001 mm stimmen überein, und das PDF enthält nachgeprüft keine weiteren Formen. Das PDF ist die aktuelle Vorlage. Wenn also das Original gelesen wird und unser Ausdruck nicht, liegt der Unterschied im Druck und nicht in der Zeichnung: Maßstab, Strichbreite, Schwärze, Papier. Erst das 100-mm-Kontrollmaß nachmessen, dann einen dünnen und einen dicken Balken auf beiden Blättern vergleichen.": "The reconstruction is demonstrably a faithful copy of the original PDF: bar count, heights to 0.000 mm and gaps to 0.001 mm all agree, and the PDF has been checked to contain no further shapes. The PDF is the current master. So if the original is read and our printout is not, the difference lies in the printing and not in the drawing: scale, line width, blackness, paper. First measure the 100 mm check mark, then compare one thin and one thick bar on both sheets.",
     "Die nächste Messung: zwei Betriebsarten vergleichen.": "The next measurement: compare the two operating modes.",
-    "Die sieben oben sind aus Zylinderzahl, Kurbelwelle und Zündfolge gerechnet. Bei den aufgeladenen Originalen fehlt der Lader.": "The seven at the top are computed from cylinder count, crankshaft and firing order. On the turbocharged originals, the boost is missing.",
+    "Die acht oben sind aus Zylinderzahl, Kurbelwelle und Zündfolge gerechnet. Bei den aufgeladenen Originalen fehlt der Lader.": "The seven at the top are computed from cylinder count, crankshaft and firing order. On the turbocharged originals, the boost is missing.",
     "Die ältere DR!FT-Fassung, zeichengenau. Von ihr ist bekannt, dass sie gelesen wird.": "The older DR!FT version, exactly reproduced. It is known to be read.",
     "Diese fünf Blätter tragen dieselbe Nutzlast und verschieden lange Vorläufe. Melden alle denselben Code, ist der Vorlauf bestätigt kein Nutzdatum, und die kürzeste noch gelesene Fassung sagt, wieviel Anlauf gebraucht wird. Das verkürzt jedes weitere Muster.": "These five sheets carry the same payload with lead-ins of different lengths. If they all report the same code, the lead-in is confirmed not to be payload, and the shortest one still read says how much run-up is needed. That shortens every further pattern.",
     "Dieselbe Idee, eine Stufe größer. Ein autonomes Auto braucht keine Zeitkurve, sondern eine": "The same idea, one size up. An autonomous car does not need a curve over time but one",
@@ -5653,7 +5656,7 @@
     "Entwicklertools": "Developer tools",
     "Speichern und austauschen": "Save and exchange",
     "Speichern": "Save",
-    "Standard aus. Die ersten fünf sind Aufnahmen, der Rest ist gerechnet.": "Off by default. The first five are recordings, the rest are computed.",
+    "Standard aus. Die ersten sechs sind Aufnahmen, der Rest ist gerechnet.": "Off by default. The first six are recordings, the rest are computed.",
     "Standard: rechter Trigger = Gas, linker Trigger = Bremse, linker Stick = Lenkung, X (links) = runterschalten, B (rechts) = hochschalten: wie bei einem Xbox-Controller. Klicke \"Neu zuweisen\" und betätige dann den gewünschten Knopf/Stick/Trigger am Controller.": "Default: right trigger = throttle, left trigger = brake, left stick = steering, X (left) = shift down, B (right) = shift up: as on an Xbox controller. Click \"Reassign\" and then operate the button, stick or trigger you want on the controller.",
     "Start / Ziel": "Start / finish",
     "Start / Ziel, nicht auslegen": "Start / finish, do not lay down",
@@ -5777,6 +5780,8 @@
     // Aussage traegt: schneller UND ohne Abgang, nicht das eine oder das andere.
     "und": "and",
     "Bremsbalance": "Brake bias",
+    "Furz 2": "Fart 2",
+    "Porsche 911 GT3 R: Boxer-6, Einzeldrosseln": "Porsche 911 GT3 R: flat-6, individual throttle bodies",
     "Bremsenquietschen": "Brake squeal",
     "Eigener Regler. Es hing vorher am Motorregler und war deshalb nicht getrennt leiser zu bekommen.":
       "Its own slider. It used to hang on the engine volume, so it could not be turned down on its own.",
@@ -11095,25 +11100,67 @@
     osc.stop(t + dur + 0.02);
   }
 
-  // The finish-line sound: friendly and soft ("dümm"), not a sharp beep — a short sine
-  // tone gliding down in pitch through a lowpass filter, quick attack/decay envelope.
-  function playLapChime() {
+  // Der Ton an der Ziellinie. "Dueuet", nicht "Blip".
+  //
+  // Vorher war es ein GLEITTON von 520 auf 280 Hz ueber die ganzen 160 ms, und ein Gleitton
+  // ohne stehenden Grundton hat keine Tonhoehe, die man behalten kann - er liest sich als
+  // "blip" oder "wupp". Die Rundenzeit ist aber die Sache, auf die man beim Fahren hoert.
+  //
+  // Jetzt: ein kurzer Anlauf HINEIN (30 ms von einer Quinte darunter), dann 170 ms auf der
+  // Zieltonhoehe STEHEN, dann ausklingen. Das Stehen ist der Teil, der aus einem Blip einen
+  // Ton macht.
+  const LAP_TONE_HZ = 392;          // G4, der Grundton der normalen Runde
+  const LAP_BEST_RATIO = 1.1892;    // kleine Terz nach oben, 2^(3/12)
+
+  // beste = true macht denselben Ton eine kleine Terz hoeher, mit einem zweiten Teilton
+  // eine Oktave darueber.
+  //
+  // Warum eine kleine Terz und nicht irgendein Abstand: sie ist der kleinste Schritt, den
+  // man ohne Vergleich als "anders" hoert, und sie klingt nach oben offen statt nach
+  // Fehlermeldung. Ein groesserer Sprung waere ein Signal, und eine Bestzeit ist kein Alarm,
+  // sondern eine gute Nachricht.
+  //
+  // Der Teilton ist LEISER als der Grundton, nicht lauter. Die Bestzeit soll heller klingen,
+  // nicht lauter - lauter waere die naheliegende Wahl und die falsche.
+  function playLapChime(beste) {
     if (!soundEnabled || !audioCtx) return;
-    const osc = audioCtx.createOscillator();
-    osc.type = 'sine';
     const t = audioCtx.currentTime;
-    osc.frequency.setValueAtTime(520, t);
-    osc.frequency.exponentialRampToValueAtTime(280, t + 0.16);
+    const f0 = beste ? LAP_TONE_HZ * LAP_BEST_RATIO : LAP_TONE_HZ;
+
     const lp = audioCtx.createBiquadFilter();
     lp.type = 'lowpass';
-    lp.frequency.value = 900;
-    const g = audioCtx.createGain();
-    g.gain.setValueAtTime(0.001, t);
-    g.gain.linearRampToValueAtTime(0.28, t + 0.02);
-    g.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
-    osc.connect(lp).connect(g).connect(audioCtx.destination);
-    osc.start(t);
-    osc.stop(t + 0.25);
+    // Hoeher als die alten 900 Hz. Bei 900 saesse der Filter UNTER dem zweiten Teilton und
+    // haette ihn weggenommen - die Bestzeit waere dann nur hoeher und nicht heller.
+    lp.frequency.value = beste ? 2600 : 1600;
+
+    // Der Spitzenpegel wird fuer die Bestzeit ABGESENKT, damit sie nicht lauter wird.
+    //
+    // Gemessen ohne diese Absenkung: 0,36 gegen 0,31 Spitze, also 16 Prozent lauter - der
+    // zweite Teilton addiert sich eben auf. Und lauter war ausdruecklich nicht gemeint: eine
+    // Bestzeit soll HELLER klingen. 0,26 bringt beide auf dieselbe Spitze, und dann bleibt
+    // als Unterschied genau das, was der Unterschied sein soll - die Tonhoehe und der
+    // Oberton.
+    const pegel = beste ? 0.26 : 0.30;
+    const summe = audioCtx.createGain();
+    summe.gain.setValueAtTime(0.001, t);
+    summe.gain.linearRampToValueAtTime(pegel, t + 0.03);
+    summe.gain.setValueAtTime(pegel, t + 0.20);
+    summe.gain.exponentialRampToValueAtTime(0.001, t + 0.34);
+    summe.connect(lp).connect(audioCtx.destination);
+
+    const stimme = (hz, pegel) => {
+      const o = audioCtx.createOscillator();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(hz / 1.5, t);
+      o.frequency.exponentialRampToValueAtTime(hz, t + 0.03);
+      const g = audioCtx.createGain();
+      g.gain.value = pegel;
+      o.connect(g).connect(summe);
+      o.start(t);
+      o.stop(t + 0.36);
+    };
+    stimme(f0, 1.0);
+    if (beste) stimme(f0 * 2, 0.34);
   }
 
   // ---- Tempolimit: eine Stelle, drei Quellen ----
@@ -12167,9 +12214,16 @@
     if (raceFormationLap) { endFormationLap(); return true; }
     if ((raceState === 'racing' || raceState === 'finishing') && raceLapStart !== null) {
       const wasFinishing = raceState === 'finishing';
-      raceLapTimes.push({ lap: raceLapTimes.length + 1, ms: now - raceLapStart });
+      const rundeMs = now - raceLapStart;
+      // Beste Zeit? VOR dem Einfuegen geprueft, sonst vergleicht die Runde sich mit sich
+      // selbst und jede waere die beste.
+      const besteBisher = raceLapTimes.length
+        ? Math.min.apply(null, raceLapTimes.map(l => l.ms)) : Infinity;
+      raceLapTimes.push({ lap: raceLapTimes.length + 1, ms: rundeMs });
       raceLapStart = now;
-      playLapChime();
+      // Die erste Runde ist nicht "die beste" - sie ist die einzige, und ein Bestzeit-Ton
+      // beim ersten Mal nimmt ihm die Bedeutung fuer alle weiteren.
+      playLapChime(raceLapTimes.length > 1 && rundeMs < besteBisher);
       if (wasFinishing) finishRace();
       // Runde 0, nicht 1: das Feld steht auf der Startgeraden und ueberfaehrt Start/Ziel
       // erst am Ende der ersten Runde. Vor der ersten Ueberfahrt ist also noch keine Runde

@@ -479,7 +479,7 @@
     "Die Ideallinie schickt einen Lenkanteil hinaus und nimmt an, dass das Auto dadurch weiter aussen oder innen sitzt.": "The racing line sends out a steering share and assumes the car therefore sits further out or further in.",
     "Die Rekonstruktion ist nachweislich eine treue Kopie des Original-PDF: Balkenzahl, Höhen auf 0,000 mm und Lücken auf 0,001 mm stimmen überein, und das PDF enthält nachgeprüft keine weiteren Formen. Das PDF ist die aktuelle Vorlage. Wenn also das Original gelesen wird und unser Ausdruck nicht, liegt der Unterschied im Druck und nicht in der Zeichnung: Maßstab, Strichbreite, Schwärze, Papier. Erst das 100-mm-Kontrollmaß nachmessen, dann einen dünnen und einen dicken Balken auf beiden Blättern vergleichen.": "The reconstruction is demonstrably a faithful copy of the original PDF: bar count, heights to 0.000 mm and gaps to 0.001 mm all agree, and the PDF has been checked to contain no further shapes. The PDF is the current master. So if the original is read and our printout is not, the difference lies in the printing and not in the drawing: scale, line width, blackness, paper. First measure the 100 mm check mark, then compare one thin and one thick bar on both sheets.",
     "Die nächste Messung: zwei Betriebsarten vergleichen.": "The next measurement: compare the two operating modes.",
-    "Die sieben oben sind aus Zylinderzahl, Kurbelwelle und Zündfolge gerechnet. Bei den aufgeladenen Originalen fehlt der Lader.": "The seven at the top are computed from cylinder count, crankshaft and firing order. On the turbocharged originals, the boost is missing.",
+    "Die acht oben sind aus Zylinderzahl, Kurbelwelle und Zündfolge gerechnet. Bei den aufgeladenen Originalen fehlt der Lader.": "The seven at the top are computed from cylinder count, crankshaft and firing order. On the turbocharged originals, the boost is missing.",
     "Die ältere DR!FT-Fassung, zeichengenau. Von ihr ist bekannt, dass sie gelesen wird.": "The older DR!FT version, exactly reproduced. It is known to be read.",
     "Diese fünf Blätter tragen dieselbe Nutzlast und verschieden lange Vorläufe. Melden alle denselben Code, ist der Vorlauf bestätigt kein Nutzdatum, und die kürzeste noch gelesene Fassung sagt, wieviel Anlauf gebraucht wird. Das verkürzt jedes weitere Muster.": "These five sheets carry the same payload with lead-ins of different lengths. If they all report the same code, the lead-in is confirmed not to be payload, and the shortest one still read says how much run-up is needed. That shortens every further pattern.",
     "Dieselbe Idee, eine Stufe größer. Ein autonomes Auto braucht keine Zeitkurve, sondern eine": "The same idea, one size up. An autonomous car does not need a curve over time but one",
@@ -801,7 +801,7 @@
     "Entwicklertools": "Developer tools",
     "Speichern und austauschen": "Save and exchange",
     "Speichern": "Save",
-    "Standard aus. Die ersten fünf sind Aufnahmen, der Rest ist gerechnet.": "Off by default. The first five are recordings, the rest are computed.",
+    "Standard aus. Die ersten sechs sind Aufnahmen, der Rest ist gerechnet.": "Off by default. The first six are recordings, the rest are computed.",
     "Standard: rechter Trigger = Gas, linker Trigger = Bremse, linker Stick = Lenkung, X (links) = runterschalten, B (rechts) = hochschalten: wie bei einem Xbox-Controller. Klicke \"Neu zuweisen\" und betätige dann den gewünschten Knopf/Stick/Trigger am Controller.": "Default: right trigger = throttle, left trigger = brake, left stick = steering, X (left) = shift down, B (right) = shift up: as on an Xbox controller. Click \"Reassign\" and then operate the button, stick or trigger you want on the controller.",
     "Start / Ziel": "Start / finish",
     "Start / Ziel, nicht auslegen": "Start / finish, do not lay down",
@@ -925,6 +925,8 @@
     // Aussage traegt: schneller UND ohne Abgang, nicht das eine oder das andere.
     "und": "and",
     "Bremsbalance": "Brake bias",
+    "Furz 2": "Fart 2",
+    "Porsche 911 GT3 R: Boxer-6, Einzeldrosseln": "Porsche 911 GT3 R: flat-6, individual throttle bodies",
     "Bremsenquietschen": "Brake squeal",
     "Eigener Regler. Es hing vorher am Motorregler und war deshalb nicht getrennt leiser zu bekommen.":
       "Its own slider. It used to hang on the engine volume, so it could not be turned down on its own.",
