@@ -299,6 +299,12 @@
     background: linear-gradient(90deg, transparent, var(--brand-bg));
   }
   .tabs-wrap.can-scroll::after { opacity: 1; }
+  /* Eine Sitzungszeile. Monospace fuer die Uhrzeit, damit die Zeilen untereinander
+     ausgerichtet stehen - eine Liste von Zeitpunkten, deren Ziffern wandern, liest sich
+     schlechter als eine, deren Spalten stehen. */
+  .sess-row { font-size: 12.5px; line-height: 1.6; padding: 2px 0 2px 9px;
+              border-left: 2px solid var(--line); color: var(--muted); }
+  .sess-row b { font-family: monospace; color: var(--ink); margin-right: 4px; }
   .misc-grid {
     display: grid; gap: 14px;
     grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
@@ -2126,6 +2132,30 @@
         der Bahn das Auto f&auml;hrt.
       </p>
 
+      <h3 style="font-size:14px; margin:16px 0 6px 0">Eine Werkzeugfalle, die drei Anl&auml;ufe
+        gekostet hat</h3>
+      <p class="muted">
+        Nicht &uuml;ber das Auto, sondern &uuml;ber das Bauen: die Werkzeugkette, mit der
+        diese Datei geschrieben wird, <b>frisst Backslashes</b>. Aus
+        <code>[^"\]</code> wird <code>[^"\]</code>, und das ist eine unabgeschlossene
+        Zeichenklasse: Syntaxfehler, die IIFE bricht ab, nichts l&auml;dt mehr. Aus
+        <code>split('\n')</code> wird ein <em>echtes</em> Zeilenende mitten in einem
+        String &ndash; derselbe Effekt.
+      </p>
+      <p class="muted">
+        Dreimal in einer Sitzung passiert, und die Lehre ist nicht &bdquo;besser
+        aufpassen&ldquo;. Sie ist: <b>keine Escapes durch diese Kette schicken.</b> Jede
+        Pr&uuml;fung, die einen Regexp braucht, l&auml;sst sich auch als Zeichenschleife
+        schreiben, und die kommt ohne einen einzigen Backslash aus. Wo ein Zeilenende
+        gebraucht wird, steht <code>String.fromCharCode(10)</code>.
+      </p>
+      <p class="muted">
+        Der Grund, warum das hier steht und nicht nur als Kommentar an der einen Stelle: der
+        Fehler sieht jedes Mal anders aus &ndash; einmal ein kaputter Regexp, einmal ein
+        String &uuml;ber zwei Zeilen &ndash; und man sucht ihn deshalb jedes Mal neu im
+        JavaScript, wo er nicht ist.
+      </p>
+
       <h3 style="font-size:14px; margin:16px 0 6px 0">Woher die Muster kommen, und was ihr
         Vorlauf ist</h3>
       <p class="muted">
@@ -3766,6 +3796,21 @@
       <div class="opt-row"><div class="opt-label"><span id="race-limit-label">Minuten</span>
           <small>Bei freiem Training ohne Bedeutung.</small></div>
         <input type="number" id="race-limit" value="2" min="1" max="120" step="1" style="width:84px"></div>
+      <div class="opt-row"><div class="opt-label">Sektoren
+          <span class="wip-tag">experimentell</span>
+          <small>&Uuml;berfahrten je Runde. Nur <b>ohne Bahn</b> sinnvoll: auf der
+          CH-Schiene gibt es genau ein Start/Ziel, also ist jede &Uuml;berfahrt eine Runde.
+          Im Ausdruck-Modus legt man die Muster selbst hin &ndash; drei Ausdrucke &uuml;ber
+          eine Runde verteilt sind drei Sektoren. Eine Sektorzeit ist die
+          <em>gemessene</em> Zeit zwischen zwei Kontakten und nicht die Rundenzeit geteilt
+          durch drei: genau darin liegt der Wert, denn die Streuung sagt, <em>wo</em> Zeit
+          verlorengeht.</small></div>
+        <select id="sector-count">
+          <option value="1" selected>1 (aus)</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+        </select></div>
       <!-- Ausgegraut: nicht umgesetzt. Ein Ankreuzfeld, das man setzen kann und das
            nichts bewirkt, ist eine Falschaussage der Oberflaeche - und dieses hier
            versprach eine Einfuehrungsrunde, die es nicht gibt. -->
@@ -3846,12 +3891,40 @@
         </div>
         <h3 style="margin:14px 0 8px 0; font-size:14px">Position &uuml;ber die Runden</h3>
         <div id="race-position-plot" class="doc-table-wrap"></div>
+        <h3 style="margin:14px 0 8px 0; font-size:14px">Sektorzeiten</h3>
+        <div id="sector-list" style="margin-bottom:10px"></div>
         <h3 style="margin:14px 0 8px 0; font-size:14px">Alle Rundenzeiten</h3>
         <div class="doc-table-wrap" style="max-height:280px; overflow-y:auto; border:1px solid var(--border); border-radius:6px">
           <table style="width:100%; border-collapse:collapse; font-size:13px" id="race-results-laps"></table>
         </div>
         <button id="race-export-csv" style="margin-top:10px">Als CSV exportieren</button>
       </div>
+    </div>
+
+    <!-- Sitzungsdaten. Bis v0.4 ueberlebte KEINE Rundenzeit ein Neuladen: raceLapTimes und
+         car.race.laps waren Variablen im Speicher, und in chc.cars.v1 standen nur Farbe und
+         Name. Der CSV-Export war der einzige Rettungsweg - man musste also vor dem Fahren
+         wissen, dass man exportieren will. -->
+    <div class="card">
+      <h2>Gefahrene Sitzungen</h2>
+      <p class="muted">
+        Nach jedem beendeten Rennen abgelegt, auf diesem Ger&auml;t. Gespeichert werden
+        Rundenzeiten, Datum, Streckencode, Modus, die verwendete Abstimmung und die
+        gefahrene Strecke &ndash; und zwar <b>zweimal</b>: als simulierte Kilometer, die zum
+        Tacho passen, und als echte Meter, die das Modellauto auf dem Teppich zur&uuml;ckgelegt
+        hat. Nur eine der beiden zu speichern w&auml;re eine willk&uuml;rliche Wahl.
+      </p>
+      <p class="muted" id="sess-summary" style="font-size:12.5px">&nbsp;</p>
+      <div class="doc-table-wrap" id="sess-list"></div>
+      <div class="row" style="gap:8px; margin-top:12px; flex-wrap:wrap">
+        <button id="sess-export">Alles als CSV exportieren</button>
+        <button id="sess-clear">Alle Sitzungsdaten l&ouml;schen</button>
+      </div>
+      <p class="muted" style="font-size:11.5px; margin-top:8px">
+        Die Zuordnung l&auml;uft &uuml;ber die Bluetooth-Ger&auml;tekennung, damit dasselbe
+        Auto bei anderer Verbindungsreihenfolge dieselben Kilometer beh&auml;lt. Genau
+        deshalb gibt es den L&ouml;schknopf.
+      </p>
     </div>
 
   </section>
@@ -4754,10 +4827,37 @@
         stehen, läuft der Service: je länger du stehst, desto mehr Sprit und Reparatur.
         Beim Losfahren ist das Limit wieder weg.
       </p>
+      <p class="muted" style="font-size:12px">
+        <b>&Uuml;berall halten</b> ist die Vorgabe: ein angeforderter Boxenstopp wird durch
+        Anhalten bedient, egal wo. Braucht keinen Ausdruck und keine Schiene.<br>
+        <b>Neben der Strecke</b> nimmt Byte&nbsp;12&nbsp;=&nbsp;0x00 als Boxengasse. Nur auf
+        der CH-Schiene sinnvoll &ndash; ohne Schiene ist das Auto praktisch immer
+        &bdquo;abseits&ldquo;, und dann w&auml;re die ganze Strecke Boxengasse.<br>
+        <b>Doppelter Start-Ausdruck</b> <span class="wip-tag">experimentell</span>: zwei
+        Ausdrucke im Abstand von 50&nbsp;cm. Zwei Musterkontakte innerhalb von 3&nbsp;s bei
+        mindestens 1&nbsp;s Abstand sind eine Boxeneinfahrt und keine Runde. Danach piept es,
+        das Tempolimit von 60&nbsp;km/h gilt 4&nbsp;s, und ein Anhalten in dieser Zeit startet
+        den Service. Der Mindestabstand ist der wichtigere Teil der Bedingung: ein einzelner
+        Ausdruck h&auml;lt bei Fahrt etwa eine Sekunde Kontakt, und ohne ihn w&uuml;rde das
+        Flattern <em>eines</em> Musters als Paar gelesen.
+      </p>
+      <label style="display:flex; align-items:center; gap:6px; font-size:12.5px;
+             margin-bottom:10px" id="pit-double-lap-wrap">
+        <input type="checkbox" id="pit-double-lap"> Runde beim Boxeneinfahren trotzdem
+        z&auml;hlen
+      </label>
       <div class="row" style="align-items:center; gap:16px">
         <label style="display:flex; align-items:center; gap:6px">
           <input type="checkbox" id="pit-enable" checked> Boxengasse aktiv
         </label>
+        <div>
+          <label class="small">Wo ist die Boxengasse?</label>
+          <select id="pit-trigger">
+            <option value="anywhere" selected>&Uuml;berall halten</option>
+            <option value="offtrack">Neben der Strecke (Byte 12 = 0x00)</option>
+            <option value="double">Doppelter Start-Ausdruck (experimentell)</option>
+          </select>
+        </div>
         <div>
           <label class="small">Auslöse-Code (Byte 12)</label>
           <input type="text" id="pit-marker-code" value="" placeholder="0x0e bei Nummer 14, erst prüfen"
@@ -4823,7 +4923,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.4.18</span></span>
+    <span class="foot-ver">v<span id="app-version">0.4.19</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -5391,7 +5491,6 @@
       "Setup for the car you drive – the same five as in the options; the sliders there follow along.",
     "Oder auf diesem Gerät ablegen. Bleibt im Browser, wird nicht mitgeschickt.":
       "Or store it on this device. Stays in the browser, is not sent anywhere.",
-    "Ablegen": "Store",
     "– abgelegt –": "– stored –",
     "Vibration": "Vibration",
     "R\u00fcckmeldung im Controller bei Gangwechsel, ABS, Aufprall und im Boxenstopp. Das Handy vibriert nicht mit, das Protokoll kennt daf\u00fcr nichts.":
@@ -5412,7 +5511,6 @@
     "Einfach: Turbo": "Simple: turbo",
     "Einführungsrunde mit Boxengassen-Tempo, frei beim ersten Überfahren von Start/Ziel.": "Formation lap at pit-lane pace, released the first time start/finish is crossed.",
     "Einmal senden": "Send once",
-    "Einstellungen": "settings",
     "Endlosschleife": "Loop forever",
     "Entwickler": "Developer",
     "Ergebnis": "Result",
@@ -5770,7 +5868,6 @@
     "verbinde dein Auto in der": "connect your car in the",
     "Garage": "Garage",
     ", stelle die": ", set the",
-    "Optionen": "Options",
     "nach deinem Geschmack ein, und fahre im": "to your taste, and drive in the",
     "Cockpit": "Cockpit",
     ". Einige Optionen lassen sich direkt dort anpassen.":
@@ -5779,6 +5876,48 @@
     // Ein eigenstaendiges <b>und</b> im Ghost-Lerntext, hervorgehoben weil es dort die
     // Aussage traegt: schneller UND ohne Abgang, nicht das eine oder das andere.
     "und": "and",
+    // v0.4 Block H: Sitzungsdaten
+    // v0.4 Block H: Sektoren und Boxengassen-Varianten
+    "Sektoren": "Sectors",
+    "experimentell": "experimental",
+    "Überfahrten je Runde": "Crossings per lap",
+    "1 (aus)": "1 (off)",
+    "Nur": "Only",
+    "ohne Bahn": "without a track",
+    "sinnvoll: auf der CH-Schiene gibt es genau ein Start/Ziel, also ist jede Überfahrt eine Runde. Im Ausdruck-Modus legt man die Muster selbst hin – drei Ausdrucke über eine Runde verteilt sind drei Sektoren. Eine Sektorzeit ist die":
+      "makes sense: the CH rail has exactly one start/finish, so every crossing is a lap. In print mode you place the patterns yourself – three printouts spread over a lap are three sectors. A sector time is the",
+    "gemessene": "measured",
+    "Zeit zwischen zwei Kontakten und nicht die Rundenzeit geteilt durch drei: genau darin liegt der Wert, denn die Streuung sagt,":
+      "time between two contacts, not the lap time divided by three: that is exactly where the value lies, because the spread tells you",
+    "wo": "where",
+    "Zeit verlorengeht.": "time is being lost.",
+    "Wo ist die Boxengasse?": "Where is the pit lane?",
+    "Überall halten": "Stop anywhere",
+    "Neben der Strecke": "Beside the track",
+    "Neben der Strecke (Byte 12 = 0x00)": "Beside the track (byte 12 = 0x00)",
+    "Doppelter Start-Ausdruck (experimentell)": "Double start printout (experimental)",
+    "Doppelter Start-Ausdruck": "Double start printout",
+    "ist die Vorgabe: ein angeforderter Boxenstopp wird durch Anhalten bedient, egal wo. Braucht keinen Ausdruck und keine Schiene.":
+      "is the default: a requested pit stop is served by stopping, anywhere. Needs no printout and no rail.",
+    "nimmt Byte 12 = 0x00 als Boxengasse. Nur auf der CH-Schiene sinnvoll – ohne Schiene ist das Auto praktisch immer „abseits“, und dann wäre die ganze Strecke Boxengasse.":
+      "takes byte 12 = 0x00 as the pit lane. Only meaningful on the CH rail – without a rail the car is off-track almost always, and then the whole course would be pit lane.",
+    ": zwei Ausdrucke im Abstand von 50 cm. Zwei Musterkontakte innerhalb von 3 s bei mindestens 1 s Abstand sind eine Boxeneinfahrt und keine Runde. Danach piept es, das Tempolimit von 60 km/h gilt 4 s, und ein Anhalten in dieser Zeit startet den Service. Der Mindestabstand ist der wichtigere Teil der Bedingung: ein einzelner Ausdruck hält bei Fahrt etwa eine Sekunde Kontakt, und ohne ihn würde das Flattern":
+      ": two printouts 50 cm apart. Two pattern contacts within 3 s and at least 1 s apart are a pit entry, not a lap. Then it beeps, the 60 km/h limit holds for 4 s, and stopping within that time starts the service. The minimum gap is the more important half of the condition: a single printout holds contact for about a second at speed, and without it the flutter of",
+    "eines": "a single",
+    "Musters als Paar gelesen.": "pattern would be read as a pair.",
+    "Runde beim Boxeneinfahren trotzdem zählen":
+      "Count the lap on pit entry anyway",
+    "Gefahrene Sitzungen": "Sessions driven",
+    "Nach jedem beendeten Rennen abgelegt, auf diesem Gerät. Gespeichert werden Rundenzeiten, Datum, Streckencode, Modus, die verwendete Abstimmung und die gefahrene Strecke – und zwar":
+      "Stored after every finished race, on this device. Lap times, date, track code, mode, the setup used and the distance driven – and that",
+    "zweimal": "twice",
+    ": als simulierte Kilometer, die zum Tacho passen, und als echte Meter, die das Modellauto auf dem Teppich zurückgelegt hat. Nur eine der beiden zu speichern wäre eine willkürliche Wahl.":
+      ": as simulated kilometres matching the speedo, and as real metres the model car actually covered on the carpet. Storing only one of them would be an arbitrary choice.",
+    "Alles als CSV exportieren": "Export everything as CSV",
+    "Alle Sitzungsdaten löschen": "Delete all session data",
+    "Die Zuordnung läuft über die Bluetooth-Gerätekennung, damit dasselbe Auto bei anderer Verbindungsreihenfolge dieselben Kilometer behält. Genau deshalb gibt es den Löschknopf.":
+      "Cars are matched by their Bluetooth device id, so the same car keeps its mileage even when connected in a different order. That is exactly why the delete button exists.",
+    "noch nichts gespeichert": "nothing stored yet",
     "Bremsbalance": "Brake bias",
     "Furz 2": "Fart 2",
     "Porsche 911 GT3 R: Boxer-6, Einzeldrosseln": "Porsche 911 GT3 R: flat-6, individual throttle bodies",
@@ -8771,6 +8910,10 @@
     const out = physEngine.update({ steering: steer, throttle: rawThrottle, brake: rawBrake,
                                     headlights: headlightsOn }, dt);
     updateDashboard(out);
+    // Gefahrene Strecke mitzaehlen, siehe 97-sessions.js. Hier und nicht dort, weil dies
+    // der einzige Ort mit einem verlaesslichen dt ist - und ausdruecklich OHNE
+    // Speicherzugriff: localStorage ist synchron und wuerde den 45-ms-Sendetakt stoeren.
+    trackDistance(physEngine.state.speedKmh * REAL_SCALE, dt);
     physOutSteer = out.servoAngle;
     physOutThrottle = out.motorPWM;
   }
@@ -11606,6 +11749,13 @@
     // nur im Tab "Renneinstellungen" - wer im Cockpit auf Stopp drueckt, sah nichts, und
     // beim freien Training sah es deshalb aus, als gebe es ueberhaupt keine Ergebnisse.
     showRaceSummary();
+    // Und ablegen. Hier, weil dies die eine Stelle ist, an der ein Rennen wirklich vorbei
+    // ist - und nach showRaceSummary(), damit ein Fehlschlag beim Speichern das Ergebnis
+    // nicht verdeckt.
+    if (typeof sessionRecord === 'function') {
+      sessionRecord();
+      if (typeof renderSessions === 'function') renderSessions();
+    }
   }
 
   // ---- Ergebnisfenster ----
@@ -12019,7 +12169,9 @@
           ? String(z.counterVon)
           : z.counterVon + '\u2013' + z.counterBis;
         return '<tr><td style="' + td + '">0x' + z.code.toString(16).padStart(2, '0')
-             + ' ' + (TILE_LABEL[z.code] || '?') + einzeln + '</td>'
+             // Durch t(), aus demselben Grund wie in der Musterprobe: der rohe Name
+             // faerbt den ganzen zusammengesetzten Messwert deutsch.
+             + ' ' + t(TILE_LABEL[z.code] || '?') + einzeln + '</td>'
              + '<td style="' + tdr + '">' + z.pakete + '</td>'
              + '<td style="' + tdr + '">' + (dauer >= 1000
                  ? (dauer / 1000).toFixed(1) + ' s' : dauer + ' ms') + '</td>'
@@ -12081,6 +12233,9 @@
         log('Start/Ziel im Ausdruck-Modus: Musterkontakt gesetzt, Code 0x'
             + code.toString(16).padStart(2, '0') + '.', 'info');
         if (playerLapCrossed()) { refreshMinimap(); }
+        // Und DANACH die Doppelpruefung: die Runde ist gezaehlt, mit richtiger Zeit, und
+        // wird zurueckgenommen falls sich der Kontakt als zweiter eines Paares erweist.
+        pitDoubleCheck(jetzt);
       } else if (frei && code === pitMarkerCode) {
         dashLastActedCode = code; dashLastActedAt = jetzt;
         onPitMarkerCrossed();
@@ -12145,6 +12300,13 @@
     //
     // Mitangezeigt wird der Kachelzaehler, denn genau er war die stille Bedingung: bewegt
     // er sich nicht, sieht man das jetzt.
+    // Variante 'offtrack': 0x00 heisst abseits der Bahn, und abseits der Bahn IST die
+    // Boxengasse. Nur auf der CH-Schiene sinnvoll - ohne Schiene ist das Auto praktisch
+    // immer "abseits", und dann waere die ganze Strecke Boxengasse.
+    if (pitLaneEnabled && pitTrigger === 'offtrack' && type === 0x00
+        && lastTileCode !== 0x00) {
+      onPitMarkerCrossed();
+    }
     lastTileCode = type;
     tileTimelineTick(type, counter);
     const probe = $('tile-probe');
@@ -12203,8 +12365,136 @@
   // Testtaste Q genau hier hineingeht statt einen zweiten Weg zu nehmen - ein zweiter Weg
   // prueft den ersten nicht. Rueckgabewert: true, wenn der Aufrufer abbrechen soll (die
   // Einfuehrungsrunde endete, das war keine gezaehlte Runde).
+  // Eine gerade gezaehlte Runde zuruecknehmen.
+  //
+  // Gebraucht wird das nur von der Boxengassen-Variante 'double': dort steht erst beim
+  // ZWEITEN Kontakt fest, dass der erste eine Boxeneinfahrt war und keine Runde. Die
+  // Alternative waere, die Runde drei Sekunden zurueckzuhalten - dann waere aber die
+  // Rundenzeit falsch, denn die Rundengrenze ist der Moment der Ueberfahrt und nicht der
+  // Moment der Entscheidung. Eine zurueckgenommene Runde ist sichtbar; eine um drei
+  // Sekunden verschobene Grenze ist ein stiller Messfehler in JEDER Runde.
+  //
+  // Die Zeit muss mit zurueck: ohne das faengt die naechste Runde mitten in der
+  // zurueckgenommenen an, und dann sind beide falsch.
+  function retractLap(warum) {
+    if (!raceLapTimes.length) return false;
+    const weg = raceLapTimes.pop();
+    if (raceLapStart !== null) raceLapStart -= weg.ms;
+    if (dashLapTimes.length) {
+      const d = dashLapTimes.pop();
+      if (dashLapStart !== null) dashLapStart -= d;
+    }
+    renderLapList();
+    $('race-status').textContent = t('Rennen läuft, Runde') + ' ' + raceLapTimes.length;
+    log('Runde zurueckgenommen (' + formatLapTime(weg.ms) + '): ' + warum, 'info');
+    showHudToast('KEINE RUNDE, BOXENEINFAHRT');
+    return true;
+  }
+
+  // ---- Sektoren [experimentell] ----
+  //
+  // X Ueberfahrten ueber Start/Ziel sind EINE Runde; die Zeiten dazwischen sind
+  // Teilstreckenzeiten. Das geht nur ohne Bahn, und nicht weil es riskant waere, sondern
+  // weil es mit Bahn bedeutungslos ist: auf der CH-Schiene gibt es genau ein Start/Ziel,
+  // also ist jede Ueberfahrt eine Runde. Im Ausdruck-Modus legt man die Muster selbst hin,
+  // und drei Ausdrucke ueber eine Runde verteilt sind drei Sektoren.
+  //
+  // WICHTIG am Entwurf: eine Sektorzeit ist NICHT die Rundenzeit geteilt durch X, sondern
+  // die gemessene Zeit zwischen zwei Kontakten. Genau darin liegt der Wert - die Sektoren
+  // einer Runde sind ungleich lang, und ihre Streuung sagt, WO Zeit verlorengeht. Eine
+  // gerechnete Drittelung waere eine Zahl ohne Information.
+  //
+  // Und die Rundenzeit ist die SUMME der gemessenen Sektoren, nicht eine zweite Messung.
+  // Zwei Uhren fuer dieselbe Strecke laufen auseinander.
+  let sectorCount = 1;          // 1 = aus, jede Ueberfahrt ist eine Runde
+  let sectorIndex = 0;          // wieviele Kontakte diese Runde schon hatte
+  let sectorStart = null;       // Beginn des laufenden Sektors
+  let sectorTimes = [];         // die Sektoren der laufenden Runde, in ms
+  let sectorHistory = [];       // je vollendete Runde ein Array von Sektorzeiten
+
+  function sectorReset() {
+    sectorIndex = 0;
+    sectorStart = null;
+    sectorTimes = [];
+  }
+
+  // Gibt true zurueck, wenn dieser Kontakt eine RUNDE vollendet - dann laeuft die normale
+  // Rundenlogik. Sonst war es eine Sektorgrenze und die Runde laeuft weiter.
+  function sectorCrossed(now) {
+    if (sectorCount <= 1) return true;
+    if (sectorStart === null) {
+      // Der erste Kontakt ueberhaupt: er beginnt den ersten Sektor und ist noch keine
+      // Sektorgrenze. Ohne diesen Fall waere der erste Sektor die Zeit seit dem Rennstart
+      // und damit systematisch zu lang.
+      sectorStart = now;
+      sectorIndex = 0;
+      return false;
+    }
+    sectorTimes.push(now - sectorStart);
+    sectorStart = now;
+    sectorIndex += 1;
+    if (sectorIndex < sectorCount) {
+      renderSectors();
+      showHudToast('SEKTOR ' + sectorIndex + ': '
+                   + formatLapTime(sectorTimes[sectorTimes.length - 1]));
+      // Ein eigener, tieferer Ton fuer die Sektorgrenze: derselbe wie fuer die Runde waere
+      // eine Falschmeldung, denn die Runde ist nicht vorbei.
+      playTone(300, 0.07, 'sine', 0.12);
+      return false;
+    }
+    // Runde voll.
+    sectorHistory.push(sectorTimes.slice());
+    sectorTimes = [];
+    sectorIndex = 0;
+    renderSectors();
+    return true;
+  }
+
+  function renderSectors() {
+    const host = $('sector-list');
+    if (!host) return;
+    if (sectorCount <= 1) { host.innerHTML = ''; return; }
+    const teile = [];
+    if (sectorTimes.length) {
+      teile.push('<div class="sess-row"><b>jetzt</b> '
+                 + sectorTimes.map((ms, i) => 'S' + (i + 1) + ' ' + formatLapTime(ms))
+                     .join(' &middot; ') + '</div>');
+    }
+    // Die BESTE je Sektor, ueber alle Runden. Das ist die Zahl, aus der eine
+    // Ideal-Rundenzeit entsteht: die Summe der besten Sektoren ist schneller als die beste
+    // gefahrene Runde, und die Differenz sagt, wieviel noch drin ist.
+    if (sectorHistory.length) {
+      const beste = [];
+      for (let i = 0; i < sectorCount - 1 + 1; i++) {
+        const werte = sectorHistory.map(r => r[i]).filter(v => v !== undefined);
+        if (werte.length) beste.push(Math.min.apply(null, werte));
+      }
+      const summe = beste.reduce((a, b) => a + b, 0);
+      const rundenSummen = sectorHistory.map(r => r.reduce((a, b) => a + b, 0));
+      const besteRunde = rundenSummen.length ? Math.min.apply(null, rundenSummen) : null;
+      teile.push('<div class="sess-row"><b>beste</b> '
+                 + beste.map((ms, i) => 'S' + (i + 1) + ' ' + formatLapTime(ms))
+                     .join(' &middot; ')
+                 + ' &rarr; ideal ' + formatLapTime(summe)
+                 + (besteRunde !== null && besteRunde > summe
+                    ? ' (' + formatLapTime(besteRunde - summe) + ' schneller als die beste '
+                      + 'gefahrene Runde)' : '')
+                 + '</div>');
+      sectorHistory.slice(-5).reverse().forEach((r, k) => {
+        teile.push('<div class="sess-row"><b>R' + (sectorHistory.length - k) + '</b> '
+                   + r.map((ms, i) => 'S' + (i + 1) + ' ' + formatLapTime(ms))
+                       .join(' &middot; ')
+                   + ' = ' + formatLapTime(r.reduce((a, b) => a + b, 0)) + '</div>');
+      });
+    }
+    host.innerHTML = teile.join('');
+  }
+
   function playerLapCrossed() {
     const now = Date.now();
+    // Sektoren zuerst: war das nur eine Sektorgrenze, ist die Runde nicht vorbei und alles
+    // Weitere darf nicht laufen - weder die Rundenzeit noch der Ton noch das Rennende.
+    if (!sectorCrossed(now)) return false;
     if (dashLapStart !== null) { dashLapTimes.push(now - dashLapStart); renderLapList(); }
     dashLapStart = now;
     triggerDoppler();
@@ -12340,6 +12630,32 @@
   // guarantees the pit lane can never trigger, and nothing in the UI said so. null makes
   // every comparison against it false until the Muster-Sonde has actually measured a value.
   let pitLaneEnabled = true;
+
+  // ---- Wo ist die Boxengasse? Drei Varianten ----
+  //
+  // 'anywhere'  Vorgabe. Ein angeforderter Boxenstopp wird durch Anhalten bedient, egal wo.
+  //             Braucht keinen Ausdruck und keine Schiene.
+  // 'offtrack'  Byte 12 meldet 0x00, also abseits der Bahn. Nur auf der CH-Schiene sinnvoll,
+  //             weil nur dort "abseits" ueberhaupt eine Bedeutung hat.
+  // 'double'    Experimentell: zwei Ausdrucke im Abstand von 50 cm.
+  let pitTrigger = 'anywhere';
+  // Zaehlt die Runde beim Boxeneinfahren trotzdem? Vorgabe nein - eine Boxeneinfahrt ist
+  // keine Runde. Wer die Zaehlung lieber durchlaufen laesst, kann es umstellen.
+  let pitDoubleCountsLap = false;
+
+  // Zwei Kontakte innerhalb von 3 s bei mindestens 1 s Abstand. Die untere Grenze ist der
+  // wichtigere Teil: ein einzelner Ausdruck haelt bei Fahrt etwa eine Sekunde Kontakt, und
+  // ohne Mindestabstand wuerde das Flattern EINES Musters als Paar gelesen.
+  const PIT_DOUBLE_WINDOW_MS = 3000;
+  const PIT_DOUBLE_MIN_MS = 1000;
+  // Danach 4 s Tempolimit. Haelt das Auto in dieser Zeit, beginnt der Service von selbst.
+  const PIT_DOUBLE_LIMIT_MS = 4000;
+  const PIT_DOUBLE_KMH = 60;
+  // Dieselbe Rechnung wie PIT_SPEED_FACTOR, nur mit 60 statt 80: der angezeigte Tacho ist
+  // speedKmh * REAL_SCALE, und topSpeedKmh ist 4,0.
+  const PIT_DOUBLE_SPEED_FACTOR = PIT_DOUBLE_KMH / REAL_SCALE / 4.0;
+  let pitDoubleFirstAt = 0;
+  let pitDoubleArmedUntil = 0;
   let pitMarkerCode = null;
   // 80 km/h on the racing display, the speed a real pit lane limiter holds. The display
   // reads speedKmh * REAL_SCALE (71.25), so 80 / 71.25 / 4.0 top speed = 0.2807.
@@ -12357,7 +12673,11 @@
   function setPitState(next) {
     if (pitState === next) return;
     pitState = next;
-    limitPit = (next === 'off') ? 1 : PIT_SPEED_FACTOR;
+    // Die Variante 'double' nennt ausdruecklich 60 km/h, die anderen fahren mit den
+    // 80 km/h der Boxengasse. Beide Faktoren werden HIER gewaehlt, damit es weiter genau
+    // eine Stelle gibt, an der das Boxenlimit gesetzt wird.
+    limitPit = (next === 'off') ? 1
+             : (pitTrigger === 'double' ? PIT_DOUBLE_SPEED_FACTOR : PIT_SPEED_FACTOR);
     applySpeedLimit();
     // Nachlauf-Wecker. Das Ausfahrtmuster wird nicht immer gelesen - ein Muster, das
     // nicht gelesen wird, laesst den Limiter sonst bis zum Rundenende an, und das ist der
@@ -12435,6 +12755,35 @@
     updatePitUI();
   }
 
+  // Variante 'double': war das der zweite Kontakt eines Paares?
+  //
+  // Aufgerufen NACH playerLapCrossed(), damit die Runde mit ihrer richtigen Zeit gezaehlt
+  // ist, bevor hier ueber sie entschieden wird.
+  function pitDoubleCheck(jetzt) {
+    if (!pitLaneEnabled || pitTrigger !== 'double') return;
+    const seit = jetzt - pitDoubleFirstAt;
+    if (pitDoubleFirstAt && seit >= PIT_DOUBLE_MIN_MS && seit <= PIT_DOUBLE_WINDOW_MS) {
+      // Paar erkannt. Der Boxenstopp beginnt erst JETZT, nach dem zweiten Muster - so
+      // steht es in der Anforderung, und es ist auch das Richtige: nach dem ersten weiss
+      // niemand, ob eine Einfahrt gemeint war.
+      pitDoubleFirstAt = 0;
+      if (!pitDoubleCountsLap) retractLap('doppelter Start-Ausdruck, Boxeneinfahrt');
+      pitDoubleArmedUntil = jetzt + PIT_DOUBLE_LIMIT_MS;
+      setPitState('limited');
+      // Das Piepen: dasselbe wie die Boxengassen-Meldung, damit es nicht ein weiterer Ton
+      // ist, den man lernen muss.
+      playTone(880, 0.12, 'square', 0.16);
+      setTimeout(() => playTone(880, 0.12, 'square', 0.16), 180);
+      showHudToast('BOXENGASSE AKTIV, ' + PIT_DOUBLE_KMH + ' KM/H');
+      log('Boxengasse per doppeltem Ausdruck: zweiter Kontakt nach ' + seit
+          + ' ms, Tempolimit ' + PIT_DOUBLE_KMH + ' km/h fuer '
+          + (PIT_DOUBLE_LIMIT_MS / 1000) + ' s. Anhalten startet den Service.', 'info');
+      return;
+    }
+    // Kein Paar: dieser Kontakt ist der moegliche ERSTE eines neuen.
+    pitDoubleFirstAt = jetzt;
+  }
+
   function onPitMarkerCrossed() {
     if (!pitLaneEnabled || pitState !== 'off') return;
     // Just aborted: do not drag the car straight back in while it is still on the marker.
@@ -12450,6 +12799,19 @@
     const now = Date.now();
     const dt = pitLastTick ? Math.min(0.5, (now - pitLastTick) / 1000) : 0;
     pitLastTick = now;
+
+    // Variante 'double': das 4-Sekunden-Fenster laeuft ab. Wer in dieser Zeit nicht anhaelt,
+    // faehrt durch - und dann ist die Boxengasse wieder aus, statt dass das Tempolimit
+    // haengen bleibt.
+    if (pitTrigger === 'double' && pitDoubleArmedUntil
+        && now > pitDoubleArmedUntil && pitState === 'limited') {
+      pitDoubleArmedUntil = 0;
+      setPitState('off');
+      showHudToast('BOXENGASSE VORBEI');
+      log('Boxengasse per doppeltem Ausdruck: nicht angehalten, Fenster abgelaufen.', 'info');
+      return;
+    }
+
     if (pitState === 'off') return;
 
     // Absolute value: any NEGATIVE speed would otherwise satisfy this and start a pit
@@ -12519,6 +12881,48 @@
     pitLaneEnabled = e.target.checked;
     if (!pitLaneEnabled) setPitState('off');
   });
+  $('sector-count').addEventListener('change', (e) => {
+    sectorCount = Math.max(1, parseInt(e.target.value, 10) || 1);
+    sectorReset();
+    sectorHistory = [];
+    renderSectors();
+    if (sectorCount > 1 && trackMode === 'on') {
+      // Kein stiller Fehlschlag: mit Bahn ist die Einstellung nicht falsch, sondern
+      // bedeutungslos, und das gehoert gesagt statt dass man auf Sektorzeiten wartet, die
+      // nie kommen.
+      showHudToast('SEKTOREN BRAUCHEN DEN AUSDRUCK-MODUS');
+      log('Sektoren sind auf ' + sectorCount + ' gestellt, aber die Leseart ist "Bahn". '
+          + 'Auf der Schiene gibt es genau ein Start/Ziel, also bleibt jede Ueberfahrt eine '
+          + 'Runde. Im Cockpit auf "Ausdruck" umschalten.', 'err');
+    } else {
+      log('Sektoren: ' + (sectorCount <= 1 ? 'aus'
+          : sectorCount + ' Ueberfahrten je Runde'), 'info');
+    }
+  });
+
+  $('pit-trigger').addEventListener('change', (e) => {
+    pitTrigger = e.target.value;
+    // Beim Umschalten aufraeumen: ein halb erkanntes Paar oder ein laufendes Limit der
+    // vorigen Variante haette sonst noch Wirkung, obwohl die Variante gewechselt hat.
+    pitDoubleFirstAt = 0;
+    pitDoubleArmedUntil = 0;
+    if (pitState !== 'off') setPitState('off');
+    // Die Zusatzoption gilt nur fuer 'double', also wird sie nur dort gezeigt. Ein
+    // Ankreuzfeld, das in der gewaehlten Variante nichts bedeutet, ist eine Frage ohne
+    // Antwort.
+    const wrap = $('pit-double-lap-wrap');
+    if (wrap) wrap.style.display = pitTrigger === 'double' ? 'flex' : 'none';
+    log('Boxengasse: ' + (pitTrigger === 'anywhere' ? 'ueberall halten'
+        : pitTrigger === 'offtrack' ? 'neben der Strecke (Byte 12 = 0x00)'
+        : 'doppelter Start-Ausdruck, 2 Kontakte in ' + (PIT_DOUBLE_WINDOW_MS / 1000)
+          + ' s bei mindestens ' + (PIT_DOUBLE_MIN_MS / 1000) + ' s Abstand'), 'info');
+  });
+  $('pit-double-lap').addEventListener('change', (e) => {
+    pitDoubleCountsLap = e.target.checked;
+  });
+  // Beim Laden verstecken, weil die Vorgabe 'anywhere' ist.
+  if ($('pit-double-lap-wrap')) $('pit-double-lap-wrap').style.display = 'none';
+
   $('pit-marker-code').addEventListener('change', (e) => {
     const raw = e.target.value.trim();
     if (raw === '') { pitMarkerCode = null; return; }
@@ -19398,6 +19802,178 @@
              mass: teile.join(', ') + (schlecht.length ? ' | ' + schlecht.join('; ') : '') };
   });
 
+  // ---- Boxengasse per doppeltem Start-Ausdruck ----
+  //
+  // Die experimentelle Variante, und die einzige mit einer Zeitbedingung: zwei
+  // Musterkontakte innerhalb von 3 s bei MINDESTENS 1 s Abstand sind eine Boxeneinfahrt.
+  //
+  // Geprueft werden drei Faelle, und der dritte ist der wichtige: ein einzelner Ausdruck
+  // haelt bei Fahrt etwa eine Sekunde Kontakt, und ohne den Mindestabstand wuerde das
+  // Flattern EINES Musters als Paar gelesen. Ein Test nur mit dem gueltigen Paar haette
+  // genau diesen Fehler durchgelassen.
+  //
+  // Der Weg geht ueber feedNotify, also durch die echte Paketauswertung - playerLapCrossed
+  // direkt zu rufen wuerde die Erkennung umgehen, die hier geprueft werden soll.
+  stAdd('Boxengasse: doppelter Ausdruck nimmt die Runde zurueck', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.feedNotify) {
+      return { skip: true, mass: 'feedNotify nicht vorhanden' };
+    }
+    const merk = { sp: playerCar, tm: trackMode, pt: pitTrigger, ps: pitState,
+                   rs: raceState, lt: raceLapTimes.slice(), ls: raceLapStart,
+                   ple: pitLaneEnabled, pdf: pitDoubleFirstAt,
+                   ac: dashLastActedCode, aa: dashLastActedAt };
+    try {
+      const attrappe = { device: { id: 'st-pit', name: 'Pruefwagen' }, role: 'player',
+                         rx: null, tx: null, tileCode: 0xff, tileCount: null,
+                         lastCodeAt: 0, yaw: 0, ghost: null, timer: null, race: null };
+      playerCar = attrappe;
+      trackMode = 'off';
+      pitLaneEnabled = true;
+      pitTrigger = 'double';
+      raceState = 'racing';
+
+      const paket = (marker) => {
+        const a = new Array(19).fill(0);
+        a[10] = 140; a[12] = 0x0a; a[14] = 0x80; a[15] = marker ? 0x08 : 0x00;
+        return a;
+      };
+      // Ein Kontakt ist eine steigende FLANKE von Byte 15 Bit 3, also aus-an-aus.
+      const kontakt = () => {
+        dashLastActedCode = null;
+        dashLastActedAt = 0;
+        OMEGA_TEST.feedNotify(paket(false), { car: attrappe });
+        OMEGA_TEST.feedNotify(paket(true), { car: attrappe });
+        OMEGA_TEST.feedNotify(paket(false), { car: attrappe });
+      };
+      // Den gemerkten Zeitpunkt VORVERLEGEN, statt im Test zu warten.
+      //
+      // Und zwar VOR dem zweiten Kontakt und nicht danach - das war der Fehler im ersten
+      // Anlauf dieser Pruefung. pitDoubleCheck() liest pitDoubleFirstAt IM Kontakt; ein
+      // Verschieben danach kommt zu spaet, beide Kontakte liegen dann Millisekunden
+      // auseinander, und die Untergrenze von 1 s verwirft das Paar. Die Pruefung meldete
+      // also einen Fehler, der im Messaufbau lag.
+      const alter = (ms) => { if (pitDoubleFirstAt) pitDoubleFirstAt -= ms; };
+
+      const teile = [], schlecht = [];
+
+      // 1. Ein Kontakt allein ist eine Runde.
+      raceLapTimes.length = 0;
+      raceLapStart = Date.now() - 5000;
+      pitDoubleFirstAt = 0;
+      setPitState('off');
+      kontakt();
+      const nachEins = raceLapTimes.length;
+      teile.push('ein Kontakt: ' + nachEins + ' Runde');
+      if (nachEins !== 1) schlecht.push('erster Kontakt zaehlt keine Runde');
+
+      // 2. Zweiter Kontakt nach 1,5 s: Paar, Runde zurueck, Boxengasse aktiv.
+      raceLapStart = Date.now() - 1500;
+      alter(1500);
+      kontakt();
+      const nachZwei = raceLapTimes.length;
+      teile.push('Paar nach 1,5 s: ' + nachZwei + ' Runden, pitState ' + pitState);
+      // EINE Runde, nicht null - und das ist die richtige Erwartung, auch wenn der erste
+      // Anlauf dieser Pruefung null forderte.
+      //
+      // Der doppelte Ausdruck ist EIN physisches Ding: zwei Blaetter 50 cm auseinander am
+      // Boxeneingang. Darueber zu fahren erzeugt zwei Kontakte, ist aber eine Ueberfahrt.
+      // Also gehoert genau eine Runde gezaehlt, und der zweite, unechte Kontakt wird
+      // zurueckgenommen. Null zu fordern hiesse, dass eine Boxeneinfahrt die vorige Runde
+      // mitloescht - die ist aber wirklich gefahren worden.
+      if (nachZwei !== 1) schlecht.push('Paar laesst ' + nachZwei
+                                        + ' Runden stehen statt einer');
+      if (pitState !== 'limited') schlecht.push('Paar aktiviert die Boxengasse nicht');
+
+      // 3. DER WICHTIGE FALL: zwei Kontakte zu SCHNELL hintereinander sind KEIN Paar.
+      //    Ein einzelner Ausdruck haelt bei Fahrt rund eine Sekunde Kontakt.
+      raceLapTimes.length = 0;
+      raceLapStart = Date.now() - 5000;
+      pitDoubleFirstAt = 0;
+      setPitState('off');
+      kontakt();
+      raceLapStart = Date.now() - 300;
+      alter(300);
+      kontakt();
+      const nachSchnell = raceLapTimes.length;
+      teile.push('zwei Kontakte in 0,3 s: ' + nachSchnell + ' Runden, pitState ' + pitState);
+      if (nachSchnell !== 2) schlecht.push('zu schnelles Paar wird als Einfahrt gelesen');
+      if (pitState !== 'off') schlecht.push('zu schnelles Paar aktiviert die Boxengasse');
+
+      return { ok: !schlecht.length,
+               mass: teile.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+    } finally {
+      playerCar = merk.sp; trackMode = merk.tm; pitTrigger = merk.pt;
+      pitLaneEnabled = merk.ple; pitDoubleFirstAt = merk.pdf;
+      raceState = merk.rs; raceLapStart = merk.ls;
+      raceLapTimes.length = 0;
+      merk.lt.forEach(l => raceLapTimes.push(l));
+      dashLastActedCode = merk.ac; dashLastActedAt = merk.aa;
+      setPitState(merk.ps);
+      renderLapList();
+    }
+  });
+
+  // ---- Das Woerterbuch hat keine doppelten Schluessel ----
+  //
+  // Ein doppelter Schluessel in einem Objektliteral ist kein Syntaxfehler: der spaetere
+  // gewinnt, still. Gefunden wurden vier, und bei einem davon ("Einstellungen") wichen die
+  // Werte ab - "Settings" gegen "settings" -, der frueher gepflegte war also seit dem
+  // Hinzufuegen des zweiten wirkungslos.
+  //
+  // Von aussen ist das unsichtbar: die Uebersetzung ERSCHEINT, nur eben die falsche. Eine
+  // Pruefung dafuer kostet nichts, weil das Woerterbuch schon im Speicher liegt - was sie
+  // nicht kann, ist die Quelldatei sehen, in der die Dopplung steht. Sie zaehlt deshalb die
+  // Schluessel des OBJEKTS gegen die Zahl der Zeilen, die im gebauten Dokument danach
+  // aussehen; weichen sie ab, wurde etwas ueberschrieben.
+  stAdd('Woerterbuch ohne doppelte Schluessel', () => {
+    const imObjekt = Object.keys(I18N_EN).length;
+    // Die Quelle steht im eigenen <script>. Sie zu lesen ist billiger und ehrlicher als die
+    // Dopplung zu erraten: das Objekt selbst kann sie per Definition nicht zeigen.
+    let inQuelle = null;
+    for (const sc of document.querySelectorAll('script')) {
+      const txt = sc.textContent || '';
+      const i = txt.indexOf('const I18N_EN');
+      if (i < 0) continue;
+      const zeilen = txt.slice(i).split(String.fromCharCode(10));
+      let n = 0;
+      for (let k = 1; k < zeilen.length; k++) {
+        const z = zeilen[k].trim();
+        if (z.startsWith('};')) break;
+        // Nur SCHLUESSELzeilen, also solche mit einem Doppelpunkt hinter dem
+        // abschliessenden Anfuehrungszeichen. Der erste Anlauf zaehlte jede Zeile, die mit
+        // einem Anfuehrungszeichen beginnt - also auch die Fortsetzungszeilen mehrzeiliger
+        // Eintraege, bei denen der Wert allein auf der naechsten Zeile steht. Es gibt 40
+        // solche Eintraege, und genau 40 hat er zuviel gezaehlt: eine Pruefung, die ihren
+        // eigenen Formatierungsstil nicht kennt, meldet ihn als Fehler.
+        // "Hinter dem abschliessenden Anfuehrungszeichen kommt ein Doppelpunkt" - also
+        // eine SCHLUESSELzeile und nicht die Fortsetzungszeile eines mehrzeiligen Eintrags.
+        //
+        // Als Zeichenschleife und ausdruecklich NICHT als Regexp. Der erste Anlauf benutzte
+        // einen, und dessen Zeichenklasse verlor beim Schreiben durch die Werkzeugkette
+        // einen Backslash - aus [^"\\] wurde [^"\], eine unabgeschlossene Zeichenklasse,
+        // und die IIFE brach ab. Eine Pruefung, die den Aufbau kaputtmachen kann, ist keine.
+        if (z.charAt(0) === '"') {
+          let j = 1, ende = -1;
+          while (j < z.length) {
+            if (z.charCodeAt(j) === 92) { j += 2; continue; }   // 92 = Backslash
+            if (z.charAt(j) === '"') { ende = j; break; }
+            j++;
+          }
+          if (ende > 0 && z.slice(ende + 1).trim().charAt(0) === ':') n++;
+        }
+      }
+      inQuelle = n;
+      break;
+    }
+    if (inQuelle === null) {
+      return { skip: true, mass: 'Quelle nicht lesbar (eigene Datei statt inline)' };
+    }
+    return { ok: inQuelle === imObjekt,
+             mass: inQuelle + ' Zeilen in der Quelle, ' + imObjekt + ' Schluessel im Objekt'
+                   + (inQuelle === imObjekt ? '' : ' – '
+                      + (inQuelle - imObjekt) + ' still ueberschrieben') };
+  });
+
   // ---- Ausfuehren und anzeigen ----
   async function runSelfTest() {
     const rows = $('st-rows');
@@ -19631,6 +20207,275 @@
   }
 
 
+  // ============================== SITZUNGSDATEN ==============================
+  //
+  // Bis v0.4 ueberlebte KEINE einzige Rundenzeit ein Neuladen. raceLapTimes, dashLapTimes und
+  // car.race.laps waren einfache Variablen im Modulbereich; in chc.cars.v1 standen nur Farbe
+  // und Name. Ein Neuladen - oder auch nur ein Verbindungsabbruch, weil garage im Speicher
+  // lebt - verlor alles, und der CSV-Export war der einzige Weg, etwas zu retten. Man musste
+  // also VOR dem Fahren wissen, dass man exportieren will.
+  //
+  // Drei Entscheidungen, die den Aufbau bestimmen:
+  //
+  // 1. GESCHRIEBEN WIRD AM RENNENDE, nicht laufend. Ein Schreibvorgang je Runde waere bei
+  //    einem Zwei-Minuten-Rennen ein Dutzend Zugriffe auf localStorage, und localStorage ist
+  //    synchron - es blockiert den Faden, der den 45-ms-Sendetakt haelt. Genau dieser Takt
+  //    war schon einmal die Ursache fuer ruckelndes Fahren.
+  //
+  // 2. DIE ZAHL DER SITZUNGEN IST BEGRENZT. localStorage hat je Ursprung ein paar Megabyte,
+  //    und eine unbegrenzte Liste laeuft irgendwann dagegen - dann schlaegt der naechste
+  //    Schreibvorgang fehl, und zwar der, der gerade wichtig war. 200 Sitzungen sind bei
+  //    dieser Groesse reichlich und kosten nach oben nichts.
+  //
+  // 3. GESPEICHERT WIRD JE GERAET, wie schon bei Farbe und Name. Verbindet man in anderer
+  //    Reihenfolge, gehoeren die Kilometer weiter zum richtigen Auto.
+  const SESSION_STORE = 'chc.sessions.v1';
+  const SESSION_MAX = 200;
+
+  function sessionStore() {
+    try {
+      const o = JSON.parse(localStorage.getItem(SESSION_STORE) || '{}');
+      return { cars: o.cars || {}, sessions: Array.isArray(o.sessions) ? o.sessions : [] };
+    } catch (e) { return { cars: {}, sessions: [] }; }
+  }
+
+  function sessionSave(o) {
+    try {
+      if (o.sessions.length > SESSION_MAX) {
+        o.sessions = o.sessions.slice(-SESSION_MAX);
+      }
+      localStorage.setItem(SESSION_STORE, JSON.stringify(o));
+      return true;
+    } catch (e) {
+      // Ein voller Speicher ist kein Grund, das Rennen zu verlieren - aber er ist ein Grund,
+      // es zu SAGEN. Still zu scheitern waere hier das Schlimmste: man faehrt weiter und
+      // merkt es erst, wenn man die Zahlen sucht.
+      log('Sitzung konnte nicht gespeichert werden: ' + e.message, 'err');
+      showHudToast('SPEICHER VOLL');
+      return false;
+    }
+  }
+
+  // ---- Gefahrene Strecke -------------------------------------------------------------
+  //
+  // ZWEI Zahlen, und beide sind interessant, weil sie verschiedene Fragen beantworten:
+  //
+  //   simKm   die Strecke im MASSSTAB, also was der Tacho behauptet. Das ist die Zahl, die
+  //           zu einer Rundenzeit passt: eine Runde in 8 s bei 200 km/h angezeigt sind
+  //           440 simulierte Meter.
+  //   realKm  die Strecke, die das Modellauto wirklich auf dem Teppich gefahren ist. Bei
+  //           REAL_SCALE 73,75 ist das ein 74stel davon, und es ist die Zahl, die etwas
+  //           ueber Reifen und Getriebe sagt.
+  //
+  // Nur eine von beiden zu speichern waere eine willkuerliche Wahl, und die jeweils andere
+  // liesse sich nicht rekonstruieren, ohne REAL_SCALE zu kennen.
+  let simMeters = 0;
+  let realMeters = 0;
+
+  // Aufgerufen aus physicsStep(), also im Fahrtakt. Absichtlich ohne jeden Speicherzugriff -
+  // hier wird nur gezaehlt, geschrieben wird am Rennende.
+  function trackDistance(kmh, dt) {
+    if (!(dt > 0) || !isFinite(kmh)) return;
+    const v = Math.abs(kmh);
+    realMeters += v / 3.6 * dt;
+    simMeters += v * REAL_SCALE / 3.6 * dt;
+  }
+
+  function distanceSnapshot() {
+    return { simKm: +(simMeters / 1000).toFixed(3),
+             realKm: +(realMeters / 1000).toFixed(4) };
+  }
+
+  // ---- Eine Sitzung ablegen ----------------------------------------------------------
+  //
+  // Der Aufruf steht in finishRace(), also an der einen Stelle, an der ein Rennen wirklich
+  // vorbei ist. Er greift auf raceAllCars() zu, also auf dieselbe Funktion, aus der auch
+  // die Ergebnistabelle und der CSV-Export lesen - damit gibt es keine zweite Wahrheit
+  // darueber, wer welche Runden gefahren hat.
+  function sessionRecord() {
+    const autos = raceAllCars().filter(c => c.laps.length);
+    if (!autos.length) return null;
+    const o = sessionStore();
+    const weg = distanceSnapshot();
+
+    // Die Strecke als CODE und nicht als Name: ein Name kann sich aendern oder fehlen, der
+    // Code beschreibt das Layout und laesst es auf einem anderen Geraet wieder aufbauen.
+    let strecke = '';
+    try {
+      strecke = (typeof trackToCode === 'function' && currentTrackTiles.length > 1)
+        ? trackToCode(currentTrackTiles) : '';
+    } catch (e) { strecke = ''; }
+
+    const eintrag = {
+      // ISO, weil es sortierbar und zeitzonenfest ist. Der Anzeigetext wird daraus
+      // gerechnet und nicht mitgespeichert - sonst haette man zwei Wahrheiten ueber ein
+      // Datum, und die eine waere in der Sprache von damals.
+      zeit: new Date().toISOString(),
+      modus: raceMode,
+      limit: raceLimit,
+      strecke,
+      wetter: typeof weather !== 'undefined' ? weather : null,
+      simKm: weg.simKm,
+      realKm: weg.realKm,
+      autos: autos.map(c => ({
+        name: c.name, kennung: c.kennung, rolle: c.role,
+        // Nur die Millisekunden, nicht die ganzen Objekte: die Rundennummer ist der Index
+        // plus eins, und sie zweimal zu speichern ist die Gelegenheit, dass sie
+        // auseinanderlaufen.
+        laps: c.laps.map(l => l.ms),
+      })),
+      // Die Abstimmung mit. Ohne sie ist eine Rundenzeit eine Zahl ohne Bedingungen, und
+      // dann kann man zwei Sitzungen nicht vergleichen.
+      einstellungen: (typeof presetRead === 'function') ? presetRead() : null,
+    };
+    o.sessions.push(eintrag);
+
+    // Und die Summen je Auto. Sie stehen NEBEN den Sitzungen und werden nicht daraus
+    // gerechnet: die Sitzungsliste ist begrenzt, die Summen sollen es nicht sein.
+    for (const c of autos) {
+      const auto = garage.find(g => garageLabel(g) === c.name);
+      const id = auto ? String(auto.device.id) : ('name:' + c.name);
+      const e = o.cars[id] || { name: c.name, km: 0, realKm: 0, runden: 0, besteMs: null,
+                                sitzungen: 0 };
+      e.name = c.name;
+      e.runden += c.laps.length;
+      e.sitzungen += 1;
+      // Die Strecke wird auf ALLE Autos gebucht, weil nur das Fahrerauto eine Physik hat und
+      // die Ghosts dieselbe Runde fahren. Das ist eine Naeherung, und sie steht hier als
+      // solche: ein Ghost fuhr nicht genau dieselbe Linie.
+      e.km = +(e.km + weg.simKm).toFixed(3);
+      e.realKm = +(e.realKm + weg.realKm).toFixed(4);
+      const beste = Math.min.apply(null, c.laps.map(l => l.ms));
+      if (e.besteMs === null || beste < e.besteMs) e.besteMs = beste;
+      o.cars[id] = e;
+    }
+
+    if (!sessionSave(o)) return null;
+    simMeters = 0;
+    realMeters = 0;
+    log('Sitzung gespeichert: ' + autos.length + ' Auto'
+        + (autos.length === 1 ? '' : 's') + ', '
+        + autos.reduce((a, c) => a + c.laps.length, 0) + ' Runden, '
+        + weg.simKm.toFixed(1) + ' km simuliert ('
+        + (weg.realKm * 1000).toFixed(0) + ' m auf dem Teppich).', 'ok');
+    return eintrag;
+  }
+
+  // ---- Anzeige -----------------------------------------------------------------------
+  function sessionFmt(ms) { return (ms / 1000).toFixed(2) + 's'; }
+
+  function renderSessions() {
+    const host = $('sess-list');
+    if (!host) return;
+    const o = sessionStore();
+    const autos = Object.values(o.cars);
+    const kopf = $('sess-summary');
+    if (kopf) {
+      kopf.textContent = o.sessions.length
+        ? o.sessions.length + ' Sitzung' + (o.sessions.length === 1 ? '' : 'en') + ', '
+          + autos.reduce((a, c) => a + c.runden, 0) + ' Runden, '
+          + autos.reduce((a, c) => a + c.km, 0).toFixed(1) + ' km simuliert'
+        : 'noch nichts gespeichert';
+    }
+    if (!o.sessions.length) { host.innerHTML = ''; return; }
+
+    // Nach TAG gruppiert, neueste zuerst. Eine flache Liste von 200 Zeilen ist keine
+    // Uebersicht, und der Tag ist die Einheit, in der man sich erinnert ("letzten Samstag").
+    const tage = {};
+    for (const s of o.sessions) {
+      const tag = (s.zeit || '').slice(0, 10);
+      (tage[tag] = tage[tag] || []).push(s);
+    }
+    const teile = [];
+    teile.push('<table class="doc-tab"><thead><tr><th>Auto</th><th>Runden</th>'
+               + '<th>Beste</th><th>km sim</th><th>m echt</th></tr></thead><tbody>');
+    for (const c of autos.sort((a, b) => b.runden - a.runden)) {
+      teile.push('<tr><td>' + String(c.name).replace(/</g, '&lt;') + '</td><td>' + c.runden
+                 + '</td><td>' + (c.besteMs === null ? '–' : sessionFmt(c.besteMs))
+                 + '</td><td>' + c.km.toFixed(1) + '</td><td>'
+                 + (c.realKm * 1000).toFixed(0) + '</td></tr>');
+    }
+    teile.push('</tbody></table>');
+
+    for (const tag of Object.keys(tage).sort().reverse()) {
+      const liste = tage[tag];
+      teile.push('<h3 style="font-size:13px; margin:16px 0 5px 0">' + tag + ' &middot; '
+                 + liste.length + ' Sitzung' + (liste.length === 1 ? '' : 'en') + '</h3>');
+      for (const s of liste.slice().reverse()) {
+        const zeit = (s.zeit || '').slice(11, 16);
+        const runden = s.autos.reduce((a, c) => a + c.laps.length, 0);
+        const alle = s.autos.reduce((a, c) => a.concat(c.laps), []);
+        const beste = alle.length ? Math.min.apply(null, alle) : null;
+        teile.push('<div class="sess-row"><b>' + zeit + '</b> '
+                   + (RACE_MODES[s.modus] ? RACE_MODES[s.modus].label : s.modus)
+                   + ' &middot; ' + runden + ' Runden'
+                   + (beste !== null ? ' &middot; beste ' + sessionFmt(beste) : '')
+                   + (s.strecke ? ' &middot; <code>' + s.strecke + '</code>' : '')
+                   + ' &middot; ' + s.simKm.toFixed(1) + ' km</div>');
+      }
+    }
+    host.innerHTML = teile.join('');
+  }
+
+  // ---- Export ------------------------------------------------------------------------
+  //
+  // Dasselbe Format wie der vorhandene Rennergebnis-Export: Semikolon, Komma als
+  // Dezimaltrenner, BOM. Das ist nicht Geschmack, sondern was ein deutsches Excel ohne
+  // Nachfrage richtig oeffnet - und ein Export, den man erst reparieren muss, ist keiner.
+  function sessionCsv() {
+    const o = sessionStore();
+    const z = (x) => String(x === null || x === undefined ? '' : x)
+      .replace(/[";\n]/g, ' ');
+    const komma = (x) => String(x).replace('.', ',');
+    const zeilen = ['Datum;Zeit;Modus;Strecke;Auto;Kennung;Rolle;Runde;Zeit (s);km sim;m echt'];
+    for (const s of o.sessions) {
+      const tag = (s.zeit || '').slice(0, 10);
+      const uhr = (s.zeit || '').slice(11, 19);
+      for (const c of s.autos) {
+        c.laps.forEach((ms, i) => {
+          zeilen.push([tag, uhr, z(s.modus), z(s.strecke), z(c.name), z(c.kennung),
+                       z(c.rolle), i + 1, komma((ms / 1000).toFixed(3)),
+                       komma(s.simKm.toFixed(3)), komma((s.realKm * 1000).toFixed(1))].join(';'));
+        });
+      }
+    }
+    zeilen.push('');
+    zeilen.push('Summe je Auto');
+    zeilen.push('Auto;Sitzungen;Runden;Beste (s);km sim;m echt');
+    for (const c of Object.values(o.cars)) {
+      zeilen.push([z(c.name), c.sitzungen, c.runden,
+                   c.besteMs === null ? '' : komma((c.besteMs / 1000).toFixed(3)),
+                   komma(c.km.toFixed(3)), komma((c.realKm * 1000).toFixed(1))].join(';'));
+    }
+    return '﻿' + zeilen.join('\r\n');
+  }
+
+  if ($('sess-export')) {
+    $('sess-export').addEventListener('click', () => {
+      const blob = new Blob([sessionCsv()], { type: 'text/csv;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'omegasim-sitzungen-' + new Date().toISOString().slice(0, 10) + '.csv';
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    });
+  }
+
+  if ($('sess-clear')) {
+    $('sess-clear').addEventListener('click', () => {
+      // Ohne Rueckfrage waere das die einzige Stelle in der App, an der ein Klick
+      // unwiederbringlich Daten loescht. Und geloescht wird wirklich alles, auch die
+      // Geraetekennungen - genau deshalb gibt es den Knopf.
+      if (!confirm('Alle gespeicherten Sitzungen und Kilometerstände löschen? '
+                   + 'Das lässt sich nicht zurücknehmen.')) return;
+      try { localStorage.removeItem(SESSION_STORE); } catch (e) { /* privat */ }
+      renderSessions();
+      showHudToast('SITZUNGEN GELÖSCHT');
+      log('Alle Sitzungsdaten gelöscht.', 'info');
+    });
+  }
+
+  renderSessions();
   // ============================== VOREINSTELLUNGEN ==============================
   // presetControls() sucht NUR in #tab-options. Die Karte verspricht "nicht die
   // Rennlaenge, nicht das Wetter, nicht die Strecke", und dieses Versprechen hing einmal

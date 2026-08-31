@@ -1184,6 +1184,178 @@
              mass: teile.join(', ') + (schlecht.length ? ' | ' + schlecht.join('; ') : '') };
   });
 
+  // ---- Boxengasse per doppeltem Start-Ausdruck ----
+  //
+  // Die experimentelle Variante, und die einzige mit einer Zeitbedingung: zwei
+  // Musterkontakte innerhalb von 3 s bei MINDESTENS 1 s Abstand sind eine Boxeneinfahrt.
+  //
+  // Geprueft werden drei Faelle, und der dritte ist der wichtige: ein einzelner Ausdruck
+  // haelt bei Fahrt etwa eine Sekunde Kontakt, und ohne den Mindestabstand wuerde das
+  // Flattern EINES Musters als Paar gelesen. Ein Test nur mit dem gueltigen Paar haette
+  // genau diesen Fehler durchgelassen.
+  //
+  // Der Weg geht ueber feedNotify, also durch die echte Paketauswertung - playerLapCrossed
+  // direkt zu rufen wuerde die Erkennung umgehen, die hier geprueft werden soll.
+  stAdd('Boxengasse: doppelter Ausdruck nimmt die Runde zurueck', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.feedNotify) {
+      return { skip: true, mass: 'feedNotify nicht vorhanden' };
+    }
+    const merk = { sp: playerCar, tm: trackMode, pt: pitTrigger, ps: pitState,
+                   rs: raceState, lt: raceLapTimes.slice(), ls: raceLapStart,
+                   ple: pitLaneEnabled, pdf: pitDoubleFirstAt,
+                   ac: dashLastActedCode, aa: dashLastActedAt };
+    try {
+      const attrappe = { device: { id: 'st-pit', name: 'Pruefwagen' }, role: 'player',
+                         rx: null, tx: null, tileCode: 0xff, tileCount: null,
+                         lastCodeAt: 0, yaw: 0, ghost: null, timer: null, race: null };
+      playerCar = attrappe;
+      trackMode = 'off';
+      pitLaneEnabled = true;
+      pitTrigger = 'double';
+      raceState = 'racing';
+
+      const paket = (marker) => {
+        const a = new Array(19).fill(0);
+        a[10] = 140; a[12] = 0x0a; a[14] = 0x80; a[15] = marker ? 0x08 : 0x00;
+        return a;
+      };
+      // Ein Kontakt ist eine steigende FLANKE von Byte 15 Bit 3, also aus-an-aus.
+      const kontakt = () => {
+        dashLastActedCode = null;
+        dashLastActedAt = 0;
+        OMEGA_TEST.feedNotify(paket(false), { car: attrappe });
+        OMEGA_TEST.feedNotify(paket(true), { car: attrappe });
+        OMEGA_TEST.feedNotify(paket(false), { car: attrappe });
+      };
+      // Den gemerkten Zeitpunkt VORVERLEGEN, statt im Test zu warten.
+      //
+      // Und zwar VOR dem zweiten Kontakt und nicht danach - das war der Fehler im ersten
+      // Anlauf dieser Pruefung. pitDoubleCheck() liest pitDoubleFirstAt IM Kontakt; ein
+      // Verschieben danach kommt zu spaet, beide Kontakte liegen dann Millisekunden
+      // auseinander, und die Untergrenze von 1 s verwirft das Paar. Die Pruefung meldete
+      // also einen Fehler, der im Messaufbau lag.
+      const alter = (ms) => { if (pitDoubleFirstAt) pitDoubleFirstAt -= ms; };
+
+      const teile = [], schlecht = [];
+
+      // 1. Ein Kontakt allein ist eine Runde.
+      raceLapTimes.length = 0;
+      raceLapStart = Date.now() - 5000;
+      pitDoubleFirstAt = 0;
+      setPitState('off');
+      kontakt();
+      const nachEins = raceLapTimes.length;
+      teile.push('ein Kontakt: ' + nachEins + ' Runde');
+      if (nachEins !== 1) schlecht.push('erster Kontakt zaehlt keine Runde');
+
+      // 2. Zweiter Kontakt nach 1,5 s: Paar, Runde zurueck, Boxengasse aktiv.
+      raceLapStart = Date.now() - 1500;
+      alter(1500);
+      kontakt();
+      const nachZwei = raceLapTimes.length;
+      teile.push('Paar nach 1,5 s: ' + nachZwei + ' Runden, pitState ' + pitState);
+      // EINE Runde, nicht null - und das ist die richtige Erwartung, auch wenn der erste
+      // Anlauf dieser Pruefung null forderte.
+      //
+      // Der doppelte Ausdruck ist EIN physisches Ding: zwei Blaetter 50 cm auseinander am
+      // Boxeneingang. Darueber zu fahren erzeugt zwei Kontakte, ist aber eine Ueberfahrt.
+      // Also gehoert genau eine Runde gezaehlt, und der zweite, unechte Kontakt wird
+      // zurueckgenommen. Null zu fordern hiesse, dass eine Boxeneinfahrt die vorige Runde
+      // mitloescht - die ist aber wirklich gefahren worden.
+      if (nachZwei !== 1) schlecht.push('Paar laesst ' + nachZwei
+                                        + ' Runden stehen statt einer');
+      if (pitState !== 'limited') schlecht.push('Paar aktiviert die Boxengasse nicht');
+
+      // 3. DER WICHTIGE FALL: zwei Kontakte zu SCHNELL hintereinander sind KEIN Paar.
+      //    Ein einzelner Ausdruck haelt bei Fahrt rund eine Sekunde Kontakt.
+      raceLapTimes.length = 0;
+      raceLapStart = Date.now() - 5000;
+      pitDoubleFirstAt = 0;
+      setPitState('off');
+      kontakt();
+      raceLapStart = Date.now() - 300;
+      alter(300);
+      kontakt();
+      const nachSchnell = raceLapTimes.length;
+      teile.push('zwei Kontakte in 0,3 s: ' + nachSchnell + ' Runden, pitState ' + pitState);
+      if (nachSchnell !== 2) schlecht.push('zu schnelles Paar wird als Einfahrt gelesen');
+      if (pitState !== 'off') schlecht.push('zu schnelles Paar aktiviert die Boxengasse');
+
+      return { ok: !schlecht.length,
+               mass: teile.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+    } finally {
+      playerCar = merk.sp; trackMode = merk.tm; pitTrigger = merk.pt;
+      pitLaneEnabled = merk.ple; pitDoubleFirstAt = merk.pdf;
+      raceState = merk.rs; raceLapStart = merk.ls;
+      raceLapTimes.length = 0;
+      merk.lt.forEach(l => raceLapTimes.push(l));
+      dashLastActedCode = merk.ac; dashLastActedAt = merk.aa;
+      setPitState(merk.ps);
+      renderLapList();
+    }
+  });
+
+  // ---- Das Woerterbuch hat keine doppelten Schluessel ----
+  //
+  // Ein doppelter Schluessel in einem Objektliteral ist kein Syntaxfehler: der spaetere
+  // gewinnt, still. Gefunden wurden vier, und bei einem davon ("Einstellungen") wichen die
+  // Werte ab - "Settings" gegen "settings" -, der frueher gepflegte war also seit dem
+  // Hinzufuegen des zweiten wirkungslos.
+  //
+  // Von aussen ist das unsichtbar: die Uebersetzung ERSCHEINT, nur eben die falsche. Eine
+  // Pruefung dafuer kostet nichts, weil das Woerterbuch schon im Speicher liegt - was sie
+  // nicht kann, ist die Quelldatei sehen, in der die Dopplung steht. Sie zaehlt deshalb die
+  // Schluessel des OBJEKTS gegen die Zahl der Zeilen, die im gebauten Dokument danach
+  // aussehen; weichen sie ab, wurde etwas ueberschrieben.
+  stAdd('Woerterbuch ohne doppelte Schluessel', () => {
+    const imObjekt = Object.keys(I18N_EN).length;
+    // Die Quelle steht im eigenen <script>. Sie zu lesen ist billiger und ehrlicher als die
+    // Dopplung zu erraten: das Objekt selbst kann sie per Definition nicht zeigen.
+    let inQuelle = null;
+    for (const sc of document.querySelectorAll('script')) {
+      const txt = sc.textContent || '';
+      const i = txt.indexOf('const I18N_EN');
+      if (i < 0) continue;
+      const zeilen = txt.slice(i).split(String.fromCharCode(10));
+      let n = 0;
+      for (let k = 1; k < zeilen.length; k++) {
+        const z = zeilen[k].trim();
+        if (z.startsWith('};')) break;
+        // Nur SCHLUESSELzeilen, also solche mit einem Doppelpunkt hinter dem
+        // abschliessenden Anfuehrungszeichen. Der erste Anlauf zaehlte jede Zeile, die mit
+        // einem Anfuehrungszeichen beginnt - also auch die Fortsetzungszeilen mehrzeiliger
+        // Eintraege, bei denen der Wert allein auf der naechsten Zeile steht. Es gibt 40
+        // solche Eintraege, und genau 40 hat er zuviel gezaehlt: eine Pruefung, die ihren
+        // eigenen Formatierungsstil nicht kennt, meldet ihn als Fehler.
+        // "Hinter dem abschliessenden Anfuehrungszeichen kommt ein Doppelpunkt" - also
+        // eine SCHLUESSELzeile und nicht die Fortsetzungszeile eines mehrzeiligen Eintrags.
+        //
+        // Als Zeichenschleife und ausdruecklich NICHT als Regexp. Der erste Anlauf benutzte
+        // einen, und dessen Zeichenklasse verlor beim Schreiben durch die Werkzeugkette
+        // einen Backslash - aus [^"\\] wurde [^"\], eine unabgeschlossene Zeichenklasse,
+        // und die IIFE brach ab. Eine Pruefung, die den Aufbau kaputtmachen kann, ist keine.
+        if (z.charAt(0) === '"') {
+          let j = 1, ende = -1;
+          while (j < z.length) {
+            if (z.charCodeAt(j) === 92) { j += 2; continue; }   // 92 = Backslash
+            if (z.charAt(j) === '"') { ende = j; break; }
+            j++;
+          }
+          if (ende > 0 && z.slice(ende + 1).trim().charAt(0) === ':') n++;
+        }
+      }
+      inQuelle = n;
+      break;
+    }
+    if (inQuelle === null) {
+      return { skip: true, mass: 'Quelle nicht lesbar (eigene Datei statt inline)' };
+    }
+    return { ok: inQuelle === imObjekt,
+             mass: inQuelle + ' Zeilen in der Quelle, ' + imObjekt + ' Schluessel im Objekt'
+                   + (inQuelle === imObjekt ? '' : ' – '
+                      + (inQuelle - imObjekt) + ' still ueberschrieben') };
+  });
+
   // ---- Ausfuehren und anzeigen ----
   async function runSelfTest() {
     const rows = $('st-rows');

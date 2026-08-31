@@ -536,7 +536,6 @@
       "Setup for the car you drive – the same five as in the options; the sliders there follow along.",
     "Oder auf diesem Gerät ablegen. Bleibt im Browser, wird nicht mitgeschickt.":
       "Or store it on this device. Stays in the browser, is not sent anywhere.",
-    "Ablegen": "Store",
     "– abgelegt –": "– stored –",
     "Vibration": "Vibration",
     "R\u00fcckmeldung im Controller bei Gangwechsel, ABS, Aufprall und im Boxenstopp. Das Handy vibriert nicht mit, das Protokoll kennt daf\u00fcr nichts.":
@@ -557,7 +556,6 @@
     "Einfach: Turbo": "Simple: turbo",
     "Einführungsrunde mit Boxengassen-Tempo, frei beim ersten Überfahren von Start/Ziel.": "Formation lap at pit-lane pace, released the first time start/finish is crossed.",
     "Einmal senden": "Send once",
-    "Einstellungen": "settings",
     "Endlosschleife": "Loop forever",
     "Entwickler": "Developer",
     "Ergebnis": "Result",
@@ -915,7 +913,6 @@
     "verbinde dein Auto in der": "connect your car in the",
     "Garage": "Garage",
     ", stelle die": ", set the",
-    "Optionen": "Options",
     "nach deinem Geschmack ein, und fahre im": "to your taste, and drive in the",
     "Cockpit": "Cockpit",
     ". Einige Optionen lassen sich direkt dort anpassen.":
@@ -924,6 +921,48 @@
     // Ein eigenstaendiges <b>und</b> im Ghost-Lerntext, hervorgehoben weil es dort die
     // Aussage traegt: schneller UND ohne Abgang, nicht das eine oder das andere.
     "und": "and",
+    // v0.4 Block H: Sitzungsdaten
+    // v0.4 Block H: Sektoren und Boxengassen-Varianten
+    "Sektoren": "Sectors",
+    "experimentell": "experimental",
+    "Überfahrten je Runde": "Crossings per lap",
+    "1 (aus)": "1 (off)",
+    "Nur": "Only",
+    "ohne Bahn": "without a track",
+    "sinnvoll: auf der CH-Schiene gibt es genau ein Start/Ziel, also ist jede Überfahrt eine Runde. Im Ausdruck-Modus legt man die Muster selbst hin – drei Ausdrucke über eine Runde verteilt sind drei Sektoren. Eine Sektorzeit ist die":
+      "makes sense: the CH rail has exactly one start/finish, so every crossing is a lap. In print mode you place the patterns yourself – three printouts spread over a lap are three sectors. A sector time is the",
+    "gemessene": "measured",
+    "Zeit zwischen zwei Kontakten und nicht die Rundenzeit geteilt durch drei: genau darin liegt der Wert, denn die Streuung sagt,":
+      "time between two contacts, not the lap time divided by three: that is exactly where the value lies, because the spread tells you",
+    "wo": "where",
+    "Zeit verlorengeht.": "time is being lost.",
+    "Wo ist die Boxengasse?": "Where is the pit lane?",
+    "Überall halten": "Stop anywhere",
+    "Neben der Strecke": "Beside the track",
+    "Neben der Strecke (Byte 12 = 0x00)": "Beside the track (byte 12 = 0x00)",
+    "Doppelter Start-Ausdruck (experimentell)": "Double start printout (experimental)",
+    "Doppelter Start-Ausdruck": "Double start printout",
+    "ist die Vorgabe: ein angeforderter Boxenstopp wird durch Anhalten bedient, egal wo. Braucht keinen Ausdruck und keine Schiene.":
+      "is the default: a requested pit stop is served by stopping, anywhere. Needs no printout and no rail.",
+    "nimmt Byte 12 = 0x00 als Boxengasse. Nur auf der CH-Schiene sinnvoll – ohne Schiene ist das Auto praktisch immer „abseits“, und dann wäre die ganze Strecke Boxengasse.":
+      "takes byte 12 = 0x00 as the pit lane. Only meaningful on the CH rail – without a rail the car is off-track almost always, and then the whole course would be pit lane.",
+    ": zwei Ausdrucke im Abstand von 50 cm. Zwei Musterkontakte innerhalb von 3 s bei mindestens 1 s Abstand sind eine Boxeneinfahrt und keine Runde. Danach piept es, das Tempolimit von 60 km/h gilt 4 s, und ein Anhalten in dieser Zeit startet den Service. Der Mindestabstand ist der wichtigere Teil der Bedingung: ein einzelner Ausdruck hält bei Fahrt etwa eine Sekunde Kontakt, und ohne ihn würde das Flattern":
+      ": two printouts 50 cm apart. Two pattern contacts within 3 s and at least 1 s apart are a pit entry, not a lap. Then it beeps, the 60 km/h limit holds for 4 s, and stopping within that time starts the service. The minimum gap is the more important half of the condition: a single printout holds contact for about a second at speed, and without it the flutter of",
+    "eines": "a single",
+    "Musters als Paar gelesen.": "pattern would be read as a pair.",
+    "Runde beim Boxeneinfahren trotzdem zählen":
+      "Count the lap on pit entry anyway",
+    "Gefahrene Sitzungen": "Sessions driven",
+    "Nach jedem beendeten Rennen abgelegt, auf diesem Gerät. Gespeichert werden Rundenzeiten, Datum, Streckencode, Modus, die verwendete Abstimmung und die gefahrene Strecke – und zwar":
+      "Stored after every finished race, on this device. Lap times, date, track code, mode, the setup used and the distance driven – and that",
+    "zweimal": "twice",
+    ": als simulierte Kilometer, die zum Tacho passen, und als echte Meter, die das Modellauto auf dem Teppich zurückgelegt hat. Nur eine der beiden zu speichern wäre eine willkürliche Wahl.":
+      ": as simulated kilometres matching the speedo, and as real metres the model car actually covered on the carpet. Storing only one of them would be an arbitrary choice.",
+    "Alles als CSV exportieren": "Export everything as CSV",
+    "Alle Sitzungsdaten löschen": "Delete all session data",
+    "Die Zuordnung läuft über die Bluetooth-Gerätekennung, damit dasselbe Auto bei anderer Verbindungsreihenfolge dieselben Kilometer behält. Genau deshalb gibt es den Löschknopf.":
+      "Cars are matched by their Bluetooth device id, so the same car keeps its mileage even when connected in a different order. That is exactly why the delete button exists.",
+    "noch nichts gespeichert": "nothing stored yet",
     "Bremsbalance": "Brake bias",
     "Furz 2": "Fart 2",
     "Porsche 911 GT3 R: Boxer-6, Einzeldrosseln": "Porsche 911 GT3 R: flat-6, individual throttle bodies",

@@ -612,6 +612,10 @@
     const out = physEngine.update({ steering: steer, throttle: rawThrottle, brake: rawBrake,
                                     headlights: headlightsOn }, dt);
     updateDashboard(out);
+    // Gefahrene Strecke mitzaehlen, siehe 97-sessions.js. Hier und nicht dort, weil dies
+    // der einzige Ort mit einem verlaesslichen dt ist - und ausdruecklich OHNE
+    // Speicherzugriff: localStorage ist synchron und wuerde den 45-ms-Sendetakt stoeren.
+    trackDistance(physEngine.state.speedKmh * REAL_SCALE, dt);
     physOutSteer = out.servoAngle;
     physOutThrottle = out.motorPWM;
   }

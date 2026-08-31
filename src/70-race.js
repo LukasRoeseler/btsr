@@ -771,6 +771,13 @@
     // nur im Tab "Renneinstellungen" - wer im Cockpit auf Stopp drueckt, sah nichts, und
     // beim freien Training sah es deshalb aus, als gebe es ueberhaupt keine Ergebnisse.
     showRaceSummary();
+    // Und ablegen. Hier, weil dies die eine Stelle ist, an der ein Rennen wirklich vorbei
+    // ist - und nach showRaceSummary(), damit ein Fehlschlag beim Speichern das Ergebnis
+    // nicht verdeckt.
+    if (typeof sessionRecord === 'function') {
+      sessionRecord();
+      if (typeof renderSessions === 'function') renderSessions();
+    }
   }
 
   // ---- Ergebnisfenster ----
@@ -1184,7 +1191,9 @@
           ? String(z.counterVon)
           : z.counterVon + '\u2013' + z.counterBis;
         return '<tr><td style="' + td + '">0x' + z.code.toString(16).padStart(2, '0')
-             + ' ' + (TILE_LABEL[z.code] || '?') + einzeln + '</td>'
+             // Durch t(), aus demselben Grund wie in der Musterprobe: der rohe Name
+             // faerbt den ganzen zusammengesetzten Messwert deutsch.
+             + ' ' + t(TILE_LABEL[z.code] || '?') + einzeln + '</td>'
              + '<td style="' + tdr + '">' + z.pakete + '</td>'
              + '<td style="' + tdr + '">' + (dauer >= 1000
                  ? (dauer / 1000).toFixed(1) + ' s' : dauer + ' ms') + '</td>'
@@ -1246,6 +1255,9 @@
         log('Start/Ziel im Ausdruck-Modus: Musterkontakt gesetzt, Code 0x'
             + code.toString(16).padStart(2, '0') + '.', 'info');
         if (playerLapCrossed()) { refreshMinimap(); }
+        // Und DANACH die Doppelpruefung: die Runde ist gezaehlt, mit richtiger Zeit, und
+        // wird zurueckgenommen falls sich der Kontakt als zweiter eines Paares erweist.
+        pitDoubleCheck(jetzt);
       } else if (frei && code === pitMarkerCode) {
         dashLastActedCode = code; dashLastActedAt = jetzt;
         onPitMarkerCrossed();
@@ -1310,6 +1322,13 @@
     //
     // Mitangezeigt wird der Kachelzaehler, denn genau er war die stille Bedingung: bewegt
     // er sich nicht, sieht man das jetzt.
+    // Variante 'offtrack': 0x00 heisst abseits der Bahn, und abseits der Bahn IST die
+    // Boxengasse. Nur auf der CH-Schiene sinnvoll - ohne Schiene ist das Auto praktisch
+    // immer "abseits", und dann waere die ganze Strecke Boxengasse.
+    if (pitLaneEnabled && pitTrigger === 'offtrack' && type === 0x00
+        && lastTileCode !== 0x00) {
+      onPitMarkerCrossed();
+    }
     lastTileCode = type;
     tileTimelineTick(type, counter);
     const probe = $('tile-probe');
@@ -1368,8 +1387,136 @@
   // Testtaste Q genau hier hineingeht statt einen zweiten Weg zu nehmen - ein zweiter Weg
   // prueft den ersten nicht. Rueckgabewert: true, wenn der Aufrufer abbrechen soll (die
   // Einfuehrungsrunde endete, das war keine gezaehlte Runde).
+  // Eine gerade gezaehlte Runde zuruecknehmen.
+  //
+  // Gebraucht wird das nur von der Boxengassen-Variante 'double': dort steht erst beim
+  // ZWEITEN Kontakt fest, dass der erste eine Boxeneinfahrt war und keine Runde. Die
+  // Alternative waere, die Runde drei Sekunden zurueckzuhalten - dann waere aber die
+  // Rundenzeit falsch, denn die Rundengrenze ist der Moment der Ueberfahrt und nicht der
+  // Moment der Entscheidung. Eine zurueckgenommene Runde ist sichtbar; eine um drei
+  // Sekunden verschobene Grenze ist ein stiller Messfehler in JEDER Runde.
+  //
+  // Die Zeit muss mit zurueck: ohne das faengt die naechste Runde mitten in der
+  // zurueckgenommenen an, und dann sind beide falsch.
+  function retractLap(warum) {
+    if (!raceLapTimes.length) return false;
+    const weg = raceLapTimes.pop();
+    if (raceLapStart !== null) raceLapStart -= weg.ms;
+    if (dashLapTimes.length) {
+      const d = dashLapTimes.pop();
+      if (dashLapStart !== null) dashLapStart -= d;
+    }
+    renderLapList();
+    $('race-status').textContent = t('Rennen läuft, Runde') + ' ' + raceLapTimes.length;
+    log('Runde zurueckgenommen (' + formatLapTime(weg.ms) + '): ' + warum, 'info');
+    showHudToast('KEINE RUNDE, BOXENEINFAHRT');
+    return true;
+  }
+
+  // ---- Sektoren [experimentell] ----
+  //
+  // X Ueberfahrten ueber Start/Ziel sind EINE Runde; die Zeiten dazwischen sind
+  // Teilstreckenzeiten. Das geht nur ohne Bahn, und nicht weil es riskant waere, sondern
+  // weil es mit Bahn bedeutungslos ist: auf der CH-Schiene gibt es genau ein Start/Ziel,
+  // also ist jede Ueberfahrt eine Runde. Im Ausdruck-Modus legt man die Muster selbst hin,
+  // und drei Ausdrucke ueber eine Runde verteilt sind drei Sektoren.
+  //
+  // WICHTIG am Entwurf: eine Sektorzeit ist NICHT die Rundenzeit geteilt durch X, sondern
+  // die gemessene Zeit zwischen zwei Kontakten. Genau darin liegt der Wert - die Sektoren
+  // einer Runde sind ungleich lang, und ihre Streuung sagt, WO Zeit verlorengeht. Eine
+  // gerechnete Drittelung waere eine Zahl ohne Information.
+  //
+  // Und die Rundenzeit ist die SUMME der gemessenen Sektoren, nicht eine zweite Messung.
+  // Zwei Uhren fuer dieselbe Strecke laufen auseinander.
+  let sectorCount = 1;          // 1 = aus, jede Ueberfahrt ist eine Runde
+  let sectorIndex = 0;          // wieviele Kontakte diese Runde schon hatte
+  let sectorStart = null;       // Beginn des laufenden Sektors
+  let sectorTimes = [];         // die Sektoren der laufenden Runde, in ms
+  let sectorHistory = [];       // je vollendete Runde ein Array von Sektorzeiten
+
+  function sectorReset() {
+    sectorIndex = 0;
+    sectorStart = null;
+    sectorTimes = [];
+  }
+
+  // Gibt true zurueck, wenn dieser Kontakt eine RUNDE vollendet - dann laeuft die normale
+  // Rundenlogik. Sonst war es eine Sektorgrenze und die Runde laeuft weiter.
+  function sectorCrossed(now) {
+    if (sectorCount <= 1) return true;
+    if (sectorStart === null) {
+      // Der erste Kontakt ueberhaupt: er beginnt den ersten Sektor und ist noch keine
+      // Sektorgrenze. Ohne diesen Fall waere der erste Sektor die Zeit seit dem Rennstart
+      // und damit systematisch zu lang.
+      sectorStart = now;
+      sectorIndex = 0;
+      return false;
+    }
+    sectorTimes.push(now - sectorStart);
+    sectorStart = now;
+    sectorIndex += 1;
+    if (sectorIndex < sectorCount) {
+      renderSectors();
+      showHudToast('SEKTOR ' + sectorIndex + ': '
+                   + formatLapTime(sectorTimes[sectorTimes.length - 1]));
+      // Ein eigener, tieferer Ton fuer die Sektorgrenze: derselbe wie fuer die Runde waere
+      // eine Falschmeldung, denn die Runde ist nicht vorbei.
+      playTone(300, 0.07, 'sine', 0.12);
+      return false;
+    }
+    // Runde voll.
+    sectorHistory.push(sectorTimes.slice());
+    sectorTimes = [];
+    sectorIndex = 0;
+    renderSectors();
+    return true;
+  }
+
+  function renderSectors() {
+    const host = $('sector-list');
+    if (!host) return;
+    if (sectorCount <= 1) { host.innerHTML = ''; return; }
+    const teile = [];
+    if (sectorTimes.length) {
+      teile.push('<div class="sess-row"><b>jetzt</b> '
+                 + sectorTimes.map((ms, i) => 'S' + (i + 1) + ' ' + formatLapTime(ms))
+                     .join(' &middot; ') + '</div>');
+    }
+    // Die BESTE je Sektor, ueber alle Runden. Das ist die Zahl, aus der eine
+    // Ideal-Rundenzeit entsteht: die Summe der besten Sektoren ist schneller als die beste
+    // gefahrene Runde, und die Differenz sagt, wieviel noch drin ist.
+    if (sectorHistory.length) {
+      const beste = [];
+      for (let i = 0; i < sectorCount - 1 + 1; i++) {
+        const werte = sectorHistory.map(r => r[i]).filter(v => v !== undefined);
+        if (werte.length) beste.push(Math.min.apply(null, werte));
+      }
+      const summe = beste.reduce((a, b) => a + b, 0);
+      const rundenSummen = sectorHistory.map(r => r.reduce((a, b) => a + b, 0));
+      const besteRunde = rundenSummen.length ? Math.min.apply(null, rundenSummen) : null;
+      teile.push('<div class="sess-row"><b>beste</b> '
+                 + beste.map((ms, i) => 'S' + (i + 1) + ' ' + formatLapTime(ms))
+                     .join(' &middot; ')
+                 + ' &rarr; ideal ' + formatLapTime(summe)
+                 + (besteRunde !== null && besteRunde > summe
+                    ? ' (' + formatLapTime(besteRunde - summe) + ' schneller als die beste '
+                      + 'gefahrene Runde)' : '')
+                 + '</div>');
+      sectorHistory.slice(-5).reverse().forEach((r, k) => {
+        teile.push('<div class="sess-row"><b>R' + (sectorHistory.length - k) + '</b> '
+                   + r.map((ms, i) => 'S' + (i + 1) + ' ' + formatLapTime(ms))
+                       .join(' &middot; ')
+                   + ' = ' + formatLapTime(r.reduce((a, b) => a + b, 0)) + '</div>');
+      });
+    }
+    host.innerHTML = teile.join('');
+  }
+
   function playerLapCrossed() {
     const now = Date.now();
+    // Sektoren zuerst: war das nur eine Sektorgrenze, ist die Runde nicht vorbei und alles
+    // Weitere darf nicht laufen - weder die Rundenzeit noch der Ton noch das Rennende.
+    if (!sectorCrossed(now)) return false;
     if (dashLapStart !== null) { dashLapTimes.push(now - dashLapStart); renderLapList(); }
     dashLapStart = now;
     triggerDoppler();
@@ -1505,6 +1652,32 @@
   // guarantees the pit lane can never trigger, and nothing in the UI said so. null makes
   // every comparison against it false until the Muster-Sonde has actually measured a value.
   let pitLaneEnabled = true;
+
+  // ---- Wo ist die Boxengasse? Drei Varianten ----
+  //
+  // 'anywhere'  Vorgabe. Ein angeforderter Boxenstopp wird durch Anhalten bedient, egal wo.
+  //             Braucht keinen Ausdruck und keine Schiene.
+  // 'offtrack'  Byte 12 meldet 0x00, also abseits der Bahn. Nur auf der CH-Schiene sinnvoll,
+  //             weil nur dort "abseits" ueberhaupt eine Bedeutung hat.
+  // 'double'    Experimentell: zwei Ausdrucke im Abstand von 50 cm.
+  let pitTrigger = 'anywhere';
+  // Zaehlt die Runde beim Boxeneinfahren trotzdem? Vorgabe nein - eine Boxeneinfahrt ist
+  // keine Runde. Wer die Zaehlung lieber durchlaufen laesst, kann es umstellen.
+  let pitDoubleCountsLap = false;
+
+  // Zwei Kontakte innerhalb von 3 s bei mindestens 1 s Abstand. Die untere Grenze ist der
+  // wichtigere Teil: ein einzelner Ausdruck haelt bei Fahrt etwa eine Sekunde Kontakt, und
+  // ohne Mindestabstand wuerde das Flattern EINES Musters als Paar gelesen.
+  const PIT_DOUBLE_WINDOW_MS = 3000;
+  const PIT_DOUBLE_MIN_MS = 1000;
+  // Danach 4 s Tempolimit. Haelt das Auto in dieser Zeit, beginnt der Service von selbst.
+  const PIT_DOUBLE_LIMIT_MS = 4000;
+  const PIT_DOUBLE_KMH = 60;
+  // Dieselbe Rechnung wie PIT_SPEED_FACTOR, nur mit 60 statt 80: der angezeigte Tacho ist
+  // speedKmh * REAL_SCALE, und topSpeedKmh ist 4,0.
+  const PIT_DOUBLE_SPEED_FACTOR = PIT_DOUBLE_KMH / REAL_SCALE / 4.0;
+  let pitDoubleFirstAt = 0;
+  let pitDoubleArmedUntil = 0;
   let pitMarkerCode = null;
   // 80 km/h on the racing display, the speed a real pit lane limiter holds. The display
   // reads speedKmh * REAL_SCALE (71.25), so 80 / 71.25 / 4.0 top speed = 0.2807.
@@ -1522,7 +1695,11 @@
   function setPitState(next) {
     if (pitState === next) return;
     pitState = next;
-    limitPit = (next === 'off') ? 1 : PIT_SPEED_FACTOR;
+    // Die Variante 'double' nennt ausdruecklich 60 km/h, die anderen fahren mit den
+    // 80 km/h der Boxengasse. Beide Faktoren werden HIER gewaehlt, damit es weiter genau
+    // eine Stelle gibt, an der das Boxenlimit gesetzt wird.
+    limitPit = (next === 'off') ? 1
+             : (pitTrigger === 'double' ? PIT_DOUBLE_SPEED_FACTOR : PIT_SPEED_FACTOR);
     applySpeedLimit();
     // Nachlauf-Wecker. Das Ausfahrtmuster wird nicht immer gelesen - ein Muster, das
     // nicht gelesen wird, laesst den Limiter sonst bis zum Rundenende an, und das ist der
@@ -1600,6 +1777,35 @@
     updatePitUI();
   }
 
+  // Variante 'double': war das der zweite Kontakt eines Paares?
+  //
+  // Aufgerufen NACH playerLapCrossed(), damit die Runde mit ihrer richtigen Zeit gezaehlt
+  // ist, bevor hier ueber sie entschieden wird.
+  function pitDoubleCheck(jetzt) {
+    if (!pitLaneEnabled || pitTrigger !== 'double') return;
+    const seit = jetzt - pitDoubleFirstAt;
+    if (pitDoubleFirstAt && seit >= PIT_DOUBLE_MIN_MS && seit <= PIT_DOUBLE_WINDOW_MS) {
+      // Paar erkannt. Der Boxenstopp beginnt erst JETZT, nach dem zweiten Muster - so
+      // steht es in der Anforderung, und es ist auch das Richtige: nach dem ersten weiss
+      // niemand, ob eine Einfahrt gemeint war.
+      pitDoubleFirstAt = 0;
+      if (!pitDoubleCountsLap) retractLap('doppelter Start-Ausdruck, Boxeneinfahrt');
+      pitDoubleArmedUntil = jetzt + PIT_DOUBLE_LIMIT_MS;
+      setPitState('limited');
+      // Das Piepen: dasselbe wie die Boxengassen-Meldung, damit es nicht ein weiterer Ton
+      // ist, den man lernen muss.
+      playTone(880, 0.12, 'square', 0.16);
+      setTimeout(() => playTone(880, 0.12, 'square', 0.16), 180);
+      showHudToast('BOXENGASSE AKTIV, ' + PIT_DOUBLE_KMH + ' KM/H');
+      log('Boxengasse per doppeltem Ausdruck: zweiter Kontakt nach ' + seit
+          + ' ms, Tempolimit ' + PIT_DOUBLE_KMH + ' km/h fuer '
+          + (PIT_DOUBLE_LIMIT_MS / 1000) + ' s. Anhalten startet den Service.', 'info');
+      return;
+    }
+    // Kein Paar: dieser Kontakt ist der moegliche ERSTE eines neuen.
+    pitDoubleFirstAt = jetzt;
+  }
+
   function onPitMarkerCrossed() {
     if (!pitLaneEnabled || pitState !== 'off') return;
     // Just aborted: do not drag the car straight back in while it is still on the marker.
@@ -1615,6 +1821,19 @@
     const now = Date.now();
     const dt = pitLastTick ? Math.min(0.5, (now - pitLastTick) / 1000) : 0;
     pitLastTick = now;
+
+    // Variante 'double': das 4-Sekunden-Fenster laeuft ab. Wer in dieser Zeit nicht anhaelt,
+    // faehrt durch - und dann ist die Boxengasse wieder aus, statt dass das Tempolimit
+    // haengen bleibt.
+    if (pitTrigger === 'double' && pitDoubleArmedUntil
+        && now > pitDoubleArmedUntil && pitState === 'limited') {
+      pitDoubleArmedUntil = 0;
+      setPitState('off');
+      showHudToast('BOXENGASSE VORBEI');
+      log('Boxengasse per doppeltem Ausdruck: nicht angehalten, Fenster abgelaufen.', 'info');
+      return;
+    }
+
     if (pitState === 'off') return;
 
     // Absolute value: any NEGATIVE speed would otherwise satisfy this and start a pit
@@ -1684,6 +1903,48 @@
     pitLaneEnabled = e.target.checked;
     if (!pitLaneEnabled) setPitState('off');
   });
+  $('sector-count').addEventListener('change', (e) => {
+    sectorCount = Math.max(1, parseInt(e.target.value, 10) || 1);
+    sectorReset();
+    sectorHistory = [];
+    renderSectors();
+    if (sectorCount > 1 && trackMode === 'on') {
+      // Kein stiller Fehlschlag: mit Bahn ist die Einstellung nicht falsch, sondern
+      // bedeutungslos, und das gehoert gesagt statt dass man auf Sektorzeiten wartet, die
+      // nie kommen.
+      showHudToast('SEKTOREN BRAUCHEN DEN AUSDRUCK-MODUS');
+      log('Sektoren sind auf ' + sectorCount + ' gestellt, aber die Leseart ist "Bahn". '
+          + 'Auf der Schiene gibt es genau ein Start/Ziel, also bleibt jede Ueberfahrt eine '
+          + 'Runde. Im Cockpit auf "Ausdruck" umschalten.', 'err');
+    } else {
+      log('Sektoren: ' + (sectorCount <= 1 ? 'aus'
+          : sectorCount + ' Ueberfahrten je Runde'), 'info');
+    }
+  });
+
+  $('pit-trigger').addEventListener('change', (e) => {
+    pitTrigger = e.target.value;
+    // Beim Umschalten aufraeumen: ein halb erkanntes Paar oder ein laufendes Limit der
+    // vorigen Variante haette sonst noch Wirkung, obwohl die Variante gewechselt hat.
+    pitDoubleFirstAt = 0;
+    pitDoubleArmedUntil = 0;
+    if (pitState !== 'off') setPitState('off');
+    // Die Zusatzoption gilt nur fuer 'double', also wird sie nur dort gezeigt. Ein
+    // Ankreuzfeld, das in der gewaehlten Variante nichts bedeutet, ist eine Frage ohne
+    // Antwort.
+    const wrap = $('pit-double-lap-wrap');
+    if (wrap) wrap.style.display = pitTrigger === 'double' ? 'flex' : 'none';
+    log('Boxengasse: ' + (pitTrigger === 'anywhere' ? 'ueberall halten'
+        : pitTrigger === 'offtrack' ? 'neben der Strecke (Byte 12 = 0x00)'
+        : 'doppelter Start-Ausdruck, 2 Kontakte in ' + (PIT_DOUBLE_WINDOW_MS / 1000)
+          + ' s bei mindestens ' + (PIT_DOUBLE_MIN_MS / 1000) + ' s Abstand'), 'info');
+  });
+  $('pit-double-lap').addEventListener('change', (e) => {
+    pitDoubleCountsLap = e.target.checked;
+  });
+  // Beim Laden verstecken, weil die Vorgabe 'anywhere' ist.
+  if ($('pit-double-lap-wrap')) $('pit-double-lap-wrap').style.display = 'none';
+
   $('pit-marker-code').addEventListener('change', (e) => {
     const raw = e.target.value.trim();
     if (raw === '') { pitMarkerCode = null; return; }

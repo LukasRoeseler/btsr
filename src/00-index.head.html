@@ -299,6 +299,12 @@
     background: linear-gradient(90deg, transparent, var(--brand-bg));
   }
   .tabs-wrap.can-scroll::after { opacity: 1; }
+  /* Eine Sitzungszeile. Monospace fuer die Uhrzeit, damit die Zeilen untereinander
+     ausgerichtet stehen - eine Liste von Zeitpunkten, deren Ziffern wandern, liest sich
+     schlechter als eine, deren Spalten stehen. */
+  .sess-row { font-size: 12.5px; line-height: 1.6; padding: 2px 0 2px 9px;
+              border-left: 2px solid var(--line); color: var(--muted); }
+  .sess-row b { font-family: monospace; color: var(--ink); margin-right: 4px; }
   .misc-grid {
     display: grid; gap: 14px;
     grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
@@ -2126,6 +2132,30 @@
         der Bahn das Auto f&auml;hrt.
       </p>
 
+      <h3 style="font-size:14px; margin:16px 0 6px 0">Eine Werkzeugfalle, die drei Anl&auml;ufe
+        gekostet hat</h3>
+      <p class="muted">
+        Nicht &uuml;ber das Auto, sondern &uuml;ber das Bauen: die Werkzeugkette, mit der
+        diese Datei geschrieben wird, <b>frisst Backslashes</b>. Aus
+        <code>[^"\]</code> wird <code>[^"\]</code>, und das ist eine unabgeschlossene
+        Zeichenklasse: Syntaxfehler, die IIFE bricht ab, nichts l&auml;dt mehr. Aus
+        <code>split('\n')</code> wird ein <em>echtes</em> Zeilenende mitten in einem
+        String &ndash; derselbe Effekt.
+      </p>
+      <p class="muted">
+        Dreimal in einer Sitzung passiert, und die Lehre ist nicht &bdquo;besser
+        aufpassen&ldquo;. Sie ist: <b>keine Escapes durch diese Kette schicken.</b> Jede
+        Pr&uuml;fung, die einen Regexp braucht, l&auml;sst sich auch als Zeichenschleife
+        schreiben, und die kommt ohne einen einzigen Backslash aus. Wo ein Zeilenende
+        gebraucht wird, steht <code>String.fromCharCode(10)</code>.
+      </p>
+      <p class="muted">
+        Der Grund, warum das hier steht und nicht nur als Kommentar an der einen Stelle: der
+        Fehler sieht jedes Mal anders aus &ndash; einmal ein kaputter Regexp, einmal ein
+        String &uuml;ber zwei Zeilen &ndash; und man sucht ihn deshalb jedes Mal neu im
+        JavaScript, wo er nicht ist.
+      </p>
+
       <h3 style="font-size:14px; margin:16px 0 6px 0">Woher die Muster kommen, und was ihr
         Vorlauf ist</h3>
       <p class="muted">
@@ -3766,6 +3796,21 @@
       <div class="opt-row"><div class="opt-label"><span id="race-limit-label">Minuten</span>
           <small>Bei freiem Training ohne Bedeutung.</small></div>
         <input type="number" id="race-limit" value="2" min="1" max="120" step="1" style="width:84px"></div>
+      <div class="opt-row"><div class="opt-label">Sektoren
+          <span class="wip-tag">experimentell</span>
+          <small>&Uuml;berfahrten je Runde. Nur <b>ohne Bahn</b> sinnvoll: auf der
+          CH-Schiene gibt es genau ein Start/Ziel, also ist jede &Uuml;berfahrt eine Runde.
+          Im Ausdruck-Modus legt man die Muster selbst hin &ndash; drei Ausdrucke &uuml;ber
+          eine Runde verteilt sind drei Sektoren. Eine Sektorzeit ist die
+          <em>gemessene</em> Zeit zwischen zwei Kontakten und nicht die Rundenzeit geteilt
+          durch drei: genau darin liegt der Wert, denn die Streuung sagt, <em>wo</em> Zeit
+          verlorengeht.</small></div>
+        <select id="sector-count">
+          <option value="1" selected>1 (aus)</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+        </select></div>
       <!-- Ausgegraut: nicht umgesetzt. Ein Ankreuzfeld, das man setzen kann und das
            nichts bewirkt, ist eine Falschaussage der Oberflaeche - und dieses hier
            versprach eine Einfuehrungsrunde, die es nicht gibt. -->
@@ -3846,12 +3891,40 @@
         </div>
         <h3 style="margin:14px 0 8px 0; font-size:14px">Position &uuml;ber die Runden</h3>
         <div id="race-position-plot" class="doc-table-wrap"></div>
+        <h3 style="margin:14px 0 8px 0; font-size:14px">Sektorzeiten</h3>
+        <div id="sector-list" style="margin-bottom:10px"></div>
         <h3 style="margin:14px 0 8px 0; font-size:14px">Alle Rundenzeiten</h3>
         <div class="doc-table-wrap" style="max-height:280px; overflow-y:auto; border:1px solid var(--border); border-radius:6px">
           <table style="width:100%; border-collapse:collapse; font-size:13px" id="race-results-laps"></table>
         </div>
         <button id="race-export-csv" style="margin-top:10px">Als CSV exportieren</button>
       </div>
+    </div>
+
+    <!-- Sitzungsdaten. Bis v0.4 ueberlebte KEINE Rundenzeit ein Neuladen: raceLapTimes und
+         car.race.laps waren Variablen im Speicher, und in chc.cars.v1 standen nur Farbe und
+         Name. Der CSV-Export war der einzige Rettungsweg - man musste also vor dem Fahren
+         wissen, dass man exportieren will. -->
+    <div class="card">
+      <h2>Gefahrene Sitzungen</h2>
+      <p class="muted">
+        Nach jedem beendeten Rennen abgelegt, auf diesem Ger&auml;t. Gespeichert werden
+        Rundenzeiten, Datum, Streckencode, Modus, die verwendete Abstimmung und die
+        gefahrene Strecke &ndash; und zwar <b>zweimal</b>: als simulierte Kilometer, die zum
+        Tacho passen, und als echte Meter, die das Modellauto auf dem Teppich zur&uuml;ckgelegt
+        hat. Nur eine der beiden zu speichern w&auml;re eine willk&uuml;rliche Wahl.
+      </p>
+      <p class="muted" id="sess-summary" style="font-size:12.5px">&nbsp;</p>
+      <div class="doc-table-wrap" id="sess-list"></div>
+      <div class="row" style="gap:8px; margin-top:12px; flex-wrap:wrap">
+        <button id="sess-export">Alles als CSV exportieren</button>
+        <button id="sess-clear">Alle Sitzungsdaten l&ouml;schen</button>
+      </div>
+      <p class="muted" style="font-size:11.5px; margin-top:8px">
+        Die Zuordnung l&auml;uft &uuml;ber die Bluetooth-Ger&auml;tekennung, damit dasselbe
+        Auto bei anderer Verbindungsreihenfolge dieselben Kilometer beh&auml;lt. Genau
+        deshalb gibt es den L&ouml;schknopf.
+      </p>
     </div>
 
   </section>
@@ -4754,10 +4827,37 @@
         stehen, läuft der Service: je länger du stehst, desto mehr Sprit und Reparatur.
         Beim Losfahren ist das Limit wieder weg.
       </p>
+      <p class="muted" style="font-size:12px">
+        <b>&Uuml;berall halten</b> ist die Vorgabe: ein angeforderter Boxenstopp wird durch
+        Anhalten bedient, egal wo. Braucht keinen Ausdruck und keine Schiene.<br>
+        <b>Neben der Strecke</b> nimmt Byte&nbsp;12&nbsp;=&nbsp;0x00 als Boxengasse. Nur auf
+        der CH-Schiene sinnvoll &ndash; ohne Schiene ist das Auto praktisch immer
+        &bdquo;abseits&ldquo;, und dann w&auml;re die ganze Strecke Boxengasse.<br>
+        <b>Doppelter Start-Ausdruck</b> <span class="wip-tag">experimentell</span>: zwei
+        Ausdrucke im Abstand von 50&nbsp;cm. Zwei Musterkontakte innerhalb von 3&nbsp;s bei
+        mindestens 1&nbsp;s Abstand sind eine Boxeneinfahrt und keine Runde. Danach piept es,
+        das Tempolimit von 60&nbsp;km/h gilt 4&nbsp;s, und ein Anhalten in dieser Zeit startet
+        den Service. Der Mindestabstand ist der wichtigere Teil der Bedingung: ein einzelner
+        Ausdruck h&auml;lt bei Fahrt etwa eine Sekunde Kontakt, und ohne ihn w&uuml;rde das
+        Flattern <em>eines</em> Musters als Paar gelesen.
+      </p>
+      <label style="display:flex; align-items:center; gap:6px; font-size:12.5px;
+             margin-bottom:10px" id="pit-double-lap-wrap">
+        <input type="checkbox" id="pit-double-lap"> Runde beim Boxeneinfahren trotzdem
+        z&auml;hlen
+      </label>
       <div class="row" style="align-items:center; gap:16px">
         <label style="display:flex; align-items:center; gap:6px">
           <input type="checkbox" id="pit-enable" checked> Boxengasse aktiv
         </label>
+        <div>
+          <label class="small">Wo ist die Boxengasse?</label>
+          <select id="pit-trigger">
+            <option value="anywhere" selected>&Uuml;berall halten</option>
+            <option value="offtrack">Neben der Strecke (Byte 12 = 0x00)</option>
+            <option value="double">Doppelter Start-Ausdruck (experimentell)</option>
+          </select>
+        </div>
         <div>
           <label class="small">Auslöse-Code (Byte 12)</label>
           <input type="text" id="pit-marker-code" value="" placeholder="0x0e bei Nummer 14, erst prüfen"
@@ -4823,7 +4923,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.4.18</span></span>
+    <span class="foot-ver">v<span id="app-version">0.4.19</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
