@@ -422,6 +422,63 @@
     } finally { if (lang !== vorher) setLang(vorher); }
   });
 
+  // ---- Abseits der Fahrbahn ----
+  //
+  // Die Bedingung, an der es schiefgeht, wenn sie jemand vergisst: die Drosselung darf NUR
+  // im Bahn-Modus greifen. Im Ausdruck-Modus ist der Streckensensor abgeschaltet (gemessen
+  // 0 Lesungen in 551 Fahrmeldungen), Byte 12 stuende dauernd auf 0x00, und das Auto waere
+  // permanent auf 45 % gedeckelt - man wuerde den Fehler beim Motor suchen.
+  //
+  // Geprueft wird ausserdem die Entprellung: ein einzelnes 0x00 zwischen guten Lesungen ist
+  // Rauschen und darf nichts ausloesen. Ohne sie zuckt das Gas mitten auf der Bahn.
+  stAdd('Drosselung abseits nur auf der Bahn, und entprellt', () => {
+    if (typeof offtrackMelden !== 'function' || typeof offtrackGilt !== 'function') {
+      return { ok: null, mass: 'Funktionen nicht erreichbar' };
+    }
+    const merk = { mode: trackMode, effekt: !!($('setting-offtrack') || {}).checked };
+    try {
+      if ($('setting-offtrack')) $('setting-offtrack').checked = true;
+      offtrackEffekt = true;
+
+      // a) Ein einzelner Ausfall darf nichts tun.
+      trackMode = 'on';
+      offtrackMelden(false);
+      offtrackMelden(true);
+      const einzeln = offtrackGilt();
+
+      // b) Durchgehend abseits, laenger als die Einschaltzeit: greift.
+      const t0 = Date.now();
+      while (Date.now() - t0 < 420) offtrackMelden(true);
+      const dauer = offtrackGilt();
+
+      // c) Dieselbe Lage im Ausdruck-Modus: greift NICHT.
+      trackMode = 'off';
+      offtrackMelden(true);
+      const ausdruck = offtrackGilt();
+
+      // d) Zurueck auf die Bahn: endet.
+      trackMode = 'on';
+      const t1 = Date.now();
+      while (Date.now() - t1 < 220) offtrackMelden(false);
+      const zurueck = offtrackGilt();
+
+      return {
+        ok: !einzeln && dauer && !ausdruck && !zurueck,
+        mass: 'einzelner Ausfall ' + (einzeln ? 'greift (FALSCH)' : 'ignoriert')
+            + ' | 420 ms abseits ' + (dauer ? 'greift' : 'greift NICHT (falsch)')
+            + ' | Ausdruck-Modus ' + (ausdruck ? 'greift (FALSCH)' : 'greift nicht')
+            + ' | zurueck ' + (zurueck ? 'greift weiter (FALSCH)' : 'beendet'),
+      };
+    } finally {
+      trackMode = merk.mode;
+      if ($('setting-offtrack')) $('setting-offtrack').checked = merk.effekt;
+      offtrackEffekt = merk.effekt;
+      // Zustand zuruecklegen, sonst steht der Streifen nach dem Test im Cockpit.
+      const t2 = Date.now();
+      while (Date.now() - t2 < 200) offtrackMelden(false);
+    }
+  });
+
   // ---- Voreinstellungen gegen die Reglerraster ----
   //
   // Eine Voreinstellung darf nur Werte verlangen, die ihr Regler DARSTELLEN kann. Ein

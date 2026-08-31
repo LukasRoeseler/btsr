@@ -1223,6 +1223,10 @@
     "kein fertiger Satz": "not a ready-made set",
     "Mindestens ein Regler weicht von allen fünf Voreinstellungen ab. Ein Klick oben setzt wieder einen ganzen Satz.": "At least one control differs from all five presets. A click above sets a whole set again.",
     "Eigen": "Custom",
+    // Block 3 (v0.5): abseits der Fahrbahn.
+    "ABSEITS · GAS GEDROSSELT": "OFF TRACK · THROTTLE LIMITED",
+    "Controllervibration und Drosselung jenseits Fahrbahn": "Controller rumble and throttle limit off the track",
+    "Meldet Byte 12 den Wert 0x00, ist das Auto neben der Bahn: dann brummt der Controller leicht und das Gas wird auf 45 % gedeckelt – nicht auf null, denn man muss zurückkommen. Wirkt nur in der Stellung „Auf der Bahn“: im Ausdruck-Modus ist der Streckensensor aus und Byte 12 stände dauernd auf 0x00. Der Brummteil braucht zusätzlich den Schalter „Vibration“ darüber.": "When byte 12 reports 0x00 the car is off the track: the controller then rumbles gently and the throttle is capped at 45 % – not at zero, because you have to get back. Only works in the “On the track” position: in printout mode the track sensor is off and byte 12 would sit at 0x00 permanently. The rumble half also needs the “Vibration” switch above.",
   };
 
   // ============================================================================

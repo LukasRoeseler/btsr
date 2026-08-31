@@ -712,6 +712,11 @@
     background: #ffd83d; opacity: .30; pointer-events: none; transition: none;
   }
   #race-act-flag > * { position: relative; }
+  /* Dieselbe Zeile wie die Flagge, andere Farbe: Braun-Orange fuer "du bist neben der
+     Bahn", nicht Gelb - Gelb ist im Rennsport die Flagge und darf nicht zweierlei heissen. */
+  #gt3-offtrack { display: none; grid-area: flag; background: #3a2410; color: #ffb26b;
+    font-weight: 700; text-align: center; letter-spacing: .09em;
+    font-size: clamp(10px, 2.2vw, 13px); padding: 3px 6px; }
   #gt3-flag { display: none; grid-area: flag; background: #4a3c00; color: #ffd83d;
     font-weight: 800; letter-spacing: .16em; text-align: center;
     padding: clamp(2px, .6vw, 6px) 0; font-size: clamp(9px, 1.5vw, 14px); }
@@ -1932,6 +1937,11 @@
       </div>
 
       <div class="gt3-banner" id="gt3-flag"><span id="race-flag"></span></div>
+      <!-- Ein Auto, das von selbst langsamer wird und im Controller brummt, sieht ohne
+           Anschrift nach einem Defekt aus. Eigener Streifen und nicht der Flaggenstreifen:
+           beides kann gleichzeitig gelten. -->
+      <div class="gt3-banner" id="gt3-offtrack" style="display:none">ABSEITS
+        &middot; GAS GEDROSSELT</div>
       <div class="gt3-banner" id="gt3-pit"><span id="race-pit-text">PIT LIMITER ENGAGED</span></div>
       <div class="gt3-foot">
         <span><b id="dash-real-kmh">&ndash;</b> km/h echt <i id="dash-real-ratio"></i></span>
@@ -4116,6 +4126,23 @@
           Boxenstopp. Das Handy vibriert nicht mit, das Protokoll kennt daf&uuml;r
           nichts.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-vibration"><span></span></label></div>
+      <!-- Direkt unter der Vibration, weil die eine Haelfte dieser Option daran haengt -
+           und das steht auch im Kleintext. Ohne den Hinweis waere es die naechste
+           Stellschraube, die scheinbar nichts tut. -->
+      <div class="opt-row"><div class="opt-label">Controllervibration und Drosselung
+          jenseits Fahrbahn
+          <!-- Absichtlich OHNE <code> und <b> im Inneren: jedes davon teilt den Satz in
+               einen eigenen Textknoten, und das Woerterbuch schlaegt Textknoten nach. Mit
+               Auszeichnung zerfiel dieser Satz in fuenf Bruchstuecke, und jede spaetere
+               Umformulierung haette alle fuenf Schluessel gleichzeitig gebrochen - sichtbar
+               nur daran, dass im englischen Modus mitten im Satz Deutsch steht. -->
+          <small>Meldet Byte 12 den Wert 0x00, ist das Auto neben der Bahn: dann brummt
+          der Controller leicht und das Gas wird auf 45 % gedeckelt &ndash; nicht auf null,
+          denn man muss zur&uuml;ckkommen. Wirkt nur in der Stellung &bdquo;Auf der
+          Bahn&ldquo;: im Ausdruck-Modus ist der Streckensensor aus und Byte 12 st&auml;nde
+          dauernd auf 0x00. Der Brummteil braucht zus&auml;tzlich den Schalter
+          &bdquo;Vibration&ldquo; dar&uuml;ber.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-offtrack" checked><span></span></label></div>
 <div class="opt-head">Akku</div>
       <div class="opt-row"><div class="opt-label">Leistung über Akkulaufzeit konstant halten<small>Drosselt bei vollem Akku. Der Akkuwert ist eine unkalibrierte Schätzung.</small></div><label class="tgl"><input type="checkbox" id="setting-battery-comp"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Referenz-Akkustand</div>
@@ -5024,7 +5051,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.4.25</span></span>
+    <span class="foot-ver">v<span id="app-version">0.4.26</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine

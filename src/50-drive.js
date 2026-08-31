@@ -683,6 +683,73 @@
              brake: Math.max(0, Math.min(1, -err * 3)) };
   }
 
+  // ---- Abseits der Fahrbahn ----------------------------------------------------------
+  //
+  // Byte 12 meldet 0x00, wenn der Sensor keinen Streckencode sieht - das ist "neben der
+  // Bahn". Bis v0.4 hat das nur die Ghosts angehalten und die Zeitzaehlung gefuettert; fuers
+  // Fahrerauto hatte es keine Folge.
+  //
+  // ENTPRELLT, und das ist der Teil, ohne den es als Ruckeln auffaellt statt als Merkmal:
+  // Byte 12 flattert, und ein einzelnes 0x00 zwischen guten Lesungen ist Rauschen. Steht so
+  // schon in der Zeitleiste der Codes. Erst nach OFFTRACK_EIN_MS durchgehend abseits gilt
+  // es, und nach OFFTRACK_AUS_MS wieder guter Lesung ist es vorbei - asymmetrisch, weil ein
+  // verspaeteter Einsatz harmlos und ein verspaetetes Ende aergerlich ist.
+  const OFFTRACK_EIN_MS = 350;
+  const OFFTRACK_AUS_MS = 150;
+  // 45 % und nicht 0: neben der Bahn muss man ZURUECKKOMMEN. Ein Auto, das dort
+  // stehenbleibt, muss man holen, und dann ist die Drosselung eine Strafe statt einer
+  // Rueckmeldung.
+  const OFFTRACK_GAS = 0.45;
+  // Der Rumble wird nachgetriggert, weil playEffect eine Dauer hat. Etwas kuerzer als die
+  // Dauer, damit keine Luecke entsteht.
+  const OFFTRACK_RUMBLE_MS = 220;
+  let offtrackEffekt = true;
+  let offtrackSeit = null;      // seit wann durchgehend 0x00
+  let offtrackWiederSeit = null; // seit wann durchgehend etwas anderes
+  let offtrackAktiv = false;
+  let offtrackRumbleAt = 0;
+
+  // Gerufen aus dem Meldekanal in 70-race.js, also je Paket.
+  function offtrackMelden(abseits) {
+    const jetzt = Date.now();
+    if (abseits) {
+      offtrackWiederSeit = null;
+      if (offtrackSeit === null) offtrackSeit = jetzt;
+      if (!offtrackAktiv && jetzt - offtrackSeit >= OFFTRACK_EIN_MS) offtrackAktiv = true;
+    } else {
+      offtrackSeit = null;
+      if (offtrackWiederSeit === null) offtrackWiederSeit = jetzt;
+      if (offtrackAktiv && jetzt - offtrackWiederSeit >= OFFTRACK_AUS_MS) offtrackAktiv = false;
+    }
+    offtrackAnzeige();
+  }
+
+  // Wirkt nur im Bahn-Modus. Im Ausdruck-Modus ist der Streckensensor abgeschaltet
+  // (gemessen 0 Lesungen in 551 Fahrmeldungen), Byte 12 steht dort praktisch immer auf
+  // 0x00 - die Drosselung wuerde also IMMER greifen, und man wuerde den Fehler beim Motor
+  // suchen.
+  function offtrackGilt() {
+    return offtrackEffekt && offtrackAktiv && trackMode === 'on';
+  }
+
+  function offtrackAnzeige() {
+    const el = $('gt3-offtrack');
+    if (!el) return;
+    // Nur ein- und ausblenden, den TEXT nie umschreiben. Hier stand einmal
+    // t('ABSEITS \u00b7 GAS ' + Prozent + '%') - ein dynamischer Woerterbuchschluessel, und
+    // solche gibt es hier nicht: nachgeschlagen werden ganze Textknoten. Eine Aenderung an
+    // OFFTRACK_GAS haette die Uebersetzung still ausfallen lassen.
+    el.style.display = offtrackGilt() ? 'block' : 'none';
+  }
+
+  if ($('setting-offtrack')) {
+    offtrackEffekt = $('setting-offtrack').checked;
+    $('setting-offtrack').addEventListener('change', (e) => {
+      offtrackEffekt = e.target.checked;
+      offtrackAnzeige();
+    });
+  }
+
   function physicsStep() {
     if (!physicsEnabled) { physLastTime = null; return; }
     const now = performance.now();
@@ -697,6 +764,20 @@
     // abgeflogene Ghosts zurueckzustellen. Siehe autopilotYellow().
     const ap = autopilotYellow();
     if (ap) { rawThrottle = ap.throttle; rawBrake = ap.brake; steer = 0; }
+    // Abseits der Bahn gedeckelt, und zwar VOR der Physik. Genau das war der Fehler beim
+    // Gasfaktor: er wirkte nach der Physik auf die Ausgabe, der Tacho zeigte volles Tempo
+    // und das Auto fuhr langsamer. Hier sagen Anzeige und Auto dasselbe.
+    if (offtrackGilt()) {
+      rawThrottle = Math.min(rawThrottle, OFFTRACK_GAS);
+      const jetzt = Date.now();
+      if (jetzt - offtrackRumbleAt >= OFFTRACK_RUMBLE_MS - 40) {
+        offtrackRumbleAt = jetzt;
+        // Dauerhaft und schwach, nicht ein Stoss wie beim Crash: ein Dauerrumble in
+        // Crash-Staerke ist nach fuenf Sekunden nur noch nervig. Der schwache Motor traegt
+        // mehr, das fuehlt sich nach Schotter an und nicht nach Aufprall.
+        padRumble(0.12, 0.34, OFFTRACK_RUMBLE_MS);
+      }
+    }
     const out = physEngine.update({ steering: steer, throttle: rawThrottle, brake: rawBrake,
                                     headlights: headlightsOn }, dt);
     updateDashboard(out);

@@ -1319,6 +1319,9 @@
     // now that only ever stopped the ghosts. Nothing recorded it for the driver, so a lap
     // driven half across the carpet looked exactly like a clean one in the lap list.
     trackTimeTick((bytes[12] & 0xff) !== TILE_OFFTRACK);
+    // Dasselbe Byte, zweite Folge: Rumble und Drosselung jenseits der Bahn. Der Zustand
+    // liegt in 50-drive.js, weil dort der Fahrtakt sitzt - siehe offtrackMelden().
+    offtrackMelden((bytes[12] & 0xff) === TILE_OFFTRACK);
     realSpeedTick(bytes[11], bytes[12] & 0xff);
 
     const counter = bytes[11];

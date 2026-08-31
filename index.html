@@ -712,6 +712,11 @@
     background: #ffd83d; opacity: .30; pointer-events: none; transition: none;
   }
   #race-act-flag > * { position: relative; }
+  /* Dieselbe Zeile wie die Flagge, andere Farbe: Braun-Orange fuer "du bist neben der
+     Bahn", nicht Gelb - Gelb ist im Rennsport die Flagge und darf nicht zweierlei heissen. */
+  #gt3-offtrack { display: none; grid-area: flag; background: #3a2410; color: #ffb26b;
+    font-weight: 700; text-align: center; letter-spacing: .09em;
+    font-size: clamp(10px, 2.2vw, 13px); padding: 3px 6px; }
   #gt3-flag { display: none; grid-area: flag; background: #4a3c00; color: #ffd83d;
     font-weight: 800; letter-spacing: .16em; text-align: center;
     padding: clamp(2px, .6vw, 6px) 0; font-size: clamp(9px, 1.5vw, 14px); }
@@ -1932,6 +1937,11 @@
       </div>
 
       <div class="gt3-banner" id="gt3-flag"><span id="race-flag"></span></div>
+      <!-- Ein Auto, das von selbst langsamer wird und im Controller brummt, sieht ohne
+           Anschrift nach einem Defekt aus. Eigener Streifen und nicht der Flaggenstreifen:
+           beides kann gleichzeitig gelten. -->
+      <div class="gt3-banner" id="gt3-offtrack" style="display:none">ABSEITS
+        &middot; GAS GEDROSSELT</div>
       <div class="gt3-banner" id="gt3-pit"><span id="race-pit-text">PIT LIMITER ENGAGED</span></div>
       <div class="gt3-foot">
         <span><b id="dash-real-kmh">&ndash;</b> km/h echt <i id="dash-real-ratio"></i></span>
@@ -4116,6 +4126,23 @@
           Boxenstopp. Das Handy vibriert nicht mit, das Protokoll kennt daf&uuml;r
           nichts.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-vibration"><span></span></label></div>
+      <!-- Direkt unter der Vibration, weil die eine Haelfte dieser Option daran haengt -
+           und das steht auch im Kleintext. Ohne den Hinweis waere es die naechste
+           Stellschraube, die scheinbar nichts tut. -->
+      <div class="opt-row"><div class="opt-label">Controllervibration und Drosselung
+          jenseits Fahrbahn
+          <!-- Absichtlich OHNE <code> und <b> im Inneren: jedes davon teilt den Satz in
+               einen eigenen Textknoten, und das Woerterbuch schlaegt Textknoten nach. Mit
+               Auszeichnung zerfiel dieser Satz in fuenf Bruchstuecke, und jede spaetere
+               Umformulierung haette alle fuenf Schluessel gleichzeitig gebrochen - sichtbar
+               nur daran, dass im englischen Modus mitten im Satz Deutsch steht. -->
+          <small>Meldet Byte 12 den Wert 0x00, ist das Auto neben der Bahn: dann brummt
+          der Controller leicht und das Gas wird auf 45 % gedeckelt &ndash; nicht auf null,
+          denn man muss zur&uuml;ckkommen. Wirkt nur in der Stellung &bdquo;Auf der
+          Bahn&ldquo;: im Ausdruck-Modus ist der Streckensensor aus und Byte 12 st&auml;nde
+          dauernd auf 0x00. Der Brummteil braucht zus&auml;tzlich den Schalter
+          &bdquo;Vibration&ldquo; dar&uuml;ber.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-offtrack" checked><span></span></label></div>
 <div class="opt-head">Akku</div>
       <div class="opt-row"><div class="opt-label">Leistung über Akkulaufzeit konstant halten<small>Drosselt bei vollem Akku. Der Akkuwert ist eine unkalibrierte Schätzung.</small></div><label class="tgl"><input type="checkbox" id="setting-battery-comp"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Referenz-Akkustand</div>
@@ -5024,7 +5051,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.4.25</span></span>
+    <span class="foot-ver">v<span id="app-version">0.4.26</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -6278,6 +6305,10 @@
     "kein fertiger Satz": "not a ready-made set",
     "Mindestens ein Regler weicht von allen fünf Voreinstellungen ab. Ein Klick oben setzt wieder einen ganzen Satz.": "At least one control differs from all five presets. A click above sets a whole set again.",
     "Eigen": "Custom",
+    // Block 3 (v0.5): abseits der Fahrbahn.
+    "ABSEITS · GAS GEDROSSELT": "OFF TRACK · THROTTLE LIMITED",
+    "Controllervibration und Drosselung jenseits Fahrbahn": "Controller rumble and throttle limit off the track",
+    "Meldet Byte 12 den Wert 0x00, ist das Auto neben der Bahn: dann brummt der Controller leicht und das Gas wird auf 45 % gedeckelt – nicht auf null, denn man muss zurückkommen. Wirkt nur in der Stellung „Auf der Bahn“: im Ausdruck-Modus ist der Streckensensor aus und Byte 12 stände dauernd auf 0x00. Der Brummteil braucht zusätzlich den Schalter „Vibration“ darüber.": "When byte 12 reports 0x00 the car is off the track: the controller then rumbles gently and the throttle is capped at 45 % – not at zero, because you have to get back. Only works in the “On the track” position: in printout mode the track sensor is off and byte 12 would sit at 0x00 permanently. The rumble half also needs the “Vibration” switch above.",
   };
 
   // ============================================================================
@@ -9132,6 +9163,73 @@
              brake: Math.max(0, Math.min(1, -err * 3)) };
   }
 
+  // ---- Abseits der Fahrbahn ----------------------------------------------------------
+  //
+  // Byte 12 meldet 0x00, wenn der Sensor keinen Streckencode sieht - das ist "neben der
+  // Bahn". Bis v0.4 hat das nur die Ghosts angehalten und die Zeitzaehlung gefuettert; fuers
+  // Fahrerauto hatte es keine Folge.
+  //
+  // ENTPRELLT, und das ist der Teil, ohne den es als Ruckeln auffaellt statt als Merkmal:
+  // Byte 12 flattert, und ein einzelnes 0x00 zwischen guten Lesungen ist Rauschen. Steht so
+  // schon in der Zeitleiste der Codes. Erst nach OFFTRACK_EIN_MS durchgehend abseits gilt
+  // es, und nach OFFTRACK_AUS_MS wieder guter Lesung ist es vorbei - asymmetrisch, weil ein
+  // verspaeteter Einsatz harmlos und ein verspaetetes Ende aergerlich ist.
+  const OFFTRACK_EIN_MS = 350;
+  const OFFTRACK_AUS_MS = 150;
+  // 45 % und nicht 0: neben der Bahn muss man ZURUECKKOMMEN. Ein Auto, das dort
+  // stehenbleibt, muss man holen, und dann ist die Drosselung eine Strafe statt einer
+  // Rueckmeldung.
+  const OFFTRACK_GAS = 0.45;
+  // Der Rumble wird nachgetriggert, weil playEffect eine Dauer hat. Etwas kuerzer als die
+  // Dauer, damit keine Luecke entsteht.
+  const OFFTRACK_RUMBLE_MS = 220;
+  let offtrackEffekt = true;
+  let offtrackSeit = null;      // seit wann durchgehend 0x00
+  let offtrackWiederSeit = null; // seit wann durchgehend etwas anderes
+  let offtrackAktiv = false;
+  let offtrackRumbleAt = 0;
+
+  // Gerufen aus dem Meldekanal in 70-race.js, also je Paket.
+  function offtrackMelden(abseits) {
+    const jetzt = Date.now();
+    if (abseits) {
+      offtrackWiederSeit = null;
+      if (offtrackSeit === null) offtrackSeit = jetzt;
+      if (!offtrackAktiv && jetzt - offtrackSeit >= OFFTRACK_EIN_MS) offtrackAktiv = true;
+    } else {
+      offtrackSeit = null;
+      if (offtrackWiederSeit === null) offtrackWiederSeit = jetzt;
+      if (offtrackAktiv && jetzt - offtrackWiederSeit >= OFFTRACK_AUS_MS) offtrackAktiv = false;
+    }
+    offtrackAnzeige();
+  }
+
+  // Wirkt nur im Bahn-Modus. Im Ausdruck-Modus ist der Streckensensor abgeschaltet
+  // (gemessen 0 Lesungen in 551 Fahrmeldungen), Byte 12 steht dort praktisch immer auf
+  // 0x00 - die Drosselung wuerde also IMMER greifen, und man wuerde den Fehler beim Motor
+  // suchen.
+  function offtrackGilt() {
+    return offtrackEffekt && offtrackAktiv && trackMode === 'on';
+  }
+
+  function offtrackAnzeige() {
+    const el = $('gt3-offtrack');
+    if (!el) return;
+    // Nur ein- und ausblenden, den TEXT nie umschreiben. Hier stand einmal
+    // t('ABSEITS \u00b7 GAS ' + Prozent + '%') - ein dynamischer Woerterbuchschluessel, und
+    // solche gibt es hier nicht: nachgeschlagen werden ganze Textknoten. Eine Aenderung an
+    // OFFTRACK_GAS haette die Uebersetzung still ausfallen lassen.
+    el.style.display = offtrackGilt() ? 'block' : 'none';
+  }
+
+  if ($('setting-offtrack')) {
+    offtrackEffekt = $('setting-offtrack').checked;
+    $('setting-offtrack').addEventListener('change', (e) => {
+      offtrackEffekt = e.target.checked;
+      offtrackAnzeige();
+    });
+  }
+
   function physicsStep() {
     if (!physicsEnabled) { physLastTime = null; return; }
     const now = performance.now();
@@ -9146,6 +9244,20 @@
     // abgeflogene Ghosts zurueckzustellen. Siehe autopilotYellow().
     const ap = autopilotYellow();
     if (ap) { rawThrottle = ap.throttle; rawBrake = ap.brake; steer = 0; }
+    // Abseits der Bahn gedeckelt, und zwar VOR der Physik. Genau das war der Fehler beim
+    // Gasfaktor: er wirkte nach der Physik auf die Ausgabe, der Tacho zeigte volles Tempo
+    // und das Auto fuhr langsamer. Hier sagen Anzeige und Auto dasselbe.
+    if (offtrackGilt()) {
+      rawThrottle = Math.min(rawThrottle, OFFTRACK_GAS);
+      const jetzt = Date.now();
+      if (jetzt - offtrackRumbleAt >= OFFTRACK_RUMBLE_MS - 40) {
+        offtrackRumbleAt = jetzt;
+        // Dauerhaft und schwach, nicht ein Stoss wie beim Crash: ein Dauerrumble in
+        // Crash-Staerke ist nach fuenf Sekunden nur noch nervig. Der schwache Motor traegt
+        // mehr, das fuehlt sich nach Schotter an und nicht nach Aufprall.
+        padRumble(0.12, 0.34, OFFTRACK_RUMBLE_MS);
+      }
+    }
     const out = physEngine.update({ steering: steer, throttle: rawThrottle, brake: rawBrake,
                                     headlights: headlightsOn }, dt);
     updateDashboard(out);
@@ -12475,6 +12587,9 @@
     // now that only ever stopped the ghosts. Nothing recorded it for the driver, so a lap
     // driven half across the carpet looked exactly like a clean one in the lap list.
     trackTimeTick((bytes[12] & 0xff) !== TILE_OFFTRACK);
+    // Dasselbe Byte, zweite Folge: Rumble und Drosselung jenseits der Bahn. Der Zustand
+    // liegt in 50-drive.js, weil dort der Fahrtakt sitzt - siehe offtrackMelden().
+    offtrackMelden((bytes[12] & 0xff) === TILE_OFFTRACK);
     realSpeedTick(bytes[11], bytes[12] & 0xff);
 
     const counter = bytes[11];
@@ -19258,6 +19373,63 @@
                mass: rest.size === 0 ? 'kein deutscher Text'
                                      : rest.size + ' Stellen, z. B. "' + bsp.slice(0, 46) + '"' };
     } finally { if (lang !== vorher) setLang(vorher); }
+  });
+
+  // ---- Abseits der Fahrbahn ----
+  //
+  // Die Bedingung, an der es schiefgeht, wenn sie jemand vergisst: die Drosselung darf NUR
+  // im Bahn-Modus greifen. Im Ausdruck-Modus ist der Streckensensor abgeschaltet (gemessen
+  // 0 Lesungen in 551 Fahrmeldungen), Byte 12 stuende dauernd auf 0x00, und das Auto waere
+  // permanent auf 45 % gedeckelt - man wuerde den Fehler beim Motor suchen.
+  //
+  // Geprueft wird ausserdem die Entprellung: ein einzelnes 0x00 zwischen guten Lesungen ist
+  // Rauschen und darf nichts ausloesen. Ohne sie zuckt das Gas mitten auf der Bahn.
+  stAdd('Drosselung abseits nur auf der Bahn, und entprellt', () => {
+    if (typeof offtrackMelden !== 'function' || typeof offtrackGilt !== 'function') {
+      return { ok: null, mass: 'Funktionen nicht erreichbar' };
+    }
+    const merk = { mode: trackMode, effekt: !!($('setting-offtrack') || {}).checked };
+    try {
+      if ($('setting-offtrack')) $('setting-offtrack').checked = true;
+      offtrackEffekt = true;
+
+      // a) Ein einzelner Ausfall darf nichts tun.
+      trackMode = 'on';
+      offtrackMelden(false);
+      offtrackMelden(true);
+      const einzeln = offtrackGilt();
+
+      // b) Durchgehend abseits, laenger als die Einschaltzeit: greift.
+      const t0 = Date.now();
+      while (Date.now() - t0 < 420) offtrackMelden(true);
+      const dauer = offtrackGilt();
+
+      // c) Dieselbe Lage im Ausdruck-Modus: greift NICHT.
+      trackMode = 'off';
+      offtrackMelden(true);
+      const ausdruck = offtrackGilt();
+
+      // d) Zurueck auf die Bahn: endet.
+      trackMode = 'on';
+      const t1 = Date.now();
+      while (Date.now() - t1 < 220) offtrackMelden(false);
+      const zurueck = offtrackGilt();
+
+      return {
+        ok: !einzeln && dauer && !ausdruck && !zurueck,
+        mass: 'einzelner Ausfall ' + (einzeln ? 'greift (FALSCH)' : 'ignoriert')
+            + ' | 420 ms abseits ' + (dauer ? 'greift' : 'greift NICHT (falsch)')
+            + ' | Ausdruck-Modus ' + (ausdruck ? 'greift (FALSCH)' : 'greift nicht')
+            + ' | zurueck ' + (zurueck ? 'greift weiter (FALSCH)' : 'beendet'),
+      };
+    } finally {
+      trackMode = merk.mode;
+      if ($('setting-offtrack')) $('setting-offtrack').checked = merk.effekt;
+      offtrackEffekt = merk.effekt;
+      // Zustand zuruecklegen, sonst steht der Streifen nach dem Test im Cockpit.
+      const t2 = Date.now();
+      while (Date.now() - t2 < 200) offtrackMelden(false);
+    }
   });
 
   // ---- Voreinstellungen gegen die Reglerraster ----
