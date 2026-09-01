@@ -5234,19 +5234,19 @@
 <div class="opt-head">Autonome Gegner</div>
       <div class="opt-row"><div class="opt-label">Ghost: Leitplanken-Modus<small>Das Auto hält sich selbst auf der Bahn, der Ghost gibt nur Gas.</small></div>
         <label class="tgl"><input type="checkbox" id="ghost-rail" checked><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Ghost-Tempo<small>Rundentempo der autonomen Autos.</small></div>
+      <div class="opt-row"><div class="opt-label">Ghost-Tempo<small>Rundentempo der autonomen Autos. Gefahren brauchbar zwischen 40 und 60 Prozent. Der Regler beginnt bei 35 und nicht tiefer: darunter f&auml;hrt das Auto so langsam, dass es die gedruckte Strecke nicht mehr zuverl&auml;ssig &bdquo;liest&ldquo; &ndash; und dann fallen Vorausblick, Ideallinie und Kurvendrosselung alle drei aus.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="ghost-speed" min="0.3" max="1" step="0.05" value="0.35">
+          <input type="range" id="ghost-speed" min="0.35" max="1" step="0.05" value="0.45">
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="ghost-speed-val">35%</span>
+          <span class="opt-val" id="ghost-speed-val">45%</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Ghost: Kurvendrosselung <span class="wip-tag">WIP</span><small>Wie viel Tempo in Kurven abgegeben wird. <b>Braucht ein Streckenlayout</b>: ohne gelesene oder gebaute Kacheln wei&szlig; der Ghost nicht, wo eine Kurve ist, und der Regler multipliziert eine Null.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="ghost-curve" min="0" max="0.6" step="0.05" value="0.35">
+          <input type="range" id="ghost-curve" min="0" max="0.6" step="0.05" value="0.15">
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="ghost-curve-val">35%</span>
+          <span class="opt-val" id="ghost-curve-val">15%</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Rennw&uuml;rze
           <small>Tagesform, Fehler, Windschatten, Attacke, Gummiband. Auf 0 f&auml;hrt jeder
@@ -5258,13 +5258,12 @@
           <span class="opt-val" id="ghost-spice-val">40%</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Ghost: Ideallinie <span class="wip-tag">WIP</span>
-          <small>Au&szlig;en anstellen, innen scheiteln, au&szlig;en heraus. Ob es hilft, sagen
-          Rundenzeit und Abg&auml;nge. Links = aus. <b>Braucht ein Streckenlayout</b>, und selbst dann sind es gemessen nur 12 von 127 Lenkschritten &ndash; im Leitplanken-Modus h&auml;lt sich das Auto ohnehin selbst.</small></div>
+          <small>Au&szlig;en anstellen, innen scheiteln, au&szlig;en heraus. Gemessener Einschlag: 70 Prozent ergeben 13,5 Grad, 100 Prozent 20,9 Grad von den 45 des Autos. Ohne gebaute oder gelernte Strecke f&auml;llt sie auf eine gr&ouml;bere Regel je Kachel zur&uuml;ck &ndash; halb so stark und ohne Blick auf die n&auml;chste Kurve. Ganz ohne gelesene Streckencodes wirkt sie nicht, weil niemand wei&szlig;, wo das Auto ist. Ob es hilft, sagen Rundenzeit und Abg&auml;nge.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="ghost-line" min="0" max="1" step="0.05" value="0.35">
+          <input type="range" id="ghost-line" min="0" max="1" step="0.05" value="0.7">
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="ghost-line-val">35%</span>
+          <span class="opt-val" id="ghost-line-val">70%</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Ghost: Linienmodell
           <small>Kr&uuml;mmung nimmt den gr&ouml;&szlig;ten Radius. Rundenzeit rechnet ein
@@ -5301,7 +5300,7 @@
           <small>Aus: f&auml;hrt auch ohne gedruckte Strecke. An: nur mit gelesenem
           Muster.</small></div>
         <label class="tgl"><input type="checkbox" id="ghost-needcode"><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Ghost: F&uuml;hrenden bremsen<small>Der Erstplatzierte fährt etwas langsamer.</small></div>
+      <div class="opt-row"><div class="opt-label">Ghost: F&uuml;hrenden bremsen<small>Der Erstplatzierte f&auml;hrt etwas langsamer, damit das Feld zusammenbleibt. Wirkt auch ohne Rennen, also beim freien Fahren &ndash; aber erst ab zwei Ghosts: mit einem einzigen ist dieser eine der F&uuml;hrende, und ihn zu bremsen hie&szlig;e nur, ihn langsamer zu machen.</small></div>
         <label class="tgl"><input type="checkbox" id="ghost-leader"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Ghost: Abschlag f&uuml;r den F&uuml;hrenden
           <small>Um wie viel langsamer. Stand bis v0.4 als Konstante im Code &ndash; eine
@@ -5794,7 +5793,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.4.46</span></span>
+    <span class="foot-ver">v<span id="app-version">0.4.47</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -7187,6 +7186,9 @@
     "So lange muss das Auto DURCHGEHEND abseits melden, bevor gedrosselt wird. Eine Sekunde ist die Vorgabe, damit leichtes Schneiden noch durchgeht – ein einzelnes Paket von der Bahn setzt die Uhr zurück. Gilt nur in der Stellung „Auf der Bahn“, weil der Streckensensor nur dort liest.": "This is how long the car must report off track CONTINUOUSLY before the throttle is capped. One second is the default so that cutting a corner slightly still gets through – a single packet from the track resets the clock. Applies only in the „On the track“ position, because that is the only place the track sensor reads.",
     ": der Stopp wird von Hand angefordert und beginnt erst, wenn das Auto neben der Bahn steht (Byte 12 = 0x00). Der Knopf sagt also, DASS ein Stopp kommt, die Bahnkante sagt, WO er anfängt. Nur auf der CH-Schiene sinnvoll – ohne Schiene meldet das Auto ständig „abseits“.": ": the stop is requested by hand and only begins once the car is standing beside the track (byte 12 = 0x00). So the button says THAT a stop is coming, the track edge says WHERE it begins. Only useful on the CH rail – without the rail the car reports „off track“ all the time.",
     "Neben der Strecke (von Hand, Start erst abseits)": "Beside the track (by hand, starts only off track)",
+    "Außen anstellen, innen scheiteln, außen heraus. Gemessener Einschlag: 70 Prozent ergeben 13,5 Grad, 100 Prozent 20,9 Grad von den 45 des Autos. Ohne gebaute oder gelernte Strecke fällt sie auf eine gröbere Regel je Kachel zurück – halb so stark und ohne Blick auf die nächste Kurve. Ganz ohne gelesene Streckencodes wirkt sie nicht, weil niemand weiß, wo das Auto ist. Ob es hilft, sagen Rundenzeit und Abgänge.": "Set up wide, clip the apex, run wide again. Measured lock: 70 percent gives 13.5 degrees, 100 percent 20.9 of the car’s 45. Without a built or learnt track it falls back to a coarser per-tile rule – half as strong and blind to the next corner. With no track codes read at all it does nothing, because nobody knows where the car is. Whether it helps is told by lap times and departures.",
+    "Rundentempo der autonomen Autos. Gefahren brauchbar zwischen 40 und 60 Prozent. Der Regler beginnt bei 35 und nicht tiefer: darunter fährt das Auto so langsam, dass es die gedruckte Strecke nicht mehr zuverlässig „liest“ – und dann fallen Vorausblick, Ideallinie und Kurvendrosselung alle drei aus.": "Lap pace of the autonomous cars. Driven, 40 to 60 percent works well. The slider starts at 35 and no lower: below that the car drives so slowly that it no longer „reads“ the printed track reliably – and then lookahead, racing line and corner braking all three fall away.",
+    "Der Erstplatzierte fährt etwas langsamer, damit das Feld zusammenbleibt. Wirkt auch ohne Rennen, also beim freien Fahren – aber erst ab zwei Ghosts: mit einem einzigen ist dieser eine der Führende, und ihn zu bremsen hieße nur, ihn langsamer zu machen.": "The car in front runs slightly slower so the field stays together. Works without a race too, i.e. in free practice – but only from two ghosts upwards: with a single one that one is the leader, and holding it back would just mean making it slower.",
   };
 
   // ============================================================================
@@ -18085,23 +18087,39 @@
   //     Sitzung mit echten Ausfluegen:   Median 1013 ms,               Maximum 5845 ms
   // Die beiden Verteilungen ueberschneiden sich nicht. 350 ms liegt dazwischen, doppelt so
   // weit ueber dem groessten Zwischenkachel-Aussetzer wie unter dem kleinsten echten Ausflug.
-  const GHOST_OFFTRACK_CONFIRM_MS = 350;
+  // 900 statt 350 ms, und dazu eine zweite Bedingung. Ein Auto ist mitten auf der Bahn
+  // stehen geblieben und hat geblinkt: 0x00 heisst "neben der Bahn", kommt aber zwischen zwei
+  // Kacheln regelmaessig vor (Median 32 ms, gemessen), und ein etwas laengerer Ausfall reichte
+  // fuer einen Fehlalarm.
+  //
+  // Die eigentliche Verbesserung ist die zweite Bedingung, nicht die Zeit: laeuft der
+  // KACHELZAEHLER weiter, faehrt das Auto ueber Kacheln, und dann ist es auf der Bahn - egal
+  // was Byte 12 dazwischen meldet. Das unterscheidet, was Zeit allein nicht unterscheiden
+  // kann, naemlich einen Ausfall der Lesung von einem Abflug.
+  const GHOST_OFFTRACK_CONFIRM_MS = 900;
   const GHOST_YAW_GAIN = 0.045;     // rotation units -> steering; refined on the real car
   const GHOST_STEER_CURVE = 0.55;   // feed-forward lock in a curve, before the yaw loop
 
   const ghostCfg = {
-    // 0,35, nachgezogen zur Reglervorgabe im Markup. Der Bereich beginnt bei 0,3: darunter
-    // kommt ein Ghost aus dem Stand nicht zuverlaessig los, weil minMoveThrottle den
-    // Losbrechpunkt setzt und ein zu kleines Ziel ihn nie erreicht.
-    speed: 0.35,        // fraction of top speed on a straight
-    curveSlow: 0.35,    // how much of that is given up in a curve
+    // 0,45, gefahren ermittelt: brauchbar liegt es zwischen 40 und 60 Prozent. Der Bereich
+    // beginnt jetzt bei 0,35 und nicht bei 0,30 - darunter faehrt das Auto so langsam, dass
+    // es die gedruckte Strecke nicht mehr zuverlaessig LIEST, und dann faellt der ganze
+    // Vorausblick aus. Ein Regler, der eine kaputte Einstellung zulaesst, ist eine Falle.
+    speed: 0.45,        // fraction of top speed on a straight
+    // 0,15, gefahren ermittelt. 0,35 war zu viel: mit der berichtigten Ratenbegrenzung wirkt
+    // der Abschlag jetzt wirklich, und die Haarnadel bekommt ohnehin das Doppelte.
+    curveSlow: 0.15,    // how much of that is given up in a curve
     // 0.5 statt 0. Die Naeherungslogik in ghostAssignBias gab es laengst - gleiche Runde
     // und Kachelindex hoechstens eins auseinander ergibt gegenlaeufige Versaetze - aber sie
     // wurde mit diesem Faktor multipliziert, und der stand auf Null. Das Feature war da und
     // konnte nie wirken.
     lateral: 0.5,
-    // Ideallinie. 0 = wie bisher, gerade Lenkung und nur der Anti-Ramm-Versatz.
-    line: 0.35,
+    // Ideallinie, 0,7 statt 0,35. Gefahren war von 0,35 nichts zu merken, und die Rechnung
+    // sagt warum: der Deckel begrenzt den Versatz auf 0,55, danach kam x 0,35 x 0,5 - also
+    // 0,096 von 1, ein Sechstel dessen, was die Messung als sicher annimmt. Mit
+    // GHOST_LINE_STEER = 1,0 und 0,7 sind es 0,385, viermal so viel; auf 100 Prozent genau
+    // der Deckel. 0 = gerade Lenkung und nur der Anti-Ramm-Versatz.
+    line: 0.7,
     // EIGENE SPUREN. Jeder Ghost haelt eine feste, ihm eigene Linie ueber die Bahnbreite -
     // unabhaengig von Abstand, Strecke und Kachelzahl. Das ist der Unterschied zu den zwei
     // anderen Linieneinstellungen: ghost-lateral wirkt nur bei zwei Autos nebeneinander,
@@ -18236,10 +18254,17 @@
     g.tileMs = g.tileMs ? g.tileMs * 0.7 + ms * 0.3 : ms;
   }
 
-  // Voller Linienversatz entspricht halbem Lenkausschlag. Die Beschreibung der Linie
-  // selbst steht bei ghostLineOffset() weiter unten - hier stand sie ein zweites Mal, in
-  // der alten Fassung "jede Kachel eine eigene Kurve", und widersprach damit dem Code.
-  const GHOST_LINE_STEER = 0.5;   // voller Linienversatz = halber Lenkausschlag
+  // VOLLER LINIENVERSATZ = VOLLER LENKAUSSCHLAG, vorher der halbe.
+  //
+  // Der Faktor 0,5 war eine zweite Sicherheit auf einer, die es schon gibt: der Versatz ist
+  // durch learnSteerCap() ohnehin auf den halben Kippwert begrenzt (unvermessen 0,55). Beides
+  // uebereinander ergab eine Anforderung von 0,096 bei der alten Vorgabe - gefahren war davon
+  // nichts zu merken, und das war der Bericht.
+  //
+  // Die Regel der Doku - "die Ideallinie darf nie mehr als etwa die Haelfte des Kippwerts
+  // anfordern" - bleibt eingehalten, denn genau die IST der Deckel. Bei 100 Prozent wird er
+  // jetzt erreicht statt gedrittelt.
+  const GHOST_LINE_STEER = 1.0;   // voller Linienversatz = voller Lenkausschlag
 
   function ghostTurnOf(t) {
     return t === TILE_TYPE.CURVE_RIGHT || t === TILE_TYPE.HAIRPIN ? 1
@@ -18719,6 +18744,17 @@
   const SPICE_ATTACK_ARM_MS = 900;  // so lange muss man kleben, bevor es losgeht
   const SPICE_ATTACK_P = 0.45;      // und dann wird gewuerfelt, sonst ist es kein Rennen
   const SPICE_ATTACK_GAIN = 0.07;
+  // ERST AUSWEICHEN, DANN BESCHLEUNIGEN. Vorher kamen Seitenversatz und Temposchub
+  // gleichzeitig, also schob der Angreifer, solange er noch genau hinter dem anderen lag -
+  // und dann beruehren sich zwei Autos, statt aneinander vorbeizufahren. 400 ms sind bei
+  // GHOST_BIAS_STEP genug, um den Versatz aufzubauen.
+  const SPICE_ATTACK_SIDE_MS = 400;
+  // Wie stark Angreifer und Vorausfahrender zur Seite gehen. Getrennt von der Ideallinie:
+  // das ist ein Ausweichen und keine Linienwahl, und es haengt deshalb an ghostCfg.lateral -
+  // dem Regler, der ausdruecklich "Querablage gegen Rammen" heisst. Vorher war der
+  // Seitenversatz des Angreifers mit ghostCfg.line skaliert: stand die Ideallinie auf 0,
+  // fuhr er OHNE Versatz in den Vorausfahrenden.
+  const GHOST_PASS_STEER = 0.8;
   const SPICE_BAND_PER_TILE = 0.022;
   const SPICE_BAND_MAX = 0.13;
   // 6. ABSTAND. Es gab keinen Baustein, der Autos auseinander haelt: Windschatten und
@@ -18820,11 +18856,26 @@
         // Linie da: ohne sie waere "die andere Seite" nicht definiert.
         const lo = ghostLineOffset(car);
         g.attackSide = lo >= 0 ? -1 : 1;
-        log(garageLabel(car) + ': setzt zum Ueberholen an.', 'info');
+        // UND DER VORAUSFAHRENDE WEICHT MIT AUS, zur anderen Seite. Vorher wich nur einer
+        // aus, und zwei Autos auf 25 cm Bahnbreite brauchen beide Haelften - gemeldet als
+        // "beim Ueberholen beruehren sie sich stark".
+        //
+        // Gesetzt wird es am ANDEREN Auto, und das ist Absicht: der Vorausfahrende weiss
+        // nicht, dass hinter ihm einer ansetzt, und soll es hier erfahren. Ein Ghost, der
+        // jeden Takt selbst nachsieht, ob ihn wer angreift, waere dieselbe Rechnung n-mal.
+        if (ah.car && ah.car.ghost) {
+          ah.car.ghost.yieldSide = -g.attackSide;
+          ah.car.ghost.yieldUntil = now + SPICE_ATTACK_MS;
+        }
+        log(garageLabel(car) + ': setzt zum Ueberholen an, '
+            + (ah.car ? garageLabel(ah.car) + ' weicht aus.' : 'freie Bahn.'), 'info');
         showHudToast(garageLabel(car).toUpperCase() + ' ATTACKIERT');
       }
     }
-    if (g.attackUntil) f *= 1 + SPICE_ATTACK_GAIN * ghostCfg.spice;
+    // Der Schub kommt ERST, wenn der Seitenversatz steht - siehe SPICE_ATTACK_SIDE_MS.
+    if (g.attackUntil && now - (g.attackUntil - SPICE_ATTACK_MS) > SPICE_ATTACK_SIDE_MS) {
+      f *= 1 + SPICE_ATTACK_GAIN * ghostCfg.spice;
+    }
 
     // 6. Abstand halten - der Gegenspieler zu Windschatten und Attacke. Nicht waehrend
     // einer Attacke: wer angreift, darf dichter heran, sonst gibt es kein Ueberholen.
@@ -19255,6 +19306,19 @@
     e.config.speedSteerReduction = 0;
     e.config.steerExpo = 1;
     e.config.steerResponse = 1;
+    // UND DIE LENKKALIBRIERUNG AUF 1, was in dieser Liste gefehlt hat.
+    //
+    // Sie ist dafuer da, dass der STICK des Fahrers auf engen Strecken die 45 Grad des Autos
+    // erreicht. Ein Ghost hat keinen Stick: sein Lenkbefehl ist schon ein Anteil des vollen
+    // Einschlags, und der Versatz der Ideallinie ist durch learnSteerCap() ausdruecklich auf
+    // den halben Kippwert begrenzt. Mit der Kalibrierung des Fahrers wurde dieser Deckel
+    // hinterher wieder mit 2,0 multipliziert - gemessen lagen bei Ideallinie 100 % dann 118
+    // von 127 an, also praktisch Vollausschlag, statt der gedeckelten 70.
+    //
+    // Die Folge war eine stille Kopplung: die Stellung eines Reglers fuer das Fahrerauto
+    // aenderte, wie stark die Ghosts ihre Linie fahren. Genau die Sorte Verbindung, die man
+    // beim Abstimmen nicht findet.
+    e.config.steerCalib = 1;
     e.config.fuelWeightEffect = 0;   // ghosts carry no fuel and take no damage for now
     e.config.tyreEffect = 0;
     // Nach dem Kopieren neu kalibrieren: accelScale() haengt an topSpeedKmh, an der
@@ -19272,7 +19336,16 @@
                   // Faehrt dieser Ghost? NICHT car.timer pruefen: der wird erst in einem
                   // setTimeout gesetzt, damit vier Autos nicht in derselben Millisekunde
                   // senden - im Moment des Klicks ist er noch null.
+                  // Rundenuhr und Abgangsstand fuer die Lernbilanz.
+                  lapStart: 0, offAtLapStart: 0,
                   running: true };
+    // Den ersten Versuch ziehen, wenn gelernt werden soll. Ohne ihn steht tryPace auf null,
+    // und learnSettle() kehrt in genau diesem Fall frueh zurueck, OHNE einen zu ziehen - das
+    // Lernen kaeme also auch mit der neuen Rundenbilanz nie in Gang. Der Schalter selbst ruft
+    // learnPropose nur fuer Autos, die beim Umlegen schon verbunden sind; wer ihn vorher
+    // einschaltet, bekam gar keinen Lernzustand.
+    if (ghostCfg.learnPace) learnPropose(car);
+
     // Stagger against the player's heartbeat and against each other, so four cars do not
     // all transmit in the same millisecond.
     const slot = garage.indexOf(car) + 1;
@@ -19523,7 +19596,24 @@
       let lmRundeVoll = false;
       if (currentTrackTiles.length) {
         g.tileIndex %= currentTrackTiles.length;
-        if (g.tileIndex === 0) { g.laps++; lmRundeVoll = true; }
+        if (g.tileIndex === 0) {
+          g.laps++; lmRundeVoll = true;
+          // DIE RUNDENBILANZ DES LERNENS, und sie hatte bis hier keinen Aufrufer im
+          // Fahrbetrieb. learnSettle() stand fertig da und wurde nur vom Prueflauf gerufen -
+          // also zog das Lernen nie Bilanz, behielt seinen ersten Zufallsversuch fuer immer
+          // und konvergierte nie. Gemeldet als "Ghost lernt von Runde zu Runde: merke ich
+          // nichts von", und das war nicht Feinheit, sondern ein fehlender Aufruf.
+          //
+          // Abgaenge werden je RUNDE gebraucht, nicht insgesamt: die Annahmeregel heisst
+          // "schneller UND kein Abgang", und ein Abflug aus Runde drei darf Runde neun nicht
+          // mehr belasten.
+          if (g.lapStart) {
+            const abgGesamt = (car.race && car.race.offLap) || 0;
+            learnSettle(car, now - g.lapStart, abgGesamt - (g.offAtLapStart || 0));
+            g.offAtLapStart = abgGesamt;
+          }
+          g.lapStart = now;
+        }
       }
       // Die Lenkmessung zaehlt hier mit, wo Kachelwechsel und Rundenschluss ohnehin
       // durchlaufen. Ein eigener Zeitgeber waere ein zweiter Ort fuer dieselbe Zaehlung.
@@ -19551,8 +19641,11 @@
     // Ein bestaetigter Abgang STELLT AB. Vorher war das ein Zustand, der von selbst wieder
     // wegging, sobald ein Code kam - das Auto fuhr dann neben der Bahn weiter, statt auf
     // die Hand zu warten, die es zurueckstellt.
+    // Faehrt es noch ueber Kacheln? Dann ist es auf der Bahn. g.tileStart wird bei jedem
+    // Kachelwechsel gesetzt, ist also der Zeitpunkt des letzten bewiesenen Kontakts.
+    const zaehlerLaeuft = g.tileStart && (now - g.tileStart) < GHOST_OFFTRACK_CONFIRM_MS;
     if ((ghostCfg.needCode ? (offConfirmed || noCode) : (offConfirmed && !noCode))
-        && !car.parked) {
+        && !zaehlerLaeuft && !car.parked) {
       parkCar(car, 'Bahn verlassen');
     }
     const offTrack = !!car.parked;
@@ -19642,7 +19735,14 @@
       // zum Stehen bringt.
       const abzugKachel = tight > 0 ? Math.min(0.85, ghostCfg.curveSlow * tight) : 0;
       target *= 1 - Math.max(abzugProfil, abzugKachel);
-      if (ghostCfg.leaderBrake && ghostLeader() === car) target *= (1 - ghostCfg.leaderBrakePct);
+      // ERST AB ZWEI GHOSTS, wie beim Gummiband. Mit einem einzigen Ghost ist dieser eine
+      // der Fuehrende und wurde gebremst, ohne dass es jemanden gibt, den er einholen soll -
+      // von aussen sah das aus wie "der Ghost ist zu langsam". Ein Rennen ist NICHT
+      // Bedingung: auch im freien Fahren gibt es einen Fuehrenden.
+      const feldGross = garage.filter(c => c.role === 'ghost' && c.ghost).length > 1;
+      if (ghostCfg.leaderBrake && feldGross && ghostLeader() === car) {
+        target *= (1 - ghostCfg.leaderBrakePct);
+      }
       // Formation lap: everyone rolls at pit-lane pace, whatever their speed setting says.
       if (raceFormationLap) target = Math.min(target, PIT_SPEED_FACTOR);
 
@@ -19730,9 +19830,23 @@
         // Mittig fahren unter Gelb: keine Ideallinie, kein Ausweichen. Das ist der Sinn
         // der Phase - eine vorhersagbare Spur, damit man ein Auto von Hand dazwischen
         // stellen kann.
-        const lineOff = underYellow ? 0
-                      : (spice.attack ? spice.attack : ghostLineOffset(car));
-        steer = lineOff * ghostCfg.line * GHOST_LINE_STEER
+        // Drei Quellen fuer den Querversatz, und sie sind bewusst an VERSCHIEDENEN Reglern:
+        //
+        //   Ideallinie   ghostCfg.line     - wo man faehrt, wenn nichts los ist
+        //   Ueberholen   ghostCfg.lateral  - Angreifer zur Seite, Vorausfahrender zur andern
+        //   eigene Spur  ghostCfg.lanes    - die feste Linie dieses Autos
+        //
+        // Vorher hing der Seitenversatz des Angreifers an ghostCfg.line. Stand die Ideallinie
+        // auf 0, fuhr er ohne Versatz in den Vorausfahrenden - der Regler fuer "Querablage
+        // gegen Rammen" konnte daran nichts aendern, obwohl er genau dafuer da ist.
+        const weiche = (!underYellow && g.yieldUntil && now < g.yieldUntil)
+          ? (g.yieldSide || 0) : 0;
+        const quer = underYellow ? 0
+          : (spice.attack
+              ? spice.attack * ghostCfg.lateral * GHOST_PASS_STEER
+              : ghostLineOffset(car) * ghostCfg.line * GHOST_LINE_STEER)
+            + weiche * ghostCfg.lateral * GHOST_PASS_STEER;
+        steer = quer
               + g.bias * ghostCfg.lateral * 0.25
               + ghostLane(car) * ghostCfg.lanes * GHOST_LANE_STEER;
       } else {
@@ -19740,8 +19854,12 @@
         const dir = ghostTurnDir(car, 0);
         const yawTarget = dir * 8;
         steer = dir * GHOST_STEER_CURVE + (yawTarget - car.yaw) * GHOST_YAW_GAIN;
-        steer += (spice.attack ? spice.attack : ghostLineOffset(car))
-                 * ghostCfg.line * GHOST_LINE_STEER
+        // Dieselbe Aufteilung wie im Leitplanken-Modus, siehe dort.
+        const weiche2 = (g.yieldUntil && now < g.yieldUntil) ? (g.yieldSide || 0) : 0;
+        steer += (spice.attack
+                   ? spice.attack * ghostCfg.lateral * GHOST_PASS_STEER
+                   : ghostLineOffset(car) * ghostCfg.line * GHOST_LINE_STEER)
+               + weiche2 * ghostCfg.lateral * GHOST_PASS_STEER
                + g.bias * ghostCfg.lateral * 0.25
                + ghostLane(car) * ghostCfg.lanes * GHOST_LANE_STEER;
       }
@@ -21154,6 +21272,12 @@
         // Der Querversatz gegen Rammen wird von einem Zeitgeber gestellt; im Prueflauf wird
         // er FESTGEHALTEN, sonst mischt er sich in jede Messung. 0 heisst: aus.
         car.ghost.bias = opt.bias === undefined ? 0 : opt.bias;
+        // Ausweichen von aussen setzbar: eine Attacke wird gewuerfelt, also ist sie kein
+        // Pruefmittel. Der Zustand, den sie SETZT, ist eines.
+        if (opt.yieldSide) {
+          car.ghost.yieldSide = opt.yieldSide;
+          car.ghost.yieldUntil = uhr + 1e9;
+        }
         const tempo = [], ziel = [], vorsteuer = [], gang = [], drehzahl = [];
         let seitKachel = 0, k = 0, schaltSeit = 0;
         for (let i = 0; i < takte; i++) {
@@ -21243,6 +21367,9 @@
                             zug_gang_darueber: zugNaechster === null ? null : +zugNaechster.toFixed(4),
                             rpm: Math.round(e2.rpmRawAt(v2, gg)) };
                  })(),
+                 // Der Lernzustand: hat sich ueber die Runden etwas bewegt?
+                 lernen: car.learn ? JSON.parse(JSON.stringify(car.learn)) : null,
+                 runden: car.ghost ? car.ghost.laps : null,
                  // Die Konfiguration des GHOST-Motors gegen die des Fahrerautos. Jeder
                  // Unterschied hier ist eine Erklaerung oder eine Absicht - beides will man
                  // sehen, wenn ein Ghost nicht so faehrt wie das Auto daneben.
@@ -24789,8 +24916,13 @@
     const HP = [0x05, 0x06], KU = [0x03, 0x04], GE = [0x02];
     const zeilen = [], schlecht = [];
     for (const lage of ['codes', 'karte']) {
+      // curveSlow AUSDRUECKLICH gesetzt und nicht die Vorgabe genommen: geprueft wird der
+      // Mechanismus - Haarnadel bekommt den doppelten Abschlag -, nicht die gerade
+      // eingestellte Staerke. Mit der gefahrenen Vorgabe von 0,15 lag das Ergebnis knapp
+      // unter der Schwelle, und die naechste Vorgabenaenderung haette den Test rot gemacht,
+      // obwohl nichts kaputt ist.
       const g = await OMEGA_TEST.ghostDriveProbe({ lage, takte: 900, code: 'SG3H2G3R2',
-                                                   tileMs: 900, cfg: { spice: 0 } });
+        tileMs: 900, cfg: { spice: 0, curveSlow: 0.35 } });
       const mittel = (codes) => {
         const v = [];
         g.kachel.forEach((k, i) => {
@@ -24855,6 +24987,91 @@
     return { ok: !stumm.length,
              mass: 'RMS-Aenderung am Lenkbyte: ' + zeilen.join(' | ')
                  + (stumm.length ? ' || STUMM: ' + stumm.join(', ') : '') };
+  });
+
+  // ---- Lernt der Ghost wirklich von Runde zu Runde? ----
+  //
+  // GEMELDET ALS "merke ich nichts von", und das war kein Feingefuehl: learnSettle() - die
+  // Bewertung einer Runde - hatte im Fahrbetrieb KEINEN AUFRUFER. Die Funktion stand fertig
+  // da und wurde nur vom Prueflauf gerufen. Folge: das Lernen zog nie Bilanz, behielt seinen
+  // ersten Zufallsversuch fuer immer und konvergierte nie. Wer den Schalter ausserdem
+  // umlegte, BEVOR ein Ghost verbunden war, bekam gar keinen Lernzustand - learnFactors gab
+  // dann stumm 1/1 zurueck.
+  //
+  // Geprueft wird, dass ueber mehrere Runden VERSUCHE GEZAEHLT werden und die Schrittweite
+  // sich bewegt. Nicht, dass der Ghost schneller wird: eine (1+1)-Strategie verwirft die
+  // meisten Versuche, und das ist ihre Aufgabe.
+  stAdd('Ghost-Lernen zieht je Runde Bilanz', async () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.ghostDriveProbe) {
+      return { skip: true, mass: 'ghostDriveProbe nicht vorhanden' };
+    }
+    const an = await OMEGA_TEST.ghostDriveProbe({ lage: 'karte', takte: 1000,
+      code: 'SG3H2G3R2', tileMs: 500, cfg: { spice: 0, learnPace: true } });
+    const aus = await OMEGA_TEST.ghostDriveProbe({ lage: 'karte', takte: 1000,
+      code: 'SG3H2G3R2', tileMs: 500, cfg: { spice: 0, learnPace: false } });
+    const L = an.lernen;
+    const fehler = [];
+    if (!L) fehler.push('kein Lernzustand angelegt');
+    else {
+      if (!(an.runden >= 3)) fehler.push('nur ' + an.runden + ' Runden gefahren');
+      // Versuche muessen MITZAEHLEN. Genau das tat sie nicht, als der Aufruf fehlte.
+      if (!(L.tries >= 3)) fehler.push('nur ' + L.tries + ' Versuche in ' + an.runden + ' Runden');
+      if (!(L.kept + L.rejected >= 2)) fehler.push('nichts bewertet');
+    }
+    if (aus.lernen) fehler.push('ausgeschaltet trotzdem ein Lernzustand');
+    return { ok: !fehler.length,
+             mass: (L ? an.runden + ' Runden, ' + L.tries + ' Versuche, ' + L.kept
+                        + ' behalten, ' + L.rejected + ' verworfen, Schrittweite '
+                        + L.sigma.toFixed(4)
+                      : 'kein Zustand')
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
+  // ---- Weicht der Vorausfahrende beim Ueberholen aus? ----
+  //
+  // GEMELDET ALS "beim Ueberholen beruehren sie sich stark". Zwei Ursachen:
+  //
+  //   1. Nur EINER wich aus. Zwei Autos auf 25 cm Bahnbreite brauchen beide Haelften, also
+  //      setzt der Angreifer jetzt am Vorausfahrenden ein Ausweichen zur anderen Seite.
+  //   2. Der Seitenversatz des Angreifers war mit ghostCfg.line skaliert. Stand die
+  //      Ideallinie auf 0, fuhr er OHNE Versatz in den anderen hinein - und der Regler
+  //      "Querablage gegen Rammen" konnte daran nichts aendern, obwohl er dafuer da ist.
+  //      Jetzt haengen beide an ghostCfg.lateral.
+  //
+  // Geprueft wird der ZUSTAND, den eine Attacke setzt, und nicht die Attacke: sie wird
+  // gewuerfelt und ist damit kein Pruefmittel.
+  stAdd('Ueberholen: der Vorausfahrende weicht aus', async () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.ghostDriveProbe) {
+      return { skip: true, mass: 'ghostDriveProbe nicht vorhanden' };
+    }
+    const rms = (a) => Math.sqrt(a.reduce((s, x) => s + x * x, 0) / Math.max(1, a.length));
+    const P = (o) => OMEGA_TEST.ghostDriveProbe(Object.assign(
+      { lage: 'karte', takte: 400, code: 'SG3H2G3R2', tileMs: 900,
+        cfg: { spice: 0, line: 0 } }, o));
+    // line auf 0, damit nur das Ausweichen uebrig bleibt - und das ist genau der Fall, in
+    // dem es vorher gar nichts tat.
+    const ohne = await P({});
+    const rechts = await P({ yieldSide: 1 });
+    const links = await P({ yieldSide: -1 });
+    const mit = (a, b) => {
+      const n = Math.min(a.length, b.length), d = [];
+      for (let i = 0; i < n; i++) d.push(a[i] - b[i]);
+      return rms(d);
+    };
+    const dR = mit(rechts.lenk, ohne.lenk), dL = mit(links.lenk, ohne.lenk);
+    const mR = rechts.lenk.reduce((s, x) => s + x, 0) / rechts.lenk.length;
+    const mL = links.lenk.reduce((s, x) => s + x, 0) / links.lenk.length;
+    const fehler = [];
+    if (dR < 5) fehler.push('nach rechts nur ' + dR.toFixed(1));
+    if (dL < 5) fehler.push('nach links nur ' + dL.toFixed(1));
+    // Und in die richtige Richtung: positiv ist rechts.
+    if (!(mR > 0)) fehler.push('yieldSide +1 lenkt nicht rechts');
+    if (!(mL < 0)) fehler.push('yieldSide -1 lenkt nicht links');
+    return { ok: !fehler.length,
+             mass: 'Wirkung ' + dR.toFixed(1) + ' / ' + dL.toFixed(1)
+                 + ' RMS, Mittel ' + mR.toFixed(1) + ' / ' + mL.toFixed(1)
+                 + ' von 127 (Ideallinie auf 0)'
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
   // ---- Block 4.4: Reifendruck ----

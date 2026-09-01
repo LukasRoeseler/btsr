@@ -2004,8 +2004,13 @@
     const HP = [0x05, 0x06], KU = [0x03, 0x04], GE = [0x02];
     const zeilen = [], schlecht = [];
     for (const lage of ['codes', 'karte']) {
+      // curveSlow AUSDRUECKLICH gesetzt und nicht die Vorgabe genommen: geprueft wird der
+      // Mechanismus - Haarnadel bekommt den doppelten Abschlag -, nicht die gerade
+      // eingestellte Staerke. Mit der gefahrenen Vorgabe von 0,15 lag das Ergebnis knapp
+      // unter der Schwelle, und die naechste Vorgabenaenderung haette den Test rot gemacht,
+      // obwohl nichts kaputt ist.
       const g = await OMEGA_TEST.ghostDriveProbe({ lage, takte: 900, code: 'SG3H2G3R2',
-                                                   tileMs: 900, cfg: { spice: 0 } });
+        tileMs: 900, cfg: { spice: 0, curveSlow: 0.35 } });
       const mittel = (codes) => {
         const v = [];
         g.kachel.forEach((k, i) => {
@@ -2070,6 +2075,91 @@
     return { ok: !stumm.length,
              mass: 'RMS-Aenderung am Lenkbyte: ' + zeilen.join(' | ')
                  + (stumm.length ? ' || STUMM: ' + stumm.join(', ') : '') };
+  });
+
+  // ---- Lernt der Ghost wirklich von Runde zu Runde? ----
+  //
+  // GEMELDET ALS "merke ich nichts von", und das war kein Feingefuehl: learnSettle() - die
+  // Bewertung einer Runde - hatte im Fahrbetrieb KEINEN AUFRUFER. Die Funktion stand fertig
+  // da und wurde nur vom Prueflauf gerufen. Folge: das Lernen zog nie Bilanz, behielt seinen
+  // ersten Zufallsversuch fuer immer und konvergierte nie. Wer den Schalter ausserdem
+  // umlegte, BEVOR ein Ghost verbunden war, bekam gar keinen Lernzustand - learnFactors gab
+  // dann stumm 1/1 zurueck.
+  //
+  // Geprueft wird, dass ueber mehrere Runden VERSUCHE GEZAEHLT werden und die Schrittweite
+  // sich bewegt. Nicht, dass der Ghost schneller wird: eine (1+1)-Strategie verwirft die
+  // meisten Versuche, und das ist ihre Aufgabe.
+  stAdd('Ghost-Lernen zieht je Runde Bilanz', async () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.ghostDriveProbe) {
+      return { skip: true, mass: 'ghostDriveProbe nicht vorhanden' };
+    }
+    const an = await OMEGA_TEST.ghostDriveProbe({ lage: 'karte', takte: 1000,
+      code: 'SG3H2G3R2', tileMs: 500, cfg: { spice: 0, learnPace: true } });
+    const aus = await OMEGA_TEST.ghostDriveProbe({ lage: 'karte', takte: 1000,
+      code: 'SG3H2G3R2', tileMs: 500, cfg: { spice: 0, learnPace: false } });
+    const L = an.lernen;
+    const fehler = [];
+    if (!L) fehler.push('kein Lernzustand angelegt');
+    else {
+      if (!(an.runden >= 3)) fehler.push('nur ' + an.runden + ' Runden gefahren');
+      // Versuche muessen MITZAEHLEN. Genau das tat sie nicht, als der Aufruf fehlte.
+      if (!(L.tries >= 3)) fehler.push('nur ' + L.tries + ' Versuche in ' + an.runden + ' Runden');
+      if (!(L.kept + L.rejected >= 2)) fehler.push('nichts bewertet');
+    }
+    if (aus.lernen) fehler.push('ausgeschaltet trotzdem ein Lernzustand');
+    return { ok: !fehler.length,
+             mass: (L ? an.runden + ' Runden, ' + L.tries + ' Versuche, ' + L.kept
+                        + ' behalten, ' + L.rejected + ' verworfen, Schrittweite '
+                        + L.sigma.toFixed(4)
+                      : 'kein Zustand')
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
+  // ---- Weicht der Vorausfahrende beim Ueberholen aus? ----
+  //
+  // GEMELDET ALS "beim Ueberholen beruehren sie sich stark". Zwei Ursachen:
+  //
+  //   1. Nur EINER wich aus. Zwei Autos auf 25 cm Bahnbreite brauchen beide Haelften, also
+  //      setzt der Angreifer jetzt am Vorausfahrenden ein Ausweichen zur anderen Seite.
+  //   2. Der Seitenversatz des Angreifers war mit ghostCfg.line skaliert. Stand die
+  //      Ideallinie auf 0, fuhr er OHNE Versatz in den anderen hinein - und der Regler
+  //      "Querablage gegen Rammen" konnte daran nichts aendern, obwohl er dafuer da ist.
+  //      Jetzt haengen beide an ghostCfg.lateral.
+  //
+  // Geprueft wird der ZUSTAND, den eine Attacke setzt, und nicht die Attacke: sie wird
+  // gewuerfelt und ist damit kein Pruefmittel.
+  stAdd('Ueberholen: der Vorausfahrende weicht aus', async () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.ghostDriveProbe) {
+      return { skip: true, mass: 'ghostDriveProbe nicht vorhanden' };
+    }
+    const rms = (a) => Math.sqrt(a.reduce((s, x) => s + x * x, 0) / Math.max(1, a.length));
+    const P = (o) => OMEGA_TEST.ghostDriveProbe(Object.assign(
+      { lage: 'karte', takte: 400, code: 'SG3H2G3R2', tileMs: 900,
+        cfg: { spice: 0, line: 0 } }, o));
+    // line auf 0, damit nur das Ausweichen uebrig bleibt - und das ist genau der Fall, in
+    // dem es vorher gar nichts tat.
+    const ohne = await P({});
+    const rechts = await P({ yieldSide: 1 });
+    const links = await P({ yieldSide: -1 });
+    const mit = (a, b) => {
+      const n = Math.min(a.length, b.length), d = [];
+      for (let i = 0; i < n; i++) d.push(a[i] - b[i]);
+      return rms(d);
+    };
+    const dR = mit(rechts.lenk, ohne.lenk), dL = mit(links.lenk, ohne.lenk);
+    const mR = rechts.lenk.reduce((s, x) => s + x, 0) / rechts.lenk.length;
+    const mL = links.lenk.reduce((s, x) => s + x, 0) / links.lenk.length;
+    const fehler = [];
+    if (dR < 5) fehler.push('nach rechts nur ' + dR.toFixed(1));
+    if (dL < 5) fehler.push('nach links nur ' + dL.toFixed(1));
+    // Und in die richtige Richtung: positiv ist rechts.
+    if (!(mR > 0)) fehler.push('yieldSide +1 lenkt nicht rechts');
+    if (!(mL < 0)) fehler.push('yieldSide -1 lenkt nicht links');
+    return { ok: !fehler.length,
+             mass: 'Wirkung ' + dR.toFixed(1) + ' / ' + dL.toFixed(1)
+                 + ' RMS, Mittel ' + mR.toFixed(1) + ' / ' + mL.toFixed(1)
+                 + ' von 127 (Ideallinie auf 0)'
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
   // ---- Block 4.4: Reifendruck ----
