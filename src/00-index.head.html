@@ -519,17 +519,12 @@
   /* --brand-bg, not --navy: this card was always light text on a dark field, so under the
      split it follows the SURFACE role. Leaving it on --navy made it near-white with
      near-white text on it - 1.00:1, which the contrast check caught. */
-  .hud-card { background: var(--brand-bg); }
-  .hud-card::before { border-color: var(--border-strong); }
-  .hud-card h2 { color: var(--ink-2); border-bottom-color: var(--tint-3); }
-  .hud-row { display: flex; gap: 28px; align-items: center; flex-wrap: wrap; }
-  .hud-stat { display: flex; flex-direction: column; align-items: center; min-width: 64px; }
-  .hud-value { font-size: 26px; font-weight: 800; font-family: monospace; color: var(--ink); line-height: 1; }
+  /* Die .hud-* Regeln standen hier: hud-card (drei Regeln), hud-row, hud-stat, hud-value,
+     hud-light und hud-toggle. Sie gehoerten zur alten HUD-Karte, die mit dem Cockpit-Umbau
+     entfernt wurde; keine davon war noch in einem Markup oder in einer Zeichenkette. Toter
+     Stil ist harmloser als toter Code, aber er kostet bei jeder Durchsicht die Frage, wozu
+     er da ist. Ebenso .gar-name, das mit der alten Garagenzeile ging. */
   .hud-label { font-size: 10px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin-top: 4px; }
-  .hud-light {
-    display: inline-block; width: 14px; height: 14px; border-radius: 50%;
-    background: #3a4a6b; margin: 0 3px; vertical-align: middle;
-  }
   /* ---- Racing screen, styled after real GT3 wheel dashes ----
      The defining element of those displays is the CAPTIONED BOX: a thin-bordered cell with
      a small uppercase caption and a monospace value under it. Everything is a box, which is
@@ -674,7 +669,13 @@
   .gt3-shift { grid-area: shift; display: grid;
     grid-template-columns: repeat(10, minmax(0, 1fr));
     gap: clamp(3px, 1.1vw, 14px);
-    padding: clamp(3px, .7vw, 7px) clamp(38px, 11vw, 58px); }
+    padding: clamp(3px, .7vw, 7px) clamp(38px, 11vw, 58px);
+    /* MINDESTHOEHE fuer den Vollbildknopf. Der sitzt 6 px unter der Oberkante und ist 34 px
+       hoch, endet also 40 px unter ihr. Auf 375 px war diese Reihe niedriger, und dann ragte
+       er in die erste Kachel der rechten Spalte und stand ueber "Aktuelle Runde". Die
+       seitliche Aussparung oben hielt nur die LICHTER frei, nicht die Zeile darunter.
+       40 px ist aus den beiden Zahlen des Knopfes gerechnet und nicht geraten. */
+    min-height: 40px; align-content: center; }
   /* EIN BOGEN, keine Reihe. Auf einem GT3-Lenkrad sitzen die Schaltlichter in der
      Kruemmung des Kranzes, und die aeusseren stehen tiefer. Symmetrisch aus der Mitte
      heraus: 0 fuer die vier innersten, dann 1, 2, 3 px. Mehr waere auf 375 px ein Sprung
@@ -1595,7 +1596,6 @@
   body.track-fs .tp-space { right: 14px; bottom: 68px; }
   .gar-row.is-player { border-color: var(--good); }
   .gar-row.is-ghost { border-color: #7a6bd0; }
-  .gar-name { font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
   .gar-id { font-size: 11px; color: var(--muted); font-family: monospace; }
   /* Ein Segmentschalter statt drei einzelner Knoepfe: die drei Rollen schliessen sich
      gegenseitig aus, und drei getrennte Knoepfe sagen das nicht. Zusammengeschoben, mit
@@ -1710,7 +1710,6 @@
     transform: translate(-50%, -50%) rotate(90deg); transform-origin: center; }
   body.race-fs .race-bar { position: fixed; z-index: 201; top: 8px; left: 8px; }
   body.race-fs.race-turn .race-bar { top: auto; bottom: 8px; left: 8px; }
-  .hud-toggle { margin-left: auto; display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-2); }
 
   /* Race-mode start lights: off (gray) -> up to 3 reds -> green on "go" */
   .race-light {
@@ -4706,12 +4705,14 @@
         </div></div>
       
 
-      <div class="opt-row"><div class="opt-label">Reifen links und rechts getrennt
-          <small>Die kommandierte Lenkrichtung verteilt die Last: eine Strecke mit vielen
-          Rechtskurven nutzt die linken Reifen st&auml;rker ab. Das Cockpit zeigt dann zwei
-          Balken, und das Auto zieht leicht zur st&auml;rker abgenutzten Seite &ndash; die
-          erzeugt weniger Querkraft. Der Mittelwert bleibt derselbe, der Schalter macht also
-          nicht mehr Verschlei&szlig;, sondern ungleichen.</small></div>
+      <div class="opt-row"><div class="opt-label">Jedes Rad einzeln
+          <small>Aus Nick- und Querverlagerung bekommt jedes der vier Räder seine eigene
+          Last, und daraus folgen vier Temperaturen, vier Verschleißwerte und vier
+          Bremsscheiben. Eine Strecke mit vielen Rechtskurven nutzt die linken Reifen
+          stärker ab, Bremsen verlagert nach vorn, Gas nach hinten. Das Auto zieht leicht
+          zur stärker abgenutzten Seite, weil die weniger Querkraft erzeugt. Der
+          Mittelwert bleibt derselbe: der Schalter macht nicht mehr Verschleiß, sondern
+          ungleichen.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-tyre-asym" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Reifendruck (bar)
           <small>Wenig Druck hei&szlig;t mehr Walkarbeit: schnellere Erw&auml;rmung, mehr
@@ -5392,7 +5393,7 @@
       </p>
       <p class="muted" style="font-size:11.5px; border-left:3px solid var(--good);
          padding-left:9px; margin-top:0">
-        Im Ausdruck-Modus meldet das Start/Ziel-Blatt <b>0x01</b>. Im Bahn-Modus melden die
+        Im Ausdruck-Modus meldet das Start/Ziel-Blatt 0x01. Im Bahn-Modus melden die
         Schienen 0x02 Gerade, 0x03 Linkskurve, 0x04 Rechtskurve, 0x05 und 0x06 Haarnadel,
         0x0a Start/Ziel, 0x00 abseits der Bahn. Dieselbe Zahl bedeutet je Modus etwas
         anderes &ndash; wer Codes vergleicht, muss den Modus mitnennen.
@@ -5562,14 +5563,14 @@
         </p>
       </div>
       <p class="muted" style="font-size:11.5px">
-        <b>Muster-Sonde:</b> fahr über ein beliebiges ausgedrucktes Muster, hier steht sofort,
-        welchen Code das Auto meldet. <b>Achtung auf den Modus:</b> ein Ausdruck meldet
-        aus der Ausdruck-Tabelle, dort ist <code>0x01</code> Start/Ziel. Die Werte
-        <code>0x0a</code> Start/Ziel, <code>0x02</code> Gerade, <code>0x03</code>
-        Linkskurve, <code>0x04</code> Rechtskurve, <code>0x05</code> und <code>0x06</code>
-        Haarnadel geh&ouml;ren zur <b>Bahn</b>-Tabelle; alles andere ist unbest&auml;tigt. Trag hier den Code ein, den dein gedrucktes Boxen-Muster
-        tatsächlich auslöst, <code>0x08</code> war nie ein reales Signal und ist deshalb
-        nicht mehr die Vorgabe.
+        <b>Muster-Sonde:</b>
+        fahr über ein beliebiges ausgedrucktes Muster, hier steht sofort, welchen Code das
+        Auto meldet. Achtung auf den Modus: ein Ausdruck meldet aus der Ausdruck-Tabelle,
+        dort ist 0x01 Start/Ziel. Die Werte 0x0a Start/Ziel, 0x02 Gerade, 0x03 Linkskurve,
+        0x04 Rechtskurve, 0x05 und 0x06 Haarnadel gehören zur Bahn-Tabelle; alles andere
+        ist unbestätigt. Trag hier den Code ein, den dein gedrucktes Boxen-Muster
+        tatsächlich auslöst – 0x08 war nie ein reales Signal und ist deshalb nicht mehr
+        die Vorgabe.
       </p>
     </div>
 
@@ -5584,7 +5585,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.4.33</span></span>
+    <span class="foot-ver">v<span id="app-version">0.4.34</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine

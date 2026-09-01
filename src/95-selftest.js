@@ -714,6 +714,50 @@
       + ', danach ' + (r.danach.gas ? 'NOCH GESPERRT' : 'frei') };
   });
 
+  // ---- Uebersetzung: kein Deutsch im englischen Modus ----
+  //
+  // Gesucht wird nach Woertern, die es im ENGLISCHEN nicht gibt, plus Umlauten. Ein erstes
+  // Muster enthielt "also" und "die" und meldete damit englische Saetze als deutsch - ein
+  // Test, der Rauschen meldet, wird abgeschaltet.
+  //
+  // Und es wird NICHT durch die Reiter geklickt: alle liegen gleichzeitig im Dokument, und
+  // ein klickender Durchgang oeffnet die Unterseiten nicht. Genau dort lagen drei von vier
+  // Befunden, als diese Pruefung zum ersten Mal lief.
+  stAdd('Uebersetzung: kein Deutsch im englischen Modus', () => {
+    const knopf = $('lang-toggle');
+    if (!knopf) return { skip: true, mass: 'kein Sprachumschalter' };
+    const vorher = document.documentElement.getAttribute('lang');
+    const warEnglisch = vorher === 'en';
+    try {
+      if (!warEnglisch) knopf.click();
+      if (document.documentElement.getAttribute('lang') !== 'en') {
+        return { skip: true, mass: 'Umschalten auf Englisch hat nicht gegriffen' };
+      }
+      const DE = /(?:^|[\s(])(?:werden|wurde|wird|nicht|damit|deshalb|jedoch|welche|meldet|liegt|steht|braucht|dieselbe|derselbe|jedes|jeder|Werte|Blatt|Aufnahmen|Strecken|gespeichert|Ausdruck|Reifen|Bremse|Lenkung|Boxengasse)(?:[\s.,;:!?)]|$)|[\u00e4\u00f6\u00fc\u00df\u00c4\u00d6\u00dc]/;
+      const gehen = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+      const treffer = [];
+      let n;
+      while ((n = gehen.nextNode())) {
+        const el = n.parentElement;
+        if (!el) continue;
+        // Die Doku ist ausdruecklich nur deutsch; das Protokoll und die Testtabelle
+        // enthalten Laufzeittexte und keine Oberflaeche.
+        if (el.closest('#tab-doc, #log, script, style, template, #st-rows')) continue;
+        const t = n.nodeValue.trim().replace(/\s+/g, ' ');
+        if (t.length < 10 || !DE.test(t)) continue;
+        const wo = el.closest('[id^="tab-"]');
+        treffer.push((wo ? wo.id : '?') + ': ' + t.slice(0, 50));
+      }
+      return { ok: treffer.length === 0,
+               mass: treffer.length === 0 ? 'kein deutscher Text gefunden'
+                                          : treffer.length + ' Stellen \u2013 ' + treffer.slice(0, 3).join(' | ') };
+    } finally {
+      // Die Sprache MUSS zurueck: ein Test, der die Oberflaeche umstellt und so stehen
+      // laesst, ist selbst der naechste Fehlerbericht.
+      if (!warEnglisch && document.documentElement.getAttribute('lang') === 'en') knopf.click();
+    }
+  });
+
   // ---- Block 4.4: Reifendruck ----
   // Monoton, ueber den ganzen Reglerbereich. Ein Regler, der in der Mitte umkehrt, ist keine
   // Abstimmung, sondern eine Falle.
@@ -1297,7 +1341,16 @@
       // Byte 11 bleibt FEST: genau der Fall, in dem vorher nichts angezeigt wurde.
       for (let k = 0; k < 3; k++) OMEGA_TEST.feedNotify(paket(0x14, 7), { car: attrappe });
       const text = feld.textContent;
-      const ok = text.indexOf('0x14') >= 0 && /steht/.test(text);
+      // BEIDE Sprachen nennen, denn dieser Test lief nur auf Deutsch. Aufgefallen ist es
+      // erst, als der neue Uebersetzungstest die Oberflaeche auf Englisch gestellt hat: dann
+      // steht dort "still" und dieser Test meldete einen Fehler, den es nicht gab. Ein Test,
+      // der still von der Spracheinstellung abhaengt, ist schlimmer als keiner - er zeigt
+      // rot fuer etwas, das funktioniert.
+      //
+      // Der Code selbst (0x14) ist sprachfrei und traegt die eigentliche Aussage; das Wort
+      // dazu wird mitgeprueft, weil die Aussage "der Zaehler steht" der Punkt dieses Tests
+      // ist. Kommt eine dritte Sprache dazu, faellt der Test auf - und das ist richtig so.
+      const ok = text.indexOf('0x14') >= 0 && /steht|still/.test(text);
       return { ok, mass: 'angezeigt: "' + text + '"' };
     } finally {
       playerCar = echterSpieler;

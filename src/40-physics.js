@@ -403,7 +403,6 @@
         // nothing engaged, engine free to rev.
         driveMode: 'neutral', // 'neutral' | 'forward' | 'reverse'
         neutralRpm: 0,        // lagged free-rev value, 0..1 of the usable rev range
-        reverseLatched: false,
         currentGear: 0,
         rpm: IDLE_RPM,
         rpmFrac: 0,           // (rpm - idle) / (redline - idle)
@@ -444,9 +443,7 @@
         steerGrip: 1,     // front lateral capacity left over, 1 = static baseline
         gLat: 0, gLong: 0, // for the G plot
         engineLoad: 0,        // pedal opening actually applied — drives sound VOLUME
-        commanded: 0,
         dampedSteering: 0,
-        pitch: 0,
         isShifting: false,
         absActive: false,
         lastAbsRumble: 0,
@@ -477,9 +474,8 @@
     // can't drift apart on which fields they remember to clear.
     reset() {
       const st = this.state;
-      st.speedKmh = 0; st.virtualSpeed = 0; st.commanded = 0;
+      st.speedKmh = 0; st.virtualSpeed = 0;
       st.driveMode = 'neutral'; st.neutralRpm = 0;
-      st.reverseLatched = false;
       st.currentGear = 0; st.rpm = IDLE_RPM; st.rpmFrac = 0;
       st.isShifting = false; st.engineLoad = 0; st.onLimiter = false;
     }
@@ -610,7 +606,12 @@
       // standstill guard, and the shift bindings are not gated on gearbox mode, so
       // reverse stays reachable in automatic: two downshifts from first. No new binding,
       // one less way to end up in R without asking for it.
-      if (inputs.brake <= 0.02) st.reverseLatched = false;
+      //
+      // Und damit ist auch st.reverseLatched weggefallen. Es sollte verhindern, dass eine
+      // GEHALTENE Bremse den Gang gleich wieder zurueckkippt - eine Absicherung fuer eine
+      // Mechanik, die es hier nicht mehr gibt: triggerShift() wird nur aus Tastendruecken
+      // gerufen, ein Dauerzustand kann es nicht wiederholt auslösen. Sechs Schreibstellen
+      // ohne eine einzige Lesestelle, also war der Schutz ohnehin keiner.
       const reversing = st.driveMode === 'reverse';
       const inNeutral = st.driveMode === 'neutral';
       const gearIdx = reversing ? -1 : st.currentGear;
@@ -1054,8 +1055,11 @@
       }
 
       st.virtualSpeed = Math.abs(st.speedKmh) / cfg.topSpeedKmh;
-      st.commanded = output;
-      st.pitch = output;
+      // st.commanded und st.pitch standen hier und bekamen beide denselben Wert wie output.
+      // Gelesen hat sie nie etwas. st.pitch war dabei nicht bloss ueberzaehlig, sondern eine
+      // Falle: seit der Vierradverlagerung heisst "pitch" die Nickverlagerung, und wer
+      // st.pitch fuer den Nickwinkel liest, bekommt das Motorbyte. Wer den Ausgabewert
+      // braucht, nimmt den Rueckgabewert von update().
 
       // Automatic gearbox, now on RPM rather than band fraction.
       // FIRST: an automatic must not be able to sit in neutral. Neutral is the starting
@@ -1216,7 +1220,6 @@
           if (direction > 0) {
             st.driveMode = 'forward'; st.currentGear = 0;
             st.speedKmh = 0; st.neutralRpm = 0;
-            st.reverseLatched = true;
             showHudToast('Vorw\u00e4rts'); padRumble(0.3, 0.2, 90);
             playShiftSound(1);
           }
@@ -1226,7 +1229,6 @@
           if (langsam) {
             st.driveMode = 'reverse'; st.currentGear = 0;
             st.speedKmh = 0; st.neutralRpm = 0;
-            st.reverseLatched = true;
             showHudToast('R\u00fcckw\u00e4rtsgang'); padRumble(0.3, 0.2, 90);
             playShiftSound(-1);
           } else {
@@ -1241,8 +1243,6 @@
       if (st.driveMode === 'reverse') {
         if (direction > 0 && stopped) {
           st.driveMode = 'neutral'; st.speedKmh = 0; st.neutralRpm = 0;
-          // Latch as well, or a still-held brake would flip it back within half a second.
-          st.reverseLatched = true;
           showHudToast('Leerlauf'); padRumble(0.3, 0.2, 90);
           playShiftSound(1);
         }
@@ -1258,7 +1258,6 @@
           setTimeout(() => { st.isShifting = false; }, cfg.shiftMs);
         } else if (stopped) {
           st.driveMode = 'reverse'; st.speedKmh = 0; st.neutralRpm = 0;
-          st.reverseLatched = true;
           showHudToast('Rückwärtsgang'); padRumble(0.3, 0.2, 90);
           playShiftSound(-1);
         }

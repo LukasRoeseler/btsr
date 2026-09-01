@@ -2057,22 +2057,12 @@
   // What is happening RIGHT NOW, task by task, with a tick for the finished ones. The old
   // text only said how much fuel and repair had accumulated, which does not answer
   // "what is left".
-  function pitTaskText() {
-    const p = pitPlan;
-    if (pitPlanEmpty(p)) {
-      return `Standzeit ${Math.max(0, PIT_EMPTY_STOP_S - pitEmptyElapsed).toFixed(1)} s`;
-    }
-    const parts = [];
-    if (p.refuel) parts.push(pitDone.refuel ? '✓ Tank voll' : `Tanken ${fuelLiters(fuel)} l`);
-    if (p.tyres) parts.push(pitDone.tyres ? '✓ Reifen neu'
-                            : `Reifen ${Math.max(0, pitTyreTarget - pitTyreElapsed).toFixed(1)} s`);
-    if (p.repair) parts.push(pitDone.repair ? '✓ repariert'
-                             : `Reparatur ${Math.round(100 - damage)} %`);
-    return parts.join(' · ');
-  }
-
-  // Der Rumpf schrieb danach in #dash-pit, ein Element der entfernten alten Karte. Der
-  // Boxenzustand steht heute im Streifen unter dem Tacho, gezeichnet von updateRaceScreen().
+  // pitTaskText() stand hier und baute den Boxen-Fortschritt als Text. Ihr Abnehmer war
+  // #dash-pit, ein Element der entfernten alten Karte - und mit ihm ging der einzige Aufrufer.
+  // Der Rumpf wurde damals entfernt, der Textbauer blieb stehen: eine halbe Entfernung, und
+  // eine Funktion ohne Aufrufer sieht bei der naechsten Durchsicht aus wie etwas, das jemand
+  // braucht. Der Boxenzustand steht heute im Streifen unter dem Tacho, gezeichnet von
+  // updateRaceScreen().
   // Der Rumpf schrieb in #dash-pit, ein Element der entfernten alten Karte, und war damit
   // bis auf updatePitTiles() vollstaendig wirkungslos. Der Name bleibt, weil er an einem
   // Dutzend Stellen gerufen wird und "die Boxen-Anzeige auffrischen" weiter die richtige

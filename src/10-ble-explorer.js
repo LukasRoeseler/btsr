@@ -448,7 +448,7 @@
     "Boxengasse herunterladen (SVG)": "Download pit lane (SVG)",
     "Boxengasse": "Pit lane",
     "Boxengasse, Katalognummer 14": "Pit lane, catalogue number 14",
-    "Boxenstopp auf Knopfdruck, mit Quick-Menü": "Pit stop at the touch of a button, with a quick menu",
+    "Boxenstopp auf Knopfdruck": "Pit stop at the touch of a button",
     "Boxenstopp": "Pit stop",
     "Boxenstopp, erneut zweimal kurz drücken bricht ab": "Pit stop, two more short presses abort it",
     "Boxer": "Flat",
@@ -1224,8 +1224,8 @@
     // Block 4 (v0.5): Bremsfading, Windschatten, Reifenasymmetrie und -druck.
     // Alle GANZE Textknoten, keine Fragmente - die Kleintexte sind ohne <b> und
     // <code> im Inneren geschrieben, genau damit sie nicht zerfallen.
-    "Reifen links und rechts getrennt": "Left and right tyres tracked separately",
-    "Die kommandierte Lenkrichtung verteilt die Last: eine Strecke mit vielen Rechtskurven nutzt die linken Reifen stärker ab. Das Cockpit zeigt dann zwei Balken, und das Auto zieht leicht zur stärker abgenutzten Seite – die erzeugt weniger Querkraft. Der Mittelwert bleibt derselbe, der Schalter macht also nicht mehr Verschleiß, sondern ungleichen.": "The commanded steering direction distributes the load: a track full of right-hand corners wears the left tyres more. The cockpit then shows two bars, and the car pulls slightly towards the more worn side – that side generates less lateral force. The mean stays the same, so the switch does not add wear, it makes it uneven.",
+    "Jedes Rad einzeln": "Each wheel on its own",
+    "Aus Nick- und Querverlagerung bekommt jedes der vier Räder seine eigene Last, und daraus folgen vier Temperaturen, vier Verschleißwerte und vier Bremsscheiben. Eine Strecke mit vielen Rechtskurven nutzt die linken Reifen stärker ab, Bremsen verlagert nach vorn, Gas nach hinten. Das Auto zieht leicht zur stärker abgenutzten Seite, weil die weniger Querkraft erzeugt. Der Mittelwert bleibt derselbe: der Schalter macht nicht mehr Verschleiß, sondern ungleichen.": "Pitch and lateral load transfer give each of the four wheels its own load, and from that follow four temperatures, four wear values and four brake discs. A track full of right-hand corners wears the left tyres more, braking shifts the load forwards and throttle shifts it back. The car pulls slightly towards the more worn side, because that side generates less lateral force. The mean stays the same: the switch does not add wear, it makes it uneven.",
     "Reifendruck (bar)": "Tyre pressure (bar)",
     "Wenig Druck heißt mehr Walkarbeit: schnellere Erwärmung, mehr Verschleiß, besserer Kaltgriff. Viel Druck umgekehrt. Jede Abweichung von 1,8 kostet zusätzlich ein wenig Spitzengriff – sonst gäbe es genau eine beste Stellung und keine Abstimmung. Kein eigener Schalter: 1,8 ist die neutrale Stellung.": "Low pressure means more flex: faster warm-up, more wear, better grip when cold. High pressure the other way round. Any deviation from 1.8 also costs a little peak grip – otherwise there would be exactly one best setting and no trade-off. No switch of its own: 1.8 is the neutral position.",
     "Bremstemperatur und Fading": "Brake temperature and fade",
@@ -1297,6 +1297,14 @@
     "verbunden": "connected",
     "kein Kontakt zum Host": "no contact with the host",
     "Ohne Host-Adresse geht es nicht.": "It does not work without a host address.",
+    // Vier Texte, die im englischen Modus deutsch geblieben sind. Zwei waren ohne
+    // Eintrag, zwei waren BRUCHSTUECKE - Auszeichnung mitten im Satz zerlegt den
+    // Textknoten, und dann passt kein Schluessel mehr. Das Markup ist dafuer
+    // geglaettet worden; diese Schluessel sind aus ihm gerechnet und nicht abgetippt.
+    "Aufnahmen werden lokal im Browser gespeichert (localStorage).": "Recordings are stored locally in the browser (localStorage).",
+    "Strecken werden lokal im Browser gespeichert (localStorage).": "Tracks are stored locally in the browser (localStorage).",
+    "Im Ausdruck-Modus meldet das Start/Ziel-Blatt 0x01. Im Bahn-Modus melden die Schienen 0x02 Gerade, 0x03 Linkskurve, 0x04 Rechtskurve, 0x05 und 0x06 Haarnadel, 0x0a Start/Ziel, 0x00 abseits der Bahn. Dieselbe Zahl bedeutet je Modus etwas anderes – wer Codes vergleicht, muss den Modus mitnennen.": "In printed-pattern mode the start/finish sheet reports 0x01. In rail mode the rails report 0x02 straight, 0x03 left-hand corner, 0x04 right-hand corner, 0x05 and 0x06 hairpin, 0x0a start/finish, 0x00 off the track. The same number means something different in each mode – whoever compares codes has to name the mode as well.",
+    "fahr über ein beliebiges ausgedrucktes Muster, hier steht sofort, welchen Code das Auto meldet. Achtung auf den Modus: ein Ausdruck meldet aus der Ausdruck-Tabelle, dort ist 0x01 Start/Ziel. Die Werte 0x0a Start/Ziel, 0x02 Gerade, 0x03 Linkskurve, 0x04 Rechtskurve, 0x05 und 0x06 Haarnadel gehören zur Bahn-Tabelle; alles andere ist unbestätigt. Trag hier den Code ein, den dein gedrucktes Boxen-Muster tatsächlich auslöst – 0x08 war nie ein reales Signal und ist deshalb nicht mehr die Vorgabe.": "drive over any printed pattern and it says right here which code the car reports. Mind the mode: a printout reports from the printed-pattern table, where 0x01 is start/finish. The values 0x0a start/finish, 0x02 straight, 0x03 left-hand corner, 0x04 right-hand corner, 0x05 and 0x06 hairpin belong to the rail table; everything else is unconfirmed. Enter the code your printed pit pattern actually triggers here – 0x08 was never a real signal and is therefore no longer the default.",
   };
 
   // ============================================================================

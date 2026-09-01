@@ -2887,7 +2887,7 @@
       const bremsAb = opt.bremsAb || [100, 150, 200, 250];
       // Der GANZE Zustand, nicht eine Liste von Feldern. Aufgezaehlt hatte ich zwoelf, und
       // der Zustand hat mehr - rpm, dampedSteering, virtualSpeed, gripLong, pitch,
-      // onLimiter, reverseLatched. Ein Aufruf liess sie stehen, der naechste setzte darauf
+      // onLimiter. Ein Aufruf liess sie stehen, der naechste setzte darauf
       // auf, und zwei identische Aufrufe lieferten Verschiedenes. Eine Aufzaehlung ist bei
       // einem Zustandsobjekt immer unvollstaendig.
       const merkState = OMEGA_TEST.zustandKopie(st);
