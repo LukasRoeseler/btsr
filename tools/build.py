@@ -26,6 +26,7 @@ Abnahme, die den ganzen Umbau risikolos macht.
 import argparse
 import io
 import os
+import re
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -140,6 +141,36 @@ def check_dict(quelle):
     return fehler
 
 
+def check_ids(html):
+    """Zugriffe auf Element-ids, die es im Dokument nicht gibt.
+
+    $('foo') ohne id=\"foo\" ist eine Zuweisung, die nichts tut. Sie sieht wie ein
+    Merkmal aus und ist keines; so war es bei #race-track und bei #crash-indicator.
+    """
+    doc = re.findall(r'id="([A-Za-z0-9_-]+)"', html)
+    doc_set = set(doc)
+    # Zugriffe: die Formen, mit denen diese App auf Elemente geht.
+    zugriff = set()
+    for muster in (r"\$\('([A-Za-z0-9_-]+)'\)",
+                   r"getElementById\('([A-Za-z0-9_-]+)'\)",
+                   r"setTxt\('([A-Za-z0-9_-]+)'",
+                   r"setSty\('([A-Za-z0-9_-]+)'"):
+        zugriff |= set(re.findall(muster, html))
+    # Dynamisch erzeugte ids beruecksichtigen: alles, was das Skript als id= ausgibt.
+    doc_set |= set(re.findall(r"id=.([A-Za-z0-9_-]+).", html))
+
+    # NUR diese Richtung. Die umgekehrte - "id im Dokument, das sonst nirgends vorkommt"
+    # - meldete 50 Stellen, und fast alle waren falsch: mw-clatter-val, sub-print und
+    # Verwandte werden im Code zusammengesetzt, das Literal steht also nirgends. Eine
+    # Pruefung mit 50 falschen Treffern wird ignoriert, und dann meldet sie auch den
+    # echten Fall nicht mehr.
+    #
+    # Der Fall "Anzeige im Dokument, die niemand mehr beschreibt" wird dort gefangen, wo
+    # er sich zeigt: ein Selbsttest faehrt die Physik und prueft, dass die
+    # Cockpit-Anzeigen sich dabei aendern.
+    return sorted(zugriff - doc_set)
+
+
 def check_refs(html):
     fehlend = []
     for nr, ziel in local_refs(html):
@@ -178,6 +209,7 @@ def main():
 
     fehlend = check_refs(built)
     dictfehler = check_dict(built)
+    ins_leere = check_ids(built)
 
     with io.open(OUT, 'w', encoding='utf-8', newline='') as f:
         f.write(built)
@@ -204,6 +236,16 @@ def main():
         print('  Eine Waise ist ein SyntaxError: die IIFE bricht ab, OMEGA_TEST fehlt,'
               ' und der Selbsttest kann nichts melden.', file=sys.stderr)
         return 2
+    if ins_leere:
+        print('', file=sys.stderr)
+        print('ZUGRIFF INS LEERE: %d ids, die es im Dokument nicht gibt'
+              % len(ins_leere), file=sys.stderr)
+        for i in ins_leere:
+            print('  ' + i, file=sys.stderr)
+        return 2
+
+
+    print('  Element-ids geprueft: kein Zugriff ins Leere')
     print('  Woerterbuch geprueft: keine Waisen')
     print('  Verweise geprueft: %d lokale src/href, alle vorhanden'
           % len(local_refs(built)))

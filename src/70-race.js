@@ -2094,7 +2094,10 @@
   // car really stops switching that light rather than only the display pretending.
   const LIGHT_DEAD_DAMAGE = 50;
   const lightDamage = { front: false, rear: false };
-  const CRASH_THRESHOLD = 40;
+  // Einstellbar seit v0.5. Sie stand als Konstante hier - dieselbe Fehlerklasse wie
+  // leaderBrakePct und ghostCfg.lineModel: eine Einstellung, die niemand einstellen konnte.
+  // Die 40 bleibt die Vorgabe, denn mit ihr ist die Erkennung gebaut und geprueft.
+  let crashThreshold = 40;
   const CRASH_ROLLING_ALPHA = 0.15;
   const CRASH_REFRACTORY_MS = 1000; // avoid re-triggering repeatedly off one jolt
   let fuelDrainPerSec = 3;       // % per second at full throttle magnitude (slider)
@@ -2118,6 +2121,15 @@
 
   function s8signed(b) { return b >= 128 ? b - 256 : b; }
 
+  if ($('setting-crash-threshold')) {
+    const anwenden = () => {
+      crashThreshold = parseInt($('setting-crash-threshold').value, 10);
+      $('setting-crash-threshold-val').textContent = crashThreshold;
+    };
+    $('setting-crash-threshold').addEventListener('input', anwenden);
+    anwenden();
+  }
+
   function detectCrash(bytes) {
     if (!crashDetectionEnabled) return;
     const v1 = s8signed(bytes[1]), v3 = s8signed(bytes[3]);
@@ -2126,7 +2138,7 @@
     crashRollingAvg1 += (v1 - crashRollingAvg1) * CRASH_ROLLING_ALPHA;
     crashRollingAvg3 += (v3 - crashRollingAvg3) * CRASH_ROLLING_ALPHA;
     const now = Date.now();
-    if (dev > CRASH_THRESHOLD && now - lastCrashTime > CRASH_REFRACTORY_MS) {
+    if (dev > crashThreshold && now - lastCrashTime > CRASH_REFRACTORY_MS) {
       lastCrashTime = now;
       registerCrash();
     }

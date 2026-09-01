@@ -607,8 +607,10 @@
     // rechts trennt. Sie kuenstlich zu spreizen waere eine Erfindung, und eine Anzeige, die
     // mehr behauptet als das Modell weiss, ist schlimmer als eine grobe.
     {
-      const felder = [['race-tyre-fl', 'L'], ['race-tyre-rl', 'L'],
-                      ['race-tyre-fr', 'R'], ['race-tyre-rr', 'R']];
+      // Seite fuer den Reifen, Achse fuer die Bremsscheibe: der Verschleiss ist links und
+      // rechts getrennt, die Scheibentemperatur vorn und hinten.
+      const felder = [['race-tyre-fl', 'L', 'V'], ['race-tyre-rl', 'L', 'H'],
+                      ['race-tyre-fr', 'R', 'V'], ['race-tyre-rr', 'R', 'H']];
       const cfgT = physEngine.config;
       const aus = cfgT.tyreEffect === 0;
       let col = '#4a5568';
@@ -631,17 +633,67 @@
       const asymAn = cfgT.tyreAsymEffect > 0;
       const wL = aus ? 0 : (asymAn ? st.tyreWearL : st.tyreWear);
       const wR = aus ? 0 : (asymAn ? st.tyreWearR : st.tyreWear);
-      for (const [id, seite] of felder) {
+
+      // ---- Bremsscheiben, als Ring in jedem Reifen -----------------------------------
+      //
+      // WIEDER EINGEBAUT: diese Anzeige lag im Textbereich, den der Umbau auf vier Reifen
+      // ersetzt hat, und ist dabei mitgeloescht worden. race-braket-f stand danach im
+      // Dokument, ohne dass es jemand beschrieb - eine tote Element-id, von mir selbst
+      // erzeugt. Gemeldet als "die Temperatur reagiert nicht auf mein Fahren".
+      //
+      // Vorn und hinten sind hier wirklich verschieden: zwei Scheibentemperaturen, getrennt
+      // nach der Bremsbalance.
+      const fadeAus = cfgT.brakeFadeEffect === 0;
+      const scheibe = (T) => {
+        if (fadeAus) return '#2a3346';
+        const ueber = Math.max(0, Math.min(1, (T - cfgT.brakeFadeStartC)
+          / Math.max(1, cfgT.brakeFadeFullC - cfgT.brakeFadeStartC)));
+        if (ueber > 0) {
+          // Ab Fadingbeginn orange nach rot: das ist die Nachricht.
+          return 'rgb(255, ' + Math.round(178 - 130 * ueber) + ', '
+               + Math.round(107 - 92 * ueber) + ')';
+        }
+        // Darunter grau nach gruen - und NICHT gegen die Fadingschwelle normiert. Das war
+        // die erste Fassung, und sie liess den Ring bis fast 500 Grad grau: bei 66 Grad
+        // gemessen rgb(44,64,73), also kein sichtbarer Unterschied zu kalt. Der Bereich, den
+        // man beim Fahren sieht, liegt zwischen 25 und ein paar hundert Grad, und dort muss
+        // sich die Farbe bewegen.
+        //
+        // 300 Grad ist hier die Betriebstemperatur: eine harte Runde erreicht das, und ab
+        // dort geht es weiter nach Gelb, bis das Fading bei 520 einsetzt.
+        const warm = Math.max(0, Math.min(1, (T - cfgT.brakeAmbientC) / 275));
+        if (warm >= 1) {
+          const heiss = Math.max(0, Math.min(1,
+            (T - 300) / Math.max(1, cfgT.brakeFadeStartC - 300)));
+          return 'rgb(' + Math.round(62 + 193 * heiss) + ', ' + Math.round(209 - 31 * heiss)
+               + ', ' + Math.round(106 - heiss) + ')';
+        }
+        return 'rgb(' + Math.round(42 + 20 * warm) + ', ' + Math.round(51 + 158 * warm)
+             + ', ' + Math.round(70 + 36 * warm) + ')';
+      };
+      const farbeF = scheibe(st.brakeTempF);
+      const farbeR = scheibe(st.brakeTempR);
+
+      for (const [id, seite, achse] of felder) {
         const el = $(id);
         if (!el || !el.firstChild) continue;
         const rest = aus ? 100 : Math.max(0, Math.min(100, 100 - (seite === 'L' ? wL : wR) * 100));
         el.firstChild.style.height = rest + '%';
         el.firstChild.style.background = col;
+        const ring = el.lastChild;
+        if (ring && ring !== el.firstChild) {
+          ring.style.borderColor = achse === 'V' ? farbeF : farbeR;
+        }
       }
+      // Eine Zeile fuer beides: Reifentemperatur mit Abnutzung, und die zwei
+      // Scheibentemperaturen. Zwei Zeilen waeren in einer 77-px-Kachel eine zu viel.
       const tt = $('race-tyre-temp');
       if (tt) {
-        tt.textContent = aus ? 'aus' : (Math.round(st.tyreTempC) + '\u00b0 '
+        const reifen = aus ? 'aus' : (Math.round(st.tyreTempC) + '\u00b0 '
           + Math.round(Math.max(wL, wR) * 100) + '%');
+        const br = fadeAus ? '' : (' \u00b7 ' + Math.round(st.brakeTempF) + '/'
+          + Math.round(st.brakeTempR) + '\u00b0');
+        tt.textContent = reifen + br;
       }
     }
 

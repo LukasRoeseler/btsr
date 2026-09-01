@@ -422,6 +422,73 @@
     } finally { if (lang !== vorher) setLang(vorher); }
   });
 
+  // ---- Cockpit-Anzeigen reagieren aufs Fahren ----
+  //
+  // DIESER TEST HAETTE EINEN ECHTEN FEHLER GEFUNDEN. Beim Umbau der Reifenkachel auf vier
+  // Reifen wurde die Bremstemperatur-Anzeige mitgeloescht: das Element blieb im Dokument,
+  // geschrieben hat es niemand mehr. Gemeldet wurde es als "die Temperatur reagiert nicht auf
+  // mein Fahren" - und kein vorhandener Test konnte es melden. Der Bauschritt prueft
+  // Zugriffe ins LEERE, aber ein Element, das DA ist und das niemand beschreibt, ist keiner.
+  //
+  // Deshalb geht dieser Test den Weg der Beschwerde: er faehrt und sieht nach, ob sich die
+  // Anzeigen dabei aendern.
+  stAdd('Cockpit-Anzeigen reagieren aufs Fahren', () => {
+    const st = physEngine.state, cfg = physEngine.config;
+    const lesen = () => ({
+      tempo: ($('race-speed') || {}).textContent,
+      reifen: ($('race-tyre-temp') || {}).textContent,
+      gang: ($('race-gear') || {}).textContent,
+      scheibeV: ($('race-tyre-fl') && $('race-tyre-fl').lastChild
+                 ? $('race-tyre-fl').lastChild.style.borderColor : null),
+      profil: ($('race-tyre-fl') && $('race-tyre-fl').firstChild
+               ? $('race-tyre-fl').firstChild.style.height : null),
+    });
+    const merkState = Object.assign({}, st);
+    const merkCfg = Object.assign({}, cfg);
+    try {
+      // Kalter, langsamer Ausgangszustand - und die drei Modelle sicher AN, damit der Test
+      // nicht davon abhaengt, welche Voreinstellung gerade gilt.
+      cfg.tyreEffect = 1; cfg.brakeFadeEffect = 1; cfg.tyreAsymEffect = 1;
+      st.speedKmh = 0; st.currentGear = 0; st.driveMode = 'forward';
+      st.tyreTempC = cfg.tyreAmbientC; st.tyreWear = 0;
+      st.tyreWearL = 0; st.tyreWearR = 0;
+      st.brakeTempF = cfg.brakeAmbientC; st.brakeTempR = cfg.brakeAmbientC;
+      st.brakeFade = 0; st.longUse = 0; st.loadFront = 0.5;
+      updateDashboard(physEngine.update({ throttle: 0, brake: 0, steering: 0 }, 0.02));
+      const vorher = lesen();
+
+      // Und jetzt fahren: beschleunigen, lenken, dann hart bremsen. Genau die drei Sachen,
+      // die Tempo, Reifen und Scheiben bewegen muessen.
+      for (let i = 0; i < 240; i++) {
+        st.speedKmh = 180 / REAL_SCALE;      // Fahrt halten, damit die Arbeit gross bleibt
+        physEngine.update({ throttle: 0.6, brake: 0, steering: 0.8 }, 0.02);
+      }
+      for (let i = 0; i < 240; i++) {
+        st.speedKmh = 180 / REAL_SCALE;
+        physEngine.update({ throttle: 0, brake: 1, steering: 0.2 }, 0.02);
+      }
+      updateDashboard(physEngine.update({ throttle: 0, brake: 1, steering: 0.2 }, 0.02));
+      const nachher = lesen();
+
+      const stumm = [];
+      for (const k of Object.keys(vorher)) {
+        if (vorher[k] === nachher[k]) stumm.push(k);
+      }
+      return {
+        ok: stumm.length === 0,
+        mass: 'Reifen "' + vorher.reifen + '" -> "' + nachher.reifen + '"'
+            + ' | Profil ' + vorher.profil + ' -> ' + nachher.profil
+            + ' | Scheibe ' + (vorher.scheibeV || '-') + ' -> ' + (nachher.scheibeV || '-')
+            + (stumm.length ? ' | STUMM: ' + stumm.join(', ') : ''),
+      };
+    } finally {
+      Object.assign(cfg, merkCfg);
+      physEngine.calibrateAccel();
+      for (const k of Object.keys(st)) if (!(k in merkState)) delete st[k];
+      Object.assign(st, merkState);
+    }
+  });
+
   // ---- Block 4.1: Bremstemperatur und Fading ----
   //
   // ZWEI BEDINGUNGEN, und die erste ist die, die schiefgehen kann ohne aufzufallen: eine

@@ -35,9 +35,24 @@
     //
     // Die rechte Schulter bleibt das Rennen, die Trigger bleiben Gas und Bremse.
     pitstop: { type: 'button', index: 9, label: 'Start / Options' },
-    racestart: { type: 'button', index: 5, label: 'RB / R1' },
+    // LB und RB machen jetzt die zwei Umschaltungen, die man WAEHREND der Fahrt braucht:
+    // welche Kodierung gelesen wird, und ob von Hand geschaltet wird. Beide sind
+    // Fahrentscheidungen und gehoeren unter die Zeigefinger.
+    //
+    // Rennen starten und Streckenansicht ziehen dafuer um. A / Kreuz ist der
+    // Bestaetigungsknopf, das passt zum Rennstart; die Streckenansicht ist ein Blick auf die
+    // Karte und kein Fahrbefehl, also L3. Das Touchpad bleibt absichtlich frei, weil das
+    // System es als Zeiger fuehrt.
+    scanmode: { type: 'button', index: 4, label: 'LB / L1' },
+    gearmode: { type: 'button', index: 5, label: 'RB / R1' },
+    // X hat ZWEI Bedeutungen: kurz ist Runterschalten, eine Sekunde gehalten die gelbe
+    // Flagge - genau wie die Taste X auf der Tastatur. Das Halten ist der Schutz: die gelbe
+    // Flagge bremst jedes Auto auf 40 km/h, und ein Knopf, der das mit einem Antippen tut,
+    // liegt zu nah an der Hand.
+    yellowflag: { type: 'button', index: 2, label: 'X / Quadrat (1 s halten)' },
+    racestart: { type: 'button', index: 0, label: 'A / Kreuz' },
     weather: { type: 'button', index: 8, label: 'Select / Share' },
-    trackview: { type: 'button', index: 4, label: 'LB / L1' },
+    trackview: { type: 'button', index: 10, label: 'L3 (linker Stick dr\u00fccken)' },
     // Nicht belegt. Das Touchpad wird vom System als Zeiger erkannt, also loest ein Tippen
     // gleichzeitig einen Klick irgendwo in der Seite aus - eine Belegung darauf kaempft mit
     // dem Cursor. Frei zuweisbar bleibt es, nur eben nicht ab Werk.
@@ -48,6 +63,9 @@
     downshift: 'Runterschalten', upshift: 'Hochschalten',
     headlights: 'Licht an/aus', lightflash: 'Lichthupe', pitstop: 'Boxenstopp',
     racestart: 'Rennen starten / abbrechen',
+    scanmode: 'Leseart: Bahn oder Ausdruck',
+    gearmode: 'Getriebe: Automatik oder von Hand',
+    yellowflag: 'Gelbe Flagge (1 s halten)',
     weather: 'Wetter umschalten',
     trackview: 'Streckenansicht',
     resetcar: 'Auto zurücksetzen',
@@ -68,6 +86,15 @@
       b.trackview = { ...DEFAULT_BINDINGS.trackview };
       b.__migrated = true;
     }
+    // v0.5: LB und RB werden Leseart und Getriebe. Verschoben wird nur, wenn Rennstart und
+    // Streckenansicht noch genau auf den ALTEN Vorgaben liegen (RB=5 und LB=4) - dann hat
+    // sie niemand angefasst. Wer selbst zugewiesen hat, behaelt seine Zuweisung; die drei
+    // neuen Aktionen bekommt er trotzdem, weil loadBindings die Vorgaben untermischt.
+    if (ist(b.racestart, 5) && ist(b.trackview, 4)) {
+      b.racestart = { ...DEFAULT_BINDINGS.racestart };
+      b.trackview = { ...DEFAULT_BINDINGS.trackview };
+      b.__migrated2 = true;
+    }
     return b;
   }
 
@@ -87,9 +114,20 @@
     log('Controller: Boxenstopp liegt jetzt auf Start/Options, Streckenansicht auf LB/L1. '
         + 'Options hat vorher den Tab gewechselt und damit das Cockpit verlassen.', 'info');
   }
+  if (bindings.__migrated2) {
+    delete bindings.__migrated2;
+    saveBindings();
+    log('Controller: LB schaltet jetzt die Leseart (Bahn/Ausdruck), RB das Getriebe '
+        + '(Automatik/von Hand). Rennen starten liegt auf A/Kreuz, Streckenansicht auf L3. '
+        + 'X eine Sekunde halten gibt die gelbe Flagge.', 'info');
+  }
   let listeningFor = null; // action key currently waiting for a new input, or null
   let padConnected = false;
   let prevDownshift = false, prevUpshift = false, prevHeadlights = false;
+  // Die drei neuen Aktionen. padFlagFired merkt sich, dass die Sekunde in DIESEM Druck schon
+  // voll war - ohne das wuerde die Flagge im Takt danach gleich wieder umgeschaltet.
+  let prevScanMode = false, prevGearMode = false, prevYellowFlag = false;
+  let padFlagFired = false;
 
   function bindingDescription(b) {
     if (b.label) return b.label;
@@ -114,11 +152,10 @@
     });
   }
   renderBindTable();
-  // Dieselben Daten, zweite Anzeige: die Tastenbelegung als Karte im Cockpit-Tab. Der
-  // Aufruf steht hier und nicht in 30-input.js, wo renderHelpPad definiert ist, weil die
-  // Funktion BIND_ACTION_LABELS liest und das const oben in DIESER Datei steht. In einer
-  // zusammengesetzten IIFE ist das Ende einer Datei nicht das Ende des Moduls.
-  renderHelpPad();
+  // Hier stand der Aufruf von renderHelpPad(): die Controller-Belegung ein zweites Mal, nur
+  // lesbar. Sie war doppelt - die zuweisbare Tabelle in derselben Karte zeigt dasselbe und
+  // kann es aendern. Die Funktion ist mit weg; eine ohne Aufrufstelle ist dieselbe
+  // Fehlerklasse wie eine tote Element-id.
 
   $('bind-reset').onclick = () => {
     bindings = { ...DEFAULT_BINDINGS };
@@ -3054,6 +3091,41 @@
       const trackViewNow = readBindingValue(pad, bindings.trackview) > BUTTON_CAPTURE_THRESHOLD;
       if (trackViewNow && !prevTrackView) toggleTrackView();
       prevTrackView = trackViewNow;
+
+      // Leseart und Getriebe gehen ueber die Bedienelemente in den Optionen und deren
+      // 'change'-Ereignis - wie der Knopf im Cockpit und die Reifenkachel. Damit gibt es
+      // keinen zweiten Zustand, und die Optionen ziehen von selbst nach.
+      const scanNow = readBindingValue(pad, bindings.scanmode) > BUTTON_CAPTURE_THRESHOLD;
+      if (scanNow && !prevScanMode) {
+        const sw = $('setting-ontrack');
+        if (sw) { sw.checked = !sw.checked; sw.dispatchEvent(new Event('change', { bubbles: true })); }
+      }
+      prevScanMode = scanNow;
+
+      const gearNow = readBindingValue(pad, bindings.gearmode) > BUTTON_CAPTURE_THRESHOLD;
+      if (gearNow && !prevGearMode) {
+        const sw = $('setting-autoshift');
+        if (sw) {
+          sw.checked = !sw.checked;
+          sw.dispatchEvent(new Event('change', { bubbles: true }));
+          showHudToast(sw.checked ? 'AUTOMATIK' : 'VON HAND');
+        }
+      }
+      prevGearMode = gearNow;
+
+      // Gelbe Flagge auf HALTEN. Dieselben zwei Funktionen wie die Taste X, nicht eine
+      // zweite Fassung der Logik: flagHoldPress startet den Ladebalken, flagHoldRelease(true)
+      // loest aus. Zu frueh losgelassen passiert nichts - ein halber Druck darf keine halbe
+      // Wirkung haben.
+      const flagNow = readBindingValue(pad, bindings.yellowflag) > BUTTON_CAPTURE_THRESHOLD;
+      if (flagNow && !prevYellowFlag) { padFlagFired = false; flagHoldPress(); }
+      if (flagNow && !padFlagFired && flagHoldStart !== null
+          && Date.now() - flagHoldStart >= FLAG_HOLD_MS) {
+        padFlagFired = true;
+        flagHoldRelease(true);
+      }
+      if (!flagNow && prevYellowFlag && !padFlagFired) flagHoldRelease(false);
+      prevYellowFlag = flagNow;
 
       const resetNow = readBindingValue(pad, bindings.resetcar) > BUTTON_CAPTURE_THRESHOLD;
       if (resetNow && !prevResetCar) resetCarState();

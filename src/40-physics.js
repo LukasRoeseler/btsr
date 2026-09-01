@@ -294,14 +294,33 @@
         // Haftung, bei Hoechstgeschwindigkeit ist sie alles. Ohne das leert eine Vollbremsung
         // den Kreis bei JEDER Fahrt, und die Lenkung klebt bis zum Stand am Notboden.
         // Angezeigte Entsprechung bei 295 km/h Spitze: 30 und 180 km/h.
-        loadOnsetFrac: 0.10,
-        loadFullFrac: 0.61,
+        // TEMPOWICHTUNG DER BREMSANFORDERUNG. Sie ist der Grund, warum Bremsen die
+        // Lenkung ueberhaupt schwaecht - und war bis v0.5 so flach, dass man es unter
+        // 100 km/h nicht gespuert hat: Ansatz bei 29,5 angezeigten km/h, VOLL erst bei 180.
+        // Gemessen gab volles Bremsen bei 60 km/h noch 100 % des Rollwerts.
+        //
+        // Jetzt Ansatz bei 14,8 und voll bei 65 angezeigten km/h. Unter 15 km/h passiert
+        // weiterhin NICHTS, und das ist per Konstruktion so: dort ist lastFrac null, der
+        // Notboden von 12 % kann also nicht zurueckkommen. Genau der war der Fehler, gegen
+        // den diese Wichtung ueberhaupt eingebaut wurde.
+        loadOnsetFrac: 0.05,
+        loadFullFrac: 0.22,
         // 0.65 und 1.55, gewaehlt und nicht gemessen: gefittet auf Vollbremsung 50 % und
         // Vollgas 59 % des Lenkgrips beim Rollen, weil die Original-App unter Vollbremsung
         // sichtbar weniger lenkt. Vorher waren es 77 und 75 % - die Wirkung war da, nur zu
         // schwach. Ein Sollwert dafuer liegt nicht vor, also ist das eine Gefuehlsangabe und
         // keine Messung; die Zahlen stehen hier, damit sie nachpruefbar sind.
-        brakeUseGain: 1.35,   // how much of that capacity the brake eats
+        // 0,85, und die Zahl kommt aus der GEFAHRENEN Bremsung, nicht aus dem
+        // festgehaltenen Messaufbau. Das ist der Unterschied, der hier zaehlt: bei
+        // festgehaltener Fahrt setzt sich longUse auf die Anforderung (gemessen -0,83), beim
+        // wirklichen Verzoegern liegt es rund 25 % hoeher (-1,05 bis -1,10). Mit 1,00 lag die
+        // Lenkung in der gefahrenen Vollbremsung zwischen 80 und 110 km/h auf dem Notboden
+        // von 12 % - gesaettigt statt abgestuft, also ohne Dosierung.
+        //
+        // Mit 0,85 bleibt frontUse auch im schlimmsten Fall unter frontCap, und die Lenkung
+        // faellt auf rund 43 % statt auf den Boden. Weniger waere zu wenig: der Messaufbau
+        // mit festgehaltener Fahrt zeigt dann 73 % und man spuert es kaum.
+        brakeUseGain: 0.85,   // how much of that capacity the brake eats
 
         // ---- Bremstemperatur und Fading (Block 4.1) ----
         //
@@ -684,7 +703,14 @@
       // Notboden von 0,12. Gemessen: unter 70 km/h durchgehend 0,12.
       //
       // Dieselben zwei Schwellen wie beim Regen: unterhalb der ersten gar keine Wirkung,
-      // ab der zweiten voll.
+      // ab der zweiten voll. Seit v0.5 bei 14,8 und 65 angezeigten km/h statt 29,5 und 180 -
+      // gemessen gab volles Bremsen bei 60 km/h vorher noch 100 % des Rollwerts, und auf
+      // einer Wohnzimmerstrecke kommt man kaum ueber 100.
+      //
+      // UND EINE FALSCHE ERKLAERUNG BERICHTIGT, die hier in der Naehe stand: dass Eintauchen
+      // und Bremsanforderung gegeneinander arbeiten, gilt im Trockenen NICHT. frontCap ist
+      // mit Math.min(1, ...) gedeckelt und liegt beim Rollen wie beim Bremsen auf 1,0 - das
+      // Eintauchen bringt dort gar nichts. Der einzige Grund war diese Wichtung.
       const lastFrac = Math.max(0, Math.min(1,
         (vFrac - cfg.loadOnsetFrac) / Math.max(1e-6, cfg.loadFullFrac - cfg.loadOnsetFrac)));
       // Die Bremsbalance sitzt HIER und nicht an maxSteerLimit. Das ist der Unterschied

@@ -694,6 +694,16 @@
      drei Anzeigen, die gleich leerlaufen, liest man mit einem Blick. */
   .gt3-t4 > b { position: absolute; left: 0; right: 0; bottom: 0; height: 0;
     background: #4a5568; transition: height .15s linear, background .3s linear; }
+  /* Die Bremsscheibe: ein Ring in der Mitte des Reifens. <s> und nicht ein zusaetzliches
+     <div>, damit die Kachel bei vier Reifen nicht acht Knoten mehr bekommt - der Schirm
+     wird jeden Takt neu geschrieben.
+
+     text-decoration: none, weil <s> von sich aus durchstreicht; hier ist es nur ein
+     kurzer, semantisch neutraler Traeger. */
+  .gt3-t4 > s { position: absolute; left: 50%; top: 50%; text-decoration: none;
+    width: 46%; aspect-ratio: 1; transform: translate(-50%, -50%);
+    border-radius: 50%; border: 2px solid #2a3346; box-sizing: border-box;
+    transition: border-color .3s linear; }
   .gt3-bias { cursor: ns-resize; touch-action: none; }
   /* Zwei Zahlen in einer Zeile, deshalb schmaler als die anderen Trimmwerte. Der Trenner
      ist gedaempft, damit die Zahlen die Aufmerksamkeit haben und nicht der Schraegstrich. */
@@ -1708,7 +1718,7 @@
           Bluetooth-Berechtigung. Web Bluetooth gibt es in Safari und Firefox
           nicht.</span></li>
         <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12.5l5 5L20 6.5"/></svg><span>Ein <b>Carrera-Hybrid-Auto</b> mit Firmware ab
-          <b>August&nbsp;2026</b>. &Auml;ltere melden andere Bytes.</span></li>
+          <b>August&nbsp;2026</b>.</span></li>
         <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12.5l5 5L20 6.5"/></svg><span>Einen <b>Bluetooth-Controller</b>. Getestet mit DualShock&nbsp;4 und
           DualSense. Mit der Tastatur geht es auch, aber deutlich schlechter &ndash; sie
           kennt nur ganz oder gar nicht.</span></li>
@@ -1731,7 +1741,8 @@
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="13" height="10" rx="1"/><rect x="17" y="9" width="4" height="11" rx="1"/></svg><span>PC und Android, Chrome-basiert</span></div>
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 17a8 8 0 1 1 16 0"/><path d="M12 17 16 9"/></svg><span>Anzeigen wie auf einem echten GT3-HUD</span></div>
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20V8"/><circle cx="12" cy="5" r="2"/><path d="M6 12h12"/></svg><span>Automatische oder manuelle Schaltung</span></div>
-        <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3s5 6 5 10a5 5 0 0 1-10 0c0-4 5-10 5-10z"/></svg><span>Wetter, Reifentemperatur, ABS</span></div>
+        <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3s5 6 5 10a5 5 0 0 1-10 0c0-4 5-10 5-10z"/></svg><span>Wettersimulation</span></div>
+        <div><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.2"/><path d="M12 3.5v3M12 17.5v3M3.5 12h3M17.5 12h3"/></svg><span>Reifenverschlei&szlig;, Reifentemperatur, Bremstemperatur</span></div>
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4 3 20h18z"/><path d="M12 10v5"/></svg><span>Crash-Erkennung mit Vibration und Folgen fürs Handling</span></div>
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4a4 4 0 1 0 4 5l-2 2-3-3 2-2a4 4 0 0 0-1-2z"/><path d="M13 11 4 20"/></svg><span>Boxenstopp auf Knopfdruck</span></div>
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V10a7 7 0 0 1 14 0v10l-3-2-2 2-2-2-2 2z"/><circle cx="9.5" cy="10" r="1"/><circle cx="14.5" cy="10" r="1"/></svg><span>Autonome Gegner</span></div>
@@ -1885,11 +1896,19 @@
              schon, und zweimal dasselbe in einer 77-px-Kachel ist Platzverschwendung. -->
         <div class="gt3-box gt3-click pit-tile" id="race-tyre-box" data-pit="tyres"
              title="Reifen: F&uuml;llh&ouml;he ist Restprofil, Farbe die Temperatur. Links und rechts werden getrennt gerechnet, vorn und hinten nicht &ndash; die beiden einer Seite laufen deshalb gleich. Antippen schaltet die Reifensimulation aus, beim Boxenstopp den Reifenwechsel."><div class="gt3-lbl">Reifen</div>
+          <!-- In jedem Reifen steckt eine BREMSSCHEIBE, als kleiner Ring. Sachlich
+               richtig - eine Scheibe steckt in der Felge -, und die Zuordnung vorn/hinten ist
+               dieselbe wie beim Reifen.
+
+               Anders als beim Verschleiss sind vorn und hinten hier WIRKLICH verschieden:
+               das Modell fuehrt zwei Scheibentemperaturen, getrennt nach der Bremsbalance.
+               Die obere Reihe zeigt deshalb einen anderen Wert als die untere, und genau da
+               wird die Balance sichtbar. -->
           <div class="gt3-tyres4">
-            <i class="gt3-t4" id="race-tyre-fl"><b></b></i>
-            <i class="gt3-t4" id="race-tyre-fr"><b></b></i>
-            <i class="gt3-t4" id="race-tyre-rl"><b></b></i>
-            <i class="gt3-t4" id="race-tyre-rr"><b></b></i>
+            <i class="gt3-t4" id="race-tyre-fl"><b></b><s></s></i>
+            <i class="gt3-t4" id="race-tyre-fr"><b></b><s></s></i>
+            <i class="gt3-t4" id="race-tyre-rl"><b></b><s></s></i>
+            <i class="gt3-t4" id="race-tyre-rr"><b></b><s></s></i>
           </div>
           <div class="gt3-val sm" id="race-tyre-temp">&ndash;</div></div>
         <div class="gt3-box"><svg class="gt3-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-label="Akku"><rect x="2" y="7" width="17" height="10" rx="2"/><path d="M22 11v2"/><path d="M6 10v4M9.5 10v4M13 10v4"/></svg>
@@ -1931,17 +1950,10 @@
             </svg>
             <b id="race-trim-accel">62%</b>
           </div>
-          <!-- Die Scheibentemperaturen stehen HIER und nicht in einer neunten Kachel: das
-               Band ist ein Achterraster und eine neunte Kachel braeche in eine zweite Reihe
-               mit einem einzelnen Element um. Und sie gehoeren hierher - die Balance
-               entscheidet, welche Scheibe heiss wird, Ursache und Wirkung nebeneinander. -->
-          <div class="gt3-trim-row gt3-brakeT" id="race-braket-row"
-               title="Bremsscheibentemperatur vorn und hinten">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
-                 stroke-linecap="round" aria-label="Bremsscheibe"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3"/><path d="M12 3.5v3M12 17.5v3M3.5 12h3M17.5 12h3"/></svg>
-            <b><span id="race-braket-f">25</span><span class="gt3-dim">/</span><span
-               id="race-braket-r">25</span></b>
-          </div>
+          <!-- Hier standen die Scheibentemperaturen. Sie sitzen jetzt als Ring IN den
+               Reifen: eine Scheibe steckt in der Felge, und die Zuordnung vorn/hinten
+               ist dort dieselbe wie beim Reifen. Zweimal dasselbe waere in einer
+               77-px-Kachel Platzverschwendung. -->
           <div class="gt3-trim-row" title="Lenkansprechen (Steuerkreuz links/rechts)">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
                  stroke-linecap="round" aria-label="Lenkansprechen"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="2.4"/><path d="M12 3.5v6M6.2 17.4l4.2-3.1M17.8 17.4l-4.2-3.1" stroke="var(--bad)"/></svg>
@@ -1984,7 +1996,13 @@
        Seite, die es schon gibt. -->
   <section class="tabpage" id="tab-misc">
     <div class="card">
-      <h2>Entwicklertools</h2>
+      <h2>Entwicklertools <span class="wip-tag">experimentell</span></h2>
+      <p class="muted" style="font-size:11.5px">
+        Alles hier schreibt rohe Bytes zum Auto und liest rohe Bytes zur&uuml;ck. Das ist
+        Werkbank und kein Merkmal: die Pakete tragen g&uuml;ltige Pr&uuml;fsummen, aber
+        was das Auto mit einem selbst zusammengesetzten Paket macht, ist nicht
+        vorhersagbar. Zum Fahren wird nichts davon gebraucht.
+      </p>
       <div class="misc-grid">
         <button class="misc-tile goto-tab" data-tab="school">
           <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
@@ -4148,7 +4166,7 @@
           <small>R&uuml;ckmeldung im Controller bei Gangwechsel, ABS, Aufprall und im
           Boxenstopp. Das Handy vibriert nicht mit, das Protokoll kennt daf&uuml;r
           nichts.</small></div>
-        <label class="tgl"><input type="checkbox" id="setting-vibration"><span></span></label></div>
+        <label class="tgl"><input type="checkbox" id="setting-vibration" checked><span></span></label></div>
       <!-- Direkt unter der Vibration, weil die eine Haelfte dieser Option daran haengt -
            und das steht auch im Kleintext. Ohne den Hinweis waere es die naechste
            Stellschraube, die scheinbar nichts tut. -->
@@ -4227,6 +4245,19 @@
           <span class="opt-val" id="setting-crash-count-val">10</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Schaden</div><label class="tgl"><input type="checkbox" id="setting-crash-damage" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Crash-Schwelle
+          <small>Wie weit die Bewegungsbytes 1 und 3 vom gleitenden Mittel abweichen
+          m&uuml;ssen, damit ein Sto&szlig; als Crash gilt. Niedriger hei&szlig;t
+          empfindlicher: schon ein Rempler z&auml;hlt. H&ouml;her hei&szlig;t, dass nur ein
+          echter Einschlag z&auml;hlt. 40 ist der Wert, mit dem die Erkennung gebaut und
+          gepr&uuml;ft wurde &ndash; stand bis v0.5 als Konstante im Code, war also eine
+          Einstellung, die niemand einstellen konnte.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="setting-crash-threshold" min="10" max="100" step="5" value="40">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-crash-threshold-val">40</span>
+        </div></div>
       <div class="opt-row"><div class="opt-label">Vollst&auml;ndige Reparatur dauert (s)<small>Von 100 % auf 0. Nicht linear: die ersten 25 % in 1/10 der Zeit, die letzten 25 % in 4/10.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
@@ -4273,7 +4304,7 @@
 <div class="opt-head">
         Getriebe &amp; Fahrleistung
       </div>
-      <div class="opt-row"><div class="opt-label">Automatikgetriebe<small>An: Quadrat/X legt unter 10 km/h den Rückwärtsgang, Kreis/B holt ihn heraus. Aus: von Hand schalten, unter dem 1. Gang liegt der Leerlauf und darunter im Stand der Rückwärtsgang.</small></div><label class="tgl"><input type="checkbox" id="setting-autoshift"><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Automatikgetriebe<small>An: Quadrat/X legt unter 10 km/h den Rückwärtsgang, Kreis/B holt ihn heraus. Aus: von Hand schalten, unter dem 1. Gang liegt der Leerlauf und darunter im Stand der Rückwärtsgang.</small></div><label class="tgl"><input type="checkbox" id="setting-autoshift" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Höchstgeschwindigkeit (km/h)</div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
@@ -4353,6 +4384,7 @@
 
 <div class="opt-head">Aerodynamik</div>
       <div class="opt-row" id="dirtyair-row"><div class="opt-label">Windschatten in Kurven
+          <span class="wip-tag">experimentell</span>
           <small>Dicht hinter einem anderen Auto sinkt der Abtrieb, also die
           Kurvengeschwindigkeit &ndash; auf der Geraden ist er ein Vorteil, in der Kurve ein
           Nachteil. Braucht eine Strecke mit mindestens drei Teilen und einen Gegner: ohne
@@ -4778,13 +4810,10 @@
       <kbd>M</kbd><span>Aufnahme: n&auml;chsten Abschnitt markieren</span>
     </div>
 
-    <div class="opt-head">Controller</div>
-    <div class="help-grid" id="help-pad"></div>
-
-    <p class="muted" style="font-size:12px">
-      Die Controller-Belegung ist frei zuweisbar, Optionen &rarr; Controller. Hier steht,
-      was gerade eingestellt ist.
-    </p>
+    <!-- Hier stand eine zweite, nur lesbare Liste der Controller-Belegung (#help-pad).
+         Sie war doppelt: die zuweisbare Tabelle weiter oben in derselben Karte zeigt
+         dieselben Angaben UND laesst sie aendern. Die zwei Tastatur-Abschnitte darueber
+         bleiben - die betrifft die Tabelle nicht, Tasten sind fest. -->
     </div>
 
   </section>
@@ -4839,7 +4868,7 @@
         <button class="misc-tile subpage-open" data-sub="pit">
           <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 42V12h16a8 8 0 0 1 0 16H10"/><path d="M34 20h8M38 16v8" stroke="var(--bad)"/></svg>
-          <b>Boxengasse</b>
+          <b>Boxengasse <span class="wip-tag">experimentell</span></b>
           <span>Eigenes Muster für die Box, mit dem Code, den es auslöst.</span>
         </button>
       </div>
@@ -5109,7 +5138,12 @@
 
     <div class="card subpage" id="sub-pit">
       <button class="misc-back subpage-back" data-sub="">&larr; Strecke</button>
-      <h2>Boxengasse</h2>
+      <h2>Boxengasse <span class="wip-tag">experimentell</span></h2>
+      <p class="muted" style="font-size:11.5px">
+        Zwei der drei Varianten sind am Auto unerprobt, und die Nummer des gedruckten
+        Musters ist geraten und nicht entziffert &ndash; die Kodierregel ist nicht bekannt.
+        &bdquo;&Uuml;berall halten&ldquo; tr&auml;gt dagegen: es braucht kein Muster.
+      </p>
       <p class="muted">
         Fährt das Auto über das Boxen-Muster, greift ein Tempolimit von 40&nbsp;%. Bleibt es dann
         stehen, läuft der Service: je länger du stehst, desto mehr Sprit und Reparatur.
@@ -5188,7 +5222,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.4.29</span></span>
+    <span class="foot-ver">v<span id="app-version">0.4.30</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine

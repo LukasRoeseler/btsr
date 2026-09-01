@@ -300,31 +300,11 @@
   renderRecMarks();
   setInterval(() => { if (rec.on) recStatus(); }, 1000);
 
-  // ---- Key-binding overlay ----
-  // Reads the LIVE binding table rather than a hard-coded list: a help panel that drifts
-  // out of step with the actual assignment is worse than none at all.
-  function renderHelpPad() {
-    const grid = $('help-pad');
-    if (!grid) return;
-    const extra = {
-      'D-Pad hoch / runter': 'Beschleunigung +/- 10 %',
-      'D-Pad links / rechts': 'Lenkansprechen -/+ 10 %',
-    };
-    grid.innerHTML = Object.keys(BIND_ACTION_LABELS).map(a =>
-      `<kbd>${bindingDescription(bindings[a])}</kbd><span>${BIND_ACTION_LABELS[a]}</span>`
-    ).join('') + Object.entries(extra).map(([k, v]) =>
-      `<kbd>${k}</kbd><span>${v}</span>`).join('');
-  }
-
-  // Die Tastenbelegung steht jetzt als Karte im Cockpit-Tab statt in einem Vollbildfenster
-  // hinter einem Fragezeichen. Damit gibt es nichts zu oeffnen und nichts zu schliessen.
-  //
-  // Der erste Aufruf von renderHelpPad() steht NICHT hier, sondern in 90-ghosts.js neben
-  // renderBindTable(). Grund: die Funktion liest BIND_ACTION_LABELS, und das const steht in
-  // 90-ghosts.js, also in einer spaeteren Datei. Hier aufgerufen wirft der Zugriff, und die
-  // ganze IIFE bricht ab - gemessen 117 Folgefehler und OMEGA_TEST undefiniert. "Ans Ende
-  // der Datei" reicht dafuer nicht: in einer zusammengesetzten IIFE ist das Ende einer Datei
-  // nicht das Ende des Moduls.
+  // Hier stand ein Hilfefeld, das die Controller-Belegung ein zweites Mal anzeigte, sowie
+  // eine ausfuehrliche Notiz darueber, warum sein Aufruf in 90-ghosts.js stehen musste.
+  // Beides ist weg: die zuweisbare Tabelle in Optionen -> Controller zeigt dasselbe und
+  // kann es aendern. Die Notiz war richtig und ist jetzt gegenstandslos - ein Kommentar
+  // ueber eine entfernte Funktion fuehrt den naechsten Leser in die Irre.
 
   // ---- Keyboard control ----
   const keys = new Set();

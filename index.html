@@ -694,6 +694,16 @@
      drei Anzeigen, die gleich leerlaufen, liest man mit einem Blick. */
   .gt3-t4 > b { position: absolute; left: 0; right: 0; bottom: 0; height: 0;
     background: #4a5568; transition: height .15s linear, background .3s linear; }
+  /* Die Bremsscheibe: ein Ring in der Mitte des Reifens. <s> und nicht ein zusaetzliches
+     <div>, damit die Kachel bei vier Reifen nicht acht Knoten mehr bekommt - der Schirm
+     wird jeden Takt neu geschrieben.
+
+     text-decoration: none, weil <s> von sich aus durchstreicht; hier ist es nur ein
+     kurzer, semantisch neutraler Traeger. */
+  .gt3-t4 > s { position: absolute; left: 50%; top: 50%; text-decoration: none;
+    width: 46%; aspect-ratio: 1; transform: translate(-50%, -50%);
+    border-radius: 50%; border: 2px solid #2a3346; box-sizing: border-box;
+    transition: border-color .3s linear; }
   .gt3-bias { cursor: ns-resize; touch-action: none; }
   /* Zwei Zahlen in einer Zeile, deshalb schmaler als die anderen Trimmwerte. Der Trenner
      ist gedaempft, damit die Zahlen die Aufmerksamkeit haben und nicht der Schraegstrich. */
@@ -1708,7 +1718,7 @@
           Bluetooth-Berechtigung. Web Bluetooth gibt es in Safari und Firefox
           nicht.</span></li>
         <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12.5l5 5L20 6.5"/></svg><span>Ein <b>Carrera-Hybrid-Auto</b> mit Firmware ab
-          <b>August&nbsp;2026</b>. &Auml;ltere melden andere Bytes.</span></li>
+          <b>August&nbsp;2026</b>.</span></li>
         <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12.5l5 5L20 6.5"/></svg><span>Einen <b>Bluetooth-Controller</b>. Getestet mit DualShock&nbsp;4 und
           DualSense. Mit der Tastatur geht es auch, aber deutlich schlechter &ndash; sie
           kennt nur ganz oder gar nicht.</span></li>
@@ -1731,7 +1741,8 @@
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="13" height="10" rx="1"/><rect x="17" y="9" width="4" height="11" rx="1"/></svg><span>PC und Android, Chrome-basiert</span></div>
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 17a8 8 0 1 1 16 0"/><path d="M12 17 16 9"/></svg><span>Anzeigen wie auf einem echten GT3-HUD</span></div>
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20V8"/><circle cx="12" cy="5" r="2"/><path d="M6 12h12"/></svg><span>Automatische oder manuelle Schaltung</span></div>
-        <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3s5 6 5 10a5 5 0 0 1-10 0c0-4 5-10 5-10z"/></svg><span>Wetter, Reifentemperatur, ABS</span></div>
+        <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3s5 6 5 10a5 5 0 0 1-10 0c0-4 5-10 5-10z"/></svg><span>Wettersimulation</span></div>
+        <div><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.2"/><path d="M12 3.5v3M12 17.5v3M3.5 12h3M17.5 12h3"/></svg><span>Reifenverschlei&szlig;, Reifentemperatur, Bremstemperatur</span></div>
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4 3 20h18z"/><path d="M12 10v5"/></svg><span>Crash-Erkennung mit Vibration und Folgen fürs Handling</span></div>
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4a4 4 0 1 0 4 5l-2 2-3-3 2-2a4 4 0 0 0-1-2z"/><path d="M13 11 4 20"/></svg><span>Boxenstopp auf Knopfdruck</span></div>
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V10a7 7 0 0 1 14 0v10l-3-2-2 2-2-2-2 2z"/><circle cx="9.5" cy="10" r="1"/><circle cx="14.5" cy="10" r="1"/></svg><span>Autonome Gegner</span></div>
@@ -1885,11 +1896,19 @@
              schon, und zweimal dasselbe in einer 77-px-Kachel ist Platzverschwendung. -->
         <div class="gt3-box gt3-click pit-tile" id="race-tyre-box" data-pit="tyres"
              title="Reifen: F&uuml;llh&ouml;he ist Restprofil, Farbe die Temperatur. Links und rechts werden getrennt gerechnet, vorn und hinten nicht &ndash; die beiden einer Seite laufen deshalb gleich. Antippen schaltet die Reifensimulation aus, beim Boxenstopp den Reifenwechsel."><div class="gt3-lbl">Reifen</div>
+          <!-- In jedem Reifen steckt eine BREMSSCHEIBE, als kleiner Ring. Sachlich
+               richtig - eine Scheibe steckt in der Felge -, und die Zuordnung vorn/hinten ist
+               dieselbe wie beim Reifen.
+
+               Anders als beim Verschleiss sind vorn und hinten hier WIRKLICH verschieden:
+               das Modell fuehrt zwei Scheibentemperaturen, getrennt nach der Bremsbalance.
+               Die obere Reihe zeigt deshalb einen anderen Wert als die untere, und genau da
+               wird die Balance sichtbar. -->
           <div class="gt3-tyres4">
-            <i class="gt3-t4" id="race-tyre-fl"><b></b></i>
-            <i class="gt3-t4" id="race-tyre-fr"><b></b></i>
-            <i class="gt3-t4" id="race-tyre-rl"><b></b></i>
-            <i class="gt3-t4" id="race-tyre-rr"><b></b></i>
+            <i class="gt3-t4" id="race-tyre-fl"><b></b><s></s></i>
+            <i class="gt3-t4" id="race-tyre-fr"><b></b><s></s></i>
+            <i class="gt3-t4" id="race-tyre-rl"><b></b><s></s></i>
+            <i class="gt3-t4" id="race-tyre-rr"><b></b><s></s></i>
           </div>
           <div class="gt3-val sm" id="race-tyre-temp">&ndash;</div></div>
         <div class="gt3-box"><svg class="gt3-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-label="Akku"><rect x="2" y="7" width="17" height="10" rx="2"/><path d="M22 11v2"/><path d="M6 10v4M9.5 10v4M13 10v4"/></svg>
@@ -1931,17 +1950,10 @@
             </svg>
             <b id="race-trim-accel">62%</b>
           </div>
-          <!-- Die Scheibentemperaturen stehen HIER und nicht in einer neunten Kachel: das
-               Band ist ein Achterraster und eine neunte Kachel braeche in eine zweite Reihe
-               mit einem einzelnen Element um. Und sie gehoeren hierher - die Balance
-               entscheidet, welche Scheibe heiss wird, Ursache und Wirkung nebeneinander. -->
-          <div class="gt3-trim-row gt3-brakeT" id="race-braket-row"
-               title="Bremsscheibentemperatur vorn und hinten">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
-                 stroke-linecap="round" aria-label="Bremsscheibe"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3"/><path d="M12 3.5v3M12 17.5v3M3.5 12h3M17.5 12h3"/></svg>
-            <b><span id="race-braket-f">25</span><span class="gt3-dim">/</span><span
-               id="race-braket-r">25</span></b>
-          </div>
+          <!-- Hier standen die Scheibentemperaturen. Sie sitzen jetzt als Ring IN den
+               Reifen: eine Scheibe steckt in der Felge, und die Zuordnung vorn/hinten
+               ist dort dieselbe wie beim Reifen. Zweimal dasselbe waere in einer
+               77-px-Kachel Platzverschwendung. -->
           <div class="gt3-trim-row" title="Lenkansprechen (Steuerkreuz links/rechts)">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
                  stroke-linecap="round" aria-label="Lenkansprechen"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="2.4"/><path d="M12 3.5v6M6.2 17.4l4.2-3.1M17.8 17.4l-4.2-3.1" stroke="var(--bad)"/></svg>
@@ -1984,7 +1996,13 @@
        Seite, die es schon gibt. -->
   <section class="tabpage" id="tab-misc">
     <div class="card">
-      <h2>Entwicklertools</h2>
+      <h2>Entwicklertools <span class="wip-tag">experimentell</span></h2>
+      <p class="muted" style="font-size:11.5px">
+        Alles hier schreibt rohe Bytes zum Auto und liest rohe Bytes zur&uuml;ck. Das ist
+        Werkbank und kein Merkmal: die Pakete tragen g&uuml;ltige Pr&uuml;fsummen, aber
+        was das Auto mit einem selbst zusammengesetzten Paket macht, ist nicht
+        vorhersagbar. Zum Fahren wird nichts davon gebraucht.
+      </p>
       <div class="misc-grid">
         <button class="misc-tile goto-tab" data-tab="school">
           <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
@@ -4148,7 +4166,7 @@
           <small>R&uuml;ckmeldung im Controller bei Gangwechsel, ABS, Aufprall und im
           Boxenstopp. Das Handy vibriert nicht mit, das Protokoll kennt daf&uuml;r
           nichts.</small></div>
-        <label class="tgl"><input type="checkbox" id="setting-vibration"><span></span></label></div>
+        <label class="tgl"><input type="checkbox" id="setting-vibration" checked><span></span></label></div>
       <!-- Direkt unter der Vibration, weil die eine Haelfte dieser Option daran haengt -
            und das steht auch im Kleintext. Ohne den Hinweis waere es die naechste
            Stellschraube, die scheinbar nichts tut. -->
@@ -4227,6 +4245,19 @@
           <span class="opt-val" id="setting-crash-count-val">10</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Schaden</div><label class="tgl"><input type="checkbox" id="setting-crash-damage" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Crash-Schwelle
+          <small>Wie weit die Bewegungsbytes 1 und 3 vom gleitenden Mittel abweichen
+          m&uuml;ssen, damit ein Sto&szlig; als Crash gilt. Niedriger hei&szlig;t
+          empfindlicher: schon ein Rempler z&auml;hlt. H&ouml;her hei&szlig;t, dass nur ein
+          echter Einschlag z&auml;hlt. 40 ist der Wert, mit dem die Erkennung gebaut und
+          gepr&uuml;ft wurde &ndash; stand bis v0.5 als Konstante im Code, war also eine
+          Einstellung, die niemand einstellen konnte.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="setting-crash-threshold" min="10" max="100" step="5" value="40">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-crash-threshold-val">40</span>
+        </div></div>
       <div class="opt-row"><div class="opt-label">Vollst&auml;ndige Reparatur dauert (s)<small>Von 100 % auf 0. Nicht linear: die ersten 25 % in 1/10 der Zeit, die letzten 25 % in 4/10.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
@@ -4273,7 +4304,7 @@
 <div class="opt-head">
         Getriebe &amp; Fahrleistung
       </div>
-      <div class="opt-row"><div class="opt-label">Automatikgetriebe<small>An: Quadrat/X legt unter 10 km/h den Rückwärtsgang, Kreis/B holt ihn heraus. Aus: von Hand schalten, unter dem 1. Gang liegt der Leerlauf und darunter im Stand der Rückwärtsgang.</small></div><label class="tgl"><input type="checkbox" id="setting-autoshift"><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Automatikgetriebe<small>An: Quadrat/X legt unter 10 km/h den Rückwärtsgang, Kreis/B holt ihn heraus. Aus: von Hand schalten, unter dem 1. Gang liegt der Leerlauf und darunter im Stand der Rückwärtsgang.</small></div><label class="tgl"><input type="checkbox" id="setting-autoshift" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Höchstgeschwindigkeit (km/h)</div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
@@ -4353,6 +4384,7 @@
 
 <div class="opt-head">Aerodynamik</div>
       <div class="opt-row" id="dirtyair-row"><div class="opt-label">Windschatten in Kurven
+          <span class="wip-tag">experimentell</span>
           <small>Dicht hinter einem anderen Auto sinkt der Abtrieb, also die
           Kurvengeschwindigkeit &ndash; auf der Geraden ist er ein Vorteil, in der Kurve ein
           Nachteil. Braucht eine Strecke mit mindestens drei Teilen und einen Gegner: ohne
@@ -4778,13 +4810,10 @@
       <kbd>M</kbd><span>Aufnahme: n&auml;chsten Abschnitt markieren</span>
     </div>
 
-    <div class="opt-head">Controller</div>
-    <div class="help-grid" id="help-pad"></div>
-
-    <p class="muted" style="font-size:12px">
-      Die Controller-Belegung ist frei zuweisbar, Optionen &rarr; Controller. Hier steht,
-      was gerade eingestellt ist.
-    </p>
+    <!-- Hier stand eine zweite, nur lesbare Liste der Controller-Belegung (#help-pad).
+         Sie war doppelt: die zuweisbare Tabelle weiter oben in derselben Karte zeigt
+         dieselben Angaben UND laesst sie aendern. Die zwei Tastatur-Abschnitte darueber
+         bleiben - die betrifft die Tabelle nicht, Tasten sind fest. -->
     </div>
 
   </section>
@@ -4839,7 +4868,7 @@
         <button class="misc-tile subpage-open" data-sub="pit">
           <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 42V12h16a8 8 0 0 1 0 16H10"/><path d="M34 20h8M38 16v8" stroke="var(--bad)"/></svg>
-          <b>Boxengasse</b>
+          <b>Boxengasse <span class="wip-tag">experimentell</span></b>
           <span>Eigenes Muster für die Box, mit dem Code, den es auslöst.</span>
         </button>
       </div>
@@ -5109,7 +5138,12 @@
 
     <div class="card subpage" id="sub-pit">
       <button class="misc-back subpage-back" data-sub="">&larr; Strecke</button>
-      <h2>Boxengasse</h2>
+      <h2>Boxengasse <span class="wip-tag">experimentell</span></h2>
+      <p class="muted" style="font-size:11.5px">
+        Zwei der drei Varianten sind am Auto unerprobt, und die Nummer des gedruckten
+        Musters ist geraten und nicht entziffert &ndash; die Kodierregel ist nicht bekannt.
+        &bdquo;&Uuml;berall halten&ldquo; tr&auml;gt dagegen: es braucht kein Muster.
+      </p>
       <p class="muted">
         Fährt das Auto über das Boxen-Muster, greift ein Tempolimit von 40&nbsp;%. Bleibt es dann
         stehen, läuft der Service: je länger du stehst, desto mehr Sprit und Reparatur.
@@ -5188,7 +5222,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.4.29</span></span>
+    <span class="foot-ver">v<span id="app-version">0.4.30</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -6469,11 +6503,24 @@
     "Kurve, Blatt 2": "Curve, sheet 2",
     // Pro als Vorgabe (v0.5): geaenderte Preset-Texte, Gasfaktor, vier Reifen.
     "Automatik, 2,6 s auf 100, voller Grip, kein Reifenverschleiß und kein Tankgewicht. Verzeihende Bremse, und die direkteste Lenkung von allen: voller Stick fordert 120 % des mechanischen Anschlags, man ist also schon vor dem Stickende am Limit. Zum Fahren ohne Nachdenken.": "Automatic, 2.6 s to 100, full grip, no tyre wear and no fuel weight. Forgiving brakes, and the most direct steering of all: full stick asks for 120 % of the mechanical lock, so you are at the limit before the end of the stick travel. For driving without thinking.",
-    "Von Hand schalten, 2,6 s auf 100, Reifen und Tankgewicht wirken zur Hälfte. Die Lenkung ist so direkt wie bei Arcade (120 % des Anschlags bei vollem Stick), in der Bremse ist aber noch Reserve.": "Manual shifting, 2.6 s to 100, tyres and fuel weight at half effect. The steering is as direct as in Arcade (120 % of the lock at full stick), but there is still reserve in the brakes.",
     "Von Hand schalten, 2,4 s auf 100, stärkster Reifenverschleiß, volles Tankgewicht, die am feinsten dosierbare Lenkung (52 % des Anschlags bei vollem Stick, man muss also weit ziehen) und die kürzeste Bremse. Das Ausrollen ist kurz, weil der Luftwiderstand hier die größte Einzelkraft ist.": "Manual shifting, 2.4 s to 100, the strongest tyre wear, full fuel weight, the most finely metered steering (52 % of the lock at full stick, so you have to pull a long way) and the shortest braking. The coast-down is short because drag is the largest single force here.",
     "Gasfaktor": "Throttle factor",
     "Faktor auf das Motorbyte, das zum Auto geht. Das Byte ist Tempo geteilt durch Simulations-Höchstgeschwindigkeit; bei 100 % bekommt das Auto also erst volle Leistung, wenn die Simulation ihre Höchstgeschwindigkeit erreicht hat, und das dauert gemessen fast 25 Sekunden Vollgas. Über 100 % erreicht es die volle Leistung früher, ohne dass der Tacho anders skaliert. Das ist auch ehrlicher als es klingt: das Modellauto fährt real 5,9 km/h, egal was die Simulation glaubt – dieser Faktor ist die Abbildung zwischen beidem, und dass er früher genau 1 war, war eine Annahme und keine Messung.": "Factor applied to the motor byte that goes to the car. The byte is speed divided by the simulated top speed, so at 100 % the car only gets full power once the simulation has reached its top speed – and that takes a measured 25 seconds of full throttle. Above 100 % it reaches full power sooner without the speedometer scaling differently. That is also more honest than it sounds: the model car really does 5.9 km/h whatever the simulation believes – this factor is the mapping between the two, and the fact that it used to be exactly 1 was an assumption, not a measurement.",
     "Reifen: Füllhöhe ist Restprofil, Farbe die Temperatur. Links und rechts werden getrennt gerechnet, vorn und hinten nicht – die beiden einer Seite laufen deshalb gleich. Antippen schaltet die Reifensimulation aus, beim Boxenstopp den Reifenwechsel.": "Tyres: fill height is remaining tread, colour is temperature. Left and right are tracked separately, front and rear are not – the two on one side therefore move together. Tapping switches the tyre simulation off, and during a pit stop the tyre change.",
+    // Zusaetze v0.5: Kennzeichnungen, Crash-Schwelle, Startseite, Pad-Aktionen.
+    "Reifenverschleiß, Reifentemperatur, Bremstemperatur": "Tyre wear, tyre temperature, brake temperature",
+    "Wettersimulation": "Weather simulation",
+    "Alles hier schreibt rohe Bytes zum Auto und liest rohe Bytes zurück. Das ist Werkbank und kein Merkmal: die Pakete tragen gültige Prüfsummen, aber was das Auto mit einem selbst zusammengesetzten Paket macht, ist nicht vorhersagbar. Zum Fahren wird nichts davon gebraucht.": "Everything here writes raw bytes to the car and reads raw bytes back. This is a workbench, not a feature: the packets carry valid checksums, but what the car does with a hand-assembled packet is not predictable. None of it is needed for driving.",
+    "Automatik, 2,6 s auf 100, Reifen und Tankgewicht wirken zur Hälfte. Die Lenkung ist so direkt wie bei Arcade (120 % des Anschlags bei vollem Stick), in der Bremse ist aber noch Reserve.": "Automatic, 2.6 s to 100, tyres and fuel weight at half effect. The steering is as direct as in Arcade (120 % of the lock at full stick), but there is still reserve in the brakes.",
+    "Crash-Schwelle": "Crash threshold",
+    "Wie weit die Bewegungsbytes 1 und 3 vom gleitenden Mittel abweichen müssen, damit ein Stoß als Crash gilt. Niedriger heißt empfindlicher: schon ein Rempler zählt. Höher heißt, dass nur ein echter Einschlag zählt. 40 ist der Wert, mit dem die Erkennung gebaut und geprüft wurde – stand bis v0.5 als Konstante im Code, war also eine Einstellung, die niemand einstellen konnte.": "How far the motion bytes 1 and 3 must deviate from the running mean for a jolt to count as a crash. Lower means more sensitive: even a nudge counts. Higher means only a real impact counts. 40 is the value the detection was built and tested with – it was a constant in the code until v0.5, so it was a setting nobody could set.",
+    "L3 (linker Stick drücken)": "L3 (press left stick)",
+    "Zwei der drei Varianten sind am Auto unerprobt, und die Nummer des gedruckten Musters ist geraten und nicht entziffert – die Kodierregel ist nicht bekannt. „Überall halten“ trägt dagegen: es braucht kein Muster.": "Two of the three variants are untested on the car, and the number of the printed pattern is guessed rather than deciphered – the encoding rule is not known. “Stop anywhere” does hold up, though: it needs no pattern at all.",
+    "Leseart: Bahn oder Ausdruck": "Reading mode: rail or printout",
+    "Getriebe: Automatik oder von Hand": "Gearbox: automatic or manual",
+    "Gelbe Flagge (1 s halten)": "Yellow flag (hold 1 s)",
+    "X / Quadrat (1 s halten)": "X / Square (hold 1 s)",
+    "A / Kreuz": "A / Cross",
   };
 
   // ============================================================================
@@ -7409,31 +7456,11 @@
   renderRecMarks();
   setInterval(() => { if (rec.on) recStatus(); }, 1000);
 
-  // ---- Key-binding overlay ----
-  // Reads the LIVE binding table rather than a hard-coded list: a help panel that drifts
-  // out of step with the actual assignment is worse than none at all.
-  function renderHelpPad() {
-    const grid = $('help-pad');
-    if (!grid) return;
-    const extra = {
-      'D-Pad hoch / runter': 'Beschleunigung +/- 10 %',
-      'D-Pad links / rechts': 'Lenkansprechen -/+ 10 %',
-    };
-    grid.innerHTML = Object.keys(BIND_ACTION_LABELS).map(a =>
-      `<kbd>${bindingDescription(bindings[a])}</kbd><span>${BIND_ACTION_LABELS[a]}</span>`
-    ).join('') + Object.entries(extra).map(([k, v]) =>
-      `<kbd>${k}</kbd><span>${v}</span>`).join('');
-  }
-
-  // Die Tastenbelegung steht jetzt als Karte im Cockpit-Tab statt in einem Vollbildfenster
-  // hinter einem Fragezeichen. Damit gibt es nichts zu oeffnen und nichts zu schliessen.
-  //
-  // Der erste Aufruf von renderHelpPad() steht NICHT hier, sondern in 90-ghosts.js neben
-  // renderBindTable(). Grund: die Funktion liest BIND_ACTION_LABELS, und das const steht in
-  // 90-ghosts.js, also in einer spaeteren Datei. Hier aufgerufen wirft der Zugriff, und die
-  // ganze IIFE bricht ab - gemessen 117 Folgefehler und OMEGA_TEST undefiniert. "Ans Ende
-  // der Datei" reicht dafuer nicht: in einer zusammengesetzten IIFE ist das Ende einer Datei
-  // nicht das Ende des Moduls.
+  // Hier stand ein Hilfefeld, das die Controller-Belegung ein zweites Mal anzeigte, sowie
+  // eine ausfuehrliche Notiz darueber, warum sein Aufruf in 90-ghosts.js stehen musste.
+  // Beides ist weg: die zuweisbare Tabelle in Optionen -> Controller zeigt dasselbe und
+  // kann es aendern. Die Notiz war richtig und ist jetzt gegenstandslos - ein Kommentar
+  // ueber eine entfernte Funktion fuehrt den naechsten Leser in die Irre.
 
   // ---- Keyboard control ----
   const keys = new Set();
@@ -7875,14 +7902,33 @@
         // Haftung, bei Hoechstgeschwindigkeit ist sie alles. Ohne das leert eine Vollbremsung
         // den Kreis bei JEDER Fahrt, und die Lenkung klebt bis zum Stand am Notboden.
         // Angezeigte Entsprechung bei 295 km/h Spitze: 30 und 180 km/h.
-        loadOnsetFrac: 0.10,
-        loadFullFrac: 0.61,
+        // TEMPOWICHTUNG DER BREMSANFORDERUNG. Sie ist der Grund, warum Bremsen die
+        // Lenkung ueberhaupt schwaecht - und war bis v0.5 so flach, dass man es unter
+        // 100 km/h nicht gespuert hat: Ansatz bei 29,5 angezeigten km/h, VOLL erst bei 180.
+        // Gemessen gab volles Bremsen bei 60 km/h noch 100 % des Rollwerts.
+        //
+        // Jetzt Ansatz bei 14,8 und voll bei 65 angezeigten km/h. Unter 15 km/h passiert
+        // weiterhin NICHTS, und das ist per Konstruktion so: dort ist lastFrac null, der
+        // Notboden von 12 % kann also nicht zurueckkommen. Genau der war der Fehler, gegen
+        // den diese Wichtung ueberhaupt eingebaut wurde.
+        loadOnsetFrac: 0.05,
+        loadFullFrac: 0.22,
         // 0.65 und 1.55, gewaehlt und nicht gemessen: gefittet auf Vollbremsung 50 % und
         // Vollgas 59 % des Lenkgrips beim Rollen, weil die Original-App unter Vollbremsung
         // sichtbar weniger lenkt. Vorher waren es 77 und 75 % - die Wirkung war da, nur zu
         // schwach. Ein Sollwert dafuer liegt nicht vor, also ist das eine Gefuehlsangabe und
         // keine Messung; die Zahlen stehen hier, damit sie nachpruefbar sind.
-        brakeUseGain: 1.35,   // how much of that capacity the brake eats
+        // 0,85, und die Zahl kommt aus der GEFAHRENEN Bremsung, nicht aus dem
+        // festgehaltenen Messaufbau. Das ist der Unterschied, der hier zaehlt: bei
+        // festgehaltener Fahrt setzt sich longUse auf die Anforderung (gemessen -0,83), beim
+        // wirklichen Verzoegern liegt es rund 25 % hoeher (-1,05 bis -1,10). Mit 1,00 lag die
+        // Lenkung in der gefahrenen Vollbremsung zwischen 80 und 110 km/h auf dem Notboden
+        // von 12 % - gesaettigt statt abgestuft, also ohne Dosierung.
+        //
+        // Mit 0,85 bleibt frontUse auch im schlimmsten Fall unter frontCap, und die Lenkung
+        // faellt auf rund 43 % statt auf den Boden. Weniger waere zu wenig: der Messaufbau
+        // mit festgehaltener Fahrt zeigt dann 73 % und man spuert es kaum.
+        brakeUseGain: 0.85,   // how much of that capacity the brake eats
 
         // ---- Bremstemperatur und Fading (Block 4.1) ----
         //
@@ -8265,7 +8311,14 @@
       // Notboden von 0,12. Gemessen: unter 70 km/h durchgehend 0,12.
       //
       // Dieselben zwei Schwellen wie beim Regen: unterhalb der ersten gar keine Wirkung,
-      // ab der zweiten voll.
+      // ab der zweiten voll. Seit v0.5 bei 14,8 und 65 angezeigten km/h statt 29,5 und 180 -
+      // gemessen gab volles Bremsen bei 60 km/h vorher noch 100 % des Rollwerts, und auf
+      // einer Wohnzimmerstrecke kommt man kaum ueber 100.
+      //
+      // UND EINE FALSCHE ERKLAERUNG BERICHTIGT, die hier in der Naehe stand: dass Eintauchen
+      // und Bremsanforderung gegeneinander arbeiten, gilt im Trockenen NICHT. frontCap ist
+      // mit Math.min(1, ...) gedeckelt und liegt beim Rollen wie beim Bremsen auf 1,0 - das
+      // Eintauchen bringt dort gar nichts. Der einzige Grund war diese Wichtung.
       const lastFrac = Math.max(0, Math.min(1,
         (vFrac - cfg.loadOnsetFrac) / Math.max(1e-6, cfg.loadFullFrac - cfg.loadOnsetFrac)));
       // Die Bremsbalance sitzt HIER und nicht an maxSteerLimit. Das ist der Unterschied
@@ -9392,8 +9445,10 @@
     // rechts trennt. Sie kuenstlich zu spreizen waere eine Erfindung, und eine Anzeige, die
     // mehr behauptet als das Modell weiss, ist schlimmer als eine grobe.
     {
-      const felder = [['race-tyre-fl', 'L'], ['race-tyre-rl', 'L'],
-                      ['race-tyre-fr', 'R'], ['race-tyre-rr', 'R']];
+      // Seite fuer den Reifen, Achse fuer die Bremsscheibe: der Verschleiss ist links und
+      // rechts getrennt, die Scheibentemperatur vorn und hinten.
+      const felder = [['race-tyre-fl', 'L', 'V'], ['race-tyre-rl', 'L', 'H'],
+                      ['race-tyre-fr', 'R', 'V'], ['race-tyre-rr', 'R', 'H']];
       const cfgT = physEngine.config;
       const aus = cfgT.tyreEffect === 0;
       let col = '#4a5568';
@@ -9416,17 +9471,67 @@
       const asymAn = cfgT.tyreAsymEffect > 0;
       const wL = aus ? 0 : (asymAn ? st.tyreWearL : st.tyreWear);
       const wR = aus ? 0 : (asymAn ? st.tyreWearR : st.tyreWear);
-      for (const [id, seite] of felder) {
+
+      // ---- Bremsscheiben, als Ring in jedem Reifen -----------------------------------
+      //
+      // WIEDER EINGEBAUT: diese Anzeige lag im Textbereich, den der Umbau auf vier Reifen
+      // ersetzt hat, und ist dabei mitgeloescht worden. race-braket-f stand danach im
+      // Dokument, ohne dass es jemand beschrieb - eine tote Element-id, von mir selbst
+      // erzeugt. Gemeldet als "die Temperatur reagiert nicht auf mein Fahren".
+      //
+      // Vorn und hinten sind hier wirklich verschieden: zwei Scheibentemperaturen, getrennt
+      // nach der Bremsbalance.
+      const fadeAus = cfgT.brakeFadeEffect === 0;
+      const scheibe = (T) => {
+        if (fadeAus) return '#2a3346';
+        const ueber = Math.max(0, Math.min(1, (T - cfgT.brakeFadeStartC)
+          / Math.max(1, cfgT.brakeFadeFullC - cfgT.brakeFadeStartC)));
+        if (ueber > 0) {
+          // Ab Fadingbeginn orange nach rot: das ist die Nachricht.
+          return 'rgb(255, ' + Math.round(178 - 130 * ueber) + ', '
+               + Math.round(107 - 92 * ueber) + ')';
+        }
+        // Darunter grau nach gruen - und NICHT gegen die Fadingschwelle normiert. Das war
+        // die erste Fassung, und sie liess den Ring bis fast 500 Grad grau: bei 66 Grad
+        // gemessen rgb(44,64,73), also kein sichtbarer Unterschied zu kalt. Der Bereich, den
+        // man beim Fahren sieht, liegt zwischen 25 und ein paar hundert Grad, und dort muss
+        // sich die Farbe bewegen.
+        //
+        // 300 Grad ist hier die Betriebstemperatur: eine harte Runde erreicht das, und ab
+        // dort geht es weiter nach Gelb, bis das Fading bei 520 einsetzt.
+        const warm = Math.max(0, Math.min(1, (T - cfgT.brakeAmbientC) / 275));
+        if (warm >= 1) {
+          const heiss = Math.max(0, Math.min(1,
+            (T - 300) / Math.max(1, cfgT.brakeFadeStartC - 300)));
+          return 'rgb(' + Math.round(62 + 193 * heiss) + ', ' + Math.round(209 - 31 * heiss)
+               + ', ' + Math.round(106 - heiss) + ')';
+        }
+        return 'rgb(' + Math.round(42 + 20 * warm) + ', ' + Math.round(51 + 158 * warm)
+             + ', ' + Math.round(70 + 36 * warm) + ')';
+      };
+      const farbeF = scheibe(st.brakeTempF);
+      const farbeR = scheibe(st.brakeTempR);
+
+      for (const [id, seite, achse] of felder) {
         const el = $(id);
         if (!el || !el.firstChild) continue;
         const rest = aus ? 100 : Math.max(0, Math.min(100, 100 - (seite === 'L' ? wL : wR) * 100));
         el.firstChild.style.height = rest + '%';
         el.firstChild.style.background = col;
+        const ring = el.lastChild;
+        if (ring && ring !== el.firstChild) {
+          ring.style.borderColor = achse === 'V' ? farbeF : farbeR;
+        }
       }
+      // Eine Zeile fuer beides: Reifentemperatur mit Abnutzung, und die zwei
+      // Scheibentemperaturen. Zwei Zeilen waeren in einer 77-px-Kachel eine zu viel.
       const tt = $('race-tyre-temp');
       if (tt) {
-        tt.textContent = aus ? 'aus' : (Math.round(st.tyreTempC) + '\u00b0 '
+        const reifen = aus ? 'aus' : (Math.round(st.tyreTempC) + '\u00b0 '
           + Math.round(Math.max(wL, wR) * 100) + '%');
+        const br = fadeAus ? '' : (' \u00b7 ' + Math.round(st.brakeTempF) + '/'
+          + Math.round(st.brakeTempR) + '\u00b0');
+        tt.textContent = reifen + br;
       }
     }
 
@@ -13772,7 +13877,10 @@
   // car really stops switching that light rather than only the display pretending.
   const LIGHT_DEAD_DAMAGE = 50;
   const lightDamage = { front: false, rear: false };
-  const CRASH_THRESHOLD = 40;
+  // Einstellbar seit v0.5. Sie stand als Konstante hier - dieselbe Fehlerklasse wie
+  // leaderBrakePct und ghostCfg.lineModel: eine Einstellung, die niemand einstellen konnte.
+  // Die 40 bleibt die Vorgabe, denn mit ihr ist die Erkennung gebaut und geprueft.
+  let crashThreshold = 40;
   const CRASH_ROLLING_ALPHA = 0.15;
   const CRASH_REFRACTORY_MS = 1000; // avoid re-triggering repeatedly off one jolt
   let fuelDrainPerSec = 3;       // % per second at full throttle magnitude (slider)
@@ -13796,6 +13904,15 @@
 
   function s8signed(b) { return b >= 128 ? b - 256 : b; }
 
+  if ($('setting-crash-threshold')) {
+    const anwenden = () => {
+      crashThreshold = parseInt($('setting-crash-threshold').value, 10);
+      $('setting-crash-threshold-val').textContent = crashThreshold;
+    };
+    $('setting-crash-threshold').addEventListener('input', anwenden);
+    anwenden();
+  }
+
   function detectCrash(bytes) {
     if (!crashDetectionEnabled) return;
     const v1 = s8signed(bytes[1]), v3 = s8signed(bytes[3]);
@@ -13804,7 +13921,7 @@
     crashRollingAvg1 += (v1 - crashRollingAvg1) * CRASH_ROLLING_ALPHA;
     crashRollingAvg3 += (v3 - crashRollingAvg3) * CRASH_ROLLING_ALPHA;
     const now = Date.now();
-    if (dev > CRASH_THRESHOLD && now - lastCrashTime > CRASH_REFRACTORY_MS) {
+    if (dev > crashThreshold && now - lastCrashTime > CRASH_REFRACTORY_MS) {
       lastCrashTime = now;
       registerCrash();
     }
@@ -15330,9 +15447,24 @@
     //
     // Die rechte Schulter bleibt das Rennen, die Trigger bleiben Gas und Bremse.
     pitstop: { type: 'button', index: 9, label: 'Start / Options' },
-    racestart: { type: 'button', index: 5, label: 'RB / R1' },
+    // LB und RB machen jetzt die zwei Umschaltungen, die man WAEHREND der Fahrt braucht:
+    // welche Kodierung gelesen wird, und ob von Hand geschaltet wird. Beide sind
+    // Fahrentscheidungen und gehoeren unter die Zeigefinger.
+    //
+    // Rennen starten und Streckenansicht ziehen dafuer um. A / Kreuz ist der
+    // Bestaetigungsknopf, das passt zum Rennstart; die Streckenansicht ist ein Blick auf die
+    // Karte und kein Fahrbefehl, also L3. Das Touchpad bleibt absichtlich frei, weil das
+    // System es als Zeiger fuehrt.
+    scanmode: { type: 'button', index: 4, label: 'LB / L1' },
+    gearmode: { type: 'button', index: 5, label: 'RB / R1' },
+    // X hat ZWEI Bedeutungen: kurz ist Runterschalten, eine Sekunde gehalten die gelbe
+    // Flagge - genau wie die Taste X auf der Tastatur. Das Halten ist der Schutz: die gelbe
+    // Flagge bremst jedes Auto auf 40 km/h, und ein Knopf, der das mit einem Antippen tut,
+    // liegt zu nah an der Hand.
+    yellowflag: { type: 'button', index: 2, label: 'X / Quadrat (1 s halten)' },
+    racestart: { type: 'button', index: 0, label: 'A / Kreuz' },
     weather: { type: 'button', index: 8, label: 'Select / Share' },
-    trackview: { type: 'button', index: 4, label: 'LB / L1' },
+    trackview: { type: 'button', index: 10, label: 'L3 (linker Stick dr\u00fccken)' },
     // Nicht belegt. Das Touchpad wird vom System als Zeiger erkannt, also loest ein Tippen
     // gleichzeitig einen Klick irgendwo in der Seite aus - eine Belegung darauf kaempft mit
     // dem Cursor. Frei zuweisbar bleibt es, nur eben nicht ab Werk.
@@ -15343,6 +15475,9 @@
     downshift: 'Runterschalten', upshift: 'Hochschalten',
     headlights: 'Licht an/aus', lightflash: 'Lichthupe', pitstop: 'Boxenstopp',
     racestart: 'Rennen starten / abbrechen',
+    scanmode: 'Leseart: Bahn oder Ausdruck',
+    gearmode: 'Getriebe: Automatik oder von Hand',
+    yellowflag: 'Gelbe Flagge (1 s halten)',
     weather: 'Wetter umschalten',
     trackview: 'Streckenansicht',
     resetcar: 'Auto zurücksetzen',
@@ -15363,6 +15498,15 @@
       b.trackview = { ...DEFAULT_BINDINGS.trackview };
       b.__migrated = true;
     }
+    // v0.5: LB und RB werden Leseart und Getriebe. Verschoben wird nur, wenn Rennstart und
+    // Streckenansicht noch genau auf den ALTEN Vorgaben liegen (RB=5 und LB=4) - dann hat
+    // sie niemand angefasst. Wer selbst zugewiesen hat, behaelt seine Zuweisung; die drei
+    // neuen Aktionen bekommt er trotzdem, weil loadBindings die Vorgaben untermischt.
+    if (ist(b.racestart, 5) && ist(b.trackview, 4)) {
+      b.racestart = { ...DEFAULT_BINDINGS.racestart };
+      b.trackview = { ...DEFAULT_BINDINGS.trackview };
+      b.__migrated2 = true;
+    }
     return b;
   }
 
@@ -15382,9 +15526,20 @@
     log('Controller: Boxenstopp liegt jetzt auf Start/Options, Streckenansicht auf LB/L1. '
         + 'Options hat vorher den Tab gewechselt und damit das Cockpit verlassen.', 'info');
   }
+  if (bindings.__migrated2) {
+    delete bindings.__migrated2;
+    saveBindings();
+    log('Controller: LB schaltet jetzt die Leseart (Bahn/Ausdruck), RB das Getriebe '
+        + '(Automatik/von Hand). Rennen starten liegt auf A/Kreuz, Streckenansicht auf L3. '
+        + 'X eine Sekunde halten gibt die gelbe Flagge.', 'info');
+  }
   let listeningFor = null; // action key currently waiting for a new input, or null
   let padConnected = false;
   let prevDownshift = false, prevUpshift = false, prevHeadlights = false;
+  // Die drei neuen Aktionen. padFlagFired merkt sich, dass die Sekunde in DIESEM Druck schon
+  // voll war - ohne das wuerde die Flagge im Takt danach gleich wieder umgeschaltet.
+  let prevScanMode = false, prevGearMode = false, prevYellowFlag = false;
+  let padFlagFired = false;
 
   function bindingDescription(b) {
     if (b.label) return b.label;
@@ -15409,11 +15564,10 @@
     });
   }
   renderBindTable();
-  // Dieselben Daten, zweite Anzeige: die Tastenbelegung als Karte im Cockpit-Tab. Der
-  // Aufruf steht hier und nicht in 30-input.js, wo renderHelpPad definiert ist, weil die
-  // Funktion BIND_ACTION_LABELS liest und das const oben in DIESER Datei steht. In einer
-  // zusammengesetzten IIFE ist das Ende einer Datei nicht das Ende des Moduls.
-  renderHelpPad();
+  // Hier stand der Aufruf von renderHelpPad(): die Controller-Belegung ein zweites Mal, nur
+  // lesbar. Sie war doppelt - die zuweisbare Tabelle in derselben Karte zeigt dasselbe und
+  // kann es aendern. Die Funktion ist mit weg; eine ohne Aufrufstelle ist dieselbe
+  // Fehlerklasse wie eine tote Element-id.
 
   $('bind-reset').onclick = () => {
     bindings = { ...DEFAULT_BINDINGS };
@@ -18350,6 +18504,41 @@
       if (trackViewNow && !prevTrackView) toggleTrackView();
       prevTrackView = trackViewNow;
 
+      // Leseart und Getriebe gehen ueber die Bedienelemente in den Optionen und deren
+      // 'change'-Ereignis - wie der Knopf im Cockpit und die Reifenkachel. Damit gibt es
+      // keinen zweiten Zustand, und die Optionen ziehen von selbst nach.
+      const scanNow = readBindingValue(pad, bindings.scanmode) > BUTTON_CAPTURE_THRESHOLD;
+      if (scanNow && !prevScanMode) {
+        const sw = $('setting-ontrack');
+        if (sw) { sw.checked = !sw.checked; sw.dispatchEvent(new Event('change', { bubbles: true })); }
+      }
+      prevScanMode = scanNow;
+
+      const gearNow = readBindingValue(pad, bindings.gearmode) > BUTTON_CAPTURE_THRESHOLD;
+      if (gearNow && !prevGearMode) {
+        const sw = $('setting-autoshift');
+        if (sw) {
+          sw.checked = !sw.checked;
+          sw.dispatchEvent(new Event('change', { bubbles: true }));
+          showHudToast(sw.checked ? 'AUTOMATIK' : 'VON HAND');
+        }
+      }
+      prevGearMode = gearNow;
+
+      // Gelbe Flagge auf HALTEN. Dieselben zwei Funktionen wie die Taste X, nicht eine
+      // zweite Fassung der Logik: flagHoldPress startet den Ladebalken, flagHoldRelease(true)
+      // loest aus. Zu frueh losgelassen passiert nichts - ein halber Druck darf keine halbe
+      // Wirkung haben.
+      const flagNow = readBindingValue(pad, bindings.yellowflag) > BUTTON_CAPTURE_THRESHOLD;
+      if (flagNow && !prevYellowFlag) { padFlagFired = false; flagHoldPress(); }
+      if (flagNow && !padFlagFired && flagHoldStart !== null
+          && Date.now() - flagHoldStart >= FLAG_HOLD_MS) {
+        padFlagFired = true;
+        flagHoldRelease(true);
+      }
+      if (!flagNow && prevYellowFlag && !padFlagFired) flagHoldRelease(false);
+      prevYellowFlag = flagNow;
+
       const resetNow = readBindingValue(pad, bindings.resetcar) > BUTTON_CAPTURE_THRESHOLD;
       if (resetNow && !prevResetCar) resetCarState();
       prevResetCar = resetNow;
@@ -20031,6 +20220,73 @@
                mass: rest.size === 0 ? 'kein deutscher Text'
                                      : rest.size + ' Stellen, z. B. "' + bsp.slice(0, 46) + '"' };
     } finally { if (lang !== vorher) setLang(vorher); }
+  });
+
+  // ---- Cockpit-Anzeigen reagieren aufs Fahren ----
+  //
+  // DIESER TEST HAETTE EINEN ECHTEN FEHLER GEFUNDEN. Beim Umbau der Reifenkachel auf vier
+  // Reifen wurde die Bremstemperatur-Anzeige mitgeloescht: das Element blieb im Dokument,
+  // geschrieben hat es niemand mehr. Gemeldet wurde es als "die Temperatur reagiert nicht auf
+  // mein Fahren" - und kein vorhandener Test konnte es melden. Der Bauschritt prueft
+  // Zugriffe ins LEERE, aber ein Element, das DA ist und das niemand beschreibt, ist keiner.
+  //
+  // Deshalb geht dieser Test den Weg der Beschwerde: er faehrt und sieht nach, ob sich die
+  // Anzeigen dabei aendern.
+  stAdd('Cockpit-Anzeigen reagieren aufs Fahren', () => {
+    const st = physEngine.state, cfg = physEngine.config;
+    const lesen = () => ({
+      tempo: ($('race-speed') || {}).textContent,
+      reifen: ($('race-tyre-temp') || {}).textContent,
+      gang: ($('race-gear') || {}).textContent,
+      scheibeV: ($('race-tyre-fl') && $('race-tyre-fl').lastChild
+                 ? $('race-tyre-fl').lastChild.style.borderColor : null),
+      profil: ($('race-tyre-fl') && $('race-tyre-fl').firstChild
+               ? $('race-tyre-fl').firstChild.style.height : null),
+    });
+    const merkState = Object.assign({}, st);
+    const merkCfg = Object.assign({}, cfg);
+    try {
+      // Kalter, langsamer Ausgangszustand - und die drei Modelle sicher AN, damit der Test
+      // nicht davon abhaengt, welche Voreinstellung gerade gilt.
+      cfg.tyreEffect = 1; cfg.brakeFadeEffect = 1; cfg.tyreAsymEffect = 1;
+      st.speedKmh = 0; st.currentGear = 0; st.driveMode = 'forward';
+      st.tyreTempC = cfg.tyreAmbientC; st.tyreWear = 0;
+      st.tyreWearL = 0; st.tyreWearR = 0;
+      st.brakeTempF = cfg.brakeAmbientC; st.brakeTempR = cfg.brakeAmbientC;
+      st.brakeFade = 0; st.longUse = 0; st.loadFront = 0.5;
+      updateDashboard(physEngine.update({ throttle: 0, brake: 0, steering: 0 }, 0.02));
+      const vorher = lesen();
+
+      // Und jetzt fahren: beschleunigen, lenken, dann hart bremsen. Genau die drei Sachen,
+      // die Tempo, Reifen und Scheiben bewegen muessen.
+      for (let i = 0; i < 240; i++) {
+        st.speedKmh = 180 / REAL_SCALE;      // Fahrt halten, damit die Arbeit gross bleibt
+        physEngine.update({ throttle: 0.6, brake: 0, steering: 0.8 }, 0.02);
+      }
+      for (let i = 0; i < 240; i++) {
+        st.speedKmh = 180 / REAL_SCALE;
+        physEngine.update({ throttle: 0, brake: 1, steering: 0.2 }, 0.02);
+      }
+      updateDashboard(physEngine.update({ throttle: 0, brake: 1, steering: 0.2 }, 0.02));
+      const nachher = lesen();
+
+      const stumm = [];
+      for (const k of Object.keys(vorher)) {
+        if (vorher[k] === nachher[k]) stumm.push(k);
+      }
+      return {
+        ok: stumm.length === 0,
+        mass: 'Reifen "' + vorher.reifen + '" -> "' + nachher.reifen + '"'
+            + ' | Profil ' + vorher.profil + ' -> ' + nachher.profil
+            + ' | Scheibe ' + (vorher.scheibeV || '-') + ' -> ' + (nachher.scheibeV || '-')
+            + (stumm.length ? ' | STUMM: ' + stumm.join(', ') : ''),
+      };
+    } finally {
+      Object.assign(cfg, merkCfg);
+      physEngine.calibrateAccel();
+      for (const k of Object.keys(st)) if (!(k in merkState)) delete st[k];
+      Object.assign(st, merkState);
+    }
   });
 
   // ---- Block 4.1: Bremstemperatur und Fading ----
@@ -21797,10 +22053,14 @@
     pro: {
       label: 'Pro',
       kurz: 'Halb so weit zwischen Arcade und GT3',
-      text: 'Von Hand schalten, 2,6 s auf 100, Reifen und Tankgewicht wirken zur Hälfte. '
+      text: 'Automatik, 2,6 s auf 100, Reifen und Tankgewicht wirken zur Hälfte. '
           + 'Die Lenkung ist so direkt wie bei Arcade (120 % des Anschlags bei vollem '
           + 'Stick), in der Bremse ist aber noch Reserve.',
-      v: { 'setting-grip': 0.85, 'setting-brakepower': 1.0, 'setting-autoshift': false,
+      // AUTOMATIK, obwohl Pro sonst die Zwischenstufe zu GT3 ist. Pro ist seit v0.5 die
+      // Vorgabe, und wer beim ersten Start von Hand schalten muss und es nicht weiss, bleibt
+      // im 1. Gang haengen - dann ist das Auto genau so traege, wie gemeldet wurde. Von Hand
+      // schalten steht ab GT3 zur Verfuegung, und der Knopf RB schaltet es jederzeit um.
+      v: { 'setting-grip': 0.85, 'setting-brakepower': 1.0, 'setting-autoshift': true,
            // 2,6 statt 3,2 s und Lenkansprechen 2,4 statt 1,8: gemessen brauchte das
            // Motorbyte mit den alten Werten 24,9 s Vollgas bis 90 %. Pro ist die Vorgabe und
            // muss sich wie ein Auto anfuehlen, nicht wie ein Anfahrversuch.
