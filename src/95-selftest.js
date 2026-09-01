@@ -758,6 +758,131 @@
     }
   });
 
+  // ---- Lenkwinkel-Kalibrierung ----
+  //
+  // DREI Aussagen, und die erste ist die wichtigste: der Deckel muss halten. Byte 7 traegt
+  // round(winkel * 127) in einem VORZEICHENBEHAFTETEN Byte - ein Winkel ueber 1,0 wuerde
+  // beim Umbruch als Einschlag in die ANDERE Richtung ankommen. Ein Regler, der das Auto in
+  // die falsche Richtung lenken kann, ist schlimmer als kein Regler.
+  stAdd('Lenkkalibrierung: gedeckelt, monoton, bei 1,0 wirkungslos', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.physSteerGrip) {
+      return { skip: true, mass: 'physSteerGrip nicht vorhanden' };
+    }
+    const messe = (kalib, lenk) => OMEGA_TEST.physSteerGrip({
+      kmh: 60, throttle: 0, brake: 1, steering: lenk, patch: { steerCalib: kalib } });
+    const proben = [1, 1.5, 2, 2.5, 3].map(k => messe(k, 1));
+    if (proben[0].winkel === undefined) return { skip: true, mass: 'winkel nicht herausgegeben' };
+    let gedeckelt = true, monoton = true;
+    for (let i = 0; i < proben.length; i++) {
+      if (Math.abs(proben[i].winkel) > 1 + 1e-9) gedeckelt = false;
+      if (i && proben[i].winkel < proben[i - 1].winkel - 1e-9) monoton = false;
+    }
+    // Bei 1,0 muss der uebertragene Winkel genau der Wunsch sein - kein stiller Aufschlag.
+    const neutral = Math.abs(proben[0].winkel - proben[0].wunsch) < 1e-9;
+    // Und die Kalibrierung muss WIRKEN: bei 60 km/h unter Bremsen beschneidet der Reibkreis
+    // auf etwa 35 Grad, und 2,0 muss den vollen Anschlag zurueckholen.
+    const holt = proben[0].grad < 44 && messe(2, 1).grad === 45;
+    // Auch in der Gegenrichtung, und mit demselben Betrag: eine Kalibrierung, die nur nach
+    // einer Seite wirkt, waere ein Lenkoffset.
+    const links = messe(2, -1);
+    const spiegel = Math.abs(links.winkel + messe(2, 1).winkel) < 1e-9;
+    const ok = gedeckelt && monoton && neutral && holt && spiegel;
+    return { ok, mass: proben.map((p, i) => [1, 1.5, 2, 2.5, 3][i].toFixed(1) + 'x '
+      + p.grad + '\u00b0').join('  ')
+      + ' | Wunsch ' + proben[0].wunsch.toFixed(3)
+      + (gedeckelt ? '' : ' | DECKEL OFFEN') + (monoton ? '' : ' | NICHT MONOTON')
+      + (neutral ? '' : ' | 1,0 NICHT NEUTRAL') + (holt ? '' : ' | HOLT NICHTS ZURUECK')
+      + (spiegel ? '' : ' | NICHT GESPIEGELT') };
+  });
+
+  // ---- Die Markup-Vorgaben MUESSEN die Voreinstellung Pro sein ----
+  //
+  // Pro ist die Vorgabe. Steht ein Regler beim Laden anders, zeigt die Legende "eigene
+  // Abstimmung", ohne dass jemand etwas verstellt hat - und gefahren wird eine Mischung, die
+  // in keiner Voreinstellung steht.
+  //
+  // Das ist genau einmal passiert, und zwar unbemerkt: das Markup stand Wert fuer Wert auf
+  // dem ALTEN Pro, siebzehn Abweichungen. Zwei Orte fuer eine Aussage laufen auseinander,
+  // sobald einer nachgezogen wird - und ein Vorgabewert sagt beim Ansehen nicht, aus welcher
+  // Voreinstellung er stammt.
+  stAdd('Markup-Vorgaben sind die Voreinstellung Pro', () => {
+    if (!window.__presetValues) return { skip: true, mass: 'presetValues nicht erreichbar' };
+    const soll = window.__presetValues('pro');
+    if (!soll) return { skip: true, mass: 'Voreinstellung pro nicht vorhanden' };
+    const ab = [];
+    for (const k of Object.keys(soll)) {
+      const el = $(k);
+      if (!el) { ab.push(k + ': nicht im Dokument'); continue; }
+      // Der VORGABEWERT und nicht der aktuelle: defaultValue und defaultChecked stehen fuer
+      // das, was im Markup steht. el.value waere der Stand nach jedem Reglerzug dieser
+      // Sitzung, und der Test wuerde dann messen, was der Nutzer gerade tut.
+      if (el.type === 'checkbox') {
+        if (el.defaultChecked !== !!soll[k]) {
+          ab.push(k + ': Markup ' + el.defaultChecked + ', Pro ' + soll[k]);
+        }
+      } else if (Math.abs(parseFloat(el.defaultValue) - parseFloat(soll[k])) > 1e-9) {
+        ab.push(k + ': Markup ' + el.defaultValue + ', Pro ' + soll[k]);
+      }
+    }
+    return { ok: ab.length === 0,
+             mass: ab.length === 0 ? Object.keys(soll).length + ' Vorgaben stimmen mit Pro'
+                                   : ab.length + ' Abweichungen \u2013 ' + ab.slice(0, 3).join('; ') };
+  });
+
+  // ---- Ziffernversatz: nur bei WECHSEL, nicht in jedem Frame ----
+  stAdd('Ziffernversatz feuert nicht bei unveraendertem Wert', async () => {
+    const el = $('race-gear-n') || $('race-gear');
+    if (!el) return { skip: true, mass: 'Gangfeld nicht im Dokument' };
+    let treffer = 0;
+    const beob = new MutationObserver(muts => {
+      for (const m of muts) {
+        if (m.attributeName === 'class' && el.classList.contains('gt3-tick')) treffer++;
+      }
+    });
+    beob.observe(el, { attributes: true, attributeFilter: ['class'] });
+    const vorher = el.textContent;
+    await new Promise(r => setTimeout(r, 600));
+    beob.disconnect();
+    const geblieben = el.textContent === vorher;
+    if (!geblieben) {
+      // Der Gang HAT sich geaendert - dann sagt der Test nichts, und das ist ehrlicher als
+      // ein Urteil auf einer Messung, deren Voraussetzung nicht galt.
+      return { skip: true, mass: 'Gang wechselte waehrend der Messung (' + vorher
+                                 + ' -> ' + el.textContent + ')' };
+    }
+    return { ok: treffer === 0,
+             mass: geblieben ? 'Gang "' + vorher + '" unveraendert, ' + treffer
+                               + ' Versatz-Auslösungen in 600 ms'
+                             : 'Gang wechselte' };
+  });
+
+  // ---- Deckglas und Einschaltrampe fangen keine Tipps ab ----
+  //
+  // Fast jede Kachel im Cockpit ist antippbar. Eine Scheibe ohne pointer-events: none macht
+  // die ganze Anzeige toter als vorher - und auf einem Bildschirmfoto sieht man das nicht.
+  stAdd('Deckglas und Einschaltrampe sind klickdurchlaessig', () => {
+    const g = document.querySelector('.gt3');
+    if (!g) return { skip: true, mass: 'Cockpit nicht im Dokument' };
+    const schichten = [['::before', 'Einschaltrampe'], ['::after', 'Deckglas']];
+    const schlecht = [];
+    for (const [pseudo, name] of schichten) {
+      const cs = getComputedStyle(g, pseudo);
+      if (cs.content === 'none') { schlecht.push(name + ': nicht vorhanden'); continue; }
+      if (cs.pointerEvents !== 'none') schlecht.push(name + ': pointerEvents ' + cs.pointerEvents);
+    }
+    // Und der Blendreflex ueber der Lichtreihe, in derselben Ecke wie der Vollbildknopf.
+    const sh = document.querySelector('.gt3-shift');
+    if (sh) {
+      const cs = getComputedStyle(sh, '::after');
+      if (cs.content !== 'none' && cs.pointerEvents !== 'none') {
+        schlecht.push('Blendreflex: pointerEvents ' + cs.pointerEvents);
+      }
+    }
+    return { ok: schlecht.length === 0,
+             mass: schlecht.length === 0 ? 'alle drei Schichten durchlaessig'
+                                         : schlecht.join('; ') };
+  });
+
   // ---- Block 4.4: Reifendruck ----
   // Monoton, ueber den ganzen Reglerbereich. Ein Regler, der in der Mitte umkehrt, ist keine
   // Abstimmung, sondern eine Falle.

@@ -582,6 +582,10 @@
        Gewebe. Die Webeinheit ist die halbe Kachel, also 7 px - bei 11 bis 20 px Blende
        passen ein-einhalb bis drei darueber, und ab etwa zwei liest man Stoff. */
     --gt3-blende: clamp(11px, 2.8vw, 20px);
+    /* UNTEN breiter. Ein echtes Gehaeuse ist nicht rundum gleich stark: unten sitzt die
+       Befestigung, und dort ist Material. 1,9-fach, nicht 1,5 - bei 1,5 sieht es nach einem
+       Messfehler aus statt nach Absicht. */
+    --gt3-blende-u: calc(var(--gt3-blende) * 1.9);
     /* Die Webung. Eine Zeile weniger und die Blende ist wieder eine Farbflaeche. */
     --gt3-carbon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cdefs%3E%3ClinearGradient id='h' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%231a1a1a'/%3E%3Cstop offset='.25' stop-color='%23404040'/%3E%3Cstop offset='.5' stop-color='%231e1e1e'/%3E%3Cstop offset='.75' stop-color='%23454545'/%3E%3Cstop offset='1' stop-color='%23141414'/%3E%3C/linearGradient%3E%3ClinearGradient id='v' x1='0' y1='0' x2='1' y2='0'%3E%3Cstop offset='0' stop-color='%23161616'/%3E%3Cstop offset='.25' stop-color='%233b3b3b'/%3E%3Cstop offset='.5' stop-color='%231a1a1a'/%3E%3Cstop offset='.75' stop-color='%23404040'/%3E%3Cstop offset='1' stop-color='%23101010'/%3E%3C/linearGradient%3E%3Cpattern id='w' width='12' height='12' patternUnits='userSpaceOnUse'%3E%3Crect width='12' height='12' fill='%23121212'/%3E%3Cpath d='M0 0h6v6H0zM6 6h6v6H6z' fill='url(%23h)'/%3E%3Cpath d='M6 0h6v6H6zM0 6h6v6H0z' fill='url(%23v)'/%3E%3Cpath d='M0 1h12M0 3h12M0 5h12M0 7h12M0 9h12M0 11h12' stroke='%23000' stroke-width='.4' opacity='.4'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='24' height='24' fill='url(%23w)'/%3E%3C/svg%3E");
     /* Die vier Schrauben in den Blendenecken: heller Kopf, dunkler Sitz, aussen nichts.
@@ -589,7 +593,8 @@
     --gt3-schraube: radial-gradient(circle at 50% 50%,
       #7c8798 0 13%, #464f5e 13% 19%, #14181f 19% 25%, rgba(0,0,0,0) 25%);
     position: relative;
-    border: var(--gt3-blende) solid transparent;
+    border-style: solid; border-color: transparent;
+    border-width: var(--gt3-blende) var(--gt3-blende) var(--gt3-blende-u);
     border-radius: 2px; overflow: hidden;
     background-image:
       /* 1. Der Schirm. Kein flaches Schwarz: ein TFT wird von der Kante beleuchtet und ist
@@ -603,26 +608,31 @@
       /* 3. Die vier Schrauben, je eine Ecke. */
       var(--gt3-schraube), var(--gt3-schraube),
       var(--gt3-schraube), var(--gt3-schraube),
-      /* 4. Eine Daempfung UEBER der Webung und nicht darin. Die Faserverlaeufe der Vorlage
+      /* 4. Die FLACHE KANTE im unteren Band: ein heller Streifen ueber die ganze Breite,
+            wie eine angefraeste Flaeche, die das Licht anders zurueckwirft als das Gewebe.
+            Nur unten, weil nur dort Platz dafuer ist. */
+      linear-gradient(180deg, rgba(255,255,255,.11) 0%, rgba(255,255,255,.03) 34%,
+                              rgba(0,0,0,.22) 100%),
+      /* 5. Eine Daempfung UEBER der Webung und nicht darin. Die Faserverlaeufe der Vorlage
             gehen bis #454545; das ist auf einem hellen Blatt richtig, auf einer dunklen
             Anzeige wird daraus Silber statt Carbon. Gedaempft wird deshalb hier, damit die
             Verlaeufe selbst unangetastet bleiben und eine Zahl genuegt, um es zu regeln. */
       linear-gradient(rgba(0,0,0,.46), rgba(0,0,0,.46)),
-      /* 5. Die Webung. */
+      /* 6. Die Webung. */
       var(--gt3-carbon);
     background-origin: padding-box, border-box, border-box, border-box,
-                       border-box, border-box, border-box, border-box;
+                       border-box, border-box, border-box, border-box, border-box;
     background-clip: padding-box, border-box, border-box, border-box,
-                     border-box, border-box, border-box, border-box;
+                     border-box, border-box, border-box, border-box, border-box;
     background-repeat: no-repeat, no-repeat, no-repeat, no-repeat,
-                       no-repeat, no-repeat, no-repeat, repeat;
+                       no-repeat, no-repeat, no-repeat, no-repeat, repeat;
     background-size: auto, auto,
                      var(--gt3-blende) var(--gt3-blende),
                      var(--gt3-blende) var(--gt3-blende),
-                     var(--gt3-blende) var(--gt3-blende),
-                     var(--gt3-blende) var(--gt3-blende),
-                     auto, 14px 14px;
-    background-position: 0 0, 0 0, 0 0, 100% 0, 0 100%, 100% 100%, 0 0, 0 0;
+                     var(--gt3-blende) var(--gt3-blende-u),
+                     var(--gt3-blende) var(--gt3-blende-u),
+                     100% var(--gt3-blende-u), auto, 14px 14px;
+    background-position: 0 0, 0 0, 0 0, 100% 0, 0 100%, 100% 100%, 0 100%, 0 0, 0 0;
     padding: clamp(5px, 1vw, 11px); color: #eef2fa; display: grid;
     gap: clamp(4px, .8vw, 9px);
     grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr) minmax(0, 1.15fr);
@@ -644,6 +654,21 @@
      pointer-events: none ist hier nicht Kosmetik, sondern notwendig. Fast jede Kachel im
      Cockpit ist antippbar - eine Glasscheibe ueber allem wuerde jeden Tipp abfangen, und
      dann laesst sich keine Simulation mehr abschalten und kein Rennen starten. */
+  /* EINSCHALTRAMPE. Eine Ueberlagerung, die in 300 ms von deckendem Schirmschwarz auf
+     durchsichtig geht - ein TFT wird nicht sofort hell, es zieht hoch. Als Ueberlagerung und
+     nicht als Filter auf den Inhalt: ein Filter auf .gt3 wuerde die Blende mitdunkeln, und
+     eine Blende ist kein Bildschirm.
+
+     Die Klasse setzt der Rennstart und nimmt sie nach 320 ms wieder weg. Ohne sie ist das
+     ::before vollstaendig durchsichtig und kostet nichts. */
+  .gt3::before { content: ''; position: absolute; inset: 0; pointer-events: none;
+    z-index: 5; background: #04060a; opacity: 0; }
+  .gt3.gt3-warm::before { animation: gt3-einschalten .3s ease-out 1; }
+  @keyframes gt3-einschalten {
+    0%   { opacity: 1; }
+    55%  { opacity: .45; }
+    100% { opacity: 0; }
+  }
   .gt3::after { content: ''; position: absolute; inset: 0; pointer-events: none;
     z-index: 4; border-radius: inherit;
     background:
@@ -656,6 +681,15 @@
   /* Eine selbstleuchtende Anzeige blueht. Eine Ziffer mit vollkommen scharfer Kante liest
      sich als Text auf Papier - das Leuchten ist der Unterschied, und es ist so schwach
      gehalten, dass es die Kante nicht weich macht. */
+  /* ZIFFERNVERSATZ bei Wertwechsel: 1 px nach unten, 80 ms, dann zurueck. Ein Wert, der
+     ohne jede Bewegung von 3 auf 4 springt, sieht nach einem Textfeld aus; eine Anzeige mit
+     Masse setzt sich kurz. NICHT am Tacho - der aendert sich jeden Takt, dort waere es ein
+     Dauerzittern. Nur an den Werten, die SPRINGEN. */
+  .gt3-tick { animation: gt3-versatz .08s ease-out 1; }
+  @keyframes gt3-versatz {
+    0%   { transform: translateY(1px); }
+    100% { transform: translateY(0); }
+  }
   .gt3-val.big, .gt3-gearnum, .gt3-rpm {
     text-shadow: 0 0 clamp(5px, 1.4vw, 13px) rgba(210, 226, 255, .20); }
 
@@ -688,6 +722,17 @@
     border-radius: 50%; background: #0d1119;
     box-shadow: inset 0 0 0 1px #2b3547,
                 inset 0 1px 2px rgba(255,255,255,.10); }
+  /* BLENDREFLEX: ein schwacher Bogen im Deckglas, der die zehn Lichter spiegelt. Eine
+     Ellipse, deren Mitte OBERHALB der Reihe liegt - dadurch ist der sichtbare Teil ein
+     flacher Bogen und kein Fleck, und er folgt derselben Kruemmung wie die Lichter selbst.
+
+     pointer-events: none, weil in derselben Ecke der Vollbildknopf liegt. */
+  .gt3-shift { position: relative; }
+  .gt3-shift::after { content: ''; position: absolute; inset: 0; pointer-events: none;
+    z-index: 1;
+    background: radial-gradient(ellipse 62% 150% at 50% -46%,
+      rgba(214, 232, 255, .11) 0%, rgba(214, 232, 255, .045) 52%,
+      rgba(214, 232, 255, 0) 78%); }
   .gt3-shift > span:nth-child(1), .gt3-shift > span:nth-child(10) { transform: translateY(3px); }
   .gt3-shift > span:nth-child(2), .gt3-shift > span:nth-child(9) { transform: translateY(2px); }
   .gt3-shift > span:nth-child(3), .gt3-shift > span:nth-child(8) { transform: translateY(1px); }
@@ -697,8 +742,13 @@
      Augenwinkel - genau das macht ein Autoschirm anders. */
   .gt3-left { grid-area: left; display: grid; gap: clamp(4px, .8vw, 9px);
     align-content: start; }
+  /* Die erste Kachel je Spalte behaelt ihre HELLE Oberkante: sie trennt die drei Bloecke
+     staerker als die Werte darin, und das ist die Hierarchie, die ein Autoschirm anders macht
+     als ein Armaturenbrett. Ueber denselben Schatten wie oben, weil border-top hier
+     weggefallen ist. */
   .gt3-left > .gt3-box:first-child, .gt3-right > .gt3-box:first-child {
-    border-top-color: rgba(255, 255, 255, .55); }
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .5),
+                inset 0 -1px 0 rgba(255, 255, 255, .055); }
   /* Zwei Knoepfe auf der Breite von einem. Das Bild darueber und die Beschriftung darunter,
      damit auf 375 px beide noch lesbar sind - nebeneinander waere der Text vier Zeichen. */
   .gt3-half { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(3px, .7vw, 8px); }
@@ -731,17 +781,31 @@
   /* FLACH. Vorher hatte jeder Wert seinen eigenen aufgehellten Kasten, und dieses Raster
      aus abgesetzten Panels ist das, was als Carbon-Umrandung gelesen wird. Jetzt eine
      Haarlinie als Trenner und sonst der Grund des Schirms. */
+  /* EINGEFRAESTE KANTE statt einer Linie: 1 px dunkel oben, 1 px hell unten. Eine Linie
+     sagt "hier ist eine Grenze", zwei Linien mit Gegenlicht sagen "hier ist eine Stufe" -
+     und genau das ist der Unterschied zwischen einem gezeichneten Kasten und einer
+     vertieften Flaeche.
+
+     Als inset-Schatten und nicht als border: ein border verschiebt das Kastenmass und damit
+     die ganze Rasteraufteilung. Zwei Schatten kosten kein Pixel Platz. */
   .gt3-box { background: none; border: 0; border-radius: 0;
-    border-top: 1px solid var(--gt3-line);
+    box-shadow: inset 0 1px 0 rgba(0, 0, 0, .55),
+                inset 0 -1px 0 rgba(255, 255, 255, .055);
     padding: clamp(3px, .7vw, 7px) clamp(4px, .8vw, 8px); min-width: 0; }
   /* Der aufgehellte Grund bleibt allein an den antippbaren Kacheln: dort ist er keine
      Zierde, sondern die Aussage "hier kann man draufdruecken". */
   /* Dunkler als vorher (#131925) und mit HELLER Oberkante. Der Grund muss bleiben - hier
      wird angetippt, auf einem Autoschirm nicht -, aber er darf weniger Kasten sein. Die
      helle Kante uebernimmt die Aussage, die vorher die Flaeche allein trug. */
+  /* border-top-color stand hier und wirkte ins Leere: die Kachel hat seit der eingefraesten
+     Kante keinen border mehr, sondern zwei inset-Schatten. Eine Farbangabe auf einen
+     Rahmen der Breite null wird still verworfen - der Grund, warum solche Zeilen jahrelang
+     stehen bleiben. Die antippbare Kachel bekommt ihre Oberkante jetzt ueber denselben
+     Schatten, nur eine Spur heller als eine gewoehnliche Kachel. */
   .gt3-box.gt3-click, .gt3-box.pit-tile {
     background: linear-gradient(#101623, #0a0e17);
-    border-top-color: var(--gt3-line); }
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .16),
+                inset 0 -1px 0 rgba(0, 0, 0, .5); }
   /* Weiter gesperrt und etwas blasser: auf dem Vorbild ist die Beschriftung fast eine
      Unterschrift, die Zahl traegt die Aufmerksamkeit. .16em statt .1em, und die Farbe von
      #8b99b4 auf #78849c. */
@@ -4561,7 +4625,7 @@
       <div class="opt-row"><div class="opt-label">Tankverbrauch (%/s bei Vollgas)</div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-fuel-drain" min="0" max="10" step="0.1" value="1.5">
+          <input type="range" id="setting-fuel-drain" min="0" max="10" step="0.1" value="0">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-fuel-drain-val">3.0</span>
         </div></div>
@@ -4601,11 +4665,11 @@
       <div class="opt-row"><div class="opt-label">Crashs, bis Fahrzeug ruckelt</div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-crash-count" min="0" max="7" step="1" value="2">
+          <input type="range" id="setting-crash-count" min="0" max="7" step="1" value="4">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-crash-count-val">10</span>
         </div></div>
-      <div class="opt-row"><div class="opt-label">Schaden</div><label class="tgl"><input type="checkbox" id="setting-crash-damage" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Schaden</div><label class="tgl"><input type="checkbox" id="setting-crash-damage"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Crash-Schwelle
           <small>Wie weit die Bewegungsbytes 1 und 3 vom gleitenden Mittel abweichen
           m&uuml;ssen, damit ein Sto&szlig; als Crash gilt. Niedriger hei&szlig;t
@@ -4622,7 +4686,7 @@
       <div class="opt-row"><div class="opt-label">Vollst&auml;ndige Reparatur dauert (s)<small>Von 100 % auf 0. Nicht linear: die ersten 25 % in 1/10 der Zeit, die letzten 25 % in 4/10.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-repair-time" min="2" max="30" step="1" value="10">
+          <input type="range" id="setting-repair-time" min="2" max="30" step="1" value="4">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-repair-time-val">10 s</span>
         </div></div>
@@ -4643,21 +4707,21 @@
           er fr&uuml;her genau 1 war, war eine Annahme und keine Messung.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-topspeed" min="0.2" max="2" step="0.05" value="1.6">
+          <input type="range" id="setting-topspeed" min="0.2" max="2" step="0.05" value="1.8">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-topspeed-val">160%</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Reifengrip</div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-grip" min="0" max="1" step="0.01" value="0.85">
+          <input type="range" id="setting-grip" min="0" max="1" step="0.01" value="1">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-grip-val">0.60</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Bremswirkung</div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-brakepower" min="0.3" max="1.5" step="0.05" value="1">
+          <input type="range" id="setting-brakepower" min="0.3" max="1.5" step="0.05" value="1.4">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-brakepower-val">1.00</span>
         </div></div>
@@ -4683,7 +4747,7 @@
       <div class="opt-row"><div class="opt-label">Ausrollen (Faktor)<small>Rollwiderstand, Motorbremse und Luftwiderstand zugleich. Klein rollt weit.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-coast-drag" min="0.2" max="2" step="0.05" value="1">
+          <input type="range" id="setting-coast-drag" min="0.2" max="2" step="0.05" value="0.6">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-coast-drag-val">1.00</span>
         </div></div>
@@ -4692,14 +4756,14 @@
       <div class="opt-row"><div class="opt-label">Tankgewicht<small>Voller Tank macht träger. Links = aus.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-fuelweight" min="0" max="1" step="0.05" value="0.5">
+          <input type="range" id="setting-fuelweight" min="0" max="1" step="0.05" value="0">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-fuelweight-val">100%</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Reifen: Temperatur &amp; Verschlei&szlig;<small>Kalt nach Start und Boxenstopp, abgenutzt nach hartem Stint. Links = aus.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-tyres" min="0" max="2" step="0.05" value="0.5">
+          <input type="range" id="setting-tyres" min="0" max="2" step="0.05" value="0">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-tyres-val">200%</span>
         </div></div>
@@ -4713,7 +4777,7 @@
           zur stärker abgenutzten Seite, weil die weniger Querkraft erzeugt. Der
           Mittelwert bleibt derselbe: der Schalter macht nicht mehr Verschleiß, sondern
           ungleichen.</small></div>
-        <label class="tgl"><input type="checkbox" id="setting-tyre-asym" checked><span></span></label></div>
+        <label class="tgl"><input type="checkbox" id="setting-tyre-asym"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Reifendruck (bar)
           <small>Wenig Druck hei&szlig;t mehr Walkarbeit: schnellere Erw&auml;rmung, mehr
           Verschlei&szlig;, besserer Kaltgriff. Viel Druck umgekehrt. Jede Abweichung von
@@ -4735,12 +4799,12 @@
           einzelne Vollbremsung aus 250&nbsp;km/h erreicht aus kalten Scheiben gemessen
           183&nbsp;&deg;C vorn und fadet nicht; nach acht Bremsungen sind es 806&nbsp;&deg;C
           und der Bremsweg ist 23&nbsp;% l&auml;nger.</small></div>
-        <label class="tgl"><input type="checkbox" id="setting-brake-fade" checked><span></span></label></div>
+        <label class="tgl"><input type="checkbox" id="setting-brake-fade"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">St&auml;rke des Fadings
           <small>&Uuml;ber 100&nbsp;% steigt die Heizrate, nicht der maximale Verlust.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-brake-fade-strength" min="0" max="2" step="0.05" value="0.6">
+          <input type="range" id="setting-brake-fade-strength" min="0" max="2" step="0.05" value="1">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-brake-fade-strength-val">100%</span>
         </div></div>
@@ -4752,12 +4816,12 @@
           Kurvengeschwindigkeit &ndash; auf der Geraden ist er ein Vorteil, in der Kurve ein
           Nachteil. Braucht eine Strecke mit mindestens drei Teilen und einen Gegner: ohne
           Streckenlayout wei&szlig; die App nicht, wer vor dir f&auml;hrt.</small></div>
-        <label class="tgl"><input type="checkbox" id="setting-dirtyair" checked><span></span></label></div>
+        <label class="tgl"><input type="checkbox" id="setting-dirtyair"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">St&auml;rke des Windschattens
           <small>100&nbsp;% sind h&ouml;chstens 18&nbsp;% Kurvengrip weniger.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-dirtyair-strength" min="0" max="2" step="0.05" value="0.6">
+          <input type="range" id="setting-dirtyair-strength" min="0" max="2" step="0.05" value="1">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-dirtyair-strength-val">100%</span>
         </div></div>
@@ -4769,6 +4833,13 @@
           <input type="range" id="phys-steerresp" min="0.5" max="3" step="0.05" value="2.4">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="phys-steerresp-val">100%</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Lenkwinkel-Kalibrierung<small>Für enge Strecken. Der Regler sitzt hinter dem Reibkreis: beim Anbremsen einer Kurve beschneidet der die Lenkung auf etwa 60 Prozent, und bei 200 Prozent erreicht dieser beschnittene Wunsch wieder den vollen Anschlag. Weiter als 45 Grad kann kein Wert lenken, das ist die Mechanik des Autos und nicht die App. Der Preis ist Feingefühl: je höher, desto früher liegt der Anschlag an und desto weniger sagt der letzte Teil des Sticks.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="setting-steer-calib" min="1" max="3" step="0.05" value="2">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-steer-calib-val">200%</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Beschleunigungsfaktor<small>Feinabstimmung, 1.0 = die eingestellte Zeit.</small></div>
         <div class="opt-slider">
@@ -4784,7 +4855,7 @@
           Mittelstellung und &auml;ndert nichts.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-brakebias" min="50" max="80" step="1" value="60">
+          <input type="range" id="setting-brakebias" min="50" max="80" step="1" value="58">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-brakebias-val">62% vorn</span>
         </div></div>
@@ -5585,7 +5656,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.4.34</span></span>
+    <span class="foot-ver">v<span id="app-version">0.4.35</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -6865,7 +6936,7 @@
     "Kurve, Blatt 1": "Curve, sheet 1",
     "Kurve, Blatt 2": "Curve, sheet 2",
     // Pro als Vorgabe (v0.5): geaenderte Preset-Texte, Gasfaktor, vier Reifen.
-    "Automatik, 2,6 s auf 100, voller Grip, kein Reifenverschleiß und kein Tankgewicht. Verzeihende Bremse, und die direkteste Lenkung von allen: voller Stick fordert 120 % des mechanischen Anschlags, man ist also schon vor dem Stickende am Limit. Zum Fahren ohne Nachdenken.": "Automatic, 2.6 s to 100, full grip, no tyre wear and no fuel weight. Forgiving brakes, and the most direct steering of all: full stick asks for 120 % of the mechanical lock, so you are at the limit before the end of the stick travel. For driving without thinking.",
+    "Automatik, 2,0 s auf 100, voller Grip, kein Reifenverschleiß und kein Tankgewicht. Die Bremse steht am Anschlag, also der kürzeste Bremsweg von allen, und die Lenkkalibrierung auf 250 Prozent: der volle Einschlag liegt schon bei einem Viertel Stick an. 50 Abgänge erlaubt, kein Schaden. Zum Fahren ohne Nachdenken.": "Automatic, 2.0 s to 100, full grip, no tyre wear and no fuel weight. The brake is at its stop, so the shortest braking distance of them all, and steering calibration at 250 percent: full lock arrives at a quarter of stick travel. 50 departures allowed, no damage. For driving without thinking.",
     "Von Hand schalten, 2,4 s auf 100, stärkster Reifenverschleiß, volles Tankgewicht, die am feinsten dosierbare Lenkung (52 % des Anschlags bei vollem Stick, man muss also weit ziehen) und die kürzeste Bremse. Das Ausrollen ist kurz, weil der Luftwiderstand hier die größte Einzelkraft ist.": "Manual shifting, 2.4 s to 100, the strongest tyre wear, full fuel weight, the most finely metered steering (52 % of the lock at full stick, so you have to pull a long way) and the shortest braking. The coast-down is short because drag is the largest single force here.",
     "Gasfaktor": "Throttle factor",
     "Faktor auf das Motorbyte, das zum Auto geht. Das Byte ist Tempo geteilt durch Simulations-Höchstgeschwindigkeit; bei 100 % bekommt das Auto also erst volle Leistung, wenn die Simulation ihre Höchstgeschwindigkeit erreicht hat, und das dauert gemessen fast 25 Sekunden Vollgas. Über 100 % erreicht es die volle Leistung früher, ohne dass der Tacho anders skaliert. Das ist auch ehrlicher als es klingt: das Modellauto fährt real 5,9 km/h, egal was die Simulation glaubt – dieser Faktor ist die Abbildung zwischen beidem, und dass er früher genau 1 war, war eine Annahme und keine Messung.": "Factor applied to the motor byte that goes to the car. The byte is speed divided by the simulated top speed, so at 100 % the car only gets full power once the simulation has reached its top speed – and that takes a measured 25 seconds of full throttle. Above 100 % it reaches full power sooner without the speedometer scaling differently. That is also more honest than it sounds: the model car really does 5.9 km/h whatever the simulation believes – this factor is the mapping between the two, and the fact that it used to be exactly 1 was an assumption, not a measurement.",
@@ -6874,7 +6945,7 @@
     "Reifenverschleiß, Reifentemperatur, Bremstemperatur": "Tyre wear, tyre temperature, brake temperature",
     "Wettersimulation": "Weather simulation",
     "Alles hier schreibt rohe Bytes zum Auto und liest rohe Bytes zurück. Das ist Werkbank und kein Merkmal: die Pakete tragen gültige Prüfsummen, aber was das Auto mit einem selbst zusammengesetzten Paket macht, ist nicht vorhersagbar. Zum Fahren wird nichts davon gebraucht.": "Everything here writes raw bytes to the car and reads raw bytes back. This is a workbench, not a feature: the packets carry valid checksums, but what the car does with a hand-assembled packet is not predictable. None of it is needed for driving.",
-    "Automatik, 2,6 s auf 100, Reifen und Tankgewicht wirken zur Hälfte. Die Lenkung ist so direkt wie bei Arcade (120 % des Anschlags bei vollem Stick), in der Bremse ist aber noch Reserve.": "Automatic, 2.6 s to 100, tyres and fuel weight at half effect. The steering is as direct as in Arcade (120 % of the lock at full stick), but there is still reserve in the brakes.",
+    "Automatik, 2,6 s auf 100, voller Grip, kein Reifenverschleiß und kein Tankgewicht. Lenkkalibrierung 200 Prozent, damit auch enge Strecken gehen – der volle Einschlag liegt bei etwa einem Drittel Stick an. Fading und Windschatten sind aus; sie stehen ab GT3 zur Verfügung.": "Automatic, 2.6 s to 100, full grip, no tyre wear and no fuel weight. Steering calibration 200 percent so that tight tracks work too – full lock arrives at about a third of stick travel. Fade and dirty air are off; they are available from GT3 upwards.",
     "Crash-Schwelle": "Crash threshold",
     "Wie weit die Bewegungsbytes 1 und 3 vom gleitenden Mittel abweichen müssen, damit ein Stoß als Crash gilt. Niedriger heißt empfindlicher: schon ein Rempler zählt. Höher heißt, dass nur ein echter Einschlag zählt. 40 ist der Wert, mit dem die Erkennung gebaut und geprüft wurde – stand bis v0.5 als Konstante im Code, war also eine Einstellung, die niemand einstellen konnte.": "How far the motion bytes 1 and 3 must deviate from the running mean for a jolt to count as a crash. Lower means more sensitive: even a nudge counts. Higher means only a real impact counts. 40 is the value the detection was built and tested with – it was a constant in the code until v0.5, so it was a setting nobody could set.",
     "L3 (linker Stick drücken)": "L3 (press left stick)",
@@ -6921,6 +6992,8 @@
     "Strecken werden lokal im Browser gespeichert (localStorage).": "Tracks are stored locally in the browser (localStorage).",
     "Im Ausdruck-Modus meldet das Start/Ziel-Blatt 0x01. Im Bahn-Modus melden die Schienen 0x02 Gerade, 0x03 Linkskurve, 0x04 Rechtskurve, 0x05 und 0x06 Haarnadel, 0x0a Start/Ziel, 0x00 abseits der Bahn. Dieselbe Zahl bedeutet je Modus etwas anderes – wer Codes vergleicht, muss den Modus mitnennen.": "In printed-pattern mode the start/finish sheet reports 0x01. In rail mode the rails report 0x02 straight, 0x03 left-hand corner, 0x04 right-hand corner, 0x05 and 0x06 hairpin, 0x0a start/finish, 0x00 off the track. The same number means something different in each mode – whoever compares codes has to name the mode as well.",
     "fahr über ein beliebiges ausgedrucktes Muster, hier steht sofort, welchen Code das Auto meldet. Achtung auf den Modus: ein Ausdruck meldet aus der Ausdruck-Tabelle, dort ist 0x01 Start/Ziel. Die Werte 0x0a Start/Ziel, 0x02 Gerade, 0x03 Linkskurve, 0x04 Rechtskurve, 0x05 und 0x06 Haarnadel gehören zur Bahn-Tabelle; alles andere ist unbestätigt. Trag hier den Code ein, den dein gedrucktes Boxen-Muster tatsächlich auslöst – 0x08 war nie ein reales Signal und ist deshalb nicht mehr die Vorgabe.": "drive over any printed pattern and it says right here which code the car reports. Mind the mode: a printout reports from the printed-pattern table, where 0x01 is start/finish. The values 0x0a start/finish, 0x02 straight, 0x03 left-hand corner, 0x04 right-hand corner, 0x05 and 0x06 hairpin belong to the rail table; everything else is unconfirmed. Enter the code your printed pit pattern actually triggers here – 0x08 was never a real signal and is therefore no longer the default.",
+    "Lenkwinkel-Kalibrierung": "Steering angle calibration",
+    "Für enge Strecken. Der Regler sitzt hinter dem Reibkreis: beim Anbremsen einer Kurve beschneidet der die Lenkung auf etwa 60 Prozent, und bei 200 Prozent erreicht dieser beschnittene Wunsch wieder den vollen Anschlag. Weiter als 45 Grad kann kein Wert lenken, das ist die Mechanik des Autos und nicht die App. Der Preis ist Feingefühl: je höher, desto früher liegt der Anschlag an und desto weniger sagt der letzte Teil des Sticks.": "For tight tracks. The slider sits behind the friction circle: braking into a corner cuts steering to about 60 percent, and at 200 percent that cut request reaches full lock again. No value can steer further than 45 degrees – that is the mechanics of the car, not the app. The price is finesse: the higher it goes, the earlier full lock is reached and the less the last part of the stick says.",
   };
 
   // ============================================================================
@@ -8255,6 +8328,11 @@
         // Track-surface grip, SEPARATE from the friction circle on purpose: the circle is
         // driving dynamics, this is what the road is doing. Set from the weather/tyre pair.
         gripScale: 1.0,
+        // Lenkwinkel-Kalibrierung. Sie sitzt HINTER dem Reibkreis: 1,0 ist die
+        // kalibrierte Fassung, 2,0 laesst einen um die Haelfte beschnittenen Lenkwunsch
+        // wieder den vollen mechanischen Anschlag erreichen. Gedeckelt bleibt sie ohnehin -
+        // Byte 7 kann nicht mehr als 127 tragen, und das ist der Anschlag des Autos.
+        steerCalib: 1.0,
         aquaplaning: 0,       // 0 = dry grip, 1 = slicks in standing water
 
         // ---- Longitudinal weight transfer ----
@@ -8452,6 +8530,10 @@
         gLat: 0, gLong: 0, // for the G plot
         engineLoad: 0,        // pedal opening actually applied — drives sound VOLUME
         dampedSteering: 0,
+        // Der Lenkwunsch NACH Reibkreis und Aquaplaning, aber VOR der Kalibrierung und vor
+        // dem Deckel. Ohne ihn ist nicht messbar, wie viel die Kalibrierung ueberhaupt
+        // zurueckholt - und was sich nicht messen laesst, kann man nicht einstellen.
+        steerDemand: 0,
         isShifting: false,
         absActive: false,
         lastAbsRumble: 0,
@@ -9131,8 +9213,17 @@
       // Nur bei Fahrt: im Stand zieht nichts, und ein Auto, das an der Box von selbst
       // einschlaegt, sieht nach einem Servofehler aus.
       const zug = st.tyrePull * Math.min(1, Math.abs(st.speedKmh) / (cfg.topSpeedKmh * 0.15));
+      // Die Kalibrierung steht HINTER dem Reibkreis und dem Aquaplaning, und das ist ihr
+      // ganzer Sinn: beim Anbremsen einer engen Kurve liegt steerGrip bei 0,5 bis 0,6, und
+      // dann kommen am Auto nur 60 Prozent Einschlag an - genau im Moment, in dem man ihn
+      // braucht. Bei 2,0 erreicht ein halbierter Wunsch wieder den vollen Anschlag.
+      //
+      // Der Deckel bleibt: |servoAngle| <= 1 wird zu Byte 7 = 127, dem Maximum des
+      // vorzeichenbehafteten Bereichs. Die 45 Grad sind eine Grenze des Autos, nicht der App,
+      // und kein Reglerwert kann darueber hinaus.
+      st.steerDemand = this.state.dampedSteering * st.aquaFactor * st.steerGrip;
       this.outputs.servoAngle = Math.max(-1, Math.min(1,
-        this.state.dampedSteering * st.aquaFactor * st.steerGrip + zug));
+        st.steerDemand * cfg.steerCalib + zug));
 
       // Values for the G plot. Lateral force rises with steer angle and speed; longitudinal
       // is the lagged demand, which is what the body actually feels.
@@ -9668,7 +9759,7 @@
   // Todeszone, die in diesem Projekt schon fuenf Ladeabbrueche gekostet hat. In einer
   // zusammengefuegten IIFE ist das Ende einer Datei nicht das Ende des Moduls.
   function steerRespPct(v) { return Math.round(v / STEER_RESP_REF * 100); }
-  ['phys-steerresp', 'phys-accel'].forEach(id => {
+  ['phys-steerresp', 'phys-accel', 'setting-steer-calib'].forEach(id => {
     const input = $(id);
     const readout = $(id + '-val');
     const apply = () => {
@@ -9685,6 +9776,13 @@
         $('phys-steerresp-val').textContent = steerRespPct(v) + '%';
       }
       if (id === 'phys-accel') physEngine.config.accelerationFactor = v;
+      if (id === 'setting-steer-calib') {
+        physEngine.config.steerCalib = v;
+        // Als Prozent, weil der Wert ein Faktor auf eine Anforderung ist und kein Winkel.
+        // Ein Grad-Wert waere hier die falsche Einheit und die naechste Verwechslung: der
+        // Winkel ist immer auf 45 Grad gedeckelt, egal was hier steht.
+        readout.textContent = Math.round(v * 100) + '%';
+      }
       markDrivetrainChartsDirty();
     };
     input.addEventListener('input', apply);
@@ -9827,14 +9925,38 @@
   }
 
 
+  // Einen Wert schreiben UND, wenn er sich geaendert hat, die Anzeige 1 px nach unten
+  // setzen. 80 ms, dann zurueck: eine Anzeige mit Masse setzt sich kurz, ein Textfeld nicht.
+  //
+  // DER VERGLEICH IST DER GANZE PUNKT. Der Schirm wird jeden Takt neu geschrieben; ohne ihn
+  // bekaeme jede Ziffer in jedem Frame die Klasse und zuckte dauernd. Ein MutationObserver
+  // haette dasselbe Problem gehabt: textContent auf denselben Wert zu setzen ersetzt den
+  // Textknoten trotzdem und feuert.
+  //
+  // Und NICHT am Tacho. Der aendert sich jeden Takt - dort ist der Versatz ein Dauerzittern
+  // und keine Rueckmeldung. Verwendet wird sie fuer die Werte, die SPRINGEN: Gang,
+  // Rundenzahl, Rundenzeiten.
+  function schreibeWert(el, txt) {
+    if (!el) return;
+    const neu = String(txt);
+    if (el.textContent === neu) return;
+    el.textContent = neu;
+    // Die Klasse zweimal in Folge zu setzen startet die Animation nicht neu - sie muss
+    // erst weg sein. Der Neustart des Bildaufbaus (offsetWidth) ist die uebliche und
+    // billigste Art, das zu erzwingen.
+    el.classList.remove('gt3-tick');
+    void el.offsetWidth;
+    el.classList.add('gt3-tick');
+  }
+
   function updateRaceScreen(st, out) {
     const gearEl = $('race-gear');
     if (!gearEl) return;
     // Zahl und Kennzeichnung getrennt, weil die Zahl mittig bleiben muss. textContent auf
     // den Knopf zu schreiben wuerde beide Kindknoten loeschen.
     const nEl = $('race-gear-n');
-    if (nEl) nEl.textContent = gearLabel(st);
-    else gearEl.textContent = gearLabel(st);
+    if (nEl) schreibeWert(nEl, gearLabel(st));
+    else schreibeWert(gearEl, gearLabel(st));
     const mEl = $('race-gear-m');
     if (mEl) mEl.textContent = physEngine.config.autoShift ? '' : 'M';
     $('race-rpm').textContent = Math.round(st.rpm);
@@ -10080,14 +10202,14 @@
       : (dashLapStart !== null ? formatLapTime(Date.now() - dashLapStart) : '\u2013');
     const laps = raceLapTimes.length ? raceLapTimes : dashLapTimes.map((ms, i) => ({ lap: i + 1, ms }));
     const best = laps.length ? Math.min(...laps.map(l => l.ms)) : null;
-    $('race-lap-best').textContent = best === null ? '\u2013' : formatLapTime(best);
+    schreibeWert($('race-lap-best'), best === null ? '\u2013' : formatLapTime(best));
     // Mode and remaining time/laps belong on the dash: that is where they are read.
     const modeEl = $('race-clock');
     if (modeEl && raceState !== 'racing') {
       modeEl.textContent = raceState === 'finished' ? 'beendet' : RACE_MODES[raceMode].label;
     }
-    $('race-lap-last').textContent = laps.length
-      ? formatLapTime(laps[laps.length - 1].ms) : '\u2013';
+    schreibeWert($('race-lap-last'), laps.length
+      ? formatLapTime(laps[laps.length - 1].ms) : '\u2013');
     // Das Ziel gehoert in dieselbe Kachel: "Runde 3" allein sagt nicht, ob noch 17 oder
     // noch 2 kommen. Bei Endurance und Qualifying ist das Ziel eine ZEIT, also steht dort
     // die verbleibende Zeit - eine Rundenzahl anzuschreiben, die es in diesem Modus nicht
@@ -12905,6 +13027,21 @@
   function startRaceCountdown() {
     // launchGhosts() is called from the green-light step below, not here.
     if (raceState !== 'idle' && raceState !== 'finished') return; // ignore while armed/racing
+    // EINSCHALTRAMPE: der Schirm zieht in 300 ms von schwarz auf Wert hoch, wie ein TFT beim
+    // Einschalten. Hier und nicht in raceGreen(), weil der Schirm mit dem Knopfdruck
+    // "angeht" und nicht erst bei Gruen - im Countdown will man ihn schon lesen.
+    //
+    // Die Klasse wird nach 320 ms wieder abgenommen, 20 ms nach dem Ende der Animation: sonst
+    // startet sie beim naechsten Rennstart nicht neu, weil sie schon dransteht.
+    {
+      const schirm = $('race-dash');
+      if (schirm) {
+        schirm.classList.remove('gt3-warm');
+        void schirm.offsetWidth;
+        schirm.classList.add('gt3-warm');
+        setTimeout(() => schirm.classList.remove('gt3-warm'), 320);
+      }
+    }
     // Starting conditions, applied before the lights: weather first, because the tyre
     // choice follows from it, then the tank, then the pit-stop counter.
     setWeather(raceWxStart);
@@ -18438,6 +18575,12 @@
         }
         return { steerGrip: st.steerGrip, gripLong: st.gripLong,
                  loadFront: st.loadFront, longUse: st.longUse,
+                 // Der UEBERTRAGENE Winkel und der Wunsch davor. Ohne beide muesste die
+                 // Messung nachrechnen, was das Modell rechnet - und wuerde jeden Fehler
+                 // darin mitmachen.
+                 winkel: e.outputs.servoAngle,
+                 wunsch: st.steerDemand,
+                 grad: Math.round(Math.abs(e.outputs.servoAngle) * 45),
                  // Die vier Radlasten, Reihenfolge VL, VR, HL, HR. Ohne sie ist die
                  // Vierradverlagerung nicht pruefbar.
                  load4: st.load4 ? st.load4.slice() : null,
@@ -21359,6 +21502,131 @@
     }
   });
 
+  // ---- Lenkwinkel-Kalibrierung ----
+  //
+  // DREI Aussagen, und die erste ist die wichtigste: der Deckel muss halten. Byte 7 traegt
+  // round(winkel * 127) in einem VORZEICHENBEHAFTETEN Byte - ein Winkel ueber 1,0 wuerde
+  // beim Umbruch als Einschlag in die ANDERE Richtung ankommen. Ein Regler, der das Auto in
+  // die falsche Richtung lenken kann, ist schlimmer als kein Regler.
+  stAdd('Lenkkalibrierung: gedeckelt, monoton, bei 1,0 wirkungslos', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.physSteerGrip) {
+      return { skip: true, mass: 'physSteerGrip nicht vorhanden' };
+    }
+    const messe = (kalib, lenk) => OMEGA_TEST.physSteerGrip({
+      kmh: 60, throttle: 0, brake: 1, steering: lenk, patch: { steerCalib: kalib } });
+    const proben = [1, 1.5, 2, 2.5, 3].map(k => messe(k, 1));
+    if (proben[0].winkel === undefined) return { skip: true, mass: 'winkel nicht herausgegeben' };
+    let gedeckelt = true, monoton = true;
+    for (let i = 0; i < proben.length; i++) {
+      if (Math.abs(proben[i].winkel) > 1 + 1e-9) gedeckelt = false;
+      if (i && proben[i].winkel < proben[i - 1].winkel - 1e-9) monoton = false;
+    }
+    // Bei 1,0 muss der uebertragene Winkel genau der Wunsch sein - kein stiller Aufschlag.
+    const neutral = Math.abs(proben[0].winkel - proben[0].wunsch) < 1e-9;
+    // Und die Kalibrierung muss WIRKEN: bei 60 km/h unter Bremsen beschneidet der Reibkreis
+    // auf etwa 35 Grad, und 2,0 muss den vollen Anschlag zurueckholen.
+    const holt = proben[0].grad < 44 && messe(2, 1).grad === 45;
+    // Auch in der Gegenrichtung, und mit demselben Betrag: eine Kalibrierung, die nur nach
+    // einer Seite wirkt, waere ein Lenkoffset.
+    const links = messe(2, -1);
+    const spiegel = Math.abs(links.winkel + messe(2, 1).winkel) < 1e-9;
+    const ok = gedeckelt && monoton && neutral && holt && spiegel;
+    return { ok, mass: proben.map((p, i) => [1, 1.5, 2, 2.5, 3][i].toFixed(1) + 'x '
+      + p.grad + '\u00b0').join('  ')
+      + ' | Wunsch ' + proben[0].wunsch.toFixed(3)
+      + (gedeckelt ? '' : ' | DECKEL OFFEN') + (monoton ? '' : ' | NICHT MONOTON')
+      + (neutral ? '' : ' | 1,0 NICHT NEUTRAL') + (holt ? '' : ' | HOLT NICHTS ZURUECK')
+      + (spiegel ? '' : ' | NICHT GESPIEGELT') };
+  });
+
+  // ---- Die Markup-Vorgaben MUESSEN die Voreinstellung Pro sein ----
+  //
+  // Pro ist die Vorgabe. Steht ein Regler beim Laden anders, zeigt die Legende "eigene
+  // Abstimmung", ohne dass jemand etwas verstellt hat - und gefahren wird eine Mischung, die
+  // in keiner Voreinstellung steht.
+  //
+  // Das ist genau einmal passiert, und zwar unbemerkt: das Markup stand Wert fuer Wert auf
+  // dem ALTEN Pro, siebzehn Abweichungen. Zwei Orte fuer eine Aussage laufen auseinander,
+  // sobald einer nachgezogen wird - und ein Vorgabewert sagt beim Ansehen nicht, aus welcher
+  // Voreinstellung er stammt.
+  stAdd('Markup-Vorgaben sind die Voreinstellung Pro', () => {
+    if (!window.__presetValues) return { skip: true, mass: 'presetValues nicht erreichbar' };
+    const soll = window.__presetValues('pro');
+    if (!soll) return { skip: true, mass: 'Voreinstellung pro nicht vorhanden' };
+    const ab = [];
+    for (const k of Object.keys(soll)) {
+      const el = $(k);
+      if (!el) { ab.push(k + ': nicht im Dokument'); continue; }
+      // Der VORGABEWERT und nicht der aktuelle: defaultValue und defaultChecked stehen fuer
+      // das, was im Markup steht. el.value waere der Stand nach jedem Reglerzug dieser
+      // Sitzung, und der Test wuerde dann messen, was der Nutzer gerade tut.
+      if (el.type === 'checkbox') {
+        if (el.defaultChecked !== !!soll[k]) {
+          ab.push(k + ': Markup ' + el.defaultChecked + ', Pro ' + soll[k]);
+        }
+      } else if (Math.abs(parseFloat(el.defaultValue) - parseFloat(soll[k])) > 1e-9) {
+        ab.push(k + ': Markup ' + el.defaultValue + ', Pro ' + soll[k]);
+      }
+    }
+    return { ok: ab.length === 0,
+             mass: ab.length === 0 ? Object.keys(soll).length + ' Vorgaben stimmen mit Pro'
+                                   : ab.length + ' Abweichungen \u2013 ' + ab.slice(0, 3).join('; ') };
+  });
+
+  // ---- Ziffernversatz: nur bei WECHSEL, nicht in jedem Frame ----
+  stAdd('Ziffernversatz feuert nicht bei unveraendertem Wert', async () => {
+    const el = $('race-gear-n') || $('race-gear');
+    if (!el) return { skip: true, mass: 'Gangfeld nicht im Dokument' };
+    let treffer = 0;
+    const beob = new MutationObserver(muts => {
+      for (const m of muts) {
+        if (m.attributeName === 'class' && el.classList.contains('gt3-tick')) treffer++;
+      }
+    });
+    beob.observe(el, { attributes: true, attributeFilter: ['class'] });
+    const vorher = el.textContent;
+    await new Promise(r => setTimeout(r, 600));
+    beob.disconnect();
+    const geblieben = el.textContent === vorher;
+    if (!geblieben) {
+      // Der Gang HAT sich geaendert - dann sagt der Test nichts, und das ist ehrlicher als
+      // ein Urteil auf einer Messung, deren Voraussetzung nicht galt.
+      return { skip: true, mass: 'Gang wechselte waehrend der Messung (' + vorher
+                                 + ' -> ' + el.textContent + ')' };
+    }
+    return { ok: treffer === 0,
+             mass: geblieben ? 'Gang "' + vorher + '" unveraendert, ' + treffer
+                               + ' Versatz-Auslösungen in 600 ms'
+                             : 'Gang wechselte' };
+  });
+
+  // ---- Deckglas und Einschaltrampe fangen keine Tipps ab ----
+  //
+  // Fast jede Kachel im Cockpit ist antippbar. Eine Scheibe ohne pointer-events: none macht
+  // die ganze Anzeige toter als vorher - und auf einem Bildschirmfoto sieht man das nicht.
+  stAdd('Deckglas und Einschaltrampe sind klickdurchlaessig', () => {
+    const g = document.querySelector('.gt3');
+    if (!g) return { skip: true, mass: 'Cockpit nicht im Dokument' };
+    const schichten = [['::before', 'Einschaltrampe'], ['::after', 'Deckglas']];
+    const schlecht = [];
+    for (const [pseudo, name] of schichten) {
+      const cs = getComputedStyle(g, pseudo);
+      if (cs.content === 'none') { schlecht.push(name + ': nicht vorhanden'); continue; }
+      if (cs.pointerEvents !== 'none') schlecht.push(name + ': pointerEvents ' + cs.pointerEvents);
+    }
+    // Und der Blendreflex ueber der Lichtreihe, in derselben Ecke wie der Vollbildknopf.
+    const sh = document.querySelector('.gt3-shift');
+    if (sh) {
+      const cs = getComputedStyle(sh, '::after');
+      if (cs.content !== 'none' && cs.pointerEvents !== 'none') {
+        schlecht.push('Blendreflex: pointerEvents ' + cs.pointerEvents);
+      }
+    }
+    return { ok: schlecht.length === 0,
+             mass: schlecht.length === 0 ? 'alle drei Schichten durchlaessig'
+                                         : schlecht.join('; ') };
+  });
+
   // ---- Block 4.4: Reifendruck ----
   // Monoton, ueber den ganzen Reglerbereich. Ein Regler, der in der Mitte umkehrt, ist keine
   // Abstimmung, sondern eine Falle.
@@ -23193,18 +23461,65 @@
     arcade: {
       label: 'Arcade',
       kurz: 'Der ursprüngliche Sim-Modus',
+      text: 'Automatik, 2,0 s auf 100, voller Grip, kein Reifenverschleiß und kein '
+          + 'Tankgewicht. Die Bremse steht am Anschlag, also der kürzeste Bremsweg von '
+          + 'allen, und die Lenkkalibrierung auf 250 Prozent: der volle Einschlag liegt '
+          + 'schon bei einem Viertel Stick an. 50 Abgänge erlaubt, kein Schaden. Zum '
+          + 'Fahren ohne Nachdenken.',
+      v: { 'setting-grip': 1.0, 'setting-brakepower': 1.5, 'setting-autoshift': true,
+           'setting-zero-to-top': 2.0, 'setting-coast-drag': 0.4, 'setting-fuelweight': 0,
+           'setting-tyres': 0, 'phys-steerresp': 2.6, 'setting-brakebias': 56,
+           // Die engste Lenkung von allen: bei 250 Prozent liegt der volle Anschlag schon
+           // bei einem Viertel Stick an. Weiter als 45 Grad kommt auch das nicht - das ist
+           // die Mechanik des Autos.
+           'setting-steer-calib': 2.5,
+           'phys-accel': 1.2,
+           // crash-count ist ein INDEX in [1,2,3,4,5,10,20,50]: 7 = fuenfzig Crashs.
+           'setting-fuel-drain': 0, 'setting-crash-count': 7,
+           'setting-crash-damage': false,
+           // Hoehere Schwelle heisst NACHSICHTIGER: gemeldet wird erst ueber ihr.
+           'setting-crash-threshold': 60,
+           'setting-repair-time': 2,
+           // Block 4: Bremsfading, Windschatten, Reifenasymmetrie und -druck.
+           'setting-brake-fade': false,
+           'setting-brake-fade-strength': 1.0,
+           'setting-dirtyair': false,
+           'setting-dirtyair-strength': 1.0,
+           'setting-tyre-asym': false,
+           'setting-tyre-pressure': 1.8,
+           // Gasfaktor: wie frueh das Auto volle Motorleistung bekommt. 1,0 ist
+           // das Byte genau proportional zum Tacho, also die kalibrierte Fassung.
+           'setting-topspeed': 2.0 },
+    },
+    pro: {
+      label: 'Pro',
+      kurz: 'Halb so weit zwischen Arcade und GT3',
       text: 'Automatik, 2,6 s auf 100, voller Grip, kein Reifenverschleiß und kein '
-          + 'Tankgewicht. Verzeihende Bremse, und die direkteste Lenkung von allen: '
-          + 'voller Stick fordert 120 % des mechanischen Anschlags, man ist also schon '
-          + 'vor dem Stickende am Limit. Zum Fahren ohne Nachdenken.',
+          + 'Tankgewicht. Lenkkalibrierung 200 Prozent, damit auch enge Strecken gehen '
+          + '– der volle Einschlag liegt bei etwa einem Drittel Stick an. Fading und '
+          + 'Windschatten sind aus; sie stehen ab GT3 zur Verfügung.',
+      // AUTOMATIK, obwohl Pro sonst die Zwischenstufe zu GT3 ist. Pro ist seit v0.5 die
+      // Vorgabe, und wer beim ersten Start von Hand schalten muss und es nicht weiss, bleibt
+      // im 1. Gang haengen - dann ist das Auto genau so traege, wie gemeldet wurde. Von Hand
+      // schalten steht ab GT3 zur Verfuegung, und der Knopf RB schaltet es jederzeit um.
       v: { 'setting-grip': 1.0, 'setting-brakepower': 1.4, 'setting-autoshift': true,
+           // 2,6 statt 3,2 s: gemessen brauchte das Motorbyte mit den alten Werten 24,9 s
+           // Vollgas bis 90 %. Pro ist die Vorgabe und muss sich wie ein Auto anfuehlen,
+           // nicht wie ein Anfahrversuch.
            'setting-zero-to-top': 2.6, 'setting-coast-drag': 0.6, 'setting-fuelweight': 0,
            'setting-tyres': 0, 'phys-steerresp': 2.4, 'setting-brakebias': 58,
-           // crash-count ist ein INDEX in [1,2,3,4,5,10,20,50]: 4 = fuenf Crashs.
+           // Lenkkalibrierung 200 Prozent: der Reibkreis beschneidet den Einschlag beim
+           // Anbremsen auf etwa 60 Prozent, und das holt ihn zurueck. Gemessen bei 60 km/h
+           // unter Bremsen: 35 Grad ohne, volle 45 Grad ab einem Drittel Stick mit.
+           'setting-steer-calib': 2.0,
+           'phys-accel': 1.0,
            'setting-fuel-drain': 0, 'setting-crash-count': 4,
            'setting-crash-damage': false,
+           'setting-crash-threshold': 40,
            'setting-repair-time': 4,
-           // Block 4: Bremsfading, Windschatten, Reifenasymmetrie und -druck.
+           // Block 4: Bremsfading, Windschatten, Reifenasymmetrie und -druck. Bei Pro AUS -
+           // es ist die Vorgabe, und die drei Effekte gehoeren zu den Klassen, die sich
+           // ausdruecklich schwerer fahren.
            'setting-brake-fade': false,
            'setting-brake-fade-strength': 1.0,
            'setting-dirtyair': false,
@@ -23215,36 +23530,6 @@
            // das Byte genau proportional zum Tacho, also die kalibrierte Fassung.
            'setting-topspeed': 1.8 },
     },
-    pro: {
-      label: 'Pro',
-      kurz: 'Halb so weit zwischen Arcade und GT3',
-      text: 'Automatik, 2,6 s auf 100, Reifen und Tankgewicht wirken zur Hälfte. '
-          + 'Die Lenkung ist so direkt wie bei Arcade (120 % des Anschlags bei vollem '
-          + 'Stick), in der Bremse ist aber noch Reserve.',
-      // AUTOMATIK, obwohl Pro sonst die Zwischenstufe zu GT3 ist. Pro ist seit v0.5 die
-      // Vorgabe, und wer beim ersten Start von Hand schalten muss und es nicht weiss, bleibt
-      // im 1. Gang haengen - dann ist das Auto genau so traege, wie gemeldet wurde. Von Hand
-      // schalten steht ab GT3 zur Verfuegung, und der Knopf RB schaltet es jederzeit um.
-      v: { 'setting-grip': 0.85, 'setting-brakepower': 1.0, 'setting-autoshift': true,
-           // 2,6 statt 3,2 s und Lenkansprechen 2,4 statt 1,8: gemessen brauchte das
-           // Motorbyte mit den alten Werten 24,9 s Vollgas bis 90 %. Pro ist die Vorgabe und
-           // muss sich wie ein Auto anfuehlen, nicht wie ein Anfahrversuch.
-           'setting-zero-to-top': 2.6, 'setting-coast-drag': 1.0, 'setting-fuelweight': 0.5,
-           'setting-tyres': 0.5, 'phys-steerresp': 2.4, 'setting-brakebias': 60,
-           'setting-fuel-drain': 1.5, 'setting-crash-count': 2,
-           'setting-crash-damage': true,
-           'setting-repair-time': 10,
-           // Block 4: Bremsfading, Windschatten, Reifenasymmetrie und -druck.
-           'setting-brake-fade': true,
-           'setting-brake-fade-strength': 0.6,
-           'setting-dirtyair': true,
-           'setting-dirtyair-strength': 0.6,
-           'setting-tyre-asym': true,
-           'setting-tyre-pressure': 1.8,
-           // Gasfaktor: wie frueh das Auto volle Motorleistung bekommt. 1,0 ist
-           // das Byte genau proportional zum Tacho, also die kalibrierte Fassung.
-           'setting-topspeed': 1.6 },
-    },
     gt3: {
       label: 'GT3',
       kurz: 'An einem echten GT3 kalibriert',
@@ -23254,6 +23539,12 @@
       v: { 'setting-grip': 0.72, 'setting-brakepower': 0.85, 'setting-autoshift': false,
            'setting-zero-to-top': 3.2, 'setting-coast-drag': 1.25, 'setting-fuelweight': 1.0,
            'setting-tyres': 2.0, 'phys-steerresp': 1.3, 'setting-brakebias': 62,
+           // Lenkkalibrierung 1,0 heisst: der uebertragene Winkel ist genau der gerechnete.
+           // Die Klassen ab GT3 sind gegen gemessenes Verhalten abgestimmt, und eine
+           // Kalibrierung darauf waere ein Aufschlag auf eine Messung.
+           'setting-steer-calib': 1.0,
+           'phys-accel': 1.0,
+           'setting-crash-threshold': 30,
            'setting-fuel-drain': 3.0, 'setting-crash-count': 5,
            'setting-crash-damage': true,
            'setting-repair-time': 20,
@@ -23277,6 +23568,12 @@
       v: { 'setting-grip': 0.82, 'setting-brakepower': 1.0, 'setting-autoshift': false,
            'setting-zero-to-top': 4.4, 'setting-coast-drag': 1.15, 'setting-fuelweight': 1.0,
            'setting-tyres': 1.5, 'phys-steerresp': 1.5, 'setting-brakebias': 61,
+           // Lenkkalibrierung 1,0 heisst: der uebertragene Winkel ist genau der gerechnete.
+           // Die Klassen ab GT3 sind gegen gemessenes Verhalten abgestimmt, und eine
+           // Kalibrierung darauf waere ein Aufschlag auf eine Messung.
+           'setting-steer-calib': 1.1,
+           'phys-accel': 1.0,
+           'setting-crash-threshold': 35,
            'setting-fuel-drain': 2.2, 'setting-crash-count': 5,
            'setting-crash-damage': true,
            'setting-repair-time': 16,
@@ -23302,6 +23599,12 @@
       v: { 'setting-grip': 0.95, 'setting-brakepower': 1.45, 'setting-autoshift': false,
            'setting-zero-to-top': 2.4, 'setting-coast-drag': 1.6, 'setting-fuelweight': 1.0,
            'setting-tyres': 2.0, 'phys-steerresp': 1.05, 'setting-brakebias': 66,
+           // Lenkkalibrierung 1,0 heisst: der uebertragene Winkel ist genau der gerechnete.
+           // Die Klassen ab GT3 sind gegen gemessenes Verhalten abgestimmt, und eine
+           // Kalibrierung darauf waere ein Aufschlag auf eine Messung.
+           'setting-steer-calib': 1.0,
+           'phys-accel': 1.0,
+           'setting-crash-threshold': 25,
            'setting-fuel-drain': 4.5, 'setting-crash-count': 3,
            'setting-crash-damage': true,
            'setting-repair-time': 24,

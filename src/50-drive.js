@@ -345,7 +345,7 @@
   // Todeszone, die in diesem Projekt schon fuenf Ladeabbrueche gekostet hat. In einer
   // zusammengefuegten IIFE ist das Ende einer Datei nicht das Ende des Moduls.
   function steerRespPct(v) { return Math.round(v / STEER_RESP_REF * 100); }
-  ['phys-steerresp', 'phys-accel'].forEach(id => {
+  ['phys-steerresp', 'phys-accel', 'setting-steer-calib'].forEach(id => {
     const input = $(id);
     const readout = $(id + '-val');
     const apply = () => {
@@ -362,6 +362,13 @@
         $('phys-steerresp-val').textContent = steerRespPct(v) + '%';
       }
       if (id === 'phys-accel') physEngine.config.accelerationFactor = v;
+      if (id === 'setting-steer-calib') {
+        physEngine.config.steerCalib = v;
+        // Als Prozent, weil der Wert ein Faktor auf eine Anforderung ist und kein Winkel.
+        // Ein Grad-Wert waere hier die falsche Einheit und die naechste Verwechslung: der
+        // Winkel ist immer auf 45 Grad gedeckelt, egal was hier steht.
+        readout.textContent = Math.round(v * 100) + '%';
+      }
       markDrivetrainChartsDirty();
     };
     input.addEventListener('input', apply);
@@ -504,14 +511,38 @@
   }
 
 
+  // Einen Wert schreiben UND, wenn er sich geaendert hat, die Anzeige 1 px nach unten
+  // setzen. 80 ms, dann zurueck: eine Anzeige mit Masse setzt sich kurz, ein Textfeld nicht.
+  //
+  // DER VERGLEICH IST DER GANZE PUNKT. Der Schirm wird jeden Takt neu geschrieben; ohne ihn
+  // bekaeme jede Ziffer in jedem Frame die Klasse und zuckte dauernd. Ein MutationObserver
+  // haette dasselbe Problem gehabt: textContent auf denselben Wert zu setzen ersetzt den
+  // Textknoten trotzdem und feuert.
+  //
+  // Und NICHT am Tacho. Der aendert sich jeden Takt - dort ist der Versatz ein Dauerzittern
+  // und keine Rueckmeldung. Verwendet wird sie fuer die Werte, die SPRINGEN: Gang,
+  // Rundenzahl, Rundenzeiten.
+  function schreibeWert(el, txt) {
+    if (!el) return;
+    const neu = String(txt);
+    if (el.textContent === neu) return;
+    el.textContent = neu;
+    // Die Klasse zweimal in Folge zu setzen startet die Animation nicht neu - sie muss
+    // erst weg sein. Der Neustart des Bildaufbaus (offsetWidth) ist die uebliche und
+    // billigste Art, das zu erzwingen.
+    el.classList.remove('gt3-tick');
+    void el.offsetWidth;
+    el.classList.add('gt3-tick');
+  }
+
   function updateRaceScreen(st, out) {
     const gearEl = $('race-gear');
     if (!gearEl) return;
     // Zahl und Kennzeichnung getrennt, weil die Zahl mittig bleiben muss. textContent auf
     // den Knopf zu schreiben wuerde beide Kindknoten loeschen.
     const nEl = $('race-gear-n');
-    if (nEl) nEl.textContent = gearLabel(st);
-    else gearEl.textContent = gearLabel(st);
+    if (nEl) schreibeWert(nEl, gearLabel(st));
+    else schreibeWert(gearEl, gearLabel(st));
     const mEl = $('race-gear-m');
     if (mEl) mEl.textContent = physEngine.config.autoShift ? '' : 'M';
     $('race-rpm').textContent = Math.round(st.rpm);
@@ -757,14 +788,14 @@
       : (dashLapStart !== null ? formatLapTime(Date.now() - dashLapStart) : '\u2013');
     const laps = raceLapTimes.length ? raceLapTimes : dashLapTimes.map((ms, i) => ({ lap: i + 1, ms }));
     const best = laps.length ? Math.min(...laps.map(l => l.ms)) : null;
-    $('race-lap-best').textContent = best === null ? '\u2013' : formatLapTime(best);
+    schreibeWert($('race-lap-best'), best === null ? '\u2013' : formatLapTime(best));
     // Mode and remaining time/laps belong on the dash: that is where they are read.
     const modeEl = $('race-clock');
     if (modeEl && raceState !== 'racing') {
       modeEl.textContent = raceState === 'finished' ? 'beendet' : RACE_MODES[raceMode].label;
     }
-    $('race-lap-last').textContent = laps.length
-      ? formatLapTime(laps[laps.length - 1].ms) : '\u2013';
+    schreibeWert($('race-lap-last'), laps.length
+      ? formatLapTime(laps[laps.length - 1].ms) : '\u2013');
     // Das Ziel gehoert in dieselbe Kachel: "Runde 3" allein sagt nicht, ob noch 17 oder
     // noch 2 kommen. Bei Endurance und Qualifying ist das Ziel eine ZEIT, also steht dort
     // die verbleibende Zeit - eine Rundenzahl anzuschreiben, die es in diesem Modus nicht

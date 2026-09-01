@@ -18,18 +18,65 @@
     arcade: {
       label: 'Arcade',
       kurz: 'Der ursprüngliche Sim-Modus',
+      text: 'Automatik, 2,0 s auf 100, voller Grip, kein Reifenverschleiß und kein '
+          + 'Tankgewicht. Die Bremse steht am Anschlag, also der kürzeste Bremsweg von '
+          + 'allen, und die Lenkkalibrierung auf 250 Prozent: der volle Einschlag liegt '
+          + 'schon bei einem Viertel Stick an. 50 Abgänge erlaubt, kein Schaden. Zum '
+          + 'Fahren ohne Nachdenken.',
+      v: { 'setting-grip': 1.0, 'setting-brakepower': 1.5, 'setting-autoshift': true,
+           'setting-zero-to-top': 2.0, 'setting-coast-drag': 0.4, 'setting-fuelweight': 0,
+           'setting-tyres': 0, 'phys-steerresp': 2.6, 'setting-brakebias': 56,
+           // Die engste Lenkung von allen: bei 250 Prozent liegt der volle Anschlag schon
+           // bei einem Viertel Stick an. Weiter als 45 Grad kommt auch das nicht - das ist
+           // die Mechanik des Autos.
+           'setting-steer-calib': 2.5,
+           'phys-accel': 1.2,
+           // crash-count ist ein INDEX in [1,2,3,4,5,10,20,50]: 7 = fuenfzig Crashs.
+           'setting-fuel-drain': 0, 'setting-crash-count': 7,
+           'setting-crash-damage': false,
+           // Hoehere Schwelle heisst NACHSICHTIGER: gemeldet wird erst ueber ihr.
+           'setting-crash-threshold': 60,
+           'setting-repair-time': 2,
+           // Block 4: Bremsfading, Windschatten, Reifenasymmetrie und -druck.
+           'setting-brake-fade': false,
+           'setting-brake-fade-strength': 1.0,
+           'setting-dirtyair': false,
+           'setting-dirtyair-strength': 1.0,
+           'setting-tyre-asym': false,
+           'setting-tyre-pressure': 1.8,
+           // Gasfaktor: wie frueh das Auto volle Motorleistung bekommt. 1,0 ist
+           // das Byte genau proportional zum Tacho, also die kalibrierte Fassung.
+           'setting-topspeed': 2.0 },
+    },
+    pro: {
+      label: 'Pro',
+      kurz: 'Halb so weit zwischen Arcade und GT3',
       text: 'Automatik, 2,6 s auf 100, voller Grip, kein Reifenverschleiß und kein '
-          + 'Tankgewicht. Verzeihende Bremse, und die direkteste Lenkung von allen: '
-          + 'voller Stick fordert 120 % des mechanischen Anschlags, man ist also schon '
-          + 'vor dem Stickende am Limit. Zum Fahren ohne Nachdenken.',
+          + 'Tankgewicht. Lenkkalibrierung 200 Prozent, damit auch enge Strecken gehen '
+          + '– der volle Einschlag liegt bei etwa einem Drittel Stick an. Fading und '
+          + 'Windschatten sind aus; sie stehen ab GT3 zur Verfügung.',
+      // AUTOMATIK, obwohl Pro sonst die Zwischenstufe zu GT3 ist. Pro ist seit v0.5 die
+      // Vorgabe, und wer beim ersten Start von Hand schalten muss und es nicht weiss, bleibt
+      // im 1. Gang haengen - dann ist das Auto genau so traege, wie gemeldet wurde. Von Hand
+      // schalten steht ab GT3 zur Verfuegung, und der Knopf RB schaltet es jederzeit um.
       v: { 'setting-grip': 1.0, 'setting-brakepower': 1.4, 'setting-autoshift': true,
+           // 2,6 statt 3,2 s: gemessen brauchte das Motorbyte mit den alten Werten 24,9 s
+           // Vollgas bis 90 %. Pro ist die Vorgabe und muss sich wie ein Auto anfuehlen,
+           // nicht wie ein Anfahrversuch.
            'setting-zero-to-top': 2.6, 'setting-coast-drag': 0.6, 'setting-fuelweight': 0,
            'setting-tyres': 0, 'phys-steerresp': 2.4, 'setting-brakebias': 58,
-           // crash-count ist ein INDEX in [1,2,3,4,5,10,20,50]: 4 = fuenf Crashs.
+           // Lenkkalibrierung 200 Prozent: der Reibkreis beschneidet den Einschlag beim
+           // Anbremsen auf etwa 60 Prozent, und das holt ihn zurueck. Gemessen bei 60 km/h
+           // unter Bremsen: 35 Grad ohne, volle 45 Grad ab einem Drittel Stick mit.
+           'setting-steer-calib': 2.0,
+           'phys-accel': 1.0,
            'setting-fuel-drain': 0, 'setting-crash-count': 4,
            'setting-crash-damage': false,
+           'setting-crash-threshold': 40,
            'setting-repair-time': 4,
-           // Block 4: Bremsfading, Windschatten, Reifenasymmetrie und -druck.
+           // Block 4: Bremsfading, Windschatten, Reifenasymmetrie und -druck. Bei Pro AUS -
+           // es ist die Vorgabe, und die drei Effekte gehoeren zu den Klassen, die sich
+           // ausdruecklich schwerer fahren.
            'setting-brake-fade': false,
            'setting-brake-fade-strength': 1.0,
            'setting-dirtyair': false,
@@ -40,36 +87,6 @@
            // das Byte genau proportional zum Tacho, also die kalibrierte Fassung.
            'setting-topspeed': 1.8 },
     },
-    pro: {
-      label: 'Pro',
-      kurz: 'Halb so weit zwischen Arcade und GT3',
-      text: 'Automatik, 2,6 s auf 100, Reifen und Tankgewicht wirken zur Hälfte. '
-          + 'Die Lenkung ist so direkt wie bei Arcade (120 % des Anschlags bei vollem '
-          + 'Stick), in der Bremse ist aber noch Reserve.',
-      // AUTOMATIK, obwohl Pro sonst die Zwischenstufe zu GT3 ist. Pro ist seit v0.5 die
-      // Vorgabe, und wer beim ersten Start von Hand schalten muss und es nicht weiss, bleibt
-      // im 1. Gang haengen - dann ist das Auto genau so traege, wie gemeldet wurde. Von Hand
-      // schalten steht ab GT3 zur Verfuegung, und der Knopf RB schaltet es jederzeit um.
-      v: { 'setting-grip': 0.85, 'setting-brakepower': 1.0, 'setting-autoshift': true,
-           // 2,6 statt 3,2 s und Lenkansprechen 2,4 statt 1,8: gemessen brauchte das
-           // Motorbyte mit den alten Werten 24,9 s Vollgas bis 90 %. Pro ist die Vorgabe und
-           // muss sich wie ein Auto anfuehlen, nicht wie ein Anfahrversuch.
-           'setting-zero-to-top': 2.6, 'setting-coast-drag': 1.0, 'setting-fuelweight': 0.5,
-           'setting-tyres': 0.5, 'phys-steerresp': 2.4, 'setting-brakebias': 60,
-           'setting-fuel-drain': 1.5, 'setting-crash-count': 2,
-           'setting-crash-damage': true,
-           'setting-repair-time': 10,
-           // Block 4: Bremsfading, Windschatten, Reifenasymmetrie und -druck.
-           'setting-brake-fade': true,
-           'setting-brake-fade-strength': 0.6,
-           'setting-dirtyair': true,
-           'setting-dirtyair-strength': 0.6,
-           'setting-tyre-asym': true,
-           'setting-tyre-pressure': 1.8,
-           // Gasfaktor: wie frueh das Auto volle Motorleistung bekommt. 1,0 ist
-           // das Byte genau proportional zum Tacho, also die kalibrierte Fassung.
-           'setting-topspeed': 1.6 },
-    },
     gt3: {
       label: 'GT3',
       kurz: 'An einem echten GT3 kalibriert',
@@ -79,6 +96,12 @@
       v: { 'setting-grip': 0.72, 'setting-brakepower': 0.85, 'setting-autoshift': false,
            'setting-zero-to-top': 3.2, 'setting-coast-drag': 1.25, 'setting-fuelweight': 1.0,
            'setting-tyres': 2.0, 'phys-steerresp': 1.3, 'setting-brakebias': 62,
+           // Lenkkalibrierung 1,0 heisst: der uebertragene Winkel ist genau der gerechnete.
+           // Die Klassen ab GT3 sind gegen gemessenes Verhalten abgestimmt, und eine
+           // Kalibrierung darauf waere ein Aufschlag auf eine Messung.
+           'setting-steer-calib': 1.0,
+           'phys-accel': 1.0,
+           'setting-crash-threshold': 30,
            'setting-fuel-drain': 3.0, 'setting-crash-count': 5,
            'setting-crash-damage': true,
            'setting-repair-time': 20,
@@ -102,6 +125,12 @@
       v: { 'setting-grip': 0.82, 'setting-brakepower': 1.0, 'setting-autoshift': false,
            'setting-zero-to-top': 4.4, 'setting-coast-drag': 1.15, 'setting-fuelweight': 1.0,
            'setting-tyres': 1.5, 'phys-steerresp': 1.5, 'setting-brakebias': 61,
+           // Lenkkalibrierung 1,0 heisst: der uebertragene Winkel ist genau der gerechnete.
+           // Die Klassen ab GT3 sind gegen gemessenes Verhalten abgestimmt, und eine
+           // Kalibrierung darauf waere ein Aufschlag auf eine Messung.
+           'setting-steer-calib': 1.1,
+           'phys-accel': 1.0,
+           'setting-crash-threshold': 35,
            'setting-fuel-drain': 2.2, 'setting-crash-count': 5,
            'setting-crash-damage': true,
            'setting-repair-time': 16,
@@ -127,6 +156,12 @@
       v: { 'setting-grip': 0.95, 'setting-brakepower': 1.45, 'setting-autoshift': false,
            'setting-zero-to-top': 2.4, 'setting-coast-drag': 1.6, 'setting-fuelweight': 1.0,
            'setting-tyres': 2.0, 'phys-steerresp': 1.05, 'setting-brakebias': 66,
+           // Lenkkalibrierung 1,0 heisst: der uebertragene Winkel ist genau der gerechnete.
+           // Die Klassen ab GT3 sind gegen gemessenes Verhalten abgestimmt, und eine
+           // Kalibrierung darauf waere ein Aufschlag auf eine Messung.
+           'setting-steer-calib': 1.0,
+           'phys-accel': 1.0,
+           'setting-crash-threshold': 25,
            'setting-fuel-drain': 4.5, 'setting-crash-count': 3,
            'setting-crash-damage': true,
            'setting-repair-time': 24,

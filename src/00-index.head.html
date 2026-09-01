@@ -582,6 +582,10 @@
        Gewebe. Die Webeinheit ist die halbe Kachel, also 7 px - bei 11 bis 20 px Blende
        passen ein-einhalb bis drei darueber, und ab etwa zwei liest man Stoff. */
     --gt3-blende: clamp(11px, 2.8vw, 20px);
+    /* UNTEN breiter. Ein echtes Gehaeuse ist nicht rundum gleich stark: unten sitzt die
+       Befestigung, und dort ist Material. 1,9-fach, nicht 1,5 - bei 1,5 sieht es nach einem
+       Messfehler aus statt nach Absicht. */
+    --gt3-blende-u: calc(var(--gt3-blende) * 1.9);
     /* Die Webung. Eine Zeile weniger und die Blende ist wieder eine Farbflaeche. */
     --gt3-carbon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cdefs%3E%3ClinearGradient id='h' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%231a1a1a'/%3E%3Cstop offset='.25' stop-color='%23404040'/%3E%3Cstop offset='.5' stop-color='%231e1e1e'/%3E%3Cstop offset='.75' stop-color='%23454545'/%3E%3Cstop offset='1' stop-color='%23141414'/%3E%3C/linearGradient%3E%3ClinearGradient id='v' x1='0' y1='0' x2='1' y2='0'%3E%3Cstop offset='0' stop-color='%23161616'/%3E%3Cstop offset='.25' stop-color='%233b3b3b'/%3E%3Cstop offset='.5' stop-color='%231a1a1a'/%3E%3Cstop offset='.75' stop-color='%23404040'/%3E%3Cstop offset='1' stop-color='%23101010'/%3E%3C/linearGradient%3E%3Cpattern id='w' width='12' height='12' patternUnits='userSpaceOnUse'%3E%3Crect width='12' height='12' fill='%23121212'/%3E%3Cpath d='M0 0h6v6H0zM6 6h6v6H6z' fill='url(%23h)'/%3E%3Cpath d='M6 0h6v6H6zM0 6h6v6H0z' fill='url(%23v)'/%3E%3Cpath d='M0 1h12M0 3h12M0 5h12M0 7h12M0 9h12M0 11h12' stroke='%23000' stroke-width='.4' opacity='.4'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='24' height='24' fill='url(%23w)'/%3E%3C/svg%3E");
     /* Die vier Schrauben in den Blendenecken: heller Kopf, dunkler Sitz, aussen nichts.
@@ -589,7 +593,8 @@
     --gt3-schraube: radial-gradient(circle at 50% 50%,
       #7c8798 0 13%, #464f5e 13% 19%, #14181f 19% 25%, rgba(0,0,0,0) 25%);
     position: relative;
-    border: var(--gt3-blende) solid transparent;
+    border-style: solid; border-color: transparent;
+    border-width: var(--gt3-blende) var(--gt3-blende) var(--gt3-blende-u);
     border-radius: 2px; overflow: hidden;
     background-image:
       /* 1. Der Schirm. Kein flaches Schwarz: ein TFT wird von der Kante beleuchtet und ist
@@ -603,26 +608,31 @@
       /* 3. Die vier Schrauben, je eine Ecke. */
       var(--gt3-schraube), var(--gt3-schraube),
       var(--gt3-schraube), var(--gt3-schraube),
-      /* 4. Eine Daempfung UEBER der Webung und nicht darin. Die Faserverlaeufe der Vorlage
+      /* 4. Die FLACHE KANTE im unteren Band: ein heller Streifen ueber die ganze Breite,
+            wie eine angefraeste Flaeche, die das Licht anders zurueckwirft als das Gewebe.
+            Nur unten, weil nur dort Platz dafuer ist. */
+      linear-gradient(180deg, rgba(255,255,255,.11) 0%, rgba(255,255,255,.03) 34%,
+                              rgba(0,0,0,.22) 100%),
+      /* 5. Eine Daempfung UEBER der Webung und nicht darin. Die Faserverlaeufe der Vorlage
             gehen bis #454545; das ist auf einem hellen Blatt richtig, auf einer dunklen
             Anzeige wird daraus Silber statt Carbon. Gedaempft wird deshalb hier, damit die
             Verlaeufe selbst unangetastet bleiben und eine Zahl genuegt, um es zu regeln. */
       linear-gradient(rgba(0,0,0,.46), rgba(0,0,0,.46)),
-      /* 5. Die Webung. */
+      /* 6. Die Webung. */
       var(--gt3-carbon);
     background-origin: padding-box, border-box, border-box, border-box,
-                       border-box, border-box, border-box, border-box;
+                       border-box, border-box, border-box, border-box, border-box;
     background-clip: padding-box, border-box, border-box, border-box,
-                     border-box, border-box, border-box, border-box;
+                     border-box, border-box, border-box, border-box, border-box;
     background-repeat: no-repeat, no-repeat, no-repeat, no-repeat,
-                       no-repeat, no-repeat, no-repeat, repeat;
+                       no-repeat, no-repeat, no-repeat, no-repeat, repeat;
     background-size: auto, auto,
                      var(--gt3-blende) var(--gt3-blende),
                      var(--gt3-blende) var(--gt3-blende),
-                     var(--gt3-blende) var(--gt3-blende),
-                     var(--gt3-blende) var(--gt3-blende),
-                     auto, 14px 14px;
-    background-position: 0 0, 0 0, 0 0, 100% 0, 0 100%, 100% 100%, 0 0, 0 0;
+                     var(--gt3-blende) var(--gt3-blende-u),
+                     var(--gt3-blende) var(--gt3-blende-u),
+                     100% var(--gt3-blende-u), auto, 14px 14px;
+    background-position: 0 0, 0 0, 0 0, 100% 0, 0 100%, 100% 100%, 0 100%, 0 0, 0 0;
     padding: clamp(5px, 1vw, 11px); color: #eef2fa; display: grid;
     gap: clamp(4px, .8vw, 9px);
     grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr) minmax(0, 1.15fr);
@@ -644,6 +654,21 @@
      pointer-events: none ist hier nicht Kosmetik, sondern notwendig. Fast jede Kachel im
      Cockpit ist antippbar - eine Glasscheibe ueber allem wuerde jeden Tipp abfangen, und
      dann laesst sich keine Simulation mehr abschalten und kein Rennen starten. */
+  /* EINSCHALTRAMPE. Eine Ueberlagerung, die in 300 ms von deckendem Schirmschwarz auf
+     durchsichtig geht - ein TFT wird nicht sofort hell, es zieht hoch. Als Ueberlagerung und
+     nicht als Filter auf den Inhalt: ein Filter auf .gt3 wuerde die Blende mitdunkeln, und
+     eine Blende ist kein Bildschirm.
+
+     Die Klasse setzt der Rennstart und nimmt sie nach 320 ms wieder weg. Ohne sie ist das
+     ::before vollstaendig durchsichtig und kostet nichts. */
+  .gt3::before { content: ''; position: absolute; inset: 0; pointer-events: none;
+    z-index: 5; background: #04060a; opacity: 0; }
+  .gt3.gt3-warm::before { animation: gt3-einschalten .3s ease-out 1; }
+  @keyframes gt3-einschalten {
+    0%   { opacity: 1; }
+    55%  { opacity: .45; }
+    100% { opacity: 0; }
+  }
   .gt3::after { content: ''; position: absolute; inset: 0; pointer-events: none;
     z-index: 4; border-radius: inherit;
     background:
@@ -656,6 +681,15 @@
   /* Eine selbstleuchtende Anzeige blueht. Eine Ziffer mit vollkommen scharfer Kante liest
      sich als Text auf Papier - das Leuchten ist der Unterschied, und es ist so schwach
      gehalten, dass es die Kante nicht weich macht. */
+  /* ZIFFERNVERSATZ bei Wertwechsel: 1 px nach unten, 80 ms, dann zurueck. Ein Wert, der
+     ohne jede Bewegung von 3 auf 4 springt, sieht nach einem Textfeld aus; eine Anzeige mit
+     Masse setzt sich kurz. NICHT am Tacho - der aendert sich jeden Takt, dort waere es ein
+     Dauerzittern. Nur an den Werten, die SPRINGEN. */
+  .gt3-tick { animation: gt3-versatz .08s ease-out 1; }
+  @keyframes gt3-versatz {
+    0%   { transform: translateY(1px); }
+    100% { transform: translateY(0); }
+  }
   .gt3-val.big, .gt3-gearnum, .gt3-rpm {
     text-shadow: 0 0 clamp(5px, 1.4vw, 13px) rgba(210, 226, 255, .20); }
 
@@ -688,6 +722,17 @@
     border-radius: 50%; background: #0d1119;
     box-shadow: inset 0 0 0 1px #2b3547,
                 inset 0 1px 2px rgba(255,255,255,.10); }
+  /* BLENDREFLEX: ein schwacher Bogen im Deckglas, der die zehn Lichter spiegelt. Eine
+     Ellipse, deren Mitte OBERHALB der Reihe liegt - dadurch ist der sichtbare Teil ein
+     flacher Bogen und kein Fleck, und er folgt derselben Kruemmung wie die Lichter selbst.
+
+     pointer-events: none, weil in derselben Ecke der Vollbildknopf liegt. */
+  .gt3-shift { position: relative; }
+  .gt3-shift::after { content: ''; position: absolute; inset: 0; pointer-events: none;
+    z-index: 1;
+    background: radial-gradient(ellipse 62% 150% at 50% -46%,
+      rgba(214, 232, 255, .11) 0%, rgba(214, 232, 255, .045) 52%,
+      rgba(214, 232, 255, 0) 78%); }
   .gt3-shift > span:nth-child(1), .gt3-shift > span:nth-child(10) { transform: translateY(3px); }
   .gt3-shift > span:nth-child(2), .gt3-shift > span:nth-child(9) { transform: translateY(2px); }
   .gt3-shift > span:nth-child(3), .gt3-shift > span:nth-child(8) { transform: translateY(1px); }
@@ -697,8 +742,13 @@
      Augenwinkel - genau das macht ein Autoschirm anders. */
   .gt3-left { grid-area: left; display: grid; gap: clamp(4px, .8vw, 9px);
     align-content: start; }
+  /* Die erste Kachel je Spalte behaelt ihre HELLE Oberkante: sie trennt die drei Bloecke
+     staerker als die Werte darin, und das ist die Hierarchie, die ein Autoschirm anders macht
+     als ein Armaturenbrett. Ueber denselben Schatten wie oben, weil border-top hier
+     weggefallen ist. */
   .gt3-left > .gt3-box:first-child, .gt3-right > .gt3-box:first-child {
-    border-top-color: rgba(255, 255, 255, .55); }
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .5),
+                inset 0 -1px 0 rgba(255, 255, 255, .055); }
   /* Zwei Knoepfe auf der Breite von einem. Das Bild darueber und die Beschriftung darunter,
      damit auf 375 px beide noch lesbar sind - nebeneinander waere der Text vier Zeichen. */
   .gt3-half { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(3px, .7vw, 8px); }
@@ -731,17 +781,31 @@
   /* FLACH. Vorher hatte jeder Wert seinen eigenen aufgehellten Kasten, und dieses Raster
      aus abgesetzten Panels ist das, was als Carbon-Umrandung gelesen wird. Jetzt eine
      Haarlinie als Trenner und sonst der Grund des Schirms. */
+  /* EINGEFRAESTE KANTE statt einer Linie: 1 px dunkel oben, 1 px hell unten. Eine Linie
+     sagt "hier ist eine Grenze", zwei Linien mit Gegenlicht sagen "hier ist eine Stufe" -
+     und genau das ist der Unterschied zwischen einem gezeichneten Kasten und einer
+     vertieften Flaeche.
+
+     Als inset-Schatten und nicht als border: ein border verschiebt das Kastenmass und damit
+     die ganze Rasteraufteilung. Zwei Schatten kosten kein Pixel Platz. */
   .gt3-box { background: none; border: 0; border-radius: 0;
-    border-top: 1px solid var(--gt3-line);
+    box-shadow: inset 0 1px 0 rgba(0, 0, 0, .55),
+                inset 0 -1px 0 rgba(255, 255, 255, .055);
     padding: clamp(3px, .7vw, 7px) clamp(4px, .8vw, 8px); min-width: 0; }
   /* Der aufgehellte Grund bleibt allein an den antippbaren Kacheln: dort ist er keine
      Zierde, sondern die Aussage "hier kann man draufdruecken". */
   /* Dunkler als vorher (#131925) und mit HELLER Oberkante. Der Grund muss bleiben - hier
      wird angetippt, auf einem Autoschirm nicht -, aber er darf weniger Kasten sein. Die
      helle Kante uebernimmt die Aussage, die vorher die Flaeche allein trug. */
+  /* border-top-color stand hier und wirkte ins Leere: die Kachel hat seit der eingefraesten
+     Kante keinen border mehr, sondern zwei inset-Schatten. Eine Farbangabe auf einen
+     Rahmen der Breite null wird still verworfen - der Grund, warum solche Zeilen jahrelang
+     stehen bleiben. Die antippbare Kachel bekommt ihre Oberkante jetzt ueber denselben
+     Schatten, nur eine Spur heller als eine gewoehnliche Kachel. */
   .gt3-box.gt3-click, .gt3-box.pit-tile {
     background: linear-gradient(#101623, #0a0e17);
-    border-top-color: var(--gt3-line); }
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .16),
+                inset 0 -1px 0 rgba(0, 0, 0, .5); }
   /* Weiter gesperrt und etwas blasser: auf dem Vorbild ist die Beschriftung fast eine
      Unterschrift, die Zahl traegt die Aufmerksamkeit. .16em statt .1em, und die Farbe von
      #8b99b4 auf #78849c. */
@@ -4561,7 +4625,7 @@
       <div class="opt-row"><div class="opt-label">Tankverbrauch (%/s bei Vollgas)</div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-fuel-drain" min="0" max="10" step="0.1" value="1.5">
+          <input type="range" id="setting-fuel-drain" min="0" max="10" step="0.1" value="0">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-fuel-drain-val">3.0</span>
         </div></div>
@@ -4601,11 +4665,11 @@
       <div class="opt-row"><div class="opt-label">Crashs, bis Fahrzeug ruckelt</div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-crash-count" min="0" max="7" step="1" value="2">
+          <input type="range" id="setting-crash-count" min="0" max="7" step="1" value="4">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-crash-count-val">10</span>
         </div></div>
-      <div class="opt-row"><div class="opt-label">Schaden</div><label class="tgl"><input type="checkbox" id="setting-crash-damage" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Schaden</div><label class="tgl"><input type="checkbox" id="setting-crash-damage"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Crash-Schwelle
           <small>Wie weit die Bewegungsbytes 1 und 3 vom gleitenden Mittel abweichen
           m&uuml;ssen, damit ein Sto&szlig; als Crash gilt. Niedriger hei&szlig;t
@@ -4622,7 +4686,7 @@
       <div class="opt-row"><div class="opt-label">Vollst&auml;ndige Reparatur dauert (s)<small>Von 100 % auf 0. Nicht linear: die ersten 25 % in 1/10 der Zeit, die letzten 25 % in 4/10.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-repair-time" min="2" max="30" step="1" value="10">
+          <input type="range" id="setting-repair-time" min="2" max="30" step="1" value="4">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-repair-time-val">10 s</span>
         </div></div>
@@ -4643,21 +4707,21 @@
           er fr&uuml;her genau 1 war, war eine Annahme und keine Messung.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-topspeed" min="0.2" max="2" step="0.05" value="1.6">
+          <input type="range" id="setting-topspeed" min="0.2" max="2" step="0.05" value="1.8">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-topspeed-val">160%</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Reifengrip</div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-grip" min="0" max="1" step="0.01" value="0.85">
+          <input type="range" id="setting-grip" min="0" max="1" step="0.01" value="1">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-grip-val">0.60</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Bremswirkung</div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-brakepower" min="0.3" max="1.5" step="0.05" value="1">
+          <input type="range" id="setting-brakepower" min="0.3" max="1.5" step="0.05" value="1.4">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-brakepower-val">1.00</span>
         </div></div>
@@ -4683,7 +4747,7 @@
       <div class="opt-row"><div class="opt-label">Ausrollen (Faktor)<small>Rollwiderstand, Motorbremse und Luftwiderstand zugleich. Klein rollt weit.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-coast-drag" min="0.2" max="2" step="0.05" value="1">
+          <input type="range" id="setting-coast-drag" min="0.2" max="2" step="0.05" value="0.6">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-coast-drag-val">1.00</span>
         </div></div>
@@ -4692,14 +4756,14 @@
       <div class="opt-row"><div class="opt-label">Tankgewicht<small>Voller Tank macht träger. Links = aus.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-fuelweight" min="0" max="1" step="0.05" value="0.5">
+          <input type="range" id="setting-fuelweight" min="0" max="1" step="0.05" value="0">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-fuelweight-val">100%</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Reifen: Temperatur &amp; Verschlei&szlig;<small>Kalt nach Start und Boxenstopp, abgenutzt nach hartem Stint. Links = aus.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-tyres" min="0" max="2" step="0.05" value="0.5">
+          <input type="range" id="setting-tyres" min="0" max="2" step="0.05" value="0">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-tyres-val">200%</span>
         </div></div>
@@ -4713,7 +4777,7 @@
           zur stärker abgenutzten Seite, weil die weniger Querkraft erzeugt. Der
           Mittelwert bleibt derselbe: der Schalter macht nicht mehr Verschleiß, sondern
           ungleichen.</small></div>
-        <label class="tgl"><input type="checkbox" id="setting-tyre-asym" checked><span></span></label></div>
+        <label class="tgl"><input type="checkbox" id="setting-tyre-asym"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Reifendruck (bar)
           <small>Wenig Druck hei&szlig;t mehr Walkarbeit: schnellere Erw&auml;rmung, mehr
           Verschlei&szlig;, besserer Kaltgriff. Viel Druck umgekehrt. Jede Abweichung von
@@ -4735,12 +4799,12 @@
           einzelne Vollbremsung aus 250&nbsp;km/h erreicht aus kalten Scheiben gemessen
           183&nbsp;&deg;C vorn und fadet nicht; nach acht Bremsungen sind es 806&nbsp;&deg;C
           und der Bremsweg ist 23&nbsp;% l&auml;nger.</small></div>
-        <label class="tgl"><input type="checkbox" id="setting-brake-fade" checked><span></span></label></div>
+        <label class="tgl"><input type="checkbox" id="setting-brake-fade"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">St&auml;rke des Fadings
           <small>&Uuml;ber 100&nbsp;% steigt die Heizrate, nicht der maximale Verlust.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-brake-fade-strength" min="0" max="2" step="0.05" value="0.6">
+          <input type="range" id="setting-brake-fade-strength" min="0" max="2" step="0.05" value="1">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-brake-fade-strength-val">100%</span>
         </div></div>
@@ -4752,12 +4816,12 @@
           Kurvengeschwindigkeit &ndash; auf der Geraden ist er ein Vorteil, in der Kurve ein
           Nachteil. Braucht eine Strecke mit mindestens drei Teilen und einen Gegner: ohne
           Streckenlayout wei&szlig; die App nicht, wer vor dir f&auml;hrt.</small></div>
-        <label class="tgl"><input type="checkbox" id="setting-dirtyair" checked><span></span></label></div>
+        <label class="tgl"><input type="checkbox" id="setting-dirtyair"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">St&auml;rke des Windschattens
           <small>100&nbsp;% sind h&ouml;chstens 18&nbsp;% Kurvengrip weniger.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-dirtyair-strength" min="0" max="2" step="0.05" value="0.6">
+          <input type="range" id="setting-dirtyair-strength" min="0" max="2" step="0.05" value="1">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-dirtyair-strength-val">100%</span>
         </div></div>
@@ -4769,6 +4833,13 @@
           <input type="range" id="phys-steerresp" min="0.5" max="3" step="0.05" value="2.4">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="phys-steerresp-val">100%</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Lenkwinkel-Kalibrierung<small>Für enge Strecken. Der Regler sitzt hinter dem Reibkreis: beim Anbremsen einer Kurve beschneidet der die Lenkung auf etwa 60 Prozent, und bei 200 Prozent erreicht dieser beschnittene Wunsch wieder den vollen Anschlag. Weiter als 45 Grad kann kein Wert lenken, das ist die Mechanik des Autos und nicht die App. Der Preis ist Feingefühl: je höher, desto früher liegt der Anschlag an und desto weniger sagt der letzte Teil des Sticks.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="setting-steer-calib" min="1" max="3" step="0.05" value="2">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-steer-calib-val">200%</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Beschleunigungsfaktor<small>Feinabstimmung, 1.0 = die eingestellte Zeit.</small></div>
         <div class="opt-slider">
@@ -4784,7 +4855,7 @@
           Mittelstellung und &auml;ndert nichts.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-brakebias" min="50" max="80" step="1" value="60">
+          <input type="range" id="setting-brakebias" min="50" max="80" step="1" value="58">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-brakebias-val">62% vorn</span>
         </div></div>
@@ -5585,7 +5656,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.4.34</span></span>
+    <span class="foot-ver">v<span id="app-version">0.4.35</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine

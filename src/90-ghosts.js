@@ -2499,6 +2499,12 @@
         }
         return { steerGrip: st.steerGrip, gripLong: st.gripLong,
                  loadFront: st.loadFront, longUse: st.longUse,
+                 // Der UEBERTRAGENE Winkel und der Wunsch davor. Ohne beide muesste die
+                 // Messung nachrechnen, was das Modell rechnet - und wuerde jeden Fehler
+                 // darin mitmachen.
+                 winkel: e.outputs.servoAngle,
+                 wunsch: st.steerDemand,
+                 grad: Math.round(Math.abs(e.outputs.servoAngle) * 45),
                  // Die vier Radlasten, Reihenfolge VL, VR, HL, HR. Ohne sie ist die
                  // Vierradverlagerung nicht pruefbar.
                  load4: st.load4 ? st.load4.slice() : null,

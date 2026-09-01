@@ -247,6 +247,11 @@
         // Track-surface grip, SEPARATE from the friction circle on purpose: the circle is
         // driving dynamics, this is what the road is doing. Set from the weather/tyre pair.
         gripScale: 1.0,
+        // Lenkwinkel-Kalibrierung. Sie sitzt HINTER dem Reibkreis: 1,0 ist die
+        // kalibrierte Fassung, 2,0 laesst einen um die Haelfte beschnittenen Lenkwunsch
+        // wieder den vollen mechanischen Anschlag erreichen. Gedeckelt bleibt sie ohnehin -
+        // Byte 7 kann nicht mehr als 127 tragen, und das ist der Anschlag des Autos.
+        steerCalib: 1.0,
         aquaplaning: 0,       // 0 = dry grip, 1 = slicks in standing water
 
         // ---- Longitudinal weight transfer ----
@@ -444,6 +449,10 @@
         gLat: 0, gLong: 0, // for the G plot
         engineLoad: 0,        // pedal opening actually applied — drives sound VOLUME
         dampedSteering: 0,
+        // Der Lenkwunsch NACH Reibkreis und Aquaplaning, aber VOR der Kalibrierung und vor
+        // dem Deckel. Ohne ihn ist nicht messbar, wie viel die Kalibrierung ueberhaupt
+        // zurueckholt - und was sich nicht messen laesst, kann man nicht einstellen.
+        steerDemand: 0,
         isShifting: false,
         absActive: false,
         lastAbsRumble: 0,
@@ -1123,8 +1132,17 @@
       // Nur bei Fahrt: im Stand zieht nichts, und ein Auto, das an der Box von selbst
       // einschlaegt, sieht nach einem Servofehler aus.
       const zug = st.tyrePull * Math.min(1, Math.abs(st.speedKmh) / (cfg.topSpeedKmh * 0.15));
+      // Die Kalibrierung steht HINTER dem Reibkreis und dem Aquaplaning, und das ist ihr
+      // ganzer Sinn: beim Anbremsen einer engen Kurve liegt steerGrip bei 0,5 bis 0,6, und
+      // dann kommen am Auto nur 60 Prozent Einschlag an - genau im Moment, in dem man ihn
+      // braucht. Bei 2,0 erreicht ein halbierter Wunsch wieder den vollen Anschlag.
+      //
+      // Der Deckel bleibt: |servoAngle| <= 1 wird zu Byte 7 = 127, dem Maximum des
+      // vorzeichenbehafteten Bereichs. Die 45 Grad sind eine Grenze des Autos, nicht der App,
+      // und kein Reglerwert kann darueber hinaus.
+      st.steerDemand = this.state.dampedSteering * st.aquaFactor * st.steerGrip;
       this.outputs.servoAngle = Math.max(-1, Math.min(1,
-        this.state.dampedSteering * st.aquaFactor * st.steerGrip + zug));
+        st.steerDemand * cfg.steerCalib + zug));
 
       // Values for the G plot. Lateral force rises with steer angle and speed; longitudinal
       // is the lagged demand, which is what the body actually feels.

@@ -628,6 +628,21 @@
   function startRaceCountdown() {
     // launchGhosts() is called from the green-light step below, not here.
     if (raceState !== 'idle' && raceState !== 'finished') return; // ignore while armed/racing
+    // EINSCHALTRAMPE: der Schirm zieht in 300 ms von schwarz auf Wert hoch, wie ein TFT beim
+    // Einschalten. Hier und nicht in raceGreen(), weil der Schirm mit dem Knopfdruck
+    // "angeht" und nicht erst bei Gruen - im Countdown will man ihn schon lesen.
+    //
+    // Die Klasse wird nach 320 ms wieder abgenommen, 20 ms nach dem Ende der Animation: sonst
+    // startet sie beim naechsten Rennstart nicht neu, weil sie schon dransteht.
+    {
+      const schirm = $('race-dash');
+      if (schirm) {
+        schirm.classList.remove('gt3-warm');
+        void schirm.offsetWidth;
+        schirm.classList.add('gt3-warm');
+        setTimeout(() => schirm.classList.remove('gt3-warm'), 320);
+      }
+    }
     // Starting conditions, applied before the lights: weather first, because the tyre
     // choice follows from it, then the tank, then the pit-stop counter.
     setWeather(raceWxStart);
