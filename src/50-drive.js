@@ -852,6 +852,11 @@
   let offtrackWiederSeit = null; // seit wann durchgehend etwas anderes
   let offtrackAktiv = false;
   let offtrackRumbleAt = 0;
+  // Wie oft das Auto die Bahn verlassen hat, seit dem Laden. Als FLANKE gezaehlt: der
+  // Zustand allein waere je Takt ein Abgang. Gebraucht wird er von der Mehrspieler-Rangliste,
+  // und er ist die Zahl, die man nach einem Rennen wissen will - der Zeitanteil abseits
+  // stand schon in der Fusszeile, die ANZAHL nicht.
+  let offtrackZaehler = 0;
 
   // Gerufen aus dem Meldekanal in 70-race.js, also je Paket.
   function offtrackMelden(abseits) {
@@ -859,7 +864,10 @@
     if (abseits) {
       offtrackWiederSeit = null;
       if (offtrackSeit === null) offtrackSeit = jetzt;
-      if (!offtrackAktiv && jetzt - offtrackSeit >= OFFTRACK_EIN_MS) offtrackAktiv = true;
+      if (!offtrackAktiv && jetzt - offtrackSeit >= OFFTRACK_EIN_MS) {
+        offtrackAktiv = true;
+        offtrackZaehler++;
+      }
     } else {
       offtrackSeit = null;
       if (offtrackWiederSeit === null) offtrackWiederSeit = jetzt;

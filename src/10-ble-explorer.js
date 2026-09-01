@@ -1280,6 +1280,23 @@
     "Als CSV": "As CSV",
     "nicht gestartet": "not started",
     "Abgänge": "Departures",
+    // Mehrspieler Version A (v0.5). Alle GANZE Textknoten, kein Fragment - die
+    // Erklaerabsaetze sind ohne inneres Markup geschrieben.
+    "Mehrspieler im WLAN": "Multiplayer over Wi-Fi",
+    "Mehrere Telefone, jedes mit eigenem Auto, eine gemeinsame Rangliste. Auf dem PC laeuft dazu ein kleines Programm: python tools/omegasim_host.py": "Several phones, each with its own car, one shared leaderboard. A small program runs on the PC for it: python tools/omegasim_host.py",
+    "Ueber die Leitung gehen Rundenzahl, Rundenzeiten und Abgaenge. Keine Physik, keine Lenkwerte: jedes Telefon rechnet seine eigene Physik und haelt seine eigene Bluetooth-Verbindung. Reisst das WLAN ab, faehrt jeder weiter, nur die Rangliste steht still.": "What goes over the wire: lap count, lap times and departures. No physics, no steering values – each phone computes its own physics and holds its own Bluetooth connection. If the Wi-Fi drops, everyone keeps driving; only the leaderboard stands still.",
+    "Gezaehlt werden GEMESSENE Runden, genau wie in der Rundenliste im Cockpit: die erste Ueberfahrt startet die Uhr, erst die zweite ergibt eine Zeit. Nach drei Ueberfahrten stehen also zwei Runden da. Bei Gleichstand fuehrt, wer zuerst dort war.": "Counted are MEASURED laps, exactly as in the cockpit lap list: the first crossing starts the clock, only the second yields a time. After three crossings the count shows two laps. On a tie, whoever got there first leads.",
+    "Warum es experimentell ist, und der Grund ist eine Browserregel und kein Wackeln im Code: Web Bluetooth verlangt einen secure context. Das sind https, http://localhost und file. Eine Adresse wie http://192.168.1.50:8080 ist keiner – die App laedt dort, aber „Auto verbinden“ bleibt ohne Wirkung. Einmal je Telefon muss man in Chrome unter chrome://flags/#unsafely-treat-insecure-origin-as-secure die Adresse des Hosts eintragen und Chrome neu starten. Damit erklaert man diesen einen Ursprung fuer vertrauenswuerdig; im eigenen WLAN mit dem eigenen PC ist das vertretbar, aber es ist eine Ausnahme von einer Sicherheitsregel und keine Einstellung.": "Why it is experimental – and the reason is a browser rule, not shaky code: Web Bluetooth requires a secure context. Those are https, http://localhost and file. An address like http://192.168.1.50:8080 is not one – the app loads there, but “Connect car” has no effect. Once per phone you have to enter the host address in Chrome under chrome://flags/#unsafely-treat-insecure-origin-as-secure and restart Chrome. Doing so declares that one origin trustworthy; on your own Wi-Fi with your own PC that is defensible, but it is an exception to a security rule and not a setting.",
+    "Der Ueberblicksschirm fuer den PC liegt beim Host unter /mp-overview.html. Er braucht kein Bluetooth und deshalb auch keine Freigabe: auf http://localhost ist er ohnehin ein secure context.": "The overview screen for the PC sits on the host at /mp-overview.html. It needs no Bluetooth and therefore no exemption: on http://localhost it is a secure context anyway.",
+    "Host-Adresse": "Host address",
+    "Mein Name": "My name",
+    "Mitmachen": "Join",
+    "Verlassen": "Leave",
+    "keine Daten": "no data",
+    "Fahrer": "drivers",
+    "verbunden": "connected",
+    "kein Kontakt zum Host": "no contact with the host",
+    "Ohne Host-Adresse geht es nicht.": "It does not work without a host address.",
   };
 
   // ============================================================================

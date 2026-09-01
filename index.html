@@ -257,6 +257,11 @@
   /* Kennzeichen fuer Regler, die nachgerechnet nicht wirken. Es steht IN der Beschriftung
      und nicht als Farbe der ganzen Zeile: eine ausgegraute Zeile liest sich wie "gesperrt",
      und diese Regler sind nicht gesperrt - sie brauchen nur etwas, das fehlt. */
+  /* Formelzeilen in der Doku. Eingerueckt und in Monospace, damit sie sich vom
+     Erklaertext abheben - eine Gleichung mitten im Flusstext liest man nicht. */
+  .formel { font-family: monospace; font-size: 13px; color: var(--ink);
+    margin: 8px 0 10px 0; padding-left: 14px;
+    border-left: 2px solid var(--gt3-line-soft); }
   .wip-tag { display: inline-block; font-size: 9.5px; letter-spacing: .1em;
     padding: 1px 5px; border-radius: 3px; vertical-align: 2px;
     background: #4a3c00; color: #ffd83d; font-weight: 700; }
@@ -3471,6 +3476,119 @@
         geschnitten. Welche Datei woher stammt, steht in <code>audio/CREDITS.md</code>.
       </p>
     </div>
+
+    <div class="card">
+      <h2>Plan: das Einspurmodell <span class="wip-tag">noch nicht gebaut</span></h2>
+      <p class="muted">
+        Das ist ein Bauplan und kein Bericht. Er steht hier, damit der naechste Block nicht
+        neu recherchiert werden muss, und damit nachpruefbar ist, was dabei versprochen wurde.
+      </p>
+
+      <h3 style="font-size:14px; margin:16px 0 6px 0">Die tragende Entscheidung: Instrument,
+        nicht Aktor</h3>
+      <p class="muted">
+        Das Einspurmodell rechnet Schwimmwinkel, Gierrate und Achsschraeglaufwinkel aus
+        Lenkwinkel und Tempo. Sein Ergebnis darf die Lenkung nicht stellen, und der Grund ist
+        keine Vorsicht, sondern eine Tatsache: das Modellauto rutscht nicht. Ein Modell, das
+        eine Bewegung berechnet, die das Fahrzeug nicht ausfuehren kann, wuerde die
+        Lenkvorgabe von der Wirklichkeit wegdrehen &ndash; das Auto faehrt geradeaus, waehrend
+        die Simulation eine Drift meldet, und die App korrigiert eine Bewegung, die es nicht
+        gibt.
+      </p>
+      <p class="muted">
+        Es darf zeigen und begrenzen. Beides ist ehrlich, und beides ist neu: ein
+        Gierratenzeiger im Cockpit sagt, wie weit das Auto vom stationaeren Zustand entfernt
+        ist, und eine Kurvengrenzgeschwindigkeit aus dem Reibkreis sagt, wie schnell man
+        durch eine bekannte Kurve kaeme. Die Rueckmeldung am Grenzbereich wird ein
+        Reifenquietschen im Stil von Gran Turismo: Lautstaerke und Tonhoehe laufen stetig mit
+        der Ausnutzung des Reibkreises, Einsatz ab etwa 85 Prozent. Das ist die ehrlichste
+        Ausgabe, die dieses Modell haben kann &ndash; das Auto rutscht nicht, aber die
+        Ausnutzung ist gerechnet.
+      </p>
+
+      <h3 style="font-size:14px; margin:16px 0 6px 0">Die Gleichungen</h3>
+      <p class="muted">
+        Der stationaere Lenkwinkel setzt sich aus dem geometrischen Anteil und dem
+        Eigenlenkanteil zusammen. L ist der Radstand, R der Kurvenradius, a<sub>y</sub> die
+        Querbeschleunigung und K<sub>u</sub> der Eigenlenkgradient:
+      </p>
+      <p class="formel" data-i18n-skip>&delta; = L / R + K<sub>u</sub> &middot; a<sub>y</sub></p>
+      <p class="muted">
+        K<sub>u</sub> ist positiv beim untersteuernden Auto, null beim neutralen, negativ beim
+        uebersteuernden. Er folgt aus den Achslasten und den Schraeglaufsteifigkeiten:
+      </p>
+      <p class="formel" data-i18n-skip>K<sub>u</sub> = m<sub>v</sub> / C<sub>v</sub>
+        &minus; m<sub>h</sub> / C<sub>h</sub></p>
+      <p class="muted">
+        Die Gierdynamik ist das Momentengleichgewicht um die Hochachse. I<sub>z</sub> ist das
+        Traegheitsmoment, r die Gierrate, l<sub>v</sub> und l<sub>h</sub> die Abstaende der
+        Achsen vom Schwerpunkt:
+      </p>
+      <p class="formel" data-i18n-skip>I<sub>z</sub> &middot; &#7771; = F<sub>y,v</sub>
+        &middot; l<sub>v</sub> &minus; F<sub>y,h</sub> &middot; l<sub>h</sub></p>
+      <p class="muted">
+        Die Achsquerkraefte kommen aus den Schraeglaufwinkeln. Linear reicht fuer den Anfang,
+        weil das Modell nur bis zum Grenzbereich zeigen soll und nicht darueber hinaus. Erst
+        wenn das trägt, lohnt eine Reifenkennlinie nach Pacejka &ndash; sie beschreibt genau
+        den Bereich JENSEITS des Maximums, und der ist auf einem Auto ohne Gripverlust ohnehin
+        nicht darstellbar.
+      </p>
+
+      <h3 style="font-size:14px; margin:16px 0 6px 0">Die drei Layouts</h3>
+      <p class="muted">
+        Die Zahlen sind Schaetzungen aus der Fahrzeugklasse und keine Messungen. Sie stehen
+        hier, damit die Wahl nachvollziehbar ist &ndash; und weil ein Modell mit drei
+        Bauformen mehr zeigt als eines mit einer.
+      </p>
+      <div class="doc-table-wrap"><table class="doc-table">
+        <tr><th>Fahrzeug</th><th>Motorlage</th><th>Achslast v/h</th><th>I<sub>z</sub></th></tr>
+        <tr><td>BMW M4 GT3</td><td>Frontmotor</td><td>50 : 50</td><td>&asymp; 2500 kg&middot;m&sup2;</td></tr>
+        <tr><td>Ferrari 296 GT3</td><td>Mittelmotor</td><td>44 : 56</td><td>&asymp; 1800 kg&middot;m&sup2;</td></tr>
+        <tr><td>Porsche 911 GT3 R</td><td>Heckmotor</td><td>39 : 61</td><td>&asymp; 2200 kg&middot;m&sup2;</td></tr>
+      </table></div>
+      <p class="muted">
+        Der Heckmotor hat die groesste Hinterachslast und damit den kleinsten
+        Eigenlenkgradienten: er dreht leichter ein und wird am Kurvenausgang unruhig. Der
+        Mittelmotor hat das kleinste Traegheitsmoment und reagiert am schnellsten auf einen
+        Lenkbefehl. Das sind die zwei Unterschiede, die ein Gierratenzeiger sichtbar machen
+        koennte.
+      </p>
+
+      <h3 style="font-size:14px; margin:16px 0 6px 0">Schrittweite und Stabilitaet</h3>
+      <p class="muted">
+        Gerechnet wird im Sendetakt, also mit 45 Millisekunden. Das ist grob: die
+        Gierdynamik eines Fahrzeugs hat Zeitkonstanten um 0,2 bis 0,5 Sekunden, und ein
+        explizites Euler-Verfahren wird bei 45 ms an der Grenze instabil, sobald die
+        Schraeglaufsteifigkeit hoch wird. Zwei Auswege, und der zweite ist der bessere:
+        entweder mehrere Teilschritte je Sendetakt, oder ein halbimpliziter Schritt, der bei
+        jeder Steifigkeit stabil bleibt. Die Physik kostet gemessen 6,7 Mikrosekunden je
+        Takt, also 0,015 Prozent des Sendeintervalls &ndash; Rechenzeit ist hier keine
+        Grenze, und deshalb waere ein Sparen an der Schrittweite falsch begruendet.
+      </p>
+
+      <h3 style="font-size:14px; margin:16px 0 6px 0">Womit man es prueft</h3>
+      <p class="muted">
+        Das ist der Teil, der bei einem Physikblock am haeufigsten fehlt. Die Probe ist eine
+        stationaere Kreisfahrt: festes Tempo, fester Radius, warten bis sich die Gierrate
+        nicht mehr aendert. Dann gilt die erste Gleichung, und der Eigenlenkgradient faellt
+        aus zwei Messpunkten heraus:
+      </p>
+      <p class="formel" data-i18n-skip>K<sub>u</sub> = (&delta;<sub>2</sub> &minus;
+        &delta;<sub>1</sub>) / (a<sub>y,2</sub> &minus; a<sub>y,1</sub>)</p>
+      <p class="muted">
+        Kommt der herausgerechnete Wert nicht auf den eingestellten heraus, ist irgendwo ein
+        Vorzeichen oder eine Achslast falsch &ndash; und zwar messbar, nicht nach Gefuehl. Die
+        zweite Probe ist der Sprungversuch: Lenkwinkel schlagartig anlegen, Gierrate
+        mitschreiben. Sie muss auf ihren stationaeren Wert einschwingen und nicht
+        aufschwingen; tut sie das, ist die Schrittweite zu grob.
+      </p>
+      <p class="muted">
+        Und eine dritte, die nichts kostet: bei sehr kleinem Lenkwinkel und niedrigem Tempo
+        muss das Modell dasselbe sagen wie die reine Geometrie, also L / R. Ein Modell, das im
+        einfachsten Fall von der Schulformel abweicht, ist an einer Stelle falsch, die man
+        ohne diese Probe lange nicht findet.
+      </p>
+    </div>
   </section>
 
   <section class="tabpage" id="tab-dev">
@@ -3958,6 +4076,56 @@
   </section>
 
   <section class="tabpage" id="tab-control">
+    <div class="card">
+      <h2>Mehrspieler im WLAN <span class="wip-tag">experimentell</span></h2>
+      <p class="muted">
+        Mehrere Telefone, jedes mit eigenem Auto, eine gemeinsame Rangliste. Auf dem PC laeuft
+        dazu ein kleines Programm: python tools/omegasim_host.py
+      </p>
+      <p class="muted" style="font-size:11.5px">
+        Ueber die Leitung gehen Rundenzahl, Rundenzeiten und Abgaenge. Keine Physik, keine
+        Lenkwerte: jedes Telefon rechnet seine eigene Physik und haelt seine eigene
+        Bluetooth-Verbindung. Reisst das WLAN ab, faehrt jeder weiter, nur die Rangliste
+        steht still.
+      </p>
+      <p class="muted" style="font-size:11.5px">
+        Gezaehlt werden GEMESSENE Runden, genau wie in der Rundenliste im Cockpit: die erste
+        Ueberfahrt startet die Uhr, erst die zweite ergibt eine Zeit. Nach drei Ueberfahrten
+        stehen also zwei Runden da. Bei Gleichstand fuehrt, wer zuerst dort war.
+      </p>
+      <p class="muted" style="font-size:11.5px; border-left:3px solid var(--warn);
+         padding-left:9px">
+        Warum es experimentell ist, und der Grund ist eine Browserregel und kein Wackeln im
+        Code: Web Bluetooth verlangt einen secure context. Das sind https, http://localhost
+        und file. Eine Adresse wie http://192.168.1.50:8080 ist keiner &ndash; die App
+        laedt dort, aber &bdquo;Auto verbinden&ldquo; bleibt ohne Wirkung. Einmal je Telefon
+        muss man in Chrome unter chrome://flags/#unsafely-treat-insecure-origin-as-secure die
+        Adresse des Hosts eintragen und Chrome neu starten. Damit erklaert man diesen einen
+        Ursprung fuer vertrauenswuerdig; im eigenen WLAN mit dem eigenen PC ist das
+        vertretbar, aber es ist eine Ausnahme von einer Sicherheitsregel und keine
+        Einstellung.
+      </p>
+      <div class="row" style="gap:10px; flex-wrap:wrap; align-items:flex-end">
+        <label class="small" style="flex:1 1 200px">Host-Adresse
+          <input type="text" id="mp-host" placeholder="http://192.168.1.50:8080"></label>
+        <label class="small" style="flex:1 1 140px">Mein Name
+          <input type="text" id="mp-name" maxlength="40" placeholder="z. B. Lukas"></label>
+        <button class="primary" id="mp-join">Mitmachen</button>
+        <button id="mp-leave" class="warn">Verlassen</button>
+      </div>
+      <div class="muted" id="mp-status" style="margin-top:8px">nicht verbunden</div>
+      <table class="cm-tab"><thead><tr>
+        <th></th><th>Fahrer</th><th>Runden</th><th>Letzte</th><th>Beste</th>
+      </tr></thead><tbody id="mp-rows">
+        <tr><td colspan="5" class="muted">keine Daten</td></tr>
+      </tbody></table>
+      <p class="muted" style="font-size:11.5px">
+        Der Ueberblicksschirm fuer den PC liegt beim Host unter /mp-overview.html. Er braucht
+        kein Bluetooth und deshalb auch keine Freigabe: auf http://localhost ist er ohnehin
+        ein secure context.
+      </p>
+    </div>
+
     <div class="card" id="race-card">
       <h2>Rennmodus</h2>
       <div class="row" style="align-items:center; gap:18px; flex-wrap:wrap">
@@ -5306,7 +5474,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.4.31</span></span>
+    <span class="foot-ver">v<span id="app-version">0.4.32</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -6617,6 +6785,23 @@
     "Als CSV": "As CSV",
     "nicht gestartet": "not started",
     "Abgänge": "Departures",
+    // Mehrspieler Version A (v0.5). Alle GANZE Textknoten, kein Fragment - die
+    // Erklaerabsaetze sind ohne inneres Markup geschrieben.
+    "Mehrspieler im WLAN": "Multiplayer over Wi-Fi",
+    "Mehrere Telefone, jedes mit eigenem Auto, eine gemeinsame Rangliste. Auf dem PC laeuft dazu ein kleines Programm: python tools/omegasim_host.py": "Several phones, each with its own car, one shared leaderboard. A small program runs on the PC for it: python tools/omegasim_host.py",
+    "Ueber die Leitung gehen Rundenzahl, Rundenzeiten und Abgaenge. Keine Physik, keine Lenkwerte: jedes Telefon rechnet seine eigene Physik und haelt seine eigene Bluetooth-Verbindung. Reisst das WLAN ab, faehrt jeder weiter, nur die Rangliste steht still.": "What goes over the wire: lap count, lap times and departures. No physics, no steering values – each phone computes its own physics and holds its own Bluetooth connection. If the Wi-Fi drops, everyone keeps driving; only the leaderboard stands still.",
+    "Gezaehlt werden GEMESSENE Runden, genau wie in der Rundenliste im Cockpit: die erste Ueberfahrt startet die Uhr, erst die zweite ergibt eine Zeit. Nach drei Ueberfahrten stehen also zwei Runden da. Bei Gleichstand fuehrt, wer zuerst dort war.": "Counted are MEASURED laps, exactly as in the cockpit lap list: the first crossing starts the clock, only the second yields a time. After three crossings the count shows two laps. On a tie, whoever got there first leads.",
+    "Warum es experimentell ist, und der Grund ist eine Browserregel und kein Wackeln im Code: Web Bluetooth verlangt einen secure context. Das sind https, http://localhost und file. Eine Adresse wie http://192.168.1.50:8080 ist keiner – die App laedt dort, aber „Auto verbinden“ bleibt ohne Wirkung. Einmal je Telefon muss man in Chrome unter chrome://flags/#unsafely-treat-insecure-origin-as-secure die Adresse des Hosts eintragen und Chrome neu starten. Damit erklaert man diesen einen Ursprung fuer vertrauenswuerdig; im eigenen WLAN mit dem eigenen PC ist das vertretbar, aber es ist eine Ausnahme von einer Sicherheitsregel und keine Einstellung.": "Why it is experimental – and the reason is a browser rule, not shaky code: Web Bluetooth requires a secure context. Those are https, http://localhost and file. An address like http://192.168.1.50:8080 is not one – the app loads there, but “Connect car” has no effect. Once per phone you have to enter the host address in Chrome under chrome://flags/#unsafely-treat-insecure-origin-as-secure and restart Chrome. Doing so declares that one origin trustworthy; on your own Wi-Fi with your own PC that is defensible, but it is an exception to a security rule and not a setting.",
+    "Der Ueberblicksschirm fuer den PC liegt beim Host unter /mp-overview.html. Er braucht kein Bluetooth und deshalb auch keine Freigabe: auf http://localhost ist er ohnehin ein secure context.": "The overview screen for the PC sits on the host at /mp-overview.html. It needs no Bluetooth and therefore no exemption: on http://localhost it is a secure context anyway.",
+    "Host-Adresse": "Host address",
+    "Mein Name": "My name",
+    "Mitmachen": "Join",
+    "Verlassen": "Leave",
+    "keine Daten": "no data",
+    "Fahrer": "drivers",
+    "verbunden": "connected",
+    "kein Kontakt zum Host": "no contact with the host",
+    "Ohne Host-Adresse geht es nicht.": "It does not work without a host address.",
   };
 
   // ============================================================================
@@ -9786,6 +9971,11 @@
   let offtrackWiederSeit = null; // seit wann durchgehend etwas anderes
   let offtrackAktiv = false;
   let offtrackRumbleAt = 0;
+  // Wie oft das Auto die Bahn verlassen hat, seit dem Laden. Als FLANKE gezaehlt: der
+  // Zustand allein waere je Takt ein Abgang. Gebraucht wird er von der Mehrspieler-Rangliste,
+  // und er ist die Zahl, die man nach einem Rennen wissen will - der Zeitanteil abseits
+  // stand schon in der Fusszeile, die ANZAHL nicht.
+  let offtrackZaehler = 0;
 
   // Gerufen aus dem Meldekanal in 70-race.js, also je Paket.
   function offtrackMelden(abseits) {
@@ -9793,7 +9983,10 @@
     if (abseits) {
       offtrackWiederSeit = null;
       if (offtrackSeit === null) offtrackSeit = jetzt;
-      if (!offtrackAktiv && jetzt - offtrackSeit >= OFFTRACK_EIN_MS) offtrackAktiv = true;
+      if (!offtrackAktiv && jetzt - offtrackSeit >= OFFTRACK_EIN_MS) {
+        offtrackAktiv = true;
+        offtrackZaehler++;
+      }
     } else {
       offtrackSeit = null;
       if (offtrackWiederSeit === null) offtrackWiederSeit = jetzt;
@@ -13445,6 +13638,11 @@
     if (!sectorCrossed(now)) return false;
     if (dashLapStart !== null) dashLapTimes.push(now - dashLapStart);
     dashLapStart = now;
+    // Mehrspieler: eine Runde ist der Moment, in dem sich die Rangliste wirklich aendert.
+    // Defensiv gerufen, weil mpRundeGefahren in 97-sessions.js steht - einer SPAETEREN Datei.
+    // Zur Laufzeit ist das unproblematisch, zur Ladezeit waere es die temporale Todeszone,
+    // und bei einer function-Deklaration greift die Hochziehung ohnehin.
+    if (typeof mpRundeGefahren === 'function') mpRundeGefahren();
     triggerDoppler();
 
     // Race mode: only count laps while a race is armed. "finishing" means RB/R1 was
@@ -22283,6 +22481,147 @@
   }
 
   renderSessions();
+
+  // ============================== MEHRSPIELER (Version A) ==============================
+  //
+  // WAS UEBER DIE LEITUNG GEHT: Rundenzahl, letzte und beste Rundenzeit, Abgaenge, Name.
+  // Keine Physik, keine Lenkwerte, keine Position. Jedes Telefon rechnet seine eigene Physik
+  // und haelt seine eigene Bluetooth-Verbindung; reisst das WLAN ab, faehrt jeder weiter und
+  // nur die Rangliste steht still.
+  //
+  // GEMELDET WIRD BEIM RUNDENSCHLUSS, dazu einmal je fuenf Sekunden als Lebenszeichen. Ein
+  // Bericht je Sendetakt waere 22 Anfragen je Sekunde fuer eine Zahl, die sich alle paar
+  // Sekunden aendert - und er wuerde denselben Faden belasten, der den 45-ms-Sendetakt haelt.
+  // Genau der war schon einmal die Ursache fuer ruckelndes Fahren.
+  //
+  // SOLANGE KEIN HOST EINGETRAGEN IST, PASSIERT GAR NICHTS: kein Zeitgeber, keine Anfrage.
+  // Eine Mehrspielerfunktion, die im Hintergrund pollt, obwohl niemand mehrspielt, ist eine
+  // Last ohne Gegenwert.
+  const MP_STORE = 'chc.mp.v1';
+  const MP_POLL_MS = 1500;      // Rangliste holen
+  const MP_HEARTBEAT_MS = 5000; // Lebenszeichen, damit die eigene Zeile nicht blass wird
+  const mp = { host: '', name: '', id: '', an: false, timer: null, letzterBericht: 0 };
+
+  function mpLaden() {
+    try {
+      const o = JSON.parse(localStorage.getItem(MP_STORE) || '{}');
+      mp.host = o.host || '';
+      mp.name = o.name || '';
+      // Die Kennung wird EINMAL erzeugt und bleibt. Ohne sie waere jeder Neustart ein neuer
+      // Fahrer in der Rangliste, und nach drei Ladevorgaengen stehen dort vier Mal dieselbe
+      // Person.
+      mp.id = o.id || ('p' + Math.random().toString(36).slice(2, 10));
+      mpSpeichern();
+    } catch (e) { mp.id = 'p' + Math.random().toString(36).slice(2, 10); }
+  }
+
+  function mpSpeichern() {
+    try {
+      localStorage.setItem(MP_STORE, JSON.stringify(
+        { host: mp.host, name: mp.name, id: mp.id }));
+    } catch (e) { /* privater Modus */ }
+  }
+
+  function mpSay(text, schlecht) {
+    const el = $('mp-status');
+    if (!el) return;
+    el.textContent = text;
+    el.style.color = schlecht ? 'var(--bad)' : '';
+  }
+
+  function mpUrl(pfad) {
+    let h = mp.host.trim().replace(/\/+$/, '');
+    if (h && !/^https?:\/\//.test(h)) h = 'http://' + h;
+    return h + pfad;
+  }
+
+  // Der eigene Stand. Er kommt aus DENSELBEN Variablen, aus denen das Cockpit liest -
+  // dashLapTimes und die Rundenzahl. Eine zweite Zaehlung waere eine zweite Wahrheit.
+  function mpEigenerStand() {
+    const zeiten = (typeof dashLapTimes !== 'undefined' && dashLapTimes) || [];
+    const beste = zeiten.length ? Math.min.apply(null, zeiten) / 1000 : null;
+    const letzte = zeiten.length ? zeiten[zeiten.length - 1] / 1000 : null;
+    return { id: mp.id, name: mp.name || 'ohne Namen', laps: zeiten.length,
+             letzte, beste,
+             abgaenge: (typeof offtrackZaehler !== 'undefined') ? offtrackZaehler : 0 };
+  }
+
+  async function mpBerichten() {
+    if (!mp.an) return;
+    mp.letzterBericht = Date.now();
+    try {
+      await fetch(mpUrl('/mp/report'), {
+        method: 'POST', cache: 'no-store',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(mpEigenerStand()),
+      });
+    } catch (e) { /* die Rangliste zeigt es beim naechsten Holen */ }
+  }
+
+  // Aus playerLapCrossed gerufen. Eine Runde ist der Moment, in dem sich die Rangliste
+  // wirklich aendert - alles andere ist Lebenszeichen.
+  function mpRundeGefahren() {
+    if (mp.an) mpBerichten();
+  }
+
+  async function mpHolen() {
+    if (!mp.an) return;
+    // Lebenszeichen, wenn lange kein Rundenschluss war: ohne das wird die eigene Zeile im
+    // Ueberblicksschirm nach zehn Sekunden blass, obwohl man faehrt.
+    if (Date.now() - mp.letzterBericht > MP_HEARTBEAT_MS) mpBerichten();
+    try {
+      const r = await fetch(mpUrl('/mp/state'), { cache: 'no-store' });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const d = await r.json();
+      mpZeichnen(d);
+      mpSay(t('verbunden') + ', ' + (d.fahrer || []).length + ' '
+            + t('Fahrer'));
+    } catch (e) {
+      mpSay(t('kein Kontakt zum Host') + ': ' + e.message, true);
+    }
+  }
+
+  function mpZeichnen(d) {
+    const host = $('mp-rows');
+    if (!host) return;
+    const leute = d.fahrer || [];
+    if (!leute.length) {
+      host.innerHTML = '<tr><td colspan="5" class="muted">' + t('keine Daten') + '</td></tr>';
+      return;
+    }
+    const zeit = (x) => (x === null || x === undefined) ? '&ndash;' : x.toFixed(2) + 's';
+    host.innerHTML = leute.map((f, i) =>
+      '<tr' + (f.id === mp.id ? ' style="color:var(--good)"' : '') + '>'
+      + '<td>' + (i + 1) + '</td><td>' + String(f.name).replace(/</g, '&lt;') + '</td>'
+      + '<td>' + f.laps + '</td><td>' + zeit(f.letzte) + '</td><td>' + zeit(f.beste)
+      + '</td></tr>').join('');
+  }
+
+  function mpJoin() {
+    mp.host = ($('mp-host') || { value: '' }).value.trim();
+    mp.name = ($('mp-name') || { value: '' }).value.trim();
+    if (!mp.host) { mpSay(t('Ohne Host-Adresse geht es nicht.'), true); return; }
+    mpSpeichern();
+    mp.an = true;
+    if (mp.timer === null) mp.timer = setInterval(mpHolen, MP_POLL_MS);
+    mpBerichten();
+    mpHolen();
+    log('Mehrspieler: bei ' + mp.host + ' angemeldet als "' + (mp.name || 'ohne Namen')
+        + '".', 'info');
+  }
+
+  function mpLeave() {
+    mp.an = false;
+    if (mp.timer !== null) { clearInterval(mp.timer); mp.timer = null; }
+    mpSay(t('nicht verbunden'));
+    log('Mehrspieler verlassen.', 'info');
+  }
+
+  mpLaden();
+  if ($('mp-host')) $('mp-host').value = mp.host;
+  if ($('mp-name')) $('mp-name').value = mp.name;
+  if ($('mp-join')) $('mp-join').addEventListener('click', mpJoin);
+  if ($('mp-leave')) $('mp-leave').addEventListener('click', mpLeave);
   // ============================== VOREINSTELLUNGEN ==============================
   // presetControls() sucht NUR in #tab-options. Die Karte verspricht "nicht die
   // Rennlaenge, nicht das Wetter, nicht die Strecke", und dieses Versprechen hing einmal

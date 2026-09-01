@@ -1566,6 +1566,11 @@
     if (!sectorCrossed(now)) return false;
     if (dashLapStart !== null) dashLapTimes.push(now - dashLapStart);
     dashLapStart = now;
+    // Mehrspieler: eine Runde ist der Moment, in dem sich die Rangliste wirklich aendert.
+    // Defensiv gerufen, weil mpRundeGefahren in 97-sessions.js steht - einer SPAETEREN Datei.
+    // Zur Laufzeit ist das unproblematisch, zur Ladezeit waere es die temporale Todeszone,
+    // und bei einer function-Deklaration greift die Hochziehung ohnehin.
+    if (typeof mpRundeGefahren === 'function') mpRundeGefahren();
     triggerDoppler();
 
     // Race mode: only count laps while a race is armed. "finishing" means RB/R1 was

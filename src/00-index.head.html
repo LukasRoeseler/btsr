@@ -257,6 +257,11 @@
   /* Kennzeichen fuer Regler, die nachgerechnet nicht wirken. Es steht IN der Beschriftung
      und nicht als Farbe der ganzen Zeile: eine ausgegraute Zeile liest sich wie "gesperrt",
      und diese Regler sind nicht gesperrt - sie brauchen nur etwas, das fehlt. */
+  /* Formelzeilen in der Doku. Eingerueckt und in Monospace, damit sie sich vom
+     Erklaertext abheben - eine Gleichung mitten im Flusstext liest man nicht. */
+  .formel { font-family: monospace; font-size: 13px; color: var(--ink);
+    margin: 8px 0 10px 0; padding-left: 14px;
+    border-left: 2px solid var(--gt3-line-soft); }
   .wip-tag { display: inline-block; font-size: 9.5px; letter-spacing: .1em;
     padding: 1px 5px; border-radius: 3px; vertical-align: 2px;
     background: #4a3c00; color: #ffd83d; font-weight: 700; }
@@ -3471,6 +3476,119 @@
         geschnitten. Welche Datei woher stammt, steht in <code>audio/CREDITS.md</code>.
       </p>
     </div>
+
+    <div class="card">
+      <h2>Plan: das Einspurmodell <span class="wip-tag">noch nicht gebaut</span></h2>
+      <p class="muted">
+        Das ist ein Bauplan und kein Bericht. Er steht hier, damit der naechste Block nicht
+        neu recherchiert werden muss, und damit nachpruefbar ist, was dabei versprochen wurde.
+      </p>
+
+      <h3 style="font-size:14px; margin:16px 0 6px 0">Die tragende Entscheidung: Instrument,
+        nicht Aktor</h3>
+      <p class="muted">
+        Das Einspurmodell rechnet Schwimmwinkel, Gierrate und Achsschraeglaufwinkel aus
+        Lenkwinkel und Tempo. Sein Ergebnis darf die Lenkung nicht stellen, und der Grund ist
+        keine Vorsicht, sondern eine Tatsache: das Modellauto rutscht nicht. Ein Modell, das
+        eine Bewegung berechnet, die das Fahrzeug nicht ausfuehren kann, wuerde die
+        Lenkvorgabe von der Wirklichkeit wegdrehen &ndash; das Auto faehrt geradeaus, waehrend
+        die Simulation eine Drift meldet, und die App korrigiert eine Bewegung, die es nicht
+        gibt.
+      </p>
+      <p class="muted">
+        Es darf zeigen und begrenzen. Beides ist ehrlich, und beides ist neu: ein
+        Gierratenzeiger im Cockpit sagt, wie weit das Auto vom stationaeren Zustand entfernt
+        ist, und eine Kurvengrenzgeschwindigkeit aus dem Reibkreis sagt, wie schnell man
+        durch eine bekannte Kurve kaeme. Die Rueckmeldung am Grenzbereich wird ein
+        Reifenquietschen im Stil von Gran Turismo: Lautstaerke und Tonhoehe laufen stetig mit
+        der Ausnutzung des Reibkreises, Einsatz ab etwa 85 Prozent. Das ist die ehrlichste
+        Ausgabe, die dieses Modell haben kann &ndash; das Auto rutscht nicht, aber die
+        Ausnutzung ist gerechnet.
+      </p>
+
+      <h3 style="font-size:14px; margin:16px 0 6px 0">Die Gleichungen</h3>
+      <p class="muted">
+        Der stationaere Lenkwinkel setzt sich aus dem geometrischen Anteil und dem
+        Eigenlenkanteil zusammen. L ist der Radstand, R der Kurvenradius, a<sub>y</sub> die
+        Querbeschleunigung und K<sub>u</sub> der Eigenlenkgradient:
+      </p>
+      <p class="formel" data-i18n-skip>&delta; = L / R + K<sub>u</sub> &middot; a<sub>y</sub></p>
+      <p class="muted">
+        K<sub>u</sub> ist positiv beim untersteuernden Auto, null beim neutralen, negativ beim
+        uebersteuernden. Er folgt aus den Achslasten und den Schraeglaufsteifigkeiten:
+      </p>
+      <p class="formel" data-i18n-skip>K<sub>u</sub> = m<sub>v</sub> / C<sub>v</sub>
+        &minus; m<sub>h</sub> / C<sub>h</sub></p>
+      <p class="muted">
+        Die Gierdynamik ist das Momentengleichgewicht um die Hochachse. I<sub>z</sub> ist das
+        Traegheitsmoment, r die Gierrate, l<sub>v</sub> und l<sub>h</sub> die Abstaende der
+        Achsen vom Schwerpunkt:
+      </p>
+      <p class="formel" data-i18n-skip>I<sub>z</sub> &middot; &#7771; = F<sub>y,v</sub>
+        &middot; l<sub>v</sub> &minus; F<sub>y,h</sub> &middot; l<sub>h</sub></p>
+      <p class="muted">
+        Die Achsquerkraefte kommen aus den Schraeglaufwinkeln. Linear reicht fuer den Anfang,
+        weil das Modell nur bis zum Grenzbereich zeigen soll und nicht darueber hinaus. Erst
+        wenn das trägt, lohnt eine Reifenkennlinie nach Pacejka &ndash; sie beschreibt genau
+        den Bereich JENSEITS des Maximums, und der ist auf einem Auto ohne Gripverlust ohnehin
+        nicht darstellbar.
+      </p>
+
+      <h3 style="font-size:14px; margin:16px 0 6px 0">Die drei Layouts</h3>
+      <p class="muted">
+        Die Zahlen sind Schaetzungen aus der Fahrzeugklasse und keine Messungen. Sie stehen
+        hier, damit die Wahl nachvollziehbar ist &ndash; und weil ein Modell mit drei
+        Bauformen mehr zeigt als eines mit einer.
+      </p>
+      <div class="doc-table-wrap"><table class="doc-table">
+        <tr><th>Fahrzeug</th><th>Motorlage</th><th>Achslast v/h</th><th>I<sub>z</sub></th></tr>
+        <tr><td>BMW M4 GT3</td><td>Frontmotor</td><td>50 : 50</td><td>&asymp; 2500 kg&middot;m&sup2;</td></tr>
+        <tr><td>Ferrari 296 GT3</td><td>Mittelmotor</td><td>44 : 56</td><td>&asymp; 1800 kg&middot;m&sup2;</td></tr>
+        <tr><td>Porsche 911 GT3 R</td><td>Heckmotor</td><td>39 : 61</td><td>&asymp; 2200 kg&middot;m&sup2;</td></tr>
+      </table></div>
+      <p class="muted">
+        Der Heckmotor hat die groesste Hinterachslast und damit den kleinsten
+        Eigenlenkgradienten: er dreht leichter ein und wird am Kurvenausgang unruhig. Der
+        Mittelmotor hat das kleinste Traegheitsmoment und reagiert am schnellsten auf einen
+        Lenkbefehl. Das sind die zwei Unterschiede, die ein Gierratenzeiger sichtbar machen
+        koennte.
+      </p>
+
+      <h3 style="font-size:14px; margin:16px 0 6px 0">Schrittweite und Stabilitaet</h3>
+      <p class="muted">
+        Gerechnet wird im Sendetakt, also mit 45 Millisekunden. Das ist grob: die
+        Gierdynamik eines Fahrzeugs hat Zeitkonstanten um 0,2 bis 0,5 Sekunden, und ein
+        explizites Euler-Verfahren wird bei 45 ms an der Grenze instabil, sobald die
+        Schraeglaufsteifigkeit hoch wird. Zwei Auswege, und der zweite ist der bessere:
+        entweder mehrere Teilschritte je Sendetakt, oder ein halbimpliziter Schritt, der bei
+        jeder Steifigkeit stabil bleibt. Die Physik kostet gemessen 6,7 Mikrosekunden je
+        Takt, also 0,015 Prozent des Sendeintervalls &ndash; Rechenzeit ist hier keine
+        Grenze, und deshalb waere ein Sparen an der Schrittweite falsch begruendet.
+      </p>
+
+      <h3 style="font-size:14px; margin:16px 0 6px 0">Womit man es prueft</h3>
+      <p class="muted">
+        Das ist der Teil, der bei einem Physikblock am haeufigsten fehlt. Die Probe ist eine
+        stationaere Kreisfahrt: festes Tempo, fester Radius, warten bis sich die Gierrate
+        nicht mehr aendert. Dann gilt die erste Gleichung, und der Eigenlenkgradient faellt
+        aus zwei Messpunkten heraus:
+      </p>
+      <p class="formel" data-i18n-skip>K<sub>u</sub> = (&delta;<sub>2</sub> &minus;
+        &delta;<sub>1</sub>) / (a<sub>y,2</sub> &minus; a<sub>y,1</sub>)</p>
+      <p class="muted">
+        Kommt der herausgerechnete Wert nicht auf den eingestellten heraus, ist irgendwo ein
+        Vorzeichen oder eine Achslast falsch &ndash; und zwar messbar, nicht nach Gefuehl. Die
+        zweite Probe ist der Sprungversuch: Lenkwinkel schlagartig anlegen, Gierrate
+        mitschreiben. Sie muss auf ihren stationaeren Wert einschwingen und nicht
+        aufschwingen; tut sie das, ist die Schrittweite zu grob.
+      </p>
+      <p class="muted">
+        Und eine dritte, die nichts kostet: bei sehr kleinem Lenkwinkel und niedrigem Tempo
+        muss das Modell dasselbe sagen wie die reine Geometrie, also L / R. Ein Modell, das im
+        einfachsten Fall von der Schulformel abweicht, ist an einer Stelle falsch, die man
+        ohne diese Probe lange nicht findet.
+      </p>
+    </div>
   </section>
 
   <section class="tabpage" id="tab-dev">
@@ -3958,6 +4076,56 @@
   </section>
 
   <section class="tabpage" id="tab-control">
+    <div class="card">
+      <h2>Mehrspieler im WLAN <span class="wip-tag">experimentell</span></h2>
+      <p class="muted">
+        Mehrere Telefone, jedes mit eigenem Auto, eine gemeinsame Rangliste. Auf dem PC laeuft
+        dazu ein kleines Programm: python tools/omegasim_host.py
+      </p>
+      <p class="muted" style="font-size:11.5px">
+        Ueber die Leitung gehen Rundenzahl, Rundenzeiten und Abgaenge. Keine Physik, keine
+        Lenkwerte: jedes Telefon rechnet seine eigene Physik und haelt seine eigene
+        Bluetooth-Verbindung. Reisst das WLAN ab, faehrt jeder weiter, nur die Rangliste
+        steht still.
+      </p>
+      <p class="muted" style="font-size:11.5px">
+        Gezaehlt werden GEMESSENE Runden, genau wie in der Rundenliste im Cockpit: die erste
+        Ueberfahrt startet die Uhr, erst die zweite ergibt eine Zeit. Nach drei Ueberfahrten
+        stehen also zwei Runden da. Bei Gleichstand fuehrt, wer zuerst dort war.
+      </p>
+      <p class="muted" style="font-size:11.5px; border-left:3px solid var(--warn);
+         padding-left:9px">
+        Warum es experimentell ist, und der Grund ist eine Browserregel und kein Wackeln im
+        Code: Web Bluetooth verlangt einen secure context. Das sind https, http://localhost
+        und file. Eine Adresse wie http://192.168.1.50:8080 ist keiner &ndash; die App
+        laedt dort, aber &bdquo;Auto verbinden&ldquo; bleibt ohne Wirkung. Einmal je Telefon
+        muss man in Chrome unter chrome://flags/#unsafely-treat-insecure-origin-as-secure die
+        Adresse des Hosts eintragen und Chrome neu starten. Damit erklaert man diesen einen
+        Ursprung fuer vertrauenswuerdig; im eigenen WLAN mit dem eigenen PC ist das
+        vertretbar, aber es ist eine Ausnahme von einer Sicherheitsregel und keine
+        Einstellung.
+      </p>
+      <div class="row" style="gap:10px; flex-wrap:wrap; align-items:flex-end">
+        <label class="small" style="flex:1 1 200px">Host-Adresse
+          <input type="text" id="mp-host" placeholder="http://192.168.1.50:8080"></label>
+        <label class="small" style="flex:1 1 140px">Mein Name
+          <input type="text" id="mp-name" maxlength="40" placeholder="z. B. Lukas"></label>
+        <button class="primary" id="mp-join">Mitmachen</button>
+        <button id="mp-leave" class="warn">Verlassen</button>
+      </div>
+      <div class="muted" id="mp-status" style="margin-top:8px">nicht verbunden</div>
+      <table class="cm-tab"><thead><tr>
+        <th></th><th>Fahrer</th><th>Runden</th><th>Letzte</th><th>Beste</th>
+      </tr></thead><tbody id="mp-rows">
+        <tr><td colspan="5" class="muted">keine Daten</td></tr>
+      </tbody></table>
+      <p class="muted" style="font-size:11.5px">
+        Der Ueberblicksschirm fuer den PC liegt beim Host unter /mp-overview.html. Er braucht
+        kein Bluetooth und deshalb auch keine Freigabe: auf http://localhost ist er ohnehin
+        ein secure context.
+      </p>
+    </div>
+
     <div class="card" id="race-card">
       <h2>Rennmodus</h2>
       <div class="row" style="align-items:center; gap:18px; flex-wrap:wrap">
@@ -5306,7 +5474,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.4.31</span></span>
+    <span class="foot-ver">v<span id="app-version">0.4.32</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine

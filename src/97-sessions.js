@@ -267,3 +267,144 @@
   }
 
   renderSessions();
+
+  // ============================== MEHRSPIELER (Version A) ==============================
+  //
+  // WAS UEBER DIE LEITUNG GEHT: Rundenzahl, letzte und beste Rundenzeit, Abgaenge, Name.
+  // Keine Physik, keine Lenkwerte, keine Position. Jedes Telefon rechnet seine eigene Physik
+  // und haelt seine eigene Bluetooth-Verbindung; reisst das WLAN ab, faehrt jeder weiter und
+  // nur die Rangliste steht still.
+  //
+  // GEMELDET WIRD BEIM RUNDENSCHLUSS, dazu einmal je fuenf Sekunden als Lebenszeichen. Ein
+  // Bericht je Sendetakt waere 22 Anfragen je Sekunde fuer eine Zahl, die sich alle paar
+  // Sekunden aendert - und er wuerde denselben Faden belasten, der den 45-ms-Sendetakt haelt.
+  // Genau der war schon einmal die Ursache fuer ruckelndes Fahren.
+  //
+  // SOLANGE KEIN HOST EINGETRAGEN IST, PASSIERT GAR NICHTS: kein Zeitgeber, keine Anfrage.
+  // Eine Mehrspielerfunktion, die im Hintergrund pollt, obwohl niemand mehrspielt, ist eine
+  // Last ohne Gegenwert.
+  const MP_STORE = 'chc.mp.v1';
+  const MP_POLL_MS = 1500;      // Rangliste holen
+  const MP_HEARTBEAT_MS = 5000; // Lebenszeichen, damit die eigene Zeile nicht blass wird
+  const mp = { host: '', name: '', id: '', an: false, timer: null, letzterBericht: 0 };
+
+  function mpLaden() {
+    try {
+      const o = JSON.parse(localStorage.getItem(MP_STORE) || '{}');
+      mp.host = o.host || '';
+      mp.name = o.name || '';
+      // Die Kennung wird EINMAL erzeugt und bleibt. Ohne sie waere jeder Neustart ein neuer
+      // Fahrer in der Rangliste, und nach drei Ladevorgaengen stehen dort vier Mal dieselbe
+      // Person.
+      mp.id = o.id || ('p' + Math.random().toString(36).slice(2, 10));
+      mpSpeichern();
+    } catch (e) { mp.id = 'p' + Math.random().toString(36).slice(2, 10); }
+  }
+
+  function mpSpeichern() {
+    try {
+      localStorage.setItem(MP_STORE, JSON.stringify(
+        { host: mp.host, name: mp.name, id: mp.id }));
+    } catch (e) { /* privater Modus */ }
+  }
+
+  function mpSay(text, schlecht) {
+    const el = $('mp-status');
+    if (!el) return;
+    el.textContent = text;
+    el.style.color = schlecht ? 'var(--bad)' : '';
+  }
+
+  function mpUrl(pfad) {
+    let h = mp.host.trim().replace(/\/+$/, '');
+    if (h && !/^https?:\/\//.test(h)) h = 'http://' + h;
+    return h + pfad;
+  }
+
+  // Der eigene Stand. Er kommt aus DENSELBEN Variablen, aus denen das Cockpit liest -
+  // dashLapTimes und die Rundenzahl. Eine zweite Zaehlung waere eine zweite Wahrheit.
+  function mpEigenerStand() {
+    const zeiten = (typeof dashLapTimes !== 'undefined' && dashLapTimes) || [];
+    const beste = zeiten.length ? Math.min.apply(null, zeiten) / 1000 : null;
+    const letzte = zeiten.length ? zeiten[zeiten.length - 1] / 1000 : null;
+    return { id: mp.id, name: mp.name || 'ohne Namen', laps: zeiten.length,
+             letzte, beste,
+             abgaenge: (typeof offtrackZaehler !== 'undefined') ? offtrackZaehler : 0 };
+  }
+
+  async function mpBerichten() {
+    if (!mp.an) return;
+    mp.letzterBericht = Date.now();
+    try {
+      await fetch(mpUrl('/mp/report'), {
+        method: 'POST', cache: 'no-store',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(mpEigenerStand()),
+      });
+    } catch (e) { /* die Rangliste zeigt es beim naechsten Holen */ }
+  }
+
+  // Aus playerLapCrossed gerufen. Eine Runde ist der Moment, in dem sich die Rangliste
+  // wirklich aendert - alles andere ist Lebenszeichen.
+  function mpRundeGefahren() {
+    if (mp.an) mpBerichten();
+  }
+
+  async function mpHolen() {
+    if (!mp.an) return;
+    // Lebenszeichen, wenn lange kein Rundenschluss war: ohne das wird die eigene Zeile im
+    // Ueberblicksschirm nach zehn Sekunden blass, obwohl man faehrt.
+    if (Date.now() - mp.letzterBericht > MP_HEARTBEAT_MS) mpBerichten();
+    try {
+      const r = await fetch(mpUrl('/mp/state'), { cache: 'no-store' });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const d = await r.json();
+      mpZeichnen(d);
+      mpSay(t('verbunden') + ', ' + (d.fahrer || []).length + ' '
+            + t('Fahrer'));
+    } catch (e) {
+      mpSay(t('kein Kontakt zum Host') + ': ' + e.message, true);
+    }
+  }
+
+  function mpZeichnen(d) {
+    const host = $('mp-rows');
+    if (!host) return;
+    const leute = d.fahrer || [];
+    if (!leute.length) {
+      host.innerHTML = '<tr><td colspan="5" class="muted">' + t('keine Daten') + '</td></tr>';
+      return;
+    }
+    const zeit = (x) => (x === null || x === undefined) ? '&ndash;' : x.toFixed(2) + 's';
+    host.innerHTML = leute.map((f, i) =>
+      '<tr' + (f.id === mp.id ? ' style="color:var(--good)"' : '') + '>'
+      + '<td>' + (i + 1) + '</td><td>' + String(f.name).replace(/</g, '&lt;') + '</td>'
+      + '<td>' + f.laps + '</td><td>' + zeit(f.letzte) + '</td><td>' + zeit(f.beste)
+      + '</td></tr>').join('');
+  }
+
+  function mpJoin() {
+    mp.host = ($('mp-host') || { value: '' }).value.trim();
+    mp.name = ($('mp-name') || { value: '' }).value.trim();
+    if (!mp.host) { mpSay(t('Ohne Host-Adresse geht es nicht.'), true); return; }
+    mpSpeichern();
+    mp.an = true;
+    if (mp.timer === null) mp.timer = setInterval(mpHolen, MP_POLL_MS);
+    mpBerichten();
+    mpHolen();
+    log('Mehrspieler: bei ' + mp.host + ' angemeldet als "' + (mp.name || 'ohne Namen')
+        + '".', 'info');
+  }
+
+  function mpLeave() {
+    mp.an = false;
+    if (mp.timer !== null) { clearInterval(mp.timer); mp.timer = null; }
+    mpSay(t('nicht verbunden'));
+    log('Mehrspieler verlassen.', 'info');
+  }
+
+  mpLaden();
+  if ($('mp-host')) $('mp-host').value = mp.host;
+  if ($('mp-name')) $('mp-name').value = mp.name;
+  if ($('mp-join')) $('mp-join').addEventListener('click', mpJoin);
+  if ($('mp-leave')) $('mp-leave').addEventListener('click', mpLeave);
