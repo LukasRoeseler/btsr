@@ -114,7 +114,16 @@
         // plus eins, und sie zweimal zu speichern ist die Gelegenheit, dass sie
         // auseinanderlaufen.
         laps: c.laps.map(l => l.ms),
+        // Ereignisse je Runde, nur fuer das gesteuerte Auto: Boxenstopps und Crashs werden
+        // fuer den Fahrer erfasst, nicht fuer die Ghosts. Bei denen bleibt das Feld leer,
+        // und der Plot zeichnet sie dann ohne Markierungen - ehrlicher, als fehlende Daten
+        // als "kein Stopp" zu zeigen.
+        ereignisse: (c.role === 'player' && typeof raceLapEvents !== 'undefined')
+          ? raceLapEvents.slice(0, c.laps.length) : [],
       })),
+      // Die Zeitstrafe der Sitzung, als EINE Zahl. Sie wird am Rennende vergeben und
+      // gehoert keiner Runde - im Plot steht sie deshalb in der Fussnote.
+      strafeS: (typeof racePenaltyMs === 'function') ? Math.round(racePenaltyMs() / 1000) : null,
       // Die Abstimmung mit. Ohne sie ist eine Rundenzeit eine Zahl ohne Bedingungen, und
       // dann kann man zwei Sitzungen nicht vergleichen.
       einstellungen: (typeof presetRead === 'function') ? presetRead() : null,
@@ -155,9 +164,183 @@
   // ---- Anzeige -----------------------------------------------------------------------
   function sessionFmt(ms) { return (ms / 1000).toFixed(2) + 's'; }
 
+  // ---- Rundenzeit-Plot ----------------------------------------------------------------
+  //
+  // BALKEN und keine Linie: eine Runde ist eine abgeschlossene Einheit, keine stetige
+  // Groesse. Eine Linie zwischen zwei Runden behauptet Zwischenwerte, die es nicht gibt.
+  //
+  // DIE Y-ACHSE BEGINNT NICHT BEI NULL, und das ist eine Entscheidung mit Begruendung: bei
+  // null gestaucht sehen alle Runden gleich hoch aus, und der Unterschied zwischen 12,1 und
+  // 12,8 Sekunden ist genau das, was interessiert. Die Achse ist beschriftet, damit die
+  // Stauchung sichtbar ist und nicht taeuscht - eine unbeschriftete abgeschnittene Achse
+  // waere eine Luege.
+  //
+  // ALS SVG und nicht als Canvas: es skaliert mit der Blattbreite, laesst sich mit den
+  // Augen pruefen, und es gibt kein zweites Zeichensystem in diesem Projekt.
+  function plotAufbauen(sitzung, autoName) {
+    const host = $('sess-plot');
+    const note = $('sess-plot-note');
+    if (!host) return;
+    if (!sitzung) {
+      host.innerHTML = '';
+      if (note) note.textContent = t('Noch keine Sitzung aufgezeichnet.');
+      return;
+    }
+    const auto = (sitzung.autos || []).find(a => a.name === autoName)
+              || (sitzung.autos || [])[0];
+    const zeiten = (auto && auto.laps) || [];
+    if (zeiten.length < 1) {
+      host.innerHTML = '';
+      if (note) note.textContent = t('Diese Sitzung hat keine gemessenen Runden.');
+      return;
+    }
+    const ev = (auto && auto.ereignisse) || [];
+    const beste = Math.min.apply(null, zeiten);
+    const schlecht = Math.max.apply(null, zeiten);
+    // Untere Kante etwas UNTER der besten Runde, obere etwas ueber der langsamsten: sonst
+    // klebt der schnellste Balken auf der Achse und der langsamste am Rand.
+    const spanne = Math.max(1, schlecht - beste);
+    const yMin = Math.max(0, beste - spanne * 0.25);
+    const yMax = schlecht + spanne * 0.18;
+    const B = 34, hoehe = 150, links = 52, oben = 22, unten = 26;
+    const breite = links + zeiten.length * B + 14;
+    const yPos = (ms) => oben + (yMax - ms) / (yMax - yMin) * hoehe;
+    const teile = [];
+    teile.push('<svg viewBox="0 0 ' + breite + ' ' + (oben + hoehe + unten)
+               // width:100% streckte die SVG auf die Blattbreite und height:auto zog die
+               // Hoehe mit - aus 198 Einheiten wurden ueber 500 Pixel. Feste Breite mit
+               // max-width: auf dem Telefon wird sie kleiner, auf dem Bildschirm nicht
+               // groesser als vorgesehen.
+               + '" style="width:' + breite + 'px;max-width:100%;height:auto"'
+               + ' role="img" aria-label="Rundenzeiten je Runde">');
+    // Bezugslinie auf der Bestzeit: so liest man den Abstand jeder Runde ohne zu rechnen.
+    const yB = yPos(beste);
+    teile.push('<line x1="' + links + '" y1="' + yB.toFixed(1) + '" x2="' + (breite - 8)
+               + '" y2="' + yB.toFixed(1) + '" stroke="#3ddc84" stroke-width="1"'
+               + ' stroke-dasharray="3 3"/>');
+    teile.push('<text x="4" y="' + (yB + 3.5).toFixed(1) + '" font-size="9" fill="#3ddc84"'
+               + ' font-family="monospace">' + formatLapTime(beste) + '</text>');
+    // Und die obere Kante beschriftet, damit die abgeschnittene Achse sichtbar ist.
+    teile.push('<text x="4" y="' + (oben + 4) + '" font-size="9" fill="#6f7a94"'
+               + ' font-family="monospace">' + formatLapTime(Math.round(yMax)) + '</text>');
+    teile.push('<line x1="' + links + '" y1="' + (oben + hoehe) + '" x2="' + (breite - 8)
+               + '" y2="' + (oben + hoehe) + '" stroke="#2b3547" stroke-width="1"/>');
+    for (let i = 0; i < zeiten.length; i++) {
+      const ms = zeiten[i];
+      const e = ev[i] || {};
+      const x = links + i * B + 4;
+      const w = B - 10;
+      const y = yPos(ms);
+      const h = Math.max(1, oben + hoehe - y);
+      // Gelb bei Boxenstopp, gruen bei der schnellsten Runde, sonst blau. Die Reihenfolge
+      // entscheidet: ein Boxenstopp erklaert eine lange Runde, und das ist die wichtigere
+      // Aussage als "war nicht die schnellste".
+      const farbe = e.pit ? '#ffb02e' : (ms === beste ? '#3ddc84' : '#5aa9ff');
+      teile.push('<rect x="' + x + '" y="' + y.toFixed(1) + '" width="' + w + '" height="'
+                 + h.toFixed(1) + '" fill="' + farbe + '" opacity="0.85" rx="1"/>');
+      // Crashs als Blitz ueber dem Balken, mit Zahl ab zwei.
+      if (e.crash) {
+        teile.push('<text x="' + (x + w / 2) + '" y="' + (y - 3).toFixed(1)
+                   + '" text-anchor="middle" font-size="11" fill="#ff5c5c">\u26a1'
+                   + (e.crash > 1 ? '<tspan font-size="8">' + e.crash + '</tspan>' : '')
+                   + '</text>');
+      }
+      teile.push('<text x="' + (x + w / 2) + '" y="' + (oben + hoehe + 11)
+                 + '" text-anchor="middle" font-size="9" fill="#6f7a94"'
+                 + ' font-family="monospace">' + (i + 1) + '</text>');
+    }
+    teile.push('<text x="' + links + '" y="' + (oben + hoehe + 23) + '" font-size="8.5"'
+               + ' fill="#6f7a94">Runde</text>');
+    teile.push('</svg>');
+    host.innerHTML = teile.join('');
+
+    // Die Fussnote traegt, was NICHT im Bild steht: die Zeitstrafe (sie gehoert keiner
+    // Runde) und der Hinweis, wenn eine alte Sitzung keine Ereignisse mitbringt.
+    if (note) {
+      const stueck = [];
+      const stopps = ev.reduce((a, x) => a + (x.pit || 0), 0);
+      const crashs = ev.reduce((a, x) => a + (x.crash || 0), 0);
+      // Ueber t() und nicht als deutsche Zeichenketten: die Fussnote entsteht im CODE, also
+      // greift die Textknoten-Uebersetzung nicht von selbst - sie waere im englischen Modus
+      // deutsch geblieben. Genau solche Stellen findet der Uebersetzungs-Selbsttest.
+      stueck.push(zeiten.length + ' ' + t('gemessene Runden, beste') + ' '
+                  + formatLapTime(beste));
+      if (!ev.length) {
+        stueck.push(t('diese Sitzung wurde vor v0.5 aufgezeichnet und trägt keine Ereignisse'));
+      } else {
+        stueck.push(stopps + ' ' + t(stopps === 1 ? 'Boxenstopp (gelb)' : 'Boxenstopps (gelb)'));
+        stueck.push(crashs + ' ' + t(crashs === 1 ? 'Abgang (Blitz)' : 'Abgänge (Blitz)'));
+      }
+      if (sitzung.strafeS) {
+        stueck.push(sitzung.strafeS + ' ' + t('s Zeitstrafe am Rennende'));
+      }
+      stueck.push(t('y-Achse abgeschnitten, siehe Beschriftung'));
+      note.textContent = stueck.join(' \u00b7 ') + '.';
+    }
+  }
+
+  // Die Auswahl fuellen und den Plot zeichnen. Neueste Sitzung zuerst, weil man die sucht.
+  function plotAuswahl() {
+    const pick = $('sess-plot-pick');
+    if (!pick) return;
+    const o = sessionStore();
+    const eintraege = [];
+    for (let i = o.sessions.length - 1; i >= 0; i--) {
+      const st = o.sessions[i];
+      for (const a of (st.autos || [])) {
+        if (!a.laps || !a.laps.length) continue;
+        eintraege.push({ i, name: a.name,
+                         text: new Date(st.zeit).toLocaleString() + ' \u2013 ' + a.name });
+      }
+    }
+    const vorher = pick.value;
+    pick.innerHTML = eintraege.map((e, k) =>
+      '<option value="' + k + '">' + e.text + '</option>').join('');
+    const row = $('sess-plot-row');
+    if (row) row.style.display = eintraege.length ? '' : 'none';
+    if (!eintraege.length) { plotAufbauen(null); return; }
+    if (vorher && pick.querySelector('option[value="' + vorher + '"]')) pick.value = vorher;
+    const wahl = eintraege[parseInt(pick.value, 10) || 0];
+    plotAufbauen(o.sessions[wahl.i], wahl.name);
+    // Die Liste am ELEMENT ablegen und nicht in der Abschlussumgebung des Zuhoerers.
+    //
+    // Vorher hielt der Zuhoerer die eintraege des ERSTEN Verdrahtens fest. Nach einem
+    // weiteren Rennen fuellt plotAuswahl die Auswahl neu, der Zuhoerer arbeitete aber
+    // weiter mit der alten Liste - und ein Wechsel in der Auswahl haette die falsche
+    // Sitzung gezeichnet. Gefunden beim Durchsehen, nicht beim Fahren: der Fehler zeigt
+    // sich erst ab der zweiten Sitzung.
+    pick.__eintraege = eintraege;
+    if (!pick.__verdrahtet) {
+      pick.__verdrahtet = true;
+      pick.addEventListener('change', () => {
+        const liste = pick.__eintraege || [];
+        const e = liste[parseInt(pick.value, 10) || 0];
+        if (e) plotAufbauen(sessionStore().sessions[e.i], e.name);
+      });
+    }
+  }
+
+  // Pruefzugang: den Plot mit GEGEBENEN Daten zeichnen, ohne den Sitzungsspeicher
+  // anzufassen. Ein Test, der echte Sitzungen anlegt, veraendert die Daten des Nutzers.
+  if (window.OMEGA_TEST) {
+    window.OMEGA_TEST.plotZeichnen = (sitzung, name) => {
+      plotAufbauen(sitzung, name);
+      const host = $('sess-plot');
+      const note = $('sess-plot-note');
+      const html = host ? host.innerHTML : '';
+      return { balken: (html.match(/<rect/g) || []).length,
+               gelb: (html.match(/#ffb02e/g) || []).length,
+               blitze: (html.match(/\u26a1/g) || []).length,
+               fussnote: note ? note.textContent : '' };
+    };
+  }
+
   function renderSessions() {
     const host = $('sess-list');
     if (!host) return;
+    // Der Plot zieht MIT der Liste nach und nicht auf eigenem Weg: eine Stelle, die die
+    // Ergebnisse zeichnet, und zwei Darstellungen desselben Speichers.
+    plotAuswahl();
     const o = sessionStore();
     const autos = Object.values(o.cars);
     const kopf = $('sess-summary');

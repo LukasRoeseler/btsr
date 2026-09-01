@@ -994,6 +994,118 @@
     }
   });
 
+  // ---- Controller: eine Taste, eine Bedeutung ----
+  //
+  // Gemeldet als "LB hat noch irgendeine weitere Belegung". Die Ursache war eine Migration,
+  // die nur greift, wenn ZWEI Belegungen zugleich noch auf ihren alten Vorgaben liegen: wer in
+  // v0.4 gefahren ist, hatte trackview auf LB gespeichert und racestart gar nicht, also lief
+  // sie nicht - und LB schaltete die Leseart UND die Streckenansicht, die das Cockpit und
+  // damit das Vollbild verlaesst.
+  //
+  // Geprueft werden BEIDE Richtungen, und die zweite ist die, die ich beim ersten Anlauf
+  // kaputtgemacht habe: X traegt ab Werk absichtlich zwei Aktionen (Tippen schaltet runter,
+  // Halten loest die gelbe Flagge). Ein Aufloeser, der stur Kollisionen bricht, gibt dort das
+  // Runterschalten frei - eine Verschlechterung, die als Aufraeumen aussieht.
+  stAdd('Controller: Kollisionen aufgeloest, gewollte Doppelbelegung bleibt', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.padResolve) {
+      return { skip: true, mass: 'padResolve nicht vorhanden' };
+    }
+    const vorgabe = OMEGA_TEST.padDefaults();
+    const schluessel = (x) => (x && x.type && x.type !== 'none') ? x.type + ':' + x.index : null;
+    const schlecht = [], teile = [];
+
+    // 1. Der gemeldete Fall: ein v0.4-Speicher mit trackview auf LB.
+    const a = OMEGA_TEST.padResolve({
+      pitstop: { type: 'button', index: 9, label: 'Start / Options' },
+      trackview: { type: 'button', index: 4, label: 'LB / L1' } });
+    teile.push('gepflanzt: scanmode ' + a.scanmode.label + ', trackview ' + a.trackview.label);
+    if (schluessel(a.scanmode) !== schluessel(vorgabe.scanmode)) {
+      schlecht.push('scanmode nicht mehr auf LB');
+    }
+    if (schluessel(a.trackview) === schluessel(a.scanmode)) {
+      schlecht.push('trackview liegt weiter auf LB');
+    }
+    if (!a.__kollisionen || !a.__kollisionen.length) schlecht.push('Kollision nicht gemeldet');
+
+    // 2. Die GEWOLLTE Doppelbelegung: X traegt Runterschalten und die gelbe Flagge. Ein
+    //    unveraenderter Speicher darf daran nichts aendern.
+    const b = OMEGA_TEST.padResolve({});
+    for (const n of Object.keys(vorgabe)) {
+      if (schluessel(b[n]) !== schluessel(vorgabe[n])) {
+        schlecht.push(n + ': ohne Anlass verschoben (' + (b[n] && b[n].label) + ')');
+      }
+    }
+    if (b.__kollisionen) schlecht.push('meldet Kollisionen in den eigenen Vorgaben');
+    teile.push('Vorgaben unveraendert: ' + (b.__kollisionen ? 'NEIN' : 'ja')
+               + ' (Kreuz ' + (b.yellowflag && b.yellowflag.index === 0 ? 'traegt die Flagge'
+                                : 'traegt sie NICHT') + ')');
+
+    // 3. Und die Vorgaben selbst: ausser dem X-Paar darf nichts doppelt liegen. Eine
+    //    unbeabsichtigte Doppelbelegung ab Werk waere derselbe Fehler, nur von Anfang an.
+    const zaehler = new Map();
+    for (const n of Object.keys(vorgabe)) {
+      const k = schluessel(vorgabe[n]);
+      if (!k) continue;
+      zaehler.set(k, (zaehler.get(k) || []).concat(n));
+    }
+    // KEINE Ausnahme mehr. Bis v0.5.1 lagen Runterschalten und gelbe Flagge gemeinsam auf
+    // Quadrat, unterschieden nur durch die Haltedauer - das war so gebaut und stand hier als
+    // erlaubtes Paar. Gemeint war es nicht: die gelbe Flagge liegt jetzt auf Kreuz, und
+    // damit traegt jede Taste genau eine Bedeutung. Der Test ist dadurch strenger und
+    // einfacher, und eine Ausnahmeliste, die man pflegen muss, faellt weg.
+    for (const [k, ns] of zaehler) {
+      if (ns.length > 1) schlecht.push('Vorgaben: ' + ns.join(' und ') + ' beide auf ' + k);
+    }
+
+    return { ok: !schlecht.length,
+             mass: teile.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // ---- Rundenzeit-Plot: die Zahlen im Bild passen zu den Daten ----
+  //
+  // Nicht wie er AUSSIEHT - das entscheidet das Auge -, sondern dass er keine Runde
+  // verschluckt und die Markierungen an der richtigen Runde sitzen. Ein Plot, der einen
+  // Boxenstopp eine Runde zu spaet malt, sieht vollkommen richtig aus.
+  stAdd('Rundenzeit-Plot: Balken, Markierungen und Fussnote stimmen', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.plotZeichnen) {
+      return { skip: true, mass: 'plotZeichnen nicht vorhanden' };
+    }
+    const merk = $('sess-plot') ? $('sess-plot').innerHTML : null;
+    const merkNote = $('sess-plot-note') ? $('sess-plot-note').textContent : null;
+    try {
+      const sitzung = { zeit: '2026-01-01T00:00:00.000Z', strafeS: 7,
+        autos: [{ name: 'Pruefwagen', rolle: 'player',
+                  laps: [12000, 11500, 19000, 11800, 12200],
+                  ereignisse: [{ pit: 0, crash: 0 }, { pit: 0, crash: 0 },
+                               { pit: 1, crash: 0 }, { pit: 0, crash: 2 },
+                               { pit: 0, crash: 0 }] }] };
+      const r = OMEGA_TEST.plotZeichnen(sitzung, 'Pruefwagen');
+      const schlecht = [];
+      // Fuenf Runden, fuenf Balken. Genau einer gelb (die Runde mit dem Stopp), genau ein
+      // Blitz (die Runde mit den zwei Abgaengen - zwei Abgaenge, EIN Symbol mit Zahl).
+      if (r.balken !== 5) schlecht.push(r.balken + ' Balken statt 5');
+      if (r.gelb !== 1) schlecht.push(r.gelb + ' gelbe statt 1');
+      if (r.blitze !== 1) schlecht.push(r.blitze + ' Blitze statt 1');
+      // Die Fussnote nennt die Summen und die Strafe.
+      for (const soll of ['5 ', '11.50s', '1 ', '2 ', '7 ']) {
+        if (r.fussnote.indexOf(soll) < 0) schlecht.push('Fussnote ohne "' + soll.trim() + '"');
+      }
+      // Und eine Sitzung OHNE Ereignisse darf keine Markierungen erfinden.
+      const alt = OMEGA_TEST.plotZeichnen({ zeit: '2026-01-01T00:00:00.000Z',
+        autos: [{ name: 'Alt', rolle: 'player', laps: [12000, 12100], ereignisse: [] }] }, 'Alt');
+      if (alt.gelb !== 0 || alt.blitze !== 0) {
+        schlecht.push('alte Sitzung erfindet Markierungen');
+      }
+      return { ok: !schlecht.length,
+               mass: r.balken + ' Balken, ' + r.gelb + ' gelb, ' + r.blitze + ' Blitz | '
+                     + r.fussnote.slice(0, 70)
+                     + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+    } finally {
+      if (merk !== null && $('sess-plot')) $('sess-plot').innerHTML = merk;
+      if (merkNote !== null && $('sess-plot-note')) $('sess-plot-note').textContent = merkNote;
+    }
+  });
+
   // ---- Block 4.4: Reifendruck ----
   // Monoton, ueber den ganzen Reglerbereich. Ein Regler, der in der Mitte umkehrt, ist keine
   // Abstimmung, sondern eine Falle.
@@ -1858,15 +1970,28 @@
       // deutlicher Abstand, sonst ist der Regler wieder nur nominell da. Und drittens darf
       // die Balance im STAND nichts aendern - dort spielt die Bremse keine Rolle, und das
       // war der Fehler, gegen den die Tempoabhaengigkeit ueberhaupt eingebaut wurde.
-      const fallend = v.bei140 > m.bei140 && m.bei140 > h.bei140;
+      // FALLEND, aber nur BIS ZUM NOTBODEN - und das ist keine Abschwaechung des Tests,
+      // sondern die Berichtigung einer falschen Annahme. Der Reibkreis hat einen Boden von
+      // 0,12 (eine Trockenreserve, damit das Auto nie voellig hilflos ist). Ist er erreicht,
+      // aendert mehr Bremse vorn nichts mehr, und "streng fallend" kann dort nicht gelten.
+      //
+      // Seit der Reibkreis-Faktor auf 1,15 steht - der kleinste Wert, der bei Pros
+      // Bremsbalance von 58 % ueberhaupt wirkt - liegen 66 % und mehr auf dem Boden. Der Test
+      // verlangt deshalb: nicht steigend ueberall, streng fallend im nicht gesaettigten
+      // Bereich, und wo es flach ist, MUSS es der Boden sein. Ein beliebiges Plateau waere
+      // weiterhin ein Fehler.
+      const nichtSteigend = v.bei140 >= m.bei140 - 1e-9 && m.bei140 >= h.bei140 - 1e-9;
+      const strengOben = v.bei140 > m.bei140;
+      const amBoden = h.bei140 < 0.2;
       const spanne = v.bei140 - h.bei140;
       const standGleich = Math.abs(v.stand - h.stand) < 0.02 && h.stand > 0.95;
-      return { ok: fallend && spanne > 0.25 && standGleich,
+      return { ok: nichtSteigend && strengOben && amBoden && spanne > 0.25 && standGleich,
                mass: '140 km/h: 50 % vorn ' + Math.round(v.bei140 * 100)
                      + ' %, 62 % vorn ' + Math.round(m.bei140 * 100)
                      + ' %, 80 % vorn ' + Math.round(h.bei140 * 100)
                      + ' % | Spanne ' + Math.round(spanne * 100)
-                     + ' Punkte, im Stand ' + Math.round(h.stand * 100) + ' %' };
+                     + ' Punkte, im Stand ' + Math.round(h.stand * 100) + ' %'
+                     + (h.bei140 < 0.2 ? ' | 80 % vorn liegt auf dem Notboden' : '') };
     }
   });
 

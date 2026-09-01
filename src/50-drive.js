@@ -345,7 +345,7 @@
   // Todeszone, die in diesem Projekt schon fuenf Ladeabbrueche gekostet hat. In einer
   // zusammengefuegten IIFE ist das Ende einer Datei nicht das Ende des Moduls.
   function steerRespPct(v) { return Math.round(v / STEER_RESP_REF * 100); }
-  ['phys-steerresp', 'phys-accel', 'setting-steer-calib'].forEach(id => {
+  ['phys-steerresp', 'phys-accel', 'setting-steer-calib', 'setting-brake-steal'].forEach(id => {
     const input = $(id);
     const readout = $(id + '-val');
     const apply = () => {
@@ -362,6 +362,10 @@
         $('phys-steerresp-val').textContent = steerRespPct(v) + '%';
       }
       if (id === 'phys-accel') physEngine.config.accelerationFactor = v;
+      if (id === 'setting-brake-steal') {
+        physEngine.config.brakeUseGain = v;
+        readout.textContent = Math.round(v * 100) + '%';
+      }
       if (id === 'setting-steer-calib') {
         physEngine.config.steerCalib = v;
         // Als Prozent, weil der Wert ein Faktor auf eine Anforderung ist und kein Winkel.

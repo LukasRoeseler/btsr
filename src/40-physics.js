@@ -331,7 +331,20 @@
         // Mit 0,85 bleibt frontUse auch im schlimmsten Fall unter frontCap, und die Lenkung
         // faellt auf rund 43 % statt auf den Boden. Weniger waere zu wenig: der Messaufbau
         // mit festgehaltener Fahrt zeigt dann 73 % und man spuert es kaum.
-        brakeUseGain: 0.85,   // how much of that capacity the brake eats
+        // Wieviel von der Vorderachskapazitaet die Bremse frisst - der Reibkreis, und seit
+        // v0.5 ueber setting-brake-steal einstellbar.
+        //
+        // 1,15 und nicht 0,85, GEMESSEN: bei der Lenkkalibrierung 200 Prozent, die Pro
+        // fuehrt, kommen mit 0,85 und mit 1,00 rollend WIE bremsend volle 45 Grad am Auto an
+        // - der Effekt war vollstaendig unsichtbar. 1,15 nimmt bei 80 km/h und darueber 45
+        // auf 26 Grad und laesst 40 bis 60 km/h unberuehrt. Ueber 1,15 faellt es auf den
+        // Notboden von 0,12, und dann lenkt das Auto unter Bremsen gar nicht mehr.
+        //
+        // Dieselbe Zahl steht als Vorgabe im Markup, weil Pro die Vorgabe IST. Hier steht
+        // sie fuer calibRef: stuende hier 0,85, meldete physConfigDiff auf frischem Laden
+        // eine Abweichung, die niemand verstellt hat. Den Bremsweg beruehrt der Wert nicht -
+        // steerGrip geht in die Lenkung und nicht in die Verzoegerung.
+        brakeUseGain: 1.15,
 
         // ---- Bremstemperatur und Fading (Block 4.1) ----
         //

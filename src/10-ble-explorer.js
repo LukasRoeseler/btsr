@@ -633,7 +633,7 @@
     "Kurven an das Auto senden": "Send the curves to the car",
     "Kurven glätten": "Smooth the curves",
     "Kurven ziehen statt Code schreiben, und sofort sehen, was das Auto daraus macht.": "Drag curves instead of writing code, and see straight away what the car makes of it.",
-    "LB / L1: Rennen starten · RB / R1: Rennen beenden": "LB / L1: start the race · RB / R1: end the race",
+    "L1: Bahn oder Ausdruck · R1: Automatik oder von Hand · Kreuz: gelbe Flagge (1 s halten) · Select: Rennen starten": "L1: rail or printout · R1: automatic or manual · Cross: yellow flag (hold 1 s) · Select: start the race",
     "Laden": "Load",
     "Last": "Load",
     "Leeren": "Clear",
@@ -1261,13 +1261,13 @@
     "Automatik, 2,6 s auf 100, voller Grip, kein Reifenverschleiß und kein Tankgewicht. Lenkkalibrierung 200 Prozent, damit auch enge Strecken gehen – der volle Einschlag liegt bei etwa einem Drittel Stick an. Fading und Windschatten sind aus; sie stehen ab GT3 zur Verfügung.": "Automatic, 2.6 s to 100, full grip, no tyre wear and no fuel weight. Steering calibration 200 percent so that tight tracks work too – full lock arrives at about a third of stick travel. Fade and dirty air are off; they are available from GT3 upwards.",
     "Crash-Schwelle": "Crash threshold",
     "Wie weit die Bewegungsbytes 1 und 3 vom gleitenden Mittel abweichen müssen, damit ein Stoß als Crash gilt. Niedriger heißt empfindlicher: schon ein Rempler zählt. Höher heißt, dass nur ein echter Einschlag zählt. 40 ist der Wert, mit dem die Erkennung gebaut und geprüft wurde – stand bis v0.5 als Konstante im Code, war also eine Einstellung, die niemand einstellen konnte.": "How far the motion bytes 1 and 3 must deviate from the running mean for a jolt to count as a crash. Lower means more sensitive: even a nudge counts. Higher means only a real impact counts. 40 is the value the detection was built and tested with – it was a constant in the code until v0.5, so it was a setting nobody could set.",
-    "L3 (linker Stick drücken)": "L3 (press left stick)",
+    "R3 (rechten Stick drücken)": "R3 (press right stick)",
     "Zwei der drei Varianten sind am Auto unerprobt, und die Nummer des gedruckten Musters ist geraten und nicht entziffert – die Kodierregel ist nicht bekannt. „Überall halten“ trägt dagegen: es braucht kein Muster.": "Two of the three variants are untested on the car, and the number of the printed pattern is guessed rather than deciphered – the encoding rule is not known. “Stop anywhere” does hold up, though: it needs no pattern at all.",
     "Leseart: Bahn oder Ausdruck": "Reading mode: rail or printout",
     "Getriebe: Automatik oder von Hand": "Gearbox: automatic or manual",
     "Gelbe Flagge (1 s halten)": "Yellow flag (hold 1 s)",
-    "X / Quadrat (1 s halten)": "X / Square (hold 1 s)",
-    "A / Kreuz": "A / Cross",
+    "Kreuz (PS) / A (Xbox), 1 s halten": "Cross (PS) / A (Xbox), hold 1 s",
+    "Select / Share (PS) / Back (Xbox)": "Select / Share (PS) / Back (Xbox)",
     // Lenkmessung (v0.5): Absaetze ohne inneres Markup, damit sie EIN Knoten sind.
     "die offene Frage": "the open question",
     "Lenkmessung Ghosts": "Ghost steering measurement",
@@ -1311,6 +1311,27 @@
     "Jeder Ghost hält eine feste eigene Linie über die Bahnbreite, gleichmäßig verteilt und symmetrisch um die Mitte. Anders als der seitliche Versatz braucht das keine zwei Autos nebeneinander, und anders als die Ideallinie keine drei Streckenteile: es wirkt auf der Vorgabestrecke und allein unterwegs. Bei nur einem Ghost ist die Spur die Mitte, denn verschiedene Linien haben bei einem Auto keine Bedeutung. Links = aus.": "Each ghost holds a fixed lane of its own across the track width, evenly spread and symmetric about the centre. Unlike the lateral offset this needs no two cars side by side, and unlike the racing line no three track pieces: it works on the default track and when driving alone. With only one ghost the lane is the centre, because different lines have no meaning for a single car. Left = off.",
     "Reifenwärmer": "Tyre blankets",
     "Start und Reifenwechsel auf Betriebstemperatur statt kalt. Aus heißt: die ersten Runden fehlt Grip, bis die Reifen warm gefahren sind. An heißt: sofort im Griff-Fenster, also 85 Grad. In der Formel 1 waren Wärmedecken bis 2024 erlaubt und sind seit 2025 verboten; im GT-Sport sind sie meist untersagt. Hier ist es eine Einstellung und keine Regel.": "Start and tyre change at operating temperature instead of cold. Off means the first few laps lack grip until the tyres have been warmed up. On means straight into the grip window, that is 85 degrees. In Formula 1 tyre blankets were allowed until 2024 and have been banned since 2025; in GT racing they are mostly prohibited. Here it is a setting and not a rule.",
+    "Bremsen nimmt Lenkung": "Braking eats steering",
+    "Der Reibkreis: was die Bremse an der Vorderachse verbraucht, fehlt der Lenkung. 0 heißt, Bremsen und Lenken behindern sich nicht; höhere Werte lassen das Auto beim Anbremsen deutlich schlechter einlenken. Zu beachten: die Lenkwinkel-Kalibrierung darunter holt genau das wieder zurück, also wirkt ein starker Wert erst, wenn die Kalibrierung ihn nicht mehr ausgleichen kann.": "The friction circle: whatever the brake uses at the front axle is missing from the steering. 0 means braking and steering do not interfere; higher values make the car turn in markedly worse while braking. Note: the steering angle calibration below takes exactly that back, so a strong value only bites once the calibration can no longer compensate for it.",
+    "Quadrat (PS) / X (Xbox)": "Square (PS) / X (Xbox)",
+    "Kreis (PS) / B (Xbox)": "Circle (PS) / B (Xbox)",
+    "Dreieck (PS) / Y (Xbox)": "Triangle (PS) / Y (Xbox)",
+    "Options (PS) / Start (Xbox)": "Options (PS) / Start (Xbox)",
+    "L1 (PS) / LB (Xbox)": "L1 (PS) / LB (Xbox)",
+    "R1 (PS) / RB (Xbox)": "R1 (PS) / RB (Xbox)",
+    "Rechter Trigger (R2 / RT)": "Right trigger (R2 / RT)",
+    "Linker Trigger (L2 / LT)": "Left trigger (L2 / LT)",
+    "Rundenzeiten": "Lap times",
+    "Noch keine Sitzung aufgezeichnet.": "No session recorded yet.",
+    "Diese Sitzung hat keine gemessenen Runden.": "This session has no measured laps.",
+    "gemessene Runden, beste": "measured laps, best",
+    "diese Sitzung wurde vor v0.5 aufgezeichnet und trägt keine Ereignisse": "this session was recorded before v0.5 and carries no events",
+    "Boxenstopp (gelb)": "pit stop (yellow)",
+    "Boxenstopps (gelb)": "pit stops (yellow)",
+    "Abgang (Blitz)": "departure (lightning)",
+    "Abgänge (Blitz)": "departures (lightning)",
+    "s Zeitstrafe am Rennende": "s time penalty at the end of the race",
+    "y-Achse abgeschnitten, siehe Beschriftung": "y axis truncated, see the labels",
   };
 
   // ============================================================================
@@ -1444,6 +1465,25 @@
   function setLang(next) {
     if (I18N_LANGS.indexOf(next) < 0 || next === lang) return;
     lang = next;
+    // ZUERST neu zeichnen, DANN uebersetzen - die Reihenfolge ist der ganze Punkt.
+    //
+    // Text, der im Code ZUSAMMENGESETZT wird, kann der Textknoten-Uebersetzer nicht
+    // erreichen: er sucht ganze Knoten in der Tabelle, und "8 gemessene Runden, beste
+    // 12.18s - 1 Boxenstopp" steht dort nicht und kann dort auch nicht stehen. Solche
+    // Ansichten muessen neu gezeichnet werden, damit ihre t()-Aufrufe in der neuen Sprache
+    // laufen; lang ist eine Zeile darueber schon gesetzt.
+    //
+    // Und sie muessen VOR i18nApply neu gezeichnet werden. Erst danach war der Fehler:
+    // das Neuzeichnen schrieb ganze Knoten wieder auf Deutsch, nachdem der Uebersetzer
+    // durch war - "noch nichts gespeichert" blieb im englischen Modus deutsch, obwohl es
+    // im Woerterbuch stand. Der Uebersetzungs-Selbsttest hat genau das gemeldet.
+    if (typeof renderSessions === 'function') {
+      // Der Versuchsblock ist hier nicht Vorsicht, sondern die Ladefolge: setLang laeuft
+      // auch beim Laden, und renderSessions liest Konstanten aus einer SPAETEREN Datei.
+      // Gemessen laeuft die Wiederherstellung der Sprache danach, es geht also gut - aber
+      // ein Wurf hier wuerde die ganze IIFE mitnehmen.
+      try { renderSessions(); } catch (e) { /* Ladefolge, siehe oben */ }
+    }
     i18nBusy = true;
     try { i18nRoots().forEach(i18nApply); } finally { i18nBusy = false; }
     document.documentElement.lang = lang;

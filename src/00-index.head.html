@@ -4315,7 +4315,7 @@
                Eintrag und bleibt daher beim Sprachwechsel stehen, bis er sich das naechste
                Mal neu bildet - dann steht er richtig da. Veraltet, nicht falsch. -->
           <div class="muted">Status: <b data-i18n-skip id="race-status">Bereit</b></div>
-          <div class="muted" style="font-size:11.5px">LB / L1: Rennen starten &middot; RB / R1: Rennen beenden</div>
+          <div class="muted" style="font-size:11.5px">L1: Bahn oder Ausdruck · R1: Automatik oder von Hand · Kreuz: gelbe Flagge (1 s halten) · Select: Rennen starten</div>
           <div class="muted" id="race-lap-current-row" style="display:none">Aktuelle Runde: <b id="race-lap-current">-</b></div>
         </div>
       </div>
@@ -4478,6 +4478,12 @@
         hat. Nur eine der beiden zu speichern w&auml;re eine willk&uuml;rliche Wahl.
       </p>
       <p class="muted" id="sess-summary" style="font-size:12.5px">&nbsp;</p>
+      <div class="row" id="sess-plot-row" style="align-items:center;gap:8px;margin-bottom:6px">
+        <label for="sess-plot-pick" class="muted" style="font-size:12px">Rundenzeiten</label>
+        <select id="sess-plot-pick"></select>
+      </div>
+      <div id="sess-plot" style="overflow-x:auto"></div>
+      <p class="muted" id="sess-plot-note" style="font-size:11.5px">&nbsp;</p>
       <div class="doc-table-wrap" id="sess-list"></div>
       <div class="row" style="gap:8px; margin-top:12px; flex-wrap:wrap">
         <button id="sess-export">Alles als CSV exportieren</button>
@@ -4835,6 +4841,13 @@
           <input type="range" id="phys-steerresp" min="0.5" max="3" step="0.05" value="2.4">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="phys-steerresp-val">100%</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Bremsen nimmt Lenkung<small>Der Reibkreis: was die Bremse an der Vorderachse verbraucht, fehlt der Lenkung. 0 hei&szlig;t, Bremsen und Lenken behindern sich nicht; h&ouml;here Werte lassen das Auto beim Anbremsen deutlich schlechter einlenken. Zu beachten: die Lenkwinkel-Kalibrierung darunter holt genau das wieder zur&uuml;ck, also wirkt ein starker Wert erst, wenn die Kalibrierung ihn nicht mehr ausgleichen kann.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="setting-brake-steal" min="0" max="1.5" step="0.05" value="1.15">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-brake-steal-val">115%</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Lenkwinkel-Kalibrierung<small>Für enge Strecken. Der Regler sitzt hinter dem Reibkreis: beim Anbremsen einer Kurve beschneidet der die Lenkung auf etwa 60 Prozent, und bei 200 Prozent erreicht dieser beschnittene Wunsch wieder den vollen Anschlag. Weiter als 45 Grad kann kein Wert lenken, das ist die Mechanik des Autos und nicht die App. Der Preis ist Feingefühl: je höher, desto früher liegt der Anschlag an und desto weniger sagt der letzte Teil des Sticks.</small></div>
         <div class="opt-slider">
@@ -5665,7 +5678,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.4.36</span></span>
+    <span class="foot-ver">v<span id="app-version">0.4.37</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine

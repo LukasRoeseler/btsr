@@ -19,13 +19,13 @@
   // Boxenstopp on Y and collide with the headlight button that now lives there.
   const GAMEPAD_BINDINGS_KEY = 'carrera-hybrid-gamepad-bindings-v2';
   const DEFAULT_BINDINGS = {
-    throttle: { type: 'button', index: 7, label: 'Rechter Trigger (RT / R2)' },
-    brake: { type: 'button', index: 6, label: 'Linker Trigger (LT / L2)' },
+    throttle: { type: 'button', index: 7, label: 'Rechter Trigger (R2 / RT)' },
+    brake: { type: 'button', index: 6, label: 'Linker Trigger (L2 / LT)' },
     steering: { type: 'axis', index: 0, invert: false, label: 'Linker Stick (X-Achse)' },
-    downshift: { type: 'button', index: 2, label: 'X / Quadrat' },
-    upshift: { type: 'button', index: 1, label: 'B / Kreis' },
-    headlights: { type: 'button', index: 3, label: 'Y / Dreieck' },
-    lightflash: { type: 'button', index: 11, label: 'R3 (rechter Stick drücken)' },
+    downshift: { type: 'button', index: 2, label: 'Quadrat (PS) / X (Xbox)' },
+    upshift: { type: 'button', index: 1, label: 'Kreis (PS) / B (Xbox)' },
+    headlights: { type: 'button', index: 3, label: 'Dreieck (PS) / Y (Xbox)' },
+    lightflash: { type: 'button', index: 11, label: 'R3 (rechten Stick drücken)' },
     // Boxenstopp auf Start/Options, Streckenansicht auf die linke Schulter.
     //
     // Vorher war es umgekehrt, und das war eine Fehlbedienung mit Ansage: Options hat den
@@ -34,25 +34,43 @@
     // Vorbeigehen trifft - und ein Boxenstopp ist das, was man an dieser Stelle will.
     //
     // Die rechte Schulter bleibt das Rennen, die Trigger bleiben Gas und Bremse.
-    pitstop: { type: 'button', index: 9, label: 'Start / Options' },
+    pitstop: { type: 'button', index: 9, label: 'Options (PS) / Start (Xbox)' },
     // LB und RB machen jetzt die zwei Umschaltungen, die man WAEHREND der Fahrt braucht:
     // welche Kodierung gelesen wird, und ob von Hand geschaltet wird. Beide sind
     // Fahrentscheidungen und gehoeren unter die Zeigefinger.
     //
-    // Rennen starten und Streckenansicht ziehen dafuer um. A / Kreuz ist der
-    // Bestaetigungsknopf, das passt zum Rennstart; die Streckenansicht ist ein Blick auf die
-    // Karte und kein Fahrbefehl, also L3. Das Touchpad bleibt absichtlich frei, weil das
-    // System es als Zeiger fuehrt.
-    scanmode: { type: 'button', index: 4, label: 'LB / L1' },
-    gearmode: { type: 'button', index: 5, label: 'RB / R1' },
+    // Rennen starten zieht dafuer um, und seit v0.5.1 auf Select: Kreuz traegt die gelbe
+    // Flagge, weil "X" in PlayStation-Namen genau diese Taste ist - die alte Beschriftung
+    // "X / Quadrat" war mehrdeutig und hat die Flagge auf der falschen Taste gehalten.
+    //
+    // Die Streckenansicht ist ab Werk UNBELEGT. Sie lag auf L3, und der linke Stick soll
+    // beim Lenken nichts ausloesen; ausserdem verlaesst sie das Cockpit. Das Touchpad bleibt
+    // ebenfalls frei, weil das System es als Zeiger fuehrt.
+    scanmode: { type: 'button', index: 4, label: 'L1 (PS) / LB (Xbox)' },
+    gearmode: { type: 'button', index: 5, label: 'R1 (PS) / RB (Xbox)' },
     // X hat ZWEI Bedeutungen: kurz ist Runterschalten, eine Sekunde gehalten die gelbe
     // Flagge - genau wie die Taste X auf der Tastatur. Das Halten ist der Schutz: die gelbe
     // Flagge bremst jedes Auto auf 40 km/h, und ein Knopf, der das mit einem Antippen tut,
     // liegt zu nah an der Hand.
-    yellowflag: { type: 'button', index: 2, label: 'X / Quadrat (1 s halten)' },
-    racestart: { type: 'button', index: 0, label: 'A / Kreuz' },
-    weather: { type: 'button', index: 8, label: 'Select / Share' },
-    trackview: { type: 'button', index: 10, label: 'L3 (linker Stick dr\u00fccken)' },
+    // KREUZ und nicht Quadrat. Die alte Beschriftung "X / Quadrat" war mehrdeutig: auf
+    // einer Xbox ist Knopf 2 das X, auf einer PlayStation das Quadrat - und "X" bedeutet auf
+    // einer PlayStation den Knopf 0. Gemeint war der PlayStation-Name.
+    //
+    // Damit liegt die gelbe Flagge ALLEIN auf ihrer Taste. Vorher teilte sie sich Quadrat mit
+    // dem Runterschalten, unterschieden nur durch die Haltedauer - eine Taste mit zwei
+    // Bedeutungen ist mitten im Rennen die falsche Sorte Ueberraschung.
+    yellowflag: { type: 'button', index: 0, label: 'Kreuz (PS) / A (Xbox), 1 s halten' },
+    // Auf Select, weil Kreuz die gelbe Flagge bekommt. Damit liegen die zwei
+    // Rennsteuerungen - starten und Boxenstopp - auf den zwei Menuetasten nebeneinander.
+    racestart: { type: 'button', index: 8, label: 'Select / Share (PS) / Back (Xbox)' },
+    // UNBELEGT ab Werk: Select traegt jetzt den Rennstart. Das Wetter ist ueber die
+    // Oberflaeche erreichbar, eine Taste dafuer ist eine Annehmlichkeit - frei zuweisbar
+    // bleibt es.
+    weather: { type: 'none', index: -1, label: 'nicht belegt' },
+    // UNBELEGT ab Werk, ausdruecklich: der linke Stick soll nichts ausloesen, wenn man ihn
+    // beim Lenken drueckt. Und die Streckenansicht verlaesst das Cockpit - genau der
+    // Grund, aus dem L1 sie nicht mehr traegt.
+    trackview: { type: 'none', index: -1, label: 'nicht belegt' },
     // Nicht belegt. Das Touchpad wird vom System als Zeiger erkannt, also loest ein Tippen
     // gleichzeitig einen Klick irgendwo in der Seite aus - eine Belegung darauf kaempft mit
     // dem Cursor. Frei zuweisbar bleibt es, nur eben nicht ab Werk.
@@ -95,6 +113,97 @@
       b.trackview = { ...DEFAULT_BINDINGS.trackview };
       b.__migrated2 = true;
     }
+    // v0.5.1: gelbe Flagge auf Kreuz, Rennstart auf Select, Streckenansicht und Wetter
+    // unbelegt. JE AKTION UNABHAENGIG und nicht gekoppelt - die gekoppelte Fassung darueber
+    // ist zweimal danebengegangen, und genau daran lag, dass L1 zwei Bedeutungen hatte: wer
+    // trackview gespeichert hatte und racestart nicht, wurde von ihr nicht erfasst.
+    //
+    // Verschoben wird nur, wer noch auf SEINER alten Vorgabe liegt. Wer selbst zugewiesen
+    // hat, behaelt seine Zuweisung, und der Kollisionsaufloeser faengt, was dabei doppelt
+    // liegen bleibt.
+    const ALT = { yellowflag: 2, racestart: 0, trackview: 10, weather: 8 };
+    for (const n of Object.keys(ALT)) {
+      if (ist(b[n], ALT[n])) {
+        b[n] = { ...DEFAULT_BINDINGS[n] };
+        b.__migrated3 = true;
+      }
+    }
+    return b;
+  }
+
+  // Der Fingerabdruck eines Eingangs: Art und Nummer. Die Achsenrichtung gehoert NICHT dazu -
+  // zwei Aktionen auf derselben Achse mit verschiedenem Vorzeichen sind trotzdem dieselbe
+  // Achse und stoeren sich.
+  function bindingKey(x) {
+    // type 'none' ist KEIN Eingang. Ohne diese Zeile kollidieren zwei unbelegte Aktionen
+    // miteinander, und die zweite wuerde "aufgeloest" - eine Kollision, die es nicht gibt.
+    if (!x || x.type === undefined || x.type === 'none') return null;
+    return x.type + ':' + x.index;
+  }
+
+  // KOLLISIONEN AUFLOESEN, allgemein statt Fall fuer Fall.
+  //
+  // Der Anlass: LB schaltete die Leseart UND die Streckenansicht, und letztere verlaesst das
+  // Cockpit und damit das Vollbild. Die Ursache war eine Migration, die nur greift, wenn
+  // ZWEI Belegungen zugleich noch auf ihren alten Vorgaben liegen - wer in v0.4 gefahren ist,
+  // hatte trackview gespeichert und racestart nicht, also lief sie nicht.
+  //
+  // Eine dritte Bedingung waere die Gelegenheit fuer den naechsten Fall. Hier gewinnt
+  // stattdessen, wer auf seiner EIGENEN Vorgabe liegt; alle anderen auf demselben Eingang
+  // gehen auf ihre Vorgabe zurueck. Damit ist es unerheblich, welcher Pfad die Kollision
+  // erzeugt hat.
+  //
+  // Gemeldet wird sie, nicht still behoben: ein Knopf, der heimlich seine Bedeutung
+  // wechselt, ist der naechste Fehlerbericht.
+  function resolveBindingCollisions(b) {
+    const namen = Object.keys(DEFAULT_BINDINGS);
+    // Eingang -> Liste der Aktionen, die dort liegen.
+    const belegt = new Map();
+    const dazu = (k, n) => {
+      if (!belegt.has(k)) belegt.set(k, []);
+      belegt.get(k).push(n);
+    };
+    const bericht = [];
+
+    // ERSTER DURCHGANG: wer auf seiner EIGENEN Vorgabe liegt, bekommt den Platz - und zwar
+    // ohne Kollisionspruefung untereinander.
+    //
+    // Das ist der Punkt, an dem mein erster Anlauf falsch war: X traegt ab Werk ABSICHTLICH
+    // zwei Aktionen, Runterschalten beim Tippen und die gelbe Flagge beim Halten. Ein
+    // Aufloeser, der stur Kollisionen bricht, hat mir dort das Runterschalten freigegeben -
+    // eine Verschlechterung, die als Aufraeumen aussah. Was in den Vorgaben zusammenliegt,
+    // ist eine Entscheidung und kein Versehen.
+    for (const n of namen) {
+      const k = bindingKey(b[n]);
+      if (k && k === bindingKey(DEFAULT_BINDINGS[n])) dazu(k, n);
+    }
+
+    // ZWEITER DURCHGANG: alle anderen. Wer auf einen schon belegten Eingang zeigt, geht auf
+    // seine eigene Vorgabe zurueck; ist die auch besetzt, wird er freigegeben statt still auf
+    // einem doppelten Knopf zu liegen.
+    for (const n of namen) {
+      const k = bindingKey(b[n]);
+      if (!k) continue;
+      const dort = belegt.get(k) || [];
+      if (dort.includes(n)) continue;          // im ersten Durchgang platziert
+      if (!dort.length) { dazu(k, n); continue; }
+      const vorher = (b[n] && b[n].label) || k;
+      const mit = dort.map(x => BIND_ACTION_LABELS[x] || x).join(' und ');
+      const vk = bindingKey(DEFAULT_BINDINGS[n]);
+      if (vk && !(belegt.get(vk) || []).length) {
+        b[n] = { ...DEFAULT_BINDINGS[n] };
+        dazu(vk, n);
+        bericht.push((BIND_ACTION_LABELS[n] || n) + ': lag auf ' + vorher + ' zusammen mit '
+                     + mit + ', zurueck auf ' + b[n].label);
+      } else {
+        // Unbelegt heisst type 'none' und nicht null - dieselbe Form wie resetcar ab Werk,
+        // damit die Tabelle in den Optionen sie darstellen kann.
+        b[n] = { type: 'none', index: -1, label: 'nicht belegt' };
+        bericht.push((BIND_ACTION_LABELS[n] || n) + ': lag auf ' + vorher + ' zusammen mit '
+                     + mit + ', jetzt unbelegt - bitte neu zuweisen');
+      }
+    }
+    if (bericht.length) b.__kollisionen = bericht;
     return b;
   }
 
@@ -102,12 +211,24 @@
     try {
       const saved = JSON.parse(localStorage.getItem(GAMEPAD_BINDINGS_KEY) || 'null');
       if (!saved) return { ...DEFAULT_BINDINGS };
-      return migrateBindings({ ...DEFAULT_BINDINGS, ...saved });
+      return resolveBindingCollisions(migrateBindings({ ...DEFAULT_BINDINGS, ...saved }));
     } catch { return { ...DEFAULT_BINDINGS }; }
   }
   function saveBindings() { localStorage.setItem(GAMEPAD_BINDINGS_KEY, JSON.stringify(bindings)); }
 
   let bindings = loadBindings();
+  if (bindings.__kollisionen) {
+    for (const zeile of bindings.__kollisionen) log('Controller: ' + zeile, 'notify');
+    delete bindings.__kollisionen;
+    saveBindings();
+  }
+  if (bindings.__migrated3) {
+    delete bindings.__migrated3;
+    saveBindings();
+    log('Controller: gelbe Flagge liegt jetzt auf Kreuz (PS) bzw. A (Xbox), Rennstart auf '
+        + 'Select. Streckenansicht und Wetter sind ab Werk unbelegt - der linke Stick soll '
+        + 'beim Lenken nichts ausloesen.', 'info');
+  }
   if (bindings.__migrated) {
     delete bindings.__migrated;
     saveBindings();
@@ -2810,6 +2931,16 @@
     ghostLanes() {
       return garage.filter(c => c.role === 'ghost' && c.ghost)
         .map(c => ({ name: garageLabel(c), spur: +ghostLane(c).toFixed(4) }));
+    },
+
+    // Den Kollisionsaufloeser pruefbar machen. Er laeuft beim Laden, also ist er ohne
+    // Zugang nur ueber einen Neustart mit gepflanztem Speicher zu testen - und das kann ein
+    // Selbsttest nicht.
+    padResolve(gespeichert) {
+      return resolveBindingCollisions({ ...DEFAULT_BINDINGS, ...(gespeichert || {}) });
+    },
+    padDefaults() {
+      return JSON.parse(JSON.stringify(DEFAULT_BINDINGS));
     },
 
     physTyreAsym(o) {

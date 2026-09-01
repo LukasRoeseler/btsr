@@ -179,6 +179,148 @@ def check_refs(html):
     return fehlend
 
 
+
+def check_klammern(js, quelle):
+    """Klammern zaehlen, ausserhalb von Zeichenketten, Vorlagen, Kommentaren und Regexen.
+
+    KEIN PARSER. Sie findet genau eine Fehlerklasse - eine Klammer zu viel oder zu wenig -
+    und die hat in diesem Projekt dreimal die ganze IIFE abgebrochen. Ein Programm, das gar
+    nicht laeuft, meldet keine Fehler, und der Selbsttest zeigt dann null Zeilen statt einer
+    roten. Genau davor schuetzt das hier.
+
+    MIT KONTEXTSTAPEL, weil dieses Projekt VERSCHACHTELTE Template-Literale benutzt: eine
+    Vorlage enthaelt ${...} und darin wieder eine Vorlage. Ein Scanner ohne Stapel schliesst
+    die aeussere am inneren Backtick, liest danach Auszeichnung als Code, und der
+    Schraegstrich in </div> sieht aus wie ein regulaerer Ausdruck. Der erste Anlauf hat genau
+    so einen Fehler gemeldet, den es nicht gab.
+    """
+    OFFEN = {'{': 0, '(': 0, '[': 0}
+    tiefe = dict(OFFEN)
+    passt = {'}': '{', ')': '(', ']': '['}
+    # Stapel: 'code' oder ('tmpl',) - und fuer jeden aus einer Vorlage geoeffneten
+    # Code-Kontext die Klammertiefe, bei der er wieder endet.
+    stapel = [['code', None]]
+    i, n, zeile = 0, len(js), 1
+    # Wo ein Schraegstrich ein regulaerer Ausdruck sein KANN: nur nach einem Operator oder
+    # einer oeffnenden Klammer. Nach einem Namen, einer Zahl oder einer schliessenden
+    # Klammer ist er eine Division.
+    wert = False
+    while i < n:
+        c = js[i]
+        art = stapel[-1][0]
+
+        if art == 'tmpl':
+            if c == chr(92):
+                i += 2
+                continue
+            if c == chr(10):
+                zeile += 1
+                i += 1
+                continue
+            if c == '`':
+                stapel.pop()
+                wert = True
+                i += 1
+                continue
+            if c == '$' and i + 1 < n and js[i + 1] == '{':
+                # Die Klammertiefe MERKEN: die schliessende Klammer dieses ${...} kehrt in
+                # die Vorlage zurueck und darf nicht als geschweifte Klammer gezaehlt werden.
+                stapel.append(['code', tiefe['{']])
+                wert = False
+                i += 2
+                continue
+            i += 1
+            continue
+
+        if c == chr(10):
+            zeile += 1
+            i += 1
+            continue
+        if c == '/' and i + 1 < n and js[i + 1] == '/':
+            k = js.find(chr(10), i)
+            i = n if k < 0 else k
+            continue
+        if c == '/' and i + 1 < n and js[i + 1] == '*':
+            k = js.find('*/', i + 2)
+            if k < 0:
+                return None, 'unbeendeter Blockkommentar ab Zeile %d' % zeile
+            zeile += js.count(chr(10), i, k)
+            i = k + 2
+            continue
+        if c == '`':
+            stapel.append(['tmpl', None])
+            i += 1
+            continue
+        if c in ('"', "'"):
+            k = i + 1
+            while k < n:
+                if js[k] == chr(92):
+                    k += 2
+                    continue
+                if js[k] == c:
+                    break
+                if js[k] == chr(10):
+                    return None, 'unbeendete Zeichenkette in Zeile %d' % zeile
+                k += 1
+            if k >= n:
+                return None, 'unbeendete Zeichenkette ab Zeile %d' % zeile
+            i = k + 1
+            wert = True
+            continue
+        if c == '/' and not wert:
+            k, klasse = i + 1, False
+            while k < n:
+                if js[k] == chr(92):
+                    k += 2
+                    continue
+                if js[k] == '[':
+                    klasse = True
+                elif js[k] == ']':
+                    klasse = False
+                elif js[k] == '/' and not klasse:
+                    break
+                elif js[k] == chr(10):
+                    return None, 'unbeendeter regulaerer Ausdruck in Zeile %d' % zeile
+                k += 1
+            if k >= n:
+                return None, 'unbeendeter regulaerer Ausdruck ab Zeile %d' % zeile
+            i = k + 1
+            wert = True
+            continue
+        if c in tiefe:
+            tiefe[c] += 1
+            wert = False
+            i += 1
+            continue
+        if c in passt:
+            # Endet hier ein ${...}? Dann zurueck in die Vorlage, OHNE zu zaehlen.
+            if c == '}' and len(stapel) > 1 and stapel[-1][1] is not None \
+                    and tiefe['{'] == stapel[-1][1]:
+                stapel.pop()
+                wert = True
+                i += 1
+                continue
+            tiefe[passt[c]] -= 1
+            if tiefe[passt[c]] < 0:
+                return None, 'eine schliessende %s zu viel, Zeile %d' % (c, zeile)
+            wert = True
+            i += 1
+            continue
+        if c.isalnum() or c in '_$':
+            wert = True
+        elif not c.isspace():
+            wert = False
+        i += 1
+
+    if len(stapel) != 1:
+        return None, 'unbeendete Vorlage oder Einsetzung ab Zeile %d' % zeile
+    unwucht = [k for k in tiefe if tiefe[k] != 0]
+    if unwucht:
+        return None, ('nicht ausgeglichen: '
+                      + ', '.join('%s um %+d' % (k, tiefe[k]) for k in unwucht))
+    return True, 'Klammern ausgeglichen'
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
     ap.add_argument('--check', action='store_true',
@@ -245,6 +387,18 @@ def main():
         return 2
 
 
+    # Klammern im gebauten JavaScript. Zuletzt, weil sie das ERGEBNIS prueft und nicht die
+    # Quellen: die Dateien sind Stuecke einer IIFE und balancieren einzeln nicht.
+    js_teile = re.findall(r'<script>(.*?)</script>', built, re.S)
+    ok_kl, meld_kl = check_klammern(chr(10).join(js_teile), 'index.html')
+    if not ok_kl:
+        print('', file=sys.stderr)
+        print('JAVASCRIPT-KLAMMERN: ' + meld_kl, file=sys.stderr)
+        print('  Eine Klammer zu viel ist ein SyntaxError: die IIFE bricht ab,'
+              ' OMEGA_TEST fehlt, und der Selbsttest zeigt NULL Zeilen statt einer roten.',
+              file=sys.stderr)
+        return 2
+    print('  Klammern geprueft: %s (%d Skriptbloecke)' % (meld_kl, len(js_teile)))
     print('  Element-ids geprueft: kein Zugriff ins Leere')
     print('  Woerterbuch geprueft: keine Waisen')
     print('  Verweise geprueft: %d lokale src/href, alle vorhanden'

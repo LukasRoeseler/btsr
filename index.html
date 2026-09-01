@@ -4315,7 +4315,7 @@
                Eintrag und bleibt daher beim Sprachwechsel stehen, bis er sich das naechste
                Mal neu bildet - dann steht er richtig da. Veraltet, nicht falsch. -->
           <div class="muted">Status: <b data-i18n-skip id="race-status">Bereit</b></div>
-          <div class="muted" style="font-size:11.5px">LB / L1: Rennen starten &middot; RB / R1: Rennen beenden</div>
+          <div class="muted" style="font-size:11.5px">L1: Bahn oder Ausdruck · R1: Automatik oder von Hand · Kreuz: gelbe Flagge (1 s halten) · Select: Rennen starten</div>
           <div class="muted" id="race-lap-current-row" style="display:none">Aktuelle Runde: <b id="race-lap-current">-</b></div>
         </div>
       </div>
@@ -4478,6 +4478,12 @@
         hat. Nur eine der beiden zu speichern w&auml;re eine willk&uuml;rliche Wahl.
       </p>
       <p class="muted" id="sess-summary" style="font-size:12.5px">&nbsp;</p>
+      <div class="row" id="sess-plot-row" style="align-items:center;gap:8px;margin-bottom:6px">
+        <label for="sess-plot-pick" class="muted" style="font-size:12px">Rundenzeiten</label>
+        <select id="sess-plot-pick"></select>
+      </div>
+      <div id="sess-plot" style="overflow-x:auto"></div>
+      <p class="muted" id="sess-plot-note" style="font-size:11.5px">&nbsp;</p>
       <div class="doc-table-wrap" id="sess-list"></div>
       <div class="row" style="gap:8px; margin-top:12px; flex-wrap:wrap">
         <button id="sess-export">Alles als CSV exportieren</button>
@@ -4835,6 +4841,13 @@
           <input type="range" id="phys-steerresp" min="0.5" max="3" step="0.05" value="2.4">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="phys-steerresp-val">100%</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Bremsen nimmt Lenkung<small>Der Reibkreis: was die Bremse an der Vorderachse verbraucht, fehlt der Lenkung. 0 hei&szlig;t, Bremsen und Lenken behindern sich nicht; h&ouml;here Werte lassen das Auto beim Anbremsen deutlich schlechter einlenken. Zu beachten: die Lenkwinkel-Kalibrierung darunter holt genau das wieder zur&uuml;ck, also wirkt ein starker Wert erst, wenn die Kalibrierung ihn nicht mehr ausgleichen kann.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="setting-brake-steal" min="0" max="1.5" step="0.05" value="1.15">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-brake-steal-val">115%</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Lenkwinkel-Kalibrierung<small>Für enge Strecken. Der Regler sitzt hinter dem Reibkreis: beim Anbremsen einer Kurve beschneidet der die Lenkung auf etwa 60 Prozent, und bei 200 Prozent erreicht dieser beschnittene Wunsch wieder den vollen Anschlag. Weiter als 45 Grad kann kein Wert lenken, das ist die Mechanik des Autos und nicht die App. Der Preis ist Feingefühl: je höher, desto früher liegt der Anschlag an und desto weniger sagt der letzte Teil des Sticks.</small></div>
         <div class="opt-slider">
@@ -5665,7 +5678,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.4.36</span></span>
+    <span class="foot-ver">v<span id="app-version">0.4.37</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -6329,7 +6342,7 @@
     "Kurven an das Auto senden": "Send the curves to the car",
     "Kurven glätten": "Smooth the curves",
     "Kurven ziehen statt Code schreiben, und sofort sehen, was das Auto daraus macht.": "Drag curves instead of writing code, and see straight away what the car makes of it.",
-    "LB / L1: Rennen starten · RB / R1: Rennen beenden": "LB / L1: start the race · RB / R1: end the race",
+    "L1: Bahn oder Ausdruck · R1: Automatik oder von Hand · Kreuz: gelbe Flagge (1 s halten) · Select: Rennen starten": "L1: rail or printout · R1: automatic or manual · Cross: yellow flag (hold 1 s) · Select: start the race",
     "Laden": "Load",
     "Last": "Load",
     "Leeren": "Clear",
@@ -6957,13 +6970,13 @@
     "Automatik, 2,6 s auf 100, voller Grip, kein Reifenverschleiß und kein Tankgewicht. Lenkkalibrierung 200 Prozent, damit auch enge Strecken gehen – der volle Einschlag liegt bei etwa einem Drittel Stick an. Fading und Windschatten sind aus; sie stehen ab GT3 zur Verfügung.": "Automatic, 2.6 s to 100, full grip, no tyre wear and no fuel weight. Steering calibration 200 percent so that tight tracks work too – full lock arrives at about a third of stick travel. Fade and dirty air are off; they are available from GT3 upwards.",
     "Crash-Schwelle": "Crash threshold",
     "Wie weit die Bewegungsbytes 1 und 3 vom gleitenden Mittel abweichen müssen, damit ein Stoß als Crash gilt. Niedriger heißt empfindlicher: schon ein Rempler zählt. Höher heißt, dass nur ein echter Einschlag zählt. 40 ist der Wert, mit dem die Erkennung gebaut und geprüft wurde – stand bis v0.5 als Konstante im Code, war also eine Einstellung, die niemand einstellen konnte.": "How far the motion bytes 1 and 3 must deviate from the running mean for a jolt to count as a crash. Lower means more sensitive: even a nudge counts. Higher means only a real impact counts. 40 is the value the detection was built and tested with – it was a constant in the code until v0.5, so it was a setting nobody could set.",
-    "L3 (linker Stick drücken)": "L3 (press left stick)",
+    "R3 (rechten Stick drücken)": "R3 (press right stick)",
     "Zwei der drei Varianten sind am Auto unerprobt, und die Nummer des gedruckten Musters ist geraten und nicht entziffert – die Kodierregel ist nicht bekannt. „Überall halten“ trägt dagegen: es braucht kein Muster.": "Two of the three variants are untested on the car, and the number of the printed pattern is guessed rather than deciphered – the encoding rule is not known. “Stop anywhere” does hold up, though: it needs no pattern at all.",
     "Leseart: Bahn oder Ausdruck": "Reading mode: rail or printout",
     "Getriebe: Automatik oder von Hand": "Gearbox: automatic or manual",
     "Gelbe Flagge (1 s halten)": "Yellow flag (hold 1 s)",
-    "X / Quadrat (1 s halten)": "X / Square (hold 1 s)",
-    "A / Kreuz": "A / Cross",
+    "Kreuz (PS) / A (Xbox), 1 s halten": "Cross (PS) / A (Xbox), hold 1 s",
+    "Select / Share (PS) / Back (Xbox)": "Select / Share (PS) / Back (Xbox)",
     // Lenkmessung (v0.5): Absaetze ohne inneres Markup, damit sie EIN Knoten sind.
     "die offene Frage": "the open question",
     "Lenkmessung Ghosts": "Ghost steering measurement",
@@ -7007,6 +7020,27 @@
     "Jeder Ghost hält eine feste eigene Linie über die Bahnbreite, gleichmäßig verteilt und symmetrisch um die Mitte. Anders als der seitliche Versatz braucht das keine zwei Autos nebeneinander, und anders als die Ideallinie keine drei Streckenteile: es wirkt auf der Vorgabestrecke und allein unterwegs. Bei nur einem Ghost ist die Spur die Mitte, denn verschiedene Linien haben bei einem Auto keine Bedeutung. Links = aus.": "Each ghost holds a fixed lane of its own across the track width, evenly spread and symmetric about the centre. Unlike the lateral offset this needs no two cars side by side, and unlike the racing line no three track pieces: it works on the default track and when driving alone. With only one ghost the lane is the centre, because different lines have no meaning for a single car. Left = off.",
     "Reifenwärmer": "Tyre blankets",
     "Start und Reifenwechsel auf Betriebstemperatur statt kalt. Aus heißt: die ersten Runden fehlt Grip, bis die Reifen warm gefahren sind. An heißt: sofort im Griff-Fenster, also 85 Grad. In der Formel 1 waren Wärmedecken bis 2024 erlaubt und sind seit 2025 verboten; im GT-Sport sind sie meist untersagt. Hier ist es eine Einstellung und keine Regel.": "Start and tyre change at operating temperature instead of cold. Off means the first few laps lack grip until the tyres have been warmed up. On means straight into the grip window, that is 85 degrees. In Formula 1 tyre blankets were allowed until 2024 and have been banned since 2025; in GT racing they are mostly prohibited. Here it is a setting and not a rule.",
+    "Bremsen nimmt Lenkung": "Braking eats steering",
+    "Der Reibkreis: was die Bremse an der Vorderachse verbraucht, fehlt der Lenkung. 0 heißt, Bremsen und Lenken behindern sich nicht; höhere Werte lassen das Auto beim Anbremsen deutlich schlechter einlenken. Zu beachten: die Lenkwinkel-Kalibrierung darunter holt genau das wieder zurück, also wirkt ein starker Wert erst, wenn die Kalibrierung ihn nicht mehr ausgleichen kann.": "The friction circle: whatever the brake uses at the front axle is missing from the steering. 0 means braking and steering do not interfere; higher values make the car turn in markedly worse while braking. Note: the steering angle calibration below takes exactly that back, so a strong value only bites once the calibration can no longer compensate for it.",
+    "Quadrat (PS) / X (Xbox)": "Square (PS) / X (Xbox)",
+    "Kreis (PS) / B (Xbox)": "Circle (PS) / B (Xbox)",
+    "Dreieck (PS) / Y (Xbox)": "Triangle (PS) / Y (Xbox)",
+    "Options (PS) / Start (Xbox)": "Options (PS) / Start (Xbox)",
+    "L1 (PS) / LB (Xbox)": "L1 (PS) / LB (Xbox)",
+    "R1 (PS) / RB (Xbox)": "R1 (PS) / RB (Xbox)",
+    "Rechter Trigger (R2 / RT)": "Right trigger (R2 / RT)",
+    "Linker Trigger (L2 / LT)": "Left trigger (L2 / LT)",
+    "Rundenzeiten": "Lap times",
+    "Noch keine Sitzung aufgezeichnet.": "No session recorded yet.",
+    "Diese Sitzung hat keine gemessenen Runden.": "This session has no measured laps.",
+    "gemessene Runden, beste": "measured laps, best",
+    "diese Sitzung wurde vor v0.5 aufgezeichnet und trägt keine Ereignisse": "this session was recorded before v0.5 and carries no events",
+    "Boxenstopp (gelb)": "pit stop (yellow)",
+    "Boxenstopps (gelb)": "pit stops (yellow)",
+    "Abgang (Blitz)": "departure (lightning)",
+    "Abgänge (Blitz)": "departures (lightning)",
+    "s Zeitstrafe am Rennende": "s time penalty at the end of the race",
+    "y-Achse abgeschnitten, siehe Beschriftung": "y axis truncated, see the labels",
   };
 
   // ============================================================================
@@ -7140,6 +7174,25 @@
   function setLang(next) {
     if (I18N_LANGS.indexOf(next) < 0 || next === lang) return;
     lang = next;
+    // ZUERST neu zeichnen, DANN uebersetzen - die Reihenfolge ist der ganze Punkt.
+    //
+    // Text, der im Code ZUSAMMENGESETZT wird, kann der Textknoten-Uebersetzer nicht
+    // erreichen: er sucht ganze Knoten in der Tabelle, und "8 gemessene Runden, beste
+    // 12.18s - 1 Boxenstopp" steht dort nicht und kann dort auch nicht stehen. Solche
+    // Ansichten muessen neu gezeichnet werden, damit ihre t()-Aufrufe in der neuen Sprache
+    // laufen; lang ist eine Zeile darueber schon gesetzt.
+    //
+    // Und sie muessen VOR i18nApply neu gezeichnet werden. Erst danach war der Fehler:
+    // das Neuzeichnen schrieb ganze Knoten wieder auf Deutsch, nachdem der Uebersetzer
+    // durch war - "noch nichts gespeichert" blieb im englischen Modus deutsch, obwohl es
+    // im Woerterbuch stand. Der Uebersetzungs-Selbsttest hat genau das gemeldet.
+    if (typeof renderSessions === 'function') {
+      // Der Versuchsblock ist hier nicht Vorsicht, sondern die Ladefolge: setLang laeuft
+      // auch beim Laden, und renderSessions liest Konstanten aus einer SPAETEREN Datei.
+      // Gemessen laeuft die Wiederherstellung der Sprache danach, es geht also gut - aber
+      // ein Wurf hier wuerde die ganze IIFE mitnehmen.
+      try { renderSessions(); } catch (e) { /* Ladefolge, siehe oben */ }
+    }
     i18nBusy = true;
     try { i18nRoots().forEach(i18nApply); } finally { i18nBusy = false; }
     document.documentElement.lang = lang;
@@ -8425,7 +8478,20 @@
         // Mit 0,85 bleibt frontUse auch im schlimmsten Fall unter frontCap, und die Lenkung
         // faellt auf rund 43 % statt auf den Boden. Weniger waere zu wenig: der Messaufbau
         // mit festgehaltener Fahrt zeigt dann 73 % und man spuert es kaum.
-        brakeUseGain: 0.85,   // how much of that capacity the brake eats
+        // Wieviel von der Vorderachskapazitaet die Bremse frisst - der Reibkreis, und seit
+        // v0.5 ueber setting-brake-steal einstellbar.
+        //
+        // 1,15 und nicht 0,85, GEMESSEN: bei der Lenkkalibrierung 200 Prozent, die Pro
+        // fuehrt, kommen mit 0,85 und mit 1,00 rollend WIE bremsend volle 45 Grad am Auto an
+        // - der Effekt war vollstaendig unsichtbar. 1,15 nimmt bei 80 km/h und darueber 45
+        // auf 26 Grad und laesst 40 bis 60 km/h unberuehrt. Ueber 1,15 faellt es auf den
+        // Notboden von 0,12, und dann lenkt das Auto unter Bremsen gar nicht mehr.
+        //
+        // Dieselbe Zahl steht als Vorgabe im Markup, weil Pro die Vorgabe IST. Hier steht
+        // sie fuer calibRef: stuende hier 0,85, meldete physConfigDiff auf frischem Laden
+        // eine Abweichung, die niemand verstellt hat. Den Bremsweg beruehrt der Wert nicht -
+        // steerGrip geht in die Lenkung und nicht in die Verzoegerung.
+        brakeUseGain: 1.15,
 
         // ---- Bremstemperatur und Fading (Block 4.1) ----
         //
@@ -9778,7 +9844,7 @@
   // Todeszone, die in diesem Projekt schon fuenf Ladeabbrueche gekostet hat. In einer
   // zusammengefuegten IIFE ist das Ende einer Datei nicht das Ende des Moduls.
   function steerRespPct(v) { return Math.round(v / STEER_RESP_REF * 100); }
-  ['phys-steerresp', 'phys-accel', 'setting-steer-calib'].forEach(id => {
+  ['phys-steerresp', 'phys-accel', 'setting-steer-calib', 'setting-brake-steal'].forEach(id => {
     const input = $(id);
     const readout = $(id + '-val');
     const apply = () => {
@@ -9795,6 +9861,10 @@
         $('phys-steerresp-val').textContent = steerRespPct(v) + '%';
       }
       if (id === 'phys-accel') physEngine.config.accelerationFactor = v;
+      if (id === 'setting-brake-steal') {
+        physEngine.config.brakeUseGain = v;
+        readout.textContent = Math.round(v * 100) + '%';
+      }
       if (id === 'setting-steer-calib') {
         physEngine.config.steerCalib = v;
         // Als Prozent, weil der Wert ein Faktor auf eine Anforderung ist und kein Winkel.
@@ -13089,6 +13159,8 @@
     racePitDone = 0;
     syncRaceGridOrder();
     scheduleRaceWeatherChange();
+    raceLapEvents = [];
+    lapEventAkku = { pit: 0, crash: 0 };
     resetTyres();   // a race starts on cold tyres, same as leaving the pits
     // Everyone starts from zero, including cars with no role: they still cross the line and
     // their times belong in the table.
@@ -14047,6 +14119,10 @@
       const besteBisher = raceLapTimes.length
         ? Math.min.apply(null, raceLapTimes.map(l => l.ms)) : Infinity;
       raceLapTimes.push({ lap: raceLapTimes.length + 1, ms: rundeMs });
+      // Die Ereignisse DIESER Runde festhalten und den Zaehler leeren. Dieselbe Reihenfolge
+      // wie raceLapTimes, damit der Index die Rundennummer bleibt.
+      raceLapEvents.push({ pit: lapEventAkku.pit, crash: lapEventAkku.crash });
+      lapEventAkku = { pit: 0, crash: 0 };
       raceLapStart = now;
       // Die erste Runde ist nicht "die beste" - sie ist die einzige, und ein Bestzeit-Ton
       // beim ersten Mal nimmt ihm die Bedeutung fuer alle weiteren.
@@ -14406,6 +14482,8 @@
 
       if (allDone && !pitReady) {
         pitReady = true;
+        // Beim FERTIGWERDEN und nicht beim Einfahren: wer abbricht, hatte keinen Stopp.
+        lapEventAkku.pit += 1;
         stopAllPitLoops();
         pitChimeReady();
         padRumble(0.35, 0.2, 200);
@@ -14544,6 +14622,15 @@
   let damage = 0;
   let crashRollingAvg1 = null, crashRollingAvg3 = null;
   let lastCrashTime = 0;
+  // Ereignisse JE RUNDE, fuer den Rundenzeit-Plot. raceLapEvents[i] gehoert zu
+  // raceLapTimes[i] - die Rundennummer ist der Index, genau wie dort, und sie zweimal zu
+  // fuehren waere die Gelegenheit, dass sie auseinanderlaufen.
+  //
+  // Strafen stehen hier NICHT: die einzige im Modell ist die Zeitstrafe fuer verpasste
+  // Pflichtstopps, und die wird am Rennende vergeben. Sie an eine Runde zu haengen waere
+  // eine erfundene Angabe.
+  let raceLapEvents = [];
+  let lapEventAkku = { pit: 0, crash: 0 };
   let fuelLastTickTime = null;
   // Which end took the hit, and whether that end's lights still work. The protocol has
   // exactly two light bits - LIGHT_HEAD for the headlights and LIGHT_BRAKE for the rear -
@@ -14598,6 +14685,7 @@
     const now = Date.now();
     if (dev > crashThreshold && now - lastCrashTime > CRASH_REFRACTORY_MS) {
       lastCrashTime = now;
+      lapEventAkku.crash += 1;
       registerCrash();
     }
   }
@@ -16167,13 +16255,13 @@
   // Boxenstopp on Y and collide with the headlight button that now lives there.
   const GAMEPAD_BINDINGS_KEY = 'carrera-hybrid-gamepad-bindings-v2';
   const DEFAULT_BINDINGS = {
-    throttle: { type: 'button', index: 7, label: 'Rechter Trigger (RT / R2)' },
-    brake: { type: 'button', index: 6, label: 'Linker Trigger (LT / L2)' },
+    throttle: { type: 'button', index: 7, label: 'Rechter Trigger (R2 / RT)' },
+    brake: { type: 'button', index: 6, label: 'Linker Trigger (L2 / LT)' },
     steering: { type: 'axis', index: 0, invert: false, label: 'Linker Stick (X-Achse)' },
-    downshift: { type: 'button', index: 2, label: 'X / Quadrat' },
-    upshift: { type: 'button', index: 1, label: 'B / Kreis' },
-    headlights: { type: 'button', index: 3, label: 'Y / Dreieck' },
-    lightflash: { type: 'button', index: 11, label: 'R3 (rechter Stick drücken)' },
+    downshift: { type: 'button', index: 2, label: 'Quadrat (PS) / X (Xbox)' },
+    upshift: { type: 'button', index: 1, label: 'Kreis (PS) / B (Xbox)' },
+    headlights: { type: 'button', index: 3, label: 'Dreieck (PS) / Y (Xbox)' },
+    lightflash: { type: 'button', index: 11, label: 'R3 (rechten Stick drücken)' },
     // Boxenstopp auf Start/Options, Streckenansicht auf die linke Schulter.
     //
     // Vorher war es umgekehrt, und das war eine Fehlbedienung mit Ansage: Options hat den
@@ -16182,25 +16270,43 @@
     // Vorbeigehen trifft - und ein Boxenstopp ist das, was man an dieser Stelle will.
     //
     // Die rechte Schulter bleibt das Rennen, die Trigger bleiben Gas und Bremse.
-    pitstop: { type: 'button', index: 9, label: 'Start / Options' },
+    pitstop: { type: 'button', index: 9, label: 'Options (PS) / Start (Xbox)' },
     // LB und RB machen jetzt die zwei Umschaltungen, die man WAEHREND der Fahrt braucht:
     // welche Kodierung gelesen wird, und ob von Hand geschaltet wird. Beide sind
     // Fahrentscheidungen und gehoeren unter die Zeigefinger.
     //
-    // Rennen starten und Streckenansicht ziehen dafuer um. A / Kreuz ist der
-    // Bestaetigungsknopf, das passt zum Rennstart; die Streckenansicht ist ein Blick auf die
-    // Karte und kein Fahrbefehl, also L3. Das Touchpad bleibt absichtlich frei, weil das
-    // System es als Zeiger fuehrt.
-    scanmode: { type: 'button', index: 4, label: 'LB / L1' },
-    gearmode: { type: 'button', index: 5, label: 'RB / R1' },
+    // Rennen starten zieht dafuer um, und seit v0.5.1 auf Select: Kreuz traegt die gelbe
+    // Flagge, weil "X" in PlayStation-Namen genau diese Taste ist - die alte Beschriftung
+    // "X / Quadrat" war mehrdeutig und hat die Flagge auf der falschen Taste gehalten.
+    //
+    // Die Streckenansicht ist ab Werk UNBELEGT. Sie lag auf L3, und der linke Stick soll
+    // beim Lenken nichts ausloesen; ausserdem verlaesst sie das Cockpit. Das Touchpad bleibt
+    // ebenfalls frei, weil das System es als Zeiger fuehrt.
+    scanmode: { type: 'button', index: 4, label: 'L1 (PS) / LB (Xbox)' },
+    gearmode: { type: 'button', index: 5, label: 'R1 (PS) / RB (Xbox)' },
     // X hat ZWEI Bedeutungen: kurz ist Runterschalten, eine Sekunde gehalten die gelbe
     // Flagge - genau wie die Taste X auf der Tastatur. Das Halten ist der Schutz: die gelbe
     // Flagge bremst jedes Auto auf 40 km/h, und ein Knopf, der das mit einem Antippen tut,
     // liegt zu nah an der Hand.
-    yellowflag: { type: 'button', index: 2, label: 'X / Quadrat (1 s halten)' },
-    racestart: { type: 'button', index: 0, label: 'A / Kreuz' },
-    weather: { type: 'button', index: 8, label: 'Select / Share' },
-    trackview: { type: 'button', index: 10, label: 'L3 (linker Stick dr\u00fccken)' },
+    // KREUZ und nicht Quadrat. Die alte Beschriftung "X / Quadrat" war mehrdeutig: auf
+    // einer Xbox ist Knopf 2 das X, auf einer PlayStation das Quadrat - und "X" bedeutet auf
+    // einer PlayStation den Knopf 0. Gemeint war der PlayStation-Name.
+    //
+    // Damit liegt die gelbe Flagge ALLEIN auf ihrer Taste. Vorher teilte sie sich Quadrat mit
+    // dem Runterschalten, unterschieden nur durch die Haltedauer - eine Taste mit zwei
+    // Bedeutungen ist mitten im Rennen die falsche Sorte Ueberraschung.
+    yellowflag: { type: 'button', index: 0, label: 'Kreuz (PS) / A (Xbox), 1 s halten' },
+    // Auf Select, weil Kreuz die gelbe Flagge bekommt. Damit liegen die zwei
+    // Rennsteuerungen - starten und Boxenstopp - auf den zwei Menuetasten nebeneinander.
+    racestart: { type: 'button', index: 8, label: 'Select / Share (PS) / Back (Xbox)' },
+    // UNBELEGT ab Werk: Select traegt jetzt den Rennstart. Das Wetter ist ueber die
+    // Oberflaeche erreichbar, eine Taste dafuer ist eine Annehmlichkeit - frei zuweisbar
+    // bleibt es.
+    weather: { type: 'none', index: -1, label: 'nicht belegt' },
+    // UNBELEGT ab Werk, ausdruecklich: der linke Stick soll nichts ausloesen, wenn man ihn
+    // beim Lenken drueckt. Und die Streckenansicht verlaesst das Cockpit - genau der
+    // Grund, aus dem L1 sie nicht mehr traegt.
+    trackview: { type: 'none', index: -1, label: 'nicht belegt' },
     // Nicht belegt. Das Touchpad wird vom System als Zeiger erkannt, also loest ein Tippen
     // gleichzeitig einen Klick irgendwo in der Seite aus - eine Belegung darauf kaempft mit
     // dem Cursor. Frei zuweisbar bleibt es, nur eben nicht ab Werk.
@@ -16243,6 +16349,97 @@
       b.trackview = { ...DEFAULT_BINDINGS.trackview };
       b.__migrated2 = true;
     }
+    // v0.5.1: gelbe Flagge auf Kreuz, Rennstart auf Select, Streckenansicht und Wetter
+    // unbelegt. JE AKTION UNABHAENGIG und nicht gekoppelt - die gekoppelte Fassung darueber
+    // ist zweimal danebengegangen, und genau daran lag, dass L1 zwei Bedeutungen hatte: wer
+    // trackview gespeichert hatte und racestart nicht, wurde von ihr nicht erfasst.
+    //
+    // Verschoben wird nur, wer noch auf SEINER alten Vorgabe liegt. Wer selbst zugewiesen
+    // hat, behaelt seine Zuweisung, und der Kollisionsaufloeser faengt, was dabei doppelt
+    // liegen bleibt.
+    const ALT = { yellowflag: 2, racestart: 0, trackview: 10, weather: 8 };
+    for (const n of Object.keys(ALT)) {
+      if (ist(b[n], ALT[n])) {
+        b[n] = { ...DEFAULT_BINDINGS[n] };
+        b.__migrated3 = true;
+      }
+    }
+    return b;
+  }
+
+  // Der Fingerabdruck eines Eingangs: Art und Nummer. Die Achsenrichtung gehoert NICHT dazu -
+  // zwei Aktionen auf derselben Achse mit verschiedenem Vorzeichen sind trotzdem dieselbe
+  // Achse und stoeren sich.
+  function bindingKey(x) {
+    // type 'none' ist KEIN Eingang. Ohne diese Zeile kollidieren zwei unbelegte Aktionen
+    // miteinander, und die zweite wuerde "aufgeloest" - eine Kollision, die es nicht gibt.
+    if (!x || x.type === undefined || x.type === 'none') return null;
+    return x.type + ':' + x.index;
+  }
+
+  // KOLLISIONEN AUFLOESEN, allgemein statt Fall fuer Fall.
+  //
+  // Der Anlass: LB schaltete die Leseart UND die Streckenansicht, und letztere verlaesst das
+  // Cockpit und damit das Vollbild. Die Ursache war eine Migration, die nur greift, wenn
+  // ZWEI Belegungen zugleich noch auf ihren alten Vorgaben liegen - wer in v0.4 gefahren ist,
+  // hatte trackview gespeichert und racestart nicht, also lief sie nicht.
+  //
+  // Eine dritte Bedingung waere die Gelegenheit fuer den naechsten Fall. Hier gewinnt
+  // stattdessen, wer auf seiner EIGENEN Vorgabe liegt; alle anderen auf demselben Eingang
+  // gehen auf ihre Vorgabe zurueck. Damit ist es unerheblich, welcher Pfad die Kollision
+  // erzeugt hat.
+  //
+  // Gemeldet wird sie, nicht still behoben: ein Knopf, der heimlich seine Bedeutung
+  // wechselt, ist der naechste Fehlerbericht.
+  function resolveBindingCollisions(b) {
+    const namen = Object.keys(DEFAULT_BINDINGS);
+    // Eingang -> Liste der Aktionen, die dort liegen.
+    const belegt = new Map();
+    const dazu = (k, n) => {
+      if (!belegt.has(k)) belegt.set(k, []);
+      belegt.get(k).push(n);
+    };
+    const bericht = [];
+
+    // ERSTER DURCHGANG: wer auf seiner EIGENEN Vorgabe liegt, bekommt den Platz - und zwar
+    // ohne Kollisionspruefung untereinander.
+    //
+    // Das ist der Punkt, an dem mein erster Anlauf falsch war: X traegt ab Werk ABSICHTLICH
+    // zwei Aktionen, Runterschalten beim Tippen und die gelbe Flagge beim Halten. Ein
+    // Aufloeser, der stur Kollisionen bricht, hat mir dort das Runterschalten freigegeben -
+    // eine Verschlechterung, die als Aufraeumen aussah. Was in den Vorgaben zusammenliegt,
+    // ist eine Entscheidung und kein Versehen.
+    for (const n of namen) {
+      const k = bindingKey(b[n]);
+      if (k && k === bindingKey(DEFAULT_BINDINGS[n])) dazu(k, n);
+    }
+
+    // ZWEITER DURCHGANG: alle anderen. Wer auf einen schon belegten Eingang zeigt, geht auf
+    // seine eigene Vorgabe zurueck; ist die auch besetzt, wird er freigegeben statt still auf
+    // einem doppelten Knopf zu liegen.
+    for (const n of namen) {
+      const k = bindingKey(b[n]);
+      if (!k) continue;
+      const dort = belegt.get(k) || [];
+      if (dort.includes(n)) continue;          // im ersten Durchgang platziert
+      if (!dort.length) { dazu(k, n); continue; }
+      const vorher = (b[n] && b[n].label) || k;
+      const mit = dort.map(x => BIND_ACTION_LABELS[x] || x).join(' und ');
+      const vk = bindingKey(DEFAULT_BINDINGS[n]);
+      if (vk && !(belegt.get(vk) || []).length) {
+        b[n] = { ...DEFAULT_BINDINGS[n] };
+        dazu(vk, n);
+        bericht.push((BIND_ACTION_LABELS[n] || n) + ': lag auf ' + vorher + ' zusammen mit '
+                     + mit + ', zurueck auf ' + b[n].label);
+      } else {
+        // Unbelegt heisst type 'none' und nicht null - dieselbe Form wie resetcar ab Werk,
+        // damit die Tabelle in den Optionen sie darstellen kann.
+        b[n] = { type: 'none', index: -1, label: 'nicht belegt' };
+        bericht.push((BIND_ACTION_LABELS[n] || n) + ': lag auf ' + vorher + ' zusammen mit '
+                     + mit + ', jetzt unbelegt - bitte neu zuweisen');
+      }
+    }
+    if (bericht.length) b.__kollisionen = bericht;
     return b;
   }
 
@@ -16250,12 +16447,24 @@
     try {
       const saved = JSON.parse(localStorage.getItem(GAMEPAD_BINDINGS_KEY) || 'null');
       if (!saved) return { ...DEFAULT_BINDINGS };
-      return migrateBindings({ ...DEFAULT_BINDINGS, ...saved });
+      return resolveBindingCollisions(migrateBindings({ ...DEFAULT_BINDINGS, ...saved }));
     } catch { return { ...DEFAULT_BINDINGS }; }
   }
   function saveBindings() { localStorage.setItem(GAMEPAD_BINDINGS_KEY, JSON.stringify(bindings)); }
 
   let bindings = loadBindings();
+  if (bindings.__kollisionen) {
+    for (const zeile of bindings.__kollisionen) log('Controller: ' + zeile, 'notify');
+    delete bindings.__kollisionen;
+    saveBindings();
+  }
+  if (bindings.__migrated3) {
+    delete bindings.__migrated3;
+    saveBindings();
+    log('Controller: gelbe Flagge liegt jetzt auf Kreuz (PS) bzw. A (Xbox), Rennstart auf '
+        + 'Select. Streckenansicht und Wetter sind ab Werk unbelegt - der linke Stick soll '
+        + 'beim Lenken nichts ausloesen.', 'info');
+  }
   if (bindings.__migrated) {
     delete bindings.__migrated;
     saveBindings();
@@ -18958,6 +19167,16 @@
     ghostLanes() {
       return garage.filter(c => c.role === 'ghost' && c.ghost)
         .map(c => ({ name: garageLabel(c), spur: +ghostLane(c).toFixed(4) }));
+    },
+
+    // Den Kollisionsaufloeser pruefbar machen. Er laeuft beim Laden, also ist er ohne
+    // Zugang nur ueber einen Neustart mit gepflanztem Speicher zu testen - und das kann ein
+    // Selbsttest nicht.
+    padResolve(gespeichert) {
+      return resolveBindingCollisions({ ...DEFAULT_BINDINGS, ...(gespeichert || {}) });
+    },
+    padDefaults() {
+      return JSON.parse(JSON.stringify(DEFAULT_BINDINGS));
     },
 
     physTyreAsym(o) {
@@ -21848,6 +22067,118 @@
     }
   });
 
+  // ---- Controller: eine Taste, eine Bedeutung ----
+  //
+  // Gemeldet als "LB hat noch irgendeine weitere Belegung". Die Ursache war eine Migration,
+  // die nur greift, wenn ZWEI Belegungen zugleich noch auf ihren alten Vorgaben liegen: wer in
+  // v0.4 gefahren ist, hatte trackview auf LB gespeichert und racestart gar nicht, also lief
+  // sie nicht - und LB schaltete die Leseart UND die Streckenansicht, die das Cockpit und
+  // damit das Vollbild verlaesst.
+  //
+  // Geprueft werden BEIDE Richtungen, und die zweite ist die, die ich beim ersten Anlauf
+  // kaputtgemacht habe: X traegt ab Werk absichtlich zwei Aktionen (Tippen schaltet runter,
+  // Halten loest die gelbe Flagge). Ein Aufloeser, der stur Kollisionen bricht, gibt dort das
+  // Runterschalten frei - eine Verschlechterung, die als Aufraeumen aussieht.
+  stAdd('Controller: Kollisionen aufgeloest, gewollte Doppelbelegung bleibt', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.padResolve) {
+      return { skip: true, mass: 'padResolve nicht vorhanden' };
+    }
+    const vorgabe = OMEGA_TEST.padDefaults();
+    const schluessel = (x) => (x && x.type && x.type !== 'none') ? x.type + ':' + x.index : null;
+    const schlecht = [], teile = [];
+
+    // 1. Der gemeldete Fall: ein v0.4-Speicher mit trackview auf LB.
+    const a = OMEGA_TEST.padResolve({
+      pitstop: { type: 'button', index: 9, label: 'Start / Options' },
+      trackview: { type: 'button', index: 4, label: 'LB / L1' } });
+    teile.push('gepflanzt: scanmode ' + a.scanmode.label + ', trackview ' + a.trackview.label);
+    if (schluessel(a.scanmode) !== schluessel(vorgabe.scanmode)) {
+      schlecht.push('scanmode nicht mehr auf LB');
+    }
+    if (schluessel(a.trackview) === schluessel(a.scanmode)) {
+      schlecht.push('trackview liegt weiter auf LB');
+    }
+    if (!a.__kollisionen || !a.__kollisionen.length) schlecht.push('Kollision nicht gemeldet');
+
+    // 2. Die GEWOLLTE Doppelbelegung: X traegt Runterschalten und die gelbe Flagge. Ein
+    //    unveraenderter Speicher darf daran nichts aendern.
+    const b = OMEGA_TEST.padResolve({});
+    for (const n of Object.keys(vorgabe)) {
+      if (schluessel(b[n]) !== schluessel(vorgabe[n])) {
+        schlecht.push(n + ': ohne Anlass verschoben (' + (b[n] && b[n].label) + ')');
+      }
+    }
+    if (b.__kollisionen) schlecht.push('meldet Kollisionen in den eigenen Vorgaben');
+    teile.push('Vorgaben unveraendert: ' + (b.__kollisionen ? 'NEIN' : 'ja')
+               + ' (Kreuz ' + (b.yellowflag && b.yellowflag.index === 0 ? 'traegt die Flagge'
+                                : 'traegt sie NICHT') + ')');
+
+    // 3. Und die Vorgaben selbst: ausser dem X-Paar darf nichts doppelt liegen. Eine
+    //    unbeabsichtigte Doppelbelegung ab Werk waere derselbe Fehler, nur von Anfang an.
+    const zaehler = new Map();
+    for (const n of Object.keys(vorgabe)) {
+      const k = schluessel(vorgabe[n]);
+      if (!k) continue;
+      zaehler.set(k, (zaehler.get(k) || []).concat(n));
+    }
+    // KEINE Ausnahme mehr. Bis v0.5.1 lagen Runterschalten und gelbe Flagge gemeinsam auf
+    // Quadrat, unterschieden nur durch die Haltedauer - das war so gebaut und stand hier als
+    // erlaubtes Paar. Gemeint war es nicht: die gelbe Flagge liegt jetzt auf Kreuz, und
+    // damit traegt jede Taste genau eine Bedeutung. Der Test ist dadurch strenger und
+    // einfacher, und eine Ausnahmeliste, die man pflegen muss, faellt weg.
+    for (const [k, ns] of zaehler) {
+      if (ns.length > 1) schlecht.push('Vorgaben: ' + ns.join(' und ') + ' beide auf ' + k);
+    }
+
+    return { ok: !schlecht.length,
+             mass: teile.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // ---- Rundenzeit-Plot: die Zahlen im Bild passen zu den Daten ----
+  //
+  // Nicht wie er AUSSIEHT - das entscheidet das Auge -, sondern dass er keine Runde
+  // verschluckt und die Markierungen an der richtigen Runde sitzen. Ein Plot, der einen
+  // Boxenstopp eine Runde zu spaet malt, sieht vollkommen richtig aus.
+  stAdd('Rundenzeit-Plot: Balken, Markierungen und Fussnote stimmen', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.plotZeichnen) {
+      return { skip: true, mass: 'plotZeichnen nicht vorhanden' };
+    }
+    const merk = $('sess-plot') ? $('sess-plot').innerHTML : null;
+    const merkNote = $('sess-plot-note') ? $('sess-plot-note').textContent : null;
+    try {
+      const sitzung = { zeit: '2026-01-01T00:00:00.000Z', strafeS: 7,
+        autos: [{ name: 'Pruefwagen', rolle: 'player',
+                  laps: [12000, 11500, 19000, 11800, 12200],
+                  ereignisse: [{ pit: 0, crash: 0 }, { pit: 0, crash: 0 },
+                               { pit: 1, crash: 0 }, { pit: 0, crash: 2 },
+                               { pit: 0, crash: 0 }] }] };
+      const r = OMEGA_TEST.plotZeichnen(sitzung, 'Pruefwagen');
+      const schlecht = [];
+      // Fuenf Runden, fuenf Balken. Genau einer gelb (die Runde mit dem Stopp), genau ein
+      // Blitz (die Runde mit den zwei Abgaengen - zwei Abgaenge, EIN Symbol mit Zahl).
+      if (r.balken !== 5) schlecht.push(r.balken + ' Balken statt 5');
+      if (r.gelb !== 1) schlecht.push(r.gelb + ' gelbe statt 1');
+      if (r.blitze !== 1) schlecht.push(r.blitze + ' Blitze statt 1');
+      // Die Fussnote nennt die Summen und die Strafe.
+      for (const soll of ['5 ', '11.50s', '1 ', '2 ', '7 ']) {
+        if (r.fussnote.indexOf(soll) < 0) schlecht.push('Fussnote ohne "' + soll.trim() + '"');
+      }
+      // Und eine Sitzung OHNE Ereignisse darf keine Markierungen erfinden.
+      const alt = OMEGA_TEST.plotZeichnen({ zeit: '2026-01-01T00:00:00.000Z',
+        autos: [{ name: 'Alt', rolle: 'player', laps: [12000, 12100], ereignisse: [] }] }, 'Alt');
+      if (alt.gelb !== 0 || alt.blitze !== 0) {
+        schlecht.push('alte Sitzung erfindet Markierungen');
+      }
+      return { ok: !schlecht.length,
+               mass: r.balken + ' Balken, ' + r.gelb + ' gelb, ' + r.blitze + ' Blitz | '
+                     + r.fussnote.slice(0, 70)
+                     + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+    } finally {
+      if (merk !== null && $('sess-plot')) $('sess-plot').innerHTML = merk;
+      if (merkNote !== null && $('sess-plot-note')) $('sess-plot-note').textContent = merkNote;
+    }
+  });
+
   // ---- Block 4.4: Reifendruck ----
   // Monoton, ueber den ganzen Reglerbereich. Ein Regler, der in der Mitte umkehrt, ist keine
   // Abstimmung, sondern eine Falle.
@@ -22712,15 +23043,28 @@
       // deutlicher Abstand, sonst ist der Regler wieder nur nominell da. Und drittens darf
       // die Balance im STAND nichts aendern - dort spielt die Bremse keine Rolle, und das
       // war der Fehler, gegen den die Tempoabhaengigkeit ueberhaupt eingebaut wurde.
-      const fallend = v.bei140 > m.bei140 && m.bei140 > h.bei140;
+      // FALLEND, aber nur BIS ZUM NOTBODEN - und das ist keine Abschwaechung des Tests,
+      // sondern die Berichtigung einer falschen Annahme. Der Reibkreis hat einen Boden von
+      // 0,12 (eine Trockenreserve, damit das Auto nie voellig hilflos ist). Ist er erreicht,
+      // aendert mehr Bremse vorn nichts mehr, und "streng fallend" kann dort nicht gelten.
+      //
+      // Seit der Reibkreis-Faktor auf 1,15 steht - der kleinste Wert, der bei Pros
+      // Bremsbalance von 58 % ueberhaupt wirkt - liegen 66 % und mehr auf dem Boden. Der Test
+      // verlangt deshalb: nicht steigend ueberall, streng fallend im nicht gesaettigten
+      // Bereich, und wo es flach ist, MUSS es der Boden sein. Ein beliebiges Plateau waere
+      // weiterhin ein Fehler.
+      const nichtSteigend = v.bei140 >= m.bei140 - 1e-9 && m.bei140 >= h.bei140 - 1e-9;
+      const strengOben = v.bei140 > m.bei140;
+      const amBoden = h.bei140 < 0.2;
       const spanne = v.bei140 - h.bei140;
       const standGleich = Math.abs(v.stand - h.stand) < 0.02 && h.stand > 0.95;
-      return { ok: fallend && spanne > 0.25 && standGleich,
+      return { ok: nichtSteigend && strengOben && amBoden && spanne > 0.25 && standGleich,
                mass: '140 km/h: 50 % vorn ' + Math.round(v.bei140 * 100)
                      + ' %, 62 % vorn ' + Math.round(m.bei140 * 100)
                      + ' %, 80 % vorn ' + Math.round(h.bei140 * 100)
                      + ' % | Spanne ' + Math.round(spanne * 100)
-                     + ' Punkte, im Stand ' + Math.round(h.stand * 100) + ' %' };
+                     + ' Punkte, im Stand ' + Math.round(h.stand * 100) + ' %'
+                     + (h.bei140 < 0.2 ? ' | 80 % vorn liegt auf dem Notboden' : '') };
     }
   });
 
@@ -23461,7 +23805,16 @@
         // plus eins, und sie zweimal zu speichern ist die Gelegenheit, dass sie
         // auseinanderlaufen.
         laps: c.laps.map(l => l.ms),
+        // Ereignisse je Runde, nur fuer das gesteuerte Auto: Boxenstopps und Crashs werden
+        // fuer den Fahrer erfasst, nicht fuer die Ghosts. Bei denen bleibt das Feld leer,
+        // und der Plot zeichnet sie dann ohne Markierungen - ehrlicher, als fehlende Daten
+        // als "kein Stopp" zu zeigen.
+        ereignisse: (c.role === 'player' && typeof raceLapEvents !== 'undefined')
+          ? raceLapEvents.slice(0, c.laps.length) : [],
       })),
+      // Die Zeitstrafe der Sitzung, als EINE Zahl. Sie wird am Rennende vergeben und
+      // gehoert keiner Runde - im Plot steht sie deshalb in der Fussnote.
+      strafeS: (typeof racePenaltyMs === 'function') ? Math.round(racePenaltyMs() / 1000) : null,
       // Die Abstimmung mit. Ohne sie ist eine Rundenzeit eine Zahl ohne Bedingungen, und
       // dann kann man zwei Sitzungen nicht vergleichen.
       einstellungen: (typeof presetRead === 'function') ? presetRead() : null,
@@ -23502,9 +23855,183 @@
   // ---- Anzeige -----------------------------------------------------------------------
   function sessionFmt(ms) { return (ms / 1000).toFixed(2) + 's'; }
 
+  // ---- Rundenzeit-Plot ----------------------------------------------------------------
+  //
+  // BALKEN und keine Linie: eine Runde ist eine abgeschlossene Einheit, keine stetige
+  // Groesse. Eine Linie zwischen zwei Runden behauptet Zwischenwerte, die es nicht gibt.
+  //
+  // DIE Y-ACHSE BEGINNT NICHT BEI NULL, und das ist eine Entscheidung mit Begruendung: bei
+  // null gestaucht sehen alle Runden gleich hoch aus, und der Unterschied zwischen 12,1 und
+  // 12,8 Sekunden ist genau das, was interessiert. Die Achse ist beschriftet, damit die
+  // Stauchung sichtbar ist und nicht taeuscht - eine unbeschriftete abgeschnittene Achse
+  // waere eine Luege.
+  //
+  // ALS SVG und nicht als Canvas: es skaliert mit der Blattbreite, laesst sich mit den
+  // Augen pruefen, und es gibt kein zweites Zeichensystem in diesem Projekt.
+  function plotAufbauen(sitzung, autoName) {
+    const host = $('sess-plot');
+    const note = $('sess-plot-note');
+    if (!host) return;
+    if (!sitzung) {
+      host.innerHTML = '';
+      if (note) note.textContent = t('Noch keine Sitzung aufgezeichnet.');
+      return;
+    }
+    const auto = (sitzung.autos || []).find(a => a.name === autoName)
+              || (sitzung.autos || [])[0];
+    const zeiten = (auto && auto.laps) || [];
+    if (zeiten.length < 1) {
+      host.innerHTML = '';
+      if (note) note.textContent = t('Diese Sitzung hat keine gemessenen Runden.');
+      return;
+    }
+    const ev = (auto && auto.ereignisse) || [];
+    const beste = Math.min.apply(null, zeiten);
+    const schlecht = Math.max.apply(null, zeiten);
+    // Untere Kante etwas UNTER der besten Runde, obere etwas ueber der langsamsten: sonst
+    // klebt der schnellste Balken auf der Achse und der langsamste am Rand.
+    const spanne = Math.max(1, schlecht - beste);
+    const yMin = Math.max(0, beste - spanne * 0.25);
+    const yMax = schlecht + spanne * 0.18;
+    const B = 34, hoehe = 150, links = 52, oben = 22, unten = 26;
+    const breite = links + zeiten.length * B + 14;
+    const yPos = (ms) => oben + (yMax - ms) / (yMax - yMin) * hoehe;
+    const teile = [];
+    teile.push('<svg viewBox="0 0 ' + breite + ' ' + (oben + hoehe + unten)
+               // width:100% streckte die SVG auf die Blattbreite und height:auto zog die
+               // Hoehe mit - aus 198 Einheiten wurden ueber 500 Pixel. Feste Breite mit
+               // max-width: auf dem Telefon wird sie kleiner, auf dem Bildschirm nicht
+               // groesser als vorgesehen.
+               + '" style="width:' + breite + 'px;max-width:100%;height:auto"'
+               + ' role="img" aria-label="Rundenzeiten je Runde">');
+    // Bezugslinie auf der Bestzeit: so liest man den Abstand jeder Runde ohne zu rechnen.
+    const yB = yPos(beste);
+    teile.push('<line x1="' + links + '" y1="' + yB.toFixed(1) + '" x2="' + (breite - 8)
+               + '" y2="' + yB.toFixed(1) + '" stroke="#3ddc84" stroke-width="1"'
+               + ' stroke-dasharray="3 3"/>');
+    teile.push('<text x="4" y="' + (yB + 3.5).toFixed(1) + '" font-size="9" fill="#3ddc84"'
+               + ' font-family="monospace">' + formatLapTime(beste) + '</text>');
+    // Und die obere Kante beschriftet, damit die abgeschnittene Achse sichtbar ist.
+    teile.push('<text x="4" y="' + (oben + 4) + '" font-size="9" fill="#6f7a94"'
+               + ' font-family="monospace">' + formatLapTime(Math.round(yMax)) + '</text>');
+    teile.push('<line x1="' + links + '" y1="' + (oben + hoehe) + '" x2="' + (breite - 8)
+               + '" y2="' + (oben + hoehe) + '" stroke="#2b3547" stroke-width="1"/>');
+    for (let i = 0; i < zeiten.length; i++) {
+      const ms = zeiten[i];
+      const e = ev[i] || {};
+      const x = links + i * B + 4;
+      const w = B - 10;
+      const y = yPos(ms);
+      const h = Math.max(1, oben + hoehe - y);
+      // Gelb bei Boxenstopp, gruen bei der schnellsten Runde, sonst blau. Die Reihenfolge
+      // entscheidet: ein Boxenstopp erklaert eine lange Runde, und das ist die wichtigere
+      // Aussage als "war nicht die schnellste".
+      const farbe = e.pit ? '#ffb02e' : (ms === beste ? '#3ddc84' : '#5aa9ff');
+      teile.push('<rect x="' + x + '" y="' + y.toFixed(1) + '" width="' + w + '" height="'
+                 + h.toFixed(1) + '" fill="' + farbe + '" opacity="0.85" rx="1"/>');
+      // Crashs als Blitz ueber dem Balken, mit Zahl ab zwei.
+      if (e.crash) {
+        teile.push('<text x="' + (x + w / 2) + '" y="' + (y - 3).toFixed(1)
+                   + '" text-anchor="middle" font-size="11" fill="#ff5c5c">\u26a1'
+                   + (e.crash > 1 ? '<tspan font-size="8">' + e.crash + '</tspan>' : '')
+                   + '</text>');
+      }
+      teile.push('<text x="' + (x + w / 2) + '" y="' + (oben + hoehe + 11)
+                 + '" text-anchor="middle" font-size="9" fill="#6f7a94"'
+                 + ' font-family="monospace">' + (i + 1) + '</text>');
+    }
+    teile.push('<text x="' + links + '" y="' + (oben + hoehe + 23) + '" font-size="8.5"'
+               + ' fill="#6f7a94">Runde</text>');
+    teile.push('</svg>');
+    host.innerHTML = teile.join('');
+
+    // Die Fussnote traegt, was NICHT im Bild steht: die Zeitstrafe (sie gehoert keiner
+    // Runde) und der Hinweis, wenn eine alte Sitzung keine Ereignisse mitbringt.
+    if (note) {
+      const stueck = [];
+      const stopps = ev.reduce((a, x) => a + (x.pit || 0), 0);
+      const crashs = ev.reduce((a, x) => a + (x.crash || 0), 0);
+      // Ueber t() und nicht als deutsche Zeichenketten: die Fussnote entsteht im CODE, also
+      // greift die Textknoten-Uebersetzung nicht von selbst - sie waere im englischen Modus
+      // deutsch geblieben. Genau solche Stellen findet der Uebersetzungs-Selbsttest.
+      stueck.push(zeiten.length + ' ' + t('gemessene Runden, beste') + ' '
+                  + formatLapTime(beste));
+      if (!ev.length) {
+        stueck.push(t('diese Sitzung wurde vor v0.5 aufgezeichnet und trägt keine Ereignisse'));
+      } else {
+        stueck.push(stopps + ' ' + t(stopps === 1 ? 'Boxenstopp (gelb)' : 'Boxenstopps (gelb)'));
+        stueck.push(crashs + ' ' + t(crashs === 1 ? 'Abgang (Blitz)' : 'Abgänge (Blitz)'));
+      }
+      if (sitzung.strafeS) {
+        stueck.push(sitzung.strafeS + ' ' + t('s Zeitstrafe am Rennende'));
+      }
+      stueck.push(t('y-Achse abgeschnitten, siehe Beschriftung'));
+      note.textContent = stueck.join(' \u00b7 ') + '.';
+    }
+  }
+
+  // Die Auswahl fuellen und den Plot zeichnen. Neueste Sitzung zuerst, weil man die sucht.
+  function plotAuswahl() {
+    const pick = $('sess-plot-pick');
+    if (!pick) return;
+    const o = sessionStore();
+    const eintraege = [];
+    for (let i = o.sessions.length - 1; i >= 0; i--) {
+      const st = o.sessions[i];
+      for (const a of (st.autos || [])) {
+        if (!a.laps || !a.laps.length) continue;
+        eintraege.push({ i, name: a.name,
+                         text: new Date(st.zeit).toLocaleString() + ' \u2013 ' + a.name });
+      }
+    }
+    const vorher = pick.value;
+    pick.innerHTML = eintraege.map((e, k) =>
+      '<option value="' + k + '">' + e.text + '</option>').join('');
+    const row = $('sess-plot-row');
+    if (row) row.style.display = eintraege.length ? '' : 'none';
+    if (!eintraege.length) { plotAufbauen(null); return; }
+    if (vorher && pick.querySelector('option[value="' + vorher + '"]')) pick.value = vorher;
+    const wahl = eintraege[parseInt(pick.value, 10) || 0];
+    plotAufbauen(o.sessions[wahl.i], wahl.name);
+    // Die Liste am ELEMENT ablegen und nicht in der Abschlussumgebung des Zuhoerers.
+    //
+    // Vorher hielt der Zuhoerer die eintraege des ERSTEN Verdrahtens fest. Nach einem
+    // weiteren Rennen fuellt plotAuswahl die Auswahl neu, der Zuhoerer arbeitete aber
+    // weiter mit der alten Liste - und ein Wechsel in der Auswahl haette die falsche
+    // Sitzung gezeichnet. Gefunden beim Durchsehen, nicht beim Fahren: der Fehler zeigt
+    // sich erst ab der zweiten Sitzung.
+    pick.__eintraege = eintraege;
+    if (!pick.__verdrahtet) {
+      pick.__verdrahtet = true;
+      pick.addEventListener('change', () => {
+        const liste = pick.__eintraege || [];
+        const e = liste[parseInt(pick.value, 10) || 0];
+        if (e) plotAufbauen(sessionStore().sessions[e.i], e.name);
+      });
+    }
+  }
+
+  // Pruefzugang: den Plot mit GEGEBENEN Daten zeichnen, ohne den Sitzungsspeicher
+  // anzufassen. Ein Test, der echte Sitzungen anlegt, veraendert die Daten des Nutzers.
+  if (window.OMEGA_TEST) {
+    window.OMEGA_TEST.plotZeichnen = (sitzung, name) => {
+      plotAufbauen(sitzung, name);
+      const host = $('sess-plot');
+      const note = $('sess-plot-note');
+      const html = host ? host.innerHTML : '';
+      return { balken: (html.match(/<rect/g) || []).length,
+               gelb: (html.match(/#ffb02e/g) || []).length,
+               blitze: (html.match(/\u26a1/g) || []).length,
+               fussnote: note ? note.textContent : '' };
+    };
+  }
+
   function renderSessions() {
     const host = $('sess-list');
     if (!host) return;
+    // Der Plot zieht MIT der Liste nach und nicht auf eigenem Weg: eine Stelle, die die
+    // Ergebnisse zeichnet, und zwei Darstellungen desselben Speichers.
+    plotAuswahl();
     const o = sessionStore();
     const autos = Object.values(o.cars);
     const kopf = $('sess-summary');
@@ -23787,6 +24314,9 @@
            // bei einem Viertel Stick an. Weiter als 45 Grad kommt auch das nicht - das ist
            // die Mechanik des Autos.
            'setting-steer-calib': 2.5,
+           // Reibkreis schwach: Arcade soll nicht dafuer bestraft werden, dass man bremst und
+           // lenkt gleichzeitig.
+           'setting-brake-steal': 0.4,
            // Waermer an: das ist die nachsichtigste Abstimmung, und kalte Reifen in den ersten
            // Runden sind genau die Sorte Huerde, die Arcade nicht haben soll.
            'setting-tyre-blankets': true,
@@ -23829,6 +24359,12 @@
            // Anbremsen auf etwa 60 Prozent, und das holt ihn zurueck. Gemessen bei 60 km/h
            // unter Bremsen: 35 Grad ohne, volle 45 Grad ab einem Drittel Stick mit.
            'setting-steer-calib': 2.0,
+           // Reibkreis 1,15, GEMESSEN. Bei Kalibrierung 200 Prozent waren 0,85 und 1,00 beide
+           // unsichtbar (45 Grad rollend wie bremsend); 1,15 nimmt bei 80 km/h und
+           // darueber 45 auf 26 Grad und laesst 40 bis 60 km/h unberuehrt. Ueber
+           // 1,15 faellt es auf den Notboden von 11 Grad, und dann lenkt das Auto
+           // unter Bremsen gar nicht mehr.
+           'setting-brake-steal': 1.15,
            // Waermer an, weil Pro die Vorgabe ist: wer zum ersten Mal faehrt, soll nicht drei
            // Runden auf Grip warten und das fuer das Fahrverhalten halten.
            'setting-tyre-blankets': true,
@@ -23865,6 +24401,8 @@
            'setting-steer-calib': 1.0,
            'phys-accel': 1.0,
            'setting-crash-threshold': 30,
+           // Bei Kalibrierung 1,0 wirkt schon 1,0 deutlich: 25 Grad statt 41 bei 100 km/h.
+           'setting-brake-steal': 1.0,
            // Waermer AUS. Im GT-Sport sind Waermedecken meist untersagt, und die ersten Runden
            // auf kalten Reifen sind ein Teil dessen, was diese Klasse ausmacht.
            'setting-tyre-blankets': false,
@@ -23897,6 +24435,8 @@
            'setting-steer-calib': 1.1,
            'phys-accel': 1.0,
            'setting-crash-threshold': 35,
+           // Etwas gutmuetiger als GT3, wie die ganze Klasse.
+           'setting-brake-steal': 0.9,
            // Waermer aus, wie GT3.
            'setting-tyre-blankets': false,
            'setting-fuel-drain': 2.2, 'setting-crash-count': 5,
@@ -23930,6 +24470,9 @@
            'setting-steer-calib': 1.0,
            'phys-accel': 1.0,
            'setting-crash-threshold': 25,
+           // Der schaerfste Reibkreis, aber nicht am Notboden: bei Kalibrierung 1,0 gibt 1,15
+           // schon 13 Grad, und das ist kein Fahren mehr.
+           'setting-brake-steal': 1.05,
            // Waermer an. In der Formel 1 waren Waermedecken bis 2024 erlaubt und sind seit 2025
            // verboten - hier ist es die Einstellung, die zur schaerfsten Klasse passt.
            'setting-tyre-blankets': true,

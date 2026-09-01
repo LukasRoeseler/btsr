@@ -30,6 +30,9 @@
            // bei einem Viertel Stick an. Weiter als 45 Grad kommt auch das nicht - das ist
            // die Mechanik des Autos.
            'setting-steer-calib': 2.5,
+           // Reibkreis schwach: Arcade soll nicht dafuer bestraft werden, dass man bremst und
+           // lenkt gleichzeitig.
+           'setting-brake-steal': 0.4,
            // Waermer an: das ist die nachsichtigste Abstimmung, und kalte Reifen in den ersten
            // Runden sind genau die Sorte Huerde, die Arcade nicht haben soll.
            'setting-tyre-blankets': true,
@@ -72,6 +75,12 @@
            // Anbremsen auf etwa 60 Prozent, und das holt ihn zurueck. Gemessen bei 60 km/h
            // unter Bremsen: 35 Grad ohne, volle 45 Grad ab einem Drittel Stick mit.
            'setting-steer-calib': 2.0,
+           // Reibkreis 1,15, GEMESSEN. Bei Kalibrierung 200 Prozent waren 0,85 und 1,00 beide
+           // unsichtbar (45 Grad rollend wie bremsend); 1,15 nimmt bei 80 km/h und
+           // darueber 45 auf 26 Grad und laesst 40 bis 60 km/h unberuehrt. Ueber
+           // 1,15 faellt es auf den Notboden von 11 Grad, und dann lenkt das Auto
+           // unter Bremsen gar nicht mehr.
+           'setting-brake-steal': 1.15,
            // Waermer an, weil Pro die Vorgabe ist: wer zum ersten Mal faehrt, soll nicht drei
            // Runden auf Grip warten und das fuer das Fahrverhalten halten.
            'setting-tyre-blankets': true,
@@ -108,6 +117,8 @@
            'setting-steer-calib': 1.0,
            'phys-accel': 1.0,
            'setting-crash-threshold': 30,
+           // Bei Kalibrierung 1,0 wirkt schon 1,0 deutlich: 25 Grad statt 41 bei 100 km/h.
+           'setting-brake-steal': 1.0,
            // Waermer AUS. Im GT-Sport sind Waermedecken meist untersagt, und die ersten Runden
            // auf kalten Reifen sind ein Teil dessen, was diese Klasse ausmacht.
            'setting-tyre-blankets': false,
@@ -140,6 +151,8 @@
            'setting-steer-calib': 1.1,
            'phys-accel': 1.0,
            'setting-crash-threshold': 35,
+           // Etwas gutmuetiger als GT3, wie die ganze Klasse.
+           'setting-brake-steal': 0.9,
            // Waermer aus, wie GT3.
            'setting-tyre-blankets': false,
            'setting-fuel-drain': 2.2, 'setting-crash-count': 5,
@@ -173,6 +186,9 @@
            'setting-steer-calib': 1.0,
            'phys-accel': 1.0,
            'setting-crash-threshold': 25,
+           // Der schaerfste Reibkreis, aber nicht am Notboden: bei Kalibrierung 1,0 gibt 1,15
+           // schon 13 Grad, und das ist kein Fahren mehr.
+           'setting-brake-steal': 1.05,
            // Waermer an. In der Formel 1 waren Waermedecken bis 2024 erlaubt und sind seit 2025
            // verboten - hier ist es die Einstellung, die zur schaerfsten Klasse passt.
            'setting-tyre-blankets': true,

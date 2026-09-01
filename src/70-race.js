@@ -651,6 +651,8 @@
     racePitDone = 0;
     syncRaceGridOrder();
     scheduleRaceWeatherChange();
+    raceLapEvents = [];
+    lapEventAkku = { pit: 0, crash: 0 };
     resetTyres();   // a race starts on cold tyres, same as leaving the pits
     // Everyone starts from zero, including cars with no role: they still cross the line and
     // their times belong in the table.
@@ -1609,6 +1611,10 @@
       const besteBisher = raceLapTimes.length
         ? Math.min.apply(null, raceLapTimes.map(l => l.ms)) : Infinity;
       raceLapTimes.push({ lap: raceLapTimes.length + 1, ms: rundeMs });
+      // Die Ereignisse DIESER Runde festhalten und den Zaehler leeren. Dieselbe Reihenfolge
+      // wie raceLapTimes, damit der Index die Rundennummer bleibt.
+      raceLapEvents.push({ pit: lapEventAkku.pit, crash: lapEventAkku.crash });
+      lapEventAkku = { pit: 0, crash: 0 };
       raceLapStart = now;
       // Die erste Runde ist nicht "die beste" - sie ist die einzige, und ein Bestzeit-Ton
       // beim ersten Mal nimmt ihm die Bedeutung fuer alle weiteren.
@@ -1968,6 +1974,8 @@
 
       if (allDone && !pitReady) {
         pitReady = true;
+        // Beim FERTIGWERDEN und nicht beim Einfahren: wer abbricht, hatte keinen Stopp.
+        lapEventAkku.pit += 1;
         stopAllPitLoops();
         pitChimeReady();
         padRumble(0.35, 0.2, 200);
@@ -2106,6 +2114,15 @@
   let damage = 0;
   let crashRollingAvg1 = null, crashRollingAvg3 = null;
   let lastCrashTime = 0;
+  // Ereignisse JE RUNDE, fuer den Rundenzeit-Plot. raceLapEvents[i] gehoert zu
+  // raceLapTimes[i] - die Rundennummer ist der Index, genau wie dort, und sie zweimal zu
+  // fuehren waere die Gelegenheit, dass sie auseinanderlaufen.
+  //
+  // Strafen stehen hier NICHT: die einzige im Modell ist die Zeitstrafe fuer verpasste
+  // Pflichtstopps, und die wird am Rennende vergeben. Sie an eine Runde zu haengen waere
+  // eine erfundene Angabe.
+  let raceLapEvents = [];
+  let lapEventAkku = { pit: 0, crash: 0 };
   let fuelLastTickTime = null;
   // Which end took the hit, and whether that end's lights still work. The protocol has
   // exactly two light bits - LIGHT_HEAD for the headlights and LIGHT_BRAKE for the rear -
@@ -2160,6 +2177,7 @@
     const now = Date.now();
     if (dev > crashThreshold && now - lastCrashTime > CRASH_REFRACTORY_MS) {
       lastCrashTime = now;
+      lapEventAkku.crash += 1;
       registerCrash();
     }
   }

@@ -183,6 +183,106 @@ Ein wichtiger Punkt, den man leicht falsch einschätzt: Die App ist kein Physik-
 
 Das erklärt auch, warum der Gaswert kein einfacher "Stopp bis Vollgas"-Wert ist. Er wirkt eher wie ein Wert, der sich weich hoch- und runterregelt, ähnlich wie beim Gasgeben in einem echten Auto. Die Feinarbeit passiert in der Firmware des Autos, nicht in der App.
 
+### Was OmegaSim daneben rechnet
+
+Die Aussage oben gilt fuer das Auto: die Fahrdynamik entsteht in seiner Firmware. OmegaSim
+rechnet daneben ein eigenes Modell, und zwar nicht als Ersatz, sondern um die **zwei Bytes zu
+formen**, die ohnehin gesendet werden. Der Unterschied ist wichtig: alles, was das Modell tut,
+muss am Ende ein Gaswert und ein Lenkwert sein, sonst kommt es am Auto nicht an.
+
+**Gewichtsverlagerung, vier Raeder.** Aus Gas, Bremse und Lenkung folgt eine Lastverteilung
+auf vier Raeder:
+
+- **Bremsen verlagert nach vorn**, Gas nach hinten. Der Achsanteil laeuft von 0,2 bei Vollgas
+  ueber 0,5 im Rollen bis 0,8 unter Vollbremsung.
+- **Lenken verlagert nach aussen.** Eine Rechtskurve belastet die linken Raeder.
+- Beides multipliziert ergibt die Radlast, **im Mittel immer genau 1,0**. Gemessen fuer eine
+  Rechtskurve unter Vollbremsung: vorne links 2,72, vorne rechts 0,48, hinten links 0,68,
+  hinten rechts 0,12. Die Linkskurve ist die exakte Spiegelung.
+
+Die Verlagerung **verschiebt** Last, sie erfindet keine: der Verschleissmittelwert ist mit und
+ohne Asymmetrie exakt gleich. Aus den vier Radlasten folgen vier Reifentemperaturen, vier
+Verschleisswerte und vier Bremsscheibentemperaturen, und die stehen so im Cockpit.
+
+**Was davon wirkt und was nur anzeigt.** Das Auto rutscht in echt nicht, also kann das Modell
+nur ueber die zwei Bytes wirken:
+
+| Groesse | Art | Wirkung |
+|---|---|---|
+| Reibkreis (Bremsen nimmt Lenkung) | Aktor | schneidet den Lenkwert |
+| Bremsfading | Aktor | verlaengert den Bremsweg ueber das Bremsbyte |
+| Reifengriff kalt/heiss/abgefahren | Aktor | senkt Lenk- und Bremswert |
+| Reifenzug bei ungleichem Verschleiss | Aktor | kleiner Lenk-Offset |
+| Radlasten, Temperaturen, Scheiben | Instrument | Anzeige im Cockpit |
+
+**Der Reibkreis** ist der Teil, den man am deutlichsten spuert: was die Bremse an der
+Vorderachse verbraucht, fehlt der Lenkung. Er hat einen Boden von 0,12, damit das Auto nie
+voellig hilflos ist - im Regen wird dieser Boden weggeskaliert, weil dort wirklich nichts mehr
+uebrig ist.
+
+### Die Lenkgrenze: 45 Grad, und kein Regler kommt darueber
+
+Byte 7 traegt den Lenkwert als `round(winkel * 127)` in einem **vorzeichenbehafteten** Byte.
+127 ist das Maximum dieses Bereichs, und die App sendet es bei Vollanforderung. Daraus folgt:
+
+- Kein Reglerwert kann das Auto weiter einschlagen lassen als seine Mechanik. Die 45 Grad sind
+  eine Grenze des Fahrzeugs, nicht der Software.
+- Ein Wert **ueber** 1,0 waere schaedlich und nicht nur wirkungslos: beim Umbruch des
+  vorzeichenbehafteten Bytes kaeme er als Einschlag in die ANDERE Richtung an. Der Deckel bei
+  1,0 ist deshalb keine Vorsicht, sondern notwendig.
+
+Was eine Kalibrierung dennoch bringt: der uebertragene Winkel wird **vor** dem Senden mit dem
+Reibkreis multipliziert. Beim Anbremsen einer engen Kurve - dem Moment mit dem groessten
+Einschlagbedarf - bleiben davon etwa 60 bis 77 Prozent. Eine Kalibrierung hinter dieser
+Multiplikation holt das zurueck. Gemessen bei 60 km/h unter Vollbremsung:
+
+| Kalibrierung | 100 % | 150 % | 200 % | 250 % | 300 % |
+|---|---|---|---|---|---|
+| erreichter Winkel | 35 Grad | 45 Grad | 45 Grad | 45 Grad | 45 Grad |
+| Anschlag ab Stickanteil | nie | 40 % | 30 % | 25 % | 20 % |
+
+Bei 100 Prozent werden die 45 Grad also **nie** erreicht. Oberhalb von 150 Prozent ist bei
+vollem Ausschlag nichts mehr zu holen; der Unterschied liegt nur darin, wo im Stickweg der
+Anschlag anliegt - und der Preis ist Feingefuehl, weil der letzte Teil des Sticks dann nichts
+mehr sagt.
+
+**Die zwei Regler arbeiten gegeneinander**, und das ist keine Nachlaessigkeit, sondern folgt
+aus der Rechnung: eine Kalibrierung von 200 Prozent macht jede Beschneidung oberhalb von 0,5
+unsichtbar. Wer den Reibkreis spueren will, muss die Kalibrierung senken oder den Reibkreis so
+weit aufdrehen, dass die Kalibrierung ihn nicht mehr ausgleichen kann.
+
+### Controller: eine Taste, eine Bedeutung
+
+Die Belegung steht zuweisbar in den Optionen unter Controller. Ab Werk, mit
+PlayStation-Namen zuerst:
+
+| Taste | Aktion |
+|---|---|
+| R2 / RT | Gas |
+| L2 / LT | Bremse |
+| Linker Stick, X-Achse | Lenkung |
+| Quadrat / X | Runterschalten |
+| Kreis / B | Hochschalten |
+| Dreieck / Y | Licht an/aus |
+| R3 (rechten Stick druecken) | Lichthupe |
+| L1 / LB | Leseart: Bahn oder Ausdruck |
+| R1 / RB | Getriebe: Automatik oder von Hand |
+| Kreuz / A, 1 s halten | Gelbe Flagge |
+| Options / Start | Boxenstopp |
+| Select / Share | Rennen starten oder abbrechen |
+| L3 (linken Stick druecken) | nichts |
+
+Zwei Punkte dazu, beide aus Fehlern gelernt:
+
+- **Die Beschriftungen nennen den PlayStation-Namen zuerst.** "X / Quadrat" war mehrdeutig:
+  auf einer Xbox ist Knopf 2 das X, auf einer PlayStation das Quadrat - und "X" bedeutet auf
+  einer PlayStation den Knopf 0. Eine Beschriftung, die zwei Tasten bedeuten kann, ist der
+  Fehler und nicht der Leser.
+- **Jede Taste traegt genau eine Bedeutung.** Der linke Stick loest ausdruecklich nichts aus,
+  weil man ihn beim Lenken drueckt. Beim Laden wird auf Kollisionen geprueft: liegen zwei
+  Aktionen auf demselben Eingang, geht die zweite auf ihre Vorgabe zurueck, und es wird
+  gemeldet statt still behoben.
+
 ## Mehrspieler-Rennen
 
 Laut Hersteller können mehrere Spieler gleichzeitig fahren. Jedes Handy verbindet sich dabei über Bluetooth mit seinem eigenen Auto. Für die Renn-Organisation zwischen den Handys, etwa Rundenzeiten oder Startreihenfolge, wird vermutlich zusätzlich WLAN zwischen den Handys genutzt.
