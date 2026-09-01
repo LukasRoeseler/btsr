@@ -1879,6 +1879,63 @@
     }
   });
 
+  // ---- Das Bremslicht steht, wenn die Leuchte heil ist ----
+  //
+  // GEMELDET ALS: "wenn ich Bremse druecke, blinkt das Bremslicht statt zu leuchten". Die
+  // Ursache lag zwei Schritte davor - crashDetectionEnabled stand beim Laden auf true,
+  // waehrend der Schalter aus zeigte, also wurden Crashs gezaehlt, und ab 50 % Schaden faellt
+  // lightDamage.rear. Ein defektes Ruecklicht bekommt in buildCommandPacket keinen harten
+  // Aus-Zustand, sondern einen Wackelkontakt (lampFlicker: an in etwa 14 Prozent der
+  // 70-ms-Fenster), und der sieht beim Bremsen wie Blinken aus.
+  //
+  // Geprueft wird die STELLE, an der man es sieht, und nicht die Ursache: der Startwert ist
+  // schon vom Schaltertest abgedeckt, die Maskierung war es nicht.
+  //
+  // Beide Richtungen, und die zweite ist die Absicherung: ohne sie waere der Test auch dann
+  // gruen, wenn die Maskierung ueberhaupt nicht mehr wirkt.
+  stAdd('Bremslicht steht bei heiler Leuchte und flackert bei defekter', () => {
+    if (typeof lightDamage !== 'object' || typeof buildCommandPacket !== 'function') {
+      return { skip: true, mass: 'lightDamage/buildCommandPacket nicht erreichbar' };
+    }
+    const merk = { r: lightDamage.rear, f: lightDamage.front };
+    // Je 70-ms-Fenster einmal lesen: lampFlicker faechert nach Math.floor(Date.now()/70)
+    // auf, und mehrere Lesungen im selben Fenster ergeben denselben Wert.
+    const messe = (ms) => {
+      const an = [];
+      const t0 = Date.now();
+      let letztes = -1;
+      while (Date.now() - t0 < ms) {
+        const f = Math.floor(Date.now() / 70);
+        if (f !== letztes) {
+          letztes = f;
+          an.push((buildCommandPacket(0, 0, LIGHT_HEAD | LIGHT_BRAKE)[14] & LIGHT_BRAKE)
+                  ? 1 : 0);
+        }
+      }
+      return an;
+    };
+    try {
+      lightDamage.rear = false;
+      const heil = messe(840);
+      lightDamage.rear = true;
+      const defekt = messe(840);
+      const heilStetig = heil.length >= 8 && heil.every(x => x === 1);
+      const anteilDefekt = defekt.reduce((s, x) => s + x, 0) / Math.max(1, defekt.length);
+      // Ueberwiegend aus. Nicht "genau 14 Prozent": lampFlicker ist eine Hashfunktion ueber
+      // die Uhr, und eine Probe von zwoelf Fenstern hat Streuung. Geprueft wird die
+      // Aussage - ueberwiegend dunkel -, nicht die Zahl.
+      const defektFlackert = defekt.length >= 8 && anteilDefekt < 0.5;
+      return { ok: heilStetig && defektFlackert,
+               mass: 'heil ' + heil.length + ' Fenster, ' + (heilStetig ? 'durchgehend an'
+                       : 'NICHT DURCHGEHEND (' + heil.join('') + ')')
+                   + ' | defekt ' + (anteilDefekt * 100).toFixed(0) + ' % an'
+                   + (defektFlackert ? '' : ' (FLACKERT NICHT)') };
+    } finally {
+      lightDamage.rear = merk.r;
+      lightDamage.front = merk.f;
+    }
+  });
+
   // ---- Block 4.4: Reifendruck ----
   // Monoton, ueber den ganzen Reglerbereich. Ein Regler, der in der Mitte umkehrt, ist keine
   // Abstimmung, sondern eine Falle.
