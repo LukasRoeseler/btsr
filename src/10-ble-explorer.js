@@ -1268,6 +1268,18 @@
     "Gelbe Flagge (1 s halten)": "Yellow flag (hold 1 s)",
     "X / Quadrat (1 s halten)": "X / Square (hold 1 s)",
     "A / Kreuz": "A / Cross",
+    // Lenkmessung (v0.5): Absaetze ohne inneres Markup, damit sie EIN Knoten sind.
+    "die offene Frage": "the open question",
+    "Lenkmessung Ghosts": "Ghost steering measurement",
+    "Wertet das Auto im Bahn-Modus einen gesendeten Lenkbefehl überhaupt aus?": "Does the car evaluate a transmitted steering command at all in rail mode?",
+    "Davon hängt ab, ob Ghost-Ideallinie und Querversatz je mehr als Zierde werden. Sie erreichen zusammen gemessen höchstens 22 von 127 Lenkschritten, und der Kommentar im Code sagt selbst, dass sich das Auto im Bahn-Modus selbst auf der Strecke hält. Die Kippwert-Messung darüber beantwortet das nicht: sie sagt, wann es zu viel ist, nicht ob wenig etwas tut.": "Whether the ghost racing line and lateral offset ever become more than decoration depends on this. Together they reach a measured 22 of 127 steering steps at most, and the comment in the code says itself that the car keeps itself on the track in rail mode. The tipping-point measurement above does not answer it: it says when there is too much, not whether a little does anything.",
+    "Der Versuch: dieselbe Strecke, dieselben Ghosts, seitlicher Versatz einmal auf 0 % und einmal auf 100 %. Gezählt werden zwei Zahlen und nicht der Eindruck – Abgänge, also Byte 12 wechselt auf 0x00, und Rundenzeiten. Ändert sich keines von beiden, ignoriert die Firmware die Lenkung.": "The experiment: same track, same ghosts, lateral offset once at 0 % and once at 100 %. Two numbers are counted rather than an impression – departures, meaning byte 12 switches to 0x00, and lap times. If neither changes, the firmware ignores the steering.",
+    "Was der Knopf prüft, bevor er startet: mindestens drei Streckenteile, mindestens zwei Ghosts, und Bahn-Modus. Unter drei Kacheln liefern die Linienfunktionen null, mit einem Ghost bleibt der Querversatz null, und im Ausdruck-Modus hält sich das Auto nicht selbst auf der Bahn. Wer den Versuch so führt, misst garantiert „keine Wirkung“ – aus Gründen, die mit der Frage nichts zu tun haben.": "What the button checks before it starts: at least three track pieces, at least two ghosts, and rail mode. Below three tiles the line functions return null, with one ghost the lateral offset stays zero, and in printout mode the car does not keep itself on the track. Running the experiment that way is guaranteed to measure “no effect” – for reasons that have nothing to do with the question.",
+    "Runden je Phase": "Laps per phase",
+    "Abbrechen": "Cancel",
+    "Als CSV": "As CSV",
+    "nicht gestartet": "not started",
+    "Abgänge": "Departures",
   };
 
   // ============================================================================

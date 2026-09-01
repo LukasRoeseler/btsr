@@ -1911,6 +1911,181 @@
     return nah * nah;
   }
 
+  // ---- Lenkmessung: wirkt ein gesendeter Lenkbefehl im Bahn-Modus? -------------------
+  //
+  // Zwei Phasen mit demselben Aufbau, nur der seitliche Versatz unterscheidet sie. Gezaehlt
+  // werden Abgaenge und Rundenzeiten je Ghost; die Auswertung ist danach ein Vergleich von
+  // zwei Zahlenpaaren und kein Eindruck.
+  //
+  // Die Zaehlung haengt an ghostTick und nicht an einem eigenen Zeitgeber: dort laufen die
+  // Kachelwechsel und der Byte-12-Zustand ohnehin durch, und ein zweiter Takt waere ein
+  // zweiter Ort, an dem dasselbe gezaehlt wird.
+  const lmState = {
+    aktiv: false,
+    phase: null,          // 'A' (Versatz 0) oder 'B' (Versatz 1)
+    rundenZiel: 5,
+    daten: {},            // phase -> kennung -> { runden: [ms], abgaenge, letzteRunde }
+    warOff: {},           // kennung -> war im letzten Takt abseits
+  };
+
+  function lmLeer(kennung, phase) {
+    if (!lmState.daten[phase]) lmState.daten[phase] = {};
+    if (!lmState.daten[phase][kennung]) {
+      lmState.daten[phase][kennung] = { runden: [], abgaenge: 0, letzteRunde: null };
+    }
+    return lmState.daten[phase][kennung];
+  }
+
+  function lmVersatzSetzen(wert) {
+    const el = $('ghost-lateral');
+    if (!el) return;
+    el.value = String(wert);
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+
+  function lmSay(text) {
+    const el = $('lm-status');
+    if (el) el.textContent = text;
+  }
+
+  function lmGhosts() {
+    return garage.filter(c => c.role === 'ghost' && c.ghost);
+  }
+
+  // Die drei Bedingungen werden GEPRUEFT und nicht erwaehnt: unter einer von ihnen misst der
+  // Versuch garantiert "keine Wirkung", und zwar aus Gruenden, die mit der Frage nichts zu
+  // tun haben.
+  function lmPruefen() {
+    const fehlt = [];
+    if (!currentTrackTiles || currentTrackTiles.length < 3) {
+      fehlt.push('mindestens drei Streckenteile (jetzt '
+                 + (currentTrackTiles ? currentTrackTiles.length : 0) + ')');
+    }
+    if (lmGhosts().length < 2) {
+      fehlt.push('mindestens zwei Ghosts (jetzt ' + lmGhosts().length + ')');
+    }
+    if (trackMode !== 'on') fehlt.push('Bahn-Modus (jetzt Ausdruck)');
+    return fehlt;
+  }
+
+  function lmStart() {
+    const fehlt = lmPruefen();
+    if (fehlt.length) {
+      lmSay('Nicht startbar, es fehlt: ' + fehlt.join('; ') + '.');
+      log('Lenkmessung nicht startbar: ' + fehlt.join('; '), 'warn');
+      return;
+    }
+    lmState.aktiv = true;
+    lmState.phase = 'A';
+    lmState.rundenZiel = parseInt(($('lm-laps') || { value: '5' }).value, 10);
+    lmState.daten = {};
+    lmState.warOff = {};
+    lmVersatzSetzen(0);
+    lmRender();
+    lmSay('Phase A laeuft: Versatz 0 %. Fahre ' + lmState.rundenZiel
+          + ' Runden, dann schaltet es selbst um.');
+    log('Lenkmessung gestartet, Phase A (Versatz 0 %).', 'info');
+  }
+
+  function lmStop(grund) {
+    if (!lmState.aktiv) return;
+    lmState.aktiv = false;
+    lmState.phase = null;
+    lmSay(grund || 'abgebrochen');
+    lmRender();
+  }
+
+  // Aus ghostTick gerufen, je Takt und Ghost.
+  function lmTick(car, rundeVoll) {
+    if (!lmState.aktiv) return;
+    const kennung = garageLabel(car);
+    const d = lmLeer(kennung, lmState.phase);
+    // Abgang: Flanke auf 0x00. Die Flanke und nicht der Zustand - sonst zaehlt ein langer
+    // Abflug hundert Abgaenge.
+    const offJetzt = car.tileCode === TILE_OFFTRACK;
+    if (offJetzt && !lmState.warOff[kennung]) d.abgaenge++;
+    lmState.warOff[kennung] = offJetzt;
+
+    if (rundeVoll) {
+      const now = Date.now();
+      if (d.letzteRunde !== null) d.runden.push(now - d.letzteRunde);
+      d.letzteRunde = now;
+      lmRender();
+      // Phase wechseln, wenn ALLE Ghosts das Ziel haben. Der schnellste allein waere ein
+      // ungleicher Vergleich: der langsame haette in Phase B mehr Runden.
+      const alle = lmGhosts().every(c => {
+        const x = lmState.daten[lmState.phase][garageLabel(c)];
+        return x && x.runden.length >= lmState.rundenZiel;
+      });
+      if (alle) {
+        if (lmState.phase === 'A') {
+          lmState.phase = 'B';
+          lmState.warOff = {};
+          lmVersatzSetzen(1);
+          lmSay('Phase B laeuft: Versatz 100 %. Noch ' + lmState.rundenZiel + ' Runden.');
+          log('Lenkmessung: Phase B (Versatz 100 %).', 'info');
+        } else {
+          lmStop('fertig. Vergleiche die zwei Phasen: aendern sich Abgaenge und '
+                 + 'Rundenzeiten nicht, wertet die Firmware die Lenkung nicht aus.');
+          log('Lenkmessung fertig.', 'ok');
+        }
+      }
+    }
+  }
+
+  function lmRender() {
+    const host = $('lm-rows');
+    if (!host) return;
+    const zeilen = [];
+    for (const phase of ['A', 'B']) {
+      const p = lmState.daten[phase];
+      if (!p) continue;
+      for (const kennung of Object.keys(p)) {
+        const d = p[kennung];
+        const n = d.runden.length;
+        const mittel = n ? d.runden.reduce((a, b) => a + b, 0) / n : null;
+        const beste = n ? Math.min.apply(null, d.runden) : null;
+        zeilen.push('<tr><td>' + (phase === 'A' ? 'A, Versatz 0 %' : 'B, Versatz 100 %')
+          + '</td><td>' + kennung + '</td><td>' + n + '</td><td>'
+          + (mittel === null ? '&ndash;' : (mittel / 1000).toFixed(2) + ' s') + '</td><td>'
+          + (beste === null ? '&ndash;' : (beste / 1000).toFixed(2) + ' s') + '</td><td>'
+          + d.abgaenge + '</td></tr>');
+      }
+    }
+    host.innerHTML = zeilen.length ? zeilen.join('')
+      : '<tr><td colspan="6" class="muted">noch nichts gemessen</td></tr>';
+  }
+
+  function lmCsv() {
+    // Dieselben Konventionen wie der Renn-Export: Semikolon, Komma-Dezimal, BOM. Ein
+    // deutsches Excel liest sonst eine Spalte mit Punkten als Text.
+    const komma = (x) => String(x).replace('.', ',');
+    const z = ['Phase;Versatz;Auto;Runde;Zeit_s;Abgaenge_gesamt'];
+    for (const phase of ['A', 'B']) {
+      const p = lmState.daten[phase];
+      if (!p) continue;
+      for (const kennung of Object.keys(p)) {
+        const d = p[kennung];
+        d.runden.forEach((ms, i) => {
+          z.push(phase + ';' + (phase === 'A' ? '0' : '100') + ';' + kennung + ';'
+                 + (i + 1) + ';' + komma((ms / 1000).toFixed(3)) + ';' + d.abgaenge);
+        });
+      }
+    }
+    if (z.length === 1) { lmSay('nichts zu exportieren'); return; }
+    const blob = new Blob(['\ufeff' + z.join(String.fromCharCode(13, 10))],
+                          { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'lenkmessung.csv';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  if ($('lm-start')) $('lm-start').addEventListener('click', lmStart);
+  if ($('lm-stop')) $('lm-stop').addEventListener('click', () => lmStop('abgebrochen'));
+  if ($('lm-csv')) $('lm-csv').addEventListener('click', lmCsv);
+
   function ghostTick(car) {
     const g = car.ghost;
     if (!g) return;
@@ -1928,10 +2103,14 @@
       g.tilesTotal = (g.tilesTotal || 0) + 1;
       g.lastCount = car.tileCount;
       g.tileIndex = g.tileIndex === null ? 0 : g.tileIndex + 1;
+      let lmRundeVoll = false;
       if (currentTrackTiles.length) {
         g.tileIndex %= currentTrackTiles.length;
-        if (g.tileIndex === 0) g.laps++;
+        if (g.tileIndex === 0) { g.laps++; lmRundeVoll = true; }
       }
+      // Die Lenkmessung zaehlt hier mit, wo Kachelwechsel und Rundenschluss ohnehin
+      // durchlaufen. Ein eigener Zeitgeber waere ein zweiter Ort fuer dieselbe Zaehlung.
+      lmTick(car, lmRundeVoll);
     }
 
     // Cut-out. Two detectors, and the first one is new: code 0x00 IS the off-track report,

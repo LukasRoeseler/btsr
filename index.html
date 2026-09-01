@@ -580,12 +580,29 @@
     grid-template-columns: repeat(10, minmax(0, 1fr));
     gap: clamp(3px, 1.1vw, 14px);
     padding: clamp(3px, .7vw, 7px) clamp(38px, 11vw, 58px); }
-  .gt3-shift > span { width: 100%; aspect-ratio: 1; max-width: 26px; justify-self: center;
-    border-radius: 50%; background: #12161f;
-    box-shadow: inset 0 0 0 1px #262e3d; }
+  /* EIN BOGEN, keine Reihe. Auf einem GT3-Lenkrad sitzen die Schaltlichter in der
+     Kruemmung des Kranzes, und die aeusseren stehen tiefer. Symmetrisch aus der Mitte
+     heraus: 0 fuer die vier innersten, dann 1, 2, 3 px. Mehr waere auf 375 px ein Sprung
+     statt einer Kruemmung.
 
+     TIEFE: ein dunkler Ring aussen und ein Glanzpunkt oben innen. Ein flacher Kreis sieht
+     nach Bildschirm aus, ein LED-Feld hat beides - und es kostet zwei Schatten, keinen
+     zusaetzlichen Knoten. */
+  .gt3-shift > span { width: 100%; aspect-ratio: 1; max-width: 26px; justify-self: center;
+    border-radius: 50%; background: #0d1119;
+    box-shadow: inset 0 0 0 1px #2b3547,
+                inset 0 1px 2px rgba(255,255,255,.10); }
+  .gt3-shift > span:nth-child(1), .gt3-shift > span:nth-child(10) { transform: translateY(3px); }
+  .gt3-shift > span:nth-child(2), .gt3-shift > span:nth-child(9) { transform: translateY(2px); }
+  .gt3-shift > span:nth-child(3), .gt3-shift > span:nth-child(8) { transform: translateY(1px); }
+
+  /* HIERARCHIE: die drei Bloecke werden durch eine staerkere Linie getrennt als die Werte
+     darin. Vorher war jede Trennlinie gleich stark, und dann liest man die Gruppen nicht im
+     Augenwinkel - genau das macht ein Autoschirm anders. */
   .gt3-left { grid-area: left; display: grid; gap: clamp(4px, .8vw, 9px);
     align-content: start; }
+  .gt3-left > .gt3-box:first-child, .gt3-right > .gt3-box:first-child {
+    border-top-color: rgba(255, 255, 255, .55); }
   /* Zwei Knoepfe auf der Breite von einem. Das Bild darueber und die Beschriftung darunter,
      damit auf 375 px beide noch lesbar sind - nebeneinander waere der Text vier Zeichen. */
   .gt3-half { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(3px, .7vw, 8px); }
@@ -623,14 +640,24 @@
     padding: clamp(3px, .7vw, 7px) clamp(4px, .8vw, 8px); min-width: 0; }
   /* Der aufgehellte Grund bleibt allein an den antippbaren Kacheln: dort ist er keine
      Zierde, sondern die Aussage "hier kann man draufdruecken". */
-  .gt3-box.gt3-click, .gt3-box.pit-tile { background: #131925; border-top-color: var(--gt3-line); }
-  .gt3-lbl { font-size: clamp(7px, 1vw, 9.5px); letter-spacing: .1em;
-    text-transform: uppercase; color: #8b99b4; line-height: 1.3; white-space: nowrap;
-    overflow: hidden; text-overflow: ellipsis; }
+  /* Dunkler als vorher (#131925) und mit HELLER Oberkante. Der Grund muss bleiben - hier
+     wird angetippt, auf einem Autoschirm nicht -, aber er darf weniger Kasten sein. Die
+     helle Kante uebernimmt die Aussage, die vorher die Flaeche allein trug. */
+  .gt3-box.gt3-click, .gt3-box.pit-tile {
+    background: linear-gradient(#101623, #0a0e17);
+    border-top-color: var(--gt3-line); }
+  /* Weiter gesperrt und etwas blasser: auf dem Vorbild ist die Beschriftung fast eine
+     Unterschrift, die Zahl traegt die Aufmerksamkeit. .16em statt .1em, und die Farbe von
+     #8b99b4 auf #78849c. */
+  .gt3-lbl { font-size: clamp(7px, 1vw, 9.5px); letter-spacing: .16em;
+    text-transform: uppercase; color: #78849c; line-height: 1.3;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   /* tabular-nums ist der Teil, der im Fahrbetrieb zaehlt: ohne ihn haben die Ziffern
      verschiedene Breiten, und eine Rundenzeit, deren Doppelpunkt bei jedem Zehntel wandert,
      liest man schlechter als eine, die stillsteht. */
-  .gt3-val { font-family: var(--gt3-font); font-weight: 700; line-height: 1.05;
+  /* line-height 1.12 statt 1.05: ein echter Schirm setzt die grossen Werte optisch
+     tiefer, weil darunter Raum bleibt. Bei 1.05 kleben Zahl und Balken aneinander. */
+  .gt3-val { font-family: var(--gt3-font); font-weight: 700; line-height: 1.12;
     font-variant-numeric: tabular-nums; letter-spacing: .01em;
     font-size: clamp(14px, 2.6vw, 27px); }
   .gt3-val.sm { font-size: clamp(11px, 1.8vw, 18px); }
@@ -688,12 +715,19 @@
   .gt3-tyres4 { display: grid; grid-template-columns: 1fr 1fr;
     gap: clamp(2px, .5vw, 4px) clamp(5px, 1.6vw, 12px);
     margin: 3px 0 2px 0; }
+  /* Etwas Gummi-Optik statt eines Farbfelds: eine leichte Rundung wie eine Lauffleche,
+     ein dunkler Rand und ein Schatten nach innen. Die Fuellung selbst wird gedaempft
+     (opacity .82) - bei 100 % Restprofil ist sie sonst der groesste Farbblock im ganzen
+     Cockpit, und der gehoert dem Tacho. */
   .gt3-t4 { display: block; position: relative; aspect-ratio: 1 / 1.6;
-    background: #04060b; border-radius: 1px; overflow: hidden; }
+    background: #04060b; border-radius: 2px / 4px; overflow: hidden;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .12),
+                inset 0 2px 4px rgba(0, 0, 0, .55); }
   /* Die Fuellung waechst von UNTEN, wie ein Vorrat. Dieselbe Richtung wie Tank und Schaden:
      drei Anzeigen, die gleich leerlaufen, liest man mit einem Blick. */
   .gt3-t4 > b { position: absolute; left: 0; right: 0; bottom: 0; height: 0;
-    background: #4a5568; transition: height .15s linear, background .3s linear; }
+    background: #4a5568; opacity: .82;
+    transition: height .15s linear, background .3s linear; }
   /* Die Bremsscheibe: ein Ring in der Mitte des Reifens. <s> und nicht ein zusaetzliches
      <div>, damit die Kachel bei vier Reifen nicht acht Knoten mehr bekommt - der Schirm
      wird jeden Takt neu geschrieben.
@@ -3670,6 +3704,56 @@
       </div>
 
     <div class="card">
+      <h2>Lenkmessung Ghosts <span class="wip-tag">die offene Frage</span></h2>
+      <!-- Absichtlich OHNE <b>, <em> und <code> im Inneren: jedes davon teilt den Satz in
+           einen eigenen Textknoten, und das Woerterbuch schlaegt Textknoten nach. Mit
+           Auszeichnung zerfielen diese vier Absaetze in 14 Bruchstuecke, neun davon
+           anfangend mit einem Satzzeichen. Hervorhebung durch Anfuehrungszeichen. -->
+      <p class="muted">
+        Wertet das Auto im Bahn-Modus einen gesendeten Lenkbefehl &uuml;berhaupt aus?
+      </p>
+      <p class="muted" style="font-size:11.5px">
+        Davon h&auml;ngt ab, ob Ghost-Ideallinie und Querversatz je mehr als Zierde werden.
+        Sie erreichen zusammen gemessen h&ouml;chstens 22 von 127 Lenkschritten, und der
+        Kommentar im Code sagt selbst, dass sich das Auto im Bahn-Modus selbst auf der
+        Strecke h&auml;lt. Die Kippwert-Messung dar&uuml;ber beantwortet das nicht: sie sagt,
+        wann es zu viel ist, nicht ob wenig etwas tut.
+      </p>
+      <p class="muted" style="font-size:11.5px">
+        Der Versuch: dieselbe Strecke, dieselben Ghosts, seitlicher Versatz einmal auf 0 %
+        und einmal auf 100 %. Gez&auml;hlt werden zwei Zahlen und nicht der Eindruck &ndash;
+        Abg&auml;nge, also Byte 12 wechselt auf 0x00, und Rundenzeiten. &Auml;ndert sich
+        keines von beiden, ignoriert die Firmware die Lenkung.
+      </p>
+      <div class="row" style="gap:10px; flex-wrap:wrap; align-items:flex-end">
+        <label class="muted">Runden je Phase
+          <select id="lm-laps">
+            <option value="3">3</option>
+            <option value="5" selected>5</option>
+            <option value="10">10</option>
+          </select></label>
+        <button class="primary" id="lm-start">Messung starten</button>
+        <button id="lm-stop" class="warn">Abbrechen</button>
+        <button id="lm-csv">Als CSV</button>
+      </div>
+      <div class="muted" id="lm-status" style="margin-top:8px">nicht gestartet</div>
+      <table class="cm-tab"><thead><tr>
+        <th>Phase</th><th>Auto</th><th>Runden</th><th>Mittel</th><th>Beste</th>
+        <th>Abg&auml;nge</th>
+      </tr></thead><tbody id="lm-rows">
+        <tr><td colspan="6" class="muted">noch nichts gemessen</td></tr>
+      </tbody></table>
+      <p class="muted" style="font-size:11.5px">
+        Was der Knopf pr&uuml;ft, bevor er startet: mindestens drei Streckenteile, mindestens
+        zwei Ghosts, und Bahn-Modus. Unter drei Kacheln liefern die Linienfunktionen null,
+        mit einem Ghost bleibt der Querversatz null, und im Ausdruck-Modus h&auml;lt sich das
+        Auto nicht selbst auf der Bahn. Wer den Versuch so f&uuml;hrt, misst garantiert
+        &bdquo;keine Wirkung&ldquo; &ndash; aus Gr&uuml;nden, die mit der Frage nichts zu tun
+        haben.
+      </p>
+    </div>
+
+    <div class="card">
       <h2>Automatischer Kalibrierungslauf</h2>
       <p class="muted">
         Sendet eine feste Testsequenz (Lenkung im Stand 0/25/50/75/100% links &amp; rechts, dazu 3 sehr kurze
@@ -5222,7 +5306,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.4.30</span></span>
+    <span class="foot-ver">v<span id="app-version">0.4.31</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -6521,6 +6605,18 @@
     "Gelbe Flagge (1 s halten)": "Yellow flag (hold 1 s)",
     "X / Quadrat (1 s halten)": "X / Square (hold 1 s)",
     "A / Kreuz": "A / Cross",
+    // Lenkmessung (v0.5): Absaetze ohne inneres Markup, damit sie EIN Knoten sind.
+    "die offene Frage": "the open question",
+    "Lenkmessung Ghosts": "Ghost steering measurement",
+    "Wertet das Auto im Bahn-Modus einen gesendeten Lenkbefehl überhaupt aus?": "Does the car evaluate a transmitted steering command at all in rail mode?",
+    "Davon hängt ab, ob Ghost-Ideallinie und Querversatz je mehr als Zierde werden. Sie erreichen zusammen gemessen höchstens 22 von 127 Lenkschritten, und der Kommentar im Code sagt selbst, dass sich das Auto im Bahn-Modus selbst auf der Strecke hält. Die Kippwert-Messung darüber beantwortet das nicht: sie sagt, wann es zu viel ist, nicht ob wenig etwas tut.": "Whether the ghost racing line and lateral offset ever become more than decoration depends on this. Together they reach a measured 22 of 127 steering steps at most, and the comment in the code says itself that the car keeps itself on the track in rail mode. The tipping-point measurement above does not answer it: it says when there is too much, not whether a little does anything.",
+    "Der Versuch: dieselbe Strecke, dieselben Ghosts, seitlicher Versatz einmal auf 0 % und einmal auf 100 %. Gezählt werden zwei Zahlen und nicht der Eindruck – Abgänge, also Byte 12 wechselt auf 0x00, und Rundenzeiten. Ändert sich keines von beiden, ignoriert die Firmware die Lenkung.": "The experiment: same track, same ghosts, lateral offset once at 0 % and once at 100 %. Two numbers are counted rather than an impression – departures, meaning byte 12 switches to 0x00, and lap times. If neither changes, the firmware ignores the steering.",
+    "Was der Knopf prüft, bevor er startet: mindestens drei Streckenteile, mindestens zwei Ghosts, und Bahn-Modus. Unter drei Kacheln liefern die Linienfunktionen null, mit einem Ghost bleibt der Querversatz null, und im Ausdruck-Modus hält sich das Auto nicht selbst auf der Bahn. Wer den Versuch so führt, misst garantiert „keine Wirkung“ – aus Gründen, die mit der Frage nichts zu tun haben.": "What the button checks before it starts: at least three track pieces, at least two ghosts, and rail mode. Below three tiles the line functions return null, with one ghost the lateral offset stays zero, and in printout mode the car does not keep itself on the track. Running the experiment that way is guaranteed to measure “no effect” – for reasons that have nothing to do with the question.",
+    "Runden je Phase": "Laps per phase",
+    "Abbrechen": "Cancel",
+    "Als CSV": "As CSV",
+    "nicht gestartet": "not started",
+    "Abgänge": "Departures",
   };
 
   // ============================================================================
@@ -17323,6 +17419,181 @@
     return nah * nah;
   }
 
+  // ---- Lenkmessung: wirkt ein gesendeter Lenkbefehl im Bahn-Modus? -------------------
+  //
+  // Zwei Phasen mit demselben Aufbau, nur der seitliche Versatz unterscheidet sie. Gezaehlt
+  // werden Abgaenge und Rundenzeiten je Ghost; die Auswertung ist danach ein Vergleich von
+  // zwei Zahlenpaaren und kein Eindruck.
+  //
+  // Die Zaehlung haengt an ghostTick und nicht an einem eigenen Zeitgeber: dort laufen die
+  // Kachelwechsel und der Byte-12-Zustand ohnehin durch, und ein zweiter Takt waere ein
+  // zweiter Ort, an dem dasselbe gezaehlt wird.
+  const lmState = {
+    aktiv: false,
+    phase: null,          // 'A' (Versatz 0) oder 'B' (Versatz 1)
+    rundenZiel: 5,
+    daten: {},            // phase -> kennung -> { runden: [ms], abgaenge, letzteRunde }
+    warOff: {},           // kennung -> war im letzten Takt abseits
+  };
+
+  function lmLeer(kennung, phase) {
+    if (!lmState.daten[phase]) lmState.daten[phase] = {};
+    if (!lmState.daten[phase][kennung]) {
+      lmState.daten[phase][kennung] = { runden: [], abgaenge: 0, letzteRunde: null };
+    }
+    return lmState.daten[phase][kennung];
+  }
+
+  function lmVersatzSetzen(wert) {
+    const el = $('ghost-lateral');
+    if (!el) return;
+    el.value = String(wert);
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+
+  function lmSay(text) {
+    const el = $('lm-status');
+    if (el) el.textContent = text;
+  }
+
+  function lmGhosts() {
+    return garage.filter(c => c.role === 'ghost' && c.ghost);
+  }
+
+  // Die drei Bedingungen werden GEPRUEFT und nicht erwaehnt: unter einer von ihnen misst der
+  // Versuch garantiert "keine Wirkung", und zwar aus Gruenden, die mit der Frage nichts zu
+  // tun haben.
+  function lmPruefen() {
+    const fehlt = [];
+    if (!currentTrackTiles || currentTrackTiles.length < 3) {
+      fehlt.push('mindestens drei Streckenteile (jetzt '
+                 + (currentTrackTiles ? currentTrackTiles.length : 0) + ')');
+    }
+    if (lmGhosts().length < 2) {
+      fehlt.push('mindestens zwei Ghosts (jetzt ' + lmGhosts().length + ')');
+    }
+    if (trackMode !== 'on') fehlt.push('Bahn-Modus (jetzt Ausdruck)');
+    return fehlt;
+  }
+
+  function lmStart() {
+    const fehlt = lmPruefen();
+    if (fehlt.length) {
+      lmSay('Nicht startbar, es fehlt: ' + fehlt.join('; ') + '.');
+      log('Lenkmessung nicht startbar: ' + fehlt.join('; '), 'warn');
+      return;
+    }
+    lmState.aktiv = true;
+    lmState.phase = 'A';
+    lmState.rundenZiel = parseInt(($('lm-laps') || { value: '5' }).value, 10);
+    lmState.daten = {};
+    lmState.warOff = {};
+    lmVersatzSetzen(0);
+    lmRender();
+    lmSay('Phase A laeuft: Versatz 0 %. Fahre ' + lmState.rundenZiel
+          + ' Runden, dann schaltet es selbst um.');
+    log('Lenkmessung gestartet, Phase A (Versatz 0 %).', 'info');
+  }
+
+  function lmStop(grund) {
+    if (!lmState.aktiv) return;
+    lmState.aktiv = false;
+    lmState.phase = null;
+    lmSay(grund || 'abgebrochen');
+    lmRender();
+  }
+
+  // Aus ghostTick gerufen, je Takt und Ghost.
+  function lmTick(car, rundeVoll) {
+    if (!lmState.aktiv) return;
+    const kennung = garageLabel(car);
+    const d = lmLeer(kennung, lmState.phase);
+    // Abgang: Flanke auf 0x00. Die Flanke und nicht der Zustand - sonst zaehlt ein langer
+    // Abflug hundert Abgaenge.
+    const offJetzt = car.tileCode === TILE_OFFTRACK;
+    if (offJetzt && !lmState.warOff[kennung]) d.abgaenge++;
+    lmState.warOff[kennung] = offJetzt;
+
+    if (rundeVoll) {
+      const now = Date.now();
+      if (d.letzteRunde !== null) d.runden.push(now - d.letzteRunde);
+      d.letzteRunde = now;
+      lmRender();
+      // Phase wechseln, wenn ALLE Ghosts das Ziel haben. Der schnellste allein waere ein
+      // ungleicher Vergleich: der langsame haette in Phase B mehr Runden.
+      const alle = lmGhosts().every(c => {
+        const x = lmState.daten[lmState.phase][garageLabel(c)];
+        return x && x.runden.length >= lmState.rundenZiel;
+      });
+      if (alle) {
+        if (lmState.phase === 'A') {
+          lmState.phase = 'B';
+          lmState.warOff = {};
+          lmVersatzSetzen(1);
+          lmSay('Phase B laeuft: Versatz 100 %. Noch ' + lmState.rundenZiel + ' Runden.');
+          log('Lenkmessung: Phase B (Versatz 100 %).', 'info');
+        } else {
+          lmStop('fertig. Vergleiche die zwei Phasen: aendern sich Abgaenge und '
+                 + 'Rundenzeiten nicht, wertet die Firmware die Lenkung nicht aus.');
+          log('Lenkmessung fertig.', 'ok');
+        }
+      }
+    }
+  }
+
+  function lmRender() {
+    const host = $('lm-rows');
+    if (!host) return;
+    const zeilen = [];
+    for (const phase of ['A', 'B']) {
+      const p = lmState.daten[phase];
+      if (!p) continue;
+      for (const kennung of Object.keys(p)) {
+        const d = p[kennung];
+        const n = d.runden.length;
+        const mittel = n ? d.runden.reduce((a, b) => a + b, 0) / n : null;
+        const beste = n ? Math.min.apply(null, d.runden) : null;
+        zeilen.push('<tr><td>' + (phase === 'A' ? 'A, Versatz 0 %' : 'B, Versatz 100 %')
+          + '</td><td>' + kennung + '</td><td>' + n + '</td><td>'
+          + (mittel === null ? '&ndash;' : (mittel / 1000).toFixed(2) + ' s') + '</td><td>'
+          + (beste === null ? '&ndash;' : (beste / 1000).toFixed(2) + ' s') + '</td><td>'
+          + d.abgaenge + '</td></tr>');
+      }
+    }
+    host.innerHTML = zeilen.length ? zeilen.join('')
+      : '<tr><td colspan="6" class="muted">noch nichts gemessen</td></tr>';
+  }
+
+  function lmCsv() {
+    // Dieselben Konventionen wie der Renn-Export: Semikolon, Komma-Dezimal, BOM. Ein
+    // deutsches Excel liest sonst eine Spalte mit Punkten als Text.
+    const komma = (x) => String(x).replace('.', ',');
+    const z = ['Phase;Versatz;Auto;Runde;Zeit_s;Abgaenge_gesamt'];
+    for (const phase of ['A', 'B']) {
+      const p = lmState.daten[phase];
+      if (!p) continue;
+      for (const kennung of Object.keys(p)) {
+        const d = p[kennung];
+        d.runden.forEach((ms, i) => {
+          z.push(phase + ';' + (phase === 'A' ? '0' : '100') + ';' + kennung + ';'
+                 + (i + 1) + ';' + komma((ms / 1000).toFixed(3)) + ';' + d.abgaenge);
+        });
+      }
+    }
+    if (z.length === 1) { lmSay('nichts zu exportieren'); return; }
+    const blob = new Blob(['\ufeff' + z.join(String.fromCharCode(13, 10))],
+                          { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'lenkmessung.csv';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  if ($('lm-start')) $('lm-start').addEventListener('click', lmStart);
+  if ($('lm-stop')) $('lm-stop').addEventListener('click', () => lmStop('abgebrochen'));
+  if ($('lm-csv')) $('lm-csv').addEventListener('click', lmCsv);
+
   function ghostTick(car) {
     const g = car.ghost;
     if (!g) return;
@@ -17340,10 +17611,14 @@
       g.tilesTotal = (g.tilesTotal || 0) + 1;
       g.lastCount = car.tileCount;
       g.tileIndex = g.tileIndex === null ? 0 : g.tileIndex + 1;
+      let lmRundeVoll = false;
       if (currentTrackTiles.length) {
         g.tileIndex %= currentTrackTiles.length;
-        if (g.tileIndex === 0) g.laps++;
+        if (g.tileIndex === 0) { g.laps++; lmRundeVoll = true; }
       }
+      // Die Lenkmessung zaehlt hier mit, wo Kachelwechsel und Rundenschluss ohnehin
+      // durchlaufen. Ein eigener Zeitgeber waere ein zweiter Ort fuer dieselbe Zaehlung.
+      lmTick(car, lmRundeVoll);
     }
 
     // Cut-out. Two detectors, and the first one is new: code 0x00 IS the off-track report,
