@@ -642,7 +642,17 @@
     {
       const cfgT = physEngine.config;
       const aus = cfgT.tyreEffect === 0;
-      const fadeAus = cfgT.brakeFadeEffect === 0;
+      // Der Fading-Schalter gilt fuer die WIRKUNG und NICHT fuer die Anzeige, und deshalb
+      // steht hier keine Abfrage mehr auf ihn. Die Scheibentemperatur wird immer gerechnet
+      // (brakeHeatRate * Math.max(1, brakeFadeEffect), also auch bei 0), und sie immer zu
+      // zeigen ist die ehrlichere Aufteilung: mit abgeschaltetem Fading sind die Scheiben ein
+      // Instrument ohne Folgen - man sieht sie gluehen und der Bremsweg bleibt gleich. Das
+      // ist etwas anderes als abgeschaltet.
+      //
+      // Vorher hing die Farbe am Schalter, und die Pro-Abstimmung schaltet ihn aus: die
+      // Scheiben blieben grau, obwohl die Physik lief. Gemeldet als "beim Bremsen von 150
+      // auf 0 passiert nichts mit den Bremsscheiben" - und die Ursache war ein Schalter, der
+      // zwei Dinge bedeutete.
       const REIFEN = ['race-tyre-fl', 'race-tyre-fr', 'race-tyre-rl', 'race-tyre-rr'];
       const SCHEIBEN = ['race-disc-fl', 'race-disc-fr', 'race-disc-rl', 'race-disc-rr'];
 
@@ -662,26 +672,36 @@
              + ', ' + Math.round(230 - 103 * warm) + ')';
       };
 
-      // Scheibenfarbe, auf den SICHTBAREN Bereich normiert und nicht auf die Fadingschwelle:
-      // 300 Grad ist Betriebstemperatur, darueber nach Gelb, ab 520 nach Rot. Gegen die
-      // Schwelle normiert blieb der Ring bis fast 500 Grad grau.
+      // SCHEIBENFARBE, auf die gemessenen Temperaturen gelegt und nicht geraten.
+      //
+      // Die alte Skala spreizte den kalten Bereich ueber 275 Grad. Eine gefahrene Bremsung
+      // aus 150 km/h erreicht aber nur 70 Grad, drei erreichen 176 - der ganze Vorgang
+      // spielte sich in den ersten 15 bis 55 Prozent der Skala ab, wo sie fast nichts tut.
+      // Gemeldet als "beim Bremsen von 150 auf 0 passiert nichts mit den Bremsscheiben", und
+      // gemessen war es rgb(44,71,74) gegen rgb(42,51,70) kalt: die Farbe AENDERTE sich, nur
+      // nicht sichtbar. Das ist derselbe Fehler wie keine Aenderung.
+      //
+      // Die Abschnitte, jeder aus einer Messung:
+      //   25 bis 200 Grad   normales Fahren, eine bis drei Bremsungen  -> dunkelblau nach gruen
+      //   200 bis 520 Grad  harter Renneinsatz, drei aus 250 km/h      -> gruen nach orange
+      //   ab 520 Grad       hier setzt das Fading ein                  -> orange nach rot
+      //   780 Grad          Fading voll                               -> volles rot
+      // Damit sagt die Farbe etwas: rot heisst "die Bremse laesst nach", und ab 520 ist das
+      // auch wahr.
       const scheibenFarbe = (T) => {
-        if (fadeAus) return '#2a3346';
-        const ueber = Math.max(0, Math.min(1, (T - cfgT.brakeFadeStartC)
-          / Math.max(1, cfgT.brakeFadeFullC - cfgT.brakeFadeStartC)));
-        if (ueber > 0) {
-          return 'rgb(255, ' + Math.round(178 - 130 * ueber) + ', '
-               + Math.round(107 - 92 * ueber) + ')';
+        const mischen = (a, b, x) => 'rgb(' + Math.round(a[0] + (b[0] - a[0]) * x) + ', '
+          + Math.round(a[1] + (b[1] - a[1]) * x) + ', '
+          + Math.round(a[2] + (b[2] - a[2]) * x) + ')';
+        const KALT = [42, 51, 70], WARM = [62, 209, 106];
+        const HEISS = [255, 168, 62], ROT = [255, 48, 32];
+        const start = cfgT.brakeFadeStartC, voll = cfgT.brakeFadeFullC;
+        if (T >= start) {
+          return mischen(HEISS, ROT,
+            Math.min(1, (T - start) / Math.max(1, voll - start)));
         }
-        const warm = Math.max(0, Math.min(1, (T - cfgT.brakeAmbientC) / 275));
-        if (warm >= 1) {
-          const heiss = Math.max(0, Math.min(1,
-            (T - 300) / Math.max(1, cfgT.brakeFadeStartC - 300)));
-          return 'rgb(' + Math.round(62 + 193 * heiss) + ', ' + Math.round(209 - 31 * heiss)
-               + ', ' + Math.round(106 - heiss) + ')';
-        }
-        return 'rgb(' + Math.round(42 + 20 * warm) + ', ' + Math.round(51 + 158 * warm)
-             + ', ' + Math.round(70 + 36 * warm) + ')';
+        if (T >= 200) return mischen(WARM, HEISS, (T - 200) / Math.max(1, start - 200));
+        const u = cfgT.brakeAmbientC;
+        return mischen(KALT, WARM, Math.max(0, (T - u) / Math.max(1, 200 - u)));
       };
 
       // Welches Rad gerade abgebaut ist. Beim Boxenstopp laeuft der Schrauberton ueber die
@@ -724,7 +744,7 @@
           const ab = Math.round(Math.max.apply(null, w4) * 100);
           const bmax = Math.round(Math.max.apply(null, b4));
           tt.textContent = (kalt === heiss ? heiss + '\u00b0' : kalt + '\u2013' + heiss + '\u00b0')
-            + ' ' + ab + '%' + (fadeAus ? '' : ' \u00b7 ' + bmax + '\u00b0');
+            + ' ' + ab + '%' + ' \u00b7 ' + bmax + '\u00b0';
         }
       }
     }

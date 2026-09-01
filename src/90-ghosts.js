@@ -909,6 +909,12 @@
     lateral: 0.5,
     // Ideallinie. 0 = wie bisher, gerade Lenkung und nur der Anti-Ramm-Versatz.
     line: 0.35,
+    // EIGENE SPUREN. Jeder Ghost haelt eine feste, ihm eigene Linie ueber die Bahnbreite -
+    // unabhaengig von Abstand, Strecke und Kachelzahl. Das ist der Unterschied zu den zwei
+    // anderen Linieneinstellungen: ghost-lateral wirkt nur bei zwei Autos nebeneinander,
+    // ghost-line erst ab drei Streckenteilen. Beides null heisst "alle stumpf in der Mitte",
+    // und genau so wurde es gemeldet.
+    lanes: 0.5,
     // Rennwuerze. Ein Regler, fuenf Bausteine - siehe ghostSpice() weiter unten.
     spice: 0.4,
     // Lernen von Runde zu Runde, standardmaessig aus: es aendert das Fahrverhalten ueber
@@ -2284,7 +2290,8 @@
         const lineOff = underYellow ? 0
                       : (spice.attack ? spice.attack : ghostLineOffset(car));
         steer = lineOff * ghostCfg.line * GHOST_LINE_STEER
-              + g.bias * ghostCfg.lateral * 0.25;
+              + g.bias * ghostCfg.lateral * 0.25
+              + ghostLane(car) * ghostCfg.lanes * GHOST_LANE_STEER;
       } else {
         // Fallback for cars not in guard-rail mode: the old layout-plus-yaw controller.
         const dir = ghostTurnDir(car, 0);
@@ -2292,7 +2299,8 @@
         steer = dir * GHOST_STEER_CURVE + (yawTarget - car.yaw) * GHOST_YAW_GAIN;
         steer += (spice.attack ? spice.attack : ghostLineOffset(car))
                  * ghostCfg.line * GHOST_LINE_STEER
-               + g.bias * ghostCfg.lateral * 0.25;
+               + g.bias * ghostCfg.lateral * 0.25
+               + ghostLane(car) * ghostCfg.lanes * GHOST_LANE_STEER;
       }
       steer = Math.max(-1, Math.min(1, steer + weave));
     }
@@ -2363,6 +2371,29 @@
   // sagen. Danach entscheidet der Abstand. Sechs Sekunden sind bei real gut 2 km/h etwa
   // drei Meter Fahrt - lang genug, dass sich die Abstaende bilden.
   const GHOST_GRID_MS = 6000;
+  // Die feste Spur EINES Ghosts, -1 bis +1. Gleichmaessig ueber das Feld verteilt und
+  // symmetrisch um die Mitte, damit das Feld nicht insgesamt zur Seite wandert.
+  //
+  // Die Position kommt aus der GARAGE und nicht aus dem Rennstand: eine Spur, die sich mit
+  // dem Kachelindex aendert, ist keine Linie, sondern ein Zickzack. Und sie ist nicht
+  // gewuerfelt - gewuerfelt waere sie bei jedem Aufruf anders, und dann faehrt kein Auto
+  // eine Linie, sondern zittert.
+  //
+  // Bei EINEM Ghost ist die Spur die Mitte, und das ist richtig: "verschiedene Linien" hat
+  // bei einem Auto keine Bedeutung, und ein einzelner Versatz waere ein Lenkfehler.
+  // Wieviel Lenkung eine ganze Spurbreite bedeutet. 0,16 in derselben Groessenordnung wie
+  // GHOST_LINE_STEER: es ist ein Halten neben der Mitte und kein Ausweichmanoever, und mehr
+  // waere auf der Schiene ohnehin nur ein Kampf gegen die Firmware.
+  const GHOST_LANE_STEER = 0.16;
+
+  function ghostLane(car) {
+    const gs = garage.filter(c => c.role === 'ghost' && c.ghost);
+    if (gs.length < 2) return 0;
+    const k = gs.indexOf(car);
+    if (k < 0) return 0;
+    return (2 * k) / (gs.length - 1) - 1;
+  }
+
   function ghostAssignBias() {
     const gs = garage.filter(c => c.role === 'ghost' && c.ghost);
     const want = new Map(gs.map(c => [c, 0]));
@@ -2772,6 +2803,13 @@
         pitTyreElapsed = merk.el; pitTyreTarget = merk.ziel;
         refreshPitThrottleLock();
       }
+    },
+
+    // Die Spuren des ganzen Feldes, in Garagenreihenfolge. Herausgegeben, damit sich
+    // pruefen laesst, was man am Auto nicht messen kann: kein Byte meldet die Querlage.
+    ghostLanes() {
+      return garage.filter(c => c.role === 'ghost' && c.ghost)
+        .map(c => ({ name: garageLabel(c), spur: +ghostLane(c).toFixed(4) }));
     },
 
     physTyreAsym(o) {

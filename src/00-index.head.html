@@ -4769,6 +4769,8 @@
         </div></div>
       
 
+      <div class="opt-row"><div class="opt-label">Reifenw&auml;rmer<small>Start und Reifenwechsel auf Betriebstemperatur statt kalt. Aus hei&szlig;t: die ersten Runden fehlt Grip, bis die Reifen warm gefahren sind. An hei&szlig;t: sofort im Griff-Fenster, also 85 Grad. In der Formel 1 waren W&auml;rmedecken bis 2024 erlaubt und sind seit 2025 verboten; im GT-Sport sind sie meist untersagt. Hier ist es eine Einstellung und keine Regel.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-tyre-blankets" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Jedes Rad einzeln
           <small>Aus Nick- und Querverlagerung bekommt jedes der vier Räder seine eigene
           Last, und daraus folgen vier Temperaturen, vier Verschleißwerte und vier
@@ -4889,9 +4891,9 @@
           getrennt leiser zu bekommen.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="brake-volume" min="0" max="1" step="0.05" value="0.6">
+          <input type="range" id="brake-volume" min="0" max="1" step="0.05" value="0.3">
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="brake-volume-val">60%</span>
+          <span class="opt-val" id="brake-volume-val">30%</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Motorsound-Profil<small>Die acht
           oben sind aus Zylinderzahl, Kurbelwelle und Z&uuml;ndfolge gerechnet. Bei den
@@ -4905,9 +4907,9 @@
           <option value="m4gt3">BMW M4 GT3: Reihen-6</option>
           <option value="f296gt3">Ferrari 296 GT3: V6, 120 Grad</option>
           <option value="huracan">Huracan GT3 / R8 LMS: V10, Split-Pin</option>
-          <option value="p992gt3r">Porsche 911 GT3 R: Boxer-6, Einzeldrosseln</option>
+          <option value="p992gt3r" selected>Porsche 911 GT3 R: Boxer-6, Einzeldrosseln</option>
           </optgroup>
-          <option value="mustang" selected>Mustang, V8, Cross-Plane</option>
+          <option value="mustang">Mustang, V8, Cross-Plane</option>
           <option value="corvette">Corvette C6: V8 (Aufnahme)</option>
           <option value="porsche_rec">Porsche, Boxer-6 (Aufnahme)</option>
           <option value="porsche">Porsche: Boxer-6, Saugmotor</option>
@@ -5154,6 +5156,13 @@
           <input type="range" id="ghost-lateral" min="0" max="1" step="0.1" value="0.5">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="ghost-lateral-val">50%</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Ghost: eigene Spuren <span class="wip-tag">experimentell</span><small>Jeder Ghost h&auml;lt eine feste eigene Linie &uuml;ber die Bahnbreite, gleichm&auml;&szlig;ig verteilt und symmetrisch um die Mitte. Anders als der seitliche Versatz braucht das keine zwei Autos nebeneinander, und anders als die Ideallinie keine drei Streckenteile: es wirkt auf der Vorgabestrecke und allein unterwegs. Bei nur einem Ghost ist die Spur die Mitte, denn verschiedene Linien haben bei einem Auto keine Bedeutung. Links = aus.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="ghost-lanes" min="0" max="1" step="0.05" value="0.5">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="ghost-lanes-val">50%</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Strecke beim Fahren lernen
           <small>Setzt das Layout aus den gemeldeten Kacheln zusammen und &uuml;bernimmt es
@@ -5656,7 +5665,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.4.35</span></span>
+    <span class="foot-ver">v<span id="app-version">0.4.36</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine

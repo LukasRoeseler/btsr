@@ -295,7 +295,10 @@
   let ambienceVolume = 0.10;   // track bed and pass-bys: quiet, the engine leads
   let rainVolume = 0.25;
   // Eigene Lautstaerke fuer das Bremsenquietschen. Sie hing vorher an engineVolume.
-  let brakeVolume = 0.6;       // rain and thunder: own control, weather stays audible
+  // 0,3 statt 0,6: halbiert. Der Startwert steht hier UND im Markup - zwei Orte fuer
+  // eine Zahl, und beim Nachziehen muessen beide mit. Genau diese Klasse hat bei den
+  // Voreinstellungen siebzehn Abweichungen ergeben.
+  let brakeVolume = 0.3;       // rain and thunder: own control, weather stays audible
   let ambienceEnabled = true;   // on, but quiet enough to sit under the engine
 
   async function loadAmbience() {
@@ -638,6 +641,18 @@
     ghostCfg.line = parseFloat(e.target.value);
     $('ghost-line-val').textContent = ghostCfg.line === 0
       ? 'aus' : Math.round(ghostCfg.line * 100) + '%';
+  });
+
+  $('setting-tyre-blankets').addEventListener('change', (e) => {
+    physEngine.config.tyreBlankets = e.target.checked;
+    log('Reifenwaermer ' + (e.target.checked ? 'an: Start und Wechsel auf '
+        + physEngine.config.tyreOptimalC + ' Grad' : 'aus: Start und Wechsel kalt') + '.', 'info');
+  });
+
+  $('ghost-lanes').addEventListener('input', (e) => {
+    ghostCfg.lanes = parseFloat(e.target.value);
+    $('ghost-lanes-val').textContent = ghostCfg.lanes === 0
+      ? 'aus' : Math.round(ghostCfg.lanes * 100) + '%';
   });
 
   $('ghost-learn').addEventListener('change', (e) => {

@@ -1441,7 +1441,17 @@
     if (type === pitMarkerCode) onPitMarkerCrossed();
 
     if (isStartCode(type)) {
-      if (playerLapCrossed()) { refreshMinimap(); return; }
+      const gezaehlt = playerLapCrossed();
+      // Und DANACH die Doppelpruefung, genau wie auf dem Ausdruck-Weg. Sie stand hier
+      // nicht, und das war der Fehler: bewegt sich der Kachelzaehler zwischen den beiden
+      // Kontakten eines Paares - und das tut er, sobald das Auto ein Streckenteil
+      // weiterfaehrt -, laeuft der zweite Kontakt ueber DIESEN Weg, und die Runde wurde
+      // nie zurueckgenommen. Zwei Runden statt einer.
+      //
+      // VOR dem return, nicht danach: das return war die Stelle, an der die Pruefung
+      // uebersprungen wurde.
+      pitDoubleCheck(nowCode);
+      if (gezaehlt) { refreshMinimap(); return; }
     }
     refreshMinimap();
   }
@@ -2583,7 +2593,12 @@
   // Fresh rubber: cold and unworn. Called when the crew fits tyres and at the green light,
   // which is exactly when a real car leaves on new or cooled-down tyres.
   function resetTyres() {
-    physEngine.state.tyreTempC = physEngine.config.tyreAmbientC;
+    // Mit Reifenwaermer auf Betriebstemperatur, ohne auf Umgebung. tyreOptimalC und nicht
+    // ein eigener Wert: ein Waermer bringt den Reifen in sein Griff-Fenster, und zwei Zahlen
+    // fuer dasselbe Fenster laufen auseinander.
+    const startTemp = physEngine.config.tyreBlankets
+      ? physEngine.config.tyreOptimalC : physEngine.config.tyreAmbientC;
+    physEngine.state.tyreTempC = startTemp;
     physEngine.state.tyreWear = 0;
     // Links und rechts MUESSEN mit. Ohne diese zwei Zeilen setzt der Boxenstopp den
     // Mittelwert auf 0 und die Seiten stehen weiter bei 0,4: das Cockpit zeigt heile Reifen
@@ -2597,11 +2612,14 @@
     // einmal dazu gefuehrt, dass die Kachel dem Toast widersprach - und man glaubt dem, was
     // man sieht. Beim naechsten Takt werden die Mittelwerte aus den vier GERECHNET, also
     // reicht es nicht, nur die Mittelwerte zu nullen: sie waeren sofort wieder da.
-    physEngine.state.tyreWear4 = [0, 0, 0, 0];
-    physEngine.state.tyreTemp4 = [physEngine.config.tyreAmbientC,
-                                  physEngine.config.tyreAmbientC,
-                                  physEngine.config.tyreAmbientC,
-                                  physEngine.config.tyreAmbientC];
+    // HINEINSCHREIBEN und nicht ersetzen. Ein neues Array zu setzen laesst jeden Leser,
+    // der die alte Referenz haelt, in eine Leiche schreiben - dieselbe Klasse wie die flache
+    // Zustandskopie in den Messaufbauten. Hier haelt gerade niemand eine; es so zu lassen
+    // waere die Sorte Entscheidung, die beim naechsten Leser teuer wird.
+    for (let i = 0; i < 4; i++) {
+      physEngine.state.tyreWear4[i] = 0;
+      physEngine.state.tyreTemp4[i] = startTemp;
+    }
     physEngine.state.tyreGrip = 1;
     // Die BREMSSCHEIBEN werden hier ausdruecklich NICHT gekuehlt. Ein Boxenstopp dauert
     // Sekunden, und Scheiben kuehlen darin nicht auf Umgebungstemperatur. Reifen werden

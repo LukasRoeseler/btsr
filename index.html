@@ -4769,6 +4769,8 @@
         </div></div>
       
 
+      <div class="opt-row"><div class="opt-label">Reifenw&auml;rmer<small>Start und Reifenwechsel auf Betriebstemperatur statt kalt. Aus hei&szlig;t: die ersten Runden fehlt Grip, bis die Reifen warm gefahren sind. An hei&szlig;t: sofort im Griff-Fenster, also 85 Grad. In der Formel 1 waren W&auml;rmedecken bis 2024 erlaubt und sind seit 2025 verboten; im GT-Sport sind sie meist untersagt. Hier ist es eine Einstellung und keine Regel.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-tyre-blankets" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Jedes Rad einzeln
           <small>Aus Nick- und Querverlagerung bekommt jedes der vier Räder seine eigene
           Last, und daraus folgen vier Temperaturen, vier Verschleißwerte und vier
@@ -4889,9 +4891,9 @@
           getrennt leiser zu bekommen.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="brake-volume" min="0" max="1" step="0.05" value="0.6">
+          <input type="range" id="brake-volume" min="0" max="1" step="0.05" value="0.3">
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="brake-volume-val">60%</span>
+          <span class="opt-val" id="brake-volume-val">30%</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Motorsound-Profil<small>Die acht
           oben sind aus Zylinderzahl, Kurbelwelle und Z&uuml;ndfolge gerechnet. Bei den
@@ -4905,9 +4907,9 @@
           <option value="m4gt3">BMW M4 GT3: Reihen-6</option>
           <option value="f296gt3">Ferrari 296 GT3: V6, 120 Grad</option>
           <option value="huracan">Huracan GT3 / R8 LMS: V10, Split-Pin</option>
-          <option value="p992gt3r">Porsche 911 GT3 R: Boxer-6, Einzeldrosseln</option>
+          <option value="p992gt3r" selected>Porsche 911 GT3 R: Boxer-6, Einzeldrosseln</option>
           </optgroup>
-          <option value="mustang" selected>Mustang, V8, Cross-Plane</option>
+          <option value="mustang">Mustang, V8, Cross-Plane</option>
           <option value="corvette">Corvette C6: V8 (Aufnahme)</option>
           <option value="porsche_rec">Porsche, Boxer-6 (Aufnahme)</option>
           <option value="porsche">Porsche: Boxer-6, Saugmotor</option>
@@ -5154,6 +5156,13 @@
           <input type="range" id="ghost-lateral" min="0" max="1" step="0.1" value="0.5">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="ghost-lateral-val">50%</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Ghost: eigene Spuren <span class="wip-tag">experimentell</span><small>Jeder Ghost h&auml;lt eine feste eigene Linie &uuml;ber die Bahnbreite, gleichm&auml;&szlig;ig verteilt und symmetrisch um die Mitte. Anders als der seitliche Versatz braucht das keine zwei Autos nebeneinander, und anders als die Ideallinie keine drei Streckenteile: es wirkt auf der Vorgabestrecke und allein unterwegs. Bei nur einem Ghost ist die Spur die Mitte, denn verschiedene Linien haben bei einem Auto keine Bedeutung. Links = aus.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="ghost-lanes" min="0" max="1" step="0.05" value="0.5">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="ghost-lanes-val">50%</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Strecke beim Fahren lernen
           <small>Setzt das Layout aus den gemeldeten Kacheln zusammen und &uuml;bernimmt es
@@ -5656,7 +5665,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.4.35</span></span>
+    <span class="foot-ver">v<span id="app-version">0.4.36</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -6994,6 +7003,10 @@
     "fahr über ein beliebiges ausgedrucktes Muster, hier steht sofort, welchen Code das Auto meldet. Achtung auf den Modus: ein Ausdruck meldet aus der Ausdruck-Tabelle, dort ist 0x01 Start/Ziel. Die Werte 0x0a Start/Ziel, 0x02 Gerade, 0x03 Linkskurve, 0x04 Rechtskurve, 0x05 und 0x06 Haarnadel gehören zur Bahn-Tabelle; alles andere ist unbestätigt. Trag hier den Code ein, den dein gedrucktes Boxen-Muster tatsächlich auslöst – 0x08 war nie ein reales Signal und ist deshalb nicht mehr die Vorgabe.": "drive over any printed pattern and it says right here which code the car reports. Mind the mode: a printout reports from the printed-pattern table, where 0x01 is start/finish. The values 0x0a start/finish, 0x02 straight, 0x03 left-hand corner, 0x04 right-hand corner, 0x05 and 0x06 hairpin belong to the rail table; everything else is unconfirmed. Enter the code your printed pit pattern actually triggers here – 0x08 was never a real signal and is therefore no longer the default.",
     "Lenkwinkel-Kalibrierung": "Steering angle calibration",
     "Für enge Strecken. Der Regler sitzt hinter dem Reibkreis: beim Anbremsen einer Kurve beschneidet der die Lenkung auf etwa 60 Prozent, und bei 200 Prozent erreicht dieser beschnittene Wunsch wieder den vollen Anschlag. Weiter als 45 Grad kann kein Wert lenken, das ist die Mechanik des Autos und nicht die App. Der Preis ist Feingefühl: je höher, desto früher liegt der Anschlag an und desto weniger sagt der letzte Teil des Sticks.": "For tight tracks. The slider sits behind the friction circle: braking into a corner cuts steering to about 60 percent, and at 200 percent that cut request reaches full lock again. No value can steer further than 45 degrees – that is the mechanics of the car, not the app. The price is finesse: the higher it goes, the earlier full lock is reached and the less the last part of the stick says.",
+    "Ghost: eigene Spuren": "Ghosts: own lanes",
+    "Jeder Ghost hält eine feste eigene Linie über die Bahnbreite, gleichmäßig verteilt und symmetrisch um die Mitte. Anders als der seitliche Versatz braucht das keine zwei Autos nebeneinander, und anders als die Ideallinie keine drei Streckenteile: es wirkt auf der Vorgabestrecke und allein unterwegs. Bei nur einem Ghost ist die Spur die Mitte, denn verschiedene Linien haben bei einem Auto keine Bedeutung. Links = aus.": "Each ghost holds a fixed lane of its own across the track width, evenly spread and symmetric about the centre. Unlike the lateral offset this needs no two cars side by side, and unlike the racing line no three track pieces: it works on the default track and when driving alone. With only one ghost the lane is the centre, because different lines have no meaning for a single car. Left = off.",
+    "Reifenwärmer": "Tyre blankets",
+    "Start und Reifenwechsel auf Betriebstemperatur statt kalt. Aus heißt: die ersten Runden fehlt Grip, bis die Reifen warm gefahren sind. An heißt: sofort im Griff-Fenster, also 85 Grad. In der Formel 1 waren Wärmedecken bis 2024 erlaubt und sind seit 2025 verboten; im GT-Sport sind sie meist untersagt. Hier ist es eine Einstellung und keine Regel.": "Start and tyre change at operating temperature instead of cold. Off means the first few laps lack grip until the tyres have been warmed up. On means straight into the grip window, that is 85 degrees. In Formula 1 tyre blankets were allowed until 2024 and have been banned since 2025; in GT racing they are mostly prohibited. Here it is a setting and not a rule.",
   };
 
   // ============================================================================
@@ -8268,6 +8281,12 @@
         tyreEffect: 2.0,       // 0 = aus; 1 = volles Modell; darueber schnellere Raten.
         tyreAmbientC: 20,
         tyreOptimalC: 85,
+        // REIFENWAERMER. Aus heisst: Start und Reifenwechsel auf Umgebungstemperatur, wie
+        // bisher. An heisst: auf tyreOptimalC, also genau in das Griff-Fenster - das ist,
+        // was ein Reifenwaermer tut, und deshalb steht hier kein eigener Zahlenwert. Eine
+        // zweite Zahl neben tyreOptimalC waere die Gelegenheit, dass "aufgewaermt" und
+        // "optimal" auseinanderlaufen.
+        tyreBlankets: false,
         // Balanced so the equilibrium temperature lands where it should: with
         // T = ambient + span * (heat/cool) * work, brisk driving (work ~0.65) settles at
         // 82°C and full attack (~0.95) at 111°C, just into the overheating range. The first
@@ -10056,7 +10075,17 @@
     {
       const cfgT = physEngine.config;
       const aus = cfgT.tyreEffect === 0;
-      const fadeAus = cfgT.brakeFadeEffect === 0;
+      // Der Fading-Schalter gilt fuer die WIRKUNG und NICHT fuer die Anzeige, und deshalb
+      // steht hier keine Abfrage mehr auf ihn. Die Scheibentemperatur wird immer gerechnet
+      // (brakeHeatRate * Math.max(1, brakeFadeEffect), also auch bei 0), und sie immer zu
+      // zeigen ist die ehrlichere Aufteilung: mit abgeschaltetem Fading sind die Scheiben ein
+      // Instrument ohne Folgen - man sieht sie gluehen und der Bremsweg bleibt gleich. Das
+      // ist etwas anderes als abgeschaltet.
+      //
+      // Vorher hing die Farbe am Schalter, und die Pro-Abstimmung schaltet ihn aus: die
+      // Scheiben blieben grau, obwohl die Physik lief. Gemeldet als "beim Bremsen von 150
+      // auf 0 passiert nichts mit den Bremsscheiben" - und die Ursache war ein Schalter, der
+      // zwei Dinge bedeutete.
       const REIFEN = ['race-tyre-fl', 'race-tyre-fr', 'race-tyre-rl', 'race-tyre-rr'];
       const SCHEIBEN = ['race-disc-fl', 'race-disc-fr', 'race-disc-rl', 'race-disc-rr'];
 
@@ -10076,26 +10105,36 @@
              + ', ' + Math.round(230 - 103 * warm) + ')';
       };
 
-      // Scheibenfarbe, auf den SICHTBAREN Bereich normiert und nicht auf die Fadingschwelle:
-      // 300 Grad ist Betriebstemperatur, darueber nach Gelb, ab 520 nach Rot. Gegen die
-      // Schwelle normiert blieb der Ring bis fast 500 Grad grau.
+      // SCHEIBENFARBE, auf die gemessenen Temperaturen gelegt und nicht geraten.
+      //
+      // Die alte Skala spreizte den kalten Bereich ueber 275 Grad. Eine gefahrene Bremsung
+      // aus 150 km/h erreicht aber nur 70 Grad, drei erreichen 176 - der ganze Vorgang
+      // spielte sich in den ersten 15 bis 55 Prozent der Skala ab, wo sie fast nichts tut.
+      // Gemeldet als "beim Bremsen von 150 auf 0 passiert nichts mit den Bremsscheiben", und
+      // gemessen war es rgb(44,71,74) gegen rgb(42,51,70) kalt: die Farbe AENDERTE sich, nur
+      // nicht sichtbar. Das ist derselbe Fehler wie keine Aenderung.
+      //
+      // Die Abschnitte, jeder aus einer Messung:
+      //   25 bis 200 Grad   normales Fahren, eine bis drei Bremsungen  -> dunkelblau nach gruen
+      //   200 bis 520 Grad  harter Renneinsatz, drei aus 250 km/h      -> gruen nach orange
+      //   ab 520 Grad       hier setzt das Fading ein                  -> orange nach rot
+      //   780 Grad          Fading voll                               -> volles rot
+      // Damit sagt die Farbe etwas: rot heisst "die Bremse laesst nach", und ab 520 ist das
+      // auch wahr.
       const scheibenFarbe = (T) => {
-        if (fadeAus) return '#2a3346';
-        const ueber = Math.max(0, Math.min(1, (T - cfgT.brakeFadeStartC)
-          / Math.max(1, cfgT.brakeFadeFullC - cfgT.brakeFadeStartC)));
-        if (ueber > 0) {
-          return 'rgb(255, ' + Math.round(178 - 130 * ueber) + ', '
-               + Math.round(107 - 92 * ueber) + ')';
+        const mischen = (a, b, x) => 'rgb(' + Math.round(a[0] + (b[0] - a[0]) * x) + ', '
+          + Math.round(a[1] + (b[1] - a[1]) * x) + ', '
+          + Math.round(a[2] + (b[2] - a[2]) * x) + ')';
+        const KALT = [42, 51, 70], WARM = [62, 209, 106];
+        const HEISS = [255, 168, 62], ROT = [255, 48, 32];
+        const start = cfgT.brakeFadeStartC, voll = cfgT.brakeFadeFullC;
+        if (T >= start) {
+          return mischen(HEISS, ROT,
+            Math.min(1, (T - start) / Math.max(1, voll - start)));
         }
-        const warm = Math.max(0, Math.min(1, (T - cfgT.brakeAmbientC) / 275));
-        if (warm >= 1) {
-          const heiss = Math.max(0, Math.min(1,
-            (T - 300) / Math.max(1, cfgT.brakeFadeStartC - 300)));
-          return 'rgb(' + Math.round(62 + 193 * heiss) + ', ' + Math.round(209 - 31 * heiss)
-               + ', ' + Math.round(106 - heiss) + ')';
-        }
-        return 'rgb(' + Math.round(42 + 20 * warm) + ', ' + Math.round(51 + 158 * warm)
-             + ', ' + Math.round(70 + 36 * warm) + ')';
+        if (T >= 200) return mischen(WARM, HEISS, (T - 200) / Math.max(1, start - 200));
+        const u = cfgT.brakeAmbientC;
+        return mischen(KALT, WARM, Math.max(0, (T - u) / Math.max(1, 200 - u)));
       };
 
       // Welches Rad gerade abgebaut ist. Beim Boxenstopp laeuft der Schrauberton ueber die
@@ -10138,7 +10177,7 @@
           const ab = Math.round(Math.max.apply(null, w4) * 100);
           const bmax = Math.round(Math.max.apply(null, b4));
           tt.textContent = (kalt === heiss ? heiss + '\u00b0' : kalt + '\u2013' + heiss + '\u00b0')
-            + ' ' + ab + '%' + (fadeAus ? '' : ' \u00b7 ' + bmax + '\u00b0');
+            + ' ' + ab + '%' + ' \u00b7 ' + bmax + '\u00b0';
         }
       }
     }
@@ -13840,7 +13879,17 @@
     if (type === pitMarkerCode) onPitMarkerCrossed();
 
     if (isStartCode(type)) {
-      if (playerLapCrossed()) { refreshMinimap(); return; }
+      const gezaehlt = playerLapCrossed();
+      // Und DANACH die Doppelpruefung, genau wie auf dem Ausdruck-Weg. Sie stand hier
+      // nicht, und das war der Fehler: bewegt sich der Kachelzaehler zwischen den beiden
+      // Kontakten eines Paares - und das tut er, sobald das Auto ein Streckenteil
+      // weiterfaehrt -, laeuft der zweite Kontakt ueber DIESEN Weg, und die Runde wurde
+      // nie zurueckgenommen. Zwei Runden statt einer.
+      //
+      // VOR dem return, nicht danach: das return war die Stelle, an der die Pruefung
+      // uebersprungen wurde.
+      pitDoubleCheck(nowCode);
+      if (gezaehlt) { refreshMinimap(); return; }
     }
     refreshMinimap();
   }
@@ -14982,7 +15031,12 @@
   // Fresh rubber: cold and unworn. Called when the crew fits tyres and at the green light,
   // which is exactly when a real car leaves on new or cooled-down tyres.
   function resetTyres() {
-    physEngine.state.tyreTempC = physEngine.config.tyreAmbientC;
+    // Mit Reifenwaermer auf Betriebstemperatur, ohne auf Umgebung. tyreOptimalC und nicht
+    // ein eigener Wert: ein Waermer bringt den Reifen in sein Griff-Fenster, und zwei Zahlen
+    // fuer dasselbe Fenster laufen auseinander.
+    const startTemp = physEngine.config.tyreBlankets
+      ? physEngine.config.tyreOptimalC : physEngine.config.tyreAmbientC;
+    physEngine.state.tyreTempC = startTemp;
     physEngine.state.tyreWear = 0;
     // Links und rechts MUESSEN mit. Ohne diese zwei Zeilen setzt der Boxenstopp den
     // Mittelwert auf 0 und die Seiten stehen weiter bei 0,4: das Cockpit zeigt heile Reifen
@@ -14996,11 +15050,14 @@
     // einmal dazu gefuehrt, dass die Kachel dem Toast widersprach - und man glaubt dem, was
     // man sieht. Beim naechsten Takt werden die Mittelwerte aus den vier GERECHNET, also
     // reicht es nicht, nur die Mittelwerte zu nullen: sie waeren sofort wieder da.
-    physEngine.state.tyreWear4 = [0, 0, 0, 0];
-    physEngine.state.tyreTemp4 = [physEngine.config.tyreAmbientC,
-                                  physEngine.config.tyreAmbientC,
-                                  physEngine.config.tyreAmbientC,
-                                  physEngine.config.tyreAmbientC];
+    // HINEINSCHREIBEN und nicht ersetzen. Ein neues Array zu setzen laesst jeden Leser,
+    // der die alte Referenz haelt, in eine Leiche schreiben - dieselbe Klasse wie die flache
+    // Zustandskopie in den Messaufbauten. Hier haelt gerade niemand eine; es so zu lassen
+    // waere die Sorte Entscheidung, die beim naechsten Leser teuer wird.
+    for (let i = 0; i < 4; i++) {
+      physEngine.state.tyreWear4[i] = 0;
+      physEngine.state.tyreTemp4[i] = startTemp;
+    }
     physEngine.state.tyreGrip = 1;
     // Die BREMSSCHEIBEN werden hier ausdruecklich NICHT gekuehlt. Ein Boxenstopp dauert
     // Sekunden, und Scheiben kuehlen darin nicht auf Umgebungstemperatur. Reifen werden
@@ -15566,7 +15623,10 @@
   let ambienceVolume = 0.10;   // track bed and pass-bys: quiet, the engine leads
   let rainVolume = 0.25;
   // Eigene Lautstaerke fuer das Bremsenquietschen. Sie hing vorher an engineVolume.
-  let brakeVolume = 0.6;       // rain and thunder: own control, weather stays audible
+  // 0,3 statt 0,6: halbiert. Der Startwert steht hier UND im Markup - zwei Orte fuer
+  // eine Zahl, und beim Nachziehen muessen beide mit. Genau diese Klasse hat bei den
+  // Voreinstellungen siebzehn Abweichungen ergeben.
+  let brakeVolume = 0.3;       // rain and thunder: own control, weather stays audible
   let ambienceEnabled = true;   // on, but quiet enough to sit under the engine
 
   async function loadAmbience() {
@@ -15909,6 +15969,18 @@
     ghostCfg.line = parseFloat(e.target.value);
     $('ghost-line-val').textContent = ghostCfg.line === 0
       ? 'aus' : Math.round(ghostCfg.line * 100) + '%';
+  });
+
+  $('setting-tyre-blankets').addEventListener('change', (e) => {
+    physEngine.config.tyreBlankets = e.target.checked;
+    log('Reifenwaermer ' + (e.target.checked ? 'an: Start und Wechsel auf '
+        + physEngine.config.tyreOptimalC + ' Grad' : 'aus: Start und Wechsel kalt') + '.', 'info');
+  });
+
+  $('ghost-lanes').addEventListener('input', (e) => {
+    ghostCfg.lanes = parseFloat(e.target.value);
+    $('ghost-lanes-val').textContent = ghostCfg.lanes === 0
+      ? 'aus' : Math.round(ghostCfg.lanes * 100) + '%';
   });
 
   $('ghost-learn').addEventListener('change', (e) => {
@@ -16985,6 +17057,12 @@
     lateral: 0.5,
     // Ideallinie. 0 = wie bisher, gerade Lenkung und nur der Anti-Ramm-Versatz.
     line: 0.35,
+    // EIGENE SPUREN. Jeder Ghost haelt eine feste, ihm eigene Linie ueber die Bahnbreite -
+    // unabhaengig von Abstand, Strecke und Kachelzahl. Das ist der Unterschied zu den zwei
+    // anderen Linieneinstellungen: ghost-lateral wirkt nur bei zwei Autos nebeneinander,
+    // ghost-line erst ab drei Streckenteilen. Beides null heisst "alle stumpf in der Mitte",
+    // und genau so wurde es gemeldet.
+    lanes: 0.5,
     // Rennwuerze. Ein Regler, fuenf Bausteine - siehe ghostSpice() weiter unten.
     spice: 0.4,
     // Lernen von Runde zu Runde, standardmaessig aus: es aendert das Fahrverhalten ueber
@@ -18360,7 +18438,8 @@
         const lineOff = underYellow ? 0
                       : (spice.attack ? spice.attack : ghostLineOffset(car));
         steer = lineOff * ghostCfg.line * GHOST_LINE_STEER
-              + g.bias * ghostCfg.lateral * 0.25;
+              + g.bias * ghostCfg.lateral * 0.25
+              + ghostLane(car) * ghostCfg.lanes * GHOST_LANE_STEER;
       } else {
         // Fallback for cars not in guard-rail mode: the old layout-plus-yaw controller.
         const dir = ghostTurnDir(car, 0);
@@ -18368,7 +18447,8 @@
         steer = dir * GHOST_STEER_CURVE + (yawTarget - car.yaw) * GHOST_YAW_GAIN;
         steer += (spice.attack ? spice.attack : ghostLineOffset(car))
                  * ghostCfg.line * GHOST_LINE_STEER
-               + g.bias * ghostCfg.lateral * 0.25;
+               + g.bias * ghostCfg.lateral * 0.25
+               + ghostLane(car) * ghostCfg.lanes * GHOST_LANE_STEER;
       }
       steer = Math.max(-1, Math.min(1, steer + weave));
     }
@@ -18439,6 +18519,29 @@
   // sagen. Danach entscheidet der Abstand. Sechs Sekunden sind bei real gut 2 km/h etwa
   // drei Meter Fahrt - lang genug, dass sich die Abstaende bilden.
   const GHOST_GRID_MS = 6000;
+  // Die feste Spur EINES Ghosts, -1 bis +1. Gleichmaessig ueber das Feld verteilt und
+  // symmetrisch um die Mitte, damit das Feld nicht insgesamt zur Seite wandert.
+  //
+  // Die Position kommt aus der GARAGE und nicht aus dem Rennstand: eine Spur, die sich mit
+  // dem Kachelindex aendert, ist keine Linie, sondern ein Zickzack. Und sie ist nicht
+  // gewuerfelt - gewuerfelt waere sie bei jedem Aufruf anders, und dann faehrt kein Auto
+  // eine Linie, sondern zittert.
+  //
+  // Bei EINEM Ghost ist die Spur die Mitte, und das ist richtig: "verschiedene Linien" hat
+  // bei einem Auto keine Bedeutung, und ein einzelner Versatz waere ein Lenkfehler.
+  // Wieviel Lenkung eine ganze Spurbreite bedeutet. 0,16 in derselben Groessenordnung wie
+  // GHOST_LINE_STEER: es ist ein Halten neben der Mitte und kein Ausweichmanoever, und mehr
+  // waere auf der Schiene ohnehin nur ein Kampf gegen die Firmware.
+  const GHOST_LANE_STEER = 0.16;
+
+  function ghostLane(car) {
+    const gs = garage.filter(c => c.role === 'ghost' && c.ghost);
+    if (gs.length < 2) return 0;
+    const k = gs.indexOf(car);
+    if (k < 0) return 0;
+    return (2 * k) / (gs.length - 1) - 1;
+  }
+
   function ghostAssignBias() {
     const gs = garage.filter(c => c.role === 'ghost' && c.ghost);
     const want = new Map(gs.map(c => [c, 0]));
@@ -18848,6 +18951,13 @@
         pitTyreElapsed = merk.el; pitTyreTarget = merk.ziel;
         refreshPitThrottleLock();
       }
+    },
+
+    // Die Spuren des ganzen Feldes, in Garagenreihenfolge. Herausgegeben, damit sich
+    // pruefen laesst, was man am Auto nicht messen kann: kein Byte meldet die Querlage.
+    ghostLanes() {
+      return garage.filter(c => c.role === 'ghost' && c.ghost)
+        .map(c => ({ name: garageLabel(c), spur: +ghostLane(c).toFixed(4) }));
     },
 
     physTyreAsym(o) {
@@ -21627,6 +21737,117 @@
                                          : schlecht.join('; ') };
   });
 
+  // ---- Ghosts: eigene Spuren ----
+  //
+  // Am Auto ist das NICHT messbar - kein Byte meldet die Querlage, und deshalb steht in der
+  // Option auch "blind". Pruefbar ist die Rechnung, und drei Aussagen daran sind es wert:
+  // die Spuren muessen VERSCHIEDEN sein (sonst faehrt das Feld weiter in einer Reihe), sie
+  // muessen die ganze Breite ausnutzen, und ihre Summe muss null sein - ein Feld, das im
+  // Mittel zur Seite versetzt ist, faehrt nicht auf verschiedenen Linien, sondern schief.
+  stAdd('Ghost-Spuren: verschieden, volle Breite, im Mittel null', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.ghostLanes) {
+      return { skip: true, mass: 'ghostLanes nicht vorhanden' };
+    }
+    const echt = OMEGA_TEST.ghostLanes();
+    // Die Rechnung selbst pruefen, unabhaengig davon, wieviele Ghosts gerade in der Garage
+    // stehen: das ist der Teil, der immer gilt.
+    const spuren = (n) => {
+      if (n < 2) return [0];
+      const out = [];
+      for (let k = 0; k < n; k++) out.push((2 * k) / (n - 1) - 1);
+      return out;
+    };
+    const schlecht = [];
+    for (const n of [2, 3, 4, 5, 8]) {
+      const sp = spuren(n);
+      if (new Set(sp.map(x => x.toFixed(4))).size !== n) {
+        schlecht.push(n + ' Ghosts: nicht alle Spuren verschieden');
+      }
+      if (Math.abs(sp[0] + 1) > 1e-9 || Math.abs(sp[n - 1] - 1) > 1e-9) {
+        schlecht.push(n + ' Ghosts: Breite nicht ausgenutzt (' + sp[0] + ' bis ' + sp[n - 1] + ')');
+      }
+      const summe = sp.reduce((a, b) => a + b, 0);
+      if (Math.abs(summe) > 1e-9) schlecht.push(n + ' Ghosts: Summe ' + summe.toFixed(4));
+    }
+    // Ein einzelner Ghost faehrt die Mitte: ein Versatz waere dort ein Lenkfehler und keine
+    // Linie.
+    if (spuren(1)[0] !== 0) schlecht.push('ein Ghost fährt nicht die Mitte');
+    // Und was das laufende Feld sagt, mitgemeldet - auch wenn es leer ist.
+    const jetzt = echt.length
+      ? echt.map(g => g.name + ' ' + g.spur.toFixed(2)).join(', ')
+      : 'keine Ghosts in der Garage';
+    return { ok: !schlecht.length,
+             mass: '2 Ghosts ' + spuren(2).join('/') + ' | 3 ' + spuren(3).join('/')
+                   + ' | 5 ' + spuren(5).map(x => x.toFixed(1)).join('/')
+                   + ' || aktuell: ' + jetzt
+                   + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // ---- Reifenwaermer ----
+  //
+  // ZWEI Aussagen, und die zweite ist die, auf die es beim Fahren ankommt: die Temperatur
+  // muss stimmen UND sie muss sich als Grip auswirken. Nur die Temperatur zu pruefen liesse
+  // den Fall durch, in dem resetTyres richtig setzt und die Griffrechnung sie ignoriert -
+  // genau so ist die Bremsscheibenanzeige durchgekommen: die Physik lief, und die Anzeige
+  // hing an einem anderen Schalter.
+  //
+  // Die VIER Raeder einzeln, nicht der Mittelwert: der stimmt auch, wenn zwei Raeder kalt
+  // und zwei zu heiss sind.
+  stAdd('Reifenwaermer: warme Reifen beim Start, und sie greifen', () => {
+    const schalter = $('setting-tyre-blankets');
+    if (!schalter) return { skip: true, mass: 'Schalter nicht im Dokument' };
+    if (!window.OMEGA_TEST || !OMEGA_TEST.zustandKopie) {
+      return { skip: true, mass: 'zustandKopie nicht vorhanden' };
+    }
+    const cfg = physEngine.config, st = physEngine.state;
+    const merkState = OMEGA_TEST.zustandKopie(st);
+    const merkCfg = { bl: cfg.tyreBlankets, te: cfg.tyreEffect };
+    const schlecht = [], teile = [];
+    try {
+      // tyreEffect ausdruecklich AN, sonst prueft der Test eine abgeschaltete Simulation -
+      // und ein gruener Test auf einer abgeschalteten Simulation ist schlimmer als keiner.
+      cfg.tyreEffect = 1;
+      const griff = {};
+      for (const an of [false, true]) {
+        cfg.tyreBlankets = an;
+        resetTyres();
+        const soll = an ? cfg.tyreOptimalC : cfg.tyreAmbientC;
+        const ab = st.tyreTemp4.filter(x => Math.abs(x - soll) > 1e-9).length;
+        teile.push((an ? 'an' : 'aus') + ': ' + st.tyreTemp4.map(x => Math.round(x)).join('/')
+                   + '\u00b0');
+        if (ab) schlecht.push((an ? 'an' : 'aus') + ': ' + ab + ' von 4 Raedern falsch');
+        if (Math.abs(st.tyreTempC - soll) > 1e-9) {
+          schlecht.push((an ? 'an' : 'aus') + ': Mittelwert ' + st.tyreTempC.toFixed(1));
+        }
+        // EIN Takt echte Physik, kein Messaufbau dazwischen: tyreGrip wird in update()
+        // aus st.tyreTempC gerechnet, und genau diese Kette soll geprueft werden.
+        st.speedKmh = 60 / REAL_SCALE;
+        st.driveMode = 'forward';
+        physEngine.update({ throttle: 0.2, brake: 0, steering: 0 }, 0.02);
+        griff[an ? 'warm' : 'kalt'] = st.tyreGrip;
+      }
+      teile.push('tyreGrip kalt ' + griff.kalt.toFixed(3) + ' gegen warm '
+                 + griff.warm.toFixed(3));
+      // Warme Reifen MUESSEN mehr Griff haben. Ein Waermer, der die Temperatur setzt und
+      // sonst nichts tut, waere eine Anzeige und keine Einstellung.
+      if (!(griff.kalt < griff.warm - 1e-6)) {
+        schlecht.push('warme Reifen greifen nicht besser (' + griff.kalt.toFixed(4)
+                      + ' gegen ' + griff.warm.toFixed(4) + ')');
+      }
+      // Und das Feld MUSS in calibRef stehen, sonst meldet physConfigDiff auf frischem
+      // Laden eine Abweichung - diese Fehlerklasse hat in v0.4 dreimal Zeit gekostet.
+      if (physEngine.calibRef && !('tyreBlankets' in physEngine.calibRef)) {
+        schlecht.push('tyreBlankets fehlt in calibRef');
+      }
+      return { ok: !schlecht.length,
+               mass: teile.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+    } finally {
+      cfg.tyreBlankets = merkCfg.bl;
+      cfg.tyreEffect = merkCfg.te;
+      OMEGA_TEST.zustandZurueck(st, merkState);
+    }
+  });
+
   // ---- Block 4.4: Reifendruck ----
   // Monoton, ueber den ganzen Reglerbereich. Ein Regler, der in der Mitte umkehrt, ist keine
   // Abstimmung, sondern eine Falle.
@@ -22748,6 +22969,99 @@
     }
   });
 
+  // ---- Doppelter Start-Ausdruck auf dem KACHELZAEHLER-WEG ----
+  //
+  // Dies ist der zweite von zwei Wegen, auf denen der Spieler Start/Ziel ueberfaehrt, und
+  // der gewoehnliche: sobald sich Byte 11 bewegt - also sobald das Auto ein Streckenteil
+  // weiterfaehrt -, laeuft der Kontakt hier durch und nicht ueber den Ausdruck-Weg.
+  //
+  // Hier fehlte pitDoubleCheck(), und deshalb zaehlte ein Paar zwei Runden statt einer. Der
+  // vorhandene Test daneben baut Byte 14 = 0x80 und ging nur ueber den anderen Weg - weil er
+  // gruen war, sah die Sache geprueft aus. Ein Test, der einen von zwei Wegen prueft, sagt
+  // nichts ueber den anderen.
+  stAdd('Boxengasse: doppelter Ausdruck auch bei laufendem Kachelzaehler', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.feedNotify) {
+      return { skip: true, mass: 'feedNotify nicht vorhanden' };
+    }
+    const merk = { sp: playerCar, tm: trackMode, pt: pitTrigger, ps: pitState,
+                   rs: raceState, lt: raceLapTimes.slice(), ls: raceLapStart,
+                   ple: pitLaneEnabled, pdf: pitDoubleFirstAt, pdc: pitDoubleCountsLap,
+                   ac: dashLastActedCode, aa: dashLastActedAt,
+                   pc: dashPendingCode, pv: dashPendingSeen, tc: dashLastTileCounter };
+    try {
+      const attrappe = { device: { id: 'st-pit2', name: 'Pruefwagen' }, role: 'player',
+                         rx: null, tx: null, tileCode: 0xff, tileCount: null,
+                         lastCodeAt: 0, yaw: 0, ghost: null, timer: null, race: null };
+      playerCar = attrappe;
+      trackMode = 'off';
+      pitLaneEnabled = true;
+      pitTrigger = 'double';
+      pitDoubleCountsLap = false;
+      raceState = 'racing';
+
+      // Byte 14 = 0x22: Bit 5 gesetzt, also BAHN-Modus - der Weg mit Kachelzaehler.
+      const paket = (code, zaehler) => {
+        const a = new Array(19).fill(0);
+        a[10] = 140; a[11] = zaehler; a[12] = code; a[14] = 0x22;
+        return a;
+      };
+      // Ein Kontakt braucht dreierlei, und alle drei sind Schutzmassnahmen aus v0.4:
+      // denselben Code ZWEIMAL (kein Einzelpaket zaehlt), einen VERAENDERTEN Zaehler, und
+      // keinen Sperrvermerk vom vorigen Kontakt.
+      let zaehler = 0;
+      const kontakt = () => {
+        dashLastActedCode = null;
+        dashLastActedAt = 0;
+        dashPendingCode = null;
+        dashPendingSeen = 0;
+        OMEGA_TEST.feedNotify(paket(0x0a, zaehler), { car: attrappe });
+        OMEGA_TEST.feedNotify(paket(0x0a, zaehler), { car: attrappe });
+        zaehler += 1;
+        OMEGA_TEST.feedNotify(paket(0x0a, zaehler), { car: attrappe });
+      };
+      const alter = (ms) => { if (pitDoubleFirstAt) pitDoubleFirstAt -= ms; };
+
+      const teile = [], schlecht = [];
+
+      // Erster Kontakt: eine Runde. Der Zaehler muss dabei EINMAL gesetzt worden sein,
+      // sonst verwirft der erste Kontakt sich selbst - deshalb ein Vorlauf.
+      dashLastTileCounter = null;
+      raceLapTimes.length = 0;
+      raceLapStart = Date.now() - 5000;
+      pitDoubleFirstAt = 0;
+      setPitState('off');
+      kontakt();
+      const nachEins = raceLapTimes.length;
+      teile.push('ein Kontakt: ' + nachEins + ' Runde');
+      if (nachEins !== 1) schlecht.push('erster Kontakt zaehlt ' + nachEins + ' statt 1');
+
+      // Zweiter Kontakt 1,5 s spaeter: Paar. EINE Runde bleibt stehen, nicht zwei.
+      raceLapStart = Date.now() - 1500;
+      alter(1500);
+      kontakt();
+      const nachZwei = raceLapTimes.length;
+      teile.push('Paar nach 1,5 s: ' + nachZwei + ' Runden, pitState ' + pitState);
+      if (nachZwei !== 1) {
+        schlecht.push('Paar laesst ' + nachZwei + ' Runden stehen statt einer');
+      }
+      if (pitState !== 'limited') schlecht.push('Paar aktiviert die Boxengasse nicht');
+
+      return { ok: !schlecht.length,
+               mass: teile.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+    } finally {
+      playerCar = merk.sp; trackMode = merk.tm; pitTrigger = merk.pt;
+      pitLaneEnabled = merk.ple; pitDoubleFirstAt = merk.pdf;
+      pitDoubleCountsLap = merk.pdc;
+      raceState = merk.rs; raceLapStart = merk.ls;
+      raceLapTimes.length = 0;
+      merk.lt.forEach(l => raceLapTimes.push(l));
+      dashLastActedCode = merk.ac; dashLastActedAt = merk.aa;
+      dashPendingCode = merk.pc; dashPendingSeen = merk.pv;
+      dashLastTileCounter = merk.tc;
+      setPitState(merk.ps);
+    }
+  });
+
   // ---- Das Woerterbuch hat keine doppelten Schluessel ----
   //
   // Ein doppelter Schluessel in einem Objektliteral ist kein Syntaxfehler: der spaetere
@@ -23473,6 +23787,9 @@
            // bei einem Viertel Stick an. Weiter als 45 Grad kommt auch das nicht - das ist
            // die Mechanik des Autos.
            'setting-steer-calib': 2.5,
+           // Waermer an: das ist die nachsichtigste Abstimmung, und kalte Reifen in den ersten
+           // Runden sind genau die Sorte Huerde, die Arcade nicht haben soll.
+           'setting-tyre-blankets': true,
            'phys-accel': 1.2,
            // crash-count ist ein INDEX in [1,2,3,4,5,10,20,50]: 7 = fuenfzig Crashs.
            'setting-fuel-drain': 0, 'setting-crash-count': 7,
@@ -23512,6 +23829,9 @@
            // Anbremsen auf etwa 60 Prozent, und das holt ihn zurueck. Gemessen bei 60 km/h
            // unter Bremsen: 35 Grad ohne, volle 45 Grad ab einem Drittel Stick mit.
            'setting-steer-calib': 2.0,
+           // Waermer an, weil Pro die Vorgabe ist: wer zum ersten Mal faehrt, soll nicht drei
+           // Runden auf Grip warten und das fuer das Fahrverhalten halten.
+           'setting-tyre-blankets': true,
            'phys-accel': 1.0,
            'setting-fuel-drain': 0, 'setting-crash-count': 4,
            'setting-crash-damage': false,
@@ -23545,6 +23865,9 @@
            'setting-steer-calib': 1.0,
            'phys-accel': 1.0,
            'setting-crash-threshold': 30,
+           // Waermer AUS. Im GT-Sport sind Waermedecken meist untersagt, und die ersten Runden
+           // auf kalten Reifen sind ein Teil dessen, was diese Klasse ausmacht.
+           'setting-tyre-blankets': false,
            'setting-fuel-drain': 3.0, 'setting-crash-count': 5,
            'setting-crash-damage': true,
            'setting-repair-time': 20,
@@ -23574,6 +23897,8 @@
            'setting-steer-calib': 1.1,
            'phys-accel': 1.0,
            'setting-crash-threshold': 35,
+           // Waermer aus, wie GT3.
+           'setting-tyre-blankets': false,
            'setting-fuel-drain': 2.2, 'setting-crash-count': 5,
            'setting-crash-damage': true,
            'setting-repair-time': 16,
@@ -23605,6 +23930,9 @@
            'setting-steer-calib': 1.0,
            'phys-accel': 1.0,
            'setting-crash-threshold': 25,
+           // Waermer an. In der Formel 1 waren Waermedecken bis 2024 erlaubt und sind seit 2025
+           // verboten - hier ist es die Einstellung, die zur schaerfsten Klasse passt.
+           'setting-tyre-blankets': true,
            'setting-fuel-drain': 4.5, 'setting-crash-count': 3,
            'setting-crash-damage': true,
            'setting-repair-time': 24,

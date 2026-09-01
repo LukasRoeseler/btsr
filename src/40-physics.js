@@ -187,6 +187,12 @@
         tyreEffect: 2.0,       // 0 = aus; 1 = volles Modell; darueber schnellere Raten.
         tyreAmbientC: 20,
         tyreOptimalC: 85,
+        // REIFENWAERMER. Aus heisst: Start und Reifenwechsel auf Umgebungstemperatur, wie
+        // bisher. An heisst: auf tyreOptimalC, also genau in das Griff-Fenster - das ist,
+        // was ein Reifenwaermer tut, und deshalb steht hier kein eigener Zahlenwert. Eine
+        // zweite Zahl neben tyreOptimalC waere die Gelegenheit, dass "aufgewaermt" und
+        // "optimal" auseinanderlaufen.
+        tyreBlankets: false,
         // Balanced so the equilibrium temperature lands where it should: with
         // T = ambient + span * (heat/cool) * work, brisk driving (work ~0.65) settles at
         // 82°C and full attack (~0.95) at 111°C, just into the overheating range. The first

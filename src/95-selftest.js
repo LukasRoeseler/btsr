@@ -883,6 +883,117 @@
                                          : schlecht.join('; ') };
   });
 
+  // ---- Ghosts: eigene Spuren ----
+  //
+  // Am Auto ist das NICHT messbar - kein Byte meldet die Querlage, und deshalb steht in der
+  // Option auch "blind". Pruefbar ist die Rechnung, und drei Aussagen daran sind es wert:
+  // die Spuren muessen VERSCHIEDEN sein (sonst faehrt das Feld weiter in einer Reihe), sie
+  // muessen die ganze Breite ausnutzen, und ihre Summe muss null sein - ein Feld, das im
+  // Mittel zur Seite versetzt ist, faehrt nicht auf verschiedenen Linien, sondern schief.
+  stAdd('Ghost-Spuren: verschieden, volle Breite, im Mittel null', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.ghostLanes) {
+      return { skip: true, mass: 'ghostLanes nicht vorhanden' };
+    }
+    const echt = OMEGA_TEST.ghostLanes();
+    // Die Rechnung selbst pruefen, unabhaengig davon, wieviele Ghosts gerade in der Garage
+    // stehen: das ist der Teil, der immer gilt.
+    const spuren = (n) => {
+      if (n < 2) return [0];
+      const out = [];
+      for (let k = 0; k < n; k++) out.push((2 * k) / (n - 1) - 1);
+      return out;
+    };
+    const schlecht = [];
+    for (const n of [2, 3, 4, 5, 8]) {
+      const sp = spuren(n);
+      if (new Set(sp.map(x => x.toFixed(4))).size !== n) {
+        schlecht.push(n + ' Ghosts: nicht alle Spuren verschieden');
+      }
+      if (Math.abs(sp[0] + 1) > 1e-9 || Math.abs(sp[n - 1] - 1) > 1e-9) {
+        schlecht.push(n + ' Ghosts: Breite nicht ausgenutzt (' + sp[0] + ' bis ' + sp[n - 1] + ')');
+      }
+      const summe = sp.reduce((a, b) => a + b, 0);
+      if (Math.abs(summe) > 1e-9) schlecht.push(n + ' Ghosts: Summe ' + summe.toFixed(4));
+    }
+    // Ein einzelner Ghost faehrt die Mitte: ein Versatz waere dort ein Lenkfehler und keine
+    // Linie.
+    if (spuren(1)[0] !== 0) schlecht.push('ein Ghost fährt nicht die Mitte');
+    // Und was das laufende Feld sagt, mitgemeldet - auch wenn es leer ist.
+    const jetzt = echt.length
+      ? echt.map(g => g.name + ' ' + g.spur.toFixed(2)).join(', ')
+      : 'keine Ghosts in der Garage';
+    return { ok: !schlecht.length,
+             mass: '2 Ghosts ' + spuren(2).join('/') + ' | 3 ' + spuren(3).join('/')
+                   + ' | 5 ' + spuren(5).map(x => x.toFixed(1)).join('/')
+                   + ' || aktuell: ' + jetzt
+                   + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // ---- Reifenwaermer ----
+  //
+  // ZWEI Aussagen, und die zweite ist die, auf die es beim Fahren ankommt: die Temperatur
+  // muss stimmen UND sie muss sich als Grip auswirken. Nur die Temperatur zu pruefen liesse
+  // den Fall durch, in dem resetTyres richtig setzt und die Griffrechnung sie ignoriert -
+  // genau so ist die Bremsscheibenanzeige durchgekommen: die Physik lief, und die Anzeige
+  // hing an einem anderen Schalter.
+  //
+  // Die VIER Raeder einzeln, nicht der Mittelwert: der stimmt auch, wenn zwei Raeder kalt
+  // und zwei zu heiss sind.
+  stAdd('Reifenwaermer: warme Reifen beim Start, und sie greifen', () => {
+    const schalter = $('setting-tyre-blankets');
+    if (!schalter) return { skip: true, mass: 'Schalter nicht im Dokument' };
+    if (!window.OMEGA_TEST || !OMEGA_TEST.zustandKopie) {
+      return { skip: true, mass: 'zustandKopie nicht vorhanden' };
+    }
+    const cfg = physEngine.config, st = physEngine.state;
+    const merkState = OMEGA_TEST.zustandKopie(st);
+    const merkCfg = { bl: cfg.tyreBlankets, te: cfg.tyreEffect };
+    const schlecht = [], teile = [];
+    try {
+      // tyreEffect ausdruecklich AN, sonst prueft der Test eine abgeschaltete Simulation -
+      // und ein gruener Test auf einer abgeschalteten Simulation ist schlimmer als keiner.
+      cfg.tyreEffect = 1;
+      const griff = {};
+      for (const an of [false, true]) {
+        cfg.tyreBlankets = an;
+        resetTyres();
+        const soll = an ? cfg.tyreOptimalC : cfg.tyreAmbientC;
+        const ab = st.tyreTemp4.filter(x => Math.abs(x - soll) > 1e-9).length;
+        teile.push((an ? 'an' : 'aus') + ': ' + st.tyreTemp4.map(x => Math.round(x)).join('/')
+                   + '\u00b0');
+        if (ab) schlecht.push((an ? 'an' : 'aus') + ': ' + ab + ' von 4 Raedern falsch');
+        if (Math.abs(st.tyreTempC - soll) > 1e-9) {
+          schlecht.push((an ? 'an' : 'aus') + ': Mittelwert ' + st.tyreTempC.toFixed(1));
+        }
+        // EIN Takt echte Physik, kein Messaufbau dazwischen: tyreGrip wird in update()
+        // aus st.tyreTempC gerechnet, und genau diese Kette soll geprueft werden.
+        st.speedKmh = 60 / REAL_SCALE;
+        st.driveMode = 'forward';
+        physEngine.update({ throttle: 0.2, brake: 0, steering: 0 }, 0.02);
+        griff[an ? 'warm' : 'kalt'] = st.tyreGrip;
+      }
+      teile.push('tyreGrip kalt ' + griff.kalt.toFixed(3) + ' gegen warm '
+                 + griff.warm.toFixed(3));
+      // Warme Reifen MUESSEN mehr Griff haben. Ein Waermer, der die Temperatur setzt und
+      // sonst nichts tut, waere eine Anzeige und keine Einstellung.
+      if (!(griff.kalt < griff.warm - 1e-6)) {
+        schlecht.push('warme Reifen greifen nicht besser (' + griff.kalt.toFixed(4)
+                      + ' gegen ' + griff.warm.toFixed(4) + ')');
+      }
+      // Und das Feld MUSS in calibRef stehen, sonst meldet physConfigDiff auf frischem
+      // Laden eine Abweichung - diese Fehlerklasse hat in v0.4 dreimal Zeit gekostet.
+      if (physEngine.calibRef && !('tyreBlankets' in physEngine.calibRef)) {
+        schlecht.push('tyreBlankets fehlt in calibRef');
+      }
+      return { ok: !schlecht.length,
+               mass: teile.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+    } finally {
+      cfg.tyreBlankets = merkCfg.bl;
+      cfg.tyreEffect = merkCfg.te;
+      OMEGA_TEST.zustandZurueck(st, merkState);
+    }
+  });
+
   // ---- Block 4.4: Reifendruck ----
   // Monoton, ueber den ganzen Reglerbereich. Ein Regler, der in der Mitte umkehrt, ist keine
   // Abstimmung, sondern eine Falle.
@@ -2000,6 +2111,99 @@
       raceLapTimes.length = 0;
       merk.lt.forEach(l => raceLapTimes.push(l));
       dashLastActedCode = merk.ac; dashLastActedAt = merk.aa;
+      setPitState(merk.ps);
+    }
+  });
+
+  // ---- Doppelter Start-Ausdruck auf dem KACHELZAEHLER-WEG ----
+  //
+  // Dies ist der zweite von zwei Wegen, auf denen der Spieler Start/Ziel ueberfaehrt, und
+  // der gewoehnliche: sobald sich Byte 11 bewegt - also sobald das Auto ein Streckenteil
+  // weiterfaehrt -, laeuft der Kontakt hier durch und nicht ueber den Ausdruck-Weg.
+  //
+  // Hier fehlte pitDoubleCheck(), und deshalb zaehlte ein Paar zwei Runden statt einer. Der
+  // vorhandene Test daneben baut Byte 14 = 0x80 und ging nur ueber den anderen Weg - weil er
+  // gruen war, sah die Sache geprueft aus. Ein Test, der einen von zwei Wegen prueft, sagt
+  // nichts ueber den anderen.
+  stAdd('Boxengasse: doppelter Ausdruck auch bei laufendem Kachelzaehler', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.feedNotify) {
+      return { skip: true, mass: 'feedNotify nicht vorhanden' };
+    }
+    const merk = { sp: playerCar, tm: trackMode, pt: pitTrigger, ps: pitState,
+                   rs: raceState, lt: raceLapTimes.slice(), ls: raceLapStart,
+                   ple: pitLaneEnabled, pdf: pitDoubleFirstAt, pdc: pitDoubleCountsLap,
+                   ac: dashLastActedCode, aa: dashLastActedAt,
+                   pc: dashPendingCode, pv: dashPendingSeen, tc: dashLastTileCounter };
+    try {
+      const attrappe = { device: { id: 'st-pit2', name: 'Pruefwagen' }, role: 'player',
+                         rx: null, tx: null, tileCode: 0xff, tileCount: null,
+                         lastCodeAt: 0, yaw: 0, ghost: null, timer: null, race: null };
+      playerCar = attrappe;
+      trackMode = 'off';
+      pitLaneEnabled = true;
+      pitTrigger = 'double';
+      pitDoubleCountsLap = false;
+      raceState = 'racing';
+
+      // Byte 14 = 0x22: Bit 5 gesetzt, also BAHN-Modus - der Weg mit Kachelzaehler.
+      const paket = (code, zaehler) => {
+        const a = new Array(19).fill(0);
+        a[10] = 140; a[11] = zaehler; a[12] = code; a[14] = 0x22;
+        return a;
+      };
+      // Ein Kontakt braucht dreierlei, und alle drei sind Schutzmassnahmen aus v0.4:
+      // denselben Code ZWEIMAL (kein Einzelpaket zaehlt), einen VERAENDERTEN Zaehler, und
+      // keinen Sperrvermerk vom vorigen Kontakt.
+      let zaehler = 0;
+      const kontakt = () => {
+        dashLastActedCode = null;
+        dashLastActedAt = 0;
+        dashPendingCode = null;
+        dashPendingSeen = 0;
+        OMEGA_TEST.feedNotify(paket(0x0a, zaehler), { car: attrappe });
+        OMEGA_TEST.feedNotify(paket(0x0a, zaehler), { car: attrappe });
+        zaehler += 1;
+        OMEGA_TEST.feedNotify(paket(0x0a, zaehler), { car: attrappe });
+      };
+      const alter = (ms) => { if (pitDoubleFirstAt) pitDoubleFirstAt -= ms; };
+
+      const teile = [], schlecht = [];
+
+      // Erster Kontakt: eine Runde. Der Zaehler muss dabei EINMAL gesetzt worden sein,
+      // sonst verwirft der erste Kontakt sich selbst - deshalb ein Vorlauf.
+      dashLastTileCounter = null;
+      raceLapTimes.length = 0;
+      raceLapStart = Date.now() - 5000;
+      pitDoubleFirstAt = 0;
+      setPitState('off');
+      kontakt();
+      const nachEins = raceLapTimes.length;
+      teile.push('ein Kontakt: ' + nachEins + ' Runde');
+      if (nachEins !== 1) schlecht.push('erster Kontakt zaehlt ' + nachEins + ' statt 1');
+
+      // Zweiter Kontakt 1,5 s spaeter: Paar. EINE Runde bleibt stehen, nicht zwei.
+      raceLapStart = Date.now() - 1500;
+      alter(1500);
+      kontakt();
+      const nachZwei = raceLapTimes.length;
+      teile.push('Paar nach 1,5 s: ' + nachZwei + ' Runden, pitState ' + pitState);
+      if (nachZwei !== 1) {
+        schlecht.push('Paar laesst ' + nachZwei + ' Runden stehen statt einer');
+      }
+      if (pitState !== 'limited') schlecht.push('Paar aktiviert die Boxengasse nicht');
+
+      return { ok: !schlecht.length,
+               mass: teile.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+    } finally {
+      playerCar = merk.sp; trackMode = merk.tm; pitTrigger = merk.pt;
+      pitLaneEnabled = merk.ple; pitDoubleFirstAt = merk.pdf;
+      pitDoubleCountsLap = merk.pdc;
+      raceState = merk.rs; raceLapStart = merk.ls;
+      raceLapTimes.length = 0;
+      merk.lt.forEach(l => raceLapTimes.push(l));
+      dashLastActedCode = merk.ac; dashLastActedAt = merk.aa;
+      dashPendingCode = merk.pc; dashPendingSeen = merk.pv;
+      dashLastTileCounter = merk.tc;
       setPitState(merk.ps);
     }
   });

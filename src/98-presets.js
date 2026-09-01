@@ -30,6 +30,9 @@
            // bei einem Viertel Stick an. Weiter als 45 Grad kommt auch das nicht - das ist
            // die Mechanik des Autos.
            'setting-steer-calib': 2.5,
+           // Waermer an: das ist die nachsichtigste Abstimmung, und kalte Reifen in den ersten
+           // Runden sind genau die Sorte Huerde, die Arcade nicht haben soll.
+           'setting-tyre-blankets': true,
            'phys-accel': 1.2,
            // crash-count ist ein INDEX in [1,2,3,4,5,10,20,50]: 7 = fuenfzig Crashs.
            'setting-fuel-drain': 0, 'setting-crash-count': 7,
@@ -69,6 +72,9 @@
            // Anbremsen auf etwa 60 Prozent, und das holt ihn zurueck. Gemessen bei 60 km/h
            // unter Bremsen: 35 Grad ohne, volle 45 Grad ab einem Drittel Stick mit.
            'setting-steer-calib': 2.0,
+           // Waermer an, weil Pro die Vorgabe ist: wer zum ersten Mal faehrt, soll nicht drei
+           // Runden auf Grip warten und das fuer das Fahrverhalten halten.
+           'setting-tyre-blankets': true,
            'phys-accel': 1.0,
            'setting-fuel-drain': 0, 'setting-crash-count': 4,
            'setting-crash-damage': false,
@@ -102,6 +108,9 @@
            'setting-steer-calib': 1.0,
            'phys-accel': 1.0,
            'setting-crash-threshold': 30,
+           // Waermer AUS. Im GT-Sport sind Waermedecken meist untersagt, und die ersten Runden
+           // auf kalten Reifen sind ein Teil dessen, was diese Klasse ausmacht.
+           'setting-tyre-blankets': false,
            'setting-fuel-drain': 3.0, 'setting-crash-count': 5,
            'setting-crash-damage': true,
            'setting-repair-time': 20,
@@ -131,6 +140,8 @@
            'setting-steer-calib': 1.1,
            'phys-accel': 1.0,
            'setting-crash-threshold': 35,
+           // Waermer aus, wie GT3.
+           'setting-tyre-blankets': false,
            'setting-fuel-drain': 2.2, 'setting-crash-count': 5,
            'setting-crash-damage': true,
            'setting-repair-time': 16,
@@ -162,6 +173,9 @@
            'setting-steer-calib': 1.0,
            'phys-accel': 1.0,
            'setting-crash-threshold': 25,
+           // Waermer an. In der Formel 1 waren Waermedecken bis 2024 erlaubt und sind seit 2025
+           // verboten - hier ist es die Einstellung, die zur schaerfsten Klasse passt.
+           'setting-tyre-blankets': true,
            'setting-fuel-drain': 4.5, 'setting-crash-count': 3,
            'setting-crash-damage': true,
            'setting-repair-time': 24,
