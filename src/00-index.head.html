@@ -2199,7 +2199,13 @@
             <path d="M50 4V96M4 50H96" stroke="#1e2634"/>
             <circle id="race-g-real" cx="50" cy="50" r="4.5" fill="#2ee06a" opacity=".85"/>
             <circle id="race-g-sim" cx="50" cy="50" r="5" fill="#ff4d4d"/>
-          </svg></div>
+          </svg>
+          <!-- Das Einspurmodell in ZWEI Zahlen, und beide sind Instrument: keine davon
+               stellt die Lenkung. Gierrate ist, wie schnell das Auto sich dreht;
+               Ausnutzung ist, wieviel von der verf&uuml;gbaren Haftung das Man&ouml;ver
+               verlangt. &Uuml;ber 100 Prozent hei&szlig;t: so f&auml;hrt kein Auto durch
+               diese Kurve. -->
+          <div class="gt3-val sm" id="race-yaw" style="font-size:clamp(9px,1.6vw,13px)">&ndash;</div></div>
       </div>
 
       <div class="gt3-banner" id="gt3-flag"><span id="race-flag"></span></div>
@@ -3670,10 +3676,60 @@
     </div>
 
     <div class="card">
-      <h2>Plan: das Einspurmodell <span class="wip-tag">noch nicht gebaut</span></h2>
+      <h2>Das Einspurmodell <span class="wip-tag">experimentell</span></h2>
       <p class="muted">
-        Das ist ein Bauplan und kein Bericht. Er steht hier, damit der naechste Block nicht
-        neu recherchiert werden muss, und damit nachpruefbar ist, was dabei versprochen wurde.
+        Gebaut in v0.5. Was hier stand, war ein Bauplan; die Abschnitte darunter sind
+        unveraendert geblieben, damit nachpruefbar ist, was versprochen wurde. Dieser Abschnitt
+        sagt, was daraus geworden ist &ndash; und was die Messung dabei ergeben hat.
+      </p>
+      <p class="muted">
+        Die drei Proben aus dem Plan laufen als Selbsttests. Der Kleinwinkel-Grenzfall trifft
+        die reine Geometrie auf 0,01 bis 1,07 Prozent, der Sprungversuch schwingt ein und nicht
+        auf &ndash; auch mit einer absichtlich vierfach ueberhoehten Schraeglaufsteifigkeit, bei
+        der ein explizites Verfahren aufschwingen wuerde &ndash;, und der Eigenlenkgradient
+        faellt aus der stationaeren Kreisfahrt auf 1 bis 2&nbsp;&middot;&nbsp;10&#8315;&#8308;
+        genau heraus.
+      </p>
+      <p class="muted">
+        Eine Probe war zuerst falsch, und zwar meine und nicht das Modell: die Formel
+        &bdquo;Eigenlenkgradient aus zwei Punkten&ldquo; verlangt einen KONSTANTEN Radius bei
+        verschiedenem Tempo. Der erste Aufbau hielt das Tempo fest und veraenderte den
+        Lenkwinkel; damit blieb der geometrische Anteil im Unterschied stehen, und die Probe
+        meldete 0,021 statt 0. Aufgefallen ist es daran, dass der uebertragene Winkel und
+        L&nbsp;&middot;&nbsp;r/v auf 6&nbsp;&middot;&nbsp;10&#8315;&#8309; zusammenfielen &ndash;
+        das Modell hatte also recht.
+      </p>
+
+      <h3 style="font-size:14px; margin:16px 0 6px 0">Der Befund, der die Anzeige begrenzt</h3>
+      <p class="muted">
+        Der BETRAG der gerechneten Querbeschleunigung ist keine brauchbare Anzeige, und das ist
+        eine Eigenschaft dieser App und kein Rechenfehler. Gemessen bei 120&nbsp;km/h und
+        28,8&nbsp;Grad Einschlag: 212&nbsp;m/s&sup2;, also 21&nbsp;g. Die Rechnung ist richtig
+        &ndash; 28,8&nbsp;Grad bei 120&nbsp;km/h IST ein Radius von fuenf Metern, und der IST
+        21&nbsp;g.
+      </p>
+      <p class="muted">
+        Der Widerspruch steckt in den Eingaengen: der Lenkbereich bis 45&nbsp;Grad gehoert zu
+        einem Modellauto, die angezeigten Kilometer je Stunde gehoeren zu einem echten. Ein
+        echtes Auto braucht bei 120&nbsp;km/h wenige Grad; schon vier Grad sind dort ein
+        36-Meter-Radius und damit 3,1&nbsp;g. Bei 25&nbsp;km/h und fuenf Grad kommen dagegen
+        0,17&nbsp;g heraus &ndash; im langsamen Bereich, in dem eine Wohnzimmerstrecke gefahren
+        wird, stimmen die Zahlen.
+      </p>
+      <p class="muted">
+        Deshalb zeigt das Cockpit nicht den Betrag, sondern die AUSNUTZUNG: wieviel von der
+        verfuegbaren Haftung das Manoever verlangt. Ueber 100&nbsp;Prozent steht ein
+        Groesserzeichen &ndash; die Anzeige sagt dann &bdquo;so faehrt kein Auto durch diese
+        Kurve&ldquo; und tut nicht so, als waere es eine feine Abstufung. Dieselbe Ausnutzung ist
+        das, was ein Grenzbereich-Quietschen braucht.
+      </p>
+      <p class="muted">
+        Und eine Stelle, an der das Modell ohne diesen Zusatz nichts gesagt haette: waere die
+        Schraeglaufsteifigkeit strikt proportional zur Achslast, kuerzte sich der
+        Eigenlenkgradient exakt weg &ndash; K<sub>u</sub> waere fuer JEDE Verteilung genau null,
+        und die Anzeige haette jedes Layout als neutral gemeldet. Ein Reifen traegt Seitenkraft
+        aber unterlinear zur Last, und erst dieser Exponent macht aus der Achslastverteilung ein
+        Eigenlenkverhalten.
       </p>
 
       <h3 style="font-size:14px; margin:16px 0 6px 0">Die tragende Entscheidung: Instrument,
@@ -5709,7 +5765,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.4.39</span></span>
+    <span class="foot-ver">v<span id="app-version">0.4.40</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine

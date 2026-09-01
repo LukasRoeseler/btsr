@@ -673,6 +673,26 @@
     const R = 42;
     $('race-g-sim').setAttribute('cx', (50 + Math.max(-1, Math.min(1, st.gLat)) * R).toFixed(1));
     $('race-g-sim').setAttribute('cy', (50 + Math.max(-1, Math.min(1, -st.gLong)) * R).toFixed(1));
+
+    // Das Einspurmodell in zwei Zahlen. Beide sind Instrument.
+    //
+    // Die AUSNUTZUNG traegt den Vorbehalt, den die Messung ergeben hat: der Lenkbereich der
+    // App geht bis 45 Grad und gehoert damit zu einem Modellauto, die angezeigten Tempi
+    // gehoeren zu einem echten. Gemessen sind 4 Grad bei 120 km/h ein Radius von 36 Metern
+    // und damit 3,1 g - richtig gerechnet und fuer ein echtes Auto unmoeglich. Ueber 100
+    // Prozent steht deshalb ein Groesserzeichen: die Anzeige sagt dann "so faehrt kein Auto
+    // durch diese Kurve" und tut nicht so, als waere es eine feine Abstufung.
+    const yawEl = $('race-yaw');
+    if (yawEl) {
+      if (!(physEngine.config.yawModelEffect > 0)) {
+        yawEl.textContent = t('aus');
+      } else {
+        const grad = st.yawRate * 180 / Math.PI;
+        const nutz = Math.round(st.ayUse * 100);
+        yawEl.textContent = Math.abs(grad).toFixed(0) + '°/s · '
+          + (nutz > 100 ? '>100' : nutz) + '%';
+      }
+    }
     const gx = Math.max(-1, Math.min(1, gyroRaw.x / gyroRaw.span));
     const gy = Math.max(-1, Math.min(1, gyroRaw.y / gyroRaw.span));
     $('race-g-real').setAttribute('cx', (50 + gx * R).toFixed(1));

@@ -498,6 +498,33 @@
         // noch (45 bis 39 Grad), und die Reihenfolge folgt der Vorderachslast.
         frontAxleEffect: 0.15,
 
+        // ---- Einspurmodell (Instrument) ----------------------------------------------
+        //
+        // Die Schraeglaufsteifigkeit der GANZEN Achse bei voller Last, in Newton je Radiant.
+        // Aufgeteilt wird sie nach der Achslast, damit der Eigenlenkgradient allein aus der
+        // Verteilung folgt - zwei unabhaengige Zahlen je Achse waeren die Gelegenheit, dass
+        // Layout und Eigenlenkverhalten auseinanderlaufen.
+        //
+        // Der Betrag ist eine Klassenschaetzung fuer einen Rennreifen (etwa 1200 N/Grad je
+        // Achse). Er setzt die Zeitkonstante der Gierdynamik; auf sie kommt es an, nicht auf
+        // die absolute Kraft, denn eine Kraft kann dieses Modell ohnehin nicht ausgeben.
+        corneringStiffness: 140000,
+        // Fahrzeugmasse in kg. Nur fuer das Einspurmodell - der Vortrieb rechnet mit
+        // massFactor, das gegen eine Messung kalibriert ist und hiervon unberuehrt bleibt.
+        vehicleMassKg: 1300,
+        // 0 schaltet das Modell ab: dann bleiben alle Anzeigen leer statt zu luegen.
+        yawModelEffect: 1,
+        // Lastempfindlichkeit der Achssteifigkeit. WESENTLICH und nicht Feinschliff: mit
+        // strikter Proportionalitaet (Exponent 1) kuerzt sich der Eigenlenkgradient exakt
+        // weg - kU = m*f/(C*f) - m*(1-f)/(C*(1-f)) = 0 fuer JEDE Verteilung -, und das Modell
+        // meldete jedes Layout als neutral. 0,85 ist der uebliche Bereich fuer einen
+        // Rennreifen.
+        stiffnessLoadExp: 0.85,
+        // Verfuegbare Querbeschleunigung in g. Bezug fuer ayUse und die
+        // Grenzgeschwindigkeit. 1,4 g ist der uebliche Bereich fuer einen Rennslick auf
+        // Asphalt; gripScale (Regen) multipliziert darauf.
+        gripLimitG: 1.4,
+
         // loadFrontOnPower und loadFrontOnBrake standen HIER als eigene Felder (0,20 und
         // 0,80). Sie sind weggefallen, weil sie 0,5 -/+ transferK sind - dieselbe Geometrie
         // an einem zweiten Ort. Mit veraenderlicher statischer Achslast waere jede
@@ -581,6 +608,16 @@
         // dem Deckel. Ohne ihn ist nicht messbar, wie viel die Kalibrierung ueberhaupt
         // zurueckholt - und was sich nicht messen laesst, kann man nicht einstellen.
         steerDemand: 0,
+        // ---- Einspurmodell. ALLE Instrument, keines stellt die Lenkung. ----
+        yawRate: 0,        // rad/s, positiv = Rechtsdrehung
+        slipAngle: 0,      // rad, Schwimmwinkel am Schwerpunkt
+        alphaFront: 0,     // rad, Schraeglaufwinkel vorn
+        alphaRear: 0,      // rad, Schraeglaufwinkel hinten
+        ayModel: 0,        // m/s^2, gerechnete Querbeschleunigung
+        kU: 0,             // s^2/m, Eigenlenkgradient: >0 untersteuernd
+        yawSteady: 0,      // rad/s, stationaere Gierrate zum aktuellen Lenkwinkel
+        ayUse: 0,          // ayModel / ayLimit: 1 = am Haftungsende, >1 unmoeglich
+        vLimitKmh: 0,      // Grenzgeschwindigkeit fuer den gerade gefahrenen Radius
         isShifting: false,
         absActive: false,
         lastAbsRumble: 0,
@@ -609,6 +646,142 @@
       // nichts, aber ein Layout, das vor dem Kalibrierbezug gesetzt wuerde, waere danach
       // nicht mehr davon zu unterscheiden - und physConfigDiff() koennte es nicht melden.
       this.applyLayout('neutral');
+    }
+
+    // ---- EINSPURMODELL, ein Schritt ---------------------------------------------------
+    //
+    // INSTRUMENT UND KEIN AKTOR. Nichts hiervon stellt die Lenkung, und der Grund ist keine
+    // Vorsicht, sondern eine Tatsache: das Modellauto rutscht nicht. Ein Modell, das eine
+    // Bewegung rechnet, die das Fahrzeug nicht ausfuehren kann, wuerde die Vorgabe von der
+    // Wirklichkeit wegdrehen - das Auto faehrt geradeaus, die Simulation meldet eine Drift,
+    // und die App korrigiert eine Bewegung, die es nicht gibt.
+    //
+    // HALBIMPLIZIT und nicht explizit. Die Doku nennt das als den besseren der zwei Wege, und
+    // die Begruendung ist nachrechenbar: die Zeitkonstante der Gierdynamik liegt bei 0,2 bis
+    // 0,5 s, der Sendetakt bei 45 ms, und explizites Euler wird instabil, sobald die
+    // Schraeglaufsteifigkeit hoch wird. Halbimplizit heisst hier: die neuen Zustaende stehen
+    // im Nenner mit, und der Schritt bleibt bei jeder Steifigkeit stabil.
+    //
+    // DIE STEIFIGKEITEN FOLGEN DER ACHSLAST und sind nicht getrennt eingetippt. Damit kommt
+    // der Eigenlenkgradient allein aus der Verteilung - genau die Aussage, die das Layout
+    // treffen soll. Zwei unabhaengige Zahlen waeren die Gelegenheit, dass Layout und
+    // Eigenlenkverhalten auseinanderlaufen.
+    yawStep(dt) {
+      const st = this.state, cfg = this.config;
+      if (!(cfg.yawModelEffect > 0)) {
+        st.yawRate = 0; st.slipAngle = 0; st.alphaFront = 0; st.alphaRear = 0;
+        st.ayModel = 0; st.kU = 0; st.yawSteady = 0;
+        return;
+      }
+      // ECHTE Einheiten. st.speedKmh ist der Modellmasstab; angezeigt und gerechnet wird mit
+      // dem hochskalierten Tempo, weil die Gleichungen fuer ein echtes Auto gelten.
+      const v = Math.abs(st.speedKmh) * REAL_SCALE / 3.6;   // m/s
+      const L = cfg.wheelbaseM;
+      const lv = L * (1 - cfg.loadFrontStatic);   // Abstand Schwerpunkt -> Vorderachse
+      const lh = L * cfg.loadFrontStatic;         // ... -> Hinterachse
+      const m = cfg.vehicleMassKg;
+      const Iz = cfg.yawInertia;
+      // DIE STEIFIGKEIT WAECHST UNTERLINEAR MIT DER LAST, und das ist nicht Feinschliff,
+      // sondern der Grund, warum das Modell ueberhaupt etwas sagt.
+      //
+      // Mit strikter Proportionalitaet (Cv = C*f) kuerzt sich der Eigenlenkgradient exakt
+      // weg: kU = m*f/(C*f) - m*(1-f)/(C*(1-f)) = m/C - m/C = 0, und zwar fuer JEDE
+      // Verteilung. Das Modell haette jedes Layout als neutral gemeldet - eine Anzeige, die
+      // aussieht wie eine Messung und immer dasselbe sagt.
+      //
+      // Ein Reifen traegt Seitenkraft unterlinear zur Last (dieselbe Lastempfindlichkeit,
+      // die weiter oben schon frontCap formt). Damit wird
+      //   kU = (m/C) * (f^(1-p) - (1-f)^(1-p))
+      // und das ist bei f = 0,5 genau null, bei mehr Last hinten negativ - uebersteuernd,
+      // wie ein hecklastiges Auto.
+      const p = cfg.stiffnessLoadExp;
+      const Cv = cfg.corneringStiffness * Math.pow(cfg.loadFrontStatic, p);
+      const Ch = cfg.corneringStiffness * Math.pow(1 - cfg.loadFrontStatic, p);
+
+      // Der Eigenlenkgradient. Er haengt NICHT vom Tempo ab und wird deshalb immer gerechnet,
+      // auch im Stand: die Anzeige soll sagen, was das Auto IST, und nicht nur, was es
+      // gerade tut.
+      st.kU = (m * cfg.loadFrontStatic) / Cv - (m * (1 - cfg.loadFrontStatic)) / Ch;
+
+      // Der uebertragene Winkel in Radiant. servoAngle ist auf -1..1 normiert, und 1 ist der
+      // mechanische Anschlag von STEER_MAX_DEG.
+      const delta = (this.outputs.servoAngle || 0) * STEER_MAX_DEG * Math.PI / 180;
+
+      // Unter einer Mindestfahrt ist das Modell bedeutungslos: die Schraeglaufwinkel haben v
+      // im Nenner, und im Stand geht alles gegen unendlich. Dann steht die Gierrate auf null
+      // und die Anzeige sagt nichts - was ehrlicher ist, als eine Zahl zu zeigen, die aus
+      // einer Division durch fast null kommt.
+      if (v < 0.5) {
+        st.yawRate = 0; st.slipAngle = 0; st.alphaFront = 0; st.alphaRear = 0;
+        st.ayModel = 0; st.yawSteady = 0;
+        return;
+      }
+
+      // Die stationaere Gierrate zum aktuellen Winkel, aus der Doku-Gleichung
+      // delta = L/R + kU * ay, mit ay = v * r und r = v / R:
+      //   delta = r * (L + kU * v^2) / v   ->   r = delta * v / (L + kU * v^2)
+      st.yawSteady = delta * v / Math.max(1e-6, L + st.kU * v * v);
+
+      // Halbimplizit: die Ableitungen mit den NEUEN Zustaenden aufgestellt und aufgeloest.
+      //
+      //   m*v*(beta' + r) = Fv + Fh
+      //   Iz*r'           = Fv*lv - Fh*lh
+      //   Fv = -Cv*(beta + lv*r/v - delta),   Fh = -Ch*(beta - lh*r/v)
+      //
+      // Zusammengefasst mit a11..a22 und den Eingangsgliedern b1, b2. Ein 2x2-System je
+      // Takt - bei 6,7 Mikrosekunden Gesamtphysik ist das nichts.
+      const a11 = -(Cv + Ch) / (m * v);
+      const a12 = -1 - (Cv * lv - Ch * lh) / (m * v * v);
+      const a21 = -(Cv * lv - Ch * lh) / Iz;
+      const a22 = -(Cv * lv * lv + Ch * lh * lh) / (Iz * v);
+      const b1 = Cv / (m * v);
+      const b2 = Cv * lv / Iz;
+
+      // (I - dt*A) * x_neu = x_alt + dt*B*delta
+      const m11 = 1 - dt * a11, m12 = -dt * a12;
+      const m21 = -dt * a21, m22 = 1 - dt * a22;
+      const r1 = st.slipAngle + dt * b1 * delta;
+      const r2 = st.yawRate + dt * b2 * delta;
+      const det = m11 * m22 - m12 * m21;
+      if (Math.abs(det) > 1e-12) {
+        st.slipAngle = (r1 * m22 - m12 * r2) / det;
+        st.yawRate = (m11 * r2 - r1 * m21) / det;
+      }
+
+      // Die Schraeglaufwinkel und die Querbeschleunigung folgen aus den zwei Zustaenden.
+      st.alphaFront = st.slipAngle + lv * st.yawRate / v - delta;
+      st.alphaRear = st.slipAngle - lh * st.yawRate / v;
+      // ay aus den KRAEFTEN und nicht aus v*(r + beta'): dieselbe Groesse, aber ohne einen
+      // Differenzenquotienten, der bei 45 ms rauscht.
+      const Fv = -Cv * st.alphaFront;
+      const Fh = -Ch * st.alphaRear;
+      st.ayModel = (Fv + Fh) / m;
+
+      // ---- WAS DAS MODELL EHRLICH SAGEN KANN ------------------------------------------
+      //
+      // Der BETRAG von ayModel ist fuer sich genommen keine brauchbare Anzeige, und das ist
+      // eine Eigenschaft dieser App und kein Rechenfehler. Gemessen bei 120 km/h und 28,8
+      // Grad Einschlag: 212 m/s^2, also 21 g. Die Rechnung ist richtig - 28,8 Grad bei
+      // 120 km/h IST ein Radius von 5 Metern, und der IST 21 g.
+      //
+      // Der Widerspruch steckt in den Eingaengen: der Lenkbereich bis 45 Grad gehoert zu
+      // einem Modellauto, die angezeigten Kilometer je Stunde gehoeren zu einem echten. Ein
+      // echtes Auto braucht bei 120 km/h wenige Grad. Das Modell meldet also korrekt ein
+      // unmoegliches Manoever.
+      //
+      // Brauchbar wird es als VERHAELTNIS. Zwei Groessen, und beide sagen etwas:
+      //   ayUse      wieviel von der verfuegbaren Haftung das Manoever verlangt. Ueber 1
+      //              heisst: so faehrt kein Auto durch diese Kurve.
+      //   vLimitKmh  bei welchem Tempo der gerade gefahrene Radius noch halten wuerde.
+      //
+      // Damit ist aus einer absurden Zahl eine Aussage geworden - und genau diese Ausnutzung
+      // ist auch das, was ein Grenzbereich-Quietschen braucht.
+      const ayLimit = 9.81 * cfg.gripLimitG * cfg.gripScale;
+      st.ayUse = Math.abs(st.ayModel) / Math.max(0.1, ayLimit);
+      // Der gefahrene Radius aus Tempo und Gierrate: R = v / r. Bei fast gerader Fahrt geht
+      // er gegen unendlich, dann ist die Grenzgeschwindigkeit bedeutungslos und bleibt 0.
+      const radius = Math.abs(st.yawRate) > 0.02 ? v / Math.abs(st.yawRate) : 0;
+      st.vLimitKmh = radius > 0 ? Math.sqrt(ayLimit * radius) * 3.6 : 0;
     }
 
     // Ein Layout anwenden. Setzt die drei Fahrzeugwerte und leitet daraus ab, was abzuleiten
@@ -1327,9 +1500,24 @@
       this.outputs.servoAngle = Math.max(-1, Math.min(1,
         st.steerDemand * cfg.steerCalib + zug));
 
-      // Values for the G plot. Lateral force rises with steer angle and speed; longitudinal
-      // is the lagged demand, which is what the body actually feels.
-      st.gLat = this.state.dampedSteering * (Math.abs(st.speedKmh) / cfg.topSpeedKmh);
+      // ---- EINSPURMODELL, ein Schritt --------------------------------------------------
+      //
+      // HIER und nicht weiter oben: der Eingang ist der UEBERTRAGENE Winkel (servoAngle), und
+      // der steht erst wenige Zeilen darueber fest. Das Modell soll zeigen, was aus dem
+      // Winkel folgt, der wirklich am Auto ankommt - nicht aus dem, den der Daumen wollte.
+      this.yawStep(dt);
+
+      // Der G-Plot zeigt jetzt die GERECHNETE Querbeschleunigung statt einer Naeherung.
+      //
+      // Hier stand dampedSteering * (Tempo / Hoechsttempo) - ein Produkt, das mit der
+      // Querbeschleunigung nur die Richtung teilte. Auf 1 g normiert, weil der Plot einen
+      // Kreis von -1 bis 1 zeichnet.
+      // Auf die HAFTGRENZE normiert und nicht auf 1 g: der Plot zeichnet einen Kreis von
+      // -1 bis 1, und 1 soll "am Haftungsende" heissen. Auf 1 g normiert klebte der Punkt
+      // schon bei maessiger Kurvenfahrt am Rand und sagte nichts mehr.
+      st.gLat = cfg.yawModelEffect > 0
+        ? Math.max(-1.5, Math.min(1.5, Math.sign(st.ayModel) * st.ayUse))
+        : this.state.dampedSteering * (Math.abs(st.speedKmh) / cfg.topSpeedKmh);
       st.gLong = st.longUse;
       this.outputs.motorPWM = Math.max(-1, Math.min(1, output));
       this.outputs.lights.head = !!inputs.headlights;

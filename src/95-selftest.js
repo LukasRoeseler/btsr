@@ -1315,6 +1315,132 @@
                    + ', Attribut ' + (markiert ? 'gesetzt' : 'FEHLT') };
   });
 
+  // ---- Einspurmodell, Probe 1: der Kleinwinkel-Grenzfall ----
+  //
+  // DIE STAERKSTE der drei, weil sie gegen eine Formel prueft, die man nicht bestreiten kann:
+  // bei kleinem Winkel und niedrigem Tempo muss das Modell dasselbe sagen wie die reine
+  // Geometrie, r = delta * v / L. Ein Modell, das im einfachsten Fall von der Schulformel
+  // abweicht, ist an einer Stelle falsch, die man ohne diese Probe lange nicht findet.
+  stAdd('Einspurmodell: Kleinwinkel trifft die Geometrie', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.physYawGeometry) {
+      return { skip: true, mass: 'physYawGeometry nicht vorhanden' };
+    }
+    const schlecht = [], teile = [];
+    // Fuer JEDES Layout, denn der Radstand geht in die Formel ein.
+    for (const layout of ['neutral', 'gt3front', 'gt3rear', 'f1']) {
+      const r = OMEGA_TEST.physYawGeometry({ layout });
+      teile.push(layout + ' ' + (r.abweichungProzent === null ? '?' : r.abweichungProzent + '%'));
+      if (r.abweichungProzent === null || Math.abs(r.abweichungProzent) > 2) {
+        schlecht.push(layout + ': ' + r.abweichungProzent + ' % gegen die Geometrie');
+      }
+    }
+    return { ok: !schlecht.length,
+             mass: 'Abweichung von delta*v/L: ' + teile.join('  ')
+                   + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // ---- Einspurmodell, Probe 2: der Sprungversuch ----
+  //
+  // Lenkwinkel schlagartig anlegen. Die Gierrate MUSS einschwingen und nicht aufschwingen -
+  // und zwar im SENDETAKT von 45 ms, nicht in einem feinen Prueftakt. Genau dafuer ist der
+  // Schritt halbimplizit: bei 45 ms und hoher Schraeglaufsteifigkeit wird explizites Euler
+  // instabil.
+  stAdd('Einspurmodell: Sprungversuch schwingt ein, nicht auf', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.physYawStep) {
+      return { skip: true, mass: 'physYawStep nicht vorhanden' };
+    }
+    const schlecht = [], teile = [];
+    for (const layout of ['neutral', 'gt3rear', 'f1']) {
+      // Auch mit einer ABSICHTLICH ueberhohen Steifigkeit: dort wuerde ein explizites
+      // Verfahren aufschwingen, und nur so sagt der Test etwas ueber das Verfahren.
+      for (const [name, cfg] of [['normal', {}], ['steif', { corneringStiffness: 600000 }]]) {
+        const r = OMEGA_TEST.physYawStep({ layout, cfg });
+        teile.push(layout + '/' + name + ' ' + r.ueberschwingen.toFixed(2));
+        if (!r.endlich) schlecht.push(layout + '/' + name + ': nicht endlich');
+        // 1,0 heisst monoton eingeschwungen. Bis 1,3 ist ein gedaempftes Ueberschwingen,
+        // darueber schwingt es auf.
+        if (r.ueberschwingen > 1.3) {
+          schlecht.push(layout + '/' + name + ': Ueberschwingen '
+                        + r.ueberschwingen.toFixed(2));
+        }
+      }
+    }
+    return { ok: !schlecht.length,
+             mass: 'Spitze/Endwert: ' + teile.join('  ')
+                   + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // ---- Einspurmodell, Probe 3: der Eigenlenkgradient faellt heraus ----
+  //
+  // Aus zwei Punkten einer stationaeren Kreisfahrt: kU = (delta2-delta1)/(ay2-ay1). Der
+  // herausgerechnete Wert muss den eingestellten treffen, sonst ist ein Vorzeichen oder eine
+  // Achslast falsch.
+  //
+  // UND DAS VORZEICHEN JE LAYOUT, denn das ist die eigentliche Aussage: mehr Last hinten
+  // heisst uebersteuernd, also kU negativ. Waeren die Achssteifigkeiten strikt proportional
+  // zur Last, waere kU fuer JEDE Verteilung genau null - das Modell haette jedes Layout als
+  // neutral gemeldet, und dieser Test faellt genau darauf.
+  stAdd('Einspurmodell: Eigenlenkgradient stimmt und hat das richtige Vorzeichen', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.physYawCircle || !OMEGA_TEST.physLayouts) {
+      return { skip: true, mass: 'Messaufbau nicht vorhanden' };
+    }
+    const schlecht = [], teile = [];
+    const tab = OMEGA_TEST.physLayouts();
+    for (const layout of ['neutral', 'gt3front', 'gt3mid', 'gt3rear', 'f1']) {
+      // Kleine Winkel und niedriges Tempo: dort ist das Modell im linearen Bereich, und nur
+      // dort gilt die stationaere Gleichung, aus der kU herausfaellt.
+      // KONSTANTER RADIUS und zwei Tempi - nur so kuerzt sich der geometrische Anteil L/R
+      // aus dem Unterschied heraus. Mit festem Tempo und wechselndem Lenkwinkel meldete die
+      // Probe 0,021 statt 0, und der Fehler lag in der Messung: L/R blieb im Unterschied
+      // stehen. Nachgewiesen wurde es daran, dass delta und L*r/v auf 6*10^-5 zusammenfielen.
+      const r = OMEGA_TEST.physYawCircle({ layout, radius: 40, tempi: [30, 55] });
+      const vorn = tab[layout].vorn;
+      teile.push(layout + ' ' + r.kuEingestellt.toFixed(4) + '/' + r.kuGemessen.toFixed(4));
+      // Der herausgerechnete Wert gegen den eingestellten. Absolute Schranke, weil beide
+      // klein sind und ein Verhaeltnis bei kU nahe null nichts sagt.
+      //
+      // 3*10^-4 und nicht 0,02: gemessen trifft die Probe auf 1 bis 2*10^-4, und eine
+      // Schranke, die hundertfach darueber liegt, faengt nichts. Sie war zuerst so lose, weil
+      // die MESSUNG falsch war (festes Tempo statt fester Radius) - eine weite Schranke um
+      // einen Messfehler herum ist die Sorte Test, die spaeter nichts meldet.
+      if (Math.abs(r.kuGemessen - r.kuEingestellt) > 3e-4) {
+        schlecht.push(layout + ': gemessen ' + r.kuGemessen.toFixed(4)
+                      + ' gegen eingestellt ' + r.kuEingestellt.toFixed(4));
+      }
+      // Das VORZEICHEN: mehr Last vorn heisst untersteuernd (kU > 0), mehr hinten
+      // uebersteuernd (kU < 0), 50:50 neutral.
+      if (Math.abs(vorn - 0.5) < 1e-9) {
+        if (Math.abs(r.kuEingestellt) > 1e-6) schlecht.push(layout + ': 50:50 ist nicht neutral');
+      } else if (vorn < 0.5 && !(r.kuEingestellt < 0)) {
+        schlecht.push(layout + ': hecklastig, aber kU nicht negativ');
+      } else if (vorn > 0.5 && !(r.kuEingestellt > 0)) {
+        schlecht.push(layout + ': frontlastig, aber kU nicht positiv');
+      }
+    }
+    // Und die Layouts muessen sich UEBERHAUPT unterscheiden - sonst prueft der Test nur, dass
+    // alles null ist.
+    const werte = ['neutral', 'gt3mid', 'gt3rear', 'f1'].map(l => tab[l].vorn);
+    if (new Set(werte).size < 3) schlecht.push('zu wenige verschiedene Achslasten');
+    return { ok: !schlecht.length,
+             mass: 'kU eingestellt/gemessen: ' + teile.join('  ')
+                   + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // ---- Einspurmodell: abgeschaltet luegt es nicht ----
+  //
+  // yawModelEffect 0 muss ALLE Felder auf null setzen. Ein Modell, das abgeschaltet den
+  // letzten Wert stehen laesst, zeigt eine Gierrate fuer ein Auto, das gerade steht - und das
+  // ist schlimmer als keine Anzeige.
+  stAdd('Einspurmodell: abgeschaltet bleibt alles null', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.physYawStep) {
+      return { skip: true, mass: 'physYawStep nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.physYawStep({ cfg: { yawModelEffect: 0 } });
+    const ok = r.ende === 0 && r.spitze === 0;
+    return { ok, mass: ok ? 'Gierrate bleibt 0'
+                          : 'Endwert ' + r.ende + ', Spitze ' + r.spitze };
+  });
+
   // ---- Block 4.4: Reifendruck ----
   // Monoton, ueber den ganzen Reglerbereich. Ein Regler, der in der Mitte umkehrt, ist keine
   // Abstimmung, sondern eine Falle.

@@ -2981,6 +2981,160 @@
       }
     },
 
+    // ---- Probe 1: STATIONAERE KREISFAHRT --------------------------------------------
+    //
+    // Festes Tempo, fester Lenkwinkel, warten bis die Gierrate steht. Dann gilt die
+    // Doku-Gleichung delta = L/R + kU*ay, und der Eigenlenkgradient faellt aus ZWEI
+    // Messpunkten heraus: kU = (delta2 - delta1) / (ay2 - ay1).
+    //
+    // Der Wert MUSS den eingestellten treffen. Trifft er nicht, ist irgendwo ein Vorzeichen
+    // oder eine Achslast falsch - und zwar messbar, nicht nach Gefuehl.
+    physYawCircle(o) {
+      const opt = o || {};
+      const e = physEngine, st = e.state, cfg = e.config;
+      const merkState = OMEGA_TEST.zustandKopie(st);
+      const merk = Object.assign({}, cfg);
+      const merkLayout = e.layoutName || 'neutral';
+      try {
+        if (opt.layout) e.applyLayout(opt.layout);
+        for (const k of Object.keys(opt.cfg || {})) cfg[k] = opt.cfg[k];
+        const dt = 0.02;
+        const R = opt.radius || 40;      // Meter, fester Kurvenradius
+        const tempi = opt.tempi || [30, 55];   // angezeigte km/h
+
+        // Eine stationaere Fahrt bei festem Tempo und fester Stickstellung.
+        const fahre = (kmh, stick, sekunden) => {
+          st.yawRate = 0; st.slipAngle = 0;
+          st.driveMode = 'forward'; st.currentGear = 3; st.isShifting = false;
+          for (let t = 0; t < sekunden; t += dt) {
+            st.speedKmh = kmh / REAL_SCALE;
+            e.update({ throttle: 0.2, brake: 0, steering: stick }, dt);
+          }
+          const v = kmh / 3.6;
+          return { delta: (e.outputs.servoAngle || 0) * 45 * Math.PI / 180,
+                   r: st.yawRate, ay: st.ayModel,
+                   radius: Math.abs(st.yawRate) > 1e-6 ? v / Math.abs(st.yawRate) : Infinity };
+        };
+
+        // Die Stickstellung SUCHEN, die den Zielradius ergibt. Der Lenkwinkel ist ein
+        // Ausgang - er laeuft durch Servorate, Kalibrierung und Reibkreis -, also kann man
+        // ihn nicht setzen, sondern nur treffen.
+        const suche = (kmh) => {
+          let lo = 0.002, hi = 1;
+          let letzte = null;
+          for (let k = 0; k < 22; k++) {
+            const mid = (lo + hi) / 2;
+            letzte = fahre(kmh, mid, 4);
+            // Zu klein gelenkt heisst zu grosser Radius.
+            if (letzte.radius > R) lo = mid; else hi = mid;
+          }
+          return { stick: (lo + hi) / 2, ...fahre(kmh, (lo + hi) / 2, 6) };
+        };
+
+        const a = suche(tempi[0]);
+        const b = suche(tempi[1]);
+        // JETZT kuerzt sich L/R heraus, weil beide Punkte denselben Radius haben.
+        const kuGemessen = (b.delta - a.delta) / ((b.ay - a.ay) || 1e-9);
+        return { punkte: [a, b].map(p => ({ stick: +p.stick.toFixed(4),
+                                            delta: +p.delta.toFixed(5),
+                                            r: +p.r.toFixed(5), ay: +p.ay.toFixed(4),
+                                            radius: +p.radius.toFixed(2) })),
+                 zielRadius: R,
+                 kuGemessen: +kuGemessen.toFixed(6),
+                 kuEingestellt: +st.kU.toFixed(6),
+                 radstand: cfg.wheelbaseM };
+      } finally {
+        Object.assign(cfg, merk);
+        e.calibrateAccel();
+        e.applyLayout(merkLayout);
+        OMEGA_TEST.zustandZurueck(st, merkState);
+      }
+    },
+
+    // ---- Probe 2: SPRUNGVERSUCH -----------------------------------------------------
+    //
+    // Lenkwinkel schlagartig anlegen, Gierrate mitschreiben. Sie MUSS einschwingen und nicht
+    // aufschwingen; tut sie das, ist die Schrittweite zu grob. Genau dafuer ist der Schritt
+    // halbimplizit.
+    physYawStep(o) {
+      const opt = o || {};
+      const e = physEngine, st = e.state, cfg = e.config;
+      const merkState = OMEGA_TEST.zustandKopie(st);
+      const merk = Object.assign({}, cfg);
+      const merkLayout = e.layoutName || 'neutral';
+      try {
+        if (opt.layout) e.applyLayout(opt.layout);
+        for (const k of Object.keys(opt.cfg || {})) cfg[k] = opt.cfg[k];
+        const dt = opt.dt || 0.045;   // der SENDETAKT, nicht ein feiner Prueftakt
+        const kmh = opt.kmh || 160;
+        st.yawRate = 0; st.slipAngle = 0;
+        st.driveMode = 'forward'; st.currentGear = 3; st.isShifting = false;
+        // Erst geradeaus einlaufen, damit der Sprung ein Sprung ist.
+        for (let t = 0; t < 1; t += dt) {
+          st.speedKmh = kmh / REAL_SCALE;
+          e.update({ throttle: 0.2, brake: 0, steering: 0 }, dt);
+        }
+        const spur = [];
+        for (let t = 0; t < 3; t += dt) {
+          st.speedKmh = kmh / REAL_SCALE;
+          e.update({ throttle: 0.2, brake: 0, steering: 1 }, dt);
+          spur.push(+st.yawRate.toFixed(6));
+        }
+        const ende = spur[spur.length - 1];
+        const spitze = Math.max.apply(null, spur.map(Math.abs));
+        // Ueberschwingen als Anteil des Endwerts. Ein Einschwingen hat wenig, ein
+        // Aufschwingen viel - und ein instabiler Schritt waechst ohne Grenze.
+        const ueber = Math.abs(ende) > 1e-9 ? spitze / Math.abs(ende) : 0;
+        return { punkte: spur.length, ende: +ende.toFixed(6), spitze: +spitze.toFixed(6),
+                 ueberschwingen: +ueber.toFixed(4),
+                 endlich: spur.every(x => isFinite(x)),
+                 spurAnfang: spur.slice(0, 8), spurEnde: spur.slice(-4) };
+      } finally {
+        Object.assign(cfg, merk);
+        e.calibrateAccel();
+        e.applyLayout(merkLayout);
+        OMEGA_TEST.zustandZurueck(st, merkState);
+      }
+    },
+
+    // ---- Probe 3: DER KLEINWINKEL-GRENZFALL -----------------------------------------
+    //
+    // Bei sehr kleinem Lenkwinkel und niedrigem Tempo muss das Modell dasselbe sagen wie die
+    // reine Geometrie: r = v/R und delta = L/R, also r = delta * v / L. Ein Modell, das im
+    // einfachsten Fall von der Schulformel abweicht, ist an einer Stelle falsch, die man ohne
+    // diese Probe lange nicht findet.
+    physYawGeometry(o) {
+      const opt = o || {};
+      const e = physEngine, st = e.state, cfg = e.config;
+      const merkState = OMEGA_TEST.zustandKopie(st);
+      const merk = Object.assign({}, cfg);
+      const merkLayout = e.layoutName || 'neutral';
+      try {
+        if (opt.layout) e.applyLayout(opt.layout);
+        const dt = 0.02;
+        const kmh = opt.kmh || 25;      // niedrig: dort ist der Eigenlenkanteil kU*v^2 klein
+        const lenk = opt.lenk || 0.06;  // kleiner Winkel
+        st.yawRate = 0; st.slipAngle = 0;
+        st.driveMode = 'forward'; st.currentGear = 1; st.isShifting = false;
+        for (let t = 0; t < 6; t += dt) {
+          st.speedKmh = kmh / REAL_SCALE;
+          e.update({ throttle: 0.15, brake: 0, steering: lenk }, dt);
+        }
+        const v = kmh / 3.6;
+        const delta = (e.outputs.servoAngle || 0) * 45 * Math.PI / 180;
+        const rGeometrie = delta * v / cfg.wheelbaseM;
+        return { v: +v.toFixed(3), delta: +delta.toFixed(5),
+                 rModell: +st.yawRate.toFixed(6), rGeometrie: +rGeometrie.toFixed(6),
+                 abweichungProzent: rGeometrie ? +(100 * (st.yawRate - rGeometrie)
+                                                  / rGeometrie).toFixed(2) : null };
+      } finally {
+        Object.assign(cfg, merk);
+        e.calibrateAccel();
+        e.applyLayout(merkLayout);
+        OMEGA_TEST.zustandZurueck(st, merkState);
+      }
+    },
+
     physTyreAsym(o) {
       const opt = o || {};
       const e = physEngine, st = e.state, cfg = e.config;
