@@ -1696,13 +1696,25 @@
   //
   // Die Abfrage steht hier und nicht an den 18 Aufrufstellen: eine Stelle kann nicht
   // vergessen werden, achtzehn schon.
-  let rumbleOn = false;
+  // Der Startwert steht hier UND im Markup. Damit sie nicht auseinanderlaufen koennen,
+  // liest 50-drive.js ihn beim Aufbau aus dem Kaestchen - dieser Wert gilt also nur, bis das
+  // Dokument da ist. Er ist trotzdem auf den Markup-Wert gesetzt, damit die zwei Orte auch
+  // beim Lesen dasselbe sagen.
+  let rumbleOn = true;
 
   function padRumble(strong, weak, ms) {
     if (!rumbleOn) return;
     try {
       const pads = navigator.getGamepads ? navigator.getGamepads() : [];
-      for (const p of pads) {
+      // DENSELBEN PAD NEHMEN WIE DIE EINGABE. Windows zeigt denselben Controller oft zweimal
+      // (ein DualSense ueber Bluetooth erscheint als zugeordnetes UND als rohes HID-Geraet),
+      // und pollGamepad() bevorzugt darum ausdruecklich mapping === 'standard'. Hier wurde
+      // stattdessen der erste Pad mit einem Ruettler genommen - das kann der rohe Zwilling
+      // sein, an dem nichts haengt. Zwei verschiedene Auswahlregeln fuer dasselbe Geraet
+      // sind eine Falle, und sie kostet genau das Ruetteln.
+      const liste = Array.from(pads).filter(p => p);
+      const bevorzugt = liste.find(p => p.mapping === 'standard') || liste[0];
+      for (const p of (bevorzugt ? [bevorzugt, ...liste.filter(x => x !== bevorzugt)] : [])) {
         if (p && p.vibrationActuator && typeof p.vibrationActuator.playEffect === 'function') {
           p.vibrationActuator.playEffect('dual-rumble', {
             duration: ms, startDelay: 0,

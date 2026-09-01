@@ -257,6 +257,13 @@
     markDrivetrainChartsDirty();
   });
 
+  // AUS DEM MARKUP LESEN, nicht nur auf Aenderungen hoeren. Der Schalter stand auf an und
+  // rumbleOn auf false: die Vibration war tot, bis man ihn zweimal umlegte. Gemeldet als
+  // "Controller Vibration ist zwar an, aber es geht nicht" - und genau das war es.
+  //
+  // Dasselbe Muster wie bei setting-offtrack ein paar Zeilen weiter unten, das es schon
+  // richtig macht. Ein Selbsttest prueft jetzt alle 19 gespiegelten Kaestchen.
+  rumbleOn = $('setting-vibration').checked;
   $('setting-vibration').addEventListener('change', (e) => { rumbleOn = e.target.checked; });
 
   // Der Regler steht in PROZENT vorn, die Physik rechnet mit einem Anteil.
@@ -360,10 +367,21 @@
     $('setting-crash-count-val').textContent = crashesToTotal;
   });
 
+  // Der Anfangswert wird NICHT hier gelesen, sondern in 70-race.js neben der Deklaration.
+  // Hier stand er einen Anlauf lang, und das war ein ReferenceError: crashDetectionEnabled
+  // ist ein let aus 70-race.js, also einer SPAETEREN Datei, und eine Zuweisung vor der
+  // ausgefuehrten Deklaration liegt in der temporalen Todeszone. Sie hat den ganzen
+  // restlichen Aufbau abgebrochen - sichtbar nur an zwei Folgefehlern zu calibRunning und
+  // playing, nicht an der Ursache. Der Listener darf bleiben: er laeuft erst auf eine
+  // Nutzergeste, lange nach der Deklaration.
   $('setting-crash-damage').addEventListener('change', (e) => {
     // Umgedreht gegenueber vorher: der Schalter hiess "Crashs ausschalten" und war damit
     // eine doppelte Negation - angehakt bedeutete "kein Schaden". Jetzt heisst er "Schaden"
-    // und angehakt bedeutet, dass es welchen gibt. Standard an.
+    // und angehakt bedeutet, dass es welchen gibt.
+    //
+    // STANDARD AUS, und der Kommentar sagte hier "Standard an": das Markup und die
+    // Voreinstellung Pro setzen ihn beide auf false, und die entscheiden. Eine Absicht im
+    // Kommentar, die der Vorgabe widerspricht, ist schlimmer als keine.
     crashDetectionEnabled = e.target.checked;
     // Der Zaehler "Crashs bis Schadensbalken voll" ist ohne Schadensmodell bedeutungslos.
     $('setting-crash-count').disabled = !e.target.checked;
@@ -970,7 +988,14 @@
   // schon in der Zeitleiste der Codes. Erst nach OFFTRACK_EIN_MS durchgehend abseits gilt
   // es, und nach OFFTRACK_AUS_MS wieder guter Lesung ist es vorbei - asymmetrisch, weil ein
   // verspaeteter Einsatz harmlos und ein verspaetetes Ende aergerlich ist.
-  const OFFTRACK_EIN_MS = 350;
+  // EINSTELLBAR, Vorgabe 1000 ms. Vorher standen hier 350 ms fest, und das ist kuerzer
+  // als das Ueberfahren einer Kachelkante: leichtes Schneiden wurde damit schon als Abflug
+  // gedrosselt. Wer ganz ohne Nachsicht fahren will, stellt 0 ein.
+  //
+  // Es bleibt eine EINSCHALTVERZOEGERUNG und wird kein Mittelwert: 1 s durchgehend abseits
+  // heisst abseits, ein einzelnes Paket dazwischen setzt die Uhr zurueck (siehe
+  // offtrackMelden). Ein gleitendes Mittel wuerde dauerndes Streifen unsichtbar machen.
+  let offtrackEinMs = 1000;
   const OFFTRACK_AUS_MS = 150;
   // 45 % und nicht 0: neben der Bahn muss man ZURUECKKOMMEN. Ein Auto, das dort
   // stehenbleibt, muss man holen, und dann ist die Drosselung eine Strafe statt einer
@@ -996,7 +1021,7 @@
     if (abseits) {
       offtrackWiederSeit = null;
       if (offtrackSeit === null) offtrackSeit = jetzt;
-      if (!offtrackAktiv && jetzt - offtrackSeit >= OFFTRACK_EIN_MS) {
+      if (!offtrackAktiv && jetzt - offtrackSeit >= offtrackEinMs) {
         offtrackAktiv = true;
         offtrackZaehler++;
       }
@@ -1024,6 +1049,29 @@
     // solche gibt es hier nicht: nachgeschlagen werden ganze Textknoten. Eine Aenderung an
     // OFFTRACK_GAS haette die Uebersetzung still ausfallen lassen.
     el.style.display = offtrackGilt() ? 'block' : 'none';
+  }
+
+  // Ist das Auto neben der Bahn? Die entprellte Antwort, und ausdruecklich OHNE
+  // offtrackEffekt und ohne den Bahn-Modus - das sind Fragen der Drosselung, nicht der Lage.
+  // Die Boxengasse im Modus "Neben der Strecke" liest sie, um zu entscheiden, ob ein
+  // angeforderter Stopp anfangen darf.
+  function istAbseits() { return offtrackAktiv; }
+
+  if ($('setting-offtrack-delay')) {
+    const zeigeVerzoegerung = () => {
+      $('setting-offtrack-delay-val').textContent = offtrackEinMs === 0
+        ? 'sofort' : (offtrackEinMs / 1000).toFixed(1) + ' s';
+    };
+    offtrackEinMs = Math.round(parseFloat($('setting-offtrack-delay').value) * 1000);
+    zeigeVerzoegerung();
+    $('setting-offtrack-delay').addEventListener('input', (e) => {
+      offtrackEinMs = Math.round(parseFloat(e.target.value) * 1000);
+      zeigeVerzoegerung();
+      // Die laufende Uhr NICHT zuruecksetzen: wer den Regler waehrend eines Abflugs
+      // verschiebt, soll die neue Schwelle sofort auf die schon vergangene Zeit angewandt
+      // sehen und nicht von vorn zaehlen.
+      offtrackAnzeige();
+    });
   }
 
   if ($('setting-offtrack')) {

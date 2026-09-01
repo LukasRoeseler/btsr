@@ -307,7 +307,17 @@
     return out;
   }
 
-  // Unit normal pointing to the RIGHT of the direction of travel.
+  // Unit normal pointing to the LEFT of the direction of travel.
+  //
+  // GEMESSEN, weil der Kommentar hier "RIGHT" behauptete und zwei Leser darauf
+  // hereingefallen sind: auf einer Geraden nach Norden ist die Tangente (0,-1), die Normale
+  // kommt (-1,0) heraus, und auf dem Bildschirm mit y nach unten ist das LINKS. Das
+  // Skalarprodukt mit der Fahrtrichtungs-Rechten ist genau -1.
+  //
+  // Die zwei Leser: die Randsteinbeschriftung (60-track.js, dort schon berichtigt) und die
+  // Ghost-Lenkung (ghostLineOffset in 90-ghosts.js) - letztere lenkte dadurch in jeder
+  // Kurve nach aussen. Die Funktion bleibt wie sie ist, weil die Zeichnung darauf steht;
+  // geaendert ist, was der Kommentar sagt, damit kein dritter Leser darauf baut.
   function trackNormals(pts) {
     return pts.map((p, i) => {
       const a = pts[Math.max(0, i - 1)], b = pts[Math.min(pts.length - 1, i + 1)];
@@ -553,7 +563,17 @@
   //
   //   Und beides sind MODELLZAHLEN. Ob die Linie auf dem Teppich schneller ist, sagt nur die
   //   Rundenzeit gegen die Abgaenge - dafuer ist der Schalter da.
-  let lineModel = 'curvature';
+  // RUNDENZEIT IST DIE VORGABE, und das ist gemessen entschieden:
+  //
+  //   Kruemmung      Kurvenspanne 0,018 des Lenkbereichs - die Linie liegt ueber die GANZE
+  //                  Kurve am Rand. Kein Scheitel, also keine Linie, sondern ein Versatz.
+  //   Rundenzeit     Kurvenspanne 0,144, und nach dem Selbsttest messbar schneller.
+  //
+  // Das Kruemmungsmodell bleibt waehlbar: es ist das Lehrbuchverfahren und braucht keine
+  // Annahmen ueber Quer-, Zug- und Bremsbeschleunigung. Auf DIESER Bahnbreite (25 cm) und
+  // Kachellaenge (43 cm) hat es aber keinen Platz fuer einen Scheitel, und das steht im
+  // Kommentar darueber schon.
+  let lineModel = 'laptime';
 
   function setLineModel(m) {
     if (m !== 'curvature' && m !== 'laptime') return;

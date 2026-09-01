@@ -4303,6 +4303,7 @@
         <button id="gar-disconnect-all">Alle trennen</button>
         <span class="muted" id="gar-count">keine Autos verbunden</span>
         <div class="spacer" style="flex:1"></div>
+        <button id="gar-stop-ghosts" disabled>Ghosts anhalten</button>
         <button class="primary" id="gar-go" disabled>Losfahren</button>
       </div>
       <div id="gar-list"></div>
@@ -4698,6 +4699,17 @@
           dauernd auf 0x00. Der Brummteil braucht zus&auml;tzlich den Schalter
           &bdquo;Vibration&ldquo; dar&uuml;ber.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-offtrack" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Drosselung abseits beginnt nach
+          <small>So lange muss das Auto DURCHGEHEND abseits melden, bevor gedrosselt wird.
+          Eine Sekunde ist die Vorgabe, damit leichtes Schneiden noch durchgeht &ndash; ein
+          einzelnes Paket von der Bahn setzt die Uhr zur&uuml;ck. Gilt nur in der Stellung
+          &bdquo;Auf der Bahn&ldquo;, weil der Streckensensor nur dort liest.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="setting-offtrack-delay" min="0" max="3" step="0.1" value="1">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-offtrack-delay-val">1.0 s</span>
+        </div></div>
 <div class="opt-head">Akku</div>
       <div class="opt-row"><div class="opt-label">Leistung über Akkulaufzeit konstant halten<small>Drosselt bei vollem Akku. Der Akkuwert ist eine unkalibrierte Schätzung.</small></div><label class="tgl"><input type="checkbox" id="setting-battery-comp"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Referenz-Akkustand</div>
@@ -4731,9 +4743,11 @@
           <small><b>&Uuml;berall halten</b> ist die Vorgabe: ein angeforderter Boxenstopp
           wird durch Anhalten bedient, egal wo. Braucht keinen Ausdruck und keine
           Schiene.<br>
-          <b>Neben der Strecke</b> nimmt Byte&nbsp;12&nbsp;=&nbsp;0x00 als Boxengasse. Nur
-          auf der CH-Schiene sinnvoll &ndash; ohne Schiene ist das Auto praktisch immer
-          &bdquo;abseits&ldquo;, und dann w&auml;re die ganze Strecke Boxengasse.<br>
+          <b>Neben der Strecke</b>: der Stopp wird von Hand angefordert und beginnt erst,
+          wenn das Auto neben der Bahn steht (Byte&nbsp;12&nbsp;=&nbsp;0x00). Der Knopf sagt
+          also, DASS ein Stopp kommt, die Bahnkante sagt, WO er anf&auml;ngt. Nur auf der
+          CH-Schiene sinnvoll &ndash; ohne Schiene meldet das Auto st&auml;ndig
+          &bdquo;abseits&ldquo;.<br>
           <b>Doppelter Start-Ausdruck</b>: zwei Ausdrucke im Abstand von 50&nbsp;cm. Zwei
           Musterkontakte innerhalb von 3&nbsp;s bei mindestens 1&nbsp;s Abstand sind eine
           Boxeneinfahrt und keine Runde. Danach piept es, das Tempolimit von 60&nbsp;km/h
@@ -4743,7 +4757,7 @@
           Flattern <em>eines</em> Musters als Paar gelesen.</small></div>
         <select id="pit-trigger">
           <option value="anywhere" selected>&Uuml;berall halten</option>
-          <option value="offtrack">Neben der Strecke (Byte 12 = 0x00)</option>
+          <option value="offtrack">Neben der Strecke (von Hand, Start erst abseits)</option>
           <option value="double">Doppelter Start-Ausdruck (experimentell)</option>
         </select></div>
       <div class="opt-row" id="pit-double-lap-wrap"><div class="opt-label">Runde beim
@@ -5257,8 +5271,8 @@
           Geschwindigkeitsprofil und ist im Modell 1&ndash;8&nbsp;% schneller; ob auch auf
           dem Teppich, sagen Rundenzeit und Abg&auml;nge.</small></div>
         <div class="row" style="gap:6px; flex-wrap:wrap">
-          <button type="button" class="mw-preset sel" data-linemodel="curvature">Kr&uuml;mmung</button>
-          <button type="button" class="mw-preset" data-linemodel="laptime">Rundenzeit</button>
+          <button type="button" class="mw-preset" data-linemodel="curvature">Kr&uuml;mmung</button>
+          <button type="button" class="mw-preset sel" data-linemodel="laptime">Rundenzeit</button>
         </div></div>
       <div class="opt-row"><div class="opt-label">Ghost: lernt von Runde zu Runde
           <small>Probiert jede Runde eine kleine &Auml;nderung an Tempo und Linie und
@@ -5780,7 +5794,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.4.43</span></span>
+    <span class="foot-ver">v<span id="app-version">0.4.44</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine

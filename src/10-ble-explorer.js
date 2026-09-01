@@ -1357,6 +1357,11 @@
     "Realismus GT3": "Realism GT3",
     "Gegen echte Werte kalibriert": "Calibrated against real figures",
     "Von Hand schalten, 3,2 s auf 100 – die gemessene Reihe, gegen die die Physik gefittet ist –, voller Reifenverschleiß und volles Tankgewicht. Wenig Grip, schwache Bremse, langes Ausrollen, keine Reifenwärmer. Das ist die haerteste der sechs Abstimmungen und die einzige, deren Zahlen aus Messungen kommen und nicht aus einer Anpassung. Ein Fahrfehler kostet hier Zeit.": "Shift by hand, 3.2 s to 100 – the measured series the physics is fitted against –, full tyre wear and full fuel weight. Little grip, a weak brake, long coasting, no tyre blankets. This is the hardest of the six tunings and the only one whose figures come from measurements rather than from an adjustment. A driving error costs time here.",
+    "Ghosts anhalten": "Stop ghosts",
+    "Drosselung abseits beginnt nach": "Throttling off track starts after",
+    "So lange muss das Auto DURCHGEHEND abseits melden, bevor gedrosselt wird. Eine Sekunde ist die Vorgabe, damit leichtes Schneiden noch durchgeht – ein einzelnes Paket von der Bahn setzt die Uhr zurück. Gilt nur in der Stellung „Auf der Bahn“, weil der Streckensensor nur dort liest.": "This is how long the car must report off track CONTINUOUSLY before the throttle is capped. One second is the default so that cutting a corner slightly still gets through – a single packet from the track resets the clock. Applies only in the „On the track“ position, because that is the only place the track sensor reads.",
+    ": der Stopp wird von Hand angefordert und beginnt erst, wenn das Auto neben der Bahn steht (Byte 12 = 0x00). Der Knopf sagt also, DASS ein Stopp kommt, die Bahnkante sagt, WO er anfängt. Nur auf der CH-Schiene sinnvoll – ohne Schiene meldet das Auto ständig „abseits“.": ": the stop is requested by hand and only begins once the car is standing beside the track (byte 12 = 0x00). So the button says THAT a stop is coming, the track edge says WHERE it begins. Only useful on the CH rail – without the rail the car reports „off track“ all the time.",
+    "Neben der Strecke (von Hand, Start erst abseits)": "Beside the track (by hand, starts only off track)",
   };
 
   // ============================================================================

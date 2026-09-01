@@ -771,8 +771,14 @@
     }
     if (raceClockTimer) { clearInterval(raceClockTimer); raceClockTimer = null; }
     raceStartedAt = null;
-    // Chequered flag: the ghosts stop too, and their lights go back to plain headlights.
-    garage.forEach(c => { if (c.role === 'ghost') stopGhost(c); });
+    // Zielflagge: die Ghosts raeumen die Bahn - rechts heranfahren, anhalten, dreimal
+    // blinken. Vorher stand hier stopGhost(), also "Nullen schreiben und stehenbleiben, wo
+    // du bist" - mitten auf der Linie, wenn es dumm laeuft.
+    //
+    // Diese Stelle ist die richtige und die einzige: alle Endbedingungen laufen durch
+    // finishRace() (Rundenzahl erreicht, Zeit abgelaufen und letzte Runde beendet, Stopp von
+    // Hand), also wird die Sequenz von jeder ausgeloest, ohne sie einzeln zu verdrahten.
+    garage.forEach(c => { if (c.role === 'ghost') finishGhost(c); });
     const missed = Math.max(0, racePitRequired - racePitDone);
     $('race-status').textContent =
       `Beendet (${raceLapTimes.length} Runde${raceLapTimes.length === 1 ? '' : 'n'})`
@@ -1376,13 +1382,15 @@
     //
     // Mitangezeigt wird der Kachelzaehler, denn genau er war die stille Bedingung: bewegt
     // er sich nicht, sieht man das jetzt.
-    // Variante 'offtrack': 0x00 heisst abseits der Bahn, und abseits der Bahn IST die
-    // Boxengasse. Nur auf der CH-Schiene sinnvoll - ohne Schiene ist das Auto praktisch
-    // immer "abseits", und dann waere die ganze Strecke Boxengasse.
-    if (pitLaneEnabled && pitTrigger === 'offtrack' && type === 0x00
-        && lastTileCode !== 0x00) {
-      onPitMarkerCrossed();
-    }
+    // HIER STAND EINE SELBSTAUSLOESUNG, und sie ist absichtlich weg.
+    //
+    // Vorher galt: 0x00 heisst abseits der Bahn, und abseits der Bahn IST die Boxengasse -
+    // also loeste jedes Verlassen der Bahn den Pit-Modus aus. Das heisst aber auch, dass
+    // jeder Abflug eine Boxeneinfahrt ist, und das war es nicht wert.
+    //
+    // Jetzt fordert man den Stopp von Hand an (requestPitStop, Taste oder Options/Start),
+    // und die Bahnkante entscheidet nur noch, ob er ANFAENGT - siehe pitLaneTick. Damit hat
+    // der Modus eine Aufgabenteilung: der Knopf sagt DASS, die Kante sagt WO.
     lastTileCode = type;
     tileTimelineTick(type, counter);
     const probe = $('tile-probe');
@@ -1750,8 +1758,11 @@
   //
   // 'anywhere'  Vorgabe. Ein angeforderter Boxenstopp wird durch Anhalten bedient, egal wo.
   //             Braucht keinen Ausdruck und keine Schiene.
-  // 'offtrack'  Byte 12 meldet 0x00, also abseits der Bahn. Nur auf der CH-Schiene sinnvoll,
-  //             weil nur dort "abseits" ueberhaupt eine Bedeutung hat.
+  // 'offtrack'  Der Stopp wird von HAND angefordert und beginnt erst, wenn Byte 12 den
+  //             Wert 0x00 meldet, das Auto also neben der Bahn steht. Nur auf der
+  //             CH-Schiene sinnvoll, weil nur dort "abseits" eine Bedeutung hat.
+  //             Loeste bis v0.4.43 von selbst aus, sobald das Auto die Bahn verliess -
+  //             damit war jeder Abflug eine Boxeneinfahrt.
   // 'double'    Experimentell: zwei Ausdrucke im Abstand von 50 cm.
   let pitTrigger = 'anywhere';
   // Zaehlt die Runde beim Boxeneinfahren trotzdem? Vorgabe nein - eine Boxeneinfahrt ist
@@ -1769,6 +1780,9 @@
   // Dieselbe Rechnung wie PIT_SPEED_FACTOR, nur mit 60 statt 80: der angezeigte Tacho ist
   // speedKmh * REAL_SCALE, und topSpeedKmh ist 4,0.
   const PIT_DOUBLE_SPEED_FACTOR = PIT_DOUBLE_KMH / REAL_SCALE / 4.0;
+  // Einmal melden und nicht 22 Mal je Sekunde: der Hinweis "neben die Strecke fahren"
+  // kommt aus dem Fahrtakt, und ein Hinweis, der den Bildschirm zunagelt, ist kein Hinweis.
+  let pitOrtGemeldet = false;
   let pitDoubleFirstAt = 0;
   let pitDoubleArmedUntil = 0;
   let pitMarkerCode = null;
@@ -1930,7 +1944,26 @@
     // Absolute value: any NEGATIVE speed would otherwise satisfy this and start a pit
     // service while the car is reversing away.
     const stopped = Math.abs(physEngine.state.speedKmh) < PIT_STANDSTILL_KMH && Math.abs(throttleY) < 0.1;
-    if (pitState === 'limited' && stopped) { setPitState('servicing'); return; }
+    // Im Modus "Neben der Strecke" gehoert zum Anfangen mehr als Stillstand: das Auto muss
+    // auch neben der Bahn stehen. Das ist die Haelfte des Modus, die geblieben ist, nachdem
+    // die Selbstausloesung weg ist - der Knopf sagt DASS ein Stopp kommt, die Bahnkante WO.
+    //
+    // Gelesen wird die ENTPRELLTE Lage (istAbseits, Vorgabe 1 s durchgehend), nicht das
+    // rohe Byte: ein einzelnes 0x00 zwischen zwei Kacheln ist kein Ort. Genau diese
+    // Entprellung hat schon bei den Ghosts einen Fehler gekostet.
+    // Direkt gerufen und nicht mit typeof abgesichert: istAbseits() ist eine
+    // Funktionsdeklaration im selben Skriptblock und damit hochgezogen - genau wie
+    // stopGhost(), das von hier aus schon immer gerufen wird. Eine Wache, die nie greifen
+    // kann, liest sich wie eine echte und verdeckt, dass die Abhaengigkeit sicher ist.
+    const amOrt = pitTrigger !== 'offtrack' || istAbseits();
+    if (pitState === 'limited' && stopped && amOrt) { setPitState('servicing'); return; }
+    if (pitState === 'limited' && stopped && !amOrt && !pitOrtGemeldet) {
+      pitOrtGemeldet = true;
+      showHudToast('NEBEN DIE STRECKE FAHREN');
+      log('Boxenstopp angefordert, aber das Auto steht auf der Bahn: der Service beginnt '
+          + 'erst neben der Strecke.', 'info');
+    }
+    if (!stopped) pitOrtGemeldet = false;
 
     if (pitState === 'servicing') {
       if (!stopped) { setPitState('off'); showHudToast('Boxengasse verlassen'); return; }
@@ -2139,7 +2172,27 @@
   const CRASH_REFRACTORY_MS = 1000; // avoid re-triggering repeatedly off one jolt
   let fuelDrainPerSec = 3;       // % per second at full throttle magnitude (slider)
   let crashesToTotal = 10;       // Crashs bis der Schadensbalken voll ist (Regler, Index in CRASH_STEPS)
-  let crashDetectionEnabled = true;
+  // Der Startwert stand auf true, das Kaestchen im Markup auf AUS (Pro und Arcade setzen
+  // 'setting-crash-damage': false). Crashs wurden also gezaehlt, obwohl der Schalter aus
+  // war - und ab 50 % Schaden setzt registerCrash() lightDamage.rear, worauf
+  // buildCommandPacket das Bremslicht ueber lampFlicker herausmaskiert. Das ist die Ursache
+  // von "beim Bremsen blinkt das Bremslicht statt zu leuchten".
+  //
+  // Gelesen wird jetzt aus dem Kaestchen (siehe die Verdrahtung weiter unten); dieser Wert
+  // gilt nur, bis das Dokument da ist, und steht deshalb auf dem Markup-Wert.
+  let crashDetectionEnabled = false;
+  // AUS DEM MARKUP LESEN, und zwar HIER neben der Deklaration und nicht bei der Verdrahtung
+  // in 50-drive.js: von dort waere es eine Zuweisung an ein let einer spaeteren Datei, also
+  // temporale Todeszone. Genau das hat einen Anlauf lang den ganzen Aufbau abgebrochen.
+  //
+  // Der disabled-Zustand des Crash-Zaehlers gehoert mit dazu: der wurde auch nur im
+  // change-Listener gesetzt und stand beim Laden frei, obwohl er bedeutungslos war.
+  if ($('setting-crash-damage')) {
+    crashDetectionEnabled = $('setting-crash-damage').checked;
+    if ($('setting-crash-count')) {
+      $('setting-crash-count').disabled = !crashDetectionEnabled;
+    }
+  }
   // Total time (s) to repair 100% damage down to 0, non-linear: the schedule is fixed
   // proportions of that total (1/10, 2/10, 3/10, 4/10 for the four 25%-damage quarters,
   // fast-to-slow as the car gets more whole), so changing the total scales every quarter

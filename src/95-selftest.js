@@ -1600,6 +1600,285 @@
                    + (fehlt.length ? ' || fehlt: ' + fehlt.join(', ') : '') };
   });
 
+  // ---- Ideallinie: Richtung ----
+  //
+  // DER FEHLER, GEGEN DEN ER STEHT, war da und ist gemessen: trackNormals() zeigt nach
+  // LINKS in Fahrtrichtung, ihr eigener Kopfkommentar behauptete "RIGHT", und
+  // ghostLineOffset() hat ihm geglaubt. Die Ghosts lenkten damit in JEDER Kurve nach aussen
+  // statt zum Scheitel - das Gegenteil einer Ideallinie, und von aussen sah es aus wie ein
+  // Regler ohne Wirkung.
+  //
+  // Geprueft wird das VORZEICHEN gegen die Drehrichtung der Kurve, denn genau das ist die
+  // Zusicherung: in einer Rechtskurve liegt die schnelle Linie rechts (innen), in einer
+  // Linkskurve links. Kein Betrag, keine Zentimeter - eine Seite.
+  stAdd('Ideallinie liegt auf der Innenseite', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.lineShape) {
+      return { skip: true, mass: 'lineShape nicht vorhanden' };
+    }
+    const proben = ['SG4R4G4L4', 'SG2RG2L', 'SRRRLLL', 'SG2H2G2J2'];
+    const schlecht = [];
+    const zeilen = [];
+    let n = 0;
+    for (const code of proben) {
+      for (const m of ['curvature', 'laptime']) {
+        const zuege = OMEGA_TEST.lineShape(code, m);
+        if (!zuege || !zuege.length) { schlecht.push(code + '/' + m + ': keine Kurve'); continue; }
+        for (const z of zuege) {
+          n++;
+          // Das Mittel muss das Vorzeichen der Drehrichtung haben. Ein Mittel um Null
+          // waere "haelt die Mitte", ein umgekehrtes ist der Fehler von oben.
+          if (Math.sign(z.mittel) !== z.dir || Math.abs(z.mittel) < 0.05) {
+            schlecht.push(code + '/' + m + ' Kachel ' + z.von + '-' + z.bis
+                          + ' dreht ' + (z.dir > 0 ? 'rechts' : 'links')
+                          + ', Linie ' + z.mittel.toFixed(2));
+          }
+        }
+        if (m === 'laptime') {
+          zeilen.push(code + ' ' + zuege.map(z => (z.dir > 0 ? 'R' : 'L')
+                      + (z.mittel >= 0 ? '+' : '') + z.mittel.toFixed(2)).join(' '));
+        }
+      }
+    }
+    return { ok: !schlecht.length,
+             mass: n + ' Kurvenzuege in ' + proben.length + ' Strecken x 2 Modelle'
+                 + (schlecht.length ? ' | FALSCHE SEITE: ' + schlecht.join(', ')
+                                    : ' | ' + zeilen.join(' | ')) };
+  });
+
+  // ---- Ideallinie: Form ----
+  //
+  // Der zweite Fehler, und er sass in derselben Zeile: der Deckel aus der Querablagemessung
+  // wurde auf den WERT geklemmt. Weil die Linie auf dieser Bahnbreite fast ueberall am Rand
+  // liegt, kam in der Kurve eine Konstante heraus - die Spanne war exakt 0,000, und zwar in
+  // BEIDEN Linienmodellen. Zwei unabhaengige Optimierer, die bitgleich dasselbe Konstante
+  // liefern, sind der Beweis, dass nicht sie das Ergebnis bestimmen.
+  //
+  // Geprueft wird nur das Rundenzeitmodell, und das ist Absicht: das Kruemmungsmodell legt
+  // die Linie auf dieser Geometrie ueber die ganze Kurve an den Rand und hat dort
+  // tatsaechlich keinen Scheitel (gemessen 0,018). Ein Test, der von ihm eine Form
+  // verlangte, wuerde einen Effekt pruefen, den es nicht gibt.
+  stAdd('Ideallinie hat in der Kurve eine Form', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.lineShape) {
+      return { skip: true, mass: 'lineShape nicht vorhanden' };
+    }
+    const proben = ['SG4R4G4L4', 'SG2R2G2L2', 'SHG4R4LG'];
+    const flach = [];
+    const zeilen = [];
+    for (const code of proben) {
+      const zuege = OMEGA_TEST.lineShape(code, 'laptime') || [];
+      for (const z of zuege) {
+        if (z.bis - z.von < 1) continue;      // eine einzelne Kachel hat kaum Platz
+        zeilen.push(code + ' ' + z.von + '-' + z.bis + ' Spanne ' + z.spanne.toFixed(3));
+        if (z.spanne < 0.05) {
+          flach.push(code + ' ' + z.von + '-' + z.bis + ' nur ' + z.spanne.toFixed(3));
+        }
+      }
+    }
+    if (!zeilen.length) return { skip: true, mass: 'kein Kurvenzug ueber eine Kachel' };
+    return { ok: !flach.length,
+             mass: zeilen.join(' | ')
+                 + (flach.length ? ' || FLACH: ' + flach.join(', ') : '') };
+  });
+
+  // ---- Abstand halten ----
+  //
+  // Es gab keinen einzigen Baustein, der Autos AUSEINANDER haelt: Windschatten und Attacke
+  // ziehen zusammen, das Gummiband bremst nur den Fuehrenden. Zwei Ghosts konnten also
+  // Stossstange an Stossstange fahren, und genau so wurde es gemeldet.
+  stAdd('Abstand: dichtes Auffahren kostet Tempo', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.ghostGapFactor) {
+      return { skip: true, mass: 'ghostGapFactor nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.ghostGapFactor([0.05, 0.35, 0.7, 1.5]);
+    if (r.length < 4) return { skip: true, mass: 'Prueflauf leer' };
+    const f = r.map(x => x.faktor);
+    // Monoton steigend mit dem Abstand, und ab der Schwelle wirkungslos.
+    const monoton = f[0] < f[1] && f[1] < f[2] && Math.abs(f[3] - 1) < 1e-9
+                    && Math.abs(f[2] - 1) < 1e-9;
+    // Und er muss ueberhaupt etwas KOSTEN. Ein Baustein, der 0,2 Prozent bewegt, ist auf
+    // dem Tisch nicht zu sehen - dieselbe Klasse wie ein Regler mit Faktor null.
+    const wirkt = 1 - f[0] > 0.15;
+    return { ok: monoton && wirkt,
+             mass: r.map(x => x.gap + ': x' + x.faktor).join('  ')
+                 + (monoton ? '' : ' | NICHT MONOTON')
+                 + (wirkt ? '' : ' | ZU SCHWACH') };
+  });
+
+  // ---- Geparkt darf den Neustart nicht ueberleben ----
+  //
+  // Der gemeldete Fehler: "ein Ghost hat nach einem Rennen trotz Neustart nur noch
+  // geblinkt". Ein geparktes Auto ist offTrack, bekommt Gas 0, und der Lichtzweig laesst es
+  // im 260-ms-Takt blinken. startGhost() legte einen frischen Ghost an und liess das
+  // Parkschild stehen - der Ghost war neu, das Schild alt.
+  stAdd('Start hebt das Parkschild auf', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.ghostUnparkOnStart) {
+      return { skip: true, mass: 'ghostUnparkOnStart nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.ghostUnparkOnStart();
+    const ok = r.vor && !r.nach && r.ghostNeu && r.cutOut === false;
+    return { ok, mass: 'vorher "' + r.vor + '", nachher ' + JSON.stringify(r.nach)
+                     + ', Ghost neu ' + r.ghostNeu + ', cutOut ' + r.cutOut };
+  });
+
+  // ---- Zieleinlauf ----
+  //
+  // Vorher endete ein Rennen fuer die Ghosts mit stopGhost(): Nullen schreiben und
+  // stehenbleiben, wo man gerade ist - mitten auf der Linie, wenn es dumm laeuft.
+  //
+  // Geprueft werden die GESENDETEN BYTES, nicht die Absicht: voller Rechtseinschlag beim
+  // Heranfahren, Gas fallend, Bremslicht in der Bremsphase, und genau DREI sichtbare
+  // Blitze. Die Drei ist der Punkt, an dem man um den Faktor zwei danebenliegt - ein
+  // Blinken ist an UND aus -, und beim Entwurf dieses Tests ist genau das aufgefallen: das
+  // Blinken begann mit AN, waehrend das Standlicht schon an war, also waren zwei sichtbar.
+  stAdd('Zieleinlauf: rechts ran, anhalten, dreimal blinken', async () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.ghostFinishTimeline) {
+      return { skip: true, mass: 'ghostFinishTimeline nicht vorhanden' };
+    }
+    const r = await OMEGA_TEST.ghostFinishTimeline({ schritt: 60 });
+    if (!r || !r.reihe.length) return { ok: false, mass: 'keine Pakete gesendet' };
+    // Die Phase steht am Paket. Sie ueber einen zweiten Index zu suchen war der Fehler
+    // der ersten Fassung: Takte und Pakete sind nicht gleich viele.
+    const pull = r.reihe.filter(x => x.phase === 'pull');
+    const brems = r.reihe.filter(x => x.phase === 'brake');
+    const blink = r.reihe.filter(x => x.phase === 'blink');
+    const fehler = [];
+    // 1. Voller Rechtseinschlag beim Heranfahren. 127 ist der Anschlag des Bytes.
+    if (!pull.length || pull.some(x => x.lenk !== 127)) {
+      fehler.push('Lenkung beim Heranfahren nicht voll rechts');
+    }
+    // 2. Gas fallend und am Anfang ueber dem Losbrechpunkt.
+    const gas = pull.map(x => x.gas);
+    if (!(gas[0] > 0.16 * 127)) fehler.push('Startgas unter dem Losbrechpunkt');
+    for (let i = 1; i < gas.length; i++) if (gas[i] > gas[i - 1]) fehler.push('Gas steigt');
+    // 3. Bremslicht in der Bremsphase.
+    if (!brems.length || brems.some(x => !(x.licht & r.bremse))) {
+      fehler.push('kein Bremslicht in der Bremsphase');
+    }
+    // 4. Genau drei sichtbare Blitze: steigende Flanken des Standlichts im Blinkteil.
+    let flanken = 0, vor = 1;   // vor der Blinkphase war das Licht AN
+    for (const x of blink) {
+      const an = (x.licht & r.kopf) ? 1 : 0;
+      if (an && !vor) flanken++;
+      vor = an;
+    }
+    if (flanken !== r.blinks) fehler.push(flanken + ' Blitze statt ' + r.blinks);
+    // 5. Und die Sequenz muss ENDEN.
+    if (r.takte >= 400) fehler.push('Sequenz endet nicht');
+    return { ok: !fehler.length,
+             mass: pull.length + ' Takte ran, ' + brems.length + ' bremsen, '
+                 + blink.length + ' blinken, ' + flanken + ' Blitze, Gas '
+                 + gas[0] + '->' + gas[gas.length - 1]
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
+  // ---- Schalter und Spiegel sagen beim Laden dasselbe ----
+  //
+  // DIE FEHLERKLASSE: ein Kaestchen im Markup und seine Variable im Code sind zwei Orte fuer
+  // denselben Zustand, und geschrieben wird die Variable nur im change-Listener. Der feuert
+  // beim Laden NICHT. Stehen die zwei unterschiedlich da, zeigt die Oberflaeche das eine und
+  // die Funktion tut das andere - bis jemand den Schalter zweimal umlegt.
+  //
+  // ZWEI GEMELDETE FEHLER, EINE URSACHE, und beide waeren hier aufgefallen:
+  //
+  //   setting-vibration     Markup an, Variable false. "Controller Vibration ist zwar an,
+  //                         aber es geht nicht" - genau das.
+  //   setting-crash-damage  Markup aus, Variable true. Crashs wurden gezaehlt, obwohl der
+  //                         Schalter aus war; ab 50 % Schaden faellt lightDamage.rear, und
+  //                         dann maskiert buildCommandPacket das Bremslicht ueber
+  //                         lampFlicker heraus. Das ist "beim Bremsen blinkt das
+  //                         Bremslicht statt zu leuchten".
+  //
+  // Die Liste ist GEPFLEGT, und das ist hier richtig: sie IST die Zusicherung. Sie stammt
+  // aus einer Suche ueber alle Kaestchen, deren Listener "X = e.target.checked" schreibt.
+  // Ein neuer Schalter gehoert hinein.
+  stAdd('Schalter und Spiegel sagen beim Laden dasselbe', () => {
+    const PAARE = [
+      ['amb-enable', () => ambienceEnabled],
+      ['dash-head-toggle', () => headlightsOn],
+      ['ghost-leader', () => ghostCfg.leaderBrake],
+      ['ghost-learn', () => ghostCfg.learn],
+      ['ghost-learn-pace', () => ghostCfg.learnPace],
+      ['ghost-needcode', () => ghostCfg.needCode],
+      ['ghost-rail', () => ghostCfg.railMode],
+      ['phys-enable', () => physicsEnabled],
+      ['pit-double-lap', () => pitDoubleCountsLap],
+      ['pit-enable', () => pitLaneEnabled],
+      ['race-flying', () => raceFlying],
+      ['race-wx-change', () => raceWxChange],
+      ['setting-autoshift', () => physEngine.config.autoShift],
+      ['setting-battery-comp', () => batteryCompEnabled],
+      ['setting-crash-damage', () => crashDetectionEnabled],
+      ['setting-offtrack', () => offtrackEffekt],
+      ['setting-tyre-blankets', () => physEngine.config.tyreBlankets],
+      ['setting-vibration', () => rumbleOn],
+      ['sound-enable', () => soundEnabled],
+    ];
+    const schlecht = [], fehlt = [];
+    let geprueft = 0;
+    for (const [id, lies] of PAARE) {
+      const el = $(id);
+      if (!el) { fehlt.push(id); continue; }
+      let spiegel;
+      try { spiegel = lies(); } catch (e) { fehlt.push(id + ' (' + e.message + ')'); continue; }
+      geprueft++;
+      if (!!spiegel !== !!el.checked) {
+        schlecht.push(id + ': Schalter ' + (el.checked ? 'an' : 'aus')
+                      + ', Spiegel ' + (spiegel ? 'an' : 'aus'));
+      }
+    }
+    return { ok: !schlecht.length && !fehlt.length,
+             mass: geprueft + ' Schalter geprueft'
+                 + (schlecht.length ? ' | WEICHEN AB: ' + schlecht.join(', ')
+                                    : ' | alle gleich')
+                 + (fehlt.length ? ' | nicht erreichbar: ' + fehlt.join(', ') : '') };
+  });
+
+  // ---- Ruettelt der Controller ueberhaupt? ----
+  //
+  // Gemeldet als "Controller Vibration ist zwar an, aber es geht nicht". Der Test haengt
+  // einen Pad-Stummel an navigator.getGamepads und sieht, ob playEffect gerufen wird - der
+  // einzige Weg, das ohne echten Controller zu pruefen, und er deckt genau die zwei Fehler
+  // ab, die es gab: der stille Startwert und die falsche Pad-Auswahl.
+  //
+  // Zwei Pads im Stummel, und das ist der Punkt: Windows zeigt denselben Controller oft
+  // zweimal, und padRumble nahm den ERSTEN mit einem Ruettler - das kann der rohe Zwilling
+  // ohne Zuordnung sein. Geprueft wird, dass der Ruettler des ZUGEORDNETEN Pads laeuft.
+  stAdd('Controller-Vibration erreicht den richtigen Pad', () => {
+    if (typeof padRumble !== 'function') return { skip: true, mass: 'padRumble nicht da' };
+    const echt = navigator.getGamepads;
+    const sw = $('setting-vibration');
+    const merk = sw ? sw.checked : null;
+    const rufe = [];
+    const mk = (mapping, name) => ({
+      mapping, id: name, connected: true, axes: [0, 0, 0, 0], buttons: [],
+      vibrationActuator: { type: 'dual-rumble',
+        playEffect(art, o) { rufe.push({ name, art, o }); return Promise.resolve('complete'); } },
+    });
+    try {
+      // Der ROHE zuerst in der Liste - so wie Windows es liefert, wenn es schiefgeht.
+      navigator.getGamepads = () => [mk('', 'roh'), mk('standard', 'zugeordnet')];
+      if (sw && !sw.checked) { sw.checked = true; sw.dispatchEvent(new Event('change', { bubbles: true })); }
+      padRumble(0.6, 0.3, 90);
+      const anGetroffen = rufe.length === 1 && rufe[0].name === 'zugeordnet'
+                          && rufe[0].art === 'dual-rumble';
+      // Und aus muss aus sein.
+      rufe.length = 0;
+      if (sw) { sw.checked = false; sw.dispatchEvent(new Event('change', { bubbles: true })); }
+      padRumble(0.6, 0.3, 90);
+      const ausStill = rufe.length === 0;
+      return { ok: anGetroffen && ausStill,
+               mass: (anGetroffen ? 'an: zugeordneter Pad geruettelt'
+                                  : 'an: FALSCH, ' + JSON.stringify(rufe.map(r => r.name)))
+                   + ' | ' + (ausStill ? 'aus: still' : 'aus: RUETTELT TROTZDEM') };
+    } finally {
+      navigator.getGamepads = echt;
+      if (sw && merk !== null) {
+        sw.checked = merk;
+        sw.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    }
+  });
+
   // ---- Block 4.4: Reifendruck ----
   // Monoton, ueber den ganzen Reglerbereich. Ein Regler, der in der Mitte umkehrt, ist keine
   // Abstimmung, sondern eine Falle.
@@ -1670,6 +1949,9 @@
       return { ok: null, mass: 'Funktionen nicht erreichbar' };
     }
     const merk = { mode: trackMode, effekt: !!($('setting-offtrack') || {}).checked };
+    // VOR dem try, weil das finally ihn liest. Im try deklariert war er dort nicht
+    // sichtbar - Blockgeltungsbereich - und der Test warf statt zu urteilen.
+    const merkVerz = $('setting-offtrack-delay') ? $('setting-offtrack-delay').value : null;
     try {
       if ($('setting-offtrack')) $('setting-offtrack').checked = true;
       offtrackEffekt = true;
@@ -1680,10 +1962,35 @@
       offtrackMelden(true);
       const einzeln = offtrackGilt();
 
-      // b) Durchgehend abseits, laenger als die Einschaltzeit: greift.
+      // b) Durchgehend abseits, laenger als die eingestellte Zeit: greift.
+      //
+      // DER REGLER WIRD GESTELLT und nicht die alte Konstante nachgeschrieben. Vorher stand
+      // hier eine feste Wartezeit von 420 ms gegen einen festen Schwellwert von 350 ms - und
+      // als die Vorgabe auf 1 s ging (leichtes Schneiden soll durchgehen), meldete der Test
+      // richtigerweise rot. Ein Test, der eine Zahl abschreibt, prueft die Zahl und nicht die
+      // Sache. Jetzt prueft er BEIDE Richtungen und deckt damit zusaetzlich ab, dass der
+      // neue Regler ueberhaupt wirkt.
+      const stelle = (sek) => {
+        const el = $('setting-offtrack-delay');
+        if (!el) return false;
+        el.value = String(sek);
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+        return true;
+      };
+      stelle(0.3);
+      offtrackMelden(false); offtrackMelden(true);
       const t0 = Date.now();
       while (Date.now() - t0 < 420) offtrackMelden(true);
       const dauer = offtrackGilt();
+      // Und mit einer langen Schwelle darf dieselbe Zeit NICHT greifen.
+      stelle(1.5);
+      const tz = Date.now();
+      while (Date.now() - tz < 260) offtrackMelden(false);
+      offtrackMelden(true);
+      const t0b = Date.now();
+      while (Date.now() - t0b < 420) offtrackMelden(true);
+      const langNicht = !offtrackGilt();
+      stelle(0.3);
 
       // c) Dieselbe Lage im Ausdruck-Modus: greift NICHT.
       trackMode = 'off';
@@ -1697,9 +2004,11 @@
       const zurueck = offtrackGilt();
 
       return {
-        ok: !einzeln && dauer && !ausdruck && !zurueck,
+        ok: !einzeln && dauer && langNicht && !ausdruck && !zurueck,
         mass: 'einzelner Ausfall ' + (einzeln ? 'greift (FALSCH)' : 'ignoriert')
-            + ' | 420 ms abseits ' + (dauer ? 'greift' : 'greift NICHT (falsch)')
+            + ' | Regler 0,3 s, 420 ms abseits ' + (dauer ? 'greift' : 'greift NICHT (falsch)')
+            + ' | Regler 1,5 s, 420 ms abseits '
+            + (langNicht ? 'greift nicht' : 'greift schon (FALSCH)')
             + ' | Ausdruck-Modus ' + (ausdruck ? 'greift (FALSCH)' : 'greift nicht')
             + ' | zurueck ' + (zurueck ? 'greift weiter (FALSCH)' : 'beendet'),
       };
@@ -1707,6 +2016,12 @@
       trackMode = merk.mode;
       if ($('setting-offtrack')) $('setting-offtrack').checked = merk.effekt;
       offtrackEffekt = merk.effekt;
+      // Den Regler zuruecklegen, sonst faehrt der Nutzer nach einem Testlauf mit einer
+      // anderen Nachsicht als vorher - und wundert sich beim Motor.
+      if (merkVerz !== null && $('setting-offtrack-delay')) {
+        $('setting-offtrack-delay').value = merkVerz;
+        $('setting-offtrack-delay').dispatchEvent(new Event('input', { bubbles: true }));
+      }
       // Zustand zuruecklegen, sonst steht der Streifen nach dem Test im Cockpit.
       const t2 = Date.now();
       while (Date.now() - t2 < 200) offtrackMelden(false);
