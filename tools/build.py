@@ -180,6 +180,53 @@ def check_refs(html):
 
 
 
+SW_IN = os.path.join(HERE, 'sw.js.in')
+SW_OUT = os.path.join(REPO, 'sw.js')
+SW_MARKE = 'SW_VERSION_PLATZHALTER'
+
+
+def build_sw(built):
+    """sw.js aus der Vorlage schreiben, mit der Version aus index.html.
+
+    Der Cachename MUSS sich mit jedem Build aendern, sonst liefert der Service Worker nach
+    einem Push die alte Fassung aus - und der Fehlerbericht heisst dann "die Behebung ist
+    nicht drin", waehrend man im Code sucht statt im Cache.
+
+    Die Version kommt aus DEMSELBEN span, das bump_version.py schreibt. Sie hier ein zweites
+    Mal zu pflegen waere genau die Fehlerklasse, die dieses Projekt schon mehrfach getroffen
+    hat.
+    """
+    m = re.search(r'<span id="app-version">([^<]+)</span>', built)
+    if not m:
+        return None, 'app-version nicht in index.html gefunden'
+    version = m.group(1).strip()
+    if not os.path.exists(SW_IN):
+        return None, 'tools/sw.js.in fehlt'
+    with io.open(SW_IN, encoding='utf-8', newline='') as f:
+        vorlage = f.read()
+    # Die ZEILE pruefen und nicht bloss, ob die Marke irgendwo vorkommt. Beim ersten Anlauf
+    # stand sie auch im Kommentar der Vorlage - damit war die Bedingung immer erfuellt, der
+    # Waechter konnte nie ausloesen, UND die Ersetzung traf den Kommentar mit.
+    zeile_marke = "const VERSION = '" + SW_MARKE + "';"
+    if zeile_marke not in vorlage:
+        return None, 'in sw.js.in fehlt die Zeile ' + zeile_marke
+    text = vorlage.replace(zeile_marke, "const VERSION = '" + version + "';")
+    # Und das Ergebnis nachpruefen: was hier hinausgeht, MUSS die Version tragen und darf
+    # die Marke nicht mehr enthalten.
+    if SW_MARKE in text:
+        return None, 'nach der Ersetzung steht die Marke noch in sw.js'
+    if ("const VERSION = '" + version + "';") not in text:
+        return None, 'die Version steht nicht in der VERSION-Zeile'
+    alt = None
+    if os.path.exists(SW_OUT):
+        with io.open(SW_OUT, encoding='utf-8', newline='') as f:
+            alt = f.read()
+    if alt != text:
+        with io.open(SW_OUT, 'w', encoding='utf-8', newline='') as f:
+            f.write(text)
+    return version, 'sw.js auf Version %s' % version
+
+
 def check_klammern(js, quelle):
     """Klammern zaehlen, ausserhalb von Zeichenketten, Vorlagen, Kommentaren und Regexen.
 
@@ -398,6 +445,15 @@ def main():
               ' OMEGA_TEST fehlt, und der Selbsttest zeigt NULL Zeilen statt einer roten.',
               file=sys.stderr)
         return 2
+    sw_version, sw_meld = build_sw(built)
+    if sw_version is None:
+        print('', file=sys.stderr)
+        print('SERVICE WORKER: ' + sw_meld, file=sys.stderr)
+        print('  Ohne Version im Cachenamen liefert der Arbeiter nach jedem Push die ALTE'
+              ' Fassung aus, und man sucht die fehlende Behebung im Code statt im Cache.',
+              file=sys.stderr)
+        return 2
+    print('  ' + sw_meld)
     print('  Klammern geprueft: %s (%d Skriptbloecke)' % (meld_kl, len(js_teile)))
     print('  Element-ids geprueft: kein Zugriff ins Leere')
     print('  Woerterbuch geprueft: keine Waisen')

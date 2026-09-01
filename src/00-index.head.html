@@ -5,6 +5,21 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>OmegaSim</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
+<!-- ALS APP INSTALLIERBAR. Rein zusaetzlich: im Browser laeuft alles unveraendert weiter.
+     Der Nutzen ist Vollbild ohne Adresszeile, ein Symbol im Startmenue und - mit dem
+     Service Worker - dass die App ohne Netz startet.
+
+     ALLE PFADE RELATIV. Auf GitHub Pages liegt die App unter /btsr/ und nicht unter der
+     Wurzel; ein fuehrender Schraegstrich zeigt dort auf die falsche Stelle. -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#000000">
+<!-- Fuer iOS, wo es kein Manifest-Installieren gibt. Dass die App dort kein Auto fahren
+     kann (Safari hat kein Web Bluetooth), aendert nichts daran: der Streckenbau und die
+     Doku funktionieren, und dafuer ist ein Symbol im Startmenue nuetzlich. -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="OmegaSim">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
 <style>
   /* Palette inspired by the NART Ferrari 412P Le Mans livery: white body, deep navy
      stripe/roundel, thin pinstripe linework. Red is reserved for danger/stop states only. */
@@ -1909,6 +1924,10 @@
       <div class="home-cta">
         <button class="primary" id="home-go">Auto verbinden</button>
         <button id="home-fs">Cockpit</button>
+        <!-- Ab Werk verborgen. Er erscheint nur, wenn der Browser die Installation
+             tatsaechlich anbietet - ein Knopf, der immer dasteht und manchmal nichts tut,
+             sieht wie ein Fehler aus. -->
+        <button id="home-install" hidden>Als App installieren</button>
       </div>
     </div>
     <!-- Was man BRAUCHT, vor dem, was man haben kann. Die App liess sich nicht an einen
@@ -5678,7 +5697,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.4.37</span></span>
+    <span class="foot-ver">v<span id="app-version">0.4.38</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine

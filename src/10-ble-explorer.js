@@ -1332,6 +1332,7 @@
     "Abgänge (Blitz)": "departures (lightning)",
     "s Zeitstrafe am Rennende": "s time penalty at the end of the race",
     "y-Achse abgeschnitten, siehe Beschriftung": "y axis truncated, see the labels",
+    "Als App installieren": "Install as an app",
   };
 
   // ============================================================================

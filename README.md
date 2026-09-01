@@ -8,6 +8,16 @@ Motorklängen, autonomen Gegnern und einem Streckeneditor.
 kein Netz. Auf Windows und Android; iOS unterstützt Web Bluetooth nicht.
 Auf Windows liegt zusätzlich `Start OmegaSim.bat` daneben.
 
+**Als App:** über https (etwa GitHub Pages) lässt sich OmegaSim ins Startmenü legen –
+Vollbild ohne Adresszeile und Start ohne Netz. Der Browser-Betrieb bleibt unverändert; wer
+nichts installiert, merkt nichts. Was es ausdrücklich NICHT löst, ist der Mehrspieler-Fall:
+der secure context hängt an der Herkunft, und die ist nach dem Installieren dieselbe.
+Einzelheiten in `CARRERA_HYBRID.md`.
+
+Der Cache wird **netz-zuerst** gefüllt: online immer aktuell, offline die letzte gesehene
+Fassung. Cache-zuerst wäre hier die schlechteste Wahl – bei mehreren Builds am Tag liefert
+er eine alte Fassung aus, während die neue schon daliegt.
+
 ## Mitarbeiten
 
 `index.html` ist das **Ergebnis**, nicht die Quelle. Die Quelle liegt in `src/`:

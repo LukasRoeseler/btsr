@@ -283,6 +283,42 @@ Zwei Punkte dazu, beide aus Fehlern gelernt:
   Aktionen auf demselben Eingang, geht die zweite auf ihre Vorgabe zurueck, und es wird
   gemeldet statt still behoben.
 
+### Als App installieren
+
+OmegaSim laesst sich als App ins Startmenue legen: Chrome zeigt dafuer ein Symbol in der
+Adresszeile, und auf dem Startschirm der App steht ein Knopf, sobald der Browser es anbietet.
+Der Browser-Betrieb bleibt davon unberuehrt - wer nichts installiert, merkt nichts.
+
+**Was es bringt:**
+
+- Vollbild ohne Adresszeile, ein eigenes Symbol, ein eigener Fenstereintrag.
+- **Start ohne Netz.** Ein Service Worker legt die Huelle ab (die eine HTML-Datei, das
+  Manifest, die Symbole). Die Tonschleifen von 1,8 MB werden absichtlich NICHT vorab geladen -
+  wer die App nur zum Streckenbauen aufmacht, soll nicht Motorgeraeusche herunterladen; sie
+  landen beim ersten Hoeren im Cache und sind ab dann auch ohne Netz da.
+- Web Bluetooth funktioniert unveraendert: die installierte App behaelt die Herkunft der Seite.
+
+**Was es NICHT bringt, und das ist der Punkt, der falsch erwartet wird:** es loest das
+Mehrspieler-Problem nicht. Der secure context haengt an der HERKUNFT, und die ist nach dem
+Installieren dieselbe wie vorher. Wer die App von `http://192.168.x.x` installiert, hat
+danach genau dieselbe Sperre wie im Browser.
+
+**Der Cache wird NETZ-ZUERST gefuellt**, nicht Cache-zuerst. Der uebliche Rat lautet
+umgekehrt, weil es schneller aussieht - fuer dieses Projekt waere es die schlechteste Wahl:
+es wird mehrmals am Tag neu gebaut, und ein Cache-zuerst-Arbeiter liefert dann eine alte
+Fassung aus, waehrend die neue schon daliegt. Der Fehlerbericht heisst dann "die Behebung ist
+nicht drin", und man sucht im Code statt im Cache. Online also immer aktuell, offline die
+letzte gesehene Fassung.
+
+Der Cachename traegt die Programmversion, und `tools/build.py` setzt sie aus derselben Quelle
+ein, aus der auch die Anzeige kommt (das span mit der id `app-version`). Bleibt der Name
+gleich, ueberlebt der Arbeiter jeden Build - deshalb bricht der Build ab, wenn die Marke in
+`tools/sw.js.in` fehlt.
+
+Auf **iOS** erscheint kein Installationsknopf. Das ist richtig so: Safari hat kein Web
+Bluetooth, die App kann dort kein Auto fahren. Streckenbau und Doku funktionieren, und dafuer
+liegen die Apple-Kopfzeilen und das Touch-Symbol bei.
+
 ## Mehrspieler-Rennen
 
 Laut Hersteller können mehrere Spieler gleichzeitig fahren. Jedes Handy verbindet sich dabei über Bluetooth mit seinem eigenen Auto. Für die Renn-Organisation zwischen den Handys, etwa Rundenzeiten oder Startreihenfolge, wird vermutlich zusätzlich WLAN zwischen den Handys genutzt.

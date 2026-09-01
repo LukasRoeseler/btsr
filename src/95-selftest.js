@@ -1106,6 +1106,74 @@
     }
   });
 
+  // ---- Als App installierbar: Manifest, Symbole, Cacheversion ----
+  //
+  // Die dritte Aussage ist die wichtigste und die einzige, die man nicht sehen kann: bleibt
+  // der Cachename ueber einen Build gleich, liefert der Service Worker die ALTE Fassung aus.
+  // Der Fehlerbericht heisst dann "die Behebung ist nicht drin", und man sucht im Code statt
+  // im Cache.
+  stAdd('Als App installierbar: Manifest, Symbole, Cacheversion', async () => {
+    const link = document.querySelector('link[rel=manifest]');
+    if (!link) return { ok: false, mass: 'kein <link rel=manifest> im Dokument' };
+    if (location.protocol === 'file:') {
+      // Von der Platte laesst sich das Manifest nicht holen (fetch auf file:// ist
+      // gesperrt), und ein Service Worker gibt es dort ohnehin nicht.
+      return { skip: true, mass: 'von der Platte geladen, Manifest nicht abrufbar' };
+    }
+    const teile = [], schlecht = [];
+    let man = null;
+    try {
+      man = await (await fetch(link.getAttribute('href'), { cache: 'no-store' })).json();
+    } catch (e) {
+      return { ok: false, mass: 'Manifest nicht lesbar: ' + (e && e.message ? e.message : e) };
+    }
+    for (const feld of ['name', 'short_name', 'start_url', 'scope', 'display', 'icons']) {
+      if (!man[feld]) schlecht.push('Feld ' + feld + ' fehlt');
+    }
+    // RELATIV. Ein fuehrender Schraegstrich zeigt auf GitHub Pages auf die Wurzel der Domain
+    // und nicht auf /btsr/ - und auf localhost faellt das nicht auf.
+    for (const [feld, wert] of [['start_url', man.start_url], ['scope', man.scope]]) {
+      if (typeof wert === 'string' && wert.charAt(0) === '/') {
+        schlecht.push(feld + ' ist absolut (' + wert + '), bricht unter einem Unterpfad');
+      }
+    }
+    const symbole = man.icons || [];
+    if (!symbole.some(i => (i.purpose || 'any').indexOf('maskable') >= 0)) {
+      schlecht.push('kein maskable-Symbol');
+    }
+    // Jedes Symbol wirklich holen. Der Build prueft nur Markup, nicht diese JSON-Datei.
+    let geladen = 0;
+    for (const ic of symbole) {
+      if (typeof ic.src === 'string' && ic.src.charAt(0) === '/') {
+        schlecht.push('Symbolpfad absolut: ' + ic.src);
+      }
+      try {
+        const r = await fetch(new URL(ic.src, link.href).href, { cache: 'no-store' });
+        if (r.ok) geladen++; else schlecht.push(ic.src + ': ' + r.status);
+      } catch (e) { schlecht.push(ic.src + ' nicht abrufbar'); }
+    }
+    teile.push(geladen + ' von ' + symbole.length + ' Symbolen geladen');
+
+    // Der Cachename gegen die angezeigte Version.
+    const v = ($('app-version') || {}).textContent;
+    let swText = null;
+    try { swText = await (await fetch('sw.js', { cache: 'no-store' })).text(); } catch (e) { }
+    if (swText === null) {
+      teile.push('sw.js nicht abrufbar');
+      schlecht.push('sw.js fehlt');
+    } else {
+      if (swText.indexOf('SW_VERSION_PLATZHALTER') >= 0) {
+        schlecht.push('sw.js traegt noch den Platzhalter, der Build hat ihn nicht ersetzt');
+      } else if (v && swText.indexOf("'" + String(v).trim() + "'") < 0) {
+        schlecht.push('Cacheversion in sw.js passt nicht zu ' + v);
+      } else {
+        teile.push('Cacheversion ' + String(v).trim());
+      }
+    }
+    return { ok: !schlecht.length,
+             mass: teile.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
   // ---- Block 4.4: Reifendruck ----
   // Monoton, ueber den ganzen Reglerbereich. Ein Regler, der in der Mitte umkehrt, ist keine
   // Abstimmung, sondern eine Falle.
