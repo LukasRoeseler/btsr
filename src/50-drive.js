@@ -597,70 +597,51 @@
     $('race-g-real').setAttribute('cx', (50 + gx * R).toFixed(1));
     $('race-g-real').setAttribute('cy', (50 + gy * R).toFixed(1));
 
-    // ---- Reifen: vier Felder, paarweise gleichlaufend ------------------------------
+    // ---- Reifen und Bremsscheiben: vier echte Werte --------------------------------
     //
-    // Farbe = Temperatur (blau kalt, gruen im Fenster, rot zu heiss), Fuellhoehe = restliche
-    // Lauffleche. Dieselben zwei Rechnungen wie bisher fuer Ring und Balken, nur in EIN
-    // Element gelegt: zwei Anzeigen fuer die Temperatur waren eine zu viel.
+    // Bis v0.5 zeigten vier Felder ZWEI Werte (links/rechts verklebt) und vier Ringe ZWEI
+    // Temperaturen (vorn/hinten verklebt). Das passte zum Modell. Seit der
+    // Vierradverlagerung fuehrt es vier Radlasten, vier Reifentemperaturen, vier
+    // Verschleisswerte und vier Scheibentemperaturen - also zeigt die Anzeige vier.
     //
-    // Die beiden Reifen einer Seite bekommen denselben Wert, weil das Modell nur links und
-    // rechts trennt. Sie kuenstlich zu spreizen waere eine Erfindung, und eine Anzeige, die
-    // mehr behauptet als das Modell weiss, ist schlimmer als eine grobe.
+    // DIE REIHENFOLGE STEHT AN EINER STELLE: das Modell fuehrt [vorne links, vorne rechts,
+    // hinten links, hinten rechts], und dieses Feld hier in derselben. Eine zweite Zuordnung
+    // irgendwo waere die Gelegenheit, links und rechts zu tauschen - und ein vertauschtes Rad
+    // in einer Anzeige, die plausibel aussieht, findet man erst beim dritten Rennen.
     {
-      // Seite fuer den Reifen, Achse fuer die Bremsscheibe: der Verschleiss ist links und
-      // rechts getrennt, die Scheibentemperatur vorn und hinten.
-      const felder = [['race-tyre-fl', 'L', 'V'], ['race-tyre-rl', 'L', 'H'],
-                      ['race-tyre-fr', 'R', 'V'], ['race-tyre-rr', 'R', 'H']];
       const cfgT = physEngine.config;
       const aus = cfgT.tyreEffect === 0;
-      let col = '#4a5568';
-      if (!aus) {
-        const t = st.tyreTempC;
-        const warm = Math.max(0, Math.min(1, (t - cfgT.tyreAmbientC)
-                                             / (cfgT.tyreOptimalC - cfgT.tyreAmbientC)));
-        if (t > cfgT.tyreOptimalC) {
-          const over = Math.min(1, (t - cfgT.tyreOptimalC)
-                                   / (cfgT.tyreOverheatC - cfgT.tyreOptimalC));
-          col = 'rgb(' + Math.round(70 + 185 * over) + ', ' + Math.round(209 - 130 * over)
-              + ', ' + Math.round(127 - 100 * over) + ')';
-        } else {
-          col = 'rgb(' + Math.round(60 + 10 * warm) + ', ' + Math.round(140 + 69 * warm)
-              + ', ' + Math.round(230 - 103 * warm) + ')';
-        }
-      }
-      // Ohne Asymmetrie tragen alle vier den Mittelwert - dann sieht die Kachel gleichmaessig
-      // aus, und genau das ist die Aussage.
-      const asymAn = cfgT.tyreAsymEffect > 0;
-      const wL = aus ? 0 : (asymAn ? st.tyreWearL : st.tyreWear);
-      const wR = aus ? 0 : (asymAn ? st.tyreWearR : st.tyreWear);
-
-      // ---- Bremsscheiben, als Ring in jedem Reifen -----------------------------------
-      //
-      // WIEDER EINGEBAUT: diese Anzeige lag im Textbereich, den der Umbau auf vier Reifen
-      // ersetzt hat, und ist dabei mitgeloescht worden. race-braket-f stand danach im
-      // Dokument, ohne dass es jemand beschrieb - eine tote Element-id, von mir selbst
-      // erzeugt. Gemeldet als "die Temperatur reagiert nicht auf mein Fahren".
-      //
-      // Vorn und hinten sind hier wirklich verschieden: zwei Scheibentemperaturen, getrennt
-      // nach der Bremsbalance.
       const fadeAus = cfgT.brakeFadeEffect === 0;
-      const scheibe = (T) => {
+      const REIFEN = ['race-tyre-fl', 'race-tyre-fr', 'race-tyre-rl', 'race-tyre-rr'];
+      const SCHEIBEN = ['race-disc-fl', 'race-disc-fr', 'race-disc-rl', 'race-disc-rr'];
+
+      // Reifenfarbe aus der Temperatur DIESES Rades: blau kalt, gruen im Fenster, rot zu
+      // heiss. Dieselbe Rechnung wie bisher, nur je Rad statt einmal.
+      const reifenFarbe = (T) => {
+        if (aus) return '#4a5568';
+        const warm = Math.max(0, Math.min(1, (T - cfgT.tyreAmbientC)
+                                             / (cfgT.tyreOptimalC - cfgT.tyreAmbientC)));
+        if (T > cfgT.tyreOptimalC) {
+          const over = Math.min(1, (T - cfgT.tyreOptimalC)
+                                   / (cfgT.tyreOverheatC - cfgT.tyreOptimalC));
+          return 'rgb(' + Math.round(70 + 185 * over) + ', ' + Math.round(209 - 130 * over)
+               + ', ' + Math.round(127 - 100 * over) + ')';
+        }
+        return 'rgb(' + Math.round(60 + 10 * warm) + ', ' + Math.round(140 + 69 * warm)
+             + ', ' + Math.round(230 - 103 * warm) + ')';
+      };
+
+      // Scheibenfarbe, auf den SICHTBAREN Bereich normiert und nicht auf die Fadingschwelle:
+      // 300 Grad ist Betriebstemperatur, darueber nach Gelb, ab 520 nach Rot. Gegen die
+      // Schwelle normiert blieb der Ring bis fast 500 Grad grau.
+      const scheibenFarbe = (T) => {
         if (fadeAus) return '#2a3346';
         const ueber = Math.max(0, Math.min(1, (T - cfgT.brakeFadeStartC)
           / Math.max(1, cfgT.brakeFadeFullC - cfgT.brakeFadeStartC)));
         if (ueber > 0) {
-          // Ab Fadingbeginn orange nach rot: das ist die Nachricht.
           return 'rgb(255, ' + Math.round(178 - 130 * ueber) + ', '
                + Math.round(107 - 92 * ueber) + ')';
         }
-        // Darunter grau nach gruen - und NICHT gegen die Fadingschwelle normiert. Das war
-        // die erste Fassung, und sie liess den Ring bis fast 500 Grad grau: bei 66 Grad
-        // gemessen rgb(44,64,73), also kein sichtbarer Unterschied zu kalt. Der Bereich, den
-        // man beim Fahren sieht, liegt zwischen 25 und ein paar hundert Grad, und dort muss
-        // sich die Farbe bewegen.
-        //
-        // 300 Grad ist hier die Betriebstemperatur: eine harte Runde erreicht das, und ab
-        // dort geht es weiter nach Gelb, bis das Fading bei 520 einsetzt.
         const warm = Math.max(0, Math.min(1, (T - cfgT.brakeAmbientC) / 275));
         if (warm >= 1) {
           const heiss = Math.max(0, Math.min(1,
@@ -671,29 +652,49 @@
         return 'rgb(' + Math.round(42 + 20 * warm) + ', ' + Math.round(51 + 158 * warm)
              + ', ' + Math.round(70 + 36 * warm) + ')';
       };
-      const farbeF = scheibe(st.brakeTempF);
-      const farbeR = scheibe(st.brakeTempR);
 
-      for (const [id, seite, achse] of felder) {
-        const el = $(id);
-        if (!el || !el.firstChild) continue;
-        const rest = aus ? 100 : Math.max(0, Math.min(100, 100 - (seite === 'L' ? wL : wR) * 100));
-        el.firstChild.style.height = rest + '%';
-        el.firstChild.style.background = col;
-        const ring = el.lastChild;
-        if (ring && ring !== el.firstChild) {
-          ring.style.borderColor = achse === 'V' ? farbeF : farbeR;
+      // Welches Rad gerade abgebaut ist. Beim Boxenstopp laeuft der Schrauberton ueber die
+      // ganze Wechseldauer und man hoert darin vier Ansaetze - also zeigt die Anzeige vier
+      // Ausfaelle, einen je Rad. Ohne das sieht man vier Toene und keine Bewegung.
+      const abIdx = typeof pitWheelOff === 'function' ? pitWheelOff() : -1;
+      for (let i = 0; i < 4; i++) {
+        const el = $(REIFEN[i]);
+        if (el && el.firstChild) {
+          const ab = i === abIdx;
+          el.classList.toggle('t4-ab', ab);
+          const w = aus ? 0 : (st.tyreWear4 ? st.tyreWear4[i] : st.tyreWear);
+          // Abgebaut heisst leer: es ist kein Reifen da, dessen Profil man zeigen koennte.
+          const rest = ab ? 0 : Math.max(0, Math.min(100, 100 - w * 100));
+          el.firstChild.style.height = rest + '%';
+          el.firstChild.style.background =
+            reifenFarbe(st.tyreTemp4 ? st.tyreTemp4[i] : st.tyreTempC);
+        }
+        const sc = $(SCHEIBEN[i]);
+        if (sc) {
+          sc.style.background =
+            scheibenFarbe(st.brakeTemp4 ? st.brakeTemp4[i]
+                                        : (i < 2 ? st.brakeTempF : st.brakeTempR));
         }
       }
-      // Eine Zeile fuer beides: Reifentemperatur mit Abnutzung, und die zwei
-      // Scheibentemperaturen. Zwei Zeilen waeren in einer 77-px-Kachel eine zu viel.
+
+      // Eine Zeile fuer beides, und sie nennt den BEREICH statt eines Mittelwerts: bei vier
+      // verschiedenen Werten ist der Mittelwert die eine Zahl, die kein Rad hat. Das
+      // heisseste Rad und der staerkste Verschleiss sind die Zahlen, auf die man reagiert.
       const tt = $('race-tyre-temp');
       if (tt) {
-        const reifen = aus ? 'aus' : (Math.round(st.tyreTempC) + '\u00b0 '
-          + Math.round(Math.max(wL, wR) * 100) + '%');
-        const br = fadeAus ? '' : (' \u00b7 ' + Math.round(st.brakeTempF) + '/'
-          + Math.round(st.brakeTempR) + '\u00b0');
-        tt.textContent = reifen + br;
+        if (aus) {
+          tt.textContent = 'aus';
+        } else {
+          const t4 = st.tyreTemp4 || [st.tyreTempC];
+          const w4 = st.tyreWear4 || [st.tyreWear];
+          const b4 = st.brakeTemp4 || [st.brakeTempF, st.brakeTempR];
+          const heiss = Math.round(Math.max.apply(null, t4));
+          const kalt = Math.round(Math.min.apply(null, t4));
+          const ab = Math.round(Math.max.apply(null, w4) * 100);
+          const bmax = Math.round(Math.max.apply(null, b4));
+          tt.textContent = (kalt === heiss ? heiss + '\u00b0' : kalt + '\u2013' + heiss + '\u00b0')
+            + ' ' + ab + '%' + (fadeAus ? '' : ' \u00b7 ' + bmax + '\u00b0');
+        }
       }
     }
 

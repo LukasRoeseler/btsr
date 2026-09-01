@@ -2587,6 +2587,16 @@
     physEngine.state.tyreWearL = 0;
     physEngine.state.tyreWearR = 0;
     physEngine.state.tyrePull = 0;
+    // Die VIER Raeder muessen mit, sonst setzt der Boxenstopp die Mittelwerte auf 0 und die
+    // vier Felder im Cockpit zeigen weiter Abnutzung. Genau diese Sorte Auslassung hat schon
+    // einmal dazu gefuehrt, dass die Kachel dem Toast widersprach - und man glaubt dem, was
+    // man sieht. Beim naechsten Takt werden die Mittelwerte aus den vier GERECHNET, also
+    // reicht es nicht, nur die Mittelwerte zu nullen: sie waeren sofort wieder da.
+    physEngine.state.tyreWear4 = [0, 0, 0, 0];
+    physEngine.state.tyreTemp4 = [physEngine.config.tyreAmbientC,
+                                  physEngine.config.tyreAmbientC,
+                                  physEngine.config.tyreAmbientC,
+                                  physEngine.config.tyreAmbientC];
     physEngine.state.tyreGrip = 1;
     // Die BREMSSCHEIBEN werden hier ausdruecklich NICHT gekuehlt. Ein Boxenstopp dauert
     // Sekunden, und Scheiben kuehlen darin nicht auf Umgebungstemperatur. Reifen werden
@@ -2713,6 +2723,34 @@
   // Wheels off means the car cannot move, whatever the driver asks for. Once they are back
   // on, the throttle is free again - and using it is how you leave, which is exactly what
   // "sobald das fertig ist bedeutet Gas geben auch Ende" describes.
+  // Die Reihenfolge, in der die vier Raeder gewechselt werden: Boxenmauerseite zuerst,
+  // weil dort die Crew steht und den Wagen von dort umlaeuft. Indizes wie ueberall im
+  // Modell: 0 vorne links, 1 vorne rechts, 2 hinten links, 3 hinten rechts.
+  //
+  // EINE Liste, weil eine zweite die Gelegenheit waere, dass Anzeige und Ton in
+  // verschiedener Ordnung laufen.
+  const PIT_RAD_FOLGE = [1, 3, 2, 0];
+  // Wie lange ein Rad innerhalb seines Fensters ABGEBAUT ist. Zwei Drittel: dann sieht man
+  // vier deutliche Ausfaelle. Bei 1,0 waere immer genau ein Rad weg und der Wechsel saehe
+  // wie ein einziger langer Vorgang aus, obwohl vier Toene zu hoeren sind.
+  const PIT_RAD_AB_ANTEIL = 0.66;
+
+  // Der Index des Rades, das GERADE abgebaut ist, oder -1. Wird vom Cockpit-Takt in
+  // 50-drive.js gelesen; eine Funktionsdeklaration ist ueber den ganzen Bereich hochgezogen,
+  // also ist der Aufruf von dort gefahrlos - anders als bei einem let, das vor seiner Zeile
+  // in der Totzone liegt. Diese Falle hat in dieser Werkstatt schon siebenmal zugeschlagen.
+  function pitWheelOff() {
+    if (pitState !== 'servicing' || !pitPlan || !pitPlan.tyres) return -1;
+    if (!pitDone || pitDone.tyres) return -1;
+    if (!(pitTyreTarget > 0)) return -1;
+    const anteil = Math.max(0, Math.min(0.999, pitTyreElapsed / pitTyreTarget));
+    const fenster = anteil * 4;
+    const nr = Math.floor(fenster);
+    // Im letzten Drittel des Fensters ist das neue Rad schon dran.
+    if (fenster - nr > PIT_RAD_AB_ANTEIL) return -1;
+    return PIT_RAD_FOLGE[nr];
+  }
+
   function refreshPitThrottleLock() {
     pitThrottleLock = pitState === 'servicing' && !!pitPlan && pitPlan.tyres
                       && !!pitDone && !pitDone.tyres;

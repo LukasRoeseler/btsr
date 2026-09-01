@@ -357,7 +357,14 @@
 
         // ---- Asymmetrischer Reifenverschleiss (Block 4.3) ----
         tyreAsymEffect: 1.0,
-        tyreAsymShare: 0.7,     // wie stark die Lenkung die Last verteilt
+        // QUERVERLAGERUNG, das Gegenstueck zu transferK fuer die Laengsrichtung. 0,7 heisst:
+        // bei vollem Querbedarf traegt die aeussere Seite 85 % und die innere 15 % - das ist
+        // die Groessenordnung eines Rennwagens mit steifen Federn und viel Abtrieb.
+        //
+        // Wie transferK eine NAEHERUNG: ein echtes Modell haette Federraten, Stabilisatoren
+        // und eine Waelzachse. Was hier stimmt, ist die Reihenfolge - eine Rechtskurve
+        // belastet die linken Raeder, und mit dem Bremsen zusammen vorne links am meisten.
+        tyreAsymShare: 0.7,
         tyreAsymPull: 0.05,     // hoechster Lenk-Offset bei voller Ungleichheit
 
         // ---- Reifendruck (Block 4.4) ----
@@ -410,8 +417,21 @@
         // der Balken im Cockpit, der Boxenstopp, die Griffrechnung - lesen weiter dieses
         // Feld und brauchen keine Aenderung. Die Aufteilung ist ein Zusatz, kein Umbau.
         tyreWear: 0,      // 0..1
+        // Die Seitenmittel bleiben, weil Leser daran haengen - sie werden jetzt aus den vier
+        // Raedern GERECHNET und nicht mehr selbst gefuehrt.
         tyreWearL: 0,
         tyreWearR: 0,
+        // VIER RAEDER, Reihenfolge vorne links, vorne rechts, hinten links, hinten rechts.
+        // Als Feld und nicht als vier Felder: alles, was damit passiert, passiert fuer alle
+        // vier gleich, und vier Namen waeren vier Stellen, an denen einer vergessen wird.
+        tyreWear4: [0, 0, 0, 0],
+        tyreTemp4: [20, 20, 20, 20],
+        load4: [1, 1, 1, 1],       // Radlast, 1 = Mittel
+        // Der REINE Seitenanteil, ebenfalls 1 im Mittel und ohne die Achsaufteilung. Die
+        // Bremsscheiben brauchen genau ihn: ihre Achsaufteilung kommt aus der Bremsbalance,
+        // und beides zu multiplizieren hiesse, die Vorderachse zweimal zu bevorzugen.
+        latShare4: [1, 1, 1, 1],
+        brakeTemp4: [25, 25, 25, 25],
         brakeTempF: 25,
         brakeTempR: 25,
         brakeFade: 0,     // 0..brakeFadeMax, Anteil verlorener Bremskraft
@@ -641,6 +661,31 @@
       st.loadFront += ((0.5 - demand * cfg.transferK) - st.loadFront) * aL;
       st.longUse += (demand - st.longUse) * aU;
 
+      // ---- VIER RADLASTEN: Nicken mal Waelzen ----------------------------------------
+      //
+      // Die Laengsverlagerung stand schon da (loadFront), der Querbedarf auch (latUse) - nur
+      // die Information, WELCHE Seite er belastet, lag unbenutzt daneben. Aus beidem fallen
+      // vier Radlasten heraus, ohne eine neue Annahme:
+      //
+      //   Achsanteil   loadFront bzw. 1 - loadFront
+      //   Seitenanteil 0,5 +/- latUse * tyreAsymShare / 2, Vorzeichen aus der Lenkrichtung
+      //   Radlast      Achsanteil * Seitenanteil * 4, also 1,0 im Mittel
+      //
+      // Eine Rechtskurve (dampedSteering > 0) belastet die LINKEN Raeder. Das ist der Punkt,
+      // an dem sich das Vorzeichen entscheidet, und er ist einen Kommentar wert: das AEUSSERE
+      // Rad traegt mehr, und aussen ist bei Rechtskurve links.
+      const lenkVz = st.dampedSteering >= 0 ? 1 : -1;
+      const rollen = Math.max(0, Math.min(1, latUse)) * cfg.tyreAsymShare / 2;
+      const anteilLinks = 0.5 + lenkVz * rollen;
+      const anteilRechts = 1 - anteilLinks;
+      st.load4[0] = st.loadFront * anteilLinks * 4;          // vorne links
+      st.load4[1] = st.loadFront * anteilRechts * 4;         // vorne rechts
+      st.load4[2] = (1 - st.loadFront) * anteilLinks * 4;    // hinten links
+      st.load4[3] = (1 - st.loadFront) * anteilRechts * 4;   // hinten rechts
+      // Derselbe Seitenanteil ohne die Achsaufteilung, auf 1 im Mittel normiert.
+      st.latShare4[0] = st.latShare4[2] = anteilLinks * 2;
+      st.latShare4[1] = st.latShare4[3] = anteilRechts * 2;
+
       // How wet it is, from the surface factor itself rather than from a weather flag:
       // GRIP_MATRIX runs 1.00 (dry slicks) down to 0.45 (rain on slicks), so this is 0 in
       // the dry and 1 on slicks in the rain.
@@ -756,9 +801,23 @@
       const pWear = 1 / pRel;      // weniger Druck -> mehr Verschleiss
       const pCold = pRel;          // mehr Druck -> kalt schlechter
 
-      st.tyreTempC += (cfg.tyreHeatRate * pHeat * Math.max(1, cfg.tyreEffect) * work
-                       - cfg.tyreCoolRate * (st.tyreTempC - cfg.tyreAmbientC) / span) * dt;
-      st.tyreTempC = Math.max(cfg.tyreAmbientC, st.tyreTempC);
+      // VIER Temperaturen, jede mit ihrer eigenen Radlast. Die Arbeit skaliert mit der
+      // Last: ein entlastetes Innenrad wird kaum warm, ein belastetes Aussenrad umso mehr.
+      // Die Kuehlung ist fuer alle vier dieselbe - sie haengt an der Umgebung und nicht am
+      // Rad.
+      const asymAn4 = cfg.tyreAsymEffect > 0;
+      for (let i = 0; i < 4; i++) {
+        const last = asymAn4 ? st.load4[i] : 1;
+        st.tyreTemp4[i] += (cfg.tyreHeatRate * pHeat * Math.max(1, cfg.tyreEffect)
+                            * work * last
+                            - cfg.tyreCoolRate * (st.tyreTemp4[i] - cfg.tyreAmbientC) / span)
+                           * dt;
+        st.tyreTemp4[i] = Math.max(cfg.tyreAmbientC, st.tyreTemp4[i]);
+      }
+      // tyreTempC BLEIBT der Mittelwert. Alle vorhandenen Leser - Griffrechnung,
+      // Boxenstopp, die Selbsttests - haengen daran, und ein zweiter Weg zur Temperatur
+      // waere eine zweite Wahrheit.
+      st.tyreTempC = (st.tyreTemp4[0] + st.tyreTemp4[1] + st.tyreTemp4[2] + st.tyreTemp4[3]) / 4;
 
       // Wear accumulates with the same work, and faster once they are hot — which is what
       // makes an aggressive stint cost more than a tidy one.
@@ -774,14 +833,19 @@
       // Die Summe der beiden Anteile ist immer 2, also bleibt der Mittelwert genau die
       // alte Rate. Ohne diese Normierung waere "Asymmetrie an" auch "mehr Verschleiss an",
       // und dann waere nicht messbar, was der Schalter tut.
+      // VIER Verschleisswerte, jeder mit seiner Radlast. Vorher waren es zwei
+      // (links/rechts) aus der Lenkrichtung allein - vorne und hinten waren verklebt,
+      // obwohl das Bremsen die Vorderachse laengst belastet.
       const zuwachs = cfg.tyreWearRate * pWear * cfg.tyreEffect * work * hotFactor * dt;
       const asym = Math.max(0, Math.min(2, cfg.tyreAsymEffect));
-      const lenkS = Math.max(-1, Math.min(1, st.dampedSteering || 0));
-      const anteilL = 1 + cfg.tyreAsymShare * Math.min(1, asym) * lenkS;
-      const anteilR = 2 - anteilL;
-      st.tyreWearL = Math.min(1, st.tyreWearL + zuwachs * anteilL);
-      st.tyreWearR = Math.min(1, st.tyreWearR + zuwachs * anteilR);
-      // tyreWear BLEIBT der Mittelwert: alle vorhandenen Leser haengen daran.
+      for (let i = 0; i < 4; i++) {
+        const last = asym > 0 ? st.load4[i] : 1;
+        st.tyreWear4[i] = Math.min(1, st.tyreWear4[i] + zuwachs * last);
+      }
+      // Die Seitenmittel und der Gesamtmittelwert werden GERECHNET und nicht gefuehrt: so
+      // koennen sie per Konstruktion nicht von den vier Raedern abweichen.
+      st.tyreWearL = (st.tyreWear4[0] + st.tyreWear4[2]) / 2;
+      st.tyreWearR = (st.tyreWear4[1] + st.tyreWear4[3]) / 2;
       st.tyreWear = (st.tyreWearL + st.tyreWearR) / 2;
 
       // Der Aktorteil: die staerker abgenutzte Seite erzeugt weniger Querkraft, also zieht
@@ -834,12 +898,34 @@
       const bLuft = cfg.brakeCoolBase
                     + cfg.brakeCoolAir * Math.min(1, Math.abs(st.speedKmh) / cfg.topSpeedKmh);
       const bRate = cfg.brakeHeatRate * Math.max(1, cfg.brakeFadeEffect);
-      const heizF = bRate * bWork * 2 * cfg.brakeBias;
-      const heizR = bRate * bWork * 2 * (1 - cfg.brakeBias);
-      st.brakeTempF += (heizF - bLuft * (st.brakeTempF - cfg.brakeAmbientC)) * dt;
-      st.brakeTempR += (heizR - bLuft * (st.brakeTempR - cfg.brakeAmbientC)) * dt;
-      st.brakeTempF = Math.max(cfg.brakeAmbientC, st.brakeTempF);
-      st.brakeTempR = Math.max(cfg.brakeAmbientC, st.brakeTempR);
+      // VIER Scheiben. Die Achsaufteilung kommt aus der Bremsbalance, die Seitenaufteilung
+      // aus derselben Querverlagerung wie bei den Reifen: wer im Bremsen einlenkt, heizt die
+      // AEUSSERE Scheibe mehr, weil dort mehr Last liegt und die Bremse mehr Kraft absetzen
+      // kann. Genau das sieht man auf dem Schirm eines echten Rennwagens.
+      //
+      // Der Faktor 2 auf den Achsanteil ist die Normierung: bei 50:50 bekommt jede Achse die
+      // volle Rate. Der Seitenanteil ist bereits auf 1 im Mittel normiert (load4).
+      const heizAchse = [2 * cfg.brakeBias, 2 * cfg.brakeBias,
+                         2 * (1 - cfg.brakeBias), 2 * (1 - cfg.brakeBias)];
+      // Die Seitenverteilung nimmt den REINEN Seitenanteil und nicht die ganze Radlast:
+      // load4 enthaelt die Achsaufteilung schon, und heizAchse enthaelt sie auch - beides
+      // multipliziert hat die Vorderachse zweimal bevorzugt, bis vorne-innen kaelter
+      // herauskam als hinten-aussen. Vorne bremst immer mehr.
+      //
+      // Und nur zur Haelfte gewichtet: eine Bremsscheibe sitzt an einer starren Achse und
+      // teilt ihre Kraft nicht so ungleich wie ein Reifen seine Haftung. Ein voller
+      // Lastfaktor haette die Innenscheibe im Kurvenbremsen kalt gelassen, und das ist nicht,
+      // was Telemetrie zeigt.
+      for (let i = 0; i < 4; i++) {
+        const lastB = 1 + (st.latShare4[i] - 1) * 0.5;
+        const heiz = bRate * bWork * heizAchse[i] * (asymAn4 ? lastB : 1);
+        st.brakeTemp4[i] += (heiz - bLuft * (st.brakeTemp4[i] - cfg.brakeAmbientC)) * dt;
+        st.brakeTemp4[i] = Math.max(cfg.brakeAmbientC, st.brakeTemp4[i]);
+      }
+      // Die Achsmittel werden GERECHNET: brakeTempF und brakeTempR haengen Leser dran (das
+      // Fading unten, die Anzeige, die Selbsttests), und sie duerfen nicht auseinanderlaufen.
+      st.brakeTempF = (st.brakeTemp4[0] + st.brakeTemp4[1]) / 2;
+      st.brakeTempR = (st.brakeTemp4[2] + st.brakeTemp4[3]) / 2;
 
       // Der Verlust je Achse, gewichtet mit ihrem Anteil an der Bremskraft: eine glueende
       // Hinterscheibe bei 62 % Balance vorn kostet nur 38 % ihres Verlusts.

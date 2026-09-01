@@ -559,20 +559,110 @@
     --gt3-line-soft: rgba(255, 255, 255, .16);
   }
   #tab-race { position: relative; }
-  /* Schmale Carbon-Umrandung: ein 45-Grad-Streifenmuster als border-image, 2 px. Kein
-     Bild und kein zusaetzlicher Knoten - ein wiederholter Verlauf im Rahmen kostet nichts
-     und laesst sich in einer Zeile wieder abschalten. */
-  .gt3 { background: #05070c;
-    border: 2px solid transparent;
-    border-image: repeating-linear-gradient(45deg,
-      #2b3547 0 2px, #10151f 2px 4px) 2;
-    border-radius: 0; overflow: hidden;
+  /* CARBON-BLENDE UND GLASSCHIRM.
+
+     Die Blende braucht KEINEN zusaetzlichen Knoten, und das ist der ganze Trick: die Textur
+     wird auf die border-box gemalt, der Schirm auf die padding-box. Damit liegt Carbon im
+     Rahmenring und der Schirm darin - ein Rahmen aus durchsichtigen Pixeln, dessen Breite
+     die Blendenbreite ist. Der Cockpit-Takt schreibt diesen Schirm jeden Frame neu; was hier
+     entsteht, darf ihn nichts kosten, und eine Hintergrundschicht kostet nichts.
+
+     Die Webung ist die gelieferte Vorlage, unveraendert: zwei Straenge im Twill, jeder mit
+     einem Verlauf QUER zu sich selbst, damit er wie ein Zylinder aussieht und nicht wie ein
+     Rechteck, plus die feinen Filamentlinien. Eine CSS-Einheit ist eine SVG-Einheit, also
+     ist die Webung 12 px gross - dieselbe Zahl wie in der Vorlage.
+
+     Der Klarlack-Glanz steht NICHT in der Textur, obwohl die Vorlage ihn dort hat. Ein
+     diagonaler Glanz laeuft von Ecke zu Ecke des Bildes; die Textur wiederholt sich aber
+     alle 24 px, und dann wiederholt sich der Glanz mit. Ein Lack, der vierzig Mal ueber die
+     Blende laeuft, sieht nach Karo aus. Er kommt darum als EINE ungetaktete Schicht ueber
+     die ganze Blende.
+
+     Reihenfolge der Schichten, und in CSS malt die ERSTE oben: Schirm, Lack, Schrauben,
+     Webung. Der Schirm ist auf die padding-box beschnitten, also zeigen sich Lack und
+     Schrauben nur im Ring. */
+  .gt3 {
+    /* Die Blende muss BREITER sein als eine Webeinheit. Bei 8 px war sie schmaler als
+       eine, und dann sieht man einen Verlaufsausschnitt und liest gebuerstetes Grau statt
+       Gewebe. Die Webeinheit ist die halbe Kachel, also 7 px - bei 11 bis 20 px Blende
+       passen ein-einhalb bis drei darueber, und ab etwa zwei liest man Stoff. */
+    --gt3-blende: clamp(11px, 2.8vw, 20px);
+    /* Die Webung. Eine Zeile weniger und die Blende ist wieder eine Farbflaeche. */
+    --gt3-carbon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cdefs%3E%3ClinearGradient id='h' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%231a1a1a'/%3E%3Cstop offset='.25' stop-color='%23404040'/%3E%3Cstop offset='.5' stop-color='%231e1e1e'/%3E%3Cstop offset='.75' stop-color='%23454545'/%3E%3Cstop offset='1' stop-color='%23141414'/%3E%3C/linearGradient%3E%3ClinearGradient id='v' x1='0' y1='0' x2='1' y2='0'%3E%3Cstop offset='0' stop-color='%23161616'/%3E%3Cstop offset='.25' stop-color='%233b3b3b'/%3E%3Cstop offset='.5' stop-color='%231a1a1a'/%3E%3Cstop offset='.75' stop-color='%23404040'/%3E%3Cstop offset='1' stop-color='%23101010'/%3E%3C/linearGradient%3E%3Cpattern id='w' width='12' height='12' patternUnits='userSpaceOnUse'%3E%3Crect width='12' height='12' fill='%23121212'/%3E%3Cpath d='M0 0h6v6H0zM6 6h6v6H6z' fill='url(%23h)'/%3E%3Cpath d='M6 0h6v6H6zM0 6h6v6H0z' fill='url(%23v)'/%3E%3Cpath d='M0 1h12M0 3h12M0 5h12M0 7h12M0 9h12M0 11h12' stroke='%23000' stroke-width='.4' opacity='.4'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='24' height='24' fill='url(%23w)'/%3E%3C/svg%3E");
+    /* Die vier Schrauben in den Blendenecken: heller Kopf, dunkler Sitz, aussen nichts.
+       Diese Zeile auf none gesetzt nimmt sie weg, ohne sonst etwas zu ruehren. */
+    --gt3-schraube: radial-gradient(circle at 50% 50%,
+      #7c8798 0 13%, #464f5e 13% 19%, #14181f 19% 25%, rgba(0,0,0,0) 25%);
+    position: relative;
+    border: var(--gt3-blende) solid transparent;
+    border-radius: 2px; overflow: hidden;
+    background-image:
+      /* 1. Der Schirm. Kein flaches Schwarz: ein TFT wird von der Kante beleuchtet und ist
+            dort eine Spur heller, und genau das unterscheidet eine Anzeige von einer
+            Farbflaeche. */
+      linear-gradient(180deg, #090d15 0%, #05070c 46%, #04060a 74%, #070a12 100%),
+      /* 2. Der Klarlack ueber der Blende, ungetaktet, mit dunklem Gegenfeld - eine
+            Spiegelung ohne Gegenlicht sieht nach Aufhellung aus und nicht nach Lack. */
+      linear-gradient(118deg, rgba(255,255,255,.10) 0%, rgba(255,255,255,.015) 34%,
+                              rgba(0,0,0,.30) 62%, rgba(255,255,255,.04) 100%),
+      /* 3. Die vier Schrauben, je eine Ecke. */
+      var(--gt3-schraube), var(--gt3-schraube),
+      var(--gt3-schraube), var(--gt3-schraube),
+      /* 4. Eine Daempfung UEBER der Webung und nicht darin. Die Faserverlaeufe der Vorlage
+            gehen bis #454545; das ist auf einem hellen Blatt richtig, auf einer dunklen
+            Anzeige wird daraus Silber statt Carbon. Gedaempft wird deshalb hier, damit die
+            Verlaeufe selbst unangetastet bleiben und eine Zahl genuegt, um es zu regeln. */
+      linear-gradient(rgba(0,0,0,.46), rgba(0,0,0,.46)),
+      /* 5. Die Webung. */
+      var(--gt3-carbon);
+    background-origin: padding-box, border-box, border-box, border-box,
+                       border-box, border-box, border-box, border-box;
+    background-clip: padding-box, border-box, border-box, border-box,
+                     border-box, border-box, border-box, border-box;
+    background-repeat: no-repeat, no-repeat, no-repeat, no-repeat,
+                       no-repeat, no-repeat, no-repeat, repeat;
+    background-size: auto, auto,
+                     var(--gt3-blende) var(--gt3-blende),
+                     var(--gt3-blende) var(--gt3-blende),
+                     var(--gt3-blende) var(--gt3-blende),
+                     var(--gt3-blende) var(--gt3-blende),
+                     auto, 14px 14px;
+    background-position: 0 0, 0 0, 0 0, 100% 0, 0 100%, 100% 100%, 0 0, 0 0;
     padding: clamp(5px, 1vw, 11px); color: #eef2fa; display: grid;
     gap: clamp(4px, .8vw, 9px);
     grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr) minmax(0, 1.15fr);
     grid-template-areas: "flag flag flag" "shift shift shift" "left gear right"
                          "strip strip strip" "banner banner banner"
                          "foot foot foot" "toast toast toast"; }
+
+  /* DAS DECKGLAS. Drei Dinge, die eine Anzeige von einer Farbflaeche unterscheiden, und
+     alle drei sind Aussehen und keine Aussage:
+
+       - eine Spiegelung, diagonal und schwach, mit einem dunklen Gegenfeld,
+       - eine Pixelzeilen-Struktur, sehr schwach - bei 3 px Teilung und 8 Prozent ist sie
+         auf dem Telefon Struktur und auf dem Bildschirmfoto kaum zu benennen,
+       - eine Randabschattung, damit der Schirm IM Gehaeuse liegt und nicht darauf.
+
+     ::after und kein zusaetzliches Kind: das Cockpit ist ein Raster, ein Kind waere ein
+     Rasterfeld und wuerde die Anordnung verschieben. Absolut gesetzt ist es keines.
+
+     pointer-events: none ist hier nicht Kosmetik, sondern notwendig. Fast jede Kachel im
+     Cockpit ist antippbar - eine Glasscheibe ueber allem wuerde jeden Tipp abfangen, und
+     dann laesst sich keine Simulation mehr abschalten und kein Rennen starten. */
+  .gt3::after { content: ''; position: absolute; inset: 0; pointer-events: none;
+    z-index: 4; border-radius: inherit;
+    background:
+      linear-gradient(122deg, rgba(255,255,255,.045) 0%, rgba(255,255,255,.008) 30%,
+                              rgba(255,255,255,0) 52%, rgba(0,0,0,.10) 78%,
+                              rgba(255,255,255,.022) 100%),
+      repeating-linear-gradient(0deg, rgba(0,0,0,.08) 0 1px, rgba(0,0,0,0) 1px 3px);
+    box-shadow: inset 0 0 clamp(14px, 5vw, 54px) rgba(0,0,0,.55),
+                inset 0 1px 0 rgba(255,255,255,.05); }
+  /* Eine selbstleuchtende Anzeige blueht. Eine Ziffer mit vollkommen scharfer Kante liest
+     sich als Text auf Papier - das Leuchten ist der Unterschied, und es ist so schwach
+     gehalten, dass es die Kante nicht weich macht. */
+  .gt3-val.big, .gt3-gearnum, .gt3-rpm {
+    text-shadow: 0 0 clamp(5px, 1.4vw, 13px) rgba(210, 226, 255, .20); }
 
   /* Shift lights: round, evenly spaced, green through red to blue.
      RASTER und nicht flex: mit repeat(10, minmax(0,1fr)) und aspect-ratio kann die Reihe
@@ -717,9 +807,24 @@
      statt die Marke zu ziehen. */
   /* Vier Reifen in Fahrzeuganordnung. aspect-ratio statt fester Hoehe, damit die Felder
      auf 375 px nicht zu Strichen werden; der Zwischenraum in der Mitte ist die Spur. */
-  .gt3-tyres4 { display: grid; grid-template-columns: 1fr 1fr;
-    gap: clamp(2px, .5vw, 4px) clamp(5px, 1.6vw, 12px);
-    margin: 3px 0 2px 0; }
+  /* FUENF Spalten: Reifen, Scheibe, Spur, Scheibe, Reifen. Die mittlere traegt kein
+     Element - sie ist der Spalt zwischen den Fahrzeugseiten, und genau der macht die
+     Anordnung als Fahrzeug lesbar. */
+  .gt3-tyres4 { display: grid;
+    grid-template-columns: 1fr 0.36fr clamp(3px, 1.4vw, 11px) 0.36fr 1fr;
+    column-gap: clamp(1px, .35vw, 3px);
+    row-gap: clamp(2px, .6vw, 5px);
+    margin: 3px 0 2px 0; align-items: center; }
+  .t4-aussen-l { grid-column: 1; }
+  .t4-innen-l  { grid-column: 2; }
+  .t4-innen-r  { grid-column: 4; }
+  .t4-aussen-r { grid-column: 5; }
+  /* Die Scheibe ist SCHMALER und KUERZER als der Reifen, wie auf dem Vorbild: sie steckt in
+     der Felge und ist kleiner als das Rad. Volle Flaeche und nicht gefuellt - sie hat nur
+     eine Groesse, die Temperatur, und die traegt die Farbe. Ein Fuellstand waere eine zweite
+     Aussage, die es nicht gibt. */
+  .gt3-disc { display: block; height: 62%; border-radius: 1px;
+    background: #2a3346; transition: background .3s linear; }
   /* Etwas Gummi-Optik statt eines Farbfelds: eine leichte Rundung wie eine Lauffleche,
      ein dunkler Rand und ein Schatten nach innen. Die Fuellung selbst wird gedaempft
      (opacity .82) - bei 100 % Restprofil ist sie sonst der groesste Farbblock im ganzen
@@ -733,16 +838,13 @@
   .gt3-t4 > b { position: absolute; left: 0; right: 0; bottom: 0; height: 0;
     background: #4a5568; opacity: .82;
     transition: height .15s linear, background .3s linear; }
-  /* Die Bremsscheibe: ein Ring in der Mitte des Reifens. <s> und nicht ein zusaetzliches
-     <div>, damit die Kachel bei vier Reifen nicht acht Knoten mehr bekommt - der Schirm
-     wird jeden Takt neu geschrieben.
-
-     text-decoration: none, weil <s> von sich aus durchstreicht; hier ist es nur ein
-     kurzer, semantisch neutraler Traeger. */
-  .gt3-t4 > s { position: absolute; left: 50%; top: 50%; text-decoration: none;
-    width: 46%; aspect-ratio: 1; transform: translate(-50%, -50%);
-    border-radius: 50%; border: 2px solid #2a3346; box-sizing: border-box;
-    transition: border-color .3s linear; }
+  /* Ein ABGEBAUTES Rad beim Boxenstopp. Nicht nur leer, sondern weg: die helle Kante
+     verschwindet fast, und die Nabe wird noch dunkler als der leere Reifen. Ein leerer
+     Reifen und ein fehlender Reifen sehen sonst gleich aus, und dann sieht der Wechsel wie
+     vier Mal Verschleiss auf null aus. */
+  .gt3-t4.t4-ab { background: #010204;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .04),
+                inset 0 2px 6px rgba(0, 0, 0, .8); }
   .gt3-bias { cursor: ns-resize; touch-action: none; }
   /* Zwei Zahlen in einer Zeile, deshalb schmaler als die anderen Trimmwerte. Der Trenner
      ist gedaempft, damit die Zahlen die Aufmerksamkeit haben und nicht der Schraegstrich. */
@@ -1943,11 +2045,19 @@
                das Modell fuehrt zwei Scheibentemperaturen, getrennt nach der Bremsbalance.
                Die obere Reihe zeigt deshalb einen anderen Wert als die untere, und genau da
                wird die Balance sichtbar. -->
+          <!-- Reihenfolge: aussen, innen, innen, aussen - je Achse. Die Scheiben stehen
+               damit beide an der INNENSEITE ihres Reifens, wie auf dem Schirm eines echten
+               Rennwagens. Die Elemente werden im Stilblock ausdruecklich platziert; der
+               automatischen Verteilung ueberlassen landet das dritte in der Mittelspur. -->
           <div class="gt3-tyres4">
-            <i class="gt3-t4" id="race-tyre-fl"><b></b><s></s></i>
-            <i class="gt3-t4" id="race-tyre-fr"><b></b><s></s></i>
-            <i class="gt3-t4" id="race-tyre-rl"><b></b><s></s></i>
-            <i class="gt3-t4" id="race-tyre-rr"><b></b><s></s></i>
+            <i class="gt3-t4 t4-aussen-l" id="race-tyre-fl"><b></b></i>
+            <i class="gt3-disc t4-innen-l" id="race-disc-fl"></i>
+            <i class="gt3-disc t4-innen-r" id="race-disc-fr"></i>
+            <i class="gt3-t4 t4-aussen-r" id="race-tyre-fr"><b></b></i>
+            <i class="gt3-t4 t4-aussen-l" id="race-tyre-rl"><b></b></i>
+            <i class="gt3-disc t4-innen-l" id="race-disc-rl"></i>
+            <i class="gt3-disc t4-innen-r" id="race-disc-rr"></i>
+            <i class="gt3-t4 t4-aussen-r" id="race-tyre-rr"><b></b></i>
           </div>
           <div class="gt3-val sm" id="race-tyre-temp">&ndash;</div></div>
         <div class="gt3-box"><svg class="gt3-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-label="Akku"><rect x="2" y="7" width="17" height="10" rx="2"/><path d="M22 11v2"/><path d="M6 10v4M9.5 10v4M13 10v4"/></svg>
@@ -5474,7 +5584,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.4.32</span></span>
+    <span class="foot-ver">v<span id="app-version">0.4.33</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -8246,7 +8356,14 @@
 
         // ---- Asymmetrischer Reifenverschleiss (Block 4.3) ----
         tyreAsymEffect: 1.0,
-        tyreAsymShare: 0.7,     // wie stark die Lenkung die Last verteilt
+        // QUERVERLAGERUNG, das Gegenstueck zu transferK fuer die Laengsrichtung. 0,7 heisst:
+        // bei vollem Querbedarf traegt die aeussere Seite 85 % und die innere 15 % - das ist
+        // die Groessenordnung eines Rennwagens mit steifen Federn und viel Abtrieb.
+        //
+        // Wie transferK eine NAEHERUNG: ein echtes Modell haette Federraten, Stabilisatoren
+        // und eine Waelzachse. Was hier stimmt, ist die Reihenfolge - eine Rechtskurve
+        // belastet die linken Raeder, und mit dem Bremsen zusammen vorne links am meisten.
+        tyreAsymShare: 0.7,
         tyreAsymPull: 0.05,     // hoechster Lenk-Offset bei voller Ungleichheit
 
         // ---- Reifendruck (Block 4.4) ----
@@ -8299,8 +8416,21 @@
         // der Balken im Cockpit, der Boxenstopp, die Griffrechnung - lesen weiter dieses
         // Feld und brauchen keine Aenderung. Die Aufteilung ist ein Zusatz, kein Umbau.
         tyreWear: 0,      // 0..1
+        // Die Seitenmittel bleiben, weil Leser daran haengen - sie werden jetzt aus den vier
+        // Raedern GERECHNET und nicht mehr selbst gefuehrt.
         tyreWearL: 0,
         tyreWearR: 0,
+        // VIER RAEDER, Reihenfolge vorne links, vorne rechts, hinten links, hinten rechts.
+        // Als Feld und nicht als vier Felder: alles, was damit passiert, passiert fuer alle
+        // vier gleich, und vier Namen waeren vier Stellen, an denen einer vergessen wird.
+        tyreWear4: [0, 0, 0, 0],
+        tyreTemp4: [20, 20, 20, 20],
+        load4: [1, 1, 1, 1],       // Radlast, 1 = Mittel
+        // Der REINE Seitenanteil, ebenfalls 1 im Mittel und ohne die Achsaufteilung. Die
+        // Bremsscheiben brauchen genau ihn: ihre Achsaufteilung kommt aus der Bremsbalance,
+        // und beides zu multiplizieren hiesse, die Vorderachse zweimal zu bevorzugen.
+        latShare4: [1, 1, 1, 1],
+        brakeTemp4: [25, 25, 25, 25],
         brakeTempF: 25,
         brakeTempR: 25,
         brakeFade: 0,     // 0..brakeFadeMax, Anteil verlorener Bremskraft
@@ -8530,6 +8660,31 @@
       st.loadFront += ((0.5 - demand * cfg.transferK) - st.loadFront) * aL;
       st.longUse += (demand - st.longUse) * aU;
 
+      // ---- VIER RADLASTEN: Nicken mal Waelzen ----------------------------------------
+      //
+      // Die Laengsverlagerung stand schon da (loadFront), der Querbedarf auch (latUse) - nur
+      // die Information, WELCHE Seite er belastet, lag unbenutzt daneben. Aus beidem fallen
+      // vier Radlasten heraus, ohne eine neue Annahme:
+      //
+      //   Achsanteil   loadFront bzw. 1 - loadFront
+      //   Seitenanteil 0,5 +/- latUse * tyreAsymShare / 2, Vorzeichen aus der Lenkrichtung
+      //   Radlast      Achsanteil * Seitenanteil * 4, also 1,0 im Mittel
+      //
+      // Eine Rechtskurve (dampedSteering > 0) belastet die LINKEN Raeder. Das ist der Punkt,
+      // an dem sich das Vorzeichen entscheidet, und er ist einen Kommentar wert: das AEUSSERE
+      // Rad traegt mehr, und aussen ist bei Rechtskurve links.
+      const lenkVz = st.dampedSteering >= 0 ? 1 : -1;
+      const rollen = Math.max(0, Math.min(1, latUse)) * cfg.tyreAsymShare / 2;
+      const anteilLinks = 0.5 + lenkVz * rollen;
+      const anteilRechts = 1 - anteilLinks;
+      st.load4[0] = st.loadFront * anteilLinks * 4;          // vorne links
+      st.load4[1] = st.loadFront * anteilRechts * 4;         // vorne rechts
+      st.load4[2] = (1 - st.loadFront) * anteilLinks * 4;    // hinten links
+      st.load4[3] = (1 - st.loadFront) * anteilRechts * 4;   // hinten rechts
+      // Derselbe Seitenanteil ohne die Achsaufteilung, auf 1 im Mittel normiert.
+      st.latShare4[0] = st.latShare4[2] = anteilLinks * 2;
+      st.latShare4[1] = st.latShare4[3] = anteilRechts * 2;
+
       // How wet it is, from the surface factor itself rather than from a weather flag:
       // GRIP_MATRIX runs 1.00 (dry slicks) down to 0.45 (rain on slicks), so this is 0 in
       // the dry and 1 on slicks in the rain.
@@ -8645,9 +8800,23 @@
       const pWear = 1 / pRel;      // weniger Druck -> mehr Verschleiss
       const pCold = pRel;          // mehr Druck -> kalt schlechter
 
-      st.tyreTempC += (cfg.tyreHeatRate * pHeat * Math.max(1, cfg.tyreEffect) * work
-                       - cfg.tyreCoolRate * (st.tyreTempC - cfg.tyreAmbientC) / span) * dt;
-      st.tyreTempC = Math.max(cfg.tyreAmbientC, st.tyreTempC);
+      // VIER Temperaturen, jede mit ihrer eigenen Radlast. Die Arbeit skaliert mit der
+      // Last: ein entlastetes Innenrad wird kaum warm, ein belastetes Aussenrad umso mehr.
+      // Die Kuehlung ist fuer alle vier dieselbe - sie haengt an der Umgebung und nicht am
+      // Rad.
+      const asymAn4 = cfg.tyreAsymEffect > 0;
+      for (let i = 0; i < 4; i++) {
+        const last = asymAn4 ? st.load4[i] : 1;
+        st.tyreTemp4[i] += (cfg.tyreHeatRate * pHeat * Math.max(1, cfg.tyreEffect)
+                            * work * last
+                            - cfg.tyreCoolRate * (st.tyreTemp4[i] - cfg.tyreAmbientC) / span)
+                           * dt;
+        st.tyreTemp4[i] = Math.max(cfg.tyreAmbientC, st.tyreTemp4[i]);
+      }
+      // tyreTempC BLEIBT der Mittelwert. Alle vorhandenen Leser - Griffrechnung,
+      // Boxenstopp, die Selbsttests - haengen daran, und ein zweiter Weg zur Temperatur
+      // waere eine zweite Wahrheit.
+      st.tyreTempC = (st.tyreTemp4[0] + st.tyreTemp4[1] + st.tyreTemp4[2] + st.tyreTemp4[3]) / 4;
 
       // Wear accumulates with the same work, and faster once they are hot — which is what
       // makes an aggressive stint cost more than a tidy one.
@@ -8663,14 +8832,19 @@
       // Die Summe der beiden Anteile ist immer 2, also bleibt der Mittelwert genau die
       // alte Rate. Ohne diese Normierung waere "Asymmetrie an" auch "mehr Verschleiss an",
       // und dann waere nicht messbar, was der Schalter tut.
+      // VIER Verschleisswerte, jeder mit seiner Radlast. Vorher waren es zwei
+      // (links/rechts) aus der Lenkrichtung allein - vorne und hinten waren verklebt,
+      // obwohl das Bremsen die Vorderachse laengst belastet.
       const zuwachs = cfg.tyreWearRate * pWear * cfg.tyreEffect * work * hotFactor * dt;
       const asym = Math.max(0, Math.min(2, cfg.tyreAsymEffect));
-      const lenkS = Math.max(-1, Math.min(1, st.dampedSteering || 0));
-      const anteilL = 1 + cfg.tyreAsymShare * Math.min(1, asym) * lenkS;
-      const anteilR = 2 - anteilL;
-      st.tyreWearL = Math.min(1, st.tyreWearL + zuwachs * anteilL);
-      st.tyreWearR = Math.min(1, st.tyreWearR + zuwachs * anteilR);
-      // tyreWear BLEIBT der Mittelwert: alle vorhandenen Leser haengen daran.
+      for (let i = 0; i < 4; i++) {
+        const last = asym > 0 ? st.load4[i] : 1;
+        st.tyreWear4[i] = Math.min(1, st.tyreWear4[i] + zuwachs * last);
+      }
+      // Die Seitenmittel und der Gesamtmittelwert werden GERECHNET und nicht gefuehrt: so
+      // koennen sie per Konstruktion nicht von den vier Raedern abweichen.
+      st.tyreWearL = (st.tyreWear4[0] + st.tyreWear4[2]) / 2;
+      st.tyreWearR = (st.tyreWear4[1] + st.tyreWear4[3]) / 2;
       st.tyreWear = (st.tyreWearL + st.tyreWearR) / 2;
 
       // Der Aktorteil: die staerker abgenutzte Seite erzeugt weniger Querkraft, also zieht
@@ -8723,12 +8897,34 @@
       const bLuft = cfg.brakeCoolBase
                     + cfg.brakeCoolAir * Math.min(1, Math.abs(st.speedKmh) / cfg.topSpeedKmh);
       const bRate = cfg.brakeHeatRate * Math.max(1, cfg.brakeFadeEffect);
-      const heizF = bRate * bWork * 2 * cfg.brakeBias;
-      const heizR = bRate * bWork * 2 * (1 - cfg.brakeBias);
-      st.brakeTempF += (heizF - bLuft * (st.brakeTempF - cfg.brakeAmbientC)) * dt;
-      st.brakeTempR += (heizR - bLuft * (st.brakeTempR - cfg.brakeAmbientC)) * dt;
-      st.brakeTempF = Math.max(cfg.brakeAmbientC, st.brakeTempF);
-      st.brakeTempR = Math.max(cfg.brakeAmbientC, st.brakeTempR);
+      // VIER Scheiben. Die Achsaufteilung kommt aus der Bremsbalance, die Seitenaufteilung
+      // aus derselben Querverlagerung wie bei den Reifen: wer im Bremsen einlenkt, heizt die
+      // AEUSSERE Scheibe mehr, weil dort mehr Last liegt und die Bremse mehr Kraft absetzen
+      // kann. Genau das sieht man auf dem Schirm eines echten Rennwagens.
+      //
+      // Der Faktor 2 auf den Achsanteil ist die Normierung: bei 50:50 bekommt jede Achse die
+      // volle Rate. Der Seitenanteil ist bereits auf 1 im Mittel normiert (load4).
+      const heizAchse = [2 * cfg.brakeBias, 2 * cfg.brakeBias,
+                         2 * (1 - cfg.brakeBias), 2 * (1 - cfg.brakeBias)];
+      // Die Seitenverteilung nimmt den REINEN Seitenanteil und nicht die ganze Radlast:
+      // load4 enthaelt die Achsaufteilung schon, und heizAchse enthaelt sie auch - beides
+      // multipliziert hat die Vorderachse zweimal bevorzugt, bis vorne-innen kaelter
+      // herauskam als hinten-aussen. Vorne bremst immer mehr.
+      //
+      // Und nur zur Haelfte gewichtet: eine Bremsscheibe sitzt an einer starren Achse und
+      // teilt ihre Kraft nicht so ungleich wie ein Reifen seine Haftung. Ein voller
+      // Lastfaktor haette die Innenscheibe im Kurvenbremsen kalt gelassen, und das ist nicht,
+      // was Telemetrie zeigt.
+      for (let i = 0; i < 4; i++) {
+        const lastB = 1 + (st.latShare4[i] - 1) * 0.5;
+        const heiz = bRate * bWork * heizAchse[i] * (asymAn4 ? lastB : 1);
+        st.brakeTemp4[i] += (heiz - bLuft * (st.brakeTemp4[i] - cfg.brakeAmbientC)) * dt;
+        st.brakeTemp4[i] = Math.max(cfg.brakeAmbientC, st.brakeTemp4[i]);
+      }
+      // Die Achsmittel werden GERECHNET: brakeTempF und brakeTempR haengen Leser dran (das
+      // Fading unten, die Anzeige, die Selbsttests), und sie duerfen nicht auseinanderlaufen.
+      st.brakeTempF = (st.brakeTemp4[0] + st.brakeTemp4[1]) / 2;
+      st.brakeTempR = (st.brakeTemp4[2] + st.brakeTemp4[3]) / 2;
 
       // Der Verlust je Achse, gewichtet mit ihrem Anteil an der Bremskraft: eine glueende
       // Hinterscheibe bei 62 % Balance vorn kostet nur 38 % ihres Verlusts.
@@ -9716,70 +9912,51 @@
     $('race-g-real').setAttribute('cx', (50 + gx * R).toFixed(1));
     $('race-g-real').setAttribute('cy', (50 + gy * R).toFixed(1));
 
-    // ---- Reifen: vier Felder, paarweise gleichlaufend ------------------------------
+    // ---- Reifen und Bremsscheiben: vier echte Werte --------------------------------
     //
-    // Farbe = Temperatur (blau kalt, gruen im Fenster, rot zu heiss), Fuellhoehe = restliche
-    // Lauffleche. Dieselben zwei Rechnungen wie bisher fuer Ring und Balken, nur in EIN
-    // Element gelegt: zwei Anzeigen fuer die Temperatur waren eine zu viel.
+    // Bis v0.5 zeigten vier Felder ZWEI Werte (links/rechts verklebt) und vier Ringe ZWEI
+    // Temperaturen (vorn/hinten verklebt). Das passte zum Modell. Seit der
+    // Vierradverlagerung fuehrt es vier Radlasten, vier Reifentemperaturen, vier
+    // Verschleisswerte und vier Scheibentemperaturen - also zeigt die Anzeige vier.
     //
-    // Die beiden Reifen einer Seite bekommen denselben Wert, weil das Modell nur links und
-    // rechts trennt. Sie kuenstlich zu spreizen waere eine Erfindung, und eine Anzeige, die
-    // mehr behauptet als das Modell weiss, ist schlimmer als eine grobe.
+    // DIE REIHENFOLGE STEHT AN EINER STELLE: das Modell fuehrt [vorne links, vorne rechts,
+    // hinten links, hinten rechts], und dieses Feld hier in derselben. Eine zweite Zuordnung
+    // irgendwo waere die Gelegenheit, links und rechts zu tauschen - und ein vertauschtes Rad
+    // in einer Anzeige, die plausibel aussieht, findet man erst beim dritten Rennen.
     {
-      // Seite fuer den Reifen, Achse fuer die Bremsscheibe: der Verschleiss ist links und
-      // rechts getrennt, die Scheibentemperatur vorn und hinten.
-      const felder = [['race-tyre-fl', 'L', 'V'], ['race-tyre-rl', 'L', 'H'],
-                      ['race-tyre-fr', 'R', 'V'], ['race-tyre-rr', 'R', 'H']];
       const cfgT = physEngine.config;
       const aus = cfgT.tyreEffect === 0;
-      let col = '#4a5568';
-      if (!aus) {
-        const t = st.tyreTempC;
-        const warm = Math.max(0, Math.min(1, (t - cfgT.tyreAmbientC)
-                                             / (cfgT.tyreOptimalC - cfgT.tyreAmbientC)));
-        if (t > cfgT.tyreOptimalC) {
-          const over = Math.min(1, (t - cfgT.tyreOptimalC)
-                                   / (cfgT.tyreOverheatC - cfgT.tyreOptimalC));
-          col = 'rgb(' + Math.round(70 + 185 * over) + ', ' + Math.round(209 - 130 * over)
-              + ', ' + Math.round(127 - 100 * over) + ')';
-        } else {
-          col = 'rgb(' + Math.round(60 + 10 * warm) + ', ' + Math.round(140 + 69 * warm)
-              + ', ' + Math.round(230 - 103 * warm) + ')';
-        }
-      }
-      // Ohne Asymmetrie tragen alle vier den Mittelwert - dann sieht die Kachel gleichmaessig
-      // aus, und genau das ist die Aussage.
-      const asymAn = cfgT.tyreAsymEffect > 0;
-      const wL = aus ? 0 : (asymAn ? st.tyreWearL : st.tyreWear);
-      const wR = aus ? 0 : (asymAn ? st.tyreWearR : st.tyreWear);
-
-      // ---- Bremsscheiben, als Ring in jedem Reifen -----------------------------------
-      //
-      // WIEDER EINGEBAUT: diese Anzeige lag im Textbereich, den der Umbau auf vier Reifen
-      // ersetzt hat, und ist dabei mitgeloescht worden. race-braket-f stand danach im
-      // Dokument, ohne dass es jemand beschrieb - eine tote Element-id, von mir selbst
-      // erzeugt. Gemeldet als "die Temperatur reagiert nicht auf mein Fahren".
-      //
-      // Vorn und hinten sind hier wirklich verschieden: zwei Scheibentemperaturen, getrennt
-      // nach der Bremsbalance.
       const fadeAus = cfgT.brakeFadeEffect === 0;
-      const scheibe = (T) => {
+      const REIFEN = ['race-tyre-fl', 'race-tyre-fr', 'race-tyre-rl', 'race-tyre-rr'];
+      const SCHEIBEN = ['race-disc-fl', 'race-disc-fr', 'race-disc-rl', 'race-disc-rr'];
+
+      // Reifenfarbe aus der Temperatur DIESES Rades: blau kalt, gruen im Fenster, rot zu
+      // heiss. Dieselbe Rechnung wie bisher, nur je Rad statt einmal.
+      const reifenFarbe = (T) => {
+        if (aus) return '#4a5568';
+        const warm = Math.max(0, Math.min(1, (T - cfgT.tyreAmbientC)
+                                             / (cfgT.tyreOptimalC - cfgT.tyreAmbientC)));
+        if (T > cfgT.tyreOptimalC) {
+          const over = Math.min(1, (T - cfgT.tyreOptimalC)
+                                   / (cfgT.tyreOverheatC - cfgT.tyreOptimalC));
+          return 'rgb(' + Math.round(70 + 185 * over) + ', ' + Math.round(209 - 130 * over)
+               + ', ' + Math.round(127 - 100 * over) + ')';
+        }
+        return 'rgb(' + Math.round(60 + 10 * warm) + ', ' + Math.round(140 + 69 * warm)
+             + ', ' + Math.round(230 - 103 * warm) + ')';
+      };
+
+      // Scheibenfarbe, auf den SICHTBAREN Bereich normiert und nicht auf die Fadingschwelle:
+      // 300 Grad ist Betriebstemperatur, darueber nach Gelb, ab 520 nach Rot. Gegen die
+      // Schwelle normiert blieb der Ring bis fast 500 Grad grau.
+      const scheibenFarbe = (T) => {
         if (fadeAus) return '#2a3346';
         const ueber = Math.max(0, Math.min(1, (T - cfgT.brakeFadeStartC)
           / Math.max(1, cfgT.brakeFadeFullC - cfgT.brakeFadeStartC)));
         if (ueber > 0) {
-          // Ab Fadingbeginn orange nach rot: das ist die Nachricht.
           return 'rgb(255, ' + Math.round(178 - 130 * ueber) + ', '
                + Math.round(107 - 92 * ueber) + ')';
         }
-        // Darunter grau nach gruen - und NICHT gegen die Fadingschwelle normiert. Das war
-        // die erste Fassung, und sie liess den Ring bis fast 500 Grad grau: bei 66 Grad
-        // gemessen rgb(44,64,73), also kein sichtbarer Unterschied zu kalt. Der Bereich, den
-        // man beim Fahren sieht, liegt zwischen 25 und ein paar hundert Grad, und dort muss
-        // sich die Farbe bewegen.
-        //
-        // 300 Grad ist hier die Betriebstemperatur: eine harte Runde erreicht das, und ab
-        // dort geht es weiter nach Gelb, bis das Fading bei 520 einsetzt.
         const warm = Math.max(0, Math.min(1, (T - cfgT.brakeAmbientC) / 275));
         if (warm >= 1) {
           const heiss = Math.max(0, Math.min(1,
@@ -9790,29 +9967,49 @@
         return 'rgb(' + Math.round(42 + 20 * warm) + ', ' + Math.round(51 + 158 * warm)
              + ', ' + Math.round(70 + 36 * warm) + ')';
       };
-      const farbeF = scheibe(st.brakeTempF);
-      const farbeR = scheibe(st.brakeTempR);
 
-      for (const [id, seite, achse] of felder) {
-        const el = $(id);
-        if (!el || !el.firstChild) continue;
-        const rest = aus ? 100 : Math.max(0, Math.min(100, 100 - (seite === 'L' ? wL : wR) * 100));
-        el.firstChild.style.height = rest + '%';
-        el.firstChild.style.background = col;
-        const ring = el.lastChild;
-        if (ring && ring !== el.firstChild) {
-          ring.style.borderColor = achse === 'V' ? farbeF : farbeR;
+      // Welches Rad gerade abgebaut ist. Beim Boxenstopp laeuft der Schrauberton ueber die
+      // ganze Wechseldauer und man hoert darin vier Ansaetze - also zeigt die Anzeige vier
+      // Ausfaelle, einen je Rad. Ohne das sieht man vier Toene und keine Bewegung.
+      const abIdx = typeof pitWheelOff === 'function' ? pitWheelOff() : -1;
+      for (let i = 0; i < 4; i++) {
+        const el = $(REIFEN[i]);
+        if (el && el.firstChild) {
+          const ab = i === abIdx;
+          el.classList.toggle('t4-ab', ab);
+          const w = aus ? 0 : (st.tyreWear4 ? st.tyreWear4[i] : st.tyreWear);
+          // Abgebaut heisst leer: es ist kein Reifen da, dessen Profil man zeigen koennte.
+          const rest = ab ? 0 : Math.max(0, Math.min(100, 100 - w * 100));
+          el.firstChild.style.height = rest + '%';
+          el.firstChild.style.background =
+            reifenFarbe(st.tyreTemp4 ? st.tyreTemp4[i] : st.tyreTempC);
+        }
+        const sc = $(SCHEIBEN[i]);
+        if (sc) {
+          sc.style.background =
+            scheibenFarbe(st.brakeTemp4 ? st.brakeTemp4[i]
+                                        : (i < 2 ? st.brakeTempF : st.brakeTempR));
         }
       }
-      // Eine Zeile fuer beides: Reifentemperatur mit Abnutzung, und die zwei
-      // Scheibentemperaturen. Zwei Zeilen waeren in einer 77-px-Kachel eine zu viel.
+
+      // Eine Zeile fuer beides, und sie nennt den BEREICH statt eines Mittelwerts: bei vier
+      // verschiedenen Werten ist der Mittelwert die eine Zahl, die kein Rad hat. Das
+      // heisseste Rad und der staerkste Verschleiss sind die Zahlen, auf die man reagiert.
       const tt = $('race-tyre-temp');
       if (tt) {
-        const reifen = aus ? 'aus' : (Math.round(st.tyreTempC) + '\u00b0 '
-          + Math.round(Math.max(wL, wR) * 100) + '%');
-        const br = fadeAus ? '' : (' \u00b7 ' + Math.round(st.brakeTempF) + '/'
-          + Math.round(st.brakeTempR) + '\u00b0');
-        tt.textContent = reifen + br;
+        if (aus) {
+          tt.textContent = 'aus';
+        } else {
+          const t4 = st.tyreTemp4 || [st.tyreTempC];
+          const w4 = st.tyreWear4 || [st.tyreWear];
+          const b4 = st.brakeTemp4 || [st.brakeTempF, st.brakeTempR];
+          const heiss = Math.round(Math.max.apply(null, t4));
+          const kalt = Math.round(Math.min.apply(null, t4));
+          const ab = Math.round(Math.max.apply(null, w4) * 100);
+          const bmax = Math.round(Math.max.apply(null, b4));
+          tt.textContent = (kalt === heiss ? heiss + '\u00b0' : kalt + '\u2013' + heiss + '\u00b0')
+            + ' ' + ab + '%' + (fadeAus ? '' : ' \u00b7 ' + bmax + '\u00b0');
+        }
       }
     }
 
@@ -14659,6 +14856,16 @@
     physEngine.state.tyreWearL = 0;
     physEngine.state.tyreWearR = 0;
     physEngine.state.tyrePull = 0;
+    // Die VIER Raeder muessen mit, sonst setzt der Boxenstopp die Mittelwerte auf 0 und die
+    // vier Felder im Cockpit zeigen weiter Abnutzung. Genau diese Sorte Auslassung hat schon
+    // einmal dazu gefuehrt, dass die Kachel dem Toast widersprach - und man glaubt dem, was
+    // man sieht. Beim naechsten Takt werden die Mittelwerte aus den vier GERECHNET, also
+    // reicht es nicht, nur die Mittelwerte zu nullen: sie waeren sofort wieder da.
+    physEngine.state.tyreWear4 = [0, 0, 0, 0];
+    physEngine.state.tyreTemp4 = [physEngine.config.tyreAmbientC,
+                                  physEngine.config.tyreAmbientC,
+                                  physEngine.config.tyreAmbientC,
+                                  physEngine.config.tyreAmbientC];
     physEngine.state.tyreGrip = 1;
     // Die BREMSSCHEIBEN werden hier ausdruecklich NICHT gekuehlt. Ein Boxenstopp dauert
     // Sekunden, und Scheiben kuehlen darin nicht auf Umgebungstemperatur. Reifen werden
@@ -14785,6 +14992,34 @@
   // Wheels off means the car cannot move, whatever the driver asks for. Once they are back
   // on, the throttle is free again - and using it is how you leave, which is exactly what
   // "sobald das fertig ist bedeutet Gas geben auch Ende" describes.
+  // Die Reihenfolge, in der die vier Raeder gewechselt werden: Boxenmauerseite zuerst,
+  // weil dort die Crew steht und den Wagen von dort umlaeuft. Indizes wie ueberall im
+  // Modell: 0 vorne links, 1 vorne rechts, 2 hinten links, 3 hinten rechts.
+  //
+  // EINE Liste, weil eine zweite die Gelegenheit waere, dass Anzeige und Ton in
+  // verschiedener Ordnung laufen.
+  const PIT_RAD_FOLGE = [1, 3, 2, 0];
+  // Wie lange ein Rad innerhalb seines Fensters ABGEBAUT ist. Zwei Drittel: dann sieht man
+  // vier deutliche Ausfaelle. Bei 1,0 waere immer genau ein Rad weg und der Wechsel saehe
+  // wie ein einziger langer Vorgang aus, obwohl vier Toene zu hoeren sind.
+  const PIT_RAD_AB_ANTEIL = 0.66;
+
+  // Der Index des Rades, das GERADE abgebaut ist, oder -1. Wird vom Cockpit-Takt in
+  // 50-drive.js gelesen; eine Funktionsdeklaration ist ueber den ganzen Bereich hochgezogen,
+  // also ist der Aufruf von dort gefahrlos - anders als bei einem let, das vor seiner Zeile
+  // in der Totzone liegt. Diese Falle hat in dieser Werkstatt schon siebenmal zugeschlagen.
+  function pitWheelOff() {
+    if (pitState !== 'servicing' || !pitPlan || !pitPlan.tyres) return -1;
+    if (!pitDone || pitDone.tyres) return -1;
+    if (!(pitTyreTarget > 0)) return -1;
+    const anteil = Math.max(0, Math.min(0.999, pitTyreElapsed / pitTyreTarget));
+    const fenster = anteil * 4;
+    const nr = Math.floor(fenster);
+    // Im letzten Drittel des Fensters ist das neue Rad schon dran.
+    if (fenster - nr > PIT_RAD_AB_ANTEIL) return -1;
+    return PIT_RAD_FOLGE[nr];
+  }
+
   function refreshPitThrottleLock() {
     pitThrottleLock = pitState === 'servicing' && !!pitPlan && pitPlan.tyres
                       && !!pitDone && !pitDone.tyres;
@@ -18174,9 +18409,12 @@
     // Momentanwert waere eine andere Groesse als die, die man beim Fahren spuert.
     physSteerGrip(o) {
       const e = physEngine, st = e.state, cfg = e.config;
-      const merk = { gs: cfg.gripScale, v: st.speedKmh, dm: st.driveMode,
-                     g: st.currentGear, tg: st.tyreGrip, lf: st.loadFront,
-                     lu: st.longUse, ds: st.dampedSteering };
+      // VOLLSTAENDIG sichern und nicht acht namentlich aufgezaehlte Felder: dieser Aufbau
+      // faehrt 40 Takte, und die heizen Reifen, nutzen sie ab und heizen die Bremsscheiben.
+      // Mit einer handverlesenen Liste blieb all das veraendert zurueck - und eine solche
+      // Liste veraltet genau dann, wenn das Modell waechst.
+      const merkState = OMEGA_TEST.zustandKopie(st);
+      const merk = { gs: cfg.gripScale };
       // Zusaetzliche Konfigurationswerte, damit eine Anpassung messbar ist und nicht nur
       // ablesbar. Werden wie alles andere zurueckgelegt.
       const merkP = {};
@@ -18188,6 +18426,12 @@
         st.driveMode = 'forward';
         st.currentGear = o.gear === undefined ? 2 : o.gear;
         st.tyreGrip = 1; st.loadFront = 0.5; st.longUse = 0;
+        // Bekannter Anfangsstand, sonst haengt das Ergebnis daran, was vorher gefahren wurde.
+        for (let i = 0; i < 4; i++) {
+          st.tyreWear4[i] = 0;
+          st.tyreTemp4[i] = cfg.tyreOptimalC;
+          st.brakeTemp4[i] = cfg.brakeAmbientC;
+        }
         const inp = { throttle: o.throttle || 0, brake: o.brake || 0,
                       steering: o.steering === undefined ? 0.3 : o.steering };
         for (let i = 0; i < 40; i++) {
@@ -18195,12 +18439,15 @@
           e.update(inp, 0.02);
         }
         return { steerGrip: st.steerGrip, gripLong: st.gripLong,
-                 loadFront: st.loadFront, longUse: st.longUse };
+                 loadFront: st.loadFront, longUse: st.longUse,
+                 // Die vier Radlasten, Reihenfolge VL, VR, HL, HR. Ohne sie ist die
+                 // Vierradverlagerung nicht pruefbar.
+                 load4: st.load4 ? st.load4.slice() : null,
+                 lat4: st.latShare4 ? st.latShare4.slice() : null };
       } finally {
         for (const k of Object.keys(merkP)) cfg[k] = merkP[k];
-        cfg.gripScale = merk.gs; st.speedKmh = merk.v; st.driveMode = merk.dm;
-        st.currentGear = merk.g; st.tyreGrip = merk.tg; st.loadFront = merk.lf;
-        st.longUse = merk.lu; st.dampedSteering = merk.ds;
+        cfg.gripScale = merk.gs;
+        OMEGA_TEST.zustandZurueck(st, merkState);
       }
     },
     // Der uebertragene Lenkwinkel ueber eine echte Fahrt: beschleunigen, dann bremsen, bei
@@ -18213,7 +18460,7 @@
       const lenk = opt.steering === undefined ? 0.6 : opt.steering;
       const bis = opt.bisKmh || 120;
       const bremse = opt.brake === undefined ? 1 : opt.brake;
-      const merkState = Object.assign({}, st);
+      const merkState = OMEGA_TEST.zustandKopie(st);
       const merk = Object.assign({}, cfg);
       const dt = 0.02;
       try {
@@ -18280,8 +18527,7 @@
         // waehrend die Regler etwas anderes anzeigen.
         e.calibrateAccel();
         delete st._simShift;
-        for (const k of Object.keys(st)) if (!(k in merkState)) delete st[k];
-        Object.assign(st, merkState);
+        OMEGA_TEST.zustandZurueck(st, merkState);
       }
     },
     // Werte setzen, neu kalibrieren, messen. Der Kern jeder Kalibrierung: jede Aenderung
@@ -18337,12 +18583,16 @@
     physBrakeHeat(o) {
       const opt = o || {};
       const e = physEngine, st = e.state, cfg = e.config;
-      const merkState = Object.assign({}, st);
+      const merkState = OMEGA_TEST.zustandKopie(st);
       const merk = Object.assign({}, cfg);
       try {
         Object.assign(cfg, e.calibRef);
         e.calibrateAccel();
-        for (const k of Object.keys(opt.cfg || {})) cfg[k] = opt.cfg[k];
+        // Beide Namen gelten: die Messaufbauten hiessen teils cfg, teils patch,
+        // und derselbe Zweck unter zwei Namen hat schon einen Vergleich still
+        // unwirksam gemacht.
+        const einst = Object.assign({}, opt.cfg || {}, opt.patch || {});
+        for (const k of Object.keys(einst)) cfg[k] = einst[k];
         cfg.tyreEffect = 0;
         const dt = 0.02;
         const v0 = opt.kmh || 250;
@@ -18388,8 +18638,7 @@
       } finally {
         Object.assign(cfg, merk);
         e.calibrateAccel();
-        for (const k of Object.keys(st)) if (!(k in merkState)) delete st[k];
-        Object.assign(st, merkState);
+        OMEGA_TEST.zustandZurueck(st, merkState);
       }
     },
 
@@ -18397,21 +18646,95 @@
     // der MITTELWERT derselbe wie ohne Asymmetrie? Das Zweite ist der eigentliche Punkt -
     // sonst waere "Asymmetrie an" auch "mehr Verschleiss an", und dann liesse sich nicht
     // messen, was der Schalter tut.
+    // Eine Zustandskopie, die ARRAYS MITKLONT. Object.assign({}, st) ist flach, und der
+    // Zustand fuehrt seit der Vierradverlagerung fuenf Vierer-Felder. Flach gesichert wurden
+    // sie als Referenz gehalten und im finally auf sich selbst zurueckgeschrieben - jeder
+    // Messaufruf hat den echten Fahrzustand dauerhaft veraendert.
+    //
+    // Sie steht EINMAL da, weil sechs Messaufbauten sie brauchen: sechs Kopien derselben
+    // Regel waeren fuenf Gelegenheiten, sie beim naechsten Feld zu vergessen.
+    zustandKopie(st) {
+      const k = {};
+      for (const n of Object.keys(st)) {
+        k[n] = Array.isArray(st[n]) ? st[n].slice() : st[n];
+      }
+      return k;
+    },
+
+    // Und die Ruecksicherung muss ebenso in die Arrays HINEIN schreiben und nicht die
+    // Referenz tauschen: andere Leser koennen die alte noch halten.
+    zustandZurueck(st, merk) {
+      for (const n of Object.keys(st)) if (!(n in merk)) delete st[n];
+      for (const n of Object.keys(merk)) {
+        if (Array.isArray(merk[n]) && Array.isArray(st[n])) {
+          st[n].length = 0;
+          for (const w of merk[n]) st[n].push(w);
+        } else {
+          st[n] = merk[n];
+        }
+      }
+    },
+
+    // Der Radwechsel als Zeitstrahl. Aufgerufen wird die ECHTE Funktion; vorgestellt wird
+    // nur die Uhr. Eine nachgebaute Rechnung koennte richtig sein, waehrend die echte falsch
+    // ist - und dann prueft der Test sich selbst.
+    pitWheelTimeline(o) {
+      const opt = o || {};
+      if (typeof pitWheelOff !== 'function') return null;
+      const merk = { st: pitState, plan: pitPlan, done: pitDone,
+                     el: pitTyreElapsed, ziel: pitTyreTarget };
+      try {
+        pitState = 'servicing';
+        pitPlan = { tyres: true, refuel: false, repair: false };
+        pitDone = { tyres: false, refuel: false, repair: false };
+        pitTyreTarget = opt.dauer || 4.0;
+        const schritt = opt.schritt || 0.05;
+        const reihe = [];
+        for (let t = 0; t < pitTyreTarget - 1e-9; t += schritt) {
+          pitTyreElapsed = t;
+          refreshPitThrottleLock();
+          reihe.push({ t: +t.toFixed(3), rad: pitWheelOff(), gas: pitThrottleLock });
+        }
+        // Und der Zustand NACH dem Wechsel: alle vier muessen wieder dran sein und das Gas
+        // muss frei sein.
+        pitDone.tyres = true;
+        pitTyreElapsed = pitTyreTarget;
+        refreshPitThrottleLock();
+        const danach = { rad: pitWheelOff(), gas: pitThrottleLock };
+        return { reihe, danach, dauer: pitTyreTarget };
+      } finally {
+        pitState = merk.st; pitPlan = merk.plan; pitDone = merk.done;
+        pitTyreElapsed = merk.el; pitTyreTarget = merk.ziel;
+        refreshPitThrottleLock();
+      }
+    },
+
     physTyreAsym(o) {
       const opt = o || {};
       const e = physEngine, st = e.state, cfg = e.config;
-      const merkState = Object.assign({}, st);
+      const merkState = OMEGA_TEST.zustandKopie(st);
       const merk = Object.assign({}, cfg);
       try {
         Object.assign(cfg, e.calibRef);
         e.calibrateAccel();
-        for (const k of Object.keys(opt.cfg || {})) cfg[k] = opt.cfg[k];
+        // Beide Namen gelten: die Messaufbauten hiessen teils cfg, teils patch,
+        // und derselbe Zweck unter zwei Namen hat schon einen Vergleich still
+        // unwirksam gemacht.
+        const einst = Object.assign({}, opt.cfg || {}, opt.patch || {});
+        for (const k of Object.keys(einst)) cfg[k] = einst[k];
         const dt = 0.02;
         st.driveMode = 'forward';
         st.currentGear = 3;
         st.isShifting = false; st.loadFront = 0.5; st.longUse = 0; st.fuelLoad = 1;
         st.tyreTempC = cfg.tyreOptimalC;
         st.tyreWear = 0; st.tyreWearL = 0; st.tyreWearR = 0; st.tyrePull = 0;
+        // Die vier Felder MUESSEN mit zurueckgesetzt werden. Die Mittelwerte werden aus
+        // ihnen gerechnet, also erschienen sie sonst im naechsten Takt wieder.
+        for (let i = 0; i < 4; i++) {
+          st.tyreWear4[i] = 0;
+          st.tyreTemp4[i] = cfg.tyreOptimalC;
+          st.brakeTemp4[i] = cfg.brakeAmbientC;
+        }
         const kmh = opt.kmh || 140;
         const lenk = opt.steering === undefined ? 0.7 : opt.steering;
         const sekunden = opt.sekunden || 30;
@@ -18422,12 +18745,17 @@
         }
         return { wearL: +st.tyreWearL.toFixed(5), wearR: +st.tyreWearR.toFixed(5),
                  mittel: +st.tyreWear.toFixed(5), pull: +st.tyrePull.toFixed(5),
-                 tempC: +st.tyreTempC.toFixed(1) };
+                 tempC: +st.tyreTempC.toFixed(1),
+                 // Vier Raeder und vier Scheiben, Reihenfolge VL, VR, HL, HR.
+                 wear4: st.tyreWear4 ? st.tyreWear4.map(x => +x.toFixed(5)) : null,
+                 temp4: st.tyreTemp4 ? st.tyreTemp4.map(x => +x.toFixed(1)) : null,
+                 load4: st.load4 ? st.load4.map(x => +x.toFixed(3)) : null,
+                 lat4: st.latShare4 ? st.latShare4.map(x => +x.toFixed(3)) : null,
+                 brake4: st.brakeTemp4 ? st.brakeTemp4.map(x => +x.toFixed(0)) : null };
       } finally {
         Object.assign(cfg, merk);
         e.calibrateAccel();
-        for (const k of Object.keys(st)) if (!(k in merkState)) delete st[k];
-        Object.assign(st, merkState);
+        OMEGA_TEST.zustandZurueck(st, merkState);
       }
     },
 
@@ -18439,11 +18767,15 @@
     physOutTrace(o) {
       const opt = o || {};
       const e = physEngine, st = e.state, cfg = e.config;
-      const merkState = Object.assign({}, st);
+      const merkState = OMEGA_TEST.zustandKopie(st);
       const merk = Object.assign({}, cfg);
       try {
         Object.assign(cfg, e.calibRef);
-        for (const k of Object.keys(opt.cfg || {})) cfg[k] = opt.cfg[k];
+        // Beide Namen gelten: die Messaufbauten hiessen teils cfg, teils patch,
+        // und derselbe Zweck unter zwei Namen hat schon einen Vergleich still
+        // unwirksam gemacht.
+        const einst = Object.assign({}, opt.cfg || {}, opt.patch || {});
+        for (const k of Object.keys(einst)) cfg[k] = einst[k];
         // NACH dem Setzen kalibrieren: die Schubskala ist eine abgeleitete Groesse, und mit
         // einer anderen Hoechstgeschwindigkeit oder Beschleunigungszeit ist sie eine andere.
         e.calibrateAccel();
@@ -18485,8 +18817,7 @@
         Object.assign(cfg, merk);
         e.calibrateAccel();
         delete st._simShift;
-        for (const k of Object.keys(st)) if (!(k in merkState)) delete st[k];
-        Object.assign(st, merkState);
+        OMEGA_TEST.zustandZurueck(st, merkState);
       }
     },
 
@@ -18500,7 +18831,7 @@
       // onLimiter, reverseLatched. Ein Aufruf liess sie stehen, der naechste setzte darauf
       // auf, und zwei identische Aufrufe lieferten Verschiedenes. Eine Aufzaehlung ist bei
       // einem Zustandsobjekt immer unvollstaendig.
-      const merkState = Object.assign({}, st);
+      const merkState = OMEGA_TEST.zustandKopie(st);
       const merk = Object.assign({}, cfg);
       // Bezugszustand: RENNSTART. Voller Tank, warme Reifen, trockene Bahn.
       //
@@ -18611,8 +18942,7 @@
         // Erst die eigenen Zutaten weg, dann alles zuruecklegen: sonst bliebe ein Feld
         // stehen, das es vor dem Aufruf nicht gab.
         delete st._simShift;
-        for (const k of Object.keys(st)) if (!(k in merkState)) delete st[k];
-        Object.assign(st, merkState);
+        OMEGA_TEST.zustandZurueck(st, merkState);
       }
     },
     // Aus dem Stand Vollgas und die Gaenge mitschreiben. Ueber update(), nicht ueber einen
@@ -20711,12 +21041,13 @@
       tempo: ($('race-speed') || {}).textContent,
       reifen: ($('race-tyre-temp') || {}).textContent,
       gang: ($('race-gear') || {}).textContent,
-      scheibeV: ($('race-tyre-fl') && $('race-tyre-fl').lastChild
-                 ? $('race-tyre-fl').lastChild.style.borderColor : null),
+      // Die Scheibe ist seit v0.5 ein EIGENES Rechteck an der Innenseite und kein Ring im
+      // Reifen mehr. Gelesen wird ihre Fuellfarbe, denn die traegt die Temperatur.
+      scheibeV: ($('race-disc-fl') ? $('race-disc-fl').style.background : null),
       profil: ($('race-tyre-fl') && $('race-tyre-fl').firstChild
                ? $('race-tyre-fl').firstChild.style.height : null),
     });
-    const merkState = Object.assign({}, st);
+    const merkState = OMEGA_TEST.zustandKopie(st);
     const merkCfg = Object.assign({}, cfg);
     try {
       // Kalter, langsamer Ausgangszustand - und die drei Modelle sicher AN, damit der Test
@@ -20757,8 +21088,7 @@
     } finally {
       Object.assign(cfg, merkCfg);
       physEngine.calibrateAccel();
-      for (const k of Object.keys(st)) if (!(k in merkState)) delete st[k];
-      Object.assign(st, merkState);
+      OMEGA_TEST.zustandZurueck(st, merkState);
     }
   });
 
@@ -20815,6 +21145,176 @@
           + ', links L/R ' + li.wearL.toFixed(3) + '/' + li.wearR.toFixed(3)
           + ' | Mittel ' + re.mittel.toFixed(5) + ' gegen symmetrisch '
           + sy.mittel.toFixed(5) + ' | Zug ' + re.pull.toFixed(4) };
+  });
+
+  // ---- Vierradverlagerung: Richtung, Normierung, Spiegelung ----
+  //
+  // DREI Aussagen in einem Test, weil sie nur zusammen etwas heissen: eine Verlagerung, die
+  // in die richtige Richtung geht, aber im Mittel Last erfindet, wuerde das Auto insgesamt
+  // griffiger machen - und das waere kein Reifenmodell, sondern ein versteckter Griffregler.
+  stAdd('Radlasten: richtige Ecke, Mittel 1,0, gespiegelt', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.physSteerGrip) {
+      return { skip: true, mass: 'physSteerGrip nicht vorhanden' };
+    }
+    const mit = a => (a[0] + a[1] + a[2] + a[3]) / 4;
+    const re = OMEGA_TEST.physSteerGrip({ kmh: 180, throttle: 0, brake: 1, steering: 0.8 });
+    const li = OMEGA_TEST.physSteerGrip({ kmh: 180, throttle: 0, brake: 1, steering: -0.8 });
+    const gas = OMEGA_TEST.physSteerGrip({ kmh: 180, throttle: 1, brake: 0, steering: 0.8 });
+    if (!re.load4 || !li.load4 || !gas.load4) {
+      return { skip: true, mass: 'load4 nicht vorhanden' };
+    }
+    const L = re.load4;
+    const ok =
+      // Rechtskurve unter Bremsen: vorne links traegt am meisten, hinten rechts am wenigsten.
+      L[0] > L[1] && L[0] > L[2] && L[0] > L[3] && L[3] < L[1] && L[3] < L[2]
+      // Bremsen verlagert nach vorn, Gas nach hinten.
+      && (L[0] + L[1]) > (L[2] + L[3])
+      && (gas.load4[2] + gas.load4[3]) > (gas.load4[0] + gas.load4[1])
+      // Die Linkskurve ist die exakte Spiegelung: VL gegen VR und HL gegen HR.
+      && Math.abs(L[0] - li.load4[1]) < 1e-9 && Math.abs(L[2] - li.load4[3]) < 1e-9
+      // Und im Mittel genau 1,0 - in ALLEN drei Faellen.
+      && Math.abs(mit(L) - 1) < 1e-9 && Math.abs(mit(li.load4) - 1) < 1e-9
+      && Math.abs(mit(gas.load4) - 1) < 1e-9;
+    return { ok, mass: 'Rechtskurve+Bremse VL/VR/HL/HR '
+      + L.map(x => x.toFixed(2)).join('/') + ' | Mittel ' + mit(L).toFixed(6)
+      + ' | Gas hinten ' + (gas.load4[2] + gas.load4[3]).toFixed(2) };
+  });
+
+  // Die Bremsscheiben nehmen den REINEN Seitenanteil und nicht die ganze Radlast. Der Grund
+  // ist ein Fehler, der genau so schon drinstand: load4 enthaelt die Achsaufteilung, und die
+  // Bremsbalance enthaelt sie auch. Beides multipliziert kam vorne-innen kaelter heraus als
+  // hinten-aussen - und vorne bremst immer mehr.
+  stAdd('Bremsscheiben: Achse aus der Balance, Seite aus der Verlagerung', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.physSteerGrip) {
+      return { skip: true, mass: 'physSteerGrip nicht vorhanden' };
+    }
+    const re = OMEGA_TEST.physSteerGrip({ kmh: 180, throttle: 0, brake: 1, steering: 0.8 });
+    const ger = OMEGA_TEST.physSteerGrip({ kmh: 180, throttle: 0, brake: 1, steering: 0 });
+    if (!re.lat4 || !ger.lat4) return { skip: true, mass: 'lat4 nicht vorhanden' };
+    const bias = physEngine.config.brakeBias;
+    const heiz = (lat) => [0, 1, 2, 3].map(i =>
+      2 * (i < 2 ? bias : 1 - bias) * (1 + (lat[i] - 1) * 0.5));
+    const h = heiz(re.lat4), hg = heiz(ger.lat4);
+    const ok =
+      // Der Seitenanteil traegt KEINE Achsaufteilung: vorne links und hinten links gleich.
+      Math.abs(re.lat4[0] - re.lat4[2]) < 1e-9 && Math.abs(re.lat4[1] - re.lat4[3]) < 1e-9
+      && Math.abs((re.lat4[0] + re.lat4[1] + re.lat4[2] + re.lat4[3]) / 4 - 1) < 1e-9
+      // Geradeaus entscheidet allein die Bremsbalance, und vorne ist mehr.
+      && Math.abs(hg[0] - hg[1]) < 1e-9 && hg[0] > hg[2]
+      // Und der Achsmittelwert bleibt in der Kurve derselbe: die Seite verschiebt nur.
+      && Math.abs((h[0] + h[1]) / 2 - hg[0]) < 1e-9
+      && Math.abs((h[2] + h[3]) / 2 - hg[2]) < 1e-9;
+    return { ok, mass: 'Kurve VL/VR/HL/HR ' + h.map(x => x.toFixed(2)).join('/')
+      + ' | geradeaus vorn ' + hg[0].toFixed(2) + ' hinten ' + hg[2].toFixed(2) };
+  });
+
+  // Vier Reifen, vier Temperaturen - und mit abgeschalteter Asymmetrie muessen alle VIER
+  // gleich sein. Der Mittelwert allein genuegt als Pruefung nicht: er stimmt auch, wenn zwei
+  // Raeder vertauscht sind.
+  stAdd('Vier Reifen: einzeln verschieden, symmetrisch alle gleich', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.physTyreAsym) {
+      return { skip: true, mass: 'physTyreAsym nicht vorhanden' };
+    }
+    const a = OMEGA_TEST.physTyreAsym({ steering: 0.8, sekunden: 20 });
+    const sy = OMEGA_TEST.physTyreAsym({ steering: 0.8, sekunden: 20,
+                                         cfg: { tyreAsymEffect: 0 } });
+    if (!a.temp4 || !sy.temp4) return { skip: true, mass: 'temp4 nicht vorhanden' };
+    const mit = x => (x[0] + x[1] + x[2] + x[3]) / 4;
+    const ok =
+      // Mit Asymmetrie: das belastete Rad ist waermer und staerker abgenutzt.
+      a.temp4[0] > a.temp4[1] && a.temp4[2] > a.temp4[3]
+      && a.wear4[0] > a.wear4[1] && a.wear4[2] > a.wear4[3]
+      // Ohne: alle vier gleich.
+      && Math.max.apply(null, sy.temp4) - Math.min.apply(null, sy.temp4) < 1e-6
+      && Math.max.apply(null, sy.wear4) - Math.min.apply(null, sy.wear4) < 1e-9
+      // Und der Verschleissmittelwert ist derselbe - die Verlagerung verschiebt nur.
+      && Math.abs(mit(a.wear4) - mit(sy.wear4)) < 1e-6;
+    return { ok, mass: 'Temp ' + a.temp4.map(x => x.toFixed(0)).join('/')
+      + ' | Versch ' + a.wear4.map(x => (x * 100).toFixed(1)).join('/')
+      + ' | Mittel ' + (mit(a.wear4) * 100).toFixed(4) + '% gegen '
+      + (mit(sy.wear4) * 100).toFixed(4) + '%' };
+  });
+
+  // DER wichtigste der vier, und er prueft nicht die Physik, sondern den Messaufbau: ein
+  // Messaufruf darf den echten Fahrzustand nicht veraendern. Genau das war kaputt, seit der
+  // Zustand Arrays fuehrt - Object.assign auf ein leeres Objekt ist flach, also wurden die
+  // Vierer-Felder als Referenz gesichert und im finally auf sich selbst zurueckgeschrieben.
+  // Gezeigt hat es sich nur zufaellig, an Werten, die zwischen zwei Laeufen gestiegen sind.
+  stAdd('Messaufbau: ein Messaufruf laesst den Fahrzustand unberuehrt', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.physTyreAsym) {
+      return { skip: true, mass: 'physTyreAsym nicht vorhanden' };
+    }
+    const st = physEngine.state;
+    // Erkennbare Werte hineinschreiben, damit eine Veraenderung auffaellt.
+    const marke = { tyreWear4: [0.11, 0.22, 0.33, 0.44],
+                    tyreTemp4: [61, 62, 63, 64],
+                    brakeTemp4: [71, 72, 73, 74] };
+    const vorher = {};
+    for (const k of Object.keys(marke)) {
+      if (!Array.isArray(st[k])) return { skip: true, mass: k + ' nicht vorhanden' };
+      vorher[k] = st[k].slice();
+      for (let i = 0; i < 4; i++) st[k][i] = marke[k][i];
+    }
+    let ok = true;
+    const meld = [];
+    try {
+      OMEGA_TEST.physTyreAsym({ steering: 0.8, sekunden: 5 });
+      OMEGA_TEST.physSteerGrip({ kmh: 180, throttle: 0, brake: 1, steering: 0.8 });
+      for (const k of Object.keys(marke)) {
+        for (let i = 0; i < 4; i++) {
+          if (Math.abs(st[k][i] - marke[k][i]) > 1e-9) {
+            ok = false;
+            meld.push(k + ' ' + i + ': ' + marke[k][i] + ' wurde ' + st[k][i].toFixed(3));
+          }
+        }
+      }
+      // Und die Wiederholbarkeit, die aus demselben Fehler fiel.
+      const p = OMEGA_TEST.physTyreAsym({ steering: 0.8, sekunden: 10 });
+      const q = OMEGA_TEST.physTyreAsym({ steering: 0.8, sekunden: 10 });
+      if (JSON.stringify(p.temp4) !== JSON.stringify(q.temp4)) {
+        ok = false;
+        meld.push('nicht wiederholbar: ' + p.temp4 + ' gegen ' + q.temp4);
+      }
+    } finally {
+      for (const k of Object.keys(vorher)) {
+        for (let i = 0; i < 4; i++) st[k][i] = vorher[k][i];
+      }
+    }
+    return { ok, mass: ok ? 'unberuehrt und wiederholbar' : meld.join('; ') };
+  });
+
+  // ---- Boxenstopp: vier Raeder, vier Toene, kein Losfahren ----
+  //
+  // Der letzte Teil ist der, auf den es beim Fahren ankommt: ohne Raeder kann man nicht
+  // losfahren. Die Sperre stand schon da, aber eine Sperre, auf die man sich verlaesst, ohne
+  // sie zu messen, ist keine - und sie haengt an drei Bedingungen zugleich (Zustand, Plan,
+  // Fertigmeldung), von denen jede einzeln kippen kann.
+  stAdd('Radwechsel: vier Raeder der Reihe nach, Gas gesperrt', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.pitWheelTimeline) {
+      return { skip: true, mass: 'pitWheelTimeline nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.pitWheelTimeline({ dauer: 4.0, schritt: 0.05 });
+    if (!r) return { skip: true, mass: 'pitWheelOff nicht vorhanden' };
+    // Die Abschnitte zusammenfassen: aus 80 Abtastungen werden die Wechselpunkte.
+    const ab = [];
+    for (const p of r.reihe) {
+      const l = ab[ab.length - 1];
+      if (!l || l.rad !== p.rad) ab.push({ rad: p.rad, von: p.t, bis: p.t });
+      else l.bis = p.t;
+    }
+    const folge = ab.filter(a => a.rad >= 0).map(a => a.rad);
+    const ok =
+      // Genau vier Ausfaelle, und jedes Rad genau einmal.
+      folge.length === 4 && new Set(folge).size === 4
+      // Kein Rad fehlt vor dem ersten oder nach dem letzten Ton.
+      && r.danach.rad === -1
+      // Und das Entscheidende: solange gewechselt wird, ist das Gas gesperrt, danach frei.
+      && r.reihe.every(p => p.gas === true)
+      && r.danach.gas === false;
+    const N = ['VL', 'VR', 'HL', 'HR'];
+    return { ok, mass: folge.map(i => N[i]).join(' \u2192 ')
+      + ' | Gas gesperrt ' + (r.reihe.every(p => p.gas) ? 'durchgehend' : 'LUECKE')
+      + ', danach ' + (r.danach.gas ? 'NOCH GESPERRT' : 'frei') };
   });
 
   // ---- Block 4.4: Reifendruck ----

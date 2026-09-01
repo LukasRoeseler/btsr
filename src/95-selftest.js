@@ -438,12 +438,13 @@
       tempo: ($('race-speed') || {}).textContent,
       reifen: ($('race-tyre-temp') || {}).textContent,
       gang: ($('race-gear') || {}).textContent,
-      scheibeV: ($('race-tyre-fl') && $('race-tyre-fl').lastChild
-                 ? $('race-tyre-fl').lastChild.style.borderColor : null),
+      // Die Scheibe ist seit v0.5 ein EIGENES Rechteck an der Innenseite und kein Ring im
+      // Reifen mehr. Gelesen wird ihre Fuellfarbe, denn die traegt die Temperatur.
+      scheibeV: ($('race-disc-fl') ? $('race-disc-fl').style.background : null),
       profil: ($('race-tyre-fl') && $('race-tyre-fl').firstChild
                ? $('race-tyre-fl').firstChild.style.height : null),
     });
-    const merkState = Object.assign({}, st);
+    const merkState = OMEGA_TEST.zustandKopie(st);
     const merkCfg = Object.assign({}, cfg);
     try {
       // Kalter, langsamer Ausgangszustand - und die drei Modelle sicher AN, damit der Test
@@ -484,8 +485,7 @@
     } finally {
       Object.assign(cfg, merkCfg);
       physEngine.calibrateAccel();
-      for (const k of Object.keys(st)) if (!(k in merkState)) delete st[k];
-      Object.assign(st, merkState);
+      OMEGA_TEST.zustandZurueck(st, merkState);
     }
   });
 
@@ -542,6 +542,176 @@
           + ', links L/R ' + li.wearL.toFixed(3) + '/' + li.wearR.toFixed(3)
           + ' | Mittel ' + re.mittel.toFixed(5) + ' gegen symmetrisch '
           + sy.mittel.toFixed(5) + ' | Zug ' + re.pull.toFixed(4) };
+  });
+
+  // ---- Vierradverlagerung: Richtung, Normierung, Spiegelung ----
+  //
+  // DREI Aussagen in einem Test, weil sie nur zusammen etwas heissen: eine Verlagerung, die
+  // in die richtige Richtung geht, aber im Mittel Last erfindet, wuerde das Auto insgesamt
+  // griffiger machen - und das waere kein Reifenmodell, sondern ein versteckter Griffregler.
+  stAdd('Radlasten: richtige Ecke, Mittel 1,0, gespiegelt', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.physSteerGrip) {
+      return { skip: true, mass: 'physSteerGrip nicht vorhanden' };
+    }
+    const mit = a => (a[0] + a[1] + a[2] + a[3]) / 4;
+    const re = OMEGA_TEST.physSteerGrip({ kmh: 180, throttle: 0, brake: 1, steering: 0.8 });
+    const li = OMEGA_TEST.physSteerGrip({ kmh: 180, throttle: 0, brake: 1, steering: -0.8 });
+    const gas = OMEGA_TEST.physSteerGrip({ kmh: 180, throttle: 1, brake: 0, steering: 0.8 });
+    if (!re.load4 || !li.load4 || !gas.load4) {
+      return { skip: true, mass: 'load4 nicht vorhanden' };
+    }
+    const L = re.load4;
+    const ok =
+      // Rechtskurve unter Bremsen: vorne links traegt am meisten, hinten rechts am wenigsten.
+      L[0] > L[1] && L[0] > L[2] && L[0] > L[3] && L[3] < L[1] && L[3] < L[2]
+      // Bremsen verlagert nach vorn, Gas nach hinten.
+      && (L[0] + L[1]) > (L[2] + L[3])
+      && (gas.load4[2] + gas.load4[3]) > (gas.load4[0] + gas.load4[1])
+      // Die Linkskurve ist die exakte Spiegelung: VL gegen VR und HL gegen HR.
+      && Math.abs(L[0] - li.load4[1]) < 1e-9 && Math.abs(L[2] - li.load4[3]) < 1e-9
+      // Und im Mittel genau 1,0 - in ALLEN drei Faellen.
+      && Math.abs(mit(L) - 1) < 1e-9 && Math.abs(mit(li.load4) - 1) < 1e-9
+      && Math.abs(mit(gas.load4) - 1) < 1e-9;
+    return { ok, mass: 'Rechtskurve+Bremse VL/VR/HL/HR '
+      + L.map(x => x.toFixed(2)).join('/') + ' | Mittel ' + mit(L).toFixed(6)
+      + ' | Gas hinten ' + (gas.load4[2] + gas.load4[3]).toFixed(2) };
+  });
+
+  // Die Bremsscheiben nehmen den REINEN Seitenanteil und nicht die ganze Radlast. Der Grund
+  // ist ein Fehler, der genau so schon drinstand: load4 enthaelt die Achsaufteilung, und die
+  // Bremsbalance enthaelt sie auch. Beides multipliziert kam vorne-innen kaelter heraus als
+  // hinten-aussen - und vorne bremst immer mehr.
+  stAdd('Bremsscheiben: Achse aus der Balance, Seite aus der Verlagerung', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.physSteerGrip) {
+      return { skip: true, mass: 'physSteerGrip nicht vorhanden' };
+    }
+    const re = OMEGA_TEST.physSteerGrip({ kmh: 180, throttle: 0, brake: 1, steering: 0.8 });
+    const ger = OMEGA_TEST.physSteerGrip({ kmh: 180, throttle: 0, brake: 1, steering: 0 });
+    if (!re.lat4 || !ger.lat4) return { skip: true, mass: 'lat4 nicht vorhanden' };
+    const bias = physEngine.config.brakeBias;
+    const heiz = (lat) => [0, 1, 2, 3].map(i =>
+      2 * (i < 2 ? bias : 1 - bias) * (1 + (lat[i] - 1) * 0.5));
+    const h = heiz(re.lat4), hg = heiz(ger.lat4);
+    const ok =
+      // Der Seitenanteil traegt KEINE Achsaufteilung: vorne links und hinten links gleich.
+      Math.abs(re.lat4[0] - re.lat4[2]) < 1e-9 && Math.abs(re.lat4[1] - re.lat4[3]) < 1e-9
+      && Math.abs((re.lat4[0] + re.lat4[1] + re.lat4[2] + re.lat4[3]) / 4 - 1) < 1e-9
+      // Geradeaus entscheidet allein die Bremsbalance, und vorne ist mehr.
+      && Math.abs(hg[0] - hg[1]) < 1e-9 && hg[0] > hg[2]
+      // Und der Achsmittelwert bleibt in der Kurve derselbe: die Seite verschiebt nur.
+      && Math.abs((h[0] + h[1]) / 2 - hg[0]) < 1e-9
+      && Math.abs((h[2] + h[3]) / 2 - hg[2]) < 1e-9;
+    return { ok, mass: 'Kurve VL/VR/HL/HR ' + h.map(x => x.toFixed(2)).join('/')
+      + ' | geradeaus vorn ' + hg[0].toFixed(2) + ' hinten ' + hg[2].toFixed(2) };
+  });
+
+  // Vier Reifen, vier Temperaturen - und mit abgeschalteter Asymmetrie muessen alle VIER
+  // gleich sein. Der Mittelwert allein genuegt als Pruefung nicht: er stimmt auch, wenn zwei
+  // Raeder vertauscht sind.
+  stAdd('Vier Reifen: einzeln verschieden, symmetrisch alle gleich', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.physTyreAsym) {
+      return { skip: true, mass: 'physTyreAsym nicht vorhanden' };
+    }
+    const a = OMEGA_TEST.physTyreAsym({ steering: 0.8, sekunden: 20 });
+    const sy = OMEGA_TEST.physTyreAsym({ steering: 0.8, sekunden: 20,
+                                         cfg: { tyreAsymEffect: 0 } });
+    if (!a.temp4 || !sy.temp4) return { skip: true, mass: 'temp4 nicht vorhanden' };
+    const mit = x => (x[0] + x[1] + x[2] + x[3]) / 4;
+    const ok =
+      // Mit Asymmetrie: das belastete Rad ist waermer und staerker abgenutzt.
+      a.temp4[0] > a.temp4[1] && a.temp4[2] > a.temp4[3]
+      && a.wear4[0] > a.wear4[1] && a.wear4[2] > a.wear4[3]
+      // Ohne: alle vier gleich.
+      && Math.max.apply(null, sy.temp4) - Math.min.apply(null, sy.temp4) < 1e-6
+      && Math.max.apply(null, sy.wear4) - Math.min.apply(null, sy.wear4) < 1e-9
+      // Und der Verschleissmittelwert ist derselbe - die Verlagerung verschiebt nur.
+      && Math.abs(mit(a.wear4) - mit(sy.wear4)) < 1e-6;
+    return { ok, mass: 'Temp ' + a.temp4.map(x => x.toFixed(0)).join('/')
+      + ' | Versch ' + a.wear4.map(x => (x * 100).toFixed(1)).join('/')
+      + ' | Mittel ' + (mit(a.wear4) * 100).toFixed(4) + '% gegen '
+      + (mit(sy.wear4) * 100).toFixed(4) + '%' };
+  });
+
+  // DER wichtigste der vier, und er prueft nicht die Physik, sondern den Messaufbau: ein
+  // Messaufruf darf den echten Fahrzustand nicht veraendern. Genau das war kaputt, seit der
+  // Zustand Arrays fuehrt - Object.assign auf ein leeres Objekt ist flach, also wurden die
+  // Vierer-Felder als Referenz gesichert und im finally auf sich selbst zurueckgeschrieben.
+  // Gezeigt hat es sich nur zufaellig, an Werten, die zwischen zwei Laeufen gestiegen sind.
+  stAdd('Messaufbau: ein Messaufruf laesst den Fahrzustand unberuehrt', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.physTyreAsym) {
+      return { skip: true, mass: 'physTyreAsym nicht vorhanden' };
+    }
+    const st = physEngine.state;
+    // Erkennbare Werte hineinschreiben, damit eine Veraenderung auffaellt.
+    const marke = { tyreWear4: [0.11, 0.22, 0.33, 0.44],
+                    tyreTemp4: [61, 62, 63, 64],
+                    brakeTemp4: [71, 72, 73, 74] };
+    const vorher = {};
+    for (const k of Object.keys(marke)) {
+      if (!Array.isArray(st[k])) return { skip: true, mass: k + ' nicht vorhanden' };
+      vorher[k] = st[k].slice();
+      for (let i = 0; i < 4; i++) st[k][i] = marke[k][i];
+    }
+    let ok = true;
+    const meld = [];
+    try {
+      OMEGA_TEST.physTyreAsym({ steering: 0.8, sekunden: 5 });
+      OMEGA_TEST.physSteerGrip({ kmh: 180, throttle: 0, brake: 1, steering: 0.8 });
+      for (const k of Object.keys(marke)) {
+        for (let i = 0; i < 4; i++) {
+          if (Math.abs(st[k][i] - marke[k][i]) > 1e-9) {
+            ok = false;
+            meld.push(k + ' ' + i + ': ' + marke[k][i] + ' wurde ' + st[k][i].toFixed(3));
+          }
+        }
+      }
+      // Und die Wiederholbarkeit, die aus demselben Fehler fiel.
+      const p = OMEGA_TEST.physTyreAsym({ steering: 0.8, sekunden: 10 });
+      const q = OMEGA_TEST.physTyreAsym({ steering: 0.8, sekunden: 10 });
+      if (JSON.stringify(p.temp4) !== JSON.stringify(q.temp4)) {
+        ok = false;
+        meld.push('nicht wiederholbar: ' + p.temp4 + ' gegen ' + q.temp4);
+      }
+    } finally {
+      for (const k of Object.keys(vorher)) {
+        for (let i = 0; i < 4; i++) st[k][i] = vorher[k][i];
+      }
+    }
+    return { ok, mass: ok ? 'unberuehrt und wiederholbar' : meld.join('; ') };
+  });
+
+  // ---- Boxenstopp: vier Raeder, vier Toene, kein Losfahren ----
+  //
+  // Der letzte Teil ist der, auf den es beim Fahren ankommt: ohne Raeder kann man nicht
+  // losfahren. Die Sperre stand schon da, aber eine Sperre, auf die man sich verlaesst, ohne
+  // sie zu messen, ist keine - und sie haengt an drei Bedingungen zugleich (Zustand, Plan,
+  // Fertigmeldung), von denen jede einzeln kippen kann.
+  stAdd('Radwechsel: vier Raeder der Reihe nach, Gas gesperrt', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.pitWheelTimeline) {
+      return { skip: true, mass: 'pitWheelTimeline nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.pitWheelTimeline({ dauer: 4.0, schritt: 0.05 });
+    if (!r) return { skip: true, mass: 'pitWheelOff nicht vorhanden' };
+    // Die Abschnitte zusammenfassen: aus 80 Abtastungen werden die Wechselpunkte.
+    const ab = [];
+    for (const p of r.reihe) {
+      const l = ab[ab.length - 1];
+      if (!l || l.rad !== p.rad) ab.push({ rad: p.rad, von: p.t, bis: p.t });
+      else l.bis = p.t;
+    }
+    const folge = ab.filter(a => a.rad >= 0).map(a => a.rad);
+    const ok =
+      // Genau vier Ausfaelle, und jedes Rad genau einmal.
+      folge.length === 4 && new Set(folge).size === 4
+      // Kein Rad fehlt vor dem ersten oder nach dem letzten Ton.
+      && r.danach.rad === -1
+      // Und das Entscheidende: solange gewechselt wird, ist das Gas gesperrt, danach frei.
+      && r.reihe.every(p => p.gas === true)
+      && r.danach.gas === false;
+    const N = ['VL', 'VR', 'HL', 'HR'];
+    return { ok, mass: folge.map(i => N[i]).join(' \u2192 ')
+      + ' | Gas gesperrt ' + (r.reihe.every(p => p.gas) ? 'durchgehend' : 'LUECKE')
+      + ', danach ' + (r.danach.gas ? 'NOCH GESPERRT' : 'frei') };
   });
 
   // ---- Block 4.4: Reifendruck ----

@@ -2468,9 +2468,12 @@
     // Momentanwert waere eine andere Groesse als die, die man beim Fahren spuert.
     physSteerGrip(o) {
       const e = physEngine, st = e.state, cfg = e.config;
-      const merk = { gs: cfg.gripScale, v: st.speedKmh, dm: st.driveMode,
-                     g: st.currentGear, tg: st.tyreGrip, lf: st.loadFront,
-                     lu: st.longUse, ds: st.dampedSteering };
+      // VOLLSTAENDIG sichern und nicht acht namentlich aufgezaehlte Felder: dieser Aufbau
+      // faehrt 40 Takte, und die heizen Reifen, nutzen sie ab und heizen die Bremsscheiben.
+      // Mit einer handverlesenen Liste blieb all das veraendert zurueck - und eine solche
+      // Liste veraltet genau dann, wenn das Modell waechst.
+      const merkState = OMEGA_TEST.zustandKopie(st);
+      const merk = { gs: cfg.gripScale };
       // Zusaetzliche Konfigurationswerte, damit eine Anpassung messbar ist und nicht nur
       // ablesbar. Werden wie alles andere zurueckgelegt.
       const merkP = {};
@@ -2482,6 +2485,12 @@
         st.driveMode = 'forward';
         st.currentGear = o.gear === undefined ? 2 : o.gear;
         st.tyreGrip = 1; st.loadFront = 0.5; st.longUse = 0;
+        // Bekannter Anfangsstand, sonst haengt das Ergebnis daran, was vorher gefahren wurde.
+        for (let i = 0; i < 4; i++) {
+          st.tyreWear4[i] = 0;
+          st.tyreTemp4[i] = cfg.tyreOptimalC;
+          st.brakeTemp4[i] = cfg.brakeAmbientC;
+        }
         const inp = { throttle: o.throttle || 0, brake: o.brake || 0,
                       steering: o.steering === undefined ? 0.3 : o.steering };
         for (let i = 0; i < 40; i++) {
@@ -2489,12 +2498,15 @@
           e.update(inp, 0.02);
         }
         return { steerGrip: st.steerGrip, gripLong: st.gripLong,
-                 loadFront: st.loadFront, longUse: st.longUse };
+                 loadFront: st.loadFront, longUse: st.longUse,
+                 // Die vier Radlasten, Reihenfolge VL, VR, HL, HR. Ohne sie ist die
+                 // Vierradverlagerung nicht pruefbar.
+                 load4: st.load4 ? st.load4.slice() : null,
+                 lat4: st.latShare4 ? st.latShare4.slice() : null };
       } finally {
         for (const k of Object.keys(merkP)) cfg[k] = merkP[k];
-        cfg.gripScale = merk.gs; st.speedKmh = merk.v; st.driveMode = merk.dm;
-        st.currentGear = merk.g; st.tyreGrip = merk.tg; st.loadFront = merk.lf;
-        st.longUse = merk.lu; st.dampedSteering = merk.ds;
+        cfg.gripScale = merk.gs;
+        OMEGA_TEST.zustandZurueck(st, merkState);
       }
     },
     // Der uebertragene Lenkwinkel ueber eine echte Fahrt: beschleunigen, dann bremsen, bei
@@ -2507,7 +2519,7 @@
       const lenk = opt.steering === undefined ? 0.6 : opt.steering;
       const bis = opt.bisKmh || 120;
       const bremse = opt.brake === undefined ? 1 : opt.brake;
-      const merkState = Object.assign({}, st);
+      const merkState = OMEGA_TEST.zustandKopie(st);
       const merk = Object.assign({}, cfg);
       const dt = 0.02;
       try {
@@ -2574,8 +2586,7 @@
         // waehrend die Regler etwas anderes anzeigen.
         e.calibrateAccel();
         delete st._simShift;
-        for (const k of Object.keys(st)) if (!(k in merkState)) delete st[k];
-        Object.assign(st, merkState);
+        OMEGA_TEST.zustandZurueck(st, merkState);
       }
     },
     // Werte setzen, neu kalibrieren, messen. Der Kern jeder Kalibrierung: jede Aenderung
@@ -2631,12 +2642,16 @@
     physBrakeHeat(o) {
       const opt = o || {};
       const e = physEngine, st = e.state, cfg = e.config;
-      const merkState = Object.assign({}, st);
+      const merkState = OMEGA_TEST.zustandKopie(st);
       const merk = Object.assign({}, cfg);
       try {
         Object.assign(cfg, e.calibRef);
         e.calibrateAccel();
-        for (const k of Object.keys(opt.cfg || {})) cfg[k] = opt.cfg[k];
+        // Beide Namen gelten: die Messaufbauten hiessen teils cfg, teils patch,
+        // und derselbe Zweck unter zwei Namen hat schon einen Vergleich still
+        // unwirksam gemacht.
+        const einst = Object.assign({}, opt.cfg || {}, opt.patch || {});
+        for (const k of Object.keys(einst)) cfg[k] = einst[k];
         cfg.tyreEffect = 0;
         const dt = 0.02;
         const v0 = opt.kmh || 250;
@@ -2682,8 +2697,7 @@
       } finally {
         Object.assign(cfg, merk);
         e.calibrateAccel();
-        for (const k of Object.keys(st)) if (!(k in merkState)) delete st[k];
-        Object.assign(st, merkState);
+        OMEGA_TEST.zustandZurueck(st, merkState);
       }
     },
 
@@ -2691,21 +2705,95 @@
     // der MITTELWERT derselbe wie ohne Asymmetrie? Das Zweite ist der eigentliche Punkt -
     // sonst waere "Asymmetrie an" auch "mehr Verschleiss an", und dann liesse sich nicht
     // messen, was der Schalter tut.
+    // Eine Zustandskopie, die ARRAYS MITKLONT. Object.assign({}, st) ist flach, und der
+    // Zustand fuehrt seit der Vierradverlagerung fuenf Vierer-Felder. Flach gesichert wurden
+    // sie als Referenz gehalten und im finally auf sich selbst zurueckgeschrieben - jeder
+    // Messaufruf hat den echten Fahrzustand dauerhaft veraendert.
+    //
+    // Sie steht EINMAL da, weil sechs Messaufbauten sie brauchen: sechs Kopien derselben
+    // Regel waeren fuenf Gelegenheiten, sie beim naechsten Feld zu vergessen.
+    zustandKopie(st) {
+      const k = {};
+      for (const n of Object.keys(st)) {
+        k[n] = Array.isArray(st[n]) ? st[n].slice() : st[n];
+      }
+      return k;
+    },
+
+    // Und die Ruecksicherung muss ebenso in die Arrays HINEIN schreiben und nicht die
+    // Referenz tauschen: andere Leser koennen die alte noch halten.
+    zustandZurueck(st, merk) {
+      for (const n of Object.keys(st)) if (!(n in merk)) delete st[n];
+      for (const n of Object.keys(merk)) {
+        if (Array.isArray(merk[n]) && Array.isArray(st[n])) {
+          st[n].length = 0;
+          for (const w of merk[n]) st[n].push(w);
+        } else {
+          st[n] = merk[n];
+        }
+      }
+    },
+
+    // Der Radwechsel als Zeitstrahl. Aufgerufen wird die ECHTE Funktion; vorgestellt wird
+    // nur die Uhr. Eine nachgebaute Rechnung koennte richtig sein, waehrend die echte falsch
+    // ist - und dann prueft der Test sich selbst.
+    pitWheelTimeline(o) {
+      const opt = o || {};
+      if (typeof pitWheelOff !== 'function') return null;
+      const merk = { st: pitState, plan: pitPlan, done: pitDone,
+                     el: pitTyreElapsed, ziel: pitTyreTarget };
+      try {
+        pitState = 'servicing';
+        pitPlan = { tyres: true, refuel: false, repair: false };
+        pitDone = { tyres: false, refuel: false, repair: false };
+        pitTyreTarget = opt.dauer || 4.0;
+        const schritt = opt.schritt || 0.05;
+        const reihe = [];
+        for (let t = 0; t < pitTyreTarget - 1e-9; t += schritt) {
+          pitTyreElapsed = t;
+          refreshPitThrottleLock();
+          reihe.push({ t: +t.toFixed(3), rad: pitWheelOff(), gas: pitThrottleLock });
+        }
+        // Und der Zustand NACH dem Wechsel: alle vier muessen wieder dran sein und das Gas
+        // muss frei sein.
+        pitDone.tyres = true;
+        pitTyreElapsed = pitTyreTarget;
+        refreshPitThrottleLock();
+        const danach = { rad: pitWheelOff(), gas: pitThrottleLock };
+        return { reihe, danach, dauer: pitTyreTarget };
+      } finally {
+        pitState = merk.st; pitPlan = merk.plan; pitDone = merk.done;
+        pitTyreElapsed = merk.el; pitTyreTarget = merk.ziel;
+        refreshPitThrottleLock();
+      }
+    },
+
     physTyreAsym(o) {
       const opt = o || {};
       const e = physEngine, st = e.state, cfg = e.config;
-      const merkState = Object.assign({}, st);
+      const merkState = OMEGA_TEST.zustandKopie(st);
       const merk = Object.assign({}, cfg);
       try {
         Object.assign(cfg, e.calibRef);
         e.calibrateAccel();
-        for (const k of Object.keys(opt.cfg || {})) cfg[k] = opt.cfg[k];
+        // Beide Namen gelten: die Messaufbauten hiessen teils cfg, teils patch,
+        // und derselbe Zweck unter zwei Namen hat schon einen Vergleich still
+        // unwirksam gemacht.
+        const einst = Object.assign({}, opt.cfg || {}, opt.patch || {});
+        for (const k of Object.keys(einst)) cfg[k] = einst[k];
         const dt = 0.02;
         st.driveMode = 'forward';
         st.currentGear = 3;
         st.isShifting = false; st.loadFront = 0.5; st.longUse = 0; st.fuelLoad = 1;
         st.tyreTempC = cfg.tyreOptimalC;
         st.tyreWear = 0; st.tyreWearL = 0; st.tyreWearR = 0; st.tyrePull = 0;
+        // Die vier Felder MUESSEN mit zurueckgesetzt werden. Die Mittelwerte werden aus
+        // ihnen gerechnet, also erschienen sie sonst im naechsten Takt wieder.
+        for (let i = 0; i < 4; i++) {
+          st.tyreWear4[i] = 0;
+          st.tyreTemp4[i] = cfg.tyreOptimalC;
+          st.brakeTemp4[i] = cfg.brakeAmbientC;
+        }
         const kmh = opt.kmh || 140;
         const lenk = opt.steering === undefined ? 0.7 : opt.steering;
         const sekunden = opt.sekunden || 30;
@@ -2716,12 +2804,17 @@
         }
         return { wearL: +st.tyreWearL.toFixed(5), wearR: +st.tyreWearR.toFixed(5),
                  mittel: +st.tyreWear.toFixed(5), pull: +st.tyrePull.toFixed(5),
-                 tempC: +st.tyreTempC.toFixed(1) };
+                 tempC: +st.tyreTempC.toFixed(1),
+                 // Vier Raeder und vier Scheiben, Reihenfolge VL, VR, HL, HR.
+                 wear4: st.tyreWear4 ? st.tyreWear4.map(x => +x.toFixed(5)) : null,
+                 temp4: st.tyreTemp4 ? st.tyreTemp4.map(x => +x.toFixed(1)) : null,
+                 load4: st.load4 ? st.load4.map(x => +x.toFixed(3)) : null,
+                 lat4: st.latShare4 ? st.latShare4.map(x => +x.toFixed(3)) : null,
+                 brake4: st.brakeTemp4 ? st.brakeTemp4.map(x => +x.toFixed(0)) : null };
       } finally {
         Object.assign(cfg, merk);
         e.calibrateAccel();
-        for (const k of Object.keys(st)) if (!(k in merkState)) delete st[k];
-        Object.assign(st, merkState);
+        OMEGA_TEST.zustandZurueck(st, merkState);
       }
     },
 
@@ -2733,11 +2826,15 @@
     physOutTrace(o) {
       const opt = o || {};
       const e = physEngine, st = e.state, cfg = e.config;
-      const merkState = Object.assign({}, st);
+      const merkState = OMEGA_TEST.zustandKopie(st);
       const merk = Object.assign({}, cfg);
       try {
         Object.assign(cfg, e.calibRef);
-        for (const k of Object.keys(opt.cfg || {})) cfg[k] = opt.cfg[k];
+        // Beide Namen gelten: die Messaufbauten hiessen teils cfg, teils patch,
+        // und derselbe Zweck unter zwei Namen hat schon einen Vergleich still
+        // unwirksam gemacht.
+        const einst = Object.assign({}, opt.cfg || {}, opt.patch || {});
+        for (const k of Object.keys(einst)) cfg[k] = einst[k];
         // NACH dem Setzen kalibrieren: die Schubskala ist eine abgeleitete Groesse, und mit
         // einer anderen Hoechstgeschwindigkeit oder Beschleunigungszeit ist sie eine andere.
         e.calibrateAccel();
@@ -2779,8 +2876,7 @@
         Object.assign(cfg, merk);
         e.calibrateAccel();
         delete st._simShift;
-        for (const k of Object.keys(st)) if (!(k in merkState)) delete st[k];
-        Object.assign(st, merkState);
+        OMEGA_TEST.zustandZurueck(st, merkState);
       }
     },
 
@@ -2794,7 +2890,7 @@
       // onLimiter, reverseLatched. Ein Aufruf liess sie stehen, der naechste setzte darauf
       // auf, und zwei identische Aufrufe lieferten Verschiedenes. Eine Aufzaehlung ist bei
       // einem Zustandsobjekt immer unvollstaendig.
-      const merkState = Object.assign({}, st);
+      const merkState = OMEGA_TEST.zustandKopie(st);
       const merk = Object.assign({}, cfg);
       // Bezugszustand: RENNSTART. Voller Tank, warme Reifen, trockene Bahn.
       //
@@ -2905,8 +3001,7 @@
         // Erst die eigenen Zutaten weg, dann alles zuruecklegen: sonst bliebe ein Feld
         // stehen, das es vor dem Aufruf nicht gab.
         delete st._simShift;
-        for (const k of Object.keys(st)) if (!(k in merkState)) delete st[k];
-        Object.assign(st, merkState);
+        OMEGA_TEST.zustandZurueck(st, merkState);
       }
     },
     // Aus dem Stand Vollgas und die Gaenge mitschreiben. Ueber update(), nicht ueber einen
