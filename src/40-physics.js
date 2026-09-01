@@ -520,10 +520,6 @@
         // meldete jedes Layout als neutral. 0,85 ist der uebliche Bereich fuer einen
         // Rennreifen.
         stiffnessLoadExp: 0.85,
-        // Verfuegbare Querbeschleunigung in g. Bezug fuer ayUse und die
-        // Grenzgeschwindigkeit. 1,4 g ist der uebliche Bereich fuer einen Rennslick auf
-        // Asphalt; gripScale (Regen) multipliziert darauf.
-        gripLimitG: 1.4,
 
         // loadFrontOnPower und loadFrontOnBrake standen HIER als eigene Felder (0,20 und
         // 0,80). Sie sind weggefallen, weil sie 0,5 -/+ transferK sind - dieselbe Geometrie
@@ -617,8 +613,11 @@
         kU: 0,             // s^2/m, Eigenlenkgradient: >0 untersteuernd
         yawSteady: 0,      // rad/s, stationaere Gierrate zum aktuellen Lenkwinkel
         latUse: 0,         // Querausnutzung des Reibkreises, 0..1 - treibt das Quietschen
-        ayUse: 0,          // ayModel / ayLimit: 1 = am Haftungsende, >1 unmoeglich
-        vLimitKmh: 0,      // Grenzgeschwindigkeit fuer den gerade gefahrenen Radius
+        // ayUse und vLimitKmh standen hier und liest jetzt niemand mehr. Sie waren fuer eine
+        // Anzeige gedacht, die gefahren gemessen dauerhaft am Anschlag stand - siehe den
+        // Skalenwiderspruch in yawStep. Ein Zustandsfeld ohne Leser ist toter Ballast, und
+        // eine Groesse, die nur in einer verworfenen Anzeige Sinn hatte, gehoert nicht in den
+        // Zustand.
         isShifting: false,
         absActive: false,
         lastAbsRumble: 0,
@@ -770,19 +769,15 @@
       // echtes Auto braucht bei 120 km/h wenige Grad. Das Modell meldet also korrekt ein
       // unmoegliches Manoever.
       //
-      // Brauchbar wird es als VERHAELTNIS. Zwei Groessen, und beide sagen etwas:
-      //   ayUse      wieviel von der verfuegbaren Haftung das Manoever verlangt. Ueber 1
-      //              heisst: so faehrt kein Auto durch diese Kurve.
-      //   vLimitKmh  bei welchem Tempo der gerade gefahrene Radius noch halten wuerde.
+      // BRAUCHBAR IST NUR EIN VERHAELTNIS ZWEIER MODELLGROESSEN, und das ist yawSteady
+      // weiter oben: die Ist-Gierrate gegen die stationaere. 100 Prozent heisst
+      // eingeschwungen, mehr heisst "dreht noch ein", weniger heisst "schiebt". Ein
+      // Verhaeltnis ist vom Skalenwiderspruch unberuehrt, ein Betrag nicht.
       //
-      // Damit ist aus einer absurden Zahl eine Aussage geworden - und genau diese Ausnutzung
-      // ist auch das, was ein Grenzbereich-Quietschen braucht.
-      const ayLimit = 9.81 * cfg.gripLimitG * cfg.gripScale;
-      st.ayUse = Math.abs(st.ayModel) / Math.max(0.1, ayLimit);
-      // Der gefahrene Radius aus Tempo und Gierrate: R = v / r. Bei fast gerader Fahrt geht
-      // er gegen unendlich, dann ist die Grenzgeschwindigkeit bedeutungslos und bleibt 0.
-      const radius = Math.abs(st.yawRate) > 0.02 ? v / Math.abs(st.yawRate) : 0;
-      st.vLimitKmh = radius > 0 ? Math.sqrt(ayLimit * radius) * 3.6 : 0;
+      // Hier stand eine Ausnutzung (ayModel gegen eine Haftgrenze) und eine
+      // Grenzgeschwindigkeit. Beide sind weggefallen: gefahren gemessen stand die Ausnutzung
+      // bei 165 km/h dauerhaft ueber 100 Prozent, und eine Anzeige am Anschlag sagt nichts.
+      // Das Reifenquietschen laeuft aus demselben Grund ueber latUse und nicht hierueber.
     }
 
     // Ein Layout anwenden. Setzt die drei Fahrzeugwerte und leitet daraus ab, was abzuleiten
@@ -1517,12 +1512,24 @@
       // Hier stand dampedSteering * (Tempo / Hoechsttempo) - ein Produkt, das mit der
       // Querbeschleunigung nur die Richtung teilte. Auf 1 g normiert, weil der Plot einen
       // Kreis von -1 bis 1 zeichnet.
-      // Auf die HAFTGRENZE normiert und nicht auf 1 g: der Plot zeichnet einen Kreis von
-      // -1 bis 1, und 1 soll "am Haftungsende" heissen. Auf 1 g normiert klebte der Punkt
-      // schon bei maessiger Kurvenfahrt am Rand und sagte nichts mehr.
-      st.gLat = cfg.yawModelEffect > 0
-        ? Math.max(-1.5, Math.min(1.5, Math.sign(st.ayModel) * st.ayUse))
-        : this.state.dampedSteering * (Math.abs(st.speedKmh) / cfg.topSpeedKmh);
+      // DER G-PLOT ZEIGT latUse UND NICHT DEN MODELLWERT, und das ist eine Korrektur mit
+      // Messung dahinter.
+      //
+      // Der Versuch, die gerechnete Querbeschleunigung zu zeigen, ist gescheitert: gefahren
+      // gemessen bei 165 km/h und Vollausschlag stand der Punkt dauerhaft bei 92 von 100 und
+      // die Ausnutzung dauerhaft ueber 100 Prozent. Der Grund ist der Skalenwiderspruch, der
+      // in yawStep steht - der Lenkbereich gehoert zu einem Modellauto, die Tempi zu einem
+      // echten -, und eine Anzeige, die immer am Anschlag steht, sagt nichts.
+      //
+      // latUse ist die kalibrierte Querausnutzung des Reibkreises, auf 0..1 begrenzt, und sie
+      // beziffert "am Limit" wirklich mit 1. Sie ist damit die einzige Groesse hier, die in
+      // einen Kreis von -1 bis 1 gehoert.
+      //
+      // Was NICHT zurueckgenommen ist: das Vorzeichen kommt jetzt aus der Lenkrichtung und
+      // die Groesse aus dem Reibkreis, statt aus dem alten Produkt
+      // dampedSteering * (Tempo / Hoechsttempo), das mit einer Querbeschleunigung nur die
+      // Richtung teilte.
+      st.gLat = Math.sign(this.state.dampedSteering) * Math.max(0, Math.min(1, st.latUse));
       st.gLong = st.longUse;
       this.outputs.motorPWM = Math.max(-1, Math.min(1, output));
       this.outputs.lights.head = !!inputs.headlights;

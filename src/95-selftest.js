@@ -1514,6 +1514,92 @@
              mass: teile.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
   });
 
+  // ---- Verdrahtung: jeder Physik-Regler erreicht die Physik ----
+  stAdd('Verdrahtung: alle Physik-Regler greifen', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.physConfigDiff) {
+      return { skip: true, mass: 'physConfigDiff nicht vorhanden' };
+    }
+    // Die Regler, die die Fahrphysik stellen MUESSEN. Eine gepflegte Liste, und das ist hier
+    // richtig: sie ist die Zusicherung. Ein neuer Physik-Regler gehoert hinein, und wenn
+    // einer aufhoert zu greifen, meldet es der Test.
+    //
+    // NICHT dabei: Toene, Ghosts, Boxenlogik, Crashzaehler, Anzeigeschalter - die stellen
+    // nicht die Fahrphysik. Und setting-topspeed nicht, weil der Gasfaktor absichtlich am
+    // Protokoll ansetzt und nicht am Modell (siehe topSpeedScale in 50-drive.js).
+    const PFLICHT = [
+      'setting-layout', 'setting-grip', 'setting-brakepower', 'setting-autoshift',
+      'setting-topspeed-kmh', 'setting-zero-to-top', 'setting-coast-drag',
+      'setting-fuelweight', 'setting-tyres', 'setting-tyre-blankets', 'setting-tyre-asym',
+      'setting-tyre-pressure', 'setting-brake-fade', 'setting-dirtyair',
+      'phys-steerresp', 'setting-brake-steal', 'setting-steer-calib', 'phys-accel',
+      'setting-brakebias', 'setting-rain',
+    ];
+    // Diese zwei multiplizieren in ihren Schalter hinein und tun ohne ihn richtigerweise
+    // nichts. Der Test schaltet ihn erst ein.
+    const MIT_SCHALTER = [['setting-brake-fade-strength', 'setting-brake-fade'],
+                          ['setting-dirtyair-strength', 'setting-dirtyair']];
+
+    // WERTE vergleichen und nicht Schluessel: ein Feld, das durch die Voreinstellung schon
+    // abweicht, bleibt sonst unsichtbar.
+    const abbild = () => JSON.stringify(OMEGA_TEST.physConfigDiff() || {});
+    const anfassen = (el) => {
+      const alt = el.type === 'checkbox' ? el.checked : el.value;
+      // EINEN DEFINIERTEN ANFANGSZUSTAND herstellen, bevor gemessen wird.
+      //
+      // Ohne das ist der Test reihenfolgeabhaengig, und genau daran ist er beim ersten Anlauf
+      // gescheitert: er meldete setting-tyre-blankets als stumm, waehrend derselbe Regler
+      // einzeln nachweislich greift. Ein frueherer Test hatte Kaestchen und Konfiguration
+      // auseinanderlaufen lassen, und dann setzt ein Umschalten die Konfiguration auf einen
+      // Wert, den sie schon hat - keine Aenderung, obwohl die Verdrahtung steht.
+      //
+      // Ein Test, der von der Reihenfolge abhaengt, meldet Fehler, die es nicht gibt, und
+      // verschweigt welche, die es gibt.
+      if (el.type === 'checkbox') {
+        el.checked = false;
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+      const vor = abbild();
+      if (el.type === 'checkbox') el.checked = !el.checked;
+      else if (el.tagName === 'SELECT') el.selectedIndex = (el.selectedIndex + 1) % el.options.length;
+      else {
+        const max = parseFloat(el.max), v = parseFloat(el.value);
+        const st = parseFloat(el.step) || 0.05;
+        el.value = String(v + st <= max ? v + st : v - st);
+      }
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+      el.dispatchEvent(new Event('change', { bubbles: true }));
+      const nach = abbild();
+      // ZURUECKSETZEN, immer. Ein Test, der die Einstellungen des Nutzers veraendert, ist
+      // selbst der naechste Fehlerbericht.
+      if (el.type === 'checkbox') el.checked = alt; else el.value = alt;
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+      el.dispatchEvent(new Event('change', { bubbles: true }));
+      return vor !== nach;
+    };
+
+    const stumm = [], fehlt = [];
+    for (const id of PFLICHT) {
+      const el = $(id);
+      if (!el) { fehlt.push(id); continue; }
+      if (!anfassen(el)) stumm.push(id);
+    }
+    for (const [id, schalterId] of MIT_SCHALTER) {
+      const el = $(id), sw = $(schalterId);
+      if (!el || !sw) { fehlt.push(id); continue; }
+      const altSw = sw.checked;
+      if (!sw.checked) { sw.checked = true; sw.dispatchEvent(new Event('change', { bubbles: true })); }
+      const ok = anfassen(el);
+      if (sw.checked !== altSw) { sw.checked = altSw; sw.dispatchEvent(new Event('change', { bubbles: true })); }
+      if (!ok) stumm.push(id + ' (mit Schalter an)');
+    }
+    const geprueft = PFLICHT.length + MIT_SCHALTER.length;
+    return { ok: !stumm.length && !fehlt.length,
+             mass: geprueft + ' Physik-Regler geprueft, ' + (geprueft - stumm.length - fehlt.length)
+                   + ' greifen'
+                   + (stumm.length ? ' || stumm: ' + stumm.join(', ') : '')
+                   + (fehlt.length ? ' || fehlt: ' + fehlt.join(', ') : '') };
+  });
+
   // ---- Block 4.4: Reifendruck ----
   // Monoton, ueber den ganzen Reglerbereich. Ein Regler, der in der Mitte umkehrt, ist keine
   // Abstimmung, sondern eine Falle.

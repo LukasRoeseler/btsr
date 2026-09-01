@@ -687,10 +687,20 @@
       if (!(physEngine.config.yawModelEffect > 0)) {
         yawEl.textContent = t('aus');
       } else {
-        const grad = st.yawRate * 180 / Math.PI;
-        const nutz = Math.round(st.ayUse * 100);
-        yawEl.textContent = Math.abs(grad).toFixed(0) + '°/s · '
-          + (nutz > 100 ? '>100' : nutz) + '%';
+        // GIERRATE gegen ihren STATIONAEREN Wert und nicht die Ausnutzung.
+        //
+        // Die Ausnutzung stand hier und war gefahren gemessen dauerhaft ueber 100 Prozent -
+        // eine Anzeige am Anschlag sagt nichts. Der Grund ist der Skalenwiderspruch der App
+        // (Lenkbereich vom Modellauto, Tempi vom echten), und er laesst sich nicht wegrechnen.
+        //
+        // Ein VERHAELTNIS zweier Modellgroessen ist davon unberuehrt: 100 Prozent heisst
+        // eingeschwungen, mehr heisst "dreht noch ein", weniger heisst "schiebt". Genau das
+        // hat der Bauplan versprochen, und es ist die eine Aussage, die hier skalenfrei ist.
+        const grad = Math.abs(st.yawRate * 180 / Math.PI);
+        const soll = Math.abs(st.yawSteady);
+        const anteil = soll > 0.02 ? Math.round(100 * Math.abs(st.yawRate) / soll) : null;
+        yawEl.textContent = grad.toFixed(0) + '°/s'
+          + (anteil === null ? '' : ' · ' + Math.min(999, anteil) + '%');
       }
     }
     const gx = Math.max(-1, Math.min(1, gyroRaw.x / gyroRaw.span));

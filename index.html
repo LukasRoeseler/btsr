@@ -5773,7 +5773,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.4.41</span></span>
+    <span class="foot-ver">v<span id="app-version">0.4.42</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -8793,10 +8793,6 @@
         // meldete jedes Layout als neutral. 0,85 ist der uebliche Bereich fuer einen
         // Rennreifen.
         stiffnessLoadExp: 0.85,
-        // Verfuegbare Querbeschleunigung in g. Bezug fuer ayUse und die
-        // Grenzgeschwindigkeit. 1,4 g ist der uebliche Bereich fuer einen Rennslick auf
-        // Asphalt; gripScale (Regen) multipliziert darauf.
-        gripLimitG: 1.4,
 
         // loadFrontOnPower und loadFrontOnBrake standen HIER als eigene Felder (0,20 und
         // 0,80). Sie sind weggefallen, weil sie 0,5 -/+ transferK sind - dieselbe Geometrie
@@ -8890,8 +8886,11 @@
         kU: 0,             // s^2/m, Eigenlenkgradient: >0 untersteuernd
         yawSteady: 0,      // rad/s, stationaere Gierrate zum aktuellen Lenkwinkel
         latUse: 0,         // Querausnutzung des Reibkreises, 0..1 - treibt das Quietschen
-        ayUse: 0,          // ayModel / ayLimit: 1 = am Haftungsende, >1 unmoeglich
-        vLimitKmh: 0,      // Grenzgeschwindigkeit fuer den gerade gefahrenen Radius
+        // ayUse und vLimitKmh standen hier und liest jetzt niemand mehr. Sie waren fuer eine
+        // Anzeige gedacht, die gefahren gemessen dauerhaft am Anschlag stand - siehe den
+        // Skalenwiderspruch in yawStep. Ein Zustandsfeld ohne Leser ist toter Ballast, und
+        // eine Groesse, die nur in einer verworfenen Anzeige Sinn hatte, gehoert nicht in den
+        // Zustand.
         isShifting: false,
         absActive: false,
         lastAbsRumble: 0,
@@ -9043,19 +9042,15 @@
       // echtes Auto braucht bei 120 km/h wenige Grad. Das Modell meldet also korrekt ein
       // unmoegliches Manoever.
       //
-      // Brauchbar wird es als VERHAELTNIS. Zwei Groessen, und beide sagen etwas:
-      //   ayUse      wieviel von der verfuegbaren Haftung das Manoever verlangt. Ueber 1
-      //              heisst: so faehrt kein Auto durch diese Kurve.
-      //   vLimitKmh  bei welchem Tempo der gerade gefahrene Radius noch halten wuerde.
+      // BRAUCHBAR IST NUR EIN VERHAELTNIS ZWEIER MODELLGROESSEN, und das ist yawSteady
+      // weiter oben: die Ist-Gierrate gegen die stationaere. 100 Prozent heisst
+      // eingeschwungen, mehr heisst "dreht noch ein", weniger heisst "schiebt". Ein
+      // Verhaeltnis ist vom Skalenwiderspruch unberuehrt, ein Betrag nicht.
       //
-      // Damit ist aus einer absurden Zahl eine Aussage geworden - und genau diese Ausnutzung
-      // ist auch das, was ein Grenzbereich-Quietschen braucht.
-      const ayLimit = 9.81 * cfg.gripLimitG * cfg.gripScale;
-      st.ayUse = Math.abs(st.ayModel) / Math.max(0.1, ayLimit);
-      // Der gefahrene Radius aus Tempo und Gierrate: R = v / r. Bei fast gerader Fahrt geht
-      // er gegen unendlich, dann ist die Grenzgeschwindigkeit bedeutungslos und bleibt 0.
-      const radius = Math.abs(st.yawRate) > 0.02 ? v / Math.abs(st.yawRate) : 0;
-      st.vLimitKmh = radius > 0 ? Math.sqrt(ayLimit * radius) * 3.6 : 0;
+      // Hier stand eine Ausnutzung (ayModel gegen eine Haftgrenze) und eine
+      // Grenzgeschwindigkeit. Beide sind weggefallen: gefahren gemessen stand die Ausnutzung
+      // bei 165 km/h dauerhaft ueber 100 Prozent, und eine Anzeige am Anschlag sagt nichts.
+      // Das Reifenquietschen laeuft aus demselben Grund ueber latUse und nicht hierueber.
     }
 
     // Ein Layout anwenden. Setzt die drei Fahrzeugwerte und leitet daraus ab, was abzuleiten
@@ -9790,12 +9785,24 @@
       // Hier stand dampedSteering * (Tempo / Hoechsttempo) - ein Produkt, das mit der
       // Querbeschleunigung nur die Richtung teilte. Auf 1 g normiert, weil der Plot einen
       // Kreis von -1 bis 1 zeichnet.
-      // Auf die HAFTGRENZE normiert und nicht auf 1 g: der Plot zeichnet einen Kreis von
-      // -1 bis 1, und 1 soll "am Haftungsende" heissen. Auf 1 g normiert klebte der Punkt
-      // schon bei maessiger Kurvenfahrt am Rand und sagte nichts mehr.
-      st.gLat = cfg.yawModelEffect > 0
-        ? Math.max(-1.5, Math.min(1.5, Math.sign(st.ayModel) * st.ayUse))
-        : this.state.dampedSteering * (Math.abs(st.speedKmh) / cfg.topSpeedKmh);
+      // DER G-PLOT ZEIGT latUse UND NICHT DEN MODELLWERT, und das ist eine Korrektur mit
+      // Messung dahinter.
+      //
+      // Der Versuch, die gerechnete Querbeschleunigung zu zeigen, ist gescheitert: gefahren
+      // gemessen bei 165 km/h und Vollausschlag stand der Punkt dauerhaft bei 92 von 100 und
+      // die Ausnutzung dauerhaft ueber 100 Prozent. Der Grund ist der Skalenwiderspruch, der
+      // in yawStep steht - der Lenkbereich gehoert zu einem Modellauto, die Tempi zu einem
+      // echten -, und eine Anzeige, die immer am Anschlag steht, sagt nichts.
+      //
+      // latUse ist die kalibrierte Querausnutzung des Reibkreises, auf 0..1 begrenzt, und sie
+      // beziffert "am Limit" wirklich mit 1. Sie ist damit die einzige Groesse hier, die in
+      // einen Kreis von -1 bis 1 gehoert.
+      //
+      // Was NICHT zurueckgenommen ist: das Vorzeichen kommt jetzt aus der Lenkrichtung und
+      // die Groesse aus dem Reibkreis, statt aus dem alten Produkt
+      // dampedSteering * (Tempo / Hoechsttempo), das mit einer Querbeschleunigung nur die
+      // Richtung teilte.
+      st.gLat = Math.sign(this.state.dampedSteering) * Math.max(0, Math.min(1, st.latUse));
       st.gLong = st.longUse;
       this.outputs.motorPWM = Math.max(-1, Math.min(1, output));
       this.outputs.lights.head = !!inputs.headlights;
@@ -10669,10 +10676,20 @@
       if (!(physEngine.config.yawModelEffect > 0)) {
         yawEl.textContent = t('aus');
       } else {
-        const grad = st.yawRate * 180 / Math.PI;
-        const nutz = Math.round(st.ayUse * 100);
-        yawEl.textContent = Math.abs(grad).toFixed(0) + '°/s · '
-          + (nutz > 100 ? '>100' : nutz) + '%';
+        // GIERRATE gegen ihren STATIONAEREN Wert und nicht die Ausnutzung.
+        //
+        // Die Ausnutzung stand hier und war gefahren gemessen dauerhaft ueber 100 Prozent -
+        // eine Anzeige am Anschlag sagt nichts. Der Grund ist der Skalenwiderspruch der App
+        // (Lenkbereich vom Modellauto, Tempi vom echten), und er laesst sich nicht wegrechnen.
+        //
+        // Ein VERHAELTNIS zweier Modellgroessen ist davon unberuehrt: 100 Prozent heisst
+        // eingeschwungen, mehr heisst "dreht noch ein", weniger heisst "schiebt". Genau das
+        // hat der Bauplan versprochen, und es ist die eine Aussage, die hier skalenfrei ist.
+        const grad = Math.abs(st.yawRate * 180 / Math.PI);
+        const soll = Math.abs(st.yawSteady);
+        const anteil = soll > 0.02 ? Math.round(100 * Math.abs(st.yawRate) / soll) : null;
+        yawEl.textContent = grad.toFixed(0) + '°/s'
+          + (anteil === null ? '' : ' · ' + Math.min(999, anteil) + '%');
       }
     }
     const gx = Math.max(-1, Math.min(1, gyroRaw.x / gyroRaw.span));
@@ -23481,6 +23498,92 @@
     }
     return { ok: !schlecht.length,
              mass: teile.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // ---- Verdrahtung: jeder Physik-Regler erreicht die Physik ----
+  stAdd('Verdrahtung: alle Physik-Regler greifen', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.physConfigDiff) {
+      return { skip: true, mass: 'physConfigDiff nicht vorhanden' };
+    }
+    // Die Regler, die die Fahrphysik stellen MUESSEN. Eine gepflegte Liste, und das ist hier
+    // richtig: sie ist die Zusicherung. Ein neuer Physik-Regler gehoert hinein, und wenn
+    // einer aufhoert zu greifen, meldet es der Test.
+    //
+    // NICHT dabei: Toene, Ghosts, Boxenlogik, Crashzaehler, Anzeigeschalter - die stellen
+    // nicht die Fahrphysik. Und setting-topspeed nicht, weil der Gasfaktor absichtlich am
+    // Protokoll ansetzt und nicht am Modell (siehe topSpeedScale in 50-drive.js).
+    const PFLICHT = [
+      'setting-layout', 'setting-grip', 'setting-brakepower', 'setting-autoshift',
+      'setting-topspeed-kmh', 'setting-zero-to-top', 'setting-coast-drag',
+      'setting-fuelweight', 'setting-tyres', 'setting-tyre-blankets', 'setting-tyre-asym',
+      'setting-tyre-pressure', 'setting-brake-fade', 'setting-dirtyair',
+      'phys-steerresp', 'setting-brake-steal', 'setting-steer-calib', 'phys-accel',
+      'setting-brakebias', 'setting-rain',
+    ];
+    // Diese zwei multiplizieren in ihren Schalter hinein und tun ohne ihn richtigerweise
+    // nichts. Der Test schaltet ihn erst ein.
+    const MIT_SCHALTER = [['setting-brake-fade-strength', 'setting-brake-fade'],
+                          ['setting-dirtyair-strength', 'setting-dirtyair']];
+
+    // WERTE vergleichen und nicht Schluessel: ein Feld, das durch die Voreinstellung schon
+    // abweicht, bleibt sonst unsichtbar.
+    const abbild = () => JSON.stringify(OMEGA_TEST.physConfigDiff() || {});
+    const anfassen = (el) => {
+      const alt = el.type === 'checkbox' ? el.checked : el.value;
+      // EINEN DEFINIERTEN ANFANGSZUSTAND herstellen, bevor gemessen wird.
+      //
+      // Ohne das ist der Test reihenfolgeabhaengig, und genau daran ist er beim ersten Anlauf
+      // gescheitert: er meldete setting-tyre-blankets als stumm, waehrend derselbe Regler
+      // einzeln nachweislich greift. Ein frueherer Test hatte Kaestchen und Konfiguration
+      // auseinanderlaufen lassen, und dann setzt ein Umschalten die Konfiguration auf einen
+      // Wert, den sie schon hat - keine Aenderung, obwohl die Verdrahtung steht.
+      //
+      // Ein Test, der von der Reihenfolge abhaengt, meldet Fehler, die es nicht gibt, und
+      // verschweigt welche, die es gibt.
+      if (el.type === 'checkbox') {
+        el.checked = false;
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+      const vor = abbild();
+      if (el.type === 'checkbox') el.checked = !el.checked;
+      else if (el.tagName === 'SELECT') el.selectedIndex = (el.selectedIndex + 1) % el.options.length;
+      else {
+        const max = parseFloat(el.max), v = parseFloat(el.value);
+        const st = parseFloat(el.step) || 0.05;
+        el.value = String(v + st <= max ? v + st : v - st);
+      }
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+      el.dispatchEvent(new Event('change', { bubbles: true }));
+      const nach = abbild();
+      // ZURUECKSETZEN, immer. Ein Test, der die Einstellungen des Nutzers veraendert, ist
+      // selbst der naechste Fehlerbericht.
+      if (el.type === 'checkbox') el.checked = alt; else el.value = alt;
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+      el.dispatchEvent(new Event('change', { bubbles: true }));
+      return vor !== nach;
+    };
+
+    const stumm = [], fehlt = [];
+    for (const id of PFLICHT) {
+      const el = $(id);
+      if (!el) { fehlt.push(id); continue; }
+      if (!anfassen(el)) stumm.push(id);
+    }
+    for (const [id, schalterId] of MIT_SCHALTER) {
+      const el = $(id), sw = $(schalterId);
+      if (!el || !sw) { fehlt.push(id); continue; }
+      const altSw = sw.checked;
+      if (!sw.checked) { sw.checked = true; sw.dispatchEvent(new Event('change', { bubbles: true })); }
+      const ok = anfassen(el);
+      if (sw.checked !== altSw) { sw.checked = altSw; sw.dispatchEvent(new Event('change', { bubbles: true })); }
+      if (!ok) stumm.push(id + ' (mit Schalter an)');
+    }
+    const geprueft = PFLICHT.length + MIT_SCHALTER.length;
+    return { ok: !stumm.length && !fehlt.length,
+             mass: geprueft + ' Physik-Regler geprueft, ' + (geprueft - stumm.length - fehlt.length)
+                   + ' greifen'
+                   + (stumm.length ? ' || stumm: ' + stumm.join(', ') : '')
+                   + (fehlt.length ? ' || fehlt: ' + fehlt.join(', ') : '') };
   });
 
   // ---- Block 4.4: Reifendruck ----
