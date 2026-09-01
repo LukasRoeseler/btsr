@@ -499,7 +499,7 @@
     // werden von dort in die Legende gerendert, sind aber trotzdem Oberflaechentext -
     // deshalb gehoeren sie hierher wie jeder andere Satz auch.
     "Der ursprüngliche Sim-Modus": "The original sim mode",
-    "Halb so weit zwischen Arcade und GT3": "Halfway between Arcade and GT3",
+    "Halb so weit zwischen Arcade und Realismus GT3": "Halfway between Arcade and Realism GT3",
     "An einem echten GT3 kalibriert": "Calibrated against a real GT3",
     "Von Hand schalten, 3,2 s auf 100 (die gemessene Reihe, gegen die die Physik gefittet ist), voller Reifenverschleiß und volles Tankgewicht. Wenig Grip, schwache Bremse, langes Ausrollen. Ein Fahrfehler kostet hier Zeit.":
       "Manual gearbox, 3.2 s to 100 (the measured series the physics was fitted against), full tyre wear and full fuel weight. Little grip, weak brakes, long coasting. A mistake costs time here.",
@@ -1258,7 +1258,7 @@
     "Reifenverschleiß, Reifentemperatur, Bremstemperatur": "Tyre wear, tyre temperature, brake temperature",
     "Wettersimulation": "Weather simulation",
     "Alles hier schreibt rohe Bytes zum Auto und liest rohe Bytes zurück. Das ist Werkbank und kein Merkmal: die Pakete tragen gültige Prüfsummen, aber was das Auto mit einem selbst zusammengesetzten Paket macht, ist nicht vorhersagbar. Zum Fahren wird nichts davon gebraucht.": "Everything here writes raw bytes to the car and reads raw bytes back. This is a workbench, not a feature: the packets carry valid checksums, but what the car does with a hand-assembled packet is not predictable. None of it is needed for driving.",
-    "Automatik, 2,6 s auf 100, voller Grip, kein Reifenverschleiß und kein Tankgewicht. Lenkkalibrierung 200 Prozent, damit auch enge Strecken gehen – der volle Einschlag liegt bei etwa einem Drittel Stick an. Fading und Windschatten sind aus; sie stehen ab GT3 zur Verfügung.": "Automatic, 2.6 s to 100, full grip, no tyre wear and no fuel weight. Steering calibration 200 percent so that tight tracks work too – full lock arrives at about a third of stick travel. Fade and dirty air are off; they are available from GT3 upwards.",
+    "Automatik, 2,6 s auf 100, voller Grip, kein Reifenverschleiß und kein Tankgewicht. Lenkkalibrierung 200 Prozent, damit auch enge Strecken gehen – der volle Einschlag liegt bei etwa einem Drittel Stick an. Fading und Windschatten sind aus; sie stehen ab GT4 zur Verfügung.": "Automatic, 2.6 s to 100, full grip, no tyre wear and no fuel weight. Steering calibration 200 percent so that tight tracks work too – full lock arrives at about a third of stick travel. Fade and dirty air are off; they are available from GT4 upwards.",
     "Crash-Schwelle": "Crash threshold",
     "Wie weit die Bewegungsbytes 1 und 3 vom gleitenden Mittel abweichen müssen, damit ein Stoß als Crash gilt. Niedriger heißt empfindlicher: schon ein Rempler zählt. Höher heißt, dass nur ein echter Einschlag zählt. 40 ist der Wert, mit dem die Erkennung gebaut und geprüft wurde – stand bis v0.5 als Konstante im Code, war also eine Einstellung, die niemand einstellen konnte.": "How far the motion bytes 1 and 3 must deviate from the running mean for a jolt to count as a crash. Lower means more sensitive: even a nudge counts. Higher means only a real impact counts. 40 is the value the detection was built and tested with – it was a constant in the code until v0.5, so it was a setting nobody could set.",
     "R3 (rechten Stick drücken)": "R3 (press right stick)",
@@ -1348,6 +1348,15 @@
     "Lenkrate": "steering rate",
     "Reifenquietschen": "Tyre squeal",
     "Am Grenzbereich, im Stil von Gran Turismo: Lautstärke und Tonhöhe laufen stetig mit der Querausnutzung des Reibkreises, Einsatz ab 85 Prozent. Es setzt absichtlich spät ein – ein Quietschen, das bei jeder Kurve mitläuft, ist ein Dauergeräusch und keine Rückmeldung.": "At the limit, in the manner of Gran Turismo: volume and pitch run continuously with the lateral usage of the friction circle, starting at 85 percent. It deliberately comes in late – a squeal that runs through every corner is background noise, not feedback.",
+    "Mehrspieler": "Multiplayer",
+    "Sportlich, mit Simulationstiefe": "Sporty, with simulation depth",
+    "Von Hand schalten, 2,9 s auf 100, Reifenverschleiß und Tankgewicht knapp zur Hälfte. Bremsfading, Windschatten und ungleicher Verschleiß sind voll an. Die harte, gegen echte Werte kalibrierte Fassung steht daneben als Realismus GT3.": "Shift by hand, 2.9 s to 100, tyre wear and fuel weight at just under half. Brake fade, dirty air and uneven wear are fully on. The hard version, calibrated against real figures, sits next to it as Realism GT3.",
+    "Automatik, 3,1 s auf 100, Reifenverschleiß und Tankgewicht knapp halb so stark wie im Realismus-GT3. Die Klasse direkt neben Pro: Bremsfading, Windschatten und ungleicher Verschleiß sind an, aber gutmütig eingestellt, und die Lenkkalibrierung liegt bei 175 Prozent.": "Automatic, 3.1 s to 100, tyre wear and fuel weight just under half as strong as in the Realism GT3. The class right next to Pro: brake fade, dirty air and uneven wear are on, but set gently, and the steering calibration sits at 175 percent.",
+    "Das schärfste der fahrbaren": "The sharpest of the driveable ones",
+    "Von Hand schalten, 2,5 s auf 100, stärkster Reifenverschleiß der drei Klassen und die kürzeste Bremse. Die am feinsten dosierbare Lenkung, langes Ausrollen, und Windschatten wirkt am stärksten. Reifenwärmer an.": "Shift by hand, 2.5 s to 100, the strongest tyre wear of the three classes and the shortest brake. The most finely metered steering, long coasting, and dirty air bites hardest. Tyre blankets on.",
+    "Realismus GT3": "Realism GT3",
+    "Gegen echte Werte kalibriert": "Calibrated against real figures",
+    "Von Hand schalten, 3,2 s auf 100 – die gemessene Reihe, gegen die die Physik gefittet ist –, voller Reifenverschleiß und volles Tankgewicht. Wenig Grip, schwache Bremse, langes Ausrollen, keine Reifenwärmer. Das ist die haerteste der sechs Abstimmungen und die einzige, deren Zahlen aus Messungen kommen und nicht aus einer Anpassung. Ein Fahrfehler kostet hier Zeit.": "Shift by hand, 3.2 s to 100 – the measured series the physics is fitted against –, full tyre wear and full fuel weight. Little grip, a weak brake, long coasting, no tyre blankets. This is the hardest of the six tunings and the only one whose figures come from measurements rather than from an adjustment. A driving error costs time here.",
   };
 
   // ============================================================================

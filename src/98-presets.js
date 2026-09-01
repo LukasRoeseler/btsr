@@ -56,11 +56,11 @@
     },
     pro: {
       label: 'Pro',
-      kurz: 'Halb so weit zwischen Arcade und GT3',
+      kurz: 'Halb so weit zwischen Arcade und Realismus GT3',
       text: 'Automatik, 2,6 s auf 100, voller Grip, kein Reifenverschleiß und kein '
           + 'Tankgewicht. Lenkkalibrierung 200 Prozent, damit auch enge Strecken gehen '
           + '– der volle Einschlag liegt bei etwa einem Drittel Stick an. Fading und '
-          + 'Windschatten sind aus; sie stehen ab GT3 zur Verfügung.',
+          + 'Windschatten sind aus; sie stehen ab GT4 zur Verfügung.',
       // AUTOMATIK, obwohl Pro sonst die Zwischenstufe zu GT3 ist. Pro ist seit v0.5 die
       // Vorgabe, und wer beim ersten Start von Hand schalten muss und es nicht weiss, bleibt
       // im 1. Gang haengen - dann ist das Auto genau so traege, wie gemeldet wurde. Von Hand
@@ -104,10 +104,110 @@
     },
     gt3: {
       label: 'GT3',
-      kurz: 'An einem echten GT3 kalibriert',
-      text: 'Von Hand schalten, 3,2 s auf 100 (die gemessene Reihe, gegen die die Physik '
-          + 'gefittet ist), voller Reifenverschleiß und volles Tankgewicht. Wenig Grip, '
-          + 'schwache Bremse, langes Ausrollen. Ein Fahrfehler kostet hier Zeit.',
+      kurz: 'Sportlich, mit Simulationstiefe',
+      text: 'Von Hand schalten, 2,9 s auf 100, Reifenverschleiß und Tankgewicht knapp zur Hälfte. Bremsfading, Windschatten und ungleicher Verschleiß sind voll an. Die harte, gegen echte Werte kalibrierte Fassung steht daneben als Realismus GT3.',
+      v: { 'setting-grip': 0.87, 'setting-brakepower': 1.15, 'setting-autoshift': false,
+           'setting-zero-to-top': 2.9, 'setting-coast-drag': 0.9, 'setting-fuelweight': 0.45,
+           'setting-tyres': 0.9, 'phys-steerresp': 1.9, 'setting-brakebias': 60,
+           // Lenkkalibrierung 1,0 heisst: der uebertragene Winkel ist genau der gerechnete.
+           // Die Klassen ab GT3 sind gegen gemessenes Verhalten abgestimmt, und eine
+           // Kalibrierung darauf waere ein Aufschlag auf eine Messung.
+           'setting-steer-calib': 1.55,
+           'phys-accel': 1.0,
+           'setting-crash-threshold': 35,
+           // Bei Kalibrierung 1,0 wirkt schon 1,0 deutlich: 25 Grad statt 41 bei 100 km/h.
+           'setting-brake-steal': 1.1,
+           // Waermer AUS. Im GT-Sport sind Waermedecken meist untersagt, und die ersten Runden
+           // auf kalten Reifen sind ein Teil dessen, was diese Klasse ausmacht.
+           'setting-tyre-blankets': false,
+           'setting-fuel-drain': 1.3, 'setting-crash-count': 4,
+           'setting-crash-damage': true,
+           'setting-repair-time': 11,
+           // Block 4: Bremsfading, Windschatten, Reifenasymmetrie und -druck.
+           'setting-brake-fade': true,
+           'setting-brake-fade-strength': 1.0,
+           'setting-dirtyair': true,
+           'setting-dirtyair-strength': 1.0,
+           'setting-tyre-asym': true,
+           'setting-tyre-pressure': 1.8,
+           // Gasfaktor: wie frueh das Auto volle Motorleistung bekommt. 1,0 ist
+           // das Byte genau proportional zum Tacho, also die kalibrierte Fassung.
+           'setting-topspeed': 1.45 },
+    },
+    gt4: {
+      label: 'GT4',
+      kurz: 'Weniger Leistung, mehr Reserve',
+      text: 'Automatik, 3,1 s auf 100, Reifenverschleiß und Tankgewicht knapp halb so stark wie im Realismus-GT3. Die Klasse direkt neben Pro: Bremsfading, Windschatten und ungleicher Verschleiß sind an, aber gutmütig eingestellt, und die Lenkkalibrierung liegt bei 175 Prozent.',
+      v: { 'setting-grip': 0.95, 'setting-brakepower': 1.3, 'setting-autoshift': true,
+           'setting-zero-to-top': 3.1, 'setting-coast-drag': 0.75, 'setting-fuelweight': 0.3,
+           'setting-tyres': 0.45, 'phys-steerresp': 2.15, 'setting-brakebias': 59,
+           // Lenkkalibrierung 1,0 heisst: der uebertragene Winkel ist genau der gerechnete.
+           // Die Klassen ab GT3 sind gegen gemessenes Verhalten abgestimmt, und eine
+           // Kalibrierung darauf waere ein Aufschlag auf eine Messung.
+           'setting-steer-calib': 1.75,
+           'phys-accel': 1.0,
+           'setting-crash-threshold': 40,
+           // Etwas gutmuetiger als GT3, wie die ganze Klasse.
+           'setting-brake-steal': 1.05,
+           // Waermer aus, wie GT3.
+           'setting-tyre-blankets': true,
+           'setting-fuel-drain': 0.7, 'setting-crash-count': 4,
+           'setting-crash-damage': false,
+           'setting-repair-time': 8,
+           // Block 4: Bremsfading, Windschatten, Reifenasymmetrie und -druck.
+           'setting-brake-fade': true,
+           'setting-brake-fade-strength': 0.95,
+           'setting-dirtyair': true,
+           'setting-dirtyair-strength': 0.95,
+           'setting-tyre-asym': true,
+           'setting-tyre-pressure': 1.8,
+           // Gasfaktor: wie frueh das Auto volle Motorleistung bekommt. 1,0 ist
+           // das Byte genau proportional zum Tacho, also die kalibrierte Fassung.
+           'setting-topspeed': 1.6 },
+    },
+    f1: {
+      label: 'F1',
+      kurz: 'Das schärfste der fahrbaren',
+      text: 'Von Hand schalten, 2,5 s auf 100, stärkster Reifenverschleiß der drei Klassen und die kürzeste Bremse. Die am feinsten dosierbare Lenkung, langes Ausrollen, und Windschatten wirkt am stärksten. Reifenwärmer an.',
+      v: { 'setting-grip': 0.97, 'setting-brakepower': 1.45, 'setting-autoshift': false,
+           'setting-zero-to-top': 2.5, 'setting-coast-drag': 1.2, 'setting-fuelweight': 0.6,
+           'setting-tyres': 1.2, 'phys-steerresp': 1.6, 'setting-brakebias': 63,
+           // Lenkkalibrierung 1,0 heisst: der uebertragene Winkel ist genau der gerechnete.
+           // Die Klassen ab GT3 sind gegen gemessenes Verhalten abgestimmt, und eine
+           // Kalibrierung darauf waere ein Aufschlag auf eine Messung.
+           'setting-steer-calib': 1.4,
+           'phys-accel': 1.0,
+           'setting-crash-threshold': 30,
+           // Der schaerfste Reibkreis, aber nicht am Notboden: bei Kalibrierung 1,0 gibt 1,15
+           // schon 13 Grad, und das ist kein Fahren mehr.
+           'setting-brake-steal': 1.1,
+           // Waermer an. In der Formel 1 waren Waermedecken bis 2024 erlaubt und sind seit 2025
+           // verboten - hier ist es die Einstellung, die zur schaerfsten Klasse passt.
+           'setting-tyre-blankets': true,
+           'setting-fuel-drain': 2.7, 'setting-crash-count': 3,
+           'setting-crash-damage': true,
+           'setting-repair-time': 16,
+           // Block 4: Bremsfading, Windschatten, Reifenasymmetrie und -druck.
+           'setting-brake-fade': true,
+           'setting-brake-fade-strength': 1.25,
+           'setting-dirtyair': true,
+           'setting-dirtyair-strength': 1.35,
+           'setting-tyre-asym': true,
+           'setting-tyre-pressure': 1.75,
+           // Gasfaktor: wie frueh das Auto volle Motorleistung bekommt. 1,0 ist
+           // das Byte genau proportional zum Tacho, also die kalibrierte Fassung.
+           'setting-topspeed': 1.6 },
+    },
+    // DIE KALIBRIERTE FASSUNG, und sie steht hier, damit sie nicht verlorengeht.
+    //
+    // Das ist das GT3 aus v0.4 Wort fuer Wort: 3,2 s auf 100 ist die gemessene Reihe, gegen
+    // die die Physik gefittet ist (RMSE 7,3 %), und die uebrigen Werte gehoeren dazu. Als die
+    // drei Klassen an Pro gerueckt sind, waere diese Abstimmung sonst mitgewandert - und mit
+    // ihr die einzige, deren Zahlen aus Messungen kommen und nicht aus einer Anpassung.
+    realgt3: {
+      label: 'Realismus GT3',
+      kurz: 'Gegen echte Werte kalibriert',
+      text: 'Von Hand schalten, 3,2 s auf 100 – die gemessene Reihe, gegen die die Physik gefittet ist –, voller Reifenverschleiß und volles Tankgewicht. Wenig Grip, schwache Bremse, langes Ausrollen, keine Reifenwärmer. Das ist die haerteste der sechs Abstimmungen und die einzige, deren Zahlen aus Messungen kommen und nicht aus einer Anpassung. Ein Fahrfehler kostet hier Zeit.',
       v: { 'setting-grip': 0.72, 'setting-brakepower': 0.85, 'setting-autoshift': false,
            'setting-zero-to-top': 3.2, 'setting-coast-drag': 1.25, 'setting-fuelweight': 1.0,
            'setting-tyres': 2.0, 'phys-steerresp': 1.3, 'setting-brakebias': 62,
@@ -135,76 +235,6 @@
            // Gasfaktor: wie frueh das Auto volle Motorleistung bekommt. 1,0 ist
            // das Byte genau proportional zum Tacho, also die kalibrierte Fassung.
            'setting-topspeed': 1.0 },
-    },
-    gt4: {
-      label: 'GT4',
-      kurz: 'Weniger Leistung, mehr Reserve',
-      text: 'Von Hand schalten, 4,4 s auf 100, Reifenverschleiß und Tankgewicht wie GT3, '
-          + 'aber mehr Grip und eine gutmütigere Bremse. Die Klasse darunter fährt sich '
-          + 'nicht leichter, weil sie mehr verzeiht, sondern weil sie langsamer ist.',
-      v: { 'setting-grip': 0.82, 'setting-brakepower': 1.0, 'setting-autoshift': false,
-           'setting-zero-to-top': 4.4, 'setting-coast-drag': 1.15, 'setting-fuelweight': 1.0,
-           'setting-tyres': 1.5, 'phys-steerresp': 1.5, 'setting-brakebias': 61,
-           // Lenkkalibrierung 1,0 heisst: der uebertragene Winkel ist genau der gerechnete.
-           // Die Klassen ab GT3 sind gegen gemessenes Verhalten abgestimmt, und eine
-           // Kalibrierung darauf waere ein Aufschlag auf eine Messung.
-           'setting-steer-calib': 1.1,
-           'phys-accel': 1.0,
-           'setting-crash-threshold': 35,
-           // Etwas gutmuetiger als GT3, wie die ganze Klasse.
-           'setting-brake-steal': 0.9,
-           // Waermer aus, wie GT3.
-           'setting-tyre-blankets': false,
-           'setting-fuel-drain': 2.2, 'setting-crash-count': 5,
-           'setting-crash-damage': true,
-           'setting-repair-time': 16,
-           // Block 4: Bremsfading, Windschatten, Reifenasymmetrie und -druck.
-           'setting-brake-fade': true,
-           'setting-brake-fade-strength': 0.8,
-           'setting-dirtyair': true,
-           'setting-dirtyair-strength': 0.8,
-           'setting-tyre-asym': true,
-           'setting-tyre-pressure': 1.85,
-           // Gasfaktor: wie frueh das Auto volle Motorleistung bekommt. 1,0 ist
-           // das Byte genau proportional zum Tacho, also die kalibrierte Fassung.
-           'setting-topspeed': 1.2 },
-    },
-    f1: {
-      label: 'F1',
-      kurz: 'Das schärfste, was das Modell hergibt',
-      text: 'Von Hand schalten, 2,4 s auf 100, stärkster Reifenverschleiß, volles '
-          + 'Tankgewicht, die am feinsten dosierbare Lenkung (52 % des Anschlags bei '
-          + 'vollem Stick, man muss also weit ziehen) und die kürzeste Bremse. Das '
-          + 'Ausrollen '
-          + 'ist kurz, weil der Luftwiderstand hier die größte Einzelkraft ist.',
-      v: { 'setting-grip': 0.95, 'setting-brakepower': 1.45, 'setting-autoshift': false,
-           'setting-zero-to-top': 2.4, 'setting-coast-drag': 1.6, 'setting-fuelweight': 1.0,
-           'setting-tyres': 2.0, 'phys-steerresp': 1.05, 'setting-brakebias': 66,
-           // Lenkkalibrierung 1,0 heisst: der uebertragene Winkel ist genau der gerechnete.
-           // Die Klassen ab GT3 sind gegen gemessenes Verhalten abgestimmt, und eine
-           // Kalibrierung darauf waere ein Aufschlag auf eine Messung.
-           'setting-steer-calib': 1.0,
-           'phys-accel': 1.0,
-           'setting-crash-threshold': 25,
-           // Der schaerfste Reibkreis, aber nicht am Notboden: bei Kalibrierung 1,0 gibt 1,15
-           // schon 13 Grad, und das ist kein Fahren mehr.
-           'setting-brake-steal': 1.05,
-           // Waermer an. In der Formel 1 waren Waermedecken bis 2024 erlaubt und sind seit 2025
-           // verboten - hier ist es die Einstellung, die zur schaerfsten Klasse passt.
-           'setting-tyre-blankets': true,
-           'setting-fuel-drain': 4.5, 'setting-crash-count': 3,
-           'setting-crash-damage': true,
-           'setting-repair-time': 24,
-           // Block 4: Bremsfading, Windschatten, Reifenasymmetrie und -druck.
-           'setting-brake-fade': true,
-           'setting-brake-fade-strength': 1.4,
-           'setting-dirtyair': true,
-           'setting-dirtyair-strength': 1.6,
-           'setting-tyre-asym': true,
-           'setting-tyre-pressure': 1.7,
-           // Gasfaktor: wie frueh das Auto volle Motorleistung bekommt. 1,0 ist
-           // das Byte genau proportional zum Tacho, also die kalibrierte Fassung.
-           'setting-topspeed': 1.5 },
     },
   };
   // Bis v0.4 hiess GT3 "real". Aeltere exportierte Abstimmungen und der Knopf im

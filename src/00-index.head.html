@@ -1857,6 +1857,7 @@
   <button class="tab-btn" data-tab="options">Optionen</button>
   <button class="tab-btn" data-tab="track">Strecke</button>
   <button class="tab-btn" data-tab="control">Renneinstellungen</button>
+  <button class="tab-btn" data-tab="mp">Mehrspieler</button>
   <button class="tab-btn" data-tab="doc">Doku</button>
   <button class="tab-btn" data-tab="misc">Entwicklertools</button>
   <!-- Nicht in der Leiste, aber weiter als Tab-Knopf vorhanden: showTab() sucht genau
@@ -4324,7 +4325,11 @@
     </div>
   </section>
 
-  <section class="tabpage" id="tab-control">
+  <!-- MEHRSPIELER. Eigener Reiter, weil er etwas anderes sagt als die
+       Renneinstellungen: die sagen, WIE ein Rennen laeuft, dieser hier sagt, WER
+       mitfaehrt und ueber welche Leitung. Als erste Karte in den Renneinstellungen
+       schob er ausserdem Rennmodus, Rundenlogik und Ergebnisse unter den Rand. -->
+  <section class="tabpage" id="tab-mp">
     <div class="card">
       <h2>Mehrspieler im WLAN <span class="wip-tag">experimentell</span></h2>
       <p class="muted">
@@ -4374,7 +4379,9 @@
         ein secure context.
       </p>
     </div>
+  </section>
 
+  <section class="tabpage" id="tab-control">
     <div class="card" id="race-card">
       <h2>Rennmodus</h2>
       <div class="row" style="align-items:center; gap:18px; flex-wrap:wrap">
@@ -5773,7 +5780,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.4.42</span></span>
+    <span class="foot-ver">v<span id="app-version">0.4.43</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
