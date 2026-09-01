@@ -91,6 +91,42 @@ def brake_squeal(seconds=1.4, seed=7):
     return (out / (np.max(np.abs(out)) + 1e-9) * 0.85).astype(np.float32)
 
 
+def tyre_squeal(seconds=1.6, seed=23):
+    """A loopable tyre squeal in the manner of Gran Turismo.
+
+    WHAT MAKES IT A TYRE AND NOT A BRAKE, and the difference is the whole point: the brake
+    squeal above is piercing and narrow — pad resonances at 2.8 to 5.6 kHz with Q around 50.
+    A tyre is an order lower and far broader. The sound is rubber shearing against tarmac:
+    a scrub, not a whistle. So the resonances sit at 620 to 1650 Hz with Q around 12, and a
+    substantial broadband bed carries the scrub itself rather than sitting under a tone.
+
+    The pitch is deliberately NOT baked in. The player varies playbackRate with friction
+    circle usage, which is how a real squeal rises as the tyre approaches its limit — baking
+    a sweep into the loop would fight that and make the seam audible.
+
+    Circular construction throughout, same as the brake squeal: a time-domain filter would
+    leave the two ends of the loop mismatched, and a seam in a sound that plays for whole
+    corners is far more noticeable than one in a one-shot.
+    """
+    rng = np.random.default_rng(seed)
+    n = int(seconds * SR)
+    t = np.arange(n) / SR
+    out = np.zeros(n, dtype=np.float32)
+    # Three broad resonances. Not a harmonic series — a tyre carcass is not a string.
+    for f0, amp, q in ((620.0, 1.00, 11.0), (980.0, 0.70, 13.0), (1650.0, 0.34, 15.0)):
+        layer = resonant_noise(n, f0, q, rng)
+        # A slower, deeper wobble than the brake squeal: a tyre at the limit judders as the
+        # contact patch grips and releases, and that is a slower process than pad chatter.
+        cycles = max(1, int(round(seconds * rng.uniform(1.4, 2.4))))
+        wob = 1.0 + 0.30 * np.sin(2 * np.pi * cycles * t / seconds + rng.uniform(0, 6.28))
+        out += (amp * layer * wob).astype(np.float32)
+    # The scrub bed carries more weight here than in the brake squeal (0.18 there): the
+    # broadband part IS the sound of rubber shearing, not a filler under a tone.
+    out += 0.42 * circular_noise(n, 1300.0, rng)
+    out += 0.16 * circular_noise(n, 430.0, rng)     # carcass rumble
+    return (out / (np.max(np.abs(out)) + 1e-9) * 0.85).astype(np.float32)
+
+
 def crash(variant, seed):
     """A dull ram between two GT3 cars — carbon and tyres, not glass.
 
@@ -480,6 +516,13 @@ def main():
     sz = to_ogg(brake_squeal(), 'brake_squeal')
     meta['brake'] = {'file': 'brake_squeal.ogg', 'loop': True, 'seconds': 1.4}
     print('brake_squeal      %d KB  (loopbar, ACC-artig tonal)' % (sz // 1024))
+
+    # Das Reifenquietschen. Eigener Eintrag, damit ein voller Lauf es nicht verliert - ein
+    # fehlender Eintrag in fx.json heisst, dass der Ton still fehlt (der Lader ist
+    # absichtlich duldsam gegenueber fehlenden Dateien).
+    sz = to_ogg(tyre_squeal(), 'tyre_squeal')
+    meta['tyre'] = {'file': 'tyre_squeal.ogg', 'loop': True, 'seconds': 1.6}
+    print('tyre_squeal       %d KB  (loopbar, GT-artig breit)' % (sz // 1024))
 
     variants = [(78.0, 11.0, 0.30, 0.75), (96.0, 14.0, 0.22, 0.62),
                 (64.0, 9.0, 0.40, 0.90), (112.0, 17.0, 0.16, 0.55)]

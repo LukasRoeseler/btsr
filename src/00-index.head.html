@@ -3557,6 +3557,7 @@
         <div class="snd-row"><audio controls preload="none" src="audio/shift_up.ogg"></audio><div><b>Hochschalten</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, Anstieg 8&ndash;14&nbsp;ms, damit es klunkt statt zu klicken</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/shift_down.ogg"></audio><div><b>Runterschalten</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/brake_squeal.ogg"></audio><div><b>Bremsenquietschen</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, als Schleife nach Bremsdruck eingeblendet</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/tyre_squeal.ogg"></audio><div><b>Reifenquietschen</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, als Schleife nach Reibkreis-Ausnutzung eingeblendet. Eine Gr&ouml;&szlig;enordnung tiefer und breiter als das Bremsenquietschen: Schwerpunkt 1473 statt 3382 Hz</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/crash_0.ogg"></audio><div><b>Crash, Variante 1</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert: vier Varianten, weil dieselbe Aufnahme bei mehreren Ber&uuml;hrungen als Fehler klingt</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/crash_1.ogg"></audio><div><b>Crash, Variante 2</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/crash_2.ogg"></audio><div><b>Crash, Variante 3</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
@@ -4986,6 +4987,13 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="rain-volume-val">25%</span>
         </div></div>
+      <div class="opt-row"><div class="opt-label">Reifenquietschen<small>Am Grenzbereich, im Stil von Gran Turismo: Lautst&auml;rke und Tonh&ouml;he laufen stetig mit der Querausnutzung des Reibkreises, Einsatz ab 85 Prozent. Es setzt absichtlich sp&auml;t ein &ndash; ein Quietschen, das bei jeder Kurve mitl&auml;uft, ist ein Dauerger&auml;usch und keine R&uuml;ckmeldung.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="tyre-volume" min="0" max="1" step="0.05" value="0.35">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="tyre-volume-val">35%</span>
+        </div></div>
       <div class="opt-row"><div class="opt-label">Bremsenquietschen
           <small>Eigener Regler. Es hing vorher am Motorregler und war deshalb nicht
           getrennt leiser zu bekommen.</small></div>
@@ -5765,7 +5773,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.4.40</span></span>
+    <span class="foot-ver">v<span id="app-version">0.4.41</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine

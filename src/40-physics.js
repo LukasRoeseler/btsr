@@ -616,6 +616,7 @@
         ayModel: 0,        // m/s^2, gerechnete Querbeschleunigung
         kU: 0,             // s^2/m, Eigenlenkgradient: >0 untersteuernd
         yawSteady: 0,      // rad/s, stationaere Gierrate zum aktuellen Lenkwinkel
+        latUse: 0,         // Querausnutzung des Reibkreises, 0..1 - treibt das Quietschen
         ayUse: 0,          // ayModel / ayLimit: 1 = am Haftungsende, >1 unmoeglich
         vLimitKmh: 0,      // Grenzgeschwindigkeit fuer den gerade gefahrenen Radius
         isShifting: false,
@@ -981,6 +982,10 @@
                                  * (Math.abs(st.speedKmh) / cfg.topSpeedKmh)
                                  * cfg.corneringLoad);
       st.gripLong = Math.sqrt(Math.max(0, 1 - latUse * latUse));
+      // Herausgegeben, weil das Reifenquietschen sie braucht: sie ist die Querausnutzung des
+      // Reibkreises, auf 1 begrenzt, und damit die einzige Groesse hier, die "am Limit"
+      // wirklich mit 1 beziffert. ayUse aus dem Einspurmodell steht gemessen oft ueber 1.
+      st.latUse = latUse;
       // Surface grip multiplies on top of the circle. Kept as its own factor so the two
       // effects stay legible: gripLong is how hard you are cornering, gripScale is rain.
       const surf = cfg.gripScale;

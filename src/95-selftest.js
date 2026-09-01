@@ -1441,6 +1441,79 @@
                           : 'Endwert ' + r.ende + ', Spitze ' + r.spitze };
   });
 
+  // ---- Reifenquietschen am Grenzbereich ----
+  //
+  // DREI Aussagen, und die dritte ist die, die man nicht hoert: der Startwert der
+  // Lautstaerke steht im CODE und im MARKUP. Zwei Orte fuer eine Zahl - genau diese Klasse
+  // hat bei den Voreinstellungen siebzehn Abweichungen ergeben, und beim Bremsenquietschen
+  // musste sie beim Halbieren an beiden Stellen nachgezogen werden.
+  stAdd('Reifenquietschen: Treiber, Ton und Lautstaerke stimmen', async () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.sndVolumes) {
+      return { skip: true, mass: 'sndVolumes nicht vorhanden' };
+    }
+    const schlecht = [], teile = [];
+
+    // 1. Der TREIBER: latUse muss im Zustand stehen und mit der Lenkung steigen. Ohne ihn
+    //    hat das Quietschen keine Groesse, an der es haengen kann.
+    if (OMEGA_TEST.physSteerGrip) {
+      const gerade = OMEGA_TEST.physSteerGrip({ kmh: 140, throttle: 0.3, brake: 0,
+                                                steering: 0 });
+      const kurve = OMEGA_TEST.physSteerGrip({ kmh: 140, throttle: 0.3, brake: 0,
+                                               steering: 1 });
+      const l0 = physEngine.state.latUse;
+      teile.push('latUse ' + (l0 === undefined ? 'FEHLT' : 'vorhanden'));
+      if (l0 === undefined) schlecht.push('latUse nicht im Zustand');
+      if (!(gerade.steerGrip >= kurve.steerGrip)) {
+        schlecht.push('Kurvenfahrt nimmt keinen Griff');
+      }
+    }
+
+    // 2. Der TON: in fx.json eingetragen und abrufbar. Der Lader ist absichtlich duldsam -
+    //    ein fehlender Eintrag faellt sonst still aus.
+    if (location.protocol !== 'file:') {
+      try {
+        const fx = await (await fetch('audio/fx.json', { cache: 'no-store' })).json();
+        if (!fx.tyre || !fx.tyre.file) {
+          schlecht.push('kein tyre-Eintrag in fx.json');
+        } else {
+          const r = await fetch('audio/' + fx.tyre.file, { cache: 'no-store' });
+          teile.push(fx.tyre.file + ' ' + (r.ok ? Math.round((await r.blob()).size / 1024)
+                                                  + ' kB' : r.status));
+          if (!r.ok) schlecht.push(fx.tyre.file + ': ' + r.status);
+          if (!fx.tyre.loop) schlecht.push('tyre ist nicht als Schleife eingetragen');
+        }
+      } catch (e) {
+        schlecht.push('fx.json nicht lesbar');
+      }
+    }
+
+    // 3. Die LAUTSTAERKE: Code gegen Markup.
+    const v = OMEGA_TEST.sndVolumes();
+    const el = $('tyre-volume');
+    if (!el) {
+      schlecht.push('tyre-volume fehlt im Dokument');
+    } else if (v.reifen === null) {
+      schlecht.push('tyreVolume nicht erreichbar');
+    } else {
+      teile.push('Lautstaerke Code ' + v.reifen + ' / Markup ' + el.defaultValue);
+      if (Math.abs(parseFloat(el.defaultValue) - v.reifen) > 1e-9) {
+        schlecht.push('Startwert laeuft auseinander: Code ' + v.reifen
+                      + ', Markup ' + el.defaultValue);
+      }
+    }
+    // Und die Schwelle: sie muss SPAET liegen. Ein Quietschen ab 30 Prozent ist ein
+    // Dauergeraeusch und keine Rueckmeldung.
+    if (OMEGA_TEST.sndTyreSquealCurve) {
+      const k = OMEGA_TEST.sndTyreSquealCurve();
+      teile.push('Schwelle ' + k.schwelle);
+      if (!(k.schwelle >= 0.7 && k.schwelle < 1)) {
+        schlecht.push('Schwelle ' + k.schwelle + ' liegt nicht spaet');
+      }
+    }
+    return { ok: !schlecht.length,
+             mass: teile.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
   // ---- Block 4.4: Reifendruck ----
   // Monoton, ueber den ganzen Reglerbereich. Ein Regler, der in der Mitte umkehrt, ist keine
   // Abstimmung, sondern eine Falle.

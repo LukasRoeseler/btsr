@@ -159,6 +159,9 @@
       };
       fxBuffers.crash = await Promise.all(fx.crash.map(c => grab(c.file)));
       fxBuffers.brake = await grab(fx.brake.file);
+      // Duldsam gegenueber einem aelteren audio/: fehlt der Eintrag, bleibt der Ton weg und
+      // der Ladevorgang laeuft weiter. Genau daran hing schon einmal der Schaltton.
+      if (fx.tyre) fxBuffers.tyre = await grab(fx.tyre.file);
       fxBuffers.pit = await grab(fx.pit.file);
       // Both are loops: they run for as long as their job does. Missing files are tolerated
       // (grab returns null) and the sound is simply absent rather than the load failing.
@@ -285,6 +288,54 @@
     }
   }
 
+  // ---- Reifenquietschen am Grenzbereich ------------------------------------------------
+  //
+  // Nach dem Muster des Bremsenquietschens: eine gehaltene Schleife, deren Lautstaerke
+  // eingeblendet wird - so wie ein echtes Quietschen anschwillt und abklingt, statt neu
+  // angestossen zu werden.
+  //
+  // ZWEI UNTERSCHIEDE zum Bremsenquietschen, und beide sind Absicht:
+  //
+  // 1. Die TONHOEHE laeuft mit. Ein Reifen wird hoeher, wenn er sich der Grenze naehert.
+  //    Umgesetzt ueber playbackRate und nicht als Sweep in der Datei: ein eingebackener
+  //    Sweep wuerde gegen die Modulation arbeiten und die Naht der Schleife hoerbar machen.
+  //
+  // 2. Es setzt erst SPAET ein, bei 85 Prozent Ausnutzung. Ein Quietschen, das bei jeder
+  //    Kurve mitlaeuft, ist ein Dauergeraeusch und keine Rueckmeldung - und die Aussage
+  //    "du bist am Limit" ist nur etwas wert, wenn sie nicht immer gilt.
+  let tyreNode = null, tyreGain = null;
+  const TYRE_SQUEAL_START = 0.85;
+  function setTyreSqueal(nutzung) {
+    if (!fxBuffers.tyre || !audioCtx || !soundEnabled) return;
+    // Unterhalb der Schwelle auf null abbilden, statt die Schwelle im Nenner zu vergessen:
+    // sonst faengt es bei 0 an und ist bei 0,85 schon laut.
+    const roh = (Math.max(0, Math.min(1.2, nutzung)) - TYRE_SQUEAL_START)
+                / (1 - TYRE_SQUEAL_START);
+    const menge = Math.max(0, Math.min(1, roh));
+    if (menge > 0.01 && !tyreNode) {
+      tyreNode = audioCtx.createBufferSource();
+      tyreNode.buffer = fxBuffers.tyre;
+      tyreNode.loop = true;
+      tyreGain = audioCtx.createGain();
+      tyreGain.gain.value = 0;
+      tyreNode.connect(tyreGain).connect(audioCtx.destination);
+      tyreNode.start();
+    }
+    if (!tyreGain) return;
+    tyreGain.gain.setTargetAtTime(Math.min(0.3, menge * 0.3) * tyreVolume,
+                                  audioCtx.currentTime, 0.05);
+    // 1,0 bis 1,18: hoerbar, aber ohne dass der Ton nach Bandgeschwindigkeit klingt. Mehr
+    // verschiebt auch die Schleifenlaenge und macht die Naht hoerbar.
+    if (tyreNode) {
+      tyreNode.playbackRate.setTargetAtTime(1 + 0.18 * menge, audioCtx.currentTime, 0.08);
+    }
+    if (menge <= 0.01 && tyreNode) {
+      const node = tyreNode;
+      tyreNode = null; tyreGain = null;
+      setTimeout(() => { try { node.stop(); } catch (e) { /* schon gestoppt */ } }, 400);
+    }
+  }
+
   // ---- Ambience: a quiet bed plus scattered one-off events ----
   // Two beds (trackside, rain) loop continuously behind their own gains, and a single timer
   // sprinkles pass-bys and thunder at random intervals. A lone loop, however long, becomes
@@ -299,6 +350,10 @@
   // eine Zahl, und beim Nachziehen muessen beide mit. Genau diese Klasse hat bei den
   // Voreinstellungen siebzehn Abweichungen ergeben.
   let brakeVolume = 0.3;       // rain and thunder: own control, weather stays audible
+  // Eigene Lautstaerke, aus demselben Grund wie beim Bremsenquietschen: an engineVolume
+  // gehaengt liesse es sich nur zusammen mit dem Motor leiser stellen, also gar nicht.
+  // Der Startwert steht hier UND im Markup - beim Nachziehen muessen beide mit.
+  let tyreVolume = 0.35;
   let ambienceEnabled = true;   // on, but quiet enough to sit under the engine
 
   async function loadAmbience() {
@@ -643,6 +698,12 @@
       ? 'aus' : Math.round(ghostCfg.line * 100) + '%';
   });
 
+  $('tyre-volume').addEventListener('input', (e) => {
+    tyreVolume = parseFloat(e.target.value);
+    $('tyre-volume-val').textContent = tyreVolume === 0
+      ? 'aus' : Math.round(tyreVolume * 100) + '%';
+  });
+
   $('setting-tyre-blankets').addEventListener('change', (e) => {
     physEngine.config.tyreBlankets = e.target.checked;
     log('Reifenwaermer ' + (e.target.checked ? 'an: Start und Wechsel auf '
@@ -772,6 +833,8 @@
     const brakeAmt = (physicsEnabled && st.speedKmh > physEngine.config.topSpeedKmh * 0.12)
       ? Math.max(0, Math.min(1, (Math.max(0, -throttleY) - 0.25) / 0.55)) : 0;
     setBrakeSqueal(brakeAmt);
+    // Der Reibkreis-Querbedarf treibt es. Er steht im Zustand, weil er hier gebraucht wird.
+    setTyreSqueal(physEngine.state.latUse || 0);
 
     if (sampleEngine.nodes && physicsEnabled) { updateSampleEngine(st.rpm, load, silent); return; }
 

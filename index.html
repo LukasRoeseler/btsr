@@ -3557,6 +3557,7 @@
         <div class="snd-row"><audio controls preload="none" src="audio/shift_up.ogg"></audio><div><b>Hochschalten</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, Anstieg 8&ndash;14&nbsp;ms, damit es klunkt statt zu klicken</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/shift_down.ogg"></audio><div><b>Runterschalten</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/brake_squeal.ogg"></audio><div><b>Bremsenquietschen</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, als Schleife nach Bremsdruck eingeblendet</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/tyre_squeal.ogg"></audio><div><b>Reifenquietschen</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, als Schleife nach Reibkreis-Ausnutzung eingeblendet. Eine Gr&ouml;&szlig;enordnung tiefer und breiter als das Bremsenquietschen: Schwerpunkt 1473 statt 3382 Hz</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/crash_0.ogg"></audio><div><b>Crash, Variante 1</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert: vier Varianten, weil dieselbe Aufnahme bei mehreren Ber&uuml;hrungen als Fehler klingt</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/crash_1.ogg"></audio><div><b>Crash, Variante 2</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/crash_2.ogg"></audio><div><b>Crash, Variante 3</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
@@ -4986,6 +4987,13 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="rain-volume-val">25%</span>
         </div></div>
+      <div class="opt-row"><div class="opt-label">Reifenquietschen<small>Am Grenzbereich, im Stil von Gran Turismo: Lautst&auml;rke und Tonh&ouml;he laufen stetig mit der Querausnutzung des Reibkreises, Einsatz ab 85 Prozent. Es setzt absichtlich sp&auml;t ein &ndash; ein Quietschen, das bei jeder Kurve mitl&auml;uft, ist ein Dauerger&auml;usch und keine R&uuml;ckmeldung.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="tyre-volume" min="0" max="1" step="0.05" value="0.35">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="tyre-volume-val">35%</span>
+        </div></div>
       <div class="opt-row"><div class="opt-label">Bremsenquietschen
           <small>Eigener Regler. Es hing vorher am Motorregler und war deshalb nicht
           getrennt leiser zu bekommen.</small></div>
@@ -5765,7 +5773,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.4.40</span></span>
+    <span class="foot-ver">v<span id="app-version">0.4.41</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -7142,6 +7150,8 @@
     "vorn bei Gas": "front on throttle",
     "bei Bremse": "on the brake",
     "Lenkrate": "steering rate",
+    "Reifenquietschen": "Tyre squeal",
+    "Am Grenzbereich, im Stil von Gran Turismo: Lautstärke und Tonhöhe laufen stetig mit der Querausnutzung des Reibkreises, Einsatz ab 85 Prozent. Es setzt absichtlich spät ein – ein Quietschen, das bei jeder Kurve mitläuft, ist ein Dauergeräusch und keine Rückmeldung.": "At the limit, in the manner of Gran Turismo: volume and pitch run continuously with the lateral usage of the friction circle, starting at 85 percent. It deliberately comes in late – a squeal that runs through every corner is background noise, not feedback.",
   };
 
   // ============================================================================
@@ -8879,6 +8889,7 @@
         ayModel: 0,        // m/s^2, gerechnete Querbeschleunigung
         kU: 0,             // s^2/m, Eigenlenkgradient: >0 untersteuernd
         yawSteady: 0,      // rad/s, stationaere Gierrate zum aktuellen Lenkwinkel
+        latUse: 0,         // Querausnutzung des Reibkreises, 0..1 - treibt das Quietschen
         ayUse: 0,          // ayModel / ayLimit: 1 = am Haftungsende, >1 unmoeglich
         vLimitKmh: 0,      // Grenzgeschwindigkeit fuer den gerade gefahrenen Radius
         isShifting: false,
@@ -9244,6 +9255,10 @@
                                  * (Math.abs(st.speedKmh) / cfg.topSpeedKmh)
                                  * cfg.corneringLoad);
       st.gripLong = Math.sqrt(Math.max(0, 1 - latUse * latUse));
+      // Herausgegeben, weil das Reifenquietschen sie braucht: sie ist die Querausnutzung des
+      // Reibkreises, auf 1 begrenzt, und damit die einzige Groesse hier, die "am Limit"
+      // wirklich mit 1 beziffert. ayUse aus dem Einspurmodell steht gemessen oft ueber 1.
+      st.latUse = latUse;
       // Surface grip multiplies on top of the circle. Kept as its own factor so the two
       // effects stay legible: gripLong is how hard you are cornering, gripScale is rain.
       const surf = cfg.gripScale;
@@ -16109,6 +16124,9 @@
       };
       fxBuffers.crash = await Promise.all(fx.crash.map(c => grab(c.file)));
       fxBuffers.brake = await grab(fx.brake.file);
+      // Duldsam gegenueber einem aelteren audio/: fehlt der Eintrag, bleibt der Ton weg und
+      // der Ladevorgang laeuft weiter. Genau daran hing schon einmal der Schaltton.
+      if (fx.tyre) fxBuffers.tyre = await grab(fx.tyre.file);
       fxBuffers.pit = await grab(fx.pit.file);
       // Both are loops: they run for as long as their job does. Missing files are tolerated
       // (grab returns null) and the sound is simply absent rather than the load failing.
@@ -16235,6 +16253,54 @@
     }
   }
 
+  // ---- Reifenquietschen am Grenzbereich ------------------------------------------------
+  //
+  // Nach dem Muster des Bremsenquietschens: eine gehaltene Schleife, deren Lautstaerke
+  // eingeblendet wird - so wie ein echtes Quietschen anschwillt und abklingt, statt neu
+  // angestossen zu werden.
+  //
+  // ZWEI UNTERSCHIEDE zum Bremsenquietschen, und beide sind Absicht:
+  //
+  // 1. Die TONHOEHE laeuft mit. Ein Reifen wird hoeher, wenn er sich der Grenze naehert.
+  //    Umgesetzt ueber playbackRate und nicht als Sweep in der Datei: ein eingebackener
+  //    Sweep wuerde gegen die Modulation arbeiten und die Naht der Schleife hoerbar machen.
+  //
+  // 2. Es setzt erst SPAET ein, bei 85 Prozent Ausnutzung. Ein Quietschen, das bei jeder
+  //    Kurve mitlaeuft, ist ein Dauergeraeusch und keine Rueckmeldung - und die Aussage
+  //    "du bist am Limit" ist nur etwas wert, wenn sie nicht immer gilt.
+  let tyreNode = null, tyreGain = null;
+  const TYRE_SQUEAL_START = 0.85;
+  function setTyreSqueal(nutzung) {
+    if (!fxBuffers.tyre || !audioCtx || !soundEnabled) return;
+    // Unterhalb der Schwelle auf null abbilden, statt die Schwelle im Nenner zu vergessen:
+    // sonst faengt es bei 0 an und ist bei 0,85 schon laut.
+    const roh = (Math.max(0, Math.min(1.2, nutzung)) - TYRE_SQUEAL_START)
+                / (1 - TYRE_SQUEAL_START);
+    const menge = Math.max(0, Math.min(1, roh));
+    if (menge > 0.01 && !tyreNode) {
+      tyreNode = audioCtx.createBufferSource();
+      tyreNode.buffer = fxBuffers.tyre;
+      tyreNode.loop = true;
+      tyreGain = audioCtx.createGain();
+      tyreGain.gain.value = 0;
+      tyreNode.connect(tyreGain).connect(audioCtx.destination);
+      tyreNode.start();
+    }
+    if (!tyreGain) return;
+    tyreGain.gain.setTargetAtTime(Math.min(0.3, menge * 0.3) * tyreVolume,
+                                  audioCtx.currentTime, 0.05);
+    // 1,0 bis 1,18: hoerbar, aber ohne dass der Ton nach Bandgeschwindigkeit klingt. Mehr
+    // verschiebt auch die Schleifenlaenge und macht die Naht hoerbar.
+    if (tyreNode) {
+      tyreNode.playbackRate.setTargetAtTime(1 + 0.18 * menge, audioCtx.currentTime, 0.08);
+    }
+    if (menge <= 0.01 && tyreNode) {
+      const node = tyreNode;
+      tyreNode = null; tyreGain = null;
+      setTimeout(() => { try { node.stop(); } catch (e) { /* schon gestoppt */ } }, 400);
+    }
+  }
+
   // ---- Ambience: a quiet bed plus scattered one-off events ----
   // Two beds (trackside, rain) loop continuously behind their own gains, and a single timer
   // sprinkles pass-bys and thunder at random intervals. A lone loop, however long, becomes
@@ -16249,6 +16315,10 @@
   // eine Zahl, und beim Nachziehen muessen beide mit. Genau diese Klasse hat bei den
   // Voreinstellungen siebzehn Abweichungen ergeben.
   let brakeVolume = 0.3;       // rain and thunder: own control, weather stays audible
+  // Eigene Lautstaerke, aus demselben Grund wie beim Bremsenquietschen: an engineVolume
+  // gehaengt liesse es sich nur zusammen mit dem Motor leiser stellen, also gar nicht.
+  // Der Startwert steht hier UND im Markup - beim Nachziehen muessen beide mit.
+  let tyreVolume = 0.35;
   let ambienceEnabled = true;   // on, but quiet enough to sit under the engine
 
   async function loadAmbience() {
@@ -16593,6 +16663,12 @@
       ? 'aus' : Math.round(ghostCfg.line * 100) + '%';
   });
 
+  $('tyre-volume').addEventListener('input', (e) => {
+    tyreVolume = parseFloat(e.target.value);
+    $('tyre-volume-val').textContent = tyreVolume === 0
+      ? 'aus' : Math.round(tyreVolume * 100) + '%';
+  });
+
   $('setting-tyre-blankets').addEventListener('change', (e) => {
     physEngine.config.tyreBlankets = e.target.checked;
     log('Reifenwaermer ' + (e.target.checked ? 'an: Start und Wechsel auf '
@@ -16722,6 +16798,8 @@
     const brakeAmt = (physicsEnabled && st.speedKmh > physEngine.config.topSpeedKmh * 0.12)
       ? Math.max(0, Math.min(1, (Math.max(0, -throttleY) - 0.25) / 0.55)) : 0;
     setBrakeSqueal(brakeAmt);
+    // Der Reibkreis-Querbedarf treibt es. Er steht im Zustand, weil er hier gebraucht wird.
+    setTyreSqueal(physEngine.state.latUse || 0);
 
     if (sampleEngine.nodes && physicsEnabled) { updateSampleEngine(st.rpm, load, silent); return; }
 
@@ -19903,6 +19981,25 @@
         e.applyLayout(merkLayout);
         OMEGA_TEST.zustandZurueck(st, merkState);
       }
+    },
+
+    // Die Lautstaerken, wie der CODE sie fuehrt. Herausgegeben, damit sich gegen das Markup
+    // pruefen laesst: der Startwert steht an zwei Orten, und diese Klasse hat bei den
+    // Voreinstellungen siebzehn Abweichungen ergeben.
+    sndVolumes() {
+      return { motor: typeof engineVolume !== 'undefined' ? engineVolume : null,
+               bremse: typeof brakeVolume !== 'undefined' ? brakeVolume : null,
+               reifen: typeof tyreVolume !== 'undefined' ? tyreVolume : null,
+               ambience: typeof ambienceVolume !== 'undefined' ? ambienceVolume : null,
+               regen: typeof rainVolume !== 'undefined' ? rainVolume : null };
+    },
+
+    // Die Kennlinie des Reifenquietschens: aus der Ausnutzung wird eine Menge. Nachgebaut
+    // waere sie eine zweite Wahrheit, also wird die Schwelle herausgegeben und der Test
+    // rechnet mit IHR.
+    sndTyreSquealCurve() {
+      return { schwelle: typeof TYRE_SQUEAL_START !== 'undefined' ? TYRE_SQUEAL_START : null,
+               tonDa: !!(typeof fxBuffers !== 'undefined' && fxBuffers.tyre) };
     },
 
     physTyreAsym(o) {
@@ -23311,6 +23408,79 @@
     const ok = r.ende === 0 && r.spitze === 0;
     return { ok, mass: ok ? 'Gierrate bleibt 0'
                           : 'Endwert ' + r.ende + ', Spitze ' + r.spitze };
+  });
+
+  // ---- Reifenquietschen am Grenzbereich ----
+  //
+  // DREI Aussagen, und die dritte ist die, die man nicht hoert: der Startwert der
+  // Lautstaerke steht im CODE und im MARKUP. Zwei Orte fuer eine Zahl - genau diese Klasse
+  // hat bei den Voreinstellungen siebzehn Abweichungen ergeben, und beim Bremsenquietschen
+  // musste sie beim Halbieren an beiden Stellen nachgezogen werden.
+  stAdd('Reifenquietschen: Treiber, Ton und Lautstaerke stimmen', async () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.sndVolumes) {
+      return { skip: true, mass: 'sndVolumes nicht vorhanden' };
+    }
+    const schlecht = [], teile = [];
+
+    // 1. Der TREIBER: latUse muss im Zustand stehen und mit der Lenkung steigen. Ohne ihn
+    //    hat das Quietschen keine Groesse, an der es haengen kann.
+    if (OMEGA_TEST.physSteerGrip) {
+      const gerade = OMEGA_TEST.physSteerGrip({ kmh: 140, throttle: 0.3, brake: 0,
+                                                steering: 0 });
+      const kurve = OMEGA_TEST.physSteerGrip({ kmh: 140, throttle: 0.3, brake: 0,
+                                               steering: 1 });
+      const l0 = physEngine.state.latUse;
+      teile.push('latUse ' + (l0 === undefined ? 'FEHLT' : 'vorhanden'));
+      if (l0 === undefined) schlecht.push('latUse nicht im Zustand');
+      if (!(gerade.steerGrip >= kurve.steerGrip)) {
+        schlecht.push('Kurvenfahrt nimmt keinen Griff');
+      }
+    }
+
+    // 2. Der TON: in fx.json eingetragen und abrufbar. Der Lader ist absichtlich duldsam -
+    //    ein fehlender Eintrag faellt sonst still aus.
+    if (location.protocol !== 'file:') {
+      try {
+        const fx = await (await fetch('audio/fx.json', { cache: 'no-store' })).json();
+        if (!fx.tyre || !fx.tyre.file) {
+          schlecht.push('kein tyre-Eintrag in fx.json');
+        } else {
+          const r = await fetch('audio/' + fx.tyre.file, { cache: 'no-store' });
+          teile.push(fx.tyre.file + ' ' + (r.ok ? Math.round((await r.blob()).size / 1024)
+                                                  + ' kB' : r.status));
+          if (!r.ok) schlecht.push(fx.tyre.file + ': ' + r.status);
+          if (!fx.tyre.loop) schlecht.push('tyre ist nicht als Schleife eingetragen');
+        }
+      } catch (e) {
+        schlecht.push('fx.json nicht lesbar');
+      }
+    }
+
+    // 3. Die LAUTSTAERKE: Code gegen Markup.
+    const v = OMEGA_TEST.sndVolumes();
+    const el = $('tyre-volume');
+    if (!el) {
+      schlecht.push('tyre-volume fehlt im Dokument');
+    } else if (v.reifen === null) {
+      schlecht.push('tyreVolume nicht erreichbar');
+    } else {
+      teile.push('Lautstaerke Code ' + v.reifen + ' / Markup ' + el.defaultValue);
+      if (Math.abs(parseFloat(el.defaultValue) - v.reifen) > 1e-9) {
+        schlecht.push('Startwert laeuft auseinander: Code ' + v.reifen
+                      + ', Markup ' + el.defaultValue);
+      }
+    }
+    // Und die Schwelle: sie muss SPAET liegen. Ein Quietschen ab 30 Prozent ist ein
+    // Dauergeraeusch und keine Rueckmeldung.
+    if (OMEGA_TEST.sndTyreSquealCurve) {
+      const k = OMEGA_TEST.sndTyreSquealCurve();
+      teile.push('Schwelle ' + k.schwelle);
+      if (!(k.schwelle >= 0.7 && k.schwelle < 1)) {
+        schlecht.push('Schwelle ' + k.schwelle + ' liegt nicht spaet');
+      }
+    }
+    return { ok: !schlecht.length,
+             mass: teile.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
   });
 
   // ---- Block 4.4: Reifendruck ----

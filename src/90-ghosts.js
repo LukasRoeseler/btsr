@@ -3135,6 +3135,25 @@
       }
     },
 
+    // Die Lautstaerken, wie der CODE sie fuehrt. Herausgegeben, damit sich gegen das Markup
+    // pruefen laesst: der Startwert steht an zwei Orten, und diese Klasse hat bei den
+    // Voreinstellungen siebzehn Abweichungen ergeben.
+    sndVolumes() {
+      return { motor: typeof engineVolume !== 'undefined' ? engineVolume : null,
+               bremse: typeof brakeVolume !== 'undefined' ? brakeVolume : null,
+               reifen: typeof tyreVolume !== 'undefined' ? tyreVolume : null,
+               ambience: typeof ambienceVolume !== 'undefined' ? ambienceVolume : null,
+               regen: typeof rainVolume !== 'undefined' ? rainVolume : null };
+    },
+
+    // Die Kennlinie des Reifenquietschens: aus der Ausnutzung wird eine Menge. Nachgebaut
+    // waere sie eine zweite Wahrheit, also wird die Schwelle herausgegeben und der Test
+    // rechnet mit IHR.
+    sndTyreSquealCurve() {
+      return { schwelle: typeof TYRE_SQUEAL_START !== 'undefined' ? TYRE_SQUEAL_START : null,
+               tonDa: !!(typeof fxBuffers !== 'undefined' && fxBuffers.tyre) };
+    },
+
     physTyreAsym(o) {
       const opt = o || {};
       const e = physEngine, st = e.state, cfg = e.config;

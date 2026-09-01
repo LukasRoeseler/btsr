@@ -220,6 +220,107 @@ Vorderachse verbraucht, fehlt der Lenkung. Er hat einen Boden von 0,12, damit da
 voellig hilflos ist - im Regen wird dieser Boden weggeskaliert, weil dort wirklich nichts mehr
 uebrig ist.
 
+### Fahrzeuglayout: fuenf Bauformen
+
+Bis v0.5 hatten alle Autos DASSELBE Fahrwerk. Unterschiedlich war nur der Klang; die statische
+Achslastverteilung stand als Literal `0.5` in der Verlagerungszeile und kam sonst nirgends vor.
+Seit v0.5 gibt es fuenf Layouts: Neutral (Vorgabe, reproduziert das bisherige Verhalten genau),
+die drei GT3-Motorlagen und ein Formel-1-Monoposto.
+
+| Layout | Achslast v:h | Radstand | I_z | K_u |
+|---|---|---|---|---|
+| Neutral, kalibriert | 50 : 50 | 2,60 m | 2000 | 0 (neutral) |
+| GT3, Frontmotor (BMW M4 GT3) | 50 : 50 | 2,85 m | 2500 | 0 |
+| GT3, Mittelmotor (Ferrari 296 GT3) | 44 : 56 | 2,60 m | 1800 | -0,0003 |
+| GT3, Heckmotor (Porsche 911 GT3 R) | 39 : 61 | 2,50 m | 2200 | -0,0006 |
+| Formel-1-Monoposto | 45 : 55 | 3,60 m | 1000 | -0,0003 |
+
+**Dass die drei Motorlagen GT3-Varianten sind, ist wichtiger als es klingt:** sie unterscheiden
+sich NUR in Achslast, Radstand und Traegheitsmoment, waehrend Leistung, Reifen und Bremse
+dieselben bleiben. Deshalb zeigt der Wechsel, was die *Motorlage* macht, und nicht, was eine
+andere Klasse macht.
+
+Die Zahlen sind Schaetzungen aus der Fahrzeugklasse und keine Messungen. Am unsichersten ist
+das Traegheitsmoment des F1-Autos.
+
+**Was spuerbar ist**, gemessen als uebertragener Winkel bei 140 km/h unter Vollbremsung, mit der
+Lenkkalibrierung 200 Prozent:
+
+| Layout | rollend | bremsend | Lenkrate |
+|---|---|---|---|
+| Neutral / GT3 Front | 45 Grad | 26 Grad | 6,0 / 4,8 |
+| GT3 Mitte | 45 Grad | 20 Grad | 6,7 |
+| Formel 1 | 45 Grad | 21 Grad | 9,0 |
+| GT3 Heck | 45 Grad | 13 Grad | 5,5 |
+
+**Warum die Kalibrierung dabei nicht kippt.** `loadFrontOnPower` und `loadFrontOnBrake` waren
+eigene Konstanten (0,20 und 0,80) und damit `0,5 -/+ transferK` - dieselbe Geometrie an einem
+zweiten Ort. Der Vortrieb ist auf `loadFrontOnPower` normiert, ausdruecklich damit die gemessene
+Anfahrzeit bleibt, wie kalibriert. Seit v0.5 werden die beiden **gerechnet**: damit gilt am
+Vollgas-Gleichgewicht weiterhin `rearGrip = 1`, egal welches Layout, und die
+Beschleunigungskalibrierung bleibt unberuehrt. Das Layout aendert die **Balance**, nicht die
+Geradeausleistung.
+
+Die absolute Achslast wirkt **nur vorne**, und das ist eine bewusste Unsymmetrie: die
+Vorderachskapazitaet geht ausschliesslich in die Lenkung. Denselben Griff hinten absolut zu
+rechnen wuerde die Anfahrzeit veraendern - und die ist gegen eine Messung kalibriert. Eine
+gewaehlte Bauform darf eine Messung nicht verschieben.
+
+Und die Staerke ist **gemessen und keine Reifeneigenschaft**. Zuerst stand dort die
+Lastempfindlichkeit eines Rennreifens als Exponent 0,85 - physikalisch begruendet und
+unbrauchbar: der Reibkreis ist eine Wurzel aus einer Differenz von Quadraten und saettigt
+schon bei zehn Prozent Absenkung. Drei von fuenf Layouts klebten am Notboden von 0,12, also bei
+5 Grad Einschlag. Linear mit Staerke 0,15 ergibt die geordnete Spreizung oben.
+
+### Das Einspurmodell
+
+Gebaut in v0.5, als **Instrument**: es rechnet Gierrate, Schwimmwinkel, Achsschraeglaufwinkel
+und Eigenlenkgradient, und nichts davon stellt die Lenkung. Das Modellauto rutscht nicht.
+
+Der Schritt ist **halbimplizit**, nicht explizit - bei 45 ms Sendetakt und hoher
+Schraeglaufsteifigkeit wird explizites Euler instabil. Nachgewiesen: der Sprungversuch schwingt
+ein und nicht auf, auch mit vierfach ueberhoehter Steifigkeit.
+
+Die drei Proben laufen als Selbsttests. Der Kleinwinkel-Grenzfall trifft die reine Geometrie
+`L/R` auf 0,01 bis 1,07 Prozent; der Eigenlenkgradient faellt aus einer stationaeren Kreisfahrt
+mit konstantem Radius auf 1 bis 2 * 10^-4 heraus.
+
+**Eine Probe war zuerst falsch, und zwar die Probe und nicht das Modell.** Die Formel
+`K_u = (d2-d1)/(ay2-ay1)` verlangt einen KONSTANTEN Radius bei verschiedenem Tempo. Der erste
+Aufbau hielt das Tempo fest und veraenderte den Lenkwinkel; damit blieb der geometrische Anteil
+`L/R` im Unterschied stehen, und die Probe meldete 0,021 statt 0. Aufgefallen ist es daran, dass
+der uebertragene Winkel und `L*r/v` auf 6 * 10^-5 zusammenfielen.
+
+**Und eine Stelle, an der das Modell sonst stumm geblieben waere:** waere die
+Schraeglaufsteifigkeit strikt proportional zur Achslast, kuerzte sich der Eigenlenkgradient
+exakt weg - `K_u = m*f/(C*f) - m*(1-f)/(C*(1-f)) = 0` fuer JEDE Verteilung. Das Modell haette
+jedes Layout als neutral gemeldet. Ein Reifen traegt Seitenkraft unterlinear zur Last; erst
+dieser Exponent macht aus einer Achslastverteilung ein Eigenlenkverhalten.
+
+**Was das Modell NICHT als Zahl sagen kann.** Der Betrag der Querbeschleunigung ist keine
+brauchbare Anzeige - gemessen 212 m/s^2 (21 g) bei 120 km/h und 28,8 Grad Einschlag. Die
+Rechnung ist richtig: 28,8 Grad bei 120 km/h IST ein Radius von fuenf Metern. Der Widerspruch
+steckt in den Eingaengen - der Lenkbereich bis 45 Grad gehoert zu einem Modellauto, die
+angezeigten km/h zu einem echten. Schon vier Grad sind bei 120 km/h 3,1 g; bei 25 km/h und
+fuenf Grad dagegen 0,17 g. Im langsamen Bereich einer Wohnzimmerstrecke stimmen die Zahlen.
+
+Das Cockpit zeigt deshalb die **Ausnutzung** und nicht den Betrag, mit einem Groesserzeichen
+ueber 100 Prozent. Und der G-Plot zeigt die gerechnete Querbeschleunigung, normiert auf die
+Haftgrenze statt auf 1 g - sonst klebte der Punkt schon bei maessiger Kurvenfahrt am Rand.
+
+### Reifenquietschen am Grenzbereich
+
+Getrieben von der Querausnutzung des Reibkreises, Einsatz ab 85 Prozent, Lautstaerke UND
+Tonhoehe laufen stetig mit. Absichtlich spaet: ein Quietschen, das bei jeder Kurve mitlaeuft,
+ist ein Dauergeraeusch und keine Rueckmeldung.
+
+Getrieben wird es von `latUse` und nicht von der Modell-Ausnutzung: `latUse` ist auf 1 begrenzt
+und beziffert "am Limit" wirklich mit 1, waehrend die Modell-Ausnutzung aus dem oben genannten
+Grund oft darueber steht.
+
+Der Ton ist vollstaendig synthetisch und eine Groessenordnung tiefer als das Bremsenquietschen
+(Frequenzschwerpunkt 1473 gegen 3382 Hz). Einzelheiten in `audio/CREDITS.md`.
+
 ### Die Lenkgrenze: 45 Grad, und kein Regler kommt darueber
 
 Byte 7 traegt den Lenkwert als `round(winkel * 127)` in einem **vorzeichenbehafteten** Byte.

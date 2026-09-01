@@ -1346,6 +1346,8 @@
     "vorn bei Gas": "front on throttle",
     "bei Bremse": "on the brake",
     "Lenkrate": "steering rate",
+    "Reifenquietschen": "Tyre squeal",
+    "Am Grenzbereich, im Stil von Gran Turismo: Lautstärke und Tonhöhe laufen stetig mit der Querausnutzung des Reibkreises, Einsatz ab 85 Prozent. Es setzt absichtlich spät ein – ein Quietschen, das bei jeder Kurve mitläuft, ist ein Dauergeräusch und keine Rückmeldung.": "At the limit, in the manner of Gran Turismo: volume and pitch run continuously with the lateral usage of the friction circle, starting at 85 percent. It deliberately comes in late – a squeal that runs through every corner is background noise, not feedback.",
   };
 
   // ============================================================================

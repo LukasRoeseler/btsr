@@ -10,8 +10,8 @@ GT3-V8 (Flat-Plane), GT3-V10, B-Max (Reihen-3 Turbo), Formel 1 (V12) und acht
 Rennmotoren nach technischen Angaben (Corvette C6.R, Corvette Z06 GT3.R,
 Mercedes-AMG GT3, Ferrari 296 GT3, BMW M4 GT3, Huracan GT3 / R8 LMS,
 Aston Martin Vantage GT3, Porsche 911 GT3 R) — sowie alle
-Effekte (Bremsenquietschen, Crash-Varianten, Schlagschrauber, Tankgeraeusch,
-Karosseriereparatur, Motorstart) sind von Grund auf gerechnet. Es wird nichts aus einer
+Effekte (Bremsenquietschen, Reifenquietschen, Crash-Varianten, Schlagschrauber,
+Tankgeraeusch, Karosseriereparatur, Motorstart) sind von Grund auf gerechnet. Es wird nichts aus einer
 Aufnahme abgespielt.
 
 Jeder dieser Motoren hat vier Schleifen: drei Drehzahlbaender (`idle`, `mid`, `high`), die
@@ -25,6 +25,33 @@ bestimmt die Resonanz physikalisch als `c / (4 L)`, und die Zylinderzahlen, Dreh
 und Kurbelwellenwinkel stammen aus den Motordefinitionen von engine-sim. Die drei
 urspruenglichen Motoren behielten ihren Klang: fuer sie wurde die Rohrlaenge so gesetzt,
 dass sie die vorher von Hand eingestellten Resonanzen (148 / 150 / 95 Hz) genau trifft.
+
+### Die zwei Quietschtoene, und warum es zwei sind
+
+Bremse und Reifen quietschen nicht gleich, und ein Ton fuer beides waere fuer eines von
+beiden falsch. Gemessen an ihrem eigenen Material:
+
+| Ton | Laenge | Frequenzschwerpunkt | Naht (Verhaeltnis zum mittleren Schritt) |
+|---|---|---|---|
+| `brake_squeal.ogg` | 1,40 s | 3382 Hz | 1,41 |
+| `tyre_squeal.ogg` | 1,60 s | 1473 Hz | 0,57 |
+
+Das Bremsenquietschen ist **tonal und schmal**: drei enge Resonanzen bei 2,85 / 4,18 /
+5,62 kHz mit Guete um 50, wie die Reibpaarung Belag gegen Scheibe. Es pfeift.
+
+Das Reifenquietschen ist eine Groessenordnung tiefer und **breit**: Resonanzen bei 620 / 980 /
+1650 Hz mit Guete um 12, dazu ein deutlich schwererer Rauschanteil (0,42 gegen 0,18), weil
+der breitbandige Teil beim Reifen der Klang SELBST ist - Gummi, das auf Asphalt schert - und
+nicht Fuellung unter einem Ton. Es scheuert.
+
+Die **Tonhoehe ist absichtlich nicht eingebacken.** Der Spieler veraendert die
+Abspielgeschwindigkeit mit der Reibkreis-Ausnutzung, so wie ein echtes Quietschen steigt,
+wenn der Reifen sich seiner Grenze naehert. Ein eingebackener Verlauf wuerde dagegen
+arbeiten und die Naht der Schleife hoerbar machen.
+
+Beide sind zirkular konstruiert, im Frequenzbereich statt mit einem Zeitfilter: ein
+Zeitfilter liesse die zwei Enden der Schleife nicht zusammenpassen, und eine Naht in einem
+Ton, der ueber ganze Kurven laeuft, faellt weit mehr auf als eine in einem Einzelschlag.
 
 ### Die acht Rennmotoren, und was an ihnen Angabe ist und was Wahl
 
