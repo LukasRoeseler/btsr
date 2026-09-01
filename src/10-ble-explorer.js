@@ -1333,6 +1333,19 @@
     "s Zeitstrafe am Rennende": "s time penalty at the end of the race",
     "y-Achse abgeschnitten, siehe Beschriftung": "y axis truncated, see the labels",
     "Als App installieren": "Install as an app",
+    "Fahrzeug": "Car",
+    "Layout": "Layout",
+    "Welches Auto du fährst, nicht wie es abgestimmt ist. Die drei GT3-Varianten unterscheiden sich NUR in Achslast, Radstand und Trägheitsmoment; Leistung, Reifen und Bremse bleiben gleich. Deshalb zeigt der Wechsel, was die Motorlage macht. Ein Heckmotor hat weniger Vorderachslast und lenkt unter Bremsen schlechter ein; ein kleines Trägheitsmoment antwortet schneller. Die Zahlen sind Schätzungen aus der Fahrzeugklasse und keine Messungen. Nicht zu verwechseln mit der Voreinstellung „F1“ weiter oben: die ist eine Abstimmung, das hier ist ein Auto, und die Voreinstellungen fassen es absichtlich nicht an.": "Which car you drive, not how it is tuned. The three GT3 variants differ ONLY in axle load, wheelbase and yaw inertia; power, tyres and brakes stay the same. That is why switching shows what the engine position does. A rear engine has less front axle load and turns in worse under braking; a small yaw inertia answers faster. The figures are estimates from the vehicle class and not measurements. Not to be confused with the “F1” preset above: that is a tuning, this is a car, and the presets deliberately do not touch it.",
+    "Neutral, kalibriert": "Neutral, as calibrated",
+    "GT3, Frontmotor – BMW M4 GT3": "GT3, front engine – BMW M4 GT3",
+    "GT3, Mittelmotor – Ferrari 296 GT3": "GT3, mid engine – Ferrari 296 GT3",
+    "GT3, Heckmotor – Porsche 911 GT3 R": "GT3, rear engine – Porsche 911 GT3 R",
+    "Formel-1-Monoposto": "Formula 1 single-seater",
+    "Daten des Layouts": "Layout figures",
+    "Gerechnet und nicht eingetippt: die Nickgrenzen folgen aus der statischen Achslast und dem Verlagerungsanteil.": "Computed, not typed in: the pitch limits follow from the static axle load and the transfer share.",
+    "vorn bei Gas": "front on throttle",
+    "bei Bremse": "on the brake",
+    "Lenkrate": "steering rate",
   };
 
   // ============================================================================
@@ -1463,6 +1476,22 @@
     }
   }
 
+  // Ansichten, die sich beim Sprachwechsel NEU ZEICHNEN muessen.
+  //
+  // Text, der im Code ZUSAMMENGESETZT wird, kann der Textknoten-Uebersetzer nicht erreichen:
+  // er sucht ganze Knoten in der Tabelle, und "50:50 - 2,60 m - vorn bei Gas 20%" steht dort
+  // nicht und kann dort auch nicht stehen. Solche Ansichten muessen ihre t()-Aufrufe erneut
+  // durchlaufen.
+  //
+  // ALS ANMELDELISTE und nicht als Aufzaehlung in setLang: der erste Fall (die Fussnote des
+  // Rundenzeit-Plots) stand dort als einzelne Zeile, und beim zweiten Fall (die Layout-Daten)
+  // waere daraus eine Liste geworden, die man beim dritten vergisst. Wer sich hier anmeldet,
+  // ist dabei.
+  const i18nNeuzeichnen = [];
+  function i18nOnLangChange(fn) {
+    if (typeof fn === 'function') i18nNeuzeichnen.push(fn);
+  }
+
   function setLang(next) {
     if (I18N_LANGS.indexOf(next) < 0 || next === lang) return;
     lang = next;
@@ -1478,12 +1507,11 @@
     // das Neuzeichnen schrieb ganze Knoten wieder auf Deutsch, nachdem der Uebersetzer
     // durch war - "noch nichts gespeichert" blieb im englischen Modus deutsch, obwohl es
     // im Woerterbuch stand. Der Uebersetzungs-Selbsttest hat genau das gemeldet.
-    if (typeof renderSessions === 'function') {
-      // Der Versuchsblock ist hier nicht Vorsicht, sondern die Ladefolge: setLang laeuft
-      // auch beim Laden, und renderSessions liest Konstanten aus einer SPAETEREN Datei.
-      // Gemessen laeuft die Wiederherstellung der Sprache danach, es geht also gut - aber
-      // ein Wurf hier wuerde die ganze IIFE mitnehmen.
-      try { renderSessions(); } catch (e) { /* Ladefolge, siehe oben */ }
+    for (const fn of i18nNeuzeichnen) {
+      // Der Versuchsblock ist hier nicht Vorsicht, sondern die Ladefolge: setLang laeuft auch
+      // beim Laden, und eine angemeldete Ansicht kann Konstanten aus einer SPAETEREN Datei
+      // lesen. Ein Wurf hier wuerde die ganze IIFE mitnehmen.
+      try { fn(); } catch (e) { /* Ladefolge, siehe oben */ }
     }
     i18nBusy = true;
     try { i18nRoots().forEach(i18nApply); } finally { i18nBusy = false; }

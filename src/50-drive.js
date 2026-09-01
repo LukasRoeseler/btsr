@@ -148,6 +148,52 @@
   }
   applyScanMode();
 
+  // ---- Fahrzeuglayout ----------------------------------------------------------------
+  //
+  // EIGENE Ablage und nicht die der Voreinstellungen: das Layout ist absichtlich kein
+  // Preset-Schluessel (siehe data-preset-skip), also wuerde es sonst bei jedem Neuladen
+  // zurueckfallen - und ein Auto, das sich beim Neuladen aendert, ist eine Falle.
+  const LAYOUT_STORE = 'chc.layout.v1';
+  if ($('setting-layout')) {
+    const zeigeLayoutDaten = () => {
+      const el = $('layout-info');
+      if (!el) return;
+      const c = physEngine.config;
+      const vorn = Math.round(c.loadFrontStatic * 100);
+      // Die Nickgrenzen werden GERECHNET angezeigt, damit man sieht, dass sie es sind.
+      const gas = Math.round((c.loadFrontStatic - c.transferK) * 100);
+      const bremse = Math.round((c.loadFrontStatic + c.transferK) * 100);
+      el.textContent = vorn + ':' + (100 - vorn) + ' \u00b7 ' + c.wheelbaseM.toFixed(2)
+        + ' m \u00b7 ' + c.yawInertia + ' kg\u00b7m\u00b2'
+        + ' \u00b7 ' + t('vorn bei Gas') + ' ' + gas + '% / ' + t('bei Bremse') + ' '
+        + bremse + '%'
+        + ' \u00b7 ' + t('Lenkrate') + ' ' + physEngine.config.steerRatePerS.toFixed(1);
+    };
+    const anwenden = (melden) => {
+      const name = physEngine.applyLayout($('setting-layout').value);
+      // Falls der gespeicherte Name unbekannt war, faellt applyLayout auf neutral zurueck -
+      // dann muss die Auswahl mitkommen, sonst zeigt sie etwas anderes als das Modell.
+      if ($('setting-layout').value !== name) $('setting-layout').value = name;
+      zeigeLayoutDaten();
+      markDrivetrainChartsDirty();
+      if (melden) {
+        const opt = $('setting-layout').selectedOptions[0];
+        log('Fahrzeuglayout: ' + (opt ? opt.textContent : name) + '.', 'info');
+        showHudToast((opt ? opt.textContent : name).toUpperCase());
+      }
+      try { localStorage.setItem(LAYOUT_STORE, name); } catch (e) { /* privater Modus */ }
+    };
+    try {
+      const gespeichert = localStorage.getItem(LAYOUT_STORE);
+      if (gespeichert) $('setting-layout').value = gespeichert;
+    } catch (e) { /* privater Modus */ }
+    $('setting-layout').addEventListener('change', () => anwenden(true));
+    // Beim Sprachwechsel neu zeichnen: die Datenzeile wird aus t()-Stuecken zusammengesetzt
+    // und ist damit fuer den Textknoten-Uebersetzer unerreichbar.
+    if (typeof i18nOnLangChange === 'function') i18nOnLangChange(zeigeLayoutDaten);
+    anwenden(false);
+  }
+
   $('phys-enable').addEventListener('change', (e) => {
     physicsEnabled = e.target.checked;
     physLastTime = null;

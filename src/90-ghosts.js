@@ -2943,6 +2943,44 @@
       return JSON.parse(JSON.stringify(DEFAULT_BINDINGS));
     },
 
+    // Das Fahrzeuglayout: welche es gibt, was sie setzen, und was daraus gerechnet wird.
+    //
+    // Die Nickgrenzen werden MITGEGEBEN, obwohl sie gerechnet sind - genau darum: der Test
+    // soll pruefen koennen, dass sie es sind und nicht irgendwo doch als Feld herumliegen.
+    physLayouts() {
+      const c = physEngine.config;
+      const merk = physEngine.layoutName || 'neutral';
+      const out = {};
+      try {
+        for (const name of Object.keys(LAYOUTS)) {
+          physEngine.applyLayout(name);
+          out[name] = { label: LAYOUTS[name].label,
+                        vorn: c.loadFrontStatic,
+                        radstand: c.wheelbaseM,
+                        iz: c.yawInertia,
+                        rate: +c.steerRatePerS.toFixed(3),
+                        gas: +(c.loadFrontStatic - c.transferK).toFixed(4),
+                        bremse: +(c.loadFrontStatic + c.transferK).toFixed(4),
+                        ruhelast: physEngine.state.loadFront };
+        }
+      } finally {
+        physEngine.applyLayout(merk);
+      }
+      return out;
+    },
+
+    // Ein Layout setzen und den uebertragenen Winkel messen. Getrennt von physLayouts, weil
+    // eine Messung ueber 40 Takte laeuft und die Tabelle oben nur Werte abliest.
+    physLayoutDrive(name, o) {
+      const merk = physEngine.layoutName || 'neutral';
+      try {
+        physEngine.applyLayout(name);
+        return OMEGA_TEST.physSteerGrip(o || { kmh: 140, throttle: 0, brake: 1, steering: 1 });
+      } finally {
+        physEngine.applyLayout(merk);
+      }
+    },
+
     physTyreAsym(o) {
       const opt = o || {};
       const e = physEngine, st = e.state, cfg = e.config;

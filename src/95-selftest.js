@@ -1174,6 +1174,147 @@
              mass: teile.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
   });
 
+  // ---- Fahrzeuglayout: gerechnete Nickgrenzen ----
+  //
+  // DIE ZUSICHERUNG, DIE DIE KALIBRIERUNG SCHUETZT. loadFrontOnPower und loadFrontOnBrake
+  // standen bis v0.5 als eigene Konfigurationsfelder da und waren 0,5 -/+ transferK -
+  // dieselbe Geometrie an einem zweiten Ort. rearGrip ist auf loadFrontOnPower normiert,
+  // ausdruecklich damit die gemessene Anfahrzeit so bleibt, wie kalibriert. Wuerden die
+  // Grenzen unabhaengig gehalten, verschoebe jede Layout-Wahl still diese Messung.
+  stAdd('Layout: Nickgrenzen werden gerechnet, nicht gehalten', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.physLayouts) {
+      return { skip: true, mass: 'physLayouts nicht vorhanden' };
+    }
+    const tab = OMEGA_TEST.physLayouts();
+    const tk = physEngine.config.transferK;
+    const schlecht = [], teile = [];
+    for (const [name, v] of Object.entries(tab)) {
+      if (Math.abs(v.gas - (v.vorn - tk)) > 1e-9) {
+        schlecht.push(name + ': Gas ' + v.gas + ' statt ' + (v.vorn - tk).toFixed(4));
+      }
+      if (Math.abs(v.bremse - (v.vorn + tk)) > 1e-9) {
+        schlecht.push(name + ': Bremse ' + v.bremse + ' statt ' + (v.vorn + tk).toFixed(4));
+      }
+      // Der Ruhewert der Achslast MUSS dem Layout folgen, sonst zeigt die Radlastanzeige
+      // beim ersten Takt ein anderes Auto und springt dann.
+      if (Math.abs(v.ruhelast - v.vorn) > 1e-9) {
+        schlecht.push(name + ': Ruhelast ' + v.ruhelast + ' statt ' + v.vorn);
+      }
+      teile.push(name + ' ' + Math.round(v.vorn * 100) + '/'
+                 + Math.round(v.gas * 100) + '/' + Math.round(v.bremse * 100));
+    }
+    // Und die alten Felder duerfen NICHT mehr existieren: solange sie da sind, kann jemand
+    // sie lesen und bekommt einen Wert, der nicht zum Layout passt.
+    for (const alt of ['loadFrontOnPower', 'loadFrontOnBrake']) {
+      if (alt in physEngine.config) schlecht.push(alt + ' steht noch in der Konfiguration');
+    }
+    return { ok: !schlecht.length,
+             mass: 'vorn/Gas/Bremse in %: ' + teile.join('  ')
+                   + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // ---- Layout: Neutral laesst die Kalibrierung unberuehrt ----
+  //
+  // Die Aenderung soll rein additiv sein: wer nichts umstellt, merkt nichts. Geprueft wird es
+  // an der Stelle, an der eine Verschiebung auffiele - physConfigDiff() nennt jede Abweichung
+  // vom Kalibrierbezug, und kein LAYOUT-Feld darf darin stehen, solange Neutral gilt.
+  stAdd('Layout: Neutral weicht nicht vom Kalibrierbezug ab', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.physConfigDiff || !OMEGA_TEST.physLayouts) {
+      return { skip: true, mass: 'Messaufbau nicht vorhanden' };
+    }
+    const merk = physEngine.layoutName || 'neutral';
+    const FELDER = ['loadFrontStatic', 'wheelbaseM', 'yawInertia', 'steerRatePerS'];
+    try {
+      physEngine.applyLayout('neutral');
+      const diff = OMEGA_TEST.physConfigDiff() || {};
+      const drin = FELDER.filter(f => f in diff);
+      // Und die Gegenprobe: ein ANDERES Layout MUSS auftauchen. Ein Test, der nur die
+      // Abwesenheit prueft, ist auch gruen, wenn physConfigDiff gar nichts meldet.
+      physEngine.applyLayout('gt3rear');
+      const diff2 = OMEGA_TEST.physConfigDiff() || {};
+      const drin2 = FELDER.filter(f => f in diff2);
+      const ok = drin.length === 0 && drin2.length >= 2;
+      return { ok, mass: 'Neutral: ' + (drin.length ? drin.join(', ') : 'keine Abweichung')
+                         + ' | GT3 Heck: ' + (drin2.length ? drin2.join(', ') : 'KEINE')
+                         + (ok ? '' : ' || Gegenprobe fehlgeschlagen') };
+    } finally {
+      physEngine.applyLayout(merk);
+    }
+  });
+
+  // ---- Layout: die fuenf unterscheiden sich, geordnet, und keiner klebt am Notboden ----
+  //
+  // Der zweite Teil ist der, der eine Abstimmung von einer Klippe unterscheidet. Bei der
+  // ersten Fassung (Achslast als physikalischer Exponent 0,85) lagen drei von fuenf Layouts
+  // auf dem Notboden von 0,12 - unterscheidbar waren sie damit nicht, nur alle unfahrbar.
+  stAdd('Layout: geordnet unterschiedlich, keiner am Notboden', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.physLayoutDrive) {
+      return { skip: true, mass: 'physLayoutDrive nicht vorhanden' };
+    }
+    const namen = ['neutral', 'gt3front', 'gt3mid', 'gt3rear', 'f1'];
+    const werte = namen.map(n => {
+      const r = OMEGA_TEST.physLayoutDrive(n, { kmh: 140, throttle: 0, brake: 1,
+                                                steering: 1, patch: { steerCalib: 2.0 } });
+      const v = OMEGA_TEST.physLayouts()[n];
+      return { n, grad: r.grad, sg: r.steerGrip, vorn: v.vorn, rate: v.rate, iz: v.iz };
+    });
+    const schlecht = [];
+    // 1. Keiner am Notboden. 0,12 ist die Trockenreserve; wer dort liegt, lenkt nicht mehr.
+    for (const w of werte) {
+      if (w.sg < 0.13) schlecht.push(w.n + ' liegt am Notboden (' + w.sg.toFixed(3) + ')');
+    }
+    // 2. Nach Vorderachslast geordnet: mehr Last vorn heisst mehr Lenkung unter Bremsen.
+    const nachLast = werte.slice().sort((a, b) => b.vorn - a.vorn);
+    for (let i = 1; i < nachLast.length; i++) {
+      if (nachLast[i].grad > nachLast[i - 1].grad + 1) {
+        schlecht.push(nachLast[i].n + ' lenkt mehr als das schwerere ' + nachLast[i - 1].n);
+      }
+    }
+    // 3. Und sie muessen sich UEBERHAUPT unterscheiden. Genau daran ist der erste Anlauf
+    //    gescheitert: alle fuenf gaben 26 Grad, weil uF auf 0,5 normiert und frontCap
+    //    gedeckelt war.
+    const spanne = Math.max.apply(null, werte.map(w => w.grad))
+                 - Math.min.apply(null, werte.map(w => w.grad));
+    if (spanne < 5) schlecht.push('Spanne nur ' + spanne + ' Grad, die Layouts wirken kaum');
+    // 4. Die Lenkrate folgt dem Traegheitsmoment, gegenlaeufig.
+    const nachIz = werte.slice().sort((a, b) => a.iz - b.iz);
+    for (let i = 1; i < nachIz.length; i++) {
+      if (nachIz[i].rate > nachIz[i - 1].rate + 1e-9) {
+        schlecht.push('Lenkrate steigt mit dem Traegheitsmoment (' + nachIz[i].n + ')');
+      }
+    }
+    return { ok: !schlecht.length,
+             mass: werte.map(w => w.n + ' ' + w.grad + '\u00b0/' + w.rate.toFixed(1)).join('  ')
+                   + ' | Spanne ' + spanne + '\u00b0'
+                   + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // ---- Layout: KEIN Preset-Schluessel ----
+  //
+  // Zwei Achsen, die getrennt bleiben muessen: welches Auto (Layout) und wie abgestimmt
+  // (Voreinstellung). Ohne die Ausnahme wuerde ein Klick auf "GT3" das AUTO wechseln.
+  //
+  // Geprueft wird der VERTRAG und nicht die Wirkung: presetControls() darf den Waehler nicht
+  // finden. Eine Voreinstellung anzuwenden waere invasiv und wuerde die Einstellungen des
+  // Nutzers veraendern, nur um etwas zu pruefen, das strukturell entschieden ist.
+  stAdd('Layout: nicht in den Voreinstellungen', () => {
+    const el = $('setting-layout');
+    if (!el) return { ok: false, mass: 'setting-layout fehlt' };
+    if (typeof presetControls !== 'function') {
+      return { skip: true, mass: 'presetControls nicht erreichbar' };
+    }
+    const ids = presetControls().map(x => x.id);
+    const drin = ids.includes('setting-layout');
+    // Gegenprobe: die Sammlung darf nicht einfach LEER sein, sonst ist der Test wertlos.
+    const genug = ids.length > 30;
+    // Und das Attribut muss am Element stehen, nicht nur zufaellig ausserhalb liegen.
+    const markiert = el.hasAttribute('data-preset-skip');
+    return { ok: !drin && genug && markiert,
+             mass: ids.length + ' Bedienelemente in den Voreinstellungen, Layout '
+                   + (drin ? 'IST DABEI' : 'nicht dabei')
+                   + ', Attribut ' + (markiert ? 'gesetzt' : 'FEHLT') };
+  });
+
   // ---- Block 4.4: Reifendruck ----
   // Monoton, ueber den ganzen Reglerbereich. Ein Regler, der in der Mitte umkehrt, ist keine
   // Abstimmung, sondern eine Falle.

@@ -335,6 +335,10 @@
     };
   }
 
+  // Beim Sprachwechsel neu zeichnen: die Fussnote des Plots wird im Code zusammengesetzt und
+  // ist damit fuer den Textknoten-Uebersetzer unerreichbar.
+  if (typeof i18nOnLangChange === 'function') i18nOnLangChange(() => renderSessions());
+
   function renderSessions() {
     const host = $('sess-list');
     if (!host) return;

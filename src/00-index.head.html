@@ -4720,6 +4720,18 @@
     <div class="card subpage" id="sub-opt-feel">
       <button class="misc-back subpage-back" data-sub="">&larr; Einstellungen</button>
       <h2>Fahrgef&uuml;hl</h2>
+<div class="opt-head">Fahrzeug</div>
+      <div class="opt-row"><div class="opt-label">Layout<small>Welches Auto du fährst, nicht wie es abgestimmt ist. Die drei GT3-Varianten unterscheiden sich NUR in Achslast, Radstand und Trägheitsmoment; Leistung, Reifen und Bremse bleiben gleich. Deshalb zeigt der Wechsel, was die Motorlage macht. Ein Heckmotor hat weniger Vorderachslast und lenkt unter Bremsen schlechter ein; ein kleines Trägheitsmoment antwortet schneller. Die Zahlen sind Schätzungen aus der Fahrzeugklasse und keine Messungen. Nicht zu verwechseln mit der Voreinstellung „F1“ weiter oben: die ist eine Abstimmung, das hier ist ein Auto, und die Voreinstellungen fassen es absichtlich nicht an.</small></div>
+        <select id="setting-layout" data-preset-skip>
+          <option value="neutral" selected>Neutral, kalibriert</option>
+          <option value="gt3front">GT3, Frontmotor &ndash; BMW M4 GT3</option>
+          <option value="gt3mid">GT3, Mittelmotor &ndash; Ferrari 296 GT3</option>
+          <option value="gt3rear">GT3, Heckmotor &ndash; Porsche 911 GT3 R</option>
+          <option value="f1">Formel-1-Monoposto</option>
+        </select></div>
+      <div class="opt-row"><div class="opt-label">Daten des Layouts<small>Gerechnet und nicht eingetippt: die Nickgrenzen folgen aus der statischen Achslast und dem Verlagerungsanteil.</small></div>
+        <div class="opt-val" id="layout-info" style="text-align:right;font-size:11.5px;line-height:1.5">&nbsp;</div></div>
+
 <div class="opt-head">Fahrwerk</div>
       <div class="opt-row"><div class="opt-label">Gasfaktor
           <small>Faktor auf das Motorbyte, das zum Auto geht. Das Byte ist Tempo geteilt
@@ -5697,7 +5709,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.4.38</span></span>
+    <span class="foot-ver">v<span id="app-version">0.4.39</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine

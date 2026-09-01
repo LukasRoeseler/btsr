@@ -223,8 +223,16 @@
     // Renneinstellungen dieselbe Zeilenform bekamen, zog eine Voreinstellung Rennlaenge,
     // Wetter und Pflichtstopps mit - messbar daran, dass der Ausgabetext von 861 auf 1015
     // Zeichen wuchs. Jetzt steht das Versprechen im Selektor und nicht im Zufall.
-    return [...document.querySelectorAll('#tab-options .opt-row input[id], '
-                                         + '#tab-options .opt-row select[id]')];
+    // data-preset-skip nimmt einzelne Bedienelemente aus, und es gibt genau einen Grund
+    // dafuer: der Layout-Waehler beschreibt, WELCHES Auto man hat, und die Voreinstellungen
+    // beschreiben, WIE es abgestimmt ist. Zwei Achsen. Ohne die Ausnahme wuerde ein Klick auf
+    // "GT3" das Auto wechseln - und das ist keine Abstimmung, sondern ein anderer Wagen.
+    //
+    // Dasselbe Muster wie data-i18n-skip in der Uebersetzung: ein Attribut am Element, damit
+    // die Ausnahme dort steht, wo sie gilt, und nicht in einer Liste woanders.
+    return [...document.querySelectorAll(
+      '#tab-options .opt-row input[id]:not([data-preset-skip]), '
+      + '#tab-options .opt-row select[id]:not([data-preset-skip])')];
   }
 
   function presetRead() {

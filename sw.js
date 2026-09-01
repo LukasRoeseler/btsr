@@ -31,7 +31,7 @@
  *     Ursprung; ihn zu cachen hiesse, alte Rundenzahlen als neue auszugeben.
  */
 
-const VERSION = '0.4.38';
+const VERSION = '0.4.39';
 const CACHE = 'omegasim-' + VERSION;
 
 // Nur die Huelle. Die Tonschleifen (1,8 MB) werden NICHT vorab geladen: wer die App nur

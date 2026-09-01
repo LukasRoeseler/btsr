@@ -13,6 +13,66 @@
   // ist die Bedeutung von servoAngle = 1 und nichts, woran man dreht.
   const STEER_MAX_DEG = 45;
 
+  // Die Nickgrenzen, GERECHNET aus der statischen Achslast und dem Verlagerungsanteil.
+  //
+  // Als Funktionen und nicht als Konfigurationsfelder: ein Feld muesste nach jeder Aenderung
+  // der statischen Achslast nachgezogen werden, und ein Wert, den man nachziehen muss, ist
+  // die Einladung, es zu vergessen. Zwei Leser gibt es im ganzen Programm.
+  //
+  // Sie sind ausdruecklich NICHT gedeckelt: bei 39:61 ergibt onPower 0,09, und das ist
+  // richtig - ein Heckmotor hat unter Vollgas fast keine Vorderachslast mehr. Ein Deckel
+  // waere eine erfundene Grenze.
+  // ============================== FAHRZEUGLAYOUTS ==============================
+  //
+  // Fuenf Eintraege: die GT3-Klasse mit ihren drei Motorlagen und ein Formel-1-Monoposto.
+  //
+  // WARUM DREI GT3 UND NICHT DREI KLASSEN, und das ist wichtiger als es klingt: die drei
+  // unterscheiden sich NUR in Achslast, Radstand und Traegheitsmoment, waehrend Leistung,
+  // Reifen und Bremse dieselben bleiben. Genau deshalb zeigt der Vergleich, was die MOTORLAGE
+  // macht - und nicht, was eine andere Klasse macht.
+  //
+  // DIE ZAHLEN SIND SCHAETZUNGEN aus der Fahrzeugklasse und keine Messungen. Die drei
+  // GT3-Werte stehen so schon in der Doku und sind uebernommen statt neu erfunden. Am
+  // unsichersten ist das Traegheitsmoment des F1-Autos. Die App kann keine Gierrate messen,
+  // also pruefbar ist die innere Widerspruchsfreiheit und nicht die Uebereinstimmung mit dem
+  // echten Auto.
+  //
+  // NEUTRAL IST DIE VORGABE und reproduziert das bisherige Verhalten genau - die Aenderung
+  // ist damit rein additiv, und ein Selbsttest beweist es.
+  const LAYOUTS = {
+    neutral: { label: 'Neutral, kalibriert', vorn: 0.50, radstand: 2.60, iz: 2000 },
+    gt3front: { label: 'GT3, Frontmotor \u2013 BMW M4 GT3', vorn: 0.50, radstand: 2.85, iz: 2500 },
+    gt3mid: { label: 'GT3, Mittelmotor \u2013 Ferrari 296 GT3', vorn: 0.44, radstand: 2.60, iz: 1800 },
+    gt3rear: { label: 'GT3, Heckmotor \u2013 Porsche 911 GT3 R', vorn: 0.39, radstand: 2.50, iz: 2200 },
+    f1: { label: 'Formel-1-Monoposto', vorn: 0.45, radstand: 3.60, iz: 1000 },
+  };
+  // Der Bezug, an dem die Lenkgeschwindigkeit haengt: bei diesem Traegheitsmoment gilt genau
+  // der kalibrierte Wert von steerRatePerS.
+  const IZ_REF = 2000;
+  const STEER_RATE_REF = 6.0;
+
+  // Wie schnell das Auto auf einen Lenkbefehl antwortet, aus dem Traegheitsmoment.
+  //
+  // EINE ABSICHTLICHE ABKUERZUNG, und sie gehoert benannt: steerRatePerS ist eigentlich die
+  // Geschwindigkeit des SERVOS und keine Eigenschaft der Fahrzeugmasse. Das Auto rutscht in
+  // echt nicht, also gibt es keinen anderen Kanal, ueber den "antwortet schneller" ueberhaupt
+  // ausdrueckbar waere. Das ist keine Aussage ueber die Servohardware, sondern die einzige
+  // Stelle, an der ein kleines Traegheitsmoment sich zeigen kann.
+  //
+  // GEDECKELT auf 4 bis 9: ohne Deckel gaebe ein F1-Traegheitsmoment von 1000 den doppelten
+  // Wert, und eine Lenkung, die in einem Achtel Sekunde am Anschlag ist, ist kein
+  // Fahrzeugverhalten mehr, sondern ein Sprung.
+  function steerRateFor(iz) {
+    return Math.max(4, Math.min(9, STEER_RATE_REF * (IZ_REF / Math.max(1, iz))));
+  }
+
+  // Der Bezug fuer den absoluten Achslastanteil: bei dieser statischen Achslast ist der
+  // Faktor genau 1, also die kalibrierte Fassung.
+  const FRONT_AXLE_REF = 0.5;
+
+  const loadOnPower = (cfg) => cfg.loadFrontStatic - cfg.transferK;
+  const loadOnBrake = (cfg) => cfg.loadFrontStatic + cfg.transferK;
+
   class CarreraPhysicsEngine {
     constructor() {
       this.config = {
@@ -398,11 +458,56 @@
         tyrePressureRef: 1.8,
         tyrePressurePeakLoss: 0.06,   // Spitzengriff-Einbusse am Reglerrand
         coastPitch: 0.15,     // engine braking pitches the nose down a little
-        // Full-throttle equilibrium of loadFront. Traction is normalised to THIS state, not
-        // to static 50/50, so the measured launch time stays exactly as calibrated and the
-        // model can only ever take grip away, never invent some.
-        loadFrontOnPower: 0.20,
-        loadFrontOnBrake: 0.80,   // same idea for the brake, see below
+        // ---- Fahrzeuglayout ----------------------------------------------------------
+        //
+        // Bis v0.5 hatten alle Autos DASSELBE Fahrwerk: die statische Achslast stand als
+        // Literal 0.5 in der Verlagerungszeile weiter unten, und unterschiedlich war nur der
+        // Klang. Damit war auch das Einspurmodell nicht baubar - seine Gleichungen brauchen
+        // Radstand, Achslasten und Traegheitsmoment.
+        //
+        // 0,5 ist die Vorgabe und reproduziert das bisherige Verhalten genau.
+        loadFrontStatic: 0.5,
+        // Radstand in Metern und Giertraegheitsmoment in kg*m^2. Beide sind SCHAETZUNGEN aus
+        // der Fahrzeugklasse und keine Messungen; die App kann keine Gierrate messen. Sie
+        // setzen relatives Verhalten, und geprueft wird die innere Widerspruchsfreiheit.
+        wheelbaseM: 2.60,
+        yawInertia: 2000,
+        // Wie stark die statische Achslast auf die LENKKAPAZITAET wirkt. 0 heisst
+        // gleichgueltig, 1 heisst voll proportional zur Abweichung von 50:50.
+        //
+        // KEIN PHYSIKALISCHER EXPONENT, und das gehoert dazu: hier stand zuerst 0,85 als
+        // Lastempfindlichkeit eines Rennreifens - physikalisch begruendet und in diesem
+        // Modell unbrauchbar. Gemessen: bei 39 Prozent vorn ergab das frontCap 0,81, und weil
+        // frontUse gegen eine VOLLE Kapazitaet kalibriert ist, wurde die Wurzel null und die
+        // Lenkung klebte am Notboden von 0,12 - 5 Grad Einschlag bei 140 km/h, unfahrbar. Der
+        // Reibkreis saettigt schon bei zehn Prozent Absenkung.
+        //
+        // Die Zahl ist also eine Abstimmung und keine Reifeneigenschaft. Sie wird gemessen
+        // und nicht hergeleitet, und sie steht hier als das, was sie ist.
+        //
+        // 0,15 ist gemessen. Uebertragener Winkel bei 140 km/h unter Vollbremsung, mit der
+        // Lenkkalibrierung 2,0, die Pro fuehrt:
+        //
+        //   Staerke   neutral   F1    GT3 Mitte   GT3 Heck
+        //   0,15        26       21       20         13     <- geordnet, keiner am Boden
+        //   0,30        26       15       11         11     <- zwei am Notboden
+        //   0,45        26       11       11         11     <- alle am Notboden
+        //
+        // Ab 0,30 kleben Layouts am Notboden von 0,12, und dann sind sie nicht mehr
+        // unterscheidbar, sondern nur noch alle unfahrbar. Bei 0,15 lenken bei 60 km/h alle
+        // noch (45 bis 39 Grad), und die Reihenfolge folgt der Vorderachslast.
+        frontAxleEffect: 0.15,
+
+        // loadFrontOnPower und loadFrontOnBrake standen HIER als eigene Felder (0,20 und
+        // 0,80). Sie sind weggefallen, weil sie 0,5 -/+ transferK sind - dieselbe Geometrie
+        // an einem zweiten Ort. Mit veraenderlicher statischer Achslast waere jede
+        // Layout-Wahl eine stille Verschiebung der Kalibrierung gewesen.
+        //
+        // Gerechnet wird sie von loadOnPower() und loadOnBrake() weiter unten. Der Grund fuer
+        // die Normierung bleibt derselbe wie vorher: der Vortrieb ist auf das
+        // Vollgas-Gleichgewicht bezogen und nicht auf 50:50, damit die gemessene Anfahrzeit
+        // genau so bleibt, wie kalibriert - und das gilt jetzt fuer JEDES Layout, weil
+        // Zaehler und Nenner zusammen wandern.
         upshiftRpm: 8800,
         downshiftRpm: 4200,
         shiftMs: 120,     // a sequential swaps far quicker than the old 180ms
@@ -462,7 +567,11 @@
         dirtyAir: 0,
         tyrePull: 0,      // Lenk-Offset aus der Ungleichheit, in Servo-Einheiten
         tyreGrip: 1,      // combined temperature and wear factor, 1 = nothing simulated
-        loadFront: 0.5,   // static 50/50; >0.5 means nose-down
+        // Der RUHEWERT, und er folgt dem Layout: bei einem Heckmotor liegt das Auto im
+        // Stand hinten tiefer. Er wird im Konstruktor aus loadFrontStatic gesetzt, nicht
+        // hier festgeschrieben - sonst zeigte die Radlastanzeige beim ersten Takt 50:50 und
+        // sprang danach.
+        loadFront: 0.5,   // wird aus loadFrontStatic gesetzt; >0.5 heisst vorne tiefer
         longUse: 0,       // lagging longitudinal demand, signed: + drive, - brake
         steerGrip: 1,     // front lateral capacity left over, 1 = static baseline
         gLat: 0, gLong: 0, // for the G plot
@@ -496,6 +605,26 @@
       // eine streng lineare Beschleunigung (1,38 / 2,70 / 4,02 / 5,36 s), also wie ein Auto
       // ohne Luftwiderstand. Am Ende aufgenommen braucht der Aufbau keine Ausnahmeliste.
       this.calibRef = Object.assign({}, this.config);
+      // Das Layout ZULETZT anwenden, nach calibRef: die Vorgabe ist neutral und aendert
+      // nichts, aber ein Layout, das vor dem Kalibrierbezug gesetzt wuerde, waere danach
+      // nicht mehr davon zu unterscheiden - und physConfigDiff() koennte es nicht melden.
+      this.applyLayout('neutral');
+    }
+
+    // Ein Layout anwenden. Setzt die drei Fahrzeugwerte und leitet daraus ab, was abzuleiten
+    // ist - die Lenkgeschwindigkeit und den Ruhewert der Achslast.
+    //
+    // Der RUHEWERT wird mitgesetzt, weil er sonst beim ersten Takt von 50:50 auf den neuen
+    // Wert springen wuerde: die Radlastanzeige zeigte kurz das falsche Auto.
+    applyLayout(name) {
+      const L = LAYOUTS[name] || LAYOUTS.neutral;
+      this.config.loadFrontStatic = L.vorn;
+      this.config.wheelbaseM = L.radstand;
+      this.config.yawInertia = L.iz;
+      this.config.steerRatePerS = steerRateFor(L.iz);
+      this.state.loadFront = L.vorn;
+      this.layoutName = LAYOUTS[name] ? name : 'neutral';
+      return this.layoutName;
     }
 
     // Central reset shared by the E-stop and the pit stop, so the two
@@ -503,6 +632,10 @@
     reset() {
       const st = this.state;
       st.speedKmh = 0; st.virtualSpeed = 0;
+      // Der Ruhewert der Achslast folgt dem LAYOUT und nicht 0,5: bei einem Heckmotor liegt
+      // das Auto im Stand hinten tiefer, und nach einem Not-Halt soll die Radlastanzeige
+      // nicht kurz ein anderes Auto zeigen.
+      st.loadFront = this.config.loadFrontStatic;
       st.driveMode = 'neutral'; st.neutralRpm = 0;
       st.currentGear = 0; st.rpm = IDLE_RPM; st.rpmFrac = 0;
       st.isShifting = false; st.engineLoad = 0; st.onLimiter = false;
@@ -687,7 +820,10 @@
                    : (rolling ? -cfg.coastPitch : 0));   // coasting: engine braking
       const aL = 1 - Math.exp(-dt / cfg.loadTau);
       const aU = 1 - Math.exp(-dt / cfg.useTau);
-      st.loadFront += ((0.5 - demand * cfg.transferK) - st.loadFront) * aL;
+      // Hier stand 0.5 als Literal, und das war die statische Achslastverteilung: der
+      // einzige Ort, an dem sie ueberhaupt vorkam. Damit hatten alle Autos dasselbe
+      // Fahrwerk.
+      st.loadFront += ((cfg.loadFrontStatic - demand * cfg.transferK) - st.loadFront) * aL;
       st.longUse += (demand - st.longUse) * aU;
 
       // ---- VIER RADLASTEN: Nicken mal Waelzen ----------------------------------------
@@ -756,7 +892,17 @@
       // der Beschwerde "erst beim Bremsen kann ich gut lenken".
       // Lastempfindlichkeit statt linearem Zuwachs. u ist Fz/Fz0, im Stand genau 1,
       // beim Anbremsen bis etwa 1,6 und unter Zug bis herunter auf 0,4.
-      const uF = st.loadFront / 0.5;
+      // uF ist die Last RELATIV ZUR EIGENEN RUHELAST und nicht relativ zu 50:50. Hier
+      // stand 0.5 als zweites Literal derselben Geometrie, und es war der Grund, warum die
+      // Layouts zunaechst wirkungslos blieben: mit 0,5 als Bezug landeten alle ueber dem
+      // Deckel bei 1, und der uebertragene Winkel war fuer alle fuenf gleich - gemessen
+      // 45 Grad rollend und 26 Grad bremsend, ohne jeden Unterschied.
+      //
+      // Auf die eigene Ruhelast bezogen ist uF im Stand fuer JEDES Layout genau 1, und die
+      // Verlagerung wirkt relativ: ein Heckmotor mit 39 Prozent vorn verschiebt beim Bremsen
+      // auf 69 Prozent, also den Faktor 1,77 - deutlich mehr als die 1,60 des neutralen
+      // Autos. Genau das ist die Eigenart eines Heckmotors: er taucht relativ tiefer ein.
+      const uF = st.loadFront / Math.max(0.05, cfg.loadFrontStatic);
       const capRaw = uF * (1 - cfg.tyreLoadSens * (uF - 1));
       // Der Deckel bei 1 bleibt, und er ist eine Aussage ueber das SERVO: steerGrip
       // skaliert den ausgegebenen Lenkwinkel, und ueber Vollausschlag hinaus gibt es dort
@@ -768,7 +914,25 @@
       // alles andere und kann die Bremse nicht "gratis" mitverbessern.
       const luft = 1 - cfg.dirtyAirMax * Math.max(0, Math.min(2, cfg.dirtyAirEffect))
                        * Math.max(0, Math.min(1, st.dirtyAir));
-      const frontCap = Math.min(1, Math.max(0.15, capRaw)) * surfSteer * luft;
+      // DER ABSOLUTE ACHSLASTANTEIL, und er steht NACH dem Deckel - das ist der Punkt.
+      //
+      // Der Deckel bei 1 ist eine Aussage ueber das SERVO: mehr als Vollausschlag gibt es
+      // nicht. Eine leichte Vorderachse hat aber wirklich weniger Griff, und das ist keine
+      // Servogrenze. Vor dem Deckel gerechnet wuerde er es wegschneiden, genau wie er die
+      // Layouts vorher wirkungslos gemacht hat.
+      //
+      // LINEAR und mit einer Staerke, die gemessen ist: frontUse ist gegen eine volle
+      // Kapazitaet kalibriert, und der Reibkreis (eine Wurzel aus einer Differenz von
+      // Quadraten) saettigt schon bei zehn Prozent Absenkung. Ein physikalisch begruendeter
+      // Exponent von 0,85 machte das Auto unfahrbar - siehe frontAxleEffect.
+      //
+      // NUR VORNE, und das ist eine bewusste Unsymmetrie: frontCap geht ausschliesslich in
+      // die Lenkung. Denselben Griff hinten absolut zu rechnen wuerde die Anfahrzeit
+      // veraendern - und die ist gegen eine MESSUNG kalibriert (RMSE 7,3 %). Eine gewaehlte
+      // Bauform darf eine Messung nicht verschieben.
+      const frontAxle = 1 - cfg.frontAxleEffect
+                            * (1 - cfg.loadFrontStatic / FRONT_AXLE_REF);
+      const frontCap = Math.min(1, Math.max(0.15, capRaw)) * frontAxle * surfSteer * luft;
       // Die Anforderung skaliert mit der Fahrt, und zwar aus demselben Grund wie beim
       // Regen ein paar Zeilen weiter oben: bei 20 km/h braucht eine Vollbremsung einen
       // Bruchteil der verfuegbaren Haftung, das Auto steht nach zwei Metern; bei 250 km/h
@@ -805,7 +969,7 @@
       // is 1 once the car has squatted and below 1 only while the rear is still light — the
       // soft first moments of a throttle application, not a free performance bonus.
       const rearGrip = Math.max(0.35, Math.min(1,
-        (1 - st.loadFront) / (1 - cfg.loadFrontOnPower)));
+        (1 - st.loadFront) / (1 - loadOnPower(cfg))));
 
       // ---- Fuel mass ----
       st.massFactor = 1 + cfg.fuelWeightEffect * cfg.fuelMassSpan * st.fuelLoad;
@@ -1004,7 +1168,7 @@
           // full-braking equilibrium, so the deceleration fitted to the real GT3 braking
           // table stays exactly that. The term can only bite less, during the moment
           // before the nose is down, never more.
-          const dive = Math.max(0.5, Math.min(1, st.loadFront / cfg.loadFrontOnBrake));
+          const dive = Math.max(0.5, Math.min(1, st.loadFront / loadOnBrake(cfg)));
           // (1 - brakeFade) ist der Aktorteil von Block 4.1: heisse Scheiben bremsen
           // schlechter, und weil wir das Bremsbyte selbst stellen, wird der Bremsweg
           // wirklich laenger. Der resist-Anteil bleibt unangetastet - Rollwiderstand und
