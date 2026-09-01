@@ -1725,12 +1725,12 @@
   // Vorher endete ein Rennen fuer die Ghosts mit stopGhost(): Nullen schreiben und
   // stehenbleiben, wo man gerade ist - mitten auf der Linie, wenn es dumm laeuft.
   //
-  // Geprueft werden die GESENDETEN BYTES, nicht die Absicht: voller Rechtseinschlag beim
-  // Heranfahren, Gas fallend, Bremslicht in der Bremsphase, und genau DREI sichtbare
-  // Blitze. Die Drei ist der Punkt, an dem man um den Faktor zwei danebenliegt - ein
+  // Geprueft werden die GESENDETEN BYTES, nicht die Absicht: Lenkung GERADE (die
+  // Rechtskurve eines frueheren Anlaufs ist heraus und soll nicht zurueckkommen), kein Gas,
+  // Bremslicht in der Bremsphase, und genau DREI sichtbare Blitze. Die Drei ist der Punkt, an dem man um den Faktor zwei danebenliegt - ein
   // Blinken ist an UND aus -, und beim Entwurf dieses Tests ist genau das aufgefallen: das
   // Blinken begann mit AN, waehrend das Standlicht schon an war, also waren zwei sichtbar.
-  stAdd('Zieleinlauf: rechts ran, anhalten, dreimal blinken', async () => {
+  stAdd('Zieleinlauf: gerade ausrollen, anhalten, dreimal blinken', async () => {
     if (!window.OMEGA_TEST || !OMEGA_TEST.ghostFinishTimeline) {
       return { skip: true, mass: 'ghostFinishTimeline nicht vorhanden' };
     }
@@ -1738,18 +1738,23 @@
     if (!r || !r.reihe.length) return { ok: false, mass: 'keine Pakete gesendet' };
     // Die Phase steht am Paket. Sie ueber einen zweiten Index zu suchen war der Fehler
     // der ersten Fassung: Takte und Pakete sind nicht gleich viele.
-    const pull = r.reihe.filter(x => x.phase === 'pull');
+    const pull = r.reihe.filter(x => x.phase === 'roll');
     const brems = r.reihe.filter(x => x.phase === 'brake');
     const blink = r.reihe.filter(x => x.phase === 'blink');
     const fehler = [];
-    // 1. Voller Rechtseinschlag beim Heranfahren. 127 ist der Anschlag des Bytes.
-    if (!pull.length || pull.some(x => x.lenk !== 127)) {
-      fehler.push('Lenkung beim Heranfahren nicht voll rechts');
+    // 1. LENKUNG GERADE, in jeder Phase. Ein Anlauf liess sie nach rechts an den Rand
+    // fahren; das ist heraus, weil ohne Rueckmeldung zur Querlage niemand weiss, wo der
+    // Rand ist - am Ende fuhren nur alle Autos gleichzeitig eine Rechtskurve. Der Test
+    // haelt das Gegenteil fest, damit es nicht zurueckkommt.
+    const krumm = r.reihe.filter(x => x.lenk !== 0);
+    if (krumm.length) {
+      fehler.push(krumm.length + ' Pakete mit Lenkung (max '
+                  + Math.max(...krumm.map(x => Math.abs(x.lenk))) + ')');
     }
-    // 2. Gas fallend und am Anfang ueber dem Losbrechpunkt.
-    const gas = pull.map(x => x.gas);
-    if (!(gas[0] > 0.16 * 127)) fehler.push('Startgas unter dem Losbrechpunkt');
-    for (let i = 1; i < gas.length; i++) if (gas[i] > gas[i - 1]) fehler.push('Gas steigt');
+    // 2. Kein Gas, in keiner Phase: es wird ausgerollt, nicht gefahren.
+    const gas = r.reihe.map(x => x.gas);
+    if (gas.some(g => g > 0)) fehler.push('Gas im Zieleinlauf: max ' + Math.max(...gas));
+    if (!pull.length) fehler.push('keine Ausrollphase');
     // 3. Bremslicht in der Bremsphase.
     if (!brems.length || brems.some(x => !(x.licht & r.bremse))) {
       fehler.push('kein Bremslicht in der Bremsphase');
@@ -1765,9 +1770,9 @@
     // 5. Und die Sequenz muss ENDEN.
     if (r.takte >= 400) fehler.push('Sequenz endet nicht');
     return { ok: !fehler.length,
-             mass: pull.length + ' Takte ran, ' + brems.length + ' bremsen, '
-                 + blink.length + ' blinken, ' + flanken + ' Blitze, Gas '
-                 + gas[0] + '->' + gas[gas.length - 1]
+             mass: pull.length + ' Takte ausrollen, ' + brems.length + ' bremsen, '
+                 + blink.length + ' blinken, ' + flanken + ' Blitze, Lenkung '
+                 + (krumm.length ? 'KRUMM' : 'gerade')
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
@@ -1934,6 +1939,137 @@
       lightDamage.rear = merk.r;
       lightDamage.front = merk.f;
     }
+  });
+
+  // ---- Erreicht ein Ghost sein eingestelltes Tempo? ----
+  //
+  // Der Regler ist ein P-Regler mit Totband, und so einer hat von Natur aus eine
+  // Beharrungsabweichung. Seit ein I-Anteil dazugekommen ist, trifft er gemessen auf 95 bis
+  // 99 Prozent. Der Test haelt das fest, denn davon haengt ALLES andere am Tempo ab: jeder
+  // Abschlag - Kurve, Windschatten, Gummiband, gelbe Flagge - wirkt nur so genau, wie der
+  // Regler seinem Ziel folgt.
+  //
+  // ES GAB EINEN FEHLALARM AUF DEM WEG, und er gehoert hierher, weil er teuer war: ein
+  // frueherer Prueflauf faelschte Date.now und liess nur Mikrotasks laufen. st.isShifting
+  // wird aber von einem setTimeout zurueckgesetzt, und waehrend einer Schaltunterbrechung
+  // gibt es keinen Zug - das Auto hing nach dem ersten Hochschalten dauerhaft bei 24 Prozent,
+  // bei JEDEM Ziel. Daraus wurde erst eine Beharrungsabweichung von 58 Prozent geschlossen.
+  // Sie war der Prueflauf. Er setzt die Unterbrechung jetzt auf seine eigene Uhr.
+  stAdd('Ghost erreicht sein eingestelltes Tempo', async () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.ghostDriveProbe) {
+      return { skip: true, mass: 'ghostDriveProbe nicht vorhanden' };
+    }
+    const zeilen = [], schlecht = [];
+    for (const soll of [0.2, 0.35, 0.7]) {
+      const g = await OMEGA_TEST.ghostDriveProbe({ lage: 'codes', takte: 500, code: 'SG8',
+                                                   tileMs: 900, cfg: { spice: 0, speed: soll } });
+      const f = g.tempo.filter(x => isFinite(x)).slice(-30);
+      const ist = f.reduce((s, x) => s + x, 0) / Math.max(1, f.length);
+      const treffer = ist / soll;
+      zeilen.push(Math.round(soll * 100) + ' % -> ' + (ist * 100).toFixed(1)
+                  + ' % (' + (treffer * 100).toFixed(0) + ')');
+      // 88 Prozent ist die Grenze, nicht 100: ein Regler ohne Ueberschwingen bleibt
+      // etwas unter dem Ziel, und das ist richtig so. Gemessen sind es 95 bis 99.
+      if (treffer < 0.88 || treffer > 1.12) {
+        schlecht.push(Math.round(soll * 100) + ' % trifft ' + (treffer * 100).toFixed(0));
+      }
+    }
+    return { ok: !schlecht.length,
+             mass: zeilen.join(' | ')
+                 + (schlecht.length ? ' || VERFEHLT: ' + schlecht.join(', ') : '') };
+  });
+
+  // ---- Wird die Haarnadel staerker gedrosselt als eine 60-Grad-Kurve? ----
+  //
+  // GEMELDET ALS: "Kurvengeschwindigkeit drosseln geht auch nicht so gut, sollte in
+  // Haarnadel staerker sein als in den normalen Kurven." Es waren zwei Ursachen:
+  //
+  //   1. dtG war IMMER 0,01 s, weil g.lastTick am Anfang derselben Funktion schon auf now
+  //      gesetzt worden war. Die Ratenbegrenzung lief damit 4,5-fach zu langsam, und einem
+  //      Zielwechsel an einer Kachelgrenze - etwa 700 ms - konnte der Regler nicht folgen.
+  //   2. Sobald eine Strecke da war, lieferte ghostBrakeDemand einen Wert und die
+  //      KACHELREGEL WURDE UEBERSPRUNGEN. Das Bremsprofil misst aber den Anstieg der
+  //      Kruemmung, nicht die Kruemmung - eine Kurve mit konstantem Radius braucht danach
+  //      kein Bremsen mehr. Der dauerhafte Abschlag der Haarnadel war damit weg, gerade WEIL
+  //      eine Karte vorlag.
+  //
+  // Geprueft wird das ZIELTEMPO und nicht das erreichte: das Ziel ist, was die Kurvenlogik
+  // entscheidet, das Erreichte haengt zusaetzlich an der Physik und an der Kachellaenge. Eine
+  // Haarnadel dauert etwa eine Sekunde, und in der Zeit ist nicht jedes Tempo abzubauen -
+  // das ist Physik und kein Fehler.
+  stAdd('Haarnadel wird staerker gedrosselt als eine 60-Grad-Kurve', async () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.ghostDriveProbe) {
+      return { skip: true, mass: 'ghostDriveProbe nicht vorhanden' };
+    }
+    const HP = [0x05, 0x06], KU = [0x03, 0x04], GE = [0x02];
+    const zeilen = [], schlecht = [];
+    for (const lage of ['codes', 'karte']) {
+      const g = await OMEGA_TEST.ghostDriveProbe({ lage, takte: 900, code: 'SG3H2G3R2',
+                                                   tileMs: 900, cfg: { spice: 0 } });
+      const mittel = (codes) => {
+        const v = [];
+        g.kachel.forEach((k, i) => {
+          if (codes.indexOf(k) >= 0 && g.ziel[i] !== null && isFinite(g.ziel[i])) v.push(g.ziel[i]);
+        });
+        return v.length ? v.reduce((s, x) => s + x, 0) / v.length : null;
+      };
+      const hp = mittel(HP), ku = mittel(KU), ge = mittel(GE);
+      if (hp === null || ku === null || ge === null) {
+        schlecht.push(lage + ': Kacheltyp fehlt im Lauf');
+        continue;
+      }
+      zeilen.push(lage + ' Gerade ' + (ge * 100).toFixed(1) + ' / Kurve ' + (ku * 100).toFixed(1)
+                  + ' / Haarnadel ' + (hp * 100).toFixed(1) + ' %');
+      // Die Ordnung, und mit Luft: die Haarnadel muss deutlich unter der Kurve liegen, nicht
+      // nur ein Promille. 15 Prozent relativ ist der Abstand, den ein Regler von 0,35
+      // mindestens erzeugt (0,35 gegen 0,70 Abschlag).
+      if (!(hp < ku * 0.85)) schlecht.push(lage + ': Haarnadel nicht deutlich unter Kurve');
+      if (!(ku < ge)) schlecht.push(lage + ': Kurve nicht unter Gerade');
+    }
+    return { ok: !schlecht.length,
+             mass: zeilen.join(' | ')
+                 + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // ---- Wirkt die Ideallinie auch ohne gebaute Strecke? ----
+  //
+  // GEMELDET ALS: "Ideallinie funktioniert gar nicht, eigene Linien ein bisschen." Gemessen
+  // war das genau richtig: ohne Strecke bewegte die Ideallinie das Lenkbyte um 0,3 von 127,
+  // mit Strecke um 15,3. Sie braucht g.tileIndex und eine Karte, und beides gibt es nur mit
+  // gelesenen Codes UND gebauter oder gelernter Strecke. Eigene Spuren sind dagegen eine
+  // Konstante je Auto und wirken immer.
+  //
+  // Seit der Rueckfalllinie aus dem gemeldeten Code allein - Kacheltyp und Phase reichen fuer
+  // ein Aussen-Scheitel-Aussen je Kachel - sind es 8,5. Der Test haelt fest, dass sie in
+  // ALLEN Lagen etwas tut, und dass eigene Spuren das weiterhin auch tun.
+  stAdd('Linieneinstellungen wirken, auch ohne gebaute Strecke', async () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.ghostDriveProbe) {
+      return { skip: true, mass: 'ghostDriveProbe nicht vorhanden' };
+    }
+    const rms = (a) => Math.sqrt(a.reduce((s, x) => s + x * x, 0) / Math.max(1, a.length));
+    const unterschied = (a, b) => {
+      const n = Math.min(a.length, b.length), d = [];
+      for (let i = 0; i < n; i++) d.push(a[i] - b[i]);
+      return rms(d);
+    };
+    const zeilen = [], stumm = [];
+    for (const lage of ['codes', 'karte']) {
+      const grund = await OMEGA_TEST.ghostDriveProbe({ lage, takte: 500, code: 'SG3H2G3R2',
+                                                       tileMs: 900, cfg: { spice: 0 } });
+      for (const feld of ['line', 'lanes']) {
+        const cfg = { spice: 0 }; cfg[feld] = 0;
+        const ohne = await OMEGA_TEST.ghostDriveProbe({ lage, takte: 500, code: 'SG3H2G3R2',
+                                                        tileMs: 900, cfg });
+        const d = unterschied(grund.lenk, ohne.lenk);
+        zeilen.push(lage + '/' + feld + ' ' + d.toFixed(1));
+        // 3 von 127 ist die Schwelle. Darunter ist es kein Regler, sondern eine Zierde -
+        // und "Ideallinie ohne Karte" lag vor der Rueckfalllinie bei 0,3.
+        if (d < 3) stumm.push(lage + '/' + feld + ' nur ' + d.toFixed(1));
+      }
+    }
+    return { ok: !stumm.length,
+             mass: 'RMS-Aenderung am Lenkbyte: ' + zeilen.join(' | ')
+                 + (stumm.length ? ' || STUMM: ' + stumm.join(', ') : '') };
   });
 
   // ---- Block 4.4: Reifendruck ----

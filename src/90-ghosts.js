@@ -847,15 +847,14 @@
       stop.disabled = !fahren.length;
       stop.title = fahren.length
         ? fahren.length + ' Ghost' + (fahren.length === 1 ? '' : 's')
-          + ' rechts ranfahren lassen und anhalten'
+          + ' ausrollen lassen und anhalten'
         : 'Kein Ghost f\u00e4hrt gerade';
     }
   }
 
-  // GHOSTS ANHALTEN. Er fuehrt dieselbe Sequenz wie die Zielflagge aus - rechts
-  // heranfahren, anhalten, dreimal blinken -, und das ist bewusst so: ein Ghost, der auf
-  // Knopfdruck sofort mitten in der Kurve stehen bleibt, liegt genau da, wo der naechste
-  // durchfahren will. Zwei Sekunden ausrollen raeumt die Bahn.
+  // GHOSTS ANHALTEN. Er fuehrt dieselbe Sequenz wie die Zielflagge aus - ausrollen,
+  // anhalten, dreimal blinken. Ausrollen und nicht sofort stehen: ein Auto, das auf
+  // Knopfdruck von Tempo auf null geht, macht einen Ruck, und die 700 ms kosten nichts.
   //
   // Ein ZWEITER Druck waehrend der Sequenz haelt hart an. Wer den Knopf noch einmal
   // drueckt, meint "jetzt" - und ein Knopf, der beim zweiten Mal dasselbe tut wie beim
@@ -871,7 +870,7 @@
     } else {
       for (const c of ghosts) { c.ghost.freeRun = false; finishGhost(c); }
       log(ghosts.length + ' Ghost' + (ghosts.length === 1 ? '' : 's')
-          + ': rechts ranfahren, anhalten, dreimal blinken.', 'info');
+          + ': ausrollen, anhalten, dreimal blinken.', 'info');
     }
     refreshGarageGo();
   };
@@ -1366,6 +1365,26 @@
   const GHOST_SLEW_GAS = 1.6;    // Anteil je Sekunde; voll durchtreten dauert 0,6 s
   const GHOST_SLEW_BREMSE = 4.0; // Bremse darf schneller kommen, 0,25 s auf voll
 
+  // ---- Warum hier KEINE Vorsteuerung steht -----------------------------------------
+  //
+  // Ein Anlauf hat es versucht: den Gasbefehl ausrechnen, der ein Tempo im
+  // Beharrungszustand haelt, aus thrustAt() gegen resistAt() per Bisektion. Das ist falsch,
+  // und der Grund ist wichtiger als der Fehler - thrustAt() rechnet mit der INNEREN
+  // Gaskennung des Fahrzeugmodells, waehrend e.update() eine andere Groesse bekommt.
+  // Dazwischen liegen minMoveThrottle, die Gangbaender und die Abbildung auf das Gasbyte.
+  // Gemessen lieferte die Bisektion 2,3 Prozent, wo der Arbeitspunkt bei 23 liegt.
+  //
+  // Stattdessen ein I-Anteil, siehe ghostSpeedControl. Er muss die Abbildung nicht kennen,
+  // weil er sie erlaeuft, und er bleibt richtig, wenn jemand am Antriebsstrang dreht.
+  //
+  // GHOST_KI_GAS: 1,2 je Sekunde. Bei einer Abweichung von 0,11 - der gemessenen
+  // Beharrungsabweichung - baut sich damit in etwa 0,8 s der fehlende Gasanteil auf. Deutlich
+  // langsamer als der P-Anteil, wie es sich fuer einen I-Anteil gehoert.
+  const GHOST_KI_GAS = 1.2;
+  // Wie schnell der I-Anteil beim Bremsen wieder abgebaut wird. Ohne das drueckt er beim
+  // Kurvenausgang sofort wieder Vollgas: er ist auf der Geraden davor volllaufen.
+  const GHOST_KI_ABBAU = 3.0;
+
   // Der Tempo-Regler, AUSGELAGERT damit er pruefbar ist.
   //
   // Vorher stand er als sechs Zeilen mitten in ghostTick, und dort ist er nur mit einem
@@ -1386,10 +1405,35 @@
   // fuer die Bremse.
   function ghostSpeedControl(g, target, v, dtG) {
     const err = target - v;
+    // DER I-ANTEIL IST DER ARBEITSPUNKT, der P-Anteil korrigiert darum herum.
+    //
+    // Ohne ihn musste die Abweichung das ganze Gas erzeugen - und eine Abweichung, die Gas
+    // erzeugt, verschwindet nicht. Das ist die Beharrungsabweichung eines reinen P-Reglers,
+    // und sie war hier gross: Ziel 35 Prozent, erreicht 24, gemessen auf reiner Gerade ohne
+    // jede Lenkung. Jeder Abschlag auf das Zieltempo - Kurve, Windschatten, Gummiband, gelbe
+    // Flagge - wurde dadurch in einen Bereich gequetscht, in dem er im Rauschen verschwand.
+    //
+    // ER STEHT IM TOTBAND AUCH, und das ist der Punkt des Totbands: es soll das Pendeln um
+    // den Zielwert beenden, nicht das Gas abstellen. Vorher fiel das Auto im Totband auf
+    // null Gas, verlor Tempo, bis die Abweichung das Totband verliess, gab Gas, kam ins
+    // Totband, fiel auf null - ein Saegezahn genau um den Zielwert.
+    const iAlt = g.iTerm || 0;
+    let iNeu = Math.max(0, Math.min(1, iAlt + err * GHOST_KI_GAS * dtG));
     const roh = Math.abs(err) < GHOST_DEADBAND
-      ? { t: 0, b: 0 }
-      : { t: Math.max(0, Math.min(1, err * GHOST_KP_GAS)),
+      ? { t: Math.max(0, Math.min(1, iNeu)), b: 0 }
+      : { t: Math.max(0, Math.min(1, iNeu + err * GHOST_KP_GAS)),
           b: Math.max(0, Math.min(1, -err * GHOST_KP_BREMSE)) };
+    // ANTI-WINDUP, zwei Faelle, und beide sind hier notwendig:
+    //
+    // 1. Wird gebremst, wird der I-Anteil ABGEBAUT und nicht nur nicht weiter geladen. Er
+    //    ist auf der Geraden davor volllaufen, und ohne Abbau drueckt er am Kurvenausgang
+    //    sofort wieder Vollgas - genau der Ruck, den ein Ghost nicht haben soll.
+    // 2. Steht der Ausgang am Anschlag, wird nicht weiter integriert. Sonst laedt sich der
+    //    I-Anteil waehrend einer langen Vollgasphase auf einen Wert, den er danach erst
+    //    wieder abbauen muss, und das Auto ueberschiesst sein neues, kleineres Ziel.
+    if (roh.b > 0.02) iNeu = Math.max(0, iAlt * (1 - Math.min(1, GHOST_KI_ABBAU * dtG)));
+    else if (roh.t >= 1 && err > 0) iNeu = iAlt;
+    g.iTerm = iNeu;
     const zieh = (ist, soll, rate) => {
       const max = rate * dtG;
       return soll > ist ? Math.min(soll, ist + max) : Math.max(soll, ist - max);
@@ -1401,24 +1445,21 @@
     return { throttle, brake };
   }
 
-  // ---- Zieleinlauf: rechts heranfahren, anhalten, dreimal blinken --------------------
+  // ---- Zieleinlauf: ausrollen, anhalten, dreimal blinken -----------------------------
   //
   // Vorher endete ein Rennen fuer die Ghosts mit stopGhost(): Zeitgeber weg, Nullen
-  // geschrieben, Auto steht da, wo es gerade war - mitten auf der Linie, wenn es dumm
-  // laeuft. Jetzt raeumen sie die Bahn.
+  // geschrieben, Auto stand mit dunklem Licht da. Jetzt rollt es aus und meldet sich.
   //
-  // DIE SEQUENZ FAEHRT OHNE DEN LEITPLANKEN-MODUS, und das ist der Punkt, an dem sie
-  // ueberhaupt funktionieren kann: in diesem Modus haelt sich das Auto SELBST auf der Bahn
-  // und arbeitet gegen jeden Lenkbefehl, der es herausfuehren soll. Die Sequenz schreibt
-  // deshalb keine Modus-Bytes und kein Modus-Bit - fuer diese zwei Sekunden ist das Auto
-  // wieder von Hand gefahren.
+  // KEINE RECHTSKURVE MEHR. Ein Anlauf hat versucht, sie an den rechten Rand zu fahren -
+  // das ist wieder heraus. Ohne Rueckmeldung zur Querlage ist "an den Rand" eine offene
+  // Steuerung: das Auto weiss nicht, wo der Rand ist, es weiss nur, dass es rechts
+  // einschlaegt. Auf der Bahn sah das nicht nach Herausfahren aus, sondern danach, dass am
+  // Ende jedes Rennens alle Autos gleichzeitig eine Rechtskurve fahren. Geradeaus
+  // anzuhalten ist ehrlicher und war auch das, was gewuenscht wurde.
   //
-  // Was ich NICHT verspreche: dass es am Rand zum Stehen kommt. Es gibt keine Rueckmeldung
-  // zur Querlage, also ist das eine offene Steuerung - voller Einschlag nach rechts, Gas im
-  // Kriechbereich, und was dabei herauskommt, entscheidet der Teppich. Die Richtung stimmt;
-  // die Strecke ist nicht messbar.
-  const FINISH_PULL_MS = 1900;      // so lange wird nach rechts gelenkt
-  const FINISH_PULL_GAS = 0.30;     // Kriechgas am Anfang, linear auf null
+  // Die Sequenz schreibt weiter KEINE Modus-Bytes und kein Modus-Bit: der
+  // Leitplanken-Modus soll das stehende Auto nicht weiter fuehren wollen.
+  const FINISH_ROLL_MS = 700;       // ausrollen, Gas schon auf null
   const FINISH_BRAKE_MS = 450;
   const FINISH_BLINKS = 3;
   const FINISH_BLINK_MS = 260;
@@ -1427,7 +1468,7 @@
     const g = car.ghost;
     if (!g) { stopGhost(car); return; }
     if (g.finish) return;           // laeuft schon, nicht neu anstossen
-    g.finish = { phase: 'pull', at: Date.now() };
+    g.finish = { phase: 'roll', at: Date.now() };
   }
 
   // Ein Takt der Sequenz. Laeuft im gewohnten Zeitgeber des Ghosts und schreibt die Bytes
@@ -1437,18 +1478,16 @@
     const g = car.ghost, f = g.finish, now = Date.now();
     const seit = now - f.at;
     const bit = trackModeBit();
-    if (f.phase === 'pull') {
-      if (seit >= FINISH_PULL_MS) { f.phase = 'brake'; f.at = now; return; }
-      // Gas linear herunter. Es faellt dabei unter minMoveThrottle (0,16) und das Auto
-      // hoert von selbst auf zu rollen - gewollt: ein harter Schnitt auf null waere ein
-      // Ruck, und die Bremsphase danach setzt den Punkt.
-      const gas = FINISH_PULL_GAS * (1 - seit / FINISH_PULL_MS);
-      writeToCar(car, 1, gas, bit | LIGHT_HEAD);
+    if (f.phase === 'roll') {
+      if (seit >= FINISH_ROLL_MS) { f.phase = 'brake'; f.at = now; return; }
+      // Gas aus, Lenkung GERADE. Ausrollen und nicht hart abschneiden: das Auto rollt sonst
+      // mit einem Ruck aus, und die Bremsphase danach setzt den Punkt sowieso.
+      writeToCar(car, 0, 0, bit | LIGHT_HEAD);
       return;
     }
     if (f.phase === 'brake') {
       if (seit >= FINISH_BRAKE_MS) { f.phase = 'blink'; f.at = now; return; }
-      writeToCar(car, 1, 0, bit | LIGHT_HEAD | LIGHT_BRAKE);
+      writeToCar(car, 0, 0, bit | LIGHT_HEAD | LIGHT_BRAKE);
       return;
     }
     // Dreimal blinken. Ein Blinken ist AN und AUS, also zaehlt der Schritt Halbphasen und
@@ -1472,6 +1511,11 @@
     if (car.ghost) {
       car.ghost.cutOut = false; car.ghost.offSince = 0;
       car.ghost.unparkAt = Date.now();
+      // Den I-Anteil loeschen. Er ist waehrend des Stillstands nicht gewachsen (geparkt wird
+      // ghostSpeedControl nicht gerufen), aber der Wert VOR dem Abflug steht noch da - und
+      // der gehoert zu einem Tempo, das dieses Auto gerade nicht hat. Mit ihm wuerde die
+      // Anfahrrampe umgangen.
+      car.ghost.iTerm = 0;
     }
     log(garageLabel(car) + ': ' + why + ', f\u00e4hrt weiter.', 'info');
     showHudToast(garageLabel(car).toUpperCase() + ' F\u00c4HRT');
@@ -2003,12 +2047,47 @@
              push: L.tryPush === null ? L.push : L.tryPush };
   }
 
+  // ---- Rueckfall ohne Karte: nur der gemeldete Code und die Phase --------------------
+  //
+  // GEMESSEN WAR DAS PROBLEM: ohne gebaute oder gelernte Strecke bewegte die Ideallinie das
+  // Lenkbyte um 0,3 von 127 - also nichts. Mit Strecke sind es 15,3. Beide anderen
+  // Linieneinstellungen wirken ohne Karte weiter (eigene Spuren 18,4), und deshalb kam der
+  // Eindruck "eigene Linien gehen ein bisschen, Ideallinie gar nicht" - er war richtig.
+  //
+  // Was OHNE Karte trotzdem bekannt ist: der Code der Kachel, auf der das Auto JETZT liegt
+  // (Byte 12), und die Phase darin (aus dem Kachelzaehler und der gemessenen Kacheldauer).
+  // Das reicht fuer ein Aussen-Scheitel-Aussen je Kachel.
+  //
+  // WAS DAS NICHT KANN, und das gehoert dazu: es sieht die Kachel nicht, die kommt. Eine
+  // Doppelkurve wird deshalb zweimal einzeln gefahren statt in einem Zug - genau der Fehler,
+  // wegen dem die kartengestuetzte Handregel auf ganze Kurvenzuege umgebaut wurde. Ohne
+  // Karte ist das nicht zu vermeiden; grob ist besser als nichts, und der Regler sagt
+  // jetzt, in welchem der drei Faelle er steckt.
+  function ghostLineFromCode(car) {
+    const g = car.ghost;
+    if (!g || !car.tileAt) return 0;
+    const dir = ghostTurnOf(car.tileCode);
+    if (!dir) return 0;                       // Gerade, Start/Ziel, keine Lesung
+    const tight = ghostTileInfo(car.tileCode).curve;
+    const ph = ghostTilePhase(car);
+    // Der Scheitel der Haarnadel liegt spaeter, aus demselben Grund wie in der Handregel:
+    // bei 180 Grad wird tief hineingebremst.
+    const apex = tight >= 2 ? 0.62 : 0.5;
+    // Aussen ist -dir, innen +dir. Linear hin und zurueck.
+    const v = ph < apex
+      ? -dir + 2 * dir * (ph / apex)
+      : dir - 2 * dir * ((ph - apex) / (1 - apex));
+    return Math.max(-1, Math.min(1, v));
+  }
+
   function ghostLineOffset(car) {
     const lc = ghostLine();
     const g = car.ghost;
-    if (!lc || !g) return ghostLineHeuristic(car);
+    if (!lc || !g) return ghostLineMitDeckel(car, ghostLineHeuristic(car)
+                                             || ghostLineFromCode(car));
     const i = ghostLineIndex(lc, g.tileIndex, ghostTilePhase(car));
-    if (i === null) return ghostLineHeuristic(car);
+    if (i === null) return ghostLineMitDeckel(car, ghostLineHeuristic(car)
+                                             || ghostLineFromCode(car));
     // span statt limit als Bezug: die Relaxation nutzt die Bahnbreite nicht immer voll aus,
     // und dann waere der Ausschlag der Ghost-Lenkung kuenstlich klein. Der Regler
     // "Ideallinie" soll die ganze gefundene Linie bedeuten, nicht einen Bruchteil davon.
@@ -2040,6 +2119,17 @@
     // ueberlebt: gemessen 0,144 Kurvenspanne im Rundenzeitmodell statt 0,000.
     const roh2 = Math.max(-1, Math.min(1, roh * f.push));
     return roh2 * cap;
+  }
+
+  // Lernfaktor und Kippwert-Deckel, fuer die zwei Rueckfallquellen. Sie gingen vorher OHNE
+  // Deckel hinaus: die Handregel liefert bis +/-1, die gerechnete Linie war auf 0,55
+  // begrenzt - der Rueckfall durfte also fast das Doppelte anfordern, obwohl die Messung
+  // sagt, dass das Auto darueber die Bahn verlaesst. Ein Rueckfall, der mehr darf als der
+  // Normalfall, ist keine Vorsicht.
+  function ghostLineMitDeckel(car, roh) {
+    const f = learnFactors(car);
+    const cap = learnSteerCap();
+    return Math.max(-1, Math.min(1, roh * f.push)) * cap;
   }
 
   // Bremsbedarf an der Stelle, an der das Auto gerade ist: 0 = freie Fahrt, 1 = voll
@@ -2494,21 +2584,32 @@
       // Wenn es eine gerechnete Linie gibt, kommt der Bremsbedarf von dort: er ist stetig
       // und liegt an der richtigen STELLE innerhalb der Kachel, waehrend die Kachelregel nur
       // "enge Kachel in Sicht" kennt und dann die ganze Kachel gleich behandelt.
+      // DER STAERKERE DER ZWEI GILT, nicht der eine ODER der andere. Vorher stand hier
+      // "if (bd === null && tight > 0)": sobald eine Strecke da war, lieferte
+      // ghostBrakeDemand einen Wert und die Kachelregel wurde KOMPLETT uebersprungen.
+      //
+      // Das war ein echter Verlust, denn die zwei sagen Verschiedenes. Das Bremsprofil misst
+      // den ANSTIEG der Kruemmung - eine Kurve, die man schon mit konstantem Radius faehrt,
+      // braucht danach kein Bremsen mehr, und das ist fuer eine BREMSE richtig. Der
+      // dauerhafte Tempoabschlag einer engen Kurve ist aber keine Bremsung, sondern eine
+      // Grenze, und die gilt bis zum Kurvenausgang. Gemeldet als "in der Haarnadel sollte
+      // stärker gedrosselt werden als in normalen Kurven" - mit Karte war der Unterschied
+      // vollstaendig weg.
+      //
+      // Addiert werden sie NICHT: zwei Abschlaege auf dieselbe Groesse, die beide dasselbe
+      // meinen, ergeben zusammen einen stehenden Ghost. Das Maximum ist die Aussage
+      // "so langsam mindestens".
       const bd = ghostBrakeDemand(car);
-      if (bd !== null) {
-        // curveSlow bleibt der Bezug und behaelt seine Bedeutung: voller Bremsbedarf kostet
-        // das Doppelte dessen, was der Regler fuer eine normale Kurve sagt.
-        target *= 1 - Math.min(0.85, 2 * ghostCfg.curveSlow * bd);
-      }
       const reach = ahead.tight >= 2 ? 2 : 1;
       const tight = Math.max(here, ahead.dist <= reach ? ahead.tight : 0);
-      if (bd === null && tight > 0) {
-        // Der Regler curveSlow bleibt der Bezug: er beschreibt weiter die 60-Grad-Kurve.
-        // Die Haarnadel bekommt das Doppelte, auf hoechstens 85 Prozent begrenzt, damit ein
-        // hoch eingestellter Regler den Ghost nicht zum Stehen bringt.
-        const slow = Math.min(0.85, ghostCfg.curveSlow * tight);
-        target *= (1 - slow);
-      }
+      // Bremsprofil: voller Bremsbedarf kostet das Doppelte dessen, was der Regler fuer eine
+      // normale Kurve sagt.
+      const abzugProfil = bd === null ? 0 : Math.min(0.85, 2 * ghostCfg.curveSlow * bd);
+      // Kachelregel: curveSlow beschreibt die 60-Grad-Kurve, die Haarnadel bekommt das
+      // Doppelte (tileTightness = 2), gedeckelt damit ein hoher Regler den Ghost nicht
+      // zum Stehen bringt.
+      const abzugKachel = tight > 0 ? Math.min(0.85, ghostCfg.curveSlow * tight) : 0;
+      target *= 1 - Math.max(abzugProfil, abzugKachel);
       if (ghostCfg.leaderBrake && ghostLeader() === car) target *= (1 - ghostCfg.leaderBrakePct);
       // Formation lap: everyone rolls at pit-lane pace, whatever their speed setting says.
       if (raceFormationLap) target = Math.min(target, PIT_SPEED_FACTOR);
@@ -2521,9 +2622,30 @@
       }
 
       const v = Math.abs(e.state.speedKmh) / cfg.topSpeedKmh;
-      const dtG = Math.max(0.01, Math.min(0.5, (now - (g.lastTick || now)) / 1000));
-      g.lastTick = now;
+      // DAS dt VON OBEN, und das ist eine Berichtigung. Hier stand
+      //
+      //     const dtG = Math.max(0.01, Math.min(0.5, (now - (g.lastTick || now)) / 1000));
+      //     g.lastTick = now;
+      //
+      // und g.lastTick war am Anfang derselben Funktion schon auf now gesetzt worden. Die
+      // Differenz war also immer genau NULL, und dtG fiel auf seinen Boden von 0,01 s.
+      //
+      // Folge: die Ratenbegrenzung des Tempo-Reglers lief bei 45-ms-Takten 4,5-fach zu
+      // langsam. GHOST_SLEW_GAS = 1,6 je Sekunde sollte "voll durchtreten in 0,6 s" heissen
+      // und hiess 2,8 s; die Bremse 0,25 s und hiess 1,1 s. Damit konnte der Ghost einem
+      // Zielwechsel an einer Kachelgrenze gar nicht folgen - eine Kachel dauert bei diesen
+      // Tempi etwa 700 ms. Genau das war "Kurvengeschwindigkeit drosseln geht nicht so gut":
+      // die LOGIK war richtig (Ziel gemessen 35 % Gerade, 22,7 % Kurve, 10,5 % Haarnadel),
+      // nur kam das Gas nie dort an.
+      //
+      // Ein zweiter Zeitgeber in derselben Funktion ist die Ursache. Jetzt gibt es einen.
+      const dtG = Math.max(0.01, dt);
+      // Herausgegeben fuer den Prueflauf: das ZIEL ist, was die Kurvenlogik entscheidet. Das
+      // erreichte Tempo haengt zusaetzlich an der Physik, und ein Prueflauf mit kuenstlicher
+      // Kacheluhr verfaelscht es - dann prueft man seinen Prueflauf.
+      g.lastTarget = target;
       const st2 = ghostSpeedControl(g, target, v, dtG);
+      g.lastFF = g.iTerm || 0;
       throttle = st2.throttle;
       brake = st2.brake;
       // VORSTEUERUNG aus dem Bremsprofil der Linie. Das Profil weiss, dass eine Kurve kommt,
@@ -3841,7 +3963,7 @@
       }));
       return { reihe, phasen, takte, schritt,
                kopf: LIGHT_HEAD, bremse: LIGHT_BRAKE,
-               blinks: FINISH_BLINKS, pullMs: FINISH_PULL_MS };
+               blinks: FINISH_BLINKS, rollMs: FINISH_ROLL_MS };
     },
 
     // ---- Hebt ein Start das Parkschild? -----------------------------------------
@@ -3941,6 +4063,188 @@
         currentTrackTiles = keep;
         setLineModel(mVor);
         lineCache = null;
+      }
+    },
+
+    // ---- Was traegt jede Einstellung zum gesendeten Byte bei? --------------------
+    //
+    // Ein ECHTER Ghost laeuft durch ghostTick, die Uhr ist gefaelscht, und gemessen werden
+    // die Bytes, die buildCommandPacket erzeugt. Kein Nachbau der Zusammensetzung: der
+    // koennte stimmen, waehrend das Original falsch ist - genau der Fehler, der bei der
+    // Ideallinie zwei Fassungen lang unentdeckt blieb.
+    //
+    // lage: 'ohne'  kein Streckencode (Teppich ohne gedrucktes Muster)
+    //       'codes' Codes kommen, aber keine Strecke gebaut oder gescannt
+    //       'karte' Codes und Strecke
+    async ghostDriveProbe(o) {
+      const opt = o || {};
+      const lage = opt.lage || 'karte';
+      const takte = opt.takte || 300;
+      const dtMs = 45;
+      const tileMs = opt.tileMs || 700;
+      const keepTiles = currentTrackTiles;
+      const merkCfg = JSON.parse(JSON.stringify(ghostCfg));
+      const echtNow = Date.now;
+      try {
+        const p = codeToTrack(opt.code || 'SG2H2G2R2');
+        currentTrackTiles = (lage === 'karte') ? p.tiles : [];
+        lineCache = null;
+        if (opt.cfg) Object.assign(ghostCfg, opt.cfg);
+        // Die Uhr faelschen, damit der Lauf deterministisch ist. Ohne das ist dt in einer
+        // synchronen Schleife praktisch null und der Ghost beschleunigt nie.
+        let uhr = echtNow();
+        Date.now = () => uhr;
+        const bytes = [];
+        const car = {
+          role: 'ghost', alias: 'Sonde', writeInFlight: false,
+          tileCode: 0x02, tileCount: (lage === 'ohne') ? null : 0,
+          lastCodeAt: (lage === 'ohne') ? 0 : uhr, yaw: 0,
+          rx: { properties: { writeWithoutResponse: true },
+                writeValueWithoutResponse(b) {
+                  bytes.push([b[7] > 127 ? b[7] - 256 : b[7],
+                              ((b[6] - 0xdf) & 0xff) > 127 ? ((b[6] - 0xdf) & 0xff) - 256
+                                                           : ((b[6] - 0xdf) & 0xff),
+                              car.tileCode]);
+                  return Promise.resolve();
+                } },
+        };
+        // Ein zweites Auto, damit ghostLane() ueberhaupt etwas verteilt: unter zwei Ghosts
+        // gibt es keine Spuren, und beide muessen IN der Garage stehen, weil die Funktion
+        // das Auto ueber garage.indexOf findet.
+        const zweit = { role: 'ghost', alias: 'Sonde2', writeInFlight: false,
+                        tileCode: 0x02, tileCount: 0, lastCodeAt: uhr, yaw: 0, rx: null };
+        garage.push(car, zweit);
+        startGhost(car);
+        startGhost(zweit);
+        if (car.timer) { clearInterval(car.timer); car.timer = null; }  // von Hand takten
+        if (zweit.timer) { clearInterval(zweit.timer); zweit.timer = null; }
+        car.ghost.freeRun = true;
+        // Der Querversatz gegen Rammen wird von einem Zeitgeber gestellt; im Prueflauf wird
+        // er FESTGEHALTEN, sonst mischt er sich in jede Messung. 0 heisst: aus.
+        car.ghost.bias = opt.bias === undefined ? 0 : opt.bias;
+        const tempo = [], ziel = [], vorsteuer = [], gang = [], drehzahl = [];
+        let seitKachel = 0, k = 0, schaltSeit = 0;
+        for (let i = 0; i < takte; i++) {
+          uhr += dtMs;
+          seitKachel += dtMs;
+          if (lage !== 'ohne') {
+            car.lastCodeAt = uhr;
+            if (seitKachel >= tileMs) {
+              seitKachel = 0;
+              k++;
+              car.tileCount = k & 0xff;
+              car.tileAt = uhr;
+              // Der Code der Kachel, auf der das Auto jetzt liegt. Bei 'codes' ohne Karte
+              // ist das die einzige Ortsinformation, die es ueberhaupt gibt.
+              car.tileCode = p.tiles[k % p.tiles.length].type;
+            }
+          }
+          ghostTick(car);
+          // DIE SCHALTUNTERBRECHUNG AUF DIE GEFAELSCHTE UHR SETZEN, und das ist eine
+          // Berichtigung an diesem Prueflauf selbst.
+          //
+          // st.isShifting wird in 40-physics.js von einem setTimeout zurueckgesetzt, und
+          // waehrend einer Unterbrechung gibt es keinen Zug (siehe 40-physics.js:1366). Ein
+          // Prueflauf, der Date.now faelscht und synchron laeuft, laesst diesen Zeitgeber
+          // NIE dran kommen - nach dem ersten Hochschalten hing das Auto dauerhaft ohne Zug
+          // und blieb bei 24 Prozent stehen, bei JEDEM Ziel. Ich habe daraus erst eine
+          // Beharrungsabweichung des Reglers geschlossen; es war der Prueflauf. Echte
+          // Zeitgeber abzuwarten geht auch nicht: in einem nicht angezeigten Fenster sind sie
+          // auf eine Sekunde gedrosselt, und 300 Takte waeren fuenf Minuten.
+          //
+          // Uebernommen wird deshalb NUR DIE UHR dieser einen Zusicherung, nicht die Logik:
+          // nach shiftMs gefaelschter Zeit ist die Unterbrechung vorbei - genau das, was der
+          // Zeitgeber in der App sagt.
+          const stt = car.ghost.engine ? car.ghost.engine.state : null;
+          if (stt && stt.isShifting) {
+            if (!schaltSeit) schaltSeit = uhr;
+            else if (uhr - schaltSeit >= (car.ghost.engine.config.shiftMs || 0)) {
+              stt.isShifting = false;
+              schaltSeit = 0;
+            }
+          } else {
+            schaltSeit = 0;
+          }
+          // Mikrotasks abarbeiten: writeToCar setzt writeInFlight in einem finally NACH
+          // einem await zurueck, und ohne diese Pause faellt jedes zweite Paket aus.
+          await Promise.resolve(); await Promise.resolve();
+          // DAS TEMPO ist die Groesse, um die es bei der Kurvendrosselung geht - nicht das
+          // Gasbyte. Das Gas ist die ANTWORT eines Reglers: faellt das Zieltempo, bremst er
+          // erst und gibt danach wieder Gas, um das neue Ziel zu halten. Ein Mittel ueber
+          // das Gasbyte kann in der Kurve deshalb hoeher liegen als auf der Geraden, ohne
+          // dass irgendetwas falsch ist. Genau darauf bin ich beim ersten Anlauf
+          // hereingefallen.
+          ziel.push(car.ghost.lastTarget === undefined ? null : +car.ghost.lastTarget.toFixed(4));
+          vorsteuer.push(car.ghost.lastFF === undefined ? null : +car.ghost.lastFF.toFixed(4));
+          gang.push(car.ghost.engine ? car.ghost.engine.state.currentGear : null);
+          drehzahl.push(car.ghost.engine && car.ghost.engine.rpmRawAt
+            ? Math.round(car.ghost.engine.rpmRawAt(car.ghost.engine.state.speedKmh,
+                                                   car.ghost.engine.state.currentGear))
+            : null);
+          tempo.push(car.ghost.engine
+            ? +(car.ghost.engine.state.speedKmh / car.ghost.engine.config.topSpeedKmh)
+                .toFixed(4)
+            : 0);
+        }
+        stopGhost(car);
+        stopGhost(zweit);
+        return { lenk: bytes.map(b => b[0]), gas: bytes.map(b => b[1]),
+                 kachel: bytes.map(b => b[2]), tempo, ziel, vorsteuer, gang, drehzahl,
+                 // Die KRAEFTE an genau der Stelle, an der es klebt. Sagt thrust > resist
+                 // und faehrt das Auto trotzdem nicht schneller, sitzt die Grenze nicht im
+                 // Antrieb, sondern in e.update().
+                 kraefte: (() => {
+                   const e2 = car.ghost && car.ghost.engine;
+                   if (!e2 || !e2.thrustAt) return null;
+                   const A2 = e2.accelScale();
+                   const v2 = e2.state.speedKmh;
+                   const gg = e2.state.currentGear;
+                   const zug = e2.thrustAt(v2, gg, 1, A2);
+                   const wid = e2.resistAt(v2, A2, true);
+                   const zugNaechster = gg + 1 < e2.config.gears.length
+                     ? e2.thrustAt(v2, gg + 1, 1, A2) : null;
+                   const zugVoriger = gg > 0 ? e2.thrustAt(v2, gg - 1, 1, A2) : null;
+                   return { v: +v2.toFixed(4), gang: gg, A: +A2.toFixed(5),
+                            zug: +zug.toFixed(4), widerstand: +wid.toFixed(4),
+                            netto: +(zug - wid).toFixed(4),
+                            zug_gang_darunter: zugVoriger === null ? null : +zugVoriger.toFixed(4),
+                            zug_gang_darueber: zugNaechster === null ? null : +zugNaechster.toFixed(4),
+                            rpm: Math.round(e2.rpmRawAt(v2, gg)) };
+                 })(),
+                 // Die Konfiguration des GHOST-Motors gegen die des Fahrerautos. Jeder
+                 // Unterschied hier ist eine Erklaerung oder eine Absicht - beides will man
+                 // sehen, wenn ein Ghost nicht so faehrt wie das Auto daneben.
+                 cfgDiff: (() => {
+                   const e2 = car.ghost && car.ghost.engine;
+                   if (!e2) return null;
+                   const raus = {};
+                   for (const kk of Object.keys(physEngine.config)) {
+                     const a1 = physEngine.config[kk], b1 = e2.config[kk];
+                     if (typeof a1 === 'number' && typeof b1 === 'number') {
+                       if (Math.abs(a1 - b1) > 1e-9) raus[kk] = [a1, b1];
+                     } else if (typeof a1 === 'boolean' && a1 !== b1) raus[kk] = [a1, b1];
+                   }
+                   return raus;
+                 })(),
+                 endzustand: car.ghost && car.ghost.engine
+                   ? JSON.parse(JSON.stringify(car.ghost.engine.state)) : null,
+                 gaenge: car.ghost && car.ghost.engine
+                   ? car.ghost.engine.config.gears.map(x => x.topFrac) : null,
+                 upshiftRpm: car.ghost && car.ghost.engine
+                   ? car.ghost.engine.config.upshiftRpm : null,
+                 autoShift: car.ghost && car.ghost.engine
+                   ? car.ghost.engine.config.autoShift : null,
+                 pakete: bytes.length, lage,
+                 tileIndex: car.ghost ? car.ghost.tileIndex : null };
+      } finally {
+        // Die zwei Sondenautos wieder aus der Garage, sonst stehen sie in der Liste.
+        for (let i = garage.length - 1; i >= 0; i--) {
+          if (garage[i] && garage[i].alias && /^Sonde/.test(garage[i].alias)) garage.splice(i, 1);
+        }
+        Date.now = echtNow;
+        currentTrackTiles = keepTiles;
+        lineCache = null;
+        Object.keys(merkCfg).forEach(x => { ghostCfg[x] = merkCfg[x]; });
       }
     },
 

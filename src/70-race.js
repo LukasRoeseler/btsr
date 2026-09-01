@@ -771,9 +771,8 @@
     }
     if (raceClockTimer) { clearInterval(raceClockTimer); raceClockTimer = null; }
     raceStartedAt = null;
-    // Zielflagge: die Ghosts raeumen die Bahn - rechts heranfahren, anhalten, dreimal
-    // blinken. Vorher stand hier stopGhost(), also "Nullen schreiben und stehenbleiben, wo
-    // du bist" - mitten auf der Linie, wenn es dumm laeuft.
+    // Zielflagge: die Ghosts rollen aus, halten an und blinken dreimal. Vorher stand hier
+    // stopGhost(), also "Nullen schreiben und dunkel stehenbleiben".
     //
     // Diese Stelle ist die richtige und die einzige: alle Endbedingungen laufen durch
     // finishRace() (Rundenzahl erreicht, Zeit abgelaufen und letzte Runde beendet, Stopp von
