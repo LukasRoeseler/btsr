@@ -558,7 +558,29 @@
   const lat = { on: false, car: null, steer: 0, dir: 1, timer: null, stepAt: 0,
                 tiles: 0, lastCount: null, step: 0, rows: [] };
 
+  // Der Deckel, wie er GERADE gilt, und woher er kommt. Ohne diese Anzeige ist nach einer
+  // Messung nicht zu sehen, dass sie etwas geaendert hat - und dann wirkt sie wie eine
+  // Fleissaufgabe ohne Folge.
+  function latCapRender() {
+    const el = $('lat-cap');
+    if (!el) return;
+    const cap = learnSteerCap();
+    el.textContent = cap.toFixed(2) + ' (' + Math.round(cap * 127) + ' von 127, '
+      + (cap * 45).toFixed(1) + '\u00b0)';
+    const zeilen = (lat.rows || []);
+    const gekippt = zeilen.find(r => !r.ok);
+    const src = $('lat-cap-src');
+    if (src) {
+      src.textContent = gekippt
+        ? '\u2013 gemessen: gekippt bei ' + gekippt.steer.toFixed(2) + ', Deckel ist die Haelfte'
+        : zeilen.length
+          ? '\u2013 gemessen: nie gekippt, Deckel ist der hoechste gehaltene Wert'
+          : '\u2013 gesch\u00e4tzt, noch nichts gemessen';
+    }
+  }
+
   function latRender() {
+    latCapRender();
     $('lat-now').textContent = (lat.steer * lat.dir).toFixed(2);
     $('lat-raw').textContent = Math.round(lat.steer * lat.dir * 127);
     $('lat-step').textContent = lat.on ? String(lat.step) : '\u2013';
@@ -1721,6 +1743,54 @@
   // Seitenversatz des Angreifers mit ghostCfg.line skaliert: stand die Ideallinie auf 0,
   // fuhr er OHNE Versatz in den Vorausfahrenden.
   const GHOST_PASS_STEER = 0.8;
+
+  // ---- 1. UEBERHOLEN ALS SEQUENZ ----------------------------------------------------
+  //
+  // Vorher war eine Attacke ein ZUSTAND von 2,6 s: Seitenversatz und Temposchub, dann
+  // vorbei - unabhaengig davon, ob das Manoever geglueckt war. Genau die fehlende
+  // Abbruchbedingung erzeugt das Nebeneinander-Kleben, in dem Beruehrungen passieren: zwei
+  // Autos auf gleicher Hoehe, keines gibt nach, und nach 2,6 s hoert der Versatz einfach auf.
+  //
+  // Jetzt vier Phasen mit Ausgang:
+  //
+  //   raus    Seitenversatz aufbauen, NOCH KEIN Schub. 400 ms.
+  //   vorbei  Schub an, Versatz gehalten.
+  //   rein    vorne heraus - Versatz faehrt ueber 700 ms zurueck auf die eigene Linie.
+  //   Abbruch nach 5 s nicht vorbei: Schub aus, einordnen, und eine laengere Sperre, damit
+  //           er es nicht sofort wieder versucht. Ein Ghost, der es dreimal in Folge
+  //           probiert und dreimal daneben liegt, ist genau der, der rammt.
+  const SPICE_PASS_MAX_MS = 5000;      // so lange darf ein Versuch dauern
+  const SPICE_PASS_TUCK_MS = 700;      // so lange dauert das Einordnen
+  const SPICE_PASS_CLEAR = 0.45;       // Kacheln VOR dem anderen = geschafft
+  const SPICE_PASS_BLOCK_MS = 6000;    // Sperre nach einem Abbruch
+
+  // ---- 2. ZEITLUECKE STATT KACHELABSTAND -------------------------------------------
+  //
+  // Der Mindestabstand rechnete in Kacheln. Das ist die falsche Groesse: wer mit hohem
+  // Tempodelta auf eine Kachel Abstand zufaehrt, ist gefaehrlich; wer bei gleichem Tempo
+  // eine halbe Kachel hinterherfaehrt, nicht. Der noetige Abstand waechst deshalb mit der
+  // ANNAEHERUNGSRATE.
+  //
+  // Die Rate wird numerisch aus dem Abstand gebildet und nicht aus den Tempi: Tempi muessten
+  // erst ueber Kachellaengen in Kacheln je Sekunde umgerechnet werden, und diese Umrechnung
+  // haengt am Layout. Der Abstand selbst ist schon in Kacheln, seine Ableitung also in
+  // Kacheln je Sekunde - ohne eine einzige Annahme.
+  const SPICE_GAP_PER_CLOSING = 0.5;   // Kacheln Aufschlag je Kachel/s Annaeherung
+  const SPICE_GAP_GLATT = 0.3;         // Glaettung der Ableitung, 0..1
+
+  // ---- 3. SPURDISZIPLIN ------------------------------------------------------------
+  //
+  // Auf der Geraden soll jeder seine eigene Spur halten - dann faehrt man hintereinander,
+  // aber auf verschiedenen Linien. In der Kurve wollen alle zum Scheitel, und dort soll die
+  // Ideallinie das Sagen haben. Vorher waren beide Anteile FEST addiert, also galt auf der
+  // Geraden dieselbe Mischung wie im Bogen.
+  //
+  // MIT HYSTERESE, und die ist der Punkt: der Kacheltyp wechselt sprunghaft, und ein
+  // sprunghafter Wechsel der Mischung ist ein Ruck am Lenkservo. Der Mix laeuft deshalb mit
+  // einer Zeitkonstante nach - 350 ms, etwa eine halbe Kachel bei diesen Tempi.
+  const GHOST_MIX_TAU = 0.35;          // s
+  const GHOST_LANE_DROP = 0.5;         // in der Kurve bleibt die halbe Spur
+  const GHOST_LINE_STRAIGHT = 0.35;    // auf der Geraden wirkt ein Drittel der Linie
   const SPICE_BAND_PER_TILE = 0.022;
   const SPICE_BAND_MAX = 0.13;
   // 6. ABSTAND. Es gab keinen Baustein, der Autos auseinander haelt: Windschatten und
@@ -1759,6 +1829,28 @@
       if (gap > 0 && gap < bestGap) { bestGap = gap; best = o; }
     }
     return best ? { car: best, gap: bestGap } : null;
+  }
+
+  // Wie schnell schrumpft der Abstand, in Kacheln je Sekunde? Numerisch aus dem Abstand
+  // selbst, nicht aus den Tempi: der Abstand ist schon in Kacheln, seine Ableitung also in
+  // Kacheln je Sekunde - eine Umrechnung ueber Kachellaengen wuerde eine Layout-Annahme
+  // einfuehren, die hier keine braucht.
+  //
+  // Geglaettet, weil eine Ableitung auf einer geschaetzten Groesse rauscht: der Abstand
+  // enthaelt die Phase innerhalb der Kachel, und die ist eine Schaetzung aus der gemessenen
+  // Kacheldauer.
+  function ghostClosing(car, gap) {
+    const g = car.ghost;
+    const now = Date.now();
+    if (gap === null) { g.gapLast = undefined; g.naehern = 0; return 0; }
+    let roh = 0;
+    if (g.gapLast !== undefined && g.gapAt) {
+      const dtg = Math.max(0.02, (now - g.gapAt) / 1000);
+      roh = (g.gapLast - gap) / dtg;
+    }
+    g.gapLast = gap; g.gapAt = now;
+    g.naehern = (g.naehern || 0) * (1 - SPICE_GAP_GLATT) + roh * SPICE_GAP_GLATT;
+    return g.naehern;
   }
 
   // Tagesform fortschreiben. Begrenzter Zufallslauf: er haelt an, laeuft aber nicht weg.
@@ -1812,12 +1904,46 @@
     } else {
       g.closeSince = 0;
     }
-    if (g.attackUntil && now >= g.attackUntil) { g.attackUntil = 0; g.attackSide = 0; }
+    // ---- Die Ueberholsequenz fortschreiben ----
+    if (g.attackUntil) {
+      const seit = now - (g.passSince || now);
+      const ziel = g.passZiel;
+      // Geschafft? Der Fortschritt entscheidet, nicht die Uhr.
+      const durch = ziel && ziel.ghost
+        && ghostProgress(car) > ghostProgress(ziel) + SPICE_PASS_CLEAR;
+      if (g.passPhase !== 'rein' && durch) {
+        g.passPhase = 'rein'; g.passAt = now;
+        log(garageLabel(car) + ': vorbei an '
+            + (ziel ? garageLabel(ziel) : '?') + ', ordnet sich ein.', 'info');
+      } else if (g.passPhase === 'raus' && seit > SPICE_ATTACK_SIDE_MS) {
+        g.passPhase = 'vorbei';
+      }
+      if (g.passPhase === 'rein' && now - g.passAt > SPICE_PASS_TUCK_MS) {
+        g.attackUntil = 0; g.attackSide = 0; g.passZiel = null; g.passPhase = null;
+      } else if (g.passPhase !== 'rein' && seit > SPICE_PASS_MAX_MS) {
+        // ABBRUCH. Der wichtigste Ausgang: ohne ihn klebt der Verfolger neben dem anderen,
+        // bis die Uhr ablaeuft, und genau dort beruehren sich zwei Autos.
+        g.attackUntil = 0; g.attackSide = 0; g.passZiel = null; g.passPhase = null;
+        g.passBlockUntil = now + SPICE_PASS_BLOCK_MS;
+        log(garageLabel(car) + ': kommt nicht vorbei, ordnet sich wieder ein.', 'info');
+      }
+    }
     if (!g.attackUntil && g.closeSince && now - g.closeSince > SPICE_ATTACK_ARM_MS
-        && onStraight && now - (g.attackTriedAt || 0) > 4000) {
+        && onStraight
+        // 4. KEIN ANGRIFF IN EINE KURVE HINEIN. onStraight prueft den Vorausblick, und den
+        // gibt es nur mit Karte - ohne Karte ist er immer "frei", und dann wurde auch mitten
+        // in einer Haarnadel angesetzt. Der gemeldete Code der Kachel UNTER dem Auto braucht
+        // keine Karte und schliesst genau diesen Fall.
+        && ghostTileInfo(car.tileCode).curve === 0
+        && now > (g.passBlockUntil || 0)
+        && now - (g.attackTriedAt || 0) > 4000) {
       g.attackTriedAt = now;
       if (Math.random() < SPICE_ATTACK_P * ghostCfg.spice) {
-        g.attackUntil = now + SPICE_ATTACK_MS;
+        // attackUntil bleibt als "eine Sequenz laeuft"-Marke; die Phasen entscheiden.
+        // Die Obergrenze steht jetzt bei SPICE_PASS_MAX_MS, nicht bei SPICE_ATTACK_MS.
+        g.attackUntil = now + SPICE_PASS_MAX_MS + SPICE_PASS_TUCK_MS;
+        g.passSince = now;
+        g.passPhase = 'raus';
         // Die andere Seite als die, auf der die Linie gerade liegt. Genau dafuer ist die
         // Linie da: ohne sie waere "die andere Seite" nicht definiert.
         const lo = ghostLineOffset(car);
@@ -1838,15 +1964,21 @@
         showHudToast(garageLabel(car).toUpperCase() + ' ATTACKIERT');
       }
     }
-    // Der Schub kommt ERST, wenn der Seitenversatz steht - siehe SPICE_ATTACK_SIDE_MS.
-    if (g.attackUntil && now - (g.attackUntil - SPICE_ATTACK_MS) > SPICE_ATTACK_SIDE_MS) {
+    // Der Schub gilt NUR in der Phase 'vorbei': in 'raus' baut sich erst der Versatz auf,
+    // in 'rein' ist das Manoever gelaufen und ein Schub waere nur noch Draengeln.
+    if (g.attackUntil && g.passPhase === 'vorbei') {
       f *= 1 + SPICE_ATTACK_GAIN * ghostCfg.spice;
     }
 
-    // 6. Abstand halten - der Gegenspieler zu Windschatten und Attacke. Nicht waehrend
-    // einer Attacke: wer angreift, darf dichter heran, sonst gibt es kein Ueberholen.
-    if (ah && !g.attackUntil && ah.gap < SPICE_GAP_MIN) {
-      f *= 1 - SPICE_GAP_LIFT * ghostCfg.spice * (1 - ah.gap / SPICE_GAP_MIN);
+    // 6. Abstand halten, mit ZEITLUECKE statt festem Kachelabstand. Der noetige Abstand
+    // waechst mit der Annaeherungsrate: eine Kachel Abstand bei einer Kachel je Sekunde
+    // Annaeherung ist eine Sekunde bis zur Beruehrung, eine Kachel bei gleichem Tempo ist
+    // unbegrenzt. Nicht waehrend einer Attacke: wer angreift, darf dichter heran, sonst gibt
+    // es kein Ueberholen.
+    const naehern = ghostClosing(car, ah ? ah.gap : null);
+    const noetig = SPICE_GAP_MIN + SPICE_GAP_PER_CLOSING * Math.max(0, naehern);
+    if (ah && !g.attackUntil && ah.gap < noetig) {
+      f *= 1 - SPICE_GAP_LIFT * ghostCfg.spice * (1 - ah.gap / noetig);
     }
 
     // 5. Gummiband: nur den Fuehrenden, und nur wenn es einen Zweiten gibt.
@@ -1866,7 +1998,13 @@
       }
     }
 
-    return { factor: f, attack: g.attackUntil ? (g.attackSide || 0) : 0 };
+    // Der Seitenversatz faehrt beim Einordnen ZURUECK statt abzuschalten. Ein Sprung von
+    // vollem Versatz auf null ist ein Ruck am Lenkservo und sieht aus wie ein Fehler.
+    const versatz = !g.attackUntil ? 0
+      : g.passPhase === 'rein'
+        ? (g.attackSide || 0) * Math.max(0, 1 - (now - g.passAt) / SPICE_PASS_TUCK_MS)
+        : (g.attackSide || 0);
+    return { factor: f, attack: versatz, phase: g.passPhase || null };
   }
 
   // ---- Die Ideallinie ----
@@ -2304,6 +2442,9 @@
                   // senden - im Moment des Klicks ist er noch null.
                   // Rundenuhr und Abgangsstand fuer die Lernbilanz.
                   lapStart: 0, offAtLapStart: 0,
+                  // Ueberholsequenz und Spurmischung.
+                  passPhase: null, passZiel: null, passSince: 0, passBlockUntil: 0,
+                  kurveMix: 0, naehern: 0,
                   running: true };
     // Den ersten Versuch ziehen, wenn gelernt werden soll. Ohne ihn steht tryPace auf null,
     // und learnSettle() kehrt in genau diesem Fall frueh zurueck, OHNE einen zu ziehen - das
@@ -2667,6 +2808,17 @@
       ahead.key = (g.tileIndex === null ? -1 : g.tileIndex) + ':' + ahead.dist;
       // Waehrend Gelb keine Wuerze: kein Windschatten, keine Attacke, kein Gummiband, und
       // auch keine Tagesform - sonst waere "alle gleich schnell" wieder aufgehoben.
+      // 3. SPURDISZIPLIN: wieviel Kurve ist gerade? 0 = Gerade, 1 = Kurve oder Haarnadel.
+      // Nur die Kachel unter dem Auto und die direkt naechste zaehlen - der weitere
+      // Vorausblick gehoert zum Bremsen, nicht zur Frage "fahre ich jetzt meine Spur oder die
+      // Linie".
+      //
+      // MIT HYSTERESE. Der Kacheltyp wechselt sprunghaft, und ein sprunghafter Wechsel der
+      // Mischung ist ein Ruck am Lenkservo. 350 ms Zeitkonstante sind bei diesen Tempi etwa
+      // eine halbe Kachel.
+      const kurveJetzt = Math.min(1, Math.max(here, ahead.dist <= 1 ? ahead.tight : 0));
+      g.kurveMix = g.kurveMix === undefined ? kurveJetzt
+        : g.kurveMix + (kurveJetzt - g.kurveMix) * Math.min(1, dt / GHOST_MIX_TAU);
       const spice = underYellow ? { factor: 1, attack: 0 } : ghostSpice(car, ahead);
       target *= spice.factor;
       // Was gilt: die Kachel unter dem Auto, oder die naechste enge in Reichweite. Die
@@ -2807,27 +2959,45 @@
         // gegen Rammen" konnte daran nichts aendern, obwohl er genau dafuer da ist.
         const weiche = (!underYellow && g.yieldUntil && now < g.yieldUntil)
           ? (g.yieldSide || 0) : 0;
+        // SPURDISZIPLIN: auf der Geraden zaehlt die eigene Spur, in der Kurve die Ideallinie.
+        // Vorher waren beide fest addiert, also galt auf der Geraden dieselbe Mischung wie im
+        // Bogen - und dann faehrt das Feld ueberall dieselbe Linie.
+        //
+        // Die Spur bleibt in der Kurve zur HAELFTE stehen und nicht bei null: alle auf
+        // denselben Scheitel zu schicken waere realistisch und wuerde sie zusammenfuehren -
+        // und Beruehrungen sind hier nicht zurueckzuregeln, weil keine Querlage gemeldet wird.
+        const mix = g.kurveMix || 0;
+        const spurGewicht = 1 - GHOST_LANE_DROP * mix;
+        const linieGewicht = GHOST_LINE_STRAIGHT + (1 - GHOST_LINE_STRAIGHT) * mix;
+        // UEBERKREUZBLENDE zwischen Ueberholversatz und Linie statt einer harten Umschaltung:
+        // beim Einordnen faehrt der Versatz zurueck, und ein "attack ? A : B" wuerde am Ende
+        // sprunghaft auf die Linie zurueckfallen.
+        const anteilA = Math.min(1, Math.abs(spice.attack || 0));
         const quer = underYellow ? 0
-          : (spice.attack
-              ? spice.attack * ghostCfg.lateral * GHOST_PASS_STEER
-              : ghostLineOffset(car) * ghostCfg.line * GHOST_LINE_STEER)
+          : (spice.attack || 0) * ghostCfg.lateral * GHOST_PASS_STEER
+            + (1 - anteilA) * ghostLineOffset(car) * ghostCfg.line * GHOST_LINE_STEER
+              * linieGewicht
             + weiche * ghostCfg.lateral * GHOST_PASS_STEER;
         steer = quer
               + g.bias * ghostCfg.lateral * 0.25
-              + ghostLane(car) * ghostCfg.lanes * GHOST_LANE_STEER;
+              + ghostLane(car) * ghostCfg.lanes * GHOST_LANE_STEER * spurGewicht;
       } else {
         // Fallback for cars not in guard-rail mode: the old layout-plus-yaw controller.
         const dir = ghostTurnDir(car, 0);
         const yawTarget = dir * 8;
         steer = dir * GHOST_STEER_CURVE + (yawTarget - car.yaw) * GHOST_YAW_GAIN;
         // Dieselbe Aufteilung wie im Leitplanken-Modus, siehe dort.
+        // Dieselbe Aufteilung und dieselbe Blende wie im Leitplanken-Modus, siehe dort.
         const weiche2 = (g.yieldUntil && now < g.yieldUntil) ? (g.yieldSide || 0) : 0;
-        steer += (spice.attack
-                   ? spice.attack * ghostCfg.lateral * GHOST_PASS_STEER
-                   : ghostLineOffset(car) * ghostCfg.line * GHOST_LINE_STEER)
+        const mix2 = g.kurveMix || 0;
+        const anteilA2 = Math.min(1, Math.abs(spice.attack || 0));
+        steer += (spice.attack || 0) * ghostCfg.lateral * GHOST_PASS_STEER
+               + (1 - anteilA2) * ghostLineOffset(car) * ghostCfg.line * GHOST_LINE_STEER
+                 * (GHOST_LINE_STRAIGHT + (1 - GHOST_LINE_STRAIGHT) * mix2)
                + weiche2 * ghostCfg.lateral * GHOST_PASS_STEER
                + g.bias * ghostCfg.lateral * 0.25
-               + ghostLane(car) * ghostCfg.lanes * GHOST_LANE_STEER;
+               + ghostLane(car) * ghostCfg.lanes * GHOST_LANE_STEER
+                 * (1 - GHOST_LANE_DROP * mix2);
       }
       steer = Math.max(-1, Math.min(1, steer + weave));
     }
@@ -4134,6 +4304,108 @@
       }
     },
 
+    // ---- Die Ueberholsequenz, Phase fuer Phase --------------------------------
+    //
+    // Zwei Autos in die Garage, die Uhr gefaelscht, und ghostSpice() selbst gefragt. Der
+    // Angriff wird NICHT gewuerfelt abgewartet: gewuerfelt ist er kein Pruefmittel. Gesetzt
+    // wird der Anfangszustand, den das Wuerfeln erzeugt, und geprueft wird, was die Sequenz
+    // daraus macht.
+    //
+    // ueberholtNach: nach so vielen ms zieht der Verfolger am anderen vorbei. null heisst
+    // "kommt nicht vorbei" - der Abbruchfall, und der ist der wichtigere: ohne Abbruch klebt
+    // ein Verfolger neben dem anderen, bis die Uhr ablaeuft, und genau dort beruehren sie
+    // sich.
+    ghostPassProbe(o) {
+      const opt = o || {};
+      const merkGarage = garage.splice(0, garage.length);
+      const merkSpice = ghostCfg.spice;
+      const echtNow = Date.now;
+      try {
+        ghostCfg.spice = 1;
+        let uhr = echtNow();
+        Date.now = () => uhr;
+        const mk = (total) => ({ role: 'ghost', alias: 'P', tileAt: 0, tileCode: 0x02,
+          ghost: { tilesTotal: total, tileIndex: 0, form: 0, formAt: uhr, attackUntil: 0,
+                   closeSince: 0, mistakeUntil: 0, passPhase: null, passZiel: null,
+                   passSince: 0, passBlockUntil: 0, naehern: 0 } });
+        const hinten = mk(0), vorne = mk(0.5);
+        garage.push(hinten, vorne);
+        const g = hinten.ghost;
+        // Den Zustand setzen, den ein gewuerfelter Angriff erzeugt.
+        g.attackUntil = uhr + 1e9;   // wird von der Sequenz selbst beendet
+        g.passSince = uhr;
+        g.passPhase = 'raus';
+        g.attackSide = 1;
+        g.passZiel = vorne;
+        vorne.ghost.yieldSide = -1;
+        vorne.ghost.yieldUntil = uhr + 1e9;
+        const reihe = [];
+        const schritt = 60;
+        for (let t = 0; t < (opt.dauerMs || 8000); t += schritt) {
+          uhr += schritt;
+          if (opt.ueberholtNach !== null && opt.ueberholtNach !== undefined
+              && t >= opt.ueberholtNach) {
+            // Vorbei: der Fortschritt des Verfolgers ueberholt den des anderen.
+            hinten.ghost.tilesTotal = vorne.ghost.tilesTotal + 1.0;
+          }
+          const r = ghostSpice(hinten, { tight: 0, dist: 99, key: 'p' });
+          reihe.push({ t, phase: g.passPhase || '-', versatz: +(r.attack || 0).toFixed(3),
+                       faktor: +r.factor.toFixed(4), laeuft: !!g.attackUntil });
+          if (!g.attackUntil && t > (opt.ueberholtNach || 0)) break;
+        }
+        return { reihe, gesperrtBis: g.passBlockUntil ? g.passBlockUntil - uhr : 0,
+                 phasen: [...new Set(reihe.map(x => x.phase))] };
+      } finally {
+        Date.now = echtNow;
+        garage.splice(0, garage.length);
+        merkGarage.forEach(c => garage.push(c));
+        ghostCfg.spice = merkSpice;
+      }
+    },
+
+    // ---- Setzt ein Ghost auf einer Kurvenkachel zum Ueberholen an? -------------
+    //
+    // Soll er NICHT. Der Vorausblick verbietet es schon, aber den gibt es nur mit Karte -
+    // ohne Karte war er immer "frei", und dann wurde mitten in einer Haarnadel angesetzt.
+    // Geprueft wird ueber den gemeldeten Code der Kachel UNTER dem Auto, der keine Karte
+    // braucht.
+    ghostPassArming(tileCode, versuche) {
+      const merkGarage = garage.splice(0, garage.length);
+      const merkSpice = ghostCfg.spice;
+      const echtNow = Date.now;
+      try {
+        ghostCfg.spice = 1;
+        let uhr = echtNow();
+        Date.now = () => uhr;
+        const mk = (total) => ({ role: 'ghost', alias: 'P', tileAt: 0, tileCode,
+          ghost: { tilesTotal: total, tileIndex: 0, form: 0, formAt: uhr, attackUntil: 0,
+                   closeSince: uhr - 5000, mistakeUntil: 0, passPhase: null, passZiel: null,
+                   passSince: 0, passBlockUntil: 0, naehern: 0, attackTriedAt: 0 } });
+        const hinten = mk(0), vorne = mk(0.4);
+        garage.push(hinten, vorne);
+        let gestartet = 0;
+        for (let i = 0; i < (versuche || 400); i++) {
+          uhr += 60;
+          // Kleben halten, damit die Zuendbedingung immer erfuellt ist.
+          hinten.ghost.closeSince = uhr - 5000;
+          ghostSpice(hinten, { tight: 0, dist: 99, key: 'p' });
+          if (hinten.ghost.attackUntil) {
+            gestartet++;
+            // Zuruecksetzen und weiter wuerfeln.
+            hinten.ghost.attackUntil = 0; hinten.ghost.passPhase = null;
+            hinten.ghost.passZiel = null; hinten.ghost.attackTriedAt = 0;
+            hinten.ghost.passBlockUntil = 0;
+          }
+        }
+        return { gestartet, takte: versuche || 400, code: tileCode };
+      } finally {
+        Date.now = echtNow;
+        garage.splice(0, garage.length);
+        merkGarage.forEach(c => garage.push(c));
+        ghostCfg.spice = merkSpice;
+      }
+    },
+
     // ---- Die Ideallinie je Kurvenzug: Richtung und Form -------------------------
     //
     // Zwei Groessen, und beide waren falsch: das MITTEL sagt, auf welcher Seite die Linie in
@@ -4245,6 +4517,10 @@
           car.ghost.yieldUntil = uhr + 1e9;
         }
         const tempo = [], ziel = [], vorsteuer = [], gang = [], drehzahl = [];
+        const phase = [], mix = [], naehern = [];
+        // Die Pakete VOR der Schleife wegzaehlen: startGhost() ruft stopGhost(), und das
+        // schreibt eine Null-Nachricht. Sie hat keinen Takt und damit keinen Kanalwert.
+        const vorLauf = bytes.length;
         let seitKachel = 0, k = 0, schaltSeit = 0;
         for (let i = 0; i < takte; i++) {
           uhr += dtMs;
@@ -4258,9 +4534,16 @@
               car.tileAt = uhr;
               // Der Code der Kachel, auf der das Auto jetzt liegt. Bei 'codes' ohne Karte
               // ist das die einzige Ortsinformation, die es ueberhaupt gibt.
-              car.tileCode = p.tiles[k % p.tiles.length].type;
+              //
+              // (k - 1) UND NICHT k, und das ist die dritte Ausrichtungsfalle in diesem
+              // Prueflauf: ghostTick setzt g.tileIndex beim ERSTEN Kachelwechsel auf 0, nicht
+              // auf 1. Mit tiles[k] lagen der gemeldete Code (den here liest) und der
+              // Kachelindex (den der Vorausblick liest) eine Kachel auseinander - und dann
+              // sieht man auf der Start/Ziel-Kachel den Kurvenanteil der Kurve davor.
+              car.tileCode = p.tiles[(k - 1) % p.tiles.length].type;
             }
           }
+          const vorPaket = bytes.length;
           ghostTick(car);
           // DIE SCHALTUNTERBRECHUNG AUF DIE GEFAELSCHTE UHR SETZEN, und das ist eine
           // Berichtigung an diesem Prueflauf selbst.
@@ -4296,22 +4579,41 @@
           // das Gasbyte kann in der Kurve deshalb hoeher liegen als auf der Geraden, ohne
           // dass irgendetwas falsch ist. Genau darauf bin ich beim ersten Anlauf
           // hereingefallen.
-          ziel.push(car.ghost.lastTarget === undefined ? null : +car.ghost.lastTarget.toFixed(4));
-          vorsteuer.push(car.ghost.lastFF === undefined ? null : +car.ghost.lastFF.toFixed(4));
-          gang.push(car.ghost.engine ? car.ghost.engine.state.currentGear : null);
-          drehzahl.push(car.ghost.engine && car.ghost.engine.rpmRawAt
-            ? Math.round(car.ghost.engine.rpmRawAt(car.ghost.engine.state.speedKmh,
-                                                   car.ghost.engine.state.currentGear))
-            : null);
-          tempo.push(car.ghost.engine
-            ? +(car.ghost.engine.state.speedKmh / car.ghost.engine.config.topSpeedKmh)
-                .toFixed(4)
-            : 0);
+          // ALLE Kanaele je PAKET und nicht je Takt. Ein Takt, in dem writeToCar nichts
+          // sendet - ein Phasenwechsel, oder ein noch laufender Schreibvorgang -, erzeugt
+          // kein Paket. Zwei Listen verschiedener Laenge nebeneinander und mit demselben
+          // Index gelesen sind dann still verschoben, und die Verschiebung WAECHST mit dem
+          // Lauf: am Ende gruppiert man Tempi unter den falschen Kacheltypen.
+          //
+          // Genau dieser Fehler ist mir beim Zieleinlauf-Prueflauf schon einmal unterlaufen.
+          // Dass er hier ein zweites Mal auftrat, ist der Grund, warum er jetzt an EINER
+          // Stelle geloest ist statt je Kanal.
+          //
+          // Das ZIELTEMPO ist die Groesse, um die es bei der Kurvenlogik geht; das erreichte
+          // Tempo haengt zusaetzlich an der Physik. Das Gasbyte ist fuer beides das falsche
+          // Mass - es ist die Antwort eines Reglers und kann in der Kurve hoeher liegen als
+          // auf der Geraden, ohne dass etwas falsch ist.
+          const e3 = car.ghost.engine;
+          for (let q = vorPaket; q < bytes.length; q++) {
+            ziel.push(car.ghost.lastTarget === undefined
+              ? null : +car.ghost.lastTarget.toFixed(4));
+            vorsteuer.push(car.ghost.lastFF === undefined
+              ? null : +car.ghost.lastFF.toFixed(4));
+            phase.push(car.ghost.passPhase || '-');
+            mix.push(+(car.ghost.kurveMix || 0).toFixed(3));
+            naehern.push(+(car.ghost.naehern || 0).toFixed(3));
+            gang.push(e3 ? e3.state.currentGear : null);
+            drehzahl.push(e3 && e3.rpmRawAt
+              ? Math.round(e3.rpmRawAt(e3.state.speedKmh, e3.state.currentGear)) : null);
+            tempo.push(e3 ? +(e3.state.speedKmh / e3.config.topSpeedKmh).toFixed(4) : 0);
+          }
         }
         stopGhost(car);
         stopGhost(zweit);
-        return { lenk: bytes.map(b => b[0]), gas: bytes.map(b => b[1]),
-                 kachel: bytes.map(b => b[2]), tempo, ziel, vorsteuer, gang, drehzahl,
+        const roh = bytes.slice(vorLauf);
+        return { lenk: roh.map(b => b[0]), gas: roh.map(b => b[1]),
+                 kachel: roh.map(b => b[2]), tempo, ziel, vorsteuer, gang, drehzahl,
+                 phase, mix, naehern,
                  // Die KRAEFTE an genau der Stelle, an der es klebt. Sagt thrust > resist
                  // und faehrt das Auto trotzdem nicht schneller, sitzt die Grenze nicht im
                  // Antrieb, sondern in e.update().

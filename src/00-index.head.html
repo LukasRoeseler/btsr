@@ -277,6 +277,7 @@
   .formel { font-family: monospace; font-size: 13px; color: var(--ink);
     margin: 8px 0 10px 0; padding-left: 14px;
     border-left: 2px solid var(--gt3-line-soft); }
+  .opt-note-h { font-weight: 700; }
   .wip-tag { display: inline-block; font-size: 9.5px; letter-spacing: .1em;
     padding: 1px 5px; border-radius: 3px; vertical-align: 2px;
     background: #4a3c00; color: #ffd83d; font-weight: 700; }
@@ -4009,12 +4010,42 @@
           sagt, wie viel Lenkanteil einer halben Bahnbreite entspricht.
         </p>
         <p class="muted" style="font-size:11.5px">
-          Ablauf: Auto in der Garage verbinden, unten <b>Messung starten</b>. Das Auto
-          f&auml;hrt mit festem, langsamem Gas und h&auml;lt jede Stufe
-          <span id="lat-hold-lbl">4</span>&nbsp;s. Verl&auml;sst es die Bahn, wird die Stufe
-          festgehalten und die Messung endet. Wenn du es <em>siehst</em>, bevor die App es
-          merkt: <b>runtergefahren</b> dr&uuml;cken.
+          Ablauf: Auto in der Garage verbinden, unten auf &bdquo;Messung starten&ldquo;
+          dr&uuml;cken. Das Auto f&auml;hrt mit festem, langsamem Gas und h&auml;lt jede
+          Stufe so lange, wie unten eingestellt ist. Verl&auml;sst es die Bahn, wird die
+          Stufe festgehalten und die Messung endet. Wenn du es siehst, bevor die App es
+          merkt: &bdquo;runtergefahren&ldquo; dr&uuml;cken.
         </p>
+        <p class="muted" style="font-size:11.5px">Haltedauer je Stufe:
+          <span id="lat-hold-lbl">4</span>&nbsp;s</p>
+        <div class="opt-note">
+          <div class="opt-note-h">Schritt f&uuml;r Schritt, damit die Zahl etwas wert ist</div>
+          <ol style="margin:6px 0 0 18px; padding:0">
+            <li>Eine m&ouml;glichst lange Gerade aufbauen, mindestens vier Teile. In einer
+              Kurve misst du die Kurve mit und nicht den Lenkanteil.</li>
+            <li>Genug Platz neben der Bahn lassen: das Auto soll abfliegen d&uuml;rfen, ohne
+              gegen ein Tischbein zu fahren.</li>
+            <li>In der Garage genau ein Auto auf &bdquo;Ghost&ldquo; stellen. Bei zwei Autos
+              mischen sich Ausweichversatz und Messung.</li>
+            <li>Sonst nichts abschalten. Der Messstand sendet mit eigenem Takt, also sind
+              Tempo, Ideallinie und W&uuml;rze der Ghosts w&auml;hrend der Messung ohne
+              Wirkung.</li>
+            <li>Auf &bdquo;Messung starten&ldquo; dr&uuml;cken. Nach jeder Stufe f&auml;hrt
+              das Auto weiter und der Lenkanteil steigt; beim ersten Abflug ist die Messung
+              fertig.</li>
+            <li>Kommt es bis zum Anschlag, ohne abzufliegen, ist das auch ein Ergebnis: dann
+              h&auml;lt das Auto jeden Lenkanteil, und der Deckel darf auf den h&ouml;chsten
+              gehaltenen Wert.</li>
+            <li>Zwei- oder dreimal wiederholen. Ein einzelner Abflug kann ein Staubkorn
+              gewesen sein.</li>
+          </ol>
+          <div class="opt-note-h" style="margin-top:8px">Was danach von selbst passiert</div>
+          <div>Der gemessene Kippwert ersetzt den gesch&auml;tzten Deckel f&uuml;r alle
+            Querbewegungen: Ideallinie, &Uuml;berholversatz und Ausweichen. Du musst nichts
+            &uuml;bertragen.</div>
+          <div style="margin-top:6px">Aktueller Deckel:
+            <b id="lat-cap">&ndash;</b> <span class="muted" id="lat-cap-src"></span></div>
+        </div>
         <div class="row" style="gap:14px; align-items:baseline; flex-wrap:wrap">
           <div><span class="hud-label">Lenkanteil</span><br>
             <span class="cm-now" id="lat-now">0.00</span></div>
@@ -4066,7 +4097,7 @@
           gerade noch auf der Bahn h&auml;lt, nicht, um wie viele Zentimeter es dabei
           versetzt liegt. Der Zusammenhang zwischen beiden ist nicht gemessen und wird hier
           nicht behauptet. Brauchbar ist sie trotzdem: die Ideallinie und die
-          &Uuml;berholmanov&ouml;r d&uuml;rfen nie mehr als etwa die H&auml;lfte des
+          &Uuml;berholman&ouml;ver d&uuml;rfen nie mehr als etwa die H&auml;lfte des
           Kippwerts anfordern, und das ist eine Grenze, die vorher nicht bekannt war.
         </p>
       </div>
@@ -5234,7 +5265,7 @@
 <div class="opt-head">Autonome Gegner</div>
       <div class="opt-row"><div class="opt-label">Ghost: Leitplanken-Modus<small>Das Auto hält sich selbst auf der Bahn, der Ghost gibt nur Gas.</small></div>
         <label class="tgl"><input type="checkbox" id="ghost-rail" checked><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Ghost-Tempo<small>Rundentempo der autonomen Autos. Gefahren brauchbar zwischen 40 und 60 Prozent. Der Regler beginnt bei 35 und nicht tiefer: darunter f&auml;hrt das Auto so langsam, dass es die gedruckte Strecke nicht mehr zuverl&auml;ssig &bdquo;liest&ldquo; &ndash; und dann fallen Vorausblick, Ideallinie und Kurvendrosselung alle drei aus.</small></div>
+      <div class="opt-row"><div class="opt-label">Ghost-Tempo<small><span class="wip-tag">NEU</span> Rundentempo der autonomen Autos. Gefahren brauchbar zwischen 40 und 60 Prozent. Der Regler beginnt bei 35 und nicht tiefer: darunter f&auml;hrt das Auto so langsam, dass es die gedruckte Strecke nicht mehr zuverl&auml;ssig &bdquo;liest&ldquo; &ndash; und dann fallen Vorausblick, Ideallinie und Kurvendrosselung alle drei aus.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
           <input type="range" id="ghost-speed" min="0.35" max="1" step="0.05" value="0.45">
@@ -5249,8 +5280,7 @@
           <span class="opt-val" id="ghost-curve-val">15%</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Rennw&uuml;rze
-          <small>Tagesform, Fehler, Windschatten, Attacke, Gummiband. Auf 0 f&auml;hrt jeder
-          Ghost stur seine Zeit.</small></div>
+          <small><span class="wip-tag">NEU</span> Tagesform, Fehler, Windschatten, &Uuml;berholen, Gummiband und Abstand halten &ndash; ein Regler f&uuml;r alle sechs. Ein &Uuml;berholvorgang l&auml;uft als Sequenz: erst zur Seite, dann Schub, dann vorne wieder einordnen, und wenn es nach 5&nbsp;s nicht geklappt hat, Abbruch mit 6&nbsp;s Sperre. Ohne diesen Abbruch klebte der Verfolger neben dem anderen, bis die Uhr ablief, und genau dort ber&uuml;hren sie sich. Der Mindestabstand rechnet ausserdem mit der Ann&auml;herungsrate statt mit einem festen Kachelabstand. Auf 0 ist jeder der sechs Bausteine wirkungslos.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
           <input type="range" id="ghost-spice" min="0" max="1" step="0.05" value="0.4">
@@ -5278,14 +5308,14 @@
           beh&auml;lt sie nur, wenn die Runde schneller war <b>und</b> kein Abgang dabei.
           Nach einem Abgang wird zur&uuml;ckgenommen und vorsichtiger weiterprobiert.</small></div>
         <label class="tgl"><input type="checkbox" id="ghost-learn-pace"><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Ghost: seitlicher Versatz <span class="wip-tag">WIP</span><small>Gegen gegenseitiges Rammen. Blind: kein Byte meldet die Querlage. Links = aus. <b>Braucht mindestens zwei Ghosts</b> nahe beieinander, sonst bleibt der Versatz null.</small></div>
+      <div class="opt-row"><div class="opt-label">Ghost: seitlicher Versatz <span class="wip-tag">WIP</span><small><span class="wip-tag">NEU</span> Zwei Autos nebeneinander gehen auseinander, und beim &Uuml;berholen weicht auch der Vorausfahrende aus, zur anderen Seite. Zwei Autos auf 25&nbsp;cm Bahnbreite brauchen beide H&auml;lften. Dieser Regler bestimmt auch, wie weit der Angreifer zur Seite geht: das ist ein Ausweichen und keine Linienwahl, h&auml;ngt also nicht an der Ideallinie.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
           <input type="range" id="ghost-lateral" min="0" max="1" step="0.1" value="0.5">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="ghost-lateral-val">50%</span>
         </div></div>
-      <div class="opt-row"><div class="opt-label">Ghost: eigene Spuren <span class="wip-tag">experimentell</span><small>Jeder Ghost h&auml;lt eine feste eigene Linie &uuml;ber die Bahnbreite, gleichm&auml;&szlig;ig verteilt und symmetrisch um die Mitte. Anders als der seitliche Versatz braucht das keine zwei Autos nebeneinander, und anders als die Ideallinie keine drei Streckenteile: es wirkt auf der Vorgabestrecke und allein unterwegs. Bei nur einem Ghost ist die Spur die Mitte, denn verschiedene Linien haben bei einem Auto keine Bedeutung. Links = aus.</small></div>
+      <div class="opt-row"><div class="opt-label">Ghost: eigene Spuren <span class="wip-tag">experimentell</span><small><span class="wip-tag">NEU</span> Jeder Ghost h&auml;lt eine eigene, feste Linie &uuml;ber die Bahnbreite. Auf der Geraden gilt die Spur, in der Kurve die Ideallinie &ndash; so f&auml;hrt das Feld hintereinander, aber auf verschiedenen Linien, und sucht im Bogen trotzdem den Scheitel. Der &Uuml;bergang l&auml;uft mit 350&nbsp;ms nach, damit an der Kachelgrenze kein Ruck entsteht. In der Kurve bleibt die halbe Spur stehen: alle auf denselben Scheitel zu schicken w&auml;re realistisch, w&uuml;rde sie aber zusammenf&uuml;hren, und Ber&uuml;hrungen sind ohne R&uuml;ckmeldung zur Querlage nicht zur&uuml;ckzuregeln.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
           <input type="range" id="ghost-lanes" min="0" max="1" step="0.05" value="0.5">
@@ -5793,7 +5823,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.4.47</span></span>
+    <span class="foot-ver">v<span id="app-version">0.4.48</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine

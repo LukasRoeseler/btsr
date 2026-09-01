@@ -2162,6 +2162,153 @@
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
+  // ---- 1. Ueberholen laeuft als Sequenz und hat einen Ausgang ----
+  //
+  // Vorher war eine Attacke ein ZUSTAND von 2,6 s: Versatz und Schub, dann vorbei -
+  // unabhaengig davon, ob das Manoever geglueckt war. Die fehlende Abbruchbedingung ist
+  // genau, was das Nebeneinander-Kleben erzeugt: zwei Autos auf gleicher Hoehe, keines gibt
+  // nach, und nach 2,6 s hoert der Versatz einfach auf. Gemeldet als "beim Ueberholen
+  // beruehren sie sich stark".
+  //
+  // Geprueft werden BEIDE Ausgaenge. Der Abbruch ist der wichtigere: ohne ihn gibt es keinen
+  // Zustand, in dem ein Ghost aufgibt.
+  stAdd('Ueberholen laeuft als Sequenz, mit Abbruch', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.ghostPassProbe) {
+      return { skip: true, mass: 'ghostPassProbe nicht vorhanden' };
+    }
+    const folge = (r) => {
+      const o = [];
+      r.reihe.forEach(x => { if (!o.length || o[o.length - 1] !== x.phase) o.push(x.phase); });
+      return o;
+    };
+    const gut = OMEGA_TEST.ghostPassProbe({ ueberholtNach: 1500, dauerMs: 8000 });
+    const ab = OMEGA_TEST.ghostPassProbe({ ueberholtNach: null, dauerMs: 9000 });
+    const fg = folge(gut), fa = folge(ab);
+    const fehler = [];
+    if (fg.join('>') !== 'raus>vorbei>rein>-') fehler.push('Erfolg: ' + fg.join('>'));
+    if (fa.join('>') !== 'raus>vorbei>-') fehler.push('Abbruch: ' + fa.join('>'));
+    if (!(ab.gesperrtBis > 3000)) fehler.push('keine Sperre nach dem Abbruch');
+    // Der Versatz muss beim Einordnen ZURUECKFAHREN und nicht abschalten: ein Sprung von
+    // vollem Versatz auf null ist ein Ruck am Lenkservo.
+    const rein = gut.reihe.filter(x => x.phase === 'rein').map(x => Math.abs(x.versatz));
+    let steigt = false;
+    for (let i = 1; i < rein.length; i++) if (rein[i] > rein[i - 1] + 1e-9) steigt = true;
+    if (!rein.length) fehler.push('keine Einordnungsphase');
+    else if (steigt) fehler.push('Versatz faehrt nicht monoton zurueck');
+    else if (rein[rein.length - 1] > 0.15) fehler.push('Versatz endet bei ' + rein[rein.length - 1]);
+    return { ok: !fehler.length,
+             mass: 'Erfolg ' + fg.join('>') + ' | Abbruch ' + fa.join('>')
+                 + ', Sperre ' + Math.round(ab.gesperrtBis) + ' ms'
+                 + ' | Einordnen ' + rein.length + ' Takte, Versatz auf '
+                 + (rein.length ? rein[rein.length - 1].toFixed(2) : '?')
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
+  // ---- 4. Kein Ueberholversuch in eine Kurve hinein ----
+  //
+  // Der Vorausblick verbietet es schon - aber den gibt es nur mit Karte. Ohne Karte war er
+  // immer "frei", und dann wurde mitten in einer Haarnadel angesetzt. Die Kachel UNTER dem
+  // Auto kommt aus dem gemeldeten Code und braucht keine Karte.
+  stAdd('Kein Ueberholversuch auf einer Kurvenkachel', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.ghostPassArming) {
+      return { skip: true, mass: 'ghostPassArming nicht vorhanden' };
+    }
+    const gerade = OMEGA_TEST.ghostPassArming(0x02, 400);
+    const kurve = OMEGA_TEST.ghostPassArming(0x04, 400);
+    const haarnadel = OMEGA_TEST.ghostPassArming(0x06, 400);
+    const fehler = [];
+    // Auf der Geraden MUSS es ueberhaupt vorkommen, sonst prueft der Test nichts: bei
+    // 400 Takten a 60 ms und einem Wurf je 4 s sind das etwa sechs Gelegenheiten.
+    if (!(gerade.gestartet > 0)) fehler.push('auf der Geraden gar kein Versuch');
+    if (kurve.gestartet) fehler.push('Kurve: ' + kurve.gestartet + ' Versuche');
+    if (haarnadel.gestartet) fehler.push('Haarnadel: ' + haarnadel.gestartet + ' Versuche');
+    return { ok: !fehler.length,
+             mass: 'Gerade ' + gerade.gestartet + ', Kurve ' + kurve.gestartet
+                 + ', Haarnadel ' + haarnadel.gestartet + ' Versuche in je 400 Takten'
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
+  // ---- 3. Spurdisziplin: Gerade = eigene Spur, Kurve = Ideallinie ----
+  //
+  // Vorher waren beide Anteile FEST addiert, also galt auf der Geraden dieselbe Mischung wie
+  // im Bogen - und dann faehrt das Feld ueberall dieselbe Linie. Geprueft wird die Mischung
+  // je Kacheltyp UND die Hysterese: der Kacheltyp wechselt sprunghaft, und ein sprunghafter
+  // Wechsel der Mischung ist ein Ruck am Lenkservo.
+  stAdd('Spurdisziplin: Spur auf der Geraden, Linie in der Kurve', async () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.ghostDriveProbe) {
+      return { skip: true, mass: 'ghostDriveProbe nicht vorhanden' };
+    }
+    const g = await OMEGA_TEST.ghostDriveProbe({ lage: 'karte', takte: 700,
+      code: 'SG3H2G3R2', tileMs: 900, cfg: { spice: 0 } });
+    const KURVEN = [0x03, 0x04, 0x05, 0x06];
+    const mittel = (pred) => {
+      const v = [];
+      g.kachel.forEach((k, i) => { if (pred(k) && isFinite(g.mix[i])) v.push(g.mix[i]); });
+      return v.length ? v.reduce((s, x) => s + x, 0) / v.length : null;
+    };
+    const gerade = mittel(k => KURVEN.indexOf(k) < 0);
+    const kurve = mittel(k => KURVEN.indexOf(k) >= 0);
+    let sprung = 0;
+    for (let i = 1; i < g.mix.length; i++) sprung = Math.max(sprung, Math.abs(g.mix[i] - g.mix[i - 1]));
+    const fehler = [];
+    if (gerade === null || kurve === null) fehler.push('ein Kacheltyp fehlt im Lauf');
+    else {
+      if (!(gerade < 0.45)) fehler.push('Gerade zu hoch: ' + gerade.toFixed(2));
+      if (!(kurve > 0.7)) fehler.push('Kurve zu niedrig: ' + kurve.toFixed(2));
+    }
+    // Die Hysterese: der Nachlauf begrenzt den Schritt auf dt/tau. Bei 45 ms und 350 ms
+    // sind das 0,13 - deutlich unter einem Sprung von 0 auf 1.
+    if (!(sprung < 0.2)) fehler.push('Sprung je Takt ' + sprung.toFixed(3) + ' (keine Hysterese)');
+    return { ok: !fehler.length,
+             mass: 'Spurmix Gerade ' + (gerade === null ? '?' : gerade.toFixed(2))
+                 + ', Kurve ' + (kurve === null ? '?' : kurve.toFixed(2))
+                 + ', groesster Sprung je Takt ' + sprung.toFixed(3)
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
+  // ---- Der gemessene Kippwert erreicht die Ideallinie ----
+  //
+  // WARUM DIESER TEST DER WICHTIGSTE DER VIER IST: die Querablage-Messung im Entwicklertab
+  // kostet Aufbau und mehrere Abfluege. Wenn ihr Ergebnis danach nirgends ankommt, ist das
+  // eine Fleissaufgabe ohne Folge - und das merkt man nicht, weil der Deckel auch ohne
+  // Messung einen plausiblen Wert hat (0,55 als vorsichtige Schaetzung).
+  //
+  // Geprueft werden alle drei Faelle, die learnSteerCap() unterscheidet, und die Reihenfolge
+  // ist die Zusicherung: gekippt schlaegt gehalten, gehalten schlaegt Schaetzung.
+  stAdd('Gemessener Kippwert ersetzt den geschaetzten Deckel', () => {
+    if (typeof lat !== 'object' || !lat || typeof learnSteerCap !== 'function') {
+      return { skip: true, mass: 'lat/learnSteerCap nicht erreichbar' };
+    }
+    const merk = lat.rows;
+    try {
+      lat.rows = [];
+      const ohne = learnSteerCap();
+      lat.rows = [{ steer: 0.3, ok: true }, { steer: 0.45, ok: true }];
+      const nurGehalten = learnSteerCap();
+      lat.rows = [{ steer: 0.3, ok: true }, { steer: 0.45, ok: true },
+                  { steer: 0.6, ok: false }];
+      const gekippt = learnSteerCap();
+      const fehler = [];
+      // 1. Ohne Messung die dokumentierte Schaetzung.
+      if (Math.abs(ohne - 0.55) > 1e-9) fehler.push('ohne Messung ' + ohne);
+      // 2. Nie gekippt: der hoechste gehaltene Wert selbst, nicht die Haelfte - wir wissen
+      //    nur, dass es BIS dahin haelt.
+      if (Math.abs(nurGehalten - 0.45) > 1e-9) fehler.push('nur gehalten ' + nurGehalten);
+      // 3. Gekippt: die Haelfte des Kippwerts, wie die Doku es festhaelt.
+      if (Math.abs(gekippt - 0.3) > 1e-9) fehler.push('gekippt ' + gekippt);
+      // 4. Und die Messung MUSS etwas aendern, sonst war sie umsonst.
+      if (Math.abs(gekippt - ohne) < 0.01) fehler.push('Messung ohne Wirkung');
+      return { ok: !fehler.length,
+               mass: 'geschaetzt ' + ohne.toFixed(2) + ' | nur gehalten (max 0,45) '
+                   + nurGehalten.toFixed(2) + ' | gekippt bei 0,60 -> '
+                   + gekippt.toFixed(2)
+                   + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+    } finally {
+      lat.rows = merk;
+      if (typeof latRender === 'function') { try { latRender(); } catch (e) { /* Karte fehlt */ } }
+    }
+  });
+
   // ---- Block 4.4: Reifendruck ----
   // Monoton, ueber den ganzen Reglerbereich. Ein Regler, der in der Mitte umkehrt, ist keine
   // Abstimmung, sondern eine Falle.
