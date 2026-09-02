@@ -278,6 +278,16 @@
     margin: 8px 0 10px 0; padding-left: 14px;
     border-left: 2px solid var(--gt3-line-soft); }
   .opt-note-h { font-weight: 700; }
+  /* ---- Regenradar in der Wetterkachel ----
+     Das Canvas liegt UNTER dem Symbol und fuellt die Kachel. Es ist nicht anklickbar, damit
+     der Klick weiter auf der Kachel landet - sie schaltet das Wetter. */
+  .gt3-wx { position: relative; overflow: hidden; }
+  .wx-radar { position: absolute; inset: 0; width: 100%; height: 100%; display: block;
+    pointer-events: none; border-radius: inherit; }
+  /* Das Symbol in die obere linke Ecke, klein. Es ist jetzt eine Marke und keine Anzeige:
+     was das Wetter TUT, steht im Radar. */
+  .wx-ico { position: absolute; top: 5px; left: 6px; z-index: 2; line-height: 0; }
+  .wx-ico .gt3-ico { width: 15px; height: 15px; }
   /* Controller-Grafik. Die Farben kommen aus dem Vorbild-SVG, sind aber auf die
      Projektvariablen gezogen, damit sie bei einer Themenaenderung mitgehen. */
   .pad-wrap { overflow-x: auto; margin-top: 10px; }
@@ -1278,8 +1288,18 @@
      which is what the eye reads as depth; slightly different angles stop it looking like a
      ruled grid. */
   .race-rain { position: absolute; inset: -20%; pointer-events: none; opacity: 0;
-    transition: opacity .8s ease; overflow: hidden; z-index: 3; }
-  body.race-wet .race-rain { opacity: 1; }
+    transition: opacity .25s linear; overflow: hidden; z-index: 3; }
+  /* ERST WENIGE TROPFEN, DANN VIELE. --rain-lvl kommt aus setRainVisuals und traegt die
+     Staerke der Wetterfront (0..1).
+     Die Deckkraft ist der SICHTBARE Teil: sie waechst mit der Front, aber nicht linear -
+     bei 0,3 sieht man schon etwas, bei 1,0 steht es. Der Uebergang im transition ist
+     absichtlich kurz (0,25 s): die langsame Bewegung macht die Front, nicht das
+     Stylesheet, und zwei Rampen uebereinander waeren eine Rampe, die niemand mehr
+     zuordnen kann.
+     Die DICHTE kommt oben drauf: die drei Blaetter werden mit der Front nicht nur
+     deutlicher, sondern auch enger - background-size waechst umgekehrt zur Staerke, also
+     passen mehr Tropfen in dieselbe Flaeche. */
+  body.race-wet .race-rain { opacity: calc(0.25 + 0.75 * var(--rain-lvl, 1)); }
   .race-rain > i { position: absolute; inset: -30% -30%; display: block;
     will-change: transform; }
   /* Three sheets of DROPS.
@@ -1981,17 +2001,16 @@
         <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12.5l5 5L20 6.5"/></svg><span><b>Chrome</b> (oder Edge) auf PC oder Android, mit erteilter
           Bluetooth-Berechtigung. Web Bluetooth gibt es in Safari und Firefox
           nicht.</span></li>
-        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12.5l5 5L20 6.5"/></svg><span>Ein <b>Carrera-Hybrid-Auto</b> mit Firmware ab
-          <b>August&nbsp;2026</b>.</span></li>
-        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12.5l5 5L20 6.5"/></svg><span>Einen <b>Bluetooth-Controller</b>. Getestet mit DualShock&nbsp;4 und
-          DualSense. Mit der Tastatur geht es auch, aber deutlich schlechter &ndash; sie
-          kennt nur ganz oder gar nicht.</span></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12.5l5 5L20 6.5"/></svg><span>Ein Carrera-Hybrid-Auto mit Firmware Stand August&nbsp;2026.</span></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12.5l5 5L20 6.5"/></svg><span>Einen Bluetooth-Controller. Getestet mit DualShock&nbsp;4 und
+          DualSense.</span></li>
       </ul>
       <h3 style="margin-top:16px">Optional</h3>
       <ul class="need-list need-opt">
-        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Eine <b>CH-Strecke</b> &ndash; oder der <b>Start/Ziel-Ausdruck</b>
-          samt Boxengasse aus dem Tab Strecke. Ohne beides f&auml;hrt es sich auch, nur
-          z&auml;hlt dann niemand die Runden.</span></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Eine CH-Strecke oder der Start/Ziel-Ausdruck &ndash; ben&ouml;tigt
+          zum Rundenz&auml;hlen.
+          <a href="startziel-a4.svg" download="startziel-a4.svg">Start/Ziel als SVG
+            herunterladen</a></span></li>
         <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span><b>Weitere Autos</b> als autonome Gegner.</span></li>
       </ul>
       <p class="need-tip">
@@ -2034,6 +2053,7 @@
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h3l2-6 3 12 3-9 2 5 2-2h3"/></svg><span>Simulierte Motoren und eigene Sounds über Engine-Sim</span></div>
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="8" width="20" height="10" rx="4"/><path d="M7 13h2M8 12v2M16 13h.01"/></svg><span>Gamepad-Vibration</span></div>
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 11V8a5 5 0 0 1 9-3"/><rect x="5" y="11" width="14" height="9" rx="2"/></svg><span>Open Source, offene Lizenz</span></div>
+        <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 14c0-3 2-5 5-5h2l4-4v14l-4-4H9c-3 0-5-1-5-3z"/><path d="M18 9c1.5 1.5 1.5 4.5 0 6"/></svg><span>Zwei verschiedene Pups-Hupen</span></div>
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg><span class="feat-1line"><b>Und vieles mehr &hellip;</b></span></div>
     </div>
   </section>
@@ -2209,7 +2229,9 @@
         <div class="gt3-box gt3-click" id="race-light-box" title="Licht an/aus" style="display:flex;align-items:center;justify-content:center">
           <div class="gt3-tell" style="width:100%"><svg class="gt3-lamp" id="race-light" viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" aria-label="Scheinwerfer"><path d="M 107 43 C 145 43 182 68 182 100 C 182 132 145 157 107 157 Z"/><path d="M28 71 89 52M28 96 89 77M28 121 89 102M28 146 89 127M28 171 89 152"/></svg></div></div>
         <div class="gt3-box gt3-click gt3-wx" id="race-wx-box" title="Wetter umschalten">
-          <div class="gt3-tell"><svg class="gt3-ico" id="race-wx-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-label="Trocken"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.4M12 19.6V22M2 12h2.4M19.6 12H22M4.9 4.9l1.7 1.7M17.4 17.4l1.7 1.7M19.1 4.9l-1.7 1.7M6.6 17.4l-1.7 1.7"/></svg><svg class="gt3-ico" id="race-wx-rain" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-label="Regen" style="display:none"><path d="M6.5 14a4 4 0 0 1 .4-8 5.5 5.5 0 0 1 10.5 1.4A3.6 3.6 0 0 1 17.5 14z"/><path d="M8 17.5l-1 2.5M12 17.5l-1 2.5M16 17.5l-1 2.5"/></svg></div></div>
+          <canvas id="race-wx-radar" class="wx-radar" width="200" height="150"
+                  aria-hidden="true"></canvas>
+          <div class="wx-ico"><svg class="gt3-ico" id="race-wx-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-label="Trocken"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.4M12 19.6V22M2 12h2.4M19.6 12H22M4.9 4.9l1.7 1.7M17.4 17.4l1.7 1.7M19.1 4.9l-1.7 1.7M6.6 17.4l-1.7 1.7"/></svg><svg class="gt3-ico" id="race-wx-rain" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-label="Regen" style="display:none"><path d="M6.5 14a4 4 0 0 1 .4-8 5.5 5.5 0 0 1 10.5 1.4A3.6 3.6 0 0 1 17.5 14z"/><path d="M8 17.5l-1 2.5M12 17.5l-1 2.5M16 17.5l-1 2.5"/></svg></div></div>
         <!-- Was auf dem Steuerkreuz liegt: hoch/runter Bremsbalance, links/rechts
              Lenkansprechen. Die Kachel und das Kreuz zeigen dieselben zwei Groessen.
 
@@ -2451,63 +2473,18 @@
        Fliesstext, und die Sprachtests nehmen tab-doc ausdruecklich aus. Ein Reiter
        mit halb uebersetztem Fliesstext waere schlechter als einer mit einem
        ehrlichen Hinweis darauf, dass er nur deutsch vorliegt. -->
-  <section class="tabpage" id="tab-info" data-i18n-skip>
-    <div class="card" style="border-color:var(--warn)">
-      <p class="muted" style="margin:0" data-i18n-skip>
-        <b>This is available in German only, at the moment.</b>
-      </p>
-    </div>
+  <section class="tabpage" id="tab-info">
     <div class="card">
       <h2>Wozu dient dieses Projekt?</h2>
-      <p class="muted">
-        Die Hardware ist gekauft, die Software bestimmt jemand anders. Dieses Projekt dreht
-        das um: es steuert ein Carrera-Hybrid-Auto mit eigenem Code &uuml;ber dieselbe
-        Bluetooth-Schnittstelle, die die Hersteller-App benutzt. Damit l&auml;uft auf der
-        Hardware, was man selbst darauf laufen lassen will: unabh&auml;ngig davon, ob
-        ein Anbieter eine Funktion vorsieht, eine App weiter pflegt oder einen Server
-        abschaltet.
-      </p>
-      <p class="muted">
-        Der zweite Punkt ist die <b>Gemeinschaft</b>. Ein offengelegtes Protokoll kann
-        jeder weiterverwenden: f&uuml;r Funktionen, die der Hersteller nicht baut, f&uuml;r
-        eine andere Bedienung, f&uuml;r Unterricht. Das hier ist bewusst als Beispiel
-        gebaut, nicht als Produkt: alles, was herausgefunden wurde, steht in dieser
-        Doku, samt der Stellen, an denen wir uns geirrt haben.
-      </p>
-
+      <p class="muted">Die Hardware ist gekauft, die Software bestimmt jemand anders. Dieses Projekt dreht das um: es steuert ein Carrera-Hybrid-Auto mit eigenem Code &uuml;ber dieselbe Bluetooth-Schnittstelle, die die Hersteller-App benutzt. Damit l&auml;uft auf der Hardware, was man selbst darauf laufen lassen will &ndash; unabh&auml;ngig davon, ob ein Anbieter eine Funktion vorsieht, eine App weiter pflegt oder einen Server abschaltet.</p>
+      <p class="muted">Der zweite Punkt ist die Gemeinschaft. Ein offengelegtes Protokoll kann jeder weiterverwenden: f&uuml;r Funktionen, die der Hersteller nicht baut, f&uuml;r eine andere Bedienung, f&uuml;r Unterricht. Das hier ist bewusst als Beispiel gebaut und nicht als Produkt: alles, was herausgefunden wurde, steht in der Doku, samt der Stellen, an denen wir uns geirrt haben.</p>
       <h3 style="font-size:14px; margin:16px 0 6px 0">Offene Software als Teil offener Wissenschaft</h3>
-      <p class="muted">
-        Wer Ergebnisse pr&uuml;fbar machen will, braucht pr&uuml;fbare Werkzeuge. Eine
-        Auswertung, die auf einem Programm beruht, in das niemand hineinsehen darf, ist
-        genau so weit nachvollziehbar wie das Vertrauen in dessen Hersteller reicht.
-        Deshalb wechseln Forschende zunehmend von kommerzieller auf offene Software, und
-        deshalb steigen auch Landesverwaltungen von Windows auf Linux um, es geht um
-        Kontrolle &uuml;ber die eigene Infrastruktur, nicht um Anschaffungskosten.
-      </p>
-      <p class="muted">
-        Offene Software <em>kann</em> dabei sogar sicherer sein, und der Grund daf&uuml;r ist
-        <b>Kerckhoffs&rsquo; Prinzip</b>: ein Verfahren soll seine Sicherheit aus dem
-        geheimen <em>Schl&uuml;ssel</em> ziehen, nicht aus der Geheimhaltung des
-        <em>Verfahrens</em>. Ein Verfahren, das nur funktioniert, solange niemand es kennt,
-        ist nicht sicher, sondern unpr&uuml;fbar. Offenlegung ist deshalb kein Risiko,
-        sondern die Voraussetzung daf&uuml;r, dass Fehler gefunden werden k&ouml;nnen.
-        <b>Das hei&szlig;t nicht, dass offene Software automatisch sicherer ist</b>:
-        nur, dass Pr&uuml;fbarkeit und Sicherheit sich nicht widersprechen.
-      </p>
-
+      <p class="muted">Wer Ergebnisse pr&uuml;fbar machen will, braucht pr&uuml;fbare Werkzeuge. Eine Auswertung, die auf einem Programm beruht, in das niemand hineinsehen darf, ist genau so weit nachvollziehbar wie das Vertrauen in dessen Hersteller reicht. Deshalb wechseln Forschende zunehmend von kommerzieller auf offene Software, und deshalb steigen auch Landesverwaltungen von Windows auf Linux um: es geht um Kontrolle &uuml;ber die eigene Infrastruktur, nicht um Anschaffungskosten.</p>
+      <p class="muted">Offene Software kann dabei sogar sicherer sein, und der Grund daf&uuml;r hei&szlig;t Kerckhoffs&rsquo; Prinzip: ein Verfahren soll seine Sicherheit aus dem geheimen &bdquo;Schl&uuml;ssel&ldquo; ziehen und nicht aus der Geheimhaltung des &bdquo;Verfahrens&ldquo;. Ein Verfahren, das nur funktioniert, solange niemand es kennt, ist nicht sicher, sondern unpr&uuml;fbar. Offenlegung ist deshalb kein Risiko, sondern die Voraussetzung daf&uuml;r, dass Fehler gefunden werden k&ouml;nnen.</p>
+      <p class="muted">Das hei&szlig;t nicht, dass offene Software automatisch sicherer ist &ndash; nur, dass Pr&uuml;fbarkeit und Sicherheit sich nicht widersprechen.</p>
       <h3 style="font-size:14px; margin:16px 0 6px 0">Zum Weiterlesen und Ausprobieren</h3>
-      <p class="muted">
-        <b><em>Ada &amp; Zangemann</em></b> von Matthias Kirschner und Sandra Brandst&auml;tter,
-        ein Kinderbuch dar&uuml;ber, wem die Software auf einem Ger&auml;t
-        eigentlich geh&ouml;rt. Es erkl&auml;rt in einer Geschichte, worum es oben in drei
-        Abs&auml;tzen ging.
-      </p>
-      <p class="muted">
-        Und praktisch: der Tab <b>Programmierschule</b> l&auml;sst dich
-        Beschleunigungs- und Lenkkurven mit der Hand ziehen und sofort sehen, was das Auto
-        daraus macht. Das ist der k&uuml;rzeste Weg von &bdquo;Programmieren ist abstrakt&ldquo;
-        zu &bdquo;eine eckige Kurve f&auml;hrt schlechter als eine geschmeidige&ldquo;.
-      </p>
+      <p class="muted">&bdquo;Ada &amp; Zangemann&ldquo; von Matthias Kirschner und Sandra Brandst&auml;tter ist ein Kinderbuch dar&uuml;ber, wem die Software auf einem Ger&auml;t eigentlich geh&ouml;rt. Es erkl&auml;rt in einer Geschichte, worum es oben in drei Abs&auml;tzen ging.</p>
+      <p class="muted">Und praktisch: die Programmierschule unter Entwicklertools l&auml;sst dich Beschleunigungs- und Lenkkurven mit der Hand ziehen und sofort sehen, was das Auto daraus macht. Das ist der k&uuml;rzeste Weg von &bdquo;Programmieren ist abstrakt&ldquo; zu &bdquo;eine eckige Kurve f&auml;hrt schlechter als eine geschmeidige&ldquo;.</p>
     </div>
   </section>
 
@@ -4584,12 +4561,6 @@
         </div>
         <div class="row" style="gap:8px; flex-wrap:wrap" id="gar-preset-buttons"></div>
       </div>
-      <p class="muted" style="font-size:12px; margin-top:10px">
-        <b>Steuern</b>: dieses Auto folgt Gamepad und Tastatur. Genau eines kann das sein;
-        Standard ist das zuerst verbundene.<br>
-        <b>Ghost</b>: f&auml;hrt beim Rennstart selbst&auml;ndig los und h&auml;lt sich an der
-        Strecke. Tank und Schaden werden f&uuml;r Ghosts nicht simuliert.
-      </p>
     </div>
   </section>
 
@@ -4851,49 +4822,9 @@
 
   <!-- OPTIONEN TAB: player-facing settings (feel, sound, controller bindings) -->
   <section class="tabpage" id="tab-options">
-    <div class="card">
-      <h2>Voreinstellungen</h2>
-      <p class="muted">
-        F&uuml;nf fertige Abstimmungen. Sie setzen nur die Regler, die das
-        <em>Fahrgef&uuml;hl</em> betreffen: nicht die Rennl&auml;nge, nicht das Wetter,
-        nicht die Strecke, denn die geh&ouml;ren zum Rennen und nicht zum Auto.
-      </p>
-      <div class="row" style="gap:8px; flex-wrap:wrap" id="preset-buttons"></div>
-      <div class="muted" id="preset-status" style="margin-top:6px">&nbsp;</div>
-      <div id="preset-legend"></div>
-      <p class="muted" style="font-size:11.5px; margin:10px 0 4px 0">
-        Zum Weitergeben: der Text unten enth&auml;lt <b>alle</b> Regler, auch die, die keine
-        Voreinstellung anfasst. Kopieren, verschicken, einf&uuml;gen,
-        <b>&Uuml;bernehmen</b>.
-      </p>
-      <!-- Drei Zeilen statt Vollhoehe: der Inhalt ist EINE JSON-Zeile zum Markieren und
-           Kopieren, kein Text zum Lesen. resize:vertical laesst ihn aufziehen, wer doch
-           hineinsehen will. -->
-      <textarea id="preset-json" spellcheck="false" rows="3"
-                style="width:100%; height:3.4em; min-height:0; resize:vertical;
-                       font-family:monospace; font-size:11.5px"></textarea>
-      <div class="row" style="gap:8px; margin-top:6px">
-        <button id="preset-import">&Uuml;bernehmen</button>
-        <button id="preset-export">Aktuelle Werte hineinschreiben</button>
-      </div>
-      <p class="muted" style="font-size:11.5px; margin:14px 0 4px 0">
-        Oder auf diesem Ger&auml;t ablegen. Bleibt im Browser, wird nicht mitgeschickt.
-      </p>
-      <div class="row" style="gap:8px; flex-wrap:wrap">
-        <input type="text" id="preset-store-name" placeholder="Name der Abstimmung"
-               maxlength="40" style="min-width:150px">
-        <button id="preset-store-save">Ablegen</button>
-        <select id="preset-store-list"><option value="">&ndash; abgelegt &ndash;</option></select>
-        <button id="preset-store-load">Laden</button>
-        <button id="preset-store-del">L&ouml;schen</button>
-      </div>
-    </div>
     <div class="card subpage-home" id="sub-home-options">
       <h2>Einstellungen</h2>
-      <p class="muted">
-        F&uuml;nf Bereiche. Was das Auto <em>f&auml;hrt</em>, steht unter Fahrgef&uuml;hl;
-        was es <em>hat</em>, unter Allgemein.
-      </p>
+      
       <div class="misc-grid">
         <button class="misc-tile subpage-open" data-sub="opt-general">
           <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
@@ -4932,8 +4863,7 @@
       <h2>Allgemein</h2>
 <div class="opt-head">Allgemein</div>
       <div class="opt-row"><div class="opt-label">Scheinwerfer
-          <small>Vorne Standlicht, hinten Bremslicht. Taste <b>L</b> ist die
-          Lichthupe.</small></div>
+          </div>
         <label class="tgl"><input type="checkbox" id="dash-head-toggle" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Auf der Bahn
           <small>Zwei Lesearten, kein Sensorschalter. <b>An</b>: das Auto liest die
@@ -4960,8 +4890,8 @@
                Umformulierung haette alle fuenf Schluessel gleichzeitig gebrochen - sichtbar
                nur daran, dass im englischen Modus mitten im Satz Deutsch steht. -->
           <small>Meldet Byte 12 den Wert 0x00, ist das Auto neben der Bahn: dann brummt
-          der Controller leicht und das Gas wird auf 45 % gedeckelt &ndash; nicht auf null,
-          denn man muss zur&uuml;ckkommen. Wirkt nur in der Stellung &bdquo;Auf der
+          der Controller leicht und das Gas wird auf 45 % gedeckelt. Wirkt nur in der
+          Stellung &bdquo;Auf der
           Bahn&ldquo;: im Ausdruck-Modus ist der Streckensensor aus und Byte 12 st&auml;nde
           dauernd auf 0x00. Der Brummteil braucht zus&auml;tzlich den Schalter
           &bdquo;Vibration&ldquo; dar&uuml;ber.</small></div>
@@ -4977,7 +4907,7 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-offtrack-delay-val">1.0 s</span>
         </div></div>
-<div class="opt-head">Akku</div>
+<div class="opt-head">Akku <span class="wip-tag">WIP</span></div>
       <div class="opt-row"><div class="opt-label">Leistung über Akkulaufzeit konstant halten<small>Drosselt bei vollem Akku. Der Akkuwert ist eine unkalibrierte Schätzung.</small></div><label class="tgl"><input type="checkbox" id="setting-battery-comp"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Referenz-Akkustand</div>
         <div class="opt-slider">
@@ -5045,8 +4975,7 @@
           m&uuml;ssen, damit ein Sto&szlig; als Crash gilt. Niedriger hei&szlig;t
           empfindlicher: schon ein Rempler z&auml;hlt. H&ouml;her hei&szlig;t, dass nur ein
           echter Einschlag z&auml;hlt. 40 ist der Wert, mit dem die Erkennung gebaut und
-          gepr&uuml;ft wurde &ndash; stand bis v0.5 als Konstante im Code, war also eine
-          Einstellung, die niemand einstellen konnte.</small></div>
+          gepr&uuml;ft wurde.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
           <input type="range" id="setting-crash-threshold" min="10" max="100" step="5" value="40">
@@ -5065,6 +4994,38 @@
     <div class="card subpage" id="sub-opt-feel">
       <button class="misc-back subpage-back" data-sub="">&larr; Einstellungen</button>
       <h2>Fahrgef&uuml;hl</h2>
+      <div class="opt-head" style="margin-top:0">Voreinstellungen</div>
+      
+      <div class="row" style="gap:8px; flex-wrap:wrap" id="preset-buttons"></div>
+      <div class="muted" id="preset-status" style="margin-top:6px">&nbsp;</div>
+      <div id="preset-legend"></div>
+      <p class="muted" style="font-size:11.5px; margin:10px 0 4px 0">
+        Zum Weitergeben: der Text unten enth&auml;lt <b>alle</b> Regler, auch die, die keine
+        Voreinstellung anfasst. Kopieren, verschicken, einf&uuml;gen,
+        <b>&Uuml;bernehmen</b>.
+      </p>
+      <!-- Drei Zeilen statt Vollhoehe: der Inhalt ist EINE JSON-Zeile zum Markieren und
+           Kopieren, kein Text zum Lesen. resize:vertical laesst ihn aufziehen, wer doch
+           hineinsehen will. -->
+      <textarea id="preset-json" spellcheck="false" rows="3"
+                style="width:100%; height:3.4em; min-height:0; resize:vertical;
+                       font-family:monospace; font-size:11.5px"></textarea>
+      <div class="row" style="gap:8px; margin-top:6px">
+        <button id="preset-import">&Uuml;bernehmen</button>
+        <button id="preset-export">Aktuelle Werte hineinschreiben</button>
+      </div>
+      <p class="muted" style="font-size:11.5px; margin:14px 0 4px 0">
+        Oder auf diesem Ger&auml;t ablegen. Bleibt im Browser, wird nicht mitgeschickt.
+      </p>
+      <div class="row" style="gap:8px; flex-wrap:wrap">
+        <input type="text" id="preset-store-name" placeholder="Name der Abstimmung"
+               maxlength="40" style="min-width:150px">
+        <button id="preset-store-save">Ablegen</button>
+        <select id="preset-store-list"><option value="">&ndash; abgelegt &ndash;</option></select>
+        <button id="preset-store-load">Laden</button>
+        <button id="preset-store-del">L&ouml;schen</button>
+      </div>
+
 <div class="opt-head">Fahrzeug</div>
       <div class="opt-row"><div class="opt-label">Layout<small>Welches Auto du fährst, nicht wie es abgestimmt ist. Die drei GT3-Varianten unterscheiden sich NUR in Achslast, Radstand und Trägheitsmoment; Leistung, Reifen und Bremse bleiben gleich. Deshalb zeigt der Wechsel, was die Motorlage macht. Ein Heckmotor hat weniger Vorderachslast und lenkt unter Bremsen schlechter ein; ein kleines Trägheitsmoment antwortet schneller. Die Zahlen sind Schätzungen aus der Fahrzeugklasse und keine Messungen. Nicht zu verwechseln mit der Voreinstellung „F1“ weiter oben: die ist eine Abstimmung, das hier ist ein Auto, und die Voreinstellungen fassen es absichtlich nicht an.</small></div>
         <select id="setting-layout" data-preset-skip>
@@ -5569,8 +5530,7 @@
       <div class="opt-row"><div class="opt-label">Ghost: F&uuml;hrenden bremsen<small>Der Erstplatzierte f&auml;hrt etwas langsamer, damit das Feld zusammenbleibt. Wirkt auch ohne Rennen, also beim freien Fahren &ndash; aber erst ab zwei Ghosts: mit einem einzigen ist dieser eine der F&uuml;hrende, und ihn zu bremsen hie&szlig;e nur, ihn langsamer zu machen.</small></div>
         <label class="tgl"><input type="checkbox" id="ghost-leader"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Ghost: Abschlag f&uuml;r den F&uuml;hrenden
-          <small>Um wie viel langsamer. Stand bis v0.4 als Konstante im Code &ndash; eine
-          Einstellung, die niemand einstellen konnte.</small></div>
+          <small>Um wie viel langsamer.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
           <input type="range" id="ghost-leader-pct" min="0" max="0.3" step="0.01" value="0.1">
@@ -5883,7 +5843,7 @@
         weiter gelesen: der Vorlauf ist kein Nutzdatum. Und eines der beiden wiederholten
         Muster gen&uuml;gt. Die kleinste tragende Nutzlast ist damit ein Wort ohne Vorlauf,
         etwa 54 mm in Fahrtrichtung. Deshalb sind die Vorlauf- und Probebl&auml;tter aus
-        dieser Seite verschwunden &ndash; das Experiment ist gelaufen.
+        dieser Seite verschwunden.
       </p>
       <p class="muted" style="font-size:11.5px; border-left:3px solid var(--good);
          padding-left:9px; margin-top:0">
@@ -6039,7 +5999,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.4.49</span></span>
+    <span class="foot-ver">v<span id="app-version">0.4.50</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine

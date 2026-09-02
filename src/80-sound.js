@@ -342,7 +342,7 @@
   // recognisable within minutes; scattered distinct events do not.
   const ambience = { bed: null, rainBed: null, passby: [], thunder: [],
                      bedNode: null, bedGain: null, rainNode: null, rainGain: null,
-                     ready: false, rainOn: false, busy: false };
+                     ready: false, rainOn: false, rainLevel: 0, busy: false };
   let ambienceVolume = 0.10;   // track bed and pass-bys: quiet, the engine leads
   let rainVolume = 0.25;
   // Eigene Lautstaerke fuer das Bremsenquietschen. Sie hing vorher an engineVolume.
@@ -429,7 +429,12 @@
     const wet = live ? rainVolume : 0;
     if (ambience.bedGain) ambience.bedGain.gain.setTargetAtTime(on * 0.7, t, 0.4);
     if (ambience.rainGain) {
-      ambience.rainGain.gain.setTargetAtTime(ambience.rainOn ? wet : 0, t, 0.6);
+      // Die Staerke der Wetterfront mal die eingestellte Lautstaerke. Die 0,6 s Glaettung
+      // bleiben: sie fangen die Sprunge des Reglers, waehrend die Front die langsame
+      // Bewegung macht.
+      const lvl = ambience.rainLevel === undefined
+        ? (ambience.rainOn ? 1 : 0) : ambience.rainLevel;
+      ambience.rainGain.gain.setTargetAtTime(wet * lvl, t, 0.6);
     }
   }
 
@@ -442,8 +447,13 @@
   // The visual side of the weather. Tied to the WEATHER, not to the volume: muting the
   // ambience must not also stop the rain from being visible, or a silent storm becomes an
   // invisible one.
-  function setRainVisuals(on) {
-    document.body.classList.toggle('race-wet', !!on);
+  function setRainVisuals(lvl) {
+    const v = typeof lvl === 'number' ? lvl : (lvl ? 1 : 0);
+    document.body.classList.toggle('race-wet', v > 0.02);
+    // Die Staerke geht als CSS-Variable hinaus, und das Stylesheet entscheidet, was daraus
+    // wird: erst wenige Tropfen, dann viele. Die Alternative waere, hier Tropfen zu zaehlen
+    // und einzeln zu erzeugen - dann stuende die Gestaltung im Programm.
+    document.documentElement.style.setProperty('--rain-lvl', v.toFixed(3));
   }
 
   // Lightning: two flashes, the second weaker, because real strikes usually double up.
@@ -459,9 +469,24 @@
     setTimeout(() => flash(55), 190);
   }
 
-  function setAmbienceRain(on) {
-    ambience.rainOn = on;
+  // STUFE statt Schalter. Vorher war rainOn ein Boolean und die Lautstaerke sprang auf
+  // ihren Wert (mit 0,6 s Glaettung im Gain-Knoten); jetzt traegt sie die Staerke der
+  // Wetterfront, und der Regen schwillt ueber fuenf Sekunden an.
+  //
+  // rainOn bleibt als Boolean daneben, weil refreshAmbienceGains() es liest und von
+  // mehreren Stellen gerufen wird (Sichtbarkeitswechsel, Lautstaerkeregler). Es ist jetzt
+  // "es regnet ueberhaupt", die Staerke steht in rainLevel.
+  function setAmbienceRainLevel(lvl) {
+    const v = Math.max(0, Math.min(1, lvl || 0));
+    ambience.rainLevel = v;
+    ambience.rainOn = v > 0.001;
     refreshAmbienceGains();
+  }
+
+  // Der alte Name bleibt als Durchreicher: er stand an mehreren Stellen, und ein Umbenennen
+  // in einem Zug ist die Gelegenheit, eine zu vergessen.
+  function setAmbienceRain(on) {
+    setAmbienceRainLevel(on ? 1 : 0);
   }
 
   function playAmbienceOneShot(buffer, gain, wet) {

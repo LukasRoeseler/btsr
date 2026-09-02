@@ -1683,6 +1683,149 @@
   // The four states the user described, as a 2x2. Wets on a dry track are deliberately
   // WORSE than slicks on a dry track: they overheat and grease over, which is why a second
   // pit stop is needed to get back to the baseline rather than the weather clearing alone.
+  // ---- Der Wetterumschwung als FRONT ------------------------------------------------
+  //
+  // Regen war ein Schalter: gripScale sprang, der Ton sprang, die Tropfen erschienen. Jetzt
+  // zieht eine Front ueber uns hinweg, und ihre Lage ist die EINE Zahl, aus der Ton, Griff,
+  // Tropfen und das Radarbild kommen:
+  //
+  //     wxFront  -1 = im Anmarsch     0 = ueber uns     +1 = durch
+  //     Staerke  = max(0, 1 - |wxFront|)
+  //
+  // Eine zweite Groesse fuer das Bild waere ein zweiter Ort, an dem etwas auseinanderlaufen
+  // kann - und dann zeigt das Radar Regen, waehrend es trocken faehrt.
+  //
+  // NACH DEM ABSCHALTEN ZIEHT SIE WEITER, von 0 auf +1, also mit dem Wind davon. Zurueck auf
+  // -1 zu laufen saehe aus wie ein zurueckgespultes Band.
+  const WX_RAMP_S = 5;
+  let wxFront = -1;          // wo die Front steht
+  let wxFrontTo = -1;        // wohin sie zieht
+  let wxTickAt = 0;
+
+  function wxRainLevel() { return Math.max(0, 1 - Math.abs(wxFront)); }
+
+  // ---- Das Regenradar ---------------------------------------------------------------
+  //
+  // Zwanzig unregelmaessige Formen, jede aus vier bis sieben ueberlappenden Kreisen. Die
+  // Ueberlappung IST die Kuestenlinie: einzelne Kreise sehen wie Blasen aus, ueberlappte
+  // wie eine Wolke. Die Teile werden EINMAL gezogen und bleiben - eine Form, die bei jedem
+  // Takt neu gewuerfelt wird, flackert.
+  //
+  // Zwei Sorten:
+  //   weiss   Wolken, die immer ziehen. Sie sagen nichts ueber den Regen - sie machen das
+  //           Bild lebendig, und ohne sie sieht ein trockenes Radar defekt aus.
+  //   blau    die Regenfront. Ihre Lage IST wxFront, nicht davon abgeleitet.
+  const WX_WIND = { x: 0.86, y: -0.51 };     // Zugrichtung, normiert
+  const wxBlobs = [];
+  function wxBlobBauen(n, regen) {
+    for (let i = 0; i < n; i++) {
+      const teile = [];
+      const m = 4 + Math.floor(Math.random() * 4);
+      for (let k = 0; k < m; k++) {
+        teile.push({ dx: (Math.random() * 2 - 1) * 0.09,
+                     dy: (Math.random() * 2 - 1) * 0.07,
+                     r: 0.045 + Math.random() * 0.06 });
+      }
+      wxBlobs.push({
+        regen,
+        teile,
+        // Weisse Wolken: eigene Bahn quer zum Wind, eigenes Tempo.
+        // Regenformen: Lage im Band, laengs und quer.
+        laengs: regen ? (Math.random() * 2 - 1) * 0.42 : Math.random() * 2 - 1,
+        quer: (Math.random() * 2 - 1) * (regen ? 0.62 : 1.0),
+        tempo: regen ? 0 : 0.055 + Math.random() * 0.05,
+        deck: regen ? 0.42 + Math.random() * 0.3 : 0.05 + Math.random() * 0.08,
+      });
+    }
+  }
+  wxBlobBauen(14, false);
+  wxBlobBauen(9, true);
+
+  function wxRadarDraw() {
+    const cv = $('race-wx-radar');
+    if (!cv || document.hidden || !cv.clientWidth) return;
+    // Auf die tatsaechliche Anzeigegroesse ziehen, EINMAL je Aenderung: ein Canvas mit
+    // falscher Pufferbreite wird von der Grafikkarte skaliert und sieht unscharf aus.
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    const bw = Math.round(cv.clientWidth * dpr), bh = Math.round(cv.clientHeight * dpr);
+    if (cv.width !== bw || cv.height !== bh) { cv.width = bw; cv.height = bh; }
+    const g = cv.getContext('2d');
+    const W = cv.width, H = cv.height, S = Math.max(W, H);
+    g.clearRect(0, 0, W, H);
+    g.fillStyle = '#0d1219';
+    g.fillRect(0, 0, W, H);
+
+    // Gitter, wie auf dem Vorbild: fein und dunkel, damit die Formen davor stehen.
+    g.strokeStyle = 'rgba(255,255,255,0.055)';
+    g.lineWidth = 1;
+    for (let k = 1; k < 4; k++) {
+      const x = Math.round(W * k / 4) + 0.5, y = Math.round(H * k / 4) + 0.5;
+      g.beginPath(); g.moveTo(x, 0); g.lineTo(x, H); g.stroke();
+      g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke();
+    }
+
+    const t = Date.now() / 1000;
+    const mx = W / 2, my = H / 2;
+    for (const b of wxBlobs) {
+      let cx, cy, deck = b.deck;
+      if (b.regen) {
+        // Die Front: laengs des Windes um wxFront verschoben. Bei wxFront = 0 liegt das
+        // Band ueber der Mitte - und genau dann regnet es.
+        const l = (wxFront + b.laengs) * 1.25;
+        cx = mx + (WX_WIND.x * l + -WX_WIND.y * b.quer) * S * 0.5;
+        cy = my + (WX_WIND.y * l + WX_WIND.x * b.quer) * S * 0.5;
+        // Ausblenden, wenn die Front weit weg ist: sonst kleben die Formen am Rand.
+        deck *= Math.max(0, Math.min(1, 1.35 - Math.abs(wxFront + b.laengs)));
+      } else {
+        // Weisse Wolken ziehen endlos und werden am Rand umgeschlagen. Der Umschlag laeuft
+        // auf einer Breite von 2,6 - grosszuegiger als das Bild -, damit keine Form
+        // sichtbar aus dem Nichts erscheint.
+        const l = ((b.laengs + t * b.tempo + 1.3) % 2.6) - 1.3;
+        cx = mx + (WX_WIND.x * l + -WX_WIND.y * b.quer) * S * 0.62;
+        cy = my + (WX_WIND.y * l + WX_WIND.x * b.quer) * S * 0.62;
+      }
+      if (deck <= 0.004) continue;
+      g.fillStyle = b.regen
+        ? 'rgba(104,166,186,' + deck.toFixed(3) + ')'
+        : 'rgba(226,236,246,' + deck.toFixed(3) + ')';
+      g.beginPath();
+      for (const s2 of b.teile) {
+        g.moveTo(cx + s2.dx * S + s2.r * S, cy + s2.dy * S);
+        g.arc(cx + s2.dx * S, cy + s2.dy * S, s2.r * S, 0, 6.2832);
+      }
+      g.fill();
+    }
+
+    // Das Kreuz und der Punkt: wo WIR sind. Zuletzt gezeichnet, damit es ueber den Formen
+    // liegt - auf dem Vorbild ist es das auch, und es ist der Bezugspunkt fuer alles andere.
+    g.strokeStyle = 'rgba(255,255,255,0.5)';
+    g.lineWidth = Math.max(1, dpr);
+    g.beginPath();
+    g.moveTo(mx, my - H * 0.18); g.lineTo(mx, my + H * 0.18);
+    g.moveTo(mx - W * 0.14, my); g.lineTo(mx + W * 0.14, my);
+    g.stroke();
+    g.fillStyle = wxRainLevel() > 0.12 ? '#68a6ba' : '#e2ecf6';
+    g.beginPath();
+    g.arc(mx, my, Math.max(1.6, 2.1 * dpr), 0, 6.2832);
+    g.fill();
+  }
+
+  // Eigener Zeitgeber und nicht im Fahrtakt: das Wetter zieht auch, wenn niemand faehrt -
+  // im Menue, in der Garage, beim Zuschauen. 80 ms sind fuer ziehende Wolken reichlich.
+  function wxTick() {
+    const now = Date.now();
+    const dt = wxTickAt ? Math.min(0.5, (now - wxTickAt) / 1000) : 0;
+    wxTickAt = now;
+    if (wxFront !== wxFrontTo) {
+      const schritt = dt / WX_RAMP_S;
+      const d = wxFrontTo - wxFront;
+      wxFront = Math.abs(d) <= schritt ? wxFrontTo : wxFront + Math.sign(d) * schritt;
+      applySurface();
+    }
+    wxRadarDraw();
+  }
+  setInterval(wxTick, 80);
+
   const GRIP_MATRIX = {
     'dry|slick': 1.00,
     'dry|wet':   0.88,
@@ -1693,12 +1836,27 @@
   let tyres = 'slick';
 
   function applySurface() {
-    physEngine.config.gripScale = GRIP_MATRIX[weather + '|' + tyres] ?? 1.0;
-    // Only slicks aquaplane; wets are cut to move water.
-    physEngine.config.aquaplaning = (weather === 'rain' && tyres === 'slick') ? 1 : 0;
-    setAmbienceRain(weather === 'rain');
-    lightFx.rain = (weather === 'rain');   // FIA-style rain light on the rear lamp
-    setRainVisuals(weather === 'rain');
+    // GEMISCHT statt geschaltet. Der Griff wandert zwischen der trockenen und der nassen
+    // Zeile der Matrix - dieselben Endwerte wie vorher, nur nicht mehr in einem Sprung.
+    //
+    // Die Staerke geht QUADRATISCH in den Griff. Das ist kein Feinschliff, sondern die
+    // Aussage: Wasser braucht Zeit, sich auf der Bahn zu sammeln. Nach der Haelfte der
+    // Rampe ist der Ton schon halb da und zu sehen ist Regen, aber gefahren wird noch fast
+    // trocken - nach 2,5 s ein Viertel des Effekts. Genau darum ging es bei "erst nach 5 s
+    // soll das Handling reagieren".
+    const lvl = wxRainLevel();
+    const griff = lvl * lvl;
+    const trocken = GRIP_MATRIX['dry|' + tyres] ?? 1.0;
+    const nass = GRIP_MATRIX['rain|' + tyres] ?? 1.0;
+    physEngine.config.gripScale = trocken + (nass - trocken) * griff;
+    // Only slicks aquaplane; wets are cut to move water. Der Faktor darf gebrochen sein:
+    // die Physik rechnet 1 - aquaplaning * ueber^2, also multipliziert er ohnehin.
+    physEngine.config.aquaplaning = tyres === 'slick' ? griff : 0;
+    setAmbienceRainLevel(lvl);
+    // Das Regenlicht und die Tropfen haengen an der SICHTBAREN Front und nicht am
+    // quadratischen Griff: man sieht Regen, bevor man ihn faehrt.
+    lightFx.rain = lvl > 0.12;
+    setRainVisuals(lvl);
   }
 
   function setWeather(next) {
@@ -1706,6 +1864,14 @@
     weather = next;
     const cb = $('setting-rain');
     if (cb) cb.checked = (weather === 'rain'); // keep the options switch in step
+    // NUR DAS ZIEL SETZEN, den Weg macht wxTick. Und wenn die Front schon durch ist (+1),
+    // faengt eine neue von vorn an - sonst wuerde sie rueckwaerts ueber uns zurueckkommen.
+    if (weather === 'rain') {
+      if (wxFront >= 0.999) wxFront = -1;
+      wxFrontTo = 0;
+    } else {
+      wxFrontTo = 1;
+    }
     applySurface();
     // Audible confirmation: the switch lives on a controller button, where there is nothing
     // to look at. Rain announces itself with a thunder clap, dry with a short two-tone.

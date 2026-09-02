@@ -387,6 +387,12 @@
       if (lang !== 'en') setLang('en');
       const DE = /[äöüßÄÖÜ]|\b(der|die|und|nicht|eine|mit|für|ist|sind|wird|wenn|auch|über|nach|beim|dann|aber|noch|kann|muss|sich|dem|den|des|zum|zur|aus|bei|nur|schon|sehr)\b/;
       const rest = new Set();
+      // FERTIGE ENGLISCHE FASSUNGEN durchlassen. Die Wortliste oben verwirft jeden Umlaut,
+      // und das trifft einen deutschen EIGENNAMEN in einer richtig uebersetzten Zeile -
+      // "by Matthias Kirschner and Sandra Brandstaetter" ist Englisch. Namen uebersetzt man
+      // nicht, also muss der Test unterscheiden koennen: ein Knoten, dessen Text eine
+      // bekannte englische Fassung IST, ist fertig.
+      const englisch = new Set(Object.values(I18N_EN));
       for (const root of i18nRoots()) {
         const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
           acceptNode(n) {
@@ -401,7 +407,7 @@
             // sonst sich selbst gemeldet ("Byte 14 = 0x22, Bit 5 an, Bit 7 aus").
             // Der feste Text der Selbsttestseite wird weiter geprueft, er steht ausserhalb
             // von #st-rows.
-            if (p.closest('[data-i18n-skip]') || p.closest('#tab-doc') || p.closest('#tab-info')
+            if (p.closest('[data-i18n-skip]') || p.closest('#tab-doc')
                 || p.closest('#log') || p.closest('#st-rows') || p.closest('#hud-toast')
                 || p.id === 'st-status') {
               return NodeFilter.FILTER_REJECT;
@@ -412,7 +418,7 @@
         let n;
         while ((n = w.nextNode())) {
           const t = n.nodeValue.replace(/\s+/g, ' ').trim();
-          if (t.length >= 4 && DE.test(t)) rest.add(t);
+          if (t.length >= 4 && DE.test(t) && !englisch.has(t)) rest.add(t);
         }
       }
       const bsp = [...rest][0];
@@ -734,6 +740,17 @@
         return { skip: true, mass: 'Umschalten auf Englisch hat nicht gegriffen' };
       }
       const DE = /(?:^|[\s(])(?:werden|wurde|wird|nicht|damit|deshalb|jedoch|welche|meldet|liegt|steht|braucht|dieselbe|derselbe|jedes|jeder|Werte|Blatt|Aufnahmen|Strecken|gespeichert|Ausdruck|Reifen|Bremse|Lenkung|Boxengasse)(?:[\s.,;:!?)]|$)|[\u00e4\u00f6\u00fc\u00df\u00c4\u00d6\u00dc]/;
+      // ZWEI AUSNAHMEN, die der Test vorher nicht kannte - und beide haben ihn falsch
+      // ausloesen lassen, nicht etwas verschwiegen:
+      //
+      // 1. FERTIGE ENGLISCHE FASSUNGEN. Die Regel oben verwirft jeden Text mit Umlaut, und
+      //    das trifft eine richtig uebersetzte Zeile, in der ein deutscher NAME steht:
+      //    "by Matthias Kirschner and Sandra Brandstaetter" ist Englisch mit einem
+      //    Eigennamen. Namen uebersetzt man nicht. Ein Knoten, dessen Text eine bekannte
+      //    englische Fassung IST, ist also fertig - und genau das wird jetzt geprueft.
+      // 2. data-i18n-skip. Der andere Sprachtest ehrt das Attribut schon; hier fehlte es,
+      //    und dadurch meldete er Laufzeitanzeigen wie die Muster-Sonde.
+      const englisch = new Set(Object.values(I18N_EN));
       const gehen = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
       const treffer = [];
       let n;
@@ -742,9 +759,11 @@
         if (!el) continue;
         // Die Doku ist ausdruecklich nur deutsch; das Protokoll und die Testtabelle
         // enthalten Laufzeittexte und keine Oberflaeche.
-        if (el.closest('#tab-doc, #tab-info, #log, script, style, template, #st-rows')) continue;
+        if (el.closest('#tab-doc, #log, script, style, template, #st-rows')) continue;
+        if (el.closest('[data-i18n-skip]')) continue;
         const t = n.nodeValue.trim().replace(/\s+/g, ' ');
         if (t.length < 10 || !DE.test(t)) continue;
+        if (englisch.has(t)) continue;
         const wo = el.closest('[id^="tab-"]');
         treffer.push((wo ? wo.id : '?') + ': ' + t.slice(0, 50));
       }
@@ -1532,12 +1551,25 @@
       'setting-fuelweight', 'setting-tyres', 'setting-tyre-blankets', 'setting-tyre-asym',
       'setting-tyre-pressure', 'setting-brake-fade', 'setting-dirtyair',
       'phys-steerresp', 'setting-brake-steal', 'setting-steer-calib', 'phys-accel',
-      'setting-brakebias', 'setting-rain',
+      'setting-brakebias',
+      // setting-rain steht in MIT_RAMPE, nicht hier: es setzt seit v0.4.50 nur das Ziel der
+      // Wetterfront, und unmittelbar nach dem Umlegen ist an der Konfiguration nichts zu
+      // sehen. In beiden Listen wurde es zweimal geprueft, und der erste Durchgang meldete
+      // es richtigerweise als stumm.
     ];
     // Diese zwei multiplizieren in ihren Schalter hinein und tun ohne ihn richtigerweise
     // nichts. Der Test schaltet ihn erst ein.
     const MIT_SCHALTER = [['setting-brake-fade-strength', 'setting-brake-fade'],
                           ['setting-dirtyair-strength', 'setting-dirtyair']];
+    // UND EINER WIRKT UEBER EINE RAMPE. Der Regenschalter setzt seit v0.4.50 nur das ZIEL
+    // der Wetterfront; gripScale wandert ueber fuenf Sekunden dorthin. Unmittelbar nach dem
+    // Umlegen ist deshalb nichts zu sehen, und der Test hat ihn richtigerweise als stumm
+    // gemeldet.
+    //
+    // Die Antwort ist nicht, den Test nachsichtiger zu machen, sondern die Front
+    // nachzuziehen - dann prueft er den GANZEN Weg: Schalter, Ziel, applySurface,
+    // Konfiguration. Nachsicht haette nur die Zusicherung verkleinert.
+    const MIT_RAMPE = ['setting-rain'];
 
     // WERTE vergleichen und nicht Schluessel: ein Feld, das durch die Voreinstellung schon
     // abweicht, bleibt sonst unsichtbar.
@@ -1583,6 +1615,23 @@
       if (!el) { fehlt.push(id); continue; }
       if (!anfassen(el)) stumm.push(id);
     }
+    for (const id of MIT_RAMPE) {
+      const el = $(id);
+      if (!el) { fehlt.push(id); continue; }
+      if (!window.OMEGA_TEST || !OMEGA_TEST.wxSet) { fehlt.push(id + ' (wxSet fehlt)'); continue; }
+      const merkFront = OMEGA_TEST.wxProbe().front;
+      const vor = abbild();
+      const alt = el.checked;
+      el.checked = !el.checked;
+      el.dispatchEvent(new Event('change', { bubbles: true }));
+      // Die Front auf ihr Ziel ziehen, statt fuenf Sekunden zu warten.
+      OMEGA_TEST.wxSet(OMEGA_TEST.wxProbe().ziel);
+      const nach = abbild();
+      el.checked = alt;
+      el.dispatchEvent(new Event('change', { bubbles: true }));
+      OMEGA_TEST.wxSet(merkFront);
+      if (vor === nach) stumm.push(id + ' (mit nachgezogener Front)');
+    }
     for (const [id, schalterId] of MIT_SCHALTER) {
       const el = $(id), sw = $(schalterId);
       if (!el || !sw) { fehlt.push(id); continue; }
@@ -1592,7 +1641,7 @@
       if (sw.checked !== altSw) { sw.checked = altSw; sw.dispatchEvent(new Event('change', { bubbles: true })); }
       if (!ok) stumm.push(id + ' (mit Schalter an)');
     }
-    const geprueft = PFLICHT.length + MIT_SCHALTER.length;
+    const geprueft = PFLICHT.length + MIT_SCHALTER.length + MIT_RAMPE.length;
     return { ok: !stumm.length && !fehlt.length,
              mass: geprueft + ' Physik-Regler geprueft, ' + (geprueft - stumm.length - fehlt.length)
                    + ' greifen'
@@ -2213,18 +2262,25 @@
     if (!window.OMEGA_TEST || !OMEGA_TEST.ghostPassArming) {
       return { skip: true, mass: 'ghostPassArming nicht vorhanden' };
     }
-    const gerade = OMEGA_TEST.ghostPassArming(0x02, 400);
-    const kurve = OMEGA_TEST.ghostPassArming(0x04, 400);
-    const haarnadel = OMEGA_TEST.ghostPassArming(0x06, 400);
+    // 1500 Takte und nicht 400, und das ist eine Berichtigung an DIESEM Test: bei 400
+    // Takten a 60 ms sind es 24 s gefaelschter Zeit, also etwa sechs Wuerfe mit P = 0,45 -
+    // in gut drei Prozent der Laeufe faellt keiner, und dann meldet er rot, obwohl nichts
+    // kaputt ist. Genau so entstehen Tests, die man irgendwann wegklickt. Mit 1500 Takten
+    // sind es rund zweiundzwanzig Wuerfe und die Wahrscheinlichkeit liegt bei 1 zu 100.000.
+    //
+    // Die Gegenrichtung braucht die Laenge auch: "auf der Kurve NIE" ist mit sechs
+    // Gelegenheiten kaum eine Aussage.
+    const gerade = OMEGA_TEST.ghostPassArming(0x02, 1500);
+    const kurve = OMEGA_TEST.ghostPassArming(0x04, 1500);
+    const haarnadel = OMEGA_TEST.ghostPassArming(0x06, 1500);
     const fehler = [];
-    // Auf der Geraden MUSS es ueberhaupt vorkommen, sonst prueft der Test nichts: bei
-    // 400 Takten a 60 ms und einem Wurf je 4 s sind das etwa sechs Gelegenheiten.
+    // Auf der Geraden MUSS es ueberhaupt vorkommen, sonst prueft der Test nichts.
     if (!(gerade.gestartet > 0)) fehler.push('auf der Geraden gar kein Versuch');
     if (kurve.gestartet) fehler.push('Kurve: ' + kurve.gestartet + ' Versuche');
     if (haarnadel.gestartet) fehler.push('Haarnadel: ' + haarnadel.gestartet + ' Versuche');
     return { ok: !fehler.length,
              mass: 'Gerade ' + gerade.gestartet + ', Kurve ' + kurve.gestartet
-                 + ', Haarnadel ' + haarnadel.gestartet + ' Versuche in je 400 Takten'
+                 + ', Haarnadel ' + haarnadel.gestartet + ' Versuche in je 1500 Takten'
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
@@ -2375,6 +2431,63 @@
              mass: zeilen + ' Zeilen, ' + geprueft + ' zugewiesene Aktionen wiedergefunden, '
                  + symbole.length + ' Symbole'
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
+  // ---- Der Wetterumschwung ist weich, und das Handling kommt zuletzt ----
+  //
+  // Regen war ein Schalter: gripScale sprang von 1,00 auf 0,45, der Ton sprang, die Tropfen
+  // erschienen. Jetzt zieht eine Front, und ihre Lage ist die EINE Zahl, aus der Ton, Griff,
+  // Tropfen und das Radarbild kommen.
+  //
+  // GEPRUEFT WIRD DIE ORDNUNG, nicht die Zahl fuenf. Die Sekunden stehen in einer
+  // Konstanten, und ein Test, der sie abschreibt, prueft die Konstante. Was er pruefen
+  // soll: dass der Ton VOR dem Griff kommt. Genau das war der Wunsch - erst hoert und sieht
+  // man Regen, dann faehrt man ihn.
+  stAdd('Wetterfront: Ton vor Griff, und beides stetig', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.wxSet) {
+      return { skip: true, mass: 'wxSet nicht vorhanden' };
+    }
+    const merk = OMEGA_TEST.wxProbe();
+    try {
+      const reihe = [];
+      for (let f = -1; f <= 0.0001; f += 0.1) reihe.push(OMEGA_TEST.wxSet(f));
+      const fehler = [];
+      // 1. Anfang und Ende: trocken und voll nass.
+      const a = reihe[0], e = reihe[reihe.length - 1];
+      if (!(a.staerke === 0 && a.grip > 0.999)) fehler.push('Anfang nicht trocken');
+      if (!(e.staerke > 0.999)) fehler.push('Ende nicht voll');
+      // 2. STETIG: kein Sprung groesser als ein Fuenftel im Griff. Das schliesst den
+      //    Schalter aus, der hier vorher stand - der sprang um 0,55 auf einmal.
+      let sprung = 0;
+      for (let i = 1; i < reihe.length; i++) {
+        sprung = Math.max(sprung, Math.abs(reihe[i].grip - reihe[i - 1].grip));
+      }
+      if (sprung > 0.2) fehler.push('Griffsprung ' + sprung.toFixed(3));
+      // 3. DER TON KOMMT VOR DEM GRIFF. Auf der halben Strecke muss der Ton schon halb da
+      //    sein, der Griff aber noch kaum: quadratisch heisst bei 0,5 nur ein Viertel.
+      const mitte = reihe.find(x => Math.abs(x.staerke - 0.5) < 0.02);
+      if (!mitte) fehler.push('kein Messpunkt auf halber Strecke');
+      else {
+        if (!(mitte.regenTon > 0.4)) fehler.push('Ton auf halber Strecke nur ' + mitte.regenTon);
+        // Griffanteil: wie weit ist der Griff auf dem Weg von trocken nach nass?
+        const weg = (a.grip - mitte.grip) / (a.grip - e.grip);
+        if (!(weg < 0.35)) fehler.push('Griff auf halber Strecke schon ' + (weg * 100).toFixed(0) + ' %');
+      }
+      // 4. Und hinter der Front ist es wieder trocken - sie zieht durch, nicht zurueck.
+      const durch = OMEGA_TEST.wxSet(1);
+      if (!(durch.staerke === 0 && durch.grip > 0.999)) fehler.push('hinter der Front nicht trocken');
+      const mitteTxt = mitte
+        ? 'auf halber Strecke Ton ' + mitte.regenTon.toFixed(2) + ', Griff '
+          + (100 * (a.grip - mitte.grip) / (a.grip - e.grip)).toFixed(0) + ' % des Wegs'
+        : '?';
+      return { ok: !fehler.length,
+               mass: reihe.length + ' Messpunkte, groesster Griffsprung ' + sprung.toFixed(3)
+                   + ', ' + mitteTxt
+                   + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+    } finally {
+      // Zuruecklegen, sonst faehrt der Nutzer nach einem Testlauf im Regen.
+      OMEGA_TEST.wxSet(merk.front);
+    }
   });
 
   // ---- Block 4.4: Reifendruck ----

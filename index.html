@@ -278,6 +278,16 @@
     margin: 8px 0 10px 0; padding-left: 14px;
     border-left: 2px solid var(--gt3-line-soft); }
   .opt-note-h { font-weight: 700; }
+  /* ---- Regenradar in der Wetterkachel ----
+     Das Canvas liegt UNTER dem Symbol und fuellt die Kachel. Es ist nicht anklickbar, damit
+     der Klick weiter auf der Kachel landet - sie schaltet das Wetter. */
+  .gt3-wx { position: relative; overflow: hidden; }
+  .wx-radar { position: absolute; inset: 0; width: 100%; height: 100%; display: block;
+    pointer-events: none; border-radius: inherit; }
+  /* Das Symbol in die obere linke Ecke, klein. Es ist jetzt eine Marke und keine Anzeige:
+     was das Wetter TUT, steht im Radar. */
+  .wx-ico { position: absolute; top: 5px; left: 6px; z-index: 2; line-height: 0; }
+  .wx-ico .gt3-ico { width: 15px; height: 15px; }
   /* Controller-Grafik. Die Farben kommen aus dem Vorbild-SVG, sind aber auf die
      Projektvariablen gezogen, damit sie bei einer Themenaenderung mitgehen. */
   .pad-wrap { overflow-x: auto; margin-top: 10px; }
@@ -1278,8 +1288,18 @@
      which is what the eye reads as depth; slightly different angles stop it looking like a
      ruled grid. */
   .race-rain { position: absolute; inset: -20%; pointer-events: none; opacity: 0;
-    transition: opacity .8s ease; overflow: hidden; z-index: 3; }
-  body.race-wet .race-rain { opacity: 1; }
+    transition: opacity .25s linear; overflow: hidden; z-index: 3; }
+  /* ERST WENIGE TROPFEN, DANN VIELE. --rain-lvl kommt aus setRainVisuals und traegt die
+     Staerke der Wetterfront (0..1).
+     Die Deckkraft ist der SICHTBARE Teil: sie waechst mit der Front, aber nicht linear -
+     bei 0,3 sieht man schon etwas, bei 1,0 steht es. Der Uebergang im transition ist
+     absichtlich kurz (0,25 s): die langsame Bewegung macht die Front, nicht das
+     Stylesheet, und zwei Rampen uebereinander waeren eine Rampe, die niemand mehr
+     zuordnen kann.
+     Die DICHTE kommt oben drauf: die drei Blaetter werden mit der Front nicht nur
+     deutlicher, sondern auch enger - background-size waechst umgekehrt zur Staerke, also
+     passen mehr Tropfen in dieselbe Flaeche. */
+  body.race-wet .race-rain { opacity: calc(0.25 + 0.75 * var(--rain-lvl, 1)); }
   .race-rain > i { position: absolute; inset: -30% -30%; display: block;
     will-change: transform; }
   /* Three sheets of DROPS.
@@ -1981,17 +2001,16 @@
         <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12.5l5 5L20 6.5"/></svg><span><b>Chrome</b> (oder Edge) auf PC oder Android, mit erteilter
           Bluetooth-Berechtigung. Web Bluetooth gibt es in Safari und Firefox
           nicht.</span></li>
-        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12.5l5 5L20 6.5"/></svg><span>Ein <b>Carrera-Hybrid-Auto</b> mit Firmware ab
-          <b>August&nbsp;2026</b>.</span></li>
-        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12.5l5 5L20 6.5"/></svg><span>Einen <b>Bluetooth-Controller</b>. Getestet mit DualShock&nbsp;4 und
-          DualSense. Mit der Tastatur geht es auch, aber deutlich schlechter &ndash; sie
-          kennt nur ganz oder gar nicht.</span></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12.5l5 5L20 6.5"/></svg><span>Ein Carrera-Hybrid-Auto mit Firmware Stand August&nbsp;2026.</span></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12.5l5 5L20 6.5"/></svg><span>Einen Bluetooth-Controller. Getestet mit DualShock&nbsp;4 und
+          DualSense.</span></li>
       </ul>
       <h3 style="margin-top:16px">Optional</h3>
       <ul class="need-list need-opt">
-        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Eine <b>CH-Strecke</b> &ndash; oder der <b>Start/Ziel-Ausdruck</b>
-          samt Boxengasse aus dem Tab Strecke. Ohne beides f&auml;hrt es sich auch, nur
-          z&auml;hlt dann niemand die Runden.</span></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Eine CH-Strecke oder der Start/Ziel-Ausdruck &ndash; ben&ouml;tigt
+          zum Rundenz&auml;hlen.
+          <a href="startziel-a4.svg" download="startziel-a4.svg">Start/Ziel als SVG
+            herunterladen</a></span></li>
         <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span><b>Weitere Autos</b> als autonome Gegner.</span></li>
       </ul>
       <p class="need-tip">
@@ -2034,6 +2053,7 @@
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h3l2-6 3 12 3-9 2 5 2-2h3"/></svg><span>Simulierte Motoren und eigene Sounds über Engine-Sim</span></div>
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="8" width="20" height="10" rx="4"/><path d="M7 13h2M8 12v2M16 13h.01"/></svg><span>Gamepad-Vibration</span></div>
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 11V8a5 5 0 0 1 9-3"/><rect x="5" y="11" width="14" height="9" rx="2"/></svg><span>Open Source, offene Lizenz</span></div>
+        <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 14c0-3 2-5 5-5h2l4-4v14l-4-4H9c-3 0-5-1-5-3z"/><path d="M18 9c1.5 1.5 1.5 4.5 0 6"/></svg><span>Zwei verschiedene Pups-Hupen</span></div>
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg><span class="feat-1line"><b>Und vieles mehr &hellip;</b></span></div>
     </div>
   </section>
@@ -2209,7 +2229,9 @@
         <div class="gt3-box gt3-click" id="race-light-box" title="Licht an/aus" style="display:flex;align-items:center;justify-content:center">
           <div class="gt3-tell" style="width:100%"><svg class="gt3-lamp" id="race-light" viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" aria-label="Scheinwerfer"><path d="M 107 43 C 145 43 182 68 182 100 C 182 132 145 157 107 157 Z"/><path d="M28 71 89 52M28 96 89 77M28 121 89 102M28 146 89 127M28 171 89 152"/></svg></div></div>
         <div class="gt3-box gt3-click gt3-wx" id="race-wx-box" title="Wetter umschalten">
-          <div class="gt3-tell"><svg class="gt3-ico" id="race-wx-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-label="Trocken"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.4M12 19.6V22M2 12h2.4M19.6 12H22M4.9 4.9l1.7 1.7M17.4 17.4l1.7 1.7M19.1 4.9l-1.7 1.7M6.6 17.4l-1.7 1.7"/></svg><svg class="gt3-ico" id="race-wx-rain" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-label="Regen" style="display:none"><path d="M6.5 14a4 4 0 0 1 .4-8 5.5 5.5 0 0 1 10.5 1.4A3.6 3.6 0 0 1 17.5 14z"/><path d="M8 17.5l-1 2.5M12 17.5l-1 2.5M16 17.5l-1 2.5"/></svg></div></div>
+          <canvas id="race-wx-radar" class="wx-radar" width="200" height="150"
+                  aria-hidden="true"></canvas>
+          <div class="wx-ico"><svg class="gt3-ico" id="race-wx-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-label="Trocken"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.4M12 19.6V22M2 12h2.4M19.6 12H22M4.9 4.9l1.7 1.7M17.4 17.4l1.7 1.7M19.1 4.9l-1.7 1.7M6.6 17.4l-1.7 1.7"/></svg><svg class="gt3-ico" id="race-wx-rain" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-label="Regen" style="display:none"><path d="M6.5 14a4 4 0 0 1 .4-8 5.5 5.5 0 0 1 10.5 1.4A3.6 3.6 0 0 1 17.5 14z"/><path d="M8 17.5l-1 2.5M12 17.5l-1 2.5M16 17.5l-1 2.5"/></svg></div></div>
         <!-- Was auf dem Steuerkreuz liegt: hoch/runter Bremsbalance, links/rechts
              Lenkansprechen. Die Kachel und das Kreuz zeigen dieselben zwei Groessen.
 
@@ -2451,63 +2473,18 @@
        Fliesstext, und die Sprachtests nehmen tab-doc ausdruecklich aus. Ein Reiter
        mit halb uebersetztem Fliesstext waere schlechter als einer mit einem
        ehrlichen Hinweis darauf, dass er nur deutsch vorliegt. -->
-  <section class="tabpage" id="tab-info" data-i18n-skip>
-    <div class="card" style="border-color:var(--warn)">
-      <p class="muted" style="margin:0" data-i18n-skip>
-        <b>This is available in German only, at the moment.</b>
-      </p>
-    </div>
+  <section class="tabpage" id="tab-info">
     <div class="card">
       <h2>Wozu dient dieses Projekt?</h2>
-      <p class="muted">
-        Die Hardware ist gekauft, die Software bestimmt jemand anders. Dieses Projekt dreht
-        das um: es steuert ein Carrera-Hybrid-Auto mit eigenem Code &uuml;ber dieselbe
-        Bluetooth-Schnittstelle, die die Hersteller-App benutzt. Damit l&auml;uft auf der
-        Hardware, was man selbst darauf laufen lassen will: unabh&auml;ngig davon, ob
-        ein Anbieter eine Funktion vorsieht, eine App weiter pflegt oder einen Server
-        abschaltet.
-      </p>
-      <p class="muted">
-        Der zweite Punkt ist die <b>Gemeinschaft</b>. Ein offengelegtes Protokoll kann
-        jeder weiterverwenden: f&uuml;r Funktionen, die der Hersteller nicht baut, f&uuml;r
-        eine andere Bedienung, f&uuml;r Unterricht. Das hier ist bewusst als Beispiel
-        gebaut, nicht als Produkt: alles, was herausgefunden wurde, steht in dieser
-        Doku, samt der Stellen, an denen wir uns geirrt haben.
-      </p>
-
+      <p class="muted">Die Hardware ist gekauft, die Software bestimmt jemand anders. Dieses Projekt dreht das um: es steuert ein Carrera-Hybrid-Auto mit eigenem Code &uuml;ber dieselbe Bluetooth-Schnittstelle, die die Hersteller-App benutzt. Damit l&auml;uft auf der Hardware, was man selbst darauf laufen lassen will &ndash; unabh&auml;ngig davon, ob ein Anbieter eine Funktion vorsieht, eine App weiter pflegt oder einen Server abschaltet.</p>
+      <p class="muted">Der zweite Punkt ist die Gemeinschaft. Ein offengelegtes Protokoll kann jeder weiterverwenden: f&uuml;r Funktionen, die der Hersteller nicht baut, f&uuml;r eine andere Bedienung, f&uuml;r Unterricht. Das hier ist bewusst als Beispiel gebaut und nicht als Produkt: alles, was herausgefunden wurde, steht in der Doku, samt der Stellen, an denen wir uns geirrt haben.</p>
       <h3 style="font-size:14px; margin:16px 0 6px 0">Offene Software als Teil offener Wissenschaft</h3>
-      <p class="muted">
-        Wer Ergebnisse pr&uuml;fbar machen will, braucht pr&uuml;fbare Werkzeuge. Eine
-        Auswertung, die auf einem Programm beruht, in das niemand hineinsehen darf, ist
-        genau so weit nachvollziehbar wie das Vertrauen in dessen Hersteller reicht.
-        Deshalb wechseln Forschende zunehmend von kommerzieller auf offene Software, und
-        deshalb steigen auch Landesverwaltungen von Windows auf Linux um, es geht um
-        Kontrolle &uuml;ber die eigene Infrastruktur, nicht um Anschaffungskosten.
-      </p>
-      <p class="muted">
-        Offene Software <em>kann</em> dabei sogar sicherer sein, und der Grund daf&uuml;r ist
-        <b>Kerckhoffs&rsquo; Prinzip</b>: ein Verfahren soll seine Sicherheit aus dem
-        geheimen <em>Schl&uuml;ssel</em> ziehen, nicht aus der Geheimhaltung des
-        <em>Verfahrens</em>. Ein Verfahren, das nur funktioniert, solange niemand es kennt,
-        ist nicht sicher, sondern unpr&uuml;fbar. Offenlegung ist deshalb kein Risiko,
-        sondern die Voraussetzung daf&uuml;r, dass Fehler gefunden werden k&ouml;nnen.
-        <b>Das hei&szlig;t nicht, dass offene Software automatisch sicherer ist</b>:
-        nur, dass Pr&uuml;fbarkeit und Sicherheit sich nicht widersprechen.
-      </p>
-
+      <p class="muted">Wer Ergebnisse pr&uuml;fbar machen will, braucht pr&uuml;fbare Werkzeuge. Eine Auswertung, die auf einem Programm beruht, in das niemand hineinsehen darf, ist genau so weit nachvollziehbar wie das Vertrauen in dessen Hersteller reicht. Deshalb wechseln Forschende zunehmend von kommerzieller auf offene Software, und deshalb steigen auch Landesverwaltungen von Windows auf Linux um: es geht um Kontrolle &uuml;ber die eigene Infrastruktur, nicht um Anschaffungskosten.</p>
+      <p class="muted">Offene Software kann dabei sogar sicherer sein, und der Grund daf&uuml;r hei&szlig;t Kerckhoffs&rsquo; Prinzip: ein Verfahren soll seine Sicherheit aus dem geheimen &bdquo;Schl&uuml;ssel&ldquo; ziehen und nicht aus der Geheimhaltung des &bdquo;Verfahrens&ldquo;. Ein Verfahren, das nur funktioniert, solange niemand es kennt, ist nicht sicher, sondern unpr&uuml;fbar. Offenlegung ist deshalb kein Risiko, sondern die Voraussetzung daf&uuml;r, dass Fehler gefunden werden k&ouml;nnen.</p>
+      <p class="muted">Das hei&szlig;t nicht, dass offene Software automatisch sicherer ist &ndash; nur, dass Pr&uuml;fbarkeit und Sicherheit sich nicht widersprechen.</p>
       <h3 style="font-size:14px; margin:16px 0 6px 0">Zum Weiterlesen und Ausprobieren</h3>
-      <p class="muted">
-        <b><em>Ada &amp; Zangemann</em></b> von Matthias Kirschner und Sandra Brandst&auml;tter,
-        ein Kinderbuch dar&uuml;ber, wem die Software auf einem Ger&auml;t
-        eigentlich geh&ouml;rt. Es erkl&auml;rt in einer Geschichte, worum es oben in drei
-        Abs&auml;tzen ging.
-      </p>
-      <p class="muted">
-        Und praktisch: der Tab <b>Programmierschule</b> l&auml;sst dich
-        Beschleunigungs- und Lenkkurven mit der Hand ziehen und sofort sehen, was das Auto
-        daraus macht. Das ist der k&uuml;rzeste Weg von &bdquo;Programmieren ist abstrakt&ldquo;
-        zu &bdquo;eine eckige Kurve f&auml;hrt schlechter als eine geschmeidige&ldquo;.
-      </p>
+      <p class="muted">&bdquo;Ada &amp; Zangemann&ldquo; von Matthias Kirschner und Sandra Brandst&auml;tter ist ein Kinderbuch dar&uuml;ber, wem die Software auf einem Ger&auml;t eigentlich geh&ouml;rt. Es erkl&auml;rt in einer Geschichte, worum es oben in drei Abs&auml;tzen ging.</p>
+      <p class="muted">Und praktisch: die Programmierschule unter Entwicklertools l&auml;sst dich Beschleunigungs- und Lenkkurven mit der Hand ziehen und sofort sehen, was das Auto daraus macht. Das ist der k&uuml;rzeste Weg von &bdquo;Programmieren ist abstrakt&ldquo; zu &bdquo;eine eckige Kurve f&auml;hrt schlechter als eine geschmeidige&ldquo;.</p>
     </div>
   </section>
 
@@ -4584,12 +4561,6 @@
         </div>
         <div class="row" style="gap:8px; flex-wrap:wrap" id="gar-preset-buttons"></div>
       </div>
-      <p class="muted" style="font-size:12px; margin-top:10px">
-        <b>Steuern</b>: dieses Auto folgt Gamepad und Tastatur. Genau eines kann das sein;
-        Standard ist das zuerst verbundene.<br>
-        <b>Ghost</b>: f&auml;hrt beim Rennstart selbst&auml;ndig los und h&auml;lt sich an der
-        Strecke. Tank und Schaden werden f&uuml;r Ghosts nicht simuliert.
-      </p>
     </div>
   </section>
 
@@ -4851,49 +4822,9 @@
 
   <!-- OPTIONEN TAB: player-facing settings (feel, sound, controller bindings) -->
   <section class="tabpage" id="tab-options">
-    <div class="card">
-      <h2>Voreinstellungen</h2>
-      <p class="muted">
-        F&uuml;nf fertige Abstimmungen. Sie setzen nur die Regler, die das
-        <em>Fahrgef&uuml;hl</em> betreffen: nicht die Rennl&auml;nge, nicht das Wetter,
-        nicht die Strecke, denn die geh&ouml;ren zum Rennen und nicht zum Auto.
-      </p>
-      <div class="row" style="gap:8px; flex-wrap:wrap" id="preset-buttons"></div>
-      <div class="muted" id="preset-status" style="margin-top:6px">&nbsp;</div>
-      <div id="preset-legend"></div>
-      <p class="muted" style="font-size:11.5px; margin:10px 0 4px 0">
-        Zum Weitergeben: der Text unten enth&auml;lt <b>alle</b> Regler, auch die, die keine
-        Voreinstellung anfasst. Kopieren, verschicken, einf&uuml;gen,
-        <b>&Uuml;bernehmen</b>.
-      </p>
-      <!-- Drei Zeilen statt Vollhoehe: der Inhalt ist EINE JSON-Zeile zum Markieren und
-           Kopieren, kein Text zum Lesen. resize:vertical laesst ihn aufziehen, wer doch
-           hineinsehen will. -->
-      <textarea id="preset-json" spellcheck="false" rows="3"
-                style="width:100%; height:3.4em; min-height:0; resize:vertical;
-                       font-family:monospace; font-size:11.5px"></textarea>
-      <div class="row" style="gap:8px; margin-top:6px">
-        <button id="preset-import">&Uuml;bernehmen</button>
-        <button id="preset-export">Aktuelle Werte hineinschreiben</button>
-      </div>
-      <p class="muted" style="font-size:11.5px; margin:14px 0 4px 0">
-        Oder auf diesem Ger&auml;t ablegen. Bleibt im Browser, wird nicht mitgeschickt.
-      </p>
-      <div class="row" style="gap:8px; flex-wrap:wrap">
-        <input type="text" id="preset-store-name" placeholder="Name der Abstimmung"
-               maxlength="40" style="min-width:150px">
-        <button id="preset-store-save">Ablegen</button>
-        <select id="preset-store-list"><option value="">&ndash; abgelegt &ndash;</option></select>
-        <button id="preset-store-load">Laden</button>
-        <button id="preset-store-del">L&ouml;schen</button>
-      </div>
-    </div>
     <div class="card subpage-home" id="sub-home-options">
       <h2>Einstellungen</h2>
-      <p class="muted">
-        F&uuml;nf Bereiche. Was das Auto <em>f&auml;hrt</em>, steht unter Fahrgef&uuml;hl;
-        was es <em>hat</em>, unter Allgemein.
-      </p>
+      
       <div class="misc-grid">
         <button class="misc-tile subpage-open" data-sub="opt-general">
           <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
@@ -4932,8 +4863,7 @@
       <h2>Allgemein</h2>
 <div class="opt-head">Allgemein</div>
       <div class="opt-row"><div class="opt-label">Scheinwerfer
-          <small>Vorne Standlicht, hinten Bremslicht. Taste <b>L</b> ist die
-          Lichthupe.</small></div>
+          </div>
         <label class="tgl"><input type="checkbox" id="dash-head-toggle" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Auf der Bahn
           <small>Zwei Lesearten, kein Sensorschalter. <b>An</b>: das Auto liest die
@@ -4960,8 +4890,8 @@
                Umformulierung haette alle fuenf Schluessel gleichzeitig gebrochen - sichtbar
                nur daran, dass im englischen Modus mitten im Satz Deutsch steht. -->
           <small>Meldet Byte 12 den Wert 0x00, ist das Auto neben der Bahn: dann brummt
-          der Controller leicht und das Gas wird auf 45 % gedeckelt &ndash; nicht auf null,
-          denn man muss zur&uuml;ckkommen. Wirkt nur in der Stellung &bdquo;Auf der
+          der Controller leicht und das Gas wird auf 45 % gedeckelt. Wirkt nur in der
+          Stellung &bdquo;Auf der
           Bahn&ldquo;: im Ausdruck-Modus ist der Streckensensor aus und Byte 12 st&auml;nde
           dauernd auf 0x00. Der Brummteil braucht zus&auml;tzlich den Schalter
           &bdquo;Vibration&ldquo; dar&uuml;ber.</small></div>
@@ -4977,7 +4907,7 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-offtrack-delay-val">1.0 s</span>
         </div></div>
-<div class="opt-head">Akku</div>
+<div class="opt-head">Akku <span class="wip-tag">WIP</span></div>
       <div class="opt-row"><div class="opt-label">Leistung über Akkulaufzeit konstant halten<small>Drosselt bei vollem Akku. Der Akkuwert ist eine unkalibrierte Schätzung.</small></div><label class="tgl"><input type="checkbox" id="setting-battery-comp"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Referenz-Akkustand</div>
         <div class="opt-slider">
@@ -5045,8 +4975,7 @@
           m&uuml;ssen, damit ein Sto&szlig; als Crash gilt. Niedriger hei&szlig;t
           empfindlicher: schon ein Rempler z&auml;hlt. H&ouml;her hei&szlig;t, dass nur ein
           echter Einschlag z&auml;hlt. 40 ist der Wert, mit dem die Erkennung gebaut und
-          gepr&uuml;ft wurde &ndash; stand bis v0.5 als Konstante im Code, war also eine
-          Einstellung, die niemand einstellen konnte.</small></div>
+          gepr&uuml;ft wurde.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
           <input type="range" id="setting-crash-threshold" min="10" max="100" step="5" value="40">
@@ -5065,6 +4994,38 @@
     <div class="card subpage" id="sub-opt-feel">
       <button class="misc-back subpage-back" data-sub="">&larr; Einstellungen</button>
       <h2>Fahrgef&uuml;hl</h2>
+      <div class="opt-head" style="margin-top:0">Voreinstellungen</div>
+      
+      <div class="row" style="gap:8px; flex-wrap:wrap" id="preset-buttons"></div>
+      <div class="muted" id="preset-status" style="margin-top:6px">&nbsp;</div>
+      <div id="preset-legend"></div>
+      <p class="muted" style="font-size:11.5px; margin:10px 0 4px 0">
+        Zum Weitergeben: der Text unten enth&auml;lt <b>alle</b> Regler, auch die, die keine
+        Voreinstellung anfasst. Kopieren, verschicken, einf&uuml;gen,
+        <b>&Uuml;bernehmen</b>.
+      </p>
+      <!-- Drei Zeilen statt Vollhoehe: der Inhalt ist EINE JSON-Zeile zum Markieren und
+           Kopieren, kein Text zum Lesen. resize:vertical laesst ihn aufziehen, wer doch
+           hineinsehen will. -->
+      <textarea id="preset-json" spellcheck="false" rows="3"
+                style="width:100%; height:3.4em; min-height:0; resize:vertical;
+                       font-family:monospace; font-size:11.5px"></textarea>
+      <div class="row" style="gap:8px; margin-top:6px">
+        <button id="preset-import">&Uuml;bernehmen</button>
+        <button id="preset-export">Aktuelle Werte hineinschreiben</button>
+      </div>
+      <p class="muted" style="font-size:11.5px; margin:14px 0 4px 0">
+        Oder auf diesem Ger&auml;t ablegen. Bleibt im Browser, wird nicht mitgeschickt.
+      </p>
+      <div class="row" style="gap:8px; flex-wrap:wrap">
+        <input type="text" id="preset-store-name" placeholder="Name der Abstimmung"
+               maxlength="40" style="min-width:150px">
+        <button id="preset-store-save">Ablegen</button>
+        <select id="preset-store-list"><option value="">&ndash; abgelegt &ndash;</option></select>
+        <button id="preset-store-load">Laden</button>
+        <button id="preset-store-del">L&ouml;schen</button>
+      </div>
+
 <div class="opt-head">Fahrzeug</div>
       <div class="opt-row"><div class="opt-label">Layout<small>Welches Auto du fährst, nicht wie es abgestimmt ist. Die drei GT3-Varianten unterscheiden sich NUR in Achslast, Radstand und Trägheitsmoment; Leistung, Reifen und Bremse bleiben gleich. Deshalb zeigt der Wechsel, was die Motorlage macht. Ein Heckmotor hat weniger Vorderachslast und lenkt unter Bremsen schlechter ein; ein kleines Trägheitsmoment antwortet schneller. Die Zahlen sind Schätzungen aus der Fahrzeugklasse und keine Messungen. Nicht zu verwechseln mit der Voreinstellung „F1“ weiter oben: die ist eine Abstimmung, das hier ist ein Auto, und die Voreinstellungen fassen es absichtlich nicht an.</small></div>
         <select id="setting-layout" data-preset-skip>
@@ -5569,8 +5530,7 @@
       <div class="opt-row"><div class="opt-label">Ghost: F&uuml;hrenden bremsen<small>Der Erstplatzierte f&auml;hrt etwas langsamer, damit das Feld zusammenbleibt. Wirkt auch ohne Rennen, also beim freien Fahren &ndash; aber erst ab zwei Ghosts: mit einem einzigen ist dieser eine der F&uuml;hrende, und ihn zu bremsen hie&szlig;e nur, ihn langsamer zu machen.</small></div>
         <label class="tgl"><input type="checkbox" id="ghost-leader"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Ghost: Abschlag f&uuml;r den F&uuml;hrenden
-          <small>Um wie viel langsamer. Stand bis v0.4 als Konstante im Code &ndash; eine
-          Einstellung, die niemand einstellen konnte.</small></div>
+          <small>Um wie viel langsamer.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
           <input type="range" id="ghost-leader-pct" min="0" max="0.3" step="0.01" value="0.1">
@@ -5883,7 +5843,7 @@
         weiter gelesen: der Vorlauf ist kein Nutzdatum. Und eines der beiden wiederholten
         Muster gen&uuml;gt. Die kleinste tragende Nutzlast ist damit ein Wort ohne Vorlauf,
         etwa 54 mm in Fahrtrichtung. Deshalb sind die Vorlauf- und Probebl&auml;tter aus
-        dieser Seite verschwunden &ndash; das Experiment ist gelaufen.
+        dieser Seite verschwunden.
       </p>
       <p class="muted" style="font-size:11.5px; border-left:3px solid var(--good);
          padding-left:9px; margin-top:0">
@@ -6039,7 +5999,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.4.49</span></span>
+    <span class="foot-ver">v<span id="app-version">0.4.50</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -6942,8 +6902,7 @@
     "Braucht ein Streckenlayout": "Needs a track layout",
     "Braucht mindestens zwei Ghosts": "Needs at least two ghosts",
     "Ghost: Abschlag für den Führenden": "Ghost: leader handicap",
-    "Um wie viel langsamer. Stand bis v0.4 als Konstante im Code – eine Einstellung, die niemand einstellen konnte.":
-      "By how much slower. Was a constant in the code until v0.4 – a setting nobody could set.",
+    "Um wie viel langsamer.": "By how much slower.",
     "nicht umgesetzt": "not implemented",
     "Teilweise im Aufbau.": "Partly under construction.",
     "Drei der Regler hier wirken nur, wenn eine Strecke mit mindestens drei Teilen vorliegt – entweder im Editor gebaut oder beim Fahren gelernt. Ohne Streckenlayout rechnen sie mit einer Null. Sie sind unten mit":
@@ -7475,6 +7434,28 @@
     "Code-Sonde": "Code probe",
     "Was das Auto gerade unter sich liest, ungefiltert – mit Zeitleiste der Codewechsel.": "What the car is reading beneath itself right now, unfiltered – with a timeline of the code changes.",
     "Was das Auto gerade unter sich liest, ungefiltert. Die Anzeige zeigt den ROHEN Code und nicht das, was die Rundenlogik daraus macht – genau darin liegt ihr Zweck: sie soll die Fehler sichtbar machen, die jene Logik verdeckt.": "What the car is reading beneath itself right now, unfiltered. The readout shows the RAW code and not what the lap logic makes of it – which is precisely its purpose: it is meant to show the errors that logic hides.",
+    "Wozu dient dieses Projekt?": "What is this project for?",
+    "Die Hardware ist gekauft, die Software bestimmt jemand anders. Dieses Projekt dreht das um: es steuert ein Carrera-Hybrid-Auto mit eigenem Code über dieselbe Bluetooth-Schnittstelle, die die Hersteller-App benutzt. Damit läuft auf der Hardware, was man selbst darauf laufen lassen will – unabhängig davon, ob ein Anbieter eine Funktion vorsieht, eine App weiter pflegt oder einen Server abschaltet.": "The hardware is bought and paid for; what runs on it is somebody else’s decision. This project turns that around: it drives a Carrera Hybrid car with its own code over the same Bluetooth interface the manufacturer’s app uses. What runs on the hardware is then what you want to run on it – regardless of whether a vendor provides a feature, keeps an app maintained, or switches off a server.",
+    "Der zweite Punkt ist die Gemeinschaft. Ein offengelegtes Protokoll kann jeder weiterverwenden: für Funktionen, die der Hersteller nicht baut, für eine andere Bedienung, für Unterricht. Das hier ist bewusst als Beispiel gebaut und nicht als Produkt: alles, was herausgefunden wurde, steht in der Doku, samt der Stellen, an denen wir uns geirrt haben.": "The second point is the community. A documented protocol is something anyone can build on: for features the manufacturer does not build, for a different way of controlling things, for teaching. This is deliberately built as an example and not as a product: everything that was found out is written down in the documentation, including the places where we got it wrong.",
+    "Offene Software als Teil offener Wissenschaft": "Open software as part of open science",
+    "Wer Ergebnisse prüfbar machen will, braucht prüfbare Werkzeuge. Eine Auswertung, die auf einem Programm beruht, in das niemand hineinsehen darf, ist genau so weit nachvollziehbar wie das Vertrauen in dessen Hersteller reicht. Deshalb wechseln Forschende zunehmend von kommerzieller auf offene Software, und deshalb steigen auch Landesverwaltungen von Windows auf Linux um: es geht um Kontrolle über die eigene Infrastruktur, nicht um Anschaffungskosten.": "Anyone who wants results to be verifiable needs verifiable tools. An analysis that rests on a program nobody is allowed to look inside is reproducible exactly as far as trust in its maker reaches. That is why researchers are increasingly moving from commercial to open software, and why state administrations are moving from Windows to Linux: it is about control over your own infrastructure, not about purchase costs.",
+    "Offene Software kann dabei sogar sicherer sein, und der Grund dafür heißt Kerckhoffs’ Prinzip: ein Verfahren soll seine Sicherheit aus dem geheimen „Schlüssel“ ziehen und nicht aus der Geheimhaltung des „Verfahrens“. Ein Verfahren, das nur funktioniert, solange niemand es kennt, ist nicht sicher, sondern unprüfbar. Offenlegung ist deshalb kein Risiko, sondern die Voraussetzung dafür, dass Fehler gefunden werden können.": "Open software can even be more secure, and the reason has a name: Kerckhoffs’ principle. A system should draw its security from the secret “key” and not from keeping the “method” secret. A method that only works as long as nobody knows it is not secure, it is unverifiable. Disclosure is therefore not a risk but the precondition for errors being findable at all.",
+    "Das heißt nicht, dass offene Software automatisch sicherer ist – nur, dass Prüfbarkeit und Sicherheit sich nicht widersprechen.": "That does not mean open software is automatically more secure – only that verifiability and security do not contradict each other.",
+    "Zum Weiterlesen und Ausprobieren": "Further reading, and something to try",
+    "„Ada & Zangemann“ von Matthias Kirschner und Sandra Brandstätter ist ein Kinderbuch darüber, wem die Software auf einem Gerät eigentlich gehört. Es erklärt in einer Geschichte, worum es oben in drei Absätzen ging.": "“Ada & Zangemann” by Matthias Kirschner and Sandra Brandstätter is a children’s book about who actually owns the software on a device. It explains in a story what the three paragraphs above were about.",
+    "Und praktisch: die Programmierschule unter Entwicklertools lässt dich Beschleunigungs- und Lenkkurven mit der Hand ziehen und sofort sehen, was das Auto daraus macht. Das ist der kürzeste Weg von „Programmieren ist abstrakt“ zu „eine eckige Kurve fährt schlechter als eine geschmeidige“.": "And something hands-on: the programming school under Developer tools lets you drag acceleration and steering curves by hand and see at once what the car makes of them. That is the shortest road from “programming is abstract” to “a kinked curve drives worse than a smooth one”.",
+    "Eine CH-Strecke oder der Start/Ziel-Ausdruck – benötigt zum Rundenzählen.": "A CH track or the start/finish printout – needed for counting laps.",
+    "gemessen: gekippt bei": "measured: tipped at",
+    "der Deckel ist die Hälfte davon": "the cap is half of that",
+    "gemessen: nie gekippt – der Deckel ist der höchste gehaltene Wert": "measured: never tipped – the cap is the highest value it held",
+    "geschätzt, noch nichts gemessen": "estimated, nothing measured yet",
+    "Meldet Byte 12 den Wert 0x00, ist das Auto neben der Bahn: dann brummt der Controller leicht und das Gas wird auf 45 % gedeckelt. Wirkt nur in der Stellung „Auf der Bahn“: im Ausdruck-Modus ist der Streckensensor aus und Byte 12 stände dauernd auf 0x00. Der Brummteil braucht zusätzlich den Schalter „Vibration“ darüber.": "If byte 12 reports 0x00 the car is off the track: the controller then rumbles gently and the throttle is capped at 45 %. Only takes effect in the “On the track” position: in printout mode the track sensor is off and byte 12 would sit at 0x00 permanently. The rumble part additionally needs the “Vibration” switch above.",
+    "Wie weit die Bewegungsbytes 1 und 3 vom gleitenden Mittel abweichen müssen, damit ein Stoß als Crash gilt. Niedriger heißt empfindlicher: schon ein Rempler zählt. Höher heißt, dass nur ein echter Einschlag zählt. 40 ist der Wert, mit dem die Erkennung gebaut und geprüft wurde.": "How far motion bytes 1 and 3 must deviate from the running mean for an impact to count as a crash. Lower means more sensitive: a nudge already counts. Higher means only a real hit counts. 40 is the value the detection was built and tested with.",
+    "Die drei führenden dünnen Striche lassen sich abschneiden, das Blatt wird weiter gelesen: der Vorlauf ist kein Nutzdatum. Und eines der beiden wiederholten Muster genügt. Die kleinste tragende Nutzlast ist damit ein Wort ohne Vorlauf, etwa 54 mm in Fahrtrichtung. Deshalb sind die Vorlauf- und Probeblätter aus dieser Seite verschwunden.": "The three leading thin bars can be cut off and the sheet is still read: the run-in is not payload. And one of the two repeated patterns is enough. The smallest load-bearing payload is therefore one word without a run-in, about 54 mm in the direction of travel. That is why the run-in and test sheets have disappeared from this page.",
+    "Ein Carrera-Hybrid-Auto mit Firmware Stand August 2026.": "A Carrera Hybrid car with firmware as of August 2026.",
+    "Einen Bluetooth-Controller. Getestet mit DualShock 4 und DualSense.": "A Bluetooth controller. Tested with a DualShock 4 and a DualSense.",
+    "Start/Ziel als SVG herunterladen": "Download start/finish as SVG",
+    "Zwei verschiedene Pups-Hupen": "Two different whoopee horns",
   };
 
   // ============================================================================
@@ -15160,6 +15141,149 @@
   // The four states the user described, as a 2x2. Wets on a dry track are deliberately
   // WORSE than slicks on a dry track: they overheat and grease over, which is why a second
   // pit stop is needed to get back to the baseline rather than the weather clearing alone.
+  // ---- Der Wetterumschwung als FRONT ------------------------------------------------
+  //
+  // Regen war ein Schalter: gripScale sprang, der Ton sprang, die Tropfen erschienen. Jetzt
+  // zieht eine Front ueber uns hinweg, und ihre Lage ist die EINE Zahl, aus der Ton, Griff,
+  // Tropfen und das Radarbild kommen:
+  //
+  //     wxFront  -1 = im Anmarsch     0 = ueber uns     +1 = durch
+  //     Staerke  = max(0, 1 - |wxFront|)
+  //
+  // Eine zweite Groesse fuer das Bild waere ein zweiter Ort, an dem etwas auseinanderlaufen
+  // kann - und dann zeigt das Radar Regen, waehrend es trocken faehrt.
+  //
+  // NACH DEM ABSCHALTEN ZIEHT SIE WEITER, von 0 auf +1, also mit dem Wind davon. Zurueck auf
+  // -1 zu laufen saehe aus wie ein zurueckgespultes Band.
+  const WX_RAMP_S = 5;
+  let wxFront = -1;          // wo die Front steht
+  let wxFrontTo = -1;        // wohin sie zieht
+  let wxTickAt = 0;
+
+  function wxRainLevel() { return Math.max(0, 1 - Math.abs(wxFront)); }
+
+  // ---- Das Regenradar ---------------------------------------------------------------
+  //
+  // Zwanzig unregelmaessige Formen, jede aus vier bis sieben ueberlappenden Kreisen. Die
+  // Ueberlappung IST die Kuestenlinie: einzelne Kreise sehen wie Blasen aus, ueberlappte
+  // wie eine Wolke. Die Teile werden EINMAL gezogen und bleiben - eine Form, die bei jedem
+  // Takt neu gewuerfelt wird, flackert.
+  //
+  // Zwei Sorten:
+  //   weiss   Wolken, die immer ziehen. Sie sagen nichts ueber den Regen - sie machen das
+  //           Bild lebendig, und ohne sie sieht ein trockenes Radar defekt aus.
+  //   blau    die Regenfront. Ihre Lage IST wxFront, nicht davon abgeleitet.
+  const WX_WIND = { x: 0.86, y: -0.51 };     // Zugrichtung, normiert
+  const wxBlobs = [];
+  function wxBlobBauen(n, regen) {
+    for (let i = 0; i < n; i++) {
+      const teile = [];
+      const m = 4 + Math.floor(Math.random() * 4);
+      for (let k = 0; k < m; k++) {
+        teile.push({ dx: (Math.random() * 2 - 1) * 0.09,
+                     dy: (Math.random() * 2 - 1) * 0.07,
+                     r: 0.045 + Math.random() * 0.06 });
+      }
+      wxBlobs.push({
+        regen,
+        teile,
+        // Weisse Wolken: eigene Bahn quer zum Wind, eigenes Tempo.
+        // Regenformen: Lage im Band, laengs und quer.
+        laengs: regen ? (Math.random() * 2 - 1) * 0.42 : Math.random() * 2 - 1,
+        quer: (Math.random() * 2 - 1) * (regen ? 0.62 : 1.0),
+        tempo: regen ? 0 : 0.055 + Math.random() * 0.05,
+        deck: regen ? 0.42 + Math.random() * 0.3 : 0.05 + Math.random() * 0.08,
+      });
+    }
+  }
+  wxBlobBauen(14, false);
+  wxBlobBauen(9, true);
+
+  function wxRadarDraw() {
+    const cv = $('race-wx-radar');
+    if (!cv || document.hidden || !cv.clientWidth) return;
+    // Auf die tatsaechliche Anzeigegroesse ziehen, EINMAL je Aenderung: ein Canvas mit
+    // falscher Pufferbreite wird von der Grafikkarte skaliert und sieht unscharf aus.
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    const bw = Math.round(cv.clientWidth * dpr), bh = Math.round(cv.clientHeight * dpr);
+    if (cv.width !== bw || cv.height !== bh) { cv.width = bw; cv.height = bh; }
+    const g = cv.getContext('2d');
+    const W = cv.width, H = cv.height, S = Math.max(W, H);
+    g.clearRect(0, 0, W, H);
+    g.fillStyle = '#0d1219';
+    g.fillRect(0, 0, W, H);
+
+    // Gitter, wie auf dem Vorbild: fein und dunkel, damit die Formen davor stehen.
+    g.strokeStyle = 'rgba(255,255,255,0.055)';
+    g.lineWidth = 1;
+    for (let k = 1; k < 4; k++) {
+      const x = Math.round(W * k / 4) + 0.5, y = Math.round(H * k / 4) + 0.5;
+      g.beginPath(); g.moveTo(x, 0); g.lineTo(x, H); g.stroke();
+      g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke();
+    }
+
+    const t = Date.now() / 1000;
+    const mx = W / 2, my = H / 2;
+    for (const b of wxBlobs) {
+      let cx, cy, deck = b.deck;
+      if (b.regen) {
+        // Die Front: laengs des Windes um wxFront verschoben. Bei wxFront = 0 liegt das
+        // Band ueber der Mitte - und genau dann regnet es.
+        const l = (wxFront + b.laengs) * 1.25;
+        cx = mx + (WX_WIND.x * l + -WX_WIND.y * b.quer) * S * 0.5;
+        cy = my + (WX_WIND.y * l + WX_WIND.x * b.quer) * S * 0.5;
+        // Ausblenden, wenn die Front weit weg ist: sonst kleben die Formen am Rand.
+        deck *= Math.max(0, Math.min(1, 1.35 - Math.abs(wxFront + b.laengs)));
+      } else {
+        // Weisse Wolken ziehen endlos und werden am Rand umgeschlagen. Der Umschlag laeuft
+        // auf einer Breite von 2,6 - grosszuegiger als das Bild -, damit keine Form
+        // sichtbar aus dem Nichts erscheint.
+        const l = ((b.laengs + t * b.tempo + 1.3) % 2.6) - 1.3;
+        cx = mx + (WX_WIND.x * l + -WX_WIND.y * b.quer) * S * 0.62;
+        cy = my + (WX_WIND.y * l + WX_WIND.x * b.quer) * S * 0.62;
+      }
+      if (deck <= 0.004) continue;
+      g.fillStyle = b.regen
+        ? 'rgba(104,166,186,' + deck.toFixed(3) + ')'
+        : 'rgba(226,236,246,' + deck.toFixed(3) + ')';
+      g.beginPath();
+      for (const s2 of b.teile) {
+        g.moveTo(cx + s2.dx * S + s2.r * S, cy + s2.dy * S);
+        g.arc(cx + s2.dx * S, cy + s2.dy * S, s2.r * S, 0, 6.2832);
+      }
+      g.fill();
+    }
+
+    // Das Kreuz und der Punkt: wo WIR sind. Zuletzt gezeichnet, damit es ueber den Formen
+    // liegt - auf dem Vorbild ist es das auch, und es ist der Bezugspunkt fuer alles andere.
+    g.strokeStyle = 'rgba(255,255,255,0.5)';
+    g.lineWidth = Math.max(1, dpr);
+    g.beginPath();
+    g.moveTo(mx, my - H * 0.18); g.lineTo(mx, my + H * 0.18);
+    g.moveTo(mx - W * 0.14, my); g.lineTo(mx + W * 0.14, my);
+    g.stroke();
+    g.fillStyle = wxRainLevel() > 0.12 ? '#68a6ba' : '#e2ecf6';
+    g.beginPath();
+    g.arc(mx, my, Math.max(1.6, 2.1 * dpr), 0, 6.2832);
+    g.fill();
+  }
+
+  // Eigener Zeitgeber und nicht im Fahrtakt: das Wetter zieht auch, wenn niemand faehrt -
+  // im Menue, in der Garage, beim Zuschauen. 80 ms sind fuer ziehende Wolken reichlich.
+  function wxTick() {
+    const now = Date.now();
+    const dt = wxTickAt ? Math.min(0.5, (now - wxTickAt) / 1000) : 0;
+    wxTickAt = now;
+    if (wxFront !== wxFrontTo) {
+      const schritt = dt / WX_RAMP_S;
+      const d = wxFrontTo - wxFront;
+      wxFront = Math.abs(d) <= schritt ? wxFrontTo : wxFront + Math.sign(d) * schritt;
+      applySurface();
+    }
+    wxRadarDraw();
+  }
+  setInterval(wxTick, 80);
+
   const GRIP_MATRIX = {
     'dry|slick': 1.00,
     'dry|wet':   0.88,
@@ -15170,12 +15294,27 @@
   let tyres = 'slick';
 
   function applySurface() {
-    physEngine.config.gripScale = GRIP_MATRIX[weather + '|' + tyres] ?? 1.0;
-    // Only slicks aquaplane; wets are cut to move water.
-    physEngine.config.aquaplaning = (weather === 'rain' && tyres === 'slick') ? 1 : 0;
-    setAmbienceRain(weather === 'rain');
-    lightFx.rain = (weather === 'rain');   // FIA-style rain light on the rear lamp
-    setRainVisuals(weather === 'rain');
+    // GEMISCHT statt geschaltet. Der Griff wandert zwischen der trockenen und der nassen
+    // Zeile der Matrix - dieselben Endwerte wie vorher, nur nicht mehr in einem Sprung.
+    //
+    // Die Staerke geht QUADRATISCH in den Griff. Das ist kein Feinschliff, sondern die
+    // Aussage: Wasser braucht Zeit, sich auf der Bahn zu sammeln. Nach der Haelfte der
+    // Rampe ist der Ton schon halb da und zu sehen ist Regen, aber gefahren wird noch fast
+    // trocken - nach 2,5 s ein Viertel des Effekts. Genau darum ging es bei "erst nach 5 s
+    // soll das Handling reagieren".
+    const lvl = wxRainLevel();
+    const griff = lvl * lvl;
+    const trocken = GRIP_MATRIX['dry|' + tyres] ?? 1.0;
+    const nass = GRIP_MATRIX['rain|' + tyres] ?? 1.0;
+    physEngine.config.gripScale = trocken + (nass - trocken) * griff;
+    // Only slicks aquaplane; wets are cut to move water. Der Faktor darf gebrochen sein:
+    // die Physik rechnet 1 - aquaplaning * ueber^2, also multipliziert er ohnehin.
+    physEngine.config.aquaplaning = tyres === 'slick' ? griff : 0;
+    setAmbienceRainLevel(lvl);
+    // Das Regenlicht und die Tropfen haengen an der SICHTBAREN Front und nicht am
+    // quadratischen Griff: man sieht Regen, bevor man ihn faehrt.
+    lightFx.rain = lvl > 0.12;
+    setRainVisuals(lvl);
   }
 
   function setWeather(next) {
@@ -15183,6 +15322,14 @@
     weather = next;
     const cb = $('setting-rain');
     if (cb) cb.checked = (weather === 'rain'); // keep the options switch in step
+    // NUR DAS ZIEL SETZEN, den Weg macht wxTick. Und wenn die Front schon durch ist (+1),
+    // faengt eine neue von vorn an - sonst wuerde sie rueckwaerts ueber uns zurueckkommen.
+    if (weather === 'rain') {
+      if (wxFront >= 0.999) wxFront = -1;
+      wxFrontTo = 0;
+    } else {
+      wxFrontTo = 1;
+    }
     applySurface();
     // Audible confirmation: the switch lives on a controller button, where there is nothing
     // to look at. Rain announces itself with a thunder clap, dry with a short two-tone.
@@ -16779,7 +16926,7 @@
   // recognisable within minutes; scattered distinct events do not.
   const ambience = { bed: null, rainBed: null, passby: [], thunder: [],
                      bedNode: null, bedGain: null, rainNode: null, rainGain: null,
-                     ready: false, rainOn: false, busy: false };
+                     ready: false, rainOn: false, rainLevel: 0, busy: false };
   let ambienceVolume = 0.10;   // track bed and pass-bys: quiet, the engine leads
   let rainVolume = 0.25;
   // Eigene Lautstaerke fuer das Bremsenquietschen. Sie hing vorher an engineVolume.
@@ -16866,7 +17013,12 @@
     const wet = live ? rainVolume : 0;
     if (ambience.bedGain) ambience.bedGain.gain.setTargetAtTime(on * 0.7, t, 0.4);
     if (ambience.rainGain) {
-      ambience.rainGain.gain.setTargetAtTime(ambience.rainOn ? wet : 0, t, 0.6);
+      // Die Staerke der Wetterfront mal die eingestellte Lautstaerke. Die 0,6 s Glaettung
+      // bleiben: sie fangen die Sprunge des Reglers, waehrend die Front die langsame
+      // Bewegung macht.
+      const lvl = ambience.rainLevel === undefined
+        ? (ambience.rainOn ? 1 : 0) : ambience.rainLevel;
+      ambience.rainGain.gain.setTargetAtTime(wet * lvl, t, 0.6);
     }
   }
 
@@ -16879,8 +17031,13 @@
   // The visual side of the weather. Tied to the WEATHER, not to the volume: muting the
   // ambience must not also stop the rain from being visible, or a silent storm becomes an
   // invisible one.
-  function setRainVisuals(on) {
-    document.body.classList.toggle('race-wet', !!on);
+  function setRainVisuals(lvl) {
+    const v = typeof lvl === 'number' ? lvl : (lvl ? 1 : 0);
+    document.body.classList.toggle('race-wet', v > 0.02);
+    // Die Staerke geht als CSS-Variable hinaus, und das Stylesheet entscheidet, was daraus
+    // wird: erst wenige Tropfen, dann viele. Die Alternative waere, hier Tropfen zu zaehlen
+    // und einzeln zu erzeugen - dann stuende die Gestaltung im Programm.
+    document.documentElement.style.setProperty('--rain-lvl', v.toFixed(3));
   }
 
   // Lightning: two flashes, the second weaker, because real strikes usually double up.
@@ -16896,9 +17053,24 @@
     setTimeout(() => flash(55), 190);
   }
 
-  function setAmbienceRain(on) {
-    ambience.rainOn = on;
+  // STUFE statt Schalter. Vorher war rainOn ein Boolean und die Lautstaerke sprang auf
+  // ihren Wert (mit 0,6 s Glaettung im Gain-Knoten); jetzt traegt sie die Staerke der
+  // Wetterfront, und der Regen schwillt ueber fuenf Sekunden an.
+  //
+  // rainOn bleibt als Boolean daneben, weil refreshAmbienceGains() es liest und von
+  // mehreren Stellen gerufen wird (Sichtbarkeitswechsel, Lautstaerkeregler). Es ist jetzt
+  // "es regnet ueberhaupt", die Staerke steht in rainLevel.
+  function setAmbienceRainLevel(lvl) {
+    const v = Math.max(0, Math.min(1, lvl || 0));
+    ambience.rainLevel = v;
+    ambience.rainOn = v > 0.001;
     refreshAmbienceGains();
+  }
+
+  // Der alte Name bleibt als Durchreicher: er stand an mehreren Stellen, und ein Umbenennen
+  // in einem Zug ist die Gelegenheit, eine zu vergessen.
+  function setAmbienceRain(on) {
+    setAmbienceRainLevel(on ? 1 : 0);
   }
 
   function playAmbienceOneShot(buffer, gain, wet) {
@@ -17380,13 +17552,16 @@
     // dem Runterschalten, unterschieden nur durch die Haltedauer - eine Taste mit zwei
     // Bedeutungen ist mitten im Rennen die falsche Sorte Ueberraschung.
     yellowflag: { type: 'button', index: 0, label: 'Kreuz (PS) / A (Xbox), 1 s halten' },
-    // Auf Select, weil Kreuz die gelbe Flagge bekommt. Damit liegen die zwei
-    // Rennsteuerungen - starten und Boxenstopp - auf den zwei Menuetasten nebeneinander.
-    racestart: { type: 'button', index: 8, label: 'Select / Share (PS) / Back (Xbox)' },
-    // UNBELEGT ab Werk: Select traegt jetzt den Rennstart. Das Wetter ist ueber die
-    // Oberflaeche erreichbar, eine Taste dafuer ist eine Annehmlichkeit - frei zuweisbar
-    // bleibt es.
-    weather: { type: 'none', index: -1, label: 'nicht belegt' },
+    // RENNSTART HAT AB WERK KEINE TASTE, und das ist eine Entscheidung ueber Folgen:
+    // ein Rennen zu starten oder abzubrechen ist der eingreifendste Knopf der ganzen App -
+    // er wirft eine laufende Wertung weg. Ein Knopf mit dieser Folge gehoert nicht dorthin,
+    // wo die Hand ihn im Vorbeigehen trifft. Ueber die Oberflaeche ist er zwei Klicks weit
+    // weg, und frei zuweisbar bleibt er.
+    racestart: { type: 'none', index: -1, label: 'nicht belegt' },
+    // Auf Select. Das Wetter umzuschalten ist harmlos und rueckgaengig machbar - genau die
+    // Sorte Sache, die auf eine Menuetaste gehoert, die man beim Fahren trifft. Es hat
+    // vorher der Rennstart getragen; siehe dort, warum er umgezogen ist.
+    weather: { type: 'button', index: 8, label: 'Select / Share (PS) / Back (Xbox)' },
     // UNBELEGT ab Werk, ausdruecklich: der linke Stick soll nichts ausloesen, wenn man ihn
     // beim Lenken drueckt. Und die Streckenansicht verlaesst das Cockpit - genau der
     // Grund, aus dem L1 sie nicht mehr traegt.
@@ -17447,6 +17622,22 @@
         b[n] = { ...DEFAULT_BINDINGS[n] };
         b.__migrated3 = true;
       }
+    }
+    // v0.4.50: Select traegt das Wetter, Rennstart bekommt ab Werk keine Taste.
+    //
+    // JE AKTION UNABHAENGIG, wie darueber, und aus demselben Grund: die gekoppelte Fassung
+    // ist in diesem Projekt zweimal danebengegangen. Wer racestart noch auf Select hat, wird
+    // entlastet; wer weather selbst zugewiesen hat, behaelt es.
+    //
+    // Die Reihenfolge ist wichtig: ZUERST racestart raeumen, DANN weather setzen. Anders
+    // herum liegen beide einen Moment auf Knopf 8, und der Kollisionsaufloeser wuerde eines
+    // von beiden verschieben - ausgerechnet das, was gerade richtig gesetzt wurde.
+    if (ist(b.racestart, 8)) {
+      b.racestart = { ...DEFAULT_BINDINGS.racestart };
+      b.__migrated4 = true;
+    }
+    if (b.weather && b.weather.type === 'none' && b.__migrated4) {
+      b.weather = { ...DEFAULT_BINDINGS.weather };
     }
     return b;
   }
@@ -17977,11 +18168,15 @@
     const gekippt = zeilen.find(r => !r.ok);
     const src = $('lat-cap-src');
     if (src) {
+      // Durch t(), weil der Text hier ENTSTEHT: der Knoten-Uebersetzer findet nur, was in
+      // der Vorlage steht. Der Messwert wird angehaengt und nicht eingesetzt - ein
+      // Woerterbuchschluessel mit einer Zahl darin waere fuer jede Zahl ein eigener.
       src.textContent = gekippt
-        ? '\u2013 gemessen: gekippt bei ' + gekippt.steer.toFixed(2) + ', Deckel ist die Haelfte'
+        ? t('gemessen: gekippt bei') + ' ' + gekippt.steer.toFixed(2) + ' \u2013 '
+          + t('der Deckel ist die H\u00e4lfte davon')
         : zeilen.length
-          ? '\u2013 gemessen: nie gekippt, Deckel ist der hoechste gehaltene Wert'
-          : '\u2013 gesch\u00e4tzt, noch nichts gemessen';
+          ? t('gemessen: nie gekippt \u2013 der Deckel ist der h\u00f6chste gehaltene Wert')
+          : t('gesch\u00e4tzt, noch nichts gemessen');
     }
   }
 
@@ -22081,6 +22276,33 @@
       }
     },
 
+    // ---- Die Wetterfront, von aussen lesbar ------------------------------------
+    //
+    // Sie ist die EINE Zahl, aus der Ton, Griff, Tropfen und Radarbild kommen; ohne einen
+    // Zugang dazu ist "der Umschwung dauert fuenf Sekunden" eine Behauptung. Gelesen wird
+    // hier, was die PHYSIK bekommt, nicht was die Anzeige sagt.
+    wxProbe() {
+      return {
+        front: typeof wxFront === 'undefined' ? null : +wxFront.toFixed(4),
+        ziel: typeof wxFrontTo === 'undefined' ? null : wxFrontTo,
+        staerke: typeof wxRainLevel === 'function' ? +wxRainLevel().toFixed(4) : null,
+        grip: +physEngine.config.gripScale.toFixed(4),
+        aqua: +physEngine.config.aquaplaning.toFixed(4),
+        regenTon: (typeof ambience === 'object' && ambience)
+          ? +(ambience.rainLevel || 0).toFixed(4) : null,
+        wetter: typeof weather === 'undefined' ? null : weather,
+        reifen: typeof tyres === 'undefined' ? null : tyres,
+      };
+    },
+    // Die Front von aussen stellen, damit ein Test nicht fuenf Sekunden warten muss.
+    wxSet(front) {
+      if (typeof wxFront === 'undefined') return null;
+      wxFront = Math.max(-1, Math.min(1, front));
+      wxFrontTo = wxFront;
+      applySurface();
+      return this.wxProbe();
+    },
+
     sampleLine(tiles, steps) {
       const keep = currentTrackTiles;
       currentTrackTiles = tiles;
@@ -23973,6 +24195,12 @@
       if (lang !== 'en') setLang('en');
       const DE = /[äöüßÄÖÜ]|\b(der|die|und|nicht|eine|mit|für|ist|sind|wird|wenn|auch|über|nach|beim|dann|aber|noch|kann|muss|sich|dem|den|des|zum|zur|aus|bei|nur|schon|sehr)\b/;
       const rest = new Set();
+      // FERTIGE ENGLISCHE FASSUNGEN durchlassen. Die Wortliste oben verwirft jeden Umlaut,
+      // und das trifft einen deutschen EIGENNAMEN in einer richtig uebersetzten Zeile -
+      // "by Matthias Kirschner and Sandra Brandstaetter" ist Englisch. Namen uebersetzt man
+      // nicht, also muss der Test unterscheiden koennen: ein Knoten, dessen Text eine
+      // bekannte englische Fassung IST, ist fertig.
+      const englisch = new Set(Object.values(I18N_EN));
       for (const root of i18nRoots()) {
         const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
           acceptNode(n) {
@@ -23987,7 +24215,7 @@
             // sonst sich selbst gemeldet ("Byte 14 = 0x22, Bit 5 an, Bit 7 aus").
             // Der feste Text der Selbsttestseite wird weiter geprueft, er steht ausserhalb
             // von #st-rows.
-            if (p.closest('[data-i18n-skip]') || p.closest('#tab-doc') || p.closest('#tab-info')
+            if (p.closest('[data-i18n-skip]') || p.closest('#tab-doc')
                 || p.closest('#log') || p.closest('#st-rows') || p.closest('#hud-toast')
                 || p.id === 'st-status') {
               return NodeFilter.FILTER_REJECT;
@@ -23998,7 +24226,7 @@
         let n;
         while ((n = w.nextNode())) {
           const t = n.nodeValue.replace(/\s+/g, ' ').trim();
-          if (t.length >= 4 && DE.test(t)) rest.add(t);
+          if (t.length >= 4 && DE.test(t) && !englisch.has(t)) rest.add(t);
         }
       }
       const bsp = [...rest][0];
@@ -24320,6 +24548,17 @@
         return { skip: true, mass: 'Umschalten auf Englisch hat nicht gegriffen' };
       }
       const DE = /(?:^|[\s(])(?:werden|wurde|wird|nicht|damit|deshalb|jedoch|welche|meldet|liegt|steht|braucht|dieselbe|derselbe|jedes|jeder|Werte|Blatt|Aufnahmen|Strecken|gespeichert|Ausdruck|Reifen|Bremse|Lenkung|Boxengasse)(?:[\s.,;:!?)]|$)|[\u00e4\u00f6\u00fc\u00df\u00c4\u00d6\u00dc]/;
+      // ZWEI AUSNAHMEN, die der Test vorher nicht kannte - und beide haben ihn falsch
+      // ausloesen lassen, nicht etwas verschwiegen:
+      //
+      // 1. FERTIGE ENGLISCHE FASSUNGEN. Die Regel oben verwirft jeden Text mit Umlaut, und
+      //    das trifft eine richtig uebersetzte Zeile, in der ein deutscher NAME steht:
+      //    "by Matthias Kirschner and Sandra Brandstaetter" ist Englisch mit einem
+      //    Eigennamen. Namen uebersetzt man nicht. Ein Knoten, dessen Text eine bekannte
+      //    englische Fassung IST, ist also fertig - und genau das wird jetzt geprueft.
+      // 2. data-i18n-skip. Der andere Sprachtest ehrt das Attribut schon; hier fehlte es,
+      //    und dadurch meldete er Laufzeitanzeigen wie die Muster-Sonde.
+      const englisch = new Set(Object.values(I18N_EN));
       const gehen = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
       const treffer = [];
       let n;
@@ -24328,9 +24567,11 @@
         if (!el) continue;
         // Die Doku ist ausdruecklich nur deutsch; das Protokoll und die Testtabelle
         // enthalten Laufzeittexte und keine Oberflaeche.
-        if (el.closest('#tab-doc, #tab-info, #log, script, style, template, #st-rows')) continue;
+        if (el.closest('#tab-doc, #log, script, style, template, #st-rows')) continue;
+        if (el.closest('[data-i18n-skip]')) continue;
         const t = n.nodeValue.trim().replace(/\s+/g, ' ');
         if (t.length < 10 || !DE.test(t)) continue;
+        if (englisch.has(t)) continue;
         const wo = el.closest('[id^="tab-"]');
         treffer.push((wo ? wo.id : '?') + ': ' + t.slice(0, 50));
       }
@@ -25118,12 +25359,25 @@
       'setting-fuelweight', 'setting-tyres', 'setting-tyre-blankets', 'setting-tyre-asym',
       'setting-tyre-pressure', 'setting-brake-fade', 'setting-dirtyair',
       'phys-steerresp', 'setting-brake-steal', 'setting-steer-calib', 'phys-accel',
-      'setting-brakebias', 'setting-rain',
+      'setting-brakebias',
+      // setting-rain steht in MIT_RAMPE, nicht hier: es setzt seit v0.4.50 nur das Ziel der
+      // Wetterfront, und unmittelbar nach dem Umlegen ist an der Konfiguration nichts zu
+      // sehen. In beiden Listen wurde es zweimal geprueft, und der erste Durchgang meldete
+      // es richtigerweise als stumm.
     ];
     // Diese zwei multiplizieren in ihren Schalter hinein und tun ohne ihn richtigerweise
     // nichts. Der Test schaltet ihn erst ein.
     const MIT_SCHALTER = [['setting-brake-fade-strength', 'setting-brake-fade'],
                           ['setting-dirtyair-strength', 'setting-dirtyair']];
+    // UND EINER WIRKT UEBER EINE RAMPE. Der Regenschalter setzt seit v0.4.50 nur das ZIEL
+    // der Wetterfront; gripScale wandert ueber fuenf Sekunden dorthin. Unmittelbar nach dem
+    // Umlegen ist deshalb nichts zu sehen, und der Test hat ihn richtigerweise als stumm
+    // gemeldet.
+    //
+    // Die Antwort ist nicht, den Test nachsichtiger zu machen, sondern die Front
+    // nachzuziehen - dann prueft er den GANZEN Weg: Schalter, Ziel, applySurface,
+    // Konfiguration. Nachsicht haette nur die Zusicherung verkleinert.
+    const MIT_RAMPE = ['setting-rain'];
 
     // WERTE vergleichen und nicht Schluessel: ein Feld, das durch die Voreinstellung schon
     // abweicht, bleibt sonst unsichtbar.
@@ -25169,6 +25423,23 @@
       if (!el) { fehlt.push(id); continue; }
       if (!anfassen(el)) stumm.push(id);
     }
+    for (const id of MIT_RAMPE) {
+      const el = $(id);
+      if (!el) { fehlt.push(id); continue; }
+      if (!window.OMEGA_TEST || !OMEGA_TEST.wxSet) { fehlt.push(id + ' (wxSet fehlt)'); continue; }
+      const merkFront = OMEGA_TEST.wxProbe().front;
+      const vor = abbild();
+      const alt = el.checked;
+      el.checked = !el.checked;
+      el.dispatchEvent(new Event('change', { bubbles: true }));
+      // Die Front auf ihr Ziel ziehen, statt fuenf Sekunden zu warten.
+      OMEGA_TEST.wxSet(OMEGA_TEST.wxProbe().ziel);
+      const nach = abbild();
+      el.checked = alt;
+      el.dispatchEvent(new Event('change', { bubbles: true }));
+      OMEGA_TEST.wxSet(merkFront);
+      if (vor === nach) stumm.push(id + ' (mit nachgezogener Front)');
+    }
     for (const [id, schalterId] of MIT_SCHALTER) {
       const el = $(id), sw = $(schalterId);
       if (!el || !sw) { fehlt.push(id); continue; }
@@ -25178,7 +25449,7 @@
       if (sw.checked !== altSw) { sw.checked = altSw; sw.dispatchEvent(new Event('change', { bubbles: true })); }
       if (!ok) stumm.push(id + ' (mit Schalter an)');
     }
-    const geprueft = PFLICHT.length + MIT_SCHALTER.length;
+    const geprueft = PFLICHT.length + MIT_SCHALTER.length + MIT_RAMPE.length;
     return { ok: !stumm.length && !fehlt.length,
              mass: geprueft + ' Physik-Regler geprueft, ' + (geprueft - stumm.length - fehlt.length)
                    + ' greifen'
@@ -25799,18 +26070,25 @@
     if (!window.OMEGA_TEST || !OMEGA_TEST.ghostPassArming) {
       return { skip: true, mass: 'ghostPassArming nicht vorhanden' };
     }
-    const gerade = OMEGA_TEST.ghostPassArming(0x02, 400);
-    const kurve = OMEGA_TEST.ghostPassArming(0x04, 400);
-    const haarnadel = OMEGA_TEST.ghostPassArming(0x06, 400);
+    // 1500 Takte und nicht 400, und das ist eine Berichtigung an DIESEM Test: bei 400
+    // Takten a 60 ms sind es 24 s gefaelschter Zeit, also etwa sechs Wuerfe mit P = 0,45 -
+    // in gut drei Prozent der Laeufe faellt keiner, und dann meldet er rot, obwohl nichts
+    // kaputt ist. Genau so entstehen Tests, die man irgendwann wegklickt. Mit 1500 Takten
+    // sind es rund zweiundzwanzig Wuerfe und die Wahrscheinlichkeit liegt bei 1 zu 100.000.
+    //
+    // Die Gegenrichtung braucht die Laenge auch: "auf der Kurve NIE" ist mit sechs
+    // Gelegenheiten kaum eine Aussage.
+    const gerade = OMEGA_TEST.ghostPassArming(0x02, 1500);
+    const kurve = OMEGA_TEST.ghostPassArming(0x04, 1500);
+    const haarnadel = OMEGA_TEST.ghostPassArming(0x06, 1500);
     const fehler = [];
-    // Auf der Geraden MUSS es ueberhaupt vorkommen, sonst prueft der Test nichts: bei
-    // 400 Takten a 60 ms und einem Wurf je 4 s sind das etwa sechs Gelegenheiten.
+    // Auf der Geraden MUSS es ueberhaupt vorkommen, sonst prueft der Test nichts.
     if (!(gerade.gestartet > 0)) fehler.push('auf der Geraden gar kein Versuch');
     if (kurve.gestartet) fehler.push('Kurve: ' + kurve.gestartet + ' Versuche');
     if (haarnadel.gestartet) fehler.push('Haarnadel: ' + haarnadel.gestartet + ' Versuche');
     return { ok: !fehler.length,
              mass: 'Gerade ' + gerade.gestartet + ', Kurve ' + kurve.gestartet
-                 + ', Haarnadel ' + haarnadel.gestartet + ' Versuche in je 400 Takten'
+                 + ', Haarnadel ' + haarnadel.gestartet + ' Versuche in je 1500 Takten'
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
@@ -25961,6 +26239,63 @@
              mass: zeilen + ' Zeilen, ' + geprueft + ' zugewiesene Aktionen wiedergefunden, '
                  + symbole.length + ' Symbole'
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
+  // ---- Der Wetterumschwung ist weich, und das Handling kommt zuletzt ----
+  //
+  // Regen war ein Schalter: gripScale sprang von 1,00 auf 0,45, der Ton sprang, die Tropfen
+  // erschienen. Jetzt zieht eine Front, und ihre Lage ist die EINE Zahl, aus der Ton, Griff,
+  // Tropfen und das Radarbild kommen.
+  //
+  // GEPRUEFT WIRD DIE ORDNUNG, nicht die Zahl fuenf. Die Sekunden stehen in einer
+  // Konstanten, und ein Test, der sie abschreibt, prueft die Konstante. Was er pruefen
+  // soll: dass der Ton VOR dem Griff kommt. Genau das war der Wunsch - erst hoert und sieht
+  // man Regen, dann faehrt man ihn.
+  stAdd('Wetterfront: Ton vor Griff, und beides stetig', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.wxSet) {
+      return { skip: true, mass: 'wxSet nicht vorhanden' };
+    }
+    const merk = OMEGA_TEST.wxProbe();
+    try {
+      const reihe = [];
+      for (let f = -1; f <= 0.0001; f += 0.1) reihe.push(OMEGA_TEST.wxSet(f));
+      const fehler = [];
+      // 1. Anfang und Ende: trocken und voll nass.
+      const a = reihe[0], e = reihe[reihe.length - 1];
+      if (!(a.staerke === 0 && a.grip > 0.999)) fehler.push('Anfang nicht trocken');
+      if (!(e.staerke > 0.999)) fehler.push('Ende nicht voll');
+      // 2. STETIG: kein Sprung groesser als ein Fuenftel im Griff. Das schliesst den
+      //    Schalter aus, der hier vorher stand - der sprang um 0,55 auf einmal.
+      let sprung = 0;
+      for (let i = 1; i < reihe.length; i++) {
+        sprung = Math.max(sprung, Math.abs(reihe[i].grip - reihe[i - 1].grip));
+      }
+      if (sprung > 0.2) fehler.push('Griffsprung ' + sprung.toFixed(3));
+      // 3. DER TON KOMMT VOR DEM GRIFF. Auf der halben Strecke muss der Ton schon halb da
+      //    sein, der Griff aber noch kaum: quadratisch heisst bei 0,5 nur ein Viertel.
+      const mitte = reihe.find(x => Math.abs(x.staerke - 0.5) < 0.02);
+      if (!mitte) fehler.push('kein Messpunkt auf halber Strecke');
+      else {
+        if (!(mitte.regenTon > 0.4)) fehler.push('Ton auf halber Strecke nur ' + mitte.regenTon);
+        // Griffanteil: wie weit ist der Griff auf dem Weg von trocken nach nass?
+        const weg = (a.grip - mitte.grip) / (a.grip - e.grip);
+        if (!(weg < 0.35)) fehler.push('Griff auf halber Strecke schon ' + (weg * 100).toFixed(0) + ' %');
+      }
+      // 4. Und hinter der Front ist es wieder trocken - sie zieht durch, nicht zurueck.
+      const durch = OMEGA_TEST.wxSet(1);
+      if (!(durch.staerke === 0 && durch.grip > 0.999)) fehler.push('hinter der Front nicht trocken');
+      const mitteTxt = mitte
+        ? 'auf halber Strecke Ton ' + mitte.regenTon.toFixed(2) + ', Griff '
+          + (100 * (a.grip - mitte.grip) / (a.grip - e.grip)).toFixed(0) + ' % des Wegs'
+        : '?';
+      return { ok: !fehler.length,
+               mass: reihe.length + ' Messpunkte, groesster Griffsprung ' + sprung.toFixed(3)
+                   + ', ' + mitteTxt
+                   + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+    } finally {
+      // Zuruecklegen, sonst faehrt der Nutzer nach einem Testlauf im Regen.
+      OMEGA_TEST.wxSet(merk.front);
+    }
   });
 
   // ---- Block 4.4: Reifendruck ----

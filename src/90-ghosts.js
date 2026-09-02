@@ -60,13 +60,16 @@
     // dem Runterschalten, unterschieden nur durch die Haltedauer - eine Taste mit zwei
     // Bedeutungen ist mitten im Rennen die falsche Sorte Ueberraschung.
     yellowflag: { type: 'button', index: 0, label: 'Kreuz (PS) / A (Xbox), 1 s halten' },
-    // Auf Select, weil Kreuz die gelbe Flagge bekommt. Damit liegen die zwei
-    // Rennsteuerungen - starten und Boxenstopp - auf den zwei Menuetasten nebeneinander.
-    racestart: { type: 'button', index: 8, label: 'Select / Share (PS) / Back (Xbox)' },
-    // UNBELEGT ab Werk: Select traegt jetzt den Rennstart. Das Wetter ist ueber die
-    // Oberflaeche erreichbar, eine Taste dafuer ist eine Annehmlichkeit - frei zuweisbar
-    // bleibt es.
-    weather: { type: 'none', index: -1, label: 'nicht belegt' },
+    // RENNSTART HAT AB WERK KEINE TASTE, und das ist eine Entscheidung ueber Folgen:
+    // ein Rennen zu starten oder abzubrechen ist der eingreifendste Knopf der ganzen App -
+    // er wirft eine laufende Wertung weg. Ein Knopf mit dieser Folge gehoert nicht dorthin,
+    // wo die Hand ihn im Vorbeigehen trifft. Ueber die Oberflaeche ist er zwei Klicks weit
+    // weg, und frei zuweisbar bleibt er.
+    racestart: { type: 'none', index: -1, label: 'nicht belegt' },
+    // Auf Select. Das Wetter umzuschalten ist harmlos und rueckgaengig machbar - genau die
+    // Sorte Sache, die auf eine Menuetaste gehoert, die man beim Fahren trifft. Es hat
+    // vorher der Rennstart getragen; siehe dort, warum er umgezogen ist.
+    weather: { type: 'button', index: 8, label: 'Select / Share (PS) / Back (Xbox)' },
     // UNBELEGT ab Werk, ausdruecklich: der linke Stick soll nichts ausloesen, wenn man ihn
     // beim Lenken drueckt. Und die Streckenansicht verlaesst das Cockpit - genau der
     // Grund, aus dem L1 sie nicht mehr traegt.
@@ -127,6 +130,22 @@
         b[n] = { ...DEFAULT_BINDINGS[n] };
         b.__migrated3 = true;
       }
+    }
+    // v0.4.50: Select traegt das Wetter, Rennstart bekommt ab Werk keine Taste.
+    //
+    // JE AKTION UNABHAENGIG, wie darueber, und aus demselben Grund: die gekoppelte Fassung
+    // ist in diesem Projekt zweimal danebengegangen. Wer racestart noch auf Select hat, wird
+    // entlastet; wer weather selbst zugewiesen hat, behaelt es.
+    //
+    // Die Reihenfolge ist wichtig: ZUERST racestart raeumen, DANN weather setzen. Anders
+    // herum liegen beide einen Moment auf Knopf 8, und der Kollisionsaufloeser wuerde eines
+    // von beiden verschieben - ausgerechnet das, was gerade richtig gesetzt wurde.
+    if (ist(b.racestart, 8)) {
+      b.racestart = { ...DEFAULT_BINDINGS.racestart };
+      b.__migrated4 = true;
+    }
+    if (b.weather && b.weather.type === 'none' && b.__migrated4) {
+      b.weather = { ...DEFAULT_BINDINGS.weather };
     }
     return b;
   }
@@ -657,11 +676,15 @@
     const gekippt = zeilen.find(r => !r.ok);
     const src = $('lat-cap-src');
     if (src) {
+      // Durch t(), weil der Text hier ENTSTEHT: der Knoten-Uebersetzer findet nur, was in
+      // der Vorlage steht. Der Messwert wird angehaengt und nicht eingesetzt - ein
+      // Woerterbuchschluessel mit einer Zahl darin waere fuer jede Zahl ein eigener.
       src.textContent = gekippt
-        ? '\u2013 gemessen: gekippt bei ' + gekippt.steer.toFixed(2) + ', Deckel ist die Haelfte'
+        ? t('gemessen: gekippt bei') + ' ' + gekippt.steer.toFixed(2) + ' \u2013 '
+          + t('der Deckel ist die H\u00e4lfte davon')
         : zeilen.length
-          ? '\u2013 gemessen: nie gekippt, Deckel ist der hoechste gehaltene Wert'
-          : '\u2013 gesch\u00e4tzt, noch nichts gemessen';
+          ? t('gemessen: nie gekippt \u2013 der Deckel ist der h\u00f6chste gehaltene Wert')
+          : t('gesch\u00e4tzt, noch nichts gemessen');
     }
   }
 
@@ -4759,6 +4782,33 @@
         lineCache = null;
         Object.keys(merkCfg).forEach(x => { ghostCfg[x] = merkCfg[x]; });
       }
+    },
+
+    // ---- Die Wetterfront, von aussen lesbar ------------------------------------
+    //
+    // Sie ist die EINE Zahl, aus der Ton, Griff, Tropfen und Radarbild kommen; ohne einen
+    // Zugang dazu ist "der Umschwung dauert fuenf Sekunden" eine Behauptung. Gelesen wird
+    // hier, was die PHYSIK bekommt, nicht was die Anzeige sagt.
+    wxProbe() {
+      return {
+        front: typeof wxFront === 'undefined' ? null : +wxFront.toFixed(4),
+        ziel: typeof wxFrontTo === 'undefined' ? null : wxFrontTo,
+        staerke: typeof wxRainLevel === 'function' ? +wxRainLevel().toFixed(4) : null,
+        grip: +physEngine.config.gripScale.toFixed(4),
+        aqua: +physEngine.config.aquaplaning.toFixed(4),
+        regenTon: (typeof ambience === 'object' && ambience)
+          ? +(ambience.rainLevel || 0).toFixed(4) : null,
+        wetter: typeof weather === 'undefined' ? null : weather,
+        reifen: typeof tyres === 'undefined' ? null : tyres,
+      };
+    },
+    // Die Front von aussen stellen, damit ein Test nicht fuenf Sekunden warten muss.
+    wxSet(front) {
+      if (typeof wxFront === 'undefined') return null;
+      wxFront = Math.max(-1, Math.min(1, front));
+      wxFrontTo = wxFront;
+      applySurface();
+      return this.wxProbe();
     },
 
     sampleLine(tiles, steps) {
