@@ -4818,6 +4818,17 @@
       }
     },
 
+    // Die Reifenmischung von aussen setzen. Ein Wechsel geht in der App nur ueber einen
+    // Boxenstopp, und den fuer eine Anzeigepruefung nachzuspielen waere ein halbes Rennen.
+    tyreSet(kind) {
+      if (typeof tyres === 'undefined') return null;
+      tyres = (kind === 'wet') ? 'wet' : 'slick';
+      applySurface();
+      return { reifen: tyres,
+               profil: document.body.classList.contains('tyres-wet'),
+               grip: +physEngine.config.gripScale.toFixed(4) };
+    },
+
     // ---- Die Wetterfront, von aussen lesbar ------------------------------------
     //
     // Sie ist die EINE Zahl, aus der Ton, Griff, Tropfen und Radarbild kommen; ohne einen

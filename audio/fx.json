@@ -50,26 +50,6 @@
       "seconds": 2.6
     }
   },
-  "accel": {
-    "porsche": {
-      "file": "porsche_demo.ogg",
-      "seconds": 9.77,
-      "upshifts": 5,
-      "downshifts": 5
-    },
-    "bmw": {
-      "file": "bmw_demo.ogg",
-      "seconds": 9.77,
-      "upshifts": 5,
-      "downshifts": 5
-    },
-    "mustang": {
-      "file": "mustang_demo.ogg",
-      "seconds": 9.77,
-      "upshifts": 5,
-      "downshifts": 5
-    }
-  },
   "launch_curve": {
     "t": [
       0.0,

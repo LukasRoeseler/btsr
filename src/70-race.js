@@ -1966,6 +1966,11 @@
   let tyres = 'slick';
 
   function applySurface() {
+    // DAS PIKTOGRAMM ZEIGT DIE MISCHUNG. Hier und nicht bei fitTyresForWeather(): das ist
+    // nur EIN Weg zu einem Reifenwechsel, applySurface() laeuft bei jedem - Boxenstopp,
+    // Wetterwechsel, Aufbau. Eine Klasse je Weg zu setzen ist die Gelegenheit, einen zu
+    // vergessen, und dann zeigt der Reifen die Mischung von vorletzter Runde.
+    document.body.classList.toggle('tyres-wet', tyres === 'wet');
     // GEMISCHT statt geschaltet. Der Griff wandert zwischen der trockenen und der nassen
     // Zeile der Matrix - dieselben Endwerte wie vorher, nur nicht mehr in einem Sprung.
     //
@@ -2001,7 +2006,16 @@
       wxFrontTo = 0;
       wxRegenLosschicken();
     } else {
-      wxFrontTo = 1;
+      // DER KUERZERE WEG, wenn die Front noch nicht angekommen ist.
+      //
+      // Vorher ging sie immer auf +1, also mit dem Wind weiter. Wer an- und sofort wieder
+      // ausschaltet, stand damit bei -0,95 und musste 1,95 Einheiten laufen: gemeldet als
+      // "dauert noch 20 Sekunden".
+      //
+      // Beide Richtungen sind physikalisch sinnvoll, und welche gilt, entscheidet die Lage:
+      // eine Front, die noch nicht da ist, kann abdrehen (zurueck auf -1, kurzer Weg); eine,
+      // die durch ist, zieht weiter (auf +1). Nur letzteres saehe zurueckgespult aus.
+      wxFrontTo = wxFront < 0 ? -1 : 1;
       wxRegenAbbestellen();
     }
     applySurface();
@@ -2662,51 +2676,15 @@
       showHudToast('HUPE NICHT GELADEN');
       return;
     }
-    const t = audioCtx.currentTime + 0.01;
-    if (kind === 'relay') {
-      // Zwei harte, kurze Klicks: Anzug und Abfall. Rauschen durch einen engen Bandpass,
-      // weil ein Relaisklick fast nur Anschlag und kaum Ton ist.
-      for (const [dt, amp] of [[0, 0.5], [0.055, 0.32]]) {
-        const n = audioCtx.createBufferSource();
-        const len = Math.floor(audioCtx.sampleRate * 0.02);
-        const buf = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
-        const d = buf.getChannelData(0);
-        for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (len * 0.16));
-        n.buffer = buf;
-        const bp = audioCtx.createBiquadFilter();
-        bp.type = 'bandpass'; bp.frequency.value = 2600; bp.Q.value = 1.4;
-        const g = audioCtx.createGain(); g.gain.value = amp;
-        n.connect(bp).connect(g).connect(audioCtx.destination);
-        n.start(t + dt);
-      }
-      return;
-    }
-    if (kind === 'horn') {
-      // Zwei Teiltoene in einer kleinen Terz, wie eine Zweiklanghupe, 140 ms.
-      for (const f of [370, 440]) {
-        const o = audioCtx.createOscillator();
-        const g = audioCtx.createGain();
-        o.type = 'sawtooth';
-        o.frequency.value = f;
-        g.gain.setValueAtTime(0.0001, t);
-        g.gain.exponentialRampToValueAtTime(0.14, t + 0.015);
-        g.gain.setValueAtTime(0.14, t + 0.11);
-        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.14);
-        o.connect(g).connect(audioCtx.destination);
-        o.start(t); o.stop(t + 0.16);
-      }
-      return;
-    }
-    const o = audioCtx.createOscillator();
-    const g = audioCtx.createGain();
-    o.type = 'square';
-    o.frequency.setValueAtTime(880, t);
-    o.frequency.exponentialRampToValueAtTime(1760, t + 0.05);
-    g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(0.10, t + 0.008);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.07);
-    o.connect(g).connect(audioCtx.destination);
-    o.start(t); o.stop(t + 0.09);
+    // HIER STANDEN DREI GERECHNETE TOENE - Relais-Klacken, Zweiklang, Blip -, und sie
+    // sind heraus. Sie waren als Rueckfall gedacht, solange keine Aufnahmen dabei waren;
+    // jetzt sind sechs Aufnahmen dabei, und drei synthetische Ersatztoene daneben sind
+    // eine Wahl ohne Gewinn.
+    //
+    // Der Zweig ist damit vollstaendig: 'none' und die sechs horn_*-Aufnahmen. Alles
+    // andere kann nicht mehr im Menue stehen, und ein stiller Rueckfall waere hier das
+    // Falsche - wer eine Ziege gewaehlt hat, will keinen Blip hoeren.
+    log('Unbekannter Lichthupenton: ' + kind, 'err');
   }
 
   function updateDamageBlink() {

@@ -967,6 +967,28 @@
   .gt3-t4 > b { position: absolute; left: 0; right: 0; bottom: 0; height: 0;
     background: #4a5568; opacity: .82;
     transition: height .15s linear, background .3s linear; }
+  /* REGENREIFEN HABEN PROFIL, Slicks nicht - und genau das ist der Unterschied, den man
+     auf einem Reifen sofort sieht. Die Anzeige zeigte bisher nur Restprofil und Temperatur;
+     WELCHE Mischung montiert ist, stand allein im Text darunter.
+
+     Zwei Rillenscharen ueber Kreuz, jede mit einem Vorzeichen: das ergibt das V, das ein
+     Regenreifen in der Lauffleche hat, und es ist an einem 20 Pixel breiten Feld noch als
+     Muster zu erkennen. Eine Schar allein saehe nach Schraegrillen aus, vier nach
+     Gelaendereifen.
+
+     ::after und nicht ::before: es liegt damit UEBER der Fuellung. Die Rillen sollen auch
+     auf dem farbigen Teil zu sehen sein - ein Reifen, dessen Profil beim Aufwaermen
+     verschwindet, waere eine Aussage, die niemand gemacht hat.
+
+     Die Rillen liegen an der Lauffleche und nicht an der Flanke, deshalb der Rand von
+     14 Prozent: ein Muster bis in die Ecken saehe wie eine Schraffur des ganzen Feldes aus. */
+  body.tyres-wet .gt3-t4::after { content: ''; position: absolute;
+    left: 14%; right: 14%; top: 6%; bottom: 6%; pointer-events: none;
+    background-image:
+      repeating-linear-gradient(24deg, transparent 0 2.5px,
+        rgba(2, 6, 14, .62) 2.5px 4px, transparent 4px 7px),
+      repeating-linear-gradient(-24deg, transparent 0 2.5px,
+        rgba(2, 6, 14, .62) 2.5px 4px, transparent 4px 7px); }
   /* Ein ABGEBAUTES Rad beim Boxenstopp. Nicht nur leer, sondern weg: die helle Kante
      verschwindet fast, und die Nabe wird noch dunkler als der leere Reifen. Ein leerer
      Reifen und ein fehlender Reifen sehen sonst gleich aus, und dann sieht der Wechsel wie
@@ -2168,7 +2190,7 @@
         <button type="button" class="gt3-act" id="race-act-start">Rennen starten</button>
         <!-- Der Motorklang gehoert ins Cockpit, weil man ihn im Fahren wechselt: das ist
              kein Einrichten, sondern Ausprobieren. MIT Namen und nicht nur mit dem Symbol -
-             ein Knopf, der durch siebzehn Eintraege schaltet, muss sagen wo er steht, sonst
+             ein Knopf, der durch zehn Eintraege schaltet, muss sagen wo er steht, sonst
              drueckt man blind und hoert erst beim Gasgeben, was passiert ist. -->
         <button type="button" class="gt3-act gt3-act-ico" id="race-act-sound"
                 title="Motorklang durchschalten">
@@ -2200,7 +2222,7 @@
              Lauffleche, Farbe die Temperatur. Der frueher separate Ring sagte die Temperatur
              schon, und zweimal dasselbe in einer 77-px-Kachel ist Platzverschwendung. -->
         <div class="gt3-box gt3-click pit-tile" id="race-tyre-box" data-pit="tyres"
-             title="Reifen: F&uuml;llh&ouml;he ist Restprofil, Farbe die Temperatur. Links und rechts werden getrennt gerechnet, vorn und hinten nicht &ndash; die beiden einer Seite laufen deshalb gleich. Antippen schaltet die Reifensimulation aus, beim Boxenstopp den Reifenwechsel."><div class="gt3-lbl">Reifen</div>
+             title="Reifen: F&uuml;llh&ouml;he ist Restprofil, Farbe die Temperatur, Rillen bedeuten Regenreifen. Links und rechts werden getrennt gerechnet, vorn und hinten nicht &ndash; die beiden einer Seite laufen deshalb gleich. Antippen schaltet die Reifensimulation aus, beim Boxenstopp den Reifenwechsel."><div class="gt3-lbl">Reifen</div>
           <!-- In jedem Reifen steckt eine BREMSSCHEIBE, als kleiner Ring. Sachlich
                richtig - eine Scheibe steckt in der Felge -, und die Zuordnung vorn/hinten ist
                dieselbe wie beim Reifen.
@@ -3728,19 +3750,17 @@
         kürzere Gang den Motor bei gleicher Geschwindigkeit schneller dreht. Das kurze Bellen dabei
         ist Zwischengas: echte GT3-Getriebe gleichen die Drehzahl beim Runterschalten an.
       </p>
-      <div class="row" style="gap:18px; flex-wrap:wrap">
-        <div><p class="muted" style="margin:0 0 4px 0"><b>Porsche</b>: Boxer-6, gleichmäßig zündend</p>
-          <audio controls preload="none" src="audio/porsche_demo.ogg" style="height:32px"></audio></div>
-        <div><p class="muted" style="margin:0 0 4px 0"><b>BMW</b>: Reihen-6, Turbo</p>
-          <audio controls preload="none" src="audio/bmw_demo.ogg" style="height:32px"></audio></div>
-        <div><p class="muted" style="margin:0 0 4px 0"><b>Mustang</b>: V8, Cross-Plane</p>
-          <audio controls preload="none" src="audio/mustang_demo.ogg" style="height:32px"></audio></div>
-      </div>
+      <!-- HIER STANDEN DREI ABSPIELER auf porsche_demo, bmw_demo und mustang_demo: ein
+           kompletter Fahrzyklus je Motor. Die drei Dateien sind mit v0.4.52 heraus, und der
+           Grund gehoert hierher: sie wurden von NICHTS gelesen ausser einem accel-Block in
+           audio/fx.json, den ebenfalls kein Code las. Drei Abspieler in der Doku sind kein
+           Grund, drei Dateien mitzuschleppen - die Schleifen weiter unten zeigen dasselbe
+           und werden auch gefahren. -->
       <p class="muted" style="font-size:11.5px; margin-top:10px">
-        Porsche, BMW und Mustang sowie alle Effekte oben sind <b>vollständig synthetisch</b>:
+        Alle Motoren und alle Effekte oben sind <b>vollständig synthetisch</b>:
         Zündimpulse, gefaltet mit der Resonanz des Auspuffkrümmers, nach dem Vorbild von
         ange-yaghi/engine-sim (MIT). Der Unterschied zwischen den Fahrzeugen kommt nicht aus der
-        Tonhöhe, sondern aus den <b>Zündabständen</b>: die beiden Sechszylinder zünden gleichmäßig
+        Tonhöhe, sondern aus den <b>Zündabständen</b>: ein gleichmäßig zündender Sechszylinder zündet
         alle 120°, der Cross-Plane-V8 dagegen ungleichmäßig innerhalb jeder Bank, daher das
         Blubbern. Der Crash ist bewusst dumpf gehalten: ein GT3-Kontakt ist Carbon, das den Stoß
         schluckt, kein splitterndes Glas.
@@ -3830,37 +3850,46 @@
         Drehzahl in Klammern ist die Basis: dort klingt die Schleife unverstimmt.
       </p>
       <div class="snd-grid">
-        <div class="snd-row"><audio controls preload="none" src="audio/porsche_idle.ogg"></audio><div><b>Porsche 992 GT3 (Boxer-6, Saugmotor), Leerlauf (1500/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
-        <div class="snd-row"><audio controls preload="none" src="audio/porsche_mid.ogg"></audio><div><b>Porsche 992 GT3 (Boxer-6, Saugmotor), Mittelband (4500/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
-        <div class="snd-row"><audio controls preload="none" src="audio/porsche_high.ogg"></audio><div><b>Porsche 992 GT3 (Boxer-6, Saugmotor), oberes Band (8200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
-        <div class="snd-row"><audio controls preload="none" src="audio/porsche_over.ogg"></audio><div><b>Porsche 992 GT3 (Boxer-6, Saugmotor), Schub (4500/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
-        <div class="snd-row"><audio controls preload="none" src="audio/bmw_idle.ogg"></audio><div><b>BMW M4 GT3 (Reihen-6, Turbo), Leerlauf (1400/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
-        <div class="snd-row"><audio controls preload="none" src="audio/bmw_mid.ogg"></audio><div><b>BMW M4 GT3 (Reihen-6, Turbo), Mittelband (4200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
-        <div class="snd-row"><audio controls preload="none" src="audio/bmw_high.ogg"></audio><div><b>BMW M4 GT3 (Reihen-6, Turbo), oberes Band (7200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
-        <div class="snd-row"><audio controls preload="none" src="audio/bmw_over.ogg"></audio><div><b>BMW M4 GT3 (Reihen-6, Turbo), Schub (4200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/p992gt3r_idle.ogg"></audio><div><b>Porsche 911 GT3 R (4.2 Boxer-6, Einzeldrosseln), Leerlauf (1200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/p992gt3r_mid.ogg"></audio><div><b>Porsche 911 GT3 R (4.2 Boxer-6, Einzeldrosseln), Mittelband (5500/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/p992gt3r_high.ogg"></audio><div><b>Porsche 911 GT3 R (4.2 Boxer-6, Einzeldrosseln), oberes Band (8800/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/p992gt3r_over.ogg"></audio><div><b>Porsche 911 GT3 R (4.2 Boxer-6, Einzeldrosseln), Schub (5500/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/m4gt3_idle.ogg"></audio><div><b>BMW M4 GT3 (P58 3.0 Reihen-6, ohne Lader), Leerlauf (1300/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/m4gt3_mid.ogg"></audio><div><b>BMW M4 GT3 (P58 3.0 Reihen-6, ohne Lader), Mittelband (4300/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/m4gt3_high.ogg"></audio><div><b>BMW M4 GT3 (P58 3.0 Reihen-6, ohne Lader), oberes Band (7200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/m4gt3_over.ogg"></audio><div><b>BMW M4 GT3 (P58 3.0 Reihen-6, ohne Lader), Schub (4300/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/amggt3_idle.ogg"></audio><div><b>Mercedes-AMG GT3 (M159 6.2 V8, Cross-Plane), Leerlauf (1200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/amggt3_mid.ogg"></audio><div><b>Mercedes-AMG GT3 (M159 6.2 V8, Cross-Plane), Mittelband (4400/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/amggt3_high.ogg"></audio><div><b>Mercedes-AMG GT3 (M159 6.2 V8, Cross-Plane), oberes Band (7700/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/amggt3_over.ogg"></audio><div><b>Mercedes-AMG GT3 (M159 6.2 V8, Cross-Plane), Schub (4400/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/f296gt3_idle.ogg"></audio><div><b>Ferrari 296 GT3 (F163CE 3.0 V6 120 Grad, ohne Lader), Leerlauf (1400/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/f296gt3_mid.ogg"></audio><div><b>Ferrari 296 GT3 (F163CE 3.0 V6 120 Grad, ohne Lader), Mittelband (5000/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/f296gt3_high.ogg"></audio><div><b>Ferrari 296 GT3 (F163CE 3.0 V6 120 Grad, ohne Lader), oberes Band (8000/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/f296gt3_over.ogg"></audio><div><b>Ferrari 296 GT3 (F163CE 3.0 V6 120 Grad, ohne Lader), Schub (5000/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/huracan_idle.ogg"></audio><div><b>Huracan GT3 EVO2 / R8 LMS (5.2 V10, Split-Pin), Leerlauf (1400/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/huracan_mid.ogg"></audio><div><b>Huracan GT3 EVO2 / R8 LMS (5.2 V10, Split-Pin), Mittelband (5400/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/huracan_high.ogg"></audio><div><b>Huracan GT3 EVO2 / R8 LMS (5.2 V10, Split-Pin), oberes Band (8700/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/huracan_over.ogg"></audio><div><b>Huracan GT3 EVO2 / R8 LMS (5.2 V10, Split-Pin), Schub (5400/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/vantagegt3_idle.ogg"></audio><div><b>Aston Martin Vantage GT3 (M177 4.0 V8, ohne Lader), Leerlauf (1200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/vantagegt3_mid.ogg"></audio><div><b>Aston Martin Vantage GT3 (M177 4.0 V8, ohne Lader), Mittelband (4200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/vantagegt3_high.ogg"></audio><div><b>Aston Martin Vantage GT3 (M177 4.0 V8, ohne Lader), oberes Band (7200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/vantagegt3_over.ogg"></audio><div><b>Aston Martin Vantage GT3 (M177 4.0 V8, ohne Lader), Schub (4200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/c6r_idle.ogg"></audio><div><b>Corvette C6.R (LS7.R 7.0 V8, Cross-Plane), Leerlauf (1100/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/c6r_mid.ogg"></audio><div><b>Corvette C6.R (LS7.R 7.0 V8, Cross-Plane), Mittelband (4000/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/c6r_high.ogg"></audio><div><b>Corvette C6.R (LS7.R 7.0 V8, Cross-Plane), oberes Band (7200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/c6r_over.ogg"></audio><div><b>Corvette C6.R (LS7.R 7.0 V8, Cross-Plane), Schub (4000/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/z06gt3r_idle.ogg"></audio><div><b>Corvette Z06 GT3.R (LT6.R 5.5 V8, Flat-Plane), Leerlauf (1300/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/z06gt3r_mid.ogg"></audio><div><b>Corvette Z06 GT3.R (LT6.R 5.5 V8, Flat-Plane), Mittelband (5200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/z06gt3r_high.ogg"></audio><div><b>Corvette Z06 GT3.R (LT6.R 5.5 V8, Flat-Plane), oberes Band (8600/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/z06gt3r_over.ogg"></audio><div><b>Corvette Z06 GT3.R (LT6.R 5.5 V8, Flat-Plane), Schub (5200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/mustang_idle.ogg"></audio><div><b>Ford Mustang GT3 (V8, Cross-Plane), Leerlauf (1200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/mustang_mid.ogg"></audio><div><b>Ford Mustang GT3 (V8, Cross-Plane), Mittelband (3900/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/mustang_high.ogg"></audio><div><b>Ford Mustang GT3 (V8, Cross-Plane), oberes Band (7000/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/mustang_over.ogg"></audio><div><b>Ford Mustang GT3 (V8, Cross-Plane), Schub (3900/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
-        <div class="snd-row"><audio controls preload="none" src="audio/corvette_idle.ogg"></audio><div><b>Chevrolet Corvette C6 (V8), Leerlauf (1776/min)</b><br><span class="muted" style="font-size:11px">aus einer Pixabay-Aufnahme geschnitten</span></div></div>
-        <div class="snd-row"><audio controls preload="none" src="audio/corvette_mid.ogg"></audio><div><b>Chevrolet Corvette C6 (V8), Mittelband (4545/min)</b><br><span class="muted" style="font-size:11px">aus einer Pixabay-Aufnahme geschnitten</span></div></div>
-        <div class="snd-row"><audio controls preload="none" src="audio/corvette_high.ogg"></audio><div><b>Chevrolet Corvette C6 (V8), oberes Band (4980/min)</b><br><span class="muted" style="font-size:11px">aus einer Pixabay-Aufnahme geschnitten</span></div></div>
-        <div class="snd-row"><audio controls preload="none" src="audio/gt3v8_idle.ogg"></audio><div><b>GT3 V8, Flat-Plane (nach Ferrari F136), Leerlauf (1300/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
-        <div class="snd-row"><audio controls preload="none" src="audio/gt3v8_mid.ogg"></audio><div><b>GT3 V8, Flat-Plane (nach Ferrari F136), Mittelband (5200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
-        <div class="snd-row"><audio controls preload="none" src="audio/gt3v8_high.ogg"></audio><div><b>GT3 V8, Flat-Plane (nach Ferrari F136), oberes Band (8800/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
-        <div class="snd-row"><audio controls preload="none" src="audio/gt3v8_over.ogg"></audio><div><b>GT3 V8, Flat-Plane (nach Ferrari F136), Schub (5200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
-        <div class="snd-row"><audio controls preload="none" src="audio/gt3v10_idle.ogg"></audio><div><b>GT3 V10 (nach Lexus LFA), Leerlauf (1400/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
-        <div class="snd-row"><audio controls preload="none" src="audio/gt3v10_mid.ogg"></audio><div><b>GT3 V10 (nach Lexus LFA), Mittelband (5400/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
-        <div class="snd-row"><audio controls preload="none" src="audio/gt3v10_high.ogg"></audio><div><b>GT3 V10 (nach Lexus LFA), oberes Band (8900/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
-        <div class="snd-row"><audio controls preload="none" src="audio/gt3v10_over.ogg"></audio><div><b>GT3 V10 (nach Lexus LFA), Schub (5400/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
-        <div class="snd-row"><audio controls preload="none" src="audio/bmax_idle.ogg"></audio><div><b>Ford B-Max 1.0 EcoBoost (Reihen-3, Turbo), Leerlauf (850/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
-        <div class="snd-row"><audio controls preload="none" src="audio/bmax_mid.ogg"></audio><div><b>Ford B-Max 1.0 EcoBoost (Reihen-3, Turbo), Mittelband (3200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
-        <div class="snd-row"><audio controls preload="none" src="audio/bmax_high.ogg"></audio><div><b>Ford B-Max 1.0 EcoBoost (Reihen-3, Turbo), oberes Band (6000/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
-        <div class="snd-row"><audio controls preload="none" src="audio/bmax_over.ogg"></audio><div><b>Ford B-Max 1.0 EcoBoost (Reihen-3, Turbo), Schub (3200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
-        <div class="snd-row"><audio controls preload="none" src="audio/f1_idle.ogg"></audio><div><b>F1 V12, 18 000/min (nach Ferrari 412 T2), Leerlauf (4000/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
-        <div class="snd-row"><audio controls preload="none" src="audio/f1_mid.ogg"></audio><div><b>F1 V12, 18 000/min (nach Ferrari 412 T2), Mittelband (11000/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
-        <div class="snd-row"><audio controls preload="none" src="audio/f1_high.ogg"></audio><div><b>F1 V12, 18 000/min (nach Ferrari 412 T2), oberes Band (17500/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
-        <div class="snd-row"><audio controls preload="none" src="audio/f1_over.ogg"></audio><div><b>F1 V12, 18 000/min (nach Ferrari 412 T2), Schub (11000/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/f1_2026_idle.ogg"></audio><div><b>Formel 1 2026 (1.6 V6 Turbo-Hybrid, 90 Grad), Leerlauf (4200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/f1_2026_mid.ogg"></audio><div><b>Formel 1 2026 (1.6 V6 Turbo-Hybrid, 90 Grad), Mittelband (8500/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/f1_2026_high.ogg"></audio><div><b>Formel 1 2026 (1.6 V6 Turbo-Hybrid, 90 Grad), oberes Band (12500/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/f1_2026_over.ogg"></audio><div><b>Formel 1 2026 (1.6 V6 Turbo-Hybrid, 90 Grad), Schub (8500/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
       </div>
       <p class="muted" style="font-size:11.5px">
         Vollst&auml;ndige Herkunftsangaben in <code>audio/CREDITS.md</code>.
@@ -3868,7 +3897,7 @@
 
       <h2>Audio-Engine</h2>
       <p class="muted">
-        Die drei Hauptmotoren sind <strong>vollst&auml;ndig synthetisch</strong>: es wird keine
+        Alle zehn Motoren sind <strong>vollst&auml;ndig synthetisch</strong>: es wird keine
         Aufnahme wiedergegeben. Modelliert nach dem Ansatz von <em>ange-yaghi/engine-sim</em> (MIT-Lizenz):
       </p>
       <ul class="muted">
@@ -5256,7 +5285,7 @@
           oben sind aus Zylinderzahl, Kurbelwelle und Z&uuml;ndfolge gerechnet. Bei den
           aufgeladenen Originalen fehlt der Lader.</small></div>
         <select id="sound-profile">
-          <optgroup label="Rennmotoren, gerechnet">
+          <optgroup label="GT3 und GT-Rennmotoren">
           <option value="amggt3">Mercedes-AMG GT3: V8, Cross-Plane</option>
           <option value="c6r">Corvette C6.R: V8, Cross-Plane, OHV</option>
           <option value="z06gt3r">Corvette Z06 GT3.R: V8, Flat-Plane</option>
@@ -5265,16 +5294,11 @@
           <option value="f296gt3">Ferrari 296 GT3: V6, 120 Grad</option>
           <option value="huracan">Huracan GT3 / R8 LMS: V10, Split-Pin</option>
           <option value="p992gt3r" selected>Porsche 911 GT3 R: Boxer-6, Einzeldrosseln</option>
+          <option value="mustang">Ford Mustang GT3: V8, Cross-Plane</option>
           </optgroup>
-          <option value="mustang">Mustang, V8, Cross-Plane</option>
-          <option value="corvette">Corvette C6: V8 (Aufnahme)</option>
-          <option value="porsche_rec">Porsche, Boxer-6 (Aufnahme)</option>
-          <option value="porsche">Porsche: Boxer-6, Saugmotor</option>
-          <option value="bmw">BMW: Reihen-6, Turbo</option>
-          <option value="gt3v8">GT3: V8, Flat-Plane, 8800/min</option>
-          <option value="gt3v10">GT3: V10, Saugmotor, 8900/min</option>
-          <option value="bmax">B-Max: Reihen-3, Turbo</option>
-          <option value="f1">Formel 1: V12, 17500/min</option>
+          <optgroup label="Formel 1">
+          <option value="f1_2026">Formel 1 2026: V6 Turbo-Hybrid, 1,6 l</option>
+          </optgroup>
         </select></div>
       <div class="opt-row"><div class="opt-label">Motorlautstärke</div>
         <div class="opt-slider">
@@ -5284,8 +5308,9 @@
           <span class="opt-val" id="sound-volume-val">70%</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Ton bei Lichthupe
-          <small>Standard aus. Die ersten sechs sind Aufnahmen, der Rest ist
-          gerechnet.</small></div>
+          <small>Standard aus, denn ein Auto macht bei der Lichthupe kein Ger&auml;usch
+          &ndash; das hier ist eine R&uuml;ckmeldung f&uuml;r den Fahrer und keine
+          Simulation. Alle sechs sind Aufnahmen.</small></div>
         <select id="flash-sound">
           <option value="none" selected>kein Ton</option>
           <option value="horn_car">Autohupe</option>
@@ -5294,9 +5319,6 @@
           <option value="horn_goat">Ziege</option>
           <option value="horn_fart">Furz</option>
           <option value="horn_fart2">Furz 2</option>
-          <option value="relay">Relais-Klacken (gerechnet)</option>
-          <option value="horn">Zweiklang (gerechnet)</option>
-          <option value="blip">Blip (gerechnet)</option>
         </select></div>
       
       <div class="mw-block">
@@ -5999,7 +6021,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.4.52</span></span>
+    <span class="foot-ver">v<span id="app-version">0.4.53</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -6825,7 +6847,7 @@
     "Entwicklertools": "Developer tools",
     "Speichern und austauschen": "Save and exchange",
     "Speichern": "Save",
-    "Standard aus. Die ersten sechs sind Aufnahmen, der Rest ist gerechnet.": "Off by default. The first six are recordings, the rest are computed.",
+    "Standard aus, denn ein Auto macht bei der Lichthupe kein Geräusch – das hier ist eine Rückmeldung für den Fahrer und keine Simulation. Alle sechs sind Aufnahmen.": "Off by default, because a car makes no sound when it flashes its headlights – this is feedback for the driver and not a simulation. All six are recordings.",
     "Standard: rechter Trigger = Gas, linker Trigger = Bremse, linker Stick = Lenkung, X (links) = runterschalten, B (rechts) = hochschalten: wie bei einem Xbox-Controller. Klicke \"Neu zuweisen\" und betätige dann den gewünschten Knopf/Stick/Trigger am Controller.": "Default: right trigger = throttle, left trigger = brake, left stick = steering, X (left) = shift down, B (right) = shift up: as on an Xbox controller. Click \"Reassign\" and then operate the button, stick or trigger you want on the controller.",
     "Start / Ziel": "Start / finish",
     "Start / Ziel, nicht auslegen": "Start / finish, do not lay down",
@@ -10938,7 +10960,11 @@
     el.classList.add('gt3-tick');
   }
 
-  function updateRaceScreen(st, out) {
+  // out ist HERAUS, und zwar weil es nicht benutzt wurde: die Anzeige liest alles aus dem
+  // Zustand st, und die Ausgaben des Modells (motorPWM, servoAngle, Lichter) gehen an das
+  // Auto und nicht auf den Schirm. Ein Parameter, den der Aufrufer uebergibt und der Rumpf
+  // nicht anfasst, liest sich wie eine Zusage.
+  function updateRaceScreen(st) {
     const gearEl = $('race-gear');
     if (!gearEl) return;
     // Zahl und Kennzeichnung getrennt, weil die Zahl mittig bleiben muss. textContent auf
@@ -11268,7 +11294,7 @@
   // raceLampHead, die BEIDE ins gesendete Paket gehen.
   function updateDashboard(out) {
     const st = physEngine.state;
-    updateRaceScreen(st, out);
+    updateRaceScreen(st);
     const lamp = resolveLights(out.lights.head, out.lights.brake);
     raceLampHead = lamp.head;
   }
@@ -11949,7 +11975,14 @@
   // Editor gilt weiter TILE_TYPE.START allein.
   const START_CODES = [0x0a, 0x01];
   const START_CODE_LEGACY = 0x01;
-  function isStartCode(c) { return c === 0x0a || c === START_CODE_LEGACY; }
+  // AUS DER LISTE GELESEN und nicht daneben aufgezaehlt. Vorher stand hier
+  // "c === 0x0a || c === START_CODE_LEGACY", und damit gab es die Tatsache "was gilt als
+  // Start/Ziel" an ZWEI Orten - die Liste hatte keinen einzigen Leser und war die
+  // aufgeschriebene Fassung ohne Wirkung. Die Durchsicht auf nicht verdrahtete Teile hat
+  // sie als einzige Konstante ohne Leser gefunden.
+  //
+  // Wer einen dritten Code aufnimmt, aendert jetzt eine Stelle.
+  function isStartCode(c) { return START_CODES.indexOf(c) >= 0; }
   // Code 0x00 means the sensor is reading NOTHING VALID, i.e. the car has left the track.
   // From the guard-rail capture of 20.08: every departure showed up as 0x00 together with the
   // tile counter racing (6 -> 8 -> 9 -> 15 -> 18 within three seconds), and 16 of 38
@@ -15454,6 +15487,11 @@
   let tyres = 'slick';
 
   function applySurface() {
+    // DAS PIKTOGRAMM ZEIGT DIE MISCHUNG. Hier und nicht bei fitTyresForWeather(): das ist
+    // nur EIN Weg zu einem Reifenwechsel, applySurface() laeuft bei jedem - Boxenstopp,
+    // Wetterwechsel, Aufbau. Eine Klasse je Weg zu setzen ist die Gelegenheit, einen zu
+    // vergessen, und dann zeigt der Reifen die Mischung von vorletzter Runde.
+    document.body.classList.toggle('tyres-wet', tyres === 'wet');
     // GEMISCHT statt geschaltet. Der Griff wandert zwischen der trockenen und der nassen
     // Zeile der Matrix - dieselben Endwerte wie vorher, nur nicht mehr in einem Sprung.
     //
@@ -15489,7 +15527,16 @@
       wxFrontTo = 0;
       wxRegenLosschicken();
     } else {
-      wxFrontTo = 1;
+      // DER KUERZERE WEG, wenn die Front noch nicht angekommen ist.
+      //
+      // Vorher ging sie immer auf +1, also mit dem Wind weiter. Wer an- und sofort wieder
+      // ausschaltet, stand damit bei -0,95 und musste 1,95 Einheiten laufen: gemeldet als
+      // "dauert noch 20 Sekunden".
+      //
+      // Beide Richtungen sind physikalisch sinnvoll, und welche gilt, entscheidet die Lage:
+      // eine Front, die noch nicht da ist, kann abdrehen (zurueck auf -1, kurzer Weg); eine,
+      // die durch ist, zieht weiter (auf +1). Nur letzteres saehe zurueckgespult aus.
+      wxFrontTo = wxFront < 0 ? -1 : 1;
       wxRegenAbbestellen();
     }
     applySurface();
@@ -16150,51 +16197,15 @@
       showHudToast('HUPE NICHT GELADEN');
       return;
     }
-    const t = audioCtx.currentTime + 0.01;
-    if (kind === 'relay') {
-      // Zwei harte, kurze Klicks: Anzug und Abfall. Rauschen durch einen engen Bandpass,
-      // weil ein Relaisklick fast nur Anschlag und kaum Ton ist.
-      for (const [dt, amp] of [[0, 0.5], [0.055, 0.32]]) {
-        const n = audioCtx.createBufferSource();
-        const len = Math.floor(audioCtx.sampleRate * 0.02);
-        const buf = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
-        const d = buf.getChannelData(0);
-        for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (len * 0.16));
-        n.buffer = buf;
-        const bp = audioCtx.createBiquadFilter();
-        bp.type = 'bandpass'; bp.frequency.value = 2600; bp.Q.value = 1.4;
-        const g = audioCtx.createGain(); g.gain.value = amp;
-        n.connect(bp).connect(g).connect(audioCtx.destination);
-        n.start(t + dt);
-      }
-      return;
-    }
-    if (kind === 'horn') {
-      // Zwei Teiltoene in einer kleinen Terz, wie eine Zweiklanghupe, 140 ms.
-      for (const f of [370, 440]) {
-        const o = audioCtx.createOscillator();
-        const g = audioCtx.createGain();
-        o.type = 'sawtooth';
-        o.frequency.value = f;
-        g.gain.setValueAtTime(0.0001, t);
-        g.gain.exponentialRampToValueAtTime(0.14, t + 0.015);
-        g.gain.setValueAtTime(0.14, t + 0.11);
-        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.14);
-        o.connect(g).connect(audioCtx.destination);
-        o.start(t); o.stop(t + 0.16);
-      }
-      return;
-    }
-    const o = audioCtx.createOscillator();
-    const g = audioCtx.createGain();
-    o.type = 'square';
-    o.frequency.setValueAtTime(880, t);
-    o.frequency.exponentialRampToValueAtTime(1760, t + 0.05);
-    g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(0.10, t + 0.008);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.07);
-    o.connect(g).connect(audioCtx.destination);
-    o.start(t); o.stop(t + 0.09);
+    // HIER STANDEN DREI GERECHNETE TOENE - Relais-Klacken, Zweiklang, Blip -, und sie
+    // sind heraus. Sie waren als Rueckfall gedacht, solange keine Aufnahmen dabei waren;
+    // jetzt sind sechs Aufnahmen dabei, und drei synthetische Ersatztoene daneben sind
+    // eine Wahl ohne Gewinn.
+    //
+    // Der Zweig ist damit vollstaendig: 'none' und die sechs horn_*-Aufnahmen. Alles
+    // andere kann nicht mehr im Menue stehen, und ein stiller Rueckfall waere hier das
+    // Falsche - wer eine Ziege gewaehlt hat, will keinen Blip hoeren.
+    log('Unbekannter Lichthupenton: ' + kind, 'err');
   }
 
   function updateDamageBlink() {
@@ -16822,19 +16833,21 @@
   // Three looping buffers per car (idle/mid/high), pitch-shifted by playbackRate and
   // crossfaded by RPM. The loops are fully synthetic — generated by tools/engine_synth.py
   // from a firing-event model, no recorded material — see audio/CREDITS.md.
-  const SAMPLE_CARS = ['porsche', 'bmw', 'mustang', 'corvette',
-                       'gt3v8', 'gt3v10', 'bmax', 'f1', 'porsche_rec',
-                       // Sieben Rennmotoren, aus den technischen Angaben gerechnet: die
-                       // Bankaufteilung folgt aus der Zuendfolge, und daraus kommt der
-                       // Charakter, weil jede Bank ihren eigenen Kruemmer hat. Erzeugt von
-                       // tools/engine_synth.py, kein aufgenommenes Material.
-                       // p992gt3r hat hier bis v0.5 GEFEHLT, und das war der Grund
-                       // fuer "der Porsche klingt kaputt": der Wert stand im Menue und in
-                       // audio/loops.json, aber nicht in dieser Liste. Der Handler unten
-                       // prueft genau sie, fand ihn nicht und fiel still auf den
-                       // Saegezahn-Ersatzmotor zurueck. Der Boxer-6 hat also nie gespielt.
-                       'c6r', 'z06gt3r', 'amggt3', 'f296gt3', 'm4gt3', 'huracan',
-                       'vantagegt3', 'p992gt3r'];
+  const SAMPLE_CARS = [
+    // NEUN GERECHNETE MOTOREN, und jeder gehoert zu einem wirklichen Auto.
+    //
+    // Bis v0.4.52 waren es siebzehn: acht Rennmotoren nach technischen Angaben, sechs
+    // generische (ein Strassen-Porsche, ein Turbo-Reihensechser, ein Flat-Plane-V8, ein
+    // V10, ein Dreizylinder, ein V12-Formel-1) und zwei Aufnahmen. Das waren 68
+    // Schleifendateien, von denen die meisten kein Auto benannten, das man kennt.
+    //
+    // Geblieben sind die acht nach Angaben gerechneten, der Mustang - der ist ebenfalls
+    // gerechnet, siehe audio/CREDITS.md - und neu ein Formel 1 nach dem Reglement 2026.
+    // Die zwei Aufnahmen sind mit heraus; damit ist ALLES hier synthetisch, und der
+    // Unterschied, den CREDITS.md aufmacht, betrifft nur noch die Umgebungsgeraeusche.
+    'amggt3', 'c6r', 'z06gt3r', 'vantagegt3', 'm4gt3', 'f296gt3', 'huracan', 'p992gt3r',
+    'mustang', 'f1_2026',
+  ];
   const BANDS = ['idle', 'mid', 'high'];
   let engineVolume = 0.7;
   const sampleEngine = { buffers: {}, rpmScale: {}, nodes: null, over: null, car: null,
@@ -17229,11 +17242,13 @@
     refreshAmbienceGains();
   }
 
-  // Der alte Name bleibt als Durchreicher: er stand an mehreren Stellen, und ein Umbenennen
-  // in einem Zug ist die Gelegenheit, eine zu vergessen.
-  function setAmbienceRain(on) {
-    setAmbienceRainLevel(on ? 1 : 0);
-  }
+  // HIER STAND EIN DURCHREICHER setAmbienceRain(on), und die Begruendung daneben war
+  // falsch: "der alte Name stand an mehreren Stellen". Er stand an EINER, und die ist bei
+  // der Umstellung auf setAmbienceRainLevel mitgezogen. Die Durchsicht auf nicht
+  // verdrahtete Teile hat ihn als einzige Funktion ohne Aufruf von 480 gefunden.
+  //
+  // Eine Behauptung ueber den Code, die man nicht nachgesehen hat, ist schlechter als
+  // keine: sie haelt genau die Sache am Leben, die sie rechtfertigt.
 
   function playAmbienceOneShot(buffer, gain, wet) {
     if (!buffer || !audioCtx || !soundEnabled || !ambienceEnabled || ambience.busy) return;
@@ -22472,6 +22487,17 @@
       }
     },
 
+    // Die Reifenmischung von aussen setzen. Ein Wechsel geht in der App nur ueber einen
+    // Boxenstopp, und den fuer eine Anzeigepruefung nachzuspielen waere ein halbes Rennen.
+    tyreSet(kind) {
+      if (typeof tyres === 'undefined') return null;
+      tyres = (kind === 'wet') ? 'wet' : 'slick';
+      applySurface();
+      return { reifen: tyres,
+               profil: document.body.classList.contains('tyres-wet'),
+               grip: +physEngine.config.gripScale.toFixed(4) };
+    },
+
     // ---- Die Wetterfront, von aussen lesbar ------------------------------------
     //
     // Sie ist die EINE Zahl, aus der Ton, Griff, Tropfen und Radarbild kommen; ohne einen
@@ -26625,6 +26651,55 @@
                  + fahrt.ende.gLong.toFixed(2) + ' bei ' + fahrt.ende.kmh + ' km/h'
                  + ' | Vollgas ' + gas.ende.gLong.toFixed(2)
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
+  // ---- Das Reifenpiktogramm zeigt die Mischung ----
+  //
+  // Es zeigte Restprofil und Temperatur, aber nicht, WELCHE Mischung montiert ist - das
+  // stand allein im Text darunter. Regenreifen haben Profil und Slicks nicht, und das ist
+  // der Unterschied, den man an einem Reifen zuerst sieht.
+  //
+  // Geprueft wird BEIDES: die Klasse am Koerper und die tatsaechlich gerechnete Rillenschar
+  // im ::after. Nur die Klasse zu pruefen liesse offen, ob das Stylesheet sie auch benutzt -
+  // genau die Luecke, durch die in diesem Projekt schon ein Regler ohne Wirkung gefallen
+  // ist.
+  stAdd('Reifenpiktogramm zeigt Slick oder Regen', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.tyreSet) {
+      return { skip: true, mass: 'tyreSet nicht vorhanden' };
+    }
+    const el = $('race-tyre-fl');
+    if (!el) return { skip: true, mass: 'Reifenpiktogramm nicht im Dokument' };
+    const merk = OMEGA_TEST.wxProbe().reifen;
+    try {
+      const rillen = () => {
+        const s = getComputedStyle(el, '::after').backgroundImage;
+        return s && s !== 'none' ? s : null;
+      };
+      const s1 = OMEGA_TEST.tyreSet('slick');
+      const r1 = rillen();
+      const s2 = OMEGA_TEST.tyreSet('wet');
+      const r2 = rillen();
+      const fehler = [];
+      if (s1.profil) fehler.push('Slick tragt die Regenklasse');
+      if (!s2.profil) fehler.push('Regenreifen ohne Regenklasse');
+      if (r1) fehler.push('Slick hat Rillen');
+      if (!r2) fehler.push('Regenreifen ohne Rillen');
+      // Und zwei Scharen, nicht eine: eine allein saehe nach Schraegrillen aus, das V
+      // entsteht erst aus zwei Vorzeichen.
+      if (r2 && (r2.match(/repeating-linear-gradient/g) || []).length < 2) {
+        fehler.push('nur eine Rillenschar');
+      }
+      // Der Griff muss mitgehen - sonst ist es eine Anzeige ohne Sache dahinter.
+      if (!(s2.grip < s1.grip)) fehler.push('Regenreifen ohne Griffnachteil im Trockenen');
+      return { ok: !fehler.length,
+               mass: 'Slick: Profil ' + s1.profil + ', Grip ' + s1.grip
+                   + ' | Regen: Profil ' + s2.profil + ', Grip ' + s2.grip
+                   + ', ' + ((r2 || '').match(/repeating-linear-gradient/g) || []).length
+                   + ' Rillenscharen'
+                   + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+    } finally {
+      OMEGA_TEST.tyreSet(merk);
+    }
   });
 
   // ---- Block 4.4: Reifendruck ----

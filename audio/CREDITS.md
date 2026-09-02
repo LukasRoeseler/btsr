@@ -5,11 +5,11 @@ Gruppe fremdes Aufnahmematerial enthaelt.
 
 ## Vollstaendig synthetisch — kein Aufnahmematerial
 
-Fuenfzehn Motoren — Porsche (Boxer-6), BMW (Reihen-6 Turbo), Mustang (V8 Cross-Plane),
-GT3-V8 (Flat-Plane), GT3-V10, B-Max (Reihen-3 Turbo), Formel 1 (V12) und acht
-Rennmotoren nach technischen Angaben (Corvette C6.R, Corvette Z06 GT3.R,
-Mercedes-AMG GT3, Ferrari 296 GT3, BMW M4 GT3, Huracan GT3 / R8 LMS,
-Aston Martin Vantage GT3, Porsche 911 GT3 R) — sowie alle
+Zehn Motoren, und jeder gehoert zu einem wirklichen Auto: die acht Rennmotoren nach
+technischen Angaben (Corvette C6.R, Corvette Z06 GT3.R, Mercedes-AMG GT3, Ferrari 296 GT3,
+BMW M4 GT3, Huracan GT3 / R8 LMS, Aston Martin Vantage GT3, Porsche 911 GT3 R), der Ford
+Mustang GT3 (V8 Cross-Plane) und ein Formel 1 nach dem Reglement 2026 (1,6-l-V6
+Turbo-Hybrid) — sowie alle
 Effekte (Bremsenquietschen, Reifenquietschen, Crash-Varianten, Schlagschrauber,
 Tankgeraeusch, Karosseriereparatur, Motorstart) sind von Grund auf gerechnet. Es wird nichts aus einer
 Aufnahme abgespielt.
@@ -25,6 +25,25 @@ bestimmt die Resonanz physikalisch als `c / (4 L)`, und die Zylinderzahlen, Dreh
 und Kurbelwellenwinkel stammen aus den Motordefinitionen von engine-sim. Die drei
 urspruenglichen Motoren behielten ihren Klang: fuer sie wurde die Rohrlaenge so gesetzt,
 dass sie die vorher von Hand eingestellten Resonanzen (148 / 150 / 95 Hz) genau trifft.
+
+### Was in v0.4.52 herausgefallen ist
+
+Bis dahin waren es siebzehn Motoren mit 68 Schleifendateien. Acht sind heraus, und der
+Grund ist bei beiden Gruppen derselbe: sie benannten kein Auto, das man kennt.
+
+* **Sechs generische, gerechnete** — ein Strassen-Porsche (Boxer-6), ein Turbo-Reihensechser,
+  ein Flat-Plane-V8, ein V10, ein Dreizylinder-Turbo und ein Formel-1-V12 nach dem Ferrari
+  412 T2. Der V12 ist durch den 2026er V6 ersetzt: ein aktuelles Auto statt eines aus 1995.
+* **Zwei Aufnahmen** — die Corvette C6 und ein zweiter Porsche, beide aus Aufnahmematerial
+  geschnitten. Damit ist jetzt **jeder** Motor in diesem Ordner synthetisch, und der
+  Unterschied, den dieses Dokument aufmacht, betrifft nur noch die Umgebungsgeraeusche.
+
+Dazu sechs weitere Dateien, die von nichts gelesen wurden: drei `*_accel.ogg`, die in keiner
+Datei standen, und drei `*_demo.ogg`, die nur ein `accel`-Block in `fx.json` nannte — den
+kein Code las. Gefunden bei der Durchsicht auf nicht verdrahtete Teile, nicht beim Aufraeumen
+der Motoren.
+
+Damit sind es 70 statt 106 `.ogg`-Dateien.
 
 ### Die zwei Quietschtoene, und warum es zwei sind
 
@@ -53,7 +72,7 @@ Beide sind zirkular konstruiert, im Frequenzbereich statt mit einem Zeitfilter: 
 Zeitfilter liesse die zwei Enden der Schleife nicht zusammenpassen, und eine Naht in einem
 Ton, der ueber ganze Kurven laeuft, faellt weit mehr auf als eine in einem Einzelschlag.
 
-### Die acht Rennmotoren, und was an ihnen Angabe ist und was Wahl
+### Die Rennmotoren, und was an ihnen Angabe ist und was Wahl
 
 Aus den technischen Angaben kommen Zylinderzahl, Bauart, Kurbelwelle, Drehzahl und die
 Zuendfolge. Aus der Zuendfolge folgt die Bankaufteilung, und daraus kommt der Charakter,

@@ -129,28 +129,6 @@ def cross_plane_v8():
 # The three original engines keep the sound they had: their primary_in is set to whatever
 # reproduces the res_hz that was tuned by ear, so nothing regresses.
 CARS = {
-    'porsche': {
-        'label': 'Porsche 992 GT3 (Boxer-6, Saugmotor)',
-        'banks': even_firing(6), 'cylinders': 6,
-        'rpms': {'idle': 1500, 'mid': 4500, 'high': 8200},
-        # Pitched well down from 210Hz: at that resonance the flat-six was simply shrill.
-        # 22.81 inch reproduces the 148 Hz that was tuned by ear.
-        'primary_in': 22.81, 'res_q': 6.0, 'partials': 6, 'ir_ms': 40.0,
-        'pulse_ms': 2.8, 'bright': 0.62, 'noise': 0.06, 'noise_hz': 2600.0,
-        'clatter': 0.16, 'clatter_hz': 3100.0, 'drive': 2.4,
-        'scatter_t': 0.006, 'scatter_g': 0.05, 'crackle': 0.35,
-    },
-    'bmw': {
-        'label': 'BMW M4 GT3 (Reihen-6, Turbo)',
-        'banks': even_firing(6), 'cylinders': 6,
-        'rpms': {'idle': 1400, 'mid': 4200, 'high': 7200},
-        # Turbochargers sit in the exhaust path and act as a muffler: the top end is
-        # softened and there is more induction hiss than on the naturally aspirated six.
-        'primary_in': 22.51, 'res_q': 4.5, 'partials': 4, 'ir_ms': 46.0,
-        'pulse_ms': 3.4, 'bright': 0.45, 'noise': 0.12, 'noise_hz': 2200.0,
-        'clatter': 0.11, 'clatter_hz': 2600.0, 'drive': 1.9,
-        'scatter_t': 0.005, 'scatter_g': 0.04, 'crackle': 0.55,
-    },
     'mustang': {
         'label': 'Ford Mustang GT3 (V8, Cross-Plane)',
         'banks': cross_plane_v8(), 'cylinders': 8,
@@ -159,38 +137,6 @@ CARS = {
         'pulse_ms': 4.0, 'bright': 0.55, 'noise': 0.07, 'noise_hz': 1500.0,
         'clatter': 0.20, 'clatter_hz': 2200.0, 'drive': 3.0,
         'scatter_t': 0.008, 'scatter_g': 0.07, 'crackle': 0.45,
-    },
-    # ---- New engines ----
-    'gt3v8': {
-        'label': 'GT3 V8, Flat-Plane (nach Ferrari F136)',
-        # Same eight cylinders as the Mustang, EVEN banks instead of uneven. The whole
-        # difference between a burble and a scream is in this one line.
-        'banks': even_v_banks(8), 'cylinders': 8,
-        'rpms': {'idle': 1300, 'mid': 5200, 'high': 8800},
-        'primary_in': 29.0, 'res_q': 8.0, 'partials': 7, 'ir_ms': 44.0,
-        'pulse_ms': 2.4, 'bright': 0.70, 'noise': 0.05, 'noise_hz': 3200.0,
-        'clatter': 0.14, 'clatter_hz': 3400.0, 'drive': 2.6,
-        'scatter_t': 0.004, 'scatter_g': 0.035, 'crackle': 0.60,
-    },
-    'gt3v10': {
-        'label': 'GT3 V10 (nach Lexus LFA)',
-        'banks': even_v_banks(10), 'cylinders': 10,
-        'rpms': {'idle': 1400, 'mid': 5400, 'high': 8900},
-        'primary_in': 50.0, 'res_q': 9.0, 'partials': 8, 'ir_ms': 52.0,
-        'pulse_ms': 2.0, 'bright': 0.74, 'noise': 0.05, 'noise_hz': 3600.0,
-        'clatter': 0.12, 'clatter_hz': 3800.0, 'drive': 2.3,
-        'scatter_t': 0.0035, 'scatter_g': 0.03, 'crackle': 0.50,
-    },
-    'bmax': {
-        'label': 'Ford B-Max 1.0 EcoBoost (Reihen-3, Turbo)',
-        # A triple fires every 240 degrees, which is why it thrums rather than hums, and a
-        # small turbo sits in the exhaust and takes the edge off the top end.
-        'banks': even_firing(3), 'cylinders': 3,
-        'rpms': {'idle': 850, 'mid': 3200, 'high': 6000},
-        'primary_in': 10.0, 'res_q': 3.5, 'partials': 4, 'ir_ms': 34.0,
-        'pulse_ms': 4.2, 'bright': 0.38, 'noise': 0.18, 'noise_hz': 1800.0,
-        'clatter': 0.22, 'clatter_hz': 2400.0, 'drive': 1.6,
-        'scatter_t': 0.010, 'scatter_g': 0.09, 'crackle': 0.30,
     },
     # ---- Sieben Rennmotoren aus den gelieferten technischen Angaben ----
     #
@@ -319,14 +265,38 @@ CARS = {
         'clatter': 0.13, 'clatter_hz': 2400.0, 'drive': 2.5,
         'scatter_t': 0.0065, 'scatter_g': 0.05, 'crackle': 0.58,
     },
-    'f1': {
-        'label': 'F1 V12, 18 000/min (nach Ferrari 412 T2)',
-        'banks': even_v_banks(12), 'cylinders': 12,
-        'rpms': {'idle': 4000, 'mid': 11000, 'high': 17500},
-        'primary_in': 20.0, 'res_q': 11.0, 'partials': 9, 'ir_ms': 30.0,
-        'pulse_ms': 1.1, 'bright': 0.82, 'noise': 0.04, 'noise_hz': 5000.0,
-        'clatter': 0.08, 'clatter_hz': 4600.0, 'drive': 2.0,
-        'scatter_t': 0.002, 'scatter_g': 0.02, 'crackle': 0.25,
+    # ---- Formel 1, Reglement 2026 --------------------------------------------------
+    #
+    # WAS ANGABE IST: 1,6 Liter V6 mit Turbo und 90 Grad Bankwinkel, Drehzahlgrenze 15 000,
+    # und die Zuendfolge 1-4-2-5-3-6 der aktuellen Turbo-V6 (zwei Baenke zu drei). Neu ab
+    # 2026 ist die Leistungsaufteilung - der Verbrenner gibt rund 400 kW ab, die
+    # Elektromaschine bis 350, also fast die Haelfte.
+    #
+    # WAS WAHL IST, und das gehoert dazu:
+    #
+    #   high 12500 und nicht 15000. Die Grenze ist eine Grenze, kein Betriebspunkt: die
+    #   Autos drehen wegen der Energieverwaltung praktisch nie bis dorthin. Eine Schleife AM
+    #   Begrenzer laesst ausserdem keinen Platz fuer den Anschlag selbst.
+    #
+    #   primary_in 17,0 ergibt 199 Hz. Bei einem Turbomotor sitzt die Turbine im
+    #   Abgasstrom und schluckt genau die Resonanz, die bei einem Saugmotor den Charakter
+    #   macht - deshalb steht dazu ein NIEDRIGES res_q (3,2 gegen 6,5 beim 911 GT3 R). Die
+    #   Rohrlaenge ist damit weniger Messwert als Bezugspunkt.
+    #
+    #   noise 0,2 bei 4200 Hz ist der Lader. Er ist bei diesem Motor das Merkmal, nicht ein
+    #   Nebengeraeusch: was man von einem 2026er Auto hoert, ist zu einem guten Teil
+    #   Ansaugen und Turbine und nicht der Auspuff.
+    #
+    #   crackle 0,12 ist der niedrigste Wert im ganzen Satz. Ein Turbo daempft die
+    #   Schubknaller, und ab 2026 gibt es ausserdem keinen Ueberschuss zu verknallen.
+    'f1_2026': {
+        'label': 'Formel 1 2026 (1.6 V6 Turbo-Hybrid, 90 Grad)',
+        'banks': banks_from_order([1, 4, 2, 5, 3, 6], 6, 'half'), 'cylinders': 6,
+        'rpms': {'idle': 4200, 'mid': 8500, 'high': 12500},
+        'primary_in': 17.0, 'res_q': 3.2, 'partials': 7, 'ir_ms': 26.0,
+        'pulse_ms': 1.3, 'bright': 0.58, 'noise': 0.2, 'noise_hz': 4200.0,
+        'clatter': 0.07, 'clatter_hz': 5200.0, 'drive': 1.8,
+        'scatter_t': 0.002, 'scatter_g': 0.02, 'crackle': 0.12,
     },
 }
 

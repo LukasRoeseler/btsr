@@ -64,7 +64,14 @@
   // Editor gilt weiter TILE_TYPE.START allein.
   const START_CODES = [0x0a, 0x01];
   const START_CODE_LEGACY = 0x01;
-  function isStartCode(c) { return c === 0x0a || c === START_CODE_LEGACY; }
+  // AUS DER LISTE GELESEN und nicht daneben aufgezaehlt. Vorher stand hier
+  // "c === 0x0a || c === START_CODE_LEGACY", und damit gab es die Tatsache "was gilt als
+  // Start/Ziel" an ZWEI Orten - die Liste hatte keinen einzigen Leser und war die
+  // aufgeschriebene Fassung ohne Wirkung. Die Durchsicht auf nicht verdrahtete Teile hat
+  // sie als einzige Konstante ohne Leser gefunden.
+  //
+  // Wer einen dritten Code aufnimmt, aendert jetzt eine Stelle.
+  function isStartCode(c) { return START_CODES.indexOf(c) >= 0; }
   // Code 0x00 means the sensor is reading NOTHING VALID, i.e. the car has left the track.
   // From the guard-rail capture of 20.08: every departure showed up as 0x00 together with the
   // tile counter racing (6 -> 8 -> 9 -> 15 -> 18 within three seconds), and 16 of 38

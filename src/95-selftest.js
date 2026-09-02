@@ -2601,6 +2601,55 @@
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
+  // ---- Das Reifenpiktogramm zeigt die Mischung ----
+  //
+  // Es zeigte Restprofil und Temperatur, aber nicht, WELCHE Mischung montiert ist - das
+  // stand allein im Text darunter. Regenreifen haben Profil und Slicks nicht, und das ist
+  // der Unterschied, den man an einem Reifen zuerst sieht.
+  //
+  // Geprueft wird BEIDES: die Klasse am Koerper und die tatsaechlich gerechnete Rillenschar
+  // im ::after. Nur die Klasse zu pruefen liesse offen, ob das Stylesheet sie auch benutzt -
+  // genau die Luecke, durch die in diesem Projekt schon ein Regler ohne Wirkung gefallen
+  // ist.
+  stAdd('Reifenpiktogramm zeigt Slick oder Regen', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.tyreSet) {
+      return { skip: true, mass: 'tyreSet nicht vorhanden' };
+    }
+    const el = $('race-tyre-fl');
+    if (!el) return { skip: true, mass: 'Reifenpiktogramm nicht im Dokument' };
+    const merk = OMEGA_TEST.wxProbe().reifen;
+    try {
+      const rillen = () => {
+        const s = getComputedStyle(el, '::after').backgroundImage;
+        return s && s !== 'none' ? s : null;
+      };
+      const s1 = OMEGA_TEST.tyreSet('slick');
+      const r1 = rillen();
+      const s2 = OMEGA_TEST.tyreSet('wet');
+      const r2 = rillen();
+      const fehler = [];
+      if (s1.profil) fehler.push('Slick tragt die Regenklasse');
+      if (!s2.profil) fehler.push('Regenreifen ohne Regenklasse');
+      if (r1) fehler.push('Slick hat Rillen');
+      if (!r2) fehler.push('Regenreifen ohne Rillen');
+      // Und zwei Scharen, nicht eine: eine allein saehe nach Schraegrillen aus, das V
+      // entsteht erst aus zwei Vorzeichen.
+      if (r2 && (r2.match(/repeating-linear-gradient/g) || []).length < 2) {
+        fehler.push('nur eine Rillenschar');
+      }
+      // Der Griff muss mitgehen - sonst ist es eine Anzeige ohne Sache dahinter.
+      if (!(s2.grip < s1.grip)) fehler.push('Regenreifen ohne Griffnachteil im Trockenen');
+      return { ok: !fehler.length,
+               mass: 'Slick: Profil ' + s1.profil + ', Grip ' + s1.grip
+                   + ' | Regen: Profil ' + s2.profil + ', Grip ' + s2.grip
+                   + ', ' + ((r2 || '').match(/repeating-linear-gradient/g) || []).length
+                   + ' Rillenscharen'
+                   + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+    } finally {
+      OMEGA_TEST.tyreSet(merk);
+    }
+  });
+
   // ---- Block 4.4: Reifendruck ----
   // Monoton, ueber den ganzen Reglerbereich. Ein Regler, der in der Mitte umkehrt, ist keine
   // Abstimmung, sondern eine Falle.

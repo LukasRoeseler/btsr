@@ -1,74 +1,4 @@
 {
- "porsche": {
-  "label": "Porsche 992 GT3 (Boxer-6, Saugmotor)",
-  "cylinders": 6,
-  "source": "vollst\u00c3\u00a4ndig synthetisiert (Modell nach engine-sim, MIT)",
-  "loops": {
-   "idle": {
-    "file": "porsche_idle.ogg",
-    "baseRpm": 1500,
-    "firingHz": 75.0,
-    "seconds": 2.0,
-    "load": 1.0
-   },
-   "mid": {
-    "file": "porsche_mid.ogg",
-    "baseRpm": 4500,
-    "firingHz": 225.0,
-    "seconds": 2.0,
-    "load": 1.0
-   },
-   "high": {
-    "file": "porsche_high.ogg",
-    "baseRpm": 8200,
-    "firingHz": 410.0,
-    "seconds": 2.0049,
-    "load": 1.0
-   },
-   "over": {
-    "file": "porsche_over.ogg",
-    "baseRpm": 4500,
-    "firingHz": 225.0,
-    "seconds": 2.0,
-    "load": 0.0
-   }
-  }
- },
- "bmw": {
-  "label": "BMW M4 GT3 (Reihen-6, Turbo)",
-  "cylinders": 6,
-  "source": "vollst\u00c3\u00a4ndig synthetisiert (Modell nach engine-sim, MIT)",
-  "loops": {
-   "idle": {
-    "file": "bmw_idle.ogg",
-    "baseRpm": 1400,
-    "firingHz": 70.0,
-    "seconds": 1.9714,
-    "load": 1.0
-   },
-   "mid": {
-    "file": "bmw_mid.ogg",
-    "baseRpm": 4200,
-    "firingHz": 210.0,
-    "seconds": 2.0,
-    "load": 1.0
-   },
-   "high": {
-    "file": "bmw_high.ogg",
-    "baseRpm": 7200,
-    "firingHz": 360.0,
-    "seconds": 2.0,
-    "load": 1.0
-   },
-   "over": {
-    "file": "bmw_over.ogg",
-    "baseRpm": 4200,
-    "firingHz": 210.0,
-    "seconds": 2.0,
-    "load": 0.0
-   }
-  }
- },
  "mustang": {
   "label": "Ford Mustang GT3 (V8, Cross-Plane)",
   "cylinders": 8,
@@ -101,200 +31,6 @@
     "firingHz": 260.0,
     "seconds": 2.0,
     "load": 0.0
-   }
-  }
- },
- "corvette": {
-  "label": "Chevrolet Corvette C6 (V8)",
-  "cylinders": 8,
-  "source": "Pixabay (lizenzfrei), Ausschnitte",
-  "loops": {
-   "idle": {
-    "file": "corvette_idle.ogg",
-    "baseRpm": 1776,
-    "f0": 118.4,
-    "seconds": 1.88
-   },
-   "mid": {
-    "file": "corvette_mid.ogg",
-    "baseRpm": 4545,
-    "f0": 303.0,
-    "seconds": 1.88
-   },
-   "high": {
-    "file": "corvette_high.ogg",
-    "baseRpm": 4980,
-    "f0": 332.0,
-    "seconds": 1.88
-   }
-  },
-  "rpmScale": 0.62,
-  "rpmScaleGrund": "Die Aufnahme reicht nur bis ~4500/min (Strassenwagen), die App dreht bis 9000. Ohne diesen Faktor spielt die App die Schleife am oberen Ende mit Faktor 1.99, also fast doppelter Geschwindigkeit - daher klang die Corvette insgesamt zu hoch. Das ist eine Transposition und keine Messung: 0.62 bringt den Faktor bei 9000/min auf 1.12 statt 1.99."
- },
- "gt3v8": {
-  "label": "GT3 V8, Flat-Plane (nach Ferrari F136)",
-  "cylinders": 8,
-  "source": "vollst\u00c3\u00a4ndig synthetisiert (Modell nach engine-sim, MIT)",
-  "loops": {
-   "idle": {
-    "file": "gt3v8_idle.ogg",
-    "baseRpm": 1300,
-    "firingHz": 86.7,
-    "seconds": 2.0308,
-    "load": 1.0
-   },
-   "mid": {
-    "file": "gt3v8_mid.ogg",
-    "baseRpm": 5200,
-    "firingHz": 346.7,
-    "seconds": 2.0077,
-    "load": 1.0
-   },
-   "high": {
-    "file": "gt3v8_high.ogg",
-    "baseRpm": 8800,
-    "firingHz": 586.7,
-    "seconds": 2.0045,
-    "load": 1.0
-   },
-   "over": {
-    "file": "gt3v8_over.ogg",
-    "baseRpm": 5200,
-    "firingHz": 346.7,
-    "seconds": 2.0077,
-    "load": 0.0
-   }
-  }
- },
- "gt3v10": {
-  "label": "GT3 V10 (nach Lexus LFA)",
-  "cylinders": 10,
-  "source": "vollst\u00c3\u00a4ndig synthetisiert (Modell nach engine-sim, MIT)",
-  "loops": {
-   "idle": {
-    "file": "gt3v10_idle.ogg",
-    "baseRpm": 1400,
-    "firingHz": 116.7,
-    "seconds": 1.9714,
-    "load": 1.0
-   },
-   "mid": {
-    "file": "gt3v10_mid.ogg",
-    "baseRpm": 5400,
-    "firingHz": 450.0,
-    "seconds": 2.0,
-    "load": 1.0
-   },
-   "high": {
-    "file": "gt3v10_high.ogg",
-    "baseRpm": 8900,
-    "firingHz": 741.7,
-    "seconds": 1.9955,
-    "load": 1.0
-   },
-   "over": {
-    "file": "gt3v10_over.ogg",
-    "baseRpm": 5400,
-    "firingHz": 450.0,
-    "seconds": 2.0,
-    "load": 0.0
-   }
-  }
- },
- "bmax": {
-  "label": "Ford B-Max 1.0 EcoBoost (Reihen-3, Turbo)",
-  "cylinders": 3,
-  "source": "vollst\u00c3\u00a4ndig synthetisiert (Modell nach engine-sim, MIT)",
-  "loops": {
-   "idle": {
-    "file": "bmax_idle.ogg",
-    "baseRpm": 850,
-    "firingHz": 21.2,
-    "seconds": 1.9765,
-    "load": 1.0
-   },
-   "mid": {
-    "file": "bmax_mid.ogg",
-    "baseRpm": 3200,
-    "firingHz": 80.0,
-    "seconds": 1.9875,
-    "load": 1.0
-   },
-   "high": {
-    "file": "bmax_high.ogg",
-    "baseRpm": 6000,
-    "firingHz": 150.0,
-    "seconds": 2.0,
-    "load": 1.0
-   },
-   "over": {
-    "file": "bmax_over.ogg",
-    "baseRpm": 3200,
-    "firingHz": 80.0,
-    "seconds": 1.9875,
-    "load": 0.0
-   }
-  }
- },
- "f1": {
-  "label": "F1 V12, 18 000/min (nach Ferrari 412 T2)",
-  "cylinders": 12,
-  "source": "vollst\u00c3\u00a4ndig synthetisiert (Modell nach engine-sim, MIT)",
-  "loops": {
-   "idle": {
-    "file": "f1_idle.ogg",
-    "baseRpm": 4000,
-    "firingHz": 400.0,
-    "seconds": 2.01,
-    "load": 1.0
-   },
-   "mid": {
-    "file": "f1_mid.ogg",
-    "baseRpm": 11000,
-    "firingHz": 1100.0,
-    "seconds": 1.9964,
-    "load": 1.0
-   },
-   "high": {
-    "file": "f1_high.ogg",
-    "baseRpm": 17500,
-    "firingHz": 1750.0,
-    "seconds": 2.0023,
-    "load": 1.0
-   },
-   "over": {
-    "file": "f1_over.ogg",
-    "baseRpm": 11000,
-    "firingHz": 1100.0,
-    "seconds": 1.9964,
-    "load": 0.0
-   }
-  }
- },
- "porsche_rec": {
-  "label": "Porsche (Aufnahme)",
-  "cylinders": 6,
-  "source": "Aufnahme des Nutzers (porschesound/Porsche sounds.m4a), Ausschnitte",
-  "rpmScale": 0.961,
-  "rpmScaleGrund": "Aufnahme deckt 3230 bis 4522/min ab, die App dreht bis 9000. Ohne Faktor liefe das obere Band am 2.0-Anschlag.",
-  "loops": {
-   "idle": {
-    "file": "porsche_rec_idle.ogg",
-    "baseRpm": 3230,
-    "f0": 161.5,
-    "seconds": 1.84
-   },
-   "mid": {
-    "file": "porsche_rec_mid.ogg",
-    "baseRpm": 3876,
-    "f0": 193.8,
-    "seconds": 1.84
-   },
-   "high": {
-    "file": "porsche_rec_high.ogg",
-    "baseRpm": 4522,
-    "f0": 226.1,
-    "seconds": 1.84
    }
   }
  },
@@ -574,6 +310,41 @@
     "baseRpm": 5500,
     "firingHz": 275.0,
     "seconds": 2.0073,
+    "load": 0.0
+   }
+  }
+ },
+ "f1_2026": {
+  "label": "Formel 1 2026 (1.6 V6 Turbo-Hybrid, 90 Grad)",
+  "cylinders": 6,
+  "source": "vollst\u00e4ndig synthetisiert (Modell nach engine-sim, MIT)",
+  "loops": {
+   "idle": {
+    "file": "f1_2026_idle.ogg",
+    "baseRpm": 4200,
+    "firingHz": 210.0,
+    "seconds": 2.0,
+    "load": 1.0
+   },
+   "mid": {
+    "file": "f1_2026_mid.ogg",
+    "baseRpm": 8500,
+    "firingHz": 425.0,
+    "seconds": 2.0047,
+    "load": 1.0
+   },
+   "high": {
+    "file": "f1_2026_high.ogg",
+    "baseRpm": 12500,
+    "firingHz": 625.0,
+    "seconds": 1.9968,
+    "load": 1.0
+   },
+   "over": {
+    "file": "f1_2026_over.ogg",
+    "baseRpm": 8500,
+    "firingHz": 425.0,
+    "seconds": 2.0047,
     "load": 0.0
    }
   }

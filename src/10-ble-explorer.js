@@ -795,7 +795,7 @@
     "Entwicklertools": "Developer tools",
     "Speichern und austauschen": "Save and exchange",
     "Speichern": "Save",
-    "Standard aus. Die ersten sechs sind Aufnahmen, der Rest ist gerechnet.": "Off by default. The first six are recordings, the rest are computed.",
+    "Standard aus, denn ein Auto macht bei der Lichthupe kein Geräusch – das hier ist eine Rückmeldung für den Fahrer und keine Simulation. Alle sechs sind Aufnahmen.": "Off by default, because a car makes no sound when it flashes its headlights – this is feedback for the driver and not a simulation. All six are recordings.",
     "Standard: rechter Trigger = Gas, linker Trigger = Bremse, linker Stick = Lenkung, X (links) = runterschalten, B (rechts) = hochschalten: wie bei einem Xbox-Controller. Klicke \"Neu zuweisen\" und betätige dann den gewünschten Knopf/Stick/Trigger am Controller.": "Default: right trigger = throttle, left trigger = brake, left stick = steering, X (left) = shift down, B (right) = shift up: as on an Xbox controller. Click \"Reassign\" and then operate the button, stick or trigger you want on the controller.",
     "Start / Ziel": "Start / finish",
     "Start / Ziel, nicht auslegen": "Start / finish, do not lay down",

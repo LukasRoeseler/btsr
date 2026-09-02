@@ -603,7 +603,11 @@
     el.classList.add('gt3-tick');
   }
 
-  function updateRaceScreen(st, out) {
+  // out ist HERAUS, und zwar weil es nicht benutzt wurde: die Anzeige liest alles aus dem
+  // Zustand st, und die Ausgaben des Modells (motorPWM, servoAngle, Lichter) gehen an das
+  // Auto und nicht auf den Schirm. Ein Parameter, den der Aufrufer uebergibt und der Rumpf
+  // nicht anfasst, liest sich wie eine Zusage.
+  function updateRaceScreen(st) {
     const gearEl = $('race-gear');
     if (!gearEl) return;
     // Zahl und Kennzeichnung getrennt, weil die Zahl mittig bleiben muss. textContent auf
@@ -933,7 +937,7 @@
   // raceLampHead, die BEIDE ins gesendete Paket gehen.
   function updateDashboard(out) {
     const st = physEngine.state;
-    updateRaceScreen(st, out);
+    updateRaceScreen(st);
     const lamp = resolveLights(out.lights.head, out.lights.brake);
     raceLampHead = lamp.head;
   }
