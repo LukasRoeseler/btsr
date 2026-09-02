@@ -4799,8 +4799,25 @@
         regenTon: (typeof ambience === 'object' && ambience)
           ? +(ambience.rainLevel || 0).toFixed(4) : null,
         wetter: typeof weather === 'undefined' ? null : weather,
+        // Die Regenformen: wieviele ziehen, und wo stehen sie laengs des Windes. Ohne das
+        // ist "sie kommen von aussen und hoeren nicht auf" eine Behauptung.
+        regen: (typeof wxBlobs === 'undefined') ? null : (() => {
+          const r = wxBlobs.filter(b => b.regen);
+          return { gesamt: r.length, aktiv: r.filter(b => b.aktiv).length,
+                   laengs: r.filter(b => b.aktiv).map(b => +b.l.toFixed(2)).sort((x, y) => x - y) };
+        })(),
         reifen: typeof tyres === 'undefined' ? null : tyres,
       };
+    },
+    // Die Wolken von aussen weiterschieben. In Scheiben von 100 ms und nicht in einem
+    // Sprung: das Fortbewegen enthaelt Schwellen (Ausgang, Ausblenden), und ein einziger
+    // grosser Schritt wuerde ueber sie hinwegspringen. Ein Test, der eine Schwelle
+    // ueberspringt, prueft sie nicht.
+    wxSchritt(sekunden) {
+      if (typeof wxBlobsWeiter !== 'function') return null;
+      const n = Math.max(1, Math.round((sekunden || 0) / 0.1));
+      for (let i = 0; i < n; i++) wxBlobsWeiter(0.1);
+      return this.wxProbe();
     },
     // Die Front von aussen stellen, damit ein Test nicht fuenf Sekunden warten muss.
     wxSet(front) {

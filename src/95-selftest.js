@@ -2490,6 +2490,79 @@
     }
   });
 
+  // ---- Die Regenformen kommen von aussen und hoeren nicht auf ----
+  //
+  // DREI BEFUNDE VOM FAHREN, und alle drei kamen aus einer Entscheidung: die Regenformen
+  // lagen in einem BAND, dessen Lage wxFront WAR. Eine Zahl fuer alles - elegant, und als
+  // Bild falsch:
+  //
+  //   1. Sie standen halb sichtbar da, bevor es regnete. Bei wxFront = -1 lag eine Form mit
+  //      laengs = +0,42 auf -0,58, und die Deckkraftformel gab ihr 0,77.
+  //   2. Sie kamen an und blieben stehen. Ein Band, dessen Lage eine Rampe ist, hoert auf
+  //      sich zu bewegen, sobald die Rampe fertig ist.
+  //   3. Bewegt wurde IN der Zeichenfunktion, und die kehrt bei verstecktem Fenster frueh
+  //      zurueck. Ort und Zeit liefen auseinander.
+  //
+  // Geprueft wird deshalb der ZUSTAND und nicht das Bild: wieviele Formen ziehen, und wo.
+  stAdd('Regenformen: von aussen, mit Nachschub', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.wxSchritt) {
+      return { skip: true, mass: 'wxSchritt nicht vorhanden' };
+    }
+    const box = $('race-wx-box');
+    if (!box) return { skip: true, mass: 'Wetterkachel nicht im Dokument' };
+    const warRegen = OMEGA_TEST.wxProbe().wetter === 'rain';
+    const fehler = [];
+    let trocken = null, nachKlick = null, spaeter = null, lange = null, danach = null;
+    try {
+      // Trocken: KEINE Form darf ziehen. Das war Befund 1.
+      if (warRegen) box.click();
+      OMEGA_TEST.wxSet(-1);
+      OMEGA_TEST.wxSchritt(3);
+      trocken = OMEGA_TEST.wxProbe().regen;
+      if (trocken.aktiv !== 0) fehler.push(trocken.aktiv + ' Formen ziehen im Trockenen');
+
+      // Klick: sie starten AUSSERHALB des Bildes. Das Bild reicht bis etwa 0,8.
+      box.click();
+      nachKlick = OMEGA_TEST.wxProbe().regen;
+      if (!nachKlick.aktiv) fehler.push('nach dem Klick zieht keine Form');
+      const vorn = nachKlick.laengs[nachKlick.laengs.length - 1];
+      if (!(vorn < -0.9)) fehler.push('vorderste Form startet schon im Bild bei ' + vorn);
+
+      // Sie bewegen sich, und die vorderste erreicht die Mitte.
+      OMEGA_TEST.wxSchritt(6);
+      spaeter = OMEGA_TEST.wxProbe().regen;
+      const vorn2 = spaeter.laengs[spaeter.laengs.length - 1];
+      if (!(vorn2 > vorn + 0.5)) fehler.push('Formen bewegen sich nicht (' + vorn + ' -> ' + vorn2 + ')');
+      if (!spaeter.laengs.some(x => Math.abs(x) < 0.4)) fehler.push('keine Form ueber der Mitte');
+
+      // NACHSCHUB: nach einer Zeit, in der die ersten laengst durch sind, muessen noch
+      // genauso viele ziehen. Das war Befund 2.
+      OMEGA_TEST.wxSchritt(40);
+      lange = OMEGA_TEST.wxProbe().regen;
+      if (lange.aktiv !== lange.gesamt) {
+        fehler.push('nach 40 s nur ' + lange.aktiv + ' von ' + lange.gesamt + ' Formen');
+      }
+      if (!lange.laengs.some(x => Math.abs(x) < 0.4)) fehler.push('Nachschub erreicht die Mitte nicht');
+
+      // Abschalten: sie ziehen davon und hoeren auf.
+      box.click();
+      OMEGA_TEST.wxSchritt(30);
+      danach = OMEGA_TEST.wxProbe().regen;
+      if (danach.aktiv !== 0) fehler.push('nach dem Abschalten ziehen noch ' + danach.aktiv);
+      return { ok: !fehler.length,
+               mass: 'trocken ' + trocken.aktiv + ' | Start bei ' + vorn.toFixed(2)
+                   + ' | nach 6 s vorderste ' + vorn2.toFixed(2)
+                   + ' | nach 40 s ' + lange.aktiv + '/' + lange.gesamt
+                   + ' | abgeschaltet ' + danach.aktiv
+                   + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+    } finally {
+      // Zuruecklegen: ein Test, der den Nutzer im Regen stehen laesst, ist der naechste
+      // Fehlerbericht.
+      if (OMEGA_TEST.wxProbe().wetter === 'rain') box.click();
+      OMEGA_TEST.wxSet(-1);
+    }
+  });
+
   // ---- Block 4.4: Reifendruck ----
   // Monoton, ueber den ganzen Reglerbereich. Ein Regler, der in der Mitte umkehrt, ist keine
   // Abstimmung, sondern eine Falle.

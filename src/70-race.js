@@ -1706,46 +1706,131 @@
 
   // ---- Das Regenradar ---------------------------------------------------------------
   //
-  // Zwanzig unregelmaessige Formen, jede aus vier bis sieben ueberlappenden Kreisen. Die
-  // Ueberlappung IST die Kuestenlinie: einzelne Kreise sehen wie Blasen aus, ueberlappte
-  // wie eine Wolke. Die Teile werden EINMAL gezogen und bleiben - eine Form, die bei jedem
-  // Takt neu gewuerfelt wird, flackert.
+  // ZWEI GETRENNTE SACHEN, und die Trennung ist die Lehre aus dem ersten Anlauf:
   //
-  // Zwei Sorten:
-  //   weiss   Wolken, die immer ziehen. Sie sagen nichts ueber den Regen - sie machen das
-  //           Bild lebendig, und ohne sie sieht ein trockenes Radar defekt aus.
-  //   blau    die Regenfront. Ihre Lage IST wxFront, nicht davon abgeleitet.
+  //   wxFront    die Rampe fuer Ton, Griff und Tropfen. Eine Zahl, fuenf Sekunden.
+  //   die Formen ziehen mit dem Wind und werden nachgeliefert, solange Regen an ist.
+  //
+  // Der erste Anlauf hatte die Regenformen in einem BAND, dessen Lage wxFront WAR. Das war
+  // eine Zahl fuer alles und als Bild falsch: die Formen standen halb sichtbar im Bild,
+  // waehrend die weissen vorbeizogen, und wenn die Rampe fertig war, standen sie still.
+  //
+  // Entkoppelt sind sie trotzdem nicht: die Regenformen ziehen genau so schnell, dass die
+  // erste die Mitte nach fuenf Sekunden erreicht - dieselben fuenf, die die Rampe braucht.
+  //
+  // WARUM SIE SCHNELLER ZIEHEN ALS DIE WEISSEN: sie sollen von AUSSERHALB des Radars kommen,
+  // und mit dem Tempo der weissen Wolken braeuchten sie dafuer vierzehn Sekunden. Auf einem
+  // echten Radar ist das ebenso - die Niederschlagsechos ziehen mit der Front, die hohe
+  // Wolkendecke steht fast. Die Richtung ist dieselbe.
   const WX_WIND = { x: 0.86, y: -0.51 };     // Zugrichtung, normiert
+  const WX_AUS = 1.25;                        // ab hier ist eine Form aus dem Bild
+  const WX_REGEN_V = WX_AUS / WX_RAMP_S;      // damit die erste nach 5 s in der Mitte ist
+  const WX_ABSTAND = 0.34;                    // Abstand der nachrueckenden Formen
+
+  // Je Form vier radiale Oberwellen. DAS ist die Kontur: r(winkel) = 1 + Summe der Wellen,
+  // und jede dreht langsam mit eigener Rate, wodurch der Rand kriecht. Auf dem Canvas ist
+  // das dasselbe, was feTurbulence + feDisplacementMap in einem SVG tun.
+  //
+  // Die Wellenzahlen 2/3/5/7 sind teilerfremd gewaehlt: 2 und 4 zusammen ergeben eine
+  // sichtbar zweizaehlige, also kuenstlich wirkende Form.
+  function wxWellen(stark) {
+    return [2, 3, 5, 7].map((k) => ({
+      k,
+      a: (stark ? 0.11 : 0.07) + Math.random() * (stark ? 0.2 : 0.12),
+      p: Math.random() * 6.2832,
+      w: (Math.random() * 2 - 1) * 0.22,
+    }));
+  }
+
   const wxBlobs = [];
   function wxBlobBauen(n, regen) {
     for (let i = 0; i < n; i++) {
-      const teile = [];
-      const m = 4 + Math.floor(Math.random() * 4);
-      for (let k = 0; k < m; k++) {
-        teile.push({ dx: (Math.random() * 2 - 1) * 0.09,
-                     dy: (Math.random() * 2 - 1) * 0.07,
-                     r: 0.045 + Math.random() * 0.06 });
-      }
       wxBlobs.push({
         regen,
-        teile,
-        // Weisse Wolken: eigene Bahn quer zum Wind, eigenes Tempo.
-        // Regenformen: Lage im Band, laengs und quer.
-        laengs: regen ? (Math.random() * 2 - 1) * 0.42 : Math.random() * 2 - 1,
-        quer: (Math.random() * 2 - 1) * (regen ? 0.62 : 1.0),
-        tempo: regen ? 0 : 0.055 + Math.random() * 0.05,
-        deck: regen ? 0.42 + Math.random() * 0.3 : 0.05 + Math.random() * 0.08,
+        wellen: wxWellen(regen),
+        basis: (regen ? 0.1 : 0.085) + Math.random() * (regen ? 0.075 : 0.055),
+        l: regen ? -WX_AUS - i * WX_ABSTAND : Math.random() * 2 - 1,
+        quer: (Math.random() * 2 - 1) * (regen ? 0.7 : 1.0),
+        tempo: regen ? WX_REGEN_V : 0.055 + Math.random() * 0.05,
+        deck: regen ? 1 : 0.09 + Math.random() * 0.07,
+        // Regenformen ziehen nur, wenn sie geschickt wurden. Ohne dieses Flag stehen sie
+        // vor dem ersten Klick im Bild - genau der gemeldete Fehler.
+        aktiv: !regen,
+        weg: 0,           // laeuft aus: ausblenden und dann stilllegen
       });
     }
   }
   wxBlobBauen(14, false);
-  wxBlobBauen(9, true);
+  wxBlobBauen(11, true);
+
+  // Nachschub anschalten: alle Regenformen von aussen losschicken, hintereinander. Solange
+  // Regen an ist, wird jede am Ausgang neu hinten angestellt - der Strom hoert nicht auf.
+  function wxRegenLosschicken() {
+    let k = 0;
+    for (const b of wxBlobs) {
+      if (!b.regen) continue;
+      b.aktiv = true;
+      b.weg = 0;
+      b.l = -WX_AUS - k * WX_ABSTAND;
+      b.quer = (Math.random() * 2 - 1) * 0.7;
+      b.wellen = wxWellen(true);
+      k++;
+    }
+  }
+
+  // Nachschub abschalten. Wer die Mitte noch NICHT erreicht hat, wird ausgeblendet - er
+  // gehoert zu einem Regen, der nicht mehr kommt. Wer durch ist, zieht weiter davon: genau
+  // das heisst "die Front ist vorbei".
+  function wxRegenAbbestellen() {
+    for (const b of wxBlobs) {
+      if (b.regen && b.aktiv && b.l < -0.05) b.weg = 1;
+    }
+  }
+
+  // ---- Fortbewegen, GETRENNT vom Zeichnen -------------------------------------------
+  //
+  // Es stand vorher IN wxRadarDraw, und das war ein Entwurfsfehler: die Zeichenfunktion
+  // kehrt bei verstecktem Fenster und bei ungezeichneter Kachel frueh zurueck, und dann
+  // standen die Formen still, waehrend die Rampe weiterlief. Ort und Zeit liefen
+  // auseinander - beim Zurueckkommen stand die Front woanders als die Zahl sagte.
+  //
+  // Bewegen ist Zustand, Zeichnen ist Anzeige. Der Takt bewegt immer, gezeichnet wird nur,
+  // wenn jemand hinsieht.
+  function wxBlobsWeiter(dt) {
+    const regenAn = wxFrontTo === 0;
+    for (const b of wxBlobs) {
+      if (b.regen) {
+        if (!b.aktiv) continue;
+        b.l += b.tempo * dt;
+        if (b.weg) {
+          // Ausblenden, dann stilllegen. Sichtbar bleibt eine halbe Sekunde.
+          b.weg -= dt / 0.5;
+          if (b.weg <= 0) { b.aktiv = false; continue; }
+        }
+        if (b.l > WX_AUS) {
+          // Hinten neu anstellen, solange Regen an ist. Das ist der unendliche Nachschub.
+          if (regenAn && !b.weg) {
+            b.l = -WX_AUS;
+            b.quer = (Math.random() * 2 - 1) * 0.7;
+            b.wellen = wxWellen(true);
+          } else {
+            b.aktiv = false;
+          }
+        }
+      } else {
+        // Weisse Wolken ziehen endlos und werden umgeschlagen. 2,6 ist grosszuegiger als
+        // das Bild, damit keine Form sichtbar aus dem Nichts erscheint.
+        b.l += b.tempo * dt;
+        if (b.l > 1.3) b.l -= 2.6;
+      }
+    }
+  }
 
   function wxRadarDraw() {
     const cv = $('race-wx-radar');
     if (!cv || document.hidden || !cv.clientWidth) return;
-    // Auf die tatsaechliche Anzeigegroesse ziehen, EINMAL je Aenderung: ein Canvas mit
-    // falscher Pufferbreite wird von der Grafikkarte skaliert und sieht unscharf aus.
+    // Auf die tatsaechliche Anzeigegroesse ziehen: ein Canvas mit falscher Pufferbreite wird
+    // von der Grafikkarte skaliert und sieht unscharf aus.
     const dpr = Math.min(2, window.devicePixelRatio || 1);
     const bw = Math.round(cv.clientWidth * dpr), bh = Math.round(cv.clientHeight * dpr);
     if (cv.width !== bw || cv.height !== bh) { cv.width = bw; cv.height = bh; }
@@ -1755,7 +1840,7 @@
     g.fillStyle = '#0d1219';
     g.fillRect(0, 0, W, H);
 
-    // Gitter, wie auf dem Vorbild: fein und dunkel, damit die Formen davor stehen.
+    // Gitter: fein und dunkel, damit die Formen davor stehen.
     g.strokeStyle = 'rgba(255,255,255,0.055)';
     g.lineWidth = 1;
     for (let k = 1; k < 4; k++) {
@@ -1766,38 +1851,44 @@
 
     const t = Date.now() / 1000;
     const mx = W / 2, my = H / 2;
+
     for (const b of wxBlobs) {
-      let cx, cy, deck = b.deck;
-      if (b.regen) {
-        // Die Front: laengs des Windes um wxFront verschoben. Bei wxFront = 0 liegt das
-        // Band ueber der Mitte - und genau dann regnet es.
-        const l = (wxFront + b.laengs) * 1.25;
-        cx = mx + (WX_WIND.x * l + -WX_WIND.y * b.quer) * S * 0.5;
-        cy = my + (WX_WIND.y * l + WX_WIND.x * b.quer) * S * 0.5;
-        // Ausblenden, wenn die Front weit weg ist: sonst kleben die Formen am Rand.
-        deck *= Math.max(0, Math.min(1, 1.35 - Math.abs(wxFront + b.laengs)));
-      } else {
-        // Weisse Wolken ziehen endlos und werden am Rand umgeschlagen. Der Umschlag laeuft
-        // auf einer Breite von 2,6 - grosszuegiger als das Bild -, damit keine Form
-        // sichtbar aus dem Nichts erscheint.
-        const l = ((b.laengs + t * b.tempo + 1.3) % 2.6) - 1.3;
-        cx = mx + (WX_WIND.x * l + -WX_WIND.y * b.quer) * S * 0.62;
-        cy = my + (WX_WIND.y * l + WX_WIND.x * b.quer) * S * 0.62;
-      }
+      if (b.regen && !b.aktiv) continue;
+      const spanne = 0.62;
+      const cx = mx + (WX_WIND.x * b.l + -WX_WIND.y * b.quer) * S * spanne;
+      const cy = my + (WX_WIND.y * b.l + WX_WIND.x * b.quer) * S * spanne;
+      let deck = b.deck;
+      if (b.regen && b.weg) deck *= Math.max(0, b.weg);
       if (deck <= 0.004) continue;
-      g.fillStyle = b.regen
-        ? 'rgba(104,166,186,' + deck.toFixed(3) + ')'
-        : 'rgba(226,236,246,' + deck.toFixed(3) + ')';
-      g.beginPath();
-      for (const s2 of b.teile) {
-        g.moveTo(cx + s2.dx * S + s2.r * S, cy + s2.dy * S);
-        g.arc(cx + s2.dx * S, cy + s2.dy * S, s2.r * S, 0, 6.2832);
+
+      // ---- zeichnen: drei geschachtelte Zonen, EINFARBIG ----
+      // Aus dem Vorbild uebernommen ist die Abstufung, nicht die Farbpalette: ein
+      // Niederschlagsecho ist aussen schwach und innen kraeftig. Vier Blautoene waeren eine
+      // zweite Vokabel; drei Deckkraftstufen derselben Farbe sagen dasselbe.
+      const stufen = b.regen
+        ? [[1.0, 0.3], [0.7, 0.34], [0.42, 0.4]]
+        : [[1.0, 0.62], [0.66, 0.5]];
+      const N = 44;
+      for (const [rf, af] of stufen) {
+        g.beginPath();
+        for (let i = 0; i <= N; i++) {
+          const th = i / N * 6.2832;
+          let rr = 1;
+          for (const w of b.wellen) rr += w.a * Math.sin(w.k * th + w.p + w.w * t);
+          rr = Math.max(0.4, rr) * b.basis * rf * S;
+          const x = cx + Math.cos(th) * rr, y = cy + Math.sin(th) * rr;
+          if (i) g.lineTo(x, y); else g.moveTo(x, y);
+        }
+        g.closePath();
+        const a2 = (deck * af).toFixed(3);
+        g.fillStyle = b.regen ? 'rgba(104,166,186,' + a2 + ')'
+                              : 'rgba(226,236,246,' + a2 + ')';
+        g.fill();
       }
-      g.fill();
     }
 
     // Das Kreuz und der Punkt: wo WIR sind. Zuletzt gezeichnet, damit es ueber den Formen
-    // liegt - auf dem Vorbild ist es das auch, und es ist der Bezugspunkt fuer alles andere.
+    // liegt - es ist der Bezugspunkt fuer alles andere.
     g.strokeStyle = 'rgba(255,255,255,0.5)';
     g.lineWidth = Math.max(1, dpr);
     g.beginPath();
@@ -1822,6 +1913,7 @@
       wxFront = Math.abs(d) <= schritt ? wxFrontTo : wxFront + Math.sign(d) * schritt;
       applySurface();
     }
+    wxBlobsWeiter(dt);
     wxRadarDraw();
   }
   setInterval(wxTick, 80);
@@ -1869,8 +1961,10 @@
     if (weather === 'rain') {
       if (wxFront >= 0.999) wxFront = -1;
       wxFrontTo = 0;
+      wxRegenLosschicken();
     } else {
       wxFrontTo = 1;
+      wxRegenAbbestellen();
     }
     applySurface();
     // Audible confirmation: the switch lives on a controller button, where there is nothing
