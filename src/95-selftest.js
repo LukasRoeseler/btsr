@@ -2529,7 +2529,10 @@
       if (!(vorn < -0.9)) fehler.push('vorderste Form startet schon im Bild bei ' + vorn);
 
       // Sie bewegen sich, und die vorderste erreicht die Mitte.
-      OMEGA_TEST.wxSchritt(6);
+      // 12 s und nicht 6: die Rampe dauert jetzt zehn Sekunden, und genau so lange braucht
+      // die vorderste Form von aussen bis zur Mitte. Ein Test, der die alte Zahl behaelt,
+      // prueft die alte Geschwindigkeit.
+      OMEGA_TEST.wxSchritt(12);
       spaeter = OMEGA_TEST.wxProbe().regen;
       const vorn2 = spaeter.laengs[spaeter.laengs.length - 1];
       if (!(vorn2 > vorn + 0.5)) fehler.push('Formen bewegen sich nicht (' + vorn + ' -> ' + vorn2 + ')');
@@ -2551,7 +2554,7 @@
       if (danach.aktiv !== 0) fehler.push('nach dem Abschalten ziehen noch ' + danach.aktiv);
       return { ok: !fehler.length,
                mass: 'trocken ' + trocken.aktiv + ' | Start bei ' + vorn.toFixed(2)
-                   + ' | nach 6 s vorderste ' + vorn2.toFixed(2)
+                   + ' | nach 12 s vorderste ' + vorn2.toFixed(2)
                    + ' | nach 40 s ' + lange.aktiv + '/' + lange.gesamt
                    + ' | abgeschaltet ' + danach.aktiv
                    + (fehler.length ? ' || ' + fehler.join('; ') : '') };
@@ -2561,6 +2564,41 @@
       if (OMEGA_TEST.wxProbe().wetter === 'rain') box.click();
       OMEGA_TEST.wxSet(-1);
     }
+  });
+
+  // ---- Laengs-G zeigt das Ergebnis, nicht die Anforderung ----
+  //
+  // GEMELDET ALS: "warum geht das rote simulierte Gyro nach hinten, wenn ich im Stand
+  // bremse?" Die Antwort war st.gLong = st.longUse - der ANGEFORDERTE Laengsbedarf, also
+  // beim Bremsen -inputs.brake. Im Stand gibt es keine Verzoegerung, und eine G-Anzeige
+  // zeigt, was gemessen wuerde.
+  //
+  // longUse selbst ist damit nicht falsch: es traegt die Lastverlagerung und den Reibkreis,
+  // und dort ist eine Anforderung mit Nachlauf richtig - die Bremse drueckt die Nase auch
+  // im Stand nach unten. Der Fehler war, dieselbe Zahl fuer zwei verschiedene Aussagen zu
+  // nehmen.
+  stAdd('Laengs-G: im Stand bremsen bewegt nichts', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.physGTrace) {
+      return { skip: true, mass: 'physGTrace nicht vorhanden' };
+    }
+    const stand = OMEGA_TEST.physGTrace({ startKmh: 0, brake: 1, sekunden: 1.5 });
+    const fahrt = OMEGA_TEST.physGTrace({ startKmh: 150, brake: 1, sekunden: 1.5 });
+    const gas = OMEGA_TEST.physGTrace({ startKmh: 0, throttle: 1, sekunden: 1.5 });
+    const fehler = [];
+    // 1. Im Stand: NICHTS. Das ist der gemeldete Fall.
+    if (stand.gMax > 0.02) fehler.push('im Stand ' + stand.gMax.toFixed(3));
+    // 2. Aus der Fahrt: deutlich negativ, und das Auto wird wirklich langsamer.
+    if (!(fahrt.ende.gLong < -0.3)) fehler.push('aus 150 nur ' + fahrt.ende.gLong);
+    if (!(fahrt.ende.kmh < 140)) fehler.push('aus 150 kaum verzoegert: ' + fahrt.ende.kmh);
+    // 3. Gas: positiv, und SCHWAECHER als die Bremse. Ein Auto bremst haerter als es
+    //    beschleunigt; waere es umgekehrt, waere der Bezug falsch gewaehlt.
+    if (!(gas.ende.gLong > 0.2)) fehler.push('Vollgas nur ' + gas.ende.gLong);
+    if (!(gas.gMax < fahrt.gMax)) fehler.push('Gas staerker als Bremse');
+    return { ok: !fehler.length,
+             mass: 'Stand ' + stand.gMax.toFixed(3) + ' | Bremsen aus 150 '
+                 + fahrt.ende.gLong.toFixed(2) + ' bei ' + fahrt.ende.kmh + ' km/h'
+                 + ' | Vollgas ' + gas.ende.gLong.toFixed(2)
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
   // ---- Block 4.4: Reifendruck ----

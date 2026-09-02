@@ -1697,7 +1697,13 @@
   //
   // NACH DEM ABSCHALTEN ZIEHT SIE WEITER, von 0 auf +1, also mit dem Wind davon. Zurueck auf
   // -1 zu laufen saehe aus wie ein zurueckgespultes Band.
-  const WX_RAMP_S = 5;
+  // ZEHN Sekunden, nicht fuenf. Zwei Gruende, und der zweite ist der eigentliche:
+  //
+  //   Der Umschwung ist gefahren angenehmer, wenn er nicht hetzt.
+  //   Und die Regenformen muessen damit nur halb so schnell ziehen. Sie sollen von
+  //   ausserhalb des Radars kommen, und ihr Tempo ist WX_AUS / WX_RAMP_S - bei fuenf
+  //   Sekunden zogen sie sichtbar schneller als die weissen Wolken.
+  const WX_RAMP_S = 10;
   let wxFront = -1;          // wo die Front steht
   let wxFrontTo = -1;        // wohin sie zieht
   let wxTickAt = 0;
@@ -1724,8 +1730,11 @@
   // Wolkendecke steht fast. Die Richtung ist dieselbe.
   const WX_WIND = { x: 0.86, y: -0.51 };     // Zugrichtung, normiert
   const WX_AUS = 1.25;                        // ab hier ist eine Form aus dem Bild
-  const WX_REGEN_V = WX_AUS / WX_RAMP_S;      // damit die erste nach 5 s in der Mitte ist
-  const WX_ABSTAND = 0.34;                    // Abstand der nachrueckenden Formen
+  const WX_REGEN_V = WX_AUS / WX_RAMP_S;      // damit die erste nach der Rampe in der Mitte ist
+  // 0,18 statt 0,34: die Formen sollen sich UEBERLAPPEN. Mit Luecken dazwischen sieht ein
+  // Dauerregen aus wie einzelne Schauer, und gemeldet war genau das - "sonst sind Luecken
+  // dazwischen, aber es regnet konstant weiter".
+  const WX_ABSTAND = 0.18;
 
   // Je Form vier radiale Oberwellen. DAS ist die Kontur: r(winkel) = 1 + Summe der Wellen,
   // und jede dreht langsam mit eigener Rate, wodurch der Rand kriecht. Auf dem Canvas ist
@@ -1733,12 +1742,21 @@
   //
   // Die Wellenzahlen 2/3/5/7 sind teilerfremd gewaehlt: 2 und 4 zusammen ergeben eine
   // sichtbar zweizaehlige, also kuenstlich wirkende Form.
-  function wxWellen(stark) {
+  //
+  // KEINE UNTERSCHEIDUNG MEHR ZWISCHEN REGEN UND WOLKE. Die Regenformen hatten Amplituden
+  // bis 0,31, und damit sahen sie nach BLUMEN aus: vier kraeftige Wellen auf einem Kreis
+  // ergeben Blaetter, keine Wolke. Die weissen mit bis 0,19 sahen richtig aus, also gilt
+  // dieser Satz jetzt fuer beide - gemeldet als "die Regenwolken sehen aus wie Blumen".
+  //
+  // Und die Drehraten sind grosszuegiger (0,38 statt 0,22): die Form soll sich DAUERHAFT
+  // aendern, nicht nur unmerklich kriechen. Vier Wellen mit verschiedenen Raten wiederholen
+  // sich praktisch nie.
+  function wxWellen() {
     return [2, 3, 5, 7].map((k) => ({
       k,
-      a: (stark ? 0.11 : 0.07) + Math.random() * (stark ? 0.2 : 0.12),
+      a: 0.06 + Math.random() * 0.12,
       p: Math.random() * 6.2832,
-      w: (Math.random() * 2 - 1) * 0.22,
+      w: (Math.random() * 2 - 1) * 0.38,
     }));
   }
 
@@ -1747,8 +1765,11 @@
     for (let i = 0; i < n; i++) {
       wxBlobs.push({
         regen,
-        wellen: wxWellen(regen),
-        basis: (regen ? 0.1 : 0.085) + Math.random() * (regen ? 0.075 : 0.055),
+        wellen: wxWellen(),
+        // DOPPELTE GROESSE, wie gewuenscht. Und bei den Regenformen ist sie zugleich das
+        // Mittel gegen Luecken: zwei Formen im Abstand 0,18 mit Radius um 0,25 ueberlappen
+        // sich sicher.
+        basis: (regen ? 0.2 : 0.17) + Math.random() * (regen ? 0.15 : 0.11),
         l: regen ? -WX_AUS - i * WX_ABSTAND : Math.random() * 2 - 1,
         quer: (Math.random() * 2 - 1) * (regen ? 0.7 : 1.0),
         tempo: regen ? WX_REGEN_V : 0.055 + Math.random() * 0.05,
@@ -1761,7 +1782,9 @@
     }
   }
   wxBlobBauen(14, false);
-  wxBlobBauen(11, true);
+  // 18 Regenformen statt 11: mit dem dichteren Abstand reicht der Strom damit ueber die
+  // ganze Breite, und dazwischen bleibt keine Luecke.
+  wxBlobBauen(18, true);
 
   // Nachschub anschalten: alle Regenformen von aussen losschicken, hintereinander. Solange
   // Regen an ist, wird jede am Ausgang neu hinten angestellt - der Strom hoert nicht auf.
@@ -1773,7 +1796,7 @@
       b.weg = 0;
       b.l = -WX_AUS - k * WX_ABSTAND;
       b.quer = (Math.random() * 2 - 1) * 0.7;
-      b.wellen = wxWellen(true);
+      b.wellen = wxWellen();
       k++;
     }
   }
@@ -1812,7 +1835,7 @@
           if (regenAn && !b.weg) {
             b.l = -WX_AUS;
             b.quer = (Math.random() * 2 - 1) * 0.7;
-            b.wellen = wxWellen(true);
+            b.wellen = wxWellen();
           } else {
             b.aktiv = false;
           }
@@ -1852,6 +1875,19 @@
     const t = Date.now() / 1000;
     const mx = W / 2, my = H / 2;
 
+    // GRUNDFAERBUNG, getragen von der Regenstaerke. Sie ist der Teil, der "es regnet HIER"
+    // sagt, und sie schliesst die Luecken, die einzelne Formen unvermeidlich lassen: bei
+    // Dauerregen ist die ganze Flaeche belegt, nicht ein Muster aus Schauern.
+    //
+    // Sie ersetzt die Formen nicht, sondern liegt darunter - die Formen geben die Textur und
+    // die Bewegung, die Faerbung die Aussage. Nur eines von beiden waere entweder ein
+    // gleichmaessiger blauer Kasten oder ein Schauermuster.
+    const stk = wxRainLevel();
+    if (stk > 0.01) {
+      g.fillStyle = 'rgba(104,166,186,' + (0.3 * stk).toFixed(3) + ')';
+      g.fillRect(0, 0, W, H);
+    }
+
     for (const b of wxBlobs) {
       if (b.regen && !b.aktiv) continue;
       const spanne = 0.62;
@@ -1865,8 +1901,10 @@
       // Aus dem Vorbild uebernommen ist die Abstufung, nicht die Farbpalette: ein
       // Niederschlagsecho ist aussen schwach und innen kraeftig. Vier Blautoene waeren eine
       // zweite Vokabel; drei Deckkraftstufen derselben Farbe sagen dasselbe.
+      // ZWEI Stufen fuer beide, nicht drei fuer den Regen. Die dritte, engste Fuellung hat
+      // die Wellenbaeuche betont und damit den Blumeneindruck verstaerkt.
       const stufen = b.regen
-        ? [[1.0, 0.3], [0.7, 0.34], [0.42, 0.4]]
+        ? [[1.0, 0.34], [0.68, 0.3]]
         : [[1.0, 0.62], [0.66, 0.5]];
       const N = 44;
       for (const [rf, af] of stufen) {

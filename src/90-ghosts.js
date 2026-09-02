@@ -4784,6 +4784,40 @@
       }
     },
 
+    // ---- Laengs-G: zeigt es das Ergebnis oder die Anforderung? -----------------
+    //
+    // Gemeldet als "warum geht das rote simulierte Gyro nach hinten, wenn ich im Stand
+    // bremse?". Die Antwort war: weil es st.longUse zeigte, den ANGEFORDERTEN Laengsbedarf.
+    // Im Stand gibt es keine Verzoegerung, also darf da nichts anliegen.
+    //
+    // Gemessen wird am Zustand der Physik und nicht am SVG: die Anzeige liest st.gLong, und
+    // wenn die Zahl stimmt, stimmt der Punkt.
+    physGTrace(o) {
+      const opt = o || {};
+      const e = physEngine, st = e.state;
+      const merk = OMEGA_TEST.zustandKopie(st);
+      try {
+        st.speedKmh = (opt.startKmh || 0) / REAL_SCALE;
+        st.virtualSpeed = st.speedKmh / e.config.topSpeedKmh;
+        st.gLong = 0; st.gLongV = undefined;
+        st.driveMode = 'forward';
+        const dt = CONTROL_SEND_INTERVAL_MS / 1000;
+        const reihe = [];
+        const n = Math.round((opt.sekunden || 1) / dt);
+        for (let i = 0; i < n; i++) {
+          e.update({ steering: 0, throttle: opt.throttle || 0, brake: opt.brake || 0,
+                     headlights: false }, dt);
+          reihe.push({ t: +((i + 1) * dt).toFixed(3),
+                       kmh: +(st.speedKmh * REAL_SCALE).toFixed(2),
+                       gLong: +st.gLong.toFixed(4) });
+        }
+        return { reihe, ende: reihe[reihe.length - 1],
+                 gMax: Math.max.apply(null, reihe.map(x => Math.abs(x.gLong))) };
+      } finally {
+        OMEGA_TEST.zustandZurueck(st, merk);
+      }
+    },
+
     // ---- Die Wetterfront, von aussen lesbar ------------------------------------
     //
     // Sie ist die EINE Zahl, aus der Ton, Griff, Tropfen und Radarbild kommen; ohne einen
@@ -4824,6 +4858,11 @@
       if (typeof wxFront === 'undefined') return null;
       wxFront = Math.max(-1, Math.min(1, front));
       wxFrontTo = wxFront;
+      // DEN WOLKENSTROM MITZIEHEN. Ohne das stellte wxSet die Front, liess die Formen aber
+      // stehen - und dann sagte die Sonde "Staerke 1" bei null ziehenden Regenformen. Genau
+      // die Divergenz zwischen Zahl und Bild, gegen die der ganze Entwurf steht, nur eben
+      // im Prueflauf statt in der App.
+      if (wxFrontTo === 0) wxRegenLosschicken(); else wxRegenAbbestellen();
       applySurface();
       return this.wxProbe();
     },

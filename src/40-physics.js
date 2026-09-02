@@ -598,6 +598,10 @@
         longUse: 0,       // lagging longitudinal demand, signed: + drive, - brake
         steerGrip: 1,     // front lateral capacity left over, 1 = static baseline
         gLat: 0, gLong: 0, // for the G plot
+        // Fuer die Laengs-G-Anzeige: das Tempo des letzten Takts. gLong ist seit v0.4.52 die
+        // gemessene Aenderung der Geschwindigkeit und nicht mehr die Bremsanforderung -
+        // siehe die Begruendung dort.
+        gLongV: undefined,
         engineLoad: 0,        // pedal opening actually applied — drives sound VOLUME
         dampedSteering: 0,
         // Der Lenkwunsch NACH Reibkreis und Aquaplaning, aber VOR der Kalibrierung und vor
@@ -1530,7 +1534,33 @@
       // dampedSteering * (Tempo / Hoechsttempo), das mit einer Querbeschleunigung nur die
       // Richtung teilte.
       st.gLat = Math.sign(this.state.dampedSteering) * Math.max(0, Math.min(1, st.latUse));
-      st.gLong = st.longUse;
+
+      // ---- Laengs-G: DAS ERGEBNIS, nicht die Anforderung ------------------------------
+      //
+      // Hier stand st.gLong = st.longUse, und longUse ist der ANGEFORDERTE Laengsbedarf
+      // (demand = -inputs.brake beim Bremsen). Gemeldet wurde: "warum geht das rote
+      // simulierte Gyro nach hinten, wenn ich im Stand bremse?" - weil es die Bremse zeigte
+      // und nicht die Verzoegerung. Im Stand gibt es keine.
+      //
+      // longUse bleibt, wo es hingehoert: es traegt die Lastverlagerung und den Reibkreis,
+      // und dort ist eine Anforderung mit Nachlauf richtig - die Bremse drueckt die Nase
+      // auch dann nach unten, wenn das Auto steht. Eine G-ANZEIGE zeigt dagegen, was
+      // gemessen wuerde, und das ist die Aenderung der Geschwindigkeit.
+      //
+      // Bezugsgroesse ist die volle Bremsverzoegerung, damit eine Vollbremsung etwa -1
+      // ergibt. Beschleunigen faellt dadurch schwaecher aus als Bremsen, und das ist richtig:
+      // ein Auto bremst haerter als es beschleunigt.
+      //
+      // Der kurze Nachlauf (0,12 s) glaettet den numerischen Differenzenquotienten. Ohne ihn
+      // zappelt der Punkt bei jedem Schaltvorgang und jeder Reifenschwankung.
+      const vJetzt = st.speedKmh;
+      const dvdt = (st.gLongV === undefined || dt <= 1e-6)
+        ? 0 : (vJetzt - st.gLongV) / dt;
+      st.gLongV = vJetzt;
+      const bezug = Math.max(0.01, cfg.brakeDecelBase + cfg.brakeDecelAero);
+      const roh = Math.max(-1.4, Math.min(1.4, dvdt / bezug));
+      const aG = 1 - Math.exp(-dt / 0.12);
+      st.gLong = st.gLong + (roh - st.gLong) * aG;
       this.outputs.motorPWM = Math.max(-1, Math.min(1, output));
       this.outputs.lights.head = !!inputs.headlights;
       this.outputs.lights.brake = !reversing && isBraking; // reversing must not light it

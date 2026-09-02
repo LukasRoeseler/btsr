@@ -5999,7 +5999,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.4.51</span></span>
+    <span class="foot-ver">v<span id="app-version">0.4.52</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -9175,6 +9175,10 @@
         longUse: 0,       // lagging longitudinal demand, signed: + drive, - brake
         steerGrip: 1,     // front lateral capacity left over, 1 = static baseline
         gLat: 0, gLong: 0, // for the G plot
+        // Fuer die Laengs-G-Anzeige: das Tempo des letzten Takts. gLong ist seit v0.4.52 die
+        // gemessene Aenderung der Geschwindigkeit und nicht mehr die Bremsanforderung -
+        // siehe die Begruendung dort.
+        gLongV: undefined,
         engineLoad: 0,        // pedal opening actually applied — drives sound VOLUME
         dampedSteering: 0,
         // Der Lenkwunsch NACH Reibkreis und Aquaplaning, aber VOR der Kalibrierung und vor
@@ -10107,7 +10111,33 @@
       // dampedSteering * (Tempo / Hoechsttempo), das mit einer Querbeschleunigung nur die
       // Richtung teilte.
       st.gLat = Math.sign(this.state.dampedSteering) * Math.max(0, Math.min(1, st.latUse));
-      st.gLong = st.longUse;
+
+      // ---- Laengs-G: DAS ERGEBNIS, nicht die Anforderung ------------------------------
+      //
+      // Hier stand st.gLong = st.longUse, und longUse ist der ANGEFORDERTE Laengsbedarf
+      // (demand = -inputs.brake beim Bremsen). Gemeldet wurde: "warum geht das rote
+      // simulierte Gyro nach hinten, wenn ich im Stand bremse?" - weil es die Bremse zeigte
+      // und nicht die Verzoegerung. Im Stand gibt es keine.
+      //
+      // longUse bleibt, wo es hingehoert: es traegt die Lastverlagerung und den Reibkreis,
+      // und dort ist eine Anforderung mit Nachlauf richtig - die Bremse drueckt die Nase
+      // auch dann nach unten, wenn das Auto steht. Eine G-ANZEIGE zeigt dagegen, was
+      // gemessen wuerde, und das ist die Aenderung der Geschwindigkeit.
+      //
+      // Bezugsgroesse ist die volle Bremsverzoegerung, damit eine Vollbremsung etwa -1
+      // ergibt. Beschleunigen faellt dadurch schwaecher aus als Bremsen, und das ist richtig:
+      // ein Auto bremst haerter als es beschleunigt.
+      //
+      // Der kurze Nachlauf (0,12 s) glaettet den numerischen Differenzenquotienten. Ohne ihn
+      // zappelt der Punkt bei jedem Schaltvorgang und jeder Reifenschwankung.
+      const vJetzt = st.speedKmh;
+      const dvdt = (st.gLongV === undefined || dt <= 1e-6)
+        ? 0 : (vJetzt - st.gLongV) / dt;
+      st.gLongV = vJetzt;
+      const bezug = Math.max(0.01, cfg.brakeDecelBase + cfg.brakeDecelAero);
+      const roh = Math.max(-1.4, Math.min(1.4, dvdt / bezug));
+      const aG = 1 - Math.exp(-dt / 0.12);
+      st.gLong = st.gLong + (roh - st.gLong) * aG;
       this.outputs.motorPWM = Math.max(-1, Math.min(1, output));
       this.outputs.lights.head = !!inputs.headlights;
       this.outputs.lights.brake = !reversing && isBraking; // reversing must not light it
@@ -15155,7 +15185,13 @@
   //
   // NACH DEM ABSCHALTEN ZIEHT SIE WEITER, von 0 auf +1, also mit dem Wind davon. Zurueck auf
   // -1 zu laufen saehe aus wie ein zurueckgespultes Band.
-  const WX_RAMP_S = 5;
+  // ZEHN Sekunden, nicht fuenf. Zwei Gruende, und der zweite ist der eigentliche:
+  //
+  //   Der Umschwung ist gefahren angenehmer, wenn er nicht hetzt.
+  //   Und die Regenformen muessen damit nur halb so schnell ziehen. Sie sollen von
+  //   ausserhalb des Radars kommen, und ihr Tempo ist WX_AUS / WX_RAMP_S - bei fuenf
+  //   Sekunden zogen sie sichtbar schneller als die weissen Wolken.
+  const WX_RAMP_S = 10;
   let wxFront = -1;          // wo die Front steht
   let wxFrontTo = -1;        // wohin sie zieht
   let wxTickAt = 0;
@@ -15182,8 +15218,11 @@
   // Wolkendecke steht fast. Die Richtung ist dieselbe.
   const WX_WIND = { x: 0.86, y: -0.51 };     // Zugrichtung, normiert
   const WX_AUS = 1.25;                        // ab hier ist eine Form aus dem Bild
-  const WX_REGEN_V = WX_AUS / WX_RAMP_S;      // damit die erste nach 5 s in der Mitte ist
-  const WX_ABSTAND = 0.34;                    // Abstand der nachrueckenden Formen
+  const WX_REGEN_V = WX_AUS / WX_RAMP_S;      // damit die erste nach der Rampe in der Mitte ist
+  // 0,18 statt 0,34: die Formen sollen sich UEBERLAPPEN. Mit Luecken dazwischen sieht ein
+  // Dauerregen aus wie einzelne Schauer, und gemeldet war genau das - "sonst sind Luecken
+  // dazwischen, aber es regnet konstant weiter".
+  const WX_ABSTAND = 0.18;
 
   // Je Form vier radiale Oberwellen. DAS ist die Kontur: r(winkel) = 1 + Summe der Wellen,
   // und jede dreht langsam mit eigener Rate, wodurch der Rand kriecht. Auf dem Canvas ist
@@ -15191,12 +15230,21 @@
   //
   // Die Wellenzahlen 2/3/5/7 sind teilerfremd gewaehlt: 2 und 4 zusammen ergeben eine
   // sichtbar zweizaehlige, also kuenstlich wirkende Form.
-  function wxWellen(stark) {
+  //
+  // KEINE UNTERSCHEIDUNG MEHR ZWISCHEN REGEN UND WOLKE. Die Regenformen hatten Amplituden
+  // bis 0,31, und damit sahen sie nach BLUMEN aus: vier kraeftige Wellen auf einem Kreis
+  // ergeben Blaetter, keine Wolke. Die weissen mit bis 0,19 sahen richtig aus, also gilt
+  // dieser Satz jetzt fuer beide - gemeldet als "die Regenwolken sehen aus wie Blumen".
+  //
+  // Und die Drehraten sind grosszuegiger (0,38 statt 0,22): die Form soll sich DAUERHAFT
+  // aendern, nicht nur unmerklich kriechen. Vier Wellen mit verschiedenen Raten wiederholen
+  // sich praktisch nie.
+  function wxWellen() {
     return [2, 3, 5, 7].map((k) => ({
       k,
-      a: (stark ? 0.11 : 0.07) + Math.random() * (stark ? 0.2 : 0.12),
+      a: 0.06 + Math.random() * 0.12,
       p: Math.random() * 6.2832,
-      w: (Math.random() * 2 - 1) * 0.22,
+      w: (Math.random() * 2 - 1) * 0.38,
     }));
   }
 
@@ -15205,8 +15253,11 @@
     for (let i = 0; i < n; i++) {
       wxBlobs.push({
         regen,
-        wellen: wxWellen(regen),
-        basis: (regen ? 0.1 : 0.085) + Math.random() * (regen ? 0.075 : 0.055),
+        wellen: wxWellen(),
+        // DOPPELTE GROESSE, wie gewuenscht. Und bei den Regenformen ist sie zugleich das
+        // Mittel gegen Luecken: zwei Formen im Abstand 0,18 mit Radius um 0,25 ueberlappen
+        // sich sicher.
+        basis: (regen ? 0.2 : 0.17) + Math.random() * (regen ? 0.15 : 0.11),
         l: regen ? -WX_AUS - i * WX_ABSTAND : Math.random() * 2 - 1,
         quer: (Math.random() * 2 - 1) * (regen ? 0.7 : 1.0),
         tempo: regen ? WX_REGEN_V : 0.055 + Math.random() * 0.05,
@@ -15219,7 +15270,9 @@
     }
   }
   wxBlobBauen(14, false);
-  wxBlobBauen(11, true);
+  // 18 Regenformen statt 11: mit dem dichteren Abstand reicht der Strom damit ueber die
+  // ganze Breite, und dazwischen bleibt keine Luecke.
+  wxBlobBauen(18, true);
 
   // Nachschub anschalten: alle Regenformen von aussen losschicken, hintereinander. Solange
   // Regen an ist, wird jede am Ausgang neu hinten angestellt - der Strom hoert nicht auf.
@@ -15231,7 +15284,7 @@
       b.weg = 0;
       b.l = -WX_AUS - k * WX_ABSTAND;
       b.quer = (Math.random() * 2 - 1) * 0.7;
-      b.wellen = wxWellen(true);
+      b.wellen = wxWellen();
       k++;
     }
   }
@@ -15270,7 +15323,7 @@
           if (regenAn && !b.weg) {
             b.l = -WX_AUS;
             b.quer = (Math.random() * 2 - 1) * 0.7;
-            b.wellen = wxWellen(true);
+            b.wellen = wxWellen();
           } else {
             b.aktiv = false;
           }
@@ -15310,6 +15363,19 @@
     const t = Date.now() / 1000;
     const mx = W / 2, my = H / 2;
 
+    // GRUNDFAERBUNG, getragen von der Regenstaerke. Sie ist der Teil, der "es regnet HIER"
+    // sagt, und sie schliesst die Luecken, die einzelne Formen unvermeidlich lassen: bei
+    // Dauerregen ist die ganze Flaeche belegt, nicht ein Muster aus Schauern.
+    //
+    // Sie ersetzt die Formen nicht, sondern liegt darunter - die Formen geben die Textur und
+    // die Bewegung, die Faerbung die Aussage. Nur eines von beiden waere entweder ein
+    // gleichmaessiger blauer Kasten oder ein Schauermuster.
+    const stk = wxRainLevel();
+    if (stk > 0.01) {
+      g.fillStyle = 'rgba(104,166,186,' + (0.3 * stk).toFixed(3) + ')';
+      g.fillRect(0, 0, W, H);
+    }
+
     for (const b of wxBlobs) {
       if (b.regen && !b.aktiv) continue;
       const spanne = 0.62;
@@ -15323,8 +15389,10 @@
       // Aus dem Vorbild uebernommen ist die Abstufung, nicht die Farbpalette: ein
       // Niederschlagsecho ist aussen schwach und innen kraeftig. Vier Blautoene waeren eine
       // zweite Vokabel; drei Deckkraftstufen derselben Farbe sagen dasselbe.
+      // ZWEI Stufen fuer beide, nicht drei fuer den Regen. Die dritte, engste Fuellung hat
+      // die Wellenbaeuche betont und damit den Blumeneindruck verstaerkt.
       const stufen = b.regen
-        ? [[1.0, 0.3], [0.7, 0.34], [0.42, 0.4]]
+        ? [[1.0, 0.34], [0.68, 0.3]]
         : [[1.0, 0.62], [0.66, 0.5]];
       const N = 44;
       for (const [rf, af] of stufen) {
@@ -22370,6 +22438,40 @@
       }
     },
 
+    // ---- Laengs-G: zeigt es das Ergebnis oder die Anforderung? -----------------
+    //
+    // Gemeldet als "warum geht das rote simulierte Gyro nach hinten, wenn ich im Stand
+    // bremse?". Die Antwort war: weil es st.longUse zeigte, den ANGEFORDERTEN Laengsbedarf.
+    // Im Stand gibt es keine Verzoegerung, also darf da nichts anliegen.
+    //
+    // Gemessen wird am Zustand der Physik und nicht am SVG: die Anzeige liest st.gLong, und
+    // wenn die Zahl stimmt, stimmt der Punkt.
+    physGTrace(o) {
+      const opt = o || {};
+      const e = physEngine, st = e.state;
+      const merk = OMEGA_TEST.zustandKopie(st);
+      try {
+        st.speedKmh = (opt.startKmh || 0) / REAL_SCALE;
+        st.virtualSpeed = st.speedKmh / e.config.topSpeedKmh;
+        st.gLong = 0; st.gLongV = undefined;
+        st.driveMode = 'forward';
+        const dt = CONTROL_SEND_INTERVAL_MS / 1000;
+        const reihe = [];
+        const n = Math.round((opt.sekunden || 1) / dt);
+        for (let i = 0; i < n; i++) {
+          e.update({ steering: 0, throttle: opt.throttle || 0, brake: opt.brake || 0,
+                     headlights: false }, dt);
+          reihe.push({ t: +((i + 1) * dt).toFixed(3),
+                       kmh: +(st.speedKmh * REAL_SCALE).toFixed(2),
+                       gLong: +st.gLong.toFixed(4) });
+        }
+        return { reihe, ende: reihe[reihe.length - 1],
+                 gMax: Math.max.apply(null, reihe.map(x => Math.abs(x.gLong))) };
+      } finally {
+        OMEGA_TEST.zustandZurueck(st, merk);
+      }
+    },
+
     // ---- Die Wetterfront, von aussen lesbar ------------------------------------
     //
     // Sie ist die EINE Zahl, aus der Ton, Griff, Tropfen und Radarbild kommen; ohne einen
@@ -22410,6 +22512,11 @@
       if (typeof wxFront === 'undefined') return null;
       wxFront = Math.max(-1, Math.min(1, front));
       wxFrontTo = wxFront;
+      // DEN WOLKENSTROM MITZIEHEN. Ohne das stellte wxSet die Front, liess die Formen aber
+      // stehen - und dann sagte die Sonde "Staerke 1" bei null ziehenden Regenformen. Genau
+      // die Divergenz zwischen Zahl und Bild, gegen die der ganze Entwurf steht, nur eben
+      // im Prueflauf statt in der App.
+      if (wxFrontTo === 0) wxRegenLosschicken(); else wxRegenAbbestellen();
       applySurface();
       return this.wxProbe();
     },
@@ -26448,7 +26555,10 @@
       if (!(vorn < -0.9)) fehler.push('vorderste Form startet schon im Bild bei ' + vorn);
 
       // Sie bewegen sich, und die vorderste erreicht die Mitte.
-      OMEGA_TEST.wxSchritt(6);
+      // 12 s und nicht 6: die Rampe dauert jetzt zehn Sekunden, und genau so lange braucht
+      // die vorderste Form von aussen bis zur Mitte. Ein Test, der die alte Zahl behaelt,
+      // prueft die alte Geschwindigkeit.
+      OMEGA_TEST.wxSchritt(12);
       spaeter = OMEGA_TEST.wxProbe().regen;
       const vorn2 = spaeter.laengs[spaeter.laengs.length - 1];
       if (!(vorn2 > vorn + 0.5)) fehler.push('Formen bewegen sich nicht (' + vorn + ' -> ' + vorn2 + ')');
@@ -26470,7 +26580,7 @@
       if (danach.aktiv !== 0) fehler.push('nach dem Abschalten ziehen noch ' + danach.aktiv);
       return { ok: !fehler.length,
                mass: 'trocken ' + trocken.aktiv + ' | Start bei ' + vorn.toFixed(2)
-                   + ' | nach 6 s vorderste ' + vorn2.toFixed(2)
+                   + ' | nach 12 s vorderste ' + vorn2.toFixed(2)
                    + ' | nach 40 s ' + lange.aktiv + '/' + lange.gesamt
                    + ' | abgeschaltet ' + danach.aktiv
                    + (fehler.length ? ' || ' + fehler.join('; ') : '') };
@@ -26480,6 +26590,41 @@
       if (OMEGA_TEST.wxProbe().wetter === 'rain') box.click();
       OMEGA_TEST.wxSet(-1);
     }
+  });
+
+  // ---- Laengs-G zeigt das Ergebnis, nicht die Anforderung ----
+  //
+  // GEMELDET ALS: "warum geht das rote simulierte Gyro nach hinten, wenn ich im Stand
+  // bremse?" Die Antwort war st.gLong = st.longUse - der ANGEFORDERTE Laengsbedarf, also
+  // beim Bremsen -inputs.brake. Im Stand gibt es keine Verzoegerung, und eine G-Anzeige
+  // zeigt, was gemessen wuerde.
+  //
+  // longUse selbst ist damit nicht falsch: es traegt die Lastverlagerung und den Reibkreis,
+  // und dort ist eine Anforderung mit Nachlauf richtig - die Bremse drueckt die Nase auch
+  // im Stand nach unten. Der Fehler war, dieselbe Zahl fuer zwei verschiedene Aussagen zu
+  // nehmen.
+  stAdd('Laengs-G: im Stand bremsen bewegt nichts', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.physGTrace) {
+      return { skip: true, mass: 'physGTrace nicht vorhanden' };
+    }
+    const stand = OMEGA_TEST.physGTrace({ startKmh: 0, brake: 1, sekunden: 1.5 });
+    const fahrt = OMEGA_TEST.physGTrace({ startKmh: 150, brake: 1, sekunden: 1.5 });
+    const gas = OMEGA_TEST.physGTrace({ startKmh: 0, throttle: 1, sekunden: 1.5 });
+    const fehler = [];
+    // 1. Im Stand: NICHTS. Das ist der gemeldete Fall.
+    if (stand.gMax > 0.02) fehler.push('im Stand ' + stand.gMax.toFixed(3));
+    // 2. Aus der Fahrt: deutlich negativ, und das Auto wird wirklich langsamer.
+    if (!(fahrt.ende.gLong < -0.3)) fehler.push('aus 150 nur ' + fahrt.ende.gLong);
+    if (!(fahrt.ende.kmh < 140)) fehler.push('aus 150 kaum verzoegert: ' + fahrt.ende.kmh);
+    // 3. Gas: positiv, und SCHWAECHER als die Bremse. Ein Auto bremst haerter als es
+    //    beschleunigt; waere es umgekehrt, waere der Bezug falsch gewaehlt.
+    if (!(gas.ende.gLong > 0.2)) fehler.push('Vollgas nur ' + gas.ende.gLong);
+    if (!(gas.gMax < fahrt.gMax)) fehler.push('Gas staerker als Bremse');
+    return { ok: !fehler.length,
+             mass: 'Stand ' + stand.gMax.toFixed(3) + ' | Bremsen aus 150 '
+                 + fahrt.ende.gLong.toFixed(2) + ' bei ' + fahrt.ende.kmh + ' km/h'
+                 + ' | Vollgas ' + gas.ende.gLong.toFixed(2)
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
   // ---- Block 4.4: Reifendruck ----
