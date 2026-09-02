@@ -255,7 +255,93 @@
     return b.type === 'axis' ? `Achse ${b.index}${b.invert ? ' (invertiert)' : ''}` : `Knopf ${b.index}`;
   }
 
+  // ---- Die Controller-Grafik unter dem Cockpit --------------------------------------
+  //
+  // DIE ZUORDNUNG LAEUFT UMGEKEHRT zur Bindungstabelle. Die Tabelle sagt "Aktion -> Taste"
+  // und kann nachschlagen; die Grafik braucht "Taste -> Aktion" und muss deshalb SUCHEN.
+  // Das ist kein Umstand, sondern der Grund, warum es ueberhaupt eine eigene Funktion gibt:
+  // eine Taste kann ZWEI Aktionen tragen, und eine Nachschlagetabelle koennte das nicht
+  // zeigen.
+  //
+  // Die Indizes sind die des Standard-Gamepad-Bilds, also dieselben, aus denen die
+  // Bindungen bestehen - hier wird nichts umgerechnet, nur benannt. Vertippt man sich, zeigt
+  // die Zeile "nicht belegt", und der Selbsttest meldet es.
+  const PAD_CONTROLS = [
+    { id: 'cross', typ: 'button', index: 0 },   // Kreuz / A
+    { id: 'circ', typ: 'button', index: 1 },    // Kreis / B
+    { id: 'sq', typ: 'button', index: 2 },      // Quadrat / X
+    { id: 'tri', typ: 'button', index: 3 },     // Dreieck / Y
+    { id: 'l1', typ: 'button', index: 4 },
+    { id: 'r1', typ: 'button', index: 5 },
+    { id: 'l2', typ: 'button', index: 6 },
+    { id: 'r2', typ: 'button', index: 7 },
+    { id: 'select', typ: 'button', index: 8 },  // Select / Share / Back
+    { id: 'options', typ: 'button', index: 9 },
+    { id: 'l3', typ: 'button', index: 10 },
+    { id: 'r3', typ: 'button', index: 11 },
+    { id: 'dup', typ: 'button', index: 12 },
+    { id: 'ddown', typ: 'button', index: 13 },
+    { id: 'dleft', typ: 'button', index: 14 },
+    { id: 'dright', typ: 'button', index: 15 },
+    { id: 'ps', typ: 'button', index: 16 },
+    { id: 'touchpad', typ: 'button', index: 17 },
+    // Die Stickachsen. Nur die X-Achsen: die Lenkung liegt auf einer davon, und eine Zeile
+    // je Achse waere vier Zeilen fuer zwei Bedienelemente.
+    { id: 'lstick', typ: 'axis', index: 0 },
+    { id: 'rstick', typ: 'axis', index: 2 },
+  ];
+
+  // FESTVERDRAHTETE BELEGUNGEN, die NICHT durch die Bindungstabelle laufen.
+  //
+  // Sie waeren in der Grafik als "nicht belegt" erschienen, und das ist schlicht falsch: das
+  // Steuerkreuz verstellt Bremsbalance und Lenkansprechen im Fahren. Eine Grafik, die eine
+  // belegte Taste als frei zeigt, ist schlechter als keine - man probiert dann im Rennen
+  // aus, was sie tut.
+  //
+  // Frei zuweisbar sind sie nicht, deshalb stehen sie hier und nicht in DEFAULT_BINDINGS.
+  // Und sie sind nicht ausschliesslich: im Streckeneditor und bei scharfem Boxenstopp
+  // greifen erst diese zwei ab (siehe pollGamepad), danach gilt wieder das hier.
+  const PAD_FIXED = {
+    dup: 'Bremsbalance nach vorn',
+    ddown: 'Bremsbalance nach hinten',
+    dleft: 'Lenkansprechen kleiner',
+    dright: 'Lenkansprechen größer',
+  };
+
+  function padDiagramRender() {
+    if (!document.getElementById('pad-a-cross')) return;   // Karte nicht im Dokument
+    for (const c of PAD_CONTROLS) {
+      const el = document.getElementById('pad-a-' + c.id);
+      if (!el) continue;
+      // Alle Aktionen, die auf diesem Bedienelement liegen. Mehrzahl mit Absicht: eine
+      // Doppelbelegung ist erlaubt und soll sichtbar sein, nicht verschwiegen.
+      const treffer = Object.keys(BIND_ACTION_LABELS).filter((a) => {
+        const b = bindings[a];
+        return b && b.type === c.typ && b.index === c.index;
+      });
+      // Durch t(), weil der Text hier ENTSTEHT und nicht im Markup steht - der
+      // Textknoten-Uebersetzer findet nur, was in der Vorlage liegt.
+      // Reihenfolge: zugewiesen schlaegt festverdrahtet schlaegt frei. Wer eine Aktion auf
+      // das Steuerkreuz legt, soll SIE sehen und nicht die Werksfunktion darunter.
+      const fest = PAD_FIXED[c.id];
+      el.textContent = treffer.length
+        ? treffer.map((a) => t(BIND_ACTION_LABELS[a])).join(' + ')
+        : (fest ? t(fest) : t('nicht belegt'));
+      el.classList.toggle('pad-frei', !treffer.length && !fest);
+      el.classList.toggle('pad-fest', !treffer.length && !!fest);
+    }
+  }
+
+  // Beim Sprachwechsel neu zeichnen. Ohne diese Anmeldung bliebe die Grafik in der Sprache
+  // stehen, in der sie zuletzt gezeichnet wurde - genau der Fall, fuer den die Anmeldung
+  // gebaut wurde.
+  if (typeof i18nOnLangChange === 'function') i18nOnLangChange(padDiagramRender);
+
   function renderBindTable() {
+    // Die Grafik zieht hier mit. renderBindTable() ist die EINE Stelle, die nach jeder
+    // Zuweisung laeuft; sie an sieben Aufrufstellen einzeln nachzuziehen waere die
+    // Gelegenheit, eine zu vergessen.
+    padDiagramRender();
     const body = $('bind-table-body');
     body.innerHTML = '';
     Object.keys(BIND_ACTION_LABELS).forEach(action => {

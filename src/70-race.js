@@ -2071,17 +2071,17 @@
   // Beim Laden verstecken, weil die Vorgabe 'anywhere' ist.
   if ($('pit-double-lap-wrap')) $('pit-double-lap-wrap').style.display = 'none';
 
-  $('pit-marker-code').addEventListener('change', (e) => {
-    const raw = e.target.value.trim();
-    if (raw === '') { pitMarkerCode = null; return; }
-    const v = parseInt(raw, raw.startsWith('0x') ? 16 : 10);
-    if (Number.isFinite(v) && v >= 0 && v <= 255) {
-      pitMarkerCode = v;
-      e.target.value = '0x' + v.toString(16).padStart(2, '0');
-    } else {
-      e.target.value = pitMarkerCode === null ? '' : '0x' + pitMarkerCode.toString(16).padStart(2, '0');
-    }
-  });
+  // HIER STAND DER LESER FUER pit-marker-code, das Eingabefeld des Boxengassen-Ausloesecodes.
+  // Er ist mit der Karte heraus (siehe den auskommentierten Block in 00-index.head.html),
+  // und zwar GELOESCHT und nicht mit einer Wache stehengelassen: ein Leser fuer ein Element,
+  // das es nicht gibt, ist toter Code, und der Element-Pruefer im Build meldet ihn zu Recht.
+  //
+  // Was mit der Karte zurueckkommen muss, damit man es nicht neu herleiten muss: ein
+  // change-Leser auf dem Feld, der den Text als Hex (0x..) oder Dezimal liest, auf 0..255
+  // pruefte, pitMarkerCode setzte und das Feld auf die Hex-Schreibweise normalisierte -
+  // bei ungueltiger Eingabe zurueck auf den letzten gueltigen Wert. pitMarkerCode selbst
+  // bleibt hier stehen: es ist null, und null vergleicht sich gegen keinen Code, also ist
+  // die Boxengasse per eigenem Muster damit sauber aus.
 
   // ---- Das Schild auf dem Tacho ----
   //

@@ -401,7 +401,7 @@
             // sonst sich selbst gemeldet ("Byte 14 = 0x22, Bit 5 an, Bit 7 aus").
             // Der feste Text der Selbsttestseite wird weiter geprueft, er steht ausserhalb
             // von #st-rows.
-            if (p.closest('[data-i18n-skip]') || p.closest('#tab-doc')
+            if (p.closest('[data-i18n-skip]') || p.closest('#tab-doc') || p.closest('#tab-info')
                 || p.closest('#log') || p.closest('#st-rows') || p.closest('#hud-toast')
                 || p.id === 'st-status') {
               return NodeFilter.FILTER_REJECT;
@@ -742,7 +742,7 @@
         if (!el) continue;
         // Die Doku ist ausdruecklich nur deutsch; das Protokoll und die Testtabelle
         // enthalten Laufzeittexte und keine Oberflaeche.
-        if (el.closest('#tab-doc, #log, script, style, template, #st-rows')) continue;
+        if (el.closest('#tab-doc, #tab-info, #log, script, style, template, #st-rows')) continue;
         const t = n.nodeValue.trim().replace(/\s+/g, ' ');
         if (t.length < 10 || !DE.test(t)) continue;
         const wo = el.closest('[id^="tab-"]');
@@ -2307,6 +2307,74 @@
       lat.rows = merk;
       if (typeof latRender === 'function') { try { latRender(); } catch (e) { /* Karte fehlt */ } }
     }
+  });
+
+  // ---- Die Controller-Grafik zeigt, was wirklich belegt ist ----
+  //
+  // DIE FEHLERKLASSE: eine Grafik ist eine ZWEITE Wahrheit neben den Bindungen. Sie kann
+  // richtig aussehen und falsch sein, und man merkt es erst mitten im Rennen, wenn eine
+  // Taste etwas anderes tut als angeschrieben.
+  //
+  // GEFUNDEN HAT DIESER TEST SCHON EINEN: das Steuerkreuz stand auf "nicht belegt", obwohl
+  // es Bremsbalance und Lenkansprechen verstellt - diese vier Belegungen laufen nicht durch
+  // die Bindungstabelle, sondern sind festverdrahtet. Eine Grafik, die eine belegte Taste
+  // als frei zeigt, ist schlechter als keine: man probiert dann im Fahren aus, was sie tut.
+  //
+  // Und einen zweiten: der Renderer setzte textContent auf das <text>-Element und loeschte
+  // damit den tspan mit dem Tastensymbol. Die Pfeile und die Tastenzeichen waren nach dem
+  // ersten Zeichnen weg. Deshalb prueft der Test die Symbole mit.
+  stAdd('Controller-Grafik stimmt mit den Bindungen', () => {
+    if (!$('pad-a-cross') || typeof PAD_CONTROLS === 'undefined') {
+      return { skip: true, mass: 'Grafik oder PAD_CONTROLS nicht erreichbar' };
+    }
+    const fehler = [];
+    // 1. Jedes Bedienelement aus PAD_CONTROLS hat eine Zeile in der Grafik. Ein Tippfehler
+    //    im Index faellt hier NICHT auf - dafuer ist Punkt 2 da -, ein fehlendes
+    //    Textelement schon.
+    let zeilen = 0;
+    for (const c of PAD_CONTROLS) {
+      const el = $('pad-a-' + c.id);
+      if (!el) { fehler.push('Zeile fehlt: ' + c.id); continue; }
+      zeilen++;
+      if (!el.textContent.trim()) fehler.push('Zeile leer: ' + c.id);
+    }
+    // 2. JEDE zugewiesene Aktion muss in der Grafik auftauchen. Das ist die eigentliche
+    //    Zusicherung, und sie laeuft in der Gegenrichtung zum Renderer: der geht von der
+    //    Taste zur Aktion, der Test von der Aktion zur Taste. Ein falscher Index im
+    //    Renderer laesst die Aktion damit verschwinden, und das faellt auf.
+    let geprueft = 0;
+    for (const action of Object.keys(BIND_ACTION_LABELS)) {
+      const b = bindings[action];
+      if (!b || b.type === 'none') continue;
+      const c = PAD_CONTROLS.find(x => x.typ === b.type && x.index === b.index);
+      if (!c) continue;          // Bedienelement nicht gezeichnet, z. B. eine Y-Achse
+      geprueft++;
+      const el = $('pad-a-' + c.id);
+      const soll = i18nLookup(BIND_ACTION_LABELS[action]);
+      const txt = el ? el.textContent : '';
+      // Entweder deutsch oder englisch - der Test laeuft in beiden Sprachen.
+      if (txt.indexOf(BIND_ACTION_LABELS[action]) < 0
+          && (soll === null || txt.indexOf(soll) < 0)) {
+        fehler.push(action + ' fehlt auf ' + c.id + ' (steht dort: "' + txt + '")');
+      }
+    }
+    // 3. Das Steuerkreuz ist belegt, auch wenn es nicht zuweisbar ist.
+    for (const id of ['dup', 'ddown', 'dleft', 'dright']) {
+      const el = $('pad-a-' + id);
+      if (el && el.classList.contains('pad-frei')) {
+        fehler.push(id + ' als "nicht belegt" gezeigt, ist aber festverdrahtet');
+      }
+    }
+    // 4. Die Tastensymbole ueberleben das Zeichnen. Sie stehen in eigenen tspans, weil
+    //    textContent auf dem Elternelement sie sonst mitloescht.
+    const symbole = document.querySelectorAll('.pad-svg .pad-sym');
+    if (symbole.length !== 8) {
+      fehler.push(symbole.length + ' Tastensymbole statt 8');
+    }
+    return { ok: !fehler.length,
+             mass: zeilen + ' Zeilen, ' + geprueft + ' zugewiesene Aktionen wiedergefunden, '
+                 + symbole.length + ' Symbole'
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
   // ---- Block 4.4: Reifendruck ----

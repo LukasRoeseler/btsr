@@ -278,6 +278,44 @@
     margin: 8px 0 10px 0; padding-left: 14px;
     border-left: 2px solid var(--gt3-line-soft); }
   .opt-note-h { font-weight: 700; }
+  /* Controller-Grafik. Die Farben kommen aus dem Vorbild-SVG, sind aber auf die
+     Projektvariablen gezogen, damit sie bei einer Themenaenderung mitgehen. */
+  .pad-wrap { overflow-x: auto; margin-top: 10px; }
+  .pad-svg { width: 100%; min-width: 620px; height: auto; display: block;
+    background: #0f141c; border: 1px solid var(--border); border-radius: 10px; }
+  .pad-shell { fill: #181f2a; stroke: #3b485d; stroke-width: 2.5; }
+  .pad-fill1 { fill: #222c3d; stroke: #485873; stroke-width: 1.5; }
+  .pad-fill2 { fill: #1b2432; stroke: #485873; stroke-width: 1.5; }
+  .pad-btn { fill: #2a364a; stroke: #5a6e8c; stroke-width: 1.5; }
+  .pad-hole { fill: #181f2a; }
+  .pad-ring { stroke: #181f2a; stroke-width: 3; }
+  .pad-mark { fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .pad-line { fill: none; stroke: #5aa9ff; stroke-width: 1.4; opacity: .7; }
+  .pad-dot { fill: #5aa9ff; }
+  .pad-key { fill: #5aa9ff; font-size: 11.5px; font-weight: 600; letter-spacing: .06em;
+    font-family: inherit; }
+  .pad-row { font-family: inherit; font-size: 12.5px; }
+  .pad-sym { fill: #8a99ad; font-size: 13px; font-family: inherit; }
+  .pad-act { fill: #f4f6fb; font-size: 12.5px; font-weight: 700; font-family: inherit; }
+  /* Nicht belegt sieht anders aus, statt nur anders zu heissen. */
+  .pad-act.pad-frei { fill: #6b7688; font-weight: 500; font-style: italic; }
+  /* Festverdrahtet: belegt, aber nicht zuweisbar. Eigene Farbe, damit der Unterschied zu
+     einer zuweisbaren Belegung sichtbar ist und nicht nur im Hilfetext steht. */
+  .pad-act.pad-fest { fill: #a9b2c4; font-weight: 600; }
+  /* Der Lizenzhinweis auf der Startseite. Ruhig gehalten und nicht als Warnkasten: er ist
+     kein Fehler, sondern eine Aussage - aber er soll auch nicht zu ueberlesen sein,
+     deshalb die Kante links. */
+  .home-legal { max-width: 860px; margin: 26px auto 6px auto; padding: 14px 18px;
+    border-left: 3px solid var(--info); background: #12161f; border-radius: 0 10px 10px 0;
+    color: var(--muted); font-size: 12.5px; line-height: 1.62; }
+  .home-legal-h { font-weight: 700; color: #f4f6fb; font-size: 13px; letter-spacing: .02em;
+    margin-bottom: 6px; }
+  .home-legal p { margin: 0 0 8px 0; }
+  .home-legal p:last-of-type { margin-bottom: 10px; }
+  .home-legal-links { display: flex; gap: 18px; flex-wrap: wrap; }
+  .home-legal-links a { color: var(--info); font-weight: 600; text-decoration: none;
+    border-bottom: 1px solid rgba(90,169,255,.4); }
+  .home-legal-links a:hover { border-bottom-color: var(--info); }
   .wip-tag { display: inline-block; font-size: 9.5px; letter-spacing: .1em;
     padding: 1px 5px; border-radius: 3px; vertical-align: 2px;
     background: #4a3c00; color: #ffd83d; font-weight: 700; }
@@ -1859,12 +1897,13 @@
   <button class="tab-btn" data-tab="track">Strecke</button>
   <button class="tab-btn" data-tab="control">Renneinstellungen</button>
   <button class="tab-btn" data-tab="mp">Mehrspieler</button>
-  <button class="tab-btn" data-tab="doc">Doku</button>
+  <button class="tab-btn" data-tab="info">Info</button>
   <button class="tab-btn" data-tab="misc">Entwicklertools</button>
   <!-- Nicht in der Leiste, aber weiter als Tab-Knopf vorhanden: showTab() sucht genau
        diese Knoepfe, und die drei Kacheln unter "Sonstige" rufen showTab() auf. Ein
        data-parent laesst waehrend ihrer Anzeige "Sonstige" markiert bleiben, damit die
        Leiste nicht ohne Markierung dasteht. -->
+  <button class="tab-btn" data-tab="doc" data-parent="misc" hidden style="display:none">Doku</button>
   <button class="tab-btn" data-tab="school" data-parent="misc" hidden style="display:none">Programmierschule</button>
   <button class="tab-btn" data-tab="dev" data-parent="misc" hidden style="display:none">Entwickler</button>
   <button class="tab-btn" data-tab="selftest" data-parent="misc" hidden style="display:none">Selbsttest</button>
@@ -1960,6 +1999,27 @@
         stelle die <b>Optionen</b> nach deinem Geschmack ein, und fahre im
         <b>Cockpit</b>. Einige Optionen lassen sich direkt dort anpassen.
       </p>
+    </div>
+    <!-- LIZENZ UND HAFTUNG, und zwar VOR den Features. Wer wissen will, worauf er sich
+         einlaesst, soll es lesen, bevor er von einer Liste mit Faehigkeiten ueberzeugt
+         wird. Vier Absaetze statt eines Blocks, weil es vier verschiedene Aussagen sind -
+         unabhaengig, frei nutzbar, ohne Garantie, wo man sich meldet.
+
+         Je EIN Textknoten je Absatz, ohne Auszeichnung im Satzinneren: nachgeschlagen
+         werden ganze Textknoten, und ein <b> mitten im Satz zerteilt sie. Die Betonung
+         tragen die Zwischenzeilen. -->
+    <div class="home-legal">
+      <div class="home-legal-h">Unabh&auml;ngig, offen, ohne Gew&auml;hr</div>
+      <p>Dieses Projekt ist unabh&auml;ngig von Carrera und geh&ouml;rt zu keinem Hersteller. Der vollst&auml;ndige Quellcode steht unter der MIT-Lizenz auf GitHub.</p>
+      <p>Jeder darf ihn nutzen, kopieren, ver&auml;ndern und auch in kommerzieller Software verwenden, solange der urspr&uuml;ngliche Urheberrechtsvermerk und der Lizenztext in der Kopie erhalten bleiben.</p>
+      <p>Dieselbe Lizenz sagt aber auch: die Software kommt ohne Garantie und ohne Gew&auml;hrleistung. Du steuerst deine Autos auf eigene Gefahr. Es ist ein Freizeitprojekt, motiviert durch die Option, eine Pups-Hupe einzubauen &ndash; und m&ouml;glicherweise funktioniert es nach einem k&uuml;nftigen Firmware-Update nicht mehr.</p>
+      <p>F&uuml;r konstruktives Feedback oder Feature-W&uuml;nsche schreib mir gern im Thema &bdquo;Omega Sim&ldquo; im Carrera Hybrid Players Discord, unter &bdquo;weitere Themen&ldquo;.</p>
+      <div class="home-legal-links">
+        <a href="https://github.com/luuke42/omegasim" target="_blank"
+           rel="noopener noreferrer">Quellcode auf GitHub</a>
+        <a href="https://discord.com/invite/carrera-hybrid-players-1278414059921735861"
+           target="_blank" rel="noopener noreferrer">Carrera Hybrid Players Discord</a>
+      </div>
     </div>
     <div class="home-feat">
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/><circle cx="9" cy="7" r="2"/><circle cx="15" cy="12" r="2"/><circle cx="7" cy="17" r="2"/></svg><span class="feat-1line">&Uuml;ber <b id="home-param-count">70</b> Einstellungen</span></div>
@@ -2227,12 +2287,230 @@
       </div>
       <div class="gt3-banner" id="hud-toast-wrap"><span id="hud-toast"></span></div>
     </div>
+
+    <!-- CONTROLLER-BELEGUNG. Sie steht hier und nicht in den Optionen, weil man sie beim
+         FAHREN braucht: wer wissen will, was L1 tut, will nicht den Tab wechseln.
+         Zugewiesen wird weiter in den Optionen; diese Grafik zeigt nur.
+
+         Die Beschriftungen sind LEER im Markup und werden von padDiagramRender() gefuellt.
+         Das ist Absicht: eine feste Beschriftung im SVG waere eine zweite Wahrheit neben
+         den Bindungen, und die zwei laufen beim ersten Umbelegen auseinander. -->
+    <div class="card">
+      <h2>Controller-Belegung</h2>
+      <p class="muted" style="font-size:11.5px">
+        Was gerade auf welcher Taste liegt. Zuweisen l&auml;sst sich das in den Optionen
+        unter &bdquo;Gamepad&ldquo;; die Grafik zieht sofort nach.
+      </p>
+      <p class="muted" style="font-size:11.5px">
+        Wei&szlig; ist zuweisbar, gedecktes Grau ist festverdrahtet und nicht zuweisbar
+        (das Steuerkreuz), kursives Grau hei&szlig;t &bdquo;nicht belegt&ldquo;. Touchpad
+        und PS-Taste bleiben ab Werk frei, weil das System beide selbst abgreift: ein
+        Tippen aufs Touchpad l&ouml;st zugleich einen Klick in der Seite aus. Im
+        Streckeneditor und bei scharfem Boxenstopp bedient das Steuerkreuz erst diese,
+        danach gilt wieder das Gezeigte.
+      </p>
+      <div class="pad-wrap">
+      <svg viewBox="0 0 1000 660" class="pad-svg" role="img"
+           aria-label="Controller mit der aktuellen Tastenbelegung">
+        <g class="pad-body" transform="translate(0, 20)">
+          <!-- L2 und R2 liegen HINTEN, also gezeichnet vor L1/R1 und etwas hoeher. -->
+          <path d="M 318 148 C 312 108, 352 103, 382 113 L 386 137 Z" class="pad-fill2"/>
+          <path d="M 682 148 C 688 108, 648 103, 618 113 L 614 137 Z" class="pad-fill2"/>
+          <path d="M 320 162 C 316 138, 354 133, 384 141 L 386 158 Z" class="pad-fill1"/>
+          <path d="M 680 162 C 684 138, 646 133, 616 141 L 614 158 Z" class="pad-fill1"/>
+          <path d="M 380 155 L 620 155 C 655 155, 680 170, 710 200
+                   C 745 235, 785 300, 755 450 C 740 500, 685 495, 650 455
+                   C 620 420, 595 385, 570 385 C 545 385, 530 405, 500 405
+                   C 470 405, 455 385, 430 385 C 405 385, 380 420, 350 455
+                   C 315 495, 260 500, 245 450 C 215 300, 255 235, 290 200
+                   C 320 170, 345 155, 380 155 Z" class="pad-shell"/>
+          <path d="M 385 160 L 615 160 C 622 160, 628 165, 625 175 L 610 260
+                   C 608 268, 600 272, 590 272 L 410 272 C 400 272, 392 268, 390 260
+                   L 375 175 C 372 165, 378 160, 385 160 Z" class="pad-fill1"/>
+          <rect x="350" y="180" width="16" height="28" rx="5"
+                transform="rotate(-12 358 194)" class="pad-btn"/>
+          <rect x="634" y="180" width="16" height="28" rx="5"
+                transform="rotate(12 642 194)" class="pad-btn"/>
+          <g transform="translate(320, 275)">
+            <circle cx="0" cy="0" r="48" class="pad-fill1" opacity="0.4"/>
+            <path d="M -11 -42 L 11 -42 C 14 -42, 15 -39, 15 -36 L 15 -15 L -15 -15
+                     L -15 -36 C -15 -39, -12 -42, -11 -42 Z" class="pad-btn"/>
+            <path d="M -11 42 L 11 42 C 14 42, 15 39, 15 36 L 15 15 L -15 15
+                     L -15 36 C -15 39, -12 42, -11 42 Z" class="pad-btn"/>
+            <path d="M -42 -11 L -42 11 C -42 14, -39 15, -36 15 L -15 15 L -15 -15
+                     L -36 -15 C -39 -15, -42 -12, -42 -11 Z" class="pad-btn"/>
+            <path d="M 42 -11 L 42 11 C 42 14, 39 15, 36 15 L 15 15 L 15 -15 L 36 -15
+                     C 39 -15, 42 -12, 42 -11 Z" class="pad-btn"/>
+            <circle cx="0" cy="0" r="12" class="pad-hole"/>
+          </g>
+          <g transform="translate(680, 275)">
+            <circle cx="0" cy="0" r="48" class="pad-fill1" opacity="0.4"/>
+            <circle cx="0" cy="-30" r="14" class="pad-btn"/>
+            <polygon points="0,-36 -6,-25 6,-25" class="pad-mark" stroke="#00ffcc"/>
+            <circle cx="-30" cy="0" r="14" class="pad-btn"/>
+            <rect x="-35" y="-5" width="10" height="10" class="pad-mark" stroke="#ff77c6"/>
+            <circle cx="30" cy="0" r="14" class="pad-btn"/>
+            <circle cx="30" cy="0" r="5" class="pad-mark" stroke="#ff5555"/>
+            <circle cx="0" cy="30" r="14" class="pad-btn"/>
+            <path d="M -4 26 L 4 34 M 4 26 L -4 34" class="pad-mark" stroke="#7799ff"/>
+          </g>
+          <g transform="translate(425, 365)">
+            <circle cx="0" cy="0" r="42" class="pad-fill1"/>
+            <circle cx="0" cy="0" r="32" class="pad-btn"/>
+            <circle cx="0" cy="0" r="24" fill="none" class="pad-ring"/>
+          </g>
+          <g transform="translate(575, 365)">
+            <circle cx="0" cy="0" r="42" class="pad-fill1"/>
+            <circle cx="0" cy="0" r="32" class="pad-btn"/>
+            <circle cx="0" cy="0" r="24" fill="none" class="pad-ring"/>
+          </g>
+          <g transform="translate(500, 355)">
+            <circle cx="0" cy="0" r="15" class="pad-btn"/>
+            <path d="M -5 2 C -5 -3, 0 -5, 0 -5 C 0 -5, 4 -3, 3 0 C 2 3, -3 3, -3 6
+                     C -3 8, 2 8, 4 6" fill="none" class="pad-mark" stroke="#8a99ad"/>
+          </g>
+        </g>
+        <g>
+      <polyline points="348,126 255,126 255,62" class="pad-line"/>
+      <circle cx="348" cy="126" r="3.5" class="pad-dot"/>
+      <text x="225" y="66" text-anchor="end" class="pad-key">L2 &middot; LT</text>
+      <text x="225" y="83" text-anchor="end" class="pad-act" id="pad-a-l2">&ndash;</text>
+      <polyline points="352,156 255,156 255,122" class="pad-line"/>
+      <circle cx="352" cy="156" r="3.5" class="pad-dot"/>
+      <text x="225" y="126" text-anchor="end" class="pad-key">L1 &middot; LB</text>
+      <text x="225" y="143" text-anchor="end" class="pad-act" id="pad-a-l1">&ndash;</text>
+      <polyline points="356,212 255,212 255,182" class="pad-line"/>
+      <circle cx="356" cy="212" r="3.5" class="pad-dot"/>
+      <text x="225" y="186" text-anchor="end" class="pad-key">Select &middot; Share</text>
+      <text x="225" y="203" text-anchor="end" class="pad-act" id="pad-a-select">&ndash;</text>
+      <polyline points="425,385 255,385 255,426" class="pad-line"/>
+      <circle cx="425" cy="385" r="3.5" class="pad-dot"/>
+      <text x="225" y="430" text-anchor="end" class="pad-key">Linker Stick</text>
+      <text x="225" y="447" text-anchor="end" class="pad-act" id="pad-a-lstick">&ndash;</text>
+      <polyline points="425,408 255,408 255,474" class="pad-line"/>
+      <circle cx="425" cy="408" r="3.5" class="pad-dot"/>
+      <text x="225" y="478" text-anchor="end" class="pad-key">L3 &middot; Stick dr&uuml;cken</text>
+      <text x="225" y="495" text-anchor="end" class="pad-act" id="pad-a-l3">&ndash;</text>
+      <polyline points="652,126 745,126 745,62" class="pad-line"/>
+      <circle cx="652" cy="126" r="3.5" class="pad-dot"/>
+      <text x="775" y="66" text-anchor="start" class="pad-key">R2 &middot; RT</text>
+      <text x="775" y="83" text-anchor="start" class="pad-act" id="pad-a-r2">&ndash;</text>
+      <polyline points="648,156 745,156 745,122" class="pad-line"/>
+      <circle cx="648" cy="156" r="3.5" class="pad-dot"/>
+      <text x="775" y="126" text-anchor="start" class="pad-key">R1 &middot; RB</text>
+      <text x="775" y="143" text-anchor="start" class="pad-act" id="pad-a-r1">&ndash;</text>
+      <polyline points="644,212 745,212 745,182" class="pad-line"/>
+      <circle cx="644" cy="212" r="3.5" class="pad-dot"/>
+      <text x="775" y="186" text-anchor="start" class="pad-key">Options &middot; Start</text>
+      <text x="775" y="203" text-anchor="start" class="pad-act" id="pad-a-options">&ndash;</text>
+      <polyline points="575,385 745,385 745,426" class="pad-line"/>
+      <circle cx="575" cy="385" r="3.5" class="pad-dot"/>
+      <text x="775" y="430" text-anchor="start" class="pad-key">Rechter Stick</text>
+      <text x="775" y="447" text-anchor="start" class="pad-act" id="pad-a-rstick">&ndash;</text>
+      <polyline points="575,408 745,408 745,474" class="pad-line"/>
+      <circle cx="575" cy="408" r="3.5" class="pad-dot"/>
+      <text x="775" y="478" text-anchor="start" class="pad-key">R3 &middot; Stick dr&uuml;cken</text>
+      <text x="775" y="495" text-anchor="start" class="pad-act" id="pad-a-r3">&ndash;</text>
+      <polyline points="500,200 500,564 390,564" class="pad-line"/>
+      <circle cx="500" cy="200" r="3.5" class="pad-dot"/>
+      <text x="390" y="604" text-anchor="middle" class="pad-key">Touchpad</text>
+      <text x="390" y="621" text-anchor="middle" class="pad-act" id="pad-a-touchpad">&ndash;</text>
+      <polyline points="500,375 500,564 610,564" class="pad-line"/>
+      <circle cx="500" cy="375" r="3.5" class="pad-dot"/>
+      <text x="610" y="604" text-anchor="middle" class="pad-key">PS-Taste</text>
+      <text x="610" y="621" text-anchor="middle" class="pad-act" id="pad-a-ps">&ndash;</text>
+      <polyline points="272,295 232,295 232,238" class="pad-line"/>
+      <circle cx="272" cy="295" r="3.5" class="pad-dot"/>
+      <text x="225" y="246" text-anchor="end" class="pad-key">Steuerkreuz</text>
+      <text x="225" y="268" text-anchor="end" class="pad-row"><tspan class="pad-sym">&uarr;</tspan> <tspan class="pad-act" id="pad-a-dup">&ndash;</tspan></text>
+      <text x="225" y="289" text-anchor="end" class="pad-row"><tspan class="pad-sym">&darr;</tspan> <tspan class="pad-act" id="pad-a-ddown">&ndash;</tspan></text>
+      <text x="225" y="310" text-anchor="end" class="pad-row"><tspan class="pad-sym">&larr;</tspan> <tspan class="pad-act" id="pad-a-dleft">&ndash;</tspan></text>
+      <text x="225" y="331" text-anchor="end" class="pad-row"><tspan class="pad-sym">&rarr;</tspan> <tspan class="pad-act" id="pad-a-dright">&ndash;</tspan></text>
+      <polyline points="728,295 768,295 768,238" class="pad-line"/>
+      <circle cx="728" cy="295" r="3.5" class="pad-dot"/>
+      <text x="775" y="246" text-anchor="start" class="pad-key">Tasten</text>
+      <text x="775" y="268" text-anchor="start" class="pad-row"><tspan class="pad-sym">&#9651;</tspan> <tspan class="pad-act" id="pad-a-tri">&ndash;</tspan></text>
+      <text x="775" y="289" text-anchor="start" class="pad-row"><tspan class="pad-sym">&#9711;</tspan> <tspan class="pad-act" id="pad-a-circ">&ndash;</tspan></text>
+      <text x="775" y="310" text-anchor="start" class="pad-row"><tspan class="pad-sym">&#10005;</tspan> <tspan class="pad-act" id="pad-a-cross">&ndash;</tspan></text>
+      <text x="775" y="331" text-anchor="start" class="pad-row"><tspan class="pad-sym">&#9633;</tspan> <tspan class="pad-act" id="pad-a-sq">&ndash;</tspan></text>
+        </g>
+      </svg>
+      </div>
+    </div>
   </section>
 
   <!-- PROGRAMMIERSCHULE -->
   <!-- SONSTIGE: Sammelstelle fuer die drei Seiten, die keinen eigenen Platz in der
        Leiste mehr brauchen. Drei Kacheln, keine Verschachtelung - jede fuehrt auf eine
        Seite, die es schon gibt. -->
+  <!-- INFO. Der erste Teil der Doku, aber als eigener Reiter: es ist der Text, den
+       jemand liest, BEVOR er etwas ausprobiert - und in einem Reiter namens
+       "Entwicklertools" sucht ihn dort niemand.
+
+       data-i18n-skip auf dem Abschnitt, wie bei tab-doc: es ist derselbe deutsche
+       Fliesstext, und die Sprachtests nehmen tab-doc ausdruecklich aus. Ein Reiter
+       mit halb uebersetztem Fliesstext waere schlechter als einer mit einem
+       ehrlichen Hinweis darauf, dass er nur deutsch vorliegt. -->
+  <section class="tabpage" id="tab-info" data-i18n-skip>
+    <div class="card" style="border-color:var(--warn)">
+      <p class="muted" style="margin:0" data-i18n-skip>
+        <b>This is available in German only, at the moment.</b>
+      </p>
+    </div>
+    <div class="card">
+      <h2>Wozu dient dieses Projekt?</h2>
+      <p class="muted">
+        Die Hardware ist gekauft, die Software bestimmt jemand anders. Dieses Projekt dreht
+        das um: es steuert ein Carrera-Hybrid-Auto mit eigenem Code &uuml;ber dieselbe
+        Bluetooth-Schnittstelle, die die Hersteller-App benutzt. Damit l&auml;uft auf der
+        Hardware, was man selbst darauf laufen lassen will: unabh&auml;ngig davon, ob
+        ein Anbieter eine Funktion vorsieht, eine App weiter pflegt oder einen Server
+        abschaltet.
+      </p>
+      <p class="muted">
+        Der zweite Punkt ist die <b>Gemeinschaft</b>. Ein offengelegtes Protokoll kann
+        jeder weiterverwenden: f&uuml;r Funktionen, die der Hersteller nicht baut, f&uuml;r
+        eine andere Bedienung, f&uuml;r Unterricht. Das hier ist bewusst als Beispiel
+        gebaut, nicht als Produkt: alles, was herausgefunden wurde, steht in dieser
+        Doku, samt der Stellen, an denen wir uns geirrt haben.
+      </p>
+
+      <h3 style="font-size:14px; margin:16px 0 6px 0">Offene Software als Teil offener Wissenschaft</h3>
+      <p class="muted">
+        Wer Ergebnisse pr&uuml;fbar machen will, braucht pr&uuml;fbare Werkzeuge. Eine
+        Auswertung, die auf einem Programm beruht, in das niemand hineinsehen darf, ist
+        genau so weit nachvollziehbar wie das Vertrauen in dessen Hersteller reicht.
+        Deshalb wechseln Forschende zunehmend von kommerzieller auf offene Software, und
+        deshalb steigen auch Landesverwaltungen von Windows auf Linux um, es geht um
+        Kontrolle &uuml;ber die eigene Infrastruktur, nicht um Anschaffungskosten.
+      </p>
+      <p class="muted">
+        Offene Software <em>kann</em> dabei sogar sicherer sein, und der Grund daf&uuml;r ist
+        <b>Kerckhoffs&rsquo; Prinzip</b>: ein Verfahren soll seine Sicherheit aus dem
+        geheimen <em>Schl&uuml;ssel</em> ziehen, nicht aus der Geheimhaltung des
+        <em>Verfahrens</em>. Ein Verfahren, das nur funktioniert, solange niemand es kennt,
+        ist nicht sicher, sondern unpr&uuml;fbar. Offenlegung ist deshalb kein Risiko,
+        sondern die Voraussetzung daf&uuml;r, dass Fehler gefunden werden k&ouml;nnen.
+        <b>Das hei&szlig;t nicht, dass offene Software automatisch sicherer ist</b>:
+        nur, dass Pr&uuml;fbarkeit und Sicherheit sich nicht widersprechen.
+      </p>
+
+      <h3 style="font-size:14px; margin:16px 0 6px 0">Zum Weiterlesen und Ausprobieren</h3>
+      <p class="muted">
+        <b><em>Ada &amp; Zangemann</em></b> von Matthias Kirschner und Sandra Brandst&auml;tter,
+        ein Kinderbuch dar&uuml;ber, wem die Software auf einem Ger&auml;t
+        eigentlich geh&ouml;rt. Es erkl&auml;rt in einer Geschichte, worum es oben in drei
+        Abs&auml;tzen ging.
+      </p>
+      <p class="muted">
+        Und praktisch: der Tab <b>Programmierschule</b> l&auml;sst dich
+        Beschleunigungs- und Lenkkurven mit der Hand ziehen und sofort sehen, was das Auto
+        daraus macht. Das ist der k&uuml;rzeste Weg von &bdquo;Programmieren ist abstrakt&ldquo;
+        zu &bdquo;eine eckige Kurve f&auml;hrt schlechter als eine geschmeidige&ldquo;.
+      </p>
+    </div>
+  </section>
+
   <section class="tabpage" id="tab-misc">
     <div class="card">
       <h2>Entwicklertools <span class="wip-tag">experimentell</span></h2>
@@ -2243,6 +2521,17 @@
         vorhersagbar. Zum Fahren wird nichts davon gebraucht.
       </p>
       <div class="misc-grid">
+        <button class="misc-tile goto-tab" data-tab="doc">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M10 6h18l10 10v26H10z" stroke-width="2.8"/>
+            <path d="M28 6v10h10"/>
+            <path d="M16 24h16M16 30h16M16 36h10" stroke="var(--bad)"/>
+          </svg>
+          <b>Doku</b>
+          <span>Was gemessen wurde und was nur vermutet: Protokoll, Physik, T&ouml;ne
+            &ndash; samt der Stellen, an denen wir uns geirrt haben.</span>
+        </button>
         <button class="misc-tile goto-tab" data-tab="school">
           <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -2391,59 +2680,6 @@
       </p>
     </div>
     <button class="misc-back goto-tab" data-tab="misc">&larr; Entwicklertools</button>
-
-    <div class="card">
-      <h2>Wozu dient dieses Projekt?</h2>
-      <p class="muted">
-        Die Hardware ist gekauft, die Software bestimmt jemand anders. Dieses Projekt dreht
-        das um: es steuert ein Carrera-Hybrid-Auto mit eigenem Code &uuml;ber dieselbe
-        Bluetooth-Schnittstelle, die die Hersteller-App benutzt. Damit l&auml;uft auf der
-        Hardware, was man selbst darauf laufen lassen will: unabh&auml;ngig davon, ob
-        ein Anbieter eine Funktion vorsieht, eine App weiter pflegt oder einen Server
-        abschaltet.
-      </p>
-      <p class="muted">
-        Der zweite Punkt ist die <b>Gemeinschaft</b>. Ein offengelegtes Protokoll kann
-        jeder weiterverwenden: f&uuml;r Funktionen, die der Hersteller nicht baut, f&uuml;r
-        eine andere Bedienung, f&uuml;r Unterricht. Das hier ist bewusst als Beispiel
-        gebaut, nicht als Produkt: alles, was herausgefunden wurde, steht in dieser
-        Doku, samt der Stellen, an denen wir uns geirrt haben.
-      </p>
-
-      <h3 style="font-size:14px; margin:16px 0 6px 0">Offene Software als Teil offener Wissenschaft</h3>
-      <p class="muted">
-        Wer Ergebnisse pr&uuml;fbar machen will, braucht pr&uuml;fbare Werkzeuge. Eine
-        Auswertung, die auf einem Programm beruht, in das niemand hineinsehen darf, ist
-        genau so weit nachvollziehbar wie das Vertrauen in dessen Hersteller reicht.
-        Deshalb wechseln Forschende zunehmend von kommerzieller auf offene Software, und
-        deshalb steigen auch Landesverwaltungen von Windows auf Linux um, es geht um
-        Kontrolle &uuml;ber die eigene Infrastruktur, nicht um Anschaffungskosten.
-      </p>
-      <p class="muted">
-        Offene Software <em>kann</em> dabei sogar sicherer sein, und der Grund daf&uuml;r ist
-        <b>Kerckhoffs&rsquo; Prinzip</b>: ein Verfahren soll seine Sicherheit aus dem
-        geheimen <em>Schl&uuml;ssel</em> ziehen, nicht aus der Geheimhaltung des
-        <em>Verfahrens</em>. Ein Verfahren, das nur funktioniert, solange niemand es kennt,
-        ist nicht sicher, sondern unpr&uuml;fbar. Offenlegung ist deshalb kein Risiko,
-        sondern die Voraussetzung daf&uuml;r, dass Fehler gefunden werden k&ouml;nnen.
-        <b>Das hei&szlig;t nicht, dass offene Software automatisch sicherer ist</b>:
-        nur, dass Pr&uuml;fbarkeit und Sicherheit sich nicht widersprechen.
-      </p>
-
-      <h3 style="font-size:14px; margin:16px 0 6px 0">Zum Weiterlesen und Ausprobieren</h3>
-      <p class="muted">
-        <b><em>Ada &amp; Zangemann</em></b> von Matthias Kirschner und Sandra Brandst&auml;tter,
-        ein Kinderbuch dar&uuml;ber, wem die Software auf einem Ger&auml;t
-        eigentlich geh&ouml;rt. Es erkl&auml;rt in einer Geschichte, worum es oben in drei
-        Abs&auml;tzen ging.
-      </p>
-      <p class="muted">
-        Und praktisch: der Tab <b>Programmierschule</b> l&auml;sst dich
-        Beschleunigungs- und Lenkkurven mit der Hand ziehen und sofort sehen, was das Auto
-        daraus macht. Das ist der k&uuml;rzeste Weg von &bdquo;Programmieren ist abstrakt&ldquo;
-        zu &bdquo;eine eckige Kurve f&auml;hrt schlechter als eine geschmeidige&ldquo;.
-      </p>
-    </div>
 
     <div class="card">
       <h2>Überblick</h2>
@@ -5466,11 +5702,12 @@
           <b>Druckvorlagen</b>
           <span>Start/Ziel und Boxengasse maßhaltig als SVG zum Ausdrucken.</span>
         </button>
-        <button class="misc-tile subpage-open" data-sub="pit">
+        <button class="misc-tile subpage-open" data-sub="probe">
           <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
-               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 42V12h16a8 8 0 0 1 0 16H10"/><path d="M34 20h8M38 16v8" stroke="var(--bad)"/></svg>
-          <b>Boxengasse <span class="wip-tag">experimentell</span></b>
-          <span>Eigenes Muster für die Box, mit dem Code, den es auslöst.</span>
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="21" cy="21" r="12" stroke-width="2.8"/><path d="M30 30l10 10" stroke="var(--bad)"/><path d="M21 15v12M15 21h12"/></svg>
+          <b>Code-Sonde</b>
+          <span>Was das Auto gerade unter sich liest, ungefiltert &ndash; mit Zeitleiste
+            der Codewechsel.</span>
         </button>
       </div>
     </div>
@@ -5737,32 +5974,36 @@
       -->
     </div>
 
-    <div class="card subpage" id="sub-pit">
+    <!-- BOXENGASSE, vorlaeufig auskommentiert (Stand v0.4.49).
+
+         Die Karte stand auf einer Vermutung: die Nummer des gedruckten Musters ist
+         geraten und nicht entziffert, die Kodierregel der Balken ist nicht bekannt, und
+         zwei der drei Varianten waren am Auto unerprobt. Ein Bedienelement, das eine
+         Vermutung als Einstellung anbietet, sieht wie eine Zusicherung aus.
+
+         SIE KOMMT ZURUECK, sobald eine Firmware einen offiziellen Boxengassen-Ausdruck
+         kennt - dann ist der Ausloesecode bekannt statt geraten. Was hier stand:
+           - ein Eingabefeld pit-marker-code fuer den Ausloesecode
+           - die Erklaerung der drei Betriebsarten (die steht weiterhin in den Optionen
+             unter "Wo ist die Boxengasse?", wo sie hingehoert)
+           - Hinweise auf die Musterblaetter, die es nicht mehr gibt
+
+         Die Muster-Sonde und die Code-Zeitleiste sind NICHT mit weg: sie sind eine
+         allgemeine Streckendiagnose und stehen jetzt unter "Code-Sonde". An ihnen hingen
+         drei Element-ids, und die haetten den Build gebrochen.
+
+         Absichtlich ohne src= und href= aufgeschrieben: der Selbsttest sucht solche
+         Verweise mit Zeichensuche, auch in Kommentaren.
+    -->
+
+    <div class="card subpage" id="sub-probe">
       <button class="misc-back subpage-back" data-sub="">&larr; Strecke</button>
-      <h2>Boxengasse <span class="wip-tag">experimentell</span></h2>
+      <h2>Code-Sonde</h2>
       <p class="muted" style="font-size:11.5px">
-        Zwei der drei Varianten sind am Auto unerprobt, und die Nummer des gedruckten
-        Musters ist geraten und nicht entziffert &ndash; die Kodierregel ist nicht bekannt.
-        &bdquo;&Uuml;berall halten&ldquo; tr&auml;gt dagegen: es braucht kein Muster.
+        Was das Auto gerade unter sich liest, ungefiltert. Die Anzeige zeigt den ROHEN
+        Code und nicht das, was die Rundenlogik daraus macht &ndash; genau darin liegt ihr
+        Zweck: sie soll die Fehler sichtbar machen, die jene Logik verdeckt.
       </p>
-      <p class="muted">
-        Fährt das Auto über das Boxen-Muster, greift ein Tempolimit von 40&nbsp;%. Bleibt es dann
-        stehen, läuft der Service: je länger du stehst, desto mehr Sprit und Reparatur.
-        Beim Losfahren ist das Limit wieder weg.
-      </p>
-      <p class="muted" style="font-size:12px">
-        <b>Wo die Boxengasse liegt</b> und ob sie &uuml;berhaupt aktiv ist, steht in den
-        <b>Optionen &rarr; Allgemein</b>, direkt unter dem Tankverbrauch: das sind
-        Einstellungen. Hier stehen die Angaben zum <em>Muster</em> &ndash; welchen Code es
-        ausl&ouml;st und wie man es druckt.
-      </p>
-      <div class="row" style="align-items:center; gap:16px">
-        <div>
-          <label class="small">Auslöse-Code (Byte 12)</label>
-          <input type="text" id="pit-marker-code" value="" placeholder="0x0e bei Nummer 14, erst prüfen"
-                 style="width:150px; font-family:monospace">
-        </div>
-      </div>
       <div class="row" style="margin-top:12px">
         <span class="muted">Zuletzt überfahrenes Muster: <b data-i18n-skip id="tile-probe" style="font-family:monospace">-</b></span>
         <div style="margin-top:10px">
@@ -5784,32 +6025,7 @@
             <tbody data-i18n-skip id="tile-timeline"><tr><td colspan="4" class="muted">noch nichts</td></tr></tbody>
           </table>
           <button id="tile-timeline-clear" style="margin-top:7px">Zeitleiste leeren</button>
-        </div>
-        <p class="muted" style="font-size:11.5px; border-left:3px solid var(--info);
-           padding-left:9px; margin-top:12px">
-          <b>Die n&auml;chste Messung: zwei Betriebsarten vergleichen.</b>
-        </p>
-        <p class="muted" style="font-size:11.5px; border-left:3px solid var(--info);
-           padding-left:9px; margin-top:0">
-          F&uuml;r zwei Scannerbetriebsarten gibt es Belege: Byte 14 Bit 5 hei&szlig;t
-          &bdquo;Auf der Bahn&ldquo;, Bit 7 hei&szlig;t &bdquo;Ohne Bahn&ldquo;, und mit Bit
-          7 wurden 0 Lesungen in 551 Fahrmeldungen gez&auml;hlt. Fahr dasselbe Blatt zweimal
-          &uuml;ber: einmal mit dem Schalter Auf der Bahn an, einmal aus, und vergleich die
-          Zeitleisten. Findet nur eine der beiden Betriebsarten das Muster, ist das die
-          Antwort auf die Frage, ob gedruckte Codes auf der Bahn &uuml;berhaupt gelesen
-          werden.
-        </p>
       </div>
-      <p class="muted" style="font-size:11.5px">
-        <b>Muster-Sonde:</b>
-        fahr über ein beliebiges ausgedrucktes Muster, hier steht sofort, welchen Code das
-        Auto meldet. Achtung auf den Modus: ein Ausdruck meldet aus der Ausdruck-Tabelle,
-        dort ist 0x01 Start/Ziel. Die Werte 0x0a Start/Ziel, 0x02 Gerade, 0x03 Linkskurve,
-        0x04 Rechtskurve, 0x05 und 0x06 Haarnadel gehören zur Bahn-Tabelle; alles andere
-        ist unbestätigt. Trag hier den Code ein, den dein gedrucktes Boxen-Muster
-        tatsächlich auslöst – 0x08 war nie ein reales Signal und ist deshalb nicht mehr
-        die Vorgabe.
-      </p>
     </div>
 
   </section>
@@ -5823,7 +6039,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.4.48</span></span>
+    <span class="foot-ver">v<span id="app-version">0.4.49</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -7235,6 +7451,30 @@
     "Tagesform, Fehler, Windschatten, Überholen, Gummiband und Abstand halten – ein Regler für alle sechs. Ein Überholvorgang läuft als Sequenz: erst zur Seite, dann Schub, dann vorne wieder einordnen, und wenn es nach 5 s nicht geklappt hat, Abbruch mit 6 s Sperre. Ohne diesen Abbruch klebte der Verfolger neben dem anderen, bis die Uhr ablief, und genau dort berühren sie sich. Der Mindestabstand rechnet ausserdem mit der Annäherungsrate statt mit einem festen Kachelabstand. Auf 0 ist jeder der sechs Bausteine wirkungslos.": "Form, mistakes, slipstream, overtaking, rubber band and keeping distance – one slider for all six. An overtake runs as a sequence: move aside, then the boost, then tuck back in ahead, and if it has not worked after 5 s, abort with a 6 s lockout. Without that abort the follower stuck alongside the other until the clock ran out, and that is exactly where they touch. The minimum gap also reckons with the closing rate rather than a fixed tile distance. At 0 every one of the six parts is inert.",
     "Zwei Autos nebeneinander gehen auseinander, und beim Überholen weicht auch der Vorausfahrende aus, zur anderen Seite. Zwei Autos auf 25 cm Bahnbreite brauchen beide Hälften. Dieser Regler bestimmt auch, wie weit der Angreifer zur Seite geht: das ist ein Ausweichen und keine Linienwahl, hängt also nicht an der Ideallinie.": "Two cars side by side move apart, and when overtaking the car in front gives way too, to the other side. Two cars on 25 cm of track width need both halves. This slider also sets how far the attacker moves over: that is an avoidance and not a choice of line, so it does not depend on the racing line.",
     "Jeder Ghost hält eine eigene, feste Linie über die Bahnbreite. Auf der Geraden gilt die Spur, in der Kurve die Ideallinie – so fährt das Feld hintereinander, aber auf verschiedenen Linien, und sucht im Bogen trotzdem den Scheitel. Der Übergang läuft mit 350 ms nach, damit an der Kachelgrenze kein Ruck entsteht. In der Kurve bleibt die halbe Spur stehen: alle auf denselben Scheitel zu schicken wäre realistisch, würde sie aber zusammenführen, und Berührungen sind ohne Rückmeldung zur Querlage nicht zurückzuregeln.": "Every ghost holds its own fixed line across the track width. On the straight the lane rules, in the corner the racing line – so the field runs in file but on different lines, and still seeks the apex through the bend. The transition follows with a 350 ms lag so that no jolt appears at the tile boundary. Half the lane stays in the corner: sending everyone to the same apex would be realistic but would bring them together, and contact cannot be regulated away without feedback on lateral position.",
+    "Dieses Projekt ist unabhängig von Carrera und gehört zu keinem Hersteller. Der vollständige Quellcode steht unter der MIT-Lizenz auf GitHub.": "This project is independent of Carrera and belongs to no manufacturer. The complete source code is available under the MIT licence on GitHub.",
+    "Jeder darf ihn nutzen, kopieren, verändern und auch in kommerzieller Software verwenden, solange der ursprüngliche Urheberrechtsvermerk und der Lizenztext in der Kopie erhalten bleiben.": "Anyone may use, copy and modify it, including in commercial software, as long as the original copyright notice and the licence text are kept in the copy.",
+    "Dieselbe Lizenz sagt aber auch: die Software kommt ohne Garantie und ohne Gewährleistung. Du steuerst deine Autos auf eigene Gefahr. Es ist ein Freizeitprojekt, motiviert durch die Option, eine Pups-Hupe einzubauen – und möglicherweise funktioniert es nach einem künftigen Firmware-Update nicht mehr.": "The same licence also says: the software comes with no warranty and no guarantee. You drive your cars at your own risk. This is a hobby project, motivated by the option of building in a whoopee horn – and it may well stop working after a future firmware update.",
+    "Für konstruktives Feedback oder Feature-Wünsche schreib mir gern im Thema „Omega Sim“ im Carrera Hybrid Players Discord, unter „weitere Themen“.": "For constructive feedback or feature requests, do write to me in the “Omega Sim” topic of the Carrera Hybrid Players Discord, under “weitere Themen”.",
+    "Unabhängig, offen, ohne Gewähr": "Independent, open, without warranty",
+    "Quellcode auf GitHub": "Source code on GitHub",
+    "Bremsbalance nach vorn": "Brake bias forward",
+    "Bremsbalance nach hinten": "Brake bias rearward",
+    "Lenkansprechen kleiner": "Steering response lower",
+    "Lenkansprechen größer": "Steering response higher",
+    "Controller-Belegung": "Controller mapping",
+    "Was gerade auf welcher Taste liegt. Zuweisen lässt sich das in den Optionen unter „Gamepad“; die Grafik zieht sofort nach.": "What currently sits on which button. It can be reassigned in the options under “Gamepad”; the diagram follows immediately.",
+    "Weiß ist zuweisbar, gedecktes Grau ist festverdrahtet und nicht zuweisbar (das Steuerkreuz), kursives Grau heißt „nicht belegt“. Touchpad und PS-Taste bleiben ab Werk frei, weil das System beide selbst abgreift: ein Tippen aufs Touchpad löst zugleich einen Klick in der Seite aus. Im Streckeneditor und bei scharfem Boxenstopp bedient das Steuerkreuz erst diese, danach gilt wieder das Gezeigte.": "White is assignable, muted grey is hard-wired and not assignable (the D-pad), italic grey means “not assigned”. Touchpad and PS button stay free out of the box because the system claims both itself: a tap on the touchpad also fires a click somewhere in the page. In the track editor and with an armed pit stop the D-pad serves those first, after which what is shown here applies again.",
+    "L3 · Stick drücken": "L3 · press the stick",
+    "R3 · Stick drücken": "R3 · press the stick",
+    "Linker Stick": "Left stick",
+    "Rechter Stick": "Right stick",
+    "Steuerkreuz": "D-pad",
+    "Tasten": "Buttons",
+    "PS-Taste": "PS button",
+    "Was gemessen wurde und was nur vermutet: Protokoll, Physik, Töne – samt der Stellen, an denen wir uns geirrt haben.": "What was measured and what is only assumed: protocol, physics, sound – including the places where we got it wrong.",
+    "Code-Sonde": "Code probe",
+    "Was das Auto gerade unter sich liest, ungefiltert – mit Zeitleiste der Codewechsel.": "What the car is reading beneath itself right now, unfiltered – with a timeline of the code changes.",
+    "Was das Auto gerade unter sich liest, ungefiltert. Die Anzeige zeigt den ROHEN Code und nicht das, was die Rundenlogik daraus macht – genau darin liegt ihr Zweck: sie soll die Fehler sichtbar machen, die jene Logik verdeckt.": "What the car is reading beneath itself right now, unfiltered. The readout shows the RAW code and not what the lap logic makes of it – which is precisely its purpose: it is meant to show the errors that logic hides.",
   };
 
   // ============================================================================
@@ -15308,17 +15548,17 @@
   // Beim Laden verstecken, weil die Vorgabe 'anywhere' ist.
   if ($('pit-double-lap-wrap')) $('pit-double-lap-wrap').style.display = 'none';
 
-  $('pit-marker-code').addEventListener('change', (e) => {
-    const raw = e.target.value.trim();
-    if (raw === '') { pitMarkerCode = null; return; }
-    const v = parseInt(raw, raw.startsWith('0x') ? 16 : 10);
-    if (Number.isFinite(v) && v >= 0 && v <= 255) {
-      pitMarkerCode = v;
-      e.target.value = '0x' + v.toString(16).padStart(2, '0');
-    } else {
-      e.target.value = pitMarkerCode === null ? '' : '0x' + pitMarkerCode.toString(16).padStart(2, '0');
-    }
-  });
+  // HIER STAND DER LESER FUER pit-marker-code, das Eingabefeld des Boxengassen-Ausloesecodes.
+  // Er ist mit der Karte heraus (siehe den auskommentierten Block in 00-index.head.html),
+  // und zwar GELOESCHT und nicht mit einer Wache stehengelassen: ein Leser fuer ein Element,
+  // das es nicht gibt, ist toter Code, und der Element-Pruefer im Build meldet ihn zu Recht.
+  //
+  // Was mit der Karte zurueckkommen muss, damit man es nicht neu herleiten muss: ein
+  // change-Leser auf dem Feld, der den Text als Hex (0x..) oder Dezimal liest, auf 0..255
+  // pruefte, pitMarkerCode setzte und das Feld auf die Hex-Schreibweise normalisierte -
+  // bei ungueltiger Eingabe zurueck auf den letzten gueltigen Wert. pitMarkerCode selbst
+  // bleibt hier stehen: es ist null, und null vergleicht sich gegen keinen Code, also ist
+  // die Boxengasse per eigenem Muster damit sauber aus.
 
   // ---- Das Schild auf dem Tacho ----
   //
@@ -17335,7 +17575,93 @@
     return b.type === 'axis' ? `Achse ${b.index}${b.invert ? ' (invertiert)' : ''}` : `Knopf ${b.index}`;
   }
 
+  // ---- Die Controller-Grafik unter dem Cockpit --------------------------------------
+  //
+  // DIE ZUORDNUNG LAEUFT UMGEKEHRT zur Bindungstabelle. Die Tabelle sagt "Aktion -> Taste"
+  // und kann nachschlagen; die Grafik braucht "Taste -> Aktion" und muss deshalb SUCHEN.
+  // Das ist kein Umstand, sondern der Grund, warum es ueberhaupt eine eigene Funktion gibt:
+  // eine Taste kann ZWEI Aktionen tragen, und eine Nachschlagetabelle koennte das nicht
+  // zeigen.
+  //
+  // Die Indizes sind die des Standard-Gamepad-Bilds, also dieselben, aus denen die
+  // Bindungen bestehen - hier wird nichts umgerechnet, nur benannt. Vertippt man sich, zeigt
+  // die Zeile "nicht belegt", und der Selbsttest meldet es.
+  const PAD_CONTROLS = [
+    { id: 'cross', typ: 'button', index: 0 },   // Kreuz / A
+    { id: 'circ', typ: 'button', index: 1 },    // Kreis / B
+    { id: 'sq', typ: 'button', index: 2 },      // Quadrat / X
+    { id: 'tri', typ: 'button', index: 3 },     // Dreieck / Y
+    { id: 'l1', typ: 'button', index: 4 },
+    { id: 'r1', typ: 'button', index: 5 },
+    { id: 'l2', typ: 'button', index: 6 },
+    { id: 'r2', typ: 'button', index: 7 },
+    { id: 'select', typ: 'button', index: 8 },  // Select / Share / Back
+    { id: 'options', typ: 'button', index: 9 },
+    { id: 'l3', typ: 'button', index: 10 },
+    { id: 'r3', typ: 'button', index: 11 },
+    { id: 'dup', typ: 'button', index: 12 },
+    { id: 'ddown', typ: 'button', index: 13 },
+    { id: 'dleft', typ: 'button', index: 14 },
+    { id: 'dright', typ: 'button', index: 15 },
+    { id: 'ps', typ: 'button', index: 16 },
+    { id: 'touchpad', typ: 'button', index: 17 },
+    // Die Stickachsen. Nur die X-Achsen: die Lenkung liegt auf einer davon, und eine Zeile
+    // je Achse waere vier Zeilen fuer zwei Bedienelemente.
+    { id: 'lstick', typ: 'axis', index: 0 },
+    { id: 'rstick', typ: 'axis', index: 2 },
+  ];
+
+  // FESTVERDRAHTETE BELEGUNGEN, die NICHT durch die Bindungstabelle laufen.
+  //
+  // Sie waeren in der Grafik als "nicht belegt" erschienen, und das ist schlicht falsch: das
+  // Steuerkreuz verstellt Bremsbalance und Lenkansprechen im Fahren. Eine Grafik, die eine
+  // belegte Taste als frei zeigt, ist schlechter als keine - man probiert dann im Rennen
+  // aus, was sie tut.
+  //
+  // Frei zuweisbar sind sie nicht, deshalb stehen sie hier und nicht in DEFAULT_BINDINGS.
+  // Und sie sind nicht ausschliesslich: im Streckeneditor und bei scharfem Boxenstopp
+  // greifen erst diese zwei ab (siehe pollGamepad), danach gilt wieder das hier.
+  const PAD_FIXED = {
+    dup: 'Bremsbalance nach vorn',
+    ddown: 'Bremsbalance nach hinten',
+    dleft: 'Lenkansprechen kleiner',
+    dright: 'Lenkansprechen größer',
+  };
+
+  function padDiagramRender() {
+    if (!document.getElementById('pad-a-cross')) return;   // Karte nicht im Dokument
+    for (const c of PAD_CONTROLS) {
+      const el = document.getElementById('pad-a-' + c.id);
+      if (!el) continue;
+      // Alle Aktionen, die auf diesem Bedienelement liegen. Mehrzahl mit Absicht: eine
+      // Doppelbelegung ist erlaubt und soll sichtbar sein, nicht verschwiegen.
+      const treffer = Object.keys(BIND_ACTION_LABELS).filter((a) => {
+        const b = bindings[a];
+        return b && b.type === c.typ && b.index === c.index;
+      });
+      // Durch t(), weil der Text hier ENTSTEHT und nicht im Markup steht - der
+      // Textknoten-Uebersetzer findet nur, was in der Vorlage liegt.
+      // Reihenfolge: zugewiesen schlaegt festverdrahtet schlaegt frei. Wer eine Aktion auf
+      // das Steuerkreuz legt, soll SIE sehen und nicht die Werksfunktion darunter.
+      const fest = PAD_FIXED[c.id];
+      el.textContent = treffer.length
+        ? treffer.map((a) => t(BIND_ACTION_LABELS[a])).join(' + ')
+        : (fest ? t(fest) : t('nicht belegt'));
+      el.classList.toggle('pad-frei', !treffer.length && !fest);
+      el.classList.toggle('pad-fest', !treffer.length && !!fest);
+    }
+  }
+
+  // Beim Sprachwechsel neu zeichnen. Ohne diese Anmeldung bliebe die Grafik in der Sprache
+  // stehen, in der sie zuletzt gezeichnet wurde - genau der Fall, fuer den die Anmeldung
+  // gebaut wurde.
+  if (typeof i18nOnLangChange === 'function') i18nOnLangChange(padDiagramRender);
+
   function renderBindTable() {
+    // Die Grafik zieht hier mit. renderBindTable() ist die EINE Stelle, die nach jeder
+    // Zuweisung laeuft; sie an sieben Aufrufstellen einzeln nachzuziehen waere die
+    // Gelegenheit, eine zu vergessen.
+    padDiagramRender();
     const body = $('bind-table-body');
     body.innerHTML = '';
     Object.keys(BIND_ACTION_LABELS).forEach(action => {
@@ -23661,7 +23987,7 @@
             // sonst sich selbst gemeldet ("Byte 14 = 0x22, Bit 5 an, Bit 7 aus").
             // Der feste Text der Selbsttestseite wird weiter geprueft, er steht ausserhalb
             // von #st-rows.
-            if (p.closest('[data-i18n-skip]') || p.closest('#tab-doc')
+            if (p.closest('[data-i18n-skip]') || p.closest('#tab-doc') || p.closest('#tab-info')
                 || p.closest('#log') || p.closest('#st-rows') || p.closest('#hud-toast')
                 || p.id === 'st-status') {
               return NodeFilter.FILTER_REJECT;
@@ -24002,7 +24328,7 @@
         if (!el) continue;
         // Die Doku ist ausdruecklich nur deutsch; das Protokoll und die Testtabelle
         // enthalten Laufzeittexte und keine Oberflaeche.
-        if (el.closest('#tab-doc, #log, script, style, template, #st-rows')) continue;
+        if (el.closest('#tab-doc, #tab-info, #log, script, style, template, #st-rows')) continue;
         const t = n.nodeValue.trim().replace(/\s+/g, ' ');
         if (t.length < 10 || !DE.test(t)) continue;
         const wo = el.closest('[id^="tab-"]');
@@ -25567,6 +25893,74 @@
       lat.rows = merk;
       if (typeof latRender === 'function') { try { latRender(); } catch (e) { /* Karte fehlt */ } }
     }
+  });
+
+  // ---- Die Controller-Grafik zeigt, was wirklich belegt ist ----
+  //
+  // DIE FEHLERKLASSE: eine Grafik ist eine ZWEITE Wahrheit neben den Bindungen. Sie kann
+  // richtig aussehen und falsch sein, und man merkt es erst mitten im Rennen, wenn eine
+  // Taste etwas anderes tut als angeschrieben.
+  //
+  // GEFUNDEN HAT DIESER TEST SCHON EINEN: das Steuerkreuz stand auf "nicht belegt", obwohl
+  // es Bremsbalance und Lenkansprechen verstellt - diese vier Belegungen laufen nicht durch
+  // die Bindungstabelle, sondern sind festverdrahtet. Eine Grafik, die eine belegte Taste
+  // als frei zeigt, ist schlechter als keine: man probiert dann im Fahren aus, was sie tut.
+  //
+  // Und einen zweiten: der Renderer setzte textContent auf das <text>-Element und loeschte
+  // damit den tspan mit dem Tastensymbol. Die Pfeile und die Tastenzeichen waren nach dem
+  // ersten Zeichnen weg. Deshalb prueft der Test die Symbole mit.
+  stAdd('Controller-Grafik stimmt mit den Bindungen', () => {
+    if (!$('pad-a-cross') || typeof PAD_CONTROLS === 'undefined') {
+      return { skip: true, mass: 'Grafik oder PAD_CONTROLS nicht erreichbar' };
+    }
+    const fehler = [];
+    // 1. Jedes Bedienelement aus PAD_CONTROLS hat eine Zeile in der Grafik. Ein Tippfehler
+    //    im Index faellt hier NICHT auf - dafuer ist Punkt 2 da -, ein fehlendes
+    //    Textelement schon.
+    let zeilen = 0;
+    for (const c of PAD_CONTROLS) {
+      const el = $('pad-a-' + c.id);
+      if (!el) { fehler.push('Zeile fehlt: ' + c.id); continue; }
+      zeilen++;
+      if (!el.textContent.trim()) fehler.push('Zeile leer: ' + c.id);
+    }
+    // 2. JEDE zugewiesene Aktion muss in der Grafik auftauchen. Das ist die eigentliche
+    //    Zusicherung, und sie laeuft in der Gegenrichtung zum Renderer: der geht von der
+    //    Taste zur Aktion, der Test von der Aktion zur Taste. Ein falscher Index im
+    //    Renderer laesst die Aktion damit verschwinden, und das faellt auf.
+    let geprueft = 0;
+    for (const action of Object.keys(BIND_ACTION_LABELS)) {
+      const b = bindings[action];
+      if (!b || b.type === 'none') continue;
+      const c = PAD_CONTROLS.find(x => x.typ === b.type && x.index === b.index);
+      if (!c) continue;          // Bedienelement nicht gezeichnet, z. B. eine Y-Achse
+      geprueft++;
+      const el = $('pad-a-' + c.id);
+      const soll = i18nLookup(BIND_ACTION_LABELS[action]);
+      const txt = el ? el.textContent : '';
+      // Entweder deutsch oder englisch - der Test laeuft in beiden Sprachen.
+      if (txt.indexOf(BIND_ACTION_LABELS[action]) < 0
+          && (soll === null || txt.indexOf(soll) < 0)) {
+        fehler.push(action + ' fehlt auf ' + c.id + ' (steht dort: "' + txt + '")');
+      }
+    }
+    // 3. Das Steuerkreuz ist belegt, auch wenn es nicht zuweisbar ist.
+    for (const id of ['dup', 'ddown', 'dleft', 'dright']) {
+      const el = $('pad-a-' + id);
+      if (el && el.classList.contains('pad-frei')) {
+        fehler.push(id + ' als "nicht belegt" gezeigt, ist aber festverdrahtet');
+      }
+    }
+    // 4. Die Tastensymbole ueberleben das Zeichnen. Sie stehen in eigenen tspans, weil
+    //    textContent auf dem Elternelement sie sonst mitloescht.
+    const symbole = document.querySelectorAll('.pad-svg .pad-sym');
+    if (symbole.length !== 8) {
+      fehler.push(symbole.length + ' Tastensymbole statt 8');
+    }
+    return { ok: !fehler.length,
+             mass: zeilen + ' Zeilen, ' + geprueft + ' zugewiesene Aktionen wiedergefunden, '
+                 + symbole.length + ' Symbole'
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
   // ---- Block 4.4: Reifendruck ----
