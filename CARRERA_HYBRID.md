@@ -220,6 +220,41 @@ Vorderachse verbraucht, fehlt der Lenkung. Er hat einen Boden von 0,12, damit da
 voellig hilflos ist - im Regen wird dieser Boden weggeskaliert, weil dort wirklich nichts mehr
 uebrig ist.
 
+### Wann das Auto selbst faehrt
+
+Zwei Lagen, in denen die Eingabe des Fahrers **ersetzt** und nicht nur geformt wird - der
+einzige Aktor in der Tabelle oben, der das tut:
+
+| Lage | Ziel | Lenkung |
+|---|---|---|
+| Gelbe Flagge | 80 km/h, mittig | null, damit die Spur vorhersagbar bleibt |
+| Einfuehrungsrunde (fliegender Start) | Boxentempo | Schlaengeln plus die Seite des Startplatzes |
+
+Beides laeuft ueber `autopilotGrund()` in `src/50-drive.js`, das den GRUND zurueckgibt und
+nicht nur ein Ja: die Flaggenanzeige braucht ihn auch, und sie hatte die Bedingung bis
+v0.4.54 ein zweites Mal abgeschrieben.
+
+**Warum ueber die Eingaben und nicht mit einem Ghost-Gehirn.** `sendControlValue()` schreibt
+ausschliesslich an `playerCar`, die Ghosts senden ueber ihren eigenen Pfad in `ghostTick()`.
+Ein `startGhost()` auf das Auto des Fahrers haette zwei Sender auf derselben Charakteristik
+ergeben, die sich um den 45-ms-Takt streiten. Also bekommt `physicsStep()` synthetische
+Eingaben, und es bleibt bei einem Sender, einer Physik und einer Anzeige.
+
+**Nur in der Bahn-Stellung, und das ist keine Vorsicht, sondern eine Tatsache.** Im
+Ausdruck-Modus haelt sich das Auto nicht selbst auf der Bahn; ein Autopilot ohne
+Querregelung wuerde es geradeaus in die Bande fahren. Deshalb steigt `autopilotGrund()` bei
+`trackMode !== 'on'` aus, in beiden Lagen.
+
+**Die Bremse des Fahrers gewinnt - in der Einfuehrungsrunde.** Dort rollt das Feld in zwei
+Kolonnen dicht hintereinander, und ein Auto, das man nicht anhalten kann, ist ein Auto, das
+rammt. Bei Gelb bleibt es absichtlich beim vollen Eingriff: dort ist der Sinn, dass die
+Haende ganz frei sind, waehrend man abgeflogene Autos aufsammelt.
+
+Bis v0.4.54 kannte diese Stelle nur die gelbe Flagge. Der fliegende Start war damit halb
+umgesetzt: die Ghosts rollten von selbst im Boxentempo, das Auto des Fahrers wurde nur
+GEDROSSELT (`limitFormation` -> `speedLimitFactor`) und musste weiter von Hand gelenkt und
+gegast werden. `raceFormationLap` kam in `50-drive.js` an keiner Stelle vor.
+
 ### Fahrzeuglayout: fuenf Bauformen
 
 Bis v0.5 hatten alle Autos DASSELBE Fahrwerk. Unterschiedlich war nur der Klang; die statische

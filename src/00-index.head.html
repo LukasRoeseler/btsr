@@ -4728,7 +4728,7 @@
                Eintrag und bleibt daher beim Sprachwechsel stehen, bis er sich das naechste
                Mal neu bildet - dann steht er richtig da. Veraltet, nicht falsch. -->
           <div class="muted">Status: <b data-i18n-skip id="race-status">Bereit</b></div>
-          <div class="muted" style="font-size:11.5px">L1: Bahn oder Ausdruck · R1: Automatik oder von Hand · Kreuz: gelbe Flagge (1 s halten) · Select: Rennen starten</div>
+          <div class="muted" style="font-size:11.5px">L1: Bahn oder Ausdruck · R1: Automatik oder von Hand · Kreuz: gelbe Flagge (1 s halten) · Select: Wetter umschalten</div>
           <div class="muted" id="race-lap-current-row" style="display:none">Aktuelle Runde: <b id="race-lap-current">-</b></div>
         </div>
       </div>
@@ -4796,9 +4796,17 @@
            noch nicht gefahren ist. -->
       <div class="opt-row"><div class="opt-label">Fliegender Start
           <span class="wip-tag">experimentell</span>
-          <small>Einf&uuml;hrungsrunde mit Boxengassen-Tempo, frei beim ersten
-          &Uuml;berfahren von Start/Ziel &ndash; von wem auch immer, ein Ghost darf es
-          sein. Danach f&auml;hrt jeder nach seinen Einstellungen.</small></div>
+          <small>Einf&uuml;hrungsrunde mit Boxengassen-Tempo. Dein Auto f&auml;hrt sie
+          selbst, genau wie die Ghosts: es rollt mit an, schl&auml;ngelt zum Reifenw&auml;rmen
+          und h&auml;lt die Seite seines Startplatzes, ohne dass du etwas anfassen musst
+          &ndash; die Bremse gilt trotzdem, damit du anhalten kannst, wenn vor dir jemand
+          steht. Im Cockpit steht dann &bdquo;Einf&uuml;hrungsrunde &middot;
+          Autopilot&ldquo;. Frei ist es beim ersten &Uuml;berfahren von Start/Ziel, von wem
+          auch immer &ndash; ein Ghost darf es sein. Danach f&auml;hrt jeder nach seinen
+          Einstellungen, und die Lenkung ist wieder deine. Nur in der Stellung
+          &bdquo;Auf der Bahn&ldquo;: im Ausdruck-Modus h&auml;lt sich das Auto nicht selbst
+          auf der Bahn, und ein Autopilot ohne Querregelung w&uuml;rde es in die
+          Bande fahren.</small></div>
         <label class="tgl"><input type="checkbox" id="race-flying"><span></span></label></div>
 
       <div id="race-grid-wrap" style="display:none; margin-top:12px">
@@ -6131,7 +6139,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.4.54</span></span>
+    <span class="foot-ver">v<span id="app-version">0.4.55</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine

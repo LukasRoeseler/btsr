@@ -1455,6 +1455,159 @@
     }
   });
 
+
+
+  // ---- Flaggenstreifen: jeder Text, den er zeigen kann, ist uebersetzt ----
+  //
+  // DIE LUECKE, DIE DIESEN TEST NOETIG MACHT: der Sprachtest laeuft ueber die SICHTBAREN
+  // Textknoten, und dieser Streifen ist im Ruhezustand leer - er wird erst befuellt, wenn
+  // eine Flagge weht. "GELB" und "ANFAHRT" standen deshalb seit v0.4 ohne Eintrag da, ohne
+  // dass etwas es meldete, waehrend "GELB · AUTOPILOT" daneben einen hatte.
+  //
+  // Geprueft wird mit den Zeichenketten DES CODES und nicht mit abgetippten: der Test
+  // stellt jeden Zustand her, ruft updateFlagUi() und liest, was dasteht. Ein zweites Mal
+  // hingeschriebene Texte wuerden auseinanderlaufen, sobald einer sich aendert - genau die
+  // Fehlerklasse, die dieser Test finden soll.
+  stAdd('Flaggenstreifen: jeder Text ist uebersetzt', () => {
+    const el = $('race-flag');
+    if (!el) return { ok: false, mass: 'race-flag fehlt' };
+    if (typeof updateFlagUi !== 'function') {
+      return { skip: true, mass: 'updateFlagUi nicht erreichbar' };
+    }
+    const merk = { flag: flagState, tm: trackMode, form: raceFormationLap };
+    const gesehen = [], ohne = [];
+    // Dieselbe Regel wie im Sprachtest: Umlaute oder deutsche Funktionswoerter.
+    const DE = /[\u00e4\u00f6\u00fc\u00df\u00c4\u00d6\u00dc]|\b(GELB|ANFAHRT)\b/;
+    try {
+      const ZUSTAENDE = [
+        ['yellow', 'on', false], ['yellow', 'off', false],
+        ['restart', 'on', false],
+        ['green', 'on', true], ['green', 'off', true],
+      ];
+      for (const [f, tm, form] of ZUSTAENDE) {
+        flagState = f; trackMode = tm; raceFormationLap = form;
+        updateFlagUi();
+        const t0 = (el.textContent || '').trim();
+        if (!t0) continue;
+        gesehen.push(t0);
+        // Im deutschen Modus muss es einen Eintrag geben, im englischen darf kein Deutsch
+        // stehen bleiben. Beide Richtungen aus derselben Zeichenkette.
+        if (lang === 'de') {
+          if (i18nLookup(t0) === null) ohne.push(t0);
+        } else if (DE.test(t0)) {
+          ohne.push(t0);
+        }
+      }
+      return { ok: ohne.length === 0,
+               mass: gesehen.length + ' Zustaende mit Text: ' + gesehen.join(' / ')
+                     + (ohne.length ? ' || OHNE EINTRAG: ' + ohne.join(', ') : '') };
+    } finally {
+      flagState = merk.flag; trackMode = merk.tm; raceFormationLap = merk.form;
+      updateFlagUi();
+    }
+  });
+
+  // ---- Autopilot in der Einfuehrungsrunde ----
+  //
+  // DER BEFUND, der diesen Test noetig gemacht hat: raceFormationLap kam in 50-drive.js -
+  // dem Eingabepfad des Fahrers - an keiner Stelle vor. Die Ghosts rollten von selbst im
+  // Boxentempo, das Auto des Fahrers wurde nur GEDROSSELT und musste weiter von Hand
+  // gelenkt und gegast werden. Der fliegende Start war damit halb umgesetzt.
+  //
+  // Geprueft wird die Regelung und nicht die Anzeige, in sechs Punkten. Der vierte ist der,
+  // ohne den es rammt: in zwei Kolonnen dicht hintereinander muss man anhalten koennen.
+  stAdd('Autopilot: Einfuehrungsrunde faehrt das Auto selbst', () => {
+    if (typeof autopilot !== 'function' || typeof autopilotGrund !== 'function') {
+      return { skip: true, mass: 'Autopilot nicht erreichbar' };
+    }
+    const merk = { flag: flagState, tm: trackMode, v: physEngine.state.speedKmh,
+                   form: raceFormationLap };
+    const schlecht = [];
+    try {
+      flagState = 'green'; trackMode = 'on';
+      const bei = (frac, bremse) => {
+        physEngine.state.speedKmh = frac * physEngine.config.topSpeedKmh;
+        return autopilot(bremse || 0);
+      };
+      // 1. Ohne Einfuehrungsrunde kein Eingriff.
+      raceFormationLap = false;
+      if (bei(0.1) !== null) schlecht.push('greift ohne Einfuehrungsrunde');
+      // 2. In der Einfuehrungsrunde greift sie, und der Grund ist der richtige.
+      raceFormationLap = true;
+      const langsam = bei(PIT_SPEED_FACTOR * 0.4);
+      const schnell = bei(PIT_SPEED_FACTOR * 2.5);
+      const passend = bei(PIT_SPEED_FACTOR);
+      if (!langsam || !schnell || !passend) {
+        return { ok: false, mass: 'greift in der Einfuehrungsrunde nicht' };
+      }
+      if (langsam.grund !== 'formation') schlecht.push('Grund ' + langsam.grund);
+      if (!(langsam.throttle > 0.2 && langsam.brake === 0)) schlecht.push('zu langsam: kein Gas');
+      if (!(schnell.brake > 0.2 && schnell.throttle === 0)) schlecht.push('zu schnell: keine Bremse');
+      if (!(passend.throttle < 0.15 && passend.brake < 0.15)) schlecht.push('am Ziel nicht ruhig');
+      // 3. Das Ziel ist das BOXENTEMPO. Gegenprobe ueber den Nulldurchgang des Reglers:
+      //    knapp darunter muss Gas kommen, knapp darueber Bremse.
+      const unter = bei(PIT_SPEED_FACTOR * 0.9), ueber = bei(PIT_SPEED_FACTOR * 1.1);
+      if (!(unter.throttle > 0 && ueber.brake > 0)) schlecht.push('Ziel nicht das Boxentempo');
+      // 4. Die Bremse des Fahrers gewinnt - in der Einfuehrungsrunde.
+      const mitBremse = bei(PIT_SPEED_FACTOR * 0.4, 0.8);
+      if (!(mitBremse.brake >= 0.8 && mitBremse.throttle === 0)) {
+        schlecht.push('Bremse des Fahrers verliert');
+      }
+      // 5. Und bei Gelb gewinnt sie NICHT: dort ist der Sinn, dass die Haende ganz frei
+      //    sind. Ohne diese Gegenprobe waere Punkt 4 auch gruen, wenn er ueberall gilt.
+      raceFormationLap = false; flagState = 'yellow';
+      const gelbBremse = bei(0.1, 0.8);
+      if (gelbBremse && gelbBremse.brake > 0.5) schlecht.push('bei Gelb greift die Bremse doch');
+      // 6. Ausdruck-Stellung: kein Eingriff, auch nicht in der Einfuehrungsrunde. Ohne
+      //    Leitplanken faehrt ein Autopilot ohne Querregelung in die Bande.
+      raceFormationLap = true; flagState = 'green'; trackMode = 'off';
+      if (bei(0.1) !== null) schlecht.push('greift in der Ausdruck-Stellung');
+      return { ok: schlecht.length === 0,
+               mass: 'Ziel ' + PIT_SPEED_FACTOR.toFixed(3) + ' | bei 40 % Gas '
+                     + langsam.throttle.toFixed(2) + ', bei 250 % Bremse '
+                     + schnell.brake.toFixed(2) + ', am Ziel '
+                     + passend.throttle.toFixed(2) + '/' + passend.brake.toFixed(2)
+                     + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+    } finally {
+      flagState = merk.flag; trackMode = merk.tm;
+      physEngine.state.speedKmh = merk.v; raceFormationLap = merk.form;
+    }
+  });
+
+  // ---- Der Querversatz gilt fuer Ghosts UND das Fahrerauto ----
+  //
+  // "so wie Ghosts" heisst auch quer: Schlaengeln zum Reifenwaermen plus die Seite der
+  // Zweierkolonne. Geprueft wird, dass es EINE Definition ist - zwei Abschriften derselben
+  // zwei Konstanten waeren die naechste Abweichung, und sie faellt erst auf, wenn das Feld
+  // anders schlaengelt als der Fahrer.
+  stAdd('Einfuehrungsrunde: Fahrer und Ghosts teilen den Versatz', () => {
+    if (typeof formationOffset !== 'function' || typeof formationDriverOffset !== 'function') {
+      return { skip: true, mass: 'formationOffset nicht erreichbar' };
+    }
+    const schlecht = [];
+    // Gleiche Phase, gleicher Platz, gleiche Zeit -> gleicher Wert. Das ist die Zusicherung.
+    const a = {}, b = {};
+    a.weavePhase = b.weavePhase = 1.234;
+    const t = 1000000;
+    for (const platz of [0, 1, 2, 3, -1]) {
+      const va = formationOffset(a, platz, t), vb = formationOffset(b, platz, t);
+      if (Math.abs(va - vb) > 1e-12) schlecht.push('Platz ' + platz + ' unterschiedlich');
+    }
+    // Zwei benachbarte Plaetze gehen auseinander, ohne Platz gibt es keinen Kolonnenanteil.
+    const p0 = formationOffset(a, 0, t), p1 = formationOffset(a, 1, t);
+    const ohne = formationOffset(a, -1, t);
+    if (!(p0 > ohne && p1 < ohne)) schlecht.push('Kolonne ohne Vorzeichenwechsel');
+    // Und der Fahrer bekommt einen Wert im gleichen Rahmen.
+    const f = formationDriverOffset();
+    if (!(Math.abs(f) <= GHOST_WEAVE + GHOST_GRID_OFFSET + 1e-9)) {
+      schlecht.push('Fahrerversatz ausserhalb des Rahmens: ' + f);
+    }
+    return { ok: schlecht.length === 0,
+             mass: 'Platz 0 ' + p0.toFixed(3) + ', Platz 1 ' + p1.toFixed(3)
+                   + ', ohne Platz ' + ohne.toFixed(3) + ' | Fahrer ' + f.toFixed(3)
+                   + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
   // ---- Fliegender Start: der Schalter ist nicht mehr gesperrt ----
   //
   // Bis v0.4.53 trug er `disabled` und die Beschriftung "nicht umgesetzt", waehrend die
@@ -4044,14 +4197,18 @@
   // sein, bei zu schnell Bremse, und bei richtigem Tempo beides nahe null. Ohne den letzten
   // Punkt waere ein Regler, der dauerhaft Vollgas gibt, ebenfalls "gruen".
   stAdd('Autopilot nur auf der Bahn, und er regelt', () => {
-    if (typeof autopilotYellow !== 'function') {
-      return { skip: true, mass: 'autopilotYellow nicht vorhanden' };
+    if (typeof autopilot !== 'function') {
+      return { skip: true, mass: 'autopilot nicht vorhanden' };
     }
-    const merk = { flag: flagState, tm: trackMode, v: physEngine.state.speedKmh };
+    const merk = { flag: flagState, tm: trackMode, v: physEngine.state.speedKmh,
+                   form: raceFormationLap };
     try {
+      // Ausdruecklich aus: dieser Test prueft den Grund "gelb", und ein von einem
+      // vorherigen Test stehengelassenes true haette ihn auf den anderen Zweig geschickt.
+      raceFormationLap = false;
       const bei = (kmh) => {
         physEngine.state.speedKmh = kmh / REAL_SCALE;
-        return autopilotYellow();
+        return autopilot(0);
       };
       // 1. Gruen: gar kein Eingriff, egal wie schnell.
       flagState = 'green'; trackMode = 'on';
@@ -4084,6 +4241,7 @@
       flagState = merk.flag;
       trackMode = merk.tm;
       physEngine.state.speedKmh = merk.v;
+      raceFormationLap = merk.form;
     }
   });
 

@@ -148,11 +148,12 @@
     if (!raceFormationLap) return;
     raceFormationLap = false;
     limitFormation = 1; applySpeedLimit();
+    updateFlagUi();
     raceLapStart = Date.now();
     garage.forEach(c => { if (c.race) c.race.lapStart = Date.now(); });
     setRaceLights('go');
     playTone(1046, 0.30, 'square', 0.22);
-    showHudToast('Frei, volle Fahrt!');
+    showHudToast(t('Frei, volle Fahrt!'));
     log('Einführungsrunde beendet, Rennen freigegeben.', 'info');
     $('race-status').textContent = `${RACE_MODES[raceMode].label} läuft`;
     setTimeout(() => setRaceLights(0), 900);
@@ -719,7 +720,10 @@
     launchGhosts();   // green means green for everyone
     if (raceFormationLap) {
       limitFormation = PIT_SPEED_FACTOR; applySpeedLimit();
-      showHudToast('Einführungsrunde');
+      // Der Flaggenstreifen haengt sonst nur an Flaggenwechseln, und die Einfuehrungsrunde
+      // ist keiner - ohne diesen Aufruf faehrt das Auto von selbst und nichts sagt es.
+      updateFlagUi();
+      showHudToast(t('Einführungsrunde'));
     }
     raceStartedAt = Date.now();
     if (raceClockTimer) clearInterval(raceClockTimer);

@@ -1032,17 +1032,61 @@
   //
   // Nicht waehrend der Anfahrt: sobald die Ampel laeuft, gehoert das Auto wieder dem
   // Fahrer, denn genau dann faengt das Rennen wieder an.
-  function autopilotYellow() {
-    if (flagState !== 'yellow') return null;
-    // Ausdruck-Stellung: nicht lenkfaehig, siehe oben. trackMode ist ein STRING
-    // ('on'/'off') und kein Boolean - ein !trackMode waere hier immer falsch gewesen.
+  // ZWEI GRUENDE, aus denen das Auto des Fahrers selbst faehrt, und beide sagen dasselbe:
+  // die Haende sollen frei sein. Bei Gelb, um abgeflogene Ghosts zurueckzustellen; in der
+  // Einfuehrungsrunde, weil das die Runde VOR dem Fahren ist.
+  //
+  // BIS v0.4.54 KANNTE DIESE STELLE NUR GELB, und das war eine halbe Umsetzung des
+  // fliegenden Starts: die Ghosts rollten im Boxentempo von selbst, das Auto des Fahrers
+  // wurde nur GEDROSSELT (limitFormation -> speedLimitFactor) und musste weiter von Hand
+  // gelenkt und gegast werden. raceFormationLap kam in dieser Datei gar nicht vor.
+  //
+  // DER GRUND WIRD ZURUECKGEGEBEN und nicht nur ein Boolean: die Flaggenanzeige in
+  // 90-ghosts.js braucht ihn auch, und dort stand die Bedingung bisher ein zweites Mal
+  // abgeschrieben - mit dem Vermerk, dass bei einer dritten Stelle eine Funktion daraus
+  // gehoert. Das hier ist die dritte Stelle.
+  //
+  // raceFormationLap und flagState werden ohne typeof gelesen: sie stehen in SPAETEREN
+  // Quelldateien, aber diese Funktion laeuft erst zur Laufzeit - physicsStep() haengt am
+  // 45-ms-Takt, und updateFlagUi() ruft sie nach dem Laden. Genau das galt fuer flagState
+  // schon vorher.
+  function autopilotGrund() {
+    // Ausdruck-Stellung: nicht lenkfaehig. Ohne Leitplanken haelt sich das Auto nicht selbst
+    // auf der Bahn, und ein Autopilot ohne Querregelung faehrt es geradeaus in die Bande.
+    // trackMode ist ein STRING ('on'/'off') und kein Boolean - ein !trackMode waere hier
+    // immer falsch gewesen.
     if (trackMode !== 'on') return null;
+    if (raceFormationLap) {
+      // Beides kann gelten: wenn in der Einfuehrungsrunde jemand abfliegt. Dann gewinnt der
+      // LANGSAMERE, und das ist keine Rangfolge, sondern eine Rechnung.
+      return (flagState === 'yellow' && yellowFactor() < PIT_SPEED_FACTOR)
+        ? 'yellow' : 'formation';
+    }
+    return flagState === 'yellow' ? 'yellow' : null;
+  }
+
+  function autopilot(fahrerBremse) {
+    const grund = autopilotGrund();
+    if (!grund) return null;
     const st = physEngine.state;
-    const ziel = yellowFactor();
+    const ziel = grund === 'formation' ? PIT_SPEED_FACTOR : yellowFactor();
     const v = Math.abs(st.speedKmh) / physEngine.config.topSpeedKmh;
     const err = ziel - v;
-    return { throttle: Math.max(0, Math.min(1, err * 4)),
-             brake: Math.max(0, Math.min(1, -err * 3)) };
+    let throttle = Math.max(0, Math.min(1, err * 4));
+    let brake = Math.max(0, Math.min(1, -err * 3));
+    // DIE BREMSE DES FAHRERS GEWINNT, aber nur in der Einfuehrungsrunde. Dort rollt das Feld
+    // in zwei Kolonnen dicht hintereinander, und ein Auto, das man nicht anhalten kann, ist
+    // ein Auto, das rammt. Bei Gelb bleibt es absichtlich beim vollen Eingriff: dort ist der
+    // Sinn, dass die Haende ganz frei sind, waehrend man Autos aufsammelt.
+    if (grund === 'formation' && fahrerBremse > 0.05) {
+      brake = Math.max(brake, fahrerBremse);
+      throttle = 0;
+    }
+    return { grund, throttle, brake,
+             // Bei Gelb geradeaus - eine vorhersagbare Spur, damit man ein Auto von Hand
+             // dazwischenstellen kann. In der Einfuehrungsrunde wie die Ghosts.
+             steer: grund === 'formation' && typeof formationDriverOffset === 'function'
+               ? formationDriverOffset() : 0 };
   }
 
   // ---- Abseits der Fahrbahn ----------------------------------------------------------
@@ -1160,10 +1204,10 @@
     let rawThrottle = fuelDamageDerate(Math.max(0, throttleY));
     let rawBrake = Math.max(0, -throttleY);
     let steer = steerX;
-    // Waehrend der gelben Flagge faehrt das Auto selbst, damit man die Haende frei hat, um
-    // abgeflogene Ghosts zurueckzustellen. Siehe autopilotYellow().
-    const ap = autopilotYellow();
-    if (ap) { rawThrottle = ap.throttle; rawBrake = ap.brake; steer = 0; }
+    // Bei gelber Flagge und in der Einfuehrungsrunde faehrt das Auto selbst. Siehe
+    // autopilotGrund() fuer die zwei Gruende und autopilot() fuer die Regelung.
+    const ap = autopilot(rawBrake);
+    if (ap) { rawThrottle = ap.throttle; rawBrake = ap.brake; steer = ap.steer; }
     // Abseits der Bahn gedeckelt, und zwar VOR der Physik. Genau das war der Fehler beim
     // Gasfaktor: er wirkte nach der Physik auf die Ausgabe, der Tacho zeigte volles Tempo
     // und das Auto fuhr langsamer. Hier sagen Anzeige und Auto dasselbe.

@@ -1184,6 +1184,47 @@
   // Einfuehrungsrunde geht es mit Boxentempo zu, und dort verzeiht ein seitlicher Versatz
   // mehr.
   const GHOST_GRID_OFFSET = 0.16;
+
+  // Der Startplatz eines Autos, oder -1 fuer "steht nicht in der Aufstellung". Als Funktion,
+  // weil ihn jetzt zwei Stellen brauchen: startGhost() und das Auto des Fahrers. Zwei
+  // Abschriften von indexOf(String(car.device.id)) waeren die naechste Abweichung.
+  function gridPosOf(car) {
+    if (!car || !car.device || typeof raceGridOrder === 'undefined') return -1;
+    return raceGridOrder.indexOf(String(car.device.id));
+  }
+
+  // Der Querversatz in der Einfuehrungsrunde: Schlaengeln zum Reifenwaermen plus die Seite
+  // der Zweierkolonne.
+  //
+  // EINE DEFINITION FUER BEIDE. Seit v0.4.54 faehrt auch das Auto des Fahrers diese Runde
+  // selbst, und die zwei Konstanten duerfen nicht an zwei Orten stehen - sonst schlaengelt
+  // das Feld anders als der Fahrer, und niemand sieht, warum.
+  //
+  // `halter` traegt nur die Phase, damit das Feld nicht als ein Block schwingt: fuer einen
+  // Ghost ist das sein Ghost-Zustand, fuer den Fahrer ein eigenes Objekt. Er wird beim
+  // ersten Aufruf gesetzt und nicht im Konstruktor - ein Auto, das nie in einer
+  // Einfuehrungsrunde faehrt, braucht keine Phase.
+  function formationOffset(halter, gridPos, now) {
+    if (halter.weavePhase === undefined) halter.weavePhase = Math.random() * 6.283;
+    let v = Math.sin(now / 700 + halter.weavePhase) * GHOST_WEAVE;
+    if (gridPos >= 0) v += (gridPos % 2 ? -1 : 1) * GHOST_GRID_OFFSET;
+    return v;
+  }
+
+  // Was das Auto des Fahrers quer tut, waehrend es die Einfuehrungsrunde selbst faehrt.
+  // Gerufen aus physicsStep() in 50-drive.js.
+  //
+  // NUR SCHLAENGELN UND KOLONNE, keine Ideallinie. Das ist kein Nachlassen, sondern
+  // dieselbe Wahl, die ein Ghost trifft: er sendet Lenkung null und laesst das Auto die
+  // Arbeit machen, weil es sich in der Leitplanken-Stellung selbst auf der Bahn haelt. Der
+  // Versatz ist ein kleiner Anstoss auf diese Null. Das Linienmodell der Ghosts haengt an
+  // ihrem Kachelzustand in car.ghost, den das Fahrerauto nicht hat - und in einer
+  // Einfuehrungsrunde geht es ohnehin ums Rollen in Formation und nicht um die Ideallinie.
+  const formationFahrer = {};
+  function formationDriverOffset() {
+    const car = garage.find(c => c.role === 'player');
+    return formationOffset(formationFahrer, gridPosOf(car), Date.now());
+  }
   const GHOST_OFFTRACK_MS = 1500;   // measured: tiles last 0.4-2.7 s with no 0xff between
   // Wie lange 0x00 stehen muss, bevor der Ghost anhaelt. Vorher hielt ein EINZIGES 0x00-Paket
   // ihn sofort an, und das war die Ursache dafuer, dass Ghosts unterwegs stehen blieben.
@@ -1780,13 +1821,21 @@
       // ein Auto, das von selbst Gas gibt, ohne dass das irgendwo steht, sieht beim ersten
       // Mal wie ein durchgehendes Auto aus.
       //
-      // Die Bedingung ist dieselbe wie in autopilotYellow(), und dass sie zweimal steht,
-      // ist der Preis dafuer, dass die Anzeige in einer anderen Datei liegt als die
-      // Regelung. Waeren es drei Stellen, gehoerte eine Funktion daraus.
-      const apAn = flagState === 'yellow' && trackMode === 'on';
-      el.textContent = flagState === 'yellow' ? (apAn ? 'GELB · AUTOPILOT' : 'GELB')
-                     : flagState === 'restart' ? 'ANFAHRT' : '';
-      el.style.display = flagState === 'green' ? 'none' : '';
+      // DIE BEDINGUNG STAND HIER ABGESCHRIEBEN, mit dem Vermerk: waeren es drei Stellen,
+      // gehoerte eine Funktion daraus. Mit der Einfuehrungsrunde sind es drei, also fragt
+      // die Anzeige jetzt die Regelung - autopilotGrund() in 50-drive.js, direkt gerufen,
+      // weil Funktionsdeklarationen ueber den einen Skriptblock hinweg hochgezogen werden
+      // und 50 ohnehin vor 90 gebaut wird.
+      //
+      // Und die Einfuehrungsrunde steht MIT DRIN, aus demselben Grund, der schon fuer Gelb
+      // aufgeschrieben war: ein Auto, das von selbst Gas gibt, ohne dass das irgendwo steht,
+      // sieht beim ersten Mal wie ein durchgehendes Auto aus.
+      const grund = autopilotGrund();
+      el.textContent = flagState === 'yellow' ? (grund === 'yellow' ? 'GELB · AUTOPILOT' : 'GELB')
+                     : flagState === 'restart' ? 'ANFAHRT'
+                     : grund === 'formation' ? 'EINFÜHRUNGSRUNDE · AUTOPILOT'
+                     : raceFormationLap ? 'EINFÜHRUNGSRUNDE' : '';
+      el.style.display = el.textContent ? '' : 'none';
     }
   }
 
@@ -2566,8 +2615,7 @@
                   // Aufstellung laeuft sonst 22 Mal je Sekunde je Auto. -1 heisst "steht
                   // nicht in der Liste", und dann gibt es keinen Versatz - eine Paritaet aus
                   // -1 waere geraten und keine Aufstellung.
-                  gridPos: (typeof raceGridOrder !== 'undefined' && car.device)
-                    ? raceGridOrder.indexOf(String(car.device.id)) : -1,
+                  gridPos: gridPosOf(car),
                   running: true };
     // Den ersten Versuch ziehen, wenn gelernt werden soll. Ohne ihn steht tryPace auf null,
     // und learnSettle() kehrt in genau diesem Fall frueh zurueck, OHNE einen zu ziehen - das
@@ -3053,21 +3101,13 @@
       // Warming the tyres on the formation lap: a slow weave, phase-shifted per car so the
       // field does not swing as one block. Purely cosmetic — the car holds the track by
       // itself in guard-rail mode, so this is a small offset on top of zero, not steering.
-      if (raceFormationLap) {
-        const phase = (g.weavePhase !== undefined ? g.weavePhase : (g.weavePhase = Math.random() * 6.283));
-        weave = Math.sin(now / 700 + phase) * GHOST_WEAVE;
-        // ZWEIERKOLONNE. Zwei benachbarte Startplaetze gehen auf entgegengesetzte Seiten,
-        // also Pole links, Zweiter rechts, Dritter links. Das ist die Wirkung, die die
-        // Startaufstellung bis v0.4.53 nicht hatte: sie speiste nur die Liste.
-        //
-        // Auf die Bahn stellen muss man von Hand - das kann die App nicht -, aber wer
-        // fahrend nebeneinander liegt, ist damit gesagt. Das eigene Auto steht mit in der
-        // Liste und verschiebt deshalb die Paritaet der Ghosts hinter sich; das ist keine
-        // Ungenauigkeit, sondern die Aufstellung, in der es selbst steht.
-        if (g.gridPos >= 0) {
-          weave += (g.gridPos % 2 ? -1 : 1) * GHOST_GRID_OFFSET;
-        }
-      }
+      // ZWEIERKOLONNE plus Schlaengeln, aus formationOffset() - derselbe Satz, den seit
+      // v0.4.54 auch das Auto des Fahrers benutzt. Zwei benachbarte Startplaetze gehen auf
+      // entgegengesetzte Seiten, also Pole links, Zweiter rechts, Dritter links.
+      //
+      // Auf die Bahn stellen muss man von Hand - das kann die App nicht -, aber wer fahrend
+      // nebeneinander liegt, ist damit gesagt.
+      if (raceFormationLap) weave = formationOffset(g, g.gridPos, now);
       if (ghostCfg.railMode) {
         // Zero steering plus the anti-ramming offset. There is no lateral feedback to close
         // a loop with, so this is deliberately the conservative choice rather than a guess.

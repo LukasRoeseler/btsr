@@ -4728,7 +4728,7 @@
                Eintrag und bleibt daher beim Sprachwechsel stehen, bis er sich das naechste
                Mal neu bildet - dann steht er richtig da. Veraltet, nicht falsch. -->
           <div class="muted">Status: <b data-i18n-skip id="race-status">Bereit</b></div>
-          <div class="muted" style="font-size:11.5px">L1: Bahn oder Ausdruck · R1: Automatik oder von Hand · Kreuz: gelbe Flagge (1 s halten) · Select: Rennen starten</div>
+          <div class="muted" style="font-size:11.5px">L1: Bahn oder Ausdruck · R1: Automatik oder von Hand · Kreuz: gelbe Flagge (1 s halten) · Select: Wetter umschalten</div>
           <div class="muted" id="race-lap-current-row" style="display:none">Aktuelle Runde: <b id="race-lap-current">-</b></div>
         </div>
       </div>
@@ -4796,9 +4796,17 @@
            noch nicht gefahren ist. -->
       <div class="opt-row"><div class="opt-label">Fliegender Start
           <span class="wip-tag">experimentell</span>
-          <small>Einf&uuml;hrungsrunde mit Boxengassen-Tempo, frei beim ersten
-          &Uuml;berfahren von Start/Ziel &ndash; von wem auch immer, ein Ghost darf es
-          sein. Danach f&auml;hrt jeder nach seinen Einstellungen.</small></div>
+          <small>Einf&uuml;hrungsrunde mit Boxengassen-Tempo. Dein Auto f&auml;hrt sie
+          selbst, genau wie die Ghosts: es rollt mit an, schl&auml;ngelt zum Reifenw&auml;rmen
+          und h&auml;lt die Seite seines Startplatzes, ohne dass du etwas anfassen musst
+          &ndash; die Bremse gilt trotzdem, damit du anhalten kannst, wenn vor dir jemand
+          steht. Im Cockpit steht dann &bdquo;Einf&uuml;hrungsrunde &middot;
+          Autopilot&ldquo;. Frei ist es beim ersten &Uuml;berfahren von Start/Ziel, von wem
+          auch immer &ndash; ein Ghost darf es sein. Danach f&auml;hrt jeder nach seinen
+          Einstellungen, und die Lenkung ist wieder deine. Nur in der Stellung
+          &bdquo;Auf der Bahn&ldquo;: im Ausdruck-Modus h&auml;lt sich das Auto nicht selbst
+          auf der Bahn, und ein Autopilot ohne Querregelung w&uuml;rde es in die
+          Bande fahren.</small></div>
         <label class="tgl"><input type="checkbox" id="race-flying"><span></span></label></div>
 
       <div id="race-grid-wrap" style="display:none; margin-top:12px">
@@ -6131,7 +6139,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.4.54</span></span>
+    <span class="foot-ver">v<span id="app-version">0.4.55</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -7600,6 +7608,14 @@
     "Diese Seite zählt Aufrufe mit GoatCounter, damit ich weiß, ob das Projekt jemand benutzt. Ohne Cookies, ohne Werbung und ohne personenbezogene Daten; wer den Zähler blockiert, verliert keine Funktion. Alles andere – Abstimmungen, Rundenzeiten, Streckenpläne – bleibt im Browser und wird nirgends hingeschickt.": "This page counts visits with GoatCounter so I know whether anyone uses the project. No cookies, no advertising and no personal data; blocking the counter costs you no function. Everything else – setups, lap times, track plans – stays in the browser and is not sent anywhere.",
     "Gänge": "gears",
     "Schaltzeit": "shift time",
+    "EINFÜHRUNGSRUNDE · AUTOPILOT": "FORMATION LAP · AUTOPILOT",
+    "EINFÜHRUNGSRUNDE": "FORMATION LAP",
+    "GELB": "YELLOW",
+    "ANFAHRT": "ROLLING UP",
+    "Einführungsrunde": "Formation lap",
+    "Frei, volle Fahrt!": "Clear, full speed!",
+    "Einführungsrunde mit Boxengassen-Tempo. Dein Auto fährt sie selbst, genau wie die Ghosts: es rollt mit an, schlängelt zum Reifenwärmen und hält die Seite seines Startplatzes, ohne dass du etwas anfassen musst – die Bremse gilt trotzdem, damit du anhalten kannst, wenn vor dir jemand steht. Im Cockpit steht dann „Einführungsrunde · Autopilot“. Frei ist es beim ersten Überfahren von Start/Ziel, von wem auch immer – ein Ghost darf es sein. Danach fährt jeder nach seinen Einstellungen, und die Lenkung ist wieder deine. Nur in der Stellung „Auf der Bahn“: im Ausdruck-Modus hält sich das Auto nicht selbst auf der Bahn, und ein Autopilot ohne Querregelung würde es in die Bande fahren.": "Formation lap at pit-lane pace. Your car drives it itself, exactly like the ghosts: it rolls away with the field, weaves to warm the tyres and holds the side of its grid slot without you touching anything – the brake still works, so you can stop if someone is stranded ahead of you. The cockpit then reads “Formation lap · Autopilot”. It is released the first time anyone crosses start/finish – a ghost may do it. After that everyone drives to their own settings and the steering is yours again. Only in the “On the track” position: in printout mode the car does not hold the track by itself, and an autopilot without lateral control would drive it into the barrier.",
+    "L1: Bahn oder Ausdruck · R1: Automatik oder von Hand · Kreuz: gelbe Flagge (1 s halten) · Select: Wetter umschalten": "L1: track or printout · R1: automatic or manual · Cross: yellow flag (hold for 1 s) · Select: switch the weather",
   };
 
   // ============================================================================
@@ -11631,17 +11647,61 @@
   //
   // Nicht waehrend der Anfahrt: sobald die Ampel laeuft, gehoert das Auto wieder dem
   // Fahrer, denn genau dann faengt das Rennen wieder an.
-  function autopilotYellow() {
-    if (flagState !== 'yellow') return null;
-    // Ausdruck-Stellung: nicht lenkfaehig, siehe oben. trackMode ist ein STRING
-    // ('on'/'off') und kein Boolean - ein !trackMode waere hier immer falsch gewesen.
+  // ZWEI GRUENDE, aus denen das Auto des Fahrers selbst faehrt, und beide sagen dasselbe:
+  // die Haende sollen frei sein. Bei Gelb, um abgeflogene Ghosts zurueckzustellen; in der
+  // Einfuehrungsrunde, weil das die Runde VOR dem Fahren ist.
+  //
+  // BIS v0.4.54 KANNTE DIESE STELLE NUR GELB, und das war eine halbe Umsetzung des
+  // fliegenden Starts: die Ghosts rollten im Boxentempo von selbst, das Auto des Fahrers
+  // wurde nur GEDROSSELT (limitFormation -> speedLimitFactor) und musste weiter von Hand
+  // gelenkt und gegast werden. raceFormationLap kam in dieser Datei gar nicht vor.
+  //
+  // DER GRUND WIRD ZURUECKGEGEBEN und nicht nur ein Boolean: die Flaggenanzeige in
+  // 90-ghosts.js braucht ihn auch, und dort stand die Bedingung bisher ein zweites Mal
+  // abgeschrieben - mit dem Vermerk, dass bei einer dritten Stelle eine Funktion daraus
+  // gehoert. Das hier ist die dritte Stelle.
+  //
+  // raceFormationLap und flagState werden ohne typeof gelesen: sie stehen in SPAETEREN
+  // Quelldateien, aber diese Funktion laeuft erst zur Laufzeit - physicsStep() haengt am
+  // 45-ms-Takt, und updateFlagUi() ruft sie nach dem Laden. Genau das galt fuer flagState
+  // schon vorher.
+  function autopilotGrund() {
+    // Ausdruck-Stellung: nicht lenkfaehig. Ohne Leitplanken haelt sich das Auto nicht selbst
+    // auf der Bahn, und ein Autopilot ohne Querregelung faehrt es geradeaus in die Bande.
+    // trackMode ist ein STRING ('on'/'off') und kein Boolean - ein !trackMode waere hier
+    // immer falsch gewesen.
     if (trackMode !== 'on') return null;
+    if (raceFormationLap) {
+      // Beides kann gelten: wenn in der Einfuehrungsrunde jemand abfliegt. Dann gewinnt der
+      // LANGSAMERE, und das ist keine Rangfolge, sondern eine Rechnung.
+      return (flagState === 'yellow' && yellowFactor() < PIT_SPEED_FACTOR)
+        ? 'yellow' : 'formation';
+    }
+    return flagState === 'yellow' ? 'yellow' : null;
+  }
+
+  function autopilot(fahrerBremse) {
+    const grund = autopilotGrund();
+    if (!grund) return null;
     const st = physEngine.state;
-    const ziel = yellowFactor();
+    const ziel = grund === 'formation' ? PIT_SPEED_FACTOR : yellowFactor();
     const v = Math.abs(st.speedKmh) / physEngine.config.topSpeedKmh;
     const err = ziel - v;
-    return { throttle: Math.max(0, Math.min(1, err * 4)),
-             brake: Math.max(0, Math.min(1, -err * 3)) };
+    let throttle = Math.max(0, Math.min(1, err * 4));
+    let brake = Math.max(0, Math.min(1, -err * 3));
+    // DIE BREMSE DES FAHRERS GEWINNT, aber nur in der Einfuehrungsrunde. Dort rollt das Feld
+    // in zwei Kolonnen dicht hintereinander, und ein Auto, das man nicht anhalten kann, ist
+    // ein Auto, das rammt. Bei Gelb bleibt es absichtlich beim vollen Eingriff: dort ist der
+    // Sinn, dass die Haende ganz frei sind, waehrend man Autos aufsammelt.
+    if (grund === 'formation' && fahrerBremse > 0.05) {
+      brake = Math.max(brake, fahrerBremse);
+      throttle = 0;
+    }
+    return { grund, throttle, brake,
+             // Bei Gelb geradeaus - eine vorhersagbare Spur, damit man ein Auto von Hand
+             // dazwischenstellen kann. In der Einfuehrungsrunde wie die Ghosts.
+             steer: grund === 'formation' && typeof formationDriverOffset === 'function'
+               ? formationDriverOffset() : 0 };
   }
 
   // ---- Abseits der Fahrbahn ----------------------------------------------------------
@@ -11759,10 +11819,10 @@
     let rawThrottle = fuelDamageDerate(Math.max(0, throttleY));
     let rawBrake = Math.max(0, -throttleY);
     let steer = steerX;
-    // Waehrend der gelben Flagge faehrt das Auto selbst, damit man die Haende frei hat, um
-    // abgeflogene Ghosts zurueckzustellen. Siehe autopilotYellow().
-    const ap = autopilotYellow();
-    if (ap) { rawThrottle = ap.throttle; rawBrake = ap.brake; steer = 0; }
+    // Bei gelber Flagge und in der Einfuehrungsrunde faehrt das Auto selbst. Siehe
+    // autopilotGrund() fuer die zwei Gruende und autopilot() fuer die Regelung.
+    const ap = autopilot(rawBrake);
+    if (ap) { rawThrottle = ap.throttle; rawBrake = ap.brake; steer = ap.steer; }
     // Abseits der Bahn gedeckelt, und zwar VOR der Physik. Genau das war der Fehler beim
     // Gasfaktor: er wirkte nach der Physik auf die Ausgabe, der Tacho zeigte volles Tempo
     // und das Auto fuhr langsamer. Hier sagen Anzeige und Auto dasselbe.
@@ -13975,11 +14035,12 @@
     if (!raceFormationLap) return;
     raceFormationLap = false;
     limitFormation = 1; applySpeedLimit();
+    updateFlagUi();
     raceLapStart = Date.now();
     garage.forEach(c => { if (c.race) c.race.lapStart = Date.now(); });
     setRaceLights('go');
     playTone(1046, 0.30, 'square', 0.22);
-    showHudToast('Frei, volle Fahrt!');
+    showHudToast(t('Frei, volle Fahrt!'));
     log('Einführungsrunde beendet, Rennen freigegeben.', 'info');
     $('race-status').textContent = `${RACE_MODES[raceMode].label} läuft`;
     setTimeout(() => setRaceLights(0), 900);
@@ -14546,7 +14607,10 @@
     launchGhosts();   // green means green for everyone
     if (raceFormationLap) {
       limitFormation = PIT_SPEED_FACTOR; applySpeedLimit();
-      showHudToast('Einführungsrunde');
+      // Der Flaggenstreifen haengt sonst nur an Flaggenwechseln, und die Einfuehrungsrunde
+      // ist keiner - ohne diesen Aufruf faehrt das Auto von selbst und nichts sagt es.
+      updateFlagUi();
+      showHudToast(t('Einführungsrunde'));
     }
     raceStartedAt = Date.now();
     if (raceClockTimer) clearInterval(raceClockTimer);
@@ -19244,6 +19308,47 @@
   // Einfuehrungsrunde geht es mit Boxentempo zu, und dort verzeiht ein seitlicher Versatz
   // mehr.
   const GHOST_GRID_OFFSET = 0.16;
+
+  // Der Startplatz eines Autos, oder -1 fuer "steht nicht in der Aufstellung". Als Funktion,
+  // weil ihn jetzt zwei Stellen brauchen: startGhost() und das Auto des Fahrers. Zwei
+  // Abschriften von indexOf(String(car.device.id)) waeren die naechste Abweichung.
+  function gridPosOf(car) {
+    if (!car || !car.device || typeof raceGridOrder === 'undefined') return -1;
+    return raceGridOrder.indexOf(String(car.device.id));
+  }
+
+  // Der Querversatz in der Einfuehrungsrunde: Schlaengeln zum Reifenwaermen plus die Seite
+  // der Zweierkolonne.
+  //
+  // EINE DEFINITION FUER BEIDE. Seit v0.4.54 faehrt auch das Auto des Fahrers diese Runde
+  // selbst, und die zwei Konstanten duerfen nicht an zwei Orten stehen - sonst schlaengelt
+  // das Feld anders als der Fahrer, und niemand sieht, warum.
+  //
+  // `halter` traegt nur die Phase, damit das Feld nicht als ein Block schwingt: fuer einen
+  // Ghost ist das sein Ghost-Zustand, fuer den Fahrer ein eigenes Objekt. Er wird beim
+  // ersten Aufruf gesetzt und nicht im Konstruktor - ein Auto, das nie in einer
+  // Einfuehrungsrunde faehrt, braucht keine Phase.
+  function formationOffset(halter, gridPos, now) {
+    if (halter.weavePhase === undefined) halter.weavePhase = Math.random() * 6.283;
+    let v = Math.sin(now / 700 + halter.weavePhase) * GHOST_WEAVE;
+    if (gridPos >= 0) v += (gridPos % 2 ? -1 : 1) * GHOST_GRID_OFFSET;
+    return v;
+  }
+
+  // Was das Auto des Fahrers quer tut, waehrend es die Einfuehrungsrunde selbst faehrt.
+  // Gerufen aus physicsStep() in 50-drive.js.
+  //
+  // NUR SCHLAENGELN UND KOLONNE, keine Ideallinie. Das ist kein Nachlassen, sondern
+  // dieselbe Wahl, die ein Ghost trifft: er sendet Lenkung null und laesst das Auto die
+  // Arbeit machen, weil es sich in der Leitplanken-Stellung selbst auf der Bahn haelt. Der
+  // Versatz ist ein kleiner Anstoss auf diese Null. Das Linienmodell der Ghosts haengt an
+  // ihrem Kachelzustand in car.ghost, den das Fahrerauto nicht hat - und in einer
+  // Einfuehrungsrunde geht es ohnehin ums Rollen in Formation und nicht um die Ideallinie.
+  const formationFahrer = {};
+  function formationDriverOffset() {
+    const car = garage.find(c => c.role === 'player');
+    return formationOffset(formationFahrer, gridPosOf(car), Date.now());
+  }
   const GHOST_OFFTRACK_MS = 1500;   // measured: tiles last 0.4-2.7 s with no 0xff between
   // Wie lange 0x00 stehen muss, bevor der Ghost anhaelt. Vorher hielt ein EINZIGES 0x00-Paket
   // ihn sofort an, und das war die Ursache dafuer, dass Ghosts unterwegs stehen blieben.
@@ -19840,13 +19945,21 @@
       // ein Auto, das von selbst Gas gibt, ohne dass das irgendwo steht, sieht beim ersten
       // Mal wie ein durchgehendes Auto aus.
       //
-      // Die Bedingung ist dieselbe wie in autopilotYellow(), und dass sie zweimal steht,
-      // ist der Preis dafuer, dass die Anzeige in einer anderen Datei liegt als die
-      // Regelung. Waeren es drei Stellen, gehoerte eine Funktion daraus.
-      const apAn = flagState === 'yellow' && trackMode === 'on';
-      el.textContent = flagState === 'yellow' ? (apAn ? 'GELB · AUTOPILOT' : 'GELB')
-                     : flagState === 'restart' ? 'ANFAHRT' : '';
-      el.style.display = flagState === 'green' ? 'none' : '';
+      // DIE BEDINGUNG STAND HIER ABGESCHRIEBEN, mit dem Vermerk: waeren es drei Stellen,
+      // gehoerte eine Funktion daraus. Mit der Einfuehrungsrunde sind es drei, also fragt
+      // die Anzeige jetzt die Regelung - autopilotGrund() in 50-drive.js, direkt gerufen,
+      // weil Funktionsdeklarationen ueber den einen Skriptblock hinweg hochgezogen werden
+      // und 50 ohnehin vor 90 gebaut wird.
+      //
+      // Und die Einfuehrungsrunde steht MIT DRIN, aus demselben Grund, der schon fuer Gelb
+      // aufgeschrieben war: ein Auto, das von selbst Gas gibt, ohne dass das irgendwo steht,
+      // sieht beim ersten Mal wie ein durchgehendes Auto aus.
+      const grund = autopilotGrund();
+      el.textContent = flagState === 'yellow' ? (grund === 'yellow' ? 'GELB · AUTOPILOT' : 'GELB')
+                     : flagState === 'restart' ? 'ANFAHRT'
+                     : grund === 'formation' ? 'EINFÜHRUNGSRUNDE · AUTOPILOT'
+                     : raceFormationLap ? 'EINFÜHRUNGSRUNDE' : '';
+      el.style.display = el.textContent ? '' : 'none';
     }
   }
 
@@ -20626,8 +20739,7 @@
                   // Aufstellung laeuft sonst 22 Mal je Sekunde je Auto. -1 heisst "steht
                   // nicht in der Liste", und dann gibt es keinen Versatz - eine Paritaet aus
                   // -1 waere geraten und keine Aufstellung.
-                  gridPos: (typeof raceGridOrder !== 'undefined' && car.device)
-                    ? raceGridOrder.indexOf(String(car.device.id)) : -1,
+                  gridPos: gridPosOf(car),
                   running: true };
     // Den ersten Versuch ziehen, wenn gelernt werden soll. Ohne ihn steht tryPace auf null,
     // und learnSettle() kehrt in genau diesem Fall frueh zurueck, OHNE einen zu ziehen - das
@@ -21113,21 +21225,13 @@
       // Warming the tyres on the formation lap: a slow weave, phase-shifted per car so the
       // field does not swing as one block. Purely cosmetic — the car holds the track by
       // itself in guard-rail mode, so this is a small offset on top of zero, not steering.
-      if (raceFormationLap) {
-        const phase = (g.weavePhase !== undefined ? g.weavePhase : (g.weavePhase = Math.random() * 6.283));
-        weave = Math.sin(now / 700 + phase) * GHOST_WEAVE;
-        // ZWEIERKOLONNE. Zwei benachbarte Startplaetze gehen auf entgegengesetzte Seiten,
-        // also Pole links, Zweiter rechts, Dritter links. Das ist die Wirkung, die die
-        // Startaufstellung bis v0.4.53 nicht hatte: sie speiste nur die Liste.
-        //
-        // Auf die Bahn stellen muss man von Hand - das kann die App nicht -, aber wer
-        // fahrend nebeneinander liegt, ist damit gesagt. Das eigene Auto steht mit in der
-        // Liste und verschiebt deshalb die Paritaet der Ghosts hinter sich; das ist keine
-        // Ungenauigkeit, sondern die Aufstellung, in der es selbst steht.
-        if (g.gridPos >= 0) {
-          weave += (g.gridPos % 2 ? -1 : 1) * GHOST_GRID_OFFSET;
-        }
-      }
+      // ZWEIERKOLONNE plus Schlaengeln, aus formationOffset() - derselbe Satz, den seit
+      // v0.4.54 auch das Auto des Fahrers benutzt. Zwei benachbarte Startplaetze gehen auf
+      // entgegengesetzte Seiten, also Pole links, Zweiter rechts, Dritter links.
+      //
+      // Auf die Bahn stellen muss man von Hand - das kann die App nicht -, aber wer fahrend
+      // nebeneinander liegt, ist damit gesagt.
+      if (raceFormationLap) weave = formationOffset(g, g.gridPos, now);
       if (ghostCfg.railMode) {
         // Zero steering plus the anti-ramming offset. There is no lateral feedback to close
         // a loop with, so this is deliberately the conservative choice rather than a guess.
@@ -26027,6 +26131,159 @@
     }
   });
 
+
+
+  // ---- Flaggenstreifen: jeder Text, den er zeigen kann, ist uebersetzt ----
+  //
+  // DIE LUECKE, DIE DIESEN TEST NOETIG MACHT: der Sprachtest laeuft ueber die SICHTBAREN
+  // Textknoten, und dieser Streifen ist im Ruhezustand leer - er wird erst befuellt, wenn
+  // eine Flagge weht. "GELB" und "ANFAHRT" standen deshalb seit v0.4 ohne Eintrag da, ohne
+  // dass etwas es meldete, waehrend "GELB · AUTOPILOT" daneben einen hatte.
+  //
+  // Geprueft wird mit den Zeichenketten DES CODES und nicht mit abgetippten: der Test
+  // stellt jeden Zustand her, ruft updateFlagUi() und liest, was dasteht. Ein zweites Mal
+  // hingeschriebene Texte wuerden auseinanderlaufen, sobald einer sich aendert - genau die
+  // Fehlerklasse, die dieser Test finden soll.
+  stAdd('Flaggenstreifen: jeder Text ist uebersetzt', () => {
+    const el = $('race-flag');
+    if (!el) return { ok: false, mass: 'race-flag fehlt' };
+    if (typeof updateFlagUi !== 'function') {
+      return { skip: true, mass: 'updateFlagUi nicht erreichbar' };
+    }
+    const merk = { flag: flagState, tm: trackMode, form: raceFormationLap };
+    const gesehen = [], ohne = [];
+    // Dieselbe Regel wie im Sprachtest: Umlaute oder deutsche Funktionswoerter.
+    const DE = /[\u00e4\u00f6\u00fc\u00df\u00c4\u00d6\u00dc]|\b(GELB|ANFAHRT)\b/;
+    try {
+      const ZUSTAENDE = [
+        ['yellow', 'on', false], ['yellow', 'off', false],
+        ['restart', 'on', false],
+        ['green', 'on', true], ['green', 'off', true],
+      ];
+      for (const [f, tm, form] of ZUSTAENDE) {
+        flagState = f; trackMode = tm; raceFormationLap = form;
+        updateFlagUi();
+        const t0 = (el.textContent || '').trim();
+        if (!t0) continue;
+        gesehen.push(t0);
+        // Im deutschen Modus muss es einen Eintrag geben, im englischen darf kein Deutsch
+        // stehen bleiben. Beide Richtungen aus derselben Zeichenkette.
+        if (lang === 'de') {
+          if (i18nLookup(t0) === null) ohne.push(t0);
+        } else if (DE.test(t0)) {
+          ohne.push(t0);
+        }
+      }
+      return { ok: ohne.length === 0,
+               mass: gesehen.length + ' Zustaende mit Text: ' + gesehen.join(' / ')
+                     + (ohne.length ? ' || OHNE EINTRAG: ' + ohne.join(', ') : '') };
+    } finally {
+      flagState = merk.flag; trackMode = merk.tm; raceFormationLap = merk.form;
+      updateFlagUi();
+    }
+  });
+
+  // ---- Autopilot in der Einfuehrungsrunde ----
+  //
+  // DER BEFUND, der diesen Test noetig gemacht hat: raceFormationLap kam in 50-drive.js -
+  // dem Eingabepfad des Fahrers - an keiner Stelle vor. Die Ghosts rollten von selbst im
+  // Boxentempo, das Auto des Fahrers wurde nur GEDROSSELT und musste weiter von Hand
+  // gelenkt und gegast werden. Der fliegende Start war damit halb umgesetzt.
+  //
+  // Geprueft wird die Regelung und nicht die Anzeige, in sechs Punkten. Der vierte ist der,
+  // ohne den es rammt: in zwei Kolonnen dicht hintereinander muss man anhalten koennen.
+  stAdd('Autopilot: Einfuehrungsrunde faehrt das Auto selbst', () => {
+    if (typeof autopilot !== 'function' || typeof autopilotGrund !== 'function') {
+      return { skip: true, mass: 'Autopilot nicht erreichbar' };
+    }
+    const merk = { flag: flagState, tm: trackMode, v: physEngine.state.speedKmh,
+                   form: raceFormationLap };
+    const schlecht = [];
+    try {
+      flagState = 'green'; trackMode = 'on';
+      const bei = (frac, bremse) => {
+        physEngine.state.speedKmh = frac * physEngine.config.topSpeedKmh;
+        return autopilot(bremse || 0);
+      };
+      // 1. Ohne Einfuehrungsrunde kein Eingriff.
+      raceFormationLap = false;
+      if (bei(0.1) !== null) schlecht.push('greift ohne Einfuehrungsrunde');
+      // 2. In der Einfuehrungsrunde greift sie, und der Grund ist der richtige.
+      raceFormationLap = true;
+      const langsam = bei(PIT_SPEED_FACTOR * 0.4);
+      const schnell = bei(PIT_SPEED_FACTOR * 2.5);
+      const passend = bei(PIT_SPEED_FACTOR);
+      if (!langsam || !schnell || !passend) {
+        return { ok: false, mass: 'greift in der Einfuehrungsrunde nicht' };
+      }
+      if (langsam.grund !== 'formation') schlecht.push('Grund ' + langsam.grund);
+      if (!(langsam.throttle > 0.2 && langsam.brake === 0)) schlecht.push('zu langsam: kein Gas');
+      if (!(schnell.brake > 0.2 && schnell.throttle === 0)) schlecht.push('zu schnell: keine Bremse');
+      if (!(passend.throttle < 0.15 && passend.brake < 0.15)) schlecht.push('am Ziel nicht ruhig');
+      // 3. Das Ziel ist das BOXENTEMPO. Gegenprobe ueber den Nulldurchgang des Reglers:
+      //    knapp darunter muss Gas kommen, knapp darueber Bremse.
+      const unter = bei(PIT_SPEED_FACTOR * 0.9), ueber = bei(PIT_SPEED_FACTOR * 1.1);
+      if (!(unter.throttle > 0 && ueber.brake > 0)) schlecht.push('Ziel nicht das Boxentempo');
+      // 4. Die Bremse des Fahrers gewinnt - in der Einfuehrungsrunde.
+      const mitBremse = bei(PIT_SPEED_FACTOR * 0.4, 0.8);
+      if (!(mitBremse.brake >= 0.8 && mitBremse.throttle === 0)) {
+        schlecht.push('Bremse des Fahrers verliert');
+      }
+      // 5. Und bei Gelb gewinnt sie NICHT: dort ist der Sinn, dass die Haende ganz frei
+      //    sind. Ohne diese Gegenprobe waere Punkt 4 auch gruen, wenn er ueberall gilt.
+      raceFormationLap = false; flagState = 'yellow';
+      const gelbBremse = bei(0.1, 0.8);
+      if (gelbBremse && gelbBremse.brake > 0.5) schlecht.push('bei Gelb greift die Bremse doch');
+      // 6. Ausdruck-Stellung: kein Eingriff, auch nicht in der Einfuehrungsrunde. Ohne
+      //    Leitplanken faehrt ein Autopilot ohne Querregelung in die Bande.
+      raceFormationLap = true; flagState = 'green'; trackMode = 'off';
+      if (bei(0.1) !== null) schlecht.push('greift in der Ausdruck-Stellung');
+      return { ok: schlecht.length === 0,
+               mass: 'Ziel ' + PIT_SPEED_FACTOR.toFixed(3) + ' | bei 40 % Gas '
+                     + langsam.throttle.toFixed(2) + ', bei 250 % Bremse '
+                     + schnell.brake.toFixed(2) + ', am Ziel '
+                     + passend.throttle.toFixed(2) + '/' + passend.brake.toFixed(2)
+                     + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+    } finally {
+      flagState = merk.flag; trackMode = merk.tm;
+      physEngine.state.speedKmh = merk.v; raceFormationLap = merk.form;
+    }
+  });
+
+  // ---- Der Querversatz gilt fuer Ghosts UND das Fahrerauto ----
+  //
+  // "so wie Ghosts" heisst auch quer: Schlaengeln zum Reifenwaermen plus die Seite der
+  // Zweierkolonne. Geprueft wird, dass es EINE Definition ist - zwei Abschriften derselben
+  // zwei Konstanten waeren die naechste Abweichung, und sie faellt erst auf, wenn das Feld
+  // anders schlaengelt als der Fahrer.
+  stAdd('Einfuehrungsrunde: Fahrer und Ghosts teilen den Versatz', () => {
+    if (typeof formationOffset !== 'function' || typeof formationDriverOffset !== 'function') {
+      return { skip: true, mass: 'formationOffset nicht erreichbar' };
+    }
+    const schlecht = [];
+    // Gleiche Phase, gleicher Platz, gleiche Zeit -> gleicher Wert. Das ist die Zusicherung.
+    const a = {}, b = {};
+    a.weavePhase = b.weavePhase = 1.234;
+    const t = 1000000;
+    for (const platz of [0, 1, 2, 3, -1]) {
+      const va = formationOffset(a, platz, t), vb = formationOffset(b, platz, t);
+      if (Math.abs(va - vb) > 1e-12) schlecht.push('Platz ' + platz + ' unterschiedlich');
+    }
+    // Zwei benachbarte Plaetze gehen auseinander, ohne Platz gibt es keinen Kolonnenanteil.
+    const p0 = formationOffset(a, 0, t), p1 = formationOffset(a, 1, t);
+    const ohne = formationOffset(a, -1, t);
+    if (!(p0 > ohne && p1 < ohne)) schlecht.push('Kolonne ohne Vorzeichenwechsel');
+    // Und der Fahrer bekommt einen Wert im gleichen Rahmen.
+    const f = formationDriverOffset();
+    if (!(Math.abs(f) <= GHOST_WEAVE + GHOST_GRID_OFFSET + 1e-9)) {
+      schlecht.push('Fahrerversatz ausserhalb des Rahmens: ' + f);
+    }
+    return { ok: schlecht.length === 0,
+             mass: 'Platz 0 ' + p0.toFixed(3) + ', Platz 1 ' + p1.toFixed(3)
+                   + ', ohne Platz ' + ohne.toFixed(3) + ' | Fahrer ' + f.toFixed(3)
+                   + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
   // ---- Fliegender Start: der Schalter ist nicht mehr gesperrt ----
   //
   // Bis v0.4.53 trug er `disabled` und die Beschriftung "nicht umgesetzt", waehrend die
@@ -28616,14 +28873,18 @@
   // sein, bei zu schnell Bremse, und bei richtigem Tempo beides nahe null. Ohne den letzten
   // Punkt waere ein Regler, der dauerhaft Vollgas gibt, ebenfalls "gruen".
   stAdd('Autopilot nur auf der Bahn, und er regelt', () => {
-    if (typeof autopilotYellow !== 'function') {
-      return { skip: true, mass: 'autopilotYellow nicht vorhanden' };
+    if (typeof autopilot !== 'function') {
+      return { skip: true, mass: 'autopilot nicht vorhanden' };
     }
-    const merk = { flag: flagState, tm: trackMode, v: physEngine.state.speedKmh };
+    const merk = { flag: flagState, tm: trackMode, v: physEngine.state.speedKmh,
+                   form: raceFormationLap };
     try {
+      // Ausdruecklich aus: dieser Test prueft den Grund "gelb", und ein von einem
+      // vorherigen Test stehengelassenes true haette ihn auf den anderen Zweig geschickt.
+      raceFormationLap = false;
       const bei = (kmh) => {
         physEngine.state.speedKmh = kmh / REAL_SCALE;
-        return autopilotYellow();
+        return autopilot(0);
       };
       // 1. Gruen: gar kein Eingriff, egal wie schnell.
       flagState = 'green'; trackMode = 'on';
@@ -28656,6 +28917,7 @@
       flagState = merk.flag;
       trackMode = merk.tm;
       physEngine.state.speedKmh = merk.v;
+      raceFormationLap = merk.form;
     }
   });
 

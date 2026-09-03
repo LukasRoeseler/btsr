@@ -1438,6 +1438,14 @@
     "Diese Seite zählt Aufrufe mit GoatCounter, damit ich weiß, ob das Projekt jemand benutzt. Ohne Cookies, ohne Werbung und ohne personenbezogene Daten; wer den Zähler blockiert, verliert keine Funktion. Alles andere – Abstimmungen, Rundenzeiten, Streckenpläne – bleibt im Browser und wird nirgends hingeschickt.": "This page counts visits with GoatCounter so I know whether anyone uses the project. No cookies, no advertising and no personal data; blocking the counter costs you no function. Everything else – setups, lap times, track plans – stays in the browser and is not sent anywhere.",
     "Gänge": "gears",
     "Schaltzeit": "shift time",
+    "EINFÜHRUNGSRUNDE · AUTOPILOT": "FORMATION LAP · AUTOPILOT",
+    "EINFÜHRUNGSRUNDE": "FORMATION LAP",
+    "GELB": "YELLOW",
+    "ANFAHRT": "ROLLING UP",
+    "Einführungsrunde": "Formation lap",
+    "Frei, volle Fahrt!": "Clear, full speed!",
+    "Einführungsrunde mit Boxengassen-Tempo. Dein Auto fährt sie selbst, genau wie die Ghosts: es rollt mit an, schlängelt zum Reifenwärmen und hält die Seite seines Startplatzes, ohne dass du etwas anfassen musst – die Bremse gilt trotzdem, damit du anhalten kannst, wenn vor dir jemand steht. Im Cockpit steht dann „Einführungsrunde · Autopilot“. Frei ist es beim ersten Überfahren von Start/Ziel, von wem auch immer – ein Ghost darf es sein. Danach fährt jeder nach seinen Einstellungen, und die Lenkung ist wieder deine. Nur in der Stellung „Auf der Bahn“: im Ausdruck-Modus hält sich das Auto nicht selbst auf der Bahn, und ein Autopilot ohne Querregelung würde es in die Bande fahren.": "Formation lap at pit-lane pace. Your car drives it itself, exactly like the ghosts: it rolls away with the field, weaves to warm the tyres and holds the side of its grid slot without you touching anything – the brake still works, so you can stop if someone is stranded ahead of you. The cockpit then reads “Formation lap · Autopilot”. It is released the first time anyone crosses start/finish – a ghost may do it. After that everyone drives to their own settings and the steering is yours again. Only in the “On the track” position: in printout mode the car does not hold the track by itself, and an autopilot without lateral control would drive it into the barrier.",
+    "L1: Bahn oder Ausdruck · R1: Automatik oder von Hand · Kreuz: gelbe Flagge (1 s halten) · Select: Wetter umschalten": "L1: track or printout · R1: automatic or manual · Cross: yellow flag (hold for 1 s) · Select: switch the weather",
   };
 
   // ============================================================================
