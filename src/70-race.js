@@ -1625,7 +1625,11 @@
       raceLapStart = now;
       // Die erste Runde ist nicht "die beste" - sie ist die einzige, und ein Bestzeit-Ton
       // beim ersten Mal nimmt ihm die Bedeutung fuer alle weiteren.
-      playLapChime(raceLapTimes.length > 1 && rundeMs < besteBisher);
+      const istBest = raceLapTimes.length > 1 && rundeMs < besteBisher;
+      playLapChime(istBest);
+      // Die Ansage NEBEN dem Ton und nicht statt ihm: der Ton kommt sofort, die Stimme
+      // braucht eine Sekunde. Wer sie abschaltet, hoert weiter, dass eine Runde voll ist.
+      speakLap(rundeMs, istBest);
       if (wasFinishing) finishRace();
       // Runde 0, nicht 1: das Feld steht auf der Startgeraden und ueberfaehrt Start/Ziel
       // erst am Ende der ersten Runde. Vor der ersten Ueberfahrt ist also noch keine Runde

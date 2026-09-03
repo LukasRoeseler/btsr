@@ -298,6 +298,76 @@ CARS = {
         'clatter': 0.07, 'clatter_hz': 5200.0, 'drive': 1.8,
         'scatter_t': 0.002, 'scatter_g': 0.02, 'crackle': 0.12,
     },
+    # ---- Vier historische Rennwagen [WIP] -------------------------------------------
+    #
+    # WIP FUER ALLE VIER, und der Grund ist nicht Bescheidenheit: nach Gehoer geprueft ist
+    # keiner. Die Geometrie stimmt, die sieben Klangregler sind geraten.
+    #
+    # Beim mc12 kommt ein zweiter, ehrlicherer Grund dazu. banks_from_order() legt
+    # Zuendereignis i immer auf i * 720/n - UNABHAENGIG VOM BANKWINKEL. Die 65 Grad des
+    # Maserati gegen die 60 Grad des Ferrari sind also genau das, was dieses Modell nicht
+    # darstellen kann; die beiden V12 unterscheiden sich hier nur in Drehzahl, Rohrlaenge
+    # und Bankaufteilung. Dasselbe gilt abgeschwaecht fuer die zwei Cross-Plane-V8, die
+    # untereinander und zur Corvette C6.R aehneln werden - unterschieden allein durch die
+    # Zuendfolge, die Nummerierungskonvention und die Rohrlaenge.
+    'gt40': {
+        'label': 'Ford GT40 Mk I (4.7 V8, Cross-Plane)',
+        # Zuendfolge des Ford-289: 1-5-4-2-6-3-7-8. NICHT cross_plane_v8() - das ist die
+        # GM-Folge 1-5-4-8-6-3-7-2 und ergibt eine andere Bankaufteilung. Ford zaehlt
+        # 1 bis 4 auf der rechten und 5 bis 8 auf der linken Bank, also 'half'.
+        'banks': banks_from_order([1, 5, 4, 2, 6, 3, 7, 8], 8, 'half'), 'cylinders': 8,
+        'rpms': {'idle': 900, 'mid': 4200, 'high': 6500},
+        # Lange Seitenrohre ohne Daempfer, vier Weber-Doppelvergaser: das tiefste und
+        # rauheste Rohr im ganzen Satz, mit hoerbarem Ventiltrieb (Stossstangen, starre
+        # Stoessel) und viel Ansauggeraeusch.
+        'primary_in': 34.0, 'res_q': 5.8, 'partials': 6, 'ir_ms': 64.0,
+        'pulse_ms': 4.6, 'bright': 0.50, 'noise': 0.09, 'noise_hz': 1300.0,
+        'clatter': 0.24, 'clatter_hz': 2000.0, 'drive': 3.5,
+        'scatter_t': 0.009, 'scatter_g': 0.075, 'crackle': 0.40,
+    },
+    'lolat70': {
+        'label': 'Lola T70 Mk3B (Chevrolet 5.0 V8, Cross-Plane)',
+        # Small-Block-Folge 1-8-4-3-6-5-7-2 unter GM-Nummerierung (ungerade links). Die
+        # Corvette C6.R teilt die Konvention, hat aber die LS-Folge 1-8-7-2-6-5-4-3 - daran
+        # und an der kuerzeren Rohrlaenge unterscheiden sich die beiden.
+        'banks': banks_from_order([1, 8, 4, 3, 6, 5, 7, 2], 8, 'oddeven'), 'cylinders': 8,
+        'rpms': {'idle': 1000, 'mid': 4600, 'high': 7000},
+        # Kurze Stummelrohre seitlich am Heck: weniger Bass als der GT40, mehr Kante.
+        'primary_in': 26.0, 'res_q': 6.2, 'partials': 6, 'ir_ms': 56.0,
+        'pulse_ms': 4.0, 'bright': 0.56, 'noise': 0.08, 'noise_hz': 1600.0,
+        'clatter': 0.22, 'clatter_hz': 2200.0, 'drive': 3.3,
+        'scatter_t': 0.008, 'scatter_g': 0.07, 'crackle': 0.48,
+    },
+    'f330p4': {
+        'label': 'Ferrari 330 P4 / 412P (4.0 V12, 60 Grad)',
+        # Am P4 verankert: Einspritzung, drei Ventile. Der 412P war die Kundenfassung mit
+        # Vergasern und zwei Ventilen und drehte etwas weniger williger obenaus - eine
+        # Unterscheidung, die dieses Modell nicht traegt, weshalb ein Eintrag fuer beide
+        # steht und der Name das sagt.
+        'banks': banks_from_order([1, 7, 5, 11, 3, 9, 6, 12, 2, 8, 4, 10], 12, 'half'),
+        'cylinders': 12,
+        'rpms': {'idle': 1400, 'mid': 5800, 'high': 8200},
+        # 20 Zoll ist die Laenge, die engine-sim fuer den Ferrari-V12 ansetzt. Ein 60-Grad-V12
+        # zuendet alle 60 Grad, bei 8200 also 820 Hz - der hoechste Zuendtakt im Satz, und
+        # genau daraus kommt das Kreischen. Sechs Weber-Doppelvergaser: hoerbares Ansaugen.
+        'primary_in': 20.0, 'res_q': 7.0, 'partials': 7, 'ir_ms': 34.0,
+        'pulse_ms': 1.5, 'bright': 0.74, 'noise': 0.11, 'noise_hz': 3000.0,
+        'clatter': 0.12, 'clatter_hz': 3600.0, 'drive': 2.4,
+        'scatter_t': 0.0045, 'scatter_g': 0.035, 'crackle': 0.50,
+    },
+    'mc12': {
+        'label': 'Maserati MC12 (6.0 V12, 65 Grad)',
+        'banks': banks_from_order([1, 12, 5, 8, 3, 10, 6, 7, 2, 11, 4, 9], 12, 'half'),
+        'cylinders': 12,
+        'rpms': {'idle': 1300, 'mid': 5500, 'high': 7800},
+        # Mehr Hubraum, laengere Rohre, tiefer und satter als der 330 P4 - und weniger
+        # Schubknaller, weil eine Einspritzung von 2004 im Schub abschaltet, wo sechs
+        # Vergaser weiter nachliefern.
+        'primary_in': 22.0, 'res_q': 6.6, 'partials': 7, 'ir_ms': 38.0,
+        'pulse_ms': 1.9, 'bright': 0.68, 'noise': 0.10, 'noise_hz': 2800.0,
+        'clatter': 0.10, 'clatter_hz': 3400.0, 'drive': 2.6,
+        'scatter_t': 0.005, 'scatter_g': 0.04, 'crackle': 0.44,
+    },
 }
 
 

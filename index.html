@@ -20,6 +20,22 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="OmegaSim">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
+<!-- AUFRUFZAEHLER (GoatCounter). Ohne Cookies, ohne personenbezogene Daten; ein Satz
+     darueber steht im Lizenzblock auf der Startseite, denn ein stiller Zaehler neben
+     "unabhaengig, offen, ohne Gewaehr" waere der falsche Ton.
+
+     https:// UND NICHT //, obwohl die Vorlage von GoatCounter es protokollrelativ schreibt.
+     Diese App laeuft ausdruecklich auch von der Platte - "Start OmegaSim.bat", und
+     91-pwa.js prueft location.protocol darauf -, und dort loest // zu
+     file://gc.zgo.at/count.js auf. Das ist kein Ausfall des Zaehlers, sondern ein Zugriff
+     auf einen Ordner, den es nicht gibt. Und auffallen wuerde es nicht: der Verweispruefer
+     in build.py ueberspringt beide Formen.
+
+     Am Service Worker ist nichts zu tun. sw.js steigt bei fremder Herkunft aus, BEVOR es
+     antwortet, also faellt ohne Netz nur der Zaehler aus und die App startet weiter aus
+     dem Cache. async, damit er sich nie in den Aufbau des Cockpits einreiht. -->
+<script data-goatcounter="https://omegasim.goatcounter.com/count"
+        async src="https://gc.zgo.at/count.js"></script>
 <style>
   /* Palette inspired by the NART Ferrari 412P Le Mans livery: white body, deep navy
      stripe/roundel, thin pinstripe linework. Red is reserved for danger/stop states only. */
@@ -329,9 +345,6 @@
   .wip-tag { display: inline-block; font-size: 9.5px; letter-spacing: .1em;
     padding: 1px 5px; border-radius: 3px; vertical-align: 2px;
     background: #4a3c00; color: #ffd83d; font-weight: 700; }
-  /* Ausgegraut heisst hier wirklich gesperrt: der fliegende Start ist nicht umgesetzt. */
-  .opt-row.opt-off { opacity: .5 }
-  .opt-row.opt-off input, .row.opt-off input { pointer-events: none }
   /* Die Voraussetzungsliste auf der Startseite. Zwei Gruppen, unterschiedlich markiert:
      ein Haken heisst "muss stimmen", ein Plus heisst "Zugabe". Die Unterscheidung ist der
      ganze Zweck der Liste - eine einheitliche Aufzaehlung haette wieder nicht gesagt, was
@@ -702,7 +715,7 @@
     grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr) minmax(0, 1.15fr);
     grid-template-areas: "flag flag flag" "shift shift shift" "left gear right"
                          "strip strip strip" "banner banner banner"
-                         "foot foot foot" "toast toast toast"; }
+                         "foot foot foot" "toast toast toast" "marke marke marke"; }
 
   /* DAS DECKGLAS. Drei Dinge, die eine Anzeige von einer Farbflaeche unterscheiden, und
      alle drei sind Aussehen und keine Aussage:
@@ -1050,6 +1063,29 @@
   .gt3-foot b { font-family: monospace; color: #dbe3f0; font-weight: 700; }
   .gt3-foot i { font-style: normal; opacity: .75; }
   .gt3-foot-name { margin-left: auto; }
+  /* DIE MARKENZEILE, ganz unten am Schirm.
+     WARUM NICHT AUF DER ECHTEN BLENDE, denn dort gehoerte sie hin: .gt3 hat
+     overflow: hidden, und das schneidet Kinder an der INNENKANTE ab - die vier
+     Eckschrauben sind genau deshalb Hintergrundschichten und keine Elemente. Ein
+     Hintergrundbild kann man aber nicht anklicken, und ein Link, den man nicht treffen
+     kann, ist kein Link. Also die unterste Rasterzeile, mit derselben Carbonstruktur und
+     demselben Glanzrand, den die untere Blende benutzt: sie liest sich als Fortsetzung des
+     Gehaeuses und ist trotzdem erreichbar.
+     Wer es doch auf die Blende will, braucht overflow: clip mit
+     overflow-clip-margin: border-box - nur Chrome, was hier nichts kostet, weil Web
+     Bluetooth die App ohnehin auf Chrome festlegt. */
+  .gt3-marke {
+    grid-area: marke; display: flex; align-items: center; gap: 7px;
+    padding: clamp(3px, .7vw, 6px) clamp(4px, 1vw, 10px);
+    background: var(--gt3-carbon) 0 0 / 14px 14px repeat, #0b0f18;
+    border-top: 1px solid rgba(255, 255, 255, .07);
+    font-size: clamp(8px, 1.1vw, 10.5px); letter-spacing: .06em;
+  }
+  .gt3-marke svg { width: 14px; height: 14px; flex: none; opacity: .85; }
+  .gt3-marke a { color: var(--info); text-decoration: none; font-weight: 600;
+    border-bottom: 1px solid rgba(90, 169, 255, .35); }
+  .gt3-marke a:hover { border-bottom-color: var(--info); }
+  .gt3-marke span { color: #6b7688; margin-left: auto; }
   #hud-toast-wrap {
     grid-area: toast; min-height: 0; padding: 0 clamp(4px, 1vw, 10px);
     color: #ffcf6e; font-family: monospace; font-size: clamp(9px, 1.3vw, 13px);
@@ -2054,6 +2090,7 @@
       <p>Dieses Projekt ist unabh&auml;ngig von Carrera und geh&ouml;rt zu keinem Hersteller. Der vollst&auml;ndige Quellcode steht unter der MIT-Lizenz auf GitHub.</p>
       <p>Jeder darf ihn nutzen, kopieren, ver&auml;ndern und auch in kommerzieller Software verwenden, solange der urspr&uuml;ngliche Urheberrechtsvermerk und der Lizenztext in der Kopie erhalten bleiben.</p>
       <p>Dieselbe Lizenz sagt aber auch: die Software kommt ohne Garantie und ohne Gew&auml;hrleistung. Du steuerst deine Autos auf eigene Gefahr. Es ist ein Freizeitprojekt, motiviert durch die Option, eine Pups-Hupe einzubauen &ndash; und m&ouml;glicherweise funktioniert es nach einem k&uuml;nftigen Firmware-Update nicht mehr.</p>
+      <p>Diese Seite z&auml;hlt Aufrufe mit GoatCounter, damit ich wei&szlig;, ob das Projekt jemand benutzt. Ohne Cookies, ohne Werbung und ohne personenbezogene Daten; wer den Z&auml;hler blockiert, verliert keine Funktion. Alles andere &ndash; Abstimmungen, Rundenzeiten, Streckenpl&auml;ne &ndash; bleibt im Browser und wird nirgends hingeschickt.</p>
       <p>F&uuml;r konstruktives Feedback oder Feature-W&uuml;nsche schreib mir gern im Thema &bdquo;Omega Sim&ldquo; im Carrera Hybrid Players Discord, unter &bdquo;weitere Themen&ldquo;.</p>
       <div class="home-legal-links">
         <a href="https://github.com/luuke42/omegasim" target="_blank"
@@ -2328,6 +2365,12 @@
         <span id="dash-offtrack">&ndash;</span>
         <span id="dash-vehicle-name" class="gt3-foot-name">nicht verbunden</span>
         <span id="dash-light-dmg" style="color:#ff5252"></span>
+      </div>
+      <div class="gt3-marke">
+        <svg viewBox="0 0 512 512" aria-hidden="true"><use href="#om" fill="#e6ecf7"/></svg>
+        <a href="https://t1p.de/omegasim" target="_blank" rel="noopener noreferrer"
+           data-i18n-skip>t1p.de/omegasim</a>
+        <span data-i18n-skip>OmegaSim</span>
       </div>
       <div class="gt3-banner" id="hud-toast-wrap"><span id="hud-toast"></span></div>
     </div>
@@ -3766,10 +3809,13 @@
         schluckt, kein splitterndes Glas.
       </p>
       <p class="muted" style="font-size:11.5px">
-        <b>Nicht jeder Klang in der App ist das.</b> Der Corvette-Motor und die Strecken-Ambience sind
+        <b>Nicht jeder Klang in der App ist das.</b> Die Strecken-Ambience und die sechs Hupen sind
         aus lizenzfreien Pixabay-Aufnahmen geschnitten, nicht gerechnet: die Pixabay-Lizenz
         erlaubt das, und es gab keinen Grund, nachzubauen, was eine gute Aufnahme schon liefert. Die
         unbearbeiteten Quelldateien sind nicht Teil des Repos, nur die geschnittenen Ableitungen.
+        Bei den Motoren gilt das seit v0.4.53 nicht mehr: dort sind inzwischen alle vierzehn
+        gerechnet, die zwei aufgenommenen sind mit dem Aufräumen herausgefallen. Dieser Absatz
+        nannte den Corvette-Motor bis v0.4.54 weiter eine Aufnahme.
         Vollständige Aufschlüsselung, Datei für Datei: <code>audio/CREDITS.md</code>.
       </p>
     </div>
@@ -3890,6 +3936,22 @@
         <div class="snd-row"><audio controls preload="none" src="audio/f1_2026_mid.ogg"></audio><div><b>Formel 1 2026 (1.6 V6 Turbo-Hybrid, 90 Grad), Mittelband (8500/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/f1_2026_high.ogg"></audio><div><b>Formel 1 2026 (1.6 V6 Turbo-Hybrid, 90 Grad), oberes Band (12500/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/f1_2026_over.ogg"></audio><div><b>Formel 1 2026 (1.6 V6 Turbo-Hybrid, 90 Grad), Schub (8500/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/gt40_idle.ogg"></audio><div><b>Ford GT40 Mk I (4.7 V8, Cross-Plane), Leerlauf (900/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/gt40_mid.ogg"></audio><div><b>Ford GT40 Mk I (4.7 V8, Cross-Plane), Mittelband (4200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/gt40_high.ogg"></audio><div><b>Ford GT40 Mk I (4.7 V8, Cross-Plane), oberes Band (6500/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/gt40_over.ogg"></audio><div><b>Ford GT40 Mk I (4.7 V8, Cross-Plane), Schub (4200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/lolat70_idle.ogg"></audio><div><b>Lola T70 Mk3B (Chevrolet 5.0 V8, Cross-Plane), Leerlauf (1000/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/lolat70_mid.ogg"></audio><div><b>Lola T70 Mk3B (Chevrolet 5.0 V8, Cross-Plane), Mittelband (4600/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/lolat70_high.ogg"></audio><div><b>Lola T70 Mk3B (Chevrolet 5.0 V8, Cross-Plane), oberes Band (7000/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/lolat70_over.ogg"></audio><div><b>Lola T70 Mk3B (Chevrolet 5.0 V8, Cross-Plane), Schub (4600/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/f330p4_idle.ogg"></audio><div><b>Ferrari 330 P4 / 412P (4.0 V12, 60 Grad), Leerlauf (1400/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/f330p4_mid.ogg"></audio><div><b>Ferrari 330 P4 / 412P (4.0 V12, 60 Grad), Mittelband (5800/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/f330p4_high.ogg"></audio><div><b>Ferrari 330 P4 / 412P (4.0 V12, 60 Grad), oberes Band (8200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/f330p4_over.ogg"></audio><div><b>Ferrari 330 P4 / 412P (4.0 V12, 60 Grad), Schub (5800/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/mc12_idle.ogg"></audio><div><b>Maserati MC12 (6.0 V12, 65 Grad), Leerlauf (1300/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/mc12_mid.ogg"></audio><div><b>Maserati MC12 (6.0 V12, 65 Grad), Mittelband (5500/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/mc12_high.ogg"></audio><div><b>Maserati MC12 (6.0 V12, 65 Grad), oberes Band (7800/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/mc12_over.ogg"></audio><div><b>Maserati MC12 (6.0 V12, 65 Grad), Schub (5500/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
       </div>
       <p class="muted" style="font-size:11.5px">
         Vollst&auml;ndige Herkunftsangaben in <code>audio/CREDITS.md</code>.
@@ -4725,23 +4787,30 @@
           <option value="3">3</option>
           <option value="4">4</option>
         </select></div>
-      <!-- Ausgegraut: nicht umgesetzt. Ein Ankreuzfeld, das man setzen kann und das
-           nichts bewirkt, ist eine Falschaussage der Oberflaeche - und dieses hier
-           versprach eine Einfuehrungsrunde, die es nicht gibt. -->
-      <div class="opt-row opt-off"><div class="opt-label">Fliegender Start
-          <span class="wip-tag">nicht umgesetzt</span>
+      <!-- ENTSPERRT in v0.4.54. Die Sperre war laenger falsch als richtig: die
+           Einfuehrungsrunde stand vollstaendig im Code - Boxentempo ueber limitFormation,
+           das Schlaengeln der Ghosts, die Ampel am Rundenende, das Aufraeumen am Ziel -,
+           und nur das Ankreuzfeld sagte "nicht umgesetzt". Gefehlt hat genau eine Sache,
+           und die ist jetzt da: die Startaufstellung hatte keine Wirkung.
+           "experimentell" statt "nicht umgesetzt", weil es am Tisch mit mehreren Autos
+           noch nicht gefahren ist. -->
+      <div class="opt-row"><div class="opt-label">Fliegender Start
+          <span class="wip-tag">experimentell</span>
           <small>Einf&uuml;hrungsrunde mit Boxengassen-Tempo, frei beim ersten
-          &Uuml;berfahren von Start/Ziel. <b>Noch nicht gebaut</b> &ndash; der Schalter ist
-          deshalb gesperrt statt wirkungslos.</small></div>
-        <label class="tgl"><input type="checkbox" id="race-flying" disabled><span></span></label></div>
+          &Uuml;berfahren von Start/Ziel &ndash; von wem auch immer, ein Ghost darf es
+          sein. Danach f&auml;hrt jeder nach seinen Einstellungen.</small></div>
+        <label class="tgl"><input type="checkbox" id="race-flying"><span></span></label></div>
 
       <div id="race-grid-wrap" style="display:none; margin-top:12px">
         <label class="small">Startaufstellung, ziehen oder mit den Pfeilen sortieren</label>
         <div id="race-grid"></div>
         <p class="muted" style="font-size:11.5px; margin:6px 0 0 0">
-          Die Autos fahren in dieser Reihenfolge los. Die Einf&uuml;hrungsrunde l&auml;uft mit
-          Boxengassen-Tempo; sobald das erste Auto Start/Ziel &uuml;berf&auml;hrt, ist das
-          Limit weg.
+          Zwei benachbarte Pl&auml;tze fahren in der Einf&uuml;hrungsrunde versetzt, also als
+          Zweierkolonne. Die Runde l&auml;uft mit Boxengassen-Tempo; sobald das erste Auto
+          Start/Ziel &uuml;berf&auml;hrt, ist das Limit weg. Aufstellen musst du von Hand
+          &ndash; ein Auto auf die Bahn setzen kann die App nicht. Dein eigenes Auto steht
+          mit in der Liste und verschiebt damit, auf welche Seite die Ghosts hinter dir
+          gehen.
         </p>
       </div>
 
@@ -5066,6 +5135,27 @@
         </select></div>
       <div class="opt-row"><div class="opt-label">Daten des Layouts<small>Gerechnet und nicht eingetippt: die Nickgrenzen folgen aus der statischen Achslast und dem Verlagerungsanteil.</small></div>
         <div class="opt-val" id="layout-info" style="text-align:right;font-size:11.5px;line-height:1.5">&nbsp;</div></div>
+      <div class="opt-row"><div class="opt-label">Getriebe<small>Wieviele G&auml;nge und wie
+          weit sie auseinanderliegen. Steht hier und nicht unter &bdquo;Getriebe und
+          Fahrleistung&ldquo;, weil es dieselbe Art Aussage ist wie das Layout dar&uuml;ber:
+          welches Auto du f&auml;hrst. Wie du damit f&auml;hrst &ndash; von Hand oder
+          automatisch &ndash; steht weiter unten. Die Voreinstellungen fassen beides
+          absichtlich nicht an. Die Drehzahlgrenze bleibt, wo sie ist: die geh&ouml;rt zum
+          Motor und nicht zum Getriebe. Ge&auml;ndert werden Anzahl, Spreizung und
+          Schaltpunkte &ndash; und die Schaltzeit, und die ist der gr&ouml;&szlig;ere
+          Unterschied: 40 ms nahtlos gegen 350 ms Kulisse mit Kupplung. Acht G&auml;nge sind
+          F1-Reglement, sechs sequenzielle GT3-Standard, f&uuml;nf hatte das Transaxle des
+          412P. Welche Geschwindigkeit im dritten Gang liegt, ist eine Sch&auml;tzung aus der
+          Klasse.</small></div>
+        <select id="setting-gearbox" data-preset-skip>
+          <option value="gt3" selected>GT3, 6-Gang sequenziell</option>
+          <option value="f1">Formel 1, 8-Gang</option>
+          <option value="p412">Ferrari 412P, 5-Gang Transaxle</option>
+        </select></div>
+      <div class="opt-row"><div class="opt-label">Daten des Getriebes<small>Bis zu welchem
+          Tempo jeder Gang reicht. Gerechnet aus den &Uuml;bersetzungen und der
+          H&ouml;chstgeschwindigkeit, nicht eingetippt.</small></div>
+        <div class="opt-val" id="gearbox-info" style="text-align:right;font-size:11.5px;line-height:1.5">&nbsp;</div></div>
 
 <div class="opt-head">Fahrwerk</div>
       <div class="opt-row"><div class="opt-label">Gasfaktor
@@ -5247,6 +5337,17 @@
       <h2>Ton</h2>
 <div class="opt-head">Ton</div>
       <div class="opt-row"><div class="opt-label">Motorsound</div><label class="tgl"><input type="checkbox" id="sound-enable" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Rundenzeiten ansagen
+          <span class="wip-tag">experimentell</span>
+          <small>Nach jeder Runde die Zeit, und bei einer eigenen Bestzeit ein Wort dazu.
+          Gesprochen von der eingebauten Stimme des Browsers &ndash; kein Dienst, kein Netz,
+          nichts verl&auml;sst das Ger&auml;t. Absichtlich kurz gehalten, damit die Ansage
+          vor der n&auml;chsten Kurve fertig ist. Kommt eine zweite Runde herein, w&auml;hrend
+          noch geredet wird, bricht die alte Ansage ab: die Zeit der Gegenwart ist
+          wichtiger. Ob es &uuml;berhaupt spricht, h&auml;ngt an den Stimmen des Systems
+          &ndash; unter Windows sind sie lokal vorhanden, auf Android k&ouml;nnen sie fehlen.
+          Fehlt eine, steht das einmal im Protokoll und nicht bei jeder Runde.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-announce" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Regen<small>Select oder W. Reifen kommen beim Boxenstopp passend.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-rain"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Strecken-Ambience<small>Vorbeifahrten, Regen, Donner.</small></div>
@@ -5281,9 +5382,12 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="brake-volume-val">30%</span>
         </div></div>
-      <div class="opt-row"><div class="opt-label">Motorsound-Profil<small>Die acht
-          oben sind aus Zylinderzahl, Kurbelwelle und Z&uuml;ndfolge gerechnet. Bei den
-          aufgeladenen Originalen fehlt der Lader.</small></div>
+      <div class="opt-row"><div class="opt-label">Motorsound-Profil<small>Alle sind aus
+          Zylinderzahl, Kurbelwelle, Bankaufteilung und Z&uuml;ndfolge gerechnet &ndash;
+          keiner ist eine Aufnahme. Bei den aufgeladenen Originalen fehlt der Lader. Die vier
+          historischen sind noch nicht nach Geh&ouml;r gepr&uuml;ft; beim Maserati kommt
+          dazu, dass dieses Modell den Bankwinkel gar nicht darstellt, weshalb er sich vom
+          Ferrari-V12 nur in Drehzahl und Rohrl&auml;nge unterscheidet.</small></div>
         <select id="sound-profile">
           <optgroup label="GT3 und GT-Rennmotoren">
           <option value="amggt3">Mercedes-AMG GT3: V8, Cross-Plane</option>
@@ -5298,6 +5402,12 @@
           </optgroup>
           <optgroup label="Formel 1">
           <option value="f1_2026">Formel 1 2026: V6 Turbo-Hybrid, 1,6 l</option>
+          </optgroup>
+          <optgroup label="Historische Rennwagen (WIP)">
+          <option value="gt40">Ford GT40 Mk I: V8, Cross-Plane, 4,7 l</option>
+          <option value="lolat70">Lola T70 Mk3B: Chevrolet-V8, Cross-Plane</option>
+          <option value="f330p4">Ferrari 330 P4 / 412P: V12, 60 Grad</option>
+          <option value="mc12">Maserati MC12: V12, 65 Grad</option>
           </optgroup>
         </select></div>
       <div class="opt-row"><div class="opt-label">Motorlautstärke</div>
@@ -6021,7 +6131,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.4.53</span></span>
+    <span class="foot-ver">v<span id="app-version">0.4.54</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -7478,6 +7588,18 @@
     "Einen Bluetooth-Controller. Getestet mit DualShock 4 und DualSense.": "A Bluetooth controller. Tested with a DualShock 4 and a DualSense.",
     "Start/Ziel als SVG herunterladen": "Download start/finish as SVG",
     "Zwei verschiedene Pups-Hupen": "Two different whoopee horns",
+    "Einführungsrunde mit Boxengassen-Tempo, frei beim ersten Überfahren von Start/Ziel – von wem auch immer, ein Ghost darf es sein. Danach fährt jeder nach seinen Einstellungen.": "Formation lap at pit-lane pace, released the first time anyone crosses start/finish – a ghost may do it. After that everyone drives to their own settings.",
+    "Getriebe": "Gearbox",
+    "Wieviele Gänge und wie weit sie auseinanderliegen. Steht hier und nicht unter „Getriebe und Fahrleistung“, weil es dieselbe Art Aussage ist wie das Layout darüber: welches Auto du fährst. Wie du damit fährst – von Hand oder automatisch – steht weiter unten. Die Voreinstellungen fassen beides absichtlich nicht an. Die Drehzahlgrenze bleibt, wo sie ist: die gehört zum Motor und nicht zum Getriebe. Geändert werden Anzahl, Spreizung und Schaltpunkte – und die Schaltzeit, und die ist der größere Unterschied: 40 ms nahtlos gegen 350 ms Kulisse mit Kupplung. Acht Gänge sind F1-Reglement, sechs sequenzielle GT3-Standard, fünf hatte das Transaxle des 412P. Welche Geschwindigkeit im dritten Gang liegt, ist eine Schätzung aus der Klasse.": "How many gears there are and how far apart they sit. It stands here and not under “Gearbox and performance” because it is the same kind of statement as the layout above it: which car you drive. How you drive it – by hand or automatically – is further down. The presets deliberately touch neither. The rev limit stays where it is: that belongs to the engine, not to the gearbox. What changes is the number of gears, their spacing and the shift points – and the shift time, which is the bigger difference: 40 ms seamless against 350 ms of gate and clutch. Eight gears are F1 regulations, six sequential ones are the GT3 standard, five were in the 412P transaxle. Which speed third gear reaches is an estimate from the class.",
+    "Daten des Getriebes": "Gearbox data",
+    "Bis zu welchem Tempo jeder Gang reicht. Gerechnet aus den Übersetzungen und der Höchstgeschwindigkeit, nicht eingetippt.": "How fast each gear reaches. Calculated from the ratios and the top speed, not typed in.",
+    "Rundenzeiten ansagen": "Announce lap times",
+    "Nach jeder Runde die Zeit, und bei einer eigenen Bestzeit ein Wort dazu. Gesprochen von der eingebauten Stimme des Browsers – kein Dienst, kein Netz, nichts verlässt das Gerät. Absichtlich kurz gehalten, damit die Ansage vor der nächsten Kurve fertig ist. Kommt eine zweite Runde herein, während noch geredet wird, bricht die alte Ansage ab: die Zeit der Gegenwart ist wichtiger. Ob es überhaupt spricht, hängt an den Stimmen des Systems – unter Windows sind sie lokal vorhanden, auf Android können sie fehlen. Fehlt eine, steht das einmal im Protokoll und nicht bei jeder Runde.": "The time after every lap, and a word with it on a personal best. Spoken by the browser’s built-in voice – no service, no network, nothing leaves the device. Deliberately kept short so the announcement is finished before the next corner. If a second lap comes in while it is still talking, the old announcement is cut off: the time of the present matters more. Whether it speaks at all depends on the voices of the system – under Windows they are installed locally, on Android they can be missing. If one is missing, that goes into the log once and not on every lap.",
+    "Alle sind aus Zylinderzahl, Kurbelwelle, Bankaufteilung und Zündfolge gerechnet – keiner ist eine Aufnahme. Bei den aufgeladenen Originalen fehlt der Lader. Die vier historischen sind noch nicht nach Gehör geprüft; beim Maserati kommt dazu, dass dieses Modell den Bankwinkel gar nicht darstellt, weshalb er sich vom Ferrari-V12 nur in Drehzahl und Rohrlänge unterscheidet.": "All of them are calculated from cylinder count, crankshaft, bank split and firing order – none is a recording. The forced-induction originals are missing their blower. The four historic ones have not been checked by ear yet; with the Maserati there is more to it, because this model does not represent the bank angle at all, which is why it differs from the Ferrari V12 only in revs and pipe length.",
+    "Zwei benachbarte Plätze fahren in der Einführungsrunde versetzt, also als Zweierkolonne. Die Runde läuft mit Boxengassen-Tempo; sobald das erste Auto Start/Ziel überfährt, ist das Limit weg. Aufstellen musst du von Hand – ein Auto auf die Bahn setzen kann die App nicht. Dein eigenes Auto steht mit in der Liste und verschiebt damit, auf welche Seite die Ghosts hinter dir gehen.": "Two adjacent grid slots drive offset from each other on the formation lap, so as a double column. The lap runs at pit-lane pace; as soon as the first car crosses start/finish the limit is gone. Lining up is your job – the app cannot place a car on the track. Your own car is in the list too and therefore shifts which side the ghosts behind you take.",
+    "Diese Seite zählt Aufrufe mit GoatCounter, damit ich weiß, ob das Projekt jemand benutzt. Ohne Cookies, ohne Werbung und ohne personenbezogene Daten; wer den Zähler blockiert, verliert keine Funktion. Alles andere – Abstimmungen, Rundenzeiten, Streckenpläne – bleibt im Browser und wird nirgends hingeschickt.": "This page counts visits with GoatCounter so I know whether anyone uses the project. No cookies, no advertising and no personal data; blocking the counter costs you no function. Everything else – setups, lap times, track plans – stays in the browser and is not sent anywhere.",
+    "Gänge": "gears",
+    "Schaltzeit": "shift time",
   };
 
   // ============================================================================
@@ -8578,6 +8700,68 @@
     { ratio: 0.88, topFrac: 1.0000 }, // 325/325
   ];
 
+  // ============================== GETRIEBEARTEN ==============================
+  //
+  // Drei Getriebe, und GT3 ist nicht nur die Vorgabe, sondern IDENTISCH mit vorher: der
+  // Eintrag zeigt auf dasselbe Array, nicht auf eine Kopie davon.
+  //
+  // DIE UEBERSETZUNGEN SIND GERECHNET UND NICHT GETIPPT. In der GT3-Tabelle darueber ist
+  // das Produkt ratio * topFrac fuer die Gaenge 1 bis 5 konstant 0,9507 und faellt beim
+  // sechsten auf 0,88 - der ist luftwiderstandsbegrenzt und erreicht den Begrenzer nicht
+  // (siehe rebuildGearModel). Diese Unsymmetrie ist echt und wird uebernommen:
+  //
+  //     ratio_i = 0,9507 / topFrac_i   fuer alle ausser dem letzten
+  //     ratio_n = 0,88   bei topFrac_n = 1,0
+  //
+  // Damit bleibt ratioRef in jedem Getriebe 0,88, und der Anker der
+  // Beschleunigungskalibrierung ist unberuehrt. Gewaehlt ist nur die SPREIZUNG, und dort
+  // sitzt der Charakter: acht enge Gaenge oben gegen fuenf weite.
+  //
+  // WAS ANGABE IST: acht Vorwaertsgaenge sind seit 2014 F1-Reglement, sechs sequenzielle
+  // sind GT3-Standard, fuenf hatte das Transaxle des 412P. WAS SCHAETZUNG IST: bei welchem
+  // Anteil der Hoechstgeschwindigkeit der dritte Gang endet. Das ist eine Wahl aus der
+  // Klasse und keine Messung.
+  //
+  // shiftMs ist der zweite fuehlbare Unterschied und der groessere: 40 ms nahtlos, 120 ms
+  // sequenziell, 350 ms Kulisse mit Kupplung und Zwischengas.
+  //
+  // DIE DREHZAHLGRENZE BLEIBT BEI REDLINE_RPM. Sie ist eine Eigenschaft des MOTORS und
+  // nicht des Getriebes; ein Getriebe, das die Drehzahlgrenze mitbringt, waere ein Motor
+  // mit Zahnraedern. Das Getriebe aendert Anzahl, Spreizung und Schaltpunkte.
+  const F1_GEARS = [
+    { ratio: 3.07, topFrac: 0.3100 }, // 1. bis 31% von Vmax - hoch uebersetzt, nur zum Start
+    { ratio: 2.26, topFrac: 0.4200 },
+    { ratio: 1.83, topFrac: 0.5200 },
+    { ratio: 1.51, topFrac: 0.6300 },
+    { ratio: 1.28, topFrac: 0.7400 },
+    { ratio: 1.13, topFrac: 0.8400 },
+    { ratio: 1.03, topFrac: 0.9200 }, // die oberen drei liegen eng: 84, 92, 100
+    { ratio: 0.88, topFrac: 1.0000 },
+  ];
+  const P412_GEARS = [
+    { ratio: 3.17, topFrac: 0.3000 }, // 1. bis 30% - und dann ein weiter Sprung
+    { ratio: 2.11, topFrac: 0.4500 },
+    { ratio: 1.53, topFrac: 0.6200 },
+    { ratio: 1.17, topFrac: 0.8100 },
+    { ratio: 0.88, topFrac: 1.0000 },
+  ];
+  // downshiftRpm ist nicht frei: nach einem Hochschalten faellt die Drehzahl auf
+  // upshiftRpm * ratio[i+1] / ratio[i], und liegt die Rueckschaltschwelle darueber, schaltet
+  // die Automatik hoch und sofort wieder herunter. Gemessen bleibt Reserve: GT3 1385,
+  // F1 915 (enge Gaenge, also knapper), 412P 2324 Umdrehungen. Ein Selbsttest haelt das fest.
+  const GEARBOXES = {
+    gt3: { label: 'GT3, 6-Gang sequenziell', gears: GT3_GEARS,
+           upshiftRpm: 8800, downshiftRpm: 4200, shiftMs: 120 },
+    f1: { label: 'Formel 1, 8-Gang', gears: F1_GEARS,
+          upshiftRpm: 8850, downshiftRpm: 5600, shiftMs: 40 },
+    p412: { label: 'Ferrari 412P, 5-Gang Transaxle', gears: P412_GEARS,
+            upshiftRpm: 8600, downshiftRpm: 3400, shiftMs: 350 },
+  };
+  // Das Produkt, aus dem die Uebersetzungen kommen. Steht hier als Konstante, damit der
+  // Selbsttest gegen dieselbe Zahl prueft, aus der sie gerechnet sind - und nicht gegen
+  // eine zweite Abschrift davon.
+  const GEAR_PRODUCT = 0.9507;
+
   // Normalised engine torque, 1.0 = peak. Deliberately a TABLE rather than a formula:
   // update(), calibrateAccel() AND the Doku charts all read it, so there must be exactly
   // one definition that cannot drift. Weak low down, peak arriving late (~6200), then
@@ -8877,7 +9061,11 @@
         // car down rather than standing it on its nose.
         pitLimiterDecel: 0.35,
 
-        gears: GT3_GEARS,
+        // EINE EIGENE KOPIE und nicht GT3_GEARS selbst. applyGearbox() aendert dieses
+        // Array an der Stelle - das muss es, weil die Ghosts es per Verweis teilen -, und
+        // stuende hier die Tabelle, wuerde der erste Wechsel auf Formel 1 die GT3-Tabelle
+        // ueberschreiben. Zurueck auf GT3 haette dann acht Gaenge gehabt.
+        gears: GT3_GEARS.map(g => ({ ratio: g.ratio, topFrac: g.topFrac })),
         rpmScale: 0,      // derived in rebuildGearModel()
         ratioRef: 0.88,   // top gear's ratio, so 6th has a force factor of exactly 1.0
         // Fitted numerically against the user's real GT3 acceleration table (0-50km/h
@@ -9235,8 +9423,16 @@
       //
       // Er wird GANZ kopiert und nicht aufgezaehlt: eine Liste von Feldern ist bei einem
       // Konfigurationsobjekt immer unvollstaendig, und die fehlende Zeile faellt erst auf,
-      // wenn eine Messung nicht mehr reproduzierbar ist. gears ist geteilt und wird nie
-      // geaendert.
+      // wenn eine Messung nicht mehr reproduzierbar ist.
+      //
+      // gears braucht dabei eine EIGENE Kopie, seit es Getriebearten gibt. Object.assign
+      // ist flach, also traegt der Bezug sonst denselben Verweis wie die Konfiguration und
+      // wandert bei jedem Getriebewechsel mit. Die Folge wuesste man erst spaeter: die
+      // Messaufbauten stellen mit Object.assign(cfg, calibRef) den gefitteten Zustand her,
+      // und dort snappen ratioRef, rpmScale, upshiftRpm und shiftMs als Skalare
+      // automatisch auf die GT3-Werte zurueck. Ohne eigene Kopie blieben die
+      // UEBERSETZUNGEN dabei die des gewaehlten Getriebes - GT3-Schaltpunkte auf
+      // F1-Zahnraedern, und die Messung waere still falsch statt offen anders.
       //
       // Und er steht HIER, am Ende des Konstruktors, nicht vor rebuildGearModel(): rpmScale
       // und accelCalibration sind ABGELEITETE Groessen, die erst dort entstehen. Weiter oben
@@ -9245,6 +9441,7 @@
       // eine streng lineare Beschleunigung (1,38 / 2,70 / 4,02 / 5,36 s), also wie ein Auto
       // ohne Luftwiderstand. Am Ende aufgenommen braucht der Aufbau keine Ausnahmeliste.
       this.calibRef = Object.assign({}, this.config);
+      this.calibRef.gears = this.config.gears.map(g => ({ ratio: g.ratio, topFrac: g.topFrac }));
       // Das Layout ZULETZT anwenden, nach calibRef: die Vorgabe ist neutral und aendert
       // nichts, aber ein Layout, das vor dem Kalibrierbezug gesetzt wuerde, waere danach
       // nicht mehr davon zu unterscheiden - und physConfigDiff() koennte es nicht melden.
@@ -9397,6 +9594,51 @@
       this.state.loadFront = L.vorn;
       this.layoutName = LAYOUTS[name] ? name : 'neutral';
       return this.layoutName;
+    }
+
+    // Ein Getriebe anwenden. Vier Dinge daran sind keine Geschmacksfrage:
+    //
+    // 1. DAS ARRAY WIRD AN DER STELLE GEAENDERT, nicht ersetzt. Die Ghosts teilen
+    //    config.gears mit dieser Maschine per Verweis - absichtlich, siehe die Begruendung
+    //    in 90-ghosts.js: eine Kopie laesst accelScale() zweimal kalibrieren. Ein Splice
+    //    erreicht damit jeden Teilhaber auf einmal, auch einen schon fahrenden Ghost. Ein
+    //    neues Array haette den Verweis gekappt, und das Feld waere still im alten
+    //    Getriebe weitergefahren.
+    // 2. NICHT DEN KALIBRIERBEZUG MITVERBIEGEN. Die Messaufbauten stellen den gefitteten
+    //    Zustand mit Object.assign(cfg, calibRef) her, und danach zeigen beide auf
+    //    dasselbe Array. Ein Splice waere dann eine Aenderung am Bezug selbst - also erst
+    //    loesen, dann aendern.
+    // 3. ratioRef wird GERECHNET und nicht gehalten. Es ist die Uebersetzung des letzten
+    //    Gangs, an der thrustAt() normiert; zwei Orte fuer dieselbe Zahl waren in diesem
+    //    Projekt schon oft genug eine Abweichung. Dass sie bei allen drei Getrieben 0,88
+    //    ist, macht die Rechnung nicht ueberfluessig, sondern nur unauffaellig.
+    // 4. rebuildGearModel() VOR calibrateAccel(). Die Kalibrierung braucht rpmScale, und
+    //    rpmScale kommt aus den Uebersetzungen - dieselbe Reihenfolge, die der Konstruktor
+    //    einhaelt.
+    //
+    // Was das Getriebe damit aendert, ist die FORM der Beschleunigung: wo die Stufen sitzen
+    // und welcher Gang zieht. Nicht die Schlagzeilenzahl - calibrateAccel() loest gegen die
+    // eingestellte Zeit von null auf Hoechstgeschwindigkeit, und die bleibt. Genau wie das
+    // Layout die Balance aendert und nicht die Geradeausleistung.
+    applyGearbox(name) {
+      const G = GEARBOXES[name] || GEARBOXES.gt3;
+      const cfg = this.config;
+      if (this.calibRef && cfg.gears === this.calibRef.gears) {
+        cfg.gears = cfg.gears.map(g => ({ ratio: g.ratio, topFrac: g.topFrac }));
+      }
+      cfg.gears.splice(0, cfg.gears.length,
+        ...G.gears.map(g => ({ ratio: g.ratio, topFrac: g.topFrac })));
+      cfg.ratioRef = cfg.gears[cfg.gears.length - 1].ratio;
+      cfg.upshiftRpm = G.upshiftRpm;
+      cfg.downshiftRpm = G.downshiftRpm;
+      cfg.shiftMs = G.shiftMs;
+      // Von acht auf fuenf Gaenge zeigt der eingelegte Gang sonst ins Leere, und
+      // gearRatio() liest undefined.ratio.
+      this.state.currentGear = Math.min(this.state.currentGear, cfg.gears.length - 1);
+      this.rebuildGearModel();
+      this.calibrateAccel();
+      this.gearboxName = GEARBOXES[name] ? name : 'gt3';
+      return this.gearboxName;
     }
 
     // Central reset shared by the E-stop and the pit stop, so the two
@@ -10549,6 +10791,70 @@
     // und ist damit fuer den Textknoten-Uebersetzer unerreichbar.
     if (typeof i18nOnLangChange === 'function') i18nOnLangChange(zeigeLayoutDaten);
     anwenden(false);
+  }
+
+  // ---- Getriebeart -------------------------------------------------------------------
+  //
+  // Dieselbe Bauform wie das Layout darueber, und aus demselben Grund eine EIGENE Ablage:
+  // der Waehler traegt data-preset-skip, also fasst ihn presetControls() nicht an - und
+  // ohne eigene Ablage faellt er bei jedem Neuladen auf GT3 zurueck.
+  const GEARBOX_STORE = 'chc.gearbox.v1';
+  if ($('setting-gearbox')) {
+    const zeigeGetriebeDaten = () => {
+      const el = $('gearbox-info');
+      if (!el) return;
+      const cfg = physEngine.config;
+      // Dieselbe Rechnung, die die Doku fuer ihre Gangtabelle benutzt: topFrac mal
+      // Hoechstgeschwindigkeit, hier in Tacho-Kilometern, also mit REAL_SCALE.
+      const gaenge = cfg.gears.map((g, i) => (i + 1) + '. '
+        + Math.round(g.topFrac * cfg.topSpeedKmh * REAL_SCALE)).join(' \u00b7 ');
+      el.textContent = cfg.gears.length + ' ' + t('G\u00e4nge') + ' \u00b7 '
+        + gaenge + ' km/h \u00b7 ' + t('Schaltzeit') + ' ' + cfg.shiftMs + ' ms';
+    };
+    // ZWEI ARGUMENTE UND NICHT EINES, und der Grund ist die Ladereihenfolge: `garage` ist
+    // ein const in 90-ghosts.js, also in einer SPAETEREN Quelldatei. Beim ersten Aufruf hier
+    // ist es noch in seiner temporalen Todeszone, und dort wirft schon `typeof garage` -
+    // was die ganze IIFE mitnimmt und OMEGA_TEST verschwinden laesst. Beim Laden gibt es
+    // ausserdem keine Ghosts, also ist der Verzicht nicht nur sicher, sondern richtig.
+    const getriebeAnwenden = (melden, mitGhosts) => {
+      const name = physEngine.applyGearbox($('setting-gearbox').value);
+      // Wie beim Layout: war der abgelegte Name unbekannt, faellt applyGearbox auf gt3
+      // zurueck, und dann muss die Auswahl mitkommen.
+      if ($('setting-gearbox').value !== name) $('setting-gearbox').value = name;
+      if (mitGhosts) {
+        // Die Ghosts teilen das UEBERSETZUNGS-ARRAY per Verweis, sind also schon umgestellt.
+        // Ihre SKALARE - Schaltpunkte, Schaltzeit, rpmScale, ratioRef - sind aber Kopien aus
+        // dem Augenblick ihrer Einrichtung. Ohne diese Schleife schaltet ein fahrender Ghost
+        // weiter nach den alten Punkten, und von aussen sieht das aus wie "der Ghost
+        // schaltet falsch".
+        garage.forEach(c => {
+          if (!c.ghost || !c.ghost.engine || c.ghost.engine === physEngine) return;
+          const gc = c.ghost.engine.config, pc = physEngine.config;
+          gc.ratioRef = pc.ratioRef;
+          gc.upshiftRpm = pc.upshiftRpm;
+          gc.downshiftRpm = pc.downshiftRpm;
+          gc.shiftMs = pc.shiftMs;
+          gc.rpmScale = pc.rpmScale;
+          c.ghost.engine.state.currentGear =
+            Math.min(c.ghost.engine.state.currentGear, gc.gears.length - 1);
+        });
+      }
+      zeigeGetriebeDaten();
+      markDrivetrainChartsDirty();
+      if (melden) {
+        const opt = $('setting-gearbox').selectedOptions[0];
+        log('Getriebe: ' + (opt ? opt.textContent : name) + '.', 'info');
+        showHudToast((opt ? opt.textContent : name).toUpperCase());
+      }
+      try { localStorage.setItem(GEARBOX_STORE, name); } catch (e) { /* privater Modus */ }
+    };
+    try {
+      const gespeichert = localStorage.getItem(GEARBOX_STORE);
+      if (gespeichert) $('setting-gearbox').value = gespeichert;
+    } catch (e) { /* privater Modus */ }
+    $('setting-gearbox').addEventListener('change', () => getriebeAnwenden(true, true));
+    if (typeof i18nOnLangChange === 'function') i18nOnLangChange(zeigeGetriebeDaten);
+    getriebeAnwenden(false, false);
   }
 
   $('phys-enable').addEventListener('change', (e) => {
@@ -15146,7 +15452,11 @@
       raceLapStart = now;
       // Die erste Runde ist nicht "die beste" - sie ist die einzige, und ein Bestzeit-Ton
       // beim ersten Mal nimmt ihm die Bedeutung fuer alle weiteren.
-      playLapChime(raceLapTimes.length > 1 && rundeMs < besteBisher);
+      const istBest = raceLapTimes.length > 1 && rundeMs < besteBisher;
+      playLapChime(istBest);
+      // Die Ansage NEBEN dem Ton und nicht statt ihm: der Ton kommt sofort, die Stimme
+      // braucht eine Sekunde. Wer sie abschaltet, hoert weiter, dass eine Runde voll ist.
+      speakLap(rundeMs, istBest);
       if (wasFinishing) finishRace();
       // Runde 0, nicht 1: das Feld steht auf der Startgeraden und ueberfaehrt Start/Ziel
       // erst am Ende der ersten Runde. Vor der ersten Ueberfahrt ist also noch keine Runde
@@ -16847,6 +17157,9 @@
     // Unterschied, den CREDITS.md aufmacht, betrifft nur noch die Umgebungsgeraeusche.
     'amggt3', 'c6r', 'z06gt3r', 'vantagegt3', 'm4gt3', 'f296gt3', 'huracan', 'p992gt3r',
     'mustang', 'f1_2026',
+    // Vier historische Rennwagen, dazugekommen in v0.4.54 und als WIP gekennzeichnet: nach
+    // Gehoer geprueft ist keiner von ihnen. Damit sind es vierzehn Motoren und 56 Schleifen.
+    'gt40', 'lolat70', 'f330p4', 'mc12',
   ];
   const BANDS = ['idle', 'mid', 'high'];
   let engineVolume = 0.7;
@@ -17015,6 +17328,84 @@
   // Pneumatic paddle shift. Up and down are distinct samples because they really do
   // sound different — the downshift carries a longer air release. If the samples are
   // missing, a two-tone stands in rather than nothing happening at all.
+  // ============================== RUNDENZEIT ANSAGEN ==============================
+  //
+  // Die erste Sprachausgabe im Projekt. Eingebaute Stimme des Browsers: kein Dienst, kein
+  // Netz, nichts verlaesst das Geraet.
+  //
+  // WARUM EIN EIGENER FORMATIERER und nicht formatLapTime(). Das liefert "62.43s", und
+  // vorgelesen ist das falsch - eine Stimme sagt daraus "zweiundsechzig Punkt vier drei
+  // Sekunden", und ueber einer Minute ist eine Sekundenzahl ohnehin keine Rundenzeit mehr.
+  // Also Minute und Rest getrennt, und eine Nachkommastelle statt zwei: die zweite hoert
+  // im Fahren niemand, kostet aber eine halbe Sekunde Ansage.
+  //
+  // KUERZE IST HIER DIE EIGENTLICHE ANFORDERUNG. Die Ansage muss vor der naechsten Kurve
+  // fertig sein, sonst redet sie in die Stelle hinein, an der man sie gebrauchen koennte.
+  // Deshalb kein "deine Rundenzeit betraegt", kein Einheitenwort unter einer Minute - auf
+  // einer Rennstrecke braucht eine Zeit keine Einheit - und rate 1,15.
+  let announceOn = true;
+  let announceCalls = 0, announceCancels = 0, announceFailLogged = false;
+
+  function lapSpeechText(ms, istBest) {
+    const s = ms / 1000;
+    const m = Math.floor(s / 60);
+    const rest = s - m * 60;
+    const de = lang === 'de';
+    // Das Dezimalzeichen gehoert zur Sprache und nicht zur Zahl: eine deutsche Stimme
+    // liest "58.3" als "achtundfuenfzig Punkt drei".
+    const zahl = de ? rest.toFixed(1).replace('.', ',') : rest.toFixed(1);
+    let text;
+    if (m <= 0) {
+      text = zahl;
+    } else if (de) {
+      text = m + (m === 1 ? ' Minute ' : ' Minuten ') + zahl;
+    } else {
+      text = m + (m === 1 ? ' minute ' : ' minutes ') + zahl;
+    }
+    if (istBest) text += de ? ', Bestzeit' : ', best lap';
+    return text;
+  }
+
+  function speakLap(ms, istBest) {
+    if (!announceOn) return;
+    if (!('speechSynthesis' in window)) return;
+    // ABBRECHEN VOR DEM SPRECHEN. Zwei Runden kurz hintereinander duerfen sich nicht
+    // stapeln - sonst laeuft die Stimme der Gegenwart nach und sagt die vorletzte Zeit,
+    // waehrend man schon in der naechsten Runde ist.
+    try {
+      window.speechSynthesis.cancel();
+      announceCancels++;
+      const u = new SpeechSynthesisUtterance(lapSpeechText(ms, istBest));
+      u.lang = lang === 'de' ? 'de-DE' : 'en-US';
+      u.rate = 1.15;
+      // EINMAL melden und nicht je Runde. Ein Geraet ohne passende Stimme wuerde sonst bei
+      // jeder Runde eine Zeile ins Protokoll schreiben, und das Protokoll ist der Ort, an
+      // dem man echte Fehler sucht.
+      u.onerror = (ev) => {
+        if (announceFailLogged) return;
+        announceFailLogged = true;
+        log('Rundenansage: keine Stimme verfuegbar (' + (ev && ev.error ? ev.error : '?')
+            + '). Die Ansage bleibt aus, alles andere laeuft weiter.', 'info');
+      };
+      window.speechSynthesis.speak(u);
+      announceCalls++;
+    } catch (e) {
+      if (!announceFailLogged) {
+        announceFailLogged = true;
+        log('Rundenansage nicht moeglich: ' + e.message, 'info');
+      }
+    }
+  }
+
+  if ($('setting-announce')) {
+    announceOn = $('setting-announce').checked;
+    $('setting-announce').addEventListener('change', (e) => {
+      announceOn = e.target.checked;
+      // Beim Ausschalten sofort still sein und nicht den Satz noch beenden.
+      if (!announceOn && 'speechSynthesis' in window) window.speechSynthesis.cancel();
+    });
+  }
+
   function playShiftSound(direction) {
     const buf = direction >= 0 ? fxBuffers.shift.up : fxBuffers.shift.down;
     if (playFx(buf, 0.35)) return;   // quieter: the shift should be felt, not announced
@@ -18845,6 +19236,14 @@
   // Amplitude of the formation-lap weave, as a fraction of full lock. Small on purpose:
   // it should read as warming tyres, not as a car out of control.
   const GHOST_WEAVE = 0.22;
+  // Der Versatz der Zweierkolonne, in derselben Einheit wie das Schlaengeln: ein Anteil des
+  // vollen Lenkeinschlags. Etwas kleiner als die Schlaengelamplitude, damit die beiden
+  // Bewegungen sich nicht aufheben - zusammen bleiben sie unter 0,4, also weit vom Anschlag.
+  //
+  // Er darf deutlicher ausfallen als der Versatz gegen das Rammen bei voller Fahrt: in der
+  // Einfuehrungsrunde geht es mit Boxentempo zu, und dort verzeiht ein seitlicher Versatz
+  // mehr.
+  const GHOST_GRID_OFFSET = 0.16;
   const GHOST_OFFTRACK_MS = 1500;   // measured: tiles last 0.4-2.7 s with no 0xff between
   // Wie lange 0x00 stehen muss, bevor der Ghost anhaelt. Vorher hielt ein EINZIGES 0x00-Paket
   // ihn sofort an, und das war die Ursache dafuer, dass Ghosts unterwegs stehen blieben.
@@ -20223,6 +20622,12 @@
                   // Ueberholsequenz und Spurmischung.
                   passPhase: null, passZiel: null, passSince: 0, passBlockUntil: 0,
                   kurveMix: 0, naehern: 0,
+                  // Der Startplatz, EINMAL nachgesehen und nicht je Takt: indexOf ueber die
+                  // Aufstellung laeuft sonst 22 Mal je Sekunde je Auto. -1 heisst "steht
+                  // nicht in der Liste", und dann gibt es keinen Versatz - eine Paritaet aus
+                  // -1 waere geraten und keine Aufstellung.
+                  gridPos: (typeof raceGridOrder !== 'undefined' && car.device)
+                    ? raceGridOrder.indexOf(String(car.device.id)) : -1,
                   running: true };
     // Den ersten Versuch ziehen, wenn gelernt werden soll. Ohne ihn steht tryPace auf null,
     // und learnSettle() kehrt in genau diesem Fall frueh zurueck, OHNE einen zu ziehen - das
@@ -20711,6 +21116,17 @@
       if (raceFormationLap) {
         const phase = (g.weavePhase !== undefined ? g.weavePhase : (g.weavePhase = Math.random() * 6.283));
         weave = Math.sin(now / 700 + phase) * GHOST_WEAVE;
+        // ZWEIERKOLONNE. Zwei benachbarte Startplaetze gehen auf entgegengesetzte Seiten,
+        // also Pole links, Zweiter rechts, Dritter links. Das ist die Wirkung, die die
+        // Startaufstellung bis v0.4.53 nicht hatte: sie speiste nur die Liste.
+        //
+        // Auf die Bahn stellen muss man von Hand - das kann die App nicht -, aber wer
+        // fahrend nebeneinander liegt, ist damit gesagt. Das eigene Auto steht mit in der
+        // Liste und verschiebt deshalb die Paritaet der Ghosts hinter sich; das ist keine
+        // Ungenauigkeit, sondern die Aufstellung, in der es selbst steht.
+        if (g.gridPos >= 0) {
+          weave += (g.gridPos % 2 ? -1 : 1) * GHOST_GRID_OFFSET;
+        }
       }
       if (ghostCfg.railMode) {
         // Zero steering plus the anti-ramming offset. There is no lateral feedback to close
@@ -21137,7 +21553,11 @@
     // Markup-Wert zeigt - bis jemand den Regler einmal anfasst, und dann springt das
     // Verhalten. So war es bei topSpeedScale und beim Tankgewicht.
     //
-    // gears wird uebersprungen: geteilte Referenz, nie geaendert.
+    // gears wird uebersprungen, aber nicht mehr aus dem alten Grund: seit es
+    // Getriebearten gibt, WIRD das Array geaendert. Uebersprungen wird es, weil ein
+    // Wertevergleich hier ein Tiefenvergleich waere - und weil das Getriebe wie das Layout
+    // eine Aussage darueber ist, WELCHES Auto man hat, nicht eine Reglervorgabe, die von
+    // ihrem Modellwert abweichen koennte. Dafuer hat es einen eigenen Selbsttest.
     physConfigDiff() {
       const cfg = physEngine.config, ref = physEngine.calibRef, out = {};
       for (const k of Object.keys(ref)) {
@@ -21295,6 +21715,106 @@
     },
     padDefaults() {
       return JSON.parse(JSON.stringify(DEFAULT_BINDINGS));
+    },
+
+    // Die Getriebearten: was drinsteht, was daraus gerechnet wird, und die Pendelreserve.
+    //
+    // MITGEGEBEN WIRD AUCH DAS GERECHNETE - ratioRef und rpmScale -, genau darum: der Test
+    // soll pruefen koennen, dass sie es sind und nicht doch irgendwo als Feld herumliegen.
+    //
+    // `reserve` ist die Zahl, die ein Pendeln ausschliesst: nach einem Hochschalten faellt
+    // die Drehzahl auf upshiftRpm * ratio[i+1] / ratio[i], und liegt downshiftRpm darueber,
+    // schaltet die Automatik hoch und sofort wieder herunter. Der kleinste Abstand ueber
+    // alle Gaenge ist das, was zaehlt.
+    physGearboxes() {
+      const c = physEngine.config;
+      const merk = physEngine.gearboxName || 'gt3';
+      const out = {};
+      try {
+        for (const name of Object.keys(GEARBOXES)) {
+          physEngine.applyGearbox(name);
+          const r = c.gears.map(g => g.ratio);
+          const nach = [];
+          for (let i = 0; i < r.length - 1; i++) nach.push(c.upshiftRpm * r[i + 1] / r[i]);
+          out[name] = { label: GEARBOXES[name].label,
+                        gaenge: r.length,
+                        ratios: r.slice(),
+                        topFracs: c.gears.map(g => g.topFrac),
+                        ratioRef: c.ratioRef,
+                        rpmScale: Math.round(c.rpmScale),
+                        upshiftRpm: c.upshiftRpm,
+                        downshiftRpm: c.downshiftRpm,
+                        shiftMs: c.shiftMs,
+                        // Das Produkt, aus dem die Uebersetzungen gerechnet sind: fuer alle
+                        // ausser dem letzten Gang muss es GEAR_PRODUCT treffen.
+                        produkte: c.gears.map(g => +(g.ratio * g.topFrac).toFixed(3)),
+                        reserve: nach.length ? Math.round(Math.min.apply(null, nach) - c.downshiftRpm) : null,
+                        // Erreicht der letzte Gang die Drehzahlgrenze bei Vmax?
+                        drehzahlOben: Math.round(physEngine.rpmRawAt(c.topSpeedKmh, r.length - 1)) };
+        }
+        out._produkt = GEAR_PRODUCT;
+        out._redline = REDLINE_RPM;
+      } finally {
+        physEngine.applyGearbox(merk);
+      }
+      return out;
+    },
+
+    // Ein Getriebe setzen und nachsehen, wer davon etwas mitbekommt. Getrennt von
+    // physGearboxes, weil diese Probe die GHOSTS anfasst und die Tabelle oben nur abliest.
+    //
+    // Die Frage, die sie beantwortet: teilen die Ghosts nach einem Wechsel noch dasselbe
+    // Uebersetzungs-Array? Ein Splice erreicht jeden Teilhaber, ein neues Array haette den
+    // Verweis gekappt - und ein Ghost waere still im alten Getriebe weitergefahren.
+    physGearboxShare(name) {
+      const merk = physEngine.gearboxName || 'gt3';
+      try {
+        physEngine.applyGearbox(name || 'f1');
+        const ghosts = [];
+        garage.forEach(c => {
+          if (!c.ghost || !c.ghost.engine) return;
+          ghosts.push({ alias: garageLabel(c),
+                        geteilt: c.ghost.engine.config.gears === physEngine.config.gears,
+                        gaenge: c.ghost.engine.config.gears.length,
+                        gang: c.ghost.engine.state.currentGear });
+        });
+        return { getriebe: physEngine.gearboxName,
+                 gaenge: physEngine.config.gears.length,
+                 // Der Kalibrierbezug darf NICHT mitgewandert sein.
+                 bezugGaenge: physEngine.calibRef.gears.length,
+                 bezugGeteilt: physEngine.calibRef.gears === physEngine.config.gears,
+                 ghosts };
+      } finally {
+        physEngine.applyGearbox(merk);
+      }
+    },
+
+    // Der Startplatz-Versatz der Zweierkolonne. Gefragt wird nach dem VORZEICHEN je Platz,
+    // denn genau das ist die Zusicherung: zwei benachbarte Plaetze gehen auf
+    // entgegengesetzte Seiten.
+    gridOffsets(n) {
+      const wieviele = n || 6;
+      const out = [];
+      for (let i = 0; i < wieviele; i++) {
+        out.push(+((i % 2 ? -1 : 1) * GHOST_GRID_OFFSET).toFixed(4));
+      }
+      return { betrag: GHOST_GRID_OFFSET, weave: GHOST_WEAVE, versatz: out,
+               // Zusammen duerfen sie nicht an den Anschlag kommen.
+               zusammen: +(GHOST_GRID_OFFSET + GHOST_WEAVE).toFixed(4),
+               // Und was ein Ghost wirklich gemerkt hat, falls einer faehrt.
+               gemerkt: garage.filter(c => c.ghost).map(c => ({ alias: garageLabel(c),
+                                                                platz: c.ghost.gridPos })) };
+    },
+
+    // Die Ansage, ohne zu sprechen: der TEXT und die Zaehler. Der Text ist die eine Sache,
+    // die man ohne Lautsprecher pruefen kann, und die Zaehler beantworten die zweite Frage -
+    // bricht jede Aeusserung die vorherige ab? announceCancels muss mit announceCalls
+    // mitlaufen, sonst stapeln sich zwei Runden.
+    ansage(ms, best) {
+      return { text: lapSpeechText(ms === undefined ? 62430 : ms, !!best),
+               an: announceOn,
+               calls: announceCalls,
+               cancels: announceCancels };
     },
 
     // Das Fahrzeuglayout: welche es gibt, was sie setzen, und was daraus gerechnet wird.
@@ -24071,6 +24591,24 @@
 
   function stAdd(name, fn) { ST_TESTS.push({ name, fn }); }
 
+  // Einmal dem Browser Luft lassen, ohne einen Zeitgeber zu benutzen. Der Kanal wird EINMAL
+  // angelegt und nicht je Test: hundert MessageChannel hintereinander sind hundert Paare von
+  // Ports, die der Sammler wieder einholen muss.
+  //
+  // scheduler.yield() waere das Gleiche mit Namen, gibt es aber erst ab Chrome 129 - also
+  // wird es benutzt, wenn es da ist, und sonst der Kanal.
+  const stKanal = typeof MessageChannel === 'function' ? new MessageChannel() : null;
+  function stLuft() {
+    if (typeof scheduler === 'object' && scheduler && typeof scheduler.yield === 'function') {
+      return scheduler.yield();
+    }
+    if (!stKanal) return new Promise(res => setTimeout(res, 0));
+    return new Promise((res) => {
+      stKanal.port1.onmessage = () => { stKanal.port1.onmessage = null; res(); };
+      stKanal.port2.postMessage(0);
+    });
+  }
+
   // ---- 1. Ist der Aufbau durchgelaufen? ----
   // Wenn diese Zeile ueberhaupt laeuft, ist die IIFE nicht abgebrochen. Interessant ist
   // deshalb nicht das Ob, sondern wieviel: ein abgebrochener Aufbau hinterlaesst leere
@@ -24314,7 +24852,12 @@
     }
     let schlimmsterDc = 0, schlimmsteNaht = 0, geprueft = 0;
     const kaputt = [];
-    for (const name of dateien.slice(0, 40)) {
+    // ALLE, nicht die ersten vierzig. Bis v0.4.53 waren es genau vierzig Schleifen, also
+    // traf slice(0, 40) zufaellig alles; mit vierzehn Motoren sind es 56 und sechzehn waeren
+    // stumm ungeprueft geblieben - waehrend die Zahl darunter weiter "geprueft" sagt. Ein
+    // Abschneiden wuerde ausserdem immer die ERSTEN Eintraege der Manifestdatei begruenstigen
+    // und die neuen nie treffen, also genau die, an denen ein Fehler wahrscheinlich ist.
+    for (const name of dateien) {
       try {
         const buf = await ctx.decodeAudioData(
           await (await fetch('audio/' + name)).arrayBuffer());
@@ -25282,6 +25825,405 @@
     return { ok: !schlecht.length,
              mass: 'vorn/Gas/Bremse in %: ' + teile.join('  ')
                    + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+
+  // ---- Getriebe: GT3 ist die Vorgabe und bleibt der Kalibrierbezug ----
+  //
+  // Die Aenderung soll rein additiv sein. Geprueft wird an zwei Stellen: der Bezug traegt
+  // weiter sechs Gaenge (er darf beim Wechsel NICHT mitwandern), und mit GT3 stimmen die
+  // Skalare mit ihm ueberein.
+  //
+  // Der Bezug ist der wunde Punkt: calibRef ist eine FLACHE Kopie der Konfiguration, also
+  // trug er bis v0.4.53 denselben Verweis auf das Uebersetzungs-Array. Ohne eigene Kopie
+  // waeren nach einem Wechsel die GT3-Schaltpunkte auf F1-Zahnraedern gestanden - eine
+  // Messung, die still falsch ist statt offen anders.
+  stAdd('Getriebe: GT3 ist der Kalibrierbezug', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.physGearboxShare) {
+      return { skip: true, mass: 'Messaufbau nicht vorhanden' };
+    }
+    const p = OMEGA_TEST.physGearboxShare('f1');
+    const merk = physEngine.gearboxName || 'gt3';
+    let gleich = null;
+    try {
+      physEngine.applyGearbox('gt3');
+      const c = physEngine.config, r = physEngine.calibRef;
+      gleich = ['ratioRef', 'upshiftRpm', 'downshiftRpm', 'shiftMs', 'rpmScale']
+        .filter(k => Math.abs(c[k] - r[k]) > 1e-9);
+    } finally {
+      physEngine.applyGearbox(merk);
+    }
+    const ok = p.bezugGaenge === 6 && !p.bezugGeteilt && gleich.length === 0;
+    return { ok, mass: 'Bezug ' + p.bezugGaenge + ' Gaenge, '
+                       + (p.bezugGeteilt ? 'TEILT das Array' : 'eigene Kopie')
+                       + ' | mit GT3 abweichend: '
+                       + (gleich.length ? gleich.join(', ') : 'nichts') };
+  });
+
+  // ---- Getriebe: die Uebersetzungen sind gerechnet, nicht getippt ----
+  //
+  // DIE STAERKSTE der Getriebepruefungen, weil sie gegen eine Regel prueft und nicht gegen
+  // eine Abschrift: ratio mal topFrac ist fuer jeden Gang ausser dem letzten das
+  // Produkt GEAR_PRODUCT, und der letzte traegt ratioRef. Eine einzeln verstellte Zahl
+  // faellt damit auf, egal in welchem Getriebe sie steht.
+  stAdd('Getriebe: Uebersetzungen folgen der Regel', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.physGearboxes) {
+      return { skip: true, mass: 'Messaufbau nicht vorhanden' };
+    }
+    const t = OMEGA_TEST.physGearboxes();
+    const P = t._produkt;
+    const schlecht = [], teile = [];
+    for (const name of Object.keys(t)) {
+      if (name.charAt(0) === '_') continue;
+      const g = t[name];
+      teile.push(name + ': ' + g.gaenge + ' Gaenge, Ref ' + g.ratioRef);
+      // 1. Der letzte Gang IST der Bezug - gerechnet und nicht gehalten.
+      if (Math.abs(g.ratioRef - g.ratios[g.ratios.length - 1]) > 1e-9) {
+        schlecht.push(name + ': ratioRef ' + g.ratioRef + ' statt '
+                      + g.ratios[g.ratios.length - 1]);
+      }
+      // 2. Alle ausser dem letzten treffen das Produkt. 0,006 Toleranz, weil die
+      //    Uebersetzungen auf zwei Stellen gerundet im Quelltext stehen.
+      for (let i = 0; i < g.produkte.length - 1; i++) {
+        if (Math.abs(g.produkte[i] - P) > 0.006) {
+          schlecht.push(name + ': Gang ' + (i + 1) + ' Produkt ' + g.produkte[i]);
+        }
+      }
+      // 3. Der letzte Gang erreicht die Spitze, und nur dort.
+      if (Math.abs(g.topFracs[g.topFracs.length - 1] - 1) > 1e-9) {
+        schlecht.push(name + ': letzter topFrac ' + g.topFracs[g.topFracs.length - 1]);
+      }
+      // 4. Fallend, ohne Ausnahme. Ein Gang, der laenger ist als der darunter, waere ein
+      //    Getriebe, in dem Hochschalten die Drehzahl hebt.
+      for (let i = 0; i < g.ratios.length - 1; i++) {
+        if (g.ratios[i] <= g.ratios[i + 1]) schlecht.push(name + ': Gang ' + (i + 2) + ' nicht kuerzer');
+      }
+    }
+    return { ok: schlecht.length === 0,
+             mass: 'Produkt ' + P + ' | ' + teile.join(' | ')
+                   + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // ---- Getriebe: die Automatik pendelt nicht ----
+  //
+  // Nach einem Hochschalten faellt die Drehzahl auf upshiftRpm * ratio[i+1] / ratio[i].
+  // Liegt die Rueckschaltschwelle darueber, schaltet die Automatik hoch und sofort wieder
+  // herunter - und man sucht das im Fahrgefuehl statt in einer Zahl. Der kleinste Abstand
+  // ueber alle Gaenge ist das, was zaehlt.
+  stAdd('Getriebe: kein Schaltpendeln', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.physGearboxes) {
+      return { skip: true, mass: 'Messaufbau nicht vorhanden' };
+    }
+    const t = OMEGA_TEST.physGearboxes();
+    const schlecht = [], teile = [];
+    for (const name of Object.keys(t)) {
+      if (name.charAt(0) === '_') continue;
+      const g = t[name];
+      teile.push(name + ': ' + g.reserve + '/min');
+      if (!(g.reserve > 300)) schlecht.push(name + ': nur ' + g.reserve);
+      // Und die Schaltschwelle darf nicht ueber der Drehzahlgrenze liegen: dann wuerde
+      // NIE hochgeschaltet und das Auto haenge im ersten Gang am Begrenzer.
+      if (g.upshiftRpm >= t._redline) schlecht.push(name + ': Schaltpunkt ueber der Grenze');
+    }
+    return { ok: schlecht.length === 0,
+             mass: 'Pendelreserve ' + teile.join(' | ')
+                   + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // ---- Getriebe: die Ghosts fahren dasselbe ----
+  //
+  // Die Ghosts teilen das Uebersetzungs-Array per Verweis, damit accelScale() nicht zweimal
+  // kalibriert. Deshalb aendert applyGearbox es AN DER STELLE: ein Splice erreicht jeden
+  // Teilhaber, ein neues Array haette den Verweis gekappt - und ein fahrender Ghost waere
+  // still im alten Getriebe geblieben. Ohne Ghost im Feld prueft der Test nur, dass der
+  // Aufbau laeuft, und sagt das.
+  stAdd('Getriebe: Ghosts teilen die Uebersetzungen', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.physGearboxShare) {
+      return { skip: true, mass: 'Messaufbau nicht vorhanden' };
+    }
+    const p = OMEGA_TEST.physGearboxShare('p412');
+    if (!p.ghosts.length) {
+      return { ok: p.gaenge === 5,
+               mass: 'kein Ghost verbunden, Wechsel selbst ok: ' + p.gaenge + ' Gaenge' };
+    }
+    const lose = p.ghosts.filter(g => !g.geteilt);
+    const zuHoch = p.ghosts.filter(g => g.gang >= g.gaenge);
+    return { ok: lose.length === 0 && zuHoch.length === 0,
+             mass: p.ghosts.length + ' Ghosts, ' + p.gaenge + ' Gaenge'
+                   + (lose.length ? ' || NICHT GETEILT: ' + lose.map(g => g.alias).join(', ') : '')
+                   + (zuHoch.length ? ' || Gang ausserhalb: ' + zuHoch.map(g => g.alias).join(', ') : '') };
+  });
+
+  // ---- Getriebe: KEIN Preset-Schluessel ----
+  //
+  // Dieselben zwei Achsen wie beim Layout: welches Auto gegen wie abgestimmt. Ohne die
+  // Ausnahme wuerde ein Klick auf "GT3" das GETRIEBE wechseln. Geprueft wird der Vertrag
+  // und nicht die Wirkung - eine Voreinstellung anzuwenden wuerde die Einstellungen des
+  // Nutzers veraendern, nur um etwas zu pruefen, das strukturell entschieden ist.
+  stAdd('Getriebe: nicht in den Voreinstellungen', () => {
+    const el = $('setting-gearbox');
+    if (!el) return { ok: false, mass: 'setting-gearbox fehlt' };
+    if (typeof presetControls !== 'function') {
+      return { skip: true, mass: 'presetControls nicht erreichbar' };
+    }
+    const ids = presetControls().map(x => x.id);
+    const drin = ids.includes('setting-gearbox');
+    const genug = ids.length > 30;
+    const markiert = el.hasAttribute('data-preset-skip');
+    return { ok: !drin && genug && markiert,
+             mass: ids.length + ' Bedienelemente in den Voreinstellungen, Getriebe '
+                   + (drin ? 'IST DABEI' : 'nicht dabei')
+                   + ', Attribut ' + (markiert ? 'gesetzt' : 'FEHLT') };
+  });
+
+  // ---- Getriebe: das Menue und die Tabelle sind derselbe Satz ----
+  //
+  // Dieselbe Fehlerklasse wie beim Motormenue: ein Eintrag ohne Tabelleneintrag laesst
+  // applyGearbox still auf GT3 zurueckfallen, und der Waehler zeigt dann etwas anderes als
+  // das Modell. Beide Richtungen, denn ein Getriebe, das man nicht waehlen kann, ist ein
+  // toter Eintrag.
+  stAdd('Getriebe: Menue und Tabelle deckungsgleich', () => {
+    const sel = $('setting-gearbox');
+    if (!sel) return { ok: false, mass: 'kein #setting-gearbox' };
+    if (!window.OMEGA_TEST || !OMEGA_TEST.physGearboxes) {
+      return { skip: true, mass: 'Messaufbau nicht vorhanden' };
+    }
+    const t = OMEGA_TEST.physGearboxes();
+    const tabelle = Object.keys(t).filter(k => k.charAt(0) !== '_');
+    const menue = Array.prototype.map.call(sel.options, o => o.value);
+    const ohne = menue.filter(v => tabelle.indexOf(v) < 0);
+    const unerreichbar = tabelle.filter(v => menue.indexOf(v) < 0);
+    return { ok: ohne.length === 0 && unerreichbar.length === 0,
+             mass: menue.length + ' Eintraege, ' + tabelle.length + ' Getriebe'
+                   + (ohne.length ? ' | OHNE TABELLE: ' + ohne.join(', ') : '')
+                   + (unerreichbar.length ? ' | nicht waehlbar: ' + unerreichbar.join(', ') : '') };
+  });
+
+  // ---- Getriebe: der eingelegte Gang bleibt im Getriebe ----
+  //
+  // Von acht auf fuenf Gaenge zeigt der alte Index ins Leere, und gearRatio() liest
+  // undefined.ratio. Der Weg dorthin ist ganz normal: im achten Gang fahren, umschalten.
+  stAdd('Getriebe: Gang wird beim Wechsel gedeckelt', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.physGearboxes) {
+      return { skip: true, mass: 'Messaufbau nicht vorhanden' };
+    }
+    const merk = physEngine.gearboxName || 'gt3';
+    const merkGang = physEngine.state.currentGear;
+    try {
+      physEngine.applyGearbox('f1');
+      physEngine.state.currentGear = physEngine.config.gears.length - 1;   // achter Gang
+      const vor = physEngine.state.currentGear;
+      physEngine.applyGearbox('p412');
+      const nach = physEngine.state.currentGear;
+      // Und die Gegenprobe, dass danach ueberhaupt gerechnet werden kann.
+      const r = physEngine.gearRatio(nach);
+      const ok = vor === 7 && nach === 4 && typeof r === 'number' && isFinite(r);
+      return { ok, mass: 'im ' + (vor + 1) + '. Gang umgeschaltet, danach '
+                         + (nach + 1) + '. von ' + physEngine.config.gears.length
+                         + ', Uebersetzung ' + r };
+    } finally {
+      physEngine.applyGearbox(merk);
+      physEngine.state.currentGear = Math.min(merkGang, physEngine.config.gears.length - 1);
+    }
+  });
+
+  // ---- Fliegender Start: der Schalter ist nicht mehr gesperrt ----
+  //
+  // Bis v0.4.53 trug er `disabled` und die Beschriftung "nicht umgesetzt", waehrend die
+  // Einfuehrungsrunde vollstaendig im Code stand. Der Test haelt beides fest: der Schalter
+  // muss bedienbar sein, und die alte Sperrklasse darf nirgends mehr stehen - eine Regel
+  // ohne Nutzer sieht wie eine Moeglichkeit aus.
+  stAdd('Fliegender Start: entsperrt', () => {
+    const el = $('race-flying');
+    if (!el) return { ok: false, mass: 'race-flying fehlt' };
+    const zeile = el.closest('.opt-row');
+    const gesperrt = el.disabled || (zeile && zeile.classList.contains('opt-off'));
+    const reste = document.querySelectorAll('.opt-off').length;
+    // Und das Etikett muss "experimentell" sagen und nicht mehr "nicht umgesetzt".
+    const tag = zeile ? zeile.querySelector('.wip-tag') : null;
+    const text = tag ? tag.textContent.trim() : '';
+    const ok = !gesperrt && reste === 0
+               && (text === 'experimentell' || text === 'experimental');
+    return { ok, mass: (gesperrt ? 'GESPERRT' : 'bedienbar') + ', Etikett "' + text
+                       + '", ' + reste + ' Reste von .opt-off' };
+  });
+
+  // ---- Fliegender Start: die Einfuehrungsrunde von der Ampel bis zur Freigabe ----
+  //
+  // Der ganze Ablauf in einer Probe, weil er nur als Ablauf etwas zusichert. Gefahren wird
+  // er ohne Auto: raceFormationLap und das Tempolimit sind Zustand der Rennleitung, und
+  // genau der ist die Zusicherung.
+  //
+  // Vier Dinge muessen danach stimmen: das Limit ist weg, die Einfuehrungsrunde ist
+  // beendet, die Rundenuhr ist NEU gestempelt, und gezaehlt wurde nichts. Der vierte ist
+  // der wichtigste - eine Einfuehrungsrunde, die als Runde zaehlt, waere eine geschenkte
+  // schnelle Runde.
+  stAdd('Fliegender Start: Einfuehrungsrunde und Freigabe', () => {
+    if (typeof raceFormationLap === 'undefined' || typeof endFormationLap !== 'function') {
+      return { skip: true, mass: 'Rennleitung nicht erreichbar' };
+    }
+    const merk = { state: raceState, form: raceFormationLap, lim: limitFormation,
+                   lapStart: raceLapStart, zeiten: raceLapTimes.slice(),
+                   part: racePartialMs };
+    try {
+      raceState = 'racing';
+      raceLapTimes = [];
+      raceFormationLap = true;
+      limitFormation = PIT_SPEED_FACTOR;
+      applySpeedLimit();
+      raceLapStart = Date.now() - 5000;
+      const limVor = physEngine.config.speedLimitFactor;
+      const startVor = raceLapStart;
+      // Die erste Ueberfahrt von Start/Ziel, egal von wem.
+      endFormationLap();
+      const limNach = physEngine.config.speedLimitFactor;
+      const ok = limVor < 0.9 && Math.abs(limNach - 1) < 1e-9
+                 && raceFormationLap === false
+                 && raceLapStart > startVor
+                 && raceLapTimes.length === 0;
+      return { ok, mass: 'Limit ' + limVor.toFixed(3) + ' -> ' + limNach.toFixed(3)
+                         + ', Einfuehrungsrunde ' + (raceFormationLap ? 'LAEUFT NOCH' : 'beendet')
+                         + ', Uhr ' + (raceLapStart > startVor ? 'neu gestempelt' : 'ALT')
+                         + ', gezaehlte Runden ' + raceLapTimes.length };
+    } finally {
+      raceFormationLap = merk.form;
+      limitFormation = merk.lim;
+      applySpeedLimit();
+      raceState = merk.state;
+      raceLapStart = merk.lapStart;
+      raceLapTimes = merk.zeiten;
+      racePartialMs = merk.part;
+    }
+  });
+
+  // ---- Startaufstellung: zwei benachbarte Plaetze gehen auseinander ----
+  //
+  // Die Wirkung, die die Aufstellung bis v0.4.53 nicht hatte: sie speiste nur die Liste.
+  // Geprueft wird das VORZEICHEN je Platz - Pole links, Zweiter rechts - und dass Versatz
+  // und Schlaengeln zusammen nicht an den Anschlag kommen.
+  stAdd('Startaufstellung: Zweierkolonne', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.gridOffsets) {
+      return { skip: true, mass: 'Messaufbau nicht vorhanden' };
+    }
+    const g = OMEGA_TEST.gridOffsets(6);
+    const schlecht = [];
+    for (let i = 0; i < g.versatz.length - 1; i++) {
+      if (g.versatz[i] * g.versatz[i + 1] >= 0) {
+        schlecht.push('Platz ' + (i + 1) + ' und ' + (i + 2) + ' auf derselben Seite');
+      }
+    }
+    if (!(g.betrag > 0.05)) schlecht.push('Versatz zu klein, unsichtbar');
+    if (!(g.zusammen < 0.5)) schlecht.push('mit dem Schlaengeln zu nah am Anschlag');
+    return { ok: schlecht.length === 0,
+             mass: 'Versatz ' + g.betrag + ', mit Schlaengeln ' + g.zusammen
+                   + ' | Vorzeichen ' + g.versatz.map(v => v > 0 ? '+' : '-').join('')
+                   + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // ---- Ansage: der gesprochene Text ----
+  //
+  // formatLapTime() liefert "62.43s", und vorgelesen ist das falsch: eine Stimme sagt
+  // daraus "zweiundsechzig Punkt vier drei Sekunden". Geprueft werden die drei Faelle, an
+  // denen es auseinandergeht - unter einer Minute, darueber, und die Bestzeit -, und dass
+  // das Dezimalzeichen zur SPRACHE passt: eine deutsche Stimme liest "58.3" als
+  // "achtundfuenfzig Punkt drei".
+  stAdd('Ansage: gesprochener Text', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.ansage) {
+      return { skip: true, mass: 'Messaufbau nicht vorhanden' };
+    }
+    const kurz = OMEGA_TEST.ansage(58300, false).text;
+    const lang1 = OMEGA_TEST.ansage(62430, false).text;
+    const lang2 = OMEGA_TEST.ansage(143200, false).text;
+    const best = OMEGA_TEST.ansage(58300, true).text;
+    const schlecht = [];
+    // Keine Einheit unter einer Minute: auf einer Rennstrecke braucht eine Zeit keine.
+    if (!/^58[.,]3$/.test(kurz)) schlecht.push('kurz: ' + kurz);
+    // Ueber einer Minute: Minute und Rest getrennt, und der Rest ist NICHT die Gesamtzeit.
+    if (lang1.indexOf('2') < 0 || lang1.indexOf('62') >= 0) schlecht.push('eine Minute: ' + lang1);
+    if (lang2.indexOf('23') < 0) schlecht.push('zwei Minuten: ' + lang2);
+    // Der Plural, denn "2 Minute" ist der Fehler, den man erst hoert.
+    if (lang1 === lang2) schlecht.push('Singular und Plural gleich');
+    // Und die Bestzeit sagt etwas dazu.
+    if (best.length <= kurz.length) schlecht.push('Bestzeit ohne Zusatz: ' + best);
+    // Das Dezimalzeichen folgt der Sprache.
+    const deutsch = kurz.indexOf(',') >= 0;
+    if (lang === 'de' && !deutsch) schlecht.push('deutscher Modus mit Punkt');
+    if (lang === 'en' && deutsch) schlecht.push('englischer Modus mit Komma');
+    return { ok: schlecht.length === 0,
+             mass: [kurz, lang1, lang2, best].join(' | ')
+                   + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // ---- Ansage: jede Aeusserung bricht die vorherige ab ----
+  //
+  // Zwei Runden kurz hintereinander duerfen sich nicht stapeln, sonst laeuft die Stimme
+  // nach und sagt die vorletzte Zeit, waehrend man schon in der naechsten Runde ist.
+  // Geprueft wird an den Zaehlern und nicht am Lautsprecher: ob wirklich Ton kommt, haengt
+  // an den Stimmen des Systems, aber DASS vor jeder Aeusserung abgebrochen wird, ist eine
+  // Eigenschaft des Codes.
+  stAdd('Ansage: stapelt sich nicht', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.ansage || typeof speakLap !== 'function') {
+      return { skip: true, mass: 'Messaufbau nicht vorhanden' };
+    }
+    if (!('speechSynthesis' in window)) return { skip: true, mass: 'keine Sprachausgabe' };
+    const el = $('setting-announce');
+    const merk = el ? el.checked : null;
+    try {
+      if (el && !el.checked) { el.checked = true; el.dispatchEvent(new Event('change', { bubbles: true })); }
+      const vor = OMEGA_TEST.ansage();
+      speakLap(58300, false);
+      speakLap(59100, true);
+      const nach = OMEGA_TEST.ansage();
+      const rufe = nach.calls - vor.calls;
+      const abbr = nach.cancels - vor.cancels;
+      // Und die Gegenprobe: ausgeschaltet darf gar nichts passieren.
+      if (el) { el.checked = false; el.dispatchEvent(new Event('change', { bubbles: true })); }
+      speakLap(60000, false);
+      const aus = OMEGA_TEST.ansage();
+      const stillRufe = aus.calls - nach.calls;
+      const ok = rufe === 2 && abbr === 2 && stillRufe === 0;
+      return { ok, mass: rufe + ' Aeusserungen, ' + abbr + ' Abbrueche, ausgeschaltet '
+                         + stillRufe + ' Aeusserungen' };
+    } finally {
+      if (el && merk !== null) {
+        el.checked = merk;
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    }
+  });
+
+  // ---- Marke und Zaehler: die zwei aussenwirksamen Zeilen ----
+  //
+  // Beide haben denselben wunden Punkt, und der Verweispruefer im Build sieht ihn NICHT: er
+  // ueberspringt alles mit :// und alles, was mit // beginnt. Eine protokollrelative
+  // Adresse loest von der Platte zu file://gc.zgo.at/count.js auf - kein Ausfall des
+  // Zaehlers, sondern ein Zugriff auf einen Ordner, den es nicht gibt. Deshalb prueft das
+  // hier ein Test und nicht der Build.
+  stAdd('Marke und Zaehler: https, einmal, mit rel', () => {
+    const schlecht = [];
+    const a = document.querySelectorAll('.gt3-marke a[href]');
+    if (a.length !== 1) schlecht.push(a.length + ' Kurzlinks im Cockpit');
+    if (a.length) {
+      const h = a[0].getAttribute('href');
+      if (h.indexOf('https://') !== 0) schlecht.push('Kurzlink nicht https: ' + h);
+      if (h.indexOf('t1p.de') < 0) schlecht.push('Kurzlink zeigt woanders: ' + h);
+      if ((a[0].getAttribute('rel') || '').indexOf('noopener') < 0) schlecht.push('rel ohne noopener');
+      if (a[0].getAttribute('target') !== '_blank') schlecht.push('kein target=_blank');
+      // Das Omega kommt per <use> aus dem Kopfzeilen-Logo. Fehlt der Pfad, bleibt ein
+      // leeres Kaestchen stehen, und das faellt auf einem Bildschirmfoto nicht auf.
+      if (!document.getElementById('om')) schlecht.push('Logopfad #om fehlt');
+    }
+    const z = document.querySelectorAll('script[data-goatcounter]');
+    if (z.length !== 1) schlecht.push(z.length + ' Zaehlskripte');
+    if (z.length) {
+      const src = z[0].getAttribute('src') || '';
+      if (src.indexOf('https://') !== 0) schlecht.push('Zaehler nicht https: ' + src);
+      if (!z[0].hasAttribute('async')) schlecht.push('Zaehler nicht async');
+    }
+    return { ok: schlecht.length === 0,
+             mass: a.length + ' Kurzlink, ' + z.length + ' Zaehlskript'
+                   + (schlecht.length ? ' || ' + schlecht.join('; ') : ', beide https') };
   });
 
   // ---- Layout: Neutral laesst die Kalibrierung unberuehrt ----
@@ -28053,12 +28995,20 @@
       // Nach jedem Test dem Browser Luft lassen, sonst steht die Tabelle bis zum Ende leer
       // und man weiss nicht, ob noch etwas passiert.
       //
-      // setTimeout und NICHT requestAnimationFrame: rAF feuert nur, wenn die Seite
-      // tatsaechlich gezeichnet wird. In einem Hintergrundtab oder einem nicht angezeigten
-      // Fenster kommt es nie, und der Testlauf bleibt nach der ersten Zeile stehen - genau
-      // das ist mir beim Pruefen passiert, und es traefe jeden, der waehrend des Laufs den
-      // Tab wechselt.
-      await new Promise(res => setTimeout(res, 0));
+      // WEDER requestAnimationFrame NOCH setTimeout, und beide Male aus demselben Grund -
+      // ein Lauf soll auch dann durchkommen, wenn niemand hinsieht:
+      //
+      //   rAF feuert nur, wenn die Seite gezeichnet wird. In einem Hintergrundtab kommt es
+      //   NIE, und der Lauf bleibt nach der ersten Zeile stehen.
+      //   setTimeout kommt, aber zu spaet. Chrome drosselt Zeitgeber im Hintergrund auf
+      //   einen Takt pro Sekunde und nach fuenf Minuten auf einen pro Minute. Gemessen mit
+      //   nicht angezeigtem Fenster: 19 von 104 Tests in 192 Sekunden, und die letzten 98
+      //   Sekunden brachten genau einen. Ein Lauf ueber hundert Tests kommt so nie zu Ende.
+      //
+      // Ein MessagePort-Takt ist keine Zeitgeber-Aufgabe und wird gar nicht gedrosselt. Er
+      // laesst dem Browser genauso Luft wie setTimeout(0) - die Tabelle fuellt sich weiter
+      // Zeile fuer Zeile -, haengt aber nicht daran, ob das Fenster vorne liegt.
+      await stLuft();
     }
     $('st-run').disabled = false;
     $('st-status').textContent = gut + ' ok, ' + schlecht + ' Fehler'

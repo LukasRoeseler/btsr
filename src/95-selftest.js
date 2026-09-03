@@ -19,6 +19,24 @@
 
   function stAdd(name, fn) { ST_TESTS.push({ name, fn }); }
 
+  // Einmal dem Browser Luft lassen, ohne einen Zeitgeber zu benutzen. Der Kanal wird EINMAL
+  // angelegt und nicht je Test: hundert MessageChannel hintereinander sind hundert Paare von
+  // Ports, die der Sammler wieder einholen muss.
+  //
+  // scheduler.yield() waere das Gleiche mit Namen, gibt es aber erst ab Chrome 129 - also
+  // wird es benutzt, wenn es da ist, und sonst der Kanal.
+  const stKanal = typeof MessageChannel === 'function' ? new MessageChannel() : null;
+  function stLuft() {
+    if (typeof scheduler === 'object' && scheduler && typeof scheduler.yield === 'function') {
+      return scheduler.yield();
+    }
+    if (!stKanal) return new Promise(res => setTimeout(res, 0));
+    return new Promise((res) => {
+      stKanal.port1.onmessage = () => { stKanal.port1.onmessage = null; res(); };
+      stKanal.port2.postMessage(0);
+    });
+  }
+
   // ---- 1. Ist der Aufbau durchgelaufen? ----
   // Wenn diese Zeile ueberhaupt laeuft, ist die IIFE nicht abgebrochen. Interessant ist
   // deshalb nicht das Ob, sondern wieviel: ein abgebrochener Aufbau hinterlaesst leere
@@ -262,7 +280,12 @@
     }
     let schlimmsterDc = 0, schlimmsteNaht = 0, geprueft = 0;
     const kaputt = [];
-    for (const name of dateien.slice(0, 40)) {
+    // ALLE, nicht die ersten vierzig. Bis v0.4.53 waren es genau vierzig Schleifen, also
+    // traf slice(0, 40) zufaellig alles; mit vierzehn Motoren sind es 56 und sechzehn waeren
+    // stumm ungeprueft geblieben - waehrend die Zahl darunter weiter "geprueft" sagt. Ein
+    // Abschneiden wuerde ausserdem immer die ERSTEN Eintraege der Manifestdatei begruenstigen
+    // und die neuen nie treffen, also genau die, an denen ein Fehler wahrscheinlich ist.
+    for (const name of dateien) {
       try {
         const buf = await ctx.decodeAudioData(
           await (await fetch('audio/' + name)).arrayBuffer());
@@ -1230,6 +1253,405 @@
     return { ok: !schlecht.length,
              mass: 'vorn/Gas/Bremse in %: ' + teile.join('  ')
                    + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+
+  // ---- Getriebe: GT3 ist die Vorgabe und bleibt der Kalibrierbezug ----
+  //
+  // Die Aenderung soll rein additiv sein. Geprueft wird an zwei Stellen: der Bezug traegt
+  // weiter sechs Gaenge (er darf beim Wechsel NICHT mitwandern), und mit GT3 stimmen die
+  // Skalare mit ihm ueberein.
+  //
+  // Der Bezug ist der wunde Punkt: calibRef ist eine FLACHE Kopie der Konfiguration, also
+  // trug er bis v0.4.53 denselben Verweis auf das Uebersetzungs-Array. Ohne eigene Kopie
+  // waeren nach einem Wechsel die GT3-Schaltpunkte auf F1-Zahnraedern gestanden - eine
+  // Messung, die still falsch ist statt offen anders.
+  stAdd('Getriebe: GT3 ist der Kalibrierbezug', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.physGearboxShare) {
+      return { skip: true, mass: 'Messaufbau nicht vorhanden' };
+    }
+    const p = OMEGA_TEST.physGearboxShare('f1');
+    const merk = physEngine.gearboxName || 'gt3';
+    let gleich = null;
+    try {
+      physEngine.applyGearbox('gt3');
+      const c = physEngine.config, r = physEngine.calibRef;
+      gleich = ['ratioRef', 'upshiftRpm', 'downshiftRpm', 'shiftMs', 'rpmScale']
+        .filter(k => Math.abs(c[k] - r[k]) > 1e-9);
+    } finally {
+      physEngine.applyGearbox(merk);
+    }
+    const ok = p.bezugGaenge === 6 && !p.bezugGeteilt && gleich.length === 0;
+    return { ok, mass: 'Bezug ' + p.bezugGaenge + ' Gaenge, '
+                       + (p.bezugGeteilt ? 'TEILT das Array' : 'eigene Kopie')
+                       + ' | mit GT3 abweichend: '
+                       + (gleich.length ? gleich.join(', ') : 'nichts') };
+  });
+
+  // ---- Getriebe: die Uebersetzungen sind gerechnet, nicht getippt ----
+  //
+  // DIE STAERKSTE der Getriebepruefungen, weil sie gegen eine Regel prueft und nicht gegen
+  // eine Abschrift: ratio mal topFrac ist fuer jeden Gang ausser dem letzten das
+  // Produkt GEAR_PRODUCT, und der letzte traegt ratioRef. Eine einzeln verstellte Zahl
+  // faellt damit auf, egal in welchem Getriebe sie steht.
+  stAdd('Getriebe: Uebersetzungen folgen der Regel', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.physGearboxes) {
+      return { skip: true, mass: 'Messaufbau nicht vorhanden' };
+    }
+    const t = OMEGA_TEST.physGearboxes();
+    const P = t._produkt;
+    const schlecht = [], teile = [];
+    for (const name of Object.keys(t)) {
+      if (name.charAt(0) === '_') continue;
+      const g = t[name];
+      teile.push(name + ': ' + g.gaenge + ' Gaenge, Ref ' + g.ratioRef);
+      // 1. Der letzte Gang IST der Bezug - gerechnet und nicht gehalten.
+      if (Math.abs(g.ratioRef - g.ratios[g.ratios.length - 1]) > 1e-9) {
+        schlecht.push(name + ': ratioRef ' + g.ratioRef + ' statt '
+                      + g.ratios[g.ratios.length - 1]);
+      }
+      // 2. Alle ausser dem letzten treffen das Produkt. 0,006 Toleranz, weil die
+      //    Uebersetzungen auf zwei Stellen gerundet im Quelltext stehen.
+      for (let i = 0; i < g.produkte.length - 1; i++) {
+        if (Math.abs(g.produkte[i] - P) > 0.006) {
+          schlecht.push(name + ': Gang ' + (i + 1) + ' Produkt ' + g.produkte[i]);
+        }
+      }
+      // 3. Der letzte Gang erreicht die Spitze, und nur dort.
+      if (Math.abs(g.topFracs[g.topFracs.length - 1] - 1) > 1e-9) {
+        schlecht.push(name + ': letzter topFrac ' + g.topFracs[g.topFracs.length - 1]);
+      }
+      // 4. Fallend, ohne Ausnahme. Ein Gang, der laenger ist als der darunter, waere ein
+      //    Getriebe, in dem Hochschalten die Drehzahl hebt.
+      for (let i = 0; i < g.ratios.length - 1; i++) {
+        if (g.ratios[i] <= g.ratios[i + 1]) schlecht.push(name + ': Gang ' + (i + 2) + ' nicht kuerzer');
+      }
+    }
+    return { ok: schlecht.length === 0,
+             mass: 'Produkt ' + P + ' | ' + teile.join(' | ')
+                   + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // ---- Getriebe: die Automatik pendelt nicht ----
+  //
+  // Nach einem Hochschalten faellt die Drehzahl auf upshiftRpm * ratio[i+1] / ratio[i].
+  // Liegt die Rueckschaltschwelle darueber, schaltet die Automatik hoch und sofort wieder
+  // herunter - und man sucht das im Fahrgefuehl statt in einer Zahl. Der kleinste Abstand
+  // ueber alle Gaenge ist das, was zaehlt.
+  stAdd('Getriebe: kein Schaltpendeln', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.physGearboxes) {
+      return { skip: true, mass: 'Messaufbau nicht vorhanden' };
+    }
+    const t = OMEGA_TEST.physGearboxes();
+    const schlecht = [], teile = [];
+    for (const name of Object.keys(t)) {
+      if (name.charAt(0) === '_') continue;
+      const g = t[name];
+      teile.push(name + ': ' + g.reserve + '/min');
+      if (!(g.reserve > 300)) schlecht.push(name + ': nur ' + g.reserve);
+      // Und die Schaltschwelle darf nicht ueber der Drehzahlgrenze liegen: dann wuerde
+      // NIE hochgeschaltet und das Auto haenge im ersten Gang am Begrenzer.
+      if (g.upshiftRpm >= t._redline) schlecht.push(name + ': Schaltpunkt ueber der Grenze');
+    }
+    return { ok: schlecht.length === 0,
+             mass: 'Pendelreserve ' + teile.join(' | ')
+                   + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // ---- Getriebe: die Ghosts fahren dasselbe ----
+  //
+  // Die Ghosts teilen das Uebersetzungs-Array per Verweis, damit accelScale() nicht zweimal
+  // kalibriert. Deshalb aendert applyGearbox es AN DER STELLE: ein Splice erreicht jeden
+  // Teilhaber, ein neues Array haette den Verweis gekappt - und ein fahrender Ghost waere
+  // still im alten Getriebe geblieben. Ohne Ghost im Feld prueft der Test nur, dass der
+  // Aufbau laeuft, und sagt das.
+  stAdd('Getriebe: Ghosts teilen die Uebersetzungen', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.physGearboxShare) {
+      return { skip: true, mass: 'Messaufbau nicht vorhanden' };
+    }
+    const p = OMEGA_TEST.physGearboxShare('p412');
+    if (!p.ghosts.length) {
+      return { ok: p.gaenge === 5,
+               mass: 'kein Ghost verbunden, Wechsel selbst ok: ' + p.gaenge + ' Gaenge' };
+    }
+    const lose = p.ghosts.filter(g => !g.geteilt);
+    const zuHoch = p.ghosts.filter(g => g.gang >= g.gaenge);
+    return { ok: lose.length === 0 && zuHoch.length === 0,
+             mass: p.ghosts.length + ' Ghosts, ' + p.gaenge + ' Gaenge'
+                   + (lose.length ? ' || NICHT GETEILT: ' + lose.map(g => g.alias).join(', ') : '')
+                   + (zuHoch.length ? ' || Gang ausserhalb: ' + zuHoch.map(g => g.alias).join(', ') : '') };
+  });
+
+  // ---- Getriebe: KEIN Preset-Schluessel ----
+  //
+  // Dieselben zwei Achsen wie beim Layout: welches Auto gegen wie abgestimmt. Ohne die
+  // Ausnahme wuerde ein Klick auf "GT3" das GETRIEBE wechseln. Geprueft wird der Vertrag
+  // und nicht die Wirkung - eine Voreinstellung anzuwenden wuerde die Einstellungen des
+  // Nutzers veraendern, nur um etwas zu pruefen, das strukturell entschieden ist.
+  stAdd('Getriebe: nicht in den Voreinstellungen', () => {
+    const el = $('setting-gearbox');
+    if (!el) return { ok: false, mass: 'setting-gearbox fehlt' };
+    if (typeof presetControls !== 'function') {
+      return { skip: true, mass: 'presetControls nicht erreichbar' };
+    }
+    const ids = presetControls().map(x => x.id);
+    const drin = ids.includes('setting-gearbox');
+    const genug = ids.length > 30;
+    const markiert = el.hasAttribute('data-preset-skip');
+    return { ok: !drin && genug && markiert,
+             mass: ids.length + ' Bedienelemente in den Voreinstellungen, Getriebe '
+                   + (drin ? 'IST DABEI' : 'nicht dabei')
+                   + ', Attribut ' + (markiert ? 'gesetzt' : 'FEHLT') };
+  });
+
+  // ---- Getriebe: das Menue und die Tabelle sind derselbe Satz ----
+  //
+  // Dieselbe Fehlerklasse wie beim Motormenue: ein Eintrag ohne Tabelleneintrag laesst
+  // applyGearbox still auf GT3 zurueckfallen, und der Waehler zeigt dann etwas anderes als
+  // das Modell. Beide Richtungen, denn ein Getriebe, das man nicht waehlen kann, ist ein
+  // toter Eintrag.
+  stAdd('Getriebe: Menue und Tabelle deckungsgleich', () => {
+    const sel = $('setting-gearbox');
+    if (!sel) return { ok: false, mass: 'kein #setting-gearbox' };
+    if (!window.OMEGA_TEST || !OMEGA_TEST.physGearboxes) {
+      return { skip: true, mass: 'Messaufbau nicht vorhanden' };
+    }
+    const t = OMEGA_TEST.physGearboxes();
+    const tabelle = Object.keys(t).filter(k => k.charAt(0) !== '_');
+    const menue = Array.prototype.map.call(sel.options, o => o.value);
+    const ohne = menue.filter(v => tabelle.indexOf(v) < 0);
+    const unerreichbar = tabelle.filter(v => menue.indexOf(v) < 0);
+    return { ok: ohne.length === 0 && unerreichbar.length === 0,
+             mass: menue.length + ' Eintraege, ' + tabelle.length + ' Getriebe'
+                   + (ohne.length ? ' | OHNE TABELLE: ' + ohne.join(', ') : '')
+                   + (unerreichbar.length ? ' | nicht waehlbar: ' + unerreichbar.join(', ') : '') };
+  });
+
+  // ---- Getriebe: der eingelegte Gang bleibt im Getriebe ----
+  //
+  // Von acht auf fuenf Gaenge zeigt der alte Index ins Leere, und gearRatio() liest
+  // undefined.ratio. Der Weg dorthin ist ganz normal: im achten Gang fahren, umschalten.
+  stAdd('Getriebe: Gang wird beim Wechsel gedeckelt', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.physGearboxes) {
+      return { skip: true, mass: 'Messaufbau nicht vorhanden' };
+    }
+    const merk = physEngine.gearboxName || 'gt3';
+    const merkGang = physEngine.state.currentGear;
+    try {
+      physEngine.applyGearbox('f1');
+      physEngine.state.currentGear = physEngine.config.gears.length - 1;   // achter Gang
+      const vor = physEngine.state.currentGear;
+      physEngine.applyGearbox('p412');
+      const nach = physEngine.state.currentGear;
+      // Und die Gegenprobe, dass danach ueberhaupt gerechnet werden kann.
+      const r = physEngine.gearRatio(nach);
+      const ok = vor === 7 && nach === 4 && typeof r === 'number' && isFinite(r);
+      return { ok, mass: 'im ' + (vor + 1) + '. Gang umgeschaltet, danach '
+                         + (nach + 1) + '. von ' + physEngine.config.gears.length
+                         + ', Uebersetzung ' + r };
+    } finally {
+      physEngine.applyGearbox(merk);
+      physEngine.state.currentGear = Math.min(merkGang, physEngine.config.gears.length - 1);
+    }
+  });
+
+  // ---- Fliegender Start: der Schalter ist nicht mehr gesperrt ----
+  //
+  // Bis v0.4.53 trug er `disabled` und die Beschriftung "nicht umgesetzt", waehrend die
+  // Einfuehrungsrunde vollstaendig im Code stand. Der Test haelt beides fest: der Schalter
+  // muss bedienbar sein, und die alte Sperrklasse darf nirgends mehr stehen - eine Regel
+  // ohne Nutzer sieht wie eine Moeglichkeit aus.
+  stAdd('Fliegender Start: entsperrt', () => {
+    const el = $('race-flying');
+    if (!el) return { ok: false, mass: 'race-flying fehlt' };
+    const zeile = el.closest('.opt-row');
+    const gesperrt = el.disabled || (zeile && zeile.classList.contains('opt-off'));
+    const reste = document.querySelectorAll('.opt-off').length;
+    // Und das Etikett muss "experimentell" sagen und nicht mehr "nicht umgesetzt".
+    const tag = zeile ? zeile.querySelector('.wip-tag') : null;
+    const text = tag ? tag.textContent.trim() : '';
+    const ok = !gesperrt && reste === 0
+               && (text === 'experimentell' || text === 'experimental');
+    return { ok, mass: (gesperrt ? 'GESPERRT' : 'bedienbar') + ', Etikett "' + text
+                       + '", ' + reste + ' Reste von .opt-off' };
+  });
+
+  // ---- Fliegender Start: die Einfuehrungsrunde von der Ampel bis zur Freigabe ----
+  //
+  // Der ganze Ablauf in einer Probe, weil er nur als Ablauf etwas zusichert. Gefahren wird
+  // er ohne Auto: raceFormationLap und das Tempolimit sind Zustand der Rennleitung, und
+  // genau der ist die Zusicherung.
+  //
+  // Vier Dinge muessen danach stimmen: das Limit ist weg, die Einfuehrungsrunde ist
+  // beendet, die Rundenuhr ist NEU gestempelt, und gezaehlt wurde nichts. Der vierte ist
+  // der wichtigste - eine Einfuehrungsrunde, die als Runde zaehlt, waere eine geschenkte
+  // schnelle Runde.
+  stAdd('Fliegender Start: Einfuehrungsrunde und Freigabe', () => {
+    if (typeof raceFormationLap === 'undefined' || typeof endFormationLap !== 'function') {
+      return { skip: true, mass: 'Rennleitung nicht erreichbar' };
+    }
+    const merk = { state: raceState, form: raceFormationLap, lim: limitFormation,
+                   lapStart: raceLapStart, zeiten: raceLapTimes.slice(),
+                   part: racePartialMs };
+    try {
+      raceState = 'racing';
+      raceLapTimes = [];
+      raceFormationLap = true;
+      limitFormation = PIT_SPEED_FACTOR;
+      applySpeedLimit();
+      raceLapStart = Date.now() - 5000;
+      const limVor = physEngine.config.speedLimitFactor;
+      const startVor = raceLapStart;
+      // Die erste Ueberfahrt von Start/Ziel, egal von wem.
+      endFormationLap();
+      const limNach = physEngine.config.speedLimitFactor;
+      const ok = limVor < 0.9 && Math.abs(limNach - 1) < 1e-9
+                 && raceFormationLap === false
+                 && raceLapStart > startVor
+                 && raceLapTimes.length === 0;
+      return { ok, mass: 'Limit ' + limVor.toFixed(3) + ' -> ' + limNach.toFixed(3)
+                         + ', Einfuehrungsrunde ' + (raceFormationLap ? 'LAEUFT NOCH' : 'beendet')
+                         + ', Uhr ' + (raceLapStart > startVor ? 'neu gestempelt' : 'ALT')
+                         + ', gezaehlte Runden ' + raceLapTimes.length };
+    } finally {
+      raceFormationLap = merk.form;
+      limitFormation = merk.lim;
+      applySpeedLimit();
+      raceState = merk.state;
+      raceLapStart = merk.lapStart;
+      raceLapTimes = merk.zeiten;
+      racePartialMs = merk.part;
+    }
+  });
+
+  // ---- Startaufstellung: zwei benachbarte Plaetze gehen auseinander ----
+  //
+  // Die Wirkung, die die Aufstellung bis v0.4.53 nicht hatte: sie speiste nur die Liste.
+  // Geprueft wird das VORZEICHEN je Platz - Pole links, Zweiter rechts - und dass Versatz
+  // und Schlaengeln zusammen nicht an den Anschlag kommen.
+  stAdd('Startaufstellung: Zweierkolonne', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.gridOffsets) {
+      return { skip: true, mass: 'Messaufbau nicht vorhanden' };
+    }
+    const g = OMEGA_TEST.gridOffsets(6);
+    const schlecht = [];
+    for (let i = 0; i < g.versatz.length - 1; i++) {
+      if (g.versatz[i] * g.versatz[i + 1] >= 0) {
+        schlecht.push('Platz ' + (i + 1) + ' und ' + (i + 2) + ' auf derselben Seite');
+      }
+    }
+    if (!(g.betrag > 0.05)) schlecht.push('Versatz zu klein, unsichtbar');
+    if (!(g.zusammen < 0.5)) schlecht.push('mit dem Schlaengeln zu nah am Anschlag');
+    return { ok: schlecht.length === 0,
+             mass: 'Versatz ' + g.betrag + ', mit Schlaengeln ' + g.zusammen
+                   + ' | Vorzeichen ' + g.versatz.map(v => v > 0 ? '+' : '-').join('')
+                   + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // ---- Ansage: der gesprochene Text ----
+  //
+  // formatLapTime() liefert "62.43s", und vorgelesen ist das falsch: eine Stimme sagt
+  // daraus "zweiundsechzig Punkt vier drei Sekunden". Geprueft werden die drei Faelle, an
+  // denen es auseinandergeht - unter einer Minute, darueber, und die Bestzeit -, und dass
+  // das Dezimalzeichen zur SPRACHE passt: eine deutsche Stimme liest "58.3" als
+  // "achtundfuenfzig Punkt drei".
+  stAdd('Ansage: gesprochener Text', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.ansage) {
+      return { skip: true, mass: 'Messaufbau nicht vorhanden' };
+    }
+    const kurz = OMEGA_TEST.ansage(58300, false).text;
+    const lang1 = OMEGA_TEST.ansage(62430, false).text;
+    const lang2 = OMEGA_TEST.ansage(143200, false).text;
+    const best = OMEGA_TEST.ansage(58300, true).text;
+    const schlecht = [];
+    // Keine Einheit unter einer Minute: auf einer Rennstrecke braucht eine Zeit keine.
+    if (!/^58[.,]3$/.test(kurz)) schlecht.push('kurz: ' + kurz);
+    // Ueber einer Minute: Minute und Rest getrennt, und der Rest ist NICHT die Gesamtzeit.
+    if (lang1.indexOf('2') < 0 || lang1.indexOf('62') >= 0) schlecht.push('eine Minute: ' + lang1);
+    if (lang2.indexOf('23') < 0) schlecht.push('zwei Minuten: ' + lang2);
+    // Der Plural, denn "2 Minute" ist der Fehler, den man erst hoert.
+    if (lang1 === lang2) schlecht.push('Singular und Plural gleich');
+    // Und die Bestzeit sagt etwas dazu.
+    if (best.length <= kurz.length) schlecht.push('Bestzeit ohne Zusatz: ' + best);
+    // Das Dezimalzeichen folgt der Sprache.
+    const deutsch = kurz.indexOf(',') >= 0;
+    if (lang === 'de' && !deutsch) schlecht.push('deutscher Modus mit Punkt');
+    if (lang === 'en' && deutsch) schlecht.push('englischer Modus mit Komma');
+    return { ok: schlecht.length === 0,
+             mass: [kurz, lang1, lang2, best].join(' | ')
+                   + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // ---- Ansage: jede Aeusserung bricht die vorherige ab ----
+  //
+  // Zwei Runden kurz hintereinander duerfen sich nicht stapeln, sonst laeuft die Stimme
+  // nach und sagt die vorletzte Zeit, waehrend man schon in der naechsten Runde ist.
+  // Geprueft wird an den Zaehlern und nicht am Lautsprecher: ob wirklich Ton kommt, haengt
+  // an den Stimmen des Systems, aber DASS vor jeder Aeusserung abgebrochen wird, ist eine
+  // Eigenschaft des Codes.
+  stAdd('Ansage: stapelt sich nicht', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.ansage || typeof speakLap !== 'function') {
+      return { skip: true, mass: 'Messaufbau nicht vorhanden' };
+    }
+    if (!('speechSynthesis' in window)) return { skip: true, mass: 'keine Sprachausgabe' };
+    const el = $('setting-announce');
+    const merk = el ? el.checked : null;
+    try {
+      if (el && !el.checked) { el.checked = true; el.dispatchEvent(new Event('change', { bubbles: true })); }
+      const vor = OMEGA_TEST.ansage();
+      speakLap(58300, false);
+      speakLap(59100, true);
+      const nach = OMEGA_TEST.ansage();
+      const rufe = nach.calls - vor.calls;
+      const abbr = nach.cancels - vor.cancels;
+      // Und die Gegenprobe: ausgeschaltet darf gar nichts passieren.
+      if (el) { el.checked = false; el.dispatchEvent(new Event('change', { bubbles: true })); }
+      speakLap(60000, false);
+      const aus = OMEGA_TEST.ansage();
+      const stillRufe = aus.calls - nach.calls;
+      const ok = rufe === 2 && abbr === 2 && stillRufe === 0;
+      return { ok, mass: rufe + ' Aeusserungen, ' + abbr + ' Abbrueche, ausgeschaltet '
+                         + stillRufe + ' Aeusserungen' };
+    } finally {
+      if (el && merk !== null) {
+        el.checked = merk;
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    }
+  });
+
+  // ---- Marke und Zaehler: die zwei aussenwirksamen Zeilen ----
+  //
+  // Beide haben denselben wunden Punkt, und der Verweispruefer im Build sieht ihn NICHT: er
+  // ueberspringt alles mit :// und alles, was mit // beginnt. Eine protokollrelative
+  // Adresse loest von der Platte zu file://gc.zgo.at/count.js auf - kein Ausfall des
+  // Zaehlers, sondern ein Zugriff auf einen Ordner, den es nicht gibt. Deshalb prueft das
+  // hier ein Test und nicht der Build.
+  stAdd('Marke und Zaehler: https, einmal, mit rel', () => {
+    const schlecht = [];
+    const a = document.querySelectorAll('.gt3-marke a[href]');
+    if (a.length !== 1) schlecht.push(a.length + ' Kurzlinks im Cockpit');
+    if (a.length) {
+      const h = a[0].getAttribute('href');
+      if (h.indexOf('https://') !== 0) schlecht.push('Kurzlink nicht https: ' + h);
+      if (h.indexOf('t1p.de') < 0) schlecht.push('Kurzlink zeigt woanders: ' + h);
+      if ((a[0].getAttribute('rel') || '').indexOf('noopener') < 0) schlecht.push('rel ohne noopener');
+      if (a[0].getAttribute('target') !== '_blank') schlecht.push('kein target=_blank');
+      // Das Omega kommt per <use> aus dem Kopfzeilen-Logo. Fehlt der Pfad, bleibt ein
+      // leeres Kaestchen stehen, und das faellt auf einem Bildschirmfoto nicht auf.
+      if (!document.getElementById('om')) schlecht.push('Logopfad #om fehlt');
+    }
+    const z = document.querySelectorAll('script[data-goatcounter]');
+    if (z.length !== 1) schlecht.push(z.length + ' Zaehlskripte');
+    if (z.length) {
+      const src = z[0].getAttribute('src') || '';
+      if (src.indexOf('https://') !== 0) schlecht.push('Zaehler nicht https: ' + src);
+      if (!z[0].hasAttribute('async')) schlecht.push('Zaehler nicht async');
+    }
+    return { ok: schlecht.length === 0,
+             mass: a.length + ' Kurzlink, ' + z.length + ' Zaehlskript'
+                   + (schlecht.length ? ' || ' + schlecht.join('; ') : ', beide https') };
   });
 
   // ---- Layout: Neutral laesst die Kalibrierung unberuehrt ----
@@ -4001,12 +4423,20 @@
       // Nach jedem Test dem Browser Luft lassen, sonst steht die Tabelle bis zum Ende leer
       // und man weiss nicht, ob noch etwas passiert.
       //
-      // setTimeout und NICHT requestAnimationFrame: rAF feuert nur, wenn die Seite
-      // tatsaechlich gezeichnet wird. In einem Hintergrundtab oder einem nicht angezeigten
-      // Fenster kommt es nie, und der Testlauf bleibt nach der ersten Zeile stehen - genau
-      // das ist mir beim Pruefen passiert, und es traefe jeden, der waehrend des Laufs den
-      // Tab wechselt.
-      await new Promise(res => setTimeout(res, 0));
+      // WEDER requestAnimationFrame NOCH setTimeout, und beide Male aus demselben Grund -
+      // ein Lauf soll auch dann durchkommen, wenn niemand hinsieht:
+      //
+      //   rAF feuert nur, wenn die Seite gezeichnet wird. In einem Hintergrundtab kommt es
+      //   NIE, und der Lauf bleibt nach der ersten Zeile stehen.
+      //   setTimeout kommt, aber zu spaet. Chrome drosselt Zeitgeber im Hintergrund auf
+      //   einen Takt pro Sekunde und nach fuenf Minuten auf einen pro Minute. Gemessen mit
+      //   nicht angezeigtem Fenster: 19 von 104 Tests in 192 Sekunden, und die letzten 98
+      //   Sekunden brachten genau einen. Ein Lauf ueber hundert Tests kommt so nie zu Ende.
+      //
+      // Ein MessagePort-Takt ist keine Zeitgeber-Aufgabe und wird gar nicht gedrosselt. Er
+      // laesst dem Browser genauso Luft wie setTimeout(0) - die Tabelle fuellt sich weiter
+      // Zeile fuer Zeile -, haengt aber nicht daran, ob das Fenster vorne liegt.
+      await stLuft();
     }
     $('st-run').disabled = false;
     $('st-status').textContent = gut + ' ok, ' + schlecht + ' Fehler'

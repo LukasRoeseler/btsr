@@ -90,6 +90,9 @@
     // Unterschied, den CREDITS.md aufmacht, betrifft nur noch die Umgebungsgeraeusche.
     'amggt3', 'c6r', 'z06gt3r', 'vantagegt3', 'm4gt3', 'f296gt3', 'huracan', 'p992gt3r',
     'mustang', 'f1_2026',
+    // Vier historische Rennwagen, dazugekommen in v0.4.54 und als WIP gekennzeichnet: nach
+    // Gehoer geprueft ist keiner von ihnen. Damit sind es vierzehn Motoren und 56 Schleifen.
+    'gt40', 'lolat70', 'f330p4', 'mc12',
   ];
   const BANDS = ['idle', 'mid', 'high'];
   let engineVolume = 0.7;
@@ -258,6 +261,84 @@
   // Pneumatic paddle shift. Up and down are distinct samples because they really do
   // sound different — the downshift carries a longer air release. If the samples are
   // missing, a two-tone stands in rather than nothing happening at all.
+  // ============================== RUNDENZEIT ANSAGEN ==============================
+  //
+  // Die erste Sprachausgabe im Projekt. Eingebaute Stimme des Browsers: kein Dienst, kein
+  // Netz, nichts verlaesst das Geraet.
+  //
+  // WARUM EIN EIGENER FORMATIERER und nicht formatLapTime(). Das liefert "62.43s", und
+  // vorgelesen ist das falsch - eine Stimme sagt daraus "zweiundsechzig Punkt vier drei
+  // Sekunden", und ueber einer Minute ist eine Sekundenzahl ohnehin keine Rundenzeit mehr.
+  // Also Minute und Rest getrennt, und eine Nachkommastelle statt zwei: die zweite hoert
+  // im Fahren niemand, kostet aber eine halbe Sekunde Ansage.
+  //
+  // KUERZE IST HIER DIE EIGENTLICHE ANFORDERUNG. Die Ansage muss vor der naechsten Kurve
+  // fertig sein, sonst redet sie in die Stelle hinein, an der man sie gebrauchen koennte.
+  // Deshalb kein "deine Rundenzeit betraegt", kein Einheitenwort unter einer Minute - auf
+  // einer Rennstrecke braucht eine Zeit keine Einheit - und rate 1,15.
+  let announceOn = true;
+  let announceCalls = 0, announceCancels = 0, announceFailLogged = false;
+
+  function lapSpeechText(ms, istBest) {
+    const s = ms / 1000;
+    const m = Math.floor(s / 60);
+    const rest = s - m * 60;
+    const de = lang === 'de';
+    // Das Dezimalzeichen gehoert zur Sprache und nicht zur Zahl: eine deutsche Stimme
+    // liest "58.3" als "achtundfuenfzig Punkt drei".
+    const zahl = de ? rest.toFixed(1).replace('.', ',') : rest.toFixed(1);
+    let text;
+    if (m <= 0) {
+      text = zahl;
+    } else if (de) {
+      text = m + (m === 1 ? ' Minute ' : ' Minuten ') + zahl;
+    } else {
+      text = m + (m === 1 ? ' minute ' : ' minutes ') + zahl;
+    }
+    if (istBest) text += de ? ', Bestzeit' : ', best lap';
+    return text;
+  }
+
+  function speakLap(ms, istBest) {
+    if (!announceOn) return;
+    if (!('speechSynthesis' in window)) return;
+    // ABBRECHEN VOR DEM SPRECHEN. Zwei Runden kurz hintereinander duerfen sich nicht
+    // stapeln - sonst laeuft die Stimme der Gegenwart nach und sagt die vorletzte Zeit,
+    // waehrend man schon in der naechsten Runde ist.
+    try {
+      window.speechSynthesis.cancel();
+      announceCancels++;
+      const u = new SpeechSynthesisUtterance(lapSpeechText(ms, istBest));
+      u.lang = lang === 'de' ? 'de-DE' : 'en-US';
+      u.rate = 1.15;
+      // EINMAL melden und nicht je Runde. Ein Geraet ohne passende Stimme wuerde sonst bei
+      // jeder Runde eine Zeile ins Protokoll schreiben, und das Protokoll ist der Ort, an
+      // dem man echte Fehler sucht.
+      u.onerror = (ev) => {
+        if (announceFailLogged) return;
+        announceFailLogged = true;
+        log('Rundenansage: keine Stimme verfuegbar (' + (ev && ev.error ? ev.error : '?')
+            + '). Die Ansage bleibt aus, alles andere laeuft weiter.', 'info');
+      };
+      window.speechSynthesis.speak(u);
+      announceCalls++;
+    } catch (e) {
+      if (!announceFailLogged) {
+        announceFailLogged = true;
+        log('Rundenansage nicht moeglich: ' + e.message, 'info');
+      }
+    }
+  }
+
+  if ($('setting-announce')) {
+    announceOn = $('setting-announce').checked;
+    $('setting-announce').addEventListener('change', (e) => {
+      announceOn = e.target.checked;
+      // Beim Ausschalten sofort still sein und nicht den Satz noch beenden.
+      if (!announceOn && 'speechSynthesis' in window) window.speechSynthesis.cancel();
+    });
+  }
+
   function playShiftSound(direction) {
     const buf = direction >= 0 ? fxBuffers.shift.up : fxBuffers.shift.down;
     if (playFx(buf, 0.35)) return;   // quieter: the shift should be felt, not announced

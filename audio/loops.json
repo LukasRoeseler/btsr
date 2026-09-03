@@ -2,7 +2,7 @@
  "mustang": {
   "label": "Ford Mustang GT3 (V8, Cross-Plane)",
   "cylinders": 8,
-  "source": "vollst\u00c3\u00a4ndig synthetisiert (Modell nach engine-sim, MIT)",
+  "source": "vollst\u00e4ndig synthetisiert (Modell nach engine-sim, MIT)",
   "loops": {
    "idle": {
     "file": "mustang_idle.ogg",
@@ -345,6 +345,146 @@
     "baseRpm": 8500,
     "firingHz": 425.0,
     "seconds": 2.0047,
+    "load": 0.0
+   }
+  }
+ },
+ "gt40": {
+  "label": "Ford GT40 Mk I (4.7 V8, Cross-Plane)",
+  "cylinders": 8,
+  "source": "vollst\u00e4ndig synthetisiert (Modell nach engine-sim, MIT)",
+  "loops": {
+   "idle": {
+    "file": "gt40_idle.ogg",
+    "baseRpm": 900,
+    "firingHz": 60.0,
+    "seconds": 2.0,
+    "load": 1.0
+   },
+   "mid": {
+    "file": "gt40_mid.ogg",
+    "baseRpm": 4200,
+    "firingHz": 280.0,
+    "seconds": 2.0,
+    "load": 1.0
+   },
+   "high": {
+    "file": "gt40_high.ogg",
+    "baseRpm": 6500,
+    "firingHz": 433.3,
+    "seconds": 1.9938,
+    "load": 1.0
+   },
+   "over": {
+    "file": "gt40_over.ogg",
+    "baseRpm": 4200,
+    "firingHz": 280.0,
+    "seconds": 2.0,
+    "load": 0.0
+   }
+  }
+ },
+ "lolat70": {
+  "label": "Lola T70 Mk3B (Chevrolet 5.0 V8, Cross-Plane)",
+  "cylinders": 8,
+  "source": "vollst\u00e4ndig synthetisiert (Modell nach engine-sim, MIT)",
+  "loops": {
+   "idle": {
+    "file": "lolat70_idle.ogg",
+    "baseRpm": 1000,
+    "firingHz": 66.7,
+    "seconds": 2.04,
+    "load": 1.0
+   },
+   "mid": {
+    "file": "lolat70_mid.ogg",
+    "baseRpm": 4600,
+    "firingHz": 306.7,
+    "seconds": 2.0087,
+    "load": 1.0
+   },
+   "high": {
+    "file": "lolat70_high.ogg",
+    "baseRpm": 7000,
+    "firingHz": 466.7,
+    "seconds": 2.0057,
+    "load": 1.0
+   },
+   "over": {
+    "file": "lolat70_over.ogg",
+    "baseRpm": 4600,
+    "firingHz": 306.7,
+    "seconds": 2.0087,
+    "load": 0.0
+   }
+  }
+ },
+ "f330p4": {
+  "label": "Ferrari 330 P4 / 412P (4.0 V12, 60 Grad)",
+  "cylinders": 12,
+  "source": "vollst\u00e4ndig synthetisiert (Modell nach engine-sim, MIT)",
+  "loops": {
+   "idle": {
+    "file": "f330p4_idle.ogg",
+    "baseRpm": 1400,
+    "firingHz": 140.0,
+    "seconds": 1.9714,
+    "load": 1.0
+   },
+   "mid": {
+    "file": "f330p4_mid.ogg",
+    "baseRpm": 5800,
+    "firingHz": 580.0,
+    "seconds": 2.0069,
+    "load": 1.0
+   },
+   "high": {
+    "file": "f330p4_high.ogg",
+    "baseRpm": 8200,
+    "firingHz": 820.0,
+    "seconds": 2.0049,
+    "load": 1.0
+   },
+   "over": {
+    "file": "f330p4_over.ogg",
+    "baseRpm": 5800,
+    "firingHz": 580.0,
+    "seconds": 2.0069,
+    "load": 0.0
+   }
+  }
+ },
+ "mc12": {
+  "label": "Maserati MC12 (6.0 V12, 65 Grad)",
+  "cylinders": 12,
+  "source": "vollst\u00e4ndig synthetisiert (Modell nach engine-sim, MIT)",
+  "loops": {
+   "idle": {
+    "file": "mc12_idle.ogg",
+    "baseRpm": 1300,
+    "firingHz": 130.0,
+    "seconds": 2.0308,
+    "load": 1.0
+   },
+   "mid": {
+    "file": "mc12_mid.ogg",
+    "baseRpm": 5500,
+    "firingHz": 550.0,
+    "seconds": 2.0073,
+    "load": 1.0
+   },
+   "high": {
+    "file": "mc12_high.ogg",
+    "baseRpm": 7800,
+    "firingHz": 780.0,
+    "seconds": 2.0,
+    "load": 1.0
+   },
+   "over": {
+    "file": "mc12_over.ogg",
+    "baseRpm": 5500,
+    "firingHz": 550.0,
+    "seconds": 2.0073,
     "load": 0.0
    }
   }

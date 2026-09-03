@@ -20,6 +20,22 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="OmegaSim">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
+<!-- AUFRUFZAEHLER (GoatCounter). Ohne Cookies, ohne personenbezogene Daten; ein Satz
+     darueber steht im Lizenzblock auf der Startseite, denn ein stiller Zaehler neben
+     "unabhaengig, offen, ohne Gewaehr" waere der falsche Ton.
+
+     https:// UND NICHT //, obwohl die Vorlage von GoatCounter es protokollrelativ schreibt.
+     Diese App laeuft ausdruecklich auch von der Platte - "Start OmegaSim.bat", und
+     91-pwa.js prueft location.protocol darauf -, und dort loest // zu
+     file://gc.zgo.at/count.js auf. Das ist kein Ausfall des Zaehlers, sondern ein Zugriff
+     auf einen Ordner, den es nicht gibt. Und auffallen wuerde es nicht: der Verweispruefer
+     in build.py ueberspringt beide Formen.
+
+     Am Service Worker ist nichts zu tun. sw.js steigt bei fremder Herkunft aus, BEVOR es
+     antwortet, also faellt ohne Netz nur der Zaehler aus und die App startet weiter aus
+     dem Cache. async, damit er sich nie in den Aufbau des Cockpits einreiht. -->
+<script data-goatcounter="https://omegasim.goatcounter.com/count"
+        async src="https://gc.zgo.at/count.js"></script>
 <style>
   /* Palette inspired by the NART Ferrari 412P Le Mans livery: white body, deep navy
      stripe/roundel, thin pinstripe linework. Red is reserved for danger/stop states only. */
@@ -329,9 +345,6 @@
   .wip-tag { display: inline-block; font-size: 9.5px; letter-spacing: .1em;
     padding: 1px 5px; border-radius: 3px; vertical-align: 2px;
     background: #4a3c00; color: #ffd83d; font-weight: 700; }
-  /* Ausgegraut heisst hier wirklich gesperrt: der fliegende Start ist nicht umgesetzt. */
-  .opt-row.opt-off { opacity: .5 }
-  .opt-row.opt-off input, .row.opt-off input { pointer-events: none }
   /* Die Voraussetzungsliste auf der Startseite. Zwei Gruppen, unterschiedlich markiert:
      ein Haken heisst "muss stimmen", ein Plus heisst "Zugabe". Die Unterscheidung ist der
      ganze Zweck der Liste - eine einheitliche Aufzaehlung haette wieder nicht gesagt, was
@@ -702,7 +715,7 @@
     grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr) minmax(0, 1.15fr);
     grid-template-areas: "flag flag flag" "shift shift shift" "left gear right"
                          "strip strip strip" "banner banner banner"
-                         "foot foot foot" "toast toast toast"; }
+                         "foot foot foot" "toast toast toast" "marke marke marke"; }
 
   /* DAS DECKGLAS. Drei Dinge, die eine Anzeige von einer Farbflaeche unterscheiden, und
      alle drei sind Aussehen und keine Aussage:
@@ -1050,6 +1063,29 @@
   .gt3-foot b { font-family: monospace; color: #dbe3f0; font-weight: 700; }
   .gt3-foot i { font-style: normal; opacity: .75; }
   .gt3-foot-name { margin-left: auto; }
+  /* DIE MARKENZEILE, ganz unten am Schirm.
+     WARUM NICHT AUF DER ECHTEN BLENDE, denn dort gehoerte sie hin: .gt3 hat
+     overflow: hidden, und das schneidet Kinder an der INNENKANTE ab - die vier
+     Eckschrauben sind genau deshalb Hintergrundschichten und keine Elemente. Ein
+     Hintergrundbild kann man aber nicht anklicken, und ein Link, den man nicht treffen
+     kann, ist kein Link. Also die unterste Rasterzeile, mit derselben Carbonstruktur und
+     demselben Glanzrand, den die untere Blende benutzt: sie liest sich als Fortsetzung des
+     Gehaeuses und ist trotzdem erreichbar.
+     Wer es doch auf die Blende will, braucht overflow: clip mit
+     overflow-clip-margin: border-box - nur Chrome, was hier nichts kostet, weil Web
+     Bluetooth die App ohnehin auf Chrome festlegt. */
+  .gt3-marke {
+    grid-area: marke; display: flex; align-items: center; gap: 7px;
+    padding: clamp(3px, .7vw, 6px) clamp(4px, 1vw, 10px);
+    background: var(--gt3-carbon) 0 0 / 14px 14px repeat, #0b0f18;
+    border-top: 1px solid rgba(255, 255, 255, .07);
+    font-size: clamp(8px, 1.1vw, 10.5px); letter-spacing: .06em;
+  }
+  .gt3-marke svg { width: 14px; height: 14px; flex: none; opacity: .85; }
+  .gt3-marke a { color: var(--info); text-decoration: none; font-weight: 600;
+    border-bottom: 1px solid rgba(90, 169, 255, .35); }
+  .gt3-marke a:hover { border-bottom-color: var(--info); }
+  .gt3-marke span { color: #6b7688; margin-left: auto; }
   #hud-toast-wrap {
     grid-area: toast; min-height: 0; padding: 0 clamp(4px, 1vw, 10px);
     color: #ffcf6e; font-family: monospace; font-size: clamp(9px, 1.3vw, 13px);
@@ -2054,6 +2090,7 @@
       <p>Dieses Projekt ist unabh&auml;ngig von Carrera und geh&ouml;rt zu keinem Hersteller. Der vollst&auml;ndige Quellcode steht unter der MIT-Lizenz auf GitHub.</p>
       <p>Jeder darf ihn nutzen, kopieren, ver&auml;ndern und auch in kommerzieller Software verwenden, solange der urspr&uuml;ngliche Urheberrechtsvermerk und der Lizenztext in der Kopie erhalten bleiben.</p>
       <p>Dieselbe Lizenz sagt aber auch: die Software kommt ohne Garantie und ohne Gew&auml;hrleistung. Du steuerst deine Autos auf eigene Gefahr. Es ist ein Freizeitprojekt, motiviert durch die Option, eine Pups-Hupe einzubauen &ndash; und m&ouml;glicherweise funktioniert es nach einem k&uuml;nftigen Firmware-Update nicht mehr.</p>
+      <p>Diese Seite z&auml;hlt Aufrufe mit GoatCounter, damit ich wei&szlig;, ob das Projekt jemand benutzt. Ohne Cookies, ohne Werbung und ohne personenbezogene Daten; wer den Z&auml;hler blockiert, verliert keine Funktion. Alles andere &ndash; Abstimmungen, Rundenzeiten, Streckenpl&auml;ne &ndash; bleibt im Browser und wird nirgends hingeschickt.</p>
       <p>F&uuml;r konstruktives Feedback oder Feature-W&uuml;nsche schreib mir gern im Thema &bdquo;Omega Sim&ldquo; im Carrera Hybrid Players Discord, unter &bdquo;weitere Themen&ldquo;.</p>
       <div class="home-legal-links">
         <a href="https://github.com/luuke42/omegasim" target="_blank"
@@ -2328,6 +2365,12 @@
         <span id="dash-offtrack">&ndash;</span>
         <span id="dash-vehicle-name" class="gt3-foot-name">nicht verbunden</span>
         <span id="dash-light-dmg" style="color:#ff5252"></span>
+      </div>
+      <div class="gt3-marke">
+        <svg viewBox="0 0 512 512" aria-hidden="true"><use href="#om" fill="#e6ecf7"/></svg>
+        <a href="https://t1p.de/omegasim" target="_blank" rel="noopener noreferrer"
+           data-i18n-skip>t1p.de/omegasim</a>
+        <span data-i18n-skip>OmegaSim</span>
       </div>
       <div class="gt3-banner" id="hud-toast-wrap"><span id="hud-toast"></span></div>
     </div>
@@ -3766,10 +3809,13 @@
         schluckt, kein splitterndes Glas.
       </p>
       <p class="muted" style="font-size:11.5px">
-        <b>Nicht jeder Klang in der App ist das.</b> Der Corvette-Motor und die Strecken-Ambience sind
+        <b>Nicht jeder Klang in der App ist das.</b> Die Strecken-Ambience und die sechs Hupen sind
         aus lizenzfreien Pixabay-Aufnahmen geschnitten, nicht gerechnet: die Pixabay-Lizenz
         erlaubt das, und es gab keinen Grund, nachzubauen, was eine gute Aufnahme schon liefert. Die
         unbearbeiteten Quelldateien sind nicht Teil des Repos, nur die geschnittenen Ableitungen.
+        Bei den Motoren gilt das seit v0.4.53 nicht mehr: dort sind inzwischen alle vierzehn
+        gerechnet, die zwei aufgenommenen sind mit dem Aufräumen herausgefallen. Dieser Absatz
+        nannte den Corvette-Motor bis v0.4.54 weiter eine Aufnahme.
         Vollständige Aufschlüsselung, Datei für Datei: <code>audio/CREDITS.md</code>.
       </p>
     </div>
@@ -3890,6 +3936,22 @@
         <div class="snd-row"><audio controls preload="none" src="audio/f1_2026_mid.ogg"></audio><div><b>Formel 1 2026 (1.6 V6 Turbo-Hybrid, 90 Grad), Mittelband (8500/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/f1_2026_high.ogg"></audio><div><b>Formel 1 2026 (1.6 V6 Turbo-Hybrid, 90 Grad), oberes Band (12500/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/f1_2026_over.ogg"></audio><div><b>Formel 1 2026 (1.6 V6 Turbo-Hybrid, 90 Grad), Schub (8500/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/gt40_idle.ogg"></audio><div><b>Ford GT40 Mk I (4.7 V8, Cross-Plane), Leerlauf (900/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/gt40_mid.ogg"></audio><div><b>Ford GT40 Mk I (4.7 V8, Cross-Plane), Mittelband (4200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/gt40_high.ogg"></audio><div><b>Ford GT40 Mk I (4.7 V8, Cross-Plane), oberes Band (6500/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/gt40_over.ogg"></audio><div><b>Ford GT40 Mk I (4.7 V8, Cross-Plane), Schub (4200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/lolat70_idle.ogg"></audio><div><b>Lola T70 Mk3B (Chevrolet 5.0 V8, Cross-Plane), Leerlauf (1000/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/lolat70_mid.ogg"></audio><div><b>Lola T70 Mk3B (Chevrolet 5.0 V8, Cross-Plane), Mittelband (4600/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/lolat70_high.ogg"></audio><div><b>Lola T70 Mk3B (Chevrolet 5.0 V8, Cross-Plane), oberes Band (7000/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/lolat70_over.ogg"></audio><div><b>Lola T70 Mk3B (Chevrolet 5.0 V8, Cross-Plane), Schub (4600/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/f330p4_idle.ogg"></audio><div><b>Ferrari 330 P4 / 412P (4.0 V12, 60 Grad), Leerlauf (1400/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/f330p4_mid.ogg"></audio><div><b>Ferrari 330 P4 / 412P (4.0 V12, 60 Grad), Mittelband (5800/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/f330p4_high.ogg"></audio><div><b>Ferrari 330 P4 / 412P (4.0 V12, 60 Grad), oberes Band (8200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/f330p4_over.ogg"></audio><div><b>Ferrari 330 P4 / 412P (4.0 V12, 60 Grad), Schub (5800/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/mc12_idle.ogg"></audio><div><b>Maserati MC12 (6.0 V12, 65 Grad), Leerlauf (1300/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/mc12_mid.ogg"></audio><div><b>Maserati MC12 (6.0 V12, 65 Grad), Mittelband (5500/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/mc12_high.ogg"></audio><div><b>Maserati MC12 (6.0 V12, 65 Grad), oberes Band (7800/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/mc12_over.ogg"></audio><div><b>Maserati MC12 (6.0 V12, 65 Grad), Schub (5500/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
       </div>
       <p class="muted" style="font-size:11.5px">
         Vollst&auml;ndige Herkunftsangaben in <code>audio/CREDITS.md</code>.
@@ -4725,23 +4787,30 @@
           <option value="3">3</option>
           <option value="4">4</option>
         </select></div>
-      <!-- Ausgegraut: nicht umgesetzt. Ein Ankreuzfeld, das man setzen kann und das
-           nichts bewirkt, ist eine Falschaussage der Oberflaeche - und dieses hier
-           versprach eine Einfuehrungsrunde, die es nicht gibt. -->
-      <div class="opt-row opt-off"><div class="opt-label">Fliegender Start
-          <span class="wip-tag">nicht umgesetzt</span>
+      <!-- ENTSPERRT in v0.4.54. Die Sperre war laenger falsch als richtig: die
+           Einfuehrungsrunde stand vollstaendig im Code - Boxentempo ueber limitFormation,
+           das Schlaengeln der Ghosts, die Ampel am Rundenende, das Aufraeumen am Ziel -,
+           und nur das Ankreuzfeld sagte "nicht umgesetzt". Gefehlt hat genau eine Sache,
+           und die ist jetzt da: die Startaufstellung hatte keine Wirkung.
+           "experimentell" statt "nicht umgesetzt", weil es am Tisch mit mehreren Autos
+           noch nicht gefahren ist. -->
+      <div class="opt-row"><div class="opt-label">Fliegender Start
+          <span class="wip-tag">experimentell</span>
           <small>Einf&uuml;hrungsrunde mit Boxengassen-Tempo, frei beim ersten
-          &Uuml;berfahren von Start/Ziel. <b>Noch nicht gebaut</b> &ndash; der Schalter ist
-          deshalb gesperrt statt wirkungslos.</small></div>
-        <label class="tgl"><input type="checkbox" id="race-flying" disabled><span></span></label></div>
+          &Uuml;berfahren von Start/Ziel &ndash; von wem auch immer, ein Ghost darf es
+          sein. Danach f&auml;hrt jeder nach seinen Einstellungen.</small></div>
+        <label class="tgl"><input type="checkbox" id="race-flying"><span></span></label></div>
 
       <div id="race-grid-wrap" style="display:none; margin-top:12px">
         <label class="small">Startaufstellung, ziehen oder mit den Pfeilen sortieren</label>
         <div id="race-grid"></div>
         <p class="muted" style="font-size:11.5px; margin:6px 0 0 0">
-          Die Autos fahren in dieser Reihenfolge los. Die Einf&uuml;hrungsrunde l&auml;uft mit
-          Boxengassen-Tempo; sobald das erste Auto Start/Ziel &uuml;berf&auml;hrt, ist das
-          Limit weg.
+          Zwei benachbarte Pl&auml;tze fahren in der Einf&uuml;hrungsrunde versetzt, also als
+          Zweierkolonne. Die Runde l&auml;uft mit Boxengassen-Tempo; sobald das erste Auto
+          Start/Ziel &uuml;berf&auml;hrt, ist das Limit weg. Aufstellen musst du von Hand
+          &ndash; ein Auto auf die Bahn setzen kann die App nicht. Dein eigenes Auto steht
+          mit in der Liste und verschiebt damit, auf welche Seite die Ghosts hinter dir
+          gehen.
         </p>
       </div>
 
@@ -5066,6 +5135,27 @@
         </select></div>
       <div class="opt-row"><div class="opt-label">Daten des Layouts<small>Gerechnet und nicht eingetippt: die Nickgrenzen folgen aus der statischen Achslast und dem Verlagerungsanteil.</small></div>
         <div class="opt-val" id="layout-info" style="text-align:right;font-size:11.5px;line-height:1.5">&nbsp;</div></div>
+      <div class="opt-row"><div class="opt-label">Getriebe<small>Wieviele G&auml;nge und wie
+          weit sie auseinanderliegen. Steht hier und nicht unter &bdquo;Getriebe und
+          Fahrleistung&ldquo;, weil es dieselbe Art Aussage ist wie das Layout dar&uuml;ber:
+          welches Auto du f&auml;hrst. Wie du damit f&auml;hrst &ndash; von Hand oder
+          automatisch &ndash; steht weiter unten. Die Voreinstellungen fassen beides
+          absichtlich nicht an. Die Drehzahlgrenze bleibt, wo sie ist: die geh&ouml;rt zum
+          Motor und nicht zum Getriebe. Ge&auml;ndert werden Anzahl, Spreizung und
+          Schaltpunkte &ndash; und die Schaltzeit, und die ist der gr&ouml;&szlig;ere
+          Unterschied: 40 ms nahtlos gegen 350 ms Kulisse mit Kupplung. Acht G&auml;nge sind
+          F1-Reglement, sechs sequenzielle GT3-Standard, f&uuml;nf hatte das Transaxle des
+          412P. Welche Geschwindigkeit im dritten Gang liegt, ist eine Sch&auml;tzung aus der
+          Klasse.</small></div>
+        <select id="setting-gearbox" data-preset-skip>
+          <option value="gt3" selected>GT3, 6-Gang sequenziell</option>
+          <option value="f1">Formel 1, 8-Gang</option>
+          <option value="p412">Ferrari 412P, 5-Gang Transaxle</option>
+        </select></div>
+      <div class="opt-row"><div class="opt-label">Daten des Getriebes<small>Bis zu welchem
+          Tempo jeder Gang reicht. Gerechnet aus den &Uuml;bersetzungen und der
+          H&ouml;chstgeschwindigkeit, nicht eingetippt.</small></div>
+        <div class="opt-val" id="gearbox-info" style="text-align:right;font-size:11.5px;line-height:1.5">&nbsp;</div></div>
 
 <div class="opt-head">Fahrwerk</div>
       <div class="opt-row"><div class="opt-label">Gasfaktor
@@ -5247,6 +5337,17 @@
       <h2>Ton</h2>
 <div class="opt-head">Ton</div>
       <div class="opt-row"><div class="opt-label">Motorsound</div><label class="tgl"><input type="checkbox" id="sound-enable" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Rundenzeiten ansagen
+          <span class="wip-tag">experimentell</span>
+          <small>Nach jeder Runde die Zeit, und bei einer eigenen Bestzeit ein Wort dazu.
+          Gesprochen von der eingebauten Stimme des Browsers &ndash; kein Dienst, kein Netz,
+          nichts verl&auml;sst das Ger&auml;t. Absichtlich kurz gehalten, damit die Ansage
+          vor der n&auml;chsten Kurve fertig ist. Kommt eine zweite Runde herein, w&auml;hrend
+          noch geredet wird, bricht die alte Ansage ab: die Zeit der Gegenwart ist
+          wichtiger. Ob es &uuml;berhaupt spricht, h&auml;ngt an den Stimmen des Systems
+          &ndash; unter Windows sind sie lokal vorhanden, auf Android k&ouml;nnen sie fehlen.
+          Fehlt eine, steht das einmal im Protokoll und nicht bei jeder Runde.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-announce" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Regen<small>Select oder W. Reifen kommen beim Boxenstopp passend.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-rain"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Strecken-Ambience<small>Vorbeifahrten, Regen, Donner.</small></div>
@@ -5281,9 +5382,12 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="brake-volume-val">30%</span>
         </div></div>
-      <div class="opt-row"><div class="opt-label">Motorsound-Profil<small>Die acht
-          oben sind aus Zylinderzahl, Kurbelwelle und Z&uuml;ndfolge gerechnet. Bei den
-          aufgeladenen Originalen fehlt der Lader.</small></div>
+      <div class="opt-row"><div class="opt-label">Motorsound-Profil<small>Alle sind aus
+          Zylinderzahl, Kurbelwelle, Bankaufteilung und Z&uuml;ndfolge gerechnet &ndash;
+          keiner ist eine Aufnahme. Bei den aufgeladenen Originalen fehlt der Lader. Die vier
+          historischen sind noch nicht nach Geh&ouml;r gepr&uuml;ft; beim Maserati kommt
+          dazu, dass dieses Modell den Bankwinkel gar nicht darstellt, weshalb er sich vom
+          Ferrari-V12 nur in Drehzahl und Rohrl&auml;nge unterscheidet.</small></div>
         <select id="sound-profile">
           <optgroup label="GT3 und GT-Rennmotoren">
           <option value="amggt3">Mercedes-AMG GT3: V8, Cross-Plane</option>
@@ -5298,6 +5402,12 @@
           </optgroup>
           <optgroup label="Formel 1">
           <option value="f1_2026">Formel 1 2026: V6 Turbo-Hybrid, 1,6 l</option>
+          </optgroup>
+          <optgroup label="Historische Rennwagen (WIP)">
+          <option value="gt40">Ford GT40 Mk I: V8, Cross-Plane, 4,7 l</option>
+          <option value="lolat70">Lola T70 Mk3B: Chevrolet-V8, Cross-Plane</option>
+          <option value="f330p4">Ferrari 330 P4 / 412P: V12, 60 Grad</option>
+          <option value="mc12">Maserati MC12: V12, 65 Grad</option>
           </optgroup>
         </select></div>
       <div class="opt-row"><div class="opt-label">Motorlautstärke</div>
@@ -6021,7 +6131,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.4.53</span></span>
+    <span class="foot-ver">v<span id="app-version">0.4.54</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine

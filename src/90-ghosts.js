@@ -1176,6 +1176,14 @@
   // Amplitude of the formation-lap weave, as a fraction of full lock. Small on purpose:
   // it should read as warming tyres, not as a car out of control.
   const GHOST_WEAVE = 0.22;
+  // Der Versatz der Zweierkolonne, in derselben Einheit wie das Schlaengeln: ein Anteil des
+  // vollen Lenkeinschlags. Etwas kleiner als die Schlaengelamplitude, damit die beiden
+  // Bewegungen sich nicht aufheben - zusammen bleiben sie unter 0,4, also weit vom Anschlag.
+  //
+  // Er darf deutlicher ausfallen als der Versatz gegen das Rammen bei voller Fahrt: in der
+  // Einfuehrungsrunde geht es mit Boxentempo zu, und dort verzeiht ein seitlicher Versatz
+  // mehr.
+  const GHOST_GRID_OFFSET = 0.16;
   const GHOST_OFFTRACK_MS = 1500;   // measured: tiles last 0.4-2.7 s with no 0xff between
   // Wie lange 0x00 stehen muss, bevor der Ghost anhaelt. Vorher hielt ein EINZIGES 0x00-Paket
   // ihn sofort an, und das war die Ursache dafuer, dass Ghosts unterwegs stehen blieben.
@@ -2554,6 +2562,12 @@
                   // Ueberholsequenz und Spurmischung.
                   passPhase: null, passZiel: null, passSince: 0, passBlockUntil: 0,
                   kurveMix: 0, naehern: 0,
+                  // Der Startplatz, EINMAL nachgesehen und nicht je Takt: indexOf ueber die
+                  // Aufstellung laeuft sonst 22 Mal je Sekunde je Auto. -1 heisst "steht
+                  // nicht in der Liste", und dann gibt es keinen Versatz - eine Paritaet aus
+                  // -1 waere geraten und keine Aufstellung.
+                  gridPos: (typeof raceGridOrder !== 'undefined' && car.device)
+                    ? raceGridOrder.indexOf(String(car.device.id)) : -1,
                   running: true };
     // Den ersten Versuch ziehen, wenn gelernt werden soll. Ohne ihn steht tryPace auf null,
     // und learnSettle() kehrt in genau diesem Fall frueh zurueck, OHNE einen zu ziehen - das
@@ -3042,6 +3056,17 @@
       if (raceFormationLap) {
         const phase = (g.weavePhase !== undefined ? g.weavePhase : (g.weavePhase = Math.random() * 6.283));
         weave = Math.sin(now / 700 + phase) * GHOST_WEAVE;
+        // ZWEIERKOLONNE. Zwei benachbarte Startplaetze gehen auf entgegengesetzte Seiten,
+        // also Pole links, Zweiter rechts, Dritter links. Das ist die Wirkung, die die
+        // Startaufstellung bis v0.4.53 nicht hatte: sie speiste nur die Liste.
+        //
+        // Auf die Bahn stellen muss man von Hand - das kann die App nicht -, aber wer
+        // fahrend nebeneinander liegt, ist damit gesagt. Das eigene Auto steht mit in der
+        // Liste und verschiebt deshalb die Paritaet der Ghosts hinter sich; das ist keine
+        // Ungenauigkeit, sondern die Aufstellung, in der es selbst steht.
+        if (g.gridPos >= 0) {
+          weave += (g.gridPos % 2 ? -1 : 1) * GHOST_GRID_OFFSET;
+        }
       }
       if (ghostCfg.railMode) {
         // Zero steering plus the anti-ramming offset. There is no lateral feedback to close
@@ -3468,7 +3493,11 @@
     // Markup-Wert zeigt - bis jemand den Regler einmal anfasst, und dann springt das
     // Verhalten. So war es bei topSpeedScale und beim Tankgewicht.
     //
-    // gears wird uebersprungen: geteilte Referenz, nie geaendert.
+    // gears wird uebersprungen, aber nicht mehr aus dem alten Grund: seit es
+    // Getriebearten gibt, WIRD das Array geaendert. Uebersprungen wird es, weil ein
+    // Wertevergleich hier ein Tiefenvergleich waere - und weil das Getriebe wie das Layout
+    // eine Aussage darueber ist, WELCHES Auto man hat, nicht eine Reglervorgabe, die von
+    // ihrem Modellwert abweichen koennte. Dafuer hat es einen eigenen Selbsttest.
     physConfigDiff() {
       const cfg = physEngine.config, ref = physEngine.calibRef, out = {};
       for (const k of Object.keys(ref)) {
@@ -3626,6 +3655,106 @@
     },
     padDefaults() {
       return JSON.parse(JSON.stringify(DEFAULT_BINDINGS));
+    },
+
+    // Die Getriebearten: was drinsteht, was daraus gerechnet wird, und die Pendelreserve.
+    //
+    // MITGEGEBEN WIRD AUCH DAS GERECHNETE - ratioRef und rpmScale -, genau darum: der Test
+    // soll pruefen koennen, dass sie es sind und nicht doch irgendwo als Feld herumliegen.
+    //
+    // `reserve` ist die Zahl, die ein Pendeln ausschliesst: nach einem Hochschalten faellt
+    // die Drehzahl auf upshiftRpm * ratio[i+1] / ratio[i], und liegt downshiftRpm darueber,
+    // schaltet die Automatik hoch und sofort wieder herunter. Der kleinste Abstand ueber
+    // alle Gaenge ist das, was zaehlt.
+    physGearboxes() {
+      const c = physEngine.config;
+      const merk = physEngine.gearboxName || 'gt3';
+      const out = {};
+      try {
+        for (const name of Object.keys(GEARBOXES)) {
+          physEngine.applyGearbox(name);
+          const r = c.gears.map(g => g.ratio);
+          const nach = [];
+          for (let i = 0; i < r.length - 1; i++) nach.push(c.upshiftRpm * r[i + 1] / r[i]);
+          out[name] = { label: GEARBOXES[name].label,
+                        gaenge: r.length,
+                        ratios: r.slice(),
+                        topFracs: c.gears.map(g => g.topFrac),
+                        ratioRef: c.ratioRef,
+                        rpmScale: Math.round(c.rpmScale),
+                        upshiftRpm: c.upshiftRpm,
+                        downshiftRpm: c.downshiftRpm,
+                        shiftMs: c.shiftMs,
+                        // Das Produkt, aus dem die Uebersetzungen gerechnet sind: fuer alle
+                        // ausser dem letzten Gang muss es GEAR_PRODUCT treffen.
+                        produkte: c.gears.map(g => +(g.ratio * g.topFrac).toFixed(3)),
+                        reserve: nach.length ? Math.round(Math.min.apply(null, nach) - c.downshiftRpm) : null,
+                        // Erreicht der letzte Gang die Drehzahlgrenze bei Vmax?
+                        drehzahlOben: Math.round(physEngine.rpmRawAt(c.topSpeedKmh, r.length - 1)) };
+        }
+        out._produkt = GEAR_PRODUCT;
+        out._redline = REDLINE_RPM;
+      } finally {
+        physEngine.applyGearbox(merk);
+      }
+      return out;
+    },
+
+    // Ein Getriebe setzen und nachsehen, wer davon etwas mitbekommt. Getrennt von
+    // physGearboxes, weil diese Probe die GHOSTS anfasst und die Tabelle oben nur abliest.
+    //
+    // Die Frage, die sie beantwortet: teilen die Ghosts nach einem Wechsel noch dasselbe
+    // Uebersetzungs-Array? Ein Splice erreicht jeden Teilhaber, ein neues Array haette den
+    // Verweis gekappt - und ein Ghost waere still im alten Getriebe weitergefahren.
+    physGearboxShare(name) {
+      const merk = physEngine.gearboxName || 'gt3';
+      try {
+        physEngine.applyGearbox(name || 'f1');
+        const ghosts = [];
+        garage.forEach(c => {
+          if (!c.ghost || !c.ghost.engine) return;
+          ghosts.push({ alias: garageLabel(c),
+                        geteilt: c.ghost.engine.config.gears === physEngine.config.gears,
+                        gaenge: c.ghost.engine.config.gears.length,
+                        gang: c.ghost.engine.state.currentGear });
+        });
+        return { getriebe: physEngine.gearboxName,
+                 gaenge: physEngine.config.gears.length,
+                 // Der Kalibrierbezug darf NICHT mitgewandert sein.
+                 bezugGaenge: physEngine.calibRef.gears.length,
+                 bezugGeteilt: physEngine.calibRef.gears === physEngine.config.gears,
+                 ghosts };
+      } finally {
+        physEngine.applyGearbox(merk);
+      }
+    },
+
+    // Der Startplatz-Versatz der Zweierkolonne. Gefragt wird nach dem VORZEICHEN je Platz,
+    // denn genau das ist die Zusicherung: zwei benachbarte Plaetze gehen auf
+    // entgegengesetzte Seiten.
+    gridOffsets(n) {
+      const wieviele = n || 6;
+      const out = [];
+      for (let i = 0; i < wieviele; i++) {
+        out.push(+((i % 2 ? -1 : 1) * GHOST_GRID_OFFSET).toFixed(4));
+      }
+      return { betrag: GHOST_GRID_OFFSET, weave: GHOST_WEAVE, versatz: out,
+               // Zusammen duerfen sie nicht an den Anschlag kommen.
+               zusammen: +(GHOST_GRID_OFFSET + GHOST_WEAVE).toFixed(4),
+               // Und was ein Ghost wirklich gemerkt hat, falls einer faehrt.
+               gemerkt: garage.filter(c => c.ghost).map(c => ({ alias: garageLabel(c),
+                                                                platz: c.ghost.gridPos })) };
+    },
+
+    // Die Ansage, ohne zu sprechen: der TEXT und die Zaehler. Der Text ist die eine Sache,
+    // die man ohne Lautsprecher pruefen kann, und die Zaehler beantworten die zweite Frage -
+    // bricht jede Aeusserung die vorherige ab? announceCancels muss mit announceCalls
+    // mitlaufen, sonst stapeln sich zwei Runden.
+    ansage(ms, best) {
+      return { text: lapSpeechText(ms === undefined ? 62430 : ms, !!best),
+               an: announceOn,
+               calls: announceCalls,
+               cancels: announceCancels };
     },
 
     // Das Fahrzeuglayout: welche es gibt, was sie setzen, und was daraus gerechnet wird.

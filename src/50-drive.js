@@ -194,6 +194,70 @@
     anwenden(false);
   }
 
+  // ---- Getriebeart -------------------------------------------------------------------
+  //
+  // Dieselbe Bauform wie das Layout darueber, und aus demselben Grund eine EIGENE Ablage:
+  // der Waehler traegt data-preset-skip, also fasst ihn presetControls() nicht an - und
+  // ohne eigene Ablage faellt er bei jedem Neuladen auf GT3 zurueck.
+  const GEARBOX_STORE = 'chc.gearbox.v1';
+  if ($('setting-gearbox')) {
+    const zeigeGetriebeDaten = () => {
+      const el = $('gearbox-info');
+      if (!el) return;
+      const cfg = physEngine.config;
+      // Dieselbe Rechnung, die die Doku fuer ihre Gangtabelle benutzt: topFrac mal
+      // Hoechstgeschwindigkeit, hier in Tacho-Kilometern, also mit REAL_SCALE.
+      const gaenge = cfg.gears.map((g, i) => (i + 1) + '. '
+        + Math.round(g.topFrac * cfg.topSpeedKmh * REAL_SCALE)).join(' \u00b7 ');
+      el.textContent = cfg.gears.length + ' ' + t('G\u00e4nge') + ' \u00b7 '
+        + gaenge + ' km/h \u00b7 ' + t('Schaltzeit') + ' ' + cfg.shiftMs + ' ms';
+    };
+    // ZWEI ARGUMENTE UND NICHT EINES, und der Grund ist die Ladereihenfolge: `garage` ist
+    // ein const in 90-ghosts.js, also in einer SPAETEREN Quelldatei. Beim ersten Aufruf hier
+    // ist es noch in seiner temporalen Todeszone, und dort wirft schon `typeof garage` -
+    // was die ganze IIFE mitnimmt und OMEGA_TEST verschwinden laesst. Beim Laden gibt es
+    // ausserdem keine Ghosts, also ist der Verzicht nicht nur sicher, sondern richtig.
+    const getriebeAnwenden = (melden, mitGhosts) => {
+      const name = physEngine.applyGearbox($('setting-gearbox').value);
+      // Wie beim Layout: war der abgelegte Name unbekannt, faellt applyGearbox auf gt3
+      // zurueck, und dann muss die Auswahl mitkommen.
+      if ($('setting-gearbox').value !== name) $('setting-gearbox').value = name;
+      if (mitGhosts) {
+        // Die Ghosts teilen das UEBERSETZUNGS-ARRAY per Verweis, sind also schon umgestellt.
+        // Ihre SKALARE - Schaltpunkte, Schaltzeit, rpmScale, ratioRef - sind aber Kopien aus
+        // dem Augenblick ihrer Einrichtung. Ohne diese Schleife schaltet ein fahrender Ghost
+        // weiter nach den alten Punkten, und von aussen sieht das aus wie "der Ghost
+        // schaltet falsch".
+        garage.forEach(c => {
+          if (!c.ghost || !c.ghost.engine || c.ghost.engine === physEngine) return;
+          const gc = c.ghost.engine.config, pc = physEngine.config;
+          gc.ratioRef = pc.ratioRef;
+          gc.upshiftRpm = pc.upshiftRpm;
+          gc.downshiftRpm = pc.downshiftRpm;
+          gc.shiftMs = pc.shiftMs;
+          gc.rpmScale = pc.rpmScale;
+          c.ghost.engine.state.currentGear =
+            Math.min(c.ghost.engine.state.currentGear, gc.gears.length - 1);
+        });
+      }
+      zeigeGetriebeDaten();
+      markDrivetrainChartsDirty();
+      if (melden) {
+        const opt = $('setting-gearbox').selectedOptions[0];
+        log('Getriebe: ' + (opt ? opt.textContent : name) + '.', 'info');
+        showHudToast((opt ? opt.textContent : name).toUpperCase());
+      }
+      try { localStorage.setItem(GEARBOX_STORE, name); } catch (e) { /* privater Modus */ }
+    };
+    try {
+      const gespeichert = localStorage.getItem(GEARBOX_STORE);
+      if (gespeichert) $('setting-gearbox').value = gespeichert;
+    } catch (e) { /* privater Modus */ }
+    $('setting-gearbox').addEventListener('change', () => getriebeAnwenden(true, true));
+    if (typeof i18nOnLangChange === 'function') i18nOnLangChange(zeigeGetriebeDaten);
+    getriebeAnwenden(false, false);
+  }
+
   $('phys-enable').addEventListener('change', (e) => {
     physicsEnabled = e.target.checked;
     physLastTime = null;

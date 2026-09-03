@@ -272,6 +272,63 @@ unbrauchbar: der Reibkreis ist eine Wurzel aus einer Differenz von Quadraten und
 schon bei zehn Prozent Absenkung. Drei von fuenf Layouts klebten am Notboden von 0,12, also bei
 5 Grad Einschlag. Linear mit Staerke 0,15 ergibt die geordnete Spreizung oben.
 
+### Getriebearten: drei Uebersetzungssaetze
+
+Bis v0.4.53 hatte jedes Auto dasselbe Getriebe: sechs Gaenge, `GT3_GEARS`. Seit v0.4.54 gibt
+es drei, und sie sind **senkrecht zu den Voreinstellungen** - dieselbe Trennung wie beim
+Layout, mit demselben `data-preset-skip`. Ein Klick auf die Voreinstellung "F1" ist eine
+Abstimmung; das Getriebe "Formel 1" ist ein Auto.
+
+| Getriebe | Gaenge | Schaltzeit | Rueckschaltschwelle |
+|---|---|---|---|
+| GT3, sequenziell *(Vorgabe)* | 6 | 120 ms | 4200/min |
+| Formel 1 | 8 | 40 ms | 5600/min |
+| Ferrari 412P, Transaxle | 5 | 350 ms | 3400/min |
+
+**Die Uebersetzungen sind gerechnet, nicht getippt.** In der GT3-Tabelle, die gegen eine echte
+Beschleunigungstabelle gefittet wurde, ist das Produkt `ratio x topFrac` fuer die Gaenge 1 bis
+5 konstant 0,9507 und faellt beim sechsten auf 0,88 - der ist luftwiderstandsbegrenzt und
+erreicht den Begrenzer nicht. Diese Unsymmetrie ist echt und wird uebernommen:
+
+    ratio_i = 0,9507 / topFrac_i    fuer alle ausser dem letzten Gang
+    ratio_n = 0,88                  bei topFrac_n = 1,0
+
+Weil der letzte Gang in jedem Getriebe `0,88 / 1,0` traegt, bleibt `ratioRef` - der Bezug, auf
+den `thrustAt()` normiert - ueberall 0,88, und der Anker der Beschleunigungskalibrierung ist
+unberuehrt. Gewaehlt ist nur die **Spreizung**, und dort sitzt der Charakter: acht enge Gaenge
+oben (84 / 92 / 100 Prozent der Spitze) gegen fuenf weite (30 / 45 / 62 / 81 / 100).
+
+**Was das Getriebe aendert, ist die Form und nicht die Schlagzeilenzahl.** `calibrateAccel()`
+laeuft nach jedem Wechsel neu und loest gegen die eingestellte Zeit von null auf
+Hoechstgeschwindigkeit. Was sich also verschiebt, ist wo die Stufen sitzen und welcher Gang
+zieht - genau wie das Layout die Balance aendert und nicht die Geradeausleistung.
+
+**Die Drehzahlgrenze bleibt bei 9000.** Sie ist eine Eigenschaft des Motors und nicht des
+Getriebes; ein Getriebe, das die Drehzahlgrenze mitbringt, waere ein Motor mit Zahnraedern.
+
+Drei Fallen stecken in der Umsetzung, und alle drei sind Voraussetzungen, die vorher galten:
+
+* **Das Uebersetzungs-Array wird an der Stelle geaendert, nicht ersetzt.** Die Ghosts teilen
+  es per Verweis, damit `accelScale()` nicht zweimal kalibriert. Ein Splice erreicht damit
+  jeden Teilhaber auf einmal, auch einen schon fahrenden Ghost; ein neues Array haette den
+  Verweis gekappt, und das Feld waere still im alten Getriebe weitergefahren.
+* **Die Tabelle darf nicht das eigene Array sein.** `config.gears` zeigte bis v0.4.53 direkt
+  auf `GT3_GEARS`. Ein Splice darauf haette die Tabelle zerstoert, aus der er die Werte nimmt -
+  zurueck auf GT3 haette dann acht Gaenge gehabt. Seit v0.4.54 ist es eine Kopie.
+* **Der Kalibrierbezug braucht eine eigene Kopie.** `calibRef` ist eine flache Kopie der
+  Konfiguration, und sein Kommentar behauptete ausdruecklich, `gears` werde nie geaendert.
+  Ohne eigene Kopie waere der Bezug mitgewandert: die Messaufbauten stellen mit
+  `Object.assign(cfg, calibRef)` den gefitteten Zustand her, und dort snappen `ratioRef`,
+  `rpmScale`, `upshiftRpm` und `shiftMs` als Skalare zurueck - die Uebersetzungen aber nicht.
+  Das Ergebnis waeren GT3-Schaltpunkte auf F1-Zahnraedern, also eine Messung, die still falsch
+  ist statt offen anders.
+
+Und eine Zusicherung, die kein Getriebe verletzen darf: **die Automatik darf nicht pendeln.**
+Nach einem Hochschalten faellt die Drehzahl auf `upshiftRpm x ratio[i+1] / ratio[i]`; liegt die
+Rueckschaltschwelle darueber, schaltet sie hoch und sofort wieder herunter. Gemessene Reserve
+ueber den engsten Gangsprung: GT3 1385, Formel 1 915 (enge Gaenge, also knapper), 412P 2324
+Umdrehungen. Ein Selbsttest rechnet das nach, statt es zu glauben.
+
 ### Das Einspurmodell
 
 Gebaut in v0.5, als **Instrument**: es rechnet Gierrate, Schwimmwinkel, Achsschraeglaufwinkel
