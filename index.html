@@ -629,6 +629,75 @@
        Untergrund derselbe, auch im Vollbild mit gedrehtem Schirm. */
     --gt3-line: rgba(255, 255, 255, .34);
     --gt3-line-soft: rgba(255, 255, 255, .16);
+    /* DIE ACHT GROESSEN, aus denen eine Cockpit-Ansicht besteht. Hier stehen die Werte der
+       Vorgabe ("GT3"); eine andere Ansicht setzt sie unter body[data-cockpit] um.
+       Nur diese acht, und das ist gemessen begruendet: der Cockpit-Teil hat 111 Regeln mit
+       50 verschiedenen Farbliteralen, aber die Ansicht erkennt man an der Blende, am
+       Schirmgrund, an der Tinte und am Deckglas - nicht an der Farbe des Tankbalkens. */
+    --gt3-ink: #eef2fa;
+    --gt3-screen: linear-gradient(180deg, #090d15 0%, #05070c 46%,
+                                          #04060a 74%, #070a12 100%);
+    --gt3-radius: 2px;
+    /* NONE als Vorgabe, obwohl der Kommentar bei den Ziffern vom Leuchten einer
+       selbstleuchtenden Anzeige spricht: eine Regel dafuer gab es nie, es ist bei der Absicht
+       geblieben. Der Token ist jetzt verdrahtet, aber die Vorgabe bleibt unveraendert - eine
+       Aenderung, die nach den ANSICHTEN gefragt war, soll das Aussehen der Vorgabe nicht
+       mitverschieben. Die beiden neuen Ansichten bringen ihr Leuchten selbst mit. */
+    --gt3-glow: none;
+    --gt3-scan: repeating-linear-gradient(0deg, rgba(0,0,0,.08) 0 1px,
+                                                rgba(0,0,0,0) 1px 3px);
+    --gt3-vignette: inset 0 0 clamp(14px, 5vw, 54px) rgba(0,0,0,.55);
+  }
+  /* ============================ COCKPIT-ANSICHTEN ============================
+     Zwei Alternativen zur Vorgabe, ueber body[data-cockpit]. Sie setzen ausschliesslich die
+     acht Groessen aus :root um - keine Regel unten kennt die Ansicht, und keine Funktion
+     haengt daran. Der Umschalter traegt deshalb auch data-preset-skip: eine Voreinstellung
+     ist eine ABSTIMMUNG, und wie der Schirm aussieht, ist keine.
+
+     OLDSCHOOL, 1980er. Bernstein auf fast schwarz, wie eine Vakuumfluoreszenzanzeige: das
+     ist die Farbe, die Armaturen dieser Jahre wirklich hatten, weil gruene und bernsteinerne
+     Leuchtstoffe die haltbarsten waren. Dazu grobe Pixelzeilen mit 2 px Teilung statt 3 -
+     eine Roehre hatte sichtbare Zeilen -, ein deutliches Leuchten um die Ziffern, eine
+     staerkere Randabschattung (eine Roehre ist an den Ecken dunkler, nicht nur optisch) und
+     runde Ecken: Kunststoffblenden dieser Zeit waren gegossen und nicht gefraest.
+     Die Blende bekommt eine grobe Narbung statt Carbon - Carbon gab es an einem Serienauto
+     von 1985 nicht. */
+  body[data-cockpit="retro"] {
+    --gt3-ink: #ffb64a;
+    --gt3-screen: linear-gradient(180deg, #120b02 0%, #0a0600 50%, #080500 78%, #140c02 100%);
+    --gt3-radius: 8px;
+    --gt3-line: rgba(255, 182, 74, .38);
+    --gt3-line-soft: rgba(255, 182, 74, .17);
+    --gt3-glow: 0 0 8px rgba(255, 150, 40, .38);
+    --gt3-scan: repeating-linear-gradient(0deg, rgba(0,0,0,.20) 0 1px,
+                                                rgba(0,0,0,0) 1px 2px);
+    --gt3-vignette: inset 0 0 clamp(18px, 7vw, 70px) rgba(0,0,0,.72);
+    --gt3-font: "Consolas", "DejaVu Sans Mono", "Courier New", monospace;
+    --gt3-carbon:
+      repeating-linear-gradient(45deg, rgba(255,255,255,.030) 0 2px,
+                                       rgba(0,0,0,.055) 2px 5px),
+      repeating-linear-gradient(-38deg, rgba(255,255,255,.022) 0 3px,
+                                        rgba(0,0,0,.045) 3px 7px);
+  }
+
+  /* MODERN, 2000er. Kuehles Weiss auf Anthrazit, flach und kontrastreich - die Generation
+     der ersten Farb-TFT im Rennwagen, bei denen der Reiz gerade darin lag, dass sie NICHT
+     nach Roehre aussahen. Also fast keine Pixelzeilen, eine schwache Randabschattung,
+     scharfe Ecken und ein knappes Leuchten. Die Blende wird gebuersteter Aluminium:
+     feine senkrechte Striche statt Gewebe. */
+  body[data-cockpit="modern"] {
+    --gt3-ink: #f4f8ff;
+    --gt3-screen: linear-gradient(180deg, #1a1f28 0%, #12161d 44%, #0e1117 76%, #171c24 100%);
+    --gt3-radius: 0px;
+    --gt3-line: rgba(214, 232, 255, .42);
+    --gt3-line-soft: rgba(214, 232, 255, .18);
+    --gt3-glow: 0 0 3px rgba(230, 242, 255, .16);
+    --gt3-scan: repeating-linear-gradient(0deg, rgba(0,0,0,.03) 0 1px,
+                                                rgba(0,0,0,0) 1px 4px);
+    --gt3-vignette: inset 0 0 clamp(8px, 3vw, 26px) rgba(0,0,0,.34);
+    --gt3-carbon:
+      repeating-linear-gradient(90deg, rgba(255,255,255,.055) 0 1px,
+                                       rgba(0,0,0,.05) 1px 3px);
   }
   #tab-race { position: relative; }
   /* CARBON-BLENDE UND GLASSCHIRM.
@@ -672,12 +741,12 @@
     position: relative;
     border-style: solid; border-color: transparent;
     border-width: var(--gt3-blende) var(--gt3-blende) var(--gt3-blende-u);
-    border-radius: 2px; overflow: hidden;
+    border-radius: var(--gt3-radius); overflow: hidden;
     background-image:
       /* 1. Der Schirm. Kein flaches Schwarz: ein TFT wird von der Kante beleuchtet und ist
             dort eine Spur heller, und genau das unterscheidet eine Anzeige von einer
             Farbflaeche. */
-      linear-gradient(180deg, #090d15 0%, #05070c 46%, #04060a 74%, #070a12 100%),
+      var(--gt3-screen),
       /* 2. Der Klarlack ueber der Blende, ungetaktet, mit dunklem Gegenfeld - eine
             Spiegelung ohne Gegenlicht sieht nach Aufhellung aus und nicht nach Lack. */
       linear-gradient(118deg, rgba(255,255,255,.10) 0%, rgba(255,255,255,.015) 34%,
@@ -710,7 +779,7 @@
                      var(--gt3-blende) var(--gt3-blende-u),
                      100% var(--gt3-blende-u), auto, 14px 14px;
     background-position: 0 0, 0 0, 0 0, 100% 0, 0 100%, 100% 100%, 0 100%, 0 0, 0 0;
-    padding: clamp(5px, 1vw, 11px); color: #eef2fa; display: grid;
+    padding: clamp(5px, 1vw, 11px); color: var(--gt3-ink); display: grid;
     gap: clamp(4px, .8vw, 9px);
     grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr) minmax(0, 1.15fr);
     grid-template-areas: "flag flag flag" "shift shift shift" "left gear right"
@@ -752,8 +821,8 @@
       linear-gradient(122deg, rgba(255,255,255,.045) 0%, rgba(255,255,255,.008) 30%,
                               rgba(255,255,255,0) 52%, rgba(0,0,0,.10) 78%,
                               rgba(255,255,255,.022) 100%),
-      repeating-linear-gradient(0deg, rgba(0,0,0,.08) 0 1px, rgba(0,0,0,0) 1px 3px);
-    box-shadow: inset 0 0 clamp(14px, 5vw, 54px) rgba(0,0,0,.55),
+      var(--gt3-scan);
+    box-shadow: var(--gt3-vignette),
                 inset 0 1px 0 rgba(255,255,255,.05); }
   /* Eine selbstleuchtende Anzeige blueht. Eine Ziffer mit vollkommen scharfer Kante liest
      sich als Text auf Papier - das Leuchten ist der Unterschied, und es ist so schwach
@@ -896,6 +965,7 @@
      tiefer, weil darunter Raum bleibt. Bei 1.05 kleben Zahl und Balken aneinander. */
   .gt3-val { font-family: var(--gt3-font); font-weight: 700; line-height: 1.12;
     font-variant-numeric: tabular-nums; letter-spacing: .01em;
+    text-shadow: var(--gt3-glow);
     font-size: clamp(14px, 2.6vw, 27px); }
   .gt3-val.sm { font-size: clamp(11px, 1.8vw, 18px); }
   .gt3-val.big { font-size: clamp(20px, 4.2vw, 44px); }
@@ -4991,6 +5061,21 @@
       <button class="misc-back subpage-back" data-sub="">&larr; Einstellungen</button>
       <h2>Allgemein</h2>
 <div class="opt-head">Allgemein</div>
+      <div class="opt-row"><div class="opt-label">Cockpit-Ansicht<small>Nur das Aussehen des
+          Cockpit-Schirms &ndash; Anzeigen, Tasten und Physik bleiben, wie sie sind.
+          &bdquo;GT3&ldquo; ist die Vorgabe. &bdquo;Oldschool&ldquo; ist Bernstein auf
+          Schwarz mit sichtbaren Pixelzeilen und runden Ecken, wie die
+          Vakuumfluoreszenz-Armaturen der 1980er; &bdquo;Modern&ldquo; ist k&uuml;hles
+          Wei&szlig; auf Anthrazit, flach und scharf, wie die ersten Farb-TFT der 2000er.
+          Die Bedeutungsfarben bleiben in allen drei gleich: der Tankbalken ist gr&uuml;n und
+          der Schaden rot, auch in der Retro-Ansicht &ndash; eine Ansicht darf &auml;ndern,
+          wie es aussieht, nicht was eine Farbe sagt. Die Voreinstellungen fassen die Ansicht
+          nicht an.</small></div>
+        <select id="setting-cockpit" data-preset-skip>
+          <option value="gt3" selected>GT3 (Vorgabe)</option>
+          <option value="retro">Oldschool, 1980er</option>
+          <option value="modern">Modern, 2000er</option>
+        </select></div>
       <div class="opt-row"><div class="opt-label">Scheinwerfer
           </div>
         <label class="tgl"><input type="checkbox" id="dash-head-toggle" checked><span></span></label></div>
@@ -6165,7 +6250,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.5.2</span></span>
+    <span class="foot-ver">v<span id="app-version">0.5.3</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -7645,6 +7730,11 @@
     "Drosselung jenseits der Fahrbahn": "Throttling off the track",
     "Meldet Byte 12 den Wert 0x00, ist das Auto neben der Bahn: dann wird das Gas auf 45 % gedeckelt. Das leichte Brummen dazu hängt allein am Schalter „Vibration“ darüber, dieser hier allein an der Drosselung – bis v0.4.55 war es eine Option mit zwei Hälften, und wer die Drosselung abschaltete, verlor auch die Rückmeldung. Wirkt nur in der Stellung „Auf der Bahn“: im Ausdruck-Modus ist der Streckensensor aus und Byte 12 stände dauernd auf 0x00.": "If byte 12 reports 0x00 the car is off the track: the throttle is then capped at 45 %. The gentle rumble that goes with it hangs on the “Vibration” switch above and this one only on the throttling – up to v0.4.55 it was one option with two halves, and switching the throttling off also cost you the feedback. Only takes effect in the “On the track” position: in printout mode the track sensor is off and byte 12 would sit at 0x00 permanently.",
     "Rückmeldung im Controller bei Gangwechsel, ABS, Aufprall, im Boxenstopp und neben der Bahn. Standard aus, weil nicht jeder Controller es kann und ein Dauerbrummen im Gelände Geschmackssache ist. Unabhängig von der Drosselung darunter. Das Handy vibriert nicht mit, das Protokoll kennt dafür nichts.": "Feedback in the controller on gear changes, ABS, impacts, in the pit stop and off the track. Off by default, because not every controller can do it and a constant rumble in the gravel is a matter of taste. Independent of the throttling below. The phone does not vibrate along, and the protocol knows nothing for it.",
+    "Cockpit-Ansicht": "Cockpit look",
+    "Nur das Aussehen des Cockpit-Schirms – Anzeigen, Tasten und Physik bleiben, wie sie sind. „GT3“ ist die Vorgabe. „Oldschool“ ist Bernstein auf Schwarz mit sichtbaren Pixelzeilen und runden Ecken, wie die Vakuumfluoreszenz-Armaturen der 1980er; „Modern“ ist kühles Weiß auf Anthrazit, flach und scharf, wie die ersten Farb-TFT der 2000er. Die Bedeutungsfarben bleiben in allen drei gleich: der Tankbalken ist grün und der Schaden rot, auch in der Retro-Ansicht – eine Ansicht darf ändern, wie es aussieht, nicht was eine Farbe sagt. Die Voreinstellungen fassen die Ansicht nicht an.": "Only the look of the cockpit screen – readouts, buttons and physics stay as they are. “GT3” is the default. “Oldschool” is amber on black with visible scan lines and rounded corners, like the vacuum-fluorescent instruments of the 1980s; “Modern” is cool white on anthracite, flat and sharp, like the first colour TFTs of the 2000s. The meaning colours stay the same in all three: the fuel bar is green and damage is red, in the retro look as well – a look may change how something appears, not what a colour says. The presets do not touch the look.",
+    "GT3 (Vorgabe)": "GT3 (default)",
+    "Oldschool, 1980er": "Oldschool, 1980s",
+    "Modern, 2000er": "Modern, 2000s",
   };
 
   // ============================================================================
@@ -10846,6 +10936,36 @@
     // und ist damit fuer den Textknoten-Uebersetzer unerreichbar.
     if (typeof i18nOnLangChange === 'function') i18nOnLangChange(zeigeLayoutDaten);
     anwenden(false);
+  }
+
+  // ---- Cockpit-Ansicht ---------------------------------------------------------------
+  //
+  // Sie setzt ein Attribut am body und sonst nichts. Kein Neuaufbau, keine Klasse an
+  // einzelnen Kacheln: die drei Ansichten unterscheiden sich ausschliesslich in den acht
+  // --gt3-Variablen, und das Umsetzen einer Variable faerbt jede Regel mit, die sie liest.
+  //
+  // EIGENE ABLAGE, wie beim Layout und beim Getriebe: der Waehler traegt data-preset-skip,
+  // weil eine Voreinstellung eine Abstimmung ist und das Aussehen keine.
+  const COCKPIT_STORE = 'chc.cockpit.v1';
+  if ($('setting-cockpit')) {
+    const ansichtAnwenden = (melden) => {
+      const v = $('setting-cockpit').value;
+      // 'gt3' ist die Vorgabe und setzt KEIN Attribut: so stehen die Werte aus :root, und
+      // die Vorgabe ist damit nicht eine dritte Kopie derselben Zahlen.
+      if (v === 'gt3') document.body.removeAttribute('data-cockpit');
+      else document.body.setAttribute('data-cockpit', v);
+      if (melden) {
+        const opt = $('setting-cockpit').selectedOptions[0];
+        log('Cockpit-Ansicht: ' + (opt ? opt.textContent : v) + '.', 'info');
+      }
+      try { localStorage.setItem(COCKPIT_STORE, v); } catch (e) { /* privater Modus */ }
+    };
+    try {
+      const gespeichert = localStorage.getItem(COCKPIT_STORE);
+      if (gespeichert) $('setting-cockpit').value = gespeichert;
+    } catch (e) { /* privater Modus */ }
+    $('setting-cockpit').addEventListener('change', () => ansichtAnwenden(true));
+    ansichtAnwenden(false);
   }
 
   // ---- Getriebeart -------------------------------------------------------------------
@@ -26690,6 +26810,75 @@
     } finally { fuel = gemerkt; }
   });
 
+
+
+  // ---- Cockpit-Ansicht: aendert das Aussehen und sonst nichts ----
+  //
+  // Die Zusicherung der Aufgabe war ausdruecklich "nur den Look, nicht die Funktionsweise",
+  // und genau das laesst sich pruefen: die drei Ansichten muessen SICHTBAR verschieden sein,
+  // und dabei darf sich kein Physikwert, kein Element und keine Voreinstellung bewegen.
+  //
+  // Der zweite Teil ist der wichtigere. Eine Ansicht, die nebenbei eine Zahl verstellt, ist
+  // ein Fehler, den man am Aussehen nicht sieht - man sieht ihn erst beim Fahren.
+  stAdd('Cockpit-Ansicht: nur Aussehen, keine Funktion', () => {
+    const sel = $('setting-cockpit');
+    const dash = $('race-dash');
+    if (!sel || !dash) return { ok: false, mass: 'Waehler oder Cockpit fehlt' };
+    const merk = sel.value;
+    const schlecht = [];
+    try {
+      const setze = (v) => {
+        sel.value = v;
+        sel.dispatchEvent(new Event('change', { bubbles: true }));
+        const cs = getComputedStyle(dash);
+        return { attr: document.body.getAttribute('data-cockpit'),
+                 tinte: cs.color, radius: cs.borderTopLeftRadius,
+                 // Die Zahl der Elemente mit id: eine Ansicht darf keines hinzufuegen oder
+                 // wegnehmen, sonst greift eine Anzeige ins Leere.
+                 ids: document.querySelectorAll('[id]').length,
+                 diff: (window.OMEGA_TEST && OMEGA_TEST.physConfigDiff)
+                   ? Object.keys(OMEGA_TEST.physConfigDiff()).length : 0 };
+      };
+      const werte = Array.prototype.map.call(sel.options, o => o.value);
+      if (werte.length < 3) schlecht.push('nur ' + werte.length + ' Ansichten');
+      const proben = werte.map(setze);
+      // 1. Die Vorgabe setzt KEIN Attribut - sonst waeren ihre Werte eine zweite Abschrift
+      //    dessen, was in :root steht.
+      if (proben[0].attr !== null) schlecht.push('Vorgabe setzt ' + proben[0].attr);
+      // 2. Sichtbar verschieden: Tinte ODER Rundung muss sich unterscheiden, und zwar
+      //    zwischen JEDEM Paar. Zwei Ansichten, die gleich aussehen, sind eine.
+      for (let i = 0; i < proben.length; i++) {
+        for (let j = i + 1; j < proben.length; j++) {
+          if (proben[i].tinte === proben[j].tinte
+              && proben[i].radius === proben[j].radius) {
+            schlecht.push(werte[i] + ' und ' + werte[j] + ' sehen gleich aus');
+          }
+        }
+      }
+      // 3. Und NICHTS Funktionales bewegt sich.
+      const ids = new Set(proben.map(p => p.ids));
+      if (ids.size !== 1) schlecht.push('Elementzahl schwankt: ' + [...ids].join('/'));
+      const diffs = proben.map(p => p.diff);
+      if (diffs.some(d => d !== diffs[0])) {
+        schlecht.push('Physik weicht ab: ' + diffs.join('/'));
+      }
+      // 4. Kein Preset-Schluessel: eine Voreinstellung ist eine Abstimmung.
+      if (typeof presetControls === 'function') {
+        if (presetControls().map(x => x.id).includes('setting-cockpit')) {
+          schlecht.push('in den Voreinstellungen');
+        }
+        if (!sel.hasAttribute('data-preset-skip')) schlecht.push('data-preset-skip fehlt');
+      }
+      return { ok: schlecht.length === 0,
+               mass: werte.length + ' Ansichten: '
+                     + proben.map((p, i) => werte[i] + ' ' + p.tinte + '/' + p.radius).join(' | ')
+                     + ' | ' + proben[0].ids + ' Elemente unveraendert'
+                     + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+    } finally {
+      sel.value = merk;
+      sel.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+  });
 
   // ---- Streckenkarte: die Autos stehen dort, wo sie sind ----
   //

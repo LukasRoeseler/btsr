@@ -194,6 +194,36 @@
     anwenden(false);
   }
 
+  // ---- Cockpit-Ansicht ---------------------------------------------------------------
+  //
+  // Sie setzt ein Attribut am body und sonst nichts. Kein Neuaufbau, keine Klasse an
+  // einzelnen Kacheln: die drei Ansichten unterscheiden sich ausschliesslich in den acht
+  // --gt3-Variablen, und das Umsetzen einer Variable faerbt jede Regel mit, die sie liest.
+  //
+  // EIGENE ABLAGE, wie beim Layout und beim Getriebe: der Waehler traegt data-preset-skip,
+  // weil eine Voreinstellung eine Abstimmung ist und das Aussehen keine.
+  const COCKPIT_STORE = 'chc.cockpit.v1';
+  if ($('setting-cockpit')) {
+    const ansichtAnwenden = (melden) => {
+      const v = $('setting-cockpit').value;
+      // 'gt3' ist die Vorgabe und setzt KEIN Attribut: so stehen die Werte aus :root, und
+      // die Vorgabe ist damit nicht eine dritte Kopie derselben Zahlen.
+      if (v === 'gt3') document.body.removeAttribute('data-cockpit');
+      else document.body.setAttribute('data-cockpit', v);
+      if (melden) {
+        const opt = $('setting-cockpit').selectedOptions[0];
+        log('Cockpit-Ansicht: ' + (opt ? opt.textContent : v) + '.', 'info');
+      }
+      try { localStorage.setItem(COCKPIT_STORE, v); } catch (e) { /* privater Modus */ }
+    };
+    try {
+      const gespeichert = localStorage.getItem(COCKPIT_STORE);
+      if (gespeichert) $('setting-cockpit').value = gespeichert;
+    } catch (e) { /* privater Modus */ }
+    $('setting-cockpit').addEventListener('change', () => ansichtAnwenden(true));
+    ansichtAnwenden(false);
+  }
+
   // ---- Getriebeart -------------------------------------------------------------------
   //
   // Dieselbe Bauform wie das Layout darueber, und aus demselben Grund eine EIGENE Ablage:

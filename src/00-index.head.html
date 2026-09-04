@@ -629,6 +629,75 @@
        Untergrund derselbe, auch im Vollbild mit gedrehtem Schirm. */
     --gt3-line: rgba(255, 255, 255, .34);
     --gt3-line-soft: rgba(255, 255, 255, .16);
+    /* DIE ACHT GROESSEN, aus denen eine Cockpit-Ansicht besteht. Hier stehen die Werte der
+       Vorgabe ("GT3"); eine andere Ansicht setzt sie unter body[data-cockpit] um.
+       Nur diese acht, und das ist gemessen begruendet: der Cockpit-Teil hat 111 Regeln mit
+       50 verschiedenen Farbliteralen, aber die Ansicht erkennt man an der Blende, am
+       Schirmgrund, an der Tinte und am Deckglas - nicht an der Farbe des Tankbalkens. */
+    --gt3-ink: #eef2fa;
+    --gt3-screen: linear-gradient(180deg, #090d15 0%, #05070c 46%,
+                                          #04060a 74%, #070a12 100%);
+    --gt3-radius: 2px;
+    /* NONE als Vorgabe, obwohl der Kommentar bei den Ziffern vom Leuchten einer
+       selbstleuchtenden Anzeige spricht: eine Regel dafuer gab es nie, es ist bei der Absicht
+       geblieben. Der Token ist jetzt verdrahtet, aber die Vorgabe bleibt unveraendert - eine
+       Aenderung, die nach den ANSICHTEN gefragt war, soll das Aussehen der Vorgabe nicht
+       mitverschieben. Die beiden neuen Ansichten bringen ihr Leuchten selbst mit. */
+    --gt3-glow: none;
+    --gt3-scan: repeating-linear-gradient(0deg, rgba(0,0,0,.08) 0 1px,
+                                                rgba(0,0,0,0) 1px 3px);
+    --gt3-vignette: inset 0 0 clamp(14px, 5vw, 54px) rgba(0,0,0,.55);
+  }
+  /* ============================ COCKPIT-ANSICHTEN ============================
+     Zwei Alternativen zur Vorgabe, ueber body[data-cockpit]. Sie setzen ausschliesslich die
+     acht Groessen aus :root um - keine Regel unten kennt die Ansicht, und keine Funktion
+     haengt daran. Der Umschalter traegt deshalb auch data-preset-skip: eine Voreinstellung
+     ist eine ABSTIMMUNG, und wie der Schirm aussieht, ist keine.
+
+     OLDSCHOOL, 1980er. Bernstein auf fast schwarz, wie eine Vakuumfluoreszenzanzeige: das
+     ist die Farbe, die Armaturen dieser Jahre wirklich hatten, weil gruene und bernsteinerne
+     Leuchtstoffe die haltbarsten waren. Dazu grobe Pixelzeilen mit 2 px Teilung statt 3 -
+     eine Roehre hatte sichtbare Zeilen -, ein deutliches Leuchten um die Ziffern, eine
+     staerkere Randabschattung (eine Roehre ist an den Ecken dunkler, nicht nur optisch) und
+     runde Ecken: Kunststoffblenden dieser Zeit waren gegossen und nicht gefraest.
+     Die Blende bekommt eine grobe Narbung statt Carbon - Carbon gab es an einem Serienauto
+     von 1985 nicht. */
+  body[data-cockpit="retro"] {
+    --gt3-ink: #ffb64a;
+    --gt3-screen: linear-gradient(180deg, #120b02 0%, #0a0600 50%, #080500 78%, #140c02 100%);
+    --gt3-radius: 8px;
+    --gt3-line: rgba(255, 182, 74, .38);
+    --gt3-line-soft: rgba(255, 182, 74, .17);
+    --gt3-glow: 0 0 8px rgba(255, 150, 40, .38);
+    --gt3-scan: repeating-linear-gradient(0deg, rgba(0,0,0,.20) 0 1px,
+                                                rgba(0,0,0,0) 1px 2px);
+    --gt3-vignette: inset 0 0 clamp(18px, 7vw, 70px) rgba(0,0,0,.72);
+    --gt3-font: "Consolas", "DejaVu Sans Mono", "Courier New", monospace;
+    --gt3-carbon:
+      repeating-linear-gradient(45deg, rgba(255,255,255,.030) 0 2px,
+                                       rgba(0,0,0,.055) 2px 5px),
+      repeating-linear-gradient(-38deg, rgba(255,255,255,.022) 0 3px,
+                                        rgba(0,0,0,.045) 3px 7px);
+  }
+
+  /* MODERN, 2000er. Kuehles Weiss auf Anthrazit, flach und kontrastreich - die Generation
+     der ersten Farb-TFT im Rennwagen, bei denen der Reiz gerade darin lag, dass sie NICHT
+     nach Roehre aussahen. Also fast keine Pixelzeilen, eine schwache Randabschattung,
+     scharfe Ecken und ein knappes Leuchten. Die Blende wird gebuersteter Aluminium:
+     feine senkrechte Striche statt Gewebe. */
+  body[data-cockpit="modern"] {
+    --gt3-ink: #f4f8ff;
+    --gt3-screen: linear-gradient(180deg, #1a1f28 0%, #12161d 44%, #0e1117 76%, #171c24 100%);
+    --gt3-radius: 0px;
+    --gt3-line: rgba(214, 232, 255, .42);
+    --gt3-line-soft: rgba(214, 232, 255, .18);
+    --gt3-glow: 0 0 3px rgba(230, 242, 255, .16);
+    --gt3-scan: repeating-linear-gradient(0deg, rgba(0,0,0,.03) 0 1px,
+                                                rgba(0,0,0,0) 1px 4px);
+    --gt3-vignette: inset 0 0 clamp(8px, 3vw, 26px) rgba(0,0,0,.34);
+    --gt3-carbon:
+      repeating-linear-gradient(90deg, rgba(255,255,255,.055) 0 1px,
+                                       rgba(0,0,0,.05) 1px 3px);
   }
   #tab-race { position: relative; }
   /* CARBON-BLENDE UND GLASSCHIRM.
@@ -672,12 +741,12 @@
     position: relative;
     border-style: solid; border-color: transparent;
     border-width: var(--gt3-blende) var(--gt3-blende) var(--gt3-blende-u);
-    border-radius: 2px; overflow: hidden;
+    border-radius: var(--gt3-radius); overflow: hidden;
     background-image:
       /* 1. Der Schirm. Kein flaches Schwarz: ein TFT wird von der Kante beleuchtet und ist
             dort eine Spur heller, und genau das unterscheidet eine Anzeige von einer
             Farbflaeche. */
-      linear-gradient(180deg, #090d15 0%, #05070c 46%, #04060a 74%, #070a12 100%),
+      var(--gt3-screen),
       /* 2. Der Klarlack ueber der Blende, ungetaktet, mit dunklem Gegenfeld - eine
             Spiegelung ohne Gegenlicht sieht nach Aufhellung aus und nicht nach Lack. */
       linear-gradient(118deg, rgba(255,255,255,.10) 0%, rgba(255,255,255,.015) 34%,
@@ -710,7 +779,7 @@
                      var(--gt3-blende) var(--gt3-blende-u),
                      100% var(--gt3-blende-u), auto, 14px 14px;
     background-position: 0 0, 0 0, 0 0, 100% 0, 0 100%, 100% 100%, 0 100%, 0 0, 0 0;
-    padding: clamp(5px, 1vw, 11px); color: #eef2fa; display: grid;
+    padding: clamp(5px, 1vw, 11px); color: var(--gt3-ink); display: grid;
     gap: clamp(4px, .8vw, 9px);
     grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr) minmax(0, 1.15fr);
     grid-template-areas: "flag flag flag" "shift shift shift" "left gear right"
@@ -752,8 +821,8 @@
       linear-gradient(122deg, rgba(255,255,255,.045) 0%, rgba(255,255,255,.008) 30%,
                               rgba(255,255,255,0) 52%, rgba(0,0,0,.10) 78%,
                               rgba(255,255,255,.022) 100%),
-      repeating-linear-gradient(0deg, rgba(0,0,0,.08) 0 1px, rgba(0,0,0,0) 1px 3px);
-    box-shadow: inset 0 0 clamp(14px, 5vw, 54px) rgba(0,0,0,.55),
+      var(--gt3-scan);
+    box-shadow: var(--gt3-vignette),
                 inset 0 1px 0 rgba(255,255,255,.05); }
   /* Eine selbstleuchtende Anzeige blueht. Eine Ziffer mit vollkommen scharfer Kante liest
      sich als Text auf Papier - das Leuchten ist der Unterschied, und es ist so schwach
@@ -896,6 +965,7 @@
      tiefer, weil darunter Raum bleibt. Bei 1.05 kleben Zahl und Balken aneinander. */
   .gt3-val { font-family: var(--gt3-font); font-weight: 700; line-height: 1.12;
     font-variant-numeric: tabular-nums; letter-spacing: .01em;
+    text-shadow: var(--gt3-glow);
     font-size: clamp(14px, 2.6vw, 27px); }
   .gt3-val.sm { font-size: clamp(11px, 1.8vw, 18px); }
   .gt3-val.big { font-size: clamp(20px, 4.2vw, 44px); }
@@ -4991,6 +5061,21 @@
       <button class="misc-back subpage-back" data-sub="">&larr; Einstellungen</button>
       <h2>Allgemein</h2>
 <div class="opt-head">Allgemein</div>
+      <div class="opt-row"><div class="opt-label">Cockpit-Ansicht<small>Nur das Aussehen des
+          Cockpit-Schirms &ndash; Anzeigen, Tasten und Physik bleiben, wie sie sind.
+          &bdquo;GT3&ldquo; ist die Vorgabe. &bdquo;Oldschool&ldquo; ist Bernstein auf
+          Schwarz mit sichtbaren Pixelzeilen und runden Ecken, wie die
+          Vakuumfluoreszenz-Armaturen der 1980er; &bdquo;Modern&ldquo; ist k&uuml;hles
+          Wei&szlig; auf Anthrazit, flach und scharf, wie die ersten Farb-TFT der 2000er.
+          Die Bedeutungsfarben bleiben in allen drei gleich: der Tankbalken ist gr&uuml;n und
+          der Schaden rot, auch in der Retro-Ansicht &ndash; eine Ansicht darf &auml;ndern,
+          wie es aussieht, nicht was eine Farbe sagt. Die Voreinstellungen fassen die Ansicht
+          nicht an.</small></div>
+        <select id="setting-cockpit" data-preset-skip>
+          <option value="gt3" selected>GT3 (Vorgabe)</option>
+          <option value="retro">Oldschool, 1980er</option>
+          <option value="modern">Modern, 2000er</option>
+        </select></div>
       <div class="opt-row"><div class="opt-label">Scheinwerfer
           </div>
         <label class="tgl"><input type="checkbox" id="dash-head-toggle" checked><span></span></label></div>
@@ -6165,7 +6250,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.5.2</span></span>
+    <span class="foot-ver">v<span id="app-version">0.5.3</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine

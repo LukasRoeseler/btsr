@@ -1619,6 +1619,75 @@
   });
 
 
+
+  // ---- Cockpit-Ansicht: aendert das Aussehen und sonst nichts ----
+  //
+  // Die Zusicherung der Aufgabe war ausdruecklich "nur den Look, nicht die Funktionsweise",
+  // und genau das laesst sich pruefen: die drei Ansichten muessen SICHTBAR verschieden sein,
+  // und dabei darf sich kein Physikwert, kein Element und keine Voreinstellung bewegen.
+  //
+  // Der zweite Teil ist der wichtigere. Eine Ansicht, die nebenbei eine Zahl verstellt, ist
+  // ein Fehler, den man am Aussehen nicht sieht - man sieht ihn erst beim Fahren.
+  stAdd('Cockpit-Ansicht: nur Aussehen, keine Funktion', () => {
+    const sel = $('setting-cockpit');
+    const dash = $('race-dash');
+    if (!sel || !dash) return { ok: false, mass: 'Waehler oder Cockpit fehlt' };
+    const merk = sel.value;
+    const schlecht = [];
+    try {
+      const setze = (v) => {
+        sel.value = v;
+        sel.dispatchEvent(new Event('change', { bubbles: true }));
+        const cs = getComputedStyle(dash);
+        return { attr: document.body.getAttribute('data-cockpit'),
+                 tinte: cs.color, radius: cs.borderTopLeftRadius,
+                 // Die Zahl der Elemente mit id: eine Ansicht darf keines hinzufuegen oder
+                 // wegnehmen, sonst greift eine Anzeige ins Leere.
+                 ids: document.querySelectorAll('[id]').length,
+                 diff: (window.OMEGA_TEST && OMEGA_TEST.physConfigDiff)
+                   ? Object.keys(OMEGA_TEST.physConfigDiff()).length : 0 };
+      };
+      const werte = Array.prototype.map.call(sel.options, o => o.value);
+      if (werte.length < 3) schlecht.push('nur ' + werte.length + ' Ansichten');
+      const proben = werte.map(setze);
+      // 1. Die Vorgabe setzt KEIN Attribut - sonst waeren ihre Werte eine zweite Abschrift
+      //    dessen, was in :root steht.
+      if (proben[0].attr !== null) schlecht.push('Vorgabe setzt ' + proben[0].attr);
+      // 2. Sichtbar verschieden: Tinte ODER Rundung muss sich unterscheiden, und zwar
+      //    zwischen JEDEM Paar. Zwei Ansichten, die gleich aussehen, sind eine.
+      for (let i = 0; i < proben.length; i++) {
+        for (let j = i + 1; j < proben.length; j++) {
+          if (proben[i].tinte === proben[j].tinte
+              && proben[i].radius === proben[j].radius) {
+            schlecht.push(werte[i] + ' und ' + werte[j] + ' sehen gleich aus');
+          }
+        }
+      }
+      // 3. Und NICHTS Funktionales bewegt sich.
+      const ids = new Set(proben.map(p => p.ids));
+      if (ids.size !== 1) schlecht.push('Elementzahl schwankt: ' + [...ids].join('/'));
+      const diffs = proben.map(p => p.diff);
+      if (diffs.some(d => d !== diffs[0])) {
+        schlecht.push('Physik weicht ab: ' + diffs.join('/'));
+      }
+      // 4. Kein Preset-Schluessel: eine Voreinstellung ist eine Abstimmung.
+      if (typeof presetControls === 'function') {
+        if (presetControls().map(x => x.id).includes('setting-cockpit')) {
+          schlecht.push('in den Voreinstellungen');
+        }
+        if (!sel.hasAttribute('data-preset-skip')) schlecht.push('data-preset-skip fehlt');
+      }
+      return { ok: schlecht.length === 0,
+               mass: werte.length + ' Ansichten: '
+                     + proben.map((p, i) => werte[i] + ' ' + p.tinte + '/' + p.radius).join(' | ')
+                     + ' | ' + proben[0].ids + ' Elemente unveraendert'
+                     + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+    } finally {
+      sel.value = merk;
+      sel.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+  });
+
   // ---- Streckenkarte: die Autos stehen dort, wo sie sind ----
   //
   // DER BEFUND: die Karte zeichnete GAR KEIN Auto. Der einzige Aufrufer, der eine Position
