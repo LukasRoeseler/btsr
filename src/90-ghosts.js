@@ -4715,6 +4715,43 @@
                echte: trackCarMarks ? trackCarMarks().length : null };
     },
 
+    // Die sechs Motorton-Zusaetze, ohne einen Ton zu erzeugen: extrasWerte() rechnet nur.
+    // `folge` ist eine Liste von Fahrzustaenden, die HINTEREINANDER durchgerechnet werden -
+    // das muss sie sein, weil drei der sechs von der VORGESCHICHTE leben: der Knaller vom
+    // Lastabfall, der Schaltknall von der Flanke, der Ladedruck von seiner Verzoegerung.
+    //
+    // dt wird mitgegeben und nicht aus der Uhr genommen: in einer synchronen Schleife ist
+    // die Uhrdifferenz null, und dann kaeme der Ladedruck nie an.
+    sndExtras(folge, o) {
+      const opt = o || {};
+      const merk = { crackle: xs.crackle, turbo: xs.turbo, ein: extrasOn,
+                     last: xs.letzteLast, schalt: xs.schaltAn, druck: xs.ladedruck };
+      try {
+        if (opt.crackle !== undefined) xs.crackle = opt.crackle;
+        if (opt.turbo !== undefined) xs.turbo = !!opt.turbo;
+        if (opt.ein !== undefined) extrasOn = !!opt.ein;
+        xs.letzteLast = opt.startLast === undefined ? 0 : opt.startLast;
+        xs.schaltAn = false;
+        xs.ladedruck = 0;
+        const dt = opt.dt === undefined ? 0.045 : opt.dt;
+        return (folge || []).map(z => {
+          const st = { rpmFrac: z.rpmFrac || 0, onLimiter: !!z.onLimiter,
+                       isShifting: !!z.isShifting, speedKmh: z.speedKmh || 0,
+                       currentGear: z.gear || 0 };
+          const w = extrasWerte(st, z.load === undefined ? 0 : z.load, dt);
+          return { tonHz: Math.round(w.tonHz), cut: w.cutTiefe,
+                   whineHz: Math.round(w.whineHz), whineGain: +w.whineGain.toFixed(4),
+                   pfeifHz: Math.round(w.pfeifHz), pfeifGain: +w.pfeifGain.toFixed(4),
+                   knaller: w.knaller, schaltKnall: +(w.schaltKnall || 0).toFixed(3),
+                   abblasen: +(w.abblasen || 0).toFixed(3),
+                   druck: +(w.ladedruck || 0).toFixed(3), aus: !!w.aus };
+        });
+      } finally {
+        xs.crackle = merk.crackle; xs.turbo = merk.turbo; extrasOn = merk.ein;
+        xs.letzteLast = merk.last; xs.schaltAn = merk.schalt; xs.ladedruck = merk.druck;
+      }
+    },
+
     ghostPassRates() {
       const p = SPICE_ATTACK_P * ghostCfg.spice;
       return { reichweite: SPICE_ATTACK_RANGE,

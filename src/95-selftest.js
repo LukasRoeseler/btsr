@@ -1730,6 +1730,109 @@
   });
 
 
+
+  // ---- Motorton-Zusaetze: jeder haengt an seiner Groesse, und der Schalter stellt alle ab ----
+  //
+  // Sechs Zusaetze, und jeder soll genau von EINER Groesse abhaengen. Der Test prueft
+  // deshalb nicht "es klingt anders", sondern fuer jeden einzeln, dass er kommt, wenn seine
+  // Bedingung gilt, und AUSBLEIBT, wenn sie nicht gilt. Ohne die zweite Haelfte waere ein
+  // Zusatz, der dauernd feuert, ebenfalls gruen.
+  //
+  // Geprueft wird an der Rechnung und nicht am Ton: extrasWerte() braucht keinen
+  // AudioContext, und den gibt es erst nach einer Nutzergeste - ein Test, der ohne Klick
+  // ueberspringt, prueft nie.
+  stAdd('Motorton-Zusaetze: sechs Groessen, ein Schalter', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.sndExtras) {
+      return { skip: true, mass: 'sndExtras nicht vorhanden' };
+    }
+    const schlecht = [], teile = [];
+    const eins = (folge, o) => OMEGA_TEST.sndExtras(folge, o)[folge.length - 1];
+
+    // 1. Helligkeit folgt der Last.
+    const dunkel = eins([{ load: 0 }]).tonHz;
+    const hell = eins([{ load: 1 }]).tonHz;
+    teile.push('Helligkeit ' + dunkel + '/' + hell + ' Hz');
+    if (!(hell > dunkel * 2)) schlecht.push('Helligkeit folgt der Last nicht');
+
+    // 2. Stottern NUR am Begrenzer.
+    const ohne = eins([{ load: 1, rpmFrac: 0.9 }]).cut;
+    const mit = eins([{ load: 1, rpmFrac: 1, onLimiter: true }]).cut;
+    teile.push('Stottern ' + ohne + '/' + mit);
+    if (!(ohne === 0 && mit > 0.1)) schlecht.push('Stottern haengt nicht am Begrenzer');
+
+    // 3. Knaller NUR beim Lastabfall bei Drehzahl. Drei Faelle, und die letzten zwei sind
+    //    die Gegenproben.
+    const abfall = eins([{ load: 1, rpmFrac: 0.8 }, { load: 0, rpmFrac: 0.8 }]).knaller;
+    const konstant = eins([{ load: 1, rpmFrac: 0.8 }, { load: 1, rpmFrac: 0.8 }]).knaller;
+    const langsam = eins([{ load: 1, rpmFrac: 0.2 }, { load: 0, rpmFrac: 0.2 }]).knaller;
+    teile.push('Knaller ' + abfall + '/' + konstant + '/' + langsam);
+    if (!(abfall > 0)) schlecht.push('kein Knaller beim Lastabfall');
+    if (konstant !== 0) schlecht.push('Knaller bei konstantem Gas');
+    if (langsam !== 0) schlecht.push('Knaller bei niedriger Drehzahl');
+    // Und die Staerke haengt am Motor: ein Turbo knallt kaum, ein Sauger viel.
+    const viel = eins([{ load: 1, rpmFrac: 0.9 }, { load: 0, rpmFrac: 0.9 }],
+                      { crackle: 0.62 }).knaller;
+    const kaum = eins([{ load: 1, rpmFrac: 0.9 }, { load: 0, rpmFrac: 0.9 }],
+                      { crackle: 0.12 }).knaller;
+    teile.push('je Motor ' + viel + '/' + kaum);
+    if (!(viel > kaum)) schlecht.push('Knallstaerke haengt nicht am Motor');
+
+    // 4. Schaltknall an der FLANKE und nur unter Last.
+    const flanke = eins([{ load: 0.9 }, { load: 0.9, isShifting: true }]).schaltKnall;
+    const gehalten = eins([{ load: 0.9, isShifting: true },
+                           { load: 0.9, isShifting: true }]).schaltKnall;
+    const ohneLast = eins([{ load: 0.1 }, { load: 0.1, isShifting: true }]).schaltKnall;
+    teile.push('Schaltknall ' + flanke + '/' + gehalten + '/' + ohneLast);
+    if (!(flanke > 0)) schlecht.push('kein Schaltknall');
+    if (gehalten !== 0) schlecht.push('Schaltknall dauert an statt an der Flanke');
+    if (ohneLast !== 0) schlecht.push('Schaltknall ohne Last');
+
+    // 5. Getriebeheulen: mit dem TEMPO, und im kurzen Gang hoeher als im langen. Das ist
+    //    der Punkt - es haengt an der Raddrehzahl mal Uebersetzung, nicht an der Drehzahl.
+    const top = physEngine.config.topSpeedKmh;
+    const steht = eins([{ speedKmh: 0, load: 1 }]).whineGain;
+    const rollt = eins([{ speedKmh: top * 0.6, load: 1 }]).whineGain;
+    const kurz = eins([{ speedKmh: top * 0.3, load: 1, gear: 0 }]).whineHz;
+    const lang = eins([{ speedKmh: top * 0.3, load: 1,
+                         gear: physEngine.config.gears.length - 1 }]).whineHz;
+    teile.push('Heulen ' + kurz + '/' + lang + ' Hz');
+    if (steht !== 0) schlecht.push('Heulen im Stand');
+    if (!(rollt > 0)) schlecht.push('kein Heulen beim Rollen');
+    if (!(kurz > lang * 1.5)) schlecht.push('Heulen haengt nicht am Gang');
+
+    // 6. Der Lader: NUR bei aufgeladenen Motoren, und mit Verzoegerung. Der Ladedruck darf
+    //    nicht im ersten Takt stehen - genau diese Verzoegerung ist das Turboloch.
+    const sauger = eins([{ load: 1, rpmFrac: 0.9 }], { turbo: false }).pfeifGain;
+    const reihe = OMEGA_TEST.sndExtras(
+      [{ load: 1, rpmFrac: 0.9 }, { load: 1, rpmFrac: 0.9 }, { load: 1, rpmFrac: 0.9 }],
+      { turbo: true, dt: 0.2 });
+    teile.push('Ladedruck ' + reihe.map(r => r.druck).join('->'));
+    if (sauger !== 0) schlecht.push('Sauger pfeift');
+    if (!(reihe[0].druck < reihe[2].druck)) schlecht.push('Ladedruck baut sich nicht auf');
+    if (!(reihe[0].druck < 0.5)) schlecht.push('Ladedruck ohne Verzoegerung');
+    const bo = OMEGA_TEST.sndExtras(
+      [{ load: 1, rpmFrac: 0.9 }, { load: 1, rpmFrac: 0.9 }, { load: 0, rpmFrac: 0.9 }],
+      { turbo: true, dt: 0.6 })[2].abblasen;
+    if (!(bo > 0)) schlecht.push('kein Abblasen beim Lastwegnehmen');
+
+    // 7. DER SCHALTER stellt alle sechs ab, und zwar NEUTRAL: der Tiefpass geht auf 20 kHz
+    //    und nicht auf irgendeinen Wert, die Zusatzquellen auf null.
+    const aus = eins([{ load: 1, rpmFrac: 1, onLimiter: true, isShifting: true,
+                        speedKmh: top * 0.8 }], { ein: false, turbo: true });
+    teile.push('aus: Ton ' + aus.tonHz + ' Hz');
+    const reste = [];
+    if (aus.tonHz !== 20000) reste.push('Tiefpass ' + aus.tonHz);
+    if (aus.cut !== 0) reste.push('Stottern');
+    if (aus.whineGain !== 0) reste.push('Heulen');
+    if (aus.pfeifGain !== 0) reste.push('Pfeifen');
+    if (aus.knaller !== 0) reste.push('Knaller');
+    if (!aus.aus) reste.push('Kennzeichnung');
+    if (reste.length) schlecht.push('ausgeschaltet bleibt: ' + reste.join(', '));
+
+    return { ok: schlecht.length === 0,
+             mass: teile.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
   // ---- Jede Ansicht bleibt lesbar ----
   //
   // DIESER TEST HAT DREI ECHTE FEHLER GEFUNDEN, als die helle Ansicht dazukam, und keinen

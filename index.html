@@ -5602,6 +5602,23 @@
       <h2>Ton</h2>
 <div class="opt-head">Ton</div>
       <div class="opt-row"><div class="opt-label">Motorsound</div><label class="tgl"><input type="checkbox" id="sound-enable" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Motorton-Zus&auml;tze
+          <span class="wip-tag">WIP</span>
+          <small>Sechs mechanische Ger&auml;usche &uuml;ber dem Motorton, alle an diesem
+          einen Schalter &ndash; zum Vergleichen einfach ausschalten. Nichts davon ist eine
+          Aufnahme, alle sechs sind gerechnet und h&auml;ngen an Werten, die die Simulation
+          ohnehin f&uuml;hrt: die H&ouml;hen laufen mit der Last (ein Motor im Schub ist
+          dunkler und nicht nur leiser), am Begrenzer stottert die Z&uuml;ndung mit 28 Hz,
+          beim Gaswegnehmen knallt es im Auspuff, beim Hochschalten unter Last einmal
+          kr&auml;ftig, das Getriebe heult mit der Raddrehzahl statt mit der Motordrehzahl,
+          und die drei aufgeladenen Motoren bekommen ein Laderpfeifen samt Abblasen.
+          Wie stark ein Motor knallt, steht je Motor in den Tondaten &ndash; der Formel 1
+          mit Turbo knallt kaum, der Flat-Plane-V8 ohne Lader am meisten. Was hier
+          absichtlich NICHT drin ist: eine H&ouml;rposition. Cockpit gegen
+          Verfolgerkamera &auml;ndert nicht den Klang, sondern das Mischungsverh&auml;ltnis
+          von Auspuff, Ansaugung und Mechanik, und die stecken heute alle drei in einer
+          Schleife.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-engine-extras" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Rundenzeiten ansagen
           <span class="wip-tag">experimentell</span>
           <small>Nach jeder Runde die Zeit, und bei einer eigenen Bestzeit ein Wort dazu.
@@ -6396,7 +6413,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.5.5</span></span>
+    <span class="foot-ver">v<span id="app-version">0.5.6</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -7883,6 +7900,8 @@
     "Nur das Aussehen des Cockpit-Schirms – Anzeigen, Tasten und Physik bleiben, wie sie sind. „GT3“ ist die Vorgabe: Carbon und weiße Schrift auf Schwarz. „Oldschool“ ist Bernstein auf Schwarz mit sichtbaren Pixelzeilen, breiter Kunststoffblende und Messingschrauben, wie die Vakuumfluoreszenz-Armaturen der 1980er. „Modern“ ist ein weißer Schirm mit schwarzen Bedienflächen und schmaler Alublende, wie die ersten Farb-TFT der 2000er – Regenradar und G-Plot behalten dort ihren dunklen Einsatz, weil sie hell auf dunkel zeichnen und auf Weiß unsichtbar wären. „Klassiker“ ist Walnussfurnier mit Chromschrauben und cremefarbener Schrift auf Schwarzbraun, wie das Armaturenbrett eines Gran Turismo der Sechziger. Die Bedeutungsfarben bleiben in allen vier gleich: der Tankbalken ist grün und der Schaden rot, auch in der Retro-Ansicht – eine Ansicht darf ändern, wie es aussieht, nicht was eine Farbe sagt. Die Voreinstellungen fassen die Ansicht nicht an.": "Only the look of the cockpit screen – readouts, buttons and physics stay as they are. “GT3” is the default: carbon and white type on black. “Oldschool” is amber on black with visible scan lines, a wide plastic bezel and brass screws, like the vacuum-fluorescent instruments of the 1980s. “Modern” is a white screen with black controls and a narrow aluminium bezel, like the first colour TFTs of the 2000s – the rain radar and the g-plot keep their dark inset there, because they draw light on dark and would be invisible on white. “Classic” is walnut veneer with chrome screws and cream type on dark brown, like the fascia of a 1960s grand tourer. The meaning colours stay the same in all four: the fuel bar is green and damage is red, in the retro look as well – a look may change how something appears, not what a colour says. The presets do not touch the look.",
     "Modern, 2000er (hell)": "Modern, 2000s (light)",
     "Klassiker: Walnuss und Chrom": "Classic: walnut and chrome",
+    "Motorton-Zusätze": "Engine sound extras",
+    "Sechs mechanische Geräusche über dem Motorton, alle an diesem einen Schalter – zum Vergleichen einfach ausschalten. Nichts davon ist eine Aufnahme, alle sechs sind gerechnet und hängen an Werten, die die Simulation ohnehin führt: die Höhen laufen mit der Last (ein Motor im Schub ist dunkler und nicht nur leiser), am Begrenzer stottert die Zündung mit 28 Hz, beim Gaswegnehmen knallt es im Auspuff, beim Hochschalten unter Last einmal kräftig, das Getriebe heult mit der Raddrehzahl statt mit der Motordrehzahl, und die drei aufgeladenen Motoren bekommen ein Laderpfeifen samt Abblasen. Wie stark ein Motor knallt, steht je Motor in den Tondaten – der Formel 1 mit Turbo knallt kaum, der Flat-Plane-V8 ohne Lader am meisten. Was hier absichtlich NICHT drin ist: eine Hörposition. Cockpit gegen Verfolgerkamera ändert nicht den Klang, sondern das Mischungsverhältnis von Auspuff, Ansaugung und Mechanik, und die stecken heute alle drei in einer Schleife.": "Six mechanical noises on top of the engine sound, all on this one switch – turn it off to compare. None of them is a recording; all six are calculated and hang on values the simulation keeps anyway: the highs follow the load (an engine on a closed throttle is darker, not just quieter), at the limiter the ignition stutters at 28 Hz, lifting off the throttle pops in the exhaust, an upshift under load bangs once, the gearbox whines with wheel speed rather than engine speed, and the three forced-induction engines get a turbo whistle with a blow-off. How much an engine pops is stored per engine in the sound data – the turbocharged Formula 1 barely pops, the naturally aspirated flat-plane V8 the most. What is deliberately NOT in here: a listening position. Cockpit versus chase camera does not change the sound but the balance between exhaust, intake and mechanics, and today all three sit in one loop.",
   };
 
   // ============================================================================
@@ -17714,7 +17733,8 @@
       .sort((x, y) => b[x].baseRpm - b[y].baseRpm);
   }
   let engineVolume = 0.7;
-  const sampleEngine = { buffers: {}, rpmScale: {}, nodes: null, over: null, car: null,
+  const sampleEngine = { buffers: {}, rpmScale: {}, crackle: {}, turbo: {},
+                         nodes: null, over: null, car: null,
                          master: null, ready: false, loading: false };
 
   async function loadEngineSamples() {
@@ -17737,6 +17757,11 @@
         // whole engine sounded an octave too high. A synthesised engine does not need this
         // because its loops are generated at whatever rpm is asked for.
         sampleEngine.rpmScale[car] = manifest[car].rpmScale || 1;
+        // Wieviel dieser Motor knallt und ob er einen Lader hat - beides steht seit v0.5.6
+        // im Manifest, weil CARS in engine_synth.py die Quelle fuer Motorkunde ist. Eine
+        // Liste in dieser Datei waere der naechste Ort, an dem etwas auseinanderlaeuft.
+        sampleEngine.crackle[car] = manifest[car].crackle;
+        sampleEngine.turbo[car] = !!manifest[car].turbo;
         // 'over' is the closed-throttle loop and is OPTIONAL: the Corvette profile is cut
         // from a recording that has no overrun material, so its absence must not fail the
         // load. Everything the generator makes has one.
@@ -18271,11 +18296,18 @@
 
   function startSampleEngine(car) {
     if (!sampleEngine.ready || !sampleEngine.buffers[car]) return false;
+    // Die Motorkunde in den Zusatzzustand: der Takt liest sie jeden Frame und soll dafuer
+    // nicht ins Manifest greifen.
+    xs.crackle = sampleEngine.crackle[car];
+    xs.turbo = !!sampleEngine.turbo[car];
     stopSampleEngine();
     if (!sampleEngine.master) {
       sampleEngine.master = audioCtx.createGain();
       sampleEngine.master.gain.value = 0;
-      sampleEngine.master.connect(audioCtx.destination);
+      // DURCH DIE ZUSATZKETTE, nicht direkt zum Ausgang: dort sitzen der lastabhaengige
+      // Tiefpass und die getaktete Verstaerkung des Begrenzers. Ist der Schalter aus, stehen
+      // beide neutral - derselbe Weg, keine Wirkung.
+      sampleEngine.master.connect(xBus());
     }
     // ALLE Leistungsbaender starten zusammen, damit sie die ganze Sitzung phasengleich
     // bleiben - wieviele es sind, sagt der Motor selbst. Aufsteigend nach Basisdrehzahl,
@@ -18577,6 +18609,268 @@
   // same tick — so the note audibly falls at each upshift and climbs again, instead of
   // rising monotonically with road speed as it used to.
   let engineIdleSince = null;
+  // ============================== MOTORTON-ZUSAETZE [WIP] ==============================
+  //
+  // SECHS ZUSAETZE, und alle sechs haengen an Zustandsfeldern, die es schon gibt - keiner
+  // braucht eine neue Tondatei:
+  //
+  //   1. Lastabhaengige Helligkeit   engineLoad    -> Tiefpass auf dem Motorbus
+  //   2. Begrenzer-Stottern          onLimiter     -> getaktete Verstaerkung
+  //   3. Schubknaller                Lastabfall    -> Rauschstoesse durch ein Rohr
+  //   4. Schaltknall                 isShifting    -> ein lauterer Knaller
+  //   5. Getriebeheulen              Tempo x Gang  -> Saegezahn, RADdrehzahl
+  //   6. Lader: Pfeifen und Abblasen Ladedruck     -> Sinus und Rauschflattern
+  //
+  // ALLE AN EINEM SCHALTER, damit man den Unterschied hoeren kann. "Aus" heisst dabei
+  // NEUTRAL und nicht umgangen: der Tiefpass geht auf 20 kHz, die Zusatzquellen auf Null.
+  // Ein zweiter Signalweg, der nur beim Umschalten benutzt wird, waere ein zweiter Weg, auf
+  // dem etwas anders klingen kann.
+  //
+  // WAS DIESE SECHS ABSICHTLICH NICHT SIND: eine Hoerposition. Cockpit gegen Verfolgerkamera
+  // aendert nicht den Klang, sondern die BALANCE zwischen Auspuff, Ansaugung und Mechanik -
+  // und die stecken beim Generator alle drei in einer Schleife. Dafuer braucht es zwei Stems
+  // je Band, also 71 weitere Dateien. Das ist die naechste Entscheidung, nicht diese.
+  let extrasOn = true;
+  const xs = { gebaut: false, ein: null, ton: null, cut: null, add: null,
+               lfo: null, lfoTiefe: null, rausch: null,
+               whine: null, whineGain: null, whineFilter: null,
+               pfeif: null, pfeifGain: null,
+               letzteLast: 0, schaltAn: false, ladedruck: 0, letzterTakt: 0,
+               knaller: 0, boGezaehlt: 0 };
+
+  // Ein Rauschpuffer, EINMAL. Jeder Knaller ist derselbe Puffer mit anderem Ausschnitt und
+  // anderer Huellkurve - hundert Puffer je Runde waeren hundert Zuteilungen im Fahrtakt.
+  function xRausch() {
+    if (xs.rausch) return xs.rausch;
+    const n = Math.floor(audioCtx.sampleRate * 0.5);
+    const b = audioCtx.createBuffer(1, n, audioCtx.sampleRate);
+    const d = b.getChannelData(0);
+    for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+    xs.rausch = b;
+    return b;
+  }
+
+  // Der Bus. EINMAL gebaut und danach nur noch in seinen Parametern verstellt: Web Audio
+  // rechnet auf eigenem Faden, ein Filter kostet den 45-ms-Sendetakt also nichts - Knoten
+  // anzulegen und wegzuwerfen kostet ihn etwas.
+  function xBus() {
+    if (xs.gebaut) return xs.ein;
+    xs.ton = audioCtx.createBiquadFilter();
+    xs.ton.type = 'lowpass';
+    xs.ton.frequency.value = 20000;
+    xs.cut = audioCtx.createGain();
+    xs.cut.gain.value = 1;
+    xs.ton.connect(xs.cut).connect(audioCtx.destination);
+    // Die getaktete Verstaerkung des Begrenzers. Ein Rechteck bei 28 Hz ist die
+    // Zuendunterbrechung - der wiedererkennbarste Motorklang ueberhaupt, und er kostet einen
+    // Oszillator. Die Tiefe steht auf 0, solange der Begrenzer nicht anliegt.
+    xs.lfo = audioCtx.createOscillator();
+    xs.lfo.type = 'square';
+    xs.lfo.frequency.value = 28;
+    xs.lfoTiefe = audioCtx.createGain();
+    xs.lfoTiefe.gain.value = 0;
+    xs.lfo.connect(xs.lfoTiefe).connect(xs.cut.gain);
+    xs.lfo.start();
+    // Der Bus fuer die Zusatzquellen: Knaller, Heulen, Pfeifen. Ein Punkt, an dem der
+    // Schalter sie alle stumm stellt.
+    xs.add = audioCtx.createGain();
+    xs.add.gain.value = 1;
+    xs.add.connect(audioCtx.destination);
+    // Getriebeheulen: ein Saegezahn durch einen schmalen Bandpass. Ein geradverzahntes
+    // Renngetriebe heult mit der RADdrehzahl mal der Zahnzahl, nicht mit der Motordrehzahl -
+    // deshalb Tempo mal Uebersetzung und nicht rpm. Die Zahnzahl kennt dieses Modell nicht,
+    // also ist der Faktor gewaehlt: bei Hoechstgeschwindigkeit im letzten Gang knapp 2 kHz.
+    xs.whine = audioCtx.createOscillator();
+    xs.whine.type = 'sawtooth';
+    xs.whine.frequency.value = 400;
+    xs.whineFilter = audioCtx.createBiquadFilter();
+    xs.whineFilter.type = 'bandpass';
+    xs.whineFilter.Q.value = 6;
+    xs.whineFilter.frequency.value = 400;
+    xs.whineGain = audioCtx.createGain();
+    xs.whineGain.gain.value = 0;
+    xs.whine.connect(xs.whineFilter).connect(xs.whineGain).connect(xs.add);
+    xs.whine.start();
+    // Laderpfeifen: zwei Sinus, leicht verstimmt, damit es lebt statt zu piepen.
+    xs.pfeif = audioCtx.createOscillator();
+    xs.pfeif.type = 'sine';
+    xs.pfeif.frequency.value = 2000;
+    xs.pfeifGain = audioCtx.createGain();
+    xs.pfeifGain.gain.value = 0;
+    xs.pfeif.connect(xs.pfeifGain).connect(xs.add);
+    xs.pfeif.start();
+    xs.gebaut = true;
+    xs.ein = xs.ton;
+    return xs.ein;
+  }
+
+  // Ein Knaller: ein kurzer Rauschstoss durch ein Rohr. Breitbandig mit Tiefmittenbetonung,
+  // wie ein Auspuffschlag - kein Klick und kein Zischen.
+  function xKnall(staerke, verzoegerung) {
+    if (!audioCtx || !extrasOn) return;
+    xBus();
+    const t = audioCtx.currentTime + (verzoegerung || 0);
+    const src = audioCtx.createBufferSource();
+    src.buffer = xRausch();
+    // Zufaelliger Ausschnitt: derselbe Puffer klingt sonst bei jedem Knaller gleich.
+    const off = Math.random() * 0.4;
+    const bp = audioCtx.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.value = 170 + Math.random() * 130;
+    bp.Q.value = 1.1;
+    const g = audioCtx.createGain();
+    const dauer = 0.035 + Math.random() * 0.045;
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(staerke, t + 0.004);
+    g.gain.exponentialRampToValueAtTime(0.0008, t + dauer);
+    src.connect(bp).connect(g).connect(xs.add);
+    src.start(t, off, dauer + 0.02);
+    src.stop(t + dauer + 0.03);
+    xs.knaller++;
+  }
+
+  // Abblasen: Rauschen, mit etwa 35 Hz flatternd, wie ein Wastegate.
+  function xAbblasen(staerke) {
+    if (!audioCtx || !extrasOn) return;
+    xBus();
+    const t = audioCtx.currentTime;
+    const src = audioCtx.createBufferSource();
+    src.buffer = xRausch();
+    src.loop = true;
+    const hp = audioCtx.createBiquadFilter();
+    hp.type = 'bandpass';
+    hp.frequency.value = 3200;
+    hp.Q.value = 0.8;
+    const g = audioCtx.createGain();
+    const flat = audioCtx.createOscillator();
+    flat.type = 'square';
+    flat.frequency.value = 34;
+    const flatG = audioCtx.createGain();
+    flatG.gain.value = staerke * 0.5;
+    flat.connect(flatG).connect(g.gain);
+    g.gain.setValueAtTime(staerke, t);
+    g.gain.exponentialRampToValueAtTime(0.0008, t + 0.22);
+    src.connect(hp).connect(g).connect(xs.add);
+    src.start(t);
+    flat.start(t);
+    src.stop(t + 0.24);
+    flat.stop(t + 0.24);
+    xs.boGezaehlt++;
+  }
+
+  // DIE WERTE, ohne einen einzigen Tonknoten. Sie haengen an nichts als am Fahrzustand,
+  // also lassen sie sich ohne AudioContext pruefen - und den gibt es erst nach einer
+  // Nutzergeste. Ein Test, der ohne Klick immer ueberspringt, prueft nie.
+  //
+  // `dt` kommt herein statt aus Date.now(): in einer synchronen Testschleife ist die
+  // Uhrdifferenz null, und dann kaeme der Ladedruck nie an - dieselbe Falle, die in diesem
+  // Projekt schon beim Schaltvorgang zu einem falschen Schluss gefuehrt hat.
+  function extrasWerte(st, load, dt) {
+    const rpmFrac = Math.max(0, Math.min(1, st.rpmFrac || 0));
+    const dLast = load - xs.letzteLast;
+    xs.letzteLast = load;
+    const knallStark = xs.crackle === undefined ? 0.4 : xs.crackle;
+
+    if (!extrasOn) {
+      xs.ladedruck = 0;
+      // NEUTRAL, nicht umgangen: derselbe Signalweg, nur ohne Wirkung.
+      return { aus: true, tonHz: 20000, cutTiefe: 0, addGain: 0,
+               whineHz: 140, whineGain: 0, pfeifHz: 1700, pfeifGain: 0,
+               knaller: 0, knallStaerke: 0, abblasen: 0, ladedruck: 0 };
+    }
+
+    // 1. Lastabhaengige Helligkeit. Ein Motor im Schub ist dunkler als einer am Gas, und
+    //    zwar nicht nur leiser: die hohen Teiltoene kommen aus der Verbrennung.
+    const tonHz = 2200 + 9000 * Math.max(0, Math.min(1, load));
+
+    // 2. Begrenzer-Stottern: die Zuendunterbrechung, 28 Hz, siehe xBus().
+    const cutTiefe = st.onLimiter ? 0.34 : 0;
+
+    // 3. Schubknaller beim Lastwechsel. Nicht bei konstantem Gas: ein Knaller ist ein
+    //    EREIGNIS, und das Ereignis ist das Gaswegnehmen bei Drehzahl.
+    let knaller = 0, knallStaerke = 0;
+    if (dLast < -0.15 && rpmFrac > 0.4 && knallStark > 0.02) {
+      knaller = 1 + Math.floor(3 * knallStark * rpmFrac);
+      knallStaerke = 0.05 + 0.16 * knallStark * rpmFrac;
+    }
+
+    // 4. Schaltknall: die FLANKE von isShifting, und nur unter Last. Ein sequenzielles
+    //    Getriebe knallt beim Hochschalten unter Vollgas - beim Ausrollen nicht.
+    const schaltKnall = (st.isShifting && !xs.schaltAn && load > 0.45)
+      ? 0.13 + 0.1 * knallStark : 0;
+    xs.schaltAn = !!st.isShifting;
+
+    // 5. Getriebeheulen. RADdrehzahl mal Uebersetzung und nicht rpm: ein geradverzahntes
+    //    Renngetriebe heult mit der Zahneingriffsfrequenz. Die Zahnzahl kennt dieses Modell
+    //    nicht, also ist der Faktor GEWAEHLT - bei Vmax im letzten Gang knapp 2 kHz.
+    const cfg = physEngine.config;
+    const vAnteil = Math.min(1, Math.abs(st.speedKmh || 0) / Math.max(0.01, cfg.topSpeedKmh));
+    const gang = Math.max(0, Math.min(cfg.gears.length - 1, st.currentGear || 0));
+    const uebs = cfg.gears[gang] ? cfg.gears[gang].ratio / Math.max(0.01, cfg.ratioRef) : 1;
+    const whineHz = 140 + 1850 * vAnteil * Math.min(2.2, uebs);
+    // Leise: es soll UNTER dem Motor liegen und nicht neben ihm.
+    const whineGain = vAnteil > 0.03 ? 0.028 * (0.4 + 0.6 * load) : 0;
+
+    // 6. Der Lader. Ein Ladedruck baut sich AUF und faellt nicht mit dem Gas zusammen -
+    //    genau diese Verzoegerung ist das Turboloch, und ohne sie klingt es nach Sirene.
+    let pfeifHz = 1700, pfeifGain = 0, abblasen = 0;
+    if (xs.turbo) {
+      // DER DRUCK VOR DEM ABBAU entscheidet ueber das Abblasen. Ein Wastegate laesst den
+      // Druck heraus, der beim Gaswegnehmen NOCH DA WAR - nicht den Rest, der nach einem
+      // Takt Abbau uebrig ist. Bei 0,45 s Zeitkonstante und einem groben Takt ist der Rest
+      // schon zu klein, und dann blaest nichts ab: genau so hat der Test es gefunden.
+      const bVor = xs.ladedruck;
+      const ziel = Math.max(0, Math.min(1, load * (0.35 + 0.65 * rpmFrac)));
+      xs.ladedruck += (ziel - xs.ladedruck) * (1 - Math.exp(-Math.max(0, dt) / 0.45));
+      const b = xs.ladedruck;
+      pfeifHz = 1700 + 5300 * b;
+      pfeifGain = 0.05 * b * b;
+      if (dLast < -0.2 && bVor > 0.25) abblasen = 0.05 + 0.09 * bVor;
+    } else {
+      xs.ladedruck = 0;
+    }
+
+    return { aus: false, tonHz, cutTiefe, addGain: 1, whineHz, whineGain,
+             pfeifHz, pfeifGain, knaller, knallStaerke, schaltKnall, abblasen,
+             ladedruck: xs.ladedruck, dLast };
+  }
+
+  // Der Takt: er LEGT die Werte an die Knoten und rechnet keinen einzigen selbst.
+  // Gerufen aus updateEngineSound(), also VOR dem fruehen Ausstieg des Schleifenzweigs -
+  // die sechs gelten in beiden Tonarten.
+  function extrasTick(st, load) {
+    if (!audioCtx) return;
+    xBus();
+    const now = Date.now();
+    const dt = xs.letzterTakt ? Math.min(0.25, (now - xs.letzterTakt) / 1000) : 0.045;
+    xs.letzterTakt = now;
+    const w = extrasWerte(st, load, dt);
+    const t = audioCtx.currentTime;
+    xs.ton.frequency.setTargetAtTime(w.tonHz, t, 0.08);
+    xs.lfoTiefe.gain.setTargetAtTime(w.cutTiefe, t, 0.02);
+    xs.add.gain.setTargetAtTime(w.addGain, t, 0.05);
+    xs.whine.frequency.setTargetAtTime(w.whineHz, t, 0.05);
+    xs.whineFilter.frequency.setTargetAtTime(w.whineHz, t, 0.05);
+    xs.whineGain.gain.setTargetAtTime(w.whineGain, t, 0.08);
+    xs.pfeif.frequency.setTargetAtTime(w.pfeifHz, t, 0.06);
+    xs.pfeifGain.gain.setTargetAtTime(w.pfeifGain, t, 0.08);
+    if (w.aus) return;
+    for (let i = 0; i < w.knaller; i++) xKnall(w.knallStaerke, Math.random() * 0.22);
+    if (w.schaltKnall) xKnall(w.schaltKnall, 0.012);
+    if (w.abblasen) xAbblasen(w.abblasen);
+  }
+
+  // DER SCHALTER STEHT HIER und nicht oben bei den anderen Tonschaltern, und das ist keine
+  // Ordnungsfrage: extrasOn ist ein let in diesem Abschnitt, und eine Zuweisung von weiter
+  // OBEN in derselben Datei laeuft in seine temporale Todeszone. Der Wurf nimmt die ganze
+  // IIFE mit - danach fehlt OMEGA_TEST, der Selbsttest zeigt null Zeilen, und der Sendetakt
+  // spammt die Konsole mit einem ANDEREN Todeszonenfehler zu, weil auch 30-input.js nie
+  // durchgelaufen ist. Genau so ist es mir hier passiert.
+  if ($('setting-engine-extras')) {
+    extrasOn = $('setting-engine-extras').checked;
+    $('setting-engine-extras').addEventListener('change', (e) => { extrasOn = e.target.checked; });
+  }
+
   function updateEngineSound(throttleMagnitude) {
     if (!soundEnabled || !engineOsc) return;
     const st = physEngine.state, p = soundProfile;
@@ -18603,6 +18897,10 @@
     setBrakeSqueal(brakeAmt);
     // Der Reibkreis-Querbedarf treibt es. Er steht im Zustand, weil er hier gebraucht wird.
     setTyreSqueal(physEngine.state.latUse || 0);
+
+    // VOR dem fruehen Ausstieg: die Zusaetze gelten in beiden Tonarten, nicht nur im
+    // Schleifenzweig.
+    if (physicsEnabled) extrasTick(st, load);
 
     if (sampleEngine.nodes && physicsEnabled) { updateSampleEngine(st.rpm, load, silent); return; }
 
@@ -23366,6 +23664,43 @@
                echte: trackCarMarks ? trackCarMarks().length : null };
     },
 
+    // Die sechs Motorton-Zusaetze, ohne einen Ton zu erzeugen: extrasWerte() rechnet nur.
+    // `folge` ist eine Liste von Fahrzustaenden, die HINTEREINANDER durchgerechnet werden -
+    // das muss sie sein, weil drei der sechs von der VORGESCHICHTE leben: der Knaller vom
+    // Lastabfall, der Schaltknall von der Flanke, der Ladedruck von seiner Verzoegerung.
+    //
+    // dt wird mitgegeben und nicht aus der Uhr genommen: in einer synchronen Schleife ist
+    // die Uhrdifferenz null, und dann kaeme der Ladedruck nie an.
+    sndExtras(folge, o) {
+      const opt = o || {};
+      const merk = { crackle: xs.crackle, turbo: xs.turbo, ein: extrasOn,
+                     last: xs.letzteLast, schalt: xs.schaltAn, druck: xs.ladedruck };
+      try {
+        if (opt.crackle !== undefined) xs.crackle = opt.crackle;
+        if (opt.turbo !== undefined) xs.turbo = !!opt.turbo;
+        if (opt.ein !== undefined) extrasOn = !!opt.ein;
+        xs.letzteLast = opt.startLast === undefined ? 0 : opt.startLast;
+        xs.schaltAn = false;
+        xs.ladedruck = 0;
+        const dt = opt.dt === undefined ? 0.045 : opt.dt;
+        return (folge || []).map(z => {
+          const st = { rpmFrac: z.rpmFrac || 0, onLimiter: !!z.onLimiter,
+                       isShifting: !!z.isShifting, speedKmh: z.speedKmh || 0,
+                       currentGear: z.gear || 0 };
+          const w = extrasWerte(st, z.load === undefined ? 0 : z.load, dt);
+          return { tonHz: Math.round(w.tonHz), cut: w.cutTiefe,
+                   whineHz: Math.round(w.whineHz), whineGain: +w.whineGain.toFixed(4),
+                   pfeifHz: Math.round(w.pfeifHz), pfeifGain: +w.pfeifGain.toFixed(4),
+                   knaller: w.knaller, schaltKnall: +(w.schaltKnall || 0).toFixed(3),
+                   abblasen: +(w.abblasen || 0).toFixed(3),
+                   druck: +(w.ladedruck || 0).toFixed(3), aus: !!w.aus };
+        });
+      } finally {
+        xs.crackle = merk.crackle; xs.turbo = merk.turbo; extrasOn = merk.ein;
+        xs.letzteLast = merk.last; xs.schaltAn = merk.schalt; xs.ladedruck = merk.druck;
+      }
+    },
+
     ghostPassRates() {
       const p = SPICE_ATTACK_P * ghostCfg.spice;
       return { reichweite: SPICE_ATTACK_RANGE,
@@ -27069,6 +27404,109 @@
     }
   });
 
+
+
+  // ---- Motorton-Zusaetze: jeder haengt an seiner Groesse, und der Schalter stellt alle ab ----
+  //
+  // Sechs Zusaetze, und jeder soll genau von EINER Groesse abhaengen. Der Test prueft
+  // deshalb nicht "es klingt anders", sondern fuer jeden einzeln, dass er kommt, wenn seine
+  // Bedingung gilt, und AUSBLEIBT, wenn sie nicht gilt. Ohne die zweite Haelfte waere ein
+  // Zusatz, der dauernd feuert, ebenfalls gruen.
+  //
+  // Geprueft wird an der Rechnung und nicht am Ton: extrasWerte() braucht keinen
+  // AudioContext, und den gibt es erst nach einer Nutzergeste - ein Test, der ohne Klick
+  // ueberspringt, prueft nie.
+  stAdd('Motorton-Zusaetze: sechs Groessen, ein Schalter', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.sndExtras) {
+      return { skip: true, mass: 'sndExtras nicht vorhanden' };
+    }
+    const schlecht = [], teile = [];
+    const eins = (folge, o) => OMEGA_TEST.sndExtras(folge, o)[folge.length - 1];
+
+    // 1. Helligkeit folgt der Last.
+    const dunkel = eins([{ load: 0 }]).tonHz;
+    const hell = eins([{ load: 1 }]).tonHz;
+    teile.push('Helligkeit ' + dunkel + '/' + hell + ' Hz');
+    if (!(hell > dunkel * 2)) schlecht.push('Helligkeit folgt der Last nicht');
+
+    // 2. Stottern NUR am Begrenzer.
+    const ohne = eins([{ load: 1, rpmFrac: 0.9 }]).cut;
+    const mit = eins([{ load: 1, rpmFrac: 1, onLimiter: true }]).cut;
+    teile.push('Stottern ' + ohne + '/' + mit);
+    if (!(ohne === 0 && mit > 0.1)) schlecht.push('Stottern haengt nicht am Begrenzer');
+
+    // 3. Knaller NUR beim Lastabfall bei Drehzahl. Drei Faelle, und die letzten zwei sind
+    //    die Gegenproben.
+    const abfall = eins([{ load: 1, rpmFrac: 0.8 }, { load: 0, rpmFrac: 0.8 }]).knaller;
+    const konstant = eins([{ load: 1, rpmFrac: 0.8 }, { load: 1, rpmFrac: 0.8 }]).knaller;
+    const langsam = eins([{ load: 1, rpmFrac: 0.2 }, { load: 0, rpmFrac: 0.2 }]).knaller;
+    teile.push('Knaller ' + abfall + '/' + konstant + '/' + langsam);
+    if (!(abfall > 0)) schlecht.push('kein Knaller beim Lastabfall');
+    if (konstant !== 0) schlecht.push('Knaller bei konstantem Gas');
+    if (langsam !== 0) schlecht.push('Knaller bei niedriger Drehzahl');
+    // Und die Staerke haengt am Motor: ein Turbo knallt kaum, ein Sauger viel.
+    const viel = eins([{ load: 1, rpmFrac: 0.9 }, { load: 0, rpmFrac: 0.9 }],
+                      { crackle: 0.62 }).knaller;
+    const kaum = eins([{ load: 1, rpmFrac: 0.9 }, { load: 0, rpmFrac: 0.9 }],
+                      { crackle: 0.12 }).knaller;
+    teile.push('je Motor ' + viel + '/' + kaum);
+    if (!(viel > kaum)) schlecht.push('Knallstaerke haengt nicht am Motor');
+
+    // 4. Schaltknall an der FLANKE und nur unter Last.
+    const flanke = eins([{ load: 0.9 }, { load: 0.9, isShifting: true }]).schaltKnall;
+    const gehalten = eins([{ load: 0.9, isShifting: true },
+                           { load: 0.9, isShifting: true }]).schaltKnall;
+    const ohneLast = eins([{ load: 0.1 }, { load: 0.1, isShifting: true }]).schaltKnall;
+    teile.push('Schaltknall ' + flanke + '/' + gehalten + '/' + ohneLast);
+    if (!(flanke > 0)) schlecht.push('kein Schaltknall');
+    if (gehalten !== 0) schlecht.push('Schaltknall dauert an statt an der Flanke');
+    if (ohneLast !== 0) schlecht.push('Schaltknall ohne Last');
+
+    // 5. Getriebeheulen: mit dem TEMPO, und im kurzen Gang hoeher als im langen. Das ist
+    //    der Punkt - es haengt an der Raddrehzahl mal Uebersetzung, nicht an der Drehzahl.
+    const top = physEngine.config.topSpeedKmh;
+    const steht = eins([{ speedKmh: 0, load: 1 }]).whineGain;
+    const rollt = eins([{ speedKmh: top * 0.6, load: 1 }]).whineGain;
+    const kurz = eins([{ speedKmh: top * 0.3, load: 1, gear: 0 }]).whineHz;
+    const lang = eins([{ speedKmh: top * 0.3, load: 1,
+                         gear: physEngine.config.gears.length - 1 }]).whineHz;
+    teile.push('Heulen ' + kurz + '/' + lang + ' Hz');
+    if (steht !== 0) schlecht.push('Heulen im Stand');
+    if (!(rollt > 0)) schlecht.push('kein Heulen beim Rollen');
+    if (!(kurz > lang * 1.5)) schlecht.push('Heulen haengt nicht am Gang');
+
+    // 6. Der Lader: NUR bei aufgeladenen Motoren, und mit Verzoegerung. Der Ladedruck darf
+    //    nicht im ersten Takt stehen - genau diese Verzoegerung ist das Turboloch.
+    const sauger = eins([{ load: 1, rpmFrac: 0.9 }], { turbo: false }).pfeifGain;
+    const reihe = OMEGA_TEST.sndExtras(
+      [{ load: 1, rpmFrac: 0.9 }, { load: 1, rpmFrac: 0.9 }, { load: 1, rpmFrac: 0.9 }],
+      { turbo: true, dt: 0.2 });
+    teile.push('Ladedruck ' + reihe.map(r => r.druck).join('->'));
+    if (sauger !== 0) schlecht.push('Sauger pfeift');
+    if (!(reihe[0].druck < reihe[2].druck)) schlecht.push('Ladedruck baut sich nicht auf');
+    if (!(reihe[0].druck < 0.5)) schlecht.push('Ladedruck ohne Verzoegerung');
+    const bo = OMEGA_TEST.sndExtras(
+      [{ load: 1, rpmFrac: 0.9 }, { load: 1, rpmFrac: 0.9 }, { load: 0, rpmFrac: 0.9 }],
+      { turbo: true, dt: 0.6 })[2].abblasen;
+    if (!(bo > 0)) schlecht.push('kein Abblasen beim Lastwegnehmen');
+
+    // 7. DER SCHALTER stellt alle sechs ab, und zwar NEUTRAL: der Tiefpass geht auf 20 kHz
+    //    und nicht auf irgendeinen Wert, die Zusatzquellen auf null.
+    const aus = eins([{ load: 1, rpmFrac: 1, onLimiter: true, isShifting: true,
+                        speedKmh: top * 0.8 }], { ein: false, turbo: true });
+    teile.push('aus: Ton ' + aus.tonHz + ' Hz');
+    const reste = [];
+    if (aus.tonHz !== 20000) reste.push('Tiefpass ' + aus.tonHz);
+    if (aus.cut !== 0) reste.push('Stottern');
+    if (aus.whineGain !== 0) reste.push('Heulen');
+    if (aus.pfeifGain !== 0) reste.push('Pfeifen');
+    if (aus.knaller !== 0) reste.push('Knaller');
+    if (!aus.aus) reste.push('Kennzeichnung');
+    if (reste.length) schlecht.push('ausgeschaltet bleibt: ' + reste.join(', '));
+
+    return { ok: schlecht.length === 0,
+             mass: teile.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
 
   // ---- Jede Ansicht bleibt lesbar ----
   //

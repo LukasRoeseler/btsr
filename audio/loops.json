@@ -3,6 +3,8 @@
   "label": "Ford Mustang GT3 (V8, Cross-Plane)",
   "cylinders": 8,
   "source": "vollst\u00e4ndig synthetisiert (Modell nach engine-sim, MIT)",
+  "crackle": 0.45,
+  "turbo": false,
   "loops": {
    "idle": {
     "file": "mustang_idle.ogg",
@@ -45,6 +47,8 @@
   "label": "Corvette C6.R (LS7.R 7.0 V8, Cross-Plane)",
   "cylinders": 8,
   "source": "vollst\u00e4ndig synthetisiert (Modell nach engine-sim, MIT)",
+  "crackle": 0.45,
+  "turbo": false,
   "loops": {
    "idle": {
     "file": "c6r_idle.ogg",
@@ -87,6 +91,8 @@
   "label": "Corvette Z06 GT3.R (LT6.R 5.5 V8, Flat-Plane)",
   "cylinders": 8,
   "source": "vollst\u00e4ndig synthetisiert (Modell nach engine-sim, MIT)",
+  "crackle": 0.62,
+  "turbo": false,
   "loops": {
    "idle": {
     "file": "z06gt3r_idle.ogg",
@@ -129,6 +135,8 @@
   "label": "Mercedes-AMG GT3 (M159 6.2 V8, Cross-Plane)",
   "cylinders": 8,
   "source": "vollst\u00e4ndig synthetisiert (Modell nach engine-sim, MIT)",
+  "crackle": 0.5,
+  "turbo": false,
   "loops": {
    "idle": {
     "file": "amggt3_idle.ogg",
@@ -171,6 +179,8 @@
   "label": "Ferrari 296 GT3 (F163CE 3.0 V6 120 Grad, ohne Lader)",
   "cylinders": 6,
   "source": "vollst\u00e4ndig synthetisiert (Modell nach engine-sim, MIT)",
+  "crackle": 0.55,
+  "turbo": true,
   "loops": {
    "idle": {
     "file": "f296gt3_idle.ogg",
@@ -213,6 +223,8 @@
   "label": "BMW M4 GT3 (P58 3.0 Reihen-6, ohne Lader)",
   "cylinders": 6,
   "source": "vollst\u00e4ndig synthetisiert (Modell nach engine-sim, MIT)",
+  "crackle": 0.52,
+  "turbo": true,
   "loops": {
    "idle": {
     "file": "m4gt3_idle.ogg",
@@ -255,6 +267,8 @@
   "label": "Huracan GT3 EVO2 / R8 LMS (5.2 V10, Split-Pin)",
   "cylinders": 10,
   "source": "vollst\u00e4ndig synthetisiert (Modell nach engine-sim, MIT)",
+  "crackle": 0.48,
+  "turbo": false,
   "loops": {
    "idle": {
     "file": "huracan_idle.ogg",
@@ -297,6 +311,8 @@
   "label": "Aston Martin Vantage GT3 (M177 4.0 V8, ohne Lader)",
   "cylinders": 8,
   "source": "vollst\u00e4ndig synthetisiert (Modell nach engine-sim, MIT)",
+  "crackle": 0.58,
+  "turbo": false,
   "loops": {
    "idle": {
     "file": "vantagegt3_idle.ogg",
@@ -339,6 +355,8 @@
   "label": "Porsche 911 GT3 R (4.2 Boxer-6, Einzeldrosseln)",
   "cylinders": 6,
   "source": "vollst\u00e4ndig synthetisiert (Modell nach engine-sim, MIT)",
+  "crackle": 0.42,
+  "turbo": false,
   "loops": {
    "idle": {
     "file": "p992gt3r_idle.ogg",
@@ -381,6 +399,8 @@
   "label": "Formel 1 2026 (1.6 V6 Turbo-Hybrid, 90 Grad)",
   "cylinders": 6,
   "source": "vollst\u00e4ndig synthetisiert (Modell nach engine-sim, MIT)",
+  "crackle": 0.12,
+  "turbo": true,
   "loops": {
    "idle": {
     "file": "f1_2026_idle.ogg",
@@ -430,6 +450,8 @@
   "label": "Ford GT40 Mk I (4.7 V8, Cross-Plane)",
   "cylinders": 8,
   "source": "vollst\u00e4ndig synthetisiert (Modell nach engine-sim, MIT)",
+  "crackle": 0.4,
+  "turbo": false,
   "loops": {
    "idle": {
     "file": "gt40_idle.ogg",
@@ -472,6 +494,8 @@
   "label": "Lola T70 Mk3B (Chevrolet 5.0 V8, Cross-Plane)",
   "cylinders": 8,
   "source": "vollst\u00e4ndig synthetisiert (Modell nach engine-sim, MIT)",
+  "crackle": 0.48,
+  "turbo": false,
   "loops": {
    "idle": {
     "file": "lolat70_idle.ogg",
@@ -514,6 +538,8 @@
   "label": "Ferrari 330 P4 / 412P (4.0 V12, 60 Grad)",
   "cylinders": 12,
   "source": "vollst\u00e4ndig synthetisiert (Modell nach engine-sim, MIT)",
+  "crackle": 0.5,
+  "turbo": false,
   "loops": {
    "idle": {
     "file": "f330p4_idle.ogg",
@@ -556,6 +582,8 @@
   "label": "Maserati MC12 (6.0 V12, 65 Grad)",
   "cylinders": 12,
   "source": "vollst\u00e4ndig synthetisiert (Modell nach engine-sim, MIT)",
+  "crackle": 0.44,
+  "turbo": false,
   "loops": {
    "idle": {
     "file": "mc12_idle.ogg",

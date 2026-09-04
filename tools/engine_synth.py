@@ -235,6 +235,10 @@ CARS = {
         'scatter_t': 0.007, 'scatter_g': 0.055, 'crackle': 0.50,
     },
     'f296gt3': {
+        # Aufgeladen: der 296 GT3 ist ein Twin-Turbo-V6. Das MODELL hat keinen Lader
+        # (siehe 'ohne Lader' im Namen), aber die App legt seit v0.5.6 ein Pfeifen und
+        # ein Abblasen darueber - und das darf nur, wo wirklich einer sitzt.
+        'turbo': True,
         'label': 'Ferrari 296 GT3 (F163CE 3.0 V6 120 Grad, ohne Lader)',
         'banks': banks_from_order([1, 2, 3, 4, 5, 6], 6, 'oddeven'), 'cylinders': 6,
         'rpms': {'idle': 1400, 'mid': 5000, 'high': 8000},
@@ -244,6 +248,8 @@ CARS = {
         'scatter_t': 0.005, 'scatter_g': 0.04, 'crackle': 0.55,
     },
     'm4gt3': {
+        # Aufgeladen: P58 Twin-Turbo. Siehe f296gt3.
+        'turbo': True,
         'label': 'BMW M4 GT3 (P58 3.0 Reihen-6, ohne Lader)',
         'banks': inline_from_order([1, 5, 3, 6, 2, 4], 6), 'cylinders': 6,
         'rpms': {'idle': 1300, 'mid': 4300, 'high': 7200},
@@ -339,6 +345,9 @@ CARS = {
     #   crackle 0,12 ist der niedrigste Wert im ganzen Satz. Ein Turbo daempft die
     #   Schubknaller, und ab 2026 gibt es ausserdem keinen Ueberschuss zu verknallen.
     'f1_2026': {
+        # Aufgeladen: 1,6-l-V6 mit Turbo, und bei diesem Motor ist der Lader das
+        # Merkmal und nicht ein Nebengeraeusch.
+        'turbo': True,
         'label': 'Formel 1 2026 (1.6 V6 Turbo-Hybrid, 90 Grad)',
         'banks': banks_from_order([1, 4, 2, 5, 3, 6], 6, 'half'), 'cylinders': 6,
         'rpms': {'idle': 4200, 'mid': 8500, 'high': 12500},
@@ -741,6 +750,16 @@ def main(nur=None):
     for key, cfg in auswahl:
         manifest[key] = {'label': cfg['label'], 'cylinders': cfg['cylinders'],
                          'source': 'vollständig synthetisiert (Modell nach engine-sim, MIT)',
+                         # ZWEI ANGABEN FUER DIE APP, seit v0.5.6. Sie beschreiben nicht die
+                         # Datei, sondern den Motor - aber die App braucht genau sie, und CARS
+                         # ist die Quelle fuer Motorkunde. Eine Abschrift in 80-sound.js waere
+                         # der naechste Ort, an dem etwas auseinanderlaeuft.
+                         #
+                         #   crackle  wieviel dieser Motor im Schub knallt (0,12 beim F1 mit
+                         #            Turbo bis 0,62 beim Flat-Plane-V8 ohne)
+                         #   turbo    ob ein Lader draufsitzt, fuer Pfeifen und Abblasen
+                         'crackle': cfg.get('crackle', 0.0),
+                         'turbo': bool(cfg.get('turbo')),
                          'loops': {}}
         # One extra loop per engine for the closed throttle, at the mid band. The app
         # scales it by rpm like any other, and crossfades it in as load drops — one file per
