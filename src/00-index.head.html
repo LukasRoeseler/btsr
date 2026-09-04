@@ -647,6 +647,24 @@
     --gt3-scan: repeating-linear-gradient(0deg, rgba(0,0,0,.08) 0 1px,
                                                 rgba(0,0,0,0) 1px 3px);
     --gt3-vignette: inset 0 0 clamp(14px, 5vw, 54px) rgba(0,0,0,.55);
+    /* DIE FLAECHEN, auf denen Text steht - je Flaeche ihre eigene Tinte. Ohne dieses Paar
+       geht eine helle Ansicht nicht: wird der Schirm weiss, muss die Tinte darauf dunkel
+       werden, waehrend die Tinte auf einem schwarzen Knopf weiss BLEIBEN muss. Eine einzige
+       Tintenfarbe kann beides nicht. */
+    --gt3-tile: linear-gradient(#101623, #0a0e17);
+    --gt3-tile-ink: #eef2fa;
+    --gt3-btn: #1f2a3d;
+    --gt3-btn-ink: #dce7fb;
+    --gt3-btn-hover: #2b3a55;
+    --gt3-lbl: #78849c;
+    --gt3-rpm-ink: #cfe0ff;
+    --gt3-ok: #46d17f;
+    --gt3-warn: #ffb02e;
+    --gt3-bad: #ff5252;
+    /* Der Fussstreifen und die Markenzeile: eigene Flaeche, weil sie in JEDER Ansicht dunkel
+       bleiben duerfen - ein Statusstreifen darf sich vom Schirm abheben. */
+    --gt3-strip: #0b0f18;
+    --gt3-strip-ink: #8b97ad;
 
     /* DIESE VIER STANDEN BIS v0.5.4 IN DER .gt3-REGEL SELBST, und genau deshalb sahen die
        Cockpit-Ansichten fast gleich aus. Ein Wert, den body[data-cockpit] setzt, wird nur
@@ -710,28 +728,36 @@
       #b39152 0 13%, #6b552c 13% 19%, #1a1409 19% 25%, rgba(0,0,0,0) 25%);
   }
 
-  /* MODERN, 2000er. Die Generation der ersten Farb-TFT im Rennwagen, bei denen der Reiz
-     gerade darin lag, dass sie NICHT nach Roehre aussahen: fast keine Pixelzeilen, schwache
-     Randabschattung, scharfe Ecken, knappes Leuchten.
+  /* MODERN, 2000er - WEISSER SCHIRM. Die Generation, in der die Anzeige aufhoerte, eine
+     Roehre nachzumachen: heller Grund, schwarze Bedienflaechen, scharfe Kanten.
 
-     Und zwei STRUKTURELLE Unterschiede, denn ein anderer Weisston ist keiner - die erste
-     Fassung dieser Ansicht wich vom Standard um sechs von 255 in der Tinte ab, und deshalb
-     war sie von ihm nicht zu unterscheiden:
+     DAS PAAR TINTE/FLAECHE ist hier der ganze Punkt. Auf dem weissen Schirm muss die Tinte
+     DUNKEL sein, auf einem schwarzen Knopf muss sie WEISS bleiben - eine einzige Tintenfarbe
+     kann das nicht, und deshalb gibt es --gt3-ink fuer den Schirm und --gt3-tile-ink bzw.
+     --gt3-btn-ink fuer die Flaechen darauf.
 
-       Die Blende wird HELL. Gebuerstetes Aluminium gegen schwarzes Carbon ist der
-       Unterschied, den man auf den ersten Blick sieht - und deshalb wird die Schraube dunkel
-       mitgesetzt, denn eine helle verschwindet auf hellem Metall.
-       Und sie wird SCHMAL: ein Schirm von 2005 sitzt in einem knappen Rahmen. */
+     DIE ZWEI INSTRUMENTE BEHALTEN IHREN DUNKLEN GRUND, und das ist keine Ausnahme, sondern
+     eine Entscheidung: das Regenradar und der G-Plot ZEICHNEN hell auf dunkel. Auf weiss
+     waeren sie unsichtbar, und sie umzufaerben hiesse, zwei Zeichenroutinen zu aendern - dann
+     waere es keine Ansicht mehr. Ein dunkler Instrumenteneinsatz in einem hellen Armaturen-
+     brett ist ausserdem gaengige Praxis, kein Notbehelf.
+
+     DIE FUNKTIONSFARBEN bleiben: Tank gruen, Schaden rot, gelbe Flagge gelb. Sie tragen eine
+     Bedeutung, und eine Ansicht darf das Aussehen aendern und nicht die Bedeutung. Auf weiss
+     sind sie ohnehin gut lesbar. */
   body[data-cockpit="modern"] {
-    --gt3-ink: #f4f8ff;
-    --gt3-screen: linear-gradient(180deg, #1e242e 0%, #151a22 44%, #101419 76%, #1b212a 100%);
+    --gt3-ink: #12161d;
+    --gt3-screen: linear-gradient(180deg, #ffffff 0%, #f4f6f9 46%, #eef1f5 74%, #f8fafc 100%);
     --gt3-radius: 0px;
-    --gt3-line: rgba(200, 226, 255, .50);
-    --gt3-line-soft: rgba(200, 226, 255, .22);
-    --gt3-glow: 0 0 3px rgba(230, 242, 255, .16);
-    --gt3-scan: repeating-linear-gradient(0deg, rgba(0,0,0,.03) 0 1px,
+    /* Dunkle Linien: die weissen der Vorgabe sind auf weissem Grund unsichtbar. */
+    --gt3-line: rgba(18, 22, 29, .30);
+    --gt3-line-soft: rgba(18, 22, 29, .14);
+    --gt3-lbl: #5a6675;
+    /* Kein Leuchten. Ein Schein um dunkle Ziffern auf weiss liest sich als Unschaerfe. */
+    --gt3-glow: none;
+    --gt3-scan: repeating-linear-gradient(0deg, rgba(0,0,0,.018) 0 1px,
                                                 rgba(0,0,0,0) 1px 4px);
-    --gt3-vignette: inset 0 0 clamp(8px, 3vw, 26px) rgba(0,0,0,.30);
+    --gt3-vignette: inset 0 0 clamp(10px, 4vw, 34px) rgba(0,0,0,.10);
     --gt3-blende: clamp(6px, 1.5vw, 10px);
     --gt3-carbon:
       repeating-linear-gradient(90deg, rgba(255,255,255,.17) 0 1px,
@@ -739,6 +765,71 @@
       linear-gradient(180deg, #bcc4d0 0%, #909aa8 48%, #adb6c3 100%);
     --gt3-schraube: radial-gradient(circle at 50% 50%,
       #2a2f38 0 13%, #4b525e 13% 19%, rgba(0,0,0,.4) 19% 25%, rgba(0,0,0,0) 25%);
+    /* Schwarze Flaechen, weisse Schrift darauf. */
+    --gt3-tile: linear-gradient(#15191f, #0d1014);
+    --gt3-tile-ink: #ffffff;
+    --gt3-btn: #15191f;
+    --gt3-btn-ink: #ffffff;
+    --gt3-btn-hover: #262c35;
+    /* Gemessen und nachgezogen: hellblau auf weiss hatte Kontrast 1,33, das Bestzeit-Gruen
+       1,96. Gleicher Ton, dunklere Helligkeit. */
+    --gt3-rpm-ink: #24486e;
+    --gt3-ok: #0d7a41;
+    --gt3-warn: #8a5c00;
+    --gt3-bad: #c0272d;
+  }
+  /* Die zwei zeichnenden Instrumente: dunkler Einsatz, damit ihre hellen Linien stehen -
+     UND helle Tinte darin. Ohne die zweite Zeile erbt der Text die dunkle Schirmtinte und
+     steht dunkel auf dunkel: gemessen Kontrast 1,05 bei der Gierrate, also unsichtbar. */
+  body[data-cockpit="modern"] .gt3-gplot,
+  body[data-cockpit="modern"] .wx-radar {
+    background: #0d1014; border-radius: 2px; color: var(--gt3-tile-ink); }
+  body[data-cockpit="modern"] .gt3-gplot .gt3-lbl,
+  body[data-cockpit="modern"] .gt3-gplot .gt3-val { color: var(--gt3-tile-ink); }
+  body[data-cockpit="modern"] .gt3-gplot { padding: 3px; }
+
+  /* KLASSIKER - Walnuss und Chrom. Die vierte Ansicht, und die einzige, die nicht aus dem
+     Rennsport kommt: das Armaturenbrett eines Gran Turismo der Sechziger, wie es Jaguar,
+     Aston oder Maserati gebaut haben. Furnier, verchromte Ringe, cremefarbene Zifferblaetter
+     auf tiefem Schwarzbraun.
+
+     Warum sie hier steht: die anderen drei sprechen dieselbe Sprache - dunkler Schirm,
+     technische Schrift, Metall oder Kunststoff. Holz ist der eine Werkstoff, den keine davon
+     hat, und Creme auf Schwarzbraun ist warm, wo die anderen kuehl sind. Sie ist damit auf
+     einen Blick von allen dreien zu unterscheiden, und das war bei "Modern" gegen die Vorgabe
+     zuerst nicht so.
+
+     Das Furnier sind drei Schichten: eine grobe Faser laengs, eine feine quer dazu fuer den
+     Flader, und darunter der Farbverlauf des Holzes. Chrom ist ein harter Hell-Dunkel-Wechsel
+     mit einem hellen Kern - eine Politur hat KEINEN weichen Verlauf, sondern spiegelt. */
+  body[data-cockpit="klassiker"] {
+    --gt3-ink: #f3e7c6;
+    --gt3-screen: linear-gradient(180deg, #16110c 0%, #0d0a07 48%, #0a0806 76%, #14100b 100%);
+    --gt3-radius: 14px;
+    --gt3-line: rgba(243, 231, 198, .34);
+    --gt3-line-soft: rgba(243, 231, 198, .15);
+    --gt3-lbl: #a2947a;
+    --gt3-glow: 0 0 7px rgba(255, 226, 150, .26);
+    --gt3-scan: repeating-linear-gradient(0deg, rgba(0,0,0,.05) 0 1px,
+                                                rgba(0,0,0,0) 1px 4px);
+    --gt3-vignette: inset 0 0 clamp(16px, 6vw, 60px) rgba(0,0,0,.62);
+    --gt3-font: "Georgia", "Times New Roman", "Iowan Old Style", serif;
+    --gt3-blende: clamp(14px, 3.6vw, 26px);
+    --gt3-carbon:
+      repeating-linear-gradient(88deg, rgba(255,226,170,.10) 0 1px,
+                                       rgba(60,28,10,.24) 1px 4px),
+      repeating-linear-gradient(4deg, rgba(255,214,150,.055) 0 6px,
+                                      rgba(46,20,8,.20) 6px 15px),
+      linear-gradient(180deg, #6b3a17 0%, #43230d 52%, #5c3013 100%);
+    --gt3-schraube: radial-gradient(circle at 50% 50%,
+      #f2f5f8 0 9%, #9aa3ad 9% 15%, #d8dee6 15% 19%, #3a4048 19% 25%, rgba(0,0,0,0) 25%);
+    --gt3-tile: linear-gradient(#1b1409, #0e0a05);
+    --gt3-tile-ink: #f3e7c6;
+    --gt3-btn: #2b1d0c;
+    --gt3-btn-ink: #f3e7c6;
+    --gt3-btn-hover: #3d2a13;
+    --gt3-strip: #120d07;
+    --gt3-strip-ink: #a2947a;
   }
 
   #tab-race { position: relative; }
@@ -991,14 +1082,14 @@
      stehen bleiben. Die antippbare Kachel bekommt ihre Oberkante jetzt ueber denselben
      Schatten, nur eine Spur heller als eine gewoehnliche Kachel. */
   .gt3-box.gt3-click, .gt3-box.pit-tile {
-    background: linear-gradient(#101623, #0a0e17);
+    background: var(--gt3-tile); color: var(--gt3-tile-ink);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, .16),
                 inset 0 -1px 0 rgba(0, 0, 0, .5); }
   /* Weiter gesperrt und etwas blasser: auf dem Vorbild ist die Beschriftung fast eine
      Unterschrift, die Zahl traegt die Aufmerksamkeit. .16em statt .1em, und die Farbe von
      #8b99b4 auf #78849c. */
   .gt3-lbl { font-size: clamp(7px, 1vw, 9.5px); letter-spacing: .16em;
-    text-transform: uppercase; color: #78849c; line-height: 1.3;
+    text-transform: uppercase; color: var(--gt3-lbl); line-height: 1.3;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   /* tabular-nums ist der Teil, der im Fahrbetrieb zaehlt: ohne ihn haben die Ziffern
      verschiedene Breiten, und eine Rundenzeit, deren Doppelpunkt bei jedem Zehntel wandert,
@@ -1023,7 +1114,7 @@
     line-height: .92; font-size: clamp(46px, 12vw, 118px); }
   .gt3-rpm { font-family: var(--gt3-font); font-weight: 700; text-align: center;
     font-variant-numeric: tabular-nums;
-    font-size: clamp(13px, 2.2vw, 24px); color: #cfe0ff; }
+    font-size: clamp(13px, 2.2vw, 24px); color: var(--gt3-rpm-ink); }
 
   /* Die drei Zeiten als Raster in einem Feld. Auf schmalen Schirmen untereinander mit
      Haarlinien, ab 560 px in einer Reihe - dort ist Breite da, und drei Zahlen neben-
@@ -1169,7 +1260,8 @@
   .gt3-foot {
     grid-area: foot; display: flex; flex-wrap: wrap; gap: clamp(6px, 1.6vw, 18px);
     align-items: baseline; padding: clamp(3px, .7vw, 7px) clamp(4px, 1vw, 10px);
-    background: #0b0f18; font-size: clamp(8px, 1.15vw, 11px); color: #8b97ad;
+    background: var(--gt3-strip); font-size: clamp(8px, 1.15vw, 11px);
+    color: var(--gt3-strip-ink);
     letter-spacing: .04em;
   }
   .gt3-foot b { font-family: monospace; color: #dbe3f0; font-weight: 700; }
@@ -1189,7 +1281,7 @@
   .gt3-marke {
     grid-area: marke; display: flex; align-items: center; gap: 7px;
     padding: clamp(3px, .7vw, 6px) clamp(4px, 1vw, 10px);
-    background: var(--gt3-carbon) 0 0 / 14px 14px repeat, #0b0f18;
+    background: var(--gt3-carbon) 0 0 / 14px 14px repeat, var(--gt3-strip);
     border-top: 1px solid rgba(255, 255, 255, .07);
     font-size: clamp(8px, 1.1vw, 10.5px); letter-spacing: .06em;
   }
@@ -1203,7 +1295,12 @@
     color: #ffcf6e; font-family: monospace; font-size: clamp(9px, 1.3vw, 13px);
   }
   #hud-toast-wrap:empty, #hud-toast:empty { padding: 0; }
-  .gt3-ok { color: #46d17f; } .gt3-warn { color: #ffb02e; } .gt3-bad { color: #ff5252; }
+  /* FUNKTIONSFARBEN. Ihre Bedeutung ist fest - gruen gut, gelb Vorsicht, rot schlecht -,
+     ihre HELLIGKEIT nicht: auf weissem Grund ist ein helles Gruen unlesbar (gemessen
+     Kontrast 1,96). Eine Ansicht darf den Ton behalten und die Helligkeit anpassen; sie darf
+     nicht die Bedeutung anpassen. */
+  .gt3-ok { color: var(--gt3-ok); } .gt3-warn { color: var(--gt3-warn); }
+  .gt3-bad { color: var(--gt3-bad); }
   /* ABS as letters under the speed, not a number in a side box: grey means available-
      but-idle, red means it is intervening right now: a glance, not a reading. */
   .gt3-abs { font-family: monospace; font-weight: 800; letter-spacing: .14em;
@@ -1234,13 +1331,14 @@
   /* Touch controls on the dash. Big enough for a thumb, and they sit in the columns
      rather than floating, so nothing covers a reading. */
   .gt3-act { width: 100%; margin-top: 4px; padding: 9px 6px; border: 0; border-radius: 0;
-    background: #1f2a3d; color: #dce7fb; font-weight: 700; font-family: inherit;
+    background: var(--gt3-btn); color: var(--gt3-btn-ink); font-weight: 700;
+    font-family: inherit;
     font-size: clamp(10px, 1.6vw, 14px); letter-spacing: .04em; cursor: pointer;
     /* 44 statt 40: das sind die zwei Knoepfe, die man waehrend der Fahrt trifft, also
        gehoeren sie auf die volle Beruehrflaeche. Gilt fuer Boxenstopp UND gelbe Flagge,
        damit die beiden nicht unterschiedlich hoch nebeneinander stehen. */
     min-height: 44px; }
-  .gt3-act:hover { background: #2b3a55; }
+  .gt3-act:hover { background: var(--gt3-btn-hover); }
   .gt3-act.armed { background: #1c7a4d; color: #eafff1; }
   .gt3-act.warn { background: #b8860b; color: #100c02; }
   /* Eigene Klasse statt .warn: die trug ein dunkles Goldbraun (#b8860b), und eine gelbe
@@ -5105,18 +5203,24 @@
 <div class="opt-head">Allgemein</div>
       <div class="opt-row"><div class="opt-label">Cockpit-Ansicht<small>Nur das Aussehen des
           Cockpit-Schirms &ndash; Anzeigen, Tasten und Physik bleiben, wie sie sind.
-          &bdquo;GT3&ldquo; ist die Vorgabe. &bdquo;Oldschool&ldquo; ist Bernstein auf
-          Schwarz mit sichtbaren Pixelzeilen und runden Ecken, wie die
-          Vakuumfluoreszenz-Armaturen der 1980er; &bdquo;Modern&ldquo; ist k&uuml;hles
-          Wei&szlig; auf Anthrazit, flach und scharf, wie die ersten Farb-TFT der 2000er.
-          Die Bedeutungsfarben bleiben in allen drei gleich: der Tankbalken ist gr&uuml;n und
+          &bdquo;GT3&ldquo; ist die Vorgabe: Carbon und wei&szlig;e Schrift auf
+          Schwarz. &bdquo;Oldschool&ldquo; ist Bernstein auf Schwarz mit sichtbaren
+          Pixelzeilen, breiter Kunststoffblende und Messingschrauben, wie die
+          Vakuumfluoreszenz-Armaturen der 1980er. &bdquo;Modern&ldquo; ist ein wei&szlig;er
+          Schirm mit schwarzen Bedienfl&auml;chen und schmaler Alublende, wie die ersten
+          Farb-TFT der 2000er &ndash; Regenradar und G-Plot behalten dort ihren dunklen
+          Einsatz, weil sie hell auf dunkel zeichnen und auf Wei&szlig; unsichtbar w&auml;ren.
+          &bdquo;Klassiker&ldquo; ist Walnussfurnier mit Chromschrauben und cremefarbener
+          Schrift auf Schwarzbraun, wie das Armaturenbrett eines Gran Turismo der Sechziger.
+          Die Bedeutungsfarben bleiben in allen vier gleich: der Tankbalken ist gr&uuml;n und
           der Schaden rot, auch in der Retro-Ansicht &ndash; eine Ansicht darf &auml;ndern,
           wie es aussieht, nicht was eine Farbe sagt. Die Voreinstellungen fassen die Ansicht
           nicht an.</small></div>
         <select id="setting-cockpit" data-preset-skip>
           <option value="gt3" selected>GT3 (Vorgabe)</option>
           <option value="retro">Oldschool, 1980er</option>
-          <option value="modern">Modern, 2000er</option>
+          <option value="modern">Modern, 2000er (hell)</option>
+          <option value="klassiker">Klassiker: Walnuss und Chrom</option>
         </select></div>
       <div class="opt-row"><div class="opt-label">Scheinwerfer
           </div>
@@ -5755,7 +5859,7 @@
 <div class="opt-head">Autonome Gegner</div>
       <div class="opt-row"><div class="opt-label">Ghost: Leitplanken-Modus<small>Das Auto hält sich selbst auf der Bahn, der Ghost gibt nur Gas.</small></div>
         <label class="tgl"><input type="checkbox" id="ghost-rail" checked><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Ghost-Tempo<small><span class="wip-tag">NEU</span> Rundentempo der autonomen Autos. Gefahren brauchbar zwischen 40 und 60 Prozent. Der Regler beginnt bei 35 und nicht tiefer: darunter f&auml;hrt das Auto so langsam, dass es die gedruckte Strecke nicht mehr zuverl&auml;ssig &bdquo;liest&ldquo; &ndash; und dann fallen Vorausblick, Ideallinie und Kurvendrosselung alle drei aus.</small></div>
+      <div class="opt-row"><div class="opt-label">Ghost-Tempo<small>Rundentempo der autonomen Autos. Gefahren brauchbar zwischen 40 und 60 Prozent. Der Regler beginnt bei 35 und nicht tiefer: darunter f&auml;hrt das Auto so langsam, dass es die gedruckte Strecke nicht mehr zuverl&auml;ssig &bdquo;liest&ldquo; &ndash; und dann fallen Vorausblick, Ideallinie und Kurvendrosselung alle drei aus.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
           <input type="range" id="ghost-speed" min="0.35" max="1" step="0.05" value="0.45">
@@ -5770,7 +5874,7 @@
           <span class="opt-val" id="ghost-curve-val">15%</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Rennw&uuml;rze
-          <small><span class="wip-tag">NEU</span> Tagesform, Fehler, Windschatten, &Uuml;berholen, Gummiband und Abstand halten &ndash; ein Regler f&uuml;r alle sechs. Ein &Uuml;berholvorgang l&auml;uft als Sequenz: erst zur Seite, dann Schub, dann vorne wieder einordnen, und wenn es nach 5&nbsp;s nicht geklappt hat, Abbruch mit 6&nbsp;s Sperre. Ohne diesen Abbruch klebte der Verfolger neben dem anderen, bis die Uhr ablief, und genau dort ber&uuml;hren sie sich. Der Mindestabstand rechnet ausserdem mit der Ann&auml;herungsrate statt mit einem festen Kachelabstand. Auf 0 ist jeder der sechs Bausteine wirkungslos.</small></div>
+          <small>Tagesform, Fehler, Windschatten, &Uuml;berholen, Gummiband und Abstand halten &ndash; ein Regler f&uuml;r alle sechs. Ein &Uuml;berholvorgang l&auml;uft als Sequenz: erst zur Seite, dann Schub, dann vorne wieder einordnen, und wenn es nach 5&nbsp;s nicht geklappt hat, Abbruch mit 6&nbsp;s Sperre. Ohne diesen Abbruch klebte der Verfolger neben dem anderen, bis die Uhr ablief, und genau dort ber&uuml;hren sie sich. Der Mindestabstand rechnet ausserdem mit der Ann&auml;herungsrate statt mit einem festen Kachelabstand. Auf 0 ist jeder der sechs Bausteine wirkungslos.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
           <input type="range" id="ghost-spice" min="0" max="1" step="0.05" value="0.4">
@@ -5798,14 +5902,14 @@
           beh&auml;lt sie nur, wenn die Runde schneller war <b>und</b> kein Abgang dabei.
           Nach einem Abgang wird zur&uuml;ckgenommen und vorsichtiger weiterprobiert.</small></div>
         <label class="tgl"><input type="checkbox" id="ghost-learn-pace"><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Ghost: seitlicher Versatz <span class="wip-tag">WIP</span><small><span class="wip-tag">NEU</span> Zwei Autos nebeneinander gehen auseinander, und beim &Uuml;berholen weicht auch der Vorausfahrende aus, zur anderen Seite. Zwei Autos auf 25&nbsp;cm Bahnbreite brauchen beide H&auml;lften. Dieser Regler bestimmt auch, wie weit der Angreifer zur Seite geht: das ist ein Ausweichen und keine Linienwahl, h&auml;ngt also nicht an der Ideallinie.</small></div>
+      <div class="opt-row"><div class="opt-label">Ghost: seitlicher Versatz <span class="wip-tag">WIP</span><small>Zwei Autos nebeneinander gehen auseinander, und beim &Uuml;berholen weicht auch der Vorausfahrende aus, zur anderen Seite. Zwei Autos auf 25&nbsp;cm Bahnbreite brauchen beide H&auml;lften. Dieser Regler bestimmt auch, wie weit der Angreifer zur Seite geht: das ist ein Ausweichen und keine Linienwahl, h&auml;ngt also nicht an der Ideallinie.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
           <input type="range" id="ghost-lateral" min="0" max="1" step="0.1" value="0.5">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="ghost-lateral-val">50%</span>
         </div></div>
-      <div class="opt-row"><div class="opt-label">Ghost: eigene Spuren <span class="wip-tag">experimentell</span><small><span class="wip-tag">NEU</span> Jeder Ghost h&auml;lt eine eigene, feste Linie &uuml;ber die Bahnbreite. Auf der Geraden gilt die Spur, in der Kurve die Ideallinie &ndash; so f&auml;hrt das Feld hintereinander, aber auf verschiedenen Linien, und sucht im Bogen trotzdem den Scheitel. Der &Uuml;bergang l&auml;uft mit 350&nbsp;ms nach, damit an der Kachelgrenze kein Ruck entsteht. In der Kurve bleibt die halbe Spur stehen: alle auf denselben Scheitel zu schicken w&auml;re realistisch, w&uuml;rde sie aber zusammenf&uuml;hren, und Ber&uuml;hrungen sind ohne R&uuml;ckmeldung zur Querlage nicht zur&uuml;ckzuregeln.</small></div>
+      <div class="opt-row"><div class="opt-label">Ghost: eigene Spuren <span class="wip-tag">experimentell</span><small>Jeder Ghost h&auml;lt eine eigene, feste Linie &uuml;ber die Bahnbreite. Auf der Geraden gilt die Spur, in der Kurve die Ideallinie &ndash; so f&auml;hrt das Feld hintereinander, aber auf verschiedenen Linien, und sucht im Bogen trotzdem den Scheitel. Der &Uuml;bergang l&auml;uft mit 350&nbsp;ms nach, damit an der Kachelgrenze kein Ruck entsteht. In der Kurve bleibt die halbe Spur stehen: alle auf denselben Scheitel zu schicken w&auml;re realistisch, w&uuml;rde sie aber zusammenf&uuml;hren, und Ber&uuml;hrungen sind ohne R&uuml;ckmeldung zur Querlage nicht zur&uuml;ckzuregeln.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
           <input type="range" id="ghost-lanes" min="0" max="1" step="0.05" value="0.5">
@@ -6292,7 +6396,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.5.4</span></span>
+    <span class="foot-ver">v<span id="app-version">0.5.5</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine

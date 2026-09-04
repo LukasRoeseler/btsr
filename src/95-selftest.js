@@ -1729,6 +1729,100 @@
     }
   });
 
+
+  // ---- Jede Ansicht bleibt lesbar ----
+  //
+  // DIESER TEST HAT DREI ECHTE FEHLER GEFUNDEN, als die helle Ansicht dazukam, und keinen
+  // davon haette man am Bildschirm sicher gesehen:
+  //
+  //     #race-rpm       hellblau auf weiss                        Kontrast 1,33
+  //     #race-lap-best  helles Gruen auf weiss                    Kontrast 1,96
+  //     #race-yaw       dunkle Tinte auf dunklem G-Plot-Einsatz    Kontrast 1,05
+  //
+  // Der dritte ist der lehrreiche: eine helle Ansicht braucht dunkle Einsaetze fuer die zwei
+  // Instrumente, die hell auf dunkel ZEICHNEN - und dann muss die Tinte DARIN wieder hell
+  // sein. Eine einzige Tintenfarbe kann das nicht, und genau daran ist es aufgefallen.
+  //
+  // Gerechnet wird der Kontrast nach WCAG (relative Leuchtdichte, (L1+0,05)/(L2+0,05)) und
+  // gegen 3 geprueft - das ist die Grenze fuer grossen Text, und Cockpitziffern sind gross.
+  //
+  // WAS DIESER TEST NICHT KANN, und das gehoert dazu: den Hintergrund findet er, indem er
+  // nach oben laeuft, bis eine deckende Farbe kommt. Ein Verlauf oder ein Bild wird als
+  // dunkel bzw. hell EINGESCHAETZT, je nach Ansicht. Er kann also falschen Alarm geben; dann
+  // ist die Antwort, die wirkliche Farbe an der Stelle ausdruecklich zu setzen, und nicht,
+  // den Test nachsichtiger zu machen.
+  stAdd('Cockpit-Ansichten: alles lesbar', () => {
+    const sel = $('setting-cockpit');
+    if (!sel) return { ok: false, mass: 'setting-cockpit fehlt' };
+    const merk = sel.value;
+    const schlecht = [];
+    const teile = [];
+    try {
+      const lum = (c) => {
+        const m = (c || '').match(/\d+(\.\d+)?/g);
+        if (!m || m.length < 3) return null;
+        const [r, g, b] = m.slice(0, 3).map(Number).map(v => {
+          const x = v / 255;
+          return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4);
+        });
+        return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+      };
+      const kontrast = (a, b) => {
+        const A = lum(a), B = lum(b);
+        if (A === null || B === null) return 21;
+        return (Math.max(A, B) + 0.05) / (Math.min(A, B) + 0.05);
+      };
+      // Der Grund unter einem Element: die erste deckende Farbe nach oben. Trifft er statt
+      // dessen ein Bild oder einen Verlauf, wird er eingeschaetzt - hell im hellen Schirm,
+      // sonst dunkel.
+      const hell = () => document.body.dataset.cockpit === 'modern';
+      const grund = (el) => {
+        let n = el;
+        while (n && n !== document.body) {
+          const cs = getComputedStyle(n);
+          if (cs.backgroundColor && cs.backgroundColor !== 'rgba(0, 0, 0, 0)') {
+            return cs.backgroundColor;
+          }
+          if (cs.backgroundImage !== 'none') {
+            return (n.id === 'race-dash' && hell()) ? 'rgb(248,250,252)' : 'rgb(14,18,24)';
+          }
+          n = n.parentElement;
+        }
+        return hell() ? 'rgb(255,255,255)' : 'rgb(10,14,22)';
+      };
+      for (const v of Array.prototype.map.call(sel.options, o => o.value)) {
+        sel.value = v;
+        sel.dispatchEvent(new Event('change', { bubbles: true }));
+        let schlimmst = 21, wo = '';
+        let geprueft = 0;
+        document.querySelectorAll('#race-dash *').forEach(el => {
+          // Nur Elemente mit EIGENEM Text und sichtbar: ein Container erbt seine Farbe und
+          // zaehlt sonst doppelt.
+          const eigen = [...el.childNodes].some(x => x.nodeType === 3 && x.nodeValue.trim());
+          // NICHT offsetParent: der Test laeuft aus dem Selbsttest-Reiter, und dort ist das
+          // Cockpit nicht angezeigt - dann waere offsetParent ueberall null und der Test
+          // wuerde nichts messen. Die Farbe eines Elements haengt nicht daran, welcher Reiter
+          // offen ist; gefiltert wird deshalb nach der EIGENEN Anzeigeart.
+          if (!eigen || el.hidden || getComputedStyle(el).display === 'none') return;
+          geprueft++;
+          const k = kontrast(getComputedStyle(el).color, grund(el));
+          if (k < schlimmst) { schlimmst = k; wo = el.id || el.className; }
+        });
+        teile.push(v + ' ' + schlimmst.toFixed(2));
+        if (geprueft < 5) schlecht.push(v + ': nur ' + geprueft + ' Texte gefunden');
+        if (schlimmst < 3) {
+          schlecht.push(v + ': ' + wo + ' hat Kontrast ' + schlimmst.toFixed(2));
+        }
+      }
+      return { ok: schlecht.length === 0,
+               mass: 'schlechtester Kontrast je Ansicht: ' + teile.join(' | ')
+                     + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+    } finally {
+      sel.value = merk;
+      sel.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+  });
+
   // ---- Streckenkarte: die Autos stehen dort, wo sie sind ----
   //
   // DER BEFUND: die Karte zeichnete GAR KEIN Auto. Der einzige Aufrufer, der eine Position
