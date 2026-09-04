@@ -1184,6 +1184,25 @@
   // Einfuehrungsrunde geht es mit Boxentempo zu, und dort verzeiht ein seitlicher Versatz
   // mehr.
   const GHOST_GRID_OFFSET = 0.16;
+  // DIE LESESCHWELLE. Unter diesem Anteil der Hoechstgeschwindigkeit faehrt das Auto so
+  // langsam, dass es die gedruckte Strecke nicht mehr zuverlaessig liest - dann meldet Byte
+  // 12 nur noch 0x00, der Vorausblick faellt aus, und der Abgangsmelder haelt das fuer "Bahn
+  // verlassen". Genau darum beginnt der Temporegler bei 0,35 und nicht tiefer.
+  //
+  // Als Konstante, weil sie jetzt an ZWEI Stellen gilt: beim Regler (dessen min im Markup
+  // steht) und beim Formationstempo. Dort fehlte sie, und das war der Fehler.
+  const GHOST_READ_MIN = 0.35;
+  // Das Tempo der Einfuehrungsrunde. NICHT einfach das Boxentempo: 80 km/h sind 0,271 von
+  // 295, also unter der Leseschwelle. Ein Feld, das dort rollt, liest nichts mehr, parkt sich
+  // selbst - gemeldet als "sie fahren nicht richtig los und fangen an zu blinken" - und die
+  // Runde koennte gar nicht enden, denn ihr Ende ist eine Ueberfahrt von Start/Ziel, und die
+  // muss gelesen werden.
+  //
+  // Das Maximum von beiden ist damit keine Bequemlichkeit, sondern die Bedingung dafuer, dass
+  // die Einfuehrungsrunde ueberhaupt zu Ende geht.
+  function formationPace() {
+    return Math.max(PIT_SPEED_FACTOR, GHOST_READ_MIN);
+  }
 
   // Der Startplatz eines Autos, oder -1 fuer "steht nicht in der Aufstellung". Als Funktion,
   // weil ihn jetzt zwei Stellen brauchen: startGhost() und das Auto des Fahrers. Zwei
@@ -2961,7 +2980,12 @@
     //   zwischen zwei Kacheln dauern im Median 32 ms. Das genuegt allein.
     //   noCode ist das FEHLEN eines Zeugnisses und behaelt beide Gegenproben: nur mit
     //   needCode, und nur wenn der Kachelzaehler auch steht.
-    const parken = offConfirmed || (ghostCfg.needCode && noCode && !zaehlerLaeuft);
+    // NICHT WAEHREND DER EINFUEHRUNGSRUNDE. Auch im Formationstempo ist das Lesen
+    // grenzwertig, und ein Feld, das sich beim Anrollen selbst abstellt, ist schlimmer als
+    // eines, das eine verlorene Kachel uebersieht - es rollt ohnehin nur, und die Leitplanke
+    // haelt es. Der Melder ist fuer eine Runde gebaut, in der gefahren wird.
+    const parken = (offConfirmed || (ghostCfg.needCode && noCode && !zaehlerLaeuft))
+                   && !raceFormationLap;
     if (parken && !car.parked) {
       parkCar(car, 'Bahn verlassen');
     }
@@ -3071,8 +3095,10 @@
       if (ghostCfg.leaderBrake && feldGross && ghostLeader() === car) {
         target *= (1 - ghostCfg.leaderBrakePct);
       }
-      // Formation lap: everyone rolls at pit-lane pace, whatever their speed setting says.
-      if (raceFormationLap) target = Math.min(target, PIT_SPEED_FACTOR);
+      // Einfuehrungsrunde: alle rollen im Formationstempo, was ihr eigener Regler auch
+      // sagt. Das ist NICHT das Boxentempo - siehe formationPace(): darunter liest das Auto
+      // die Bahn nicht mehr.
+      if (raceFormationLap) target = Math.min(target, formationPace());
 
       // Die Anfahrrampe: sie greift NUR nach einem Entparken und laeuft von selbst aus.
       if (g.unparkAt) {
@@ -4670,6 +4696,23 @@
                // Der groesste Sprung zwischen zwei Nachbarn, in Oktaven.
                oktaven: +Math.max.apply(null, basen.slice(1).map(
                  (b, i) => Math.log2(b / basen[i]))).toFixed(2) };
+    },
+
+    // Die Autopunkte auf der Streckenkarte. Gefragt wird mit KUENSTLICHEN Autos, denn ohne
+    // verbundenes Auto gibt es keine echten - und genau dann soll die Karte trotzdem stimmen.
+    //
+    // Zurueck kommen die gezeichneten Mittelpunkte, damit der Test den VERSATZ pruefen kann:
+    // die alte Fassung rechnete (index + 1) * Abtastpunkte und setzte den Punkt damit an das
+    // ENDE der Kachel, auf der das Auto steht - eine ganze Kachel zu weit.
+    trackMarks(code, cars) {
+      const p = codeToTrack(code || 'SG2H2G2R2G2H2G2R2');
+      const html = renderTrackPreview(p.tiles, null, { detailed: true, cars: cars || [] }).html;
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+      const punkte = [...doc.querySelectorAll('circle')].map(c => ({
+        x: +c.getAttribute('cx'), y: +c.getAttribute('cy'), fill: c.getAttribute('fill') }));
+      const kuerzel = [...doc.querySelectorAll('text')].map(t => t.textContent);
+      return { kacheln: p.tiles.length, punkte, kuerzel,
+               echte: trackCarMarks ? trackCarMarks().length : null };
     },
 
     ghostPassRates() {

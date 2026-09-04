@@ -1618,6 +1618,57 @@
     } finally { fuel = gemerkt; }
   });
 
+
+  // ---- Streckenkarte: die Autos stehen dort, wo sie sind ----
+  //
+  // DER BEFUND: die Karte zeichnete GAR KEIN Auto. Der einzige Aufrufer, der eine Position
+  // mitgab, war die Cockpit-Minikarte, und die ist entfernt worden - der Editor gab
+  // ausdruecklich null. Der Punkt, den man auf der Startgeraden sah und fuer ein Auto hielt,
+  // ist die Start/Ziel-Linie: ein 4 px breiter gruener Strich quer zur Bahn.
+  //
+  // Und der Versatz war falsch: (index + 1) * Abtastpunkte setzte den Punkt an das ENDE der
+  // Kachel, auf der das Auto steht - eine ganze Kachel zu weit.
+  stAdd('Streckenkarte: Autopunkte an der richtigen Kachel', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.trackMarks) {
+      return { skip: true, mass: 'trackMarks nicht vorhanden' };
+    }
+    const schlecht = [];
+    // Ohne Autos KEIN Punkt - sonst waere der gruene Strich wieder als Auto zu lesen.
+    const leer = OMEGA_TEST.trackMarks(null, []);
+    if (leer.punkte.length !== 0) schlecht.push(leer.punkte.length + ' Punkte ohne Autos');
+    // Zwei Autos auf verschiedenen Kacheln: zwei Punkte, verschiedene Orte, beide Kuerzel.
+    const zwei = OMEGA_TEST.trackMarks(null, [
+      { index: 0, phase: 0, farbe: '#5aa9ff', kuerzel: 'ICH' },
+      { index: 4, phase: 0.5, farbe: '#ffb02e', kuerzel: 'GH1' },
+    ]);
+    if (zwei.punkte.length !== 2) schlecht.push(zwei.punkte.length + ' Punkte statt 2');
+    if (zwei.kuerzel.join(',') !== 'ICH,GH1') {
+      schlecht.push('Kuerzel: ' + zwei.kuerzel.join(','));
+    }
+    if (zwei.punkte.length === 2) {
+      const d = Math.hypot(zwei.punkte[0].x - zwei.punkte[1].x,
+                           zwei.punkte[0].y - zwei.punkte[1].y);
+      if (!(d > 20)) schlecht.push('beide Punkte am selben Ort (' + d.toFixed(0) + ')');
+    }
+    // DER VERSATZ: Kachel 0 mit Phase 0 muss WEITER VORN liegen als Kachel 0 mit Phase 1,
+    // und Phase 1 auf Kachel 0 muss dort liegen, wo Phase 0 auf Kachel 1 liegt. Das ist die
+    // Zusicherung, die die alte Rechnung gebrochen hat.
+    const a = OMEGA_TEST.trackMarks(null, [{ index: 0, phase: 0, farbe: '#fff' }]);
+    const b = OMEGA_TEST.trackMarks(null, [{ index: 0, phase: 1, farbe: '#fff' }]);
+    const c = OMEGA_TEST.trackMarks(null, [{ index: 1, phase: 0, farbe: '#fff' }]);
+    if (a.punkte.length && b.punkte.length && c.punkte.length) {
+      const dAB = Math.hypot(a.punkte[0].x - b.punkte[0].x, a.punkte[0].y - b.punkte[0].y);
+      const dBC = Math.hypot(b.punkte[0].x - c.punkte[0].x, b.punkte[0].y - c.punkte[0].y);
+      if (!(dAB > 10)) schlecht.push('Phase wirkt nicht (' + dAB.toFixed(0) + ')');
+      if (!(dBC < 2)) schlecht.push('Kachelende trifft nicht den naechsten Anfang ('
+                                    + dBC.toFixed(0) + ')');
+    }
+    return { ok: schlecht.length === 0,
+             mass: zwei.kacheln + ' Kacheln, ' + zwei.punkte.length + ' Autopunkte, '
+                   + leer.punkte.length + ' ohne Autos, ' + zwei.echte + ' echte verbunden'
+                   + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
   // ---- Ueberholen: die zwei Regeln duerfen sich nicht bestreiten ----
   //
   // DER BEFUND, der diesen Test noetig gemacht hat, und er war nur zu sehen, wenn man beide
@@ -1700,9 +1751,13 @@
       if (bei(0.1) !== null) schlecht.push('greift ohne Einfuehrungsrunde');
       // 2. In der Einfuehrungsrunde greift sie, und der Grund ist der richtige.
       raceFormationLap = true;
-      const langsam = bei(PIT_SPEED_FACTOR * 0.4);
-      const schnell = bei(PIT_SPEED_FACTOR * 2.5);
-      const passend = bei(PIT_SPEED_FACTOR);
+      // formationPace() und nicht PIT_SPEED_FACTOR: das Boxentempo liegt UNTER der
+      // Leseschwelle der Ghosts, und deshalb ist es seit v0.5.1 nur noch der Boden des
+      // Formationstempos. Ein Test, der gegen den Boden prueft, misst nicht das Ziel.
+      const ziel = formationPace();
+      const langsam = bei(ziel * 0.4);
+      const schnell = bei(ziel * 2.5);
+      const passend = bei(ziel);
       if (!langsam || !schnell || !passend) {
         return { ok: false, mass: 'greift in der Einfuehrungsrunde nicht' };
       }
@@ -1710,12 +1765,22 @@
       if (!(langsam.throttle > 0.2 && langsam.brake === 0)) schlecht.push('zu langsam: kein Gas');
       if (!(schnell.brake > 0.2 && schnell.throttle === 0)) schlecht.push('zu schnell: keine Bremse');
       if (!(passend.throttle < 0.15 && passend.brake < 0.15)) schlecht.push('am Ziel nicht ruhig');
-      // 3. Das Ziel ist das BOXENTEMPO. Gegenprobe ueber den Nulldurchgang des Reglers:
-      //    knapp darunter muss Gas kommen, knapp darueber Bremse.
-      const unter = bei(PIT_SPEED_FACTOR * 0.9), ueber = bei(PIT_SPEED_FACTOR * 1.1);
-      if (!(unter.throttle > 0 && ueber.brake > 0)) schlecht.push('Ziel nicht das Boxentempo');
+      // 3. Das Ziel ist das FORMATIONSTEMPO. Gegenprobe ueber den Nulldurchgang des
+      //    Reglers: knapp darunter muss Gas kommen, knapp darueber Bremse.
+      const unter = bei(ziel * 0.9), ueber = bei(ziel * 1.1);
+      if (!(unter.throttle > 0 && ueber.brake > 0)) schlecht.push('Ziel nicht das Formationstempo');
+      // 3b. UND DAS FORMATIONSTEMPO MUSS UEBER DER LESESCHWELLE LIEGEN. Das ist der
+      //     Widerspruch, der die Einfuehrungsrunde kaputt gemacht hat: gedeckelt war sie auf
+      //     das Boxentempo (0,271), waehrend der Ghost-Temporegler bei 0,35 beginnt, weil das
+      //     Auto darunter die gedruckte Strecke nicht mehr LIEST. Die Ghosts lasen also
+      //     nichts, wurden als "Bahn verlassen" geparkt und blinkten - und die Runde konnte
+      //     gar nicht enden, denn ihr Ende ist eine Ueberfahrt von Start/Ziel.
+      if (typeof GHOST_READ_MIN === 'number' && !(ziel >= GHOST_READ_MIN)) {
+        schlecht.push('Formationstempo ' + ziel.toFixed(3) + ' unter der Leseschwelle '
+                      + GHOST_READ_MIN);
+      }
       // 4. Die Bremse des Fahrers gewinnt - in der Einfuehrungsrunde.
-      const mitBremse = bei(PIT_SPEED_FACTOR * 0.4, 0.8);
+      const mitBremse = bei(ziel * 0.4, 0.8);
       if (!(mitBremse.brake >= 0.8 && mitBremse.throttle === 0)) {
         schlecht.push('Bremse des Fahrers verliert');
       }
@@ -1729,7 +1794,10 @@
       raceFormationLap = true; flagState = 'green'; trackMode = 'off';
       if (bei(0.1) !== null) schlecht.push('greift in der Ausdruck-Stellung');
       return { ok: schlecht.length === 0,
-               mass: 'Ziel ' + PIT_SPEED_FACTOR.toFixed(3) + ' | bei 40 % Gas '
+               mass: 'Ziel ' + ziel.toFixed(3) + ' (Boxentempo '
+                     + PIT_SPEED_FACTOR.toFixed(3) + ', Leseschwelle '
+                     + (typeof GHOST_READ_MIN === 'number' ? GHOST_READ_MIN : '?')
+                     + ') | bei 40 % Gas '
                      + langsam.throttle.toFixed(2) + ', bei 250 % Bremse '
                      + schnell.brake.toFixed(2) + ', am Ziel '
                      + passend.throttle.toFixed(2) + '/' + passend.brake.toFixed(2)

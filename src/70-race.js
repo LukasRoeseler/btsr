@@ -733,7 +733,9 @@
     raceLapStart = Date.now();
     launchGhosts();   // green means green for everyone
     if (raceFormationLap) {
-      limitFormation = PIT_SPEED_FACTOR; applySpeedLimit();
+      // formationPace() und nicht PIT_SPEED_FACTOR: der Deckel muss zum Ziel des
+      // Autopiloten passen, sonst regelt der gegen eine Wand.
+      limitFormation = formationPace(); applySpeedLimit();
       // Der Flaggenstreifen haengt sonst nur an Flaggenwechseln, und die Einfuehrungsrunde
       // ist keiner - ohne diesen Aufruf faehrt das Auto von selbst und nichts sagt es.
       updateFlagUi();

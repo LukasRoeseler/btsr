@@ -1059,7 +1059,7 @@
     if (raceFormationLap) {
       // Beides kann gelten: wenn in der Einfuehrungsrunde jemand abfliegt. Dann gewinnt der
       // LANGSAMERE, und das ist keine Rangfolge, sondern eine Rechnung.
-      return (flagState === 'yellow' && yellowFactor() < PIT_SPEED_FACTOR)
+      return (flagState === 'yellow' && yellowFactor() < formationPace())
         ? 'yellow' : 'formation';
     }
     return flagState === 'yellow' ? 'yellow' : null;
@@ -1069,7 +1069,9 @@
     const grund = autopilotGrund();
     if (!grund) return null;
     const st = physEngine.state;
-    const ziel = grund === 'formation' ? PIT_SPEED_FACTOR : yellowFactor();
+    // DASSELBE Tempo wie die Ghosts, siehe formationPace(): sonst rollt das Feld mit 0,35
+    // und der Fahrer mit 0,271, und die Kolonne faellt beim Anrollen auseinander.
+    const ziel = grund === 'formation' ? formationPace() : yellowFactor();
     const v = Math.abs(st.speedKmh) / physEngine.config.topSpeedKmh;
     const err = ziel - v;
     let throttle = Math.max(0, Math.min(1, err * 4));
