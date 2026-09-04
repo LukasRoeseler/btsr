@@ -647,6 +647,26 @@
     --gt3-scan: repeating-linear-gradient(0deg, rgba(0,0,0,.08) 0 1px,
                                                 rgba(0,0,0,0) 1px 3px);
     --gt3-vignette: inset 0 0 clamp(14px, 5vw, 54px) rgba(0,0,0,.55);
+
+    /* DIESE VIER STANDEN BIS v0.5.4 IN DER .gt3-REGEL SELBST, und genau deshalb sahen die
+       Cockpit-Ansichten fast gleich aus. Ein Wert, den body[data-cockpit] setzt, wird nur
+       GEERBT - und Erben verliert gegen eine Deklaration am Element selbst. Gemessen war
+       --gt3-carbon in allen drei Ansichten bitgleich und die Blende ueberall 11/20 px, also
+       aenderte sich von neun Hintergrundschichten genau eine: die dunkelste.
+
+       Hier oben kann eine Ansicht sie umsetzen. Ueber hoehere Spezifitaet (body[data-cockpit]
+       .gt3) haette es auch funktioniert, aber die Falle waere stehen geblieben. */
+    /* Die Blende muss BREITER sein als eine Webeinheit. Bei 8 px war sie schmaler als
+       eine, und dann sieht man einen Verlaufsausschnitt und liest gebuerstetes Grau statt
+       Gewebe. Die Webeinheit ist die halbe Kachel, also 7 px - bei 11 bis 20 px Blende
+       passen ein-einhalb bis drei darueber, und ab etwa zwei liest man Stoff. */
+    --gt3-blende: clamp(11px, 2.8vw, 20px);
+    /* Die Webung. Eine Zeile weniger und die Blende ist wieder eine Farbflaeche. */
+    --gt3-carbon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cdefs%3E%3ClinearGradient id='h' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%231a1a1a'/%3E%3Cstop offset='.25' stop-color='%23404040'/%3E%3Cstop offset='.5' stop-color='%231e1e1e'/%3E%3Cstop offset='.75' stop-color='%23454545'/%3E%3Cstop offset='1' stop-color='%23141414'/%3E%3C/linearGradient%3E%3ClinearGradient id='v' x1='0' y1='0' x2='1' y2='0'%3E%3Cstop offset='0' stop-color='%23161616'/%3E%3Cstop offset='.25' stop-color='%233b3b3b'/%3E%3Cstop offset='.5' stop-color='%231a1a1a'/%3E%3Cstop offset='.75' stop-color='%23404040'/%3E%3Cstop offset='1' stop-color='%23101010'/%3E%3C/linearGradient%3E%3Cpattern id='w' width='12' height='12' patternUnits='userSpaceOnUse'%3E%3Crect width='12' height='12' fill='%23121212'/%3E%3Cpath d='M0 0h6v6H0zM6 6h6v6H6z' fill='url(%23h)'/%3E%3Cpath d='M6 0h6v6H6zM0 6h6v6H0z' fill='url(%23v)'/%3E%3Cpath d='M0 1h12M0 3h12M0 5h12M0 7h12M0 9h12M0 11h12' stroke='%23000' stroke-width='.4' opacity='.4'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='24' height='24' fill='url(%23w)'/%3E%3C/svg%3E");
+    /* Die vier Schrauben in den Blendenecken: heller Kopf, dunkler Sitz, aussen nichts.
+       Diese Zeile auf none gesetzt nimmt sie weg, ohne sonst etwas zu ruehren. */
+    --gt3-schraube: radial-gradient(circle at 50% 50%,
+      #7c8798 0 13%, #464f5e 13% 19%, #14181f 19% 25%, rgba(0,0,0,0) 25%);
   }
   /* ============================ COCKPIT-ANSICHTEN ============================
      Zwei Alternativen zur Vorgabe, ueber body[data-cockpit]. Sie setzen ausschliesslich die
@@ -665,40 +685,62 @@
   body[data-cockpit="retro"] {
     --gt3-ink: #ffb64a;
     --gt3-screen: linear-gradient(180deg, #120b02 0%, #0a0600 50%, #080500 78%, #140c02 100%);
-    --gt3-radius: 8px;
+    --gt3-radius: 10px;
     --gt3-line: rgba(255, 182, 74, .38);
     --gt3-line-soft: rgba(255, 182, 74, .17);
     --gt3-glow: 0 0 8px rgba(255, 150, 40, .38);
-    --gt3-scan: repeating-linear-gradient(0deg, rgba(0,0,0,.20) 0 1px,
+    --gt3-scan: repeating-linear-gradient(0deg, rgba(0,0,0,.22) 0 1px,
                                                 rgba(0,0,0,0) 1px 2px);
     --gt3-vignette: inset 0 0 clamp(18px, 7vw, 70px) rgba(0,0,0,.72);
     --gt3-font: "Consolas", "DejaVu Sans Mono", "Courier New", monospace;
+    /* BREITER als die Vorgabe. Kunststoffblenden der 1980er waren dick und gegossen, nicht
+       gefraest - und die Blendenbreite ist die Groesse, an der man eine Ansicht am
+       schnellsten erkennt: sie ist rund vierzig Prozent der sichtbaren Flaeche. */
+    --gt3-blende: clamp(18px, 4.4vw, 30px);
+    /* Genarbter Kunststoff statt Gewebe: Carbon gab es an einem Serienauto von 1985 nicht.
+       Zwei Narbungen ueber Kreuz auf warmem Braunschwarz. */
     --gt3-carbon:
-      repeating-linear-gradient(45deg, rgba(255,255,255,.030) 0 2px,
-                                       rgba(0,0,0,.055) 2px 5px),
-      repeating-linear-gradient(-38deg, rgba(255,255,255,.022) 0 3px,
-                                        rgba(0,0,0,.045) 3px 7px);
+      repeating-linear-gradient(48deg, rgba(255,238,210,.05) 0 2px,
+                                       rgba(0,0,0,.11) 2px 5px),
+      repeating-linear-gradient(-40deg, rgba(255,238,210,.035) 0 3px,
+                                        rgba(0,0,0,.09) 3px 7px),
+      linear-gradient(180deg, #2a1e12, #16110b);
+    /* Messingfarbene Schraube auf braunem Kunststoff, statt Stahl auf Carbon. */
+    --gt3-schraube: radial-gradient(circle at 50% 50%,
+      #b39152 0 13%, #6b552c 13% 19%, #1a1409 19% 25%, rgba(0,0,0,0) 25%);
   }
 
-  /* MODERN, 2000er. Kuehles Weiss auf Anthrazit, flach und kontrastreich - die Generation
-     der ersten Farb-TFT im Rennwagen, bei denen der Reiz gerade darin lag, dass sie NICHT
-     nach Roehre aussahen. Also fast keine Pixelzeilen, eine schwache Randabschattung,
-     scharfe Ecken und ein knappes Leuchten. Die Blende wird gebuersteter Aluminium:
-     feine senkrechte Striche statt Gewebe. */
+  /* MODERN, 2000er. Die Generation der ersten Farb-TFT im Rennwagen, bei denen der Reiz
+     gerade darin lag, dass sie NICHT nach Roehre aussahen: fast keine Pixelzeilen, schwache
+     Randabschattung, scharfe Ecken, knappes Leuchten.
+
+     Und zwei STRUKTURELLE Unterschiede, denn ein anderer Weisston ist keiner - die erste
+     Fassung dieser Ansicht wich vom Standard um sechs von 255 in der Tinte ab, und deshalb
+     war sie von ihm nicht zu unterscheiden:
+
+       Die Blende wird HELL. Gebuerstetes Aluminium gegen schwarzes Carbon ist der
+       Unterschied, den man auf den ersten Blick sieht - und deshalb wird die Schraube dunkel
+       mitgesetzt, denn eine helle verschwindet auf hellem Metall.
+       Und sie wird SCHMAL: ein Schirm von 2005 sitzt in einem knappen Rahmen. */
   body[data-cockpit="modern"] {
     --gt3-ink: #f4f8ff;
-    --gt3-screen: linear-gradient(180deg, #1a1f28 0%, #12161d 44%, #0e1117 76%, #171c24 100%);
+    --gt3-screen: linear-gradient(180deg, #1e242e 0%, #151a22 44%, #101419 76%, #1b212a 100%);
     --gt3-radius: 0px;
-    --gt3-line: rgba(214, 232, 255, .42);
-    --gt3-line-soft: rgba(214, 232, 255, .18);
+    --gt3-line: rgba(200, 226, 255, .50);
+    --gt3-line-soft: rgba(200, 226, 255, .22);
     --gt3-glow: 0 0 3px rgba(230, 242, 255, .16);
     --gt3-scan: repeating-linear-gradient(0deg, rgba(0,0,0,.03) 0 1px,
                                                 rgba(0,0,0,0) 1px 4px);
-    --gt3-vignette: inset 0 0 clamp(8px, 3vw, 26px) rgba(0,0,0,.34);
+    --gt3-vignette: inset 0 0 clamp(8px, 3vw, 26px) rgba(0,0,0,.30);
+    --gt3-blende: clamp(6px, 1.5vw, 10px);
     --gt3-carbon:
-      repeating-linear-gradient(90deg, rgba(255,255,255,.055) 0 1px,
-                                       rgba(0,0,0,.05) 1px 3px);
+      repeating-linear-gradient(90deg, rgba(255,255,255,.17) 0 1px,
+                                       rgba(0,0,0,.11) 1px 3px),
+      linear-gradient(180deg, #bcc4d0 0%, #909aa8 48%, #adb6c3 100%);
+    --gt3-schraube: radial-gradient(circle at 50% 50%,
+      #2a2f38 0 13%, #4b525e 13% 19%, rgba(0,0,0,.4) 19% 25%, rgba(0,0,0,0) 25%);
   }
+
   #tab-race { position: relative; }
   /* CARBON-BLENDE UND GLASSCHIRM.
 
@@ -723,21 +765,21 @@
      Webung. Der Schirm ist auf die padding-box beschnitten, also zeigen sich Lack und
      Schrauben nur im Ring. */
   .gt3 {
-    /* Die Blende muss BREITER sein als eine Webeinheit. Bei 8 px war sie schmaler als
-       eine, und dann sieht man einen Verlaufsausschnitt und liest gebuerstetes Grau statt
-       Gewebe. Die Webeinheit ist die halbe Kachel, also 7 px - bei 11 bis 20 px Blende
-       passen ein-einhalb bis drei darueber, und ab etwa zwei liest man Stoff. */
-    --gt3-blende: clamp(11px, 2.8vw, 20px);
     /* UNTEN breiter. Ein echtes Gehaeuse ist nicht rundum gleich stark: unten sitzt die
        Befestigung, und dort ist Material. 1,9-fach, nicht 1,5 - bei 1,5 sieht es nach einem
-       Messfehler aus statt nach Absicht. */
+       Messfehler aus statt nach Absicht.
+
+       UND SIE STEHT HIER UND NICHT IN :root, obwohl die Blendenbreite selbst dort steht.
+       Eine eigene Eigenschaft wird an dem Element AUSGERECHNET, an dem sie deklariert ist,
+       und der fertige Wert wird geerbt: in :root waere var(--gt3-blende) darin schon der
+       :root-Wert gewesen, bevor body[data-cockpit] ueberhaupt ins Spiel kommt. Gemessen war
+       die untere Blende dann in allen drei Ansichten 20 px, waehrend die obere 11 / 18 / 6
+       folgte.
+
+       Die Regel dahinter, fuer jedes weitere abgeleitete Token: ein STELLRAD gehoert nach
+       :root, damit eine Ansicht es umsetzen kann - ein ABGELEITETER Wert dorthin, wo sein
+       Eingang endgueltig ist. */
     --gt3-blende-u: calc(var(--gt3-blende) * 1.9);
-    /* Die Webung. Eine Zeile weniger und die Blende ist wieder eine Farbflaeche. */
-    --gt3-carbon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cdefs%3E%3ClinearGradient id='h' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%231a1a1a'/%3E%3Cstop offset='.25' stop-color='%23404040'/%3E%3Cstop offset='.5' stop-color='%231e1e1e'/%3E%3Cstop offset='.75' stop-color='%23454545'/%3E%3Cstop offset='1' stop-color='%23141414'/%3E%3C/linearGradient%3E%3ClinearGradient id='v' x1='0' y1='0' x2='1' y2='0'%3E%3Cstop offset='0' stop-color='%23161616'/%3E%3Cstop offset='.25' stop-color='%233b3b3b'/%3E%3Cstop offset='.5' stop-color='%231a1a1a'/%3E%3Cstop offset='.75' stop-color='%23404040'/%3E%3Cstop offset='1' stop-color='%23101010'/%3E%3C/linearGradient%3E%3Cpattern id='w' width='12' height='12' patternUnits='userSpaceOnUse'%3E%3Crect width='12' height='12' fill='%23121212'/%3E%3Cpath d='M0 0h6v6H0zM6 6h6v6H6z' fill='url(%23h)'/%3E%3Cpath d='M6 0h6v6H6zM0 6h6v6H0z' fill='url(%23v)'/%3E%3Cpath d='M0 1h12M0 3h12M0 5h12M0 7h12M0 9h12M0 11h12' stroke='%23000' stroke-width='.4' opacity='.4'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='24' height='24' fill='url(%23w)'/%3E%3C/svg%3E");
-    /* Die vier Schrauben in den Blendenecken: heller Kopf, dunkler Sitz, aussen nichts.
-       Diese Zeile auf none gesetzt nimmt sie weg, ohne sonst etwas zu ruehren. */
-    --gt3-schraube: radial-gradient(circle at 50% 50%,
-      #7c8798 0 13%, #464f5e 13% 19%, #14181f 19% 25%, rgba(0,0,0,0) 25%);
     position: relative;
     border-style: solid; border-color: transparent;
     border-width: var(--gt3-blende) var(--gt3-blende) var(--gt3-blende-u);
@@ -6250,7 +6292,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.5.3</span></span>
+    <span class="foot-ver">v<span id="app-version">0.5.4</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -26812,56 +26854,95 @@
 
 
 
-  // ---- Cockpit-Ansicht: aendert das Aussehen und sonst nichts ----
+  // ---- Cockpit-Ansicht: sichtbar verschieden, funktional gleich ----
   //
-  // Die Zusicherung der Aufgabe war ausdruecklich "nur den Look, nicht die Funktionsweise",
-  // und genau das laesst sich pruefen: die drei Ansichten muessen SICHTBAR verschieden sein,
-  // und dabei darf sich kein Physikwert, kein Element und keine Voreinstellung bewegen.
+  // ZWEI AUSSAGEN, und die erste hat die erste Fassung dieses Tests durchgelassen.
   //
-  // Der zweite Teil ist der wichtigere. Eine Ansicht, die nebenbei eine Zahl verstellt, ist
-  // ein Fehler, den man am Aussehen nicht sieht - man sieht ihn erst beim Fahren.
-  stAdd('Cockpit-Ansicht: nur Aussehen, keine Funktion', () => {
+  // Er verglich color und border-radius mit !== - sechs von 255 Unterschied in der Tinte
+  // gelten dabei als "verschieden", und genau so viel lagen Standard und Modern auseinander.
+  // Die BLENDE hat er gar nicht angesehen, und die war in allen drei bitgleich, weil ihre
+  // Tokens in der .gt3-Regel selbst standen und eine Ueberschreibung auf body nur geerbt
+  // wird - Erben verliert gegen eine Deklaration am Element. Gemeldet als "sehen irgendwie
+  // alle identisch aus", und der Test war gruen.
+  //
+  // Er zaehlt jetzt MERKMALE statt Ungleichheiten: Tinte (mit Abstand, nicht mit !==),
+  // Blende oben, Blende unten, Eckenrundung, Blendenmaterial, Pixelzeilen. Drei davon
+  // muessen sich je PAAR unterscheiden, und das Material immer - es ist die groesste Flaeche.
+  //
+  // Die zweite Aussage ist die Zusicherung der Aufgabe: nur das Aussehen. Kein Physikwert,
+  // kein Element, keine Voreinstellung darf sich bewegen.
+  stAdd('Cockpit-Ansicht: sichtbar verschieden, funktional gleich', () => {
     const sel = $('setting-cockpit');
     const dash = $('race-dash');
     if (!sel || !dash) return { ok: false, mass: 'Waehler oder Cockpit fehlt' };
     const merk = sel.value;
     const schlecht = [];
     try {
-      const setze = (v) => {
+      const messe = (v) => {
         sel.value = v;
         sel.dispatchEvent(new Event('change', { bubbles: true }));
         const cs = getComputedStyle(dash);
-        return { attr: document.body.getAttribute('data-cockpit'),
-                 tinte: cs.color, radius: cs.borderTopLeftRadius,
-                 // Die Zahl der Elemente mit id: eine Ansicht darf keines hinzufuegen oder
-                 // wegnehmen, sonst greift eine Anzeige ins Leere.
+        return { v,
+                 attr: document.body.getAttribute('data-cockpit'),
+                 tinte: cs.color,
+                 oben: cs.borderTopWidth,
+                 unten: cs.borderBottomWidth,
+                 radius: cs.borderTopLeftRadius,
+                 material: cs.getPropertyValue('--gt3-carbon').trim(),
+                 zeilen: cs.getPropertyValue('--gt3-scan').trim(),
                  ids: document.querySelectorAll('[id]').length,
                  diff: (window.OMEGA_TEST && OMEGA_TEST.physConfigDiff)
                    ? Object.keys(OMEGA_TEST.physConfigDiff()).length : 0 };
       };
+      // Farbabstand statt Ungleichheit: rgb(238,242,250) gegen rgb(244,248,255) ist
+      // rechnerisch verschieden und mit dem Auge dasselbe.
+      const rgb = (t) => (t.match(/\d+/g) || []).map(Number);
+      const abstand = (x, y) => {
+        const A = rgb(x), B = rgb(y);
+        if (A.length < 3 || B.length < 3) return 0;
+        return Math.abs(A[0] - B[0]) + Math.abs(A[1] - B[1]) + Math.abs(A[2] - B[2]);
+      };
+
       const werte = Array.prototype.map.call(sel.options, o => o.value);
       if (werte.length < 3) schlecht.push('nur ' + werte.length + ' Ansichten');
-      const proben = werte.map(setze);
-      // 1. Die Vorgabe setzt KEIN Attribut - sonst waeren ihre Werte eine zweite Abschrift
+      const proben = werte.map(messe);
+
+      // 1. Die Vorgabe setzt KEIN Attribut: sonst waeren ihre Werte eine zweite Abschrift
       //    dessen, was in :root steht.
       if (proben[0].attr !== null) schlecht.push('Vorgabe setzt ' + proben[0].attr);
-      // 2. Sichtbar verschieden: Tinte ODER Rundung muss sich unterscheiden, und zwar
-      //    zwischen JEDEM Paar. Zwei Ansichten, die gleich aussehen, sind eine.
+
+      // 2. Sichtbar verschieden, Paar fuer Paar.
+      const paare = [];
       for (let i = 0; i < proben.length; i++) {
         for (let j = i + 1; j < proben.length; j++) {
-          if (proben[i].tinte === proben[j].tinte
-              && proben[i].radius === proben[j].radius) {
-            schlecht.push(werte[i] + ' und ' + werte[j] + ' sehen gleich aus');
+          const A = proben[i], B = proben[j];
+          const merkmale = [
+            abstand(A.tinte, B.tinte) >= 30,
+            A.oben !== B.oben,
+            A.unten !== B.unten,
+            A.radius !== B.radius,
+            A.material !== B.material,
+            A.zeilen !== B.zeilen,
+          ].filter(Boolean).length;
+          paare.push(A.v + '/' + B.v + ': ' + merkmale);
+          if (merkmale < 3) {
+            schlecht.push(A.v + ' und ' + B.v + ' unterscheiden sich in nur '
+                          + merkmale + ' von 6 Merkmalen');
+          }
+          // Das Material ausdruecklich: es ist die groesste Flaeche, und genau es war
+          // bitgleich, waehrend der alte Test gruen blieb.
+          if (A.material === B.material) {
+            schlecht.push(A.v + ' und ' + B.v + ' haben dieselbe Blende');
           }
         }
       }
+
       // 3. Und NICHTS Funktionales bewegt sich.
       const ids = new Set(proben.map(p => p.ids));
       if (ids.size !== 1) schlecht.push('Elementzahl schwankt: ' + [...ids].join('/'));
       const diffs = proben.map(p => p.diff);
-      if (diffs.some(d => d !== diffs[0])) {
-        schlecht.push('Physik weicht ab: ' + diffs.join('/'));
-      }
+      if (diffs.some(d => d !== diffs[0])) schlecht.push('Physik weicht ab: ' + diffs.join('/'));
+
       // 4. Kein Preset-Schluessel: eine Voreinstellung ist eine Abstimmung.
       if (typeof presetControls === 'function') {
         if (presetControls().map(x => x.id).includes('setting-cockpit')) {
@@ -26869,9 +26950,11 @@
         }
         if (!sel.hasAttribute('data-preset-skip')) schlecht.push('data-preset-skip fehlt');
       }
+
       return { ok: schlecht.length === 0,
-               mass: werte.length + ' Ansichten: '
-                     + proben.map((p, i) => werte[i] + ' ' + p.tinte + '/' + p.radius).join(' | ')
+               mass: proben.map(p => p.v + ' ' + p.oben + '/' + p.unten + ' r' + p.radius)
+                       .join(' | ')
+                     + ' | Merkmale je Paar ' + paare.join(', ')
                      + ' | ' + proben[0].ids + ' Elemente unveraendert'
                      + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
     } finally {

@@ -1620,56 +1620,95 @@
 
 
 
-  // ---- Cockpit-Ansicht: aendert das Aussehen und sonst nichts ----
+  // ---- Cockpit-Ansicht: sichtbar verschieden, funktional gleich ----
   //
-  // Die Zusicherung der Aufgabe war ausdruecklich "nur den Look, nicht die Funktionsweise",
-  // und genau das laesst sich pruefen: die drei Ansichten muessen SICHTBAR verschieden sein,
-  // und dabei darf sich kein Physikwert, kein Element und keine Voreinstellung bewegen.
+  // ZWEI AUSSAGEN, und die erste hat die erste Fassung dieses Tests durchgelassen.
   //
-  // Der zweite Teil ist der wichtigere. Eine Ansicht, die nebenbei eine Zahl verstellt, ist
-  // ein Fehler, den man am Aussehen nicht sieht - man sieht ihn erst beim Fahren.
-  stAdd('Cockpit-Ansicht: nur Aussehen, keine Funktion', () => {
+  // Er verglich color und border-radius mit !== - sechs von 255 Unterschied in der Tinte
+  // gelten dabei als "verschieden", und genau so viel lagen Standard und Modern auseinander.
+  // Die BLENDE hat er gar nicht angesehen, und die war in allen drei bitgleich, weil ihre
+  // Tokens in der .gt3-Regel selbst standen und eine Ueberschreibung auf body nur geerbt
+  // wird - Erben verliert gegen eine Deklaration am Element. Gemeldet als "sehen irgendwie
+  // alle identisch aus", und der Test war gruen.
+  //
+  // Er zaehlt jetzt MERKMALE statt Ungleichheiten: Tinte (mit Abstand, nicht mit !==),
+  // Blende oben, Blende unten, Eckenrundung, Blendenmaterial, Pixelzeilen. Drei davon
+  // muessen sich je PAAR unterscheiden, und das Material immer - es ist die groesste Flaeche.
+  //
+  // Die zweite Aussage ist die Zusicherung der Aufgabe: nur das Aussehen. Kein Physikwert,
+  // kein Element, keine Voreinstellung darf sich bewegen.
+  stAdd('Cockpit-Ansicht: sichtbar verschieden, funktional gleich', () => {
     const sel = $('setting-cockpit');
     const dash = $('race-dash');
     if (!sel || !dash) return { ok: false, mass: 'Waehler oder Cockpit fehlt' };
     const merk = sel.value;
     const schlecht = [];
     try {
-      const setze = (v) => {
+      const messe = (v) => {
         sel.value = v;
         sel.dispatchEvent(new Event('change', { bubbles: true }));
         const cs = getComputedStyle(dash);
-        return { attr: document.body.getAttribute('data-cockpit'),
-                 tinte: cs.color, radius: cs.borderTopLeftRadius,
-                 // Die Zahl der Elemente mit id: eine Ansicht darf keines hinzufuegen oder
-                 // wegnehmen, sonst greift eine Anzeige ins Leere.
+        return { v,
+                 attr: document.body.getAttribute('data-cockpit'),
+                 tinte: cs.color,
+                 oben: cs.borderTopWidth,
+                 unten: cs.borderBottomWidth,
+                 radius: cs.borderTopLeftRadius,
+                 material: cs.getPropertyValue('--gt3-carbon').trim(),
+                 zeilen: cs.getPropertyValue('--gt3-scan').trim(),
                  ids: document.querySelectorAll('[id]').length,
                  diff: (window.OMEGA_TEST && OMEGA_TEST.physConfigDiff)
                    ? Object.keys(OMEGA_TEST.physConfigDiff()).length : 0 };
       };
+      // Farbabstand statt Ungleichheit: rgb(238,242,250) gegen rgb(244,248,255) ist
+      // rechnerisch verschieden und mit dem Auge dasselbe.
+      const rgb = (t) => (t.match(/\d+/g) || []).map(Number);
+      const abstand = (x, y) => {
+        const A = rgb(x), B = rgb(y);
+        if (A.length < 3 || B.length < 3) return 0;
+        return Math.abs(A[0] - B[0]) + Math.abs(A[1] - B[1]) + Math.abs(A[2] - B[2]);
+      };
+
       const werte = Array.prototype.map.call(sel.options, o => o.value);
       if (werte.length < 3) schlecht.push('nur ' + werte.length + ' Ansichten');
-      const proben = werte.map(setze);
-      // 1. Die Vorgabe setzt KEIN Attribut - sonst waeren ihre Werte eine zweite Abschrift
+      const proben = werte.map(messe);
+
+      // 1. Die Vorgabe setzt KEIN Attribut: sonst waeren ihre Werte eine zweite Abschrift
       //    dessen, was in :root steht.
       if (proben[0].attr !== null) schlecht.push('Vorgabe setzt ' + proben[0].attr);
-      // 2. Sichtbar verschieden: Tinte ODER Rundung muss sich unterscheiden, und zwar
-      //    zwischen JEDEM Paar. Zwei Ansichten, die gleich aussehen, sind eine.
+
+      // 2. Sichtbar verschieden, Paar fuer Paar.
+      const paare = [];
       for (let i = 0; i < proben.length; i++) {
         for (let j = i + 1; j < proben.length; j++) {
-          if (proben[i].tinte === proben[j].tinte
-              && proben[i].radius === proben[j].radius) {
-            schlecht.push(werte[i] + ' und ' + werte[j] + ' sehen gleich aus');
+          const A = proben[i], B = proben[j];
+          const merkmale = [
+            abstand(A.tinte, B.tinte) >= 30,
+            A.oben !== B.oben,
+            A.unten !== B.unten,
+            A.radius !== B.radius,
+            A.material !== B.material,
+            A.zeilen !== B.zeilen,
+          ].filter(Boolean).length;
+          paare.push(A.v + '/' + B.v + ': ' + merkmale);
+          if (merkmale < 3) {
+            schlecht.push(A.v + ' und ' + B.v + ' unterscheiden sich in nur '
+                          + merkmale + ' von 6 Merkmalen');
+          }
+          // Das Material ausdruecklich: es ist die groesste Flaeche, und genau es war
+          // bitgleich, waehrend der alte Test gruen blieb.
+          if (A.material === B.material) {
+            schlecht.push(A.v + ' und ' + B.v + ' haben dieselbe Blende');
           }
         }
       }
+
       // 3. Und NICHTS Funktionales bewegt sich.
       const ids = new Set(proben.map(p => p.ids));
       if (ids.size !== 1) schlecht.push('Elementzahl schwankt: ' + [...ids].join('/'));
       const diffs = proben.map(p => p.diff);
-      if (diffs.some(d => d !== diffs[0])) {
-        schlecht.push('Physik weicht ab: ' + diffs.join('/'));
-      }
+      if (diffs.some(d => d !== diffs[0])) schlecht.push('Physik weicht ab: ' + diffs.join('/'));
+
       // 4. Kein Preset-Schluessel: eine Voreinstellung ist eine Abstimmung.
       if (typeof presetControls === 'function') {
         if (presetControls().map(x => x.id).includes('setting-cockpit')) {
@@ -1677,9 +1716,11 @@
         }
         if (!sel.hasAttribute('data-preset-skip')) schlecht.push('data-preset-skip fehlt');
       }
+
       return { ok: schlecht.length === 0,
-               mass: werte.length + ' Ansichten: '
-                     + proben.map((p, i) => werte[i] + ' ' + p.tinte + '/' + p.radius).join(' | ')
+               mass: proben.map(p => p.v + ' ' + p.oben + '/' + p.unten + ' r' + p.radius)
+                       .join(' | ')
+                     + ' | Merkmale je Paar ' + paare.join(', ')
                      + ' | ' + proben[0].ids + ' Elemente unveraendert'
                      + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
     } finally {
