@@ -1016,7 +1016,9 @@
                lfo: null, lfoTiefe: null, rausch: null,
                whine: null, whineGain: null, whineFilter: null,
                pfeif: null, pfeifGain: null,
+               pfeifQuelle: null,
                letzteLast: 0, schaltAn: false, ladedruck: 0, letzterTakt: 0,
+               cutTiefe: 0,
                knaller: 0, boGezaehlt: 0 };
 
   // Ein Rauschpuffer, EINMAL. Jeder Knaller ist derselbe Puffer mit anderem Ausschnitt und
@@ -1072,14 +1074,31 @@
     xs.whineGain.gain.value = 0;
     xs.whine.connect(xs.whineFilter).connect(xs.whineGain).connect(xs.add);
     xs.whine.start();
-    // Laderpfeifen: zwei Sinus, leicht verstimmt, damit es lebt statt zu piepen.
-    xs.pfeif = audioCtx.createOscillator();
-    xs.pfeif.type = 'sine';
+    // LADERPFEIFEN: RAUSCHEN DURCH EINEN SCHMALEN BANDPASS, kein Oszillator.
+    //
+    // Hier stand bis v0.5.7 ein einzelner Sinus, und der Kommentar daneben behauptete "zwei
+    // Sinus, leicht verstimmt, damit es lebt statt zu piepen" - gebaut war einer. Ein reiner
+    // Sinus zwischen 1,7 und 7 kHz IST ein Piepsen, und genau so wurde es gemeldet: beim
+    // Formel 1 und beim M4 GT3, also zwei der drei aufgeladenen Motoren.
+    //
+    // Ein Verdichterpfeifen ist auch in Wirklichkeit kein Sinus. Es ist ein Ton, der in
+    // breitbandigem Rauschen sitzt und dessen Amplitude staendig schwankt - die Schaufeln
+    // schlagen nicht gleichmaessig, und der Ansaugtrakt rauscht dazu. Rauschen durch einen
+    // Bandpass mit hoher Guete gibt genau das: dieselbe Tonhoehe, aber ein GERAEUSCH.
+    //
+    // Q = 14 und nicht hoeher: darueber wird aus dem Bandpass wieder ein Oszillator, und
+    // dann ist das Piepsen zurueck.
+    xs.pfeifQuelle = audioCtx.createBufferSource();
+    xs.pfeifQuelle.buffer = xRausch();
+    xs.pfeifQuelle.loop = true;
+    xs.pfeif = audioCtx.createBiquadFilter();
+    xs.pfeif.type = 'bandpass';
+    xs.pfeif.Q.value = 14;
     xs.pfeif.frequency.value = 2000;
     xs.pfeifGain = audioCtx.createGain();
     xs.pfeifGain.gain.value = 0;
-    xs.pfeif.connect(xs.pfeifGain).connect(xs.add);
-    xs.pfeif.start();
+    xs.pfeifQuelle.connect(xs.pfeif).connect(xs.pfeifGain).connect(xs.add);
+    xs.pfeifQuelle.start();
     xs.gebaut = true;
     xs.ein = xs.ton;
     return xs.ein;
@@ -1154,6 +1173,7 @@
 
     if (!extrasOn) {
       xs.ladedruck = 0;
+      xs.cutTiefe = 0;
       // NEUTRAL, nicht umgangen: derselbe Signalweg, nur ohne Wirkung.
       return { aus: true, tonHz: 20000, cutTiefe: 0, addGain: 0,
                whineHz: 140, whineGain: 0, pfeifHz: 1700, pfeifGain: 0,
@@ -1165,12 +1185,33 @@
     const tonHz = 2200 + 9000 * Math.max(0, Math.min(1, load));
 
     // 2. Begrenzer-Stottern: die Zuendunterbrechung, 28 Hz, siehe xBus().
-    const cutTiefe = st.onLimiter ? 0.34 : 0;
+    //
+    //    MIT ZEITKONSTANTE, und das ist der dritte Teil des gemeldeten Klickens. Ein
+    //    Runterschalten mit zu hoher Drehzahl schiebt die Drehzahl ueber REDLINE - 60, also
+    //    greift onLimiter fuer ein bis zwei Takte. Eine Rechteck-Torschaltung, die innerhalb
+    //    eines Taktes auf volle Tiefe geht, ist dann ein Klick und kein Stottern.
+    //
+    //    90 ms sind rund zwei Takte: ein Aufblitzen von einem Takt erreicht damit unter ein
+    //    Drittel der Tiefe und bleibt unhoerbar, waehrend ein echtes Anstehen am Begrenzer
+    //    nach einer Zehntelsekunde voll da ist. Und beim Verschwinden gilt dieselbe
+    //    Zeitkonstante - ein hart abgeschnittenes Stottern klickt genauso.
+    const cutZiel = st.onLimiter ? 0.34 : 0;
+    xs.cutTiefe += (cutZiel - xs.cutTiefe) * (1 - Math.exp(-Math.max(0, dt) / 0.09));
+    const cutTiefe = xs.cutTiefe;
 
     // 3. Schubknaller beim Lastwechsel. Nicht bei konstantem Gas: ein Knaller ist ein
     //    EREIGNIS, und das Ereignis ist das Gaswegnehmen bei Drehzahl.
+    //
+    //    NICHT WAEHREND EINES GANGWECHSELS, und das war der Fehler hinter dem gemeldeten
+    //    Klicken: in 40-physics.js steht engineLoad = isShifting ? 0 : throttle, also faellt
+    //    die Last bei JEDEM Gangwechsel auf null. Ein bis vier Rauschstoesse kurz
+    //    hintereinander sind ein Klicken - und beim Runterschalten mit hoher Drehzahl waren
+    //    es die meisten, weil ihre Zahl mit rpmFrac waechst.
+    //
+    //    Der Lastabfall beim Schalten ist die Zuendunterbrechung und kein Gaswegnehmen. Fuer
+    //    den Schaltvorgang gibt es den Schaltknall darunter, und der ist EINER.
     let knaller = 0, knallStaerke = 0;
-    if (dLast < -0.15 && rpmFrac > 0.4 && knallStark > 0.02) {
+    if (dLast < -0.15 && rpmFrac > 0.4 && knallStark > 0.02 && !st.isShifting) {
       knaller = 1 + Math.floor(3 * knallStark * rpmFrac);
       knallStaerke = 0.05 + 0.16 * knallStark * rpmFrac;
     }
@@ -1205,8 +1246,13 @@
       xs.ladedruck += (ziel - xs.ladedruck) * (1 - Math.exp(-Math.max(0, dt) / 0.45));
       const b = xs.ladedruck;
       pfeifHz = 1700 + 5300 * b;
-      pfeifGain = 0.05 * b * b;
-      if (dLast < -0.2 && bVor > 0.25) abblasen = 0.05 + 0.09 * bVor;
+      // Leiser als der frueher hier stehende Sinus: Bandpass-Rauschen traegt Energie
+      // ueber eine Bandbreite und nicht auf einer Linie, klingt bei gleicher Verstaerkung
+      // also lauter.
+      pfeifGain = 0.032 * b * b;
+      // Und auch das Abblasen nicht beim Schalten: derselbe falsche Ausloeser wie beim
+      // Knaller, dazu mit 34 Hz Rechteck moduliert - das war der zweite Teil des Klickens.
+      if (dLast < -0.2 && bVor > 0.25 && !st.isShifting) abblasen = 0.05 + 0.09 * bVor;
     } else {
       xs.ladedruck = 0;
     }

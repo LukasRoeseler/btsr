@@ -6413,7 +6413,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.5.6</span></span>
+    <span class="foot-ver">v<span id="app-version">0.5.7</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -18635,7 +18635,9 @@
                lfo: null, lfoTiefe: null, rausch: null,
                whine: null, whineGain: null, whineFilter: null,
                pfeif: null, pfeifGain: null,
+               pfeifQuelle: null,
                letzteLast: 0, schaltAn: false, ladedruck: 0, letzterTakt: 0,
+               cutTiefe: 0,
                knaller: 0, boGezaehlt: 0 };
 
   // Ein Rauschpuffer, EINMAL. Jeder Knaller ist derselbe Puffer mit anderem Ausschnitt und
@@ -18691,14 +18693,31 @@
     xs.whineGain.gain.value = 0;
     xs.whine.connect(xs.whineFilter).connect(xs.whineGain).connect(xs.add);
     xs.whine.start();
-    // Laderpfeifen: zwei Sinus, leicht verstimmt, damit es lebt statt zu piepen.
-    xs.pfeif = audioCtx.createOscillator();
-    xs.pfeif.type = 'sine';
+    // LADERPFEIFEN: RAUSCHEN DURCH EINEN SCHMALEN BANDPASS, kein Oszillator.
+    //
+    // Hier stand bis v0.5.7 ein einzelner Sinus, und der Kommentar daneben behauptete "zwei
+    // Sinus, leicht verstimmt, damit es lebt statt zu piepen" - gebaut war einer. Ein reiner
+    // Sinus zwischen 1,7 und 7 kHz IST ein Piepsen, und genau so wurde es gemeldet: beim
+    // Formel 1 und beim M4 GT3, also zwei der drei aufgeladenen Motoren.
+    //
+    // Ein Verdichterpfeifen ist auch in Wirklichkeit kein Sinus. Es ist ein Ton, der in
+    // breitbandigem Rauschen sitzt und dessen Amplitude staendig schwankt - die Schaufeln
+    // schlagen nicht gleichmaessig, und der Ansaugtrakt rauscht dazu. Rauschen durch einen
+    // Bandpass mit hoher Guete gibt genau das: dieselbe Tonhoehe, aber ein GERAEUSCH.
+    //
+    // Q = 14 und nicht hoeher: darueber wird aus dem Bandpass wieder ein Oszillator, und
+    // dann ist das Piepsen zurueck.
+    xs.pfeifQuelle = audioCtx.createBufferSource();
+    xs.pfeifQuelle.buffer = xRausch();
+    xs.pfeifQuelle.loop = true;
+    xs.pfeif = audioCtx.createBiquadFilter();
+    xs.pfeif.type = 'bandpass';
+    xs.pfeif.Q.value = 14;
     xs.pfeif.frequency.value = 2000;
     xs.pfeifGain = audioCtx.createGain();
     xs.pfeifGain.gain.value = 0;
-    xs.pfeif.connect(xs.pfeifGain).connect(xs.add);
-    xs.pfeif.start();
+    xs.pfeifQuelle.connect(xs.pfeif).connect(xs.pfeifGain).connect(xs.add);
+    xs.pfeifQuelle.start();
     xs.gebaut = true;
     xs.ein = xs.ton;
     return xs.ein;
@@ -18773,6 +18792,7 @@
 
     if (!extrasOn) {
       xs.ladedruck = 0;
+      xs.cutTiefe = 0;
       // NEUTRAL, nicht umgangen: derselbe Signalweg, nur ohne Wirkung.
       return { aus: true, tonHz: 20000, cutTiefe: 0, addGain: 0,
                whineHz: 140, whineGain: 0, pfeifHz: 1700, pfeifGain: 0,
@@ -18784,12 +18804,33 @@
     const tonHz = 2200 + 9000 * Math.max(0, Math.min(1, load));
 
     // 2. Begrenzer-Stottern: die Zuendunterbrechung, 28 Hz, siehe xBus().
-    const cutTiefe = st.onLimiter ? 0.34 : 0;
+    //
+    //    MIT ZEITKONSTANTE, und das ist der dritte Teil des gemeldeten Klickens. Ein
+    //    Runterschalten mit zu hoher Drehzahl schiebt die Drehzahl ueber REDLINE - 60, also
+    //    greift onLimiter fuer ein bis zwei Takte. Eine Rechteck-Torschaltung, die innerhalb
+    //    eines Taktes auf volle Tiefe geht, ist dann ein Klick und kein Stottern.
+    //
+    //    90 ms sind rund zwei Takte: ein Aufblitzen von einem Takt erreicht damit unter ein
+    //    Drittel der Tiefe und bleibt unhoerbar, waehrend ein echtes Anstehen am Begrenzer
+    //    nach einer Zehntelsekunde voll da ist. Und beim Verschwinden gilt dieselbe
+    //    Zeitkonstante - ein hart abgeschnittenes Stottern klickt genauso.
+    const cutZiel = st.onLimiter ? 0.34 : 0;
+    xs.cutTiefe += (cutZiel - xs.cutTiefe) * (1 - Math.exp(-Math.max(0, dt) / 0.09));
+    const cutTiefe = xs.cutTiefe;
 
     // 3. Schubknaller beim Lastwechsel. Nicht bei konstantem Gas: ein Knaller ist ein
     //    EREIGNIS, und das Ereignis ist das Gaswegnehmen bei Drehzahl.
+    //
+    //    NICHT WAEHREND EINES GANGWECHSELS, und das war der Fehler hinter dem gemeldeten
+    //    Klicken: in 40-physics.js steht engineLoad = isShifting ? 0 : throttle, also faellt
+    //    die Last bei JEDEM Gangwechsel auf null. Ein bis vier Rauschstoesse kurz
+    //    hintereinander sind ein Klicken - und beim Runterschalten mit hoher Drehzahl waren
+    //    es die meisten, weil ihre Zahl mit rpmFrac waechst.
+    //
+    //    Der Lastabfall beim Schalten ist die Zuendunterbrechung und kein Gaswegnehmen. Fuer
+    //    den Schaltvorgang gibt es den Schaltknall darunter, und der ist EINER.
     let knaller = 0, knallStaerke = 0;
-    if (dLast < -0.15 && rpmFrac > 0.4 && knallStark > 0.02) {
+    if (dLast < -0.15 && rpmFrac > 0.4 && knallStark > 0.02 && !st.isShifting) {
       knaller = 1 + Math.floor(3 * knallStark * rpmFrac);
       knallStaerke = 0.05 + 0.16 * knallStark * rpmFrac;
     }
@@ -18824,8 +18865,13 @@
       xs.ladedruck += (ziel - xs.ladedruck) * (1 - Math.exp(-Math.max(0, dt) / 0.45));
       const b = xs.ladedruck;
       pfeifHz = 1700 + 5300 * b;
-      pfeifGain = 0.05 * b * b;
-      if (dLast < -0.2 && bVor > 0.25) abblasen = 0.05 + 0.09 * bVor;
+      // Leiser als der frueher hier stehende Sinus: Bandpass-Rauschen traegt Energie
+      // ueber eine Bandbreite und nicht auf einer Linie, klingt bei gleicher Verstaerkung
+      // also lauter.
+      pfeifGain = 0.032 * b * b;
+      // Und auch das Abblasen nicht beim Schalten: derselbe falsche Ausloeser wie beim
+      // Knaller, dazu mit 34 Hz Rechteck moduliert - das war der zweite Teil des Klickens.
+      if (dLast < -0.2 && bVor > 0.25 && !st.isShifting) abblasen = 0.05 + 0.09 * bVor;
     } else {
       xs.ladedruck = 0;
     }
@@ -23671,6 +23717,17 @@
     //
     // dt wird mitgegeben und nicht aus der Uhr genommen: in einer synchronen Schleife ist
     // die Uhrdifferenz null, und dann kaeme der Ladedruck nie an.
+    // Die BAUART der Zusatzquellen, soweit sie schon stehen. Ein Pfeifen aus einem
+    // Oszillator ist ein Piepsen - genau das war es bis v0.5.7 -, also gehoert die Bauart
+    // festgenagelt und nicht nur ihr Klang beschrieben.
+    sndExtrasBau() {
+      return { gebaut: !!xs.gebaut,
+               pfeif: xs.pfeif ? xs.pfeif.constructor.name : null,
+               pfeifQuelle: xs.pfeifQuelle ? xs.pfeifQuelle.constructor.name : null,
+               heulen: xs.whine ? xs.whine.constructor.name : null,
+               guete: xs.pfeif && xs.pfeif.Q ? xs.pfeif.Q.value : null };
+    },
+
     sndExtras(folge, o) {
       const opt = o || {};
       const merk = { crackle: xs.crackle, turbo: xs.turbo, ein: extrasOn,
@@ -27429,11 +27486,12 @@
     teile.push('Helligkeit ' + dunkel + '/' + hell + ' Hz');
     if (!(hell > dunkel * 2)) schlecht.push('Helligkeit folgt der Last nicht');
 
-    // 2. Stottern NUR am Begrenzer.
+    // 2. Stottern NUR am Begrenzer. Wie STARK es wird, prueft 6c - hier nur, dass es
+    //    ohne Begrenzer bei null bleibt und mit ihm ueberhaupt anfaengt.
     const ohne = eins([{ load: 1, rpmFrac: 0.9 }]).cut;
     const mit = eins([{ load: 1, rpmFrac: 1, onLimiter: true }]).cut;
-    teile.push('Stottern ' + ohne + '/' + mit);
-    if (!(ohne === 0 && mit > 0.1)) schlecht.push('Stottern haengt nicht am Begrenzer');
+    teile.push('Stottern ' + ohne.toFixed(2) + '/' + mit.toFixed(2));
+    if (!(ohne === 0 && mit > 0)) schlecht.push('Stottern haengt nicht am Begrenzer');
 
     // 3. Knaller NUR beim Lastabfall bei Drehzahl. Drei Faelle, und die letzten zwei sind
     //    die Gegenproben.
@@ -27451,6 +27509,16 @@
                       { crackle: 0.12 }).knaller;
     teile.push('je Motor ' + viel + '/' + kaum);
     if (!(viel > kaum)) schlecht.push('Knallstaerke haengt nicht am Motor');
+
+    // 3b. UND KEIN KNALLER WAEHREND EINES GANGWECHSELS. Das war die Ursache des
+    //     gemeldeten Klickens: in 40-physics.js steht engineLoad = isShifting ? 0 : throttle,
+    //     also faellt die Last bei JEDEM Gangwechsel auf null - und ein bis vier
+    //     Rauschstoesse kurz hintereinander sind ein Klicken. Beim Runterschalten mit hoher
+    //     Drehzahl waren es die meisten, weil ihre Zahl mit rpmFrac waechst.
+    const beimSchalten = eins([{ load: 1, rpmFrac: 0.9 },
+                                { load: 0, rpmFrac: 0.9, isShifting: true }]).knaller;
+    teile.push('beim Schalten ' + beimSchalten);
+    if (beimSchalten !== 0) schlecht.push('Knaller waehrend des Gangwechsels');
 
     // 4. Schaltknall an der FLANKE und nur unter Last.
     const flanke = eins([{ load: 0.9 }, { load: 0.9, isShifting: true }]).schaltKnall;
@@ -27489,6 +27557,27 @@
       [{ load: 1, rpmFrac: 0.9 }, { load: 1, rpmFrac: 0.9 }, { load: 0, rpmFrac: 0.9 }],
       { turbo: true, dt: 0.6 })[2].abblasen;
     if (!(bo > 0)) schlecht.push('kein Abblasen beim Lastwegnehmen');
+    // 6b. Und auch das Abblasen NICHT beim Gangwechsel - derselbe falsche Ausloeser wie beim
+    //     Knaller, dazu mit 34 Hz Rechteck moduliert. Der zweite Teil des Klickens.
+    const boSchalt = OMEGA_TEST.sndExtras(
+      [{ load: 1, rpmFrac: 0.9 }, { load: 1, rpmFrac: 0.9 },
+       { load: 0, rpmFrac: 0.9, isShifting: true }],
+      { turbo: true, dt: 0.6 })[2].abblasen;
+    if (boSchalt !== 0) schlecht.push('Abblasen waehrend des Gangwechsels');
+
+    // 6c. DAS STOTTERN GEHT MIT ZEITKONSTANTE AUF. Ein Runterschalten mit zu hoher Drehzahl
+    //     schiebt die Drehzahl fuer einen oder zwei Takte ueber den Begrenzer; eine
+    //     Torschaltung, die dabei voll aufgeht, ist ein Klick und kein Stottern. Also: ein
+    //     Aufblitzen bleibt leise, ein Anstehen wird voll.
+    const blitz = OMEGA_TEST.sndExtras([{ load: 1, rpmFrac: 1, onLimiter: true }],
+                                       { dt: 0.045 })[0].cut;
+    const steht2 = OMEGA_TEST.sndExtras(
+      [1, 2, 3, 4, 5, 6, 7, 8].map(() => ({ load: 1, rpmFrac: 1, onLimiter: true })),
+      { dt: 0.045 });
+    teile.push('Stottern Blitz ' + blitz.toFixed(2) + ' -> steht '
+               + steht2[7].cut.toFixed(2));
+    if (!(blitz < 0.15)) schlecht.push('Stottern klickt beim Aufblitzen: ' + blitz.toFixed(2));
+    if (!(steht2[7].cut > 0.3)) schlecht.push('Stottern kommt am Begrenzer nicht an');
 
     // 7. DER SCHALTER stellt alle sechs ab, und zwar NEUTRAL: der Tiefpass geht auf 20 kHz
     //    und nicht auf irgendeinen Wert, die Zusatzquellen auf null.
@@ -27503,6 +27592,38 @@
     if (aus.knaller !== 0) reste.push('Knaller');
     if (!aus.aus) reste.push('Kennzeichnung');
     if (reste.length) schlecht.push('ausgeschaltet bleibt: ' + reste.join(', '));
+
+    // 8. DIE BAUART DES PFEIFENS. Ein reiner Ton zwischen 1,7 und 7 kHz IST ein Piepsen,
+    //    und genau so war es gemeldet: beim Formel 1 und beim M4 GT3, also zwei der drei
+    //    aufgeladenen Motoren. Ein Verdichterpfeifen ist ein Ton IN breitbandigem Rauschen,
+    //    also Rauschen durch einen schmalen Bandpass - und kein Oszillator.
+    //
+    //    Geprueft wird die Bauart und nicht der Klang, denn den kann dieser Test nicht
+    //    hoeren. Ohne die Zeile kaeme beim naechsten Aufraeumen jemand auf die naheliegende
+    //    Idee, dafuer wieder einen Sinus zu nehmen. Steht der Bus noch nicht - es gibt ihn
+    //    erst nach einer Nutzergeste -, sagt der Test das statt zu schweigen.
+    if (OMEGA_TEST.sndExtrasBau) {
+      const bau = OMEGA_TEST.sndExtrasBau();
+      if (!bau.gebaut) {
+        teile.push('Bauart: Bus noch nicht gebaut (kein Ton angefordert)');
+      } else {
+        teile.push('Pfeifen ' + bau.pfeif + ' Q' + bau.guete);
+        if (/Oscillator/.test(bau.pfeif || '')) {
+          schlecht.push('Pfeifen ist ein Oszillator, das piepst');
+        }
+        if (!/Biquad/.test(bau.pfeif || '')) {
+          schlecht.push('Pfeifen ist kein Bandpass: ' + bau.pfeif);
+        }
+        if (!/BufferSource/.test(bau.pfeifQuelle || '')) {
+          schlecht.push('Pfeifen wird nicht von Rauschen gespeist: ' + bau.pfeifQuelle);
+        }
+        // Zu hohe Guete macht aus dem Bandpass wieder einen Oszillator - dann ist das
+        // Piepsen zurueck, ohne dass ein Oszillator im Code steht.
+        if (bau.guete !== null && bau.guete > 25) {
+          schlecht.push('Guete ' + bau.guete + ' zu hoch, der Bandpass klingelt');
+        }
+      }
+    }
 
     return { ok: schlecht.length === 0,
              mass: teile.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };

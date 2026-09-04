@@ -4722,6 +4722,17 @@
     //
     // dt wird mitgegeben und nicht aus der Uhr genommen: in einer synchronen Schleife ist
     // die Uhrdifferenz null, und dann kaeme der Ladedruck nie an.
+    // Die BAUART der Zusatzquellen, soweit sie schon stehen. Ein Pfeifen aus einem
+    // Oszillator ist ein Piepsen - genau das war es bis v0.5.7 -, also gehoert die Bauart
+    // festgenagelt und nicht nur ihr Klang beschrieben.
+    sndExtrasBau() {
+      return { gebaut: !!xs.gebaut,
+               pfeif: xs.pfeif ? xs.pfeif.constructor.name : null,
+               pfeifQuelle: xs.pfeifQuelle ? xs.pfeifQuelle.constructor.name : null,
+               heulen: xs.whine ? xs.whine.constructor.name : null,
+               guete: xs.pfeif && xs.pfeif.Q ? xs.pfeif.Q.value : null };
+    },
+
     sndExtras(folge, o) {
       const opt = o || {};
       const merk = { crackle: xs.crackle, turbo: xs.turbo, ein: extrasOn,
