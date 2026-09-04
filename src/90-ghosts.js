@@ -1897,6 +1897,26 @@
   const SPICE_ATTACK_MS = 2600;
   const SPICE_ATTACK_ARM_MS = 900;  // so lange muss man kleben, bevor es losgeht
   const SPICE_ATTACK_P = 0.45;      // und dann wird gewuerfelt, sonst ist es kein Rennen
+  // WIE NAH "in Reichweite" ist, und das MUSS ueber SPICE_GAP_MIN liegen.
+  //
+  // Vorher stand hier 0,9 als Zahl im Code, waehrend der Abstandhalter ab 0,7 lupft (plus
+  // Zuschlag beim Annaehern). Das Angriffsfenster war damit 0,2 Kacheln breit, und der
+  // Abstandhalter druckte den Verfolger genau daraus heraus - er pendelte um 0,8, wurde
+  // gelupft, fiel zurueck, und eine Attacke kam fast nie zustande. Zwei Regeln, die
+  // dasselbe Band bestreiten.
+  //
+  // 1,3 loest es an der richtigen Stelle: der Abstandhalter sagt weiter "nicht kleben", die
+  // Attacke sagt "du bist in Reichweite". Waehrend einer Attacke ist der Abstandhalter aus,
+  // der Verfolger darf also heran - genau dafuer ist die Ausnahme dort.
+  const SPICE_ATTACK_RANGE = 1.3;
+  // WIE OFT gewuerfelt wird. Vorher alle 4000 ms: bei Wuerze 0,4 ist die
+  // Wahrscheinlichkeit 0,18 je Versuch, also eine Attacke pro 22 Sekunden durchgehenden
+  // Klebens. Das liest sich nicht als Rennen, sondern als Kolonne.
+  //
+  // 1200 ms ergeben bei Wuerze 0,4 eine Wartezeit von 6,7 Sekunden und bei voller Wuerze
+  // 2,7 - oft genug, um es zu sehen, selten genug, dass es nicht im Sekundentakt zerrt. Die
+  // Wahrscheinlichkeit selbst bleibt, damit die Wuerze weiter der eine Regler ist.
+  const SPICE_ATTACK_RETRY_MS = 1200;
   const SPICE_ATTACK_GAIN = 0.07;
   // ERST AUSWEICHEN, DANN BESCHLEUNIGEN. Vorher kamen Seitenversatz und Temposchub
   // gleichzeitig, also schob der Angreifer, solange er noch genau hinter dem anderen lag -
@@ -2065,7 +2085,7 @@
     }
 
     // 4. Attacke
-    if (ah && ah.gap <= 0.9) {
+    if (ah && ah.gap <= SPICE_ATTACK_RANGE) {
       if (!g.closeSince) g.closeSince = now;
     } else {
       g.closeSince = 0;
@@ -2102,7 +2122,7 @@
         // keine Karte und schliesst genau diesen Fall.
         && ghostTileInfo(car.tileCode).curve === 0
         && now > (g.passBlockUntil || 0)
-        && now - (g.attackTriedAt || 0) > 4000) {
+        && now - (g.attackTriedAt || 0) > SPICE_ATTACK_RETRY_MS) {
       g.attackTriedAt = now;
       if (Math.random() < SPICE_ATTACK_P * ghostCfg.spice) {
         // attackUntil bleibt als "eine Sequenz laeuft"-Marke; die Phasen entscheiden.
@@ -2922,8 +2942,27 @@
     // Faehrt es noch ueber Kacheln? Dann ist es auf der Bahn. g.tileStart wird bei jedem
     // Kachelwechsel gesetzt, ist also der Zeitpunkt des letzten bewiesenen Kontakts.
     const zaehlerLaeuft = g.tileStart && (now - g.tileStart) < GHOST_OFFTRACK_CONFIRM_MS;
-    if ((ghostCfg.needCode ? (offConfirmed || noCode) : (offConfirmed && !noCode))
-        && !zaehlerLaeuft && !car.parked) {
+    // DIE BEWEISLAGE ENTSCHEIDET, und bis v0.4.55 tat sie es nicht - der Ghost blieb neben
+    // der Bahn nicht stehen. Zwei Vetos konnten den Halt verhindern, und mindestens eines
+    // griff immer:
+    //
+    //   noCode wird nach GHOST_OFFTRACK_MS ohne GUELTIGEN Code wahr, und car.lastCodeAt wird
+    //   bei 0x00 ausdruecklich NICHT gesetzt (siehe recNotify). Ein Auto, das lange genug
+    //   neben der Bahn liegt, erfuellt "!noCode" also nie mehr - und mit needCode AUS lautete
+    //   die Bedingung (offConfirmed && !noCode). Nach 1,5 s war der Halt unerreichbar.
+    //
+    //   zaehlerLaeuft schaut auf den KACHELZAEHLER. Zaehlt der neben der Bahn weiter, ist das
+    //   Veto dauerhaft aktiv. Ob er das tut, kann diese App nicht entscheiden: es haengt an
+    //   der Firmware, und ich habe es nicht gemessen.
+    //
+    // Also nach der Beweislage getrennt, statt die Vetos zu raten:
+    //
+    //   offConfirmed ist ein POSITIVES ZEUGNIS - 0x00 steht 900 ms, und einzelne 0x00-Pakete
+    //   zwischen zwei Kacheln dauern im Median 32 ms. Das genuegt allein.
+    //   noCode ist das FEHLEN eines Zeugnisses und behaelt beide Gegenproben: nur mit
+    //   needCode, und nur wenn der Kachelzaehler auch steht.
+    const parken = offConfirmed || (ghostCfg.needCode && noCode && !zaehlerLaeuft);
+    if (parken && !car.parked) {
       parkCar(car, 'Bahn verlassen');
     }
     const offTrack = !!car.parked;
@@ -4593,6 +4632,61 @@
     // "kommt nicht vorbei" - der Abbruchfall, und der ist der wichtigere: ohne Abbruch klebt
     // ein Verfolger neben dem anderen, bis die Uhr ablaeuft, und genau dort beruehren sie
     // sich.
+    // Die Groessen, aus denen folgt, ob ueberhaupt ueberholt wird. Herausgegeben und nicht
+    // im Test abgeschrieben: es sind Konstanten, und eine Abschrift laeuft auseinander.
+    // Die Ueberblendung der Motorschleifen, und die eine Frage, die zaehlt: klebt bei
+    // irgendeiner Drehzahl eine HOERBARE Schleife am Ratenanschlag? Genau das war der
+    // Fehler, und genau das sieht man an den Zahlen nicht, wenn man sie einzeln ansieht.
+    // `basen` als ARGUMENT und nicht aus den geladenen Puffern: die kommen erst nach einer
+    // Nutzergeste, und ein Test, der ohne Klick immer ueberspringt, prueft nie. Der Aufrufer
+    // holt sie aus loops.json und kann damit ALLE Motoren durchgehen statt nur den gewaehlten.
+    sndBandCheck(basenRein) {
+      const basen = (basenRein || []).slice().sort((a, b) => a - b);
+      if (basen.length < 2) return { fehlt: 'weniger als zwei Baender' };
+      // DAS MASS IST DIE GEWICHTETE VERSTIMMUNG, nicht "am Anschlag oder nicht". Eine
+      // Schleife, die 2,04 statt 2,00 spielen soll, ist zwei Prozent daneben - das hoert
+      // niemand. Eine, die 0,36 spielen soll und auf 0,50 geklemmt wird, ist eine halbe
+      // Oktave daneben, und DAS war der gemeldete Fehler. Gewichtet mit der Lautstaerke des
+      // Bandes, denn eine Verstimmung bei neun Prozent Gewicht ist eine andere Sache als
+      // dieselbe bei hundert.
+      //
+      //   verlangte Rate / geklemmte Rate, in Oktaven, mal Gewicht
+      let schlimmst = 0, wo = null;
+      for (let rpm = IDLE_RPM; rpm <= REDLINE_RPM; rpm += 50) {
+        const w = sampleWeights(rpm, basen);
+        for (let i = 0; i < basen.length; i++) {
+          if (w[i] <= 0.02) continue;
+          const will = rpm / basen[i];
+          const kann = Math.max(0.5, Math.min(2.0, will));
+          const fehler = w[i] * Math.abs(Math.log2(kann / will));
+          if (fehler > schlimmst) {
+            schlimmst = fehler;
+            wo = { rpm, band: i, gewicht: +w[i].toFixed(2), will: +will.toFixed(2),
+                   kann: +kann.toFixed(2), oktaven: +Math.abs(Math.log2(kann / will)).toFixed(2) };
+          }
+        }
+      }
+      return { basen, verstimmung: +schlimmst.toFixed(4), schlimmste: wo,
+               // Der groesste Sprung zwischen zwei Nachbarn, in Oktaven.
+               oktaven: +Math.max.apply(null, basen.slice(1).map(
+                 (b, i) => Math.log2(b / basen[i]))).toFixed(2) };
+    },
+
+    ghostPassRates() {
+      const p = SPICE_ATTACK_P * ghostCfg.spice;
+      return { reichweite: SPICE_ATTACK_RANGE,
+               abstandMin: SPICE_GAP_MIN,
+               // Das Fenster, in dem der Verfolger in Reichweite ist, ohne gelupft zu werden.
+               fenster: +(SPICE_ATTACK_RANGE - SPICE_GAP_MIN).toFixed(3),
+               klebenMs: SPICE_ATTACK_ARM_MS,
+               wurfMs: SPICE_ATTACK_RETRY_MS,
+               wuerze: ghostCfg.spice,
+               p: +p.toFixed(4),
+               // Erwartete Wartezeit in Sekunden, sobald der Verfolger in Reichweite ist.
+               wartenS: p > 0 ? +(SPICE_ATTACK_RETRY_MS / 1000 / p).toFixed(1) : null,
+               sperreMs: SPICE_PASS_BLOCK_MS };
+    },
+
     ghostPassProbe(o) {
       const opt = o || {};
       const merkGarage = garage.splice(0, garage.length);

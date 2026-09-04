@@ -483,6 +483,10 @@
   const GEARBOXES = {
     gt3: { label: 'GT3, 6-Gang sequenziell', gears: GT3_GEARS,
            upshiftRpm: 8800, downshiftRpm: 4200, shiftMs: 120 },
+    // 40 ms sind die Angabe eines nahtlosen Getriebes. Angekommen ist davon nichts: das
+    // sind 0,89 Sendetakte, und eine Schaltpause unter einem Paket faellt zwischen zwei
+    // Takte. applyGearbox() deckelt deshalb auf den Sendetakt - die Angabe bleibt hier
+    // stehen, damit man sieht, dass die Grenze beim Programm liegt und nicht beim Getriebe.
     f1: { label: 'Formel 1, 8-Gang', gears: F1_GEARS,
           upshiftRpm: 8850, downshiftRpm: 5600, shiftMs: 40 },
     p412: { label: 'Ferrari 412P, 5-Gang Transaxle', gears: P412_GEARS,

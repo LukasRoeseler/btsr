@@ -94,7 +94,25 @@
     // Gehoer geprueft ist keiner von ihnen. Damit sind es vierzehn Motoren und 56 Schleifen.
     'gt40', 'lolat70', 'f330p4', 'mc12',
   ];
-  const BANDS = ['idle', 'mid', 'high'];
+  // KEINE FESTE LISTE MEHR. Bis v0.4.55 stand hier ['idle','mid','high'], und genau diese
+  // Liste war die Annahme, die den Ton kaputt gemacht hat: sie kannte drei Namen, also konnte
+  // es kein viertes Band geben - waehrend die Rate nur eine Oktave erlaubt und die drei
+  // Baender 2,2 Oktaven auseinanderlagen.
+  //
+  // Jetzt sagt loops.json, welche Leistungsbaender ein Motor hat, und der Generator rechnet
+  // die Leiter so, dass kein Nachbarabstand zu gross wird. Verschiedene Motoren duerfen
+  // damit verschieden VIELE Baender haben - der F1 braucht eines mehr, weil er bei 4200
+  // leerlaeuft und der Drehzahlmesser trotzdem auf 1500 faellt.
+  //
+  // 'over' ist das einzige, was hier NICHT dazugehoert: es laeuft parallel nach Last und
+  // nicht in der Drehzahl-Ueberblendung.
+  const OVER_BAND = 'over';
+  function powerBands(car) {
+    const b = sampleEngine.buffers[car];
+    if (!b) return [];
+    return Object.keys(b).filter(k => k !== OVER_BAND)
+      .sort((x, y) => b[x].baseRpm - b[y].baseRpm);
+  }
   let engineVolume = 0.7;
   const sampleEngine = { buffers: {}, rpmScale: {}, nodes: null, over: null, car: null,
                          master: null, ready: false, loading: false };
@@ -122,7 +140,11 @@
         // 'over' is the closed-throttle loop and is OPTIONAL: the Corvette profile is cut
         // from a recording that has no overrun material, so its absence must not fail the
         // load. Everything the generator makes has one.
-        for (const band of BANDS.concat(['over'])) {
+        // AUS DEM MANIFEST, nicht aus einer festen Liste: welche Baender ein Motor hat,
+        // sagt loops.json. Ein Motor mit einem Band mehr - der F1 braucht eines, weil er bei
+        // 4200 leerlaeuft und der Drehzahlmesser trotzdem auf 1500 faellt - wurde von der
+        // festen Liste sonst stillschweigend beschnitten.
+        for (const band of Object.keys(manifest[car].loops || {})) {
           const loop = manifest[car].loops[band];
           if (!loop) continue;
           const r = await fetch('audio/' + loop.file);
@@ -387,7 +409,25 @@
   //    Kurve mitlaeuft, ist ein Dauergeraeusch und keine Rueckmeldung - und die Aussage
   //    "du bist am Limit" ist nur etwas wert, wenn sie nicht immer gilt.
   let tyreNode = null, tyreGain = null;
-  const TYRE_SQUEAL_START = 0.85;
+  // DAS GESETZ, analytisch und gemessen deckungsgleich. latUse ist |Lenkung| mal
+  // Tempoanteil mal corneringLoad, und corneringLoad ist 1,8 - gerade so gewaehlt, dass
+  // Vollausschlag bei Hoechstgeschwindigkeit das Reibkreisbudget saettigt. Bei vollem
+  // Ausschlag gilt damit
+  //
+  //     latUse = kmh / 295 * 1,8 = kmh * 0,0061
+  //
+  // und die Messung trifft das genau: 80 km/h 0,49 | 120 0,73 | ab 164 gesaettigt bei 1,0.
+  //
+  // DIE SCHWELLE STAND AUF 0,85. Das heisst 139 km/h bei vollem Ausschlag - klingt
+  // erreichbar, ist es aber nicht: speedSteerReduction schneidet den Ausschlag mit dem Tempo,
+  // sodass oben gar kein Vollausschlag mehr ankommt. Gemessen wurde 0,85 erst bei 265 km/h.
+  // Deshalb hat es nie gequietscht.
+  //
+  // 0,6 heisst: ab etwa 98 km/h bei vollem Ausschlag, ab 197 km/h bei halbem, und bei einem
+  // Viertel Ausschlag nie (dort ist das Maximum 0,45). Eine Haarnadel quietscht, eine lange
+  // schnelle Kurve nicht. Ein Selbsttest haelt fest, dass die Schwelle ERREICHBAR bleibt -
+  // das Fehlen genau dieser Pruefung war der eigentliche Fehler.
+  const TYRE_SQUEAL_START = 0.6;
   function setTyreSqueal(nutzung) {
     if (!fxBuffers.tyre || !audioCtx || !soundEnabled) return;
     // Unterhalb der Schwelle auf null abbilden, statt die Schwelle im Nenner zu vergessen:
@@ -637,9 +677,11 @@
       sampleEngine.master.gain.value = 0;
       sampleEngine.master.connect(audioCtx.destination);
     }
-    // All three start together so they stay phase-consistent for the whole session.
+    // ALLE Leistungsbaender starten zusammen, damit sie die ganze Sitzung phasengleich
+    // bleiben - wieviele es sind, sagt der Motor selbst. Aufsteigend nach Basisdrehzahl,
+    // weil sampleWeights genau das voraussetzt.
     const t0 = audioCtx.currentTime + 0.04;
-    sampleEngine.nodes = BANDS.map(band => {
+    sampleEngine.nodes = powerBands(car).map(band => {
       const info = sampleEngine.buffers[car][band];
       const src = audioCtx.createBufferSource();
       src.buffer = info.buffer;
@@ -671,12 +713,28 @@
 
   // Triangular crossfade between the three anchors. The weights always sum to exactly 1,
   // so moving through the rev range can never produce a hole or a bulge in loudness.
+  // BELIEBIG VIELE BAENDER, nicht mehr genau drei. Seit v0.4.55 gibt es vier, und die
+  // Zahl fest zu verdrahten war der Grund, warum ein viertes vorher nicht ging.
+  //
+  // Die Regel bleibt dieselbe: unterhalb des ersten und oberhalb des letzten Bandes gilt
+  // dieses allein, dazwischen ueberblenden genau die zwei Nachbarn linear. Damit hat in
+  // jedem Abschnitt nur ein Paar Gewicht - und an den Raendern, wo die Abspielrate an ihren
+  // Anschlag kommt, ist das Gewicht des fernen Bandes null.
+  //
+  // `b` MUSS aufsteigend sein. Die Reihenfolge kommt aus loops.json, also aus der
+  // Reihenfolge im Generator; verlassen wird sich darauf nicht - der Aufrufer sortiert.
   function sampleWeights(rpm, b) {
-    const w = [0, 0, 0];
-    if (rpm <= b[0]) w[0] = 1;
-    else if (rpm >= b[2]) w[2] = 1;
-    else if (rpm <= b[1]) { const t = (rpm - b[0]) / (b[1] - b[0]); w[0] = 1 - t; w[1] = t; }
-    else { const t = (rpm - b[1]) / (b[2] - b[1]); w[1] = 1 - t; w[2] = t; }
+    const w = b.map(() => 0);
+    if (!b.length) return w;
+    if (rpm <= b[0]) { w[0] = 1; return w; }
+    if (rpm >= b[b.length - 1]) { w[b.length - 1] = 1; return w; }
+    for (let i = 1; i < b.length; i++) {
+      if (rpm <= b[i]) {
+        const t = (rpm - b[i - 1]) / (b[i] - b[i - 1]);
+        w[i - 1] = 1 - t; w[i] = t;
+        return w;
+      }
+    }
     return w;
   }
 

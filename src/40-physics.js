@@ -848,7 +848,11 @@
       cfg.ratioRef = cfg.gears[cfg.gears.length - 1].ratio;
       cfg.upshiftRpm = G.upshiftRpm;
       cfg.downshiftRpm = G.downshiftRpm;
-      cfg.shiftMs = G.shiftMs;
+      // MINDESTENS EIN SENDETAKT. Gemessen sind die 40 ms des F1-Getriebes 0,89 Takte bei
+      // 45 ms Sendeintervall - eine Schaltpause, die kuerzer ist als ein Paket, kann zwischen
+      // zwei Takten komplett verschwinden, und dann sieht weder die Simulation noch das Auto
+      // etwas davon. Die Tabelle behaelt die Angabe; hier steht die Grenze des Programms.
+      cfg.shiftMs = Math.max(CONTROL_SEND_INTERVAL_MS, G.shiftMs);
       // Von acht auf fuenf Gaenge zeigt der eingelegte Gang sonst ins Leere, und
       // gearRatio() liest undefined.ratio.
       this.state.currentGear = Math.min(this.state.currentGear, cfg.gears.length - 1);

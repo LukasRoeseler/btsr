@@ -31,6 +31,13 @@
     "firingHz": 260.0,
     "seconds": 2.0,
     "load": 0.0
+   },
+   "low": {
+    "file": "mustang_low.ogg",
+    "baseRpm": 2163,
+    "firingHz": 144.2,
+    "seconds": 1.9972,
+    "load": 1.0
    }
   }
  },
@@ -66,6 +73,13 @@
     "firingHz": 266.7,
     "seconds": 2.01,
     "load": 0.0
+   },
+   "low": {
+    "file": "c6r_low.ogg",
+    "baseRpm": 2098,
+    "firingHz": 139.9,
+    "seconds": 2.0019,
+    "load": 1.0
    }
   }
  },
@@ -101,6 +115,13 @@
     "firingHz": 346.7,
     "seconds": 2.0077,
     "load": 0.0
+   },
+   "low": {
+    "file": "z06gt3r_low.ogg",
+    "baseRpm": 2600,
+    "firingHz": 173.3,
+    "seconds": 1.9846,
+    "load": 1.0
    }
   }
  },
@@ -136,6 +157,13 @@
     "firingHz": 293.3,
     "seconds": 1.9909,
     "load": 0.0
+   },
+   "low": {
+    "file": "amggt3_low.ogg",
+    "baseRpm": 2298,
+    "firingHz": 153.2,
+    "seconds": 1.9843,
+    "load": 1.0
    }
   }
  },
@@ -171,6 +199,13 @@
     "firingHz": 250.0,
     "seconds": 1.992,
     "load": 0.0
+   },
+   "low": {
+    "file": "f296gt3_low.ogg",
+    "baseRpm": 2646,
+    "firingHz": 132.3,
+    "seconds": 1.9955,
+    "load": 1.0
    }
   }
  },
@@ -206,6 +241,13 @@
     "firingHz": 215.0,
     "seconds": 2.0093,
     "load": 0.0
+   },
+   "low": {
+    "file": "m4gt3_low.ogg",
+    "baseRpm": 2364,
+    "firingHz": 118.2,
+    "seconds": 1.9797,
+    "load": 1.0
    }
   }
  },
@@ -241,6 +283,13 @@
     "firingHz": 450.0,
     "seconds": 2.0,
     "load": 0.0
+   },
+   "low": {
+    "file": "huracan_low.ogg",
+    "baseRpm": 2750,
+    "firingHz": 229.2,
+    "seconds": 2.0073,
+    "load": 1.0
    }
   }
  },
@@ -276,6 +325,13 @@
     "firingHz": 280.0,
     "seconds": 2.0,
     "load": 0.0
+   },
+   "low": {
+    "file": "vantagegt3_low.ogg",
+    "baseRpm": 2245,
+    "firingHz": 149.7,
+    "seconds": 1.9777,
+    "load": 1.0
    }
   }
  },
@@ -311,6 +367,13 @@
     "firingHz": 275.0,
     "seconds": 2.0073,
     "load": 0.0
+   },
+   "low": {
+    "file": "p992gt3r_low.ogg",
+    "baseRpm": 2569,
+    "firingHz": 128.5,
+    "seconds": 2.0086,
+    "load": 1.0
    }
   }
  },
@@ -321,8 +384,8 @@
   "loops": {
    "idle": {
     "file": "f1_2026_idle.ogg",
-    "baseRpm": 4200,
-    "firingHz": 210.0,
+    "baseRpm": 1500,
+    "firingHz": 75.0,
     "seconds": 2.0,
     "load": 1.0
    },
@@ -346,6 +409,20 @@
     "firingHz": 425.0,
     "seconds": 2.0047,
     "load": 0.0
+   },
+   "low": {
+    "file": "f1_2026_low.ogg",
+    "baseRpm": 2510,
+    "firingHz": 125.5,
+    "seconds": 2.008,
+    "load": 1.0
+   },
+   "low2": {
+    "file": "f1_2026_low2.ogg",
+    "baseRpm": 4200,
+    "firingHz": 210.0,
+    "seconds": 2.0,
+    "load": 1.0
    }
   }
  },
@@ -381,6 +458,13 @@
     "firingHz": 280.0,
     "seconds": 2.0,
     "load": 0.0
+   },
+   "low": {
+    "file": "gt40_low.ogg",
+    "baseRpm": 1944,
+    "firingHz": 129.6,
+    "seconds": 1.9753,
+    "load": 1.0
    }
   }
  },
@@ -416,6 +500,13 @@
     "firingHz": 306.7,
     "seconds": 2.0087,
     "load": 0.0
+   },
+   "low": {
+    "file": "lolat70_low.ogg",
+    "baseRpm": 2145,
+    "firingHz": 143.0,
+    "seconds": 2.014,
+    "load": 1.0
    }
   }
  },
@@ -451,6 +542,13 @@
     "firingHz": 580.0,
     "seconds": 2.0069,
     "load": 0.0
+   },
+   "low": {
+    "file": "f330p4_low.ogg",
+    "baseRpm": 2850,
+    "firingHz": 285.0,
+    "seconds": 2.0211,
+    "load": 1.0
    }
   }
  },
@@ -486,6 +584,13 @@
     "firingHz": 550.0,
     "seconds": 2.0073,
     "load": 0.0
+   },
+   "low": {
+    "file": "mc12_low.ogg",
+    "baseRpm": 2674,
+    "firingHz": 267.4,
+    "seconds": 2.0194,
+    "load": 1.0
    }
   }
  }

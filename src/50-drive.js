@@ -1149,8 +1149,20 @@
   // (gemessen 0 Lesungen in 551 Fahrmeldungen), Byte 12 steht dort praktisch immer auf
   // 0x00 - die Drosselung wuerde also IMMER greifen, und man wuerde den Fehler beim Motor
   // suchen.
+  // ZWEI FRAGEN, die vorher eine waren:
+  //
+  //   abseitsJetzt()  - liegt das Auto neben der Bahn? Eine Tatsache, kein Schalter.
+  //   offtrackGilt()  - soll die DROSSELUNG greifen? Die Tatsache plus ihr eigener Schalter.
+  //
+  // Getrennt, weil das Brummen bis v0.4.55 in derselben Klammer sass: wer die Drosselung
+  // abschaltete, verlor auch die Rueckmeldung, obwohl er sie nicht abgeschaltet hatte. Das
+  // Brummen haengt jetzt allein am Vibrationsschalter, die Drosselung allein am eigenen.
+  function abseitsJetzt() {
+    return offtrackAktiv && trackMode === 'on';
+  }
+
   function offtrackGilt() {
-    return offtrackEffekt && offtrackAktiv && trackMode === 'on';
+    return offtrackEffekt && abseitsJetzt();
   }
 
   function offtrackAnzeige() {
@@ -1194,6 +1206,9 @@
     });
   }
 
+  // Der laufende Wert des Tankdeckels, siehe fuelCutTarget() in 70-race.js. 1 = offen.
+  let fuelCut = 1;
+
   function physicsStep() {
     if (!physicsEnabled) { physLastTime = null; return; }
     const now = performance.now();
@@ -1201,7 +1216,15 @@
     physLastTime = now;
     // Derated, not raw. Braking is left alone: brakes do not care how much fuel is left,
     // and a damaged car that cannot slow down would be the opposite of a limp mode.
-    let rawThrottle = fuelDamageDerate(Math.max(0, throttleY));
+    //
+    // DIE RAMPE DES LEEREN TANKS laeuft hier, weil dies die einzige Stelle mit einem
+    // verlaesslichen dt ist - dasselbe Argument, das weiter unten fuer die gefahrene Strecke
+    // steht. Ein Tank, der leer wird, nimmt das Gas damit ueber knapp zwei Sekunden weg
+    // statt in einem Takt, und die Simulation rollt aus.
+    const cutZiel = fuelCutTarget();
+    if (cutZiel > fuelCut) fuelCut = cutZiel;   // Tanken wirkt sofort
+    else fuelCut += (cutZiel - fuelCut) * (1 - Math.exp(-dt / FUEL_CUT_TAU));
+    let rawThrottle = fuelDamageDerate(Math.max(0, throttleY), fuelCut);
     let rawBrake = Math.max(0, -throttleY);
     let steer = steerX;
     // Bei gelber Flagge und in der Einfuehrungsrunde faehrt das Auto selbst. Siehe
@@ -1211,8 +1234,13 @@
     // Abseits der Bahn gedeckelt, und zwar VOR der Physik. Genau das war der Fehler beim
     // Gasfaktor: er wirkte nach der Physik auf die Ausgabe, der Tacho zeigte volles Tempo
     // und das Auto fuhr langsamer. Hier sagen Anzeige und Auto dasselbe.
+    // Die Drosselung an ihrem Schalter ...
     if (offtrackGilt()) {
       rawThrottle = Math.min(rawThrottle, OFFTRACK_GAS);
+    }
+    // ... und das Brummen an seinem. padRumble() prueft rumbleOn selbst, also steht hier nur
+    // die Frage, OB gebrummt werden soll - nicht, ob der Nutzer Vibration will.
+    if (abseitsJetzt()) {
       const jetzt = Date.now();
       if (jetzt - offtrackRumbleAt >= OFFTRACK_RUMBLE_MS - 40) {
         offtrackRumbleAt = jetzt;

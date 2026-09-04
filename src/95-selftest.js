@@ -810,8 +810,15 @@
     if (!window.OMEGA_TEST || !OMEGA_TEST.physSteerGrip) {
       return { skip: true, mass: 'physSteerGrip nicht vorhanden' };
     }
+    // tyreAsymEffect AUS, und das schwaecht die Pruefung nicht ab: der Reifenzug bei
+    // ungleichem Verschleiss ist ein absichtlicher Lenkoffset mit eigenem Regler und eigenem
+    // Messaufbau (physTyreAsym). Er liegt auf dem uebertragenen Winkel, und dieser Test
+    // vergleicht ihn mit dem Wunsch OHNE ihn - seit der Verschleiss standardmaessig ungleich
+    // ist, meldete das "1,0 NICHT NEUTRAL". Wahr, aber nicht die Frage dieses Tests, und die
+    // ist: legt die KALIBRIERUNG bei 1,0 etwas drauf?
     const messe = (kalib, lenk) => OMEGA_TEST.physSteerGrip({
-      kmh: 60, throttle: 0, brake: 1, steering: lenk, patch: { steerCalib: kalib } });
+      kmh: 60, throttle: 0, brake: 1, steering: lenk,
+      patch: { steerCalib: kalib, tyreAsymEffect: 0 } });
     const proben = [1, 1.5, 2, 2.5, 3].map(k => messe(k, 1));
     if (proben[0].winkel === undefined) return { skip: true, mass: 'winkel nicht herausgegeben' };
     let gedeckelt = true, monoton = true;
@@ -1507,6 +1514,165 @@
     }
   });
 
+
+
+  // ---- Motorschleifen: keine hoerbare Schleife am Ratenanschlag ----
+  //
+  // DER BEFUND, der diesen Test noetig gemacht hat, und er war an den einzelnen Zahlen nicht
+  // zu sehen: die Abspielrate ist auf [0,5 .. 2,0] geklemmt, also eine Oktave nach jeder
+  // Seite. Leerlauf und Mittelband lagen beim Porsche aber 2,2 Oktaven auseinander (1200 auf
+  // 5500). Von 1500 bis 2750 klebte damit immer mindestens ein HOERBARES Band am Anschlag,
+  // und bei 5000 trug das Leerlaufband noch 12 Prozent Gewicht bei einer Rate, die auf ein
+  // Drittel des Verlangten geklemmt war. Gemeldet als "am Anfang des Anfahrens klingt der Ton
+  // komisch, das sind zwei Toene, die nicht zusammenpassen".
+  //
+  // Geprueft wird das ganze Drehzahlband in 50er-Schritten, und die Aussage ist absolut:
+  // NULL geklemmte hoerbare Baender. Dazu der groesste Abstand zwischen zwei Nachbarn, denn
+  // das ist die Groesse, die man beim naechsten neuen Motor im Auge behalten muss.
+  stAdd('Motorschleifen: kein Band am Ratenanschlag', async () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.sndBandCheck) {
+      return { skip: true, mass: 'sndBandCheck nicht vorhanden' };
+    }
+    if (location.protocol === 'file:') {
+      return { skip: true, mass: 'file://, der Browser verbietet das Laden' };
+    }
+    let manifest;
+    try { manifest = await (await fetch('audio/loops.json')).json(); }
+    catch (e) { return { skip: true, mass: 'audio/loops.json nicht ladbar' }; }
+    // Die Schranke: 0,02 Oktaven gewichtet. Zum Vergleich die gemeldeten Faelle vor der
+    // Berichtigung - f1_2026 bei 1500/min lag bei 0,47, das Leerlaufband des Porsche bei
+    // 5000/min bei 0,13. Der heutige Rest liegt bei 0,003, also um mehr als das Sechsfache
+    // darunter: zwei Prozent Verstimmung bei neun Prozent Gewicht.
+    const GRENZE = 0.02;
+    const schlecht = [];
+    let weit = 0, geprueft = 0, aergste = 0;
+    for (const key of Object.keys(manifest)) {
+      // 'over' laeuft PARALLEL nach Last und nicht in der Drehzahl-Ueberblendung - es
+      // gehoert nicht in diese Rechnung.
+      const basen = Object.keys(manifest[key].loops || {})
+        .filter(b => b !== 'over')
+        .map(b => manifest[key].loops[b].baseRpm);
+      const r = OMEGA_TEST.sndBandCheck(basen);
+      if (r.fehlt !== undefined) { schlecht.push(key + ': ' + r.fehlt); continue; }
+      geprueft++;
+      weit = Math.max(weit, r.oktaven);
+      aergste = Math.max(aergste, r.verstimmung);
+      if (r.verstimmung > GRENZE) {
+        schlecht.push(key + ': Verstimmung ' + r.verstimmung + ' bei '
+                      + JSON.stringify(r.schlimmste));
+      }
+      if (r.oktaven > 1.2) schlecht.push(key + ': Bandabstand ' + r.oktaven + ' Oktaven');
+    }
+    return { ok: schlecht.length === 0,
+             mass: geprueft + ' Motoren, groesster Bandabstand ' + weit.toFixed(2)
+                   + ' Oktaven, schlimmste gewichtete Verstimmung ' + aergste.toFixed(4)
+                   + ' (Grenze ' + GRENZE + ')'
+                   + (schlecht.length ? ' || ' + schlecht.slice(0, 2).join('; ') : '') };
+  });
+
+  // ---- Tank und Schaden drosseln GENAU EINMAL ----
+  //
+  // Bis v0.4.55 zweimal: fuelDamageDerate() vor der Physik, und applyFuelAndDamage() noch
+  // einmal auf das ausgehende Byte. physOutThrottle ist motorPWM, also der Anteil simulierte
+  // Geschwindigkeit durch Hoechstgeschwindigkeit - wird der noch multipliziert, sagt das Byte
+  // etwas anderes als der Tacho. Gemeldet als "da steht 200 km/h, aber das Auto faehrt
+  // langsam", und die Gaenge und der Ton hingen mit, weil die Drehzahl aus der simulierten
+  // Geschwindigkeit kommt.
+  //
+  // Der zweite Griff ist weg, und der Beweis dafuer ist strukturell: die Funktion, die den
+  // Verbrauch zaehlt, gibt keinen Wert mehr zurueck. Gaebe sie einen, koennte ihn jemand
+  // wieder aufs Byte schreiben.
+  stAdd('Tank: drosselt genau einmal, vor der Physik', () => {
+    if (typeof fuelTankTick !== 'function' || typeof fuelDamageDerate !== 'function') {
+      return { skip: true, mass: 'Tankfunktionen nicht erreichbar' };
+    }
+    const schlecht = [];
+    const gemerkt = fuel;
+    try {
+      // 1. Der Verbrauchszaehler gibt NICHTS zurueck.
+      fuel = 100;
+      const rueck = fuelTankTick(0);
+      if (rueck !== undefined) schlecht.push('fuelTankTick gibt ' + rueck + ' zurueck');
+      // 2. Die Drosselung selbst wirkt weiter, und zwar mit dem Deckel als Argument.
+      fuel = 0;
+      const leer = fuelDamageDerate(1);
+      const halb = fuelDamageDerate(1, 0.6);
+      fuel = 100;
+      const voll = fuelDamageDerate(1);
+      if (!(leer < voll * 0.5)) schlecht.push('leerer Tank drosselt nicht');
+      if (!(halb > leer && halb < voll)) {
+        schlecht.push('der Deckel als Argument wirkt nicht: ' + halb);
+      }
+      // 3. Und die Rampe hat ein Ziel, das vom Tank abhaengt.
+      if (typeof fuelCutTarget === 'function') {
+        fuel = 0;
+        const zLeer = fuelCutTarget();
+        fuel = 100;
+        const zVoll = fuelCutTarget();
+        if (!(zLeer < zVoll)) schlecht.push('Rampenziel haengt nicht am Tank');
+      }
+      return { ok: schlecht.length === 0,
+               mass: 'Rueckgabe ' + rueck + ' | Gas leer ' + leer.toFixed(2)
+                     + ', bei Deckel 0,6 ' + halb.toFixed(2) + ', voll ' + voll.toFixed(2)
+                     + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+    } finally { fuel = gemerkt; }
+  });
+
+  // ---- Ueberholen: die zwei Regeln duerfen sich nicht bestreiten ----
+  //
+  // DER BEFUND, der diesen Test noetig gemacht hat, und er war nur zu sehen, wenn man beide
+  // Zahlen NEBENEINANDER legt: angesetzt wurde bei einem Abstand unter 0,9 Kacheln, das
+  // Abstandhalten lupfte das Gas aber schon ab 0,7 - plus Zuschlag beim Annaehern. Das
+  // Angriffsfenster war 0,2 Kacheln breit, und der Abstandhalter druckte den Verfolger genau
+  // daraus heraus. Gemeldet als "sie ueberholen sich nicht richtig, da ist der Wurm drin".
+  //
+  // Dazu die Wuerfelrate: alle 4 Sekunden ein Versuch mit 0,45 x Wuerze. Bei der
+  // eingestellten Wuerze 0,4 ist das eine Attacke pro 22 Sekunden durchgehenden Klebens.
+  //
+  // Geprueft wird beides, und keine der beiden Aussagen laesst sich durch Hinsehen pruefen -
+  // dafuer sind es Konstanten in verschiedenen Abschnitten.
+  stAdd('Ueberholen: Reichweite ueber dem Mindestabstand, Wartezeit brauchbar', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.ghostPassRates) {
+      return { skip: true, mass: 'ghostPassRates nicht vorhanden' };
+    }
+    const merk = ghostCfg.spice;
+    const schlecht = [];
+    let r;
+    try {
+      ghostCfg.spice = 0.4;          // die Vorgabe, gefahren ermittelt
+      r = OMEGA_TEST.ghostPassRates();
+      // 1. Die Reichweite MUSS ueber dem Mindestabstand liegen. Sonst bestreiten die zwei
+      //    Regeln dasselbe Band, und der Abstandhalter gewinnt - er wirkt jeden Takt, die
+      //    Attacke nur beim Wuerfeln.
+      if (!(r.reichweite > r.abstandMin)) {
+        schlecht.push('Reichweite ' + r.reichweite + ' nicht ueber Mindestabstand '
+                      + r.abstandMin);
+      }
+      // 2. Und das Fenster muss BREIT genug sein, um es durchgehend zu halten. 0,2 Kacheln
+      //    waren es vorher, und das hat nicht gereicht.
+      if (!(r.fenster >= 0.4)) {
+        schlecht.push('Fenster nur ' + r.fenster + ' Kacheln breit');
+      }
+      // 3. Die Wartezeit bei der VORGABE-Wuerze muss im Bereich einer Runde liegen. Ohne
+      //    diese Zahl ist "wird ueberholt" eine Hoffnung.
+      if (!(r.wartenS <= 10)) {
+        schlecht.push('Wartezeit ' + r.wartenS + ' s bei Wuerze ' + r.wuerze);
+      }
+      // 4. Gegenprobe: bei Wuerze null darf NIE angesetzt werden, sonst ist der Regler
+      //    keiner.
+      ghostCfg.spice = 0;
+      const aus = OMEGA_TEST.ghostPassRates();
+      if (aus.p !== 0) schlecht.push('Wuerze 0 wuerfelt trotzdem');
+    } finally {
+      ghostCfg.spice = merk;
+    }
+    return { ok: schlecht.length === 0,
+             mass: 'Reichweite ' + r.reichweite + ' gegen Mindestabstand ' + r.abstandMin
+                   + ' (Fenster ' + r.fenster + ') | Wurf alle ' + r.wurfMs + ' ms mit p='
+                   + r.p + ' -> ' + r.wartenS + ' s bei Wuerze ' + r.wuerze
+                   + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
   // ---- Autopilot in der Einfuehrungsrunde ----
   //
   // DER BEFUND, der diesen Test noetig gemacht hat: raceFormationLap kam in 50-drive.js -
@@ -2095,13 +2261,30 @@
                       + ', Markup ' + el.defaultValue);
       }
     }
-    // Und die Schwelle: sie muss SPAET liegen. Ein Quietschen ab 30 Prozent ist ein
-    // Dauergeraeusch und keine Rueckmeldung.
-    if (OMEGA_TEST.sndTyreSquealCurve) {
+    // Und die Schwelle. ZWEI Forderungen, und die erste ist die, deren Fehlen das
+    // Quietschen bis v0.4.55 nie hat eintreten lassen:
+    //
+    //   ERREICHBAR. Der Test forderte vorher nur "Schwelle >= 0,7". Das war erfuellt - sie
+    //   stand auf 0,85 - und trotzdem quietschte es nie: gemessen erreicht die
+    //   Querausnutzung 0,85 erst bei 265 km/h mit VOLLEM Ausschlag. "Spaet" ist eine Aussage
+    //   ueber die Zahl und nicht darueber, ob sie jemals vorkommt. Gemessen wird deshalb an
+    //   einem Betriebspunkt, den es auf einer Hausstrecke gibt: 170 km/h, voller Ausschlag.
+    //
+    //   NICHT ZU TIEF. Ein Quietschen, das bei jeder Kurve mitlaeuft, ist ein
+    //   Dauergeraeusch und keine Rueckmeldung.
+    if (OMEGA_TEST.sndTyreSquealCurve && OMEGA_TEST.physSteerGrip) {
       const k = OMEGA_TEST.sndTyreSquealCurve();
-      teile.push('Schwelle ' + k.schwelle);
-      if (!(k.schwelle >= 0.7 && k.schwelle < 1)) {
-        schlecht.push('Schwelle ' + k.schwelle + ' liegt nicht spaet');
+      const p = OMEGA_TEST.physSteerGrip({ kmh: 170, throttle: 0.2, brake: 0, steering: 1 });
+      // latUse aus gripLong zurueckgerechnet: gripLong = sqrt(1 - latUse^2).
+      const erreicht = Math.sqrt(Math.max(0, 1 - p.gripLong * p.gripLong));
+      teile.push('Schwelle ' + k.schwelle + ', bei 170 km/h voll erreicht '
+                 + erreicht.toFixed(2));
+      if (!(k.schwelle < erreicht)) {
+        schlecht.push('Schwelle ' + k.schwelle + ' unerreichbar: eine schnelle Kurve kommt '
+                      + 'nur auf ' + erreicht.toFixed(2));
+      }
+      if (!(k.schwelle >= 0.3)) {
+        schlecht.push('Schwelle ' + k.schwelle + ' zu tief, das wird ein Dauergeraeusch');
       }
     }
     return { ok: !schlecht.length,

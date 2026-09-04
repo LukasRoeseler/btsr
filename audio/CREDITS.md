@@ -59,7 +59,8 @@ unter 2 %), ohne Gleichanteil und ohne Kodierungsdrift. Bei den V12 liegt im Lee
 bzw. 64 Prozent der Energie auf der Zuendrate, bei den V8 auf der Rohrresonanz — die
 Rollenverteilung, die lange Rohre gegen einen hochdrehenden V12 erwarten lassen.
 
-Damit sind es 86 statt 70 `.ogg`-Dateien.
+Damit sind es 86 statt 70 `.ogg`-Dateien, und mit der gerechneten Baenderleiter aus
+v0.4.55 (ein Zwischenband je Motor, beim Formel 1 zwei) sind es 101.
 
 ### Was in v0.4.52 herausgefallen ist
 
@@ -78,7 +79,7 @@ Datei standen, und drei `*_demo.ogg`, die nur ein `accel`-Block in `fx.json` nan
 kein Code las. Gefunden bei der Durchsicht auf nicht verdrahtete Teile, nicht beim Aufraeumen
 der Motoren.
 
-Damit waren es 70 statt 106 `.ogg`-Dateien. Mit den vier historischen Motoren oben sind es jetzt 86.
+Damit waren es 70 statt 106 `.ogg`-Dateien. Mit den vier historischen Motoren oben waren es 86, mit der Baenderleiter sind es 101.
 
 ### Die zwei Quietschtoene, und warum es zwei sind
 

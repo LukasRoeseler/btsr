@@ -3891,64 +3891,87 @@
 
       <h3 style="font-size:14px; margin:18px 0 6px 0">Motoren</h3>
       <p class="muted" style="font-size:11.5px">
-        Je Motor drei Drehzahlb&auml;nder, die nach Drehzahl &uuml;berblendet werden, und
+        Je Motor vier Drehzahlb&auml;nder, die nach Drehzahl &uuml;berblendet werden, und
         eine Schubschleife, die parallel dazu nach <em>Last</em> eingeblendet wird. Die
         Drehzahl in Klammern ist die Basis: dort klingt die Schleife unverstimmt.
+        Das untere Band ist in v0.4.55 dazugekommen, und der Grund ist gemessen: die
+        Abspielrate ist auf eine Oktave nach jeder Seite begrenzt, Leerlauf und Mittelband
+        lagen aber 2,2 Oktaven auseinander. Im unteren ersten Gang war deshalb immer
+        mindestens eine h&ouml;rbare Schleife am Anschlag und damit verstimmt &ndash; bei
+        5000/min trug das Leerlaufband noch 12 Prozent Gewicht bei einer Rate, die auf ein
+        Drittel des Verlangten geklemmt war. Das neue Band liegt beim geometrischen Mittel,
+        damit beide Spr&uuml;nge gleich gro&szlig; werden; gemessen ist danach kein h&ouml;rbares
+        Band mehr geklemmt.
       </p>
       <div class="snd-grid">
         <div class="snd-row"><audio controls preload="none" src="audio/p992gt3r_idle.ogg"></audio><div><b>Porsche 911 GT3 R (4.2 Boxer-6, Einzeldrosseln), Leerlauf (1200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/p992gt3r_low.ogg"></audio><div><b>Porsche 911 GT3 R (4.2 Boxer-6, Einzeldrosseln), Zwischenband (2569/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/p992gt3r_mid.ogg"></audio><div><b>Porsche 911 GT3 R (4.2 Boxer-6, Einzeldrosseln), Mittelband (5500/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/p992gt3r_high.ogg"></audio><div><b>Porsche 911 GT3 R (4.2 Boxer-6, Einzeldrosseln), oberes Band (8800/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/p992gt3r_over.ogg"></audio><div><b>Porsche 911 GT3 R (4.2 Boxer-6, Einzeldrosseln), Schub (5500/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/m4gt3_idle.ogg"></audio><div><b>BMW M4 GT3 (P58 3.0 Reihen-6, ohne Lader), Leerlauf (1300/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/m4gt3_low.ogg"></audio><div><b>BMW M4 GT3 (P58 3.0 Reihen-6, ohne Lader), Zwischenband (2364/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/m4gt3_mid.ogg"></audio><div><b>BMW M4 GT3 (P58 3.0 Reihen-6, ohne Lader), Mittelband (4300/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/m4gt3_high.ogg"></audio><div><b>BMW M4 GT3 (P58 3.0 Reihen-6, ohne Lader), oberes Band (7200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/m4gt3_over.ogg"></audio><div><b>BMW M4 GT3 (P58 3.0 Reihen-6, ohne Lader), Schub (4300/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/amggt3_idle.ogg"></audio><div><b>Mercedes-AMG GT3 (M159 6.2 V8, Cross-Plane), Leerlauf (1200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/amggt3_low.ogg"></audio><div><b>Mercedes-AMG GT3 (M159 6.2 V8, Cross-Plane), Zwischenband (2298/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/amggt3_mid.ogg"></audio><div><b>Mercedes-AMG GT3 (M159 6.2 V8, Cross-Plane), Mittelband (4400/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/amggt3_high.ogg"></audio><div><b>Mercedes-AMG GT3 (M159 6.2 V8, Cross-Plane), oberes Band (7700/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/amggt3_over.ogg"></audio><div><b>Mercedes-AMG GT3 (M159 6.2 V8, Cross-Plane), Schub (4400/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/f296gt3_idle.ogg"></audio><div><b>Ferrari 296 GT3 (F163CE 3.0 V6 120 Grad, ohne Lader), Leerlauf (1400/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/f296gt3_low.ogg"></audio><div><b>Ferrari 296 GT3 (F163CE 3.0 V6 120 Grad, ohne Lader), Zwischenband (2646/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/f296gt3_mid.ogg"></audio><div><b>Ferrari 296 GT3 (F163CE 3.0 V6 120 Grad, ohne Lader), Mittelband (5000/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/f296gt3_high.ogg"></audio><div><b>Ferrari 296 GT3 (F163CE 3.0 V6 120 Grad, ohne Lader), oberes Band (8000/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/f296gt3_over.ogg"></audio><div><b>Ferrari 296 GT3 (F163CE 3.0 V6 120 Grad, ohne Lader), Schub (5000/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/huracan_idle.ogg"></audio><div><b>Huracan GT3 EVO2 / R8 LMS (5.2 V10, Split-Pin), Leerlauf (1400/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/huracan_low.ogg"></audio><div><b>Huracan GT3 EVO2 / R8 LMS (5.2 V10, Split-Pin), Zwischenband (2750/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/huracan_mid.ogg"></audio><div><b>Huracan GT3 EVO2 / R8 LMS (5.2 V10, Split-Pin), Mittelband (5400/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/huracan_high.ogg"></audio><div><b>Huracan GT3 EVO2 / R8 LMS (5.2 V10, Split-Pin), oberes Band (8700/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/huracan_over.ogg"></audio><div><b>Huracan GT3 EVO2 / R8 LMS (5.2 V10, Split-Pin), Schub (5400/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/vantagegt3_idle.ogg"></audio><div><b>Aston Martin Vantage GT3 (M177 4.0 V8, ohne Lader), Leerlauf (1200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/vantagegt3_low.ogg"></audio><div><b>Aston Martin Vantage GT3 (M177 4.0 V8, ohne Lader), Zwischenband (2245/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/vantagegt3_mid.ogg"></audio><div><b>Aston Martin Vantage GT3 (M177 4.0 V8, ohne Lader), Mittelband (4200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/vantagegt3_high.ogg"></audio><div><b>Aston Martin Vantage GT3 (M177 4.0 V8, ohne Lader), oberes Band (7200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/vantagegt3_over.ogg"></audio><div><b>Aston Martin Vantage GT3 (M177 4.0 V8, ohne Lader), Schub (4200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/c6r_idle.ogg"></audio><div><b>Corvette C6.R (LS7.R 7.0 V8, Cross-Plane), Leerlauf (1100/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/c6r_low.ogg"></audio><div><b>Corvette C6.R (LS7.R 7.0 V8, Cross-Plane), Zwischenband (2098/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/c6r_mid.ogg"></audio><div><b>Corvette C6.R (LS7.R 7.0 V8, Cross-Plane), Mittelband (4000/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/c6r_high.ogg"></audio><div><b>Corvette C6.R (LS7.R 7.0 V8, Cross-Plane), oberes Band (7200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/c6r_over.ogg"></audio><div><b>Corvette C6.R (LS7.R 7.0 V8, Cross-Plane), Schub (4000/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/z06gt3r_idle.ogg"></audio><div><b>Corvette Z06 GT3.R (LT6.R 5.5 V8, Flat-Plane), Leerlauf (1300/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/z06gt3r_low.ogg"></audio><div><b>Corvette Z06 GT3.R (LT6.R 5.5 V8, Flat-Plane), Zwischenband (2600/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/z06gt3r_mid.ogg"></audio><div><b>Corvette Z06 GT3.R (LT6.R 5.5 V8, Flat-Plane), Mittelband (5200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/z06gt3r_high.ogg"></audio><div><b>Corvette Z06 GT3.R (LT6.R 5.5 V8, Flat-Plane), oberes Band (8600/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/z06gt3r_over.ogg"></audio><div><b>Corvette Z06 GT3.R (LT6.R 5.5 V8, Flat-Plane), Schub (5200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/mustang_idle.ogg"></audio><div><b>Ford Mustang GT3 (V8, Cross-Plane), Leerlauf (1200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/mustang_low.ogg"></audio><div><b>Ford Mustang GT3 (V8, Cross-Plane), Zwischenband (2163/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/mustang_mid.ogg"></audio><div><b>Ford Mustang GT3 (V8, Cross-Plane), Mittelband (3900/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/mustang_high.ogg"></audio><div><b>Ford Mustang GT3 (V8, Cross-Plane), oberes Band (7000/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/mustang_over.ogg"></audio><div><b>Ford Mustang GT3 (V8, Cross-Plane), Schub (3900/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/f1_2026_idle.ogg"></audio><div><b>Formel 1 2026 (1.6 V6 Turbo-Hybrid, 90 Grad), Leerlauf (4200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/f1_2026_low.ogg"></audio><div><b>Formel 1 2026 (1.6 V6 Turbo-Hybrid, 90 Grad), Zwischenband (2510/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/f1_2026_low2.ogg"></audio><div><b>Formel 1 2026 (1.6 V6 Turbo-Hybrid, 90 Grad), Zwischenband (4200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/f1_2026_mid.ogg"></audio><div><b>Formel 1 2026 (1.6 V6 Turbo-Hybrid, 90 Grad), Mittelband (8500/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/f1_2026_high.ogg"></audio><div><b>Formel 1 2026 (1.6 V6 Turbo-Hybrid, 90 Grad), oberes Band (12500/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/f1_2026_over.ogg"></audio><div><b>Formel 1 2026 (1.6 V6 Turbo-Hybrid, 90 Grad), Schub (8500/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/gt40_idle.ogg"></audio><div><b>Ford GT40 Mk I (4.7 V8, Cross-Plane), Leerlauf (900/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/gt40_low.ogg"></audio><div><b>Ford GT40 Mk I (4.7 V8, Cross-Plane), Zwischenband (1944/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/gt40_mid.ogg"></audio><div><b>Ford GT40 Mk I (4.7 V8, Cross-Plane), Mittelband (4200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/gt40_high.ogg"></audio><div><b>Ford GT40 Mk I (4.7 V8, Cross-Plane), oberes Band (6500/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/gt40_over.ogg"></audio><div><b>Ford GT40 Mk I (4.7 V8, Cross-Plane), Schub (4200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/lolat70_idle.ogg"></audio><div><b>Lola T70 Mk3B (Chevrolet 5.0 V8, Cross-Plane), Leerlauf (1000/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/lolat70_low.ogg"></audio><div><b>Lola T70 Mk3B (Chevrolet 5.0 V8, Cross-Plane), Zwischenband (2145/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/lolat70_mid.ogg"></audio><div><b>Lola T70 Mk3B (Chevrolet 5.0 V8, Cross-Plane), Mittelband (4600/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/lolat70_high.ogg"></audio><div><b>Lola T70 Mk3B (Chevrolet 5.0 V8, Cross-Plane), oberes Band (7000/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/lolat70_over.ogg"></audio><div><b>Lola T70 Mk3B (Chevrolet 5.0 V8, Cross-Plane), Schub (4600/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/f330p4_idle.ogg"></audio><div><b>Ferrari 330 P4 / 412P (4.0 V12, 60 Grad), Leerlauf (1400/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/f330p4_low.ogg"></audio><div><b>Ferrari 330 P4 / 412P (4.0 V12, 60 Grad), Zwischenband (2850/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/f330p4_mid.ogg"></audio><div><b>Ferrari 330 P4 / 412P (4.0 V12, 60 Grad), Mittelband (5800/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/f330p4_high.ogg"></audio><div><b>Ferrari 330 P4 / 412P (4.0 V12, 60 Grad), oberes Band (8200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/f330p4_over.ogg"></audio><div><b>Ferrari 330 P4 / 412P (4.0 V12, 60 Grad), Schub (5800/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/mc12_idle.ogg"></audio><div><b>Maserati MC12 (6.0 V12, 65 Grad), Leerlauf (1300/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/mc12_low.ogg"></audio><div><b>Maserati MC12 (6.0 V12, 65 Grad), Zwischenband (2674/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/mc12_mid.ogg"></audio><div><b>Maserati MC12 (6.0 V12, 65 Grad), Mittelband (5500/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/mc12_high.ogg"></audio><div><b>Maserati MC12 (6.0 V12, 65 Grad), oberes Band (7800/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/mc12_over.ogg"></audio><div><b>Maserati MC12 (6.0 V12, 65 Grad), Schub (5500/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
@@ -4981,26 +5004,29 @@
       <div class="opt-row"><div class="opt-label">Physik-Modus aktivieren<small>Aus: rohe Stickstellung, ohne Gänge.</small></div><label class="tgl"><input type="checkbox" id="phys-enable" checked><span></span></label></div>
       
       <div class="opt-row"><div class="opt-label">Vibration
-          <small>R&uuml;ckmeldung im Controller bei Gangwechsel, ABS, Aufprall und im
-          Boxenstopp. Das Handy vibriert nicht mit, das Protokoll kennt daf&uuml;r
+          <small>R&uuml;ckmeldung im Controller bei Gangwechsel, ABS, Aufprall, im
+          Boxenstopp und neben der Bahn. Standard aus, weil nicht jeder Controller es kann und
+          ein Dauerbrummen im Gel&auml;nde Geschmackssache ist. Unabh&auml;ngig von der
+          Drosselung darunter. Das Handy vibriert nicht mit, das Protokoll kennt daf&uuml;r
           nichts.</small></div>
-        <label class="tgl"><input type="checkbox" id="setting-vibration" checked><span></span></label></div>
-      <!-- Direkt unter der Vibration, weil die eine Haelfte dieser Option daran haengt -
+        <label class="tgl"><input type="checkbox" id="setting-vibration"><span></span></label></div>
+      <!-- Direkt unter der Vibration, weil beide dieselbe Lage beschreiben - gekoppelt sind
+           sie seit v0.4.55 aber nicht mehr -
            und das steht auch im Kleintext. Ohne den Hinweis waere es die naechste
            Stellschraube, die scheinbar nichts tut. -->
-      <div class="opt-row"><div class="opt-label">Controllervibration und Drosselung
-          jenseits Fahrbahn
+      <div class="opt-row"><div class="opt-label">Drosselung jenseits der Fahrbahn
           <!-- Absichtlich OHNE <code> und <b> im Inneren: jedes davon teilt den Satz in
                einen eigenen Textknoten, und das Woerterbuch schlaegt Textknoten nach. Mit
                Auszeichnung zerfiel dieser Satz in fuenf Bruchstuecke, und jede spaetere
                Umformulierung haette alle fuenf Schluessel gleichzeitig gebrochen - sichtbar
                nur daran, dass im englischen Modus mitten im Satz Deutsch steht. -->
-          <small>Meldet Byte 12 den Wert 0x00, ist das Auto neben der Bahn: dann brummt
-          der Controller leicht und das Gas wird auf 45 % gedeckelt. Wirkt nur in der
-          Stellung &bdquo;Auf der
-          Bahn&ldquo;: im Ausdruck-Modus ist der Streckensensor aus und Byte 12 st&auml;nde
-          dauernd auf 0x00. Der Brummteil braucht zus&auml;tzlich den Schalter
-          &bdquo;Vibration&ldquo; dar&uuml;ber.</small></div>
+          <small>Meldet Byte 12 den Wert 0x00, ist das Auto neben der Bahn: dann wird das
+          Gas auf 45 % gedeckelt. Das leichte Brummen dazu h&auml;ngt allein am Schalter
+          &bdquo;Vibration&ldquo; dar&uuml;ber, dieser hier allein an der Drosselung
+          &ndash; bis v0.4.55 war es eine Option mit zwei H&auml;lften, und wer die
+          Drosselung abschaltete, verlor auch die R&uuml;ckmeldung. Wirkt nur in der Stellung
+          &bdquo;Auf der Bahn&ldquo;: im Ausdruck-Modus ist der Streckensensor aus und Byte 12
+          st&auml;nde dauernd auf 0x00.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-offtrack" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Drosselung abseits beginnt nach
           <small>So lange muss das Auto DURCHGEHEND abseits melden, bevor gedrosselt wird.
@@ -5249,7 +5275,7 @@
           zur stärker abgenutzten Seite, weil die weniger Querkraft erzeugt. Der
           Mittelwert bleibt derselbe: der Schalter macht nicht mehr Verschleiß, sondern
           ungleichen.</small></div>
-        <label class="tgl"><input type="checkbox" id="setting-tyre-asym"><span></span></label></div>
+        <label class="tgl"><input type="checkbox" id="setting-tyre-asym" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Reifendruck (bar)
           <small>Wenig Druck hei&szlig;t mehr Walkarbeit: schnellere Erw&auml;rmung, mehr
           Verschlei&szlig;, besserer Kaltgriff. Viel Druck umgekehrt. Jede Abweichung von
@@ -5374,7 +5400,7 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="rain-volume-val">25%</span>
         </div></div>
-      <div class="opt-row"><div class="opt-label">Reifenquietschen<small>Am Grenzbereich, im Stil von Gran Turismo: Lautst&auml;rke und Tonh&ouml;he laufen stetig mit der Querausnutzung des Reibkreises, Einsatz ab 85 Prozent. Es setzt absichtlich sp&auml;t ein &ndash; ein Quietschen, das bei jeder Kurve mitl&auml;uft, ist ein Dauerger&auml;usch und keine R&uuml;ckmeldung.</small></div>
+      <div class="opt-row"><div class="opt-label">Reifenquietschen<small>Am Grenzbereich, im Stil von Gran Turismo: Lautst&auml;rke und Tonh&ouml;he laufen stetig mit der Querausnutzung des Reibkreises, Einsatz ab 60 Prozent &ndash; also ab etwa 98 km/h bei vollem Lenkausschlag, ab 197 km/h bei halbem, und bei einem Viertel Ausschlag nie. Eine Haarnadel quietscht, eine lange schnelle Kurve nicht. Bis v0.4.55 stand die Schwelle bei 85 Prozent und war damit unerreichbar: gemessen kommt die Querausnutzung erst bei 265 km/h dorthin, weil der Lenkausschlag mit dem Tempo beschnitten wird. Es hat deshalb nie gequietscht.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
           <input type="range" id="tyre-volume" min="0" max="1" step="0.05" value="0.35">
@@ -6139,7 +6165,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.4.55</span></span>
+    <span class="foot-ver">v<span id="app-version">0.5.1</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -7516,7 +7542,7 @@
     "bei Bremse": "on the brake",
     "Lenkrate": "steering rate",
     "Reifenquietschen": "Tyre squeal",
-    "Am Grenzbereich, im Stil von Gran Turismo: Lautstärke und Tonhöhe laufen stetig mit der Querausnutzung des Reibkreises, Einsatz ab 85 Prozent. Es setzt absichtlich spät ein – ein Quietschen, das bei jeder Kurve mitläuft, ist ein Dauergeräusch und keine Rückmeldung.": "At the limit, in the manner of Gran Turismo: volume and pitch run continuously with the lateral usage of the friction circle, starting at 85 percent. It deliberately comes in late – a squeal that runs through every corner is background noise, not feedback.",
+    "Am Grenzbereich, im Stil von Gran Turismo: Lautstärke und Tonhöhe laufen stetig mit der Querausnutzung des Reibkreises, Einsatz ab 60 Prozent – also ab etwa 98 km/h bei vollem Lenkausschlag, ab 197 km/h bei halbem, und bei einem Viertel Ausschlag nie. Eine Haarnadel quietscht, eine lange schnelle Kurve nicht. Bis v0.4.55 stand die Schwelle bei 85 Prozent und war damit unerreichbar: gemessen kommt die Querausnutzung erst bei 265 km/h dorthin, weil der Lenkausschlag mit dem Tempo beschnitten wird. Es hat deshalb nie gequietscht.": "At the limit, in the style of Gran Turismo: volume and pitch run continuously with the lateral use of the friction circle, starting at 60 per cent – so from about 98 km/h at full lock, from 197 km/h at half, and at a quarter of lock never. A hairpin squeals, a long fast corner does not. Up to v0.4.55 the threshold sat at 85 per cent and was therefore unreachable: measured, the lateral use only gets there at 265 km/h, because the steering lock is cut back with speed. It therefore never squealed.",
     "Mehrspieler": "Multiplayer",
     "Sportlich, mit Simulationstiefe": "Sporty, with simulation depth",
     "Von Hand schalten, 2,9 s auf 100, Reifenverschleiß und Tankgewicht knapp zur Hälfte. Bremsfading, Windschatten und ungleicher Verschleiß sind voll an. Die harte, gegen echte Werte kalibrierte Fassung steht daneben als Realismus GT3.": "Shift by hand, 2.9 s to 100, tyre wear and fuel weight at just under half. Brake fade, dirty air and uneven wear are fully on. The hard version, calibrated against real figures, sits next to it as Realism GT3.",
@@ -7616,6 +7642,9 @@
     "Frei, volle Fahrt!": "Clear, full speed!",
     "Einführungsrunde mit Boxengassen-Tempo. Dein Auto fährt sie selbst, genau wie die Ghosts: es rollt mit an, schlängelt zum Reifenwärmen und hält die Seite seines Startplatzes, ohne dass du etwas anfassen musst – die Bremse gilt trotzdem, damit du anhalten kannst, wenn vor dir jemand steht. Im Cockpit steht dann „Einführungsrunde · Autopilot“. Frei ist es beim ersten Überfahren von Start/Ziel, von wem auch immer – ein Ghost darf es sein. Danach fährt jeder nach seinen Einstellungen, und die Lenkung ist wieder deine. Nur in der Stellung „Auf der Bahn“: im Ausdruck-Modus hält sich das Auto nicht selbst auf der Bahn, und ein Autopilot ohne Querregelung würde es in die Bande fahren.": "Formation lap at pit-lane pace. Your car drives it itself, exactly like the ghosts: it rolls away with the field, weaves to warm the tyres and holds the side of its grid slot without you touching anything – the brake still works, so you can stop if someone is stranded ahead of you. The cockpit then reads “Formation lap · Autopilot”. It is released the first time anyone crosses start/finish – a ghost may do it. After that everyone drives to their own settings and the steering is yours again. Only in the “On the track” position: in printout mode the car does not hold the track by itself, and an autopilot without lateral control would drive it into the barrier.",
     "L1: Bahn oder Ausdruck · R1: Automatik oder von Hand · Kreuz: gelbe Flagge (1 s halten) · Select: Wetter umschalten": "L1: track or printout · R1: automatic or manual · Cross: yellow flag (hold for 1 s) · Select: switch the weather",
+    "Drosselung jenseits der Fahrbahn": "Throttling off the track",
+    "Meldet Byte 12 den Wert 0x00, ist das Auto neben der Bahn: dann wird das Gas auf 45 % gedeckelt. Das leichte Brummen dazu hängt allein am Schalter „Vibration“ darüber, dieser hier allein an der Drosselung – bis v0.4.55 war es eine Option mit zwei Hälften, und wer die Drosselung abschaltete, verlor auch die Rückmeldung. Wirkt nur in der Stellung „Auf der Bahn“: im Ausdruck-Modus ist der Streckensensor aus und Byte 12 stände dauernd auf 0x00.": "If byte 12 reports 0x00 the car is off the track: the throttle is then capped at 45 %. The gentle rumble that goes with it hangs on the “Vibration” switch above and this one only on the throttling – up to v0.4.55 it was one option with two halves, and switching the throttling off also cost you the feedback. Only takes effect in the “On the track” position: in printout mode the track sensor is off and byte 12 would sit at 0x00 permanently.",
+    "Rückmeldung im Controller bei Gangwechsel, ABS, Aufprall, im Boxenstopp und neben der Bahn. Standard aus, weil nicht jeder Controller es kann und ein Dauerbrummen im Gelände Geschmackssache ist. Unabhängig von der Drosselung darunter. Das Handy vibriert nicht mit, das Protokoll kennt dafür nichts.": "Feedback in the controller on gear changes, ABS, impacts, in the pit stop and off the track. Off by default, because not every controller can do it and a constant rumble in the gravel is a matter of taste. Independent of the throttling below. The phone does not vibrate along, and the protocol knows nothing for it.",
   };
 
   // ============================================================================
@@ -8139,7 +8168,9 @@
     // ihm etwas nicht - was es auch tat, nur nicht in der Richtung.
     if (throttle > 0) throttle *= topSpeedScale;
     throttle *= batteryCompensationScale();
-    throttle = applyFuelAndDamage(throttle);
+    // NUR den Verbrauch zaehlen. Die Drosselung sitzt in physicsStep(), also vor der
+    // Physik - sonst zeigt der Tacho die Simulation und das Auto bekommt weniger.
+    fuelTankTick(throttle);
     updateEngineSound(throttle);
     const payload = buildCommandPacket(steer, throttle);
     recWrite(payload);
@@ -8768,6 +8799,10 @@
   const GEARBOXES = {
     gt3: { label: 'GT3, 6-Gang sequenziell', gears: GT3_GEARS,
            upshiftRpm: 8800, downshiftRpm: 4200, shiftMs: 120 },
+    // 40 ms sind die Angabe eines nahtlosen Getriebes. Angekommen ist davon nichts: das
+    // sind 0,89 Sendetakte, und eine Schaltpause unter einem Paket faellt zwischen zwei
+    // Takte. applyGearbox() deckelt deshalb auf den Sendetakt - die Angabe bleibt hier
+    // stehen, damit man sieht, dass die Grenze beim Programm liegt und nicht beim Getriebe.
     f1: { label: 'Formel 1, 8-Gang', gears: F1_GEARS,
           upshiftRpm: 8850, downshiftRpm: 5600, shiftMs: 40 },
     p412: { label: 'Ferrari 412P, 5-Gang Transaxle', gears: P412_GEARS,
@@ -9647,7 +9682,11 @@
       cfg.ratioRef = cfg.gears[cfg.gears.length - 1].ratio;
       cfg.upshiftRpm = G.upshiftRpm;
       cfg.downshiftRpm = G.downshiftRpm;
-      cfg.shiftMs = G.shiftMs;
+      // MINDESTENS EIN SENDETAKT. Gemessen sind die 40 ms des F1-Getriebes 0,89 Takte bei
+      // 45 ms Sendeintervall - eine Schaltpause, die kuerzer ist als ein Paket, kann zwischen
+      // zwei Takten komplett verschwinden, und dann sieht weder die Simulation noch das Auto
+      // etwas davon. Die Tabelle behaelt die Angabe; hier steht die Grenze des Programms.
+      cfg.shiftMs = Math.max(CONTROL_SEND_INTERVAL_MS, G.shiftMs);
       // Von acht auf fuenf Gaenge zeigt der eingelegte Gang sonst ins Leere, und
       // gearRatio() liest undefined.ratio.
       this.state.currentGear = Math.min(this.state.currentGear, cfg.gears.length - 1);
@@ -11764,8 +11803,20 @@
   // (gemessen 0 Lesungen in 551 Fahrmeldungen), Byte 12 steht dort praktisch immer auf
   // 0x00 - die Drosselung wuerde also IMMER greifen, und man wuerde den Fehler beim Motor
   // suchen.
+  // ZWEI FRAGEN, die vorher eine waren:
+  //
+  //   abseitsJetzt()  - liegt das Auto neben der Bahn? Eine Tatsache, kein Schalter.
+  //   offtrackGilt()  - soll die DROSSELUNG greifen? Die Tatsache plus ihr eigener Schalter.
+  //
+  // Getrennt, weil das Brummen bis v0.4.55 in derselben Klammer sass: wer die Drosselung
+  // abschaltete, verlor auch die Rueckmeldung, obwohl er sie nicht abgeschaltet hatte. Das
+  // Brummen haengt jetzt allein am Vibrationsschalter, die Drosselung allein am eigenen.
+  function abseitsJetzt() {
+    return offtrackAktiv && trackMode === 'on';
+  }
+
   function offtrackGilt() {
-    return offtrackEffekt && offtrackAktiv && trackMode === 'on';
+    return offtrackEffekt && abseitsJetzt();
   }
 
   function offtrackAnzeige() {
@@ -11809,6 +11860,9 @@
     });
   }
 
+  // Der laufende Wert des Tankdeckels, siehe fuelCutTarget() in 70-race.js. 1 = offen.
+  let fuelCut = 1;
+
   function physicsStep() {
     if (!physicsEnabled) { physLastTime = null; return; }
     const now = performance.now();
@@ -11816,7 +11870,15 @@
     physLastTime = now;
     // Derated, not raw. Braking is left alone: brakes do not care how much fuel is left,
     // and a damaged car that cannot slow down would be the opposite of a limp mode.
-    let rawThrottle = fuelDamageDerate(Math.max(0, throttleY));
+    //
+    // DIE RAMPE DES LEEREN TANKS laeuft hier, weil dies die einzige Stelle mit einem
+    // verlaesslichen dt ist - dasselbe Argument, das weiter unten fuer die gefahrene Strecke
+    // steht. Ein Tank, der leer wird, nimmt das Gas damit ueber knapp zwei Sekunden weg
+    // statt in einem Takt, und die Simulation rollt aus.
+    const cutZiel = fuelCutTarget();
+    if (cutZiel > fuelCut) fuelCut = cutZiel;   // Tanken wirkt sofort
+    else fuelCut += (cutZiel - fuelCut) * (1 - Math.exp(-dt / FUEL_CUT_TAU));
+    let rawThrottle = fuelDamageDerate(Math.max(0, throttleY), fuelCut);
     let rawBrake = Math.max(0, -throttleY);
     let steer = steerX;
     // Bei gelber Flagge und in der Einfuehrungsrunde faehrt das Auto selbst. Siehe
@@ -11826,8 +11888,13 @@
     // Abseits der Bahn gedeckelt, und zwar VOR der Physik. Genau das war der Fehler beim
     // Gasfaktor: er wirkte nach der Physik auf die Ausgabe, der Tacho zeigte volles Tempo
     // und das Auto fuhr langsamer. Hier sagen Anzeige und Auto dasselbe.
+    // Die Drosselung an ihrem Schalter ...
     if (offtrackGilt()) {
       rawThrottle = Math.min(rawThrottle, OFFTRACK_GAS);
+    }
+    // ... und das Brummen an seinem. padRumble() prueft rumbleOn selbst, also steht hier nur
+    // die Frage, OB gebrummt werden soll - nicht, ob der Nutzer Vibration will.
+    if (abseitsJetzt()) {
       const jetzt = Date.now();
       if (jetzt - offtrackRumbleAt >= OFFTRACK_RUMBLE_MS - 40) {
         offtrackRumbleAt = jetzt;
@@ -14074,6 +14141,7 @@
     if (raceState !== 'racing' && raceState !== 'finishing') { r.lapStart = now; return; }
     // During the formation lap this crossing is the START of the race, not a lap.
     if (raceFormationLap) { endFormationLap(); return; }
+    const warFinishing = raceState === 'finishing';
     if (r.lapStart !== null) {
       const ms = now - r.lapStart, offs = r.offLap || 0;
       r.laps.push({ lap: r.laps.length + 1, ms, off: offs });
@@ -14083,6 +14151,19 @@
     }
     r.offLap = 0;
     r.lapStart = now;
+    // DIE ZIELFLAGGE, wenn kein Fahrer im Feld ist.
+    //
+    // raceClockTick() setzt bei erreichtem Limit 'finishing', aber finishRace() rief bis
+    // v0.4.55 nur playerLapCrossed(). Fahren NUR Ghosts, gibt es niemanden, der die Flagge
+    // holt - das Rennen blieb fuer immer in 'finishing' stehen, mit "Letzte Runde" im HUD.
+    // Gemeldet als "wenn nur Ghosts ein Rennen fahren, hoeren sie nach den max Runden nicht
+    // auf".
+    //
+    // NUR OHNE FAHRER, und das ist die Bedingung und keine Vorsicht: ist ein Auto auf
+    // "Steuern", darf die Flagge nicht fallen, weil ein Ghost zuerst ueber die Linie kommt -
+    // dann waere die angefangene Runde des Fahrers abgeschnitten. Mit Fahrer gilt weiter
+    // dessen Ueberfahrt, genau wie vorher.
+    if (warFinishing && !garage.some(c => c.role === 'player')) finishRace();
   }
 
   // ---- Testtaste Q: eine Runde zaehlen, ohne sie zu fahren ----
@@ -16769,7 +16850,24 @@
   // Two beeps at ten per cent, one at twenty: the count carries the urgency, so the driver
   // does not have to look away from the track to learn which mark went by.
   const FUEL_WARNINGS = [{ pct: 20, beeps: 1 }, { pct: 10, beeps: 2 }];
-  function applyFuelAndDamage(throttle) {
+  // NUR NOCH DER VERBRAUCH, keine Drosselung mehr. Bis v0.4.55 gab diese Funktion am Ende
+  // fuelDamageDerate(throttle) zurueck, und der Aufrufer in sendControlValue schrieb das
+  // Ergebnis auf das AUSGEHENDE BYTE - nach der Physik.
+  //
+  // Der Kommentar bei fuelDamageDerate begruendete die Aufspaltung damit, dass die
+  // Drosselung "zweimal je Takt gefragt werden kann, ohne den Tank zweimal zu leeren".
+  // Genau das war der Fehler: zweimal gefragt heisst zweimal gedrosselt. physOutThrottle ist
+  // motorPWM, also simulierte Geschwindigkeit durch Hoechstgeschwindigkeit - wird der noch
+  // multipliziert, sagt das Byte etwas anderes als der Tacho. Dieselbe Fehlerklasse, die beim
+  // Gasfaktor schon aufgeschrieben ist.
+  //
+  // Jetzt drosselt nur physicsStep(), also VOR der Physik. Damit fallen Tempo, Drehzahl,
+  // Gang und Motorton von selbst mit - sie haengen alle an der simulierten Geschwindigkeit -
+  // und das Byte bleibt der Anteil, den der Tacho zeigt.
+  //
+  // Der Verbrauch bleibt unveraendert an derselben Groesse wie vorher: eine andere Bezugsgroesse
+  // haette die Tankreichweite still verschoben, und die ist gegen das Fahren eingestellt.
+  function fuelTankTick(throttle) {
     const now = Date.now();
     if (fuelLastTickTime !== null && pitState !== 'servicing') {
       const dt = Math.min(0.5, (now - fuelLastTickTime) / 1000);
@@ -16798,8 +16896,6 @@
     // Hand the tank level to the physics: the engine must not reach out for globals.
     physEngine.state.fuelLoad = Math.max(0, Math.min(1, fuel / 100));
     fuelLastTickTime = now;
-
-    return fuelDamageDerate(throttle);
   }
 
   // The derate ALONE, with no side effects, so it can be asked twice per tick without
@@ -16807,9 +16903,30 @@
   // RAW stick value into the simulation while this reduction only ever reached the car, so
   // an empty tank still read 200 km/h on the display and still set lap times as if nothing
   // were wrong. The car crawled, the simulation did not know.
-  function fuelDamageDerate(throttle) {
+  // Der Deckel, den ein leerer Tank aufs Gas legt, und die Zeitkonstante, mit der er
+  // zugeht. Ohne sie faellt die Gaseingabe in EINEM Takt von 1,0 auf 0,15 - das war der
+  // Sprung, der als "abrupt abbremsen" gemeldet war. Mit ihr geht das Gas ueber knapp zwei
+  // Sekunden zurueck: der Motor laeuft trocken, statt abgeschaltet zu werden, und die
+  // Simulation rollt von selbst aus.
+  //
+  // NUR IN EINE RICHTUNG langsam. Zugehen darf Zeit brauchen, Aufgehen nicht: nach dem
+  // Tanken muss das Gas sofort da sein, sonst faehrt man zwei Sekunden lang aus der Box,
+  // ohne zu wissen warum.
+  const FUEL_CUT_EMPTY = 0.15;
+  const FUEL_CUT_TAU = 0.6;
+  function fuelCutTarget() { return fuel <= 0 ? FUEL_CUT_EMPTY : 1; }
+
+  // `cut` ist ein ARGUMENT und kein Zustand hier drin: diese Funktion ist
+  // seitenwirkungsfrei, und das soll sie bleiben. Die Rampe laeuft in physicsStep(), also an
+  // der einzigen Stelle mit einem verlaesslichen dt. Waere sie hier, haette sie der
+  // Notlauf-Test verbogen - der ruft zweimal synchron hintereinander, und dort ist dt null.
+  //
+  // Ohne Argument gilt der Sofortwert. Damit sagt fuelDamageDerate(1) bei leerem Tank
+  // weiterhin genau FUEL_CUT_EMPTY, und der vorhandene Test prueft unveraendert weiter.
+  function fuelDamageDerate(throttle, cut) {
     let out = throttle;
-    if (fuel <= 0) out = Math.max(-0.15, Math.min(0.15, out));
+    const c = cut === undefined ? fuelCutTarget() : cut;
+    if (c < 1) out = Math.max(-c, Math.min(c, out));
     out *= 1 - (damage / 100) * 0.3;
     // Totalled: limp home. Deliberately still drivable so the car never strands itself
     // out on the track — a pit stop clears it.
@@ -17225,7 +17342,25 @@
     // Gehoer geprueft ist keiner von ihnen. Damit sind es vierzehn Motoren und 56 Schleifen.
     'gt40', 'lolat70', 'f330p4', 'mc12',
   ];
-  const BANDS = ['idle', 'mid', 'high'];
+  // KEINE FESTE LISTE MEHR. Bis v0.4.55 stand hier ['idle','mid','high'], und genau diese
+  // Liste war die Annahme, die den Ton kaputt gemacht hat: sie kannte drei Namen, also konnte
+  // es kein viertes Band geben - waehrend die Rate nur eine Oktave erlaubt und die drei
+  // Baender 2,2 Oktaven auseinanderlagen.
+  //
+  // Jetzt sagt loops.json, welche Leistungsbaender ein Motor hat, und der Generator rechnet
+  // die Leiter so, dass kein Nachbarabstand zu gross wird. Verschiedene Motoren duerfen
+  // damit verschieden VIELE Baender haben - der F1 braucht eines mehr, weil er bei 4200
+  // leerlaeuft und der Drehzahlmesser trotzdem auf 1500 faellt.
+  //
+  // 'over' ist das einzige, was hier NICHT dazugehoert: es laeuft parallel nach Last und
+  // nicht in der Drehzahl-Ueberblendung.
+  const OVER_BAND = 'over';
+  function powerBands(car) {
+    const b = sampleEngine.buffers[car];
+    if (!b) return [];
+    return Object.keys(b).filter(k => k !== OVER_BAND)
+      .sort((x, y) => b[x].baseRpm - b[y].baseRpm);
+  }
   let engineVolume = 0.7;
   const sampleEngine = { buffers: {}, rpmScale: {}, nodes: null, over: null, car: null,
                          master: null, ready: false, loading: false };
@@ -17253,7 +17388,11 @@
         // 'over' is the closed-throttle loop and is OPTIONAL: the Corvette profile is cut
         // from a recording that has no overrun material, so its absence must not fail the
         // load. Everything the generator makes has one.
-        for (const band of BANDS.concat(['over'])) {
+        // AUS DEM MANIFEST, nicht aus einer festen Liste: welche Baender ein Motor hat,
+        // sagt loops.json. Ein Motor mit einem Band mehr - der F1 braucht eines, weil er bei
+        // 4200 leerlaeuft und der Drehzahlmesser trotzdem auf 1500 faellt - wurde von der
+        // festen Liste sonst stillschweigend beschnitten.
+        for (const band of Object.keys(manifest[car].loops || {})) {
           const loop = manifest[car].loops[band];
           if (!loop) continue;
           const r = await fetch('audio/' + loop.file);
@@ -17518,7 +17657,25 @@
   //    Kurve mitlaeuft, ist ein Dauergeraeusch und keine Rueckmeldung - und die Aussage
   //    "du bist am Limit" ist nur etwas wert, wenn sie nicht immer gilt.
   let tyreNode = null, tyreGain = null;
-  const TYRE_SQUEAL_START = 0.85;
+  // DAS GESETZ, analytisch und gemessen deckungsgleich. latUse ist |Lenkung| mal
+  // Tempoanteil mal corneringLoad, und corneringLoad ist 1,8 - gerade so gewaehlt, dass
+  // Vollausschlag bei Hoechstgeschwindigkeit das Reibkreisbudget saettigt. Bei vollem
+  // Ausschlag gilt damit
+  //
+  //     latUse = kmh / 295 * 1,8 = kmh * 0,0061
+  //
+  // und die Messung trifft das genau: 80 km/h 0,49 | 120 0,73 | ab 164 gesaettigt bei 1,0.
+  //
+  // DIE SCHWELLE STAND AUF 0,85. Das heisst 139 km/h bei vollem Ausschlag - klingt
+  // erreichbar, ist es aber nicht: speedSteerReduction schneidet den Ausschlag mit dem Tempo,
+  // sodass oben gar kein Vollausschlag mehr ankommt. Gemessen wurde 0,85 erst bei 265 km/h.
+  // Deshalb hat es nie gequietscht.
+  //
+  // 0,6 heisst: ab etwa 98 km/h bei vollem Ausschlag, ab 197 km/h bei halbem, und bei einem
+  // Viertel Ausschlag nie (dort ist das Maximum 0,45). Eine Haarnadel quietscht, eine lange
+  // schnelle Kurve nicht. Ein Selbsttest haelt fest, dass die Schwelle ERREICHBAR bleibt -
+  // das Fehlen genau dieser Pruefung war der eigentliche Fehler.
+  const TYRE_SQUEAL_START = 0.6;
   function setTyreSqueal(nutzung) {
     if (!fxBuffers.tyre || !audioCtx || !soundEnabled) return;
     // Unterhalb der Schwelle auf null abbilden, statt die Schwelle im Nenner zu vergessen:
@@ -17768,9 +17925,11 @@
       sampleEngine.master.gain.value = 0;
       sampleEngine.master.connect(audioCtx.destination);
     }
-    // All three start together so they stay phase-consistent for the whole session.
+    // ALLE Leistungsbaender starten zusammen, damit sie die ganze Sitzung phasengleich
+    // bleiben - wieviele es sind, sagt der Motor selbst. Aufsteigend nach Basisdrehzahl,
+    // weil sampleWeights genau das voraussetzt.
     const t0 = audioCtx.currentTime + 0.04;
-    sampleEngine.nodes = BANDS.map(band => {
+    sampleEngine.nodes = powerBands(car).map(band => {
       const info = sampleEngine.buffers[car][band];
       const src = audioCtx.createBufferSource();
       src.buffer = info.buffer;
@@ -17802,12 +17961,28 @@
 
   // Triangular crossfade between the three anchors. The weights always sum to exactly 1,
   // so moving through the rev range can never produce a hole or a bulge in loudness.
+  // BELIEBIG VIELE BAENDER, nicht mehr genau drei. Seit v0.4.55 gibt es vier, und die
+  // Zahl fest zu verdrahten war der Grund, warum ein viertes vorher nicht ging.
+  //
+  // Die Regel bleibt dieselbe: unterhalb des ersten und oberhalb des letzten Bandes gilt
+  // dieses allein, dazwischen ueberblenden genau die zwei Nachbarn linear. Damit hat in
+  // jedem Abschnitt nur ein Paar Gewicht - und an den Raendern, wo die Abspielrate an ihren
+  // Anschlag kommt, ist das Gewicht des fernen Bandes null.
+  //
+  // `b` MUSS aufsteigend sein. Die Reihenfolge kommt aus loops.json, also aus der
+  // Reihenfolge im Generator; verlassen wird sich darauf nicht - der Aufrufer sortiert.
   function sampleWeights(rpm, b) {
-    const w = [0, 0, 0];
-    if (rpm <= b[0]) w[0] = 1;
-    else if (rpm >= b[2]) w[2] = 1;
-    else if (rpm <= b[1]) { const t = (rpm - b[0]) / (b[1] - b[0]); w[0] = 1 - t; w[1] = t; }
-    else { const t = (rpm - b[1]) / (b[2] - b[1]); w[1] = 1 - t; w[2] = t; }
+    const w = b.map(() => 0);
+    if (!b.length) return w;
+    if (rpm <= b[0]) { w[0] = 1; return w; }
+    if (rpm >= b[b.length - 1]) { w[b.length - 1] = 1; return w; }
+    for (let i = 1; i < b.length; i++) {
+      if (rpm <= b[i]) {
+        const t = (rpm - b[i - 1]) / (b[i] - b[i - 1]);
+        w[i - 1] = 1 - t; w[i] = t;
+        return w;
+      }
+    }
     return w;
   }
 
@@ -20021,6 +20196,26 @@
   const SPICE_ATTACK_MS = 2600;
   const SPICE_ATTACK_ARM_MS = 900;  // so lange muss man kleben, bevor es losgeht
   const SPICE_ATTACK_P = 0.45;      // und dann wird gewuerfelt, sonst ist es kein Rennen
+  // WIE NAH "in Reichweite" ist, und das MUSS ueber SPICE_GAP_MIN liegen.
+  //
+  // Vorher stand hier 0,9 als Zahl im Code, waehrend der Abstandhalter ab 0,7 lupft (plus
+  // Zuschlag beim Annaehern). Das Angriffsfenster war damit 0,2 Kacheln breit, und der
+  // Abstandhalter druckte den Verfolger genau daraus heraus - er pendelte um 0,8, wurde
+  // gelupft, fiel zurueck, und eine Attacke kam fast nie zustande. Zwei Regeln, die
+  // dasselbe Band bestreiten.
+  //
+  // 1,3 loest es an der richtigen Stelle: der Abstandhalter sagt weiter "nicht kleben", die
+  // Attacke sagt "du bist in Reichweite". Waehrend einer Attacke ist der Abstandhalter aus,
+  // der Verfolger darf also heran - genau dafuer ist die Ausnahme dort.
+  const SPICE_ATTACK_RANGE = 1.3;
+  // WIE OFT gewuerfelt wird. Vorher alle 4000 ms: bei Wuerze 0,4 ist die
+  // Wahrscheinlichkeit 0,18 je Versuch, also eine Attacke pro 22 Sekunden durchgehenden
+  // Klebens. Das liest sich nicht als Rennen, sondern als Kolonne.
+  //
+  // 1200 ms ergeben bei Wuerze 0,4 eine Wartezeit von 6,7 Sekunden und bei voller Wuerze
+  // 2,7 - oft genug, um es zu sehen, selten genug, dass es nicht im Sekundentakt zerrt. Die
+  // Wahrscheinlichkeit selbst bleibt, damit die Wuerze weiter der eine Regler ist.
+  const SPICE_ATTACK_RETRY_MS = 1200;
   const SPICE_ATTACK_GAIN = 0.07;
   // ERST AUSWEICHEN, DANN BESCHLEUNIGEN. Vorher kamen Seitenversatz und Temposchub
   // gleichzeitig, also schob der Angreifer, solange er noch genau hinter dem anderen lag -
@@ -20189,7 +20384,7 @@
     }
 
     // 4. Attacke
-    if (ah && ah.gap <= 0.9) {
+    if (ah && ah.gap <= SPICE_ATTACK_RANGE) {
       if (!g.closeSince) g.closeSince = now;
     } else {
       g.closeSince = 0;
@@ -20226,7 +20421,7 @@
         // keine Karte und schliesst genau diesen Fall.
         && ghostTileInfo(car.tileCode).curve === 0
         && now > (g.passBlockUntil || 0)
-        && now - (g.attackTriedAt || 0) > 4000) {
+        && now - (g.attackTriedAt || 0) > SPICE_ATTACK_RETRY_MS) {
       g.attackTriedAt = now;
       if (Math.random() < SPICE_ATTACK_P * ghostCfg.spice) {
         // attackUntil bleibt als "eine Sequenz laeuft"-Marke; die Phasen entscheiden.
@@ -21046,8 +21241,27 @@
     // Faehrt es noch ueber Kacheln? Dann ist es auf der Bahn. g.tileStart wird bei jedem
     // Kachelwechsel gesetzt, ist also der Zeitpunkt des letzten bewiesenen Kontakts.
     const zaehlerLaeuft = g.tileStart && (now - g.tileStart) < GHOST_OFFTRACK_CONFIRM_MS;
-    if ((ghostCfg.needCode ? (offConfirmed || noCode) : (offConfirmed && !noCode))
-        && !zaehlerLaeuft && !car.parked) {
+    // DIE BEWEISLAGE ENTSCHEIDET, und bis v0.4.55 tat sie es nicht - der Ghost blieb neben
+    // der Bahn nicht stehen. Zwei Vetos konnten den Halt verhindern, und mindestens eines
+    // griff immer:
+    //
+    //   noCode wird nach GHOST_OFFTRACK_MS ohne GUELTIGEN Code wahr, und car.lastCodeAt wird
+    //   bei 0x00 ausdruecklich NICHT gesetzt (siehe recNotify). Ein Auto, das lange genug
+    //   neben der Bahn liegt, erfuellt "!noCode" also nie mehr - und mit needCode AUS lautete
+    //   die Bedingung (offConfirmed && !noCode). Nach 1,5 s war der Halt unerreichbar.
+    //
+    //   zaehlerLaeuft schaut auf den KACHELZAEHLER. Zaehlt der neben der Bahn weiter, ist das
+    //   Veto dauerhaft aktiv. Ob er das tut, kann diese App nicht entscheiden: es haengt an
+    //   der Firmware, und ich habe es nicht gemessen.
+    //
+    // Also nach der Beweislage getrennt, statt die Vetos zu raten:
+    //
+    //   offConfirmed ist ein POSITIVES ZEUGNIS - 0x00 steht 900 ms, und einzelne 0x00-Pakete
+    //   zwischen zwei Kacheln dauern im Median 32 ms. Das genuegt allein.
+    //   noCode ist das FEHLEN eines Zeugnisses und behaelt beide Gegenproben: nur mit
+    //   needCode, und nur wenn der Kachelzaehler auch steht.
+    const parken = offConfirmed || (ghostCfg.needCode && noCode && !zaehlerLaeuft);
+    if (parken && !car.parked) {
       parkCar(car, 'Bahn verlassen');
     }
     const offTrack = !!car.parked;
@@ -22717,6 +22931,61 @@
     // "kommt nicht vorbei" - der Abbruchfall, und der ist der wichtigere: ohne Abbruch klebt
     // ein Verfolger neben dem anderen, bis die Uhr ablaeuft, und genau dort beruehren sie
     // sich.
+    // Die Groessen, aus denen folgt, ob ueberhaupt ueberholt wird. Herausgegeben und nicht
+    // im Test abgeschrieben: es sind Konstanten, und eine Abschrift laeuft auseinander.
+    // Die Ueberblendung der Motorschleifen, und die eine Frage, die zaehlt: klebt bei
+    // irgendeiner Drehzahl eine HOERBARE Schleife am Ratenanschlag? Genau das war der
+    // Fehler, und genau das sieht man an den Zahlen nicht, wenn man sie einzeln ansieht.
+    // `basen` als ARGUMENT und nicht aus den geladenen Puffern: die kommen erst nach einer
+    // Nutzergeste, und ein Test, der ohne Klick immer ueberspringt, prueft nie. Der Aufrufer
+    // holt sie aus loops.json und kann damit ALLE Motoren durchgehen statt nur den gewaehlten.
+    sndBandCheck(basenRein) {
+      const basen = (basenRein || []).slice().sort((a, b) => a - b);
+      if (basen.length < 2) return { fehlt: 'weniger als zwei Baender' };
+      // DAS MASS IST DIE GEWICHTETE VERSTIMMUNG, nicht "am Anschlag oder nicht". Eine
+      // Schleife, die 2,04 statt 2,00 spielen soll, ist zwei Prozent daneben - das hoert
+      // niemand. Eine, die 0,36 spielen soll und auf 0,50 geklemmt wird, ist eine halbe
+      // Oktave daneben, und DAS war der gemeldete Fehler. Gewichtet mit der Lautstaerke des
+      // Bandes, denn eine Verstimmung bei neun Prozent Gewicht ist eine andere Sache als
+      // dieselbe bei hundert.
+      //
+      //   verlangte Rate / geklemmte Rate, in Oktaven, mal Gewicht
+      let schlimmst = 0, wo = null;
+      for (let rpm = IDLE_RPM; rpm <= REDLINE_RPM; rpm += 50) {
+        const w = sampleWeights(rpm, basen);
+        for (let i = 0; i < basen.length; i++) {
+          if (w[i] <= 0.02) continue;
+          const will = rpm / basen[i];
+          const kann = Math.max(0.5, Math.min(2.0, will));
+          const fehler = w[i] * Math.abs(Math.log2(kann / will));
+          if (fehler > schlimmst) {
+            schlimmst = fehler;
+            wo = { rpm, band: i, gewicht: +w[i].toFixed(2), will: +will.toFixed(2),
+                   kann: +kann.toFixed(2), oktaven: +Math.abs(Math.log2(kann / will)).toFixed(2) };
+          }
+        }
+      }
+      return { basen, verstimmung: +schlimmst.toFixed(4), schlimmste: wo,
+               // Der groesste Sprung zwischen zwei Nachbarn, in Oktaven.
+               oktaven: +Math.max.apply(null, basen.slice(1).map(
+                 (b, i) => Math.log2(b / basen[i]))).toFixed(2) };
+    },
+
+    ghostPassRates() {
+      const p = SPICE_ATTACK_P * ghostCfg.spice;
+      return { reichweite: SPICE_ATTACK_RANGE,
+               abstandMin: SPICE_GAP_MIN,
+               // Das Fenster, in dem der Verfolger in Reichweite ist, ohne gelupft zu werden.
+               fenster: +(SPICE_ATTACK_RANGE - SPICE_GAP_MIN).toFixed(3),
+               klebenMs: SPICE_ATTACK_ARM_MS,
+               wurfMs: SPICE_ATTACK_RETRY_MS,
+               wuerze: ghostCfg.spice,
+               p: +p.toFixed(4),
+               // Erwartete Wartezeit in Sekunden, sobald der Verfolger in Reichweite ist.
+               wartenS: p > 0 ? +(SPICE_ATTACK_RETRY_MS / 1000 / p).toFixed(1) : null,
+               sperreMs: SPICE_PASS_BLOCK_MS };
+    },
+
     ghostPassProbe(o) {
       const opt = o || {};
       const merkGarage = garage.splice(0, garage.length);
@@ -25486,8 +25755,15 @@
     if (!window.OMEGA_TEST || !OMEGA_TEST.physSteerGrip) {
       return { skip: true, mass: 'physSteerGrip nicht vorhanden' };
     }
+    // tyreAsymEffect AUS, und das schwaecht die Pruefung nicht ab: der Reifenzug bei
+    // ungleichem Verschleiss ist ein absichtlicher Lenkoffset mit eigenem Regler und eigenem
+    // Messaufbau (physTyreAsym). Er liegt auf dem uebertragenen Winkel, und dieser Test
+    // vergleicht ihn mit dem Wunsch OHNE ihn - seit der Verschleiss standardmaessig ungleich
+    // ist, meldete das "1,0 NICHT NEUTRAL". Wahr, aber nicht die Frage dieses Tests, und die
+    // ist: legt die KALIBRIERUNG bei 1,0 etwas drauf?
     const messe = (kalib, lenk) => OMEGA_TEST.physSteerGrip({
-      kmh: 60, throttle: 0, brake: 1, steering: lenk, patch: { steerCalib: kalib } });
+      kmh: 60, throttle: 0, brake: 1, steering: lenk,
+      patch: { steerCalib: kalib, tyreAsymEffect: 0 } });
     const proben = [1, 1.5, 2, 2.5, 3].map(k => messe(k, 1));
     if (proben[0].winkel === undefined) return { skip: true, mass: 'winkel nicht herausgegeben' };
     let gedeckelt = true, monoton = true;
@@ -26183,6 +26459,165 @@
     }
   });
 
+
+
+  // ---- Motorschleifen: keine hoerbare Schleife am Ratenanschlag ----
+  //
+  // DER BEFUND, der diesen Test noetig gemacht hat, und er war an den einzelnen Zahlen nicht
+  // zu sehen: die Abspielrate ist auf [0,5 .. 2,0] geklemmt, also eine Oktave nach jeder
+  // Seite. Leerlauf und Mittelband lagen beim Porsche aber 2,2 Oktaven auseinander (1200 auf
+  // 5500). Von 1500 bis 2750 klebte damit immer mindestens ein HOERBARES Band am Anschlag,
+  // und bei 5000 trug das Leerlaufband noch 12 Prozent Gewicht bei einer Rate, die auf ein
+  // Drittel des Verlangten geklemmt war. Gemeldet als "am Anfang des Anfahrens klingt der Ton
+  // komisch, das sind zwei Toene, die nicht zusammenpassen".
+  //
+  // Geprueft wird das ganze Drehzahlband in 50er-Schritten, und die Aussage ist absolut:
+  // NULL geklemmte hoerbare Baender. Dazu der groesste Abstand zwischen zwei Nachbarn, denn
+  // das ist die Groesse, die man beim naechsten neuen Motor im Auge behalten muss.
+  stAdd('Motorschleifen: kein Band am Ratenanschlag', async () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.sndBandCheck) {
+      return { skip: true, mass: 'sndBandCheck nicht vorhanden' };
+    }
+    if (location.protocol === 'file:') {
+      return { skip: true, mass: 'file://, der Browser verbietet das Laden' };
+    }
+    let manifest;
+    try { manifest = await (await fetch('audio/loops.json')).json(); }
+    catch (e) { return { skip: true, mass: 'audio/loops.json nicht ladbar' }; }
+    // Die Schranke: 0,02 Oktaven gewichtet. Zum Vergleich die gemeldeten Faelle vor der
+    // Berichtigung - f1_2026 bei 1500/min lag bei 0,47, das Leerlaufband des Porsche bei
+    // 5000/min bei 0,13. Der heutige Rest liegt bei 0,003, also um mehr als das Sechsfache
+    // darunter: zwei Prozent Verstimmung bei neun Prozent Gewicht.
+    const GRENZE = 0.02;
+    const schlecht = [];
+    let weit = 0, geprueft = 0, aergste = 0;
+    for (const key of Object.keys(manifest)) {
+      // 'over' laeuft PARALLEL nach Last und nicht in der Drehzahl-Ueberblendung - es
+      // gehoert nicht in diese Rechnung.
+      const basen = Object.keys(manifest[key].loops || {})
+        .filter(b => b !== 'over')
+        .map(b => manifest[key].loops[b].baseRpm);
+      const r = OMEGA_TEST.sndBandCheck(basen);
+      if (r.fehlt !== undefined) { schlecht.push(key + ': ' + r.fehlt); continue; }
+      geprueft++;
+      weit = Math.max(weit, r.oktaven);
+      aergste = Math.max(aergste, r.verstimmung);
+      if (r.verstimmung > GRENZE) {
+        schlecht.push(key + ': Verstimmung ' + r.verstimmung + ' bei '
+                      + JSON.stringify(r.schlimmste));
+      }
+      if (r.oktaven > 1.2) schlecht.push(key + ': Bandabstand ' + r.oktaven + ' Oktaven');
+    }
+    return { ok: schlecht.length === 0,
+             mass: geprueft + ' Motoren, groesster Bandabstand ' + weit.toFixed(2)
+                   + ' Oktaven, schlimmste gewichtete Verstimmung ' + aergste.toFixed(4)
+                   + ' (Grenze ' + GRENZE + ')'
+                   + (schlecht.length ? ' || ' + schlecht.slice(0, 2).join('; ') : '') };
+  });
+
+  // ---- Tank und Schaden drosseln GENAU EINMAL ----
+  //
+  // Bis v0.4.55 zweimal: fuelDamageDerate() vor der Physik, und applyFuelAndDamage() noch
+  // einmal auf das ausgehende Byte. physOutThrottle ist motorPWM, also der Anteil simulierte
+  // Geschwindigkeit durch Hoechstgeschwindigkeit - wird der noch multipliziert, sagt das Byte
+  // etwas anderes als der Tacho. Gemeldet als "da steht 200 km/h, aber das Auto faehrt
+  // langsam", und die Gaenge und der Ton hingen mit, weil die Drehzahl aus der simulierten
+  // Geschwindigkeit kommt.
+  //
+  // Der zweite Griff ist weg, und der Beweis dafuer ist strukturell: die Funktion, die den
+  // Verbrauch zaehlt, gibt keinen Wert mehr zurueck. Gaebe sie einen, koennte ihn jemand
+  // wieder aufs Byte schreiben.
+  stAdd('Tank: drosselt genau einmal, vor der Physik', () => {
+    if (typeof fuelTankTick !== 'function' || typeof fuelDamageDerate !== 'function') {
+      return { skip: true, mass: 'Tankfunktionen nicht erreichbar' };
+    }
+    const schlecht = [];
+    const gemerkt = fuel;
+    try {
+      // 1. Der Verbrauchszaehler gibt NICHTS zurueck.
+      fuel = 100;
+      const rueck = fuelTankTick(0);
+      if (rueck !== undefined) schlecht.push('fuelTankTick gibt ' + rueck + ' zurueck');
+      // 2. Die Drosselung selbst wirkt weiter, und zwar mit dem Deckel als Argument.
+      fuel = 0;
+      const leer = fuelDamageDerate(1);
+      const halb = fuelDamageDerate(1, 0.6);
+      fuel = 100;
+      const voll = fuelDamageDerate(1);
+      if (!(leer < voll * 0.5)) schlecht.push('leerer Tank drosselt nicht');
+      if (!(halb > leer && halb < voll)) {
+        schlecht.push('der Deckel als Argument wirkt nicht: ' + halb);
+      }
+      // 3. Und die Rampe hat ein Ziel, das vom Tank abhaengt.
+      if (typeof fuelCutTarget === 'function') {
+        fuel = 0;
+        const zLeer = fuelCutTarget();
+        fuel = 100;
+        const zVoll = fuelCutTarget();
+        if (!(zLeer < zVoll)) schlecht.push('Rampenziel haengt nicht am Tank');
+      }
+      return { ok: schlecht.length === 0,
+               mass: 'Rueckgabe ' + rueck + ' | Gas leer ' + leer.toFixed(2)
+                     + ', bei Deckel 0,6 ' + halb.toFixed(2) + ', voll ' + voll.toFixed(2)
+                     + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+    } finally { fuel = gemerkt; }
+  });
+
+  // ---- Ueberholen: die zwei Regeln duerfen sich nicht bestreiten ----
+  //
+  // DER BEFUND, der diesen Test noetig gemacht hat, und er war nur zu sehen, wenn man beide
+  // Zahlen NEBENEINANDER legt: angesetzt wurde bei einem Abstand unter 0,9 Kacheln, das
+  // Abstandhalten lupfte das Gas aber schon ab 0,7 - plus Zuschlag beim Annaehern. Das
+  // Angriffsfenster war 0,2 Kacheln breit, und der Abstandhalter druckte den Verfolger genau
+  // daraus heraus. Gemeldet als "sie ueberholen sich nicht richtig, da ist der Wurm drin".
+  //
+  // Dazu die Wuerfelrate: alle 4 Sekunden ein Versuch mit 0,45 x Wuerze. Bei der
+  // eingestellten Wuerze 0,4 ist das eine Attacke pro 22 Sekunden durchgehenden Klebens.
+  //
+  // Geprueft wird beides, und keine der beiden Aussagen laesst sich durch Hinsehen pruefen -
+  // dafuer sind es Konstanten in verschiedenen Abschnitten.
+  stAdd('Ueberholen: Reichweite ueber dem Mindestabstand, Wartezeit brauchbar', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.ghostPassRates) {
+      return { skip: true, mass: 'ghostPassRates nicht vorhanden' };
+    }
+    const merk = ghostCfg.spice;
+    const schlecht = [];
+    let r;
+    try {
+      ghostCfg.spice = 0.4;          // die Vorgabe, gefahren ermittelt
+      r = OMEGA_TEST.ghostPassRates();
+      // 1. Die Reichweite MUSS ueber dem Mindestabstand liegen. Sonst bestreiten die zwei
+      //    Regeln dasselbe Band, und der Abstandhalter gewinnt - er wirkt jeden Takt, die
+      //    Attacke nur beim Wuerfeln.
+      if (!(r.reichweite > r.abstandMin)) {
+        schlecht.push('Reichweite ' + r.reichweite + ' nicht ueber Mindestabstand '
+                      + r.abstandMin);
+      }
+      // 2. Und das Fenster muss BREIT genug sein, um es durchgehend zu halten. 0,2 Kacheln
+      //    waren es vorher, und das hat nicht gereicht.
+      if (!(r.fenster >= 0.4)) {
+        schlecht.push('Fenster nur ' + r.fenster + ' Kacheln breit');
+      }
+      // 3. Die Wartezeit bei der VORGABE-Wuerze muss im Bereich einer Runde liegen. Ohne
+      //    diese Zahl ist "wird ueberholt" eine Hoffnung.
+      if (!(r.wartenS <= 10)) {
+        schlecht.push('Wartezeit ' + r.wartenS + ' s bei Wuerze ' + r.wuerze);
+      }
+      // 4. Gegenprobe: bei Wuerze null darf NIE angesetzt werden, sonst ist der Regler
+      //    keiner.
+      ghostCfg.spice = 0;
+      const aus = OMEGA_TEST.ghostPassRates();
+      if (aus.p !== 0) schlecht.push('Wuerze 0 wuerfelt trotzdem');
+    } finally {
+      ghostCfg.spice = merk;
+    }
+    return { ok: schlecht.length === 0,
+             mass: 'Reichweite ' + r.reichweite + ' gegen Mindestabstand ' + r.abstandMin
+                   + ' (Fenster ' + r.fenster + ') | Wurf alle ' + r.wurfMs + ' ms mit p='
+                   + r.p + ' -> ' + r.wartenS + ' s bei Wuerze ' + r.wuerze
+                   + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
   // ---- Autopilot in der Einfuehrungsrunde ----
   //
   // DER BEFUND, der diesen Test noetig gemacht hat: raceFormationLap kam in 50-drive.js -
@@ -26771,13 +27206,30 @@
                       + ', Markup ' + el.defaultValue);
       }
     }
-    // Und die Schwelle: sie muss SPAET liegen. Ein Quietschen ab 30 Prozent ist ein
-    // Dauergeraeusch und keine Rueckmeldung.
-    if (OMEGA_TEST.sndTyreSquealCurve) {
+    // Und die Schwelle. ZWEI Forderungen, und die erste ist die, deren Fehlen das
+    // Quietschen bis v0.4.55 nie hat eintreten lassen:
+    //
+    //   ERREICHBAR. Der Test forderte vorher nur "Schwelle >= 0,7". Das war erfuellt - sie
+    //   stand auf 0,85 - und trotzdem quietschte es nie: gemessen erreicht die
+    //   Querausnutzung 0,85 erst bei 265 km/h mit VOLLEM Ausschlag. "Spaet" ist eine Aussage
+    //   ueber die Zahl und nicht darueber, ob sie jemals vorkommt. Gemessen wird deshalb an
+    //   einem Betriebspunkt, den es auf einer Hausstrecke gibt: 170 km/h, voller Ausschlag.
+    //
+    //   NICHT ZU TIEF. Ein Quietschen, das bei jeder Kurve mitlaeuft, ist ein
+    //   Dauergeraeusch und keine Rueckmeldung.
+    if (OMEGA_TEST.sndTyreSquealCurve && OMEGA_TEST.physSteerGrip) {
       const k = OMEGA_TEST.sndTyreSquealCurve();
-      teile.push('Schwelle ' + k.schwelle);
-      if (!(k.schwelle >= 0.7 && k.schwelle < 1)) {
-        schlecht.push('Schwelle ' + k.schwelle + ' liegt nicht spaet');
+      const p = OMEGA_TEST.physSteerGrip({ kmh: 170, throttle: 0.2, brake: 0, steering: 1 });
+      // latUse aus gripLong zurueckgerechnet: gripLong = sqrt(1 - latUse^2).
+      const erreicht = Math.sqrt(Math.max(0, 1 - p.gripLong * p.gripLong));
+      teile.push('Schwelle ' + k.schwelle + ', bei 170 km/h voll erreicht '
+                 + erreicht.toFixed(2));
+      if (!(k.schwelle < erreicht)) {
+        schlecht.push('Schwelle ' + k.schwelle + ' unerreichbar: eine schnelle Kurve kommt '
+                      + 'nur auf ' + erreicht.toFixed(2));
+      }
+      if (!(k.schwelle >= 0.3)) {
+        schlecht.push('Schwelle ' + k.schwelle + ' zu tief, das wird ein Dauergeraeusch');
       }
     }
     return { ok: !schlecht.length,
@@ -30155,7 +30607,7 @@
            'setting-brake-fade-strength': 1.0,
            'setting-dirtyair': false,
            'setting-dirtyair-strength': 1.0,
-           'setting-tyre-asym': false,
+           'setting-tyre-asym': true,   // Vorgabe im Markup seit v0.4.55, und die Vorgabe IST Pro
            'setting-tyre-pressure': 1.8,
            // Gasfaktor: wie frueh das Auto volle Motorleistung bekommt. 1,0 ist
            // das Byte genau proportional zum Tacho, also die kalibrierte Fassung.

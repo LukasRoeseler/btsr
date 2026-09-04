@@ -3891,64 +3891,87 @@
 
       <h3 style="font-size:14px; margin:18px 0 6px 0">Motoren</h3>
       <p class="muted" style="font-size:11.5px">
-        Je Motor drei Drehzahlb&auml;nder, die nach Drehzahl &uuml;berblendet werden, und
+        Je Motor vier Drehzahlb&auml;nder, die nach Drehzahl &uuml;berblendet werden, und
         eine Schubschleife, die parallel dazu nach <em>Last</em> eingeblendet wird. Die
         Drehzahl in Klammern ist die Basis: dort klingt die Schleife unverstimmt.
+        Das untere Band ist in v0.4.55 dazugekommen, und der Grund ist gemessen: die
+        Abspielrate ist auf eine Oktave nach jeder Seite begrenzt, Leerlauf und Mittelband
+        lagen aber 2,2 Oktaven auseinander. Im unteren ersten Gang war deshalb immer
+        mindestens eine h&ouml;rbare Schleife am Anschlag und damit verstimmt &ndash; bei
+        5000/min trug das Leerlaufband noch 12 Prozent Gewicht bei einer Rate, die auf ein
+        Drittel des Verlangten geklemmt war. Das neue Band liegt beim geometrischen Mittel,
+        damit beide Spr&uuml;nge gleich gro&szlig; werden; gemessen ist danach kein h&ouml;rbares
+        Band mehr geklemmt.
       </p>
       <div class="snd-grid">
         <div class="snd-row"><audio controls preload="none" src="audio/p992gt3r_idle.ogg"></audio><div><b>Porsche 911 GT3 R (4.2 Boxer-6, Einzeldrosseln), Leerlauf (1200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/p992gt3r_low.ogg"></audio><div><b>Porsche 911 GT3 R (4.2 Boxer-6, Einzeldrosseln), Zwischenband (2569/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/p992gt3r_mid.ogg"></audio><div><b>Porsche 911 GT3 R (4.2 Boxer-6, Einzeldrosseln), Mittelband (5500/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/p992gt3r_high.ogg"></audio><div><b>Porsche 911 GT3 R (4.2 Boxer-6, Einzeldrosseln), oberes Band (8800/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/p992gt3r_over.ogg"></audio><div><b>Porsche 911 GT3 R (4.2 Boxer-6, Einzeldrosseln), Schub (5500/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/m4gt3_idle.ogg"></audio><div><b>BMW M4 GT3 (P58 3.0 Reihen-6, ohne Lader), Leerlauf (1300/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/m4gt3_low.ogg"></audio><div><b>BMW M4 GT3 (P58 3.0 Reihen-6, ohne Lader), Zwischenband (2364/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/m4gt3_mid.ogg"></audio><div><b>BMW M4 GT3 (P58 3.0 Reihen-6, ohne Lader), Mittelband (4300/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/m4gt3_high.ogg"></audio><div><b>BMW M4 GT3 (P58 3.0 Reihen-6, ohne Lader), oberes Band (7200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/m4gt3_over.ogg"></audio><div><b>BMW M4 GT3 (P58 3.0 Reihen-6, ohne Lader), Schub (4300/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/amggt3_idle.ogg"></audio><div><b>Mercedes-AMG GT3 (M159 6.2 V8, Cross-Plane), Leerlauf (1200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/amggt3_low.ogg"></audio><div><b>Mercedes-AMG GT3 (M159 6.2 V8, Cross-Plane), Zwischenband (2298/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/amggt3_mid.ogg"></audio><div><b>Mercedes-AMG GT3 (M159 6.2 V8, Cross-Plane), Mittelband (4400/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/amggt3_high.ogg"></audio><div><b>Mercedes-AMG GT3 (M159 6.2 V8, Cross-Plane), oberes Band (7700/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/amggt3_over.ogg"></audio><div><b>Mercedes-AMG GT3 (M159 6.2 V8, Cross-Plane), Schub (4400/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/f296gt3_idle.ogg"></audio><div><b>Ferrari 296 GT3 (F163CE 3.0 V6 120 Grad, ohne Lader), Leerlauf (1400/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/f296gt3_low.ogg"></audio><div><b>Ferrari 296 GT3 (F163CE 3.0 V6 120 Grad, ohne Lader), Zwischenband (2646/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/f296gt3_mid.ogg"></audio><div><b>Ferrari 296 GT3 (F163CE 3.0 V6 120 Grad, ohne Lader), Mittelband (5000/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/f296gt3_high.ogg"></audio><div><b>Ferrari 296 GT3 (F163CE 3.0 V6 120 Grad, ohne Lader), oberes Band (8000/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/f296gt3_over.ogg"></audio><div><b>Ferrari 296 GT3 (F163CE 3.0 V6 120 Grad, ohne Lader), Schub (5000/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/huracan_idle.ogg"></audio><div><b>Huracan GT3 EVO2 / R8 LMS (5.2 V10, Split-Pin), Leerlauf (1400/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/huracan_low.ogg"></audio><div><b>Huracan GT3 EVO2 / R8 LMS (5.2 V10, Split-Pin), Zwischenband (2750/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/huracan_mid.ogg"></audio><div><b>Huracan GT3 EVO2 / R8 LMS (5.2 V10, Split-Pin), Mittelband (5400/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/huracan_high.ogg"></audio><div><b>Huracan GT3 EVO2 / R8 LMS (5.2 V10, Split-Pin), oberes Band (8700/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/huracan_over.ogg"></audio><div><b>Huracan GT3 EVO2 / R8 LMS (5.2 V10, Split-Pin), Schub (5400/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/vantagegt3_idle.ogg"></audio><div><b>Aston Martin Vantage GT3 (M177 4.0 V8, ohne Lader), Leerlauf (1200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/vantagegt3_low.ogg"></audio><div><b>Aston Martin Vantage GT3 (M177 4.0 V8, ohne Lader), Zwischenband (2245/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/vantagegt3_mid.ogg"></audio><div><b>Aston Martin Vantage GT3 (M177 4.0 V8, ohne Lader), Mittelband (4200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/vantagegt3_high.ogg"></audio><div><b>Aston Martin Vantage GT3 (M177 4.0 V8, ohne Lader), oberes Band (7200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/vantagegt3_over.ogg"></audio><div><b>Aston Martin Vantage GT3 (M177 4.0 V8, ohne Lader), Schub (4200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/c6r_idle.ogg"></audio><div><b>Corvette C6.R (LS7.R 7.0 V8, Cross-Plane), Leerlauf (1100/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/c6r_low.ogg"></audio><div><b>Corvette C6.R (LS7.R 7.0 V8, Cross-Plane), Zwischenband (2098/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/c6r_mid.ogg"></audio><div><b>Corvette C6.R (LS7.R 7.0 V8, Cross-Plane), Mittelband (4000/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/c6r_high.ogg"></audio><div><b>Corvette C6.R (LS7.R 7.0 V8, Cross-Plane), oberes Band (7200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/c6r_over.ogg"></audio><div><b>Corvette C6.R (LS7.R 7.0 V8, Cross-Plane), Schub (4000/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/z06gt3r_idle.ogg"></audio><div><b>Corvette Z06 GT3.R (LT6.R 5.5 V8, Flat-Plane), Leerlauf (1300/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/z06gt3r_low.ogg"></audio><div><b>Corvette Z06 GT3.R (LT6.R 5.5 V8, Flat-Plane), Zwischenband (2600/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/z06gt3r_mid.ogg"></audio><div><b>Corvette Z06 GT3.R (LT6.R 5.5 V8, Flat-Plane), Mittelband (5200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/z06gt3r_high.ogg"></audio><div><b>Corvette Z06 GT3.R (LT6.R 5.5 V8, Flat-Plane), oberes Band (8600/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/z06gt3r_over.ogg"></audio><div><b>Corvette Z06 GT3.R (LT6.R 5.5 V8, Flat-Plane), Schub (5200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/mustang_idle.ogg"></audio><div><b>Ford Mustang GT3 (V8, Cross-Plane), Leerlauf (1200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/mustang_low.ogg"></audio><div><b>Ford Mustang GT3 (V8, Cross-Plane), Zwischenband (2163/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/mustang_mid.ogg"></audio><div><b>Ford Mustang GT3 (V8, Cross-Plane), Mittelband (3900/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/mustang_high.ogg"></audio><div><b>Ford Mustang GT3 (V8, Cross-Plane), oberes Band (7000/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/mustang_over.ogg"></audio><div><b>Ford Mustang GT3 (V8, Cross-Plane), Schub (3900/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/f1_2026_idle.ogg"></audio><div><b>Formel 1 2026 (1.6 V6 Turbo-Hybrid, 90 Grad), Leerlauf (4200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/f1_2026_low.ogg"></audio><div><b>Formel 1 2026 (1.6 V6 Turbo-Hybrid, 90 Grad), Zwischenband (2510/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/f1_2026_low2.ogg"></audio><div><b>Formel 1 2026 (1.6 V6 Turbo-Hybrid, 90 Grad), Zwischenband (4200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/f1_2026_mid.ogg"></audio><div><b>Formel 1 2026 (1.6 V6 Turbo-Hybrid, 90 Grad), Mittelband (8500/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/f1_2026_high.ogg"></audio><div><b>Formel 1 2026 (1.6 V6 Turbo-Hybrid, 90 Grad), oberes Band (12500/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/f1_2026_over.ogg"></audio><div><b>Formel 1 2026 (1.6 V6 Turbo-Hybrid, 90 Grad), Schub (8500/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/gt40_idle.ogg"></audio><div><b>Ford GT40 Mk I (4.7 V8, Cross-Plane), Leerlauf (900/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/gt40_low.ogg"></audio><div><b>Ford GT40 Mk I (4.7 V8, Cross-Plane), Zwischenband (1944/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/gt40_mid.ogg"></audio><div><b>Ford GT40 Mk I (4.7 V8, Cross-Plane), Mittelband (4200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/gt40_high.ogg"></audio><div><b>Ford GT40 Mk I (4.7 V8, Cross-Plane), oberes Band (6500/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/gt40_over.ogg"></audio><div><b>Ford GT40 Mk I (4.7 V8, Cross-Plane), Schub (4200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/lolat70_idle.ogg"></audio><div><b>Lola T70 Mk3B (Chevrolet 5.0 V8, Cross-Plane), Leerlauf (1000/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/lolat70_low.ogg"></audio><div><b>Lola T70 Mk3B (Chevrolet 5.0 V8, Cross-Plane), Zwischenband (2145/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/lolat70_mid.ogg"></audio><div><b>Lola T70 Mk3B (Chevrolet 5.0 V8, Cross-Plane), Mittelband (4600/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/lolat70_high.ogg"></audio><div><b>Lola T70 Mk3B (Chevrolet 5.0 V8, Cross-Plane), oberes Band (7000/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/lolat70_over.ogg"></audio><div><b>Lola T70 Mk3B (Chevrolet 5.0 V8, Cross-Plane), Schub (4600/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/f330p4_idle.ogg"></audio><div><b>Ferrari 330 P4 / 412P (4.0 V12, 60 Grad), Leerlauf (1400/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/f330p4_low.ogg"></audio><div><b>Ferrari 330 P4 / 412P (4.0 V12, 60 Grad), Zwischenband (2850/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/f330p4_mid.ogg"></audio><div><b>Ferrari 330 P4 / 412P (4.0 V12, 60 Grad), Mittelband (5800/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/f330p4_high.ogg"></audio><div><b>Ferrari 330 P4 / 412P (4.0 V12, 60 Grad), oberes Band (8200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/f330p4_over.ogg"></audio><div><b>Ferrari 330 P4 / 412P (4.0 V12, 60 Grad), Schub (5800/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/mc12_idle.ogg"></audio><div><b>Maserati MC12 (6.0 V12, 65 Grad), Leerlauf (1300/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/mc12_low.ogg"></audio><div><b>Maserati MC12 (6.0 V12, 65 Grad), Zwischenband (2674/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/mc12_mid.ogg"></audio><div><b>Maserati MC12 (6.0 V12, 65 Grad), Mittelband (5500/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/mc12_high.ogg"></audio><div><b>Maserati MC12 (6.0 V12, 65 Grad), oberes Band (7800/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/mc12_over.ogg"></audio><div><b>Maserati MC12 (6.0 V12, 65 Grad), Schub (5500/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
@@ -4981,26 +5004,29 @@
       <div class="opt-row"><div class="opt-label">Physik-Modus aktivieren<small>Aus: rohe Stickstellung, ohne Gänge.</small></div><label class="tgl"><input type="checkbox" id="phys-enable" checked><span></span></label></div>
       
       <div class="opt-row"><div class="opt-label">Vibration
-          <small>R&uuml;ckmeldung im Controller bei Gangwechsel, ABS, Aufprall und im
-          Boxenstopp. Das Handy vibriert nicht mit, das Protokoll kennt daf&uuml;r
+          <small>R&uuml;ckmeldung im Controller bei Gangwechsel, ABS, Aufprall, im
+          Boxenstopp und neben der Bahn. Standard aus, weil nicht jeder Controller es kann und
+          ein Dauerbrummen im Gel&auml;nde Geschmackssache ist. Unabh&auml;ngig von der
+          Drosselung darunter. Das Handy vibriert nicht mit, das Protokoll kennt daf&uuml;r
           nichts.</small></div>
-        <label class="tgl"><input type="checkbox" id="setting-vibration" checked><span></span></label></div>
-      <!-- Direkt unter der Vibration, weil die eine Haelfte dieser Option daran haengt -
+        <label class="tgl"><input type="checkbox" id="setting-vibration"><span></span></label></div>
+      <!-- Direkt unter der Vibration, weil beide dieselbe Lage beschreiben - gekoppelt sind
+           sie seit v0.4.55 aber nicht mehr -
            und das steht auch im Kleintext. Ohne den Hinweis waere es die naechste
            Stellschraube, die scheinbar nichts tut. -->
-      <div class="opt-row"><div class="opt-label">Controllervibration und Drosselung
-          jenseits Fahrbahn
+      <div class="opt-row"><div class="opt-label">Drosselung jenseits der Fahrbahn
           <!-- Absichtlich OHNE <code> und <b> im Inneren: jedes davon teilt den Satz in
                einen eigenen Textknoten, und das Woerterbuch schlaegt Textknoten nach. Mit
                Auszeichnung zerfiel dieser Satz in fuenf Bruchstuecke, und jede spaetere
                Umformulierung haette alle fuenf Schluessel gleichzeitig gebrochen - sichtbar
                nur daran, dass im englischen Modus mitten im Satz Deutsch steht. -->
-          <small>Meldet Byte 12 den Wert 0x00, ist das Auto neben der Bahn: dann brummt
-          der Controller leicht und das Gas wird auf 45 % gedeckelt. Wirkt nur in der
-          Stellung &bdquo;Auf der
-          Bahn&ldquo;: im Ausdruck-Modus ist der Streckensensor aus und Byte 12 st&auml;nde
-          dauernd auf 0x00. Der Brummteil braucht zus&auml;tzlich den Schalter
-          &bdquo;Vibration&ldquo; dar&uuml;ber.</small></div>
+          <small>Meldet Byte 12 den Wert 0x00, ist das Auto neben der Bahn: dann wird das
+          Gas auf 45 % gedeckelt. Das leichte Brummen dazu h&auml;ngt allein am Schalter
+          &bdquo;Vibration&ldquo; dar&uuml;ber, dieser hier allein an der Drosselung
+          &ndash; bis v0.4.55 war es eine Option mit zwei H&auml;lften, und wer die
+          Drosselung abschaltete, verlor auch die R&uuml;ckmeldung. Wirkt nur in der Stellung
+          &bdquo;Auf der Bahn&ldquo;: im Ausdruck-Modus ist der Streckensensor aus und Byte 12
+          st&auml;nde dauernd auf 0x00.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-offtrack" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Drosselung abseits beginnt nach
           <small>So lange muss das Auto DURCHGEHEND abseits melden, bevor gedrosselt wird.
@@ -5249,7 +5275,7 @@
           zur stärker abgenutzten Seite, weil die weniger Querkraft erzeugt. Der
           Mittelwert bleibt derselbe: der Schalter macht nicht mehr Verschleiß, sondern
           ungleichen.</small></div>
-        <label class="tgl"><input type="checkbox" id="setting-tyre-asym"><span></span></label></div>
+        <label class="tgl"><input type="checkbox" id="setting-tyre-asym" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Reifendruck (bar)
           <small>Wenig Druck hei&szlig;t mehr Walkarbeit: schnellere Erw&auml;rmung, mehr
           Verschlei&szlig;, besserer Kaltgriff. Viel Druck umgekehrt. Jede Abweichung von
@@ -5374,7 +5400,7 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="rain-volume-val">25%</span>
         </div></div>
-      <div class="opt-row"><div class="opt-label">Reifenquietschen<small>Am Grenzbereich, im Stil von Gran Turismo: Lautst&auml;rke und Tonh&ouml;he laufen stetig mit der Querausnutzung des Reibkreises, Einsatz ab 85 Prozent. Es setzt absichtlich sp&auml;t ein &ndash; ein Quietschen, das bei jeder Kurve mitl&auml;uft, ist ein Dauerger&auml;usch und keine R&uuml;ckmeldung.</small></div>
+      <div class="opt-row"><div class="opt-label">Reifenquietschen<small>Am Grenzbereich, im Stil von Gran Turismo: Lautst&auml;rke und Tonh&ouml;he laufen stetig mit der Querausnutzung des Reibkreises, Einsatz ab 60 Prozent &ndash; also ab etwa 98 km/h bei vollem Lenkausschlag, ab 197 km/h bei halbem, und bei einem Viertel Ausschlag nie. Eine Haarnadel quietscht, eine lange schnelle Kurve nicht. Bis v0.4.55 stand die Schwelle bei 85 Prozent und war damit unerreichbar: gemessen kommt die Querausnutzung erst bei 265 km/h dorthin, weil der Lenkausschlag mit dem Tempo beschnitten wird. Es hat deshalb nie gequietscht.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
           <input type="range" id="tyre-volume" min="0" max="1" step="0.05" value="0.35">
@@ -6139,7 +6165,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.4.55</span></span>
+    <span class="foot-ver">v<span id="app-version">0.5.1</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine

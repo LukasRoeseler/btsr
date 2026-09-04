@@ -128,6 +128,55 @@ def cross_plane_v8():
 #
 # The three original engines keep the sound they had: their primary_in is set to whatever
 # reproduces the res_hz that was tuned by ear, so nothing regresses.
+# Die Drehzahl, unter die der Drehzahlmesser der App nie faellt (IDLE_RPM in 30-input.js).
+# Sie gehoert hierher, weil sie bestimmt, wie TIEF die Baenderleiter reichen muss: der F1
+# hat Leerlauf 4200 - physikalisch richtig -, aber die App zeigt trotzdem 1500, und dort
+# braucht auch er eine Schleife.
+APP_IDLE_RPM = 1500
+
+# Wie weit zwei Nachbarbaender auseinanderliegen DUERFEN. Die App klemmt die Abspielrate auf
+# eine Oktave nach jeder Seite, also waere 2,0 die harte Grenze. 2,2 laesst einen Rest von
+# vier Prozent zu, und der ist unhoerbar: er tritt nur am Rand eines Abschnitts auf, wo das
+# betroffene Band unter zehn Prozent Gewicht hat. Mit 2,0 als Grenze wuerde die Leiter
+# ausserdem bei jedem Rundungsschritt ein weiteres Band verlangen.
+BAND_MAX_RATIO = 2.2
+
+
+def band_ladder(rpms):
+    """Leistungsbaender als [(name, rpm)], aufsteigend, mit Nachbarabstand <= BAND_MAX_RATIO.
+
+    Die drei angegebenen Drehzahlen sind ANKER und behalten ihre Namen; dazu kommt ein Anker
+    bei APP_IDLE_RPM, falls der Motor darueber leerlaeuft. Dann werden geometrische Mitten
+    eingefuegt, bis kein Abstand mehr zu gross ist - geometrisch, weil die Abspielrate ein
+    VERHAELTNIS ist und die Verhaeltnisse gleich gross werden muessen.
+
+    Die eingefuegten Baender heissen low, low2, low3 ... in aufsteigender Reihenfolge. Namen
+    und nicht Nummern, damit die Dateinamen stabil bleiben, solange die Anker es sind.
+    """
+    rp = dict(rpms)
+    werte = sorted(set([min(rp['idle'], APP_IDLE_RPM), rp['idle'],
+                        rp['mid'], rp['high']]))
+    while True:
+        for i in range(len(werte) - 1):
+            if werte[i + 1] / float(werte[i]) > BAND_MAX_RATIO:
+                werte.insert(i + 1, int(round((werte[i] * werte[i + 1]) ** 0.5)))
+                break
+        else:
+            break
+    # Namen: der tiefste ist 'idle', rp['mid'] ist 'mid', der hoechste 'high'. Alles
+    # dazwischen heisst low, low2, low3 ... in aufsteigender Reihenfolge. Namen und keine
+    # Nummern, damit die Dateinamen stabil bleiben, solange die Anker es sind.
+    fest = {werte[0]: 'idle', rp['mid']: 'mid', werte[-1]: 'high'}
+    out, n = [], 0
+    for v in werte:
+        if v in fest:
+            out.append((fest[v], v))
+        else:
+            n += 1
+            out.append(('low' if n == 1 else 'low%d' % n, v))
+    return out
+
+
 CARS = {
     'mustang': {
         'label': 'Ford Mustang GT3 (V8, Cross-Plane)',
@@ -696,7 +745,13 @@ def main(nur=None):
         # One extra loop per engine for the closed throttle, at the mid band. The app
         # scales it by rpm like any other, and crossfades it in as load drops — one file per
         # engine instead of a whole parallel set, which is enough to hear the difference.
-        bands = list(cfg['rpms'].items()) + [('over', cfg['rpms']['mid'])]
+        #
+        # UND EINE GERECHNETE BAENDERLEITER, seit v0.4.55 - siehe band_ladder() oben. Der
+        # Grund ist gemessen und stand vorher als Fehler in der App: die Abspielrate ist auf
+        # [0,5 .. 2,0] geklemmt, also eine Oktave nach jeder Seite, und beim Porsche lagen
+        # Leerlauf und Mitte 2,2 Oktaven auseinander. Im unteren ersten Gang klebte damit
+        # immer eine HOERBARE Schleife am Anschlag.
+        bands = band_ladder(cfg['rpms']) + [('over', cfg['rpms']['mid'])]
         for band, rpm in bands:
             load = 0.0 if band == 'over' else 1.0
             # zlib.crc32, NOT hash(). Python randomises hash() for strings once per
