@@ -1732,6 +1732,118 @@
 
 
 
+
+  // ---- Ghosts: anhalten nur, wenn es wirklich vorbei ist ----
+  //
+  // GEMELDET: "sie fahren stumpf ihre Spur, keine Querlage. Und nach einer Weile bleiben
+  // sie einfach stehen und blinken. Neustart des Rennens, Zuruecksetzen, usw. funktioniert
+  // nicht." Alle drei Teile sind an den Mitschnitten entschieden worden.
+  //
+  // DIE SECHS FAELLE hier sind keine erfundenen Zahlen, sondern jede 0x00-Strecke ab 300 ms,
+  // die in den Aufzeichnungen ueberhaupt vorkommt - mit der Kachelrate, die dabei gemessen
+  // wurde. Der Zaehler lief in 6 von 6 Faellen weiter, das blosse Zaehlen taugt also nicht
+  // als Unterscheider; die RATE taugt.
+  stAdd('Ghost haelt nur an, wenn es wirklich vorbei ist', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.ghostParkProbe) {
+      return { skip: true, mass: 'ghostParkProbe nicht vorhanden' };
+    }
+    // nullMs, kachelMs, soll geparkt sein
+    const faelle = [
+      [840, 420, false, 'faehrt, 420 ms je Kachel'],
+      [5845, 490, false, 'faehrt, 490 ms je Kachel'],
+      [13580, 438, false, 'faehrt, 438 ms je Kachel'],
+      [1013, 92, true, 'Abflug, Zaehler rast mit 92 ms'],
+      [12806, 12806, true, 'steht, eine Kachel in 12,8 s'],
+    ];
+    const schlecht = [], teile = [];
+    for (const [nullMs, kachelMs, soll, was] of faelle) {
+      const r = OMEGA_TEST.ghostParkProbe({ nullMs, kachelMs });
+      teile.push(nullMs + '/' + kachelMs + (r.geparkt ? ' steht' : ' faehrt'));
+      if (r.vorher) { schlecht.push(was + ': stand schon vor der Messung'); continue; }
+      if (!!r.geparkt !== soll) {
+        schlecht.push(was + ': ' + (r.geparkt ? 'haelt an' : 'faehrt weiter')
+                      + ', erwartet ' + (soll ? 'anhalten' : 'weiterfahren'));
+      }
+    }
+    return { ok: schlecht.length === 0,
+             mass: teile.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // ---- Ghosts: ein Neustart kommt aus dem Kreis heraus ----
+  //
+  // Geparkt heisst Gas 0, also keine Fahrt, also kein gelesenes Muster, also parkt der
+  // Neustart sofort wieder ein. Die Startgnade ist der Ausweg - und sie ist eine FRIST,
+  // kein Loch: danach muss das Auto wieder stehen, sonst faehrt es neben der Bahn weiter.
+  // Beide Haelften werden geprueft; ohne die zweite waere "nie anhalten" auch gruen.
+  stAdd('Ghost: Neustart hebt den Halt, aber nur auf Zeit', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.ghostNeustartProbe) {
+      return { skip: true, mass: 'ghostNeustartProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.ghostNeustartProbe({});
+    const schlecht = [];
+    if (!r.inGnade) schlecht.push('parkt schon waehrend der Gnadenzeit wieder ein');
+    if (!r.nachGnade) schlecht.push('parkt nach der Gnadenzeit NICHT - die Frist ist ein Loch');
+    const wechsel = r.schritte.find(x => x.geparkt);
+    return { ok: schlecht.length === 0,
+             mass: 'Gnade ' + r.gnadeMs + ' ms, haelt an bei '
+                   + (wechsel ? wechsel.ms + ' ms' : 'nie')
+                   + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // ---- Die Ziellinie liegt am Zielstreifen ----
+  //
+  // Byte 15 Bit 3 im MELDEkanal ist eine Sperre, die das Auto selbst setzt, wenn es das
+  // Startmuster liest, und rund eine Sekunde haelt. Gemessen: 17 Bloecke gegen 16 Runden,
+  // Dauer im Median 981 bis 1050 ms, steigende Flanke 420 ms NACH unserer alten Regel -
+  // und in 0 % der Schreibbefehle an dieses Auto gesetzt, also kein Echo.
+  //
+  // Vier Aussagen, und die letzten zwei sind die Gegenproben: eine stehende Sperre darf
+  // nicht mehrfach zaehlen, und der alte Rueckfall darf danach nicht ein zweites Mal
+  // zaehlen - sonst laege jede Runde doppelt.
+  stAdd('Ziellinie: die Sperre des Autos schlaegt den Startcode', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.zielSperreProbe) {
+      return { skip: true, mass: 'zielSperreProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.zielSperreProbe({});
+    const schlecht = [];
+    if (r.nurCode < 1) schlecht.push('ohne Sperre zaehlt der Rueckfall nicht');
+    if (r.mitSperre !== r.nurCode + 1) schlecht.push('die Sperrflanke zaehlt keine Runde');
+    if (r.wahrendSperre !== r.mitSperre) schlecht.push('die stehende Sperre zaehlt mehrfach');
+    if (r.ende !== r.mitSperre) {
+      schlecht.push('der Rueckfall zaehlt nach der Sperre weiter (' + r.ende + ')');
+    }
+    return { ok: schlecht.length === 0,
+             mass: r.folge.map(x => x.lage + ' ' + x.runden).join(' | ')
+                   + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // ---- Ghost-Querlage im Mass der Original-App ----
+  //
+  // Der Vergleichswert ist gemessen und nicht gewaehlt: die Original-App schickte ihren
+  // zwei Ghosts ueber 16 Runden ein Lenkbyte mit |Mittel| 32,2 und 47,3 von 127, Spitze
+  // jeweils 127. Unsere lagen bei 18,3 mit Spitze 44 - gemeldet als "stumpf ihre Spur,
+  // keine Querlage". Ursache war der Deckel von 0,55 mal line 0,7.
+  //
+  // Die Schranke steht bei 25 und 70, also unter dem schwaecheren der zwei Originalwerte:
+  // getroffen werden soll die Groessenordnung, nicht eine Nachkommastelle.
+  stAdd('Ghost-Querlage: im Mass der Original-App', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.ghostDriveProbe) {
+      return { skip: true, mass: 'ghostDriveProbe nicht vorhanden' };
+    }
+    return OMEGA_TEST.ghostDriveProbe({ takte: 300, lage: 'karte' }).then((p) => {
+      const abs = p.lenk.map(Math.abs);
+      const mittel = abs.reduce((a, b) => a + b, 0) / abs.length;
+      const spitze = Math.max.apply(null, abs);
+      const schlecht = [];
+      if (mittel < 25) schlecht.push('|Mittel| nur ' + mittel.toFixed(1) + ', Original 32 bis 47');
+      if (spitze < 70) schlecht.push('Spitze nur ' + spitze + ', Original 127');
+      return { ok: schlecht.length === 0,
+               mass: '|Mittel| ' + mittel.toFixed(1) + ', Spitze ' + spitze
+                     + ' (Original 32,2 / 47,3, Spitze 127)'
+                     + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+    });
+  });
+
   // ---- Der Steuerweg: kostet die Rechnung etwas, und kommt der Befehl an? ----
   //
   // ANLASS: "mit 2 Ghosts gibt es eine leichte Eingabeverzoegerung, laesst sich die
@@ -3668,8 +3780,12 @@
                   { steer: 0.6, ok: false }];
       const gekippt = learnSteerCap();
       const fehler = [];
-      // 1. Ohne Messung die dokumentierte Schaetzung.
-      if (Math.abs(ohne - 0.55) > 1e-9) fehler.push('ohne Messung ' + ohne);
+      // 1. Ohne eigene Messung der volle Ausschlag - seit v0.5.9, und die Begruendung
+      //    steht in learnSteerCap(): die Original-App schickt ihren Ghosts gemessen bis
+      //    zu 127 von 127, ein selbst gesetzter Deckel von 0,55 war strenger als die App
+      //    des Herstellers. Ein EIGENER Kippwert sticht ihn weiterhin, und genau das
+      //    pruefen die drei Faelle darunter.
+      if (Math.abs(ohne - 1.0) > 1e-9) fehler.push('ohne Messung ' + ohne);
       // 2. Nie gekippt: der hoechste gehaltene Wert selbst, nicht die Haelfte - wir wissen
       //    nur, dass es BIS dahin haelt.
       if (Math.abs(nurGehalten - 0.45) > 1e-9) fehler.push('nur gehalten ' + nurGehalten);

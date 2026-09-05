@@ -1290,9 +1290,15 @@
     border-bottom: 1px solid rgba(90, 169, 255, .35); }
   .gt3-marke a:hover { border-bottom-color: var(--info); }
   .gt3-marke span { color: #6b7688; margin-left: auto; }
+  /* ZWEI REGELN STRITTEN HIER, und die id gewann mit der falschen Farbe. Das Element ist
+     zugleich .gt3-banner (Hintergrund #b8860b, Tinte #100c02) und #hud-toast-wrap - und
+     eine id sticht eine Klasse. Die Tinte #ffcf6e stammt aus der Zeit, als der Streifen
+     keinen Hintergrund hatte; auf dem goldenen Band ergibt sie Kontrast 2,23.
+     Gefunden hat es der Kontrasttest, sobald ein Prueflauf den Streifen einmal sichtbar
+     stehen liess - vorher war er waehrend des Tests immer leer und damit unsichtbar. */
   #hud-toast-wrap {
     grid-area: toast; min-height: 0; padding: 0 clamp(4px, 1vw, 10px);
-    color: #ffcf6e; font-family: monospace; font-size: clamp(9px, 1.3vw, 13px);
+    color: #100c02; font-family: monospace; font-size: clamp(9px, 1.3vw, 13px);
   }
   #hud-toast-wrap:empty, #hud-toast:empty { padding: 0; }
   /* FUNKTIONSFARBEN. Ihre Bedeutung ist fest - gruen gut, gelb Vorsicht, rot schlecht -,
@@ -6413,7 +6419,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.5.8</span></span>
+    <span class="foot-ver">v<span id="app-version">0.5.9</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine

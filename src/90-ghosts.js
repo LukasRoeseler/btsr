@@ -1265,6 +1265,18 @@
   // was Byte 12 dazwischen meldet. Das unterscheidet, was Zeit allein nicht unterscheiden
   // kann, naemlich einen Ausfall der Lesung von einem Abflug.
   const GHOST_OFFTRACK_CONFIRM_MS = 900;
+  // Wie frisch muss der letzte Kachelwechsel sein, damit der Zaehler als LAUFEND gilt?
+  // GHOST_TILE_MS_MAX ist die laengste je gefahrene Kachel; wer darueber liegt, steht.
+  const GHOST_ZAEHLER_FRISCH_MS = 4000;
+  // Wieviele Kachelabstaende in die Plausibilitaet eingehen. Drei genuegen: ein Abflug
+  // laesst den Zaehler sofort rasen, und ein Mittel ueber zehn wuerde ihn verschleifen.
+  const GHOST_ZAEHLER_FENSTER = 3;
+  // Nach einem ausdruecklichen Start darf der Ghost fahren, OHNE schon einen Code gelesen
+  // zu haben. Ohne diese Gnade kommt ein einmal geparktes Auto nie wieder hoch: es steht,
+  // also liest es nichts, also parkt der Neustart es nach GHOST_OFFTRACK_MS wieder ein.
+  // Drei Sekunden reichen fuer mehrere Kacheln - wer bis dahin nichts gelesen hat, liegt
+  // wirklich neben der Bahn.
+  const GHOST_START_GNADE_MS = 3000;
   const GHOST_YAW_GAIN = 0.045;     // rotation units -> steering; refined on the real car
   const GHOST_STEER_CURVE = 0.55;   // feed-forward lock in a curve, before the yaw loop
 
@@ -2390,10 +2402,27 @@
       // nur, dass es BIS hierhin haelt, und nicht, wo es aufhoert.
       return Math.max(0.15, Math.min(1, hielten[hielten.length - 1].steer));
     }
-    // Keine Messung: ein vorsichtiger Vorgabewert, und er ist als solcher gekennzeichnet.
-    // Einen Kippwert zu erfinden waere schlimmer als keinen zu haben, weil er wie eine
-    // Messung aussieht. Messen laesst er sich im Entwicklertab, "Querablage".
-    return 0.55;
+    // Keine eigene Messung - aber eine fremde, und die ist besser als ein Vorgabewert aus
+    // Vorsicht. Hier stand 0,55 mit dem Vermerk "einen Kippwert zu erfinden waere schlimmer
+    // als keinen zu haben". Der Kippwert ist weiterhin nicht gemessen; was jetzt gemessen
+    // ist, ist der Lenkbefehl, den die ORIGINAL-APP ihren eigenen Ghosts schickt:
+    //
+    //     Aufzeichnung 21.08., zwei Ghosts ueber 16 Runden
+    //       Ghost 1   |Lenkbyte| im Mittel 32,2 von 127, Spitze 127, ungleich 0 in 56,3 %
+    //       Ghost 2   |Lenkbyte| im Mittel 47,3 von 127, Spitze 127, ungleich 0 in 80,0 %
+    //
+    //     unsere Ghosts, Vorgabe, gemessen mit ghostDriveProbe
+    //       mit Karte |Lenkbyte| im Mittel 18,3, Spitze 44
+    //
+    // Die Original-App faehrt also regelmaessig VOLLEN Anschlag, unsere kamen nie ueber ein
+    // Drittel. Gemeldet wurde das als "sie fahren stumpf ihre Spur, keine Querlage" - und
+    // das war keine Feinheit, sondern ein Deckel bei 0,55, der obendrein mit line = 0,7
+    // multipliziert wird und damit bei 0,385 endete.
+    //
+    // Ein Deckel, der strenger ist als die App des Herstellers, ist keine Vorsicht, sondern
+    // eine Einschraenkung ohne Beleg. Wer sein Auto kippen sieht, misst den Kippwert im
+    // Entwicklertab unter "Querablage" - eine ECHTE Messung sticht diesen Wert weiterhin.
+    return 1.0;
   }
 
   // Vor jeder Runde einen Versuch ziehen.
@@ -2658,6 +2687,13 @@
                   // nicht in der Liste", und dann gibt es keinen Versatz - eine Paritaet aus
                   // -1 waere geraten und keine Aufstellung.
                   gridPos: gridPosOf(car),
+                  // Die Kachelabstaende der letzten Wechsel, fuer die Plausibilitaet des
+                  // Zaehlers. Leer heisst "noch nichts gesehen", und dann zaehlt er nicht.
+                  tileRing: [],
+                  // Startgnade: siehe GHOST_START_GNADE_MS. Ohne sie kommt ein geparktes
+                  // Auto nie wieder hoch, weil es zum Lesen fahren muesste und zum Fahren
+                  // gelesen haben muesste.
+                  gnadeBis: Date.now() + GHOST_START_GNADE_MS,
                   running: true };
     // Den ersten Versuch ziehen, wenn gelernt werden soll. Ohne ihn steht tryPace auf null,
     // und learnSettle() kehrt in genau diesem Fall frueh zurueck, OHNE einen zu ziehen - das
@@ -2980,7 +3016,15 @@
     // Follow the tile counter so we know where on the layout we are.
     if (car.tileCount !== null && car.tileCount !== g.lastCount) {
       // Die Dauer der gerade verlassenen Kachel, fuer die Phasenschaetzung der Linie.
-      if (g.tileStart) ghostNoteTileTime(car, now - g.tileStart);
+      if (g.tileStart) {
+        ghostNoteTileTime(car, now - g.tileStart);
+        // Die letzten Abstaende getrennt mitfuehren: ghostNoteTileTime mittelt fuer den
+        // Vorausblick, hier wird die RATE gebraucht, und ein Mittel verschleift genau den
+        // Ausschlag, an dem ein Abflug zu erkennen ist.
+        g.tileRing = g.tileRing || [];
+        g.tileRing.push(now - g.tileStart);
+        if (g.tileRing.length > GHOST_ZAEHLER_FENSTER) g.tileRing.shift();
+      }
       g.tileStart = now;
       g.tilesTotal = (g.tilesTotal || 0) + 1;
       g.lastCount = car.tileCount;
@@ -3029,13 +3073,40 @@
     } else {
       g.offSince = 0;
     }
-    const offConfirmed = g.offSince > 0 && (now - g.offSince) >= GHOST_OFFTRACK_CONFIRM_MS;
+    const offSteht = g.offSince > 0 && (now - g.offSince) >= GHOST_OFFTRACK_CONFIRM_MS;
     // Ein bestaetigter Abgang STELLT AB. Vorher war das ein Zustand, der von selbst wieder
     // wegging, sobald ein Code kam - das Auto fuhr dann neben der Bahn weiter, statt auf
     // die Hand zu warten, die es zurueckstellt.
-    // Faehrt es noch ueber Kacheln? Dann ist es auf der Bahn. g.tileStart wird bei jedem
-    // Kachelwechsel gesetzt, ist also der Zeitpunkt des letzten bewiesenen Kontakts.
-    const zaehlerLaeuft = g.tileStart && (now - g.tileStart) < GHOST_OFFTRACK_CONFIRM_MS;
+    //
+    // ---- DER KACHELZAEHLER, UND JETZT MIT SEINER RATE -----------------------------------
+    //
+    // Hier stand "zaehlerLaeuft = letzter Kachelwechsel juenger als 900 ms", und daneben der
+    // Vermerk, dass ungemessen sei, ob der Zaehler neben der Bahn weiterlaeuft. Er ist jetzt
+    // gemessen, an allen sechs 0x00-Strecken ab 300 ms in den Mitschnitten: er laeuft in
+    // 6 von 6 Faellen weiter. Das blosse Zaehlen taugt also NICHT als Unterscheider.
+    //
+    // Die RATE taugt, und sie trennt die gemessenen Faelle vollstaendig:
+    //
+    //      840 ms 0x00, 420 ms je Kachel   faehrt
+    //     5845 ms 0x00, 490 ms je Kachel   faehrt
+    //    13580 ms 0x00, 438 ms je Kachel   faehrt
+    //      839 ms 0x00, 140 ms je Kachel   Abflug, der Zaehler rast
+    //     1013 ms 0x00,  92 ms je Kachel   Abflug, der Zaehler rast
+    //    12806 ms 0x00, eine Kachel        steht
+    //
+    // Also zwei Fragen statt einer: kam ueberhaupt noch ein Wechsel (sonst steht es), und
+    // kamen die letzten Wechsel in einem Abstand, den ein fahrendes Auto haben kann.
+    // GHOST_TILE_MS_MIN = 250 steht seit jeher im Code mit der Begruendung "schneller ist
+    // keine Kachel je gefahren worden" - es hatte hier nur noch keinen Leser.
+    const zaehlerFrisch = g.tileStart && (now - g.tileStart) < GHOST_ZAEHLER_FRISCH_MS;
+    const ring = g.tileRing || [];
+    const zaehlerPlausibel = ring.length > 0
+      && (ring.reduce((a, b) => a + b, 0) / ring.length) >= GHOST_TILE_MS_MIN;
+    const zaehlerLaeuft = !!(zaehlerFrisch && zaehlerPlausibel);
+    // UND DAS GILT JETZT FUER BEIDE ZWEIGE. Vorher hielt offConfirmed allein an, ohne den
+    // Zaehler zu fragen - und vier der sechs gemessenen 0x00-Strecken sind laenger als die
+    // 900 ms Bestaetigung. Genau so bleibt ein fahrendes Auto stehen und blinkt.
+    const offConfirmed = offSteht && !zaehlerLaeuft;
     // DIE BEWEISLAGE ENTSCHEIDET, und bis v0.4.55 tat sie es nicht - der Ghost blieb neben
     // der Bahn nicht stehen. Zwei Vetos konnten den Halt verhindern, und mindestens eines
     // griff immer:
@@ -3059,8 +3130,31 @@
     // grenzwertig, und ein Feld, das sich beim Anrollen selbst abstellt, ist schlimmer als
     // eines, das eine verlorene Kachel uebersieht - es rollt ohnehin nur, und die Leitplanke
     // haelt es. Der Melder ist fuer eine Runde gebaut, in der gefahren wird.
-    const parken = (offConfirmed || (ghostCfg.needCode && noCode && !zaehlerLaeuft))
-                   && !raceFormationLap;
+    // ---- DIE STARTGNADE ----------------------------------------------------------------
+    //
+    // Direkt nach einem ausdruecklichen Start haelt der Ghost NICHT an. Das ist der Ausweg
+    // aus einem Kreis, der sonst nicht zu verlassen ist:
+    //
+    //     geparkt  ->  Gas 0  ->  das Auto bewegt sich nicht  ->  es liest kein Muster
+    //              ->  0x00 steht weiter, der Kachelzaehler steht  ->  parkt sofort wieder
+    //
+    // Gemeldet als "nach einer Weile bleiben sie einfach stehen und blinken. Neustart des
+    // Rennens, Zuruecksetzen, usw. funktioniert nicht" - und der zweite Satz ist genau
+    // dieser Kreis. Wer auf Start drueckt, hat das Auto gerade in die Hand genommen und
+    // hingestellt; drei Sekunden Vertrauen sind die Antwort darauf, nicht ein weiterer
+    // Knopf.
+    //
+    // SIE GILT FUER BEIDE ZWEIGE, und das ist eine Berichtigung an meinem ersten Versuch:
+    // ich hatte sie nur auf noCode gelegt, in der Annahme, das sei der Zweig, der zuschlaegt.
+    // ghostCfg.needCode ist aber standardmaessig AUS - es parkt also praktisch immer nur
+    // der 0x00-Zweig, und eine Gnade, die genau ihn ausspart, waere wirkungslos gewesen.
+    //
+    // Gefaehrlich ist das nicht: nach dem Entparken laeuft die Anfahrrampe ueber
+    // GHOST_UNPARK_RAMP_MS = 2500 ms, das Auto rollt in diesen drei Sekunden also kaum an.
+    // Liegt es wirklich neben der Bahn, meldet es weiter 0x00 und steht danach wieder.
+    const gnade = g.gnadeBis && now < g.gnadeBis;
+    const parken = !gnade && !raceFormationLap
+                   && (offConfirmed || (ghostCfg.needCode && noCode && !zaehlerLaeuft));
     if (parken && !car.parked) {
       parkCar(car, 'Bahn verlassen');
     }
@@ -3497,6 +3591,192 @@
   }
 
   window.OMEGA_TEST = {
+
+    // ---- Haelt der Ghost an, wenn er anhalten soll - und nur dann? ------------------
+    //
+    // Spielt eine gemessene Lage nach: das Auto meldet ueber `nullMs` durchgehend 0x00,
+    // waehrend der Kachelzaehler alle `kachelMs` weiterlaeuft. Genau diese zwei Zahlen
+    // stehen in den Mitschnitten, und genau an ihnen trennt sich Fahren von Abflug.
+    //
+    // Getaktet wird von Hand mit gefaelschter Uhr: ein Prueflauf an echten Zeitgebern
+    // misst im verborgenen Fenster die Drosselung statt der Regel.
+    ghostParkProbe(o) {
+      const opt = o || {};
+      const nullMs = opt.nullMs === undefined ? 1000 : opt.nullMs;
+      const kachelMs = opt.kachelMs === undefined ? 450 : opt.kachelMs;
+      const vorlaufMs = opt.vorlaufMs === undefined ? 4000 : opt.vorlaufMs;
+      const merkGarage = garage.slice();
+      const keepTiles = currentTrackTiles;
+      const echtNow = Date.now;
+      const merkNeed = ghostCfg.needCode;
+      try {
+        currentTrackTiles = codeToTrack(opt.code || 'SG2H2G2R2').tiles;
+        lineCache = null;
+        let uhr = echtNow();
+        Date.now = () => uhr;
+        const car = { role: 'ghost', alias: 'Parkprobe', writeInFlight: false,
+                      tileCode: 0x02, tileCount: 0, lastCodeAt: uhr, yaw: 0,
+                      rx: { properties: { writeWithoutResponse: true },
+                            writeValueWithoutResponse() { return Promise.resolve(); } } };
+        garage.push(car);
+        startGhost(car);
+        ghostTaktLoeschen(car);
+        car.ghost.freeRun = true;
+        // Die Startgnade absichtlich ABLAUFEN lassen: geprueft wird die Haltebedingung im
+        // Fahrbetrieb, nicht die Gnade. Fuer die gibt es den eigenen Fall unten.
+        let k = 0, seitKachel = 0;
+        const takt = (code, dauer) => {
+          const bis = uhr + dauer;
+          while (uhr < bis) {
+            uhr += CONTROL_SEND_INTERVAL_MS;
+            seitKachel += CONTROL_SEND_INTERVAL_MS;
+            if (seitKachel >= kachelMs) {
+              seitKachel = 0; k++;
+              car.tileCount = k & 0xff;
+              car.tileAt = uhr;
+            }
+            car.tileCode = code;
+            // Ein gueltiger Code frischt lastCodeAt auf - genau wie onCarNotify es tut,
+            // und 0x00 tut es ausdruecklich NICHT.
+            if (code !== 0x00 && code !== 0xff) car.lastCodeAt = uhr;
+            ghostTick(car);
+          }
+        };
+        // Erst normal fahren, damit der Kachelring gefuellt ist und die Gnade ablaeuft.
+        takt(0x02, vorlaufMs);
+        const vorher = !!car.parked;
+        takt(0x00, nullMs);
+        return { nullMs, kachelMs, vorher, geparkt: !!car.parked,
+                 grund: car.parked || null,
+                 ringMittel: car.ghost && car.ghost.tileRing && car.ghost.tileRing.length
+                   ? Math.round(car.ghost.tileRing.reduce((a, b) => a + b, 0)
+                                / car.ghost.tileRing.length) : null };
+      } finally {
+        Date.now = echtNow;
+        ghostCfg.needCode = merkNeed;
+        garage.forEach(c => { if (String(c.alias || '') === 'Parkprobe') {
+          ghostTaktLoeschen(c); if (c.ghost) c.ghost.running = false; } });
+        garage.splice(0, garage.length, ...merkGarage);
+        currentTrackTiles = keepTiles;
+        lineCache = null;
+      }
+    },
+
+    // ---- Kommt ein geparkter Ghost durch einen Neustart wieder hoch? ---------------
+    //
+    // Der gemeldete Fall: "nach einer Weile bleiben sie einfach stehen und blinken.
+    // Neustart des Rennens, Zuruecksetzen, usw. funktioniert nicht." Die Ursache ist ein
+    // Kreis - geparkt heisst Gas 0, also keine Fahrt, also kein Code, also parkt der
+    // Neustart sofort wieder ein. Geprueft wird an der ENTSCHEIDUNG, nicht am Knopf.
+    ghostNeustartProbe(o) {
+      const opt = o || {};
+      const merkGarage = garage.slice();
+      const keepTiles = currentTrackTiles;
+      const echtNow = Date.now;
+      try {
+        currentTrackTiles = codeToTrack('SG2H2G2R2').tiles;
+        lineCache = null;
+        let uhr = echtNow();
+        Date.now = () => uhr;
+        // 0x00 und NICHT 0xff: needCode ist standardmaessig aus, es parkt also der
+        // 0x00-Zweig. Ein Prueflauf mit 0xff wuerde an der Vorgabe vorbeimessen - genau
+        // das ist mir beim ersten Anlauf passiert.
+        const car = { role: 'ghost', alias: 'Neustartprobe', writeInFlight: false,
+                      tileCode: 0x00, tileCount: 0, yaw: 0,
+                      // Ein Auto, das seit langem NICHTS gelesen hat - genau die Lage nach
+                      // einem Abgang, in der es stand und deshalb nichts lesen konnte.
+                      lastCodeAt: uhr - 60000,
+                      rx: { properties: { writeWithoutResponse: true },
+                            writeValueWithoutResponse() { return Promise.resolve(); } } };
+        garage.push(car);
+        startGhost(car);
+        ghostTaktLoeschen(car);
+        car.ghost.freeRun = true;
+        const schritte = [];
+        let naechste = 0, t = 0;
+        // Ueber die Gnadenzeit hinaus, damit BEIDE Seiten geprueft sind: waehrend der
+        // Gnade darf es fahren, danach muss es stehen - sonst faehrt ein Auto neben der
+        // Bahn ewig weiter, und die Gnade waere ein Loch statt einer Frist.
+        const bisMs = opt.bisMs || (GHOST_START_GNADE_MS + 2500);
+        while (t < bisMs) {
+          uhr += CONTROL_SEND_INTERVAL_MS;
+          t += CONTROL_SEND_INTERVAL_MS;
+          ghostTick(car);
+          if (t >= naechste) { schritte.push({ ms: t, geparkt: !!car.parked }); naechste += 500; }
+        }
+        return { schritte, gnadeMs: GHOST_START_GNADE_MS, bisMs,
+                 inGnade: schritte.filter(x => x.ms < GHOST_START_GNADE_MS - 200)
+                                  .every(x => !x.geparkt),
+                 nachGnade: !!car.parked,
+                 needCode: ghostCfg.needCode };
+      } finally {
+        Date.now = echtNow;
+        garage.forEach(c => { if (String(c.alias || '') === 'Neustartprobe') {
+          ghostTaktLoeschen(c); if (c.ghost) c.ghost.running = false; } });
+        garage.splice(0, garage.length, ...merkGarage);
+        currentTrackTiles = keepTiles;
+        lineCache = null;
+      }
+    },
+
+    // ---- Zaehlt die Start/Ziel-Sperre die Runde, und schlaegt sie den Startcode? ----
+    //
+    // Gefuettert wird carRaceNotify mit gebauten Meldepaketen. Byte 15 Bit 3 ist die
+    // Sperre des AUTOS, Byte 12 der Streckencode, Byte 11 der Kachelzaehler.
+    zielSperreProbe(o) {
+      const opt = o || {};
+      const merkState = raceState;
+      const echtNow = Date.now;
+      try {
+        raceState = 'racing';
+        let uhr = echtNow();
+        Date.now = () => uhr;
+        // lapStart VORBELEGEN: die erste Ueberfahrt setzt sonst nur die Rundenuhr und
+        // erzeugt keine Runde - dann waere "0 Runden" zweideutig (keine Ueberfahrt oder
+        // die erste?). So ist jede Ueberfahrt eine Runde.
+        const car = { role: 'ghost', alias: 'Zielprobe',
+                      race: { laps: [], lapStart: uhr, pending: null, seen: 0,
+                              lastActed: 0, lastCount: null } };
+        const paket = (code, count, sperre) => {
+          const b = new Array(16).fill(0);
+          b[11] = count & 0xff; b[12] = code; b[15] = sperre ? 0x08 : 0x00;
+          return b;
+        };
+        const runden = () => (car.race && car.race.laps ? car.race.laps.length : 0);
+        const folge = [];
+        // 1. Der Startbereich: Code 0x01 ueber mehrere Kacheln, OHNE Sperre. Ohne die
+        //    Sperre zaehlt der Rueckfall - das ist das alte Verhalten.
+        for (let i = 0; i < 6; i++) {
+          uhr += 200;
+          carRaceNotify(car, paket(0x01, i, false));
+        }
+        folge.push({ lage: 'nur Startcode', runden: runden() });
+        const nurCode = runden();
+        // 2. Jetzt die Sperre. Sie muss zaehlen.
+        uhr += 2000;
+        carRaceNotify(car, paket(0x01, 9, true));
+        folge.push({ lage: 'Sperre steigt', runden: runden() });
+        const mitSperre = runden();
+        // 3. Die Sperre STEHT eine Sekunde: kein zweites Zaehlen.
+        for (let i = 0; i < 15; i++) {
+          uhr += 69;
+          carRaceNotify(car, paket(0x01, 10 + i, true));
+        }
+        folge.push({ lage: 'Sperre steht', runden: runden() });
+        const wahrendSperre = runden();
+        // 4. Sperre faellt, Startcode laeuft weiter: der Rueckfall darf jetzt NICHT mehr
+        //    zaehlen, sonst laege die Runde zweimal.
+        for (let i = 0; i < 12; i++) {
+          uhr += 300;
+          carRaceNotify(car, paket(0x01, 40 + i, false));
+        }
+        folge.push({ lage: 'nach der Sperre', runden: runden() });
+        return { folge, nurCode, mitSperre, wahrendSperre, ende: runden() };
+      } finally {
+        Date.now = echtNow;
+        raceState = merkState;
+      }
+    },
     // Der Versatz eines Ghosts gegen den Herzschlag, als reine Rechnung. Siehe
     // ghostTaktVersatz(): ohne Zeitgeber pruefbar, und darauf kommt es an.
     ghostTaktVersatz,

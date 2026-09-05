@@ -159,20 +159,57 @@
     setTimeout(() => setRaceLights(0), 900);
   }
 
+  // ---- Die Start/Ziel-Sperre des AUTOS: Byte 15, Bit 3 im Meldekanal ------------------
+  //
+  // Das Auto setzt sie selbst, sobald es das Startmuster liest, und haelt sie rund eine
+  // Sekunde. Ihre STEIGENDE FLANKE ist damit ein Punkt auf der Bahn - der Zielstreifen.
+  //
+  // Gemessen an den Mitschnitten:
+  //   Blockdauer     Median 981 bis 1050 ms
+  //   Haeufigkeit    17 Bloecke gegen 16 gezaehlte Runden
+  //   Lage           420 ms NACH der alten Regel (Bereich 315 bis 980 ms)
+  //   Herkunft       Verbindung 0x200: Bit 3 in 0 % der Schreibbefehle, 0,4 % der Meldungen
+  //                  Verbindung 0x202: 100 % geschrieben, 12 % gemeldet
+  //                  Also kein Echo unseres eigenen Bytes, sondern eine Meldung des Autos.
+  const ZIEL_SPERRE_BIT = 0x08;   // Byte 15
+  function zielSperreFlanke(r, b) {
+    const jetzt = (b[15] & ZIEL_SPERRE_BIT) !== 0;
+    const flanke = jetzt && !r.sperreVor;
+    r.sperreVor = jetzt;
+    return flanke;
+  }
+
   function carRaceNotify(car, b) {
     if (!car.race) car.race = { laps: [], lapStart: null, pending: null, seen: 0,
                                 lastActed: 0, lastCount: null };
     const r = car.race;
+    const now = Date.now();
+
+    // DIE SPERRE HAT VORRANG, und sobald ein Auto sie einmal gezeigt hat, gilt nur noch
+    // sie. Die alte Regel bleibt fuer Autos, die sie nie melden - sie einfach zu loeschen
+    // hiesse, ein Verhalten wegzunehmen, das auf anderen Bahnen vielleicht das einzige ist.
+    if (zielSperreFlanke(r, b)) {
+      r.sperreGesehen = true;
+      if (now - r.lastActed >= TILE_REPEAT_BLOCK_MS) {
+        r.lastActed = now;
+        carLapCrossed(car);
+      }
+      return;
+    }
+
     const code = b[12], count = b[11];
     if (code !== r.pending) { r.pending = code; r.seen = 1; return; }
     if (++r.seen < 2) return;
     if (r.lastCount === null) { r.lastCount = count; return; }
     if (count === r.lastCount) return;
     r.lastCount = count;
+    // Der Rueckfall zaehlt nur, solange dieses Auto die Sperre noch nie gemeldet hat.
+    // Sonst laege die Runde zweimal: einmal am Anfang des Startbereichs und einmal am
+    // Streifen, und die Rundenzeiten wuerden abwechselnd zu kurz und zu lang.
+    if (r.sperreGesehen) return;
     // isStartCode und nicht der Vergleich mit einem Wert: das Originalblatt meldet 0x0a,
     // die frueher angenommene 0x01 bleibt daneben gueltig.
     if (!isStartCode(code)) return;
-    const now = Date.now();
     if (now - r.lastActed < TILE_REPEAT_BLOCK_MS) return;
     r.lastActed = now;
     carLapCrossed(car);
