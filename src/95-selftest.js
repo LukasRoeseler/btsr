@@ -1736,6 +1736,53 @@
 
 
 
+
+  // ---- Streckenlernen: der Ring braucht nicht den Startcode ----
+  //
+  // GEMELDET: der automatische Scan soll nicht auf die Start/Ziel-Gerade warten muessen.
+  // Der Grund, warum er es tat, ist echt - ohne Anker faengt der Ring irgendwo in der
+  // Runde an und ist gegen die Bahn verdreht. Der Anker muss also bleiben, aber es gibt
+  // seit v0.5.9 einen zweiten und besseren: die Sperre, die das Auto selbst setzt.
+  //
+  // Der Test faehrt eine Runde, deren Byte 12 NIE einen Startcode meldet. Vorher wurde
+  // dabei nichts gelernt, und zwar still. Die Gegenprobe ist der zweite Fall: ohne beide
+  // Anker darf weiterhin nichts uebernommen werden - ein Ring an falscher Stelle waere
+  // schlimmer als keiner.
+  stAdd('Streckenlernen: die Sperre des Autos ankert den Ring', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.lernProbe) {
+      return { skip: true, mass: 'lernProbe nicht vorhanden' };
+    }
+    const schlecht = [], teile = [];
+    // Eine Runde aus sechs Kacheln, kein einziger Startcode: Gerade, Kurven.
+    const runde = [0x02, 0x04, 0x04, 0x02, 0x03, 0x04];
+
+    const mitSperre = OMEGA_TEST.lernProbe(runde, { sperreBei: 0, runden: 3 });
+    teile.push('mit Sperre: ' + mitSperre.teile + ' Teile');
+    if (mitSperre.teile !== runde.length) {
+      schlecht.push('mit Sperre ' + mitSperre.teile + ' Teile statt ' + runde.length);
+    }
+    // Und die erste Kachel muss die Start/Ziel-Kachel sein, sonst ist der Ring verdreht.
+    if (mitSperre.typen[0] !== OMEGA_TEST.TILE_TYPE.START) {
+      schlecht.push('der Ring beginnt nicht an Start/Ziel');
+    }
+
+    // GEGENPROBE: kein Startcode UND keine Sperre - es darf nichts uebernommen werden.
+    const ohne = OMEGA_TEST.lernProbe(runde, { runden: 3 });
+    teile.push('ohne Anker: ' + ohne.teile + ' Teile, Vorlauf ' + ohne.vorlauf);
+    if (ohne.teile !== 0) schlecht.push('ohne Anker wurden ' + ohne.teile + ' Teile uebernommen');
+    // Aber es muss GEZAEHLT haben - sonst ist der Zustand wieder still, und genau das
+    // war das eigentliche Aergernis.
+    if (!(ohne.vorlauf > 5)) schlecht.push('der Vorlauf zaehlt nicht mit (' + ohne.vorlauf + ')');
+
+    // Und der alte Weg muss weiter gehen: Startcode ohne Sperre.
+    const mitCode = OMEGA_TEST.lernProbe([0x01, 0x04, 0x04, 0x02, 0x03, 0x04], { runden: 3 });
+    teile.push('mit Startcode: ' + mitCode.teile + ' Teile');
+    if (mitCode.teile !== 6) schlecht.push('mit Startcode ' + mitCode.teile + ' Teile statt 6');
+
+    return { ok: schlecht.length === 0,
+             mass: teile.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
   // ---- RC-Fernbedienung: Achsen, die nicht bei null ruhen ----
   //
   // GEMELDET an einer CH Control Box: unter Windows liess sich in Chrome und Edge gar

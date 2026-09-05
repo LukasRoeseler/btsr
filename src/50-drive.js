@@ -1072,10 +1072,26 @@
   // Advances the simulation and publishes its shaped output into physOutSteer/
   // physOutThrottle for controlHeartbeat() to transmit. Driven by the heartbeat itself
   // (NOT requestAnimationFrame) on purpose: rAF is paused by the browser whenever the
-  // page isn't being composited (hidden/minimised/background tab). With rAF, physics
-  // would freeze while the heartbeat happily kept re-sending the last throttle value —
-  // i.e. the car would keep driving at whatever speed it had when you looked away.
-  // Timer-driven, physics keeps decelerating normally instead.
+  // page isn't being composited (hidden/minimised/background tab).
+  //
+  // WAS DIESER ABSATZ FRUEHER BEHAUPTETE, war zu viel: "Timer-driven, physics keeps
+  // decelerating normally instead." Gemessen stimmt das nur mit Ton. Ein verborgenes
+  // Fenster drosselt ALLE Zeitgeber auf 1 Hz - der Herzschlag lieferte dort 1,1 statt
+  // 22,2 Pakete je Sekunde, und zwar samt wxTick, pitBoard und dem Tastaturtakt.
+  //
+  // ES SEI DENN, DIE SEITE TOENT. Mit laufendem Ton fielen in derselben verborgenen Lage
+  // 133 Pakete in 6 Sekunden, also volle 22,2 Hz: eine hoerbare Seite ist von der
+  // Drosselung ausgenommen. Der Motorton ist standardmaessig an, im Fahrbetrieb ist der
+  // Takt also da - aber wer den Ton ausschaltet und das Fenster in den Hintergrund legt,
+  // faehrt mit einem Steuertakt von einer Sekunde.
+  //
+  // Das ist trotzdem sicher, und zwar nicht durch Zufall: rAF steht in dieser Lage ganz,
+  // die Gamepad-Abtastung damit auch, und die Wache im Herzschlag gibt nach PAD_STALE_MS
+  // das Gas des Controllers frei. Die Tastatur wird beim blur-Ereignis geleert. Es bleibt
+  // also kein Gas stehen - das Auto rollt aus, nur langsamer geregelt.
+  //
+  // Gegen rAF bleibt der Zeitgeber die bessere Wahl: rAF steht IMMER still, wenn die Seite
+  // nicht gezeichnet wird, der Zeitgeber nur ohne Ton.
   // Autopilot fuer das FAHRERAUTO waehrend der gelben Flagge.
   //
   // Der Anlass: waehrend Gelb stellt man abgeflogene Ghosts von Hand zurueck auf die Bahn,

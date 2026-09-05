@@ -3671,6 +3671,56 @@
 
   window.OMEGA_TEST = {
 
+    // ---- Lernt der Scan eine Runde, deren Startcode nie gemeldet wird? --------------
+    //
+    // Gefuettert wird learnTick mit gebauten Meldepaketen. `runde` ist eine Liste von
+    // Codes je Kachel; `sperreBei` sagt, an welcher Kachel die Start/Ziel-Sperre des
+    // Autos (Byte 15 Bit 3) steigt. Der Kachelzaehler laeuft mit.
+    //
+    // Gemessen wird an currentTrackTiles - also an dem, was hinterher wirklich als
+    // Strecke dasteht, nicht an einer Zwischengroesse.
+    lernProbe(runde, o) {
+      const opt = o || {};
+      const merkTiles = currentTrackTiles;
+      const merkLearn = ghostCfg.learn;
+      const echtNow = Date.now;
+      try {
+        currentTrackTiles = [];
+        ghostCfg.learn = true;
+        learnReset();
+        let uhr = echtNow();
+        Date.now = () => uhr;
+        let zaehler = 0;
+        const paket = (code, sperre) => {
+          const b = new Array(16).fill(0);
+          b[11] = zaehler & 0xff; b[12] = code; b[15] = sperre ? 0x08 : 0x00;
+          return b;
+        };
+        const runden = opt.runden || 3;
+        for (let r = 0; r < runden; r++) {
+          for (let i = 0; i < runde.length; i++) {
+            const sperre = (opt.sperreBei !== undefined && i === opt.sperreBei);
+            // Mehrere Meldungen je Kachel, wie in Wirklichkeit: die Mehrheit entscheidet,
+            // und die Sperre haelt ueber mehrere Pakete.
+            for (let k = 0; k < 4; k++) {
+              uhr += 70;
+              learnTick(paket(runde[i], sperre && k < 3));
+            }
+            zaehler++;
+          }
+        }
+        return { teile: currentTrackTiles.length,
+                 typen: currentTrackTiles.map(t => t.type),
+                 laps: learn.laps, vorlauf: learn.vorlauf || 0 };
+      } finally {
+        Date.now = echtNow;
+        ghostCfg.learn = merkLearn;
+        learnReset();
+        currentTrackTiles = merkTiles;
+        lineCache = null;
+      }
+    },
+
     // ---- Eine RC-Fernbedienung belegen, ohne eine zu haben --------------------------
     //
     // Nachgebaut wird, was gemeldet wurde: Achsen, die NICHT bei null ruhen. Ein

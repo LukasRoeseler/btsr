@@ -447,7 +447,39 @@
         // die Simulation tiefer, sondern die Kalibrierung kaputt.
         brakeFadeEffect: 1.0,   // 0 = aus, 1 = Modell, bis 2 = schnellere Raten
         brakeAmbientC: 25,
-        brakeHeatRate: 62,      // °C/s bei voller Bremsung und voller Fahrt
+        // 85 STATT 62, und der Grund ist ein Prueflauf-Artefakt, das erst v0.5.13
+        // sichtbar gemacht hat.
+        //
+        // Bis dahin loeschte ein setTimeout die Schaltunterbrechung. In einer synchronen
+        // Messschleife kommt ein Zeitgeber nie dran: st.isShifting blieb nach dem ersten
+        // Herunterschalten fuer immer wahr, und weil die Automatik "nicht waehrend eines
+        // Gangwechsels" schaltet, fand ueberhaupt nur EIN Herunterschalten statt. Der
+        // Prueflauf mass also eine Bremsung im Dauer-Schaltzustand - etwas, das im
+        // Fahrbetrieb nie vorkam, weil dort der Zeitgeber feuerte.
+        //
+        // Mit der Unterbrechung ueber dt zeigt derselbe Prueflauf, was das Auto WIRKLICH
+        // tat, und das war ernuechternd (250 km/h, acht Bremsungen):
+        //
+        //                       eine Bremsung      acht Bremsungen
+        //     Artefakt            183 °C            806 °C, 21,7 % Fading, 252,7 m
+        //     Wirklichkeit        183 °C            505 °C,  0,0 % Fading, 207,3 m
+        //
+        // 505 °C ist der PLATEAUWERT - Kuehlung und Heizung halten sich dort die Waage,
+        // auch nach sechzehn Bremsungen waren es nur 528. Das Fading beginnt bei 520.
+        // Es war also im Fahrbetrieb praktisch unerreichbar, und der Test, der es
+        // bestaetigte, mass das Artefakt.
+        //
+        // Die Rate wird deshalb an der Aussage kalibriert, die zwei Zeilen darueber schon
+        // steht: eine Vollbremsung aus 250 km/h soll rund 250 °C erreichen. Mit 62 waren
+        // es 183, mit 85 sind es 241. Gemessen bei 85:
+        //
+        //     eine Bremsung   241 °C, 0,0 % Fading, 205,8 m   (Bremsweg unveraendert)
+        //     acht           710 °C, 15,9 % Fading, 224,4 m   (9 % laenger)
+        //
+        // Damit gilt beides, was der Absatz darueber verlangt: eine Einzelbremsung fadet
+        // nicht und laesst die gefittete Bremstabelle unangetastet, mehrere Bremszonen
+        // hintereinander kommen ins Fading.
+        brakeHeatRate: 85,      // °C/s bei voller Bremsung und voller Fahrt
         // DIREKT die Kuehlkoeffizienten in 1/s, nicht normiert. Hier stand erst eine
         // Normierung ueber eine Spanne, und die machte den Koeffizienten 0,59/s - eine
         // Zeitkonstante von 1,7 s, mit der die Scheiben gar nicht warm werden konnten:
@@ -652,6 +684,9 @@
         // eine Groesse, die nur in einer verworfenen Anzeige Sinn hatte, gehoert nicht in den
         // Zustand.
         isShifting: false,
+        // Restzeit der Schaltunterbrechung in Sekunden. Sie laeuft ueber dt und nicht
+        // ueber einen Zeitgeber - siehe die Herleitung an triggerShift().
+        shiftLeft: 0,
         absActive: false,
         lastAbsRumble: 0,
       };
@@ -1004,6 +1039,22 @@
       let isBraking = false;
       st.absActive = false;
       st.onLimiter = false;
+
+      // ---- Die Schaltunterbrechung, ueber dt statt ueber einen Zeitgeber --------------
+      //
+      // Hier hing ein setTimeout OHNE GRIFF, und das hatte drei Folgen. Der erste
+      // Zeitgeber beendete den zweiten Schaltvorgang (beim Herunterschalten unter Bremsen
+      // die Regel, und beim 412P mit 350 ms deutlich); im verborgenen Fenster ist
+      // setTimeout auf 1 Hz gedrosselt, die Unterbrechung dauerte dort bis zu einer
+      // Sekunde; und drei Prueflaeufe mussten sie von Hand nachbauen, weil ein Zeitgeber
+      // in einer synchronen Schleife nie dran kommt.
+      //
+      // Ueber dt gilt: der LETZTE Schaltvorgang bestimmt die Dauer, es gibt nichts zu
+      // drosseln, und eine gefaelschte Uhr treibt sie von selbst.
+      if (st.shiftLeft > 0) {
+        st.shiftLeft = Math.max(0, st.shiftLeft - Math.max(0, dt));
+        st.isShifting = st.shiftLeft > 0;
+      }
 
       // Speed is simulated in real km/h and the throttle byte is DERIVED from it, rather
       // than being the driver's pedal position. That is the key point: the car reaches top
@@ -1771,9 +1822,9 @@
         if (direction > 0) {
           st.driveMode = 'forward'; st.currentGear = 0; st.neutralRpm = 0;
           st.isShifting = true;
+          st.shiftLeft = cfg.shiftMs / 1000;
           showHudToast('1. Gang'); padRumble(0.15, 0.1, 40);
           playShiftSound(1);
-          setTimeout(() => { st.isShifting = false; }, cfg.shiftMs);
         } else if (stopped) {
           st.driveMode = 'reverse'; st.speedKmh = 0; st.neutralRpm = 0;
           showHudToast('Rückwärtsgang'); padRumble(0.3, 0.2, 90);
@@ -1792,12 +1843,15 @@
       const next = st.currentGear + direction;
       if (next < 0 || next >= cfg.gears.length) return;
       st.isShifting = true;
+      // DER LETZTE SCHALTVORGANG GEWINNT. Genau das konnte die alte Fassung nicht: ihr
+      // Zeitgeber lief weiter und beendete die naechste Unterbrechung vorzeitig - beim
+      // Herunterschalten unter Bremsen die Regel, und beim 412P mit 350 ms deutlich.
+      st.shiftLeft = cfg.shiftMs / 1000;
       st.currentGear = next;
       // Short and light: six shifts inside three seconds with a long pattern is a
       // pneumatic drill in the hand.
       padRumble(0.15, 0.1, 40);
       playShiftSound(direction);
-      setTimeout(() => { st.isShifting = false; }, cfg.shiftMs);
     }
   }
 

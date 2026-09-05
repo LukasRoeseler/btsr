@@ -6446,7 +6446,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.5.12</span></span>
+    <span class="foot-ver">v<span id="app-version">0.5.13</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -9635,7 +9635,39 @@
         // die Simulation tiefer, sondern die Kalibrierung kaputt.
         brakeFadeEffect: 1.0,   // 0 = aus, 1 = Modell, bis 2 = schnellere Raten
         brakeAmbientC: 25,
-        brakeHeatRate: 62,      // °C/s bei voller Bremsung und voller Fahrt
+        // 85 STATT 62, und der Grund ist ein Prueflauf-Artefakt, das erst v0.5.13
+        // sichtbar gemacht hat.
+        //
+        // Bis dahin loeschte ein setTimeout die Schaltunterbrechung. In einer synchronen
+        // Messschleife kommt ein Zeitgeber nie dran: st.isShifting blieb nach dem ersten
+        // Herunterschalten fuer immer wahr, und weil die Automatik "nicht waehrend eines
+        // Gangwechsels" schaltet, fand ueberhaupt nur EIN Herunterschalten statt. Der
+        // Prueflauf mass also eine Bremsung im Dauer-Schaltzustand - etwas, das im
+        // Fahrbetrieb nie vorkam, weil dort der Zeitgeber feuerte.
+        //
+        // Mit der Unterbrechung ueber dt zeigt derselbe Prueflauf, was das Auto WIRKLICH
+        // tat, und das war ernuechternd (250 km/h, acht Bremsungen):
+        //
+        //                       eine Bremsung      acht Bremsungen
+        //     Artefakt            183 °C            806 °C, 21,7 % Fading, 252,7 m
+        //     Wirklichkeit        183 °C            505 °C,  0,0 % Fading, 207,3 m
+        //
+        // 505 °C ist der PLATEAUWERT - Kuehlung und Heizung halten sich dort die Waage,
+        // auch nach sechzehn Bremsungen waren es nur 528. Das Fading beginnt bei 520.
+        // Es war also im Fahrbetrieb praktisch unerreichbar, und der Test, der es
+        // bestaetigte, mass das Artefakt.
+        //
+        // Die Rate wird deshalb an der Aussage kalibriert, die zwei Zeilen darueber schon
+        // steht: eine Vollbremsung aus 250 km/h soll rund 250 °C erreichen. Mit 62 waren
+        // es 183, mit 85 sind es 241. Gemessen bei 85:
+        //
+        //     eine Bremsung   241 °C, 0,0 % Fading, 205,8 m   (Bremsweg unveraendert)
+        //     acht           710 °C, 15,9 % Fading, 224,4 m   (9 % laenger)
+        //
+        // Damit gilt beides, was der Absatz darueber verlangt: eine Einzelbremsung fadet
+        // nicht und laesst die gefittete Bremstabelle unangetastet, mehrere Bremszonen
+        // hintereinander kommen ins Fading.
+        brakeHeatRate: 85,      // °C/s bei voller Bremsung und voller Fahrt
         // DIREKT die Kuehlkoeffizienten in 1/s, nicht normiert. Hier stand erst eine
         // Normierung ueber eine Spanne, und die machte den Koeffizienten 0,59/s - eine
         // Zeitkonstante von 1,7 s, mit der die Scheiben gar nicht warm werden konnten:
@@ -9840,6 +9872,9 @@
         // eine Groesse, die nur in einer verworfenen Anzeige Sinn hatte, gehoert nicht in den
         // Zustand.
         isShifting: false,
+        // Restzeit der Schaltunterbrechung in Sekunden. Sie laeuft ueber dt und nicht
+        // ueber einen Zeitgeber - siehe die Herleitung an triggerShift().
+        shiftLeft: 0,
         absActive: false,
         lastAbsRumble: 0,
       };
@@ -10192,6 +10227,22 @@
       let isBraking = false;
       st.absActive = false;
       st.onLimiter = false;
+
+      // ---- Die Schaltunterbrechung, ueber dt statt ueber einen Zeitgeber --------------
+      //
+      // Hier hing ein setTimeout OHNE GRIFF, und das hatte drei Folgen. Der erste
+      // Zeitgeber beendete den zweiten Schaltvorgang (beim Herunterschalten unter Bremsen
+      // die Regel, und beim 412P mit 350 ms deutlich); im verborgenen Fenster ist
+      // setTimeout auf 1 Hz gedrosselt, die Unterbrechung dauerte dort bis zu einer
+      // Sekunde; und drei Prueflaeufe mussten sie von Hand nachbauen, weil ein Zeitgeber
+      // in einer synchronen Schleife nie dran kommt.
+      //
+      // Ueber dt gilt: der LETZTE Schaltvorgang bestimmt die Dauer, es gibt nichts zu
+      // drosseln, und eine gefaelschte Uhr treibt sie von selbst.
+      if (st.shiftLeft > 0) {
+        st.shiftLeft = Math.max(0, st.shiftLeft - Math.max(0, dt));
+        st.isShifting = st.shiftLeft > 0;
+      }
 
       // Speed is simulated in real km/h and the throttle byte is DERIVED from it, rather
       // than being the driver's pedal position. That is the key point: the car reaches top
@@ -10959,9 +11010,9 @@
         if (direction > 0) {
           st.driveMode = 'forward'; st.currentGear = 0; st.neutralRpm = 0;
           st.isShifting = true;
+          st.shiftLeft = cfg.shiftMs / 1000;
           showHudToast('1. Gang'); padRumble(0.15, 0.1, 40);
           playShiftSound(1);
-          setTimeout(() => { st.isShifting = false; }, cfg.shiftMs);
         } else if (stopped) {
           st.driveMode = 'reverse'; st.speedKmh = 0; st.neutralRpm = 0;
           showHudToast('Rückwärtsgang'); padRumble(0.3, 0.2, 90);
@@ -10980,12 +11031,15 @@
       const next = st.currentGear + direction;
       if (next < 0 || next >= cfg.gears.length) return;
       st.isShifting = true;
+      // DER LETZTE SCHALTVORGANG GEWINNT. Genau das konnte die alte Fassung nicht: ihr
+      // Zeitgeber lief weiter und beendete die naechste Unterbrechung vorzeitig - beim
+      // Herunterschalten unter Bremsen die Regel, und beim 412P mit 350 ms deutlich.
+      st.shiftLeft = cfg.shiftMs / 1000;
       st.currentGear = next;
       // Short and light: six shifts inside three seconds with a long pattern is a
       // pneumatic drill in the hand.
       padRumble(0.15, 0.1, 40);
       playShiftSound(direction);
-      setTimeout(() => { st.isShifting = false; }, cfg.shiftMs);
     }
   }
 
@@ -12105,10 +12159,26 @@
   // Advances the simulation and publishes its shaped output into physOutSteer/
   // physOutThrottle for controlHeartbeat() to transmit. Driven by the heartbeat itself
   // (NOT requestAnimationFrame) on purpose: rAF is paused by the browser whenever the
-  // page isn't being composited (hidden/minimised/background tab). With rAF, physics
-  // would freeze while the heartbeat happily kept re-sending the last throttle value —
-  // i.e. the car would keep driving at whatever speed it had when you looked away.
-  // Timer-driven, physics keeps decelerating normally instead.
+  // page isn't being composited (hidden/minimised/background tab).
+  //
+  // WAS DIESER ABSATZ FRUEHER BEHAUPTETE, war zu viel: "Timer-driven, physics keeps
+  // decelerating normally instead." Gemessen stimmt das nur mit Ton. Ein verborgenes
+  // Fenster drosselt ALLE Zeitgeber auf 1 Hz - der Herzschlag lieferte dort 1,1 statt
+  // 22,2 Pakete je Sekunde, und zwar samt wxTick, pitBoard und dem Tastaturtakt.
+  //
+  // ES SEI DENN, DIE SEITE TOENT. Mit laufendem Ton fielen in derselben verborgenen Lage
+  // 133 Pakete in 6 Sekunden, also volle 22,2 Hz: eine hoerbare Seite ist von der
+  // Drosselung ausgenommen. Der Motorton ist standardmaessig an, im Fahrbetrieb ist der
+  // Takt also da - aber wer den Ton ausschaltet und das Fenster in den Hintergrund legt,
+  // faehrt mit einem Steuertakt von einer Sekunde.
+  //
+  // Das ist trotzdem sicher, und zwar nicht durch Zufall: rAF steht in dieser Lage ganz,
+  // die Gamepad-Abtastung damit auch, und die Wache im Herzschlag gibt nach PAD_STALE_MS
+  // das Gas des Controllers frei. Die Tastatur wird beim blur-Ereignis geleert. Es bleibt
+  // also kein Gas stehen - das Auto rollt aus, nur langsamer geregelt.
+  //
+  // Gegen rAF bleibt der Zeitgeber die bessere Wahl: rAF steht IMMER still, wenn die Seite
+  // nicht gezeichnet wird, der Zeitgeber nur ohne Ton.
   // Autopilot fuer das FAHRERAUTO waehrend der gelben Flagge.
   //
   // Der Anlass: waehrend Gelb stellt man abgeflogene Ghosts von Hand zurueck auf die Bahn,
@@ -14379,10 +14449,28 @@
     learn.car = null;
     learn.seq = []; learn.votes = {}; learn.lastCount = null;
     learn.started = false; learn.laps = 0;
+    // Der Vorlauf und der Sperrzustand gehoeren mit zurueckgesetzt: bleiben sie stehen,
+    // meldet der naechste Lauf keinen Fortschritt mehr, und eine haengende Sperrflanke
+    // wuerde ihn an der falschen Kachel ankern.
+    learn.vorlauf = 0; learn.sperreVor = false; learn.sperreFlanke = false;
+  }
+
+  // Die Start/Ziel-Sperre des Autos, Byte 15 Bit 3 - dieselbe, aus der 70-race.js die
+  // Runde zaehlt. Sie wird hier als ZWEITER ANKER gelesen: der Byte-12-Startcode ist auf
+  // manchen Bahnen nie zu sehen, und dann fing der Scan gar nicht erst an.
+  //
+  // Gemerkt wird die steigende Flanke ueber den ganzen Kacheldurchlauf, weil die Sperre
+  // rund eine Sekunde haelt und in dieser Zeit mehrere Meldungen kommen - ein Blick auf
+  // den Momentanwert an der Kachelgrenze wuerde sie je nach Takt verpassen.
+  function learnSperre(bytes) {
+    const jetzt = (bytes[15] & 0x08) !== 0;
+    if (jetzt && !learn.sperreVor) learn.sperreFlanke = true;
+    learn.sperreVor = jetzt;
   }
 
   function learnTick(bytes) {
     if (!ghostCfg.learn) return;
+    learnSperre(bytes);
     const counter = bytes[11], type = bytes[12];
     if (learn.lastCount === null) { learn.lastCount = counter; learn.votes = {}; return; }
     if (counter === learn.lastCount) {
@@ -14399,17 +14487,49 @@
     }
     learn.lastCount = counter;
     learn.votes = {};
+    // Die Flanke der Sperre gilt fuer DIESE Kachelgrenze und wird danach zurueckgesetzt -
+    // sonst wuerde sie an der uebernaechsten Grenze ein zweites Mal ankern.
+    const sperre = learn.sperreFlanke;
+    learn.sperreFlanke = false;
     if (best === null) return;
-    // Erst ab der ersten Start/Ziel-Kachel mitschreiben, sonst faengt die Folge irgendwo in
-    // der Runde an und die gelernte Strecke ist gegen die echte verdreht.
+    // ZWEI ANKER, und der Ring beginnt an dem, der zuerst kommt. Der Byte-12-Startcode ist
+    // der alte; die Sperre des Autos ist der zuverlaessigere, weil sie auch dort kommt, wo
+    // der Code nie erkannt wird.
+    const anker = sperre || isStartCode(best);
+    // ---- Vor dem Anker: mitzaehlen, aber nicht mitschreiben --------------------------
+    //
+    // Die Teile vor dem Anker sind eine angefangene Runde; sie koennen den Ring nicht
+    // schliessen und werden verworfen. Gezaehlt werden sie trotzdem, denn sie sind der
+    // Beweis, dass ueberhaupt gelesen wird. Vorher war dieser Zustand STILL, und von
+    // aussen sah ein Scan, der auf einen nie kommenden Startcode wartet, genauso aus wie
+    // ein Scan, der gar nichts empfaengt.
     if (!learn.started) {
-      // Gemeldeter Code, nicht Kacheltyp: hier kommt an, was das Auto sendet.
-      if (!isStartCode(best)) return;
+      if (!anker) {
+        learn.vorlauf = (learn.vorlauf || 0) + 1;
+        if (learn.vorlauf === 8 || learn.vorlauf === 25) {
+          log('Streckenlernen: ' + learn.vorlauf + ' Teile gelesen, Start/Ziel noch nicht '
+              + 'gesehen. Der Ring beginnt erst dort - einmal ueber die Start/Ziel-Gerade '
+              + 'fahren.', 'info');
+        }
+        return;
+      }
       learn.started = true;
+      learn.vorlauf = 0;
       learn.seq = [{ type: TILE_TYPE.START }];
       return;
     }
-    if (isStartCode(best)) {
+    if (anker) {
+      // DIE ZWEI ANKER MEINEN VERSCHIEDENE KACHELN, und das ist ein Kachelversatz wert.
+      //
+      //   isStartCode(best) sagt: die Kachel, die GERADE ZU ENDE ist, war Start/Ziel.
+      //     Sie gehoert nicht mehr in die alte Runde, sie ist der Anfang der neuen.
+      //
+      //   Die Sperre steigt beim LESEN des Startmusters, also an der Kachelgrenze davor.
+      //     Die Kachel, die gerade zu Ende ist, ist eine ganz normale und gehoert noch in
+      //     die alte Runde - sonst fehlt sie im Ring.
+      //
+      // Gemessen: ohne diese Unterscheidung lernte eine Runde aus sechs Teilen nur fuenf.
+      if (sperre && !isStartCode(best)) learn.seq.push({ type: best });
       learn.laps++;
       if (learn.seq.length >= 3) learnCommit();
       learn.seq = [{ type: TILE_TYPE.START }];
@@ -14418,7 +14538,12 @@
     learn.seq.push({ type: best });
     // Eine Runde kann nicht beliebig lang sein. Laeuft es davon, ist die Start/Ziel-Kachel
     // nicht erkannt worden, und weiterzuzaehlen wuerde nur Unsinn ansammeln.
-    if (learn.seq.length > 60) { learnReset(); }
+    if (learn.seq.length > 60) {
+      log('Streckenlernen: 60 Teile ohne zweite Start/Ziel-Ueberfahrt, Lauf verworfen. '
+          + 'Auf sehr langen Bahnen oder bei nicht gelesenem Startmuster kommt das vor.',
+          'info');
+      learnReset();
+    }
   }
 
   function learnCommit() {
@@ -23050,6 +23175,56 @@
 
   window.OMEGA_TEST = {
 
+    // ---- Lernt der Scan eine Runde, deren Startcode nie gemeldet wird? --------------
+    //
+    // Gefuettert wird learnTick mit gebauten Meldepaketen. `runde` ist eine Liste von
+    // Codes je Kachel; `sperreBei` sagt, an welcher Kachel die Start/Ziel-Sperre des
+    // Autos (Byte 15 Bit 3) steigt. Der Kachelzaehler laeuft mit.
+    //
+    // Gemessen wird an currentTrackTiles - also an dem, was hinterher wirklich als
+    // Strecke dasteht, nicht an einer Zwischengroesse.
+    lernProbe(runde, o) {
+      const opt = o || {};
+      const merkTiles = currentTrackTiles;
+      const merkLearn = ghostCfg.learn;
+      const echtNow = Date.now;
+      try {
+        currentTrackTiles = [];
+        ghostCfg.learn = true;
+        learnReset();
+        let uhr = echtNow();
+        Date.now = () => uhr;
+        let zaehler = 0;
+        const paket = (code, sperre) => {
+          const b = new Array(16).fill(0);
+          b[11] = zaehler & 0xff; b[12] = code; b[15] = sperre ? 0x08 : 0x00;
+          return b;
+        };
+        const runden = opt.runden || 3;
+        for (let r = 0; r < runden; r++) {
+          for (let i = 0; i < runde.length; i++) {
+            const sperre = (opt.sperreBei !== undefined && i === opt.sperreBei);
+            // Mehrere Meldungen je Kachel, wie in Wirklichkeit: die Mehrheit entscheidet,
+            // und die Sperre haelt ueber mehrere Pakete.
+            for (let k = 0; k < 4; k++) {
+              uhr += 70;
+              learnTick(paket(runde[i], sperre && k < 3));
+            }
+            zaehler++;
+          }
+        }
+        return { teile: currentTrackTiles.length,
+                 typen: currentTrackTiles.map(t => t.type),
+                 laps: learn.laps, vorlauf: learn.vorlauf || 0 };
+      } finally {
+        Date.now = echtNow;
+        ghostCfg.learn = merkLearn;
+        learnReset();
+        currentTrackTiles = merkTiles;
+        lineCache = null;
+      }
+    },
+
     // ---- Eine RC-Fernbedienung belegen, ohne eine zu haben --------------------------
     //
     // Nachgebaut wird, was gemeldet wurde: Achsen, die NICHT bei null ruhen. Ein
@@ -28665,6 +28840,53 @@
 
 
 
+
+
+  // ---- Streckenlernen: der Ring braucht nicht den Startcode ----
+  //
+  // GEMELDET: der automatische Scan soll nicht auf die Start/Ziel-Gerade warten muessen.
+  // Der Grund, warum er es tat, ist echt - ohne Anker faengt der Ring irgendwo in der
+  // Runde an und ist gegen die Bahn verdreht. Der Anker muss also bleiben, aber es gibt
+  // seit v0.5.9 einen zweiten und besseren: die Sperre, die das Auto selbst setzt.
+  //
+  // Der Test faehrt eine Runde, deren Byte 12 NIE einen Startcode meldet. Vorher wurde
+  // dabei nichts gelernt, und zwar still. Die Gegenprobe ist der zweite Fall: ohne beide
+  // Anker darf weiterhin nichts uebernommen werden - ein Ring an falscher Stelle waere
+  // schlimmer als keiner.
+  stAdd('Streckenlernen: die Sperre des Autos ankert den Ring', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.lernProbe) {
+      return { skip: true, mass: 'lernProbe nicht vorhanden' };
+    }
+    const schlecht = [], teile = [];
+    // Eine Runde aus sechs Kacheln, kein einziger Startcode: Gerade, Kurven.
+    const runde = [0x02, 0x04, 0x04, 0x02, 0x03, 0x04];
+
+    const mitSperre = OMEGA_TEST.lernProbe(runde, { sperreBei: 0, runden: 3 });
+    teile.push('mit Sperre: ' + mitSperre.teile + ' Teile');
+    if (mitSperre.teile !== runde.length) {
+      schlecht.push('mit Sperre ' + mitSperre.teile + ' Teile statt ' + runde.length);
+    }
+    // Und die erste Kachel muss die Start/Ziel-Kachel sein, sonst ist der Ring verdreht.
+    if (mitSperre.typen[0] !== OMEGA_TEST.TILE_TYPE.START) {
+      schlecht.push('der Ring beginnt nicht an Start/Ziel');
+    }
+
+    // GEGENPROBE: kein Startcode UND keine Sperre - es darf nichts uebernommen werden.
+    const ohne = OMEGA_TEST.lernProbe(runde, { runden: 3 });
+    teile.push('ohne Anker: ' + ohne.teile + ' Teile, Vorlauf ' + ohne.vorlauf);
+    if (ohne.teile !== 0) schlecht.push('ohne Anker wurden ' + ohne.teile + ' Teile uebernommen');
+    // Aber es muss GEZAEHLT haben - sonst ist der Zustand wieder still, und genau das
+    // war das eigentliche Aergernis.
+    if (!(ohne.vorlauf > 5)) schlecht.push('der Vorlauf zaehlt nicht mit (' + ohne.vorlauf + ')');
+
+    // Und der alte Weg muss weiter gehen: Startcode ohne Sperre.
+    const mitCode = OMEGA_TEST.lernProbe([0x01, 0x04, 0x04, 0x02, 0x03, 0x04], { runden: 3 });
+    teile.push('mit Startcode: ' + mitCode.teile + ' Teile');
+    if (mitCode.teile !== 6) schlecht.push('mit Startcode ' + mitCode.teile + ' Teile statt 6');
+
+    return { ok: schlecht.length === 0,
+             mass: teile.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
 
   // ---- RC-Fernbedienung: Achsen, die nicht bei null ruhen ----
   //
