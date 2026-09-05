@@ -3591,6 +3591,56 @@
   }
 
   window.OMEGA_TEST = {
+    // ---- Die Zustandsansagen, ohne Stimme und ohne Rennen -------------------------
+    //
+    // ansagenPruefen() nimmt die Werte als Argument, laesst sich also ohne laufendes
+    // Rennen fuettern. Zurueck kommt, WELCHE Meldung gefallen ist - und genau daran
+    // haengt die Pruefung, dass jede nur EINMAL faellt und erst nach der Hysterese
+    // wieder scharf ist.
+    ansagenFolge(schritte, o) {
+      const opt = o || {};
+      const merk = {};
+      const kaesten = { lap: 'setting-announce', damage: 'setting-announce-damage',
+                        fuel: 'setting-announce-fuel', tyre: 'setting-announce-tyre',
+                        rain: 'setting-announce-rain' };
+      // Die Kaestchen setzen und hinterher zuruecklegen: der Test darf die Einstellung
+      // des Nutzers nicht behalten.
+      try {
+        Object.keys(kaesten).forEach((art) => {
+          const el = $(kaesten[art]);
+          if (!el) return;
+          merk[art] = el.checked;
+          el.checked = opt.aus ? false : true;
+          el.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+        // Ohne Stimme im System kaeme nichts zurueck. Der Aufbau ersetzt sie deshalb
+        // durch eine Attrappe - geprueft wird die REGEL, nicht das Betriebssystem.
+        const echt = window.speechSynthesis;
+        const gesagt = [];
+        try {
+          Object.defineProperty(window, 'speechSynthesis', {
+            configurable: true,
+            value: { cancel() {}, speak(u) { gesagt.push(u.text); } },
+          });
+          const folge = schritte.map((w) => ({ w, fiel: ansagenPruefen(w) }));
+          return { folge, gesagt };
+        } finally {
+          if (echt) {
+            Object.defineProperty(window, 'speechSynthesis',
+                                  { configurable: true, value: echt });
+          } else {
+            delete window.speechSynthesis;
+          }
+        }
+      } finally {
+        Object.keys(merk).forEach((art) => {
+          const el = $(kaesten[art]);
+          if (!el) return;
+          el.checked = merk[art];
+          el.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+      }
+    },
     // Die Gaskennlinie als reine Rechnung, siehe gasKennlinie() in 40-physics.js.
     gasKennlinie,
     // Und der gelebte Zustand der zwei Regler, damit ein Test die VERDRAHTUNG prueft und

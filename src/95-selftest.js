@@ -1734,6 +1734,66 @@
 
 
 
+
+  // ---- Ansagen: jede einmal, und erst nach der Erholung wieder ----
+  //
+  // FUENF MELDUNGEN an fuenf Schaltern. Der Fehler, der hier lauert, ist nicht "sie sagt
+  // nichts", sondern "sie sagt es dauernd": ein Tank unter 10 % bleibt minutenlang unter
+  // 10 %. Geprueft wird deshalb eine FOLGE von Zustaenden, und die Gegenproben sind die
+  // Wiederholungen, bei denen nichts kommen darf.
+  //
+  // Ohne Stimme im System kaeme nichts zurueck; der Aufbau haengt deshalb eine Attrappe
+  // ein. Geprueft wird die Regel, nicht das Betriebssystem.
+  stAdd('Ansagen: jede Meldung einmal, und erst nach Erholung wieder', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.ansagenFolge) {
+      return { skip: true, mass: 'ansagenFolge nicht vorhanden' };
+    }
+    const voll = { health: 1, fuel: 1, tyre: 1, rain: false };
+    const folge = [
+      voll,
+      { health: 0.5, fuel: 0.5, tyre: 0.5, rain: false },
+      { health: 0.08, fuel: 1, tyre: 1, rain: false },   // Schaden faellt
+      { health: 0.05, fuel: 1, tyre: 1, rain: false },   // Gegenprobe: nicht nochmal
+      { health: 0.03, fuel: 0.09, tyre: 1, rain: false },// Tank faellt
+      { health: 1, fuel: 0.05, tyre: 0.07, rain: true }, // Reifen und Regen
+      { health: 1, fuel: 1, tyre: 1, rain: true },       // Gegenprobe: Regen steht
+      voll,                                              // Regen hoert auf
+      { health: 0.05, fuel: 1, tyre: 1, rain: false },   // Schaden wieder scharf
+    ];
+    const r = OMEGA_TEST.ansagenFolge(folge);
+    const fiel = r.folge.map(x => x.fiel.join(','));
+    const soll = ['', '', 'damage', '', 'fuel', 'tyre,rain', '', 'rain', 'damage'];
+    const schlecht = [];
+    for (let i = 0; i < soll.length; i++) {
+      if (fiel[i] !== soll[i]) {
+        schlecht.push('Schritt ' + i + ': "' + fiel[i] + '" statt "' + soll[i] + '"');
+      }
+    }
+    // Und die Texte muessen wirklich gesprochen worden sein - eine Regel, die richtig
+    // entscheidet und nichts sagt, waere sonst gruen.
+    if (r.gesagt.length !== 6) schlecht.push(r.gesagt.length + ' gesprochene Saetze statt 6');
+    return { ok: schlecht.length === 0,
+             mass: fiel.map(x => x || '-').join(' ') + ' | ' + r.gesagt.length + ' Saetze'
+                   + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // ---- Und die fuenf Schalter schalten wirklich ab ----
+  //
+  // Die Gegenprobe zum Test darueber: mit allen Kaestchen AUS darf keine einzige Meldung
+  // fallen. Ohne sie waere ein Kern, der die Schalter gar nicht liest, ebenfalls gruen.
+  stAdd('Ansagen: ausgeschaltet ist wirklich aus', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.ansagenFolge) {
+      return { skip: true, mass: 'ansagenFolge nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.ansagenFolge([
+      { health: 1, fuel: 1, tyre: 1, rain: false },
+      { health: 0.02, fuel: 0.02, tyre: 0.02, rain: true },
+    ], { aus: true });
+    const gefallen = r.folge.reduce((a, x) => a + x.fiel.length, 0);
+    return { ok: gefallen === 0 && r.gesagt.length === 0,
+             mass: gefallen + ' Meldungen, ' + r.gesagt.length + ' Saetze (soll 0 und 0)' };
+  });
+
   // ---- Gaskennlinie und Anfahrschub ----
   //
   // DIE ZUSICHERUNG DER AUFGABE war woertlich: "0 % input -> 0 % Beschleunigung und

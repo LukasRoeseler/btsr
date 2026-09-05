@@ -5652,6 +5652,17 @@
           &ndash; unter Windows sind sie lokal vorhanden, auf Android k&ouml;nnen sie fehlen.
           Fehlt eine, steht das einmal im Protokoll und nicht bei jeder Runde.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-announce" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Schaden ansagen<small>Einmal, wenn der Schadensbalken auf 10&nbsp;% gefallen ist. Erst nach einer Reparatur wieder scharf.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-announce-damage"><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Tank ansagen<small>Einmal, wenn noch 10&nbsp;% im Tank sind. Erst nach dem Tanken wieder scharf.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-announce-fuel"><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Reifen ansagen<small>Einmal, wenn der schlechteste der vier Reifen nur noch 10&nbsp;% hat. Der schlechteste z&auml;hlt: ein Auto mit drei guten Reifen und einem abgefahrenen f&auml;hrt nicht drei Viertel gut.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-announce-tyre"><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Regen ansagen<small>Wenn es anf&auml;ngt zu regnen und wenn es aufh&ouml;rt. Beim Laden wird nichts gesagt, erst beim Wechsel.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-announce-rain"><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Funkfilter
+          <small>L&auml;sst die Ansage nach Rennfunk klingen: ein Knacken beim Aufschalten, ein Rauschteppich darunter, ein Knacken beim Loslassen, und die Stimme spricht schneller und flacher. Was NICHT geht, und das sei gesagt: die Stimme selbst bandbegrenzen. Die Sprachausgabe des Browsers liefert keinen Audioknoten, es gibt also nichts, wo ein Filter dazwischen k&ouml;nnte. Der Funkeindruck kommt vom Drumherum.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-announce-radio"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Regen<small>Select oder W. Reifen kommen beim Boxenstopp passend.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-rain"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Strecken-Ambience<small>Vorbeifahrten, Regen, Donner.</small></div>
@@ -6435,7 +6446,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.5.10</span></span>
+    <span class="foot-ver">v<span id="app-version">0.5.11</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine

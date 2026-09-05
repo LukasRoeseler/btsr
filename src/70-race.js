@@ -2017,6 +2017,38 @@
   }
   setInterval(wxTick, 80);
 
+  // ---- Die vier Zustandsansagen ------------------------------------------------------
+  //
+  // EIN Zeitgeber fuer alle vier, und er laeuft auch ohne Rennen: ein leerer Tank und ein
+  // abgefahrener Reifen sind beim freien Fahren genauso wichtig. Der Takt ist bewusst
+  // langsam - gemeldet werden Flanken, und eine Flanke ein halbe Sekunde spaeter zu hoeren
+  // faellt niemandem auf, waehrend ein schneller Takt Rechenzeit im Fahrtakt kostet.
+  //
+  // DIE WERTE WERDEN HIER ZUSAMMENGESUCHT und nicht im Ton gelesen: hier liegen sie, und
+  // 80-sound.js soll nicht wissen muessen, dass es Tank, Schaden und Wetter gibt.
+  function ansagenZustand() {
+    const st = physEngine.state;
+    // Der SCHLECHTESTE Reifen. tyreWear4 zaehlt die Abnutzung (1 = hin), gemeldet wird der
+    // REST - der Balken im Cockpit zeigt auch den Rest, und zwei Leserichtungen fuer
+    // dieselbe Groesse waeren die Gelegenheit fuer einen Vorzeichenfehler.
+    let reifen = null;
+    if (st.tyreWear4 && st.tyreWear4.length === 4) {
+      reifen = 1 - Math.max.apply(null, st.tyreWear4);
+    } else if (typeof st.tyreWear === 'number') {
+      reifen = 1 - st.tyreWear;
+    }
+    return { health: Math.max(0, Math.min(100, 100 - damage)) / 100,
+             fuel: Math.max(0, Math.min(100, fuel)) / 100,
+             tyre: reifen,
+             // Es gibt genau zwei Wetter, 'dry' und 'rain'. Ein drittes hier zu erlauben
+             // waere ein Zustand, den niemand setzt, und beim naechsten Lesen eine Frage.
+             rain: weather === 'rain' };
+  }
+  setInterval(() => {
+    if (typeof ansagenPruefen !== 'function') return;
+    ansagenPruefen(ansagenZustand());
+  }, 500);
+
   const GRIP_MATRIX = {
     'dry|slick': 1.00,
     'dry|wet':   0.88,

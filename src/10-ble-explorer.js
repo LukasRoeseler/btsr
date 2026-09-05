@@ -334,6 +334,16 @@
   // stehen - das ist die Absicht, nicht ein Mangel: ein fehlender Eintrag faellt auf,
   // ein leerer Text nicht.
   const I18N_EN = {
+    "Schaden ansagen": "Announce damage",
+    "Einmal, wenn der Schadensbalken auf 10 % gefallen ist. Erst nach einer Reparatur wieder scharf.": "Once, when the damage bar has fallen to 10 %. Armed again only after a repair.",
+    "Tank ansagen": "Announce fuel",
+    "Einmal, wenn noch 10 % im Tank sind. Erst nach dem Tanken wieder scharf.": "Once, when 10 % of fuel is left. Armed again only after refuelling.",
+    "Reifen ansagen": "Announce tyres",
+    "Einmal, wenn der schlechteste der vier Reifen nur noch 10 % hat. Der schlechteste zählt: ein Auto mit drei guten Reifen und einem abgefahrenen fährt nicht drei Viertel gut.": "Once, when the worst of the four tyres is down to 10 %. The worst one counts: a car with three good tyres and one worn out does not drive three quarters well.",
+    "Regen ansagen": "Announce rain",
+    "Wenn es anfängt zu regnen und wenn es aufhört. Beim Laden wird nichts gesagt, erst beim Wechsel.": "When it starts raining and when it stops. Nothing is said on load, only on a change.",
+    "Funkfilter": "Radio filter",
+    "Lässt die Ansage nach Rennfunk klingen: ein Knacken beim Aufschalten, ein Rauschteppich darunter, ein Knacken beim Loslassen, und die Stimme spricht schneller und flacher. Was NICHT geht, und das sei gesagt: die Stimme selbst bandbegrenzen. Die Sprachausgabe des Browsers liefert keinen Audioknoten, es gibt also nichts, wo ein Filter dazwischen könnte. Der Funkeindruck kommt vom Drumherum.": "Makes the announcement sound like race radio: a click when the transmitter keys, a bed of static underneath, a click when it unkeys, and the voice speaks faster and flatter. What is NOT possible, and it should be said: band-limiting the voice itself. The browser’s speech output provides no audio node, so there is nowhere for a filter to sit. The radio impression comes from everything around it.",
     "Gaskennlinie": "Throttle curve",
     "Anfahrschub": "Launch shove",
     "Wie der Gasweg des Controllers auf die Beschleunigung abgebildet wird. Die Enden liegen immer fest: kein Gas heißt keine Beschleunigung, Vollgas heißt volle Beschleunigung – geändert wird nur, was dazwischen passiert. 1,0 ist die Gerade und ändert nichts. Über 1,0 streckt den unteren Bereich: ein Viertel Gasweg gibt bei 1,8 nur noch 8 % statt 25 %. Genau das braucht ein Trigger mit großer Totzone – ein DualShock 4 oder DualSense gibt schon bei leichtem Druck viel ab, und dann lässt sich kein Tempo halten. Unter 1,0 macht es umgekehrt spitzer, für Pedale mit langem Weg.": "How the controller’s throttle travel maps to acceleration. The ends are always fixed: no throttle means no acceleration, full throttle means full acceleration – only what happens in between changes. 1.0 is the straight line and changes nothing. Above 1.0 stretches the lower range: a quarter of the travel gives only 8 % instead of 25 % at 1.8. That is exactly what a trigger with a large dead zone needs – a DualShock 4 or DualSense already gives away a lot under light pressure, and then no speed can be held. Below 1.0 does the opposite and makes it sharper, for pedals with long travel.",
