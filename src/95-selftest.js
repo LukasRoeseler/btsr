@@ -1735,6 +1735,79 @@
 
 
 
+
+  // ---- RC-Fernbedienung: Achsen, die nicht bei null ruhen ----
+  //
+  // GEMELDET an einer CH Control Box: unter Windows liess sich in Chrome und Edge gar
+  // nichts zuordnen, auf einem MacBook nur Gas und Bremse. Die Ursache stand in der
+  // Erfassung: sie nahm die erste Achse, deren BETRAG ueber 0,6 lag - und setzte damit
+  // voraus, dass Achsen in Ruhe bei null liegen. Ein rastender RC-Gaskanal meldet
+  // dauerhaft -1, nicht belegte Achsen vieler HID-Adapter ebenfalls.
+  //
+  // Der Test baut genau das nach. Die GEGENPROBE ist der zweite Fall: eine Achse, die
+  // sich gar nicht bewegt, darf nie erfasst werden, egal wie weit weg von null sie ruht.
+  stAdd('Controller: RC-Fernbedienung mit Achsen abseits der Null', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.padBelegungProbe) {
+      return { skip: true, mass: 'padBelegungProbe nicht vorhanden' };
+    }
+    const schlecht = [], teile = [];
+
+    // 1. Lenkung. Achse 0 ruht bei 0 und wird bewegt; Achse 1 und 2 rasten bei -1.
+    //    Die alte Regel haette sofort Achse 1 genommen, ohne dass jemand etwas anfasst.
+    const lenk = OMEGA_TEST.padBelegungProbe('steering', [
+      { achsen: [0, -1, -1, 0] },
+      { achsen: [0.85, -1, -1, 0] },
+    ]);
+    teile.push('Lenkung -> ' + (lenk.belegt ? 'Achse ' + lenk.belegt.index : 'nichts'));
+    if (!lenk.belegt || lenk.belegt.index !== 0) {
+      schlecht.push('Lenkung landete auf ' + JSON.stringify(lenk.belegt));
+    }
+
+    // 2. Gas: ein rastender Kanal von -1 nach +1. Er muss auf Achse 1 landen, NICHT
+    //    invertiert sein, und die volle Bewegung muss 0 bis 1 ergeben - nicht die obere
+    //    Haelfte, was das gemeldete "geht, aber nur halb" war.
+    const gas = OMEGA_TEST.padBelegungProbe('throttle', [
+      { achsen: [0, -1, -1, 0] },
+      { achsen: [0, 1, -1, 0] },
+    ], { lesen: [[0, -1, -1, 0], [0, 0, -1, 0], [0, 1, -1, 0]] });
+    teile.push('Gas -> ' + (gas.belegt ? 'Achse ' + gas.belegt.index : 'nichts')
+               + ', gelesen ' + gas.gelesen.join('/'));
+    if (!gas.belegt || gas.belegt.index !== 1) {
+      schlecht.push('Gas landete auf ' + JSON.stringify(gas.belegt));
+    } else {
+      if (gas.belegt.invert) schlecht.push('Gas wurde faelschlich invertiert');
+      const [unten, mitte, oben] = gas.gelesen;
+      if (Math.abs(unten) > 0.02) schlecht.push('Ruhe gibt ' + unten + ' statt 0');
+      if (Math.abs(oben - 1) > 0.02) schlecht.push('Vollausschlag gibt ' + oben + ' statt 1');
+      if (Math.abs(mitte - 0.5) > 0.08) schlecht.push('Mitte gibt ' + mitte + ' statt 0,5');
+    }
+
+    // 3. GEGENPROBE: nichts bewegt sich. Dann darf auch nichts erfasst werden, und die
+    //    Zuordnung muss offen bleiben. Ohne diese Probe waere eine Erfassung, die immer
+    //    zugreift, ebenfalls gruen.
+    const still = OMEGA_TEST.padBelegungProbe('steering', [
+      { achsen: [0, -1, -1, 1] },
+      { achsen: [0, -1, -1, 1] },
+      { achsen: [0, -1, -1, 1] },
+    ]);
+    teile.push('nichts bewegt: ' + (still.offen ? 'bleibt offen' : 'hat zugegriffen'));
+    if (!still.offen) schlecht.push('erfasst, obwohl sich nichts bewegt hat');
+
+    // 4. Ein Knopf schlaegt eine Achse bei gleichem Ausschlag - sonst faengt an manchen
+    //    Pads die Hat-Achse den Knopfdruck ab.
+    const knopf = OMEGA_TEST.padBelegungProbe('downshift', [
+      { achsen: [0, -1], knoepfe: [0, 0, 0] },
+      { achsen: [0, -1], knoepfe: [0, 0, 1] },
+    ]);
+    teile.push('Knopf -> ' + (knopf.belegt ? knopf.belegt.type + ' ' + knopf.belegt.index : 'nichts'));
+    if (!knopf.belegt || knopf.belegt.type !== 'button' || knopf.belegt.index !== 2) {
+      schlecht.push('Knopf landete auf ' + JSON.stringify(knopf.belegt));
+    }
+
+    return { ok: schlecht.length === 0,
+             mass: teile.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
   // ---- Ansagen: jede einmal, und erst nach der Erholung wieder ----
   //
   // FUENF MELDUNGEN an fuenf Schaltern. Der Fehler, der hier lauert, ist nicht "sie sagt

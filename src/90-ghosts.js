@@ -374,7 +374,13 @@
       body.appendChild(tr);
     });
     body.querySelectorAll('button[data-action]').forEach(btn => {
-      btn.onclick = () => { listeningFor = btn.dataset.action; renderBindTable(); };
+      btn.onclick = () => {
+        listeningFor = btn.dataset.action;
+        // Die Ruhelage wird beim naechsten Takt frisch genommen, nicht jetzt: jetzt haelt
+        // die Hand noch die Maus, und der Knueppel steht vielleicht noch nicht in Ruhe.
+        bindRuhe = null;
+        renderBindTable();
+      };
     });
   }
   renderBindTable();
@@ -404,38 +410,111 @@
     return Math.sign(v) * ((mag - dz) / (1 - dz));
   }
 
+  // Die Ruhelage beim Druck auf "zuordnen". Ohne sie misst die Erfassung den BETRAG,
+  // und das ist die Annahme "Achsen ruhen bei null" - die fuer Gamepads stimmt und fuer
+  // RC-Fernbedienungen falsch ist.
+  let bindRuhe = null;
+
+  function bindRuheNehmen(pad) {
+    bindRuhe = {
+      achsen: Array.prototype.slice.call(pad.axes || []),
+      knoepfe: Array.prototype.map.call(pad.buttons || [],
+                                        (b) => (b.value !== undefined ? b.value : (b.pressed ? 1 : 0))),
+    };
+  }
+
+  // ---- Erfassen, was sich am WEITESTEN von seiner Ruhelage entfernt hat ---------------
+  //
+  // Nicht "die erste Achse ueber einem Betrag", sondern die groesste AENDERUNG. Das ist
+  // der Unterschied, an dem eine RC-Fernbedienung haengt: ihr Gasknueppel rastet unten und
+  // meldet dauerhaft -1, und nicht belegte Achsen melden bei vielen HID-Adaptern konstant
+  // -1 statt 0. Mit dem Betrag rastet die Erfassung sofort auf so eine Achse ein, ohne dass
+  // jemand etwas bewegt hat.
+  //
+  // Und es wird das MAXIMUM ueber alle Kanaele genommen und nicht der erste Treffer: an
+  // einem Knueppel bewegen sich oft zwei Achsen mit, und der Kanal, der wirklich gemeint
+  // ist, ist der mit dem groessten Ausschlag - nicht der mit dem kleinsten Index.
   function tryCaptureBinding(pad) {
     if (!listeningFor) return;
     const action = listeningFor;
+    if (!bindRuhe) { bindRuheNehmen(pad); return; }
+    let bester = null;
     for (let i = 0; i < pad.axes.length; i++) {
-      if (Math.abs(pad.axes[i]) > AXIS_CAPTURE_THRESHOLD) {
-        const invert = pad.axes[i] < 0;
-        bindings[action] = { type: 'axis', index: i, invert, label: `Achse ${i}${invert ? ' (invertiert)' : ''}` };
-        saveBindings();
-        listeningFor = null;
-        renderBindTable();
-        log(`Zuordnung gesetzt: ${BIND_ACTION_LABELS[action]} -> Achse ${i}`, 'info');
-        return;
+      const ruhe = bindRuhe.achsen[i] === undefined ? 0 : bindRuhe.achsen[i];
+      const d = Math.abs(pad.axes[i] - ruhe);
+      if (d > AXIS_CAPTURE_THRESHOLD && (!bester || d > bester.d)) {
+        bester = { d, art: 'axis', i, ruhe, jetzt: pad.axes[i] };
       }
     }
     for (let i = 0; i < pad.buttons.length; i++) {
-      const val = pad.buttons[i].value ?? (pad.buttons[i].pressed ? 1 : 0);
-      if (val > BUTTON_CAPTURE_THRESHOLD) {
-        bindings[action] = { type: 'button', index: i, label: `Knopf ${i}` };
-        saveBindings();
-        listeningFor = null;
-        renderBindTable();
-        log(`Zuordnung gesetzt: ${BIND_ACTION_LABELS[action]} -> Knopf ${i}`, 'info');
-        return;
+      const b = pad.buttons[i];
+      const v = b.value !== undefined ? b.value : (b.pressed ? 1 : 0);
+      const ruhe = bindRuhe.knoepfe[i] === undefined ? 0 : bindRuhe.knoepfe[i];
+      const d = Math.abs(v - ruhe);
+      // Ein Knopf schlaegt eine Achse bei gleichem Ausschlag: er ist eindeutiger, und ein
+      // Knopfdruck bewegt an manchen Pads eine Hat-Achse mit.
+      if (d > BUTTON_CAPTURE_THRESHOLD && (!bester || d > bester.d + 0.001)) {
+        bester = { d, art: 'button', i };
       }
     }
+    if (!bester) return;
+    if (bester.art === 'axis') {
+      // Die Richtung: hat sich die Achse nach unten bewegt, ist sie invertiert. Gemessen
+      // wird gegen die RUHELAGE und nicht gegen null.
+      const invert = bester.jetzt < bester.ruhe;
+      bindings[action] = {
+        type: 'axis', index: bester.i, invert,
+        // Die gelernte Spanne, siehe achsWert(). Sie startet an dem, was bisher gesehen
+        // wurde, und waechst mit jeder Bewegung.
+        ruhe: bester.ruhe,
+        min: Math.min(bester.ruhe, bester.jetzt),
+        max: Math.max(bester.ruhe, bester.jetzt),
+        label: `Achse ${bester.i}${invert ? ' (invertiert)' : ''}`,
+      };
+      log(`Zuordnung gesetzt: ${BIND_ACTION_LABELS[action]} -> Achse ${bester.i}`
+          + ` (Ruhe ${bester.ruhe.toFixed(2)}, Ausschlag ${bester.d.toFixed(2)})`, 'info');
+    } else {
+      bindings[action] = { type: 'button', index: bester.i, label: `Knopf ${bester.i}` };
+      log(`Zuordnung gesetzt: ${BIND_ACTION_LABELS[action]} -> Knopf ${bester.i}`, 'info');
+    }
+    saveBindings();
+    listeningFor = null;
+    bindRuhe = null;
+    renderBindTable();
+  }
+
+  // ---- Eine Achse auf ihre gelernte Spanne umrechnen ----------------------------------
+  //
+  // Ein RC-Gaskanal laeuft von -1 bis +1 und rastet unten. Roh gelesen und mit
+  // Math.max(0, ...) beschnitten bekaeme man nur die obere Haelfte - "es geht, aber nur
+  // halb", und genau so wurde es gemeldet.
+  //
+  // Die Spanne WAECHST nur. Sie nie zu schrumpfen ist Absicht: ein Knueppel, der einmal
+  // ganz ausgeschlagen war, kann das wieder, und ein Zittern in der Mitte duerfte die
+  // Spanne sonst zusammenziehen und den Ausschlag kuenstlich vergroessern.
+  function achsWert(binding, roh) {
+    if (binding.min === undefined || binding.max === undefined) return roh;
+    if (roh < binding.min) binding.min = roh;
+    if (roh > binding.max) binding.max = roh;
+    const spanne = binding.max - binding.min;
+    // Unter einem Zehntel ist noch nichts gelernt: dann lieber roh als eine Spreizung um
+    // den Faktor zwanzig, die aus Rauschen Vollgas macht.
+    if (spanne < 0.1) return roh;
+    // Auf -1..+1, mit der Ruhelage als Null. Wer die Ruhelage am Rand hat (ein rastender
+    // Gaskanal), bekommt damit von der Ruhe aus den vollen Weg nach einer Seite.
+    const ruhe = binding.ruhe === undefined ? (binding.min + binding.max) / 2 : binding.ruhe;
+    const weg = roh - ruhe;
+    const nachOben = Math.max(0.05, binding.max - ruhe);
+    const nachUnten = Math.max(0.05, ruhe - binding.min);
+    return Math.max(-1, Math.min(1, weg >= 0 ? weg / nachOben : weg / nachUnten));
   }
 
   function readBindingValue(pad, binding) {
     if (!binding) return 0;
     if (binding.type === 'axis') {
       const raw = pad.axes[binding.index] ?? 0;
-      return binding.invert ? -raw : raw;
+      const v = achsWert(binding, raw);
+      return binding.invert ? -v : v;
     }
     const btn = pad.buttons[binding.index];
     if (!btn) return 0;
@@ -3591,6 +3670,44 @@
   }
 
   window.OMEGA_TEST = {
+
+    // ---- Eine RC-Fernbedienung belegen, ohne eine zu haben --------------------------
+    //
+    // Nachgebaut wird, was gemeldet wurde: Achsen, die NICHT bei null ruhen. Ein
+    // rastender Gaskanal meldet dauerhaft -1, und nicht belegte Achsen melden bei vielen
+    // HID-Adaptern ebenfalls -1. Genau daran ist die alte Erfassung gescheitert, die den
+    // BETRAG gegen 0,6 verglich.
+    //
+    // `folge` ist eine Liste von Achsenstellungen; die erste ist die Ruhe.
+    padBelegungProbe(aktion, folge, o) {
+      const opt = o || {};
+      const merkB = JSON.parse(JSON.stringify(bindings));
+      const merkL = listeningFor;
+      try {
+        const pad = (achsen, knoepfe) => ({
+          axes: achsen.slice(),
+          buttons: (knoepfe || []).map((v) => ({ value: v, pressed: v > 0.5 })),
+          mapping: opt.mapping || '',
+        });
+        listeningFor = aktion;
+        bindRuhe = null;
+        for (const schritt of folge) {
+          tryCaptureBinding(pad(schritt.achsen, schritt.knoepfe));
+        }
+        const b = bindings[aktion];
+        // Und was liest die App danach an den gegebenen Stellungen?
+        const gelesen = (opt.lesen || []).map((achsen) =>
+          +readBindingValue(pad(achsen, []), bindings[aktion]).toFixed(3));
+        return { belegt: b ? { type: b.type, index: b.index, invert: !!b.invert,
+                               ruhe: b.ruhe, min: b.min, max: b.max } : null,
+                 offen: listeningFor !== null, gelesen };
+      } finally {
+        listeningFor = merkL;
+        bindRuhe = null;
+        Object.keys(bindings).forEach((k) => delete bindings[k]);
+        Object.keys(merkB).forEach((k) => { bindings[k] = merkB[k]; });
+      }
+    },
     // ---- Die Zustandsansagen, ohne Stimme und ohne Rennen -------------------------
     //
     // ansagenPruefen() nimmt die Werte als Argument, laesst sich also ohne laufendes
