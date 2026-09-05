@@ -3591,6 +3591,15 @@
   }
 
   window.OMEGA_TEST = {
+    // Die Gaskennlinie als reine Rechnung, siehe gasKennlinie() in 40-physics.js.
+    gasKennlinie,
+    // Und der gelebte Zustand der zwei Regler, damit ein Test die VERDRAHTUNG prueft und
+    // nicht nur die Formel: ein Regler, der rechnet und nichts setzt, waere sonst gruen.
+    fahrgefuehlWerte() {
+      return { throttleGamma: physEngine.config.throttleGamma,
+               minMoveThrottle: physEngine.config.minMoveThrottle,
+               topSpeedKmh: physEngine.config.topSpeedKmh, massstab: REAL_SCALE };
+    },
 
     // ---- Haelt der Ghost an, wenn er anhalten soll - und nur dann? ------------------
     //

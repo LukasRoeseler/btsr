@@ -360,6 +360,39 @@
   rumbleOn = $('setting-vibration').checked;
   $('setting-vibration').addEventListener('change', (e) => { rumbleOn = e.target.checked; });
 
+  // GASKENNLINIE und ANFAHRSCHUB. Beide lesen ihren Anfangswert AUS DEM MARKUP und
+  // haengen sich danach an 'input' - dasselbe Muster wie bei setting-vibration, wo der
+  // fehlende Anfangsabgleich schon einmal einen toten Schalter ergeben hat.
+  function gasKennlinieAnwenden() {
+    const el = $('setting-throttle-gamma');
+    if (!el) return;
+    const g = parseFloat(el.value);
+    physEngine.config.throttleGamma = g;
+    const nah = Math.abs(g - 1) < 0.001;
+    // Ein Beispiel statt einer nackten Zahl: was gibt ein Viertel Gasweg? Das ist die
+    // Groesse, um die es beim Halten eines Tempos geht.
+    const viertel = Math.round(100 * Math.pow(0.25, g));
+    $('setting-throttle-gamma-val').textContent =
+      g.toFixed(2) + (nah ? ' linear' : ' \u00b7 \u00bc Weg = ' + viertel + '%');
+  }
+  function anfahrschubAnwenden() {
+    const el = $('setting-minmove');
+    if (!el) return;
+    const v = parseFloat(el.value);
+    physEngine.config.minMoveThrottle = v;
+    // Im Massstab, nicht als Anteil: 0,16 sagt niemandem etwas, 47 km/h schon.
+    const kmh = Math.round(v * physEngine.config.topSpeedKmh * REAL_SCALE);
+    $('setting-minmove-val').textContent = Math.round(v * 100) + '% \u00b7 ' + kmh + ' km/h';
+  }
+  if ($('setting-throttle-gamma')) {
+    gasKennlinieAnwenden();
+    $('setting-throttle-gamma').addEventListener('input', gasKennlinieAnwenden);
+  }
+  if ($('setting-minmove')) {
+    anfahrschubAnwenden();
+    $('setting-minmove').addEventListener('input', anfahrschubAnwenden);
+  }
+
   // Der Regler steht in PROZENT vorn, die Physik rechnet mit einem Anteil.
   $('setting-brakebias').addEventListener('input', (e) => {
     const pct = parseInt(e.target.value, 10);
@@ -1256,7 +1289,14 @@
     const cutZiel = fuelCutTarget();
     if (cutZiel > fuelCut) fuelCut = cutZiel;   // Tanken wirkt sofort
     else fuelCut += (cutZiel - fuelCut) * (1 - Math.exp(-dt / FUEL_CUT_TAU));
-    let rawThrottle = fuelDamageDerate(Math.max(0, throttleY), fuelCut);
+    // DIE KENNLINIE ZUERST, vor Tank und Schaden. Sie beschreibt, was der Daumen
+    // MEINT; Tank und Schaden beschreiben, was das Auto daraus machen kann. Andersherum
+    // wuerde die Kennlinie einen halbleeren Tank mitkruemmen.
+    //
+    // Nur nach vorn: die Bremse hat ihre eigene Kennlinie, und ein Bremspedal, das sich
+    // je nach Gaseinstellung anders anfuehlt, waere eine Falle.
+    const gasKurve = gasKennlinie(Math.max(0, throttleY), physEngine.config.throttleGamma);
+    let rawThrottle = fuelDamageDerate(gasKurve, fuelCut);
     let rawBrake = Math.max(0, -throttleY);
     let steer = steerX;
     // Bei gelber Flagge und in der Einfuehrungsrunde faehrt das Auto selbst. Siehe

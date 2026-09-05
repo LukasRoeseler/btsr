@@ -1733,6 +1733,79 @@
 
 
 
+
+  // ---- Gaskennlinie und Anfahrschub ----
+  //
+  // DIE ZUSICHERUNG DER AUFGABE war woertlich: "0 % input -> 0 % Beschleunigung und
+  // 100 % -> 100 %, aber dazwischen neben einem linearen auch einen nicht-linearen
+  // Verlauf". Beide Enden werden deshalb fuer JEDES Gamma geprueft, nicht nur fuer das
+  // voreingestellte - eine Kennlinie, die nur bei 1,0 die Enden trifft, waere wertlos.
+  //
+  // Und die VERDRAHTUNG wird mitgeprueft. Eine Formel, die stimmt, waehrend der Regler
+  // nichts setzt, ist der haeufigste tote Schalter in diesem Projekt gewesen.
+  stAdd('Gaskennlinie: Enden fest, Mitte einstellbar, Regler verdrahtet', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.gasKennlinie || !OMEGA_TEST.fahrgefuehlWerte) {
+      return { skip: true, mass: 'gasKennlinie nicht vorhanden' };
+    }
+    const f = OMEGA_TEST.gasKennlinie;
+    const schlecht = [], teile = [];
+    for (const g of [0.6, 1, 1.4, 1.8, 2.5, 3]) {
+      if (f(0, g) !== 0) schlecht.push('g=' + g + ': f(0) = ' + f(0, g));
+      if (Math.abs(f(1, g) - 1) > 1e-12) schlecht.push('g=' + g + ': f(1) = ' + f(1, g));
+      // Streng steigend, sonst gaebe es Gaswege, die nichts aendern.
+      let vor = -1;
+      for (let x = 0; x <= 1.0001; x += 0.05) {
+        const y = f(x, g);
+        if (y <= vor) { schlecht.push('g=' + g + ' nicht steigend bei x=' + x.toFixed(2)); break; }
+        vor = y;
+      }
+    }
+    // Die Richtung: ueber 1 muss ein Viertel Gasweg WENIGER als ein Viertel geben, sonst
+    // hilft der Regler dem Trigger mit Totzone nicht.
+    const v1 = f(0.25, 1), v18 = f(0.25, 1.8), v06 = f(0.25, 0.6);
+    teile.push('\u00bc Weg bei 1,0/1,8/0,6: ' + (v1 * 100).toFixed(0) + '/'
+               + (v18 * 100).toFixed(0) + '/' + (v06 * 100).toFixed(0) + '%');
+    if (!(v18 < v1)) schlecht.push('Gamma ueber 1 streckt den unteren Bereich nicht');
+    if (!(v06 > v1)) schlecht.push('Gamma unter 1 macht ihn nicht spitzer');
+    // 1,0 muss bitgleich sein, sonst aendert die Vorgabe still das Fahrgefuehl.
+    for (const x of [0.1, 0.37, 0.5, 0.9]) {
+      if (f(x, 1) !== x) schlecht.push('1,0 ist nicht die Gerade bei ' + x);
+    }
+
+    // ---- Verdrahtung: der Regler setzt die Physik, und die Anzeige sagt dasselbe ----
+    const el = $('setting-throttle-gamma'), val = $('setting-throttle-gamma-val');
+    const mm = $('setting-minmove'), mmv = $('setting-minmove-val');
+    if (!el || !mm) return { ok: false, mass: 'Regler fehlen im Markup' };
+    const merkG = el.value, merkM = mm.value;
+    try {
+      el.value = '2.2'; el.dispatchEvent(new Event('input', { bubbles: true }));
+      const w = OMEGA_TEST.fahrgefuehlWerte();
+      teile.push('Regler 2,2 -> Physik ' + w.throttleGamma);
+      if (Math.abs(w.throttleGamma - 2.2) > 1e-9) {
+        schlecht.push('der Regler setzt throttleGamma nicht (' + w.throttleGamma + ')');
+      }
+      if (!/2\.20/.test(val.textContent)) schlecht.push('Anzeige: ' + val.textContent);
+
+      mm.value = '0.05'; mm.dispatchEvent(new Event('input', { bubbles: true }));
+      const w2 = OMEGA_TEST.fahrgefuehlWerte();
+      teile.push('Anfahrschub 0,05 -> ' + w2.minMoveThrottle);
+      if (Math.abs(w2.minMoveThrottle - 0.05) > 1e-9) {
+        schlecht.push('der Anfahrschub kommt nicht an (' + w2.minMoveThrottle + ')');
+      }
+      // Die Anzeige nennt km/h im Massstab - das ist die Zahl, an der man ihn einstellt.
+      const kmh = Math.round(0.05 * w2.topSpeedKmh * w2.massstab);
+      if (mmv.textContent.indexOf(String(kmh)) < 0) {
+        schlecht.push('Anzeige nennt nicht ' + kmh + ' km/h: ' + mmv.textContent);
+      }
+      teile.push('Anzeige "' + mmv.textContent + '"');
+    } finally {
+      el.value = merkG; el.dispatchEvent(new Event('input', { bubbles: true }));
+      mm.value = merkM; mm.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+    return { ok: schlecht.length === 0,
+             mass: teile.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
   // ---- Ghosts: anhalten nur, wenn es wirklich vorbei ist ----
   //
   // GEMELDET: "sie fahren stumpf ihre Spur, keine Querlage. Und nach einer Weile bleiben

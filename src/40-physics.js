@@ -13,6 +13,21 @@
   // ist die Bedeutung von servoAngle = 1 und nichts, woran man dreht.
   const STEER_MAX_DEG = 45;
 
+  // ---- Die Gaskennlinie -----------------------------------------------------------
+  //
+  // x hoch gamma, und die Familie ist mit Absicht gewaehlt: die Enden liegen fuer JEDES
+  // gamma fest - 0 hoch g ist 0, 1 hoch g ist 1 -, es braucht also keine Klemme und keine
+  // Pruefung. Eine Kurve mit Stuetzpunkten koennte die Zusicherung "0 bleibt 0, Vollgas
+  // bleibt Vollgas" verletzen, diese kann es nicht.
+  //
+  // gamma > 1 streckt den unteren Bereich (mehr Weg fuer wenig Gas), gamma < 1 macht ihn
+  // spitzer. 1 ist die Gerade und bitgleich zum Verhalten vor v0.5.10.
+  function gasKennlinie(x, gamma) {
+    const v = Math.max(0, Math.min(1, x));
+    if (!(gamma > 0) || gamma === 1) return v;
+    return Math.pow(v, gamma);
+  }
+
   // Die Nickgrenzen, GERECHNET aus der statischen Achslast und dem Verlagerungsanteil.
   //
   // Als Funktionen und nicht als Konfigurationsfelder: ein Feld muesste nach jeder Aenderung
@@ -208,7 +223,17 @@
         // noch, wieviel davon am Boden ankommt.
         launchSoftFloor: 0.95, // thrust multiplier at a dead stop
         launchSoftKmh: 0.6,    // ... rising linearly to 1.0 by this road speed
+        // DER ANFAHRSCHUB, und er ist jetzt ein Regler. 0,16 vom Gasbyte sind im
+        // Massstab rund 47 km/h - gemeldet als "das Auto springt von 0 auf gefuehlt
+        // 30 km/h und beschleunigt erst danach realistisch". Es ist das Losbrechmoment
+        // und keine Erfindung, aber wie gross es sein muss, haengt am Untergrund: auf
+        // Teppich braucht es mehr als auf Laminat.
         minMoveThrottle: 0.16, // smallest byte that actually breaks the car away from rest
+        // GASKENNLINIE, Ausgang x hoch throttleGamma. 1 = linear und bitgleich zu vorher.
+        // Ueber 1 streckt den unteren Bereich: mehr Weg fuer wenig Gas, und genau das
+        // braucht ein Trigger mit grosser Totzone, um ein Tempo zu HALTEN.
+        // Die Enden liegen fuer jedes Gamma fest - 0 bleibt 0, 1 bleibt 1.
+        throttleGamma: 1.0,
         // 10 km/h on the racing display, which reads speedKmh * REAL_SCALE (71.25).
         // Below this the car is walking pace and should simply stop.
         crawlCutoffKmh: 10 / REAL_SCALE,

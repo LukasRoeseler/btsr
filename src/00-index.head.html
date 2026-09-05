@@ -5590,6 +5590,22 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="phys-accel-val">1.00</span>
         </div></div>
+      <div class="opt-row"><div class="opt-label">Gaskennlinie
+          <small>Wie der Gasweg des Controllers auf die Beschleunigung abgebildet wird. Die Enden liegen immer fest: kein Gas hei&szlig;t keine Beschleunigung, Vollgas hei&szlig;t volle Beschleunigung &ndash; ge&auml;ndert wird nur, was dazwischen passiert. 1,0 ist die Gerade und &auml;ndert nichts. &Uuml;ber 1,0 streckt den unteren Bereich: ein Viertel Gasweg gibt bei 1,8 nur noch 8&nbsp;% statt 25&nbsp;%. Genau das braucht ein Trigger mit gro&szlig;er Totzone &ndash; ein DualShock&nbsp;4 oder DualSense gibt schon bei leichtem Druck viel ab, und dann l&auml;sst sich kein Tempo halten. Unter 1,0 macht es umgekehrt spitzer, f&uuml;r Pedale mit langem Weg.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="setting-throttle-gamma" min="0.6" max="3" step="0.05" value="1">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-throttle-gamma-val">1.00 linear</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Anfahrschub
+          <small>Der St&ouml;&szlig;er, mit dem das Auto aus dem Stand losbricht. Ohne ihn bekommt es beim Anfahren ein Gasbyte, das zu klein ist, um es zu bewegen &ndash; es zuckt und steht. Mit ihm springt es daf&uuml;r an: 16&nbsp;% sind im Ma&szlig;stab rund 47&nbsp;km/h, und das ist der Sprung von null auf gef&uuml;hlt 30, den man beim ersten Gasgeben sp&uuml;rt. Wieviel n&ouml;tig ist, h&auml;ngt am Untergrund: auf Teppich mehr als auf Laminat. Runter drehen, bis das Auto gerade noch sauber anf&auml;hrt.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="setting-minmove" min="0" max="0.35" step="0.01" value="0.16">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-minmove-val">16%</span>
+        </div></div>
       <div class="opt-row"><div class="opt-label">Bremsbalance
           <small>Wieviel der Bremse an der Vorderachse ankommt. <b>Nach vorn</b>: das Auto
           schiebt beim Anbremsen geradeaus. <b>Nach hinten</b>: mehr Lenkung beim Anbremsen,
@@ -6419,7 +6435,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.5.9</span></span>
+    <span class="foot-ver">v<span id="app-version">0.5.10</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
