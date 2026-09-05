@@ -1921,7 +1921,14 @@
     const g = cv.getContext('2d');
     const W = cv.width, H = cv.height, S = Math.max(W, H);
     g.clearRect(0, 0, W, H);
-    g.fillStyle = '#0d1219';
+    // DIE FARBEN AUS DER ANSICHT, nicht aus dem Code. Eine Leinwand kennt kein CSS, also
+    // holt sie sich die drei Werte hier ab - einmal je Bild, und das sind bei 80 ms Takt
+    // zwoelf Abfragen je Sekunde, gemessen belanglos neben den 0,5 % Gesamtlast.
+    const wxCss = getComputedStyle(document.body);
+    const wxGrund = (wxCss.getPropertyValue('--wx-grund') || '#0d1219').trim();
+    const wxWolke = (wxCss.getPropertyValue('--wx-wolke') || '226, 236, 246').trim();
+    const wxRegen = (wxCss.getPropertyValue('--wx-regen') || '104, 166, 186').trim();
+    g.fillStyle = wxGrund;
     g.fillRect(0, 0, W, H);
 
     // Gitter: fein und dunkel, damit die Formen davor stehen.
@@ -1945,7 +1952,7 @@
     // gleichmaessiger blauer Kasten oder ein Schauermuster.
     const stk = wxRainLevel();
     if (stk > 0.01) {
-      g.fillStyle = 'rgba(104,166,186,' + (0.3 * stk).toFixed(3) + ')';
+      g.fillStyle = 'rgba(' + wxRegen + ',' + (0.3 * stk).toFixed(3) + ')';
       g.fillRect(0, 0, W, H);
     }
 
@@ -1980,8 +1987,8 @@
         }
         g.closePath();
         const a2 = (deck * af).toFixed(3);
-        g.fillStyle = b.regen ? 'rgba(104,166,186,' + a2 + ')'
-                              : 'rgba(226,236,246,' + a2 + ')';
+        g.fillStyle = b.regen ? 'rgba(' + wxRegen + ',' + a2 + ')'
+                              : 'rgba(' + wxWolke + ',' + a2 + ')';
         g.fill();
       }
     }

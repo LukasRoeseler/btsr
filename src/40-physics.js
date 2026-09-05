@@ -228,7 +228,11 @@
         // 30 km/h und beschleunigt erst danach realistisch". Es ist das Losbrechmoment
         // und keine Erfindung, aber wie gross es sein muss, haengt am Untergrund: auf
         // Teppich braucht es mehr als auf Laminat.
-        minMoveThrottle: 0.16, // smallest byte that actually breaks the car away from rest
+        // 0,05 STATT 0,16, auf Bitte des Nutzers. 0,16 sind im Massstab rund 47 km/h -
+        // das war der gemeldete "Sprung von 0 auf gefuehlt 30". 0,05 sind 15 km/h, also
+        // ein Anschieben statt eines Satzes. Wieviel noetig ist, haengt am Untergrund;
+        // der Regler steht in den Optionen unter Anfahrschub.
+        minMoveThrottle: 0.05, // smallest byte that actually breaks the car away from rest
         // GASKENNLINIE, Ausgang x hoch throttleGamma. 1 = linear und bitgleich zu vorher.
         // Ueber 1 streckt den unteren Bereich: mehr Weg fuer wenig Gas, und genau das
         // braucht ein Trigger mit grosser Totzone, um ein Tempo zu HALTEN.

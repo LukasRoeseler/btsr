@@ -1108,16 +1108,46 @@
     refreshGarageGo();
   };
 
-  async function garageConnect() {
-    if (!navigator.bluetooth) {
-      alert('Web Bluetooth wird hier nicht unterstützt. Bitte in Chrome/Edge öffnen.');
+  // Die Lage EINMAL anzeigen, sobald sie bekannt ist - und nicht erst als Fehlermeldung
+  // nach dem dritten vergeblichen Klick. bluetoothLageGenau() steht in 10-ble-explorer.js
+  // und ist zur Laufzeit erreichbar; die Datei wird vorher gebaut.
+  async function garageLageZeigen() {
+    const el = $('gar-bt-lage');
+    if (!el) return;
+    const lage = await bluetoothLageGenau();
+    if (lage === 'ok') { el.hidden = true; el.textContent = ''; return; }
+    el.textContent = bluetoothLageText(lage);
+    el.hidden = false;
+  }
+  garageLageZeigen();
+  // Der Adapter kann waehrend der Sitzung an- und ausgehen. Chrome meldet das, wenn es die
+  // Abfrage kennt - und wenn nicht, bleibt es bei der Anzeige vom Start.
+  if (navigator.bluetooth && navigator.bluetooth.addEventListener) {
+    try {
+      navigator.bluetooth.addEventListener('availabilitychanged', garageLageZeigen);
+    } catch (e) { /* kennt das Ereignis nicht */ }
+  }
+
+  // `alleZeigen` ist der Notausgang: ohne Namensfilter, dafuer mit allen Geraeten in
+  // Reichweite. Er ist die Antwort auf "ich sehe mein Auto nicht" - ein Auto, dessen Name
+  // nicht in der Werbung steht, taucht im gefilterten Dialog naemlich NIE auf, und dann
+  // sucht man den Fehler bei sich.
+  async function garageConnect(alleZeigen) {
+    const lage = await bluetoothLageGenau();
+    if (lage !== 'ok') {
+      garageLageZeigen();
+      alert(bluetoothLageText(lage));
       return;
     }
     try {
-      const dev = await navigator.bluetooth.requestDevice({
-        filters: [{ namePrefix: 'HYBRID' }],
-        optionalServices: [NUS_SERVICE],
-      });
+      // ZWEI FILTER, ODER-verknuepft: der Name UND ersatzweise der Nordic-UART-Dienst.
+      // Web Bluetooth zeigt ein Geraet, wenn es IRGENDEINEN der Filter erfuellt - ein Auto,
+      // das seinen Namen nur in der Scan-Antwort fuehrt und nicht in der Werbung, faellt
+      // damit nicht mehr durch.
+      const dev = await navigator.bluetooth.requestDevice(alleZeigen
+        ? { acceptAllDevices: true, optionalServices: [NUS_SERVICE] }
+        : { filters: [{ namePrefix: 'HYBRID' }, { services: [NUS_SERVICE] }],
+            optionalServices: [NUS_SERVICE] });
       if (garage.some(c => c.device.id === dev.id)) {
         log('Dieses Auto ist bereits verbunden.', 'info');
         return;
@@ -1235,7 +1265,8 @@
     removeCar(car);
   }
 
-  $('gar-connect').onclick = garageConnect;
+  $('gar-connect').onclick = () => garageConnect(false);
+  if ($('gar-connect-all')) $('gar-connect-all').onclick = () => garageConnect(true);
   $('gar-disconnect-all').onclick = () => { [...garage].forEach(disconnectCar); };
   renderGarage();
 

@@ -357,6 +357,13 @@
   .home-legal-links a { color: var(--info); font-weight: 600; text-decoration: none;
     border-bottom: 1px solid rgba(90,169,255,.4); }
   .home-legal-links a:hover { border-bottom-color: var(--info); }
+  /* Die Lagemeldung der Garage. Rot umrandet, aber kein Alarmton: sie erklaert etwas,
+     das der Nutzer nicht falsch gemacht hat. */
+  .gar-warnung {
+    margin: 0 0 12px; padding: 9px 12px; border-radius: 6px;
+    border: 1px solid var(--bad); background: rgba(200, 60, 60, .08);
+    color: var(--text); font-size: 12.5px; line-height: 1.45;
+  }
   .wip-tag { display: inline-block; font-size: 9.5px; letter-spacing: .1em;
     padding: 1px 5px; border-radius: 3px; vertical-align: 2px;
     background: #4a3c00; color: #ffd83d; font-weight: 700; }
@@ -680,6 +687,14 @@
        bleiben duerfen - ein Statusstreifen darf sich vom Schirm abheben. */
     --gt3-strip: #0b0f18;
     --gt3-strip-ink: #8b97ad;
+    /* DAS REGENRADAR zeichnet auf eine Leinwand, und Leinwandfarben kann kein Stylesheet
+       umsetzen. Es liest sie deshalb hier - dieselbe Mechanik wie bei allem anderen, und
+       eine Ansicht kann sie mitziehen, ohne dass jemand die Zeichenroutine anfasst.
+       Wolke und Regen stehen als KOMPONENTEN, weil die Routine ihre Deckkraft je Ballen
+       selbst rechnet und deshalb rgba() zusammensetzt. */
+    --wx-grund: #0d1219;
+    --wx-wolke: 226, 236, 246;
+    --wx-regen: 104, 166, 186;
 
     /* DIESE VIER STANDEN BIS v0.5.4 IN DER .gt3-REGEL SELBST, und genau deshalb sahen die
        Cockpit-Ansichten fast gleich aus. Ein Wert, den body[data-cockpit] setzt, wird nur
@@ -760,6 +775,63 @@
      DIE FUNKTIONSFARBEN bleiben: Tank gruen, Schaden rot, gelbe Flagge gelb. Sie tragen eine
      Bedeutung, und eine Ansicht darf das Aussehen aendern und nicht die Bedeutung. Auf weiss
      sind sie ohnehin gut lesbar. */
+  /* GT3 - schwarze Kacheln, weisse Schrift. Die nuechternste der Ansichten: kein Verlauf
+     auf den Kacheln, kein Blauschimmer, nur Schwarz und Weiss. Ein echtes GT3-Display ist
+     genau das - es soll bei Sonne durch ein Visier lesbar sein, und dafuer ist maximaler
+     Kontrast das einzige, was zaehlt.
+
+     DIE FUNKTIONSFARBEN BLEIBEN. Sie tragen eine Bedeutung - gruen gut, gelb Vorsicht, rot
+     schlecht -, und eine Ansicht aendert das Aussehen und nicht die Bedeutung. Auf Schwarz
+     sind die Werte aus :root ohnehin gut lesbar, sie brauchen anders als bei "modern" keine
+     Nachfuehrung.
+
+     DER RADARGRUND ZIEHT MIT auf Schwarz, sonst saesse ein blaeulicher Kasten zwischen
+     schwarzen Kacheln. Die Wolken bleiben weiss - auf Schwarz ist das der beste Kontrast,
+     den es gibt -, und der Regen wird etwas heller, weil er sonst im Grund verschwindet. */
+  body[data-cockpit="gt3"] {
+    --gt3-tile: #000000;
+    --gt3-tile-ink: #ffffff;
+    /* Auch die SCHIRMtinte auf reines Weiss, nicht nur die der Kacheln: sonst stuende
+       weisser Text in schwarzen Kacheln und blaeulicher daneben, und die Ansicht waere
+       zur Haelfte die Vorgabe. */
+    --gt3-ink: #ffffff;
+    /* Rechteckiges Gehaeuse. Ein GT3-Display ist ein gefraester Kasten und keine Kachel
+       mit weichen Ecken; zusammen mit der matten Blende darunter ist das der Unterschied,
+       den man auf einen Blick sieht. */
+    --gt3-radius: 0px;
+    /* MATTE Blende statt der glaenzenden Webung: ein Kohlefaserteil mit Mattlack streut,
+       es spiegelt nicht. Zwei feine Richtungen bleiben, damit es Gewebe bleibt und keine
+       Farbflaeche wird - dieselbe Ueberlegung wie bei der Vorgabe, nur ohne Glanz. */
+    --gt3-carbon:
+      repeating-linear-gradient(90deg, rgba(255,255,255,.045) 0 1px,
+                                       rgba(0,0,0,.55) 1px 3px),
+      repeating-linear-gradient(0deg, rgba(255,255,255,.035) 0 1px,
+                                      rgba(0,0,0,.5) 1px 3px),
+      #0a0a0a;
+    --gt3-btn: #000000;
+    --gt3-btn-ink: #ffffff;
+    --gt3-btn-hover: #1c1c1c;
+    --gt3-lbl: #9aa0a8;
+    --gt3-rpm-ink: #ffffff;
+    --gt3-screen: #050505;
+    --gt3-line: rgba(255, 255, 255, .34);
+    --gt3-line-soft: rgba(255, 255, 255, .16);
+    /* Kein Leuchten und kein Zeilenraster: beides weicht den Kontrast auf, und der ist bei
+       dieser Ansicht der ganze Zweck. */
+    --gt3-glow: none;
+    --gt3-scan: none;
+    --wx-grund: #000000;
+    --wx-regen: 138, 198, 218;
+  }
+  /* Die zwei zeichnenden Instrumente auf denselben Grund wie die Kacheln - sonst stehen
+     zwei blaeuliche Kaesten in einer schwarzen Flaeche. Dieselbe Stelle wie bei "modern",
+     nur andersherum. */
+  body[data-cockpit="gt3"] .gt3-gplot,
+  body[data-cockpit="gt3"] .wx-radar {
+    background: #000000; border-radius: 2px; color: var(--gt3-tile-ink); }
+  body[data-cockpit="gt3"] .gt3-gplot .gt3-lbl,
+  body[data-cockpit="gt3"] .gt3-gplot .gt3-val { color: var(--gt3-tile-ink); }
+
   body[data-cockpit="modern"] {
     --gt3-ink: #12161d;
     --gt3-screen: linear-gradient(180deg, #ffffff 0%, #f4f6f9 46%, #eef1f5 74%, #f8fafc 100%);
@@ -1003,7 +1075,21 @@
        er in die erste Kachel der rechten Spalte und stand ueber "Aktuelle Runde". Die
        seitliche Aussparung oben hielt nur die LICHTER frei, nicht die Zeile darunter.
        40 px ist aus den beiden Zahlen des Knopfes gerechnet und nicht geraten. */
-    min-height: 40px; align-content: center; }
+    /* 46 STATT 40, und align-ITEMS statt align-CONTENT. Zwei Aenderungen, eine Ursache.
+       GEMESSEN lagen die inneren Lampen 0,3 px unter der Innenkante des Cockpits - sie
+       klebten an der Blende, und weil .gt3 mit overflow: hidden abschneidet, sahen sie
+       abgeschnitten aus. Unter der Hoeheneinpassung (zoom 0,49 auf einem Handy quer) wird
+       aus 0,3 px gar nichts mehr.
+
+       align-content zentriert die ZEILEN eines Rasters im Container. Hier gibt es genau
+       eine Zeile, und die wird gestreckt; die Lampen darin haben durch aspect-ratio eine
+       feste Hoehe und richten sich mangels align-self am ANFANG aus - also oben. Der
+       Regler sah nach Zentrierung aus und war keine. align-items zentriert die Elemente,
+       und das ist, was hier gemeint war.
+
+       Die 40 px stammten aus dem Vollbildknopf (6 px unter der Oberkante, 34 px hoch).
+       Diese Zusicherung gilt weiter; die zusaetzlichen 6 px sind Luft fuer die Lampen. */
+    min-height: 46px; align-items: center; }
   /* EIN BOGEN, keine Reihe. Auf einem GT3-Lenkrad sitzen die Schaltlichter in der
      Kruemmung des Kranzes, und die aeusseren stehen tiefer. Symmetrisch aus der Mitte
      heraus: 0 fuer die vier innersten, dann 1, 2, 3 px. Mehr waere auf 375 px ein Sprung
@@ -4913,8 +4999,14 @@
         <strong>Klick auf eine Zeile l&auml;sst die Lichter dieses Autos blinken</strong>, damit du
         siehst, welches Auto in der Liste welches auf dem Tisch ist.
       </p>
+      <!-- Der Hinweis steht VOR dem Knopf und nicht in einer Fehlermeldung danach: wer
+           die App ueber das WLAN vom Host-Programm holt, hat gar kein Web Bluetooth, und
+           das soll er sehen, bevor er dreimal auf "Auto verbinden" drueckt. Leer und
+           unsichtbar, solange alles in Ordnung ist. -->
+      <p id="gar-bt-lage" class="gar-warnung" hidden data-i18n-skip></p>
       <div class="row" style="gap:8px; margin-bottom:14px">
         <button class="primary" id="gar-connect">Auto verbinden</button>
+        <button id="gar-connect-all" title="Sucht ohne Namensfilter">Alle Ger&auml;te zeigen</button><span class="wip-tag">WIP</span>
         <button id="gar-disconnect-all">Alle trennen</button>
         <span class="muted" id="gar-count">keine Autos verbunden</span>
         <div class="spacer" style="flex:1"></div>
@@ -5264,7 +5356,8 @@
           wie es aussieht, nicht was eine Farbe sagt. Die Voreinstellungen fassen die Ansicht
           nicht an.</small></div>
         <select id="setting-cockpit" data-preset-skip>
-          <option value="gt3" selected>GT3 (Vorgabe)</option>
+          <option value="omega" selected>Omega (Vorgabe)</option>
+          <option value="gt3">GT3: schwarze Kacheln (WIP)</option>
           <option value="retro">Oldschool, 1980er</option>
           <option value="modern">Modern, 2000er (hell)</option>
           <option value="klassiker">Klassiker: Walnuss und Chrom</option>
@@ -5676,9 +5769,9 @@
           <small>Der St&ouml;&szlig;er, mit dem das Auto aus dem Stand losbricht. Ohne ihn bekommt es beim Anfahren ein Gasbyte, das zu klein ist, um es zu bewegen &ndash; es zuckt und steht. Mit ihm springt es daf&uuml;r an: 16&nbsp;% sind im Ma&szlig;stab rund 47&nbsp;km/h, und das ist der Sprung von null auf gef&uuml;hlt 30, den man beim ersten Gasgeben sp&uuml;rt. Wieviel n&ouml;tig ist, h&auml;ngt am Untergrund: auf Teppich mehr als auf Laminat. Runter drehen, bis das Auto gerade noch sauber anf&auml;hrt.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-minmove" min="0" max="0.35" step="0.01" value="0.16">
+          <input type="range" id="setting-minmove" min="0" max="0.35" step="0.01" value="0.05">
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="setting-minmove-val">16%</span>
+          <span class="opt-val" id="setting-minmove-val">5%</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Bremsbalance
           <small>Wieviel der Bremse an der Vorderachse ankommt. <b>Nach vorn</b>: das Auto
@@ -5734,9 +5827,6 @@
         <label class="tgl"><input type="checkbox" id="setting-announce-tyre"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Regen ansagen <span class="wip-tag">WIP</span><small>Wenn es anf&auml;ngt zu regnen und wenn es aufh&ouml;rt. Beim Laden wird nichts gesagt, erst beim Wechsel.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-announce-rain"><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Funkfilter <span class="wip-tag">WIP</span>
-          <small>L&auml;sst die Ansage nach Rennfunk klingen: ein Knacken beim Aufschalten, ein Rauschteppich darunter, ein Knacken beim Loslassen, und die Stimme spricht schneller und flacher. Was NICHT geht, und das sei gesagt: die Stimme selbst bandbegrenzen. Die Sprachausgabe des Browsers liefert keinen Audioknoten, es gibt also nichts, wo ein Filter dazwischen k&ouml;nnte. Der Funkeindruck kommt vom Drumherum.</small></div>
-        <label class="tgl"><input type="checkbox" id="setting-announce-radio"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Regen<small>Select oder W. Reifen kommen beim Boxenstopp passend.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-rain"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Strecken-Ambience<small>Vorbeifahrten, Regen, Donner.</small></div>
@@ -6529,7 +6619,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.5.15</span></span>
+    <span class="foot-ver">v<span id="app-version">0.5.16</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -6677,10 +6767,67 @@
     if (bc) bc.disabled = isConnected;
   }
 
+  // ---- Woran liegt es, wenn keine Autos auftauchen? ----------------------------------
+  //
+  // VIER FAELLE, und sie brauchen vier verschiedene Antworten. Bis v0.5.16 bekamen alle
+  // dieselbe - "Web Bluetooth wird hier nicht unterstuetzt, bitte in Chrome/Edge oeffnen" -,
+  // und auf einem Telefon, auf dem Chrome laeuft, schickt dieser Satz einen ans falsche
+  // Ende.
+  //
+  // Der Fall, der wirklich vorkam: die App vom Host-Programm ueber das WLAN geladen. Web
+  // Bluetooth verlangt einen SICHEREN KONTEXT, und http://192.168.x.x ist keiner - das
+  // steht so im Kopf von tools/omegasim_host.py, nur eben nicht in der App. Ein Telefon
+  // holt die App vom PC und hat kein navigator.bluetooth; das andere oeffnet sie ueber
+  // https oder file:// und merkt nichts.
+  //
+  // 'aus' kann nur ASYNCHRON bestimmt werden (getAvailability liefert ein Versprechen),
+  // deshalb gibt es die schnelle Fassung fuer die Anzeige und die genaue fuer den Klick.
+  function bluetoothLage() {
+    if (!window.isSecureContext) return 'unsicher';
+    if (!navigator.bluetooth) return 'kein-api';
+    return 'ok';
+  }
+
+  async function bluetoothLageGenau() {
+    const l = bluetoothLage();
+    if (l !== 'ok') return l;
+    try {
+      if (typeof navigator.bluetooth.getAvailability === 'function') {
+        const da = await navigator.bluetooth.getAvailability();
+        if (!da) return 'aus';
+      }
+    } catch (e) { /* manche Browser kennen die Abfrage nicht - dann eben nicht */ }
+    return 'ok';
+  }
+
+  // Der Text zur Lage, einmal fuer Protokoll und Anzeige. Er nennt den URSPRUNG, denn
+  // genau der ist im haeufigsten Fall die Ursache, und ohne ihn sucht man woanders.
+  function bluetoothLageText(lage) {
+    if (lage === 'unsicher') {
+      return 'Bluetooth ist hier abgeschaltet, weil die Seite ueber einen unsicheren '
+           + 'Ursprung geladen wurde (' + location.origin + '). Web Bluetooth erlaubt nur '
+           + 'https://, http://localhost und file://. Wer die App vom Host-Programm im WLAN '
+           + 'holt, hat genau diesen Fall: entweder die App direkt vom Telefon aus oeffnen '
+           + '(GitHub Pages oder gespeicherte Datei), oder in chrome://flags den Eintrag '
+           + '"unsafely-treat-insecure-origin-as-secure" um ' + location.origin + ' '
+           + 'ergaenzen und Chrome neu starten.';
+    }
+    if (lage === 'kein-api') {
+      return 'Dieser Browser kennt Web Bluetooth nicht. Chrome oder Edge auf Windows, '
+           + 'Android oder ChromeOS - Safari und Firefox koennen es nicht.';
+    }
+    if (lage === 'aus') {
+      return 'Der Bluetooth-Adapter ist aus oder nicht verfuegbar. Auf Android ausserdem '
+           + 'pruefen, ob Chrome die Berechtigung "Geraete in der Naehe" hat.';
+    }
+    return '';
+  }
+
   async function connect() {
-    if (!navigator.bluetooth) {
-      log('Web Bluetooth wird von diesem Browser nicht unterstützt. Bitte Chrome oder Edge auf Windows/Android/ChromeOS verwenden.', 'err');
-      alert('Web Bluetooth wird hier nicht unterstützt. Bitte in Chrome/Edge öffnen.');
+    const lage = await bluetoothLageGenau();
+    if (lage !== 'ok') {
+      log(bluetoothLageText(lage), 'err');
+      alert(bluetoothLageText(lage));
       return;
     }
     try {
@@ -6894,6 +7041,7 @@
   // stehen - das ist die Absicht, nicht ein Mangel: ein fehlender Eintrag faellt auf,
   // ein leerer Text nicht.
   const I18N_EN = {
+    "Alle Geräte zeigen": "Show all devices",
     "Offen": "Open",
     "Vibration überhaupt": "Vibration at all",
     "Gangwechsel": "Gear change",
@@ -6918,8 +7066,6 @@
     "Einmal, wenn der schlechteste der vier Reifen nur noch 10 % hat. Der schlechteste zählt: ein Auto mit drei guten Reifen und einem abgefahrenen fährt nicht drei Viertel gut.": "Once, when the worst of the four tyres is down to 10 %. The worst one counts: a car with three good tyres and one worn out does not drive three quarters well.",
     "Regen ansagen": "Announce rain",
     "Wenn es anfängt zu regnen und wenn es aufhört. Beim Laden wird nichts gesagt, erst beim Wechsel.": "When it starts raining and when it stops. Nothing is said on load, only on a change.",
-    "Funkfilter": "Radio filter",
-    "Lässt die Ansage nach Rennfunk klingen: ein Knacken beim Aufschalten, ein Rauschteppich darunter, ein Knacken beim Loslassen, und die Stimme spricht schneller und flacher. Was NICHT geht, und das sei gesagt: die Stimme selbst bandbegrenzen. Die Sprachausgabe des Browsers liefert keinen Audioknoten, es gibt also nichts, wo ein Filter dazwischen könnte. Der Funkeindruck kommt vom Drumherum.": "Makes the announcement sound like race radio: a click when the transmitter keys, a bed of static underneath, a click when it unkeys, and the voice speaks faster and flatter. What is NOT possible, and it should be said: band-limiting the voice itself. The browser’s speech output provides no audio node, so there is nowhere for a filter to sit. The radio impression comes from everything around it.",
     "Gaskennlinie": "Throttle curve",
     "Anfahrschub": "Launch shove",
     "Wie der Gasweg des Controllers auf die Beschleunigung abgebildet wird. Die Enden liegen immer fest: kein Gas heißt keine Beschleunigung, Vollgas heißt volle Beschleunigung – geändert wird nur, was dazwischen passiert. 1,0 ist die Gerade und ändert nichts. Über 1,0 streckt den unteren Bereich: ein Viertel Gasweg gibt bei 1,8 nur noch 8 % statt 25 %. Genau das braucht ein Trigger mit großer Totzone – ein DualShock 4 oder DualSense gibt schon bei leichtem Druck viel ab, und dann lässt sich kein Tempo halten. Unter 1,0 macht es umgekehrt spitzer, für Pedale mit langem Weg.": "How the controller’s throttle travel maps to acceleration. The ends are always fixed: no throttle means no acceleration, full throttle means full acceleration – only what happens in between changes. 1.0 is the straight line and changes nothing. Above 1.0 stretches the lower range: a quarter of the travel gives only 8 % instead of 25 % at 1.8. That is exactly what a trigger with a large dead zone needs – a DualShock 4 or DualSense already gives away a lot under light pressure, and then no speed can be held. Below 1.0 does the opposite and makes it sharper, for pedals with long travel.",
@@ -9515,7 +9661,11 @@
         // 30 km/h und beschleunigt erst danach realistisch". Es ist das Losbrechmoment
         // und keine Erfindung, aber wie gross es sein muss, haengt am Untergrund: auf
         // Teppich braucht es mehr als auf Laminat.
-        minMoveThrottle: 0.16, // smallest byte that actually breaks the car away from rest
+        // 0,05 STATT 0,16, auf Bitte des Nutzers. 0,16 sind im Massstab rund 47 km/h -
+        // das war der gemeldete "Sprung von 0 auf gefuehlt 30". 0,05 sind 15 km/h, also
+        // ein Anschieben statt eines Satzes. Wieviel noetig ist, haengt am Untergrund;
+        // der Regler steht in den Optionen unter Anfahrschub.
+        minMoveThrottle: 0.05, // smallest byte that actually breaks the car away from rest
         // GASKENNLINIE, Ausgang x hoch throttleGamma. 1 = linear und bitgleich zu vorher.
         // Ueber 1 streckt den unteren Bereich: mehr Weg fuer wenig Gas, und genau das
         // braucht ein Trigger mit grosser Totzone, um ein Tempo zu HALTEN.
@@ -11413,9 +11563,11 @@
   if ($('setting-cockpit')) {
     const ansichtAnwenden = (melden) => {
       const v = $('setting-cockpit').value;
-      // 'gt3' ist die Vorgabe und setzt KEIN Attribut: so stehen die Werte aus :root, und
-      // die Vorgabe ist damit nicht eine dritte Kopie derselben Zahlen.
-      if (v === 'gt3') document.body.removeAttribute('data-cockpit');
+      // 'omega' ist die Vorgabe und setzt KEIN Attribut: so stehen die Werte aus :root, und
+      // die Vorgabe ist damit nicht eine zweite Kopie derselben Zahlen. Sie hiess bis
+      // v0.5.16 'gt3'; unter diesem Namen steht jetzt eine ANDERE Ansicht, siehe die
+      // Ueberleitung darunter.
+      if (v === 'omega') document.body.removeAttribute('data-cockpit');
       else document.body.setAttribute('data-cockpit', v);
       if (melden) {
         const opt = $('setting-cockpit').selectedOptions[0];
@@ -11423,6 +11575,26 @@
       }
       try { localStorage.setItem(COCKPIT_STORE, v); } catch (e) { /* privater Modus */ }
     };
+    // ---- Ueberleitung: aus dem alten 'gt3' wird 'omega' -----------------------------
+    //
+    // Der gespeicherte Wert 'gt3' meinte bis v0.5.16 die VORGABE. Ab jetzt ist 'gt3' eine
+    // eigene Ansicht mit schwarzen Kacheln - wer die App vorher benutzt hat, bekaeme also
+    // beim naechsten Start still ein anderes Cockpit.
+    //
+    // Der Merker ist noetig und nicht Zierde: OHNE ihn liesse sich nicht unterscheiden, ob
+    // ein gespeichertes 'gt3' von frueher stammt oder eine frische Wahl der neuen Ansicht
+    // ist - und die Ueberleitung wuerde die neue Ansicht bei jedem Start wieder wegnehmen.
+    const COCKPIT_UMBENANNT = 'chc.cockpit.omega.v1';
+    try {
+      if (!localStorage.getItem(COCKPIT_UMBENANNT)) {
+        if (localStorage.getItem(COCKPIT_STORE) === 'gt3') {
+          localStorage.setItem(COCKPIT_STORE, 'omega');
+          log('Cockpit-Ansicht: die bisherige Vorgabe heisst jetzt "Omega". Unter "GT3" '
+              + 'steht seit v0.5.16 eine neue Ansicht mit schwarzen Kacheln.', 'info');
+        }
+        localStorage.setItem(COCKPIT_UMBENANNT, '1');
+      }
+    } catch (e) { /* privater Modus */ }
     try {
       const gespeichert = localStorage.getItem(COCKPIT_STORE);
       if (gespeichert) $('setting-cockpit').value = gespeichert;
@@ -16759,7 +16931,14 @@
     const g = cv.getContext('2d');
     const W = cv.width, H = cv.height, S = Math.max(W, H);
     g.clearRect(0, 0, W, H);
-    g.fillStyle = '#0d1219';
+    // DIE FARBEN AUS DER ANSICHT, nicht aus dem Code. Eine Leinwand kennt kein CSS, also
+    // holt sie sich die drei Werte hier ab - einmal je Bild, und das sind bei 80 ms Takt
+    // zwoelf Abfragen je Sekunde, gemessen belanglos neben den 0,5 % Gesamtlast.
+    const wxCss = getComputedStyle(document.body);
+    const wxGrund = (wxCss.getPropertyValue('--wx-grund') || '#0d1219').trim();
+    const wxWolke = (wxCss.getPropertyValue('--wx-wolke') || '226, 236, 246').trim();
+    const wxRegen = (wxCss.getPropertyValue('--wx-regen') || '104, 166, 186').trim();
+    g.fillStyle = wxGrund;
     g.fillRect(0, 0, W, H);
 
     // Gitter: fein und dunkel, damit die Formen davor stehen.
@@ -16783,7 +16962,7 @@
     // gleichmaessiger blauer Kasten oder ein Schauermuster.
     const stk = wxRainLevel();
     if (stk > 0.01) {
-      g.fillStyle = 'rgba(104,166,186,' + (0.3 * stk).toFixed(3) + ')';
+      g.fillStyle = 'rgba(' + wxRegen + ',' + (0.3 * stk).toFixed(3) + ')';
       g.fillRect(0, 0, W, H);
     }
 
@@ -16818,8 +16997,8 @@
         }
         g.closePath();
         const a2 = (deck * af).toFixed(3);
-        g.fillStyle = b.regen ? 'rgba(104,166,186,' + a2 + ')'
-                              : 'rgba(226,236,246,' + a2 + ')';
+        g.fillStyle = b.regen ? 'rgba(' + wxRegen + ',' + a2 + ')'
+                              : 'rgba(' + wxWolke + ',' + a2 + ')';
         g.fill();
       }
     }
@@ -18556,54 +18735,13 @@
   const ANSAGE_SCHWELLE = 0.10;   // 10 %, wie in der Aufgabe
   const ANSAGE_HYSTERESE = 0.18;  // erst darueber ist die Meldung wieder scharf
   const ansageAn = { lap: true, damage: false, fuel: false, tyre: false, rain: false };
-  let funkFilter = false;
   const ansageLatch = { damage: false, fuel: false, tyre: false, rain: null };
 
-  // ---- Der Funkfilter: Knacken, Rauschen, Knacken ---------------------------------
-  //
-  // Die Stimme selbst kann nicht bandbegrenzt werden - speechSynthesis liefert keinen
-  // Audioknoten. Gebaut wird das, was einen Funkspruch wirklich kennzeichnet: das
-  // Aufschalten, der Rauschteppich darunter und das Loslassen.
-  function funkKnacken(t0, staerke) {
-    if (!audioCtx) return;
-    const n = Math.floor(audioCtx.sampleRate * 0.05);
-    const b = audioCtx.createBuffer(1, n, audioCtx.sampleRate);
-    const d = b.getChannelData(0);
-    for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (n * 0.18));
-    const src = audioCtx.createBufferSource();
-    src.buffer = b;
-    // Bandpass um 1,6 kHz: das ist die Lage, in der ein Sprechfunkgeraet knackt.
-    const bp = audioCtx.createBiquadFilter();
-    bp.type = 'bandpass'; bp.frequency.value = 1600; bp.Q.value = 1.4;
-    const g = audioCtx.createGain();
-    g.gain.value = staerke;
-    src.connect(bp).connect(g).connect(audioCtx.destination);
-    src.start(t0);
-    src.stop(t0 + 0.06);
-  }
-
-  // Der Rauschteppich unter der Stimme. Er laeuft ueber eine geschaetzte Sprechdauer -
-  // speechSynthesis sagt nicht, wie lange es dauert, und onend kommt zu spaet, um daraus
-  // eine Huellkurve zu bauen. 55 ms je Zeichen ist an den eigenen Ansagen abgelesen.
-  function funkRauschen(t0, dauer) {
-    if (!audioCtx) return;
-    const n = Math.floor(audioCtx.sampleRate * Math.max(0.2, dauer));
-    const b = audioCtx.createBuffer(1, n, audioCtx.sampleRate);
-    const d = b.getChannelData(0);
-    for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
-    const src = audioCtx.createBufferSource();
-    src.buffer = b;
-    const bp = audioCtx.createBiquadFilter();
-    bp.type = 'bandpass'; bp.frequency.value = 2200; bp.Q.value = 0.7;
-    const g = audioCtx.createGain();
-    g.gain.setValueAtTime(0, t0);
-    g.gain.linearRampToValueAtTime(0.018, t0 + 0.04);
-    g.gain.setValueAtTime(0.018, t0 + dauer - 0.06);
-    g.gain.linearRampToValueAtTime(0, t0 + dauer);
-    src.connect(bp).connect(g).connect(audioCtx.destination);
-    src.start(t0);
-    src.stop(t0 + dauer + 0.02);
-  }
+  // HIER STAND DER FUNKFILTER, und er ist auf Bitte des Nutzers wieder heraus. Was er
+  // konnte: Knacken beim Aufschalten, ein Rauschteppich darunter, Knacken beim Loslassen,
+  // und eine Stimme, die schneller und flacher spricht. Was er NICHT konnte, und was ihn
+  // am Ende halbherzig machte: die Stimme selbst bandbegrenzen - speechSynthesis liefert
+  // keinen Audioknoten, es gibt also nichts, wo ein Filter dazwischen koennte.
 
   // ---- Der gemeinsame Kern ---------------------------------------------------------
   function ansage(art, text) {
@@ -18619,22 +18757,13 @@
       u.lang = lang === 'de' ? 'de-DE' : 'en-US';
       // Funk spricht schneller und flacher. Beides ist an der Stimme einstellbar, und mehr
       // gibt die Schnittstelle nicht her.
-      u.rate = funkFilter ? 1.35 : 1.15;
-      if (funkFilter) u.pitch = 0.85;
+      u.rate = 1.15;
       u.onerror = (ev) => {
         if (announceFailLogged) return;
         announceFailLogged = true;
         log('Ansage: keine Stimme verfuegbar (' + (ev && ev.error ? ev.error : '?')
             + '). Die Ansage bleibt aus, alles andere laeuft weiter.', 'info');
       };
-      if (funkFilter && audioCtx) {
-        const t0 = audioCtx.currentTime + 0.02;
-        // 55 ms je Zeichen, gedeckelt: eine Schaetzung, und sie ist als solche benannt.
-        const dauer = Math.min(6, Math.max(0.6, text.length * 0.055 / u.rate));
-        funkKnacken(t0, 0.09);
-        funkRauschen(t0 + 0.06, dauer);
-        funkKnacken(t0 + 0.06 + dauer, 0.06);
-      }
       window.speechSynthesis.speak(u);
       announceCalls++;
       return true;
@@ -18730,10 +18859,6 @@
       if (!e.target.checked && 'speechSynthesis' in window) window.speechSynthesis.cancel();
     });
   });
-  if ($('setting-announce-radio')) {
-    funkFilter = $('setting-announce-radio').checked;
-    $('setting-announce-radio').addEventListener('change', (e) => { funkFilter = e.target.checked; });
-  }
 
   function playShiftSound(direction) {
     const buf = direction >= 0 ? fxBuffers.shift.up : fxBuffers.shift.down;
@@ -20852,16 +20977,46 @@
     refreshGarageGo();
   };
 
-  async function garageConnect() {
-    if (!navigator.bluetooth) {
-      alert('Web Bluetooth wird hier nicht unterstützt. Bitte in Chrome/Edge öffnen.');
+  // Die Lage EINMAL anzeigen, sobald sie bekannt ist - und nicht erst als Fehlermeldung
+  // nach dem dritten vergeblichen Klick. bluetoothLageGenau() steht in 10-ble-explorer.js
+  // und ist zur Laufzeit erreichbar; die Datei wird vorher gebaut.
+  async function garageLageZeigen() {
+    const el = $('gar-bt-lage');
+    if (!el) return;
+    const lage = await bluetoothLageGenau();
+    if (lage === 'ok') { el.hidden = true; el.textContent = ''; return; }
+    el.textContent = bluetoothLageText(lage);
+    el.hidden = false;
+  }
+  garageLageZeigen();
+  // Der Adapter kann waehrend der Sitzung an- und ausgehen. Chrome meldet das, wenn es die
+  // Abfrage kennt - und wenn nicht, bleibt es bei der Anzeige vom Start.
+  if (navigator.bluetooth && navigator.bluetooth.addEventListener) {
+    try {
+      navigator.bluetooth.addEventListener('availabilitychanged', garageLageZeigen);
+    } catch (e) { /* kennt das Ereignis nicht */ }
+  }
+
+  // `alleZeigen` ist der Notausgang: ohne Namensfilter, dafuer mit allen Geraeten in
+  // Reichweite. Er ist die Antwort auf "ich sehe mein Auto nicht" - ein Auto, dessen Name
+  // nicht in der Werbung steht, taucht im gefilterten Dialog naemlich NIE auf, und dann
+  // sucht man den Fehler bei sich.
+  async function garageConnect(alleZeigen) {
+    const lage = await bluetoothLageGenau();
+    if (lage !== 'ok') {
+      garageLageZeigen();
+      alert(bluetoothLageText(lage));
       return;
     }
     try {
-      const dev = await navigator.bluetooth.requestDevice({
-        filters: [{ namePrefix: 'HYBRID' }],
-        optionalServices: [NUS_SERVICE],
-      });
+      // ZWEI FILTER, ODER-verknuepft: der Name UND ersatzweise der Nordic-UART-Dienst.
+      // Web Bluetooth zeigt ein Geraet, wenn es IRGENDEINEN der Filter erfuellt - ein Auto,
+      // das seinen Namen nur in der Scan-Antwort fuehrt und nicht in der Werbung, faellt
+      // damit nicht mehr durch.
+      const dev = await navigator.bluetooth.requestDevice(alleZeigen
+        ? { acceptAllDevices: true, optionalServices: [NUS_SERVICE] }
+        : { filters: [{ namePrefix: 'HYBRID' }, { services: [NUS_SERVICE] }],
+            optionalServices: [NUS_SERVICE] });
       if (garage.some(c => c.device.id === dev.id)) {
         log('Dieses Auto ist bereits verbunden.', 'info');
         return;
@@ -20979,7 +21134,8 @@
     removeCar(car);
   }
 
-  $('gar-connect').onclick = garageConnect;
+  $('gar-connect').onclick = () => garageConnect(false);
+  if ($('gar-connect-all')) $('gar-connect-all').onclick = () => garageConnect(true);
   $('gar-disconnect-all').onclick = () => { [...garage].forEach(disconnectCar); };
   renderGarage();
 

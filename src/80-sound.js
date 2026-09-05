@@ -341,54 +341,13 @@
   const ANSAGE_SCHWELLE = 0.10;   // 10 %, wie in der Aufgabe
   const ANSAGE_HYSTERESE = 0.18;  // erst darueber ist die Meldung wieder scharf
   const ansageAn = { lap: true, damage: false, fuel: false, tyre: false, rain: false };
-  let funkFilter = false;
   const ansageLatch = { damage: false, fuel: false, tyre: false, rain: null };
 
-  // ---- Der Funkfilter: Knacken, Rauschen, Knacken ---------------------------------
-  //
-  // Die Stimme selbst kann nicht bandbegrenzt werden - speechSynthesis liefert keinen
-  // Audioknoten. Gebaut wird das, was einen Funkspruch wirklich kennzeichnet: das
-  // Aufschalten, der Rauschteppich darunter und das Loslassen.
-  function funkKnacken(t0, staerke) {
-    if (!audioCtx) return;
-    const n = Math.floor(audioCtx.sampleRate * 0.05);
-    const b = audioCtx.createBuffer(1, n, audioCtx.sampleRate);
-    const d = b.getChannelData(0);
-    for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (n * 0.18));
-    const src = audioCtx.createBufferSource();
-    src.buffer = b;
-    // Bandpass um 1,6 kHz: das ist die Lage, in der ein Sprechfunkgeraet knackt.
-    const bp = audioCtx.createBiquadFilter();
-    bp.type = 'bandpass'; bp.frequency.value = 1600; bp.Q.value = 1.4;
-    const g = audioCtx.createGain();
-    g.gain.value = staerke;
-    src.connect(bp).connect(g).connect(audioCtx.destination);
-    src.start(t0);
-    src.stop(t0 + 0.06);
-  }
-
-  // Der Rauschteppich unter der Stimme. Er laeuft ueber eine geschaetzte Sprechdauer -
-  // speechSynthesis sagt nicht, wie lange es dauert, und onend kommt zu spaet, um daraus
-  // eine Huellkurve zu bauen. 55 ms je Zeichen ist an den eigenen Ansagen abgelesen.
-  function funkRauschen(t0, dauer) {
-    if (!audioCtx) return;
-    const n = Math.floor(audioCtx.sampleRate * Math.max(0.2, dauer));
-    const b = audioCtx.createBuffer(1, n, audioCtx.sampleRate);
-    const d = b.getChannelData(0);
-    for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
-    const src = audioCtx.createBufferSource();
-    src.buffer = b;
-    const bp = audioCtx.createBiquadFilter();
-    bp.type = 'bandpass'; bp.frequency.value = 2200; bp.Q.value = 0.7;
-    const g = audioCtx.createGain();
-    g.gain.setValueAtTime(0, t0);
-    g.gain.linearRampToValueAtTime(0.018, t0 + 0.04);
-    g.gain.setValueAtTime(0.018, t0 + dauer - 0.06);
-    g.gain.linearRampToValueAtTime(0, t0 + dauer);
-    src.connect(bp).connect(g).connect(audioCtx.destination);
-    src.start(t0);
-    src.stop(t0 + dauer + 0.02);
-  }
+  // HIER STAND DER FUNKFILTER, und er ist auf Bitte des Nutzers wieder heraus. Was er
+  // konnte: Knacken beim Aufschalten, ein Rauschteppich darunter, Knacken beim Loslassen,
+  // und eine Stimme, die schneller und flacher spricht. Was er NICHT konnte, und was ihn
+  // am Ende halbherzig machte: die Stimme selbst bandbegrenzen - speechSynthesis liefert
+  // keinen Audioknoten, es gibt also nichts, wo ein Filter dazwischen koennte.
 
   // ---- Der gemeinsame Kern ---------------------------------------------------------
   function ansage(art, text) {
@@ -404,22 +363,13 @@
       u.lang = lang === 'de' ? 'de-DE' : 'en-US';
       // Funk spricht schneller und flacher. Beides ist an der Stimme einstellbar, und mehr
       // gibt die Schnittstelle nicht her.
-      u.rate = funkFilter ? 1.35 : 1.15;
-      if (funkFilter) u.pitch = 0.85;
+      u.rate = 1.15;
       u.onerror = (ev) => {
         if (announceFailLogged) return;
         announceFailLogged = true;
         log('Ansage: keine Stimme verfuegbar (' + (ev && ev.error ? ev.error : '?')
             + '). Die Ansage bleibt aus, alles andere laeuft weiter.', 'info');
       };
-      if (funkFilter && audioCtx) {
-        const t0 = audioCtx.currentTime + 0.02;
-        // 55 ms je Zeichen, gedeckelt: eine Schaetzung, und sie ist als solche benannt.
-        const dauer = Math.min(6, Math.max(0.6, text.length * 0.055 / u.rate));
-        funkKnacken(t0, 0.09);
-        funkRauschen(t0 + 0.06, dauer);
-        funkKnacken(t0 + 0.06 + dauer, 0.06);
-      }
       window.speechSynthesis.speak(u);
       announceCalls++;
       return true;
@@ -515,10 +465,6 @@
       if (!e.target.checked && 'speechSynthesis' in window) window.speechSynthesis.cancel();
     });
   });
-  if ($('setting-announce-radio')) {
-    funkFilter = $('setting-announce-radio').checked;
-    $('setting-announce-radio').addEventListener('change', (e) => { funkFilter = e.target.checked; });
-  }
 
   function playShiftSound(direction) {
     const buf = direction >= 0 ? fxBuffers.shift.up : fxBuffers.shift.down;

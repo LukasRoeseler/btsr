@@ -117,10 +117,67 @@
     if (bc) bc.disabled = isConnected;
   }
 
+  // ---- Woran liegt es, wenn keine Autos auftauchen? ----------------------------------
+  //
+  // VIER FAELLE, und sie brauchen vier verschiedene Antworten. Bis v0.5.16 bekamen alle
+  // dieselbe - "Web Bluetooth wird hier nicht unterstuetzt, bitte in Chrome/Edge oeffnen" -,
+  // und auf einem Telefon, auf dem Chrome laeuft, schickt dieser Satz einen ans falsche
+  // Ende.
+  //
+  // Der Fall, der wirklich vorkam: die App vom Host-Programm ueber das WLAN geladen. Web
+  // Bluetooth verlangt einen SICHEREN KONTEXT, und http://192.168.x.x ist keiner - das
+  // steht so im Kopf von tools/omegasim_host.py, nur eben nicht in der App. Ein Telefon
+  // holt die App vom PC und hat kein navigator.bluetooth; das andere oeffnet sie ueber
+  // https oder file:// und merkt nichts.
+  //
+  // 'aus' kann nur ASYNCHRON bestimmt werden (getAvailability liefert ein Versprechen),
+  // deshalb gibt es die schnelle Fassung fuer die Anzeige und die genaue fuer den Klick.
+  function bluetoothLage() {
+    if (!window.isSecureContext) return 'unsicher';
+    if (!navigator.bluetooth) return 'kein-api';
+    return 'ok';
+  }
+
+  async function bluetoothLageGenau() {
+    const l = bluetoothLage();
+    if (l !== 'ok') return l;
+    try {
+      if (typeof navigator.bluetooth.getAvailability === 'function') {
+        const da = await navigator.bluetooth.getAvailability();
+        if (!da) return 'aus';
+      }
+    } catch (e) { /* manche Browser kennen die Abfrage nicht - dann eben nicht */ }
+    return 'ok';
+  }
+
+  // Der Text zur Lage, einmal fuer Protokoll und Anzeige. Er nennt den URSPRUNG, denn
+  // genau der ist im haeufigsten Fall die Ursache, und ohne ihn sucht man woanders.
+  function bluetoothLageText(lage) {
+    if (lage === 'unsicher') {
+      return 'Bluetooth ist hier abgeschaltet, weil die Seite ueber einen unsicheren '
+           + 'Ursprung geladen wurde (' + location.origin + '). Web Bluetooth erlaubt nur '
+           + 'https://, http://localhost und file://. Wer die App vom Host-Programm im WLAN '
+           + 'holt, hat genau diesen Fall: entweder die App direkt vom Telefon aus oeffnen '
+           + '(GitHub Pages oder gespeicherte Datei), oder in chrome://flags den Eintrag '
+           + '"unsafely-treat-insecure-origin-as-secure" um ' + location.origin + ' '
+           + 'ergaenzen und Chrome neu starten.';
+    }
+    if (lage === 'kein-api') {
+      return 'Dieser Browser kennt Web Bluetooth nicht. Chrome oder Edge auf Windows, '
+           + 'Android oder ChromeOS - Safari und Firefox koennen es nicht.';
+    }
+    if (lage === 'aus') {
+      return 'Der Bluetooth-Adapter ist aus oder nicht verfuegbar. Auf Android ausserdem '
+           + 'pruefen, ob Chrome die Berechtigung "Geraete in der Naehe" hat.';
+    }
+    return '';
+  }
+
   async function connect() {
-    if (!navigator.bluetooth) {
-      log('Web Bluetooth wird von diesem Browser nicht unterstützt. Bitte Chrome oder Edge auf Windows/Android/ChromeOS verwenden.', 'err');
-      alert('Web Bluetooth wird hier nicht unterstützt. Bitte in Chrome/Edge öffnen.');
+    const lage = await bluetoothLageGenau();
+    if (lage !== 'ok') {
+      log(bluetoothLageText(lage), 'err');
+      alert(bluetoothLageText(lage));
       return;
     }
     try {
@@ -334,6 +391,7 @@
   // stehen - das ist die Absicht, nicht ein Mangel: ein fehlender Eintrag faellt auf,
   // ein leerer Text nicht.
   const I18N_EN = {
+    "Alle Geräte zeigen": "Show all devices",
     "Offen": "Open",
     "Vibration überhaupt": "Vibration at all",
     "Gangwechsel": "Gear change",
@@ -358,8 +416,6 @@
     "Einmal, wenn der schlechteste der vier Reifen nur noch 10 % hat. Der schlechteste zählt: ein Auto mit drei guten Reifen und einem abgefahrenen fährt nicht drei Viertel gut.": "Once, when the worst of the four tyres is down to 10 %. The worst one counts: a car with three good tyres and one worn out does not drive three quarters well.",
     "Regen ansagen": "Announce rain",
     "Wenn es anfängt zu regnen und wenn es aufhört. Beim Laden wird nichts gesagt, erst beim Wechsel.": "When it starts raining and when it stops. Nothing is said on load, only on a change.",
-    "Funkfilter": "Radio filter",
-    "Lässt die Ansage nach Rennfunk klingen: ein Knacken beim Aufschalten, ein Rauschteppich darunter, ein Knacken beim Loslassen, und die Stimme spricht schneller und flacher. Was NICHT geht, und das sei gesagt: die Stimme selbst bandbegrenzen. Die Sprachausgabe des Browsers liefert keinen Audioknoten, es gibt also nichts, wo ein Filter dazwischen könnte. Der Funkeindruck kommt vom Drumherum.": "Makes the announcement sound like race radio: a click when the transmitter keys, a bed of static underneath, a click when it unkeys, and the voice speaks faster and flatter. What is NOT possible, and it should be said: band-limiting the voice itself. The browser’s speech output provides no audio node, so there is nowhere for a filter to sit. The radio impression comes from everything around it.",
     "Gaskennlinie": "Throttle curve",
     "Anfahrschub": "Launch shove",
     "Wie der Gasweg des Controllers auf die Beschleunigung abgebildet wird. Die Enden liegen immer fest: kein Gas heißt keine Beschleunigung, Vollgas heißt volle Beschleunigung – geändert wird nur, was dazwischen passiert. 1,0 ist die Gerade und ändert nichts. Über 1,0 streckt den unteren Bereich: ein Viertel Gasweg gibt bei 1,8 nur noch 8 % statt 25 %. Genau das braucht ein Trigger mit großer Totzone – ein DualShock 4 oder DualSense gibt schon bei leichtem Druck viel ab, und dann lässt sich kein Tempo halten. Unter 1,0 macht es umgekehrt spitzer, für Pedale mit langem Weg.": "How the controller’s throttle travel maps to acceleration. The ends are always fixed: no throttle means no acceleration, full throttle means full acceleration – only what happens in between changes. 1.0 is the straight line and changes nothing. Above 1.0 stretches the lower range: a quarter of the travel gives only 8 % instead of 25 % at 1.8. That is exactly what a trigger with a large dead zone needs – a DualShock 4 or DualSense already gives away a lot under light pressure, and then no speed can be held. Below 1.0 does the opposite and makes it sharper, for pedals with long travel.",

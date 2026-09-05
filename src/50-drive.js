@@ -206,9 +206,11 @@
   if ($('setting-cockpit')) {
     const ansichtAnwenden = (melden) => {
       const v = $('setting-cockpit').value;
-      // 'gt3' ist die Vorgabe und setzt KEIN Attribut: so stehen die Werte aus :root, und
-      // die Vorgabe ist damit nicht eine dritte Kopie derselben Zahlen.
-      if (v === 'gt3') document.body.removeAttribute('data-cockpit');
+      // 'omega' ist die Vorgabe und setzt KEIN Attribut: so stehen die Werte aus :root, und
+      // die Vorgabe ist damit nicht eine zweite Kopie derselben Zahlen. Sie hiess bis
+      // v0.5.16 'gt3'; unter diesem Namen steht jetzt eine ANDERE Ansicht, siehe die
+      // Ueberleitung darunter.
+      if (v === 'omega') document.body.removeAttribute('data-cockpit');
       else document.body.setAttribute('data-cockpit', v);
       if (melden) {
         const opt = $('setting-cockpit').selectedOptions[0];
@@ -216,6 +218,26 @@
       }
       try { localStorage.setItem(COCKPIT_STORE, v); } catch (e) { /* privater Modus */ }
     };
+    // ---- Ueberleitung: aus dem alten 'gt3' wird 'omega' -----------------------------
+    //
+    // Der gespeicherte Wert 'gt3' meinte bis v0.5.16 die VORGABE. Ab jetzt ist 'gt3' eine
+    // eigene Ansicht mit schwarzen Kacheln - wer die App vorher benutzt hat, bekaeme also
+    // beim naechsten Start still ein anderes Cockpit.
+    //
+    // Der Merker ist noetig und nicht Zierde: OHNE ihn liesse sich nicht unterscheiden, ob
+    // ein gespeichertes 'gt3' von frueher stammt oder eine frische Wahl der neuen Ansicht
+    // ist - und die Ueberleitung wuerde die neue Ansicht bei jedem Start wieder wegnehmen.
+    const COCKPIT_UMBENANNT = 'chc.cockpit.omega.v1';
+    try {
+      if (!localStorage.getItem(COCKPIT_UMBENANNT)) {
+        if (localStorage.getItem(COCKPIT_STORE) === 'gt3') {
+          localStorage.setItem(COCKPIT_STORE, 'omega');
+          log('Cockpit-Ansicht: die bisherige Vorgabe heisst jetzt "Omega". Unter "GT3" '
+              + 'steht seit v0.5.16 eine neue Ansicht mit schwarzen Kacheln.', 'info');
+        }
+        localStorage.setItem(COCKPIT_UMBENANNT, '1');
+      }
+    } catch (e) { /* privater Modus */ }
     try {
       const gespeichert = localStorage.getItem(COCKPIT_STORE);
       if (gespeichert) $('setting-cockpit').value = gespeichert;
