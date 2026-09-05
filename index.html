@@ -6413,7 +6413,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.5.7</span></span>
+    <span class="foot-ver">v<span id="app-version">0.5.8</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -8409,6 +8409,64 @@
   // controlHeartbeat() below is what actually transmits, at the car's expected cadence.
   let writeInFlight = false;
 
+  // ---- EIN Schreibvorgang, aber der NEUESTE Wert --------------------------------------
+  //
+  // Hier stand an zwei Stellen "if (writeInFlight) return;", und das ist der teuerste Satz
+  // im ganzen Steuerweg gewesen. GEMESSEN an einem Ziel, dessen Schreibvorgang eine
+  // einstellbare Zeit braucht (OMEGA_TEST.sendeUnterLast, 2,5 s je Zeile):
+  //
+  //       Schreibdauer     Pakete/s     Abstand
+  //             5 ms         22,4        47 ms
+  //            30 ms         22,4        48 ms
+  //            46 ms         11,2        95 ms
+  //           100 ms          7,6       142 ms
+  //
+  // EINE Millisekunde ueber dem Takt halbiert die Befehlsrate. Das ist keine sanfte
+  // Verschlechterung, sondern eine Stufe: bei 45 ms kommt jeder Daumenbefehl durch, bei
+  // 46 ms wartet jeder zweite einen ganzen Takt laenger. Genau so faellt eine gemeldete
+  // "leichte Eingabeverzoegerung" an, sobald ein zweites und drittes Auto denselben
+  // Funkadapter benutzen - die Rechnung hat damit nichts zu tun, die kostet 0,3 ms von 45.
+  //
+  // Statt zu verwerfen wird das neueste Paket GEMERKT und abgesetzt, sobald der Funk frei
+  // ist. TIEFE EINS, und das ist der Punkt: ein zweites wartendes Paket ueberschreibt das
+  // erste und wird nicht angehaengt. Eine Warteschlange wuerde alte Daumenstellungen
+  // nachliefern, und ein verspaeteter Lenkbefehl ist schlimmer als gar keiner.
+  //
+  // DIE SENDERATE BLEIBT DAMIT BEGRENZT, und zwar von selbst: es geht nie ein zweiter
+  // Schreibvorgang los, bevor der erste fertig ist. Mehr als 1/Schreibdauer kann also nicht
+  // hinaus, und mehr als ein Paket je Takt entsteht ohnehin nicht. Was wegfaellt, ist nur
+  // das Aufrunden auf ganze Takte - die Leerzeit zwischen "Funk wieder frei" und "naechster
+  // Takt", und genau die war die Verzoegerung.
+  //
+  // GEMERKT WIRD DAS FERTIGE PAKET. Alles, was am Bauen haengt - Verbrauch, Motorton,
+  // Aufnahme - ist beim Bauen schon gelaufen und darf nicht ein zweites Mal laufen.
+  let wartendes = null;
+
+  async function funkSchreiben(ziel, payload, notiz) {
+    if (writeInFlight) { wartendes = { ziel, payload, notiz }; return; }
+    writeInFlight = true;
+    try {
+      let auf = { ziel, payload, notiz };
+      while (auf) {
+        try {
+          if (auf.ziel.properties.writeWithoutResponse) await auf.ziel.writeValueWithoutResponse(auf.payload);
+          else await auf.ziel.writeValueWithResponse(auf.payload);
+          if (auf.notiz) log(`WRITE ${auf.notiz}: ${bufToHex(auf.payload)}`, 'write');
+        } catch (err) {
+          // Abbrechen und nicht weiterschleifen: wenn die Verbindung weg ist, wirft jeder
+          // Versuch, und das Wartende ist in 45 ms ohnehin durch ein frisches ersetzt.
+          log('Steuer-Schreibfehler: ' + err.message, 'err');
+          break;
+        }
+        auf = wartendes;
+        wartendes = null;
+      }
+    } finally {
+      writeInFlight = false;
+      wartendes = null;
+    }
+  }
+
   async function sendControlValue(overrideSteer, overrideThrottle) {
     const steer = overrideSteer !== undefined ? overrideSteer : steerX;
     let throttle = overrideThrottle !== undefined ? overrideThrottle : throttleY;
@@ -8434,14 +8492,7 @@
     // A car given the "Steuern" role in the garage becomes the write target. Falls back to
     // the BLE explorer's selection so the developer workflow keeps working untouched.
     if (typeof playerCar !== 'undefined' && playerCar && playerCar.rx) {
-      if (writeInFlight) return;
-      writeInFlight = true;
-      try {
-        if (playerCar.rx.properties.writeWithoutResponse) await playerCar.rx.writeValueWithoutResponse(payload);
-        else await playerCar.rx.writeValueWithResponse(payload);
-      } catch (err) {
-        log('Steuer-Schreibfehler: ' + err.message, 'err');
-      } finally { writeInFlight = false; }
+      await funkSchreiben(playerCar.rx, payload, null);
       return;
     }
     const uuid = controlSelect.value;
@@ -8451,17 +8502,9 @@
     }
     const entry = charByUuid.get(uuid);
     if (!entry) return;
-    if (writeInFlight) return; // drop this tick rather than pile a second write onto the queue
-    writeInFlight = true;
-    try {
-      if (entry.char.properties.writeWithoutResponse) await entry.char.writeValueWithoutResponse(payload);
-      else await entry.char.writeValueWithResponse(payload);
-      log(`WRITE ${uuid}: ${bufToHex(payload)}`, 'write');
-    } catch (err) {
-      log('Steuer-Schreibfehler: ' + err.message, 'err');
-    } finally {
-      writeInFlight = false;
-    }
+    // Die Notiz reist MIT dem Paket, nicht mit dem Aufruf: ein gemerktes Paket wird spaeter
+    // geschrieben, und dann muss im Protokoll stehen, was wirklich hinausging.
+    await funkSchreiben(entry.char, payload, uuid);
   }
 
   // Physics mode is on by default now; the loop writes its shaped output into these
@@ -8471,7 +8514,14 @@
 
   const CONTROL_SEND_INTERVAL_MS = 45; // matches the real app's observed command cadence
 
+  // Wann hat der Herzschlag zuletzt gefeuert? Die Ghosts richten ihre Sendezeitpunkte
+  // daran aus (siehe ghostTaktSetzen in 90-ghosts.js). Hier und nicht dort, weil nur hier
+  // bekannt ist, wann es war - und der Versatz wurde bis v0.5.8 vom KLICK aus gemessen,
+  // was mit dieser Phase nichts zu tun hat.
+  let herzschlagAt = 0;
+
   function controlHeartbeat() {
+    herzschlagAt = performance.now();
     // The calibration runner drives its own carefully-timed sequence; stay out of its way.
     if (typeof calibRunning !== 'undefined' && calibRunning) return;
     // Safety watchdog: gamepad sampling runs on rAF, which the browser suspends while the
@@ -20126,7 +20176,10 @@
   }
 
   function stopGhost(car) {
-    if (car.timer) { clearInterval(car.timer); car.timer = null; }
+    // AUCH den wartenden setTimeout, nicht nur den laufenden Zeitgeber - siehe
+    // ghostTaktLoeschen(). Ein Halt in den ersten Millisekunden nach dem Start liess sonst
+    // einen Zeitgeber zurueck, den niemand mehr kannte.
+    ghostTaktLoeschen(car);
     if (car.ghost) { car.ghost.running = false; car.ghost.finish = null; }
     if (car.rx) writeToCar(car, 0, 0, trackModeBit() | LIGHT_HEAD);
     // Der Knopf "Ghosts anhalten" haengt daran. Hier und nicht an den sieben Aufrufstellen:
@@ -21658,13 +21711,85 @@
     // einschaltet, bekam gar keinen Lernzustand.
     if (ghostCfg.learnPace) learnPropose(car);
 
-    // Stagger against the player's heartbeat and against each other, so four cars do not
-    // all transmit in the same millisecond.
-    const slot = garage.indexOf(car) + 1;
-    setTimeout(() => {
-      if (car.role !== 'ghost') return;
+    ghostPhasenSetzen();
+  }
+
+  // ---- Der Sendetakt der Ghosts ------------------------------------------------------
+  //
+  // ZWEI FEHLER STANDEN HIER, und beide waren nur mit einer Messung zu sehen.
+  //
+  // 1. DER VERSATZ GING VOM KLICK AUS. Der Kommentar sagte "Stagger against the player's
+  //    heartbeat"; gemessen hat der setTimeout aber vom Aufruf, und die Phase des
+  //    Herzschlags steht seit dem Laden der Seite fest - die zwei hatten nichts
+  //    miteinander zu tun. Ueber 4 s mit zwei Ghosts, Abstand jedes Ghost-Pakets zum
+  //    naechstgelegenen Spielerpaket:
+  //
+  //        Ghost 0    Mittel  0,7 ms     58 von 88 Paketen unter 5 ms
+  //        Ghost 1    Mittel 15,1 ms
+  //
+  //    Ein Ghost lag also DAUERHAFT auf dem Sendezeitpunkt des Spielers, und welcher es
+  //    traf, hing am Zufall des Klickzeitpunkts (im zweiten Lauf war es der andere). Soll
+  //    sind 45/3 = 15 ms. Zwei Zeitgeber gleicher Periode driften kaum gegeneinander,
+  //    deshalb blieb eine einmal getroffene Ueberdeckung minutenlang stehen.
+  //
+  //    WAS ICH DAZU NICHT MESSEN KANN: ob gleichzeitiges Senden auf dem Funk wirklich etwas
+  //    kostet. Jede der drei Verbindungen hat ihr eigenes Verbindungsintervall, und der
+  //    Adapter teilt sich ohnehin auf. Behoben, weil der Kommentar eine Zusicherung gab,
+  //    die der Code nicht einhielt - nicht, weil eine Messung einen Gewinn zeigt.
+  //
+  // 2. DER WARTENDE ZEITGEBER HATTE KEINEN GRIFF. stopGhost() loeschte car.timer, der in
+  //    den ersten Millisekunden aber noch null ist, weil der Zeitgeber erst IM setTimeout
+  //    angelegt wird - der Kommentar in startGhost sagte das sogar. Wer in diesem Fenster
+  //    anhielt oder neu startete, bekam danach einen 45-ms-Zeitgeber auf einem Auto, das
+  //    niemand mehr faehrt, und der tickte bis zum Neuladen weiter.
+  //
+  //    GEMESSEN, indem setInterval/clearInterval mitgezaehlt wurden: ein Durchlauf der
+  //    Selbsttests hinterliess 35 solcher Phantom-Zeitgeber. Sie kosten wenig Rechenzeit -
+  //    ein ghostTick sind 0,05 ms -, aber jeder von ihnen schreibt weiter an sein Auto,
+  //    und ein Ghost, den man angehalten hat, soll nicht weiterfahren.
+  function ghostTaktLoeschen(car) {
+    if (car.startTimer) { clearTimeout(car.startTimer); car.startTimer = null; }
+    if (car.timer) { clearInterval(car.timer); car.timer = null; }
+  }
+
+  // Wie lange muss dieses Auto warten, damit sein erster Takt auf seinem Platz landet?
+  //
+  // ALS REINE RECHNUNG herausgezogen, damit sie ohne Zeitgeber pruefbar ist: ein
+  // verborgenes Fenster drosselt setInterval auf 1 Hz, und ein Test, der auf echte Takte
+  // wartet, misst dort die Drosselung statt dieser Formel.
+  //
+  // seitHerz = wie lange der letzte Herzschlag her ist. Das Ergebnis ist so gewaehlt, dass
+  // (seitHerz + Wartezeit) modulo Takt genau auf dem Platz liegt - unabhaengig davon, wo
+  // die Phase gerade steht. GENAU DAS konnte die alte Zeile nicht: sie mass vom Klick.
+  function ghostTaktVersatz(platz, teile, seitHerz) {
+    const ziel = CONTROL_SEND_INTERVAL_MS * platz / teile;
+    let warten = (ziel - seitHerz) % CONTROL_SEND_INTERVAL_MS;
+    if (warten < 0) warten += CONTROL_SEND_INTERVAL_MS;
+    return warten;
+  }
+
+  // Einen Ghost auf seinen Platz im Takt setzen. platz von 1 an, teile = Zahl der Autos.
+  function ghostTaktSetzen(car, platz, teile) {
+    ghostTaktLoeschen(car);
+    // herzschlagAt steht in 20-protocol.js. Ohne bisherigen Herzschlag (0) ist es der
+    // Versatz vom Seitenstart - dieselbe Auskunft wie vorher, nur ohne falschen Kommentar.
+    const warten = ghostTaktVersatz(platz, teile, performance.now() - herzschlagAt);
+    car.startTimer = setTimeout(() => {
+      car.startTimer = null;
+      // Die Wache fragt jetzt, ob dieses Auto ueberhaupt noch faehrt, und nicht nur, ob es
+      // ein Ghost ist. Ein angehaltener Ghost behaelt seine Rolle.
+      if (car.role !== 'ghost' || !car.ghost || !car.ghost.running) return;
       car.timer = setInterval(() => ghostTick(car), CONTROL_SEND_INTERVAL_MS);
-    }, Math.round(CONTROL_SEND_INTERVAL_MS * slot / (garage.length + 1)));
+    }, Math.round(warten));
+  }
+
+  // Alle fahrenden Ghosts neu verteilen. Gerufen aus startGhost, also immer dann, wenn sich
+  // die Zahl der Autos aendert. NICHT aus stopGhost: startGhost ruft stopGhost als erstes,
+  // und dann verteilte jeder Start zweimal. Ein Ghost, der aussteigt, hinterlaesst eine
+  // Luecke im Takt, und eine Luecke kostet nichts.
+  function ghostPhasenSetzen() {
+    const fahren = garage.filter(c => c.role === 'ghost' && c.ghost && c.ghost.running);
+    fahren.forEach((c, i) => ghostTaktSetzen(c, i + 1, fahren.length + 1));
   }
 
   // ---- Windschatten (Block 4.2) ------------------------------------------------------
@@ -22417,6 +22542,267 @@
   }
 
   window.OMEGA_TEST = {
+    // Der Versatz eines Ghosts gegen den Herzschlag, als reine Rechnung. Siehe
+    // ghostTaktVersatz(): ohne Zeitgeber pruefbar, und darauf kommt es an.
+    ghostTaktVersatz,
+
+    // ---- Was kostet EIN Steuertakt? ---------------------------------------------
+    //
+    // Die Frage, aus der das hier entstanden ist, lautete: laesst sich die Rechnung
+    // beschleunigen, weil mit zwei Ghosts eine Eingabeverzoegerung spuerbar ist? Die
+    // Antwort war nein, und nicht nach Gefuehl - gemessen kostet der ganze Takt mit drei
+    // Autos rund 0,3 ms von 45. Dieser Aufbau haelt die Antwort nachpruefbar.
+    //
+    // Gemessen wird an den ECHTEN Funktionen des Herzschlags und nicht an einem Nachbau:
+    // physicsStep, pitLaneTick, sendControlValue, dazu ghostTick je Ghost. Das Ziel des
+    // Schreibvorgangs ist ein Stummel, der sofort fertig ist - hier geht es um die
+    // Rechnung, der Funk wird in sendeUnterLast gemessen.
+    //
+    // DIE WERTE MUESSEN WACKELN, sonst misst man zu guenstig: schreibeWert() vergleicht
+    // erst und schreibt nur bei Aenderung, und nur eine Aenderung erzwingt den Umbruch des
+    // Bildaufbaus, den es beim Fahren gibt.
+    taktKosten(o) {
+      const opt = o || {};
+      const n = opt.ghosts === undefined ? 2 : opt.ghosts;
+      const takte = opt.takte || 200;
+      const keepTiles = currentTrackTiles;
+      const keepGarage = garage.slice();
+      const merkPlayer = playerCar;
+      const echtNow = Date.now;
+      const stumm = { properties: { writeWithoutResponse: true },
+                      writeValueWithoutResponse() { return Promise.resolve(); } };
+      try {
+        const p = codeToTrack(opt.code || 'SG2H2G2R2');
+        currentTrackTiles = p.tiles;
+        lineCache = null;
+        let uhr = echtNow();
+        Date.now = () => uhr;
+        playerCar = { role: 'player', alias: 'Taktsonde', writeInFlight: false, rx: stumm };
+        const autos = [];
+        for (let a = 0; a < n; a++) {
+          const car = { role: 'ghost', alias: 'Taktsonde' + a, writeInFlight: false,
+                        tileCode: 0x02, tileCount: 0, lastCodeAt: uhr, yaw: 0, rx: stumm };
+          garage.push(car);
+          autos.push(car);
+        }
+        autos.forEach(c => { startGhost(c); ghostTaktLoeschen(c); c.ghost.freeRun = true;
+                             c.ghost.bias = 0; });
+        const st = physEngine.state;
+        const messe = (fn) => { const t0 = performance.now(); fn(); return performance.now() - t0; };
+        // Einlaufen: der erste Takt baut Zwischenspeicher auf und ist nicht typisch.
+        for (let i = 0; i < 20; i++) { physicsStep(); autos.forEach(c => ghostTick(c)); }
+        const ganz = [], gh = [];
+        let seitKachel = 0, k = 0;
+        for (let i = 0; i < takte; i++) {
+          uhr += CONTROL_SEND_INTERVAL_MS;
+          seitKachel += CONTROL_SEND_INTERVAL_MS;
+          if (seitKachel >= 700) {
+            seitKachel = 0; k++;
+            autos.forEach(c => { c.tileCount = k & 0xff; c.tileAt = uhr;
+                                 c.tileCode = p.tiles[(k - 1) % p.tiles.length].type; });
+          }
+          autos.forEach(c => { c.lastCodeAt = uhr; });
+          st.speedKmh = 0.5 + 3.4 * Math.abs(Math.sin(i / 17));
+          st.rpmFrac = Math.abs(Math.sin(i / 11));
+          st.tyreTempC = 60 + 30 * Math.sin(i / 23);
+          const g = messe(() => { for (const c of autos) ghostTick(c); });
+          gh.push(g);
+          ganz.push(g + messe(() => {
+            physicsStep();
+            pitLaneTick();
+            sendControlValue(0.3 * Math.sin(i / 9), 0.6);
+          }));
+        }
+        const stat = (a) => { const s = a.slice().sort((x, y) => x - y);
+          return { med: +s[Math.floor(s.length / 2)].toFixed(3),
+                   p95: +s[Math.floor(s.length * 0.95)].toFixed(3),
+                   max: +s[s.length - 1].toFixed(3) }; };
+        return { ghosts: n, takte, budgetMs: CONTROL_SEND_INTERVAL_MS,
+                 ganzerTakt: stat(ganz), ghostAnteil: stat(gh),
+                 tonAn: !!(typeof audioCtx !== 'undefined' && audioCtx) };
+      } finally {
+        Date.now = echtNow;
+        playerCar = merkPlayer;
+        garage.forEach(c => { if (String(c.alias || '').startsWith('Taktsonde')) {
+          ghostTaktLoeschen(c); if (c.ghost) c.ghost.running = false; } });
+        garage.splice(0, garage.length, ...keepGarage);
+        currentTrackTiles = keepTiles;
+        lineCache = null;
+      }
+    },
+
+    // ---- Was passiert, wenn ein Schreibvorgang laenger dauert als ein Takt? -----
+    //
+    // DIE MESSUNG, die den Umbau in sendControlValue ausgeloest hat. Ein Ziel, dessen
+    // Schreibvorgang eine einstellbare Zeit braucht, und gezaehlt werden die Pakete, die
+    // wirklich hinausgehen. Vorher wurde ein Takt VERWORFEN, solange ein Schreibvorgang
+    // lief - eine Millisekunde ueber dem Takt halbierte damit die Befehlsrate.
+    //
+    // Der laufende Herzschlag treibt das und nicht eine Schleife: gemessen werden soll das
+    // Zusammenspiel von Zeitgeber und Schreibweg, und genau daran lag es.
+    async sendeUnterLast(o) {
+      const opt = o || {};
+      const schreibMs = opt.schreibMs === undefined ? 60 : opt.schreibMs;
+      const ms = opt.ms || 3000;
+      // Kein echtes Auto uebernehmen: waehrend der Messung bekaeme es keine Befehle.
+      if (playerCar && playerCar.device) return { echtesAuto: true };
+      const merkPlayer = playerCar;
+      // GEFAELSCHTE UHR IN MILLISEKUNDEN, und der Grund ist gemessen: ein verborgenes
+      // Fenster drosselt setInterval auf 1 Hz, der echte Herzschlag liefert dort 1,2 statt
+      // 22,4 Pakete je Sekunde. Ein Messstand an der echten Uhr misst im Selbsttest also
+      // die Drosselung. Gestellt wird deshalb von Hand, und der Schreibvorgang wird fertig,
+      // wenn die gefaelschte Uhr weit genug ist.
+      const zeiten = [];
+      const offen = [];
+      let uhr = 0;
+      try {
+        playerCar = {
+          role: 'player', alias: 'Funksonde', writeInFlight: false,
+          rx: { properties: { writeWithoutResponse: true },
+                writeValueWithoutResponse() {
+                  zeiten.push(uhr);
+                  return new Promise(res => offen.push({ fertigAt: uhr + schreibMs, res }));
+                } },
+        };
+        for (uhr = 0; uhr <= ms; uhr++) {
+          // ERST die fertigen Schreibvorgaenge abschliessen, dann der Takt. Umgekehrt
+          // saehe ein Schreibvorgang, der genau jetzt fertig wird, noch als laufend aus.
+          for (let i = offen.length - 1; i >= 0; i--) {
+            if (offen[i].fertigAt <= uhr) { const r = offen[i].res; offen.splice(i, 1); r(); }
+          }
+          // Den Mikrotasks Luft lassen: funkSchreiben setzt sein Wartendes NACH einem
+          // await ab, und ohne diese Pause kaeme das gemerkte Paket nie hinaus.
+          await Promise.resolve(); await Promise.resolve(); await Promise.resolve();
+          if (uhr % CONTROL_SEND_INTERVAL_MS === 0) {
+            sendControlValue(0.2, 0.5);
+            await Promise.resolve(); await Promise.resolve();
+          }
+        }
+      } finally {
+        // ALLES OFFENE ABSCHLIESSEN, sonst wartet funkSchreiben ewig auf einen
+        // Schreibvorgang, den diese Uhr nicht mehr weiterstellt - und writeInFlight bliebe
+        // bis zum Neuladen auf wahr. Gemessen ist das kein theoretischer Fall: die erste
+        // Fassung dieses Aufbaus liess einen offen, und danach lieferten alle folgenden
+        // Laeufe null Pakete. Ein Schreibvorgang, der nie fertig wird, legt die Steuerung
+        // still - das gilt fuer die App genauso, nur dass dort ein echtes Geraet am anderen
+        // Ende sitzt, das seine Zusage einloest oder abweist.
+        // Der Deckel ist nicht Zierde: ohne ihn haengt das Aufraeumen an einer Zusage,
+        // die dieser Aufbau selbst gibt, und ein Aufbau, der haengen kann, ist schlimmer
+        // als kein Aufbau.
+        for (let k = 0; k < 8 && (offen.length || writeInFlight); k++) {
+          while (offen.length) offen.pop().res();
+          await Promise.resolve(); await Promise.resolve(); await Promise.resolve();
+        }
+        playerCar = merkPlayer;
+      }
+      const ab = [];
+      for (let i = 1; i < zeiten.length; i++) ab.push(zeiten[i] - zeiten[i - 1]);
+      const s = ab.slice().sort((x, y) => x - y);
+      return { schreibMs, ms, pakete: zeiten.length,
+               rateHz: +(zeiten.length / (ms / 1000)).toFixed(1),
+               med: s.length ? s[Math.floor(s.length / 2)] : null,
+               // Was ueberhaupt moeglich ist: schneller als ein Schreibvorgang geht nicht,
+               // und mehr als ein Paket je Takt entsteht nicht.
+               obergrenzeHz: +Math.min(1000 / Math.max(1, schreibMs),
+                                       1000 / CONTROL_SEND_INTERVAL_MS).toFixed(1) };
+    },
+
+    // ---- Liegen die Sendezeitpunkte auseinander? --------------------------------
+    //
+    // Fuer jedes Ghost-Paket der Abstand zum naechstgelegenen Paket des Spielerautos.
+    // Soll ist 45/(n+1); gemessen wurde vor v0.5.8 bei einem der zwei Ghosts 0,7 ms.
+    async ghostPhasen(o) {
+      const opt = o || {};
+      const n = opt.ghosts === undefined ? 2 : opt.ghosts;
+      const ms = opt.ms || 1500;
+      if (playerCar && playerCar.device) return { echtesAuto: true };
+      const merkPlayer = playerCar, merkGarage = garage.slice(), keepTiles = currentTrackTiles;
+      const spieler = [], ghosts = [];
+      const stub = (liste, k) => ({ properties: { writeWithoutResponse: true },
+        writeValueWithoutResponse() { liste.push({ t: performance.now(), k });
+                                      return Promise.resolve(); } });
+      const gs = [];
+      try {
+        currentTrackTiles = codeToTrack(opt.code || 'SG2H2G2R2').tiles;
+        lineCache = null;
+        const auto = { role: 'player', alias: 'Phasensonde', writeInFlight: false,
+                       rx: stub(spieler, -1) };
+        playerCar = auto;
+        garage.push(auto);
+        for (let a = 0; a < n; a++) {
+          const c = { role: 'ghost', alias: 'Phasensonde' + a, writeInFlight: false,
+                      tileCode: 0x02, tileCount: 0, lastCodeAt: Date.now(), yaw: 0,
+                      rx: stub(ghosts, a) };
+          garage.push(c); gs.push(c);
+        }
+        gs.forEach(c => { startGhost(c); c.ghost.freeRun = true; });
+        await new Promise(r => setTimeout(r, ms));
+      } finally {
+        gs.forEach(c => { ghostTaktLoeschen(c); if (c.ghost) c.ghost.running = false; });
+        playerCar = merkPlayer;
+        garage.splice(0, garage.length, ...merkGarage);
+        currentTrackTiles = keepTiles; lineCache = null;
+      }
+      const naechster = (t) => {
+        let best = 1e9;
+        for (const p of spieler) { const d = Math.abs(p.t - t); if (d < best) best = d; }
+        return best;
+      };
+      const je = gs.map((c, a) => {
+        const ds = ghosts.filter(x => x.k === a).map(x => naechster(x.t)).sort((x, y) => x - y);
+        return ds.length ? { pakete: ds.length, med: +ds[Math.floor(ds.length / 2)].toFixed(1),
+                             min: +ds[0].toFixed(1) } : null;
+      });
+      return { ms, spielerPakete: spieler.length, je,
+               soll: +(CONTROL_SEND_INTERVAL_MS / (n + 1)).toFixed(1) };
+    },
+
+    // ---- Hoert ein angehaltener Ghost wirklich auf zu ticken? -------------------
+    //
+    // Der Fall, der 35 Phantom-Zeitgeber je Selbsttestlauf hinterliess: anhalten, BEVOR
+    // der wartende setTimeout den Zeitgeber ueberhaupt angelegt hat. Gemessen wird an
+    // gesendeten Paketen und nicht an car.timer - der Zeitgeber war ja gerade der, den
+    // niemand mehr kannte.
+    async ghostHaltProbe(o) {
+      const opt = o || {};
+      const warten = opt.warten || 1600;
+      const merkGarage = garage.slice(), keepTiles = currentTrackTiles;
+      const bau = (name, liste) => ({
+        role: 'ghost', alias: name, writeInFlight: false,
+        tileCode: 0x02, tileCount: 0, lastCodeAt: Date.now(), yaw: 0,
+        rx: { properties: { writeWithoutResponse: true },
+              writeValueWithoutResponse() { liste.push(1); return Promise.resolve(); } } });
+      const gestoppt = [], laeuft = [];
+      const a = bau('Haltprobe0', gestoppt), b = bau('Haltprobe1', laeuft);
+      try {
+        currentTrackTiles = codeToTrack('SG2H2G2R2').tiles;
+        lineCache = null;
+        garage.push(a, b);
+        startGhost(a);
+        // SOFORT wieder anhalten - im selben Takt, also lange bevor der Zeitgeber steht.
+        stopGhost(a);
+        const nachHalt = gestoppt.length;
+        startGhost(b);
+        b.ghost.freeRun = true;
+        // AUF DAS EREIGNIS WARTEN und nicht auf eine feste Zeit: im verborgenen Fenster
+        // sind Zeitgeber auf 1 Hz gedrosselt, und dann kaeme in 240 ms kein einziger Takt -
+        // die Gegenprobe waere rot, ohne dass etwas kaputt ist.
+        const bis = Date.now() + warten;
+        while (!laeuft.length && Date.now() < bis) {
+          await new Promise(r => setTimeout(r, 30));
+        }
+        return { warten,
+                 // Nach dem Halt darf NICHTS mehr dazukommen. stopGhost selbst schreibt
+                 // eine Nullnachricht, die zaehlt also nicht mit.
+                 nachHalt: gestoppt.length - nachHalt,
+                 // Gegenprobe: ein Ghost, den niemand anhaelt, MUSS ticken.
+                 laufend: laeuft.length };
+      } finally {
+        [a, b].forEach(c => { ghostTaktLoeschen(c); if (c.ghost) c.ghost.running = false; });
+        garage.splice(0, garage.length, ...merkGarage);
+        currentTrackTiles = keepTiles; lineCache = null;
+      }
+    },
     ghostSpeedControl, GHOST_UNPARK_RAMP_MS,
     TILE_TYPE, TILE_LABEL,
     codeToTrack, trackToCode,
@@ -23931,6 +24317,10 @@
       const keepTiles = currentTrackTiles;
       const merkCfg = JSON.parse(JSON.stringify(ghostCfg));
       const echtNow = Date.now;
+      // VOR dem try, weil das finally sie abmelden muss. Standen sie im try, war "car" im
+      // finally nicht im Bereich - der Wurf von dort liess dann auch "Date.now = echtNow"
+      // aus, und die gefaelschte Uhr blieb fuer den Rest der Seite stehen.
+      let car = null, zweit = null;
       try {
         const p = codeToTrack(opt.code || 'SG2H2G2R2');
         currentTrackTiles = (lage === 'karte') ? p.tiles : [];
@@ -23941,7 +24331,7 @@
         let uhr = echtNow();
         Date.now = () => uhr;
         const bytes = [];
-        const car = {
+        car = {
           role: 'ghost', alias: 'Sonde', writeInFlight: false,
           tileCode: 0x02, tileCount: (lage === 'ohne') ? null : 0,
           lastCodeAt: (lage === 'ohne') ? 0 : uhr, yaw: 0,
@@ -23957,13 +24347,17 @@
         // Ein zweites Auto, damit ghostLane() ueberhaupt etwas verteilt: unter zwei Ghosts
         // gibt es keine Spuren, und beide muessen IN der Garage stehen, weil die Funktion
         // das Auto ueber garage.indexOf findet.
-        const zweit = { role: 'ghost', alias: 'Sonde2', writeInFlight: false,
+        zweit = { role: 'ghost', alias: 'Sonde2', writeInFlight: false,
                         tileCode: 0x02, tileCount: 0, lastCodeAt: uhr, yaw: 0, rx: null };
         garage.push(car, zweit);
         startGhost(car);
         startGhost(zweit);
-        if (car.timer) { clearInterval(car.timer); car.timer = null; }  // von Hand takten
-        if (zweit.timer) { clearInterval(zweit.timer); zweit.timer = null; }
+        // Von Hand takten. ghostTaktLoeschen und nicht clearInterval: der Zeitgeber wird
+        // erst in einem setTimeout angelegt, car.timer steht hier also noch auf null - und
+        // genau dieses clearInterval war ein No-op, das je Prueflauf zwei Phantom-Zeitgeber
+        // stehen liess.
+        ghostTaktLoeschen(car);
+        ghostTaktLoeschen(zweit);
         car.ghost.freeRun = true;
         // Der Querversatz gegen Rammen wird von einem Zeitgeber gestellt; im Prueflauf wird
         // er FESTGEHALTEN, sonst mischt er sich in jede Messung. 0 heisst: aus.
@@ -24122,14 +24516,28 @@
                  pakete: bytes.length, lage,
                  tileIndex: car.ghost ? car.ghost.tileIndex : null };
       } finally {
-        // Die zwei Sondenautos wieder aus der Garage, sonst stehen sie in der Liste.
-        for (let i = garage.length - 1; i >= 0; i--) {
-          if (garage[i] && garage[i].alias && /^Sonde/.test(garage[i].alias)) garage.splice(i, 1);
-        }
+        // DIE UHR ZUERST, und das ist keine Kosmetik. Eine Aufraeumzeile, die werfen kann,
+        // macht alle folgenden unerreichbar - und genau das ist hier passiert: das Abmelden
+        // stand oben, warf "car is not defined", und danach lief "Date.now = echtNow" nie.
+        // Die gefaelschte Uhr blieb fuer den Rest der Seite stehen, und der naechste Test
+        // mit einer Warteschleife auf Date.now legte den ganzen Reiter still.
         Date.now = echtNow;
         currentTrackTiles = keepTiles;
         lineCache = null;
         Object.keys(merkCfg).forEach(x => { ghostCfg[x] = merkCfg[x]; });
+        // Abmelden, BEVOR die Autos aus der Garage fliegen: sonst bleibt ein Zeitgeber auf
+        // einem Auto, das die Garage nicht mehr kennt, und der laeuft bis zum Neuladen.
+        // stopGhost() waere hier zuviel - es schreibt eine Nullnachricht, und die zaehlte in
+        // der Paketliste des Prueflaufs mit.
+        for (const c of [car, zweit]) {
+          if (!c) continue;
+          ghostTaktLoeschen(c);
+          if (c.ghost) c.ghost.running = false;
+        }
+        // Die zwei Sondenautos wieder aus der Garage, sonst stehen sie in der Liste.
+        for (let i = garage.length - 1; i >= 0; i--) {
+          if (garage[i] && garage[i].alias && /^Sonde/.test(garage[i].alias)) garage.splice(i, 1);
+        }
       }
     },
 
@@ -27462,6 +27870,132 @@
   });
 
 
+
+
+  // ---- Der Steuerweg: kostet die Rechnung etwas, und kommt der Befehl an? ----
+  //
+  // ANLASS: "mit 2 Ghosts gibt es eine leichte Eingabeverzoegerung, laesst sich die
+  // Berechnung beschleunigen?" Die Antwort war nein - und diese drei Tests halten fest,
+  // warum, damit die Frage nicht in einem Jahr noch einmal geraten werden muss.
+
+  // 1. Das RECHENBUDGET. Gemessen an den echten Funktionen des Herzschlags.
+  //
+  // Die Grenze steht bei 5 ms von 45 und nicht bei den gemessenen 0,3: das ist keine
+  // Zielmarke, sondern eine Reissleine. Sie soll anschlagen, wenn jemand etwas wirklich
+  // Teures in den Takt legt - eine Abfrage der Karte, einen Zugriff auf localStorage, eine
+  // Schleife ueber alle Kacheln. Enger gezogen wuerde sie auf einem langsamen Rechner
+  // grundlos rot, und ein Test, der ohne Fehler rot wird, wird abgeschaltet.
+  stAdd('Steuertakt: die Rechnung passt in ihr Budget', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.taktKosten) {
+      return { skip: true, mass: 'taktKosten nicht vorhanden' };
+    }
+    const schlecht = [], teile = [];
+    let ohne = null;
+    for (const n of [0, 2]) {
+      const r = OMEGA_TEST.taktKosten({ ghosts: n, takte: 150 });
+      teile.push(n + ' Ghosts: ' + r.ganzerTakt.med + ' ms (p95 ' + r.ganzerTakt.p95 + ')');
+      if (n === 0) ohne = r.ganzerTakt.med;
+      if (r.ganzerTakt.p95 > 5) {
+        schlecht.push(n + ' Ghosts brauchen ' + r.ganzerTakt.p95 + ' ms von 45');
+      }
+      if (n > 0 && r.ghostAnteil.p95 > 2) {
+        schlecht.push('ein Ghost kostet ' + r.ghostAnteil.p95 + ' ms');
+      }
+    }
+    return { ok: schlecht.length === 0,
+             mass: teile.join(' | ') + ' von 45 ms'
+                   + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // 2. LANGSAMER FUNK DARF NICHT EINEN GANZEN TAKT KOSTEN.
+  //
+  // Bis v0.5.8 stand in sendControlValue "if (writeInFlight) return;", und damit wurde ein
+  // Takt verworfen, solange ein Schreibvorgang lief. Gemessen mit einem Ziel, dessen
+  // Schreibvorgang eine einstellbare Zeit braucht:
+  //
+  //       Schreibdauer     vorher        Obergrenze
+  //             5 ms       22,4 Hz         22,2 Hz
+  //            46 ms       11,2 Hz         21,7 Hz
+  //            60 ms       11,2 Hz         16,7 Hz
+  //
+  // Eine Millisekunde ueber dem Takt HALBIERTE die Befehlsrate - eine Stufe, keine sanfte
+  // Verschlechterung. Genau so faellt eine Eingabeverzoegerung an, sobald mehrere Autos
+  // sich einen Funkadapter teilen.
+  //
+  // Geprueft wird gegen die OBERGRENZE und nicht gegen eine feste Zahl: schneller als der
+  // Funk geht nicht, und diese Grenze ist Physik. Verlangt werden 80 Prozent davon.
+  stAdd('Steuerweg: langsamer Funk kostet keinen ganzen Takt', async () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.sendeUnterLast) {
+      return { skip: true, mass: 'sendeUnterLast nicht vorhanden' };
+    }
+    const schlecht = [], teile = [];
+    for (const w of [5, 60]) {
+      // 3000 ms GEFAELSCHTE Zeit, also rund 66 Takte - und keine echte Sekunde.
+      const r = await OMEGA_TEST.sendeUnterLast({ schreibMs: w, ms: 3000 });
+      if (r.echtesAuto) return { skip: true, mass: 'echtes Auto verbunden' };
+      teile.push(w + ' ms Funk: ' + r.rateHz + ' Hz von ' + r.obergrenzeHz);
+      if (r.rateHz < r.obergrenzeHz * 0.8) {
+        schlecht.push('bei ' + w + ' ms Funk nur ' + r.rateHz + ' statt ' + r.obergrenzeHz + ' Hz');
+      }
+    }
+    return { ok: schlecht.length === 0,
+             mass: teile.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // 3. ZWEI ZUSICHERUNGEN UEBER DEN GHOST-TAKT, und beide waren vorher nicht eingehalten.
+  //
+  //   a) Die Sendezeitpunkte liegen auseinander. Der Kommentar in startGhost versprach
+  //      einen Versatz gegen den Herzschlag des Spielers, gemessen wurde aber vom KLICK
+  //      aus - ein Ghost lag mit 0,7 ms Mittel dauerhaft auf dem Spielerpaket.
+  //   b) Ein angehaltener Ghost tickt nicht weiter. Wer in den ersten Millisekunden nach
+  //      dem Start anhielt, liess einen Zeitgeber zurueck, den niemand mehr kannte -
+  //      ein Selbsttestlauf hinterliess 35 davon.
+  //
+  // Beide mit Gegenprobe: ohne sie waere ein Takt, der GAR nicht laeuft, ebenfalls gruen.
+  stAdd('Ghost-Takt: versetzt gesendet, und ein Halt haelt', async () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.ghostTaktVersatz || !OMEGA_TEST.ghostHaltProbe) {
+      return { skip: true, mass: 'Ghost-Takt-Aufbauten nicht vorhanden' };
+    }
+    const schlecht = [], teile = [];
+    const T = 45, ziel = OMEGA_TEST.ghostTaktVersatz;
+
+    // (a) DIE PHASE, und zwar UNABHAENGIG davon, wo sie beim Klick gerade steht. Das ist
+    //     der ganze Fehler gewesen: die alte Zeile gab einen festen Versatz vom Klick aus,
+    //     und wo der landete, hing am Zufall. Geprueft ueber die ganze Taktbreite.
+    //
+    //     Die Gegenprobe steckt in der Variation von seitHerz: eine Formel, die den
+    //     Herzschlag ignoriert, ist fuer genau einen Wert richtig und fuer alle anderen
+    //     falsch. Mit nur einem seitHerz waere auch die alte Zeile gruen geworden.
+    const phasen = [];
+    for (const seitHerz of [0, 7, 15.5, 22, 33, 44.9]) {
+      for (let platz = 1; platz <= 2; platz++) {
+        const v = ziel(platz, 3, seitHerz);
+        const lage = (seitHerz + v) % T;
+        const soll = T * platz / 3;
+        if (v < 0 || v >= T) schlecht.push('Versatz ' + v.toFixed(1) + ' liegt ausserhalb des Taktes');
+        if (Math.abs(lage - soll) > 0.01) {
+          schlecht.push('bei ' + seitHerz + ' ms landet Platz ' + platz
+                        + ' auf ' + lage.toFixed(1) + ' statt ' + soll.toFixed(1));
+        }
+        if (platz === 1) phasen.push(lage);
+      }
+    }
+    teile.push('Phase Platz 1: ' + phasen.map(x => x.toFixed(1)).join('/') + ' ms');
+    // Und die zwei Ghosts liegen auseinander, nicht uebereinander.
+    const d = Math.abs(ziel(2, 3, 12) - ziel(1, 3, 12));
+    teile.push('Ghosts ' + d.toFixed(1) + ' ms auseinander');
+    if (Math.abs(d - T / 3) > 0.01) schlecht.push('Ghosts liegen ' + d.toFixed(1) + ' ms auseinander');
+
+    // (b) EIN HALT HAELT. Anhalten, BEVOR der wartende setTimeout den Zeitgeber angelegt
+    //     hat - der Fall, der 35 Phantom-Zeitgeber je Selbsttestlauf hinterliess.
+    const h = await OMEGA_TEST.ghostHaltProbe({});
+    teile.push('nach Halt ' + h.nachHalt + ' Pakete, laufend ' + h.laufend);
+    if (h.nachHalt !== 0) schlecht.push('angehaltener Ghost sendet weiter (' + h.nachHalt + ')');
+    // Gegenprobe: ohne sie waere ein Ghost-Takt, der GAR nicht laeuft, ebenfalls gruen.
+    if (h.laufend < 1) schlecht.push('laufender Ghost sendet nicht');
+    return { ok: schlecht.length === 0,
+             mass: teile.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
 
   // ---- Motorton-Zusaetze: jeder haengt an seiner Groesse, und der Schalter stellt alle ab ----
   //

@@ -1731,6 +1731,132 @@
 
 
 
+
+  // ---- Der Steuerweg: kostet die Rechnung etwas, und kommt der Befehl an? ----
+  //
+  // ANLASS: "mit 2 Ghosts gibt es eine leichte Eingabeverzoegerung, laesst sich die
+  // Berechnung beschleunigen?" Die Antwort war nein - und diese drei Tests halten fest,
+  // warum, damit die Frage nicht in einem Jahr noch einmal geraten werden muss.
+
+  // 1. Das RECHENBUDGET. Gemessen an den echten Funktionen des Herzschlags.
+  //
+  // Die Grenze steht bei 5 ms von 45 und nicht bei den gemessenen 0,3: das ist keine
+  // Zielmarke, sondern eine Reissleine. Sie soll anschlagen, wenn jemand etwas wirklich
+  // Teures in den Takt legt - eine Abfrage der Karte, einen Zugriff auf localStorage, eine
+  // Schleife ueber alle Kacheln. Enger gezogen wuerde sie auf einem langsamen Rechner
+  // grundlos rot, und ein Test, der ohne Fehler rot wird, wird abgeschaltet.
+  stAdd('Steuertakt: die Rechnung passt in ihr Budget', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.taktKosten) {
+      return { skip: true, mass: 'taktKosten nicht vorhanden' };
+    }
+    const schlecht = [], teile = [];
+    let ohne = null;
+    for (const n of [0, 2]) {
+      const r = OMEGA_TEST.taktKosten({ ghosts: n, takte: 150 });
+      teile.push(n + ' Ghosts: ' + r.ganzerTakt.med + ' ms (p95 ' + r.ganzerTakt.p95 + ')');
+      if (n === 0) ohne = r.ganzerTakt.med;
+      if (r.ganzerTakt.p95 > 5) {
+        schlecht.push(n + ' Ghosts brauchen ' + r.ganzerTakt.p95 + ' ms von 45');
+      }
+      if (n > 0 && r.ghostAnteil.p95 > 2) {
+        schlecht.push('ein Ghost kostet ' + r.ghostAnteil.p95 + ' ms');
+      }
+    }
+    return { ok: schlecht.length === 0,
+             mass: teile.join(' | ') + ' von 45 ms'
+                   + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // 2. LANGSAMER FUNK DARF NICHT EINEN GANZEN TAKT KOSTEN.
+  //
+  // Bis v0.5.8 stand in sendControlValue "if (writeInFlight) return;", und damit wurde ein
+  // Takt verworfen, solange ein Schreibvorgang lief. Gemessen mit einem Ziel, dessen
+  // Schreibvorgang eine einstellbare Zeit braucht:
+  //
+  //       Schreibdauer     vorher        Obergrenze
+  //             5 ms       22,4 Hz         22,2 Hz
+  //            46 ms       11,2 Hz         21,7 Hz
+  //            60 ms       11,2 Hz         16,7 Hz
+  //
+  // Eine Millisekunde ueber dem Takt HALBIERTE die Befehlsrate - eine Stufe, keine sanfte
+  // Verschlechterung. Genau so faellt eine Eingabeverzoegerung an, sobald mehrere Autos
+  // sich einen Funkadapter teilen.
+  //
+  // Geprueft wird gegen die OBERGRENZE und nicht gegen eine feste Zahl: schneller als der
+  // Funk geht nicht, und diese Grenze ist Physik. Verlangt werden 80 Prozent davon.
+  stAdd('Steuerweg: langsamer Funk kostet keinen ganzen Takt', async () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.sendeUnterLast) {
+      return { skip: true, mass: 'sendeUnterLast nicht vorhanden' };
+    }
+    const schlecht = [], teile = [];
+    for (const w of [5, 60]) {
+      // 3000 ms GEFAELSCHTE Zeit, also rund 66 Takte - und keine echte Sekunde.
+      const r = await OMEGA_TEST.sendeUnterLast({ schreibMs: w, ms: 3000 });
+      if (r.echtesAuto) return { skip: true, mass: 'echtes Auto verbunden' };
+      teile.push(w + ' ms Funk: ' + r.rateHz + ' Hz von ' + r.obergrenzeHz);
+      if (r.rateHz < r.obergrenzeHz * 0.8) {
+        schlecht.push('bei ' + w + ' ms Funk nur ' + r.rateHz + ' statt ' + r.obergrenzeHz + ' Hz');
+      }
+    }
+    return { ok: schlecht.length === 0,
+             mass: teile.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // 3. ZWEI ZUSICHERUNGEN UEBER DEN GHOST-TAKT, und beide waren vorher nicht eingehalten.
+  //
+  //   a) Die Sendezeitpunkte liegen auseinander. Der Kommentar in startGhost versprach
+  //      einen Versatz gegen den Herzschlag des Spielers, gemessen wurde aber vom KLICK
+  //      aus - ein Ghost lag mit 0,7 ms Mittel dauerhaft auf dem Spielerpaket.
+  //   b) Ein angehaltener Ghost tickt nicht weiter. Wer in den ersten Millisekunden nach
+  //      dem Start anhielt, liess einen Zeitgeber zurueck, den niemand mehr kannte -
+  //      ein Selbsttestlauf hinterliess 35 davon.
+  //
+  // Beide mit Gegenprobe: ohne sie waere ein Takt, der GAR nicht laeuft, ebenfalls gruen.
+  stAdd('Ghost-Takt: versetzt gesendet, und ein Halt haelt', async () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.ghostTaktVersatz || !OMEGA_TEST.ghostHaltProbe) {
+      return { skip: true, mass: 'Ghost-Takt-Aufbauten nicht vorhanden' };
+    }
+    const schlecht = [], teile = [];
+    const T = 45, ziel = OMEGA_TEST.ghostTaktVersatz;
+
+    // (a) DIE PHASE, und zwar UNABHAENGIG davon, wo sie beim Klick gerade steht. Das ist
+    //     der ganze Fehler gewesen: die alte Zeile gab einen festen Versatz vom Klick aus,
+    //     und wo der landete, hing am Zufall. Geprueft ueber die ganze Taktbreite.
+    //
+    //     Die Gegenprobe steckt in der Variation von seitHerz: eine Formel, die den
+    //     Herzschlag ignoriert, ist fuer genau einen Wert richtig und fuer alle anderen
+    //     falsch. Mit nur einem seitHerz waere auch die alte Zeile gruen geworden.
+    const phasen = [];
+    for (const seitHerz of [0, 7, 15.5, 22, 33, 44.9]) {
+      for (let platz = 1; platz <= 2; platz++) {
+        const v = ziel(platz, 3, seitHerz);
+        const lage = (seitHerz + v) % T;
+        const soll = T * platz / 3;
+        if (v < 0 || v >= T) schlecht.push('Versatz ' + v.toFixed(1) + ' liegt ausserhalb des Taktes');
+        if (Math.abs(lage - soll) > 0.01) {
+          schlecht.push('bei ' + seitHerz + ' ms landet Platz ' + platz
+                        + ' auf ' + lage.toFixed(1) + ' statt ' + soll.toFixed(1));
+        }
+        if (platz === 1) phasen.push(lage);
+      }
+    }
+    teile.push('Phase Platz 1: ' + phasen.map(x => x.toFixed(1)).join('/') + ' ms');
+    // Und die zwei Ghosts liegen auseinander, nicht uebereinander.
+    const d = Math.abs(ziel(2, 3, 12) - ziel(1, 3, 12));
+    teile.push('Ghosts ' + d.toFixed(1) + ' ms auseinander');
+    if (Math.abs(d - T / 3) > 0.01) schlecht.push('Ghosts liegen ' + d.toFixed(1) + ' ms auseinander');
+
+    // (b) EIN HALT HAELT. Anhalten, BEVOR der wartende setTimeout den Zeitgeber angelegt
+    //     hat - der Fall, der 35 Phantom-Zeitgeber je Selbsttestlauf hinterliess.
+    const h = await OMEGA_TEST.ghostHaltProbe({});
+    teile.push('nach Halt ' + h.nachHalt + ' Pakete, laufend ' + h.laufend);
+    if (h.nachHalt !== 0) schlecht.push('angehaltener Ghost sendet weiter (' + h.nachHalt + ')');
+    // Gegenprobe: ohne sie waere ein Ghost-Takt, der GAR nicht laeuft, ebenfalls gruen.
+    if (h.laufend < 1) schlecht.push('laufender Ghost sendet nicht');
+    return { ok: schlecht.length === 0,
+             mass: teile.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
   // ---- Motorton-Zusaetze: jeder haengt an seiner Groesse, und der Schalter stellt alle ab ----
   //
   // Sechs Zusaetze, und jeder soll genau von EINER Groesse abhaengen. Der Test prueft
