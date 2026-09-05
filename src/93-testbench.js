@@ -22,6 +22,44 @@
   //      sie und stellt sie von Hand.
 
   window.OMEGA_TEST = {
+    // ---- Passt das Cockpit in die Bildschirmhoehe? ---------------------------------
+    //
+    // Gemessen wird an der EINPASSUNG selbst: sie gibt zurueck, wieviel Platz da ist,
+    // wieviel das Cockpit braucht und welcher Faktor daraus folgt. Ein Test, der nur die
+    // Kastenhoehe misst, wuerde die Verkleinerung mitmessen und immer gruen sein.
+    cockpitPassung(h) { return cockpitPassung(h); },
+    // ---- Lassen die Vibrationsschalter das Richtige durch? -------------------------
+    //
+    // Geprueft wird die SCHALTERLOGIK und nicht der Controller: padRumble meldet, ob der
+    // Stoss die Schalter passiert hat. Bei siebzehn Aufrufstellen und sieben Schaltern ist
+    // genau das die Stelle, an der man sich vertut - und ohne Controller waere sie sonst
+    // gar nicht pruefbar.
+    vibProbe() {
+      const merkHaupt = rumbleOn;
+      const merkArten = Object.assign({}, RUMBLE_ARTEN);
+      try {
+        const arten = Object.keys(RUMBLE_ARTEN);
+        // 1. Hauptschalter aus: nichts kommt durch, egal was angekreuzt ist.
+        rumbleOn = false;
+        arten.forEach((a) => { RUMBLE_ARTEN[a] = true; });
+        const hauptAus = arten.filter((a) => padRumble(0.1, 0.1, 10, a));
+        // 2. Hauptschalter an, jede Art einzeln: nur die eingeschaltete kommt durch.
+        rumbleOn = true;
+        const einzeln = {};
+        for (const an of arten) {
+          arten.forEach((a) => { RUMBLE_ARTEN[a] = (a === an); });
+          einzeln[an] = arten.filter((a) => padRumble(0.1, 0.1, 10, a));
+        }
+        // 3. Eine unbekannte Art kommt durch - Absicht: wer eine neue Aufrufstelle
+        //    einbaut und das Etikett vergisst, soll es merken.
+        arten.forEach((a) => { RUMBLE_ARTEN[a] = false; });
+        const unbekannt = padRumble(0.1, 0.1, 10, 'gibtsnicht');
+        return { arten, hauptAus, einzeln, unbekannt };
+      } finally {
+        rumbleOn = merkHaupt;
+        Object.keys(RUMBLE_ARTEN).forEach((k) => { RUMBLE_ARTEN[k] = merkArten[k]; });
+      }
+    },
 
     // ---- Lernt der Scan eine Runde, deren Startcode nie gemeldet wird? --------------
     //

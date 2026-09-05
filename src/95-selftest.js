@@ -1783,6 +1783,85 @@
              mass: teile.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
   });
 
+
+
+  // ---- Das Cockpit passt auf ein Handy ----
+  //
+  // GEMELDET: "auf einem Handy sehe ich oben die Lichter nicht." Gemessen in 844 x 390,
+  // also einem Handy quer: das Cockpit war 531 px hoch und der Platz darunter 298.
+  //
+  // Geprueft wird mit einer VORGEGEBENEN Fensterhoehe, nicht mit der echten - sonst
+  // sagte der Test nur etwas aus, wenn er zufaellig auf einem kleinen Schirm laeuft, und
+  // dann wird er nie gefahren. cockpitPassung() misst die wirkliche Unterkante nach,
+  // statt einen Faktor auszurechnen: das Raster schrumpft nicht rein proportional
+  // (clamp()-Mindestwerte und vw-Anteile schrumpfen nicht mit), und ein gerechneter
+  // Faktor liess 19 px stehen.
+  //
+  // Die Gegenprobe steht am Ende: auf einem hohen Fenster darf NICHT verkleinert werden.
+  stAdd('Cockpit passt in die Bildschirmhoehe', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.cockpitPassung) {
+      return { skip: true, mass: 'cockpitPassung nicht vorhanden' };
+    }
+    // Der Reiter muss offen sein, sonst hat das Cockpit die Hoehe 0.
+    const btn = document.querySelector('[data-tab="race"]');
+    if (!btn) return { ok: false, mass: 'Cockpit-Reiter fehlt' };
+    btn.click();
+    const schlecht = [], teile = [];
+    // Drei Handyhoehen: quer, quer mit Adressleiste, hochkant.
+    for (const h of [390, 330, 812]) {
+      const r = OMEGA_TEST.cockpitPassung(h);
+      if (!r) { schlecht.push(h + ': keine Messung'); continue; }
+      teile.push(h + 'px: Faktor ' + r.faktor + (r.passt ? ' passt' : ' UEBER ' + r.ueberstand));
+      // Passen muss es - es sei denn, die Untergrenze ist erreicht. Dann ist Scrollen die
+      // ehrliche Antwort, und der Test sagt das statt zu schweigen.
+      if (!r.passt && !r.amBoden) {
+        schlecht.push(h + 'px: ' + r.ueberstand + ' px Ueberstand ohne an der Grenze zu sein');
+      }
+    }
+    // GEGENPROBE: viel Platz, also kein Zoom. Ohne sie waere "immer verkleinern" gruen.
+    const gross = OMEGA_TEST.cockpitPassung(2000);
+    teile.push('2000px: Faktor ' + gross.faktor);
+    if (gross.faktor < 0.999) schlecht.push('verkleinert auch bei 2000 px Hoehe');
+    // Und danach der echte Zustand zurueck.
+    OMEGA_TEST.cockpitPassung();
+    return { ok: schlecht.length === 0,
+             mass: teile.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // ---- Controller-Vibration: ein Schalter je Ausloeser ----
+  //
+  // Siebzehn Aufrufstellen, sechs Arten, ein Hauptschalter. Geprueft wird die
+  // SCHALTERLOGIK - padRumble meldet, ob ein Stoss die Schalter passiert hat -, denn ohne
+  // Controller waere sie sonst gar nicht pruefbar, und mit siebzehn Stellen ist sie genau
+  // die Stelle, an der man sich vertut.
+  //
+  // Drei Aussagen, und die dritte ist die, die man leicht vergisst: eine UNBEKANNTE Art
+  // muss durchkommen. Wer eine neue Aufrufstelle einbaut und das Etikett vergisst, soll
+  // ein Brummen bekommen und es merken - ein stilles Verschlucken waere ein Fehler, den
+  // niemand sieht.
+  stAdd('Controller-Vibration: jeder Ausloeser an seinem Schalter', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.vibProbe) {
+      return { skip: true, mass: 'vibProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.vibProbe();
+    const schlecht = [];
+    if (r.hauptAus.length) {
+      schlecht.push('Hauptschalter aus, aber ' + r.hauptAus.join('/') + ' brummt');
+    }
+    for (const an of r.arten) {
+      const durch = r.einzeln[an];
+      if (durch.length !== 1 || durch[0] !== an) {
+        schlecht.push('nur ' + an + ' an, durch kam: ' + (durch.join('/') || 'nichts'));
+      }
+    }
+    if (!r.unbekannt) schlecht.push('eine unbekannte Art wird still verschluckt');
+    return { ok: schlecht.length === 0,
+             mass: r.arten.length + ' Arten, Hauptschalter aus laesst '
+                   + r.hauptAus.length + ' durch, unbekannte Art '
+                   + (r.unbekannt ? 'brummt' : 'still')
+                   + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
   // ---- RC-Fernbedienung: Achsen, die nicht bei null ruhen ----
   //
   // GEMELDET an einer CH Control Box: unter Windows liess sich in Chrome und Edge gar

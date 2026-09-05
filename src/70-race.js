@@ -2126,7 +2126,7 @@
     log('Wetter: ' + (weather === 'rain' ? 'Regen' : 'trocken') + ': Reifen: '
         + (tyres === 'wet' ? 'Regen' : 'Slicks')
         + (need ? ' (Boxenstopp für passende Reifen)' : ''), 'info');
-    padRumble(0.2, 0.15, 120);
+    padRumble(0.2, 0.15, 120, 'meldung');
   }
 
   function fitTyresForWeather() {
@@ -2241,7 +2241,7 @@
       }
       if (pitPlan.refuel) setPitLoop('fuel', true);
       if (pitPlan.repair) setPitLoop('repair', true);
-      padRumble(0.25, 0.15, 120);
+      padRumble(0.25, 0.15, 120, 'box');
       log(`Boxenstopp: ${describePitPlan(pitPlan)}.`, 'info');
     } else if (next === 'limited') {
       // Arm the plan HERE, not at the service: the quick menu is meant to be used while
@@ -2258,7 +2258,7 @@
       if (pitServiceStart !== null) {
         playTone(440, 0.12, 'sine', 0.18);
         setTimeout(() => playTone(660, 0.22, 'sine', 0.18), 120); // rising: throttle released
-        padRumble(0.25, 0.15, 120);
+        padRumble(0.25, 0.15, 120, 'box');
       }
       // A mandatory stop counts after PIT_MANDATORY_STAND_S of standing time. Requiring the
       // whole service to finish would have punished the legitimate choice to take fuel only
@@ -2415,7 +2415,7 @@
         lapEventAkku.pit += 1;
         stopAllPitLoops();
         pitChimeReady();
-        padRumble(0.35, 0.2, 200);
+        padRumble(0.35, 0.2, 200, 'box');
         showHudToast('Fertig, losfahren!');
         log('Boxenstopp fertig.', 'info');
       }
@@ -2663,12 +2663,24 @@
       showHudToast(end === 'front' ? 'SCHEINWERFER AUS' : 'RUECKLEUCHTEN AUS');
       updateLightTellTales();
     }
+    // DIE WUCHT, und sie wird VOR der naechsten Zeile genommen: die kuerzt das Tempo auf
+    // 30 Prozent, und danach waere jeder Aufprall gleich schwach.
+    //
+    // Hier stand ein fester Wert mit dem Vermerk "medium, per user spec". Eine Groesse fuer
+    // die Staerke gibt es aber: mit welchem Tempo man einschlaegt. Ein Einschlag bei
+    // Hoechstgeschwindigkeit soll sich nicht anfuehlen wie ein Anstupsen in der Boxengasse.
+    const wucht = Math.max(0, Math.min(1, Math.abs(physEngine.state.speedKmh)
+                                          / Math.max(0.01, physEngine.config.topSpeedKmh)));
     // An impact scrubs off most of the speed at once — the one case where the car should
     // NOT roll out gently. Everything else decays via the coast drag in the engine.
     physEngine.state.speedKmh *= 0.3;
     updateDamageFuelUI();
     if (!playCrashFx()) playCrashSound(); // sample variants first, synth burst as fallback
-    padRumble(0.6, 0.4, 220); // medium, per user spec
+    // Der untere Wert liegt ueber dem alten festen (0,6 / 0,4 / 220 ms): auch ein
+    // langsamer Aufprall soll deutlicher sein als bisher. Oben laeuft es auf den vollen
+    // Ausschlag hinaus.
+    padRumble(0.65 + 0.35 * wucht, 0.45 + 0.35 * wucht,
+              Math.round(240 + 160 * wucht), 'crash');
     // Hier stand ein Crash-Indikator, dessen Element es nicht mehr gibt: #crash-indicator
     // kam im gebauten Dokument genau einmal vor, naemlich hier. Die Stelle prueft zwar mit
     // if (ind), griff im Zeitgeber danach aber UNGESCHUETZT auf ind.style zu - der Fehler kam
@@ -2992,7 +3004,7 @@
       fuel = Math.max(0, fuel - Math.abs(throttle) * dt * fuelDrainPerSec);
       // Edge-triggered: without this it would rumble again on every 45ms heartbeat.
       if (fuelBefore > 0 && fuel <= 0) {
-        padRumble(0.2, 0.12, 160);
+        padRumble(0.2, 0.12, 160, 'meldung');
         log('Tank leer.', 'err');
       }
       // Once per tank, each. Falling PAST the mark triggers; rising back above it re-arms,
@@ -3215,7 +3227,7 @@
     const now = Date.now();
     if (now - pitRumbleAt < 180) return;
     pitRumbleAt = now;
-    padRumble(0.16, 0.10, 200);
+    padRumble(0.16, 0.10, 200, 'box');
   }
 
   // Wheels off means the car cannot move, whatever the driver asks for. Once they are back

@@ -1106,12 +1106,24 @@
     if (info) {
       // Residual in millimetres: a bare number in drawing units means nothing to a reader.
       const li = result.lineInfo;
+      // UEBER EINE VORLAGE, nicht ueber den fertigen Satz. Im Woerterbuch stand die Zeile
+      // mit EINGEBACKENEN ZAHLEN ("0.0 cm von 9.3 cm"), sie traf also genau eine einzige
+      // Streckenlage und sonst nie - im englischen Modus stand dort deutscher Text, sobald
+      // die Ideallinie irgendeinen anderen Wert hatte. Gefunden hat es der Sprachtest.
+      //
+      // Die Vorlage traegt Platzhalter und ist damit fuer jede Zahl dieselbe.
       info.textContent = li
-        ? `Ideallinie nutzt ${(li.span / TRACK_UNITS_PER_CM).toFixed(1)} cm `
-          + `von ${(li.limit / TRACK_UNITS_PER_CM).toFixed(1)} cm möglichem Versatz`
+        ? t('Ideallinie nutzt {a} cm von {b} cm möglichem Versatz')
+            .replace('{a}', (li.span / TRACK_UNITS_PER_CM).toFixed(1))
+            .replace('{b}', (li.limit / TRACK_UNITS_PER_CM).toFixed(1))
         : '';
     }
-    $('track-closed-badge').textContent = currentTrackTiles.length === 0 ? '-' : (result.closed ? 'Geschlossen ✓' : 'Offen');
+    // Auch hier durch t(): "Geschlossen" stand im Woerterbuch, "Offen" fehlte, und keines
+    // von beiden wurde je nachgeschlagen, weil der Text per textContent hineingeschrieben
+    // wird. Der Sprachtest sieht "Offen" nicht - es hat weder Umlaut noch deutsches
+    // Funktionswort -, falsch ist es trotzdem.
+    $('track-closed-badge').textContent = currentTrackTiles.length === 0 ? '-'
+      : t(result.closed ? 'Geschlossen ✓' : 'Offen');
     const list = $('track-tile-list');
     // The first tile is the Start/Finish anchor and is not deletable.
     list.innerHTML = currentTrackTiles.map((t, i) =>

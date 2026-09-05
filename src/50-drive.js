@@ -360,6 +360,20 @@
   rumbleOn = $('setting-vibration').checked;
   $('setting-vibration').addEventListener('change', (e) => { rumbleOn = e.target.checked; });
 
+  // Ein Kaestchen je Ausloeser. Dieselbe Bauform wie oben: AUS DEM MARKUP lesen und danach
+  // auf 'change' hoeren - der fehlende Anfangsabgleich hat hier schon einmal einen toten
+  // Schalter ergeben, und mit sechs Kaestchen waeren es sechs.
+  const VIB_KAESTCHEN = { 'vib-schalt': 'schalt', 'vib-abs': 'abs', 'vib-crash': 'crash',
+                          'vib-abseits': 'abseits', 'vib-box': 'box',
+                          'vib-meldung': 'meldung' };
+  Object.keys(VIB_KAESTCHEN).forEach((id) => {
+    const el = $(id);
+    if (!el) return;
+    const art = VIB_KAESTCHEN[id];
+    RUMBLE_ARTEN[art] = el.checked;
+    el.addEventListener('change', (e) => { RUMBLE_ARTEN[art] = e.target.checked; });
+  });
+
   // GASKENNLINIE und ANFAHRSCHUB. Beide lesen ihren Anfangswert AUS DEM MARKUP und
   // haengen sich danach an 'input' - dasselbe Muster wie bei setting-vibration, wo der
   // fehlende Anfangsabgleich schon einmal einen toten Schalter ergeben hat.
@@ -392,6 +406,88 @@
     anfahrschubAnwenden();
     $('setting-minmove').addEventListener('input', anfahrschubAnwenden);
   }
+
+  // ---- Das Cockpit auf die Bildschirmhoehe einpassen ---------------------------------
+  //
+  // GEMELDET: "auf einem Handy sehe ich oben die Lichter nicht." Gemessen in 844 x 390,
+  // also einem Handy quer: Kopfzeile 62 px, Cockpit 531 px hoch ab y = 86 - Fensterhoehe
+  // 390, und die Seite scrollt dort nicht. 227 px liegen ausserhalb.
+  //
+  // Verkleinert wird das GANZE Instrumentenbrett und nicht seine Zeilenaufteilung: die
+  // Anordnung ist der Sinn der Sache, und wer sie auf kleinen Schirmen umbaut, hat zwei
+  // Cockpits zu pflegen.
+  //
+  // zoom und nicht transform: scale() - zoom aendert die Lage im Layout mit, es entsteht
+  // also kein Loch darunter, und Treffer- wie Scrollrechnung stimmen von selbst. Der
+  // uebliche Einwand ist die Browserunterstuetzung; hier belanglos, weil Web Bluetooth die
+  // App ohnehin auf Chrome festlegt.
+  // UNTERGRENZE 0,45, und sie ist gemessen und nicht geschaetzt. zoom verkleinert den
+  // gezeichneten Kasten, aber der Inhalt braucht dabei relativ MEHR Zeilen - clamp()-
+  // Mindestwerte und vw-Anteile schrumpfen nicht mit. Gemessen an einem Cockpit von
+  // 495 px in einem Fenster von 390 px:
+  //
+  //      zoom   1     0,8   0,65  0,55  0,45  0,35
+  //      hoch  495   418   362   323   286   247
+  //
+  // Fuer die verfuegbaren 298 px braucht es rund 0,47 - mit der frueheren Grenze von 0,55
+  // blieb ein Ueberstand von 19 px stehen, und genau der ist der gemeldete Fehler.
+  // Tiefer als 0,45 geht es nicht: darunter ist der Tacho nicht mehr zu entziffern, und
+  // dann ist Scrollen ehrlicher als eine Anzeige, die man nicht lesen kann.
+  const COCKPIT_MIN_ZOOM = 0.45;
+  const COCKPIT_LUFT = 6;          // px, damit die untere Blende nicht am Rand klebt
+
+  // `hoeheFuerTest` gibt eine Fensterhoehe vor. Ohne sie gilt die echte; mit ihr laesst
+  // sich "passt es auf einem Handy quer" auf JEDEM Schirm pruefen - und ein Test, der nur
+  // auf einem kleinen Fenster etwas aussagt, wird nie gefahren.
+  function cockpitPassung(hoeheFuerTest) {
+    const el = $('race-dash');
+    if (!el || !el.offsetParent) return null;
+    const fensterH = hoeheFuerTest || window.innerHeight;
+    // ERST ZURUECKSETZEN, DANN MESSEN. Mit gesetztem zoom liefert getBoundingClientRect
+    // bereits verkleinerte Werte, und die Rechnung liefe sich selbst nach - bei jedem
+    // Aufruf ein Stueck kleiner.
+    el.style.zoom = '';
+    const oben = el.getBoundingClientRect().top;
+    const noetig = el.offsetHeight;
+    const platz = fensterH - oben - COCKPIT_LUFT;
+    if (!(noetig > 0) || !(platz > 0)) return null;
+
+    // NACHMESSEN STATT AUSRECHNEN, und das ist eine Berichtigung an meinem ersten Versuch:
+    // der setzte platz/noetig als Faktor und war fertig. Gemessen kam damit ein Cockpit
+    // heraus, das immer noch 44 px ueberstand - das Raster schrumpft nicht rein
+    // proportional, weil einzelne Zeilen Mindesthoehen und in vh gerechnete Anteile haben.
+    //
+    // Also: Faktor setzen, WIRKLICHE Unterkante messen, nachbessern. Vier Durchgaenge
+    // genuegen (jeder halbiert den Fehler); der Deckel ist dabei kein Schoenheitsfehler,
+    // sondern die Zusicherung, dass diese Schleife endet.
+    let f = Math.min(1, platz / noetig);
+    for (let i = 0; i < 4; i++) {
+      f = Math.min(1, Math.max(COCKPIT_MIN_ZOOM, f));
+      el.style.zoom = f < 0.999 ? f.toFixed(4) : '';
+      const unten = el.getBoundingClientRect().bottom;
+      const rest = fensterH - COCKPIT_LUFT - unten;
+      if (rest >= -1) break;                       // passt
+      if (f <= COCKPIT_MIN_ZOOM + 1e-6) break;     // kleiner wird es nicht, siehe Konstante
+      const hoehe = unten - oben;
+      if (!(hoehe > 0)) break;
+      f *= (hoehe + rest) / hoehe;
+    }
+    const unten = el.getBoundingClientRect().bottom;
+    return { noetig, platz: Math.round(platz), faktor: +f.toFixed(3),
+             fensterH, amBoden: f <= COCKPIT_MIN_ZOOM + 1e-6,
+             passt: unten <= fensterH + 1,
+             ueberstand: Math.max(0, Math.round(unten - fensterH)) };
+  }
+
+  // Bei jeder Groessenaenderung, bei jedem Drehen des Geraets, und beim Wechsel auf den
+  // Reiter - vorher ist das Cockpit unsichtbar und hat die Hoehe 0.
+  window.addEventListener('resize', cockpitPassung);
+  window.addEventListener('orientationchange', () => setTimeout(cockpitPassung, 120));
+  document.querySelectorAll('[data-tab="race"]').forEach((b) => {
+    b.addEventListener('click', () => setTimeout(cockpitPassung, 60));
+  });
+  // Und einmal beim Laden, falls der Reiter schon offen ist.
+  setTimeout(cockpitPassung, 300);
 
   // Der Regler steht in PROZENT vorn, die Physik rechnet mit einem Anteil.
   $('setting-brakebias').addEventListener('input', (e) => {
@@ -1335,7 +1431,7 @@
         // Dauerhaft und schwach, nicht ein Stoss wie beim Crash: ein Dauerrumble in
         // Crash-Staerke ist nach fuenf Sekunden nur noch nervig. Der schwache Motor traegt
         // mehr, das fuehlt sich nach Schotter an und nicht nach Aufprall.
-        padRumble(0.12, 0.34, OFFTRACK_RUMBLE_MS);
+        padRumble(0.12, 0.34, OFFTRACK_RUMBLE_MS, 'abseits');
       }
     }
     // Windschatten: gemessen wird in 90-ghosts.js (nur dort ist bekannt, wo die anderen

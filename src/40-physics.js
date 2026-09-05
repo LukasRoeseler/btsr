@@ -1496,7 +1496,7 @@
           if (inputs.brake > 0.8 && st.speedKmh > cfg.topSpeedKmh * 0.15) {
             st.absActive = true;
             const now = Date.now();
-            if (now - st.lastAbsRumble > 140) { st.lastAbsRumble = now; padRumble(0.18, 0.1, 60); }
+            if (now - st.lastAbsRumble > 140) { st.lastAbsRumble = now; padRumble(0.18, 0.1, 60, 'abs'); }
           }
         } else if (inNeutral) {
           // Out of gear the engine is disconnected from the wheels: revving it does nothing
@@ -1789,7 +1789,7 @@
           if (direction > 0) {
             st.driveMode = 'forward'; st.currentGear = 0;
             st.speedKmh = 0; st.neutralRpm = 0;
-            showHudToast('Vorw\u00e4rts'); padRumble(0.3, 0.2, 90);
+            showHudToast('Vorw\u00e4rts'); padRumble(0.3, 0.2, 90, 'schalt');
             playShiftSound(1);
           }
           return;
@@ -1798,7 +1798,7 @@
           if (langsam) {
             st.driveMode = 'reverse'; st.currentGear = 0;
             st.speedKmh = 0; st.neutralRpm = 0;
-            showHudToast('R\u00fcckw\u00e4rtsgang'); padRumble(0.3, 0.2, 90);
+            showHudToast('R\u00fcckw\u00e4rtsgang'); padRumble(0.3, 0.2, 90, 'schalt');
             playShiftSound(-1);
           } else {
             // Sagen, WARUM nichts passiert. Ein Knopf, der schweigend nichts tut, sieht
@@ -1812,7 +1812,7 @@
       if (st.driveMode === 'reverse') {
         if (direction > 0 && stopped) {
           st.driveMode = 'neutral'; st.speedKmh = 0; st.neutralRpm = 0;
-          showHudToast('Leerlauf'); padRumble(0.3, 0.2, 90);
+          showHudToast('Leerlauf'); padRumble(0.3, 0.2, 90, 'schalt');
           playShiftSound(1);
         }
         return;
@@ -1823,11 +1823,11 @@
           st.driveMode = 'forward'; st.currentGear = 0; st.neutralRpm = 0;
           st.isShifting = true;
           st.shiftLeft = cfg.shiftMs / 1000;
-          showHudToast('1. Gang'); padRumble(0.15, 0.1, 40);
+          showHudToast('1. Gang'); padRumble(0.15, 0.1, 40, 'schalt');
           playShiftSound(1);
         } else if (stopped) {
           st.driveMode = 'reverse'; st.speedKmh = 0; st.neutralRpm = 0;
-          showHudToast('Rückwärtsgang'); padRumble(0.3, 0.2, 90);
+          showHudToast('Rückwärtsgang'); padRumble(0.3, 0.2, 90, 'schalt');
           playShiftSound(-1);
         }
         return;
@@ -1835,7 +1835,7 @@
 
       if (direction < 0 && st.currentGear === 0) {
         st.driveMode = 'neutral'; st.neutralRpm = 0;
-        showHudToast('Leerlauf'); padRumble(0.2, 0.12, 60);
+        showHudToast('Leerlauf'); padRumble(0.2, 0.12, 60, 'schalt');
         playShiftSound(-1);
         return;
       }
@@ -1850,7 +1850,7 @@
       st.currentGear = next;
       // Short and light: six shifts inside three seconds with a long pattern is a
       // pneumatic drill in the hand.
-      padRumble(0.15, 0.1, 40);
+      padRumble(0.15, 0.1, 40, 'schalt');
       playShiftSound(direction);
     }
   }
@@ -1873,8 +1873,28 @@
   // beim Lesen dasselbe sagen.
   let rumbleOn = true;
 
-  function padRumble(strong, weak, ms) {
-    if (!rumbleOn) return;
+  // ---- Ein Schalter je Ausloeser ---------------------------------------------------
+  //
+  // Die sechs Arten sind an den siebzehn Aufrufstellen von padRumble abgelesen, nicht
+  // erfunden. Sie stehen hier und nicht bei den Kaestchen, weil padRumble sie liest -
+  // und die Abfrage gehoert an DIE eine Stelle und nicht an siebzehn.
+  //
+  // Vorgaben: Schalten, ABS, Crash und Boxenstopp an; neben der Bahn und Meldungen aus.
+  // "Neben der Bahn" und "Meldungen" sind die zwei, die nicht auf ein Ereignis am Auto
+  // zeigen, sondern auf einen Zustand bzw. eine Nachricht - ein Dauerbrummen im Gelaende
+  // ist Geschmackssache, und ein Wetterwechsel ist keine Kraft.
+  const RUMBLE_ARTEN = { schalt: true, abs: true, crash: true,
+                         abseits: false, box: true, meldung: false };
+
+  // Der Rueckgabewert sagt, ob die Schalter den Stoss DURCHGELASSEN haben - nicht, ob ein
+  // Controller ihn ausgefuehrt hat. Damit ist die Schalterlogik ohne Hardware pruefbar, und
+  // genau die ist bei siebzehn Aufrufstellen die Stelle, an der man sich vertut.
+  function padRumble(strong, weak, ms, art) {
+    if (!rumbleOn) return false;
+    // Eine unbekannte Art brummt - das ist Absicht. Wer eine neue Stelle einbaut und das
+    // Etikett vergisst, bekommt ein Brummen und merkt es; ein stilles Verschlucken waere
+    // ein Feature, das niemand vermisst, bis es fehlt.
+    if (art && RUMBLE_ARTEN[art] === false) return false;
     try {
       const pads = navigator.getGamepads ? navigator.getGamepads() : [];
       // DENSELBEN PAD NEHMEN WIE DIE EINGABE. Windows zeigt denselben Controller oft zweimal
@@ -1896,4 +1916,5 @@
         }
       }
     } catch { /* pad vanished mid-call — nothing to do */ }
+    return true;
   }

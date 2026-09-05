@@ -1920,8 +1920,12 @@
     document.body.classList.toggle('flag-yellow', flagState !== 'green');
     const b = $('race-act-flag');
     if (b) {
-      b.textContent = flagState === 'yellow' ? 'Freigeben'
-                    : flagState === 'restart' ? 'Anfahrt' : 'Gelbe Flagge';
+      // DURCH t(), und das ist die Hausregel fuer im Code zusammengesetzte Texte: der
+      // Uebersetzer laeuft ueber die Textknoten des Dokuments, und was danach per
+      // textContent hineingeschrieben wird, hat er nie gesehen. Gefunden hat es der
+      // Flaggentest - aber erst, als die App zufaellig auf Englisch stand.
+      b.textContent = t(flagState === 'yellow' ? 'Freigeben'
+                    : flagState === 'restart' ? 'Anfahrt' : 'Gelbe Flagge');
       b.classList.toggle('flagged', flagState !== 'green');
       // Waehrend der Anfahrt ist der Knopf gesperrt: die Ampel laeuft, ein zweites
       // Umschalten mitten hinein waere ein Zustand, den niemand gemeint hat.
@@ -1944,10 +1948,11 @@
       // aufgeschrieben war: ein Auto, das von selbst Gas gibt, ohne dass das irgendwo steht,
       // sieht beim ersten Mal wie ein durchgehendes Auto aus.
       const grund = autopilotGrund();
-      el.textContent = flagState === 'yellow' ? (grund === 'yellow' ? 'GELB · AUTOPILOT' : 'GELB')
+      const flaggenText = flagState === 'yellow' ? (grund === 'yellow' ? 'GELB · AUTOPILOT' : 'GELB')
                      : flagState === 'restart' ? 'ANFAHRT'
                      : grund === 'formation' ? 'EINFÜHRUNGSRUNDE · AUTOPILOT'
                      : raceFormationLap ? 'EINFÜHRUNGSRUNDE' : '';
+      el.textContent = flaggenText ? t(flaggenText) : '';
       el.style.display = el.textContent ? '' : 'none';
     }
   }
