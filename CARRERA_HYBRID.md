@@ -621,3 +621,30 @@ Zwei Folgerungen, und beide aendern etwas:
   sendet fast nur die zwei Endwerte. Das ist auch der Grund, warum hier zeitgewichtet
   gemittelt wird und nicht ueber die Pakete — ein Paketmittel haette an der Senderate
   gehangen statt daran, wie schraeg das Auto wirklich stand.
+
+### Wie stark die Ghosts wirklich lenken — gemessen, drei Einstellungen
+
+`OMEGA_TEST.ghostDriveProbe({ lage: 'karte', takte: 600 })` fährt einen Ghost auf einer
+gebauten Strecke und gibt die gesendeten Lenkbytes zurück. Der Betrag über 600 Takte:
+
+| Einstellung (Linie / Spuren / Versatz) | Mittel \|Byte\| | Spitze | über 60 |
+|---|---|---|---|
+| Vorgabe 70 / 50 / 50 % | 35,9 | 83 | 33 % |
+| 100 / 100 / 100 % | 50,3 | 116 | 46 % |
+| 200 / 200 / 200 % | **80,9** | **127** | 64 % |
+
+Zum Vergleich die **Original-App**, aufgezeichnet am 21.08. über 16 Runden mit zwei Ghosts:
+Mittel 32,2 bzw. 47,3 von 127, Spitze bei beiden 127.
+
+Damit liegt die Vorgabe auf dem ruhigeren der beiden Original-Ghosts, 100 Prozent auf dem
+lebhafteren, und 200 Prozent darüber. Das ist keine Übertreibung ohne Beleg: die
+Abrissmessung im Abschnitt darüber zeigt, dass die Schiene auch bei vollem Anschlag gelesen
+wird.
+
+**Was „über 100 Prozent" außerdem ändert.** Zwei Abschwächungen wachsen mit: auf der Geraden
+wirkte die Ideallinie nur zu 35 Prozent (`GHOST_LINE_STRAIGHT`) und in der Kurve blieb die
+halbe eigene Spur stehen (`GHOST_LANE_DROP`). Beides hat einen Grund — alle auf denselben
+Scheitel zu schicken führt sie zusammen, und Berührungen sind ohne Rückmeldung zur Querlage
+nicht zurückzuregeln. Ab 100 Prozent ist das aber eine ausdrückliche Bitte, und der Anteil
+wächst linear bis auf voll bei 200 Prozent. **Unter 100 Prozent ändert sich nichts:** die
+Ausdrücke sind dort Zeichen für Zeichen die alten.

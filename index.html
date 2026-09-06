@@ -6491,10 +6491,10 @@
           <!-- Seit v0.5.9 wirkt dieser Regler deutlich staerker: der Deckel aus
                learnSteerCap() ging von 0,55 auf 1,0, gemessen an dem, was die Original-App
                ihren eigenen Ghosts schickt. Am Auto ist das nicht geprueft. -->
-          <small>Au&szlig;en anstellen, innen scheiteln, au&szlig;en heraus. Gemessener Einschlag: 70 Prozent ergeben 13,5 Grad, 100 Prozent 20,9 Grad von den 45 des Autos. Ohne gebaute oder gelernte Strecke f&auml;llt sie auf eine gr&ouml;bere Regel je Kachel zur&uuml;ck &ndash; halb so stark und ohne Blick auf die n&auml;chste Kurve. Ganz ohne gelesene Streckencodes wirkt sie nicht, weil niemand wei&szlig;, wo das Auto ist. Ob es hilft, sagen Rundenzeit und Abg&auml;nge.</small></div>
+          <small>Au&szlig;en anstellen, innen scheiteln, au&szlig;en heraus. Gemessen am mittleren Lenkbyte &uuml;ber 600 Takte: die Vorgabe ergibt 36 von 127, 100 Prozent ergeben 50, 200 Prozent ergeben 81 mit Spitzen am vollen Anschlag. Zum Vergleich schickt die Original-App ihren eigenen Ghosts im Mittel 32 und 47. &Uuml;ber 100 Prozent wirkt die Linie zus&auml;tzlich auch auf der Geraden voll statt nur zu einem Drittel &ndash; das Anbremsen von au&szlig;en ist die H&auml;lfte einer Ideallinie, und genau dort sieht man sie. Ohne gebaute oder gelernte Strecke f&auml;llt sie auf eine gr&ouml;bere Regel je Kachel zur&uuml;ck. Ganz ohne gelesene Streckencodes wirkt sie nicht, weil niemand wei&szlig;, wo das Auto ist. Ob es hilft, sagen Rundenzeit und Abg&auml;nge.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="ghost-line" min="0" max="1" step="0.05" value="0.7">
+          <input type="range" id="ghost-line" min="0" max="2" step="0.05" value="0.7">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="ghost-line-val">70%</span>
         </div></div>
@@ -6511,17 +6511,17 @@
           beh&auml;lt sie nur, wenn die Runde schneller war <b>und</b> kein Abgang dabei.
           Nach einem Abgang wird zur&uuml;ckgenommen und vorsichtiger weiterprobiert.</small></div>
         <label class="tgl"><input type="checkbox" id="ghost-learn-pace"><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Ghost: seitlicher Versatz <span class="wip-tag">WIP</span><small>Zwei Autos nebeneinander gehen auseinander, und beim &Uuml;berholen weicht auch der Vorausfahrende aus, zur anderen Seite. Zwei Autos auf 25&nbsp;cm Bahnbreite brauchen beide H&auml;lften. Dieser Regler bestimmt auch, wie weit der Angreifer zur Seite geht: das ist ein Ausweichen und keine Linienwahl, h&auml;ngt also nicht an der Ideallinie.</small></div>
+      <div class="opt-row"><div class="opt-label">Ghost: seitlicher Versatz <span class="wip-tag">WIP</span><small>Zwei Autos nebeneinander gehen auseinander, und beim &Uuml;berholen weicht auch der Vorausfahrende aus, zur anderen Seite. Zwei Autos auf 25&nbsp;cm Bahnbreite brauchen beide H&auml;lften. Dieser Regler bestimmt auch, wie weit der Angreifer zur Seite geht: das ist ein Ausweichen und keine Linienwahl, h&auml;ngt also nicht an der Ideallinie. &Uuml;ber 100 Prozent geht die Anforderung bis an den vollen Anschlag &ndash; die Mitschnitte zeigen, dass das Auto die Schiene auch dort noch liest.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="ghost-lateral" min="0" max="1" step="0.1" value="0.5">
+          <input type="range" id="ghost-lateral" min="0" max="2" step="0.05" value="0.5">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="ghost-lateral-val">50%</span>
         </div></div>
-      <div class="opt-row"><div class="opt-label">Ghost: eigene Spuren <span class="wip-tag">experimentell</span><small>Jeder Ghost h&auml;lt eine eigene, feste Linie &uuml;ber die Bahnbreite. Auf der Geraden gilt die Spur, in der Kurve die Ideallinie &ndash; so f&auml;hrt das Feld hintereinander, aber auf verschiedenen Linien, und sucht im Bogen trotzdem den Scheitel. Der &Uuml;bergang l&auml;uft mit 350&nbsp;ms nach, damit an der Kachelgrenze kein Ruck entsteht. In der Kurve bleibt die halbe Spur stehen: alle auf denselben Scheitel zu schicken w&auml;re realistisch, w&uuml;rde sie aber zusammenf&uuml;hren, und Ber&uuml;hrungen sind ohne R&uuml;ckmeldung zur Querlage nicht zur&uuml;ckzuregeln.</small></div>
+      <div class="opt-row"><div class="opt-label">Ghost: eigene Spuren <span class="wip-tag">experimentell</span><small>Jeder Ghost h&auml;lt eine eigene, feste Linie &uuml;ber die Bahnbreite. Auf der Geraden gilt die Spur, in der Kurve die Ideallinie &ndash; so f&auml;hrt das Feld hintereinander, aber auf verschiedenen Linien, und sucht im Bogen trotzdem den Scheitel. Der &Uuml;bergang l&auml;uft mit 350&nbsp;ms nach, damit an der Kachelgrenze kein Ruck entsteht. Bis 100 Prozent bleibt in der Kurve die halbe Spur stehen: alle auf denselben Scheitel zu schicken w&auml;re realistisch, w&uuml;rde sie aber zusammenf&uuml;hren, und Ber&uuml;hrungen sind ohne R&uuml;ckmeldung zur Querlage nicht zur&uuml;ckzuregeln. &Uuml;ber 100 Prozent gilt die eigene Spur auch in der Kurve ganz &ndash; auf eigene Gefahr, denn dann bleiben sie sich auch im Bogen im Weg.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="ghost-lanes" min="0" max="1" step="0.05" value="0.5">
+          <input type="range" id="ghost-lanes" min="0" max="2" step="0.05" value="0.5">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="ghost-lanes-val">50%</span>
         </div></div>
@@ -8507,7 +8507,7 @@
     "So lange muss das Auto DURCHGEHEND abseits melden, bevor gedrosselt wird. Eine Sekunde ist die Vorgabe, damit leichtes Schneiden noch durchgeht – ein einzelnes Paket von der Bahn setzt die Uhr zurück. Gilt nur in der Stellung „Auf der Bahn“, weil der Streckensensor nur dort liest.": "This is how long the car must report off track CONTINUOUSLY before the throttle is capped. One second is the default so that cutting a corner slightly still gets through – a single packet from the track resets the clock. Applies only in the „On the track“ position, because that is the only place the track sensor reads.",
     ": der Stopp wird von Hand angefordert und beginnt erst, wenn das Auto neben der Bahn steht (Byte 12 = 0x00). Der Knopf sagt also, DASS ein Stopp kommt, die Bahnkante sagt, WO er anfängt. Nur auf der CH-Schiene sinnvoll – ohne Schiene meldet das Auto ständig „abseits“.": ": the stop is requested by hand and only begins once the car is standing beside the track (byte 12 = 0x00). So the button says THAT a stop is coming, the track edge says WHERE it begins. Only useful on the CH rail – without the rail the car reports „off track“ all the time.",
     "Neben der Strecke (von Hand, Start erst abseits)": "Beside the track (by hand, starts only off track)",
-    "Außen anstellen, innen scheiteln, außen heraus. Gemessener Einschlag: 70 Prozent ergeben 13,5 Grad, 100 Prozent 20,9 Grad von den 45 des Autos. Ohne gebaute oder gelernte Strecke fällt sie auf eine gröbere Regel je Kachel zurück – halb so stark und ohne Blick auf die nächste Kurve. Ganz ohne gelesene Streckencodes wirkt sie nicht, weil niemand weiß, wo das Auto ist. Ob es hilft, sagen Rundenzeit und Abgänge.": "Set up wide, clip the apex, run wide again. Measured lock: 70 percent gives 13.5 degrees, 100 percent 20.9 of the car’s 45. Without a built or learnt track it falls back to a coarser per-tile rule – half as strong and blind to the next corner. With no track codes read at all it does nothing, because nobody knows where the car is. Whether it helps is told by lap times and departures.",
+    "Außen anstellen, innen scheiteln, außen heraus. Gemessen am mittleren Lenkbyte über 600 Takte: die Vorgabe ergibt 36 von 127, 100 Prozent ergeben 50, 200 Prozent ergeben 81 mit Spitzen am vollen Anschlag. Zum Vergleich schickt die Original-App ihren eigenen Ghosts im Mittel 32 und 47. Über 100 Prozent wirkt die Linie zusätzlich auch auf der Geraden voll statt nur zu einem Drittel – das Anbremsen von außen ist die Hälfte einer Ideallinie, und genau dort sieht man sie. Ohne gebaute oder gelernte Strecke fällt sie auf eine gröbere Regel je Kachel zurück. Ganz ohne gelesene Streckencodes wirkt sie nicht, weil niemand weiß, wo das Auto ist. Ob es hilft, sagen Rundenzeit und Abgänge.": "Set up wide, clip the apex, run out wide. Measured as the mean steering byte over 600 ticks: the default gives 36 of 127, 100 per cent gives 50, 200 per cent gives 81 with peaks at full lock. For comparison the original app sends its own ghosts 32 and 47 on average. Above 100 per cent the line also acts fully on the straights instead of only a third – braking in from the outside is half of a racing line, and that is where you see it. Without a built or learned track it falls back to a coarser per-tile rule. With no track codes read at all it does nothing, because nobody knows where the car is. Whether it helps is answered by lap times and excursions.",
     "Rundentempo der autonomen Autos. Gefahren brauchbar zwischen 40 und 60 Prozent. Der Regler beginnt bei 35 und nicht tiefer: darunter fährt das Auto so langsam, dass es die gedruckte Strecke nicht mehr zuverlässig „liest“ – und dann fallen Vorausblick, Ideallinie und Kurvendrosselung alle drei aus.": "Lap pace of the autonomous cars. Driven, 40 to 60 percent works well. The slider starts at 35 and no lower: below that the car drives so slowly that it no longer „reads“ the printed track reliably – and then lookahead, racing line and corner braking all three fall away.",
     "Der Erstplatzierte fährt etwas langsamer, damit das Feld zusammenbleibt. Wirkt auch ohne Rennen, also beim freien Fahren – aber erst ab zwei Ghosts: mit einem einzigen ist dieser eine der Führende, und ihn zu bremsen hieße nur, ihn langsamer zu machen.": "The car in front runs slightly slower so the field stays together. Works without a race too, i.e. in free practice – but only from two ghosts upwards: with a single one that one is the leader, and holding it back would just mean making it slower.",
     "Ablauf: Auto in der Garage verbinden, unten auf „Messung starten“ drücken. Das Auto fährt mit festem, langsamem Gas und hält jede Stufe so lange, wie unten eingestellt ist. Verlässt es die Bahn, wird die Stufe festgehalten und die Messung endet. Wenn du es siehst, bevor die App es merkt: „runtergefahren“ drücken.": "How it runs: connect a car in the garage, then press “Start measurement” below. The car drives at a fixed, slow throttle and holds each step for as long as set below. If it leaves the track, the step is recorded and the measurement ends. If you see it before the app does, press “went off”.",
@@ -8524,8 +8524,8 @@
     "Der gemessene Kippwert ersetzt den geschätzten Deckel für alle Querbewegungen: Ideallinie, Überholversatz und Ausweichen. Du musst nichts übertragen.": "The measured tipping value replaces the estimated cap for every lateral movement: racing line, overtaking offset and avoidance. You do not have to transfer anything.",
     "Aktueller Deckel:": "Current cap:",
     "Tagesform, Fehler, Windschatten, Überholen, Gummiband und Abstand halten – ein Regler für alle sechs. Ein Überholvorgang läuft als Sequenz: erst zur Seite, dann Schub, dann vorne wieder einordnen, und wenn es nach 5 s nicht geklappt hat, Abbruch mit 6 s Sperre. Ohne diesen Abbruch klebte der Verfolger neben dem anderen, bis die Uhr ablief, und genau dort berühren sie sich. Der Mindestabstand rechnet ausserdem mit der Annäherungsrate statt mit einem festen Kachelabstand. Auf 0 ist jeder der sechs Bausteine wirkungslos.": "Form, mistakes, slipstream, overtaking, rubber band and keeping distance – one slider for all six. An overtake runs as a sequence: move aside, then the boost, then tuck back in ahead, and if it has not worked after 5 s, abort with a 6 s lockout. Without that abort the follower stuck alongside the other until the clock ran out, and that is exactly where they touch. The minimum gap also reckons with the closing rate rather than a fixed tile distance. At 0 every one of the six parts is inert.",
-    "Zwei Autos nebeneinander gehen auseinander, und beim Überholen weicht auch der Vorausfahrende aus, zur anderen Seite. Zwei Autos auf 25 cm Bahnbreite brauchen beide Hälften. Dieser Regler bestimmt auch, wie weit der Angreifer zur Seite geht: das ist ein Ausweichen und keine Linienwahl, hängt also nicht an der Ideallinie.": "Two cars side by side move apart, and when overtaking the car in front gives way too, to the other side. Two cars on 25 cm of track width need both halves. This slider also sets how far the attacker moves over: that is an avoidance and not a choice of line, so it does not depend on the racing line.",
-    "Jeder Ghost hält eine eigene, feste Linie über die Bahnbreite. Auf der Geraden gilt die Spur, in der Kurve die Ideallinie – so fährt das Feld hintereinander, aber auf verschiedenen Linien, und sucht im Bogen trotzdem den Scheitel. Der Übergang läuft mit 350 ms nach, damit an der Kachelgrenze kein Ruck entsteht. In der Kurve bleibt die halbe Spur stehen: alle auf denselben Scheitel zu schicken wäre realistisch, würde sie aber zusammenführen, und Berührungen sind ohne Rückmeldung zur Querlage nicht zurückzuregeln.": "Every ghost holds its own fixed line across the track width. On the straight the lane rules, in the corner the racing line – so the field runs in file but on different lines, and still seeks the apex through the bend. The transition follows with a 350 ms lag so that no jolt appears at the tile boundary. Half the lane stays in the corner: sending everyone to the same apex would be realistic but would bring them together, and contact cannot be regulated away without feedback on lateral position.",
+    "Zwei Autos nebeneinander gehen auseinander, und beim Überholen weicht auch der Vorausfahrende aus, zur anderen Seite. Zwei Autos auf 25 cm Bahnbreite brauchen beide Hälften. Dieser Regler bestimmt auch, wie weit der Angreifer zur Seite geht: das ist ein Ausweichen und keine Linienwahl, hängt also nicht an der Ideallinie. Über 100 Prozent geht die Anforderung bis an den vollen Anschlag – die Mitschnitte zeigen, dass das Auto die Schiene auch dort noch liest.": "Two cars side by side move apart, and when being overtaken the car ahead also gives way, to the other side. Two cars on 25 cm of track width need both halves. This slider also sets how far the attacker moves across: that is an evasion and not a line choice, so it does not depend on the racing line. Above 100 per cent the request goes all the way to full lock – the recordings show the car still reads the rail there.",
+    "Jeder Ghost hält eine eigene, feste Linie über die Bahnbreite. Auf der Geraden gilt die Spur, in der Kurve die Ideallinie – so fährt das Feld hintereinander, aber auf verschiedenen Linien, und sucht im Bogen trotzdem den Scheitel. Der Übergang läuft mit 350 ms nach, damit an der Kachelgrenze kein Ruck entsteht. Bis 100 Prozent bleibt in der Kurve die halbe Spur stehen: alle auf denselben Scheitel zu schicken wäre realistisch, würde sie aber zusammenführen, und Berührungen sind ohne Rückmeldung zur Querlage nicht zurückzuregeln. Über 100 Prozent gilt die eigene Spur auch in der Kurve ganz – auf eigene Gefahr, denn dann bleiben sie sich auch im Bogen im Weg.": "Every ghost holds its own fixed line across the track width. On the straight the lane applies, in a corner the racing line – so the field runs in single file but on different lines, and still hunts the apex through the bend. The transition eases over 350 ms so there is no jolt at a tile boundary. Up to 100 per cent half of the lane survives through a corner: sending everyone to the same apex would be realistic but would bring them together, and contact cannot be corrected without any feedback on lateral position. Above 100 per cent the lane applies fully in corners too – at your own risk, because then they stay in each other's way through the bend as well.",
     "Dieses Projekt ist unabhängig von Carrera und gehört zu keinem Hersteller. Der vollständige Quellcode steht unter der MIT-Lizenz auf GitHub.": "This project is independent of Carrera and belongs to no manufacturer. The complete source code is available under the MIT licence on GitHub.",
     "Jeder darf ihn nutzen, kopieren, verändern und auch in kommerzieller Software verwenden, solange der ursprüngliche Urheberrechtsvermerk und der Lizenztext in der Kopie erhalten bleiben.": "Anyone may use, copy and modify it, including in commercial software, as long as the original copyright notice and the licence text are kept in the copy.",
     "Dieselbe Lizenz sagt aber auch: die Software kommt ohne Garantie und ohne Gewährleistung. Du steuerst deine Autos auf eigene Gefahr. Es ist ein Freizeitprojekt, motiviert durch die Option, eine Pups-Hupe einzubauen – und möglicherweise funktioniert es nach einem künftigen Firmware-Update nicht mehr.": "The same licence also says: the software comes with no warranty and no guarantee. You drive your cars at your own risk. This is a hobby project, motivated by the option of building in a whoopee horn – and it may well stop working after a future firmware update.",
@@ -16119,6 +16119,20 @@
     if (!car.race) car.race = { laps: [], lapStart: null, pending: null, seen: 0,
                                 lastActed: 0, lastCount: null };
     const r = car.race, now = Date.now();
+    // DIE AUSLAUFRUNDE endet hier, und nur hier: dieses Auto hat Start/Ziel ueberfahren,
+    // also gilt die Zielflagge fuer es. Die Runde wird noch GEWERTET - sie ist gefahren
+    // worden, und eine gefahrene Runde zu verschweigen waere die zweite Unwahrheit nach der
+    // ersten (dem Stehenbleiben mitten auf der Bahn).
+    if (raceState === 'finished' && car.ghost && car.ghost.auslauf) {
+      car.ghost.auslauf = false;
+      if (r.lapStart !== null) {
+        r.laps.push({ lap: r.laps.length + 1, ms: now - r.lapStart, off: r.offLap || 0 });
+      }
+      r.lapStart = null;
+      finishGhost(car);
+      ghostAuslaufFertig();
+      return;
+    }
     if (raceState !== 'racing' && raceState !== 'finishing') { r.lapStart = now; return; }
     // During the formation lap this crossing is the START of the race, not a lap.
     if (raceFormationLap) { formationUeberfahrt(String(car.device.id)); return; }
@@ -16704,7 +16718,10 @@
     if (raceState !== 'racing' && raceState !== 'countdown' && raceState !== 'finishing') return;
     if (raceCountdownTimer) { clearInterval(raceCountdownTimer); raceCountdownTimer = null; }
     setRaceLights(0);
-    finishRace();
+    // KEIN AUSLAUFEN bei einem Abbruch von Hand. Wer abbricht, will, dass es aufhoert -
+    // eine Extrarunde saehe aus, als haette der Knopf nichts getan. Dieselbe Ueberlegung,
+    // mit der die laufende Runde hier verworfen und nicht gewertet wird.
+    finishRace(false);
     showHudToast('Rennen abgebrochen');
     updateRaceActButtons();
   }
@@ -16717,7 +16734,16 @@
     return missed * racePitPenaltyS * 1000;
   }
 
-  function finishRace() {
+  // Wie lange ein Ghost hoechstens noch faehrt, um seine Runde zu beenden. 90 s ist
+  // grosszuegig - eine Runde auf einer Wohnzimmerbahn dauert gemessen unter 20 s -, und die
+  // Grenze ist nicht fuer den Normalfall da, sondern fuer den Ghost, der neben der Bahn
+  // liegt und nie ankommt.
+  const GHOST_AUSLAUF_MAX_MS = 90000;
+  let ghostAuslaufBis = 0;
+
+  // `auslaufen` = die Ghosts duerfen ihre angefangene Runde zu Ende fahren. Vorgabe ja;
+  // requestRaceStop() uebergibt ausdruecklich false.
+  function finishRace(auslaufen) {
     raceState = 'finished';
     // Die laufende Runde festhalten und die Uhr anhalten. Ohne das Nullsetzen von
     // raceLapStart rechnet die Anzeige weiter gegen Date.now() und die Runde waechst nach
@@ -16741,7 +16767,28 @@
     // Diese Stelle ist die richtige und die einzige: alle Endbedingungen laufen durch
     // finishRace() (Rundenzahl erreicht, Zeit abgelaufen und letzte Runde beendet, Stopp von
     // Hand), also wird die Sequenz von jeder ausgeloest, ohne sie einzeln zu verdrahten.
-    garage.forEach(c => { if (c.role === 'ghost') finishGhost(c); });
+    // ---- Die Zielflagge gilt JE AUTO beim Ueberfahren -------------------------------
+    //
+    // Bis v0.5.17 stand hier finishGhost() fuer jeden, und das ganze Feld blieb mitten auf
+    // der Bahn stehen, sobald der Fahrer ueber die Linie kam. Auf einer echten Bahn faehrt
+    // jeder seine angefangene Runde zu Ende.
+    //
+    // Wer schon steht oder gar nicht faehrt, laeuft nicht aus - fuer den gilt die Flagge
+    // sofort, sonst wartete das Rennen auf ein Auto, das sich nicht bewegt.
+    const willAuslaufen = auslaufen !== false;
+    ghostAuslaufBis = willAuslaufen ? now + GHOST_AUSLAUF_MAX_MS : 0;
+    garage.forEach(c => {
+      if (c.role !== 'ghost') return;
+      const faehrt = willAuslaufen && c.ghost && !c.parked && !c.ghost.finish;
+      if (faehrt) {
+        c.ghost.auslauf = true;
+        return;
+      }
+      finishGhost(c);
+    });
+    if (willAuslaufen && garage.some(c => c.role === 'ghost' && c.ghost && c.ghost.auslauf)) {
+      showHudToast(t('Ghosts fahren die Runde zu Ende'));
+    }
     const missed = Math.max(0, racePitRequired - racePitDone);
     $('race-status').textContent =
       `Beendet (${raceLapTimes.length} Runde${raceLapTimes.length === 1 ? '' : 'n'})`
@@ -16766,6 +16813,37 @@
       if (typeof renderSessions === 'function') renderSessions();
     }
   }
+
+  // Wenn der letzte Ghost angekommen ist, steht das Ergebnis fest - also neu zeichnen.
+  // Die Tabelle war beim Fallen der Flagge schon gemalt, und die Auslaufrunden kommen erst
+  // danach dazu; ohne diesen Aufruf fehlten sie darin.
+  function ghostAuslaufFertig() {
+    if (garage.some(c => c.role === 'ghost' && c.ghost && c.ghost.auslauf)) return;
+    ghostAuslaufBis = 0;
+    renderRaceResults();
+    renderPositionPlot();
+    showHudToast(t('Alle im Ziel'));
+  }
+
+  // Die Grenze. Ein eigener, langsamer Takt reicht: hier wird auf Sekunden gewartet und
+  // nicht auf Millisekunden.
+  setInterval(() => {
+    if (!ghostAuslaufBis || Date.now() < ghostAuslaufBis) return;
+    ghostAuslaufBis = 0;
+    let n = 0;
+    garage.forEach(c => {
+      if (c.role === 'ghost' && c.ghost && c.ghost.auslauf) {
+        c.ghost.auslauf = false;
+        finishGhost(c);
+        n++;
+      }
+    });
+    if (n) {
+      log('Auslaufrunde abgebrochen: ' + n + ' Auto(s) kamen nicht ans Ziel.', 'info');
+      renderRaceResults();
+      renderPositionPlot();
+    }
+  }, 1000);
 
   // ---- Ergebnisfenster ----
   // Eigener, kleiner Aufbau statt eines Klons der grossen Tabelle: die traegt IDs, und
@@ -23365,6 +23443,32 @@
   const GHOST_MIX_TAU = 0.35;          // s
   const GHOST_LANE_DROP = 0.5;         // in der Kurve bleibt die halbe Spur
   const GHOST_LINE_STRAIGHT = 0.35;    // auf der Geraden wirkt ein Drittel der Linie
+
+  // ---- Was ein Regler ueber 100 Prozent bedeutet -------------------------------------
+  //
+  // Die zwei Zahlen darueber sind Abschwaechungen mit gutem Grund: alle auf denselben
+  // Scheitel zu schicken fuehrt sie zusammen, und Beruehrungen sind nicht zurueckzuregeln,
+  // weil das Auto keine Querlage meldet.
+  //
+  // Ab 100 Prozent ist das aber eine ausdrueckliche Bitte. Der Anteil waechst deshalb linear
+  // bis auf voll bei 200 Prozent: dort wirkt die Linie auch auf der Geraden ganz und die
+  // eigene Spur auch in der Kurve. Gemeldet war "es sah nicht aus, als fuehren sie die
+  // Ideallinie" - und das Anbremsen von aussen, also die Gerade, ist die Haelfte davon.
+  //
+  // Unter 100 Prozent aendert sich nichts: `ueber` ist dort 0, und die zwei Ausdruecke sind
+  // Zeichen fuer Zeichen die alten.
+  function ghostUeber(v) { return Math.max(0, Math.min(1, (v || 0) - 1)); }
+
+  function ghostLinieGewicht(mix) {
+    const gerade = GHOST_LINE_STRAIGHT
+                 + (1 - GHOST_LINE_STRAIGHT) * ghostUeber(ghostCfg.line);
+    return gerade + (1 - gerade) * (mix || 0);
+  }
+
+  function ghostSpurGewicht(mix) {
+    const drop = GHOST_LANE_DROP * (1 - ghostUeber(ghostCfg.lanes));
+    return 1 - drop * (mix || 0);
+  }
   const SPICE_BAND_PER_TILE = 0.022;
   const SPICE_BAND_MAX = 0.13;
   // 6. ABSTAND. Es gab keinen Baustein, der Autos auseinander haelt: Windschatten und
@@ -24513,7 +24617,11 @@
       parkCar(car, 'Bahn verlassen');
     }
     const offTrack = !!car.parked;
-    const armed = (raceState === 'racing' || raceState === 'finishing' || g.freeRun)
+    // g.auslauf: das Rennen ist gewertet, dieses Auto faehrt aber seine angefangene Runde
+    // noch zu Ende. Ohne diesen Zweig steht es in dem Moment still, in dem die Flagge
+    // faellt - und genau das war der Bericht.
+    const armed = (raceState === 'racing' || raceState === 'finishing'
+                   || g.freeRun || g.auslauf)
                   && !car.parked;
     // Abgaenge zaehlen, nicht nur melden. Ohne eine Zahl je Runde ist "die Linie hilft"
     // oder "die Linie schmeisst ihn raus" nicht entscheidbar, und dann wird der Regler nach
@@ -24729,8 +24837,8 @@
         // denselben Scheitel zu schicken waere realistisch und wuerde sie zusammenfuehren -
         // und Beruehrungen sind hier nicht zurueckzuregeln, weil keine Querlage gemeldet wird.
         const mix = g.kurveMix || 0;
-        const spurGewicht = 1 - GHOST_LANE_DROP * mix;
-        const linieGewicht = GHOST_LINE_STRAIGHT + (1 - GHOST_LINE_STRAIGHT) * mix;
+        const spurGewicht = ghostSpurGewicht(mix);
+        const linieGewicht = ghostLinieGewicht(mix);
         // UEBERKREUZBLENDE zwischen Ueberholversatz und Linie statt einer harten Umschaltung:
         // beim Einordnen faehrt der Versatz zurueck, und ein "attack ? A : B" wuerde am Ende
         // sprunghaft auf die Linie zurueckfallen.
@@ -24755,11 +24863,11 @@
         const anteilA2 = Math.min(1, Math.abs(spice.attack || 0));
         steer += (spice.attack || 0) * ghostCfg.lateral * GHOST_PASS_STEER
                + (1 - anteilA2) * ghostLineOffset(car) * ghostCfg.line * GHOST_LINE_STEER
-                 * (GHOST_LINE_STRAIGHT + (1 - GHOST_LINE_STRAIGHT) * mix2)
+                 * ghostLinieGewicht(mix2)
                + weiche2 * ghostCfg.lateral * GHOST_PASS_STEER
                + g.bias * ghostCfg.lateral * 0.25
                + ghostLane(car) * ghostCfg.lanes * GHOST_LANE_STEER
-                 * (1 - GHOST_LANE_DROP * mix2);
+                 * ghostSpurGewicht(mix2);
       }
       steer = Math.max(-1, Math.min(1, steer + weave));
     }

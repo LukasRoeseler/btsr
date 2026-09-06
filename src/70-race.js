@@ -249,6 +249,20 @@
     if (!car.race) car.race = { laps: [], lapStart: null, pending: null, seen: 0,
                                 lastActed: 0, lastCount: null };
     const r = car.race, now = Date.now();
+    // DIE AUSLAUFRUNDE endet hier, und nur hier: dieses Auto hat Start/Ziel ueberfahren,
+    // also gilt die Zielflagge fuer es. Die Runde wird noch GEWERTET - sie ist gefahren
+    // worden, und eine gefahrene Runde zu verschweigen waere die zweite Unwahrheit nach der
+    // ersten (dem Stehenbleiben mitten auf der Bahn).
+    if (raceState === 'finished' && car.ghost && car.ghost.auslauf) {
+      car.ghost.auslauf = false;
+      if (r.lapStart !== null) {
+        r.laps.push({ lap: r.laps.length + 1, ms: now - r.lapStart, off: r.offLap || 0 });
+      }
+      r.lapStart = null;
+      finishGhost(car);
+      ghostAuslaufFertig();
+      return;
+    }
     if (raceState !== 'racing' && raceState !== 'finishing') { r.lapStart = now; return; }
     // During the formation lap this crossing is the START of the race, not a lap.
     if (raceFormationLap) { formationUeberfahrt(String(car.device.id)); return; }
@@ -834,7 +848,10 @@
     if (raceState !== 'racing' && raceState !== 'countdown' && raceState !== 'finishing') return;
     if (raceCountdownTimer) { clearInterval(raceCountdownTimer); raceCountdownTimer = null; }
     setRaceLights(0);
-    finishRace();
+    // KEIN AUSLAUFEN bei einem Abbruch von Hand. Wer abbricht, will, dass es aufhoert -
+    // eine Extrarunde saehe aus, als haette der Knopf nichts getan. Dieselbe Ueberlegung,
+    // mit der die laufende Runde hier verworfen und nicht gewertet wird.
+    finishRace(false);
     showHudToast('Rennen abgebrochen');
     updateRaceActButtons();
   }
@@ -847,7 +864,16 @@
     return missed * racePitPenaltyS * 1000;
   }
 
-  function finishRace() {
+  // Wie lange ein Ghost hoechstens noch faehrt, um seine Runde zu beenden. 90 s ist
+  // grosszuegig - eine Runde auf einer Wohnzimmerbahn dauert gemessen unter 20 s -, und die
+  // Grenze ist nicht fuer den Normalfall da, sondern fuer den Ghost, der neben der Bahn
+  // liegt und nie ankommt.
+  const GHOST_AUSLAUF_MAX_MS = 90000;
+  let ghostAuslaufBis = 0;
+
+  // `auslaufen` = die Ghosts duerfen ihre angefangene Runde zu Ende fahren. Vorgabe ja;
+  // requestRaceStop() uebergibt ausdruecklich false.
+  function finishRace(auslaufen) {
     raceState = 'finished';
     // Die laufende Runde festhalten und die Uhr anhalten. Ohne das Nullsetzen von
     // raceLapStart rechnet die Anzeige weiter gegen Date.now() und die Runde waechst nach
@@ -871,7 +897,28 @@
     // Diese Stelle ist die richtige und die einzige: alle Endbedingungen laufen durch
     // finishRace() (Rundenzahl erreicht, Zeit abgelaufen und letzte Runde beendet, Stopp von
     // Hand), also wird die Sequenz von jeder ausgeloest, ohne sie einzeln zu verdrahten.
-    garage.forEach(c => { if (c.role === 'ghost') finishGhost(c); });
+    // ---- Die Zielflagge gilt JE AUTO beim Ueberfahren -------------------------------
+    //
+    // Bis v0.5.17 stand hier finishGhost() fuer jeden, und das ganze Feld blieb mitten auf
+    // der Bahn stehen, sobald der Fahrer ueber die Linie kam. Auf einer echten Bahn faehrt
+    // jeder seine angefangene Runde zu Ende.
+    //
+    // Wer schon steht oder gar nicht faehrt, laeuft nicht aus - fuer den gilt die Flagge
+    // sofort, sonst wartete das Rennen auf ein Auto, das sich nicht bewegt.
+    const willAuslaufen = auslaufen !== false;
+    ghostAuslaufBis = willAuslaufen ? now + GHOST_AUSLAUF_MAX_MS : 0;
+    garage.forEach(c => {
+      if (c.role !== 'ghost') return;
+      const faehrt = willAuslaufen && c.ghost && !c.parked && !c.ghost.finish;
+      if (faehrt) {
+        c.ghost.auslauf = true;
+        return;
+      }
+      finishGhost(c);
+    });
+    if (willAuslaufen && garage.some(c => c.role === 'ghost' && c.ghost && c.ghost.auslauf)) {
+      showHudToast(t('Ghosts fahren die Runde zu Ende'));
+    }
     const missed = Math.max(0, racePitRequired - racePitDone);
     $('race-status').textContent =
       `Beendet (${raceLapTimes.length} Runde${raceLapTimes.length === 1 ? '' : 'n'})`
@@ -896,6 +943,37 @@
       if (typeof renderSessions === 'function') renderSessions();
     }
   }
+
+  // Wenn der letzte Ghost angekommen ist, steht das Ergebnis fest - also neu zeichnen.
+  // Die Tabelle war beim Fallen der Flagge schon gemalt, und die Auslaufrunden kommen erst
+  // danach dazu; ohne diesen Aufruf fehlten sie darin.
+  function ghostAuslaufFertig() {
+    if (garage.some(c => c.role === 'ghost' && c.ghost && c.ghost.auslauf)) return;
+    ghostAuslaufBis = 0;
+    renderRaceResults();
+    renderPositionPlot();
+    showHudToast(t('Alle im Ziel'));
+  }
+
+  // Die Grenze. Ein eigener, langsamer Takt reicht: hier wird auf Sekunden gewartet und
+  // nicht auf Millisekunden.
+  setInterval(() => {
+    if (!ghostAuslaufBis || Date.now() < ghostAuslaufBis) return;
+    ghostAuslaufBis = 0;
+    let n = 0;
+    garage.forEach(c => {
+      if (c.role === 'ghost' && c.ghost && c.ghost.auslauf) {
+        c.ghost.auslauf = false;
+        finishGhost(c);
+        n++;
+      }
+    });
+    if (n) {
+      log('Auslaufrunde abgebrochen: ' + n + ' Auto(s) kamen nicht ans Ziel.', 'info');
+      renderRaceResults();
+      renderPositionPlot();
+    }
+  }, 1000);
 
   // ---- Ergebnisfenster ----
   // Eigener, kleiner Aufbau statt eines Klons der grossen Tabelle: die traegt IDs, und

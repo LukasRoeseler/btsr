@@ -2124,6 +2124,32 @@
   const GHOST_MIX_TAU = 0.35;          // s
   const GHOST_LANE_DROP = 0.5;         // in der Kurve bleibt die halbe Spur
   const GHOST_LINE_STRAIGHT = 0.35;    // auf der Geraden wirkt ein Drittel der Linie
+
+  // ---- Was ein Regler ueber 100 Prozent bedeutet -------------------------------------
+  //
+  // Die zwei Zahlen darueber sind Abschwaechungen mit gutem Grund: alle auf denselben
+  // Scheitel zu schicken fuehrt sie zusammen, und Beruehrungen sind nicht zurueckzuregeln,
+  // weil das Auto keine Querlage meldet.
+  //
+  // Ab 100 Prozent ist das aber eine ausdrueckliche Bitte. Der Anteil waechst deshalb linear
+  // bis auf voll bei 200 Prozent: dort wirkt die Linie auch auf der Geraden ganz und die
+  // eigene Spur auch in der Kurve. Gemeldet war "es sah nicht aus, als fuehren sie die
+  // Ideallinie" - und das Anbremsen von aussen, also die Gerade, ist die Haelfte davon.
+  //
+  // Unter 100 Prozent aendert sich nichts: `ueber` ist dort 0, und die zwei Ausdruecke sind
+  // Zeichen fuer Zeichen die alten.
+  function ghostUeber(v) { return Math.max(0, Math.min(1, (v || 0) - 1)); }
+
+  function ghostLinieGewicht(mix) {
+    const gerade = GHOST_LINE_STRAIGHT
+                 + (1 - GHOST_LINE_STRAIGHT) * ghostUeber(ghostCfg.line);
+    return gerade + (1 - gerade) * (mix || 0);
+  }
+
+  function ghostSpurGewicht(mix) {
+    const drop = GHOST_LANE_DROP * (1 - ghostUeber(ghostCfg.lanes));
+    return 1 - drop * (mix || 0);
+  }
   const SPICE_BAND_PER_TILE = 0.022;
   const SPICE_BAND_MAX = 0.13;
   // 6. ABSTAND. Es gab keinen Baustein, der Autos auseinander haelt: Windschatten und
@@ -3272,7 +3298,11 @@
       parkCar(car, 'Bahn verlassen');
     }
     const offTrack = !!car.parked;
-    const armed = (raceState === 'racing' || raceState === 'finishing' || g.freeRun)
+    // g.auslauf: das Rennen ist gewertet, dieses Auto faehrt aber seine angefangene Runde
+    // noch zu Ende. Ohne diesen Zweig steht es in dem Moment still, in dem die Flagge
+    // faellt - und genau das war der Bericht.
+    const armed = (raceState === 'racing' || raceState === 'finishing'
+                   || g.freeRun || g.auslauf)
                   && !car.parked;
     // Abgaenge zaehlen, nicht nur melden. Ohne eine Zahl je Runde ist "die Linie hilft"
     // oder "die Linie schmeisst ihn raus" nicht entscheidbar, und dann wird der Regler nach
@@ -3488,8 +3518,8 @@
         // denselben Scheitel zu schicken waere realistisch und wuerde sie zusammenfuehren -
         // und Beruehrungen sind hier nicht zurueckzuregeln, weil keine Querlage gemeldet wird.
         const mix = g.kurveMix || 0;
-        const spurGewicht = 1 - GHOST_LANE_DROP * mix;
-        const linieGewicht = GHOST_LINE_STRAIGHT + (1 - GHOST_LINE_STRAIGHT) * mix;
+        const spurGewicht = ghostSpurGewicht(mix);
+        const linieGewicht = ghostLinieGewicht(mix);
         // UEBERKREUZBLENDE zwischen Ueberholversatz und Linie statt einer harten Umschaltung:
         // beim Einordnen faehrt der Versatz zurueck, und ein "attack ? A : B" wuerde am Ende
         // sprunghaft auf die Linie zurueckfallen.
@@ -3514,11 +3544,11 @@
         const anteilA2 = Math.min(1, Math.abs(spice.attack || 0));
         steer += (spice.attack || 0) * ghostCfg.lateral * GHOST_PASS_STEER
                + (1 - anteilA2) * ghostLineOffset(car) * ghostCfg.line * GHOST_LINE_STEER
-                 * (GHOST_LINE_STRAIGHT + (1 - GHOST_LINE_STRAIGHT) * mix2)
+                 * ghostLinieGewicht(mix2)
                + weiche2 * ghostCfg.lateral * GHOST_PASS_STEER
                + g.bias * ghostCfg.lateral * 0.25
                + ghostLane(car) * ghostCfg.lanes * GHOST_LANE_STEER
-                 * (1 - GHOST_LANE_DROP * mix2);
+                 * ghostSpurGewicht(mix2);
       }
       steer = Math.max(-1, Math.min(1, steer + weave));
     }
