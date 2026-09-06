@@ -2551,6 +2551,134 @@
       return { jeAufrufMs: +((t1 - t0) / n).toFixed(3), punkte, kuerzel };
     },
 
+    // ---- Die Ghost-Querlage Stufe fuer Stufe --------------------------------------
+    //
+    // "Es sieht nicht aus, als fuehren sie die Ideallinie" ist mit einem MITTELWERT nicht zu
+    // beantworten: ein grosser mittlerer Lenkbetrag kann auch eine konstante Schraeglage
+    // sein. Was eine Ideallinie ausmacht, ist die FORM - aussen, Scheitel, aussen - und ob
+    // sie den Weg bis zum gesendeten Byte ueberlebt.
+    //
+    // Diese Probe zeichnet je Takt vier Groessen auf und macht damit sichtbar, WO die Form
+    // verlorengeht:
+    //
+    //     linie    der rohe Linienversatz, -1 bis 1        (was die Karte sagt)
+    //     wunsch   die Summe aller Querversaetze           (was der Ghost will)
+    //     servo    out.servoAngle nach der Physik          (was uebrigbleibt)
+    //     byte     round(servo * 127)                      (was gesendet wird)
+    //
+    // Dazwischen liegen Expo, die Tempobeschneidung (maxSteerLimit), die Ratenbegrenzung
+    // (steerRatePerS) und der Reibkreis. Jede davon kann eine Form flachdruecken, und der
+    // Unterschied zwischen `wunsch` und `servo` sagt, welche.
+    ghostLinieTrace(o) {
+      const opt = o || {};
+      const takte = opt.takte || 400;
+      const dtMs = 45;
+      if (!currentTrackTiles || currentTrackTiles.length < 3) return null;
+      const merkCfg = JSON.parse(JSON.stringify(ghostCfg));
+      const echtNow = Date.now;
+      let car = null;
+      const reihe = [];
+      try {
+        if (opt.cfg) Object.assign(ghostCfg, opt.cfg);
+        car = { device: { id: 'trace', name: 'Trace' }, role: 'ghost', colorId: 'rot',
+                tileCode: 0x02, tileAt: Date.now(), yaw: 0 };
+        let uhr = echtNow();
+        Date.now = () => uhr;
+        startGhost(car);
+        car.ghost.freeRun = true;
+        const g = car.ghost;
+        g.tileIndex = 0;
+        g.tileStart = uhr;
+        car.tileAt = uhr;
+        car.tileCount = 0;
+        g.tileMs = opt.tileMs || 700;
+        for (let k = 0; k < takte; k++) {
+          uhr += dtMs;
+          // DIE KACHEL WEITERZAEHLEN, WIE ES DIE MELDUNGEN TAETEN - und dazu gehoert
+          // car.tileAt. Ohne das steht ghostTilePhase() dauerhaft auf 1, weil es die Zeit
+          // seit der letzten Kachelmeldung misst und nicht seit g.tileStart.
+          //
+          // `echtMs` ist die WIRKLICHE Dauer dieser Kachel; sie darf sich von der
+          // geschaetzten unterscheiden, denn genau darum geht es hier: der Ghost bremst in
+          // Kurven ab, also dauern sie laenger, als der laufende Mittelwert erwartet.
+          // `kurvenFaktor` streckt die WIRKLICHE Dauer der Kurven ueber das hinaus, was der
+          // Laengenfaktor erwartet - genau das tut curveSlow am echten Auto: der Ghost gibt
+          // in einer Kurve Tempo ab, also dauert sie laenger, als ihre LAENGE vorhersagt.
+          // Mit curveSlow 0,15 sind das rund 1,18; die Haarnadel bekommt das Doppelte,
+          // also rund 1,4.
+          const istKurve = currentTrackTiles[g.tileIndex].type !== 2;
+          const kf = (istKurve && opt.kurvenFaktor) ? opt.kurvenFaktor : 1;
+          const echtMs = (opt.tileMs || 700) * kf
+            * (opt.echteLaenge === false ? 1 : ghostTileLenFactor(g.tileIndex));
+          if (uhr - g.tileStart >= echtMs) {
+            g.tileIndex = (g.tileIndex + 1) % currentTrackTiles.length;
+            g.tileStart = uhr;
+            car.tileAt = uhr;
+            car.tileCount = (car.tileCount + 1) & 0xff;
+            if (opt.lernen !== false) ghostNoteTileTime(car, echtMs);
+          }
+          const vorher = { linie: ghostLineOffset(car), phase: ghostTilePhase(car),
+                           tile: g.tileIndex, typ: currentTrackTiles[g.tileIndex].type };
+          ghostTick(car);
+          reihe.push({
+            t: k * dtMs,
+            tile: vorher.tile, typ: vorher.typ, phase: +vorher.phase.toFixed(2),
+            linie: +vorher.linie.toFixed(3),
+            wunsch: +(g.querSoll === undefined ? 0 : g.querSoll).toFixed(3),
+            servo: +((g.engine && g.engine.outputs) ? g.engine.outputs.servoAngle : 0).toFixed(3),
+          });
+        }
+      } catch (e) {
+        return { fehler: String(e && e.message || e) };
+      } finally {
+        Date.now = echtNow;
+        try { if (car) stopGhost(car); } catch (e2) { /* egal */ }
+        Object.assign(ghostCfg, merkCfg);
+      }
+      // Auswertung: je Kachel die SPANNE des gesendeten Bytes. Eine Ideallinie hat in einer
+      // Kurve eine grosse Spanne (aussen -> innen -> aussen); eine konstante Schraeglage
+      // hat null, egal wie gross ihr Betrag ist.
+      const proKachel = {};
+      for (const r of reihe) {
+        const b = Math.round(r.servo * 127);
+        const k = r.tile;
+        if (!proKachel[k]) proKachel[k] = { typ: r.typ, min: b, max: b, n: 0, sumAbs: 0 };
+        const p = proKachel[k];
+        p.min = Math.min(p.min, b); p.max = Math.max(p.max, b);
+        p.n++; p.sumAbs += Math.abs(b);
+      }
+      const kacheln = Object.keys(proKachel).map((k) => ({
+        tile: +k, typ: proKachel[k].typ,
+        spanne: proKachel[k].max - proKachel[k].min,
+        mittel: Math.round(proKachel[k].sumAbs / proKachel[k].n),
+      }));
+      // Und der VERLUST: wieviel vom Wunsch kommt am Servo an?
+      // WIEVIEL EINER KACHEL KLEBT BEI PHASE 1? ghostTilePhase() deckelt auf 1, und ab
+      // dort steht der Linienversatz still - der Ghost faehrt den Rest der Kachel mit
+      // KONSTANTER Schraeglage. Das ist die Zahl, die "stumpf ihre Spur" beziffert.
+      const geklebt = reihe.filter((r) => r.phase >= 0.995).length / Math.max(1, reihe.length);
+      const geklebtKurve = (() => {
+        const k = reihe.filter((r) => r.typ !== 2);
+        return k.length ? k.filter((r) => r.phase >= 0.995).length / k.length : null;
+      })();
+      const mitWunsch = reihe.filter((r) => Math.abs(r.wunsch) > 0.05);
+      const anteil = mitWunsch.length
+        ? mitWunsch.reduce((a, r) => a + Math.abs(r.servo) / Math.abs(r.wunsch), 0) / mitWunsch.length
+        : null;
+      return {
+        takte: reihe.length,
+        phaseGeklebt: +geklebt.toFixed(3),
+        phaseGeklebtInKurven: geklebtKurve === null ? null : +geklebtKurve.toFixed(3),
+        tileMsEnde: car.ghost ? Math.round(car.ghost.tileMs) : null,
+        linieSpanne: +(Math.max(...reihe.map(r => r.linie)) - Math.min(...reihe.map(r => r.linie))).toFixed(3),
+        wunschSpanne: +(Math.max(...reihe.map(r => r.wunsch)) - Math.min(...reihe.map(r => r.wunsch))).toFixed(3),
+        servoSpanne: +(Math.max(...reihe.map(r => r.servo)) - Math.min(...reihe.map(r => r.servo))).toFixed(3),
+        anteilServoVomWunsch: anteil === null ? null : +anteil.toFixed(3),
+        kacheln,
+        verlauf: reihe.filter((_, i) => i % 4 === 0).slice(0, 60),
+      };
+    },
+
     fanfareProbe() {
       if (typeof playRaceEndFanfare !== 'function') return null;
       return playRaceEndFanfare();

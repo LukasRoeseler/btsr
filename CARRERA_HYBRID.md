@@ -714,3 +714,56 @@ Signal, unter 6 km/h oder ohne Verbindung.
 messen" zeichnet vier Sekunden auf, was das Signal bei **gerader** Vollgasfahrt tut — also
 genau im beobachteten Fall. Schlägt es dabei nicht aus, taugt es nicht zum Gegensteuern; die
 Probe urteilt aber nicht, sie schreibt hin, was sie gemessen hat.
+
+### Fährt der Ghost die Ideallinie? Die Kette Stufe für Stufe gemessen
+
+„Es sieht nicht aus, als führen sie die Ideallinie" ist mit einem Mittelwert nicht zu
+beantworten: ein großer mittlerer Lenkbetrag kann auch eine konstante Schräglage sein. Was
+eine Ideallinie ausmacht, ist die **Form** — außen, Scheitel, außen — und ob sie den Weg bis
+zum gesendeten Byte überlebt. `OMEGA_TEST.ghostLinieTrace()` zeichnet je Takt vier Größen
+auf und macht sichtbar, wo sie verlorengeht:
+
+| | |
+|---|---|
+| `linie` | der rohe Linienversatz aus der Karte |
+| `wunsch` | die Summe aller Querversätze, die der Ghost will |
+| `servo` | `out.servoAngle` nach Expo, Tempobeschneidung, Ratenbegrenzung und Reibkreis |
+| `byte` | `round(servo × 127)` — was gesendet wird |
+
+**Die Kette verliert die Form nicht.** Über 500 Takte auf `SG2H2G2R2G2H2G2R2`:
+
+| Einstellung Linie | Kurvenspanne des Bytes | Kurvenmittel | Anteil Servo vom Wunsch |
+|---|---|---|---|
+| 70 % *(Vorgabe)* | 39 von 127 | 62 | **0,93** |
+| 100 % | **55** | 89 | 0,93 |
+| 200 % | **36** | 106 | **0,61** |
+
+**Und hier steht das Gegenteil dessen, was „stärker" verspricht.** Über 100 Prozent wird der
+Ghost schräger (Mittel 62 → 106), aber die Linie wird *flacher* (Spanne 55 → 36): 39 Prozent
+der Anforderung werden am Anschlag abgeschnitten, und abgeschnitten wird dort, wo sie am
+größten ist — **im Scheitel**. In den Haarnadeln bleibt bei 200 Prozent eine Spanne von 0 bis
+3 bei einem Mittel von 127 übrig, also konstanter Vollausschlag.
+
+**Für die Form ist 100 Prozent das Optimum, nicht 200.** Die 200 sind für Querlage da, nicht
+für Linie.
+
+Zwei weitere Befunde aus derselben Messung:
+
+- **Die Kachelphase kommt aus einer Messung plus einer Schätzung.** `car.tileAt` wird gesetzt,
+  wenn Byte 11 (der Kachelzähler) wechselt — ein echtes Ereignis. Die Dauer ist ein gleitender
+  Mittelwert über alle Kacheln, korrigiert um das geometrische Längenverhältnis. Der Ghost
+  bremst in Kurven aber ab, also dauern sie länger, als ihre Länge vorhersagt, und
+  `ghostTilePhase()` deckelt auf 1: der Rest der Kachel wird mit **konstanter** Schräglage
+  gefahren. Gemessen, Anteil der Takte am Deckel in Kurven:
+
+  | Kurve dauert länger als erwartet | 1,0× | 1,2× | 1,4× | 1,8× |
+  |---|---|---|---|---|
+  | Anteil bei Phase 1 | 5 % | 12 % | 20 % | **29 %** |
+
+  Die Amplitude bleibt dabei (Spanne 38–39 in allen vier Fällen); verloren geht der
+  **Kurvenausgang**.
+
+- **„Eigene Spuren" tut bei EINEM Ghost gar nichts**, und das ist so gebaut:
+  `ghostLane()` gibt bei weniger als zwei Ghosts null zurück — „verschiedene Linien" hat bei
+  einem Auto keine Bedeutung. Ab zwei Ghosts sind es ±1 × `GHOST_LANE_STEER` (0,16), bei
+  100 Prozent also ±20 von 127.

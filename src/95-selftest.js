@@ -2328,6 +2328,48 @@
                  + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
   });
 
+  // ---- Die Ideallinie ueberlebt den Weg bis zum Servo ----
+  //
+  // DIE ZUSICHERUNG, AUF DER DIE GANZE GHOST-LINIE STEHT, und sie ist nicht der Betrag,
+  // sondern die FORM. Zwischen dem Linienversatz aus der Karte und dem gesendeten Byte
+  // liegen Expo, die Tempobeschneidung, die Ratenbegrenzung und der Reibkreis; jede davon
+  // kann eine Form flachdruecken, ohne den Mittelwert zu senken.
+  //
+  // Gemessen wird deshalb die SPANNE des Bytes innerhalb einer Kurve. Eine Ideallinie hat
+  // dort eine grosse Spanne (aussen - innen - aussen); eine konstante Schraeglage hat null,
+  // egal wie gross ihr Betrag ist. Genau dieser Unterschied war der Bericht "sie fahren
+  // stumpf ihre Spur".
+  stAdd('Ideallinie: die Form ueberlebt bis zum Servo', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.ghostLinieTrace) {
+      return { skip: true, mass: 'ghostLinieTrace nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.ghostLinieTrace({ takte: 400, kurvenFaktor: 1.2,
+                                           cfg: { line: 1, lanes: 0.5, lateral: 0.5 } });
+    if (!r) return { skip: true, mass: 'keine Strecke geladen' };
+    if (r.fehler) return { ok: false, mass: 'Messung warf: ' + r.fehler };
+    const kurven = r.kacheln.filter((k) => k.typ !== 2);
+    if (!kurven.length) return { skip: true, mass: 'Strecke ohne Kurven' };
+    const spanne = kurven.reduce((a, k) => a + k.spanne, 0) / kurven.length;
+    const schlecht = [];
+    // 1. Die Karte liefert ueberhaupt eine Form.
+    if (!(r.linieSpanne > 0.5)) schlecht.push('Linienversatz spannt nur ' + r.linieSpanne);
+    // 2. Der Wunsch traegt sie weiter.
+    if (!(r.wunschSpanne > 0.3)) schlecht.push('Wunsch spannt nur ' + r.wunschSpanne);
+    // 3. UND DIE PHYSIK LAESST SIE DURCH. Gemessen 0,93 bei der Vorgabe; unter 0,75 wird
+    //    am Anschlag abgeschnitten, und abgeschnitten wird der Scheitel.
+    if (!(r.anteilServoVomWunsch > 0.75)) {
+      schlecht.push('nur ' + r.anteilServoVomWunsch + ' des Wunsches kommt am Servo an');
+    }
+    // 4. Und am Ende steht eine SPANNE im gesendeten Byte, nicht nur ein Betrag. Gemessen
+    //    55 bei 100 Prozent; 25 ist grosszuegig und faengt eine konstante Schraeglage.
+    if (!(spanne > 25)) schlecht.push('Kurvenspanne nur ' + Math.round(spanne) + ' von 127');
+    return { ok: schlecht.length === 0,
+             mass: 'Linie ' + r.linieSpanne + ' -> Wunsch ' + r.wunschSpanne
+                 + ' -> Servo ' + r.servoSpanne + ' (' + r.anteilServoVomWunsch + ')'
+                 + ' | Kurvenspanne ' + Math.round(spanne) + ' von 127'
+                 + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
   // ---- Controller-Vibration: ein Schalter je Ausloeser ----
   //
   // Siebzehn Aufrufstellen, sechs Arten, ein Hauptschalter. Geprueft wird die
