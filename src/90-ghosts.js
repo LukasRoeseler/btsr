@@ -1128,11 +1128,11 @@
     } catch (e) { /* kennt das Ereignis nicht */ }
   }
 
-  // `alleZeigen` ist der Notausgang: ohne Namensfilter, dafuer mit allen Geraeten in
-  // Reichweite. Er ist die Antwort auf "ich sehe mein Auto nicht" - ein Auto, dessen Name
-  // nicht in der Werbung steht, taucht im gefilterten Dialog naemlich NIE auf, und dann
-  // sucht man den Fehler bei sich.
-  async function garageConnect(alleZeigen) {
+  // HIER STAND EIN NOTAUSGANG "alle Geraete zeigen" (acceptAllDevices), und er ist auf
+  // Bitte des Nutzers wieder heraus. Der eigentliche Fund von v0.5.16 bleibt: der Filter
+  // darunter ist ODER-verknuepft und nimmt ersatzweise den Nordic-UART-Dienst, ein Auto
+  // ohne Namen in der Werbung faellt damit nicht mehr durch.
+  async function garageConnect() {
     const lage = await bluetoothLageGenau();
     if (lage !== 'ok') {
       garageLageZeigen();
@@ -1144,10 +1144,10 @@
       // Web Bluetooth zeigt ein Geraet, wenn es IRGENDEINEN der Filter erfuellt - ein Auto,
       // das seinen Namen nur in der Scan-Antwort fuehrt und nicht in der Werbung, faellt
       // damit nicht mehr durch.
-      const dev = await navigator.bluetooth.requestDevice(alleZeigen
-        ? { acceptAllDevices: true, optionalServices: [NUS_SERVICE] }
-        : { filters: [{ namePrefix: 'HYBRID' }, { services: [NUS_SERVICE] }],
-            optionalServices: [NUS_SERVICE] });
+      const dev = await navigator.bluetooth.requestDevice({
+        filters: [{ namePrefix: 'HYBRID' }, { services: [NUS_SERVICE] }],
+        optionalServices: [NUS_SERVICE],
+      });
       if (garage.some(c => c.device.id === dev.id)) {
         log('Dieses Auto ist bereits verbunden.', 'info');
         return;
@@ -1265,8 +1265,7 @@
     removeCar(car);
   }
 
-  $('gar-connect').onclick = () => garageConnect(false);
-  if ($('gar-connect-all')) $('gar-connect-all').onclick = () => garageConnect(true);
+  $('gar-connect').onclick = () => garageConnect();
   $('gar-disconnect-all').onclick = () => { [...garage].forEach(disconnectCar); };
   renderGarage();
 

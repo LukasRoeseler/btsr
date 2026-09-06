@@ -1802,6 +1802,14 @@
     if (!window.OMEGA_TEST || !OMEGA_TEST.cockpitPassung) {
       return { skip: true, mass: 'cockpitPassung nicht vorhanden' };
     }
+    // NICHT PRUEFBAR OHNE FENSTER. Ein verborgener Browser-Bereich meldet innerWidth = 0,
+    // und daran haengen die Medienabfragen des Cockpits: bei Breite 0 greift
+    // @media (max-width: 560px), der Kachelstreifen geht auf vier Spalten, und seine Kacheln
+    // werden ueber ihr Seitenverhaeltnis mehr als doppelt so hoch (gemessen 619 statt 275 px).
+    // Der Test meldete dann einen Ueberstand, den es auf keinem Geraet gibt.
+    if (!(window.innerWidth > 0) || !(window.innerHeight > 0)) {
+      return { skip: true, mass: 'Fenster ist 0 x 0 - im verborgenen Bereich nicht messbar' };
+    }
     // Der Reiter muss offen sein, sonst hat das Cockpit die Hoehe 0.
     const btn = document.querySelector('[data-tab="race"]');
     if (!btn) return { ok: false, mass: 'Cockpit-Reiter fehlt' };
@@ -1845,6 +1853,14 @@
   stAdd('Cockpit passt im Vollbild, quer wie gedreht', () => {
     if (!window.OMEGA_TEST || !OMEGA_TEST.cockpitPassung) {
       return { skip: true, mass: 'cockpitPassung nicht vorhanden' };
+    }
+    // NICHT PRUEFBAR OHNE FENSTER. Ein verborgener Browser-Bereich meldet innerWidth = 0,
+    // und daran haengen die Medienabfragen des Cockpits: bei Breite 0 greift
+    // @media (max-width: 560px), der Kachelstreifen geht auf vier Spalten, und seine Kacheln
+    // werden ueber ihr Seitenverhaeltnis mehr als doppelt so hoch (gemessen 619 statt 275 px).
+    // Der Test meldete dann einen Ueberstand, den es auf keinem Geraet gibt.
+    if (!(window.innerWidth > 0) || !(window.innerHeight > 0)) {
+      return { skip: true, mass: 'Fenster ist 0 x 0 - im verborgenen Bereich nicht messbar' };
     }
     const btn = document.querySelector('[data-tab="race"]');
     if (!btn) return { ok: false, mass: 'Cockpit-Reiter fehlt' };
@@ -3737,7 +3753,17 @@
   // Zwei Pads im Stummel, und das ist der Punkt: Windows zeigt denselben Controller oft
   // zweimal, und padRumble nahm den ERSTEN mit einem Ruettler - das kann der rohe Zwilling
   // ohne Zuordnung sein. Geprueft wird, dass der Ruettler des ZUGEORDNETEN Pads laeuft.
-  stAdd('Controller-Vibration erreicht den richtigen Pad', () => {
+  // BIS v0.5.17 HIESS DIESE PRUEFUNG "erreicht den richtigen Pad", und sie verlangte, dass
+  // genau der Zwilling mit mapping === 'standard' geruettelt wird. Die Zusicherung ist
+  // umgedreht worden, und das ist der Grund:
+  //
+  // Fuer die EINGABE muss man sich fuer eine Quelle entscheiden - zwei Pads, die beide Gas
+  // geben, waeren ein Fehler. Fuers RUETTELN ist dieselbe Wahl eine Wette: welcher der
+  // beiden von Windows gemeldeten Zwillinge den Motor wirklich bedient, steht nirgends, und
+  // ging die Wette daneben, passierte gar nichts - still.
+  //
+  // Zwei Aufrufe auf dasselbe Geraet sind harmlos, ein stiller Fehlgriff nicht.
+  stAdd('Controller-Vibration erreicht JEDEN Pad mit Ruettler', () => {
     if (typeof padRumble !== 'function') return { skip: true, mass: 'padRumble nicht da' };
     const echt = navigator.getGamepads;
     const sw = $('setting-vibration');
@@ -3750,19 +3776,27 @@
     });
     try {
       // Der ROHE zuerst in der Liste - so wie Windows es liefert, wenn es schiefgeht.
-      navigator.getGamepads = () => [mk('', 'roh'), mk('standard', 'zugeordnet')];
+      // Drei Eintraege: die zwei Zwillinge und ein Pad OHNE Ruettler. Der dritte ist die
+      // Gegenprobe - er darf nicht in der Liste der Getroffenen auftauchen.
+      const ohne = { mapping: 'standard', id: 'stumm', connected: true,
+                     axes: [0, 0, 0, 0], buttons: [] };
+      navigator.getGamepads = () => [mk('', 'roh'), mk('standard', 'zugeordnet'), ohne];
       if (sw && !sw.checked) { sw.checked = true; sw.dispatchEvent(new Event('change', { bubbles: true })); }
       padRumble(0.6, 0.3, 90);
-      const anGetroffen = rufe.length === 1 && rufe[0].name === 'zugeordnet'
-                          && rufe[0].art === 'dual-rumble';
+      // BEIDE, und beide mit 'dual-rumble'. Ein Pad OHNE Ruettler steht mit in der Liste und
+      // darf nicht mitgezaehlt werden - sonst waere "alle" nur eine Schleife und keine
+      // Auswahl.
+      const namen = rufe.map(r => r.name).sort().join(',');
+      const anGetroffen = namen === 'roh,zugeordnet'
+                          && rufe.every(r => r.art === 'dual-rumble');
       // Und aus muss aus sein.
       rufe.length = 0;
       if (sw) { sw.checked = false; sw.dispatchEvent(new Event('change', { bubbles: true })); }
       padRumble(0.6, 0.3, 90);
       const ausStill = rufe.length === 0;
       return { ok: anGetroffen && ausStill,
-               mass: (anGetroffen ? 'an: zugeordneter Pad geruettelt'
-                                  : 'an: FALSCH, ' + JSON.stringify(rufe.map(r => r.name)))
+               mass: (anGetroffen ? 'an: beide Pads geruettelt'
+                                  : 'an: FALSCH, ' + JSON.stringify(namen))
                    + ' | ' + (ausStill ? 'aus: still' : 'aus: RUETTELT TROTZDEM') };
     } finally {
       navigator.getGamepads = echt;

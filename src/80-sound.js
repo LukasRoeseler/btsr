@@ -88,11 +88,20 @@
     // gerechnet, siehe audio/CREDITS.md - und neu ein Formel 1 nach dem Reglement 2026.
     // Die zwei Aufnahmen sind mit heraus; damit ist ALLES hier synthetisch, und der
     // Unterschied, den CREDITS.md aufmacht, betrifft nur noch die Umgebungsgeraeusche.
-    'amggt3', 'c6r', 'z06gt3r', 'vantagegt3', 'm4gt3', 'f296gt3', 'huracan', 'p992gt3r',
-    'mustang', 'f1_2026',
+    // DIESELBE REIHENFOLGE WIE IM MENUE. Fuer die Funktion ist sie belanglos - diese Liste
+    // ist nur eine Mitgliedschaftspruefung -, aber zwei Listen derselben Sache in
+    // unterschiedlicher Ordnung sind die naechste Verwechslung.
+    'p992gt3r', 'm4gt3', 'mustang', 'f296gt3',
+    'amggt3', 'c6r', 'z06gt3r', 'vantagegt3', 'huracan', 'f1_2026',
     // Vier historische Rennwagen, dazugekommen in v0.4.54 und als WIP gekennzeichnet: nach
-    // Gehoer geprueft ist keiner von ihnen. Damit sind es vierzehn Motoren und 56 Schleifen.
+    // Gehoer geprueft ist keiner von ihnen.
     'gt40', 'lolat70', 'f330p4', 'mc12',
+    // Zwei Strassen- und Rallyeklassiker, dazugekommen in v0.5.18, ebenfalls WIP und
+    // ebenfalls nicht nach Gehoer geprueft. Damit sind es sechzehn Motoren und 85 Schleifen -
+    // die zwei neuen haben SIEBEN Baender statt fuenf, weil zwischen ihrem Leerlauf und
+    // ihrem Mittelband mehr als der Faktor 2,2 liegt und band_ladder() dann Zwischenstufen
+    // einzieht.
+    'countach', 'impreza99',
   ];
   // KEINE FESTE LISTE MEHR. Bis v0.4.55 stand hier ['idle','mid','high'], und genau diese
   // Liste war die Annahme, die den Ton kaputt gemacht hat: sie kannte drei Namen, also konnte

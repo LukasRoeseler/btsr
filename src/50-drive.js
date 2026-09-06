@@ -382,6 +382,42 @@
   rumbleOn = $('setting-vibration').checked;
   $('setting-vibration').addEventListener('change', (e) => { rumbleOn = e.target.checked; });
 
+  // DER PRUEFKNOPF. Er ist die Antwort auf "Vibration geht nicht", und er antwortet mit
+  // einer Messung statt mit einer Vermutung: er loest einen Stoss aus und schreibt daneben,
+  // was dabei vorgefunden wurde.
+  //
+  // Warum das noetig ist: zwischen "der Nutzer spuert nichts" und "der Code hat nichts
+  // getan" liegen vier Moeglichkeiten, und sie sehen von aussen alle gleich aus - kein
+  // Controller, ein Controller ohne Ruettler, der falsche von zwei gemeldeten Zwillingen,
+  // oder ein abgeschalteter Hauptschalter. Ohne diese Zeile raet man zwischen ihnen.
+  if ($('vib-test')) {
+    $('vib-test').addEventListener('click', () => {
+      const out = $('vib-test-out');
+      const lage = vibrationLage();
+      // AUSDRUECKLICH AN padRumble VORBEI, mit einer Art, die es nicht gibt: der Test soll
+      // den WEG pruefen und nicht die Schalter. Wer den Hauptschalter aus hat, soll das als
+      // Satz lesen und nicht als Schweigen.
+      const stoss = rumbleOn ? ruettle({ duration: 260, startDelay: 0,
+                                         strongMagnitude: 0.6, weakMagnitude: 0.4 }) : 0;
+      const teile = [];
+      if (!lage.pads.length) {
+        teile.push('Kein Controller gemeldet. Eine Taste dr\u00fccken \u2013 der Browser '
+                   + 'zeigt einen Controller erst, wenn er einmal benutzt wurde.');
+      } else {
+        for (const p of lage.pads) {
+          teile.push(p.name + ' \u00b7 ' + p.mapping + ' \u00b7 '
+                     + (p.ruettler ? 'R\u00fcttler: ' + (p.arten.length ? p.arten.join(', ')
+                                                                        : 'ohne Angabe')
+                                   : 'kein R\u00fcttler'));
+        }
+      }
+      if (!lage.hauptschalter) teile.push('Hauptschalter steht AUS \u2013 nichts gesendet.');
+      else teile.push('Stoss an ' + stoss + ' von ' + lage.pads.length + ' gesendet.');
+      out.textContent = teile.join(' | ');
+      log('R\u00fcttelprobe: ' + teile.join(' | '), 'info');
+    });
+  }
+
   // Ein Kaestchen je Ausloeser. Dieselbe Bauform wie oben: AUS DEM MARKUP lesen und danach
   // auf 'change' hoeren - der fehlende Anfangsabgleich hat hier schon einmal einen toten
   // Schalter ergeben, und mit sechs Kaestchen waeren es sechs.
@@ -395,6 +431,37 @@
     RUMBLE_ARTEN[art] = el.checked;
     el.addEventListener('change', (e) => { RUMBLE_ARTEN[art] = e.target.checked; });
   });
+
+  // Die Trigger-Vibration, dieselbe Bauform: AUS DEM MARKUP lesen, dann auf 'change'.
+  if ($('vib-trigger')) {
+    triggerRumbleOn = $('vib-trigger').checked;
+    $('vib-trigger').addEventListener('change', (e) => { triggerRumbleOn = e.target.checked; });
+  }
+
+  // ---- Was kann der angeschlossene Controller wirklich? -------------------------------
+  //
+  // AUSGELESEN UND NICHT ANGENOMMEN. `vibrationActuator.effects` ist die Liste der
+  // Effektarten, die dieser Pad annimmt. Ohne diese Zeile ist "die Trigger tun nichts"
+  // nicht von "die Option ist kaputt" zu unterscheiden - und der haeufigste Fall ist, dass
+  // der Pad die Art schlicht nicht kennt.
+  //
+  // Sie zieht bei jedem An- und Abstecken nach, denn vorher gibt es nichts auszulesen: der
+  // Browser meldet einen Controller erst, wenn er einmal benutzt wurde.
+  function triggerLageZeigen() {
+    const el = $('vib-trigger-lage');
+    if (!el) return;
+    const lage = vibrationLage();
+    if (!lage.pads.length) { el.textContent = 'noch kein Controller gemeldet'; return; }
+    el.textContent = lage.pads.map((p) => {
+      if (!p.ruettler) return p.name + ': kein R\u00fcttler';
+      const kann = p.arten.indexOf('trigger-rumble') >= 0;
+      return p.name + ': ' + (kann ? 'Trigger m\u00f6glich'
+                                   : 'keine Trigger (' + (p.arten.join(', ') || 'ohne Angabe') + ')');
+    }).join(' | ');
+  }
+  triggerLageZeigen();
+  window.addEventListener('gamepadconnected', triggerLageZeigen);
+  window.addEventListener('gamepaddisconnected', triggerLageZeigen);
 
   // GASKENNLINIE und ANFAHRSCHUB. Beide lesen ihren Anfangswert AUS DEM MARKUP und
   // haengen sich danach an 'input' - dasselbe Muster wie bei setting-vibration, wo der

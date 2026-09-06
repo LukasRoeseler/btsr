@@ -141,9 +141,37 @@
   // Same two guards as the dashboard: a code must be seen twice before it is believed, and
   // an immediate repeat of start/finish is ignored. Without them a stuttering counter
   // produces phantom laps, and here it would corrupt the results table of every car.
-  // The formation lap ends the moment ANY car crosses start/finish. Called from both lap
-  // detectors (the player's dashboard and the per-car one) so it does not matter who gets
-  // there first — including a ghost, which is the usual case.
+  // ---- Wieviele Ueberfahrten die Einfuehrungsrunde braucht ---------------------------
+  //
+  // ZWEI, auf Wunsch - und es ist nicht nur eine Zahl. Bei EINER Ueberfahrt endete die
+  // Einfuehrungsrunde, sobald irgendein Auto den Zielstreifen meldete, und das kann der
+  // Moment des Gruen selbst sein: ein Auto, das auf oder kurz vor dem Streifen steht, setzt
+  // die Start/Ziel-Sperre sofort. Die Einfuehrungsrunde war dann vorbei, bevor sie
+  // angefangen hatte - "fliegender Start klappt nicht".
+  //
+  // Zwischen der ersten und der zweiten Ueberfahrt EINES Autos liegt dagegen immer eine
+  // volle Runde, egal wo es gestanden hat. Die Regel braucht dafuer weder eine
+  // Positionsbestimmung noch die Aufstellung; sie folgt aus der Bahn.
+  const FORMATION_UEBERFAHRTEN = 2;
+
+  // Je Auto gezaehlt, und "der Erste" ist deshalb kein eigener Begriff: wer als Erster bei
+  // zwei ankommt, IST der Erste. Eine Rangliste waere ein zweiter Ort fuer dieselbe Aussage.
+  // Der Schluessel ist die Geraete-id, fuer das eigene Auto der feste String 'spieler'.
+  let formationZaehler = new Map();
+
+  function formationUeberfahrt(schluessel) {
+    if (!raceFormationLap) return;
+    const n = (formationZaehler.get(schluessel) || 0) + 1;
+    formationZaehler.set(schluessel, n);
+    if (n < FORMATION_UEBERFAHRTEN) {
+      // Ein Zwischenstand, kein Ereignis: die Meldung sagt, dass es noch eine Runde ist,
+      // sonst haelt man die stille Vorbeifahrt fuer einen Fehler.
+      showHudToast(t('Einführungsrunde: noch eine Runde'));
+      return;
+    }
+    endFormationLap();
+  }
+
   function endFormationLap() {
     if (!raceFormationLap) return;
     raceFormationLap = false;
@@ -223,7 +251,7 @@
     const r = car.race, now = Date.now();
     if (raceState !== 'racing' && raceState !== 'finishing') { r.lapStart = now; return; }
     // During the formation lap this crossing is the START of the race, not a lap.
-    if (raceFormationLap) { endFormationLap(); return; }
+    if (raceFormationLap) { formationUeberfahrt(String(car.device.id)); return; }
     const warFinishing = raceState === 'finishing';
     if (r.lapStart !== null) {
       const ms = now - r.lapStart, offs = r.offLap || 0;
@@ -766,6 +794,9 @@
     // A flying start goes to the formation lap first: the cars roll at pit-lane speed
     // and no laps count until the field crosses the line.
     raceFormationLap = raceFlying;
+    // FRISCH ZAEHLEN. Ohne das traegt ein zweites Rennen die Ueberfahrten des ersten mit
+    // sich, und dann ist die Einfuehrungsrunde beim naechsten Start sofort vorbei.
+    formationZaehler = new Map();
     raceState = 'racing';
     raceLapStart = Date.now();
     launchGhosts();   // green means green for everyone
@@ -1666,7 +1697,7 @@
 
     // Race mode: only count laps while a race is armed. "finishing" means RB/R1 was
     // pressed already — this crossing completes the last lap, then the race ends.
-    if (raceFormationLap) { endFormationLap(); return true; }
+    if (raceFormationLap) { formationUeberfahrt('spieler'); return true; }
     if ((raceState === 'racing' || raceState === 'finishing') && raceLapStart !== null) {
       const wasFinishing = raceState === 'finishing';
       const rundeMs = now - raceLapStart;
@@ -2631,6 +2662,12 @@
     anwenden();
   }
 
+  // NACH DEM ABSEITS NOCH EINEN MOMENT TAUB. Im Augenblick des Aufsetzens liest der Sensor
+  // wieder, aber die Hand ist noch am Auto - der Ruck beim Loslassen waere sonst genau der
+  // Crash, den man sich beim Zurueckstellen einhandelt.
+  const OFFTRACK_GNADE_MS = 1200;
+  let abseitsBis = 0;
+
   function detectCrash(bytes) {
     if (!crashDetectionEnabled) return;
     const v1 = s8signed(bytes[1]), v3 = s8signed(bytes[3]);
@@ -2639,6 +2676,31 @@
     crashRollingAvg1 += (v1 - crashRollingAvg1) * CRASH_ROLLING_ALPHA;
     crashRollingAvg3 += (v3 - crashRollingAvg3) * CRASH_ROLLING_ALPHA;
     const now = Date.now();
+
+    // ---- Ein Auto neben der Bahn wird AUFGEHOBEN, und das ist kein Crash ---------------
+    //
+    // GEMELDET: "wenn das Auto einmal von der Strecke gekommen ist, schuettele ich es, dann
+    // faehrt es ganz kurz und dann blinkt es wieder."
+    //
+    // NACHGERECHNET: ein geschutteltes Auto liefert auf den Bytes 1 und 3 genau die
+    // Abweichung, auf die diese Funktion wartet - und zwar dauernd. Die Sperrzeit laesst
+    // einen Crash je Sekunde durch, und jeder nimmt 10 % Schaden und 70 % Tempo. Nach fuenf
+    // Sekunden Zurechtruecken steht der Schaden bei 50 %, das ist LIGHT_DEAD_DAMAGE, und ab
+    // da maskiert buildCommandPacket() das Licht ueber lampFlicker heraus. Von aussen ist
+    // das ein Blinken, und zwischen zwei Crashs faehrt das Auto genau "ganz kurz".
+    //
+    // Die Schwelle heraufzusetzen waere dieselbe Falle einen Schritt weiter: ein Aufprall
+    // auf der Bahn soll weiter zaehlen. Was hier fehlt, ist der Unterschied zwischen einer
+    // Kollision und einer Hand.
+    if (typeof abseitsJetzt === 'function' && abseitsJetzt()) {
+      abseitsBis = now + OFFTRACK_GNADE_MS;
+      // Das gleitende Mittel laeuft weiter (siehe oben), es kommt also nach dem Aufsetzen
+      // nicht aus einem kalten Zustand zurueck - sonst waere die erste echte Beruehrung
+      // danach unsichtbar.
+      return;
+    }
+    if (now < abseitsBis) return;
+
     if (dev > crashThreshold && now - lastCrashTime > CRASH_REFRACTORY_MS) {
       lastCrashTime = now;
       lapEventAkku.crash += 1;

@@ -1859,22 +1859,14 @@
     }
   }
 
-  // Real CONTROLLER rumble via the Gamepad API, ONLY. This used to also fire
-  // navigator.vibrate() — the PHONE's own vibration motor — on every call, so a session
-  // played on a phone buzzed the phone itself on every shift, crash and ABS pulse even
-  // though nothing was asked to vibrate but the gamepad. Removed outright, along with
-  // rumbleHaptic(), the older phone-only helper it had already fully replaced and which
-  // had no remaining callers.
-  // Standardmaessig AUS. Ein Controller, der bei jedem Gangwechsel brummt, ohne dass
-  // jemand danach gefragt hat, ist die Art Voreinstellung, die man einmal sucht und dann
-  // nicht findet - und der Schalter sass bisher nirgends.
+  // DER STARTWERT GILT NUR, BIS DAS DOKUMENT DA IST. 50-drive.js liest ihn beim Aufbau aus
+  // dem Kaestchen; was hier steht, entscheidet also nur ueber die ersten Millisekunden.
   //
-  // Die Abfrage steht hier und nicht an den 18 Aufrufstellen: eine Stelle kann nicht
-  // vergessen werden, achtzehn schon.
-  // Der Startwert steht hier UND im Markup. Damit sie nicht auseinanderlaufen koennen,
-  // liest 50-drive.js ihn beim Aufbau aus dem Kaestchen - dieser Wert gilt also nur, bis das
-  // Dokument da ist. Er ist trotzdem auf den Markup-Wert gesetzt, damit die zwei Orte auch
-  // beim Lesen dasselbe sagen.
+  // Er steht trotzdem auf dem Markup-Wert, und seit v0.5.18 stimmt das auch: bis dahin
+  // behauptete diese Zeile "an", waehrend das Kaestchen kein checked trug. Gemessen kam
+  // rumbleOn = false heraus, padRumble() stieg in seiner ersten Zeile aus, und die in
+  // v0.5.15 bestellten Vorgaben je Ausloeser kamen nie zum Tragen. Genau das war
+  // "Vibration ging bei 5.15 und 5.16 nicht".
   let rumbleOn = true;
 
   // ---- Ein Schalter je Ausloeser ---------------------------------------------------
@@ -1890,6 +1882,17 @@
   const RUMBLE_ARTEN = { schalt: true, abs: true, crash: true,
                          abseits: false, box: true, meldung: false };
 
+  // ---- Trigger-Vibration, und WELCHER Trigger zu welcher Art gehoert -----------------
+  //
+  // Die Zuordnung ist die Aussage: das ABS regelt die BREMSE, also brummt der linke
+  // Trigger; geschaltet wird mit der rechten Hand, also der rechte. Eine Tabelle und nicht
+  // zwei Sonderfaelle an zwei Aufrufstellen - dieselbe Ueberlegung wie bei RUMBLE_ARTEN.
+  //
+  // Nur diese zwei Arten. Ein Aufprall auf einem Trigger waere ein Stoss am falschen Ort,
+  // und ein Dauerbrummen im Gelaende macht die Bremse schwergaengig.
+  const TRIGGER_ARTEN = { abs: [0.30, 0], schalt: [0, 0.45] };
+  let triggerRumbleOn = true;
+
   // Der Rueckgabewert sagt, ob die Schalter den Stoss DURCHGELASSEN haben - nicht, ob ein
   // Controller ihn ausgefuehrt hat. Damit ist die Schalterlogik ohne Hardware pruefbar, und
   // genau die ist bei siebzehn Aufrufstellen die Stelle, an der man sich vertut.
@@ -1899,26 +1902,102 @@
     // Etikett vergisst, bekommt ein Brummen und merkt es; ein stilles Verschlucken waere
     // ein Feature, das niemand vermisst, bis es fehlt.
     if (art && RUMBLE_ARTEN[art] === false) return false;
+    ruettle({
+      duration: ms, startDelay: 0,
+      strongMagnitude: Math.max(0, Math.min(1, strong)),
+      weakMagnitude: Math.max(0, Math.min(1, weak)),
+    });
+    // EIN ZWEITER WEG, KEIN ZWEITER AUFRUF. Die achtzehn Aufrufstellen bleiben unberuehrt;
+    // ob eine Art auch die Trigger bewegt, steht in TRIGGER_ARTEN und nicht bei ihnen.
+    if (triggerRumbleOn && art && TRIGGER_ARTEN[art]) {
+      const [li, re] = TRIGGER_ARTEN[art];
+      triggerRuettle(li, re, ms);
+    }
+    return true;
+  }
+
+  // ---- Der Trigger-Effekt, und warum er still bleiben darf ---------------------------
+  //
+  // 'trigger-rumble' ist eine ANDERE Effektart als 'dual-rumble', und nicht jeder Pad kann
+  // sie. Chrome stellt sie vor allem fuer Xbox-Pads bereit; die adaptiven Trigger eines
+  // DualSense sind ueber die Gamepad-API ueberhaupt nicht erreichbar.
+  //
+  // Deshalb wird GEFRAGT und nicht versucht: `vibrationActuator.effects` ist die Liste der
+  // Arten, die dieser Pad annimmt (nachgesehen in Chromium 148 - `canPlayEffectType()` gibt
+  // es dort nicht, das waere der naechste Griff ins Leere gewesen). Steht die Art nicht
+  // darin, passiert nichts.
+  //
+  // UND AUSDRUECKLICH KEIN RUECKFALL auf 'dual-rumble': das wuerde vortaeuschen, die Trigger
+  // haetten reagiert. Der Nutzer soll in den Optionen lesen koennen, dass sein Pad es nicht
+  // kann - und nicht ein Brummen in den Griffen dafuer halten.
+  function triggerRuettle(links, rechts, ms) {
+    let erreicht = 0;
     try {
       const pads = navigator.getGamepads ? navigator.getGamepads() : [];
-      // DENSELBEN PAD NEHMEN WIE DIE EINGABE. Windows zeigt denselben Controller oft zweimal
-      // (ein DualSense ueber Bluetooth erscheint als zugeordnetes UND als rohes HID-Geraet),
-      // und pollGamepad() bevorzugt darum ausdruecklich mapping === 'standard'. Hier wurde
-      // stattdessen der erste Pad mit einem Ruettler genommen - das kann der rohe Zwilling
-      // sein, an dem nichts haengt. Zwei verschiedene Auswahlregeln fuer dasselbe Geraet
-      // sind eine Falle, und sie kostet genau das Ruetteln.
-      const liste = Array.from(pads).filter(p => p);
-      const bevorzugt = liste.find(p => p.mapping === 'standard') || liste[0];
-      for (const p of (bevorzugt ? [bevorzugt, ...liste.filter(x => x !== bevorzugt)] : [])) {
-        if (p && p.vibrationActuator && typeof p.vibrationActuator.playEffect === 'function') {
-          p.vibrationActuator.playEffect('dual-rumble', {
-            duration: ms, startDelay: 0,
-            strongMagnitude: Math.max(0, Math.min(1, strong)),
-            weakMagnitude: Math.max(0, Math.min(1, weak)),
-          }).catch(() => {}); // some browsers reject while the pad is busy; harmless
-          break;
-        }
+      for (const p of Array.from(pads)) {
+        const akt = p && p.vibrationActuator;
+        if (!akt || typeof akt.playEffect !== 'function') continue;
+        if (!Array.isArray(akt.effects) || akt.effects.indexOf('trigger-rumble') < 0) continue;
+        erreicht++;
+        akt.playEffect('trigger-rumble', {
+          duration: ms, startDelay: 0,
+          // Die Griffmotoren bleiben hier auf null: der Stoss in den Griffen kommt schon
+          // aus ruettle(). Beides doppelt zu senden waere doppelte Staerke.
+          strongMagnitude: 0, weakMagnitude: 0,
+          leftTrigger: Math.max(0, Math.min(1, links)),
+          rightTrigger: Math.max(0, Math.min(1, rechts)),
+        }).catch(() => {});
       }
-    } catch { /* pad vanished mid-call — nothing to do */ }
-    return true;
+    } catch (e) { /* Pad mitten im Aufruf verschwunden */ }
+    return erreicht;
+  }
+
+  // ---- Der eigentliche Stoss, und er geht an ALLE Pads mit Ruettler ------------------
+  //
+  // BIS v0.5.17 BRACH DIE SCHLEIFE beim ersten Pad ab, der einen Ruettler hatte, und der
+  // bevorzugte war der mit mapping === 'standard' - dieselbe Regel wie in pollGamepad().
+  // Fuer die EINGABE ist das richtig: dort muss man sich fuer eine Quelle entscheiden.
+  // Fuers Ruetteln ist es eine Wette. Windows meldet denselben DualSense ueber Bluetooth
+  // zweimal, und welcher der beiden Zwillinge den Motor wirklich bedient, steht nirgends.
+  // Traf die Wette daneben, passierte gar nichts, und zwar still.
+  //
+  // Also alle. Zwei Aufrufe auf dasselbe Geraet sind harmlos - der zweite ueberschreibt den
+  // ersten -, ein stiller Fehlgriff ist es nicht.
+  function ruettle(effekt) {
+    let erreicht = 0;
+    try {
+      const pads = navigator.getGamepads ? navigator.getGamepads() : [];
+      for (const p of Array.from(pads)) {
+        if (!p || !p.vibrationActuator) continue;
+        if (typeof p.vibrationActuator.playEffect !== 'function') continue;
+        erreicht++;
+        p.vibrationActuator.playEffect('dual-rumble', effekt)
+          .catch(() => {}); // manche Browser lehnen ab, solange der Pad beschaeftigt ist
+      }
+    } catch (e) { /* Pad mitten im Aufruf verschwunden - dann eben nicht */ }
+    return erreicht;
+  }
+
+  // ---- Was ist ueberhaupt da? --------------------------------------------------------
+  //
+  // Die Antwort auf "Vibration geht nicht" ist eine MESSUNG und keine Vermutung. Diese
+  // Funktion loest einen Stoss aus und gibt zurueck, was sie dabei vorgefunden hat; der
+  // Knopf in den Optionen schreibt es hin. Dieselbe Bauform wie bluetoothLageGenau() in
+  // der Garage, und aus demselben Grund: der Nutzer soll nicht raten muessen, an welchem
+  // Ende er suchen soll.
+  function vibrationLage() {
+    const roh = navigator.getGamepads ? Array.from(navigator.getGamepads()) : [];
+    const pads = roh.filter(p => p);
+    const zeilen = pads.map((p) => {
+      const akt = p.vibrationActuator;
+      const arten = akt && Array.isArray(akt.effects) ? akt.effects.slice()
+                  : (akt && akt.type ? [akt.type] : []);
+      return {
+        name: String(p.id || '').slice(0, 40),
+        mapping: p.mapping || '(keine Zuordnung)',
+        ruettler: !!(akt && typeof akt.playEffect === 'function'),
+        arten,
+      };
+    });
+    return { hauptschalter: rumbleOn, pads: zeilen };
   }

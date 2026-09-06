@@ -591,3 +591,33 @@ Manche Details lassen sich nur aus dem beobachteten Verhalten ableiten, nicht mi
 - die genaue Bedeutung aller Bytes im Bluetooth-Protokoll
 
 Diese Lücken ändern nichts am Grundprinzip: Ein Sensor liest die Strecke, ein Funkchip verbindet Auto und Handy, und die eigentliche Fahrphysik läuft im Auto selbst.
+
+### Wieviel Querversatz vertraegt die Bahn? Gemessen — und die Antwort ist: keine Grenze
+
+Gefragt war, wie hoch der Lenkwert werden darf, bevor der Streckensensor abreisst — also
+welche Breite fuer Ideallinie und Ueberholmanoever zu haben ist. `tools/querlage_messen.py`
+legt Schreibbefehle und Meldungen aller Mitschnitte in eine Zeitleiste und haelt Byte 7 (den
+angeforderten Lenkwinkel) gegen Byte 12 (den gelesenen Streckencode).
+
+Ueber **67 830 Meldungen mit gelesenem Code**:
+
+| | Median | P90 | P99 | max |
+|---|---|---|---|---|
+| anhaltender Lenkbetrag MIT Code | 0 | **127** | 127 | 127 |
+| anhaltender Lenkbetrag OHNE Code | 127 | 127 | 127 | 127 (n = 147) |
+| anhaltende Spitze vor einem Abriss | 45 | 77 | 77 | 77 (n = **4**) |
+
+**Das Auto liest die Schiene bei vollem Anschlag.** In 68 000 Meldungen gibt es vier
+Abrisse, und ihre Vorgeschichte liegt bei 45 bis 77 — also *unter* dem Wert, der die
+uebrigen 99,8 Prozent der Zeit ohne jeden Abriss gefahren wurde. Lenkbetrag und Abriss sind
+unkorreliert; die vier Abrisse haben eine andere Ursache.
+
+Zwei Folgerungen, und beide aendern etwas:
+
+- **Es gibt keine Querlage-Grenze, die man einhalten muesste.** Der Rueckfallwert 1,0 in
+  `learnSteerCap()` ist damit nicht vorsichtig, sondern richtig, und ein Ghost, der stumpf
+  seine Spur faehrt, tut das nicht wegen eines Deckels.
+- **Gemessen wird bang-bang.** Der Median ist 0 und das 90er-Perzentil 127: die Original-App
+  sendet fast nur die zwei Endwerte. Das ist auch der Grund, warum hier zeitgewichtet
+  gemittelt wird und nicht ueber die Pakete — ein Paketmittel haette an der Senderate
+  gehangen statt daran, wie schraeg das Auto wirklich stand.
