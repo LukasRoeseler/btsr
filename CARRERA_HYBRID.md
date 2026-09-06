@@ -648,3 +648,48 @@ Scheitel zu schicken führt sie zusammen, und Berührungen sind ohne Rückmeldun
 nicht zurückzuregeln. Ab 100 Prozent ist das aber eine ausdrückliche Bitte, und der Anteil
 wächst linear bis auf voll bei 200 Prozent. **Unter 100 Prozent ändert sich nichts:** die
 Ausdrücke sind dort Zeichen für Zeichen die alten.
+
+### Drift-Modus — und eine Voraussetzung, die nicht stimmte
+
+Das Fahrgefühl hat seit v0.5.18 drei Stellungen statt zweier: **Physik** (Drehmoment, Gänge,
+Reibkreis — die Vorgabe), **Aus** (rohe Stickstellung, wie ein Fernsteuerungsauto) und
+**Drift** (experimentell).
+
+**Die Begründung im Code war falsch, und der Nutzer hat sie berichtigt.**
+`40-physics.js` verbot dem Einspurmodell, die Lenkung zu stellen, mit dem Satz „das
+Modellauto rutscht nicht". Beobachtet am Fahrzeug: **auf rutschigem Boden bricht es aus,
+wenn man aus dem Stand direkt Vollgas gibt.**
+
+Was trotzdem gilt, ist eine feinere Aussage, und sie trägt den ganzen Aufbau: das
+Einspurmodell rechnet den **Kurvenschräglauf**, also das Wegdriften aus Seitenkraft bei
+Kurvenfahrt. Beobachtet ist **durchdrehende Räder aus dem Stand**. Zwei verschiedene
+Bewegungen — die eine gegen die andere zu regeln wäre die Korrektur von etwas, das gerade
+nicht stattfindet.
+
+Geregelt wird deshalb gegen das **gemessene** Drehsignal: `gyroRaw.x`, geglättet aus Byte 3
+der Meldungen. Der Zuschlag ist additiv, gedeckelt auf ±1 (Byte 7 ist vorzeichenbehaftet und
+bricht darüber in die andere Richtung um) und **null**, wenn es nichts zu regeln gibt — ohne
+Signal, unter 6 km/h oder ohne Verbindung.
+
+| Drehsignal (normiert) | Tempo | Lenkwert hinein | heraus, bei 50 % |
+|---|---|---|---|
+| 0 | 60 | 0,20 | 0,20 *(kein Zuschlag)* |
+| 1,0 | 2 | 0,20 | 0,20 *(Stand)* |
+| 0,5 | 60 | 0,20 | −0,05 |
+| 1,0 | 60 | 0,20 | −0,30 |
+| −1,0 | 60 | 0,20 | +0,70 |
+| −1,0 | 60 | 0,90 | +1,00 *(Deckel)* |
+
+**Zwei Einschränkungen, beide aus dem Code selbst und beide in der Oberfläche:**
+
+1. **Unbestätigt.** `70-race.js` sagt es wörtlich: Byte 3 schwankt erst, wenn das Auto fährt,
+   und wechselte *in einer Aufnahme* das Vorzeichen mit der Kurvenrichtung — „hence
+   motion-ish. **Unconfirmed.**" Eine Aufnahme ist keine Messreihe.
+2. **Unkalibriert, und der Maßstab läuft mit.** `gyroRaw.span` wird selbstnachgeführt, weil
+   die wirkliche Amplitude unbekannt ist. Folge: die Stärke des Gegensteuerns hängt davon ab,
+   welchen größten Gierwert die Sitzung bisher gesehen hat.
+
+**Deshalb steht eine Messung vor dem Regler.** Der Knopf *Drift-Probe* unter „Querablage
+messen" zeichnet vier Sekunden auf, was das Signal bei **gerader** Vollgasfahrt tut — also
+genau im beobachteten Fall. Schlägt es dabei nicht aus, taugt es nicht zum Gegensteuern; die
+Probe urteilt aber nicht, sie schreibt hin, was sie gemessen hat.

@@ -4740,12 +4740,15 @@
         nicht Aktor</h3>
       <p class="muted">
         Das Einspurmodell rechnet Schwimmwinkel, Gierrate und Achsschraeglaufwinkel aus
-        Lenkwinkel und Tempo. Sein Ergebnis darf die Lenkung nicht stellen, und der Grund ist
-        keine Vorsicht, sondern eine Tatsache: das Modellauto rutscht nicht. Ein Modell, das
-        eine Bewegung berechnet, die das Fahrzeug nicht ausfuehren kann, wuerde die
-        Lenkvorgabe von der Wirklichkeit wegdrehen &ndash; das Auto faehrt geradeaus, waehrend
-        die Simulation eine Drift meldet, und die App korrigiert eine Bewegung, die es nicht
-        gibt.
+        Lenkwinkel und Tempo. Sein Ergebnis darf die Lenkung nicht stellen. Hier stand als
+        Begruendung &bdquo;das Modellauto rutscht nicht&ldquo;, und das ist seit v0.5.18
+        berichtigt: auf rutschigem Boden bricht es aus, wenn man aus dem Stand direkt Vollgas
+        gibt. Was gilt, ist eine feinere Aussage &ndash; dieses Modell rechnet den
+        Kurvenschraeglauf, also das Wegdriften aus Seitenkraft bei Kurvenfahrt, und beobachtet
+        sind durchdrehende Raeder aus dem Stand. Das sind zwei verschiedene Bewegungen, und
+        die eine gegen die andere zu regeln waere die Korrektur von etwas, das gerade nicht
+        stattfindet. Der Drift-Modus regelt deshalb gegen das gemessene Drehsignal des Autos
+        und nicht gegen dieses Modell.
       </p>
       <p class="muted">
         Es darf zeigen und begrenzen. Beides ist ehrlich, und beides ist neu: ein
@@ -5046,6 +5049,14 @@
             &uuml;bertragen.</div>
           <div style="margin-top:6px">Aktueller Deckel:
             <b id="lat-cap">&ndash;</b> <span class="muted" id="lat-cap-src"></span></div>
+        </div>
+        <!-- DIE PROBE VOR DEM REGLER. Sie faehrt NICHT selbst: der Nutzer gibt Gas, sie
+             schaut vier Sekunden zu. Alles andere waere eine Fahrbewegung, die jemand
+             ausloest, der nicht am Tisch sitzt. -->
+        <div class="row" style="gap:10px; margin:10px 0; align-items:center; flex-wrap:wrap">
+          <button type="button" id="drift-probe">Drift-Probe (4&nbsp;s)</button>
+          <span class="muted" id="drift-probe-out" data-i18n-skip
+                style="font-size:11.5px; max-width:52ch"></span>
         </div>
         <div class="row" style="gap:14px; align-items:baseline; flex-wrap:wrap">
           <div><span class="hud-label">Lenkanteil</span><br>
@@ -5706,7 +5717,35 @@
           Am 26.08. mit der Original-App gemessen: ein Ausdruck wird nur in der Stellung Aus
           erkannt. Beides zugleich gibt es nicht.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-ontrack" checked><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Physik-Modus aktivieren<small>Aus: rohe Stickstellung, ohne Gänge.</small></div><label class="tgl"><input type="checkbox" id="phys-enable" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Fahrgef&uuml;hl
+          <small>Physik: Drehmoment, G&auml;nge, Reibkreis &ndash; die Vorgabe. Aus: rohe
+          Stickstellung ohne G&auml;nge, wie ein Fernsteuerungsauto. Drift: rohes Gas wie
+          bei &bdquo;Aus&ldquo;, dazu ein automatisches Gegensteuern gegen das gemessene
+          Drehsignal des Autos und eine weichere Lenkung. Der Drift-Modus ist experimentell,
+          und die Zeile darunter sagt, warum.</small></div>
+        <select id="phys-mode">
+          <option value="physik" selected>Physik</option>
+          <option value="aus">Aus, rohe Stickstellung</option>
+          <option value="drift">Drift (experimentell)</option>
+        </select></div>
+      <div class="opt-row"><div class="opt-label">Gegensteuern im Drift
+          <span class="wip-tag">experimentell</span>
+          <small>Wie stark gegen das Ausbrechen gelenkt wird, gemessen am Drehsignal aus
+          Byte 3 der Meldungen. 50 Prozent entspricht der Vorgabe, nach der gefragt wurde.
+          Was daran unsicher ist, und zwar beides zugleich: das Signal ist unbest&auml;tigt
+          &ndash; es schwankt erst, wenn das Auto f&auml;hrt, und wechselte in genau einer
+          Aufnahme das Vorzeichen mit der Kurvenrichtung. Und es ist unkalibriert: sein
+          Ma&szlig;stab wird selbst nachgef&uuml;hrt, weil die wirkliche Amplitude unbekannt
+          ist. Deshalb h&auml;ngt die St&auml;rke davon ab, welchen gr&ouml;&szlig;ten
+          Gierwert die Sitzung bisher gesehen hat. Der Knopf &bdquo;Drift-Probe&ldquo; unter
+          &bdquo;Querablage messen&ldquo; misst, ob das Signal bei gerader Vollgasfahrt
+          &uuml;berhaupt ausschl&auml;gt.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="setting-countersteer" min="0" max="1" step="0.05" value="0.5">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-countersteer-val">50%</span>
+        </div></div>
       
       <!-- Die Vibration stand hier und hat seit v0.5.15 eine eigene Kategorie weiter
            unten - sie ist ein Kapitel und keine Zeile, seit jeder Ausloeser seinen

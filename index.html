@@ -4740,12 +4740,15 @@
         nicht Aktor</h3>
       <p class="muted">
         Das Einspurmodell rechnet Schwimmwinkel, Gierrate und Achsschraeglaufwinkel aus
-        Lenkwinkel und Tempo. Sein Ergebnis darf die Lenkung nicht stellen, und der Grund ist
-        keine Vorsicht, sondern eine Tatsache: das Modellauto rutscht nicht. Ein Modell, das
-        eine Bewegung berechnet, die das Fahrzeug nicht ausfuehren kann, wuerde die
-        Lenkvorgabe von der Wirklichkeit wegdrehen &ndash; das Auto faehrt geradeaus, waehrend
-        die Simulation eine Drift meldet, und die App korrigiert eine Bewegung, die es nicht
-        gibt.
+        Lenkwinkel und Tempo. Sein Ergebnis darf die Lenkung nicht stellen. Hier stand als
+        Begruendung &bdquo;das Modellauto rutscht nicht&ldquo;, und das ist seit v0.5.18
+        berichtigt: auf rutschigem Boden bricht es aus, wenn man aus dem Stand direkt Vollgas
+        gibt. Was gilt, ist eine feinere Aussage &ndash; dieses Modell rechnet den
+        Kurvenschraeglauf, also das Wegdriften aus Seitenkraft bei Kurvenfahrt, und beobachtet
+        sind durchdrehende Raeder aus dem Stand. Das sind zwei verschiedene Bewegungen, und
+        die eine gegen die andere zu regeln waere die Korrektur von etwas, das gerade nicht
+        stattfindet. Der Drift-Modus regelt deshalb gegen das gemessene Drehsignal des Autos
+        und nicht gegen dieses Modell.
       </p>
       <p class="muted">
         Es darf zeigen und begrenzen. Beides ist ehrlich, und beides ist neu: ein
@@ -5046,6 +5049,14 @@
             &uuml;bertragen.</div>
           <div style="margin-top:6px">Aktueller Deckel:
             <b id="lat-cap">&ndash;</b> <span class="muted" id="lat-cap-src"></span></div>
+        </div>
+        <!-- DIE PROBE VOR DEM REGLER. Sie faehrt NICHT selbst: der Nutzer gibt Gas, sie
+             schaut vier Sekunden zu. Alles andere waere eine Fahrbewegung, die jemand
+             ausloest, der nicht am Tisch sitzt. -->
+        <div class="row" style="gap:10px; margin:10px 0; align-items:center; flex-wrap:wrap">
+          <button type="button" id="drift-probe">Drift-Probe (4&nbsp;s)</button>
+          <span class="muted" id="drift-probe-out" data-i18n-skip
+                style="font-size:11.5px; max-width:52ch"></span>
         </div>
         <div class="row" style="gap:14px; align-items:baseline; flex-wrap:wrap">
           <div><span class="hud-label">Lenkanteil</span><br>
@@ -5706,7 +5717,35 @@
           Am 26.08. mit der Original-App gemessen: ein Ausdruck wird nur in der Stellung Aus
           erkannt. Beides zugleich gibt es nicht.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-ontrack" checked><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Physik-Modus aktivieren<small>Aus: rohe Stickstellung, ohne Gänge.</small></div><label class="tgl"><input type="checkbox" id="phys-enable" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Fahrgef&uuml;hl
+          <small>Physik: Drehmoment, G&auml;nge, Reibkreis &ndash; die Vorgabe. Aus: rohe
+          Stickstellung ohne G&auml;nge, wie ein Fernsteuerungsauto. Drift: rohes Gas wie
+          bei &bdquo;Aus&ldquo;, dazu ein automatisches Gegensteuern gegen das gemessene
+          Drehsignal des Autos und eine weichere Lenkung. Der Drift-Modus ist experimentell,
+          und die Zeile darunter sagt, warum.</small></div>
+        <select id="phys-mode">
+          <option value="physik" selected>Physik</option>
+          <option value="aus">Aus, rohe Stickstellung</option>
+          <option value="drift">Drift (experimentell)</option>
+        </select></div>
+      <div class="opt-row"><div class="opt-label">Gegensteuern im Drift
+          <span class="wip-tag">experimentell</span>
+          <small>Wie stark gegen das Ausbrechen gelenkt wird, gemessen am Drehsignal aus
+          Byte 3 der Meldungen. 50 Prozent entspricht der Vorgabe, nach der gefragt wurde.
+          Was daran unsicher ist, und zwar beides zugleich: das Signal ist unbest&auml;tigt
+          &ndash; es schwankt erst, wenn das Auto f&auml;hrt, und wechselte in genau einer
+          Aufnahme das Vorzeichen mit der Kurvenrichtung. Und es ist unkalibriert: sein
+          Ma&szlig;stab wird selbst nachgef&uuml;hrt, weil die wirkliche Amplitude unbekannt
+          ist. Deshalb h&auml;ngt die St&auml;rke davon ab, welchen gr&ouml;&szlig;ten
+          Gierwert die Sitzung bisher gesehen hat. Der Knopf &bdquo;Drift-Probe&ldquo; unter
+          &bdquo;Querablage messen&ldquo; misst, ob das Signal bei gerader Vollgasfahrt
+          &uuml;berhaupt ausschl&auml;gt.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="setting-countersteer" min="0" max="1" step="0.05" value="0.5">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-countersteer-val">50%</span>
+        </div></div>
       
       <!-- Die Vibration stand hier und hat seit v0.5.15 eine eigene Kategorie weiter
            unten - sie ist ein Kapitel und keine Zeile, seit jeder Ausloeser seinen
@@ -8589,6 +8628,24 @@
     "GELB": "YELLOW",
     "ANFAHRT": "ROLLING UP",
     "Einführungsrunde": "Formation lap",
+    "Physik":
+      "Physics",
+    "Aus, rohe Stickstellung":
+      "Off, raw stick position",
+    "Drift (experimentell)":
+      "Drift (experimental)",
+    "Gegensteuern im Drift":
+      "Countersteer in drift",
+    "Drift-Probe (4 s)":
+      "Drift probe (4 s)",
+    "Ghosts fahren die Runde zu Ende":
+      "Ghosts are finishing the lap",
+    "Alle im Ziel":
+      "Everyone home",
+    "Physik: Drehmoment, Gänge, Reibkreis – die Vorgabe. Aus: rohe Stickstellung ohne Gänge, wie ein Fernsteuerungsauto. Drift: rohes Gas wie bei „Aus“, dazu ein automatisches Gegensteuern gegen das gemessene Drehsignal des Autos und eine weichere Lenkung. Der Drift-Modus ist experimentell, und die Zeile darunter sagt, warum.":
+      "Physics: torque, gears, friction circle – the default. Off: raw stick position with no gears, like a radio-controlled car. Drift: raw throttle as with “Off”, plus automatic countersteer against the car's measured rotation signal and softer steering. Drift mode is experimental, and the line below says why.",
+    "Wie stark gegen das Ausbrechen gelenkt wird, gemessen am Drehsignal aus Byte 3 der Meldungen. 50 Prozent entspricht der Vorgabe, nach der gefragt wurde. Was daran unsicher ist, und zwar beides zugleich: das Signal ist unbestätigt – es schwankt erst, wenn das Auto fährt, und wechselte in genau einer Aufnahme das Vorzeichen mit der Kurvenrichtung. Und es ist unkalibriert: sein Maßstab wird selbst nachgeführt, weil die wirkliche Amplitude unbekannt ist. Deshalb hängt die Stärke davon ab, welchen größten Gierwert die Sitzung bisher gesehen hat. Der Knopf „Drift-Probe“ unter „Querablage messen“ misst, ob das Signal bei gerader Vollgasfahrt überhaupt ausschlägt.":
+      "How hard the car steers against a slide, measured from the rotation signal in byte 3 of the notifications. 50 per cent is the default that was asked for. What is uncertain about it, and it is two things at once: the signal is unconfirmed – it only varies once the car is moving, and flipped sign with cornering direction in exactly one recording. And it is uncalibrated: its scale is self-adjusting because the real amplitude is unknown. So the strength depends on the largest yaw value the session has seen so far. The “Drift probe” button under “Measure lateral offset” measures whether the signal moves at all under straight full throttle.",
     "Rennen":
       "Race",
     "Boxenstopp einleiten":
@@ -9269,6 +9326,12 @@
   // Physics mode is on by default now; the loop writes its shaped output into these
   // vars and the heartbeat transmits them, instead of the loop writing to BLE itself.
   let physicsEnabled = true;
+  // Der Drift-Modus faehrt wie "Aus" (physicsEnabled false), unterscheidet sich davon aber
+  // im Sendeweg: dort kommt das Gegensteuern dazu. Zwei getrennte Groessen und kein
+  // dreiwertiger Zustand, damit die neun bestehenden Verzweigungen auf physicsEnabled
+  // unveraendert bleiben.
+  let driftModus = false;
+  let gegenlenkStaerke = 0.5;
   let physOutSteer = 0, physOutThrottle = 0;
 
   const CONTROL_SEND_INTERVAL_MS = 45; // matches the real app's observed command cadence
@@ -9278,6 +9341,38 @@
   // bekannt ist, wann es war - und der Versatz wurde bis v0.5.8 vom KLICK aus gemessen,
   // was mit dieser Phase nichts zu tun hat.
   let herzschlagAt = 0;
+
+  // ---- Gegensteuern im Drift-Modus ---------------------------------------------------
+  //
+  // GEREGELT WIRD GEGEN DAS GEMESSENE Drehsignal (gyroRaw.x aus Byte 3 der Meldungen) und
+  // NICHT gegen das Einspurmodell. Der Unterschied ist der ganze Punkt: das Modell rechnet
+  // Kurvenschraeglauf, beobachtet ist aber ein Ausbrechen aus dem Stand bei Vollgas - zwei
+  // verschiedene Bewegungen, und die eine gegen die andere zu regeln waere die Korrektur
+  // von etwas, das gerade nicht stattfindet.
+  //
+  // DER NORMIERTE WERT, nicht der rohe: gyroRaw.span wird selbst nachgefuehrt, weil die
+  // wirkliche Amplitude des Bytes unbekannt ist. Folge, die man aussprechen muss - die
+  // Staerke des Gegensteuerns haengt davon ab, welchen groessten Gierwert die Sitzung
+  // bisher gesehen hat.
+  //
+  // NULL, WENN ES NICHTS ZU REGELN GIBT: ohne Signal, im Stand oder ohne Verbindung wird
+  // nichts zugeschlagen. Ein geschaetzter Zuschlag waere schlimmer als keiner.
+  const DRIFT_STAND_KMH = 6;         // darunter gibt es keine Drift, nur Wackeln
+  function driftGegenlenken(steer) {
+    let g = 0, v = 0;
+    try {
+      if (typeof gyroRaw === 'object' && gyroRaw && gyroRaw.span > 0) {
+        g = Math.max(-1, Math.min(1, gyroRaw.x / gyroRaw.span));
+      }
+      v = Math.abs(physEngine.state.speedKmh) * REAL_SCALE;
+    } catch (e) { return steer; }
+    if (!g || v < DRIFT_STAND_KMH) return steer;
+    // Der Zuschlag ist ADDITIV und gedeckelt. Ein Wert ueber 1 waere nicht wirkungslos,
+    // sondern schaedlich: Byte 7 ist vorzeichenbehaftet und braeche in die ANDERE Richtung
+    // um - siehe CARRERA_HYBRID.md, "Die Lenkgrenze".
+    const zu = -g * gegenlenkStaerke;
+    return Math.max(-1, Math.min(1, steer + zu));
+  }
 
   function controlHeartbeat() {
     herzschlagAt = performance.now();
@@ -9296,6 +9391,7 @@
     pitLaneTick();
     let steer = physicsEnabled ? physOutSteer : steerX;
     let throttle = physicsEnabled ? physOutThrottle : throttleY;
+    if (driftModus) steer = driftGegenlenken(steer);
     sendControlValue(steer, throttle);
   }
   setInterval(controlHeartbeat, CONTROL_SEND_INTERVAL_MS);
@@ -10635,11 +10731,21 @@
 
     // ---- EINSPURMODELL, ein Schritt ---------------------------------------------------
     //
-    // INSTRUMENT UND KEIN AKTOR. Nichts hiervon stellt die Lenkung, und der Grund ist keine
-    // Vorsicht, sondern eine Tatsache: das Modellauto rutscht nicht. Ein Modell, das eine
-    // Bewegung rechnet, die das Fahrzeug nicht ausfuehren kann, wuerde die Vorgabe von der
-    // Wirklichkeit wegdrehen - das Auto faehrt geradeaus, die Simulation meldet eine Drift,
-    // und die App korrigiert eine Bewegung, die es nicht gibt.
+    // INSTRUMENT UND KEIN AKTOR. Nichts hiervon stellt die Lenkung.
+    //
+    // DIE BEGRUENDUNG IST BERICHTIGT, und zwar vom Nutzer am Fahrzeug. Hier stand "das
+    // Modellauto rutscht nicht". Das stimmt nicht: auf rutschigem Boden bricht es aus, wenn
+    // man aus dem Stand direkt Vollgas gibt.
+    //
+    // Was trotzdem gilt, und darauf kommt es an: DIESES Modell rechnet den
+    // KURVENSCHRAEGLAUF, also das Wegdriften aus Seitenkraft bei Kurvenfahrt. Beobachtet ist
+    // etwas anderes, naemlich durchdrehende Raeder aus dem Stand. Ein Gegensteuern aus dem
+    // Kurvenmodell waere weiterhin die Korrektur einer Bewegung, die in dem Moment nicht
+    // stattfindet - das Auto faehrt geradeaus und dreht durch, die Simulation meldete eine
+    // Kurvendrift.
+    //
+    // Der Drift-Modus (v0.5.18) regelt deshalb gegen das GEMESSENE Drehsignal aus Byte 3
+    // und nicht gegen dieses Modell. Siehe driftGegenlenken() in 20-protocol.js.
     //
     // HALBIMPLIZIT und nicht explizit. Die Doku nennt das als den besseren der zwei Wege, und
     // die Begruendung ist nachrechenbar: die Zeitkonstante der Gierdynamik liegt bei 0,2 bis
@@ -12221,10 +12327,68 @@
     getriebeAnwenden(false, false);
   }
 
-  $('phys-enable').addEventListener('change', (e) => {
-    physicsEnabled = e.target.checked;
+  // ---- Drei Stellungen, ein abgeleiteter Schalter ------------------------------------
+  //
+  // physicsEnabled BLEIBT und wird abgeleitet: neun Stellen im Projekt verzweigen darauf
+  // (Sendeweg, Fahrschleife, Schalttasten, Motorton), und sie alle auf eine dritte
+  // Moeglichkeit umzuschreiben waere neun Gelegenheiten, eine zu vergessen.
+  //
+  // Der Drift-Modus faehrt wie "Aus" - rohe Stickstellung, keine Gaenge -, deshalb ist
+  // physicsEnabled dort false. Was ihn unterscheidet, sitzt im Sendeweg: das Gegensteuern.
+  function physModusAnwenden(melden) {
+    const v = $('phys-mode') ? $('phys-mode').value : 'physik';
+    driftModus = (v === 'drift');
+    physicsEnabled = (v === 'physik');
     physLastTime = null;
-  });
+    if (melden) {
+      log('Fahrgefuehl: ' + (v === 'physik' ? 'Physik'
+                             : v === 'drift' ? 'Drift (experimentell)'
+                             : 'Aus, rohe Stickstellung'), 'info');
+    }
+  }
+  if ($('phys-mode')) {
+    $('phys-mode').addEventListener('change', () => physModusAnwenden(true));
+    physModusAnwenden(false);
+  }
+
+  // Der Knopf ruft DIESELBE Funktion, die auch der Selbsttest benutzt: zwei Wege zu
+  // einer Messung waeren zwei Messungen.
+  if ($('drift-probe')) {
+    $('drift-probe').addEventListener('click', async () => {
+      const out = $('drift-probe-out');
+      if (!window.OMEGA_TEST || !OMEGA_TEST.driftProbe) {
+        out.textContent = 'Messstand nicht vorhanden.';
+        return;
+      }
+      out.textContent = 'Vollgas geradeaus, ohne zu lenken \u2026';
+      const r = await OMEGA_TEST.driftProbe(4000);
+      if (!r.mitTempo) {
+        out.textContent = 'Das Auto ist nicht gefahren \u2013 ohne Fahrt gibt es kein '
+                        + 'Drehsignal, Byte 3 schwankt erst dann.';
+        return;
+      }
+      const teile = [
+        r.mitTempo + ' von ' + r.punkte + ' Messpunkten mit Tempo',
+        r.geradeaus + ' davon ohne Lenkeingabe',
+        'Drehsignal geradeaus: ' + (r.gyroGeradeaus === null ? '\u2013' : r.gyroGeradeaus),
+        'insgesamt: ' + (r.gyroInsgesamt === null ? '\u2013' : r.gyroInsgesamt),
+        'Massstab: ' + (r.spanEnde === null ? '\u2013' : Math.round(r.spanEnde)),
+      ];
+      // KEIN URTEIL. Ob 0,3 viel ist, entscheidet das Auto auf dem Teppich; diese Zeile
+      // sagt nur, was gemessen wurde.
+      out.textContent = teile.join(' \u00b7 ');
+      log('Drift-Probe: ' + teile.join(' | '), 'info');
+    });
+  }
+
+  if ($('setting-countersteer')) {
+    const gegen = (v) => {
+      gegenlenkStaerke = v;
+      $('setting-countersteer-val').textContent = Math.round(v * 100) + '%';
+    };
+    $('setting-countersteer').addEventListener('input', (e) => gegen(parseFloat(e.target.value)));
+    gegen(parseFloat($('setting-countersteer').value));
+  }
 
   $('dash-head-toggle').addEventListener('change', (e) => {
     headlightsOn = e.target.checked;
@@ -16273,6 +16437,77 @@
   //
   // Der Teilton ist LEISER als der Grundton, nicht lauter. Die Bestzeit soll heller klingen,
   // nicht lauter - lauter waere die naheliegende Wahl und die falsche.
+  // ---- Der Rundenzaehler am Rennende -------------------------------------------------
+  //
+  // Die Lautmalerei aus dem Wunsch IST die Partitur:
+  //
+  //     du-di-di   drei kurze, steigende Toene
+  //     dueue      ein langer, hoher
+  //     dumm       einer kurz und tief darunter
+  //     daaaa      am Ende einer, der stehenbleibt
+  //
+  // Drei Takte: zweimal derselbe, dann ein dritter mit doppeltem Lauf und Schlusston.
+  //
+  // ALS TABELLE und nicht als Folge von Aufrufen: so laesst sich die Melodie aendern, ohne
+  // die Wiedergabe anzufassen, und man sieht sie beim Lesen. [Startzeit s, Frequenz Hz,
+  // Dauer s, Lautstaerke].
+  //
+  // Die Frequenzen sind eine C-Dur-Dreiklangsfolge - C5 E5 G5 hinauf, C6 als Spitze, G3 als
+  // "dumm" darunter, C4 als Schluss. Gewaehlt und nicht gemessen: ein Rundenzaehler von
+  // 1978 spielt keine bestimmte Tonart, er spielt, was sein Teiler hergibt.
+  const ZAEHLER_TON = { C4: 261.6, G3: 196.0, C5: 523.3, E5: 659.3, G5: 784.0, C6: 1046.5 };
+  function zaehlerTakt(t0, mitLauf) {
+    const T = ZAEHLER_TON, n = [];
+    const lauf = (t) => {
+      n.push([t + 0.00, T.C5, 0.075, 0.16]);
+      n.push([t + 0.09, T.E5, 0.075, 0.16]);
+      n.push([t + 0.18, T.G5, 0.075, 0.16]);
+    };
+    lauf(t0);
+    lauf(t0 + 0.27);
+    if (mitLauf) { lauf(t0 + 0.54); lauf(t0 + 0.81); }
+    const nach = t0 + (mitLauf ? 1.08 : 0.54);
+    n.push([nach, T.C6, mitLauf ? 0.26 : 0.30, 0.20]);       // dueue
+    n.push([nach + (mitLauf ? 0.30 : 0.34), T.G3, 0.20, 0.22]); // dumm
+    return { noten: n, ende: nach + (mitLauf ? 0.50 : 0.54) };
+  }
+
+  function playRaceEndFanfare() {
+    if (!soundEnabled || !audioCtx) return null;
+    const t0 = audioCtx.currentTime + 0.05;
+    const a = zaehlerTakt(t0, false);
+    const b = zaehlerTakt(a.ende, false);
+    const c = zaehlerTakt(b.ende, true);
+    const noten = a.noten.concat(b.noten, c.noten);
+    // "daaaa": der Schluss bleibt stehen, tief und lang. Er ist der einzige Ton, der nicht
+    // aus dem Takt kommt - deshalb steht er hier und nicht in der Tabelle.
+    noten.push([c.ende + 0.06, ZAEHLER_TON.C4, 1.10, 0.24]);
+
+    // EIN Tiefpass fuer alles: der Rundenzaehler ist ein Piezosummer an einer einfachen
+    // Schaltung, also ein gefiltertes Rechteck. Ein Sinus waere zu weich und traefe das
+    // Vorbild nicht; ein ungefiltertes Rechteck waere zu scharf.
+    const lp = audioCtx.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.value = 2400;
+    lp.Q.value = 0.7;
+    lp.connect(audioCtx.destination);
+
+    for (const [t, f, d, v] of noten) {
+      const osc = audioCtx.createOscillator();
+      osc.type = 'square';
+      osc.frequency.value = f;
+      const g = audioCtx.createGain();
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(v, t + 0.008);
+      g.gain.exponentialRampToValueAtTime(0.0008, t + d);
+      osc.connect(g).connect(lp);
+      osc.start(t);
+      osc.stop(t + d + 0.02);
+    }
+    // Zurueck kommt die Partitur, damit ein Test sie nachrechnen kann, ohne zu hoeren.
+    return { noten: noten.length, dauer: +(noten[noten.length - 1][0] + noten[noten.length - 1][2] - t0).toFixed(2) };
+  }
+
   function playLapChime(beste) {
     if (!soundEnabled || !audioCtx) return;
     const t = audioCtx.currentTime;
@@ -16817,6 +17052,10 @@
          ? `, letzte Runde unvollendet nach ${formatLapTime(racePartialMs)}` : '')
       + (missed > 0 ? `, ${missed} Pflichtstopp${missed === 1 ? '' : 's'} verpasst, `
                       + `+${missed * racePitPenaltyS} s Strafe` : '');
+    // DER RUNDENZAEHLER, aber nur bei einer echten Zielflagge. Wer von Hand abbricht,
+    // bekommt keine Fanfare - dieselbe Ueberlegung, mit der die Ghosts dann auch nicht
+    // auslaufen: ein Abbruch ist kein Zieleinlauf.
+    if (willAuslaufen) playRaceEndFanfare();
     $('race-start-btn').disabled = false;
     $('race-lap-current-row').style.display = 'none';
     $('race-results').style.display = '';
@@ -28161,6 +28400,82 @@
     // 'regen', und die bestehenden Pruefungen benutzen die alten. Ein stiller
     // Umbenennungsdurchlauf haette sie umgeschrieben und damit den Beweis verwischt, dass
     // die Vorgabe bitgleich geblieben ist.
+    // ---- Die Rundenzaehler-Fanfare, ohne zu hoeren ---------------------------------
+    //
+    // Sie gibt ihre Partitur zurueck: Anzahl Toene und Gesamtdauer. Damit ist pruefbar,
+    // dass sie ueberhaupt spielt und wie lange - der Klang selbst ist eine Sache fuers Ohr,
+    // die Laenge nicht (eine Fanfare, die zehn Sekunden dauert, ist ein Fehler).
+    // ---- Taugt das Drehsignal zum Gegensteuern? -------------------------------------
+    //
+    // DIE MESSUNG, DIE VOR DEM REGLER KOMMT. Der beobachtete Fall gibt sie vor: aus dem
+    // Stand auf rutschigem Boden Vollgas, geradeaus, OHNE Lenkeingabe. Wenn das Auto dabei
+    // ausbricht und Byte 3 ausschlaegt, ist bewiesen, was das Gegensteuern braucht - dass
+    // das Signal eine Drehung OHNE Lenkeingabe anzeigt.
+    //
+    // Sie zeichnet auf und urteilt nicht: zurueck kommen die Werte, nicht ein "taugt" oder
+    // "taugt nicht". Ob 0,3 viel ist, entscheidet das Auto auf dem Teppich und nicht diese
+    // Funktion.
+    //
+    // `ms` ist die Aufzeichnungsdauer. Gefahren wird NICHT von hier aus - der Nutzer gibt
+    // selbst Gas; diese Probe schaut nur zu. Alles andere waere eine Fahrbewegung, die
+    // jemand ausloest, der nicht am Tisch sitzt.
+    driftProbe(ms) {
+      const dauer = ms || 4000;
+      const start = Date.now();
+      const punkte = [];
+      return new Promise((fertig) => {
+        const t = setInterval(() => {
+          let g = null, span = null, v = null, lenk = null;
+          try {
+            if (typeof gyroRaw === 'object' && gyroRaw) { g = gyroRaw.x; span = gyroRaw.span; }
+            v = physEngine.state.speedKmh * REAL_SCALE;
+            lenk = physicsEnabled ? physOutSteer : steerX;
+          } catch (e) { /* noch nichts da */ }
+          punkte.push({ t: Date.now() - start, gyro: g, span, kmh: v, lenk });
+          if (Date.now() - start >= dauer) {
+            clearInterval(t);
+            const mitTempo = punkte.filter(p => p.kmh !== null && Math.abs(p.kmh) > 6);
+            const gerade = mitTempo.filter(p => Math.abs(p.lenk || 0) < 0.08);
+            const betrag = (a) => a.length
+              ? +(a.reduce((x, p) => x + Math.abs(p.gyro || 0), 0) / a.length).toFixed(2) : null;
+            fertig({
+              punkte: punkte.length,
+              mitTempo: mitTempo.length,
+              geradeaus: gerade.length,
+              // Der eigentliche Wert: schlaegt das Signal aus, WAEHREND nicht gelenkt wird?
+              gyroGeradeaus: betrag(gerade),
+              gyroInsgesamt: betrag(mitTempo),
+              spanEnde: punkte.length ? punkte[punkte.length - 1].span : null,
+              verlauf: punkte.filter((_, i) => i % 5 === 0).slice(0, 40),
+            });
+          }
+        }, 100);
+      });
+    },
+
+    // Der Drift-Zuschlag selbst, ohne Auto: gefragt wird die FUNKTION, nicht die Fahrt.
+    driftZuschlag(gyro, span, kmh, steer, staerke) {
+      if (typeof driftGegenlenken !== 'function') return null;
+      const merkG = (typeof gyroRaw === 'object' && gyroRaw) ? { x: gyroRaw.x, span: gyroRaw.span } : null;
+      const merkV = physEngine.state.speedKmh;
+      const merkS = gegenlenkStaerke;
+      try {
+        if (merkG) { gyroRaw.x = gyro; gyroRaw.span = span; }
+        physEngine.state.speedKmh = kmh / REAL_SCALE;
+        if (staerke !== undefined) gegenlenkStaerke = staerke;
+        return +driftGegenlenken(steer).toFixed(4);
+      } finally {
+        if (merkG) { gyroRaw.x = merkG.x; gyroRaw.span = merkG.span; }
+        physEngine.state.speedKmh = merkV;
+        gegenlenkStaerke = merkS;
+      }
+    },
+
+    fanfareProbe() {
+      if (typeof playRaceEndFanfare !== 'function') return null;
+      return playRaceEndFanfare();
+    },
+
     tyreSet(kind) {
       if (typeof tyres === 'undefined') return null;
       const ALIAS = { wet: 'regen', slick: 'mittel' };
@@ -31093,6 +31408,239 @@
              mass: teile.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
   });
 
+
+  // ---- Ein Schirmwechsel aendert die Einpassung nicht ----
+  //
+  // DIE ZUSICHERUNG, AUF DER DIE GANZE BAUFORM STEHT. Die zwei zusaetzlichen Schirme sind
+  // absolut positionierte Ueberlagerungen, damit cockpitInhaltHoehe() sie nicht mitzaehlt -
+  // waeren sie ein zweites Raster, bekaemen beide Schirme verschiedene Einpassungsfaktoren,
+  // und das Cockpit wuerde beim BLAETTERN seine Groesse aendern.
+  //
+  // Geprueft wird deshalb ZEICHENGLEICH und nicht "ungefaehr": eine Zeilenhoehe, die sich um
+  // ein Zehntel Pixel aendert, ist schon ein zweites Raster.
+  stAdd('Schirmwechsel aendert die Einpassung nicht', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.schirmListe) {
+      return { skip: true, mass: 'Schirmliste nicht vorhanden' };
+    }
+    if (!(window.innerWidth > 0) || !(window.innerHeight > 0)) {
+      return { skip: true, mass: 'Fenster ist 0 x 0 - im verborgenen Bereich nicht messbar' };
+    }
+    const btn = document.querySelector('[data-tab="race"]');
+    if (btn) btn.click();
+    const dash = document.getElementById('race-dash');
+    const merk = OMEGA_TEST.schirmIst();
+    const teile = [], schlecht = [];
+    try {
+      const liste = OMEGA_TEST.schirmListe();
+      OMEGA_TEST.schirmZu(liste[0]);
+      const rows0 = getComputedStyle(dash).gridTemplateRows;
+      const f0 = OMEGA_TEST.cockpitPassung().faktor;
+      for (let i = 1; i < liste.length; i++) {
+        OMEGA_TEST.schirmZu(liste[i]);
+        const rows = getComputedStyle(dash).gridTemplateRows;
+        const f = OMEGA_TEST.cockpitPassung().faktor;
+        teile.push(liste[i] + (rows === rows0 ? ' gleich' : ' ANDERS'));
+        if (rows !== rows0) schlecht.push(liste[i] + ': Rasterzeilen aendern sich');
+        if (Math.abs(f - f0) > 1e-9) schlecht.push(liste[i] + ': Faktor ' + f + ' statt ' + f0);
+      }
+      // Und er laeuft im Kreis: nach so vielen Schritten wie Schirme ist man wieder da.
+      OMEGA_TEST.schirmZu(liste[0]);
+      for (let i = 0; i < liste.length; i++) OMEGA_TEST.schirmStep(+1);
+      if (OMEGA_TEST.schirmIst() !== liste[0]) schlecht.push('laeuft nicht im Kreis');
+      teile.push(liste.length + ' Schirme, Umlauf ok');
+    } finally {
+      OMEGA_TEST.schirmZu(merk);
+    }
+    return { ok: schlecht.length === 0,
+             mass: teile.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // ---- Der Boxenschirm deckt die Instrumente und nicht die Lichter ----
+  //
+  // Er liegt ueber den Kacheln, aber Schaltlichter, Flaggenband, Boxenband und die
+  // MELDEZEILE muessen sichtbar bleiben. Das letzte ist keine Feinheit: pitToggle()
+  // bestaetigt jede Aenderung ueber showHudToast(), und ein Schirm mit inset: 0 haette das
+  // Pit-Menue stumm gemacht.
+  //
+  // Zugleich ist das die Probe, ob die Rasterlage im Browser wirklich greift. Fiele sie auf
+  // den Polsterkasten zurueck, deckte der Schirm alles - und die Schaltlichter-Bedingung
+  // schlaegt an.
+  stAdd('Boxenschirm deckt die Kacheln, nicht die Lichter', () => {
+    const btn = document.querySelector('[data-tab="race"]');
+    if (btn) btn.click();
+    const s = document.getElementById('race-pitscreen');
+    if (!s || !OMEGA_TEST || !OMEGA_TEST.schirmZu) return { skip: true, mass: 'kein Boxenschirm' };
+    const merk = OMEGA_TEST.schirmIst();
+    const schlecht = [], teile = [];
+    try {
+      OMEGA_TEST.schirmZu('pit');
+      const r = s.getBoundingClientRect();
+      if (!(r.width > 0 && r.height > 0)) {
+        return { skip: true, mass: 'Schirm hat keine Ausdehnung - Reiter nicht sichtbar' };
+      }
+      const drin = (el) => {
+        const q = el.getBoundingClientRect();
+        return q.left >= r.left - 1 && q.right <= r.right + 1
+            && q.top >= r.top - 1 && q.bottom <= r.bottom + 1;
+      };
+      const schneidet = (el) => {
+        const q = el.getBoundingClientRect();
+        if (!(q.width > 0 && q.height > 0)) return false;
+        return !(q.right <= r.left || q.left >= r.right
+                 || q.bottom <= r.top || q.top >= r.bottom);
+      };
+      for (const sel of ['.gt3-left', '.gt3-gear', '.gt3-right', '.gt3-strip']) {
+        const el = document.querySelector('#race-dash ' + sel);
+        if (!el) continue;
+        teile.push(sel + (drin(el) ? ' gedeckt' : ' NICHT gedeckt'));
+        if (!drin(el)) schlecht.push(sel + ' wird nicht gedeckt');
+      }
+      for (const id of ['race-shift', 'hud-toast-wrap']) {
+        const el = document.getElementById(id);
+        if (!el) continue;
+        if (schneidet(el)) schlecht.push(id + ' wird verdeckt');
+      }
+      teile.push('Lichter und Meldezeile frei');
+    } finally {
+      OMEGA_TEST.schirmZu(merk);
+    }
+    return { ok: schlecht.length === 0,
+             mass: teile.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // ---- Die Mischungen: mittel ist bitgleich zum alten Reifen ----
+  //
+  // DIE WICHTIGSTE der vier Aussagen. 'mittel' hiess bis v0.5.17 'slick' und 'regen' hiess
+  // 'wet'; wenn die Vorgabe dabei auch nur im fuenften Nachkommastellen abweicht, hat der
+  // Umbau das Fahrverhalten geaendert, ohne dass es jemand bestellt hat.
+  stAdd('Reifenmischungen: mittel ist die alte Vorgabe', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.tyreMixProbe) {
+      return { skip: true, mass: 'tyreMixProbe nicht vorhanden' };
+    }
+    const schlecht = [], teile = [];
+    const bei1 = OMEGA_TEST.tyreMixProbe(1);
+    if (!bei1) return { skip: true, mass: 'keine Mischungstabelle' };
+    // 1. mittel == der alte slick: Griff 1,0 im Trockenen, Aquaplaning wie ein Slick.
+    teile.push('mittel Griff ' + bei1.mittel.grip);
+    if (Math.abs(bei1.mittel.grip - 1) > 1e-9) schlecht.push('mittel hat Griff ' + bei1.mittel.grip);
+    if (Math.abs(bei1.mittel.verschleiss - 1) > 1e-9) {
+      schlecht.push('mittel verschleisst ' + bei1.mittel.verschleiss + 'x');
+    }
+    // 2. Die Rangfolge stimmt: weich mehr Griff und mehr Verschleiss als hart.
+    teile.push('weich ' + bei1.weich.grip + '/' + bei1.weich.verschleiss
+               + ' hart ' + bei1.hart.grip + '/' + bei1.hart.verschleiss);
+    if (!(bei1.weich.grip > bei1.mittel.grip && bei1.mittel.grip > bei1.hart.grip)) {
+      schlecht.push('Griffrangfolge weich > mittel > hart stimmt nicht');
+    }
+    if (!(bei1.weich.verschleiss > bei1.hart.verschleiss)) {
+      schlecht.push('weich verschleisst nicht schneller als hart');
+    }
+    // 3. Bei Staerke 0 sind alle drei Slicks derselbe Reifen.
+    const bei0 = OMEGA_TEST.tyreMixProbe(0);
+    const gleich = Math.abs(bei0.weich.grip - bei0.mittel.grip) < 1e-9
+                && Math.abs(bei0.hart.grip - bei0.mittel.grip) < 1e-9
+                && Math.abs(bei0.weich.verschleiss - bei0.mittel.verschleiss) < 1e-9;
+    teile.push('bei Staerke 0: ' + (gleich ? 'alle gleich' : 'VERSCHIEDEN'));
+    if (!gleich) schlecht.push('bei Staerke 0 unterscheiden sich die Slicks noch');
+    // 4. Regen im Trockenen ist schlechter als ein Slick - die bestehende Zusicherung.
+    if (!(bei1.regen.grip < bei1.mittel.grip)) {
+      schlecht.push('Regenreifen greifen im Trockenen nicht schlechter');
+    }
+    // 5. Nur Slicks schwimmen auf.
+    if (bei1.regen.aqua !== 0) schlecht.push('Regenreifen aquaplanen');
+    OMEGA_TEST.tyreMixProbe(1);
+    return { ok: schlecht.length === 0,
+             mass: teile.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // ---- Die Autos auf der Karte tragen ihre Farbe, ihr Kuerzel und ihre Querlage ----
+  //
+  // GEMELDET: "aktuell sind alle orange mit Fragezeichen daneben". Die Ursache war ein
+  // falscher Feldname - c.farbe und c.name gibt es an einem Auto nicht. Genau das prueft
+  // dieser Test: eine gegebene Farbe muss im Punkt ankommen, und ein Querversatz muss den
+  // Punkt bewegen.
+  stAdd('Streckenkarte: Farbe, Kuerzel und Querlage kommen an', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.trackMarks) {
+      return { skip: true, mass: 'trackMarks nicht vorhanden' };
+    }
+    const schlecht = [], teile = [];
+    const mk = (quer) => OMEGA_TEST.trackMarks(null,
+      [{ index: 4, phase: 0.5, farbe: '#e23b3b', kuerzel: 'Alp', quer }]);
+    const mitte = mk(0), links = mk(-0.8), rechts = mk(0.8);
+    const letzt = (r) => r.punkte[r.punkte.length - 1];
+    // 1. Die Farbe kommt an und ist NICHT der Rueckfall.
+    teile.push('Farbe ' + letzt(mitte).fill);
+    if (letzt(mitte).fill !== '#e23b3b') schlecht.push('Farbe kommt nicht an');
+    // 2. Das Kuerzel steht daneben.
+    if (mitte.kuerzel.indexOf('Alp') < 0) schlecht.push('Kuerzel fehlt');
+    // 3. Der Querversatz bewegt den Punkt, und zwar in ENTGEGENGESETZTE Richtungen.
+    const dL = Math.hypot(letzt(links).x - letzt(mitte).x, letzt(links).y - letzt(mitte).y);
+    const dR = Math.hypot(letzt(rechts).x - letzt(mitte).x, letzt(rechts).y - letzt(mitte).y);
+    teile.push('Versatz ' + dL.toFixed(1) + ' / ' + dR.toFixed(1));
+    if (!(dL > 3 && dR > 3)) schlecht.push('Querlage bewegt den Punkt nicht');
+    const dLR = Math.hypot(letzt(links).x - letzt(rechts).x, letzt(links).y - letzt(rechts).y);
+    if (!(dLR > dL && dLR > dR)) schlecht.push('links und rechts liegen nicht auf zwei Seiten');
+    // 4. Das CH-Aussehen: schwarze Fahrbahn, rot links, blau rechts.
+    const f = mitte.farben || [];
+    for (const [farbe, was] of [['#14181f', 'Fahrbahn'], ['#ff5c5c', 'roter Randstein'],
+                                ['#5aa9ff', 'blauer Randstein'], ['#ffffff', 'Stossfugen']]) {
+      if (f.indexOf(farbe) < 0) schlecht.push(was + ' fehlt (' + farbe + ')');
+    }
+    teile.push(f.length + ' Farben im Bild');
+    return { ok: schlecht.length === 0,
+             mass: teile.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // ---- Das Gegensteuern im Drift-Modus ----
+  //
+  // Geprueft wird die FUNKTION und nicht die Fahrt: driftZuschlag() setzt Drehsignal, Tempo
+  // und Lenkwert und fragt, was herauskommt. Fuenf Aussagen, und die ersten zwei sind die,
+  // an denen ein Regler ohne Signal gefaehrlich wuerde.
+  stAdd('Drift: Gegensteuern regelt gegen das Drehsignal', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.driftZuschlag) {
+      return { skip: true, mass: 'driftZuschlag nicht vorhanden' };
+    }
+    const z = (g, span, kmh, steer, st) => OMEGA_TEST.driftZuschlag(g, span, kmh, steer, st);
+    const schlecht = [], teile = [];
+    // 1. OHNE SIGNAL kein Zuschlag - nicht raten.
+    if (Math.abs(z(0, 8, 60, 0.2, 0.5) - 0.2) > 1e-6) schlecht.push('ohne Signal wird zugeschlagen');
+    // 2. IM STAND kein Zuschlag: dort gibt es keine Drift, nur Wackeln.
+    if (Math.abs(z(8, 8, 2, 0.2, 0.5) - 0.2) > 1e-6) schlecht.push('im Stand wird zugeschlagen');
+    // 3. Die Richtung ist GEGEN die Drehung.
+    const rechtsDreh = z(8, 8, 60, 0.2, 0.5);
+    const linksDreh = z(-8, 8, 60, 0.2, 0.5);
+    teile.push('rechts ' + rechtsDreh + ' links ' + linksDreh);
+    if (!(rechtsDreh < 0.2 && linksDreh > 0.2)) schlecht.push('Richtung stimmt nicht');
+    // 4. Der Regler wirkt, und bei 0 passiert nichts.
+    if (Math.abs(z(8, 8, 60, 0.2, 0) - 0.2) > 1e-6) schlecht.push('Staerke 0 wirkt trotzdem');
+    if (!(z(8, 8, 60, 0.2, 1) < z(8, 8, 60, 0.2, 0.5))) schlecht.push('Staerke wirkt nicht');
+    // 5. DER DECKEL. Ein Wert ueber 1 waere nicht wirkungslos, sondern schaedlich: Byte 7
+    //    ist vorzeichenbehaftet und braeche in die andere Richtung um.
+    const voll = z(-8, 8, 60, 0.9, 1);
+    teile.push('Deckel ' + voll);
+    if (voll > 1 + 1e-9 || voll < -1 - 1e-9) schlecht.push('Deckel haelt nicht: ' + voll);
+    return { ok: schlecht.length === 0,
+             mass: teile.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // ---- Die Rundenzaehler-Fanfare ----
+  //
+  // Ihr Klang ist eine Sache fuers Ohr, ihre LAENGE nicht: eine Fanfare, die zehn Sekunden
+  // dauert, haelt das Ergebnis auf. Geprueft wird, dass sie spielt und wie lange.
+  stAdd('Rundenzaehler-Fanfare spielt und ist kurz genug', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.fanfareProbe) {
+      return { skip: true, mass: 'fanfareProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.fanfareProbe();
+    if (!r) return { skip: true, mass: 'kein Audiokontext - braucht eine Nutzergeste' };
+    const schlecht = [];
+    if (!(r.noten >= 20)) schlecht.push('nur ' + r.noten + ' Toene');
+    if (!(r.dauer > 2 && r.dauer < 7)) schlecht.push('Dauer ' + r.dauer + ' s');
+    return { ok: schlecht.length === 0,
+             mass: r.noten + ' Toene, ' + r.dauer + ' s'
+                 + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
   // ---- Controller-Vibration: ein Schalter je Ausloeser ----
   //
   // Siebzehn Aufrufstellen, sechs Arten, ein Hauptschalter. Geprueft wird die
@@ -32900,7 +33448,6 @@
       ['ghost-learn-pace', () => ghostCfg.learnPace],
       ['ghost-needcode', () => ghostCfg.needCode],
       ['ghost-rail', () => ghostCfg.railMode],
-      ['phys-enable', () => physicsEnabled],
       ['pit-double-lap', () => pitDoubleCountsLap],
       ['pit-enable', () => pitLaneEnabled],
       ['race-flying', () => raceFlying],

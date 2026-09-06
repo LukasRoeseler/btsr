@@ -1917,6 +1917,239 @@
              mass: teile.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
   });
 
+
+  // ---- Ein Schirmwechsel aendert die Einpassung nicht ----
+  //
+  // DIE ZUSICHERUNG, AUF DER DIE GANZE BAUFORM STEHT. Die zwei zusaetzlichen Schirme sind
+  // absolut positionierte Ueberlagerungen, damit cockpitInhaltHoehe() sie nicht mitzaehlt -
+  // waeren sie ein zweites Raster, bekaemen beide Schirme verschiedene Einpassungsfaktoren,
+  // und das Cockpit wuerde beim BLAETTERN seine Groesse aendern.
+  //
+  // Geprueft wird deshalb ZEICHENGLEICH und nicht "ungefaehr": eine Zeilenhoehe, die sich um
+  // ein Zehntel Pixel aendert, ist schon ein zweites Raster.
+  stAdd('Schirmwechsel aendert die Einpassung nicht', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.schirmListe) {
+      return { skip: true, mass: 'Schirmliste nicht vorhanden' };
+    }
+    if (!(window.innerWidth > 0) || !(window.innerHeight > 0)) {
+      return { skip: true, mass: 'Fenster ist 0 x 0 - im verborgenen Bereich nicht messbar' };
+    }
+    const btn = document.querySelector('[data-tab="race"]');
+    if (btn) btn.click();
+    const dash = document.getElementById('race-dash');
+    const merk = OMEGA_TEST.schirmIst();
+    const teile = [], schlecht = [];
+    try {
+      const liste = OMEGA_TEST.schirmListe();
+      OMEGA_TEST.schirmZu(liste[0]);
+      const rows0 = getComputedStyle(dash).gridTemplateRows;
+      const f0 = OMEGA_TEST.cockpitPassung().faktor;
+      for (let i = 1; i < liste.length; i++) {
+        OMEGA_TEST.schirmZu(liste[i]);
+        const rows = getComputedStyle(dash).gridTemplateRows;
+        const f = OMEGA_TEST.cockpitPassung().faktor;
+        teile.push(liste[i] + (rows === rows0 ? ' gleich' : ' ANDERS'));
+        if (rows !== rows0) schlecht.push(liste[i] + ': Rasterzeilen aendern sich');
+        if (Math.abs(f - f0) > 1e-9) schlecht.push(liste[i] + ': Faktor ' + f + ' statt ' + f0);
+      }
+      // Und er laeuft im Kreis: nach so vielen Schritten wie Schirme ist man wieder da.
+      OMEGA_TEST.schirmZu(liste[0]);
+      for (let i = 0; i < liste.length; i++) OMEGA_TEST.schirmStep(+1);
+      if (OMEGA_TEST.schirmIst() !== liste[0]) schlecht.push('laeuft nicht im Kreis');
+      teile.push(liste.length + ' Schirme, Umlauf ok');
+    } finally {
+      OMEGA_TEST.schirmZu(merk);
+    }
+    return { ok: schlecht.length === 0,
+             mass: teile.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // ---- Der Boxenschirm deckt die Instrumente und nicht die Lichter ----
+  //
+  // Er liegt ueber den Kacheln, aber Schaltlichter, Flaggenband, Boxenband und die
+  // MELDEZEILE muessen sichtbar bleiben. Das letzte ist keine Feinheit: pitToggle()
+  // bestaetigt jede Aenderung ueber showHudToast(), und ein Schirm mit inset: 0 haette das
+  // Pit-Menue stumm gemacht.
+  //
+  // Zugleich ist das die Probe, ob die Rasterlage im Browser wirklich greift. Fiele sie auf
+  // den Polsterkasten zurueck, deckte der Schirm alles - und die Schaltlichter-Bedingung
+  // schlaegt an.
+  stAdd('Boxenschirm deckt die Kacheln, nicht die Lichter', () => {
+    const btn = document.querySelector('[data-tab="race"]');
+    if (btn) btn.click();
+    const s = document.getElementById('race-pitscreen');
+    if (!s || !OMEGA_TEST || !OMEGA_TEST.schirmZu) return { skip: true, mass: 'kein Boxenschirm' };
+    const merk = OMEGA_TEST.schirmIst();
+    const schlecht = [], teile = [];
+    try {
+      OMEGA_TEST.schirmZu('pit');
+      const r = s.getBoundingClientRect();
+      if (!(r.width > 0 && r.height > 0)) {
+        return { skip: true, mass: 'Schirm hat keine Ausdehnung - Reiter nicht sichtbar' };
+      }
+      const drin = (el) => {
+        const q = el.getBoundingClientRect();
+        return q.left >= r.left - 1 && q.right <= r.right + 1
+            && q.top >= r.top - 1 && q.bottom <= r.bottom + 1;
+      };
+      const schneidet = (el) => {
+        const q = el.getBoundingClientRect();
+        if (!(q.width > 0 && q.height > 0)) return false;
+        return !(q.right <= r.left || q.left >= r.right
+                 || q.bottom <= r.top || q.top >= r.bottom);
+      };
+      for (const sel of ['.gt3-left', '.gt3-gear', '.gt3-right', '.gt3-strip']) {
+        const el = document.querySelector('#race-dash ' + sel);
+        if (!el) continue;
+        teile.push(sel + (drin(el) ? ' gedeckt' : ' NICHT gedeckt'));
+        if (!drin(el)) schlecht.push(sel + ' wird nicht gedeckt');
+      }
+      for (const id of ['race-shift', 'hud-toast-wrap']) {
+        const el = document.getElementById(id);
+        if (!el) continue;
+        if (schneidet(el)) schlecht.push(id + ' wird verdeckt');
+      }
+      teile.push('Lichter und Meldezeile frei');
+    } finally {
+      OMEGA_TEST.schirmZu(merk);
+    }
+    return { ok: schlecht.length === 0,
+             mass: teile.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // ---- Die Mischungen: mittel ist bitgleich zum alten Reifen ----
+  //
+  // DIE WICHTIGSTE der vier Aussagen. 'mittel' hiess bis v0.5.17 'slick' und 'regen' hiess
+  // 'wet'; wenn die Vorgabe dabei auch nur im fuenften Nachkommastellen abweicht, hat der
+  // Umbau das Fahrverhalten geaendert, ohne dass es jemand bestellt hat.
+  stAdd('Reifenmischungen: mittel ist die alte Vorgabe', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.tyreMixProbe) {
+      return { skip: true, mass: 'tyreMixProbe nicht vorhanden' };
+    }
+    const schlecht = [], teile = [];
+    const bei1 = OMEGA_TEST.tyreMixProbe(1);
+    if (!bei1) return { skip: true, mass: 'keine Mischungstabelle' };
+    // 1. mittel == der alte slick: Griff 1,0 im Trockenen, Aquaplaning wie ein Slick.
+    teile.push('mittel Griff ' + bei1.mittel.grip);
+    if (Math.abs(bei1.mittel.grip - 1) > 1e-9) schlecht.push('mittel hat Griff ' + bei1.mittel.grip);
+    if (Math.abs(bei1.mittel.verschleiss - 1) > 1e-9) {
+      schlecht.push('mittel verschleisst ' + bei1.mittel.verschleiss + 'x');
+    }
+    // 2. Die Rangfolge stimmt: weich mehr Griff und mehr Verschleiss als hart.
+    teile.push('weich ' + bei1.weich.grip + '/' + bei1.weich.verschleiss
+               + ' hart ' + bei1.hart.grip + '/' + bei1.hart.verschleiss);
+    if (!(bei1.weich.grip > bei1.mittel.grip && bei1.mittel.grip > bei1.hart.grip)) {
+      schlecht.push('Griffrangfolge weich > mittel > hart stimmt nicht');
+    }
+    if (!(bei1.weich.verschleiss > bei1.hart.verschleiss)) {
+      schlecht.push('weich verschleisst nicht schneller als hart');
+    }
+    // 3. Bei Staerke 0 sind alle drei Slicks derselbe Reifen.
+    const bei0 = OMEGA_TEST.tyreMixProbe(0);
+    const gleich = Math.abs(bei0.weich.grip - bei0.mittel.grip) < 1e-9
+                && Math.abs(bei0.hart.grip - bei0.mittel.grip) < 1e-9
+                && Math.abs(bei0.weich.verschleiss - bei0.mittel.verschleiss) < 1e-9;
+    teile.push('bei Staerke 0: ' + (gleich ? 'alle gleich' : 'VERSCHIEDEN'));
+    if (!gleich) schlecht.push('bei Staerke 0 unterscheiden sich die Slicks noch');
+    // 4. Regen im Trockenen ist schlechter als ein Slick - die bestehende Zusicherung.
+    if (!(bei1.regen.grip < bei1.mittel.grip)) {
+      schlecht.push('Regenreifen greifen im Trockenen nicht schlechter');
+    }
+    // 5. Nur Slicks schwimmen auf.
+    if (bei1.regen.aqua !== 0) schlecht.push('Regenreifen aquaplanen');
+    OMEGA_TEST.tyreMixProbe(1);
+    return { ok: schlecht.length === 0,
+             mass: teile.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // ---- Die Autos auf der Karte tragen ihre Farbe, ihr Kuerzel und ihre Querlage ----
+  //
+  // GEMELDET: "aktuell sind alle orange mit Fragezeichen daneben". Die Ursache war ein
+  // falscher Feldname - c.farbe und c.name gibt es an einem Auto nicht. Genau das prueft
+  // dieser Test: eine gegebene Farbe muss im Punkt ankommen, und ein Querversatz muss den
+  // Punkt bewegen.
+  stAdd('Streckenkarte: Farbe, Kuerzel und Querlage kommen an', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.trackMarks) {
+      return { skip: true, mass: 'trackMarks nicht vorhanden' };
+    }
+    const schlecht = [], teile = [];
+    const mk = (quer) => OMEGA_TEST.trackMarks(null,
+      [{ index: 4, phase: 0.5, farbe: '#e23b3b', kuerzel: 'Alp', quer }]);
+    const mitte = mk(0), links = mk(-0.8), rechts = mk(0.8);
+    const letzt = (r) => r.punkte[r.punkte.length - 1];
+    // 1. Die Farbe kommt an und ist NICHT der Rueckfall.
+    teile.push('Farbe ' + letzt(mitte).fill);
+    if (letzt(mitte).fill !== '#e23b3b') schlecht.push('Farbe kommt nicht an');
+    // 2. Das Kuerzel steht daneben.
+    if (mitte.kuerzel.indexOf('Alp') < 0) schlecht.push('Kuerzel fehlt');
+    // 3. Der Querversatz bewegt den Punkt, und zwar in ENTGEGENGESETZTE Richtungen.
+    const dL = Math.hypot(letzt(links).x - letzt(mitte).x, letzt(links).y - letzt(mitte).y);
+    const dR = Math.hypot(letzt(rechts).x - letzt(mitte).x, letzt(rechts).y - letzt(mitte).y);
+    teile.push('Versatz ' + dL.toFixed(1) + ' / ' + dR.toFixed(1));
+    if (!(dL > 3 && dR > 3)) schlecht.push('Querlage bewegt den Punkt nicht');
+    const dLR = Math.hypot(letzt(links).x - letzt(rechts).x, letzt(links).y - letzt(rechts).y);
+    if (!(dLR > dL && dLR > dR)) schlecht.push('links und rechts liegen nicht auf zwei Seiten');
+    // 4. Das CH-Aussehen: schwarze Fahrbahn, rot links, blau rechts.
+    const f = mitte.farben || [];
+    for (const [farbe, was] of [['#14181f', 'Fahrbahn'], ['#ff5c5c', 'roter Randstein'],
+                                ['#5aa9ff', 'blauer Randstein'], ['#ffffff', 'Stossfugen']]) {
+      if (f.indexOf(farbe) < 0) schlecht.push(was + ' fehlt (' + farbe + ')');
+    }
+    teile.push(f.length + ' Farben im Bild');
+    return { ok: schlecht.length === 0,
+             mass: teile.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // ---- Das Gegensteuern im Drift-Modus ----
+  //
+  // Geprueft wird die FUNKTION und nicht die Fahrt: driftZuschlag() setzt Drehsignal, Tempo
+  // und Lenkwert und fragt, was herauskommt. Fuenf Aussagen, und die ersten zwei sind die,
+  // an denen ein Regler ohne Signal gefaehrlich wuerde.
+  stAdd('Drift: Gegensteuern regelt gegen das Drehsignal', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.driftZuschlag) {
+      return { skip: true, mass: 'driftZuschlag nicht vorhanden' };
+    }
+    const z = (g, span, kmh, steer, st) => OMEGA_TEST.driftZuschlag(g, span, kmh, steer, st);
+    const schlecht = [], teile = [];
+    // 1. OHNE SIGNAL kein Zuschlag - nicht raten.
+    if (Math.abs(z(0, 8, 60, 0.2, 0.5) - 0.2) > 1e-6) schlecht.push('ohne Signal wird zugeschlagen');
+    // 2. IM STAND kein Zuschlag: dort gibt es keine Drift, nur Wackeln.
+    if (Math.abs(z(8, 8, 2, 0.2, 0.5) - 0.2) > 1e-6) schlecht.push('im Stand wird zugeschlagen');
+    // 3. Die Richtung ist GEGEN die Drehung.
+    const rechtsDreh = z(8, 8, 60, 0.2, 0.5);
+    const linksDreh = z(-8, 8, 60, 0.2, 0.5);
+    teile.push('rechts ' + rechtsDreh + ' links ' + linksDreh);
+    if (!(rechtsDreh < 0.2 && linksDreh > 0.2)) schlecht.push('Richtung stimmt nicht');
+    // 4. Der Regler wirkt, und bei 0 passiert nichts.
+    if (Math.abs(z(8, 8, 60, 0.2, 0) - 0.2) > 1e-6) schlecht.push('Staerke 0 wirkt trotzdem');
+    if (!(z(8, 8, 60, 0.2, 1) < z(8, 8, 60, 0.2, 0.5))) schlecht.push('Staerke wirkt nicht');
+    // 5. DER DECKEL. Ein Wert ueber 1 waere nicht wirkungslos, sondern schaedlich: Byte 7
+    //    ist vorzeichenbehaftet und braeche in die andere Richtung um.
+    const voll = z(-8, 8, 60, 0.9, 1);
+    teile.push('Deckel ' + voll);
+    if (voll > 1 + 1e-9 || voll < -1 - 1e-9) schlecht.push('Deckel haelt nicht: ' + voll);
+    return { ok: schlecht.length === 0,
+             mass: teile.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // ---- Die Rundenzaehler-Fanfare ----
+  //
+  // Ihr Klang ist eine Sache fuers Ohr, ihre LAENGE nicht: eine Fanfare, die zehn Sekunden
+  // dauert, haelt das Ergebnis auf. Geprueft wird, dass sie spielt und wie lange.
+  stAdd('Rundenzaehler-Fanfare spielt und ist kurz genug', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.fanfareProbe) {
+      return { skip: true, mass: 'fanfareProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.fanfareProbe();
+    if (!r) return { skip: true, mass: 'kein Audiokontext - braucht eine Nutzergeste' };
+    const schlecht = [];
+    if (!(r.noten >= 20)) schlecht.push('nur ' + r.noten + ' Toene');
+    if (!(r.dauer > 2 && r.dauer < 7)) schlecht.push('Dauer ' + r.dauer + ' s');
+    return { ok: schlecht.length === 0,
+             mass: r.noten + ' Toene, ' + r.dauer + ' s'
+                 + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
   // ---- Controller-Vibration: ein Schalter je Ausloeser ----
   //
   // Siebzehn Aufrufstellen, sechs Arten, ein Hauptschalter. Geprueft wird die
@@ -3724,7 +3957,6 @@
       ['ghost-learn-pace', () => ghostCfg.learnPace],
       ['ghost-needcode', () => ghostCfg.needCode],
       ['ghost-rail', () => ghostCfg.railMode],
-      ['phys-enable', () => physicsEnabled],
       ['pit-double-lap', () => pitDoubleCountsLap],
       ['pit-enable', () => pitLaneEnabled],
       ['race-flying', () => raceFlying],

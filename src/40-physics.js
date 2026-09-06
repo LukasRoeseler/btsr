@@ -735,11 +735,21 @@
 
     // ---- EINSPURMODELL, ein Schritt ---------------------------------------------------
     //
-    // INSTRUMENT UND KEIN AKTOR. Nichts hiervon stellt die Lenkung, und der Grund ist keine
-    // Vorsicht, sondern eine Tatsache: das Modellauto rutscht nicht. Ein Modell, das eine
-    // Bewegung rechnet, die das Fahrzeug nicht ausfuehren kann, wuerde die Vorgabe von der
-    // Wirklichkeit wegdrehen - das Auto faehrt geradeaus, die Simulation meldet eine Drift,
-    // und die App korrigiert eine Bewegung, die es nicht gibt.
+    // INSTRUMENT UND KEIN AKTOR. Nichts hiervon stellt die Lenkung.
+    //
+    // DIE BEGRUENDUNG IST BERICHTIGT, und zwar vom Nutzer am Fahrzeug. Hier stand "das
+    // Modellauto rutscht nicht". Das stimmt nicht: auf rutschigem Boden bricht es aus, wenn
+    // man aus dem Stand direkt Vollgas gibt.
+    //
+    // Was trotzdem gilt, und darauf kommt es an: DIESES Modell rechnet den
+    // KURVENSCHRAEGLAUF, also das Wegdriften aus Seitenkraft bei Kurvenfahrt. Beobachtet ist
+    // etwas anderes, naemlich durchdrehende Raeder aus dem Stand. Ein Gegensteuern aus dem
+    // Kurvenmodell waere weiterhin die Korrektur einer Bewegung, die in dem Moment nicht
+    // stattfindet - das Auto faehrt geradeaus und dreht durch, die Simulation meldete eine
+    // Kurvendrift.
+    //
+    // Der Drift-Modus (v0.5.18) regelt deshalb gegen das GEMESSENE Drehsignal aus Byte 3
+    // und nicht gegen dieses Modell. Siehe driftGegenlenken() in 20-protocol.js.
     //
     // HALBIMPLIZIT und nicht explizit. Die Doku nennt das als den besseren der zwei Wege, und
     // die Begruendung ist nachrechenbar: die Zeitkonstante der Gierdynamik liegt bei 0,2 bis

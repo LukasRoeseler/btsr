@@ -2453,6 +2453,82 @@
     // 'regen', und die bestehenden Pruefungen benutzen die alten. Ein stiller
     // Umbenennungsdurchlauf haette sie umgeschrieben und damit den Beweis verwischt, dass
     // die Vorgabe bitgleich geblieben ist.
+    // ---- Die Rundenzaehler-Fanfare, ohne zu hoeren ---------------------------------
+    //
+    // Sie gibt ihre Partitur zurueck: Anzahl Toene und Gesamtdauer. Damit ist pruefbar,
+    // dass sie ueberhaupt spielt und wie lange - der Klang selbst ist eine Sache fuers Ohr,
+    // die Laenge nicht (eine Fanfare, die zehn Sekunden dauert, ist ein Fehler).
+    // ---- Taugt das Drehsignal zum Gegensteuern? -------------------------------------
+    //
+    // DIE MESSUNG, DIE VOR DEM REGLER KOMMT. Der beobachtete Fall gibt sie vor: aus dem
+    // Stand auf rutschigem Boden Vollgas, geradeaus, OHNE Lenkeingabe. Wenn das Auto dabei
+    // ausbricht und Byte 3 ausschlaegt, ist bewiesen, was das Gegensteuern braucht - dass
+    // das Signal eine Drehung OHNE Lenkeingabe anzeigt.
+    //
+    // Sie zeichnet auf und urteilt nicht: zurueck kommen die Werte, nicht ein "taugt" oder
+    // "taugt nicht". Ob 0,3 viel ist, entscheidet das Auto auf dem Teppich und nicht diese
+    // Funktion.
+    //
+    // `ms` ist die Aufzeichnungsdauer. Gefahren wird NICHT von hier aus - der Nutzer gibt
+    // selbst Gas; diese Probe schaut nur zu. Alles andere waere eine Fahrbewegung, die
+    // jemand ausloest, der nicht am Tisch sitzt.
+    driftProbe(ms) {
+      const dauer = ms || 4000;
+      const start = Date.now();
+      const punkte = [];
+      return new Promise((fertig) => {
+        const t = setInterval(() => {
+          let g = null, span = null, v = null, lenk = null;
+          try {
+            if (typeof gyroRaw === 'object' && gyroRaw) { g = gyroRaw.x; span = gyroRaw.span; }
+            v = physEngine.state.speedKmh * REAL_SCALE;
+            lenk = physicsEnabled ? physOutSteer : steerX;
+          } catch (e) { /* noch nichts da */ }
+          punkte.push({ t: Date.now() - start, gyro: g, span, kmh: v, lenk });
+          if (Date.now() - start >= dauer) {
+            clearInterval(t);
+            const mitTempo = punkte.filter(p => p.kmh !== null && Math.abs(p.kmh) > 6);
+            const gerade = mitTempo.filter(p => Math.abs(p.lenk || 0) < 0.08);
+            const betrag = (a) => a.length
+              ? +(a.reduce((x, p) => x + Math.abs(p.gyro || 0), 0) / a.length).toFixed(2) : null;
+            fertig({
+              punkte: punkte.length,
+              mitTempo: mitTempo.length,
+              geradeaus: gerade.length,
+              // Der eigentliche Wert: schlaegt das Signal aus, WAEHREND nicht gelenkt wird?
+              gyroGeradeaus: betrag(gerade),
+              gyroInsgesamt: betrag(mitTempo),
+              spanEnde: punkte.length ? punkte[punkte.length - 1].span : null,
+              verlauf: punkte.filter((_, i) => i % 5 === 0).slice(0, 40),
+            });
+          }
+        }, 100);
+      });
+    },
+
+    // Der Drift-Zuschlag selbst, ohne Auto: gefragt wird die FUNKTION, nicht die Fahrt.
+    driftZuschlag(gyro, span, kmh, steer, staerke) {
+      if (typeof driftGegenlenken !== 'function') return null;
+      const merkG = (typeof gyroRaw === 'object' && gyroRaw) ? { x: gyroRaw.x, span: gyroRaw.span } : null;
+      const merkV = physEngine.state.speedKmh;
+      const merkS = gegenlenkStaerke;
+      try {
+        if (merkG) { gyroRaw.x = gyro; gyroRaw.span = span; }
+        physEngine.state.speedKmh = kmh / REAL_SCALE;
+        if (staerke !== undefined) gegenlenkStaerke = staerke;
+        return +driftGegenlenken(steer).toFixed(4);
+      } finally {
+        if (merkG) { gyroRaw.x = merkG.x; gyroRaw.span = merkG.span; }
+        physEngine.state.speedKmh = merkV;
+        gegenlenkStaerke = merkS;
+      }
+    },
+
+    fanfareProbe() {
+      if (typeof playRaceEndFanfare !== 'function') return null;
+      return playRaceEndFanfare();
+    },
+
     tyreSet(kind) {
       if (typeof tyres === 'undefined') return null;
       const ALIAS = { wet: 'regen', slick: 'mittel' };

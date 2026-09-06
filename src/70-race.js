@@ -382,6 +382,77 @@
   //
   // Der Teilton ist LEISER als der Grundton, nicht lauter. Die Bestzeit soll heller klingen,
   // nicht lauter - lauter waere die naheliegende Wahl und die falsche.
+  // ---- Der Rundenzaehler am Rennende -------------------------------------------------
+  //
+  // Die Lautmalerei aus dem Wunsch IST die Partitur:
+  //
+  //     du-di-di   drei kurze, steigende Toene
+  //     dueue      ein langer, hoher
+  //     dumm       einer kurz und tief darunter
+  //     daaaa      am Ende einer, der stehenbleibt
+  //
+  // Drei Takte: zweimal derselbe, dann ein dritter mit doppeltem Lauf und Schlusston.
+  //
+  // ALS TABELLE und nicht als Folge von Aufrufen: so laesst sich die Melodie aendern, ohne
+  // die Wiedergabe anzufassen, und man sieht sie beim Lesen. [Startzeit s, Frequenz Hz,
+  // Dauer s, Lautstaerke].
+  //
+  // Die Frequenzen sind eine C-Dur-Dreiklangsfolge - C5 E5 G5 hinauf, C6 als Spitze, G3 als
+  // "dumm" darunter, C4 als Schluss. Gewaehlt und nicht gemessen: ein Rundenzaehler von
+  // 1978 spielt keine bestimmte Tonart, er spielt, was sein Teiler hergibt.
+  const ZAEHLER_TON = { C4: 261.6, G3: 196.0, C5: 523.3, E5: 659.3, G5: 784.0, C6: 1046.5 };
+  function zaehlerTakt(t0, mitLauf) {
+    const T = ZAEHLER_TON, n = [];
+    const lauf = (t) => {
+      n.push([t + 0.00, T.C5, 0.075, 0.16]);
+      n.push([t + 0.09, T.E5, 0.075, 0.16]);
+      n.push([t + 0.18, T.G5, 0.075, 0.16]);
+    };
+    lauf(t0);
+    lauf(t0 + 0.27);
+    if (mitLauf) { lauf(t0 + 0.54); lauf(t0 + 0.81); }
+    const nach = t0 + (mitLauf ? 1.08 : 0.54);
+    n.push([nach, T.C6, mitLauf ? 0.26 : 0.30, 0.20]);       // dueue
+    n.push([nach + (mitLauf ? 0.30 : 0.34), T.G3, 0.20, 0.22]); // dumm
+    return { noten: n, ende: nach + (mitLauf ? 0.50 : 0.54) };
+  }
+
+  function playRaceEndFanfare() {
+    if (!soundEnabled || !audioCtx) return null;
+    const t0 = audioCtx.currentTime + 0.05;
+    const a = zaehlerTakt(t0, false);
+    const b = zaehlerTakt(a.ende, false);
+    const c = zaehlerTakt(b.ende, true);
+    const noten = a.noten.concat(b.noten, c.noten);
+    // "daaaa": der Schluss bleibt stehen, tief und lang. Er ist der einzige Ton, der nicht
+    // aus dem Takt kommt - deshalb steht er hier und nicht in der Tabelle.
+    noten.push([c.ende + 0.06, ZAEHLER_TON.C4, 1.10, 0.24]);
+
+    // EIN Tiefpass fuer alles: der Rundenzaehler ist ein Piezosummer an einer einfachen
+    // Schaltung, also ein gefiltertes Rechteck. Ein Sinus waere zu weich und traefe das
+    // Vorbild nicht; ein ungefiltertes Rechteck waere zu scharf.
+    const lp = audioCtx.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.value = 2400;
+    lp.Q.value = 0.7;
+    lp.connect(audioCtx.destination);
+
+    for (const [t, f, d, v] of noten) {
+      const osc = audioCtx.createOscillator();
+      osc.type = 'square';
+      osc.frequency.value = f;
+      const g = audioCtx.createGain();
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(v, t + 0.008);
+      g.gain.exponentialRampToValueAtTime(0.0008, t + d);
+      osc.connect(g).connect(lp);
+      osc.start(t);
+      osc.stop(t + d + 0.02);
+    }
+    // Zurueck kommt die Partitur, damit ein Test sie nachrechnen kann, ohne zu hoeren.
+    return { noten: noten.length, dauer: +(noten[noten.length - 1][0] + noten[noten.length - 1][2] - t0).toFixed(2) };
+  }
+
   function playLapChime(beste) {
     if (!soundEnabled || !audioCtx) return;
     const t = audioCtx.currentTime;
@@ -926,6 +997,10 @@
          ? `, letzte Runde unvollendet nach ${formatLapTime(racePartialMs)}` : '')
       + (missed > 0 ? `, ${missed} Pflichtstopp${missed === 1 ? '' : 's'} verpasst, `
                       + `+${missed * racePitPenaltyS} s Strafe` : '');
+    // DER RUNDENZAEHLER, aber nur bei einer echten Zielflagge. Wer von Hand abbricht,
+    // bekommt keine Fanfare - dieselbe Ueberlegung, mit der die Ghosts dann auch nicht
+    // auslaufen: ein Abbruch ist kein Zieleinlauf.
+    if (willAuslaufen) playRaceEndFanfare();
     $('race-start-btn').disabled = false;
     $('race-lap-current-row').style.display = 'none';
     $('race-results').style.display = '';

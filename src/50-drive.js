@@ -310,10 +310,68 @@
     getriebeAnwenden(false, false);
   }
 
-  $('phys-enable').addEventListener('change', (e) => {
-    physicsEnabled = e.target.checked;
+  // ---- Drei Stellungen, ein abgeleiteter Schalter ------------------------------------
+  //
+  // physicsEnabled BLEIBT und wird abgeleitet: neun Stellen im Projekt verzweigen darauf
+  // (Sendeweg, Fahrschleife, Schalttasten, Motorton), und sie alle auf eine dritte
+  // Moeglichkeit umzuschreiben waere neun Gelegenheiten, eine zu vergessen.
+  //
+  // Der Drift-Modus faehrt wie "Aus" - rohe Stickstellung, keine Gaenge -, deshalb ist
+  // physicsEnabled dort false. Was ihn unterscheidet, sitzt im Sendeweg: das Gegensteuern.
+  function physModusAnwenden(melden) {
+    const v = $('phys-mode') ? $('phys-mode').value : 'physik';
+    driftModus = (v === 'drift');
+    physicsEnabled = (v === 'physik');
     physLastTime = null;
-  });
+    if (melden) {
+      log('Fahrgefuehl: ' + (v === 'physik' ? 'Physik'
+                             : v === 'drift' ? 'Drift (experimentell)'
+                             : 'Aus, rohe Stickstellung'), 'info');
+    }
+  }
+  if ($('phys-mode')) {
+    $('phys-mode').addEventListener('change', () => physModusAnwenden(true));
+    physModusAnwenden(false);
+  }
+
+  // Der Knopf ruft DIESELBE Funktion, die auch der Selbsttest benutzt: zwei Wege zu
+  // einer Messung waeren zwei Messungen.
+  if ($('drift-probe')) {
+    $('drift-probe').addEventListener('click', async () => {
+      const out = $('drift-probe-out');
+      if (!window.OMEGA_TEST || !OMEGA_TEST.driftProbe) {
+        out.textContent = 'Messstand nicht vorhanden.';
+        return;
+      }
+      out.textContent = 'Vollgas geradeaus, ohne zu lenken \u2026';
+      const r = await OMEGA_TEST.driftProbe(4000);
+      if (!r.mitTempo) {
+        out.textContent = 'Das Auto ist nicht gefahren \u2013 ohne Fahrt gibt es kein '
+                        + 'Drehsignal, Byte 3 schwankt erst dann.';
+        return;
+      }
+      const teile = [
+        r.mitTempo + ' von ' + r.punkte + ' Messpunkten mit Tempo',
+        r.geradeaus + ' davon ohne Lenkeingabe',
+        'Drehsignal geradeaus: ' + (r.gyroGeradeaus === null ? '\u2013' : r.gyroGeradeaus),
+        'insgesamt: ' + (r.gyroInsgesamt === null ? '\u2013' : r.gyroInsgesamt),
+        'Massstab: ' + (r.spanEnde === null ? '\u2013' : Math.round(r.spanEnde)),
+      ];
+      // KEIN URTEIL. Ob 0,3 viel ist, entscheidet das Auto auf dem Teppich; diese Zeile
+      // sagt nur, was gemessen wurde.
+      out.textContent = teile.join(' \u00b7 ');
+      log('Drift-Probe: ' + teile.join(' | '), 'info');
+    });
+  }
+
+  if ($('setting-countersteer')) {
+    const gegen = (v) => {
+      gegenlenkStaerke = v;
+      $('setting-countersteer-val').textContent = Math.round(v * 100) + '%';
+    };
+    $('setting-countersteer').addEventListener('input', (e) => gegen(parseFloat(e.target.value)));
+    gegen(parseFloat($('setting-countersteer').value));
+  }
 
   $('dash-head-toggle').addEventListener('change', (e) => {
     headlightsOn = e.target.checked;

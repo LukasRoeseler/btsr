@@ -1547,6 +1547,24 @@
     "GELB": "YELLOW",
     "ANFAHRT": "ROLLING UP",
     "Einführungsrunde": "Formation lap",
+    "Physik":
+      "Physics",
+    "Aus, rohe Stickstellung":
+      "Off, raw stick position",
+    "Drift (experimentell)":
+      "Drift (experimental)",
+    "Gegensteuern im Drift":
+      "Countersteer in drift",
+    "Drift-Probe (4 s)":
+      "Drift probe (4 s)",
+    "Ghosts fahren die Runde zu Ende":
+      "Ghosts are finishing the lap",
+    "Alle im Ziel":
+      "Everyone home",
+    "Physik: Drehmoment, Gänge, Reibkreis – die Vorgabe. Aus: rohe Stickstellung ohne Gänge, wie ein Fernsteuerungsauto. Drift: rohes Gas wie bei „Aus“, dazu ein automatisches Gegensteuern gegen das gemessene Drehsignal des Autos und eine weichere Lenkung. Der Drift-Modus ist experimentell, und die Zeile darunter sagt, warum.":
+      "Physics: torque, gears, friction circle – the default. Off: raw stick position with no gears, like a radio-controlled car. Drift: raw throttle as with “Off”, plus automatic countersteer against the car's measured rotation signal and softer steering. Drift mode is experimental, and the line below says why.",
+    "Wie stark gegen das Ausbrechen gelenkt wird, gemessen am Drehsignal aus Byte 3 der Meldungen. 50 Prozent entspricht der Vorgabe, nach der gefragt wurde. Was daran unsicher ist, und zwar beides zugleich: das Signal ist unbestätigt – es schwankt erst, wenn das Auto fährt, und wechselte in genau einer Aufnahme das Vorzeichen mit der Kurvenrichtung. Und es ist unkalibriert: sein Maßstab wird selbst nachgeführt, weil die wirkliche Amplitude unbekannt ist. Deshalb hängt die Stärke davon ab, welchen größten Gierwert die Sitzung bisher gesehen hat. Der Knopf „Drift-Probe“ unter „Querablage messen“ misst, ob das Signal bei gerader Vollgasfahrt überhaupt ausschlägt.":
+      "How hard the car steers against a slide, measured from the rotation signal in byte 3 of the notifications. 50 per cent is the default that was asked for. What is uncertain about it, and it is two things at once: the signal is unconfirmed – it only varies once the car is moving, and flipped sign with cornering direction in exactly one recording. And it is uncalibrated: its scale is self-adjusting because the real amplitude is unknown. So the strength depends on the largest yaw value the session has seen so far. The “Drift probe” button under “Measure lateral offset” measures whether the signal moves at all under straight full throttle.",
     "Rennen":
       "Race",
     "Boxenstopp einleiten":
