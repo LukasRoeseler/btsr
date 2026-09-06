@@ -1070,12 +1070,35 @@
     $('setting-fuelweight-val').textContent = v === 0 ? 'aus' : Math.round(v * 100) + '%';
   });
 
-  $('setting-tyres').addEventListener('input', (e) => {
-    const v = parseFloat(e.target.value);
+  // AUS DEM MARKUP LESEN, nicht nur auf Aenderungen hoeren - dasselbe Muster wie bei
+  // setting-vibration. GEMESSEN am 0.5.17: der Regler stand auf 0 ("aus"), das Modell auf
+  // 2,0, und die Anzeige daneben behauptete "200 %". Ein einziges Antippen liess das
+  // Fahrverhalten von 200 auf 0 Prozent springen. Der Spiegel-Selbsttest hat es nicht
+  // gefunden, weil er nur Kaestchen verglich und dieser hier ein Schieberegler ist.
+  function reifenReglerAnwenden(v) {
     physEngine.config.tyreEffect = v;
     $('setting-tyres-val').textContent = v === 0 ? 'aus' : Math.round(v * 100) + '%';
     if (v === 0) resetTyres();   // leave nothing stale behind when switching off
+    // Die Mischungsstaerke haengt an dieser Zahl (ohne Reifensimulation fahren alle den
+    // Mittelreifen), also muss der Untergrund neu gerechnet werden.
+    if (typeof applySurface === 'function') applySurface();
+  }
+  $('setting-tyres').addEventListener('input', (e) => {
+    reifenReglerAnwenden(parseFloat(e.target.value));
   });
+  reifenReglerAnwenden(parseFloat($('setting-tyres').value));
+
+  if ($('setting-tyre-mix')) {
+    const mixAnwenden = (v) => {
+      tyreMixStaerke = v;
+      $('setting-tyre-mix-val').textContent = v === 0 ? 'gleich' : Math.round(v * 100) + '%';
+      if (typeof applySurface === 'function') applySurface();
+    };
+    $('setting-tyre-mix').addEventListener('input', (e) => {
+      mixAnwenden(parseFloat(e.target.value));
+    });
+    mixAnwenden(parseFloat($('setting-tyre-mix').value));
+  }
 
   $('brake-volume').addEventListener('input', (e) => {
     brakeVolume = parseFloat(e.target.value);

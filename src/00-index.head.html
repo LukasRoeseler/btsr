@@ -1305,10 +1305,23 @@
      ein dunkler Rand und ein Schatten nach innen. Die Fuellung selbst wird gedaempft
      (opacity .82) - bei 100 % Restprofil ist sie sonst der groesste Farbblock im ganzen
      Cockpit, und der gehoert dem Tacho. */
+  /* DER RAHMEN IST DIE MISCHUNG, die Fuellung die Temperatur, die Fuellhoehe das
+     Restprofil. Drei Aussagen auf einer 77-px-Kachel, und sie sind unterscheidbar, weil sie
+     verschiedene GEOMETRIEN benutzen: eine Linie aussen, eine Flaeche innen, eine Hoehe.
+
+     Die Farben nach Pirelli (rot weich, gelb mittel, weiss hart, blau Regen). Die Fuellung
+     benutzt blau-gruen-rot fuer die Temperatur, es gibt also eine Ueberschneidung - deshalb
+     die 2 px Linie und nicht eine getoente Flaeche, und deshalb steht die Mischung
+     zusaetzlich ausgeschrieben in der Zeile darunter. Zwei Traeger fuer eine Aussage. */
   .gt3-t4 { display: block; position: relative; aspect-ratio: 1 / 1.6;
     background: #04060b; border-radius: 2px / 4px; overflow: hidden;
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .12),
+    --mix-farbe: #f7d117;
+    box-shadow: inset 0 0 0 2px var(--mix-farbe),
                 inset 0 2px 4px rgba(0, 0, 0, .55); }
+  body[data-tyre-mix="weich"] .gt3-t4 { --mix-farbe: #e5261e; }
+  body[data-tyre-mix="mittel"] .gt3-t4 { --mix-farbe: #f7d117; }
+  body[data-tyre-mix="hart"] .gt3-t4 { --mix-farbe: #f2f4f8; }
+  body[data-tyre-mix="regen"] .gt3-t4 { --mix-farbe: #2f6fd0; }
   /* Die Fuellung waechst von UNTEN, wie ein Vorrat. Dieselbe Richtung wie Tank und Schaden:
      drei Anzeigen, die gleich leerlaufen, liest man mit einem Blick. */
   .gt3-t4 > b { position: absolute; left: 0; right: 0; bottom: 0; height: 0;
@@ -1465,6 +1478,96 @@
      keinen Hintergrund hatte; auf dem goldenen Band ergibt sie Kontrast 2,23.
      Gefunden hat es der Kontrasttest, sobald ein Prueflauf den Streifen einmal sichtbar
      stehen liess - vorher war er waehrend des Tests immer leer und damit unsichtbar. */
+  /* ---- Die zwei zusaetzlichen Cockpit-Schirme -----------------------------------------
+     Blaettern mit dem Steuerkreuz links/rechts. Sie liegen UEBER den Kacheln und decken
+     genau deren Rasterflaeche - Schaltlichter, Flaggenband, Boxenband und Meldezeile
+     bleiben sichtbar.
+
+     KEIN PIXELWERT, nur Rasterlinien: wer das Raster oben umbaut, zieht hier von selbst
+     nach. Und absolut gesetzt zaehlen sie in cockpitInhaltHoehe() nicht mit, also aendert
+     ein Schirmwechsel die Einpassung nicht und cockpitPassung() muss nicht neu laufen. */
+  .gt3-schirm {
+    position: absolute;
+    grid-row: left-start / strip-end;
+    grid-column: left-start / right-end;
+    inset: 0;
+    /* ueber den Kacheln, UNTER Regen, Deckglas, Einschaltrampe und den Eckknoepfen: aus dem
+       Schirm heraus muss man das Vollbild verlassen koennen. */
+    z-index: 2;
+    display: none;
+    /* DAS FARBPAAR DES STREIFENS, und das ist eine Entscheidung mit Begruendung.
+       --gt3-strip / --gt3-strip-ink fuehrt jede der fuenf Ansichten fuer genau das hier:
+       eine deckende Instrumentenflaeche mit lesbarer Tinte. Gemessen ist es in allen fuenf
+       eine REINE FARBE (#0b0f18, beim Klassiker #120d07) - kein Verlauf.
+
+       Das loest drei Dinge auf einmal. Erstens ist der Schirm deckend, ohne dass eine
+       Verlaufsebene traegt (die Falle aus v0.5.17: eine reine Farbe als erste
+       background-image-Ebene macht die ganze Deklaration ungueltig). Zweitens findet ein
+       Kontrastpruefer eine wirkliche Farbe statt ein Bild schaetzen zu muessen. Und
+       drittens - der eigentliche Befund - ist --gt3-ink in der hellen Ansicht "modern"
+       DUNKEL (#12161d), weil dort der Schirm hell ist. Auf einer dunklen Kachel war das
+       gemessen Kontrast 1,04, also unlesbar. --gt3-strip-ink ist in jeder Ansicht die
+       Tinte, die zu diesem Grund gehoert. */
+    background: var(--gt3-strip);
+    color: var(--gt3-strip-ink);
+    padding: clamp(4px, .8vw, 9px);
+    gap: clamp(3px, .6vw, 7px);
+    overflow: hidden;
+  }
+  #race-dash[data-screen="pit"] #race-pitscreen,
+  #race-dash[data-screen="uebersicht"] #race-ovscreen { display: grid; }
+
+  .schirm-kopf { display: flex; align-items: baseline; gap: 10px;
+    font-size: clamp(8px, 1.1vw, 11px); letter-spacing: .12em;
+    color: var(--gt3-strip-ink); text-transform: uppercase; }
+  .schirm-kopf b { color: var(--gt3-tile-ink); letter-spacing: .06em; }
+  .schirm-fuss { font-size: clamp(7.5px, 1vw, 10px); color: var(--gt3-strip-ink);
+    letter-spacing: .06em; }
+
+  /* ---- Der Boxenschirm ---------------------------------------------------------------- */
+  #race-pitscreen { grid-template-rows: auto repeat(5, minmax(0, 1fr)) auto; }
+  .pit-row { display: grid; align-items: center;
+    grid-template-columns: 18px minmax(0, 1.3fr) minmax(0, 1fr);
+    gap: clamp(4px, 1vw, 12px);
+    padding: 0 clamp(4px, 1vw, 10px);
+    background: var(--gt3-tile); color: var(--gt3-tile-ink);
+    border-radius: var(--gt3-radius); }
+  .pit-row > .pr-pfeil { font-size: 13px; color: var(--gt3-tile-ink); opacity: 0; }
+  .pit-row > .pr-name { font-size: clamp(10px, 1.5vw, 15px); font-weight: 700;
+    letter-spacing: .04em; }
+  .pit-row > .pr-wert { font-size: clamp(9px, 1.3vw, 13px); font-family: monospace;
+    text-align: right; color: var(--gt3-strip-ink); }
+  /* DIE MARKIERUNG ALS OUTLINE, nicht als Rahmen: sie malt AUSSERHALB des Innenrings, den
+     pit-on/pit-off schon tragen, und kostet kein Layout. Dazu ein Zeichen, weil Farbe
+     allein keine Kennung ist - dieselbe Ueberlegung wie bei den Autofarben. */
+  .pit-row.pr-sel { outline: 2px solid var(--gt3-tile-ink); outline-offset: -2px; }
+  .pit-row.pr-sel > .pr-pfeil { opacity: 1; }
+
+  /* ---- Der Rennuebersichts-Schirm ----------------------------------------------------- */
+  #race-ovscreen { grid-template-rows: auto minmax(0, 1fr) auto; }
+  .ov-tab { display: grid; align-content: start; gap: 2px; overflow: hidden;
+    font-family: monospace; font-size: clamp(9px, 1.35vw, 14px); }
+  .ov-zeile { display: grid; align-items: center;
+    grid-template-columns: 1.6em 1.1em minmax(0, 1fr) 2.6em 2.4em 4.2em;
+    gap: clamp(3px, .7vw, 8px);
+    padding: clamp(1px, .35vw, 4px) clamp(3px, .8vw, 8px);
+    background: var(--gt3-tile); color: var(--gt3-tile-ink);
+    border-radius: var(--gt3-radius); }
+  .ov-zeile.ov-ich { outline: 1px solid var(--gt3-tile-ink); outline-offset: -1px; }
+  .ov-pos { color: var(--gt3-strip-ink); }
+  /* Der Farbklecks des Autos, dieselbe Kennung wie in der Garage. */
+  .ov-farbe { width: 1em; height: 1em; border-radius: 50%; align-self: center;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.35); }
+  .ov-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ov-runden { text-align: right; }
+  /* Das gelbe P fuer Boxenstopps. Gelb wie im Rennsport, und mit Anzahl statt mehrfach. */
+  .ov-pit { text-align: center; color: #ffd83d; font-weight: 700; }
+  /* Nur die FARBE der Mischung, wie gewuenscht - kein Buchstabe, keine Flaeche. Ein Balken
+     an der Kante, damit er neben einer Ziffernspalte nicht wie ein Wert aussieht. */
+  .ov-mix { width: 100%; height: .82em; border-radius: 2px;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,.45); }
+  .ov-luecke { text-align: right; }
+
   #hud-toast-wrap {
     grid-area: toast; min-height: 0; padding: 0 clamp(4px, 1vw, 10px);
     color: #100c02; font-family: monospace; font-size: clamp(9px, 1.3vw, 13px);
@@ -2223,6 +2326,18 @@
      kept reserving 40px and pushed the fullscreen icon away from the corner. */
   .race-corner button[hidden] { display: none; }
   .race-corner svg { width: 18px; height: 18px; }
+  /* SCHMALER UND GEDECKTER als die Vollbildknoepfe: eine Nebenbedienung. Sie werden erst
+     beim Zeigen deutlich, damit sie im Fahren nicht ablenken. */
+  .race-corner button.schirm-pfeil { width: 26px; height: 34px;
+    background: rgba(10, 14, 22, .45); opacity: .55; }
+  .race-corner button.schirm-pfeil:hover { opacity: 1; }
+  .race-corner button.schirm-pfeil svg { width: 15px; height: 15px; }
+  /* Ein Punkt je Schirm, der aktive gefuellt. Aus der Schirmliste erzeugt und nicht fest
+     im Markup: ein vierter Schirm soll nicht an zwei Orten nachgetragen werden muessen. */
+  .schirm-punkte { display: flex; align-items: center; gap: 3px; padding: 0 2px; }
+  .schirm-punkte i { width: 4px; height: 4px; border-radius: 50%;
+    background: var(--ink-2); opacity: .35; }
+  .schirm-punkte i.an { opacity: 1; }
 
   /* Recorder. The badge has to be visible while DRIVING, including on the racing
      screen, otherwise it is far too easy to do a whole run with the recorder off. */
@@ -2580,6 +2695,21 @@
     <div class="gt3" id="race-dash">
       <div class="race-rain" aria-hidden="true"><i></i><i></i><i></i></div>
       <div class="race-corner">
+        <!-- BLAETTERN OHNE GAMEPAD. Absichtlich klein und gedeckt: es ist eine
+             Nebenbedienung, kein Instrument, und im Augenwinkel eines Fahrers soll es nicht
+             mit den Kacheln um Aufmerksamkeit streiten. Die Punkte dazwischen sagen, wo man
+             ist - eine Beschriftung waere breiter als der Knopf. -->
+        <button type="button" class="schirm-pfeil" id="race-screen-prev"
+                title="Vorheriger Schirm" aria-label="Vorheriger Schirm">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+               stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 5 8 12l6.5 7"/>
+          </svg></button>
+        <span class="schirm-punkte" id="race-screen-dots" aria-hidden="true"></span>
+        <button type="button" class="schirm-pfeil" id="race-screen-next"
+                title="N&auml;chster Schirm" aria-label="N&auml;chster Schirm">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+               stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 5 16 12l-6.5 7"/>
+          </svg></button>
         <button type="button" id="race-fs" title="Vollbild" aria-label="Vollbild">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                stroke-linecap="round" stroke-linejoin="round">
@@ -2809,6 +2939,43 @@
            data-i18n-skip>t1p.de/omegasim</a>
         <span data-i18n-skip>OmegaSim</span>
       </div>
+      <!-- ZWEI ZUSAETZLICHE SCHIRME, im Markup und NICHT zur Malzeit erzeugt: der
+           Selbsttest "Cockpit-Ansicht: sichtbar verschieden, funktional gleich" verlangt,
+           dass die Zahl der Elemente mit id ueber alle Ansichten konstant ist. Gefuellt
+           werden nur die Werte. -->
+      <div class="gt3-schirm" id="race-pitscreen">
+        <div class="schirm-kopf"><b>Box</b><span id="pit-kopf-lage" data-i18n-skip>aus</span>
+          <span style="margin-left:auto" id="pit-kopf-zeit" data-i18n-skip></span></div>
+        <div class="pit-row" id="pit-row-go">
+          <span class="pr-pfeil" aria-hidden="true">&#9656;</span>
+          <span class="pr-name">Boxenstopp einleiten</span>
+          <span class="pr-wert" id="pit-wert-go" data-i18n-skip>&ndash;</span></div>
+        <div class="pit-row pit-tile" id="pit-row-tyres" data-pit="tyres">
+          <span class="pr-pfeil" aria-hidden="true">&#9656;</span>
+          <span class="pr-name">Reifen wechseln</span>
+          <span class="pr-wert" id="pit-wert-tyres" data-i18n-skip>&ndash;</span></div>
+        <div class="pit-row" id="pit-row-mix">
+          <span class="pr-pfeil" aria-hidden="true">&#9656;</span>
+          <span class="pr-name">Reifenwahl</span>
+          <span class="pr-wert" id="pit-wert-mix" data-i18n-skip>&ndash;</span></div>
+        <div class="pit-row pit-tile" id="pit-row-refuel" data-pit="refuel">
+          <span class="pr-pfeil" aria-hidden="true">&#9656;</span>
+          <span class="pr-name">Tanken</span>
+          <span class="pr-wert" id="pit-wert-refuel" data-i18n-skip>&ndash;</span></div>
+        <div class="pit-row pit-tile" id="pit-row-repair" data-pit="repair">
+          <span class="pr-pfeil" aria-hidden="true">&#9656;</span>
+          <span class="pr-name">Reparieren</span>
+          <span class="pr-wert" id="pit-wert-repair" data-i18n-skip>&ndash;</span></div>
+        <div class="schirm-fuss" id="pit-fuss" data-i18n-skip></div>
+      </div>
+
+      <div class="gt3-schirm" id="race-ovscreen">
+        <div class="schirm-kopf"><b>Rennen</b><span id="ov-kopf-lage" data-i18n-skip>&ndash;</span>
+          <span style="margin-left:auto" id="ov-kopf-runde" data-i18n-skip></span></div>
+        <div class="ov-tab" id="ov-tab"></div>
+        <div class="schirm-fuss" id="ov-fuss" data-i18n-skip></div>
+      </div>
+
       <div class="gt3-banner" id="hud-toast-wrap"><span id="hud-toast"></span></div>
     </div>
 
@@ -5798,12 +5965,26 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-fuelweight-val">100%</span>
         </div></div>
-      <div class="opt-row"><div class="opt-label">Reifen: Temperatur &amp; Verschlei&szlig;<small>Kalt nach Start und Boxenstopp, abgenutzt nach hartem Stint. Links = aus.</small></div>
+      <div class="opt-row"><div class="opt-label">Reifen: Temperatur &amp; Verschlei&szlig;<small>Kalt nach Start und Boxenstopp, abgenutzt nach hartem Stint. Links = aus. Bis v0.5.17 stand der Regler beim Laden auf 0 und das Modell trotzdem auf 200 Prozent &ndash; ein einziges Antippen lie&szlig; das Fahrverhalten springen. Beide sagen jetzt dasselbe, und die Vorgabe ist das volle Modell.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-tyres" min="0" max="2" step="0.05" value="0">
+          <input type="range" id="setting-tyres" min="0" max="2" step="0.05" value="1">
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="setting-tyres-val">200%</span>
+          <span class="opt-val" id="setting-tyres-val">100%</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Mischungsunterschied
+          <span class="wip-tag">WIP</span>
+          <small>Wie stark sich weich, mittel, hart und Regen unterscheiden. Der Regler bewegt
+          alle Werte zugleich &ndash; Grip und Verschlei&szlig; &ndash; und zwar als
+          Abstand zum Mittelreifen. Bei 0 rechnen alle drei Slicks wie mittel, bei 100 Prozent
+          gilt die Tabelle, dar&uuml;ber ist der Unterschied gr&ouml;&szlig;er als im
+          Rennsport. Steht die Reifensimulation dar&uuml;ber auf aus, fahren ohnehin alle den
+          Mittelreifen, egal was hier steht.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="setting-tyre-mix" min="0" max="2" step="0.05" value="1">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-tyre-mix-val">100%</span>
         </div></div>
       
 

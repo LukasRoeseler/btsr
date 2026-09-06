@@ -3321,8 +3321,22 @@
       const l0 = physEngine.state.latUse;
       teile.push('latUse ' + (l0 === undefined ? 'FEHLT' : 'vorhanden'));
       if (l0 === undefined) schlecht.push('latUse nicht im Zustand');
-      if (!(gerade.steerGrip >= kurve.steerGrip)) {
-        schlecht.push('Kurvenfahrt nimmt keinen Griff');
+      // HIER STAND steerGrip, UND DAS WAR DIE FALSCHE GROESSE. steerGrip haengt an
+      // frontCap und frontUse, also am BREMSEN - der Lenkeinschlag kommt darin gar nicht
+      // vor. Bei brake: 0 sind beide Proben rechnerisch gleich, und der Unterschied kam
+      // allein daher, dass die Kurvenprobe die Reifen ein wenig aufheizt.
+      //
+      // Gemessen mit dem Reifenmodell auf 1,0: 0,85650939 gegen 0,85656252, also 5e-5 in
+      // der FALSCHEN Richtung - der Test war gruen, solange das Modell auf 2,0 stand und
+      // die schnellere Erwaermung das Vorzeichen zufaellig andersherum drehte. Eine
+      // Zusicherung, die an der Aufheizrate haengt, sichert nichts zu.
+      //
+      // Was der Reibkreis WIRKLICH sagt: wer lenkt, hat weniger LAENGS uebrig. Das steht in
+      // gripLong, und dort ist der Unterschied kein Rauschen (gemessen 1,00 gegen 0,52).
+      teile.push('gripLong gerade ' + gerade.gripLong.toFixed(2)
+                 + ' / Kurve ' + kurve.gripLong.toFixed(2));
+      if (!(gerade.gripLong > kurve.gripLong + 0.05)) {
+        schlecht.push('Kurvenfahrt nimmt keinen Laengsgriff');
       }
     }
 

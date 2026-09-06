@@ -298,6 +298,10 @@
         // v0.4 von 0,0018 herauf: bei 100 % war der Verschleiss ueber eine Rennlaenge
         // kaum zu merken. Jetzt abgefahren nach gut vier Minuten voller Attacke.
         tyreWearRate: 0.0032,
+        // Faktor der REIFENMISCHUNG auf den Verschleiss, gesetzt von applySurface() in
+        // 70-race.js. Eigenes Feld und nicht tyreWearRate selbst: zwei Orte fuer dieselbe
+        // Zahl waren in diesem Projekt schon siebzehnmal eine Abweichung.
+        tyreWearMix: 1.0,
         tyreWearPenalty: 0.35, // Griffverlust auf voellig abgefahrenen Reifen (v0.4: von 0,30)
         shiftDragFactor: 0.25, // drag during a shift: a slight lull, not a full coast-down
         accelCalibration: 1,   // solved for in calibrateAccel(), see there
@@ -1348,7 +1352,11 @@
       // VIER Verschleisswerte, jeder mit seiner Radlast. Vorher waren es zwei
       // (links/rechts) aus der Lenkrichtung allein - vorne und hinten waren verklebt,
       // obwohl das Bremsen die Vorderachse laengst belastet.
-      const zuwachs = cfg.tyreWearRate * pWear * cfg.tyreEffect * work * hotFactor * dt;
+      // Der Mischungsfaktor multipliziert HIER und nicht in tyreWearRate: weich frisst
+      // sich schneller ab als hart, und das ist eine Eigenschaft des Gummis und keine
+      // der Grundrate.
+      const zuwachs = cfg.tyreWearRate * (cfg.tyreWearMix || 1) * pWear
+                      * cfg.tyreEffect * work * hotFactor * dt;
       const asym = Math.max(0, Math.min(2, cfg.tyreAsymEffect));
       for (let i = 0; i < 4; i++) {
         const last = asym > 0 ? st.load4[i] : 1;

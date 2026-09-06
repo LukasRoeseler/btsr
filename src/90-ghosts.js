@@ -320,11 +320,16 @@
   // Frei zuweisbar sind sie nicht, deshalb stehen sie hier und nicht in DEFAULT_BINDINGS.
   // Und sie sind nicht ausschliesslich: im Streckeneditor und bei scharfem Boxenstopp
   // greifen erst diese zwei ab (siehe pollGamepad), danach gilt wieder das hier.
+  // DIE TABELLE, AUS DER DAS SCHAUBILD LIEST. Sie muss mit der Kette in pollGamepad
+  // uebereinstimmen. Der bestehende Selbsttest prueft nur, dass das Steuerkreuz nicht
+  // als FREI erscheint - eine falsche Beschriftung bliebe also gruen, und genau das
+  // waere beim Umbelegen in v0.5.18 beinahe passiert. Deshalb steht die
+  // Uebereinstimmung ab jetzt zusaetzlich als eigene Pruefung.
   const PAD_FIXED = {
-    dup: 'Bremsbalance nach vorn',
-    ddown: 'Bremsbalance nach hinten',
-    dleft: 'Lenkansprechen kleiner',
-    dright: 'Lenkansprechen größer',
+    dup: 'Lenkansprechen größer',
+    ddown: 'Lenkansprechen kleiner',
+    dleft: 'Schirm zurück',
+    dright: 'Schirm vor',
   };
 
   function padDiagramRender() {
@@ -604,22 +609,16 @@
     return false;
   }
 
-  // Hoch/runter auf dem Steuerkreuz ist die BREMSBALANCE. Vorher war es der
-  // Beschleunigungsfaktor, und der ist eine Feinabstimmung, die man einmal setzt und stehen
-  // laesst. Die Balance ist die Groesse, die ein Fahrer WAEHREND der Fahrt nachzieht - dafuer
-  // hat ein GT3 einen Drehregler am Lenkrad.
+  // HIER STAND nudgeBrakeBias(), und die Funktion ist mit ihren zwei Aufrufern gegangen.
+  // Bis v0.5.17 lag die Bremsbalance auf hoch/runter, mit der Begruendung, sie sei die
+  // Groesse, die ein Fahrer WAEHREND der Fahrt nachzieht. Das stimmt weiter - sie hat
+  // dafuer den Regler in den Optionen und die Zieh-Skala im Cockpit. Was das Steuerkreuz
+  // konnte und die zwei nicht koennen, ist Blaettern, und dafuer werden links und rechts
+  // gebraucht.
   //
-  // Der Weg geht ueber das Bedienelement und sein Ereignis, nicht direkt in die
-  // Konfiguration: dann zieht die Anzeige in den Optionen von selbst nach, und es gibt
-  // keinen zweiten Zustand.
-  function nudgeBrakeBias(delta) {
-    const input = $('setting-brakebias');
-    if (!input) return;
-    const v = Math.max(+input.min, Math.min(+input.max, parseInt(input.value, 10) + delta));
-    input.value = v;
-    input.dispatchEvent(new Event('input', { bubbles: true }));
-    showHudToast(`Bremsbalance ${v}% vorn`);
-  }
+  // Ebenso ausgebaut: pitQuickMenu(). Bliebe es stehen, verschluckte es hoch/runter, sobald
+  // ein Stopp scharf ist - der Lenktrimm hoerte also mitten im Rennen ohne sichtbaren Grund
+  // auf zu wirken. Was es konnte, kann der Boxenschirm vollstaendig und sichtbar.
 
   function nudgeSteerResponse(delta) {
     // Keep the options slider in step, otherwise menu and controller drift apart.
@@ -3855,13 +3854,28 @@
       // loest aus. Zu frueh losgelassen passiert nichts - ein halber Druck darf keine halbe
       // Wirkung haben.
       const flagNow = readBindingValue(pad, bindings.yellowflag) > BUTTON_CAPTURE_THRESHOLD;
-      if (flagNow && !prevYellowFlag) { padFlagFired = false; flagHoldPress(); }
-      if (flagNow && !padFlagFired && flagHoldStart !== null
-          && Date.now() - flagHoldStart >= FLAG_HOLD_MS) {
-        padFlagFired = true;
-        flagHoldRelease(true);
+      // ---- Am Boxenschirm waehlt diese Taste, und zwar GANZ ---------------------------
+      //
+      // Sie liest die GEBUNDENE Flaggenaktion und nicht fest Knopf 0. Wer die Flagge auf
+      // Dreieck legt, waehlt dann mit Dreieck - ein fest verdrahteter Knopf 0 waere eine
+      // zweite Bedeutung auf einer Taste, die das Schaubild als "nicht belegt" zeigt.
+      //
+      // UND AUSDRUECKLICH KEINE UNTERSCHEIDUNG NACH HALTEDAUER. Genau das war bis v0.5.1
+      // gebaut - Quadrat trug Runterschalten UND die Flagge - und ist als Fehler
+      // zurueckgenommen worden. Der Ladebalken startet am Boxenschirm gar nicht erst, statt
+      // bei 40 Prozent stehenzubleiben. Wer dort Gelb geben will, blaettert zurueck; das ist
+      // eine Regel, die man in einem Satz sagen kann.
+      if (flagNow && !prevYellowFlag && pitScreenSelect()) {
+        padFlagFired = true;              // kein Halten offen, also auch kein Loslassen
+      } else if (!padFlagFired || !flagNow) {
+        if (flagNow && !prevYellowFlag) { padFlagFired = false; flagHoldPress(); }
+        if (flagNow && !padFlagFired && flagHoldStart !== null
+            && Date.now() - flagHoldStart >= FLAG_HOLD_MS) {
+          padFlagFired = true;
+          flagHoldRelease(true);
+        }
+        if (!flagNow && prevYellowFlag && !padFlagFired) flagHoldRelease(false);
       }
-      if (!flagNow && prevYellowFlag && !padFlagFired) flagHoldRelease(false);
       prevYellowFlag = flagNow;
 
       const resetNow = readBindingValue(pad, bindings.resetcar) > BUTTON_CAPTURE_THRESHOLD;
@@ -3899,10 +3913,20 @@
       // Fehlbedienungen: ein Druck aufs Steuerkreuz verstellte irgendeinen Regler, den man
       // gerade nicht im Blick hatte. Die Programmierschule hing an derselben Kette und ist
       // mit ausgebaut; sie laesst sich weiterhin mit Maus und Finger bedienen.
-      if (dUp && !prevDpad.up && !trackEditorPad('up') && !pitQuickMenu('up')) nudgeBrakeBias(+1);
-      if (dDown && !prevDpad.down && !trackEditorPad('down') && !pitQuickMenu('down')) nudgeBrakeBias(-1);
-      if (dLeft && !prevDpad.left && !trackEditorPad('left') && !pitQuickMenu('left')) nudgeSteerResponse(-0.1);
-      if (dRight && !prevDpad.right && !trackEditorPad('right') && !pitQuickMenu('right')) nudgeSteerResponse(+0.1);
+      // NEUE BELEGUNG seit v0.5.18, auf Wunsch:
+      //
+      //   hoch/runter    Lenkansprechen (vorher: Bremsbalance)
+      //   links/rechts   Cockpit-Schirm blaettern (vorher: Lenkansprechen)
+      //
+      // Die Bremsbalance behaelt zwei Wege - den Regler in den Optionen und die Zieh-Skala
+      // im Cockpit -, und das genuegt fuer eine Groesse, die man einmal je Stint nachzieht.
+      //
+      // LINKS/RECHTS wird dem Boxenschirm ausdruecklich NICHT angeboten: ein Schirm, der die
+      // Taste frisst, mit der man ihn verlaesst, ist eine Sackgasse.
+      if (dUp && !prevDpad.up && !trackEditorPad('up') && !pitScreenPad('up')) nudgeSteerResponse(+0.1);
+      if (dDown && !prevDpad.down && !trackEditorPad('down') && !pitScreenPad('down')) nudgeSteerResponse(-0.1);
+      if (dLeft && !prevDpad.left && !trackEditorPad('left')) cockpitScreenStep(-1);
+      if (dRight && !prevDpad.right && !trackEditorPad('right')) cockpitScreenStep(+1);
       prevDpad.up = dUp; prevDpad.down = dDown; prevDpad.left = dLeft; prevDpad.right = dRight;
 
     }

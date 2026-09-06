@@ -809,6 +809,12 @@
       updateFlagUi();
       showHudToast(t('Einführungsrunde'));
     }
+    // AUF WUNSCH SOFORT ZUR UEBERSICHT, und zwar im Vollbild genauso: der Schirm ist eine
+    // Ueberlagerung im Cockpit, also gilt derselbe Zustand in beiden Lagen. Wer lieber das
+    // Cockpit sieht, blaettert mit links zurueck - der Sprung nimmt nichts weg, er waehlt
+    // nur den Anfang.
+    if (typeof cockpitScreenZu === 'function') cockpitScreenZu('uebersicht');
+
     raceStartedAt = Date.now();
     if (raceClockTimer) clearInterval(raceClockTimer);
     raceClockTimer = setInterval(raceClockTick, 250);
@@ -1086,7 +1092,11 @@
 
   // Tank und Zustand sind nur WAEHREND eines Boxenstopps Schalter. Ausserhalb bleibt ein
   // Tipp wirkungslos, statt versehentlich etwas zu verstellen.
-  for (const el of document.querySelectorAll('.pit-tile[data-pit="refuel"], .pit-tile[data-pit="repair"]')) {
+  // AUF DEN STREIFEN EINGEENGT. Seit v0.5.18 tragen die Zeilen des Boxenschirms dieselben
+  // data-pit-Werte, und dieser Zuhoerer haette sich mit an sie gehaengt - dort wuerde ein
+  // Tipp ausserhalb eines Stopps die SIMULATION umschalten statt das zu tun, was die Taste
+  // X tut. Der Boxenschirm hat seinen eigenen Weg, und beide laufen durch pitScreenSelect().
+  for (const el of document.querySelectorAll('.gt3-strip .pit-tile[data-pit="refuel"], .gt3-strip .pit-tile[data-pit="repair"]')) {
     el.addEventListener('click', () => {
       // Zwei Bedeutungen nach Zustand, wie bei der Reifenkachel: im Boxenstopp der Plan,
       // sonst die Simulation. Der vorhandene Zuhoerer wird ERWEITERT und nicht ein zweiter
@@ -2087,21 +2097,70 @@
     ansagenPruefen(ansagenZustand());
   }, 500);
 
-  const GRIP_MATRIX = {
-    'dry|slick': 1.00,
-    'dry|wet':   0.88,
-    'rain|wet':  0.80,
-    'rain|slick': 0.45,
+  // ---- Vier Mischungen statt zweier Reifenarten --------------------------------------
+  //
+  // Bis v0.5.17 war `tyres` zweiwertig ('slick' | 'wet') und GRIP_MATRIX hatte vier Felder.
+  // Daraus werden vier Mischungen, und zwei davon sind BITGLEICH zu vorher:
+  //
+  //     mittel  ==  der alte slick
+  //     regen   ==  der alte wet
+  //
+  // Damit ist die Vorgabe nicht nur gleichwertig, sondern identisch, und ein Selbsttest
+  // rechnet das nach. Die zwei neuen sind gewaehlt - deshalb der Regler darunter.
+  //
+  // Die Farben nach Pirelli, also nach der Formel 1: rot weich, gelb mittel, weiss hart,
+  // blau Regen. Wer Rennsport sieht, liest sie ohne Legende.
+  //
+  // WARUM NICHT weiss/grau/schwarz/dunkelblau, was auch vorgeschlagen war: .gt3-t4 hat den
+  // Grund #04060b, und ein schwarzer Rahmen auf fast schwarzem Feld ist unsichtbar - "hart"
+  // waere ausgerechnet die Mischung, die man nicht erkennt. Das ist ein gemessener Grund und
+  // keine Vorliebe.
+  const TYRE_MIX = {
+    weich:  { griff: 1.12, nass: 0.45, verschleiss: 1.8, aqua: true,
+              farbe: '#e5261e', name: 'weich' },
+    mittel: { griff: 1.00, nass: 0.45, verschleiss: 1.0, aqua: true,
+              farbe: '#f7d117', name: 'mittel' },
+    hart:   { griff: 0.92, nass: 0.45, verschleiss: 0.6, aqua: true,
+              farbe: '#f2f4f8', name: 'hart' },
+    regen:  { griff: 0.88, nass: 0.80, verschleiss: 1.0, aqua: false,
+              farbe: '#2f6fd0', name: 'Regen' },
   };
+  const MISCHUNG_FOLGE = ['weich', 'mittel', 'hart', 'regen'];
+
+  // Wie stark sich die Mischungen unterscheiden. 0 = alle rechnen wie mittel, 1 = die
+  // Tabelle, 2 = doppelt. EINE Interpolation gegen mittel bewegt alle Werte zugleich -
+  // deshalb ist "alle gleich" hier eine Zeile und kein Sonderfall.
+  let tyreMixStaerke = 1;
+
+  function mischungStaerke() {
+    // OHNE REIFENSIMULATION FAHREN ALLE DEN MITTEL-REIFEN, wie bestellt. Das steht hier und
+    // nicht an drei Rechenstellen: eine Bedingung, die dreimal abgefragt wird, wird zweimal
+    // richtig und einmal vergessen.
+    if (!(physEngine.config.tyreEffect > 0)) return 0;
+    return tyreMixStaerke;
+  }
+
+  function mischungWert(m, feld) {
+    const e = TYRE_MIX[m] || TYRE_MIX.mittel;
+    return 1 + (e[feld] - 1) * mischungStaerke();
+  }
+
+  function mischungFarbe(m) { return (TYRE_MIX[m] || TYRE_MIX.mittel).farbe; }
+  function mischungName(m) { return t((TYRE_MIX[m] || TYRE_MIX.mittel).name); }
+
   let weather = 'dry';
-  let tyres = 'slick';
+  let tyres = 'mittel';
 
   function applySurface() {
     // DAS PIKTOGRAMM ZEIGT DIE MISCHUNG. Hier und nicht bei fitTyresForWeather(): das ist
     // nur EIN Weg zu einem Reifenwechsel, applySurface() laeuft bei jedem - Boxenstopp,
     // Wetterwechsel, Aufbau. Eine Klasse je Weg zu setzen ist die Gelegenheit, einen zu
     // vergessen, und dann zeigt der Reifen die Mischung von vorletzter Runde.
-    document.body.classList.toggle('tyres-wet', tyres === 'wet');
+    document.body.classList.toggle('tyres-wet', tyres === 'regen');
+    // Die Mischung als Attribut am Koerper, damit CSS die Rahmenfarbe der vier Reifenfelder
+    // daraus zieht. Hier und nicht bei fitTyres(): das ist nur EIN Weg zu einem Wechsel,
+    // applySurface() laeuft bei jedem.
+    document.body.dataset.tyreMix = tyres;
     // GEMISCHT statt geschaltet. Der Griff wandert zwischen der trockenen und der nassen
     // Zeile der Matrix - dieselben Endwerte wie vorher, nur nicht mehr in einem Sprung.
     //
@@ -2112,12 +2171,18 @@
     // soll das Handling reagieren".
     const lvl = wxRainLevel();
     const griff = lvl * lvl;
-    const trocken = GRIP_MATRIX['dry|' + tyres] ?? 1.0;
-    const nass = GRIP_MATRIX['rain|' + tyres] ?? 1.0;
-    physEngine.config.gripScale = trocken + (nass - trocken) * griff;
-    // Only slicks aquaplane; wets are cut to move water. Der Faktor darf gebrochen sein:
-    // die Physik rechnet 1 - aquaplaning * ueber^2, also multipliziert er ohnehin.
-    physEngine.config.aquaplaning = tyres === 'slick' ? griff : 0;
+    const e = TYRE_MIX[tyres] || TYRE_MIX.mittel;
+    // Beide Zeilen der Tabelle laufen durch dieselbe Interpolation gegen mittel: bei
+    // Staerke 0 sind alle drei Slicks rechnerisch der Mittelreifen.
+    const trocken = mischungWert(tyres, 'griff');
+    const nass = 1 + (e.nass - 1) * mischungStaerke() + (e.nass - 1) * 0;
+    physEngine.config.gripScale = trocken + (e.nass - trocken) * griff;
+    // Nur Slicks schwimmen auf; Regenreifen sind geschnitten, um Wasser wegzufuehren.
+    physEngine.config.aquaplaning = e.aqua ? griff : 0;
+    // Der Verschleissfaktor der Mischung. Ein EIGENES Feld und nicht tyreWearRate selbst:
+    // sonst gaebe es zwei Orte fuer dieselbe Zahl, und der zweite gewaenne beim naechsten
+    // Reglerklick.
+    physEngine.config.tyreWearMix = mischungWert(tyres, 'verschleiss');
     setAmbienceRainLevel(lvl);
     // Das Regenlicht und die Tropfen haengen an der SICHTBAREN Front und nicht am
     // quadratischen Griff: man sieht Regen, bevor man ihn faehrt.
@@ -2167,13 +2232,34 @@
     padRumble(0.2, 0.15, 120, 'meldung');
   }
 
+  // ---- Was beim Boxenstopp montiert wird ---------------------------------------------
+  //
+  // OHNE AUSDRUECKLICHE WAHL bleibt es beim bisherigen Verhalten: Regen -> Regenreifen,
+  // sonst Slicks (jetzt: der Mittelreifen). Das erhaelt die Zusicherung, dass ein Stopp im
+  // Regen von selbst das Richtige tut.
+  //
+  // MIT einer Wahl aus dem Boxenschirm wird diese montiert - auch die vermeintlich falsche.
+  // Wer im Trockenen Regenreifen aufziehen will, darf das; die Matrix bestraft es schon.
+  let mischungWunsch = null;
+
+  function pitMischungWahl() {
+    return mischungWunsch || (weather === 'rain' ? 'regen' : 'mittel');
+  }
+
+  function pitMischungWeiter() {
+    const i = MISCHUNG_FOLGE.indexOf(pitMischungWahl());
+    mischungWunsch = MISCHUNG_FOLGE[(i + 1) % MISCHUNG_FOLGE.length];
+    showHudToast(t('Reifenwahl') + ': ' + mischungName(mischungWunsch));
+    return mischungWunsch;
+  }
+
   function fitTyresForWeather() {
-    const want = weather === 'rain' ? 'wet' : 'slick';
+    const want = pitMischungWahl();
     if (tyres === want) return false;
     tyres = want;
     applySurface();
-    showHudToast(want === 'wet' ? 'Regenreifen montiert' : 'Slicks montiert');
-    log('Boxenstopp: ' + (want === 'wet' ? 'Regenreifen' : 'Slicks') + ' montiert.', 'info');
+    showHudToast(t('Reifen montiert') + ': ' + mischungName(want));
+    log('Boxenstopp: ' + TYRE_MIX[want].name + ' montiert.', 'info');
     return true;
   }
 
@@ -3241,12 +3327,20 @@
   function fuelSimOn() { return fuelDrainPerSec > 0; }
   function tyreSimOn() { return physEngine.config.tyreEffect > 0; }
 
+  // DIE EINE STELLE, an der aus der Vorwahl ein Plan wird. Was in pitVorwahl auf null
+  // steht, entscheidet weiter die Lage - wer nichts vorwaehlt, bekommt genau den Plan von
+  // vorher.
   function makePitPlan() {
-    return {
+    const auto = {
       refuel: fuelSimOn() && fuel < 99.5,
       tyres: tyreSimOn(),
       repair: damage > 0.5,
     };
+    if (typeof pitVorwahl !== 'object' || !pitVorwahl) return auto;
+    for (const k of ['refuel', 'tyres', 'repair']) {
+      if (pitVorwahl[k] !== null && pitVorwahl[k] !== undefined) auto[k] = !!pitVorwahl[k];
+    }
+    return auto;
   }
 
   function pitPlanEmpty(p) { return !p || (!p.refuel && !p.tyres && !p.repair); }
@@ -3335,6 +3429,264 @@
                       && !!pitDone && !pitDone.tyres;
   }
 
+
+  // =====================================================================================
+  // Der Boxenschirm und der Rennuebersichts-Schirm
+  // =====================================================================================
+  //
+  // Beide malen auf einem EIGENEN Takt und nicht aus updateRaceScreen(). Der Grund ist eine
+  // Zeile: physicsStep() kehrt sofort zurueck, wenn der Physik-Modus aus ist, und damit
+  // laeuft auch updateRaceScreen() nicht. Ein Boxenschirm, der ohne Simulation leer bleibt,
+  // waere genau dann unlesbar, wenn man ihn am ehesten braucht.
+  //
+  // 120 ms, wie pitBoard(): schneller als das Auge Zahlen liest und langsam genug, dass es
+  // dem Sendetakt nichts wegnimmt.
+
+  // ---- Boxenschirm ------------------------------------------------------------------
+
+  const PIT_SCREEN_ROWS = [
+    { id: 'go',      art: 'aktion',   el: 'pit-row-go',     wert: 'pit-wert-go' },
+    { id: 'tyres',   art: 'schalter', el: 'pit-row-tyres',  wert: 'pit-wert-tyres' },
+    { id: 'mix',     art: 'wahl',     el: 'pit-row-mix',    wert: 'pit-wert-mix' },
+    { id: 'refuel',  art: 'schalter', el: 'pit-row-refuel', wert: 'pit-wert-refuel' },
+    { id: 'repair',  art: 'schalter', el: 'pit-row-repair', wert: 'pit-wert-repair' },
+  ];
+  let pitScreenSel = 0;
+
+  function pitScreenOffen() {
+    return typeof cockpitScreenIst === 'function' && cockpitScreenIst().id === 'pit';
+  }
+
+  // Hoch/runter bewegt die Auswahl. Links/rechts wird AUSDRUECKLICH nicht verbraucht: ein
+  // Schirm, der die Taste frisst, mit der man ihn verlaesst, ist eine Sackgasse.
+  function pitScreenPad(dir) {
+    if (!pitScreenOffen()) return false;
+    if (dir !== 'up' && dir !== 'down') return false;
+    const n = PIT_SCREEN_ROWS.length;
+    pitScreenSel = ((pitScreenSel + (dir === 'up' ? -1 : 1)) % n + n) % n;
+    pitScreenRender();
+    return true;
+  }
+
+  // X waehlt. Rueckgabe true heisst "verbraucht", damit der Aufrufer die gelbe Flagge nicht
+  // zusaetzlich laedt.
+  function pitScreenSelect(idVorgabe) {
+    if (!pitScreenOffen() && idVorgabe === undefined) return false;
+    const zeile = idVorgabe !== undefined
+      ? PIT_SCREEN_ROWS.find((z) => z.id === idVorgabe)
+      : PIT_SCREEN_ROWS[pitScreenSel];
+    if (!zeile) return false;
+
+    if (zeile.art === 'aktion') {
+      // requestPitStop() IST schon eine Druck/Doppeldruck-Maschine: erster Druck scharf,
+      // zweiter innerhalb des Fensters bricht ab. Ein "Abwaehlen" muss hier also nicht
+      // erfunden werden - es ist der zweite Druck.
+      requestPitStop();
+      updateRaceActButtons();
+    } else if (zeile.art === 'wahl') {
+      pitMischungWeiter();
+    } else if (pitState === 'servicing' && pitPlan) {
+      pitToggle(zeile.id);
+    } else {
+      // pitToggle() steigt aus, solange kein Plan existiert - und ohne Plan gaebe es hier
+      // nichts zu tun. Statt zu schweigen wird VORGEWAEHLT: was hier gesetzt wird, uebernimmt
+      // makePitPlan() beim Scharfstellen. Genau dafuer ist der Schirm waehrend der Fahrt da.
+      const jetzt = pitVorwahlIst(zeile.id);
+      pitVorwahl[zeile.id] = !jetzt;
+      showHudToast(t(zeile.id === 'refuel' ? 'Vorgewählt: tanken'
+                     : zeile.id === 'tyres' ? 'Vorgewählt: Reifen'
+                     : 'Vorgewählt: reparieren') + ' ' + (!jetzt ? 'AN' : 'AUS'));
+    }
+    pitScreenRender();
+    return true;
+  }
+
+  // ---- Vorwahl: was beim naechsten Stopp passieren soll -------------------------------
+  //
+  // null heisst "wie bisher automatisch". makePitPlan() uebernimmt daraus, was nicht null
+  // ist - EINE Anwendungsstelle, damit die Vorwahl nicht zu einem zweiten Plan wird.
+  let pitVorwahl = { refuel: null, tyres: null, repair: null };
+
+  function pitVorwahlIst(which) {
+    if (pitVorwahl[which] !== null) return pitVorwahl[which];
+    // Der Vorgabewert ist das, was makePitPlan() ohne Vorwahl entscheiden wuerde.
+    if (which === 'refuel') return fuelSimOn() && fuel < 99.5;
+    if (which === 'tyres') return tyreSimOn();
+    if (which === 'repair') return damage > 0.5;
+    return false;
+  }
+
+  function pitScreenRender() {
+    if (!$('race-pitscreen')) return;
+    const lage = pitState === 'off' ? 'aus'
+               : pitState === 'limited' ? 'Boxengasse'
+               : pitReady ? 'fertig' : 'Arbeit';
+    schreibeWert($('pit-kopf-lage'), t(lage));
+    schreibeWert($('pit-kopf-zeit'), pitState === 'servicing' && pitServiceStart
+      ? ((Date.now() - pitServiceStart) / 1000).toFixed(1) + ' s' : '');
+
+    for (let i = 0; i < PIT_SCREEN_ROWS.length; i++) {
+      const z = PIT_SCREEN_ROWS[i];
+      const el = $(z.el);
+      if (el) el.classList.toggle('pr-sel', i === pitScreenSel);
+      const w = $(z.wert);
+      if (!w) continue;
+      schreibeWert(w, pitZeilenWert(z));
+    }
+    // Die Fusszeile nennt die Taste, mit der gewaehlt wird - und zwar die WIRKLICH belegte.
+    // Ist die Flaggenaktion nicht belegt, steht das da, statt dass man raet.
+    const fuss = $('pit-fuss');
+    if (fuss) {
+      const b = (typeof bindings === 'object' && bindings && bindings.yellowflag)
+        ? bindingDescription(bindings.yellowflag) : 'nicht belegt';
+      fuss.textContent = 'Steuerkreuz hoch/runter waehlt \u00b7 ' + b + ' schaltet';
+    }
+  }
+
+  function pitZeilenWert(z) {
+    if (z.art === 'aktion') {
+      if (pitState === 'off') return t('bereit');
+      if (pitState === 'limited') return t('Boxengasse');
+      return pitReady ? t('fertig') : t('Arbeit läuft');
+    }
+    if (z.art === 'wahl') return mischungName(pitMischungWahl());
+    // Die drei Arbeiten: der WERT ist der Zustand, den man beim Blaettern sehen will.
+    let zahl = '';
+    if (z.id === 'refuel') zahl = Math.round(fuel) + '% \u00b7 ' + fuelLiters(fuel) + ' l';
+    else if (z.id === 'repair') zahl = Math.round(100 - damage) + '%';
+    else if (z.id === 'tyres') {
+      const st = physEngine.state;
+      const w = st.tyreWear4 ? Math.max.apply(null, st.tyreWear4) : st.tyreWear;
+      zahl = Math.round(100 - w * 100) + '%';
+    }
+    if (!pitJobAvailable(z.id)) return zahl + ' \u00b7 ' + t('Sim aus');
+    if (pitState === 'servicing' && pitPlan) {
+      return zahl + ' \u00b7 ' + (pitPlan[z.id] ? t('wird gemacht') : t('abgewählt'));
+    }
+    return zahl + ' \u00b7 ' + (pitVorwahlIst(z.id) ? t('vorgewählt') : t('aus'));
+  }
+
+  // ---- Rennuebersicht ----------------------------------------------------------------
+  //
+  // WAS HIER GEMESSEN IST UND WAS NICHT, und das gehoert an den Anfang: Runden, Zeiten und
+  // Position kommen aus den gezaehlten Runden jedes Autos, also aus Messwerten. Die
+  // Reifenmischung und die Boxenstopps gibt es nur fuer das EIGENE Auto - Ghosts haben
+  // weder Reifenmodell noch Boxenstopp. Ihre Felder bleiben deshalb leer, statt dass eine
+  // Farbe erfunden wird, die nichts bedeutet.
+
+  function ovDaten() {
+    const cars = raceAllCars();
+    // Die Position: mehr Runden zuerst, bei gleicher Rundenzahl die kleinere Gesamtzeit.
+    // Dasselbe Kriterium wie in der Ergebnistabelle, damit die Uebersicht waehrend des
+    // Rennens und das Ergebnis danach nicht verschiedene Sieger nennen.
+    const mit = cars.map((c) => {
+      const ms = c.laps.map((l) => l.ms);
+      return { c, n: ms.length, summe: ms.reduce((a, b) => a + b, 0) };
+    });
+    mit.sort((a, b) => (b.n - a.n) || (a.summe - b.summe));
+    const fuehrer = mit.length ? mit[0] : null;
+    return mit.map((x, i) => {
+      let luecke = '';
+      if (fuehrer && x !== fuehrer) {
+        const zurueck = fuehrer.n - x.n;
+        if (zurueck > 0) {
+          // UEBERRUNDET: eine Sekundenzahl waere hier sinnlos, weil sie eine andere Runde
+          // meint. Also die Anzahl Runden, wie auf einer Zeittafel.
+          luecke = '+' + zurueck + (zurueck === 1 ? ' Rd' : ' Rd');
+        } else {
+          // Gemessen an der Zeit bis zur ABGESCHLOSSENEN Runde, wie gewuenscht: beide
+          // Summen laufen ueber dieselbe Rundenzahl, also ist der Unterschied ein echter
+          // Rueckstand und kein Artefakt verschieden vieler Runden.
+          const d = (x.summe - fuehrer.summe) / 1000;
+          luecke = (d >= 0 ? '+' : '') + d.toFixed(1);
+        }
+      } else if (fuehrer && x === fuehrer) {
+        luecke = '\u2014';
+      }
+      return { pos: i + 1, name: x.c.name, farbe: x.c.farbe, rolle: x.c.role,
+               runden: x.n, luecke };
+    });
+  }
+
+  function ovScreenRender() {
+    const tab = $('ov-tab');
+    if (!tab) return;
+    const zeilen = ovDaten();
+    schreibeWert($('ov-kopf-lage'), t(raceState === 'idle' ? 'kein Rennen'
+      : raceState === 'countdown' ? 'Start'
+      : raceFormationLap ? 'Einführungsrunde'
+      : raceState === 'finishing' ? 'letzte Runde' : 'läuft'));
+    schreibeWert($('ov-kopf-runde'), zeilen.length ? zeilen[0].runden + '' : '');
+
+    if (!zeilen.length) {
+      if (tab.dataset.leer !== '1') {
+        tab.dataset.leer = '1';
+        tab.innerHTML = '<div class="ov-zeile"><span class="ov-pos"></span>'
+          + '<span></span><span class="ov-name" data-i18n-skip>'
+          + t('Noch keine Runde gefahren') + '</span>'
+          + '<span></span><span></span><span></span></div>';
+      }
+      return;
+    }
+    tab.dataset.leer = '0';
+
+    // NEU AUFGEBAUT statt eingesetzt: die Zeilen wechseln ihre Reihenfolge, und ein
+    // Umsortieren vorhandener Knoten waere mehr Buchhaltung als ein neuer Aufbau von
+    // hoechstens acht Zeilen. Element-ids gibt es hier keine, der Zaehltest bleibt heil.
+    const html = zeilen.map((z) => {
+      const eigen = z.rolle === 'player';
+      const mix = eigen ? mischungFarbe(tyres) : '';
+      const stops = eigen ? racePitDone : 0;
+      const p = stops > 0 ? (stops === 1 ? 'P' : 'P&times;' + stops) : '';
+      return '<div class="ov-zeile' + (eigen ? ' ov-ich' : '') + '">'
+        + '<span class="ov-pos">' + z.pos + '</span>'
+        + '<span class="ov-farbe" style="background:' + (z.farbe || 'transparent') + '"></span>'
+        + '<span class="ov-name" data-i18n-skip>' + z.name + '</span>'
+        + '<span class="ov-runden">' + z.runden + '</span>'
+        + '<span class="ov-pit">' + p + '</span>'
+        + '<span class="ov-luecke">' + z.luecke + '</span>'
+        + '</div>';
+    }).join('');
+    // Die Mischungsfarbe steht als eigener Balken NEBEN der Zeile, weil sie eine Farbe und
+    // keine Zahl ist. Sie wird hier eingesetzt, damit die Spaltenbreiten fest bleiben.
+    if (tab.innerHTML !== html) tab.innerHTML = html;
+    const fuss = $('ov-fuss');
+    if (fuss) {
+      fuss.textContent = 'Position \u00b7 Runden \u00b7 Stopps \u00b7 R\u00fcckstand'
+        + ' \u2014 Reifen und Stopps nur f\u00fcr das eigene Auto simuliert';
+    }
+  }
+
+  // FINGER UND PAD AUF EINEM WEG. Ein Tipp auf eine Zeile waehlt sie an und schaltet sie -
+  // dieselbe Funktion, die die Taste ruft. Zwei Wege mit eigener Logik waeren zwei Wege, die
+  // auseinanderlaufen, und pitToggle() sagt in seinem Kommentar schon, warum das nicht sein
+  // soll.
+  if ($('race-pitscreen')) {
+    $('race-pitscreen').addEventListener('click', (ev) => {
+      const zeile = ev.target.closest ? ev.target.closest('.pit-row') : null;
+      if (!zeile) return;
+      const i = PIT_SCREEN_ROWS.findIndex((z) => z.el === zeile.id);
+      if (i < 0) return;
+      pitScreenSel = i;
+      pitScreenSelect(PIT_SCREEN_ROWS[i].id);
+    });
+  }
+
+  // BEI EINEM SPRACHWECHSEL BEIDE NEU MALEN, nicht nur den sichtbaren. Ihre Werte gehen
+  // durch t(), werden aber zur Laufzeit geschrieben - der verborgene Schirm behielte sonst
+  // seinen alten Text bis zum naechsten Blaettern, und die Uebersetzungspruefung liest auch
+  // verborgene Elemente.
+  if (typeof i18nOnLangChange === 'function') {
+    i18nOnLangChange(() => { pitScreenRender(); ovScreenRender(); });
+  }
+
+  // Beide Schirme auf einem eigenen Takt, aus dem oben genannten Grund.
+  setInterval(() => {
+    if (typeof cockpitScreenIst !== 'function') return;
+    const s = cockpitScreenIst();
+    if (s && s.malen) s.malen();
+  }, 120);
+
   // Three distinguishable confirmations, so the ear alone tells you which job finished.
   function pitChimeFuel()   { playTone(520, 0.10, 'sine', 0.16);
                               setTimeout(() => playTone(780, 0.16, 'sine', 0.16), 90); }
@@ -3397,14 +3749,6 @@
     return true;
   }
 
-  function pitQuickMenu(dir) {
-    if (pitState === 'off' || !pitPlan) return false;
-    if (dir === 'up') return pitToggle('refuel', true);
-    if (dir === 'down') return pitToggle('refuel', false);
-    if (dir === 'right') return pitToggle('tyres', true);
-    if (dir === 'left') return pitToggle('tyres', false);
-    return false;
-  }
 
   // Die drei Kacheln faerben. Gruen = wird gemacht, rot = abgewaehlt, grau = nicht
   // simuliert. Ausserhalb eines Boxenstopps traegt keine Kachel eine dieser Klassen: die

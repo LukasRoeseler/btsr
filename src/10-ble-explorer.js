@@ -1361,7 +1361,7 @@
     "Reifenverschleiß, Reifentemperatur, Bremstemperatur": "Tyre wear, tyre temperature, brake temperature",
     "Wettersimulation": "Weather simulation",
     "Alles hier schreibt rohe Bytes zum Auto und liest rohe Bytes zurück. Das ist Werkbank und kein Merkmal: die Pakete tragen gültige Prüfsummen, aber was das Auto mit einem selbst zusammengesetzten Paket macht, ist nicht vorhersagbar. Zum Fahren wird nichts davon gebraucht.": "Everything here writes raw bytes to the car and reads raw bytes back. This is a workbench, not a feature: the packets carry valid checksums, but what the car does with a hand-assembled packet is not predictable. None of it is needed for driving.",
-    "Automatik, 2,6 s auf 100, voller Grip, kein Reifenverschleiß und kein Tankgewicht. Lenkkalibrierung 200 Prozent, damit auch enge Strecken gehen – der volle Einschlag liegt bei etwa einem Drittel Stick an. Fading und Windschatten sind aus; sie stehen ab GT4 zur Verfügung.": "Automatic, 2.6 s to 100, full grip, no tyre wear and no fuel weight. Steering calibration 200 percent so that tight tracks work too – full lock arrives at about a third of stick travel. Fade and dirty air are off; they are available from GT4 upwards.",
+    "Automatik, 2,6 s auf 100, voller Grip, Reifenmodell an und kein Tankgewicht. Lenkkalibrierung 200 Prozent, damit auch enge Strecken gehen – der volle Einschlag liegt bei etwa einem Drittel Stick an. Fading und Windschatten sind aus; sie stehen ab GT4 zur Verfügung.": "Automatic, 2.6 s to 100, full grip, tyre model on and no fuel weight. Steering calibration 200 percent so that tight tracks work too – full lock arrives at about a third of stick travel. Fade and dirty air are off; they are available from GT4 upwards.",
     "Crash-Schwelle": "Crash threshold",
     "Wie weit die Bewegungsbytes 1 und 3 vom gleitenden Mittel abweichen müssen, damit ein Stoß als Crash gilt. Niedriger heißt empfindlicher: schon ein Rempler zählt. Höher heißt, dass nur ein echter Einschlag zählt. 40 ist der Wert, mit dem die Erkennung gebaut und geprüft wurde – stand bis v0.5 als Konstante im Code, war also eine Einstellung, die niemand einstellen konnte.": "How far the motion bytes 1 and 3 must deviate from the running mean for a jolt to count as a crash. Lower means more sensitive: even a nudge counts. Higher means only a real impact counts. 40 is the value the detection was built and tested with – it was a constant in the code until v0.5, so it was a setting nobody could set.",
     "R3 (rechten Stick drücken)": "R3 (press right stick)",
@@ -1490,10 +1490,10 @@
     "Für konstruktives Feedback oder Feature-Wünsche schreib mir gern im Thema „Omega Sim“ im Carrera Hybrid Players Discord, unter „weitere Themen“.": "For constructive feedback or feature requests, do write to me in the “Omega Sim” topic of the Carrera Hybrid Players Discord, under “weitere Themen”.",
     "Unabhängig, offen, ohne Gewähr": "Independent, open, without warranty",
     "Quellcode auf GitHub": "Source code on GitHub",
-    "Bremsbalance nach vorn": "Brake bias forward",
-    "Bremsbalance nach hinten": "Brake bias rearward",
     "Lenkansprechen kleiner": "Steering response lower",
     "Lenkansprechen größer": "Steering response higher",
+    "Schirm zurück": "Previous screen",
+    "Schirm vor": "Next screen",
     "Controller-Belegung": "Controller mapping",
     "Was gerade auf welcher Taste liegt. Zuweisen lässt sich das in den Optionen unter „Gamepad“; die Grafik zieht sofort nach.": "What currently sits on which button. It can be reassigned in the options under “Gamepad”; the diagram follows immediately.",
     "Weiß ist zuweisbar, gedecktes Grau ist festverdrahtet und nicht zuweisbar (das Steuerkreuz), kursives Grau heißt „nicht belegt“. Touchpad und PS-Taste bleiben ab Werk frei, weil das System beide selbst abgreift: ein Tippen aufs Touchpad löst zugleich einen Klick in der Seite aus. Im Streckeneditor und bei scharfem Boxenstopp bedient das Steuerkreuz erst diese, danach gilt wieder das Gezeigte.": "White is assignable, muted grey is hard-wired and not assignable (the D-pad), italic grey means “not assigned”. Touchpad and PS button stay free out of the box because the system claims both itself: a tap on the touchpad also fires a click somewhere in the page. In the track editor and with an armed pit stop the D-pad serves those first, after which what is shown here applies again.",
@@ -1547,6 +1547,62 @@
     "GELB": "YELLOW",
     "ANFAHRT": "ROLLING UP",
     "Einführungsrunde": "Formation lap",
+    "Rennen":
+      "Race",
+    "Boxenstopp einleiten":
+      "Call a pit stop",
+    "Reifen wechseln":
+      "Change tyres",
+    "Reifenwahl":
+      "Tyre choice",
+    "Tanken":
+      "Refuel",
+    "Reparieren":
+      "Repair",
+    "Arbeit":
+      "working",
+    "Arbeit läuft":
+      "work in progress",
+    "fertig":
+      "done",
+    "Sim aus":
+      "sim off",
+    "wird gemacht":
+      "will be done",
+    "abgewählt":
+      "deselected",
+    "vorgewählt":
+      "pre-selected",
+    "weich":
+      "soft",
+    "mittel":
+      "medium",
+    "hart":
+      "hard",
+    "Vorgewählt: tanken":
+      "Pre-selected: refuel",
+    "Vorgewählt: Reifen":
+      "Pre-selected: tyres",
+    "Vorgewählt: reparieren":
+      "Pre-selected: repair",
+    "Reifen montiert":
+      "Tyres fitted",
+    "kein Rennen":
+      "no race",
+    "Start":
+      "start",
+    "letzte Runde":
+      "final lap",
+    "läuft":
+      "running",
+    "Noch keine Runde gefahren":
+      "No lap driven yet",
+    "Wie stark sich weich, mittel, hart und Regen unterscheiden. Der Regler bewegt alle Werte zugleich – Grip und Verschleiß – und zwar als Abstand zum Mittelreifen. Bei 0 rechnen alle drei Slicks wie mittel, bei 100 Prozent gilt die Tabelle, darüber ist der Unterschied größer als im Rennsport. Steht die Reifensimulation darüber auf aus, fahren ohnehin alle den Mittelreifen, egal was hier steht.":
+      "How far apart soft, medium, hard and wet are. The slider moves every value at once – grip and wear – as a distance from the medium tyre. At 0 all three slicks compute as medium, at 100 per cent the table applies, above that the spread is wider than in real racing. With the tyre simulation above switched off everyone runs the medium tyre anyway, whatever this says.",
+    "Mischungsunterschied":
+      "Compound spread",
+    "Kalt nach Start und Boxenstopp, abgenutzt nach hartem Stint. Links = aus. Bis v0.5.17 stand der Regler beim Laden auf 0 und das Modell trotzdem auf 200 Prozent – ein einziges Antippen ließ das Fahrverhalten springen. Beide sagen jetzt dasselbe, und die Vorgabe ist das volle Modell.":
+      "Cold after a start and a pit stop, worn after a hard stint. Left = off. Up to v0.5.17 the slider read 0 on load while the model still ran at 200 per cent – a single nudge made the handling jump. Both now say the same thing, and the default is the full model.",
     "Einführungsrunde: noch eine Runde": "Formation lap: one more lap",
     "Frei, volle Fahrt!": "Clear, full speed!",
     "Einführungsrunde mit Boxengassen-Tempo. Dein Auto fährt sie selbst, genau wie die Ghosts: es rollt mit an, schlängelt zum Reifenwärmen und hält die Seite seines Startplatzes, ohne dass du etwas anfassen musst – die Bremse gilt trotzdem, damit du anhalten kannst, wenn vor dir jemand steht. Im Cockpit steht dann „Einführungsrunde · Autopilot“. Frei ist es, wenn das erste Auto Start/Ziel zum zweiten Mal überfährt – ein Ghost darf es sein. Warum zweimal: zwischen der ersten und der zweiten Überfahrt desselben Autos liegt immer eine volle Runde, egal wo es gestanden hat. Bei einer einzigen Überfahrt war die Einführungsrunde vorbei, bevor sie anfing, wenn ein Auto auf oder kurz vor dem Zielstreifen stand. Danach fährt jeder nach seinen Einstellungen, und die Lenkung ist wieder deine. Nur in der Stellung „Auf der Bahn“: im Ausdruck-Modus hält sich das Auto nicht selbst auf der Bahn, und ein Autopilot ohne Querregelung würde es in die Bande fahren.": "Formation lap at pit-lane pace. Your car drives it itself, exactly like the ghosts: it rolls away with the field, weaves to warm the tyres and holds the side of its grid slot without you touching anything – the brake still works, so you can stop if someone is stranded ahead of you. The cockpit then reads “Formation lap · Autopilot”. It is released when the first car crosses start/finish for the SECOND time – a ghost may do it. Why twice: between the first and the second crossing by the same car there is always a full lap, wherever it was standing. With a single crossing the formation lap was over before it began whenever a car sat on or just before the finish stripe. After that everyone drives to their own settings and the steering is yours again. Only in the “On the track” position: in printout mode the car does not hold the track by itself, and an autopilot without lateral control would drive it into the barrier.",

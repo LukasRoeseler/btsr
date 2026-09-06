@@ -30,6 +30,21 @@
     // `b` ist die Kastenbreite und gilt nur im Vollbild - ohne sie prueft ein breites
     // Testfenster eine Lage, in die ein Handy nie geraet.
     cockpitPassung(h, b) { return cockpitPassung(h, b); },
+
+    // ---- Die Cockpit-Schirme, von aussen bedienbar ----------------------------------
+    //
+    // Gebraucht fuer die Zusicherung, auf der die ganze Bauform steht: ein Schirmwechsel
+    // darf grid-template-rows NICHT aendern, sonst muesste cockpitPassung() bei jedem
+    // Tastendruck neu messen - und beide Schirme haetten verschiedene Faktoren, das Cockpit
+    // wuerde also beim Blaettern seine Groesse aendern.
+    schirmListe() { return COCKPIT_SCREENS.map((s) => s.id); },
+    schirmIst() { return cockpitScreenIst().id; },
+    schirmStep(d) { cockpitScreenStep(d); return cockpitScreenIst().id; },
+    schirmZu(id) { cockpitScreenZu(id); return cockpitScreenIst().id; },
+    // Und der Weg, den das Steuerkreuz wirklich nimmt - nicht nur die Registry.
+    schirmPad(dir) { return pitScreenPad(dir); },
+    schirmWaehlen() { return pitScreenSelect(); },
+    schirmAuswahl() { return pitScreenSel; },
     // ---- Lassen die Vibrationsschalter das Richtige durch? -------------------------
     //
     // Geprueft wird die SCHALTERLOGIK und nicht der Controller: padRumble meldet, ob der
@@ -2430,13 +2445,53 @@
 
     // Die Reifenmischung von aussen setzen. Ein Wechsel geht in der App nur ueber einen
     // Boxenstopp, und den fuer eine Anzeigepruefung nachzuspielen waere ein halbes Rennen.
+    // ALTE NAMEN BLEIBEN GUELTIG: 'slick' und 'wet' sind seit v0.5.18 'mittel' und
+    // 'regen', und die bestehenden Pruefungen benutzen die alten. Ein stiller
+    // Umbenennungsdurchlauf haette sie umgeschrieben und damit den Beweis verwischt, dass
+    // die Vorgabe bitgleich geblieben ist.
     tyreSet(kind) {
       if (typeof tyres === 'undefined') return null;
-      tyres = (kind === 'wet') ? 'wet' : 'slick';
+      const ALIAS = { wet: 'regen', slick: 'mittel' };
+      const m = ALIAS[kind] || kind;
+      tyres = (typeof TYRE_MIX === 'object' && TYRE_MIX[m]) ? m : 'mittel';
       applySurface();
       return { reifen: tyres,
                profil: document.body.classList.contains('tyres-wet'),
+               verschleiss: +(physEngine.config.tyreWearMix || 1).toFixed(4),
                grip: +physEngine.config.gripScale.toFixed(4) };
+    },
+
+    // ---- Die Mischungen als Tabelle, von aussen lesbar ---------------------------
+    //
+    // Damit ein Test nachrechnen kann, was oben behauptet wird: mittel ist bitgleich zum
+    // alten slick, und bei Staerke 0 sind alle drei Slicks derselbe Reifen.
+    tyreMixProbe(staerke) {
+      if (typeof TYRE_MIX === 'undefined') return null;
+      const regler = document.getElementById('setting-tyre-mix');
+      const merkR = regler ? regler.value : null;
+      const merkT = tyres;
+      try {
+        if (staerke !== undefined && regler) {
+          regler.value = staerke;
+          regler.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+        const aus = {};
+        for (const m of Object.keys(TYRE_MIX)) {
+          tyres = m;
+          applySurface();
+          aus[m] = { grip: +physEngine.config.gripScale.toFixed(5),
+                     aqua: +physEngine.config.aquaplaning.toFixed(5),
+                     verschleiss: +(physEngine.config.tyreWearMix || 1).toFixed(5) };
+        }
+        return aus;
+      } finally {
+        tyres = merkT;
+        if (regler && merkR !== null) {
+          regler.value = merkR;
+          regler.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+        applySurface();
+      }
     },
 
     // ---- Die Wetterfront, von aussen lesbar ------------------------------------

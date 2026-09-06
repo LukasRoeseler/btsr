@@ -496,6 +496,86 @@
     $('setting-minmove').addEventListener('input', anfahrschubAnwenden);
   }
 
+  // ---- Die Cockpit-Schirme -----------------------------------------------------------
+  //
+  // Drei Schirme, geblaettert mit dem Steuerkreuz links/rechts. Die WAHRHEIT ist die
+  // Variable; das Attribut auf #race-dash gibt es nur, damit CSS auswaehlen kann - dieselbe
+  // Bauform wie pitState und updatePitTiles().
+  //
+  // Ein vierter Schirm ist ein Eintrag in dieser Liste, eine CSS-Regel und ein Block im
+  // Markup. Sonst nichts, und genau dafuer ist es eine Liste und keine Kette von if.
+  //
+  // Die Handlungen stehen als Pfeilfunktionen und nicht als blosse Verweise: die Ziele
+  // liegen in 70-race.js, also einer SPAETEREN Datei. Bei function-Deklarationen greift die
+  // Hochziehung zwar ohnehin, aber ein Verweis im Array wuerde beim Aufbau ausgewertet, und
+  // diese Datei hat schon fuenf Ladeabbrueche an genau dieser Falle gekostet.
+  const COCKPIT_SCREENS = [
+    { id: 'main', name: 'Cockpit' },
+    { id: 'pit', name: 'Box',
+      pad: (d) => pitScreenPad(d),
+      waehlen: () => pitScreenSelect(),
+      malen: () => pitScreenRender() },
+    { id: 'uebersicht', name: 'Rennen',
+      malen: () => ovScreenRender() },
+  ];
+  let cockpitScreen = 0;
+
+  function cockpitScreenIst() { return COCKPIT_SCREENS[cockpitScreen]; }
+
+  function cockpitScreenSet(i) {
+    const n = COCKPIT_SCREENS.length;
+    const next = ((i % n) + n) % n;
+    if (next === cockpitScreen) return;
+    cockpitScreen = next;
+    const s = COCKPIT_SCREENS[next];
+    const el = $('race-dash');
+    if (el) el.dataset.screen = s.id;
+
+    // EINEN LAUFENDEN FLAGGEN-LADEBALKEN ABBRECHEN, und das ist kein Feinschliff.
+    // flagHoldPaint() laeuft an SEINER EIGENEN Uhr und loest bei voller Ladung aus,
+    // unabhaengig davon, was pollGamepad gerade sieht. Wer X haelt und dabei blaettert,
+    // bekaeme sonst eine Sekunde spaeter eine gelbe Flagge, waehrend er in ein Menue sieht.
+    // Diese Stelle ist die einzige, die beide Richtungen abfaengt.
+    if (typeof flagHoldRelease === 'function') flagHoldRelease(false);
+
+    cockpitPunkteMalen();
+    if (s.malen) s.malen();
+    if (typeof showHudToast === 'function') showHudToast(t(s.name));
+
+    // AUSDRUECKLICH KEIN cockpitPassung(): die Schirme sind Ueberlagerungen und aendern
+    // grid-template-rows nicht. Ein Nachmessen waere Arbeit ohne Wirkung - und im Vollbild
+    // sechs Layoutlaeufe auf einen Tastendruck waehrend der Fahrt.
+  }
+
+  function cockpitScreenStep(d) { cockpitScreenSet(cockpitScreen + d); }
+
+  // Die Punkte AUS DER LISTE erzeugen, nicht aus dem Markup: ein vierter Schirm soll an
+  // genau einer Stelle nachgetragen werden.
+  function cockpitPunkteMalen() {
+    const host = $('race-screen-dots');
+    if (!host) return;
+    if (host.children.length !== COCKPIT_SCREENS.length) {
+      host.innerHTML = COCKPIT_SCREENS.map(() => '<i></i>').join('');
+    }
+    for (let i = 0; i < host.children.length; i++) {
+      host.children[i].classList.toggle('an', i === cockpitScreen);
+    }
+  }
+
+  if ($('race-screen-prev')) {
+    $('race-screen-prev').addEventListener('click', () => cockpitScreenStep(-1));
+  }
+  if ($('race-screen-next')) {
+    $('race-screen-next').addEventListener('click', () => cockpitScreenStep(+1));
+  }
+  cockpitPunkteMalen();
+
+  // Zu einem bestimmten Schirm springen, wenn er existiert. Gerufen beim Rennstart.
+  function cockpitScreenZu(id) {
+    const i = COCKPIT_SCREENS.findIndex((s) => s.id === id);
+    if (i >= 0) cockpitScreenSet(i);
+  }
+
   // ---- Das Cockpit auf die Bildschirmhoehe einpassen ---------------------------------
   //
   // GEMELDET: "auf einem Handy sehe ich oben die Lichter nicht." Gemessen in 844 x 390,
@@ -1311,10 +1391,15 @@
     // nicht auseinanderlaufen.
     const tankAus = fuelDrainPerSec <= 0;
     const schadenAus = !crashDetectionEnabled;
-    const tankKachel = document.querySelector('[data-pit="refuel"]');
-    const schadenKachel = document.querySelector('[data-pit="repair"]');
-    if (tankKachel) tankKachel.classList.toggle('sim-off', tankAus);
-    if (schadenKachel) schadenKachel.classList.toggle('sim-off', schadenAus);
+    // ALLE Treffer und nicht der erste: seit v0.5.18 tragen die Zeilen des Boxenschirms
+    // dieselben data-pit-Werte, und ein einzahliges querySelector haette dort nie sim-off
+    // gesetzt - die Kachel im Streifen waere grau gewesen, die Zeile daneben nicht.
+    for (const el of document.querySelectorAll('[data-pit="refuel"]')) {
+      el.classList.toggle('sim-off', tankAus);
+    }
+    for (const el of document.querySelectorAll('[data-pit="repair"]')) {
+      el.classList.toggle('sim-off', schadenAus);
+    }
     const reifenKachel = $('race-tyre-box');
     if (reifenKachel) reifenKachel.classList.toggle('sim-off',
       physEngine.config.tyreEffect <= 0);

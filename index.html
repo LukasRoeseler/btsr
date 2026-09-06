@@ -1305,10 +1305,23 @@
      ein dunkler Rand und ein Schatten nach innen. Die Fuellung selbst wird gedaempft
      (opacity .82) - bei 100 % Restprofil ist sie sonst der groesste Farbblock im ganzen
      Cockpit, und der gehoert dem Tacho. */
+  /* DER RAHMEN IST DIE MISCHUNG, die Fuellung die Temperatur, die Fuellhoehe das
+     Restprofil. Drei Aussagen auf einer 77-px-Kachel, und sie sind unterscheidbar, weil sie
+     verschiedene GEOMETRIEN benutzen: eine Linie aussen, eine Flaeche innen, eine Hoehe.
+
+     Die Farben nach Pirelli (rot weich, gelb mittel, weiss hart, blau Regen). Die Fuellung
+     benutzt blau-gruen-rot fuer die Temperatur, es gibt also eine Ueberschneidung - deshalb
+     die 2 px Linie und nicht eine getoente Flaeche, und deshalb steht die Mischung
+     zusaetzlich ausgeschrieben in der Zeile darunter. Zwei Traeger fuer eine Aussage. */
   .gt3-t4 { display: block; position: relative; aspect-ratio: 1 / 1.6;
     background: #04060b; border-radius: 2px / 4px; overflow: hidden;
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .12),
+    --mix-farbe: #f7d117;
+    box-shadow: inset 0 0 0 2px var(--mix-farbe),
                 inset 0 2px 4px rgba(0, 0, 0, .55); }
+  body[data-tyre-mix="weich"] .gt3-t4 { --mix-farbe: #e5261e; }
+  body[data-tyre-mix="mittel"] .gt3-t4 { --mix-farbe: #f7d117; }
+  body[data-tyre-mix="hart"] .gt3-t4 { --mix-farbe: #f2f4f8; }
+  body[data-tyre-mix="regen"] .gt3-t4 { --mix-farbe: #2f6fd0; }
   /* Die Fuellung waechst von UNTEN, wie ein Vorrat. Dieselbe Richtung wie Tank und Schaden:
      drei Anzeigen, die gleich leerlaufen, liest man mit einem Blick. */
   .gt3-t4 > b { position: absolute; left: 0; right: 0; bottom: 0; height: 0;
@@ -1465,6 +1478,96 @@
      keinen Hintergrund hatte; auf dem goldenen Band ergibt sie Kontrast 2,23.
      Gefunden hat es der Kontrasttest, sobald ein Prueflauf den Streifen einmal sichtbar
      stehen liess - vorher war er waehrend des Tests immer leer und damit unsichtbar. */
+  /* ---- Die zwei zusaetzlichen Cockpit-Schirme -----------------------------------------
+     Blaettern mit dem Steuerkreuz links/rechts. Sie liegen UEBER den Kacheln und decken
+     genau deren Rasterflaeche - Schaltlichter, Flaggenband, Boxenband und Meldezeile
+     bleiben sichtbar.
+
+     KEIN PIXELWERT, nur Rasterlinien: wer das Raster oben umbaut, zieht hier von selbst
+     nach. Und absolut gesetzt zaehlen sie in cockpitInhaltHoehe() nicht mit, also aendert
+     ein Schirmwechsel die Einpassung nicht und cockpitPassung() muss nicht neu laufen. */
+  .gt3-schirm {
+    position: absolute;
+    grid-row: left-start / strip-end;
+    grid-column: left-start / right-end;
+    inset: 0;
+    /* ueber den Kacheln, UNTER Regen, Deckglas, Einschaltrampe und den Eckknoepfen: aus dem
+       Schirm heraus muss man das Vollbild verlassen koennen. */
+    z-index: 2;
+    display: none;
+    /* DAS FARBPAAR DES STREIFENS, und das ist eine Entscheidung mit Begruendung.
+       --gt3-strip / --gt3-strip-ink fuehrt jede der fuenf Ansichten fuer genau das hier:
+       eine deckende Instrumentenflaeche mit lesbarer Tinte. Gemessen ist es in allen fuenf
+       eine REINE FARBE (#0b0f18, beim Klassiker #120d07) - kein Verlauf.
+
+       Das loest drei Dinge auf einmal. Erstens ist der Schirm deckend, ohne dass eine
+       Verlaufsebene traegt (die Falle aus v0.5.17: eine reine Farbe als erste
+       background-image-Ebene macht die ganze Deklaration ungueltig). Zweitens findet ein
+       Kontrastpruefer eine wirkliche Farbe statt ein Bild schaetzen zu muessen. Und
+       drittens - der eigentliche Befund - ist --gt3-ink in der hellen Ansicht "modern"
+       DUNKEL (#12161d), weil dort der Schirm hell ist. Auf einer dunklen Kachel war das
+       gemessen Kontrast 1,04, also unlesbar. --gt3-strip-ink ist in jeder Ansicht die
+       Tinte, die zu diesem Grund gehoert. */
+    background: var(--gt3-strip);
+    color: var(--gt3-strip-ink);
+    padding: clamp(4px, .8vw, 9px);
+    gap: clamp(3px, .6vw, 7px);
+    overflow: hidden;
+  }
+  #race-dash[data-screen="pit"] #race-pitscreen,
+  #race-dash[data-screen="uebersicht"] #race-ovscreen { display: grid; }
+
+  .schirm-kopf { display: flex; align-items: baseline; gap: 10px;
+    font-size: clamp(8px, 1.1vw, 11px); letter-spacing: .12em;
+    color: var(--gt3-strip-ink); text-transform: uppercase; }
+  .schirm-kopf b { color: var(--gt3-tile-ink); letter-spacing: .06em; }
+  .schirm-fuss { font-size: clamp(7.5px, 1vw, 10px); color: var(--gt3-strip-ink);
+    letter-spacing: .06em; }
+
+  /* ---- Der Boxenschirm ---------------------------------------------------------------- */
+  #race-pitscreen { grid-template-rows: auto repeat(5, minmax(0, 1fr)) auto; }
+  .pit-row { display: grid; align-items: center;
+    grid-template-columns: 18px minmax(0, 1.3fr) minmax(0, 1fr);
+    gap: clamp(4px, 1vw, 12px);
+    padding: 0 clamp(4px, 1vw, 10px);
+    background: var(--gt3-tile); color: var(--gt3-tile-ink);
+    border-radius: var(--gt3-radius); }
+  .pit-row > .pr-pfeil { font-size: 13px; color: var(--gt3-tile-ink); opacity: 0; }
+  .pit-row > .pr-name { font-size: clamp(10px, 1.5vw, 15px); font-weight: 700;
+    letter-spacing: .04em; }
+  .pit-row > .pr-wert { font-size: clamp(9px, 1.3vw, 13px); font-family: monospace;
+    text-align: right; color: var(--gt3-strip-ink); }
+  /* DIE MARKIERUNG ALS OUTLINE, nicht als Rahmen: sie malt AUSSERHALB des Innenrings, den
+     pit-on/pit-off schon tragen, und kostet kein Layout. Dazu ein Zeichen, weil Farbe
+     allein keine Kennung ist - dieselbe Ueberlegung wie bei den Autofarben. */
+  .pit-row.pr-sel { outline: 2px solid var(--gt3-tile-ink); outline-offset: -2px; }
+  .pit-row.pr-sel > .pr-pfeil { opacity: 1; }
+
+  /* ---- Der Rennuebersichts-Schirm ----------------------------------------------------- */
+  #race-ovscreen { grid-template-rows: auto minmax(0, 1fr) auto; }
+  .ov-tab { display: grid; align-content: start; gap: 2px; overflow: hidden;
+    font-family: monospace; font-size: clamp(9px, 1.35vw, 14px); }
+  .ov-zeile { display: grid; align-items: center;
+    grid-template-columns: 1.6em 1.1em minmax(0, 1fr) 2.6em 2.4em 4.2em;
+    gap: clamp(3px, .7vw, 8px);
+    padding: clamp(1px, .35vw, 4px) clamp(3px, .8vw, 8px);
+    background: var(--gt3-tile); color: var(--gt3-tile-ink);
+    border-radius: var(--gt3-radius); }
+  .ov-zeile.ov-ich { outline: 1px solid var(--gt3-tile-ink); outline-offset: -1px; }
+  .ov-pos { color: var(--gt3-strip-ink); }
+  /* Der Farbklecks des Autos, dieselbe Kennung wie in der Garage. */
+  .ov-farbe { width: 1em; height: 1em; border-radius: 50%; align-self: center;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.35); }
+  .ov-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ov-runden { text-align: right; }
+  /* Das gelbe P fuer Boxenstopps. Gelb wie im Rennsport, und mit Anzahl statt mehrfach. */
+  .ov-pit { text-align: center; color: #ffd83d; font-weight: 700; }
+  /* Nur die FARBE der Mischung, wie gewuenscht - kein Buchstabe, keine Flaeche. Ein Balken
+     an der Kante, damit er neben einer Ziffernspalte nicht wie ein Wert aussieht. */
+  .ov-mix { width: 100%; height: .82em; border-radius: 2px;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,.45); }
+  .ov-luecke { text-align: right; }
+
   #hud-toast-wrap {
     grid-area: toast; min-height: 0; padding: 0 clamp(4px, 1vw, 10px);
     color: #100c02; font-family: monospace; font-size: clamp(9px, 1.3vw, 13px);
@@ -2223,6 +2326,18 @@
      kept reserving 40px and pushed the fullscreen icon away from the corner. */
   .race-corner button[hidden] { display: none; }
   .race-corner svg { width: 18px; height: 18px; }
+  /* SCHMALER UND GEDECKTER als die Vollbildknoepfe: eine Nebenbedienung. Sie werden erst
+     beim Zeigen deutlich, damit sie im Fahren nicht ablenken. */
+  .race-corner button.schirm-pfeil { width: 26px; height: 34px;
+    background: rgba(10, 14, 22, .45); opacity: .55; }
+  .race-corner button.schirm-pfeil:hover { opacity: 1; }
+  .race-corner button.schirm-pfeil svg { width: 15px; height: 15px; }
+  /* Ein Punkt je Schirm, der aktive gefuellt. Aus der Schirmliste erzeugt und nicht fest
+     im Markup: ein vierter Schirm soll nicht an zwei Orten nachgetragen werden muessen. */
+  .schirm-punkte { display: flex; align-items: center; gap: 3px; padding: 0 2px; }
+  .schirm-punkte i { width: 4px; height: 4px; border-radius: 50%;
+    background: var(--ink-2); opacity: .35; }
+  .schirm-punkte i.an { opacity: 1; }
 
   /* Recorder. The badge has to be visible while DRIVING, including on the racing
      screen, otherwise it is far too easy to do a whole run with the recorder off. */
@@ -2580,6 +2695,21 @@
     <div class="gt3" id="race-dash">
       <div class="race-rain" aria-hidden="true"><i></i><i></i><i></i></div>
       <div class="race-corner">
+        <!-- BLAETTERN OHNE GAMEPAD. Absichtlich klein und gedeckt: es ist eine
+             Nebenbedienung, kein Instrument, und im Augenwinkel eines Fahrers soll es nicht
+             mit den Kacheln um Aufmerksamkeit streiten. Die Punkte dazwischen sagen, wo man
+             ist - eine Beschriftung waere breiter als der Knopf. -->
+        <button type="button" class="schirm-pfeil" id="race-screen-prev"
+                title="Vorheriger Schirm" aria-label="Vorheriger Schirm">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+               stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 5 8 12l6.5 7"/>
+          </svg></button>
+        <span class="schirm-punkte" id="race-screen-dots" aria-hidden="true"></span>
+        <button type="button" class="schirm-pfeil" id="race-screen-next"
+                title="N&auml;chster Schirm" aria-label="N&auml;chster Schirm">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+               stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 5 16 12l-6.5 7"/>
+          </svg></button>
         <button type="button" id="race-fs" title="Vollbild" aria-label="Vollbild">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                stroke-linecap="round" stroke-linejoin="round">
@@ -2809,6 +2939,43 @@
            data-i18n-skip>t1p.de/omegasim</a>
         <span data-i18n-skip>OmegaSim</span>
       </div>
+      <!-- ZWEI ZUSAETZLICHE SCHIRME, im Markup und NICHT zur Malzeit erzeugt: der
+           Selbsttest "Cockpit-Ansicht: sichtbar verschieden, funktional gleich" verlangt,
+           dass die Zahl der Elemente mit id ueber alle Ansichten konstant ist. Gefuellt
+           werden nur die Werte. -->
+      <div class="gt3-schirm" id="race-pitscreen">
+        <div class="schirm-kopf"><b>Box</b><span id="pit-kopf-lage" data-i18n-skip>aus</span>
+          <span style="margin-left:auto" id="pit-kopf-zeit" data-i18n-skip></span></div>
+        <div class="pit-row" id="pit-row-go">
+          <span class="pr-pfeil" aria-hidden="true">&#9656;</span>
+          <span class="pr-name">Boxenstopp einleiten</span>
+          <span class="pr-wert" id="pit-wert-go" data-i18n-skip>&ndash;</span></div>
+        <div class="pit-row pit-tile" id="pit-row-tyres" data-pit="tyres">
+          <span class="pr-pfeil" aria-hidden="true">&#9656;</span>
+          <span class="pr-name">Reifen wechseln</span>
+          <span class="pr-wert" id="pit-wert-tyres" data-i18n-skip>&ndash;</span></div>
+        <div class="pit-row" id="pit-row-mix">
+          <span class="pr-pfeil" aria-hidden="true">&#9656;</span>
+          <span class="pr-name">Reifenwahl</span>
+          <span class="pr-wert" id="pit-wert-mix" data-i18n-skip>&ndash;</span></div>
+        <div class="pit-row pit-tile" id="pit-row-refuel" data-pit="refuel">
+          <span class="pr-pfeil" aria-hidden="true">&#9656;</span>
+          <span class="pr-name">Tanken</span>
+          <span class="pr-wert" id="pit-wert-refuel" data-i18n-skip>&ndash;</span></div>
+        <div class="pit-row pit-tile" id="pit-row-repair" data-pit="repair">
+          <span class="pr-pfeil" aria-hidden="true">&#9656;</span>
+          <span class="pr-name">Reparieren</span>
+          <span class="pr-wert" id="pit-wert-repair" data-i18n-skip>&ndash;</span></div>
+        <div class="schirm-fuss" id="pit-fuss" data-i18n-skip></div>
+      </div>
+
+      <div class="gt3-schirm" id="race-ovscreen">
+        <div class="schirm-kopf"><b>Rennen</b><span id="ov-kopf-lage" data-i18n-skip>&ndash;</span>
+          <span style="margin-left:auto" id="ov-kopf-runde" data-i18n-skip></span></div>
+        <div class="ov-tab" id="ov-tab"></div>
+        <div class="schirm-fuss" id="ov-fuss" data-i18n-skip></div>
+      </div>
+
       <div class="gt3-banner" id="hud-toast-wrap"><span id="hud-toast"></span></div>
     </div>
 
@@ -5798,12 +5965,26 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-fuelweight-val">100%</span>
         </div></div>
-      <div class="opt-row"><div class="opt-label">Reifen: Temperatur &amp; Verschlei&szlig;<small>Kalt nach Start und Boxenstopp, abgenutzt nach hartem Stint. Links = aus.</small></div>
+      <div class="opt-row"><div class="opt-label">Reifen: Temperatur &amp; Verschlei&szlig;<small>Kalt nach Start und Boxenstopp, abgenutzt nach hartem Stint. Links = aus. Bis v0.5.17 stand der Regler beim Laden auf 0 und das Modell trotzdem auf 200 Prozent &ndash; ein einziges Antippen lie&szlig; das Fahrverhalten springen. Beide sagen jetzt dasselbe, und die Vorgabe ist das volle Modell.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-tyres" min="0" max="2" step="0.05" value="0">
+          <input type="range" id="setting-tyres" min="0" max="2" step="0.05" value="1">
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="setting-tyres-val">200%</span>
+          <span class="opt-val" id="setting-tyres-val">100%</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Mischungsunterschied
+          <span class="wip-tag">WIP</span>
+          <small>Wie stark sich weich, mittel, hart und Regen unterscheiden. Der Regler bewegt
+          alle Werte zugleich &ndash; Grip und Verschlei&szlig; &ndash; und zwar als
+          Abstand zum Mittelreifen. Bei 0 rechnen alle drei Slicks wie mittel, bei 100 Prozent
+          gilt die Tabelle, dar&uuml;ber ist der Unterschied gr&ouml;&szlig;er als im
+          Rennsport. Steht die Reifensimulation dar&uuml;ber auf aus, fahren ohnehin alle den
+          Mittelreifen, egal was hier steht.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="setting-tyre-mix" min="0" max="2" step="0.05" value="1">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-tyre-mix-val">100%</span>
         </div></div>
       
 
@@ -8166,7 +8347,7 @@
     "Reifenverschleiß, Reifentemperatur, Bremstemperatur": "Tyre wear, tyre temperature, brake temperature",
     "Wettersimulation": "Weather simulation",
     "Alles hier schreibt rohe Bytes zum Auto und liest rohe Bytes zurück. Das ist Werkbank und kein Merkmal: die Pakete tragen gültige Prüfsummen, aber was das Auto mit einem selbst zusammengesetzten Paket macht, ist nicht vorhersagbar. Zum Fahren wird nichts davon gebraucht.": "Everything here writes raw bytes to the car and reads raw bytes back. This is a workbench, not a feature: the packets carry valid checksums, but what the car does with a hand-assembled packet is not predictable. None of it is needed for driving.",
-    "Automatik, 2,6 s auf 100, voller Grip, kein Reifenverschleiß und kein Tankgewicht. Lenkkalibrierung 200 Prozent, damit auch enge Strecken gehen – der volle Einschlag liegt bei etwa einem Drittel Stick an. Fading und Windschatten sind aus; sie stehen ab GT4 zur Verfügung.": "Automatic, 2.6 s to 100, full grip, no tyre wear and no fuel weight. Steering calibration 200 percent so that tight tracks work too – full lock arrives at about a third of stick travel. Fade and dirty air are off; they are available from GT4 upwards.",
+    "Automatik, 2,6 s auf 100, voller Grip, Reifenmodell an und kein Tankgewicht. Lenkkalibrierung 200 Prozent, damit auch enge Strecken gehen – der volle Einschlag liegt bei etwa einem Drittel Stick an. Fading und Windschatten sind aus; sie stehen ab GT4 zur Verfügung.": "Automatic, 2.6 s to 100, full grip, tyre model on and no fuel weight. Steering calibration 200 percent so that tight tracks work too – full lock arrives at about a third of stick travel. Fade and dirty air are off; they are available from GT4 upwards.",
     "Crash-Schwelle": "Crash threshold",
     "Wie weit die Bewegungsbytes 1 und 3 vom gleitenden Mittel abweichen müssen, damit ein Stoß als Crash gilt. Niedriger heißt empfindlicher: schon ein Rempler zählt. Höher heißt, dass nur ein echter Einschlag zählt. 40 ist der Wert, mit dem die Erkennung gebaut und geprüft wurde – stand bis v0.5 als Konstante im Code, war also eine Einstellung, die niemand einstellen konnte.": "How far the motion bytes 1 and 3 must deviate from the running mean for a jolt to count as a crash. Lower means more sensitive: even a nudge counts. Higher means only a real impact counts. 40 is the value the detection was built and tested with – it was a constant in the code until v0.5, so it was a setting nobody could set.",
     "R3 (rechten Stick drücken)": "R3 (press right stick)",
@@ -8295,10 +8476,10 @@
     "Für konstruktives Feedback oder Feature-Wünsche schreib mir gern im Thema „Omega Sim“ im Carrera Hybrid Players Discord, unter „weitere Themen“.": "For constructive feedback or feature requests, do write to me in the “Omega Sim” topic of the Carrera Hybrid Players Discord, under “weitere Themen”.",
     "Unabhängig, offen, ohne Gewähr": "Independent, open, without warranty",
     "Quellcode auf GitHub": "Source code on GitHub",
-    "Bremsbalance nach vorn": "Brake bias forward",
-    "Bremsbalance nach hinten": "Brake bias rearward",
     "Lenkansprechen kleiner": "Steering response lower",
     "Lenkansprechen größer": "Steering response higher",
+    "Schirm zurück": "Previous screen",
+    "Schirm vor": "Next screen",
     "Controller-Belegung": "Controller mapping",
     "Was gerade auf welcher Taste liegt. Zuweisen lässt sich das in den Optionen unter „Gamepad“; die Grafik zieht sofort nach.": "What currently sits on which button. It can be reassigned in the options under “Gamepad”; the diagram follows immediately.",
     "Weiß ist zuweisbar, gedecktes Grau ist festverdrahtet und nicht zuweisbar (das Steuerkreuz), kursives Grau heißt „nicht belegt“. Touchpad und PS-Taste bleiben ab Werk frei, weil das System beide selbst abgreift: ein Tippen aufs Touchpad löst zugleich einen Klick in der Seite aus. Im Streckeneditor und bei scharfem Boxenstopp bedient das Steuerkreuz erst diese, danach gilt wieder das Gezeigte.": "White is assignable, muted grey is hard-wired and not assignable (the D-pad), italic grey means “not assigned”. Touchpad and PS button stay free out of the box because the system claims both itself: a tap on the touchpad also fires a click somewhere in the page. In the track editor and with an armed pit stop the D-pad serves those first, after which what is shown here applies again.",
@@ -8352,6 +8533,62 @@
     "GELB": "YELLOW",
     "ANFAHRT": "ROLLING UP",
     "Einführungsrunde": "Formation lap",
+    "Rennen":
+      "Race",
+    "Boxenstopp einleiten":
+      "Call a pit stop",
+    "Reifen wechseln":
+      "Change tyres",
+    "Reifenwahl":
+      "Tyre choice",
+    "Tanken":
+      "Refuel",
+    "Reparieren":
+      "Repair",
+    "Arbeit":
+      "working",
+    "Arbeit läuft":
+      "work in progress",
+    "fertig":
+      "done",
+    "Sim aus":
+      "sim off",
+    "wird gemacht":
+      "will be done",
+    "abgewählt":
+      "deselected",
+    "vorgewählt":
+      "pre-selected",
+    "weich":
+      "soft",
+    "mittel":
+      "medium",
+    "hart":
+      "hard",
+    "Vorgewählt: tanken":
+      "Pre-selected: refuel",
+    "Vorgewählt: Reifen":
+      "Pre-selected: tyres",
+    "Vorgewählt: reparieren":
+      "Pre-selected: repair",
+    "Reifen montiert":
+      "Tyres fitted",
+    "kein Rennen":
+      "no race",
+    "Start":
+      "start",
+    "letzte Runde":
+      "final lap",
+    "läuft":
+      "running",
+    "Noch keine Runde gefahren":
+      "No lap driven yet",
+    "Wie stark sich weich, mittel, hart und Regen unterscheiden. Der Regler bewegt alle Werte zugleich – Grip und Verschleiß – und zwar als Abstand zum Mittelreifen. Bei 0 rechnen alle drei Slicks wie mittel, bei 100 Prozent gilt die Tabelle, darüber ist der Unterschied größer als im Rennsport. Steht die Reifensimulation darüber auf aus, fahren ohnehin alle den Mittelreifen, egal was hier steht.":
+      "How far apart soft, medium, hard and wet are. The slider moves every value at once – grip and wear – as a distance from the medium tyre. At 0 all three slicks compute as medium, at 100 per cent the table applies, above that the spread is wider than in real racing. With the tyre simulation above switched off everyone runs the medium tyre anyway, whatever this says.",
+    "Mischungsunterschied":
+      "Compound spread",
+    "Kalt nach Start und Boxenstopp, abgenutzt nach hartem Stint. Links = aus. Bis v0.5.17 stand der Regler beim Laden auf 0 und das Modell trotzdem auf 200 Prozent – ein einziges Antippen ließ das Fahrverhalten springen. Beide sagen jetzt dasselbe, und die Vorgabe ist das volle Modell.":
+      "Cold after a start and a pit stop, worn after a hard stint. Left = off. Up to v0.5.17 the slider read 0 on load while the model still ran at 200 per cent – a single nudge made the handling jump. Both now say the same thing, and the default is the full model.",
     "Einführungsrunde: noch eine Runde": "Formation lap: one more lap",
     "Frei, volle Fahrt!": "Clear, full speed!",
     "Einführungsrunde mit Boxengassen-Tempo. Dein Auto fährt sie selbst, genau wie die Ghosts: es rollt mit an, schlängelt zum Reifenwärmen und hält die Seite seines Startplatzes, ohne dass du etwas anfassen musst – die Bremse gilt trotzdem, damit du anhalten kannst, wenn vor dir jemand steht. Im Cockpit steht dann „Einführungsrunde · Autopilot“. Frei ist es, wenn das erste Auto Start/Ziel zum zweiten Mal überfährt – ein Ghost darf es sein. Warum zweimal: zwischen der ersten und der zweiten Überfahrt desselben Autos liegt immer eine volle Runde, egal wo es gestanden hat. Bei einer einzigen Überfahrt war die Einführungsrunde vorbei, bevor sie anfing, wenn ein Auto auf oder kurz vor dem Zielstreifen stand. Danach fährt jeder nach seinen Einstellungen, und die Lenkung ist wieder deine. Nur in der Stellung „Auf der Bahn“: im Ausdruck-Modus hält sich das Auto nicht selbst auf der Bahn, und ein Autopilot ohne Querregelung würde es in die Bande fahren.": "Formation lap at pit-lane pace. Your car drives it itself, exactly like the ghosts: it rolls away with the field, weaves to warm the tyres and holds the side of its grid slot without you touching anything – the brake still works, so you can stop if someone is stranded ahead of you. The cockpit then reads “Formation lap · Autopilot”. It is released when the first car crosses start/finish for the SECOND time – a ghost may do it. Why twice: between the first and the second crossing by the same car there is always a full lap, wherever it was standing. With a single crossing the formation lap was over before it began whenever a car sat on or just before the finish stripe. After that everyone drives to their own settings and the steering is yours again. Only in the “On the track” position: in printout mode the car does not hold the track by itself, and an autopilot without lateral control would drive it into the barrier.",
@@ -9905,6 +10142,10 @@
         // v0.4 von 0,0018 herauf: bei 100 % war der Verschleiss ueber eine Rennlaenge
         // kaum zu merken. Jetzt abgefahren nach gut vier Minuten voller Attacke.
         tyreWearRate: 0.0032,
+        // Faktor der REIFENMISCHUNG auf den Verschleiss, gesetzt von applySurface() in
+        // 70-race.js. Eigenes Feld und nicht tyreWearRate selbst: zwei Orte fuer dieselbe
+        // Zahl waren in diesem Projekt schon siebzehnmal eine Abweichung.
+        tyreWearMix: 1.0,
         tyreWearPenalty: 0.35, // Griffverlust auf voellig abgefahrenen Reifen (v0.4: von 0,30)
         shiftDragFactor: 0.25, // drag during a shift: a slight lull, not a full coast-down
         accelCalibration: 1,   // solved for in calibrateAccel(), see there
@@ -10955,7 +11196,11 @@
       // VIER Verschleisswerte, jeder mit seiner Radlast. Vorher waren es zwei
       // (links/rechts) aus der Lenkrichtung allein - vorne und hinten waren verklebt,
       // obwohl das Bremsen die Vorderachse laengst belastet.
-      const zuwachs = cfg.tyreWearRate * pWear * cfg.tyreEffect * work * hotFactor * dt;
+      // Der Mischungsfaktor multipliziert HIER und nicht in tyreWearRate: weich frisst
+      // sich schneller ab als hart, und das ist eine Eigenschaft des Gummis und keine
+      // der Grundrate.
+      const zuwachs = cfg.tyreWearRate * (cfg.tyreWearMix || 1) * pWear
+                      * cfg.tyreEffect * work * hotFactor * dt;
       const asym = Math.max(0, Math.min(2, cfg.tyreAsymEffect));
       for (let i = 0; i < 4; i++) {
         const last = asym > 0 ? st.load4[i] : 1;
@@ -12106,6 +12351,86 @@
     $('setting-minmove').addEventListener('input', anfahrschubAnwenden);
   }
 
+  // ---- Die Cockpit-Schirme -----------------------------------------------------------
+  //
+  // Drei Schirme, geblaettert mit dem Steuerkreuz links/rechts. Die WAHRHEIT ist die
+  // Variable; das Attribut auf #race-dash gibt es nur, damit CSS auswaehlen kann - dieselbe
+  // Bauform wie pitState und updatePitTiles().
+  //
+  // Ein vierter Schirm ist ein Eintrag in dieser Liste, eine CSS-Regel und ein Block im
+  // Markup. Sonst nichts, und genau dafuer ist es eine Liste und keine Kette von if.
+  //
+  // Die Handlungen stehen als Pfeilfunktionen und nicht als blosse Verweise: die Ziele
+  // liegen in 70-race.js, also einer SPAETEREN Datei. Bei function-Deklarationen greift die
+  // Hochziehung zwar ohnehin, aber ein Verweis im Array wuerde beim Aufbau ausgewertet, und
+  // diese Datei hat schon fuenf Ladeabbrueche an genau dieser Falle gekostet.
+  const COCKPIT_SCREENS = [
+    { id: 'main', name: 'Cockpit' },
+    { id: 'pit', name: 'Box',
+      pad: (d) => pitScreenPad(d),
+      waehlen: () => pitScreenSelect(),
+      malen: () => pitScreenRender() },
+    { id: 'uebersicht', name: 'Rennen',
+      malen: () => ovScreenRender() },
+  ];
+  let cockpitScreen = 0;
+
+  function cockpitScreenIst() { return COCKPIT_SCREENS[cockpitScreen]; }
+
+  function cockpitScreenSet(i) {
+    const n = COCKPIT_SCREENS.length;
+    const next = ((i % n) + n) % n;
+    if (next === cockpitScreen) return;
+    cockpitScreen = next;
+    const s = COCKPIT_SCREENS[next];
+    const el = $('race-dash');
+    if (el) el.dataset.screen = s.id;
+
+    // EINEN LAUFENDEN FLAGGEN-LADEBALKEN ABBRECHEN, und das ist kein Feinschliff.
+    // flagHoldPaint() laeuft an SEINER EIGENEN Uhr und loest bei voller Ladung aus,
+    // unabhaengig davon, was pollGamepad gerade sieht. Wer X haelt und dabei blaettert,
+    // bekaeme sonst eine Sekunde spaeter eine gelbe Flagge, waehrend er in ein Menue sieht.
+    // Diese Stelle ist die einzige, die beide Richtungen abfaengt.
+    if (typeof flagHoldRelease === 'function') flagHoldRelease(false);
+
+    cockpitPunkteMalen();
+    if (s.malen) s.malen();
+    if (typeof showHudToast === 'function') showHudToast(t(s.name));
+
+    // AUSDRUECKLICH KEIN cockpitPassung(): die Schirme sind Ueberlagerungen und aendern
+    // grid-template-rows nicht. Ein Nachmessen waere Arbeit ohne Wirkung - und im Vollbild
+    // sechs Layoutlaeufe auf einen Tastendruck waehrend der Fahrt.
+  }
+
+  function cockpitScreenStep(d) { cockpitScreenSet(cockpitScreen + d); }
+
+  // Die Punkte AUS DER LISTE erzeugen, nicht aus dem Markup: ein vierter Schirm soll an
+  // genau einer Stelle nachgetragen werden.
+  function cockpitPunkteMalen() {
+    const host = $('race-screen-dots');
+    if (!host) return;
+    if (host.children.length !== COCKPIT_SCREENS.length) {
+      host.innerHTML = COCKPIT_SCREENS.map(() => '<i></i>').join('');
+    }
+    for (let i = 0; i < host.children.length; i++) {
+      host.children[i].classList.toggle('an', i === cockpitScreen);
+    }
+  }
+
+  if ($('race-screen-prev')) {
+    $('race-screen-prev').addEventListener('click', () => cockpitScreenStep(-1));
+  }
+  if ($('race-screen-next')) {
+    $('race-screen-next').addEventListener('click', () => cockpitScreenStep(+1));
+  }
+  cockpitPunkteMalen();
+
+  // Zu einem bestimmten Schirm springen, wenn er existiert. Gerufen beim Rennstart.
+  function cockpitScreenZu(id) {
+    const i = COCKPIT_SCREENS.findIndex((s) => s.id === id);
+    if (i >= 0) cockpitScreenSet(i);
+  }
+
   // ---- Das Cockpit auf die Bildschirmhoehe einpassen ---------------------------------
   //
   // GEMELDET: "auf einem Handy sehe ich oben die Lichter nicht." Gemessen in 844 x 390,
@@ -12921,10 +13246,15 @@
     // nicht auseinanderlaufen.
     const tankAus = fuelDrainPerSec <= 0;
     const schadenAus = !crashDetectionEnabled;
-    const tankKachel = document.querySelector('[data-pit="refuel"]');
-    const schadenKachel = document.querySelector('[data-pit="repair"]');
-    if (tankKachel) tankKachel.classList.toggle('sim-off', tankAus);
-    if (schadenKachel) schadenKachel.classList.toggle('sim-off', schadenAus);
+    // ALLE Treffer und nicht der erste: seit v0.5.18 tragen die Zeilen des Boxenschirms
+    // dieselben data-pit-Werte, und ein einzahliges querySelector haette dort nie sim-off
+    // gesetzt - die Kachel im Streifen waere grau gewesen, die Zeile daneben nicht.
+    for (const el of document.querySelectorAll('[data-pit="refuel"]')) {
+      el.classList.toggle('sim-off', tankAus);
+    }
+    for (const el of document.querySelectorAll('[data-pit="repair"]')) {
+      el.classList.toggle('sim-off', schadenAus);
+    }
     const reifenKachel = $('race-tyre-box');
     if (reifenKachel) reifenKachel.classList.toggle('sim-off',
       physEngine.config.tyreEffect <= 0);
@@ -16281,6 +16611,12 @@
       updateFlagUi();
       showHudToast(t('Einführungsrunde'));
     }
+    // AUF WUNSCH SOFORT ZUR UEBERSICHT, und zwar im Vollbild genauso: der Schirm ist eine
+    // Ueberlagerung im Cockpit, also gilt derselbe Zustand in beiden Lagen. Wer lieber das
+    // Cockpit sieht, blaettert mit links zurueck - der Sprung nimmt nichts weg, er waehlt
+    // nur den Anfang.
+    if (typeof cockpitScreenZu === 'function') cockpitScreenZu('uebersicht');
+
     raceStartedAt = Date.now();
     if (raceClockTimer) clearInterval(raceClockTimer);
     raceClockTimer = setInterval(raceClockTick, 250);
@@ -16558,7 +16894,11 @@
 
   // Tank und Zustand sind nur WAEHREND eines Boxenstopps Schalter. Ausserhalb bleibt ein
   // Tipp wirkungslos, statt versehentlich etwas zu verstellen.
-  for (const el of document.querySelectorAll('.pit-tile[data-pit="refuel"], .pit-tile[data-pit="repair"]')) {
+  // AUF DEN STREIFEN EINGEENGT. Seit v0.5.18 tragen die Zeilen des Boxenschirms dieselben
+  // data-pit-Werte, und dieser Zuhoerer haette sich mit an sie gehaengt - dort wuerde ein
+  // Tipp ausserhalb eines Stopps die SIMULATION umschalten statt das zu tun, was die Taste
+  // X tut. Der Boxenschirm hat seinen eigenen Weg, und beide laufen durch pitScreenSelect().
+  for (const el of document.querySelectorAll('.gt3-strip .pit-tile[data-pit="refuel"], .gt3-strip .pit-tile[data-pit="repair"]')) {
     el.addEventListener('click', () => {
       // Zwei Bedeutungen nach Zustand, wie bei der Reifenkachel: im Boxenstopp der Plan,
       // sonst die Simulation. Der vorhandene Zuhoerer wird ERWEITERT und nicht ein zweiter
@@ -17559,21 +17899,70 @@
     ansagenPruefen(ansagenZustand());
   }, 500);
 
-  const GRIP_MATRIX = {
-    'dry|slick': 1.00,
-    'dry|wet':   0.88,
-    'rain|wet':  0.80,
-    'rain|slick': 0.45,
+  // ---- Vier Mischungen statt zweier Reifenarten --------------------------------------
+  //
+  // Bis v0.5.17 war `tyres` zweiwertig ('slick' | 'wet') und GRIP_MATRIX hatte vier Felder.
+  // Daraus werden vier Mischungen, und zwei davon sind BITGLEICH zu vorher:
+  //
+  //     mittel  ==  der alte slick
+  //     regen   ==  der alte wet
+  //
+  // Damit ist die Vorgabe nicht nur gleichwertig, sondern identisch, und ein Selbsttest
+  // rechnet das nach. Die zwei neuen sind gewaehlt - deshalb der Regler darunter.
+  //
+  // Die Farben nach Pirelli, also nach der Formel 1: rot weich, gelb mittel, weiss hart,
+  // blau Regen. Wer Rennsport sieht, liest sie ohne Legende.
+  //
+  // WARUM NICHT weiss/grau/schwarz/dunkelblau, was auch vorgeschlagen war: .gt3-t4 hat den
+  // Grund #04060b, und ein schwarzer Rahmen auf fast schwarzem Feld ist unsichtbar - "hart"
+  // waere ausgerechnet die Mischung, die man nicht erkennt. Das ist ein gemessener Grund und
+  // keine Vorliebe.
+  const TYRE_MIX = {
+    weich:  { griff: 1.12, nass: 0.45, verschleiss: 1.8, aqua: true,
+              farbe: '#e5261e', name: 'weich' },
+    mittel: { griff: 1.00, nass: 0.45, verschleiss: 1.0, aqua: true,
+              farbe: '#f7d117', name: 'mittel' },
+    hart:   { griff: 0.92, nass: 0.45, verschleiss: 0.6, aqua: true,
+              farbe: '#f2f4f8', name: 'hart' },
+    regen:  { griff: 0.88, nass: 0.80, verschleiss: 1.0, aqua: false,
+              farbe: '#2f6fd0', name: 'Regen' },
   };
+  const MISCHUNG_FOLGE = ['weich', 'mittel', 'hart', 'regen'];
+
+  // Wie stark sich die Mischungen unterscheiden. 0 = alle rechnen wie mittel, 1 = die
+  // Tabelle, 2 = doppelt. EINE Interpolation gegen mittel bewegt alle Werte zugleich -
+  // deshalb ist "alle gleich" hier eine Zeile und kein Sonderfall.
+  let tyreMixStaerke = 1;
+
+  function mischungStaerke() {
+    // OHNE REIFENSIMULATION FAHREN ALLE DEN MITTEL-REIFEN, wie bestellt. Das steht hier und
+    // nicht an drei Rechenstellen: eine Bedingung, die dreimal abgefragt wird, wird zweimal
+    // richtig und einmal vergessen.
+    if (!(physEngine.config.tyreEffect > 0)) return 0;
+    return tyreMixStaerke;
+  }
+
+  function mischungWert(m, feld) {
+    const e = TYRE_MIX[m] || TYRE_MIX.mittel;
+    return 1 + (e[feld] - 1) * mischungStaerke();
+  }
+
+  function mischungFarbe(m) { return (TYRE_MIX[m] || TYRE_MIX.mittel).farbe; }
+  function mischungName(m) { return t((TYRE_MIX[m] || TYRE_MIX.mittel).name); }
+
   let weather = 'dry';
-  let tyres = 'slick';
+  let tyres = 'mittel';
 
   function applySurface() {
     // DAS PIKTOGRAMM ZEIGT DIE MISCHUNG. Hier und nicht bei fitTyresForWeather(): das ist
     // nur EIN Weg zu einem Reifenwechsel, applySurface() laeuft bei jedem - Boxenstopp,
     // Wetterwechsel, Aufbau. Eine Klasse je Weg zu setzen ist die Gelegenheit, einen zu
     // vergessen, und dann zeigt der Reifen die Mischung von vorletzter Runde.
-    document.body.classList.toggle('tyres-wet', tyres === 'wet');
+    document.body.classList.toggle('tyres-wet', tyres === 'regen');
+    // Die Mischung als Attribut am Koerper, damit CSS die Rahmenfarbe der vier Reifenfelder
+    // daraus zieht. Hier und nicht bei fitTyres(): das ist nur EIN Weg zu einem Wechsel,
+    // applySurface() laeuft bei jedem.
+    document.body.dataset.tyreMix = tyres;
     // GEMISCHT statt geschaltet. Der Griff wandert zwischen der trockenen und der nassen
     // Zeile der Matrix - dieselben Endwerte wie vorher, nur nicht mehr in einem Sprung.
     //
@@ -17584,12 +17973,18 @@
     // soll das Handling reagieren".
     const lvl = wxRainLevel();
     const griff = lvl * lvl;
-    const trocken = GRIP_MATRIX['dry|' + tyres] ?? 1.0;
-    const nass = GRIP_MATRIX['rain|' + tyres] ?? 1.0;
-    physEngine.config.gripScale = trocken + (nass - trocken) * griff;
-    // Only slicks aquaplane; wets are cut to move water. Der Faktor darf gebrochen sein:
-    // die Physik rechnet 1 - aquaplaning * ueber^2, also multipliziert er ohnehin.
-    physEngine.config.aquaplaning = tyres === 'slick' ? griff : 0;
+    const e = TYRE_MIX[tyres] || TYRE_MIX.mittel;
+    // Beide Zeilen der Tabelle laufen durch dieselbe Interpolation gegen mittel: bei
+    // Staerke 0 sind alle drei Slicks rechnerisch der Mittelreifen.
+    const trocken = mischungWert(tyres, 'griff');
+    const nass = 1 + (e.nass - 1) * mischungStaerke() + (e.nass - 1) * 0;
+    physEngine.config.gripScale = trocken + (e.nass - trocken) * griff;
+    // Nur Slicks schwimmen auf; Regenreifen sind geschnitten, um Wasser wegzufuehren.
+    physEngine.config.aquaplaning = e.aqua ? griff : 0;
+    // Der Verschleissfaktor der Mischung. Ein EIGENES Feld und nicht tyreWearRate selbst:
+    // sonst gaebe es zwei Orte fuer dieselbe Zahl, und der zweite gewaenne beim naechsten
+    // Reglerklick.
+    physEngine.config.tyreWearMix = mischungWert(tyres, 'verschleiss');
     setAmbienceRainLevel(lvl);
     // Das Regenlicht und die Tropfen haengen an der SICHTBAREN Front und nicht am
     // quadratischen Griff: man sieht Regen, bevor man ihn faehrt.
@@ -17639,13 +18034,34 @@
     padRumble(0.2, 0.15, 120, 'meldung');
   }
 
+  // ---- Was beim Boxenstopp montiert wird ---------------------------------------------
+  //
+  // OHNE AUSDRUECKLICHE WAHL bleibt es beim bisherigen Verhalten: Regen -> Regenreifen,
+  // sonst Slicks (jetzt: der Mittelreifen). Das erhaelt die Zusicherung, dass ein Stopp im
+  // Regen von selbst das Richtige tut.
+  //
+  // MIT einer Wahl aus dem Boxenschirm wird diese montiert - auch die vermeintlich falsche.
+  // Wer im Trockenen Regenreifen aufziehen will, darf das; die Matrix bestraft es schon.
+  let mischungWunsch = null;
+
+  function pitMischungWahl() {
+    return mischungWunsch || (weather === 'rain' ? 'regen' : 'mittel');
+  }
+
+  function pitMischungWeiter() {
+    const i = MISCHUNG_FOLGE.indexOf(pitMischungWahl());
+    mischungWunsch = MISCHUNG_FOLGE[(i + 1) % MISCHUNG_FOLGE.length];
+    showHudToast(t('Reifenwahl') + ': ' + mischungName(mischungWunsch));
+    return mischungWunsch;
+  }
+
   function fitTyresForWeather() {
-    const want = weather === 'rain' ? 'wet' : 'slick';
+    const want = pitMischungWahl();
     if (tyres === want) return false;
     tyres = want;
     applySurface();
-    showHudToast(want === 'wet' ? 'Regenreifen montiert' : 'Slicks montiert');
-    log('Boxenstopp: ' + (want === 'wet' ? 'Regenreifen' : 'Slicks') + ' montiert.', 'info');
+    showHudToast(t('Reifen montiert') + ': ' + mischungName(want));
+    log('Boxenstopp: ' + TYRE_MIX[want].name + ' montiert.', 'info');
     return true;
   }
 
@@ -18713,12 +19129,20 @@
   function fuelSimOn() { return fuelDrainPerSec > 0; }
   function tyreSimOn() { return physEngine.config.tyreEffect > 0; }
 
+  // DIE EINE STELLE, an der aus der Vorwahl ein Plan wird. Was in pitVorwahl auf null
+  // steht, entscheidet weiter die Lage - wer nichts vorwaehlt, bekommt genau den Plan von
+  // vorher.
   function makePitPlan() {
-    return {
+    const auto = {
       refuel: fuelSimOn() && fuel < 99.5,
       tyres: tyreSimOn(),
       repair: damage > 0.5,
     };
+    if (typeof pitVorwahl !== 'object' || !pitVorwahl) return auto;
+    for (const k of ['refuel', 'tyres', 'repair']) {
+      if (pitVorwahl[k] !== null && pitVorwahl[k] !== undefined) auto[k] = !!pitVorwahl[k];
+    }
+    return auto;
   }
 
   function pitPlanEmpty(p) { return !p || (!p.refuel && !p.tyres && !p.repair); }
@@ -18807,6 +19231,264 @@
                       && !!pitDone && !pitDone.tyres;
   }
 
+
+  // =====================================================================================
+  // Der Boxenschirm und der Rennuebersichts-Schirm
+  // =====================================================================================
+  //
+  // Beide malen auf einem EIGENEN Takt und nicht aus updateRaceScreen(). Der Grund ist eine
+  // Zeile: physicsStep() kehrt sofort zurueck, wenn der Physik-Modus aus ist, und damit
+  // laeuft auch updateRaceScreen() nicht. Ein Boxenschirm, der ohne Simulation leer bleibt,
+  // waere genau dann unlesbar, wenn man ihn am ehesten braucht.
+  //
+  // 120 ms, wie pitBoard(): schneller als das Auge Zahlen liest und langsam genug, dass es
+  // dem Sendetakt nichts wegnimmt.
+
+  // ---- Boxenschirm ------------------------------------------------------------------
+
+  const PIT_SCREEN_ROWS = [
+    { id: 'go',      art: 'aktion',   el: 'pit-row-go',     wert: 'pit-wert-go' },
+    { id: 'tyres',   art: 'schalter', el: 'pit-row-tyres',  wert: 'pit-wert-tyres' },
+    { id: 'mix',     art: 'wahl',     el: 'pit-row-mix',    wert: 'pit-wert-mix' },
+    { id: 'refuel',  art: 'schalter', el: 'pit-row-refuel', wert: 'pit-wert-refuel' },
+    { id: 'repair',  art: 'schalter', el: 'pit-row-repair', wert: 'pit-wert-repair' },
+  ];
+  let pitScreenSel = 0;
+
+  function pitScreenOffen() {
+    return typeof cockpitScreenIst === 'function' && cockpitScreenIst().id === 'pit';
+  }
+
+  // Hoch/runter bewegt die Auswahl. Links/rechts wird AUSDRUECKLICH nicht verbraucht: ein
+  // Schirm, der die Taste frisst, mit der man ihn verlaesst, ist eine Sackgasse.
+  function pitScreenPad(dir) {
+    if (!pitScreenOffen()) return false;
+    if (dir !== 'up' && dir !== 'down') return false;
+    const n = PIT_SCREEN_ROWS.length;
+    pitScreenSel = ((pitScreenSel + (dir === 'up' ? -1 : 1)) % n + n) % n;
+    pitScreenRender();
+    return true;
+  }
+
+  // X waehlt. Rueckgabe true heisst "verbraucht", damit der Aufrufer die gelbe Flagge nicht
+  // zusaetzlich laedt.
+  function pitScreenSelect(idVorgabe) {
+    if (!pitScreenOffen() && idVorgabe === undefined) return false;
+    const zeile = idVorgabe !== undefined
+      ? PIT_SCREEN_ROWS.find((z) => z.id === idVorgabe)
+      : PIT_SCREEN_ROWS[pitScreenSel];
+    if (!zeile) return false;
+
+    if (zeile.art === 'aktion') {
+      // requestPitStop() IST schon eine Druck/Doppeldruck-Maschine: erster Druck scharf,
+      // zweiter innerhalb des Fensters bricht ab. Ein "Abwaehlen" muss hier also nicht
+      // erfunden werden - es ist der zweite Druck.
+      requestPitStop();
+      updateRaceActButtons();
+    } else if (zeile.art === 'wahl') {
+      pitMischungWeiter();
+    } else if (pitState === 'servicing' && pitPlan) {
+      pitToggle(zeile.id);
+    } else {
+      // pitToggle() steigt aus, solange kein Plan existiert - und ohne Plan gaebe es hier
+      // nichts zu tun. Statt zu schweigen wird VORGEWAEHLT: was hier gesetzt wird, uebernimmt
+      // makePitPlan() beim Scharfstellen. Genau dafuer ist der Schirm waehrend der Fahrt da.
+      const jetzt = pitVorwahlIst(zeile.id);
+      pitVorwahl[zeile.id] = !jetzt;
+      showHudToast(t(zeile.id === 'refuel' ? 'Vorgewählt: tanken'
+                     : zeile.id === 'tyres' ? 'Vorgewählt: Reifen'
+                     : 'Vorgewählt: reparieren') + ' ' + (!jetzt ? 'AN' : 'AUS'));
+    }
+    pitScreenRender();
+    return true;
+  }
+
+  // ---- Vorwahl: was beim naechsten Stopp passieren soll -------------------------------
+  //
+  // null heisst "wie bisher automatisch". makePitPlan() uebernimmt daraus, was nicht null
+  // ist - EINE Anwendungsstelle, damit die Vorwahl nicht zu einem zweiten Plan wird.
+  let pitVorwahl = { refuel: null, tyres: null, repair: null };
+
+  function pitVorwahlIst(which) {
+    if (pitVorwahl[which] !== null) return pitVorwahl[which];
+    // Der Vorgabewert ist das, was makePitPlan() ohne Vorwahl entscheiden wuerde.
+    if (which === 'refuel') return fuelSimOn() && fuel < 99.5;
+    if (which === 'tyres') return tyreSimOn();
+    if (which === 'repair') return damage > 0.5;
+    return false;
+  }
+
+  function pitScreenRender() {
+    if (!$('race-pitscreen')) return;
+    const lage = pitState === 'off' ? 'aus'
+               : pitState === 'limited' ? 'Boxengasse'
+               : pitReady ? 'fertig' : 'Arbeit';
+    schreibeWert($('pit-kopf-lage'), t(lage));
+    schreibeWert($('pit-kopf-zeit'), pitState === 'servicing' && pitServiceStart
+      ? ((Date.now() - pitServiceStart) / 1000).toFixed(1) + ' s' : '');
+
+    for (let i = 0; i < PIT_SCREEN_ROWS.length; i++) {
+      const z = PIT_SCREEN_ROWS[i];
+      const el = $(z.el);
+      if (el) el.classList.toggle('pr-sel', i === pitScreenSel);
+      const w = $(z.wert);
+      if (!w) continue;
+      schreibeWert(w, pitZeilenWert(z));
+    }
+    // Die Fusszeile nennt die Taste, mit der gewaehlt wird - und zwar die WIRKLICH belegte.
+    // Ist die Flaggenaktion nicht belegt, steht das da, statt dass man raet.
+    const fuss = $('pit-fuss');
+    if (fuss) {
+      const b = (typeof bindings === 'object' && bindings && bindings.yellowflag)
+        ? bindingDescription(bindings.yellowflag) : 'nicht belegt';
+      fuss.textContent = 'Steuerkreuz hoch/runter waehlt \u00b7 ' + b + ' schaltet';
+    }
+  }
+
+  function pitZeilenWert(z) {
+    if (z.art === 'aktion') {
+      if (pitState === 'off') return t('bereit');
+      if (pitState === 'limited') return t('Boxengasse');
+      return pitReady ? t('fertig') : t('Arbeit läuft');
+    }
+    if (z.art === 'wahl') return mischungName(pitMischungWahl());
+    // Die drei Arbeiten: der WERT ist der Zustand, den man beim Blaettern sehen will.
+    let zahl = '';
+    if (z.id === 'refuel') zahl = Math.round(fuel) + '% \u00b7 ' + fuelLiters(fuel) + ' l';
+    else if (z.id === 'repair') zahl = Math.round(100 - damage) + '%';
+    else if (z.id === 'tyres') {
+      const st = physEngine.state;
+      const w = st.tyreWear4 ? Math.max.apply(null, st.tyreWear4) : st.tyreWear;
+      zahl = Math.round(100 - w * 100) + '%';
+    }
+    if (!pitJobAvailable(z.id)) return zahl + ' \u00b7 ' + t('Sim aus');
+    if (pitState === 'servicing' && pitPlan) {
+      return zahl + ' \u00b7 ' + (pitPlan[z.id] ? t('wird gemacht') : t('abgewählt'));
+    }
+    return zahl + ' \u00b7 ' + (pitVorwahlIst(z.id) ? t('vorgewählt') : t('aus'));
+  }
+
+  // ---- Rennuebersicht ----------------------------------------------------------------
+  //
+  // WAS HIER GEMESSEN IST UND WAS NICHT, und das gehoert an den Anfang: Runden, Zeiten und
+  // Position kommen aus den gezaehlten Runden jedes Autos, also aus Messwerten. Die
+  // Reifenmischung und die Boxenstopps gibt es nur fuer das EIGENE Auto - Ghosts haben
+  // weder Reifenmodell noch Boxenstopp. Ihre Felder bleiben deshalb leer, statt dass eine
+  // Farbe erfunden wird, die nichts bedeutet.
+
+  function ovDaten() {
+    const cars = raceAllCars();
+    // Die Position: mehr Runden zuerst, bei gleicher Rundenzahl die kleinere Gesamtzeit.
+    // Dasselbe Kriterium wie in der Ergebnistabelle, damit die Uebersicht waehrend des
+    // Rennens und das Ergebnis danach nicht verschiedene Sieger nennen.
+    const mit = cars.map((c) => {
+      const ms = c.laps.map((l) => l.ms);
+      return { c, n: ms.length, summe: ms.reduce((a, b) => a + b, 0) };
+    });
+    mit.sort((a, b) => (b.n - a.n) || (a.summe - b.summe));
+    const fuehrer = mit.length ? mit[0] : null;
+    return mit.map((x, i) => {
+      let luecke = '';
+      if (fuehrer && x !== fuehrer) {
+        const zurueck = fuehrer.n - x.n;
+        if (zurueck > 0) {
+          // UEBERRUNDET: eine Sekundenzahl waere hier sinnlos, weil sie eine andere Runde
+          // meint. Also die Anzahl Runden, wie auf einer Zeittafel.
+          luecke = '+' + zurueck + (zurueck === 1 ? ' Rd' : ' Rd');
+        } else {
+          // Gemessen an der Zeit bis zur ABGESCHLOSSENEN Runde, wie gewuenscht: beide
+          // Summen laufen ueber dieselbe Rundenzahl, also ist der Unterschied ein echter
+          // Rueckstand und kein Artefakt verschieden vieler Runden.
+          const d = (x.summe - fuehrer.summe) / 1000;
+          luecke = (d >= 0 ? '+' : '') + d.toFixed(1);
+        }
+      } else if (fuehrer && x === fuehrer) {
+        luecke = '\u2014';
+      }
+      return { pos: i + 1, name: x.c.name, farbe: x.c.farbe, rolle: x.c.role,
+               runden: x.n, luecke };
+    });
+  }
+
+  function ovScreenRender() {
+    const tab = $('ov-tab');
+    if (!tab) return;
+    const zeilen = ovDaten();
+    schreibeWert($('ov-kopf-lage'), t(raceState === 'idle' ? 'kein Rennen'
+      : raceState === 'countdown' ? 'Start'
+      : raceFormationLap ? 'Einführungsrunde'
+      : raceState === 'finishing' ? 'letzte Runde' : 'läuft'));
+    schreibeWert($('ov-kopf-runde'), zeilen.length ? zeilen[0].runden + '' : '');
+
+    if (!zeilen.length) {
+      if (tab.dataset.leer !== '1') {
+        tab.dataset.leer = '1';
+        tab.innerHTML = '<div class="ov-zeile"><span class="ov-pos"></span>'
+          + '<span></span><span class="ov-name" data-i18n-skip>'
+          + t('Noch keine Runde gefahren') + '</span>'
+          + '<span></span><span></span><span></span></div>';
+      }
+      return;
+    }
+    tab.dataset.leer = '0';
+
+    // NEU AUFGEBAUT statt eingesetzt: die Zeilen wechseln ihre Reihenfolge, und ein
+    // Umsortieren vorhandener Knoten waere mehr Buchhaltung als ein neuer Aufbau von
+    // hoechstens acht Zeilen. Element-ids gibt es hier keine, der Zaehltest bleibt heil.
+    const html = zeilen.map((z) => {
+      const eigen = z.rolle === 'player';
+      const mix = eigen ? mischungFarbe(tyres) : '';
+      const stops = eigen ? racePitDone : 0;
+      const p = stops > 0 ? (stops === 1 ? 'P' : 'P&times;' + stops) : '';
+      return '<div class="ov-zeile' + (eigen ? ' ov-ich' : '') + '">'
+        + '<span class="ov-pos">' + z.pos + '</span>'
+        + '<span class="ov-farbe" style="background:' + (z.farbe || 'transparent') + '"></span>'
+        + '<span class="ov-name" data-i18n-skip>' + z.name + '</span>'
+        + '<span class="ov-runden">' + z.runden + '</span>'
+        + '<span class="ov-pit">' + p + '</span>'
+        + '<span class="ov-luecke">' + z.luecke + '</span>'
+        + '</div>';
+    }).join('');
+    // Die Mischungsfarbe steht als eigener Balken NEBEN der Zeile, weil sie eine Farbe und
+    // keine Zahl ist. Sie wird hier eingesetzt, damit die Spaltenbreiten fest bleiben.
+    if (tab.innerHTML !== html) tab.innerHTML = html;
+    const fuss = $('ov-fuss');
+    if (fuss) {
+      fuss.textContent = 'Position \u00b7 Runden \u00b7 Stopps \u00b7 R\u00fcckstand'
+        + ' \u2014 Reifen und Stopps nur f\u00fcr das eigene Auto simuliert';
+    }
+  }
+
+  // FINGER UND PAD AUF EINEM WEG. Ein Tipp auf eine Zeile waehlt sie an und schaltet sie -
+  // dieselbe Funktion, die die Taste ruft. Zwei Wege mit eigener Logik waeren zwei Wege, die
+  // auseinanderlaufen, und pitToggle() sagt in seinem Kommentar schon, warum das nicht sein
+  // soll.
+  if ($('race-pitscreen')) {
+    $('race-pitscreen').addEventListener('click', (ev) => {
+      const zeile = ev.target.closest ? ev.target.closest('.pit-row') : null;
+      if (!zeile) return;
+      const i = PIT_SCREEN_ROWS.findIndex((z) => z.el === zeile.id);
+      if (i < 0) return;
+      pitScreenSel = i;
+      pitScreenSelect(PIT_SCREEN_ROWS[i].id);
+    });
+  }
+
+  // BEI EINEM SPRACHWECHSEL BEIDE NEU MALEN, nicht nur den sichtbaren. Ihre Werte gehen
+  // durch t(), werden aber zur Laufzeit geschrieben - der verborgene Schirm behielte sonst
+  // seinen alten Text bis zum naechsten Blaettern, und die Uebersetzungspruefung liest auch
+  // verborgene Elemente.
+  if (typeof i18nOnLangChange === 'function') {
+    i18nOnLangChange(() => { pitScreenRender(); ovScreenRender(); });
+  }
+
+  // Beide Schirme auf einem eigenen Takt, aus dem oben genannten Grund.
+  setInterval(() => {
+    if (typeof cockpitScreenIst !== 'function') return;
+    const s = cockpitScreenIst();
+    if (s && s.malen) s.malen();
+  }, 120);
+
   // Three distinguishable confirmations, so the ear alone tells you which job finished.
   function pitChimeFuel()   { playTone(520, 0.10, 'sine', 0.16);
                               setTimeout(() => playTone(780, 0.16, 'sine', 0.16), 90); }
@@ -18869,14 +19551,6 @@
     return true;
   }
 
-  function pitQuickMenu(dir) {
-    if (pitState === 'off' || !pitPlan) return false;
-    if (dir === 'up') return pitToggle('refuel', true);
-    if (dir === 'down') return pitToggle('refuel', false);
-    if (dir === 'right') return pitToggle('tyres', true);
-    if (dir === 'left') return pitToggle('tyres', false);
-    return false;
-  }
 
   // Die drei Kacheln faerben. Gruen = wird gemacht, rot = abgewaehlt, grau = nicht
   // simuliert. Ausserhalb eines Boxenstopps traegt keine Kachel eine dieser Klassen: die
@@ -19988,12 +20662,35 @@
     $('setting-fuelweight-val').textContent = v === 0 ? 'aus' : Math.round(v * 100) + '%';
   });
 
-  $('setting-tyres').addEventListener('input', (e) => {
-    const v = parseFloat(e.target.value);
+  // AUS DEM MARKUP LESEN, nicht nur auf Aenderungen hoeren - dasselbe Muster wie bei
+  // setting-vibration. GEMESSEN am 0.5.17: der Regler stand auf 0 ("aus"), das Modell auf
+  // 2,0, und die Anzeige daneben behauptete "200 %". Ein einziges Antippen liess das
+  // Fahrverhalten von 200 auf 0 Prozent springen. Der Spiegel-Selbsttest hat es nicht
+  // gefunden, weil er nur Kaestchen verglich und dieser hier ein Schieberegler ist.
+  function reifenReglerAnwenden(v) {
     physEngine.config.tyreEffect = v;
     $('setting-tyres-val').textContent = v === 0 ? 'aus' : Math.round(v * 100) + '%';
     if (v === 0) resetTyres();   // leave nothing stale behind when switching off
+    // Die Mischungsstaerke haengt an dieser Zahl (ohne Reifensimulation fahren alle den
+    // Mittelreifen), also muss der Untergrund neu gerechnet werden.
+    if (typeof applySurface === 'function') applySurface();
+  }
+  $('setting-tyres').addEventListener('input', (e) => {
+    reifenReglerAnwenden(parseFloat(e.target.value));
   });
+  reifenReglerAnwenden(parseFloat($('setting-tyres').value));
+
+  if ($('setting-tyre-mix')) {
+    const mixAnwenden = (v) => {
+      tyreMixStaerke = v;
+      $('setting-tyre-mix-val').textContent = v === 0 ? 'gleich' : Math.round(v * 100) + '%';
+      if (typeof applySurface === 'function') applySurface();
+    };
+    $('setting-tyre-mix').addEventListener('input', (e) => {
+      mixAnwenden(parseFloat(e.target.value));
+    });
+    mixAnwenden(parseFloat($('setting-tyre-mix').value));
+  }
 
   $('brake-volume').addEventListener('input', (e) => {
     brakeVolume = parseFloat(e.target.value);
@@ -20722,11 +21419,16 @@
   // Frei zuweisbar sind sie nicht, deshalb stehen sie hier und nicht in DEFAULT_BINDINGS.
   // Und sie sind nicht ausschliesslich: im Streckeneditor und bei scharfem Boxenstopp
   // greifen erst diese zwei ab (siehe pollGamepad), danach gilt wieder das hier.
+  // DIE TABELLE, AUS DER DAS SCHAUBILD LIEST. Sie muss mit der Kette in pollGamepad
+  // uebereinstimmen. Der bestehende Selbsttest prueft nur, dass das Steuerkreuz nicht
+  // als FREI erscheint - eine falsche Beschriftung bliebe also gruen, und genau das
+  // waere beim Umbelegen in v0.5.18 beinahe passiert. Deshalb steht die
+  // Uebereinstimmung ab jetzt zusaetzlich als eigene Pruefung.
   const PAD_FIXED = {
-    dup: 'Bremsbalance nach vorn',
-    ddown: 'Bremsbalance nach hinten',
-    dleft: 'Lenkansprechen kleiner',
-    dright: 'Lenkansprechen größer',
+    dup: 'Lenkansprechen größer',
+    ddown: 'Lenkansprechen kleiner',
+    dleft: 'Schirm zurück',
+    dright: 'Schirm vor',
   };
 
   function padDiagramRender() {
@@ -21006,22 +21708,16 @@
     return false;
   }
 
-  // Hoch/runter auf dem Steuerkreuz ist die BREMSBALANCE. Vorher war es der
-  // Beschleunigungsfaktor, und der ist eine Feinabstimmung, die man einmal setzt und stehen
-  // laesst. Die Balance ist die Groesse, die ein Fahrer WAEHREND der Fahrt nachzieht - dafuer
-  // hat ein GT3 einen Drehregler am Lenkrad.
+  // HIER STAND nudgeBrakeBias(), und die Funktion ist mit ihren zwei Aufrufern gegangen.
+  // Bis v0.5.17 lag die Bremsbalance auf hoch/runter, mit der Begruendung, sie sei die
+  // Groesse, die ein Fahrer WAEHREND der Fahrt nachzieht. Das stimmt weiter - sie hat
+  // dafuer den Regler in den Optionen und die Zieh-Skala im Cockpit. Was das Steuerkreuz
+  // konnte und die zwei nicht koennen, ist Blaettern, und dafuer werden links und rechts
+  // gebraucht.
   //
-  // Der Weg geht ueber das Bedienelement und sein Ereignis, nicht direkt in die
-  // Konfiguration: dann zieht die Anzeige in den Optionen von selbst nach, und es gibt
-  // keinen zweiten Zustand.
-  function nudgeBrakeBias(delta) {
-    const input = $('setting-brakebias');
-    if (!input) return;
-    const v = Math.max(+input.min, Math.min(+input.max, parseInt(input.value, 10) + delta));
-    input.value = v;
-    input.dispatchEvent(new Event('input', { bubbles: true }));
-    showHudToast(`Bremsbalance ${v}% vorn`);
-  }
+  // Ebenso ausgebaut: pitQuickMenu(). Bliebe es stehen, verschluckte es hoch/runter, sobald
+  // ein Stopp scharf ist - der Lenktrimm hoerte also mitten im Rennen ohne sichtbaren Grund
+  // auf zu wirken. Was es konnte, kann der Boxenschirm vollstaendig und sichtbar.
 
   function nudgeSteerResponse(delta) {
     // Keep the options slider in step, otherwise menu and controller drift apart.
@@ -24257,13 +24953,28 @@
       // loest aus. Zu frueh losgelassen passiert nichts - ein halber Druck darf keine halbe
       // Wirkung haben.
       const flagNow = readBindingValue(pad, bindings.yellowflag) > BUTTON_CAPTURE_THRESHOLD;
-      if (flagNow && !prevYellowFlag) { padFlagFired = false; flagHoldPress(); }
-      if (flagNow && !padFlagFired && flagHoldStart !== null
-          && Date.now() - flagHoldStart >= FLAG_HOLD_MS) {
-        padFlagFired = true;
-        flagHoldRelease(true);
+      // ---- Am Boxenschirm waehlt diese Taste, und zwar GANZ ---------------------------
+      //
+      // Sie liest die GEBUNDENE Flaggenaktion und nicht fest Knopf 0. Wer die Flagge auf
+      // Dreieck legt, waehlt dann mit Dreieck - ein fest verdrahteter Knopf 0 waere eine
+      // zweite Bedeutung auf einer Taste, die das Schaubild als "nicht belegt" zeigt.
+      //
+      // UND AUSDRUECKLICH KEINE UNTERSCHEIDUNG NACH HALTEDAUER. Genau das war bis v0.5.1
+      // gebaut - Quadrat trug Runterschalten UND die Flagge - und ist als Fehler
+      // zurueckgenommen worden. Der Ladebalken startet am Boxenschirm gar nicht erst, statt
+      // bei 40 Prozent stehenzubleiben. Wer dort Gelb geben will, blaettert zurueck; das ist
+      // eine Regel, die man in einem Satz sagen kann.
+      if (flagNow && !prevYellowFlag && pitScreenSelect()) {
+        padFlagFired = true;              // kein Halten offen, also auch kein Loslassen
+      } else if (!padFlagFired || !flagNow) {
+        if (flagNow && !prevYellowFlag) { padFlagFired = false; flagHoldPress(); }
+        if (flagNow && !padFlagFired && flagHoldStart !== null
+            && Date.now() - flagHoldStart >= FLAG_HOLD_MS) {
+          padFlagFired = true;
+          flagHoldRelease(true);
+        }
+        if (!flagNow && prevYellowFlag && !padFlagFired) flagHoldRelease(false);
       }
-      if (!flagNow && prevYellowFlag && !padFlagFired) flagHoldRelease(false);
       prevYellowFlag = flagNow;
 
       const resetNow = readBindingValue(pad, bindings.resetcar) > BUTTON_CAPTURE_THRESHOLD;
@@ -24301,10 +25012,20 @@
       // Fehlbedienungen: ein Druck aufs Steuerkreuz verstellte irgendeinen Regler, den man
       // gerade nicht im Blick hatte. Die Programmierschule hing an derselben Kette und ist
       // mit ausgebaut; sie laesst sich weiterhin mit Maus und Finger bedienen.
-      if (dUp && !prevDpad.up && !trackEditorPad('up') && !pitQuickMenu('up')) nudgeBrakeBias(+1);
-      if (dDown && !prevDpad.down && !trackEditorPad('down') && !pitQuickMenu('down')) nudgeBrakeBias(-1);
-      if (dLeft && !prevDpad.left && !trackEditorPad('left') && !pitQuickMenu('left')) nudgeSteerResponse(-0.1);
-      if (dRight && !prevDpad.right && !trackEditorPad('right') && !pitQuickMenu('right')) nudgeSteerResponse(+0.1);
+      // NEUE BELEGUNG seit v0.5.18, auf Wunsch:
+      //
+      //   hoch/runter    Lenkansprechen (vorher: Bremsbalance)
+      //   links/rechts   Cockpit-Schirm blaettern (vorher: Lenkansprechen)
+      //
+      // Die Bremsbalance behaelt zwei Wege - den Regler in den Optionen und die Zieh-Skala
+      // im Cockpit -, und das genuegt fuer eine Groesse, die man einmal je Stint nachzieht.
+      //
+      // LINKS/RECHTS wird dem Boxenschirm ausdruecklich NICHT angeboten: ein Schirm, der die
+      // Taste frisst, mit der man ihn verlaesst, ist eine Sackgasse.
+      if (dUp && !prevDpad.up && !trackEditorPad('up') && !pitScreenPad('up')) nudgeSteerResponse(+0.1);
+      if (dDown && !prevDpad.down && !trackEditorPad('down') && !pitScreenPad('down')) nudgeSteerResponse(-0.1);
+      if (dLeft && !prevDpad.left && !trackEditorPad('left')) cockpitScreenStep(-1);
+      if (dRight && !prevDpad.right && !trackEditorPad('right')) cockpitScreenStep(+1);
       prevDpad.up = dUp; prevDpad.down = dDown; prevDpad.left = dLeft; prevDpad.right = dRight;
 
     }
@@ -24733,6 +25454,21 @@
     // `b` ist die Kastenbreite und gilt nur im Vollbild - ohne sie prueft ein breites
     // Testfenster eine Lage, in die ein Handy nie geraet.
     cockpitPassung(h, b) { return cockpitPassung(h, b); },
+
+    // ---- Die Cockpit-Schirme, von aussen bedienbar ----------------------------------
+    //
+    // Gebraucht fuer die Zusicherung, auf der die ganze Bauform steht: ein Schirmwechsel
+    // darf grid-template-rows NICHT aendern, sonst muesste cockpitPassung() bei jedem
+    // Tastendruck neu messen - und beide Schirme haetten verschiedene Faktoren, das Cockpit
+    // wuerde also beim Blaettern seine Groesse aendern.
+    schirmListe() { return COCKPIT_SCREENS.map((s) => s.id); },
+    schirmIst() { return cockpitScreenIst().id; },
+    schirmStep(d) { cockpitScreenStep(d); return cockpitScreenIst().id; },
+    schirmZu(id) { cockpitScreenZu(id); return cockpitScreenIst().id; },
+    // Und der Weg, den das Steuerkreuz wirklich nimmt - nicht nur die Registry.
+    schirmPad(dir) { return pitScreenPad(dir); },
+    schirmWaehlen() { return pitScreenSelect(); },
+    schirmAuswahl() { return pitScreenSel; },
     // ---- Lassen die Vibrationsschalter das Richtige durch? -------------------------
     //
     // Geprueft wird die SCHALTERLOGIK und nicht der Controller: padRumble meldet, ob der
@@ -27133,13 +27869,53 @@
 
     // Die Reifenmischung von aussen setzen. Ein Wechsel geht in der App nur ueber einen
     // Boxenstopp, und den fuer eine Anzeigepruefung nachzuspielen waere ein halbes Rennen.
+    // ALTE NAMEN BLEIBEN GUELTIG: 'slick' und 'wet' sind seit v0.5.18 'mittel' und
+    // 'regen', und die bestehenden Pruefungen benutzen die alten. Ein stiller
+    // Umbenennungsdurchlauf haette sie umgeschrieben und damit den Beweis verwischt, dass
+    // die Vorgabe bitgleich geblieben ist.
     tyreSet(kind) {
       if (typeof tyres === 'undefined') return null;
-      tyres = (kind === 'wet') ? 'wet' : 'slick';
+      const ALIAS = { wet: 'regen', slick: 'mittel' };
+      const m = ALIAS[kind] || kind;
+      tyres = (typeof TYRE_MIX === 'object' && TYRE_MIX[m]) ? m : 'mittel';
       applySurface();
       return { reifen: tyres,
                profil: document.body.classList.contains('tyres-wet'),
+               verschleiss: +(physEngine.config.tyreWearMix || 1).toFixed(4),
                grip: +physEngine.config.gripScale.toFixed(4) };
+    },
+
+    // ---- Die Mischungen als Tabelle, von aussen lesbar ---------------------------
+    //
+    // Damit ein Test nachrechnen kann, was oben behauptet wird: mittel ist bitgleich zum
+    // alten slick, und bei Staerke 0 sind alle drei Slicks derselbe Reifen.
+    tyreMixProbe(staerke) {
+      if (typeof TYRE_MIX === 'undefined') return null;
+      const regler = document.getElementById('setting-tyre-mix');
+      const merkR = regler ? regler.value : null;
+      const merkT = tyres;
+      try {
+        if (staerke !== undefined && regler) {
+          regler.value = staerke;
+          regler.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+        const aus = {};
+        for (const m of Object.keys(TYRE_MIX)) {
+          tyres = m;
+          applySurface();
+          aus[m] = { grip: +physEngine.config.gripScale.toFixed(5),
+                     aqua: +physEngine.config.aquaplaning.toFixed(5),
+                     verschleiss: +(physEngine.config.tyreWearMix || 1).toFixed(5) };
+        }
+        return aus;
+      } finally {
+        tyres = merkT;
+        if (regler && merkR !== null) {
+          regler.value = merkR;
+          regler.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+        applySurface();
+      }
     },
 
     // ---- Die Wetterfront, von aussen lesbar ------------------------------------
@@ -31433,8 +32209,22 @@
       const l0 = physEngine.state.latUse;
       teile.push('latUse ' + (l0 === undefined ? 'FEHLT' : 'vorhanden'));
       if (l0 === undefined) schlecht.push('latUse nicht im Zustand');
-      if (!(gerade.steerGrip >= kurve.steerGrip)) {
-        schlecht.push('Kurvenfahrt nimmt keinen Griff');
+      // HIER STAND steerGrip, UND DAS WAR DIE FALSCHE GROESSE. steerGrip haengt an
+      // frontCap und frontUse, also am BREMSEN - der Lenkeinschlag kommt darin gar nicht
+      // vor. Bei brake: 0 sind beide Proben rechnerisch gleich, und der Unterschied kam
+      // allein daher, dass die Kurvenprobe die Reifen ein wenig aufheizt.
+      //
+      // Gemessen mit dem Reifenmodell auf 1,0: 0,85650939 gegen 0,85656252, also 5e-5 in
+      // der FALSCHEN Richtung - der Test war gruen, solange das Modell auf 2,0 stand und
+      // die schnellere Erwaermung das Vorzeichen zufaellig andersherum drehte. Eine
+      // Zusicherung, die an der Aufheizrate haengt, sichert nichts zu.
+      //
+      // Was der Reibkreis WIRKLICH sagt: wer lenkt, hat weniger LAENGS uebrig. Das steht in
+      // gripLong, und dort ist der Unterschied kein Rauschen (gemessen 1,00 gegen 0,52).
+      teile.push('gripLong gerade ' + gerade.gripLong.toFixed(2)
+                 + ' / Kurve ' + kurve.gripLong.toFixed(2));
+      if (!(gerade.gripLong > kurve.gripLong + 0.05)) {
+        schlecht.push('Kurvenfahrt nimmt keinen Laengsgriff');
       }
     }
 
@@ -34855,7 +35645,7 @@
     pro: {
       label: 'Pro',
       kurz: 'Halb so weit zwischen Arcade und Realismus GT3',
-      text: 'Automatik, 2,6 s auf 100, voller Grip, kein Reifenverschleiß und kein '
+      text: 'Automatik, 2,6 s auf 100, voller Grip, Reifenmodell an und kein '
           + 'Tankgewicht. Lenkkalibrierung 200 Prozent, damit auch enge Strecken gehen '
           + '– der volle Einschlag liegt bei etwa einem Drittel Stick an. Fading und '
           + 'Windschatten sind aus; sie stehen ab GT4 zur Verfügung.',
@@ -34868,7 +35658,12 @@
            // Vollgas bis 90 %. Pro ist die Vorgabe und muss sich wie ein Auto anfuehlen,
            // nicht wie ein Anfahrversuch.
            'setting-zero-to-top': 2.6, 'setting-coast-drag': 0.6, 'setting-fuelweight': 0,
-           'setting-tyres': 0, 'phys-steerresp': 2.4, 'setting-brakebias': 58,
+           // REIFENMODELL AN, seit v0.5.18. Pro ist die Vorgabe, und mit 0 waeren die
+           // vier Mischungen ab Werk wirkungslos - ein Merkmal, das man erst durch einen
+           // Regler freischalten muss, ist nicht geliefert. 1,0 ist das volle Modell und
+           // nicht die doppelte Rate; der Kommentar bei tyreEffect nennt 2,0 selbst eine
+           // Uebertreibung.
+           'setting-tyres': 1, 'phys-steerresp': 2.4, 'setting-brakebias': 58,
            // Lenkkalibrierung 200 Prozent: der Reibkreis beschneidet den Einschlag beim
            // Anbremsen auf etwa 60 Prozent, und das holt ihn zurueck. Gemessen bei 60 km/h
            // unter Bremsen: 35 Grad ohne, volle 45 Grad ab einem Drittel Stick mit.
