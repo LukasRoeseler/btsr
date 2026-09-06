@@ -27,7 +27,9 @@
     // Gemessen wird an der EINPASSUNG selbst: sie gibt zurueck, wieviel Platz da ist,
     // wieviel das Cockpit braucht und welcher Faktor daraus folgt. Ein Test, der nur die
     // Kastenhoehe misst, wuerde die Verkleinerung mitmessen und immer gruen sein.
-    cockpitPassung(h) { return cockpitPassung(h); },
+    // `b` ist die Kastenbreite und gilt nur im Vollbild - ohne sie prueft ein breites
+    // Testfenster eine Lage, in die ein Handy nie geraet.
+    cockpitPassung(h, b) { return cockpitPassung(h, b); },
     // ---- Lassen die Vibrationsschalter das Richtige durch? -------------------------
     //
     // Geprueft wird die SCHALTERLOGIK und nicht der Controller: padRumble meldet, ob der

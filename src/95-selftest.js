@@ -1828,6 +1828,79 @@
              mass: teile.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
   });
 
+  // ---- Und dasselbe im Vollbild, wo es bisher gar nicht geprueft wurde ----
+  //
+  // GEMELDET zu v0.5.16: "Drehzahllampen sind noch immer abgeschnitten." Die Ursache war
+  // nicht die Einpassung, sondern ihr Fehlen: #race-dash ist im Vollbild position: fixed,
+  // `offsetParent` ist dort null, und cockpitPassung() stieg in der ersten Zeile aus.
+  //
+  // Der Test faelscht die zwei Klassen, statt das Vollbild wirklich zu betreten - dafuer
+  // braeuchte es eine Nutzergeste, und ein Test, der eine Geste braucht, wird nie
+  // gefahren. Gerechnet wird ohnehin nur aus den Klassen und den uebergebenen Massen.
+  //
+  // DIE OBERE KANTE IST DIE AUSSAGE. align-content: center legt einen Ueberstand HALB
+  // nach oben, und oben sitzen die Drehzahllampen; .gt3 schneidet mit overflow: hidden ab.
+  // Ein Test, der nur "passt insgesamt" prueft, uebersieht genau das - deshalb steht die
+  // Lampenreihe hier ausdruecklich als eigene Bedingung.
+  stAdd('Cockpit passt im Vollbild, quer wie gedreht', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.cockpitPassung) {
+      return { skip: true, mass: 'cockpitPassung nicht vorhanden' };
+    }
+    const btn = document.querySelector('[data-tab="race"]');
+    if (!btn) return { ok: false, mass: 'Cockpit-Reiter fehlt' };
+    btn.click();
+    const dash = document.getElementById('race-dash');
+    const shift = document.getElementById('race-shift');
+    if (!dash || !shift) return { ok: false, mass: 'Cockpit oder Lampenreihe fehlt' };
+
+    const warFs = document.body.classList.contains('race-fs');
+    const warTurn = document.body.classList.contains('race-turn');
+    const schlecht = [], teile = [];
+    try {
+      for (const gedreht of [false, true]) {
+        document.body.classList.add('race-fs');
+        document.body.classList.toggle('race-turn', gedreht);
+        const name = gedreht ? 'gedreht' : 'quer';
+        // Drei WIRKLICHE Handymasse, quer gehalten, als Kasten des Cockpits gedacht -
+        // im gedrehten Vollbild liegt dieser Kasten quer ueber einem hochkant gehaltenen
+        // Telefon, und das ist derselbe Kasten.
+        for (const [b, h] of [[915, 412], [844, 390], [740, 330]]) {
+          const r = OMEGA_TEST.cockpitPassung(h, b);
+          if (!r || !r.vollbild) { schlecht.push(name + ' ' + h + ': keine Vollbildmessung'); continue; }
+          // Die Lampenreihe MISST sich selbst nach: offsetTop ist ihr Abstand zur
+          // Oberkante des Kastens, und negativ heisst abgeschnitten.
+          const lampenOben = shift.offsetTop;
+          teile.push(name + ' ' + b + 'x' + h + ': Faktor ' + r.faktor
+                     + (r.passt ? '' : ' UEBER ' + r.ueberstand)
+                     + ', Lampen bei ' + Math.round(lampenOben));
+          if (!r.passt && !r.amBoden) {
+            schlecht.push(name + ' ' + b + 'x' + h + ': ' + r.ueberstand + ' px Ueberstand');
+          }
+          // -1 und nicht 0: die Kastenmasse werden auf ganze Pixel gerundet, und ein
+          // halber Pixel Rundung ist kein abgeschnittener Rand.
+          if (lampenOben < -1) {
+            schlecht.push(name + ' ' + b + 'x' + h + ': Lampen '
+                          + Math.round(-lampenOben) + ' px ueber der Kante');
+          }
+        }
+        // GEGENPROBE je Lage: auf einem hohen Schirm darf nicht verkleinert werden.
+        const gross = OMEGA_TEST.cockpitPassung(1400, 915);
+        teile.push((gedreht ? 'gedreht' : 'quer') + ' 1400: Faktor ' + gross.faktor);
+        if (gross.faktor < 0.999) {
+          schlecht.push((gedreht ? 'gedreht' : 'quer') + ': verkleinert auch bei 1400 px');
+        }
+      }
+    } finally {
+      // Die Klassen ZURUECK, und erst danach neu einpassen - sonst bleibt ein Kasten von
+      // 915 px Breite in einer Spalte von 412 stehen.
+      document.body.classList.toggle('race-fs', warFs);
+      document.body.classList.toggle('race-turn', warTurn);
+      OMEGA_TEST.cockpitPassung();
+    }
+    return { ok: schlecht.length === 0,
+             mass: teile.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
   // ---- Controller-Vibration: ein Schalter je Ausloeser ----
   //
   // Siebzehn Aufrufstellen, sechs Arten, ein Hauptschalter. Geprueft wird die

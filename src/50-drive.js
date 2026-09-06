@@ -461,9 +461,139 @@
   // `hoeheFuerTest` gibt eine Fensterhoehe vor. Ohne sie gilt die echte; mit ihr laesst
   // sich "passt es auf einem Handy quer" auf JEDEM Schirm pruefen - und ein Test, der nur
   // auf einem kleinen Fenster etwas aussagt, wird nie gefahren.
-  function cockpitPassung(hoeheFuerTest) {
+  // ---- Das Vollbild ist ein eigener Fall, und bis v0.5.16 gab es fuer ihn gar nichts --
+  //
+  // #race-dash ist im Vollbild position: fixed, und `offsetParent` ist dort NULL - die
+  // Zeile unten stieg also sofort aus. Im Vollbild hat nie eine Einpassung stattgefunden.
+  //
+  // GEMESSEN auf 412 x 915 mit race-fs race-turn: Kasten ungedreht 915 x 412, davon 380
+  // nutzbar, Inhalt 652. align-content: center legt den Ueberstand HALB nach oben, also
+  // 136 px - und dort sitzen die Drehzahllampen. .gt3 schneidet mit overflow: hidden ab.
+  // Genau das ist die Meldung "die Lampen oben sind abgeschnitten".
+  //
+  // UNTERGRENZE 0,5, aus demselben Grund wie COCKPIT_MIN_ZOOM: darunter ist der Tacho
+  // nicht mehr zu entziffern, und dann ist ein abgeschnittener Rand ehrlicher.
+  const RACE_FS_MIN_SCALE = 0.5;
+
+  // WIE HOCH IST DER INHALT WIRKLICH? Zwei Antworten waren falsch, bevor die dritte
+  // stimmte - beide Male lag der Fehler in der Messung und nicht in der Einpassung.
+  //
+  // NICHT scrollHeight: .race-rain ist position: absolute, 1134 px hoch und liegt bei
+  // top: -162. Der Regenschleier liegt UEBER dem Cockpit und ist kein Inhalt, scrollHeight
+  // zaehlt ihn aber mit und meldete 972 statt 528. Damit lief der Faktor bis an die
+  // Untergrenze, obwohl laengst alles passte.
+  //
+  // UND AUCH NICHT die Ausdehnung der sichtbaren Kinder: .gt3 hat ACHT Rasterzeilen, von
+  // denen im gedrehten Vollbild fuenf 0 hoch sind (Flagge, Banner, Toast, Fussleiste,
+  // Marke). Ihre sieben Zwischenraeume zu je 4 px bleiben trotzdem stehen, und
+  // align-content zentriert die ZEILEN samt Zwischenraeumen. Eine Messung vom ersten bis
+  // zum letzten sichtbaren Kind laesst rund 20 px davon weg - der Test meldete daraufhin
+  // "passt" und gleichzeitig "Lampen 3 px ueber der Kante", und beides war richtig.
+  //
+  // Gemessen wird deshalb, was das RASTER belegt.
+  function cockpitInhaltHoehe(el) {
+    const cs = getComputedStyle(el);
+    const pad = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
+    const zeilen = (cs.gridTemplateRows || '').split(' ')
+      .map((z) => parseFloat(z)).filter((z) => !isNaN(z));
+    if (zeilen.length) {
+      const luecke = parseFloat(cs.rowGap) || 0;
+      return zeilen.reduce((a, b) => a + b, 0) + (zeilen.length - 1) * luecke + pad;
+    }
+    // RUECKFALL, falls das Cockpit einmal kein Raster ist: die Ausdehnung dessen, was im
+    // Fluss liegt. Ueberlagerungen zaehlen auch hier nicht.
+    let oben = Infinity, unten = -Infinity;
+    for (const k of el.children) {
+      if (!(k.offsetHeight > 0)) continue;
+      const pos = getComputedStyle(k).position;
+      if (pos === 'absolute' || pos === 'fixed') continue;
+      oben = Math.min(oben, k.offsetTop);
+      unten = Math.max(unten, k.offsetTop + k.offsetHeight);
+    }
+    if (!(unten > oben)) return 0;
+    // offsetTop misst ab dem RANDKASTEN, die Polsterung gehoert also noch dazu.
+    return (unten - oben) + pad;
+  }
+
+  function cockpitVollbildMasse(el, schirmB, schirmH, s) {
+    // Der Kasten GROSS, die Darstellung klein. Unter zoom waere das sinnlos, weil die
+    // vw-Anteile mitwachsen; unter scale() bleiben sie, wo sie sind, und der Inhalt
+    // bekommt wirklich mehr Platz.
+    el.style.width = Math.round(schirmB / s) + 'px';
+    el.style.height = Math.round(schirmH / s) + 'px';
+    el.style.setProperty('--race-scale', s.toFixed(4));
+  }
+
+  // BEIDE MASSE sind vorgebbar, und die Breite ist es aus einem Grund: die acht Kacheln
+  // des Streifens haben ein Seitenverhaeltnis, ihre Hoehe waechst also mit der Kastenbreite
+  // (gemessen 528 px Inhalt bei 1830 Breite, 841 bei 2560). Ein Test, der nur die Hoehe
+  // vorgibt, prueft auf einem breiten Fenster eine Lage, in die ein Handy nie geraet.
+  function cockpitVollbildPassung(el, hoeheFuerTest, breiteFuerTest) {
+    const gedreht = document.body.classList.contains('race-turn');
+    // UNGEDREHT GEDACHT: im gedrehten Vollbild liegt die Breite des Cockpits auf der Hoehe
+    // des Schirms und umgekehrt.
+    const schirmB = breiteFuerTest || (gedreht ? window.innerHeight : window.innerWidth);
+    const schirmH = hoeheFuerTest || (gedreht ? window.innerWidth : window.innerHeight);
+    if (!(schirmB > 0) || !(schirmH > 0)) return null;
+    // EINE Einpassung, nicht zwei: der Weg in der Seite arbeitet mit zoom, dieser mit
+    // Groesse und Skalierung. Beide zugleich waeren zwei Faktoren auf einer Zahl.
+    el.style.zoom = '';
+
+    let s = 1, braucht = 0, da = 0;
+    for (let i = 0; i < 6; i++) {
+      cockpitVollbildMasse(el, schirmB, schirmH, s);
+      da = el.clientHeight;
+      braucht = cockpitInhaltHoehe(el);
+      if (!(da > 0) || !(braucht > 0)) break;
+      // DIE SCHLEIFE LAEUFT WEITER, auch wenn es schon passt. Mit dem Faktor waechst der
+      // Kasten, mit dem Kasten waechst der Streifen - seine Kacheln haben ein Seiten-
+      // verhaeltnis. Wer beim ersten Treffer abbricht, laesst das Cockpit auf 76 % stehen,
+      // wo 92 % gepasst haetten; das ist eine Fixpunktiteration und keine Suche nach dem
+      // erstbesten Wert.
+      const naechst = Math.min(1, Math.max(RACE_FS_MIN_SCALE, s * (da / braucht)));
+      const fertig = Math.abs(naechst - s) < 0.002;
+      s = naechst;
+      if (fertig) break;
+    }
+    // Der letzte Schritt kann knapp ueber das Ziel gegangen sein. Dann lieber eine Spur
+    // kleiner als ein abgeschnittener Rand - abgeschnitten war der gemeldete Fehler.
+    cockpitVollbildMasse(el, schirmB, schirmH, s);
+    da = el.clientHeight;
+    braucht = cockpitInhaltHoehe(el);
+    // OHNE TOLERANZ: ein einziger Pixel Ueberstand wird von align-content: center
+    // halbiert und landet OBEN, wo die Lampen sitzen. Gemessen kam die Reihe mit einer
+    // Toleranz von 1 px auf offsetTop -2.
+    if (braucht > da && da > 0 && braucht > 0) {
+      s = Math.max(RACE_FS_MIN_SCALE, s * (da / braucht));
+      cockpitVollbildMasse(el, schirmB, schirmH, s);
+      da = el.clientHeight;
+      braucht = cockpitInhaltHoehe(el);
+    }
+    return { vollbild: true, gedreht, schirmB, schirmH, faktor: +s.toFixed(3),
+             braucht: Math.round(braucht), da,
+             amBoden: s <= RACE_FS_MIN_SCALE + 1e-6,
+             passt: braucht <= da + 1,
+             ueberstand: Math.max(0, Math.round(braucht - da)) };
+  }
+
+  // Die Vollbildmasse wieder abraeumen. Bleiben sie stehen, sitzt in der Seite ein Cockpit
+  // von 915 px Breite in einer Spalte von 412.
+  function cockpitFreigeben(el) {
+    el.style.width = '';
+    el.style.height = '';
+    el.style.removeProperty('--race-scale');
+  }
+
+  // `breiteFuerTest` gilt nur im Vollbild: in der Seite steht die Breite des Cockpits in
+  // der Spalte fest, und eine vorgegebene waere eine Zahl ohne Wirkung.
+  function cockpitPassung(hoeheFuerTest, breiteFuerTest) {
     const el = $('race-dash');
-    if (!el || !el.offsetParent) return null;
+    if (!el) return null;
+    if (document.body.classList.contains('race-fs')) {
+      return cockpitVollbildPassung(el, hoeheFuerTest, breiteFuerTest);
+    }
+    cockpitFreigeben(el);
+    if (!el.offsetParent) return null;
     const fensterH = hoeheFuerTest || window.innerHeight;
     // ERST ZURUECKSETZEN, DANN MESSEN. Mit gesetztem zoom liefert getBoundingClientRect
     // bereits verkleinerte Werte, und die Rechnung liefe sich selbst nach - bei jedem
@@ -503,7 +633,11 @@
 
   // Bei jeder Groessenaenderung, bei jedem Drehen des Geraets, und beim Wechsel auf den
   // Reiter - vorher ist das Cockpit unsichtbar und hat die Hoehe 0.
-  window.addEventListener('resize', cockpitPassung);
+  // OHNE DIE HUELLE reicht der Zuhoerer das EREIGNIS als erstes Argument durch, und das
+  // ist `hoeheFuerTest`. `fensterH` war dann ein Event, `platz` NaN, und die Funktion stieg
+  // ueber `!(platz > 0)` still aus - die Einpassung bei Groessenaenderung hat nie
+  // stattgefunden.
+  window.addEventListener('resize', () => cockpitPassung());
   window.addEventListener('orientationchange', () => setTimeout(cockpitPassung, 120));
   document.querySelectorAll('[data-tab="race"]').forEach((b) => {
     b.addEventListener('click', () => setTimeout(cockpitPassung, 60));
@@ -775,6 +909,10 @@
   function syncRaceRotation() {
     const fs = document.body.classList.contains('race-fs');
     document.body.classList.toggle('race-turn', fs && raceIsPortrait());
+    // Die Einpassung haengt an DIESER Entscheidung: gedreht liegt die Cockpithoehe auf der
+    // Schirmbreite. Sie hier zu rufen und nicht nur am resize-Zuhoerer stellt sicher, dass
+    // sie die neue Klasse schon sieht.
+    cockpitPassung();
   }
 
   async function enterRaceFullscreen() {
@@ -788,6 +926,8 @@
     } catch (e) { /* refused on iOS and desktop; the CSS rotation covers it */ }
     document.body.classList.add('race-fs');
     syncRaceRotation();
+    // Das Vollbild braucht einen Takt, bis der Browser die neue Fenstergroesse meldet.
+    setTimeout(() => cockpitPassung(), 120);
     $('race-fs').hidden = true; $('race-fs-exit').hidden = false;
   }
 
@@ -800,6 +940,8 @@
     catch (e) { /* never locked */ }
     document.body.classList.remove('race-fs', 'race-turn');
     $('race-fs').hidden = false; $('race-fs-exit').hidden = true;
+    cockpitPassung();
+    setTimeout(() => cockpitPassung(), 120);
   }
 
   $('race-fs').addEventListener('click', enterRaceFullscreen);
