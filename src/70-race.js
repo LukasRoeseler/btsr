@@ -3680,8 +3680,18 @@
                : pitState === 'limited' ? 'Boxengasse'
                : pitReady ? 'fertig' : 'Arbeit';
     schreibeWert($('pit-kopf-lage'), t(lage));
-    schreibeWert($('pit-kopf-zeit'), pitState === 'servicing' && pitServiceStart
-      ? ((Date.now() - pitServiceStart) / 1000).toFixed(1) + ' s' : '');
+    // Das grosse P traegt denselben Zustand wie das Wort daneben - eine Quelle, zwei
+    // Traeger: Farbe fuer den Blick im Vorbeifahren, Wort fuer die Gewissheit.
+    const pz = $('pit-zeichen');
+    if (pz) {
+      pz.classList.toggle('pz-gasse', pitState === 'limited');
+      pz.classList.toggle('pz-arbeit', pitState === 'servicing' && !pitReady);
+      pz.classList.toggle('pz-fertig', pitState === 'servicing' && !!pitReady);
+    }
+    // Der Kopf traegt die Rundenzahl statt der Standzeit: die steht jetzt in der Zeile
+    // "Boxenstopp einleiten", wo sie hingehoert - dort ist sie der Messwert.
+    schreibeWert($('pit-kopf-zeit'), raceLapTimes.length
+      ? t('Runde') + ' ' + raceLapTimes.length : '');
 
     for (let i = 0; i < PIT_SCREEN_ROWS.length; i++) {
       const z = PIT_SCREEN_ROWS[i];
@@ -3689,7 +3699,12 @@
       if (el) el.classList.toggle('pr-sel', i === pitScreenSel);
       const w = $(z.wert);
       if (!w) continue;
-      schreibeWert(w, pitZeilenWert(z));
+      // ZAHL UND ZUSTAND GETRENNT. Sie standen bis v0.5.18 in einer Zeichenkette, und mit
+      // der groesseren Schrift passte die nicht mehr in eine Spalte - abgeschnitten wurde
+      // ausgerechnet das Wort am Ende, also der Zustand.
+      const teil = pitZeilenWert(z);
+      schreibeWert($('pit-zahl-' + z.id), teil.zahl);
+      schreibeWert(w, teil.wort);
     }
     pitScreenBilder();
     // Die Fusszeile nennt die Taste, mit der gewaehlt wird - und zwar die WIRKLICH belegte.
@@ -3748,32 +3763,39 @@
     }
   }
 
+  // Zurueck kommen ZWEI Teile: die Zahl und das Zustandswort. Sie stehen in getrennten
+  // Spalten fester Breite, damit kein Wortwechsel die Bilder daneben verschiebt.
   function pitZeilenWert(z) {
     if (z.art === 'aktion') {
-      if (pitState === 'off') return t('bereit');
-      if (pitState === 'limited') return t('Boxengasse');
-      return pitReady ? t('fertig') : t('Arbeit läuft');
+      const wort = pitState === 'off' ? t('bereit')
+                 : pitState === 'limited' ? t('Boxengasse')
+                 : pitReady ? t('fertig') : t('Arbeit läuft');
+      // Die Standzeit gehoert hier hin und nicht in den Kopf: sie IST der Messwert dieser
+      // Zeile, so wie Prozent der Messwert der anderen ist.
+      const zahl = (pitState === 'servicing' && pitServiceStart)
+        ? ((Date.now() - pitServiceStart) / 1000).toFixed(1) + ' s' : '';
+      return { zahl, wort };
     }
     if (z.art === 'wahl') {
       // Waehrend eines Stopps steht hier, was MONTIERT ist; sonst, was vorgewaehlt wurde.
-      // Beides ist derselbe Rahmen im Feld daneben, also sagt der Text dasselbe zweimal -
-      // und das ist gewollt: eine Farbe ohne Namen ist bei vier Feldern eine Ratefrage.
-      return mischungName(pitState === 'servicing' ? tyres : pitMischungWahl());
+      // Der Name steht neben den Farbfeldern und sagt dasselbe zweimal - und das ist
+      // gewollt: eine Farbe ohne Namen ist bei vier Feldern eine Ratefrage.
+      return { zahl: '', wort: mischungName(pitState === 'servicing' ? tyres : pitMischungWahl()) };
     }
-    // Die drei Arbeiten: der WERT ist der Zustand, den man beim Blaettern sehen will.
+    // Die drei Arbeiten: die Zahl ist der Messwert, das Wort der Plan.
     let zahl = '';
-    if (z.id === 'refuel') zahl = Math.round(fuel) + '% \u00b7 ' + fuelLiters(fuel) + ' l';
+    if (z.id === 'refuel') zahl = fuelLiters(fuel) + ' l';
     else if (z.id === 'repair') zahl = Math.round(100 - damage) + '%';
     else if (z.id === 'tyres') {
       const st = physEngine.state;
       const w = st.tyreWear4 ? Math.max.apply(null, st.tyreWear4) : st.tyreWear;
       zahl = Math.round(100 - w * 100) + '%';
     }
-    if (!pitJobAvailable(z.id)) return zahl + ' \u00b7 ' + t('Sim aus');
+    if (!pitJobAvailable(z.id)) return { zahl, wort: t('Sim aus') };
     if (pitState === 'servicing' && pitPlan) {
-      return zahl + ' \u00b7 ' + (pitPlan[z.id] ? t('wird gemacht') : t('abgewählt'));
+      return { zahl, wort: pitPlan[z.id] ? t('wird gemacht') : t('abgewählt') };
     }
-    return zahl + ' \u00b7 ' + (pitVorwahlIst(z.id) ? t('vorgewählt') : t('aus'));
+    return { zahl, wort: pitVorwahlIst(z.id) ? t('vorgewählt') : t('aus') };
   }
 
   // ---- Rennuebersicht ----------------------------------------------------------------
@@ -3823,9 +3845,43 @@
     });
   }
 
+  // ---- Die Karte im Uebersichtsschirm ------------------------------------------------
+  //
+  // EINMAL ZEICHNEN, DANN NUR PUNKTE BEWEGEN. Gemessen kostet renderTrackPreview rund
+  // 94 ms - es rechnet Mittellinie, Normalen und die Ideallinie, und die ist eine
+  // Optimierung. Zehnmal je Sekunde waere das der Faden, an dem der 45-ms-Sendetakt haengt.
+  //
+  // Neu gezeichnet wird nur, wenn sich das LAYOUT aendert. Erkannt an Kachelzahl und
+  // Kurzcode: beides zusammen ist eindeutig, und der Kurzcode ist ohnehin da.
+  let ovKarteSchluessel = null;
+  let ovKarteGeo = null;
+
+  function ovKarteMalen() {
+    const host = $('ov-karte');
+    if (!host) return;
+    const tiles = currentTrackTiles;
+    if (!tiles || tiles.length < 2) {
+      if (host.firstChild) { host.innerHTML = ''; ovKarteSchluessel = null; ovKarteGeo = null; }
+      return;
+    }
+    const schluessel = tiles.length + ':' + (typeof trackToCode === 'function'
+      ? trackToCode(tiles) : String(tiles.map(t => t.type)));
+    if (schluessel !== ovKarteSchluessel) {
+      const r = renderTrackPreview(tiles, null, { detailed: true, cars: [] });
+      host.innerHTML = r.html;
+      ovKarteGeo = r.geo;
+      ovKarteSchluessel = schluessel;
+    }
+    const svg = host.firstElementChild;
+    if (svg && ovKarteGeo && typeof karteAutosSetzen === 'function') {
+      karteAutosSetzen(svg, ovKarteGeo, trackCarMarks());
+    }
+  }
+
   function ovScreenRender() {
     const tab = $('ov-tab');
     if (!tab) return;
+    ovKarteMalen();
     const zeilen = ovDaten();
     // Die schnellste Runde des FELDES, violett wie in der Formel 1. Hier und nicht in
     // ovDaten(): dort ist die Zeile noch allein, und "die schnellste" ist ein Vergleich.

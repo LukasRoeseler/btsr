@@ -2150,6 +2150,91 @@
                  + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
   });
 
+  // ---- Die Karte im Uebersichtsschirm kostet einen Takt fast nichts ----
+  //
+  // DIE ZUSICHERUNG, AUF DER DIE TRENNUNG STEHT. renderTrackPreview rechnet Mittellinie,
+  // Normalen UND die Ideallinie - letztere ist eine Optimierung, und gemessen kostet ein
+  // Aufruf rund 94 ms. Der Uebersichtsschirm malt zehnmal je Sekunde nach; laege der ganze
+  // Aufbau in diesem Takt, waere das der Faden, an dem der 45-ms-Sendetakt haengt.
+  //
+  // Deshalb wird die Strecke EINMAL gezeichnet und danach werden nur die Punkte gesetzt.
+  // Wenn dieser Weg auch nur ein paar Millisekunden kostet, ist die Trennung wertlos - also
+  // wird sie hier nachgemessen und nicht geglaubt.
+  stAdd('Kartenpunkte kosten fast nichts', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.ovKarteProbe) {
+      return { skip: true, mass: 'ovKarteProbe nicht vorhanden' };
+    }
+    const btn = document.querySelector('[data-tab="race"]');
+    if (btn) btn.click();
+    const merk = OMEGA_TEST.schirmIst ? OMEGA_TEST.schirmIst() : null;
+    try {
+      if (OMEGA_TEST.schirmZu) OMEGA_TEST.schirmZu('uebersicht');
+      const autos = [
+        { index: 2, phase: 0.4, farbe: '#e23b3b', kuerzel: 'Alp', quer: -0.6 },
+        { index: 5, phase: 0.7, farbe: '#3b7fe2', kuerzel: 'Bet', quer: 0.5 },
+      ];
+      const r = OMEGA_TEST.ovKarteProbe(autos, 50);
+      if (!r) return { skip: true, mass: 'keine Strecke geladen - nichts zu zeichnen' };
+      const schlecht = [];
+      // 2 ms je Takt waeren bei 8 Takten je Sekunde schon 1,6 Prozent des Fadens. Die
+      // Grenze ist grosszuegig; gemessen liegt der Weg bei 0,06 ms.
+      if (!(r.jeAufrufMs < 2)) schlecht.push('ein Takt kostet ' + r.jeAufrufMs + ' ms');
+      if (r.punkte.length !== 2) schlecht.push(r.punkte.length + ' Punkte statt 2');
+      if (r.punkte[0] && r.punkte[0].fill !== '#e23b3b') schlecht.push('Farbe kommt nicht an');
+      if (r.kuerzel.indexOf('Alp') < 0) schlecht.push('Kuerzel fehlt');
+      return { ok: schlecht.length === 0,
+               mass: r.jeAufrufMs + ' ms je Takt, ' + r.punkte.length + ' Punkte'
+                   + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+    } finally {
+      if (merk && OMEGA_TEST.schirmZu) OMEGA_TEST.schirmZu(merk);
+    }
+  });
+
+  // ---- Im Boxenschirm huepft nichts, wenn das Wort seine Laenge aendert ----
+  //
+  // GEMELDET: "Symbole (zB Reifenfarbe) sollte mit unterschiedlich langem Text 'mittel'
+  // 'weich' nicht hin und her huepfen." Die Ursache war eine Rasterspalte auf `auto`: sie
+  // ist so breit wie ihr Text, und damit verschiebt jeder Wortwechsel die Spalte DAVOR.
+  //
+  // Geprueft wird an der Stelle, an der man es sieht: die Farbfelder duerfen sich nicht
+  // bewegen, waehrend die vier Mischungen durchgeschaltet werden.
+  stAdd('Boxenschirm: die Bilder stehen still', () => {
+    const btn = document.querySelector('[data-tab="race"]');
+    if (btn) btn.click();
+    const feld = document.querySelector('#pit-row-mix .pit-mix-feld');
+    const reifen = document.querySelector('#pit-row-tyres .pit-t4-feld');
+    const wert = document.getElementById('pit-wert-mix');
+    if (!feld || !reifen || !wert || !OMEGA_TEST || !OMEGA_TEST.schirmZu) {
+      return { skip: true, mass: 'Boxenschirm nicht vorhanden' };
+    }
+    const merk = OMEGA_TEST.schirmIst();
+    try {
+      OMEGA_TEST.schirmZu('pit');
+      if (!(feld.getBoundingClientRect().width > 0)) {
+        return { skip: true, mass: 'Schirm nicht sichtbar' };
+      }
+      const worte = [], mixL = new Set(), reifenL = new Set();
+      for (let i = 0; i < 5; i++) {
+        // Ueber die Zeile selbst, also denselben Weg wie ein Fingertipp.
+        document.getElementById('pit-row-mix').click();
+        worte.push(wert.textContent);
+        mixL.add(+feld.getBoundingClientRect().left.toFixed(1));
+        reifenL.add(+reifen.getBoundingClientRect().left.toFixed(1));
+      }
+      const schlecht = [];
+      if (mixL.size > 1) schlecht.push('Mischungsfelder wandern: ' + [...mixL].join(', '));
+      if (reifenL.size > 1) schlecht.push('Reifenbild wandert: ' + [...reifenL].join(', '));
+      // Und die Gegenprobe: die Woerter mussten sich WIRKLICH geaendert haben, sonst
+      // beweist die Messung nichts.
+      if (new Set(worte).size < 2) schlecht.push('die Mischung hat gar nicht gewechselt');
+      return { ok: schlecht.length === 0,
+               mass: new Set(worte).size + ' verschiedene Woerter, Bilder stehen'
+                   + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+    } finally {
+      OMEGA_TEST.schirmZu(merk);
+    }
+  });
+
   // ---- Controller-Vibration: ein Schalter je Ausloeser ----
   //
   // Siebzehn Aufrufstellen, sechs Arten, ein Hauptschalter. Geprueft wird die
@@ -2835,11 +2920,26 @@
       // dessen ein Bild oder einen Verlauf, wird er eingeschaetzt - hell im hellen Schirm,
       // sonst dunkel.
       const hell = () => document.body.dataset.cockpit === 'modern';
+      // EINE DURCHSCHEINENDE FARBE IST KEIN GRUND. lum() liest die ersten drei Zahlen und
+      // uebergeht das Alpha - rgba(255,255,255,.07) kam damit als WEISS heraus, und ein
+      // grauer Text darauf meldete Kontrast 2,95, obwohl er in Wirklichkeit auf einem
+      // dunklen Schirm steht. Aufgefallen an der Streckenkarte im Uebersichtsschirm, die
+      // genau so einen Schleier benutzt, damit die schwarze Fahrbahn sich abhebt.
+      //
+      // Deckende Farben beenden die Suche, durchscheinende nicht: was darunter liegt,
+      // bestimmt die Helligkeit weiterhin mit.
+      const deckend = (c) => {
+        const m = (c || '').match(/rgba?\(([^)]+)\)/);
+        if (!m) return false;
+        const teile = m[1].split(',');
+        return teile.length < 4 || parseFloat(teile[3]) >= 0.999;
+      };
       const grund = (el) => {
         let n = el;
         while (n && n !== document.body) {
           const cs = getComputedStyle(n);
-          if (cs.backgroundColor && cs.backgroundColor !== 'rgba(0, 0, 0, 0)') {
+          if (cs.backgroundColor && cs.backgroundColor !== 'rgba(0, 0, 0, 0)'
+              && deckend(cs.backgroundColor)) {
             return cs.backgroundColor;
           }
           if (cs.backgroundImage !== 'none') {
@@ -2865,7 +2965,13 @@
           if (!eigen || el.hidden || getComputedStyle(el).display === 'none') return;
           geprueft++;
           const k = kontrast(getComputedStyle(el).color, grund(el));
-          if (k < schlimmst) { schlimmst = k; wo = el.id || el.className; }
+          // BEI SVG IST className EIN SVGAnimatedString und kein Text - im Bericht stand
+          // dann "[object SVGAnimatedString]" statt eines Namens.
+          if (k < schlimmst) {
+            schlimmst = k;
+            wo = el.id || (typeof el.className === 'string' ? el.className
+                           : (el.className && el.className.baseVal) || el.tagName);
+          }
         });
         teile.push(v + ' ' + schlimmst.toFixed(2));
         if (geprueft < 5) schlecht.push(v + ': nur ' + geprueft + ' Texte gefunden');

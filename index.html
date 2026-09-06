@@ -1521,8 +1521,27 @@
     font-size: clamp(8px, 1.1vw, 11px); letter-spacing: .12em;
     color: var(--gt3-strip-ink); text-transform: uppercase; }
   .schirm-kopf b { color: var(--gt3-tile-ink); letter-spacing: .06em; }
-  .schirm-fuss { font-size: clamp(7.5px, 1vw, 10px); color: var(--gt3-strip-ink);
+  .schirm-fuss { font-size: clamp(8.5px, 1.15vw, 12px); color: var(--gt3-strip-ink);
     letter-spacing: .06em; }
+  /* Der Kopf des Boxenschirms traegt links das grosse P. Eine eigene Zeile im Raster
+     braucht es nicht: das Zeichen ist so hoch wie zwei Textzeilen und zieht den Kopf mit. */
+  .pit-kopf { align-items: center; gap: clamp(8px, 1.6vw, 16px); }
+  .pit-kopf-text { display: flex; align-items: baseline; gap: 8px; }
+  /* DAS P WIE AN EINER BOXENEINFAHRT: weiss auf einem Kasten, und der Kasten faerbt sich
+     nach dem Zustand. Quadratisch ueber aspect-ratio statt ueber feste Pixel, damit es mit
+     der Schrift mitwaechst - dasselbe Muster wie bei den Schaltlichtern. */
+  .pit-zeichen {
+    display: grid; place-items: center;
+    width: clamp(26px, 5.5vw, 48px); aspect-ratio: 1;
+    border-radius: var(--gt3-radius);
+    font-size: clamp(17px, 3.6vw, 32px); font-weight: 800; line-height: 1;
+    background: var(--gt3-tile); color: var(--gt3-strip-ink);
+    box-shadow: inset 0 0 0 2px currentColor;
+    transition: color .25s linear, background .25s linear;
+  }
+  .pit-zeichen.pz-gasse { color: #ffd83d; background: rgba(255, 216, 61, .12); }
+  .pit-zeichen.pz-arbeit { color: #ffd83d; background: rgba(255, 216, 61, .22); }
+  .pit-zeichen.pz-fertig { color: var(--good); background: rgba(70, 209, 127, .18); }
 
   /* ---- Der Boxenschirm ---------------------------------------------------------------- */
   #race-pitscreen { grid-template-rows: auto repeat(5, minmax(0, 1fr)) auto; }
@@ -1532,17 +1551,34 @@
     padding: 0 clamp(4px, 1vw, 10px);
     background: var(--gt3-tile); color: var(--gt3-tile-ink);
     border-radius: var(--gt3-radius); }
-  .pit-row > .pr-pfeil { font-size: 13px; color: var(--gt3-tile-ink); opacity: 0; }
-  .pit-row > .pr-name { font-size: clamp(10px, 1.5vw, 15px); font-weight: 700;
-    letter-spacing: .04em; }
-  .pr-wert { font-size: clamp(9px, 1.3vw, 13px); font-family: monospace;
+  .pit-row > .pr-pfeil { font-size: clamp(13px, 2vw, 18px); color: var(--gt3-tile-ink);
+    opacity: 0; }
+  /* GROESSER, auf Bitte. Ein Boxenmenue liest man im Vorbeifahren, und die alten 15 px
+     waren die Groesse einer Kachelbeschriftung - dort steht aber eine Zahl, hier ein Satz,
+     den man treffen muss. */
+  .pit-row > .pr-name { font-size: clamp(12px, 2vw, 20px); font-weight: 700;
+    letter-spacing: .03em; }
+  .pr-wert { font-size: clamp(10px, 1.6vw, 17px); font-family: monospace;
     text-align: right; color: var(--gt3-strip-ink); }
   /* Die rechte Spalte traegt jetzt ein BILD und eine Zahl. Das Bild links davon, die Zahl
      rechtsbuendig - so stehen die Zahlen aller fuenf Zeilen untereinander, und das Auge
      findet sie ohne zu suchen. */
-  .pr-bild { display: grid; grid-template-columns: minmax(0, 1fr) auto;
+  /* DREI FESTE SPALTEN, und das ist die Behebung des gemeldeten Huepfens.
+     `auto` macht eine Spalte so breit wie ihr Text, und "mittel" ist breiter als "weich" -
+     also verschob jeder Wortwechsel die Nachbarspalten, und dort stehen die Farbfelder und
+     die Reifen.
+
+     Aufgeteilt entlang dessen, was die Teile SIND: die Zahl (Prozent, Liter), das Bild
+     (Reifen, Mischungsfelder, Balken) und das Zustandswort. Alle drei in `ch` - eine ch ist
+     die Breite der Ziffer Null, und beide Textspalten sind Schreibmaschinenschrift. Damit
+     haengt die Breite an der Schriftgroesse und nicht am Inhalt.
+
+     8 ch fuer die Zahl (laengster Wert "110 l"), 13 ch fuer den Zustand ("wird gemacht"). */
+  .pr-bild { display: grid; grid-template-columns: 8ch minmax(0, 1fr) 13ch;
     align-items: center; gap: clamp(4px, .9vw, 10px); min-width: 0; }
-  .pr-bild > .pr-wert { white-space: nowrap; }
+  .pr-zahl { font-size: clamp(10px, 1.6vw, 17px); font-family: monospace;
+    text-align: right; color: var(--gt3-tile-ink); white-space: nowrap; }
+  .pr-bild > .pr-wert { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .pit-bar { margin-top: 0; width: 100%; }
   /* Die vier Reifen in Fahrzeuganordnung, klein: zwei Spalten, zwei Zeilen. Kein Spalt in
      der Mitte wie im Streifen - hier ist die Zeile 20 px hoch, und ein Spalt darin waere
@@ -1568,7 +1604,37 @@
   .pit-row.pr-sel > .pr-pfeil { opacity: 1; }
 
   /* ---- Der Rennuebersichts-Schirm ----------------------------------------------------- */
-  #race-ovscreen { grid-template-rows: auto minmax(0, 1fr) auto; }
+  /* ZWEI SPALTEN: Tabelle links, Strecke rechts. Das Cockpit ist breit und flach -
+     untereinander bliebe fuer beides zu wenig Hoehe, und die Tabelle waere dann die, die
+     abgeschnitten wird.
+
+     Liegt keine Strecke, faellt die rechte Spalte auf null zusammen (siehe .ov-karte:empty)
+     und die Tabelle nimmt die ganze Breite. Ein leerer Kasten daneben saehe wie ein Fehler
+     aus. */
+  #race-ovscreen {
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-areas: "kopf kopf" "tab karte" "fuss fuss"; }
+  #race-ovscreen > .schirm-kopf { grid-area: kopf; }
+  #race-ovscreen > .ov-tab { grid-area: tab; }
+  #race-ovscreen > .ov-karte { grid-area: karte; }
+  #race-ovscreen > .schirm-fuss { grid-area: fuss; }
+  .ov-karte { display: grid; place-items: center; min-width: 0; min-height: 0;
+    overflow: hidden; }
+  /* Das SVG kommt mit max-width: 520px aus renderTrackPreview. Hier ist die HOEHE die
+     knappe Groesse, also wird sie gedeckelt und die Breite folgt - sonst waechst das Bild
+     ueber die Zeile hinaus und wird von .gt3-schirm abgeschnitten. */
+  /* EIN STRECKENBILD LIEST SICH NUR, WENN DIE STRASSE DUNKLER IST ALS IHRE UMGEBUNG.
+     Die Fahrbahn ist #14181f, der Schirmgrund #0b0f18 - vier Prozent Unterschied, und
+     gesehen blieb ein Drahtgitter aus Randsteinen ohne Strasse dazwischen. Im Editor faellt
+     das nicht auf, weil dort ein hellerer Panelgrund dahinterliegt.
+     Ein durchscheinendes Weiss statt einer festen Farbe: so hebt es sich in jeder der fuenf
+     Ansichten gleich weit ab, auch in der hellen. */
+  .ov-karte svg { max-width: 100%; max-height: 100%; width: auto; height: auto;
+    background: rgba(255, 255, 255, .07) !important; border: 0 !important;
+    border-radius: 4px; }
+  .ov-karte:empty { display: none; }
+  #race-ovscreen:has(.ov-karte:empty) { grid-template-columns: minmax(0, 1fr) 0; }
   .ov-tab { display: grid; align-content: start; gap: 2px; overflow: hidden;
     font-family: monospace; font-size: clamp(9px, 1.35vw, 14px); }
   .ov-zeile { display: grid; align-items: center;
@@ -2979,16 +3045,26 @@
            dass die Zahl der Elemente mit id ueber alle Ansichten konstant ist. Gefuellt
            werden nur die Werte. -->
       <div class="gt3-schirm" id="race-pitscreen">
-        <div class="schirm-kopf"><b>Box</b><span class="wip-tag">WIP</span><span id="pit-kopf-lage" data-i18n-skip>aus</span>
+        <!-- DAS P IST DIE ZUSTANDSANZEIGE, nicht nur ein Zeichen: grau wenn nichts
+             laeuft, gelb in der Boxengasse, gruen wenn fertig. Damit steht die Farbe dort,
+             wo das Auge ohnehin zuerst hinsieht, und nicht nur im Wort daneben. -->
+        <div class="schirm-kopf pit-kopf">
+          <span class="pit-zeichen" id="pit-zeichen" aria-hidden="true">P</span>
+          <span class="pit-kopf-text"><b>Box</b><span class="wip-tag">WIP</span>
+            <span id="pit-kopf-lage" data-i18n-skip>aus</span></span>
           <span style="margin-left:auto" id="pit-kopf-zeit" data-i18n-skip></span></div>
         <div class="pit-row" id="pit-row-go">
           <span class="pr-pfeil" aria-hidden="true">&#9656;</span>
           <span class="pr-name">Boxenstopp einleiten</span>
-          <span class="pr-wert" id="pit-wert-go" data-i18n-skip>&ndash;</span></div>
+          <span class="pr-bild">
+            <span class="pr-zahl" id="pit-zahl-go" data-i18n-skip></span>
+            <span></span>
+            <span class="pr-wert" id="pit-wert-go" data-i18n-skip>&ndash;</span></span></div>
         <div class="pit-row pit-tile" id="pit-row-tyres" data-pit="tyres">
           <span class="pr-pfeil" aria-hidden="true">&#9656;</span>
           <span class="pr-name">Reifen wechseln</span>
           <span class="pr-bild">
+            <span class="pr-zahl" id="pit-zahl-tyres" data-i18n-skip></span>
             <!-- DASSELBE BILD wie die Kachel im Streifen: Fuellhoehe ist Restprofil, Farbe
                  die Temperatur, Rahmen die Mischung. Eigene ids, weil ein Dokument keine
                  doppelten tragen darf - die Werte schreibt derselbe Takt. -->
@@ -3003,6 +3079,7 @@
           <span class="pr-pfeil" aria-hidden="true">&#9656;</span>
           <span class="pr-name">Reifenwahl</span>
           <span class="pr-bild">
+            <span class="pr-zahl" id="pit-zahl-mix" data-i18n-skip></span>
             <!-- ALLE VIER, damit man den Vorrat sieht und nicht nur die Wahl. Die geltende
                  ist umrahmt; mit der Waehltaste schaltet man durch. -->
             <span class="pit-mix-feld">
@@ -3014,12 +3091,14 @@
           <span class="pr-pfeil" aria-hidden="true">&#9656;</span>
           <span class="pr-name">Tanken</span>
           <span class="pr-bild">
+            <span class="pr-zahl" id="pit-zahl-refuel" data-i18n-skip></span>
             <span class="gt3-bar pit-bar"><i id="pit-bar-refuel"></i></span>
             <span class="pr-wert" id="pit-wert-refuel" data-i18n-skip>&ndash;</span></span></div>
         <div class="pit-row pit-tile" id="pit-row-repair" data-pit="repair">
           <span class="pr-pfeil" aria-hidden="true">&#9656;</span>
           <span class="pr-name">Reparieren</span>
           <span class="pr-bild">
+            <span class="pr-zahl" id="pit-zahl-repair" data-i18n-skip></span>
             <span class="gt3-bar pit-bar"><i id="pit-bar-repair"></i></span>
             <span class="pr-wert" id="pit-wert-repair" data-i18n-skip>&ndash;</span></span></div>
         <div class="schirm-fuss" id="pit-fuss" data-i18n-skip></div>
@@ -3029,6 +3108,11 @@
         <div class="schirm-kopf"><b>Rennen</b><span class="wip-tag">WIP</span><span id="ov-kopf-lage" data-i18n-skip>&ndash;</span>
           <span style="margin-left:auto" id="ov-kopf-runde" data-i18n-skip></span></div>
         <div class="ov-tab" id="ov-tab"></div>
+        <!-- DIE STRECKE NEBEN DER TABELLE, nicht darunter: das Cockpit ist breit und flach,
+             und untereinander bliebe fuer beides zu wenig Hoehe. Leer und verborgen, solange
+             keine Strecke liegt - ein leerer Kasten neben der Tabelle saehe wie ein Fehler
+             aus. -->
+        <div class="ov-karte" id="ov-karte" data-i18n-skip></div>
         <div class="schirm-fuss" id="ov-fuss" data-i18n-skip></div>
       </div>
 
@@ -15075,6 +15159,11 @@
     return `rgb(${mix(1)},${mix(2)},${mix(3)})`;
   }
 
+  // KLEINER ALS BIS v0.5.17: 6 px Radius deckten auf einer 30 px breiten Bahn die halbe
+  // Fahrbahn, und darin ist keine Querlage zu zeigen. 3,2 lassen Platz fuer beides.
+  // Als Modulkonstante, weil karteAutosSetzen() denselben Wert braucht.
+  const PUNKT_R = 3.2;
+
   function renderTrackPreview(tiles, currentIndex, opts) {
     const o = opts || {};
     if (!tiles || tiles.length === 0) {
@@ -15207,9 +15296,8 @@
     // Kachel, auf der das Auto steht - eine ganze Kachel zu weit. Richtig ist der Anfang
     // plus die Phase. Genauer geht es nicht: das Auto ortet sich nicht, es zaehlt Kacheln.
     const proSchritt = o.detailed ? TRACK_SAMPLES_PER_TILE : 1;
-    // KLEINER ALS VORHER: 6 px Radius deckten auf einer 30 px breiten Bahn die halbe
-    // Fahrbahn, und darin ist keine Querlage zu zeigen. 3,2 lassen Platz fuer beides.
-    const PUNKT_R = 3.2;
+    // (PUNKT_R steht als Modulkonstante weiter oben - karteAutosSetzen() braucht denselben
+    //  Wert, und zwei Zahlen fuer eine Punktgroesse waeren zwei Punktgroessen.)
     const autoPunkt = (index, phase, farbe, kuerzel, quer) => {
       if (index === null || index === undefined) return '';
       const roh = (index + Math.max(0, Math.min(1, phase || 0))) * proSchritt;
@@ -15243,9 +15331,77 @@
       ? 'width:100%;max-width:520px;height:auto;background:var(--panel-2);border:1px solid var(--border);border-radius:6px'
       : 'width:220px;height:auto;background:var(--panel-2);border:1px solid var(--border);border-radius:4px';
     const html = `<svg viewBox="0 0 ${w.toFixed(0)} ${h.toFixed(0)}" style="${style}">${body}</svg>`;
-    return { html, closed, lineInfo: o.lineInfo };
+    // DIE GEOMETRIE MIT HERAUS, damit ein Aufrufer Punkte setzen kann, ohne die Strecke neu
+    // zu rechnen. Gemessen kostet ein Aufruf dieser Funktion rund 94 ms - sie rechnet
+    // Mittellinie, Normalen UND die Ideallinie, und die ist eine Optimierung. Das gehoert
+    // nicht in einen Anzeigetakt.
+    //
+    // Es ist DIESELBE Geometrie, mit der oben gezeichnet wurde, kein zweiter Rechenweg.
+    return { html, closed, lineInfo: o.lineInfo,
+             geo: { ox, oy, proSchritt, half, pts, nrm, punktR: PUNKT_R } };
   }
 
+
+  // ---- Autopunkte in ein fertiges Streckenbild setzen ---------------------------------
+  //
+  // Sie ZEICHNET die Strecke nicht, sie legt nur Punkte darauf. Gebraucht wird sie vom
+  // Uebersichtsschirm, der zehnmal je Sekunde nachzieht - und dort waere ein neuer
+  // Streckenaufbau (gemessen 94 ms) der Faden, an dem der Sendetakt haengt.
+  //
+  // Die Knoten werden WIEDERVERWENDET und nicht neu erzeugt: eine Gruppe je Aufruf zu
+  // ersetzen erzeugt zehn Verwerfungen je Sekunde im Layout, und der Browser zeichnet dann
+  // den ganzen Baum neu statt zweier Attribute.
+  const NS_SVG = 'http://www.w3.org/2000/svg';
+  function karteAutosSetzen(svg, geo, cars) {
+    if (!svg || !geo) return 0;
+    let g = svg.querySelector('g.karte-autos');
+    if (!g) {
+      g = document.createElementNS(NS_SVG, 'g');
+      g.setAttribute('class', 'karte-autos');
+      svg.appendChild(g);
+    }
+    const liste = cars || [];
+    // Fehlende Knoten anlegen, ueberzaehlige verbergen. Nicht loeschen: die Zahl der Autos
+    // wechselt selten, und ein verborgener Knoten kostet nichts.
+    while (g.childNodes.length < liste.length * 2) {
+      const c = document.createElementNS(NS_SVG, 'circle');
+      c.setAttribute('stroke', '#fff');
+      c.setAttribute('stroke-width', '1.2');
+      const t = document.createElementNS(NS_SVG, 'text');
+      t.setAttribute('text-anchor', 'middle');
+      t.setAttribute('font-size', '9');
+      t.setAttribute('font-weight', '700');
+      t.setAttribute('fill', '#fff');
+      t.setAttribute('stroke', '#0b0c0f');
+      t.setAttribute('stroke-width', '2.5');
+      t.setAttribute('paint-order', 'stroke');
+      g.appendChild(c);
+      g.appendChild(t);
+    }
+    for (let k = 0; k < g.childNodes.length / 2; k++) {
+      const c = g.childNodes[k * 2], t = g.childNodes[k * 2 + 1];
+      const a = liste[k];
+      if (!a || a.index === null || a.index === undefined) {
+        c.setAttribute('r', '0');
+        t.textContent = '';
+        continue;
+      }
+      const roh = (a.index + Math.max(0, Math.min(1, a.phase || 0))) * geo.proSchritt;
+      const i = Math.max(0, Math.min(Math.round(roh), geo.pts.length - 1));
+      const p = geo.pts[i], n = geo.nrm[i] || { x: 0, y: 0 };
+      const q = Math.max(-0.85, Math.min(0.85, a.quer || 0));
+      const x = p.x + n.x * q * geo.half + geo.ox;
+      const y = p.y + n.y * q * geo.half + geo.oy;
+      c.setAttribute('cx', x.toFixed(1));
+      c.setAttribute('cy', y.toFixed(1));
+      c.setAttribute('r', String(geo.punktR));
+      c.setAttribute('fill', a.farbe || '#ff5c5c');
+      t.setAttribute('x', x.toFixed(1));
+      t.setAttribute('y', (y - 6).toFixed(1));
+      t.textContent = a.kuerzel || '';
+    }
+    return liste.length;
+  }
 
   // ---- Short track code ----
   // One letter per element with a run-length count, plus the orientation. Short enough to
@@ -19735,8 +19891,18 @@
                : pitState === 'limited' ? 'Boxengasse'
                : pitReady ? 'fertig' : 'Arbeit';
     schreibeWert($('pit-kopf-lage'), t(lage));
-    schreibeWert($('pit-kopf-zeit'), pitState === 'servicing' && pitServiceStart
-      ? ((Date.now() - pitServiceStart) / 1000).toFixed(1) + ' s' : '');
+    // Das grosse P traegt denselben Zustand wie das Wort daneben - eine Quelle, zwei
+    // Traeger: Farbe fuer den Blick im Vorbeifahren, Wort fuer die Gewissheit.
+    const pz = $('pit-zeichen');
+    if (pz) {
+      pz.classList.toggle('pz-gasse', pitState === 'limited');
+      pz.classList.toggle('pz-arbeit', pitState === 'servicing' && !pitReady);
+      pz.classList.toggle('pz-fertig', pitState === 'servicing' && !!pitReady);
+    }
+    // Der Kopf traegt die Rundenzahl statt der Standzeit: die steht jetzt in der Zeile
+    // "Boxenstopp einleiten", wo sie hingehoert - dort ist sie der Messwert.
+    schreibeWert($('pit-kopf-zeit'), raceLapTimes.length
+      ? t('Runde') + ' ' + raceLapTimes.length : '');
 
     for (let i = 0; i < PIT_SCREEN_ROWS.length; i++) {
       const z = PIT_SCREEN_ROWS[i];
@@ -19744,7 +19910,12 @@
       if (el) el.classList.toggle('pr-sel', i === pitScreenSel);
       const w = $(z.wert);
       if (!w) continue;
-      schreibeWert(w, pitZeilenWert(z));
+      // ZAHL UND ZUSTAND GETRENNT. Sie standen bis v0.5.18 in einer Zeichenkette, und mit
+      // der groesseren Schrift passte die nicht mehr in eine Spalte - abgeschnitten wurde
+      // ausgerechnet das Wort am Ende, also der Zustand.
+      const teil = pitZeilenWert(z);
+      schreibeWert($('pit-zahl-' + z.id), teil.zahl);
+      schreibeWert(w, teil.wort);
     }
     pitScreenBilder();
     // Die Fusszeile nennt die Taste, mit der gewaehlt wird - und zwar die WIRKLICH belegte.
@@ -19803,32 +19974,39 @@
     }
   }
 
+  // Zurueck kommen ZWEI Teile: die Zahl und das Zustandswort. Sie stehen in getrennten
+  // Spalten fester Breite, damit kein Wortwechsel die Bilder daneben verschiebt.
   function pitZeilenWert(z) {
     if (z.art === 'aktion') {
-      if (pitState === 'off') return t('bereit');
-      if (pitState === 'limited') return t('Boxengasse');
-      return pitReady ? t('fertig') : t('Arbeit läuft');
+      const wort = pitState === 'off' ? t('bereit')
+                 : pitState === 'limited' ? t('Boxengasse')
+                 : pitReady ? t('fertig') : t('Arbeit läuft');
+      // Die Standzeit gehoert hier hin und nicht in den Kopf: sie IST der Messwert dieser
+      // Zeile, so wie Prozent der Messwert der anderen ist.
+      const zahl = (pitState === 'servicing' && pitServiceStart)
+        ? ((Date.now() - pitServiceStart) / 1000).toFixed(1) + ' s' : '';
+      return { zahl, wort };
     }
     if (z.art === 'wahl') {
       // Waehrend eines Stopps steht hier, was MONTIERT ist; sonst, was vorgewaehlt wurde.
-      // Beides ist derselbe Rahmen im Feld daneben, also sagt der Text dasselbe zweimal -
-      // und das ist gewollt: eine Farbe ohne Namen ist bei vier Feldern eine Ratefrage.
-      return mischungName(pitState === 'servicing' ? tyres : pitMischungWahl());
+      // Der Name steht neben den Farbfeldern und sagt dasselbe zweimal - und das ist
+      // gewollt: eine Farbe ohne Namen ist bei vier Feldern eine Ratefrage.
+      return { zahl: '', wort: mischungName(pitState === 'servicing' ? tyres : pitMischungWahl()) };
     }
-    // Die drei Arbeiten: der WERT ist der Zustand, den man beim Blaettern sehen will.
+    // Die drei Arbeiten: die Zahl ist der Messwert, das Wort der Plan.
     let zahl = '';
-    if (z.id === 'refuel') zahl = Math.round(fuel) + '% \u00b7 ' + fuelLiters(fuel) + ' l';
+    if (z.id === 'refuel') zahl = fuelLiters(fuel) + ' l';
     else if (z.id === 'repair') zahl = Math.round(100 - damage) + '%';
     else if (z.id === 'tyres') {
       const st = physEngine.state;
       const w = st.tyreWear4 ? Math.max.apply(null, st.tyreWear4) : st.tyreWear;
       zahl = Math.round(100 - w * 100) + '%';
     }
-    if (!pitJobAvailable(z.id)) return zahl + ' \u00b7 ' + t('Sim aus');
+    if (!pitJobAvailable(z.id)) return { zahl, wort: t('Sim aus') };
     if (pitState === 'servicing' && pitPlan) {
-      return zahl + ' \u00b7 ' + (pitPlan[z.id] ? t('wird gemacht') : t('abgewählt'));
+      return { zahl, wort: pitPlan[z.id] ? t('wird gemacht') : t('abgewählt') };
     }
-    return zahl + ' \u00b7 ' + (pitVorwahlIst(z.id) ? t('vorgewählt') : t('aus'));
+    return { zahl, wort: pitVorwahlIst(z.id) ? t('vorgewählt') : t('aus') };
   }
 
   // ---- Rennuebersicht ----------------------------------------------------------------
@@ -19878,9 +20056,43 @@
     });
   }
 
+  // ---- Die Karte im Uebersichtsschirm ------------------------------------------------
+  //
+  // EINMAL ZEICHNEN, DANN NUR PUNKTE BEWEGEN. Gemessen kostet renderTrackPreview rund
+  // 94 ms - es rechnet Mittellinie, Normalen und die Ideallinie, und die ist eine
+  // Optimierung. Zehnmal je Sekunde waere das der Faden, an dem der 45-ms-Sendetakt haengt.
+  //
+  // Neu gezeichnet wird nur, wenn sich das LAYOUT aendert. Erkannt an Kachelzahl und
+  // Kurzcode: beides zusammen ist eindeutig, und der Kurzcode ist ohnehin da.
+  let ovKarteSchluessel = null;
+  let ovKarteGeo = null;
+
+  function ovKarteMalen() {
+    const host = $('ov-karte');
+    if (!host) return;
+    const tiles = currentTrackTiles;
+    if (!tiles || tiles.length < 2) {
+      if (host.firstChild) { host.innerHTML = ''; ovKarteSchluessel = null; ovKarteGeo = null; }
+      return;
+    }
+    const schluessel = tiles.length + ':' + (typeof trackToCode === 'function'
+      ? trackToCode(tiles) : String(tiles.map(t => t.type)));
+    if (schluessel !== ovKarteSchluessel) {
+      const r = renderTrackPreview(tiles, null, { detailed: true, cars: [] });
+      host.innerHTML = r.html;
+      ovKarteGeo = r.geo;
+      ovKarteSchluessel = schluessel;
+    }
+    const svg = host.firstElementChild;
+    if (svg && ovKarteGeo && typeof karteAutosSetzen === 'function') {
+      karteAutosSetzen(svg, ovKarteGeo, trackCarMarks());
+    }
+  }
+
   function ovScreenRender() {
     const tab = $('ov-tab');
     if (!tab) return;
+    ovKarteMalen();
     const zeilen = ovDaten();
     // Die schnellste Runde des FELDES, violett wie in der Formel 1. Hier und nicht in
     // ovDaten(): dort ist die Zeile noch allein, und "die schnellste" ist ein Vergleich.
@@ -28471,6 +28683,33 @@
       }
     },
 
+    // ---- Die Karte im Uebersichtsschirm: kostet ein Takt wirklich nichts? -----------
+    //
+    // DAS IST DIE ZUSICHERUNG, auf der die Trennung steht. renderTrackPreview kostet
+    // gemessen rund 94 ms, weil es die Ideallinie mitoptimiert; deshalb wird die Strecke
+    // einmal gezeichnet und danach werden nur Punkte gesetzt. Wenn dieser Weg auch nur
+    // ein paar Millisekunden kostet, ist die Trennung wertlos und der Sendetakt in Gefahr.
+    ovKarteProbe(cars, wdh) {
+      const host = document.getElementById('ov-karte');
+      if (!host) return null;
+      const svg = host.querySelector('svg');
+      if (!svg || typeof karteAutosSetzen !== 'function') return null;
+      // Die Geometrie liegt beim Renderer; hier wird sie ueber einen frischen Aufbau geholt,
+      // damit die Probe auch dann etwas messen kann, wenn der Schirm nie offen war.
+      const r = renderTrackPreview(currentTrackTiles, null, { detailed: true, cars: [] });
+      const n = wdh || 50;
+      const t0 = performance.now();
+      for (let i = 0; i < n; i++) karteAutosSetzen(svg, r.geo, cars || []);
+      const t1 = performance.now();
+      const punkte = [...svg.querySelectorAll('g.karte-autos circle')]
+        .filter(c => +c.getAttribute('r') > 0)
+        .map(c => ({ x: +c.getAttribute('cx'), y: +c.getAttribute('cy'),
+                     fill: c.getAttribute('fill') }));
+      const kuerzel = [...svg.querySelectorAll('g.karte-autos text')]
+        .map(t => t.textContent).filter(Boolean);
+      return { jeAufrufMs: +((t1 - t0) / n).toFixed(3), punkte, kuerzel };
+    },
+
     fanfareProbe() {
       if (typeof playRaceEndFanfare !== 'function') return null;
       return playRaceEndFanfare();
@@ -31641,6 +31880,91 @@
                  + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
   });
 
+  // ---- Die Karte im Uebersichtsschirm kostet einen Takt fast nichts ----
+  //
+  // DIE ZUSICHERUNG, AUF DER DIE TRENNUNG STEHT. renderTrackPreview rechnet Mittellinie,
+  // Normalen UND die Ideallinie - letztere ist eine Optimierung, und gemessen kostet ein
+  // Aufruf rund 94 ms. Der Uebersichtsschirm malt zehnmal je Sekunde nach; laege der ganze
+  // Aufbau in diesem Takt, waere das der Faden, an dem der 45-ms-Sendetakt haengt.
+  //
+  // Deshalb wird die Strecke EINMAL gezeichnet und danach werden nur die Punkte gesetzt.
+  // Wenn dieser Weg auch nur ein paar Millisekunden kostet, ist die Trennung wertlos - also
+  // wird sie hier nachgemessen und nicht geglaubt.
+  stAdd('Kartenpunkte kosten fast nichts', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.ovKarteProbe) {
+      return { skip: true, mass: 'ovKarteProbe nicht vorhanden' };
+    }
+    const btn = document.querySelector('[data-tab="race"]');
+    if (btn) btn.click();
+    const merk = OMEGA_TEST.schirmIst ? OMEGA_TEST.schirmIst() : null;
+    try {
+      if (OMEGA_TEST.schirmZu) OMEGA_TEST.schirmZu('uebersicht');
+      const autos = [
+        { index: 2, phase: 0.4, farbe: '#e23b3b', kuerzel: 'Alp', quer: -0.6 },
+        { index: 5, phase: 0.7, farbe: '#3b7fe2', kuerzel: 'Bet', quer: 0.5 },
+      ];
+      const r = OMEGA_TEST.ovKarteProbe(autos, 50);
+      if (!r) return { skip: true, mass: 'keine Strecke geladen - nichts zu zeichnen' };
+      const schlecht = [];
+      // 2 ms je Takt waeren bei 8 Takten je Sekunde schon 1,6 Prozent des Fadens. Die
+      // Grenze ist grosszuegig; gemessen liegt der Weg bei 0,06 ms.
+      if (!(r.jeAufrufMs < 2)) schlecht.push('ein Takt kostet ' + r.jeAufrufMs + ' ms');
+      if (r.punkte.length !== 2) schlecht.push(r.punkte.length + ' Punkte statt 2');
+      if (r.punkte[0] && r.punkte[0].fill !== '#e23b3b') schlecht.push('Farbe kommt nicht an');
+      if (r.kuerzel.indexOf('Alp') < 0) schlecht.push('Kuerzel fehlt');
+      return { ok: schlecht.length === 0,
+               mass: r.jeAufrufMs + ' ms je Takt, ' + r.punkte.length + ' Punkte'
+                   + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+    } finally {
+      if (merk && OMEGA_TEST.schirmZu) OMEGA_TEST.schirmZu(merk);
+    }
+  });
+
+  // ---- Im Boxenschirm huepft nichts, wenn das Wort seine Laenge aendert ----
+  //
+  // GEMELDET: "Symbole (zB Reifenfarbe) sollte mit unterschiedlich langem Text 'mittel'
+  // 'weich' nicht hin und her huepfen." Die Ursache war eine Rasterspalte auf `auto`: sie
+  // ist so breit wie ihr Text, und damit verschiebt jeder Wortwechsel die Spalte DAVOR.
+  //
+  // Geprueft wird an der Stelle, an der man es sieht: die Farbfelder duerfen sich nicht
+  // bewegen, waehrend die vier Mischungen durchgeschaltet werden.
+  stAdd('Boxenschirm: die Bilder stehen still', () => {
+    const btn = document.querySelector('[data-tab="race"]');
+    if (btn) btn.click();
+    const feld = document.querySelector('#pit-row-mix .pit-mix-feld');
+    const reifen = document.querySelector('#pit-row-tyres .pit-t4-feld');
+    const wert = document.getElementById('pit-wert-mix');
+    if (!feld || !reifen || !wert || !OMEGA_TEST || !OMEGA_TEST.schirmZu) {
+      return { skip: true, mass: 'Boxenschirm nicht vorhanden' };
+    }
+    const merk = OMEGA_TEST.schirmIst();
+    try {
+      OMEGA_TEST.schirmZu('pit');
+      if (!(feld.getBoundingClientRect().width > 0)) {
+        return { skip: true, mass: 'Schirm nicht sichtbar' };
+      }
+      const worte = [], mixL = new Set(), reifenL = new Set();
+      for (let i = 0; i < 5; i++) {
+        // Ueber die Zeile selbst, also denselben Weg wie ein Fingertipp.
+        document.getElementById('pit-row-mix').click();
+        worte.push(wert.textContent);
+        mixL.add(+feld.getBoundingClientRect().left.toFixed(1));
+        reifenL.add(+reifen.getBoundingClientRect().left.toFixed(1));
+      }
+      const schlecht = [];
+      if (mixL.size > 1) schlecht.push('Mischungsfelder wandern: ' + [...mixL].join(', '));
+      if (reifenL.size > 1) schlecht.push('Reifenbild wandert: ' + [...reifenL].join(', '));
+      // Und die Gegenprobe: die Woerter mussten sich WIRKLICH geaendert haben, sonst
+      // beweist die Messung nichts.
+      if (new Set(worte).size < 2) schlecht.push('die Mischung hat gar nicht gewechselt');
+      return { ok: schlecht.length === 0,
+               mass: new Set(worte).size + ' verschiedene Woerter, Bilder stehen'
+                   + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+    } finally {
+      OMEGA_TEST.schirmZu(merk);
+    }
+  });
+
   // ---- Controller-Vibration: ein Schalter je Ausloeser ----
   //
   // Siebzehn Aufrufstellen, sechs Arten, ein Hauptschalter. Geprueft wird die
@@ -32326,11 +32650,26 @@
       // dessen ein Bild oder einen Verlauf, wird er eingeschaetzt - hell im hellen Schirm,
       // sonst dunkel.
       const hell = () => document.body.dataset.cockpit === 'modern';
+      // EINE DURCHSCHEINENDE FARBE IST KEIN GRUND. lum() liest die ersten drei Zahlen und
+      // uebergeht das Alpha - rgba(255,255,255,.07) kam damit als WEISS heraus, und ein
+      // grauer Text darauf meldete Kontrast 2,95, obwohl er in Wirklichkeit auf einem
+      // dunklen Schirm steht. Aufgefallen an der Streckenkarte im Uebersichtsschirm, die
+      // genau so einen Schleier benutzt, damit die schwarze Fahrbahn sich abhebt.
+      //
+      // Deckende Farben beenden die Suche, durchscheinende nicht: was darunter liegt,
+      // bestimmt die Helligkeit weiterhin mit.
+      const deckend = (c) => {
+        const m = (c || '').match(/rgba?\(([^)]+)\)/);
+        if (!m) return false;
+        const teile = m[1].split(',');
+        return teile.length < 4 || parseFloat(teile[3]) >= 0.999;
+      };
       const grund = (el) => {
         let n = el;
         while (n && n !== document.body) {
           const cs = getComputedStyle(n);
-          if (cs.backgroundColor && cs.backgroundColor !== 'rgba(0, 0, 0, 0)') {
+          if (cs.backgroundColor && cs.backgroundColor !== 'rgba(0, 0, 0, 0)'
+              && deckend(cs.backgroundColor)) {
             return cs.backgroundColor;
           }
           if (cs.backgroundImage !== 'none') {
@@ -32356,7 +32695,13 @@
           if (!eigen || el.hidden || getComputedStyle(el).display === 'none') return;
           geprueft++;
           const k = kontrast(getComputedStyle(el).color, grund(el));
-          if (k < schlimmst) { schlimmst = k; wo = el.id || el.className; }
+          // BEI SVG IST className EIN SVGAnimatedString und kein Text - im Bericht stand
+          // dann "[object SVGAnimatedString]" statt eines Namens.
+          if (k < schlimmst) {
+            schlimmst = k;
+            wo = el.id || (typeof el.className === 'string' ? el.className
+                           : (el.className && el.className.baseVal) || el.tagName);
+          }
         });
         teile.push(v + ' ' + schlimmst.toFixed(2));
         if (geprueft < 5) schlecht.push(v + ': nur ' + geprueft + ' Texte gefunden');

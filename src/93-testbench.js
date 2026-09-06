@@ -2524,6 +2524,33 @@
       }
     },
 
+    // ---- Die Karte im Uebersichtsschirm: kostet ein Takt wirklich nichts? -----------
+    //
+    // DAS IST DIE ZUSICHERUNG, auf der die Trennung steht. renderTrackPreview kostet
+    // gemessen rund 94 ms, weil es die Ideallinie mitoptimiert; deshalb wird die Strecke
+    // einmal gezeichnet und danach werden nur Punkte gesetzt. Wenn dieser Weg auch nur
+    // ein paar Millisekunden kostet, ist die Trennung wertlos und der Sendetakt in Gefahr.
+    ovKarteProbe(cars, wdh) {
+      const host = document.getElementById('ov-karte');
+      if (!host) return null;
+      const svg = host.querySelector('svg');
+      if (!svg || typeof karteAutosSetzen !== 'function') return null;
+      // Die Geometrie liegt beim Renderer; hier wird sie ueber einen frischen Aufbau geholt,
+      // damit die Probe auch dann etwas messen kann, wenn der Schirm nie offen war.
+      const r = renderTrackPreview(currentTrackTiles, null, { detailed: true, cars: [] });
+      const n = wdh || 50;
+      const t0 = performance.now();
+      for (let i = 0; i < n; i++) karteAutosSetzen(svg, r.geo, cars || []);
+      const t1 = performance.now();
+      const punkte = [...svg.querySelectorAll('g.karte-autos circle')]
+        .filter(c => +c.getAttribute('r') > 0)
+        .map(c => ({ x: +c.getAttribute('cx'), y: +c.getAttribute('cy'),
+                     fill: c.getAttribute('fill') }));
+      const kuerzel = [...svg.querySelectorAll('g.karte-autos text')]
+        .map(t => t.textContent).filter(Boolean);
+      return { jeAufrufMs: +((t1 - t0) / n).toFixed(3), punkte, kuerzel };
+    },
+
     fanfareProbe() {
       if (typeof playRaceEndFanfare !== 'function') return null;
       return playRaceEndFanfare();

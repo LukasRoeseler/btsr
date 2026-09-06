@@ -1521,8 +1521,27 @@
     font-size: clamp(8px, 1.1vw, 11px); letter-spacing: .12em;
     color: var(--gt3-strip-ink); text-transform: uppercase; }
   .schirm-kopf b { color: var(--gt3-tile-ink); letter-spacing: .06em; }
-  .schirm-fuss { font-size: clamp(7.5px, 1vw, 10px); color: var(--gt3-strip-ink);
+  .schirm-fuss { font-size: clamp(8.5px, 1.15vw, 12px); color: var(--gt3-strip-ink);
     letter-spacing: .06em; }
+  /* Der Kopf des Boxenschirms traegt links das grosse P. Eine eigene Zeile im Raster
+     braucht es nicht: das Zeichen ist so hoch wie zwei Textzeilen und zieht den Kopf mit. */
+  .pit-kopf { align-items: center; gap: clamp(8px, 1.6vw, 16px); }
+  .pit-kopf-text { display: flex; align-items: baseline; gap: 8px; }
+  /* DAS P WIE AN EINER BOXENEINFAHRT: weiss auf einem Kasten, und der Kasten faerbt sich
+     nach dem Zustand. Quadratisch ueber aspect-ratio statt ueber feste Pixel, damit es mit
+     der Schrift mitwaechst - dasselbe Muster wie bei den Schaltlichtern. */
+  .pit-zeichen {
+    display: grid; place-items: center;
+    width: clamp(26px, 5.5vw, 48px); aspect-ratio: 1;
+    border-radius: var(--gt3-radius);
+    font-size: clamp(17px, 3.6vw, 32px); font-weight: 800; line-height: 1;
+    background: var(--gt3-tile); color: var(--gt3-strip-ink);
+    box-shadow: inset 0 0 0 2px currentColor;
+    transition: color .25s linear, background .25s linear;
+  }
+  .pit-zeichen.pz-gasse { color: #ffd83d; background: rgba(255, 216, 61, .12); }
+  .pit-zeichen.pz-arbeit { color: #ffd83d; background: rgba(255, 216, 61, .22); }
+  .pit-zeichen.pz-fertig { color: var(--good); background: rgba(70, 209, 127, .18); }
 
   /* ---- Der Boxenschirm ---------------------------------------------------------------- */
   #race-pitscreen { grid-template-rows: auto repeat(5, minmax(0, 1fr)) auto; }
@@ -1532,17 +1551,34 @@
     padding: 0 clamp(4px, 1vw, 10px);
     background: var(--gt3-tile); color: var(--gt3-tile-ink);
     border-radius: var(--gt3-radius); }
-  .pit-row > .pr-pfeil { font-size: 13px; color: var(--gt3-tile-ink); opacity: 0; }
-  .pit-row > .pr-name { font-size: clamp(10px, 1.5vw, 15px); font-weight: 700;
-    letter-spacing: .04em; }
-  .pr-wert { font-size: clamp(9px, 1.3vw, 13px); font-family: monospace;
+  .pit-row > .pr-pfeil { font-size: clamp(13px, 2vw, 18px); color: var(--gt3-tile-ink);
+    opacity: 0; }
+  /* GROESSER, auf Bitte. Ein Boxenmenue liest man im Vorbeifahren, und die alten 15 px
+     waren die Groesse einer Kachelbeschriftung - dort steht aber eine Zahl, hier ein Satz,
+     den man treffen muss. */
+  .pit-row > .pr-name { font-size: clamp(12px, 2vw, 20px); font-weight: 700;
+    letter-spacing: .03em; }
+  .pr-wert { font-size: clamp(10px, 1.6vw, 17px); font-family: monospace;
     text-align: right; color: var(--gt3-strip-ink); }
   /* Die rechte Spalte traegt jetzt ein BILD und eine Zahl. Das Bild links davon, die Zahl
      rechtsbuendig - so stehen die Zahlen aller fuenf Zeilen untereinander, und das Auge
      findet sie ohne zu suchen. */
-  .pr-bild { display: grid; grid-template-columns: minmax(0, 1fr) auto;
+  /* DREI FESTE SPALTEN, und das ist die Behebung des gemeldeten Huepfens.
+     `auto` macht eine Spalte so breit wie ihr Text, und "mittel" ist breiter als "weich" -
+     also verschob jeder Wortwechsel die Nachbarspalten, und dort stehen die Farbfelder und
+     die Reifen.
+
+     Aufgeteilt entlang dessen, was die Teile SIND: die Zahl (Prozent, Liter), das Bild
+     (Reifen, Mischungsfelder, Balken) und das Zustandswort. Alle drei in `ch` - eine ch ist
+     die Breite der Ziffer Null, und beide Textspalten sind Schreibmaschinenschrift. Damit
+     haengt die Breite an der Schriftgroesse und nicht am Inhalt.
+
+     8 ch fuer die Zahl (laengster Wert "110 l"), 13 ch fuer den Zustand ("wird gemacht"). */
+  .pr-bild { display: grid; grid-template-columns: 8ch minmax(0, 1fr) 13ch;
     align-items: center; gap: clamp(4px, .9vw, 10px); min-width: 0; }
-  .pr-bild > .pr-wert { white-space: nowrap; }
+  .pr-zahl { font-size: clamp(10px, 1.6vw, 17px); font-family: monospace;
+    text-align: right; color: var(--gt3-tile-ink); white-space: nowrap; }
+  .pr-bild > .pr-wert { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .pit-bar { margin-top: 0; width: 100%; }
   /* Die vier Reifen in Fahrzeuganordnung, klein: zwei Spalten, zwei Zeilen. Kein Spalt in
      der Mitte wie im Streifen - hier ist die Zeile 20 px hoch, und ein Spalt darin waere
@@ -1568,7 +1604,37 @@
   .pit-row.pr-sel > .pr-pfeil { opacity: 1; }
 
   /* ---- Der Rennuebersichts-Schirm ----------------------------------------------------- */
-  #race-ovscreen { grid-template-rows: auto minmax(0, 1fr) auto; }
+  /* ZWEI SPALTEN: Tabelle links, Strecke rechts. Das Cockpit ist breit und flach -
+     untereinander bliebe fuer beides zu wenig Hoehe, und die Tabelle waere dann die, die
+     abgeschnitten wird.
+
+     Liegt keine Strecke, faellt die rechte Spalte auf null zusammen (siehe .ov-karte:empty)
+     und die Tabelle nimmt die ganze Breite. Ein leerer Kasten daneben saehe wie ein Fehler
+     aus. */
+  #race-ovscreen {
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-areas: "kopf kopf" "tab karte" "fuss fuss"; }
+  #race-ovscreen > .schirm-kopf { grid-area: kopf; }
+  #race-ovscreen > .ov-tab { grid-area: tab; }
+  #race-ovscreen > .ov-karte { grid-area: karte; }
+  #race-ovscreen > .schirm-fuss { grid-area: fuss; }
+  .ov-karte { display: grid; place-items: center; min-width: 0; min-height: 0;
+    overflow: hidden; }
+  /* Das SVG kommt mit max-width: 520px aus renderTrackPreview. Hier ist die HOEHE die
+     knappe Groesse, also wird sie gedeckelt und die Breite folgt - sonst waechst das Bild
+     ueber die Zeile hinaus und wird von .gt3-schirm abgeschnitten. */
+  /* EIN STRECKENBILD LIEST SICH NUR, WENN DIE STRASSE DUNKLER IST ALS IHRE UMGEBUNG.
+     Die Fahrbahn ist #14181f, der Schirmgrund #0b0f18 - vier Prozent Unterschied, und
+     gesehen blieb ein Drahtgitter aus Randsteinen ohne Strasse dazwischen. Im Editor faellt
+     das nicht auf, weil dort ein hellerer Panelgrund dahinterliegt.
+     Ein durchscheinendes Weiss statt einer festen Farbe: so hebt es sich in jeder der fuenf
+     Ansichten gleich weit ab, auch in der hellen. */
+  .ov-karte svg { max-width: 100%; max-height: 100%; width: auto; height: auto;
+    background: rgba(255, 255, 255, .07) !important; border: 0 !important;
+    border-radius: 4px; }
+  .ov-karte:empty { display: none; }
+  #race-ovscreen:has(.ov-karte:empty) { grid-template-columns: minmax(0, 1fr) 0; }
   .ov-tab { display: grid; align-content: start; gap: 2px; overflow: hidden;
     font-family: monospace; font-size: clamp(9px, 1.35vw, 14px); }
   .ov-zeile { display: grid; align-items: center;
@@ -2979,16 +3045,26 @@
            dass die Zahl der Elemente mit id ueber alle Ansichten konstant ist. Gefuellt
            werden nur die Werte. -->
       <div class="gt3-schirm" id="race-pitscreen">
-        <div class="schirm-kopf"><b>Box</b><span class="wip-tag">WIP</span><span id="pit-kopf-lage" data-i18n-skip>aus</span>
+        <!-- DAS P IST DIE ZUSTANDSANZEIGE, nicht nur ein Zeichen: grau wenn nichts
+             laeuft, gelb in der Boxengasse, gruen wenn fertig. Damit steht die Farbe dort,
+             wo das Auge ohnehin zuerst hinsieht, und nicht nur im Wort daneben. -->
+        <div class="schirm-kopf pit-kopf">
+          <span class="pit-zeichen" id="pit-zeichen" aria-hidden="true">P</span>
+          <span class="pit-kopf-text"><b>Box</b><span class="wip-tag">WIP</span>
+            <span id="pit-kopf-lage" data-i18n-skip>aus</span></span>
           <span style="margin-left:auto" id="pit-kopf-zeit" data-i18n-skip></span></div>
         <div class="pit-row" id="pit-row-go">
           <span class="pr-pfeil" aria-hidden="true">&#9656;</span>
           <span class="pr-name">Boxenstopp einleiten</span>
-          <span class="pr-wert" id="pit-wert-go" data-i18n-skip>&ndash;</span></div>
+          <span class="pr-bild">
+            <span class="pr-zahl" id="pit-zahl-go" data-i18n-skip></span>
+            <span></span>
+            <span class="pr-wert" id="pit-wert-go" data-i18n-skip>&ndash;</span></span></div>
         <div class="pit-row pit-tile" id="pit-row-tyres" data-pit="tyres">
           <span class="pr-pfeil" aria-hidden="true">&#9656;</span>
           <span class="pr-name">Reifen wechseln</span>
           <span class="pr-bild">
+            <span class="pr-zahl" id="pit-zahl-tyres" data-i18n-skip></span>
             <!-- DASSELBE BILD wie die Kachel im Streifen: Fuellhoehe ist Restprofil, Farbe
                  die Temperatur, Rahmen die Mischung. Eigene ids, weil ein Dokument keine
                  doppelten tragen darf - die Werte schreibt derselbe Takt. -->
@@ -3003,6 +3079,7 @@
           <span class="pr-pfeil" aria-hidden="true">&#9656;</span>
           <span class="pr-name">Reifenwahl</span>
           <span class="pr-bild">
+            <span class="pr-zahl" id="pit-zahl-mix" data-i18n-skip></span>
             <!-- ALLE VIER, damit man den Vorrat sieht und nicht nur die Wahl. Die geltende
                  ist umrahmt; mit der Waehltaste schaltet man durch. -->
             <span class="pit-mix-feld">
@@ -3014,12 +3091,14 @@
           <span class="pr-pfeil" aria-hidden="true">&#9656;</span>
           <span class="pr-name">Tanken</span>
           <span class="pr-bild">
+            <span class="pr-zahl" id="pit-zahl-refuel" data-i18n-skip></span>
             <span class="gt3-bar pit-bar"><i id="pit-bar-refuel"></i></span>
             <span class="pr-wert" id="pit-wert-refuel" data-i18n-skip>&ndash;</span></span></div>
         <div class="pit-row pit-tile" id="pit-row-repair" data-pit="repair">
           <span class="pr-pfeil" aria-hidden="true">&#9656;</span>
           <span class="pr-name">Reparieren</span>
           <span class="pr-bild">
+            <span class="pr-zahl" id="pit-zahl-repair" data-i18n-skip></span>
             <span class="gt3-bar pit-bar"><i id="pit-bar-repair"></i></span>
             <span class="pr-wert" id="pit-wert-repair" data-i18n-skip>&ndash;</span></span></div>
         <div class="schirm-fuss" id="pit-fuss" data-i18n-skip></div>
@@ -3029,6 +3108,11 @@
         <div class="schirm-kopf"><b>Rennen</b><span class="wip-tag">WIP</span><span id="ov-kopf-lage" data-i18n-skip>&ndash;</span>
           <span style="margin-left:auto" id="ov-kopf-runde" data-i18n-skip></span></div>
         <div class="ov-tab" id="ov-tab"></div>
+        <!-- DIE STRECKE NEBEN DER TABELLE, nicht darunter: das Cockpit ist breit und flach,
+             und untereinander bliebe fuer beides zu wenig Hoehe. Leer und verborgen, solange
+             keine Strecke liegt - ein leerer Kasten neben der Tabelle saehe wie ein Fehler
+             aus. -->
+        <div class="ov-karte" id="ov-karte" data-i18n-skip></div>
         <div class="schirm-fuss" id="ov-fuss" data-i18n-skip></div>
       </div>
 

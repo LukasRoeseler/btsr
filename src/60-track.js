@@ -798,6 +798,11 @@
     return `rgb(${mix(1)},${mix(2)},${mix(3)})`;
   }
 
+  // KLEINER ALS BIS v0.5.17: 6 px Radius deckten auf einer 30 px breiten Bahn die halbe
+  // Fahrbahn, und darin ist keine Querlage zu zeigen. 3,2 lassen Platz fuer beides.
+  // Als Modulkonstante, weil karteAutosSetzen() denselben Wert braucht.
+  const PUNKT_R = 3.2;
+
   function renderTrackPreview(tiles, currentIndex, opts) {
     const o = opts || {};
     if (!tiles || tiles.length === 0) {
@@ -930,9 +935,8 @@
     // Kachel, auf der das Auto steht - eine ganze Kachel zu weit. Richtig ist der Anfang
     // plus die Phase. Genauer geht es nicht: das Auto ortet sich nicht, es zaehlt Kacheln.
     const proSchritt = o.detailed ? TRACK_SAMPLES_PER_TILE : 1;
-    // KLEINER ALS VORHER: 6 px Radius deckten auf einer 30 px breiten Bahn die halbe
-    // Fahrbahn, und darin ist keine Querlage zu zeigen. 3,2 lassen Platz fuer beides.
-    const PUNKT_R = 3.2;
+    // (PUNKT_R steht als Modulkonstante weiter oben - karteAutosSetzen() braucht denselben
+    //  Wert, und zwei Zahlen fuer eine Punktgroesse waeren zwei Punktgroessen.)
     const autoPunkt = (index, phase, farbe, kuerzel, quer) => {
       if (index === null || index === undefined) return '';
       const roh = (index + Math.max(0, Math.min(1, phase || 0))) * proSchritt;
@@ -966,9 +970,77 @@
       ? 'width:100%;max-width:520px;height:auto;background:var(--panel-2);border:1px solid var(--border);border-radius:6px'
       : 'width:220px;height:auto;background:var(--panel-2);border:1px solid var(--border);border-radius:4px';
     const html = `<svg viewBox="0 0 ${w.toFixed(0)} ${h.toFixed(0)}" style="${style}">${body}</svg>`;
-    return { html, closed, lineInfo: o.lineInfo };
+    // DIE GEOMETRIE MIT HERAUS, damit ein Aufrufer Punkte setzen kann, ohne die Strecke neu
+    // zu rechnen. Gemessen kostet ein Aufruf dieser Funktion rund 94 ms - sie rechnet
+    // Mittellinie, Normalen UND die Ideallinie, und die ist eine Optimierung. Das gehoert
+    // nicht in einen Anzeigetakt.
+    //
+    // Es ist DIESELBE Geometrie, mit der oben gezeichnet wurde, kein zweiter Rechenweg.
+    return { html, closed, lineInfo: o.lineInfo,
+             geo: { ox, oy, proSchritt, half, pts, nrm, punktR: PUNKT_R } };
   }
 
+
+  // ---- Autopunkte in ein fertiges Streckenbild setzen ---------------------------------
+  //
+  // Sie ZEICHNET die Strecke nicht, sie legt nur Punkte darauf. Gebraucht wird sie vom
+  // Uebersichtsschirm, der zehnmal je Sekunde nachzieht - und dort waere ein neuer
+  // Streckenaufbau (gemessen 94 ms) der Faden, an dem der Sendetakt haengt.
+  //
+  // Die Knoten werden WIEDERVERWENDET und nicht neu erzeugt: eine Gruppe je Aufruf zu
+  // ersetzen erzeugt zehn Verwerfungen je Sekunde im Layout, und der Browser zeichnet dann
+  // den ganzen Baum neu statt zweier Attribute.
+  const NS_SVG = 'http://www.w3.org/2000/svg';
+  function karteAutosSetzen(svg, geo, cars) {
+    if (!svg || !geo) return 0;
+    let g = svg.querySelector('g.karte-autos');
+    if (!g) {
+      g = document.createElementNS(NS_SVG, 'g');
+      g.setAttribute('class', 'karte-autos');
+      svg.appendChild(g);
+    }
+    const liste = cars || [];
+    // Fehlende Knoten anlegen, ueberzaehlige verbergen. Nicht loeschen: die Zahl der Autos
+    // wechselt selten, und ein verborgener Knoten kostet nichts.
+    while (g.childNodes.length < liste.length * 2) {
+      const c = document.createElementNS(NS_SVG, 'circle');
+      c.setAttribute('stroke', '#fff');
+      c.setAttribute('stroke-width', '1.2');
+      const t = document.createElementNS(NS_SVG, 'text');
+      t.setAttribute('text-anchor', 'middle');
+      t.setAttribute('font-size', '9');
+      t.setAttribute('font-weight', '700');
+      t.setAttribute('fill', '#fff');
+      t.setAttribute('stroke', '#0b0c0f');
+      t.setAttribute('stroke-width', '2.5');
+      t.setAttribute('paint-order', 'stroke');
+      g.appendChild(c);
+      g.appendChild(t);
+    }
+    for (let k = 0; k < g.childNodes.length / 2; k++) {
+      const c = g.childNodes[k * 2], t = g.childNodes[k * 2 + 1];
+      const a = liste[k];
+      if (!a || a.index === null || a.index === undefined) {
+        c.setAttribute('r', '0');
+        t.textContent = '';
+        continue;
+      }
+      const roh = (a.index + Math.max(0, Math.min(1, a.phase || 0))) * geo.proSchritt;
+      const i = Math.max(0, Math.min(Math.round(roh), geo.pts.length - 1));
+      const p = geo.pts[i], n = geo.nrm[i] || { x: 0, y: 0 };
+      const q = Math.max(-0.85, Math.min(0.85, a.quer || 0));
+      const x = p.x + n.x * q * geo.half + geo.ox;
+      const y = p.y + n.y * q * geo.half + geo.oy;
+      c.setAttribute('cx', x.toFixed(1));
+      c.setAttribute('cy', y.toFixed(1));
+      c.setAttribute('r', String(geo.punktR));
+      c.setAttribute('fill', a.farbe || '#ff5c5c');
+      t.setAttribute('x', x.toFixed(1));
+      t.setAttribute('y', (y - 6).toFixed(1));
+      t.textContent = a.kuerzel || '';
+    }
+    return liste.length;
+  }
 
   // ---- Short track code ----
   // One letter per element with a run-length count, plus the orientation. Short enough to
