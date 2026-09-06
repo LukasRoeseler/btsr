@@ -1960,7 +1960,11 @@
       const punkte = [...doc.querySelectorAll('circle')].map(c => ({
         x: +c.getAttribute('cx'), y: +c.getAttribute('cy'), fill: c.getAttribute('fill') }));
       const kuerzel = [...doc.querySelectorAll('text')].map(t => t.textContent);
-      return { kacheln: p.tiles.length, punkte, kuerzel,
+      return { kacheln: p.tiles.length, punkte, kuerzel, html,
+               // Die Randsteinfarben, damit ein Test das CH-Aussehen nachpruefen kann:
+               // schwarze Fahrbahn, rot-weiss links, blau-weiss rechts.
+               farben: [...new Set([...doc.querySelectorAll('path')]
+                 .map(e => e.getAttribute('stroke')).filter(Boolean))],
                echte: trackCarMarks ? trackCarMarks().length : null };
     },
 

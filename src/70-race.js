@@ -1840,7 +1840,12 @@
     if (!el) return;
     el.innerHTML = (currentTrackTiles.length === 0)
       ? '<p class="muted" style="width:220px">kein Streckenlayout geladen</p>'
-      : renderTrackPreview(currentTrackTiles, dashMinimapIndex).html;
+      // DETAILED, wie im Editor: schwarze Fahrbahn, weisse Stossfugen, rot-weisse
+      // Randsteine links und blau-weisse rechts. Den Aufbau gab es laengst, hier wurde
+      // aber die einfache Fassung gezeichnet - eine graue Linie. Und `cars` statt
+      // `currentIndex`: nur so bekommen die Punkte Farbe, Kuerzel und Querlage.
+      : renderTrackPreview(currentTrackTiles, null,
+                           { detailed: true, cars: trackCarMarks() }).html;
   }
 
   async function ensureDashboardStatusSubscribed() {

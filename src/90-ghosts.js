@@ -3532,6 +3532,14 @@
         steer = quer
               + g.bias * ghostCfg.lateral * 0.25
               + ghostLane(car) * ghostCfg.lanes * GHOST_LANE_STEER * spurGewicht;
+        // FUER DIE KARTE. Im Leitplanken-Modus IST diese Summe die Querlage, die die App
+        // will - sie besteht ausschliesslich aus Versaetzen quer zur Bahn und enthaelt
+        // keinen Lenkwinkel. Im Rueckfallzweig darunter waere dieselbe Zeile falsch: dort
+        // beginnt steer mit dir * GHOST_STEER_CURVE, also mit einem WINKEL.
+        //
+        // Und es bleibt eine ANFORDERUNG: das Auto meldet seine Querlage nicht. Traege
+        // nachgefuehrt, damit der Punkt auf der Karte nicht zittert.
+        g.querSoll = (g.querSoll || 0) + (steer - (g.querSoll || 0)) * 0.25;
       } else {
         // Fallback for cars not in guard-rail mode: the old layout-plus-yaw controller.
         const dir = ghostTurnDir(car, 0);

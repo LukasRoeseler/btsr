@@ -930,26 +930,36 @@
     // Kachel, auf der das Auto steht - eine ganze Kachel zu weit. Richtig ist der Anfang
     // plus die Phase. Genauer geht es nicht: das Auto ortet sich nicht, es zaehlt Kacheln.
     const proSchritt = o.detailed ? TRACK_SAMPLES_PER_TILE : 1;
-    const autoPunkt = (index, phase, farbe, kuerzel) => {
+    // KLEINER ALS VORHER: 6 px Radius deckten auf einer 30 px breiten Bahn die halbe
+    // Fahrbahn, und darin ist keine Querlage zu zeigen. 3,2 lassen Platz fuer beides.
+    const PUNKT_R = 3.2;
+    const autoPunkt = (index, phase, farbe, kuerzel, quer) => {
       if (index === null || index === undefined) return '';
       const roh = (index + Math.max(0, Math.min(1, phase || 0))) * proSchritt;
       const i = Math.max(0, Math.min(Math.round(roh), pts.length - 1));
       const p = pts[i];
-      const x = (p.x + ox).toFixed(1), y = (p.y + oy).toFixed(1);
-      // Weisser Ring, damit der Punkt auf der grauen Bahn UND auf dem dunklen Grund steht.
-      let t = `<circle cx="${x}" cy="${y}" r="6" fill="${farbe || '#ff5c5c'}" `
-            + `stroke="#fff" stroke-width="2"/>`;
+      // DIE QUERLAGE als Versatz laengs der Normalen. Auf 85 Prozent der halben Breite
+      // begrenzt: ein Punkt auf dem Randstein saehe aus, als laege das Auto daneben, und
+      // genau das soll die Karte NICHT behaupten.
+      const q = Math.max(-0.85, Math.min(0.85, quer || 0));
+      const n = nrm[i] || { x: 0, y: 0 };
+      const px = p.x + n.x * q * half, py = p.y + n.y * q * half;
+      const x = (px + ox).toFixed(1), y = (py + oy).toFixed(1);
+      // Weisser Ring, damit der Punkt auf der schwarzen Bahn UND auf dem Grund daneben
+      // steht. Duenner als vorher, sonst waere bei 3,2 px Radius mehr Ring als Farbe.
+      let t = `<circle cx="${x}" cy="${y}" r="${PUNKT_R}" fill="${farbe || '#ff5c5c'}" `
+            + `stroke="#fff" stroke-width="1.2"/>`;
       if (kuerzel) {
-        t += `<text x="${x}" y="${(p.y + oy - 10).toFixed(1)}" text-anchor="middle" `
-           + `font-size="11" font-weight="700" fill="#fff" `
-           + `stroke="#0b0c0f" stroke-width="3" paint-order="stroke"`
+        t += `<text x="${x}" y="${(py + oy - 6).toFixed(1)}" text-anchor="middle" `
+           + `font-size="9" font-weight="700" fill="#fff" `
+           + `stroke="#0b0c0f" stroke-width="2.5" paint-order="stroke"`
            + `>${kuerzel}</text>`;
       }
       return t;
     };
-    if (currentIndex != null) body += autoPunkt(currentIndex, 0, '#ff5c5c', null);
+    if (currentIndex != null) body += autoPunkt(currentIndex, 0, '#ff5c5c', null, 0);
     if (o.cars) {
-      for (const c of o.cars) body += autoPunkt(c.index, c.phase, c.farbe, c.kuerzel);
+      for (const c of o.cars) body += autoPunkt(c.index, c.phase, c.farbe, c.kuerzel, c.quer);
     }
 
     const style = o.detailed
@@ -1062,11 +1072,22 @@
           const dauer = (g.tileMs || 800)
             * (typeof ghostTileLenFactor === 'function' ? ghostTileLenFactor(g.tileIndex) : 1);
           const ph = g.tileStart ? Math.min(1, (now - g.tileStart) / Math.max(1, dauer)) : 0;
-          out.push({ index: g.tileIndex, phase: ph, farbe: c.farbe || '#ffb02e',
-                     kuerzel: (c.name || '?').slice(0, 3) });
+          // DIE RICHTIGEN ZUGRIFFE. Hier stand c.farbe und c.name - beides gibt es an
+          // einem Auto nicht, also fiel jeder Punkt auf Orange und jedes Kuerzel auf '?'
+          // zurueck. Gemeldet als "alle orange mit Fragezeichen daneben". Die Zuordnung war
+          // nie unklar: jeder Ghost hat seine eigene Verbindung und seinen eigenen
+          // Kachelzaehler - sie wurde nur nicht hingeschrieben.
+          out.push({ index: g.tileIndex, phase: ph, farbe: carColor(c).hex,
+                     kuerzel: garageLabel(c).slice(0, 3),
+                     // Die ANGEFORDERTE Querlage. Das Auto meldet keine; was hier steht,
+                     // ist die Summe aus eigener Spur und Ideallinie, also die Lage, die
+                     // die App gerade will. Mehr ist ehrlich nicht zu haben.
+                     quer: g.querSoll || 0 });
         } else if (c.role === 'player' && typeof dashMinimapIndex === 'number') {
-          out.push({ index: dashMinimapIndex, phase: 0.5, farbe: c.farbe || '#5aa9ff',
-                     kuerzel: (c.name || 'Ich').slice(0, 3) });
+          // Das eigene Auto lenkt die App nicht, es gibt also keine angeforderte Querlage -
+          // der Punkt bleibt mittig, statt eine zu erfinden.
+          out.push({ index: dashMinimapIndex, phase: 0.5, farbe: carColor(c).hex,
+                     kuerzel: garageLabel(c).slice(0, 3), quer: 0 });
         }
       });
     } catch (e) { return out; }
