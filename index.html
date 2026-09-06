@@ -2977,10 +2977,13 @@
                schiebt. Letzteres entspricht der Geste auf dem Steuerkreuz, man muss die
                Belegung also nicht wissen, sondern sieht sie.
 
-               OBEN ist VORN, weil "hoch" auf dem Kreuz die Balance nach vorn nimmt. Eine
-               Skala, deren Richtung der Geste widerspricht, waere schlimmer als keine. -->
+               OBEN IST VORN. Die Begruendung dafuer war "hoch auf dem Kreuz nimmt die
+               Balance nach vorn", und seit v0.5.18 liegt die Balance nicht mehr auf dem
+               Kreuz. Die Richtung bleibt trotzdem, und zwar aus einem staerkeren Grund: sie
+               ist dieselbe wie beim Regler in den Optionen, dessen rechtes Ende "mehr vorn"
+               heisst, und dieselbe wie die Fahrzeugachse, an der man sie denkt. -->
           <div class="gt3-trim-row gt3-bias" id="race-bias-row"
-               title="Bremsbalance, Anteil vorn. Ziehen oder Steuerkreuz hoch/runter">
+               title="Bremsbalance, Anteil vorn. Ziehen oder Regler in den Optionen">
             <svg viewBox="0 0 14 24" aria-label="Bremsbalance, Anteil vorn"
                  preserveAspectRatio="none">
               <path d="M7 2.5V21.5" stroke="rgba(255,255,255,.30)" stroke-width="2.2"
@@ -2996,7 +2999,7 @@
                Reifen: eine Scheibe steckt in der Felge, und die Zuordnung vorn/hinten
                ist dort dieselbe wie beim Reifen. Zweimal dasselbe waere in einer
                77-px-Kachel Platzverschwendung. -->
-          <div class="gt3-trim-row" title="Lenkansprechen (Steuerkreuz links/rechts)">
+          <div class="gt3-trim-row" title="Lenkansprechen (Steuerkreuz hoch/runter)">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
                  stroke-linecap="round" aria-label="Lenkansprechen"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="2.4"/><path d="M12 3.5v6M6.2 17.4l4.2-3.1M17.8 17.4l-4.2-3.1" stroke="var(--bad)"/></svg>
             <b id="race-trim-steer">100%</b>
@@ -3137,8 +3140,10 @@
         (das Steuerkreuz), kursives Grau hei&szlig;t &bdquo;nicht belegt&ldquo;. Touchpad
         und PS-Taste bleiben ab Werk frei, weil das System beide selbst abgreift: ein
         Tippen aufs Touchpad l&ouml;st zugleich einen Klick in der Seite aus. Im
-        Streckeneditor und bei scharfem Boxenstopp bedient das Steuerkreuz erst diese,
-        danach gilt wieder das Gezeigte.
+        Streckeneditor und auf dem Boxenschirm bedient das Steuerkreuz erst diese, danach
+        gilt wieder das Gezeigte. Dasselbe gilt f&uuml;r die Flaggentaste: auf dem
+        Boxenschirm w&auml;hlt sie dort aus, und die gelbe Flagge gibt es nach dem
+        Zur&uuml;ckbl&auml;ttern.
       </p>
       <div class="pad-wrap">
       <svg viewBox="0 0 1000 660" class="pad-svg" role="img"
@@ -6230,7 +6235,7 @@
         </div></div>
 
 <div class="opt-head">Lenkung &amp; Feinabstimmung</div>
-      <div class="opt-row"><div class="opt-label">Lenkansprechen<small>Auch auf dem Steuerkreuz links/rechts. Der volle Lenkeinschlag ist mechanisch 45&nbsp;Grad; bei 100&nbsp;% fordert voller Stick genau ihn an.</small></div>
+      <div class="opt-row"><div class="opt-label">Lenkansprechen<small>Auch auf dem Steuerkreuz hoch/runter &ndash; links/rechts bl&auml;ttert seit v0.5.18 die Cockpit-Schirme. Der volle Lenkeinschlag ist mechanisch 45&nbsp;Grad; bei 100&nbsp;% fordert voller Stick genau ihn an.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
           <input type="range" id="phys-steerresp" min="0.5" max="3" step="0.05" value="2.4">
@@ -6281,7 +6286,7 @@
           Mittelstellung und &auml;ndert nichts.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-brakebias" min="50" max="80" step="1" value="58">
+          <input type="range" id="setting-brakebias" min="50" max="80" step="1" value="62">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-brakebias-val">62% vorn</span>
         </div></div>
@@ -8256,8 +8261,8 @@
     "Eigener Regler. Es hing vorher am Motorregler und war deshalb nicht getrennt leiser zu bekommen.":
       "Its own slider. It used to hang on the engine volume, so it could not be turned down on its own.",
     "Balance / Lenkung": "Bias / steering",
-    "Auch auf dem Steuerkreuz links/rechts. Der volle Lenkeinschlag ist mechanisch 45 Grad; bei 100 % fordert voller Stick genau ihn an.":
-      "Also on the D-pad, left/right. Full steering lock is mechanically 45 degrees; at 100% a full stick asks for exactly that.",
+    "Auch auf dem Steuerkreuz hoch/runter – links/rechts blättert seit v0.5.18 die Cockpit-Schirme. Der volle Lenkeinschlag ist mechanisch 45 Grad; bei 100 % fordert voller Stick genau ihn an.":
+      "Also on the D-pad, up/down – left/right pages through the cockpit screens since v0.5.18. Full steering lock is mechanically 45 degrees; at 100% a full stick asks for exactly that.",
     "GELB · AUTOPILOT": "YELLOW · AUTOPILOT",
     "Wieviel der Bremse an der Vorderachse ankommt.": "How much of the brake reaches the front axle.",
     "Nach vorn": "Forward",
@@ -8661,7 +8666,7 @@
     "Schirm vor": "Next screen",
     "Controller-Belegung": "Controller mapping",
     "Was gerade auf welcher Taste liegt. Zuweisen lässt sich das in den Optionen unter „Gamepad“; die Grafik zieht sofort nach.": "What currently sits on which button. It can be reassigned in the options under “Gamepad”; the diagram follows immediately.",
-    "Weiß ist zuweisbar, gedecktes Grau ist festverdrahtet und nicht zuweisbar (das Steuerkreuz), kursives Grau heißt „nicht belegt“. Touchpad und PS-Taste bleiben ab Werk frei, weil das System beide selbst abgreift: ein Tippen aufs Touchpad löst zugleich einen Klick in der Seite aus. Im Streckeneditor und bei scharfem Boxenstopp bedient das Steuerkreuz erst diese, danach gilt wieder das Gezeigte.": "White is assignable, muted grey is hard-wired and not assignable (the D-pad), italic grey means “not assigned”. Touchpad and PS button stay free out of the box because the system claims both itself: a tap on the touchpad also fires a click somewhere in the page. In the track editor and with an armed pit stop the D-pad serves those first, after which what is shown here applies again.",
+    "Weiß ist zuweisbar, gedecktes Grau ist festverdrahtet und nicht zuweisbar (das Steuerkreuz), kursives Grau heißt „nicht belegt“. Touchpad und PS-Taste bleiben ab Werk frei, weil das System beide selbst abgreift: ein Tippen aufs Touchpad löst zugleich einen Klick in der Seite aus. Im Streckeneditor und auf dem Boxenschirm bedient das Steuerkreuz erst diese, danach gilt wieder das Gezeigte. Dasselbe gilt für die Flaggentaste: auf dem Boxenschirm wählt sie dort aus, und die gelbe Flagge gibt es nach dem Zurückblättern.": "White is assignable, muted grey is hard-wired and not assignable (the D-pad), italic grey means “not assigned”. Touchpad and PS button stay free out of the box because the system claims both itself: a tap on the touchpad also fires a click somewhere in the page. In the track editor and on the pit screen the D-pad serves those first, after which what is shown here applies again. The same goes for the flag button: on the pit screen it selects there, and the yellow flag is available once you page back.",
     "L3 · Stick drücken": "L3 · press the stick",
     "R3 · Stick drücken": "R3 · press the stick",
     "Linker Stick": "Left stick",
@@ -21353,11 +21358,18 @@
     $('ghost-leader-pct-val').textContent = Math.round(ghostCfg.leaderBrakePct * 100) + '%';
   });
 
-  $('setting-fuelweight').addEventListener('input', (e) => {
-    const v = parseFloat(e.target.value);
+  // AUS DEM MARKUP LESEN, dasselbe Muster wie nebenan. GEFUNDEN vom Spiegeltest fuer
+  // Regler in v0.5.18: der Regler stand auf 0 ("aus"), das Modell auf 1,0 - das Tankgewicht
+  // wirkte also voll, waehrend die Oberflaeche "aus" zeigte, und ein einziges Antippen
+  // haette es abgeschaltet statt eingeschaltet.
+  function tankgewichtAnwenden(v) {
     physEngine.config.fuelWeightEffect = v;
     $('setting-fuelweight-val').textContent = v === 0 ? 'aus' : Math.round(v * 100) + '%';
+  }
+  $('setting-fuelweight').addEventListener('input', (e) => {
+    tankgewichtAnwenden(parseFloat(e.target.value));
   });
+  tankgewichtAnwenden(parseFloat($('setting-fuelweight').value));
 
   // AUS DEM MARKUP LESEN, nicht nur auf Aenderungen hoeren - dasselbe Muster wie bei
   // setting-vibration. GEMESSEN am 0.5.17: der Regler stand auf 0 ("aus"), das Modell auf
@@ -31965,6 +31977,99 @@
     }
   });
 
+
+  // ---- Regler und Modell sagen beim Laden dasselbe ----
+  //
+  // DIESELBE FEHLERKLASSE wie bei den Kaestchen darueber, und die andere Haelfte davon: ein
+  // Schieberegler im Markup und seine Zahl im Modell sind zwei Orte fuer einen Zustand, und
+  // geschrieben wird das Modell nur im input-Zuhoerer. Der feuert beim Laden NICHT.
+  //
+  // GEMESSEN am 0.5.17, und deshalb gibt es diese Pruefung: setting-tyres stand auf 0
+  // ("aus"), das Modell auf 2,0, und die Anzeige daneben behauptete "200 %". Ein einziges
+  // Antippen liess das Fahrverhalten von 200 auf 0 Prozent springen. Der Spiegeltest
+  // darueber hat es nicht gefunden, weil er `el.checked` vergleicht - und ein Regler hat
+  // kein checked.
+  //
+  // Die Liste ist GEPFLEGT, und das ist hier richtig: sie IST die Zusicherung. Ein neuer
+  // Regler, dessen Wert im Modell landet, gehoert hinein.
+  stAdd('Regler und Modell sagen beim Laden dasselbe', () => {
+    const PAARE = [
+      ['setting-tyres', () => physEngine.config.tyreEffect],
+      ['setting-tyre-mix', () => (typeof tyreMixStaerke === 'number' ? tyreMixStaerke : null)],
+      ['setting-tyre-pressure', () => physEngine.config.tyrePressureBar],
+      ['setting-brakebias', () => physEngine.config.brakeBias * 100],
+      ['phys-steerresp', () => physEngine.config.steerResponse],
+      ['setting-steer-calib', () => physEngine.config.steerCalib],
+      ['setting-brake-steal', () => physEngine.config.brakeUseGain],
+      ['setting-minmove', () => physEngine.config.minMoveThrottle],
+      ['setting-fuelweight', () => physEngine.config.fuelWeightEffect],
+      ['setting-countersteer', () => (typeof gegenlenkStaerke === 'number' ? gegenlenkStaerke : null)],
+      ['ghost-line', () => ghostCfg.line],
+      ['ghost-lanes', () => ghostCfg.lanes],
+      ['ghost-lateral', () => ghostCfg.lateral],
+      ['ghost-speed', () => ghostCfg.speed],
+    ];
+    const schlecht = [], fehlt = [];
+    let geprueft = 0;
+    for (const [id, lies] of PAARE) {
+      const el = $(id);
+      if (!el) { fehlt.push(id); continue; }
+      let spiegel;
+      try { spiegel = lies(); } catch (e) { fehlt.push(id + ' (' + e.message + ')'); continue; }
+      if (spiegel === null || spiegel === undefined) { fehlt.push(id + ' (kein Spiegel)'); continue; }
+      geprueft++;
+      // Auf vier Nachkommastellen: die Regler sind Zehntel und Hundertstel, und ein
+      // Gleitkommavergleich auf Bitgleichheit waere hier eine Falle ohne Aussage.
+      const a = Math.round(parseFloat(el.value) * 1e4) / 1e4;
+      const b = Math.round(spiegel * 1e4) / 1e4;
+      if (a !== b) schlecht.push(id + ': Regler ' + a + ', Modell ' + b);
+    }
+    return { ok: !schlecht.length && !fehlt.length,
+             mass: geprueft + ' Regler geprueft'
+                 + (schlecht.length ? ' | WEICHEN AB: ' + schlecht.join(', ') : ' | alle gleich')
+                 + (fehlt.length ? ' | nicht erreichbar: ' + fehlt.join(', ') : '') };
+  });
+
+  // ---- Die Motorliste, das Manifest und die Doku sagen dasselbe ----
+  //
+  // DREI ORTE FUER EINE LISTE: die Auswahl im Menue, SAMPLE_CARS im Code und loops.json auf
+  // der Platte. Dazu die Dokutabelle, die von Hand gepflegt ist. Ein Motor, der in einem
+  // davon fehlt, faellt nicht auf: die Auswahl zeigt ihn, der Lader findet ihn nicht, und
+  // gehoert wird der vorige weiter.
+  stAdd('Motorliste, Manifest und Doku stimmen ueberein', async () => {
+    if (location.protocol === 'file:') {
+      return { skip: true, mass: 'ohne Server kein Manifest' };
+    }
+    const sel = $('sound-profile');
+    if (!sel) return { ok: false, mass: 'sound-profile fehlt' };
+    const menue = Array.prototype.map.call(sel.options, (o) => o.value);
+    let man;
+    try {
+      man = await fetch('audio/loops.json', { cache: 'reload' }).then((r) => r.json());
+    } catch (e) { return { skip: true, mass: 'Manifest nicht ladbar: ' + e.message }; }
+    const imManifest = Object.keys(man);
+    const schlecht = [];
+    for (const k of menue) if (imManifest.indexOf(k) < 0) schlecht.push(k + ' fehlt im Manifest');
+    for (const k of imManifest) if (menue.indexOf(k) < 0) schlecht.push(k + ' fehlt im Menue');
+    if (typeof SAMPLE_CARS !== 'undefined') {
+      for (const k of menue) if (SAMPLE_CARS.indexOf(k) < 0) schlecht.push(k + ' fehlt in SAMPLE_CARS');
+      for (const k of SAMPLE_CARS) if (menue.indexOf(k) < 0) schlecht.push(k + ' steht nur in SAMPLE_CARS');
+    }
+    // Und die Dokutabelle: so viele Motorzeilen wie Schleifen. Sie ist von Hand gepflegt,
+    // also ist das die einzige Stelle, an der ein Vergessen auffaellt.
+    const schleifen = imManifest.reduce((a, k) => a + Object.keys(man[k].loops).length, 0);
+    const zeilen = document.querySelectorAll('.snd-row audio[src*="_idle.ogg"], '
+      + '.snd-row audio[src*="_low.ogg"], .snd-row audio[src*="_low2.ogg"], '
+      + '.snd-row audio[src*="_low3.ogg"], .snd-row audio[src*="_mid.ogg"], '
+      + '.snd-row audio[src*="_high.ogg"], .snd-row audio[src*="_over.ogg"]').length;
+    if (zeilen !== schleifen) {
+      schlecht.push('Doku hat ' + zeilen + ' Motorzeilen, das Manifest ' + schleifen + ' Schleifen');
+    }
+    return { ok: schlecht.length === 0,
+             mass: menue.length + ' Motoren, ' + schleifen + ' Schleifen, ' + zeilen + ' Dokuzeilen'
+                 + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
   // ---- Controller-Vibration: ein Schalter je Ausloeser ----
   //
   // Siebzehn Aufrufstellen, sechs Arten, ein Hauptschalter. Geprueft wird die
@@ -34599,9 +34704,40 @@
       }
       // Der Griff muss mitgehen - sonst ist es eine Anzeige ohne Sache dahinter.
       if (!(s2.grip < s1.grip)) fehler.push('Regenreifen ohne Griffnachteil im Trockenen');
+      // ---- Seit v0.5.18 sind es VIER Mischungen, nicht zwei -------------------------
+      //
+      // Die Mischung steht als RAHMENFARBE an jedem der vier Reifenfelder. Geprueft wird,
+      // dass alle vier eine EIGENE Farbe bekommen: eine Kennung, die zwei Zustaende gleich
+      // faerbt, ist keine Kennung. Und dass sie sich vom Kachelgrund #04060b abhebt - genau
+      // daran waere "hart = schwarz" gescheitert, das als Palette vorgeschlagen war.
+      const rahmen = {};
+      for (const m of ['weich', 'mittel', 'hart', 'regen']) {
+        OMEGA_TEST.tyreSet(m);
+        rahmen[m] = getComputedStyle(el).getPropertyValue('--mix-farbe').trim();
+      }
+      const werte = Object.keys(rahmen).map(k => rahmen[k]);
+      if (new Set(werte).size !== 4) {
+        fehler.push('Rahmenfarben nicht paarweise verschieden: ' + werte.join(' '));
+      }
+      // Gegen den Kachelgrund. Kein voller Kontrastlauf - eine 2-px-Linie muss sich
+      // unterscheiden, nicht lesbar sein -, aber ein Schwarz auf Schwarz faellt hier durch.
+      const hell = (hx) => {
+        const m = /^#([0-9a-f]{6})$/i.exec(hx || '');
+        if (!m) return null;
+        const n = parseInt(m[1], 16);
+        return (0.2126 * ((n >> 16) & 255) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255)) / 255;
+      };
+      const grund = hell('#04060b');
+      for (const m of Object.keys(rahmen)) {
+        const h = hell(rahmen[m]);
+        if (h === null) { fehler.push(m + ': Rahmenfarbe unlesbar (' + rahmen[m] + ')'); continue; }
+        if (Math.abs(h - grund) < 0.12) fehler.push(m + ': Rahmen hebt sich nicht vom Feld ab');
+      }
+      OMEGA_TEST.tyreSet('slick');
       return { ok: !fehler.length,
                mass: 'Slick: Profil ' + s1.profil + ', Grip ' + s1.grip
                    + ' | Regen: Profil ' + s2.profil + ', Grip ' + s2.grip
+                   + ' | 4 Rahmenfarben'
                    + ', ' + ((r2 || '').match(/repeating-linear-gradient/g) || []).length
                    + ' Rillenscharen'
                    + (fehler.length ? ' || ' + fehler.join('; ') : '') };
@@ -36843,7 +36979,15 @@
            // Regler freischalten muss, ist nicht geliefert. 1,0 ist das volle Modell und
            // nicht die doppelte Rate; der Kommentar bei tyreEffect nennt 2,0 selbst eine
            // Uebertreibung.
-           'setting-tyres': 1, 'phys-steerresp': 2.4, 'setting-brakebias': 58,
+           // 62 UND NICHT 58, und das aendert nichts am Fahren - es macht die Anzeige
+           // wahr. Gefunden vom Spiegeltest fuer Regler: der Regler stand auf 58, das
+           // Modell auf 0,62, und GEFAHREN wurde 62, bis jemand den Regler einmal
+           // anfasste. 0,62 ist ausserdem der Bezugswert der Kalibrierung
+           // (brakeBiasRef): bei genau diesem Wert ist der Regler ein Nichts-Tun,
+           // und ein kalibriertes Modell soll in seiner Vorgabe auf seiner
+           // Kalibrierung stehen. Die anderen Voreinstellungen behalten ihre Werte -
+           // dort ist die Abweichung eine Abstimmung und keine Unstimmigkeit.
+           'setting-tyres': 1, 'phys-steerresp': 2.4, 'setting-brakebias': 62,
            // Lenkkalibrierung 200 Prozent: der Reibkreis beschneidet den Einschlag beim
            // Anbremsen auf etwa 60 Prozent, und das holt ihn zurueck. Gemessen bei 60 km/h
            // unter Bremsen: 35 Grad ohne, volle 45 Grad ab einem Drittel Stick mit.

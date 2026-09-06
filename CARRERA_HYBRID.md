@@ -519,17 +519,38 @@ PlayStation-Namen zuerst:
 | Options / Start | Boxenstopp |
 | Select / Share | Rennen starten oder abbrechen |
 | L3 (linken Stick druecken) | nichts |
+| Steuerkreuz hoch / runter | Lenkansprechen groesser / kleiner |
+| Steuerkreuz links / rechts | Cockpit-Schirm vor / zurueck |
 
-Zwei Punkte dazu, beide aus Fehlern gelernt:
+**Das Steuerkreuz stand bis v0.5.17 gar nicht in dieser Tabelle**, obwohl es belegt war — es
+ist fest verdrahtet und nicht zuweisbar, und deshalb ist es durch die Belegungsliste
+gerutscht. Bis dahin lag hoch/runter auf der Bremsbalance und links/rechts auf dem
+Lenkansprechen; seit v0.5.18 blaettert links/rechts die Cockpit-Schirme, und die Bremsbalance
+hat den Regler in den Optionen und die Zieh-Skala im Cockpit.
+
+Drei Punkte dazu, alle drei aus Fehlern gelernt:
 
 - **Die Beschriftungen nennen den PlayStation-Namen zuerst.** "X / Quadrat" war mehrdeutig:
   auf einer Xbox ist Knopf 2 das X, auf einer PlayStation das Quadrat - und "X" bedeutet auf
   einer PlayStation den Knopf 0. Eine Beschriftung, die zwei Tasten bedeuten kann, ist der
   Fehler und nicht der Leser.
-- **Jede Taste traegt genau eine Bedeutung.** Der linke Stick loest ausdruecklich nichts aus,
-  weil man ihn beim Lenken drueckt. Beim Laden wird auf Kollisionen geprueft: liegen zwei
-  Aktionen auf demselben Eingang, geht die zweite auf ihre Vorgabe zurueck, und es wird
-  gemeldet statt still behoben.
+- **Jede Taste traegt genau eine Bedeutung** — mit einer Einschraenkung, die seit v0.5.18
+  gilt und ausgesprochen gehoert. Der linke Stick loest ausdruecklich nichts aus, weil man ihn
+  beim Lenken drueckt. Beim Laden wird auf Kollisionen geprueft: liegen zwei Aktionen auf
+  demselben Eingang, geht die zweite auf ihre Vorgabe zurueck, und es wird gemeldet statt
+  still behoben.
+
+  **Die Einschraenkung sind KONTEXTVERBRAUCHER, und es gibt genau drei.** Streckeneditor,
+  Boxenschirm und ein Rennstart nehmen einzelne Tasten vorruebergehend an sich; danach gilt
+  wieder die Tabelle. Das ist etwas anderes als eine Doppelbelegung: die Bedeutung wechselt
+  nicht heimlich mit einem Zustand, den man nicht sieht, sondern mit einem Schirm, den man
+  gerade ansieht.
+
+  Auf dem Boxenschirm waehlt die Flaggentaste dort aus statt die gelbe Flagge zu laden — und
+  zwar GANZ, ohne Unterscheidung nach Haltedauer. Genau die war bis v0.5.1 gebaut (Quadrat
+  trug Runterschalten *und* die Flagge) und ist als Fehler zurueckgenommen worden: zwei
+  Bedeutungen, die sich nur in Millisekunden unterscheiden, sind fuer die Hand nicht zwei
+  Bedeutungen. Wer auf dem Boxenschirm Gelb geben will, blaettert zurueck.
 
 ### Als App installieren
 

@@ -1064,11 +1064,18 @@
     $('ghost-leader-pct-val').textContent = Math.round(ghostCfg.leaderBrakePct * 100) + '%';
   });
 
-  $('setting-fuelweight').addEventListener('input', (e) => {
-    const v = parseFloat(e.target.value);
+  // AUS DEM MARKUP LESEN, dasselbe Muster wie nebenan. GEFUNDEN vom Spiegeltest fuer
+  // Regler in v0.5.18: der Regler stand auf 0 ("aus"), das Modell auf 1,0 - das Tankgewicht
+  // wirkte also voll, waehrend die Oberflaeche "aus" zeigte, und ein einziges Antippen
+  // haette es abgeschaltet statt eingeschaltet.
+  function tankgewichtAnwenden(v) {
     physEngine.config.fuelWeightEffect = v;
     $('setting-fuelweight-val').textContent = v === 0 ? 'aus' : Math.round(v * 100) + '%';
+  }
+  $('setting-fuelweight').addEventListener('input', (e) => {
+    tankgewichtAnwenden(parseFloat(e.target.value));
   });
+  tankgewichtAnwenden(parseFloat($('setting-fuelweight').value));
 
   // AUS DEM MARKUP LESEN, nicht nur auf Aenderungen hoeren - dasselbe Muster wie bei
   // setting-vibration. GEMESSEN am 0.5.17: der Regler stand auf 0 ("aus"), das Modell auf

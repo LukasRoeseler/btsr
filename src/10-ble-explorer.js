@@ -1091,8 +1091,8 @@
     "Eigener Regler. Es hing vorher am Motorregler und war deshalb nicht getrennt leiser zu bekommen.":
       "Its own slider. It used to hang on the engine volume, so it could not be turned down on its own.",
     "Balance / Lenkung": "Bias / steering",
-    "Auch auf dem Steuerkreuz links/rechts. Der volle Lenkeinschlag ist mechanisch 45 Grad; bei 100 % fordert voller Stick genau ihn an.":
-      "Also on the D-pad, left/right. Full steering lock is mechanically 45 degrees; at 100% a full stick asks for exactly that.",
+    "Auch auf dem Steuerkreuz hoch/runter – links/rechts blättert seit v0.5.18 die Cockpit-Schirme. Der volle Lenkeinschlag ist mechanisch 45 Grad; bei 100 % fordert voller Stick genau ihn an.":
+      "Also on the D-pad, up/down – left/right pages through the cockpit screens since v0.5.18. Full steering lock is mechanically 45 degrees; at 100% a full stick asks for exactly that.",
     "GELB · AUTOPILOT": "YELLOW · AUTOPILOT",
     "Wieviel der Bremse an der Vorderachse ankommt.": "How much of the brake reaches the front axle.",
     "Nach vorn": "Forward",
@@ -1496,7 +1496,7 @@
     "Schirm vor": "Next screen",
     "Controller-Belegung": "Controller mapping",
     "Was gerade auf welcher Taste liegt. Zuweisen lässt sich das in den Optionen unter „Gamepad“; die Grafik zieht sofort nach.": "What currently sits on which button. It can be reassigned in the options under “Gamepad”; the diagram follows immediately.",
-    "Weiß ist zuweisbar, gedecktes Grau ist festverdrahtet und nicht zuweisbar (das Steuerkreuz), kursives Grau heißt „nicht belegt“. Touchpad und PS-Taste bleiben ab Werk frei, weil das System beide selbst abgreift: ein Tippen aufs Touchpad löst zugleich einen Klick in der Seite aus. Im Streckeneditor und bei scharfem Boxenstopp bedient das Steuerkreuz erst diese, danach gilt wieder das Gezeigte.": "White is assignable, muted grey is hard-wired and not assignable (the D-pad), italic grey means “not assigned”. Touchpad and PS button stay free out of the box because the system claims both itself: a tap on the touchpad also fires a click somewhere in the page. In the track editor and with an armed pit stop the D-pad serves those first, after which what is shown here applies again.",
+    "Weiß ist zuweisbar, gedecktes Grau ist festverdrahtet und nicht zuweisbar (das Steuerkreuz), kursives Grau heißt „nicht belegt“. Touchpad und PS-Taste bleiben ab Werk frei, weil das System beide selbst abgreift: ein Tippen aufs Touchpad löst zugleich einen Klick in der Seite aus. Im Streckeneditor und auf dem Boxenschirm bedient das Steuerkreuz erst diese, danach gilt wieder das Gezeigte. Dasselbe gilt für die Flaggentaste: auf dem Boxenschirm wählt sie dort aus, und die gelbe Flagge gibt es nach dem Zurückblättern.": "White is assignable, muted grey is hard-wired and not assignable (the D-pad), italic grey means “not assigned”. Touchpad and PS button stay free out of the box because the system claims both itself: a tap on the touchpad also fires a click somewhere in the page. In the track editor and on the pit screen the D-pad serves those first, after which what is shown here applies again. The same goes for the flag button: on the pit screen it selects there, and the yellow flag is available once you page back.",
     "L3 · Stick drücken": "L3 · press the stick",
     "R3 · Stick drücken": "R3 · press the stick",
     "Linker Stick": "Left stick",

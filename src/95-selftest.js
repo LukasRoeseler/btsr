@@ -2235,6 +2235,99 @@
     }
   });
 
+
+  // ---- Regler und Modell sagen beim Laden dasselbe ----
+  //
+  // DIESELBE FEHLERKLASSE wie bei den Kaestchen darueber, und die andere Haelfte davon: ein
+  // Schieberegler im Markup und seine Zahl im Modell sind zwei Orte fuer einen Zustand, und
+  // geschrieben wird das Modell nur im input-Zuhoerer. Der feuert beim Laden NICHT.
+  //
+  // GEMESSEN am 0.5.17, und deshalb gibt es diese Pruefung: setting-tyres stand auf 0
+  // ("aus"), das Modell auf 2,0, und die Anzeige daneben behauptete "200 %". Ein einziges
+  // Antippen liess das Fahrverhalten von 200 auf 0 Prozent springen. Der Spiegeltest
+  // darueber hat es nicht gefunden, weil er `el.checked` vergleicht - und ein Regler hat
+  // kein checked.
+  //
+  // Die Liste ist GEPFLEGT, und das ist hier richtig: sie IST die Zusicherung. Ein neuer
+  // Regler, dessen Wert im Modell landet, gehoert hinein.
+  stAdd('Regler und Modell sagen beim Laden dasselbe', () => {
+    const PAARE = [
+      ['setting-tyres', () => physEngine.config.tyreEffect],
+      ['setting-tyre-mix', () => (typeof tyreMixStaerke === 'number' ? tyreMixStaerke : null)],
+      ['setting-tyre-pressure', () => physEngine.config.tyrePressureBar],
+      ['setting-brakebias', () => physEngine.config.brakeBias * 100],
+      ['phys-steerresp', () => physEngine.config.steerResponse],
+      ['setting-steer-calib', () => physEngine.config.steerCalib],
+      ['setting-brake-steal', () => physEngine.config.brakeUseGain],
+      ['setting-minmove', () => physEngine.config.minMoveThrottle],
+      ['setting-fuelweight', () => physEngine.config.fuelWeightEffect],
+      ['setting-countersteer', () => (typeof gegenlenkStaerke === 'number' ? gegenlenkStaerke : null)],
+      ['ghost-line', () => ghostCfg.line],
+      ['ghost-lanes', () => ghostCfg.lanes],
+      ['ghost-lateral', () => ghostCfg.lateral],
+      ['ghost-speed', () => ghostCfg.speed],
+    ];
+    const schlecht = [], fehlt = [];
+    let geprueft = 0;
+    for (const [id, lies] of PAARE) {
+      const el = $(id);
+      if (!el) { fehlt.push(id); continue; }
+      let spiegel;
+      try { spiegel = lies(); } catch (e) { fehlt.push(id + ' (' + e.message + ')'); continue; }
+      if (spiegel === null || spiegel === undefined) { fehlt.push(id + ' (kein Spiegel)'); continue; }
+      geprueft++;
+      // Auf vier Nachkommastellen: die Regler sind Zehntel und Hundertstel, und ein
+      // Gleitkommavergleich auf Bitgleichheit waere hier eine Falle ohne Aussage.
+      const a = Math.round(parseFloat(el.value) * 1e4) / 1e4;
+      const b = Math.round(spiegel * 1e4) / 1e4;
+      if (a !== b) schlecht.push(id + ': Regler ' + a + ', Modell ' + b);
+    }
+    return { ok: !schlecht.length && !fehlt.length,
+             mass: geprueft + ' Regler geprueft'
+                 + (schlecht.length ? ' | WEICHEN AB: ' + schlecht.join(', ') : ' | alle gleich')
+                 + (fehlt.length ? ' | nicht erreichbar: ' + fehlt.join(', ') : '') };
+  });
+
+  // ---- Die Motorliste, das Manifest und die Doku sagen dasselbe ----
+  //
+  // DREI ORTE FUER EINE LISTE: die Auswahl im Menue, SAMPLE_CARS im Code und loops.json auf
+  // der Platte. Dazu die Dokutabelle, die von Hand gepflegt ist. Ein Motor, der in einem
+  // davon fehlt, faellt nicht auf: die Auswahl zeigt ihn, der Lader findet ihn nicht, und
+  // gehoert wird der vorige weiter.
+  stAdd('Motorliste, Manifest und Doku stimmen ueberein', async () => {
+    if (location.protocol === 'file:') {
+      return { skip: true, mass: 'ohne Server kein Manifest' };
+    }
+    const sel = $('sound-profile');
+    if (!sel) return { ok: false, mass: 'sound-profile fehlt' };
+    const menue = Array.prototype.map.call(sel.options, (o) => o.value);
+    let man;
+    try {
+      man = await fetch('audio/loops.json', { cache: 'reload' }).then((r) => r.json());
+    } catch (e) { return { skip: true, mass: 'Manifest nicht ladbar: ' + e.message }; }
+    const imManifest = Object.keys(man);
+    const schlecht = [];
+    for (const k of menue) if (imManifest.indexOf(k) < 0) schlecht.push(k + ' fehlt im Manifest');
+    for (const k of imManifest) if (menue.indexOf(k) < 0) schlecht.push(k + ' fehlt im Menue');
+    if (typeof SAMPLE_CARS !== 'undefined') {
+      for (const k of menue) if (SAMPLE_CARS.indexOf(k) < 0) schlecht.push(k + ' fehlt in SAMPLE_CARS');
+      for (const k of SAMPLE_CARS) if (menue.indexOf(k) < 0) schlecht.push(k + ' steht nur in SAMPLE_CARS');
+    }
+    // Und die Dokutabelle: so viele Motorzeilen wie Schleifen. Sie ist von Hand gepflegt,
+    // also ist das die einzige Stelle, an der ein Vergessen auffaellt.
+    const schleifen = imManifest.reduce((a, k) => a + Object.keys(man[k].loops).length, 0);
+    const zeilen = document.querySelectorAll('.snd-row audio[src*="_idle.ogg"], '
+      + '.snd-row audio[src*="_low.ogg"], .snd-row audio[src*="_low2.ogg"], '
+      + '.snd-row audio[src*="_low3.ogg"], .snd-row audio[src*="_mid.ogg"], '
+      + '.snd-row audio[src*="_high.ogg"], .snd-row audio[src*="_over.ogg"]').length;
+    if (zeilen !== schleifen) {
+      schlecht.push('Doku hat ' + zeilen + ' Motorzeilen, das Manifest ' + schleifen + ' Schleifen');
+    }
+    return { ok: schlecht.length === 0,
+             mass: menue.length + ' Motoren, ' + schleifen + ' Schleifen, ' + zeilen + ' Dokuzeilen'
+                 + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
   // ---- Controller-Vibration: ein Schalter je Ausloeser ----
   //
   // Siebzehn Aufrufstellen, sechs Arten, ein Hauptschalter. Geprueft wird die
@@ -4869,9 +4962,40 @@
       }
       // Der Griff muss mitgehen - sonst ist es eine Anzeige ohne Sache dahinter.
       if (!(s2.grip < s1.grip)) fehler.push('Regenreifen ohne Griffnachteil im Trockenen');
+      // ---- Seit v0.5.18 sind es VIER Mischungen, nicht zwei -------------------------
+      //
+      // Die Mischung steht als RAHMENFARBE an jedem der vier Reifenfelder. Geprueft wird,
+      // dass alle vier eine EIGENE Farbe bekommen: eine Kennung, die zwei Zustaende gleich
+      // faerbt, ist keine Kennung. Und dass sie sich vom Kachelgrund #04060b abhebt - genau
+      // daran waere "hart = schwarz" gescheitert, das als Palette vorgeschlagen war.
+      const rahmen = {};
+      for (const m of ['weich', 'mittel', 'hart', 'regen']) {
+        OMEGA_TEST.tyreSet(m);
+        rahmen[m] = getComputedStyle(el).getPropertyValue('--mix-farbe').trim();
+      }
+      const werte = Object.keys(rahmen).map(k => rahmen[k]);
+      if (new Set(werte).size !== 4) {
+        fehler.push('Rahmenfarben nicht paarweise verschieden: ' + werte.join(' '));
+      }
+      // Gegen den Kachelgrund. Kein voller Kontrastlauf - eine 2-px-Linie muss sich
+      // unterscheiden, nicht lesbar sein -, aber ein Schwarz auf Schwarz faellt hier durch.
+      const hell = (hx) => {
+        const m = /^#([0-9a-f]{6})$/i.exec(hx || '');
+        if (!m) return null;
+        const n = parseInt(m[1], 16);
+        return (0.2126 * ((n >> 16) & 255) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255)) / 255;
+      };
+      const grund = hell('#04060b');
+      for (const m of Object.keys(rahmen)) {
+        const h = hell(rahmen[m]);
+        if (h === null) { fehler.push(m + ': Rahmenfarbe unlesbar (' + rahmen[m] + ')'); continue; }
+        if (Math.abs(h - grund) < 0.12) fehler.push(m + ': Rahmen hebt sich nicht vom Feld ab');
+      }
+      OMEGA_TEST.tyreSet('slick');
       return { ok: !fehler.length,
                mass: 'Slick: Profil ' + s1.profil + ', Grip ' + s1.grip
                    + ' | Regen: Profil ' + s2.profil + ', Grip ' + s2.grip
+                   + ' | 4 Rahmenfarben'
                    + ', ' + ((r2 || '').match(/repeating-linear-gradient/g) || []).length
                    + ' Rillenscharen'
                    + (fehler.length ? ' || ' + fehler.join('; ') : '') };
