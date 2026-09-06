@@ -1527,7 +1527,7 @@
   /* ---- Der Boxenschirm ---------------------------------------------------------------- */
   #race-pitscreen { grid-template-rows: auto repeat(5, minmax(0, 1fr)) auto; }
   .pit-row { display: grid; align-items: center;
-    grid-template-columns: 18px minmax(0, 1.3fr) minmax(0, 1fr);
+    grid-template-columns: 18px minmax(0, 1.15fr) minmax(0, 1.15fr);
     gap: clamp(4px, 1vw, 12px);
     padding: 0 clamp(4px, 1vw, 10px);
     background: var(--gt3-tile); color: var(--gt3-tile-ink);
@@ -1535,8 +1535,32 @@
   .pit-row > .pr-pfeil { font-size: 13px; color: var(--gt3-tile-ink); opacity: 0; }
   .pit-row > .pr-name { font-size: clamp(10px, 1.5vw, 15px); font-weight: 700;
     letter-spacing: .04em; }
-  .pit-row > .pr-wert { font-size: clamp(9px, 1.3vw, 13px); font-family: monospace;
+  .pr-wert { font-size: clamp(9px, 1.3vw, 13px); font-family: monospace;
     text-align: right; color: var(--gt3-strip-ink); }
+  /* Die rechte Spalte traegt jetzt ein BILD und eine Zahl. Das Bild links davon, die Zahl
+     rechtsbuendig - so stehen die Zahlen aller fuenf Zeilen untereinander, und das Auge
+     findet sie ohne zu suchen. */
+  .pr-bild { display: grid; grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center; gap: clamp(4px, .9vw, 10px); min-width: 0; }
+  .pr-bild > .pr-wert { white-space: nowrap; }
+  .pit-bar { margin-top: 0; width: 100%; }
+  /* Die vier Reifen in Fahrzeuganordnung, klein: zwei Spalten, zwei Zeilen. Kein Spalt in
+     der Mitte wie im Streifen - hier ist die Zeile 20 px hoch, und ein Spalt darin waere
+     ein Strich und keine Spur. */
+  .pit-t4-feld { display: grid; grid-template-columns: repeat(2, 1fr);
+    gap: 2px; width: clamp(20px, 4vw, 30px); justify-self: end; }
+  .pit-t4-feld .gt3-t4 { aspect-ratio: 1 / 1.5; }
+  /* Die vier Mischungen. Gleich breit, die geltende umrahmt - ein Rahmen und keine
+     Aufhellung, weil weiss und gelb sich nicht aufhellen lassen. */
+  .pit-mix-feld { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px;
+    width: clamp(48px, 11vw, 84px); justify-self: end; }
+  .pit-mix-feld > i { display: block; height: clamp(9px, 1.8vw, 14px); border-radius: 2px;
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .5); }
+  .pit-mix-feld > i[data-mix="weich"] { background: #e5261e; }
+  .pit-mix-feld > i[data-mix="mittel"] { background: #f7d117; }
+  .pit-mix-feld > i[data-mix="hart"] { background: #f2f4f8; }
+  .pit-mix-feld > i[data-mix="regen"] { background: #2f6fd0; }
+  .pit-mix-feld > i.an { outline: 2px solid var(--gt3-tile-ink); outline-offset: 1px; }
   /* DIE MARKIERUNG ALS OUTLINE, nicht als Rahmen: sie malt AUSSERHALB des Innenrings, den
      pit-on/pit-off schon tragen, und kostet kein Layout. Dazu ein Zeichen, weil Farbe
      allein keine Kennung ist - dieselbe Ueberlegung wie bei den Autofarben. */
@@ -1548,8 +1572,8 @@
   .ov-tab { display: grid; align-content: start; gap: 2px; overflow: hidden;
     font-family: monospace; font-size: clamp(9px, 1.35vw, 14px); }
   .ov-zeile { display: grid; align-items: center;
-    grid-template-columns: 1.6em 1.1em minmax(0, 1fr) 2.6em 2.4em 4.2em;
-    gap: clamp(3px, .7vw, 8px);
+    grid-template-columns: 1.5em 1.1em minmax(0, 1fr) 2.2em 2.2em 1.4em 4.4em 4.4em 3.8em;
+    gap: clamp(2px, .55vw, 7px);
     padding: clamp(1px, .35vw, 4px) clamp(3px, .8vw, 8px);
     background: var(--gt3-tile); color: var(--gt3-tile-ink);
     border-radius: var(--gt3-radius); }
@@ -1567,6 +1591,13 @@
   .ov-mix { width: 100%; height: .82em; border-radius: 2px;
     box-shadow: inset 0 0 0 1px rgba(0,0,0,.45); }
   .ov-luecke { text-align: right; }
+  .ov-zeit { text-align: right; color: var(--gt3-strip-ink); }
+  /* Die schnellste Runde des Feldes violett, wie auf einer Zeittafel. */
+  .ov-feldbeste { color: #c77dff; font-weight: 700; }
+  /* Ein Ghost hat kein Reifenmodell: das Feld bleibt leer statt eine Farbe zu erfinden. */
+  .ov-mix-leer { background: none; box-shadow: inset 0 0 0 1px rgba(255,255,255,.12); }
+  /* Die Anzahl der Stopps klein neben dem P. */
+  .ov-pit b { font-size: .78em; font-weight: 700; }
 
   #hud-toast-wrap {
     grid-area: toast; min-height: 0; padding: 0 clamp(4px, 1vw, 10px);
@@ -2326,6 +2357,9 @@
      kept reserving 40px and pushed the fullscreen icon away from the corner. */
   .race-corner button[hidden] { display: none; }
   .race-corner svg { width: 18px; height: 18px; }
+  /* Die linke Ecke traegt das Blaettern. Dieselbe Hoehe wie rechts, damit die zwei Ecken
+     auf einer Linie liegen. */
+  .race-corner-links { left: 6px; right: auto; }
   /* SCHMALER UND GEDECKTER als die Vollbildknoepfe: eine Nebenbedienung. Sie werden erst
      beim Zeigen deutlich, damit sie im Fahren nicht ablenken. */
   .race-corner button.schirm-pfeil { width: 26px; height: 34px;
@@ -2694,22 +2728,23 @@
     </svg>
     <div class="gt3" id="race-dash">
       <div class="race-rain" aria-hidden="true"><i></i><i></i><i></i></div>
-      <div class="race-corner">
-        <!-- BLAETTERN OHNE GAMEPAD. Absichtlich klein und gedeckt: es ist eine
-             Nebenbedienung, kein Instrument, und im Augenwinkel eines Fahrers soll es nicht
-             mit den Kacheln um Aufmerksamkeit streiten. Die Punkte dazwischen sagen, wo man
-             ist - eine Beschriftung waere breiter als der Knopf. -->
-        <button type="button" class="schirm-pfeil" id="race-screen-prev"
-                title="Vorheriger Schirm" aria-label="Vorheriger Schirm">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
-               stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 5 8 12l6.5 7"/>
-          </svg></button>
-        <span class="schirm-punkte" id="race-screen-dots" aria-hidden="true"></span>
+      <!-- BLAETTERN OHNE GAMEPAD, oben LINKS und gegenueber den Vollbildknoepfen: so
+           liegt in jeder Ecke eine Sache, und man greift nicht daneben.
+
+           EIN Pfeil, nicht zwei. Die Schirmliste laeuft ohnehin um - wer beim letzten
+           weiterdrueckt, ist wieder beim ersten -, also ist die zweite Richtung mit dem
+           Finger entbehrlich. Auf dem Steuerkreuz bleiben beide, dort kostet sie nichts.
+           Absichtlich klein und gedeckt: eine Nebenbedienung, kein Instrument. Die Punkte
+           sagen, wo man ist; eine Beschriftung waere breiter als der Knopf. -->
+      <div class="race-corner race-corner-links">
         <button type="button" class="schirm-pfeil" id="race-screen-next"
                 title="N&auml;chster Schirm" aria-label="N&auml;chster Schirm">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
                stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 5 16 12l-6.5 7"/>
           </svg></button>
+        <span class="schirm-punkte" id="race-screen-dots" aria-hidden="true"></span>
+      </div>
+      <div class="race-corner">
         <button type="button" id="race-fs" title="Vollbild" aria-label="Vollbild">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                stroke-linecap="round" stroke-linejoin="round">
@@ -2953,19 +2988,40 @@
         <div class="pit-row pit-tile" id="pit-row-tyres" data-pit="tyres">
           <span class="pr-pfeil" aria-hidden="true">&#9656;</span>
           <span class="pr-name">Reifen wechseln</span>
-          <span class="pr-wert" id="pit-wert-tyres" data-i18n-skip>&ndash;</span></div>
+          <span class="pr-bild">
+            <!-- DASSELBE BILD wie die Kachel im Streifen: Fuellhoehe ist Restprofil, Farbe
+                 die Temperatur, Rahmen die Mischung. Eigene ids, weil ein Dokument keine
+                 doppelten tragen darf - die Werte schreibt derselbe Takt. -->
+            <span class="pit-t4-feld">
+              <i class="gt3-t4" id="pit-tyre-fl"><b></b></i>
+              <i class="gt3-t4" id="pit-tyre-fr"><b></b></i>
+              <i class="gt3-t4" id="pit-tyre-rl"><b></b></i>
+              <i class="gt3-t4" id="pit-tyre-rr"><b></b></i>
+            </span>
+            <span class="pr-wert" id="pit-wert-tyres" data-i18n-skip>&ndash;</span></span></div>
         <div class="pit-row" id="pit-row-mix">
           <span class="pr-pfeil" aria-hidden="true">&#9656;</span>
           <span class="pr-name">Reifenwahl</span>
-          <span class="pr-wert" id="pit-wert-mix" data-i18n-skip>&ndash;</span></div>
+          <span class="pr-bild">
+            <!-- ALLE VIER, damit man den Vorrat sieht und nicht nur die Wahl. Die geltende
+                 ist umrahmt; mit der Waehltaste schaltet man durch. -->
+            <span class="pit-mix-feld">
+              <i data-mix="weich"></i><i data-mix="mittel"></i>
+              <i data-mix="hart"></i><i data-mix="regen"></i>
+            </span>
+            <span class="pr-wert" id="pit-wert-mix" data-i18n-skip>&ndash;</span></span></div>
         <div class="pit-row pit-tile" id="pit-row-refuel" data-pit="refuel">
           <span class="pr-pfeil" aria-hidden="true">&#9656;</span>
           <span class="pr-name">Tanken</span>
-          <span class="pr-wert" id="pit-wert-refuel" data-i18n-skip>&ndash;</span></div>
+          <span class="pr-bild">
+            <span class="gt3-bar pit-bar"><i id="pit-bar-refuel"></i></span>
+            <span class="pr-wert" id="pit-wert-refuel" data-i18n-skip>&ndash;</span></span></div>
         <div class="pit-row pit-tile" id="pit-row-repair" data-pit="repair">
           <span class="pr-pfeil" aria-hidden="true">&#9656;</span>
           <span class="pr-name">Reparieren</span>
-          <span class="pr-wert" id="pit-wert-repair" data-i18n-skip>&ndash;</span></div>
+          <span class="pr-bild">
+            <span class="gt3-bar pit-bar"><i id="pit-bar-repair"></i></span>
+            <span class="pr-wert" id="pit-wert-repair" data-i18n-skip>&ndash;</span></span></div>
         <div class="schirm-fuss" id="pit-fuss" data-i18n-skip></div>
       </div>
 
@@ -12351,6 +12407,30 @@
     $('setting-minmove').addEventListener('input', anfahrschubAnwenden);
   }
 
+  // ---- Die Reifenfarbe: blau kalt, gruen im Fenster, rot zu heiss --------------------
+  //
+  // EINE FUNKTION FUER ZWEI ANZEIGEN. Sie stand bis v0.5.18 als lokaler Ausdruck in
+  // updateRaceScreen(); seit der Boxenschirm dieselben vier Reifen ein zweites Mal zeichnet,
+  // waere das eine Kopie - und eine Farbskala, die an zwei Orten steht, laeuft beim naechsten
+  // Feinschliff auseinander.
+  //
+  // Als function-DEKLARATION und nicht als const: 70-race.js ist eine spaetere Datei im
+  // zusammengefuegten Modul, und nur Deklarationen werden ueber Dateigrenzen hochgezogen.
+  function reifenFarbe(T) {
+    const cfgT = physEngine.config;
+    if (cfgT.tyreEffect === 0) return '#4a5568';
+    const warm = Math.max(0, Math.min(1, (T - cfgT.tyreAmbientC)
+                                         / (cfgT.tyreOptimalC - cfgT.tyreAmbientC)));
+    if (T > cfgT.tyreOptimalC) {
+      const over = Math.min(1, (T - cfgT.tyreOptimalC)
+                               / (cfgT.tyreOverheatC - cfgT.tyreOptimalC));
+      return 'rgb(' + Math.round(70 + 185 * over) + ', ' + Math.round(209 - 130 * over)
+           + ', ' + Math.round(127 - 100 * over) + ')';
+    }
+    return 'rgb(' + Math.round(60 + 10 * warm) + ', ' + Math.round(140 + 69 * warm)
+         + ', ' + Math.round(230 - 103 * warm) + ')';
+  }
+
   // ---- Die Cockpit-Schirme -----------------------------------------------------------
   //
   // Drei Schirme, geblaettert mit dem Steuerkreuz links/rechts. Die WAHRHEIT ist die
@@ -12417,9 +12497,9 @@
     }
   }
 
-  if ($('race-screen-prev')) {
-    $('race-screen-prev').addEventListener('click', () => cockpitScreenStep(-1));
-  }
+  // NUR VORWAERTS mit dem Finger. cockpitScreenStep() rechnet modulo, der letzte Schirm
+  // fuehrt also zum ersten zurueck - eine zweite Richtung waere ein zweiter Knopf fuer eine
+  // Bewegung, die man mit zwei Tipps ohnehin hat. Auf dem Steuerkreuz bleiben beide.
   if ($('race-screen-next')) {
     $('race-screen-next').addEventListener('click', () => cockpitScreenStep(+1));
   }
@@ -13147,21 +13227,9 @@
       const REIFEN = ['race-tyre-fl', 'race-tyre-fr', 'race-tyre-rl', 'race-tyre-rr'];
       const SCHEIBEN = ['race-disc-fl', 'race-disc-fr', 'race-disc-rl', 'race-disc-rr'];
 
-      // Reifenfarbe aus der Temperatur DIESES Rades: blau kalt, gruen im Fenster, rot zu
-      // heiss. Dieselbe Rechnung wie bisher, nur je Rad statt einmal.
-      const reifenFarbe = (T) => {
-        if (aus) return '#4a5568';
-        const warm = Math.max(0, Math.min(1, (T - cfgT.tyreAmbientC)
-                                             / (cfgT.tyreOptimalC - cfgT.tyreAmbientC)));
-        if (T > cfgT.tyreOptimalC) {
-          const over = Math.min(1, (T - cfgT.tyreOptimalC)
-                                   / (cfgT.tyreOverheatC - cfgT.tyreOptimalC));
-          return 'rgb(' + Math.round(70 + 185 * over) + ', ' + Math.round(209 - 130 * over)
-               + ', ' + Math.round(127 - 100 * over) + ')';
-        }
-        return 'rgb(' + Math.round(60 + 10 * warm) + ', ' + Math.round(140 + 69 * warm)
-             + ', ' + Math.round(230 - 103 * warm) + ')';
-      };
+      // Die Reifenfarbe steht seit v0.5.18 als eigene Funktion weiter unten: der Boxenschirm
+      // zeichnet dieselben vier Reifen ein zweites Mal, und zwei Kopien derselben Rechnung
+      // waeren zwei Orte, an denen die Skala auseinanderlaeuft.
 
       // SCHEIBENFARBE, auf die gemessenen Temperaturen gelegt und nicht geraten.
       //
@@ -19335,6 +19403,7 @@
       if (!w) continue;
       schreibeWert(w, pitZeilenWert(z));
     }
+    pitScreenBilder();
     // Die Fusszeile nennt die Taste, mit der gewaehlt wird - und zwar die WIRKLICH belegte.
     // Ist die Flaggenaktion nicht belegt, steht das da, statt dass man raet.
     const fuss = $('pit-fuss');
@@ -19345,13 +19414,64 @@
     }
   }
 
+  // ---- Die Bilder in den Zeilen ------------------------------------------------------
+  //
+  // DIESELBEN QUELLEN wie im Streifen, nur ein zweites Mal gezeichnet. Kein eigener
+  // Zustand: der Boxenschirm liest st.tyreWear4 und st.tyreTemp4 genau wie die Kachel, und
+  // reifenFarbe() ist dieselbe Funktion. Zwei Bilder, eine Wahrheit.
+  const PIT_T4 = ['pit-tyre-fl', 'pit-tyre-fr', 'pit-tyre-rl', 'pit-tyre-rr'];
+
+  function pitScreenBilder() {
+    const st = physEngine.state;
+    const aus = !(physEngine.config.tyreEffect > 0);
+    const abIdx = typeof pitWheelOff === 'function' ? pitWheelOff() : -1;
+    for (let i = 0; i < 4; i++) {
+      const el = $(PIT_T4[i]);
+      if (!el || !el.firstChild) continue;
+      const ab = i === abIdx;
+      el.classList.toggle('t4-ab', ab);
+      const w = aus ? 0 : (st.tyreWear4 ? st.tyreWear4[i] : st.tyreWear);
+      const rest = ab ? 0 : Math.max(0, Math.min(100, 100 - w * 100));
+      el.firstChild.style.height = rest + '%';
+      el.firstChild.style.background =
+        reifenFarbe(st.tyreTemp4 ? st.tyreTemp4[i] : st.tyreTempC);
+    }
+
+    // Die vier Mischungen: die GELTENDE ist umrahmt. Waehrend eines Stopps ist das die
+    // montierte, sonst die vorgewaehlte - man soll sehen, was gilt, und nicht, was man
+    // einmal angetippt hat.
+    const wahl = pitState === 'servicing' ? tyres : pitMischungWahl();
+    const feld = document.querySelector('#pit-row-mix .pit-mix-feld');
+    if (feld) {
+      for (const i of feld.children) i.classList.toggle('an', i.dataset.mix === wahl);
+    }
+
+    const tank = $('pit-bar-refuel');
+    if (tank) {
+      tank.style.width = Math.max(0, Math.min(100, fuel)) + '%';
+      // Dieselbe Ampel wie am Streifen: unter 20 Prozent gelb, unter 10 rot.
+      tank.style.background = fuel < 10 ? 'var(--bad)' : fuel < 20 ? 'var(--warn)' : 'var(--good)';
+    }
+    const rep = $('pit-bar-repair');
+    if (rep) {
+      const heil = Math.max(0, Math.min(100, 100 - damage));
+      rep.style.width = heil + '%';
+      rep.style.background = heil < 25 ? 'var(--bad)' : heil < 60 ? 'var(--warn)' : 'var(--good)';
+    }
+  }
+
   function pitZeilenWert(z) {
     if (z.art === 'aktion') {
       if (pitState === 'off') return t('bereit');
       if (pitState === 'limited') return t('Boxengasse');
       return pitReady ? t('fertig') : t('Arbeit läuft');
     }
-    if (z.art === 'wahl') return mischungName(pitMischungWahl());
+    if (z.art === 'wahl') {
+      // Waehrend eines Stopps steht hier, was MONTIERT ist; sonst, was vorgewaehlt wurde.
+      // Beides ist derselbe Rahmen im Feld daneben, also sagt der Text dasselbe zweimal -
+      // und das ist gewollt: eine Farbe ohne Namen ist bei vier Feldern eine Ratefrage.
+      return mischungName(pitState === 'servicing' ? tyres : pitMischungWahl());
+    }
     // Die drei Arbeiten: der WERT ist der Zustand, den man beim Blaettern sehen will.
     let zahl = '';
     if (z.id === 'refuel') zahl = Math.round(fuel) + '% \u00b7 ' + fuelLiters(fuel) + ' l';
@@ -19383,7 +19503,9 @@
     // Rennens und das Ergebnis danach nicht verschiedene Sieger nennen.
     const mit = cars.map((c) => {
       const ms = c.laps.map((l) => l.ms);
-      return { c, n: ms.length, summe: ms.reduce((a, b) => a + b, 0) };
+      return { c, n: ms.length, summe: ms.reduce((a, b) => a + b, 0),
+               letzte: ms.length ? ms[ms.length - 1] : null,
+               beste: ms.length ? Math.min.apply(null, ms) : null };
     });
     mit.sort((a, b) => (b.n - a.n) || (a.summe - b.summe));
     const fuehrer = mit.length ? mit[0] : null;
@@ -19406,7 +19528,10 @@
         luecke = '\u2014';
       }
       return { pos: i + 1, name: x.c.name, farbe: x.c.farbe, rolle: x.c.role,
-               runden: x.n, luecke };
+               runden: x.n, luecke, letzte: x.letzte, beste: x.beste,
+               // Die schnellste Runde des ganzen Feldes wird hervorgehoben, wie auf einer
+               // Zeittafel. Verglichen wird SPAETER, wenn alle Zeilen vorliegen.
+               istBeste: false };
     });
   }
 
@@ -19414,6 +19539,11 @@
     const tab = $('ov-tab');
     if (!tab) return;
     const zeilen = ovDaten();
+    // Die schnellste Runde des FELDES, violett wie in der Formel 1. Hier und nicht in
+    // ovDaten(): dort ist die Zeile noch allein, und "die schnellste" ist ein Vergleich.
+    const bestenListe = zeilen.map((z) => z.beste).filter((v) => v !== null);
+    const feldBeste = bestenListe.length ? Math.min.apply(null, bestenListe) : null;
+    for (const z of zeilen) z.istBeste = feldBeste !== null && z.beste === feldBeste;
     schreibeWert($('ov-kopf-lage'), t(raceState === 'idle' ? 'kein Rennen'
       : raceState === 'countdown' ? 'Start'
       : raceFormationLap ? 'Einführungsrunde'
@@ -19426,7 +19556,8 @@
         tab.innerHTML = '<div class="ov-zeile"><span class="ov-pos"></span>'
           + '<span></span><span class="ov-name" data-i18n-skip>'
           + t('Noch keine Runde gefahren') + '</span>'
-          + '<span></span><span></span><span></span></div>';
+          + '<span></span><span></span><span></span><span></span><span></span>'
+          + '<span></span></div>';
       }
       return;
     }
@@ -19437,15 +19568,25 @@
     // hoechstens acht Zeilen. Element-ids gibt es hier keine, der Zaehltest bleibt heil.
     const html = zeilen.map((z) => {
       const eigen = z.rolle === 'player';
-      const mix = eigen ? mischungFarbe(tyres) : '';
       const stops = eigen ? racePitDone : 0;
-      const p = stops > 0 ? (stops === 1 ? 'P' : 'P&times;' + stops) : '';
+      // EIN P UND EINE ZAHL, wie gewuenscht: das P sagt "war drin", die Zahl wie oft. Bei
+      // genau einem Stopp bleibt die 1 weg - eine 1 neben einem P liest man als Platz.
+      const p = stops > 0 ? 'P' + (stops > 1 ? '<b>' + stops + '</b>' : '') : '';
+      // NUR DAS EIGENE AUTO hat eine Mischung: Ghosts haben kein Reifenmodell. Ein Feld,
+      // das fuer sie eine Farbe zeigte, waere eine Erfindung - es bleibt leer.
+      const mix = eigen
+        ? '<span class="ov-mix" style="background:' + mischungFarbe(tyres) + '"></span>'
+        : '<span class="ov-mix ov-mix-leer"></span>';
       return '<div class="ov-zeile' + (eigen ? ' ov-ich' : '') + '">'
         + '<span class="ov-pos">' + z.pos + '</span>'
         + '<span class="ov-farbe" style="background:' + (z.farbe || 'transparent') + '"></span>'
         + '<span class="ov-name" data-i18n-skip>' + z.name + '</span>'
         + '<span class="ov-runden">' + z.runden + '</span>'
         + '<span class="ov-pit">' + p + '</span>'
+        + mix
+        + '<span class="ov-zeit">' + (z.letzte === null ? '&ndash;' : formatLapTime(z.letzte)) + '</span>'
+        + '<span class="ov-zeit' + (z.istBeste ? ' ov-feldbeste' : '') + '">'
+        + (z.beste === null ? '&ndash;' : formatLapTime(z.beste)) + '</span>'
         + '<span class="ov-luecke">' + z.luecke + '</span>'
         + '</div>';
     }).join('');
@@ -19454,8 +19595,9 @@
     if (tab.innerHTML !== html) tab.innerHTML = html;
     const fuss = $('ov-fuss');
     if (fuss) {
-      fuss.textContent = 'Position \u00b7 Runden \u00b7 Stopps \u00b7 R\u00fcckstand'
-        + ' \u2014 Reifen und Stopps nur f\u00fcr das eigene Auto simuliert';
+      fuss.textContent = 'Platz \u00b7 Runden \u00b7 Stopps \u00b7 Mischung \u00b7 letzte'
+        + ' \u00b7 beste \u00b7 R\u00fcckstand \u2014 Reifen und Stopps nur f\u00fcr das'
+        + ' eigene Auto simuliert';
     }
   }
 

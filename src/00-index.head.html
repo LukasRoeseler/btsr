@@ -1527,7 +1527,7 @@
   /* ---- Der Boxenschirm ---------------------------------------------------------------- */
   #race-pitscreen { grid-template-rows: auto repeat(5, minmax(0, 1fr)) auto; }
   .pit-row { display: grid; align-items: center;
-    grid-template-columns: 18px minmax(0, 1.3fr) minmax(0, 1fr);
+    grid-template-columns: 18px minmax(0, 1.15fr) minmax(0, 1.15fr);
     gap: clamp(4px, 1vw, 12px);
     padding: 0 clamp(4px, 1vw, 10px);
     background: var(--gt3-tile); color: var(--gt3-tile-ink);
@@ -1535,8 +1535,32 @@
   .pit-row > .pr-pfeil { font-size: 13px; color: var(--gt3-tile-ink); opacity: 0; }
   .pit-row > .pr-name { font-size: clamp(10px, 1.5vw, 15px); font-weight: 700;
     letter-spacing: .04em; }
-  .pit-row > .pr-wert { font-size: clamp(9px, 1.3vw, 13px); font-family: monospace;
+  .pr-wert { font-size: clamp(9px, 1.3vw, 13px); font-family: monospace;
     text-align: right; color: var(--gt3-strip-ink); }
+  /* Die rechte Spalte traegt jetzt ein BILD und eine Zahl. Das Bild links davon, die Zahl
+     rechtsbuendig - so stehen die Zahlen aller fuenf Zeilen untereinander, und das Auge
+     findet sie ohne zu suchen. */
+  .pr-bild { display: grid; grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center; gap: clamp(4px, .9vw, 10px); min-width: 0; }
+  .pr-bild > .pr-wert { white-space: nowrap; }
+  .pit-bar { margin-top: 0; width: 100%; }
+  /* Die vier Reifen in Fahrzeuganordnung, klein: zwei Spalten, zwei Zeilen. Kein Spalt in
+     der Mitte wie im Streifen - hier ist die Zeile 20 px hoch, und ein Spalt darin waere
+     ein Strich und keine Spur. */
+  .pit-t4-feld { display: grid; grid-template-columns: repeat(2, 1fr);
+    gap: 2px; width: clamp(20px, 4vw, 30px); justify-self: end; }
+  .pit-t4-feld .gt3-t4 { aspect-ratio: 1 / 1.5; }
+  /* Die vier Mischungen. Gleich breit, die geltende umrahmt - ein Rahmen und keine
+     Aufhellung, weil weiss und gelb sich nicht aufhellen lassen. */
+  .pit-mix-feld { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px;
+    width: clamp(48px, 11vw, 84px); justify-self: end; }
+  .pit-mix-feld > i { display: block; height: clamp(9px, 1.8vw, 14px); border-radius: 2px;
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .5); }
+  .pit-mix-feld > i[data-mix="weich"] { background: #e5261e; }
+  .pit-mix-feld > i[data-mix="mittel"] { background: #f7d117; }
+  .pit-mix-feld > i[data-mix="hart"] { background: #f2f4f8; }
+  .pit-mix-feld > i[data-mix="regen"] { background: #2f6fd0; }
+  .pit-mix-feld > i.an { outline: 2px solid var(--gt3-tile-ink); outline-offset: 1px; }
   /* DIE MARKIERUNG ALS OUTLINE, nicht als Rahmen: sie malt AUSSERHALB des Innenrings, den
      pit-on/pit-off schon tragen, und kostet kein Layout. Dazu ein Zeichen, weil Farbe
      allein keine Kennung ist - dieselbe Ueberlegung wie bei den Autofarben. */
@@ -1548,8 +1572,8 @@
   .ov-tab { display: grid; align-content: start; gap: 2px; overflow: hidden;
     font-family: monospace; font-size: clamp(9px, 1.35vw, 14px); }
   .ov-zeile { display: grid; align-items: center;
-    grid-template-columns: 1.6em 1.1em minmax(0, 1fr) 2.6em 2.4em 4.2em;
-    gap: clamp(3px, .7vw, 8px);
+    grid-template-columns: 1.5em 1.1em minmax(0, 1fr) 2.2em 2.2em 1.4em 4.4em 4.4em 3.8em;
+    gap: clamp(2px, .55vw, 7px);
     padding: clamp(1px, .35vw, 4px) clamp(3px, .8vw, 8px);
     background: var(--gt3-tile); color: var(--gt3-tile-ink);
     border-radius: var(--gt3-radius); }
@@ -1567,6 +1591,13 @@
   .ov-mix { width: 100%; height: .82em; border-radius: 2px;
     box-shadow: inset 0 0 0 1px rgba(0,0,0,.45); }
   .ov-luecke { text-align: right; }
+  .ov-zeit { text-align: right; color: var(--gt3-strip-ink); }
+  /* Die schnellste Runde des Feldes violett, wie auf einer Zeittafel. */
+  .ov-feldbeste { color: #c77dff; font-weight: 700; }
+  /* Ein Ghost hat kein Reifenmodell: das Feld bleibt leer statt eine Farbe zu erfinden. */
+  .ov-mix-leer { background: none; box-shadow: inset 0 0 0 1px rgba(255,255,255,.12); }
+  /* Die Anzahl der Stopps klein neben dem P. */
+  .ov-pit b { font-size: .78em; font-weight: 700; }
 
   #hud-toast-wrap {
     grid-area: toast; min-height: 0; padding: 0 clamp(4px, 1vw, 10px);
@@ -2326,6 +2357,9 @@
      kept reserving 40px and pushed the fullscreen icon away from the corner. */
   .race-corner button[hidden] { display: none; }
   .race-corner svg { width: 18px; height: 18px; }
+  /* Die linke Ecke traegt das Blaettern. Dieselbe Hoehe wie rechts, damit die zwei Ecken
+     auf einer Linie liegen. */
+  .race-corner-links { left: 6px; right: auto; }
   /* SCHMALER UND GEDECKTER als die Vollbildknoepfe: eine Nebenbedienung. Sie werden erst
      beim Zeigen deutlich, damit sie im Fahren nicht ablenken. */
   .race-corner button.schirm-pfeil { width: 26px; height: 34px;
@@ -2694,22 +2728,23 @@
     </svg>
     <div class="gt3" id="race-dash">
       <div class="race-rain" aria-hidden="true"><i></i><i></i><i></i></div>
-      <div class="race-corner">
-        <!-- BLAETTERN OHNE GAMEPAD. Absichtlich klein und gedeckt: es ist eine
-             Nebenbedienung, kein Instrument, und im Augenwinkel eines Fahrers soll es nicht
-             mit den Kacheln um Aufmerksamkeit streiten. Die Punkte dazwischen sagen, wo man
-             ist - eine Beschriftung waere breiter als der Knopf. -->
-        <button type="button" class="schirm-pfeil" id="race-screen-prev"
-                title="Vorheriger Schirm" aria-label="Vorheriger Schirm">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
-               stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 5 8 12l6.5 7"/>
-          </svg></button>
-        <span class="schirm-punkte" id="race-screen-dots" aria-hidden="true"></span>
+      <!-- BLAETTERN OHNE GAMEPAD, oben LINKS und gegenueber den Vollbildknoepfen: so
+           liegt in jeder Ecke eine Sache, und man greift nicht daneben.
+
+           EIN Pfeil, nicht zwei. Die Schirmliste laeuft ohnehin um - wer beim letzten
+           weiterdrueckt, ist wieder beim ersten -, also ist die zweite Richtung mit dem
+           Finger entbehrlich. Auf dem Steuerkreuz bleiben beide, dort kostet sie nichts.
+           Absichtlich klein und gedeckt: eine Nebenbedienung, kein Instrument. Die Punkte
+           sagen, wo man ist; eine Beschriftung waere breiter als der Knopf. -->
+      <div class="race-corner race-corner-links">
         <button type="button" class="schirm-pfeil" id="race-screen-next"
                 title="N&auml;chster Schirm" aria-label="N&auml;chster Schirm">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
                stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 5 16 12l-6.5 7"/>
           </svg></button>
+        <span class="schirm-punkte" id="race-screen-dots" aria-hidden="true"></span>
+      </div>
+      <div class="race-corner">
         <button type="button" id="race-fs" title="Vollbild" aria-label="Vollbild">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                stroke-linecap="round" stroke-linejoin="round">
@@ -2953,19 +2988,40 @@
         <div class="pit-row pit-tile" id="pit-row-tyres" data-pit="tyres">
           <span class="pr-pfeil" aria-hidden="true">&#9656;</span>
           <span class="pr-name">Reifen wechseln</span>
-          <span class="pr-wert" id="pit-wert-tyres" data-i18n-skip>&ndash;</span></div>
+          <span class="pr-bild">
+            <!-- DASSELBE BILD wie die Kachel im Streifen: Fuellhoehe ist Restprofil, Farbe
+                 die Temperatur, Rahmen die Mischung. Eigene ids, weil ein Dokument keine
+                 doppelten tragen darf - die Werte schreibt derselbe Takt. -->
+            <span class="pit-t4-feld">
+              <i class="gt3-t4" id="pit-tyre-fl"><b></b></i>
+              <i class="gt3-t4" id="pit-tyre-fr"><b></b></i>
+              <i class="gt3-t4" id="pit-tyre-rl"><b></b></i>
+              <i class="gt3-t4" id="pit-tyre-rr"><b></b></i>
+            </span>
+            <span class="pr-wert" id="pit-wert-tyres" data-i18n-skip>&ndash;</span></span></div>
         <div class="pit-row" id="pit-row-mix">
           <span class="pr-pfeil" aria-hidden="true">&#9656;</span>
           <span class="pr-name">Reifenwahl</span>
-          <span class="pr-wert" id="pit-wert-mix" data-i18n-skip>&ndash;</span></div>
+          <span class="pr-bild">
+            <!-- ALLE VIER, damit man den Vorrat sieht und nicht nur die Wahl. Die geltende
+                 ist umrahmt; mit der Waehltaste schaltet man durch. -->
+            <span class="pit-mix-feld">
+              <i data-mix="weich"></i><i data-mix="mittel"></i>
+              <i data-mix="hart"></i><i data-mix="regen"></i>
+            </span>
+            <span class="pr-wert" id="pit-wert-mix" data-i18n-skip>&ndash;</span></span></div>
         <div class="pit-row pit-tile" id="pit-row-refuel" data-pit="refuel">
           <span class="pr-pfeil" aria-hidden="true">&#9656;</span>
           <span class="pr-name">Tanken</span>
-          <span class="pr-wert" id="pit-wert-refuel" data-i18n-skip>&ndash;</span></div>
+          <span class="pr-bild">
+            <span class="gt3-bar pit-bar"><i id="pit-bar-refuel"></i></span>
+            <span class="pr-wert" id="pit-wert-refuel" data-i18n-skip>&ndash;</span></span></div>
         <div class="pit-row pit-tile" id="pit-row-repair" data-pit="repair">
           <span class="pr-pfeil" aria-hidden="true">&#9656;</span>
           <span class="pr-name">Reparieren</span>
-          <span class="pr-wert" id="pit-wert-repair" data-i18n-skip>&ndash;</span></div>
+          <span class="pr-bild">
+            <span class="gt3-bar pit-bar"><i id="pit-bar-repair"></i></span>
+            <span class="pr-wert" id="pit-wert-repair" data-i18n-skip>&ndash;</span></span></div>
         <div class="schirm-fuss" id="pit-fuss" data-i18n-skip></div>
       </div>
 

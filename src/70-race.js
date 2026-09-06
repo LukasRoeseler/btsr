@@ -3533,6 +3533,7 @@
       if (!w) continue;
       schreibeWert(w, pitZeilenWert(z));
     }
+    pitScreenBilder();
     // Die Fusszeile nennt die Taste, mit der gewaehlt wird - und zwar die WIRKLICH belegte.
     // Ist die Flaggenaktion nicht belegt, steht das da, statt dass man raet.
     const fuss = $('pit-fuss');
@@ -3543,13 +3544,64 @@
     }
   }
 
+  // ---- Die Bilder in den Zeilen ------------------------------------------------------
+  //
+  // DIESELBEN QUELLEN wie im Streifen, nur ein zweites Mal gezeichnet. Kein eigener
+  // Zustand: der Boxenschirm liest st.tyreWear4 und st.tyreTemp4 genau wie die Kachel, und
+  // reifenFarbe() ist dieselbe Funktion. Zwei Bilder, eine Wahrheit.
+  const PIT_T4 = ['pit-tyre-fl', 'pit-tyre-fr', 'pit-tyre-rl', 'pit-tyre-rr'];
+
+  function pitScreenBilder() {
+    const st = physEngine.state;
+    const aus = !(physEngine.config.tyreEffect > 0);
+    const abIdx = typeof pitWheelOff === 'function' ? pitWheelOff() : -1;
+    for (let i = 0; i < 4; i++) {
+      const el = $(PIT_T4[i]);
+      if (!el || !el.firstChild) continue;
+      const ab = i === abIdx;
+      el.classList.toggle('t4-ab', ab);
+      const w = aus ? 0 : (st.tyreWear4 ? st.tyreWear4[i] : st.tyreWear);
+      const rest = ab ? 0 : Math.max(0, Math.min(100, 100 - w * 100));
+      el.firstChild.style.height = rest + '%';
+      el.firstChild.style.background =
+        reifenFarbe(st.tyreTemp4 ? st.tyreTemp4[i] : st.tyreTempC);
+    }
+
+    // Die vier Mischungen: die GELTENDE ist umrahmt. Waehrend eines Stopps ist das die
+    // montierte, sonst die vorgewaehlte - man soll sehen, was gilt, und nicht, was man
+    // einmal angetippt hat.
+    const wahl = pitState === 'servicing' ? tyres : pitMischungWahl();
+    const feld = document.querySelector('#pit-row-mix .pit-mix-feld');
+    if (feld) {
+      for (const i of feld.children) i.classList.toggle('an', i.dataset.mix === wahl);
+    }
+
+    const tank = $('pit-bar-refuel');
+    if (tank) {
+      tank.style.width = Math.max(0, Math.min(100, fuel)) + '%';
+      // Dieselbe Ampel wie am Streifen: unter 20 Prozent gelb, unter 10 rot.
+      tank.style.background = fuel < 10 ? 'var(--bad)' : fuel < 20 ? 'var(--warn)' : 'var(--good)';
+    }
+    const rep = $('pit-bar-repair');
+    if (rep) {
+      const heil = Math.max(0, Math.min(100, 100 - damage));
+      rep.style.width = heil + '%';
+      rep.style.background = heil < 25 ? 'var(--bad)' : heil < 60 ? 'var(--warn)' : 'var(--good)';
+    }
+  }
+
   function pitZeilenWert(z) {
     if (z.art === 'aktion') {
       if (pitState === 'off') return t('bereit');
       if (pitState === 'limited') return t('Boxengasse');
       return pitReady ? t('fertig') : t('Arbeit läuft');
     }
-    if (z.art === 'wahl') return mischungName(pitMischungWahl());
+    if (z.art === 'wahl') {
+      // Waehrend eines Stopps steht hier, was MONTIERT ist; sonst, was vorgewaehlt wurde.
+      // Beides ist derselbe Rahmen im Feld daneben, also sagt der Text dasselbe zweimal -
+      // und das ist gewollt: eine Farbe ohne Namen ist bei vier Feldern eine Ratefrage.
+      return mischungName(pitState === 'servicing' ? tyres : pitMischungWahl());
+    }
     // Die drei Arbeiten: der WERT ist der Zustand, den man beim Blaettern sehen will.
     let zahl = '';
     if (z.id === 'refuel') zahl = Math.round(fuel) + '% \u00b7 ' + fuelLiters(fuel) + ' l';
@@ -3581,7 +3633,9 @@
     // Rennens und das Ergebnis danach nicht verschiedene Sieger nennen.
     const mit = cars.map((c) => {
       const ms = c.laps.map((l) => l.ms);
-      return { c, n: ms.length, summe: ms.reduce((a, b) => a + b, 0) };
+      return { c, n: ms.length, summe: ms.reduce((a, b) => a + b, 0),
+               letzte: ms.length ? ms[ms.length - 1] : null,
+               beste: ms.length ? Math.min.apply(null, ms) : null };
     });
     mit.sort((a, b) => (b.n - a.n) || (a.summe - b.summe));
     const fuehrer = mit.length ? mit[0] : null;
@@ -3604,7 +3658,10 @@
         luecke = '\u2014';
       }
       return { pos: i + 1, name: x.c.name, farbe: x.c.farbe, rolle: x.c.role,
-               runden: x.n, luecke };
+               runden: x.n, luecke, letzte: x.letzte, beste: x.beste,
+               // Die schnellste Runde des ganzen Feldes wird hervorgehoben, wie auf einer
+               // Zeittafel. Verglichen wird SPAETER, wenn alle Zeilen vorliegen.
+               istBeste: false };
     });
   }
 
@@ -3612,6 +3669,11 @@
     const tab = $('ov-tab');
     if (!tab) return;
     const zeilen = ovDaten();
+    // Die schnellste Runde des FELDES, violett wie in der Formel 1. Hier und nicht in
+    // ovDaten(): dort ist die Zeile noch allein, und "die schnellste" ist ein Vergleich.
+    const bestenListe = zeilen.map((z) => z.beste).filter((v) => v !== null);
+    const feldBeste = bestenListe.length ? Math.min.apply(null, bestenListe) : null;
+    for (const z of zeilen) z.istBeste = feldBeste !== null && z.beste === feldBeste;
     schreibeWert($('ov-kopf-lage'), t(raceState === 'idle' ? 'kein Rennen'
       : raceState === 'countdown' ? 'Start'
       : raceFormationLap ? 'Einführungsrunde'
@@ -3624,7 +3686,8 @@
         tab.innerHTML = '<div class="ov-zeile"><span class="ov-pos"></span>'
           + '<span></span><span class="ov-name" data-i18n-skip>'
           + t('Noch keine Runde gefahren') + '</span>'
-          + '<span></span><span></span><span></span></div>';
+          + '<span></span><span></span><span></span><span></span><span></span>'
+          + '<span></span></div>';
       }
       return;
     }
@@ -3635,15 +3698,25 @@
     // hoechstens acht Zeilen. Element-ids gibt es hier keine, der Zaehltest bleibt heil.
     const html = zeilen.map((z) => {
       const eigen = z.rolle === 'player';
-      const mix = eigen ? mischungFarbe(tyres) : '';
       const stops = eigen ? racePitDone : 0;
-      const p = stops > 0 ? (stops === 1 ? 'P' : 'P&times;' + stops) : '';
+      // EIN P UND EINE ZAHL, wie gewuenscht: das P sagt "war drin", die Zahl wie oft. Bei
+      // genau einem Stopp bleibt die 1 weg - eine 1 neben einem P liest man als Platz.
+      const p = stops > 0 ? 'P' + (stops > 1 ? '<b>' + stops + '</b>' : '') : '';
+      // NUR DAS EIGENE AUTO hat eine Mischung: Ghosts haben kein Reifenmodell. Ein Feld,
+      // das fuer sie eine Farbe zeigte, waere eine Erfindung - es bleibt leer.
+      const mix = eigen
+        ? '<span class="ov-mix" style="background:' + mischungFarbe(tyres) + '"></span>'
+        : '<span class="ov-mix ov-mix-leer"></span>';
       return '<div class="ov-zeile' + (eigen ? ' ov-ich' : '') + '">'
         + '<span class="ov-pos">' + z.pos + '</span>'
         + '<span class="ov-farbe" style="background:' + (z.farbe || 'transparent') + '"></span>'
         + '<span class="ov-name" data-i18n-skip>' + z.name + '</span>'
         + '<span class="ov-runden">' + z.runden + '</span>'
         + '<span class="ov-pit">' + p + '</span>'
+        + mix
+        + '<span class="ov-zeit">' + (z.letzte === null ? '&ndash;' : formatLapTime(z.letzte)) + '</span>'
+        + '<span class="ov-zeit' + (z.istBeste ? ' ov-feldbeste' : '') + '">'
+        + (z.beste === null ? '&ndash;' : formatLapTime(z.beste)) + '</span>'
         + '<span class="ov-luecke">' + z.luecke + '</span>'
         + '</div>';
     }).join('');
@@ -3652,8 +3725,9 @@
     if (tab.innerHTML !== html) tab.innerHTML = html;
     const fuss = $('ov-fuss');
     if (fuss) {
-      fuss.textContent = 'Position \u00b7 Runden \u00b7 Stopps \u00b7 R\u00fcckstand'
-        + ' \u2014 Reifen und Stopps nur f\u00fcr das eigene Auto simuliert';
+      fuss.textContent = 'Platz \u00b7 Runden \u00b7 Stopps \u00b7 Mischung \u00b7 letzte'
+        + ' \u00b7 beste \u00b7 R\u00fcckstand \u2014 Reifen und Stopps nur f\u00fcr das'
+        + ' eigene Auto simuliert';
     }
   }
 

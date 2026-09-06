@@ -496,6 +496,30 @@
     $('setting-minmove').addEventListener('input', anfahrschubAnwenden);
   }
 
+  // ---- Die Reifenfarbe: blau kalt, gruen im Fenster, rot zu heiss --------------------
+  //
+  // EINE FUNKTION FUER ZWEI ANZEIGEN. Sie stand bis v0.5.18 als lokaler Ausdruck in
+  // updateRaceScreen(); seit der Boxenschirm dieselben vier Reifen ein zweites Mal zeichnet,
+  // waere das eine Kopie - und eine Farbskala, die an zwei Orten steht, laeuft beim naechsten
+  // Feinschliff auseinander.
+  //
+  // Als function-DEKLARATION und nicht als const: 70-race.js ist eine spaetere Datei im
+  // zusammengefuegten Modul, und nur Deklarationen werden ueber Dateigrenzen hochgezogen.
+  function reifenFarbe(T) {
+    const cfgT = physEngine.config;
+    if (cfgT.tyreEffect === 0) return '#4a5568';
+    const warm = Math.max(0, Math.min(1, (T - cfgT.tyreAmbientC)
+                                         / (cfgT.tyreOptimalC - cfgT.tyreAmbientC)));
+    if (T > cfgT.tyreOptimalC) {
+      const over = Math.min(1, (T - cfgT.tyreOptimalC)
+                               / (cfgT.tyreOverheatC - cfgT.tyreOptimalC));
+      return 'rgb(' + Math.round(70 + 185 * over) + ', ' + Math.round(209 - 130 * over)
+           + ', ' + Math.round(127 - 100 * over) + ')';
+    }
+    return 'rgb(' + Math.round(60 + 10 * warm) + ', ' + Math.round(140 + 69 * warm)
+         + ', ' + Math.round(230 - 103 * warm) + ')';
+  }
+
   // ---- Die Cockpit-Schirme -----------------------------------------------------------
   //
   // Drei Schirme, geblaettert mit dem Steuerkreuz links/rechts. Die WAHRHEIT ist die
@@ -562,9 +586,9 @@
     }
   }
 
-  if ($('race-screen-prev')) {
-    $('race-screen-prev').addEventListener('click', () => cockpitScreenStep(-1));
-  }
+  // NUR VORWAERTS mit dem Finger. cockpitScreenStep() rechnet modulo, der letzte Schirm
+  // fuehrt also zum ersten zurueck - eine zweite Richtung waere ein zweiter Knopf fuer eine
+  // Bewegung, die man mit zwei Tipps ohnehin hat. Auf dem Steuerkreuz bleiben beide.
   if ($('race-screen-next')) {
     $('race-screen-next').addEventListener('click', () => cockpitScreenStep(+1));
   }
@@ -1292,21 +1316,9 @@
       const REIFEN = ['race-tyre-fl', 'race-tyre-fr', 'race-tyre-rl', 'race-tyre-rr'];
       const SCHEIBEN = ['race-disc-fl', 'race-disc-fr', 'race-disc-rl', 'race-disc-rr'];
 
-      // Reifenfarbe aus der Temperatur DIESES Rades: blau kalt, gruen im Fenster, rot zu
-      // heiss. Dieselbe Rechnung wie bisher, nur je Rad statt einmal.
-      const reifenFarbe = (T) => {
-        if (aus) return '#4a5568';
-        const warm = Math.max(0, Math.min(1, (T - cfgT.tyreAmbientC)
-                                             / (cfgT.tyreOptimalC - cfgT.tyreAmbientC)));
-        if (T > cfgT.tyreOptimalC) {
-          const over = Math.min(1, (T - cfgT.tyreOptimalC)
-                                   / (cfgT.tyreOverheatC - cfgT.tyreOptimalC));
-          return 'rgb(' + Math.round(70 + 185 * over) + ', ' + Math.round(209 - 130 * over)
-               + ', ' + Math.round(127 - 100 * over) + ')';
-        }
-        return 'rgb(' + Math.round(60 + 10 * warm) + ', ' + Math.round(140 + 69 * warm)
-             + ', ' + Math.round(230 - 103 * warm) + ')';
-      };
+      // Die Reifenfarbe steht seit v0.5.18 als eigene Funktion weiter unten: der Boxenschirm
+      // zeichnet dieselben vier Reifen ein zweites Mal, und zwei Kopien derselben Rechnung
+      // waeren zwei Orte, an denen die Skala auseinanderlaeuft.
 
       // SCHEIBENFARBE, auf die gemessenen Temperaturen gelegt und nicht geraten.
       //
