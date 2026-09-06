@@ -767,3 +767,59 @@ Zwei weitere Befunde aus derselben Messung:
   `ghostLane()` gibt bei weniger als zwei Ghosts null zurück — „verschiedene Linien" hat bei
   einem Auto keine Bedeutung. Ab zwei Ghosts sind es ±1 × `GHOST_LANE_STEER` (0,16), bei
   100 Prozent also ±20 von 127.
+
+### Der Querlage-Prüfstand, und warum es ihn braucht
+
+Die ganze Querlage-Rechnung setzt etwas voraus, das nie gemessen wurde: **Byte 7 trägt einen
+Lenk*winkel*, keine Position.** Ein konstanter Winkel lässt ein freies Auto im Kreis fahren;
+dass daraus eine *gehaltene* Lage neben der Mitte wird, leistet allein die Schienenführung
+des Autos.
+
+*Ghost: Querlage festhalten* (unter Ghosts, mit `Prüfstand` gekennzeichnet) hält deshalb
+einen **festen** Versatz statt Ideallinie, Spur und Ausweichen. Links ist links, rechts ist
+rechts, Mitte ist aus.
+
+**Er geht am Servoweg vorbei**, und das ist der Unterschied zwischen einer Anzeige und einer
+Messung. Ginge er durch, kämen Expo, Tempobeschneidung, Ratenbegrenzung und Reibkreis
+dazwischen — gemessen wurden bei „rechts 76" so **70 ± 9**, weil die Beschneidung mit dem
+Tempo schwankt. Ein Prüfstand, dessen Etikett um zehn Prozent danebenliegt, misst nichts.
+Direkt auf Byte 7 stimmt es auf den Punkt: 38 → 38, 76 → 76, 127 → 127, −127 → −127, Spanne
+null.
+
+Damit sind drei Fragen am Tisch entscheidbar, die es vorher nicht waren: bleibt das Auto
+neben der Mitte oder zieht es zurück; ab welchem Wert reißt der Streckensensor ab; und ist
+links wie rechts.
+
+### Die Kacheldauer wird je Typ gemessen
+
+Das Auto meldet nur, **dass** es auf einer neuen Kachel ist (Byte 11), nicht wo darauf. Die
+Phase für die Ideallinie — 0 am Eingang, 1 am Ausgang — kommt deshalb aus
+`(jetzt − Kachelbeginn) ÷ erwartete Dauer`.
+
+Der Beginn ist exakt. Die **erwartete Dauer** war bis v0.5.18 ein gleitender Mittelwert über
+*alle* Kacheln, multipliziert mit dem **geometrischen** Längenverhältnis — und `tileLength()`
+rechnet Bogenlänge aus Radius und Drehwinkel, ohne Tempo. Der Ghost bremst in Kurven aber ab:
+
+| | Tempoabzug | reale Dauer gegen Vorhersage |
+|---|---|---|
+| 60°-Kurve | `curveSlow × 1` = 15 % | 1,18× |
+| Haarnadel | `curveSlow × 2` = 30 % | 1,43× |
+
+`ghostTilePhase()` deckelt auf 1 — die Phase kam also zu früh am Ende an und blieb dort. Der
+Linienversatz fror auf dem Ausgangswert ein, und den Rest der Kurve fuhr der Ghost mit
+**konstanter** Schräglage. Das trifft den **Kurvenausgang**, also genau die Hälfte, an der man
+„außen heraus" sähe.
+
+Jetzt führt jeder Kacheltyp seinen eigenen gleitenden Mittelwert. Eine gemessene Dauer je Typ
+enthält Länge **und** Tempo — kein zweites Tempomodell, dieselbe Messung, nur getrennt
+geführt. Der alte Weg bleibt Rückfall, solange ein Typ noch keine zwei Messungen hat.
+
+Gemessen, Anteil der Takte am Phasendeckel in Kurven:
+
+| Kurve dauert länger | 1,2× | 1,4× | 1,8× |
+|---|---|---|---|
+| vorher | 12 % | 20 % | 29 % |
+| **nachher** | **3 %** | **5 %** | **10 %** |
+
+Und die Kurvenspanne des gesendeten Bytes steigt dabei von 55 auf **58–61 von 127** — der
+Ausgang ist zurück.

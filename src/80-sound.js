@@ -1090,6 +1090,19 @@
     // Mittelreifen), also muss der Untergrund neu gerechnet werden.
     if (typeof applySurface === 'function') applySurface();
   }
+  if ($('ghost-quer-test')) {
+    const quer = (v) => {
+      ghostQuerTest = v;
+      // DER GESENDETE WERT und nicht der Reglerstand: gefragt ist, was am Auto ankommt.
+      // Byte 7 ist round(anteil * 127) und vorzeichenbehaftet, also -127 bis +127.
+      const byte = Math.round(v * 127);
+      $('ghost-quer-test-val').textContent = Math.abs(v) < 0.001 ? 'aus'
+        : (byte > 0 ? 'rechts ' : 'links ') + Math.abs(byte) + ' von 127';
+    };
+    $('ghost-quer-test').addEventListener('input', (e) => quer(parseFloat(e.target.value)));
+    quer(parseFloat($('ghost-quer-test').value));
+  }
+
   $('setting-tyres').addEventListener('input', (e) => {
     reifenReglerAnwenden(parseFloat(e.target.value));
   });

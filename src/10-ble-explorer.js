@@ -1547,6 +1547,10 @@
     "GELB": "YELLOW",
     "ANFAHRT": "ROLLING UP",
     "Einführungsrunde": "Formation lap",
+    "Ghost: Querlage festhalten": "Ghost: hold a lateral offset",
+    "Alle Ghosts halten einen festen Versatz, statt zu fahren, was Ideallinie, Spur und Ausweichen sagen. Links ist links, rechts ist rechts, Mitte ist aus – und in der Mitte läuft alles wie sonst. Wozu das gut ist: Byte 7 trägt einen Lenkwinkel und keine Position. Dass daraus eine gehaltene Lage neben der Mitte wird, leistet allein die Schienenführung des Autos – und ob das stimmt und bis zu welchem Wert, ist nie gemessen worden. Mit einem festen Versatz siehst du es: bleibt das Auto neben der Mitte, oder zieht es zurück? Ab welchem Wert reißt es ab? Ist links wie rechts? Der Wert daneben geht ungefiltert auf Byte 7, also ist er genau das, was am Auto ankommt.":
+      "All ghosts hold a fixed offset instead of driving what the racing line, the lane and the evasion say. Left is left, right is right, centre is off – and in the centre everything runs as usual. What it is for: byte 7 carries a steering ANGLE and not a position. That a held position beside the centre comes out of it is done by the car's own rail following alone – and whether that holds, and up to which value, has never been measured. With a fixed offset you can see it: does the car stay beside the centre, or does it pull back? At which value does it come off? Is left the same as right? The value beside it goes to byte 7 unfiltered, so it is exactly what arrives at the car.",
+    "Prüfstand": "test rig",
     "Physik":
       "Physics",
     "Aus, rohe Stickstellung":

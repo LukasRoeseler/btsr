@@ -2370,6 +2370,92 @@
                  + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
   });
 
+  // ---- Der Querlage-Pruefstand sendet genau das, was daneben steht ----
+  //
+  // SEIN GANZER ZWECK IST, dass das Etikett stimmt: er beantwortet die Frage, welcher
+  // BYTEWERT das Auto wie weit bewegt, und dafuer muss der eingestellte Wert unveraendert
+  // an Byte 7 ankommen.
+  //
+  // Er geht deshalb am Servoweg vorbei. Ginge er durch, kaemen Expo, Tempobeschneidung,
+  // Ratenbegrenzung und Reibkreis dazwischen - gemessen wurden bei "rechts 76" so 70 plus
+  // minus 9, weil die Beschneidung mit dem Tempo schwankt. Ein Pruefstand, dessen Etikett
+  // um zehn Prozent danebenliegt, misst nichts.
+  stAdd('Querlage-Pruefstand: das Etikett ist das Byte', () => {
+    const reg = $('ghost-quer-test');
+    if (!reg || !window.OMEGA_TEST || !OMEGA_TEST.ghostLinieTrace) {
+      return { skip: true, mass: 'Pruefstand oder Messstand nicht vorhanden' };
+    }
+    const merk = reg.value;
+    const schlecht = [], teile = [];
+    try {
+      const setz = (v) => { reg.value = v; reg.dispatchEvent(new Event('input', { bubbles: true })); };
+      for (const v of [0.3, 0.6, 1, -0.6, -1]) {
+        setz(v);
+        const r = OMEGA_TEST.ghostLinieTrace({ takte: 200, cfg: { line: 1, lanes: 0.5, lateral: 0.5 } });
+        if (!r) return { skip: true, mass: 'keine Strecke geladen' };
+        if (r.fehler) return { ok: false, mass: 'Messung warf: ' + r.fehler };
+        const soll = Math.round(v * 127);
+        const ist = Math.round(r.kacheln.reduce((a, k) => a + k.mittel, 0) / r.kacheln.length)
+                  * (v < 0 ? -1 : 1);
+        const spanne = Math.max.apply(null, r.kacheln.map((k) => k.spanne));
+        teile.push(soll + '->' + ist);
+        // 1. Der Wert kommt unveraendert an.
+        if (Math.abs(ist - soll) > 1) schlecht.push(soll + ' gesendet als ' + ist);
+        // 2. UND ER STEHT STILL. Ein Pruefstand, dessen Wert schwankt, ist keiner - und
+        //    genau das war der Grund, am Servoweg vorbeizugehen.
+        if (spanne > 1) schlecht.push('bei ' + soll + ' schwankt es um ' + spanne);
+      }
+      // 3. Bei 0 ist er AUS und alles laeuft wie sonst: die Linie muss ihre Form haben.
+      setz(0);
+      const r0 = OMEGA_TEST.ghostLinieTrace({ takte: 400, kurvenFaktor: 1.2,
+                                              cfg: { line: 1, lanes: 0.5, lateral: 0.5 } });
+      const kurven = r0.kacheln.filter((k) => k.typ !== 2);
+      const sp = kurven.length ? kurven.reduce((a, k) => a + k.spanne, 0) / kurven.length : 0;
+      teile.push('aus: Kurvenspanne ' + Math.round(sp));
+      if (!(sp > 25)) schlecht.push('bei 0 ist die Linie weg (Spanne ' + Math.round(sp) + ')');
+      return { ok: schlecht.length === 0,
+               mass: teile.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+    } finally {
+      reg.value = merk;
+      reg.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+  });
+
+  // ---- Die Kacheldauer wird JE TYP gemessen, nicht global geschaetzt ----
+  //
+  // GEGEN DAS EINFRIEREN DES KURVENAUSGANGS. ghostTilePhase() deckelt auf 1; ist die
+  // erwartete Dauer zu kurz, kommt die Phase zu frueh am Ende an und bleibt dort - der
+  // Linienversatz friert ein und der Rest der Kurve wird mit konstanter Schraeglage
+  // gefahren.
+  //
+  // Zu kurz WAR sie systematisch: die Schaetzung war ein Mittel ueber alle Kacheln mal dem
+  // GEOMETRISCHEN Laengenverhaeltnis, und der Ghost bremst in Kurven ab (curveSlow). Eine
+  // 60-Grad-Kurve dauert dadurch rund 1,18 mal so lang wie ihre Laenge vorhersagt, eine
+  // Haarnadel 1,43 mal.
+  //
+  // Geprueft wird an der Wirkung: wieviel einer Kurve klebt am Deckel, wenn sie laenger
+  // dauert als vorhergesagt? Gemessen vorher 12 / 20 / 29 Prozent bei 1,2 / 1,4 / 1,8 mal.
+  stAdd('Kacheldauer je Typ: der Kurvenausgang friert nicht ein', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.ghostLinieTrace) {
+      return { skip: true, mass: 'ghostLinieTrace nicht vorhanden' };
+    }
+    const schlecht = [], teile = [];
+    for (const kf of [1.2, 1.4, 1.8]) {
+      const r = OMEGA_TEST.ghostLinieTrace({ takte: 900, kurvenFaktor: kf,
+                                             cfg: { line: 1, lanes: 0.5, lateral: 0.5 } });
+      if (!r) return { skip: true, mass: 'keine Strecke geladen' };
+      if (r.fehler) return { ok: false, mass: 'Messung warf: ' + r.fehler };
+      const klebt = r.phaseGeklebtInKurven;
+      teile.push(kf + 'x: ' + Math.round(klebt * 100) + '%');
+      // 15 Prozent ist grosszuegig: gemessen sind es 2,6 / 5 / 10, und vor der Behebung
+      // waren es 12 / 20 / 29. Die Grenze faengt eine Rueckkehr zum alten Verhalten.
+      if (!(klebt < 0.15)) schlecht.push(kf + 'x klebt zu ' + Math.round(klebt * 100) + '%');
+    }
+    return { ok: schlecht.length === 0,
+             mass: 'Anteil am Phasendeckel in Kurven: ' + teile.join(', ')
+                 + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
   // ---- Controller-Vibration: ein Schalter je Ausloeser ----
   //
   // Siebzehn Aufrufstellen, sechs Arten, ein Hauptschalter. Geprueft wird die

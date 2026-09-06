@@ -245,6 +245,12 @@
   // unveraendert bleiben.
   let driftModus = false;
   let gegenlenkStaerke = 0.5;
+  // DER QUERLAGE-PRUEFSTAND. Er wird in 90-ghosts.js gelesen und von einem Regler in
+  // 80-sound.js geschrieben - und 80 kommt VOR 90. Eine Deklaration bei der Leseseite waere
+  // deshalb zu spaet: der Regler schreibt beim Aufbau, und ein Zugriff vor der Deklaration
+  // nimmt in einer zusammengefuegten IIFE die ganze Datei mit. Hier, in der fruehesten
+  // Datei, die ihn braucht, kann das nicht passieren.
+  let ghostQuerTest = 0;
   let physOutSteer = 0, physOutThrottle = 0;
 
   const CONTROL_SEND_INTERVAL_MS = 45; // matches the real app's observed command cadence

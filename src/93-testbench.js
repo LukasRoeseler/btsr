@@ -2606,6 +2606,7 @@
           // in einer Kurve Tempo ab, also dauert sie laenger, als ihre LAENGE vorhersagt.
           // Mit curveSlow 0,15 sind das rund 1,18; die Haarnadel bekommt das Doppelte,
           // also rund 1,4.
+          const vorTile = g.tileIndex;
           const istKurve = currentTrackTiles[g.tileIndex].type !== 2;
           const kf = (istKurve && opt.kurvenFaktor) ? opt.kurvenFaktor : 1;
           const echtMs = (opt.tileMs || 700) * kf
@@ -2615,7 +2616,9 @@
             g.tileStart = uhr;
             car.tileAt = uhr;
             car.tileCount = (car.tileCount + 1) & 0xff;
-            if (opt.lernen !== false) ghostNoteTileTime(car, echtMs);
+            if (opt.lernen !== false) {
+              ghostNoteTileTime(car, echtMs, currentTrackTiles[vorTile].type);
+            }
           }
           const vorher = { linie: ghostLineOffset(car), phase: ghostTilePhase(car),
                            tile: g.tileIndex, typ: currentTrackTiles[g.tileIndex].type };
@@ -2625,7 +2628,10 @@
             tile: vorher.tile, typ: vorher.typ, phase: +vorher.phase.toFixed(2),
             linie: +vorher.linie.toFixed(3),
             wunsch: +(g.querSoll === undefined ? 0 : g.querSoll).toFixed(3),
-            servo: +((g.engine && g.engine.outputs) ? g.engine.outputs.servoAngle : 0).toFixed(3),
+            // Der GESENDETE Wert. Bei aktivem Pruefstand geht der feste Versatz am
+            // Servoweg vorbei, und servoAngle allein wuerde ihn nicht sehen.
+            servo: +(ghostQuerTestAn() ? ghostQuerTest
+                     : ((g.engine && g.engine.outputs) ? g.engine.outputs.servoAngle : 0)).toFixed(3),
           });
         }
       } catch (e) {

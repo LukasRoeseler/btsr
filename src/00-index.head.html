@@ -6653,6 +6653,23 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="ghost-lanes-val">50%</span>
         </div></div>
+      <div class="opt-row"><div class="opt-label">Ghost: Querlage festhalten
+          <span class="wip-tag">Pr&uuml;fstand</span>
+          <small>Alle Ghosts halten einen festen Versatz, statt zu fahren, was Ideallinie,
+          Spur und Ausweichen sagen. Links ist links, rechts ist rechts, Mitte ist aus &ndash;
+          und in der Mitte l&auml;uft alles wie sonst. Wozu das gut ist: Byte&nbsp;7
+          tr&auml;gt einen Lenkwinkel und keine Position. Dass daraus eine gehaltene Lage
+          neben der Mitte wird, leistet allein die Schienenf&uuml;hrung des Autos &ndash; und
+          ob das stimmt und bis zu welchem Wert, ist nie gemessen worden. Mit einem festen
+          Versatz siehst du es: bleibt das Auto neben der Mitte, oder zieht es zur&uuml;ck? Ab
+          welchem Wert rei&szlig;t es ab? Ist links wie rechts? Der Wert daneben geht
+          ungefiltert auf Byte&nbsp;7, also ist er genau das, was am Auto ankommt.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weiter links">&minus;</button>
+          <input type="range" id="ghost-quer-test" min="-1" max="1" step="0.05" value="0">
+          <button type="button" data-step="1" aria-label="weiter rechts">+</button>
+          <span class="opt-val" id="ghost-quer-test-val">aus</span>
+        </div></div>
       <div class="opt-row"><div class="opt-label">Strecke beim Fahren lernen
           <small>Setzt das Layout aus den gemeldeten Kacheln zusammen und &uuml;bernimmt es
           nach der ersten geschlossenen Runde, nur wenn noch keine Strecke liegt.</small></div>

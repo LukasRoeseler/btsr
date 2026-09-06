@@ -6653,6 +6653,23 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="ghost-lanes-val">50%</span>
         </div></div>
+      <div class="opt-row"><div class="opt-label">Ghost: Querlage festhalten
+          <span class="wip-tag">Pr&uuml;fstand</span>
+          <small>Alle Ghosts halten einen festen Versatz, statt zu fahren, was Ideallinie,
+          Spur und Ausweichen sagen. Links ist links, rechts ist rechts, Mitte ist aus &ndash;
+          und in der Mitte l&auml;uft alles wie sonst. Wozu das gut ist: Byte&nbsp;7
+          tr&auml;gt einen Lenkwinkel und keine Position. Dass daraus eine gehaltene Lage
+          neben der Mitte wird, leistet allein die Schienenf&uuml;hrung des Autos &ndash; und
+          ob das stimmt und bis zu welchem Wert, ist nie gemessen worden. Mit einem festen
+          Versatz siehst du es: bleibt das Auto neben der Mitte, oder zieht es zur&uuml;ck? Ab
+          welchem Wert rei&szlig;t es ab? Ist links wie rechts? Der Wert daneben geht
+          ungefiltert auf Byte&nbsp;7, also ist er genau das, was am Auto ankommt.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weiter links">&minus;</button>
+          <input type="range" id="ghost-quer-test" min="-1" max="1" step="0.05" value="0">
+          <button type="button" data-step="1" aria-label="weiter rechts">+</button>
+          <span class="opt-val" id="ghost-quer-test-val">aus</span>
+        </div></div>
       <div class="opt-row"><div class="opt-label">Strecke beim Fahren lernen
           <small>Setzt das Layout aus den gemeldeten Kacheln zusammen und &uuml;bernimmt es
           nach der ersten geschlossenen Runde, nur wenn noch keine Strecke liegt.</small></div>
@@ -8717,6 +8734,10 @@
     "GELB": "YELLOW",
     "ANFAHRT": "ROLLING UP",
     "Einführungsrunde": "Formation lap",
+    "Ghost: Querlage festhalten": "Ghost: hold a lateral offset",
+    "Alle Ghosts halten einen festen Versatz, statt zu fahren, was Ideallinie, Spur und Ausweichen sagen. Links ist links, rechts ist rechts, Mitte ist aus – und in der Mitte läuft alles wie sonst. Wozu das gut ist: Byte 7 trägt einen Lenkwinkel und keine Position. Dass daraus eine gehaltene Lage neben der Mitte wird, leistet allein die Schienenführung des Autos – und ob das stimmt und bis zu welchem Wert, ist nie gemessen worden. Mit einem festen Versatz siehst du es: bleibt das Auto neben der Mitte, oder zieht es zurück? Ab welchem Wert reißt es ab? Ist links wie rechts? Der Wert daneben geht ungefiltert auf Byte 7, also ist er genau das, was am Auto ankommt.":
+      "All ghosts hold a fixed offset instead of driving what the racing line, the lane and the evasion say. Left is left, right is right, centre is off – and in the centre everything runs as usual. What it is for: byte 7 carries a steering ANGLE and not a position. That a held position beside the centre comes out of it is done by the car's own rail following alone – and whether that holds, and up to which value, has never been measured. With a fixed offset you can see it: does the car stay beside the centre, or does it pull back? At which value does it come off? Is left the same as right? The value beside it goes to byte 7 unfiltered, so it is exactly what arrives at the car.",
+    "Prüfstand": "test rig",
     "Physik":
       "Physics",
     "Aus, rohe Stickstellung":
@@ -9421,6 +9442,12 @@
   // unveraendert bleiben.
   let driftModus = false;
   let gegenlenkStaerke = 0.5;
+  // DER QUERLAGE-PRUEFSTAND. Er wird in 90-ghosts.js gelesen und von einem Regler in
+  // 80-sound.js geschrieben - und 80 kommt VOR 90. Eine Deklaration bei der Leseseite waere
+  // deshalb zu spaet: der Regler schreibt beim Aufbau, und ein Zugriff vor der Deklaration
+  // nimmt in einer zusammengefuegten IIFE die ganze Datei mit. Hier, in der fruehesten
+  // Datei, die ihn braucht, kann das nicht passieren.
+  let ghostQuerTest = 0;
   let physOutSteer = 0, physOutThrottle = 0;
 
   const CONTROL_SEND_INTERVAL_MS = 45; // matches the real app's observed command cadence
@@ -21384,6 +21411,19 @@
     // Mittelreifen), also muss der Untergrund neu gerechnet werden.
     if (typeof applySurface === 'function') applySurface();
   }
+  if ($('ghost-quer-test')) {
+    const quer = (v) => {
+      ghostQuerTest = v;
+      // DER GESENDETE WERT und nicht der Reglerstand: gefragt ist, was am Auto ankommt.
+      // Byte 7 ist round(anteil * 127) und vorzeichenbehaftet, also -127 bis +127.
+      const byte = Math.round(v * 127);
+      $('ghost-quer-test-val').textContent = Math.abs(v) < 0.001 ? 'aus'
+        : (byte > 0 ? 'rechts ' : 'links ') + Math.abs(byte) + ' von 127';
+    };
+    $('ghost-quer-test').addEventListener('input', (e) => quer(parseFloat(e.target.value)));
+    quer(parseFloat($('ghost-quer-test').value));
+  }
+
   $('setting-tyres').addEventListener('input', (e) => {
     reifenReglerAnwenden(parseFloat(e.target.value));
   });
@@ -23303,8 +23343,35 @@
     // Testfolge SGHGH waren das 0.39 quer ueber die Bahn, gegen 0.12 auf einer Strecke ohne
     // Haarnadel. Die relative Laenge kommt aus der Abtastdichte der Mittellinie, die
     // trackCenterline() ohnehin nach Drehwinkel vergibt.
-    const dur = (g.tileMs || 800) * ghostTileLenFactor(g.tileIndex);
-    return Math.max(0, Math.min(1, (Date.now() - car.tileAt) / dur));
+    return Math.max(0, Math.min(1, (Date.now() - car.tileAt) / ghostTileDauer(g)));
+  }
+
+  // ---- Wie lange dauert DIESE Kachel? ------------------------------------------------
+  //
+  // JE TYP GEMESSEN, nicht global geschaetzt. Bis v0.5.18 stand hier ein gleitender
+  // Mittelwert ueber ALLE Kacheln, multipliziert mit dem geometrischen Laengenverhaeltnis -
+  // und das ist zu kurz fuer Kurven, weil der Ghost darin abbremst (curveSlow). Eine
+  // 60-Grad-Kurve dauert dadurch rund 1,18 mal so lang wie ihre Laenge vorhersagt, eine
+  // Haarnadel 1,43 mal.
+  //
+  // ghostTilePhase() deckelt auf 1, also kam die Phase zu frueh am Ende an und blieb dort:
+  // der Linienversatz fror auf dem Ausgangswert ein und der Rest der Kurve wurde mit
+  // KONSTANTER Schraeglage gefahren. Gemessen 12 Prozent einer Kurve, 20 Prozent einer
+  // Haarnadel - und zwar der Ausgang, also die Haelfte, an der man "aussen heraus" saehe.
+  //
+  // Eine gemessene Dauer JE TYP enthaelt Laenge UND Tempo. Kein zweites Tempomodell, keine
+  // zweite Zahl - dieselbe Messung, nur getrennt gefuehrt.
+  const GHOST_DAUER_MIN_N = 2;   // aus EINER Messung ist ein Mittelwert kein Mittelwert
+
+  function ghostTileDauer(g) {
+    const tiles = currentTrackTiles;
+    const i = g.tileIndex;
+    const typ = (tiles && i !== null && i !== undefined && tiles[i]) ? tiles[i].type : null;
+    const eig = (typ !== null && g.tileMsTyp && g.tileMsTyp[typ]);
+    if (eig && g.tileMsTypN[typ] >= GHOST_DAUER_MIN_N) return eig;
+    // RUECKFALL, solange dieser Typ noch nicht zweimal gemessen ist: der alte Weg. In der
+    // ersten Runde gibt es je Typ hoechstens eine Messung.
+    return (g.tileMs || 800) * ghostTileLenFactor(i);
   }
 
   // Wie lang ist diese Kachel WIRKLICH? In Zeichnungseinheiten, entlang der Mittellinie.
@@ -23344,10 +23411,18 @@
   // Beim Kachelwechsel die gemessene Dauer gleitend nachziehen. Ausreisser werden verworfen
   // statt eingerechnet: ein verlorenes Paket sieht wie eine doppelt lange Kachel aus, und
   // genau dieser Fehler hat bei der Geschwindigkeitsmessung schon einmal 14 km/h ergeben.
-  function ghostNoteTileTime(car, ms) {
+  function ghostNoteTileTime(car, ms, typ) {
     const g = car.ghost;
     if (!g || !(ms >= GHOST_TILE_MS_MIN && ms <= GHOST_TILE_MS_MAX)) return;
     g.tileMs = g.tileMs ? g.tileMs * 0.7 + ms * 0.3 : ms;
+    // UND GETRENNT JE TYP. Derselbe Messwert, zweimal abgelegt: der globale Mittelwert
+    // bleibt der Rueckfall und wird auch anderswo gebraucht (Vorausblick, Parkregel), der
+    // typeigene traegt die Phase.
+    if (typ === null || typ === undefined) return;
+    g.tileMsTyp = g.tileMsTyp || {};
+    g.tileMsTypN = g.tileMsTypN || {};
+    g.tileMsTyp[typ] = g.tileMsTyp[typ] ? g.tileMsTyp[typ] * 0.7 + ms * 0.3 : ms;
+    g.tileMsTypN[typ] = (g.tileMsTypN[typ] || 0) + 1;
   }
 
   // VOLLER LINIENVERSATZ = VOLLER LENKAUSSCHLAG, vorher der halbe.
@@ -23947,6 +24022,23 @@
   // Unter 100 Prozent aendert sich nichts: `ueber` ist dort 0, und die zwei Ausdruecke sind
   // Zeichen fuer Zeichen die alten.
   function ghostUeber(v) { return Math.max(0, Math.min(1, (v || 0) - 1)); }
+
+  // ---- Der Querlage-Pruefstand -------------------------------------------------------
+  //
+  // Ein FESTER Versatz statt der gerechneten Querlage. Er ueberschreibt und addiert nicht:
+  // ein Pruefstand, dessen Wert sich mit Ideallinie, Spur und Ausweichen mischt, misst
+  // nicht den Wert, den man eingestellt hat. Bei 0 ist er aus.
+  //
+  // Er beantwortet die Frage, die die ganze Querlage-Rechnung voraussetzt und die nie
+  // gemessen wurde: Byte 7 traegt einen Lenk-WINKEL, keine Position. Dass daraus eine
+  // gehaltene Lage neben der Mitte wird, leistet allein die Schienenfuehrung des Autos.
+  // (ghostQuerTest steht in 20-protocol.js - der FRUEHESTEN Datei, die es braucht. Der
+  //  Regler in 80-sound.js schreibt beim Aufbau darauf, und 80 kommt vor 90: eine
+  //  let-Deklaration hier waere zu spaet, und ein Zugriff davor nimmt in einer
+  //  zusammengefuegten IIFE die GANZE Datei mit. Genau das ist beim ersten Versuch
+  //  passiert - gemeldet als "Cannot access 'padConnected' before initialization", also
+  //  an einer ganz anderen Stelle.)
+  function ghostQuerTestAn() { return Math.abs(ghostQuerTest) > 0.001; }
 
   function ghostLinieGewicht(mix) {
     const gerade = GHOST_LINE_STRAIGHT
@@ -24964,7 +25056,12 @@
     if (car.tileCount !== null && car.tileCount !== g.lastCount) {
       // Die Dauer der gerade verlassenen Kachel, fuer die Phasenschaetzung der Linie.
       if (g.tileStart) {
-        ghostNoteTileTime(car, now - g.tileStart);
+        // DER TYP DER GERADE VERLASSENEN Kachel, also der von g.tileIndex - er wird erst
+        // weiter unten hochgezaehlt. Den neuen zu nehmen waere die Dauer der alten Kachel
+        // unter dem Namen der neuen.
+        const verlassen = (currentTrackTiles && currentTrackTiles[g.tileIndex])
+          ? currentTrackTiles[g.tileIndex].type : null;
+        ghostNoteTileTime(car, now - g.tileStart, verlassen);
         // Die letzten Abstaende getrennt mitfuehren: ghostNoteTileTime mittelt fuer den
         // Vorausblick, hier wird die RATE gebraucht, und ein Mittel verschleift genau den
         // Ausschlag, an dem ein Abflug zu erkennen ist.
@@ -25366,7 +25463,10 @@
                + ghostLane(car) * ghostCfg.lanes * GHOST_LANE_STEER
                  * ghostSpurGewicht(mix2);
       }
-      steer = Math.max(-1, Math.min(1, steer + weave));
+      // DER PRUEFSTAND UEBERSCHREIBT ALLES, auch das Schlaengeln: ein fester Versatz, der
+      // sich bewegt, ist kein fester Versatz.
+      steer = ghostQuerTestAn() ? ghostQuerTest
+            : Math.max(-1, Math.min(1, steer + weave));
     }
 
     const out = e.update({ steering: steer, throttle, brake, headlights: true }, dt);
@@ -25405,7 +25505,19 @@
       const on = Math.floor(Date.now() / period) % 2 === 0;
       lights = trackModeBit() | (on ? LIGHT_HEAD : 0) | (on ? 0 : LIGHT_BRAKE);
     }
-    writeToCar(car, (armed && !offTrack) ? out.servoAngle : 0, drive, lights, car.modeBytes);
+    // DER PRUEFSTAND SENDET AM SERVOWEG VORBEI, und das ist der Unterschied zwischen einer
+    // Anzeige und einer Messung. out.servoAngle ist die Anforderung NACH Expo,
+    // Tempobeschneidung, Ratenbegrenzung und Reibkreis - gemessen kamen bei "rechts 76"
+    // dadurch 70 plus/minus 9 an, weil die Beschneidung mit dem Tempo schwankt.
+    //
+    // Ein Pruefstand, dessen Etikett um zehn Prozent danebenliegt, beantwortet die Frage
+    // nicht, fuer die er da ist: welcher BYTEWERT bewegt das Auto wie weit. Also geht der
+    // feste Versatz direkt auf Byte 7, und die Anzeige daneben ist dann wirklich das, was
+    // ankommt. Das Gas laeuft weiter durch die Physik - gemessen wird die Querlage, nicht
+    // die Beschleunigung.
+    const lenkAus = ghostQuerTestAn() ? ghostQuerTest
+                  : ((armed && !offTrack) ? out.servoAngle : 0);
+    writeToCar(car, (armed && !offTrack) ? lenkAus : 0, drive, lights, car.modeBytes);
   }
 
   // The leader among the ghosts, by laps then tile index. Used for the hold-back setting.
@@ -28777,6 +28889,7 @@
           // in einer Kurve Tempo ab, also dauert sie laenger, als ihre LAENGE vorhersagt.
           // Mit curveSlow 0,15 sind das rund 1,18; die Haarnadel bekommt das Doppelte,
           // also rund 1,4.
+          const vorTile = g.tileIndex;
           const istKurve = currentTrackTiles[g.tileIndex].type !== 2;
           const kf = (istKurve && opt.kurvenFaktor) ? opt.kurvenFaktor : 1;
           const echtMs = (opt.tileMs || 700) * kf
@@ -28786,7 +28899,9 @@
             g.tileStart = uhr;
             car.tileAt = uhr;
             car.tileCount = (car.tileCount + 1) & 0xff;
-            if (opt.lernen !== false) ghostNoteTileTime(car, echtMs);
+            if (opt.lernen !== false) {
+              ghostNoteTileTime(car, echtMs, currentTrackTiles[vorTile].type);
+            }
           }
           const vorher = { linie: ghostLineOffset(car), phase: ghostTilePhase(car),
                            tile: g.tileIndex, typ: currentTrackTiles[g.tileIndex].type };
@@ -28796,7 +28911,10 @@
             tile: vorher.tile, typ: vorher.typ, phase: +vorher.phase.toFixed(2),
             linie: +vorher.linie.toFixed(3),
             wunsch: +(g.querSoll === undefined ? 0 : g.querSoll).toFixed(3),
-            servo: +((g.engine && g.engine.outputs) ? g.engine.outputs.servoAngle : 0).toFixed(3),
+            // Der GESENDETE Wert. Bei aktivem Pruefstand geht der feste Versatz am
+            // Servoweg vorbei, und servoAngle allein wuerde ihn nicht sehen.
+            servo: +(ghostQuerTestAn() ? ghostQuerTest
+                     : ((g.engine && g.engine.outputs) ? g.engine.outputs.servoAngle : 0)).toFixed(3),
           });
         }
       } catch (e) {
@@ -32237,6 +32355,92 @@
              mass: 'Linie ' + r.linieSpanne + ' -> Wunsch ' + r.wunschSpanne
                  + ' -> Servo ' + r.servoSpanne + ' (' + r.anteilServoVomWunsch + ')'
                  + ' | Kurvenspanne ' + Math.round(spanne) + ' von 127'
+                 + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // ---- Der Querlage-Pruefstand sendet genau das, was daneben steht ----
+  //
+  // SEIN GANZER ZWECK IST, dass das Etikett stimmt: er beantwortet die Frage, welcher
+  // BYTEWERT das Auto wie weit bewegt, und dafuer muss der eingestellte Wert unveraendert
+  // an Byte 7 ankommen.
+  //
+  // Er geht deshalb am Servoweg vorbei. Ginge er durch, kaemen Expo, Tempobeschneidung,
+  // Ratenbegrenzung und Reibkreis dazwischen - gemessen wurden bei "rechts 76" so 70 plus
+  // minus 9, weil die Beschneidung mit dem Tempo schwankt. Ein Pruefstand, dessen Etikett
+  // um zehn Prozent danebenliegt, misst nichts.
+  stAdd('Querlage-Pruefstand: das Etikett ist das Byte', () => {
+    const reg = $('ghost-quer-test');
+    if (!reg || !window.OMEGA_TEST || !OMEGA_TEST.ghostLinieTrace) {
+      return { skip: true, mass: 'Pruefstand oder Messstand nicht vorhanden' };
+    }
+    const merk = reg.value;
+    const schlecht = [], teile = [];
+    try {
+      const setz = (v) => { reg.value = v; reg.dispatchEvent(new Event('input', { bubbles: true })); };
+      for (const v of [0.3, 0.6, 1, -0.6, -1]) {
+        setz(v);
+        const r = OMEGA_TEST.ghostLinieTrace({ takte: 200, cfg: { line: 1, lanes: 0.5, lateral: 0.5 } });
+        if (!r) return { skip: true, mass: 'keine Strecke geladen' };
+        if (r.fehler) return { ok: false, mass: 'Messung warf: ' + r.fehler };
+        const soll = Math.round(v * 127);
+        const ist = Math.round(r.kacheln.reduce((a, k) => a + k.mittel, 0) / r.kacheln.length)
+                  * (v < 0 ? -1 : 1);
+        const spanne = Math.max.apply(null, r.kacheln.map((k) => k.spanne));
+        teile.push(soll + '->' + ist);
+        // 1. Der Wert kommt unveraendert an.
+        if (Math.abs(ist - soll) > 1) schlecht.push(soll + ' gesendet als ' + ist);
+        // 2. UND ER STEHT STILL. Ein Pruefstand, dessen Wert schwankt, ist keiner - und
+        //    genau das war der Grund, am Servoweg vorbeizugehen.
+        if (spanne > 1) schlecht.push('bei ' + soll + ' schwankt es um ' + spanne);
+      }
+      // 3. Bei 0 ist er AUS und alles laeuft wie sonst: die Linie muss ihre Form haben.
+      setz(0);
+      const r0 = OMEGA_TEST.ghostLinieTrace({ takte: 400, kurvenFaktor: 1.2,
+                                              cfg: { line: 1, lanes: 0.5, lateral: 0.5 } });
+      const kurven = r0.kacheln.filter((k) => k.typ !== 2);
+      const sp = kurven.length ? kurven.reduce((a, k) => a + k.spanne, 0) / kurven.length : 0;
+      teile.push('aus: Kurvenspanne ' + Math.round(sp));
+      if (!(sp > 25)) schlecht.push('bei 0 ist die Linie weg (Spanne ' + Math.round(sp) + ')');
+      return { ok: schlecht.length === 0,
+               mass: teile.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+    } finally {
+      reg.value = merk;
+      reg.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+  });
+
+  // ---- Die Kacheldauer wird JE TYP gemessen, nicht global geschaetzt ----
+  //
+  // GEGEN DAS EINFRIEREN DES KURVENAUSGANGS. ghostTilePhase() deckelt auf 1; ist die
+  // erwartete Dauer zu kurz, kommt die Phase zu frueh am Ende an und bleibt dort - der
+  // Linienversatz friert ein und der Rest der Kurve wird mit konstanter Schraeglage
+  // gefahren.
+  //
+  // Zu kurz WAR sie systematisch: die Schaetzung war ein Mittel ueber alle Kacheln mal dem
+  // GEOMETRISCHEN Laengenverhaeltnis, und der Ghost bremst in Kurven ab (curveSlow). Eine
+  // 60-Grad-Kurve dauert dadurch rund 1,18 mal so lang wie ihre Laenge vorhersagt, eine
+  // Haarnadel 1,43 mal.
+  //
+  // Geprueft wird an der Wirkung: wieviel einer Kurve klebt am Deckel, wenn sie laenger
+  // dauert als vorhergesagt? Gemessen vorher 12 / 20 / 29 Prozent bei 1,2 / 1,4 / 1,8 mal.
+  stAdd('Kacheldauer je Typ: der Kurvenausgang friert nicht ein', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.ghostLinieTrace) {
+      return { skip: true, mass: 'ghostLinieTrace nicht vorhanden' };
+    }
+    const schlecht = [], teile = [];
+    for (const kf of [1.2, 1.4, 1.8]) {
+      const r = OMEGA_TEST.ghostLinieTrace({ takte: 900, kurvenFaktor: kf,
+                                             cfg: { line: 1, lanes: 0.5, lateral: 0.5 } });
+      if (!r) return { skip: true, mass: 'keine Strecke geladen' };
+      if (r.fehler) return { ok: false, mass: 'Messung warf: ' + r.fehler };
+      const klebt = r.phaseGeklebtInKurven;
+      teile.push(kf + 'x: ' + Math.round(klebt * 100) + '%');
+      // 15 Prozent ist grosszuegig: gemessen sind es 2,6 / 5 / 10, und vor der Behebung
+      // waren es 12 / 20 / 29. Die Grenze faengt eine Rueckkehr zum alten Verhalten.
+      if (!(klebt < 0.15)) schlecht.push(kf + 'x klebt zu ' + Math.round(klebt * 100) + '%');
+    }
+    return { ok: schlecht.length === 0,
+             mass: 'Anteil am Phasendeckel in Kurven: ' + teile.join(', ')
                  + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
   });
 
