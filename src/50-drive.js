@@ -631,6 +631,18 @@
 
   function cockpitScreenStep(d) { cockpitScreenSet(cockpitScreen + d); }
 
+  // Was die Waehltaste auf DIESEM Schirm tut. Rueckgabe true heisst "verbraucht".
+  //
+  // DER SCHIRM ENTSCHEIDET, und zwar hier und an einer Stelle. Bis v0.5.28 stand die
+  // Entscheidung im Gamepad-Zweig und hing an einem Merker, der nur auf der naechsten
+  // steigenden Flanke fiel - die der Boxenschirm aber selbst verbraucht. Ein Schirm ohne
+  // waehlen-Eintrag verbraucht die Taste nicht: auf der Rennuebersicht gibt es nichts zu
+  // waehlen, und dort etwas zu erfinden waere schlimmer als nichts zu tun.
+  function cockpitScreenWaehlen() {
+    const s = cockpitScreenIst();
+    return !!(s && s.waehlen && s.waehlen());
+  }
+
   // Die Punkte AUS DER LISTE erzeugen, nicht aus dem Markup: ein vierter Schirm soll an
   // genau einer Stelle nachgetragen werden.
   function cockpitPunkteMalen() {

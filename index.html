@@ -789,7 +789,14 @@
      schwarzen Kacheln. Die Wolken bleiben weiss - auf Schwarz ist das der beste Kontrast,
      den es gibt -, und der Regen wird etwas heller, weil er sonst im Grund verschwindet. */
   body[data-cockpit="gt3"] {
-    --gt3-tile: #000000;
+    /* EIN VERLAUF AUS ZWEI GLEICHEN FARBEN und nicht #000000 - gerendert dasselbe
+       Schwarz, aber ueberlagerbar. Eine reine Farbe in einer background-image-Liste macht
+       die GANZE Deklaration ungueltig; wer diese Variable also mit einer zweiten Ebene
+       ueberlagert (die Zeilenaufhellung im Boxenschirm tut das), bekaeme in genau DIESER
+       Ansicht gar keinen Hintergrund. Dieselbe Falle hat in 0.5.17 den GT3-Schirm
+       durchsichtig gemacht, und dort war sie nach der Ansicht verschieden - also die Art
+       Fehler, die man an vier von fuenf Staenden nicht sieht. */
+    --gt3-tile: linear-gradient(#000000, #000000);
     --gt3-tile-ink: #ffffff;
     /* Auch die SCHIRMtinte auf reines Weiss, nicht nur die der Kacheln: sonst stuende
        weisser Text in schwarzen Kacheln und blaeulicher daneben, und die Ansicht waere
@@ -1600,6 +1607,24 @@
   /* DIE MARKIERUNG ALS OUTLINE, nicht als Rahmen: sie malt AUSSERHALB des Innenrings, den
      pit-on/pit-off schon tragen, und kostet kein Layout. Dazu ein Zeichen, weil Farbe
      allein keine Kennung ist - dieselbe Ueberlegung wie bei den Autofarben. */
+  /* "JA" HELLT DIE GANZE ZEILE AUF, auf Bitte. Der Ring aus pit-on/pit-off sagt
+     dasselbe, aber erst waehrend eines Stopps und nur als 2-px-Linie - die Aufhellung
+     traegt die Antwort auch davor und ist aus dem Augenwinkel zu lesen.
+
+     ALS ZWEITE HINTERGRUNDEBENE und nicht als inset-box-shadow: den traegt pit-on/pit-off
+     schon als Ring, und zwei box-shadow-Deklarationen stapeln sich nicht - die spaetere
+     loescht die fruehere, und der gruene Ring waere weg.
+
+     Die Ebene ist ein Verlauf aus zwei gleichen Farben und keine blosse Farbe, aus dem
+     Grund, der eine Bildschirmhoehe weiter oben bei --gt3-tile steht.
+
+     WEISS UND NICHT SCHWARZ: --gt3-tile ist in allen fuenf Ansichten dunkel und
+     --gt3-tile-ink in allen fuenf hell. Aufhellen entfernt sich also vom Grund und
+     naehert sich nicht der Schrift; der Kontrastlauf misst es nach. */
+  .pit-row.pr-ja {
+    background-image: linear-gradient(rgba(255, 255, 255, .11), rgba(255, 255, 255, .11)),
+                      var(--gt3-tile);
+  }
   .pit-row.pr-sel { outline: 2px solid var(--gt3-tile-ink); outline-offset: -2px; }
   .pit-row.pr-sel > .pr-pfeil { opacity: 1; }
 
@@ -7156,7 +7181,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.5.18</span></span>
+    <span class="foot-ver">v<span id="app-version">0.5.29</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -8776,24 +8801,16 @@
       "done",
     "Sim aus":
       "sim off",
-    "wird gemacht":
-      "will be done",
-    "abgewählt":
-      "deselected",
-    "vorgewählt":
-      "pre-selected",
+    "ja":
+      "yes",
+    "nein":
+      "no",
     "weich":
       "soft",
     "mittel":
       "medium",
     "hart":
       "hard",
-    "Vorgewählt: tanken":
-      "Pre-selected: refuel",
-    "Vorgewählt: Reifen":
-      "Pre-selected: tyres",
-    "Vorgewählt: reparieren":
-      "Pre-selected: repair",
     "Reifen montiert":
       "Tyres fitted",
     "kein Rennen":
@@ -9922,7 +9939,13 @@
     // ausgeloest wird er, wenn die Sekunde voll ist. !e.repeat ist dabei wichtig: eine
     // gehaltene Taste feuert keydown wiederholt, und jeder Wiederholer wuerde den Balken
     // neu starten.
-    if (k === 'x' && !e.repeat) flagHoldPress();
+    // DIESELBE REGEL WIE AM CONTROLLER: der Schirm entscheidet. Stuende hier nur
+    // flagHoldPress(), gaebe die Tastatur im Boxenmenue Gelb, waehrend der Controller dort
+    // waehlt - zwei Bedeutungen fuer eine Taste, unterschieden durch das Eingabegeraet.
+    if (k === 'x' && !e.repeat) {
+      if (cockpitScreenIst().id !== 'main') cockpitScreenWaehlen();
+      else flagHoldPress();
+    }
     if (k === 'q' && !e.repeat) debugCountLap(e.shiftKey);
     if (k === 'm' && !e.repeat) {
       // Next unused section, so one key walks the whole protocol in order.
@@ -12763,6 +12786,18 @@
   }
 
   function cockpitScreenStep(d) { cockpitScreenSet(cockpitScreen + d); }
+
+  // Was die Waehltaste auf DIESEM Schirm tut. Rueckgabe true heisst "verbraucht".
+  //
+  // DER SCHIRM ENTSCHEIDET, und zwar hier und an einer Stelle. Bis v0.5.28 stand die
+  // Entscheidung im Gamepad-Zweig und hing an einem Merker, der nur auf der naechsten
+  // steigenden Flanke fiel - die der Boxenschirm aber selbst verbraucht. Ein Schirm ohne
+  // waehlen-Eintrag verbraucht die Taste nicht: auf der Rennuebersicht gibt es nichts zu
+  // waehlen, und dort etwas zu erfinden waere schlimmer als nichts zu tun.
+  function cockpitScreenWaehlen() {
+    const s = cockpitScreenIst();
+    return !!(s && s.waehlen && s.waehlen());
+  }
 
   // Die Punkte AUS DER LISTE erzeugen, nicht aus dem Markup: ein vierter Schirm soll an
   // genau einer Stelle nachgetragen werden.
@@ -19894,9 +19929,11 @@
       // makePitPlan() beim Scharfstellen. Genau dafuer ist der Schirm waehrend der Fahrt da.
       const jetzt = pitVorwahlIst(zeile.id);
       pitVorwahl[zeile.id] = !jetzt;
-      showHudToast(t(zeile.id === 'refuel' ? 'Vorgewählt: tanken'
-                     : zeile.id === 'tyres' ? 'Vorgewählt: Reifen'
-                     : 'Vorgewählt: reparieren') + ' ' + (!jetzt ? 'AN' : 'AUS'));
+      // DIESELBEN ZWEI WOERTER wie in der Zeile. Eine Meldung, die "AN" sagt, waehrend
+      // die Zeile darunter "ja" zeigt, ist ein drittes Vokabular fuer dieselbe Frage.
+      showHudToast(t(zeile.id === 'refuel' ? 'Tanken'
+                     : zeile.id === 'tyres' ? 'Reifen wechseln'
+                     : 'Reparieren') + ': ' + t(!jetzt ? 'ja' : 'nein'));
     }
     pitScreenRender();
     return true;
@@ -19946,6 +19983,11 @@
       // der groesseren Schrift passte die nicht mehr in eine Spalte - abgeschnitten wurde
       // ausgerechnet das Wort am Ende, also der Zustand.
       const teil = pitZeilenWert(z);
+      // JA HELLT DIE GANZE ZEILE AUF, auf Bitte. Der Ring aus pit-on/pit-off sagt dasselbe,
+      // aber erst waehrend eines Stopps und nur als 2-px-Linie; die Aufhellung traegt die
+      // Antwort auch davor und ist aus dem Augenwinkel zu lesen - und das ist die Lage, in
+      // der man einen Boxenschirm liest.
+      if (el) el.classList.toggle('pr-ja', teil.ja === true);
       schreibeWert($('pit-zahl-' + z.id), teil.zahl);
       schreibeWert(w, teil.wort);
     }
@@ -20034,11 +20076,19 @@
       const w = st.tyreWear4 ? Math.max.apply(null, st.tyreWear4) : st.tyreWear;
       zahl = Math.round(100 - w * 100) + '%';
     }
-    if (!pitJobAvailable(z.id)) return { zahl, wort: t('Sim aus') };
-    if (pitState === 'servicing' && pitPlan) {
-      return { zahl, wort: pitPlan[z.id] ? t('wird gemacht') : t('abgewählt') };
-    }
-    return { zahl, wort: pitVorwahlIst(z.id) ? t('vorgewählt') : t('aus') };
+    if (!pitJobAvailable(z.id)) return { zahl, wort: t('Sim aus'), ja: false };
+    // JA ODER NEIN auf die Frage, die die Zeile stellt - und dieselben zwei Woerter
+    // waehrend eines Stopps wie davor. Hier standen vier: "vorgewaehlt"/"aus" davor,
+    // "wird gemacht"/"abgewaehlt" waehrenddessen. Gemeldet als "verstehe ich nicht", und
+    // das war keine Geschmacksfrage: "aus" hiess an dieser Stelle etwas anderes als das
+    // "aus" der Reifensimulation zwei Zeilen weiter, und der Leser musste raten, welches.
+    //
+    // Der Unterschied zwischen Plan und Ausfuehrung geht dabei nicht verloren - er steht
+    // eine Zeile hoeher, wo "Boxenstopp einleiten" bereit, Boxengasse, Arbeit laeuft oder
+    // fertig sagt. Ihn hier ein zweites Mal zu tragen hiess, ihn zweimal lesen zu muessen,
+    // um einmal zu wissen, ob getankt wird.
+    const ja = (pitState === 'servicing' && pitPlan) ? !!pitPlan[z.id] : pitVorwahlIst(z.id);
+    return { zahl, wort: ja ? t('ja') : t('nein'), ja };
   }
 
   // ---- Rennuebersicht ----------------------------------------------------------------
@@ -23802,6 +23852,52 @@
     else if (flagState === 'yellow') yellowRestart();
   }
 
+  // ---- Was die Waehltaste bedeutet, entscheidet der SCHIRM ---------------------------
+  //
+  // Auf dem Cockpitschirm laedt sie die gelbe Flagge, auf jedem anderen waehlt sie dort und
+  // die Flagge gibt es nicht. Eine Regel, die man in einem Satz sagen kann - und ablesbar an
+  // dem Schirm, in den man ohnehin sieht.
+  //
+  // ALS EIGENE FUNKTION und nicht als Block in pollGamepad, damit eine Pruefung genau diese
+  // Logik fahren kann statt einer nachgebauten zweiten Fassung. Die Vorlaeufer-Fassung stand
+  // im Gamepad-Zweig, und der Test aus dem Plan ("X waehlt, und die Flagge laedt dabei
+  // nicht") ist deshalb nie gebaut worden: es gab nichts, was man haette aufrufen koennen.
+  // Der Prueffstand rief stattdessen pitScreenSelect() direkt - also am Entscheidungsweg
+  // vorbei, und damit haette er den gemeldeten Fehler auch dann nicht gesehen, wenn es ihn
+  // gegeben haette. Es gab ihn.
+  //
+  // Sie liest die GEBUNDENE Flaggenaktion und nicht fest Knopf 0. Wer die Flagge auf Dreieck
+  // legt, waehlt dann mit Dreieck - ein fest verdrahteter Knopf 0 waere eine zweite
+  // Bedeutung auf einer Taste, die das Schaubild als "nicht belegt" zeigt.
+  //
+  // UND AUSDRUECKLICH KEINE UNTERSCHEIDUNG NACH HALTEDAUER. Genau das war bis v0.5.1 gebaut
+  // - Quadrat trug Runterschalten UND die Flagge - und ist als Fehler zurueckgenommen
+  // worden. Der Ladebalken startet auf den anderen Schirmen gar nicht erst, statt bei 40
+  // Prozent stehenzubleiben.
+  function flagTasteTick(flagNow) {
+    if (cockpitScreenIst().id !== 'main') {
+      if (flagNow && !prevYellowFlag) cockpitScreenWaehlen();
+    } else {
+      if (flagNow && !prevYellowFlag) { padFlagFired = false; flagHoldPress(); }
+      if (flagNow && !padFlagFired && flagHoldStart !== null
+          && Date.now() - flagHoldStart >= FLAG_HOLD_MS) {
+        padFlagFired = true;
+        flagHoldRelease(true);
+      }
+      if (!flagNow && prevYellowFlag) flagHoldRelease(false);
+    }
+    // DIE SPERRE FAELLT BEIM LOSLASSEN, und das ist die Behebung eines gemeldeten Fehlers.
+    // padFlagFired heisst "in DIESEM Druck ist die Sekunde schon voll gewesen", also endet
+    // sie mit dem Druck. Vorher fiel sie nur auf der naechsten STEIGENDEN Flanke - und die
+    // konnte der Boxenschirm verbrauchen, bevor diese Zeile sie sah. Ein einziger Druck im
+    // Boxenmenue liess den Merker also stehen, und jeder weitere Druck auf dem Cockpitschirm
+    // lief in eine Bedingung, die ihn nicht mehr durchliess: X war fuer die gelbe Flagge
+    // dauerhaft taub, im Boxenmenue aber weiter in Ordnung. Genau so gemeldet, und genau
+    // daran zu erkennen.
+    if (!flagNow) padFlagFired = false;
+    prevYellowFlag = flagNow;
+  }
+
   // ---- Gelbe Flagge ----
   // Wie in der Original-App: alles rollt langsam und mittig weiter, keiner ueberholt, die
   // Lichter blinken. Genau die Phase, in der man ein Auto von Hand zurueckstellt.
@@ -25811,30 +25907,7 @@
       // zweite Fassung der Logik: flagHoldPress startet den Ladebalken, flagHoldRelease(true)
       // loest aus. Zu frueh losgelassen passiert nichts - ein halber Druck darf keine halbe
       // Wirkung haben.
-      const flagNow = readBindingValue(pad, bindings.yellowflag) > BUTTON_CAPTURE_THRESHOLD;
-      // ---- Am Boxenschirm waehlt diese Taste, und zwar GANZ ---------------------------
-      //
-      // Sie liest die GEBUNDENE Flaggenaktion und nicht fest Knopf 0. Wer die Flagge auf
-      // Dreieck legt, waehlt dann mit Dreieck - ein fest verdrahteter Knopf 0 waere eine
-      // zweite Bedeutung auf einer Taste, die das Schaubild als "nicht belegt" zeigt.
-      //
-      // UND AUSDRUECKLICH KEINE UNTERSCHEIDUNG NACH HALTEDAUER. Genau das war bis v0.5.1
-      // gebaut - Quadrat trug Runterschalten UND die Flagge - und ist als Fehler
-      // zurueckgenommen worden. Der Ladebalken startet am Boxenschirm gar nicht erst, statt
-      // bei 40 Prozent stehenzubleiben. Wer dort Gelb geben will, blaettert zurueck; das ist
-      // eine Regel, die man in einem Satz sagen kann.
-      if (flagNow && !prevYellowFlag && pitScreenSelect()) {
-        padFlagFired = true;              // kein Halten offen, also auch kein Loslassen
-      } else if (!padFlagFired || !flagNow) {
-        if (flagNow && !prevYellowFlag) { padFlagFired = false; flagHoldPress(); }
-        if (flagNow && !padFlagFired && flagHoldStart !== null
-            && Date.now() - flagHoldStart >= FLAG_HOLD_MS) {
-          padFlagFired = true;
-          flagHoldRelease(true);
-        }
-        if (!flagNow && prevYellowFlag && !padFlagFired) flagHoldRelease(false);
-      }
-      prevYellowFlag = flagNow;
+      flagTasteTick(readBindingValue(pad, bindings.yellowflag) > BUTTON_CAPTURE_THRESHOLD);
 
       const resetNow = readBindingValue(pad, bindings.resetcar) > BUTTON_CAPTURE_THRESHOLD;
       if (resetNow && !prevResetCar) resetCarState();
@@ -26326,7 +26399,16 @@
     schirmZu(id) { cockpitScreenZu(id); return cockpitScreenIst().id; },
     // Und der Weg, den das Steuerkreuz wirklich nimmt - nicht nur die Registry.
     schirmPad(dir) { return pitScreenPad(dir); },
-    schirmWaehlen() { return pitScreenSelect(); },
+    // UEBER DEN VERTEILER und nicht direkt auf pitScreenSelect(): gefragt ist, was die
+    // Taste auf dem GERADE offenen Schirm tut, und genau diese Entscheidung war der Ort
+    // des gemeldeten Fehlers. Ein Zugang, der sie ueberspringt, prueft die falsche Sache.
+    schirmWaehlen() { return cockpitScreenWaehlen(); },
+    // Die Waehltaste selbst, so wie pollGamepad sie sieht: true heisst gedrueckt. Damit
+    // laesst sich eine FOLGE fahren - druecken, loslassen, blaettern, wieder druecken -,
+    // und nur in einer Folge war der Fehler zu sehen.
+    flagTaste(gedrueckt) { flagTasteTick(!!gedrueckt); },
+    flagLage() { return { haelt: flagHoldStart !== null, gesperrt: padFlagFired,
+                          stand: flagState }; },
     schirmAuswahl() { return pitScreenSel; },
     // ---- Lassen die Vibrationsschalter das Richtige durch? -------------------------
     //
@@ -30337,6 +30419,82 @@
     return 0.2126 * f[0] + 0.7152 * f[1] + 0.0722 * f[2];
   }
 
+  // VERLAEUFE ZAEHLEN MIT, und dass sie es bisher nicht taten, war eine echte Luecke:
+  // gelesen wurde nur backgroundColor. #race-dash traegt in der Ansicht "modern" NEUN
+  // Hintergrundebenen, und die vorderste ist ein deckendes Weiss - der Schirm ist dort hell
+  // und die Schrift dunkel. Der Pruefer lief daran vorbei bis hinunter zum schwarzen body
+  // und meldete 1,16:1 fuer dunkle Schrift auf hellem Grund. Ein Fehlalarm, und zwar einer,
+  // der in der Fassung 0.5.18 genauso steht - nachgemessen, nicht vermutet.
+  //
+  // EBENENWEISE UND VON VORN. Ein background-image ist ein Stapel: die erste Ebene liegt
+  // OBEN. Ueber alle Farbwerte des ganzen Stapels zu mitteln war der erste Versuch und war
+  // falsch - er verrechnete die verdeckten Ebenen mit und kam auf 1,49:1, also einen
+  // Fehlalarm mit anderer Zahl. Gelesen wird deshalb Ebene fuer Ebene, ueberlagert wie der
+  // Browser malt, und hinter der ersten deckenden Ebene wird nicht weitergesucht.
+  //
+  // WAS DIESE MESSUNG NICHT KANN, und das gehoert dazu: innerhalb EINER Ebene wird ueber die
+  // Farbstopps gemittelt. Fuer die Flaechen dieser App stimmt das - sie sind Verlaeufe aus
+  // zwei fast gleichen Farben. Fuer einen Verlauf von Schwarz nach Weiss waere der
+  // Mittelwert eine Beruhigung und keine Messung, und fuer die vier Schraubenkoepfe
+  // (radial-gradient) wiegt der Mittelwert einen kleinen Kreis so schwer wie die ganze
+  // Flaeche. Hier liegen sie hinter der deckenden Ebene und zaehlen deshalb gar nicht.
+
+  // "over" mit Deckkraft. stMix() kann das nicht: es gibt drei Kanaele zurueck und setzt
+  // voraus, dass der Grund deckend ist - hier ist er es unterwegs gerade nicht.
+  function stUeber(vorn, hinten) {
+    const av = vorn[3] === undefined ? 1 : vorn[3];
+    const ah = hinten[3] === undefined ? 1 : hinten[3];
+    const a = av + ah * (1 - av);
+    if (a <= 0) return [0, 0, 0, 0];
+    return [0, 1, 2].map((i) => (vorn[i] * av + hinten[i] * ah * (1 - av)) / a).concat([a]);
+  }
+
+  // Die Ebenen trennen. Nicht mit split(','): jeder Verlauf enthaelt selbst Kommata, und
+  // "linear-gradient(rgb(255, 255, 255)" waere die erste "Ebene".
+  function stLagen(bild) {
+    const s = String(bild), out = [];
+    let tiefe = 0, start = 0;
+    for (let i = 0; i < s.length; i++) {
+      const c = s[i];
+      if (c === '(') tiefe++;
+      else if (c === ')') tiefe--;
+      else if (c === ',' && tiefe === 0) { out.push(s.slice(start, i)); start = i + 1; }
+    }
+    out.push(s.slice(start));
+    return out;
+  }
+
+  function stLageFarbe(lage) {
+    const stopps = String(lage).match(/rgba?\([^)]+\)/g);
+    if (!stopps || !stopps.length) return null;
+    const su = [0, 0, 0, 0];
+    let n = 0;
+    for (const st of stopps) {
+      const q = stParse(st);
+      if (!q) continue;
+      su[0] += q[0]; su[1] += q[1]; su[2] += q[2]; su[3] += q[3];
+      n++;
+    }
+    return n ? [su[0] / n, su[1] / n, su[2] / n, su[3] / n] : null;
+  }
+
+  function stBildFarbe(bild) {
+    if (!bild || bild === 'none' || bild.indexOf('gradient') < 0) return null;
+    // Von vorn sammeln, hinter der ersten deckenden Ebene aufhoeren.
+    const lagen = [];
+    for (const lage of stLagen(bild)) {
+      const f = stLageFarbe(lage);
+      if (!f) continue;
+      lagen.push(f);
+      if (f[3] >= 0.999) break;
+    }
+    if (!lagen.length) return null;
+    // Von hinten nach vorn ueberlagern, genau wie der Browser malt.
+    let unten = lagen[lagen.length - 1];
+    for (let i = lagen.length - 2; i >= 0; i--) unten = stUeber(lagen[i], unten);
+    return unten;
+  }
+
   function stBackdrop(el) {
     // Von unten nach oben ueberlagern, bis eine deckende Flaeche kommt. Der erste
     // nicht-transparente Hintergrund allein genuegt nicht: eine halbdurchsichtige Flaeche
@@ -30348,9 +30506,16 @@
     // die Karte hinter ihm statt gegen sein eigenes Gruen.
     const kette = [];
     for (let n = el; n && n.nodeType === 1; n = n.parentElement) {
-      const bg = stParse(getComputedStyle(n).backgroundColor);
+      const cs = getComputedStyle(n);
+      const bild = stBildFarbe(cs.backgroundImage);
+      const bg = stParse(cs.backgroundColor);
+      // BILD VOR FARBE in die Kette. Sie wird weiter unten von HINTEN nach vorn ueberlagert,
+      // ein hoeherer Index liegt also weiter hinten - und der Browser malt das
+      // Hintergrundbild ueber die Hintergrundfarbe. Andersherum eingereiht waere die
+      // Reihenfolge genau verkehrt, und bei einer halbdurchsichtigen Ebene faellt das auf.
+      if (bild && bild[3] > 0) kette.push(bild);
       if (bg && bg[3] > 0) kette.push(bg);
-      if (bg && bg[3] >= 0.999) break;
+      if ((bild && bild[3] >= 0.999) || (bg && bg[3] >= 0.999)) break;
     }
     let unten = [0, 0, 0];
     for (let i = kette.length - 1; i >= 0; i--) unten = stMix(kette[i], unten);
@@ -30366,6 +30531,16 @@
       // Unsichtbares und Abgeschaltetes ist ausgenommen: 1.4.3 gilt nicht fuer
       // deaktivierte Bedienelemente, und was niemand sieht, muss nichts erfuellen.
       if (el.disabled || el.closest('[hidden]') || el.closest('.tabpage:not(.active)')) continue;
+      // LOGOTYPEN SIND AUSGENOMMEN, und das steht so in der Norm: WCAG 1.4.3 nennt Text,
+      // der Teil eines Logos oder Markennamens ist, ausdruecklich als Ausnahme vom
+      // Mindestkontrast. Die Marke auf dem Armaturenbrett ist eingeaetzt und soll leise
+      // sein - sie ist Zierde und traegt keine Auskunft.
+      //
+      // Aufgefallen ist sie erst mit dem Ebenenleser weiter oben. Vorher mass der Pruefer
+      // an dieser Stelle gegen den schwarzen body statt gegen den hellen Schirm und kam auf
+      // einen Wert, der zufaellig durchging - die Ausnahme ist also neu aufgeschrieben und
+      // nicht neu erfunden.
+      if (el.closest('.gt3-marke')) continue;
       const cs = getComputedStyle(el);
       if (cs.display === 'none' || cs.visibility === 'hidden' || +cs.opacity === 0) continue;
       const vg = stParse(cs.color);
@@ -32442,6 +32617,151 @@
     return { ok: schlecht.length === 0,
              mass: 'Anteil am Phasendeckel in Kurven: ' + teile.join(', ')
                  + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // ---- Die Waehltaste, in einer FOLGE gefahren ----
+  //
+  // DER GEMELDETE FEHLER WAR EINE FOLGE und kein Einzelzustand: einmal X im Boxenmenue,
+  // danach war X auf dem Cockpitschirm dauerhaft taub. Jeder Test, der die zwei Schirme
+  // einzeln prueft und dazwischen zuruecksetzt, sieht davon nichts - beide Haelften waren
+  // ja fuer sich in Ordnung. Gemeldet mit genau dieser Beobachtung: "X funktioniert im Pit
+  // Menue wie er soll."
+  //
+  // Die Ursache war ein Merker, der "in diesem Druck ist die Sekunde schon voll gewesen"
+  // heisst und nur auf der naechsten STEIGENDEN Flanke fiel. Der Boxenschirm verbrauchte
+  // diese Flanke, also fiel er nie mehr.
+  //
+  // Gefahren wird die WIRKLICHE Logik ueber OMEGA_TEST.flagTaste, nicht eine zweite Fassung
+  // davon. Und ausdruecklich ohne die Sekunde vollzumachen: geprueft wird, ob der Druck
+  // ANGENOMMEN wird - eine ausgeloeste gelbe Flagge braemste jedes Auto im Feld auf 40 km/h
+  // und liesse einen Zustand zurueck, den der naechste Test vorfaende.
+  stAdd('Waehltaste: nach dem Boxenmenue nimmt der Cockpitschirm sie wieder', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.flagTaste || !OMEGA_TEST.schirmZu) {
+      return { skip: true, mass: 'Waehltaste nicht erreichbar' };
+    }
+    const merk = OMEGA_TEST.schirmIst();
+    const schlecht = [];
+    let schritte = 0;
+    try {
+      // (a) Auf dem Cockpitschirm nimmt sie den Druck an und laedt.
+      OMEGA_TEST.schirmZu('main');
+      OMEGA_TEST.flagTaste(false);
+      OMEGA_TEST.flagTaste(true);
+      schritte++;
+      if (!OMEGA_TEST.flagLage().haelt) schlecht.push('a: laedt auf main nicht');
+      OMEGA_TEST.flagTaste(false);
+      schritte++;
+      if (OMEGA_TEST.flagLage().haelt) schlecht.push('a: laedt nach dem Loslassen weiter');
+
+      // (b) Auf dem Boxenschirm waehlt sie und laedt AUSDRUECKLICH nicht.
+      //
+      // AUF DER MISCHUNGSZEILE und nicht auf der obersten: die oberste ruft den Boxenstopp,
+      // und ein Selbsttest, der einen Stopp scharfstellt, hinterlaesst einen Zustand, den
+      // der naechste Test vorfindet. Die Mischung ist die einzige Zeile, deren Wirkung sich
+      // vollstaendig zuruecknehmen laesst - vier Mischungen, viermal weiter ist daheim.
+      // HINGEZAEHLT UND NICHT ANGENOMMEN. Erste Fassung tippte zweimal nach unten und
+      // rechnete mit Zeile 0 als Ausgangspunkt - die Auswahl stand aber auf 4, weil ein
+      // frueherer Test sie dort gelassen hatte. Der Test schlug dann mit "hat gar nichts
+      // gewaehlt" fehl, und das war wahr: er hatte auf der Reparaturzeile gedrueckt.
+      // Ein Test, der den Zustand seiner Vorgaenger voraussetzt, misst die Reihenfolge.
+      OMEGA_TEST.schirmZu('pit');
+      const selMerk = OMEGA_TEST.schirmAuswahl();
+      const zielSel = PIT_SCREEN_ROWS.findIndex((z) => z.art === 'wahl');
+      for (let k = 0; k < PIT_SCREEN_ROWS.length
+                      && OMEGA_TEST.schirmAuswahl() !== zielSel; k++) {
+        OMEGA_TEST.schirmPad('down');
+      }
+      if (OMEGA_TEST.schirmAuswahl() !== zielSel) schlecht.push('b: Mischungszeile nicht erreicht');
+      const heim = pitMischungWahl();
+      OMEGA_TEST.flagTaste(true);
+      schritte++;
+      if (OMEGA_TEST.flagLage().haelt) schlecht.push('b: laedt im Boxenmenue');
+      OMEGA_TEST.flagTaste(false);
+      schritte++;
+      // Dass sie ueberhaupt gewaehlt hat. Ohne diese Gegenprobe koennte der Schirm die
+      // Taste schlicht verschlafen, und (c) waere trivial gruen.
+      if (pitMischungWahl() === heim) schlecht.push('b: hat gar nichts gewaehlt');
+      for (let k = 0; k < 4 && pitMischungWahl() !== heim; k++) {
+        OMEGA_TEST.flagTaste(true); OMEGA_TEST.flagTaste(false); schritte += 2;
+      }
+      if (pitMischungWahl() !== heim) schlecht.push('b: Mischung nicht zurueckgestellt');
+      for (let k = 0; k < PIT_SCREEN_ROWS.length
+                      && OMEGA_TEST.schirmAuswahl() !== selMerk; k++) {
+        OMEGA_TEST.schirmPad('up');
+      }
+
+      // (c) DIE FOLGE. Zurueckblaettern, wieder druecken - und sie muss wieder laden.
+      OMEGA_TEST.schirmZu('main');
+      OMEGA_TEST.flagTaste(true);
+      schritte++;
+      if (!OMEGA_TEST.flagLage().haelt) {
+        schlecht.push('c: taub nach einem Druck im Boxenmenue - GENAU DER GEMELDETE FEHLER');
+      }
+      if (OMEGA_TEST.flagLage().gesperrt) schlecht.push('c: Sperre steht noch');
+      OMEGA_TEST.flagTaste(false);
+      schritte++;
+    } catch (e) {
+      schlecht.push('Ausnahme: ' + e.message);
+    } finally {
+      OMEGA_TEST.flagTaste(false);
+      OMEGA_TEST.schirmZu(merk);
+    }
+    return { ok: !schlecht.length,
+             mass: schritte + ' Tastenflanken gefahren'
+                 + (schlecht.length ? ' || ' + schlecht.join('; ') : ' | Folge sauber') };
+  });
+
+  // ---- Die Boxenzeilen sagen ja oder nein, und ein Ja hellt die Zeile auf ----
+  //
+  // EIN VOKABULAR FUER EINE FRAGE. Hier standen vier Woerter - "vorgewaehlt"/"aus" vor dem
+  // Stopp, "wird gemacht"/"abgewaehlt" waehrenddessen -, und "aus" hiess an dieser Stelle
+  // etwas anderes als das "aus" der Reifensimulation zwei Zeilen weiter.
+  stAdd('Boxenzeilen: ja oder nein, und ja ist heller', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.schirmZu) return { skip: true, mass: 'kein Boxenschirm' };
+    const merk = OMEGA_TEST.schirmIst();
+    const schlecht = [];
+    const erlaubt = [t('ja'), t('nein'), t('Sim aus')];
+    let geprueft = 0, hell = 0;
+    try {
+      OMEGA_TEST.schirmZu('pit');
+      for (const z of PIT_SCREEN_ROWS) {
+        if (z.art === 'aktion' || z.art === 'wahl') continue;
+        const w = document.getElementById(z.wert);
+        const zeile = document.getElementById(z.el);
+        if (!w || !zeile) { schlecht.push(z.id + ': Zeile fehlt'); continue; }
+        geprueft++;
+        const wort = (w.textContent || '').trim();
+        if (erlaubt.indexOf(wort) < 0) schlecht.push(z.id + ': sagt "' + wort + '"');
+        // Und die Aufhellung sagt dasselbe wie das Wort. Zwei Traeger einer Aussage duerfen
+        // sich nicht widersprechen - sonst ist der, den man aus dem Augenwinkel liest, der
+        // falsche.
+        const ja = zeile.classList.contains('pr-ja');
+        if (ja) hell++;
+        if (ja !== (wort === t('ja'))) schlecht.push(z.id + ': Aufhellung und Wort uneins');
+      }
+      // Die Aufhellung muss auch WIRKEN: ein Hintergrund, den eine ungueltige Deklaration
+      // verschluckt hat, ist keine Aufhellung. Geprueft am gerechneten Wert, nicht am
+      // Regelwerk - genau die Falle, die in 0.5.17 den GT3-Schirm durchsichtig liess.
+      const probe = document.getElementById(PIT_SCREEN_ROWS.find((z) => z.id === 'tyres').el);
+      if (probe) {
+        const hatte = probe.classList.contains('pr-ja');
+        probe.classList.remove('pr-ja');
+        const roh = getComputedStyle(probe).backgroundImage;
+        probe.classList.add('pr-ja');
+        const mit = getComputedStyle(probe).backgroundImage;
+        probe.classList.toggle('pr-ja', hatte);
+        if (mit === 'none') schlecht.push('pr-ja loescht den Hintergrund (ungueltige Deklaration)');
+        else if (mit === roh) schlecht.push('pr-ja aendert den Hintergrund nicht');
+      }
+    } catch (e) {
+      schlecht.push('Ausnahme: ' + e.message);
+    } finally {
+      OMEGA_TEST.schirmZu(merk);
+      pitScreenRender();
+    }
+    return { ok: !schlecht.length,
+             mass: geprueft + ' Arbeitszeilen, ' + hell + ' davon hell'
+                 + (schlecht.length ? ' || ' + schlecht.join('; ') : ' | ein Vokabular') };
   });
 
   // ---- Controller-Vibration: ein Schalter je Ausloeser ----

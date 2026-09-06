@@ -43,7 +43,16 @@
     schirmZu(id) { cockpitScreenZu(id); return cockpitScreenIst().id; },
     // Und der Weg, den das Steuerkreuz wirklich nimmt - nicht nur die Registry.
     schirmPad(dir) { return pitScreenPad(dir); },
-    schirmWaehlen() { return pitScreenSelect(); },
+    // UEBER DEN VERTEILER und nicht direkt auf pitScreenSelect(): gefragt ist, was die
+    // Taste auf dem GERADE offenen Schirm tut, und genau diese Entscheidung war der Ort
+    // des gemeldeten Fehlers. Ein Zugang, der sie ueberspringt, prueft die falsche Sache.
+    schirmWaehlen() { return cockpitScreenWaehlen(); },
+    // Die Waehltaste selbst, so wie pollGamepad sie sieht: true heisst gedrueckt. Damit
+    // laesst sich eine FOLGE fahren - druecken, loslassen, blaettern, wieder druecken -,
+    // und nur in einer Folge war der Fehler zu sehen.
+    flagTaste(gedrueckt) { flagTasteTick(!!gedrueckt); },
+    flagLage() { return { haelt: flagHoldStart !== null, gesperrt: padFlagFired,
+                          stand: flagState }; },
     schirmAuswahl() { return pitScreenSel; },
     // ---- Lassen die Vibrationsschalter das Richtige durch? -------------------------
     //

@@ -789,7 +789,14 @@
      schwarzen Kacheln. Die Wolken bleiben weiss - auf Schwarz ist das der beste Kontrast,
      den es gibt -, und der Regen wird etwas heller, weil er sonst im Grund verschwindet. */
   body[data-cockpit="gt3"] {
-    --gt3-tile: #000000;
+    /* EIN VERLAUF AUS ZWEI GLEICHEN FARBEN und nicht #000000 - gerendert dasselbe
+       Schwarz, aber ueberlagerbar. Eine reine Farbe in einer background-image-Liste macht
+       die GANZE Deklaration ungueltig; wer diese Variable also mit einer zweiten Ebene
+       ueberlagert (die Zeilenaufhellung im Boxenschirm tut das), bekaeme in genau DIESER
+       Ansicht gar keinen Hintergrund. Dieselbe Falle hat in 0.5.17 den GT3-Schirm
+       durchsichtig gemacht, und dort war sie nach der Ansicht verschieden - also die Art
+       Fehler, die man an vier von fuenf Staenden nicht sieht. */
+    --gt3-tile: linear-gradient(#000000, #000000);
     --gt3-tile-ink: #ffffff;
     /* Auch die SCHIRMtinte auf reines Weiss, nicht nur die der Kacheln: sonst stuende
        weisser Text in schwarzen Kacheln und blaeulicher daneben, und die Ansicht waere
@@ -1600,6 +1607,24 @@
   /* DIE MARKIERUNG ALS OUTLINE, nicht als Rahmen: sie malt AUSSERHALB des Innenrings, den
      pit-on/pit-off schon tragen, und kostet kein Layout. Dazu ein Zeichen, weil Farbe
      allein keine Kennung ist - dieselbe Ueberlegung wie bei den Autofarben. */
+  /* "JA" HELLT DIE GANZE ZEILE AUF, auf Bitte. Der Ring aus pit-on/pit-off sagt
+     dasselbe, aber erst waehrend eines Stopps und nur als 2-px-Linie - die Aufhellung
+     traegt die Antwort auch davor und ist aus dem Augenwinkel zu lesen.
+
+     ALS ZWEITE HINTERGRUNDEBENE und nicht als inset-box-shadow: den traegt pit-on/pit-off
+     schon als Ring, und zwei box-shadow-Deklarationen stapeln sich nicht - die spaetere
+     loescht die fruehere, und der gruene Ring waere weg.
+
+     Die Ebene ist ein Verlauf aus zwei gleichen Farben und keine blosse Farbe, aus dem
+     Grund, der eine Bildschirmhoehe weiter oben bei --gt3-tile steht.
+
+     WEISS UND NICHT SCHWARZ: --gt3-tile ist in allen fuenf Ansichten dunkel und
+     --gt3-tile-ink in allen fuenf hell. Aufhellen entfernt sich also vom Grund und
+     naehert sich nicht der Schrift; der Kontrastlauf misst es nach. */
+  .pit-row.pr-ja {
+    background-image: linear-gradient(rgba(255, 255, 255, .11), rgba(255, 255, 255, .11)),
+                      var(--gt3-tile);
+  }
   .pit-row.pr-sel { outline: 2px solid var(--gt3-tile-ink); outline-offset: -2px; }
   .pit-row.pr-sel > .pr-pfeil { opacity: 1; }
 
@@ -7156,7 +7181,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.5.18</span></span>
+    <span class="foot-ver">v<span id="app-version">0.5.29</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine

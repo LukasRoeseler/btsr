@@ -1589,24 +1589,16 @@
       "done",
     "Sim aus":
       "sim off",
-    "wird gemacht":
-      "will be done",
-    "abgewählt":
-      "deselected",
-    "vorgewählt":
-      "pre-selected",
+    "ja":
+      "yes",
+    "nein":
+      "no",
     "weich":
       "soft",
     "mittel":
       "medium",
     "hart":
       "hard",
-    "Vorgewählt: tanken":
-      "Pre-selected: refuel",
-    "Vorgewählt: Reifen":
-      "Pre-selected: tyres",
-    "Vorgewählt: reparieren":
-      "Pre-selected: repair",
     "Reifen montiert":
       "Tyres fitted",
     "kein Rennen":

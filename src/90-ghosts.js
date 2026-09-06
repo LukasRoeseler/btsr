@@ -1954,6 +1954,52 @@
     else if (flagState === 'yellow') yellowRestart();
   }
 
+  // ---- Was die Waehltaste bedeutet, entscheidet der SCHIRM ---------------------------
+  //
+  // Auf dem Cockpitschirm laedt sie die gelbe Flagge, auf jedem anderen waehlt sie dort und
+  // die Flagge gibt es nicht. Eine Regel, die man in einem Satz sagen kann - und ablesbar an
+  // dem Schirm, in den man ohnehin sieht.
+  //
+  // ALS EIGENE FUNKTION und nicht als Block in pollGamepad, damit eine Pruefung genau diese
+  // Logik fahren kann statt einer nachgebauten zweiten Fassung. Die Vorlaeufer-Fassung stand
+  // im Gamepad-Zweig, und der Test aus dem Plan ("X waehlt, und die Flagge laedt dabei
+  // nicht") ist deshalb nie gebaut worden: es gab nichts, was man haette aufrufen koennen.
+  // Der Prueffstand rief stattdessen pitScreenSelect() direkt - also am Entscheidungsweg
+  // vorbei, und damit haette er den gemeldeten Fehler auch dann nicht gesehen, wenn es ihn
+  // gegeben haette. Es gab ihn.
+  //
+  // Sie liest die GEBUNDENE Flaggenaktion und nicht fest Knopf 0. Wer die Flagge auf Dreieck
+  // legt, waehlt dann mit Dreieck - ein fest verdrahteter Knopf 0 waere eine zweite
+  // Bedeutung auf einer Taste, die das Schaubild als "nicht belegt" zeigt.
+  //
+  // UND AUSDRUECKLICH KEINE UNTERSCHEIDUNG NACH HALTEDAUER. Genau das war bis v0.5.1 gebaut
+  // - Quadrat trug Runterschalten UND die Flagge - und ist als Fehler zurueckgenommen
+  // worden. Der Ladebalken startet auf den anderen Schirmen gar nicht erst, statt bei 40
+  // Prozent stehenzubleiben.
+  function flagTasteTick(flagNow) {
+    if (cockpitScreenIst().id !== 'main') {
+      if (flagNow && !prevYellowFlag) cockpitScreenWaehlen();
+    } else {
+      if (flagNow && !prevYellowFlag) { padFlagFired = false; flagHoldPress(); }
+      if (flagNow && !padFlagFired && flagHoldStart !== null
+          && Date.now() - flagHoldStart >= FLAG_HOLD_MS) {
+        padFlagFired = true;
+        flagHoldRelease(true);
+      }
+      if (!flagNow && prevYellowFlag) flagHoldRelease(false);
+    }
+    // DIE SPERRE FAELLT BEIM LOSLASSEN, und das ist die Behebung eines gemeldeten Fehlers.
+    // padFlagFired heisst "in DIESEM Druck ist die Sekunde schon voll gewesen", also endet
+    // sie mit dem Druck. Vorher fiel sie nur auf der naechsten STEIGENDEN Flanke - und die
+    // konnte der Boxenschirm verbrauchen, bevor diese Zeile sie sah. Ein einziger Druck im
+    // Boxenmenue liess den Merker also stehen, und jeder weitere Druck auf dem Cockpitschirm
+    // lief in eine Bedingung, die ihn nicht mehr durchliess: X war fuer die gelbe Flagge
+    // dauerhaft taub, im Boxenmenue aber weiter in Ordnung. Genau so gemeldet, und genau
+    // daran zu erkennen.
+    if (!flagNow) padFlagFired = false;
+    prevYellowFlag = flagNow;
+  }
+
   // ---- Gelbe Flagge ----
   // Wie in der Original-App: alles rollt langsam und mittig weiter, keiner ueberholt, die
   // Lichter blinken. Genau die Phase, in der man ein Auto von Hand zurueckstellt.
@@ -3963,30 +4009,7 @@
       // zweite Fassung der Logik: flagHoldPress startet den Ladebalken, flagHoldRelease(true)
       // loest aus. Zu frueh losgelassen passiert nichts - ein halber Druck darf keine halbe
       // Wirkung haben.
-      const flagNow = readBindingValue(pad, bindings.yellowflag) > BUTTON_CAPTURE_THRESHOLD;
-      // ---- Am Boxenschirm waehlt diese Taste, und zwar GANZ ---------------------------
-      //
-      // Sie liest die GEBUNDENE Flaggenaktion und nicht fest Knopf 0. Wer die Flagge auf
-      // Dreieck legt, waehlt dann mit Dreieck - ein fest verdrahteter Knopf 0 waere eine
-      // zweite Bedeutung auf einer Taste, die das Schaubild als "nicht belegt" zeigt.
-      //
-      // UND AUSDRUECKLICH KEINE UNTERSCHEIDUNG NACH HALTEDAUER. Genau das war bis v0.5.1
-      // gebaut - Quadrat trug Runterschalten UND die Flagge - und ist als Fehler
-      // zurueckgenommen worden. Der Ladebalken startet am Boxenschirm gar nicht erst, statt
-      // bei 40 Prozent stehenzubleiben. Wer dort Gelb geben will, blaettert zurueck; das ist
-      // eine Regel, die man in einem Satz sagen kann.
-      if (flagNow && !prevYellowFlag && pitScreenSelect()) {
-        padFlagFired = true;              // kein Halten offen, also auch kein Loslassen
-      } else if (!padFlagFired || !flagNow) {
-        if (flagNow && !prevYellowFlag) { padFlagFired = false; flagHoldPress(); }
-        if (flagNow && !padFlagFired && flagHoldStart !== null
-            && Date.now() - flagHoldStart >= FLAG_HOLD_MS) {
-          padFlagFired = true;
-          flagHoldRelease(true);
-        }
-        if (!flagNow && prevYellowFlag && !padFlagFired) flagHoldRelease(false);
-      }
-      prevYellowFlag = flagNow;
+      flagTasteTick(readBindingValue(pad, bindings.yellowflag) > BUTTON_CAPTURE_THRESHOLD);
 
       const resetNow = readBindingValue(pad, bindings.resetcar) > BUTTON_CAPTURE_THRESHOLD;
       if (resetNow && !prevResetCar) resetCarState();

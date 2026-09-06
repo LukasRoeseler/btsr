@@ -3651,9 +3651,11 @@
       // makePitPlan() beim Scharfstellen. Genau dafuer ist der Schirm waehrend der Fahrt da.
       const jetzt = pitVorwahlIst(zeile.id);
       pitVorwahl[zeile.id] = !jetzt;
-      showHudToast(t(zeile.id === 'refuel' ? 'Vorgewählt: tanken'
-                     : zeile.id === 'tyres' ? 'Vorgewählt: Reifen'
-                     : 'Vorgewählt: reparieren') + ' ' + (!jetzt ? 'AN' : 'AUS'));
+      // DIESELBEN ZWEI WOERTER wie in der Zeile. Eine Meldung, die "AN" sagt, waehrend
+      // die Zeile darunter "ja" zeigt, ist ein drittes Vokabular fuer dieselbe Frage.
+      showHudToast(t(zeile.id === 'refuel' ? 'Tanken'
+                     : zeile.id === 'tyres' ? 'Reifen wechseln'
+                     : 'Reparieren') + ': ' + t(!jetzt ? 'ja' : 'nein'));
     }
     pitScreenRender();
     return true;
@@ -3703,6 +3705,11 @@
       // der groesseren Schrift passte die nicht mehr in eine Spalte - abgeschnitten wurde
       // ausgerechnet das Wort am Ende, also der Zustand.
       const teil = pitZeilenWert(z);
+      // JA HELLT DIE GANZE ZEILE AUF, auf Bitte. Der Ring aus pit-on/pit-off sagt dasselbe,
+      // aber erst waehrend eines Stopps und nur als 2-px-Linie; die Aufhellung traegt die
+      // Antwort auch davor und ist aus dem Augenwinkel zu lesen - und das ist die Lage, in
+      // der man einen Boxenschirm liest.
+      if (el) el.classList.toggle('pr-ja', teil.ja === true);
       schreibeWert($('pit-zahl-' + z.id), teil.zahl);
       schreibeWert(w, teil.wort);
     }
@@ -3791,11 +3798,19 @@
       const w = st.tyreWear4 ? Math.max.apply(null, st.tyreWear4) : st.tyreWear;
       zahl = Math.round(100 - w * 100) + '%';
     }
-    if (!pitJobAvailable(z.id)) return { zahl, wort: t('Sim aus') };
-    if (pitState === 'servicing' && pitPlan) {
-      return { zahl, wort: pitPlan[z.id] ? t('wird gemacht') : t('abgewählt') };
-    }
-    return { zahl, wort: pitVorwahlIst(z.id) ? t('vorgewählt') : t('aus') };
+    if (!pitJobAvailable(z.id)) return { zahl, wort: t('Sim aus'), ja: false };
+    // JA ODER NEIN auf die Frage, die die Zeile stellt - und dieselben zwei Woerter
+    // waehrend eines Stopps wie davor. Hier standen vier: "vorgewaehlt"/"aus" davor,
+    // "wird gemacht"/"abgewaehlt" waehrenddessen. Gemeldet als "verstehe ich nicht", und
+    // das war keine Geschmacksfrage: "aus" hiess an dieser Stelle etwas anderes als das
+    // "aus" der Reifensimulation zwei Zeilen weiter, und der Leser musste raten, welches.
+    //
+    // Der Unterschied zwischen Plan und Ausfuehrung geht dabei nicht verloren - er steht
+    // eine Zeile hoeher, wo "Boxenstopp einleiten" bereit, Boxengasse, Arbeit laeuft oder
+    // fertig sagt. Ihn hier ein zweites Mal zu tragen hiess, ihn zweimal lesen zu muessen,
+    // um einmal zu wissen, ob getankt wird.
+    const ja = (pitState === 'servicing' && pitPlan) ? !!pitPlan[z.id] : pitVorwahlIst(z.id);
+    return { zahl, wort: ja ? t('ja') : t('nein'), ja };
   }
 
   // ---- Rennuebersicht ----------------------------------------------------------------
