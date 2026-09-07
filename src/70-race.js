@@ -117,6 +117,7 @@
   function raceClockTick() {
     if (raceState !== 'racing') return;
     maybeSwitchRaceWeather();
+    wxWechselTick();
     const el = $('race-clock');
     if (el) {
       if (!RACE_MODES[raceMode].timed) {
@@ -616,11 +617,52 @@
   // there is no known end time, so a fixed window from the start is used instead.
   function scheduleRaceWeatherChange() {
     raceWxSwitchAt = null;
+    wxWechselAt = null;
+    // WECHSELHAFT GEWINNT. Der einmalige Wechsel bleibt aus, siehe die Begruendung bei
+    // wxWechselPlanen().
+    if (raceWxStart === 'wechsel') { wxWechselPlanen(false); return; }
     if (!raceWxChange) return;
     const total = RACE_MODES[raceMode].timed && raceMode !== 'laps'
       ? raceLimit * 60000
       : 5 * 60000;   // practice / lap races: assume a five-minute window
     raceWxSwitchAt = Date.now() + total * (0.35 + Math.random() * 0.3);
+  }
+
+  // ---- WECHSELHAFT ------------------------------------------------------------------
+  //
+  // Eine dritte Kategorie neben trocken und Regen, wie bestellt: alle 2 bis 6 Minuten faengt
+  // es an zu regnen, der Schauer dauert 1 bis 3 Minuten, dann trocknet es ab. Beide Zeiten
+  // werden je Phase neu GEZOGEN - ein fester Takt waere ein Metronom und kein Wetter.
+  //
+  // SIE SCHLIESST DEN EINMALIGEN WECHSEL AUS. "Wetter aendert sich" macht genau einen
+  // Wechsel zu einem zufaelligen Zeitpunkt; beides zugleich hiesse, dass mitten in einem
+  // Schauer noch ein Wechsel dazwischenfaehrt und die Phasenrechnung nicht mehr sagt, was
+  // gerade gilt. Wechselhaft gewinnt, und der Hilfetext sagt das.
+  //
+  // WARUM MINUTEN UND NICHT RUNDEN: ein Schauer haengt nicht daran, wie schnell jemand
+  // faehrt. Bei einem Rennen ueber drei Runden wird man ihn moeglicherweise nie sehen - das
+  // ist richtig so und keine Fehlfunktion.
+  const WX_TROCKEN_MIN_MS = 2 * 60000;
+  const WX_TROCKEN_MAX_MS = 6 * 60000;
+  const WX_REGEN_MIN_MS = 1 * 60000;
+  const WX_REGEN_MAX_MS = 3 * 60000;
+  let wxWechselAt = null;
+
+  function wxWechselPlanen(nass) {
+    const min = nass ? WX_REGEN_MIN_MS : WX_TROCKEN_MIN_MS;
+    const max = nass ? WX_REGEN_MAX_MS : WX_TROCKEN_MAX_MS;
+    wxWechselAt = Date.now() + min + Math.random() * (max - min);
+  }
+
+  function wxWechselTick() {
+    if (raceWxStart !== 'wechsel' || wxWechselAt === null) return;
+    if (Date.now() < wxWechselAt) return;
+    const warNass = weather === 'rain';
+    setWeather(warNass ? 'dry' : 'rain');
+    showHudToast(warNass ? t('Es trocknet ab') : t('Es fängt an zu regnen'));
+    log('Wechselhaft: ' + (warNass ? 'es trocknet ab' : 'Schauer'), 'info');
+    // Die naechste Phase ist die andere - also die Dauer der NEUEN Lage ziehen.
+    wxWechselPlanen(!warNass);
   }
 
   function maybeSwitchRaceWeather() {
@@ -818,7 +860,9 @@
     }
     // Starting conditions, applied before the lights: weather first, because the tyre
     // choice follows from it, then the tank, then the pit-stop counter.
-    setWeather(raceWxStart);
+    // 'wechsel' ist keine Lage, sondern ein Verlauf: er beginnt trocken. setWeather() mit
+    // 'wechsel' zu rufen waere ein Wetter, das es nicht gibt.
+    setWeather(raceWxStart === 'rain' ? 'rain' : 'dry');
     fuel = Math.max(0, Math.min(100, raceFuelStartL / FUEL_TANK_LITERS * 100));
     updateDamageFuelUI();
     racePitDone = 0;
@@ -1427,8 +1471,12 @@
     lines.push('');
     lines.push('Rennbedingungen;Wert');
     lines.push(`Modus;${RACE_MODES[raceMode].label}`);
-    lines.push(`Wetter zu Beginn;${raceWxStart === 'rain' ? 'Regen' : 'trocken'}`);
-    lines.push(`Wetterwechsel;${raceWxChange ? 'ja' : 'nein'}`);
+    // Die dritte Kategorie MIT: eine Ausfuhr, die "wechselhaft" als "trocken" auffuehrt,
+    // behauptet ueber das gefahrene Rennen etwas Falsches.
+    lines.push(`Wetter zu Beginn;${raceWxStart === 'rain' ? 'Regen'
+      : raceWxStart === 'wechsel' ? 'wechselhaft' : 'trocken'}`);
+    lines.push(`Wetterwechsel;${raceWxStart === 'wechsel' ? 'laufend'
+      : raceWxChange ? 'ja' : 'nein'}`);
     lines.push(`Tank beim Start (l);${raceFuelStartL}`);
     // On/off track goes into the export because it is the one figure that says whether the
     // lap times above describe driving on a track at all.

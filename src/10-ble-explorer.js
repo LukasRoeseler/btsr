@@ -1571,6 +1571,26 @@
       "How hard the car steers against a slide, measured from the rotation signal in byte 3 of the notifications. 50 per cent is the default that was asked for. What is uncertain about it, and it is two things at once: the signal is unconfirmed – it only varies once the car is moving, and flipped sign with cornering direction in exactly one recording. And it is uncalibrated: its scale is self-adjusting because the real amplitude is unknown. So the strength depends on the largest yaw value the session has seen so far. The “Drift probe” button under “Measure lateral offset” measures whether the signal moves at all under straight full throttle.",
     "Rennen":
       "Race",
+    "Trocken, Regen – oder wechselhaft: dann beginnt es trocken, und alle 2 bis 6 Minuten fällt ein Schauer von 1 bis 3 Minuten. Beide Zeiten werden je Phase neu gezogen. Bei einem kurzen Rennen kann es sein, dass man keinen Schauer sieht – ein Schauer hängt nicht daran, wie viele Runden gefahren werden.":
+      "Dry, rain – or changeable: it then starts dry, and every 2 to 6 minutes a shower falls for 1 to 3 minutes. Both durations are drawn afresh each phase. In a short race you may well see no shower at all – a shower does not depend on how many laps are run.",
+    "Wechselt einmal zu einem zufälligen Zeitpunkt. Bei „wechselhaft“ bleibt dieser Schalter ohne Wirkung: dort wechselt es ohnehin laufend, und ein zusätzlicher Wechsel mitten im Schauer würde die Phasen durcheinander bringen.":
+      "Changes once at a random moment. With “changeable” this switch has no effect: it changes constantly there anyway, and an extra change in the middle of a shower would confuse the phases.",
+    "Wechselhaft":
+      "Changeable",
+    "Es trocknet ab":
+      "It is drying out",
+    "Es fängt an zu regnen":
+      "It is starting to rain",
+    "Ghost: Feld zusammenhalten":
+      "Ghost: keep the field together",
+    "Gestaffelt über den ganzen Platz: der Erste fährt um den Abschlag langsamer, der Letzte um denselben Betrag schneller, die Feldmitte unverändert. Damit bleibt das mittlere Tempo gleich – würde nur gebremst, wäre dies in Wahrheit ein Schalter, der alle langsamer macht. Vorher wirkte es nur auf den Erstplatzierten, und dann waren die ersten beiden beieinander und der Rest blieb, wo er war. Wirkt auch ohne Rennen, aber erst ab zwei Ghosts: mit einem einzigen ist dieser eine gleichzeitig Erster und Letzter.":
+      "Graded across the whole order: the leader drives slower by the margin, the last car faster by the same amount, the middle of the field unchanged. That keeps the average pace the same \u2013 if it only braked, this would in truth be a switch that makes everyone slower. Before, it acted on the leader alone, and then the front two were together and the rest stayed where they were. Works outside a race too, but only from two ghosts up: with a single one, that one is first and last at once.",
+    "Ghost: Stärke der Staffel":
+      "Ghost: strength of the grading",
+    "Um wie viel der Erste langsamer und der Letzte schneller fährt.":
+      "By how much the first drives slower and the last faster.",
+    "Ab Werk aus. Sie greift an sechs Stellen gleichzeitig ins Tempo ein, und solange Ortung und Überholen nicht sauber sind, ist sie die Zutat, die jede Beobachtung verrauscht – wer sie einschaltet, weiß danach nicht, ob das Gesehene an ihr lag.":
+      "Off by default. It acts on pace in six places at once, and while localisation and overtaking are not clean, it is the ingredient that adds noise to every observation \u2013 switch it on and you will not know afterwards whether what you saw was down to it.",
     "Boxenstopp einleiten":
       "Call a pit stop",
     "Reifen wechseln":

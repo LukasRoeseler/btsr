@@ -1739,6 +1739,85 @@
     },
     // Beide Linien nebeneinander: die gerechnete aus dem Editor und die Handregel.
     // Damit ist pruefbar, ob sie dasselbe sagen - und wie stark sie sich unterscheiden.
+    // ---- Der Ortungsabgleich, mit einem VORGETAEUSCHTEN echten Versatz --------------
+    //
+    // Nachgestellt wird genau die Lage, die die Ortung falsch macht: die App nimmt an, das
+    // Auto stehe an Start/Ziel (Index 0), in Wahrheit steht es `versatz` Kacheln weiter. Der
+    // gemeldete Code kommt aus der WIRKLICHEN Kachel, der gerechnete Index laeuft von 0 -
+    // und der Abgleich muss die Luecke finden.
+    ortProbe(code, versatz, schritte) {
+      const keep = currentTrackTiles;
+      try {
+        currentTrackTiles = codeToTrack(code || 'SG2H2G2R2G2H2G2R2').tiles;
+        const n = currentTrackTiles.length;
+        const v = ((versatz || 0) % n + n) % n;
+        // MIT GERAET, denn ortAbgleich() meldet die Korrektur ueber garageLabel() - und das
+        // liest den Geraetenamen. Ein nackter Attrappen-Wagen brachte hier einen TypeError:
+        // richtig ist, dass der Prueffstand ein glaubwuerdiges Auto stellt, und nicht, dass
+        // der Fahrcode sich gegen unmoegliche Autos absichert.
+        const car = { tileCode: 0xff, tileAt: Date.now(), tag: 'P',
+                      device: { name: 'Ortprobe', id: 'ortprobe' },
+                      ghost: { tileIndex: 0, laps: 0, tileMs: 800 } };
+        let echt = v;
+        let korrigiertNach = null;
+        const N = schritte || n * 2;
+        for (let s = 0; s < N; s++) {
+          car.tileCode = currentTrackTiles[echt].type;
+          const vor = car.ghost.tileIndex;
+          ortAbgleich(car);
+          if (korrigiertNach === null && car.ghost.tileIndex !== vor) korrigiertNach = s + 1;
+          echt = (echt + 1) % n;
+          car.ghost.tileIndex = (car.ghost.tileIndex + 1) % n;
+        }
+        return { kacheln: n, versatz: v, korrigiertNach,
+                 angewandt: !!car.ghost.ortAngewandt,
+                 stimmt: car.ghost.tileIndex === echt,
+                 index: car.ghost.tileIndex, echt, runden: car.ghost.laps,
+                 stimmen: (car.ghost.ortStimmen || []).slice() };
+      } finally { currentTrackTiles = keep; lineCache = null; }
+    },
+
+    // Stimmen gemeldete Kachel und Layout an dieser Stelle ueberein?
+    ortStimmtProbe(code, index, gemeldet) {
+      const keep = currentTrackTiles;
+      try {
+        currentTrackTiles = codeToTrack(code || 'SG2H2G2R2G2H2G2R2').tiles;
+        const car = { tileCode: gemeldet, tag: 'P',
+                      device: { name: 'Ortprobe', id: 'ortprobe' },
+                      ghost: { tileIndex: index, laps: 0 } };
+        return ortStimmt(car);
+      } finally { currentTrackTiles = keep; lineCache = null; }
+    },
+
+    // ---- Wechselhaftes Wetter, ohne Minuten zu warten ------------------------------
+    //
+    // Die Frist wird in die Vergangenheit gesetzt und der Takt gerufen. Geprueft wird damit
+    // die PHASENFOLGE und die je Phase gezogene Dauer - nicht die Uhr des Rechners, die
+    // hier ohnehin nichts beweisen wuerde.
+    wxWechselProbe(phasen) {
+      const merkStart = raceWxStart, merkWetter = weather, merkAt = wxWechselAt;
+      const out = [];
+      try {
+        raceWxStart = 'wechsel';
+        setWeather('dry');
+        wxWechselPlanen(false);
+        for (let i = 0; i < (phasen || 8); i++) {
+          // Die Dauer, die fuer die LAUFENDE Phase gezogen wurde: wxWechselAt wurde bei
+          // ihrem Beginn auf jetzt + Dauer gesetzt.
+          const nass = weather === 'rain';
+          const dauer = wxWechselAt - Date.now();
+          wxWechselAt = Date.now() - 1;
+          wxWechselTick();
+          out.push({ nass, dauerMs: Math.round(dauer), danachNass: weather === 'rain' });
+        }
+      } finally {
+        raceWxStart = merkStart;
+        wxWechselAt = merkAt;
+        setWeather(merkWetter);
+      }
+      return out;
+    },
+
     compareLines(tiles, steps) {
       const keep = currentTrackTiles;
       currentTrackTiles = tiles;
@@ -2206,6 +2285,16 @@
         const p = codeToTrack(opt.code || 'SG2H2G2R2');
         currentTrackTiles = (lage === 'karte') ? p.tiles : [];
         lineCache = null;
+        // DIE FELDSTAFFEL IST HIER AUS, solange der Aufrufer nichts anderes sagt. Dieser
+        // Prueffstand stellt ein ZWEITES, stehendes Auto dazu, damit ghostLane() ueberhaupt
+        // etwas verteilt - und damit ist das gemessene Auto per Konstruktion der Fuehrende
+        // eines Feldes aus einem Steher und bekaeme den vollen Abschlag.
+        //
+        // GEMESSEN: "Ghost erreicht sein eingestelltes Tempo" fiel von 98,5 auf 86 Prozent,
+        // sobald "Feld zusammenhalten" ab Werk an war - ohne dass am Tempo-Regler etwas
+        // falsch gewesen waere. Ein Prueffstand, der sich ein Feld erfindet, darf dessen
+        // Wirkung nicht mitmessen. Wer sie messen WILL, uebergibt leaderBrake: true.
+        ghostCfg.leaderBrake = false;
         if (opt.cfg) Object.assign(ghostCfg, opt.cfg);
         // Die Uhr faelschen, damit der Lauf deterministisch ist. Ohne das ist dt in einer
         // synchronen Schleife praktisch null und der Ghost beschleunigt nie.

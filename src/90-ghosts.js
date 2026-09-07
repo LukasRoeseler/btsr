@@ -1393,33 +1393,47 @@
     // beginnt jetzt bei 0,35 und nicht bei 0,30 - darunter faehrt das Auto so langsam, dass
     // es die gedruckte Strecke nicht mehr zuverlaessig LIEST, und dann faellt der ganze
     // Vorausblick aus. Ein Regler, der eine kaputte Einstellung zulaesst, ist eine Falle.
-    speed: 0.45,        // fraction of top speed on a straight
+    // 0,50 auf Wunsch (war 0,45).
+    speed: 0.50,        // fraction of top speed on a straight
     // 0,15, gefahren ermittelt. 0,35 war zu viel: mit der berichtigten Ratenbegrenzung wirkt
     // der Abschlag jetzt wirklich, und die Haarnadel bekommt ohnehin das Doppelte.
-    curveSlow: 0.15,    // how much of that is given up in a curve
+    // 0,20 auf Wunsch (war 0,15). Die Haarnadel bekommt davon das Doppelte, also 40
+    // Prozent - "in der Haarnadelkurve muss die Drosselung staerker sein" ist die
+    // Kachelregel, nicht ein zweiter Regler.
+    curveSlow: 0.20,    // how much of that is given up in a curve
     // 0.5 statt 0. Die Naeherungslogik in ghostAssignBias gab es laengst - gleiche Runde
     // und Kachelindex hoechstens eins auseinander ergibt gegenlaeufige Versaetze - aber sie
     // wurde mit diesem Faktor multipliziert, und der stand auf Null. Das Feature war da und
     // konnte nie wirken.
-    lateral: 0.5,
+    // 0,80 auf Wunsch (war 0,50). Der Querversatz ist gefahren bestaetigt - "funktioniert
+    // perfekt in beide Richtungen, fuer 4 Ghosts gleichzeitig".
+    lateral: 0.80,
     // Ideallinie, 0,7 statt 0,35. Gefahren war von 0,35 nichts zu merken, und die Rechnung
     // sagt warum: der Deckel begrenzt den Versatz auf 0,55, danach kam x 0,35 x 0,5 - also
     // 0,096 von 1, ein Sechstel dessen, was die Messung als sicher annimmt. Mit
     // GHOST_LINE_STEER = 1,0 und 0,7 sind es 0,385, viermal so viel; auf 100 Prozent genau
     // der Deckel. 0 = gerade Lenkung und nur der Anti-Ramm-Versatz.
-    line: 0.7,
+    // 1,00 auf Wunsch (war 0,70) - genau der gemessene Deckel. Darueber wird die Linie
+    // gemessen FLACHER und nicht besser, weil sie am Scheitel saettigt.
+    line: 1.0,
     // EIGENE SPUREN. Jeder Ghost haelt eine feste, ihm eigene Linie ueber die Bahnbreite -
     // unabhaengig von Abstand, Strecke und Kachelzahl. Das ist der Unterschied zu den zwei
     // anderen Linieneinstellungen: ghost-lateral wirkt nur bei zwei Autos nebeneinander,
     // ghost-line erst ab drei Streckenteilen. Beides null heisst "alle stumpf in der Mitte",
     // und genau so wurde es gemeldet.
-    lanes: 0.5,
+    // 0 auf Wunsch (war 0,50). Die eigenen Spuren bleiben gebaut und einschaltbar; ab
+    // Werk fahren alle die Ideallinie, und der Querversatz haelt sie auseinander.
+    lanes: 0,
     // Rennwuerze. Ein Regler, fuenf Bausteine - siehe ghostSpice() weiter unten.
-    spice: 0.4,
+    // 0 auf Wunsch (war 0,40), und die Rennwuerze ist jetzt als experimentell
+    // gekennzeichnet. Sie greift an sechs Stellen gleichzeitig ins Tempo ein, und solange
+    // Ortung und Ueberholen nicht sauber sind, ist sie die Zutat, die jede Messung
+    // verrauscht.
+    spice: 0,
     // Lernen von Runde zu Runde, standardmaessig aus: es aendert das Fahrverhalten ueber
     // ein Rennen hinweg, und das soll niemand ungefragt bekommen.
     learnPace: false,
-    leaderBrake: false, // hold the leader back for a while
+    leaderBrake: true,  // gestaffelt ueber das ganze Feld, siehe ghostFeldStaffel()
     leaderBrakePct: 0.10,
     // Default ON: the measurement says this is the mode in which the car holds the track by
     // itself, which is the only configuration in which a ghost works at all today.
@@ -1452,6 +1466,148 @@
   };
 
   function ghostTileInfo(code) { return GHOST_TILE[code] || { curve: 0 }; }
+
+  // ---- Die Ortung gegen die GEMELDETE Schiene ausrichten ------------------------------
+  //
+  // WORUM ES GEHT, und es ist die Wurzel von drei gemeldeten Fehlern auf einmal.
+  //
+  // Der Kachelzaehler (Byte 11) zaehlt zuverlaessig, sagt aber nicht, WELCHE Kachel. Die App
+  // setzt beim ersten beobachteten Wechsel g.tileIndex = 0 - sie NIMMT ALSO AN, das Auto
+  // stehe an Start/Ziel. Wer seine Autos irgendwo auf die Bahn stellt und startet, hat damit
+  // einen Versatz, und der bleibt das ganze Rennen ueber stehen.
+  //
+  // Folgen, alle drei gemeldet:
+  //   "die Punkte sind nicht da, wo sie sein sollten"     - der Versatz IST der Fehler
+  //   "Ideallinie klappt nicht, wahrscheinlich deswegen"  - sie liest die falsche Kachel
+  //   "Kurvendrosselung hat nicht geklappt"               - sie bremst auf der Geraden
+  //
+  // WAS ES ZU MESSEN GIBT. Byte 12 ist der Code der Kachel, auf der das Auto STEHT - eine
+  // Messung, keine Rechnung. Und die Kacheltypen des Editors SIND diese Codes:
+  // TILE_TYPE.STRAIGHT ist 0x02, CURVE_LEFT 0x03, HAIRPIN 0x06. Gemeldeter Code und Layout
+  // sind also unmittelbar vergleichbar, und der richtige Versatz ist der, unter dem sie
+  // uebereinstimmen.
+  //
+  // WIE, UND WAS ES KOSTET. Je moeglicher Versatz eine Stimme, aufgesammelt ueber die
+  // Kachelwechsel - bei 17 Kacheln also 17 Vergleiche einmal je Kachel, nicht je Sendetakt.
+  // Der Versatz ist konstant, deshalb duerfen die Stimmen sich ueber die ganze Fahrt
+  // summieren: eine einzelne Kachel unterscheidet kaum (halbe Bahn ist Gerade), eine
+  // Folge von acht ist eindeutig.
+  //
+  // Angewandt wird EINMAL und nur, solange keine Runde gezaehlt ist. Danach waere eine
+  // Verschiebung eine Faelschung der Rundenzaehlung, und die Zaehlung ist das, was ein
+  // Rennen entscheidet.
+
+  // Passt ein Layout-Typ zu einem gemeldeten Code? Start/Ziel hat zwei Codes (0x0a und der
+  // alte 0x01), Boxengassen-Kacheln (0x100) melden nie einen und stimmen deshalb mit nichts.
+  function ortPasst(typ, code) {
+    if (typ === undefined || typ === null || code === undefined || code === null) return false;
+    if (isStartCode(code)) return isStartCode(typ) || typ === TILE_TYPE.START;
+    return typ === code;
+  }
+
+  // Die Start/Ziel-Kachel im Layout. Es gibt genau eine; gaebe es mehrere, gilt die erste,
+  // und dann ist die Rundenzaehlung ohnehin nicht eindeutig.
+  function ortStartIndex(tiles) {
+    for (let i = 0; i < tiles.length; i++) {
+      const t = tiles[i];
+      if (t && (t.type === TILE_TYPE.START || isStartCode(t.type))) return i;
+    }
+    return -1;
+  }
+
+  // Mindestens so viele Stimmen, und mindestens so viel Vorsprung vor JEDEM anderen Versatz.
+  const ORT_STIMMEN_MIN = 4;
+  const ORT_VORSPRUNG = 3;
+
+  function ortAbgleich(car) {
+    const g = car.ghost;
+    const tiles = currentTrackTiles;
+    if (!g || !tiles || tiles.length < 3) return;
+    if (g.tileIndex === null || g.tileIndex === undefined) return;
+    const code = car.tileCode;
+    // Nur GUELTIGE Codes zaehlen. 0x00 heisst "neben der Bahn", 0xff "nichts gelesen" -
+    // beide sagen nichts ueber die Kachel und wuerden nur Rauschen beitragen.
+    if (code === TILE_OFFTRACK || code === 0xff || code === undefined) return;
+    const n = tiles.length;
+
+    // ---- 1. START/ZIEL IST EINDEUTIG, und das ist der starke Teil -------------------
+    //
+    // Es gibt genau eine Start/Ziel-Kachel. Meldet das Auto ihren Code, ist der Ort nicht
+    // zu schaetzen, sondern BEKANNT - keine Abstimmung, keine Schwelle, kein Verdacht. Und
+    // es gilt jede Runde neu: verliert der Zaehler unterwegs eine Kachel, ist es beim
+    // naechsten Zieldurchgang wieder in Ordnung.
+    if (isStartCode(code)) {
+      const ziel = ortStartIndex(tiles);
+      if (ziel >= 0 && g.tileIndex !== ziel) {
+        const vor = g.tileIndex;
+        g.tileIndex = ziel;
+        // DIE RUNDENZAEHLUNG haengt am Index 0 (siehe die Ueberfahrt in ghostTick). Wurde
+        // gerade dorthin ausgerichtet, dann IST das die Ueberfahrt, die der falsche Index
+        // verschlafen hat. Ohne diese Zeile zaehlte weiterhin irgendeine Kachel mitten auf
+        // der Bahn als Rundenschluss - also genau der Fehler, der die Ortung erst schief
+        // gemacht hat, nur eine Ebene hoeher.
+        if (ziel === 0 && vor !== 0) g.laps++;
+        g.ortAngewandt = true;
+        log(garageLabel(car) + ': Ortung an Start/Ziel gesetzt (war Kachel ' + vor
+            + ', ist ' + ziel + ').', 'info');
+      }
+      return;
+    }
+
+    // ---- 2. Die Abstimmung, als VORSCHAU bis zum ersten Zieldurchgang ---------------
+    //
+    // Sie ist nicht so gut wie Start/Ziel und soll es nicht sein: sie holt die Punkte in der
+    // ERSTEN Runde an die richtige Stelle, bevor das Auto die Linie erreicht.
+    if (!g.ortStimmen || g.ortStimmen.length !== n) g.ortStimmen = new Array(n).fill(0);
+    for (let o = 0; o < n; o++) {
+      const t = tiles[(g.tileIndex + o) % n];
+      if (t && ortPasst(t.type, code)) g.ortStimmen[o]++;
+    }
+    if (g.ortAngewandt || g.laps > 0) return;
+    let best = 0;
+    for (let o = 1; o < n; o++) if (g.ortStimmen[o] > g.ortStimmen[best]) best = o;
+    if (best === 0) return;
+    if (g.ortStimmen[best] < ORT_STIMMEN_MIN) return;
+    // EINDEUTIGKEIT gegen JEDEN anderen Versatz, nicht nur gegen die jetzige Annahme.
+    //
+    // GEMESSEN, und es war ein Fehler in meinem ersten Entwurf: auf einer symmetrischen
+    // Strecke liefern zwei Versaetze dieselben Treffer bis auf die eine Start/Ziel-Kachel.
+    // Die Testfolge SG2H2G2R2G2H2G2R2 ist so eine - zweimal G2H2G2R2 -, und der Vergleich
+    // nur gegen die Annahme verschob dort FUENF von 17 Versaetzen um genau die halbe Runde.
+    // Auf einer solchen Strecke ist die Abstimmung ehrlich unentscheidbar, und warten ist
+    // besser als raten: der Zieldurchgang oben klaert es exakt.
+    let zweit = -1;
+    for (let o = 0; o < n; o++) if (o !== best && g.ortStimmen[o] > zweit) zweit = g.ortStimmen[o];
+    if (g.ortStimmen[best] - zweit < ORT_VORSPRUNG) return;
+    // Anwenden. Die Stimmen wandern mit, sonst zeigte die 0 weiter auf die widerlegte
+    // Annahme.
+    const roh = g.tileIndex + best;
+    g.tileIndex = roh % n;
+    // Verschiebt sich der Index ueber das Rundenende, ist das Auto weiter als angenommen und
+    // hat die Linie in Wahrheit schon ueberfahren.
+    g.laps += Math.floor(roh / n);
+    const alt = g.ortStimmen;
+    g.ortStimmen = new Array(n);
+    for (let i = 0; i < n; i++) g.ortStimmen[i] = alt[(i + best) % n];
+    g.ortAngewandt = true;
+    log(garageLabel(car) + ': Ortung um ' + best + ' Kacheln nachgezogen ('
+        + g.ortStimmen[0] + ' zu ' + alt[0] + ' Stimmen). Die Startannahme '
+        + '"steht an Start/Ziel" war falsch.', 'info');
+  }
+
+  // Stimmen gemeldete Kachel und Layout an DIESER Stelle ueberein? Das ist die Auskunft
+  // darueber, ob dem gerechneten Ort gerade zu glauben ist - und damit dem Vorausblick, der
+  // ohne sie ins Leere bremst. null heisst "nicht entscheidbar" (kein Layout, kein Code).
+  function ortStimmt(car) {
+    const g = car.ghost;
+    const tiles = currentTrackTiles;
+    if (!g || !tiles || tiles.length < 2) return null;
+    if (g.tileIndex === null || g.tileIndex === undefined) return null;
+    const code = car.tileCode;
+    if (code === TILE_OFFTRACK || code === 0xff || code === undefined) return null;
+    const t = tiles[g.tileIndex % tiles.length];
+    return t ? ortPasst(t.type, code) : null;
+  }
 
   // Wie eng ist ein Kachel-TYP aus der Karte? Dieselbe Skala wie GHOST_TILE.curve, nur aus
   // dem Layout statt aus dem gemeldeten Code - der Vorausblick kennt nur das Layout.
@@ -1841,6 +1997,13 @@
   // Reglers; eine Rampe darauf waere ein zweiter Regler, der gegen den ersten arbeitet.
   const GHOST_UNPARK_RAMP_MS = 2500;
 
+  // Ab welchem Anteil der Hoechstgeschwindigkeit das Auto die gedruckte Strecke zuverlaessig
+  // LIEST. Das ist keine neue Zahl: es ist die Untergrenze des Reglers ghost-speed, und die
+  // steht dort mit genau dieser Begruendung. Hier hat sie einen zweiten Leser bekommen - die
+  // Anfahrrampe darf nicht darunter bleiben, sonst kann ein zurueckgestelltes Auto nicht
+  // merken, dass es wieder auf der Bahn ist.
+  const GHOST_LESE_TEMPO = 0.35;
+
   // Der Tempo-Regler der Ghosts. Vorher standen die Verstaerkungen 4 und 3 hart im Code und
   // waren nirgends benannt - man konnte sie nicht diskutieren, ohne die Zeile zu suchen.
   //
@@ -1999,6 +2162,23 @@
     if (car.ghost) {
       car.ghost.cutOut = false; car.ghost.offSince = 0;
       car.ghost.unparkAt = Date.now();
+      // ---- DIE GNADE GILT AUCH HIER, und das war die gemeldete Luecke ------------------
+      //
+      // Sie wurde bisher NUR beim Start eines Ghosts erteilt. Wer ein abgeflogenes Auto
+      // zuruecksetzt und schuettelt, bekam sie nicht - und damit lief genau der Kreis, gegen
+      // den sie gebaut ist:
+      //
+      //   entparkt  ->  Anfahrrampe von 0  ->  nach 900 ms noch fast im Stand
+      //             ->  kein Muster gelesen, 0x00 steht, Kachelzaehler steht
+      //             ->  Abgang bestaetigt  ->  parkt wieder
+      //
+      // Gemeldet mit genau diesem Verlauf: "Ich habe es zurueckgestellt, es hat kurz gelenkt
+      // und dann wieder geblinkt." Die Bestaetigung braucht 900 ms, die Rampe 2500 - der
+      // Halt kam also immer, bevor das Auto eine Gelegenheit hatte, sich zu widerlegen.
+      //
+      // DIESELBE Zahl wie beim Start, weil es dieselbe Lage ist: das Auto ist gerade von
+      // Hand hingestellt worden.
+      car.ghost.gnadeBis = Date.now() + GHOST_START_GNADE_MS;
       // Den I-Anteil loeschen. Er ist waehrend des Stillstands nicht gewachsen (geparkt wird
       // ghostSpeedControl nicht gerufen), aber der Wert VOR dem Abflug steht noch da - und
       // der gehoert zu einem Tempo, das dieses Auto gerade nicht hat. Mit ihm wuerde die
@@ -3402,6 +3582,11 @@
           g.lapStart = now;
         }
       }
+      // DIE ORTUNG ABGLEICHEN, an derselben Stelle wie alles andere je Kachel. Byte 11
+      // und Byte 12 kommen aus DEMSELBEN Paket, sind hier also synchron - und eine Kachel
+      // dauert mindestens 250 ms, waehrend dieser Takt alle 45 ms laeuft: zwei Wechsel
+      // zwischen zwei Takten kann es nicht geben.
+      ortAbgleich(car);
       // Die Lenkmessung zaehlt hier mit, wo Kachelwechsel und Rundenschluss ohnehin
       // durchlaufen. Ein eigener Zeitgeber waere ein zweiter Ort fuer dieselbe Zaehlung.
       lmTick(car, lmRundeVoll);
@@ -3600,35 +3785,90 @@
       // Addiert werden sie NICHT: zwei Abschlaege auf dieselbe Groesse, die beide dasselbe
       // meinen, ergeben zusammen einen stehenden Ghost. Das Maximum ist die Aussage
       // "so langsam mindestens".
-      const bd = ghostBrakeDemand(car);
+      // ---- DIE GEMELDETE SCHIENE HAT DAS LETZTE WORT --------------------------------
+      //
+      // Bremsprofil und Vorausblick kommen aus dem GERECHNETEN Ort auf dem Layout. Stimmt
+      // der nicht, drosselt der Ghost auf der Geraden und laesst die Haarnadel aus - und
+      // weil unten das MAXIMUM der beiden Abschlaege gilt, gewinnt der falsche.
+      //
+      // Gemeldet: "auch die Kurvendrosselung hat nicht geklappt, wahrscheinlich weil sie an
+      // den simulierten Ort gebunden ist. Binde sie stattdessen an die gemeldete Schiene."
+      //
+      // Der Ausrichter oben behebt die Ursache. Diese Zeilen sind die Absicherung dagegen,
+      // dass sie wieder auftritt: solange gemeldete Kachel und Layout NICHT uebereinstimmen,
+      // zaehlt nur die Messung - der Vorausblick weiss dann nicht, wovon er redet.
+      //
+      //   stimmt ueberein   Profil und Kachelregel wie bisher, also mit Vorausblick
+      //   weicht ab         nur die gemeldete Kachel unter dem Auto
+      //   nicht entscheidbar (kein Layout / kein Code)   wie bisher, sonst faellt alles aus
+      const ortOk = ortStimmt(car);
+      const bd = ortOk === false ? null : ghostBrakeDemand(car);
       const reach = ahead.tight >= 2 ? 2 : 1;
-      const tight = Math.max(here, ahead.dist <= reach ? ahead.tight : 0);
+      const tight = ortOk === false
+        ? here
+        : Math.max(here, ahead.dist <= reach ? ahead.tight : 0);
       // Bremsprofil: voller Bremsbedarf kostet das Doppelte dessen, was der Regler fuer eine
       // normale Kurve sagt.
       const abzugProfil = bd === null ? 0 : Math.min(0.85, 2 * ghostCfg.curveSlow * bd);
       // Kachelregel: curveSlow beschreibt die 60-Grad-Kurve, die Haarnadel bekommt das
-      // Doppelte (tileTightness = 2), gedeckelt damit ein hoher Regler den Ghost nicht
-      // zum Stehen bringt.
+      // Doppelte (GHOST_TILE[0x05].curve = 2), gedeckelt damit ein hoher Regler den Ghost
+      // nicht zum Stehen bringt. Mit dem Standardregler von 20 Prozent sind das 20 Prozent
+      // in der Kurve und 40 in der Haarnadel.
       const abzugKachel = tight > 0 ? Math.min(0.85, ghostCfg.curveSlow * tight) : 0;
       target *= 1 - Math.max(abzugProfil, abzugKachel);
-      // ERST AB ZWEI GHOSTS, wie beim Gummiband. Mit einem einzigen Ghost ist dieser eine
-      // der Fuehrende und wurde gebremst, ohne dass es jemanden gibt, den er einholen soll -
-      // von aussen sah das aus wie "der Ghost ist zu langsam". Ein Rennen ist NICHT
-      // Bedingung: auch im freien Fahren gibt es einen Fuehrenden.
-      const feldGross = garage.filter(c => c.role === 'ghost' && c.ghost).length > 1;
-      if (ghostCfg.leaderBrake && feldGross && ghostLeader() === car) {
-        target *= (1 - ghostCfg.leaderBrakePct);
-      }
+      // GESTAFFELT UEBER DAS GANZE FELD, nicht nur der Erste. Begruendung und Formel
+      // stehen bei ghostFeldStaffel(); ein Rennen ist ausdruecklich nicht Bedingung, auch im
+      // freien Fahren gibt es einen Ersten und einen Letzten.
+      target *= ghostFeldStaffel(car);
+
+      // ---- Regen kostet Tempo ---------------------------------------------------------
+      //
+      // GEWAEHLT und nicht abgeleitet. Ein Ghost faehrt ohne Reifenmodell - er hat keine
+      // Mischung, keine Temperatur und keinen Reibkreis -, also gibt es hier nichts zu
+      // rechnen, woraus sich ein Faktor ergaebe. 0,85 liegt zwischen "man merkt es nicht"
+      // und "das Feld kriecht"; wer es anders will, dreht am Ghost-Tempo.
+      //
+      // Ausdruecklich MULTIPLIKATIV zum Kurvenabzug und nicht als zweiter Deckel: nass ist
+      // eine Kurve langsamer als trocken, und beides zusammen ist mehr als jedes einzeln.
+      // OHNE typeof-WAECHTER, und das ist wichtig: `weather` ist ein let in 70-race.js, und
+      // typeof auf ein let in seiner temporalen Todeszone WIRFT - der Waechter wuerde also
+      // genau in dem Fall nicht helfen, fuer den man ihn hinschreibt, und dabei aussehen wie
+      // eine Absicherung. An dieser Falle hat dieses Projekt schon eine ganze IIFE verloren.
+      // Gebraucht wird er auch nicht: ghostTick laeuft aus einem Zeitgeber, also lange nach
+      // dem Aufbau.
+      if (weather === 'rain') target *= GHOST_REGEN_TEMPO;
       // Einfuehrungsrunde: alle rollen im Formationstempo, was ihr eigener Regler auch
       // sagt. Das ist NICHT das Boxentempo - siehe formationPace(): darunter liest das Auto
       // die Bahn nicht mehr.
       if (raceFormationLap) target = Math.min(target, formationPace());
 
-      // Die Anfahrrampe: sie greift NUR nach einem Entparken und laeuft von selbst aus.
+      // ---- Die Anfahrrampe, MIT BODEN ------------------------------------------------
+      //
+      // Sie greift nur nach einem Entparken und laeuft von selbst aus. Neu ist ihr Boden,
+      // und er ist nicht gewaehlt, sondern abgeleitet:
+      //
+      // Der Regler ghost-speed beginnt bei 0,35 und nicht tiefer, und die Begruendung steht
+      // seit jeher daneben - darunter faehrt das Auto so langsam, dass es die GEDRUCKTE
+      // STRECKE nicht mehr zuverlaessig liest. Genau das braucht ein zurueckgestelltes Auto
+      // aber: es muss lesen, um zu merken, dass es wieder auf der Bahn ist.
+      //
+      // Eine Rampe, die bei 0 beginnt, haelt es also fuer die erste Sekunde unter der
+      // Leseschwelle - und in dieser Sekunde faellt die Abgangsbestaetigung (900 ms). Das
+      // ist der gemeldete Fehler, und er war nicht die Gnade allein: ohne Boden waere das
+      // Auto auch mit Gnade drei Sekunden lang zu langsam zum Lesen gewesen und danach
+      // sofort wieder gestanden.
+      //
+      // Der Boden ueberschreitet das Ziel nie: ist das Ziel selbst niedriger als die
+      // Leseschwelle, gilt das Ziel. Sonst waere die Rampe eine Beschleunigung ueber den
+      // Wunsch hinaus.
       if (g.unparkAt) {
         const seit = now - g.unparkAt;
-        if (seit >= GHOST_UNPARK_RAMP_MS) g.unparkAt = 0;
-        else target *= seit / GHOST_UNPARK_RAMP_MS;
+        if (seit >= GHOST_UNPARK_RAMP_MS) {
+          g.unparkAt = 0;
+        } else {
+          const rampe = seit / GHOST_UNPARK_RAMP_MS;
+          target = Math.max(target * rampe, Math.min(target, GHOST_LESE_TEMPO));
+        }
       }
 
       const v = Math.abs(e.state.speedKmh) / cfg.topSpeedKmh;
@@ -3827,21 +4067,13 @@
     writeToCar(car, (armed && !offTrack) ? lenkAus : 0, drive, lights, car.modeBytes);
   }
 
-  // The leader among the ghosts, by laps then tile index. Used for the hold-back setting.
-  function ghostLeader() {
-    let best = null;
-    garage.forEach(c => {
-      if (c.role !== 'ghost' || !c.ghost) return;
-      if (!best) { best = c; return; }
-      // UEBER ghostOrtGes, das Runden und Phase schon enthaelt. Hier stand "mehr Runden,
-      // sonst hoehere Kachelnummer" - auf DERSELBEN Kachel entschied also die Reihenfolge in
-      // der Garage und nicht, wer vorn ist. Auf einer Haarnadel ist eine Kachel gut eine
-      // Sekunde lang.
-      const oa = ghostOrtGes(c), ob = ghostOrtGes(best);
-      if (oa !== null && (ob === null || oa > ob)) best = c;
-    });
-    return best;
-  }
+  // ---- ghostLeader() ist ENTFALLEN ---------------------------------------------------
+  //
+  // Sie war "wer ist vorn" als eigene Rechnung, und ihr einziger Aufrufer war die alte
+  // Bremse fuer den Fuehrenden. ghostFeldStaffel() braucht die ganze Reihenfolge und
+  // ermittelt sie selbst - der Fuehrende ist deren erstes Element. Eine zweite Funktion, die
+  // dieselbe Frage anders beantwortet, ist genau das, was in dieser Ecke schon einmal
+  // fuenf Antworten auf "wo bin ich" hervorgebracht hat.
 
   // Side by side? Then split them: one a little left, the other a little right. This is a
   // guess, not a measurement — nothing reports where on the track width a car is — so it
@@ -3872,6 +4104,8 @@
   // GHOST_LINE_STEER: es ist ein Halten neben der Mitte und kein Ausweichmanoever, und mehr
   // waere auf der Schiene ohnehin nur ein Kampf gegen die Firmware.
   const GHOST_LANE_STEER = 0.16;
+  // Wieviel Tempo ein Ghost im Regen abgibt. Gewaehlt, siehe die Anwendungsstelle.
+  const GHOST_REGEN_TEMPO = 0.85;
 
   // ---- Nah heisst in SEKUNDEN und nicht in Kacheln --------------------------------
   //
@@ -3893,6 +4127,57 @@
     if (d !== null) return Math.abs(d) <= GHOST_NAH_SEK;
     return a.ghost.laps === b.ghost.laps
       && Math.abs((a.ghost.tilesTotal || 0) - (b.ghost.tilesTotal || 0)) <= 1;
+  }
+
+  // ---- Die Feldstaffel: gebremst wird nach PLATZ, nicht nur der Erste ---------------
+  //
+  // Hier stand "wenn ghostLeader() === car, dann Abschlag". Das zog genau EIN Auto an das
+  // Feld heran - gemeldet: "damit nicht nur die ersten beiden beieinander sind". Der Zweite
+  // fuhr voll und lief dem gebremsten Ersten auf, alle dahinter blieben, wo sie waren.
+  //
+  // Jetzt linear ueber den Platz, SYMMETRISCH um die Feldmitte:
+  //
+  //     Erster        1 - pct
+  //     Mitte         1
+  //     Letzter       1 + pct
+  //
+  // Die Symmetrie ist der Punkt und nicht Zierde: das MITTLERE Tempo bleibt unveraendert.
+  // Waere nur gebremst, wuerde das Einschalten dieser Option das ganze Feld langsamer
+  // machen, und "Fuehrenden bremsen" waere in Wahrheit "alle bremsen". Der Letzte wird
+  // schneller, wie bestellt.
+  //
+  // ERST AB ZWEI GHOSTS. Mit einem einzigen ist dieser eine der Fuehrende UND der Letzte,
+  // und beides zugleich ergibt keinen Faktor - er faehrt sein eigenes Tempo.
+  //
+  // Der Platz kommt aus ghostOrtGes(), also aus derselben Zahl wie alles andere. Autos ohne
+  // gemeldete Kachel stehen hinten: sie sind noch nicht losgefahren, und sie vorn
+  // einzusortieren wuerde dem Feld einen Fuehrenden geben, der nicht faehrt.
+  function ghostFeldStaffel(car) {
+    if (!ghostCfg.leaderBrake) return 1;
+    // NUR FAHRENDE, und das ist gemessen und nicht vorsichtshalber. Ohne `running` zaehlten
+    // auch Ghosts mit, die einmal gestartet und dann gestoppt wurden - `c.ghost` bleibt bei
+    // ihnen stehen. Ein einzeln fahrendes Auto war damit "der Fuehrende" eines Feldes aus
+    // Stehern und bekam den vollen Abschlag: der Selbsttest "Ghost erreicht sein
+    // eingestelltes Tempo" fiel von 98,5 auf 86 Prozent, sobald diese Option ab Werk an war.
+    //
+    // GEPARKTE zaehlen dagegen MIT: sie sind im Feld, nur gerade nicht in Fahrt, und sie
+    // stehen hinten. Wenn sie wieder anfahren, bekommen sie damit den Zuschlag des Letzten -
+    // das ist richtig und nicht Zufall.
+    const gs = garage.filter(c => c.role === 'ghost' && c.ghost && c.ghost.running);
+    if (gs.length < 2) return 1;
+    const ort = new Map(gs.map(c => [c, ghostOrtGes(c)]));
+    const sortiert = gs.slice().sort((a, b) => {
+      const oa = ort.get(a), ob = ort.get(b);
+      if (oa === null && ob === null) return 0;
+      if (oa === null) return 1;
+      if (ob === null) return -1;
+      return ob - oa;                     // vorn zuerst
+    });
+    const platz = sortiert.indexOf(car);
+    if (platz < 0) return 1;
+    // -1 fuer den Ersten, +1 fuer den Letzten, 0 in der Mitte.
+    const lage = 2 * platz / (sortiert.length - 1) - 1;
+    return 1 + ghostCfg.leaderBrakePct * lage;
   }
 
   function ghostLane(car) {

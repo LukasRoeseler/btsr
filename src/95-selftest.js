@@ -3058,6 +3058,171 @@
                  + (schlecht.length ? ' || ' + schlecht.join('; ') : ' | Invarianten halten') };
   });
 
+  // ---- Die Ortung richtet sich an der gemeldeten Schiene aus ----
+  //
+  // DIE WURZEL VON DREI GEMELDETEN FEHLERN. Die App setzte beim ersten Kachelwechsel
+  // g.tileIndex = 0, nahm also an, das Auto stehe an Start/Ziel. Wer seine Autos irgendwo
+  // auf die Bahn stellt, hatte damit einen Versatz fuer das ganze Rennen - und mit ihm
+  // Punkte an der falschen Stelle, eine Ideallinie fuer die falsche Kachel und eine
+  // Kurvendrosselung, die auf der Geraden bremst.
+  //
+  // Geprueft wird JEDER moegliche Versatz, nicht einer: bei 17 Kacheln sind das 17 Faelle,
+  // und der Fall 0 ist die Gegenprobe - eine richtige Annahme darf nicht verschoben werden.
+  stAdd('Ortung: findet den Versatz zur gemeldeten Schiene', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.ortProbe) {
+      return { skip: true, mass: 'ortProbe nicht erreichbar' };
+    }
+    // DREI LAYOUTS, und das erste ist mit Absicht SYMMETRISCH: SG2H2G2R2G2H2G2R2 ist
+    // zweimal G2H2G2R2, und dort liefern zwei Versaetze dieselben Treffer bis auf die eine
+    // Start/Ziel-Kachel. Mein erster Entwurf verglich nur gegen die jetzige Annahme und
+    // verschob dort FUENF von 17 Versaetzen um genau die halbe Runde. Eine Pruefung mit nur
+    // einer asymmetrischen Strecke haette das nie gesehen.
+    const LAYOUTS = ['SG2H2G2R2G2H2G2R2', 'SG2RG2L', 'SRRRLLL'];
+    const schlecht = [];
+    let faelle = 0, langsamster = 0;
+    for (const code of LAYOUTS) {
+      const n = OMEGA_TEST.ortProbe(code, 0, 1).kacheln;
+      for (let v = 0; v < n; v++) {
+        const r = OMEGA_TEST.ortProbe(code, v, n * 3);
+        faelle++;
+        if (!r.stimmt) {
+          schlecht.push(code + ' Versatz ' + v + ': Index ' + r.index + ' statt ' + r.echt);
+        }
+        if (v === 0 && r.angewandt) schlecht.push(code + ': Versatz 0 wurde verschoben');
+        if (v !== 0) {
+          if (!r.angewandt) schlecht.push(code + ' Versatz ' + v + ': nicht ausgerichtet');
+          else langsamster = Math.max(langsamster, r.korrigiertNach);
+        }
+      }
+      // Die Rundenzaehlung: wer beim Ausrichten ueber das Rundenende springt, hat die Linie
+      // in Wahrheit schon ueberfahren. Bleibt laps auf 0, zaehlte die naechste Ueberfahrt
+      // als erste Runde, obwohl es die zweite waere.
+      const spaet = OMEGA_TEST.ortProbe(code, n - 1, n * 2);
+      if (!(spaet.runden >= 1)) {
+        schlecht.push(code + ' Versatz ' + (n - 1) + ': Runde nicht mitgezogen');
+      }
+    }
+    return { ok: !schlecht.length,
+             mass: faelle + ' Versaetze auf ' + LAYOUTS.length
+                 + ' Layouts, spätestens nach ' + langsamster + ' Kacheln richtig'
+                 + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // ---- Und die Auskunft, ob dem gerechneten Ort zu glauben ist ----
+  //
+  // Sie ist das Tor fuer die Kurvendrosselung: stimmen gemeldete Kachel und Layout nicht
+  // ueberein, darf der Vorausblick nicht drosseln - er weiss dann nicht, wovon er redet.
+  stAdd('Ortung: die Auskunft "stimmt" trennt Messung und Rechnung', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.ortStimmtProbe) {
+      return { skip: true, mass: 'ortStimmtProbe nicht erreichbar' };
+    }
+    const tiles = codeToTrack('SG2H2G2R2G2H2G2R2').tiles;
+    const schlecht = [];
+    // Richtig gemeldet: stimmt.
+    for (let i = 0; i < tiles.length; i++) {
+      if (OMEGA_TEST.ortStimmtProbe(undefined, i, tiles[i].type) !== true) {
+        schlecht.push('Kachel ' + i + ' (Typ ' + tiles[i].type + ') gilt als falsch');
+      }
+    }
+    // Eine Gerade gemeldet, wo eine Haarnadel liegt: stimmt nicht.
+    const hp = tiles.findIndex((t) => t.type === 0x05 || t.type === 0x06);
+    if (hp >= 0 && OMEGA_TEST.ortStimmtProbe(undefined, hp, 0x02) !== false) {
+      schlecht.push('Gerade auf einer Haarnadel gilt als richtig');
+    }
+    // Kein Code und abseits der Bahn: nicht entscheidbar, und ausdruecklich nicht "falsch" -
+    // sonst fiele der Vorausblick jedes Mal aus, wenn ein Paket kein Muster trug.
+    if (OMEGA_TEST.ortStimmtProbe(undefined, 0, 0xff) !== null) {
+      schlecht.push('ohne gelesenen Code nicht null');
+    }
+    if (OMEGA_TEST.ortStimmtProbe(undefined, 0, 0x00) !== null) {
+      schlecht.push('abseits der Bahn nicht null');
+    }
+    return { ok: !schlecht.length,
+             mass: tiles.length + ' Kacheln richtig erkannt, Haarnadel/Gerade getrennt, '
+                 + 'ohne Code null'
+                 + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // ---- Wechselhaftes Wetter ----
+  //
+  // Bestellt: "alle 2-6 Minuten (genaue Zeit zufaellig gezogen) fuer 1-3 Minuten regnen und
+  // dann wieder trocken werden". Geprueft wird genau das - die Folge wechselt, die Dauern
+  // liegen in ihren Fenstern, und sie sind GEZOGEN und nicht fest. Ein Metronom waere kein
+  // Wetter, und ein Test, der nur "es wechselt" prueft, wuerde es durchlassen.
+  stAdd('Wetter wechselhaft: Phasen, Fenster, und wirklich gezogen', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.wxWechselProbe) {
+      return { skip: true, mass: 'wxWechselProbe nicht erreichbar' };
+    }
+    const p = OMEGA_TEST.wxWechselProbe(12);
+    const schlecht = [];
+    if (!p.length) return { ok: false, mass: 'keine Phasen' };
+    if (p[0].nass) schlecht.push('beginnt nass, soll trocken beginnen');
+    const trocken = [], regen = [];
+    for (let i = 0; i < p.length; i++) {
+      // Jede Phase muss in die andere umschlagen.
+      if (p[i].danachNass === p[i].nass) schlecht.push('Phase ' + i + ' schlug nicht um');
+      // Und die Folge muss alternieren.
+      if (i > 0 && p[i].nass === p[i - 1].nass) schlecht.push('Phase ' + i + ' wiederholt sich');
+      (p[i].nass ? regen : trocken).push(p[i].dauerMs);
+    }
+    const im = (arr, min, max, name) => {
+      for (const d of arr) {
+        if (d < min - 50 || d > max + 50) {
+          schlecht.push(name + ' ' + Math.round(d / 1000) + ' s liegt nicht in '
+                        + (min / 60000) + '-' + (max / 60000) + ' min');
+        }
+      }
+    };
+    im(trocken, 2 * 60000, 6 * 60000, 'trockene Phase');
+    im(regen, 1 * 60000, 3 * 60000, 'Regenphase');
+    // GEZOGEN und nicht fest: bei sechs trockenen Phasen aus einem Fenster von vier Minuten
+    // sind sechs identische Werte praktisch unmoeglich. Das ist die Pruefung, die ein
+    // Metronom von Wetter unterscheidet.
+    const verschieden = new Set(trocken.map((d) => Math.round(d / 1000))).size;
+    if (trocken.length >= 3 && verschieden < 2) {
+      schlecht.push('alle trockenen Phasen gleich lang - da wird nicht gezogen');
+    }
+    const spanne = (a) => a.length
+      ? Math.round(Math.min.apply(null, a) / 1000) + '-' + Math.round(Math.max.apply(null, a) / 1000) + ' s'
+      : '-';
+    return { ok: !schlecht.length,
+             mass: p.length + ' Phasen, trocken ' + spanne(trocken) + ', Regen '
+                 + spanne(regen) + ', ' + verschieden + ' verschiedene Trockenzeiten'
+                 + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // ---- Regen kostet die Ghosts Tempo ----
+  //
+  // Bestellt: "bei Regen soll die Geschwindigkeit der KI-Gegner gedrosselt sein". Geprueft
+  // am gefahrenen Tempo und nicht an der Existenz einer Konstante.
+  stAdd('Ghosts fahren im Regen langsamer', async () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.ghostDriveProbe) {
+      return { skip: true, mass: 'ghostDriveProbe nicht vorhanden' };
+    }
+    const merk = weather;
+    const mittel = async () => {
+      const g = await OMEGA_TEST.ghostDriveProbe({ lage: 'codes', takte: 500, code: 'SG8',
+                                                   tileMs: 900, cfg: { spice: 0, speed: 0.5,
+                                                                       leaderBrake: false } });
+      const f = g.tempo.filter((x) => isFinite(x)).slice(-30);
+      return f.reduce((s, x) => s + x, 0) / Math.max(1, f.length);
+    };
+    let trocken = 0, nass = 0;
+    try {
+      setWeather('dry');
+      trocken = await mittel();
+      setWeather('rain');
+      nass = await mittel();
+    } finally { setWeather(merk); }
+    const anteil = trocken > 0 ? nass / trocken : 0;
+    // Der Faktor ist 0,85; die Toleranz laesst dem Tempo-Regler Luft, verlangt aber einen
+    // deutlichen Unterschied - "irgendwie langsamer" wuerde auch ein Rauschen erfuellen.
+    const ok = anteil > 0.75 && anteil < 0.95;
+    return { ok, mass: 'trocken ' + (trocken * 100).toFixed(1) + ' %, nass '
+                 + (nass * 100).toFixed(1) + ' % - Anteil ' + anteil.toFixed(3)
+                 + (ok ? '' : ' || erwartet zwischen 0,75 und 0,95') };
+  });
+
   // ---- Controller-Vibration: ein Schalter je Ausloeser ----
   //
   // Siebzehn Aufrufstellen, sechs Arten, ein Hauptschalter. Geprueft wird die
@@ -5155,15 +5320,23 @@
       for (let i = 0; i < n; i++) d.push(a[i] - b[i]);
       return rms(d);
     };
+    // BEIDE ENDEN AUSDRUECKLICH GESETZT, und das ist eine Berichtigung. Vorher lief der
+    // Vergleich "Vorgabe gegen 0" - der Test las also den Standardwert als sein "an". Als
+    // `lanes` auf Wunsch ab Werk 0 wurde, verglich er 0 gegen 0, fand null Unterschied und
+    // meldete den Regler als stumm. Er war es nicht; der Test hatte keine Eingabe mehr.
+    //
+    // Dieselbe Fehlerklasse wie zweimal vorher in dieser Sitzung: eine Pruefung, die ihre
+    // Eingabe aus dem Zustand nimmt statt sie zu stellen, prueft den Zustand.
     const zeilen = [], stumm = [];
     for (const lage of ['codes', 'karte']) {
-      const grund = await OMEGA_TEST.ghostDriveProbe({ lage, takte: 500, code: 'SG3H2G3R2',
-                                                       tileMs: 900, cfg: { spice: 0 } });
       for (const feld of ['line', 'lanes']) {
-        const cfg = { spice: 0 }; cfg[feld] = 0;
+        const an = { spice: 0 }; an[feld] = 1;
+        const aus = { spice: 0 }; aus[feld] = 0;
+        const mit = await OMEGA_TEST.ghostDriveProbe({ lage, takte: 500, code: 'SG3H2G3R2',
+                                                       tileMs: 900, cfg: an });
         const ohne = await OMEGA_TEST.ghostDriveProbe({ lage, takte: 500, code: 'SG3H2G3R2',
-                                                        tileMs: 900, cfg });
-        const d = unterschied(grund.lenk, ohne.lenk);
+                                                        tileMs: 900, cfg: aus });
+        const d = unterschied(mit.lenk, ohne.lenk);
         zeilen.push(lage + '/' + feld + ' ' + d.toFixed(1));
         // 3 von 127 ist die Schwelle. Darunter ist es kein Regler, sondern eine Zierde -
         // und "Ideallinie ohne Karte" lag vor der Rueckfalllinie bei 0,3.
