@@ -3223,6 +3223,56 @@
                  + (ok ? '' : ' || erwartet zwischen 0,75 und 0,95') };
   });
 
+  // ---- Vier Autos nebeneinander brauchen vier Spuren ----
+  //
+  // GEMELDET: "Ueberholen und eigene Spuren klappt auch nicht - die Autos haben sich viel
+  // geschoben", mit vier Ghosts. Die Seitenverteilung kannte genau zwei Seiten (k % 2), also
+  // bekamen Rang 0 und 2 beide -1 und Rang 1 und 3 beide +1 - zwei Paare auf derselben
+  // Linie.
+  //
+  // Geprueft werden EIGENSCHAFTEN: paarweise verschieden, symmetrisch um die Mitte, und die
+  // Aussenspuren voll genutzt. Feste Zahlen abzufragen wuerde bei jeder Nachjustierung rot,
+  // ohne dass etwas kaputt waere - "paarweise verschieden" ist dagegen genau die
+  // Zusicherung, die vorher fehlte.
+  stAdd('Seitenverteilung: jedes Auto der Gruppe bekommt eine eigene Spur', () => {
+    if (typeof ghostSeiten !== 'function') return { ok: false, mass: 'ghostSeiten fehlt' };
+    const schlecht = [];
+    const zeilen = [];
+    if (ghostSeiten(0).length !== 0) schlecht.push('0 Autos gibt keine leere Liste');
+    if (ghostSeiten(1).length !== 1 || ghostSeiten(1)[0] !== 0) {
+      schlecht.push('ein Auto soll mittig bleiben, gibt ' + ghostSeiten(1));
+    }
+    for (let n = 2; n <= 6; n++) {
+      const s = ghostSeiten(n);
+      zeilen.push(n + ': ' + s.map((x) => x.toFixed(2)).join(' '));
+      if (s.length !== n) { schlecht.push(n + ' Autos geben ' + s.length + ' Spuren'); continue; }
+      // Paarweise verschieden - das ist der behobene Fehler.
+      for (let i = 0; i < n; i++) {
+        for (let j = i + 1; j < n; j++) {
+          if (Math.abs(s[i] - s[j]) < 1e-9) {
+            schlecht.push(n + ' Autos: Rang ' + i + ' und ' + j + ' auf derselben Spur');
+          }
+        }
+      }
+      // Die Aussenspuren voll ausgenutzt, sonst bleibt Bahnbreite liegen.
+      if (Math.abs(s[0] + 1) > 1e-9 || Math.abs(s[n - 1] - 1) > 1e-9) {
+        schlecht.push(n + ' Autos: Raender ' + s[0].toFixed(2) + '/' + s[n - 1].toFixed(2));
+      }
+      // Symmetrisch, sonst wandert das Feld insgesamt zur Seite.
+      const summe = s.reduce((a, b) => a + b, 0);
+      if (Math.abs(summe) > 1e-9) schlecht.push(n + ' Autos: Summe ' + summe.toFixed(3));
+      // Aufsteigend, damit die Ordnung der Gruppe die Ordnung der Spuren ist.
+      for (let i = 1; i < n; i++) {
+        if (!(s[i] > s[i - 1])) schlecht.push(n + ' Autos: nicht aufsteigend bei ' + i);
+      }
+    }
+    // Bei drei Autos bleibt das mittlere mittig - es hat nach beiden Seiten gleich viel Platz.
+    if (Math.abs(ghostSeiten(3)[1]) > 1e-9) schlecht.push('bei drei Autos steht das mittlere nicht mittig');
+    return { ok: !schlecht.length,
+             mass: zeilen.join(' | ')
+                 + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
   // ---- Controller-Vibration: ein Schalter je Ausloeser ----
   //
   // Siebzehn Aufrufstellen, sechs Arten, ein Hauptschalter. Geprueft wird die

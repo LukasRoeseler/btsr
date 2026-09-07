@@ -6776,7 +6776,7 @@
           beh&auml;lt sie nur, wenn die Runde schneller war <b>und</b> kein Abgang dabei.
           Nach einem Abgang wird zur&uuml;ckgenommen und vorsichtiger weiterprobiert.</small></div>
         <label class="tgl"><input type="checkbox" id="ghost-learn-pace"><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Ghost: seitlicher Versatz <span class="wip-tag">WIP</span><small>Zwei Autos nebeneinander gehen auseinander, und beim &Uuml;berholen weicht auch der Vorausfahrende aus, zur anderen Seite. Zwei Autos auf 25&nbsp;cm Bahnbreite brauchen beide H&auml;lften. Dieser Regler bestimmt auch, wie weit der Angreifer zur Seite geht: das ist ein Ausweichen und keine Linienwahl, h&auml;ngt also nicht an der Ideallinie. &Uuml;ber 100 Prozent geht die Anforderung bis an den vollen Anschlag &ndash; die Mitschnitte zeigen, dass das Auto die Schiene auch dort noch liest.</small></div>
+      <div class="opt-row"><div class="opt-label">Ghost: seitlicher Versatz <span class="wip-tag">WIP</span><small>Autos nebeneinander gehen auseinander, gleichm&auml;&szlig;ig &uuml;ber die Bahnbreite: bei zwei nach links und rechts, bei drei bleibt das mittlere mittig, bei vier auf Viertel. Vorher gab es nur zwei Seiten, und dann standen sich bei vier Autos zwei Paare weiter im Weg. Beim &Uuml;berholen weicht auch der Vorausfahrende aus, zur anderen Seite. Zwei Autos auf 25&nbsp;cm Bahnbreite brauchen beide H&auml;lften. Dieser Regler bestimmt auch, wie weit der Angreifer zur Seite geht: das ist ein Ausweichen und keine Linienwahl, h&auml;ngt also nicht an der Ideallinie. &Uuml;ber 100 Prozent geht die Anforderung bis an den vollen Anschlag &ndash; die Mitschnitte zeigen, dass das Auto die Schiene auch dort noch liest.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
           <input type="range" id="ghost-lateral" min="0" max="2" step="0.05" value="0.8">
@@ -7302,7 +7302,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.5.32</span></span>
+    <span class="foot-ver">v<span id="app-version">0.5.33</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -8904,6 +8904,8 @@
       "How hard the car steers against a slide, measured from the rotation signal in byte 3 of the notifications. 50 per cent is the default that was asked for. What is uncertain about it, and it is two things at once: the signal is unconfirmed – it only varies once the car is moving, and flipped sign with cornering direction in exactly one recording. And it is uncalibrated: its scale is self-adjusting because the real amplitude is unknown. So the strength depends on the largest yaw value the session has seen so far. The “Drift probe” button under “Measure lateral offset” measures whether the signal moves at all under straight full throttle.",
     "Rennen":
       "Race",
+    "Autos nebeneinander gehen auseinander, gleichmäßig über die Bahnbreite: bei zwei nach links und rechts, bei drei bleibt das mittlere mittig, bei vier auf Viertel. Vorher gab es nur zwei Seiten, und dann standen sich bei vier Autos zwei Paare weiter im Weg. Beim Überholen weicht auch der Vorausfahrende aus, zur anderen Seite. Zwei Autos auf 25 cm Bahnbreite brauchen beide Hälften. Dieser Regler bestimmt auch, wie weit der Angreifer zur Seite geht: das ist ein Ausweichen und keine Linienwahl, hängt also nicht an der Ideallinie. Über 100 Prozent geht die Anforderung bis an den vollen Anschlag – die Mitschnitte zeigen, dass das Auto die Schiene auch dort noch liest.":
+      "Cars alongside each other move apart, spread evenly across the track width: with two, to the left and right; with three, the middle one stays centred; with four, onto quarters. Before there were only two sides, and then with four cars two pairs still stood in each other's way. When overtaking, the car in front also moves aside, to the other side. Two cars on 25 cm of track width need both halves. This slider also sets how far the attacker moves aside: that is an evasion and not a choice of line, so it does not depend on the racing line. Above 100 per cent the request goes to the full lock – the recordings show the car still reads the rail even there.",
     "Trocken, Regen – oder wechselhaft: dann beginnt es trocken, und alle 2 bis 6 Minuten fällt ein Schauer von 1 bis 3 Minuten. Beide Zeiten werden je Phase neu gezogen. Bei einem kurzen Rennen kann es sein, dass man keinen Schauer sieht – ein Schauer hängt nicht daran, wie viele Runden gefahren werden.":
       "Dry, rain – or changeable: it then starts dry, and every 2 to 6 minutes a shower falls for 1 to 3 minutes. Both durations are drawn afresh each phase. In a short race you may well see no shower at all – a shower does not depend on how many laps are run.",
     "Wechselt einmal zu einem zufälligen Zeitpunkt. Bei „wechselhaft“ bleibt dieser Schalter ohne Wirkung: dort wechselt es ohnehin laufend, und ein zusätzlicher Wechsel mitten im Schauer würde die Phasen durcheinander bringen.":
@@ -26343,6 +26345,32 @@
     return (2 * k) / (gs.length - 1) - 1;
   }
 
+  // ---- Die Seiten einer Gruppe --------------------------------------------------------
+  //
+  // GLEICHMAESSIG UEBER DIE BAHNBREITE und symmetrisch um die Mitte. Hier stand `k % 2`,
+  // also genau zwei Seiten - und bei VIER Autos nebeneinander bekamen damit Rang 0 und 2
+  // beide -1 und Rang 1 und 3 beide +1. Zwei Paare auf derselben Linie, die sich weiter im
+  // Weg standen. Gemeldet als "Ueberholen und eigene Spuren klappt auch nicht - die Autos
+  // haben sich viel geschoben", und zwar mit vier Ghosts.
+  //
+  //     2 Autos   -1, +1
+  //     3 Autos   -1,  0, +1      das mittlere bleibt mittig - es hat nach beiden Seiten
+  //                               gleich viel Platz, und ein Versatz waere eine Erfindung
+  //     4 Autos   -1, -1/3, +1/3, +1
+  //
+  // WAS DAS NICHT KANN: die Bahn ist 25 cm breit, ein Auto knapp 6. Vier Autos nebeneinander
+  // sind physisch die Grenze, und die Verteilung schafft keinen Platz - sie nutzt nur den
+  // vorhandenen ganz statt zur Haelfte.
+  //
+  // Als eigene Funktion, damit die Verteilung ohne Garage und ohne Zeitgeber pruefbar ist.
+  function ghostSeiten(n) {
+    if (n <= 0) return [];
+    if (n === 1) return [0];
+    const out = new Array(n);
+    for (let k = 0; k < n; k++) out[k] = 2 * k / (n - 1) - 1;
+    return out;
+  }
+
   function ghostAssignBias() {
     const gs = garage.filter(c => c.role === 'ghost' && c.ghost);
     const want = new Map(gs.map(c => [c, 0]));
@@ -26362,7 +26390,8 @@
     // Namensvergleich darunter - also die Gerätekennung und nicht, wer vorn ist.
     near.sort((a, b) => (ghostOrtGes(a) || 0) - (ghostOrtGes(b) || 0)
                         || String(a.device && a.device.id).localeCompare(String(b.device && b.device.id)));
-    near.forEach((c, k) => want.set(c, k % 2 === 0 ? -1 : 1));
+    const seiten = ghostSeiten(near.length);
+    near.forEach((c, k) => want.set(c, seiten[k]));
     // Nachgezogen statt gesetzt. Ein Sprung von 0 auf den vollen Versatz ist ein Ruck am
     // Lenkservo, und der sieht aus wie ein Fehler statt wie ein Ausweichen.
     for (const c of gs) {
@@ -34057,6 +34086,56 @@
     return { ok, mass: 'trocken ' + (trocken * 100).toFixed(1) + ' %, nass '
                  + (nass * 100).toFixed(1) + ' % - Anteil ' + anteil.toFixed(3)
                  + (ok ? '' : ' || erwartet zwischen 0,75 und 0,95') };
+  });
+
+  // ---- Vier Autos nebeneinander brauchen vier Spuren ----
+  //
+  // GEMELDET: "Ueberholen und eigene Spuren klappt auch nicht - die Autos haben sich viel
+  // geschoben", mit vier Ghosts. Die Seitenverteilung kannte genau zwei Seiten (k % 2), also
+  // bekamen Rang 0 und 2 beide -1 und Rang 1 und 3 beide +1 - zwei Paare auf derselben
+  // Linie.
+  //
+  // Geprueft werden EIGENSCHAFTEN: paarweise verschieden, symmetrisch um die Mitte, und die
+  // Aussenspuren voll genutzt. Feste Zahlen abzufragen wuerde bei jeder Nachjustierung rot,
+  // ohne dass etwas kaputt waere - "paarweise verschieden" ist dagegen genau die
+  // Zusicherung, die vorher fehlte.
+  stAdd('Seitenverteilung: jedes Auto der Gruppe bekommt eine eigene Spur', () => {
+    if (typeof ghostSeiten !== 'function') return { ok: false, mass: 'ghostSeiten fehlt' };
+    const schlecht = [];
+    const zeilen = [];
+    if (ghostSeiten(0).length !== 0) schlecht.push('0 Autos gibt keine leere Liste');
+    if (ghostSeiten(1).length !== 1 || ghostSeiten(1)[0] !== 0) {
+      schlecht.push('ein Auto soll mittig bleiben, gibt ' + ghostSeiten(1));
+    }
+    for (let n = 2; n <= 6; n++) {
+      const s = ghostSeiten(n);
+      zeilen.push(n + ': ' + s.map((x) => x.toFixed(2)).join(' '));
+      if (s.length !== n) { schlecht.push(n + ' Autos geben ' + s.length + ' Spuren'); continue; }
+      // Paarweise verschieden - das ist der behobene Fehler.
+      for (let i = 0; i < n; i++) {
+        for (let j = i + 1; j < n; j++) {
+          if (Math.abs(s[i] - s[j]) < 1e-9) {
+            schlecht.push(n + ' Autos: Rang ' + i + ' und ' + j + ' auf derselben Spur');
+          }
+        }
+      }
+      // Die Aussenspuren voll ausgenutzt, sonst bleibt Bahnbreite liegen.
+      if (Math.abs(s[0] + 1) > 1e-9 || Math.abs(s[n - 1] - 1) > 1e-9) {
+        schlecht.push(n + ' Autos: Raender ' + s[0].toFixed(2) + '/' + s[n - 1].toFixed(2));
+      }
+      // Symmetrisch, sonst wandert das Feld insgesamt zur Seite.
+      const summe = s.reduce((a, b) => a + b, 0);
+      if (Math.abs(summe) > 1e-9) schlecht.push(n + ' Autos: Summe ' + summe.toFixed(3));
+      // Aufsteigend, damit die Ordnung der Gruppe die Ordnung der Spuren ist.
+      for (let i = 1; i < n; i++) {
+        if (!(s[i] > s[i - 1])) schlecht.push(n + ' Autos: nicht aufsteigend bei ' + i);
+      }
+    }
+    // Bei drei Autos bleibt das mittlere mittig - es hat nach beiden Seiten gleich viel Platz.
+    if (Math.abs(ghostSeiten(3)[1]) > 1e-9) schlecht.push('bei drei Autos steht das mittlere nicht mittig');
+    return { ok: !schlecht.length,
+             mass: zeilen.join(' | ')
+                 + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
   });
 
   // ---- Controller-Vibration: ein Schalter je Ausloeser ----

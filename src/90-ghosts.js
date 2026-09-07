@@ -4188,6 +4188,32 @@
     return (2 * k) / (gs.length - 1) - 1;
   }
 
+  // ---- Die Seiten einer Gruppe --------------------------------------------------------
+  //
+  // GLEICHMAESSIG UEBER DIE BAHNBREITE und symmetrisch um die Mitte. Hier stand `k % 2`,
+  // also genau zwei Seiten - und bei VIER Autos nebeneinander bekamen damit Rang 0 und 2
+  // beide -1 und Rang 1 und 3 beide +1. Zwei Paare auf derselben Linie, die sich weiter im
+  // Weg standen. Gemeldet als "Ueberholen und eigene Spuren klappt auch nicht - die Autos
+  // haben sich viel geschoben", und zwar mit vier Ghosts.
+  //
+  //     2 Autos   -1, +1
+  //     3 Autos   -1,  0, +1      das mittlere bleibt mittig - es hat nach beiden Seiten
+  //                               gleich viel Platz, und ein Versatz waere eine Erfindung
+  //     4 Autos   -1, -1/3, +1/3, +1
+  //
+  // WAS DAS NICHT KANN: die Bahn ist 25 cm breit, ein Auto knapp 6. Vier Autos nebeneinander
+  // sind physisch die Grenze, und die Verteilung schafft keinen Platz - sie nutzt nur den
+  // vorhandenen ganz statt zur Haelfte.
+  //
+  // Als eigene Funktion, damit die Verteilung ohne Garage und ohne Zeitgeber pruefbar ist.
+  function ghostSeiten(n) {
+    if (n <= 0) return [];
+    if (n === 1) return [0];
+    const out = new Array(n);
+    for (let k = 0; k < n; k++) out[k] = 2 * k / (n - 1) - 1;
+    return out;
+  }
+
   function ghostAssignBias() {
     const gs = garage.filter(c => c.role === 'ghost' && c.ghost);
     const want = new Map(gs.map(c => [c, 0]));
@@ -4207,7 +4233,8 @@
     // Namensvergleich darunter - also die Gerätekennung und nicht, wer vorn ist.
     near.sort((a, b) => (ghostOrtGes(a) || 0) - (ghostOrtGes(b) || 0)
                         || String(a.device && a.device.id).localeCompare(String(b.device && b.device.id)));
-    near.forEach((c, k) => want.set(c, k % 2 === 0 ? -1 : 1));
+    const seiten = ghostSeiten(near.length);
+    near.forEach((c, k) => want.set(c, seiten[k]));
     // Nachgezogen statt gesetzt. Ein Sprung von 0 auf den vollen Versatz ist ein Ruck am
     // Lenkservo, und der sieht aus wie ein Fehler statt wie ein Ausweichen.
     for (const c of gs) {
