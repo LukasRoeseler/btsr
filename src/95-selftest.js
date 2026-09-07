@@ -3695,6 +3695,87 @@
                  + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
   });
 
+  // ---- Der Ghost landet auf der INNENSEITE der Kurve ----
+  //
+  // GEMELDET: "Die simulierten Ghosts fahren keine Ideallinie sondern immer aussen in der
+  // Kurve. Da ist eine Ideallinie in der Strecke eingezeichnet, die sollen sie fahren."
+  //
+  // Die Ursache waren zwei gegenlaeufige Konventionen, die aufeinandertrafen: g.querSoll ist
+  // eine LENKANFORDERUNG (positiv rechts, wie Byte 7 und wie der Stick), die Karte zeichnet
+  // aber entlang der NORMALEN, und die zeigt nach links. Wer die eine Zahl als die andere
+  // benutzt, spiegelt jedes Auto an der Mittellinie.
+  //
+  // DIESE PRUEFUNG RECHNET GEOMETRIE, keine Vorzeichen: sie legt den Kreismittelpunkt der
+  // Kurve durch drei Punkte der Mittellinie und vergleicht die Radien. Ein Vorzeichentest
+  // waere hier wertlos - er waere algebraisch immer wahr, weil beide Groessen aus demselben
+  // alpha kommen. Der Radius ist die Frage, die der Nutzer stellt.
+  stAdd('Ghost in der Kurve: innen und nicht aussen', () => {
+    const merkTiles = currentTrackTiles;
+    const schlecht = [];
+    const zeilen = [];
+    try {
+      // Geschlossene Strecke - auf einer offenen saettigt die Linie, und dann prueft man
+      // die Saettigung statt der Linie.
+      const p = codeToTrack('SR3G2R3G');
+      currentTrackTiles = p.tiles;
+      lineCache = null;
+      const pts = trackCenterline(p.tiles);
+      const nrm = trackNormals(pts);
+      const rows = OMEGA_TEST.compareLines(p.tiles, 10);
+      if (!rows.meta || !rows.meta.closed) {
+        return { ok: false, mass: 'die Teststrecke gilt nicht als geschlossen' };
+      }
+      const mitte = (i) => {
+        const a = pts[i - 4], b = pts[i], c = pts[i + 4];
+        if (!a || !c) return null;
+        const d = 2 * (a.x * (b.y - c.y) + b.x * (c.y - a.y) + c.x * (a.y - b.y));
+        if (Math.abs(d) < 1e-9) return null;
+        return {
+          x: ((a.x * a.x + a.y * a.y) * (b.y - c.y) + (b.x * b.x + b.y * b.y) * (c.y - a.y)
+              + (c.x * c.x + c.y * c.y) * (a.y - b.y)) / d,
+          y: ((a.x * a.x + a.y * a.y) * (c.x - b.x) + (b.x * b.x + b.y * b.y) * (a.x - c.x)
+              + (c.x * c.x + c.y * c.y) * (b.x - a.x)) / d,
+        };
+      };
+      const halb = TRACK_HALF_W;
+      let geprueft = 0;
+      for (let k = 0; k < p.tiles.length; k++) {
+        const typ = p.tiles[k].type;
+        if (typ !== TILE_TYPE.CURVE_LEFT && typ !== TILE_TYPE.CURVE_RIGHT
+            && typ !== TILE_TYPE.HAIRPIN && typ !== TILE_TYPE.HAIRPIN_LEFT) continue;
+        const inK = rows.filter((r) => r.tile === k && Math.abs(r.phase - 0.5) < 0.15)[0];
+        if (!inK) continue;
+        const idx = [];
+        for (let i = 0; i < pts.length; i++) if (pts[i].tile === k) idx.push(i);
+        const i = idx[Math.floor(idx.length / 2)];
+        const c = mitte(i);
+        if (!c) continue;
+        geprueft++;
+        // Die Lage, die die Karte zeichnet: querSollAlsLage(Lenkwert), mal 85 Prozent der
+        // halben Breite - genau die Rechnung aus karteAutosSetzen().
+        const lage = querSollAlsLage(inK.calc);
+        const px = pts[i].x + nrm[i].x * lage * 0.85 * halb;
+        const py = pts[i].y + nrm[i].y * lage * 0.85 * halb;
+        const rM = Math.hypot(pts[i].x - c.x, pts[i].y - c.y);
+        const rA = Math.hypot(px - c.x, py - c.y);
+        zeilen.push('K' + k + ' ' + rA.toFixed(0) + '/' + rM.toFixed(0));
+        if (!(rA < rM)) {
+          schlecht.push('K' + k + ': Auto r=' + rA.toFixed(1) + ' nicht innerhalb der '
+                        + 'Mittellinie r=' + rM.toFixed(1));
+        }
+      }
+      if (!geprueft) schlecht.push('keine Kurve gefunden');
+    } catch (e) {
+      schlecht.push('Ausnahme: ' + e.message);
+    } finally {
+      currentTrackTiles = merkTiles;
+      lineCache = null;
+    }
+    return { ok: !schlecht.length,
+             mass: 'Radius Auto/Mittellinie: ' + zeilen.join(' ')
+                 + (schlecht.length ? ' || ' + schlecht.join('; ') : ' | alle innen') };
+  });
+
   // ---- Controller-Vibration: ein Schalter je Ausloeser ----
   //
   // Siebzehn Aufrufstellen, sechs Arten, ein Hauptschalter. Geprueft wird die

@@ -7548,7 +7548,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.5.36</span></span>
+    <span class="foot-ver">v<span id="app-version">0.5.37</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -15994,6 +15994,37 @@
   // ersetzen erzeugt zehn Verwerfungen je Sekunde im Layout, und der Browser zeichnet dann
   // den ganzen Baum neu statt zweier Attribute.
   const NS_SVG = 'http://www.w3.org/2000/svg';
+  // ---- Von der LENKANFORDERUNG zur QUERLAGE auf der Karte ----------------------------
+  //
+  // ZWEI GEGENLAEUFIGE KONVENTIONEN, und beide sind fuer sich richtig - nur nicht dieselbe:
+  //
+  //   g.querSoll   ist eine LENKANFORDERUNG. Positiv heisst RECHTS, so wie Byte 7 und so wie
+  //                der Stick, dessen Anzeige `left = 75 + nx * R` nach rechts wandert, wenn
+  //                der Wert steigt.
+  //   diese Karte  zeichnet entlang der NORMALEN, und trackNormals() zeigt nach LINKS. Das
+  //                steht seit der Randstein-Berichtigung auch bei den Kerbs.
+  //
+  // Wer die eine Zahl als die andere benutzt, spiegelt jedes Auto an der Mittellinie. Genau
+  // das ist passiert. Gemeldet wurde es so: "Die simulierten Ghosts fahren keine Ideallinie
+  // sondern immer aussen in der Kurve. Da ist eine Ideallinie in der Strecke eingezeichnet,
+  // die sollen sie fahren."
+  //
+  // NACHGEMESSEN, im Modell und ohne jede Hardware-Frage: in einer Rechtskurve liegt die
+  // gezeichnete Ideallinie bei alpha = -8,35 Zeichnungseinheiten (negative Normale = rechts
+  // = innen), der Autopunkt bei querSoll = +0,97 (positive Normale = links = aussen). Zwei
+  // gegenueberliegende Seiten derselben Mittellinie.
+  //
+  // Dass die LINIE die richtige ist, ist ebenfalls gemessen und nicht gesetzt: der Weg
+  // entlang alpha ist 607 Zeichnungseinheiten lang, die Mittellinie 648 - alpha ist also die
+  // innere Linie. Und ghostLineOffset() dreht ihr Vorzeichen bewusst, um daraus einen
+  // Lenkbefehl zum Scheitel zu machen. Beides bleibt, wie es ist; falsch war nur, den
+  // Lenkbefehl ungedreht als Ort zu zeichnen.
+  //
+  // EINE STELLE FUER DIE UMRECHNUNG. Zwei Zeichner benutzen sie (die Karte hier und die
+  // Rennsimulation), und eine zweite Kopie waere die naechste Gelegenheit, das Vorzeichen
+  // nur an einem der beiden Orte zu berichtigen.
+  function querSollAlsLage(v) { return -(v || 0); }
+
   function karteAutosSetzen(svg, geo, cars) {
     if (!svg || !geo) return 0;
     let g = svg.querySelector('g.karte-autos');
@@ -16164,7 +16195,10 @@
                      // Die ANGEFORDERTE Querlage. Das Auto meldet keine; was hier steht,
                      // ist die Summe aus eigener Spur und Ideallinie, also die Lage, die
                      // die App gerade will. Mehr ist ehrlich nicht zu haben.
-                     quer: g.querSoll || 0 });
+                     //
+                     // UMGEDREHT, weil querSoll ein Lenkbefehl ist und diese Karte entlang
+                     // der Normalen zeichnet - siehe querSollAlsLage().
+                     quer: querSollAlsLage(g.querSoll) });
         } else if (c.role === 'player' && typeof dashMinimapIndex === 'number') {
           // Das eigene Auto lenkt die App nicht, es gibt also keine angeforderte QUERLAGE -
           // quer bleibt 0, statt eine zu erfinden.
@@ -27678,7 +27712,12 @@
           kuerzel: a.car.alias,
           // Die ANGEFORDERTE Querlage, wie auf der echten Karte: die Schiene haelt das Auto,
           // gemessen wird sie nicht. Damit sieht man Spuren und Ueberholmanoever.
-          quer: (a.car.ghost && a.car.ghost.querSoll) || 0,
+          //
+          // UMGEDREHT ueber querSollAlsLage(): querSoll ist ein Lenkbefehl (positiv rechts),
+          // die Karte zeichnet entlang der Normalen (positiv links). Ohne die Drehung sitzt
+          // jedes Auto auf der falschen Seite der Mittellinie - gemeldet als "fahren immer
+          // aussen in der Kurve, obwohl die Ideallinie eingezeichnet ist".
+          quer: querSollAlsLage(a.car.ghost && a.car.ghost.querSoll),
         })));
       }
     }
@@ -35638,6 +35677,87 @@
     return { ok: !schlecht.length,
              mass: zeilen.join(' | ')
                  + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // ---- Der Ghost landet auf der INNENSEITE der Kurve ----
+  //
+  // GEMELDET: "Die simulierten Ghosts fahren keine Ideallinie sondern immer aussen in der
+  // Kurve. Da ist eine Ideallinie in der Strecke eingezeichnet, die sollen sie fahren."
+  //
+  // Die Ursache waren zwei gegenlaeufige Konventionen, die aufeinandertrafen: g.querSoll ist
+  // eine LENKANFORDERUNG (positiv rechts, wie Byte 7 und wie der Stick), die Karte zeichnet
+  // aber entlang der NORMALEN, und die zeigt nach links. Wer die eine Zahl als die andere
+  // benutzt, spiegelt jedes Auto an der Mittellinie.
+  //
+  // DIESE PRUEFUNG RECHNET GEOMETRIE, keine Vorzeichen: sie legt den Kreismittelpunkt der
+  // Kurve durch drei Punkte der Mittellinie und vergleicht die Radien. Ein Vorzeichentest
+  // waere hier wertlos - er waere algebraisch immer wahr, weil beide Groessen aus demselben
+  // alpha kommen. Der Radius ist die Frage, die der Nutzer stellt.
+  stAdd('Ghost in der Kurve: innen und nicht aussen', () => {
+    const merkTiles = currentTrackTiles;
+    const schlecht = [];
+    const zeilen = [];
+    try {
+      // Geschlossene Strecke - auf einer offenen saettigt die Linie, und dann prueft man
+      // die Saettigung statt der Linie.
+      const p = codeToTrack('SR3G2R3G');
+      currentTrackTiles = p.tiles;
+      lineCache = null;
+      const pts = trackCenterline(p.tiles);
+      const nrm = trackNormals(pts);
+      const rows = OMEGA_TEST.compareLines(p.tiles, 10);
+      if (!rows.meta || !rows.meta.closed) {
+        return { ok: false, mass: 'die Teststrecke gilt nicht als geschlossen' };
+      }
+      const mitte = (i) => {
+        const a = pts[i - 4], b = pts[i], c = pts[i + 4];
+        if (!a || !c) return null;
+        const d = 2 * (a.x * (b.y - c.y) + b.x * (c.y - a.y) + c.x * (a.y - b.y));
+        if (Math.abs(d) < 1e-9) return null;
+        return {
+          x: ((a.x * a.x + a.y * a.y) * (b.y - c.y) + (b.x * b.x + b.y * b.y) * (c.y - a.y)
+              + (c.x * c.x + c.y * c.y) * (a.y - b.y)) / d,
+          y: ((a.x * a.x + a.y * a.y) * (c.x - b.x) + (b.x * b.x + b.y * b.y) * (a.x - c.x)
+              + (c.x * c.x + c.y * c.y) * (b.x - a.x)) / d,
+        };
+      };
+      const halb = TRACK_HALF_W;
+      let geprueft = 0;
+      for (let k = 0; k < p.tiles.length; k++) {
+        const typ = p.tiles[k].type;
+        if (typ !== TILE_TYPE.CURVE_LEFT && typ !== TILE_TYPE.CURVE_RIGHT
+            && typ !== TILE_TYPE.HAIRPIN && typ !== TILE_TYPE.HAIRPIN_LEFT) continue;
+        const inK = rows.filter((r) => r.tile === k && Math.abs(r.phase - 0.5) < 0.15)[0];
+        if (!inK) continue;
+        const idx = [];
+        for (let i = 0; i < pts.length; i++) if (pts[i].tile === k) idx.push(i);
+        const i = idx[Math.floor(idx.length / 2)];
+        const c = mitte(i);
+        if (!c) continue;
+        geprueft++;
+        // Die Lage, die die Karte zeichnet: querSollAlsLage(Lenkwert), mal 85 Prozent der
+        // halben Breite - genau die Rechnung aus karteAutosSetzen().
+        const lage = querSollAlsLage(inK.calc);
+        const px = pts[i].x + nrm[i].x * lage * 0.85 * halb;
+        const py = pts[i].y + nrm[i].y * lage * 0.85 * halb;
+        const rM = Math.hypot(pts[i].x - c.x, pts[i].y - c.y);
+        const rA = Math.hypot(px - c.x, py - c.y);
+        zeilen.push('K' + k + ' ' + rA.toFixed(0) + '/' + rM.toFixed(0));
+        if (!(rA < rM)) {
+          schlecht.push('K' + k + ': Auto r=' + rA.toFixed(1) + ' nicht innerhalb der '
+                        + 'Mittellinie r=' + rM.toFixed(1));
+        }
+      }
+      if (!geprueft) schlecht.push('keine Kurve gefunden');
+    } catch (e) {
+      schlecht.push('Ausnahme: ' + e.message);
+    } finally {
+      currentTrackTiles = merkTiles;
+      lineCache = null;
+    }
+    return { ok: !schlecht.length,
+             mass: 'Radius Auto/Mittellinie: ' + zeilen.join(' ')
+                 + (schlecht.length ? ' || ' + schlecht.join('; ') : ' | alle innen') };
   });
 
   // ---- Controller-Vibration: ein Schalter je Ausloeser ----

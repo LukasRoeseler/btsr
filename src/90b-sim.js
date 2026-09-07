@@ -352,7 +352,12 @@
           kuerzel: a.car.alias,
           // Die ANGEFORDERTE Querlage, wie auf der echten Karte: die Schiene haelt das Auto,
           // gemessen wird sie nicht. Damit sieht man Spuren und Ueberholmanoever.
-          quer: (a.car.ghost && a.car.ghost.querSoll) || 0,
+          //
+          // UMGEDREHT ueber querSollAlsLage(): querSoll ist ein Lenkbefehl (positiv rechts),
+          // die Karte zeichnet entlang der Normalen (positiv links). Ohne die Drehung sitzt
+          // jedes Auto auf der falschen Seite der Mittellinie - gemeldet als "fahren immer
+          // aussen in der Kurve, obwohl die Ideallinie eingezeichnet ist".
+          quer: querSollAlsLage(a.car.ghost && a.car.ghost.querSoll),
         })));
       }
     }

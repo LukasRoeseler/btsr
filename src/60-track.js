@@ -1137,6 +1137,37 @@
   // ersetzen erzeugt zehn Verwerfungen je Sekunde im Layout, und der Browser zeichnet dann
   // den ganzen Baum neu statt zweier Attribute.
   const NS_SVG = 'http://www.w3.org/2000/svg';
+  // ---- Von der LENKANFORDERUNG zur QUERLAGE auf der Karte ----------------------------
+  //
+  // ZWEI GEGENLAEUFIGE KONVENTIONEN, und beide sind fuer sich richtig - nur nicht dieselbe:
+  //
+  //   g.querSoll   ist eine LENKANFORDERUNG. Positiv heisst RECHTS, so wie Byte 7 und so wie
+  //                der Stick, dessen Anzeige `left = 75 + nx * R` nach rechts wandert, wenn
+  //                der Wert steigt.
+  //   diese Karte  zeichnet entlang der NORMALEN, und trackNormals() zeigt nach LINKS. Das
+  //                steht seit der Randstein-Berichtigung auch bei den Kerbs.
+  //
+  // Wer die eine Zahl als die andere benutzt, spiegelt jedes Auto an der Mittellinie. Genau
+  // das ist passiert. Gemeldet wurde es so: "Die simulierten Ghosts fahren keine Ideallinie
+  // sondern immer aussen in der Kurve. Da ist eine Ideallinie in der Strecke eingezeichnet,
+  // die sollen sie fahren."
+  //
+  // NACHGEMESSEN, im Modell und ohne jede Hardware-Frage: in einer Rechtskurve liegt die
+  // gezeichnete Ideallinie bei alpha = -8,35 Zeichnungseinheiten (negative Normale = rechts
+  // = innen), der Autopunkt bei querSoll = +0,97 (positive Normale = links = aussen). Zwei
+  // gegenueberliegende Seiten derselben Mittellinie.
+  //
+  // Dass die LINIE die richtige ist, ist ebenfalls gemessen und nicht gesetzt: der Weg
+  // entlang alpha ist 607 Zeichnungseinheiten lang, die Mittellinie 648 - alpha ist also die
+  // innere Linie. Und ghostLineOffset() dreht ihr Vorzeichen bewusst, um daraus einen
+  // Lenkbefehl zum Scheitel zu machen. Beides bleibt, wie es ist; falsch war nur, den
+  // Lenkbefehl ungedreht als Ort zu zeichnen.
+  //
+  // EINE STELLE FUER DIE UMRECHNUNG. Zwei Zeichner benutzen sie (die Karte hier und die
+  // Rennsimulation), und eine zweite Kopie waere die naechste Gelegenheit, das Vorzeichen
+  // nur an einem der beiden Orte zu berichtigen.
+  function querSollAlsLage(v) { return -(v || 0); }
+
   function karteAutosSetzen(svg, geo, cars) {
     if (!svg || !geo) return 0;
     let g = svg.querySelector('g.karte-autos');
@@ -1307,7 +1338,10 @@
                      // Die ANGEFORDERTE Querlage. Das Auto meldet keine; was hier steht,
                      // ist die Summe aus eigener Spur und Ideallinie, also die Lage, die
                      // die App gerade will. Mehr ist ehrlich nicht zu haben.
-                     quer: g.querSoll || 0 });
+                     //
+                     // UMGEDREHT, weil querSoll ein Lenkbefehl ist und diese Karte entlang
+                     // der Normalen zeichnet - siehe querSollAlsLage().
+                     quer: querSollAlsLage(g.querSoll) });
         } else if (c.role === 'player' && typeof dashMinimapIndex === 'number') {
           // Das eigene Auto lenkt die App nicht, es gibt also keine angeforderte QUERLAGE -
           // quer bleibt 0, statt eine zu erfinden.
