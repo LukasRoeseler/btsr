@@ -7606,7 +7606,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.5.38</span></span>
+    <span class="foot-ver">v<span id="app-version">0.5.39</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -27058,7 +27058,38 @@
       //
       // Sie greift nur, wo es ein Bremsprofil gibt, also mit gelernter oder gebauter
       // Strecke - deshalb traegt die Kurvendrosselung ihr WIP-Zeichen.
-      if (bd !== null && bd > 0) {
+      // ---- UND NUR, WENN DAS AUTO ZU SCHNELL IST -------------------------------------
+      //
+      // bd sagt "vor dir steigt die Kruemmung". Ob daraus ein Bremsbefehl folgt, entscheidet
+      // erst der Vergleich mit dem Ziel - und das Ziel enthaelt den Abzug aus DEMSELBEN bd
+      // schon (abzugProfil weiter oben). Ohne den Vergleich bremst die Vorsteuerung auch ein
+      // Auto, das noch gar nicht faehrt.
+      //
+      // GEMESSEN an SR3GLR2GR2G2 aus dem Stand, Takt fuer Takt:
+      //
+      //     Takt   Gas     Bremse   km/h
+      //       0    0,072   0        0,0014
+      //       4    0,360   0,0171   0,0234     Bremse noch unter 0,02
+      //       5    0       0,0208   0,0230     Schwelle ueberschritten, Gas weg
+      //      13    0       0,0267   0,0189     und es kommt nicht wieder
+      //
+      // Die Vorsteuerung ist hier bd * curveSlow * 1,5 = 0,0736 * 0,2 * 1,5 = 0,0221 und
+      // liegt damit GENAU auf der Schwelle von 0,02, unter der die Zeile "nicht gleichzeitig
+      // Gas und Bremse" das Gas ganz wegnimmt. Bis v0.5.37 blieb sie darunter, weil
+      // brakeProfile seinen kMax auf dem verdoppelten Schlusspunkt einer geschlossenen Runde
+      // fand (0,6999 statt 0,0581) und deshalb jeden Bremsbedarf elffach zu klein machte.
+      // Die Berichtigung machte die Zahlen richtig, und die richtigen Zahlen kippten die
+      // Schwelle - gemeldet als "alle Ghosts bleiben am Anfang haengen".
+      //
+      // DIE SCHWELLE ANZUHEBEN WAERE DIE FALSCHE ANTWORT: sie stand nur zufaellig richtig,
+      // und der naechste richtige Bremsbedarf kippt sie wieder. Falsch ist, ein Auto unter
+      // seinem Ziel zu bremsen, und das ist von jeder Schwelle unabhaengig.
+      //
+      // GHOST_DEADBAND ist der Abstand, den der Regler selbst fuer "nah genug" haelt. Ein
+      // eigener zweiter Wert waere ein zweiter Ort fuer dieselbe Frage - und beim Anfahren
+      // aus dem Stand ist der Abstand ohnehin riesig (Ziel 0,36 gegen v = 0,006).
+      const zuSchnell = v > target + GHOST_DEADBAND;
+      if (bd !== null && bd > 0 && zuSchnell) {
         brake = Math.max(brake, Math.min(1, bd * ghostCfg.curveSlow * 1.5));
         if (brake > 0.02) throttle = 0;   // nicht gleichzeitig Gas und Bremse
         g.lastBrake = brake;
@@ -30347,6 +30378,28 @@
       return simZustand();
     },
     simZustand() { return simZustand(); },
+
+    // Warum das ueber simZustand() hinaus noetig ist: "die Ghosts haengen am Anfang" ist von
+    // aussen ein einziger Zustand, innen aber mindestens vier verschiedene Ursachen - kein
+    // Ziel, Ziel aber kein Gas, Gas aber Bremse dagegen, oder geparkt. simZustand() zeigt
+    // nur das Ergebnis (kmh 0) und laesst offen, welche davon es ist.
+    simGas() {
+      if (!simAn()) return null;
+      return simState.autos.map((a) => {
+        const g = a.car.ghost || {};
+        return {
+          name: a.car.alias,
+          zielAnteil: g.lastTarget === undefined ? null : g.lastTarget,
+          gas: g.lastThrottle === undefined ? null : g.lastThrottle,
+          bremse: g.lastBrake === undefined ? null : g.lastBrake,
+          kmh: g.engine ? g.engine.state.speedKmh : null,
+          bremsbedarf: ghostBrakeDemand(a.car),
+          ortOk: ortStimmt(a.car),
+          geparkt: !!a.car.parked,
+          kachel: g.tileIndex,
+        };
+      });
+    },
 
     // Die Schlusspruefung, mit Luecke und Winkel - damit eine Pruefung die Toleranz
     // nachrechnen kann, statt sie zu glauben.
@@ -35850,6 +35903,92 @@
                         + rd + ' Runden, S1 ' + zt + ' s' : 'kein Lauf')
                  + (zDoppelt ? ' | doppelt: ' + zDoppelt.uhrMs + ' ms aus 200 Schritten' : '')
                  + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // ---- Kurve direkt hinter dem Start: das Feld faehrt trotzdem los ----
+  //
+  // DER FEHLER, DEN DIESE PRUEFUNG FESTHAELT, und warum die Pruefung darueber ihn NICHT
+  // gefunden hat: sie fuhr auf SG2H2G2R2G2H2G2R2, also mit zwei Geraden hinter dem Start.
+  // Dort ist der Bremsbedarf am Startplatz nahe null. Gemeldet wurde SR3GLR2GR2G2 - Kurve
+  // ab Kachel eins -, und dort stand das ganze Feld:
+  //
+  //     Takt   Gas     Bremse   km/h
+  //       4    0,360   0,0171   0,0234
+  //       5    0       0,0208   0,0230     Schwelle 0,02 ueberschritten
+  //      13    0       0,0267   0,0189     Gas kommt nicht wieder
+  //
+  // Die Vorsteuerung aus dem Bremsprofil bremste ein STEHENDES Auto, und die Zeile "nicht
+  // gleichzeitig Gas und Bremse" nahm ihm daraufhin das Gas, mit dem es losfahren wuerde.
+  //
+  // GEPRUEFT WIRD DIE INVARIANTE UND NICHT EINE SCHWELLE: kein Auto darf Gas 0 haben,
+  // solange es unter seinem Ziel liegt. Eine Pruefung auf "km/h nach zwei Sekunden groesser
+  // als X" waere schwaecher - sie haengt an X, und X haengt am Regler. Die Invariante haengt
+  // an nichts: ein Auto unter seinem Ziel ohne Gas ist immer ein Widerspruch.
+  //
+  // Beides zusammen, weil die Invariante allein auch von einem Auto erfuellt wird, das gar
+  // nicht erst startet: also zusaetzlich die Bewegung.
+  stAdd('Rennsimulation: Kurve hinter dem Start haelt das Feld nicht auf', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.simGas) {
+      return { skip: true, mass: 'simGas nicht erreichbar' };
+    }
+    const schlecht = [];
+    const merkTiles = currentTrackTiles;
+    const merkGarage = garage.slice();
+    const echtNowVorher = Date.now;
+    let letzte = null, wider = 0, minKmh = null;
+    try {
+      // Die gemeldete Strecke, unveraendert.
+      currentTrackTiles = codeToTrack('SR3GLR2GR2G2').tiles;
+      lineCache = null;
+      const setzen = (id, v) => { const e = $(id); if (e) { if (e.type === 'checkbox') e.checked = v; else e.value = v; } };
+      setzen('sim-ghosts', '4'); setzen('sim-laps', '5'); setzen('sim-fast', false);
+      simStart();
+      if (!simAn()) return { ok: false, mass: 'Simulation startete nicht' };
+      const top = physEngine.config.topSpeedKmh || 4;
+      // 90 Takte, also gut vier Sekunden - lange genug, dass die Ratenbegrenzung der Bremse
+      // ihren Endwert erreicht hat, und kurz genug fuer eine Pruefung.
+      for (let i = 0; i < 90; i++) {
+        letzte = OMEGA_TEST.simSchritte(1, 45);
+        if (!letzte) break;
+        for (const g of OMEGA_TEST.simGas()) {
+          if (g.zielAnteil === null || g.gas === null || g.kmh === null) continue;
+          const v = Math.abs(g.kmh) / top;
+          // GHOST_DEADBAND ist derselbe Abstand, den der Regler fuer "nah genug" haelt.
+          if (g.gas === 0 && v < g.zielAnteil - GHOST_DEADBAND && !g.geparkt) wider++;
+        }
+      }
+      for (const a of (letzte ? letzte.autos : [])) {
+        if (a.geparkt) schlecht.push(a.name + ' steht (geparkt)');
+        const anteil = (a.kmh || 0) / top;
+        if (minKmh === null || anteil < minKmh) minKmh = anteil;
+        // Nach vier Sekunden muss das Auto FAHREN. 20 Prozent der Modellspitze sind grob
+        // die Haelfte des Ghost-Ziels von 36 Prozent - der Wert faengt "steht" und nicht
+        // "faehrt etwas langsamer als erwartet".
+        if (!(anteil > 0.2)) {
+          schlecht.push(a.name + ' bei ' + (anteil * 100).toFixed(0) + ' % der Spitze');
+        }
+        if (!(a.s > 0)) schlecht.push(a.name + ' hat keinen Weg zurueckgelegt');
+      }
+      if (wider > 0) schlecht.push(wider + 'x Gas 0 unter dem Ziel');
+    } catch (e) {
+      schlecht.push('Ausnahme: ' + e.message);
+    } finally {
+      if (simAn()) simStop('Pruefung');
+      if (Date.now !== echtNowVorher) {
+        schlecht.push('Date.now ist noch gefaelscht');
+        Date.now = echtNowVorher;
+      }
+      garage.splice(0, garage.length);
+      for (const c of merkGarage) garage.push(c);
+      currentTrackTiles = merkTiles;
+      lineCache = null;
+      if (typeof renderGarage === 'function') renderGarage();
+    }
+    return { ok: !schlecht.length,
+             mass: 'SR3GLR2GR2G2, nach 4 s langsamstes Auto bei '
+                   + (minKmh === null ? '-' : (minKmh * 100).toFixed(0) + ' %')
+                   + ', ' + wider + ' Widersprueche (Gas 0 unter Ziel)'
+                   + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
   });
 
   // ---- Kachel zu Abtastpunkt: keine Multiplikation ----

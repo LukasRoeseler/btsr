@@ -3502,6 +3502,92 @@
                  + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
   });
 
+  // ---- Kurve direkt hinter dem Start: das Feld faehrt trotzdem los ----
+  //
+  // DER FEHLER, DEN DIESE PRUEFUNG FESTHAELT, und warum die Pruefung darueber ihn NICHT
+  // gefunden hat: sie fuhr auf SG2H2G2R2G2H2G2R2, also mit zwei Geraden hinter dem Start.
+  // Dort ist der Bremsbedarf am Startplatz nahe null. Gemeldet wurde SR3GLR2GR2G2 - Kurve
+  // ab Kachel eins -, und dort stand das ganze Feld:
+  //
+  //     Takt   Gas     Bremse   km/h
+  //       4    0,360   0,0171   0,0234
+  //       5    0       0,0208   0,0230     Schwelle 0,02 ueberschritten
+  //      13    0       0,0267   0,0189     Gas kommt nicht wieder
+  //
+  // Die Vorsteuerung aus dem Bremsprofil bremste ein STEHENDES Auto, und die Zeile "nicht
+  // gleichzeitig Gas und Bremse" nahm ihm daraufhin das Gas, mit dem es losfahren wuerde.
+  //
+  // GEPRUEFT WIRD DIE INVARIANTE UND NICHT EINE SCHWELLE: kein Auto darf Gas 0 haben,
+  // solange es unter seinem Ziel liegt. Eine Pruefung auf "km/h nach zwei Sekunden groesser
+  // als X" waere schwaecher - sie haengt an X, und X haengt am Regler. Die Invariante haengt
+  // an nichts: ein Auto unter seinem Ziel ohne Gas ist immer ein Widerspruch.
+  //
+  // Beides zusammen, weil die Invariante allein auch von einem Auto erfuellt wird, das gar
+  // nicht erst startet: also zusaetzlich die Bewegung.
+  stAdd('Rennsimulation: Kurve hinter dem Start haelt das Feld nicht auf', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.simGas) {
+      return { skip: true, mass: 'simGas nicht erreichbar' };
+    }
+    const schlecht = [];
+    const merkTiles = currentTrackTiles;
+    const merkGarage = garage.slice();
+    const echtNowVorher = Date.now;
+    let letzte = null, wider = 0, minKmh = null;
+    try {
+      // Die gemeldete Strecke, unveraendert.
+      currentTrackTiles = codeToTrack('SR3GLR2GR2G2').tiles;
+      lineCache = null;
+      const setzen = (id, v) => { const e = $(id); if (e) { if (e.type === 'checkbox') e.checked = v; else e.value = v; } };
+      setzen('sim-ghosts', '4'); setzen('sim-laps', '5'); setzen('sim-fast', false);
+      simStart();
+      if (!simAn()) return { ok: false, mass: 'Simulation startete nicht' };
+      const top = physEngine.config.topSpeedKmh || 4;
+      // 90 Takte, also gut vier Sekunden - lange genug, dass die Ratenbegrenzung der Bremse
+      // ihren Endwert erreicht hat, und kurz genug fuer eine Pruefung.
+      for (let i = 0; i < 90; i++) {
+        letzte = OMEGA_TEST.simSchritte(1, 45);
+        if (!letzte) break;
+        for (const g of OMEGA_TEST.simGas()) {
+          if (g.zielAnteil === null || g.gas === null || g.kmh === null) continue;
+          const v = Math.abs(g.kmh) / top;
+          // GHOST_DEADBAND ist derselbe Abstand, den der Regler fuer "nah genug" haelt.
+          if (g.gas === 0 && v < g.zielAnteil - GHOST_DEADBAND && !g.geparkt) wider++;
+        }
+      }
+      for (const a of (letzte ? letzte.autos : [])) {
+        if (a.geparkt) schlecht.push(a.name + ' steht (geparkt)');
+        const anteil = (a.kmh || 0) / top;
+        if (minKmh === null || anteil < minKmh) minKmh = anteil;
+        // Nach vier Sekunden muss das Auto FAHREN. 20 Prozent der Modellspitze sind grob
+        // die Haelfte des Ghost-Ziels von 36 Prozent - der Wert faengt "steht" und nicht
+        // "faehrt etwas langsamer als erwartet".
+        if (!(anteil > 0.2)) {
+          schlecht.push(a.name + ' bei ' + (anteil * 100).toFixed(0) + ' % der Spitze');
+        }
+        if (!(a.s > 0)) schlecht.push(a.name + ' hat keinen Weg zurueckgelegt');
+      }
+      if (wider > 0) schlecht.push(wider + 'x Gas 0 unter dem Ziel');
+    } catch (e) {
+      schlecht.push('Ausnahme: ' + e.message);
+    } finally {
+      if (simAn()) simStop('Pruefung');
+      if (Date.now !== echtNowVorher) {
+        schlecht.push('Date.now ist noch gefaelscht');
+        Date.now = echtNowVorher;
+      }
+      garage.splice(0, garage.length);
+      for (const c of merkGarage) garage.push(c);
+      currentTrackTiles = merkTiles;
+      lineCache = null;
+      if (typeof renderGarage === 'function') renderGarage();
+    }
+    return { ok: !schlecht.length,
+             mass: 'SR3GLR2GR2G2, nach 4 s langsamstes Auto bei '
+                   + (minKmh === null ? '-' : (minKmh * 100).toFixed(0) + ' %')
+                   + ', ' + wider + ' Widersprueche (Gas 0 unter Ziel)'
+                   + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
   // ---- Kachel zu Abtastpunkt: keine Multiplikation ----
   //
   // DER FEHLER, DEN DIESE PRUEFUNG FESTHAELT: es stand `kachel * TRACK_SAMPLES_PER_TILE` an

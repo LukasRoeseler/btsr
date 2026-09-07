@@ -1834,6 +1834,28 @@
     },
     simZustand() { return simZustand(); },
 
+    // Warum das ueber simZustand() hinaus noetig ist: "die Ghosts haengen am Anfang" ist von
+    // aussen ein einziger Zustand, innen aber mindestens vier verschiedene Ursachen - kein
+    // Ziel, Ziel aber kein Gas, Gas aber Bremse dagegen, oder geparkt. simZustand() zeigt
+    // nur das Ergebnis (kmh 0) und laesst offen, welche davon es ist.
+    simGas() {
+      if (!simAn()) return null;
+      return simState.autos.map((a) => {
+        const g = a.car.ghost || {};
+        return {
+          name: a.car.alias,
+          zielAnteil: g.lastTarget === undefined ? null : g.lastTarget,
+          gas: g.lastThrottle === undefined ? null : g.lastThrottle,
+          bremse: g.lastBrake === undefined ? null : g.lastBrake,
+          kmh: g.engine ? g.engine.state.speedKmh : null,
+          bremsbedarf: ghostBrakeDemand(a.car),
+          ortOk: ortStimmt(a.car),
+          geparkt: !!a.car.parked,
+          kachel: g.tileIndex,
+        };
+      });
+    },
+
     // Die Schlusspruefung, mit Luecke und Winkel - damit eine Pruefung die Toleranz
     // nachrechnen kann, statt sie zu glauben.
     trackSchluss(code) {

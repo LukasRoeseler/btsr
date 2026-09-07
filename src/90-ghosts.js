@@ -4094,7 +4094,38 @@
       //
       // Sie greift nur, wo es ein Bremsprofil gibt, also mit gelernter oder gebauter
       // Strecke - deshalb traegt die Kurvendrosselung ihr WIP-Zeichen.
-      if (bd !== null && bd > 0) {
+      // ---- UND NUR, WENN DAS AUTO ZU SCHNELL IST -------------------------------------
+      //
+      // bd sagt "vor dir steigt die Kruemmung". Ob daraus ein Bremsbefehl folgt, entscheidet
+      // erst der Vergleich mit dem Ziel - und das Ziel enthaelt den Abzug aus DEMSELBEN bd
+      // schon (abzugProfil weiter oben). Ohne den Vergleich bremst die Vorsteuerung auch ein
+      // Auto, das noch gar nicht faehrt.
+      //
+      // GEMESSEN an SR3GLR2GR2G2 aus dem Stand, Takt fuer Takt:
+      //
+      //     Takt   Gas     Bremse   km/h
+      //       0    0,072   0        0,0014
+      //       4    0,360   0,0171   0,0234     Bremse noch unter 0,02
+      //       5    0       0,0208   0,0230     Schwelle ueberschritten, Gas weg
+      //      13    0       0,0267   0,0189     und es kommt nicht wieder
+      //
+      // Die Vorsteuerung ist hier bd * curveSlow * 1,5 = 0,0736 * 0,2 * 1,5 = 0,0221 und
+      // liegt damit GENAU auf der Schwelle von 0,02, unter der die Zeile "nicht gleichzeitig
+      // Gas und Bremse" das Gas ganz wegnimmt. Bis v0.5.37 blieb sie darunter, weil
+      // brakeProfile seinen kMax auf dem verdoppelten Schlusspunkt einer geschlossenen Runde
+      // fand (0,6999 statt 0,0581) und deshalb jeden Bremsbedarf elffach zu klein machte.
+      // Die Berichtigung machte die Zahlen richtig, und die richtigen Zahlen kippten die
+      // Schwelle - gemeldet als "alle Ghosts bleiben am Anfang haengen".
+      //
+      // DIE SCHWELLE ANZUHEBEN WAERE DIE FALSCHE ANTWORT: sie stand nur zufaellig richtig,
+      // und der naechste richtige Bremsbedarf kippt sie wieder. Falsch ist, ein Auto unter
+      // seinem Ziel zu bremsen, und das ist von jeder Schwelle unabhaengig.
+      //
+      // GHOST_DEADBAND ist der Abstand, den der Regler selbst fuer "nah genug" haelt. Ein
+      // eigener zweiter Wert waere ein zweiter Ort fuer dieselbe Frage - und beim Anfahren
+      // aus dem Stand ist der Abstand ohnehin riesig (Ziel 0,36 gegen v = 0,006).
+      const zuSchnell = v > target + GHOST_DEADBAND;
+      if (bd !== null && bd > 0 && zuSchnell) {
         brake = Math.max(brake, Math.min(1, bd * ghostCfg.curveSlow * 1.5));
         if (brake > 0.02) throttle = 0;   // nicht gleichzeitig Gas und Bremse
         g.lastBrake = brake;
