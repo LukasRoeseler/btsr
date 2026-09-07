@@ -310,6 +310,10 @@
         kmh: a.car.ghost && a.car.ghost.engine ? a.car.ghost.engine.state.speedKmh : null,
         gas: a.car.ghost && a.car.ghost.engine ? a.car.ghost.engine.state.throttle : null,
         s: a.s, kachel: a.kachel, phase: a.phase, laps: a.laps,
+        // Die angeforderte Querlage - die Groesse, die den Punkt auf der Karte seitlich
+        // setzt. Sie gehoert in den Prueffzustand, weil "alle Punkte gehen an den Rand"
+        // genau ueber sie zu messen ist.
+        quer: a.car.ghost ? (a.car.ghost.querSoll || 0) : 0,
         zeiten: a.zeiten.slice(),
         geparkt: !!a.car.parked,
         tileIndex: a.car.ghost ? a.car.ghost.tileIndex : null,

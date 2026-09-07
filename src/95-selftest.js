@@ -3485,6 +3485,216 @@
                  + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
   });
 
+  // ---- Kachel zu Abtastpunkt: keine Multiplikation ----
+  //
+  // DER FEHLER, DEN DIESE PRUEFUNG FESTHAELT: es stand `kachel * TRACK_SAMPLES_PER_TILE` an
+  // drei Stellen - die Annahme, jede Kachel liefere gleich viele Abtastpunkte.
+  // trackCenterline() vergibt sie aber nach DREHWINKEL: gemessen 14 fuer eine Gerade und
+  // 49 fuer eine Haarnadel. Auf einer Strecke mit 17 Kacheln ergab das 379 Punkte, waehrend
+  // 17 x 14 = 238 gerechnet wurde.
+  //
+  // Zwei gemeldete Folgen: die weissen Stossfugen lagen falsch und fehlten im letzten
+  // Drittel ("da fehlen die Uebergaenge zwischen den Schienen"), und die Autopunkte lagen
+  // falsch und sprangen am Rundenende auf die Ziellinie ("die Ghosts huepfen direkt von der
+  // ersten Rechtskurve unten zum Ziel").
+  //
+  // Geprueft wird die EIGENSCHAFT, nicht die Formel: zu jeder Kachel gehoert ein Punkt, der
+  // wirklich auf ihr liegt. Damit besteht auch eine kuenftige andere Rechnung, solange sie
+  // richtig ist.
+  stAdd('Kachel zu Abtastpunkt: jede Kachel trifft sich selbst', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.trackMarks) {
+      return { skip: true, mass: 'trackMarks nicht erreichbar' };
+    }
+    const LAYOUTS = ['SG2H2G2R2G2H2G2R2', 'SHJ', 'SG2RG2L', 'SH2G4J2G4'];
+    const schlecht = [];
+    let geprueft = 0, fugen = 0;
+    for (const code of LAYOUTS) {
+      const p = codeToTrack(code);
+      const pts = trackCenterline(p.tiles);
+      const tab = trackKachelTabelle(pts, p.tiles.length);
+      // 1. Jede Kachel hat Punkte, und ihr erster gehoert ihr.
+      for (let k = 0; k < p.tiles.length; k++) {
+        geprueft++;
+        if (!(tab.zahl[k] > 0)) { schlecht.push(code + ' K' + k + ': keine Punkte'); continue; }
+        if (pts[tab.start[k]].tile !== k) {
+          schlecht.push(code + ' K' + k + ': Startpunkt gehoert Kachel ' + pts[tab.start[k]].tile);
+        }
+        // 2. Und der Punkt fuer (k, phase) liegt fuer JEDE Phase auf Kachel k. Das ist die
+        //    Eigenschaft, die die Multiplikation verletzte.
+        // Phase UNTER 1 muss auf der eigenen Kachel bleiben. Phase 1 ist die GRENZE und
+        // darf auf der naechsten liegen - sie ist ein Ort, nicht zwei, und der bestehende
+        // Test "Autopunkte an der richtigen Kachel" verlangt genau das.
+        for (const ph of [0, 0.25, 0.5, 0.75, 0.95]) {
+          const i = trackPunktIndex(tab, pts, k, ph);
+          if (pts[i].tile !== k) {
+            schlecht.push(code + ' K' + k + ' Phase ' + ph + ': liegt auf Kachel ' + pts[i].tile);
+          }
+        }
+        const iGrenze = trackPunktIndex(tab, pts, k, 1);
+        const naechste = (k + 1) % p.tiles.length;
+        if (pts[iGrenze].tile !== k && pts[iGrenze].tile !== naechste) {
+          schlecht.push(code + ' K' + k + ' Phase 1: liegt auf Kachel ' + pts[iGrenze].tile);
+        }
+      }
+      // 3. Die Summe der Kachelpunkte ist die Zahl der Punkte (bis auf den Schlusspunkt,
+      //    der zu keiner Kachel gehoert - tile === -1).
+      const summe = tab.zahl.reduce((a, b) => a + b, 0);
+      const ohneKachel = pts.filter((q) => q.tile === undefined || q.tile < 0).length;
+      if (summe + ohneKachel !== pts.length) {
+        schlecht.push(code + ': ' + summe + ' + ' + ohneKachel + ' statt ' + pts.length);
+      }
+      // 4. Und die gezeichneten Stossfugen: genau eine je Kachel.
+      const html = OMEGA_TEST.trackMarks(code).html;
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+      const n = [...doc.querySelectorAll('path')].filter((x) =>
+        x.getAttribute('stroke') === '#ffffff' && x.getAttribute('stroke-width') === '1.6').length;
+      fugen += n;
+      if (n !== p.tiles.length) {
+        schlecht.push(code + ': ' + n + ' Stossfugen fuer ' + p.tiles.length + ' Kacheln');
+      }
+    }
+    return { ok: !schlecht.length,
+             mass: geprueft + ' Kacheln auf ' + LAYOUTS.length + ' Layouts, ' + fugen
+                 + ' Stossfugen'
+                 + (schlecht.length ? ' || ' + schlecht.join('; ') : ' | jede trifft sich selbst') };
+  });
+
+  // ---- Der Autopunkt laeuft die Runde entlang und springt nicht ----
+  //
+  // DIE GEGENPROBE zur Tabelle, und sie prueft das, was man SIEHT: ein Punkt, der die Runde
+  // abfaehrt, macht lauter kleine Schritte und einen einzigen grossen - den ueber Start und
+  // Ziel. Mit der alten Multiplikation lagen die Punkte gedraengt im ersten Drittel und
+  // sprangen am Ende auf die Ziellinie.
+  stAdd('Autopunkt: laeuft die Runde entlang, ein Sprung am Ziel', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.trackMarks) {
+      return { skip: true, mass: 'trackMarks nicht erreichbar' };
+    }
+    const code = 'SG2H2G2R2G2H2G2R2';
+    const p = codeToTrack(code);
+    const schritte = [];
+    let vor = null;
+    for (let k = 0; k < p.tiles.length; k++) {
+      for (const ph of [0, 0.5]) {
+        const m = OMEGA_TEST.trackMarks(code, [{ index: k, phase: ph, farbe: '#f00', kuerzel: '' }]);
+        const q = m.punkte[0];
+        if (!q) return { ok: false, mass: 'kein Punkt bei K' + k };
+        if (vor) schritte.push(Math.hypot(q.x - vor.x, q.y - vor.y));
+        vor = q;
+      }
+    }
+    const groesste = Math.max.apply(null, schritte);
+    const kleinste = Math.min.apply(null, schritte);
+    const schlecht = [];
+    // Eine halbe Gerade sind rund 20 Zeichnungseinheiten. Ein Schritt ueber 70 waere ein
+    // Sprung ueber mehr als eine ganze Kachel - und genau das war der Fehler.
+    if (groesste > 70) schlecht.push('groesster Schritt ' + groesste.toFixed(0) + ' Einheiten');
+    if (!(kleinste > 1)) schlecht.push('kleinster Schritt ' + kleinste.toFixed(1)
+                                       + ' - Punkte liegen uebereinander');
+    return { ok: !schlecht.length,
+             mass: schritte.length + ' Schritte, ' + kleinste.toFixed(0) + ' bis '
+                 + groesste.toFixed(0) + ' Einheiten je halbe Kachel'
+                 + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // ---- Die Richtungsprobe erkennt eine spiegelbildlich eingetragene Strecke ----
+  //
+  // Sie ist die Antwort auf "Ghosts fahren in jeder Kurve ganz aussen". Nachgemessen ist die
+  // Ideallinie in Ordnung (607 gegen 648 Einheiten, also die innere) und ihr Lenkbefehl
+  // zeigt zum Scheitel. Was ALLE Kurven umdreht, ist eine Strecke, die andersherum
+  // eingetragen ist als sie gefahren wird - und das ist an den gemeldeten Codes zu sehen.
+  stAdd('Richtungsprobe: erkennt eine andersherum eingetragene Strecke', () => {
+    const merkTiles = currentTrackTiles;
+    const schlecht = [];
+    const meldung = [];
+    const echtLog = typeof log === 'function' ? log : null;
+    try {
+      // Ein Layout aus Rechtskurven.
+      currentTrackTiles = codeToTrack('SG2R2G2R2G2R2G2R2').tiles;
+      const mk = () => ({ tag: 'P', device: { name: 'Probe', id: 'probe' },
+                          tileCode: 0xff, ghost: { tileIndex: 0, laps: 0 } });
+      // Fall 1: das Auto meldet LINKSkurven - Widerspruch, es muss gemeldet werden.
+      const a = mk();
+      for (let i = 0; i < 20 && !a.ghost.richtungGemeldet; i++) {
+        a.tileCode = TILE_TYPE.CURVE_LEFT;
+        richtungPruefen(a);
+      }
+      if (!a.ghost.richtungGemeldet) schlecht.push('Widerspruch nicht erkannt');
+      else if (!(a.ghost.kurvenLinks >= 6)) schlecht.push('zu frueh geurteilt');
+      meldung.push('Widerspruch nach ' + (a.ghost.kurvenLinks + a.ghost.kurvenRechts) + ' Kurven');
+
+      // Fall 2: das Auto meldet RECHTSkurven - passt, es darf NICHT gemeldet werden.
+      // Geprueft ueber den Zaehler: er laeuft weiter, bis genug gesehen ist, und schaltet
+      // dann still ab.
+      const b = mk();
+      for (let i = 0; i < 30; i++) { b.tileCode = TILE_TYPE.CURVE_RIGHT; richtungPruefen(b); }
+      if (b.ghost.kurvenRechts < 6) schlecht.push('richtige Richtung: gar nicht gezaehlt');
+
+      // Fall 3: eine Strecke fast ohne Kurven sagt nichts - kein Fehlalarm.
+      currentTrackTiles = codeToTrack('SG8').tiles;
+      const c = mk();
+      for (let i = 0; i < 20; i++) { c.tileCode = TILE_TYPE.CURVE_LEFT; richtungPruefen(c); }
+      // Bei unter zwei Kurven im Layout wird abgeschaltet, ohne zu urteilen.
+      if (!c.ghost.richtungGemeldet) schlecht.push('ohne Kurven im Layout nicht abgeschaltet');
+    } catch (e) {
+      schlecht.push('Ausnahme: ' + e.message);
+    } finally {
+      currentTrackTiles = merkTiles;
+      lineCache = null;
+    }
+    return { ok: !schlecht.length,
+             mass: meldung.join(', ')
+                 + (schlecht.length ? ' || ' + schlecht.join('; ') : ' | drei Faelle richtig') };
+  });
+
+  // ---- Die Schlusspruefung toleriert Bautoleranz und nicht ein fehlendes Teil ----
+  //
+  // GEMELDET: "Bei einer laengeren Strecke passen die Schienen am Ende auch nicht perfekt
+  // zusammen. Wenn ich dann Simulation starte, gehen alle Punkte nur an den Rand. Du
+  // brauchst etwas, um zu erkennen, dass die Strecke geschlossen ist und musst dabei etwas
+  // Ungenauigkeit tolerieren."
+  //
+  // Die Kette dahinter: gilt eine Bahn als offen, klemmt idealLine() ihre Endpunkte fest und
+  // die Kruemmungsminimierung zieht alpha ueber lange Stuecke an den Anschlag - gemessen
+  // 25 Prozent aller Abtastpunkte am Rand. Dann faehrt jeder Ghost am Rand.
+  //
+  // DIE PRUEFUNG HAELT BEIDE SEITEN FEST, denn eine Toleranz ist nur so gut wie ihre
+  // Obergrenze: eine wirklich geschlossene Runde muss durchkommen, und eine, bei der ein
+  // TEIL FEHLT (gemessen genau 43 cm Luecke), darf es nicht.
+  stAdd('Streckenschluss: Bautoleranz ja, fehlendes Teil nein', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.trackSchluss) {
+      return { skip: true, mass: 'trackSchluss nicht erreichbar' };
+    }
+    const schlecht = [];
+    const zeilen = [];
+    const FAELLE = [
+      ['SR3G2R3G', true, 'geschlossene Runde'],
+      ['SR3G2R3G2', false, 'ein Teil zu viel (43 cm Luecke)'],
+      ['SR6', false, 'ein Teil fehlt (43 cm Luecke)'],
+      ['SR6G', false, '86 cm Luecke'],
+      ['SR2G2R2G2R2G2R2G2', false, 'endet 120 Grad verdreht'],
+    ];
+    for (const [code, soll, was] of FAELLE) {
+      const r = OMEGA_TEST.trackSchluss(code);
+      zeilen.push(code + ': ' + r.lueckeCm.toFixed(0) + ' cm / '
+                  + Math.abs(r.winkel).toFixed(0) + '° -> '
+                  + (r.closed ? 'zu' : 'offen'));
+      if (r.closed !== soll) {
+        schlecht.push(code + ' (' + was + ') gilt als ' + (r.closed ? 'geschlossen' : 'offen'));
+      }
+    }
+    // Und die Toleranz selbst: sie muss deutlich unter einer Kachellaenge liegen, sonst
+    // gilt eine unfertige Strecke als Ring. 43 cm ist die gemessene Luecke eines fehlenden
+    // Teils; mehr als die Haelfte davon waere fahrlaessig.
+    const ausser = OMEGA_TEST.trackSchluss('SR6');
+    if (!(ausser.lueckeCm > 21)) {
+      schlecht.push('die Referenzluecke eines fehlenden Teils ist nur '
+                    + ausser.lueckeCm.toFixed(0) + ' cm - Annahme pruefen');
+    }
+    return { ok: !schlecht.length,
+             mass: zeilen.join(' | ')
+                 + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
   // ---- Controller-Vibration: ein Schalter je Ausloeser ----
   //
   // Siebzehn Aufrufstellen, sechs Arten, ein Hauptschalter. Geprueft wird die

@@ -2888,12 +2888,19 @@
     const pts = trackCenterline(tiles);
     if (pts.length < 8) return null;
     const nrm = trackNormals(pts);
-    const first = pts[0], last = pts[pts.length - 1];
-    // 2 cm, nicht 60 Zeichnungseinheiten. Die 60 sind 64,5 cm, und eine Kachel ist
-    // 43 cm lang: eine Strecke, bei der genau ein Teil fehlt, galt damit als geschlossen.
-    // Im Editor war dieselbe Zahl schon berichtigt, hier stand sie noch - und hier ist sie
-    // folgenreicher, weil die Ghosts danach im Kreis herum vorausschauen.
-    const closed = Math.hypot(last.x - first.x, last.y - first.y) < 2 * TRACK_UNITS_PER_CM;
+    // ---- DIE ZWEITE SCHLUSSPRUEFUNG, und sie war die folgenreichere -----------------
+    //
+    // Hier stand dieselbe Rechnung wie in 60-track.js, mit derselben Toleranz von 2 cm -
+    // zwei Orte fuer eine Wahrheit, und dieser ist der, an dem GEFAHREN wird. Der Editor
+    // zeigt bei einer nicht geschlossenen Strecke wenigstens "Offen"; hier hatte es keine
+    // Anzeige und die volle Wirkung: bei `closed: false` klemmt idealLine() die Endpunkte
+    // fest, und die Kruemmungsminimierung zieht `alpha` ueber lange Stuecke an den Anschlag.
+    // Gemessen 25 Prozent aller Abtastpunkte am Rand - und dann faehrt der Ghost am Rand,
+    // egal welchen Modus man waehlt.
+    //
+    // Jetzt EINE Funktion mit Lage UND Winkel; Begruendung und Zahlen stehen bei
+    // trackSchluss() in 60-track.js.
+    const closed = trackSchluss(pts).closed;
     const line = buildLine(pts, nrm, { closed });
     const path = pts.map((p, i) => [p.x + nrm[i].x * line.alpha[i],
                                     p.y + nrm[i].y * line.alpha[i]]);
@@ -2914,6 +2921,77 @@
                   model: line.model, lapTime: line.lapTime || null,
                   gain: line.gain || 0 };
     return lineCache;
+  }
+
+  // ---- Faehrt das Auto die Strecke ANDERSHERUM, als sie eingetragen ist? --------------
+  //
+  // WOZU. Gemeldet: "Ghosts fahren komisch: in jeder Kurve ganz aussen und nicht
+  // Ideallinie, egal welchen Modus ich waehle." In JEDER Kurve, in beiden Richtungen - und
+  // das kann nur eine Ursache haben, die die Kurvenrichtung insgesamt umdreht.
+  //
+  // Nachgemessen ist die Ideallinie in Ordnung: sie ist mit 607 gegen 648 Zeichnungseinheiten
+  // kuerzer als die Mittellinie, also die innere, und ghostLineOffset() dreht ihr Vorzeichen
+  // in einen Lenkbefehl zum Scheitel - auf einer Rechtsstrecke gemessen +59 von 127, also
+  // nach rechts. Positives Byte 7 ist rechts; das bestaetigt der Stick, dessen Anzeige
+  // `left = 75 + nx * R` nach rechts wandert, wenn der Wert steigt.
+  //
+  // Bleibt eine Erklaerung, die alles umdreht: die Strecke ist SPIEGELBILDLICH eingetragen,
+  // oder das Auto faehrt sie in der anderen Richtung. Dann ist jede Kurve, die das Layout
+  // als rechts fuehrt, fuer das Auto eine Linkskurve - und die Linie zieht in jeder Kurve
+  // nach aussen. Genau das gemeldete Bild.
+  //
+  // DAS IST MESSBAR, und zwar ohne jede Ausrichtung: Byte 12 unterscheidet links von rechts
+  // (0x03 gegen 0x04, 0x05 gegen 0x06). Man zaehlt also, was das AUTO an Kurvenrichtungen
+  // meldet, und vergleicht es mit dem, was im Layout steht. Kein Vorausblick, keine Phase,
+  // keine Annahme ueber die Ausrichtung - nur zwei Zaehlerstaende.
+  //
+  // ES WIRD NUR GEMELDET UND NICHTS UMGESTELLT. Ob die Strecke falsch eingetragen ist oder
+  // das Auto andersherum fahren soll, kann diese App nicht wissen - beides ist eine
+  // Entscheidung des Menschen, der die Bahn gelegt hat. Eine App, die das Layout
+  // stillschweigend spiegelt, macht aus einem sichtbaren Fehler einen unsichtbaren.
+  const RICHTUNG_MIN = 6;      // so viele gemeldete Kurven, bevor geurteilt wird
+  const RICHTUNG_KLAR = 0.8;   // so eindeutig muss es sein
+
+  function kurvenSeite(code) {
+    if (code === TILE_TYPE.CURVE_RIGHT || code === TILE_TYPE.HAIRPIN) return 1;
+    if (code === TILE_TYPE.CURVE_LEFT || code === TILE_TYPE.HAIRPIN_LEFT) return -1;
+    return 0;
+  }
+
+  function richtungPruefen(car) {
+    const g = car.ghost;
+    const tiles = currentTrackTiles;
+    if (!g || !tiles || tiles.length < 3 || g.richtungGemeldet) return;
+    const seite = kurvenSeite(car.tileCode);
+    if (!seite) return;
+    g.kurvenRechts = (g.kurvenRechts || 0) + (seite > 0 ? 1 : 0);
+    g.kurvenLinks = (g.kurvenLinks || 0) + (seite < 0 ? 1 : 0);
+    const gesamt = g.kurvenRechts + g.kurvenLinks;
+    if (gesamt < RICHTUNG_MIN) return;
+    // Was das LAYOUT hergibt.
+    let lR = 0, lL = 0;
+    for (const t of tiles) {
+      const s = kurvenSeite(t.type);
+      if (s > 0) lR++; else if (s < 0) lL++;
+    }
+    if (lR + lL < 2) { g.richtungGemeldet = true; return; }   // fast nur Geraden, nichts zu sagen
+    const autoRechts = g.kurvenRechts / gesamt;
+    const layoutRechts = lR / (lR + lL);
+    // Beide klar, aber gegenlaeufig.
+    const klar = (x) => x >= RICHTUNG_KLAR || x <= 1 - RICHTUNG_KLAR;
+    if (klar(autoRechts) && klar(layoutRechts)
+        && (autoRechts >= RICHTUNG_KLAR) !== (layoutRechts >= RICHTUNG_KLAR)) {
+      g.richtungGemeldet = true;
+      log(garageLabel(car) + ': Das Auto meldet ' + g.kurvenRechts + ' Rechts- und '
+          + g.kurvenLinks + ' Linkskurven, das eingetragene Layout hat ' + lR + ' und ' + lL
+          + '. Die Strecke ist also spiegelbildlich eingetragen oder wird andersherum '
+          + 'gefahren - dann zieht die Ideallinie in JEDER Kurve nach aussen statt zum '
+          + 'Scheitel. Strecke neu einlesen oder in der anderen Richtung starten.', 'err');
+      showHudToast('STRECKE ANDERSHERUM');
+    } else if (gesamt >= RICHTUNG_MIN * 3) {
+      // Genug gesehen und kein Widerspruch: nicht weiter zaehlen.
+      g.richtungGemeldet = true;
+    }
   }
 
   // Abtastindex fuer (Kachel, Phase). null, wenn es zu dieser Kachel keine Punkte gibt.
@@ -3638,6 +3716,9 @@
       // dauert mindestens 250 ms, waehrend dieser Takt alle 45 ms laeuft: zwei Wechsel
       // zwischen zwei Takten kann es nicht geben.
       ortAbgleich(car);
+      // Und die Richtungsprobe: sie braucht nur den gemeldeten Code und das Layout, also
+      // dieselbe Gelegenheit. Begruendung bei richtungPruefen().
+      richtungPruefen(car);
       // Die Lenkmessung zaehlt hier mit, wo Kachelwechsel und Rundenschluss ohnehin
       // durchlaufen. Ein eigener Zeitgeber waere ein zweiter Ort fuer dieselbe Zaehlung.
       lmTick(car, lmRundeVoll);
@@ -4042,7 +4123,14 @@
         //
         // Und es bleibt eine ANFORDERUNG: das Auto meldet seine Querlage nicht. Traege
         // nachgefuehrt, damit der Punkt auf der Karte nicht zittert.
-        g.querSoll = (g.querSoll || 0) + (steer - (g.querSoll || 0)) * 0.25;
+        // AUF DEN BEREICH DES BEFEHLS GEKLEMMT. Die Summe aus Linie, Ausweichversatz und
+        // Spur kann ueber 1 hinauslaufen - gemessen 1,16 bei Ideallinie 100 Prozent und
+        // seitlichem Versatz 80 Prozent. Byte 7 kann das nicht: buildCommandPacket() klemmt
+        // auf +/-127. Eine aufgeschriebene Anforderung, die groesser ist als das, was das
+        // Auto bekommen kann, ist keine Anforderung, sondern eine Zwischensumme - und die
+        // Karte hat sie als Querlage gezeichnet und jeden Punkt auf den Randstein gesetzt.
+        const querRoh = Math.max(-1, Math.min(1, steer));
+        g.querSoll = (g.querSoll || 0) + (querRoh - (g.querSoll || 0)) * 0.25;
       } else {
         // Fallback for cars not in guard-rail mode: the old layout-plus-yaw controller.
         const dir = ghostTurnDir(car, 0);

@@ -259,6 +259,125 @@
   const TRACK_HAIRPIN_DEG = 180;
   const TRACK_SAMPLES_PER_TILE = 14;
 
+  // ---- Welche Abtastpunkte gehoeren zu welcher Kachel? -------------------------------
+  //
+  // AUS DEN PUNKTEN SELBST, und das ist die Behebung eines Fehlers, der drei Dinge auf
+  // einmal kaputt gemacht hat.
+  //
+  // Es stand an mehreren Stellen `kachel * TRACK_SAMPLES_PER_TILE` - die Annahme, jede
+  // Kachel liefere gleich viele Abtastpunkte. Sie tut es nicht: trackCenterline() vergibt
+  // die Punkte nach DREHWINKEL, und gemessen auf SG2H2G2R2G2H2G2R2 sind das
+  //
+  //     Gerade      14 Punkte
+  //     60-Grad     14 Punkte
+  //     Haarnadel   49 Punkte
+  //
+  // 17 Kacheln ergaben so 379 Punkte, waehrend 17 x 14 = 238 gerechnet wurde. Folgen, alle
+  // drei gemeldet:
+  //
+  //   Die weissen Stossfugen zwischen den Kacheln lagen falsch und HOERTEN nach 63 Prozent
+  //   der Runde auf - dahinter klemmte Math.min sie alle auf den letzten Punkt.
+  //   ("Da fehlen die Uebergaenge zwischen den Schienen")
+  //
+  //   Die Autopunkte lagen falsch und sprangen am Rundenende auf die Ziellinie, weil
+  //   dieselbe Multiplikation ueber das Ende hinauslief.
+  //   ("die Ghosts huepfen direkt von der ersten Rechtskurve unten zum Ziel")
+  //
+  // Die richtige Zuordnung war die ganze Zeit da: jeder Abtastpunkt traegt sein `tile`.
+  // Der Pit-Zweig dieser Datei benutzt es schon (`q.p.tile === idx`) - nur die drei anderen
+  // Stellen rechneten daran vorbei.
+  function trackKachelTabelle(pts, anzahlKacheln) {
+    const start = new Array(anzahlKacheln).fill(-1);
+    const zahl = new Array(anzahlKacheln).fill(0);
+    for (let i = 0; i < pts.length; i++) {
+      const t = pts[i].tile;
+      if (t === undefined || t === null || t < 0 || t >= anzahlKacheln) continue;
+      if (start[t] < 0) start[t] = i;
+      zahl[t]++;
+    }
+    // Kacheln ohne eigene Punkte gibt es nicht, aber ein Rueckfall kostet nichts und
+    // verhindert, dass ein kuenftiger Kacheltyp ohne Abtastung hier NaN erzeugt.
+    for (let t = 0; t < anzahlKacheln; t++) {
+      if (start[t] < 0) {
+        start[t] = t > 0 ? start[t - 1] + zahl[t - 1] : 0;
+        zahl[t] = 1;
+      }
+    }
+    return { start, zahl };
+  }
+
+  // Der Abtastpunkt fuer (Kachel, Phase). Die EINE Stelle, an der diese Rechnung steht.
+  function trackPunktIndex(tab, pts, index, phase) {
+    if (index === null || index === undefined || !tab) return 0;
+    const n = tab.start.length;
+    const k = ((Math.floor(index) % n) + n) % n;
+    const ph = Math.max(0, Math.min(1, phase || 0));
+    // zahl[k] UND NICHT zahl[k]-1, und das ist eine Berichtigung: mit -1 zeigte Phase 1 auf
+    // den letzten Punkt DIESER Kachel, waehrend Phase 0 der naechsten auf deren ersten
+    // zeigte - zwei benachbarte Abtastpunkte, gemessen 2,9 Einheiten auseinander. Die
+    // Kachelgrenze war damit zwei Orte, und der Selbsttest "Autopunkte an der richtigen
+    // Kachel" hat es sofort gemeldet: er verlangt, dass Kachel k bei Phase 1 dort liegt, wo
+    // Kachel k+1 bei Phase 0 liegt. Zu Recht - ein Auto ueberquert eine Grenze und haelt
+    // nicht davor.
+    //
+    // Mit zahl[k] landet Phase 1 auf start[k] + zahl[k], also genau auf dem ersten Punkt der
+    // naechsten Kachel. Fuer jede Phase UNTER 1 bleibt der Punkt auf seiner eigenen Kachel.
+    const roh = tab.start[k] + ph * tab.zahl[k];
+    return Math.max(0, Math.min(Math.round(roh), pts.length - 1));
+  }
+
+  // ---- IST DIE STRECKE GESCHLOSSEN? --------------------------------------------------
+  //
+  // WARUM DAS SO WICHTIG IST, und das war vorher nicht aufgeschrieben: an dieser einen
+  // Wahrheit haengt die Ideallinie. idealLine() klemmt bei `closed: false` die beiden
+  // ENDPUNKTE fest und entspannt nur das Dazwischen - auf einer Bahn, die in Wahrheit ein
+  // Ring ist, zieht die Kruemmungsminimierung die Linie dann zur Sehne, und `alpha` laeuft
+  // ueber lange Stuecke an den Anschlag. Gemessen auf einer 17-Kachel-Strecke: 25 Prozent
+  // aller Abtastpunkte am Rand.
+  //
+  // Genau so wurde es gemeldet: "bei einer laengeren Strecke passen die Schienen am Ende
+  // nicht perfekt zusammen. Wenn ich dann Simulation starte, gehen alle Punkte nur an den
+  // Rand." Die Punkte sind die Folge, die Schlusspruefung die Ursache.
+  //
+  // ZWEI BEDINGUNGEN, nicht eine.
+  //
+  //   LAGE     Wie weit liegen Anfang und Ende auseinander? Bisher die einzige Bedingung,
+  //            mit 2 cm Toleranz - das laesst nur Rundungsfehler durch. Ein echtes Layout
+  //            hat aber MODELLFEHLER: der angenommene Kurvenradius und die Kachellaenge
+  //            stimmen nicht auf den Millimeter, und ueber zwanzig Teile summiert sich das.
+  //            Ein Prozent Laengenfehler auf 20 Kacheln sind schon 8,6 cm.
+  //
+  //   WINKEL   Zeigt das Ende in dieselbe Richtung wie der Anfang? Ohne diese Frage waere
+  //            eine groessere Lagetoleranz gefaehrlich: gemessen endet SR2G2R2G2R2G2R2G2
+  //            um 120 Grad verdreht, und eine Strecke, die quer zu sich selbst ankommt, ist
+  //            kein Ring, auch wenn der Abstand klein waere.
+  //
+  // DIE ZAHLEN SIND GEWAEHLT, und der Rahmen dafuer ist gemessen: eine FEHLENDE KACHEL sind
+  // genau 43 cm - das ist die Luecke, die SR6, SL6 und SG2R3G2R3 zeigen. Die Toleranz muss
+  // deutlich darunter bleiben, sonst gilt eine unfertige Strecke als Ring. 15 cm sind ein
+  // Drittel davon und lassen den Modellfehler von zwanzig Teilen durch.
+  //
+  // 12 Grad beim Winkel: gemessen liefert SR6 schon -2,1 Grad allein aus der Abtastung (die
+  // Richtung kommt aus den letzten zwei Punkten INNERHALB des Bogens), und der naechste
+  // vorkommende Fall sind 120 Grad. Dazwischen ist viel Platz.
+  const TRACK_SCHLUSS_CM = 15;
+  const TRACK_SCHLUSS_GRAD = 12;
+
+  function trackSchluss(pts) {
+    if (!pts || pts.length < 3) return { closed: false, lueckeCm: null, winkel: null };
+    const a = pts[0], b = pts[pts.length - 1];
+    const lueckeCm = Math.hypot(b.x - a.x, b.y - a.y) / TRACK_UNITS_PER_CM;
+    const w = (p1, p2) => Math.atan2(p2.y - p1.y, p2.x - p1.x);
+    const wA = w(pts[0], pts[1]);
+    const wE = w(pts[pts.length - 2], pts[pts.length - 1]);
+    let dw = (wE - wA) * 180 / Math.PI;
+    dw = ((dw % 360) + 540) % 360 - 180;
+    return {
+      closed: lueckeCm <= TRACK_SCHLUSS_CM && Math.abs(dw) <= TRACK_SCHLUSS_GRAD,
+      lueckeCm, winkel: dw,
+    };
+  }
+
   function trackCenterline(tiles) {
     const out = [];
     let x = 0, y = 0, heading = trackRotationDeg;
@@ -827,16 +946,15 @@
       return { html: '<p class="muted">Keine Streckenteile.</p>', closed: false };
     }
     const nrm = trackNormals(pts);
+    // Welche Punkte zu welcher Kachel gehoeren - einmal je Zeichnung, danach nur gelesen.
+    const kachelTab = trackKachelTabelle(pts, tiles.length);
     const first = pts[0], last = pts[pts.length - 1];
-    // 2 cm statt 60 Zeichnungseinheiten.
-     //
-     // 60 Einheiten sind 64,5 cm, und eine Kachel ist 43 cm lang: sie passte in die
-     // Toleranz. Der Editor meldete deshalb SR6, SL6 und SHGHG als "Geschlossen", obwohl
-     // bei allen dreien genau eine Kachel fehlt - eine Anzeige, die bei einer Luecke von
-     // einer Kachelbreite noch gruen sagt, ist keine Anzeige. 2 cm lassen Rundungsfehler
-     // durch und nichts sonst. Gefunden hat es der Selbsttest.
-    const closed = Math.hypot(last.x - first.x, last.y - first.y)
-                   < 2 * TRACK_UNITS_PER_CM;
+    // Lage UND Winkel, mit Toleranz - die Begruendung und die Zahlen stehen bei
+    // trackSchluss(). Hier stand eine Toleranz von 2 cm auf die Lage allein; die liess nur
+    // Rundungsfehler durch, nicht aber den Modellfehler einer langen Strecke, und dann
+    // rechnete die Ideallinie auf einer offenen Bahn.
+    const schluss = trackSchluss(pts);
+    const closed = schluss.closed;
 
     const half = TRACK_HALF_W;
     const pad = o.detailed ? half + 14 : 30;
@@ -882,9 +1000,11 @@
 
       // 3) Joints: a white tick across the roadway at every element boundary, so the
       //    individual pieces are visible instead of one continuous ribbon.
-      const perTile = TRACK_SAMPLES_PER_TILE;
-      for (let k = 0; k <= tiles.length; k++) {
-        const i = Math.min(pts.length - 1, k * perTile);
+      // JE KACHEL IHR ERSTER PUNKT, aus der Tabelle - nicht k * 14. Begruendung bei
+      // trackKachelTabelle(): eine Haarnadel hat 49 Abtastpunkte, eine Gerade 14, und mit
+      // der Multiplikation lagen die Fugen falsch und fehlten im letzten Drittel ganz.
+      for (let k = 0; k < tiles.length; k++) {
+        const i = kachelTab.start[k];
         const A = [pts[i].x + nrm[i].x * half, pts[i].y + nrm[i].y * half];
         const B = [pts[i].x - nrm[i].x * half, pts[i].y - nrm[i].y * half];
         body += `<path d="M ${P2(A)} L ${P2(B)}" stroke="#ffffff" stroke-width="1.6" opacity=".85"/>`;
@@ -948,13 +1068,11 @@
     // DER VERSATZ: die alte Zeile rechnete (index + 1) * Abtastpunkte, also das ENDE der
     // Kachel, auf der das Auto steht - eine ganze Kachel zu weit. Richtig ist der Anfang
     // plus die Phase. Genauer geht es nicht: das Auto ortet sich nicht, es zaehlt Kacheln.
-    const proSchritt = o.detailed ? TRACK_SAMPLES_PER_TILE : 1;
     // (PUNKT_R steht als Modulkonstante weiter oben - karteAutosSetzen() braucht denselben
     //  Wert, und zwei Zahlen fuer eine Punktgroesse waeren zwei Punktgroessen.)
     const autoPunkt = (index, phase, farbe, kuerzel, quer) => {
       if (index === null || index === undefined) return '';
-      const roh = (index + Math.max(0, Math.min(1, phase || 0))) * proSchritt;
-      const i = Math.max(0, Math.min(Math.round(roh), pts.length - 1));
+      const i = trackPunktIndex(kachelTab, pts, index, phase);
       const p = pts[i];
       // DIE QUERLAGE als Versatz laengs der Normalen. Auf 85 Prozent der halben Breite
       // begrenzt: ein Punkt auf dem Randstein saehe aus, als laege das Auto daneben, und
@@ -1000,8 +1118,12 @@
     // nicht in einen Anzeigetakt.
     //
     // Es ist DIESELBE Geometrie, mit der oben gezeichnet wurde, kein zweiter Rechenweg.
-    return { html, closed, lineInfo: o.lineInfo,
-             geo: { ox, oy, proSchritt, half, pts, nrm, punktR: PUNKT_R } };
+    return { html, closed, schluss, lineInfo: o.lineInfo,
+             // kachelTab statt proSchritt: die Zuordnung Kachel -> Abtastpunkt ist keine
+             // Multiplikation, siehe trackKachelTabelle(). proSchritt ist damit weg - eine
+             // Zahl, die eine falsche Annahme trug, laesst man nicht "fuer alte Aufrufer"
+             // stehen.
+             geo: { ox, oy, kachelTab, half, pts, nrm, punktR: PUNKT_R } };
   }
 
 
@@ -1049,8 +1171,7 @@
         t.textContent = '';
         continue;
       }
-      const roh = (a.index + Math.max(0, Math.min(1, a.phase || 0))) * geo.proSchritt;
-      const i = Math.max(0, Math.min(Math.round(roh), geo.pts.length - 1));
+      const i = trackPunktIndex(geo.kachelTab, geo.pts, a.index, a.phase);
       const p = geo.pts[i], n = geo.nrm[i] || { x: 0, y: 0 };
       const q = Math.max(-0.85, Math.min(0.85, a.quer || 0));
       const x = p.x + n.x * q * geo.half + geo.ox;
@@ -1253,8 +1374,23 @@
     // von beiden wurde je nachgeschlagen, weil der Text per textContent hineingeschrieben
     // wird. Der Sprachtest sieht "Offen" nicht - es hat weder Umlaut noch deutsches
     // Funktionswort -, falsch ist es trotzdem.
-    $('track-closed-badge').textContent = currentTrackTiles.length === 0 ? '-'
-      : t(result.closed ? 'Geschlossen ✓' : 'Offen');
+    // DIE LUECKE MIT ANSCHREIBEN, in Zentimetern. "Offen" allein sagt nicht, ob ein Teil
+    // fehlt oder ob es zwei Millimeter sind - und genau das ist die Frage, die man beim
+    // Bauen hat. Gemeldet als "bei einer laengeren Strecke passen die Schienen am Ende
+    // nicht perfekt zusammen": mit der Zahl daneben sieht man sofort, ob das noch in der
+    // Toleranz liegt.
+    const badge = $('track-closed-badge');
+    if (currentTrackTiles.length === 0) {
+      badge.textContent = '-';
+    } else if (result.closed) {
+      badge.textContent = t('Geschlossen ✓');
+    } else if (result.schluss && result.schluss.lueckeCm !== null) {
+      const l = result.schluss.lueckeCm.toFixed(0);
+      const w = Math.abs(result.schluss.winkel).toFixed(0);
+      badge.textContent = t('Offen') + ' (' + l + ' cm, ' + w + '°)';
+    } else {
+      badge.textContent = t('Offen');
+    }
     const list = $('track-tile-list');
     // The first tile is the Start/Finish anchor and is not deletable.
     list.innerHTML = currentTrackTiles.map((t, i) =>

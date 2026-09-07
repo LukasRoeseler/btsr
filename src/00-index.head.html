@@ -2152,9 +2152,34 @@
      beschreibt diese Spalte und nicht dieses Bild. */
   #track-preview-svg .tp-karte { width: 100%; max-width: 520px; height: auto;
     max-height: 100%; }
+  /* ---- DIE HOEHE IST 100dvh UND NICHT inset: 0 ---------------------------------------
+     Gemeldet: "Streckeneditor im Vollbild auf dem Handy zeigt nicht die Symbole zum
+     Strecke bauen". Die Symbole sind die unterste Rasterzeile, und genau die verschwand.
+
+     DER GRUND: `inset: 0` auf einem position:fixed-Element bemisst sich am LAYOUT-Viewport.
+     Auf einem Telefon ist der hoeher als der sichtbare Bereich, solange die Adresszeile
+     steht - der Host reichte also unter den Bildschirmrand, und die unterste Zeile lag
+     dahinter. Am Rechner faellt das nie auf: dort sind Layout- und sichtbarer Viewport
+     gleich, und gemessen war die Palette bei jeder Fensterhoehe von 340 bis 760 px da.
+
+     Warum die Adresszeile ueberhaupt steht, obwohl requestFullscreen() gerufen wird:
+     enterTrackFullscreen() faengt eine Ablehnung ab und legt die CSS-Klasse TROTZDEM an -
+     mit Absicht, damit das Layout auch ohne echtes Vollbild gilt. Auf iOS gibt es
+     Fullscreen fuer ein div gar nicht, und auf Android kann die Geste abgelehnt werden.
+     Genau in diesen Faellen zaehlt die Adresszeile mit.
+
+     100dvh ist der dynamische Viewport - die Hoehe, die WIRKLICH zu sehen ist. `inset: 0`
+     bleibt als Rueckfall darueber stehen: kennt ein Browser dvh nicht, faellt die
+     height-Zeile weg und bottom: 0 gilt weiter. Steht beides, ist die Lage
+     ueberbestimmt und bottom wird ignoriert - genau die gewuenschte Rangfolge.
+
+     Dazu die untere Sicherheitszone: auf einem iPhone liegt sonst die Bedienleiste des
+     Systems ueber der Palette. */
   body.track-fs #track-fs-host { position: fixed; inset: 0; z-index: 200;
+    height: 100dvh;
     background: var(--bg); display: grid; grid-template-rows: 1fr auto;
-    align-items: center; padding: 8px; gap: 6px; }
+    align-items: center; padding: 8px; gap: 6px;
+    padding-bottom: max(8px, env(safe-area-inset-bottom)); }
   /* HOEHE ZURUECK AUF auto, und das war der zweite Fehler. Der Kasten traegt in der
      Seite `height: clamp(240px, 42vh, 460px)` - eine feste Hoehe gegen das Springen beim
      Bauen -, und das Vollbild hat sie nie aufgehoben. Gemessen auf einem 720 px hohen
@@ -7523,7 +7548,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.5.35</span></span>
+    <span class="foot-ver">v<span id="app-version">0.5.36</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine

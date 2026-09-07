@@ -1833,6 +1833,14 @@
     },
     simZustand() { return simZustand(); },
 
+    // Die Schlusspruefung, mit Luecke und Winkel - damit eine Pruefung die Toleranz
+    // nachrechnen kann, statt sie zu glauben.
+    trackSchluss(code) {
+      const p = codeToTrack(code || 'SR3G2R3G');
+      return Object.assign({ kacheln: p.tiles.length },
+                           trackSchluss(trackCenterline(p.tiles)));
+    },
+
     compareLines(tiles, steps) {
       const keep = currentTrackTiles;
       currentTrackTiles = tiles;
