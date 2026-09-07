@@ -1818,6 +1818,21 @@
       return out;
     },
 
+    // ---- Die Rennsimulation, ohne Zeitgeber durchgefahren --------------------------
+    //
+    // simSchritt() rechnet einen Takt, simZeichnen() bleibt aussen vor. Damit laeuft ein
+    // ganzes Rennen in Millisekunden durch, und die Pruefung haengt nicht an der Drosselung
+    // von Zeitgebern in einem verborgenen Fenster.
+    simSchritte(n, msJeSchritt) {
+      if (!simAn()) return null;
+      // FESTE Schrittweite fuer den Prueflauf: ohne sie nimmt simSchritt die Wandzeit, und
+      // dann haengt das Ergebnis daran, wie schnell dieser Rechner die Schleife durchlaeuft.
+      const ms = msJeSchritt === undefined ? SIM_TAKT_MS : msJeSchritt;
+      for (let i = 0; i < (n || 1); i++) simSchritt(ms);
+      return simZustand();
+    },
+    simZustand() { return simZustand(); },
+
     compareLines(tiles, steps) {
       const keep = currentTrackTiles;
       currentTrackTiles = tiles;

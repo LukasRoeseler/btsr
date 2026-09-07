@@ -1335,11 +1335,26 @@
      benutzt blau-gruen-rot fuer die Temperatur, es gibt also eine Ueberschneidung - deshalb
      die 2 px Linie und nicht eine getoente Flaeche, und deshalb steht die Mischung
      zusaetzlich ausgeschrieben in der Zeile darunter. Zwei Traeger fuer eine Aussage. */
+  /* DER RAHMEN IST EIN ECHTER border UND KEIN inset-SCHATTEN, und das ist die Behebung
+     eines gemeldeten Fehlers: "Reifenrahmen groesser machen, er wird von etwas ueberlagert
+     und ich erkenne ihn mit blossem Auge nicht gut."
+
+     Ueberlagert hat ihn die FUELLUNG. Sie ist ein absolut positioniertes Kind (.gt3-t4 > b),
+     und ein positioniertes Kind malt UEBER den box-shadow seines Elternteils. Bei 100
+     Prozent Restprofil deckte sie den 2-px-Ring also fast vollstaendig zu - sichtbar blieb
+     der obere Rand, und der lag zusaetzlich unter dem dunklen Innenschatten.
+
+     Ein border liegt dagegen AUSSERHALB des Bezugsrahmens fuer absolute Kinder: der ist der
+     Polsterkasten, nicht der Rahmenkasten. Die Fuellung kann ihn damit nicht erreichen -
+     nicht durch Zutun, sondern von der Bauart her.
+
+     3 px statt 2, auf Bitte. Ueber eine Variable, weil derselbe Reifen im Boxenschirm
+     20 px breit ist und dort 3 px ein Drittel der Flaeche waeren. */
   .gt3-t4 { display: block; position: relative; aspect-ratio: 1 / 1.6;
-    background: #04060b; border-radius: 2px / 4px; overflow: hidden;
-    --mix-farbe: #f7d117;
-    box-shadow: inset 0 0 0 2px var(--mix-farbe),
-                inset 0 2px 4px rgba(0, 0, 0, .55); }
+    background: #04060b; border-radius: 3px / 5px; overflow: hidden;
+    --mix-farbe: #f7d117; --mix-linie: 3px;
+    border: var(--mix-linie) solid var(--mix-farbe);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, .55); }
   body[data-tyre-mix="weich"] .gt3-t4 { --mix-farbe: #e5261e; }
   body[data-tyre-mix="mittel"] .gt3-t4 { --mix-farbe: #f7d117; }
   body[data-tyre-mix="hart"] .gt3-t4 { --mix-farbe: #f2f4f8; }
@@ -1375,9 +1390,12 @@
      verschwindet fast, und die Nabe wird noch dunkler als der leere Reifen. Ein leerer
      Reifen und ein fehlender Reifen sehen sonst gleich aus, und dann sieht der Wechsel wie
      vier Mal Verschleiss auf null aus. */
+  /* Rad AB: der Mischungsrahmen weicht einer gedeckten Linie. Ein Reifen, der nicht am
+     Auto ist, hat keine Mischung - ihn weiter in Rot oder Weiss zu umranden waere eine
+     Aussage ueber etwas, das gerade in der Hand liegt. */
   .gt3-t4.t4-ab { background: #010204;
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .04),
-                inset 0 2px 6px rgba(0, 0, 0, .8); }
+    border-color: rgba(255, 255, 255, .10);
+    box-shadow: inset 0 2px 6px rgba(0, 0, 0, .8); }
   .gt3-bias { cursor: ns-resize; touch-action: none; }
   /* Zwei Zahlen in einer Zeile, deshalb schmaler als die anderen Trimmwerte. Der Trenner
      ist gedaempft, damit die Zahlen die Aufmerksamkeit haben und nicht der Schraegstrich. */
@@ -1607,7 +1625,9 @@
      ein Strich und keine Spur. */
   .pit-t4-feld { display: grid; grid-template-columns: repeat(2, 1fr);
     gap: 2px; width: clamp(20px, 4vw, 30px); justify-self: end; }
-  .pit-t4-feld .gt3-t4 { aspect-ratio: 1 / 1.5; }
+  /* Im Boxenschirm ist ein Reifenfeld rund 20 px breit - 3 px Rahmen waeren dort ein
+     Drittel der Flaeche und die Fuellung nicht mehr zu lesen. */
+  .pit-t4-feld .gt3-t4 { aspect-ratio: 1 / 1.5; --mix-linie: 2px; }
   /* Die vier Mischungen. Gleich breit, die geltende umrahmt - ein Rahmen und keine
      Aufhellung, weil weiss und gelb sich nicht aufhellen lassen. */
   .pit-mix-feld { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px;
@@ -2263,6 +2283,32 @@
   .snd-row audio { height: 30px; flex: none; width: 178px; max-width: 100%; }
   .snd-row > div { min-width: 0; flex: 1 1 14ch; }
   .snd-row b { font-size: 12.5px; }
+
+  /* ---- Die Buehne der Rennsimulation --------------------------------------------------
+     Karte und Zeittafel nebeneinander, sobald Platz ist. Die Karte ist das Wichtigere -
+     man schaut ein Rennen an -, deshalb bekommt sie die groessere Spalte. */
+  .sim-buehne { display: grid; gap: 10px; padding: 0 14px 14px 14px;
+    grid-template-columns: minmax(0, 1fr); }
+  @media (min-width: 760px) {
+    .sim-buehne { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); align-items: start; }
+  }
+  .sim-karte { display: grid; place-items: center; min-width: 0; overflow: hidden; }
+  .sim-karte:empty { display: none; }
+  .sim-karte .tp-karte { width: 100%; height: auto; max-width: 520px; }
+  .sim-tafel { min-width: 0; font-family: monospace; font-size: 12px; }
+  .sim-tafel:empty { display: none; }
+  .sim-tafel table { width: 100%; border-collapse: collapse; }
+  .sim-tafel th, .sim-tafel td { padding: 3px 6px; text-align: right;
+    border-bottom: 1px solid var(--border); white-space: nowrap; }
+  .sim-tafel th:nth-child(2), .sim-tafel td:nth-child(2) { text-align: left; }
+  .sim-tafel th { color: var(--muted); font-weight: 700; font-size: 11px;
+    text-transform: uppercase; letter-spacing: .06em; }
+  /* Der Farbtupfer identifiziert das Auto auf der Karte. Dieselbe Farbe wie sein Punkt -
+     eine Tabelle mit Namen, deren Punkte man nicht zuordnen kann, ist eine Liste. */
+  .sim-tafel i { display: inline-block; width: 9px; height: 9px; border-radius: 2px;
+    margin-right: 6px; vertical-align: -1px; }
+  .sim-tafel tr.sim-fuehrt td { color: var(--text); font-weight: 700; }
+  .sim-tafel .sim-best { color: var(--good); }
 
   /* ---- Home ---- */
   #tab-home { padding: 0; }
@@ -6954,6 +7000,53 @@
           <span class="opt-val" id="ghost-leader-pct-val">10%</span>
         </div></div>
       
+      <!-- ================================================================================
+           RENNEN SIMULIEREN
+           Ein Rennen, das ABLAEUFT und das man sich ansieht - kein gerechnetes Ergebnis.
+           Die Autos fahren mit der echten Ghost-Logik und dem Fahrzeugmodell dieser App;
+           was hier fehlt, ist nur das Auto aus Plastik. Begruendung und Grenzen stehen bei
+           simStart() in 90b-sim.js.
+           ============================================================================== -->
+      <div class="opt-head">Rennen simulieren <span class="wip-tag">experimentell</span></div>
+      <div class="opt-row"><div class="opt-label">Was hier passiert
+          <small>Die eingestellten Ghosts fahren die eingetragene Strecke &ndash; mit
+          derselben Logik, die sie am echten Auto benutzen: Ideallinie, Kurvendrosselung,
+          Querversatz, Staffel und die zugeschalteten Zutaten. Statt Funkbefehle bekommt ein
+          Fahrzeugmodell das Gas, und aus seinem Tempo wird die Position auf der Bahn. Man
+          sieht das Rennen laufen, nicht sein Ergebnis.
+          <br>Was das nicht ersetzt: Reibung, Staub, ein Auto, das aus der Kurve fliegt. Wer
+          hier vorne ist, ist es im Modell &ndash; nicht auf dem Teppich.</small></div>
+        <span class="muted" style="font-size:11px">&#9660;</span></div>
+      <div class="opt-row"><div class="opt-label">Anzahl Ghosts</div>
+        <select id="sim-ghosts">
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4" selected>4</option>
+          <option value="5">5</option>
+          <option value="6">6</option>
+        </select></div>
+      <div class="opt-row"><div class="opt-label">Anzahl Runden</div>
+        <select id="sim-laps">
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3" selected>3</option>
+          <option value="5">5</option>
+          <option value="10">10</option>
+        </select></div>
+      <div class="opt-row"><div class="opt-label">Doppelte Geschwindigkeit
+          <small>Spielt die Simulation doppelt so schnell ab. Die Rundenzeiten bleiben die
+          des Rennens &ndash; abgespielt wird schneller, gefahren nicht.</small></div>
+        <label class="tgl"><input type="checkbox" id="sim-fast"><span></span></label></div>
+      <div class="row" style="margin:12px 14px; align-items:center; gap:10px">
+        <button class="primary" id="sim-start">Simulation starten</button>
+        <button id="sim-stop" hidden>Abbrechen</button>
+        <span class="muted" id="sim-lage" data-i18n-skip>bereit</span>
+      </div>
+      <div class="sim-buehne">
+        <div class="sim-karte" id="sim-karte"></div>
+        <div class="sim-tafel" id="sim-tafel" data-i18n-skip></div>
+      </div>
+
     </div>
     <div class="card subpage" id="sub-opt-pad">
       <button class="misc-back subpage-back" data-sub="">&larr; Einstellungen</button>
@@ -7430,7 +7523,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.5.34</span></span>
+    <span class="foot-ver">v<span id="app-version">0.5.35</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine

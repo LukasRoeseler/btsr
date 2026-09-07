@@ -3369,6 +3369,122 @@
                  + (schlecht.length ? ' || ' + schlecht.join('; ') : ' | beide symmetrisch') };
   });
 
+  // ---- Die Rennsimulation faehrt wirklich ----
+  //
+  // BESTELLT WAR EIN RENNEN, DAS ABLAEUFT - "keine Ergebnisse simulieren, sondern das Rennen,
+  // wie es stattfindet". Genau das ist hier zu pruefen, und "die Funktion wirft nicht" waere
+  // dafuer keine Pruefung. Gemessen werden deshalb Bewegung, Rundenzeiten und Plausibilitaet
+  // der Tempi:
+  //
+  //   die Autos legen Weg zurueck                    sonst ist es eine Uhr, kein Rennen
+  //   sie schliessen Runden ab, mit Zeiten           sonst gibt es nichts anzusehen
+  //   die erste Runde ist die langsamste             stehender Start, sonst stimmt die Uhr
+  //   das Tempo liegt im Bereich des Modells         sonst ist die Umrechnung falsch
+  //   doppelte Geschwindigkeit verdoppelt die Zeit   sonst ist der Schalter Zierde
+  //   die Garage kommt vollstaendig zurueck          sie wird fuer die Dauer ausgeraeumt
+  //   Date.now ist danach wieder echt                die Uhr wird fuer die Ticks gefaelscht
+  //
+  // OHNE ZEITGEBER, mit festen Schritten. Ein Browser drosselt Zeitgeber in einem verborgenen
+  // Fenster auf 1 Hz - eine Pruefung am Zeitgeber wuerde die Fensterlage messen.
+  stAdd('Rennsimulation: die Autos fahren, und die Zeiten stimmen', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.simSchritte) {
+      return { skip: true, mass: 'simSchritte nicht erreichbar' };
+    }
+    const schlecht = [];
+    const merkTiles = currentTrackTiles;
+    const merkGarage = garage.slice();
+    // Eine ATTRAPPE in der Garage: nur so ist pruefbar, dass die Simulation sie ausraeumt
+    // UND vollstaendig zurueckgibt. Ohne einen Eintrag darin waere das Wiederherstellen
+    // trivialerweise richtig.
+    const zeuge = { role: 'none', alias: 'Zeuge', device: { name: 'Zeuge', id: 'zeuge' } };
+    const echtNowVorher = Date.now;
+    let z = null, zDoppelt = null;
+    try {
+      currentTrackTiles = codeToTrack('SG2H2G2R2G2H2G2R2').tiles;
+      garage.push(zeuge);
+      const setzen = (id, v) => { const e = $(id); if (e) { if (e.type === 'checkbox') e.checked = v; else e.value = v; } };
+      setzen('sim-ghosts', '4'); setzen('sim-laps', '5'); setzen('sim-fast', false);
+      simStart();
+      if (!simAn()) return { ok: false, mass: 'Simulation startete nicht' };
+      // Die Attrappe darf waehrend der Simulation NICHT in der Garage stehen - dort stehen
+      // jetzt die Simulationsautos.
+      if (garage.indexOf(zeuge) >= 0) schlecht.push('die echte Garage wurde nicht ausgeraeumt');
+      if (garage.length !== 4) schlecht.push('Garage hat ' + garage.length + ' statt 4 Simulationsautos');
+      // 90 Sekunden Rennzeit in festen 45-ms-Schritten.
+      z = OMEGA_TEST.simSchritte(2000, 45);
+      if (Math.abs(z.uhrMs - 90000) > 100) schlecht.push('Uhr bei ' + z.uhrMs + ' statt 90000 ms');
+      for (const a of z.autos) {
+        if (!(a.s > 0)) schlecht.push(a.name + ' hat keinen Weg zurueckgelegt');
+        if (a.geparkt) schlecht.push(a.name + ' steht (geparkt)');
+        if (!(a.laps >= 1)) schlecht.push(a.name + ' hat in 90 s keine Runde geschafft');
+        if (a.zeiten.length !== a.laps) {
+          schlecht.push(a.name + ': ' + a.laps + ' Runden, aber ' + a.zeiten.length + ' Zeiten');
+        }
+        // STEHENDER START: die erste Runde muss die langsamste sein. Waere sie es nicht,
+        // liefe die Uhr nicht mit dem Weg - der haeufigste Fehler bei so einer Schleife.
+        if (a.zeiten.length >= 2 && !(a.zeiten[0] > a.zeiten[1])) {
+          schlecht.push(a.name + ': erste Runde nicht die langsamste ('
+                        + a.zeiten.map((t) => Math.round(t)).join('/') + ')');
+        }
+        // Das Tempo im Bereich des Modells: der Ghost-Regler steht auf einem Bruchteil der
+        // Modellhoechstgeschwindigkeit, und Kurven kosten davon. Zwischen 5 und 100 Prozent
+        // ist weit gefasst - gefangen wird eine Umrechnung, die um Zehnerpotenzen irrt.
+        const top = physEngine.config.topSpeedKmh || 4;
+        const anteil = (a.kmh || 0) / top;
+        if (!(anteil > 0.05 && anteil < 1.05)) {
+          schlecht.push(a.name + ': ' + (a.kmh || 0).toFixed(2) + ' km/h sind '
+                        + (anteil * 100).toFixed(0) + ' % der Modellspitze');
+        }
+      }
+      // Die Karte und die Tafel muessen bestueckt sein - man soll ja zusehen.
+      const karte = $('sim-karte');
+      const punkte = karte ? karte.querySelectorAll('circle').length : 0;
+      if (punkte < 4) schlecht.push('nur ' + punkte + ' Punkte auf der Karte');
+      const zeilen = $('sim-tafel') ? $('sim-tafel').querySelectorAll('tbody tr').length : 0;
+      if (zeilen !== 4) schlecht.push(zeilen + ' Zeilen in der Zeittafel statt 4');
+      simStop('Pruefung');
+      if (simAn()) schlecht.push('Simulation liess sich nicht beenden');
+
+      // ---- Doppelte Geschwindigkeit ------------------------------------------------
+      setzen('sim-fast', true);
+      simStart();
+      zDoppelt = OMEGA_TEST.simSchritte(200, 45);
+      simStop('Pruefung');
+      // Gleiche Zahl Schritte, gleiche Schrittweite - aber doppelte Rennzeit.
+      if (Math.abs(zDoppelt.uhrMs - 2 * 9000) > 200) {
+        schlecht.push('doppelt gibt ' + zDoppelt.uhrMs + ' ms statt 18000');
+      }
+    } catch (e) {
+      schlecht.push('Ausnahme: ' + e.message);
+    } finally {
+      if (simAn()) simStop('Pruefung, Notausstieg');
+      // DIE UHR MUSS ECHT SEIN. Sie wird fuer die Ticks gefaelscht; blieb die Faelschung
+      // stehen, ginge der ganzen Seite die Zeit verloren - und der Fehler traete irgendwo
+      // sonst auf.
+      if (Date.now !== echtNowVorher) {
+        schlecht.push('Date.now ist noch gefaelscht');
+        Date.now = echtNowVorher;
+      }
+      const i = garage.indexOf(zeuge);
+      if (i < 0) schlecht.push('die Garage kam nicht zurueck');
+      else garage.splice(i, 1);
+      // Und exakt der alte Stand.
+      garage.splice(0, garage.length);
+      for (const c of merkGarage) garage.push(c);
+      currentTrackTiles = merkTiles;
+      lineCache = null;
+      if (typeof renderGarage === 'function') renderGarage();
+    }
+    const rd = z ? z.autos.map((a) => a.laps).join('/') : '-';
+    const zt = (z && z.autos[0] && z.autos[0].zeiten.length)
+      ? z.autos[0].zeiten.map((t) => (t / 1000).toFixed(1)).join(' ') : '-';
+    return { ok: !schlecht.length,
+             mass: (z ? 'Runde ' + (z.runde / 0.93).toFixed(0) + ' cm, 90 s ergeben '
+                        + rd + ' Runden, S1 ' + zt + ' s' : 'kein Lauf')
+                 + (zDoppelt ? ' | doppelt: ' + zDoppelt.uhrMs + ' ms aus 200 Schritten' : '')
+                 + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
   // ---- Controller-Vibration: ein Schalter je Ausloeser ----
   //
   // Siebzehn Aufrufstellen, sechs Arten, ein Hauptschalter. Geprueft wird die

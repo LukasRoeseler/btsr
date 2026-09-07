@@ -1571,6 +1571,24 @@
       "How hard the car steers against a slide, measured from the rotation signal in byte 3 of the notifications. 50 per cent is the default that was asked for. What is uncertain about it, and it is two things at once: the signal is unconfirmed – it only varies once the car is moving, and flipped sign with cornering direction in exactly one recording. And it is uncalibrated: its scale is self-adjusting because the real amplitude is unknown. So the strength depends on the largest yaw value the session has seen so far. The “Drift probe” button under “Measure lateral offset” measures whether the signal moves at all under straight full throttle.",
     "Rennen":
       "Race",
+    "Rennen simulieren":
+      "Simulate a race",
+    "Was hier passiert":
+      "What happens here",
+    "Die eingestellten Ghosts fahren die eingetragene Strecke – mit derselben Logik, die sie am echten Auto benutzen: Ideallinie, Kurvendrosselung, Querversatz, Staffel und die zugeschalteten Zutaten. Statt Funkbefehle bekommt ein Fahrzeugmodell das Gas, und aus seinem Tempo wird die Position auf der Bahn. Man sieht das Rennen laufen, nicht sein Ergebnis.":
+      "The ghosts as configured drive the track you have entered – with the same logic they use on the real car: racing line, corner throttling, lateral offset, field grading and whichever ingredients are switched on. Instead of radio commands a vehicle model gets the throttle, and its speed becomes the position on the track. You watch the race run, not its result.",
+    "Was das nicht ersetzt: Reibung, Staub, ein Auto, das aus der Kurve fliegt. Wer hier vorne ist, ist es im Modell – nicht auf dem Teppich.":
+      "What it does not replace: friction, dust, a car flying out of a corner. Whoever leads here leads in the model – not on the carpet.",
+    "Anzahl Ghosts":
+      "Number of ghosts",
+    "Anzahl Runden":
+      "Number of laps",
+    "Doppelte Geschwindigkeit":
+      "Double speed",
+    "Spielt die Simulation doppelt so schnell ab. Die Rundenzeiten bleiben die des Rennens – abgespielt wird schneller, gefahren nicht.":
+      "Plays the simulation back at twice the speed. The lap times stay those of the race – the playback is faster, the driving is not.",
+    "Simulation starten":
+      "Start simulation",
     "Rennwürze: einzeln zuschaltbar":
       "Race spice: switchable one by one",
     "Fünf Zutaten, die aus gleichmäßigem Fahren ein Rennen machen sollen. Jede einzeln, damit man sieht, welche was tut – als ein Regler für alle war nicht zu unterscheiden, woran eine Beobachtung lag. Alle experimentell: keine ist am Auto gemessen, alle sind gewählt.":

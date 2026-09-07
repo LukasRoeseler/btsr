@@ -895,11 +895,19 @@
     // Vor dem Zeichnen: die Buchstaben folgen der Reihenfolge, und die aendert sich, wenn
     // ein Auto aus der Mitte getrennt wird.
     carRetag();
-    $('gar-count').textContent = garage.length
-      ? `${garage.length} Auto${garage.length === 1 ? '' : 's'} verbunden`
+    // ---- SIMULATIONSAUTOS ZAEHLEN HIER NICHT MIT ------------------------------------
+    //
+    // Die Rennsimulation stellt ihre Autos in die GARAGE, und sie muss es: ghostLane(),
+    // ghostFeldStaffel() und ghostAhead() finden ihre Nachbarn nur dort. Ein Auto, das in
+    // dieser Liste steht, ist aber eine Aussage ueber die Bluetooth-Lage - "vier Autos
+    // verbunden", waehrend keines verbunden ist, ist einfach falsch. Also raus aus der
+    // Anzeige, drin in der Rechnung.
+    const echte = garage.filter((c) => !c.sim);
+    $('gar-count').textContent = echte.length
+      ? `${echte.length} Auto${echte.length === 1 ? '' : 's'} verbunden`
       : 'keine Autos verbunden';
     list.innerHTML = '';
-    garage.forEach((car, i) => {
+    echte.forEach((car, i) => {
       const row = document.createElement('div');
       row.className = 'gar-row' + (car.role === 'player' ? ' is-player'
                                  : car.role === 'ghost' ? ' is-ghost' : '');
