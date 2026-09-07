@@ -1661,18 +1661,22 @@
   #race-ovscreen > .schirm-fuss { grid-area: fuss; }
   .ov-karte { display: grid; place-items: center; min-width: 0; min-height: 0;
     overflow: hidden; }
-  /* Das SVG kommt mit max-width: 520px aus renderTrackPreview. Hier ist die HOEHE die
-     knappe Groesse, also wird sie gedeckelt und die Breite folgt - sonst waechst das Bild
-     ueber die Zeile hinaus und wird von .gt3-schirm abgeschnitten. */
-  /* EIN STRECKENBILD LIEST SICH NUR, WENN DIE STRASSE DUNKLER IST ALS IHRE UMGEBUNG.
-     Die Fahrbahn ist #14181f, der Schirmgrund #0b0f18 - vier Prozent Unterschied, und
-     gesehen blieb ein Drahtgitter aus Randsteinen ohne Strasse dazwischen. Im Editor faellt
-     das nicht auf, weil dort ein hellerer Panelgrund dahinterliegt.
-     Ein durchscheinendes Weiss statt einer festen Farbe: so hebt es sich in jeder der fuenf
-     Ansichten gleich weit ab, auch in der hellen. */
-  .ov-karte svg { max-width: 100%; max-height: 100%; width: auto; height: auto;
-    background: rgba(255, 255, 255, .07) !important; border: 0 !important;
-    border-radius: 4px; }
+  /* HIER IST DIE HOEHE DIE KNAPPE GROESSE, nicht die Breite - also wird sie gedeckelt und
+     die Breite folgt. Sonst waechst das Bild ueber die Zeile hinaus und wird von
+     .gt3-schirm abgeschnitten.
+
+     EIN STRECKENBILD LIEST SICH NUR, WENN DIE STRASSE DUNKLER IST ALS IHRE UMGEBUNG. Die
+     Fahrbahn ist #14181f, der Schirmgrund #0b0f18 - vier Prozent Unterschied, und gesehen
+     blieb ein Drahtgitter aus Randsteinen ohne Strasse dazwischen. Im Editor faellt das
+     nicht auf, weil dort ein hellerer Panelgrund dahinterliegt. Ein durchscheinendes Weiss
+     statt einer festen Farbe: so hebt es sich in jeder der fuenf Ansichten gleich weit ab,
+     auch in der hellen.
+
+     OHNE !important, seit der Zeichner keinen Inline-Stil mehr schreibt. Hier standen zwei
+     davon, und sie waren keine Vorliebe, sondern die einzige Moeglichkeit gegen einen
+     Inline-Stil. */
+  .ov-karte .tp-karte { max-width: 100%; max-height: 100%; width: auto; height: auto;
+    background: rgba(255, 255, 255, .07); border: 0; border-radius: 4px; }
   .ov-karte:empty { display: none; }
   #race-ovscreen:has(.ov-karte:empty) { grid-template-columns: minmax(0, 1fr) 0; }
   .ov-tab { display: grid; align-content: start; gap: 2px; overflow: hidden;
@@ -2074,6 +2078,24 @@
      both are visible at once: the point of the mode is to build while seeing the result.
      Deliberately NOT reusing the racing screen's .race-fs rules: that one rotates the dash
      on a portrait phone, which would rotate the palette out from under the map. */
+  /* ---- Das Streckenbild ---------------------------------------------------------------
+     renderTrackPreview() zeichnet nur noch: viewBox, Fahrbahn, Stossfugen, Randsteine,
+     Punkte. Alles Aeussere steht hier, weil es vom ORT abhaengt und nicht vom Bild.
+
+     DREI ORTE ZEIGEN DASSELBE BILD, und jeder hat andere Randbedingungen:
+       #track-preview-svg   Editor: 520 px breit in der Seite, im Vollbild ohne Deckel
+       #dash-minimap        Streckenreiter: schmal, unter einem Absatz Text
+       .ov-karte            Uebersichtsschirm: die HOEHE ist knapp, nicht die Breite
+
+     Der Grund ist hier --panel-2, weil das Bild in der Seite auf einer Karte liegt. Der
+     Uebersichtsschirm ueberschreibt ihn: dort liegt es auf schwarzem Cockpitgrund, und eine
+     Fahrbahn von #14181f auf #0b0f18 sind vier Prozent Unterschied - gesehen blieb ein
+     Drahtgitter aus Randsteinen ohne Strasse dazwischen. */
+  .tp-karte { background: var(--panel-2); border: 1px solid var(--border);
+    border-radius: 6px; }
+  /* Der Streckenreiter: so breit wie die Spalte, gedeckelt. Diese Regel hat vorher gefehlt -
+     #dash-minimap hatte KEIN CSS und hing vollstaendig am Inline-Stil des Zeichners. */
+  #dash-minimap .tp-karte { width: 100%; max-width: 520px; height: auto; }
   #track-fs-host { position: relative; }
   /* Feste Hoehe. Vorher wuchs und schrumpfte der Kasten mit dem Streckenumriss: jedes
      hinzugefuegte Teil aenderte die viewBox, damit das Seitenverhaeltnis und damit die
@@ -2083,7 +2105,10 @@
     height: clamp(240px, 42vh, 460px);
     display: grid; place-items: center; overflow: hidden;
   }
-  #track-preview-svg svg { max-height: 100%; max-width: 100%; width: auto; height: auto; }
+  /* Die Deckelung auf 520 px stand bis v0.5.30 im Zeichner. Sie gehoert hierher: sie
+     beschreibt diese Spalte und nicht dieses Bild. */
+  #track-preview-svg .tp-karte { width: 100%; max-width: 520px; height: auto;
+    max-height: 100%; }
   body.track-fs #track-fs-host { position: fixed; inset: 0; z-index: 200;
     background: var(--bg); display: grid; grid-template-rows: 1fr auto;
     align-items: center; padding: 8px; gap: 6px; }
@@ -2122,24 +2147,11 @@
   .tp-fs-aus { display: none; }
   body.track-fs .tp-fs-ein { display: none; }
   body.track-fs .tp-fs-aus { display: revert; }
-  /* DIE DECKELUNG AUS DEM ZEICHNER UEBERSCHREIBEN, und die drei !important sind hier
-     kein Zaunpfahl, sondern die einzige Moeglichkeit: renderTrackPreview() schreibt
-     `width:100%;max-width:520px;height:auto` als INLINE-Stil aufs svg, und ein Inline-Stil
-     schlaegt jede Regel eines Stylesheets.
-
-     Die 520 px sind in der Seite richtig - dort steht die Karte in einer Spalte neben Text -
-     und im Vollbild falsch, wo der Kasten 1264 px breit ist. Gemessen mit einer fast
-     quadratischen Strecke (viewBox 87x91) kostete die Deckelung 520 statt 570 px Breite;
-     bei einem breiten Layout ist es mehr als das Doppelte, weil dann die Breite und nicht
-     die Hoehe die bindende Grenze ist.
-
-     WAS DIE EIGENTLICHE BEHEBUNG WAERE: die Groesse gehoert ins Stylesheet und nicht in den
-     Zeichner - sie ist eine Entscheidung des Ortes, an dem die Karte haengt, und der
-     Zeichner kennt diesen Ort nicht. Dieselbe Reiberei hat der Uebersichtsschirm schon
-     einmal mit zwei !important erledigt (.ov-karte svg). Beide fallen zusammen weg, sobald
-     der Zeichner nur noch zeichnet; das ist ein eigener Schritt und keiner, der sich in
-     einer Fehlerbehebung nebenbei erledigen laesst - an derselben Funktion haengen auch die
-     Cockpit-Minikarte und der Uebersichtsschirm.
+  /* IM VOLLBILD KEIN DECKEL. Die 520 px sind in der Seite richtig - dort steht die Karte
+     in einer Spalte neben Text - und im Vollbild falsch, wo der Kasten 1264 px breit ist.
+     Gemessen mit einer fast quadratischen Strecke (viewBox 87x91) kostete die Deckelung 520
+     statt 570 px Breite; bei einem breiten Layout ist es mehr als das Doppelte, weil dann
+     die Breite und nicht die Hoehe die bindende Grenze ist.
 
      UND WARUM 100/100 UND NICHT auto/100: bei `width:auto; height:100%` bestimmt die Hoehe
      die Groesse, und eine BREITE Strecke laeuft dann waagerecht ueber den Kasten hinaus -
@@ -2148,8 +2160,8 @@
      zu sehen. Mit 100/100 ist der svg-KASTEN so gross wie die Zeile, und das Einpassen
      macht preserveAspectRatio - Vorgabe `xMidYMid meet`, also hineinpassen und zentrieren.
      Das ist bei einem viewBox-svg der Weg, der in beide Richtungen stimmt. */
-  body.track-fs #track-fs-host > #track-preview-svg svg {
-    max-width: none !important; width: 100% !important; height: 100% !important; }
+  body.track-fs #track-fs-host > #track-preview-svg .tp-karte {
+    max-width: none; width: 100%; height: 100%; }
   /* Everything outside the editor host is irrelevant while building. */
   body.track-fs > header, body.track-fs > nav.tabs { display: none; }
 
@@ -7265,7 +7277,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.5.30</span></span>
+    <span class="foot-ver">v<span id="app-version">0.5.31</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine

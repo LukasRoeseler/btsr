@@ -966,10 +966,20 @@
       for (const c of o.cars) body += autoPunkt(c.index, c.phase, c.farbe, c.kuerzel, c.quer);
     }
 
-    const style = o.detailed
-      ? 'width:100%;max-width:520px;height:auto;background:var(--panel-2);border:1px solid var(--border);border-radius:6px'
-      : 'width:220px;height:auto;background:var(--panel-2);border:1px solid var(--border);border-radius:4px';
-    const html = `<svg viewBox="0 0 ${w.toFixed(0)} ${h.toFixed(0)}" style="${style}">${body}</svg>`;
+    // KEIN style-ATTRIBUT MEHR, nur eine Klasse. Groesse, Grund und Rahmen entscheidet
+    // der ORT, an dem das Bild haengt - und dieser Zeichner kennt den Ort nicht. Er hat
+    // dreien gleichzeitig gedient (Editor, Minikarte, Uebersichtsschirm) und allen dieselbe
+    // Breitendeckelung von 520 px aufgeschrieben.
+    //
+    // Ein Inline-Stil schlaegt jede Regel eines Stylesheets, also blieb den Orten nur
+    // !important: der Uebersichtsschirm arbeitete gegen Grund und Rahmen an, das
+    // Editor-Vollbild gegen die Deckelung. Beide Behelfe fallen mit dieser Zeile weg.
+    //
+    // Die zweite Haelfte des Ternaers, das hier stand - `width:220px` fuer den einfachen
+    // Fall -, hatte ohnehin keinen Aufrufer mehr: alle fuenf Aufrufe uebergeben
+    // detailed: true. Sie sah aus wie eine Zusicherung und war keine. `o.detailed` bleibt
+    // fuer die GEOMETRIE zustaendig - Fahrbahn statt Linie -, dort ist der Unterschied echt.
+    const html = `<svg class="tp-karte" viewBox="0 0 ${w.toFixed(0)} ${h.toFixed(0)}">${body}</svg>`;
     // DIE GEOMETRIE MIT HERAUS, damit ein Aufrufer Punkte setzen kann, ohne die Strecke neu
     // zu rechnen. Gemessen kostet ein Aufruf dieser Funktion rund 94 ms - sie rechnet
     // Mittellinie, Normalen UND die Ideallinie, und die ist eine Optimierung. Das gehoert
@@ -1137,28 +1147,42 @@
     // mit - genau die Falle, die in diesem Projekt schon OMEGA_TEST verschwinden liess.
     try {
       if (typeof garage === 'undefined') return out;
-      const now = Date.now();
       garage.forEach(c => {
         const g = c.ghost;
-        if (g && g.tileIndex !== null && g.tileIndex !== undefined) {
-          const dauer = (g.tileMs || 800)
-            * (typeof ghostTileLenFactor === 'function' ? ghostTileLenFactor(g.tileIndex) : 1);
-          const ph = g.tileStart ? Math.min(1, (now - g.tileStart) / Math.max(1, dauer)) : 0;
+        // DER ORT KOMMT AUS ghostOrt(), und das ist die Behebung des gemeldeten Huepfens.
+        // Hier stand eine EIGENE Phasenrechnung, und sie war die von vor v0.5.18: global
+        // gemitteltes tileMs mal geometrischem Laengenverhaeltnis, mit g.tileStart als Uhr.
+        // Seit v0.5.18 misst die App die Dauer je KACHELTYP, und die Karte zog nicht mit.
+        //
+        // Fuer eine Haarnadel ist die geometrische Vorhersage gemessen 1,43 mal zu kurz: die
+        // Karte hielt ihre Phase also nach 70 Prozent der Haarnadel fuer voll, deckelte auf
+        // 1 - und der Punkt stand den Rest der Kurve still und sprang dann. Dazu lief sie an
+        // einer zweiten Uhr: g.tileStart wird im ghostTick gesetzt, car.tileAt schon beim
+        // Eintreffen des Pakets, und dazwischen liegt bis zu ein Takt (45 ms).
+        const ort = (typeof ghostOrt === 'function') ? ghostOrt(c) : null;
+        if (ort !== null) {
+          const kachel = Math.floor(ort);
           // DIE RICHTIGEN ZUGRIFFE. Hier stand c.farbe und c.name - beides gibt es an
           // einem Auto nicht, also fiel jeder Punkt auf Orange und jedes Kuerzel auf '?'
           // zurueck. Gemeldet als "alle orange mit Fragezeichen daneben". Die Zuordnung war
           // nie unklar: jeder Ghost hat seine eigene Verbindung und seinen eigenen
           // Kachelzaehler - sie wurde nur nicht hingeschrieben.
-          out.push({ index: g.tileIndex, phase: ph, farbe: carColor(c).hex,
+          out.push({ index: kachel, phase: ort - kachel, farbe: carColor(c).hex,
                      kuerzel: garageLabel(c).slice(0, 3),
                      // Die ANGEFORDERTE Querlage. Das Auto meldet keine; was hier steht,
                      // ist die Summe aus eigener Spur und Ideallinie, also die Lage, die
                      // die App gerade will. Mehr ist ehrlich nicht zu haben.
                      quer: g.querSoll || 0 });
         } else if (c.role === 'player' && typeof dashMinimapIndex === 'number') {
-          // Das eigene Auto lenkt die App nicht, es gibt also keine angeforderte Querlage -
-          // der Punkt bleibt mittig, statt eine zu erfinden.
-          out.push({ index: dashMinimapIndex, phase: 0.5, farbe: carColor(c).hex,
+          // Das eigene Auto lenkt die App nicht, es gibt also keine angeforderte QUERLAGE -
+          // quer bleibt 0, statt eine zu erfinden.
+          //
+          // Die PHASE dagegen gibt es, und sie stand hier fest auf 0,5: der eigene Punkt sass
+          // immer in der Mitte seiner Kachel und sprang bei jedem Wechsel eine ganze Kachel
+          // weit. dashTilePhase() war die ganze Zeit da und wurde nur nicht gefragt.
+          out.push({ index: dashMinimapIndex,
+                     phase: (typeof dashTilePhase === 'function') ? dashTilePhase() : 0.5,
+                     farbe: carColor(c).hex,
                      kuerzel: garageLabel(c).slice(0, 3), quer: 0 });
         }
       });

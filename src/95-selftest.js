@@ -2843,6 +2843,221 @@
                  + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
   });
 
+  // ---- Der Streckenzeichner zeichnet nur, das Aeussere kommt vom Ort ----
+  //
+  // renderTrackPreview() schrieb bis v0.5.30 Groesse, Grund und Rahmen als INLINE-Stil aufs
+  // svg - und ein Inline-Stil schlaegt jede Regel eines Stylesheets. Drei Orte zeigen
+  // dasselbe Bild und brauchen verschiedene Kleidung; zwei von ihnen mussten deshalb mit
+  // !important dagegen anarbeiten, und das Editor-Vollbild konnte die Breitendeckelung von
+  // 520 px ueberhaupt nicht loswerden.
+  //
+  // GEPRUEFT WIRD BEIDES: dass der Zeichner nichts mehr anzieht, UND dass die drei Orte
+  // wirklich verschieden kleiden. Nur das erste zu pruefen liesse offen, ob der Umbau die
+  // Unterschiede nicht einfach eingeebnet hat.
+  stAdd('Streckenzeichner: kein Inline-Stil, drei Orte kleiden verschieden', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.trackMarks) {
+      return { skip: true, mass: 'trackMarks nicht erreichbar' };
+    }
+    const html = OMEGA_TEST.trackMarks(undefined, []).html;
+    const schlecht = [];
+    if (html.indexOf('class="tp-karte"') < 0) schlecht.push('svg traegt keine Klasse tp-karte');
+    // Das svg selbst darf kein style tragen. Die Kacheln und Punkte DARIN duerfen es (dort
+    // ist es Zeichnung und keine Kleidung), also wird nur die oeffnende Marke geprueft.
+    const marke = html.slice(0, html.indexOf('>') + 1);
+    if (/style\s*=/.test(marke)) schlecht.push('svg-Marke traegt wieder style: ' + marke.slice(0, 80));
+
+    // Und im laufenden Dokument auch nicht.
+    for (const el of document.querySelectorAll('.tp-karte[style]')) {
+      if (el.getAttribute('style').trim()) {
+        schlecht.push('gezeichnete Karte traegt style: ' + el.getAttribute('style').slice(0, 60));
+      }
+    }
+
+    // Die drei Orte, jeder mit demselben Bild. Gemessen wird der GERECHNETE Grund: er ist
+    // der Unterschied, um den es geht - Panelgrund im Editor, durchscheinendes Weiss auf dem
+    // schwarzen Cockpitgrund des Uebersichtsschirms.
+    const ORTE = ['#track-preview-svg', '#dash-minimap', '.ov-karte'];
+    const gruende = {};
+    for (const sel of ORTE) {
+      const host = document.querySelector(sel);
+      if (!host) { schlecht.push(sel + ' fehlt'); continue; }
+      const merk = host.innerHTML;
+      try {
+        host.innerHTML = html;
+        const svg = host.querySelector('svg');
+        if (!svg) { schlecht.push(sel + ': kein svg nach dem Einsetzen'); continue; }
+        const cs = getComputedStyle(svg);
+        gruende[sel] = cs.backgroundColor;
+        // Ein Bild ohne Groesse ist ein Bild, das den Ort sprengt oder verschwindet - aber
+        // gepruefen laesst sich das nur, wenn der ORT selbst gerade gelegt ist. Von diesem
+        // Reiter aus liegen die anderen auf display:none, und dann ist alles darin 0 breit;
+        // meine erste Fassung meldete deshalb alle drei Orte als fehlerhaft. Die Farben
+        // darueber sind davon unberuehrt - getComputedStyle rechnet auch in einem
+        // verborgenen Reiter.
+        const hb = host.getBoundingClientRect();
+        if (hb.width > 0 && !(svg.getBoundingClientRect().width > 0)) {
+          schlecht.push(sel + ': Bild ist 0 breit in einem ' + Math.round(hb.width)
+                        + ' px breiten Ort');
+        }
+      } finally {
+        host.innerHTML = merk;
+      }
+    }
+    // Der Uebersichtsschirm MUSS sich vom Editor unterscheiden - das war der Grund fuer
+    // seine zwei !important.
+    if (gruende['#track-preview-svg'] && gruende['.ov-karte']
+        && gruende['#track-preview-svg'] === gruende['.ov-karte']) {
+      schlecht.push('Editor und Uebersichtsschirm haben denselben Grund - der Unterschied '
+                    + 'ist beim Umbau verlorengegangen');
+    }
+    return { ok: !schlecht.length,
+             mass: 'Editor ' + gruende['#track-preview-svg']
+                 + ' | Uebersicht ' + gruende['.ov-karte']
+                 + (schlecht.length ? ' || ' + schlecht.join('; ') : ' | kein Inline-Stil') };
+  });
+
+  // ---- Die Phase erreicht das Kachelende ----
+  //
+  // GEGEN MEINEN EIGENEN ERSTEN ENTWURF gemessen. Ich hatte hier eine Glaettung eingebaut,
+  // die die 1 nur asymptotisch erreicht, damit der Punkt auf der Karte am Kachelende nicht
+  // stehenbleibt - und "Ideallinie stetig" ist daran sofort rot geworden: die Phase ist der
+  // INDEX IN DIE IDEALLINIE, und erreicht sie das Kachelende nicht, fehlt der Linie das
+  // letzte Stueck jeder Kachel. Gemessen 2,48 mal ihr Eigenschritt auf SG2H2G2J2.
+  //
+  // Diese Pruefung haelt die Entscheidung fest, damit sie nicht ein zweites Mal getroffen
+  // werden muss: am Ende der geschaetzten Dauer ist die Phase 1, und darueber bleibt sie 1.
+  stAdd('Kachelphase erreicht am Kachelende genau 1', () => {
+    const car = { tileAt: 0, ghost: { tileIndex: 0, laps: 0, tileMs: 800 } };
+    const bei = (alterMs) => {
+      car.tileAt = Date.now() - alterMs;
+      return ghostTilePhase(car);
+    };
+    const dauer = ghostTileDauer(car.ghost);
+    const schlecht = [];
+    if (Math.abs(bei(dauer) - 1) > 1e-6) schlecht.push('am Ende ' + bei(dauer).toFixed(6) + ', nicht 1');
+    for (const f of [1.5, 3, 10]) {
+      if (bei(dauer * f) !== 1) schlecht.push('bei ' + f + 'facher Dauer ' + bei(dauer * f));
+    }
+    if (Math.abs(bei(dauer / 2) - 0.5) > 1e-6) schlecht.push('auf halber Kachel ' + bei(dauer / 2));
+    if (bei(-100) !== 0) schlecht.push('vor dem Beginn ' + bei(-100));
+    return { ok: !schlecht.length,
+             mass: 'Dauer ' + Math.round(dauer) + ' ms, halb ' + bei(dauer / 2).toFixed(3)
+                 + ', voll ' + bei(dauer).toFixed(3) + ', dreifach ' + bei(dauer * 3).toFixed(3)
+                 + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // ---- Der Ort auf der Schiene ----
+  //
+  // EINE DEFINITION statt fuenf. Dieselbe Groesse wurde an fuenf Stellen einzeln gerechnet -
+  // Kartenpunkte, Windschatten, Spurvergabe, Fuehrender, eigenes Auto - und sie waren sich
+  // nicht einig: die Kartenpunkte rechneten noch mit der Formel von vor v0.5.18 und liefen
+  // an einer zweiten Uhr.
+  //
+  // Gepruefte Invariante: der Ort liegt IMMER in [Kachel, Kachel+1) - nie auf der naechsten
+  // Kachel und nie hinter der eigenen. Daran haengt, dass floor() die Kachel zurueckgibt und
+  // dass ein Abstand nicht das Vorzeichen wechselt, weil eine Schaetzung uebergelaufen ist.
+  stAdd('Ort auf der Schiene: bleibt auf seiner Kachel, steigt monoton', () => {
+    if (typeof ghostOrt !== 'function' || typeof ghostOrtGes !== 'function') {
+      return { ok: false, mass: 'ghostOrt/ghostOrtGes fehlen' };
+    }
+    const schlecht = [];
+    const mk = (i, alterMs, laps) => ({
+      tileAt: Date.now() - alterMs,
+      ghost: { tileIndex: i, laps: laps || 0, tileMs: 800 },
+    });
+    // Ohne gemeldete Kachel gibt es keinen Ort - und ausdruecklich nicht 0, denn 0 ist die
+    // Start-Ziel-Kachel und waere eine Behauptung.
+    if (ghostOrt({ ghost: { tileIndex: null } }) !== null) schlecht.push('ohne Kachel nicht null');
+    if (ghostOrt({}) !== null) schlecht.push('ohne Ghost nicht null');
+
+    // AUF DER KACHEL BLEIBEN, auch wenn die geschaetzte Dauer weit ueberschritten ist. Die
+    // Phase deckelt bei 1 - das braucht die Ideallinie -, also SAETTIGT der Ort am
+    // Kachelende. Gefordert ist deshalb "nicht fallend" und nicht "streng steigend": ein
+    // Auto, dessen Kachel laenger dauert als geschaetzt, steht am Ende der Kachel, und das
+    // ist ehrlicher als ein Weiterkriechen ueber die Grenze hinaus.
+    let geprueft = 0;
+    for (const i of [0, 1, 7]) {
+      let vor = -Infinity;
+      for (const alter of [0, 100, 400, 800, 1600, 8000, 80000]) {
+        const o = ghostOrt(mk(i, alter));
+        geprueft++;
+        if (!(o >= i && o < i + 1)) schlecht.push('Kachel ' + i + ', ' + alter + ' ms: ' + o);
+        if (o < vor) schlecht.push('Kachel ' + i + ' bei ' + alter + ' ms zurueckgelaufen');
+        if (Math.floor(o) !== i) schlecht.push('floor(' + o + ') ist nicht ' + i);
+        vor = o;
+      }
+    }
+    // Und in der Mitte der Kachel steht er auch in der Mitte - sonst waere "bleibt auf der
+    // Kachel" auch von einer Funktion erfuellt, die immer i zurueckgibt.
+    const mitte = ghostOrt(mk(3, ghostTileDauer({ tileIndex: 3, tileMs: 800 }) / 2));
+    if (Math.abs(mitte - 3.5) > 0.01) schlecht.push('halbe Kachel gibt ' + mitte + ', nicht 3,5');
+
+    // MONOTON UEBER DIE RUNDENGRENZE: die letzte Kachel der Runde 0 muss VOR der ersten
+    // Kachel der Runde 1 liegen. Das ist die Eigenschaft, an der alles haengt - sie macht
+    // aus einem Abstand eine Subtraktion und aus einem Ueberholmanoever einen
+    // Vorzeichenwechsel.
+    //
+    // MIT EIGENER STRECKE, nach dem Verfahren von compareLines(): ohne geladenes Layout ist
+    // die Rundenlaenge 1, und dann ist die Pruefung entartet. Meine erste Fassung uebersprang
+    // sie in diesem Fall stillschweigend - also genau dann, wenn der Selbsttest ohne
+    // Streckendatei laeuft, und das ist der Normalfall.
+    const keep = currentTrackTiles;
+    let n = 0;
+    try {
+      currentTrackTiles = codeToTrack('SG2H2G2R2G2H2G2R2').tiles;
+      n = currentTrackTiles.length;
+      // Eine ganze Runde durchlaufen und die Kette pruefen, nicht nur die Naht.
+      let vor = -Infinity;
+      for (let runde = 0; runde < 3; runde++) {
+        for (let i = 0; i < n; i++) {
+          for (const ph of [0, 0.5, 0.95]) {
+            const o = ghostOrtGes(mk(i, 800 * ph * ghostTileLenFactor(i), runde));
+            if (o < vor) {
+              schlecht.push('zurueckgelaufen bei Runde ' + runde + ', Kachel ' + i
+                            + ': ' + o.toFixed(3) + ' nach ' + vor.toFixed(3));
+            }
+            vor = o;
+          }
+        }
+      }
+      // Und die Naht ausdruecklich: letzte Kachel der Runde 0 vor erster der Runde 1.
+      const ende = ghostOrtGes(mk(n - 1, 700, 0));
+      const anfang = ghostOrtGes(mk(0, 10, 1));
+      if (!(anfang > ende)) {
+        schlecht.push('Rundengrenze: ' + anfang.toFixed(3) + ' nicht nach ' + ende.toFixed(3));
+      }
+    } finally {
+      currentTrackTiles = keep;
+      lineCache = null;
+    }
+
+    // Der Abstand in Sekunden: Vorzeichen, Gegenprobe, und der Rueckfall ohne Tempo.
+    if (typeof ghostAbstandSek === 'function') {
+      const vorn = mk(4, 400), hinten = mk(2, 400);
+      const d = ghostAbstandSek(vorn, hinten);
+      if (!(d > 0)) schlecht.push('vorn/hinten gibt ' + d + ', nicht positiv');
+      const rueck = ghostAbstandSek(hinten, vorn);
+      if (Math.abs(d + rueck) > 1e-9) schlecht.push('nicht antisymmetrisch: ' + d + ' / ' + rueck);
+      // Zwei Kacheln bei 800 ms je Kachel sind 1,6 s.
+      if (Math.abs(d - 1.6) > 0.05) schlecht.push('zwei Kacheln sind ' + d.toFixed(3) + ' s, nicht 1,6');
+      // Ohne Tempo wird nicht geraten.
+      const ohne = { tileAt: Date.now(), ghost: { tileIndex: 1, laps: 0, tileMs: 0 } };
+      if (ghostAbstandSek(ohne, hinten) !== null) schlecht.push('ohne Tempo kein null');
+      if (typeof ghostNahe === 'function') {
+        // Der Rueckfall auf das Kachelmass muss greifen, wenn kein Tempo bekannt ist.
+        const a = { ghost: { tileIndex: 3, laps: 0, tileMs: 0, tilesTotal: 3 }, tileAt: Date.now() };
+        const b = { ghost: { tileIndex: 4, laps: 0, tileMs: 0, tilesTotal: 4 }, tileAt: Date.now() };
+        if (!ghostNahe(a, b)) schlecht.push('Rueckfall aufs Kachelmass greift nicht');
+      }
+    }
+    return { ok: !schlecht.length,
+             mass: geprueft + ' Orte geprueft, zwei Kacheln = '
+                 + (typeof ghostAbstandSek === 'function'
+                    ? ghostAbstandSek(mk(4, 400), mk(2, 400)).toFixed(2) + ' s' : '?')
+                 + ', ' + (n * 3 * 3) + ' Orte ueber drei Runden auf ' + n + ' Kacheln'
+                 + (schlecht.length ? ' || ' + schlecht.join('; ') : ' | Invarianten halten') };
+  });
+
   // ---- Controller-Vibration: ein Schalter je Ausloeser ----
   //
   // Siebzehn Aufrufstellen, sechs Arten, ein Hauptschalter. Geprueft wird die

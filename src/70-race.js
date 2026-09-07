@@ -322,8 +322,16 @@
   }
 
   function raceAllCars() {
+    // `ort` MIT HERAUS: der Ort auf der Schiene, monoton ueber Runden. Er entscheidet die
+    // Reihenfolge, solange noch keine Runde abgeschlossen ist - bis hierher war sie in der
+    // ersten Runde die Reihenfolge der GARAGE, weil alle Rundenzahlen und Summen null waren
+    // und die Sortierung stabil ist. Eine Uebersicht, die eine ganze Runde lang eine
+    // erfundene Reihenfolge zeigt, ist schlechter als keine.
     const out = garage.map(c => ({ name: garageLabel(c), role: c.role,
                                    farbe: carColor(c).hex, kennung: c.tag,
+                                   ort: (c.role === 'player'
+                                     ? spielerOrtGes()
+                                     : (typeof ghostOrtGes === 'function' ? ghostOrtGes(c) : null)),
                                    laps: (c.race && c.race.laps) || [] }));
     if (!garage.some(c => c === playerCar) && raceLapTimes.length) {
       // Ohne Garage gibt es kein Geraet und damit keine Farbe: dann bleibt das Feld leer,
@@ -1899,11 +1907,36 @@
   // Position innerhalb der aktuellen Kachel, 0..1. Wie ghostTilePhase(), mit derselben
   // Laengenkorrektur: eine Haarnadel ist dreimal so lang wie eine Gerade, und ohne die
   // Korrektur stuende die Phase dort nach einem Drittel auf 1.
+  // Die Phase des EIGENEN Autos. Sie hat dieselbe Aufgabe wie ghostTilePhase(), aber eine
+  // schlechtere Grundlage, und das gehoert hingeschrieben:
+  //
+  // Ein Ghost fuehrt seit v0.5.18 eine GEMESSENE Dauer je Kacheltyp mit (g.tileMsTyp) - die
+  // enthaelt Laenge UND Tempo. Fuer das eigene Auto gibt es nur dashTileMs, ein Mittel ueber
+  // alle Kacheln, multipliziert mit dem GEOMETRISCHEN Laengenverhaeltnis. Das ist zu kurz
+  // fuer Kurven, weil auch ein Mensch darin abbremst; gemessen an den Ghosts sind es 1,18
+  // mal bei einer 60-Grad-Kurve und 1,43 mal bei einer Haarnadel.
+  //
+  // Die Phase steht deshalb hier laenger am Deckel als bei einem Ghost. Eine Tabelle je Typ
+  // waere die Behebung - dafuer muesste dieses Auto seine Kacheldauern je Typ mitfuehren, so
+  // wie ein Ghost. Ein eigener Schritt, und keiner, den man nebenbei richtig hinbekommt: das
+  // eigene Auto faehrt nicht nach Plan, also streuen seine Zeiten mehr.
+  //
+  // Gedeckelt wird trotzdem, und aus demselben Grund wie bei ghostTilePhase(): die Phase ist
+  // der Index in die Ideallinie, und eine Phase, die die 1 nicht erreicht, reisst dort an
+  // jeder Kachelgrenze eine Luecke. Der Grund steht ausfuehrlich bei ghostTilePhase().
   function dashTilePhase() {
     if (!dashTileAt || !dashTileMs) return 0;
     const f = (typeof ghostTileLenFactor === 'function' && dashMinimapIndex !== null)
       ? ghostTileLenFactor(dashMinimapIndex) : 1;
     return Math.max(0, Math.min(1, (Date.now() - dashTileAt) / (dashTileMs * f)));
+  }
+
+  // Der Ort des eigenen Autos, in derselben Einheit wie ghostOrtGes(): monoton, ueber
+  // Runden hinweg. null, solange keine Kachel bekannt ist.
+  function spielerOrtGes() {
+    if (dashMinimapIndex === null || dashMinimapIndex === undefined) return null;
+    const n = currentTrackTiles.length || 1;
+    return raceLapTimes.length * n + dashMinimapIndex + dashTilePhase();
   }
 
   function refreshMinimap() {
@@ -3832,7 +3865,12 @@
                letzte: ms.length ? ms[ms.length - 1] : null,
                beste: ms.length ? Math.min.apply(null, ms) : null };
     });
-    mit.sort((a, b) => (b.n - a.n) || (a.summe - b.summe));
+    // DRITTES KRITERIUM: der Ort auf der Schiene, weiter vorn zuerst. Die ersten beiden
+    // bleiben unangetastet, damit Uebersicht und Ergebnistabelle nicht verschiedene Sieger
+    // nennen - sie greifen aber erst, wenn eine Runde abgeschlossen ist. Davor entschied die
+    // Garagenreihenfolge.
+    const ortVon = (x) => (typeof x.c.ort === 'number' ? x.c.ort : -Infinity);
+    mit.sort((a, b) => (b.n - a.n) || (a.summe - b.summe) || (ortVon(b) - ortVon(a)));
     const fuehrer = mit.length ? mit[0] : null;
     return mit.map((x, i) => {
       let luecke = '';

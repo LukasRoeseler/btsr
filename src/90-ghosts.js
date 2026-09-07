@@ -1498,6 +1498,114 @@
     return Math.max(0, Math.min(1, (Date.now() - car.tileAt) / ghostTileDauer(g)));
   }
 
+  // ---- WARUM DIE PHASE HART BEI 1 ENDET, und zwar mit Absicht ------------------------
+  //
+  // Hier stand kurzzeitig eine Glaettung: die letzten zehn Prozent gestaucht, sodass der Wert
+  // die 1 nur asymptotisch erreicht. Der Gedanke war, dass der Punkt auf der Karte am
+  // Kachelende nicht stehenbleibt, wenn die Dauerschaetzung zu kurz war.
+  //
+  // DAS WAR EIN FEHLKAUF, und gefunden hat es die Pruefung "Ideallinie stetig". Die Phase ist
+  // naemlich nicht nur eine Anzeigegroesse - sie ist der INDEX IN DIE IDEALLINIE. Erreicht
+  // sie das Kachelende nicht, fehlt der Linie das letzte Stueck JEDER Kachel, und beim
+  // Wechsel springt der Versatz. Gemessen auf SG2H2G2J2: 2,48 mal der Eigenschritt der
+  // Linie.
+  //
+  // Dagegen stand ein kleiner Gewinn. Seit v0.5.18 wird die Kacheldauer je KACHELTYP
+  // gemessen, und damit steht die Phase nur noch 3 bis 10 Prozent einer Kachel am Deckel -
+  // bei 800 ms also 24 bis 80 ms. Eine raeumliche Luecke an jeder Kachelgrenze fuer 24 bis
+  // 80 ms Punktbewegung ist kein Handel, den man machen sollte.
+  //
+  // Das gemeldete Huepfen kam ohnehin von anderswo: die Kartenpunkte rechneten mit der
+  // Formel von vor v0.5.18 und lagen auf einer Haarnadel um 43 Prozent daneben. Das behebt
+  // ghostOrt() weiter unten, und zwar an der Ursache.
+
+  // ---- Der ORT eines Ghosts auf der Schiene ------------------------------------------
+  //
+  // EINE DEFINITION, und das ist der ganze Punkt. Dieselbe Groesse - "wo auf der Runde" -
+  // wurde an vier Stellen einzeln gerechnet, und sie waren sich nicht einig:
+  //
+  //   trackCarMarks()    Kartenpunkte    eigene Formel, eigene Uhr (g.tileStart)
+  //   dirtyAir()         Windschatten    ghostTilePhase(), Uhr car.tileAt
+  //   ghostAssignBias()  Spurvergabe     ganzzahlig, |Delta tilesTotal| <= 1
+  //   ghostLeader()      Fuehrender      Runden, dann tileIndex
+  //
+  // Die Kartenpunkte rechneten dabei noch mit der Formel von vor v0.5.18 - global
+  // gemitteltes tileMs mal geometrischem Laengenverhaeltnis, statt der je Kacheltyp
+  // GEMESSENEN Dauer. Fuer eine Haarnadel ist die geometrische Vorhersage gemessen 1,43 mal
+  // zu kurz: die Karte hielt ihre Phase also nach 70 Prozent der Haarnadel fuer voll, und
+  // der Punkt stand den Rest still. Dazu zwei Uhren, die bis zu einen Takt (45 ms)
+  // auseinanderliegen - car.tileAt wird gesetzt, sobald das Paket ankommt, g.tileStart erst
+  // im naechsten ghostTick.
+  //
+  // ALS FUNKTION UND NICHT ALS FELD. Ein Feld, das ghostTick einmal je Takt schreibt, waere
+  // beim Lesen bis zu 45 ms alt - dieselbe Groessenordnung wie der Fehler, der hier behoben
+  // wird - und es waere ein zweiter Ort fuer dieselbe Zahl. Die Rechnung kostet eine
+  // Subtraktion, eine Division und einen Tabellenzugriff; teuer war an dieser Ecke nie die
+  // Arithmetik, sondern renderTrackPreview() mit 94 ms.
+  //
+  // WAS ES BLEIBT: eine ERSCHLIESSUNG. Das Auto meldet nur, DASS der Kachelzaehler
+  // gewechselt hat (Byte 11) - es ortet sich nicht. Zwischen zwei Wechseln ist die Phase
+  // eine Zeitschaetzung, und ihre Guete ist die von ghostTileDauer(). Das aendert sich mit
+  // dieser Funktion nicht; es hoert nur auf, an vier Stellen verschieden geschaetzt zu
+  // werden.
+
+  // 0 bis n: Kachel und Phase in einer Zahl. null, solange keine Kachel gemeldet wurde -
+  // und ausdruecklich nicht 0, denn 0 ist die Start-Ziel-Kachel und waere eine Behauptung.
+  //
+  // DIE PHASE WIRD HIER KNAPP UNTER 1 GEHALTEN, und das ist kein Widerspruch zum Deckel in
+  // ghostTilePhase(): die beiden haben verschiedene Aufgaben, und das ist der Grund, warum
+  // eine gemeinsame Messung zwei Abschluesse braucht.
+  //
+  //   ghostTilePhase()  ist ein INDEX in die Ideallinie. Er MUSS das Kachelende erreichen,
+  //                     sonst fehlt der Linie das letzte Stueck jeder Kachel.
+  //   ghostOrt()        ist eine POSITION. Sie muss auf ihrer Kachel BLEIBEN, damit floor()
+  //                     die Kachel zurueckgibt - und damit ein Auto auf der letzten Kachel
+  //                     nicht auf den Index n zeigt, den es nicht gibt.
+  //
+  // Gefunden hat das der eigene Test: ohne diese Zeile gab ghostOrt() am Kachelende glatt
+  // i+1 zurueck, und floor() zeigte auf die naechste Kachel.
+  const ORT_RAND = 1e-6;
+  function ghostOrt(car) {
+    const g = car && car.ghost;
+    if (!g || g.tileIndex === null || g.tileIndex === undefined) return null;
+    return g.tileIndex + Math.min(ghostTilePhase(car), 1 - ORT_RAND);
+  }
+
+  // Monoton, ueber Runden hinweg, laeuft nie zurueck. Damit ist ein Abstand eine Subtraktion
+  // und ein Ueberholmanoever ein Vorzeichenwechsel.
+  function ghostOrtGes(car) {
+    const o = ghostOrt(car);
+    if (o === null) return null;
+    const n = currentTrackTiles.length;
+    return (car.ghost.laps || 0) * (n || 1) + o;
+  }
+
+  // Kacheln je Sekunde. Aus der gemessenen Kacheldauer, also ohne zweites Tempomodell - und
+  // damit wird aus einem Abstand in Kacheln einer in SEKUNDEN. Das ist die Einheit, in der
+  // "nah" ueberhaupt eine Bedeutung hat: eine ganze Kachel sind auf der Geraden rund 0,4 s
+  // und auf der Haarnadel 1,4 s.
+  function ghostOrtRate(car) {
+    const g = car && car.ghost;
+    if (!g) return 0;
+    const ms = g.tileMs || 0;
+    return ms > 0 ? 1000 / ms : 0;
+  }
+
+  // Der Abstand zwischen zwei Autos in Sekunden, vorzeichenbehaftet: positiv heisst, a ist
+  // vorn. null, wenn einer der beiden noch keine Kachel gemeldet hat oder kein Tempo bekannt
+  // ist - geraten wird hier nicht.
+  function ghostAbstandSek(a, b) {
+    const oa = ghostOrtGes(a), ob = ghostOrtGes(b);
+    if (oa === null || ob === null) return null;
+    // BEIDE muessen ein Tempo haben. Die erste Fassung mittelte ueber beide, und damit ergab
+    // ein bekanntes Tempo von 800 ms je Kachel zusammen mit einem unbekannten (0) glatte
+    // 0,625 Kacheln je Sekunde - also genau das Raten, das dieser Kommentar ausschliesst.
+    // Gefunden hat es der eigene Test.
+    const ra = ghostOrtRate(a), rb = ghostOrtRate(b);
+    if (!(ra > 0) || !(rb > 0)) return null;
+    return (oa - ob) / ((ra + rb) / 2);
+  }
+
   // ---- Wie lange dauert DIESE Kachel? ------------------------------------------------
   //
   // JE TYP GEMESSEN, nicht global geschaetzt. Bis v0.5.18 stand hier ein gleitender
@@ -3050,8 +3158,9 @@
     const meine = dashMinimapIndex + dashTilePhase();
     let naechster = Infinity;
     for (const c of garage) {
-      if (c.role !== 'ghost' || !c.ghost || c.ghost.tileIndex === null) continue;
-      const seine = c.ghost.tileIndex + ghostTilePhase(c);
+      if (c.role !== 'ghost' || !c.ghost) continue;
+      const seine = ghostOrt(c);
+      if (seine === null) continue;
       // Nur nach VORN, und modulo Rundenlaenge: wer vorn faehrt, hat freie Luft.
       let d = seine - meine;
       while (d < 0) d += n;
@@ -3724,8 +3833,12 @@
     garage.forEach(c => {
       if (c.role !== 'ghost' || !c.ghost) return;
       if (!best) { best = c; return; }
-      const a = c.ghost, b = best.ghost;
-      if (a.laps > b.laps || (a.laps === b.laps && (a.tileIndex || 0) > (b.tileIndex || 0))) best = c;
+      // UEBER ghostOrtGes, das Runden und Phase schon enthaelt. Hier stand "mehr Runden,
+      // sonst hoehere Kachelnummer" - auf DERSELBEN Kachel entschied also die Reihenfolge in
+      // der Garage und nicht, wer vorn ist. Auf einer Haarnadel ist eine Kachel gut eine
+      // Sekunde lang.
+      const oa = ghostOrtGes(c), ob = ghostOrtGes(best);
+      if (oa !== null && (ob === null || oa > ob)) best = c;
     });
     return best;
   }
@@ -3760,6 +3873,28 @@
   // waere auf der Schiene ohnehin nur ein Kampf gegen die Firmware.
   const GHOST_LANE_STEER = 0.16;
 
+  // ---- Nah heisst in SEKUNDEN und nicht in Kacheln --------------------------------
+  //
+  // Hier stand |Delta tilesTotal| <= 1, also "eine ganze Kachel". Eine Kachel ist auf der
+  // Geraden rund 0,4 s und auf der Haarnadel rund 1,4 s: dieselbe Zahl mit dreifacher
+  // Bedeutung, und ausgerechnet in der Haarnadel - wo es eng wird - war sie am
+  // grosszuegigsten.
+  //
+  // 0,6 s ist GEWAEHLT und nicht abgeleitet: etwas mehr als eine Gerade, deutlich weniger
+  // als eine Haarnadel. Der Gewinn liegt nicht in der Zahl, sondern darin, dass es jetzt
+  // EINE ist.
+  //
+  // RUECKFALL auf das alte Kachelmass, solange kein Tempo bekannt ist - in der ersten Runde
+  // ist tileMs noch leer. Eine Regel, die ohne Messwert gar nicht greift, waere schlechter
+  // als eine groebere.
+  const GHOST_NAH_SEK = 0.6;
+  function ghostNahe(a, b) {
+    const d = ghostAbstandSek(a, b);
+    if (d !== null) return Math.abs(d) <= GHOST_NAH_SEK;
+    return a.ghost.laps === b.ghost.laps
+      && Math.abs((a.ghost.tilesTotal || 0) - (b.ghost.tilesTotal || 0)) <= 1;
+  }
+
   function ghostLane(car) {
     const gs = garage.filter(c => c.role === 'ghost' && c.ghost);
     if (gs.length < 2) return 0;
@@ -3780,12 +3915,12 @@
     // tileIndex, und der ist beim Start null: das Feld fuhr die ersten Sekunden auf einer
     // Spur, genau dort, wo es am dichtesten ist.
     const fresh = raceStartedAt && (Date.now() - raceStartedAt) < GHOST_GRID_MS;
-    const near = fresh ? gs : gs.filter(c => gs.some(o => o !== c
-      && o.ghost.laps === c.ghost.laps
-      && Math.abs((o.ghost.tilesTotal || 0) - (c.ghost.tilesTotal || 0)) <= 1));
-    // Nach Kachelindex sortiert, damit die Seiten stabil bleiben, solange sie
-    // nebeneinander fahren, und nicht bei jedem Aufruf tauschen.
-    near.sort((a, b) => (a.ghost.tileIndex || 0) - (b.ghost.tileIndex || 0)
+    const near = fresh ? gs : gs.filter(c => gs.some(o => o !== c && ghostNahe(c, o)));
+    // Nach dem Ort sortiert, damit die Seiten stabil bleiben, solange sie nebeneinander
+    // fahren, und nicht bei jedem Aufruf tauschen. Der Ort statt der Kachelnummer: auf
+    // derselben Kachel gab die Kachelnummer keine Ordnung her, und dann entschied der
+    // Namensvergleich darunter - also die Gerätekennung und nicht, wer vorn ist.
+    near.sort((a, b) => (ghostOrtGes(a) || 0) - (ghostOrtGes(b) || 0)
                         || String(a.device && a.device.id).localeCompare(String(b.device && b.device.id)));
     near.forEach((c, k) => want.set(c, k % 2 === 0 ? -1 : 1));
     // Nachgezogen statt gesetzt. Ein Sprung von 0 auf den vollen Versatz ist ein Ruck am
