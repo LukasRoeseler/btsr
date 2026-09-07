@@ -707,6 +707,147 @@
   }
   function getLineModel() { return lineModel; }
 
+  // ---- KURVENAUSGANG OEFFNEN ---------------------------------------------------------
+  //
+  // GEMELDET: "nach der Haarnadelkurve sollten die Autos sich nach aussen tragen lassen und
+  // nicht ganz innen wieder losbeschleunigen."
+  //
+  // NACHGEMESSEN an SHG4HG3 (geschlossen, zwei Haarnadeln), alpha in Anteilen des Deckels,
+  // negativ heisst innen:
+  //
+  //     Haarnadel     -0,75 -0,98 -1,00 -1,00 -1,00 -1,00
+  //     Gerade danach -0,90 -0,84 -0,78 -0,70 -0,65 -0,60
+  //     dann          -0,54 ... -0,37  und dort bleibt sie
+  //
+  // Die Linie kommt also NIE auf die Aussenseite. Das ist keine Fehlfunktion der
+  // Kruemmungsminimierung, sondern ihre Eigenschaft: sie sucht den kuerzesten glatten Weg,
+  // und bei zwei gleichsinnigen Kurven auf 25 cm Bahnbreite liegt der innen. Ein Fahrer
+  // faehrt trotzdem weit heraus, weil er BESCHLEUNIGT und dafuer Breite braucht - das ist
+  // eine Laengsgroesse, und die kennt der Glaetter nicht.
+  //
+  // WARUM ALS NACHLAUF UND NICHT IN DER RELAXATION: es gab schon einmal zwei Versuche, das
+  // in die Relaxation zu ziehen, und beide sind gescheitert - der Kommentar bei idealLine()
+  // haelt sie fest. Der zweite gab eine Zielvorgabe auf der Geraden und erzeugte damit ein
+  // S: raus am Ausgang, zurueck zur Mitte, wieder raus. Eine Feder auf ein festes Ziel
+  // DECKELT ausserdem den Ausschlag, den der Glaetter sonst weiter treiben wuerde. Deshalb
+  // hier: der Glaetter laeuft unveraendert, und danach wird nur der Ausgang geoeffnet.
+  //
+  // DIE FORM IST GEWAEHLT, nicht abgeleitet - deshalb der Regler daneben. Was gemessen ist:
+  // wo der Scheitel liegt (dort ist die Kruemmung der Linie am groessten) und wie lang eine
+  // Kachel ist. Die Oeffnung laeuft vom Scheitel ueber eine Kachellaenge aus.
+  let lineExitStaerke = 0.5;
+  function setLineExit(v) { lineExitStaerke = Math.max(0, Math.min(1, v || 0)); }
+  function getLineExit() { return lineExitStaerke; }
+
+  // Scheitel finden, KURVENAUSGANG finden, und von dort nach aussen blenden.
+  //
+  // BEIDE PUNKTE KOMMEN AUS DEM LAYOUT und nicht aus einer Kruemmungsschwelle. Eine Kurve
+  // besteht aus einer oder mehreren aufeinanderfolgenden Kurvenkacheln - das steht in
+  // tiles[i].type, und ihre Grenze ist eine Tatsache und keine Schaetzung. Der Scheitel ist
+  // dann der Punkt groesster Linienkruemmung INNERHALB dieses Laufs, der Ausgang seine
+  // letzte Kachelgrenze.
+  //
+  // ERSTER VERSUCH SUCHTE LOKALE MAXIMA MIT SCHWELLE `k > 0.3 * kMax`, und das ist an einem
+  // Artefakt gescheitert: auf einer geschlossenen Runde faellt der letzte Abtastpunkt mit
+  // dem ersten zusammen, und die Kruemmungsformel lieferte dort 0,6999 gegen 0,13 der
+  // Haarnadeln. kMax war also der doppelte Punkt, die Schwelle lag bei 0,21, und keine
+  // Haarnadel kam darueber - gemessen wurde GENAU EIN Scheitel gefunden, und der war das
+  // Artefakt. Die Schranke in pathCurvature() behebt die Ursache; diese Verankerung macht
+  // die Suche ausserdem unabhaengig davon.
+  //
+  // GEWAEHLT ist nur die Auslauflaenge nach dem Ausgang (eine Kachellaenge) und die Staerke.
+  // Deshalb der Regler.
+  const LINE_EXIT_AUSLAUF = TRACK_STEP;      // eine Kachellaenge, in Zeichnungseinheiten
+
+  function istKurvenTyp(t) {
+    return t === TILE_TYPE.CURVE_LEFT || t === TILE_TYPE.CURVE_RIGHT
+        || t === TILE_TYPE.HAIRPIN || t === TILE_TYPE.HAIRPIN_LEFT;
+  }
+
+  // Die Kurvenlaeufe eines Layouts: zusammenhaengende Ketten von Kurvenkacheln, ueber das
+  // Rundenende hinweg zusammengefasst, wenn die Runde geschlossen ist.
+  function lineKurvenLaeufe(tiles, closed) {
+    const n = tiles.length;
+    const laeufe = [];
+    let i = 0;
+    while (i < n) {
+      if (!istKurvenTyp(tiles[i].type)) { i++; continue; }
+      let j = i;
+      while (j + 1 < n && istKurvenTyp(tiles[j + 1].type)) j++;
+      laeufe.push({ von: i, bis: j });
+      i = j + 1;
+    }
+    // Ueber die Naht: laeuft die Kette am Ende weiter und beginnt am Anfang wieder, ist es
+    // EINE Kurve. Ohne das bekaeme eine Kurve, die auf der Start/Ziel-Kachel liegt, zwei
+    // Scheitel und zwei Ausgaenge.
+    if (closed && laeufe.length > 1) {
+      const erst = laeufe[0], letzt = laeufe[laeufe.length - 1];
+      if (erst.von === 0 && letzt.bis === n - 1) {
+        letzt.bis = erst.bis + n;      // ueber die Naht hinaus zaehlen
+        laeufe.shift();
+      }
+    }
+    return laeufe;
+  }
+
+  function lineAusgangOeffnen(alpha, pts, nrm, closed, limit, tiles) {
+    const st = lineExitStaerke;
+    const n = alpha.length;
+    if (!(st > 0) || n < 8 || !tiles || !tiles.length) return alpha;
+    const bahn = pts.map((p, i) => [p.x + nrm[i].x * alpha[i], p.y + nrm[i].y * alpha[i]]);
+    const k = pathCurvature(bahn, closed);
+    const at = (i) => closed ? ((i % n) + n) % n : Math.max(0, Math.min(n - 1, i));
+    const abst = (i, j) => Math.hypot(bahn[j][0] - bahn[i][0], bahn[j][1] - bahn[i][1]);
+    const tab = trackKachelTabelle(pts, tiles.length);
+    const zu = new Array(n).fill(0);
+    for (const lauf of lineKurvenLaeufe(tiles, closed)) {
+      // Die Abtastpunkte dieses Laufs, ueber die Naht hinweg.
+      const idx = [];
+      for (let kk = lauf.von; kk <= lauf.bis; kk++) {
+        const t = ((kk % tiles.length) + tiles.length) % tiles.length;
+        for (let d = 0; d < tab.zahl[t]; d++) idx.push(at(tab.start[t] + d));
+      }
+      if (idx.length < 3) continue;
+      // Scheitel: groesste Linienkruemmung im Lauf.
+      let sch = idx[0];
+      for (const i of idx) if (k[i] > k[sch]) sch = i;
+      const aussen = alpha[sch] === 0 ? 0 : -Math.sign(alpha[sch]);
+      if (!aussen) continue;
+      // Ausgang: der letzte Punkt des Laufs. Das ist die Kachelgrenze, an der die Kurve
+      // aufhoert - keine Schaetzung.
+      const ausgang = idx[idx.length - 1];
+      const bisAusgang = idx.indexOf(sch) >= 0
+        ? idx.length - 1 - idx.indexOf(sch) : 0;
+      if (bisAusgang > 0) {
+        // Vom Scheitel bis zum Ausgang aufbauen.
+        for (let d = 1; d <= bisAusgang; d++) {
+          setzeGroesser(zu, idx[idx.indexOf(sch) + d],
+                        aussen * st * limit * (d / bisAusgang));
+        }
+      }
+      // Und danach ueber eine Kachellaenge auslaufen - dort liegt die Gerade, auf der sich
+      // ein Fahrer nach aussen tragen laesst.
+      let weg = 0;
+      let vor = ausgang;
+      for (let d = 1; d <= n; d++) {
+        const j = at(ausgang + d);
+        weg += abst(vor, j);
+        vor = j;
+        if (weg >= LINE_EXIT_AUSLAUF) break;
+        setzeGroesser(zu, j, aussen * st * limit * (1 - weg / LINE_EXIT_AUSLAUF));
+      }
+    }
+    const raus = new Array(n);
+    for (let i = 0; i < n; i++) raus[i] = Math.max(-limit, Math.min(limit, alpha[i] + zu[i]));
+    return raus;
+  }
+
+  // Der GROESSERE Beitrag gilt, nicht die Summe: zwei nahe Kurven wuerden sich sonst
+  // addieren und die Linie ueber den Rand schieben.
+  function setzeGroesser(arr, i, wert) {
+    if (Math.abs(wert) > Math.abs(arr[i])) arr[i] = wert;
+  }
+
   // Beide Modelle hinter einem Aufruf. Editor und Ghosts gehen hier durch, damit die
   // gezeichnete und die gefahrene Linie nicht auseinanderlaufen koennen.
   function buildLine(pts, nrm, opts) {
@@ -714,6 +855,13 @@
     const m = o.model || lineModel;
     const line = m === 'laptime' ? lapTimeLine(pts, nrm, o) : idealLine(pts, nrm, o);
     line.model = m;
+    // NACH dem Modell, fuer BEIDE Modelle. Der Kurvenausgang ist keine Eigenschaft der
+    // Zielfunktion, sondern eine Zutat danach - siehe lineAusgangOeffnen(). Und weil er hier
+    // steht und nicht bei einem der Aufrufer, zeichnet der Editor genau die Linie, die die
+    // Ghosts fahren.
+    line.alpha = lineAusgangOeffnen(line.alpha, pts, nrm, !!o.closed, line.limit, o.tiles);
+    line.span = Math.max(...line.alpha.map(Math.abs));
+    line.exit = lineExitStaerke;
     return line;
   }
 
@@ -883,11 +1031,37 @@
     const n = pathPts.length;
     const at = (i) => pathPts[closed ? ((i % n) + n) % n : Math.max(0, Math.min(n - 1, i))];
     const out = new Array(n).fill(0);
+    // ---- ENTARTETE ABSTAENDE ZAEHLEN NICHT ------------------------------------------
+    //
+    // Auf einer GESCHLOSSENEN Runde ist der letzte Abtastpunkt derselbe wie der erste -
+    // gemessen ein Abstand von 0,0000 bei einem mittleren Abstand von 2,857 Einheiten. Der
+    // Kreis durch drei Punkte, von denen zwei zusammenfallen, hat den Radius null, und die
+    // Formel unten liefert dort einen riesigen Wert.
+    //
+    // GEMESSEN, bevor diese Schranke stand: auf SHG4HG3 kam an dieser einen Stelle eine
+    // Kruemmung von 0,6999 heraus, waehrend die beiden Haarnadeln bei 0,12 und 0,13 liegen.
+    // Das FUENFFACHE einer Haarnadel, an einer Geraden, allein aus einem doppelten Punkt.
+    //
+    // Zwei Verbraucher haben das geglaubt: brakeProfile() zeichnete an Start/Ziel eine
+    // Bremsung, die es nicht gibt, und die Scheitelsuche des Kurvenausgangs fand nur diesen
+    // einen "Scheitel" - ihre Schwelle war ein Anteil von kMax, und kMax war das Artefakt.
+    //
+    // Die alte Schranke (a*b*c < 1e-6) greift nicht: bei a = 0 und b = c = 2,857 ist das
+    // Produkt null, aber bei a = 0,001 ist es 8e-3 und damit darueber. Gebraucht wird eine
+    // RELATIVE Schranke, und der Bezug ist der mittlere Abstand dieses Pfades.
+    let summe = 0;
+    for (let i = 0; i + 1 < n; i++) {
+      summe += Math.hypot(pathPts[i + 1][0] - pathPts[i][0],
+                          pathPts[i + 1][1] - pathPts[i][1]);
+    }
+    const mittel = n > 1 ? summe / (n - 1) : 0;
+    const klein = Math.max(1e-9, mittel * 0.05);
     for (let i = 0; i < n; i++) {
       const p0 = at(i - 1), p1 = at(i), p2 = at(i + 1);
       const a = Math.hypot(p1[0] - p0[0], p1[1] - p0[1]);
       const b = Math.hypot(p2[0] - p1[0], p2[1] - p1[1]);
       const c = Math.hypot(p2[0] - p0[0], p2[1] - p0[1]);
+      if (a < klein || b < klein) continue;      // bleibt 0: hier ist nichts zu messen
       const area2 = Math.abs((p1[0] - p0[0]) * (p2[1] - p0[1]) - (p2[0] - p0[0]) * (p1[1] - p0[1]));
       out[i] = (a * b * c) < 1e-6 ? 0 : (2 * area2) / (a * b * c);
     }
@@ -1035,7 +1209,9 @@
       //    is about to rise. Curvature is read from the ideal line itself, not the
       //    centreline — the whole point of the line is that it changes the radius, so using
       //    the centreline would colour a corner the car no longer takes that tightly.
-      const line = buildLine(pts, nrm, { closed });
+      // tiles MIT: der Kurvenausgang braucht die Kacheltypen, um Scheitel und Ausgang
+      // zu finden - siehe lineAusgangOeffnen().
+      const line = buildLine(pts, nrm, { closed, tiles });
       const ideal = pts.map((p, i) => [p.x + nrm[i].x * line.alpha[i],
                                        p.y + nrm[i].y * line.alpha[i]]);
       const brake = brakeProfile(ideal, closed);

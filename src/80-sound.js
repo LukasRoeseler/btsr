@@ -1003,6 +1003,45 @@
     if (el) el.addEventListener('change', (e) => { ghostCfg[feld] = e.target.checked; });
   }
 
+  // Der Kurvenausgang liegt in 60-track.js (setLineExit), nicht in ghostCfg: gezeichnete
+  // und gefahrene Linie muessen dieselbe sein, und beide gehen durch buildLine(). Ein
+  // zweiter Wert in ghostCfg waere ein zweiter Ort fuer eine Zahl, die beide brauchen.
+  if ($('ghost-exit')) {
+    const exitSetzen = (v) => {
+      setLineExit(v);
+      // DEN ZWISCHENSPEICHER DER GHOSTS FALLEN LASSEN, sonst fahren sie die alte Linie
+      // weiter. lineCache ist ein let in 90-ghosts.js, also in einer SPAETEREN Datei
+      // derselben IIFE - deshalb ueber ghostLineCacheLeeren() und nicht direkt. Ein
+      // Schreibzugriff von hier aus traf die temporale Todeszone und nahm den Rest der IIFE
+      // mit; genau das ist mir beim Bauen der Wuerz-Schalter schon passiert.
+      ghostLineCacheLeeren();
+      refreshTrackPreview();            // und der Editor zeigt sie sofort
+      $('ghost-exit-val').textContent = Math.round(v * 100) + '%';
+    };
+    $('ghost-exit').addEventListener('input', (e) => exitSetzen(parseFloat(e.target.value)));
+    // KEIN Aufruf beim Aufbau. Markup und 60-track.js tragen beide 0,5, und der Selbsttest
+    // "Regler und Modell sagen beim Laden dasselbe" prueft das nach - ein Aufruf hier waere
+    // ein Schreibzugriff in eine noch nicht angelegte Variable.
+  }
+
+  if ($('ghost-quertempo')) {
+    const qt = (v) => {
+      ghostCfg.querTempo = v;
+      $('ghost-quertempo-val').textContent = v.toFixed(1);
+    };
+    $('ghost-quertempo').addEventListener('input', (e) => qt(parseFloat(e.target.value)));
+  }
+
+  if ($('ghost-gasdyn')) {
+    const gd = (v) => {
+      ghostCfg.gasDynamik = v;
+      // Die Aufbauzeit dazu, denn die ist die Groesse, die man vergleichen kann: bei 1,0
+      // sind es 0,63 s, ein Trigger liegt bei etwa 0,15 s.
+      $('ghost-gasdyn-val').textContent = v.toFixed(1) + ' \u00b7 ' + (1 / (1.6 * v)).toFixed(2) + ' s';
+    };
+    $('ghost-gasdyn').addEventListener('input', (e) => gd(parseFloat(e.target.value)));
+  }
+
   $('ghost-line').addEventListener('input', (e) => {
     ghostCfg.line = parseFloat(e.target.value);
     $('ghost-line-val').textContent = ghostCfg.line === 0

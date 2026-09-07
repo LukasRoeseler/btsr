@@ -1453,6 +1453,49 @@
     // zusammenhalten" (ghostFeldStaffel) und dort besser - gestaffelt ueber das ganze Feld
     // statt nur auf den Fuehrenden. Zwei Regeln, die beide den Fuehrenden bremsen, waeren
     // zwei Abschlaege auf dieselbe Groesse.
+    // ---- QUERTRAEGHEIT ------------------------------------------------------------
+    //
+    // Wie schnell ein Ghost seine Querlage aendern DARF, in Anteilen der Bahnbreite je
+    // Sekunde. Gemeldet: "sie sollten nicht abrupt nach aussen wechseln, sondern das ganze
+    // sollte etwas smoother aussehen. Bau vielleicht sowas wie Traegheit oder Smoothness
+    // fuer Aenderung der Querlage im Fahren ein."
+    //
+    // WARUM ES DAS BRAUCHT: die Ideallinie ist eine Funktion des ORTES, nicht der Zeit. Beim
+    // Kachelwechsel springt der gelesene Ort um einen Abtastpunkt, und bei einem Wechsel des
+    // Kacheltyps aendert sich der Sollwert dort in einem Takt um bis zu 0,4 der Bahnbreite -
+    // gemessen an SHG4HG3 zwischen Haarnadelausgang und Gerade. Ein Servo, der das in einem
+    // Takt nachfuehrt, sieht aus wie ein Ruck, und ein Auto auf einer Schiene faehrt es auch
+    // so.
+    //
+    // 1,2 je Sekunde ist GEWAEHLT: bei 25 cm Bahnbreite sind das 30 cm/s Querbewegung, also
+    // rund ein Drittel der Laengsgeschwindigkeit eines Ghosts bei halbem Gas (34 cm/s
+    // gemessen). Mehr sieht hektisch aus, weniger laesst ihn der Linie nicht mehr folgen.
+    // Der Regler daneben ist da, weil das eine Wahl und keine Messung ist.
+    querTempo: 1.2,
+    // ---- BREMS- UND GASVERHALTEN ---------------------------------------------------
+    //
+    // Gemeldet: "Bremsverhalten vor und Beschleunigungsverhalten nach Kurven der Ghosts soll
+    // so aehnlich aussehen wie das in den Standardeinstellungen. Wenn Kalibrierung hier
+    // schwierig ist, gib mir einen Slider."
+    //
+    // SIE IST SCHWIERIG, und der Grund ist nicht Faulheit: der Ghost und der Fahrer bekommen
+    // ihr Gas aus verschiedenen Quellen. Beide gehen durch DASSELBE Fahrzeugmodell -
+    // e.update({throttle, brake}) -, aber der Fahrer drueckt einen Trigger und ist damit
+    // sofort am Anschlag, waehrend der Ghost einen PI-Regler auf ein Zieltempo hat, dessen
+    // Ausgang zusaetzlich ratenbegrenzt ist.
+    //
+    // WAS DARAN NACHRECHENBAR IST: GHOST_SLEW_GAS = 1,6 je Sekunde heisst, dass voller
+    // Gasbefehl 1/1,6 = 0,63 s braucht. Ein Fahrer am Trigger ist in etwa 0,15 s dort. Der
+    // Ghost ist also rund viermal langsamer im Aufbau - und genau das sieht man am
+    // Kurvenausgang.
+    //
+    // 1,0 IST DER GEMESSENE, STABILE ZUSTAND und bleibt deshalb die Vorgabe: alle
+    // Tempopruefungen dieser App sind damit gefahren. Wer es fahrerhafter will, dreht auf;
+    // bei 4,0 liegt der Aufbau bei 0,16 s und damit dort, wo ein Trigger liegt. Die
+    // Ratenbegrenzung ist der Schutz davor, dass ein zurueckgestelltes Auto aus der Hand
+    // gerissen wird - wer sie hochdreht, nimmt diesen Schutz zurueck, und der Hilfetext
+    // sagt das.
+    gasDynamik: 1.0,
     wuerzeUeberholen: true,   // bestellt: an
     wuerzeAbstand: true,      // bestellt: an, "sodass sie sich nicht rammen"
     wuerzeForm: false,
@@ -2113,12 +2156,16 @@
     // den Zielwert beenden, nicht das Gas abstellen. Vorher fiel das Auto im Totband auf
     // null Gas, verlor Tempo, bis die Abweichung das Totband verliess, gab Gas, kam ins
     // Totband, fiel auf null - ein Saegezahn genau um den Zielwert.
+    // Die Entschlossenheit wirkt auf BEIDE Verstaerkungen und BEIDE Ratengrenzen. Nur die
+    // Rate zu skalieren wuerde einen Regler ergeben, der schnell greift und trotzdem traege
+    // zielt; nur die Verstaerkung einen, der will und nicht darf.
+    const dyn = Math.max(0.1, ghostCfg.gasDynamik || 1);
     const iAlt = g.iTerm || 0;
     let iNeu = Math.max(0, Math.min(1, iAlt + err * GHOST_KI_GAS * dtG));
     const roh = Math.abs(err) < GHOST_DEADBAND
       ? { t: Math.max(0, Math.min(1, iNeu)), b: 0 }
-      : { t: Math.max(0, Math.min(1, iNeu + err * GHOST_KP_GAS)),
-          b: Math.max(0, Math.min(1, -err * GHOST_KP_BREMSE)) };
+      : { t: Math.max(0, Math.min(1, iNeu + err * GHOST_KP_GAS * dyn)),
+          b: Math.max(0, Math.min(1, -err * GHOST_KP_BREMSE * dyn)) };
     // ANTI-WINDUP, zwei Faelle, und beide sind hier notwendig:
     //
     // 1. Wird gebremst, wird der I-Anteil ABGEBAUT und nicht nur nicht weiter geladen. Er
@@ -2134,8 +2181,8 @@
       const max = rate * dtG;
       return soll > ist ? Math.min(soll, ist + max) : Math.max(soll, ist - max);
     };
-    const throttle = zieh(g.lastThrottle || 0, roh.t, GHOST_SLEW_GAS);
-    const brake = zieh(g.lastBrake || 0, roh.b, GHOST_SLEW_BREMSE);
+    const throttle = zieh(g.lastThrottle || 0, roh.t, GHOST_SLEW_GAS * dyn);
+    const brake = zieh(g.lastBrake || 0, roh.b, GHOST_SLEW_BREMSE * dyn);
     g.lastThrottle = throttle;
     g.lastBrake = brake;
     return { throttle, brake };
@@ -2878,6 +2925,13 @@
   // Die Handregel bleibt als Rueckfall fuer den Fall, dass die Relaxation nichts findet
   // (zu wenige Kacheln), und weil sie ohne Layout-Geometrie auskommt.
   let lineCache = null;
+
+  // Der Zwischenspeicher der Ideallinie, von aussen leerbar. Eine Funktion und keine
+  // direkte Zuweisung, weil die Aufrufer in FRUEHEREN Dateien stehen (der Regler fuer
+  // den Kurvenausgang in 80-sound.js): ein direkter Schreibzugriff auf dieses let traefe
+  // von dort aus die temporale Todeszone. Eine Funktion wird hochgezogen und laeuft erst,
+  // wenn jemand klickt.
+  function ghostLineCacheLeeren() { lineCache = null; }
   function ghostLine() {
     const tiles = currentTrackTiles;
     if (!tiles || tiles.length < 3) return null;
@@ -2901,7 +2955,7 @@
     // Jetzt EINE Funktion mit Lage UND Winkel; Begruendung und Zahlen stehen bei
     // trackSchluss() in 60-track.js.
     const closed = trackSchluss(pts).closed;
-    const line = buildLine(pts, nrm, { closed });
+    const line = buildLine(pts, nrm, { closed, tiles });
     const path = pts.map((p, i) => [p.x + nrm[i].x * line.alpha[i],
                                     p.y + nrm[i].y * line.alpha[i]]);
     const brake = brakeProfile(path, closed);
@@ -4113,9 +4167,27 @@
             + (1 - anteilA) * ghostLineOffset(car) * ghostCfg.line * GHOST_LINE_STEER
               * linieGewicht
             + weiche * ghostCfg.lateral * GHOST_PASS_STEER;
-        steer = quer
+        const querRohSumme = quer
               + g.bias * ghostCfg.lateral * 0.25
               + ghostLane(car) * ghostCfg.lanes * GHOST_LANE_STEER * spurGewicht;
+        // ---- QUERTRAEGHEIT: eine RATENBEGRENZUNG und kein Tiefpass ------------------
+        //
+        // Der Unterschied ist wichtig. Ein Tiefpass (neu = alt + (soll-alt) * k) naehert sich
+        // dem Sollwert asymptotisch: er kommt nie ganz an, und wie schnell er sich bewegt,
+        // haengt davon ab, WIE WEIT er weg ist. Eine Ratenbegrenzung hat eine feste
+        // Hoechstgeschwindigkeit und erreicht den Sollwert exakt - das ist, was ein Servo
+        // und ein Reifen tun, und es ist die Groesse, die man in cm/s angeben kann.
+        //
+        // Auf der Ideallinie selbst wirkt sie fast nicht: die aendert sich ueber eine Kachel
+        // hinweg langsam. Sie greift genau dort, wo es gemeldet wurde - am Kacheltypwechsel,
+        // am Beginn und Ende einer Attacke, und wenn die Ortung sich neu ausrichtet.
+        const querMax = Math.max(0, ghostCfg.querTempo) * dt;
+        const querAlt = g.querIst === undefined ? querRohSumme : g.querIst;
+        const querDiff = querRohSumme - querAlt;
+        g.querIst = Math.abs(querDiff) <= querMax
+          ? querRohSumme
+          : querAlt + Math.sign(querDiff) * querMax;
+        steer = g.querIst;
         // FUER DIE KARTE. Im Leitplanken-Modus IST diese Summe die Querlage, die die App
         // will - sie besteht ausschliesslich aus Versaetzen quer zur Bahn und enthaelt
         // keinen Lenkwinkel. Im Rueckfallzweig darunter waere dieselbe Zeile falsch: dort

@@ -6962,6 +6962,64 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="ghost-line-val">100%</span>
         </div></div>
+      <div class="opt-row"><div class="opt-label">Ghost: Kurvenausgang &ouml;ffnen
+          <span class="wip-tag">experimentell</span>
+          <small>Wie weit sich ein Ghost am Kurvenausgang nach au&szlig;en tragen l&auml;sst.
+          Die Kr&uuml;mmungsminimierung kennt das nicht: sie sucht den k&uuml;rzesten glatten
+          Weg, und bei zwei gleichsinnigen Kurven auf 25&nbsp;cm Bahnbreite liegt der innen.
+          Gemessen blieb die Linie hinter einer Haarnadel bei 68&nbsp;% nach innen stehen. Ein
+          Fahrer f&auml;hrt weit heraus, weil er beschleunigt und daf&uuml;r Breite braucht
+          &ndash; das ist eine L&auml;ngsgr&ouml;&szlig;e, und die kennt der Gl&auml;tter
+          nicht.
+          <br>Scheitel und Ausgang kommen aus dem Layout: der Scheitel ist der Punkt
+          gr&ouml;&szlig;ter Linienkr&uuml;mmung im Kurvenlauf, der Ausgang seine letzte
+          Kachelgrenze. Nur die St&auml;rke und die Auslaufl&auml;nge von einer Kachel sind
+          gew&auml;hlt &ndash; deshalb dieser Regler.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="ghost-exit" min="0" max="1" step="0.05" value="0.5">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="ghost-exit-val">50%</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Ghost: Quertr&auml;gheit
+          <span class="wip-tag">experimentell</span>
+          <small>Wie schnell ein Ghost seine Querlage &auml;ndern darf, in Bahnbreiten je
+          Sekunde. Die Ideallinie ist eine Funktion des Ortes und nicht der Zeit
+          &ndash; beim Wechsel des Kacheltyps &auml;ndert sich der Sollwert in einem Takt um
+          bis zu 0,4 der Bahnbreite, und ein Servo, der das in einem Takt nachf&uuml;hrt,
+          sieht aus wie ein Ruck.
+          <br>Eine Ratenbegrenzung und kein Tiefpass: sie hat eine feste
+          H&ouml;chstgeschwindigkeit und erreicht den Sollwert exakt, w&auml;hrend ein
+          Tiefpass sich ihm nur n&auml;hert und dabei umso schneller l&auml;uft, je weiter er
+          weg ist. 1,2 sind bei 25&nbsp;cm Bahnbreite 30&nbsp;cm/s &ndash; rund ein Drittel
+          der L&auml;ngsgeschwindigkeit eines Ghosts bei halbem Gas.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="ghost-quertempo" min="0.2" max="4" step="0.1" value="1.2">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="ghost-quertempo-val">1.2</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Ghost: Brems- und Gasverhalten
+          <span class="wip-tag">experimentell</span>
+          <small>Wie entschlossen ein Ghost Gas gibt und bremst. Ghost und Fahrer gehen durch
+          dasselbe Fahrzeugmodell, bekommen ihr Gas aber aus verschiedenen Quellen:
+          der Fahrer dr&uuml;ckt einen Trigger und ist sofort am Anschlag, der Ghost hat einen
+          Regler auf ein Zieltempo, dessen Ausgang ratenbegrenzt ist.
+          <br>Nachrechenbar: bei 1,0 braucht voller Gasbefehl 0,63&nbsp;s, ein Trigger etwa
+          0,15&nbsp;s &ndash; der Ghost ist also rund viermal langsamer im Aufbau, und genau
+          das sieht man am Kurvenausgang. Bei 4,0 liegt er bei 0,16&nbsp;s und damit dort, wo
+          ein Trigger liegt.
+          <br>1,0 ist der gemessene, stabile Zustand: alle Tempopr&uuml;fungen dieser App sind
+          damit gefahren. Die Ratenbegrenzung ist auch der Schutz davor, dass ein
+          zur&uuml;ckgestelltes Auto aus der Hand gerissen wird &ndash; wer sie hochdreht,
+          nimmt diesen Schutz zur&uuml;ck.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="ghost-gasdyn" min="0.3" max="4" step="0.1" value="1">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="ghost-gasdyn-val">1.0</span>
+        </div></div>
+
       <div class="opt-row"><div class="opt-label">Ghost: Linienmodell
           <small>Kr&uuml;mmung nimmt den gr&ouml;&szlig;ten Radius. Rundenzeit rechnet ein
           Geschwindigkeitsprofil und ist im Modell 1&ndash;8&nbsp;% schneller; ob auch auf
@@ -7548,7 +7606,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.5.37</span></span>
+    <span class="foot-ver">v<span id="app-version">0.5.38</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine

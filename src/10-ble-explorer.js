@@ -1571,6 +1571,26 @@
       "How hard the car steers against a slide, measured from the rotation signal in byte 3 of the notifications. 50 per cent is the default that was asked for. What is uncertain about it, and it is two things at once: the signal is unconfirmed – it only varies once the car is moving, and flipped sign with cornering direction in exactly one recording. And it is uncalibrated: its scale is self-adjusting because the real amplitude is unknown. So the strength depends on the largest yaw value the session has seen so far. The “Drift probe” button under “Measure lateral offset” measures whether the signal moves at all under straight full throttle.",
     "Rennen":
       "Race",
+    "Ghost: Kurvenausgang öffnen":
+      "Ghost: open up the corner exit",
+    "Wie weit sich ein Ghost am Kurvenausgang nach außen tragen lässt. Die Krümmungsminimierung kennt das nicht: sie sucht den kürzesten glatten Weg, und bei zwei gleichsinnigen Kurven auf 25 cm Bahnbreite liegt der innen. Gemessen blieb die Linie hinter einer Haarnadel bei 68 % nach innen stehen. Ein Fahrer fährt weit heraus, weil er beschleunigt und dafür Breite braucht – das ist eine Längsgröße, und die kennt der Glätter nicht.":
+      "How far a ghost lets itself be carried out on corner exit. Minimum-curvature smoothing knows nothing of this: it looks for the shortest smooth path, and with two same-handed corners on 25 cm of track width that path runs on the inside. Measured, the line stayed 68% toward the inside after a hairpin. A driver runs wide because he is accelerating and needs the width for it – that is a longitudinal quantity, and the smoother does not know about it.",
+    "Scheitel und Ausgang kommen aus dem Layout: der Scheitel ist der Punkt größter Linienkrümmung im Kurvenlauf, der Ausgang seine letzte Kachelgrenze. Nur die Stärke und die Auslauflänge von einer Kachel sind gewählt – deshalb dieser Regler.":
+      "Apex and exit come from the layout: the apex is the point of greatest line curvature within the run of corner tiles, the exit its last tile boundary. Only the strength and the run-out length of one tile are chosen – hence this slider.",
+    "Ghost: Querträgheit":
+      "Ghost: lateral inertia",
+    "Wie schnell ein Ghost seine Querlage ändern darf, in Bahnbreiten je Sekunde. Die Ideallinie ist eine Funktion des Ortes und nicht der Zeit – beim Wechsel des Kacheltyps ändert sich der Sollwert in einem Takt um bis zu 0,4 der Bahnbreite, und ein Servo, der das in einem Takt nachführt, sieht aus wie ein Ruck.":
+      "How fast a ghost may change its lateral position, in track widths per second. The racing line is a function of place and not of time – at a change of tile type the target shifts by up to 0.4 of the track width in a single tick, and a servo that follows that in one tick looks like a jerk.",
+    "Eine Ratenbegrenzung und kein Tiefpass: sie hat eine feste Höchstgeschwindigkeit und erreicht den Sollwert exakt, während ein Tiefpass sich ihm nur nähert und dabei umso schneller läuft, je weiter er weg ist. 1,2 sind bei 25 cm Bahnbreite 30 cm/s – rund ein Drittel der Längsgeschwindigkeit eines Ghosts bei halbem Gas.":
+      "A rate limit and not a low-pass: it has a fixed top speed and reaches the target exactly, whereas a low-pass only approaches it and runs faster the further away it is. On 25 cm of track width 1.2 is 30 cm/s – about a third of a ghost's forward speed at half throttle.",
+    "Ghost: Brems- und Gasverhalten":
+      "Ghost: braking and throttle behaviour",
+    "Wie entschlossen ein Ghost Gas gibt und bremst. Ghost und Fahrer gehen durch dasselbe Fahrzeugmodell, bekommen ihr Gas aber aus verschiedenen Quellen: der Fahrer drückt einen Trigger und ist sofort am Anschlag, der Ghost hat einen Regler auf ein Zieltempo, dessen Ausgang ratenbegrenzt ist.":
+      "How decisively a ghost applies throttle and brake. Ghost and driver go through the same vehicle model but get their throttle from different sources: the driver pulls a trigger and is at full lock at once, the ghost has a controller on a target speed whose output is rate-limited.",
+    "Nachrechenbar: bei 1,0 braucht voller Gasbefehl 0,63 s, ein Trigger etwa 0,15 s – der Ghost ist also rund viermal langsamer im Aufbau, und genau das sieht man am Kurvenausgang. Bei 4,0 liegt er bei 0,16 s und damit dort, wo ein Trigger liegt.":
+      "Checkable: at 1.0 a full throttle command takes 0.63 s, a trigger about 0.15 s – so the ghost builds up roughly four times slower, and that is exactly what you see on corner exit. At 4.0 it is at 0.16 s and thus where a trigger is.",
+    "1,0 ist der gemessene, stabile Zustand: alle Tempoprüfungen dieser App sind damit gefahren. Die Ratenbegrenzung ist auch der Schutz davor, dass ein zurückgestelltes Auto aus der Hand gerissen wird – wer sie hochdreht, nimmt diesen Schutz zurück.":
+      "1.0 is the measured, stable state: every pace test in this app was run with it. The rate limit is also what stops a car you have just put back from being ripped out of your hand – turning it up gives that protection away.",
     "Rennen simulieren":
       "Simulate a race",
     "Was hier passiert":

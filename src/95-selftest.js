@@ -135,9 +135,20 @@
       const lc = window.OMEGA_TEST.lineOf(p.tiles);
       const rows = window.OMEGA_TEST.compareLines(p.tiles, 96);
       const a = rows.map(r => r.calc);
+      // UEBER DIE NAHT NUR AUF EINER GESCHLOSSENEN RUNDE. Auf einer offenen sind der letzte
+      // und der erste Abtastpunkt keine Nachbarn - sie liegen an zwei Enden der Bahn, und
+      // ihr Unterschied ist kein Sprung der Linie, sondern die Luecke der Strecke.
+      //
+      // Der Vergleichswert lc.maxStep wickelt ebenfalls nur bei closed um (siehe lineOf).
+      // Hier stand `% a.length` ohne diese Bedingung, und damit verglich der Test einen
+      // Schritt, den seine eigene Referenz ausschliesst. Aufgefallen ist es, als der
+      // Kurvenausgang das Ende der offenen Teststrecke nach aussen zog: gemessen 0,487 an
+      // der Naht von SG2H2G2J2 gegen eine Grenze, in der diese Stelle nicht vorkommt.
       let sprung = 0;
       for (let i = 0; i < a.length; i++) {
-        sprung = Math.max(sprung, Math.abs(a[(i + 1) % a.length] - a[i]));
+        if (i + 1 >= a.length && !lc.closed) break;
+        const j = (i + 1) % a.length;
+        sprung = Math.max(sprung, Math.abs(a[j] - a[i]));
       }
       // Kleine Toleranz auf den Eigenschritt der Linie: die Abtastung liegt nicht genau auf
       // ihren Punkten, also darf sie ihn um ein paar Prozent verfehlen.
@@ -2356,6 +2367,12 @@
       ['setting-fuelweight', () => physEngine.config.fuelWeightEffect],
       ['setting-countersteer', () => (typeof gegenlenkStaerke === 'number' ? gegenlenkStaerke : null)],
       ['ghost-line', () => ghostCfg.line],
+      // Die drei Verfeinerungsregler. ghost-exit spiegelt nach 60-track.js und nicht
+      // nach ghostCfg - dort muss der Wert liegen, damit gezeichnete und gefahrene
+      // Linie durch dieselbe Zahl gehen.
+      ['ghost-exit', () => OMEGA_TEST.getLineExit()],
+      ['ghost-quertempo', () => ghostCfg.querTempo],
+      ['ghost-gasdyn', () => ghostCfg.gasDynamik],
       ['ghost-lanes', () => ghostCfg.lanes],
       ['ghost-lateral', () => ghostCfg.lateral],
       ['ghost-speed', () => ghostCfg.speed],
@@ -3774,6 +3791,133 @@
     return { ok: !schlecht.length,
              mass: 'Radius Auto/Mittellinie: ' + zeilen.join(' ')
                  + (schlecht.length ? ' || ' + schlecht.join('; ') : ' | alle innen') };
+  });
+
+  // ---- Der Kurvenausgang oeffnet sich, und zwar nach der Kurve ----
+  //
+  // GEMELDET: "nach der Haarnadelkurve sollten die Autos sich nach aussen tragen lassen und
+  // nicht ganz innen wieder losbeschleunigen."
+  //
+  // ZWEI FEHLVERSUCHE STECKEN IN DIESER PRUEFUNG, und beide waren nur durch Messung zu
+  // sehen:
+  //
+  //   1. Die Reichweite war in ABTASTPUNKTEN gerechnet ("eine mittlere Kacheldichte"). Eine
+  //      Haarnadel hat 49 Punkte, eine Gerade 14 - die Oeffnung lag damit noch INNERHALB der
+  //      Haarnadel, und auf der Geraden danach war sie nicht messbar.
+  //   2. Der Scheitel wurde als lokales Kruemmungsmaximum ueber einer Schwelle von 30
+  //      Prozent des Maximums gesucht. Das Maximum war ein Artefakt: auf einer geschlossenen
+  //      Runde faellt der letzte Abtastpunkt mit dem ersten zusammen, und die
+  //      Kruemmungsformel lieferte dort 0,6999 gegen 0,13 der Haarnadeln. Gefunden wurde
+  //      genau EIN Scheitel, und der war der doppelte Punkt.
+  //
+  // Geprueft wird deshalb GENAU DAS, was beide Versuche verfehlt haben: die Linie muss auf
+  // der Geraden HINTER einer Kurve weiter aussen liegen als ohne Oeffnung.
+  stAdd('Kurvenausgang: die Linie traegt nach der Kurve nach aussen', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.setLineExit) {
+      return { skip: true, mass: 'setLineExit nicht erreichbar' };
+    }
+    const merkTiles = currentTrackTiles;
+    const merkExit = OMEGA_TEST.getLineExit();
+    const schlecht = [];
+    const zeilen = [];
+    try {
+      // Geschlossene Runde mit zwei Haarnadeln.
+      const p = codeToTrack('SHG4HG3');
+      currentTrackTiles = p.tiles;
+      const schl = trackSchluss(trackCenterline(p.tiles));
+      if (!schl.closed) return { ok: false, mass: 'Teststrecke gilt nicht als geschlossen' };
+      const holen = (st) => {
+        OMEGA_TEST.setLineExit(st);
+        const rows = OMEGA_TEST.compareLines(p.tiles, 6);
+        const je = {};
+        rows.forEach((r) => { (je[r.tile] = je[r.tile] || []).push(-r.calc); });
+        return je;
+      };
+      const aus = holen(0);
+      const an = holen(0.5);
+      // Fuer jede Haarnadel: die Kachel DANACH muss weiter aussen liegen. "Weiter aussen"
+      // heisst naeher an 0 oder darueber - die Werte sind negativ (innen).
+      let geprueft = 0;
+      for (let k = 0; k < p.tiles.length; k++) {
+        if (p.tiles[k].type !== TILE_TYPE.HAIRPIN
+            && p.tiles[k].type !== TILE_TYPE.HAIRPIN_LEFT) continue;
+        const nach = (k + 1) % p.tiles.length;
+        if (!aus[nach] || !an[nach]) continue;
+        geprueft++;
+        const vorher = aus[nach][0];
+        const nachher = an[nach][0];
+        zeilen.push('nach H' + k + ': ' + vorher.toFixed(2) + ' -> ' + nachher.toFixed(2));
+        // Deutlich weiter aussen: mindestens 0,15 der Bahnbreite. Weniger waere im
+        // Rauschen der Relaxation.
+        if (!(Math.abs(nachher) < Math.abs(vorher) - 0.15)) {
+          schlecht.push('nach H' + k + ' nur ' + vorher.toFixed(2) + ' -> ' + nachher.toFixed(2));
+        }
+      }
+      if (!geprueft) schlecht.push('keine Haarnadel gefunden');
+      // Und die Gegenprobe: bei 0 darf sich nichts aendern.
+      const aus2 = holen(0);
+      for (let k = 0; k < p.tiles.length; k++) {
+        if (!aus[k] || !aus2[k]) continue;
+        if (Math.abs(aus[k][0] - aus2[k][0]) > 1e-9) {
+          schlecht.push('K' + k + ': bei 0 nicht reproduzierbar');
+          break;
+        }
+      }
+    } catch (e) {
+      schlecht.push('Ausnahme: ' + e.message);
+    } finally {
+      OMEGA_TEST.setLineExit(merkExit);
+      currentTrackTiles = merkTiles;
+      ghostLineCacheLeeren();
+    }
+    return { ok: !schlecht.length,
+             mass: zeilen.join(' | ')
+                 + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // ---- Die Kruemmung glaubt keinem doppelten Punkt ----
+  //
+  // Auf einer geschlossenen Runde ist der letzte Abtastpunkt derselbe wie der erste -
+  // gemessen ein Abstand von 0,0000 bei einem mittleren Abstand von 2,857 Einheiten. Der
+  // Kreis durch drei Punkte, von denen zwei zusammenfallen, hat den Radius null.
+  //
+  // GEMESSEN, bevor die Schranke stand: 0,6999 an dieser Stelle gegen 0,12 und 0,13 der
+  // beiden Haarnadeln - das Fuenffache einer Haarnadel, auf einer Geraden. Zwei Verbraucher
+  // haben das geglaubt: das Bremsprofil zeichnete an Start/Ziel eine Bremsung, die es nicht
+  // gibt, und die Scheitelsuche fand nur diesen einen Punkt.
+  stAdd('Kruemmung: ein doppelter Abtastpunkt ist keine Kurve', () => {
+    const p = codeToTrack('SHG4HG3');
+    const pts = trackCenterline(p.tiles);
+    const nrm = trackNormals(pts);
+    const n = pts.length;
+    const luecke = Math.hypot(pts[n - 1].x - pts[0].x, pts[n - 1].y - pts[0].y);
+    if (!(luecke < 0.01)) {
+      return { skip: true, mass: 'diese Strecke hat keinen doppelten Endpunkt ('
+                                 + luecke.toFixed(3) + ')' };
+    }
+    const bahn = pts.map((q, i) => [q.x + nrm[i].x * 0, q.y + nrm[i].y * 0]);
+    const k = pathCurvature(bahn, true);
+    const kMax = Math.max.apply(null, k);
+    // Die groesste Kruemmung muss auf einer KURVENkachel liegen. Lag sie auf einer Geraden,
+    // war es das Artefakt.
+    let wo = 0;
+    for (let i = 0; i < n; i++) if (k[i] === kMax) { wo = i; break; }
+    const typ = pts[wo].tile >= 0 ? p.tiles[pts[wo].tile].type : null;
+    const istKurve = typ === TILE_TYPE.CURVE_LEFT || typ === TILE_TYPE.CURVE_RIGHT
+                  || typ === TILE_TYPE.HAIRPIN || typ === TILE_TYPE.HAIRPIN_LEFT;
+    const schlecht = [];
+    if (!istKurve) {
+      schlecht.push('groesste Kruemmung ' + kMax.toFixed(4) + ' liegt auf Kachel '
+                    + pts[wo].tile + ' (Typ ' + typ + '), keiner Kurve');
+    }
+    // Und der doppelte Punkt selbst traegt keine Kruemmung.
+    if (!(k[n - 1] === 0)) {
+      schlecht.push('der doppelte Endpunkt traegt Kruemmung ' + k[n - 1].toFixed(4));
+    }
+    return { ok: !schlecht.length,
+             mass: 'kMax ' + kMax.toFixed(4) + ' auf Kachel ' + pts[wo].tile
+                 + ' (Typ ' + typ + '), doppelter Punkt ' + k[n - 1].toFixed(4)
+                 + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
   });
 
   // ---- Controller-Vibration: ein Schalter je Ausloeser ----

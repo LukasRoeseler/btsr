@@ -6962,6 +6962,64 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="ghost-line-val">100%</span>
         </div></div>
+      <div class="opt-row"><div class="opt-label">Ghost: Kurvenausgang &ouml;ffnen
+          <span class="wip-tag">experimentell</span>
+          <small>Wie weit sich ein Ghost am Kurvenausgang nach au&szlig;en tragen l&auml;sst.
+          Die Kr&uuml;mmungsminimierung kennt das nicht: sie sucht den k&uuml;rzesten glatten
+          Weg, und bei zwei gleichsinnigen Kurven auf 25&nbsp;cm Bahnbreite liegt der innen.
+          Gemessen blieb die Linie hinter einer Haarnadel bei 68&nbsp;% nach innen stehen. Ein
+          Fahrer f&auml;hrt weit heraus, weil er beschleunigt und daf&uuml;r Breite braucht
+          &ndash; das ist eine L&auml;ngsgr&ouml;&szlig;e, und die kennt der Gl&auml;tter
+          nicht.
+          <br>Scheitel und Ausgang kommen aus dem Layout: der Scheitel ist der Punkt
+          gr&ouml;&szlig;ter Linienkr&uuml;mmung im Kurvenlauf, der Ausgang seine letzte
+          Kachelgrenze. Nur die St&auml;rke und die Auslaufl&auml;nge von einer Kachel sind
+          gew&auml;hlt &ndash; deshalb dieser Regler.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="ghost-exit" min="0" max="1" step="0.05" value="0.5">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="ghost-exit-val">50%</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Ghost: Quertr&auml;gheit
+          <span class="wip-tag">experimentell</span>
+          <small>Wie schnell ein Ghost seine Querlage &auml;ndern darf, in Bahnbreiten je
+          Sekunde. Die Ideallinie ist eine Funktion des Ortes und nicht der Zeit
+          &ndash; beim Wechsel des Kacheltyps &auml;ndert sich der Sollwert in einem Takt um
+          bis zu 0,4 der Bahnbreite, und ein Servo, der das in einem Takt nachf&uuml;hrt,
+          sieht aus wie ein Ruck.
+          <br>Eine Ratenbegrenzung und kein Tiefpass: sie hat eine feste
+          H&ouml;chstgeschwindigkeit und erreicht den Sollwert exakt, w&auml;hrend ein
+          Tiefpass sich ihm nur n&auml;hert und dabei umso schneller l&auml;uft, je weiter er
+          weg ist. 1,2 sind bei 25&nbsp;cm Bahnbreite 30&nbsp;cm/s &ndash; rund ein Drittel
+          der L&auml;ngsgeschwindigkeit eines Ghosts bei halbem Gas.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="ghost-quertempo" min="0.2" max="4" step="0.1" value="1.2">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="ghost-quertempo-val">1.2</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Ghost: Brems- und Gasverhalten
+          <span class="wip-tag">experimentell</span>
+          <small>Wie entschlossen ein Ghost Gas gibt und bremst. Ghost und Fahrer gehen durch
+          dasselbe Fahrzeugmodell, bekommen ihr Gas aber aus verschiedenen Quellen:
+          der Fahrer dr&uuml;ckt einen Trigger und ist sofort am Anschlag, der Ghost hat einen
+          Regler auf ein Zieltempo, dessen Ausgang ratenbegrenzt ist.
+          <br>Nachrechenbar: bei 1,0 braucht voller Gasbefehl 0,63&nbsp;s, ein Trigger etwa
+          0,15&nbsp;s &ndash; der Ghost ist also rund viermal langsamer im Aufbau, und genau
+          das sieht man am Kurvenausgang. Bei 4,0 liegt er bei 0,16&nbsp;s und damit dort, wo
+          ein Trigger liegt.
+          <br>1,0 ist der gemessene, stabile Zustand: alle Tempopr&uuml;fungen dieser App sind
+          damit gefahren. Die Ratenbegrenzung ist auch der Schutz davor, dass ein
+          zur&uuml;ckgestelltes Auto aus der Hand gerissen wird &ndash; wer sie hochdreht,
+          nimmt diesen Schutz zur&uuml;ck.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="ghost-gasdyn" min="0.3" max="4" step="0.1" value="1">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="ghost-gasdyn-val">1.0</span>
+        </div></div>
+
       <div class="opt-row"><div class="opt-label">Ghost: Linienmodell
           <small>Kr&uuml;mmung nimmt den gr&ouml;&szlig;ten Radius. Rundenzeit rechnet ein
           Geschwindigkeitsprofil und ist im Modell 1&ndash;8&nbsp;% schneller; ob auch auf
@@ -7548,7 +7606,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.5.37</span></span>
+    <span class="foot-ver">v<span id="app-version">0.5.38</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -9150,6 +9208,26 @@
       "How hard the car steers against a slide, measured from the rotation signal in byte 3 of the notifications. 50 per cent is the default that was asked for. What is uncertain about it, and it is two things at once: the signal is unconfirmed – it only varies once the car is moving, and flipped sign with cornering direction in exactly one recording. And it is uncalibrated: its scale is self-adjusting because the real amplitude is unknown. So the strength depends on the largest yaw value the session has seen so far. The “Drift probe” button under “Measure lateral offset” measures whether the signal moves at all under straight full throttle.",
     "Rennen":
       "Race",
+    "Ghost: Kurvenausgang öffnen":
+      "Ghost: open up the corner exit",
+    "Wie weit sich ein Ghost am Kurvenausgang nach außen tragen lässt. Die Krümmungsminimierung kennt das nicht: sie sucht den kürzesten glatten Weg, und bei zwei gleichsinnigen Kurven auf 25 cm Bahnbreite liegt der innen. Gemessen blieb die Linie hinter einer Haarnadel bei 68 % nach innen stehen. Ein Fahrer fährt weit heraus, weil er beschleunigt und dafür Breite braucht – das ist eine Längsgröße, und die kennt der Glätter nicht.":
+      "How far a ghost lets itself be carried out on corner exit. Minimum-curvature smoothing knows nothing of this: it looks for the shortest smooth path, and with two same-handed corners on 25 cm of track width that path runs on the inside. Measured, the line stayed 68% toward the inside after a hairpin. A driver runs wide because he is accelerating and needs the width for it – that is a longitudinal quantity, and the smoother does not know about it.",
+    "Scheitel und Ausgang kommen aus dem Layout: der Scheitel ist der Punkt größter Linienkrümmung im Kurvenlauf, der Ausgang seine letzte Kachelgrenze. Nur die Stärke und die Auslauflänge von einer Kachel sind gewählt – deshalb dieser Regler.":
+      "Apex and exit come from the layout: the apex is the point of greatest line curvature within the run of corner tiles, the exit its last tile boundary. Only the strength and the run-out length of one tile are chosen – hence this slider.",
+    "Ghost: Querträgheit":
+      "Ghost: lateral inertia",
+    "Wie schnell ein Ghost seine Querlage ändern darf, in Bahnbreiten je Sekunde. Die Ideallinie ist eine Funktion des Ortes und nicht der Zeit – beim Wechsel des Kacheltyps ändert sich der Sollwert in einem Takt um bis zu 0,4 der Bahnbreite, und ein Servo, der das in einem Takt nachführt, sieht aus wie ein Ruck.":
+      "How fast a ghost may change its lateral position, in track widths per second. The racing line is a function of place and not of time – at a change of tile type the target shifts by up to 0.4 of the track width in a single tick, and a servo that follows that in one tick looks like a jerk.",
+    "Eine Ratenbegrenzung und kein Tiefpass: sie hat eine feste Höchstgeschwindigkeit und erreicht den Sollwert exakt, während ein Tiefpass sich ihm nur nähert und dabei umso schneller läuft, je weiter er weg ist. 1,2 sind bei 25 cm Bahnbreite 30 cm/s – rund ein Drittel der Längsgeschwindigkeit eines Ghosts bei halbem Gas.":
+      "A rate limit and not a low-pass: it has a fixed top speed and reaches the target exactly, whereas a low-pass only approaches it and runs faster the further away it is. On 25 cm of track width 1.2 is 30 cm/s – about a third of a ghost's forward speed at half throttle.",
+    "Ghost: Brems- und Gasverhalten":
+      "Ghost: braking and throttle behaviour",
+    "Wie entschlossen ein Ghost Gas gibt und bremst. Ghost und Fahrer gehen durch dasselbe Fahrzeugmodell, bekommen ihr Gas aber aus verschiedenen Quellen: der Fahrer drückt einen Trigger und ist sofort am Anschlag, der Ghost hat einen Regler auf ein Zieltempo, dessen Ausgang ratenbegrenzt ist.":
+      "How decisively a ghost applies throttle and brake. Ghost and driver go through the same vehicle model but get their throttle from different sources: the driver pulls a trigger and is at full lock at once, the ghost has a controller on a target speed whose output is rate-limited.",
+    "Nachrechenbar: bei 1,0 braucht voller Gasbefehl 0,63 s, ein Trigger etwa 0,15 s – der Ghost ist also rund viermal langsamer im Aufbau, und genau das sieht man am Kurvenausgang. Bei 4,0 liegt er bei 0,16 s und damit dort, wo ein Trigger liegt.":
+      "Checkable: at 1.0 a full throttle command takes 0.63 s, a trigger about 0.15 s – so the ghost builds up roughly four times slower, and that is exactly what you see on corner exit. At 4.0 it is at 0.16 s and thus where a trigger is.",
+    "1,0 ist der gemessene, stabile Zustand: alle Tempoprüfungen dieser App sind damit gefahren. Die Ratenbegrenzung ist auch der Schutz davor, dass ein zurückgestelltes Auto aus der Hand gerissen wird – wer sie hochdreht, nimmt diesen Schutz zurück.":
+      "1.0 is the measured, stable state: every pace test in this app was run with it. The rate limit is also what stops a car you have just put back from being ripped out of your hand – turning it up gives that protection away.",
     "Rennen simulieren":
       "Simulate a race",
     "Was hier passiert":
@@ -15564,6 +15642,147 @@
   }
   function getLineModel() { return lineModel; }
 
+  // ---- KURVENAUSGANG OEFFNEN ---------------------------------------------------------
+  //
+  // GEMELDET: "nach der Haarnadelkurve sollten die Autos sich nach aussen tragen lassen und
+  // nicht ganz innen wieder losbeschleunigen."
+  //
+  // NACHGEMESSEN an SHG4HG3 (geschlossen, zwei Haarnadeln), alpha in Anteilen des Deckels,
+  // negativ heisst innen:
+  //
+  //     Haarnadel     -0,75 -0,98 -1,00 -1,00 -1,00 -1,00
+  //     Gerade danach -0,90 -0,84 -0,78 -0,70 -0,65 -0,60
+  //     dann          -0,54 ... -0,37  und dort bleibt sie
+  //
+  // Die Linie kommt also NIE auf die Aussenseite. Das ist keine Fehlfunktion der
+  // Kruemmungsminimierung, sondern ihre Eigenschaft: sie sucht den kuerzesten glatten Weg,
+  // und bei zwei gleichsinnigen Kurven auf 25 cm Bahnbreite liegt der innen. Ein Fahrer
+  // faehrt trotzdem weit heraus, weil er BESCHLEUNIGT und dafuer Breite braucht - das ist
+  // eine Laengsgroesse, und die kennt der Glaetter nicht.
+  //
+  // WARUM ALS NACHLAUF UND NICHT IN DER RELAXATION: es gab schon einmal zwei Versuche, das
+  // in die Relaxation zu ziehen, und beide sind gescheitert - der Kommentar bei idealLine()
+  // haelt sie fest. Der zweite gab eine Zielvorgabe auf der Geraden und erzeugte damit ein
+  // S: raus am Ausgang, zurueck zur Mitte, wieder raus. Eine Feder auf ein festes Ziel
+  // DECKELT ausserdem den Ausschlag, den der Glaetter sonst weiter treiben wuerde. Deshalb
+  // hier: der Glaetter laeuft unveraendert, und danach wird nur der Ausgang geoeffnet.
+  //
+  // DIE FORM IST GEWAEHLT, nicht abgeleitet - deshalb der Regler daneben. Was gemessen ist:
+  // wo der Scheitel liegt (dort ist die Kruemmung der Linie am groessten) und wie lang eine
+  // Kachel ist. Die Oeffnung laeuft vom Scheitel ueber eine Kachellaenge aus.
+  let lineExitStaerke = 0.5;
+  function setLineExit(v) { lineExitStaerke = Math.max(0, Math.min(1, v || 0)); }
+  function getLineExit() { return lineExitStaerke; }
+
+  // Scheitel finden, KURVENAUSGANG finden, und von dort nach aussen blenden.
+  //
+  // BEIDE PUNKTE KOMMEN AUS DEM LAYOUT und nicht aus einer Kruemmungsschwelle. Eine Kurve
+  // besteht aus einer oder mehreren aufeinanderfolgenden Kurvenkacheln - das steht in
+  // tiles[i].type, und ihre Grenze ist eine Tatsache und keine Schaetzung. Der Scheitel ist
+  // dann der Punkt groesster Linienkruemmung INNERHALB dieses Laufs, der Ausgang seine
+  // letzte Kachelgrenze.
+  //
+  // ERSTER VERSUCH SUCHTE LOKALE MAXIMA MIT SCHWELLE `k > 0.3 * kMax`, und das ist an einem
+  // Artefakt gescheitert: auf einer geschlossenen Runde faellt der letzte Abtastpunkt mit
+  // dem ersten zusammen, und die Kruemmungsformel lieferte dort 0,6999 gegen 0,13 der
+  // Haarnadeln. kMax war also der doppelte Punkt, die Schwelle lag bei 0,21, und keine
+  // Haarnadel kam darueber - gemessen wurde GENAU EIN Scheitel gefunden, und der war das
+  // Artefakt. Die Schranke in pathCurvature() behebt die Ursache; diese Verankerung macht
+  // die Suche ausserdem unabhaengig davon.
+  //
+  // GEWAEHLT ist nur die Auslauflaenge nach dem Ausgang (eine Kachellaenge) und die Staerke.
+  // Deshalb der Regler.
+  const LINE_EXIT_AUSLAUF = TRACK_STEP;      // eine Kachellaenge, in Zeichnungseinheiten
+
+  function istKurvenTyp(t) {
+    return t === TILE_TYPE.CURVE_LEFT || t === TILE_TYPE.CURVE_RIGHT
+        || t === TILE_TYPE.HAIRPIN || t === TILE_TYPE.HAIRPIN_LEFT;
+  }
+
+  // Die Kurvenlaeufe eines Layouts: zusammenhaengende Ketten von Kurvenkacheln, ueber das
+  // Rundenende hinweg zusammengefasst, wenn die Runde geschlossen ist.
+  function lineKurvenLaeufe(tiles, closed) {
+    const n = tiles.length;
+    const laeufe = [];
+    let i = 0;
+    while (i < n) {
+      if (!istKurvenTyp(tiles[i].type)) { i++; continue; }
+      let j = i;
+      while (j + 1 < n && istKurvenTyp(tiles[j + 1].type)) j++;
+      laeufe.push({ von: i, bis: j });
+      i = j + 1;
+    }
+    // Ueber die Naht: laeuft die Kette am Ende weiter und beginnt am Anfang wieder, ist es
+    // EINE Kurve. Ohne das bekaeme eine Kurve, die auf der Start/Ziel-Kachel liegt, zwei
+    // Scheitel und zwei Ausgaenge.
+    if (closed && laeufe.length > 1) {
+      const erst = laeufe[0], letzt = laeufe[laeufe.length - 1];
+      if (erst.von === 0 && letzt.bis === n - 1) {
+        letzt.bis = erst.bis + n;      // ueber die Naht hinaus zaehlen
+        laeufe.shift();
+      }
+    }
+    return laeufe;
+  }
+
+  function lineAusgangOeffnen(alpha, pts, nrm, closed, limit, tiles) {
+    const st = lineExitStaerke;
+    const n = alpha.length;
+    if (!(st > 0) || n < 8 || !tiles || !tiles.length) return alpha;
+    const bahn = pts.map((p, i) => [p.x + nrm[i].x * alpha[i], p.y + nrm[i].y * alpha[i]]);
+    const k = pathCurvature(bahn, closed);
+    const at = (i) => closed ? ((i % n) + n) % n : Math.max(0, Math.min(n - 1, i));
+    const abst = (i, j) => Math.hypot(bahn[j][0] - bahn[i][0], bahn[j][1] - bahn[i][1]);
+    const tab = trackKachelTabelle(pts, tiles.length);
+    const zu = new Array(n).fill(0);
+    for (const lauf of lineKurvenLaeufe(tiles, closed)) {
+      // Die Abtastpunkte dieses Laufs, ueber die Naht hinweg.
+      const idx = [];
+      for (let kk = lauf.von; kk <= lauf.bis; kk++) {
+        const t = ((kk % tiles.length) + tiles.length) % tiles.length;
+        for (let d = 0; d < tab.zahl[t]; d++) idx.push(at(tab.start[t] + d));
+      }
+      if (idx.length < 3) continue;
+      // Scheitel: groesste Linienkruemmung im Lauf.
+      let sch = idx[0];
+      for (const i of idx) if (k[i] > k[sch]) sch = i;
+      const aussen = alpha[sch] === 0 ? 0 : -Math.sign(alpha[sch]);
+      if (!aussen) continue;
+      // Ausgang: der letzte Punkt des Laufs. Das ist die Kachelgrenze, an der die Kurve
+      // aufhoert - keine Schaetzung.
+      const ausgang = idx[idx.length - 1];
+      const bisAusgang = idx.indexOf(sch) >= 0
+        ? idx.length - 1 - idx.indexOf(sch) : 0;
+      if (bisAusgang > 0) {
+        // Vom Scheitel bis zum Ausgang aufbauen.
+        for (let d = 1; d <= bisAusgang; d++) {
+          setzeGroesser(zu, idx[idx.indexOf(sch) + d],
+                        aussen * st * limit * (d / bisAusgang));
+        }
+      }
+      // Und danach ueber eine Kachellaenge auslaufen - dort liegt die Gerade, auf der sich
+      // ein Fahrer nach aussen tragen laesst.
+      let weg = 0;
+      let vor = ausgang;
+      for (let d = 1; d <= n; d++) {
+        const j = at(ausgang + d);
+        weg += abst(vor, j);
+        vor = j;
+        if (weg >= LINE_EXIT_AUSLAUF) break;
+        setzeGroesser(zu, j, aussen * st * limit * (1 - weg / LINE_EXIT_AUSLAUF));
+      }
+    }
+    const raus = new Array(n);
+    for (let i = 0; i < n; i++) raus[i] = Math.max(-limit, Math.min(limit, alpha[i] + zu[i]));
+    return raus;
+  }
+
+  // Der GROESSERE Beitrag gilt, nicht die Summe: zwei nahe Kurven wuerden sich sonst
+  // addieren und die Linie ueber den Rand schieben.
+  function setzeGroesser(arr, i, wert) {
+    if (Math.abs(wert) > Math.abs(arr[i])) arr[i] = wert;
+  }
+
   // Beide Modelle hinter einem Aufruf. Editor und Ghosts gehen hier durch, damit die
   // gezeichnete und die gefahrene Linie nicht auseinanderlaufen koennen.
   function buildLine(pts, nrm, opts) {
@@ -15571,6 +15790,13 @@
     const m = o.model || lineModel;
     const line = m === 'laptime' ? lapTimeLine(pts, nrm, o) : idealLine(pts, nrm, o);
     line.model = m;
+    // NACH dem Modell, fuer BEIDE Modelle. Der Kurvenausgang ist keine Eigenschaft der
+    // Zielfunktion, sondern eine Zutat danach - siehe lineAusgangOeffnen(). Und weil er hier
+    // steht und nicht bei einem der Aufrufer, zeichnet der Editor genau die Linie, die die
+    // Ghosts fahren.
+    line.alpha = lineAusgangOeffnen(line.alpha, pts, nrm, !!o.closed, line.limit, o.tiles);
+    line.span = Math.max(...line.alpha.map(Math.abs));
+    line.exit = lineExitStaerke;
     return line;
   }
 
@@ -15740,11 +15966,37 @@
     const n = pathPts.length;
     const at = (i) => pathPts[closed ? ((i % n) + n) % n : Math.max(0, Math.min(n - 1, i))];
     const out = new Array(n).fill(0);
+    // ---- ENTARTETE ABSTAENDE ZAEHLEN NICHT ------------------------------------------
+    //
+    // Auf einer GESCHLOSSENEN Runde ist der letzte Abtastpunkt derselbe wie der erste -
+    // gemessen ein Abstand von 0,0000 bei einem mittleren Abstand von 2,857 Einheiten. Der
+    // Kreis durch drei Punkte, von denen zwei zusammenfallen, hat den Radius null, und die
+    // Formel unten liefert dort einen riesigen Wert.
+    //
+    // GEMESSEN, bevor diese Schranke stand: auf SHG4HG3 kam an dieser einen Stelle eine
+    // Kruemmung von 0,6999 heraus, waehrend die beiden Haarnadeln bei 0,12 und 0,13 liegen.
+    // Das FUENFFACHE einer Haarnadel, an einer Geraden, allein aus einem doppelten Punkt.
+    //
+    // Zwei Verbraucher haben das geglaubt: brakeProfile() zeichnete an Start/Ziel eine
+    // Bremsung, die es nicht gibt, und die Scheitelsuche des Kurvenausgangs fand nur diesen
+    // einen "Scheitel" - ihre Schwelle war ein Anteil von kMax, und kMax war das Artefakt.
+    //
+    // Die alte Schranke (a*b*c < 1e-6) greift nicht: bei a = 0 und b = c = 2,857 ist das
+    // Produkt null, aber bei a = 0,001 ist es 8e-3 und damit darueber. Gebraucht wird eine
+    // RELATIVE Schranke, und der Bezug ist der mittlere Abstand dieses Pfades.
+    let summe = 0;
+    for (let i = 0; i + 1 < n; i++) {
+      summe += Math.hypot(pathPts[i + 1][0] - pathPts[i][0],
+                          pathPts[i + 1][1] - pathPts[i][1]);
+    }
+    const mittel = n > 1 ? summe / (n - 1) : 0;
+    const klein = Math.max(1e-9, mittel * 0.05);
     for (let i = 0; i < n; i++) {
       const p0 = at(i - 1), p1 = at(i), p2 = at(i + 1);
       const a = Math.hypot(p1[0] - p0[0], p1[1] - p0[1]);
       const b = Math.hypot(p2[0] - p1[0], p2[1] - p1[1]);
       const c = Math.hypot(p2[0] - p0[0], p2[1] - p0[1]);
+      if (a < klein || b < klein) continue;      // bleibt 0: hier ist nichts zu messen
       const area2 = Math.abs((p1[0] - p0[0]) * (p2[1] - p0[1]) - (p2[0] - p0[0]) * (p1[1] - p0[1]));
       out[i] = (a * b * c) < 1e-6 ? 0 : (2 * area2) / (a * b * c);
     }
@@ -15892,7 +16144,9 @@
       //    is about to rise. Curvature is read from the ideal line itself, not the
       //    centreline — the whole point of the line is that it changes the radius, so using
       //    the centreline would colour a corner the car no longer takes that tightly.
-      const line = buildLine(pts, nrm, { closed });
+      // tiles MIT: der Kurvenausgang braucht die Kacheltypen, um Scheitel und Ausgang
+      // zu finden - siehe lineAusgangOeffnen().
+      const line = buildLine(pts, nrm, { closed, tiles });
       const ideal = pts.map((p, i) => [p.x + nrm[i].x * line.alpha[i],
                                        p.y + nrm[i].y * line.alpha[i]]);
       const brake = brakeProfile(ideal, closed);
@@ -22125,6 +22379,45 @@
     if (el) el.addEventListener('change', (e) => { ghostCfg[feld] = e.target.checked; });
   }
 
+  // Der Kurvenausgang liegt in 60-track.js (setLineExit), nicht in ghostCfg: gezeichnete
+  // und gefahrene Linie muessen dieselbe sein, und beide gehen durch buildLine(). Ein
+  // zweiter Wert in ghostCfg waere ein zweiter Ort fuer eine Zahl, die beide brauchen.
+  if ($('ghost-exit')) {
+    const exitSetzen = (v) => {
+      setLineExit(v);
+      // DEN ZWISCHENSPEICHER DER GHOSTS FALLEN LASSEN, sonst fahren sie die alte Linie
+      // weiter. lineCache ist ein let in 90-ghosts.js, also in einer SPAETEREN Datei
+      // derselben IIFE - deshalb ueber ghostLineCacheLeeren() und nicht direkt. Ein
+      // Schreibzugriff von hier aus traf die temporale Todeszone und nahm den Rest der IIFE
+      // mit; genau das ist mir beim Bauen der Wuerz-Schalter schon passiert.
+      ghostLineCacheLeeren();
+      refreshTrackPreview();            // und der Editor zeigt sie sofort
+      $('ghost-exit-val').textContent = Math.round(v * 100) + '%';
+    };
+    $('ghost-exit').addEventListener('input', (e) => exitSetzen(parseFloat(e.target.value)));
+    // KEIN Aufruf beim Aufbau. Markup und 60-track.js tragen beide 0,5, und der Selbsttest
+    // "Regler und Modell sagen beim Laden dasselbe" prueft das nach - ein Aufruf hier waere
+    // ein Schreibzugriff in eine noch nicht angelegte Variable.
+  }
+
+  if ($('ghost-quertempo')) {
+    const qt = (v) => {
+      ghostCfg.querTempo = v;
+      $('ghost-quertempo-val').textContent = v.toFixed(1);
+    };
+    $('ghost-quertempo').addEventListener('input', (e) => qt(parseFloat(e.target.value)));
+  }
+
+  if ($('ghost-gasdyn')) {
+    const gd = (v) => {
+      ghostCfg.gasDynamik = v;
+      // Die Aufbauzeit dazu, denn die ist die Groesse, die man vergleichen kann: bei 1,0
+      // sind es 0,63 s, ein Trigger liegt bei etwa 0,15 s.
+      $('ghost-gasdyn-val').textContent = v.toFixed(1) + ' \u00b7 ' + (1 / (1.6 * v)).toFixed(2) + ' s';
+    };
+    $('ghost-gasdyn').addEventListener('input', (e) => gd(parseFloat(e.target.value)));
+  }
+
   $('ghost-line').addEventListener('input', (e) => {
     ghostCfg.line = parseFloat(e.target.value);
     $('ghost-line-val').textContent = ghostCfg.line === 0
@@ -24124,6 +24417,49 @@
     // zusammenhalten" (ghostFeldStaffel) und dort besser - gestaffelt ueber das ganze Feld
     // statt nur auf den Fuehrenden. Zwei Regeln, die beide den Fuehrenden bremsen, waeren
     // zwei Abschlaege auf dieselbe Groesse.
+    // ---- QUERTRAEGHEIT ------------------------------------------------------------
+    //
+    // Wie schnell ein Ghost seine Querlage aendern DARF, in Anteilen der Bahnbreite je
+    // Sekunde. Gemeldet: "sie sollten nicht abrupt nach aussen wechseln, sondern das ganze
+    // sollte etwas smoother aussehen. Bau vielleicht sowas wie Traegheit oder Smoothness
+    // fuer Aenderung der Querlage im Fahren ein."
+    //
+    // WARUM ES DAS BRAUCHT: die Ideallinie ist eine Funktion des ORTES, nicht der Zeit. Beim
+    // Kachelwechsel springt der gelesene Ort um einen Abtastpunkt, und bei einem Wechsel des
+    // Kacheltyps aendert sich der Sollwert dort in einem Takt um bis zu 0,4 der Bahnbreite -
+    // gemessen an SHG4HG3 zwischen Haarnadelausgang und Gerade. Ein Servo, der das in einem
+    // Takt nachfuehrt, sieht aus wie ein Ruck, und ein Auto auf einer Schiene faehrt es auch
+    // so.
+    //
+    // 1,2 je Sekunde ist GEWAEHLT: bei 25 cm Bahnbreite sind das 30 cm/s Querbewegung, also
+    // rund ein Drittel der Laengsgeschwindigkeit eines Ghosts bei halbem Gas (34 cm/s
+    // gemessen). Mehr sieht hektisch aus, weniger laesst ihn der Linie nicht mehr folgen.
+    // Der Regler daneben ist da, weil das eine Wahl und keine Messung ist.
+    querTempo: 1.2,
+    // ---- BREMS- UND GASVERHALTEN ---------------------------------------------------
+    //
+    // Gemeldet: "Bremsverhalten vor und Beschleunigungsverhalten nach Kurven der Ghosts soll
+    // so aehnlich aussehen wie das in den Standardeinstellungen. Wenn Kalibrierung hier
+    // schwierig ist, gib mir einen Slider."
+    //
+    // SIE IST SCHWIERIG, und der Grund ist nicht Faulheit: der Ghost und der Fahrer bekommen
+    // ihr Gas aus verschiedenen Quellen. Beide gehen durch DASSELBE Fahrzeugmodell -
+    // e.update({throttle, brake}) -, aber der Fahrer drueckt einen Trigger und ist damit
+    // sofort am Anschlag, waehrend der Ghost einen PI-Regler auf ein Zieltempo hat, dessen
+    // Ausgang zusaetzlich ratenbegrenzt ist.
+    //
+    // WAS DARAN NACHRECHENBAR IST: GHOST_SLEW_GAS = 1,6 je Sekunde heisst, dass voller
+    // Gasbefehl 1/1,6 = 0,63 s braucht. Ein Fahrer am Trigger ist in etwa 0,15 s dort. Der
+    // Ghost ist also rund viermal langsamer im Aufbau - und genau das sieht man am
+    // Kurvenausgang.
+    //
+    // 1,0 IST DER GEMESSENE, STABILE ZUSTAND und bleibt deshalb die Vorgabe: alle
+    // Tempopruefungen dieser App sind damit gefahren. Wer es fahrerhafter will, dreht auf;
+    // bei 4,0 liegt der Aufbau bei 0,16 s und damit dort, wo ein Trigger liegt. Die
+    // Ratenbegrenzung ist der Schutz davor, dass ein zurueckgestelltes Auto aus der Hand
+    // gerissen wird - wer sie hochdreht, nimmt diesen Schutz zurueck, und der Hilfetext
+    // sagt das.
+    gasDynamik: 1.0,
     wuerzeUeberholen: true,   // bestellt: an
     wuerzeAbstand: true,      // bestellt: an, "sodass sie sich nicht rammen"
     wuerzeForm: false,
@@ -24784,12 +25120,16 @@
     // den Zielwert beenden, nicht das Gas abstellen. Vorher fiel das Auto im Totband auf
     // null Gas, verlor Tempo, bis die Abweichung das Totband verliess, gab Gas, kam ins
     // Totband, fiel auf null - ein Saegezahn genau um den Zielwert.
+    // Die Entschlossenheit wirkt auf BEIDE Verstaerkungen und BEIDE Ratengrenzen. Nur die
+    // Rate zu skalieren wuerde einen Regler ergeben, der schnell greift und trotzdem traege
+    // zielt; nur die Verstaerkung einen, der will und nicht darf.
+    const dyn = Math.max(0.1, ghostCfg.gasDynamik || 1);
     const iAlt = g.iTerm || 0;
     let iNeu = Math.max(0, Math.min(1, iAlt + err * GHOST_KI_GAS * dtG));
     const roh = Math.abs(err) < GHOST_DEADBAND
       ? { t: Math.max(0, Math.min(1, iNeu)), b: 0 }
-      : { t: Math.max(0, Math.min(1, iNeu + err * GHOST_KP_GAS)),
-          b: Math.max(0, Math.min(1, -err * GHOST_KP_BREMSE)) };
+      : { t: Math.max(0, Math.min(1, iNeu + err * GHOST_KP_GAS * dyn)),
+          b: Math.max(0, Math.min(1, -err * GHOST_KP_BREMSE * dyn)) };
     // ANTI-WINDUP, zwei Faelle, und beide sind hier notwendig:
     //
     // 1. Wird gebremst, wird der I-Anteil ABGEBAUT und nicht nur nicht weiter geladen. Er
@@ -24805,8 +25145,8 @@
       const max = rate * dtG;
       return soll > ist ? Math.min(soll, ist + max) : Math.max(soll, ist - max);
     };
-    const throttle = zieh(g.lastThrottle || 0, roh.t, GHOST_SLEW_GAS);
-    const brake = zieh(g.lastBrake || 0, roh.b, GHOST_SLEW_BREMSE);
+    const throttle = zieh(g.lastThrottle || 0, roh.t, GHOST_SLEW_GAS * dyn);
+    const brake = zieh(g.lastBrake || 0, roh.b, GHOST_SLEW_BREMSE * dyn);
     g.lastThrottle = throttle;
     g.lastBrake = brake;
     return { throttle, brake };
@@ -25549,6 +25889,13 @@
   // Die Handregel bleibt als Rueckfall fuer den Fall, dass die Relaxation nichts findet
   // (zu wenige Kacheln), und weil sie ohne Layout-Geometrie auskommt.
   let lineCache = null;
+
+  // Der Zwischenspeicher der Ideallinie, von aussen leerbar. Eine Funktion und keine
+  // direkte Zuweisung, weil die Aufrufer in FRUEHEREN Dateien stehen (der Regler fuer
+  // den Kurvenausgang in 80-sound.js): ein direkter Schreibzugriff auf dieses let traefe
+  // von dort aus die temporale Todeszone. Eine Funktion wird hochgezogen und laeuft erst,
+  // wenn jemand klickt.
+  function ghostLineCacheLeeren() { lineCache = null; }
   function ghostLine() {
     const tiles = currentTrackTiles;
     if (!tiles || tiles.length < 3) return null;
@@ -25572,7 +25919,7 @@
     // Jetzt EINE Funktion mit Lage UND Winkel; Begruendung und Zahlen stehen bei
     // trackSchluss() in 60-track.js.
     const closed = trackSchluss(pts).closed;
-    const line = buildLine(pts, nrm, { closed });
+    const line = buildLine(pts, nrm, { closed, tiles });
     const path = pts.map((p, i) => [p.x + nrm[i].x * line.alpha[i],
                                     p.y + nrm[i].y * line.alpha[i]]);
     const brake = brakeProfile(path, closed);
@@ -26784,9 +27131,27 @@
             + (1 - anteilA) * ghostLineOffset(car) * ghostCfg.line * GHOST_LINE_STEER
               * linieGewicht
             + weiche * ghostCfg.lateral * GHOST_PASS_STEER;
-        steer = quer
+        const querRohSumme = quer
               + g.bias * ghostCfg.lateral * 0.25
               + ghostLane(car) * ghostCfg.lanes * GHOST_LANE_STEER * spurGewicht;
+        // ---- QUERTRAEGHEIT: eine RATENBEGRENZUNG und kein Tiefpass ------------------
+        //
+        // Der Unterschied ist wichtig. Ein Tiefpass (neu = alt + (soll-alt) * k) naehert sich
+        // dem Sollwert asymptotisch: er kommt nie ganz an, und wie schnell er sich bewegt,
+        // haengt davon ab, WIE WEIT er weg ist. Eine Ratenbegrenzung hat eine feste
+        // Hoechstgeschwindigkeit und erreicht den Sollwert exakt - das ist, was ein Servo
+        // und ein Reifen tun, und es ist die Groesse, die man in cm/s angeben kann.
+        //
+        // Auf der Ideallinie selbst wirkt sie fast nicht: die aendert sich ueber eine Kachel
+        // hinweg langsam. Sie greift genau dort, wo es gemeldet wurde - am Kacheltypwechsel,
+        // am Beginn und Ende einer Attacke, und wenn die Ortung sich neu ausrichtet.
+        const querMax = Math.max(0, ghostCfg.querTempo) * dt;
+        const querAlt = g.querIst === undefined ? querRohSumme : g.querIst;
+        const querDiff = querRohSumme - querAlt;
+        g.querIst = Math.abs(querDiff) <= querMax
+          ? querRohSumme
+          : querAlt + Math.sign(querDiff) * querMax;
+        steer = g.querIst;
         // FUER DIE KARTE. Im Leitplanken-Modus IST diese Summe die Querlage, die die App
         // will - sie besteht ausschliesslich aus Versaetzen quer zur Bahn und enthaelt
         // keinen Lenkwinkel. Im Rueckfallzweig darunter waere dieselbe Zeile falsch: dort
@@ -29775,7 +30140,8 @@
         st.speedKmh = merk.v; st.isShifting = merk.sh;
       }
     },
-    setLineModel, getLineModel, buildLine,
+    setLineModel, getLineModel, buildLine, getLineExit,
+    setLineExit(v) { setLineExit(v); lineCache = null; return getLineExit(); },
     // Das Lernen ohne Auto und ohne Rennen durchspielen: Runden hineingeben, sehen was
     // angenommen wird. Genau so ist die Annahmeregel pruefbar.
     learnSim(runden) {
@@ -32119,9 +32485,20 @@
       const lc = window.OMEGA_TEST.lineOf(p.tiles);
       const rows = window.OMEGA_TEST.compareLines(p.tiles, 96);
       const a = rows.map(r => r.calc);
+      // UEBER DIE NAHT NUR AUF EINER GESCHLOSSENEN RUNDE. Auf einer offenen sind der letzte
+      // und der erste Abtastpunkt keine Nachbarn - sie liegen an zwei Enden der Bahn, und
+      // ihr Unterschied ist kein Sprung der Linie, sondern die Luecke der Strecke.
+      //
+      // Der Vergleichswert lc.maxStep wickelt ebenfalls nur bei closed um (siehe lineOf).
+      // Hier stand `% a.length` ohne diese Bedingung, und damit verglich der Test einen
+      // Schritt, den seine eigene Referenz ausschliesst. Aufgefallen ist es, als der
+      // Kurvenausgang das Ende der offenen Teststrecke nach aussen zog: gemessen 0,487 an
+      // der Naht von SG2H2G2J2 gegen eine Grenze, in der diese Stelle nicht vorkommt.
       let sprung = 0;
       for (let i = 0; i < a.length; i++) {
-        sprung = Math.max(sprung, Math.abs(a[(i + 1) % a.length] - a[i]));
+        if (i + 1 >= a.length && !lc.closed) break;
+        const j = (i + 1) % a.length;
+        sprung = Math.max(sprung, Math.abs(a[j] - a[i]));
       }
       // Kleine Toleranz auf den Eigenschritt der Linie: die Abtastung liegt nicht genau auf
       // ihren Punkten, also darf sie ihn um ein paar Prozent verfehlen.
@@ -34340,6 +34717,12 @@
       ['setting-fuelweight', () => physEngine.config.fuelWeightEffect],
       ['setting-countersteer', () => (typeof gegenlenkStaerke === 'number' ? gegenlenkStaerke : null)],
       ['ghost-line', () => ghostCfg.line],
+      // Die drei Verfeinerungsregler. ghost-exit spiegelt nach 60-track.js und nicht
+      // nach ghostCfg - dort muss der Wert liegen, damit gezeichnete und gefahrene
+      // Linie durch dieselbe Zahl gehen.
+      ['ghost-exit', () => OMEGA_TEST.getLineExit()],
+      ['ghost-quertempo', () => ghostCfg.querTempo],
+      ['ghost-gasdyn', () => ghostCfg.gasDynamik],
       ['ghost-lanes', () => ghostCfg.lanes],
       ['ghost-lateral', () => ghostCfg.lateral],
       ['ghost-speed', () => ghostCfg.speed],
@@ -35758,6 +36141,133 @@
     return { ok: !schlecht.length,
              mass: 'Radius Auto/Mittellinie: ' + zeilen.join(' ')
                  + (schlecht.length ? ' || ' + schlecht.join('; ') : ' | alle innen') };
+  });
+
+  // ---- Der Kurvenausgang oeffnet sich, und zwar nach der Kurve ----
+  //
+  // GEMELDET: "nach der Haarnadelkurve sollten die Autos sich nach aussen tragen lassen und
+  // nicht ganz innen wieder losbeschleunigen."
+  //
+  // ZWEI FEHLVERSUCHE STECKEN IN DIESER PRUEFUNG, und beide waren nur durch Messung zu
+  // sehen:
+  //
+  //   1. Die Reichweite war in ABTASTPUNKTEN gerechnet ("eine mittlere Kacheldichte"). Eine
+  //      Haarnadel hat 49 Punkte, eine Gerade 14 - die Oeffnung lag damit noch INNERHALB der
+  //      Haarnadel, und auf der Geraden danach war sie nicht messbar.
+  //   2. Der Scheitel wurde als lokales Kruemmungsmaximum ueber einer Schwelle von 30
+  //      Prozent des Maximums gesucht. Das Maximum war ein Artefakt: auf einer geschlossenen
+  //      Runde faellt der letzte Abtastpunkt mit dem ersten zusammen, und die
+  //      Kruemmungsformel lieferte dort 0,6999 gegen 0,13 der Haarnadeln. Gefunden wurde
+  //      genau EIN Scheitel, und der war der doppelte Punkt.
+  //
+  // Geprueft wird deshalb GENAU DAS, was beide Versuche verfehlt haben: die Linie muss auf
+  // der Geraden HINTER einer Kurve weiter aussen liegen als ohne Oeffnung.
+  stAdd('Kurvenausgang: die Linie traegt nach der Kurve nach aussen', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.setLineExit) {
+      return { skip: true, mass: 'setLineExit nicht erreichbar' };
+    }
+    const merkTiles = currentTrackTiles;
+    const merkExit = OMEGA_TEST.getLineExit();
+    const schlecht = [];
+    const zeilen = [];
+    try {
+      // Geschlossene Runde mit zwei Haarnadeln.
+      const p = codeToTrack('SHG4HG3');
+      currentTrackTiles = p.tiles;
+      const schl = trackSchluss(trackCenterline(p.tiles));
+      if (!schl.closed) return { ok: false, mass: 'Teststrecke gilt nicht als geschlossen' };
+      const holen = (st) => {
+        OMEGA_TEST.setLineExit(st);
+        const rows = OMEGA_TEST.compareLines(p.tiles, 6);
+        const je = {};
+        rows.forEach((r) => { (je[r.tile] = je[r.tile] || []).push(-r.calc); });
+        return je;
+      };
+      const aus = holen(0);
+      const an = holen(0.5);
+      // Fuer jede Haarnadel: die Kachel DANACH muss weiter aussen liegen. "Weiter aussen"
+      // heisst naeher an 0 oder darueber - die Werte sind negativ (innen).
+      let geprueft = 0;
+      for (let k = 0; k < p.tiles.length; k++) {
+        if (p.tiles[k].type !== TILE_TYPE.HAIRPIN
+            && p.tiles[k].type !== TILE_TYPE.HAIRPIN_LEFT) continue;
+        const nach = (k + 1) % p.tiles.length;
+        if (!aus[nach] || !an[nach]) continue;
+        geprueft++;
+        const vorher = aus[nach][0];
+        const nachher = an[nach][0];
+        zeilen.push('nach H' + k + ': ' + vorher.toFixed(2) + ' -> ' + nachher.toFixed(2));
+        // Deutlich weiter aussen: mindestens 0,15 der Bahnbreite. Weniger waere im
+        // Rauschen der Relaxation.
+        if (!(Math.abs(nachher) < Math.abs(vorher) - 0.15)) {
+          schlecht.push('nach H' + k + ' nur ' + vorher.toFixed(2) + ' -> ' + nachher.toFixed(2));
+        }
+      }
+      if (!geprueft) schlecht.push('keine Haarnadel gefunden');
+      // Und die Gegenprobe: bei 0 darf sich nichts aendern.
+      const aus2 = holen(0);
+      for (let k = 0; k < p.tiles.length; k++) {
+        if (!aus[k] || !aus2[k]) continue;
+        if (Math.abs(aus[k][0] - aus2[k][0]) > 1e-9) {
+          schlecht.push('K' + k + ': bei 0 nicht reproduzierbar');
+          break;
+        }
+      }
+    } catch (e) {
+      schlecht.push('Ausnahme: ' + e.message);
+    } finally {
+      OMEGA_TEST.setLineExit(merkExit);
+      currentTrackTiles = merkTiles;
+      ghostLineCacheLeeren();
+    }
+    return { ok: !schlecht.length,
+             mass: zeilen.join(' | ')
+                 + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // ---- Die Kruemmung glaubt keinem doppelten Punkt ----
+  //
+  // Auf einer geschlossenen Runde ist der letzte Abtastpunkt derselbe wie der erste -
+  // gemessen ein Abstand von 0,0000 bei einem mittleren Abstand von 2,857 Einheiten. Der
+  // Kreis durch drei Punkte, von denen zwei zusammenfallen, hat den Radius null.
+  //
+  // GEMESSEN, bevor die Schranke stand: 0,6999 an dieser Stelle gegen 0,12 und 0,13 der
+  // beiden Haarnadeln - das Fuenffache einer Haarnadel, auf einer Geraden. Zwei Verbraucher
+  // haben das geglaubt: das Bremsprofil zeichnete an Start/Ziel eine Bremsung, die es nicht
+  // gibt, und die Scheitelsuche fand nur diesen einen Punkt.
+  stAdd('Kruemmung: ein doppelter Abtastpunkt ist keine Kurve', () => {
+    const p = codeToTrack('SHG4HG3');
+    const pts = trackCenterline(p.tiles);
+    const nrm = trackNormals(pts);
+    const n = pts.length;
+    const luecke = Math.hypot(pts[n - 1].x - pts[0].x, pts[n - 1].y - pts[0].y);
+    if (!(luecke < 0.01)) {
+      return { skip: true, mass: 'diese Strecke hat keinen doppelten Endpunkt ('
+                                 + luecke.toFixed(3) + ')' };
+    }
+    const bahn = pts.map((q, i) => [q.x + nrm[i].x * 0, q.y + nrm[i].y * 0]);
+    const k = pathCurvature(bahn, true);
+    const kMax = Math.max.apply(null, k);
+    // Die groesste Kruemmung muss auf einer KURVENkachel liegen. Lag sie auf einer Geraden,
+    // war es das Artefakt.
+    let wo = 0;
+    for (let i = 0; i < n; i++) if (k[i] === kMax) { wo = i; break; }
+    const typ = pts[wo].tile >= 0 ? p.tiles[pts[wo].tile].type : null;
+    const istKurve = typ === TILE_TYPE.CURVE_LEFT || typ === TILE_TYPE.CURVE_RIGHT
+                  || typ === TILE_TYPE.HAIRPIN || typ === TILE_TYPE.HAIRPIN_LEFT;
+    const schlecht = [];
+    if (!istKurve) {
+      schlecht.push('groesste Kruemmung ' + kMax.toFixed(4) + ' liegt auf Kachel '
+                    + pts[wo].tile + ' (Typ ' + typ + '), keiner Kurve');
+    }
+    // Und der doppelte Punkt selbst traegt keine Kruemmung.
+    if (!(k[n - 1] === 0)) {
+      schlecht.push('der doppelte Endpunkt traegt Kruemmung ' + k[n - 1].toFixed(4));
+    }
+    return { ok: !schlecht.length,
+             mass: 'kMax ' + kMax.toFixed(4) + ' auf Kachel ' + pts[wo].tile
+                 + ' (Typ ' + typ + '), doppelter Punkt ' + k[n - 1].toFixed(4)
+                 + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
   });
 
   // ---- Controller-Vibration: ein Schalter je Ausloeser ----

@@ -1626,7 +1626,8 @@
         st.speedKmh = merk.v; st.isShifting = merk.sh;
       }
     },
-    setLineModel, getLineModel, buildLine,
+    setLineModel, getLineModel, buildLine, getLineExit,
+    setLineExit(v) { setLineExit(v); lineCache = null; return getLineExit(); },
     // Das Lernen ohne Auto und ohne Rennen durchspielen: Runden hineingeben, sehen was
     // angenommen wird. Genau so ist die Annahmeregel pruefbar.
     learnSim(runden) {
