@@ -2390,16 +2390,38 @@
   let weather = 'dry';
   let tyres = 'mittel';
 
+  // ---- Die Mischung als Attribut am Koerper -----------------------------------------
+  //
+  // CSS zieht daraus die Rahmenfarbe der vier Reifenfelder (body[data-tyre-mix="hart"]
+  // .gt3-t4 und die drei Geschwister).
+  //
+  // EIGENE FUNKTION UND EIN AUFRUF BEIM AUFBAU, und das ist die Behebung eines gemeldeten
+  // Fehlers. Die Zuweisung stand nur in applySurface(), und applySurface() laeuft erst bei
+  // einem Wetterwechsel, einem Boxenstopp oder an einem Reifenregler. Beim Laden lief sie
+  // NIE: das Attribut fehlte am Koerper, alle vier CSS-Regeln hatten keinen Treffer, und der
+  // Rahmen zeigte dauerhaft den Rueckfallwert aus .gt3-t4 - Gelb, also "mittel". Gemeldet
+  // als "die Umrandung der Reifen im Cockpit entspricht nicht dem Reifentyp", und das war
+  // genau richtig beobachtet: sie entsprach nie einem, sie stand nur zufaellig auf dem
+  // Anfangswert.
+  //
+  // Warum nicht einfach applySurface() beim Aufbau rufen: die Funktion greift auch in den
+  // Tongraphen (setAmbienceRainLevel) und in die Regensicht, und beides ist zum Ladezeitpunkt
+  // noch nicht aufgebaut. Diese eine Zeile hat keine Nebenwirkung.
+  function tyreMixAttribut() {
+    document.body.dataset.tyreMix = tyres;
+  }
+  tyreMixAttribut();
+
   function applySurface() {
     // DAS PIKTOGRAMM ZEIGT DIE MISCHUNG. Hier und nicht bei fitTyresForWeather(): das ist
     // nur EIN Weg zu einem Reifenwechsel, applySurface() laeuft bei jedem - Boxenstopp,
     // Wetterwechsel, Aufbau. Eine Klasse je Weg zu setzen ist die Gelegenheit, einen zu
     // vergessen, und dann zeigt der Reifen die Mischung von vorletzter Runde.
     document.body.classList.toggle('tyres-wet', tyres === 'regen');
-    // Die Mischung als Attribut am Koerper, damit CSS die Rahmenfarbe der vier Reifenfelder
-    // daraus zieht. Hier und nicht bei fitTyres(): das ist nur EIN Weg zu einem Wechsel,
-    // applySurface() laeuft bei jedem.
-    document.body.dataset.tyreMix = tyres;
+    // Die Mischung als Attribut am Koerper. Hier und nicht bei fitTyres(): das ist nur EIN
+    // Weg zu einem Wechsel, applySurface() laeuft bei jedem - und zusaetzlich einmal beim
+    // Aufbau, siehe die Begruendung bei tyreMixAttribut().
+    tyreMixAttribut();
     // GEMISCHT statt geschaltet. Der Griff wandert zwischen der trockenen und der nassen
     // Zeile der Matrix - dieselben Endwerte wie vorher, nur nicht mehr in einem Sprung.
     //

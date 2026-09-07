@@ -1936,8 +1936,31 @@
   @media (max-width: 560px) {
     /* Narrow screens: the control drops under its label, but stays inside the same shaded
        band, so the pairing survives the reflow. */
-    .opt-row { grid-template-columns: 1fr; gap: 8px; }
+    /* minmax(0, 1fr) UND NICHT 1fr, und der Unterschied ist der gemeldete Ueberlauf:
+       `1fr` bedeutet `minmax(auto, 1fr)`, und `auto` laesst die Spalte nicht unter den
+       min-content-Bedarf ihres Inhalts fallen. Der ist bei einer Reglerzeile 264 px - ein
+       Schiebeelement von mindestens 90 px, zwei Knoepfe und eine Wertspalte von 58 px -,
+       waehrend die Zeile auf einem 320-px-Schirm nur 230 px breit ist. Die Spalte blieb
+       also 264 px, und der Regler lief 3 px ueber den Bildschirmrand hinaus.
+       Die Regel eine Bildschirmhoehe weiter oben macht es fuer breite Schirme schon richtig;
+       hier war sie ueberschrieben. */
+    .opt-row { grid-template-columns: minmax(0, 1fr); gap: 8px; }
     .opt-row > :last-child { justify-self: start; }
+    /* Und der Inhalt muss dann auch WIRKLICH schrumpfen. Ein Flex-Element schrumpft nicht
+       unter seine eigene Mindestbreite, also bekommen die drei Teile hier die Erlaubnis:
+       das Schiebeelement gibt nach (es ist der einzige Teil, der Breite ohne Bedeutung
+       hat), die Wertspalte begnuegt sich mit vier Zeichen statt 58 px. */
+    /* UND DER REGLER MUSS SICH STRECKEN. Die Zeile darueber gibt dem letzten Kind
+       `justify-self: start`, damit ein Schiebeschalter links steht und nicht ueber die
+       halbe Zeile gezogen wird. Fuer eine Reglergruppe heisst `start` aber: nimm deine
+       max-content-Breite und richte sie links aus - die Spaltenbreite gilt dann NICHT
+       mehr, und genau deshalb blieb der Regler bei 233 px in einer 202 px breiten Spalte
+       und lief 3 px ueber den Bildschirmrand. Gemessen, nachdem minmax(0, 1fr) die Spalte
+       schon richtig geschrumpft hatte: die Spalte war schmal, das Kind hielt seine Breite.
+       Also stretch nur fuer die Reglergruppe, start bleibt fuer alles andere. */
+    .opt-row > .opt-slider { justify-self: stretch; min-width: 0; }
+    .opt-slider input[type=range] { min-width: 0; flex: 1 1 auto; }
+    .opt-val { min-width: 4ch; }
   }
 
   /* Touch sizing. Keyed on the POINTER, not on the viewport width: a small window on a
@@ -2220,12 +2243,25 @@
   .cm-new { color: var(--warn); font-weight: 700; }
 
   /* ---- Toene in der Doku ---- */
-  .snd-grid { display: grid; gap: 8px; grid-template-columns: 1fr; }
-  @media (min-width: 780px) { .snd-grid { grid-template-columns: 1fr 1fr; } }
-  .snd-row { display: flex; gap: 10px; align-items: center;
+  /* DIESELBE FALLE WIE BEI .opt-row: `1fr` ist `minmax(auto, 1fr)` und schrumpft nicht
+     unter den min-content-Bedarf. Der ist hier 311 px - ein Abspieler von festen 178 px
+     plus das laengste Wort der Beschreibung -, und die Spalte war auf einem 320-px-Schirm
+     nur 230 px breit. Die Zeile lief 81 px aus ihrem Kasten, und 26 davon ueber den
+     Bildschirmrand. Gemeldet als "manche Texte gehen immer noch ueber den Bildschirm
+     hinaus". */
+  .snd-grid { display: grid; gap: 8px; grid-template-columns: minmax(0, 1fr); }
+  @media (min-width: 780px) {
+    .snd-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  }
+  /* UMBRECHEN statt ueberlaufen. Der Abspieler hat feste 178 px und `flex: none`, kann also
+     nicht nachgeben - dann muss die Beschreibung unter ihn. min-width: 0 dazu, sonst haelt
+     der Textkasten seinerseits sein laengstes Wort als Mindestbreite fest und der Umbruch
+     hilft nichts. */
+  .snd-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
     background: var(--panel-2); border: 1px solid var(--border); border-radius: 6px;
     padding: 7px 9px; }
-  .snd-row audio { height: 30px; flex: none; width: 178px; }
+  .snd-row audio { height: 30px; flex: none; width: 178px; max-width: 100%; }
+  .snd-row > div { min-width: 0; flex: 1 1 14ch; }
   .snd-row b { font-size: 12.5px; }
 
   /* ---- Home ---- */
@@ -2247,6 +2283,24 @@
     font-size: clamp(21px, 4.4vw, 40px); line-height: 1.14; font-weight: 800;
     letter-spacing: .01em; max-width: 20ch;
     text-shadow: 2px 0 0 var(--glitch-r), -2px 0 0 var(--glitch-c);
+    /* KEINE AUTOMATISCHE TRENNUNG IN DER UEBERSCHRIFT. Global steht hyphens: auto, und fuer
+       Fliesstext ist das richtig - hier zerlegte es "Ge-staltungsfreiheit" und "Bah-n", weil
+       der Browser die erste Silbe noch auf die vorige Zeile zwang. Eine Ueberschrift wird
+       ueberflogen und nicht gelesen; ein Trennstrich darin kostet mehr als eine kuerzere
+       Zeile.
+
+       DIE ZEILEN ERGEBEN SICH AUS DEN WORTGRENZEN, nicht aus <br>: 20ch Breite und ein
+       zusammengehaltenes "Hybrid Bahn" schneiden genau dort, wo es bestellt war -
+       Vollstaendige / Gestaltungsfreiheit / fuer deine Carrera / Hybrid Bahn.
+
+       Warum kein <br>: es zerlegt den Textknoten, und ein zerlegter Textknoten ist nicht
+       mehr uebersetzbar - der englische Satz hat andere Wortgrenzen und braeuchte andere
+       Umbrueche. So bricht jede Sprache an ihren eigenen.
+
+       break-word bleibt als Rueckfall aus der globalen Regel: ein Wort, das auch alleine
+       nicht passt, wird weiter umgebrochen statt ueber den Rand zu laufen. Bei 20ch fuer 19
+       Zeichen tritt der Fall nicht ein, aber die Zusicherung kostet nichts. */
+    hyphens: manual;
   }
   .home-sub {
     position: relative; z-index: 2; margin: 12px 0 0 0; max-width: 46ch;
@@ -2458,10 +2512,20 @@
      something and hear it immediately. */
   .mw-grid { display: grid; gap: 10px 16px; grid-template-columns: 1fr; margin-top: 10px; }
   @media (min-width: 720px) { .mw-grid { grid-template-columns: 1fr 1fr; } }
-  .mw-row { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px; }
-  .mw-row > label { font-size: 12.5px; }
-  .mw-row .mw-ctl { display: flex; align-items: center; gap: 6px; }
-  .mw-row input[type=range] { width: 116px; }
+  /* minmax(0, ...) IN BEIDEN SPALTEN, und aus demselben Grund wie bei .opt-row und
+     .snd-grid: `1fr` ist `minmax(auto, 1fr)` und `auto` schrumpft nicht unter den
+     min-content-Bedarf, und eine `auto`-Spalte tut es ueberhaupt nicht. Die Reglergruppe
+     dieser Zeile braucht 188 px - 116 fuer das Schiebeelement, 62 fuer den Wert, dazu
+     Abstaende -, und auf einem 320-px-Schirm ragte sie 3 px ueber den Rand.
+     Dieselbe Falle an der dritten Stelle in dieser Datei; wer eine vierte Rasterzeile baut,
+     findet sie hoffentlich hier. */
+  .mw-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, auto);
+    align-items: center; gap: 8px; }
+  .mw-row > label { font-size: 12.5px; min-width: 0; }
+  .mw-row .mw-ctl { display: flex; align-items: center; gap: 6px; min-width: 0; }
+  /* Das Schiebeelement gibt nach - es ist der einzige Teil der Zeile, dessen Breite keine
+     Bedeutung traegt. */
+  .mw-row input[type=range] { width: 116px; min-width: 0; flex: 1 1 auto; }
   .mw-row select { max-width: 132px; }
   .mw-val { font-family: monospace; font-size: 12px; min-width: 62px; text-align: right;
     color: var(--muted); }
@@ -2801,7 +2865,9 @@
       </svg>
       <div class="home-rain"></div>
       <div class="home-flash" id="home-flash"></div>
-      <h2>Vollst&auml;ndige Gestaltungsfreiheit f&uuml;r deine Carrera&nbsp;Hybrid&nbsp;Bahn</h2>
+      <!-- Die geschuetzten Leerzeichen setzen die Umbrueche: "Hybrid Bahn" bleibt zusammen,
+           "Carrera" darf zu "fuer deine". Siehe die Begruendung bei .home-hero h2. -->
+      <h2>Vollst&auml;ndige Gestaltungsfreiheit f&uuml;r deine Carrera Hybrid&nbsp;Bahn</h2>
       <p class="home-sub">Fahren, abstimmen, Rennen fahren. Im Browser, ohne Installation,
         mit deinem eigenen Streckenaufbau.</p>
       <div class="home-cta">
@@ -2872,7 +2938,15 @@
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.2"/><path d="M12 3.5v3M12 17.5v3M3.5 12h3M17.5 12h3"/></svg><span>Reifenverschlei&szlig;, Reifentemperatur, Bremstemperatur</span></div>
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4 3 20h18z"/><path d="M12 10v5"/></svg><span>Crash-Erkennung mit Vibration und Folgen fürs Handling</span></div>
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4a4 4 0 1 0 4 5l-2 2-3-3 2-2a4 4 0 0 0-1-2z"/><path d="M13 11 4 20"/></svg><span>Boxenstopp auf Knopfdruck</span></div>
-        <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V10a7 7 0 0 1 14 0v10l-3-2-2 2-2-2-2 2z"/><circle cx="9.5" cy="10" r="1"/><circle cx="14.5" cy="10" r="1"/></svg><span>Autonome Gegner</span></div>
+        <!-- Derselbe Geist wie auf der Einstellungskachel, im 24er Raster. Der alte Pfad
+             hatte rechts vier Bodenzacken und links eine flache Strecke von fuenf Einheiten -
+             die Asymmetrie, die gemeldet wurde. Drei Zacken von je 2,333 statt vier
+             ungleicher: bei 17 px Darstellungsgroesse sind weniger, groessere Formen zu
+             erkennen, vier waren Matsch. Die Augen sind GEFUELLT (die Regel .home-feat svg
+             setzt fill: none, ein Attribut am Kreis selbst schlaegt die Vererbung) - als
+             Ringe von 1 px Durchmesser waren sie bei dieser Groesse nicht zu sehen.
+             linejoin/linecap round, damit die Zacken keine Nadelspitzen bekommen. -->
+        <div><svg viewBox="0 0 24 24" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M5 20V11a7 7 0 0 1 14 0v9l-2.33-2.5-2.34 2.5-2.33-2.5-2.33 2.5-2.34-2.5z"/><circle cx="9.6" cy="11.5" r="1.1" fill="var(--info)" stroke="none"/><circle cx="14.4" cy="11.5" r="1.1" fill="var(--info)" stroke="none"/></svg><span>Autonome Gegner</span></div>
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h3l2-6 3 12 3-9 2 5 2-2h3"/></svg><span>Simulierte Motoren und eigene Sounds über Engine-Sim</span></div>
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="8" width="20" height="10" rx="4"/><path d="M7 13h2M8 12v2M16 13h.01"/></svg><span>Gamepad-Vibration</span></div>
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 11V8a5 5 0 0 1 9-3"/><rect x="5" y="11" width="14" height="9" rx="2"/></svg><span>Open Source, offene Lizenz</span></div>
@@ -5889,8 +5963,25 @@
           <span>Motorsound, Ambience, Lautst&auml;rken &ndash; und die Motorwerkstatt.</span>
         </button>
         <button class="misc-tile subpage-open" data-sub="opt-ghosts">
+          <!-- SYMMETRISCH NEU GEZEICHNET. Der alte Pfad war an drei Stellen schief, und
+               eine davon war ein Fehler und keine Geschmacksfrage:
+
+                 M24 6 c-8 0 -13 6 -13 14   linke Schulter
+                       ... c0-8 -1-14 -9-14  rechte Schulter, ANDERE Kurve
+                 ... 4 4 5 4                der letzte Bodenzacken ging nach UNTEN
+                                            (auf y=44) statt auf die Grundlinie y=40 -
+                                            die rechte untere Ecke hing also 4 Einheiten
+                                            unter der Figur.
+
+               Jetzt: die Kuppel ist ein echter Halbkreis (a13 13 0 0 1 26 0, Mittelpunkt
+               24/18), also spiegelsymmetrisch von selbst statt aus zwei Kurven
+               zusammengesetzt. Der Boden hat drei Zacken von je 4,333 Einheiten, deren
+               Taeler bei 32,67 / 24 / 15,33 und deren Spitzen bei 37 / 28,33 / 19,67 / 11
+               liegen - beide Folgen spiegeln sich um die Mitte 24. Die sechs Schritte
+               summieren sich auf genau 26, sonst schliesst der Pfad nicht auf der
+               Grundlinie. -->
           <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
-               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M24 6c-8 0-13 6-13 14v20l5-4 4 4 4-4 4 4 5 4V20c0-8-1-14-9-14z"/><circle cx="19" cy="21" r="2.2" fill="currentColor"/><circle cx="29" cy="21" r="2.2" fill="currentColor"/></svg>
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 42V18a13 13 0 0 1 26 0v24l-4.33-4-4.34 4-4.33-4-4.33 4-4.34-4z"/><circle cx="19.5" cy="19" r="2.4" fill="currentColor"/><circle cx="28.5" cy="19" r="2.4" fill="currentColor"/></svg>
           <b>Autonome Gegner</b>
           <span>Ghosts: Tempo, Linie, Rennw&uuml;rze, Lernen. Teilweise noch im Aufbau.</span>
         </button>
@@ -6739,19 +6830,56 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="ghost-curve-val">20%</span>
         </div></div>
-      <div class="opt-row"><div class="opt-label">Rennw&uuml;rze
+      <!-- DIE RENNWUERZE, IN EINZELNE SCHALTER ZERLEGT. Vorher ein Regler fuer sechs
+           Bausteine: wer ihn aufdrehte, bekam alle sechs und wusste danach nicht, welcher
+           davon das Gesehene erklaert. Das Gummiband ist nicht mehr dabei - es ist
+           "Feld zusammenhalten" weiter unten, und dort gestaffelt ueber das ganze Feld. -->
+      <div class="opt-row"><div class="opt-label">Rennw&uuml;rze: einzeln zuschaltbar
+          <small>F&uuml;nf Zutaten, die aus gleichm&auml;&szlig;igem Fahren ein Rennen machen
+          sollen. Jede einzeln, damit man sieht, welche was tut &ndash; als ein Regler f&uuml;r
+          alle war nicht zu unterscheiden, woran eine Beobachtung lag. Alle experimentell:
+          keine ist am Auto gemessen, alle sind gew&auml;hlt.</small></div>
+        <span class="muted" style="font-size:11px">&#9660;</span></div>
+      <div class="opt-row"><div class="opt-label">&Uuml;berholman&ouml;ver
           <span class="wip-tag">experimentell</span>
-          <small>Ab Werk aus. Sie greift an sechs Stellen gleichzeitig ins Tempo ein, und
-          solange Ortung und &Uuml;berholen nicht sauber sind, ist sie die Zutat, die jede
-          Beobachtung verrauscht &ndash; wer sie einschaltet, wei&szlig; danach nicht, ob das
-          Gesehene an ihr lag.</small>
-          <small>Tagesform, Fehler, Windschatten, &Uuml;berholen, Gummiband und Abstand halten &ndash; ein Regler f&uuml;r alle sechs. Ein &Uuml;berholvorgang l&auml;uft als Sequenz: erst zur Seite, dann Schub, dann vorne wieder einordnen, und wenn es nach 5&nbsp;s nicht geklappt hat, Abbruch mit 6&nbsp;s Sperre. Ohne diesen Abbruch klebte der Verfolger neben dem anderen, bis die Uhr ablief, und genau dort ber&uuml;hren sie sich. Der Mindestabstand rechnet ausserdem mit der Ann&auml;herungsrate statt mit einem festen Kachelabstand. Auf 0 ist jeder der sechs Bausteine wirkungslos.</small></div>
-        <div class="opt-slider">
-          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="ghost-spice" min="0" max="1" step="0.05" value="0">
-          <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="ghost-spice-val">aus</span>
-        </div></div>
+          <small>Ein Verfolger, der 0,9&nbsp;s dicht dran h&auml;ngt, setzt auf einer Geraden
+          an: erst zur Seite, dann Schub, dann vorne wieder einordnen. Der Vorausfahrende
+          weicht zur anderen Seite aus &ndash; zwei Autos auf 25&nbsp;cm Bahnbreite brauchen
+          beide H&auml;lften. Klappt es nach 5&nbsp;s nicht, bricht er ab und wartet
+          6&nbsp;s; ohne diesen Abbruch klebte der Verfolger neben dem anderen, bis die Uhr
+          ablief, und genau dort ber&uuml;hren sie sich. In eine Kurve hinein wird nie
+          angesetzt.</small></div>
+        <label class="tgl"><input type="checkbox" id="ghost-w-pass" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Abstand halten
+          <span class="wip-tag">experimentell</span>
+          <small>Ein Ghost lupft das Gas, wenn er zu schnell auflaufen w&uuml;rde. Gerechnet
+          als Zeitl&uuml;cke und nicht als fester Abstand: eine Kachel bei gleichem Tempo ist
+          unbegrenzt viel Zeit, eine Kachel bei schneller Ann&auml;herung ist eine Sekunde bis
+          zur Ber&uuml;hrung. Ohne das fahren sie Sto&szlig;stange an Sto&szlig;stange.
+          W&auml;hrend eines eigenen &Uuml;berholman&ouml;vers gilt es nicht, sonst k&auml;me
+          niemand vorbei.</small></div>
+        <label class="tgl"><input type="checkbox" id="ghost-w-gap" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Tagesform
+          <span class="wip-tag">experimentell</span>
+          <small>Jedes Auto f&auml;hrt ein etwas anderes Dauertempo, und das verschiebt sich
+          langsam &ndash; ein Zufallslauf im Band von &plusmn;7,5&nbsp;%, alle 2,6&nbsp;s
+          einen Schritt weiter. Damit ist nicht jede Runde gleich, und das Feld sortiert sich
+          von selbst um.</small></div>
+        <label class="tgl"><input type="checkbox" id="ghost-w-form"><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Fahrfehler
+          <span class="wip-tag">experimentell</span>
+          <small>Beim Anbremsen einer Kurve verbremst sich ein Ghost gelegentlich: 5,5&nbsp;%
+          Wahrscheinlichkeit je angebremster Kurve, dann 0,4 bis 0,9&nbsp;s mit 45&nbsp;%
+          weniger Tempo. Gew&uuml;rfelt wird einmal je Kurve und nicht je Takt &ndash; sonst
+          h&auml;ngt die Fehlerrate an der Rechenfrequenz statt am Rennen.</small></div>
+        <label class="tgl"><input type="checkbox" id="ghost-w-fehler"><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Windschatten
+          <span class="wip-tag">experimentell</span>
+          <small>Wer auf einer Geraden dicht hinter einem anderen h&auml;ngt, f&auml;hrt bis
+          zu 11&nbsp;% schneller, linear abnehmend bis 1,3 Kacheln Abstand. Nur auf der
+          Geraden: in der Kurve w&auml;re es Abtriebsverlust, also das Gegenteil, und das
+          bildet die Physik der Ghosts nicht ab.</small></div>
+        <label class="tgl"><input type="checkbox" id="ghost-w-slip"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Ghost: Ideallinie <span class="wip-tag">WIP</span>
           <!-- Seit v0.5.9 wirkt dieser Regler deutlich staerker: der Deckel aus
                learnSteerCap() ging von 0,55 auf 1,0, gemessen an dem, was die Original-App
@@ -7302,7 +7430,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.5.33</span></span>
+    <span class="foot-ver">v<span id="app-version">0.5.34</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -8904,6 +9032,28 @@
       "How hard the car steers against a slide, measured from the rotation signal in byte 3 of the notifications. 50 per cent is the default that was asked for. What is uncertain about it, and it is two things at once: the signal is unconfirmed – it only varies once the car is moving, and flipped sign with cornering direction in exactly one recording. And it is uncalibrated: its scale is self-adjusting because the real amplitude is unknown. So the strength depends on the largest yaw value the session has seen so far. The “Drift probe” button under “Measure lateral offset” measures whether the signal moves at all under straight full throttle.",
     "Rennen":
       "Race",
+    "Rennwürze: einzeln zuschaltbar":
+      "Race spice: switchable one by one",
+    "Fünf Zutaten, die aus gleichmäßigem Fahren ein Rennen machen sollen. Jede einzeln, damit man sieht, welche was tut – als ein Regler für alle war nicht zu unterscheiden, woran eine Beobachtung lag. Alle experimentell: keine ist am Auto gemessen, alle sind gewählt.":
+      "Five ingredients meant to turn even lapping into a race. Each one separately, so you can see which does what – as a single slider for all of them there was no telling what an observation was down to. All experimental: none is measured on the car, all are chosen.",
+    "Überholmanöver":
+      "Overtaking manoeuvre",
+    "Ein Verfolger, der 0,9 s dicht dran hängt, setzt auf einer Geraden an: erst zur Seite, dann Schub, dann vorne wieder einordnen. Der Vorausfahrende weicht zur anderen Seite aus – zwei Autos auf 25 cm Bahnbreite brauchen beide Hälften. Klappt es nach 5 s nicht, bricht er ab und wartet 6 s; ohne diesen Abbruch klebte der Verfolger neben dem anderen, bis die Uhr ablief, und genau dort berühren sie sich. In eine Kurve hinein wird nie angesetzt.":
+      "A pursuer that has sat close for 0.9 s makes its move on a straight: first to the side, then a push, then tucking back in ahead. The car in front moves to the other side – two cars on 25 cm of track width need both halves. If it has not worked after 5 s it breaks off and waits 6 s; without that break-off the pursuer stuck alongside until the clock ran out, and that is exactly where they touch. A move is never started into a corner.",
+    "Abstand halten":
+      "Keeping a gap",
+    "Ein Ghost lupft das Gas, wenn er zu schnell auflaufen würde. Gerechnet als Zeitlücke und nicht als fester Abstand: eine Kachel bei gleichem Tempo ist unbegrenzt viel Zeit, eine Kachel bei schneller Annäherung ist eine Sekunde bis zur Berührung. Ohne das fahren sie Stoßstange an Stoßstange. Während eines eigenen Überholmanövers gilt es nicht, sonst käme niemand vorbei.":
+      "A ghost lifts off when it would run up too fast. Reckoned as a time gap and not as a fixed distance: one tile at matched pace is unlimited time, one tile while closing fast is one second to contact. Without it they run bumper to bumper. It does not apply during a move of their own, otherwise nobody would ever get past.",
+    "Jedes Auto fährt ein etwas anderes Dauertempo, und das verschiebt sich langsam – ein Zufallslauf im Band von ±7,5 %, alle 2,6 s einen Schritt weiter. Damit ist nicht jede Runde gleich, und das Feld sortiert sich von selbst um.":
+      "Each car holds a slightly different steady pace, and it drifts slowly – a random walk within a band of ±7.5%, one step every 2.6 s. That way no two laps are alike, and the field reorders itself.",
+    "Fahrfehler":
+      "Driving errors",
+    "Beim Anbremsen einer Kurve verbremst sich ein Ghost gelegentlich: 5,5 % Wahrscheinlichkeit je angebremster Kurve, dann 0,4 bis 0,9 s mit 45 % weniger Tempo. Gewürfelt wird einmal je Kurve und nicht je Takt – sonst hängt die Fehlerrate an der Rechenfrequenz statt am Rennen.":
+      "Braking into a corner, a ghost occasionally locks up: 5.5% chance per corner braked for, then 0.4 to 0.9 s at 45% less pace. The dice are rolled once per corner and not per tick – otherwise the error rate would depend on the compute frequency rather than on the race.",
+    "Windschatten":
+      "Slipstream",
+    "Wer auf einer Geraden dicht hinter einem anderen hängt, fährt bis zu 11 % schneller, linear abnehmend bis 1,3 Kacheln Abstand. Nur auf der Geraden: in der Kurve wäre es Abtriebsverlust, also das Gegenteil, und das bildet die Physik der Ghosts nicht ab.":
+      "Sitting close behind another car on a straight is worth up to 11% more pace, falling off linearly to 1.3 tiles of gap. On straights only: in a corner it would be a loss of downforce, so the opposite, and the ghosts' physics does not model that.",
     "Autos nebeneinander gehen auseinander, gleichmäßig über die Bahnbreite: bei zwei nach links und rechts, bei drei bleibt das mittlere mittig, bei vier auf Viertel. Vorher gab es nur zwei Seiten, und dann standen sich bei vier Autos zwei Paare weiter im Weg. Beim Überholen weicht auch der Vorausfahrende aus, zur anderen Seite. Zwei Autos auf 25 cm Bahnbreite brauchen beide Hälften. Dieser Regler bestimmt auch, wie weit der Angreifer zur Seite geht: das ist ein Ausweichen und keine Linienwahl, hängt also nicht an der Ideallinie. Über 100 Prozent geht die Anforderung bis an den vollen Anschlag – die Mitschnitte zeigen, dass das Auto die Schiene auch dort noch liest.":
       "Cars alongside each other move apart, spread evenly across the track width: with two, to the left and right; with three, the middle one stays centred; with four, onto quarters. Before there were only two sides, and then with four cars two pairs still stood in each other's way. When overtaking, the car in front also moves aside, to the other side. Two cars on 25 cm of track width need both halves. This slider also sets how far the attacker moves aside: that is an evasion and not a choice of line, so it does not depend on the racing line. Above 100 per cent the request goes to the full lock – the recordings show the car still reads the rail even there.",
     "Trocken, Regen – oder wechselhaft: dann beginnt es trocken, und alle 2 bis 6 Minuten fällt ein Schauer von 1 bis 3 Minuten. Beide Zeiten werden je Phase neu gezogen. Bei einem kurzen Rennen kann es sein, dass man keinen Schauer sieht – ein Schauer hängt nicht daran, wie viele Runden gefahren werden.":
@@ -15198,8 +15348,22 @@
       paths += `<path d="${d}" fill="none" stroke="${s.color}" stroke-width="${s.width || 2}"`
              + `${s.dash ? ` stroke-dasharray="${s.dash}"` : ''} stroke-linejoin="round"/>`;
       if (s.label) {
+        // DIE BESCHRIFTUNG KIPPT NACH INNEN, wenn sie sonst aus dem Bild laeuft. Sie sitzt am
+        // LETZTEN Punkt der Kurve, und der liegt am rechten Rand der Zeichenflaeche - rechts
+        // daneben sind nur noch R = 16 Einheiten. Gemessen ragten "1000/min" und "km/h"
+        // damit ueber den viewBox-Rand und wurden abgeschnitten; auf einem 320-px-Schirm
+        // waren das 11 sichtbare Pixel.
+        //
+        // Die Textbreite wird GESCHAETZT, mit 0,54 em je Zeichen. Das ist keine Messung -
+        // im SVG-Text gibt es zur Bauzeit keine -, aber eine Ueberschaetzung fuer diese
+        // Schrift, und Ueberschaetzen ist hier die richtige Richtung: im Zweifel kippt die
+        // Beschriftung nach innen, und dort steht sie immer richtig.
         const last = s.points[s.points.length - 1];
-        paths += `<text x="${(sx(last[0]) + 4).toFixed(1)}" y="${(sy(last[1]) + 3).toFixed(1)}"`
+        const bx = sx(last[0]);
+        const breit = String(s.label).length * 0.54 * 10;
+        const innen = bx + 4 + breit > W - 2;
+        paths += `<text x="${(innen ? bx - 4 : bx + 4).toFixed(1)}" y="${(sy(last[1]) + 3).toFixed(1)}"`
+               + ` text-anchor="${innen ? 'end' : 'start'}"`
                + ` font-size="10" font-weight="700" fill="${s.color}">${s.label}</text>`;
       }
     }
@@ -18841,16 +19005,38 @@
   let weather = 'dry';
   let tyres = 'mittel';
 
+  // ---- Die Mischung als Attribut am Koerper -----------------------------------------
+  //
+  // CSS zieht daraus die Rahmenfarbe der vier Reifenfelder (body[data-tyre-mix="hart"]
+  // .gt3-t4 und die drei Geschwister).
+  //
+  // EIGENE FUNKTION UND EIN AUFRUF BEIM AUFBAU, und das ist die Behebung eines gemeldeten
+  // Fehlers. Die Zuweisung stand nur in applySurface(), und applySurface() laeuft erst bei
+  // einem Wetterwechsel, einem Boxenstopp oder an einem Reifenregler. Beim Laden lief sie
+  // NIE: das Attribut fehlte am Koerper, alle vier CSS-Regeln hatten keinen Treffer, und der
+  // Rahmen zeigte dauerhaft den Rueckfallwert aus .gt3-t4 - Gelb, also "mittel". Gemeldet
+  // als "die Umrandung der Reifen im Cockpit entspricht nicht dem Reifentyp", und das war
+  // genau richtig beobachtet: sie entsprach nie einem, sie stand nur zufaellig auf dem
+  // Anfangswert.
+  //
+  // Warum nicht einfach applySurface() beim Aufbau rufen: die Funktion greift auch in den
+  // Tongraphen (setAmbienceRainLevel) und in die Regensicht, und beides ist zum Ladezeitpunkt
+  // noch nicht aufgebaut. Diese eine Zeile hat keine Nebenwirkung.
+  function tyreMixAttribut() {
+    document.body.dataset.tyreMix = tyres;
+  }
+  tyreMixAttribut();
+
   function applySurface() {
     // DAS PIKTOGRAMM ZEIGT DIE MISCHUNG. Hier und nicht bei fitTyresForWeather(): das ist
     // nur EIN Weg zu einem Reifenwechsel, applySurface() laeuft bei jedem - Boxenstopp,
     // Wetterwechsel, Aufbau. Eine Klasse je Weg zu setzen ist die Gelegenheit, einen zu
     // vergessen, und dann zeigt der Reifen die Mischung von vorletzter Runde.
     document.body.classList.toggle('tyres-wet', tyres === 'regen');
-    // Die Mischung als Attribut am Koerper, damit CSS die Rahmenfarbe der vier Reifenfelder
-    // daraus zieht. Hier und nicht bei fitTyres(): das ist nur EIN Weg zu einem Wechsel,
-    // applySurface() laeuft bei jedem.
-    document.body.dataset.tyreMix = tyres;
+    // Die Mischung als Attribut am Koerper. Hier und nicht bei fitTyres(): das ist nur EIN
+    // Weg zu einem Wechsel, applySurface() laeuft bei jedem - und zusaetzlich einmal beim
+    // Aufbau, siehe die Begruendung bei tyreMixAttribut().
+    tyreMixAttribut();
     // GEMISCHT statt geschaltet. Der Griff wandert zwischen der trockenen und der nassen
     // Zeile der Matrix - dieselben Endwerte wie vorher, nur nicht mehr in einem Sprung.
     //
@@ -21605,11 +21791,33 @@
   $('lat-hold-here').addEventListener('click', () => { lat.stepAt = Date.now(); latRender(); });
   $('lat-reset').addEventListener('click', () => { lat.rows = []; lat.tiles = 0; latRender(); });
 
-  $('ghost-spice').addEventListener('input', (e) => {
-    ghostCfg.spice = parseFloat(e.target.value);
-    $('ghost-spice-val').textContent = ghostCfg.spice === 0
-      ? 'aus' : Math.round(ghostCfg.spice * 100) + '%';
-  });
+  // ---- Die fuenf Wuerz-Schalter -------------------------------------------------------
+  //
+  // Aus einem Regler sind fuenf Kaestchen geworden. Die Liste steht hier und nicht als fuenf
+  // gleiche Bloecke: ein sechster Baustein ist dann eine Zeile, und die Zuordnung
+  // Element-id zu Modellfeld ist an einer Stelle nachzulesen.
+  //
+  // DER ANFANGSABGLEICH STEHT NICHT HIER, und das ist eine Berichtigung mit Blutspur:
+  // `ghostCfg` ist ein const in 90-ghosts.js, also in einer SPAETEREN Datei derselben IIFE.
+  // Zur Aufbauzeit dieser Zeilen liegt es in seiner temporalen Todeszone - ein Schreibzugriff
+  // darauf wirft, und der Wurf nimmt den ganzen Rest der IIFE mit. Gemeldet wird er an
+  // voelig anderer Stelle ("Cannot access 'padConnected' before initialization"), weil dort
+  // der erste Zeitgeber auf eine Variable trifft, die nie angelegt wurde. Genau diese Falle
+  // hat in diesem Projekt schon einmal einen Regler gekostet.
+  //
+  // Die Zuhoerer sind unbedenklich: sie laufen erst, wenn jemand klickt. Der Abgleich steht
+  // bei ghostCfg selbst, siehe dort.
+  const WUERZE_SCHALTER = [
+    ['ghost-w-pass', 'wuerzeUeberholen'],
+    ['ghost-w-gap', 'wuerzeAbstand'],
+    ['ghost-w-form', 'wuerzeForm'],
+    ['ghost-w-fehler', 'wuerzeFehler'],
+    ['ghost-w-slip', 'wuerzeWindschatten'],
+  ];
+  for (const [id, feld] of WUERZE_SCHALTER) {
+    const el = $(id);
+    if (el) el.addEventListener('change', (e) => { ghostCfg[feld] = e.target.checked; });
+  }
 
   $('ghost-line').addEventListener('input', (e) => {
     ghostCfg.line = parseFloat(e.target.value);
@@ -23586,7 +23794,27 @@
     // gekennzeichnet. Sie greift an sechs Stellen gleichzeitig ins Tempo ein, und solange
     // Ortung und Ueberholen nicht sauber sind, ist sie die Zutat, die jede Messung
     // verrauscht.
-    spice: 0,
+    // ---- DIE RENNWUERZE, IN EINZELNE SCHALTER ZERLEGT ------------------------------
+    //
+    // Bis v0.5.33 war das EIN Regler fuer sechs Bausteine. Wer ihn aufdrehte, bekam alle
+    // sechs und wusste danach nicht, welcher davon das Gesehene erklaert - deshalb stand er
+    // ab Werk auf 0 und war damit praktisch tot. Jetzt je Baustein ein Schalter, alle
+    // ausdruecklich experimentell.
+    //
+    // DIE STAERKEN SIND JETZT DIE KONSTANTEN SELBST. Vorher wurde jeder Baustein mit dem
+    // Reglerwert multipliziert; die SPICE_*-Konstanten tragen im Kommentar "volle Wuerze",
+    // sind also genau die Werte bei 1. Ein Schalter, der auf 40 Prozent einschaltet, waere
+    // eine versteckte zweite Einstellung.
+    //
+    // DAS GUMMIBAND FEHLT HIER, und das ist Absicht: es ist seit v0.5.32 "Feld
+    // zusammenhalten" (ghostFeldStaffel) und dort besser - gestaffelt ueber das ganze Feld
+    // statt nur auf den Fuehrenden. Zwei Regeln, die beide den Fuehrenden bremsen, waeren
+    // zwei Abschlaege auf dieselbe Groesse.
+    wuerzeUeberholen: true,   // bestellt: an
+    wuerzeAbstand: true,      // bestellt: an, "sodass sie sich nicht rammen"
+    wuerzeForm: false,
+    wuerzeFehler: false,
+    wuerzeWindschatten: false,
     // Lernen von Runde zu Runde, standardmaessig aus: es aendert das Fahrverhalten ueber
     // ein Rennen hinweg, und das soll niemand ungefragt bekommen.
     learnPace: false,
@@ -23608,6 +23836,23 @@
     // und faehrt nur dort, wo es weiss, wo es ist.
     needCode: false,
   };
+
+  // ---- Der Anfangsabgleich der fuenf Wuerz-Kaestchen ---------------------------------
+  //
+  // HIER UND NICHT BEI DEN ZUHOERERN in 80-sound.js. Ein Kaestchen im Markup und sein Feld
+  // in ghostCfg sind zwei Orte fuer einen Zustand, und der change-Zuhoerer feuert beim Laden
+  // NICHT - ohne diesen Abgleich zeigte die Oberflaeche das eine und der Ghost taete das
+  // andere, bis jemand den Schalter zweimal umlegt. Zwei Regler dieser App standen schon
+  // einmal so da.
+  //
+  // Und warum nicht in 80-sound.js, wo die Zuhoerer stehen: ghostCfg ist ein const in DIESER
+  // Datei, und 80-sound.js laeuft vorher. Ein Schreibzugriff von dort trifft die temporale
+  // Todeszone, wirft, und nimmt den Rest der IIFE mit - gemeldet dann als ein Fehler an
+  // ganz anderer Stelle. Genau so ist es mir beim Bauen passiert.
+  for (const [id, feld] of (typeof WUERZE_SCHALTER === 'undefined' ? [] : WUERZE_SCHALTER)) {
+    const el = document.getElementById(id);
+    if (el) ghostCfg[feld] = el.checked;
+  }
 
   // Per-tile behaviour, data-driven on purpose: the hairpin and left-curve codes are not
   // known yet, and adding them must not require touching code.
@@ -24559,6 +24804,16 @@
   //
   // Alles skaliert mit EINEM Regler, und auf 0 ist jeder Baustein wirkungslos - das ist
   // die Einstellung, in der die Ideallinie und die Querablage gemessen werden koennen.
+  // Alle Bausteine aus, als Objekt zum Ueberschreiben. Ein Prueffstand, der das
+  // Fahrverhalten OHNE Zutaten messen will, nimmt das - und ein sechster Baustein laesst
+  // dann nicht neun Prueffstaende still durchfallen, weil jeder seine eigene Liste haette.
+  const WUERZE_AUS = { wuerzeUeberholen: false, wuerzeAbstand: false, wuerzeForm: false,
+                       wuerzeFehler: false, wuerzeWindschatten: false };
+  function wuerzeAn() {
+    return !!(ghostCfg.wuerzeUeberholen || ghostCfg.wuerzeAbstand || ghostCfg.wuerzeForm
+              || ghostCfg.wuerzeFehler || ghostCfg.wuerzeWindschatten);
+  }
+
   const SPICE_FORM_MS = 2600;      // wie oft die Tagesform fortgeschrieben wird
   const SPICE_FORM_AMP = 0.075;    // volle Wuerze: +/- 7.5 % Dauertempo
   const SPICE_FORM_STEP = 0.03;    // Schrittweite des Zufallslaufs
@@ -24693,8 +24948,8 @@
     const drop = GHOST_LANE_DROP * (1 - ghostUeber(ghostCfg.lanes));
     return 1 - drop * (mix || 0);
   }
-  const SPICE_BAND_PER_TILE = 0.022;
-  const SPICE_BAND_MAX = 0.13;
+  // SPICE_BAND_PER_TILE und SPICE_BAND_MAX standen hier und trugen das Gummiband. Es ist
+  // seit v0.5.32 "Feld zusammenhalten" (ghostFeldStaffel) - siehe die Begruendung dort.
   // 6. ABSTAND. Es gab keinen Baustein, der Autos auseinander haelt: Windschatten und
   // Attacke ziehen sie zusammen, das Gummiband bremst nur den Fuehrenden. Zwei Ghosts
   // konnten also Stossstange an Stossstange fahren, und genau so wurde es gemeldet.
@@ -24761,26 +25016,27 @@
     if (!g.formAt) { g.formAt = now; g.form = 0; return; }
     if (now - g.formAt < SPICE_FORM_MS) return;
     g.formAt = now;
-    const amp = SPICE_FORM_AMP * ghostCfg.spice;
+    if (!ghostCfg.wuerzeForm) { g.form = 0; return; }
+    const amp = SPICE_FORM_AMP;
     g.form = Math.max(-amp, Math.min(amp,
-      (g.form || 0) + (Math.random() * 2 - 1) * SPICE_FORM_STEP * ghostCfg.spice));
+      (g.form || 0) + (Math.random() * 2 - 1) * SPICE_FORM_STEP));
   }
 
   // Alle fuenf Bausteine auf das Zieltempo. Rueckgabe: der Faktor, und ob gerade attackiert
   // wird (das braucht die Linie, nicht das Tempo).
   function ghostSpice(car, aheadTight) {
     const g = car.ghost, now = Date.now();
-    if (!ghostCfg.spice) { g.attackUntil = 0; return { factor: 1, attack: 0 }; }
+    if (!wuerzeAn()) { g.attackUntil = 0; return { factor: 1, attack: 0 }; }
 
     ghostFormTick(car);
     let f = 1 + (g.form || 0);
 
     // 2. Fehler: gewuerfelt wird EINMAL je angebremster Kurve, nicht je Takt - sonst
     // haengt die Fehlerrate an der Taktfrequenz und nicht am Rennen.
-    if (aheadTight.tight > 0 && aheadTight.dist <= 1) {
+    if (ghostCfg.wuerzeFehler && aheadTight.tight > 0 && aheadTight.dist <= 1) {
       if (g.mistakeArmed !== aheadTight.key) {
         g.mistakeArmed = aheadTight.key;
-        if (Math.random() < SPICE_MISTAKE_P * ghostCfg.spice) {
+        if (Math.random() < SPICE_MISTAKE_P) {
           const d = SPICE_MISTAKE_MS[0]
                   + Math.random() * (SPICE_MISTAKE_MS[1] - SPICE_MISTAKE_MS[0]);
           g.mistakeUntil = now + d;
@@ -24790,14 +25046,14 @@
     } else if (aheadTight.tight === 0) {
       g.mistakeArmed = null;
     }
-    if (g.mistakeUntil && now < g.mistakeUntil) f *= (1 - SPICE_MISTAKE_CUT * ghostCfg.spice);
+    if (g.mistakeUntil && now < g.mistakeUntil) f *= (1 - SPICE_MISTAKE_CUT);
 
     const ah = ghostAhead(car);
     const onStraight = aheadTight.tight === 0;
 
     // 3. Windschatten
-    if (ah && ah.gap <= SPICE_SLIP_TILES && onStraight) {
-      f *= 1 + SPICE_SLIP_GAIN * ghostCfg.spice * (1 - ah.gap / SPICE_SLIP_TILES);
+    if (ghostCfg.wuerzeWindschatten && ah && ah.gap <= SPICE_SLIP_TILES && onStraight) {
+      f *= 1 + SPICE_SLIP_GAIN * (1 - ah.gap / SPICE_SLIP_TILES);
     }
 
     // 4. Attacke
@@ -24830,7 +25086,8 @@
         log(garageLabel(car) + ': kommt nicht vorbei, ordnet sich wieder ein.', 'info');
       }
     }
-    if (!g.attackUntil && g.closeSince && now - g.closeSince > SPICE_ATTACK_ARM_MS
+    if (ghostCfg.wuerzeUeberholen
+        && !g.attackUntil && g.closeSince && now - g.closeSince > SPICE_ATTACK_ARM_MS
         && onStraight
         // 4. KEIN ANGRIFF IN EINE KURVE HINEIN. onStraight prueft den Vorausblick, und den
         // gibt es nur mit Karte - ohne Karte ist er immer "frei", und dann wurde auch mitten
@@ -24840,7 +25097,7 @@
         && now > (g.passBlockUntil || 0)
         && now - (g.attackTriedAt || 0) > SPICE_ATTACK_RETRY_MS) {
       g.attackTriedAt = now;
-      if (Math.random() < SPICE_ATTACK_P * ghostCfg.spice) {
+      if (Math.random() < SPICE_ATTACK_P) {
         // attackUntil bleibt als "eine Sequenz laeuft"-Marke; die Phasen entscheiden.
         // Die Obergrenze steht jetzt bei SPICE_PASS_MAX_MS, nicht bei SPICE_ATTACK_MS.
         g.attackUntil = now + SPICE_PASS_MAX_MS + SPICE_PASS_TUCK_MS;
@@ -24869,7 +25126,7 @@
     // Der Schub gilt NUR in der Phase 'vorbei': in 'raus' baut sich erst der Versatz auf,
     // in 'rein' ist das Manoever gelaufen und ein Schub waere nur noch Draengeln.
     if (g.attackUntil && g.passPhase === 'vorbei') {
-      f *= 1 + SPICE_ATTACK_GAIN * ghostCfg.spice;
+      f *= 1 + SPICE_ATTACK_GAIN;
     }
 
     // 6. Abstand halten, mit ZEITLUECKE statt festem Kachelabstand. Der noetige Abstand
@@ -24879,26 +25136,20 @@
     // es kein Ueberholen.
     const naehern = ghostClosing(car, ah ? ah.gap : null);
     const noetig = SPICE_GAP_MIN + SPICE_GAP_PER_CLOSING * Math.max(0, naehern);
-    if (ah && !g.attackUntil && ah.gap < noetig) {
-      f *= 1 - SPICE_GAP_LIFT * ghostCfg.spice * (1 - ah.gap / noetig);
+    if (ghostCfg.wuerzeAbstand && ah && !g.attackUntil && ah.gap < noetig) {
+      f *= 1 - SPICE_GAP_LIFT * (1 - ah.gap / noetig);
     }
 
-    // 5. Gummiband: nur den Fuehrenden, und nur wenn es einen Zweiten gibt.
-    const field = ghostFieldRacing();
-    if (field.length > 1) {
-      const mine = ghostProgress(car);
-      let leader = true, second = -Infinity;
-      for (const o of field) {
-        if (o === car) continue;
-        const p = ghostProgress(o);
-        if (p > mine) leader = false;
-        if (p > second) second = p;
-      }
-      if (leader && second > -Infinity) {
-        const lead = Math.max(0, mine - second);
-        f *= 1 - Math.min(SPICE_BAND_MAX, lead * SPICE_BAND_PER_TILE) * ghostCfg.spice;
-      }
-    }
+    // ---- 5. DAS GUMMIBAND IST HIER ENTFALLEN ---------------------------------------
+    //
+    // Es bremste den Fuehrenden proportional zu seinem Vorsprung. Seit v0.5.32 tut "Feld
+    // zusammenhalten" (ghostFeldStaffel) dasselbe besser: gestaffelt ueber das GANZE Feld
+    // und symmetrisch um die Mitte, also ohne das mittlere Tempo zu senken.
+    //
+    // Beides zugleich waeren zwei Abschlaege auf dieselbe Groesse - der Fuehrende bekaeme
+    // sie addiert und faellt zurueck, statt gehalten zu werden. Deshalb weg und nicht als
+    // sechster Schalter: ein Schalter, dessen Einschalten eine andere Einstellung kaputt
+    // macht, ist keine Wahl.
 
     // Der Seitenversatz faehrt beim Einordnen ZURUECK statt abzuschalten. Ein Sprung von
     // vollem Versatz auf null ist ein Ruck am Lenkservo und sieht aus wie ein Fehler.
@@ -29022,9 +29273,15 @@
     // faehrt, ist nicht der Fuehrende, also kein Gummiband. Uebrig bleibt der Abstand.
     ghostGapFactor(gaps) {
       const merk = garage.splice(0, garage.length);
-      const spiceVor = ghostCfg.spice;
+      // NUR DEN ABSTANDHALTER an: dieser Prueffstand isoliert ihn, und die anderen Zutaten
+      // wuerden ihn ueberlagern. Vorher stand hier ein globales ghostCfg.spice = 1, also
+      // alle sechs - die Isolierung lief ueber die Eingaben (tight=1, dist=3, hinten
+      // fahrend), was funktionierte, aber jede neue Zutat haette sie still gebrochen.
+      const spiceVor = { g: ghostCfg.wuerzeAbstand, u: ghostCfg.wuerzeUeberholen,
+                         f: ghostCfg.wuerzeForm, e: ghostCfg.wuerzeFehler,
+                         w: ghostCfg.wuerzeWindschatten };
       try {
-        ghostCfg.spice = 1;
+        Object.assign(ghostCfg, WUERZE_AUS, { wuerzeAbstand: true });
         const mk = () => ({ role: 'ghost', tileAt: 0,
                             ghost: { tilesTotal: 0, tileIndex: 0, form: 0,
                                      formAt: Date.now(), attackUntil: 0, closeSince: 0,
@@ -29042,7 +29299,9 @@
       } finally {
         garage.splice(0, garage.length);
         merk.forEach(c => garage.push(c));
-        ghostCfg.spice = spiceVor;
+        ghostCfg.wuerzeAbstand = spiceVor.g; ghostCfg.wuerzeUeberholen = spiceVor.u;
+        ghostCfg.wuerzeForm = spiceVor.f; ghostCfg.wuerzeFehler = spiceVor.e;
+        ghostCfg.wuerzeWindschatten = spiceVor.w;
       }
     },
 
@@ -29167,14 +29426,15 @@
     },
 
     ghostPassRates() {
-      const p = SPICE_ATTACK_P * ghostCfg.spice;
+      // Die Wahrscheinlichkeit ist jetzt die Konstante selbst, sofern der Schalter an ist.
+      const p = ghostCfg.wuerzeUeberholen ? SPICE_ATTACK_P : 0;
       return { reichweite: SPICE_ATTACK_RANGE,
                abstandMin: SPICE_GAP_MIN,
                // Das Fenster, in dem der Verfolger in Reichweite ist, ohne gelupft zu werden.
                fenster: +(SPICE_ATTACK_RANGE - SPICE_GAP_MIN).toFixed(3),
                klebenMs: SPICE_ATTACK_ARM_MS,
                wurfMs: SPICE_ATTACK_RETRY_MS,
-               wuerze: ghostCfg.spice,
+               wuerze: ghostCfg.wuerzeUeberholen ? 1 : 0,
                p: +p.toFixed(4),
                // Erwartete Wartezeit in Sekunden, sobald der Verfolger in Reichweite ist.
                wartenS: p > 0 ? +(SPICE_ATTACK_RETRY_MS / 1000 / p).toFixed(1) : null,
@@ -29184,10 +29444,10 @@
     ghostPassProbe(o) {
       const opt = o || {};
       const merkGarage = garage.splice(0, garage.length);
-      const merkSpice = ghostCfg.spice;
+      const merkSpice = ghostCfg.wuerzeUeberholen;
       const echtNow = Date.now;
       try {
-        ghostCfg.spice = 1;
+        ghostCfg.wuerzeUeberholen = true;
         let uhr = echtNow();
         Date.now = () => uhr;
         const mk = (total) => ({ role: 'ghost', alias: 'P', tileAt: 0, tileCode: 0x02,
@@ -29225,7 +29485,7 @@
         Date.now = echtNow;
         garage.splice(0, garage.length);
         merkGarage.forEach(c => garage.push(c));
-        ghostCfg.spice = merkSpice;
+        ghostCfg.wuerzeUeberholen = merkSpice;
       }
     },
 
@@ -29237,10 +29497,10 @@
     // braucht.
     ghostPassArming(tileCode, versuche) {
       const merkGarage = garage.splice(0, garage.length);
-      const merkSpice = ghostCfg.spice;
+      const merkSpice = ghostCfg.wuerzeUeberholen;
       const echtNow = Date.now;
       try {
-        ghostCfg.spice = 1;
+        ghostCfg.wuerzeUeberholen = true;
         let uhr = echtNow();
         Date.now = () => uhr;
         const mk = (total) => ({ role: 'ghost', alias: 'P', tileAt: 0, tileCode,
@@ -29268,7 +29528,7 @@
         Date.now = echtNow;
         garage.splice(0, garage.length);
         merkGarage.forEach(c => garage.push(c));
-        ghostCfg.spice = merkSpice;
+        ghostCfg.wuerzeUeberholen = merkSpice;
       }
     },
 
@@ -34067,8 +34327,7 @@
     const merk = weather;
     const mittel = async () => {
       const g = await OMEGA_TEST.ghostDriveProbe({ lage: 'codes', takte: 500, code: 'SG8',
-                                                   tileMs: 900, cfg: { spice: 0, speed: 0.5,
-                                                                       leaderBrake: false } });
+        tileMs: 900, cfg: Object.assign({}, WUERZE_AUS, { speed: 0.5, leaderBrake: false }) });
       const f = g.tempo.filter((x) => isFinite(x)).slice(-30);
       return f.reduce((s, x) => s + x, 0) / Math.max(1, f.length);
     };
@@ -34136,6 +34395,103 @@
     return { ok: !schlecht.length,
              mass: zeilen.join(' | ')
                  + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // ---- Der Reifenrahmen zeigt die montierte Mischung ----
+  //
+  // GEMELDET: "die Umrandung der Reifen im Cockpit entspricht nicht dem Reifentyp". Sie
+  // entsprach nie einem: die CSS-Regeln lesen body[data-tyre-mix="..."], und dieses Attribut
+  // wurde nur in applySurface() geschrieben - einer Funktion, die erst bei einem
+  // Wetterwechsel, einem Boxenstopp oder an einem Reifenregler laeuft. Beim Laden lief sie
+  // nie, das Attribut fehlte, alle vier Regeln hatten keinen Treffer, und der Rahmen blieb
+  // auf dem Rueckfallwert Gelb stehen.
+  //
+  // Geprueft wird die ganze Kette und nicht die Zuweisung: Attribut vorhanden, Attribut
+  // gleich dem Modell, und die vier Werte ergeben vier UNTERSCHEIDBARE Ringfarben. Der
+  // letzte Teil faengt den Fall, dass jemand zwei Mischungen dieselbe Farbe gibt - dann
+  // waere die Anzeige da und trotzdem nutzlos.
+  stAdd('Reifenrahmen: Attribut da, gleich dem Modell, vier Farben', () => {
+    const t4 = document.querySelector('.gt3-t4');
+    if (!t4) return { ok: false, mass: '.gt3-t4 fehlt' };
+    const schlecht = [];
+    const attr = document.body.dataset.tyreMix;
+    if (!attr) {
+      schlecht.push('body traegt kein data-tyre-mix - die CSS-Regeln haben keinen Treffer');
+    } else if (attr !== tyres) {
+      schlecht.push('Attribut "' + attr + '" gegen Modell "' + tyres + '"');
+    }
+    // Die vier Ringfarben, ueber das Attribut durchgeschaltet.
+    const merk = document.body.dataset.tyreMix;
+    const farben = {};
+    try {
+      for (const m of MISCHUNG_FOLGE) {
+        document.body.dataset.tyreMix = m;
+        farben[m] = getComputedStyle(t4).getPropertyValue('--mix-farbe').trim();
+      }
+    } finally {
+      if (merk === undefined) delete document.body.dataset.tyreMix;
+      else document.body.dataset.tyreMix = merk;
+    }
+    const werte = Object.keys(farben).map((m) => farben[m]);
+    for (let i = 0; i < werte.length; i++) {
+      if (!werte[i]) schlecht.push(MISCHUNG_FOLGE[i] + ' hat keine Rahmenfarbe');
+      for (let j = i + 1; j < werte.length; j++) {
+        if (werte[i] && werte[i] === werte[j]) {
+          schlecht.push(MISCHUNG_FOLGE[i] + ' und ' + MISCHUNG_FOLGE[j] + ' gleich gefaerbt');
+        }
+      }
+    }
+    return { ok: !schlecht.length,
+             mass: 'Attribut "' + attr + '", Modell "' + tyres + '", Farben '
+                 + MISCHUNG_FOLGE.map((m) => m + '=' + farben[m]).join(' ')
+                 + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // ---- Die Geist-Piktogramme sind spiegelsymmetrisch ----
+  //
+  // GEMELDET: "Geist sollte symmetrisch sein". Er war es an beiden Stellen nicht, und die
+  // Kachel in den Einstellungen hatte einen echten Zeichenfehler - ihr letzter Bodenzacken
+  // ging nach UNTEN (auf y=44 statt auf die Grundlinie y=40), die rechte untere Ecke hing
+  // also unter der Figur. Dazu zwei verschieden geformte Schultern.
+  //
+  // Gemessen wird der PFAD und nicht die Zeichenkette: 400 Punkte abtasten, jeden an der
+  // Mittelachse spiegeln und den naechsten Nachbarn auf gleicher Hoehe suchen. Ein Pfad, der
+  // dieselbe Figur mit anderen Befehlen beschreibt, besteht damit auch - geprueft ist die
+  // Form und nicht ihre Schreibweise.
+  stAdd('Geist-Piktogramme sind spiegelsymmetrisch', () => {
+    const FAELLE = [
+      ['#tab-options [data-sub="opt-ghosts"] svg path', 24, 'Einstellungskachel'],
+      ['.home-feat svg path[d^="M5 20V11"]', 12, 'Merkmalsliste'],
+    ];
+    const schlecht = [], masse = [];
+    for (const [sel, mitte, name] of FAELLE) {
+      const el = document.querySelector(sel);
+      if (!el) { schlecht.push(name + ': Pfad nicht gefunden (' + sel + ')'); continue; }
+      let L;
+      try { L = el.getTotalLength(); } catch (e) {
+        schlecht.push(name + ': nicht messbar (' + e.message + ')'); continue;
+      }
+      if (!(L > 0)) { schlecht.push(name + ': Pfadlaenge 0'); continue; }
+      const pts = [];
+      for (let i = 0; i <= 400; i++) pts.push(el.getPointAtLength(L * i / 400));
+      let maxAbw = 0;
+      for (const p of pts) {
+        const sx = 2 * mitte - p.x;
+        let best = Infinity;
+        for (const q of pts) {
+          const d = Math.hypot(q.x - sx, q.y - p.y);
+          if (d < best) best = d;
+        }
+        if (best > maxAbw) maxAbw = best;
+      }
+      masse.push(name + ' ' + maxAbw.toFixed(3));
+      // 0,25 Einheiten bei 24 bzw. 48 Rastereinheiten - das ist ein Prozent der Figur und
+      // liegt ueber der Abtastauflaesung, aber weit unter allem, was man sehen kann.
+      if (maxAbw > 0.25) schlecht.push(name + ': weicht um ' + maxAbw.toFixed(2) + ' ab');
+    }
+    return { ok: !schlecht.length,
+             mass: masse.join(' | ')
+                 + (schlecht.length ? ' || ' + schlecht.join('; ') : ' | beide symmetrisch') };
   });
 
   // ---- Controller-Vibration: ein Schalter je Ausloeser ----
@@ -34958,11 +35314,11 @@
     if (!window.OMEGA_TEST || !OMEGA_TEST.ghostPassRates) {
       return { skip: true, mass: 'ghostPassRates nicht vorhanden' };
     }
-    const merk = ghostCfg.spice;
+    const merk = ghostCfg.wuerzeUeberholen;
     const schlecht = [];
     let r;
     try {
-      ghostCfg.spice = 0.4;          // die Vorgabe, gefahren ermittelt
+      ghostCfg.wuerzeUeberholen = true;   // ab Werk an, auf Wunsch
       r = OMEGA_TEST.ghostPassRates();
       // 1. Die Reichweite MUSS ueber dem Mindestabstand liegen. Sonst bestreiten die zwei
       //    Regeln dasselbe Band, und der Abstandhalter gewinnt - er wirkt jeden Takt, die
@@ -34981,13 +35337,13 @@
       if (!(r.wartenS <= 10)) {
         schlecht.push('Wartezeit ' + r.wartenS + ' s bei Wuerze ' + r.wuerze);
       }
-      // 4. Gegenprobe: bei Wuerze null darf NIE angesetzt werden, sonst ist der Regler
-      //    keiner.
-      ghostCfg.spice = 0;
+      // 4. Gegenprobe: mit abgeschaltetem Ueberholmanoever darf NIE angesetzt werden,
+      //    sonst ist der Schalter keiner.
+      ghostCfg.wuerzeUeberholen = false;
       const aus = OMEGA_TEST.ghostPassRates();
-      if (aus.p !== 0) schlecht.push('Wuerze 0 wuerfelt trotzdem');
+      if (aus.p !== 0) schlecht.push('abgeschaltet wuerfelt trotzdem');
     } finally {
-      ghostCfg.spice = merk;
+      ghostCfg.wuerzeUeberholen = merk;
     }
     return { ok: schlecht.length === 0,
              mass: 'Reichweite ' + r.reichweite + ' gegen Mindestabstand ' + r.abstandMin
@@ -35962,6 +36318,14 @@
       ['amb-enable', () => ambienceEnabled],
       ['dash-head-toggle', () => headlightsOn],
       ['ghost-leader', () => ghostCfg.leaderBrake],
+      // Die fuenf Wuerz-Schalter. Sie sind der Grund, warum diese Liste gepflegt ist: aus
+      // einem Regler wurden fuenf Kaestchen, und fuenf Kaestchen sind fuenf Gelegenheiten,
+      // Markup und Modell auseinanderlaufen zu lassen.
+      ['ghost-w-pass', () => ghostCfg.wuerzeUeberholen],
+      ['ghost-w-gap', () => ghostCfg.wuerzeAbstand],
+      ['ghost-w-form', () => ghostCfg.wuerzeForm],
+      ['ghost-w-fehler', () => ghostCfg.wuerzeFehler],
+      ['ghost-w-slip', () => ghostCfg.wuerzeWindschatten],
       ['ghost-learn', () => ghostCfg.learn],
       ['ghost-learn-pace', () => ghostCfg.learnPace],
       ['ghost-needcode', () => ghostCfg.needCode],
@@ -36140,7 +36504,7 @@
     const zeilen = [], schlecht = [];
     for (const soll of [0.2, 0.35, 0.7]) {
       const g = await OMEGA_TEST.ghostDriveProbe({ lage: 'codes', takte: 500, code: 'SG8',
-                                                   tileMs: 900, cfg: { spice: 0, speed: soll } });
+                                                   tileMs: 900, cfg: Object.assign({}, WUERZE_AUS, { speed: soll }) });
       const f = g.tempo.filter(x => isFinite(x)).slice(-30);
       const ist = f.reduce((s, x) => s + x, 0) / Math.max(1, f.length);
       const treffer = ist / soll;
@@ -36188,7 +36552,7 @@
       // unter der Schwelle, und die naechste Vorgabenaenderung haette den Test rot gemacht,
       // obwohl nichts kaputt ist.
       const g = await OMEGA_TEST.ghostDriveProbe({ lage, takte: 900, code: 'SG3H2G3R2',
-        tileMs: 900, cfg: { spice: 0, curveSlow: 0.35 } });
+        tileMs: 900, cfg: Object.assign({}, WUERZE_AUS, { curveSlow: 0.35 }) });
       const mittel = (codes) => {
         const v = [];
         g.kachel.forEach((k, i) => {
@@ -36245,8 +36609,8 @@
     const zeilen = [], stumm = [];
     for (const lage of ['codes', 'karte']) {
       for (const feld of ['line', 'lanes']) {
-        const an = { spice: 0 }; an[feld] = 1;
-        const aus = { spice: 0 }; aus[feld] = 0;
+        const an = Object.assign({}, WUERZE_AUS); an[feld] = 1;
+        const aus = Object.assign({}, WUERZE_AUS); aus[feld] = 0;
         const mit = await OMEGA_TEST.ghostDriveProbe({ lage, takte: 500, code: 'SG3H2G3R2',
                                                        tileMs: 900, cfg: an });
         const ohne = await OMEGA_TEST.ghostDriveProbe({ lage, takte: 500, code: 'SG3H2G3R2',
@@ -36280,9 +36644,9 @@
       return { skip: true, mass: 'ghostDriveProbe nicht vorhanden' };
     }
     const an = await OMEGA_TEST.ghostDriveProbe({ lage: 'karte', takte: 1000,
-      code: 'SG3H2G3R2', tileMs: 500, cfg: { spice: 0, learnPace: true } });
+      code: 'SG3H2G3R2', tileMs: 500, cfg: Object.assign({}, WUERZE_AUS, { learnPace: true }) });
     const aus = await OMEGA_TEST.ghostDriveProbe({ lage: 'karte', takte: 1000,
-      code: 'SG3H2G3R2', tileMs: 500, cfg: { spice: 0, learnPace: false } });
+      code: 'SG3H2G3R2', tileMs: 500, cfg: Object.assign({}, WUERZE_AUS, { learnPace: false }) });
     const L = an.lernen;
     const fehler = [];
     if (!L) fehler.push('kein Lernzustand angelegt');
@@ -36321,7 +36685,7 @@
     const rms = (a) => Math.sqrt(a.reduce((s, x) => s + x * x, 0) / Math.max(1, a.length));
     const P = (o) => OMEGA_TEST.ghostDriveProbe(Object.assign(
       { lage: 'karte', takte: 400, code: 'SG3H2G3R2', tileMs: 900,
-        cfg: { spice: 0, line: 0 } }, o));
+        cfg: Object.assign({}, WUERZE_AUS, { line: 0 }) }, o));
     // line auf 0, damit nur das Ausweichen uebrig bleibt - und das ist genau der Fall, in
     // dem es vorher gar nichts tat.
     const ohne = await P({});
@@ -36432,7 +36796,7 @@
       return { skip: true, mass: 'ghostDriveProbe nicht vorhanden' };
     }
     const g = await OMEGA_TEST.ghostDriveProbe({ lage: 'karte', takte: 700,
-      code: 'SG3H2G3R2', tileMs: 900, cfg: { spice: 0 } });
+      code: 'SG3H2G3R2', tileMs: 900, cfg: Object.assign({}, WUERZE_AUS) });
     const KURVEN = [0x03, 0x04, 0x05, 0x06];
     const mittel = (pred) => {
       const v = [];

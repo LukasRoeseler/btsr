@@ -627,8 +627,22 @@
       paths += `<path d="${d}" fill="none" stroke="${s.color}" stroke-width="${s.width || 2}"`
              + `${s.dash ? ` stroke-dasharray="${s.dash}"` : ''} stroke-linejoin="round"/>`;
       if (s.label) {
+        // DIE BESCHRIFTUNG KIPPT NACH INNEN, wenn sie sonst aus dem Bild laeuft. Sie sitzt am
+        // LETZTEN Punkt der Kurve, und der liegt am rechten Rand der Zeichenflaeche - rechts
+        // daneben sind nur noch R = 16 Einheiten. Gemessen ragten "1000/min" und "km/h"
+        // damit ueber den viewBox-Rand und wurden abgeschnitten; auf einem 320-px-Schirm
+        // waren das 11 sichtbare Pixel.
+        //
+        // Die Textbreite wird GESCHAETZT, mit 0,54 em je Zeichen. Das ist keine Messung -
+        // im SVG-Text gibt es zur Bauzeit keine -, aber eine Ueberschaetzung fuer diese
+        // Schrift, und Ueberschaetzen ist hier die richtige Richtung: im Zweifel kippt die
+        // Beschriftung nach innen, und dort steht sie immer richtig.
         const last = s.points[s.points.length - 1];
-        paths += `<text x="${(sx(last[0]) + 4).toFixed(1)}" y="${(sy(last[1]) + 3).toFixed(1)}"`
+        const bx = sx(last[0]);
+        const breit = String(s.label).length * 0.54 * 10;
+        const innen = bx + 4 + breit > W - 2;
+        paths += `<text x="${(innen ? bx - 4 : bx + 4).toFixed(1)}" y="${(sy(last[1]) + 3).toFixed(1)}"`
+               + ` text-anchor="${innen ? 'end' : 'start'}"`
                + ` font-size="10" font-weight="700" fill="${s.color}">${s.label}</text>`;
       }
     }

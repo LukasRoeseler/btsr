@@ -1960,9 +1960,15 @@
     // faehrt, ist nicht der Fuehrende, also kein Gummiband. Uebrig bleibt der Abstand.
     ghostGapFactor(gaps) {
       const merk = garage.splice(0, garage.length);
-      const spiceVor = ghostCfg.spice;
+      // NUR DEN ABSTANDHALTER an: dieser Prueffstand isoliert ihn, und die anderen Zutaten
+      // wuerden ihn ueberlagern. Vorher stand hier ein globales ghostCfg.spice = 1, also
+      // alle sechs - die Isolierung lief ueber die Eingaben (tight=1, dist=3, hinten
+      // fahrend), was funktionierte, aber jede neue Zutat haette sie still gebrochen.
+      const spiceVor = { g: ghostCfg.wuerzeAbstand, u: ghostCfg.wuerzeUeberholen,
+                         f: ghostCfg.wuerzeForm, e: ghostCfg.wuerzeFehler,
+                         w: ghostCfg.wuerzeWindschatten };
       try {
-        ghostCfg.spice = 1;
+        Object.assign(ghostCfg, WUERZE_AUS, { wuerzeAbstand: true });
         const mk = () => ({ role: 'ghost', tileAt: 0,
                             ghost: { tilesTotal: 0, tileIndex: 0, form: 0,
                                      formAt: Date.now(), attackUntil: 0, closeSince: 0,
@@ -1980,7 +1986,9 @@
       } finally {
         garage.splice(0, garage.length);
         merk.forEach(c => garage.push(c));
-        ghostCfg.spice = spiceVor;
+        ghostCfg.wuerzeAbstand = spiceVor.g; ghostCfg.wuerzeUeberholen = spiceVor.u;
+        ghostCfg.wuerzeForm = spiceVor.f; ghostCfg.wuerzeFehler = spiceVor.e;
+        ghostCfg.wuerzeWindschatten = spiceVor.w;
       }
     },
 
@@ -2105,14 +2113,15 @@
     },
 
     ghostPassRates() {
-      const p = SPICE_ATTACK_P * ghostCfg.spice;
+      // Die Wahrscheinlichkeit ist jetzt die Konstante selbst, sofern der Schalter an ist.
+      const p = ghostCfg.wuerzeUeberholen ? SPICE_ATTACK_P : 0;
       return { reichweite: SPICE_ATTACK_RANGE,
                abstandMin: SPICE_GAP_MIN,
                // Das Fenster, in dem der Verfolger in Reichweite ist, ohne gelupft zu werden.
                fenster: +(SPICE_ATTACK_RANGE - SPICE_GAP_MIN).toFixed(3),
                klebenMs: SPICE_ATTACK_ARM_MS,
                wurfMs: SPICE_ATTACK_RETRY_MS,
-               wuerze: ghostCfg.spice,
+               wuerze: ghostCfg.wuerzeUeberholen ? 1 : 0,
                p: +p.toFixed(4),
                // Erwartete Wartezeit in Sekunden, sobald der Verfolger in Reichweite ist.
                wartenS: p > 0 ? +(SPICE_ATTACK_RETRY_MS / 1000 / p).toFixed(1) : null,
@@ -2122,10 +2131,10 @@
     ghostPassProbe(o) {
       const opt = o || {};
       const merkGarage = garage.splice(0, garage.length);
-      const merkSpice = ghostCfg.spice;
+      const merkSpice = ghostCfg.wuerzeUeberholen;
       const echtNow = Date.now;
       try {
-        ghostCfg.spice = 1;
+        ghostCfg.wuerzeUeberholen = true;
         let uhr = echtNow();
         Date.now = () => uhr;
         const mk = (total) => ({ role: 'ghost', alias: 'P', tileAt: 0, tileCode: 0x02,
@@ -2163,7 +2172,7 @@
         Date.now = echtNow;
         garage.splice(0, garage.length);
         merkGarage.forEach(c => garage.push(c));
-        ghostCfg.spice = merkSpice;
+        ghostCfg.wuerzeUeberholen = merkSpice;
       }
     },
 
@@ -2175,10 +2184,10 @@
     // braucht.
     ghostPassArming(tileCode, versuche) {
       const merkGarage = garage.splice(0, garage.length);
-      const merkSpice = ghostCfg.spice;
+      const merkSpice = ghostCfg.wuerzeUeberholen;
       const echtNow = Date.now;
       try {
-        ghostCfg.spice = 1;
+        ghostCfg.wuerzeUeberholen = true;
         let uhr = echtNow();
         Date.now = () => uhr;
         const mk = (total) => ({ role: 'ghost', alias: 'P', tileAt: 0, tileCode,
@@ -2206,7 +2215,7 @@
         Date.now = echtNow;
         garage.splice(0, garage.length);
         merkGarage.forEach(c => garage.push(c));
-        ghostCfg.spice = merkSpice;
+        ghostCfg.wuerzeUeberholen = merkSpice;
       }
     },
 

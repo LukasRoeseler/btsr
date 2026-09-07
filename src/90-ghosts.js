@@ -1429,7 +1429,27 @@
     // gekennzeichnet. Sie greift an sechs Stellen gleichzeitig ins Tempo ein, und solange
     // Ortung und Ueberholen nicht sauber sind, ist sie die Zutat, die jede Messung
     // verrauscht.
-    spice: 0,
+    // ---- DIE RENNWUERZE, IN EINZELNE SCHALTER ZERLEGT ------------------------------
+    //
+    // Bis v0.5.33 war das EIN Regler fuer sechs Bausteine. Wer ihn aufdrehte, bekam alle
+    // sechs und wusste danach nicht, welcher davon das Gesehene erklaert - deshalb stand er
+    // ab Werk auf 0 und war damit praktisch tot. Jetzt je Baustein ein Schalter, alle
+    // ausdruecklich experimentell.
+    //
+    // DIE STAERKEN SIND JETZT DIE KONSTANTEN SELBST. Vorher wurde jeder Baustein mit dem
+    // Reglerwert multipliziert; die SPICE_*-Konstanten tragen im Kommentar "volle Wuerze",
+    // sind also genau die Werte bei 1. Ein Schalter, der auf 40 Prozent einschaltet, waere
+    // eine versteckte zweite Einstellung.
+    //
+    // DAS GUMMIBAND FEHLT HIER, und das ist Absicht: es ist seit v0.5.32 "Feld
+    // zusammenhalten" (ghostFeldStaffel) und dort besser - gestaffelt ueber das ganze Feld
+    // statt nur auf den Fuehrenden. Zwei Regeln, die beide den Fuehrenden bremsen, waeren
+    // zwei Abschlaege auf dieselbe Groesse.
+    wuerzeUeberholen: true,   // bestellt: an
+    wuerzeAbstand: true,      // bestellt: an, "sodass sie sich nicht rammen"
+    wuerzeForm: false,
+    wuerzeFehler: false,
+    wuerzeWindschatten: false,
     // Lernen von Runde zu Runde, standardmaessig aus: es aendert das Fahrverhalten ueber
     // ein Rennen hinweg, und das soll niemand ungefragt bekommen.
     learnPace: false,
@@ -1451,6 +1471,23 @@
     // und faehrt nur dort, wo es weiss, wo es ist.
     needCode: false,
   };
+
+  // ---- Der Anfangsabgleich der fuenf Wuerz-Kaestchen ---------------------------------
+  //
+  // HIER UND NICHT BEI DEN ZUHOERERN in 80-sound.js. Ein Kaestchen im Markup und sein Feld
+  // in ghostCfg sind zwei Orte fuer einen Zustand, und der change-Zuhoerer feuert beim Laden
+  // NICHT - ohne diesen Abgleich zeigte die Oberflaeche das eine und der Ghost taete das
+  // andere, bis jemand den Schalter zweimal umlegt. Zwei Regler dieser App standen schon
+  // einmal so da.
+  //
+  // Und warum nicht in 80-sound.js, wo die Zuhoerer stehen: ghostCfg ist ein const in DIESER
+  // Datei, und 80-sound.js laeuft vorher. Ein Schreibzugriff von dort trifft die temporale
+  // Todeszone, wirft, und nimmt den Rest der IIFE mit - gemeldet dann als ein Fehler an
+  // ganz anderer Stelle. Genau so ist es mir beim Bauen passiert.
+  for (const [id, feld] of (typeof WUERZE_SCHALTER === 'undefined' ? [] : WUERZE_SCHALTER)) {
+    const el = document.getElementById(id);
+    if (el) ghostCfg[feld] = el.checked;
+  }
 
   // Per-tile behaviour, data-driven on purpose: the hairpin and left-curve codes are not
   // known yet, and adding them must not require touching code.
@@ -2402,6 +2439,16 @@
   //
   // Alles skaliert mit EINEM Regler, und auf 0 ist jeder Baustein wirkungslos - das ist
   // die Einstellung, in der die Ideallinie und die Querablage gemessen werden koennen.
+  // Alle Bausteine aus, als Objekt zum Ueberschreiben. Ein Prueffstand, der das
+  // Fahrverhalten OHNE Zutaten messen will, nimmt das - und ein sechster Baustein laesst
+  // dann nicht neun Prueffstaende still durchfallen, weil jeder seine eigene Liste haette.
+  const WUERZE_AUS = { wuerzeUeberholen: false, wuerzeAbstand: false, wuerzeForm: false,
+                       wuerzeFehler: false, wuerzeWindschatten: false };
+  function wuerzeAn() {
+    return !!(ghostCfg.wuerzeUeberholen || ghostCfg.wuerzeAbstand || ghostCfg.wuerzeForm
+              || ghostCfg.wuerzeFehler || ghostCfg.wuerzeWindschatten);
+  }
+
   const SPICE_FORM_MS = 2600;      // wie oft die Tagesform fortgeschrieben wird
   const SPICE_FORM_AMP = 0.075;    // volle Wuerze: +/- 7.5 % Dauertempo
   const SPICE_FORM_STEP = 0.03;    // Schrittweite des Zufallslaufs
@@ -2536,8 +2583,8 @@
     const drop = GHOST_LANE_DROP * (1 - ghostUeber(ghostCfg.lanes));
     return 1 - drop * (mix || 0);
   }
-  const SPICE_BAND_PER_TILE = 0.022;
-  const SPICE_BAND_MAX = 0.13;
+  // SPICE_BAND_PER_TILE und SPICE_BAND_MAX standen hier und trugen das Gummiband. Es ist
+  // seit v0.5.32 "Feld zusammenhalten" (ghostFeldStaffel) - siehe die Begruendung dort.
   // 6. ABSTAND. Es gab keinen Baustein, der Autos auseinander haelt: Windschatten und
   // Attacke ziehen sie zusammen, das Gummiband bremst nur den Fuehrenden. Zwei Ghosts
   // konnten also Stossstange an Stossstange fahren, und genau so wurde es gemeldet.
@@ -2604,26 +2651,27 @@
     if (!g.formAt) { g.formAt = now; g.form = 0; return; }
     if (now - g.formAt < SPICE_FORM_MS) return;
     g.formAt = now;
-    const amp = SPICE_FORM_AMP * ghostCfg.spice;
+    if (!ghostCfg.wuerzeForm) { g.form = 0; return; }
+    const amp = SPICE_FORM_AMP;
     g.form = Math.max(-amp, Math.min(amp,
-      (g.form || 0) + (Math.random() * 2 - 1) * SPICE_FORM_STEP * ghostCfg.spice));
+      (g.form || 0) + (Math.random() * 2 - 1) * SPICE_FORM_STEP));
   }
 
   // Alle fuenf Bausteine auf das Zieltempo. Rueckgabe: der Faktor, und ob gerade attackiert
   // wird (das braucht die Linie, nicht das Tempo).
   function ghostSpice(car, aheadTight) {
     const g = car.ghost, now = Date.now();
-    if (!ghostCfg.spice) { g.attackUntil = 0; return { factor: 1, attack: 0 }; }
+    if (!wuerzeAn()) { g.attackUntil = 0; return { factor: 1, attack: 0 }; }
 
     ghostFormTick(car);
     let f = 1 + (g.form || 0);
 
     // 2. Fehler: gewuerfelt wird EINMAL je angebremster Kurve, nicht je Takt - sonst
     // haengt die Fehlerrate an der Taktfrequenz und nicht am Rennen.
-    if (aheadTight.tight > 0 && aheadTight.dist <= 1) {
+    if (ghostCfg.wuerzeFehler && aheadTight.tight > 0 && aheadTight.dist <= 1) {
       if (g.mistakeArmed !== aheadTight.key) {
         g.mistakeArmed = aheadTight.key;
-        if (Math.random() < SPICE_MISTAKE_P * ghostCfg.spice) {
+        if (Math.random() < SPICE_MISTAKE_P) {
           const d = SPICE_MISTAKE_MS[0]
                   + Math.random() * (SPICE_MISTAKE_MS[1] - SPICE_MISTAKE_MS[0]);
           g.mistakeUntil = now + d;
@@ -2633,14 +2681,14 @@
     } else if (aheadTight.tight === 0) {
       g.mistakeArmed = null;
     }
-    if (g.mistakeUntil && now < g.mistakeUntil) f *= (1 - SPICE_MISTAKE_CUT * ghostCfg.spice);
+    if (g.mistakeUntil && now < g.mistakeUntil) f *= (1 - SPICE_MISTAKE_CUT);
 
     const ah = ghostAhead(car);
     const onStraight = aheadTight.tight === 0;
 
     // 3. Windschatten
-    if (ah && ah.gap <= SPICE_SLIP_TILES && onStraight) {
-      f *= 1 + SPICE_SLIP_GAIN * ghostCfg.spice * (1 - ah.gap / SPICE_SLIP_TILES);
+    if (ghostCfg.wuerzeWindschatten && ah && ah.gap <= SPICE_SLIP_TILES && onStraight) {
+      f *= 1 + SPICE_SLIP_GAIN * (1 - ah.gap / SPICE_SLIP_TILES);
     }
 
     // 4. Attacke
@@ -2673,7 +2721,8 @@
         log(garageLabel(car) + ': kommt nicht vorbei, ordnet sich wieder ein.', 'info');
       }
     }
-    if (!g.attackUntil && g.closeSince && now - g.closeSince > SPICE_ATTACK_ARM_MS
+    if (ghostCfg.wuerzeUeberholen
+        && !g.attackUntil && g.closeSince && now - g.closeSince > SPICE_ATTACK_ARM_MS
         && onStraight
         // 4. KEIN ANGRIFF IN EINE KURVE HINEIN. onStraight prueft den Vorausblick, und den
         // gibt es nur mit Karte - ohne Karte ist er immer "frei", und dann wurde auch mitten
@@ -2683,7 +2732,7 @@
         && now > (g.passBlockUntil || 0)
         && now - (g.attackTriedAt || 0) > SPICE_ATTACK_RETRY_MS) {
       g.attackTriedAt = now;
-      if (Math.random() < SPICE_ATTACK_P * ghostCfg.spice) {
+      if (Math.random() < SPICE_ATTACK_P) {
         // attackUntil bleibt als "eine Sequenz laeuft"-Marke; die Phasen entscheiden.
         // Die Obergrenze steht jetzt bei SPICE_PASS_MAX_MS, nicht bei SPICE_ATTACK_MS.
         g.attackUntil = now + SPICE_PASS_MAX_MS + SPICE_PASS_TUCK_MS;
@@ -2712,7 +2761,7 @@
     // Der Schub gilt NUR in der Phase 'vorbei': in 'raus' baut sich erst der Versatz auf,
     // in 'rein' ist das Manoever gelaufen und ein Schub waere nur noch Draengeln.
     if (g.attackUntil && g.passPhase === 'vorbei') {
-      f *= 1 + SPICE_ATTACK_GAIN * ghostCfg.spice;
+      f *= 1 + SPICE_ATTACK_GAIN;
     }
 
     // 6. Abstand halten, mit ZEITLUECKE statt festem Kachelabstand. Der noetige Abstand
@@ -2722,26 +2771,20 @@
     // es kein Ueberholen.
     const naehern = ghostClosing(car, ah ? ah.gap : null);
     const noetig = SPICE_GAP_MIN + SPICE_GAP_PER_CLOSING * Math.max(0, naehern);
-    if (ah && !g.attackUntil && ah.gap < noetig) {
-      f *= 1 - SPICE_GAP_LIFT * ghostCfg.spice * (1 - ah.gap / noetig);
+    if (ghostCfg.wuerzeAbstand && ah && !g.attackUntil && ah.gap < noetig) {
+      f *= 1 - SPICE_GAP_LIFT * (1 - ah.gap / noetig);
     }
 
-    // 5. Gummiband: nur den Fuehrenden, und nur wenn es einen Zweiten gibt.
-    const field = ghostFieldRacing();
-    if (field.length > 1) {
-      const mine = ghostProgress(car);
-      let leader = true, second = -Infinity;
-      for (const o of field) {
-        if (o === car) continue;
-        const p = ghostProgress(o);
-        if (p > mine) leader = false;
-        if (p > second) second = p;
-      }
-      if (leader && second > -Infinity) {
-        const lead = Math.max(0, mine - second);
-        f *= 1 - Math.min(SPICE_BAND_MAX, lead * SPICE_BAND_PER_TILE) * ghostCfg.spice;
-      }
-    }
+    // ---- 5. DAS GUMMIBAND IST HIER ENTFALLEN ---------------------------------------
+    //
+    // Es bremste den Fuehrenden proportional zu seinem Vorsprung. Seit v0.5.32 tut "Feld
+    // zusammenhalten" (ghostFeldStaffel) dasselbe besser: gestaffelt ueber das GANZE Feld
+    // und symmetrisch um die Mitte, also ohne das mittlere Tempo zu senken.
+    //
+    // Beides zugleich waeren zwei Abschlaege auf dieselbe Groesse - der Fuehrende bekaeme
+    // sie addiert und faellt zurueck, statt gehalten zu werden. Deshalb weg und nicht als
+    // sechster Schalter: ein Schalter, dessen Einschalten eine andere Einstellung kaputt
+    // macht, ist keine Wahl.
 
     // Der Seitenversatz faehrt beim Einordnen ZURUECK statt abzuschalten. Ein Sprung von
     // vollem Versatz auf null ist ein Ruck am Lenkservo und sieht aus wie ein Fehler.

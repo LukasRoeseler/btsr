@@ -3202,8 +3202,7 @@
     const merk = weather;
     const mittel = async () => {
       const g = await OMEGA_TEST.ghostDriveProbe({ lage: 'codes', takte: 500, code: 'SG8',
-                                                   tileMs: 900, cfg: { spice: 0, speed: 0.5,
-                                                                       leaderBrake: false } });
+        tileMs: 900, cfg: Object.assign({}, WUERZE_AUS, { speed: 0.5, leaderBrake: false }) });
       const f = g.tempo.filter((x) => isFinite(x)).slice(-30);
       return f.reduce((s, x) => s + x, 0) / Math.max(1, f.length);
     };
@@ -3271,6 +3270,103 @@
     return { ok: !schlecht.length,
              mass: zeilen.join(' | ')
                  + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // ---- Der Reifenrahmen zeigt die montierte Mischung ----
+  //
+  // GEMELDET: "die Umrandung der Reifen im Cockpit entspricht nicht dem Reifentyp". Sie
+  // entsprach nie einem: die CSS-Regeln lesen body[data-tyre-mix="..."], und dieses Attribut
+  // wurde nur in applySurface() geschrieben - einer Funktion, die erst bei einem
+  // Wetterwechsel, einem Boxenstopp oder an einem Reifenregler laeuft. Beim Laden lief sie
+  // nie, das Attribut fehlte, alle vier Regeln hatten keinen Treffer, und der Rahmen blieb
+  // auf dem Rueckfallwert Gelb stehen.
+  //
+  // Geprueft wird die ganze Kette und nicht die Zuweisung: Attribut vorhanden, Attribut
+  // gleich dem Modell, und die vier Werte ergeben vier UNTERSCHEIDBARE Ringfarben. Der
+  // letzte Teil faengt den Fall, dass jemand zwei Mischungen dieselbe Farbe gibt - dann
+  // waere die Anzeige da und trotzdem nutzlos.
+  stAdd('Reifenrahmen: Attribut da, gleich dem Modell, vier Farben', () => {
+    const t4 = document.querySelector('.gt3-t4');
+    if (!t4) return { ok: false, mass: '.gt3-t4 fehlt' };
+    const schlecht = [];
+    const attr = document.body.dataset.tyreMix;
+    if (!attr) {
+      schlecht.push('body traegt kein data-tyre-mix - die CSS-Regeln haben keinen Treffer');
+    } else if (attr !== tyres) {
+      schlecht.push('Attribut "' + attr + '" gegen Modell "' + tyres + '"');
+    }
+    // Die vier Ringfarben, ueber das Attribut durchgeschaltet.
+    const merk = document.body.dataset.tyreMix;
+    const farben = {};
+    try {
+      for (const m of MISCHUNG_FOLGE) {
+        document.body.dataset.tyreMix = m;
+        farben[m] = getComputedStyle(t4).getPropertyValue('--mix-farbe').trim();
+      }
+    } finally {
+      if (merk === undefined) delete document.body.dataset.tyreMix;
+      else document.body.dataset.tyreMix = merk;
+    }
+    const werte = Object.keys(farben).map((m) => farben[m]);
+    for (let i = 0; i < werte.length; i++) {
+      if (!werte[i]) schlecht.push(MISCHUNG_FOLGE[i] + ' hat keine Rahmenfarbe');
+      for (let j = i + 1; j < werte.length; j++) {
+        if (werte[i] && werte[i] === werte[j]) {
+          schlecht.push(MISCHUNG_FOLGE[i] + ' und ' + MISCHUNG_FOLGE[j] + ' gleich gefaerbt');
+        }
+      }
+    }
+    return { ok: !schlecht.length,
+             mass: 'Attribut "' + attr + '", Modell "' + tyres + '", Farben '
+                 + MISCHUNG_FOLGE.map((m) => m + '=' + farben[m]).join(' ')
+                 + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // ---- Die Geist-Piktogramme sind spiegelsymmetrisch ----
+  //
+  // GEMELDET: "Geist sollte symmetrisch sein". Er war es an beiden Stellen nicht, und die
+  // Kachel in den Einstellungen hatte einen echten Zeichenfehler - ihr letzter Bodenzacken
+  // ging nach UNTEN (auf y=44 statt auf die Grundlinie y=40), die rechte untere Ecke hing
+  // also unter der Figur. Dazu zwei verschieden geformte Schultern.
+  //
+  // Gemessen wird der PFAD und nicht die Zeichenkette: 400 Punkte abtasten, jeden an der
+  // Mittelachse spiegeln und den naechsten Nachbarn auf gleicher Hoehe suchen. Ein Pfad, der
+  // dieselbe Figur mit anderen Befehlen beschreibt, besteht damit auch - geprueft ist die
+  // Form und nicht ihre Schreibweise.
+  stAdd('Geist-Piktogramme sind spiegelsymmetrisch', () => {
+    const FAELLE = [
+      ['#tab-options [data-sub="opt-ghosts"] svg path', 24, 'Einstellungskachel'],
+      ['.home-feat svg path[d^="M5 20V11"]', 12, 'Merkmalsliste'],
+    ];
+    const schlecht = [], masse = [];
+    for (const [sel, mitte, name] of FAELLE) {
+      const el = document.querySelector(sel);
+      if (!el) { schlecht.push(name + ': Pfad nicht gefunden (' + sel + ')'); continue; }
+      let L;
+      try { L = el.getTotalLength(); } catch (e) {
+        schlecht.push(name + ': nicht messbar (' + e.message + ')'); continue;
+      }
+      if (!(L > 0)) { schlecht.push(name + ': Pfadlaenge 0'); continue; }
+      const pts = [];
+      for (let i = 0; i <= 400; i++) pts.push(el.getPointAtLength(L * i / 400));
+      let maxAbw = 0;
+      for (const p of pts) {
+        const sx = 2 * mitte - p.x;
+        let best = Infinity;
+        for (const q of pts) {
+          const d = Math.hypot(q.x - sx, q.y - p.y);
+          if (d < best) best = d;
+        }
+        if (best > maxAbw) maxAbw = best;
+      }
+      masse.push(name + ' ' + maxAbw.toFixed(3));
+      // 0,25 Einheiten bei 24 bzw. 48 Rastereinheiten - das ist ein Prozent der Figur und
+      // liegt ueber der Abtastauflaesung, aber weit unter allem, was man sehen kann.
+      if (maxAbw > 0.25) schlecht.push(name + ': weicht um ' + maxAbw.toFixed(2) + ' ab');
+    }
+    return { ok: !schlecht.length,
+             mass: masse.join(' | ')
+                 + (schlecht.length ? ' || ' + schlecht.join('; ') : ' | beide symmetrisch') };
   });
 
   // ---- Controller-Vibration: ein Schalter je Ausloeser ----
@@ -4093,11 +4189,11 @@
     if (!window.OMEGA_TEST || !OMEGA_TEST.ghostPassRates) {
       return { skip: true, mass: 'ghostPassRates nicht vorhanden' };
     }
-    const merk = ghostCfg.spice;
+    const merk = ghostCfg.wuerzeUeberholen;
     const schlecht = [];
     let r;
     try {
-      ghostCfg.spice = 0.4;          // die Vorgabe, gefahren ermittelt
+      ghostCfg.wuerzeUeberholen = true;   // ab Werk an, auf Wunsch
       r = OMEGA_TEST.ghostPassRates();
       // 1. Die Reichweite MUSS ueber dem Mindestabstand liegen. Sonst bestreiten die zwei
       //    Regeln dasselbe Band, und der Abstandhalter gewinnt - er wirkt jeden Takt, die
@@ -4116,13 +4212,13 @@
       if (!(r.wartenS <= 10)) {
         schlecht.push('Wartezeit ' + r.wartenS + ' s bei Wuerze ' + r.wuerze);
       }
-      // 4. Gegenprobe: bei Wuerze null darf NIE angesetzt werden, sonst ist der Regler
-      //    keiner.
-      ghostCfg.spice = 0;
+      // 4. Gegenprobe: mit abgeschaltetem Ueberholmanoever darf NIE angesetzt werden,
+      //    sonst ist der Schalter keiner.
+      ghostCfg.wuerzeUeberholen = false;
       const aus = OMEGA_TEST.ghostPassRates();
-      if (aus.p !== 0) schlecht.push('Wuerze 0 wuerfelt trotzdem');
+      if (aus.p !== 0) schlecht.push('abgeschaltet wuerfelt trotzdem');
     } finally {
-      ghostCfg.spice = merk;
+      ghostCfg.wuerzeUeberholen = merk;
     }
     return { ok: schlecht.length === 0,
              mass: 'Reichweite ' + r.reichweite + ' gegen Mindestabstand ' + r.abstandMin
@@ -5097,6 +5193,14 @@
       ['amb-enable', () => ambienceEnabled],
       ['dash-head-toggle', () => headlightsOn],
       ['ghost-leader', () => ghostCfg.leaderBrake],
+      // Die fuenf Wuerz-Schalter. Sie sind der Grund, warum diese Liste gepflegt ist: aus
+      // einem Regler wurden fuenf Kaestchen, und fuenf Kaestchen sind fuenf Gelegenheiten,
+      // Markup und Modell auseinanderlaufen zu lassen.
+      ['ghost-w-pass', () => ghostCfg.wuerzeUeberholen],
+      ['ghost-w-gap', () => ghostCfg.wuerzeAbstand],
+      ['ghost-w-form', () => ghostCfg.wuerzeForm],
+      ['ghost-w-fehler', () => ghostCfg.wuerzeFehler],
+      ['ghost-w-slip', () => ghostCfg.wuerzeWindschatten],
       ['ghost-learn', () => ghostCfg.learn],
       ['ghost-learn-pace', () => ghostCfg.learnPace],
       ['ghost-needcode', () => ghostCfg.needCode],
@@ -5275,7 +5379,7 @@
     const zeilen = [], schlecht = [];
     for (const soll of [0.2, 0.35, 0.7]) {
       const g = await OMEGA_TEST.ghostDriveProbe({ lage: 'codes', takte: 500, code: 'SG8',
-                                                   tileMs: 900, cfg: { spice: 0, speed: soll } });
+                                                   tileMs: 900, cfg: Object.assign({}, WUERZE_AUS, { speed: soll }) });
       const f = g.tempo.filter(x => isFinite(x)).slice(-30);
       const ist = f.reduce((s, x) => s + x, 0) / Math.max(1, f.length);
       const treffer = ist / soll;
@@ -5323,7 +5427,7 @@
       // unter der Schwelle, und die naechste Vorgabenaenderung haette den Test rot gemacht,
       // obwohl nichts kaputt ist.
       const g = await OMEGA_TEST.ghostDriveProbe({ lage, takte: 900, code: 'SG3H2G3R2',
-        tileMs: 900, cfg: { spice: 0, curveSlow: 0.35 } });
+        tileMs: 900, cfg: Object.assign({}, WUERZE_AUS, { curveSlow: 0.35 }) });
       const mittel = (codes) => {
         const v = [];
         g.kachel.forEach((k, i) => {
@@ -5380,8 +5484,8 @@
     const zeilen = [], stumm = [];
     for (const lage of ['codes', 'karte']) {
       for (const feld of ['line', 'lanes']) {
-        const an = { spice: 0 }; an[feld] = 1;
-        const aus = { spice: 0 }; aus[feld] = 0;
+        const an = Object.assign({}, WUERZE_AUS); an[feld] = 1;
+        const aus = Object.assign({}, WUERZE_AUS); aus[feld] = 0;
         const mit = await OMEGA_TEST.ghostDriveProbe({ lage, takte: 500, code: 'SG3H2G3R2',
                                                        tileMs: 900, cfg: an });
         const ohne = await OMEGA_TEST.ghostDriveProbe({ lage, takte: 500, code: 'SG3H2G3R2',
@@ -5415,9 +5519,9 @@
       return { skip: true, mass: 'ghostDriveProbe nicht vorhanden' };
     }
     const an = await OMEGA_TEST.ghostDriveProbe({ lage: 'karte', takte: 1000,
-      code: 'SG3H2G3R2', tileMs: 500, cfg: { spice: 0, learnPace: true } });
+      code: 'SG3H2G3R2', tileMs: 500, cfg: Object.assign({}, WUERZE_AUS, { learnPace: true }) });
     const aus = await OMEGA_TEST.ghostDriveProbe({ lage: 'karte', takte: 1000,
-      code: 'SG3H2G3R2', tileMs: 500, cfg: { spice: 0, learnPace: false } });
+      code: 'SG3H2G3R2', tileMs: 500, cfg: Object.assign({}, WUERZE_AUS, { learnPace: false }) });
     const L = an.lernen;
     const fehler = [];
     if (!L) fehler.push('kein Lernzustand angelegt');
@@ -5456,7 +5560,7 @@
     const rms = (a) => Math.sqrt(a.reduce((s, x) => s + x * x, 0) / Math.max(1, a.length));
     const P = (o) => OMEGA_TEST.ghostDriveProbe(Object.assign(
       { lage: 'karte', takte: 400, code: 'SG3H2G3R2', tileMs: 900,
-        cfg: { spice: 0, line: 0 } }, o));
+        cfg: Object.assign({}, WUERZE_AUS, { line: 0 }) }, o));
     // line auf 0, damit nur das Ausweichen uebrig bleibt - und das ist genau der Fall, in
     // dem es vorher gar nichts tat.
     const ohne = await P({});
@@ -5567,7 +5671,7 @@
       return { skip: true, mass: 'ghostDriveProbe nicht vorhanden' };
     }
     const g = await OMEGA_TEST.ghostDriveProbe({ lage: 'karte', takte: 700,
-      code: 'SG3H2G3R2', tileMs: 900, cfg: { spice: 0 } });
+      code: 'SG3H2G3R2', tileMs: 900, cfg: Object.assign({}, WUERZE_AUS) });
     const KURVEN = [0x03, 0x04, 0x05, 0x06];
     const mittel = (pred) => {
       const v = [];

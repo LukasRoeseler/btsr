@@ -975,11 +975,33 @@
   $('lat-hold-here').addEventListener('click', () => { lat.stepAt = Date.now(); latRender(); });
   $('lat-reset').addEventListener('click', () => { lat.rows = []; lat.tiles = 0; latRender(); });
 
-  $('ghost-spice').addEventListener('input', (e) => {
-    ghostCfg.spice = parseFloat(e.target.value);
-    $('ghost-spice-val').textContent = ghostCfg.spice === 0
-      ? 'aus' : Math.round(ghostCfg.spice * 100) + '%';
-  });
+  // ---- Die fuenf Wuerz-Schalter -------------------------------------------------------
+  //
+  // Aus einem Regler sind fuenf Kaestchen geworden. Die Liste steht hier und nicht als fuenf
+  // gleiche Bloecke: ein sechster Baustein ist dann eine Zeile, und die Zuordnung
+  // Element-id zu Modellfeld ist an einer Stelle nachzulesen.
+  //
+  // DER ANFANGSABGLEICH STEHT NICHT HIER, und das ist eine Berichtigung mit Blutspur:
+  // `ghostCfg` ist ein const in 90-ghosts.js, also in einer SPAETEREN Datei derselben IIFE.
+  // Zur Aufbauzeit dieser Zeilen liegt es in seiner temporalen Todeszone - ein Schreibzugriff
+  // darauf wirft, und der Wurf nimmt den ganzen Rest der IIFE mit. Gemeldet wird er an
+  // voelig anderer Stelle ("Cannot access 'padConnected' before initialization"), weil dort
+  // der erste Zeitgeber auf eine Variable trifft, die nie angelegt wurde. Genau diese Falle
+  // hat in diesem Projekt schon einmal einen Regler gekostet.
+  //
+  // Die Zuhoerer sind unbedenklich: sie laufen erst, wenn jemand klickt. Der Abgleich steht
+  // bei ghostCfg selbst, siehe dort.
+  const WUERZE_SCHALTER = [
+    ['ghost-w-pass', 'wuerzeUeberholen'],
+    ['ghost-w-gap', 'wuerzeAbstand'],
+    ['ghost-w-form', 'wuerzeForm'],
+    ['ghost-w-fehler', 'wuerzeFehler'],
+    ['ghost-w-slip', 'wuerzeWindschatten'],
+  ];
+  for (const [id, feld] of WUERZE_SCHALTER) {
+    const el = $(id);
+    if (el) el.addEventListener('change', (e) => { ghostCfg[feld] = e.target.checked; });
+  }
 
   $('ghost-line').addEventListener('input', (e) => {
     ghostCfg.line = parseFloat(e.target.value);

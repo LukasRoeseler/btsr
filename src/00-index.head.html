@@ -1936,8 +1936,31 @@
   @media (max-width: 560px) {
     /* Narrow screens: the control drops under its label, but stays inside the same shaded
        band, so the pairing survives the reflow. */
-    .opt-row { grid-template-columns: 1fr; gap: 8px; }
+    /* minmax(0, 1fr) UND NICHT 1fr, und der Unterschied ist der gemeldete Ueberlauf:
+       `1fr` bedeutet `minmax(auto, 1fr)`, und `auto` laesst die Spalte nicht unter den
+       min-content-Bedarf ihres Inhalts fallen. Der ist bei einer Reglerzeile 264 px - ein
+       Schiebeelement von mindestens 90 px, zwei Knoepfe und eine Wertspalte von 58 px -,
+       waehrend die Zeile auf einem 320-px-Schirm nur 230 px breit ist. Die Spalte blieb
+       also 264 px, und der Regler lief 3 px ueber den Bildschirmrand hinaus.
+       Die Regel eine Bildschirmhoehe weiter oben macht es fuer breite Schirme schon richtig;
+       hier war sie ueberschrieben. */
+    .opt-row { grid-template-columns: minmax(0, 1fr); gap: 8px; }
     .opt-row > :last-child { justify-self: start; }
+    /* Und der Inhalt muss dann auch WIRKLICH schrumpfen. Ein Flex-Element schrumpft nicht
+       unter seine eigene Mindestbreite, also bekommen die drei Teile hier die Erlaubnis:
+       das Schiebeelement gibt nach (es ist der einzige Teil, der Breite ohne Bedeutung
+       hat), die Wertspalte begnuegt sich mit vier Zeichen statt 58 px. */
+    /* UND DER REGLER MUSS SICH STRECKEN. Die Zeile darueber gibt dem letzten Kind
+       `justify-self: start`, damit ein Schiebeschalter links steht und nicht ueber die
+       halbe Zeile gezogen wird. Fuer eine Reglergruppe heisst `start` aber: nimm deine
+       max-content-Breite und richte sie links aus - die Spaltenbreite gilt dann NICHT
+       mehr, und genau deshalb blieb der Regler bei 233 px in einer 202 px breiten Spalte
+       und lief 3 px ueber den Bildschirmrand. Gemessen, nachdem minmax(0, 1fr) die Spalte
+       schon richtig geschrumpft hatte: die Spalte war schmal, das Kind hielt seine Breite.
+       Also stretch nur fuer die Reglergruppe, start bleibt fuer alles andere. */
+    .opt-row > .opt-slider { justify-self: stretch; min-width: 0; }
+    .opt-slider input[type=range] { min-width: 0; flex: 1 1 auto; }
+    .opt-val { min-width: 4ch; }
   }
 
   /* Touch sizing. Keyed on the POINTER, not on the viewport width: a small window on a
@@ -2220,12 +2243,25 @@
   .cm-new { color: var(--warn); font-weight: 700; }
 
   /* ---- Toene in der Doku ---- */
-  .snd-grid { display: grid; gap: 8px; grid-template-columns: 1fr; }
-  @media (min-width: 780px) { .snd-grid { grid-template-columns: 1fr 1fr; } }
-  .snd-row { display: flex; gap: 10px; align-items: center;
+  /* DIESELBE FALLE WIE BEI .opt-row: `1fr` ist `minmax(auto, 1fr)` und schrumpft nicht
+     unter den min-content-Bedarf. Der ist hier 311 px - ein Abspieler von festen 178 px
+     plus das laengste Wort der Beschreibung -, und die Spalte war auf einem 320-px-Schirm
+     nur 230 px breit. Die Zeile lief 81 px aus ihrem Kasten, und 26 davon ueber den
+     Bildschirmrand. Gemeldet als "manche Texte gehen immer noch ueber den Bildschirm
+     hinaus". */
+  .snd-grid { display: grid; gap: 8px; grid-template-columns: minmax(0, 1fr); }
+  @media (min-width: 780px) {
+    .snd-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  }
+  /* UMBRECHEN statt ueberlaufen. Der Abspieler hat feste 178 px und `flex: none`, kann also
+     nicht nachgeben - dann muss die Beschreibung unter ihn. min-width: 0 dazu, sonst haelt
+     der Textkasten seinerseits sein laengstes Wort als Mindestbreite fest und der Umbruch
+     hilft nichts. */
+  .snd-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
     background: var(--panel-2); border: 1px solid var(--border); border-radius: 6px;
     padding: 7px 9px; }
-  .snd-row audio { height: 30px; flex: none; width: 178px; }
+  .snd-row audio { height: 30px; flex: none; width: 178px; max-width: 100%; }
+  .snd-row > div { min-width: 0; flex: 1 1 14ch; }
   .snd-row b { font-size: 12.5px; }
 
   /* ---- Home ---- */
@@ -2247,6 +2283,24 @@
     font-size: clamp(21px, 4.4vw, 40px); line-height: 1.14; font-weight: 800;
     letter-spacing: .01em; max-width: 20ch;
     text-shadow: 2px 0 0 var(--glitch-r), -2px 0 0 var(--glitch-c);
+    /* KEINE AUTOMATISCHE TRENNUNG IN DER UEBERSCHRIFT. Global steht hyphens: auto, und fuer
+       Fliesstext ist das richtig - hier zerlegte es "Ge-staltungsfreiheit" und "Bah-n", weil
+       der Browser die erste Silbe noch auf die vorige Zeile zwang. Eine Ueberschrift wird
+       ueberflogen und nicht gelesen; ein Trennstrich darin kostet mehr als eine kuerzere
+       Zeile.
+
+       DIE ZEILEN ERGEBEN SICH AUS DEN WORTGRENZEN, nicht aus <br>: 20ch Breite und ein
+       zusammengehaltenes "Hybrid Bahn" schneiden genau dort, wo es bestellt war -
+       Vollstaendige / Gestaltungsfreiheit / fuer deine Carrera / Hybrid Bahn.
+
+       Warum kein <br>: es zerlegt den Textknoten, und ein zerlegter Textknoten ist nicht
+       mehr uebersetzbar - der englische Satz hat andere Wortgrenzen und braeuchte andere
+       Umbrueche. So bricht jede Sprache an ihren eigenen.
+
+       break-word bleibt als Rueckfall aus der globalen Regel: ein Wort, das auch alleine
+       nicht passt, wird weiter umgebrochen statt ueber den Rand zu laufen. Bei 20ch fuer 19
+       Zeichen tritt der Fall nicht ein, aber die Zusicherung kostet nichts. */
+    hyphens: manual;
   }
   .home-sub {
     position: relative; z-index: 2; margin: 12px 0 0 0; max-width: 46ch;
@@ -2458,10 +2512,20 @@
      something and hear it immediately. */
   .mw-grid { display: grid; gap: 10px 16px; grid-template-columns: 1fr; margin-top: 10px; }
   @media (min-width: 720px) { .mw-grid { grid-template-columns: 1fr 1fr; } }
-  .mw-row { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px; }
-  .mw-row > label { font-size: 12.5px; }
-  .mw-row .mw-ctl { display: flex; align-items: center; gap: 6px; }
-  .mw-row input[type=range] { width: 116px; }
+  /* minmax(0, ...) IN BEIDEN SPALTEN, und aus demselben Grund wie bei .opt-row und
+     .snd-grid: `1fr` ist `minmax(auto, 1fr)` und `auto` schrumpft nicht unter den
+     min-content-Bedarf, und eine `auto`-Spalte tut es ueberhaupt nicht. Die Reglergruppe
+     dieser Zeile braucht 188 px - 116 fuer das Schiebeelement, 62 fuer den Wert, dazu
+     Abstaende -, und auf einem 320-px-Schirm ragte sie 3 px ueber den Rand.
+     Dieselbe Falle an der dritten Stelle in dieser Datei; wer eine vierte Rasterzeile baut,
+     findet sie hoffentlich hier. */
+  .mw-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, auto);
+    align-items: center; gap: 8px; }
+  .mw-row > label { font-size: 12.5px; min-width: 0; }
+  .mw-row .mw-ctl { display: flex; align-items: center; gap: 6px; min-width: 0; }
+  /* Das Schiebeelement gibt nach - es ist der einzige Teil der Zeile, dessen Breite keine
+     Bedeutung traegt. */
+  .mw-row input[type=range] { width: 116px; min-width: 0; flex: 1 1 auto; }
   .mw-row select { max-width: 132px; }
   .mw-val { font-family: monospace; font-size: 12px; min-width: 62px; text-align: right;
     color: var(--muted); }
@@ -2801,7 +2865,9 @@
       </svg>
       <div class="home-rain"></div>
       <div class="home-flash" id="home-flash"></div>
-      <h2>Vollst&auml;ndige Gestaltungsfreiheit f&uuml;r deine Carrera&nbsp;Hybrid&nbsp;Bahn</h2>
+      <!-- Die geschuetzten Leerzeichen setzen die Umbrueche: "Hybrid Bahn" bleibt zusammen,
+           "Carrera" darf zu "fuer deine". Siehe die Begruendung bei .home-hero h2. -->
+      <h2>Vollst&auml;ndige Gestaltungsfreiheit f&uuml;r deine Carrera Hybrid&nbsp;Bahn</h2>
       <p class="home-sub">Fahren, abstimmen, Rennen fahren. Im Browser, ohne Installation,
         mit deinem eigenen Streckenaufbau.</p>
       <div class="home-cta">
@@ -2872,7 +2938,15 @@
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.2"/><path d="M12 3.5v3M12 17.5v3M3.5 12h3M17.5 12h3"/></svg><span>Reifenverschlei&szlig;, Reifentemperatur, Bremstemperatur</span></div>
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4 3 20h18z"/><path d="M12 10v5"/></svg><span>Crash-Erkennung mit Vibration und Folgen fürs Handling</span></div>
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4a4 4 0 1 0 4 5l-2 2-3-3 2-2a4 4 0 0 0-1-2z"/><path d="M13 11 4 20"/></svg><span>Boxenstopp auf Knopfdruck</span></div>
-        <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V10a7 7 0 0 1 14 0v10l-3-2-2 2-2-2-2 2z"/><circle cx="9.5" cy="10" r="1"/><circle cx="14.5" cy="10" r="1"/></svg><span>Autonome Gegner</span></div>
+        <!-- Derselbe Geist wie auf der Einstellungskachel, im 24er Raster. Der alte Pfad
+             hatte rechts vier Bodenzacken und links eine flache Strecke von fuenf Einheiten -
+             die Asymmetrie, die gemeldet wurde. Drei Zacken von je 2,333 statt vier
+             ungleicher: bei 17 px Darstellungsgroesse sind weniger, groessere Formen zu
+             erkennen, vier waren Matsch. Die Augen sind GEFUELLT (die Regel .home-feat svg
+             setzt fill: none, ein Attribut am Kreis selbst schlaegt die Vererbung) - als
+             Ringe von 1 px Durchmesser waren sie bei dieser Groesse nicht zu sehen.
+             linejoin/linecap round, damit die Zacken keine Nadelspitzen bekommen. -->
+        <div><svg viewBox="0 0 24 24" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M5 20V11a7 7 0 0 1 14 0v9l-2.33-2.5-2.34 2.5-2.33-2.5-2.33 2.5-2.34-2.5z"/><circle cx="9.6" cy="11.5" r="1.1" fill="var(--info)" stroke="none"/><circle cx="14.4" cy="11.5" r="1.1" fill="var(--info)" stroke="none"/></svg><span>Autonome Gegner</span></div>
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h3l2-6 3 12 3-9 2 5 2-2h3"/></svg><span>Simulierte Motoren und eigene Sounds über Engine-Sim</span></div>
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="8" width="20" height="10" rx="4"/><path d="M7 13h2M8 12v2M16 13h.01"/></svg><span>Gamepad-Vibration</span></div>
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 11V8a5 5 0 0 1 9-3"/><rect x="5" y="11" width="14" height="9" rx="2"/></svg><span>Open Source, offene Lizenz</span></div>
@@ -5889,8 +5963,25 @@
           <span>Motorsound, Ambience, Lautst&auml;rken &ndash; und die Motorwerkstatt.</span>
         </button>
         <button class="misc-tile subpage-open" data-sub="opt-ghosts">
+          <!-- SYMMETRISCH NEU GEZEICHNET. Der alte Pfad war an drei Stellen schief, und
+               eine davon war ein Fehler und keine Geschmacksfrage:
+
+                 M24 6 c-8 0 -13 6 -13 14   linke Schulter
+                       ... c0-8 -1-14 -9-14  rechte Schulter, ANDERE Kurve
+                 ... 4 4 5 4                der letzte Bodenzacken ging nach UNTEN
+                                            (auf y=44) statt auf die Grundlinie y=40 -
+                                            die rechte untere Ecke hing also 4 Einheiten
+                                            unter der Figur.
+
+               Jetzt: die Kuppel ist ein echter Halbkreis (a13 13 0 0 1 26 0, Mittelpunkt
+               24/18), also spiegelsymmetrisch von selbst statt aus zwei Kurven
+               zusammengesetzt. Der Boden hat drei Zacken von je 4,333 Einheiten, deren
+               Taeler bei 32,67 / 24 / 15,33 und deren Spitzen bei 37 / 28,33 / 19,67 / 11
+               liegen - beide Folgen spiegeln sich um die Mitte 24. Die sechs Schritte
+               summieren sich auf genau 26, sonst schliesst der Pfad nicht auf der
+               Grundlinie. -->
           <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
-               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M24 6c-8 0-13 6-13 14v20l5-4 4 4 4-4 4 4 5 4V20c0-8-1-14-9-14z"/><circle cx="19" cy="21" r="2.2" fill="currentColor"/><circle cx="29" cy="21" r="2.2" fill="currentColor"/></svg>
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 42V18a13 13 0 0 1 26 0v24l-4.33-4-4.34 4-4.33-4-4.33 4-4.34-4z"/><circle cx="19.5" cy="19" r="2.4" fill="currentColor"/><circle cx="28.5" cy="19" r="2.4" fill="currentColor"/></svg>
           <b>Autonome Gegner</b>
           <span>Ghosts: Tempo, Linie, Rennw&uuml;rze, Lernen. Teilweise noch im Aufbau.</span>
         </button>
@@ -6739,19 +6830,56 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="ghost-curve-val">20%</span>
         </div></div>
-      <div class="opt-row"><div class="opt-label">Rennw&uuml;rze
+      <!-- DIE RENNWUERZE, IN EINZELNE SCHALTER ZERLEGT. Vorher ein Regler fuer sechs
+           Bausteine: wer ihn aufdrehte, bekam alle sechs und wusste danach nicht, welcher
+           davon das Gesehene erklaert. Das Gummiband ist nicht mehr dabei - es ist
+           "Feld zusammenhalten" weiter unten, und dort gestaffelt ueber das ganze Feld. -->
+      <div class="opt-row"><div class="opt-label">Rennw&uuml;rze: einzeln zuschaltbar
+          <small>F&uuml;nf Zutaten, die aus gleichm&auml;&szlig;igem Fahren ein Rennen machen
+          sollen. Jede einzeln, damit man sieht, welche was tut &ndash; als ein Regler f&uuml;r
+          alle war nicht zu unterscheiden, woran eine Beobachtung lag. Alle experimentell:
+          keine ist am Auto gemessen, alle sind gew&auml;hlt.</small></div>
+        <span class="muted" style="font-size:11px">&#9660;</span></div>
+      <div class="opt-row"><div class="opt-label">&Uuml;berholman&ouml;ver
           <span class="wip-tag">experimentell</span>
-          <small>Ab Werk aus. Sie greift an sechs Stellen gleichzeitig ins Tempo ein, und
-          solange Ortung und &Uuml;berholen nicht sauber sind, ist sie die Zutat, die jede
-          Beobachtung verrauscht &ndash; wer sie einschaltet, wei&szlig; danach nicht, ob das
-          Gesehene an ihr lag.</small>
-          <small>Tagesform, Fehler, Windschatten, &Uuml;berholen, Gummiband und Abstand halten &ndash; ein Regler f&uuml;r alle sechs. Ein &Uuml;berholvorgang l&auml;uft als Sequenz: erst zur Seite, dann Schub, dann vorne wieder einordnen, und wenn es nach 5&nbsp;s nicht geklappt hat, Abbruch mit 6&nbsp;s Sperre. Ohne diesen Abbruch klebte der Verfolger neben dem anderen, bis die Uhr ablief, und genau dort ber&uuml;hren sie sich. Der Mindestabstand rechnet ausserdem mit der Ann&auml;herungsrate statt mit einem festen Kachelabstand. Auf 0 ist jeder der sechs Bausteine wirkungslos.</small></div>
-        <div class="opt-slider">
-          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="ghost-spice" min="0" max="1" step="0.05" value="0">
-          <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="ghost-spice-val">aus</span>
-        </div></div>
+          <small>Ein Verfolger, der 0,9&nbsp;s dicht dran h&auml;ngt, setzt auf einer Geraden
+          an: erst zur Seite, dann Schub, dann vorne wieder einordnen. Der Vorausfahrende
+          weicht zur anderen Seite aus &ndash; zwei Autos auf 25&nbsp;cm Bahnbreite brauchen
+          beide H&auml;lften. Klappt es nach 5&nbsp;s nicht, bricht er ab und wartet
+          6&nbsp;s; ohne diesen Abbruch klebte der Verfolger neben dem anderen, bis die Uhr
+          ablief, und genau dort ber&uuml;hren sie sich. In eine Kurve hinein wird nie
+          angesetzt.</small></div>
+        <label class="tgl"><input type="checkbox" id="ghost-w-pass" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Abstand halten
+          <span class="wip-tag">experimentell</span>
+          <small>Ein Ghost lupft das Gas, wenn er zu schnell auflaufen w&uuml;rde. Gerechnet
+          als Zeitl&uuml;cke und nicht als fester Abstand: eine Kachel bei gleichem Tempo ist
+          unbegrenzt viel Zeit, eine Kachel bei schneller Ann&auml;herung ist eine Sekunde bis
+          zur Ber&uuml;hrung. Ohne das fahren sie Sto&szlig;stange an Sto&szlig;stange.
+          W&auml;hrend eines eigenen &Uuml;berholman&ouml;vers gilt es nicht, sonst k&auml;me
+          niemand vorbei.</small></div>
+        <label class="tgl"><input type="checkbox" id="ghost-w-gap" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Tagesform
+          <span class="wip-tag">experimentell</span>
+          <small>Jedes Auto f&auml;hrt ein etwas anderes Dauertempo, und das verschiebt sich
+          langsam &ndash; ein Zufallslauf im Band von &plusmn;7,5&nbsp;%, alle 2,6&nbsp;s
+          einen Schritt weiter. Damit ist nicht jede Runde gleich, und das Feld sortiert sich
+          von selbst um.</small></div>
+        <label class="tgl"><input type="checkbox" id="ghost-w-form"><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Fahrfehler
+          <span class="wip-tag">experimentell</span>
+          <small>Beim Anbremsen einer Kurve verbremst sich ein Ghost gelegentlich: 5,5&nbsp;%
+          Wahrscheinlichkeit je angebremster Kurve, dann 0,4 bis 0,9&nbsp;s mit 45&nbsp;%
+          weniger Tempo. Gew&uuml;rfelt wird einmal je Kurve und nicht je Takt &ndash; sonst
+          h&auml;ngt die Fehlerrate an der Rechenfrequenz statt am Rennen.</small></div>
+        <label class="tgl"><input type="checkbox" id="ghost-w-fehler"><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Windschatten
+          <span class="wip-tag">experimentell</span>
+          <small>Wer auf einer Geraden dicht hinter einem anderen h&auml;ngt, f&auml;hrt bis
+          zu 11&nbsp;% schneller, linear abnehmend bis 1,3 Kacheln Abstand. Nur auf der
+          Geraden: in der Kurve w&auml;re es Abtriebsverlust, also das Gegenteil, und das
+          bildet die Physik der Ghosts nicht ab.</small></div>
+        <label class="tgl"><input type="checkbox" id="ghost-w-slip"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Ghost: Ideallinie <span class="wip-tag">WIP</span>
           <!-- Seit v0.5.9 wirkt dieser Regler deutlich staerker: der Deckel aus
                learnSteerCap() ging von 0,55 auf 1,0, gemessen an dem, was die Original-App
@@ -7302,7 +7430,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.5.33</span></span>
+    <span class="foot-ver">v<span id="app-version">0.5.34</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
