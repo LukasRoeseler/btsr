@@ -1337,7 +1337,9 @@
       else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
     } catch (e) { /* refused: the CSS layout still applies */ }
     document.body.classList.add('track-fs');
-    $('track-fs').hidden = true; $('track-fs-exit').hidden = false;
+    // Nur noch der Textknopf in der Seite wird geschaltet. Der Umschalter in der Leiste
+    // wechselt sein Symbol per CSS an derselben Klasse - eine Wahrheit, ein Ort.
+    $('track-fs').hidden = true;
     refreshTrackPreview();
   }
   async function exitTrackFullscreen() {
@@ -1346,11 +1348,12 @@
       else if (document.webkitFullscreenElement) document.webkitExitFullscreen();
     } catch (e) { /* already out */ }
     document.body.classList.remove('track-fs');
-    $('track-fs').hidden = false; $('track-fs-exit').hidden = true;
+    $('track-fs').hidden = false;
     refreshTrackPreview();
   }
   $('track-fs').onclick = enterTrackFullscreen;
-  $('track-fs-exit').onclick = exitTrackFullscreen;
+  $('track-fs-toggle').onclick = () => (document.body.classList.contains('track-fs')
+    ? exitTrackFullscreen() : enterTrackFullscreen());
   // Leaving by Escape or a system gesture must put the buttons back too.
   document.addEventListener('fullscreenchange', () => {
     if (!document.fullscreenElement && document.body.classList.contains('track-fs')) {
@@ -1365,11 +1368,14 @@
   // Zwei Reihen, so wie sie auf dem Schirm liegen: oben die Aktionen, unten die Teile.
   // Hoch und runter wechselt die Reihe, links und rechts waehlt darin, X loest aus. Vorher
   // sprang hoch/runter auf das erste bzw. letzte Teil, was niemand erraten kann.
+  // NUR DIE ids. Hier stand bei jedem Eintrag noch eine Aufschrift, und die hat NIEMAND
+  // gelesen - renderTrackPadFocus und trackEditorPad nehmen beide ausschliesslich `id`.
+  // Fuer den Umschalter waere sie ausserdem falsch geworden: er traegt jetzt zwei.
   const TRACK_ACTIONS = [
-    { id: 'track-undo', cap: 'Zurueck' },
-    { id: 'track-rotate-right', cap: 'Drehen' },
-    { id: 'track-clear', cap: 'Leeren' },
-    { id: 'track-fs-exit', cap: 'Schliessen' },
+    { id: 'track-undo' },
+    { id: 'track-rotate-right' },
+    { id: 'track-clear' },
+    { id: 'track-fs-toggle' },
   ];
   let trackPadRow = 1;      // 0 = Aktionen oben, 1 = Teile unten
   let trackActionSel = 0;

@@ -1109,7 +1109,7 @@
     "Verbinden": "Connect",
     "Verbindung": "Connection",
     "Vergeben sind 2 Gerade, 3 Linkskurve, 4 Rechtskurve, 5 und 6 Haarnadel, 10 Start/Ziel. 14 lässt Luft für die Kurven und die Schikane, die noch nie überfahren wurden. Sollte 14 doch belegt sein, liegen 18 und 22 daneben.": "Taken are 2 straight, 3 left curve, 4 right curve, 5 and 6 hairpin, 10 start/finish. 14 leaves room for the curves and the chicane that have never been driven over. Should 14 turn out to be taken after all, 18 and 22 sit next to it.",
-    "Vollbild verlassen": "Leave fullscreen",
+    "Vollbild umschalten": "Toggle fullscreen",
     "Vollbild": "Fullscreen",
     "Voller Tank macht träger. Links = aus.": "A full tank makes it sluggish. Left = off.",
     "Vollständige Gestaltungsfreiheit für deine Carrera Hybrid Bahn": "Complete creative freedom for your Carrera Hybrid track",

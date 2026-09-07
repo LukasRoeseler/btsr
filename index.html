@@ -490,6 +490,21 @@
   #lang-toggle b { font-weight: 700; opacity: .45; }
   #lang-toggle b.on { opacity: 1; color: var(--ink);
     text-shadow: 1px 0 0 var(--glitch-r), -1px 0 0 var(--glitch-c); }
+  /* DAS hidden-ATTRIBUT WIRKT WIEDER. Die Vorgabe des Browsers dafuer ist
+     `[hidden] { display: none }`, und die verliert gegen JEDE Autoren-Regel, die display
+     setzt - hier gegen `.tp-btn { display: grid }`. Der Schliessknopf des Streckeneditors
+     stand deshalb dauerhaft in der Leiste, auch ausserhalb des Vollbilds, mit dem
+     Vollbild-Symbol und der Aufschrift "Schliessen": genau so gemeldet.
+
+     GEMESSEN, bevor diese Zeile hier stand: 11 Elemente tragen hidden, 10 gehorchten
+     zufaellig, eines nicht. Der Code setzt hidden aber an allen 11 Stellen und verlaesst
+     sich darauf. Die Regel schreibt also auf, was ohnehin vorausgesetzt wird - und nimmt
+     der naechsten display-Regel die Gelegenheit, dasselbe noch einmal zu brechen.
+
+     Weiter unten steht `.race-corner button[hidden]` mit demselben Zweck. Sie bleibt
+     stehen: sie ist harmlos, und sie ist der Beleg dafuer, dass diese Falle in diesem
+     Projekt schon einmal zugeschnappt hat. */
+  [hidden] { display: none !important; }
   body.race-fs #app-footer, body.track-fs #app-footer { display: none; }
   .tabpage { display: none; }
   .tabpage.active { display: block; }
@@ -2072,9 +2087,69 @@
   body.track-fs #track-fs-host { position: fixed; inset: 0; z-index: 200;
     background: var(--bg); display: grid; grid-template-rows: 1fr auto;
     align-items: center; padding: 8px; gap: 6px; }
-  body.track-fs #track-fs-host > #track-preview-svg { min-height: 0; overflow: hidden;
-    display: grid; place-items: center; }
-  body.track-fs #track-fs-host > #track-preview-svg svg { max-height: 100%; width: auto; }
+  /* HOEHE ZURUECK AUF auto, und das war der zweite Fehler. Der Kasten traegt in der
+     Seite `height: clamp(240px, 42vh, 460px)` - eine feste Hoehe gegen das Springen beim
+     Bauen -, und das Vollbild hat sie nie aufgehoben. Gemessen auf einem 720 px hohen
+     Schirm: die Rasterzeile bot 538 px, die Karte nahm 302 davon (42vh), und
+     `align-items: center` verteilte die restlichen 236 px als Leerraum ueber und unter ihr.
+     Das Vollbild zeigte die Karte also KLEINER als noetig - bei einem Modus, dessen ganzer
+     Zweck es ist, sie gross zu zeigen.
+
+     UND align-self: stretch DAZU. Der Host setzt `align-items: center`, damit die Leisten
+     ueber und unter der Karte mittig sitzen. Fuer die Karte selbst heisst das aber: sie
+     bekommt ihre Inhaltshoehe und nicht die Zeilenhoehe - gemessen blieben so noch 52 der
+     596 px unbenutzt, nachdem die feste Hoehe weg war. Der Ausnahmefall gehoert an die
+     Karte und nicht an den Host: die Leisten sollen mittig bleiben. */
+  body.track-fs #track-fs-host > #track-preview-svg { height: auto; min-height: 0;
+    align-self: stretch; overflow: hidden; display: grid; place-items: center; }
+  /* DER WARNABSATZ GEHOERT NICHT INS VOLLBILD, und das ist der dritte Fehler. Er nahm dort
+     eine eigene Rasterzeile von 52 px - vier Zeilen Prosa ueber fehlende Kacheltypen, die
+     man beim Bauen nicht liest und die der Karte Platz wegnimmt. In der Seite bleibt er
+     stehen, dort ist er richtig.
+
+     Nebenwirkung, und eine erwuenschte: `grid-template-rows: auto 1fr auto` nennt drei
+     Zeilen, in Flusslage waren aber vier Kinder da - die vierte Zeile entstand implizit.
+     Jetzt stimmen Erklaerung und Wirklichkeit ueberein. */
+  body.track-fs #track-fs-host > p { display: none; }
+  /* EIN KNOPF, ZWEI ZUSTAENDE. Die Wahrheit ist die Klasse auf dem body - dieselbe, die
+     das ganze Vollbild-Layout schaltet. Ausdruecklich ohne JS: waere der Zustand hier ein
+     zweites Mal in JavaScript gefuehrt, gaebe es zwei Orte fuer eine Aussage, und einer
+     von beiden wuerde irgendwann nicht mitgezogen. Genau das war der Zustand vorher.
+
+     `revert` heisst "als stuende diese Regel nicht hier" - fuer svg und span also inline,
+     was beide ohne die Regel auch sind. Ein fester Wert waere hier eine zweite Behauptung
+     ueber die Darstellung dieser Elemente. */
+  .tp-fs-aus { display: none; }
+  body.track-fs .tp-fs-ein { display: none; }
+  body.track-fs .tp-fs-aus { display: revert; }
+  /* DIE DECKELUNG AUS DEM ZEICHNER UEBERSCHREIBEN, und die drei !important sind hier
+     kein Zaunpfahl, sondern die einzige Moeglichkeit: renderTrackPreview() schreibt
+     `width:100%;max-width:520px;height:auto` als INLINE-Stil aufs svg, und ein Inline-Stil
+     schlaegt jede Regel eines Stylesheets.
+
+     Die 520 px sind in der Seite richtig - dort steht die Karte in einer Spalte neben Text -
+     und im Vollbild falsch, wo der Kasten 1264 px breit ist. Gemessen mit einer fast
+     quadratischen Strecke (viewBox 87x91) kostete die Deckelung 520 statt 570 px Breite;
+     bei einem breiten Layout ist es mehr als das Doppelte, weil dann die Breite und nicht
+     die Hoehe die bindende Grenze ist.
+
+     WAS DIE EIGENTLICHE BEHEBUNG WAERE: die Groesse gehoert ins Stylesheet und nicht in den
+     Zeichner - sie ist eine Entscheidung des Ortes, an dem die Karte haengt, und der
+     Zeichner kennt diesen Ort nicht. Dieselbe Reiberei hat der Uebersichtsschirm schon
+     einmal mit zwei !important erledigt (.ov-karte svg). Beide fallen zusammen weg, sobald
+     der Zeichner nur noch zeichnet; das ist ein eigener Schritt und keiner, der sich in
+     einer Fehlerbehebung nebenbei erledigen laesst - an derselben Funktion haengen auch die
+     Cockpit-Minikarte und der Uebersichtsschirm.
+
+     UND WARUM 100/100 UND NICHT auto/100: bei `width:auto; height:100%` bestimmt die Hoehe
+     die Groesse, und eine BREITE Strecke laeuft dann waagerecht ueber den Kasten hinaus -
+     der schneidet ab (overflow:hidden), und man sieht die Runde nicht mehr ganz. Mein
+     erster Versuch stand genau so hier und war mit der fast quadratischen Teststrecke nicht
+     zu sehen. Mit 100/100 ist der svg-KASTEN so gross wie die Zeile, und das Einpassen
+     macht preserveAspectRatio - Vorgabe `xMidYMid meet`, also hineinpassen und zentrieren.
+     Das ist bei einem viewBox-svg der Weg, der in beide Richtungen stimmt. */
+  body.track-fs #track-fs-host > #track-preview-svg svg {
+    max-width: none !important; width: 100% !important; height: 100% !important; }
   /* Everything outside the editor host is irrelevant while building. */
   body.track-fs > header, body.track-fs > nav.tabs { display: none; }
 
@@ -6897,12 +6972,21 @@
                  stroke-linecap="round" aria-hidden="true"><path d="M5 7h14M9 7V4h6v3"/>
               <path d="M7 7l1 13h8l1-13"/></svg>
             <span class="tp-cap">Leeren</span></button>
-          <button class="tp-btn" id="track-fs-exit" hidden title="Vollbild verlassen"
-                  aria-label="Vollbild verlassen">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
-                 stroke-linecap="round" aria-hidden="true">
+          <!-- EIN UMSCHALTER statt eines Schliessknopfs. Hier stand ein Knopf mit dem
+               Vollbild-Symbol und der Aufschrift "Schliessen", der ausserhalb des Vollbilds
+               sichtbar war - das hidden griff nicht - und dort nichts tat. Wer an dieser
+               Stelle das Vollbild erwartet, bekommt es jetzt auch: die Ecken zeigen nach
+               aussen, solange man hinein kann, und nach innen, wenn man heraus kann. -->
+          <button class="tp-btn" id="track-fs-toggle" title="Vollbild umschalten"
+                  aria-label="Vollbild umschalten">
+            <svg class="tp-fs-ein" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
               <path d="M9 4H4v5M15 4h5v5M9 20H4v-5M15 20h5v-5"/></svg>
-            <span class="tp-cap">Schlie&szlig;en</span></button>
+            <svg class="tp-fs-aus" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+              <path d="M4 9h5V4M20 9h-5V4M4 15h5v5M20 15h-5v5"/></svg>
+            <span class="tp-cap tp-fs-ein">Vollbild</span>
+            <span class="tp-cap tp-fs-aus">Schlie&szlig;en</span></button>
         </div>
         <div id="track-preview-svg"></div>
         <p class="muted" style="border-left:3px solid var(--warn); padding-left:9px;
@@ -7181,7 +7265,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.5.29</span></span>
+    <span class="foot-ver">v<span id="app-version">0.5.30</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -8321,7 +8405,7 @@
     "Verbinden": "Connect",
     "Verbindung": "Connection",
     "Vergeben sind 2 Gerade, 3 Linkskurve, 4 Rechtskurve, 5 und 6 Haarnadel, 10 Start/Ziel. 14 lässt Luft für die Kurven und die Schikane, die noch nie überfahren wurden. Sollte 14 doch belegt sein, liegen 18 und 22 daneben.": "Taken are 2 straight, 3 left curve, 4 right curve, 5 and 6 hairpin, 10 start/finish. 14 leaves room for the curves and the chicane that have never been driven over. Should 14 turn out to be taken after all, 18 and 22 sit next to it.",
-    "Vollbild verlassen": "Leave fullscreen",
+    "Vollbild umschalten": "Toggle fullscreen",
     "Vollbild": "Fullscreen",
     "Voller Tank macht träger. Links = aus.": "A full tank makes it sluggish. Left = off.",
     "Vollständige Gestaltungsfreiheit für deine Carrera Hybrid Bahn": "Complete creative freedom for your Carrera Hybrid track",
@@ -15765,7 +15849,9 @@
       else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
     } catch (e) { /* refused: the CSS layout still applies */ }
     document.body.classList.add('track-fs');
-    $('track-fs').hidden = true; $('track-fs-exit').hidden = false;
+    // Nur noch der Textknopf in der Seite wird geschaltet. Der Umschalter in der Leiste
+    // wechselt sein Symbol per CSS an derselben Klasse - eine Wahrheit, ein Ort.
+    $('track-fs').hidden = true;
     refreshTrackPreview();
   }
   async function exitTrackFullscreen() {
@@ -15774,11 +15860,12 @@
       else if (document.webkitFullscreenElement) document.webkitExitFullscreen();
     } catch (e) { /* already out */ }
     document.body.classList.remove('track-fs');
-    $('track-fs').hidden = false; $('track-fs-exit').hidden = true;
+    $('track-fs').hidden = false;
     refreshTrackPreview();
   }
   $('track-fs').onclick = enterTrackFullscreen;
-  $('track-fs-exit').onclick = exitTrackFullscreen;
+  $('track-fs-toggle').onclick = () => (document.body.classList.contains('track-fs')
+    ? exitTrackFullscreen() : enterTrackFullscreen());
   // Leaving by Escape or a system gesture must put the buttons back too.
   document.addEventListener('fullscreenchange', () => {
     if (!document.fullscreenElement && document.body.classList.contains('track-fs')) {
@@ -15793,11 +15880,14 @@
   // Zwei Reihen, so wie sie auf dem Schirm liegen: oben die Aktionen, unten die Teile.
   // Hoch und runter wechselt die Reihe, links und rechts waehlt darin, X loest aus. Vorher
   // sprang hoch/runter auf das erste bzw. letzte Teil, was niemand erraten kann.
+  // NUR DIE ids. Hier stand bei jedem Eintrag noch eine Aufschrift, und die hat NIEMAND
+  // gelesen - renderTrackPadFocus und trackEditorPad nehmen beide ausschliesslich `id`.
+  // Fuer den Umschalter waere sie ausserdem falsch geworden: er traegt jetzt zwei.
   const TRACK_ACTIONS = [
-    { id: 'track-undo', cap: 'Zurueck' },
-    { id: 'track-rotate-right', cap: 'Drehen' },
-    { id: 'track-clear', cap: 'Leeren' },
-    { id: 'track-fs-exit', cap: 'Schliessen' },
+    { id: 'track-undo' },
+    { id: 'track-rotate-right' },
+    { id: 'track-clear' },
+    { id: 'track-fs-toggle' },
   ];
   let trackPadRow = 1;      // 0 = Aktionen oben, 1 = Teile unten
   let trackActionSel = 0;
@@ -32762,6 +32852,155 @@
     return { ok: !schlecht.length,
              mass: geprueft + ' Arbeitszeilen, ' + hell + ' davon hell'
                  + (schlecht.length ? ' || ' + schlecht.join('; ') : ' | ein Vokabular') };
+  });
+
+  // ---- Das hidden-Attribut wirkt ----
+  //
+  // DIE FALLE: die Browser-Vorgabe ist `[hidden] { display: none }`, und die verliert gegen
+  // JEDE Autoren-Regel, die display setzt. Im Streckeneditor traf sie auf
+  // `.tp-btn { display: grid }`, und der Schliessknopf stand dauerhaft in der Leiste - mit
+  // dem Vollbild-Symbol und der Aufschrift "Schliessen", ausserhalb des Vollbilds, wo er
+  // nichts tat. Genau so gemeldet.
+  //
+  // Geprueft wird die REGEL und nicht die eine Stelle: ein frisch gebauter Knopf mit
+  // display:grid und hidden muss verschwinden. Dazu die Bestandsaufnahme - kein Element im
+  // Dokument darf hidden tragen und trotzdem gezeichnet werden.
+  stAdd('Das hidden-Attribut wirkt, auch gegen display-Regeln', () => {
+    const probe = document.createElement('button');
+    probe.className = 'tp-btn';
+    probe.hidden = true;
+    probe.textContent = 'x';
+    document.body.appendChild(probe);
+    const eigen = getComputedStyle(probe).display;
+    probe.remove();
+
+    const trotzdemDa = [];
+    for (const el of document.querySelectorAll('[hidden]')) {
+      if (getComputedStyle(el).display !== 'none') {
+        trotzdemDa.push(el.tagName.toLowerCase() + (el.id ? '#' + el.id : ''));
+      }
+    }
+    const gesamt = document.querySelectorAll('[hidden]').length;
+    return { ok: eigen === 'none' && !trotzdemDa.length,
+             mass: gesamt + ' Elemente mit hidden, Probe mit display:grid -> ' + eigen
+                 + (trotzdemDa.length ? ' || TROTZDEM GEZEICHNET: ' + trotzdemDa.join(', ')
+                                      : ' | keines wird gezeichnet') };
+  });
+
+  // ---- Das Vollbild des Streckeneditors ----
+  //
+  // ES HATTE GAR KEINE PRUEFUNG, und darin sassen drei Fehler gleichzeitig: der
+  // Schliessknopf war immer sichtbar (siehe oben), der Kartenkasten behielt seine feste
+  // Hoehe aus der Seite (`clamp(240px, 42vh, 460px)` - gemessen 302 von 596 verfuegbaren
+  // px), und der Warnabsatz ueber die unvollstaendige Palette nahm eine eigene Rasterzeile.
+  //
+  // GESCHALTET WIRD DIE KLASSE, nicht enterTrackFullscreen(). Das ist Absicht: die Klasse
+  // IST die Wahrheit, an der das ganze Layout haengt, und ein Aufruf der echten Funktion
+  // wuerde requestFullscreen() ausloesen - der Selbsttest laeuft nach einem Klick, also mit
+  // einer gueltigen Nutzergeste, und wuerde den Browser wirklich ins Vollbild werfen. Eine
+  // Pruefung, die die Arbeitsumgebung umbaut, ist keine.
+  stAdd('Editor-Vollbild: Karte fuellt den Schirm, Knopf schaltet um', () => {
+    if (!(window.innerWidth > 0) || !(window.innerHeight > 0)) {
+      return { skip: true, mass: 'Fenster ist 0 x 0 - im verborgenen Bereich nicht messbar' };
+    }
+    const host = document.getElementById('track-fs-host');
+    const knopf = document.getElementById('track-fs-toggle');
+    if (!host || !knopf) return { ok: false, mass: 'Vollbild-Host oder Umschalter fehlt' };
+
+    const aktiverTab = document.querySelector('nav.tabs [data-tab].active')
+                    || document.querySelector('[data-tab="selftest"]');
+    const warKlasse = document.body.classList.contains('track-fs');
+    const schlecht = [];
+    const gemessen = {};
+    try {
+      const tabKnopf = document.querySelector('[data-tab="track"]');
+      const subKnopf = document.querySelector('[data-sub="edit"]');
+      if (tabKnopf) tabKnopf.click();
+      if (subKnopf) subKnopf.click();
+
+      // Die Aufschrift AUSSERHALB des Vollbilds: sie muss zum Hineingehen einladen.
+      const kappe = () => [...knopf.querySelectorAll('.tp-cap')]
+        .filter((x) => getComputedStyle(x).display !== 'none')
+        .map((x) => x.textContent.trim());
+      document.body.classList.remove('track-fs');
+      const draussen = kappe();
+      if (draussen.length !== 1) schlecht.push('draussen ' + draussen.length + ' Aufschriften');
+      else if (draussen[0] !== t('Vollbild')) schlecht.push('draussen steht "' + draussen[0] + '"');
+      gemessen.draussen = draussen[0];
+
+      document.body.classList.add('track-fs');
+      const drinnen = kappe();
+      if (drinnen.length !== 1) schlecht.push('drinnen ' + drinnen.length + ' Aufschriften');
+      else if (drinnen[0] !== t('Schließen')) schlecht.push('drinnen steht "' + drinnen[0] + '"');
+      gemessen.drinnen = drinnen[0];
+      if (!knopf.onclick) schlecht.push('Umschalter hat keinen Klickzuhoerer');
+
+      // Der Host deckt den Schirm.
+      const hb = host.getBoundingClientRect();
+      if (Math.abs(hb.width - window.innerWidth) > 2
+          || Math.abs(hb.height - window.innerHeight) > 2) {
+        schlecht.push('Host ' + Math.round(hb.width) + 'x' + Math.round(hb.height)
+                      + ' statt ' + window.innerWidth + 'x' + window.innerHeight);
+      }
+
+      // Der Warnabsatz ist weg - er ist Prosa und nahm eine Rasterzeile.
+      for (const p of host.children) {
+        if (p.tagName === 'P' && getComputedStyle(p).display !== 'none') {
+          schlecht.push('Warnabsatz nimmt im Vollbild noch Platz');
+        }
+      }
+
+      // Der Kartenkasten fuellt seine Rasterzeile. Gemessen gegen die aufgeloeste Zeile
+      // selbst, nicht gegen eine Zahl - wer das Raster umbaut, zieht hier von selbst nach.
+      const kasten = document.getElementById('track-preview-svg');
+      const zeilen = getComputedStyle(host).gridTemplateRows.split(' ').map(parseFloat);
+      const groesste = Math.max.apply(null, zeilen.filter((z) => isFinite(z)));
+      const kb = kasten.getBoundingClientRect();
+      gemessen.kasten = Math.round(kb.width) + 'x' + Math.round(kb.height);
+      gemessen.zeile = Math.round(groesste);
+      if (Math.abs(kb.height - groesste) > 2) {
+        schlecht.push('Kartenkasten ' + Math.round(kb.height) + ' px in einer Zeile von '
+                      + Math.round(groesste) + ' px');
+      }
+
+      // Und die Karte darin: kein Ueberlauf, und eine Richtung voll ausgenutzt. Geprueft
+      // ueber DREI Seitenverhaeltnisse, weil der erste Versuch (`width:auto;height:100%`)
+      // mit der fast quadratischen Teststrecke unauffaellig war und eine breite Strecke
+      // waagerecht aus dem Kasten geschoben haette - der schneidet ab.
+      const svg = kasten.querySelector('svg');
+      if (!svg) {
+        gemessen.karte = 'keine Strecke geladen';
+      } else {
+        const merkVb = svg.getAttribute('viewBox');
+        const faelle = [];
+        for (const vb of ['0 0 200 60', '0 0 60 200', '0 0 90 90']) {
+          svg.setAttribute('viewBox', vb);
+          const sb = svg.getBoundingClientRect();
+          const v = svg.viewBox.baseVal;
+          if (sb.width > kb.width + 2 || sb.height > kb.height + 2) {
+            schlecht.push(vb + ': svg laeuft aus dem Kasten');
+          }
+          const sk = Math.min(sb.width / v.width, sb.height / v.height);
+          const bw = Math.round(v.width * sk), bh = Math.round(v.height * sk);
+          const voll = Math.abs(bw - kb.width) <= 2 || Math.abs(bh - kb.height) <= 2;
+          if (!voll) schlecht.push(vb + ': gezeichnet ' + bw + 'x' + bh + ', nichts voll');
+          faelle.push(vb.slice(4) + '->' + bw + 'x' + bh);
+        }
+        if (merkVb) svg.setAttribute('viewBox', merkVb);
+        gemessen.karte = faelle.join(' ');
+      }
+    } catch (e) {
+      schlecht.push('Ausnahme: ' + e.message);
+    } finally {
+      document.body.classList.toggle('track-fs', warKlasse);
+      if (aktiverTab) aktiverTab.click();
+      if (typeof refreshTrackPreview === 'function') refreshTrackPreview();
+    }
+    return { ok: !schlecht.length,
+             mass: 'draussen "' + gemessen.draussen + '", drinnen "' + gemessen.drinnen
+                 + '", Kasten ' + gemessen.kasten + ' in Zeile ' + gemessen.zeile
+                 + ' | ' + gemessen.karte
+                 + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
   });
 
   // ---- Controller-Vibration: ein Schalter je Ausloeser ----

@@ -2694,6 +2694,155 @@
                  + (schlecht.length ? ' || ' + schlecht.join('; ') : ' | ein Vokabular') };
   });
 
+  // ---- Das hidden-Attribut wirkt ----
+  //
+  // DIE FALLE: die Browser-Vorgabe ist `[hidden] { display: none }`, und die verliert gegen
+  // JEDE Autoren-Regel, die display setzt. Im Streckeneditor traf sie auf
+  // `.tp-btn { display: grid }`, und der Schliessknopf stand dauerhaft in der Leiste - mit
+  // dem Vollbild-Symbol und der Aufschrift "Schliessen", ausserhalb des Vollbilds, wo er
+  // nichts tat. Genau so gemeldet.
+  //
+  // Geprueft wird die REGEL und nicht die eine Stelle: ein frisch gebauter Knopf mit
+  // display:grid und hidden muss verschwinden. Dazu die Bestandsaufnahme - kein Element im
+  // Dokument darf hidden tragen und trotzdem gezeichnet werden.
+  stAdd('Das hidden-Attribut wirkt, auch gegen display-Regeln', () => {
+    const probe = document.createElement('button');
+    probe.className = 'tp-btn';
+    probe.hidden = true;
+    probe.textContent = 'x';
+    document.body.appendChild(probe);
+    const eigen = getComputedStyle(probe).display;
+    probe.remove();
+
+    const trotzdemDa = [];
+    for (const el of document.querySelectorAll('[hidden]')) {
+      if (getComputedStyle(el).display !== 'none') {
+        trotzdemDa.push(el.tagName.toLowerCase() + (el.id ? '#' + el.id : ''));
+      }
+    }
+    const gesamt = document.querySelectorAll('[hidden]').length;
+    return { ok: eigen === 'none' && !trotzdemDa.length,
+             mass: gesamt + ' Elemente mit hidden, Probe mit display:grid -> ' + eigen
+                 + (trotzdemDa.length ? ' || TROTZDEM GEZEICHNET: ' + trotzdemDa.join(', ')
+                                      : ' | keines wird gezeichnet') };
+  });
+
+  // ---- Das Vollbild des Streckeneditors ----
+  //
+  // ES HATTE GAR KEINE PRUEFUNG, und darin sassen drei Fehler gleichzeitig: der
+  // Schliessknopf war immer sichtbar (siehe oben), der Kartenkasten behielt seine feste
+  // Hoehe aus der Seite (`clamp(240px, 42vh, 460px)` - gemessen 302 von 596 verfuegbaren
+  // px), und der Warnabsatz ueber die unvollstaendige Palette nahm eine eigene Rasterzeile.
+  //
+  // GESCHALTET WIRD DIE KLASSE, nicht enterTrackFullscreen(). Das ist Absicht: die Klasse
+  // IST die Wahrheit, an der das ganze Layout haengt, und ein Aufruf der echten Funktion
+  // wuerde requestFullscreen() ausloesen - der Selbsttest laeuft nach einem Klick, also mit
+  // einer gueltigen Nutzergeste, und wuerde den Browser wirklich ins Vollbild werfen. Eine
+  // Pruefung, die die Arbeitsumgebung umbaut, ist keine.
+  stAdd('Editor-Vollbild: Karte fuellt den Schirm, Knopf schaltet um', () => {
+    if (!(window.innerWidth > 0) || !(window.innerHeight > 0)) {
+      return { skip: true, mass: 'Fenster ist 0 x 0 - im verborgenen Bereich nicht messbar' };
+    }
+    const host = document.getElementById('track-fs-host');
+    const knopf = document.getElementById('track-fs-toggle');
+    if (!host || !knopf) return { ok: false, mass: 'Vollbild-Host oder Umschalter fehlt' };
+
+    const aktiverTab = document.querySelector('nav.tabs [data-tab].active')
+                    || document.querySelector('[data-tab="selftest"]');
+    const warKlasse = document.body.classList.contains('track-fs');
+    const schlecht = [];
+    const gemessen = {};
+    try {
+      const tabKnopf = document.querySelector('[data-tab="track"]');
+      const subKnopf = document.querySelector('[data-sub="edit"]');
+      if (tabKnopf) tabKnopf.click();
+      if (subKnopf) subKnopf.click();
+
+      // Die Aufschrift AUSSERHALB des Vollbilds: sie muss zum Hineingehen einladen.
+      const kappe = () => [...knopf.querySelectorAll('.tp-cap')]
+        .filter((x) => getComputedStyle(x).display !== 'none')
+        .map((x) => x.textContent.trim());
+      document.body.classList.remove('track-fs');
+      const draussen = kappe();
+      if (draussen.length !== 1) schlecht.push('draussen ' + draussen.length + ' Aufschriften');
+      else if (draussen[0] !== t('Vollbild')) schlecht.push('draussen steht "' + draussen[0] + '"');
+      gemessen.draussen = draussen[0];
+
+      document.body.classList.add('track-fs');
+      const drinnen = kappe();
+      if (drinnen.length !== 1) schlecht.push('drinnen ' + drinnen.length + ' Aufschriften');
+      else if (drinnen[0] !== t('Schließen')) schlecht.push('drinnen steht "' + drinnen[0] + '"');
+      gemessen.drinnen = drinnen[0];
+      if (!knopf.onclick) schlecht.push('Umschalter hat keinen Klickzuhoerer');
+
+      // Der Host deckt den Schirm.
+      const hb = host.getBoundingClientRect();
+      if (Math.abs(hb.width - window.innerWidth) > 2
+          || Math.abs(hb.height - window.innerHeight) > 2) {
+        schlecht.push('Host ' + Math.round(hb.width) + 'x' + Math.round(hb.height)
+                      + ' statt ' + window.innerWidth + 'x' + window.innerHeight);
+      }
+
+      // Der Warnabsatz ist weg - er ist Prosa und nahm eine Rasterzeile.
+      for (const p of host.children) {
+        if (p.tagName === 'P' && getComputedStyle(p).display !== 'none') {
+          schlecht.push('Warnabsatz nimmt im Vollbild noch Platz');
+        }
+      }
+
+      // Der Kartenkasten fuellt seine Rasterzeile. Gemessen gegen die aufgeloeste Zeile
+      // selbst, nicht gegen eine Zahl - wer das Raster umbaut, zieht hier von selbst nach.
+      const kasten = document.getElementById('track-preview-svg');
+      const zeilen = getComputedStyle(host).gridTemplateRows.split(' ').map(parseFloat);
+      const groesste = Math.max.apply(null, zeilen.filter((z) => isFinite(z)));
+      const kb = kasten.getBoundingClientRect();
+      gemessen.kasten = Math.round(kb.width) + 'x' + Math.round(kb.height);
+      gemessen.zeile = Math.round(groesste);
+      if (Math.abs(kb.height - groesste) > 2) {
+        schlecht.push('Kartenkasten ' + Math.round(kb.height) + ' px in einer Zeile von '
+                      + Math.round(groesste) + ' px');
+      }
+
+      // Und die Karte darin: kein Ueberlauf, und eine Richtung voll ausgenutzt. Geprueft
+      // ueber DREI Seitenverhaeltnisse, weil der erste Versuch (`width:auto;height:100%`)
+      // mit der fast quadratischen Teststrecke unauffaellig war und eine breite Strecke
+      // waagerecht aus dem Kasten geschoben haette - der schneidet ab.
+      const svg = kasten.querySelector('svg');
+      if (!svg) {
+        gemessen.karte = 'keine Strecke geladen';
+      } else {
+        const merkVb = svg.getAttribute('viewBox');
+        const faelle = [];
+        for (const vb of ['0 0 200 60', '0 0 60 200', '0 0 90 90']) {
+          svg.setAttribute('viewBox', vb);
+          const sb = svg.getBoundingClientRect();
+          const v = svg.viewBox.baseVal;
+          if (sb.width > kb.width + 2 || sb.height > kb.height + 2) {
+            schlecht.push(vb + ': svg laeuft aus dem Kasten');
+          }
+          const sk = Math.min(sb.width / v.width, sb.height / v.height);
+          const bw = Math.round(v.width * sk), bh = Math.round(v.height * sk);
+          const voll = Math.abs(bw - kb.width) <= 2 || Math.abs(bh - kb.height) <= 2;
+          if (!voll) schlecht.push(vb + ': gezeichnet ' + bw + 'x' + bh + ', nichts voll');
+          faelle.push(vb.slice(4) + '->' + bw + 'x' + bh);
+        }
+        if (merkVb) svg.setAttribute('viewBox', merkVb);
+        gemessen.karte = faelle.join(' ');
+      }
+    } catch (e) {
+      schlecht.push('Ausnahme: ' + e.message);
+    } finally {
+      document.body.classList.toggle('track-fs', warKlasse);
+      if (aktiverTab) aktiverTab.click();
+      if (typeof refreshTrackPreview === 'function') refreshTrackPreview();
+    }
+    return { ok: !schlecht.length,
+             mass: 'draussen "' + gemessen.draussen + '", drinnen "' + gemessen.drinnen
+                 + '", Kasten ' + gemessen.kasten + ' in Zeile ' + gemessen.zeile
+                 + ' | ' + gemessen.karte
+                 + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
   // ---- Controller-Vibration: ein Schalter je Ausloeser ----
   //
   // Siebzehn Aufrufstellen, sechs Arten, ein Hauptschalter. Geprueft wird die
