@@ -735,7 +735,12 @@
   // DIE FORM IST GEWAEHLT, nicht abgeleitet - deshalb der Regler daneben. Was gemessen ist:
   // wo der Scheitel liegt (dort ist die Kruemmung der Linie am groessten) und wie lang eine
   // Kachel ist. Die Oeffnung laeuft vom Scheitel ueber eine Kachellaenge aus.
-  let lineExitStaerke = 0.5;
+  // 0,8 UND NICHT MEHR 0,5, weil der Regler jetzt eine LAGE angibt und keinen Zuschlag:
+  // "am Kurvenein- und -ausgang so viel Prozent des Weges zum Aussenrand". Bei 0,5 stand die
+  // Linie hinter einer Haarnadel gemessen noch bei -0,10 des Deckels, also auf der
+  // Innenseite - bestellt war "von aussen anfahren und aussen verlassen". Mit 0,8 liegt sie
+  // dort bei +0,02 und die Anfahrt bei +0,09.
+  let lineExitStaerke = 0.8;
   function setLineExit(v) { lineExitStaerke = Math.max(0, Math.min(1, v || 0)); }
   function getLineExit() { return lineExitStaerke; }
 
@@ -759,10 +764,35 @@
   // Deshalb der Regler.
   const LINE_EXIT_AUSLAUF = TRACK_STEP;      // eine Kachellaenge, in Zeichnungseinheiten
 
+  // ---- DIE VORGABESTRECKE -------------------------------------------------------------
+  //
+  // Bestellt: "Standard Streckenlayout fuer Simulation (wenn nichts eingetragen): Nimm das,
+  // was ich dir geschrieben hatte." Dreizehn Kacheln, acht Rechtskurven, eine Linkskurve;
+  // gemessen geschlossen mit 0,48 cm Luecke und 0 Grad Winkelfehler.
+  //
+  // HIER UND NICHT IN 90b-sim.js, obwohl die Simulation der Anlass war: die Linienvorschau
+  // in den Ghost-Einstellungen braucht sie auch, und die steht in 90-ghosts.js - also VOR
+  // der Simulationsdatei. Ein const in der gemeinsamen IIFE, das von einer frueheren Datei
+  // gelesen wird, liegt in seiner temporalen Todeszone; an dieser Falle hat dieses Projekt
+  // schon eine ganze IIFE verloren. 60-track.js liest niemand von weiter vorn.
+  const TRACK_VORGABE_CODE = 'SR3GLR2GR2G2';
+
   function istKurvenTyp(t) {
     return t === TILE_TYPE.CURVE_LEFT || t === TILE_TYPE.CURVE_RIGHT
         || t === TILE_TYPE.HAIRPIN || t === TILE_TYPE.HAIRPIN_LEFT;
   }
+
+  function istHaarnadel(t) {
+    return t === TILE_TYPE.HAIRPIN || t === TILE_TYPE.HAIRPIN_LEFT;
+  }
+
+  // Wie weit eine Kurve geoeffnet wird, als Anteil der Staerke. GEWAEHLT, und der Grund ist
+  // die Bahnbreite: eine 60-Grad-Kurve laesst sich mit 25 cm Breite noch rund fahren, eine
+  // Haarnadel nicht - dort ist der Unterschied zwischen aussen und innen der ganze Radius.
+  // Gemeldet: "nach der Haarnadelkurve sollten die Autos sich nach aussen tragen lassen",
+  // und in derselben Nachricht "Haarnadel von aussen anfahren und aussen verlassen".
+  const LINE_OEFFNUNG_HAARNADEL = 1.0;
+  const LINE_OEFFNUNG_KURVE = 0.6;
 
   // Die Kurvenlaeufe eines Layouts: zusammenhaengende Ketten von Kurvenkacheln, ueber das
   // Rundenende hinweg zusammengefasst, wenn die Runde geschlossen ist.
@@ -790,7 +820,7 @@
     return laeufe;
   }
 
-  function lineAusgangOeffnen(alpha, pts, nrm, closed, limit, tiles) {
+  function lineKurveOeffnen(alpha, pts, nrm, closed, limit, tiles) {
     const st = lineExitStaerke;
     const n = alpha.length;
     if (!(st > 0) || n < 8 || !tiles || !tiles.length) return alpha;
@@ -799,12 +829,59 @@
     const at = (i) => closed ? ((i % n) + n) % n : Math.max(0, Math.min(n - 1, i));
     const abst = (i, j) => Math.hypot(bahn[j][0] - bahn[i][0], bahn[j][1] - bahn[i][1]);
     const tab = trackKachelTabelle(pts, tiles.length);
-    const zu = new Array(n).fill(0);
+    // ---- EINE LAGE VORGEBEN UND NICHT EINEN BETRAG ADDIEREN --------------------------
+    //
+    // Der erste Versuch addierte `aussen * st * limit` auf alpha. Das klingt gleichwertig
+    // und ist es nicht, und die Messung sagt warum. Auf SHG4HG3 liegt die geglaettete Linie
+    // hinter der Haarnadel bei alpha = -0,97 des Deckels, also praktisch am inneren Rand.
+    // Ein Zuschlag von 0,5 landet dort bei -0,47 - immer noch innen, obwohl der Regler auf
+    // der Haelfte stand. Gemessen kam heraus:
+    //
+    //     Haarnadel-Ausgang   vorher -0,97   mit Zuschlag -0,73   gewollt: aussen
+    //
+    // Ein Betrag haengt also davon ab, wie tief der Glaetter vorher lag, und genau das ist
+    // die Groesse, die man beim Einstellen nicht kennt. Mit einer LAGE steht in der
+    // Einstellung, was man sieht: "am Kurvenausgang so viel Prozent des Weges zum
+    // Aussenrand". w ist das Gewicht dieser Vorgabe, und zwischen den Ankern wird auf die
+    // geglaettete Linie zurueckgeblendet - der Scheitel behaelt damit exakt den Wert, den
+    // der Glaetter gefunden hat, denn dort liegt der kleinste Radius.
+    const w = new Array(n).fill(0);
+    const ziel = new Array(n).fill(0);
+    const setzen = (i, gew, z) => {
+      if (gew > w[i]) { w[i] = gew; ziel[i] = z; }
+    };
+    // Die Scheitel, um sie am Ende freizuraeumen. WARUM DAS NOETIG IST, und es ist ein
+    // Fehler, den der Selbsttest gefunden hat: liegt der Scheitel auf dem ERSTEN Punkt des
+    // Kurvenlaufs, dann ist er derselbe Punkt wie der Eingang - und `setzen(eingang, 1, z)`
+    // zieht ihn mit vollem Gewicht nach aussen. Aus der Kurve wird dann eine, die von aussen
+    // nach aussen laeuft und innen nichts mehr hat. Gemessen schlug es bei einkacheligen
+    // Kurven zu: SG2RG2L Kachel 6 dreht links, die Linie lag bei -0,03 statt innen.
+    //
+    // Und es gilt allgemein, nicht nur fuer diesen Fall: der Scheitel ist der Punkt
+    // kleinsten Radius, und was dort steht, hat der Glaetter entschieden. Eine Zutat, die
+    // danach kommt, darf ihn nicht verschieben - sonst prueft man nicht mehr die Linie,
+    // sondern die Zutat.
+    const scheitel = [];
+    // Eine Rampe ueber eine KACHELLAENGE, vom Anker weg gemessen: das Gewicht faellt von 1
+    // am Anker auf 0. Der WEG und nicht die Punktzahl, denn die Punkte liegen ungleich dicht
+    // - gemessen 14 auf einer Geraden, 49 in einer Haarnadel.
+    const rampe = (anker, richtung, z) => {
+      let weg = 0, vor = anker;
+      for (let d = 1; d <= n; d++) {
+        const j = at(anker + richtung * d);
+        weg += abst(vor, j);
+        vor = j;
+        if (weg >= LINE_EXIT_AUSLAUF) break;
+        setzen(j, 1 - weg / LINE_EXIT_AUSLAUF, z);
+      }
+    };
     for (const lauf of lineKurvenLaeufe(tiles, closed)) {
       // Die Abtastpunkte dieses Laufs, ueber die Naht hinweg.
       const idx = [];
+      let haarnadel = false;
       for (let kk = lauf.von; kk <= lauf.bis; kk++) {
         const t = ((kk % tiles.length) + tiles.length) % tiles.length;
+        if (istHaarnadel(tiles[t].type)) haarnadel = true;
         for (let d = 0; d < tab.zahl[t]; d++) idx.push(at(tab.start[t] + d));
       }
       if (idx.length < 3) continue;
@@ -813,32 +890,70 @@
       for (const i of idx) if (k[i] > k[sch]) sch = i;
       const aussen = alpha[sch] === 0 ? 0 : -Math.sign(alpha[sch]);
       if (!aussen) continue;
-      // Ausgang: der letzte Punkt des Laufs. Das ist die Kachelgrenze, an der die Kurve
-      // aufhoert - keine Schaetzung.
+      const z = aussen * st * limit
+        * (haarnadel ? LINE_OEFFNUNG_HAARNADEL : LINE_OEFFNUNG_KURVE);
+      // ---- DER SCHEITEL LIEGT IM MITTLEREN VIERTELBEREICH DES LAUFS ------------------
+      //
+      // Gesucht wird er als Punkt groesster Linienkruemmung, und das ist eine Messung. Wo er
+      // liegen DARF, ist eine Aussage ueber Kurven: Eingang und Ausgang sind die
+      // Kachelgrenzen, an denen die Kurve anfaengt und aufhoert, und ein Scheitel auf einer
+      // dieser Grenzen ist keiner.
+      //
+      // OHNE DIESE KLEMME FAELLT EINE RAMPE GANZ AUS, gemessen an SG2H2G2J2/Kruemmung: die
+      // Suche fand die groesste Kruemmung auf dem LETZTEN Punkt des Haarnadelzugs. Damit war
+      // bisAusgang = 0, die Ausfahrt bekam keine Oeffnung, und der Wert am Ausgang stand bei
+      // +0,99 - also ganz innen, genau das Gegenteil des Bestellten. Eine Klemme um EINEN
+      // Abtastpunkt half nicht: dann blieb genau ein Punkt fuer die ganze Ausfahrt.
+      //
+      // WARUM DER SPAETE SCHEITEL UEBERHAUPT ENTSTEHT, und das ist der Grund, ihn zu
+      // beschneiden: der Glaetter kennt keine Laengsdynamik. Ein spaeter Scheitel kostet ihn
+      // nichts, weil er nicht beschleunigt; ein Fahrer bezahlt ihn mit der ganzen Ausfahrt.
+      // Das Viertel an jedem Ende ist gewaehlt - es sichert beiden Rampen einen Anteil, der
+      // mit der Laenge des Laufs waechst, statt einer festen Punktzahl.
+      const iSch = Math.max(Math.floor(idx.length * 0.25),
+                            Math.min(Math.ceil(idx.length * 0.75), idx.indexOf(sch)));
+      sch = idx[iSch];
+      scheitel.push(sch);
+      // Eingang und Ausgang sind die KACHELGRENZEN des Laufs, keine Schaetzung.
+      const eingang = idx[0];
       const ausgang = idx[idx.length - 1];
-      const bisAusgang = idx.indexOf(sch) >= 0
-        ? idx.length - 1 - idx.indexOf(sch) : 0;
+      // ---- ANFAHRT: von aussen ------------------------------------------------------
+      //
+      // GEMELDET: "Haarnadel von aussen anfahren und aussen verlassen tendenziell" - und in
+      // derselben Nachricht "auf der Start/Ziel-Geraden fahren die Autos immer ganz rechts,
+      // warum?". Das ist DIESELBE Ursache, und sie ist gemessen. alpha je Kachel, auf den
+      // Deckel normiert, negativ heisst rechts:
+      //
+      //     SR3GLR2GR2G2   S     R     R     R     G     L     R
+      //     Kruemmung    -0,81 -0,90 -1,00 -0,98 -0,64 +0,13 +0,48
+      //     Rundenzeit   -0,29 -0,43 -0,97 -0,87 -0,54 +0,41 +0,73
+      //
+      // Acht Rechtskurven, eine Linkskurve: die Runde IST eine grosse Rechtsschleife, und
+      // der glatteste Weg darin klebt rechts - auch auf der Start/Ziel-Geraden, wo ein
+      // Fahrer links waere, weil danach drei Rechtskurven kommen. Der Glaetter kennt keine
+      // Anfahrt; er kennt nur Kruemmung. Deshalb ist die Anfahrt hier und nicht dort.
+      setzen(eingang, 1, z);
+      rampe(eingang, -1, z);
+      // Vom Eingang zum Scheitel zurueckblenden.
+      if (iSch > 0) for (let d = 1; d < iSch; d++) setzen(idx[d], 1 - d / iSch, z);
+      // ---- AUSFAHRT: nach aussen tragen lassen ---------------------------------------
+      const bisAusgang = iSch >= 0 ? idx.length - 1 - iSch : 0;
       if (bisAusgang > 0) {
-        // Vom Scheitel bis zum Ausgang aufbauen.
-        for (let d = 1; d <= bisAusgang; d++) {
-          setzeGroesser(zu, idx[idx.indexOf(sch) + d],
-                        aussen * st * limit * (d / bisAusgang));
-        }
+        for (let d = 1; d <= bisAusgang; d++) setzen(idx[iSch + d], d / bisAusgang, z);
       }
       // Und danach ueber eine Kachellaenge auslaufen - dort liegt die Gerade, auf der sich
       // ein Fahrer nach aussen tragen laesst.
-      let weg = 0;
-      let vor = ausgang;
-      for (let d = 1; d <= n; d++) {
-        const j = at(ausgang + d);
-        weg += abst(vor, j);
-        vor = j;
-        if (weg >= LINE_EXIT_AUSLAUF) break;
-        setzeGroesser(zu, j, aussen * st * limit * (1 - weg / LINE_EXIT_AUSLAUF));
-      }
+      rampe(ausgang, 1, z);
     }
+    // ZULETZT, nachdem alle Kurven geschrieben haben: die Scheitel behalten ihren Wert.
+    // Vorher zu schuetzen wuerde nichts helfen - eine spaetere Kurve mit hoeherem Gewicht
+    // schriebe sie wieder zu.
+    for (const i of scheitel) { w[i] = 0; ziel[i] = 0; }
     const raus = new Array(n);
-    for (let i = 0; i < n; i++) raus[i] = Math.max(-limit, Math.min(limit, alpha[i] + zu[i]));
+    for (let i = 0; i < n; i++) {
+      const v = alpha[i] * (1 - w[i]) + ziel[i] * w[i];
+      raus[i] = Math.max(-limit, Math.min(limit, v));
+    }
     return raus;
   }
 
@@ -859,7 +974,7 @@
     // Zielfunktion, sondern eine Zutat danach - siehe lineAusgangOeffnen(). Und weil er hier
     // steht und nicht bei einem der Aufrufer, zeichnet der Editor genau die Linie, die die
     // Ghosts fahren.
-    line.alpha = lineAusgangOeffnen(line.alpha, pts, nrm, !!o.closed, line.limit, o.tiles);
+    line.alpha = lineKurveOeffnen(line.alpha, pts, nrm, !!o.closed, line.limit, o.tiles);
     line.span = Math.max(...line.alpha.map(Math.abs));
     line.exit = lineExitStaerke;
     return line;

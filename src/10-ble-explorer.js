@@ -1571,6 +1571,26 @@
       "How hard the car steers against a slide, measured from the rotation signal in byte 3 of the notifications. 50 per cent is the default that was asked for. What is uncertain about it, and it is two things at once: the signal is unconfirmed – it only varies once the car is moving, and flipped sign with cornering direction in exactly one recording. And it is uncalibrated: its scale is self-adjusting because the real amplitude is unknown. So the strength depends on the largest yaw value the session has seen so far. The “Drift probe” button under “Measure lateral offset” measures whether the signal moves at all under straight full throttle.",
     "Rennen":
       "Race",
+    "Ghost: Kurven öffnen":
+      "Ghost: open up the corners",
+    "Wie weit außen ein Ghost eine Kurve anfährt und wieder verlässt, als Anteil des Weges zum Außenrand. Die Krümmungsminimierung kennt beides nicht: sie sucht den kürzesten glatten Weg, und bei einer Runde voller gleichsinniger Kurven liegt der innen – gemessen klebte die Linie auf der Start/Ziel-Geraden bei 90 % rechts, obwohl danach drei Rechtskurven kommen. Ein Fahrer fährt weit heraus, weil er bremst und beschleunigt und dafür Breite braucht; das ist eine Längsgröße, und die kennt der Glätter nicht.":
+      "How far out a ghost enters and leaves a corner, as a fraction of the way to the outer edge. Minimum-curvature smoothing knows neither: it looks for the shortest smooth path, and on a lap full of same-handed corners that path runs on the inside – measured, the line stuck to the right at 90% along the start/finish straight even though three right-handers follow. A driver runs wide because he brakes and accelerates and needs the width for it; that is a longitudinal quantity, and the smoother does not know about it.",
+    "Scheitel, Eingang und Ausgang kommen aus dem Layout: der Scheitel ist der Punkt größter Linienkrümmung im Kurvenlauf, Eingang und Ausgang sind seine Kachelgrenzen. Der Scheitel selbst bleibt unangetastet – dort liegt der kleinste Radius. Haarnadeln werden voll geöffnet, normale Kurven zu 60 %, weil sich eine 60-Grad-Kurve auf 25 cm Breite noch rund fahren lässt.":
+      "Apex, entry and exit come from the layout: the apex is the point of greatest line curvature within the run of corner tiles, entry and exit are its tile boundaries. The apex itself is left alone – that is where the smallest radius is. Hairpins are opened fully, ordinary corners to 60%, because a 60-degree corner can still be taken round on 25 cm of width.",
+    "Die Vorgabe stand bis v0.5.39 auf 1,2 – das war für die alte Linie kalibriert, die an einer Bahnseite klebte. Seit die Linie von außen anfährt und nach außen ausfährt, verlangt sie bis zu 2,9 Bahnbreiten je Sekunde; gemessen kappte 1,2 die Spitze des Lenkbytes auf 67 von 127, während 2,0 auf 95 kommt. Weniger sieht ruhiger aus und folgt der gezeichneten Linie schlechter – hier liegt der Tausch.":
+      "Up to v0.5.39 the default was 1.2 – calibrated for the old line, which clung to one side of the track. Now that the line enters and leaves corners from the outside it asks for up to 2.9 track widths per second; measured, 1.2 clipped the peak of the steering byte to 67 of 127, whereas 2.0 reaches 95. Less looks calmer and follows the drawn line less well – that is the trade.",
+    "Ghost: so fährt das gewählte Modell":
+      "Ghost: how the chosen model drives",
+    "Die Linie, die aus der Wahl darüber folgt, mit der Bremsampel: grün freie Fahrt, rot voll anbremsen. Es ist dieselbe Linie, die der Streckeneditor zeichnet und die die Ghosts fahren – alle drei gehen durch denselben Aufruf.":
+      "The line that follows from the choice above, with the braking colours: green means clear, red means brake hard. It is the same line the track editor draws and the ghosts drive – all three go through the same call.",
+    "Ohne eingetragene Strecke wird auf SR3GLR2GR2G2 gefahren – geliehen, der Streckeneditor bleibt leer.":
+      "With no track entered, the race runs on SR3GLR2GR2G2 – borrowed, the track editor stays empty.",
+    "Keine Strecke eingetragen.":
+      "No track entered.",
+    "{m} ist gewählt. Krümmung nutzt {a} cm Versatz, Rundenzeit {b} cm und ist im Modell {p} % schneller.":
+      "{m} is selected. Curvature uses {a} cm of offset, lap time {b} cm and is {p}% faster in the model.",
+    "Gezeigt ist die Vorgabestrecke; im Editor steht noch keine.":
+      "Shown is the default track; the editor has none yet.",
     "Ghost: Kurvenausgang öffnen":
       "Ghost: open up the corner exit",
     "Wie weit sich ein Ghost am Kurvenausgang nach außen tragen lässt. Die Krümmungsminimierung kennt das nicht: sie sucht den kürzesten glatten Weg, und bei zwei gleichsinnigen Kurven auf 25 cm Bahnbreite liegt der innen. Gemessen blieb die Linie hinter einer Haarnadel bei 68 % nach innen stehen. Ein Fahrer fährt weit heraus, weil er beschleunigt und dafür Breite braucht – das ist eine Längsgröße, und die kennt der Glätter nicht.":
@@ -1581,8 +1601,8 @@
       "Ghost: lateral inertia",
     "Wie schnell ein Ghost seine Querlage ändern darf, in Bahnbreiten je Sekunde. Die Ideallinie ist eine Funktion des Ortes und nicht der Zeit – beim Wechsel des Kacheltyps ändert sich der Sollwert in einem Takt um bis zu 0,4 der Bahnbreite, und ein Servo, der das in einem Takt nachführt, sieht aus wie ein Ruck.":
       "How fast a ghost may change its lateral position, in track widths per second. The racing line is a function of place and not of time – at a change of tile type the target shifts by up to 0.4 of the track width in a single tick, and a servo that follows that in one tick looks like a jerk.",
-    "Eine Ratenbegrenzung und kein Tiefpass: sie hat eine feste Höchstgeschwindigkeit und erreicht den Sollwert exakt, während ein Tiefpass sich ihm nur nähert und dabei umso schneller läuft, je weiter er weg ist. 1,2 sind bei 25 cm Bahnbreite 30 cm/s – rund ein Drittel der Längsgeschwindigkeit eines Ghosts bei halbem Gas.":
-      "A rate limit and not a low-pass: it has a fixed top speed and reaches the target exactly, whereas a low-pass only approaches it and runs faster the further away it is. On 25 cm of track width 1.2 is 30 cm/s – about a third of a ghost's forward speed at half throttle.",
+    "Eine Ratenbegrenzung und kein Tiefpass: sie hat eine feste Höchstgeschwindigkeit und erreicht den Sollwert exakt, während ein Tiefpass sich ihm nur nähert und dabei umso schneller läuft, je weiter er weg ist. 2,0 sind bei 25 cm Bahnbreite 50 cm/s.":
+      "A rate limit and not a low-pass: it has a fixed top speed and reaches the target exactly, whereas a low-pass only approaches it and runs faster the further away it is. On 25 cm of track width 2.0 is 50 cm/s.",
     "Ghost: Brems- und Gasverhalten":
       "Ghost: braking and throttle behaviour",
     "Wie entschlossen ein Ghost Gas gibt und bremst. Ghost und Fahrer gehen durch dasselbe Fahrzeugmodell, bekommen ihr Gas aber aus verschiedenen Quellen: der Fahrer drückt einen Trigger und ist sofort am Anschlag, der Ghost hat einen Regler auf ein Zieltempo, dessen Ausgang ratenbegrenzt ist.":
@@ -1959,6 +1979,16 @@
     if (key) {
       const p = $('sub-' + key);
       if (p) p.classList.add('on');
+    }
+    // Die Linienvorschau auf der Ghost-Seite wird erst hier gezeichnet. Sie kostet rund
+    // 94 ms; sie beim Laden oder bei jedem Streckenklick mitzurechnen waere Aufwand fuer
+    // eine Karte, die niemand ansieht. HIER ist der Moment, in dem sie sichtbar wird.
+    //
+    // Ueber typeof gewaechtert und nicht ueber try: linemodellKarteZeichnen ist eine
+    // FUNKTIONSDEKLARATION in 90-ghosts.js, wird also in der gemeinsamen IIFE gehoben - der
+    // Waechter faengt nur den Fall, dass die Datei gar nicht mitgebaut wurde.
+    if (key === 'opt-ghosts' && typeof linemodellKarteZeichnen === 'function') {
+      try { linemodellKarteZeichnen(); } catch (e) { /* keine Strecke, kein Bild */ }
     }
     window.scrollTo(0, 0);
   }

@@ -3842,29 +3842,64 @@
       };
       const halb = TRACK_HALF_W;
       let geprueft = 0;
+      // ---- JE KURVENZUG DER SCHEITEL, NICHT JE KACHEL DIE MITTE --------------------
+      //
+      // Hier stand eine Schleife ueber alle KURVENKACHELN, die jeweils den Punkt bei
+      // Phase 0,5 nahm und von ihm verlangte, innerhalb der Mittellinie zu liegen. Das war
+      // richtig, solange die Linie ueber die ganze Kurve innen klebte. Seit sie von aussen
+      // anfaehrt und nach aussen ausfaehrt, ist die Mitte der LETZTEN Kachel eines
+      // dreikacheligen Zuges die Ausfahrt - und dort MUSS sie aussen liegen. Gemessen fiel
+      // die Pruefung genau so: K3 r=35,3 und K6 r=36,4 gegen eine Mittellinie von 34,4.
+      //
+      // Geprueft wird deshalb der Scheitel des ZUGES, und zwar der Punkt mit dem kleinsten
+      // Radius - das ist die Definition und braucht keine Phasenannahme. Zusaetzlich, und
+      // das ist neu: der Scheitel muss auch WEITER INNEN liegen als Anfang und Ende des
+      // Zuges. Damit prueft dieselbe Stelle beide Aussagen.
+      const istKurve = (typ) => typ === TILE_TYPE.CURVE_LEFT || typ === TILE_TYPE.CURVE_RIGHT
+                             || typ === TILE_TYPE.HAIRPIN || typ === TILE_TYPE.HAIRPIN_LEFT;
+      // Zusammenhaengende Kurvenkacheln zu Zuegen buendeln.
+      const zuege = [];
       for (let k = 0; k < p.tiles.length; k++) {
-        const typ = p.tiles[k].type;
-        if (typ !== TILE_TYPE.CURVE_LEFT && typ !== TILE_TYPE.CURVE_RIGHT
-            && typ !== TILE_TYPE.HAIRPIN && typ !== TILE_TYPE.HAIRPIN_LEFT) continue;
-        const inK = rows.filter((r) => r.tile === k && Math.abs(r.phase - 0.5) < 0.15)[0];
-        if (!inK) continue;
-        const idx = [];
-        for (let i = 0; i < pts.length; i++) if (pts[i].tile === k) idx.push(i);
-        const i = idx[Math.floor(idx.length / 2)];
-        const c = mitte(i);
-        if (!c) continue;
+        if (!istKurve(p.tiles[k].type)) continue;
+        const letzt = zuege[zuege.length - 1];
+        if (letzt && letzt[letzt.length - 1] === k - 1) letzt.push(k);
+        else zuege.push([k]);
+      }
+      for (const zug of zuege) {
+        // Alle Proben des Zuges, in Fahrtrichtung.
+        const proben = [];
+        for (const k of zug) {
+          for (const r of rows.filter((x) => x.tile === k).sort((a, b) => a.phase - b.phase)) {
+            const idx = [];
+            for (let i = 0; i < pts.length; i++) if (pts[i].tile === k) idx.push(i);
+            const i = idx[Math.min(idx.length - 1, Math.round(r.phase * idx.length))];
+            const c = mitte(i);
+            if (!c) continue;
+            // Die Lage, die die Karte zeichnet: querSollAlsLage(Lenkwert), mal 85 Prozent
+            // der halben Breite - genau die Rechnung aus karteAutosSetzen().
+            const lage = querSollAlsLage(r.calc);
+            const px = pts[i].x + nrm[i].x * lage * 0.85 * halb;
+            const py = pts[i].y + nrm[i].y * lage * 0.85 * halb;
+            proben.push({ k, rM: Math.hypot(pts[i].x - c.x, pts[i].y - c.y),
+                          rA: Math.hypot(px - c.x, py - c.y) });
+          }
+        }
+        if (proben.length < 3) continue;
         geprueft++;
-        // Die Lage, die die Karte zeichnet: querSollAlsLage(Lenkwert), mal 85 Prozent der
-        // halben Breite - genau die Rechnung aus karteAutosSetzen().
-        const lage = querSollAlsLage(inK.calc);
-        const px = pts[i].x + nrm[i].x * lage * 0.85 * halb;
-        const py = pts[i].y + nrm[i].y * lage * 0.85 * halb;
-        const rM = Math.hypot(pts[i].x - c.x, pts[i].y - c.y);
-        const rA = Math.hypot(px - c.x, py - c.y);
-        zeilen.push('K' + k + ' ' + rA.toFixed(0) + '/' + rM.toFixed(0));
-        if (!(rA < rM)) {
-          schlecht.push('K' + k + ': Auto r=' + rA.toFixed(1) + ' nicht innerhalb der '
-                        + 'Mittellinie r=' + rM.toFixed(1));
+        // Der Scheitel: kleinster Radius des Autos im ganzen Zug.
+        const sch = proben.reduce((a, b) => (b.rA < a.rA ? b : a));
+        const ein = proben[0], aus = proben[proben.length - 1];
+        zeilen.push('K' + zug[0] + (zug.length > 1 ? '-' + zug[zug.length - 1] : '')
+                    + ' ' + ein.rA.toFixed(0) + '/' + sch.rA.toFixed(0) + '/'
+                    + aus.rA.toFixed(0) + ' Mitte ' + sch.rM.toFixed(0));
+        if (!(sch.rA < sch.rM)) {
+          schlecht.push('K' + zug[0] + ': Scheitel r=' + sch.rA.toFixed(1)
+                        + ' nicht innerhalb der Mittellinie r=' + sch.rM.toFixed(1));
+        }
+        // Und die Form, nur wo Platz dafuer ist: ein einkacheliger Zug hat keinen.
+        if (zug.length > 1 && !(sch.rA < ein.rA && sch.rA < aus.rA)) {
+          schlecht.push('K' + zug[0] + ': keine Form, ein ' + ein.rA.toFixed(1)
+                        + ' Scheitel ' + sch.rA.toFixed(1) + ' aus ' + aus.rA.toFixed(1));
         }
       }
       if (!geprueft) schlecht.push('keine Kurve gefunden');
@@ -4334,8 +4369,25 @@
   // jeweils 127. Unsere lagen bei 18,3 mit Spitze 44 - gemeldet als "stumpf ihre Spur,
   // keine Querlage". Ursache war der Deckel von 0,55 mal line 0,7.
   //
-  // Die Schranke steht bei 25 und 70, also unter dem schwaecheren der zwei Originalwerte:
-  // getroffen werden soll die Groessenordnung, nicht eine Nachkommastelle.
+  // NICHT MEHR DER MITTELWERT, seit v0.5.40 - und das ist die Berichtigung eines Masses,
+  // das den Fehler belohnt, den es fangen soll. |Mittel| ist am GROESSTEN, wenn ein Auto
+  // dauerhaft auf einer Bahnseite klebt, und genau das war der gemeldete Fehler: "auf der
+  // Start/Ziel-Geraden fahren die Autos immer ganz rechts - warum?".
+  //
+  // Gemessen ueber 300 Takte, je nach Staerke der Kurvenoeffnung:
+  //
+  //     Oeffnung   min   max   Spanne   |Mittel|
+  //        aus       0   124     124      55,9
+  //        0,8     -95    73     168      19,8
+  //
+  // Bei ausgeschalteter Oeffnung ist das MINIMUM exakt null: die Linie geht ueber die ganze
+  // Runde kein einziges Mal auf die andere Seite. Sie nutzt eine halbe Bahn und bekommt
+  // dafuer den doppelten Mittelwert. Ein Test auf |Mittel| haette diesen Zustand als den
+  // besseren ausgewiesen.
+  //
+  // Geprueft wird deshalb, was die Original-App wirklich belegt: dass die Bahnbreite
+  // GENUTZT wird. Spanne und beide Vorzeichen - und die Spitze bleibt, unveraendert bei 70
+  // von 127 gegen die gemessenen 127 des Originals.
   stAdd('Ghost-Querlage: im Mass der Original-App', () => {
     if (!window.OMEGA_TEST || !OMEGA_TEST.ghostDriveProbe) {
       return { skip: true, mass: 'ghostDriveProbe nicht vorhanden' };
@@ -4344,12 +4396,19 @@
       const abs = p.lenk.map(Math.abs);
       const mittel = abs.reduce((a, b) => a + b, 0) / abs.length;
       const spitze = Math.max.apply(null, abs);
+      const min = Math.min.apply(null, p.lenk);
+      const max = Math.max.apply(null, p.lenk);
       const schlecht = [];
-      if (mittel < 25) schlecht.push('|Mittel| nur ' + mittel.toFixed(1) + ', Original 32 bis 47');
       if (spitze < 70) schlecht.push('Spitze nur ' + spitze + ', Original 127');
+      if (max - min < 90) schlecht.push('Spanne nur ' + (max - min) + ' von 254');
+      // BEIDE SEITEN. Das ist die Bedingung, die den gemeldeten Fehler faengt: ohne
+      // Kurvenoeffnung lag das Minimum bei exakt 0, die Linie ging also nie nach links.
+      if (!(min <= -20 && max >= 20)) {
+        schlecht.push('nur eine Seite benutzt (' + min + ' bis ' + max + ')');
+      }
       return { ok: schlecht.length === 0,
-               mass: '|Mittel| ' + mittel.toFixed(1) + ', Spitze ' + spitze
-                     + ' (Original 32,2 / 47,3, Spitze 127)'
+               mass: min + ' bis ' + max + ', Spanne ' + (max - min) + ', Spitze ' + spitze
+                     + ', |Mittel| ' + mittel.toFixed(1) + ' (Original Spitze 127)'
                      + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
     });
   });
@@ -5640,6 +5699,24 @@
   // Geprueft wird das VORZEICHEN gegen die Drehrichtung der Kurve, denn genau das ist die
   // Zusicherung: in einer Rechtskurve liegt die schnelle Linie rechts (innen), in einer
   // Linkskurve links. Kein Betrag, keine Zentimeter - eine Seite.
+  //
+  // AM SCHEITEL UND NICHT IM MITTEL, seit v0.5.40 - und das ist keine Abschwaechung, sondern
+  // die Berichtigung einer Groesse, die ihre Aussage verloren hat. Bis dahin klebte die Linie
+  // ueber die ganze Kurve auf der Innenseite, da war das Mittel dasselbe wie der Scheitel.
+  // Seit sie von aussen anfaehrt und nach aussen ausfaehrt, DURCHQUERT sie die Bahn, und ihr
+  // Mittelwert sagt darueber nichts mehr: gemessen an SG2H2G2J2 liegt das Mittel eines
+  // Haarnadelzugs bei +0,05, waehrend die Spanne 1,89 betraegt.
+  //
+  // Dafuer wird jetzt MEHR geprueft als vorher, naemlich die ganze Form:
+  //
+  //   der Scheitel liegt innen, mit Betrag           sonst gibt es keinen Scheitel
+  //   Ein- und Ausgang liegen weiter aussen als er   sonst ist es keine Kurvenlinie
+  //
+  // Die zweite Bedingung nur fuer Zuege ueber MEHRERE Kacheln, und das ist Geometrie und
+  // keine Nachsicht: eine einzelne 60-Grad-Kachel inmitten gegensinniger Kurven hat keinen
+  // Platz fuer Anfahrt, Scheitel und Ausfahrt. Gemessen liegt der schlechteste
+  // Mehrkachelzug bei 0,27, der schlechteste Einkachelzug bei 0,03 - die Schranke von 0,15
+  // trennt die beiden Faelle sauber.
   stAdd('Ideallinie liegt auf der Innenseite', () => {
     if (!window.OMEGA_TEST || !OMEGA_TEST.lineShape) {
       return { skip: true, mass: 'lineShape nicht vorhanden' };
@@ -5654,17 +5731,27 @@
         if (!zuege || !zuege.length) { schlecht.push(code + '/' + m + ': keine Kurve'); continue; }
         for (const z of zuege) {
           n++;
-          // Das Mittel muss das Vorzeichen der Drehrichtung haben. Ein Mittel um Null
-          // waere "haelt die Mitte", ein umgekehrtes ist der Fehler von oben.
-          if (Math.sign(z.mittel) !== z.dir || Math.abs(z.mittel) < 0.05) {
-            schlecht.push(code + '/' + m + ' Kachel ' + z.von + '-' + z.bis
-                          + ' dreht ' + (z.dir > 0 ? 'rechts' : 'links')
-                          + ', Linie ' + z.mittel.toFixed(2));
+          const wo = code + '/' + m + ' Kachel ' + z.von + '-' + z.bis
+                     + ' dreht ' + (z.dir > 0 ? 'rechts' : 'links');
+          // 1. Der Scheitel liegt innen, und zwar mit Betrag. Gemessen ist der kleinste
+          //    ueber alle Proben 0,37; 0,25 laesst Luft und faengt "kein Scheitel".
+          if (Math.sign(z.scheitel) !== z.dir || Math.abs(z.scheitel) < 0.25) {
+            schlecht.push(wo + ', Scheitel ' + z.scheitel.toFixed(2));
+            continue;
+          }
+          // 2. Und die Form: Ein- und Ausgang liegen WEITER AUSSEN als der Scheitel.
+          if (z.bis > z.von) {
+            const fEin = z.dir * (z.scheitel - z.eingang);
+            const fAus = z.dir * (z.scheitel - z.ausgang);
+            if (Math.min(fEin, fAus) < 0.15) {
+              schlecht.push(wo + ', Form ein ' + fEin.toFixed(2) + ' aus ' + fAus.toFixed(2));
+            }
           }
         }
         if (m === 'laptime') {
           zeilen.push(code + ' ' + zuege.map(z => (z.dir > 0 ? 'R' : 'L')
-                      + (z.mittel >= 0 ? '+' : '') + z.mittel.toFixed(2)).join(' '));
+                      + z.eingang.toFixed(2) + '/' + z.scheitel.toFixed(2)
+                      + '/' + z.ausgang.toFixed(2)).join(' '));
         }
       }
     }

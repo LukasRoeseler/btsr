@@ -2301,10 +2301,19 @@
             zuege.push(cur);
           }
         }
+        // SCHEITEL, EINGANG UND AUSGANG einzeln - das Mittel allein taugt nicht mehr als
+        // Beschreibung einer Kurve, seit die Linie von aussen anfaehrt und nach aussen
+        // ausfaehrt. Gemessen an SG2H2G2J2 liegt das Mittel eines Haarnadelzugs bei +0,05,
+        // waehrend die Spanne 1,89 betraegt: die Linie durchquert die ganze Bahn, und ihr
+        // Mittelwert sagt darueber genau nichts. Der Scheitel ist der Extremwert IN
+        // Drehrichtung, Eingang und Ausgang sind der erste und der letzte Punkt des Zuges.
         return zuege.map(z => ({
           von: z.von, bis: z.bis, dir: z.dir,
           mittel: +(z.werte.reduce((s, x) => s + x, 0) / z.werte.length).toFixed(4),
           spanne: +(Math.max(...z.werte) - Math.min(...z.werte)).toFixed(4),
+          scheitel: +(z.dir > 0 ? Math.max(...z.werte) : Math.min(...z.werte)).toFixed(4),
+          eingang: +z.werte[0].toFixed(4),
+          ausgang: +z.werte[z.werte.length - 1].toFixed(4),
         }));
       } finally {
         currentTrackTiles = keep;

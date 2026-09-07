@@ -2139,6 +2139,17 @@
   /* Der Streckenreiter: so breit wie die Spalte, gedeckelt. Diese Regel hat vorher gefehlt -
      #dash-minimap hatte KEIN CSS und hing vollstaendig am Inline-Stil des Zeichners. */
   #dash-minimap .tp-karte { width: 100%; max-width: 520px; height: auto; }
+  /* Die Vorschau neben der Modellwahl. Gedeckelt in der HOEHE und nicht in der Breite: ein
+     hochkantiges Layout wuerde sonst die halbe Seite fuellen. */
+  /* EINE SPALTE, und das ist keine Kosmetik. .opt-row ist ein Raster
+     `minmax(0,1fr) auto`: die zweite Spalte nimmt ihre max-content-Breite, und eine Karte
+     mit max-width 420px hat davon reichlich. Gemessen brach die Beschriftung daneben auf
+     EIN ZEICHEN pro Zeile um - die 1fr-Spalte kann unter minmax(0,...) beliebig schmal
+     werden, also tat sie es. Eine Karte gehoert unter ihren Text, nicht daneben. */
+  .opt-row.opt-breit { grid-template-columns: minmax(0, 1fr); }
+  .lm-vorschau { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .tp-karte-halter { min-width: 0; }
+  #linemodel-karte .tp-karte { width: 100%; max-width: 420px; max-height: 36vh; height: auto; }
   #track-fs-host { position: relative; }
   /* Feste Hoehe. Vorher wuchs und schrumpfte der Kasten mit dem Streckenumriss: jedes
      hinzugefuegte Teil aenderte die viewBox, damit das Seitenverhaeltnis und damit die
@@ -6962,24 +6973,27 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="ghost-line-val">100%</span>
         </div></div>
-      <div class="opt-row"><div class="opt-label">Ghost: Kurvenausgang &ouml;ffnen
+      <div class="opt-row"><div class="opt-label">Ghost: Kurven &ouml;ffnen
           <span class="wip-tag">experimentell</span>
-          <small>Wie weit sich ein Ghost am Kurvenausgang nach au&szlig;en tragen l&auml;sst.
-          Die Kr&uuml;mmungsminimierung kennt das nicht: sie sucht den k&uuml;rzesten glatten
-          Weg, und bei zwei gleichsinnigen Kurven auf 25&nbsp;cm Bahnbreite liegt der innen.
-          Gemessen blieb die Linie hinter einer Haarnadel bei 68&nbsp;% nach innen stehen. Ein
-          Fahrer f&auml;hrt weit heraus, weil er beschleunigt und daf&uuml;r Breite braucht
-          &ndash; das ist eine L&auml;ngsgr&ouml;&szlig;e, und die kennt der Gl&auml;tter
-          nicht.
-          <br>Scheitel und Ausgang kommen aus dem Layout: der Scheitel ist der Punkt
-          gr&ouml;&szlig;ter Linienkr&uuml;mmung im Kurvenlauf, der Ausgang seine letzte
-          Kachelgrenze. Nur die St&auml;rke und die Auslaufl&auml;nge von einer Kachel sind
-          gew&auml;hlt &ndash; deshalb dieser Regler.</small></div>
+          <small>Wie weit au&szlig;en ein Ghost eine Kurve anf&auml;hrt und wieder
+          verl&auml;sst, als Anteil des Weges zum Au&szlig;enrand. Die
+          Kr&uuml;mmungsminimierung kennt beides nicht: sie sucht den k&uuml;rzesten glatten
+          Weg, und bei einer Runde voller gleichsinniger Kurven liegt der innen &ndash;
+          gemessen klebte die Linie auf der Start/Ziel-Geraden bei 90&nbsp;% rechts, obwohl
+          danach drei Rechtskurven kommen. Ein Fahrer f&auml;hrt weit heraus, weil er
+          bremst und beschleunigt und daf&uuml;r Breite braucht; das ist eine
+          L&auml;ngsgr&ouml;&szlig;e, und die kennt der Gl&auml;tter nicht.
+          <br>Scheitel, Eingang und Ausgang kommen aus dem Layout: der Scheitel ist der
+          Punkt gr&ouml;&szlig;ter Linienkr&uuml;mmung im Kurvenlauf, Eingang und Ausgang
+          sind seine Kachelgrenzen. Der Scheitel selbst bleibt unangetastet &ndash; dort
+          liegt der kleinste Radius. Haarnadeln werden voll ge&ouml;ffnet, normale Kurven zu
+          60&nbsp;%, weil sich eine 60-Grad-Kurve auf 25&nbsp;cm Breite noch rund fahren
+          l&auml;sst.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="ghost-exit" min="0" max="1" step="0.05" value="0.5">
+          <input type="range" id="ghost-exit" min="0" max="1" step="0.05" value="0.8">
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="ghost-exit-val">50%</span>
+          <span class="opt-val" id="ghost-exit-val">80%</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Ghost: Quertr&auml;gheit
           <span class="wip-tag">experimentell</span>
@@ -6991,13 +7005,18 @@
           <br>Eine Ratenbegrenzung und kein Tiefpass: sie hat eine feste
           H&ouml;chstgeschwindigkeit und erreicht den Sollwert exakt, w&auml;hrend ein
           Tiefpass sich ihm nur n&auml;hert und dabei umso schneller l&auml;uft, je weiter er
-          weg ist. 1,2 sind bei 25&nbsp;cm Bahnbreite 30&nbsp;cm/s &ndash; rund ein Drittel
-          der L&auml;ngsgeschwindigkeit eines Ghosts bei halbem Gas.</small></div>
+          weg ist. 2,0 sind bei 25&nbsp;cm Bahnbreite 50&nbsp;cm/s.
+          <br>Die Vorgabe stand bis v0.5.39 auf 1,2 &ndash; das war f&uuml;r die alte Linie
+          kalibriert, die an einer Bahnseite klebte. Seit die Linie von au&szlig;en anf&auml;hrt
+          und nach au&szlig;en ausf&auml;hrt, verlangt sie bis zu 2,9&nbsp;Bahnbreiten je
+          Sekunde; gemessen kappte 1,2 die Spitze des Lenkbytes auf 67 von 127, w&auml;hrend
+          2,0 auf 95 kommt. Weniger sieht ruhiger aus und folgt der gezeichneten Linie
+          schlechter &ndash; hier liegt der Tausch.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="ghost-quertempo" min="0.2" max="4" step="0.1" value="1.2">
+          <input type="range" id="ghost-quertempo" min="0.2" max="4" step="0.1" value="2">
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="ghost-quertempo-val">1.2</span>
+          <span class="opt-val" id="ghost-quertempo-val">2.0</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Ghost: Brems- und Gasverhalten
           <span class="wip-tag">experimentell</span>
@@ -7027,6 +7046,20 @@
         <div class="row" style="gap:6px; flex-wrap:wrap">
           <button type="button" class="mw-preset" data-linemodel="curvature">Kr&uuml;mmung</button>
           <button type="button" class="mw-preset sel" data-linemodel="laptime">Rundenzeit</button>
+        </div></div>
+      <!-- DIE LINIE DIREKT NEBEN DER WAHL. Gemeldet: "ich habe 2 Ideallinie Modi, aber wenn
+           ich dazwischen waehle, aendert sich die eingezeichnete Linie nicht." Sie aendert
+           sich - gemessen wandert der Start/Ziel-Punkt der Linie von x=45,9 auf x=50,5 -,
+           nur war sie nirgends zu sehen: die Knoepfe stehen in #tab-options, die einzige
+           gezeichnete Linie in #tab-track, also einen Tab weiter. -->
+      <div class="opt-row opt-breit"><div class="opt-label">Ghost: so f&auml;hrt das gew&auml;hlte Modell
+          <small>Die Linie, die aus der Wahl dar&uuml;ber folgt, mit der Bremsampel: gr&uuml;n
+          freie Fahrt, rot voll anbremsen. Es ist dieselbe Linie, die der Streckeneditor
+          zeichnet und die die Ghosts fahren &ndash; alle drei gehen durch denselben
+          Aufruf.</small></div>
+        <div class="lm-vorschau">
+          <div id="linemodel-karte" class="tp-karte-halter"></div>
+          <span class="muted" id="linemodel-info" data-i18n-skip></span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Ghost: lernt von Runde zu Runde
           <small>Probiert jede Runde eine kleine &Auml;nderung an Tempo und Linie und
@@ -7122,6 +7155,8 @@
         <label class="tgl"><input type="checkbox" id="sim-fast"><span></span></label></div>
       <div class="row" style="margin:12px 14px; align-items:center; gap:10px">
         <button class="primary" id="sim-start">Simulation starten</button>
+        <span class="muted" id="sim-vorgabe-hinweis">Ohne eingetragene Strecke wird auf
+        SR3GLR2GR2G2 gefahren &ndash; geliehen, der Streckeneditor bleibt leer.</span>
         <button id="sim-stop" hidden>Abbrechen</button>
         <span class="muted" id="sim-lage" data-i18n-skip>bereit</span>
       </div>
@@ -7606,7 +7641,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.5.39</span></span>
+    <span class="foot-ver">v<span id="app-version">0.5.40</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine

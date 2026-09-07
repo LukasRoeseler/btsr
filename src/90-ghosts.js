@@ -1467,11 +1467,30 @@
     // Takt nachfuehrt, sieht aus wie ein Ruck, und ein Auto auf einer Schiene faehrt es auch
     // so.
     //
-    // 1,2 je Sekunde ist GEWAEHLT: bei 25 cm Bahnbreite sind das 30 cm/s Querbewegung, also
-    // rund ein Drittel der Laengsgeschwindigkeit eines Ghosts bei halbem Gas (34 cm/s
-    // gemessen). Mehr sieht hektisch aus, weniger laesst ihn der Linie nicht mehr folgen.
-    // Der Regler daneben ist da, weil das eine Wahl und keine Messung ist.
-    querTempo: 1.2,
+    // 2,0 JE SEKUNDE, UND NICHT MEHR 1,2 - eine Berichtigung, und der Grund ist
+    // nachgemessen. 1,2 war fuer die ALTE Linie kalibriert, die auf einer Runde voller
+    // gleichsinniger Kurven an einer Bahnseite klebte und sich deshalb kaum quer bewegte.
+    // Seit die Linie von aussen anfaehrt und nach aussen ausfaehrt, verlangt sie ein
+    // Vielfaches davon: der Weg von der Anfahrt (0,8 nach aussen) zum Scheitel (1,0 nach
+    // innen) sind 1,8 Bahnbreiten, und bei halbem Gas (34 cm/s, gemessen) dauert eine halbe
+    // Kachel rund 0,63 s - also bis zu 2,9 Bahnbreiten je Sekunde.
+    //
+    // Was 1,2 damit anrichtete, gemessen am Lenkbyte ueber 300 Takte:
+    //
+    //     Quertempo   min   max   Spanne   Spitze
+    //        1,2      -67    46     113      67
+    //        2,0      -95    73     168      95
+    //        3,0      -96    96     192      96
+    //
+    // Die Ratenbegrenzung war also der BINDENDE Zwang und nicht die Linie: der Ghost kam
+    // nicht mehr dorthin, wo die gezeichnete Linie lag.
+    //
+    // UND DER GRUND, WARUM SIE JETZT LOCKERER DARF, ist derselbe Umbau. 1,2 war die Antwort
+    // auf einen Sollwert, der am Kacheltypwechsel SPRANG; die Rampen ueber eine Kachellaenge
+    // machen ihn stetig, und eine Ratenbegrenzung gegen einen stetigen Sollwert muss nicht
+    // mehr so eng sein. Sie bleibt trotzdem drin - als Schutz davor, dass ein
+    // zurueckgestelltes Auto aus der Hand gerissen wird.
+    querTempo: 2.0,
     // ---- BREMS- UND GASVERHALTEN ---------------------------------------------------
     //
     // Gemeldet: "Bremsverhalten vor und Beschleunigungsverhalten nach Kurven der Ghosts soll
@@ -4503,6 +4522,66 @@
   //
   // Nur REINE Funktionen, kein Zustand, kein Schreibzugriff. Was hier steht, kann eine
   // Pruefung aufrufen, ohne ein Auto zu verbinden oder auf eine Zeitmessung zu warten.
+  // ---- Die gewaehlte Linie zeigen, direkt neben der Wahl ----
+  //
+  // GEMELDET: "Ich habe 2 Ideallinie Modi, aber wenn ich dazwischen waehle, aendert sich die
+  // eingezeichnete Linie nicht und gefuehlt auch nicht die der Autos - das muss alles
+  // zusammenpassen."
+  //
+  // SIE AENDERT SICH, und das ist nachgemessen: auf SR3GLR2GR2G2 sitzt der Startpunkt der
+  // gezeichneten Linie bei Rundenzeit auf x = 45,9 und bei Kruemmung auf x = 50,5, und die
+  // Linien unterscheiden sich um bis zu 7,65 von 8,63 Einheiten Deckel - also um 89 Prozent
+  // der nutzbaren halben Bahnbreite. Nicht zu sehen war sie: die Knoepfe stehen in
+  // #tab-options (Zeile 7028 des Markups), die einzige gezeichnete Linie in #tab-track
+  // (Zeile 7332). Ein Umschalter, dessen Wirkung einen Tab weiter liegt, ist von aussen ein
+  // Umschalter ohne Wirkung.
+  //
+  // ES IST DIESELBE LINIE und keine zweite Rechnung: renderTrackPreview() geht durch
+  // buildLine(), genau wie der Editor und wie ghostLine(). Damit kann die gezeigte nicht von
+  // der gefahrenen abweichen - was der Kommentar bei buildLine() ausdruecklich zusichert.
+  //
+  // NUR AUF ANFORDERUNG gezeichnet: renderTrackPreview() kostet gemessen rund 94 ms, weil es
+  // Mittellinie, Normalen und die Linie rechnet. Beim Umschalten und beim Oeffnen der Seite
+  // ist das nicht zu merken; in refreshTrackPreview() mitzulaufen hiesse, es bei jedem
+  // Klick im Streckeneditor zu zahlen.
+  function linemodellKarteZeichnen() {
+    const halter = $('linemodel-karte');
+    if (!halter) return;
+    const info = $('linemodel-info');
+    // OHNE eigene Strecke die Vorgabe zeigen - dieselbe, auf der die Simulation dann fährt.
+    // Ein leeres Feld hier und eine gefahrene Strecke dort waeren zwei Aussagen ueber
+    // dasselbe.
+    const eigene = currentTrackTiles && currentTrackTiles.length >= 3;
+    const tiles = eigene ? currentTrackTiles : (codeToTrack(TRACK_VORGABE_CODE) || {}).tiles;
+    if (!tiles || tiles.length < 3) {
+      halter.innerHTML = '';
+      if (info) info.textContent = t('Keine Strecke eingetragen.');
+      return;
+    }
+    // detailed: true, denn NUR dort zeichnet renderTrackPreview() die Ideallinie - ohne
+    // das Flag kommt ein grauer Umriss und sonst nichts, und die Karte waere leer an der
+    // Stelle, um die es hier geht. Gemessen: 0 gefaerbte Segmente ohne, 182 mit.
+    const r = renderTrackPreview(tiles, null, { detailed: true });
+    halter.innerHTML = r.html;
+    if (!info) return;
+    // BEIDE Modelle beziffern, nicht nur das gewaehlte. Die Frage beim Umschalten ist ja
+    // "was gewinne ich" - und die ist ohne den Vergleichswert nicht zu beantworten.
+    const pts = trackCenterline(tiles);
+    const nrm = trackNormals(pts, true);
+    const closed = trackSchluss(pts).closed;
+    const o = { closed, tiles };
+    const kr = buildLine(pts, nrm, Object.assign({ model: 'curvature' }, o));
+    const rz = buildLine(pts, nrm, Object.assign({ model: 'laptime' }, o));
+    const cm = (v) => (v / TRACK_UNITS_PER_CM).toFixed(1);
+    const jetzt = getLineModel();
+    info.textContent = t('{m} ist gewählt. Krümmung nutzt {a} cm Versatz, Rundenzeit {b} cm '
+                       + 'und ist im Modell {p} % schneller.')
+      .replace('{m}', jetzt === 'laptime' ? t('Rundenzeit') : t('Krümmung'))
+      .replace('{a}', cm(kr.span)).replace('{b}', cm(rz.span))
+      .replace('{p}', ((rz.gain || 0) * 100).toFixed(1))
+      + (eigene ? '' : ' ' + t('Gezeigt ist die Vorgabestrecke; im Editor steht noch keine.'));
+  }
+
   // ---- Linienmodell und Lernen bedienen ----
   //
   // Die Modellwahl geht durch setLineModel(), damit der Editor dieselbe Linie zeichnet, die
@@ -4522,6 +4601,8 @@
       // Editor neu zeichnen: die Linie hat sich gerade geaendert, und die gezeichnete muss
       // die gefahrene sein.
       try { refreshTrackPreview(); } catch (e) { /* Editor nicht im Dokument */ }
+      // Und die Vorschau neben der Wahl - das ist die Karte, auf die man dabei sieht.
+      try { linemodellKarteZeichnen(); } catch (e) { /* Karte nicht im Dokument */ }
       const lc = ghostLine();
       log('Linienmodell: ' + (m === 'laptime' ? 'Rundenzeit' : 'Kr\u00fcmmung')
           + (lc && lc.lapTime ? ', Modellzeit ' + lc.lapTime.toFixed(2)

@@ -118,11 +118,31 @@
   // =====================================================================================
   function simStart() {
     if (simAn()) { simStop('neu gestartet'); }
-    const tiles = currentTrackTiles;
+    // ---- OHNE EIGENE STRECKE: die gemeldete ------------------------------------------
+    //
+    // Bestellt: "Standard Streckenlayout fuer Simulation (wenn nichts eingetragen): Nimm
+    // das, was ich dir geschrieben hatte." Das ist SR3GLR2GR2G2 - dreizehn Kacheln, acht
+    // Rechtskurven, eine Linkskurve, gemessen geschlossen mit 0,48 cm Luecke und 0 Grad
+    // Winkelfehler. Vorher verweigerte die Simulation den Start, und ein Knopf, der bei
+    // leerem Editor nur "keine Strecke" sagt, laesst das Feature ungesehen.
+    //
+    // GELEIHEN UND NICHT UEBERNOMMEN: currentTrackTiles wird fuer die Dauer der Simulation
+    // gesetzt und in simStop() zurueckgegeben, genau wie die Garage. Den Editor still zu
+    // befuellen waere eine Aenderung, die niemand bestellt hat - und beim naechsten Blick
+    // in den Streckenreiter stuende dort eine Strecke, die man nicht gebaut hat.
+    let tiles = currentTrackTiles;
+    let geliehen = null;
     if (!tiles || tiles.length < 3) {
-      simLage('Es ist keine Strecke eingetragen. Baue oder scanne erst eine.');
-      showHudToast('KEINE STRECKE');
-      return;
+      const v = codeToTrack(TRACK_VORGABE_CODE);
+      if (!v || !v.tiles || v.tiles.length < 3) {
+        simLage('Es ist keine Strecke eingetragen. Baue oder scanne erst eine.');
+        showHudToast('KEINE STRECKE');
+        return;
+      }
+      geliehen = currentTrackTiles;
+      tiles = v.tiles;
+      currentTrackTiles = tiles;
+      lineCache = null;
     }
     // NICHT WAEHREND EINES ECHTEN RENNENS. Die Simulation raeumt die Garage aus und faelscht
     // die Uhr; beides mitten in einem laufenden Rennen zu tun waere kein Fehler, den man
@@ -138,7 +158,7 @@
     const bahn = simBahn(tiles);
     const uhrStart = Date.now();
     simState = {
-      tiles, bahn, runden, doppelt,
+      tiles, bahn, runden, doppelt, geliehen,
       // Die eigene Uhr der Simulation. Sie laeuft mit der Wandzeit, bei doppelter
       // Geschwindigkeit eben doppelt - die RUNDENZEITEN kommen aus ihr, sind also die Zeiten
       // des Rennens und nicht die des Abspielens. "Abgespielt wird schneller, gefahren
@@ -413,6 +433,12 @@
     garage.splice(0, garage.length);
     for (const c of st.merkGarage) garage.push(c);
     if (typeof renderGarage === 'function') renderGarage();
+    // Die geliehene Vorgabestrecke zurueckgeben. st.geliehen ist der ALTE Stand und darf
+    // auch ein leeres Feld sein - deshalb auf null geprueft und nicht auf Laenge.
+    if (st.geliehen !== null && st.geliehen !== undefined) {
+      currentTrackTiles = st.geliehen;
+      lineCache = null;
+    }
 
     const stopKnopf = $('sim-stop');
     if (stopKnopf) stopKnopf.hidden = true;
