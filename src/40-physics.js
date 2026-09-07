@@ -62,23 +62,39 @@
     f1: { label: 'Formel-1-Monoposto', vorn: 0.45, radstand: 3.60, iz: 1000 },
   };
   // Der Bezug, an dem die Lenkgeschwindigkeit haengt: bei diesem Traegheitsmoment gilt genau
-  // der kalibrierte Wert von steerRatePerS.
+  // der kalibrierte Wert.
   const IZ_REF = 2000;
   const STEER_RATE_REF = 6.0;
 
-  // Wie schnell das Auto auf einen Lenkbefehl antwortet, aus dem Traegheitsmoment.
+  // Die kalibrierte Vorgabe fuer das Lenkansprechen. Sie ist der Bezug fuer die Anzeige,
+  // damit dort 100 % steht, wo der Wert hingehoert - und nicht 200 %.
   //
-  // EINE ABSICHTLICHE ABKUERZUNG, und sie gehoert benannt: steerRatePerS ist eigentlich die
-  // Geschwindigkeit des SERVOS und keine Eigenschaft der Fahrzeugmasse. Das Auto rutscht in
-  // echt nicht, also gibt es keinen anderen Kanal, ueber den "antwortet schneller" ueberhaupt
-  // ausdrueckbar waere. Das ist keine Aussage ueber die Servohardware, sondern die einzige
-  // Stelle, an der ein kleines Traegheitsmoment sich zeigen kann.
+  // SIE STEHT HIER UND NICHT MEHR IN 50-drive.js, und das ist eine Zusammenlegung: dort war
+  // sie ein zweites Mal deklariert, und seit die Lenkdaempfung sie ebenfalls braucht, waeren
+  // es zwei Orte fuer eine Zahl gewesen. Diese Datei ist die FRUEHERE, ein const hier ist
+  // also aus 50-drive.js zur Aufbauzeit lesbar - die umgekehrte Richtung ist die temporale
+  // Todeszone, gegen die der Kommentar dort argumentiert, und sie bleibt gemieden.
+  const STEER_RESP_REF = 2.0;
+
+  // ---- LENKDAEMPFUNG: WIE LANGE VON NULL BIS ZUM VOLLEN AUSSCHLAG ---------------------
   //
-  // GEDECKELT auf 4 bis 9: ohne Deckel gaebe ein F1-Traegheitsmoment von 1000 den doppelten
-  // Wert, und eine Lenkung, die in einem Achtel Sekunde am Anschlag ist, ist kein
-  // Fahrzeugverhalten mehr, sondern ein Sprung.
-  function steerRateFor(iz) {
-    return Math.max(4, Math.min(9, STEER_RATE_REF * (IZ_REF / Math.max(1, iz))));
+  // In Millisekunden, weil das die Groesse ist, die man ausprobieren und vergleichen kann.
+  // Vorher hiess sie steerRatePerS und war "Anschlag je Sekunde" - eine Zahl, die kein
+  // Regler zeigte und die zusaetzlich mit steerResponse multipliziert wurde. Damit hing die
+  // Zeit an zwei Reglern, und keiner von beiden sagte sie.
+  //
+  // EINE ABSICHTLICHE ABKUERZUNG, und sie gehoert benannt: das ist die Geschwindigkeit des
+  // SERVOS und keine Eigenschaft der Fahrzeugmasse. Das Auto rutscht in echt nicht, also
+  // gibt es keinen anderen Kanal, ueber den "antwortet schneller" ueberhaupt ausdrueckbar
+  // waere. Das ist keine Aussage ueber die Servohardware, sondern die einzige Stelle, an der
+  // ein kleines Traegheitsmoment sich zeigen kann.
+  //
+  // GEDECKELT auf 56 bis 125 ms (das sind die alten 9 bis 4 je Sekunde): ohne Deckel gaebe
+  // ein F1-Traegheitsmoment von 1000 den doppelten Wert, und eine Lenkung, die in einem
+  // Achtel Sekunde am Anschlag ist, ist kein Fahrzeugverhalten mehr, sondern ein Sprung.
+  function steerDaempfungFor(iz) {
+    const rate = Math.max(4, Math.min(9, STEER_RATE_REF * (IZ_REF / Math.max(1, iz))));
+    return Math.round(1000 / (rate * STEER_RESP_REF));
   }
 
   // Der Bezug fuer den absoluten Achslastanteil: bei dieser statischen Achslast ist der
@@ -92,7 +108,11 @@
     constructor() {
       this.config = {
         accelerationFactor: 1.0, // fine-tune multiplier on top of the calibrated scale
-        steerRatePerS: 6.0,      // full lock in ~1/6 s; the servo's speed, not its lag
+        // Von null bis zum vollen Ausschlag, in Millisekunden. 83 ist NICHT gewaehlt,
+        // sondern der bisherige Wert nachgerechnet: 6,0 Anschlag/s mal dem kalibrierten
+        // Lenkansprechen 2,0 sind 12 Anschlaege je Sekunde, also 83 ms. Damit faehrt die
+        // App mit der Vorgabe genauso wie vorher.
+        steerDaempfungMs: Math.round(1000 / (STEER_RATE_REF * STEER_RESP_REF)),
         steerExpo: 1.15,         // near-linear: 1.5 made the car feel unwilling to turn
         // Der volle Lenkausschlag ist MECHANISCH 45 Grad. Das stand nirgends, und damit
         // war steerResponse eine Zahl ohne Einheit: der Regler ging von 0,5 bis 3,0, und
@@ -885,7 +905,7 @@
       this.config.loadFrontStatic = L.vorn;
       this.config.wheelbaseM = L.radstand;
       this.config.yawInertia = L.iz;
-      this.config.steerRatePerS = steerRateFor(L.iz);
+      this.config.steerDaempfungMs = steerDaempfungFor(L.iz);
       this.state.loadFront = L.vorn;
       this.layoutName = LAYOUTS[name] ? name : 'neutral';
       return this.layoutName;
@@ -1631,7 +1651,48 @@
       // start of a movement — precisely the moment that has to feel immediate. A rate limit
       // moves at full speed from the first tick and only caps how quickly full lock is
       // reached, which separates "how fast does it answer" from "how far does it go".
-      const maxStep = cfg.steerRatePerS * cfg.steerResponse * dt;
+      // OHNE steerResponse, und das ist eine Berichtigung. Hier stand
+      //
+      //     const maxStep = cfg.steerRatePerS * cfg.steerResponse * dt;
+      //
+      // und damit hing die Zeit bis zum vollen Ausschlag an ZWEI Reglern: an der Lenkrate,
+      // die keiner sah, und am Lenkansprechen, das laut seinem Namen und seinem Hilfetext
+      // den WINKEL bestimmt. Wer das Lenkansprechen von 200 auf 240 Prozent stellte, machte
+      // damit unangekuendigt auch die Lenkung schneller (83 ms auf 69 ms).
+      //
+      // Jetzt macht jeder Regler genau eine Sache: steerResponse skaliert den Zielwinkel,
+      // steerDaempfungMs die Zeit dorthin. Die Zahl auf dem Regler ist damit die Zahl, die
+      // gilt.
+      //
+      // 0 ms heisst SOFORT und ist kein Sonderfall im Modell, sondern ein Schritt, der
+      // groesser ist als jede moegliche Differenz - fuer Lenkrad und RC-Funke, wie bestellt.
+      //
+      // ---- BIS ZUM AKTUELL MOEGLICHEN ANSCHLAG, nicht bis zum Kommandowert 1,0 ----------
+      //
+      // Bestellt war "von 0 zum vollen AKTUELL MOEGLICHEN Lenkausschlag", und das ist nicht
+      // dasselbe. Der uebertragene Winkel ist dampedSteering mal steerCalib mal Aquaplaning
+      // mal Reibkreis, gedeckelt auf 1,0. Bei der Kalibrierung von 200 Prozent schlaegt er
+      // also schon bei einem halben Kommandowert an.
+      //
+      // GEMESSEN, bevor diese Zeilen da waren: eingestellte 83 ms ergaben 65, 200 ergaben
+      // 155, 500 ergaben 385 - durchweg 78 Prozent. Der Regler haette also gelogen, und
+      // zwar um einen Faktor, der an einem ganz anderen Regler haengt.
+      //
+      // `weg` ist die Strecke, die das Kommando wirklich zuruecklegen muss. Bei k > 1 ist
+      // sie kuerzer als 1, bei k <= 1 ist der Anschlag ohnehin erst bei vollem Kommando
+      // erreicht - in beiden Faellen kommt am Ende dieselbe ZEIT heraus, und genau das ist
+      // die Zusage des Reglers.
+      //
+      // aquaFactor und steerGrip stammen aus dem VORHERIGEN Takt (sie werden weiter unten
+      // gesetzt). Bei 20 ms Takt ist das belanglos, und die Alternative waere, die
+      // Reihenfolge des ganzen Blocks umzustellen, um eine Groesse zu gewinnen, die sich
+      // zwischen zwei Takten kaum aendert.
+      const k = Math.max(0.05, cfg.steerCalib * (st.aquaFactor === undefined ? 1 : st.aquaFactor)
+                               * (st.steerGrip === undefined ? 1 : st.steerGrip));
+      const weg = Math.min(1, 1 / k);
+      const maxStep = cfg.steerDaempfungMs > 0
+        ? dt * 1000 / cfg.steerDaempfungMs * weg
+        : Infinity;
       const dS = targetSteer - this.state.dampedSteering;
       this.state.dampedSteering += Math.max(-maxStep, Math.min(maxStep, dS));
       this.state.dampedSteering = Math.max(-1, Math.min(1, this.state.dampedSteering));

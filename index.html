@@ -6547,6 +6547,31 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="phys-steerresp-val">100%</span>
         </div></div>
+      <div class="opt-row"><div class="opt-label">Lenkd&auml;mpfung
+          <span class="wip-tag">WIP</span>
+          <small>Wie lange das Servo von der Mittelstellung bis zum vollen aktuell
+          m&ouml;glichen Ausschlag braucht. Das ist nicht die Lenkwinkelbegrenzung
+          dar&uuml;ber &ndash; die sagt, wie weit; diese sagt, wie schnell.
+          <br>0 hei&szlig;t sofort. Am Lenkrad und an der RC-Funke ist das richtig: dort gibt
+          die Hand die Rate vor, und eine zweite Begrenzung dahinter f&uuml;hlt sich wie
+          Verz&ouml;gerung an. Am Gamepad ist ein Daumen in etwa 150&nbsp;ms von der Mitte am
+          Anschlag, und ohne D&auml;mpfung wird daraus ein Sprung am Servo.
+          <br>83&nbsp;ms ist die Vorgabe und nicht gew&auml;hlt, sondern der bisherige Wert
+          nachgerechnet: 6,0&nbsp;Anschl&auml;ge je Sekunde mal dem kalibrierten
+          Lenkansprechen von 200&nbsp;% sind 12 je Sekunde. Bis v0.5.40 hing die Zeit
+          zus&auml;tzlich am Lenkansprechen &ndash; wer es auf 240&nbsp;% stellte, machte
+          unangek&uuml;ndigt auch die Lenkung schneller, 69 statt 83&nbsp;ms. Jetzt macht
+          jeder der beiden Regler genau eine Sache.
+          <br>Ein Fahrzeugwechsel weiter oben setzt diesen Regler mit: das
+          Tr&auml;gheitsmoment ist die einzige Stelle, an der sich ein leichteres Auto zeigen
+          kann, und es ergibt 56&nbsp;ms beim Formelwagen bis 125&nbsp;ms beim
+          Frontmotor-GT3. Danach kannst du frei dar&uuml;ber verf&uuml;gen.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="phys-steerdamp" min="0" max="500" step="1" value="83">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="phys-steerdamp-val">83 ms</span>
+        </div></div>
       <div class="opt-row"><div class="opt-label">Bremsen nimmt Lenkung<small>Der Reibkreis: was die Bremse an der Vorderachse verbraucht, fehlt der Lenkung. 0 hei&szlig;t, Bremsen und Lenken behindern sich nicht; h&ouml;here Werte lassen das Auto beim Anbremsen deutlich schlechter einlenken. Zu beachten: die Lenkwinkel-Kalibrierung darunter holt genau das wieder zur&uuml;ck, also wirkt ein starker Wert erst, wenn die Kalibrierung ihn nicht mehr ausgleichen kann.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
@@ -7641,7 +7666,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.5.40</span></span>
+    <span class="foot-ver">v<span id="app-version">0.5.41</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -9120,7 +9145,6 @@
     "Gerechnet und nicht eingetippt: die Nickgrenzen folgen aus der statischen Achslast und dem Verlagerungsanteil.": "Computed, not typed in: the pitch limits follow from the static axle load and the transfer share.",
     "vorn bei Gas": "front on throttle",
     "bei Bremse": "on the brake",
-    "Lenkrate": "steering rate",
     "Reifenquietschen": "Tyre squeal",
     "Am Grenzbereich, im Stil von Gran Turismo: Lautstärke und Tonhöhe laufen stetig mit der Querausnutzung des Reibkreises, Einsatz ab 60 Prozent – also ab etwa 98 km/h bei vollem Lenkausschlag, ab 197 km/h bei halbem, und bei einem Viertel Ausschlag nie. Eine Haarnadel quietscht, eine lange schnelle Kurve nicht. Bis v0.4.55 stand die Schwelle bei 85 Prozent und war damit unerreichbar: gemessen kommt die Querausnutzung erst bei 265 km/h dorthin, weil der Lenkausschlag mit dem Tempo beschnitten wird. Es hat deshalb nie gequietscht.": "At the limit, in the style of Gran Turismo: volume and pitch run continuously with the lateral use of the friction circle, starting at 60 per cent – so from about 98 km/h at full lock, from 197 km/h at half, and at a quarter of lock never. A hairpin squeals, a long fast corner does not. Up to v0.4.55 the threshold sat at 85 per cent and was therefore unreachable: measured, the lateral use only gets there at 265 km/h, because the steering lock is cut back with speed. It therefore never squealed.",
     "Mehrspieler": "Multiplayer",
@@ -9243,6 +9267,18 @@
       "How hard the car steers against a slide, measured from the rotation signal in byte 3 of the notifications. 50 per cent is the default that was asked for. What is uncertain about it, and it is two things at once: the signal is unconfirmed – it only varies once the car is moving, and flipped sign with cornering direction in exactly one recording. And it is uncalibrated: its scale is self-adjusting because the real amplitude is unknown. So the strength depends on the largest yaw value the session has seen so far. The “Drift probe” button under “Measure lateral offset” measures whether the signal moves at all under straight full throttle.",
     "Rennen":
       "Race",
+    "Lenkdämpfung":
+      "Steering damping",
+    "sofort":
+      "instant",
+    "Wie lange das Servo von der Mittelstellung bis zum vollen aktuell möglichen Ausschlag braucht. Das ist nicht die Lenkwinkelbegrenzung darüber – die sagt, wie weit; diese sagt, wie schnell.":
+      "How long the servo takes from centre to the full deflection currently available. This is not the steering-angle limit above it – that one says how far, this one says how fast.",
+    "0 heißt sofort. Am Lenkrad und an der RC-Funke ist das richtig: dort gibt die Hand die Rate vor, und eine zweite Begrenzung dahinter fühlt sich wie Verzögerung an. Am Gamepad ist ein Daumen in etwa 150 ms von der Mitte am Anschlag, und ohne Dämpfung wird daraus ein Sprung am Servo.":
+      "0 means instant. On a wheel or an RC transmitter that is right: there the hand sets the rate, and a second limit behind it feels like lag. On a gamepad a thumb goes from centre to the stop in about 150 ms, and without damping that becomes a jump at the servo.",
+    "83 ms ist die Vorgabe und nicht gewählt, sondern der bisherige Wert nachgerechnet: 6,0 Anschläge je Sekunde mal dem kalibrierten Lenkansprechen von 200 % sind 12 je Sekunde. Bis v0.5.40 hing die Zeit zusätzlich am Lenkansprechen – wer es auf 240 % stellte, machte unangekündigt auch die Lenkung schneller, 69 statt 83 ms. Jetzt macht jeder der beiden Regler genau eine Sache.":
+      "83 ms is the default, and it is not chosen but the previous value worked out: 6.0 full locks per second times the calibrated steering response of 200% is 12 per second. Up to v0.5.40 the time also depended on the steering response – setting it to 240% silently made the steering faster too, 69 instead of 83 ms. Now each of the two sliders does exactly one thing.",
+    "Ein Fahrzeugwechsel weiter oben setzt diesen Regler mit: das Trägheitsmoment ist die einzige Stelle, an der sich ein leichteres Auto zeigen kann, und es ergibt 56 ms beim Formelwagen bis 125 ms beim Frontmotor-GT3. Danach kannst du frei darüber verfügen.":
+      "Changing the vehicle above sets this slider too: the moment of inertia is the only place a lighter car can show itself, and it gives 56 ms for the formula car up to 125 ms for the front-engined GT3. After that it is yours to set.",
     "Ghost: Kurven öffnen":
       "Ghost: open up the corners",
     "Wie weit außen ein Ghost eine Kurve anfährt und wieder verlässt, als Anteil des Weges zum Außenrand. Die Krümmungsminimierung kennt beides nicht: sie sucht den kürzesten glatten Weg, und bei einer Runde voller gleichsinniger Kurven liegt der innen – gemessen klebte die Linie auf der Start/Ziel-Geraden bei 90 % rechts, obwohl danach drei Rechtskurven kommen. Ein Fahrer fährt weit heraus, weil er bremst und beschleunigt und dafür Breite braucht; das ist eine Längsgröße, und die kennt der Glätter nicht.":
@@ -10769,23 +10805,39 @@
     f1: { label: 'Formel-1-Monoposto', vorn: 0.45, radstand: 3.60, iz: 1000 },
   };
   // Der Bezug, an dem die Lenkgeschwindigkeit haengt: bei diesem Traegheitsmoment gilt genau
-  // der kalibrierte Wert von steerRatePerS.
+  // der kalibrierte Wert.
   const IZ_REF = 2000;
   const STEER_RATE_REF = 6.0;
 
-  // Wie schnell das Auto auf einen Lenkbefehl antwortet, aus dem Traegheitsmoment.
+  // Die kalibrierte Vorgabe fuer das Lenkansprechen. Sie ist der Bezug fuer die Anzeige,
+  // damit dort 100 % steht, wo der Wert hingehoert - und nicht 200 %.
   //
-  // EINE ABSICHTLICHE ABKUERZUNG, und sie gehoert benannt: steerRatePerS ist eigentlich die
-  // Geschwindigkeit des SERVOS und keine Eigenschaft der Fahrzeugmasse. Das Auto rutscht in
-  // echt nicht, also gibt es keinen anderen Kanal, ueber den "antwortet schneller" ueberhaupt
-  // ausdrueckbar waere. Das ist keine Aussage ueber die Servohardware, sondern die einzige
-  // Stelle, an der ein kleines Traegheitsmoment sich zeigen kann.
+  // SIE STEHT HIER UND NICHT MEHR IN 50-drive.js, und das ist eine Zusammenlegung: dort war
+  // sie ein zweites Mal deklariert, und seit die Lenkdaempfung sie ebenfalls braucht, waeren
+  // es zwei Orte fuer eine Zahl gewesen. Diese Datei ist die FRUEHERE, ein const hier ist
+  // also aus 50-drive.js zur Aufbauzeit lesbar - die umgekehrte Richtung ist die temporale
+  // Todeszone, gegen die der Kommentar dort argumentiert, und sie bleibt gemieden.
+  const STEER_RESP_REF = 2.0;
+
+  // ---- LENKDAEMPFUNG: WIE LANGE VON NULL BIS ZUM VOLLEN AUSSCHLAG ---------------------
   //
-  // GEDECKELT auf 4 bis 9: ohne Deckel gaebe ein F1-Traegheitsmoment von 1000 den doppelten
-  // Wert, und eine Lenkung, die in einem Achtel Sekunde am Anschlag ist, ist kein
-  // Fahrzeugverhalten mehr, sondern ein Sprung.
-  function steerRateFor(iz) {
-    return Math.max(4, Math.min(9, STEER_RATE_REF * (IZ_REF / Math.max(1, iz))));
+  // In Millisekunden, weil das die Groesse ist, die man ausprobieren und vergleichen kann.
+  // Vorher hiess sie steerRatePerS und war "Anschlag je Sekunde" - eine Zahl, die kein
+  // Regler zeigte und die zusaetzlich mit steerResponse multipliziert wurde. Damit hing die
+  // Zeit an zwei Reglern, und keiner von beiden sagte sie.
+  //
+  // EINE ABSICHTLICHE ABKUERZUNG, und sie gehoert benannt: das ist die Geschwindigkeit des
+  // SERVOS und keine Eigenschaft der Fahrzeugmasse. Das Auto rutscht in echt nicht, also
+  // gibt es keinen anderen Kanal, ueber den "antwortet schneller" ueberhaupt ausdrueckbar
+  // waere. Das ist keine Aussage ueber die Servohardware, sondern die einzige Stelle, an der
+  // ein kleines Traegheitsmoment sich zeigen kann.
+  //
+  // GEDECKELT auf 56 bis 125 ms (das sind die alten 9 bis 4 je Sekunde): ohne Deckel gaebe
+  // ein F1-Traegheitsmoment von 1000 den doppelten Wert, und eine Lenkung, die in einem
+  // Achtel Sekunde am Anschlag ist, ist kein Fahrzeugverhalten mehr, sondern ein Sprung.
+  function steerDaempfungFor(iz) {
+    const rate = Math.max(4, Math.min(9, STEER_RATE_REF * (IZ_REF / Math.max(1, iz))));
+    return Math.round(1000 / (rate * STEER_RESP_REF));
   }
 
   // Der Bezug fuer den absoluten Achslastanteil: bei dieser statischen Achslast ist der
@@ -10799,7 +10851,11 @@
     constructor() {
       this.config = {
         accelerationFactor: 1.0, // fine-tune multiplier on top of the calibrated scale
-        steerRatePerS: 6.0,      // full lock in ~1/6 s; the servo's speed, not its lag
+        // Von null bis zum vollen Ausschlag, in Millisekunden. 83 ist NICHT gewaehlt,
+        // sondern der bisherige Wert nachgerechnet: 6,0 Anschlag/s mal dem kalibrierten
+        // Lenkansprechen 2,0 sind 12 Anschlaege je Sekunde, also 83 ms. Damit faehrt die
+        // App mit der Vorgabe genauso wie vorher.
+        steerDaempfungMs: Math.round(1000 / (STEER_RATE_REF * STEER_RESP_REF)),
         steerExpo: 1.15,         // near-linear: 1.5 made the car feel unwilling to turn
         // Der volle Lenkausschlag ist MECHANISCH 45 Grad. Das stand nirgends, und damit
         // war steerResponse eine Zahl ohne Einheit: der Regler ging von 0,5 bis 3,0, und
@@ -11592,7 +11648,7 @@
       this.config.loadFrontStatic = L.vorn;
       this.config.wheelbaseM = L.radstand;
       this.config.yawInertia = L.iz;
-      this.config.steerRatePerS = steerRateFor(L.iz);
+      this.config.steerDaempfungMs = steerDaempfungFor(L.iz);
       this.state.loadFront = L.vorn;
       this.layoutName = LAYOUTS[name] ? name : 'neutral';
       return this.layoutName;
@@ -12338,7 +12394,48 @@
       // start of a movement — precisely the moment that has to feel immediate. A rate limit
       // moves at full speed from the first tick and only caps how quickly full lock is
       // reached, which separates "how fast does it answer" from "how far does it go".
-      const maxStep = cfg.steerRatePerS * cfg.steerResponse * dt;
+      // OHNE steerResponse, und das ist eine Berichtigung. Hier stand
+      //
+      //     const maxStep = cfg.steerRatePerS * cfg.steerResponse * dt;
+      //
+      // und damit hing die Zeit bis zum vollen Ausschlag an ZWEI Reglern: an der Lenkrate,
+      // die keiner sah, und am Lenkansprechen, das laut seinem Namen und seinem Hilfetext
+      // den WINKEL bestimmt. Wer das Lenkansprechen von 200 auf 240 Prozent stellte, machte
+      // damit unangekuendigt auch die Lenkung schneller (83 ms auf 69 ms).
+      //
+      // Jetzt macht jeder Regler genau eine Sache: steerResponse skaliert den Zielwinkel,
+      // steerDaempfungMs die Zeit dorthin. Die Zahl auf dem Regler ist damit die Zahl, die
+      // gilt.
+      //
+      // 0 ms heisst SOFORT und ist kein Sonderfall im Modell, sondern ein Schritt, der
+      // groesser ist als jede moegliche Differenz - fuer Lenkrad und RC-Funke, wie bestellt.
+      //
+      // ---- BIS ZUM AKTUELL MOEGLICHEN ANSCHLAG, nicht bis zum Kommandowert 1,0 ----------
+      //
+      // Bestellt war "von 0 zum vollen AKTUELL MOEGLICHEN Lenkausschlag", und das ist nicht
+      // dasselbe. Der uebertragene Winkel ist dampedSteering mal steerCalib mal Aquaplaning
+      // mal Reibkreis, gedeckelt auf 1,0. Bei der Kalibrierung von 200 Prozent schlaegt er
+      // also schon bei einem halben Kommandowert an.
+      //
+      // GEMESSEN, bevor diese Zeilen da waren: eingestellte 83 ms ergaben 65, 200 ergaben
+      // 155, 500 ergaben 385 - durchweg 78 Prozent. Der Regler haette also gelogen, und
+      // zwar um einen Faktor, der an einem ganz anderen Regler haengt.
+      //
+      // `weg` ist die Strecke, die das Kommando wirklich zuruecklegen muss. Bei k > 1 ist
+      // sie kuerzer als 1, bei k <= 1 ist der Anschlag ohnehin erst bei vollem Kommando
+      // erreicht - in beiden Faellen kommt am Ende dieselbe ZEIT heraus, und genau das ist
+      // die Zusage des Reglers.
+      //
+      // aquaFactor und steerGrip stammen aus dem VORHERIGEN Takt (sie werden weiter unten
+      // gesetzt). Bei 20 ms Takt ist das belanglos, und die Alternative waere, die
+      // Reihenfolge des ganzen Blocks umzustellen, um eine Groesse zu gewinnen, die sich
+      // zwischen zwei Takten kaum aendert.
+      const k = Math.max(0.05, cfg.steerCalib * (st.aquaFactor === undefined ? 1 : st.aquaFactor)
+                               * (st.steerGrip === undefined ? 1 : st.steerGrip));
+      const weg = Math.min(1, 1 / k);
+      const maxStep = cfg.steerDaempfungMs > 0
+        ? dt * 1000 / cfg.steerDaempfungMs * weg
+        : Infinity;
       const dS = targetSteer - this.state.dampedSteering;
       this.state.dampedSteering += Math.max(-maxStep, Math.min(maxStep, dS));
       this.state.dampedSteering = Math.max(-1, Math.min(1, this.state.dampedSteering));
@@ -12895,13 +12992,17 @@
         + ' m \u00b7 ' + c.yawInertia + ' kg\u00b7m\u00b2'
         + ' \u00b7 ' + t('vorn bei Gas') + ' ' + gas + '% / ' + t('bei Bremse') + ' '
         + bremse + '%'
-        + ' \u00b7 ' + t('Lenkrate') + ' ' + physEngine.config.steerRatePerS.toFixed(1);
+        + ' \u00b7 ' + t('Lenkd\u00e4mpfung') + ' ' + physEngine.config.steerDaempfungMs + ' ms';
     };
     const anwenden = (melden) => {
       const name = physEngine.applyLayout($('setting-layout').value);
       // Falls der gespeicherte Name unbekannt war, faellt applyLayout auf neutral zurueck -
       // dann muss die Auswahl mitkommen, sonst zeigt sie etwas anderes als das Modell.
       if ($('setting-layout').value !== name) $('setting-layout').value = name;
+      // applyLayout() hat gerade steerDaempfungMs aus dem Traegheitsmoment gesetzt. Der
+      // Regler muss mitkommen, sonst zeigt er einen Wert, der nicht mehr gilt - dieselbe
+      // Falle, gegen die drei Zeilen darueber die Auswahlliste nachgezogen wird.
+      steerDaempfungSetzen(physEngine.config.steerDaempfungMs, true);
       zeigeLayoutDaten();
       markDrivetrainChartsDirty();
       if (melden) {
@@ -13741,10 +13842,6 @@
     $('setting-repair-time-val').textContent = pitFullRepairS + ' s';
   });
 
-  // Die kalibrierte Vorgabe fuer das Lenkansprechen. Sie ist der Bezug fuer die Anzeige,
-  // damit dort 100 % steht, wo der Wert hingehoert - und nicht 200 %.
-  const STEER_RESP_REF = 2.0;
-
   // Die EINE Stelle, an der aus steerResponse eine Prozentzahl wird. Vorher gab es drei, in
   // zwei Maszstaeben: die Optionen teilten durch den kalibrierten Bezug 2,0 und zeigten
   // 100 %, das Steuerkreuz und die Cockpitkachel nahmen den Rohwert und zeigten 200 %. Wer
@@ -13757,6 +13854,30 @@
   // Todeszone, die in diesem Projekt schon fuenf Ladeabbrueche gekostet hat. In einer
   // zusammengefuegten IIFE ist das Ende einer Datei nicht das Ende des Moduls.
   function steerRespPct(v) { return Math.round(v / STEER_RESP_REF * 100); }
+  // Den Regler und das Modell an EINER Stelle zusammenbringen. steerDaempfungSetzen wird
+  // von drei Seiten gebraucht - vom Regler, vom Fahrzeugwechsel und vom Aufbau -, und drei
+  // Kopien derselben zwei Zeilen sind der Weg zu einem Regler, der irgendwann etwas anderes
+  // anzeigt als das Modell rechnet.
+  function steerDaempfungAnzeige(ms) {
+    return ms <= 0 ? t('sofort') : ms + ' ms';
+  }
+  function steerDaempfungSetzen(ms, auchRegler) {
+    const v = Math.max(0, Math.min(500, Math.round(ms)));
+    physEngine.config.steerDaempfungMs = v;
+    if (auchRegler && $('phys-steerdamp')) $('phys-steerdamp').value = String(v);
+    if ($('phys-steerdamp-val')) $('phys-steerdamp-val').textContent = steerDaempfungAnzeige(v);
+    return v;
+  }
+  if ($('phys-steerdamp')) {
+    $('phys-steerdamp').addEventListener('input', (e) => {
+      steerDaempfungSetzen(parseFloat(e.target.value), false);
+    });
+    // Beim Aufbau aus dem MARKUP lesen und nicht aus dem Modell: so ist der Regler die
+    // Wahrheit, und die Pruefung "Regler und Modell sagen beim Laden dasselbe" hat einen
+    // Gegenstand. Stimmen die zwei nicht, faellt sie - genau dafuer ist sie da.
+    steerDaempfungSetzen(parseFloat($('phys-steerdamp').value), false);
+  }
+
   ['phys-steerresp', 'phys-accel', 'setting-steer-calib', 'setting-brake-steal'].forEach(id => {
     const input = $(id);
     const readout = $(id + '-val');
@@ -29967,7 +30088,7 @@
                         vorn: c.loadFrontStatic,
                         radstand: c.wheelbaseM,
                         iz: c.yawInertia,
-                        rate: +c.steerRatePerS.toFixed(3),
+                        daempfungMs: c.steerDaempfungMs,
                         gas: +(c.loadFrontStatic - c.transferK).toFixed(4),
                         bremse: +(c.loadFrontStatic + c.transferK).toFixed(4),
                         ruhelast: physEngine.state.loadFront };
@@ -30218,6 +30339,48 @@
     // ANGEZEIGTEN Geschwindigkeitsmarken, physTopSpeed die Endgeschwindigkeit. Die Frage
     // "fuehlt sich das Auto traege an" haengt aber am Byte, und das ist Tempo geteilt durch
     // Hoechstgeschwindigkeit.
+    // ---- WIE LANGE BRAUCHT DIE LENKUNG VON NULL BIS ZUM ANSCHLAG ------------------
+    //
+    // Die Groesse, die der Regler "Lenkdaempfung" verspricht - also die, die nachgemessen
+    // werden muss. Gefahren wird bei stehendem Auto und im ersten Gang, damit weder der
+    // Reibkreis noch die Tempoabhaengigkeit den Anschlag beschneidet: gemessen wird die
+    // Zeit des SERVOS und nicht die des Grips.
+    //
+    // Gezaehlt wird bis zu 99 Prozent des erreichbaren Endwerts und nicht bis 100: eine
+    // Ratenbegrenzung trifft ihr Ziel exakt, aber der Endwert selbst haengt an Kalibrierung
+    // und Reibkreis, und ein Vergleich gegen 1,0 wuerde die falsche Groesse pruefen.
+    steerZeitProbe(o) {
+      const opt = o || {};
+      const e = physEngine, st = e.state, cfg = e.config;
+      const merkState = OMEGA_TEST.zustandKopie(st);
+      const merk = { ms: cfg.steerDaempfungMs, resp: cfg.steerResponse };
+      try {
+        if (opt.ms !== undefined) cfg.steerDaempfungMs = opt.ms;
+        if (opt.resp !== undefined) cfg.steerResponse = opt.resp;
+        const dt = 0.005;
+        st.speedKmh = 0; st.driveMode = 'forward'; st.currentGear = 0;
+        st.dampedSteering = 0;
+        // Erst den Endwert finden: lange genug fahren, dass die Rampe fertig ist.
+        let ende = 0;
+        for (let i = 0; i < 2000; i++) {
+          ende = Math.abs(e.update({ throttle: 0, brake: 0, steering: 1 }, dt).servoAngle);
+        }
+        // Dann von vorn und die Zeit bis 99 Prozent davon nehmen.
+        st.dampedSteering = 0;
+        let t = 0, ms = null;
+        for (let i = 0; i < 2000 && ms === null; i++) {
+          const v = Math.abs(e.update({ throttle: 0, brake: 0, steering: 1 }, dt).servoAngle);
+          t += dt;
+          if (v >= ende * 0.99) ms = Math.round(t * 1000);
+        }
+        return { ms, ende: +ende.toFixed(4), soll: cfg.steerDaempfungMs };
+      } finally {
+        cfg.steerDaempfungMs = merk.ms;
+        cfg.steerResponse = merk.resp;
+        OMEGA_TEST.zustandZurueck(st, merkState);
+      }
+    },
+
     physOutTrace(o) {
       const opt = o || {};
       const e = physEngine, st = e.state, cfg = e.config;
@@ -31561,7 +31724,7 @@
     //     byte     round(servo * 127)                      (was gesendet wird)
     //
     // Dazwischen liegen Expo, die Tempobeschneidung (maxSteerLimit), die Ratenbegrenzung
-    // (steerRatePerS) und der Reibkreis. Jede davon kann eine Form flachdruecken, und der
+    // (steerDaempfungMs) und der Reibkreis. Jede davon kann eine Form flachdruecken, und der
     // Unterschied zwischen `wunsch` und `servo` sagt, welche.
     ghostLinieTrace(o) {
       const opt = o || {};
@@ -37939,6 +38102,69 @@
                    + (schlecht.length ? ' || ' + schlecht.join('; ') : ', beide https') };
   });
 
+  // ---- Lenkdaempfung: die Zahl auf dem Regler ist die Zahl, die gilt ----
+  //
+  // DER FEHLER, GEGEN DEN SIE STEHT, war da und ist gemessen. Die Zeit bis zum Anschlag hing
+  // an DREI Groessen, von denen der Regler keine nannte:
+  //
+  //   steerRatePerS      unsichtbar, aus dem Traegheitsmoment, ohne Regler
+  //   steerResponse      hiess "Lenkansprechen" und bestimmt laut Hilfetext den WINKEL
+  //   steerCalib         die Lenkwinkel-Kalibrierung, ein ganz anderer Regler
+  //
+  // Die letzte war die stillste: der uebertragene Winkel ist dampedSteering mal steerCalib,
+  // gedeckelt auf 1,0 - bei 200 Prozent Kalibrierung schlaegt er also bei halbem Kommando
+  // an. Gemessen ergaben eingestellte 83 ms 65, 200 ergaben 155 und 500 ergaben 385: durchweg
+  // 78 Prozent, und der Faktor sass an einem Regler zwei Zeilen weiter unten.
+  //
+  // Geprueft wird deshalb nicht "der Wert kommt an", sondern die ZUSAGE: die eingestellte
+  // Zeit ist die gemessene, und zwar unabhaengig von den zwei anderen Reglern. Toleranz ist
+  // ein Zeitschritt des Messaufbaus (5 ms) plus ein Prozent.
+  stAdd('Lenkdämpfung: die eingestellte Zeit ist die gemessene', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.steerZeitProbe) {
+      return { skip: true, mass: 'steerZeitProbe nicht vorhanden' };
+    }
+    const schlecht = [], zeilen = [];
+    const nah = (ist, soll) => Math.abs(ist - soll) <= 5 + soll * 0.01;
+    for (const ms of [40, 83, 200, 500]) {
+      const r = OMEGA_TEST.steerZeitProbe({ ms });
+      zeilen.push(ms + '→' + r.ms);
+      if (!nah(r.ms, ms)) schlecht.push('soll ' + ms + ' ms, gemessen ' + r.ms);
+    }
+    // 0 heisst sofort: ein einziger Zeitschritt, nicht mehr.
+    const sofort = OMEGA_TEST.steerZeitProbe({ ms: 0 });
+    zeilen.push('0→' + sofort.ms);
+    if (!(sofort.ms <= 10)) schlecht.push('0 ms braucht ' + sofort.ms + ' ms');
+    // ---- UND DIE UNABHAENGIGKEIT, der eigentliche Punkt --------------------------
+    const calib = $('setting-steer-calib');
+    const merk = calib ? calib.value : null;
+    try {
+      for (const resp of [1.0, 2.0, 3.0]) {
+        const r = OMEGA_TEST.steerZeitProbe({ ms: 200, resp });
+        if (!nah(r.ms, 200)) {
+          schlecht.push('Lenkansprechen ' + resp + ' aendert die Zeit auf ' + r.ms);
+        }
+      }
+      if (calib) {
+        for (const cal of [0.5, 1.0, 2.0, 3.0]) {
+          calib.value = String(cal);
+          calib.dispatchEvent(new Event('input', { bubbles: true }));
+          const r = OMEGA_TEST.steerZeitProbe({ ms: 200 });
+          if (!nah(r.ms, 200)) {
+            schlecht.push('Kalibrierung ' + cal + ' aendert die Zeit auf ' + r.ms);
+          }
+        }
+      }
+    } finally {
+      if (calib && merk !== null) {
+        calib.value = merk;
+        calib.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+    }
+    return { ok: !schlecht.length,
+             mass: zeilen.join(' ') + ' ms, unabhängig von Ansprechen und Kalibrierung'
+                 + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
   // ---- Layout: Neutral laesst die Kalibrierung unberuehrt ----
   //
   // Die Aenderung soll rein additiv sein: wer nichts umstellt, merkt nichts. Geprueft wird es
@@ -37949,7 +38175,7 @@
       return { skip: true, mass: 'Messaufbau nicht vorhanden' };
     }
     const merk = physEngine.layoutName || 'neutral';
-    const FELDER = ['loadFrontStatic', 'wheelbaseM', 'yawInertia', 'steerRatePerS'];
+    const FELDER = ['loadFrontStatic', 'wheelbaseM', 'yawInertia', 'steerDaempfungMs'];
     try {
       physEngine.applyLayout('neutral');
       const diff = OMEGA_TEST.physConfigDiff() || {};
@@ -37982,7 +38208,7 @@
       const r = OMEGA_TEST.physLayoutDrive(n, { kmh: 140, throttle: 0, brake: 1,
                                                 steering: 1, patch: { steerCalib: 2.0 } });
       const v = OMEGA_TEST.physLayouts()[n];
-      return { n, grad: r.grad, sg: r.steerGrip, vorn: v.vorn, rate: v.rate, iz: v.iz };
+      return { n, grad: r.grad, sg: r.steerGrip, vorn: v.vorn, ms: v.daempfungMs, iz: v.iz };
     });
     const schlecht = [];
     // 1. Keiner am Notboden. 0,12 ist die Trockenreserve; wer dort liegt, lenkt nicht mehr.
@@ -38002,15 +38228,19 @@
     const spanne = Math.max.apply(null, werte.map(w => w.grad))
                  - Math.min.apply(null, werte.map(w => w.grad));
     if (spanne < 5) schlecht.push('Spanne nur ' + spanne + ' Grad, die Layouts wirken kaum');
-    // 4. Die Lenkrate folgt dem Traegheitsmoment, gegenlaeufig.
+    // 4. Die Lenkdaempfung folgt dem Traegheitsmoment, GLEICHLAEUFIG - und das ist eine
+    //    Umkehrung des Vergleichs, nicht seine Abschwaechung: bis v0.5.40 stand hier die
+    //    Lenkrate in Anschlaegen je Sekunde, die mit steigender Traegheit FIEL. Dieselbe
+    //    Aussage in Millisekunden heisst, dass die Zeit STEIGT. Wer nur den Feldnamen tauscht
+    //    und den Vergleich stehen laesst, dreht die Zusicherung um, ohne dass es auffaellt.
     const nachIz = werte.slice().sort((a, b) => a.iz - b.iz);
     for (let i = 1; i < nachIz.length; i++) {
-      if (nachIz[i].rate > nachIz[i - 1].rate + 1e-9) {
-        schlecht.push('Lenkrate steigt mit dem Traegheitsmoment (' + nachIz[i].n + ')');
+      if (nachIz[i].ms < nachIz[i - 1].ms - 1e-9) {
+        schlecht.push('Lenkdaempfung faellt mit dem Traegheitsmoment (' + nachIz[i].n + ')');
       }
     }
     return { ok: !schlecht.length,
-             mass: werte.map(w => w.n + ' ' + w.grad + '\u00b0/' + w.rate.toFixed(1)).join('  ')
+             mass: werte.map(w => w.n + ' ' + w.grad + '\u00b0/' + w.ms + 'ms').join('  ')
                    + ' | Spanne ' + spanne + '\u00b0'
                    + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
   });

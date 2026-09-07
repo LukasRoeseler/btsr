@@ -1135,7 +1135,7 @@
                         vorn: c.loadFrontStatic,
                         radstand: c.wheelbaseM,
                         iz: c.yawInertia,
-                        rate: +c.steerRatePerS.toFixed(3),
+                        daempfungMs: c.steerDaempfungMs,
                         gas: +(c.loadFrontStatic - c.transferK).toFixed(4),
                         bremse: +(c.loadFrontStatic + c.transferK).toFixed(4),
                         ruhelast: physEngine.state.loadFront };
@@ -1386,6 +1386,48 @@
     // ANGEZEIGTEN Geschwindigkeitsmarken, physTopSpeed die Endgeschwindigkeit. Die Frage
     // "fuehlt sich das Auto traege an" haengt aber am Byte, und das ist Tempo geteilt durch
     // Hoechstgeschwindigkeit.
+    // ---- WIE LANGE BRAUCHT DIE LENKUNG VON NULL BIS ZUM ANSCHLAG ------------------
+    //
+    // Die Groesse, die der Regler "Lenkdaempfung" verspricht - also die, die nachgemessen
+    // werden muss. Gefahren wird bei stehendem Auto und im ersten Gang, damit weder der
+    // Reibkreis noch die Tempoabhaengigkeit den Anschlag beschneidet: gemessen wird die
+    // Zeit des SERVOS und nicht die des Grips.
+    //
+    // Gezaehlt wird bis zu 99 Prozent des erreichbaren Endwerts und nicht bis 100: eine
+    // Ratenbegrenzung trifft ihr Ziel exakt, aber der Endwert selbst haengt an Kalibrierung
+    // und Reibkreis, und ein Vergleich gegen 1,0 wuerde die falsche Groesse pruefen.
+    steerZeitProbe(o) {
+      const opt = o || {};
+      const e = physEngine, st = e.state, cfg = e.config;
+      const merkState = OMEGA_TEST.zustandKopie(st);
+      const merk = { ms: cfg.steerDaempfungMs, resp: cfg.steerResponse };
+      try {
+        if (opt.ms !== undefined) cfg.steerDaempfungMs = opt.ms;
+        if (opt.resp !== undefined) cfg.steerResponse = opt.resp;
+        const dt = 0.005;
+        st.speedKmh = 0; st.driveMode = 'forward'; st.currentGear = 0;
+        st.dampedSteering = 0;
+        // Erst den Endwert finden: lange genug fahren, dass die Rampe fertig ist.
+        let ende = 0;
+        for (let i = 0; i < 2000; i++) {
+          ende = Math.abs(e.update({ throttle: 0, brake: 0, steering: 1 }, dt).servoAngle);
+        }
+        // Dann von vorn und die Zeit bis 99 Prozent davon nehmen.
+        st.dampedSteering = 0;
+        let t = 0, ms = null;
+        for (let i = 0; i < 2000 && ms === null; i++) {
+          const v = Math.abs(e.update({ throttle: 0, brake: 0, steering: 1 }, dt).servoAngle);
+          t += dt;
+          if (v >= ende * 0.99) ms = Math.round(t * 1000);
+        }
+        return { ms, ende: +ende.toFixed(4), soll: cfg.steerDaempfungMs };
+      } finally {
+        cfg.steerDaempfungMs = merk.ms;
+        cfg.steerResponse = merk.resp;
+        OMEGA_TEST.zustandZurueck(st, merkState);
+      }
+    },
+
     physOutTrace(o) {
       const opt = o || {};
       const e = physEngine, st = e.state, cfg = e.config;
@@ -2729,7 +2771,7 @@
     //     byte     round(servo * 127)                      (was gesendet wird)
     //
     // Dazwischen liegen Expo, die Tempobeschneidung (maxSteerLimit), die Ratenbegrenzung
-    // (steerRatePerS) und der Reibkreis. Jede davon kann eine Form flachdruecken, und der
+    // (steerDaempfungMs) und der Reibkreis. Jede davon kann eine Form flachdruecken, und der
     // Unterschied zwischen `wunsch` und `servo` sagt, welche.
     ghostLinieTrace(o) {
       const opt = o || {};

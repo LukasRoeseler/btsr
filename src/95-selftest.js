@@ -5240,6 +5240,69 @@
                    + (schlecht.length ? ' || ' + schlecht.join('; ') : ', beide https') };
   });
 
+  // ---- Lenkdaempfung: die Zahl auf dem Regler ist die Zahl, die gilt ----
+  //
+  // DER FEHLER, GEGEN DEN SIE STEHT, war da und ist gemessen. Die Zeit bis zum Anschlag hing
+  // an DREI Groessen, von denen der Regler keine nannte:
+  //
+  //   steerRatePerS      unsichtbar, aus dem Traegheitsmoment, ohne Regler
+  //   steerResponse      hiess "Lenkansprechen" und bestimmt laut Hilfetext den WINKEL
+  //   steerCalib         die Lenkwinkel-Kalibrierung, ein ganz anderer Regler
+  //
+  // Die letzte war die stillste: der uebertragene Winkel ist dampedSteering mal steerCalib,
+  // gedeckelt auf 1,0 - bei 200 Prozent Kalibrierung schlaegt er also bei halbem Kommando
+  // an. Gemessen ergaben eingestellte 83 ms 65, 200 ergaben 155 und 500 ergaben 385: durchweg
+  // 78 Prozent, und der Faktor sass an einem Regler zwei Zeilen weiter unten.
+  //
+  // Geprueft wird deshalb nicht "der Wert kommt an", sondern die ZUSAGE: die eingestellte
+  // Zeit ist die gemessene, und zwar unabhaengig von den zwei anderen Reglern. Toleranz ist
+  // ein Zeitschritt des Messaufbaus (5 ms) plus ein Prozent.
+  stAdd('Lenkdämpfung: die eingestellte Zeit ist die gemessene', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.steerZeitProbe) {
+      return { skip: true, mass: 'steerZeitProbe nicht vorhanden' };
+    }
+    const schlecht = [], zeilen = [];
+    const nah = (ist, soll) => Math.abs(ist - soll) <= 5 + soll * 0.01;
+    for (const ms of [40, 83, 200, 500]) {
+      const r = OMEGA_TEST.steerZeitProbe({ ms });
+      zeilen.push(ms + '→' + r.ms);
+      if (!nah(r.ms, ms)) schlecht.push('soll ' + ms + ' ms, gemessen ' + r.ms);
+    }
+    // 0 heisst sofort: ein einziger Zeitschritt, nicht mehr.
+    const sofort = OMEGA_TEST.steerZeitProbe({ ms: 0 });
+    zeilen.push('0→' + sofort.ms);
+    if (!(sofort.ms <= 10)) schlecht.push('0 ms braucht ' + sofort.ms + ' ms');
+    // ---- UND DIE UNABHAENGIGKEIT, der eigentliche Punkt --------------------------
+    const calib = $('setting-steer-calib');
+    const merk = calib ? calib.value : null;
+    try {
+      for (const resp of [1.0, 2.0, 3.0]) {
+        const r = OMEGA_TEST.steerZeitProbe({ ms: 200, resp });
+        if (!nah(r.ms, 200)) {
+          schlecht.push('Lenkansprechen ' + resp + ' aendert die Zeit auf ' + r.ms);
+        }
+      }
+      if (calib) {
+        for (const cal of [0.5, 1.0, 2.0, 3.0]) {
+          calib.value = String(cal);
+          calib.dispatchEvent(new Event('input', { bubbles: true }));
+          const r = OMEGA_TEST.steerZeitProbe({ ms: 200 });
+          if (!nah(r.ms, 200)) {
+            schlecht.push('Kalibrierung ' + cal + ' aendert die Zeit auf ' + r.ms);
+          }
+        }
+      }
+    } finally {
+      if (calib && merk !== null) {
+        calib.value = merk;
+        calib.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+    }
+    return { ok: !schlecht.length,
+             mass: zeilen.join(' ') + ' ms, unabhängig von Ansprechen und Kalibrierung'
+                 + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
   // ---- Layout: Neutral laesst die Kalibrierung unberuehrt ----
   //
   // Die Aenderung soll rein additiv sein: wer nichts umstellt, merkt nichts. Geprueft wird es
@@ -5250,7 +5313,7 @@
       return { skip: true, mass: 'Messaufbau nicht vorhanden' };
     }
     const merk = physEngine.layoutName || 'neutral';
-    const FELDER = ['loadFrontStatic', 'wheelbaseM', 'yawInertia', 'steerRatePerS'];
+    const FELDER = ['loadFrontStatic', 'wheelbaseM', 'yawInertia', 'steerDaempfungMs'];
     try {
       physEngine.applyLayout('neutral');
       const diff = OMEGA_TEST.physConfigDiff() || {};
@@ -5283,7 +5346,7 @@
       const r = OMEGA_TEST.physLayoutDrive(n, { kmh: 140, throttle: 0, brake: 1,
                                                 steering: 1, patch: { steerCalib: 2.0 } });
       const v = OMEGA_TEST.physLayouts()[n];
-      return { n, grad: r.grad, sg: r.steerGrip, vorn: v.vorn, rate: v.rate, iz: v.iz };
+      return { n, grad: r.grad, sg: r.steerGrip, vorn: v.vorn, ms: v.daempfungMs, iz: v.iz };
     });
     const schlecht = [];
     // 1. Keiner am Notboden. 0,12 ist die Trockenreserve; wer dort liegt, lenkt nicht mehr.
@@ -5303,15 +5366,19 @@
     const spanne = Math.max.apply(null, werte.map(w => w.grad))
                  - Math.min.apply(null, werte.map(w => w.grad));
     if (spanne < 5) schlecht.push('Spanne nur ' + spanne + ' Grad, die Layouts wirken kaum');
-    // 4. Die Lenkrate folgt dem Traegheitsmoment, gegenlaeufig.
+    // 4. Die Lenkdaempfung folgt dem Traegheitsmoment, GLEICHLAEUFIG - und das ist eine
+    //    Umkehrung des Vergleichs, nicht seine Abschwaechung: bis v0.5.40 stand hier die
+    //    Lenkrate in Anschlaegen je Sekunde, die mit steigender Traegheit FIEL. Dieselbe
+    //    Aussage in Millisekunden heisst, dass die Zeit STEIGT. Wer nur den Feldnamen tauscht
+    //    und den Vergleich stehen laesst, dreht die Zusicherung um, ohne dass es auffaellt.
     const nachIz = werte.slice().sort((a, b) => a.iz - b.iz);
     for (let i = 1; i < nachIz.length; i++) {
-      if (nachIz[i].rate > nachIz[i - 1].rate + 1e-9) {
-        schlecht.push('Lenkrate steigt mit dem Traegheitsmoment (' + nachIz[i].n + ')');
+      if (nachIz[i].ms < nachIz[i - 1].ms - 1e-9) {
+        schlecht.push('Lenkdaempfung faellt mit dem Traegheitsmoment (' + nachIz[i].n + ')');
       }
     }
     return { ok: !schlecht.length,
-             mass: werte.map(w => w.n + ' ' + w.grad + '\u00b0/' + w.rate.toFixed(1)).join('  ')
+             mass: werte.map(w => w.n + ' ' + w.grad + '\u00b0/' + w.ms + 'ms').join('  ')
                    + ' | Spanne ' + spanne + '\u00b0'
                    + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
   });

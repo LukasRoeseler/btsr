@@ -1448,7 +1448,6 @@
     "Gerechnet und nicht eingetippt: die Nickgrenzen folgen aus der statischen Achslast und dem Verlagerungsanteil.": "Computed, not typed in: the pitch limits follow from the static axle load and the transfer share.",
     "vorn bei Gas": "front on throttle",
     "bei Bremse": "on the brake",
-    "Lenkrate": "steering rate",
     "Reifenquietschen": "Tyre squeal",
     "Am Grenzbereich, im Stil von Gran Turismo: Lautstärke und Tonhöhe laufen stetig mit der Querausnutzung des Reibkreises, Einsatz ab 60 Prozent – also ab etwa 98 km/h bei vollem Lenkausschlag, ab 197 km/h bei halbem, und bei einem Viertel Ausschlag nie. Eine Haarnadel quietscht, eine lange schnelle Kurve nicht. Bis v0.4.55 stand die Schwelle bei 85 Prozent und war damit unerreichbar: gemessen kommt die Querausnutzung erst bei 265 km/h dorthin, weil der Lenkausschlag mit dem Tempo beschnitten wird. Es hat deshalb nie gequietscht.": "At the limit, in the style of Gran Turismo: volume and pitch run continuously with the lateral use of the friction circle, starting at 60 per cent – so from about 98 km/h at full lock, from 197 km/h at half, and at a quarter of lock never. A hairpin squeals, a long fast corner does not. Up to v0.4.55 the threshold sat at 85 per cent and was therefore unreachable: measured, the lateral use only gets there at 265 km/h, because the steering lock is cut back with speed. It therefore never squealed.",
     "Mehrspieler": "Multiplayer",
@@ -1571,6 +1570,18 @@
       "How hard the car steers against a slide, measured from the rotation signal in byte 3 of the notifications. 50 per cent is the default that was asked for. What is uncertain about it, and it is two things at once: the signal is unconfirmed – it only varies once the car is moving, and flipped sign with cornering direction in exactly one recording. And it is uncalibrated: its scale is self-adjusting because the real amplitude is unknown. So the strength depends on the largest yaw value the session has seen so far. The “Drift probe” button under “Measure lateral offset” measures whether the signal moves at all under straight full throttle.",
     "Rennen":
       "Race",
+    "Lenkdämpfung":
+      "Steering damping",
+    "sofort":
+      "instant",
+    "Wie lange das Servo von der Mittelstellung bis zum vollen aktuell möglichen Ausschlag braucht. Das ist nicht die Lenkwinkelbegrenzung darüber – die sagt, wie weit; diese sagt, wie schnell.":
+      "How long the servo takes from centre to the full deflection currently available. This is not the steering-angle limit above it – that one says how far, this one says how fast.",
+    "0 heißt sofort. Am Lenkrad und an der RC-Funke ist das richtig: dort gibt die Hand die Rate vor, und eine zweite Begrenzung dahinter fühlt sich wie Verzögerung an. Am Gamepad ist ein Daumen in etwa 150 ms von der Mitte am Anschlag, und ohne Dämpfung wird daraus ein Sprung am Servo.":
+      "0 means instant. On a wheel or an RC transmitter that is right: there the hand sets the rate, and a second limit behind it feels like lag. On a gamepad a thumb goes from centre to the stop in about 150 ms, and without damping that becomes a jump at the servo.",
+    "83 ms ist die Vorgabe und nicht gewählt, sondern der bisherige Wert nachgerechnet: 6,0 Anschläge je Sekunde mal dem kalibrierten Lenkansprechen von 200 % sind 12 je Sekunde. Bis v0.5.40 hing die Zeit zusätzlich am Lenkansprechen – wer es auf 240 % stellte, machte unangekündigt auch die Lenkung schneller, 69 statt 83 ms. Jetzt macht jeder der beiden Regler genau eine Sache.":
+      "83 ms is the default, and it is not chosen but the previous value worked out: 6.0 full locks per second times the calibrated steering response of 200% is 12 per second. Up to v0.5.40 the time also depended on the steering response – setting it to 240% silently made the steering faster too, 69 instead of 83 ms. Now each of the two sliders does exactly one thing.",
+    "Ein Fahrzeugwechsel weiter oben setzt diesen Regler mit: das Trägheitsmoment ist die einzige Stelle, an der sich ein leichteres Auto zeigen kann, und es ergibt 56 ms beim Formelwagen bis 125 ms beim Frontmotor-GT3. Danach kannst du frei darüber verfügen.":
+      "Changing the vehicle above sets this slider too: the moment of inertia is the only place a lighter car can show itself, and it gives 56 ms for the formula car up to 125 ms for the front-engined GT3. After that it is yours to set.",
     "Ghost: Kurven öffnen":
       "Ghost: open up the corners",
     "Wie weit außen ein Ghost eine Kurve anfährt und wieder verlässt, als Anteil des Weges zum Außenrand. Die Krümmungsminimierung kennt beides nicht: sie sucht den kürzesten glatten Weg, und bei einer Runde voller gleichsinniger Kurven liegt der innen – gemessen klebte die Linie auf der Start/Ziel-Geraden bei 90 % rechts, obwohl danach drei Rechtskurven kommen. Ein Fahrer fährt weit heraus, weil er bremst und beschleunigt und dafür Breite braucht; das ist eine Längsgröße, und die kennt der Glätter nicht.":

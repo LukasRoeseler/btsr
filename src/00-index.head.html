@@ -6547,6 +6547,31 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="phys-steerresp-val">100%</span>
         </div></div>
+      <div class="opt-row"><div class="opt-label">Lenkd&auml;mpfung
+          <span class="wip-tag">WIP</span>
+          <small>Wie lange das Servo von der Mittelstellung bis zum vollen aktuell
+          m&ouml;glichen Ausschlag braucht. Das ist nicht die Lenkwinkelbegrenzung
+          dar&uuml;ber &ndash; die sagt, wie weit; diese sagt, wie schnell.
+          <br>0 hei&szlig;t sofort. Am Lenkrad und an der RC-Funke ist das richtig: dort gibt
+          die Hand die Rate vor, und eine zweite Begrenzung dahinter f&uuml;hlt sich wie
+          Verz&ouml;gerung an. Am Gamepad ist ein Daumen in etwa 150&nbsp;ms von der Mitte am
+          Anschlag, und ohne D&auml;mpfung wird daraus ein Sprung am Servo.
+          <br>83&nbsp;ms ist die Vorgabe und nicht gew&auml;hlt, sondern der bisherige Wert
+          nachgerechnet: 6,0&nbsp;Anschl&auml;ge je Sekunde mal dem kalibrierten
+          Lenkansprechen von 200&nbsp;% sind 12 je Sekunde. Bis v0.5.40 hing die Zeit
+          zus&auml;tzlich am Lenkansprechen &ndash; wer es auf 240&nbsp;% stellte, machte
+          unangek&uuml;ndigt auch die Lenkung schneller, 69 statt 83&nbsp;ms. Jetzt macht
+          jeder der beiden Regler genau eine Sache.
+          <br>Ein Fahrzeugwechsel weiter oben setzt diesen Regler mit: das
+          Tr&auml;gheitsmoment ist die einzige Stelle, an der sich ein leichteres Auto zeigen
+          kann, und es ergibt 56&nbsp;ms beim Formelwagen bis 125&nbsp;ms beim
+          Frontmotor-GT3. Danach kannst du frei dar&uuml;ber verf&uuml;gen.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="phys-steerdamp" min="0" max="500" step="1" value="83">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="phys-steerdamp-val">83 ms</span>
+        </div></div>
       <div class="opt-row"><div class="opt-label">Bremsen nimmt Lenkung<small>Der Reibkreis: was die Bremse an der Vorderachse verbraucht, fehlt der Lenkung. 0 hei&szlig;t, Bremsen und Lenken behindern sich nicht; h&ouml;here Werte lassen das Auto beim Anbremsen deutlich schlechter einlenken. Zu beachten: die Lenkwinkel-Kalibrierung darunter holt genau das wieder zur&uuml;ck, also wirkt ein starker Wert erst, wenn die Kalibrierung ihn nicht mehr ausgleichen kann.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
@@ -7641,7 +7666,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.5.40</span></span>
+    <span class="foot-ver">v<span id="app-version">0.5.41</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine

@@ -167,13 +167,17 @@
         + ' m \u00b7 ' + c.yawInertia + ' kg\u00b7m\u00b2'
         + ' \u00b7 ' + t('vorn bei Gas') + ' ' + gas + '% / ' + t('bei Bremse') + ' '
         + bremse + '%'
-        + ' \u00b7 ' + t('Lenkrate') + ' ' + physEngine.config.steerRatePerS.toFixed(1);
+        + ' \u00b7 ' + t('Lenkd\u00e4mpfung') + ' ' + physEngine.config.steerDaempfungMs + ' ms';
     };
     const anwenden = (melden) => {
       const name = physEngine.applyLayout($('setting-layout').value);
       // Falls der gespeicherte Name unbekannt war, faellt applyLayout auf neutral zurueck -
       // dann muss die Auswahl mitkommen, sonst zeigt sie etwas anderes als das Modell.
       if ($('setting-layout').value !== name) $('setting-layout').value = name;
+      // applyLayout() hat gerade steerDaempfungMs aus dem Traegheitsmoment gesetzt. Der
+      // Regler muss mitkommen, sonst zeigt er einen Wert, der nicht mehr gilt - dieselbe
+      // Falle, gegen die drei Zeilen darueber die Auswahlliste nachgezogen wird.
+      steerDaempfungSetzen(physEngine.config.steerDaempfungMs, true);
       zeigeLayoutDaten();
       markDrivetrainChartsDirty();
       if (melden) {
@@ -1013,10 +1017,6 @@
     $('setting-repair-time-val').textContent = pitFullRepairS + ' s';
   });
 
-  // Die kalibrierte Vorgabe fuer das Lenkansprechen. Sie ist der Bezug fuer die Anzeige,
-  // damit dort 100 % steht, wo der Wert hingehoert - und nicht 200 %.
-  const STEER_RESP_REF = 2.0;
-
   // Die EINE Stelle, an der aus steerResponse eine Prozentzahl wird. Vorher gab es drei, in
   // zwei Maszstaeben: die Optionen teilten durch den kalibrierten Bezug 2,0 und zeigten
   // 100 %, das Steuerkreuz und die Cockpitkachel nahmen den Rohwert und zeigten 200 %. Wer
@@ -1029,6 +1029,30 @@
   // Todeszone, die in diesem Projekt schon fuenf Ladeabbrueche gekostet hat. In einer
   // zusammengefuegten IIFE ist das Ende einer Datei nicht das Ende des Moduls.
   function steerRespPct(v) { return Math.round(v / STEER_RESP_REF * 100); }
+  // Den Regler und das Modell an EINER Stelle zusammenbringen. steerDaempfungSetzen wird
+  // von drei Seiten gebraucht - vom Regler, vom Fahrzeugwechsel und vom Aufbau -, und drei
+  // Kopien derselben zwei Zeilen sind der Weg zu einem Regler, der irgendwann etwas anderes
+  // anzeigt als das Modell rechnet.
+  function steerDaempfungAnzeige(ms) {
+    return ms <= 0 ? t('sofort') : ms + ' ms';
+  }
+  function steerDaempfungSetzen(ms, auchRegler) {
+    const v = Math.max(0, Math.min(500, Math.round(ms)));
+    physEngine.config.steerDaempfungMs = v;
+    if (auchRegler && $('phys-steerdamp')) $('phys-steerdamp').value = String(v);
+    if ($('phys-steerdamp-val')) $('phys-steerdamp-val').textContent = steerDaempfungAnzeige(v);
+    return v;
+  }
+  if ($('phys-steerdamp')) {
+    $('phys-steerdamp').addEventListener('input', (e) => {
+      steerDaempfungSetzen(parseFloat(e.target.value), false);
+    });
+    // Beim Aufbau aus dem MARKUP lesen und nicht aus dem Modell: so ist der Regler die
+    // Wahrheit, und die Pruefung "Regler und Modell sagen beim Laden dasselbe" hat einen
+    // Gegenstand. Stimmen die zwei nicht, faellt sie - genau dafuer ist sie da.
+    steerDaempfungSetzen(parseFloat($('phys-steerdamp').value), false);
+  }
+
   ['phys-steerresp', 'phys-accel', 'setting-steer-calib', 'setting-brake-steal'].forEach(id => {
     const input = $(id);
     const readout = $(id + '-val');
