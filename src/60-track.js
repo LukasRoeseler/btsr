@@ -913,6 +913,8 @@
     }
     const tab = trackKachelTabelle(pts, tiles.length);
     const zuege = laeufe.map((l) => lateApexZug(l, pts, tiles, tab, at));
+    // EINMAL geplant, dann nur noch angewandt - siehe lineGeradenPlan().
+    const gPlan = lineGeradenPlan(pts, closed, tiles);
     const dreht = laeufe.map((l) => l.dreht);
     // Die Bogenlaenge je Zug: lateApexZug gibt Weganteile zurueck, die Laenge selbst wird
     // hier aus den Punkten geholt.
@@ -1024,7 +1026,7 @@
         for (let i = 0; i < erst; i++) alpha[i] = alpha[erst];
         for (let i = letzt + 1; i < n; i++) alpha[i] = alpha[letzt];
       }
-      return lineGeradenVerbinden(alpha, pts, closed, tiles);
+      return lineGeradenAnwenden(alpha, gPlan);
     };
     const bahnAus = (alpha) => pts.map((p, i) => [p.x + nrm[i].x * alpha[i],
                                                   p.y + nrm[i].y * alpha[i]]);
@@ -1058,7 +1060,8 @@
     const absteigen = (P) => {
       let best = wertVon(P);
       let schritt = [0.35 * limit, 0.35 * limit, 0.35 * limit, 0.12];
-      for (let runde = 0; runde < 5; runde++) {
+      const runden = o.runden === undefined ? 5 : o.runden;
+      for (let runde = 0; runde < runden; runde++) {
         for (let c = 0; c < P.length; c++) {
           for (let k = 0; k < 4; k++) {
             for (const richtung of [1, -1]) {
@@ -1299,11 +1302,21 @@
   // DIE ANKER SIND DIE KURVENWERTE an den Kachelgrenzen. Seit v0.5.43 wird diese Funktion
   // INNERHALB von formLine() gerufen, also fuer jede Kandidatenlinie der Suche: die Geraden
   // sind damit nicht mehr ein Nachlauf, sondern Teil dessen, was bewertet wird.
-  function lineGeradenVerbinden(alpha, pts, closed, tiles) {
-    const n = alpha.length;
-    if (!tiles || !tiles.length || n < 4) return alpha;
+  // ---- IN PLAN UND ANWENDUNG GETEILT, und das ist eine Messung wert ------------------
+  //
+  // Diese Verbindung laeuft INNERHALB der Optimierung, also einmal je Kandidatenlinie -
+  // gemessen 683 Mal auf einer 33-Kachel-Strecke. Sie rechnete dabei jedes Mal dieselbe
+  // Geometrie neu: die Kurvenlaeufe, die Kacheltabelle ueber alle Abtastpunkte, die Grenzen
+  // je Lauf und die Weglaengen der Geradenstuecke. Nichts davon haengt an alpha.
+  //
+  // Gemessen kostete ein Editor-Neuaufbau auf 33 Kacheln 549 ms, und der Editor rechnet ihn
+  // bei JEDEM Klick auf eine Kachel. Der Plan wird deshalb einmal gebaut und dann nur noch
+  // angewandt - dieselbe Linie, weniger Arbeit.
+  function lineGeradenPlan(pts, closed, tiles) {
+    const n = pts.length;
+    if (!tiles || !tiles.length || n < 4) return null;
     const laeufe = lineKurvenLaeufe(tiles, closed);
-    if (!laeufe.length) return alpha;          // keine Kurve, kein Anker
+    if (!laeufe.length) return null;          // keine Kurve, kein Anker
     const tab = trackKachelTabelle(pts, tiles.length);
     const at = (i) => closed ? ((i % n) + n) % n : Math.max(0, Math.min(n - 1, i));
     // Die Abtastpunkte eines Kurvenlaufs, ueber die Naht hinweg - dieselbe Rechnung wie in
@@ -1321,8 +1334,7 @@
       }
       return { ein: erst, aus: letzt };
     }).filter((g) => g.ein !== null);
-    if (!grenzen.length) return alpha;
-    const raus = alpha.slice();
+    if (!grenzen.length) return null;
     const abst = (i, j) => Math.hypot(pts[j].x - pts[i].x, pts[j].y - pts[i].y);
     // Je Paar aufeinanderfolgender Kurven das Stueck dazwischen. Bei einer geschlossenen
     // Runde auch das Paar (letzte, erste) - sonst bliebe genau die Zielgerade uebrig, und
@@ -1332,8 +1344,8 @@
       paare.push([grenzen[g].aus, grenzen[g + 1].ein]);
     }
     if (closed) paare.push([grenzen[grenzen.length - 1].aus, grenzen[0].ein]);
+    const stuecke = [];
     for (const [von, bis] of paare) {
-      // Die Punkte dazwischen sammeln, in Fahrtrichtung, samt Weglaenge.
       const weg = [0];
       const idx = [];
       let i = von, sicher = 0;
@@ -1347,13 +1359,29 @@
       if (!idx.length) continue;                 // Kurven stossen direkt aneinander
       const gesamt = weg[weg.length - 1] + abst(i, bis);
       if (!(gesamt > 1e-9)) continue;
-      const a0 = alpha[von], a1 = alpha[bis];
-      for (let q = 0; q < idx.length; q++) {
-        const f = weg[q + 1] / gesamt;
-        raus[idx[q]] = a0 + (a1 - a0) * f;
-      }
+      // Der Anteil je Punkt, fertig gerechnet. Danach ist die Anwendung eine Multiplikation.
+      stuecke.push({ von, bis, idx, f: idx.map((unused, q) => weg[q + 1] / gesamt) });
     }
-    return raus;
+    return stuecke.length ? stuecke : null;
+  }
+
+  // Anwenden, AN DER STELLE und ohne Kopie: der Aufrufer in formLine() baut alpha ohnehin je
+  // Auswertung neu, und eine Kopie je Auswertung war messbar - 683 Mal ein Array von 463
+  // Zahlen.
+  function lineGeradenAnwenden(alpha, plan) {
+    if (!plan) return alpha;
+    for (const st of plan) {
+      const a0 = alpha[st.von], d = alpha[st.bis] - a0;
+      for (let q = 0; q < st.idx.length; q++) alpha[st.idx[q]] = a0 + d * st.f[q];
+    }
+    return alpha;
+  }
+
+  // Die alte Signatur bleibt fuer Aufrufer, die keinen Plan halten - sie kopiert, damit sie
+  // das Eingabearray nicht veraendert.
+  function lineGeradenVerbinden(alpha, pts, closed, tiles) {
+    const plan = lineGeradenPlan(pts, closed, tiles);
+    return plan ? lineGeradenAnwenden(alpha.slice(), plan) : alpha;
   }
 
   // Beide Modelle hinter einem Aufruf. Editor und Ghosts gehen hier durch, damit die

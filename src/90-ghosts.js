@@ -1259,7 +1259,22 @@
     // ghostTaktLoeschen(). Ein Halt in den ersten Millisekunden nach dem Start liess sonst
     // einen Zeitgeber zurueck, den niemand mehr kannte.
     ghostTaktLoeschen(car);
-    if (car.ghost) { car.ghost.running = false; car.ghost.finish = null; }
+    // DEN BOXENSTOPP MIT AUFRAEUMEN, und das ist ein Fehler, der ohne Messung teuer
+    // geworden waere. Hier stand nur running und finish. g.pit blieb stehen, und weil
+    // pitInhaberGueltig() einen Anspruch nur dann verwirft, wenn das Auto keinen Stopp mehr
+    // hat ODER nicht mehr in der Garage steht, blieb der Boxenplatz besetzt: im Rennen
+    // bleibt das Auto in der Garage.
+    //
+    // Folge waere gewesen: wer ein Rennen beendet, waehrend ein Ghost in der Box steht,
+    // haette danach nie wieder einen Boxenstopp gesehen - und die Ursache staende nirgends.
+    // In der Simulation faellt es nicht auf, weil die dort neue Autos baut und die Heilung
+    // ueber die Garage greift.
+    if (car.ghost) {
+      car.ghost.running = false;
+      car.ghost.finish = null;
+      car.ghost.pit = null;
+      pitPlatzRaeumen(car);
+    }
     if (car.rx) writeToCar(car, 0, 0, trackModeBit() | LIGHT_HEAD);
     // Der Knopf "Ghosts anhalten" haengt daran. Hier und nicht an den sieben Aufrufstellen:
     // eine davon wird sonst vergessen, und dann steht ein scharfer Knopf ohne Ghost.
@@ -2385,6 +2400,10 @@
   }
   function pitPlatzFrei(car) { return !pitInhaberGueltig() || pitInhaber === car; }
   function pitPlatzRaeumen(car) { if (pitInhaber === car) pitInhaber = null; }
+  // Nur fuer den Prueflauf: den Inhaber von aussen setzen. Der Fahrbetrieb setzt ihn an
+  // genau einer Stelle, im Kachelwechsel - eine zweite waere ein zweiter Weg in dieselbe
+  // Sperre.
+  function pitInhaberSetzen(car) { pitInhaber = car; }
 
   // Die Boxenkachel: die Start/Ziel-Kachel des Layouts. NICHT 0 annehmen - ortStartIndex()
   // sucht sie, und auf einem gescannten Layout kann sie irgendwo liegen.
@@ -2519,6 +2538,13 @@
     const g = car.ghost;
     if (!g) { stopGhost(car); return; }
     if (g.finish) return;           // laeuft schon, nicht neu anstossen
+    // Wer einlaeuft, pittet nicht mehr. ghostTick() steigt bei g.finish frueh aus, pitTick()
+    // laeuft also nie wieder - ein Stopp, der hier stehen bleibt, wird nie beendet und haelt
+    // den Boxenplatz fuer alle folgenden Rennen besetzt.
+    if (g.pit) {
+      g.pit = null;
+      pitPlatzRaeumen(car);
+    }
     const platz = finishSeiteZaehler++;
     g.finish = { phase: 'roll', at: Date.now(),
                  seite: platz % 2 === 0 ? 1 : -1,
@@ -5105,6 +5131,10 @@
 
   // Ghosts launch on green, not before.
   function launchGhosts() {
+    // Die Seiten des Zieleinlaufs von vorn. Bisher geschah das nur beim Rennstart - wer
+    // zweimal "Ghosts losfahren" und "anhalten" drueckt, lief den Zaehler hoch, und ab dem
+    // fuenften Einlauf steht die Rollzeit auf ihrem Boden. Dann staffelt nichts mehr.
+    finishSeitenZaehlerZuruecksetzen();
     garage.forEach(c => { if (c.role === 'ghost') startGhost(c); });
     const n = garage.filter(c => c.role === 'ghost').length;
     // Die haeufigste Ursache fuer "ich starte das Rennen und es passiert nichts": ohne

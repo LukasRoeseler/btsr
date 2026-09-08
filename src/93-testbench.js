@@ -1672,6 +1672,9 @@
     // Die Sperre selbst herausgegeben: eine Pruefung soll fragen koennen, WANN sie gilt,
     // statt es aus Kachelindizes nachzubauen.
     pitSperreRechts, pitKachel, pitFaelligZiehen,
+    // Den Boxenplatz von aussen lesen und setzen. Als Funktionen, weil pitInhaber ein let
+    // ist - eine Kopie waere ein zweiter Ort fuer eine Sperre.
+    pitBelegt: () => !!pitInhaber, pitInhaberSetzen,
     // Der Tankverbrauch, damit die Spiegelpruefung ihn vergleichen kann. Als Funktion und
     // nicht als Wert: ein let wird kopiert, eine Funktion liest.
     fuelDrain: () => fuelDrainPerSec,
@@ -2482,6 +2485,34 @@
         // Prueflauf, der modulweiten Zustand liegen laesst, ist trotzdem einer, der den
         // naechsten Lauf beeinflusst - und genau das hat hier eine Messung verdorben.
         for (const c of garage) if (c.ghost) c.ghost.pit = null;
+        pitPlatzRaeumen(pitInhaber);
+      }
+    },
+
+    // ---- HAELT DER BOXENPLATZ NACH EINEM ABBRUCH? ---------------------------------
+    //
+    // Der Fall, den diese Sonde stellt: ein Rennen endet oder wird beendet, WAEHREND ein
+    // Ghost in der Box steht. Dann setzt finishGhost() g.finish, ghostTick() steigt frueh
+    // aus, und pitTick() laeuft nie wieder. Bleibt g.pit dabei stehen, ist der Boxenplatz
+    // dauerhaft besetzt - und weil das Auto im Rennen in der Garage BLEIBT, greift die
+    // Selbstheilung ueber die Garage nicht.
+    pitAbbruchProbe(wie) {
+      const merkGarage = garage.splice(0, garage.length);
+      try {
+        const car = OMEGA_TEST.attrappeGhost('X');
+        garage.push(car);
+        // Einen laufenden Stopp von Hand setzen - die Sonde prueft das AUFRAEUMEN, nicht das
+        // Ansetzen. Dafuer gibt es ghostPitProbe().
+        car.ghost.pit = { phase: 'stand', at: Date.now(), laenge: 5000 };
+        pitInhaberSetzen(car);
+        const vor = !!pitInhaber;
+        if (wie === 'finish') finishGhost(car);
+        else stopGhost(car);
+        return { vor, nach: !!pitInhaber, pit: !!car.ghost.pit,
+                 inGarage: garage.indexOf(car) >= 0 };
+      } finally {
+        garage.splice(0, garage.length);
+        for (const c of merkGarage) garage.push(c);
         pitPlatzRaeumen(pitInhaber);
       }
     },

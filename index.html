@@ -7096,7 +7096,12 @@
           ein paar Sekunden stehen und f&auml;hrt wieder los. Die Anfahrt beginnt schon auf
           der Kachel davor, im Formationstempo &ndash; ein Auto, das mit Renntempo &uuml;ber
           die Linie kommt, braucht eine Kachel zum Verz&ouml;gern. Es pittet immer nur einer;
-          wer gleichzeitig f&auml;llig ist, wartet eine Runde.
+          wer gleichzeitig f&auml;llig ist, wartet, bis die Box frei ist &ndash; nicht
+          genau eine Runde. Gemessen in der Rennsimulation ist die Box mit den
+          Vorgabewerten 28&nbsp;% der Zeit belegt (vier Ghosts) bis 31&nbsp;% (sechs).
+          Mit einem engen Intervall s&auml;ttigt sie: bei 2 bis 4&nbsp;Runden und sechs
+          Ghosts waren es 70&nbsp;%, und dann kommt jeder sp&auml;ter dran als er
+          f&auml;llig w&auml;re.
           <br>Die anderen weichen auf der Boxenkachel nach links aus, und ihre Querlage ist
           dort nach rechts gesperrt &ndash; das Ausweichen allein w&auml;re nur die weiche
           H&auml;lfte, die Sperre ist die Zusage. Dein eigenes Auto ist nicht steuerbar; es
@@ -7769,7 +7774,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.5.45</span></span>
+    <span class="foot-ver">v<span id="app-version">0.5.46</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -9370,6 +9375,8 @@
       "How hard the car steers against a slide, measured from the rotation signal in byte 3 of the notifications. 50 per cent is the default that was asked for. What is uncertain about it, and it is two things at once: the signal is unconfirmed – it only varies once the car is moving, and flipped sign with cornering direction in exactly one recording. And it is uncalibrated: its scale is self-adjusting because the real amplitude is unknown. So the strength depends on the largest yaw value the session has seen so far. The “Drift probe” button under “Measure lateral offset” measures whether the signal moves at all under straight full throttle.",
     "Rennen":
       "Race",
+    "Ein Ghost fährt auf der Start/Ziel-Kachel rechts an den Rand, bleibt ein paar Sekunden stehen und fährt wieder los. Die Anfahrt beginnt schon auf der Kachel davor, im Formationstempo – ein Auto, das mit Renntempo über die Linie kommt, braucht eine Kachel zum Verzögern. Es pittet immer nur einer; wer gleichzeitig fällig ist, wartet, bis die Box frei ist – nicht genau eine Runde. Gemessen in der Rennsimulation ist die Box mit den Vorgabewerten 28 % der Zeit belegt (vier Ghosts) bis 31 % (sechs). Mit einem engen Intervall sättigt sie: bei 2 bis 4 Runden und sechs Ghosts waren es 70 %, und dann kommt jeder später dran als er fällig wäre.":
+      "A ghost pulls over to the right-hand edge on the start/finish tile, stands there for a few seconds and drives off again. The approach begins on the tile before it, at formation pace – a car crossing the line at racing speed needs a tile to slow down. Only one pits at a time; whoever is due at the same moment waits until the pit is free – not exactly one lap. Measured in the race simulation, the pit is occupied 28% of the time at the default settings (four ghosts) to 31% (six). A short interval saturates it: at 2 to 4 laps with six ghosts it was 70%, and then everyone gets their stop later than they are due.",
     "Ghost: Boxenstopp":
       "Ghost: pit stop",
     "Ghost: Boxenstopp im freien Fahren":
@@ -9380,8 +9387,6 @@
       "Ghost: pit stop no sooner than",
     "Ghost: Boxenstopp spätestens nach":
       "Ghost: pit stop no later than",
-    "Ein Ghost fährt auf der Start/Ziel-Kachel rechts an den Rand, bleibt ein paar Sekunden stehen und fährt wieder los. Die Anfahrt beginnt schon auf der Kachel davor, im Formationstempo – ein Auto, das mit Renntempo über die Linie kommt, braucht eine Kachel zum Verzögern. Es pittet immer nur einer; wer gleichzeitig fällig ist, wartet eine Runde.":
-      "A ghost pulls over to the right-hand edge on the start/finish tile, stands there for a few seconds and drives off again. The approach begins on the tile before it, at formation pace – a car crossing the line at racing speed needs a tile to slow down. Only one pits at a time; whoever is due at the same moment waits a lap.",
     "Die anderen weichen auf der Boxenkachel nach links aus, und ihre Querlage ist dort nach rechts gesperrt – das Ausweichen allein wäre nur die weiche Hälfte, die Sperre ist die Zusage. Dein eigenes Auto ist nicht steuerbar; es gibt eine Meldung und den Punkt auf der Karte, mehr geht nicht.":
       "On the pit tile the others move to the left, and their lateral position is barred from going right there – the yielding alone would only be the soft half, the bar is the guarantee. Your own car cannot be steered; there is a message and the dot on the map, and that is all there is.",
     "Was der Stopp nicht kann: wissen, wo der Rand ist. Das Auto meldet seine Querlage nicht, voller Ausschlag ist ein Befehl und keine Messung. Die Zusage ist nicht die Randlage, sondern dass die anderen auf der anderen Seite sind.":
@@ -16183,6 +16188,8 @@
     }
     const tab = trackKachelTabelle(pts, tiles.length);
     const zuege = laeufe.map((l) => lateApexZug(l, pts, tiles, tab, at));
+    // EINMAL geplant, dann nur noch angewandt - siehe lineGeradenPlan().
+    const gPlan = lineGeradenPlan(pts, closed, tiles);
     const dreht = laeufe.map((l) => l.dreht);
     // Die Bogenlaenge je Zug: lateApexZug gibt Weganteile zurueck, die Laenge selbst wird
     // hier aus den Punkten geholt.
@@ -16294,7 +16301,7 @@
         for (let i = 0; i < erst; i++) alpha[i] = alpha[erst];
         for (let i = letzt + 1; i < n; i++) alpha[i] = alpha[letzt];
       }
-      return lineGeradenVerbinden(alpha, pts, closed, tiles);
+      return lineGeradenAnwenden(alpha, gPlan);
     };
     const bahnAus = (alpha) => pts.map((p, i) => [p.x + nrm[i].x * alpha[i],
                                                   p.y + nrm[i].y * alpha[i]]);
@@ -16328,7 +16335,8 @@
     const absteigen = (P) => {
       let best = wertVon(P);
       let schritt = [0.35 * limit, 0.35 * limit, 0.35 * limit, 0.12];
-      for (let runde = 0; runde < 5; runde++) {
+      const runden = o.runden === undefined ? 5 : o.runden;
+      for (let runde = 0; runde < runden; runde++) {
         for (let c = 0; c < P.length; c++) {
           for (let k = 0; k < 4; k++) {
             for (const richtung of [1, -1]) {
@@ -16569,11 +16577,21 @@
   // DIE ANKER SIND DIE KURVENWERTE an den Kachelgrenzen. Seit v0.5.43 wird diese Funktion
   // INNERHALB von formLine() gerufen, also fuer jede Kandidatenlinie der Suche: die Geraden
   // sind damit nicht mehr ein Nachlauf, sondern Teil dessen, was bewertet wird.
-  function lineGeradenVerbinden(alpha, pts, closed, tiles) {
-    const n = alpha.length;
-    if (!tiles || !tiles.length || n < 4) return alpha;
+  // ---- IN PLAN UND ANWENDUNG GETEILT, und das ist eine Messung wert ------------------
+  //
+  // Diese Verbindung laeuft INNERHALB der Optimierung, also einmal je Kandidatenlinie -
+  // gemessen 683 Mal auf einer 33-Kachel-Strecke. Sie rechnete dabei jedes Mal dieselbe
+  // Geometrie neu: die Kurvenlaeufe, die Kacheltabelle ueber alle Abtastpunkte, die Grenzen
+  // je Lauf und die Weglaengen der Geradenstuecke. Nichts davon haengt an alpha.
+  //
+  // Gemessen kostete ein Editor-Neuaufbau auf 33 Kacheln 549 ms, und der Editor rechnet ihn
+  // bei JEDEM Klick auf eine Kachel. Der Plan wird deshalb einmal gebaut und dann nur noch
+  // angewandt - dieselbe Linie, weniger Arbeit.
+  function lineGeradenPlan(pts, closed, tiles) {
+    const n = pts.length;
+    if (!tiles || !tiles.length || n < 4) return null;
     const laeufe = lineKurvenLaeufe(tiles, closed);
-    if (!laeufe.length) return alpha;          // keine Kurve, kein Anker
+    if (!laeufe.length) return null;          // keine Kurve, kein Anker
     const tab = trackKachelTabelle(pts, tiles.length);
     const at = (i) => closed ? ((i % n) + n) % n : Math.max(0, Math.min(n - 1, i));
     // Die Abtastpunkte eines Kurvenlaufs, ueber die Naht hinweg - dieselbe Rechnung wie in
@@ -16591,8 +16609,7 @@
       }
       return { ein: erst, aus: letzt };
     }).filter((g) => g.ein !== null);
-    if (!grenzen.length) return alpha;
-    const raus = alpha.slice();
+    if (!grenzen.length) return null;
     const abst = (i, j) => Math.hypot(pts[j].x - pts[i].x, pts[j].y - pts[i].y);
     // Je Paar aufeinanderfolgender Kurven das Stueck dazwischen. Bei einer geschlossenen
     // Runde auch das Paar (letzte, erste) - sonst bliebe genau die Zielgerade uebrig, und
@@ -16602,8 +16619,8 @@
       paare.push([grenzen[g].aus, grenzen[g + 1].ein]);
     }
     if (closed) paare.push([grenzen[grenzen.length - 1].aus, grenzen[0].ein]);
+    const stuecke = [];
     for (const [von, bis] of paare) {
-      // Die Punkte dazwischen sammeln, in Fahrtrichtung, samt Weglaenge.
       const weg = [0];
       const idx = [];
       let i = von, sicher = 0;
@@ -16617,13 +16634,29 @@
       if (!idx.length) continue;                 // Kurven stossen direkt aneinander
       const gesamt = weg[weg.length - 1] + abst(i, bis);
       if (!(gesamt > 1e-9)) continue;
-      const a0 = alpha[von], a1 = alpha[bis];
-      for (let q = 0; q < idx.length; q++) {
-        const f = weg[q + 1] / gesamt;
-        raus[idx[q]] = a0 + (a1 - a0) * f;
-      }
+      // Der Anteil je Punkt, fertig gerechnet. Danach ist die Anwendung eine Multiplikation.
+      stuecke.push({ von, bis, idx, f: idx.map((unused, q) => weg[q + 1] / gesamt) });
     }
-    return raus;
+    return stuecke.length ? stuecke : null;
+  }
+
+  // Anwenden, AN DER STELLE und ohne Kopie: der Aufrufer in formLine() baut alpha ohnehin je
+  // Auswertung neu, und eine Kopie je Auswertung war messbar - 683 Mal ein Array von 463
+  // Zahlen.
+  function lineGeradenAnwenden(alpha, plan) {
+    if (!plan) return alpha;
+    for (const st of plan) {
+      const a0 = alpha[st.von], d = alpha[st.bis] - a0;
+      for (let q = 0; q < st.idx.length; q++) alpha[st.idx[q]] = a0 + d * st.f[q];
+    }
+    return alpha;
+  }
+
+  // Die alte Signatur bleibt fuer Aufrufer, die keinen Plan halten - sie kopiert, damit sie
+  // das Eingabearray nicht veraendert.
+  function lineGeradenVerbinden(alpha, pts, closed, tiles) {
+    const plan = lineGeradenPlan(pts, closed, tiles);
+    return plan ? lineGeradenAnwenden(alpha.slice(), plan) : alpha;
   }
 
   // Beide Modelle hinter einem Aufruf. Editor und Ghosts gehen hier durch, damit die
@@ -25162,7 +25195,22 @@
     // ghostTaktLoeschen(). Ein Halt in den ersten Millisekunden nach dem Start liess sonst
     // einen Zeitgeber zurueck, den niemand mehr kannte.
     ghostTaktLoeschen(car);
-    if (car.ghost) { car.ghost.running = false; car.ghost.finish = null; }
+    // DEN BOXENSTOPP MIT AUFRAEUMEN, und das ist ein Fehler, der ohne Messung teuer
+    // geworden waere. Hier stand nur running und finish. g.pit blieb stehen, und weil
+    // pitInhaberGueltig() einen Anspruch nur dann verwirft, wenn das Auto keinen Stopp mehr
+    // hat ODER nicht mehr in der Garage steht, blieb der Boxenplatz besetzt: im Rennen
+    // bleibt das Auto in der Garage.
+    //
+    // Folge waere gewesen: wer ein Rennen beendet, waehrend ein Ghost in der Box steht,
+    // haette danach nie wieder einen Boxenstopp gesehen - und die Ursache staende nirgends.
+    // In der Simulation faellt es nicht auf, weil die dort neue Autos baut und die Heilung
+    // ueber die Garage greift.
+    if (car.ghost) {
+      car.ghost.running = false;
+      car.ghost.finish = null;
+      car.ghost.pit = null;
+      pitPlatzRaeumen(car);
+    }
     if (car.rx) writeToCar(car, 0, 0, trackModeBit() | LIGHT_HEAD);
     // Der Knopf "Ghosts anhalten" haengt daran. Hier und nicht an den sieben Aufrufstellen:
     // eine davon wird sonst vergessen, und dann steht ein scharfer Knopf ohne Ghost.
@@ -26288,6 +26336,10 @@
   }
   function pitPlatzFrei(car) { return !pitInhaberGueltig() || pitInhaber === car; }
   function pitPlatzRaeumen(car) { if (pitInhaber === car) pitInhaber = null; }
+  // Nur fuer den Prueflauf: den Inhaber von aussen setzen. Der Fahrbetrieb setzt ihn an
+  // genau einer Stelle, im Kachelwechsel - eine zweite waere ein zweiter Weg in dieselbe
+  // Sperre.
+  function pitInhaberSetzen(car) { pitInhaber = car; }
 
   // Die Boxenkachel: die Start/Ziel-Kachel des Layouts. NICHT 0 annehmen - ortStartIndex()
   // sucht sie, und auf einem gescannten Layout kann sie irgendwo liegen.
@@ -26422,6 +26474,13 @@
     const g = car.ghost;
     if (!g) { stopGhost(car); return; }
     if (g.finish) return;           // laeuft schon, nicht neu anstossen
+    // Wer einlaeuft, pittet nicht mehr. ghostTick() steigt bei g.finish frueh aus, pitTick()
+    // laeuft also nie wieder - ein Stopp, der hier stehen bleibt, wird nie beendet und haelt
+    // den Boxenplatz fuer alle folgenden Rennen besetzt.
+    if (g.pit) {
+      g.pit = null;
+      pitPlatzRaeumen(car);
+    }
     const platz = finishSeiteZaehler++;
     g.finish = { phase: 'roll', at: Date.now(),
                  seite: platz % 2 === 0 ? 1 : -1,
@@ -29008,6 +29067,10 @@
 
   // Ghosts launch on green, not before.
   function launchGhosts() {
+    // Die Seiten des Zieleinlaufs von vorn. Bisher geschah das nur beim Rennstart - wer
+    // zweimal "Ghosts losfahren" und "anhalten" drueckt, lief den Zaehler hoch, und ab dem
+    // fuenften Einlauf steht die Rollzeit auf ihrem Boden. Dann staffelt nichts mehr.
+    finishSeitenZaehlerZuruecksetzen();
     garage.forEach(c => { if (c.role === 'ghost') startGhost(c); });
     const n = garage.filter(c => c.role === 'ghost').length;
     // Die haeufigste Ursache fuer "ich starte das Rennen und es passiert nichts": ohne
@@ -31725,6 +31788,9 @@
     // Die Sperre selbst herausgegeben: eine Pruefung soll fragen koennen, WANN sie gilt,
     // statt es aus Kachelindizes nachzubauen.
     pitSperreRechts, pitKachel, pitFaelligZiehen,
+    // Den Boxenplatz von aussen lesen und setzen. Als Funktionen, weil pitInhaber ein let
+    // ist - eine Kopie waere ein zweiter Ort fuer eine Sperre.
+    pitBelegt: () => !!pitInhaber, pitInhaberSetzen,
     // Der Tankverbrauch, damit die Spiegelpruefung ihn vergleichen kann. Als Funktion und
     // nicht als Wert: ein let wird kopiert, eine Funktion liest.
     fuelDrain: () => fuelDrainPerSec,
@@ -32535,6 +32601,34 @@
         // Prueflauf, der modulweiten Zustand liegen laesst, ist trotzdem einer, der den
         // naechsten Lauf beeinflusst - und genau das hat hier eine Messung verdorben.
         for (const c of garage) if (c.ghost) c.ghost.pit = null;
+        pitPlatzRaeumen(pitInhaber);
+      }
+    },
+
+    // ---- HAELT DER BOXENPLATZ NACH EINEM ABBRUCH? ---------------------------------
+    //
+    // Der Fall, den diese Sonde stellt: ein Rennen endet oder wird beendet, WAEHREND ein
+    // Ghost in der Box steht. Dann setzt finishGhost() g.finish, ghostTick() steigt frueh
+    // aus, und pitTick() laeuft nie wieder. Bleibt g.pit dabei stehen, ist der Boxenplatz
+    // dauerhaft besetzt - und weil das Auto im Rennen in der Garage BLEIBT, greift die
+    // Selbstheilung ueber die Garage nicht.
+    pitAbbruchProbe(wie) {
+      const merkGarage = garage.splice(0, garage.length);
+      try {
+        const car = OMEGA_TEST.attrappeGhost('X');
+        garage.push(car);
+        // Einen laufenden Stopp von Hand setzen - die Sonde prueft das AUFRAEUMEN, nicht das
+        // Ansetzen. Dafuer gibt es ghostPitProbe().
+        car.ghost.pit = { phase: 'stand', at: Date.now(), laenge: 5000 };
+        pitInhaberSetzen(car);
+        const vor = !!pitInhaber;
+        if (wie === 'finish') finishGhost(car);
+        else stopGhost(car);
+        return { vor, nach: !!pitInhaber, pit: !!car.ghost.pit,
+                 inGarage: garage.indexOf(car) >= 0 };
+      } finally {
+        garage.splice(0, garage.length);
+        for (const c of merkGarage) garage.push(c);
         pitPlatzRaeumen(pitInhaber);
       }
     },
@@ -40446,6 +40540,42 @@
                                  + a.sperreMax).join(' | ')
                  + ' | ' + r.mehrfach + ' Doppelstopps'
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
+  // ---- Der Boxenplatz bleibt nach einem Abbruch nicht besetzt ----
+  //
+  // DER FEHLER, DEN DIESE PRUEFUNG FESTHAELT: stopGhost() raeumte running und finish auf,
+  // aber nicht g.pit - und finishGhost() setzte g.finish, worauf ghostTick() frueh aussteigt
+  // und pitTick() nie wieder laeuft. Der Stopp blieb also fuer immer offen und der
+  // modulweite Boxenplatz besetzt.
+  //
+  // WARUM DIE SELBSTHEILUNG DAS NICHT DECKT: pitInhaberGueltig() verwirft einen Anspruch,
+  // wenn das Auto keinen Stopp mehr hat ODER nicht mehr in der Garage steht. Im Rennen
+  // BLEIBT das Auto in der Garage, und g.pit stand noch - beide Bedingungen erfuellt, der
+  // Anspruch galt weiter. In der Rennsimulation faellt es nicht auf, weil die neue Autos
+  // baut; gemessen pittete dort auch nach einem Abbruch mitten im Stopp weiter (503 Takte).
+  //
+  // Folge waere gewesen: wer ein Rennen beendet, waehrend ein Ghost in der Box steht, sieht
+  // danach nie wieder einen Boxenstopp - und die Ursache steht nirgends.
+  stAdd('Ghost-Boxenstopp: der Platz wird nach einem Abbruch frei', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.pitAbbruchProbe) {
+      return { skip: true, mass: 'pitAbbruchProbe nicht vorhanden' };
+    }
+    const fehler = [], zeilen = [];
+    for (const wie of ['finish', 'stop']) {
+      const r = OMEGA_TEST.pitAbbruchProbe(wie);
+      zeilen.push(wie + ': belegt ' + r.vor + ' -> ' + r.nach + ', pit ' + r.pit
+                  + ', in Garage ' + r.inGarage);
+      // Die Gegenprobe zuerst: ohne einen belegten Platz prueft der Rest nichts.
+      if (!r.vor) fehler.push(wie + ': der Platz war nicht belegt');
+      if (r.nach) fehler.push(wie + ': der Platz bleibt belegt');
+      if (r.pit) fehler.push(wie + ': g.pit steht noch');
+      // Und der Fall MUSS der schwierige sein: das Auto bleibt in der Garage, sonst haette
+      // die Selbstheilung ueber die Garage gegriffen und die Pruefung waere leer.
+      if (!r.inGarage) fehler.push(wie + ': das Auto war nicht mehr in der Garage');
+    }
+    return { ok: !fehler.length,
+             mass: zeilen.join(' | ') + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
   // ---- Die Faelligkeit liegt im eingestellten Band ----

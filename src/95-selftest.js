@@ -6245,6 +6245,42 @@
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
+  // ---- Der Boxenplatz bleibt nach einem Abbruch nicht besetzt ----
+  //
+  // DER FEHLER, DEN DIESE PRUEFUNG FESTHAELT: stopGhost() raeumte running und finish auf,
+  // aber nicht g.pit - und finishGhost() setzte g.finish, worauf ghostTick() frueh aussteigt
+  // und pitTick() nie wieder laeuft. Der Stopp blieb also fuer immer offen und der
+  // modulweite Boxenplatz besetzt.
+  //
+  // WARUM DIE SELBSTHEILUNG DAS NICHT DECKT: pitInhaberGueltig() verwirft einen Anspruch,
+  // wenn das Auto keinen Stopp mehr hat ODER nicht mehr in der Garage steht. Im Rennen
+  // BLEIBT das Auto in der Garage, und g.pit stand noch - beide Bedingungen erfuellt, der
+  // Anspruch galt weiter. In der Rennsimulation faellt es nicht auf, weil die neue Autos
+  // baut; gemessen pittete dort auch nach einem Abbruch mitten im Stopp weiter (503 Takte).
+  //
+  // Folge waere gewesen: wer ein Rennen beendet, waehrend ein Ghost in der Box steht, sieht
+  // danach nie wieder einen Boxenstopp - und die Ursache steht nirgends.
+  stAdd('Ghost-Boxenstopp: der Platz wird nach einem Abbruch frei', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.pitAbbruchProbe) {
+      return { skip: true, mass: 'pitAbbruchProbe nicht vorhanden' };
+    }
+    const fehler = [], zeilen = [];
+    for (const wie of ['finish', 'stop']) {
+      const r = OMEGA_TEST.pitAbbruchProbe(wie);
+      zeilen.push(wie + ': belegt ' + r.vor + ' -> ' + r.nach + ', pit ' + r.pit
+                  + ', in Garage ' + r.inGarage);
+      // Die Gegenprobe zuerst: ohne einen belegten Platz prueft der Rest nichts.
+      if (!r.vor) fehler.push(wie + ': der Platz war nicht belegt');
+      if (r.nach) fehler.push(wie + ': der Platz bleibt belegt');
+      if (r.pit) fehler.push(wie + ': g.pit steht noch');
+      // Und der Fall MUSS der schwierige sein: das Auto bleibt in der Garage, sonst haette
+      // die Selbstheilung ueber die Garage gegriffen und die Pruefung waere leer.
+      if (!r.inGarage) fehler.push(wie + ': das Auto war nicht mehr in der Garage');
+    }
+    return { ok: !fehler.length,
+             mass: zeilen.join(' | ') + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
   // ---- Die Faelligkeit liegt im eingestellten Band ----
   //
   // Zwei Regler, ein Band, und die Ziehung muss beide Grenzen erreichen - eine Ziehung, die
