@@ -2365,6 +2365,9 @@
       ['setting-brake-steal', () => physEngine.config.brakeUseGain],
       ['setting-minmove', () => physEngine.config.minMoveThrottle],
       ['setting-fuelweight', () => physEngine.config.fuelWeightEffect],
+      // Der Tankverbrauch. Er FEHLTE hier, und deshalb blieb ein Jahr lang unbemerkt, dass
+      // der Regler 0 zeigte und das Modell 3 rechnete.
+      ['setting-fuel-drain', () => OMEGA_TEST.fuelDrain()],
       ['setting-countersteer', () => (typeof gegenlenkStaerke === 'number' ? gegenlenkStaerke : null)],
       ['ghost-line', () => ghostCfg.line],
       // Die drei Verfeinerungsregler. ghost-exit spiegelt nach 60-track.js und nicht
@@ -2376,6 +2379,12 @@
       ['ghost-lanes', () => ghostCfg.lanes],
       ['ghost-lateral', () => ghostCfg.lateral],
       ['ghost-speed', () => ghostCfg.speed],
+      // Die drei Boxenstopp-Regler. Die zwei Rundengrenzen schieben sich gegenseitig, also
+      // muss das Markup ein GUELTIGES Paar tragen - min <= max -, sonst zeigt der eine beim
+      // Laden etwas anderes als das Modell.
+      ['ghost-pit-sec', () => ghostCfg.pitSek],
+      ['ghost-pit-min', () => ghostCfg.pitRundenMin],
+      ['ghost-pit-max', () => ghostCfg.pitRundenMax],
     ];
     const schlecht = [], fehlt = [];
     let geprueft = 0;
@@ -6150,6 +6159,117 @@
                      + ', Ghost neu ' + r.ghostNeu + ', cutOut ' + r.cutOut };
   });
 
+  // ---- Ghost-Boxenstopp ----
+  //
+  // DIE PRUEFUNG, DIE DIESES FEATURE UEBERHAUPT BRAUCHT, ist die erste: der Ghost darf
+  // waehrend des Stopps nicht geparkt werden.
+  //
+  // GHOST_READ_MIN = 0,35 ist die Leseschwelle - unter etwa 35 Prozent der
+  // Hoechstgeschwindigkeit liest das Auto das gedruckte Muster nicht mehr und meldet 0x00.
+  // Der Abgangsmelder parkt daraufhin nach max(900 ms mit 0x00, 4000 ms seit dem letzten
+  // Kachelwechsel), also rund vier Sekunden nach dem Stillstand. Ein Stopp von 3 bis 10 s
+  // trifft das garantiert, und das einzige Veto (g.gnadeBis) dauert 3 s und wurde vor diesem
+  // Feature nie verlaengert.
+  //
+  // Der Messaufbau faehrt deshalb durch den ECHTEN ghostTick() mit gefaelschter Uhr und
+  // meldet 0x00, sobald das Auto steht - genau wie ein Auto, das nichts mehr liest. Eine
+  // Nachbildung der Zustandsmaschine wuerde den Melder nicht enthalten und waere gruen,
+  // waehrend das Auto auf dem Teppich blinkt.
+  stAdd('Ghost-Boxenstopp: Phasen, rechter Rand, und kein Parken', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.ghostPitProbe) {
+      return { skip: true, mass: 'ghostPitProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.ghostPitProbe({ laenge: 10, takte: 600, autos: 1 });
+    const fehler = [];
+    // 1. NICHT GEPARKT. Zehn Sekunden Stillstand, also weit ueber der Bestaetigung.
+    if (r.geparkt) fehler.push('waehrend des Stopps geparkt');
+    // 2. Die Phasen in der Reihenfolge, und die Sequenz ENDET.
+    const soll = [null, 'anfahrt', 'halt', 'stand', 'raus', null];
+    if (r.folge.join('>') !== soll.join('>')) {
+      fehler.push('Folge ' + r.folge.join('>') + ' statt ' + soll.join('>'));
+    }
+    // 3. RECHTS, nicht links. Am ENDE jeder Phase, nicht im Minimum: g.querSoll ist ein
+    //    nachlaufender Filter, sein Minimum ist der Startwert der Phase.
+    //
+    //    Byte 7 positiv ist rechts, und das ist nicht Konvention, sondern nachgemessen: bei
+    //    konstantem Versatz gibt +4 einen mittleren Bahnradius von 38,8 Einheiten, -4 nur
+    //    30,7 - der groessere Radius ist der aeussere.
+    for (const ph of ['halt', 'stand']) {
+      const q = r.querEnde ? r.querEnde[ph] : null;
+      if (!(q >= 0.9)) fehler.push(ph + ': Querlage ' + q + ' statt am rechten Rand');
+    }
+    if (!(r.querEnde && r.querEnde.anfahrt > 0)) {
+      fehler.push('Anfahrt endet nicht rechts der Mitte');
+    }
+    return { ok: !fehler.length,
+             mass: r.folge.join(' > ') + ' | Querlage am Phasenende '
+                 + JSON.stringify(r.querEnde) + ' | geparkt ' + r.geparkt
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
+  // ---- Immer nur einer, und die anderen weichen aus ----
+  //
+  // Zwei Zusagen, und die zweite ist die, die einen Crash verhindert. Sie hat zwei Haelften:
+  // yieldSide (weich, Autoritaet 0,64) und eine KLEMME auf der Boxenkachel (hart). Geprueft
+  // wird die Klemme, denn die weiche Haelfte kann von der Ideallinie ueberstimmt werden.
+  //
+  // Und zwar WAEHREND die Sperre gilt, nicht am Ende: gemessen steht ein anderes Auto nach
+  // dem Stopp wieder bei +0,999 auf seiner Linie, und dieser Wert sagt ueber die Sperre
+  // nichts. Der Messaufbau fuehrt deshalb je Auto die groesste Querlage in den Takten mit,
+  // in denen pitSperreRechts() fuer es wahr war.
+  stAdd('Ghost-Boxenstopp: einer pittet, die anderen gehen links', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.ghostPitProbe) {
+      return { skip: true, mass: 'ghostPitProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.ghostPitProbe({ laenge: 4, takte: 500, autos: 3 });
+    const fehler = [];
+    if (r.mehrfach) fehler.push(r.mehrfach + ' Takte mit zwei Stopps gleichzeitig');
+    if (r.geparkt) fehler.push('waehrend des Stopps geparkt');
+    if (!r.andere.length) fehler.push('keine anderen Autos im Aufbau');
+    for (let i = 0; i < r.andere.length; i++) {
+      const a = r.andere[i];
+      if (a.yieldSide !== -1) fehler.push('Auto ' + (i + 1) + ': yieldSide ' + a.yieldSide);
+      // Die Gegenprobe, dass die Sperre ueberhaupt gegolten hat - ohne sie waere die
+      // Aussage darunter leer.
+      if (!(a.sperreTakte > 0)) fehler.push('Auto ' + (i + 1) + ': Sperre nie aktiv');
+      else if (!(a.sperreMax <= 0)) {
+        fehler.push('Auto ' + (i + 1) + ': Querlage ' + a.sperreMax + ' rechts der Mitte, '
+                    + 'obwohl dort einer steht');
+      }
+    }
+    return { ok: !fehler.length,
+             mass: r.andere.map((a, i) => 'A' + (i + 1) + ' yield ' + a.yieldSide
+                                 + ', ' + a.sperreTakte + ' Takte gesperrt, max '
+                                 + a.sperreMax).join(' | ')
+                 + ' | ' + r.mehrfach + ' Doppelstopps'
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
+  // ---- Die Faelligkeit liegt im eingestellten Band ----
+  //
+  // Zwei Regler, ein Band, und die Ziehung muss beide Grenzen erreichen - eine Ziehung, die
+  // nur die Mitte trifft, waere ein Band ohne Wirkung.
+  stAdd('Ghost-Boxenstopp: die Faelligkeit liegt im Band', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.pitFaelligProbe) {
+      return { skip: true, mass: 'pitFaelligProbe nicht vorhanden' };
+    }
+    const fehler = [];
+    const r = OMEGA_TEST.pitFaelligProbe(5, 9, 300);
+    const lo = Math.min.apply(null, r), hi = Math.max.apply(null, r);
+    if (lo < 5) fehler.push('Ziehung ' + lo + ' unter der Untergrenze');
+    if (hi > 9) fehler.push('Ziehung ' + hi + ' ueber der Obergrenze');
+    // Beide Enden muessen vorkommen. Bei 300 Ziehungen aus fuenf Werten ist die
+    // Wahrscheinlichkeit, ein Ende zu verpassen, (4/5)^300 - also praktisch null.
+    if (lo !== 5) fehler.push('die Untergrenze 5 kommt nicht vor');
+    if (hi !== 9) fehler.push('die Obergrenze 9 kommt nicht vor');
+    // Und ein entartetes Band ist gueltig: gleiche Werte heissen "immer nach so vielen".
+    const g = OMEGA_TEST.pitFaelligProbe(7, 7, 20);
+    if (g.some((x) => x !== 7)) fehler.push('bei 7/7 kommt nicht immer 7 heraus');
+    return { ok: !fehler.length,
+             mass: '300 Ziehungen aus 5..9: ' + lo + ' bis ' + hi + ', bei 7/7 immer '
+                 + g[0] + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
   // ---- Zieleinlauf ----
   //
   // Vorher endete ein Rennen fuer die Ghosts mit stopGhost(): Nullen schreiben und
@@ -6265,6 +6385,9 @@
       ['ghost-learn-pace', () => ghostCfg.learnPace],
       ['ghost-needcode', () => ghostCfg.needCode],
       ['ghost-rail', () => ghostCfg.railMode],
+      // Die zwei Boxenstopp-Schalter.
+      ['ghost-pit', () => ghostCfg.pitAn],
+      ['ghost-pit-free', () => ghostCfg.pitFrei],
       ['pit-double-lap', () => pitDoubleCountsLap],
       ['pit-enable', () => pitLaneEnabled],
       ['race-flying', () => raceFlying],

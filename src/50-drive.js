@@ -976,6 +976,10 @@
     druckAnwenden(parseFloat($('setting-tyre-pressure').value));
   }
 
+  // NUR DER ZUHOERER. Der Anfangsabgleich steht bei der Deklaration von fuelDrainPerSec in
+  // 70-race.js - von hier aus waere er eine Zuweisung an ein let einer SPAETEREN Datei, also
+  // temporale Todeszone, und die nimmt den ganzen Aufbau mit. Genau das ist mir beim Bauen
+  // passiert, und zwei Zeilen darueber stand die Warnung schon.
   $('setting-fuel-drain').addEventListener('input', (e) => {
     fuelDrainPerSec = parseFloat(e.target.value);
     $('setting-fuel-drain-val').textContent = fuelDrainPerSec.toFixed(1);

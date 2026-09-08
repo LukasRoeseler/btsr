@@ -1669,6 +1669,12 @@
       }
     },
     setLineModel, getLineModel, buildLine, getLineExit, lapTimeOf, fahrGrenzen,
+    // Die Sperre selbst herausgegeben: eine Pruefung soll fragen koennen, WANN sie gilt,
+    // statt es aus Kachelindizes nachzubauen.
+    pitSperreRechts, pitKachel, pitFaelligZiehen,
+    // Der Tankverbrauch, damit die Spiegelpruefung ihn vergleichen kann. Als Funktion und
+    // nicht als Wert: ein let wird kopiert, eine Funktion liest.
+    fuelDrain: () => fuelDrainPerSec,
     setLineExit(v) { setLineExit(v); lineCache = null; return getLineExit(); },
     // Das Lernen ohne Auto und ohne Rennen durchspielen: Runden hineingeben, sehen was
     // angenommen wird. Genau so ist die Annahmeregel pruefbar.
@@ -1894,6 +1900,10 @@
           ortOk: ortStimmt(a.car),
           geparkt: !!a.car.parked,
           kachel: g.tileIndex,
+          // Der Boxenstopp, damit er in der Simulation messbar ist und nicht nur sichtbar.
+          pit: g.pit ? g.pit.phase : null,
+          pitFaellig: g.pitFaellig === undefined ? null : g.pitFaellig,
+          laps: g.laps || 0,
         };
       });
     },
@@ -2286,6 +2296,18 @@
     // AUSGEHENDEN Lenkwert ab, statt ihn aus der Zuteilung zu erschliessen - genau das war
     // der Fehler des frueheren Anlaufs, bei dem die Seite zugeteilt war und beim Schreiben
     // nicht ankam.
+    // Eine Attrappe mit einem ECHTEN Ghost-Zustand: startGhost() legt ihn an, damit die
+    // Attrappe kein handgepflegtes Abbild des Literals ist. Ein Abbild veraltet genau dann,
+    // wenn dem Literal ein Feld zuwaechst.
+    attrappeGhost(alias) {
+      const car = { role: 'ghost', alias: alias || 'A', tileCode: 0x02, tileCount: 0,
+                    tileAt: Date.now(), lastCodeAt: Date.now(),
+                    testSenke: [], device: { name: alias || 'A', id: 'attrappe-' + alias } };
+      startGhost(car);
+      if (car.timer) { clearInterval(car.timer); car.timer = null; }
+      return car;
+    },
+
     finishSeiten(n) {
       const merkGarage = garage.splice(0, garage.length);
       const echtNow = Date.now;
@@ -2319,6 +2341,165 @@
         Date.now = echtNow;
         garage.splice(0, garage.length);
         for (const c of merkGarage) garage.push(c);
+      }
+    },
+
+    // ---- DER GHOST-BOXENSTOPP, ohne Hardware und ohne Wartezeit --------------------
+    //
+    // Gefahren wird mit gefaelschter Uhr durch ghostTick(), also durch den ECHTEN Pfad -
+    // nicht durch eine Nachbildung der Zustandsmaschine. Der Unterschied ist der Punkt: die
+    // Pruefung, um die es hier geht ("wird waehrend des Stopps nicht geparkt"), haengt am
+    // Abgangsmelder, und den gibt es nur im echten Takt.
+    //
+    // Die Attrappen melden 0x00 als Kachelcode, sobald sie stehen - genau das tut ein Auto,
+    // das die Bahn nicht mehr liest, und genau daran haengt der Melder.
+    ghostPitProbe(opt) {
+      const o = opt || {};
+      const merkGarage = garage.splice(0, garage.length);
+      const merkTiles = currentTrackTiles;
+      const merkCfg = { an: ghostCfg.pitAn, frei: ghostCfg.pitFrei, sek: ghostCfg.pitSek,
+                        lo: ghostCfg.pitRundenMin, hi: ghostCfg.pitRundenMax };
+      const merkFlag = flagState;
+      const echtNow = Date.now;
+      try {
+        currentTrackTiles = codeToTrack(o.code || 'SR3GLR2GR2G2').tiles;
+        lineCache = null;
+        ghostCfg.pitAn = true;
+        ghostCfg.pitFrei = true;
+        ghostCfg.pitSek = o.laenge === undefined ? 10 : o.laenge;
+        flagState = 'green';
+        const n = currentTrackTiles.length;
+        let uhr = echtNow();
+        Date.now = () => uhr;
+        // So viele Autos wie bestellt, alle faellig.
+        const autos = [];
+        for (let i = 0; i < (o.autos || 1); i++) {
+          const car = OMEGA_TEST.attrappeGhost('P' + i);
+          car.ghost.pitFaellig = 0;
+          car.ghost.laps = 9;
+          car.ghost.freeRun = true;
+          // Auf die letzte Kachel vor Start/Ziel stellen. Start/Ziel ist Kachel 0, also ist
+          // die letzte die mit dem hoechsten Index.
+          car.ghost.tileIndex = n - 1;
+          car.ghost.lastCount = 0;
+          car.tileCount = 0;
+          car.tileCode = 0x02;
+          car.lastCodeAt = uhr;
+          car.tileAt = uhr;
+          car.ghost.tileStart = uhr;
+          car.ghost.tileRing = [400, 400, 400];
+          autos.push(car);
+          garage.push(car);
+        }
+        const spur = [];
+        const takte = o.takte || 600;
+        for (let t = 0; t < takte; t++) {
+          uhr += 45;
+          for (const car of autos) {
+            const g = car.ghost;
+            // Kachelwechsel nachstellen: solange das Auto faehrt, zaehlt der Zaehler weiter.
+            const v = g.engine ? Math.abs(g.engine.state.speedKmh || 0) : 0;
+            if (v > 0.05 && uhr - g.tileStart > 400) {
+              car.tileCount = (car.tileCount + 1) & 0xff;
+              car.tileAt = uhr;
+              // Der gemeldete Code der Kachel, auf die er wechselt.
+              const naechste = (g.tileIndex === null ? 0 : g.tileIndex + 1) % n;
+              car.tileCode = currentTrackTiles[naechste].type & 0xff;
+              car.lastCodeAt = uhr;
+            } else if (v <= 0.05) {
+              // STEHT: kein Muster mehr, also 0x00. Das ist der Fall, um den es geht.
+              car.tileCode = 0x00;
+            }
+            ghostTick(car);
+          }
+          // ---- WAS DIE ANDEREN TUN, WAEHREND DIE SPERRE GILT --------------------------
+          //
+          // Der Endwert taugt dafuer nicht: nach dem Stopp stehen die anderen wieder auf
+          // ihrer Linie, und gemessen ist das +0,099 - ein Wert, der nichts ueber die Sperre
+          // sagt. Was zaehlt, ist ihre GROESSTE Querlage in den Takten, in denen
+          // pitSperreRechts() fuer sie wahr war.
+          for (let i = 1; i < autos.length; i++) {
+            const c = autos[i];
+            if (!OMEGA_TEST.pitSperreRechts(c)) continue;
+            c._sperreTakte = (c._sperreTakte || 0) + 1;
+            const q = c.ghost.querSoll || 0;
+            if (c._sperreMax === undefined || q > c._sperreMax) c._sperreMax = q;
+          }
+          const g0 = autos[0].ghost;
+          spur.push({ t, phase: g0.pit ? g0.pit.phase : null,
+                      quer: +(g0.querSoll || 0).toFixed(3),
+                      kmh: g0.engine ? +(g0.engine.state.speedKmh || 0).toFixed(3) : null,
+                      geparkt: !!autos[0].parked,
+                      inhaber: autos.findIndex((c) => c.ghost.pit) });
+        }
+        // Zusammenfassung: die Phasenfolge, die Querlage je Phase, und ob geparkt wurde.
+        const folge = [];
+        const querJe = {};
+        let geparkt = false, mehrfach = 0;
+        for (const s of spur) {
+          if (!folge.length || folge[folge.length - 1] !== s.phase) folge.push(s.phase);
+          if (s.phase) {
+            querJe[s.phase] = querJe[s.phase] || [];
+            querJe[s.phase].push(s.quer);
+          }
+          if (s.geparkt) geparkt = true;
+          const wieViele = autos.filter((c) => c.ghost.pit).length;
+          if (wieViele > 1) mehrfach++;
+        }
+        // ---- DER WERT AM PHASENENDE, nicht das Minimum ------------------------------
+        //
+        // g.querSoll ist ein NACHLAUFENDER Filter (0,25 je Takt), kein Befehl. Sein Minimum
+        // ueber eine Phase ist deshalb der Wert, mit dem die Phase BEGONNEN hat - beim
+        // Einfahren also die alte Linienlage, die noch links liegen kann. Gemessen: Minimum
+        // in 'anfahrt' -0,194, waehrend der Befehl von der ersten Millisekunde +1 lautet.
+        //
+        // Ein Kriterium auf dem Minimum wuerde also die Traegheit pruefen und nicht den
+        // Boxenstopp. Was zaehlt, ist der Wert am ENDE jeder Phase - dort ist der Filter
+        // angekommen.
+        const querMin = {}, querEnde = {};
+        for (const k of Object.keys(querJe)) {
+          querMin[k] = +Math.min.apply(null, querJe[k]).toFixed(3);
+          querEnde[k] = querJe[k][querJe[k].length - 1];
+        }
+        return { folge, querMin, querEnde, geparkt, mehrfach,
+                 andere: autos.slice(1).map((c) => ({
+                   yieldSide: c.ghost.yieldSide || 0,
+                   quer: +(c.ghost.querSoll || 0).toFixed(3),
+                   sperreTakte: c._sperreTakte || 0,
+                   sperreMax: c._sperreMax === undefined ? null : +c._sperreMax.toFixed(3) })),
+                 faellig: autos.map((c) => c.ghost.pitFaellig) };
+      } finally {
+        Date.now = echtNow;
+        garage.splice(0, garage.length);
+        for (const c of merkGarage) garage.push(c);
+        currentTrackTiles = merkTiles;
+        lineCache = null;
+        ghostCfg.pitAn = merkCfg.an; ghostCfg.pitFrei = merkCfg.frei;
+        ghostCfg.pitSek = merkCfg.sek;
+        ghostCfg.pitRundenMin = merkCfg.lo; ghostCfg.pitRundenMax = merkCfg.hi;
+        flagState = merkFlag;
+        // Den Boxenplatz freigeben. Der Anspruch heilt sich inzwischen selbst, aber ein
+        // Prueflauf, der modulweiten Zustand liegen laesst, ist trotzdem einer, der den
+        // naechsten Lauf beeinflusst - und genau das hat hier eine Messung verdorben.
+        for (const c of garage) if (c.ghost) c.ghost.pit = null;
+        pitPlatzRaeumen(pitInhaber);
+      }
+    },
+
+    // Die Faelligkeit allein, ohne einen Takt zu fahren - fuer die Bandpruefung.
+    pitFaelligProbe(lo, hi, wie) {
+      const merk = { lo: ghostCfg.pitRundenMin, hi: ghostCfg.pitRundenMax };
+      try {
+        ghostCfg.pitRundenMin = lo; ghostCfg.pitRundenMax = hi;
+        const raus = [];
+        for (let i = 0; i < (wie || 200); i++) {
+          const g = { laps: 0 };
+          pitFaelligZiehen(g);
+          raus.push(g.pitFaellig);
+        }
+        return raus;
+      } finally {
+        ghostCfg.pitRundenMin = merk.lo; ghostCfg.pitRundenMax = merk.hi;
       }
     },
 

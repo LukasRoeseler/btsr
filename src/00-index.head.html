@@ -7090,6 +7090,66 @@
           <span class="opt-val" id="ghost-gasdyn-val">1.0</span>
         </div></div>
 
+      <div class="opt-row"><div class="opt-label">Ghost: Boxenstopp
+          <span class="wip-tag">experimentell</span>
+          <small>Ein Ghost f&auml;hrt auf der Start/Ziel-Kachel rechts an den Rand, bleibt
+          ein paar Sekunden stehen und f&auml;hrt wieder los. Die Anfahrt beginnt schon auf
+          der Kachel davor, im Formationstempo &ndash; ein Auto, das mit Renntempo &uuml;ber
+          die Linie kommt, braucht eine Kachel zum Verz&ouml;gern. Es pittet immer nur einer;
+          wer gleichzeitig f&auml;llig ist, wartet eine Runde.
+          <br>Die anderen weichen auf der Boxenkachel nach links aus, und ihre Querlage ist
+          dort nach rechts gesperrt &ndash; das Ausweichen allein w&auml;re nur die weiche
+          H&auml;lfte, die Sperre ist die Zusage. Dein eigenes Auto ist nicht steuerbar; es
+          gibt eine Meldung und den Punkt auf der Karte, mehr geht nicht.
+          <br>Was der Stopp nicht kann: wissen, wo der Rand ist. Das Auto meldet seine
+          Querlage nicht, voller Ausschlag ist ein Befehl und keine Messung. Die Zusage ist
+          nicht die Randlage, sondern dass die anderen auf der anderen Seite
+          sind.</small></div>
+        <label class="tgl"><input type="checkbox" id="ghost-pit" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Ghost: Boxenstopp im freien Fahren
+          <span class="wip-tag">experimentell</span>
+          <small>Ob auch au&szlig;erhalb eines Rennens gepittet wird. Beim Losfahren aus der
+          Garage stellt man meist Regler ein, und ein Auto, das dabei zehn Sekunden steht,
+          sieht nach einem Fehler aus &ndash; deshalb getrennt abschaltbar. Im Rennen und in
+          der Rennsimulation gilt der Schalter dar&uuml;ber.</small></div>
+        <label class="tgl"><input type="checkbox" id="ghost-pit-free" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Ghost: Boxenstopp-L&auml;nge
+          <span class="wip-tag">experimentell</span>
+          <small>Wie lange ein Ghost steht. 5&nbsp;s ist die Mitte des Bandes und keine
+          Messung &ndash; wie lang ein Boxenstopp aussehen soll, ist Geschmack. Der eigene
+          Boxenstopp braucht zum Vergleich 4&nbsp;s f&uuml;r die Reifen und mindestens
+          3&nbsp;s Standzeit, wenn er vorgeschrieben ist.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="ghost-pit-sec" min="3" max="10" step="0.5" value="5">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="ghost-pit-sec-val">5.0 s</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Ghost: Boxenstopp fr&uuml;hestens nach
+          <span class="wip-tag">experimentell</span>
+          <small>Die untere Grenze des Bandes, aus dem jeder Ghost seine n&auml;chste
+          F&auml;lligkeit zieht &ndash; in Runden, nach jedem Stopp neu gezogen. Dieselbe
+          Bauform wie der Wetterwechsel, damit nicht alle im Gleichschritt pitten. Schiebt
+          man diesen Regler &uuml;ber den n&auml;chsten, geht der mit.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="ghost-pit-min" min="2" max="20" step="1" value="5">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="ghost-pit-min-val">5</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Ghost: Boxenstopp sp&auml;testens nach
+          <span class="wip-tag">experimentell</span>
+          <small>Die obere Grenze desselben Bandes, in Runden. Bei gleichen Werten pittet
+          jeder Ghost genau nach dieser Rundenzahl &ndash; dann ist nichts mehr zuf&auml;llig,
+          und das ist eine g&uuml;ltige Einstellung. Nicht an den Reifenverschlei&szlig;
+          gebunden: Ghosts haben keinen, ihre Motoren werden ohne Reifen- und Tankmodell
+          gebaut.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="ghost-pit-max" min="2" max="20" step="1" value="9">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="ghost-pit-max-val">9</span>
+        </div></div>
       <div class="opt-row"><div class="opt-label">Ghost: Linienmodell
           <span class="wip-tag">WIP</span>
           <small>Alle drei benutzen seit v0.5.43 dieselbe Form &ndash; vier Zahlen
@@ -7709,7 +7769,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.5.44</span></span>
+    <span class="foot-ver">v<span id="app-version">0.5.45</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine

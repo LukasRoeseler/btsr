@@ -2966,6 +2966,24 @@
   const CRASH_ROLLING_ALPHA = 0.15;
   const CRASH_REFRACTORY_MS = 1000; // avoid re-triggering repeatedly off one jolt
   let fuelDrainPerSec = 3;       // % per second at full throttle magnitude (slider)
+  // ---- AUS DEM MARKUP LESEN, hier neben der Deklaration ----------------------------
+  //
+  // DER FEHLER, DEN DAS BEHEBT: es gab nur einen Zuhoerer in 50-drive.js. Das Markup traegt
+  // value="0", die Beschriftung daneben sagt 3.0, und diese Variable behielt ihre 3 - bis
+  // jemand den Regler anfasste. fuelSimOn() war beim Start also WAHR, obwohl der Regler 0
+  // zeigte: der Tank lief mit 3 % je Sekunde leer, und ein Boxenstopp bot Tanken an, das
+  // niemand bestellt hatte.
+  //
+  // Dieselbe Fehlerklasse wie bei setting-tyres (0 gegen 2,0) und setting-vibration, und
+  // dieselbe Loesung wie bei crashDetectionEnabled ein paar Zeilen weiter: der Abgleich
+  // gehoert neben die Deklaration. Von 50-drive.js aus waere er eine Zuweisung an ein let
+  // einer spaeteren Datei - temporale Todeszone, ganzer Aufbau weg.
+  if ($('setting-fuel-drain')) {
+    fuelDrainPerSec = parseFloat($('setting-fuel-drain').value);
+    if ($('setting-fuel-drain-val')) {
+      $('setting-fuel-drain-val').textContent = fuelDrainPerSec.toFixed(1);
+    }
+  }
   let crashesToTotal = 10;       // Crashs bis der Schadensbalken voll ist (Regler, Index in CRASH_STEPS)
   // Der Startwert stand auf true, das Kaestchen im Markup auf AUS (Pro und Arcade setzen
   // 'setting-crash-damage': false). Crashs wurden also gezaehlt, obwohl der Schalter aus

@@ -997,6 +997,10 @@
     ['ghost-w-form', 'wuerzeForm'],
     ['ghost-w-fehler', 'wuerzeFehler'],
     ['ghost-w-slip', 'wuerzeWindschatten'],
+    // Die zwei Boxenstopp-Schalter. Sie gehoeren in dieselbe Liste, weil sie dieselbe Form
+    // haben - Kaestchen an, Feld true - und nicht, weil sie mit der Wuerze zu tun haetten.
+    ['ghost-pit', 'pitAn'],
+    ['ghost-pit-free', 'pitFrei'],
   ];
   for (const [id, feld] of WUERZE_SCHALTER) {
     const el = $(id);
@@ -1022,6 +1026,35 @@
     // KEIN Aufruf beim Aufbau. Markup und 60-track.js tragen beide 0,5, und der Selbsttest
     // "Regler und Modell sagen beim Laden dasselbe" prueft das nach - ein Aufruf hier waere
     // ein Schreibzugriff in eine noch nicht angelegte Variable.
+  }
+
+  // ---- Die drei Boxenstopp-Regler ---------------------------------------------------
+  //
+  // Die zwei Rundengrenzen SCHIEBEN SICH GEGENSEITIG, statt ein ungueltiges Paar zuzulassen.
+  // min ueber max waere ein leeres Band, und pitFaelligZiehen() muesste es abfangen - zwei
+  // Orte fuer eine Regel. Hier ist es sichtbar: der andere Regler wandert mit.
+  if ($('ghost-pit-sec')) {
+    const ps = (v) => {
+      ghostCfg.pitSek = v;
+      $('ghost-pit-sec-val').textContent = v.toFixed(1) + ' s';
+    };
+    $('ghost-pit-sec').addEventListener('input', (e) => ps(parseFloat(e.target.value)));
+  }
+  if ($('ghost-pit-min') && $('ghost-pit-max')) {
+    const grenzen = (welches) => {
+      const lo = $('ghost-pit-min'), hi = $('ghost-pit-max');
+      let a = parseInt(lo.value, 10), b = parseInt(hi.value, 10);
+      if (a > b) {
+        if (welches === 'min') { b = a; hi.value = String(b); }
+        else { a = b; lo.value = String(a); }
+      }
+      ghostCfg.pitRundenMin = a;
+      ghostCfg.pitRundenMax = b;
+      $('ghost-pit-min-val').textContent = String(a);
+      $('ghost-pit-max-val').textContent = String(b);
+    };
+    $('ghost-pit-min').addEventListener('input', () => grenzen('min'));
+    $('ghost-pit-max').addEventListener('input', () => grenzen('max'));
   }
 
   if ($('ghost-quertempo')) {
