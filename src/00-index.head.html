@@ -7065,12 +7065,24 @@
         </div></div>
 
       <div class="opt-row"><div class="opt-label">Ghost: Linienmodell
+          <span class="wip-tag">WIP</span>
           <small>Kr&uuml;mmung nimmt den gr&ouml;&szlig;ten Radius. Rundenzeit rechnet ein
-          Geschwindigkeitsprofil und ist im Modell 1&ndash;8&nbsp;% schneller; ob auch auf
-          dem Teppich, sagen Rundenzeit und Abg&auml;nge.</small></div>
+          Geschwindigkeitsprofil. Beide optimieren jeden der rund 180&nbsp;Abtastpunkte frei
+          und legen deshalb auch auf Geraden Ausschl&auml;ge hin, die ein Fahrer nie
+          f&auml;hrt &ndash; gemessen 16&nbsp;Vorzeichenwechsel je Runde.
+          <br>Late Apex optimiert stattdessen vier Zahlen je Kurve: Eingang,
+          Scheitel, Ausgang und Scheitellage, mit dem Scheitel per Schranke hinter
+          55&nbsp;% des Kurvenwegs. Eine Gerade kann darin keine Kurve werden, weil
+          es daf&uuml;r keinen Parameter gibt. Es rechnet mit den eingestellten Fahrwerten
+          &ndash; Spitze, Zug und Bremse kommen aus der aktiven Simulationsklasse, nur die
+          Querbeschleunigung bleibt eine Annahme, weil kein Byte sie meldet.
+          <br>Gemessen auf vier Layouts ist Late Apex 15 bis 35&nbsp;% schneller als die
+          anderen zwei und kostet 64 bis 108&nbsp;ms statt 321 bis 639. Ob es auf dem
+          Teppich stimmt, sagen Rundenzeit und Abg&auml;nge.</small></div>
         <div class="row" style="gap:6px; flex-wrap:wrap">
           <button type="button" class="mw-preset" data-linemodel="curvature">Kr&uuml;mmung</button>
           <button type="button" class="mw-preset sel" data-linemodel="laptime">Rundenzeit</button>
+          <button type="button" class="mw-preset" data-linemodel="lateapex">Late Apex</button>
         </div></div>
       <!-- DIE LINIE DIREKT NEBEN DER WAHL. Gemeldet: "ich habe 2 Ideallinie Modi, aber wenn
            ich dazwischen waehle, aendert sich die eingezeichnete Linie nicht." Sie aendert
@@ -7666,7 +7678,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.5.41</span></span>
+    <span class="foot-ver">v<span id="app-version">0.5.42</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine

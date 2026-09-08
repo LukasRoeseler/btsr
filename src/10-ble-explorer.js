@@ -1570,6 +1570,16 @@
       "How hard the car steers against a slide, measured from the rotation signal in byte 3 of the notifications. 50 per cent is the default that was asked for. What is uncertain about it, and it is two things at once: the signal is unconfirmed – it only varies once the car is moving, and flipped sign with cornering direction in exactly one recording. And it is uncalibrated: its scale is self-adjusting because the real amplitude is unknown. So the strength depends on the largest yaw value the session has seen so far. The “Drift probe” button under “Measure lateral offset” measures whether the signal moves at all under straight full throttle.",
     "Rennen":
       "Race",
+    "Krümmung nimmt den größten Radius. Rundenzeit rechnet ein Geschwindigkeitsprofil. Beide optimieren jeden der rund 180 Abtastpunkte frei und legen deshalb auch auf Geraden Ausschläge hin, die ein Fahrer nie fährt – gemessen 16 Vorzeichenwechsel je Runde.":
+      "Curvature takes the largest radius. Lap time computes a speed profile. Both optimise each of the roughly 180 sample points freely, and so they put excursions even on straights that no driver would ever take – measured, 16 sign changes per lap.",
+    "Late Apex optimiert stattdessen vier Zahlen je Kurve: Eingang, Scheitel, Ausgang und Scheitellage, mit dem Scheitel per Schranke hinter 55 % des Kurvenwegs. Eine Gerade kann darin keine Kurve werden, weil es dafür keinen Parameter gibt. Es rechnet mit den eingestellten Fahrwerten – Spitze, Zug und Bremse kommen aus der aktiven Simulationsklasse, nur die Querbeschleunigung bleibt eine Annahme, weil kein Byte sie meldet.":
+      "Late apex instead optimises four numbers per corner: entry, apex, exit and apex position, with the apex constrained to lie beyond 55% of the corner's length. A straight cannot become a corner in this model, because there is no parameter for it. It computes with the driving figures in force – top speed, traction and braking come from the active simulation class; only lateral acceleration stays an assumption, because no byte reports it.",
+    "Gemessen auf vier Layouts ist Late Apex 15 bis 35 % schneller als die anderen zwei und kostet 64 bis 108 ms statt 321 bis 639. Ob es auf dem Teppich stimmt, sagen Rundenzeit und Abgänge.":
+      "Measured on four layouts, late apex is 15 to 35% faster than the other two and costs 64 to 108 ms instead of 321 to 639. Whether it holds on the carpet is answered by lap times and departures.",
+    "{m} ist gewählt. Modellzeit und genutzter Versatz:":
+      "{m} is selected. Model time and offset used:",
+    "Die Zeiten kommen aus den eingestellten Fahrwerten; die Querbeschleunigung ist darin eine Annahme.":
+      "The times come from the driving figures in force; lateral acceleration is an assumption within them.",
     "Lenkdämpfung":
       "Steering damping",
     "sofort":
@@ -1598,8 +1608,6 @@
       "With no track entered, the race runs on SR3GLR2GR2G2 – borrowed, the track editor stays empty.",
     "Keine Strecke eingetragen.":
       "No track entered.",
-    "{m} ist gewählt. Krümmung nutzt {a} cm Versatz, Rundenzeit {b} cm und ist im Modell {p} % schneller.":
-      "{m} is selected. Curvature uses {a} cm of offset, lap time {b} cm and is {p}% faster in the model.",
     "Gezeigt ist die Vorgabestrecke; im Editor steht noch keine.":
       "Shown is the default track; the editor has none yet.",
     "Ghost: Kurvenausgang öffnen":

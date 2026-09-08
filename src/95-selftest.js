@@ -5755,6 +5755,163 @@
                    + (fehlt.length ? ' || fehlt: ' + fehlt.join(', ') : '') };
   });
 
+  // ---- Auf einer Geraden wird nicht gelenkt ----
+  //
+  // GEMELDET: "In den aktuellen Ideallinien sind diese komischen Kurven - selbst bei einer
+  // Gerade sagst du dem Auto, es solle eine Kurve fahren. Mach ausserdem, dass bei einer
+  // oder mehreren Geraden zwischen zwei Kurven der Ausgangspunkt der einen mit dem
+  // Eingangspunkt der anderen verbunden wird (auf der Zielgeraden fahren alle Autos nach
+  // ganz rechts)."
+  //
+  // GEMESSEN, vorher, auf SR3GLR2GR2G2 mit alpha auf den Deckel normiert:
+  //
+  //   Kruemmung   Zielgerade +0,38 -> -0,83, dann -0,81 bis -0,83 die GANZE letzte Kachel.
+  //               Auf Geraden 10 Vorzeichenwechsel der zweiten Differenz, groesste 1,16.
+  //   Rundenzeit  16 Wechsel, groesste 0,557.
+  //
+  // Geprueft wird die GEOMETRIE und nicht ein Aussehen: auf einem Geradenstueck zwischen
+  // zwei Kurven muss alpha eine Gerade sein, also die zweite Differenz null. Toleranz ist
+  // die ungleiche Punktdichte an Kachelgrenzen, ein Promille des Deckels.
+  //
+  // UND DIE GEGENPROBE: die Endwerte muessen die Kurvenanker sein. Ohne sie waere der Test
+  // auch mit einer Linie gruen, die auf allen Geraden bei null steht - das wuerde die Regel
+  // erfuellen und die Kurven verlieren.
+  stAdd('Ideallinie: auf Geraden eine Gerade', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.buildLine) {
+      return { skip: true, mass: 'buildLine nicht erreichbar' };
+    }
+    const proben = ['SR3GLR2GR2G2', 'SHG4HG3', 'SG4R4G4L4'];
+    const schlecht = [], zeilen = [];
+    for (const code of proben) {
+      const p = codeToTrack(code);
+      const pts = trackCenterline(p.tiles);
+      const nrm = trackNormals(pts, true);
+      for (const m of ['curvature', 'laptime', 'lateapex']) {
+        const L = OMEGA_TEST.buildLine(pts, nrm, { closed: true, tiles: p.tiles, model: m });
+        const grenze = L.limit * 0.001;
+        let maxD2 = 0, wo = -1;
+        for (let i = 2; i < pts.length - 1; i++) {
+          // Nur INNEN in einem Geradenstueck: an der Grenze zur Kurve darf ein Knick sein,
+          // dort beginnt die Kurvenform.
+          const t0 = p.tiles[pts[i - 1].tile], t1 = p.tiles[pts[i].tile];
+          const t2 = p.tiles[pts[i + 1].tile];
+          if (!t0 || !t1 || !t2) continue;
+          if (kurvenDrehung(t0.type) || kurvenDrehung(t1.type) || kurvenDrehung(t2.type)) continue;
+          const d2 = Math.abs(L.alpha[i + 1] - 2 * L.alpha[i] + L.alpha[i - 1]);
+          if (d2 > maxD2) { maxD2 = d2; wo = i; }
+        }
+        zeilen.push(code.slice(0, 8) + '/' + m.slice(0, 4) + ' ' + maxD2.toFixed(4));
+        if (maxD2 > grenze) {
+          schlecht.push(code + '/' + m + ': zweite Differenz ' + maxD2.toFixed(3)
+                        + ' bei Punkt ' + wo);
+        }
+        // Gegenprobe: die Linie muss die Bahnbreite ueberhaupt benutzen.
+        if (!(L.span > L.limit * 0.15)) {
+          schlecht.push(code + '/' + m + ': Spanne nur ' + (L.span / L.limit).toFixed(2));
+        }
+      }
+    }
+    return { ok: !schlecht.length,
+             mass: zeilen.join(' ')
+                 + (schlecht.length ? ' || ' + schlecht.join('; ') : ' | alle gerade') };
+  });
+
+  // ---- Kurvenzuege brechen bei einem Richtungswechsel ----
+  //
+  // DER FEHLER, DEN DIESE PRUEFUNG FESTHAELT: lineKurvenLaeufe() fragte nur, OB eine Kachel
+  // eine Kurve ist, nicht wohin sie dreht. Auf SR3GLR2GR2G2 verschmolzen damit Kachel 5
+  // (links) und die Kacheln 6-7 (rechts) zu EINEM Zug - das Layout hatte drei Kurven statt
+  // vier, mit einem Scheitel fuer eine Links-Rechts-Kombination.
+  //
+  // Gefunden hat es das dritte Linienmodell, weil es je Kurve einen Scheitel vergibt und
+  // deshalb zaehlt. Die Kurvenoeffnung davor nahm ihr Vorzeichen aus dem Scheitel und
+  // funktionierte mit dem falschen Zug halbwegs weiter - deshalb fiel es nie auf.
+  stAdd('Kurvenzuege: eine Schikane ist zwei Kurven', () => {
+    if (typeof lineKurvenLaeufe !== 'function') {
+      return { skip: true, mass: 'lineKurvenLaeufe nicht erreichbar' };
+    }
+    const faelle = [
+      { code: 'SR3GLR2GR2G2', zuege: 4 },   // R3 | L | R2 | R2 - die gemeldete Strecke
+      { code: 'SRRRLLL', zuege: 2 },        // drei rechts, drei links
+      { code: 'SG4R4G4L4', zuege: 2 },
+      { code: 'SHG4HG3', zuege: 2 },
+    ];
+    const schlecht = [], zeilen = [];
+    for (const f of faelle) {
+      const p = codeToTrack(f.code);
+      const l = lineKurvenLaeufe(p.tiles, true);
+      zeilen.push(f.code.slice(0, 8) + ' ' + l.length);
+      if (l.length !== f.zuege) {
+        schlecht.push(f.code + ': ' + l.length + ' Zuege statt ' + f.zuege);
+      }
+      // Und in jedem Zug dreht jede Kachel gleich - das ist die Zusicherung selbst.
+      for (const z of l) {
+        for (let kk = z.von; kk <= z.bis; kk++) {
+          const t = p.tiles[((kk % p.tiles.length) + p.tiles.length) % p.tiles.length];
+          if (kurvenDrehung(t.type) !== z.dreht) {
+            schlecht.push(f.code + ': Zug ' + z.von + '-' + z.bis + ' mischt Richtungen');
+          }
+        }
+      }
+    }
+    return { ok: !schlecht.length,
+             mass: zeilen.join('  ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // ---- Drittes Modell: schneller, spaeter Scheitel, und die Schranke haelt ----
+  //
+  // Drei Aussagen, und jede ist nachrechenbar:
+  //
+  //   1. Der Scheitel liegt hinter 55 Prozent des Kurvenwegs. Das ist die Schranke, und sie
+  //      ist der Grund, warum das Modell existiert - die freie Suche in 'laptime' verschiebt
+  //      ihn gemessen um +0,045 der Kurvenlaenge, also gar nicht.
+  //   2. Es ist im eigenen Mass schneller als die anderen zwei. Gemessen auf vier Layouts
+  //      15 bis 35 Prozent.
+  //   3. Es ist schneller als die MITTELLINIE. Das ist die Gegenprobe, die zaehlt: eine
+  //      Carrera-Kurve ist ein Bogen mit festem Radius, jeder Versatz nach innen macht ihn
+  //      kleiner, und deshalb ist "kein Versatz" hier ein ernster Gegner. Ohne diese Probe
+  //      lief die Suche einmal in ein Ergebnis, das 4,1 Prozent SCHLECHTER war als die
+  //      Mittellinie - das war ein lokales Minimum, und es ist der Grund fuer die drei
+  //      Startpunkte.
+  stAdd('Late Apex: spaeter Scheitel und schneller als die Mittellinie', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.buildLine || !OMEGA_TEST.lapTimeOf) {
+      return { skip: true, mass: 'buildLine/lapTimeOf nicht erreichbar' };
+    }
+    const proben = ['SR3GLR2GR2G2', 'SHG4HG3', 'SG4R4G4L4', 'SRRRLLL'];
+    const schlecht = [], zeilen = [];
+    for (const code of proben) {
+      const p = codeToTrack(code);
+      const pts = trackCenterline(p.tiles);
+      const nrm = trackNormals(pts, true);
+      const o = { closed: true, tiles: p.tiles };
+      const LA = OMEGA_TEST.buildLine(pts, nrm, Object.assign({ model: 'lateapex' }, o));
+      const LT = OMEGA_TEST.buildLine(pts, nrm, Object.assign({ model: 'laptime' }, o));
+      const g = LA.grenzen;
+      const mitte = OMEGA_TEST.lapTimeOf(pts.map((q) => [q.x, q.y]), true,
+        { closed: true, aLat: g.aLat, aAcc: g.aAcc, aBrk: g.aBrk, vMax: g.vMax }).time;
+      zeilen.push(code.slice(0, 8) + ' ' + LA.lapTime.toFixed(1) + '/' + LT.lapTime.toFixed(1)
+                  + '/' + mitte.toFixed(1) + ' Scheitel ' + LA.apex.join(','));
+      // 1. Die Schranke
+      for (const a of LA.apex) {
+        if (a < 0.55 - 1e-9 || a > 0.85 + 1e-9) {
+          schlecht.push(code + ': Scheitel bei ' + a + ' ausserhalb 0,55 bis 0,85');
+        }
+      }
+      // 2. Schneller als das Rundenzeitmodell
+      if (!(LA.lapTime < LT.lapTime)) {
+        schlecht.push(code + ': ' + LA.lapTime.toFixed(2) + ' s nicht schneller als '
+                      + LT.lapTime.toFixed(2));
+      }
+      // 3. Und schneller als gar kein Versatz
+      if (!(LA.lapTime < mitte)) {
+        schlecht.push(code + ': ' + LA.lapTime.toFixed(2) + ' s nicht schneller als die '
+                      + 'Mittellinie mit ' + mitte.toFixed(2));
+      }
+    }
+    return { ok: !schlecht.length,
+             mass: zeilen.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
   // ---- Ideallinie: Richtung ----
   //
   // DER FEHLER, GEGEN DEN ER STEHT, war da und ist gemessen: trackNormals() zeigt nach

@@ -4522,6 +4522,13 @@
   //
   // Nur REINE Funktionen, kein Zustand, kein Schreibzugriff. Was hier steht, kann eine
   // Pruefung aufrufen, ohne ein Auto zu verbinden oder auf eine Zeitmessung zu warten.
+  // Die drei Modellnamen fuer die Oberflaeche. Als EINE Tabelle, weil sie an drei Stellen
+  // gebraucht werden - Meldung, Vorschau und Selbsttest - und drei Kopien einer Zuordnung
+  // der Weg zu drei verschiedenen Namen fuer dasselbe Modell sind.
+  const LINIENMODELL_NAME = {
+    curvature: 'Kr\u00fcmmung', laptime: 'Rundenzeit', lateapex: 'Late Apex',
+  };
+
   // ---- Die gewaehlte Linie zeigen, direkt neben der Wahl ----
   //
   // GEMELDET: "Ich habe 2 Ideallinie Modi, aber wenn ich dazwischen waehle, aendert sich die
@@ -4570,15 +4577,22 @@
     const nrm = trackNormals(pts, true);
     const closed = trackSchluss(pts).closed;
     const o = { closed, tiles };
-    const kr = buildLine(pts, nrm, Object.assign({ model: 'curvature' }, o));
-    const rz = buildLine(pts, nrm, Object.assign({ model: 'laptime' }, o));
+    // ALLE DREI ZEITEN NEBENEINANDER und in derselben Einheit - das ist die Frage beim
+    // Umschalten, und sie ist ohne die Vergleichswerte nicht zu beantworten. Vorher stand
+    // hier ein einzelner Prozentwert aus lc.gain, der bei jedem Modell etwas anderes
+    // bedeutet.
     const cm = (v) => (v / TRACK_UNITS_PER_CM).toFixed(1);
-    const jetzt = getLineModel();
-    info.textContent = t('{m} ist gewählt. Krümmung nutzt {a} cm Versatz, Rundenzeit {b} cm '
-                       + 'und ist im Modell {p} % schneller.')
-      .replace('{m}', jetzt === 'laptime' ? t('Rundenzeit') : t('Krümmung'))
-      .replace('{a}', cm(kr.span)).replace('{b}', cm(rz.span))
-      .replace('{p}', ((rz.gain || 0) * 100).toFixed(1))
+    const teile = [];
+    for (const m of ['curvature', 'laptime', 'lateapex']) {
+      const L = buildLine(pts, nrm, Object.assign({ model: m }, o));
+      teile.push(LINIENMODELL_NAME[m] + ' ' + (L.lapTime ? L.lapTime.toFixed(1) + ' s' : '?')
+                 + ' / ' + cm(L.span) + ' cm');
+    }
+    info.textContent = t('{m} ist gewählt. Modellzeit und genutzter Versatz:')
+        .replace('{m}', LINIENMODELL_NAME[getLineModel()])
+      + ' ' + teile.join(' \u00b7 ') + '. '
+      + t('Die Zeiten kommen aus den eingestellten Fahrwerten; die Querbeschleunigung ist '
+          + 'darin eine Annahme.')
       + (eigene ? '' : ' ' + t('Gezeigt ist die Vorgabestrecke; im Editor steht noch keine.'));
   }
 
@@ -4604,9 +4618,13 @@
       // Und die Vorschau neben der Wahl - das ist die Karte, auf die man dabei sieht.
       try { linemodellKarteZeichnen(); } catch (e) { /* Karte nicht im Dokument */ }
       const lc = ghostLine();
-      log('Linienmodell: ' + (m === 'laptime' ? 'Rundenzeit' : 'Kr\u00fcmmung')
-          + (lc && lc.lapTime ? ', Modellzeit ' + lc.lapTime.toFixed(2)
-             + ' (' + (lc.gain * 100).toFixed(1) + ' % schneller als Kr\u00fcmmung)' : ''),
+      // Der Prozentwert ist WEG, und das ist eine Berichtigung: lc.gain heisst bei jedem
+      // Modell etwas anderes - bei 'laptime' der Gewinn gegen die Kruemmungslinie, bei
+      // 'lateapex' der gegen den besten Startpunkt -, und derselbe Satz fuer beide war
+      // eine Falschaussage. Verglichen wird in der Vorschau, wo alle drei Zahlen
+      // nebeneinander stehen.
+      log('Linienmodell: ' + LINIENMODELL_NAME[m]
+          + (lc && lc.lapTime ? ', Modellzeit ' + lc.lapTime.toFixed(2) + ' s' : ''),
           'info');
     });
   }
