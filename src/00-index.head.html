@@ -6949,13 +6949,26 @@
         <span class="muted" style="font-size:11px">&#9660;</span></div>
       <div class="opt-row"><div class="opt-label">&Uuml;berholman&ouml;ver
           <span class="wip-tag">experimentell</span>
-          <small>Ein Verfolger, der 0,9&nbsp;s dicht dran h&auml;ngt, setzt auf einer Geraden
-          an: erst zur Seite, dann Schub, dann vorne wieder einordnen. Der Vorausfahrende
-          weicht zur anderen Seite aus &ndash; zwei Autos auf 25&nbsp;cm Bahnbreite brauchen
-          beide H&auml;lften. Klappt es nach 5&nbsp;s nicht, bricht er ab und wartet
-          6&nbsp;s; ohne diesen Abbruch klebte der Verfolger neben dem anderen, bis die Uhr
-          ablief, und genau dort ber&uuml;hren sie sich. In eine Kurve hinein wird nie
-          angesetzt.</small></div>
+          <small>Ein Verfolger, der 0,9&nbsp;s dicht dran h&auml;ngt, setzt an: erst zur
+          Seite, dann Schub, dann vorne wieder einordnen. Der Vorausfahrende weicht zur
+          anderen Seite aus &ndash; zwei Autos auf 25&nbsp;cm Bahnbreite brauchen beide
+          H&auml;lften. Klappt es nach 5&nbsp;s nicht, bricht er ab und wartet 6&nbsp;s; ohne
+          diesen Abbruch klebte der Verfolger neben dem anderen, bis die Uhr ablief, und
+          genau dort ber&uuml;hren sie sich.
+          <br>Seit v0.5.44 auch in Kurven, und die Erlaubnis h&auml;ngt nicht an der
+          Kachelart, sondern am freien Platz: 1 minus dem Anteil des Anschlags, den die
+          Ideallinie hier schon belegt. Unter 30&nbsp;% passt kein zweites Auto daneben, und
+          die Wahrscheinlichkeit w&auml;chst mit dem Platz. Gemessen in 1500&nbsp;Takten:
+          bei 0,70&nbsp;Platz 34&nbsp;Versuche, bei 0,14 keiner &ndash; egal ob Gerade oder
+          Haarnadel. Auf deiner Vorgabestrecke haben 11 von 13&nbsp;Kacheln genug Platz.
+          Nur in eine Haarnadel hinein wird nicht angesetzt: ein Versuch dauert bis
+          zu 5&nbsp;s, eine Kachel rund 0,7 &ndash; wer davor ausholt, ist beim Einlenken
+          noch daneben.
+          <br>Die Seite ist die, auf der der andere nicht ist. Vorher war es die andere Seite
+          als die eigene Linie; auf einer Geraden ist das dasselbe, in einer Kurve nicht.
+          Wer viel Bahnbreite f&uuml;r die Ideallinie ausgibt (Regler &bdquo;Kurven
+          &ouml;ffnen&ldquo;), l&auml;sst weniger f&uuml;r &Uuml;berholman&ouml;ver &uuml;brig
+          &ndash; das ist derselbe Platz.</small></div>
         <label class="tgl"><input type="checkbox" id="ghost-w-pass" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Abstand halten
           <span class="wip-tag">experimentell</span>
@@ -7696,7 +7709,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.5.43</span></span>
+    <span class="foot-ver">v<span id="app-version">0.5.44</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine

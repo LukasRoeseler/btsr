@@ -900,6 +900,12 @@
     // starten", waehrend das Rennen schon lief - ein Druck darauf hat es dann gestoppt. Ein
     // Knopf, der luegt, was er tun wird, ist schlimmer als einer, der langsam ist.
     setTimeout(updateRaceActButtons, 0);
+    // Die Seiten des Zieleinlaufs beginnen bei jedem Rennen von vorn - sonst haengt die
+    // Seite eines Autos an der Zahl der Rennen davor, und dieselbe Aufstellung endete beim
+    // zweiten Mal anders als beim ersten.
+    if (typeof finishSeitenZaehlerZuruecksetzen === 'function') {
+      finishSeitenZaehlerZuruecksetzen();
+    }
     raceState = 'countdown';
     $('race-start-btn').disabled = true;
     // Abbrechen muss schon im Countdown gehen: requestRaceStop() raeumt den Zaehler mit

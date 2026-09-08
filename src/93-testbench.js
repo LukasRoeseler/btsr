@@ -2017,7 +2017,7 @@
       }));
       return { reihe, phasen, takte, schritt,
                kopf: LIGHT_HEAD, bremse: LIGHT_BRAKE,
-               blinks: FINISH_BLINKS, rollMs: FINISH_ROLL_MS };
+               blinks: FINISH_BLINKS, rollMs: FINISH_ROLL_MAX };
     },
 
     // ---- Hebt ein Start das Parkschild? -----------------------------------------
@@ -2270,7 +2270,59 @@
     // ohne Karte war er immer "frei", und dann wurde mitten in einer Haarnadel angesetzt.
     // Geprueft wird ueber den gemeldeten Code der Kachel UNTER dem Auto, der keine Karte
     // braucht.
-    ghostPassArming(tileCode, versuche) {
+    // ---- DIE SONDE VARIIERT JETZT DEN PLATZ, NICHT NUR DEN KACHELCODE ---------------
+    //
+    // Bis v0.5.43 war die Zuendbedingung eine Funktion des Kachelcodes: auf einer Kurve nie.
+    // Seit sie am freien PLATZ haengt (1 minus Linienversatz), misst ein Lauf, der nur den
+    // Code aendert, gar nichts mehr - gemessen kamen Gerade 40, Kurve 35, Haarnadel 34
+    // Versuche heraus, weil die Attrappe ohne kurveMix und ohne Kachelindex ueberall
+    // denselben Platz hatte. Eine Sonde, die die gepruefte Groesse nicht bewegt, ist gruen
+    // und wertlos.
+    //
+    // opt: { tileIndex, kurveMix, tight, dist }
+    // ---- Zieleinlauf: welche Seite, wie lange, und was geht hinaus ------------------
+    //
+    // finishGhost() teilt die Seite zu, ghostFinishTick() schreibt sie. Der Haken faengt den
+    // AUSGEHENDEN Lenkwert ab, statt ihn aus der Zuteilung zu erschliessen - genau das war
+    // der Fehler des frueheren Anlaufs, bei dem die Seite zugeteilt war und beim Schreiben
+    // nicht ankam.
+    finishSeiten(n) {
+      const merkGarage = garage.splice(0, garage.length);
+      const echtNow = Date.now;
+      try {
+        finishSeitenZaehlerZuruecksetzen();
+        const raus = [];
+        for (let i = 0; i < (n || 4); i++) {
+          const gesendet = [];
+          const car = { role: 'ghost', alias: 'F' + i, tileCode: 0x02,
+                        testSenke: gesendet,
+                        ghost: { tileIndex: 0, engine: null } };
+          garage.push(car);
+          finishGhost(car);
+          const f = car.ghost.finish;
+          let uhr = echtNow();
+          Date.now = () => uhr;
+          const holen = () => {
+            gesendet.length = 0;
+            ghostFinishTick(car);
+            return gesendet.length ? gesendet[gesendet.length - 1].steer : null;
+          };
+          const steerRoll = holen();
+          uhr += (f.rollMs || 0) + 10;
+          ghostFinishTick(car);                  // Phasenwechsel auf 'brake'
+          const steerBrake = holen();
+          Date.now = echtNow;
+          raus.push({ seite: f.seite, rollMs: f.rollMs, steerRoll, steerBrake });
+        }
+        return raus;
+      } finally {
+        Date.now = echtNow;
+        garage.splice(0, garage.length);
+        for (const c of merkGarage) garage.push(c);
+      }
+    },
+
+    ghostPassArming(tileCode, versuche, opt) {
       const merkGarage = garage.splice(0, garage.length);
       const merkSpice = ghostCfg.wuerzeUeberholen;
       const echtNow = Date.now;
@@ -2278,8 +2330,10 @@
         ghostCfg.wuerzeUeberholen = true;
         let uhr = echtNow();
         Date.now = () => uhr;
+        const o = opt || {};
         const mk = (total) => ({ role: 'ghost', alias: 'P', tileAt: 0, tileCode,
-          ghost: { tilesTotal: total, tileIndex: 0, form: 0, formAt: uhr, attackUntil: 0,
+          ghost: { tilesTotal: total, tileIndex: o.tileIndex || 0, form: 0, formAt: uhr,
+                   attackUntil: 0, kurveMix: o.kurveMix || 0,
                    closeSince: uhr - 5000, mistakeUntil: 0, passPhase: null, passZiel: null,
                    passSince: 0, passBlockUntil: 0, naehern: 0, attackTriedAt: 0 } });
         const hinten = mk(0), vorne = mk(0.4);
@@ -2289,7 +2343,8 @@
           uhr += 60;
           // Kleben halten, damit die Zuendbedingung immer erfuellt ist.
           hinten.ghost.closeSince = uhr - 5000;
-          ghostSpice(hinten, { tight: 0, dist: 99, key: 'p' });
+          ghostSpice(hinten, { tight: o.tight || 0,
+                               dist: o.dist === undefined ? 99 : o.dist, key: 'p' });
           if (hinten.ghost.attackUntil) {
             gestartet++;
             // Zuruecksetzen und weiter wuerfeln.
@@ -2298,7 +2353,12 @@
             hinten.ghost.passBlockUntil = 0;
           }
         }
-        return { gestartet, takte: versuche || 400, code: tileCode };
+        // Der Platz, den die Attrappe hatte - damit eine Pruefung die Zahl gegen ihn
+        // stellen kann statt gegen eine Erwartung.
+        const li = Math.abs(ghostLineOffset(hinten) * ghostCfg.line * GHOST_LINE_STEER
+                            * ghostLinieGewicht(hinten.ghost.kurveMix || 0));
+        return { gestartet, takte: versuche || 400, code: tileCode,
+                 platz: +Math.max(0, 1 - li).toFixed(3) };
       } finally {
         Date.now = echtNow;
         garage.splice(0, garage.length);

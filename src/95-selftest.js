@@ -6155,12 +6155,21 @@
   // Vorher endete ein Rennen fuer die Ghosts mit stopGhost(): Nullen schreiben und
   // stehenbleiben, wo man gerade ist - mitten auf der Linie, wenn es dumm laeuft.
   //
-  // Geprueft werden die GESENDETEN BYTES, nicht die Absicht: Lenkung GERADE (die
-  // Rechtskurve eines frueheren Anlaufs ist heraus und soll nicht zurueckkommen), kein Gas,
-  // Bremslicht in der Bremsphase, und genau DREI sichtbare Blitze. Die Drei ist der Punkt, an dem man um den Faktor zwei danebenliegt - ein
-  // Blinken ist an UND aus -, und beim Entwurf dieses Tests ist genau das aufgefallen: das
-  // Blinken begann mit AN, waehrend das Standlicht schon an war, also waren zwei sichtbar.
-  stAdd('Zieleinlauf: gerade ausrollen, anhalten, dreimal blinken', async () => {
+  // Geprueft werden die GESENDETEN BYTES, nicht die Absicht: ein VOLLER Lenkausschlag zur
+  // zugeteilten Seite in beiden Fahrphasen, kein Gas, Bremslicht in der Bremsphase, und
+  // genau DREI sichtbare Blitze. Die Drei ist der Punkt, an dem man um den Faktor zwei
+  // danebenliegt - ein Blinken ist an UND aus -, und beim Entwurf dieses Tests ist genau das
+  // aufgefallen: das Blinken begann mit AN, waehrend das Standlicht schon an war, also waren
+  // zwei sichtbar.
+  //
+  // DIE LENKUNG WAR HIER BIS v0.5.44 AUF GERADE FESTGENAGELT, mit der Begruendung, ein
+  // frueherer Anlauf habe alle Autos gleichzeitig eine Rechtskurve fahren lassen. Bestellt
+  // ist jetzt das Gegenteil, und der Unterschied ist der Wechsel: "alle nach rechts" war der
+  // Fehler, "abwechselnd links und rechts" ist der Zweck - zwei Autos, die entgegengesetzt
+  // einschlagen, gehen auseinander. Welche Seite welches Auto bekommt, prueft die Nachbarin
+  // "Zieleinlauf: abwechselnd links und rechts an den Rand"; hier geht es nur darum, dass
+  // ueberhaupt ein Ausschlag hinausgeht und in beiden Fahrphasen derselbe.
+  stAdd('Zieleinlauf: zur Seite ausrollen, anhalten, dreimal blinken', async () => {
     if (!window.OMEGA_TEST || !OMEGA_TEST.ghostFinishTimeline) {
       return { skip: true, mass: 'ghostFinishTimeline nicht vorhanden' };
     }
@@ -6172,14 +6181,27 @@
     const brems = r.reihe.filter(x => x.phase === 'brake');
     const blink = r.reihe.filter(x => x.phase === 'blink');
     const fehler = [];
-    // 1. LENKUNG GERADE, in jeder Phase. Ein Anlauf liess sie nach rechts an den Rand
-    // fahren; das ist heraus, weil ohne Rueckmeldung zur Querlage niemand weiss, wo der
-    // Rand ist - am Ende fuhren nur alle Autos gleichzeitig eine Rechtskurve. Der Test
-    // haelt das Gegenteil fest, damit es nicht zurueckkommt.
-    const krumm = r.reihe.filter(x => x.lenk !== 0);
-    if (krumm.length) {
-      fehler.push(krumm.length + ' Pakete mit Lenkung (max '
-                  + Math.max(...krumm.map(x => Math.abs(x.lenk))) + ')');
+    // 1. VOLLER AUSSCHLAG ZU EINER SEITE, in beiden Fahrphasen, und in beiden derselbe.
+    //    Ein Vorzeichenwechsel mitten im Anhalten waere ein Schlenker statt eines
+    //    Herausfahrens.
+    const fahrend = pull.concat(brems);
+    const lenke = fahrend.map(x => x.lenk);
+    if (!lenke.length) fehler.push('keine Fahrphase');
+    else {
+      const erst = lenke[0];
+      if (Math.abs(erst) < 100) {
+        fehler.push('Lenkung nur ' + erst + ' von 127 - kein Ausschlag zur Seite');
+      }
+      if (lenke.some(l => l !== erst)) {
+        fehler.push('Lenkung wechselt innerhalb des Anhaltens: '
+                    + Array.from(new Set(lenke)).join('/'));
+      }
+    }
+    // Und in der Blinkphase steht das Auto: dort gehoert die Lenkung auf null, sonst
+    // arbeitet das Servo gegen den Anschlag, solange die Sequenz laeuft.
+    const blinkKrumm = blink.filter(x => x.lenk !== 0);
+    if (blinkKrumm.length) {
+      fehler.push(blinkKrumm.length + ' Blinkpakete mit Lenkung');
     }
     // 2. Kein Gas, in keiner Phase: es wird ausgerollt, nicht gefahren.
     const gas = r.reihe.map(x => x.gas);
@@ -6202,7 +6224,7 @@
     return { ok: !fehler.length,
              mass: pull.length + ' Takte ausrollen, ' + brems.length + ' bremsen, '
                  + blink.length + ' blinken, ' + flanken + ' Blitze, Lenkung '
-                 + (krumm.length ? 'KRUMM' : 'gerade')
+                 + (pull.length ? pull[0].lenk : '?') + ' von 127'
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
@@ -6667,34 +6689,120 @@
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
-  // ---- 4. Kein Ueberholversuch in eine Kurve hinein ----
+  // ---- Ueberholen: der PLATZ entscheidet, nicht die Kachelart ----
   //
-  // Der Vorausblick verbietet es schon - aber den gibt es nur mit Karte. Ohne Karte war er
-  // immer "frei", und dann wurde mitten in einer Haarnadel angesetzt. Die Kachel UNTER dem
-  // Auto kommt aus dem gemeldeten Code und braucht keine Karte.
-  stAdd('Kein Ueberholversuch auf einer Kurvenkachel', () => {
+  // BESTELLT: "Ueberarbeite nun die Ueberholmanoever, sodass Autos auch in Kurven ueberholen
+  // koennen." Hier stand vorher die Umkehrung - "Kein Ueberholversuch auf einer
+  // Kurvenkachel" -, und sie war mit einer Messung begruendet: alle drei Abgaenge im
+  // Leitplanken-Modus geschahen bei nahezu vollem Lenkanschlag (mittleres |steer| 119,7 von
+  // 127). Was daran richtig bleibt, ist nicht die Kachelart, sondern der Anschlag: ein
+  // Ueberholversatz oben auf eine Linie, die schon voll zieht, IST der volle Anschlag.
+  //
+  // Also haengt die Erlaubnis jetzt am freien Platz, 1 minus dem Linienversatz. Gemessen,
+  // 1500 Takte je Lage:
+  //
+  //     Lage                                Platz   Versuche
+  //     Gerade, Linie zieht kaum             0,70      34
+  //     Gerade, Linie zieht voll             0,14       0
+  //     Haarnadelkachel, Linie zieht voll    0,15       0
+  //     Haarnadelkachel, Linie zieht kaum    0,70      35
+  //     Gerade, Haarnadel 1 Kachel voraus    0,70       0
+  //     Gerade, Haarnadel 3 Kacheln voraus   0,70      25
+  //
+  // Geprueft werden genau diese vier Aussagen. Die dritte und vierte Zeile sind die
+  // eigentliche Aenderung: die Kachelart allein sperrt nicht mehr.
+  stAdd('Ueberholen: der Platz entscheidet, nicht die Kachelart', () => {
     if (!window.OMEGA_TEST || !OMEGA_TEST.ghostPassArming) {
       return { skip: true, mass: 'ghostPassArming nicht vorhanden' };
     }
-    // 1500 Takte und nicht 400, und das ist eine Berichtigung an DIESEM Test: bei 400
-    // Takten a 60 ms sind es 24 s gefaelschter Zeit, also etwa sechs Wuerfe mit P = 0,45 -
-    // in gut drei Prozent der Laeufe faellt keiner, und dann meldet er rot, obwohl nichts
-    // kaputt ist. Genau so entstehen Tests, die man irgendwann wegklickt. Mit 1500 Takten
-    // sind es rund zweiundzwanzig Wuerfe und die Wahrscheinlichkeit liegt bei 1 zu 100.000.
-    //
-    // Die Gegenrichtung braucht die Laenge auch: "auf der Kurve NIE" ist mit sechs
-    // Gelegenheiten kaum eine Aussage.
-    const gerade = OMEGA_TEST.ghostPassArming(0x02, 1500);
-    const kurve = OMEGA_TEST.ghostPassArming(0x04, 1500);
-    const haarnadel = OMEGA_TEST.ghostPassArming(0x06, 1500);
-    const fehler = [];
-    // Auf der Geraden MUSS es ueberhaupt vorkommen, sonst prueft der Test nichts.
-    if (!(gerade.gestartet > 0)) fehler.push('auf der Geraden gar kein Versuch');
-    if (kurve.gestartet) fehler.push('Kurve: ' + kurve.gestartet + ' Versuche');
-    if (haarnadel.gestartet) fehler.push('Haarnadel: ' + haarnadel.gestartet + ' Versuche');
+    const merkTiles = currentTrackTiles;
+    const fehler = [], zeilen = [];
+    try {
+      // Eine Strecke mit Haarnadeln, damit ein Kachelindex in einer liegt.
+      currentTrackTiles = codeToTrack('SHG4HG3').tiles;
+      lineCache = null;
+      // 1500 Takte und nicht 400: bei 400 Takten a 60 ms sind es etwa sechs Wuerfe, und in
+      // gut drei Prozent der Laeufe faellt keiner - so entstehen Tests, die man wegklickt.
+      const lauf = (o) => OMEGA_TEST.ghostPassArming(o.code, 1500, o);
+      const viel = lauf({ code: 0x02, tileIndex: 3, kurveMix: 0 });
+      const wenig = lauf({ code: 0x02, tileIndex: 3, kurveMix: 1 });
+      const hnFrei = lauf({ code: 0x06, tileIndex: 1, kurveMix: 0 });
+      const hnVoll = lauf({ code: 0x06, tileIndex: 1, kurveMix: 1 });
+      const vorHn = lauf({ code: 0x02, tileIndex: 3, kurveMix: 0, tight: 2, dist: 1 });
+      const fernHn = lauf({ code: 0x02, tileIndex: 3, kurveMix: 0, tight: 2, dist: 3 });
+      for (const [nm, r] of [['viel Platz', viel], ['wenig Platz', wenig],
+                             ['Haarnadel frei', hnFrei], ['Haarnadel voll', hnVoll],
+                             ['vor Haarnadel', vorHn], ['fern Haarnadel', fernHn]]) {
+        zeilen.push(nm + ' ' + r.platz + '/' + r.gestartet);
+      }
+      // 1. Mit Platz MUSS es vorkommen, sonst prueft der Test nichts.
+      if (!(viel.gestartet > 0)) fehler.push('mit Platz gar kein Versuch');
+      // 2. Ohne Platz nie - das ist der Schutz, der von der alten Regel uebrig bleibt.
+      if (wenig.gestartet) fehler.push('ohne Platz ' + wenig.gestartet + ' Versuche');
+      if (hnVoll.gestartet) fehler.push('Haarnadel voll ' + hnVoll.gestartet + ' Versuche');
+      // 3. DIE KACHELART SPERRT NICHT MEHR. Das ist die bestellte Aenderung, und ohne diese
+      //    Zeile waere der Test auch mit der alten Sperre gruen.
+      if (!(hnFrei.gestartet > 0)) {
+        fehler.push('auf einer Kurvenkachel mit Platz kein Versuch - die Kachelart sperrt');
+      }
+      // 4. In eine Haarnadel hinein nicht, eine Kachel weiter weg schon.
+      if (vorHn.gestartet) fehler.push('vor der Haarnadel ' + vorHn.gestartet + ' Versuche');
+      if (!(fernHn.gestartet > 0)) fehler.push('drei Kacheln vor der Haarnadel keiner');
+    } finally {
+      currentTrackTiles = merkTiles;
+      lineCache = null;
+    }
     return { ok: !fehler.length,
-             mass: 'Gerade ' + gerade.gestartet + ', Kurve ' + kurve.gestartet
-                 + ', Haarnadel ' + haarnadel.gestartet + ' Versuche in je 1500 Takten'
+             mass: zeilen.join(' | ') + ' (Platz/Versuche in 1500 Takten)'
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
+  // ---- Zieleinlauf: abwechselnd links und rechts ----
+  //
+  // GEMELDET: "Nach dem Rennen rammen die Ghosts alle ineinander hinein. Mache es so, dass
+  // sie abwechselnd links und rechts am Rand stehen bleiben."
+  //
+  // Geprueft wird die Zuteilung und der ausgehende Lenkwert, nicht das Ergebnis auf der
+  // Bahn: wo ein Auto wirklich stehen bleibt, kann diese App nicht wissen - es meldet seine
+  // Querlage nicht. Was sie zusichern kann, ist, dass zwei aufeinanderfolgende Autos
+  // ENTGEGENGESETZT einschlagen und dass die Hinteren laenger rollen.
+  stAdd('Zieleinlauf: abwechselnd links und rechts an den Rand', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.finishSeiten) {
+      return { skip: true, mass: 'finishSeiten nicht vorhanden' };
+    }
+    // SECHS und nicht vier: bei vier greift der Boden FINISH_ROLL_MIN nicht, und dann
+    // prueft der Lauf den Fall nicht, in dem zwei Autos dieselbe Rollzeit bekommen.
+    const r = OMEGA_TEST.finishSeiten(6);
+    const fehler = [];
+    if (!r || r.length !== 6) return { ok: false, mass: 'kein Lauf' };
+    for (let i = 1; i < r.length; i++) {
+      if (Math.sign(r[i].seite) === Math.sign(r[i - 1].seite)) {
+        fehler.push('Auto ' + i + ' auf derselben Seite wie ' + (i - 1));
+      }
+      // DER FUEHRENDE ROLLT AM LAENGSTEN, nicht am kuerzesten - und diese Zeile ist die
+      // Berichtigung eines Fehlers, den ich selbst eingebaut hatte. Rollt der Hintere
+      // laenger, schrumpft der Abstand beim Anhalten, und das Auffahren wird schlimmer statt
+      // besser. Die Rechnung steht bei FINISH_ROLL_MAX.
+      // NICHT STRENG KLEINER, sondern nicht groesser - und das ist kein Aufweichen: ab
+      // dem fuenften Auto greift FINISH_ROLL_MIN, und dann sind zwei Rollzeiten gleich.
+      // Dort trennt der Seitenwechsel, und den prueft die Zeile darueber. Eine Forderung
+      // nach streng kleiner waere bei sechs Ghosts rot, ohne dass etwas kaputt ist.
+      if (r[i].rollMs > r[i - 1].rollMs) {
+        fehler.push('Auto ' + i + ' rollt laenger als ' + (i - 1) + ' - dann schiebt es auf');
+      }
+    }
+    // Und der Lenkwert muss wirklich hinausgehen, mit dem Vorzeichen der Seite.
+    for (const x of r) {
+      if (Math.sign(x.steerRoll) !== Math.sign(x.seite) || Math.abs(x.steerRoll) < 0.9) {
+        fehler.push('Lenkwert ' + x.steerRoll + ' passt nicht zur Seite ' + x.seite);
+      }
+      if (x.steerBrake !== x.steerRoll) {
+        fehler.push('Bremsphase lenkt anders als die Rollphase');
+      }
+    }
+    return { ok: !fehler.length,
+             mass: r.map(x => (x.seite > 0 ? 'L' : 'R') + ' ' + x.rollMs + 'ms '
+                              + x.steerRoll.toFixed(1)).join(' | ')
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
