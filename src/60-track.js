@@ -1680,6 +1680,50 @@
     return `rgb(${mix(1)},${mix(2)},${mix(3)})`;
   }
 
+  // ====================================================================================
+  // DIE KAROSSERIE, MASSSTABSGETREU
+  // ====================================================================================
+  //
+  // Gemessen am Fahrzeug: 95 mm lang mit Spoiler, 38 mm breit. Alles andere folgt aus den
+  // Bahnmassen, die schon hier stehen - TRACK_UNITS_PER_CM = 40/43 rechnet Zentimeter in
+  // Zeichnungseinheiten:
+  //
+  //     Auto            9,5 cm  ->  8,84 Einheiten lang
+  //                     3,8 cm  ->  3,54 Einheiten breit
+  //     Bahn           25,0 cm  ->  23,26 Einheiten
+  //     Kachel         43,0 cm  ->  40,00 Einheiten
+  //
+  // Zwei Zahlen daraus sind der eigentliche Gewinn, und beide waren vorher nicht sichtbar:
+  //
+  //   ZWEI AUTOS NEBENEINANDER brauchen 30,4 Prozent der Bahnbreite. Es ist also reichlich
+  //   Platz - wer sich rammt, tut es nicht aus Enge.
+  //
+  //   EIN AUTO IST 22 PROZENT EINER KACHEL lang. Der Abstandshalter rechnete in Kacheln
+  //   (SPICE_GAP_MIN = 0,7), das sind also gut drei Fahrzeuglaengen. Jetzt ist die
+  //   Fahrzeuglaenge eine Zahl und kein Gefuehl.
+  //
+  // DER BISHERIGE PUNKT WAR IRREFUEHREND: Radius 3,2 sind 6,9 cm Durchmesser - breiter als
+  // das Auto ist (3,8) und kuerzer als es lang ist (9,5). Er behauptete also ein rundes
+  // Fahrzeug, das quer zu dick und laengs zu kurz war, und verschwieg die Fahrtrichtung.
+  const AUTO_LANG_CM = 9.5;
+  const AUTO_BREIT_CM = 3.8;
+  const AUTO_LANG = AUTO_LANG_CM * TRACK_UNITS_PER_CM;
+  const AUTO_BREIT = AUTO_BREIT_CM * TRACK_UNITS_PER_CM;
+  // Der Spoiler ist in den 95 mm ENTHALTEN und keine Zugabe. Er wird als Balken am Heck
+  // gezeichnet, damit man die Fahrtrichtung sieht - bei 8,8 Einheiten Laenge auf einer
+  // Karte von 200 Einheiten Breite ist das der einzige Weg, sie zu erkennen.
+  const AUTO_SPOILER = 1.4;
+
+  // Die Fahrtrichtung an einem Abtastpunkt, in Grad. AUS DEN PUNKTEN und nicht aus der
+  // Normalen: die Normale hat eine Vorzeichenkonvention, die in diesem Projekt schon zwei
+  // Fehler gekostet hat. Zwei aufeinanderfolgende Punkte haben keine.
+  function trackWinkelBei(pts, i) {
+    const n = pts.length;
+    const a = pts[Math.max(0, Math.min(n - 2, i))];
+    const b = pts[Math.max(1, Math.min(n - 1, i + 1))];
+    return Math.atan2(b.y - a.y, b.x - a.x) * 180 / Math.PI;
+  }
+
   // KLEINER ALS BIS v0.5.17: 6 px Radius deckten auf einer 30 px breiten Bahn die halbe
   // Fahrbahn, und darin ist keine Querlage zu zeigen. 3,2 lassen Platz fuer beides.
   // Als Modulkonstante, weil karteAutosSetzen() denselben Wert braucht.
@@ -1832,10 +1876,21 @@
       const n = nrm[i] || { x: 0, y: 0 };
       const px = p.x + n.x * q * half, py = p.y + n.y * q * half;
       const x = (px + ox).toFixed(1), y = (py + oy).toFixed(1);
-      // Weisser Ring, damit der Punkt auf der schwarzen Bahn UND auf dem Grund daneben
-      // steht. Duenner als vorher, sonst waere bei 3,2 px Radius mehr Ring als Farbe.
-      let t = `<circle cx="${x}" cy="${y}" r="${PUNKT_R}" fill="${farbe || '#ff5c5c'}" `
-            + `stroke="#fff" stroke-width="1.2"/>`;
+      // ---- DIE KAROSSERIE, gedreht in Fahrtrichtung -------------------------------
+      //
+      // Ein Rechteck von 8,84 x 3,54 Einheiten, also 95 x 38 mm im Massstab der Bahn, plus
+      // ein Balken am Heck fuer den Spoiler. Der weisse Rand bleibt: er traegt das Auto auf
+      // der schwarzen Bahn UND auf dem hellen Grund daneben.
+      const w = trackWinkelBei(pts, i).toFixed(1);
+      const L = AUTO_LANG, B = AUTO_BREIT;
+      let t = `<g transform="translate(${x} ${y}) rotate(${w})">`
+            + `<rect x="${(-L / 2).toFixed(2)}" y="${(-B / 2).toFixed(2)}" `
+            + `width="${L.toFixed(2)}" height="${B.toFixed(2)}" rx="0.8" `
+            + `fill="${farbe || '#ff5c5c'}" stroke="#fff" stroke-width="0.5"/>`
+            + `<rect x="${(-L / 2).toFixed(2)}" y="${(-B / 2).toFixed(2)}" `
+            + `width="${AUTO_SPOILER.toFixed(2)}" height="${B.toFixed(2)}" `
+            + `fill="#0b0c0f" opacity="0.55"/>`
+            + `</g>`;
       if (kuerzel) {
         t += `<text x="${x}" y="${(py + oy - 6).toFixed(1)}" text-anchor="middle" `
            + `font-size="9" font-weight="700" fill="#fff" `
@@ -1931,9 +1986,27 @@
     // Fehlende Knoten anlegen, ueberzaehlige verbergen. Nicht loeschen: die Zahl der Autos
     // wechselt selten, und ein verborgener Knoten kostet nichts.
     while (g.childNodes.length < liste.length * 2) {
-      const c = document.createElementNS(NS_SVG, 'circle');
-      c.setAttribute('stroke', '#fff');
-      c.setAttribute('stroke-width', '1.2');
+      // EINE GRUPPE JE AUTO, gedreht, mit Karosserie und Spoiler darin - und die
+      // Beschriftung DANEBEN und nicht darin: sie darf sich nicht mitdrehen, sonst steht
+      // das Kuerzel in einer Linkskurve auf dem Kopf.
+      const c = document.createElementNS(NS_SVG, 'g');
+      const body = document.createElementNS(NS_SVG, 'rect');
+      body.setAttribute('x', (-AUTO_LANG / 2).toFixed(2));
+      body.setAttribute('y', (-AUTO_BREIT / 2).toFixed(2));
+      body.setAttribute('width', AUTO_LANG.toFixed(2));
+      body.setAttribute('height', AUTO_BREIT.toFixed(2));
+      body.setAttribute('rx', '0.8');
+      body.setAttribute('stroke', '#fff');
+      body.setAttribute('stroke-width', '0.5');
+      const spoiler = document.createElementNS(NS_SVG, 'rect');
+      spoiler.setAttribute('x', (-AUTO_LANG / 2).toFixed(2));
+      spoiler.setAttribute('y', (-AUTO_BREIT / 2).toFixed(2));
+      spoiler.setAttribute('width', AUTO_SPOILER.toFixed(2));
+      spoiler.setAttribute('height', AUTO_BREIT.toFixed(2));
+      spoiler.setAttribute('fill', '#0b0c0f');
+      spoiler.setAttribute('opacity', '0.55');
+      c.appendChild(body);
+      c.appendChild(spoiler);
       const t = document.createElementNS(NS_SVG, 'text');
       t.setAttribute('text-anchor', 'middle');
       t.setAttribute('font-size', '9');
@@ -1949,19 +2022,22 @@
       const c = g.childNodes[k * 2], t = g.childNodes[k * 2 + 1];
       const a = liste[k];
       if (!a || a.index === null || a.index === undefined) {
-        c.setAttribute('r', '0');
+        // VERBERGEN und nicht auf Groesse null setzen: eine Gruppe hat kein r, und ein
+        // rect mit width 0 waere ein Strich. hidden ist die Aussage, die gemeint ist.
+        c.setAttribute('visibility', 'hidden');
         t.textContent = '';
         continue;
       }
+      c.setAttribute('visibility', 'visible');
       const i = trackPunktIndex(geo.kachelTab, geo.pts, a.index, a.phase);
       const p = geo.pts[i], n = geo.nrm[i] || { x: 0, y: 0 };
       const q = Math.max(-0.85, Math.min(0.85, a.quer || 0));
       const x = p.x + n.x * q * geo.half + geo.ox;
       const y = p.y + n.y * q * geo.half + geo.oy;
-      c.setAttribute('cx', x.toFixed(1));
-      c.setAttribute('cy', y.toFixed(1));
-      c.setAttribute('r', String(geo.punktR));
-      c.setAttribute('fill', a.farbe || '#ff5c5c');
+      const w = trackWinkelBei(geo.pts, i);
+      c.setAttribute('transform',
+        'translate(' + x.toFixed(1) + ' ' + y.toFixed(1) + ') rotate(' + w.toFixed(1) + ')');
+      if (c.firstChild) c.firstChild.setAttribute('fill', a.farbe || '#ff5c5c');
       t.setAttribute('x', x.toFixed(1));
       t.setAttribute('y', (y - 6).toFixed(1));
       t.textContent = a.kuerzel || '';

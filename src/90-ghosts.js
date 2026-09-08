@@ -2377,39 +2377,141 @@
   const PIT_RAUS_MS = 1200;      // Querlage von +1 zurueck auf die Linie
   const PIT_AUSWEICH_MS = 400;   // yieldUntil der anderen, laufend erneuert
 
-  // Immer nur einer. Das ist keine Eigenschaft eines Autos, also steht es modulweit - anders
-  // als die Ueberholsequenz, die nur je Ghost eine Marke braucht. Ein zweiter Ghost, der
-  // gleichzeitig faellig ist, wartet auf die naechste Runde.
-  let pitInhaber = null;
-  // ---- DER BOXENPLATZ HEILT SICH SELBST ----------------------------------------------
+  // ====================================================================================
+  // DIE BOXENGASSE: MEHRERE PLAETZE HINTEREINANDER
+  // ====================================================================================
   //
-  // Ein modulweiter Inhaber ist eine Sperre, und eine Sperre, die nur an einer Stelle
-  // freigegeben wird, bleibt irgendwann haengen. Genau das ist beim Bauen passiert: ein
-  // Prueflauf raeumte seine Attrappen aus der Garage, liess pitInhaber aber stehen - und
-  // danach pittete in einer 41-Runden-Simulation kein einziges Auto mehr, weil der Platz
-  // einem Auto gehoerte, das es nicht mehr gab. Gesucht habe ich es zuerst beim Ausloeser.
+  // BESTELLT: "Mach, dass mehrere Autos Boxenstopp machen koennen. Wenn ein Auto schon
+  // einen Stopp macht, soll das naechste ab der Kachel eins spaeter anfangen (und das
+  // andere nicht rammen)."
+  //
+  // Bis v0.5.46 war das EIN Platz und ein modulweiter Inhaber. Jetzt ist es eine Gasse:
+  // Platz 0 auf der Start/Ziel-Kachel, Platz 1 auf der naechsten, Platz 2 auf der danach.
+  // Genau die Bauform einer echten Boxengasse - eine Reihe von Boxen an derselben Geraden.
+  //
+  // WIEVIELE, UND WARUM NICHT MEHR: PIT_PLAETZE_MAX = 4 bei bis zu sechs Ghosts. Die Zahl
+  // ist nicht die Zahl der Autos, sondern die Laenge der Gasse, und die Gasse liegt auf der
+  // Strecke. Vier Kacheln sind 1,72 m; auf dem gemeldeten Layout SR3GLR2GR2G2 mit 33
+  // Kacheln ist das ein Achtel der Runde. Bei sechs waere es ein Fuenftel, und dann steht
+  // auf einem kleinen Layout ein merklicher Teil der Bahn voll. Wer als Fuenfter faellig
+  // wird, wartet - dieselbe Antwort wie vorher, nur ab dem fuenften statt ab dem zweiten.
+  //
+  // Zusaetzlich gedeckelt auf n-2: eine Gasse, die laenger ist als das Layout, waere ein
+  // Ring aus stehenden Autos.
+  const PIT_PLAETZE_MAX = 4;
+  // Wieviel Querlage ein Auto benutzt, das noch an einem stehenden vorbei muss. Der
+  // Gegenrand, also NEGATIV - der Stopp haelt rechts.
+  const PIT_VORBEI = -1.0;
+
+  // Die Plaetze. Index = Platznummer, Wert = das Auto oder null.
+  let pitPlaetze = [null, null, null, null];
+
+  // ---- DIE PLAETZE HEILEN SICH SELBST ------------------------------------------------
+  //
+  // Eine Sperre, die nur an einer Stelle freigegeben wird, bleibt irgendwann haengen. Genau
+  // das ist beim Bauen von v0.5.45 passiert: ein Prueflauf raeumte seine Attrappen aus der
+  // Garage, liess den Inhaber aber stehen - und danach pittete in einer 41-Runden-Simulation
+  // kein einziges Auto mehr, weil der Platz einem Auto gehoerte, das es nicht mehr gab.
+  // Gesucht habe ich es zuerst beim Ausloeser.
   //
   // Die Antwort ist keine weitere Freigabestelle, sondern eine PRUEFUNG des Anspruchs: wer
-  // keinen Stopp mehr laufen hat oder nicht mehr in der Garage steht, ist nicht Inhaber.
-  // Damit kann die Sperre nicht mehr haengen bleiben, egal wer sie liegen laesst.
-  function pitInhaberGueltig() {
-    if (!pitInhaber) return false;
-    if (!pitInhaber.ghost || !pitInhaber.ghost.pit) { pitInhaber = null; return false; }
-    if (garage.indexOf(pitInhaber) < 0) { pitInhaber = null; return false; }
-    return true;
+  // keinen Stopp mehr laufen hat oder nicht mehr in der Garage steht, haelt keinen Platz.
+  // Mit mehreren Plaetzen ist das noch wichtiger als mit einem - es gibt jetzt vier Sperren,
+  // die haengen bleiben koennen.
+  function pitPlaetzeAufraeumen() {
+    for (let i = 0; i < pitPlaetze.length; i++) {
+      const c = pitPlaetze[i];
+      if (!c) continue;
+      if (!c.ghost || !c.ghost.pit || garage.indexOf(c) < 0) pitPlaetze[i] = null;
+    }
   }
-  function pitPlatzFrei(car) { return !pitInhaberGueltig() || pitInhaber === car; }
-  function pitPlatzRaeumen(car) { if (pitInhaber === car) pitInhaber = null; }
-  // Nur fuer den Prueflauf: den Inhaber von aussen setzen. Der Fahrbetrieb setzt ihn an
-  // genau einer Stelle, im Kachelwechsel - eine zweite waere ein zweiter Weg in dieselbe
-  // Sperre.
-  function pitInhaberSetzen(car) { pitInhaber = car; }
 
-  // Die Boxenkachel: die Start/Ziel-Kachel des Layouts. NICHT 0 annehmen - ortStartIndex()
-  // sucht sie, und auf einem gescannten Layout kann sie irgendwo liegen.
+  // Wieviele Plaetze das aktuelle Layout hergibt.
+  function pitPlaetzeZahl() {
+    const n = currentTrackTiles ? currentTrackTiles.length : 0;
+    if (n < 3) return 0;
+    return Math.max(1, Math.min(PIT_PLAETZE_MAX, n - 2));
+  }
+
+  // Der niedrigste freie Platz, oder -1. NIEDRIGSTE ZUERST, und das ist die Bestellung:
+  // "ab der Kachel eins spaeter" heisst, dass der zweite direkt hinter dem ersten haelt und
+  // nicht irgendwo.
+  function pitPlatzSuchen(car) {
+    pitPlaetzeAufraeumen();
+    const zahl = pitPlaetzeZahl();
+    for (let i = 0; i < zahl; i++) {
+      if (pitPlaetze[i] === car) return i;
+      if (!pitPlaetze[i]) return i;
+    }
+    return -1;
+  }
+
+  function pitPlatzFrei(car) { return pitPlatzSuchen(car) >= 0; }
+
+  function pitPlatzRaeumen(car) {
+    for (let i = 0; i < pitPlaetze.length; i++) {
+      if (pitPlaetze[i] === car) pitPlaetze[i] = null;
+    }
+  }
+
+  function pitPlatzBelegen(car, platz) { pitPlaetze[platz] = car; }
+
+  // Nur fuer den Prueflauf: alle Plaetze raeumen. Ein Lauf, der einen liegen laesst,
+  // blockiert jeden spaeteren Stopp - siehe oben.
+  function pitInhaberSetzen(car) {
+    pitPlaetze = [null, null, null, null];
+    if (car) pitPlaetze[0] = car;
+  }
+  function pitPlaetzeLesen() {
+    return pitPlaetze.map((c) => (c ? (c.alias || 'x') : null));
+  }
+
+  // Die Boxenkachel von Platz 0: die Start/Ziel-Kachel des Layouts. NICHT 0 annehmen -
+  // ortStartIndex() sucht sie, und auf einem gescannten Layout kann sie irgendwo liegen.
   function pitKachel() {
     if (!currentTrackTiles || currentTrackTiles.length < 3) return -1;
     return ortStartIndex(currentTrackTiles);
+  }
+
+  // Und die Kachel eines beliebigen Platzes. Platz 1 liegt eine Kachel SPAETER, also in
+  // Fahrtrichtung hinter der Linie.
+  function pitKachelFuer(platz) {
+    const pk = pitKachel();
+    if (pk < 0) return -1;
+    const n = currentTrackTiles.length;
+    return (pk + (platz || 0)) % n;
+  }
+
+  // ---- MUSS ICH NOCH AN EINEM STEHENDEN VORBEI? -------------------------------------
+  //
+  // DAS IST DER TEIL DER BESTELLUNG, DER "das andere nicht rammen" HEISST, und ohne ihn
+  // waere die Gasse ein Auffahrunfall: das Auto fuer Platz 2 faehrt auf demselben rechten
+  // Rand an, auf dem auf Platz 0 und 1 schon zwei stehen - es wuerde dem ersten ins Heck
+  // fahren.
+  //
+  // Die Loesung ist die einer echten Boxengasse: man faehrt die Gasse NEBEN den Boxen
+  // hinunter und zieht erst am eigenen Platz herein. Hier also: links bleiben, bis die
+  // eigene Kachel erreicht ist, und beim Herausfahren genauso, solange hinter mir noch
+  // einer steht.
+  //
+  // Nur STEHENDE Autos zaehlen ('halt' und 'stand'). Eines, das selbst noch anfaehrt, ist
+  // in Bewegung und in derselben Gasse - vor dem muss man nicht ausweichen, sondern hinter
+  // ihm bleiben, und dafuer sorgt der Abstandhalter.
+  function pitVorbeiNoetig(car) {
+    const p = car.ghost && car.ghost.pit;
+    if (!p) return false;
+    const meins = p.platz || 0;
+    for (let i = 0; i < pitPlaetze.length; i++) {
+      const c = pitPlaetze[i];
+      if (!c || c === car) continue;
+      const o = c.ghost && c.ghost.pit;
+      if (!o) continue;
+      if (o.phase !== 'halt' && o.phase !== 'stand') continue;
+      // Anfahrt: alles VOR meinem Platz muss ich passieren.
+      // Ausfahrt: alles NACH meinem Platz.
+      if (p.phase === 'raus' ? i > meins : i < meins) return true;
+    }
+    return false;
   }
 
   // Die Querlage, die der Boxenstopp verlangt, oder null wenn keiner laeuft. Positiv ist
@@ -2418,6 +2520,18 @@
   function pitQuer(car) {
     const p = car.ghost && car.ghost.pit;
     if (!p) return null;
+    // ---- DIE GASSE HINUNTER, DANN HEREIN ------------------------------------------
+    //
+    // Steht vor mir noch einer, halte ich den GEGENRAND - sonst faehre ich ihm ins Heck.
+    // Das gilt in der Anfahrt (an ihm vorbei zu meinem Platz) und beim Herausfahren (an
+    // einem vorbei, der hinter mir haelt), und pitVorbeiNoetig() unterscheidet die
+    // Richtung.
+    //
+    // AM EIGENEN PLATZ GILT ES NICHT MEHR: dort ist niemand, sonst haette ich den Platz
+    // nicht bekommen. Ohne diese Ausnahme wuerde ein Auto die Gasse hinunterfahren und
+    // links stehen bleiben.
+    const amPlatz = car.ghost.tileIndex === pitKachelFuer(p.platz);
+    if (!amPlatz && pitVorbeiNoetig(car)) return PIT_VORBEI;
     if (p.phase === 'raus') {
       const f = Math.max(0, 1 - (Date.now() - p.at) / PIT_RAUS_MS);
       return PIT_RAND * f;
@@ -2436,17 +2550,37 @@
     return null;               // 'raus' laeuft ueber die Anfahrrampe
   }
 
-  // Steht auf der Boxenkachel ein Auto? Dann darf dort niemand anders nach rechts.
+  // Auf welchem Platz steht dieses Auto gerade still? -1, wenn es nicht steht. Fuer die
+  // Messung und fuer die Anzeige - der Fahrbetrieb liest p.platz direkt.
+  function pitPlatzVon(car) {
+    const p = car.ghost && car.ghost.pit;
+    if (!p) return -1;
+    return p.platz === undefined ? 0 : p.platz;
+  }
+
+  // Steht auf einer Boxenkachel ein Auto? Dann darf dort niemand anders nach rechts.
+  //
+  // MIT DER GASSE SIND ES MEHRERE KACHELN, und das ist der Punkt: die Sperre deckte vorher
+  // die Start/Ziel-Kachel und die davor. Jetzt deckt sie die Kachel jedes BESETZTEN Platzes
+  // und die davor - eine Sperre, die nur den ersten Platz kennt, waere fuer die Autos auf
+  // Platz 1 bis 3 keine.
   function pitSperreRechts(car) {
-    if (!pitInhaberGueltig() || pitInhaber === car) return false;
+    pitPlaetzeAufraeumen();
     const pk = pitKachel();
     if (pk < 0) return false;
     const ort = ghostOrt(car);
     if (ort === null) return false;
     const n = currentTrackTiles.length;
-    // Die Boxenkachel und die davor: dort wird schon ausgewichen, nicht erst daneben.
-    const d = ((Math.floor(ort) - pk) % n + n) % n;
-    return d === 0 || d === n - 1;
+    const meine = Math.floor(ort);
+    for (let i = 0; i < pitPlaetze.length; i++) {
+      const c = pitPlaetze[i];
+      if (!c || c === car) continue;
+      const kachel = pitKachelFuer(i);
+      // Die Boxenkachel und die davor: dort wird schon ausgewichen, nicht erst daneben.
+      const d = ((meine - kachel) % n + n) % n;
+      if (d === 0 || d === n - 1) return true;
+    }
+    return false;
   }
 
   // Den anderen sagen, dass sie nach LINKS sollen. Push und nicht Poll - dieselbe Bauform und
@@ -2493,10 +2627,13 @@
     // ueberspringen kann.
     g.gnadeBis = now + PIT_GNADE_MS;
     pitAusweichenSetzen(car);
-    const pk = pitKachel();
+    // DIE EIGENE Boxenkachel, nicht die von Platz 0. Bis v0.5.46 gab es nur eine, und
+    // pitKachel() war beides - jetzt ist das ein Unterschied, und ein Auto fuer Platz 2, das
+    // auf Kachel 0 anhaelt, waere ein Auffahrunfall mit dem, der dort steht.
+    const pk = pitKachelFuer(p.platz);
 
     if (p.phase === 'anfahrt') {
-      // Auf der Boxenkachel angekommen?
+      // Am eigenen Platz angekommen?
       if (g.tileIndex === pk) { p.phase = 'halt'; p.at = now; }
       return true;
     }
@@ -2513,6 +2650,25 @@
     if (p.phase === 'stand') {
       if (now - p.at >= p.laenge) {
         p.phase = 'raus'; p.at = now;
+        // ---- DIE REIFEN KOMMEN AM ENDE DER STANDZEIT DRAUF -------------------------
+        //
+        // Am ENDE und nicht am Anfang: die Standzeit IST die Arbeit, und ein Auto, das mit
+        // den neuen Reifen schon dasteht, waehrend die Uhr noch laeuft, haette den Stopp
+        // umsonst gemacht.
+        //
+        // Und NACH DEM AKTUELLEN WETTER, nicht nach dem Grund des Stopps: wer bei Regen
+        // planmaessig hereinkommt, faehrt trotzdem auf Regenreifen hinaus - eine Mannschaft,
+        // die bei laufendem Regen Slicks aufzieht, weil der Stopp anders begruendet war,
+        // gibt es nicht. Damit erledigt ein Planstopp den Reifenwechsel gleich mit, und der
+        // Ghost braucht nicht zweimal herein.
+        const will = reifenPassend();
+        if (g.reifen !== will) {
+          log(garageLabel(car) + ': ' + reifenName(will) + 'reifen aufgezogen.', 'info');
+          g.reifen = will;
+          // Die Oberflaeche gleich mit, nicht erst im naechsten Takt: der Regler liest sie
+          // im selben Durchlauf weiter unten.
+          ghostOberflaecheSetzen(car);
+        }
         // Die vorhandene Anfahrrampe uebernimmt: sie faehrt das Ziel ueber 2,5 s hoch und hat
         // den Leseschwellen-Boden schon eingebaut. Ein eigener Hochlauf waere ein zweiter Ort
         // fuer dieselbe Rampe.
@@ -2879,7 +3035,11 @@
   // 1,3 loest es an der richtigen Stelle: der Abstandhalter sagt weiter "nicht kleben", die
   // Attacke sagt "du bist in Reichweite". Waehrend einer Attacke ist der Abstandhalter aus,
   // der Verfolger darf also heran - genau dafuer ist die Ausnahme dort.
-  const SPICE_ATTACK_RANGE = 1.3;
+  // let und nicht const, damit ein Prueflauf sie sweepen kann - sie und SPICE_GAP_MIN
+  // bestreiten dasselbe Band, und welches Paar taugt, ist eine Messung und keine Meinung.
+  let SPICE_ATTACK_RANGE = 1.3;
+  function attackRangeSetzen(v) { SPICE_ATTACK_RANGE = v; }
+  function attackRangeLesen() { return SPICE_ATTACK_RANGE; }
   // WIE OFT gewuerfelt wird. Vorher alle 4000 ms: bei Wuerze 0,4 ist die
   // Wahrscheinlichkeit 0,18 je Versuch, also eine Attacke pro 22 Sekunden durchgehenden
   // Klebens. Das liest sich nicht als Rennen, sondern als Kolonne.
@@ -3035,7 +3195,49 @@
   // WAEHREND EINER ATTACKE GILT ER NICHT. Sonst waere das Ueberholen weg, und das
   // funktioniert gerade - der Verfolger muss dichter heran duerfen als der, der nur
   // mitfaehrt. Das ist der ganze Unterschied zwischen Hinterherfahren und Angreifen.
-  const SPICE_GAP_MIN = 0.7;    // Kacheln, ab hier wird gelupft
+  // ---- DIE AUFLOESUNG SETZT DEN MINDESTABSTAND, NICHT DER GESCHMACK -----------------
+  //
+  // 0,7 Kacheln stand hier, und das war unerreichbar. Der Ghost kennt seinen Ort nur aus dem
+  // Kachelzaehler und einer GESCHAETZTEN Kachelphase; unter einer Kachel hat diese Angabe
+  // keine Auflaesung. Gemessen in der Rennsimulation gegen die wahre Bogenlaenge, 3512
+  // Abtastungen:
+  //
+  //     mittlerer Fehler   +0,368 Kacheln  (16 cm zu optimistisch)
+  //     Streuung            0,55 Kacheln   (23,6 cm)
+  //     und wenn der WAHRE Abstand unter einer Fahrzeuglaenge lag (276 Faelle):
+  //     gemeldet            1,000          - in JEDEM einzelnen Fall
+  //
+  // Zwei Autos hintereinander bei gleichem Tempo haben dieselbe Kachelphase. Der gemeldete
+  // Abstand ist dann die Differenz der KACHELZAEHLER, also eine ganze Zahl - waehrend der
+  // wahre Abstand irgendwo zwischen 0 und 43 cm liegt. Ein Mindestabstand von 0,7 Kacheln
+  // konnte deshalb nie greifen: gemeldet wurde 1,0, und 1,0 ist nicht kleiner als 0,7.
+  //
+  // Der Wert muss also UEBER der Auflaesung liegen, und das ist eine Ableitung und keine
+  // Vorliebe. 1,2 Kacheln sind 52 cm, also gut fuenf Fahrzeuglaengen - und bleiben unter der
+  // Angriffsreichweite von 1,3, damit ueberhaupt noch ueberholt wird.
+  // Als let und nicht const, damit eine Messreihe ihn durchfahren kann - der Wert ist eine
+  // Abwaegung zwischen Beruehrungen und dichtem Fahren, und die entscheidet eine Reihe und
+  // nicht ein Kommentar. Der Fahrbetrieb aendert ihn nicht.
+  let SPICE_GAP_MIN = 1.2;      // Kacheln, ab hier wird gelupft (nur noch Rueckfall)
+  // ---- DIE ZEITLUECKE IN SEKUNDEN --------------------------------------------------
+  //
+  // ABGELEITET UND NICHT GEWAEHLT, aus der Fahrzeuglaenge und dem Tempo. Ein Auto ist 9,5 cm
+  // lang (siehe AUTO_LANG_CM in 60-track.js), eine Kachel 43 cm. Ein Ghost bei Vorgabetempo
+  // braucht rund 400 ms je Kachel, also rund 90 ms je Autolaenge.
+  //
+  // 0,35 s sind damit knapp VIER Autolaengen - der Abstand, bei dem ein Auffahren noch
+  // abzufangen ist und bei dem zwei Autos auf dem Tisch erkennbar getrennt aussehen. Zwei
+  // Autolaengen waeren zu spaet: der Tempo-Regler braucht selbst rund 0,3 s, bis ein
+  // geaenderter Gaswunsch als Tempo ankommt.
+  //
+  // Der Zuschlag je Annaeherungsrate hat dieselbe Bauform wie vorher, nur in Sekunden: wer
+  // mit einer Kachel je Sekunde aufholt, braucht 0,3 s mehr Vorwarnung.
+  let SPICE_LUECKE_MIN_S = 0.35;
+  const SPICE_LUECKE_PER_CLOSING = 0.30;
+  function lueckeMinSetzen(v) { SPICE_LUECKE_MIN_S = v; }
+  function lueckeMinLesen() { return SPICE_LUECKE_MIN_S; }
+  function gapMinSetzen(v) { SPICE_GAP_MIN = v; }
+  function gapMinLesen() { return SPICE_GAP_MIN; }
   const SPICE_GAP_LIFT = 0.26;  // hoechster Tempoabzug bei Beruehrung
 
   // Fortschritt in Kacheln seit dem Start, mit Bruchteil. Absichtlich NICHT ueber den
@@ -3083,6 +3285,79 @@
     g.gapLast = gap; g.gapAt = now;
     g.naehern = (g.naehern || 0) * (1 - SPICE_GAP_GLATT) + roh * SPICE_GAP_GLATT;
     return g.naehern;
+  }
+
+  // ====================================================================================
+  // DIE ZEITLUECKE: EIN ABSTAND MIT AUFLOESUNG
+  // ====================================================================================
+  //
+  // GEMELDET: "Die Simulation sollte verhindern, dass die Autos sich dauernd rammen." Der
+  // Abstandhalter dafuer war da und wirkte nicht, und der Grund ist gemessen:
+  //
+  //     DER KACHELABSTAND HAT UNTERHALB EINER KACHEL KEINE WERTE. In 1517 Stichproben, in
+  //     denen der wahre Abstand unter einer Kachel lag - darunter 155, in denen er unter
+  //     einer AUTOLAENGE lag -, meldete ghostAhead() jedes Mal genau 1,00. Nicht 0, nicht
+  //     gebrochen: 1,00.
+  //
+  // Der Grund steht bei ghostProgress(): der Abstand ist die Differenz der Kachelzaehler
+  // plus eine geschaetzte Kachelphase, und zwei Autos mit gleichem Tempo haben dieselbe
+  // Phase - sie faellt heraus. Uebrig bleibt eine ganze Zahl, und die 0 verwirft
+  // ghostAhead().
+  //
+  // FOLGE: der Abstandhalter hob bei 43 cm genauso stark ab wie bei 0 cm. Er konnte den
+  // Unterschied nicht sehen. Der Sweep zeigt das auch von aussen - sechs Ghosts, 180 s:
+  //
+  //     Mindestabstand 0,7 (feuert nie)   80,6 Beruehrungen   56,7 Ueberholer je min
+  //     Mindestabstand 1,2                78,3               43,7
+  //     Mindestabstand 1,2 / Reichw. 2,2  65,3               33,0
+  //
+  // Beruehrungen und Ueberholmanoever bewegen sich ZUSAMMEN, und je Ueberholmanoever wird
+  // es sogar schlechter (1,42 -> 1,79 -> 1,98 Beruehrungen). Mit dieser Groesse ist das
+  // Rammen also nicht zu beheben, egal wie man die Schwelle stellt.
+  //
+  // ---- WAS AM TEPPICH WIRKLICH ZU MESSEN IST ----------------------------------------
+  //
+  // Das Auto meldet zwei Dinge: DASS es eine neue Kachel betreten hat (Byte 11 zaehlt) und
+  // WANN das war (der Zeitpunkt des Pakets). Damit gibt es eine Groesse mit echter
+  // Aufloesung, und es ist dieselbe, mit der im Rennsport gemessen wird:
+  //
+  //     Der Vorausfahrende hat Kachel T zum Zeitpunkt t1 betreten.
+  //     Ich betrete Kachel T zum Zeitpunkt t2.
+  //     Die Zeitluecke ist t2 - t1.
+  //
+  // Das ist eine Zeitnahme an einer Schleife, kein Schaetzwert - Millisekunden statt
+  // Kacheln, also Zentimeter statt halber Meter. Und sie braucht nichts, was nur die
+  // Simulation weiss: auf dem Teppich stehen beide Zeitpunkte genauso zur Verfuegung.
+  //
+  // Sie aktualisiert sich einmal je Kachel, also rund alle 400 ms. Das ist derselbe Takt,
+  // in dem sich der Kachelabstand auch aendert - es wird nichts langsamer, nur genauer.
+  function ghostKachelZeitNotieren(car) {
+    const g = car.ghost;
+    if (!g || g.tileIndex === null || g.tileIndex === undefined) return;
+    if (!g.kachelZeit) g.kachelZeit = [];
+    g.kachelZeit[g.tileIndex] = Date.now();
+  }
+
+  // Die Zeitluecke zum Vorausfahrenden, in Sekunden. null heisst "nicht messbar" - und das
+  // ist ein ehrliches Ergebnis und kein Fehler: in der ersten Runde hat der Vorausfahrende
+  // meine Kachel noch nicht mit einem Stempel versehen, und ohne zwei Zeitpunkte gibt es
+  // keine Differenz.
+  const LUECKE_MAX_S = 5;
+  function ghostZeitLuecke(car, ah) {
+    const g = car.ghost;
+    if (!ah || !ah.car || !ah.car.ghost || !g) return null;
+    const t = g.tileIndex;
+    if (t === null || t === undefined) return null;
+    const meine = g.kachelZeit ? g.kachelZeit[t] : undefined;
+    const seine = ah.car.ghost.kachelZeit ? ah.car.ghost.kachelZeit[t] : undefined;
+    if (meine === undefined || seine === undefined) return null;
+    const d = (meine - seine) / 1000;
+    // Nicht positiv heisst: sein Stempel ist neuer als meiner. Das kann vorkommen, wenn er
+    // eine ganze Runde vor mir liegt und die Kachel schon wieder betreten hat - dann ist die
+    // Differenz keine Luecke, sondern ein Rundenrest, und eine Zahl daraus zu machen waere
+    // geraten.
+    if (!(d > 0)) return null;
+    return d > LUECKE_MAX_S ? null : d;
   }
 
   // Tagesform fortschreiben. Begrenzter Zufallslauf: er haelt an, laeuft aber nicht weg.
@@ -3230,9 +3505,34 @@
     // unbegrenzt. Nicht waehrend einer Attacke: wer angreift, darf dichter heran, sonst gibt
     // es kein Ueberholen.
     const naehern = ghostClosing(car, ah ? ah.gap : null);
-    const noetig = SPICE_GAP_MIN + SPICE_GAP_PER_CLOSING * Math.max(0, naehern);
-    if (ghostCfg.wuerzeAbstand && ah && !g.attackUntil && ah.gap < noetig) {
-      f *= 1 - SPICE_GAP_LIFT * (1 - ah.gap / noetig);
+    let haeltAbstand = false;
+    // ---- ZUERST DIE ZEITLUECKE, DANN DER KACHELABSTAND ALS RUECKFALL ---------------
+    //
+    // Die Zeitluecke ist die Groesse mit Aufloesung (siehe ghostZeitLuecke). Sie ist aber
+    // nicht immer messbar - in der ersten Runde fehlt der Stempel des Vorausfahrenden -, und
+    // dann bleibt der Kachelabstand. Er ist grob, aber er ist besser als nichts, und "in der
+    // ersten Runde gilt kein Abstand" waere genau die stille Ausnahme, die man spaeter sucht.
+    const luecke = ghostZeitLuecke(car, ah);
+    g.zeitLuecke = luecke;                 // fuer die Messung und die Anzeige
+    if (ghostCfg.wuerzeAbstand && ah && !g.attackUntil && luecke !== null) {
+      // Die noetige Luecke waechst mit der Annaeherung: wer schnell aufholt, braucht mehr
+      // Vorwarnung. naehern ist in Kacheln je Sekunde; der Beitrag wird in Sekunden
+      // gerechnet, indem er mit derselben Kachelzeit skaliert, die die Luecke misst.
+      const noetigS = SPICE_LUECKE_MIN_S
+                    + SPICE_LUECKE_PER_CLOSING * Math.max(0, naehern);
+      if (luecke < noetigS) {
+        // DER ABHUB WAECHST JETZT WIRKLICH MIT DER NAEHE. Vorher war ah.gap immer 1,00 und
+        // noetig 1,2 - der Abhub also eine Konstante von 0,167 mal LIFT, bei 43 cm wie bei
+        // 0 cm. Mit der Zeitluecke geht er gegen den vollen Wert, wenn es eng wird.
+        f *= 1 - SPICE_GAP_LIFT * (1 - luecke / noetigS);
+        haeltAbstand = true;
+      }
+    } else if (ghostCfg.wuerzeAbstand && ah && !g.attackUntil) {
+      const noetig = SPICE_GAP_MIN + SPICE_GAP_PER_CLOSING * Math.max(0, naehern);
+      if (ah.gap < noetig) {
+        f *= 1 - SPICE_GAP_LIFT * (1 - ah.gap / noetig);
+        haeltAbstand = true;
+      }
     }
 
     // ---- 5. DAS GUMMIBAND IST HIER ENTFALLEN ---------------------------------------
@@ -3252,7 +3552,9 @@
       : g.passPhase === 'rein'
         ? (g.attackSide || 0) * Math.max(0, 1 - (now - g.passAt) / SPICE_PASS_TUCK_MS)
         : (g.attackSide || 0);
-    return { factor: f, attack: versatz, phase: g.passPhase || null };
+    // haeltAbstand geht mit hinaus, weil der Aufrufer den Vorrang entscheiden muss - siehe
+    // dort. Hier waere er falsch: das Feld zusammenzuhalten ist keine Wuerze.
+    return { factor: f, attack: versatz, phase: g.passPhase || null, haeltAbstand };
   }
 
   // ---- Die Ideallinie ----
@@ -3796,6 +4098,12 @@
     e.config.steerCalib = 1;
     e.config.fuelWeightEffect = 0;   // ghosts carry no fuel and take no damage for now
     e.config.tyreEffect = 0;
+    // UND DIE OBERFLAECHE, die bis hierher in dieser Liste gefehlt hat. Object.assign hat
+    // gripScale und aquaplaning des Spielers gerade mitkopiert, also die REIFENWAHL DES
+    // SPIELERS - siehe ghostOberflaecheSetzen(). Hier auf trocken; der erste Takt setzt sie
+    // dann aus dem eigenen Reifen des Ghosts.
+    e.config.gripScale = 1;
+    e.config.aquaplaning = 0;
     // Nach dem Kopieren neu kalibrieren: accelScale() haengt an topSpeedKmh, an der
     // Anfahrzeit und an den Gaengen, und die kommen jetzt vom Fahrer.
     if (typeof e.calibrateAccel === 'function') e.calibrateAccel();
@@ -3815,6 +4123,9 @@
                   lapStart: 0, offAtLapStart: 0,
                   // Ueberholsequenz und Spurmischung.
                   passPhase: null, passZiel: null, passSince: 0, passBlockUntil: 0,
+                  // Zeitluecke: je Kachelindex der Zeitpunkt des Uebertritts, und die
+                  // daraus gerechnete Luecke zum Vorausfahrenden in Sekunden.
+                  kachelZeit: [], zeitLuecke: null,
                   kurveMix: 0, naehern: 0,
                   // Ausweichen: wird vom Angreifer und vom pittenden Auto von AUSSEN
                   // geschrieben. Hier angelegt, weil beide Felder bisher nirgends angelegt
@@ -3822,8 +4133,14 @@
                   // ueber die Uhr. Ein Feld, das es manchmal gibt, ist schwerer zu lesen als
                   // eines, das immer da ist.
                   yieldSide: 0, yieldUntil: 0,
-                  // Boxenstopp: { phase, at, laenge } waehrend eines Stopps, sonst null.
+                  // Boxenstopp: { phase, at, laenge, grund } waehrend eines Stopps, sonst null.
                   pit: null, pitFaellig: 0,
+                  // Die aufgezogenen Reifen. Ein Ghost kommt auf dem Reifen heraus, der zum
+                  // Wetter passt - genau wie das Rennen des Spielers das Wetter vor der Ampel
+                  // setzt und dann resetTyres() ruft. Wer mitten im Regen aus der Garage
+                  // losfaehrt, faengt also nicht mit einem Nachteil an, den er nicht gewaehlt
+                  // hat.
+                  reifen: reifenPassend(),
                   // Der Startplatz, EINMAL nachgesehen und nicht je Takt: indexOf ueber die
                   // Aufstellung laeuft sonst 22 Mal je Sekunde je Auto. -1 heisst "steht
                   // nicht in der Liste", und dann gibt es keinen Versatz - eine Paritaet aus
@@ -4158,6 +4475,11 @@
     // Leitplanken-Modus. Steht die Sequenz, gilt nur noch sie.
     if (g.finish) { ghostFinishTick(car); return; }
     const e = g.engine, cfg = e.config;
+    // Die Oberflaeche aus Wetter und aufgezogenem Reifen, JEDEN TAKT. Nicht nur beim
+    // Wetterwechsel: wxRainLevel() ist eine Rampe ueber fuenf Sekunden, ein einmaliges
+    // Setzen wuerde also einen von hundert Zwischenwerten festhalten. Kostet zwei
+    // Multiplikationen.
+    ghostOberflaecheSetzen(car);
 
     // Follow the tile counter so we know where on the layout we are.
     if (car.tileCount !== null && car.tileCount !== g.lastCount) {
@@ -4210,6 +4532,10 @@
       // Und die Richtungsprobe: sie braucht nur den gemeldeten Code und das Layout, also
       // dieselbe Gelegenheit. Begruendung bei richtungPruefen().
       richtungPruefen(car);
+      // Den Zeitstempel dieser Kachel setzen - die Grundlage der Zeitluecke. NACH
+      // ortAbgleich(), damit g.tileIndex schon die neue Kachel ist: mit der alten waere
+      // jeder Stempel eine Kachel zu frueh, und der Abstand systematisch falsch.
+      ghostKachelZeitNotieren(car);
       // Die Lenkmessung zaehlt hier mit, wo Kachelwechsel und Rundenschluss ohnehin
       // durchlaufen. Ein eigener Zeitgeber waere ein zweiter Ort fuer dieselbe Zaehlung.
       lmTick(car, lmRundeVoll);
@@ -4224,14 +4550,45 @@
       // Start/Ziel kommt und dann anhalten soll, braucht eine Kachel zum Verzoegern - genau
       // so ist eine Boxeneinfahrt gebaut.
       const pk0 = pitKachel();
+      // ---- WARUM GEPITTET WIRD, und die Reifen schlagen den Plan --------------------
+      //
+      // Zwei Gruende, und der Unterschied ist nicht Kosmetik: der Plan wartet auf seine
+      // gezogene Runde, die falschen Reifen warten nicht. "Sobald wie moeglich" heisst hier
+      // die naechste Gelegenheit, und eine Gelegenheit ist die Kachel vor der Box - mehr
+      // gibt es nicht, denn die Box IST die Start/Ziel-Kachel.
+      //
+      // DIE WARTESCHLANGE IST GEWOLLT, nicht hingenommen. Bei einem Wetterwechsel haben
+      // ALLE Ghosts die falschen Reifen und wollen alle sofort herein, aber es pittet immer
+      // nur einer - so bestellt, und so ist auch eine Box gebaut: eine Mannschaft bedient
+      // ein Auto. Der Platz ist rund 7 s besetzt (1,5 s Bremsen + 5 s Standzeit + 1,2 s
+      // Ausfahrt), eine Runde dauert mehr - es kommt also im Schnitt einer je Runde herein,
+      // und ein Feld von vier ist nach vier Runden umgeruestet. Genau das Bild, das ein
+      // Regenschauer im Rennsport macht.
+      const reifenNot = !reifenPassen(car);
+      const planFaellig = (g.laps || 0) >= (g.pitFaellig || 0);
       if (pk0 >= 0 && g.tileIndex !== null
           && (g.tileIndex + 1) % currentTrackTiles.length === pk0
-          && (g.laps || 0) >= (g.pitFaellig || 0)
+          && (planFaellig || reifenNot)
           && pitErlaubt(car)) {
-        pitInhaber = car;
-        g.pit = { phase: 'anfahrt', at: now, laenge: Math.max(1, ghostCfg.pitSek) * 1000 };
-        log(garageLabel(car) + ': f\u00e4hrt in die Box, h\u00e4lt rechts am Rand.', 'info');
-        showHudToast(garageLabel(car).toUpperCase() + ' IN DIE BOX');
+        // EINEN PLATZ NEHMEN, den niedrigsten freien. pitErlaubt() hat gerade geprueft, dass
+        // einer da ist - der Aufruf hier ist derselbe und liefert deshalb keine -1.
+        const platz = pitPlatzSuchen(car);
+        pitPlatzBelegen(car, platz);
+        g.pit = { phase: 'anfahrt', at: now, laenge: Math.max(1, ghostCfg.pitSek) * 1000,
+                  // Der Platz, und damit die Kachel, auf der dieses Auto haelt.
+                  platz: platz,
+                  // Der Grund wird MITGEFUEHRT und nicht am Ende neu erfragt: bis der Stopp
+                  // vorbei ist, kann das Wetter schon wieder gewechselt haben, und dann
+                  // haette ein Reifenstopp rueckblickend keinen Grund gehabt.
+                  grund: reifenNot ? 'reifen' : 'plan' };
+        log(garageLabel(car) + ': f\u00e4hrt in die Box, Platz ' + (platz + 1)
+            + ' (Kachel ' + pitKachelFuer(platz) + '), h\u00e4lt rechts am Rand'
+            + (reifenNot ? ' \u2013 ' + reifenName(reifenPassend()) + 'reifen.' : '.'),
+            'info');
+        showHudToast(garageLabel(car).toUpperCase()
+                     + (reifenNot ? ' HOLT ' + reifenName(reifenPassend()).toUpperCase()
+                                    + 'REIFEN'
+                                  : ' IN DIE BOX'));
       }
     }
 
@@ -4467,24 +4824,38 @@
       // GESTAFFELT UEBER DAS GANZE FELD, nicht nur der Erste. Begruendung und Formel
       // stehen bei ghostFeldStaffel(); ein Rennen ist ausdruecklich nicht Bedingung, auch im
       // freien Fahren gibt es einen Ersten und einen Letzten.
-      target *= ghostFeldStaffel(car);
-
-      // ---- Regen kostet Tempo ---------------------------------------------------------
+      // ---- ABSTAND HALTEN SCHLAEGT FELD ZUSAMMENHALTEN --------------------------------
       //
-      // GEWAEHLT und nicht abgeleitet. Ein Ghost faehrt ohne Reifenmodell - er hat keine
-      // Mischung, keine Temperatur und keinen Reibkreis -, also gibt es hier nichts zu
-      // rechnen, woraus sich ein Faktor ergaebe. 0,85 liegt zwischen "man merkt es nicht"
-      // und "das Feld kriecht"; wer es anders will, dreht am Ghost-Tempo.
+      // GEMELDET: "die Autos rammen sich dauernd." Gemessen in der Rennsimulation, mit der
+      // Karosserie als Mass (8,84 x 3,54 Einheiten, also 95 x 38 mm): 7,7 Beruehrungen je
+      // Minute, unabhaengig von der Zahl der Autos, und der engste Laengsabstand exakt 0 cm -
+      // sie ueberlappten vollstaendig.
+      //
+      // DIE URSACHE IST EINE VORRANGFRAGE UND KEINE ZAHL. Zwei Bausteine zogen gegeneinander:
+      //
+      //   Abstand halten       lupft das Gas, wenn der Vorausfahrende zu nah ist
+      //   Feld zusammenhalten  beschleunigt den Letzten, damit das Feld nicht auseinanderfaellt
+      //
+      // Und die Reihenfolge entschied: die Staffel stand HINTER der Wuerze und multiplizierte
+      // ihren Abschlag einfach weg. Ein Auto, das gerade Abstand hielt, wurde also
+      // hochgezogen, weil es Letzter war - und fuhr auf.
+      //
+      // Wer Abstand haelt, darf nicht gleichzeitig aufholen muessen. Die Staffel wird deshalb
+      // auf 1 gedeckelt, solange der Abstandshalter greift: bremsen darf sie weiter (der
+      // Fuehrende soll warten), nur schieben nicht.
+      const staffel = ghostFeldStaffel(car);
+      target *= spice.haeltAbstand ? Math.min(1, staffel) : staffel;
+
+      // ---- Regen und die aufgezogenen Reifen kosten Tempo -----------------------------
+      //
+      // Hier stand `if (weather === 'rain') target *= GHOST_REGEN_TEMPO` - ein Schalter mit
+      // einer gewaehlten Zahl, weil ein Ghost kein Reifenmodell hatte. Jetzt hat er eines,
+      // und die Zahl kommt aus derselben Tabelle wie beim Spieler; die Ableitung steht bei
+      // REIFEN_GRIFF. Die zwei bekannten Faelle bleiben dabei bitgleich.
       //
       // Ausdruecklich MULTIPLIKATIV zum Kurvenabzug und nicht als zweiter Deckel: nass ist
       // eine Kurve langsamer als trocken, und beides zusammen ist mehr als jedes einzeln.
-      // OHNE typeof-WAECHTER, und das ist wichtig: `weather` ist ein let in 70-race.js, und
-      // typeof auf ein let in seiner temporalen Todeszone WIRFT - der Waechter wuerde also
-      // genau in dem Fall nicht helfen, fuer den man ihn hinschreibt, und dabei aussehen wie
-      // eine Absicherung. An dieser Falle hat dieses Projekt schon eine ganze IIFE verloren.
-      // Gebraucht wird er auch nicht: ghostTick laeuft aus einem Zeitgeber, also lange nach
-      // dem Aufbau.
-      if (weather === 'rain') target *= GHOST_REGEN_TEMPO;
+      target *= ghostReifenTempo(car);
       // Einfuehrungsrunde: alle rollen im Formationstempo, was ihr eigener Regler auch
       // sagt. Das ist NICHT das Boxentempo - siehe formationPace(): darunter liest das Auto
       // die Bahn nicht mehr.
@@ -4835,8 +5206,173 @@
   // GHOST_LINE_STEER: es ist ein Halten neben der Mitte und kein Ausweichmanoever, und mehr
   // waere auf der Schiene ohnehin nur ein Kampf gegen die Firmware.
   const GHOST_LANE_STEER = 0.16;
-  // Wieviel Tempo ein Ghost im Regen abgibt. Gewaehlt, siehe die Anwendungsstelle.
+  // Wieviel Tempo ein Ghost im Regen abgibt, MIT DEN RICHTIGEN REIFEN. Gewaehlt und
+  // abgenommen - deshalb bleibt die Zahl unberuehrt, siehe ghostReifenTempo().
   const GHOST_REGEN_TEMPO = 0.85;
+
+  // ====================================================================================
+  // REGENREIFEN FUER GHOSTS
+  // ====================================================================================
+  //
+  // BESTELLT: wenn es regnet, sollen Ghosts sobald wie moeglich pitten (und genauso beim
+  // Wechsel zurueck auf trocken), und solange sie die falschen Reifen haben, sollen sie
+  // staerker gedrosselt werden - wie das Spieler-Auto.
+  //
+  // ZWEI ZAHLEN, KEINE WAHL: der Kommentar an GHOST_REGEN_TEMPO stand bis hierher auf
+  // "Ein Ghost faehrt ohne Reifenmodell, also gibt es hier nichts zu rechnen". Mit Reifen
+  // gibt es das doch, und zwar aus der Tabelle, die das Spieler-Auto ohnehin benutzt
+  // (TYRE_MIX in 70-race.js):
+  //
+  //     trocken auf Slicks    griff 1.00     die Grundlinie
+  //     nass auf Regenreifen  nass  0.80
+  //     nass auf Slicks       nass  0.45     die falschen Reifen im Regen
+  //     trocken auf Regen     griff 0.88     die falschen Reifen im Trockenen
+  //
+  // Kurventempo geht mit der WURZEL des Griffs, nicht linear: v^2 = a*r, und a haengt am
+  // Griff. Also ist der Abzug fuer die falsche Wahl sqrt(falsch/richtig).
+  //
+  // WARUM ALS VERHAELTNIS UND NICHT ALS ABSOLUTER FAKTOR: sqrt(0.80) = 0,894 waere der
+  // abgeleitete Regenfaktor, und er liegt erfreulich nah an den abgenommenen 0,85 - aber
+  // nicht darauf. Wer die Ableitung absolut einsetzt, aendert damit still das Regentempo,
+  // das schon abgestimmt ist. Als Verhaeltnis angewandt bleiben die zwei bekannten Faelle
+  // (trocken/trocken und nass/Regen) BITGLEICH zu vorher, und neu ist nur der Fall, um den
+  // es geht. Ein Selbsttest rechnet genau das nach.
+  //
+  //     trocken + trocken    1.000            unveraendert
+  //     nass    + regen      0.850            unveraendert
+  //     nass    + trocken    0.850 * 0.750 = 0.637
+  //     trocken + regen      1.000 * 0.938 = 0.938
+  //
+  // DASS DER TROCKENFALL MILDE AUSFAELLT, ist keine Nachlaessigkeit, sondern die Aussage der
+  // Tabelle: sie kennt keine ueberhitzenden Regenreifen. In Wirklichkeit koernen Regenreifen
+  // auf trockener Bahn in wenigen Runden ab, und dann waere der Abzug groesser. Sichtbar
+  // wird der Fall hier trotzdem, aber ueber den Boxenstopp und nicht ueber die Rundenzeit -
+  // und der Stopp kostet 5 s, also mehr als eine halbe Runde auf einer kleinen Strecke.
+  //
+  // EIN UMSCHLAGPUNKT STECKT DARIN, und er ist gemessen und nicht gewollt: der Slick
+  // verliert mit der Naesse steil (1,00 -> 0,45), der Regenreifen flach (0,88 -> 0,80). Bei
+  // wenig Wasser ist der Slick also NOCH schneller. Gleichstand bei
+  //
+  //     1,00 - 0,55n = 0,88 - 0,08n   ->   n = 0,255   ->   Front bei 0,505
+  //
+  // also bei fast genau halber Regenfront (n ist das Quadrat der Front). Gemessen liefert
+  // die Sonde dort 0,9639 fuer Slicks gegen 0,9625 fuer Regenreifen - der Slick ist um 0,1
+  // Prozent vorn.
+  //
+  // DAS IST KEIN FEHLER, sondern der Grund, warum ein Reifenwechsel im Rennsport eine
+  // Entscheidung ist und keine Rechenaufgabe. Die Folge fuer den Ausloeser: die ersten
+  // Sekunden nach dem Wetterwechsel kostet der falsche Reifen praktisch nichts, und das
+  // erste Auto in der Warteschlange ist deshalb nicht so stark bevorzugt, wie die
+  // Endwerte vermuten lassen.
+  const REIFEN_GRIFF = { trocken: { dry: 1.00, rain: 0.45 },
+                         regen:   { dry: 0.88, rain: 0.80 } };
+
+  // Welche Reifen gehoeren zum aktuellen Wetter? EINE Stelle, weil die Frage an vier
+  // gestellt wird - Start, Ausloeser, Boxenausgang und Anzeige.
+  function reifenPassend() {
+    // OHNE typeof-WAECHTER auf `weather`: es ist ein let in 70-race.js, und typeof in der
+    // temporalen Todeszone WIRFT. Der Waechter half also genau im Fall nicht, fuer den man
+    // ihn hinschreibt. Gebraucht wird er nicht - alles hier laeuft aus Zeitgebern.
+    return weather === 'rain' ? 'regen' : 'trocken';
+  }
+
+  // ---- DARF DIESER GHOST UEBERHAUPT WECHSELN? --------------------------------------
+  //
+  // DER FALLSTRICK, DEN DAS ZUMACHT: wer die Ghost-Boxenstopps abschaltet und dann Regen
+  // bekommt, haette ein Feld, das dauerhaft mit 0,637 herumkriecht - ohne Ausweg, denn der
+  // einzige Weg zurueck ist ein Stopp, und den hat er gerade verboten. Ein Schalter, der
+  // eine Sache abschaltet und dabei eine zweite dauerhaft verschlechtert, ist eine Falle.
+  //
+  // Also: wo nicht gewechselt werden KANN, gibt es keine falschen Reifen. Damit faellt das
+  // Verhalten bei ausgeschaltetem Boxenstopp genau auf das zurueck, was vor diesem Feature
+  // da war - der flache Regenabzug von 0,85 -, und zwar bitgleich. Ein Selbsttest rechnet
+  // das nach.
+  //
+  // GEPRUEFT WERDEN NUR DIE DAUERHAFTEN SPERREN, nicht die vorübergehenden: eine gelbe
+  // Flagge oder ein belegter Boxenplatz gehen vorbei, und in der Zeit SOLL der Nachteil
+  // wirken - das ist der Sinn der Warteschlange. Dauerhaft sind die zwei Schalter.
+  function reifenWechselMoeglich(car) {
+    if (!ghostCfg.pitAn) return false;
+    const g = car && car.ghost;
+    const imRennen = raceState === 'racing' || raceState === 'finishing';
+    if (!imRennen && g && g.freeRun && !ghostCfg.pitFrei) return false;
+    return true;
+  }
+
+  // Der Reifen, der fuer die Rechnung GILT. Normalerweise der aufgezogene; wo nicht
+  // gewechselt werden kann, gilt der passende - siehe oben.
+  function reifenGefahren(car) {
+    const g = car && car.ghost;
+    if (!g) return 'trocken';
+    if (!reifenWechselMoeglich(car)) return reifenPassend();
+    return g.reifen || 'trocken';
+  }
+
+  function reifenPassen(car) {
+    return reifenGefahren(car) === reifenPassend();
+  }
+
+  // Der Anzeigename. Gross am Wortanfang, damit "Regenreifen aufgezogen" und "HOLT
+  // REGENREIFEN" beide aus einem Baustein kommen.
+  function reifenName(r) { return r === 'regen' ? 'Regen' : 'Trocken'; }
+
+  // Der Tempofaktor aus Wetter und Reifen. Er ERSETZT die alte Zeile
+  // `if (weather === 'rain') target *= GHOST_REGEN_TEMPO`.
+  //
+  // GEMISCHT UND NICHT GESCHALTET, und das ist der Punkt an "wie das Spieler-Auto": dort
+  // wandert der Griff ueber wxRainLevel() quadratisch zwischen der trockenen und der nassen
+  // Zeile (70-race.js, applyGrip). Ein Ghost, der im Moment des Wetterwechsels springt,
+  // waehrend der Spieler fuenf Sekunden lang nass wird, faehrt in einer anderen Welt.
+  // Dieselbe Rampe und dieselbe Quadratur - Wasser braucht Zeit, sich zu sammeln.
+  function ghostNassAnteil() {
+    const lvl = typeof wxRainLevel === 'function' ? wxRainLevel()
+              : (weather === 'rain' ? 1 : 0);
+    return lvl * lvl;
+  }
+
+  // NIMMT DAS AUTO, nicht den Ghost: der gefahrene Reifen haengt an den Schaltern und an
+  // g.freeRun, und beides liegt am Auto. Ein Ghost-Objekt allein reichte nicht.
+  function ghostReifenTempo(car) {
+    const reifen = reifenGefahren(car);
+    const z = REIFEN_GRIFF[reifen] || REIFEN_GRIFF.trocken;
+    const nass = ghostNassAnteil();
+    // Der Griff, den DIESER Reifen gerade hat, und der Griff, den der richtige haette.
+    const griff = z.dry + (z.rain - z.dry) * nass;
+    const soll = REIFEN_GRIFF[reifenPassend()] || REIFEN_GRIFF.trocken;
+    const griffSoll = soll.dry + (soll.rain - soll.dry) * nass;
+    // Die abgenommene Grundlinie: nass kostet 0,85, trocken nichts. Ueber dieselbe Rampe,
+    // damit auch dieser Teil nicht springt.
+    const basis = 1 + (GHOST_REGEN_TEMPO - 1) * nass;
+    // Und darauf das Verhaeltnis der Griffe. Bei passenden Reifen ist es genau 1, der
+    // bekannte Fall bleibt also unberuehrt.
+    return basis * Math.sqrt(Math.max(0.05, griff) / Math.max(1e-6, griffSoll));
+  }
+
+  // Die Oberflaeche im MOTOR des Ghosts, damit Bremsweg und Anfahren zur Reifenwahl passen.
+  //
+  // DAS BEHEBT AUCH EINEN STILLEN FEHLER, der vor dieser Bestellung schon da war:
+  // startGhost() kopiert mit Object.assign das ganze Konfigurationsobjekt des Spielers, und
+  // darin stehen gripScale und aquaplaning. Ein Ghost erbte also die REIFENWAHL DES SPIELERS
+  // im Moment seines Starts - wer mit Regenreifen im Trockenen losfuhr, gab den Ghosts
+  // seinen Nachteil mit -, und danach aenderte sie niemand mehr: ein Wetterwechsel im Rennen
+  // liess die Oberflaeche der Ghosts stehen, wo sie beim Start war.
+  //
+  // Ohne mischungWert(): das ist die Interpolation gegen den Mittelreifen, und sie liefert
+  // Staerke 0, wenn die Reifensimulation des SPIELERS aus ist. Nasser Asphalt ist aber
+  // Wetter und kein Verschleissmodell - dass ein Ghost im Regen laenger bremst, haengt nicht
+  // daran, ob der Spieler seine Reifen simuliert. Der Ausschalter fuer dieses Verhalten ist
+  // der Ghost-Boxenstopp-Schalter, nicht der Reifenregler des Spielers.
+  function ghostOberflaecheSetzen(car) {
+    const g = car && car.ghost;
+    if (!g || !g.engine) return;
+    const reifen = reifenGefahren(car);
+    const z = REIFEN_GRIFF[reifen] || REIFEN_GRIFF.trocken;
+    const nass = ghostNassAnteil();
+    g.engine.config.gripScale = z.dry + (z.rain - z.dry) * nass;
+    // Nur Slicks schwimmen auf; Regenreifen sind geschnitten, um Wasser wegzufuehren -
+    // dieselbe Aussage wie beim Spieler (TYRE_MIX .aqua).
+    g.engine.config.aquaplaning = reifen === 'regen' ? 0 : nass;
+  }
 
   // ---- Nah heisst in SEKUNDEN und nicht in Kacheln --------------------------------
   //

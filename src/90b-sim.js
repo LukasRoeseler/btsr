@@ -171,6 +171,11 @@
       karteSchluessel: null,
       karteGeo: null,
       fertig: 0,
+      // Beruehrungen: Zahl der Flanken, aufsummierte Dauer, engster Abstand.
+      kontakte: 0, kontaktMs: 0, kontaktEngst: Infinity,
+      kontaktAn: {}, kontaktSeit: {},
+      // rangSeite: je Paar die letzte GESICHERTE Reihenfolge, siehe die Hysterese.
+      ueberholt: 0, rangSeite: null,
     };
 
     for (let i = 0; i < anzahl; i++) {
@@ -179,6 +184,8 @@
       simState.autos.push({
         car, s: 0, laps: 0, kachelZuvor: null, zaehler: 0,
         rundenStart: uhrStart, zeiten: [], platz: i + 1,
+        // durch: hat dieses Auto die Renndistanz erreicht? Einmal, nicht je Runde.
+        durch: false,
       });
     }
     // Erst NACH dem Fuellen der Garage starten: startGhost() verteilt die Sendetakte ueber
@@ -293,7 +300,19 @@
           a.laps++;
           a.zeiten.push(st.uhr - a.rundenStart);
           a.rundenStart = st.uhr;
-          if (a.laps >= st.runden) st.fertig++;
+          // ---- EINMAL JE AUTO, NICHT EINMAL JE RUNDE ------------------------------
+          //
+          // Hier stand `if (a.laps >= st.runden) st.fertig++;`. Die Bedingung bleibt wahr,
+          // sobald ein Auto durch ist - der Zaehler stieg also bei JEDER weiteren Runde
+          // dieses Autos weiter. Und simSchritt() beendet die Simulation bei
+          // `fertig >= autos.length`: ein einzelnes Auto, das vier Runden ueber dem Ziel
+          // liegt, hat damit ein Rennen beendet, in dem die anderen noch fahren.
+          //
+          // GEFUNDEN BEIM HINSEHEN, nicht durch einen Test: die Zeittafel zeigte fertig 3
+          // bei vier Autos mit laps 1, und diese Zahlen passen nur zusammen, wenn derselbe
+          // Wagen mehrfach gezaehlt wird. Ein eigenes Flag je Auto ist die Aussage, die
+          // gemeint war - "dieses Auto ist durch" ist eine Eigenschaft des Autos.
+          if (a.laps >= st.runden && !a.durch) { a.durch = true; st.fertig++; }
         }
         const ort = simOrtAus(st.bahn, a.s);
         a.kachel = ort.kachel;
@@ -314,10 +333,121 @@
     } finally {
       Date.now = echtNow;
     }
+    // NACH dem Bewegen und AUSSERHALB der gefaelschten Uhr: beide Messungen lesen nur
+    // Orte und brauchen Date.now nicht.
+    simKontakteTick();
+    simUeberholTick();
   }
 
   // Der Zustand fuer Prueflaeufe. Absichtlich schmal: Tempo, Weg, Runden - die Groessen, an
   // denen sich entscheidet, ob ein Rennen laeuft oder nur eine Uhr tickt.
+  // ====================================================================================
+  // BERUEHRUNGEN MESSEN
+  // ====================================================================================
+  //
+  // BESTELLT: "Die Simulation sollte verhindern, dass die Autos sich dauernd rammen - das
+  // werden wir dann auch sehen." Der zweite Halbsatz kommt zuerst: ohne eine Zahl ist
+  // "dauernd" ein Gefuehl, und eine Verbesserung ohne Vorher-Wert ist eine Behauptung.
+  //
+  // WARUM DAS HIER GEHT UND AM TEPPICH NICHT: die Simulation kennt den Ort beider Autos
+  // exakt - a.s ist die Bogenlaenge auf der Bahn, in Zeichnungseinheiten. Am echten Auto
+  // gibt es das nicht; dort zaehlt es Kacheln und meldet seine Querlage gar nicht. Diese
+  // Messung ist deshalb ausdruecklich eine Aussage UEBER DAS MODELL, nicht ueber den
+  // Teppich - aber das Modell ist genau das, was die Ghost-Logik auch fahren wuerde.
+  //
+  // Die Karosserie ist 8,84 x 3,54 Einheiten (95 x 38 mm, siehe 60-track.js). Zwei Autos
+  // beruehren sich, wenn BEIDE Abstaende darunter liegen - laengs und quer. Der laengs
+  // gemessene Abstand geht ueber die Naht, deshalb modulo Rundenlaenge.
+  //
+  // GEZAEHLT WIRD DIE FLANKE, nicht der Takt: eine Beruehrung, die zwei Sekunden anhaelt,
+  // ist eine Beruehrung und nicht vierundvierzig. SIM_KONTAKT_SPERRE_MS ist dieselbe
+  // Sperrzeit, die der Crash-Detektor des Spielers benutzt.
+  const SIM_KONTAKT_SPERRE_MS = 1000;
+
+  function simQuerEinheiten(car) {
+    // Dieselbe Groesse, die die Karte zeichnet: der Lenkbefehl, umgedreht auf die
+    // Normalenrichtung, mal der halben Bahnbreite. Gemessen wird die Querlage nicht - was
+    // hier verglichen wird, ist die ANFORDERUNG, und die ist das, was die App geschickt hat.
+    const q = querSollAlsLage(car.ghost && car.ghost.querSoll);
+    return Math.max(-1, Math.min(1, q || 0)) * TRACK_HALF_W;
+  }
+
+  // ---- UEBERHOLMANOEVER ZAEHLEN ----------------------------------------------------
+  //
+  // WARUM DAS DAZUGEHOERT: der Abstandhalter und das Ueberholmanoever bestreiten dasselbe
+  // Band. Wer den Mindestabstand hochsetzt, um Beruehrungen zu vermeiden, kann damit das
+  // Ueberholen abschalten - und wuerde es nicht merken, weil nur die Beruehrungen gezaehlt
+  // wurden. Eine Zahl allein macht jede Verbesserung beweisbar und jede Verschlechterung
+  // unsichtbar.
+  //
+  // GEZAEHLT WIRD DIE RANGAENDERUNG und nicht der Angriffsversuch: ob ein Auto
+  // ueberholt WORDEN ist, steht in der Reihenfolge, und die ist unbestechlich. Ein
+  // gezaehlter "Versuch" waere die Absicht der Logik, nicht ihr Ergebnis.
+  //
+  // Der Fortschritt ist Runden mal Rundenlaenge plus Bogenlaenge - dieselbe Groesse, nach
+  // der die Zeittafel sortiert.
+  function simUeberholTick() {
+    const st = simState;
+    if (!st || st.autos.length < 2) return;
+    const runde = st.bahn.runde || 1;
+    const fort = st.autos.map((a) => (a.laps || 0) * runde + a.s);
+    // ---- HYSTERESE, NICHT ZWEI SCHWELLEN AUF EINMAL ------------------------------
+    //
+    // DER FEHLER, DEN DAS BEHEBT, war in dieser Messung: die erste Fassung zaehlte einen
+    // Vorzeichenwechsel nur, wenn der Abstand VOR und NACH dem Takt ueber einer Autolaenge
+    // lag. Gemeint war "kein Zittern zaehlen" - gemessen wurde damit "kein Ueberholmanoever
+    // zaehlen", denn beim Vorbeifahren sind die Autos naturgemaess naeher als eine
+    // Autolaenge. Der Zaehler meldete in 120 s vier Autos genau NULL Ueberholmanoever, und
+    // ich habe die Null erst dem Abstandhalter zugeschrieben und drei Sweeps darauf gebaut.
+    //
+    // Richtig ist eine Hysterese: das Vorzeichen gilt erst als GESICHERT, wenn die Autos
+    // eine Autolaenge auseinander sind. Gezaehlt wird, wenn sich das gesicherte Vorzeichen
+    // aendert - also wenn einer erst dahinter und dann davor lag, jeweils mit Abstand.
+    // Was dazwischen passiert, Rad an Rad, aendert nichts.
+    if (!st.rangSeite) st.rangSeite = {};
+    for (let i = 0; i < fort.length; i++) {
+      for (let j = i + 1; j < fort.length; j++) {
+        const d = fort[i] - fort[j];
+        if (Math.abs(d) <= AUTO_LANG) continue;      // zu nah, keine Aussage
+        const seite = d > 0 ? 1 : -1;
+        const key = i + ':' + j;
+        const vorher = st.rangSeite[key];
+        if (vorher !== undefined && vorher !== seite) st.ueberholt++;
+        st.rangSeite[key] = seite;
+      }
+    }
+  }
+
+  function simKontakteTick() {
+    const st = simState;
+    if (!st || st.autos.length < 2) return;
+    const runde = st.bahn.runde || 1;
+    for (let i = 0; i < st.autos.length; i++) {
+      for (let j = i + 1; j < st.autos.length; j++) {
+        const a = st.autos[i], b = st.autos[j];
+        let dl = Math.abs(a.s - b.s) % runde;
+        if (dl > runde / 2) dl = runde - dl;          // ueber die Naht
+        const dq = Math.abs(simQuerEinheiten(a.car) - simQuerEinheiten(b.car));
+        const beruehrt = dl < AUTO_LANG && dq < AUTO_BREIT;
+        const key = i + ':' + j;
+        st.kontaktAn = st.kontaktAn || {};
+        st.kontaktSeit = st.kontaktSeit || {};
+        if (beruehrt) {
+          if (!st.kontaktAn[key] && st.uhr - (st.kontaktSeit[key] || -1e9) > SIM_KONTAKT_SPERRE_MS) {
+            st.kontakte++;
+            st.kontaktSeit[key] = st.uhr;
+            // Die engste gemessene Lage mitfuehren - sie sagt, WIE dicht es war.
+            if (dl < st.kontaktEngst) st.kontaktEngst = dl;
+          }
+          st.kontaktAn[key] = true;
+          st.kontaktMs += SIM_TAKT_MS;
+        } else {
+          st.kontaktAn[key] = false;
+        }
+      }
+    }
+  }
+
   function simZustand() {
     const st = simState;
     if (!st) return null;
@@ -325,6 +455,37 @@
       uhrMs: st.uhr - st.beginn,
       runde: st.bahn.runde,
       fertig: st.fertig,
+      // Der GEMELDETE Abstand gegen den WAHREN, je Auto. Der Ghost sieht nur den
+      // gemeldeten (aus Kachelzaehler und geschaetzter Kachelphase); der wahre steht hier
+      // aus a.s zur Verfuegung. Ohne diesen Vergleich ist nicht entscheidbar, ob eine
+      // Beruehrung an der Regel oder an ihrer Messung liegt.
+      abstand: st.autos.map((a) => {
+        const ah = ghostAhead(a.car);
+        let wahr = null;
+        if (ah && ah.car) {
+          const b = st.autos.find((x) => x.car === ah.car);
+          if (b) {
+            const runde = st.bahn.runde || 1;
+            let d = (b.s - a.s) % runde;
+            if (d < 0) d += runde;
+            wahr = +(d / TRACK_TILE_CM / TRACK_UNITS_PER_CM).toFixed(3);   // in Kacheln
+          }
+        }
+        // Und die ZEITLUECKE daneben. Sie ist die Groesse, mit der der Abstandhalter
+        // seit v0.5.47 arbeitet, und der Sinn dieser Zeile ist der Vergleich: `gemeldet`
+        // steht bei nahen Autos immer auf 1,00, `luecke` hat Millisekunden.
+        const lk = a.car.ghost ? a.car.ghost.zeitLuecke : null;
+        return { gemeldet: ah ? +ah.gap.toFixed(3) : null, wahr,
+                 luecke: lk === null || lk === undefined ? null : +lk.toFixed(3) };
+      }),
+      // Beruehrungen, damit "sie rammen sich dauernd" eine Zahl bekommt.
+      kontakte: st.kontakte,
+      kontaktMs: st.kontaktMs,
+      kontaktEngstCm: isFinite(st.kontaktEngst)
+        ? +(st.kontaktEngst / TRACK_UNITS_PER_CM).toFixed(1) : null,
+      // Ueberholmanoever, damit "weniger Beruehrungen" nicht heimlich "kein Rennen mehr"
+      // bedeutet.
+      ueberholt: st.ueberholt,
       autos: st.autos.map((a) => ({
         name: a.car.alias,
         kmh: a.car.ghost && a.car.ghost.engine ? a.car.ghost.engine.state.speedKmh : null,

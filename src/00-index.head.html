@@ -7095,13 +7095,16 @@
           <small>Ein Ghost f&auml;hrt auf der Start/Ziel-Kachel rechts an den Rand, bleibt
           ein paar Sekunden stehen und f&auml;hrt wieder los. Die Anfahrt beginnt schon auf
           der Kachel davor, im Formationstempo &ndash; ein Auto, das mit Renntempo &uuml;ber
-          die Linie kommt, braucht eine Kachel zum Verz&ouml;gern. Es pittet immer nur einer;
-          wer gleichzeitig f&auml;llig ist, wartet, bis die Box frei ist &ndash; nicht
-          genau eine Runde. Gemessen in der Rennsimulation ist die Box mit den
-          Vorgabewerten 28&nbsp;% der Zeit belegt (vier Ghosts) bis 31&nbsp;% (sechs).
-          Mit einem engen Intervall s&auml;ttigt sie: bei 2 bis 4&nbsp;Runden und sechs
-          Ghosts waren es 70&nbsp;%, und dann kommt jeder sp&auml;ter dran als er
-          f&auml;llig w&auml;re.
+          die Linie kommt, braucht eine Kachel zum Verz&ouml;gern. Es gibt vier Boxen hintereinander:
+          Platz 1 auf der Start/Ziel-Kachel, Platz 2 eine Kachel sp&auml;ter und so
+          weiter. Wer gleichzeitig f&auml;llig ist, nimmt den n&auml;chsten freien und h&auml;lt
+          eine Kachel dahinter; wer als F&uuml;nfter kommt, wartet, bis eine frei wird.
+          Auf dem Weg zur eigenen Box f&auml;hrt er am Gegenrand vorbei &ndash; sonst
+          w&uuml;rde er dem Stehenden ins Heck fahren. Gemessen bei einem Wetterwechsel
+          mit sechs Ghosts: vier stehen gleichzeitig, keine Doppelbelegung, und in
+          555 Takten Vorbeifahrt kein einziger Takt mit rechter Anforderung. Vier
+          Kacheln sind 1,72&nbsp;m &ndash; mehr Boxen w&uuml;rden auf einem kleinen Layout
+          einen merklichen Teil der Bahn f&uuml;llen.
           <br>Die anderen weichen auf der Boxenkachel nach links aus, und ihre Querlage ist
           dort nach rechts gesperrt &ndash; das Ausweichen allein w&auml;re nur die weiche
           H&auml;lfte, die Sperre ist die Zusage. Dein eigenes Auto ist nicht steuerbar; es
@@ -7109,7 +7112,8 @@
           <br>Was der Stopp nicht kann: wissen, wo der Rand ist. Das Auto meldet seine
           Querlage nicht, voller Ausschlag ist ein Befehl und keine Messung. Die Zusage ist
           nicht die Randlage, sondern dass die anderen auf der anderen Seite
-          sind.</small></div>
+          sind.
+          <br>Regenreifen: setzt Regen ein, kommt jeder Ghost so früh wie möglich herein und rüstet um &ndash; und beim Wechsel zurück auf trocken genauso. Solange die falschen Reifen drauf sind, fährt er langsamer: 0,64 gegen 0,85 mit Regenreifen im Regen, abgeleitet aus derselben Grifftabelle, die dein Auto benutzt. Bei leichtem Regen ist der Slick noch vorn &ndash; der Nachteil kommt mit dem Wasser, nicht mit der Meldung. Ist dieser Schalter aus, können Ghosts keine falschen Reifen haben, sonst kröchen sie nach dem ersten Regen ohne Ausweg.</small></div>
         <label class="tgl"><input type="checkbox" id="ghost-pit" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Ghost: Boxenstopp im freien Fahren
           <span class="wip-tag">experimentell</span>
@@ -7774,7 +7778,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.5.46</span></span>
+    <span class="foot-ver">v<span id="app-version">0.5.47</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine

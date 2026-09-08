@@ -3232,20 +3232,58 @@
       const f = g.tempo.filter((x) => isFinite(x)).slice(-30);
       return f.reduce((s, x) => s + x, 0) / Math.max(1, f.length);
     };
-    let trocken = 0, nass = 0;
+    const merkF = typeof wxFront === 'undefined' ? null : wxFront;
+    let trocken = 0, nass = 0, nassGleich = 0;
     try {
+      // ---- DIE FRONT MUSS DURCHGEZOGEN WERDEN ------------------------------------
+      //
+      // WARUM DAS SEIT v0.5.47 NOETIG IST: der Regenabzug hing an `weather === 'rain'`,
+      // einem Schalter. Jetzt haengt er an wxRainLevel(), der Rampe - genau wie der Griff
+      // des Spieler-Autos, und das war der Sinn der Aenderung: ein Ghost, der im Moment der
+      // Meldung springt, waehrend der Spieler fuenf Sekunden lang nass wird, faehrt in einer
+      // anderen Welt.
+      //
+      // setWeather() setzt aber nur das ZIEL der Rampe; den Weg macht wxTick in
+      // 80-ms-Schritten. Dieser Test misst sofort danach, sah also Naesse 0 und meldete
+      // Anteil 0,989 - "der Regen kostet nichts". Der Befund war echt und die Ursache war
+      // dieser Test.
+      //
+      // wxSet zieht sie durch. Damit ist zugleich die RAMPE geprueft: unten steht, dass es
+      // bei Ziel gesetzt und Front noch draussen NICHT langsamer sein darf.
       setWeather('dry');
+      if (OMEGA_TEST.wxSet) OMEGA_TEST.wxSet(-1);
       trocken = await mittel();
       setWeather('rain');
+      // Erst OHNE die Front: das Wetter ist gemeldet, das Wasser noch nicht da.
+      if (OMEGA_TEST.wxSet) OMEGA_TEST.wxSet(-1);
+      nassGleich = await mittel();
+      // Und dann mit ihr.
+      if (OMEGA_TEST.wxSet) OMEGA_TEST.wxSet(0);
       nass = await mittel();
-    } finally { setWeather(merk); }
+    } finally {
+      setWeather(merk);
+      if (merkF !== null && OMEGA_TEST.wxSet) OMEGA_TEST.wxSet(merkF);
+    }
     const anteil = trocken > 0 ? nass / trocken : 0;
+    const anteilGleich = trocken > 0 ? nassGleich / trocken : 0;
+    const schlecht = [];
     // Der Faktor ist 0,85; die Toleranz laesst dem Tempo-Regler Luft, verlangt aber einen
     // deutlichen Unterschied - "irgendwie langsamer" wuerde auch ein Rauschen erfuellen.
-    const ok = anteil > 0.75 && anteil < 0.95;
-    return { ok, mass: 'trocken ' + (trocken * 100).toFixed(1) + ' %, nass '
-                 + (nass * 100).toFixed(1) + ' % - Anteil ' + anteil.toFixed(3)
-                 + (ok ? '' : ' || erwartet zwischen 0,75 und 0,95') };
+    if (!(anteil > 0.75 && anteil < 0.95)) {
+      schlecht.push('mit Wasser Anteil ' + anteil.toFixed(3)
+                    + ', erwartet zwischen 0,75 und 0,95');
+    }
+    // UND DIE RAMPE: gemeldet, aber noch trocken heisst noch kein Abzug. Ohne diese Zeile
+    // waere der Test auch mit dem alten Schalter gruen, und die Aenderung ungeprueft.
+    if (!(anteilGleich > 0.95)) {
+      schlecht.push('vor dem Wasser schon ' + anteilGleich.toFixed(3) + ' - die Rampe fehlt');
+    }
+    return { ok: !schlecht.length,
+             mass: 'trocken ' + (trocken * 100).toFixed(1) + ' %, gemeldet aber trocken '
+                 + (nassGleich * 100).toFixed(1) + ' % (' + anteilGleich.toFixed(3)
+                 + '), mit Wasser ' + (nass * 100).toFixed(1) + ' % ('
+                 + anteil.toFixed(3) + ')'
+                 + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
   });
 
   // ---- Vier Autos nebeneinander brauchen vier Spuren ----
@@ -3395,6 +3433,38 @@
                  + (schlecht.length ? ' || ' + schlecht.join('; ') : ' | beide symmetrisch') };
   });
 
+  // ---- Die Simulationsbedienung merken und zurueckgeben ----
+  //
+  // DAS LECK, DAS DAS BEHEBT: zwei Pruefungen stellten sim-ghosts, sim-laps und sim-fast um
+  // und gaben sie nicht zurueck. sim-fast blieb danach gesetzt, und JEDE spaetere Simulation
+  // lief mit doppelter Geschwindigkeit - unsichtbar, weil die Rundenzeiten dieselben bleiben
+  // (die kommen aus der eigenen Uhr der Simulation).
+  //
+  // Gekostet hat es eine Messung: Beruehrungen je Minute kamen um den Faktor zwei zu niedrig
+  // heraus, und ich habe die Zahl zuerst geglaubt. Ein Prueflauf, der Bedienelemente
+  // umstellt und liegen laesst, verfaelscht alles, was danach kommt - auch von Hand.
+  //
+  // Als Helfer und nicht als zwei Abschriften: eine dritte Pruefung wird es sonst auch
+  // vergessen.
+  const SIM_UI = ['sim-ghosts', 'sim-laps', 'sim-fast'];
+  function simUiMerken() {
+    const m = {};
+    for (const id of SIM_UI) {
+      const e = $(id);
+      if (e) m[id] = e.type === 'checkbox' ? e.checked : e.value;
+    }
+    return m;
+  }
+  function simUiZurueck(m) {
+    if (!m) return;
+    for (const id of SIM_UI) {
+      const e = $(id);
+      if (e && m[id] !== undefined) {
+        if (e.type === 'checkbox') e.checked = m[id]; else e.value = m[id];
+      }
+    }
+  }
+
   // ---- Die Rennsimulation faehrt wirklich ----
   //
   // BESTELLT WAR EIN RENNEN, DAS ABLAEUFT - "keine Ergebnisse simulieren, sondern das Rennen,
@@ -3419,6 +3489,7 @@
     const schlecht = [];
     const merkTiles = currentTrackTiles;
     const merkGarage = garage.slice();
+    let merkUi = null;
     // Eine ATTRAPPE in der Garage: nur so ist pruefbar, dass die Simulation sie ausraeumt
     // UND vollstaendig zurueckgibt. Ohne einen Eintrag darin waere das Wiederherstellen
     // trivialerweise richtig.
@@ -3429,6 +3500,7 @@
       currentTrackTiles = codeToTrack('SG2H2G2R2G2H2G2R2').tiles;
       garage.push(zeuge);
       const setzen = (id, v) => { const e = $(id); if (e) { if (e.type === 'checkbox') e.checked = v; else e.value = v; } };
+      merkUi = simUiMerken();
       setzen('sim-ghosts', '4'); setzen('sim-laps', '5'); setzen('sim-fast', false);
       simStart();
       if (!simAn()) return { ok: false, mass: 'Simulation startete nicht' };
@@ -3464,8 +3536,14 @@
       }
       // Die Karte und die Tafel muessen bestueckt sein - man soll ja zusehen.
       const karte = $('sim-karte');
-      const punkte = karte ? karte.querySelectorAll('circle').length : 0;
-      if (punkte < 4) schlecht.push('nur ' + punkte + ' Punkte auf der Karte');
+      // SEIT v0.5.47 EINE GRUPPE JE AUTO, kein Kreis mehr: das Auto ist ein Rechteck mit
+      // Spoiler, gedreht in Fahrtrichtung. Diese Zeile suchte weiter nach <circle> und
+      // meldete "nur 0 Punkte auf der Karte", obwohl die Karte voll war.
+      const punkte = karte
+        ? [...karte.querySelectorAll('g.karte-autos > g')]
+            .filter((g) => g.getAttribute('visibility') !== 'hidden').length
+        : 0;
+      if (punkte < 4) schlecht.push('nur ' + punkte + ' Autos auf der Karte');
       const zeilen = $('sim-tafel') ? $('sim-tafel').querySelectorAll('tbody tr').length : 0;
       if (zeilen !== 4) schlecht.push(zeilen + ' Zeilen in der Zeittafel statt 4');
       simStop('Pruefung');
@@ -3491,6 +3569,7 @@
         schlecht.push('Date.now ist noch gefaelscht');
         Date.now = echtNowVorher;
       }
+      simUiZurueck(merkUi);
       const i = garage.indexOf(zeuge);
       if (i < 0) schlecht.push('die Garage kam nicht zurueck');
       else garage.splice(i, 1);
@@ -3541,12 +3620,14 @@
     const merkTiles = currentTrackTiles;
     const merkGarage = garage.slice();
     const echtNowVorher = Date.now;
+    let merkUi = null;
     let letzte = null, wider = 0, minKmh = null;
     try {
       // Die gemeldete Strecke, unveraendert.
       currentTrackTiles = codeToTrack('SR3GLR2GR2G2').tiles;
       lineCache = null;
       const setzen = (id, v) => { const e = $(id); if (e) { if (e.type === 'checkbox') e.checked = v; else e.value = v; } };
+      merkUi = simUiMerken();
       setzen('sim-ghosts', '4'); setzen('sim-laps', '5'); setzen('sim-fast', false);
       simStart();
       if (!simAn()) return { ok: false, mass: 'Simulation startete nicht' };
@@ -3584,6 +3665,7 @@
         schlecht.push('Date.now ist noch gefaelscht');
         Date.now = echtNowVorher;
       }
+      simUiZurueck(merkUi);
       garage.splice(0, garage.length);
       for (const c of merkGarage) garage.push(c);
       currentTrackTiles = merkTiles;
@@ -4911,17 +4993,57 @@
     try {
       ghostCfg.wuerzeUeberholen = true;   // ab Werk an, auf Wunsch
       r = OMEGA_TEST.ghostPassRates();
-      // 1. Die Reichweite MUSS ueber dem Mindestabstand liegen. Sonst bestreiten die zwei
-      //    Regeln dasselbe Band, und der Abstandhalter gewinnt - er wirkt jeden Takt, die
-      //    Attacke nur beim Wuerfeln.
-      if (!(r.reichweite > r.abstandMin)) {
-        schlecht.push('Reichweite ' + r.reichweite + ' nicht ueber Mindestabstand '
-                      + r.abstandMin);
+      // ---- DAS ALTE KRITERIUM WAR EIN FENSTER IN KACHELN, UND DAS IST MESSBAR LEER --
+      //
+      // Hier stand: die Reichweite muss ueber dem Mindestabstand liegen, und das Fenster
+      // dazwischen mindestens 0,4 Kacheln breit sein - sonst bestritten beide Regeln
+      // dasselbe Band. Der Gedanke ist richtig, das Mass ist es nicht, und das ist gemessen:
+      //
+      //     Der GEMELDETE Abstand hat unterhalb einer Kachel keine Zwischenwerte. In 1517
+      //     Stichproben, in denen der wahre Abstand unter einer Kachel lag - darunter 155,
+      //     in denen er unter einer Autolaenge lag -, war der gemeldete Abstand JEDES MAL
+      //     genau 1,00. Nicht 0, nicht gebrochen: 1,00.
+      //
+      // Der Grund steht bei ghostProgress(): der Abstand ist die Differenz der
+      // Kachelzaehler plus eine GESCHAETZTE Kachelphase, und zwei Autos mit gleichem Tempo
+      // haben dieselbe Phase - sie faellt heraus. Uebrig bleibt eine ganze Zahl, und
+      // ghostAhead() verwirft die 0.
+      //
+      // Ein Fenster von 0,1 oder 0,4 Kacheln macht deshalb KEINEN Unterschied: es liegt
+      // zwischen 1,00 und 2,00, und dort landet nie ein Wert. Was zaehlt, ist allein, welche
+      // ganzen Zahlen jede Schwelle einfaengt.
+      //
+      // Und das Sweep-Ergebnis widerspricht dem alten Kriterium direkt (vier Ghosts,
+      // 120 s, Beruehrungen und Ueberholmanoever je Minute):
+      //
+      //     Mindestabstand 0,7 / Reichweite 1,3     40,1 Kontakte    16,0 Ueberholer
+      //     Mindestabstand 1,0 / Reichweite 1,3     33,1             16,5
+      //     Mindestabstand 1,2 / Reichweite 1,3     29,1             19,0   <- beides best
+      //     Mindestabstand 1,2 / Reichweite 2,2     34,6             23,6
+      //     Mindestabstand 1,6 / Reichweite 2,2     36,1             19,5
+      //
+      // Das gewaehlte Paar bestreitet dasselbe Band (Fenster 0,1) und ist trotzdem auf
+      // BEIDEN Achsen das beste. Ein Fenster zu erzwingen wuerde also messbar
+      // verschlechtern, um ein Kriterium zu erfuellen, das die Messung widerlegt hat.
+      //
+      // Geprueft wird jetzt das, was wirken kann:
+      //
+      // 1. BEIDE Schwellen muessen ueber 1,0 liegen. Darunter feuern sie nie, weil der
+      //    gemeldete Abstand bei nahen Autos nicht unter 1,00 geht. Genau das war der
+      //    Fehler des alten Mindestabstands 0,7: ein Regler, der nie greift.
+      if (!(r.abstandMin > 1.0)) {
+        schlecht.push('Mindestabstand ' + r.abstandMin
+                      + ' liegt nicht ueber 1,0 und kann damit nie greifen');
       }
-      // 2. Und das Fenster muss BREIT genug sein, um es durchgehend zu halten. 0,2 Kacheln
-      //    waren es vorher, und das hat nicht gereicht.
-      if (!(r.fenster >= 0.4)) {
-        schlecht.push('Fenster nur ' + r.fenster + ' Kacheln breit');
+      if (!(r.reichweite > 1.0)) {
+        schlecht.push('Reichweite ' + r.reichweite + ' liegt nicht ueber 1,0');
+      }
+      // 2. Und die Reichweite darf nicht UNTER dem Mindestabstand liegen: dann waere der
+      //    Abstandhalter aktiv, bevor eine Attacke ueberhaupt angesetzt werden kann, und
+      //    das Ueberholen haette kein Band mehr. Gleichstand ist erlaubt - siehe oben.
+      if (!(r.reichweite >= r.abstandMin)) {
+        schlecht.push('Reichweite ' + r.reichweite + ' unter dem Mindestabstand '
+                      + r.abstandMin);
       }
       // 3. Die Wartezeit bei der VORGABE-Wuerze muss im Bereich einer Runde liegen. Ohne
       //    diese Zahl ist "wird ueberholt" eine Hoffnung.
@@ -6128,17 +6250,29 @@
     if (!window.OMEGA_TEST || !OMEGA_TEST.ghostGapFactor) {
       return { skip: true, mass: 'ghostGapFactor nicht vorhanden' };
     }
-    const r = OMEGA_TEST.ghostGapFactor([0.05, 0.35, 0.7, 1.5]);
+    // ---- DIE PROBEPUNKTE HAENGEN AN DER SCHWELLE, NICHT AN FESTEN ZAHLEN ---------
+    //
+    // Hier standen 0,05 / 0,35 / 0,7 / 1,5 mit der Erwartung, dass ab 0,7 nichts mehr
+    // passiert - das war der Mindestabstand von damals. Er steht jetzt bei 1,2, gewaehlt aus
+    // dem Sweep bei "Ueberholen: Reichweite ueber dem Mindestabstand" (29,1 Beruehrungen je
+    // Minute gegen 40,1 beim alten Wert, bei mehr Ueberholmanoevern).
+    //
+    // Die Punkte werden deshalb AUS der Schwelle gerechnet. Feste Zahlen wuerden bei der
+    // naechsten Abstimmung wieder rot, ohne dass etwas kaputt ist - und genau das ist hier
+    // passiert.
+    const S = OMEGA_TEST.gapMinLesen ? OMEGA_TEST.gapMinLesen() : 1.2;
+    const punkte = [S * 0.04, S * 0.3, S, S * 1.25];
+    const r = OMEGA_TEST.ghostGapFactor(punkte);
     if (r.length < 4) return { skip: true, mass: 'Prueflauf leer' };
     const f = r.map(x => x.faktor);
-    // Monoton steigend mit dem Abstand, und ab der Schwelle wirkungslos.
+    // Monoton steigend mit dem Abstand, und AB der Schwelle wirkungslos.
     const monoton = f[0] < f[1] && f[1] < f[2] && Math.abs(f[3] - 1) < 1e-9
                     && Math.abs(f[2] - 1) < 1e-9;
     // Und er muss ueberhaupt etwas KOSTEN. Ein Baustein, der 0,2 Prozent bewegt, ist auf
     // dem Tisch nicht zu sehen - dieselbe Klasse wie ein Regler mit Faktor null.
     const wirkt = 1 - f[0] > 0.15;
     return { ok: monoton && wirkt,
-             mass: r.map(x => x.gap + ': x' + x.faktor).join('  ')
+             mass: 'Schwelle ' + S + ' | ' + r.map(x => x.gap + ': x' + x.faktor).join('  ')
                  + (monoton ? '' : ' | NICHT MONOTON')
                  + (wirkt ? '' : ' | ZU SCHWACH') };
   });
@@ -6207,23 +6341,37 @@
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
-  // ---- Immer nur einer, und die anderen weichen aus ----
+  // ---- Einer pittet, die anderen weichen aus ----
   //
-  // Zwei Zusagen, und die zweite ist die, die einen Crash verhindert. Sie hat zwei Haelften:
-  // yieldSide (weich, Autoritaet 0,64) und eine KLEMME auf der Boxenkachel (hart). Geprueft
-  // wird die Klemme, denn die weiche Haelfte kann von der Ideallinie ueberstimmt werden.
+  // DIE ZUSAGE HAT SICH GEAENDERT, und das gehoert hierhin und nicht in ein Nebenprotokoll:
+  // bis v0.5.46 pittete immer nur EINER, und dieser Test prueft das mit `r.mehrfach === 0`.
+  // Seit der Boxengasse ist "mehrere gleichzeitig" ausdruecklich bestellt - jeder auf seiner
+  // eigenen Kachel. Die Zusage ist jetzt nicht mehr "nur einer", sondern "nie zwei auf
+  // demselben Platz, und wer vorbei muss, faehrt nicht rechts". Sie steht im Test darunter.
+  //
+  // Was HIER bleibt, ist die andere Haelfte: dass die Autos, die NICHT pitten, ausweichen.
+  // Sie hat zwei Teile - yieldSide (weich, Autoritaet 0,64) und eine KLEMME auf der
+  // Boxenkachel (hart). Geprueft wird die Klemme, denn die weiche Haelfte kann von der
+  // Ideallinie ueberstimmt werden.
   //
   // Und zwar WAEHREND die Sperre gilt, nicht am Ende: gemessen steht ein anderes Auto nach
   // dem Stopp wieder bei +0,999 auf seiner Linie, und dieser Wert sagt ueber die Sperre
   // nichts. Der Messaufbau fuehrt deshalb je Auto die groesste Querlage in den Takten mit,
   // in denen pitSperreRechts() fuer es wahr war.
+  //
+  // nurEiner: die zwei anderen sind NICHT faellig. Ohne das nehmen sie sich seit der
+  // Boxengasse selbst einen Platz, und dann gibt es keine Umstehenden mehr - der Test waere
+  // gruen, weil er nichts mehr prueft.
   stAdd('Ghost-Boxenstopp: einer pittet, die anderen gehen links', () => {
     if (!window.OMEGA_TEST || !OMEGA_TEST.ghostPitProbe) {
       return { skip: true, mass: 'ghostPitProbe nicht vorhanden' };
     }
-    const r = OMEGA_TEST.ghostPitProbe({ laenge: 4, takte: 500, autos: 3 });
+    const r = OMEGA_TEST.ghostPitProbe({ laenge: 4, takte: 500, autos: 3, nurEiner: true });
     const fehler = [];
-    if (r.mehrfach) fehler.push(r.mehrfach + ' Takte mit zwei Stopps gleichzeitig');
+    // Bei nurEiner MUSS es einer bleiben - nicht weil die Gasse es verbietet, sondern weil
+    // die anderen nicht faellig sind. Bricht das, ist der Ausloeser undicht.
+    if (r.mehrfach) fehler.push(r.mehrfach + ' Takte mit zwei Stopps, obwohl nur einer '
+                                + 'faellig war');
     if (r.geparkt) fehler.push('waehrend des Stopps geparkt');
     if (!r.andere.length) fehler.push('keine anderen Autos im Aufbau');
     for (let i = 0; i < r.andere.length; i++) {
@@ -6243,6 +6391,68 @@
                                  + a.sperreMax).join(' | ')
                  + ' | ' + r.mehrfach + ' Doppelstopps'
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
+  // ---- Die Boxengasse: mehrere gleichzeitig, jeder auf seiner Kachel ----
+  //
+  // BESTELLT: "Mach, dass mehrere Autos Boxenstopp machen koennen. Wenn ein Auto schon einen
+  // Stopp macht, soll das naechste ab der Kachel eins spaeter anfangen (und das andere nicht
+  // rammen)." Drei Zusagen, und alle drei stehen hier.
+  //
+  // DER AUFBAU ERZWINGT DEN FALL: ein Wetterwechsel macht ALLE Ghosts gleichzeitig faellig -
+  // das ist der Moment, in dem eine Boxengasse unter Druck steht, und der Grund, warum
+  // dieser Test am Reifenwechsel haengt und nicht an einem Planstopp.
+  //
+  // Der DRITTE Punkt braucht eine Unterscheidung, die zwei Messfehler gekostet hat:
+  // g.querSoll ist ein nachlaufender Filter (rund 0,5 s fuer die volle Breite), nicht der
+  // Befehl. Ein Auto, das mit rechter Ideallinie in die Gasse einfaehrt, steht dort einige
+  // Takte lang noch rechts, obwohl der Befehl schon links lautet. Gemessen wird deshalb der
+  // BEFEHL - er ist die Zusage, der Filter ihre Physik.
+  stAdd('Ghost-Boxengasse: mehrere Plaetze, und keiner faehrt dem anderen ins Heck', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.ghostReifenProbe) {
+      return { skip: true, mass: 'ghostReifenProbe nicht vorhanden' };
+    }
+    const fehler = [], zeilen = [];
+    // Zwei Feldgroessen: vier passen genau in die Gasse, sechs muessen anstehen.
+    for (const autos of [4, 6]) {
+      const r = OMEGA_TEST.ghostReifenProbe({ autos, takte: 2500,
+                                              wechselBei: 100, laenge: 5 });
+      if (!r) return { skip: true, mass: 'kein Lauf' };
+      const plaetze = r.plaetze.map((p) => p.join('+')).join('/');
+      zeilen.push(autos + ' Autos: Plaetze ' + plaetze + ', hoechstens '
+                  + r.hoechstGleich + ' gleichzeitig, ' + r.vorbeiTakte
+                  + ' Takte Vorbeifahrt');
+      // 1. MEHRERE GLEICHZEITIG. Das ist die Bestellung, und mit einem Platz waere es 1.
+      if (!(r.hoechstGleich >= 2)) {
+        fehler.push(autos + ' Autos: nur ' + r.hoechstGleich + ' gleichzeitig in der Box');
+      }
+      // 2. NIE ZWEI AUF DEMSELBEN PLATZ. Das ist die Zusage, die "nicht rammen" laengs
+      //    bedeutet: zwei Autos auf einer Kachel stehen ineinander.
+      if (r.doppeltBelegt) {
+        fehler.push(autos + ' Autos: ' + r.doppeltBelegt
+                    + ' Takte mit zwei Autos auf demselben Platz');
+      }
+      // 3. WER VORBEI MUSS, FAEHRT NICHT RECHTS. Das ist dieselbe Zusage quer.
+      if (r.vorbeiBefehlRechts) {
+        fehler.push(autos + ' Autos: ' + r.vorbeiBefehlRechts
+                    + ' Takte mit rechtem Befehl, obwohl dort einer steht');
+      }
+      // Die Gegenprobe: es muss ueberhaupt vorbeigefahren worden sein, sonst ist Punkt 3
+      // eine leere Aussage.
+      if (!(r.vorbeiTakte > 0)) {
+        fehler.push(autos + ' Autos: niemand musste vorbei - der Aufbau prueft nichts');
+      }
+      // 4. Und keiner parkt sich waehrend des Stopps. Mit mehreren Stehenden ist das
+      //    schwerer als mit einem: die Gnade muss fuer jeden einzeln laufen.
+      if (r.geparkt) fehler.push(autos + ' Autos: ein Auto wurde geparkt');
+      // 5. Die Gasse ist gedeckelt. Bei sechs Autos duerfen nicht sechs Plaetze entstehen -
+      //    sonst steht ein Fuenftel der Runde voll.
+      if (r.hoechstGleich > 4) {
+        fehler.push(autos + ' Autos: ' + r.hoechstGleich + ' Plaetze, mehr als der Deckel');
+      }
+    }
+    return { ok: !fehler.length,
+             mass: zeilen.join(' | ') + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
   // ---- Der Boxenplatz bleibt nach einem Abbruch nicht besetzt ----
@@ -6304,6 +6514,372 @@
     return { ok: !fehler.length,
              mass: '300 Ziehungen aus 5..9: ' + lo + ' bis ' + hi + ', bei 7/7 immer '
                  + g[0] + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
+  // ---- Regenreifen fuer Ghosts ----
+  //
+  // VIER FAELLE, UND ZWEI DAVON MUESSEN UNVERAENDERT SEIN. Das ist die wichtigste Zusage
+  // dieses Features: das Regentempo (0,85) und das Trockentempo (1,0) waren abgestimmt und
+  // abgenommen, bevor es Reifen gab. Eine Ableitung, die sie still verschiebt, waere eine
+  // Verschlechterung, die niemand bestellt hat - deshalb wird der abgeleitete Griff als
+  // VERHAELTNIS angewandt und nicht absolut, und deshalb steht hier ein Gleichheitstest auf
+  // GHOST_REGEN_TEMPO und nicht ein Band.
+  stAdd('Ghost-Regenreifen: der Tempofaktor, und die zwei bekannten Faelle bleiben', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.reifenTempoProbe) {
+      return { skip: true, mass: 'reifenTempoProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.reifenTempoProbe(undefined, { pitAn: true });
+    if (!r) return { skip: true, mass: 'kein Faktor' };
+    const f = r.faktor, fehler = [];
+    const nah = (a, b) => Math.abs(a - b) < 1e-3;
+    // 1. Die zwei bekannten Faelle, auf Gleichheit.
+    if (!nah(f['dry/trocken'], 1)) {
+      fehler.push('trocken auf trocken ' + f['dry/trocken'] + ' statt 1');
+    }
+    if (!nah(f['rain/regen'], 0.85)) {
+      fehler.push('nass auf Regen ' + f['rain/regen'] + ' statt 0,85 (GHOST_REGEN_TEMPO)');
+    }
+    // 2. Die falschen Reifen kosten, und im Regen deutlich mehr als im Trockenen. Die
+    //    Richtung ist die Aussage, die Zahlen stehen als Mass daneben - ein Gleichheitstest
+    //    auf 0,6375 wuerde bei jedem Griffwert in TYRE_MIX rot, und das waere eine
+    //    Abstimmung und kein Fehler.
+    if (!(f['rain/trocken'] < f['rain/regen'] - 0.1)) {
+      fehler.push('Slicks im Regen ' + f['rain/trocken'] + ' nicht deutlich langsamer');
+    }
+    if (!(f['dry/regen'] < 1 && f['dry/regen'] > f['rain/trocken'])) {
+      fehler.push('Regenreifen im Trockenen ' + f['dry/regen'] + ' unplausibel');
+    }
+    return { ok: !fehler.length,
+             mass: Object.keys(f).map((k) => k + ' ' + f[k]).join(', ')
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
+  // ---- Ohne Boxenstopp gibt es keine falschen Reifen ----
+  //
+  // DIE FALLE, DIE DAS PRUEFT: wer die Ghost-Boxenstopps abschaltet, koennte ein Feld
+  // bekommen, das nach dem ersten Regen dauerhaft mit 0,64 kriecht - denn der einzige Weg
+  // zurueck ist ein Stopp, und den hat er gerade verboten. Also gilt bei ausgeschaltetem
+  // Stopp ueberall der passende Reifen, und das Verhalten faellt BITGLEICH auf das zurueck,
+  // was vor diesem Feature da war.
+  stAdd('Ghost-Regenreifen: ohne Boxenstopp genau das alte Verhalten', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.reifenTempoProbe) {
+      return { skip: true, mass: 'reifenTempoProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.reifenTempoProbe(undefined, { pitAn: false });
+    if (!r) return { skip: true, mass: 'kein Faktor' };
+    const f = r.faktor, fehler = [];
+    const nah = (a, b) => Math.abs(a - b) < 1e-3;
+    // Beide Reifen, dasselbe Ergebnis: im Trockenen 1, im Regen 0,85 - der flache Abzug,
+    // der vor diesem Feature die einzige Regenregel war.
+    for (const reifen of ['trocken', 'regen']) {
+      if (!nah(f['dry/' + reifen], 1)) {
+        fehler.push('trocken/' + reifen + ' ' + f['dry/' + reifen] + ' statt 1');
+      }
+      if (!nah(f['rain/' + reifen], 0.85)) {
+        fehler.push('nass/' + reifen + ' ' + f['rain/' + reifen] + ' statt 0,85');
+      }
+    }
+    return { ok: !fehler.length,
+             mass: 'pitAn aus: ' + Object.keys(f).map((k) => k + ' ' + f[k]).join(', ')
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
+  // ---- Die Oberflaeche im Ghost-Motor kommt aus der Spielertabelle ----
+  //
+  // ZWEI AUSSAGEN, NICHT EINE: der Tempofaktor oben ist das ZIEL des Reglers, gripScale ist
+  // das, womit der Motor bremst und anfaehrt. Ein Fehler in einem waere im anderen nicht zu
+  // sehen - ein Ghost mit richtigem Ziel und trockenem Griff faehrt im Regen mit
+  // Trockenbremsweg, und das sieht man erst in der Kurve.
+  //
+  // Und es prueft einen STILLEN FEHLER mit, der vor diesem Feature da war: startGhost()
+  // kopiert das ganze Konfigurationsobjekt des Spielers, gripScale eingeschlossen - ein
+  // Ghost erbte also die Reifenwahl des Spielers und behielt sie ueber jeden
+  // Wetterwechsel.
+  stAdd('Ghost-Regenreifen: Griff und Aquaplaning wie beim Spieler-Auto', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.reifenGriffProbe) {
+      return { skip: true, mass: 'reifenGriffProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.reifenGriffProbe();
+    if (!r) return { skip: true, mass: 'kein Griff' };
+    const fehler = [];
+    const nah = (a, b) => Math.abs(a - b) < 1e-3;
+    // Die vier Werte aus TYRE_MIX in 70-race.js.
+    const soll = { 'dry/trocken': 1.00, 'dry/regen': 0.88,
+                   'rain/trocken': 0.45, 'rain/regen': 0.80 };
+    for (const k of Object.keys(soll)) {
+      if (!r[k]) { fehler.push(k + ' fehlt'); continue; }
+      if (!nah(r[k].grip, soll[k])) {
+        fehler.push(k + ': Griff ' + r[k].grip + ' statt ' + soll[k]);
+      }
+    }
+    // Aufschwimmen NUR auf Slicks im Regen. Regenreifen sind geschnitten - dieselbe Aussage
+    // wie TYRE_MIX .aqua beim Spieler.
+    if (r['rain/trocken'] && !(r['rain/trocken'].aqua > 0.9)) {
+      fehler.push('Slicks im Regen schwimmen nicht auf (' + r['rain/trocken'].aqua + ')');
+    }
+    if (r['rain/regen'] && !(r['rain/regen'].aqua === 0)) {
+      fehler.push('Regenreifen schwimmen auf (' + r['rain/regen'].aqua + ')');
+    }
+    if (r['dry/trocken'] && !(r['dry/trocken'].aqua === 0)) {
+      fehler.push('trocken schwimmt auf (' + r['dry/trocken'].aqua + ')');
+    }
+    return { ok: !fehler.length,
+             mass: Object.keys(r).map((k) => k + ' Griff ' + r[k].grip
+                                    + '/Aqua ' + r[k].aqua).join(', ')
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
+  // ---- Der Umschlagpunkt ----
+  //
+  // Bei WENIG Wasser ist der Slick noch schneller als der Regenreifen: er verliert steil
+  // (1,00 -> 0,45), der Regenreifen flach (0,88 -> 0,80), und der Gleichstand liegt bei
+  // n = 0,255, also bei halber Regenfront. Das ist keine Absicht, sondern die Aussage der
+  // Tabelle - und es ist der Grund, warum ein Reifenwechsel im Rennsport eine Entscheidung
+  // ist.
+  //
+  // WARUM DAS EINE PRUEFUNG WERT IST: wer den Faktor spaeter "aufraeumt" und den falschen
+  // Reifen pauschal langsamer macht, loescht diese Eigenschaft, ohne es zu merken. Sie steht
+  // hier als Zusicherung, nicht als Kuriositaet.
+  stAdd('Ghost-Regenreifen: bei leichtem Regen sind Slicks noch vorn', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.reifenTempoProbe) {
+      return { skip: true, mass: 'reifenTempoProbe nicht vorhanden' };
+    }
+    const leicht = OMEGA_TEST.reifenTempoProbe(-0.5, { pitAn: true });
+    const voll = OMEGA_TEST.reifenTempoProbe(0, { pitAn: true });
+    if (!leicht || !voll) return { skip: true, mass: 'kein Faktor' };
+    const fehler = [];
+    // Bei halber Front: der Slick mindestens gleichwertig.
+    if (!(leicht.faktor['rain/trocken'] >= leicht.faktor['rain/regen'] - 1e-4)) {
+      fehler.push('bei halber Front ist der Slick schon im Nachteil ('
+                  + leicht.faktor['rain/trocken'] + ' gegen '
+                  + leicht.faktor['rain/regen'] + ')');
+    }
+    // Bei voller Front deutlich im Nachteil - sonst waere die Rampe wirkungslos.
+    if (!(voll.faktor['rain/trocken'] < voll.faktor['rain/regen'] - 0.1)) {
+      fehler.push('bei voller Front kein deutlicher Nachteil');
+    }
+    // Und die Naesse muss sich zwischen den beiden Messungen ueberhaupt geaendert haben,
+    // sonst prueft der Test zwei identische Laeufe.
+    if (!(voll.nass > leicht.nass + 0.5)) {
+      fehler.push('die Rampe bewegt sich nicht (' + leicht.nass + ' -> ' + voll.nass + ')');
+    }
+    return { ok: !fehler.length,
+             mass: 'halbe Front (Naesse ' + leicht.nass + '): Slick '
+                 + leicht.faktor['rain/trocken'] + ' gegen Regen '
+                 + leicht.faktor['rain/regen'] + ' | volle Front (' + voll.nass + '): '
+                 + voll.faktor['rain/trocken'] + ' gegen ' + voll.faktor['rain/regen']
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
+  // ---- Der ganze Ablauf: Wetterwechsel, Warteschlange, Umruestung ----
+  //
+  // Die Pruefung, die das Feature als GANZES nachrechnet, und der Aufbau ist so gebaut, dass
+  // nur die Reifen es erklaeren koennen: kein Ghost ist planmaessig faellig (die Grenzen
+  // stehen auf 200 Runden), und das Wetter wechselt mitten im Lauf.
+  //
+  // Die Autos stehen auf VERSCHIEDENEN Kacheln. Auf dieselbe gestellt kaeme die
+  // Warteschlange nicht zustande: alle waeren im selben Takt an der Einfahrt, einer bekaeme
+  // den Platz, und die anderen haetten ihre Gelegenheit fuer diese Runde verpasst, ohne je
+  // eine gehabt zu haben.
+  stAdd('Ghost-Regenreifen: alle ruesten um, einer nach dem anderen', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.ghostReifenProbe) {
+      return { skip: true, mass: 'ghostReifenProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.ghostReifenProbe({ autos: 4, takte: 2500,
+                                            wechselBei: 100, laenge: 5 });
+    if (!r) return { skip: true, mass: 'kein Lauf' };
+    const fehler = [];
+    // 1. JEDER hat am Ende die Regenreifen drauf.
+    for (let i = 0; i < r.umbauBei.length; i++) {
+      if (r.umbauBei[i] === null) fehler.push('Auto ' + (i + 1) + ' ruestete nie um');
+    }
+    // 2. UND ZWAR WEGEN DER REIFEN. 'plan' waere hier ein Fehler im Aufbau - dann waere
+    //    nicht gezeigt, dass der Wetterwechsel den Stopp ausgeloest hat.
+    for (let i = 0; i < r.stoppGrund.length; i++) {
+      const g = r.stoppGrund[i];
+      if (!g.length) fehler.push('Auto ' + (i + 1) + ' hielt nie');
+      else if (g.some((x) => x !== 'reifen')) {
+        fehler.push('Auto ' + (i + 1) + ': Grund ' + g.join('+') + ' statt reifen');
+      }
+    }
+    // 3. MEHRERE GLEICHZEITIG SIND HIER RICHTIG, und diese Zeile hat es zuerst als
+    //    Fehler gemeldet: sie stand auf `mehrfach === 0`, der Zusage aus v0.5.45. Mit der
+    //    Boxengasse ist "mehrere zugleich, jeder auf seiner Kachel" ausdruecklich bestellt,
+    //    und ein Wetterwechsel ist genau der Fall, fuer den sie gebaut wurde. Was NICHT
+    //    passieren darf - zwei auf demselben Platz, oder einer der rechts vorbeifaehrt -
+    //    prueft "Ghost-Boxengasse"; hier wird nur festgehalten, dass die Gasse benutzt wird.
+    if (!(r.hoechstGleich >= 2)) {
+      fehler.push('nur ' + r.hoechstGleich + ' gleichzeitig in der Box - die Gasse wird '
+                  + 'nicht benutzt, obwohl alle vier faellig sind');
+    }
+    if (r.doppeltBelegt) {
+      fehler.push(r.doppeltBelegt + ' Takte mit zwei Autos auf demselben Platz');
+    }
+    // 4. UND KEINER PARKT SICH. Die Leseschwelle greift bei jedem Stillstand, auch bei
+    //    einem Reifenstopp - die erneuerte Gnade muss also auch hier tragen.
+    if (r.geparkt) fehler.push('ein Auto wurde waehrend des Stopps geparkt');
+    // 5. Die Drosselung war da, und danach ist sie weg.
+    for (let i = 0; i < r.faktorMin.length; i++) {
+      if (!(r.faktorMin[i] < 0.7)) {
+        fehler.push('Auto ' + (i + 1) + ' war nie gedrosselt (min ' + r.faktorMin[i] + ')');
+      }
+      if (Math.abs(r.faktorEnde[i] - 0.85) > 1e-3) {
+        fehler.push('Auto ' + (i + 1) + ' faehrt am Ende mit ' + r.faktorEnde[i]);
+      }
+      if (Math.abs(r.gripEnde[i] - 0.80) > 1e-3) {
+        fehler.push('Auto ' + (i + 1) + ': Griff am Ende ' + r.gripEnde[i] + ' statt 0,8');
+      }
+    }
+    // 6. UND SIE STEHEN NICHT ALLE GLEICHZEITIG WIEDER DA. Eine Schlange, in der alle
+    //    denselben Takt bekommen, waere keine - der Abstand ist der Beleg, dass der
+    //    Boxenplatz nacheinander vergeben wurde.
+    const bei = r.umbauBei.filter((x) => x !== null).slice().sort((a, b) => a - b);
+    if (bei.length > 1 && !(bei[bei.length - 1] - bei[0] > 100)) {
+      fehler.push('alle ruesteten praktisch gleichzeitig um');
+    }
+    return { ok: !fehler.length,
+             mass: 'Wechsel bei Takt ' + r.gewechselt + ', umgeruestet bei '
+                 + r.umbauBei.join('/') + ' (falsche Reifen ' + r.falschSek.join('/')
+                 + ' s), Drosselung bis ' + r.faktorMin.join('/')
+                 + ', danach ' + r.faktorEnde.join('/')
+                 + ', hoechstens ' + r.hoechstGleich + ' gleichzeitig in der Box'
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
+  // ---- Und wieder zurueck auf trocken ----
+  //
+  // "genau so mit Wetterwechsel zu sonnig" - bestellt, also geprueft. Nicht dasselbe wie der
+  // Test darueber: der Rueckweg braucht ZWEI Stopps je Auto, und beim zweiten ist der
+  // gezogene Planstopp langst nicht faellig - er kann also nur an den Reifen liegen.
+  stAdd('Ghost-Regenreifen: der Rueckweg auf trocken zaehlt genauso', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.ghostReifenProbe) {
+      return { skip: true, mass: 'ghostReifenProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.ghostReifenProbe({ autos: 3, takte: 3200, wechselBei: 60,
+                                            zurueckBei: 1400, laenge: 5 });
+    if (!r) return { skip: true, mass: 'kein Lauf' };
+    const fehler = [];
+    for (let i = 0; i < r.stoppGrund.length; i++) {
+      // ZWEI Stopps: einmal auf Regen, einmal zurueck.
+      if (r.stoppGrund[i].length < 2) {
+        fehler.push('Auto ' + (i + 1) + ': nur ' + r.stoppGrund[i].length + ' Stopp(s)');
+      }
+      if (r.stoppGrund[i].some((x) => x !== 'reifen')) {
+        fehler.push('Auto ' + (i + 1) + ': Grund ' + r.stoppGrund[i].join('+'));
+      }
+      // Und am Ende wieder trocken: Faktor 1, Griff 1.
+      if (Math.abs(r.faktorEnde[i] - 1) > 1e-3) {
+        fehler.push('Auto ' + (i + 1) + ' faehrt am Ende mit ' + r.faktorEnde[i]
+                    + ' statt 1');
+      }
+      if (Math.abs(r.gripEnde[i] - 1) > 1e-3) {
+        fehler.push('Auto ' + (i + 1) + ': Griff am Ende ' + r.gripEnde[i] + ' statt 1');
+      }
+    }
+    // Auch hier: gleichzeitig ist erlaubt, doppelt belegt nicht. Siehe oben.
+    if (r.doppeltBelegt) {
+      fehler.push(r.doppeltBelegt + ' Takte mit zwei Autos auf demselben Platz');
+    }
+    if (r.geparkt) fehler.push('ein Auto wurde waehrend des Stopps geparkt');
+    return { ok: !fehler.length,
+             mass: r.stoppGrund.map((g, i) => 'A' + (i + 1) + ' ' + g.length + ' Stopps')
+                     .join(', ')
+                 + ' | am Ende Faktor ' + r.faktorEnde.join('/')
+                 + ', Griff ' + r.gripEnde.join('/')
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
+  // ---- Der Abstandhalter braucht eine Groesse mit Aufloesung ----
+  //
+  // DER BEFUND, DER DIESE PRUEFUNG NOETIG MACHT, ist die Antwort auf "die Autos rammen sich
+  // dauernd": der Abstandhalter war da, wirkte aber nicht, weil die Groesse, die er liest,
+  // unterhalb einer Kachel keine Werte hat.
+  //
+  //     Gemessen: in 1517 Stichproben mit wahrem Abstand unter einer Kachel - darunter 155
+  //     unter einer AUTOLAENGE - meldete ghostAhead() jedes Mal genau 1,00.
+  //
+  // Der Abhub war damit eine Konstante: bei 43 cm derselbe wie bei 0 cm. Und von aussen
+  // gesehen liess sich das mit der Schwelle nicht heilen - sechs Ghosts, 180 s, je zwei
+  // Laeufe:
+  //
+  //     Zeitluecke aus (nur Kachelregel)   132,9 Beruehrungen   66,2 Ueberholer je min
+  //     Zeitluecke 0,35 s                  100,4 (-24 %)        61,1 (-8 %)
+  //     Zeitluecke 0,70 s                   91,2 (-31 %)        50,0 (-24 %)
+  //
+  // 0,35 s ist deshalb gesetzt: der beste Tausch, und der einzige, bei dem die Beruehrungen
+  // deutlich staerker fallen als das Ueberholen. Mit der alten Kachelschwelle war es
+  // umgekehrt - 0,7 auf 1,2 kostete 23 Prozent Ueberholmanoever und brachte 3 Prozent.
+  //
+  // GEPRUEFT WIRD DIE AUFLOESUNG und nicht die Wirkung: die Wirkung haengt an fuenf
+  // Reglern und schwankt je Lauf um dreissig Prozent, die Aufloesung ist eine Eigenschaft
+  // der Groesse. Sie ist der Grund, warum das eine funktioniert und das andere nicht - und
+  // wenn sie verlorengeht, faellt der Abstandhalter still auf seinen alten Zustand zurueck.
+  stAdd('Abstand: die Zeitluecke hat Aufloesung, der Kachelabstand nicht', async () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.simAufloesung) {
+      return { skip: true, mass: 'simAufloesung nicht vorhanden' };
+    }
+    // Ein eigener kleiner Setzer: `setzen` aus der Rennsimulationspruefung ist dort lokal
+    // und hier nicht in Reichweite - der erste Anlauf warf "setzen is not defined". Und
+    // GUELTIGKEIT wird geprueft: ein Wert, den ein Auswahlfeld nicht hat, laesst es auf ""
+    // stehen, und die Simulation faellt still auf ihre Vorgabe zurueck. Genau so ist mir
+    // eine Messung mit 3 statt 10 Runden gelaufen, ohne dass etwas auffiel.
+    const stell = (id, v) => {
+      const e = $(id);
+      if (!e) return;
+      if (e.type === 'checkbox') { e.checked = !!v; }
+      else {
+        if (e.tagName === 'SELECT'
+            && ![...e.options].some((o) => o.value === String(v))) {
+          throw new Error(id + ': "' + v + '" ist keine Option');
+        }
+        e.value = String(v);
+      }
+      e.dispatchEvent(new Event('change', { bubbles: true }));
+    };
+    const merk = { g: $('sim-ghosts').value, l: $('sim-laps').value,
+                   f: $('sim-fast').checked, p: ghostCfg.pitAn };
+    let r = null;
+    try {
+      stell('sim-ghosts', '4');
+      stell('sim-laps', '10');
+      stell('sim-fast', false);
+      ghostCfg.pitAn = false;         // Boxenstopps stoeren die Abstandsmessung
+      simStart();
+      r = OMEGA_TEST.simAufloesung(1400);
+      simStop('Pruefung');
+    } finally {
+      stell('sim-ghosts', merk.g); stell('sim-laps', merk.l);
+      stell('sim-fast', merk.f); ghostCfg.pitAn = merk.p;
+      if (simAn()) simStop('Pruefung');
+    }
+    if (!r || !r.proben) return { skip: true, mass: 'keine nahen Proben im Lauf' };
+    const fehler = [];
+    // 1. DER BEFUND SELBST: der Kachelabstand hat bei nahen Autos genau einen Wert. Faellt
+    //    diese Zeile eines Tages, ist der Kachelabstand besser geworden - dann gehoert die
+    //    Begruendung oben ueberprueft, und deshalb ist es eine Pruefung und keine Notiz.
+    if (r.kachelWerte.length > 2) {
+      fehler.push('der Kachelabstand hat ' + r.kachelWerte.length
+                  + ' Werte (' + r.kachelWerte.join(',') + ') - die Begruendung oben pruefen');
+    }
+    // 2. UND DIE ZEITLUECKE HAT VIELE. Zehn verschiedene Werte sind eine niedrige Huerde und
+    //    absichtlich so: gemessen waren es 21, und der Test soll nicht bei jedem
+    //    Reglerdreh rot werden, sondern wenn die Aufloesung VERSCHWINDET.
+    if (!(r.lueckeVerschieden >= 10)) {
+      fehler.push('die Zeitluecke hat nur ' + r.lueckeVerschieden
+                  + ' verschiedene Werte - die Aufloesung ist weg');
+    }
+    // 3. Und sie muss ueberhaupt messbar sein. Ein Abstandhalter, der in der Haelfte der
+    //    Faelle null bekommt, faellt in der Haelfte der Faelle auf die Kachelregel zurueck.
+    const anteil = r.lueckeMessbar / Math.max(1, r.proben);
+    if (!(anteil > 0.5)) {
+      fehler.push('nur ' + (anteil * 100).toFixed(0) + ' % der nahen Proben messbar');
+    }
+    return { ok: !fehler.length,
+             mass: r.proben + ' nahe Proben | Kachelabstand: ' + r.kachelWerte.join(',')
+                 + ' | Zeitluecke: ' + r.lueckeVerschieden + ' Werte von '
+                 + r.lueckeMin + ' bis ' + r.lueckeMax + ' s, '
+                 + (anteil * 100).toFixed(0) + ' % messbar'
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
   // ---- Zieleinlauf ----

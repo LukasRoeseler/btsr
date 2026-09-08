@@ -1672,9 +1672,16 @@
     // Die Sperre selbst herausgegeben: eine Pruefung soll fragen koennen, WANN sie gilt,
     // statt es aus Kachelindizes nachzubauen.
     pitSperreRechts, pitKachel, pitFaelligZiehen,
-    // Den Boxenplatz von aussen lesen und setzen. Als Funktionen, weil pitInhaber ein let
+    // Die Boxenplaetze von aussen lesen und raeumen. Als Funktionen, weil pitPlaetze ein let
     // ist - eine Kopie waere ein zweiter Ort fuer eine Sperre.
-    pitBelegt: () => !!pitInhaber, pitInhaberSetzen,
+    // pitBelegt heisst jetzt "irgendein Platz ist belegt" - mit der Gasse ist das nicht
+    // mehr dasselbe wie "es gibt einen Inhaber".
+    pitBelegt: () => pitPlaetze.some((c) => !!c), pitInhaberSetzen,
+    pitPlaetzeLesen, pitKachelFuer, pitPlaetzeZahl, pitPlatzVon,
+    // Der Mindestabstand als Messgroesse - siehe SPICE_GAP_MIN.
+    gapMinSetzen, gapMinLesen,
+    lueckeMinSetzen, lueckeMinLesen, ghostZeitLuecke,
+    attackRangeSetzen, attackRangeLesen,
     // Der Tankverbrauch, damit die Spiegelpruefung ihn vergleichen kann. Als Funktion und
     // nicht als Wert: ein let wird kopiert, eine Funktion liest.
     fuelDrain: () => fuelDrainPerSec,
@@ -1889,6 +1896,44 @@
     // aussen ein einziger Zustand, innen aber mindestens vier verschiedene Ursachen - kein
     // Ziel, Ziel aber kein Gas, Gas aber Bremse dagegen, oder geparkt. simZustand() zeigt
     // nur das Ergebnis (kmh 0) und laesst offen, welche davon es ist.
+    // ---- KACHELABSTAND GEGEN ZEITLUECKE, nebeneinander ----------------------------
+    //
+    // Die Sonde, die den Befund festhaelt, auf dem der ganze Abstandhalter beruht: der
+    // gemeldete Kachelabstand hat bei nahen Autos genau EINEN Wert, die Zeitluecke hat
+    // viele. Sie laeuft die Simulation ein Stueck weit und sammelt beide Groessen fuer die
+    // Takte, in denen der WAHRE Abstand unter einer Kachel liegt.
+    //
+    // Der wahre Abstand ist nur in der Simulation bekannt (a.s) - deshalb ist diese Messung
+    // eine Aussage ueber das Modell. Die Zeitluecke selbst braucht ihn nicht: sie steht am
+    // Teppich genauso zur Verfuegung, weil beide Autos ihre Kachelwechsel melden.
+    simAufloesung(takte) {
+      if (!simAn()) return null;
+      const kachel = [], luecke = [];
+      const n = takte || 1200;
+      for (let k = 0; k < n; k++) {
+        // simSchritt() gibt NICHTS zurueck - der erste Anlauf stand hier auf
+        // `if (!simSchritt(...)) break;` und brach damit im ersten Durchlauf ab. Der Test
+        // meldete "keine nahen Proben im Lauf" und sah aus wie ein Aufbauproblem.
+        // Ob die Simulation noch laeuft, sagt simAn().
+        simSchritt(SIM_TAKT_MS);
+        if (!simAn()) break;
+        if (k % 5) continue;                      // jeder fuenfte Takt reicht
+        const z = simZustand();
+        if (!z) break;
+        for (const a of (z.abstand || [])) {
+          if (a.wahr === null || a.wahr === undefined || a.wahr >= 1.0) continue;
+          if (a.gemeldet !== null) kachel.push(a.gemeldet);
+          if (a.luecke !== null) luecke.push(a.luecke);
+        }
+      }
+      return { proben: kachel.length,
+               kachelWerte: [...new Set(kachel)].sort((x, y) => x - y),
+               lueckeVerschieden: new Set(luecke).size,
+               lueckeMessbar: luecke.length,
+               lueckeMin: luecke.length ? Math.min.apply(null, luecke) : null,
+               lueckeMax: luecke.length ? Math.max.apply(null, luecke) : null };
+    },
+
     simGas() {
       if (!simAn()) return null;
       return simState.autos.map((a) => {
@@ -2154,8 +2199,23 @@
       const p = codeToTrack(code || 'SG2H2G2R2G2H2G2R2');
       const html = renderTrackPreview(p.tiles, null, { detailed: true, cars: cars || [] }).html;
       const doc = new DOMParser().parseFromString(html, 'text/html');
-      const punkte = [...doc.querySelectorAll('circle')].map(c => ({
-        x: +c.getAttribute('cx'), y: +c.getAttribute('cy'), fill: c.getAttribute('fill') }));
+      // ---- SEIT v0.5.47 IST DAS AUTO EIN RECHTECK UND KEIN KREIS -------------------
+      //
+      // Gezeichnet wird eine Gruppe mit translate(x y) rotate(w), darin die Karosserie und
+      // der Spoiler. Es gibt also kein cx/cy mehr, und diese Sonde suchte weiter nach
+      // <circle> - sie fand null Punkte, und vier Tests wurden rot mit der Meldung "kein
+      // Punkt bei K0" statt mit "die Sonde liest die alte Form".
+      //
+      // Gelesen wird der Mittelpunkt aus dem transform und die Farbe aus dem ERSTEN rect:
+      // das ist die Karosserie, der zweite ist der Spoiler und immer dunkel.
+      const punkte = [...doc.querySelectorAll('g[transform]')].map(g => {
+        const m = /translate\(([-\d.]+) ([-\d.]+)\)\s*rotate\(([-\d.]+)\)/
+          .exec(g.getAttribute('transform') || '');
+        if (!m) return null;
+        const body = g.querySelector('rect');
+        return { x: +m[1], y: +m[2], winkel: +m[3],
+                 fill: body ? body.getAttribute('fill') : null };
+      }).filter(Boolean);
       const kuerzel = [...doc.querySelectorAll('text')].map(t => t.textContent);
       return { kacheln: p.tiles.length, punkte, kuerzel, html,
                // Die Randsteinfarben, damit ein Test das CH-Aussehen nachpruefen kann:
@@ -2356,6 +2416,323 @@
     //
     // Die Attrappen melden 0x00 als Kachelcode, sobald sie stehen - genau das tut ein Auto,
     // das die Bahn nicht mehr liest, und genau daran haengt der Melder.
+    // ---- Der Tempofaktor, alle vier Faelle ------------------------------------------
+    //
+    // OHNE AUTO UND OHNE UHR: der Faktor haengt nur an Wetter und Reifen, und eine Sonde,
+    // die dafuer eine Simulation braucht, prueft die Simulation mit.
+    //
+    // Der Nassanteil wird ueber wxSet gestellt, weil ghostReifenTempo() ihn ueber
+    // wxRainLevel() quadratisch liest - der Faktor bei halber Front ist ein anderer als bei
+    // voller, und genau das soll pruefbar sein.
+    reifenTempoProbe(nassFront, opt) {
+      if (typeof ghostReifenTempo !== 'function') return null;
+      const o = opt || {};
+      const merkW = weather, merkF = wxFront, merkTo = wxFrontTo;
+      const merkAn = ghostCfg.pitAn;
+      try {
+        // pitAn AN, sonst gilt ueberall der passende Reifen (reifenWechselMoeglich) und die
+        // Sonde messe genau den Fall nicht, um den es geht. Mit pitAn: false ist das die
+        // Gegenprobe - dann MUSS ueberall 1,0 bzw. 0,85 herauskommen.
+        ghostCfg.pitAn = o.pitAn === undefined ? true : !!o.pitAn;
+        const aus = {};
+        for (const wetter of ['dry', 'rain']) {
+          setWeather(wetter);
+          // Die Front ganz durchziehen, sonst misst man einen Zwischenwert der Rampe.
+          this.wxSet(nassFront === undefined ? (wetter === 'rain' ? 0 : -1) : nassFront);
+          for (const reifen of ['trocken', 'regen']) {
+            // Ein Auto und kein Ghost: der gefahrene Reifen haengt an den Schaltern, und die
+            // liest reifenGefahren() ueber das Auto.
+            aus[wetter + '/' + reifen] =
+              +ghostReifenTempo({ ghost: { reifen } }).toFixed(4);
+          }
+        }
+        return { faktor: aus, nass: +(wxRainLevel() * wxRainLevel()).toFixed(4) };
+      } finally {
+        ghostCfg.pitAn = merkAn;
+        setWeather(merkW);
+        wxFront = merkF; wxFrontTo = merkTo;
+        if (typeof applySurface === 'function') applySurface();
+      }
+    },
+
+    // ---- Die Oberflaeche im Ghost-Motor ---------------------------------------------
+    //
+    // Getrennt vom Tempofaktor, weil es zwei Aussagen sind: der Faktor ist das ZIEL des
+    // Reglers, die Oberflaeche ist das, womit der Motor bremst und anfaehrt. Ein Fehler in
+    // einem der beiden waere im anderen nicht zu sehen.
+    reifenGriffProbe() {
+      if (typeof ghostOberflaecheSetzen !== 'function') return null;
+      const merkW = weather, merkF = wxFront, merkTo = wxFrontTo;
+      const merkAn = ghostCfg.pitAn;
+      try {
+        ghostCfg.pitAn = true;
+        const aus = {};
+        for (const wetter of ['dry', 'rain']) {
+          setWeather(wetter);
+          this.wxSet(wetter === 'rain' ? 0 : -1);
+          for (const reifen of ['trocken', 'regen']) {
+            const car = { ghost: { reifen, engine: { config: {} } } };
+            ghostOberflaecheSetzen(car);
+            const c = car.ghost.engine.config;
+            aus[wetter + '/' + reifen] = { grip: +c.gripScale.toFixed(4),
+                                           aqua: +c.aquaplaning.toFixed(4) };
+          }
+        }
+        return aus;
+      } finally {
+        ghostCfg.pitAn = merkAn;
+        setWeather(merkW);
+        wxFront = merkF; wxFrontTo = merkTo;
+        if (typeof applySurface === 'function') applySurface();
+      }
+    },
+
+    // ---- Der ganze Ablauf: Wetterwechsel, Warteschlange, Umruestung -----------------
+    //
+    // Derselbe Aufbau wie ghostPitProbe, aber mit zwei Unterschieden, und beide sind der
+    // Zweck: das Wetter wechselt MITTEN im Lauf, und keiner der Ghosts ist planmaessig
+    // faellig. Was danach passiert, kann also nur an den Reifen liegen.
+    //
+    // Und die Autos stehen auf VERSCHIEDENEN Kacheln: stellte man alle auf die letzte vor
+    // der Box, kaeme die Warteschlange nie zustande - alle waeren im selben Takt an der
+    // Einfahrt, einer bekaeme sie, und die anderen haetten ihre Gelegenheit fuer diese Runde
+    // verpasst, ohne je eine gehabt zu haben. Ein Feld verteilt sich ueber die Strecke, und
+    // genau das ist der Fall, den die Schlange bedienen muss.
+    ghostReifenProbe(opt) {
+      const o = opt || {};
+      if (typeof ghostReifenTempo !== 'function') return null;
+      const merkGarage = garage.splice(0, garage.length);
+      const merkTiles = currentTrackTiles;
+      const merkCfg = { an: ghostCfg.pitAn, frei: ghostCfg.pitFrei, sek: ghostCfg.pitSek,
+                        lo: ghostCfg.pitRundenMin, hi: ghostCfg.pitRundenMax };
+      const merkFlag = flagState;
+      const merkW = weather, merkF = wxFront, merkTo = wxFrontTo;
+      const echtNow = Date.now;
+      try {
+        currentTrackTiles = codeToTrack(o.code || 'SR3GLR2GR2G2').tiles;
+        lineCache = null;
+        ghostCfg.pitAn = true;
+        ghostCfg.pitFrei = true;
+        ghostCfg.pitSek = o.laenge === undefined ? 5 : o.laenge;
+        // WEIT AUSSERHALB DER LAUFZEIT: kein Ghost darf planmaessig faellig werden, sonst
+        // liesse sich ein Reifenstopp nicht von einem Planstopp unterscheiden.
+        ghostCfg.pitRundenMin = 200;
+        ghostCfg.pitRundenMax = 200;
+        flagState = 'green';
+        setWeather('dry');
+        this.wxSet(-1);
+        const n = currentTrackTiles.length;
+        let uhr = echtNow();
+        Date.now = () => uhr;
+        const zahl = o.autos || 3;
+        const autos = [];
+        for (let i = 0; i < zahl; i++) {
+          const car = OMEGA_TEST.attrappeGhost('R' + i);
+          car.ghost.laps = 1;
+          car.ghost.pitFaellig = 500;          // planmaessig nie in diesem Lauf
+          car.ghost.freeRun = true;
+          car.ghost.reifen = 'trocken';
+          // Gleichmaessig ueber die Strecke verteilt, siehe oben.
+          car.ghost.tileIndex = Math.floor(i * n / zahl);
+          car.ghost.lastCount = 0;
+          car.tileCount = 0;
+          car.tileCode = 0x02;
+          car.lastCodeAt = uhr;
+          car.tileAt = uhr;
+          car.ghost.tileStart = uhr;
+          car.ghost.tileRing = [400, 400, 400];
+          autos.push(car);
+          garage.push(car);
+        }
+        const takte = o.takte || 2000;
+        const wechselBei = o.wechselBei === undefined ? 100 : o.wechselBei;
+        const spur = [];
+        let gewechselt = -1;
+        for (let t = 0; t < takte; t++) {
+          uhr += 45;
+          if (t === wechselBei) {
+            setWeather('rain');
+            this.wxSet(0);                     // die Front sofort durch, wie wxSet erklaert
+            gewechselt = t;
+          }
+          if (o.zurueckBei !== undefined && t === o.zurueckBei) {
+            setWeather('dry');
+            this.wxSet(-1);
+          }
+          for (const car of autos) {
+            const g = car.ghost;
+            const v = g.engine ? Math.abs(g.engine.state.speedKmh || 0) : 0;
+            if (v > 0.05 && uhr - g.tileStart > 400) {
+              car.tileCount = (car.tileCount + 1) & 0xff;
+              car.tileAt = uhr;
+              const naechste = (g.tileIndex === null ? 0 : g.tileIndex + 1) % n;
+              car.tileCode = currentTrackTiles[naechste].type & 0xff;
+              car.lastCodeAt = uhr;
+            } else if (v <= 0.05) {
+              car.tileCode = 0x00;             // steht: liest nichts mehr
+            }
+            ghostTick(car);
+          }
+          spur.push({ t,
+            reifen: autos.map((c) => c.ghost.reifen),
+            phase: autos.map((c) => (c.ghost.pit ? c.ghost.pit.phase : null)),
+            grund: autos.map((c) => (c.ghost.pit ? c.ghost.pit.grund : null)),
+            faktor: autos.map((c) => +ghostReifenTempo(c).toFixed(4)),
+            grip: autos.map((c) => (c.ghost.engine
+              ? +(c.ghost.engine.config.gripScale || 0).toFixed(4) : null)),
+            // Der belegte Platz und die Querlage: mit mehreren Boxen ist "wer stand wo"
+            // die Frage, und "haelt der Vorbeifahrende den Gegenrand" die zweite.
+            platz: autos.map((c) => (c.ghost.pit ? c.ghost.pit.platz : null)),
+            quer: autos.map((c) => +(c.ghost.querSoll || 0).toFixed(3)),
+            // DER BEFEHL, getrennt von der gefilterten Lage. g.querSoll ist ein
+            // nachlaufender Filter (querTempo, rund 0,5 s fuer die volle Breite): kommt ein
+            // Auto von seiner Ideallinie rechts in die Gasse, steht dort einige Takte lang
+            // ein positiver Wert, obwohl der Befehl schon negativ ist. Ein Kriterium auf dem
+            // Filter wuerde also die Traegheit pruefen und nicht die Logik - der Befehl ist
+            // die Zusage, der Filter ihre Physik.
+            befehl: autos.map((c) => {
+              const q = pitQuer(c);
+              return q === null ? null : +q.toFixed(3);
+            }),
+            // Steht das Auto schon an SEINER Box? Dann faehrt es an keinem vorbei, auch
+            // wenn vor ihm einer steht - es ist angekommen.
+            //
+            // DER FEHLER, DEN DAS BEHEBT, war in dieser Messung und nicht im Fahrzeug: die
+            // erste Fassung zaehlte jedes Auto in der Box, vor dem ein anderes stand, als
+            // "muss vorbei". Damit meldete sie 27 Takte mit rechtem Befehl beim
+            // Vorbeifahren - und richtig war, dass 27 Takte lang ein Auto an seiner eigenen
+            // Box stand, wo der rechte Rand genau das Richtige ist. Zwei falsche Messungen
+            // in Folge an derselben Sonde; die Zahl war jedes Mal glaubhaft.
+            amPlatz: autos.map((c) => {
+              const p = c.ghost.pit;
+              return !!p && c.ghost.tileIndex === pitKachelFuer(p.platz);
+            }),
+            geparkt: autos.map((c) => !!c.parked) });
+        }
+        // ---- Auswerten -------------------------------------------------------------
+        // Wann hatte welches Auto welche Reifen, und wie viele standen je Takt in der Box?
+        const umbauBei = autos.map(() => null);
+        const stoppGrund = autos.map(() => []);
+        const grundZuvor = autos.map(() => null);
+        let mehrfach = 0, geparkt = false;
+        let falschTakte = autos.map(() => 0);
+        // ---- DIE GASSE: wer stand auf welchem Platz, und wich der Vorbeifahrende aus? --
+        const plaetzeJe = autos.map(() => ({}));
+        let doppeltBelegt = 0;      // zwei Autos auf DEMSELBEN Platz - waere der Bruch
+        let hoechstGleich = 0;      // wieviele gleichzeitig in der Box
+        // Wer an einem STEHENDEN vorbei musste: hielt er den Gegenrand?
+        let vorbeiTakte = 0, vorbeiRechts = 0;
+        // Der BEFEHL beim Vorbeifahren, und wie weit rechts der Filter dabei hoechstens
+        // noch stand. Das erste muss null sein (Logik), das zweite ist ein Mass (Physik).
+        let vorbeiBefehlRechts = 0, vorbeiQuerMax = 0;
+        for (const s of spur) {
+          const inBox = s.phase.filter((p) => p).length;
+          if (inBox > 1) mehrfach++;
+          if (inBox > hoechstGleich) hoechstGleich = inBox;
+          // Doppelbelegung: zwei Autos, die STEHEN, auf derselben Platznummer.
+          const stehend = {};
+          for (let i = 0; i < autos.length; i++) {
+            if (s.phase[i] === 'halt' || s.phase[i] === 'stand') {
+              const pl = s.platz[i];
+              if (stehend[pl] !== undefined) doppeltBelegt++;
+              stehend[pl] = i;
+            }
+            if (s.platz[i] !== null && s.platz[i] !== undefined) {
+              plaetzeJe[i][s.platz[i]] = true;
+            }
+          }
+          // Und die Vorbeifahrt: ein Auto in der Box, dessen Platz HINTER einem stehenden
+          // liegt, und das nicht selbst schon dort ist.
+          for (let i = 0; i < autos.length; i++) {
+            if (!s.phase[i]) continue;
+            // An der eigenen Box angekommen: kein Vorbeifahren mehr, siehe amPlatz.
+            if (s.amPlatz[i]) continue;
+            const meins = s.platz[i];
+            let musstVorbei = false;
+            for (const pl of Object.keys(stehend)) {
+              if (+stehend[pl] === i) continue;
+              if (s.phase[i] === 'raus' ? +pl > meins : +pl < meins) musstVorbei = true;
+            }
+            if (!musstVorbei) continue;
+            vorbeiTakte++;
+            if (s.befehl[i] !== null && s.befehl[i] > 0) vorbeiBefehlRechts++;
+            if (s.quer[i] > 0) {
+              vorbeiRechts++;
+              if (s.quer[i] > vorbeiQuerMax) vorbeiQuerMax = s.quer[i];
+            }
+          }
+          if (s.geparkt.some((x) => x)) geparkt = true;
+          for (let i = 0; i < autos.length; i++) {
+            if (s.reifen[i] === 'regen' && umbauBei[i] === null && s.t >= gewechselt) {
+              umbauBei[i] = s.t;
+            }
+            if (s.t > gewechselt && s.reifen[i] === 'trocken') falschTakte[i]++;
+            // DIE FLANKE, nicht der Wechsel des Grundes. Der erste Anlauf verglich mit
+            // dem letzten GEMERKTEN Grund - zwei Stopps hintereinander mit demselben Grund
+            // ergaben damit einen Eintrag, und ein Lauf mit einem Wechsel hin und einem
+            // zurueck sah aus wie ein einzelner Stopp. Gemessen: der Rueckweg auf trocken
+            // war an faktorEnde 1,0 zu sehen und an stoppGrund nicht.
+            const gr = s.grund[i];
+            if (gr && !grundZuvor[i]) stoppGrund[i].push(gr);
+            grundZuvor[i] = gr;
+          }
+        }
+        return {
+          gewechselt,
+          takte,
+          // In welchem Takt hatte jedes Auto die Regenreifen drauf? null = nie.
+          umbauBei,
+          // Und wie lange fuhr es mit den falschen? In Takten von 45 ms.
+          falschTakte,
+          falschSek: falschTakte.map((x) => +(x * 0.045).toFixed(1)),
+          // Der Grund jedes Stopps je Auto - 'reifen' erwartet, 'plan' waere ein Fehler.
+          stoppGrund,
+          // Zwei Autos gleichzeitig in der Box waere der Bruch der Zusage.
+          mehrfach,
+          geparkt,
+          // ---- Die Gasse -----------------------------------------------------------
+          // Welche Plaetze hat jedes Auto im Lauf belegt?
+          plaetze: plaetzeJe.map((o) => Object.keys(o).map(Number).sort()),
+          // Zwei Autos auf demselben Platz waeren der Bruch der Zusage.
+          doppeltBelegt,
+          // Wieviele standen hoechstens gleichzeitig in der Box? 1 waere die alte Regel.
+          hoechstGleich,
+          // Wie oft musste einer an einem stehenden vorbei, und wie oft hielt er dabei
+          // trotzdem den rechten Rand? Das zweite MUSS null sein - sonst rammt er.
+          vorbeiTakte, vorbeiRechts,
+          // Der Befehl. MUSS null sein - ein positiver Befehl beim Vorbeifahren waere die
+          // Anweisung, dem Stehenden ins Heck zu fahren.
+          vorbeiBefehlRechts,
+          // Und wie weit rechts der nachlaufende Filter dabei noch stand, als Mass.
+          vorbeiQuerMax: +vorbeiQuerMax.toFixed(3),
+          // Der Faktor gegen Ende, als Beleg, dass die Drosselung wieder weg ist.
+          faktorEnde: spur[spur.length - 1].faktor,
+          gripEnde: spur[spur.length - 1].grip,
+          // Und der schlechteste Faktor je Auto - die Drosselung, waehrend es falsch stand.
+          faktorMin: autos.map((_, i) =>
+            Math.min.apply(null, spur.map((s) => s.faktor[i]))),
+        };
+      } finally {
+        Date.now = echtNow;
+        for (const c of garage.slice()) { try { stopGhost(c); } catch (e) {} }
+        garage.splice(0, garage.length);
+        for (const c of merkGarage) garage.push(c);
+        currentTrackTiles = merkTiles;
+        lineCache = null;
+        ghostCfg.pitAn = merkCfg.an; ghostCfg.pitFrei = merkCfg.frei;
+        ghostCfg.pitSek = merkCfg.sek;
+        ghostCfg.pitRundenMin = merkCfg.lo; ghostCfg.pitRundenMax = merkCfg.hi;
+        flagState = merkFlag;
+        setWeather(merkW);
+        wxFront = merkF; wxFrontTo = merkTo;
+        if (typeof applySurface === 'function') applySurface();
+        // Den Boxenplatz freigeben - eine Sonde, die ihn hier liegen laesst, blockiert
+        // jeden spaeteren Stopp. Genau dieser Fehler hat in dieser Sitzung schon 41 Runden
+        // ohne einen einzigen Stopp erzeugt.
+        if (OMEGA_TEST.pitInhaberSetzen) OMEGA_TEST.pitInhaberSetzen(null);
+      }
+    },
+
     ghostPitProbe(opt) {
       const o = opt || {};
       const merkGarage = garage.splice(0, garage.length);
@@ -2378,7 +2755,10 @@
         const autos = [];
         for (let i = 0; i < (o.autos || 1); i++) {
           const car = OMEGA_TEST.attrappeGhost('P' + i);
-          car.ghost.pitFaellig = 0;
+          // nurEiner: die anderen sind NICHT faellig. Gebraucht seit die Boxengasse mehrere
+          // Plaetze hat - sonst pitten alle drei, und dann gibt es keine Umstehenden mehr,
+          // an denen das Ausweichen zu pruefen waere.
+          car.ghost.pitFaellig = (o.nurEiner && i > 0) ? 500 : 0;
           car.ghost.laps = 9;
           car.ghost.freeRun = true;
           // Auf die letzte Kachel vor Start/Ziel stellen. Start/Ziel ist Kachel 0, also ist
@@ -2485,7 +2865,7 @@
         // Prueflauf, der modulweiten Zustand liegen laesst, ist trotzdem einer, der den
         // naechsten Lauf beeinflusst - und genau das hat hier eine Messung verdorben.
         for (const c of garage) if (c.ghost) c.ghost.pit = null;
-        pitPlatzRaeumen(pitInhaber);
+        pitInhaberSetzen(null);        // raeumt ALLE Plaetze
       }
     },
 
@@ -2503,17 +2883,18 @@
         garage.push(car);
         // Einen laufenden Stopp von Hand setzen - die Sonde prueft das AUFRAEUMEN, nicht das
         // Ansetzen. Dafuer gibt es ghostPitProbe().
-        car.ghost.pit = { phase: 'stand', at: Date.now(), laenge: 5000 };
+        car.ghost.pit = { phase: 'stand', at: Date.now(), laenge: 5000, platz: 0 };
         pitInhaberSetzen(car);
-        const vor = !!pitInhaber;
+        const belegt = () => pitPlaetze.some((c) => !!c);
+        const vor = belegt();
         if (wie === 'finish') finishGhost(car);
         else stopGhost(car);
-        return { vor, nach: !!pitInhaber, pit: !!car.ghost.pit,
+        return { vor, nach: belegt(), pit: !!car.ghost.pit,
                  inGarage: garage.indexOf(car) >= 0 };
       } finally {
         garage.splice(0, garage.length);
         for (const c of merkGarage) garage.push(c);
-        pitPlatzRaeumen(pitInhaber);
+        pitInhaberSetzen(null);
       }
     },
 
@@ -3018,10 +3399,17 @@
       const t0 = performance.now();
       for (let i = 0; i < n; i++) karteAutosSetzen(svg, r.geo, cars || []);
       const t1 = performance.now();
-      const punkte = [...svg.querySelectorAll('g.karte-autos circle')]
-        .filter(c => +c.getAttribute('r') > 0)
-        .map(c => ({ x: +c.getAttribute('cx'), y: +c.getAttribute('cy'),
-                     fill: c.getAttribute('fill') }));
+      // Dieselbe Umstellung wie in trackMarks(): eine Gruppe je Auto, verborgen ueber
+      // visibility statt ueber Radius null - eine Gruppe hat kein r.
+      const punkte = [...svg.querySelectorAll('g.karte-autos > g')]
+        .filter(g => g.getAttribute('visibility') !== 'hidden')
+        .map(g => {
+          const m = /translate\(([-\d.]+) ([-\d.]+)\)\s*rotate\(([-\d.]+)\)/
+            .exec(g.getAttribute('transform') || '');
+          const body = g.querySelector('rect');
+          return { x: m ? +m[1] : null, y: m ? +m[2] : null, winkel: m ? +m[3] : null,
+                   fill: body ? body.getAttribute('fill') : null };
+        });
       const kuerzel = [...svg.querySelectorAll('g.karte-autos text')]
         .map(t => t.textContent).filter(Boolean);
       return { jeAufrufMs: +((t1 - t0) / n).toFixed(3), punkte, kuerzel };
@@ -3246,6 +3634,17 @@
       for (let i = 0; i < n; i++) wxBlobsWeiter(0.1);
       return this.wxProbe();
     },
+    // Das Wetter von aussen setzen UND die Front gleich durchziehen. Zwei Dinge, die immer
+    // zusammen gebraucht werden: setWeather() setzt nur das Ziel, den Weg macht wxTick in
+    // 80-ms-Schritten - ein Prueflauf mit gefaelschter Uhr wartet darauf ewig.
+    wetterSetzen(next) {
+      if (typeof setWeather !== 'function') return null;
+      setWeather(next);
+      this.wxSet(next === 'rain' ? 0 : -1);
+      return { weather, front: +wxFront.toFixed(3),
+               naesse: +wxRainLevel().toFixed(3) };
+    },
+
     // Die Front von aussen stellen, damit ein Test nicht fuenf Sekunden warten muss.
     wxSet(front) {
       if (typeof wxFront === 'undefined') return null;
