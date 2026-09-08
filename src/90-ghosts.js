@@ -3239,10 +3239,31 @@
     const i = ghostLineIndex(lc, g.tileIndex, ghostTilePhase(car));
     if (i === null) return ghostLineMitDeckel(car, ghostLineHeuristic(car)
                                              || ghostLineFromCode(car));
-    // span statt limit als Bezug: die Relaxation nutzt die Bahnbreite nicht immer voll aus,
-    // und dann waere der Ausschlag der Ghost-Lenkung kuenstlich klein. Der Regler
-    // "Ideallinie" soll die ganze gefundene Linie bedeuten, nicht einen Bruchteil davon.
-    const ref = Math.max(1e-6, lc.span || lc.limit);
+    // ---- DER BEZUG IST DIE BAHNBREITE UND NICHT DIE SPANNE DER LINIE ----------------
+    //
+    // Hier stand `lc.span || lc.limit` mit der Begruendung, die Relaxation nutze die
+    // Bahnbreite nicht immer voll aus und der Ausschlag waere sonst kuenstlich klein. Das
+    // war ein Denkfehler mit einer messbaren Folge: eine Normierung auf die eigene Spanne
+    // STRECKT jede Linie auf den vollen Anschlag und wirft damit genau die Information weg,
+    // die eine Linie ausmacht - wie weit sie sich vom Mittelstreifen entfernt.
+    //
+    // Aufgefallen ist es erst mit dem dritten Modell, und das erklaert, warum es so lange
+    // unbemerkt blieb:
+    //
+    //     Modell        Spanne   Deckel   Verstaerkung
+    //     Kruemmung      9,28     8,63       1,00
+    //     Rundenzeit     9,28     8,63       1,00
+    //     Late Apex      4,06     8,63       2,29
+    //
+    // Die alten zwei Modelle legen die Linie ohnehin an den Rand, span und limit sind dort
+    // dasselbe, und die Zeile war wirkungslos. Late Apex nutzt 4 cm von 9,3 - und wurde
+    // damit auf mehr als das Doppelte gestreckt. Gemeldet als "wenn ich Late Apex waehle und
+    // simuliere, fahren die Autos nicht auf der Ideallinie sondern steuern Kurven mal innen
+    // und mal aussen an": genau das ist eine um 2,29 verstaerkte Linie.
+    //
+    // limit ist die halbe nutzbare Bahnbreite und damit die Groesse, in der alpha gemessen
+    // ist. Der Regler "Ideallinie" skaliert davon - dafuer ist er da.
+    const ref = Math.max(1e-6, lc.limit || lc.span);
     // DAS VORZEICHEN IST GEDREHT, und das war ein echter Fehler, kein Feinschliff.
     //
     // trackNormals() zeigt nach LINKS in Fahrtrichtung. Gemessen: auf der ersten Geraden

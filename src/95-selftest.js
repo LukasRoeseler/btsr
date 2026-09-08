@@ -3968,9 +3968,20 @@
         const vorher = aus[nach][0];
         const nachher = an[nach][0];
         zeilen.push('nach H' + k + ': ' + vorher.toFixed(2) + ' -> ' + nachher.toFixed(2));
-        // Deutlich weiter aussen: mindestens 0,15 der Bahnbreite. Weniger waere im
-        // Rauschen der Relaxation.
-        if (!(Math.abs(nachher) < Math.abs(vorher) - 0.15)) {
+        // ---- MIT VORZEICHEN UND NICHT MIT BETRAG, seit v0.5.43 ----------------------
+        //
+        // Hier stand |nachher| < |vorher| - 0,15, also "naeher an null". Das war richtig,
+        // solange die Linie ohne Oeffnung tief INNEN lag: dann heisst weiter aussen
+        // zwangslaeufig naeher an null. Seit die Oeffnung eine Schranke im Suchraum ist,
+        // liegt die Linie ohne sie auf der MITTELLINIE - gemessen vorher -0,00 - und mit
+        // ihr bei +0,58, also jenseits von null. Der Betrag waechst dabei, und der alte
+        // Vergleich schlug an, obwohl genau das Gewuenschte passiert war.
+        //
+        // aussen ist fuer eine Rechtshaarnadel das positive alpha (nachgemessen: bei
+        // konstantem Versatz gibt alpha +4 einen Radius von 38,8 Einheiten, alpha -4 nur
+        // 30,7 - der groessere Radius ist der aeussere). Die Werte hier sind alpha/ref.
+        const aussenVz = (p.tiles[k].type === TILE_TYPE.HAIRPIN) ? 1 : -1;
+        if (!(aussenVz * (nachher - vorher) > 0.15)) {
           schlecht.push('nach H' + k + ' nur ' + vorher.toFixed(2) + ' -> ' + nachher.toFixed(2));
         }
       }
@@ -5867,12 +5878,29 @@
   //      ihn gemessen um +0,045 der Kurvenlaenge, also gar nicht.
   //   2. Es ist im eigenen Mass schneller als die anderen zwei. Gemessen auf vier Layouts
   //      15 bis 35 Prozent.
-  //   3. Es ist schneller als die MITTELLINIE. Das ist die Gegenprobe, die zaehlt: eine
-  //      Carrera-Kurve ist ein Bogen mit festem Radius, jeder Versatz nach innen macht ihn
-  //      kleiner, und deshalb ist "kein Versatz" hier ein ernster Gegner. Ohne diese Probe
-  //      lief die Suche einmal in ein Ergebnis, das 4,1 Prozent SCHLECHTER war als die
-  //      Mittellinie - das war ein lokales Minimum, und es ist der Grund fuer die drei
-  //      Startpunkte.
+  //   3. Es ist schneller als die MITTELLINIE - aber nur, wenn man es frei laesst, und das
+  //      ist der ehrliche Teil dieser Pruefung.
+  //
+  //      Eine Carrera-Kurve ist ein Bogen mit FESTEM Radius. Nachgemessen an einer reinen
+  //      Rechtskurve, mittlerer Bahnradius bei konstantem Versatz: Mittellinie 34,7
+  //      Einheiten, alpha +4 gibt 38,8, alpha -4 gibt 30,7. Nach innen zu tauchen macht den
+  //      Radius also KLEINER, und die zeitschnellste Linie hat deshalb gar keinen Scheitel -
+  //      bei Oeffnung 0 legt der Optimierer sie auf +-0,11 der Bahnbreite, also praktisch
+  //      auf die Mitte.
+  //
+  //      Wer eine Linie will, die aussieht wie eine Ideallinie, fordert die FORM ueber den
+  //      Regler und zahlt Zeit dafuer. Gemessen, Late Apex gegen die Mittellinie:
+  //
+  //          Oeffnung   Spanne        Zeit gegen Mittellinie
+  //             0       0,07 - 0,09     +1,0 bis +1,5 %
+  //             0,4     0,33 - 0,48     -0,7 bis -1,9 %
+  //             0,8     0,68 - 0,91     -4,9 bis -5,3 %
+  //
+  //      Geprueft wird deshalb BEIDES getrennt: bei Oeffnung 0 muss die freie Optimierung
+  //      die Mittellinie schlagen (sonst ist die Suche kaputt - genau das war sie einmal,
+  //      mit 4,1 Prozent SCHLECHTER, und es war ein lokales Minimum), und bei der Vorgabe
+  //      muss die FORM stimmen. Eine Pruefung, die beides in einem Satz verlangt, wuerde
+  //      eine Zusicherung fordern, die die Geometrie nicht hergibt.
   stAdd('Late Apex: spaeter Scheitel und schneller als die Mittellinie', () => {
     if (!window.OMEGA_TEST || !OMEGA_TEST.buildLine || !OMEGA_TEST.lapTimeOf) {
       return { skip: true, mass: 'buildLine/lapTimeOf nicht erreichbar' };
@@ -5897,15 +5925,50 @@
           schlecht.push(code + ': Scheitel bei ' + a + ' ausserhalb 0,55 bis 0,85');
         }
       }
-      // 2. Schneller als das Rundenzeitmodell
-      if (!(LA.lapTime < LT.lapTime)) {
-        schlecht.push(code + ': ' + LA.lapTime.toFixed(2) + ' s nicht schneller als '
-                      + LT.lapTime.toFixed(2));
+      // 2. NICHT SCHNELLER als das Rundenzeitmodell, und das ist eine Berichtigung an mir
+      //    selbst. Hier stand `LA.lapTime < LT.lapTime`, also die Forderung, das
+      //    eingeschraenkte Modell sei schneller als das freie. Das kann nicht sein: beide
+      //    minimieren DIESELBE Zielfunktion ueber demselben Suchraum, und 'lateapex' hat
+      //    zusaetzlich die Scheitelschranke. Ein kleinerer Suchraum kann ein Minimum nur
+      //    verfehlen, nie verbessern. Gemessen liegen die zwei auf zwei von vier Layouts
+      //    gleich (15,30 gegen 15,30), weil die Oeffnungsschranke dort ohnehin bindet.
+      //
+      //    Und auch die UMKEHRUNG ist nicht behauptbar, was ich beim ersten Anlauf ebenfalls
+      //    falsch hatte: gemessen kam 'lateapex' auf SR3GLR2GR2G2 mit 19,77 s vor dem freien
+      //    19,90 s heraus. Beide sind LOKALE Optima eines nicht konvexen Problems, gestartet
+      //    von drei festen Punkten - und die Startpunkte der beiden unterscheiden sich, weil
+      //    der Scheitelbereich verschieden ist. Ein lokaler Abstieg mit anderem Start darf im
+      //    Einzelfall besser landen; das ist eine Eigenschaft des Verfahrens und kein
+      //    Widerspruch.
+      //
+      //    Als ZUSICHERUNG bleibt damit nur eine grobe Bandbreite, die eine echte Entgleisung
+      //    faengt und keine Ordnung behauptet, die es nicht gibt. Der Vergleich selbst steht
+      //    im Messwert und ist dort ablesbar.
+      if (!(LA.lapTime < LT.lapTime * 1.15)) {
+        schlecht.push(code + ': ' + LA.lapTime.toFixed(2) + ' s liegt mehr als 15 % ueber '
+                      + 'dem freien ' + LT.lapTime.toFixed(2));
       }
-      // 3. Und schneller als gar kein Versatz
-      if (!(LA.lapTime < mitte)) {
-        schlecht.push(code + ': ' + LA.lapTime.toFixed(2) + ' s nicht schneller als die '
-                      + 'Mittellinie mit ' + mitte.toFixed(2));
+      // 3. FREI GELASSEN schneller als gar kein Versatz. Die Oeffnung wird dafuer auf 0
+      //    gestellt und danach zurueckgegeben.
+      const merkExit = OMEGA_TEST.getLineExit();
+      let frei = null;
+      try {
+        OMEGA_TEST.setLineExit(0);
+        frei = OMEGA_TEST.buildLine(pts, nrm, Object.assign({ model: 'lateapex' }, o));
+      } finally {
+        OMEGA_TEST.setLineExit(merkExit);
+      }
+      zeilen[zeilen.length - 1] += ' frei ' + frei.lapTime.toFixed(1);
+      if (!(frei.lapTime < mitte)) {
+        schlecht.push(code + ': frei optimiert ' + frei.lapTime.toFixed(2)
+                      + ' s nicht schneller als die Mittellinie mit ' + mitte.toFixed(2));
+      }
+      // 4. Und mit der Vorgabe stimmt die FORM: Ein- und Ausgang aussen, Scheitel innen.
+      for (const z of (OMEGA_TEST.lineShape(code, 'lateapex') || [])) {
+        if (Math.sign(z.scheitel) !== z.dir) {
+          schlecht.push(code + ': Scheitel ' + z.scheitel.toFixed(2) + ' auf der falschen '
+                        + 'Seite bei Kachel ' + z.von + '-' + z.bis);
+        }
       }
     }
     return { ok: !schlecht.length,
@@ -5953,21 +6016,48 @@
       for (const m of ['curvature', 'laptime']) {
         const zuege = OMEGA_TEST.lineShape(code, m);
         if (!zuege || !zuege.length) { schlecht.push(code + '/' + m + ': keine Kurve'); continue; }
-        for (const z of zuege) {
+        for (let zi = 0; zi < zuege.length; zi++) {
+          const z = zuege[zi];
           n++;
           const wo = code + '/' + m + ' Kachel ' + z.von + '-' + z.bis
                      + ' dreht ' + (z.dir > 0 ? 'rechts' : 'links');
-          // 1. Der Scheitel liegt innen, und zwar mit Betrag. Gemessen ist der kleinste
-          //    ueber alle Proben 0,37; 0,25 laesst Luft und faengt "kein Scheitel".
-          if (Math.sign(z.scheitel) !== z.dir || Math.abs(z.scheitel) < 0.25) {
+          // 1. Der Scheitel liegt innen, und zwar mit Betrag.
+          //
+          // ZWEI SCHRANKEN, UND DER GRUND IST PLATZ. Die Tiefe des Scheitels haengt am
+          // Regler "Kurven oeffnen", und dessen Wirkung skaliert mit der BOGENLAENGE des
+          // Kurvenzuges: eine einzelne 60-Grad-Kachel hat 36 von 80 Einheiten Bezugslaenge,
+          // bekommt also 45 Prozent. Bei der Vorgabe 0,8 und dem Kurvenfaktor 0,6 sind das
+          // 0,8 * 0,6 * 0,45 = 0,216 - gemessen kam auf SG2RG2L genau 0,20 heraus, mit
+          // richtigem Vorzeichen. Eine Schranke von 0,25 fuer alle wuerde also die Geometrie
+          // bestrafen und nicht einen Fehler.
+          const tief = z.bis > z.von ? 0.25 : 0.15;
+          if (Math.sign(z.scheitel) !== z.dir || Math.abs(z.scheitel) < tief) {
             schlecht.push(wo + ', Scheitel ' + z.scheitel.toFixed(2));
             continue;
           }
           // 2. Und die Form: Ein- und Ausgang liegen WEITER AUSSEN als der Scheitel.
+          //
+          // NICHT AN EINER SCHIKANE, und das ist Geometrie und keine Nachsicht: liegt
+          // zwischen zwei Kurven keine Kachel, dann sind der Ausgang der einen und der
+          // Eingang der anderen DERSELBE Abtastpunkt - und der kann nicht gleichzeitig
+          // aussen fuer eine Rechts- und eine Linkskurve sein. Gemessen an SRRRLLL: dort
+          // liegt der Uebergang bei calc +0,335, also aussen fuer die folgende Linkskurve
+          // und damit innen fuer die vorhergehende Rechtskurve. Beides ist wahr.
+          //
+          // Dieselbe Ausnahme macht auch die Konstruktion in formLine() - dort faellt an
+          // einem direkten Uebergang der Aussenboden weg und die zwei Anker werden zu einem
+          // Wert. Eine Pruefung, die sie nicht kennt, prueft ein anderes Bauwerk.
+          const nx = zuege[(zi + 1) % zuege.length];
+          const pv = zuege[(zi - 1 + zuege.length) % zuege.length];
+          const nachSchikane = zuege.length > 1 && nx && nx.von === z.bis + 1;
+          const vorSchikane = zuege.length > 1 && pv && z.von === pv.bis + 1;
           if (z.bis > z.von) {
             const fEin = z.dir * (z.scheitel - z.eingang);
             const fAus = z.dir * (z.scheitel - z.ausgang);
-            if (Math.min(fEin, fAus) < 0.15) {
+            const teile = [];
+            if (!vorSchikane) teile.push(fEin);
+            if (!nachSchikane) teile.push(fAus);
+            if (teile.length && Math.min.apply(null, teile) < 0.15) {
               schlecht.push(wo + ', Form ein ' + fEin.toFixed(2) + ' aus ' + fAus.toFixed(2));
             }
           }
