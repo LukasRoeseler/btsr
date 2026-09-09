@@ -6985,6 +6985,180 @@
              mass: zeilen.join(' | ') + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
+  // ---- Die Lichthupe vor dem Ueberholmanoever ----
+  //
+  // BESTELLT: "Bevor Ghosts zum Ueberholen ansetzen, sollen sie Lichthupe machen." Drei
+  // Zusagen stecken darin, und alle drei stehen hier.
+  //
+  // DAS PROTOKOLL HAT EIN SCHEINWERFER-BIT, also kein Fernlicht - und ein Ghost faehrt mit
+  // Licht an. Die Lichthupe ist deshalb ein kurzes AUS, genau wie die des Fahrers
+  // (resolveLights in 70-race.js, wo die Begruendung steht). Geprueft wird entsprechend
+  // nicht "Licht an", sondern die Zahl der DUNKELFLANKEN.
+  stAdd('Ueberholen: erst Lichthupe, dann ausschwenken', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.ghostPassProbe) {
+      return { skip: true, mass: 'ghostPassProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.ghostPassProbe({ mitAnsage: true, ueberholtNach: 3000,
+                                          dauerMs: 8000 });
+    if (!r || !r.reihe.length) return { skip: true, mass: 'kein Lauf' };
+    const fehler = [];
+    // 1. DIE ANSAGE KOMMT ZUERST. Eine Menge sagt darueber nichts - die REIHENFOLGE ist
+    //    die Zusage, deshalb prueft der Test 'folge' und nicht 'phasen'.
+    if (r.folge[0] !== 'ansage') {
+      fehler.push('die Folge beginnt mit ' + r.folge[0] + ' statt mit der Ansage');
+    }
+    if (r.folge.indexOf('raus') !== 1) {
+      fehler.push('nach der Ansage kommt nicht raus: ' + r.folge.join('>'));
+    }
+    // 2. UND WAEHREND IHR BEWEGT SICH NICHTS ZUR SEITE. Das ist der Unterschied zwischen
+    //    "kuendigt an" und "schwenkt aus und blinkt dabei".
+    const inAnsage = r.reihe.filter((x) => x.phase === 'ansage');
+    if (!inAnsage.length) fehler.push('keine Takte in der Ansage');
+    const querMax = Math.max.apply(null, inAnsage.map((x) => Math.abs(x.versatz)));
+    if (inAnsage.length && !(querMax === 0)) {
+      fehler.push('Seitenversatz ' + querMax + ' schon waehrend der Ansage');
+    }
+    // 3. ZWEI IMPULSE, und sie liegen IN der Ansage. Ein Blitzen, das in die Ausschwenkphase
+    //    hineinlaeuft, waere wieder eine Begleitung und keine Ankuendigung.
+    if (r.impulse !== 2) fehler.push(r.impulse + ' Lichtimpulse statt zwei');
+    const dunkelSpaeter = r.reihe.filter((x) => x.dunkel && x.phase !== 'ansage').length;
+    if (dunkelSpaeter) {
+      fehler.push(dunkelSpaeter + ' dunkle Takte nach der Ansage');
+    }
+    // 4. Die Gegenprobe: OHNE Ansage gibt es keine Lichthupe. Ohne sie waere nicht gezeigt,
+    //    dass die Dunkelflanken von der Ansage kommen und nicht von irgendetwas sonst.
+    const ohne = OMEGA_TEST.ghostPassProbe({ ueberholtNach: 3000, dauerMs: 8000 });
+    if (ohne && ohne.impulse) {
+      fehler.push('ohne Ansage ' + ohne.impulse + ' Lichtimpulse');
+    }
+    return { ok: !fehler.length,
+             mass: r.folge.join(' > ') + ' | ' + r.impulse + ' Impulse in '
+                 + r.ansageMs + ' ms, ' + r.dunkelTakte + ' dunkle Takte'
+                 + ', Versatz in der Ansage ' + querMax
+                 + ' | ohne Ansage ' + (ohne ? ohne.impulse : '?') + ' Impulse'
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
+  // ---- Die Ansage darf das Manoever nicht verkuerzen ----
+  //
+  // DER FEHLER, DEN DAS FESTHAELT: SPICE_PASS_MAX_MS ist die Zeit, die ein Versuch dauern
+  // darf, gemessen ab passSince. Setzte man passSince bei der ANSAGE, haette jeder Versuch
+  // 570 ms weniger Zeit zum Ueberholen - die Ankuendigung wuerde das Manoever verkuerzen,
+  // das sie ankuendigt, und ein Teil der Versuche wuerde am Zeitlimit scheitern statt am
+  // Platz.
+  //
+  // Gemessen wird das an der Abbruchzeit: ein Versuch, der nicht durchkommt, muss nach der
+  // Ansage PLUS der vollen Versuchszeit aufgeben und nicht vorher.
+  stAdd('Ueberholen: die Lichthupe kostet den Versuch keine Zeit', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.ghostPassProbe) {
+      return { skip: true, mass: 'ghostPassProbe nicht vorhanden' };
+    }
+    // ueberholtNach null heisst "kommt nicht vorbei" - der Abbruchfall.
+    const mit = OMEGA_TEST.ghostPassProbe({ mitAnsage: true, ueberholtNach: null,
+                                            dauerMs: 12000 });
+    const ohne = OMEGA_TEST.ghostPassProbe({ ueberholtNach: null, dauerMs: 12000 });
+    if (!mit || !ohne) return { skip: true, mass: 'kein Lauf' };
+    const ende = (r) => {
+      const i = r.reihe.findIndex((x) => !x.laeuft);
+      return i < 0 ? null : r.reihe[i].t;
+    };
+    const eMit = ende(mit), eOhne = ende(ohne);
+    const fehler = [];
+    if (eMit === null || eOhne === null) {
+      fehler.push('ein Lauf brach nicht ab (' + eMit + '/' + eOhne + ')');
+    } else {
+      // Der Unterschied MUSS die Ansage sein, und zwar sie ganz. Ein Takt Schlupf ist die
+      // Schrittweite der Sonde (60 ms), zwei sind Luft.
+      const diff = eMit - eOhne;
+      if (Math.abs(diff - mit.ansageMs) > 130) {
+        fehler.push('Abbruch ' + diff + ' ms spaeter, erwartet ' + mit.ansageMs
+                    + ' - die Ansage frisst Versuchszeit');
+      }
+    }
+    return { ok: !fehler.length,
+             mass: 'Abbruch mit Ansage ' + eMit + ' ms, ohne ' + eOhne + ' ms, Ansage '
+                 + mit.ansageMs + ' ms'
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
+  // ---- Und die Lichthupe kommt auch in der Simulation an ----
+  //
+  // DER FEHLER, DEN DIESE PRUEFUNG FESTHAELT, ist der subtilste an dieser Funktion und war
+  // nur durch Messen zu finden: die erste Fassung von ghostHupt() rechnete
+  // hupeDunkel(Date.now() - g.ansageSeit). In der Rennsimulation ist Date.now aber
+  // GEFAELSCHT - simSchritt() setzt es auf seine eigene Uhr und stellt es im finally
+  // zurueck. ghostTick() laeuft innerhalb dieses Fensters, simZeichnen() und simZustand()
+  // laufen ausserhalb.
+  //
+  // Eine Funktion, die die Uhr selbst fragt, gab damit je nach Aufrufer eine andere
+  // Antwort. Gemessen: 650 Takte in der Ansage und NULL dunkle - auf der Karte haette es
+  // nie geblitzt, und in der App waere nur aufgefallen, dass "nichts passiert".
+  //
+  // Geprueft wird deshalb der ANTEIL der dunklen Takte an den Ansagetakten, und zwar
+  // durch die Simulation hindurch. Er ist nachrechenbar: zwei Impulse von 220 ms in einer
+  // Ansage von 570 ms sind 440/570 = 77 Prozent.
+  stAdd('Ueberholen: die Lichthupe kommt durch die Simulation', async () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.simSchritte) {
+      return { skip: true, mass: 'simSchritte nicht vorhanden' };
+    }
+    const stell = (id, v) => {
+      const e = $(id);
+      if (!e) return;
+      if (e.type === 'checkbox') e.checked = !!v;
+      else {
+        if (e.tagName === 'SELECT'
+            && ![...e.options].some((o) => o.value === String(v))) {
+          throw new Error(id + ': "' + v + '" ist keine Option');
+        }
+        e.value = String(v);
+      }
+      e.dispatchEvent(new Event('change', { bubbles: true }));
+    };
+    const merk = { g: $('sim-ghosts').value, l: $('sim-laps').value,
+                   f: $('sim-fast').checked, p: ghostCfg.pitAn };
+    let ansage = 0, dunkel = 0;
+    try {
+      // Sechs Autos, damit ueberhaupt oft angesetzt wird; ohne Boxenstopps, weil ein
+      // stehendes Auto keine Ueberholmanoever faehrt.
+      stell('sim-ghosts', '6');
+      stell('sim-laps', '10');
+      stell('sim-fast', false);
+      ghostCfg.pitAn = false;
+      simStart();
+      for (let k = 0; k < 2600; k++) {
+        const z = OMEGA_TEST.simSchritte(1, 45);
+        if (!z) break;
+        for (const a of z.autos) {
+          if (a.passPhase === 'ansage') ansage++;
+          if (a.hupt) dunkel++;
+        }
+      }
+      simStop('Pruefung');
+    } finally {
+      stell('sim-ghosts', merk.g); stell('sim-laps', merk.l);
+      stell('sim-fast', merk.f); ghostCfg.pitAn = merk.p;
+      if (simAn()) simStop('Pruefung');
+    }
+    if (!ansage) return { skip: true, mass: 'in diesem Lauf wurde nicht angesetzt' };
+    const anteil = dunkel / ansage;
+    const fehler = [];
+    // 1. UEBERHAUPT DUNKEL. Das ist die Zeile, die den gemeldeten Fehler faengt.
+    if (!dunkel) {
+      fehler.push('kein einziger dunkler Takt in ' + ansage
+                  + ' Ansagetakten - die Uhr passt nicht zum Aufrufer');
+    }
+    // 2. Und der Anteil muss zur Impulsform passen: 440 von 570 ms. Das Band ist weit, weil
+    //    die Ansage an Taktgrenzen anfaengt und aufhoert - eng waere eine Pruefung der
+    //    Rundung und nicht der Sache.
+    else if (!(anteil > 0.6 && anteil < 0.9)) {
+      fehler.push('Anteil dunkler Takte ' + anteil.toFixed(2) + ', erwartet um 0,77');
+    }
+    return { ok: !fehler.length,
+             mass: ansage + ' Ansagetakte, ' + dunkel + ' davon dunkel ('
+                 + anteil.toFixed(2) + ', erwartet 440/570 = 0,77)'
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
   // ---- Zieleinlauf ----
   //
   // Vorher endete ein Rennen fuer die Ghosts mit stopGhost(): Nullen schreiben und

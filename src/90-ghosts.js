@@ -3078,6 +3078,79 @@
   //           probiert und dreimal daneben liegt, ist genau der, der rammt.
   const SPICE_PASS_MAX_MS = 5000;      // so lange darf ein Versuch dauern
   const SPICE_PASS_TUCK_MS = 700;      // so lange dauert das Einordnen
+
+  // ====================================================================================
+  // DIE LICHTHUPE VOR DEM UEBERHOLMANOEVER
+  // ====================================================================================
+  //
+  // BESTELLT: "Bevor Ghosts zum Ueberholen ansetzen, sollen sie Lichthupe machen."
+  //
+  // BEVOR heisst hier wirklich vorher, und dafuer gibt es eine eigene Phase. Der Ablauf war
+  // raus -> vorbei -> rein; jetzt steht 'ansage' davor, und in ihr bewegt sich das Auto
+  // NICHT zur Seite - es kuendigt an und faehrt erst danach heraus. Ein Blitzen waehrend
+  // des Ausschwenkens waere keine Ankuendigung, sondern eine Begleitung.
+  //
+  // ---- WAS EIN SCHEINWERFER-BIT HERGIBT --------------------------------------------
+  //
+  // Das Protokoll hat GENAU EIN Bit fuer die Scheinwerfer (LIGHT_HEAD, 20-protocol.js),
+  // also kein Fernlicht, das man aufblenden koennte. Und ein Ghost faehrt mit Licht AN.
+  // Eine Lichthupe ist hier deshalb ein kurzes AUS - dasselbe, was die Lichthupe des
+  // Fahrers tut, und dort steht die Begruendung schon (resolveLights in 70-race.js).
+  //
+  // ---- ZWEI IMPULSE UND NICHT DREI -------------------------------------------------
+  //
+  // Der Fahrer bekommt drei Impulse von 220 ms mit 130 ms Pause, also 920 ms. Fuer einen
+  // Ghost sind zwei genug, und der Grund ist keine Kosmetik, sondern Zeit: die Ansage
+  // laeuft VOR dem Manoever, und jede Millisekunde davon ist eine, in der der Verfolger
+  // hinter dem anderen klebt, ohne auszuweichen. 570 ms sind zwei klare Impulse und eine
+  // knappe halbe Sekunde.
+  //
+  // Dieselbe Impulslaenge wie beim Fahrer, damit es auf dem Tisch als dieselbe Geste
+  // erkennbar ist - zwei verschieden getaktete Lichthupen im selben Rennen waeren zwei
+  // Zeichen, und man wuesste nicht, welches was heisst.
+  const HUPE_AN_MS = 220;
+  const HUPE_AUS_MS = 130;
+  const HUPE_IMPULSE = 2;
+  const HUPE_PERIODE_MS = HUPE_AN_MS + HUPE_AUS_MS;
+  // Die letzte Pause zaehlt nicht mit: nach dem zweiten Impuls ist die Ansage vorbei.
+  const SPICE_ANSAGE_MS = HUPE_IMPULSE * HUPE_PERIODE_MS - HUPE_AUS_MS;
+
+  // Ist das Licht in diesem Augenblick AUS, weil gehupt wird? seit ist die verstrichene
+  // Zeit seit dem Beginn der Ansage.
+  //
+  // VORWAERTS gerechnet und nicht aus der Restzeit: rechnet man rueckwaerts, kommt der
+  // erste Impuls am Ende. Genau dieser Fehler steht bei der Lichthupe des Fahrers
+  // ausdruecklich im Kommentar, und er ist hier derselbe.
+  function hupeDunkel(seit) {
+    if (!(seit >= 0) || seit >= SPICE_ANSAGE_MS) return false;
+    return (seit % HUPE_PERIODE_MS) < HUPE_AN_MS;
+  }
+
+  // ---- EIN MERKER UND KEINE UHRFRAGE ----------------------------------------------
+  //
+  // DER FEHLER, DEN DAS BEHEBT, war gemessen und nicht offensichtlich: die erste Fassung
+  // rechnete hier `hupeDunkel(Date.now() - g.ansageSeit)`. In der Rennsimulation ist
+  // Date.now aber GEFAELSCHT - simSchritt() setzt es auf seine eigene Uhr und stellt es im
+  // finally zurueck (90b-sim.js). ghostTick() laeuft innerhalb dieses Fensters, simZeichnen()
+  // und simZustand() laufen ausserhalb.
+  //
+  // Eine Funktion, die die Uhr selbst fragt, gibt also je nach Aufrufer eine andere Antwort:
+  // g.ansageSeit stammt von der gefaelschten Uhr, Date.now() beim Zeichnen von der echten,
+  // und die Differenz ist Unsinn. Gemessen: 650 Takte in der Ansage und NULL dunkle - auf
+  // der Karte haette es nie geblitzt.
+  //
+  // Also wird die Entscheidung dort getroffen, wo die Uhr stimmt (in ghostTick), und alle
+  // anderen lesen einen Merker. Dieselbe Bauform wie car.railLight, aus demselben Grund.
+  function ghostHupeSetzen(g, now) {
+    g.hupt = !!(g.attackUntil && g.passPhase === 'ansage'
+                && hupeDunkel(now - (g.ansageSeit || 0)));
+  }
+
+  // Hupt dieses Auto gerade? Eine Stelle, weil die Frage an drei gestellt wird - das
+  // Lichtbyte, der Prueflauf und die Karte.
+  function ghostHupt(car) {
+    return !!(car && car.ghost && car.ghost.hupt);
+  }
   const SPICE_PASS_CLEAR = 0.45;       // Kacheln VOR dem anderen = geschafft
   const SPICE_PASS_BLOCK_MS = 6000;    // Sperre nach einem Abbruch
 
@@ -3423,6 +3496,15 @@
         g.passPhase = 'rein'; g.passAt = now;
         log(garageLabel(car) + ': vorbei an '
             + (ziel ? garageLabel(ziel) : '?') + ', ordnet sich ein.', 'info');
+      } else if (g.passPhase === 'ansage'
+                 && now - (g.ansageSeit || 0) >= SPICE_ANSAGE_MS) {
+        // Angesagt, jetzt heraus. Und DIE UHR DES VERSUCHS FAENGT HIER AN, nicht bei der
+        // Ansage: SPICE_PASS_MAX_MS ist die Zeit, die ein Ueberholmanoever dauern darf,
+        // und die Ansage ist keines. Liesse man passSince stehen, haette jeder Versuch
+        // 570 ms weniger Zeit - die Ankuendigung wuerde das Manoever verkuerzen, das sie
+        // ankuendigt.
+        g.passPhase = 'raus';
+        g.passSince = now;
       } else if (g.passPhase === 'raus' && seit > SPICE_ATTACK_SIDE_MS) {
         g.passPhase = 'vorbei';
       }
@@ -3459,9 +3541,14 @@
       if (Math.random() < SPICE_ATTACK_P * platz) {
         // attackUntil bleibt als "eine Sequenz laeuft"-Marke; die Phasen entscheiden.
         // Die Obergrenze steht jetzt bei SPICE_PASS_MAX_MS, nicht bei SPICE_ATTACK_MS.
-        g.attackUntil = now + SPICE_PASS_MAX_MS + SPICE_PASS_TUCK_MS;
+        // Die Obergrenze deckt die Ansage MIT ab: attackUntil ist die Marke "eine
+        // Sequenz laeuft", und ohne die Ansage darin waere sie einen Wimpernschlag zu
+        // frueh abgelaufen.
+        g.attackUntil = now + SPICE_ANSAGE_MS + SPICE_PASS_MAX_MS + SPICE_PASS_TUCK_MS;
         g.passSince = now;
-        g.passPhase = 'raus';
+        // ---- ERST ANSAGEN, DANN AUSSCHWENKEN --------------------------------------
+        g.passPhase = 'ansage';
+        g.ansageSeit = now;
         // ---- DIE SEITE IST DIE, AUF DER DER ANDERE NICHT IST -------------------------
         //
         // Hier stand "die andere Seite als die, auf der die eigene Linie liegt". Auf einer
@@ -3549,6 +3636,9 @@
     // Der Seitenversatz faehrt beim Einordnen ZURUECK statt abzuschalten. Ein Sprung von
     // vollem Versatz auf null ist ein Ruck am Lenkservo und sieht aus wie ein Fehler.
     const versatz = !g.attackUntil ? 0
+      // WAEHREND DER ANSAGE NOCH NICHT. Das ist der Unterschied zwischen "kuendigt an" und
+      // "schwenkt aus und blinkt dabei" - siehe SPICE_ANSAGE_MS.
+      : g.passPhase === 'ansage' ? 0
       : g.passPhase === 'rein'
         ? (g.attackSide || 0) * Math.max(0, 1 - (now - g.passAt) / SPICE_PASS_TUCK_MS)
         : (g.attackSide || 0);
@@ -4121,8 +4211,10 @@
                   // senden - im Moment des Klicks ist er noch null.
                   // Rundenuhr und Abgangsstand fuer die Lernbilanz.
                   lapStart: 0, offAtLapStart: 0,
-                  // Ueberholsequenz und Spurmischung.
+                  // Ueberholsequenz und Spurmischung. ansageSeit ist der Beginn der
+                  // Lichthupe, mit der ein Ueberholmanoever angekuendigt wird.
                   passPhase: null, passZiel: null, passSince: 0, passBlockUntil: 0,
+                  ansageSeit: 0, hupt: false,
                   // Zeitluecke: je Kachelindex der Zeitpunkt des Uebertritts, und die
                   // daraus gerechnete Luecke zum Vorausfahrenden in Sekunden.
                   kachelZeit: [], zeitLuecke: null,
@@ -5147,6 +5239,25 @@
     let lights = car.railLight !== null && car.railLight !== undefined
       ? car.railLight
       : (trackModeBit() | LIGHT_HEAD | (brake > 0.05 ? LIGHT_BRAKE : 0));
+    // ---- DIE LICHTHUPE VOR DEM UEBERHOLMANOEVER ---------------------------------
+    //
+    // NACH der Grundzusammensetzung und VOR der gelben Flagge, und beide Seiten sind
+    // Absicht:
+    //
+    //   nach railLight, weil der Leitplanken-Modus sein eigenes Lichtbyte baut und die
+    //   Hupe sonst in genau der Betriebsart fehlte, in der die Autos ueberhaupt fahren;
+    //
+    //   vor der gelben Flagge und vor dem Parkblinken, weil beides Vorrang hat. Unter
+    //   Gelb wird nicht ueberholt, die Frage stellt sich also kaum - aber "kaum" ist der
+    //   Grund, warum die Reihenfolge festgelegt gehoert und nicht dem Zufall.
+    //
+    // Ausmaskiert und nicht gesetzt: das Protokoll hat ein Bit, das Licht ist an, also ist
+    // die Hupe ein Aus. Die Begruendung steht bei hupeDunkel().
+    //
+    // GESETZT WIRD HIER, gelesen ueberall - siehe ghostHupeSetzen(). `now` ist die Uhr
+    // dieses Takts, in der Simulation also die gefaelschte, und genau darauf kommt es an.
+    ghostHupeSetzen(g, now);
+    if (g.hupt) lights &= ~LIGHT_HEAD & 0xff;
     // Unter Gelb blinken alle, und ein stehendes Auto blinkt schneller - so findet man auf
     // dem Tisch sofort, welches gemeint ist.
     if (flagState !== 'green' || car.parked) {

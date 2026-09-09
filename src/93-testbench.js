@@ -2359,7 +2359,15 @@
         // Den Zustand setzen, den ein gewuerfelter Angriff erzeugt.
         g.attackUntil = uhr + 1e9;   // wird von der Sequenz selbst beendet
         g.passSince = uhr;
-        g.passPhase = 'raus';
+        // MIT ODER OHNE ANSAGE. Ohne sie steigt der Lauf bei 'raus' ein, wie bisher - so
+        // bleiben die vorhandenen Pruefungen unberuehrt. Mit ihr faengt er dort an, wo ein
+        // gewuerfelter Angriff wirklich anfaengt, und damit ist die Lichthupe pruefbar.
+        if (opt.mitAnsage) {
+          g.passPhase = 'ansage';
+          g.ansageSeit = uhr;
+        } else {
+          g.passPhase = 'raus';
+        }
         g.attackSide = 1;
         g.passZiel = vorne;
         vorne.ghost.yieldSide = -1;
@@ -2374,12 +2382,31 @@
             hinten.ghost.tilesTotal = vorne.ghost.tilesTotal + 1.0;
           }
           const r = ghostSpice(hinten, { tight: 0, dist: 99, key: 'p' });
+          // DEN LICHTMERKER SETZEN. Diese Sonde ruft ghostSpice() direkt und nicht
+          // ghostTick(), und gesetzt wird er dort - also hier von Hand, mit der gefaelschten
+          // Uhr dieses Laufs. Ohne diese Zeile blieb g.hupt falsch und die Sonde meldete
+          // null Impulse, obwohl die Ansage lief.
+          if (typeof ghostHupeSetzen === 'function') ghostHupeSetzen(g, uhr);
           reihe.push({ t, phase: g.passPhase || '-', versatz: +(r.attack || 0).toFixed(3),
-                       faktor: +r.factor.toFixed(4), laeuft: !!g.attackUntil });
+                       faktor: +r.factor.toFixed(4), laeuft: !!g.attackUntil,
+                       // Ist das Licht in diesem Takt AUS? Das IST die Lichthupe - ein
+                       // Scheinwerfer-Bit, Licht an im Normalfall, also ein kurzes Aus.
+                       dunkel: typeof ghostHupt === 'function' ? ghostHupt(hinten) : null });
           if (!g.attackUntil && t > (opt.ueberholtNach || 0)) break;
         }
         return { reihe, gesperrtBis: g.passBlockUntil ? g.passBlockUntil - uhr : 0,
-                 phasen: [...new Set(reihe.map(x => x.phase))] };
+                 phasen: [...new Set(reihe.map(x => x.phase))],
+                 // Die Phasenfolge in ihrer Reihenfolge - 'phasen' ist eine Menge und sagt
+                 // ueber die Ordnung nichts, und bei einer Ansage VOR dem Ausschwenken ist
+                 // genau die Ordnung die Zusage.
+                 folge: reihe.reduce((a, x) =>
+                   (a[a.length - 1] === x.phase ? a : a.concat(x.phase)), []),
+                 // Die Impulse der Lichthupe: Flanken von hell auf dunkel.
+                 impulse: reihe.reduce((n, x, i) =>
+                   n + ((x.dunkel && !(reihe[i - 1] || {}).dunkel) ? 1 : 0), 0),
+                 dunkelTakte: reihe.filter((x) => x.dunkel).length,
+                 // Und wann die Ansage endete, damit ein Test die Dauer nachrechnen kann.
+                 ansageMs: typeof SPICE_ANSAGE_MS === 'number' ? SPICE_ANSAGE_MS : null };
       } finally {
         Date.now = echtNow;
         garage.splice(0, garage.length);
