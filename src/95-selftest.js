@@ -7260,67 +7260,6 @@
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
-  // ---- Die Lenkunterstuetzung, an den drei bestellten Punkten ----
-  //
-  // BESTELLT: "Schwelle fuer Querlage, ab wann Lenkkorrektur passiert, und Staerke, mit der
-  // korrigiert wird; jeweils zwischen 100 (beide auf 100 = Auto faehrt mittig und ich gebe
-  // nur Gas), 50 % (es lenkt etwas mit, staerker wenn ich am Rand bin), zu 0 % (aktuell und
-  // Default)."
-  //
-  // Drei Punkte sind ausdruecklich genannt, also werden drei geprueft - und zwar UEBER DIE
-  // REGLER, nicht ueber die Variablen dahinter. Ein Test, der die Anteile direkt setzt,
-  // prueft die Rechnung ohne die Verdrahtung; genau dort lag bei setting-fuel-drain der
-  // Fehler (Regler auf 0, Modell auf 3, unbemerkt bis jemand ihn anfasste).
-  stAdd('Lenkunterstuetzung: die drei bestellten Punkte', () => {
-    if (!window.OMEGA_TEST || !OMEGA_TEST.lenkHilfeProbe) {
-      return { skip: true, mass: 'lenkHilfeProbe nicht vorhanden' };
-    }
-    const proben = [0.15, 0.5, 0.8, 1.0];
-    const aus = OMEGA_TEST.lenkHilfeProbe(0, 0, proben);
-    const halb = OMEGA_TEST.lenkHilfeProbe(50, 50, proben);
-    const voll = OMEGA_TEST.lenkHilfeProbe(100, 100, proben);
-    if (!aus || !halb || !voll) return { skip: true, mass: 'kein Lauf' };
-    const fehler = [];
-    // 1. VORGABE AENDERT NICHTS. Das ist die wichtigste Zeile: eine Unterstuetzung, die ab
-    //    Werk mitlenkt, waere eine Aenderung am Fahrgefuehl, die niemand bestellt hat.
-    for (let i = 0; i < proben.length; i++) {
-      if (Math.abs(aus[i] - proben[i]) > 1e-6) {
-        fehler.push('bei 0/0 wird ' + proben[i] + ' zu ' + aus[i]);
-      }
-    }
-    // 2. BEIDE AUF 100: das Auto faehrt mittig, egal was man lenkt.
-    for (let i = 0; i < proben.length; i++) {
-      if (voll[i] !== 0) fehler.push('bei 100/100 bleibt ' + voll[i] + ' uebrig');
-    }
-    // 3. BEI 50/50 unter der Schwelle nichts, darueber immer mehr. Das ist "es lenkt etwas
-    //    mit, staerker wenn ich am Rand bin" - und die Richtung ist die Zusage, nicht die
-    //    Zahl: eine feste 0,5 waere bei jeder Nachjustierung rot.
-    if (Math.abs(halb[0] - proben[0]) > 1e-6) {
-      fehler.push('bei 50/50 greift es schon bei ' + proben[0]);
-    }
-    for (let i = 2; i < proben.length; i++) {
-      if (!(halb[i] < proben[i] - 1e-6)) {
-        fehler.push('bei 50/50 wird ' + proben[i] + ' nicht zurueckgezogen');
-      }
-      // Und der ABZUG muss mit der Auslenkung wachsen.
-      const abzugHier = proben[i] - halb[i];
-      const abzugVor = proben[i - 1] - halb[i - 1];
-      if (!(abzugHier >= abzugVor - 1e-9)) {
-        fehler.push('der Abzug waechst nicht: ' + abzugVor.toFixed(2) + ' -> '
-                    + abzugHier.toFixed(2));
-      }
-    }
-    // 4. Und das Vorzeichen darf nie kippen - eine Korrektur, die staerker zieht als der
-    //    Fahrer lenkt, waere ein Gegenlenken und kein Assistent.
-    for (const reihe of [halb, voll]) {
-      for (const x of reihe) if (x < 0) fehler.push('Vorzeichen gekippt: ' + x);
-    }
-    return { ok: !fehler.length,
-             mass: '0/0: ' + aus.join('/') + ' | 50/50: ' + halb.join('/')
-                 + ' | 100/100: ' + voll.join('/')
-                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
-  });
-
   // ---- Die 3-Stufen-Linie hat drei Stufen, und benutzt alle ----
   //
   // BESTELLT: "3 Spuren: links, mitte, aussen. Zusaetzliche Ideallinie '3-stufig', bei der
@@ -7441,11 +7380,15 @@
   //
   // Und der Grund, warum es ihn nie bekam: es hatte keine ORTUNG. Ein ghost-Objekt mit
   // tileIndex legt nur startGhost() an, und das laeuft fuer Ghosts.
+  //
+  // MIT `assistAn: true`, seit v0.5.55: der Vorausblick geht nur noch hinaus, wenn die
+  // Fahrhilfe aktiv ist (von Hand oder ueber den Autopiloten) - siehe den Test direkt
+  // darunter fuer die Gegenprobe, die den NEUEN gemeldeten Fehler faengt.
   stAdd('Fahrerauto: wird geortet und bekommt den Vorausblick', () => {
     if (!window.OMEGA_TEST || !OMEGA_TEST.spielerOrtProbe) {
       return { skip: true, mass: 'spielerOrtProbe nicht vorhanden' };
     }
-    const r = OMEGA_TEST.spielerOrtProbe(8, 'SR3GLR2GR2G2');
+    const r = OMEGA_TEST.spielerOrtProbe(8, 'SR3GLR2GR2G2', true);
     if (!r) return { skip: true, mass: 'kein Lauf' };
     const fehler = [];
     // 1. DER ORT LAEUFT MIT. Der erste Takt hat noch keinen - er setzt den Bezugsstand des
@@ -7484,6 +7427,66 @@
                  + ' -> ' + (mitOrt[mitOrt.length - 1]
                      ? (mitOrt[mitOrt.length - 1].vorausblick || []).join(',') : '?')
                  + ', ohne Rail ' + JSON.stringify(r.ohneRail)
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
+  // ---- Fahrhilfe aus: ganz normal lenken, trotz Bahn-Modus ----
+  //
+  // GEMELDET: "Wenn ich jetzt fahre, kann ich gar nicht mehr lenken und das Auto lenkt
+  // von alleine." Die Ursache war die Bedingung fuer den Vorausblick: sie fragte nur
+  // trackMode === 'on' ab - die normale Bahn/Ausdruck-Stellung, die beim Fahren so gut wie
+  // immer 'on' ist, und keine Frage der Rennsituation. Damit bekam das Fahrerauto bei
+  // JEDER gewoehnlichen Fahrt dieselben Modusbytes wie ein autonomer Ghost.
+  //
+  // Diese Pruefung ist die direkte Gegenprobe: Bahn-Modus an, aber die Fahrhilfe AUS und
+  // kein Autopilot - dann darf ueberhaupt kein Vorausblick hinausgehen, auf keiner Kachel.
+  stAdd('Fahrhilfe aus: Fahrerauto lenkt ganz normal trotz Bahn-Modus', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.spielerOrtProbe) {
+      return { skip: true, mass: 'spielerOrtProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.spielerOrtProbe(8, 'SR3GLR2GR2G2', false);
+    if (!r) return { skip: true, mass: 'kein Lauf' };
+    const fehler = [];
+    const mitOrt = r.reihe.filter((x) => x.tile !== null);
+    // DIE ORTUNG selbst laeuft weiter - sie ist harmlos und wird fuer die Streckenkarte
+    // und den Abstandhalter gebraucht, unabhaengig von der Fahrhilfe.
+    if (!mitOrt.length) fehler.push('keine Ortung, obwohl sie unabhaengig laufen sollte');
+    // ABER KEIN VORAUSBLICK, auf keiner einzigen Kachel - genau das war die Meldung.
+    const mitBlick = mitOrt.filter((x) => x.bytes && x.bytes.indexOf(16) >= 0);
+    if (mitBlick.length) {
+      fehler.push(mitBlick.length + ' von ' + mitOrt.length
+                  + ' Takten mit Vorausblick, obwohl die Fahrhilfe aus ist');
+    }
+    return { ok: !fehler.length,
+             mass: mitOrt.length + ' Takte geortet, ' + mitBlick.length
+                 + ' davon mit Vorausblick (muss 0 sein)'
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
+  // ---- Fahrhilfe: der Schalter greift, der Autopilot bleibt unabhaengig ----
+  //
+  // BESTELLT: "Gib mir einen Schalter, bei dem ich zwischen Fahrhilfemodus hin und her
+  // schalten kann. Wenn er aus ist, will ich ganz normal steuern koennen so wie sonst.
+  // Wenn er an ist, soll das Auto alleine lenken."
+  //
+  // Drei Zustaende, und der dritte ist die Garantie, die schon v0.5.53 versprochen hat:
+  // eine gelbe Flagge haelt das Auto selbst, EGAL wie der Schalter steht - sonst wuerde
+  // dieser Schalter die Gelbphasen-Regelung wieder abschalten koennen, was niemand
+  // bestellt hat.
+  stAdd('Fahrhilfe: Schalter steuert, Autopilot bleibt unabhaengig', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.driverAssistToggleProbe) {
+      return { skip: true, mass: 'driverAssistToggleProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.driverAssistToggleProbe();
+    if (!r) return { skip: true, mass: 'driver-assist nicht im Dokument' };
+    const fehler = [];
+    if (r.aus !== false) fehler.push('Schalter aus, aber aktiv: ' + r.aus);
+    if (r.an !== true) fehler.push('Schalter an, aber nicht aktiv: ' + r.an);
+    if (r.trotzAus !== true) {
+      fehler.push('Schalter aus + gelbe Flagge: nicht aktiv (' + r.trotzAus + ')');
+    }
+    return { ok: !fehler.length,
+             mass: 'aus=' + r.aus + ', an=' + r.an + ', aus+gelb=' + r.trotzAus
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 

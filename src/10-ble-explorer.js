@@ -1570,12 +1570,12 @@
       "How hard the car steers against a slide, measured from the rotation signal in byte 3 of the notifications. 50 per cent is the default that was asked for. What is uncertain about it, and it is two things at once: the signal is unconfirmed – it only varies once the car is moving, and flipped sign with cornering direction in exactly one recording. And it is uncalibrated: its scale is self-adjusting because the real amplitude is unknown. So the strength depends on the largest yaw value the session has seen so far. The “Drift probe” button under “Measure lateral offset” measures whether the signal moves at all under straight full throttle.",
     "Rennen":
       "Race",
-    "Wie weit du vom Mittelstreifen weg sein darfst, bevor die Unterstützung zurückzieht. 0 % heißt: nie – erst am Anschlag, also praktisch gar nicht. 100 % heißt: sofort, ab dem ersten Grad. Zusammen mit der Stärke darunter: beide auf 100 % und das Auto fährt mittig, du gibst nur Gas.":
-      "How far from the centre line you are allowed to be before the assist pulls back. 0 % means never – only at full lock, so effectively not at all. 100 % means immediately, from the first degree. Together with the strength below: both at 100 % and the car drives down the middle, you only give throttle.",
-    "Was das Maß NICHT ist: eine gemessene Querlage. Das Auto meldet nicht, wo auf der Bahn es steht – gemeint ist dein eigener Lenkbefehl. Die Unterstützung zieht also das zurück, was du anforderst, und nicht das, was das Auto tut.":
-      "What the measure is NOT: a measured lateral position. The car does not report where on the track it is – what is meant is your own steering command. The assist therefore pulls back what you ask for, not what the car does.",
-    "Wieviel von deinem Lenkbefehl die Unterstützung zurücknimmt, wenn die Schwelle überschritten ist. 0 % ist die Vorgabe und ändert nichts. Bei 50 % lenkt es etwas mit, und zwar stärker, je weiter du vom Mittelstreifen weg bist – direkt an der Schwelle greift es nicht, am Anschlag voll.":
-      "How much of your steering command the assist takes back once the threshold is exceeded. 0 % is the default and changes nothing. At 50 % it steers along somewhat, and more strongly the further you are from the centre line – right at the threshold it does not bite, at full lock it bites fully.",
+    "Aus (Vorgabe): du steuerst ganz normal, dein Lenk-Input ist der Lenkwinkel – wie ohne diese App.":
+      "Off (default): you steer completely normally, your steering input is the steering angle – same as without this app.",
+    "An: das Auto hält sich selbst auf der Bahn, so wie ein autonomer Ghost. Dein Lenk-Input bestimmt dabei nur noch die Querlage – nach rechts heißt weiter rechts auf der Bahn, nicht „mehr einschlagen“. Braucht eine eingescannte Strecke und die Bahn-Stellung (nicht Ausdruck); ohne beides ändert der Schalter nichts.":
+      "On: the car holds itself on the track, the same way an autonomous ghost does. Your steering input then only sets the lateral position – turning right means further right on the track, not “more lock”. Needs a scanned layout and the track setting (not printout); without both, this switch changes nothing.",
+    "Bei gelber Flagge oder in der Einführungsrunde hält sich das Auto unabhängig von diesem Schalter selbst – das braucht die Regelung dort, damit sie greifen kann.":
+      "Under a yellow flag or on the formation lap the car holds itself regardless of this switch – that control loop needs it to work at all.",
     "Cockpit-Schirm zurück":
       "Cockpit screen back",
     "Cockpit-Schirm vor":

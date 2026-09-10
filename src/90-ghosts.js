@@ -3680,11 +3680,22 @@
       // Zeile darueber liefert - ortAbgleich() VERFEINERT den Index, es setzt ihn nicht.
       ortAbgleich(playerCar);
     }
-    // ---- DER VORAUSBLICK, und nur im Leitplanken-Modus ---------------------------
+    // ---- DER VORAUSBLICK, und nur wenn die Fahrhilfe wirklich greift -------------
     //
-    // Ausserhalb davon hat er keine Bedeutung: das Auto haelt sich dann nicht selbst, und
-    // die Bytes 16-18 waeren eine Angabe an eine Funktion, die nicht laeuft.
-    if (trackMode === 'on') {
+    // GEMELDET, NACHDEM DIESE ZEILE FRISCH WAR: "Wenn ich jetzt fahre, kann ich gar nicht
+    // mehr lenken und das Auto lenkt von alleine." Hier stand nur `trackMode === 'on'' als
+    // Bedingung - und das ist die normale Bahn/Ausdruck-Stellung beim Fahren, nicht eine
+    // Frage der Rennsituation. modeBytes gingen damit bei JEDER gewoehnlichen Fahrt
+    // hinaus, nicht nur unter Gelb, und setzten das echte Auto dauerhaft in denselben
+    // Modus wie einen autonomen Ghost - die Lenkung des Fahrers wurde nicht mehr als
+    // Winkel gelesen.
+    //
+    // driverAssistAktiv() (50-drive.js) ist jetzt die Bedingung: von Hand eingeschaltet,
+    // oder der Autopilot greift gerade (Gelb/Formation - dafuer war der Vorausblick
+    // urspruenglich gedacht). Ausserhalb beider Faelle hat er keine Bedeutung: das Auto
+    // haelt sich dann nicht selbst, und die Bytes 16-18 waeren eine Angabe an eine
+    // Funktion, die nicht laeuft.
+    if (trackMode === 'on' && driverAssistAktiv()) {
       const la = ghostLookahead(playerCar);
       playerCar.modeBytes = la
         ? Object.assign({ 10: AUTO_MODE.b10, 15: AUTO_MODE.b15 }, la)

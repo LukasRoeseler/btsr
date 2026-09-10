@@ -1972,28 +1972,45 @@
       } finally { sampleEngine.car = merk; }
     },
 
-    // ---- Die Lenkunterstuetzung, ueber die Bedienelemente gestellt -----------------
+    // ---- Die Fahrhilfe: der Schalter, ueber das Bedienelement gestellt -------------
     //
-    // UEBER DIE REGLER und nicht ueber die Variablen: die zwei Anteile entstehen aus den
-    // Bedienelementen (assistVerdrahten), und ein Prueflauf, der die Variablen direkt setzt,
-    // prueft die Rechnung ohne die Verdrahtung. Genau die war bei setting-fuel-drain der
-    // Fehler - Regler auf 0, Modell auf 3, und niemand merkte es.
-    lenkHilfeProbe(schwellePz, staerkePz, proben) {
-      if (typeof lenkHilfe !== 'function') return null;
-      const el = { s: $('assist-schwelle'), k: $('assist-staerke') };
-      if (!el.s || !el.k) return null;
-      const merk = { s: el.s.value, k: el.k.value };
+    // UEBER DEN SCHALTER und nicht ueber die Variable: driverAssistOn entsteht aus dem
+    // Bedienelement #driver-assist, und ein Prueflauf, der die Variable direkt setzt,
+    // prueft nicht, ob der Schalter selbst noch etwas bewirkt.
+    //
+    // GEPRUEFT WIRD driverAssistAktiv(), nicht driverAssistOn allein - sie ist die
+    // tatsaechlich verwendete Groesse (spielerOrtTick fragt sie), und sie ist eine ODER-
+    // Verknuepfung mit dem Autopiloten. flagState und raceFormationLap werden dafuer auf
+    // 'green'/false gezwungen: sonst haengt das Ergebnis vom Rennzustand ab, in dem der
+    // Prueflauf zufaellig laeuft, und ist nicht wiederholbar.
+    driverAssistToggleProbe() {
+      if (typeof driverAssistAktiv !== 'function') return null;
+      const el = $('driver-assist');
+      if (!el) return null;
+      const merk = { checked: el.checked, on: (typeof driverAssistOn !== 'undefined')
+                     ? driverAssistOn : null,
+                     flag: flagState, formation: raceFormationLap };
       try {
-        for (const [e, v] of [[el.s, schwellePz], [el.k, staerkePz]]) {
-          e.value = String(v);
-          e.dispatchEvent(new Event('input', { bubbles: true }));
-        }
-        return (proben || [0.15, 0.5, 0.8, 1.0]).map((p) => +lenkHilfe(p).toFixed(4));
+        flagState = 'green';
+        raceFormationLap = false;
+        el.checked = false;
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+        const aus = driverAssistAktiv();
+        el.checked = true;
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+        const an = driverAssistAktiv();
+        // Und mit dem Schalter wieder aus: der Autopilot muss trotzdem greifen koennen,
+        // wenn eine gelbe Flagge das verlangt - das ist die ODER-Haelfte der Bedingung.
+        el.checked = false;
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+        flagState = 'yellow';
+        const trotzAus = driverAssistAktiv();
+        return { aus, an, trotzAus };
       } finally {
-        for (const [e, v] of [[el.s, merk.s], [el.k, merk.k]]) {
-          e.value = v;
-          e.dispatchEvent(new Event('input', { bubbles: true }));
-        }
+        el.checked = merk.checked;
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+        flagState = merk.flag;
+        raceFormationLap = merk.formation;
       }
     },
 
@@ -2006,14 +2023,30 @@
     // MIT EINER ATTRAPPE und nicht mit einem echten Auto: ein verbundenes Fahrzeug gibt es
     // am Schreibtisch nicht, und die Ortung braucht keines - sie braucht einen Kachelzaehler
     // und einen Kachelcode, also genau das, was eine Meldung liefert.
-    spielerOrtProbe(schritte, code) {
+    //
+    // MIT `assistAn` STEUERBAR seit der Fahrhilfe (v0.5.55): der Vorausblick geht seither
+    // nur hinaus, wenn driverAssistAktiv() wahr ist - von Hand eingeschaltet oder der
+    // Autopilot greift. Vorgabe true, damit dieser Prueflauf weiter genau das zeigt, was
+    // er zeigen soll (den Vorausblick selbst); false ist die Gegenprobe fuer den gemeldeten
+    // Fehler "kann gar nicht mehr lenken, das Auto lenkt von alleine" - trackMode 'on'
+    // ALLEIN darf keinen Vorausblick mehr ausloesen.
+    spielerOrtProbe(schritte, code, assistAn) {
       const merkPlayer = playerCar;
       const merkTiles = currentTrackTiles;
       const merkMode = trackMode;
+      const merkAssist = (typeof driverAssistOn !== 'undefined') ? driverAssistOn : null;
+      const merkFlag = flagState;
+      const merkFormation = raceFormationLap;
       try {
         currentTrackTiles = codeToTrack(code || 'SR3GLR2GR2G2').tiles;
         lineCache = null;
         trackMode = 'on';
+        // Autopilot ausdruecklich AUS, sonst haengt das Ergebnis am Rennzustand des
+        // Prueflaufs und nicht an assistAn - dieselbe Vorsicht wie in
+        // driverAssistToggleProbe().
+        flagState = 'green';
+        raceFormationLap = false;
+        driverAssistOn = assistAn === undefined ? true : !!assistAn;
         playerCar = { role: 'steuern', alias: 'Fahrer', tileCount: 0, tileCode: 0x02,
                       modeBytes: null, ghost: null };
         const reihe = [];
@@ -2030,7 +2063,8 @@
                        vorausblick: playerCar.modeBytes
                          ? [16, 17, 18].map((b) => playerCar.modeBytes[b]) : null });
         }
-        // Und die Gegenprobe: OHNE Leitplanken-Modus gibt es keinen Vorausblick.
+        // Und die Gegenprobe: OHNE Leitplanken-Modus gibt es keinen Vorausblick, auch
+        // nicht mit eingeschalteter Fahrhilfe.
         trackMode = 'off';
         spielerOrtTick();
         return { reihe, nurOrt: !!(playerCar.ghost && playerCar.ghost.nurOrt),
@@ -2039,6 +2073,9 @@
         playerCar = merkPlayer;
         currentTrackTiles = merkTiles;
         trackMode = merkMode;
+        if (merkAssist !== null) driverAssistOn = merkAssist;
+        flagState = merkFlag;
+        raceFormationLap = merkFormation;
         lineCache = null;
       }
     },

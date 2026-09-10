@@ -1683,91 +1683,73 @@
   }
 
   // ====================================================================================
-  // DIE LENKUNTERSTUETZUNG
+  // DIE FAHRHILFE: EIN SCHALTER STATT ZWEIER SLIDER
   // ====================================================================================
   //
-  // BESTELLT: "Lenkunterstuetzung mit 2 Slidern: Schwelle fuer Querlage, ab wann
-  // Lenkkorrektur passiert, und Staerke, mit der korrigiert wird; jeweils zwischen 100
-  // (beide auf 100 = Auto faehrt mittig und ich gebe nur Gas), 50 % (es lenkt etwas mit,
-  // staerker wenn ich am Rand bin), zu 0 % (aktuell und Default)."
+  // GEMELDET: "Wenn ich jetzt fahre, kann ich gar nicht mehr lenken und das Auto lenkt
+  // von alleine." Und dazu die Anweisung: "Gib mir einen Schalter, bei dem ich zwischen
+  // Fahrhilfemodus hin und her schalten kann. Wenn er aus ist, will ich ganz normal
+  // steuern koennen so wie sonst. Wenn er an ist, soll das Auto alleine lenken. In dem
+  // Modus bestimme ich mit dem Lenk-Input nur die Querlage. Vergiss die beiden Slider."
   //
-  // ---- WAS DIE "QUERLAGE" HIER IST, UND WAS SIE NICHT IST ------------------------
+  // ---- DER BEFUND: DIE ORTUNG AUS v0.5.54 HAT ZU WEIT GEGRIFFEN ------------------
   //
-  // Sie ist DEIN LENKBEFEHL und keine Messung. Das Auto meldet nicht, wo auf der Bahn es
-  // steht - es gibt kein Byte dafuer, und deshalb gibt es in dieser App nirgends eine
-  // gemessene Querlage. Was die Unterstuetzung zurueckzieht, ist also die Anforderung und
-  // nicht die Lage. Auf der Schiene laeuft es auf dasselbe hinaus, solange man fahrt: mehr
-  // Lenkbefehl heisst weiter aussen. Im Stand heisst es nichts, und das ist der ehrliche
-  // Vorbehalt.
+  // spielerOrtTick() (90-ghosts.js) haengte dem Fahrerauto seinen Vorausblick
+  // (car.modeBytes: Byte 10/15 plus die drei Kacheln in Byte 16-18) an genau EINE
+  // Bedingung: trackMode === 'on'. Das ist die "Bahn"/"Ausdruck"-Stellung - die normale
+  // Stellung beim Fahren auf der echten Bahn, nicht eine Alles-oder-nichts-Frage der
+  // Rennsituation. modeBytes gingen also bei JEDER normalen Fahrt hinaus, nicht nur unter
+  // Gelb.
   //
-  // ---- DIE RECHNUNG, UND WARUM ZIEHEN UND NICHT SKALIEREN ------------------------
+  // Diese Bytes sind aber keine Kleinigkeit: sie sind dieselben, mit denen ein Ghost sich
+  // selbst auf der Bahn haelt (AUTO_MODE, gemessen an den eigenen Ghosts der App). Ein
+  // echtes Auto, das sie bekommt, faehrt nach seiner eigenen Sensorik und dem Vorausblick -
+  // die Lenkung des Fahrers wird dann nicht mehr als Winkel gelesen, sondern (wie beim
+  // Ghost) als Querversatz obenauf. Ohne dass der Fahrer das je eingeschaltet haette, war
+  // sein Auto damit dauerhaft im selben Modus wie ein autonomer Ghost.
   //
-  // Der naheliegende Weg ist eine Skalierung: steer * (1 - staerke). Sie erfuellt die
-  // Bestellung NICHT - bei beiden Reglern auf 100 Prozent bliebe ein kleiner Lenkbefehl
-  // fast unveraendert, weil die Skalierung mit dem Betrag mitwaechst. "Auto faehrt mittig"
-  // waere damit nicht erreicht.
+  // ---- DIE LOESUNG: EIN SCHALTER, DEN DER FAHRER SELBST BEDIENT ------------------
   //
-  // Also eine KORREKTUR ZUR MITTE, addiert:
+  // driverAssistOn ersetzt die Bedingung "trackMode === 'on'" fuer das Fahrerauto. Ab Werk
+  // AUS - das stellt "ganz normal steuern koennen so wie sonst" wieder her, unabhaengig
+  // von der Bahn/Ausdruck-Stellung, die weiterhin nur bedeutet, ob die Strecke gerade
+  // gelesen wird.
   //
-  //     schwelleLage = 1 - schwelle        ab dieser Anforderung wird korrigiert
-  //     anteil       = (|s| - schwelleLage) / (1 - schwelleLage)     0 an der Schwelle, 1 am
-  //                                                                 Anschlag
-  //     s            = s - sign(s) * staerke * anteil
+  // Ist er AN, gilt fuer das Fahrerauto exakt dasselbe Verfahren wie fuer einen Ghost im
+  // Leitplanken-Modus: das Auto haelt sich selbst auf der Bahn, und was im Lenkbyte
+  // ankommt, ist keine Radstellung mehr, sondern die Querlage, die der Fahrer haben will.
+  // Der Lenk-Input (steerX) geht dafuer UNVERAENDERT durch - nicht die Zahl aendert sich,
+  // sondern die Bedeutung, die das Auto ihr gibt, sobald modeBytes dabei sind.
   //
-  // Und damit stimmen genau die drei Punkte, die bestellt sind:
+  // AUTOPILOT BLEIBT UNABHAENGIG davon: unter Gelb oder in der Einfuehrungsrunde muss das
+  // Auto sich selbst halten, damit die Regelung dort ueberhaupt funktioniert - das war die
+  // eigentliche Bestellung hinter v0.5.53. Also ist die Bedingung eine ODER-Verknuepfung:
+  // von Hand eingeschaltet, oder der Autopilot ist gerade aktiv. Faehrt man selbst mit
+  // ausgeschalteter Fahrhilfe, aendert eine gelbe Flagge daran nichts - sie regelt weiter,
+  // wie bestellt.
   //
-  //     100 / 100   schwelleLage 0, anteil = |s|, Korrektur = -s  ->  s = 0 fuer JEDEN
-  //                 Eingang. Das Auto faehrt mittig, du gibst nur Gas.
-  //      50 /  50   unter 0,5 Anforderung passiert nichts; am Anschlag bleibt die Haelfte.
-  //                 "Es lenkt etwas mit, staerker wenn ich am Rand bin."
-  //       0 /   0   schwelleLage 1, anteil 0 am Anschlag  ->  keine Aenderung. Vorgabe.
-  //
-  // Die zwei Regler sind ABSICHTLICH getrennt und nicht ein einziger: "ab wann" und "wie
-  // stark" sind zwei Entscheidungen. Ein Regler dafuer waere eine Kurve, die jemand fuer
-  // einen gewaehlt hat.
-  let assistSchwelle = 0;      // 0..1
-  let assistStaerke = 0;       // 0..1
+  // DIE ZWEI SLIDER SIND WEG, wie angewiesen. Die Korrektur-zur-Mitte-Rechnung (lenkHilfe)
+  // loeste ein anderes Problem - der Lenkbefehl blieb ein Winkel, nur weicher zur Mitte
+  // gezogen - und war eine Software-Kruecke fuer genau das, was die Hardware selbst
+  // besser kann, sobald sie den Vorausblick hat. Mit dem Schalter braucht es sie nicht
+  // mehr.
+  let driverAssistOn = false;
 
-  // Die zwei Regler. Prozent im Bedienelement, Anteil im Modell - dieselbe Aufteilung wie
-  // bei den anderen Prozentreglern.
-  function assistVerdrahten() {
-    const paare = [['assist-schwelle', (v) => { assistSchwelle = v; }],
-                   ['assist-staerke', (v) => { assistStaerke = v; }]];
-    for (const [id, setzen] of paare) {
-      const el = $(id);
-      if (!el) continue;
-      const zeigen = () => {
-        const p = Math.round(parseFloat(el.value) || 0);
-        setzen(p / 100);
-        const v = $(id + '-val');
-        if (v) v.textContent = p + '%';
-      };
-      el.addEventListener('input', zeigen);
-      el.addEventListener('change', zeigen);
-      // UND EINMAL BEIM LADEN. Genau das hat bei setting-fuel-drain gefehlt: das Markup
-      // stand auf 0, das Modell auf 3, und niemand merkte es, bis jemand den Regler anfasste.
-      zeigen();
-    }
+  // AN, wenn von Hand eingeschaltet ODER der Autopilot gerade greift (Gelb/Formation).
+  // autopilotGrund() steht weiter unten in dieser Datei; als Funktionsdeklaration ist sie
+  // bereits vorhanden, wenn diese Funktion tatsaechlich zum ersten Mal LAEUFT - das
+  // geschieht erst aus einem Zeitgeber, lange nach dem vollstaendigen Laden.
+  function driverAssistAktiv() {
+    return driverAssistOn || !!autopilotGrund();
   }
-  assistVerdrahten();
 
-  function lenkHilfe(s) {
-    if (!(assistStaerke > 0)) return s;
-    const schwelleLage = 1 - assistSchwelle;
-    const spanne = 1 - schwelleLage;
-    // Schwelle 0 heisst schwelleLage 1 und Spanne 0: dann gibt es keinen Bereich, in dem
-    // korrigiert wird, und die Unterstuetzung ist aus. Ohne diese Zeile waere es eine
-    // Division durch null.
-    if (!(spanne > 1e-6)) return s;
-    const ueber = Math.abs(s) - schwelleLage;
-    if (!(ueber > 0)) return s;
-    const anteil = Math.min(1, ueber / spanne);
-    const korr = Math.sign(s) * assistStaerke * anteil;
-    // GEKLEMMT AUF DIE MITTE und nicht darueber hinaus: eine Korrektur, die stärker zieht
-    // als der Fahrer lenkt, wuerde das Auto auf die ANDERE Seite schicken. Das waere keine
-    // Unterstuetzung, sondern ein Gegenlenken.
-    const raus = s - korr;
-    return Math.sign(raus) === Math.sign(s) ? raus : 0;
+  if ($('driver-assist')) {
+    $('driver-assist').addEventListener('change', (e) => {
+      driverAssistOn = e.target.checked;
+    });
+    // Und einmal beim Laden aus dem Markup - dieselbe Regel wie bei jedem anderen Schalter:
+    // der Regler ist die Wahrheit, das Modell folgt ihm.
+    driverAssistOn = $('driver-assist').checked;
   }
 
   function autopilotGrund() {
@@ -1985,12 +1967,11 @@
     const gasKurve = gasKennlinie(Math.max(0, throttleY), physEngine.config.throttleGamma);
     let rawThrottle = fuelDamageDerate(gasKurve, fuelCut);
     let rawBrake = Math.max(0, -throttleY);
-    // ---- DIE LENKUNTERSTUETZUNG WIRKT AUF DEN FAHRERWUNSCH ----------------------
-    //
-    // VOR dem Autopiloten: der ueberschreibt die Lenkung ohnehin ganz, und eine
-    // Unterstuetzung, die danach greift, wuerde in der Einfuehrungsrunde die
-    // Formationsspur zurueckziehen. Die Begruendung steht bei lenkHilfe().
-    let steer = lenkHilfe(steerX);
+    // Der rohe Lenk-Input geht unveraendert durch. Ist die Fahrhilfe an (siehe
+    // driverAssistAktiv() oben), aendert das NICHT diese Zahl, sondern nur, wie das Auto
+    // sie versteht: modeBytes gehen dann mit hinaus (spielerOrtTick in 90-ghosts.js), und
+    // dieselbe Zahl wird zur Querlage statt zum Lenkwinkel.
+    let steer = steerX;
     // Bei gelber Flagge und in der Einfuehrungsrunde faehrt das Auto selbst. Siehe
     // autopilotGrund() fuer die zwei Gruende und autopilot() fuer die Regelung.
     const ap = autopilot(rawBrake);

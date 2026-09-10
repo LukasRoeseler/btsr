@@ -6371,36 +6371,20 @@
     <div class="card subpage" id="sub-opt-feel">
       <button class="misc-back subpage-back" data-sub="">&larr; Einstellungen</button>
       <h2>Fahrgef&uuml;hl</h2>
-      <div class="opt-head" style="margin-top:0">Lenkunterst&uuml;tzung
+      <div class="opt-head" style="margin-top:0">Fahrhilfe
         <span class="wip-tag">experimentell</span></div>
-      <div class="opt-row"><div class="opt-label">Ab welcher Querlage korrigiert wird
-          <small>Wie weit du vom Mittelstreifen weg sein darfst, bevor die
-          Unterst&uuml;tzung zur&uuml;ckzieht. 0&nbsp;% hei&szlig;t: nie &ndash; erst am
-          Anschlag, also praktisch gar nicht. 100&nbsp;% hei&szlig;t: sofort, ab dem
-          ersten Grad. Zusammen mit der St&auml;rke darunter: beide auf 100&nbsp;% und das
-          Auto f&auml;hrt mittig, du gibst nur Gas.
-          <br>Was das Ma&szlig; NICHT ist: eine gemessene Querlage. Das Auto meldet nicht,
-          wo auf der Bahn es steht &ndash; gemeint ist dein eigener Lenkbefehl. Die
-          Unterst&uuml;tzung zieht also das zur&uuml;ck, was du anforderst, und nicht das,
-          was das Auto tut.</small></div>
-        <div class="opt-slider">
-          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="assist-schwelle" min="0" max="100" step="5" value="0">
-          <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="assist-schwelle-val">0%</span>
-        </div></div>
-      <div class="opt-row"><div class="opt-label">Wie stark korrigiert wird
-          <small>Wieviel von deinem Lenkbefehl die Unterst&uuml;tzung zur&uuml;cknimmt,
-          wenn die Schwelle &uuml;berschritten ist. 0&nbsp;% ist die Vorgabe und
-          &auml;ndert nichts. Bei 50&nbsp;% lenkt es etwas mit, und zwar st&auml;rker, je
-          weiter du vom Mittelstreifen weg bist &ndash; direkt an der Schwelle greift es
-          nicht, am Anschlag voll.</small></div>
-        <div class="opt-slider">
-          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="assist-staerke" min="0" max="100" step="5" value="0">
-          <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="assist-staerke-val">0%</span>
-        </div></div>
+      <div class="opt-row"><div class="opt-label">Fahrhilfe: Auto lenkt selbst
+          <small>Aus (Vorgabe): du steuerst ganz normal, dein Lenk-Input ist der
+          Lenkwinkel &ndash; wie ohne diese App.
+          <br>An: das Auto h&auml;lt sich selbst auf der Bahn, so wie ein autonomer
+          Ghost. Dein Lenk-Input bestimmt dabei nur noch die Querlage &ndash; nach rechts
+          hei&szlig;t weiter rechts auf der Bahn, nicht &bdquo;mehr einschlagen&ldquo;.
+          Braucht eine eingescannte Strecke und die Bahn-Stellung (nicht Ausdruck); ohne
+          beides &auml;ndert der Schalter nichts.
+          <br>Bei gelber Flagge oder in der Einf&uuml;hrungsrunde h&auml;lt sich das Auto
+          unabh&auml;ngig von diesem Schalter selbst &ndash; das braucht die Regelung
+          dort, damit sie greifen kann.</small></div>
+        <label class="tgl"><input type="checkbox" id="driver-assist"><span></span></label></div>
       <div class="opt-head">Voreinstellungen</div>
       
       <div class="row" style="gap:8px; flex-wrap:wrap" id="preset-buttons"></div>
@@ -7881,7 +7865,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.5.54</span></span>
+    <span class="foot-ver">v<span id="app-version">0.5.55</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
