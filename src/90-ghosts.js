@@ -1543,7 +1543,10 @@
     // pitAn steht auf AN, obwohl es neu und experimentell ist: bestellt war ein Feature, das
     // man sieht, und ein Schalter, der ab Werk aus ist, wird beim ersten Rennen nicht
     // gefunden. Abschaltbar ist er trotzdem, und das Etikett sagt, woran man ist.
-    pitAn: true,
+    // STANDARD AUS, wie bestellt. Ein Boxenstopp ist ein Auto, das mitten im Rennen
+    // stehen bleibt - wer die App zum ersten Mal startet, liest das als Fehler und nicht
+    // als Feature. Wer ihn will, schaltet ihn ein.
+    pitAn: false,
     // Getrennt fuer das freie Fahren, und zwar auf Wunsch: dort stellt man Regler ein und
     // probiert aus, und ein Auto, das dabei ploetzlich zehn Sekunden steht, sieht nach einem
     // Fehler aus. Vorgabe an, damit es nicht versteckt ist.
@@ -2143,6 +2146,43 @@
     if (car.rx) writeToCar(car, 0, 0, trackModeBit() | LIGHT_HEAD);
     log(garageLabel(car) + ': steht (' + reason + '). Auto anheben, zur\u00fcckstellen und '
         + 'kurz sch\u00fctteln, dann f\u00e4hrt es weiter.', 'err');
+    // ---- UND WORAN ES LAG, MIT ZAHLEN ----------------------------------------------
+    //
+    // GEMELDET: "Ghosts sind mitten im Rennen stehen geblieben, ca. 1x pro Rennen."
+    //
+    // Die Kette ist bekannt und steht bei GHOST_READ_MIN: unter etwa 35 Prozent der
+    // Hoechstgeschwindigkeit liest das Auto das gedruckte Muster nicht mehr, meldet 0x00,
+    // der Kachelzaehler steht - und der Abgangsmelder verlangt einen Wechsel innerhalb von
+    // GHOST_ZAEHLER_FRISCH_MS = 4000 ms.
+    //
+    // WARUM HIER EINE MELDUNG UND KEIN FIX: ich habe versucht, das in der Rennsimulation
+    // nachzustellen, und es NICHT reproduziert. Der Grund ist eine Luecke im Modell - die
+    // Simulation bildet die Leseschwelle nicht nach: sie setzt car.tileCode immer auf den
+    // Typ der Kachel, an der das Auto steht, also liest ein simuliertes Auto auch im
+    // Schritttempo. Sie kann diesen Fehler deshalb gar nicht zeigen.
+    //
+    // Eine Vermutung ohne Nachweis in Code zu gieszen waere hier falsch: der naheliegende
+    // Fix - einen Boden auf das Zieltempo - habe ich gemessen, und er machte es schlechter
+    // (der Anteil der Takte unter der Schwelle stieg, weil ein Ziel GENAU auf der Schwelle
+    // ein Isttempo ergibt, das die halbe Zeit darunter liegt).
+    //
+    // Also die Zahlen, die beim naechsten echten Rennen entscheiden. Sie kosten nichts:
+    // sie werden nur beim Parken gelesen und in ghostTick nur mitgeschrieben.
+    if (car.ghost) {
+      const g = car.ghost;
+      const seit = g.tileStart ? Math.round(Date.now() - g.tileStart) : null;
+      log('  Diagnose ' + garageLabel(car) + ': Zieltempo '
+          + (g.lastTarget === undefined ? '?' : g.lastTarget.toFixed(3))
+          + ' (Leseschwelle ' + GHOST_READ_MIN + '), erreicht '
+          + ((g.engine && g.engine.state)
+              ? (Math.abs(g.engine.state.speedKmh || 0)
+                 / Math.max(1e-6, g.engine.config.topSpeedKmh)).toFixed(3) : '?')
+          + ', letzter Kachelwechsel vor ' + (seit === null ? '?' : seit + ' ms')
+          + ' (Grenze ' + GHOST_ZAEHLER_FRISCH_MS + '), gemeldeter Code 0x'
+          + (car.tileCode === null || car.tileCode === undefined
+              ? '??' : car.tileCode.toString(16).padStart(2, '0'))
+          + ', Kachelabstaende ' + JSON.stringify((g.tileRing || []).slice(-4)), 'info');
+    }
     showHudToast(garageLabel(car).toUpperCase() + ' STEHT, SCH\u00dcTTELN');
   }
 
@@ -2307,13 +2347,44 @@
   //
   // finishGhost() wird je Auto beim Ueberfahren der Ziellinie gerufen (70-race.js:263), die
   // Aufrufreihenfolge IST also die Zielreihenfolge - Platz 0 ist der Fuehrende.
-  const FINISH_ROLL_MAX = 2000;     // der Fuehrende rollt so lange
-  const FINISH_ROLL_MIN = 400;      // Boden, damit auch der Sechste noch ausrollt
+  // ---- GESTAFFELT IN KACHELN UND NICHT IN ZEIT ------------------------------------
+  //
+  // GEMELDET: "Ghosts nach Rennen: erster faehrt 2 Schienen, zweiter 1, dritter 0 jeweils
+  // mit max Rand links. Aktuell rammen sie ineinander rein."
+  //
+  // Bis v0.5.50 war die Staffel eine ZEIT: der Fuehrende rollte 2000 ms, jeder Platz
+  // dahinter 500 ms weniger. Der Fehler daran ist, dass Zeit kein Abstand ist - wie weit
+  // ein Auto in 500 ms rollt, haengt davon ab, wie schnell es ueber die Linie kam, und
+  // gerade am Rennende sind die Tempi verschieden (einer hat gerade angegriffen, einer
+  // haelt Abstand, einer kommt aus der Box). Zwei Autos konnten dieselbe Stelle treffen.
+  //
+  // Jetzt zaehlt jedes Auto KACHELWECHSEL. Eine Kachel ist 43 cm und ein Auto 9,5 cm lang -
+  // ein Kachelabstand ist also mehr als vier Fahrzeuglaengen, und zwar unabhaengig vom
+  // Tempo. Die Staffel ist damit eine Aussage ueber den Platz und nicht ueber die Uhr.
+  //
+  // FINISH_ROLL_MS_MAX bleibt als RUECKFALL: ein Auto, das nicht mehr liest, zaehlt keine
+  // Kacheln mehr und wuerde ohne diese Grenze endlos rollen. Der Fall ist keine Theorie -
+  // unter der Leseschwelle meldet das Auto 0x00, und dann steht der Zaehler.
+  const FINISH_ROLL_MS_MAX = 4000;
+  // Wieviele Kacheln der VORDERSTE rollt, wenn nur er einlaeuft. Bei mehreren zieht sich
+  // die Staffel daraus nach unten: (Feldgroesse - 1 - Platz), gedeckelt hier. Bei drei
+  // Autos gibt das genau die bestellten 2, 1, 0.
+  const FINISH_KACHELN_MAX = 5;
   const FINISH_BRAKE_MS = 450;
   const FINISH_BLINKS = 3;
   const FINISH_BLINK_MS = 260;
   const FINISH_RAND = 1.0;          // voller Versatz zur Seite, mehr kann Byte 7 nicht
-  const FINISH_STAFFEL_MS = 500;    // jeder Platz dahinter rollt so viel kuerzer
+  // ---- ALLE NACH LINKS, UND ZWAR ALLE ---------------------------------------------
+  //
+  // Vorher wechselten sich die Seiten ab (rechts, links, rechts ...), damit zwei
+  // hintereinander einlaufende Autos nicht dieselbe Stelle treffen. Mit der Kachelstaffel
+  // ist der Abstand laengs gesichert, und dann ist EINE Seite besser: das Feld steht in
+  // einer Reihe am selben Rand, und die andere Haelfte der Bahn bleibt frei - auch fuer das
+  // Auto des Fahrers, das ja noch faehrt.
+  //
+  // LINKS, wie bestellt. Byte 7 negativ ist links (positiv ist rechts, geometrisch
+  // nachgemessen: +4 gibt einen Bahnradius von 38,8 Einheiten, -4 nur 30,7).
+  const FINISH_SEITE = -1;
 
   // ====================================================================================
   // GHOST-BOXENSTOPP (experimentell)
@@ -2372,9 +2443,37 @@
   //
   // Dass das Auto beim Beginn der Standzeit noch minimal kriecht, ist damit gesagt und kein
   // stiller Rest: das Ziel bleibt 0, und gemessen erreicht es in der Standzeit die Null.
-  const PIT_BREMS_MS = 1500;
+  // ---- ABRUPT UND NICHT WEICH, wie bestellt ---------------------------------------
+  //
+  // GEMELDET: "maximaler Rand rechts fuer 1s und abruptes Stehenbleiben. Dann ruckartiges
+  // Anfahren und zurueck auf die Spur."
+  //
+  // 1500 ms standen hier, und sie waren begruendet: der Tempo-Regler ist ein PI-Glied und
+  // braucht rund 1,1 s, um von 35 auf 3 Prozent zu kommen. Weich WAR also richtig, solange
+  // das Ziel "sauber zum Stehen kommen" hiess.
+  //
+  // Bestellt ist jetzt das Gegenteil, und dafuer reicht der Regler nicht - er kann nicht
+  // schneller als seine Zeitkonstante. Also wird in dieser Phase am Regler VORBEI gebremst:
+  // Gas null und Bremse voll, direkt aufs Byte. Dieselbe Bauform wie der Zieleinlauf, wo
+  // FINISH_BRAKE_MS aus demselben Grund 450 ms hat und direkt schreibt.
+  //
+  // 1000 ms ist die bestellte Sekunde am Rand: sie deckt das Anbremsen UND das Stehen am
+  // Rand, bevor die Standzeit zaehlt.
+  const PIT_BREMS_MS = 1000;
   const PIT_GNADE_MS = 1500;     // laufend erneuert, deckt die 900-ms-Bestaetigung doppelt
-  const PIT_RAUS_MS = 1200;      // Querlage von +1 zurueck auf die Linie
+  // Querlage von +1 zurueck auf die Linie. KUERZER als die 1200 von vorher: bestellt ist
+  // "ruckartiges Anfahren", und 500 ms sind an der Ratenbegrenzung (querTempo 2,0 schafft
+  // die volle Breite in 500 ms) - also so ruckartig, wie die Querfuehrung es zulaesst.
+  const PIT_RAUS_MS = 500;
+  // Wie lange die Lichter beim Herausfahren doppelt blinken. Sie laufen laenger als die
+  // Querbewegung: der Ruck ist nach 500 ms vorbei, das Auto ist aber noch langsam und
+  // gehoert markiert, bis es wieder im Feld ist.
+  const PIT_BLINK_MS = 1600;
+  // Ein Doppelblitz: zwei kurze Impulse, dann eine Pause. Dieselbe Bauform wie die
+  // Lichthupe, aber deutlich schneller getaktet - ein Warnzeichen und keine Ansage.
+  const PIT_BLINK_AN_MS = 90;
+  const PIT_BLINK_AUS_MS = 90;
+  const PIT_BLINK_PAUSE_MS = 420;
   const PIT_AUSWEICH_MS = 400;   // yieldUntil der anderen, laufend erneuert
 
   // ====================================================================================
@@ -2550,6 +2649,41 @@
     return null;               // 'raus' laeuft ueber die Anfahrrampe
   }
 
+  // ---- ABRUPT HALTEN: BREMSE VOLL, AM REGLER VORBEI ------------------------------
+  //
+  // Bestellt ist ein abruptes Stehenbleiben. Der Tempo-Regler kann das nicht - er ist ein
+  // PI-Glied mit rund 0,46 s Zeitkonstante, und ein Ziel von null erreicht er asymptotisch.
+  // Genau daran ist die erste Fassung dieses Boxenstopps schon einmal haengen geblieben:
+  // die Haltephase wartete auf eine Schwelle, die der Regler nie erreichte.
+  //
+  // Also dieselbe Loesung wie beim Zieleinlauf: in dieser Phase wird die Bremse direkt
+  // aufs Byte geschrieben und nicht ueber das Ziel angefordert. Rueckgabe null heisst
+  // "kein Griff", ein Wert heisst "so bremsen".
+  function pitBremse(car) {
+    const p = car.ghost && car.ghost.pit;
+    if (!p) return null;
+    return (p.phase === 'halt' || p.phase === 'stand') ? 1 : null;
+  }
+
+  // ---- UND DER DOPPELBLITZ BEIM HERAUSFAHREN -------------------------------------
+  //
+  // GESETZT WIRD ER IN ghostTick, gelesen ueberall - dieselbe Bauform und derselbe Grund
+  // wie bei der Lichthupe (ghostHupeSetzen): in der Rennsimulation ist Date.now gefaelscht,
+  // und eine Funktion, die die Uhr selbst fragt, gibt je nach Aufrufer eine andere Antwort.
+  function pitBlinkDunkel(seit) {
+    if (!(seit >= 0) || seit >= PIT_BLINK_MS) return false;
+    const periode = 2 * (PIT_BLINK_AN_MS + PIT_BLINK_AUS_MS) + PIT_BLINK_PAUSE_MS;
+    const t = seit % periode;
+    if (t < PIT_BLINK_AN_MS) return true;
+    const zwei = PIT_BLINK_AN_MS + PIT_BLINK_AUS_MS;
+    return t >= zwei && t < zwei + PIT_BLINK_AN_MS;
+  }
+
+  function pitBlinkSetzen(g, now) {
+    const p = g && g.pit;
+    g.pitBlink = !!(p && p.phase === 'raus' && pitBlinkDunkel(now - (p.at || 0)));
+  }
+
   // Auf welchem Platz steht dieses Auto gerade still? -1, wenn es nicht steht. Fuer die
   // Messung und fuer die Anzeige - der Fahrbetrieb liest p.platz direkt.
   function pitPlatzVon(car) {
@@ -2702,15 +2836,20 @@
       pitPlatzRaeumen(car);
     }
     const platz = finishSeiteZaehler++;
+    // Die Feldgroesse: so viele Ghosts stehen in der Garage. Daraus zieht sich die Staffel,
+    // damit der LETZTE auf 0 herauskommt - bei drei Autos also 2, 1, 0 wie bestellt.
+    const feld = garage.filter((c) => c.ghost && c.role === 'ghost').length;
+    const kacheln = Math.max(0, Math.min(FINISH_KACHELN_MAX, feld - 1 - platz));
     g.finish = { phase: 'roll', at: Date.now(),
-                 seite: platz % 2 === 0 ? 1 : -1,
-                 rollMs: Math.max(FINISH_ROLL_MIN,
-                                  FINISH_ROLL_MAX - platz * FINISH_STAFFEL_MS) };
-    log(garageLabel(car) + ': rollt ' + g.finish.rollMs + ' ms aus und h\u00e4lt '
-        // RECHTS bei positivem Vorzeichen. Hier stand es umgekehrt: Byte 7 positiv ist
-        // rechts (bestaetigt im Protokolltab und geometrisch nachgemessen), die Autos hielten
-        // also richtig und das Protokoll log.
-        + (g.finish.seite > 0 ? 'rechts' : 'links') + ' am Rand.', 'info');
+                 seite: FINISH_SEITE,
+                 kacheln,
+                 // Der Zaehlerstand beim Einlauf. Byte 11 laeuft ueber, deshalb wird die
+                 // Differenz mit & 0xff gerechnet und nicht als Subtraktion zweier Zahlen.
+                 kachelStart: car.tileCount === null || car.tileCount === undefined
+                   ? null : car.tileCount };
+    log(garageLabel(car) + ': rollt ' + kacheln
+        + (kacheln === 1 ? ' Kachel' : ' Kacheln') + ' aus und h\u00e4lt links am Rand.',
+        'info');
   }
 
   // Ein Takt der Sequenz. Laeuft im gewohnten Zeitgeber des Ghosts und schreibt die Bytes
@@ -2726,18 +2865,40 @@
     // die Ratenbegrenzung sonst ueberall vermeidet.
     const seiteAus = (f.seite || 0) * FINISH_RAND;
     if (f.phase === 'roll') {
-      if (seit >= (f.rollMs || FINISH_ROLL_MAX)) { f.phase = 'brake'; f.at = now; return; }
-      // Gas aus, Lenkung zur zugeteilten Seite. Ausrollen und nicht hart abschneiden: das
-      // Auto rollt sonst mit einem Ruck aus, und die Bremsphase danach setzt den Punkt
-      // sowieso.
+      // ---- ZWEI AUSGAENGE, und der zweite ist der Rueckfall -------------------------
+      //
+      // Gezaehlt werden KACHELWECHSEL: das ist der Abstand, den die Staffel meint, und er
+      // haengt nicht am Tempo. Die Zeitgrenze bleibt daneben, weil ein Auto unter der
+      // Leseschwelle 0x00 meldet und dann keine Kacheln mehr zaehlt - ohne sie wuerde es
+      // endlos rollen.
+      const gefahren = (f.kachelStart === null || car.tileCount === null
+                        || car.tileCount === undefined)
+        ? null
+        : ((car.tileCount - f.kachelStart) & 0xff);
+      const weit = gefahren !== null && gefahren >= (f.kacheln || 0);
+      // Wer null Kacheln rollen soll, ist sofort weit genug - das ist derselbe Fall und
+      // braucht keine eigene Zeile. Der erste Anlauf hatte eine, und sie kehrte zurueck
+      // OHNE einen Befehl zu schreiben: das Auto haette in diesem Takt keinen Lenkwert
+      // bekommen, also nicht an den Rand gezogen. Der Selbsttest hat es als
+      // "steerRoll ist null" gemeldet.
+      if (weit || (f.kacheln || 0) === 0 || seit >= FINISH_ROLL_MS_MAX) {
+        f.phase = 'brake'; f.at = now;
+        if (!weit && (f.kacheln || 0) > 0) {
+          log(garageLabel(car) + ': Kachelzaehler stand, bremst nach Zeit.', 'info');
+        }
+        // NICHT ZURUECKKEHREN, sondern durchfallen: die Bremsphase gilt ab diesem Takt,
+        // und sie schreibt die Seite mit. Ein Takt ohne Befehl ist ein Takt, in dem das
+        // Auto den letzten weiterfaehrt - beim Anhalten also einen mit Gas.
+      } else {
+        writeToCar(car, seiteAus, 0, bit | LIGHT_HEAD);
+        return;
+      }
+    }
+    if (f.phase === 'brake') {
       // ACHTUNG AUF DIE REIHENFOLGE: writeToCar(car, STEER, THROTTLE, ...). Beim ersten
       // Anlauf stand die Seite im Gas-Platz - die Autos waeren am Rennende losgefahren
       // statt zur Seite zu ziehen. Die alte Zeile schrieb zwei Nullen und verriet die
       // Reihenfolge deshalb nicht.
-      writeToCar(car, seiteAus, 0, bit | LIGHT_HEAD);
-      return;
-    }
-    if (f.phase === 'brake') {
       if (seit >= FINISH_BRAKE_MS) { f.phase = 'blink'; f.at = now; return; }
       writeToCar(car, seiteAus, 0, bit | LIGHT_HEAD | LIGHT_BRAKE);
       return;
@@ -4214,7 +4375,7 @@
                   // Ueberholsequenz und Spurmischung. ansageSeit ist der Beginn der
                   // Lichthupe, mit der ein Ueberholmanoever angekuendigt wird.
                   passPhase: null, passZiel: null, passSince: 0, passBlockUntil: 0,
-                  ansageSeit: 0, hupt: false,
+                  ansageSeit: 0, hupt: false, pitBlink: false,
                   // Zeitluecke: je Kachelindex der Zeitpunkt des Uebertritts, und die
                   // daraus gerechnete Luecke zum Vorausfahrenden in Sekunden.
                   kachelZeit: [], zeitLuecke: null,
@@ -4831,7 +4992,24 @@
       // Gelbe Flagge: alle auf denselben Wert, und zwar bevor irgendetwas anderes daran
       // dreht. Gleiches Tempo fuer alle heisst von selbst "kein Ueberholen".
       const underYellow = flagState !== 'green';
-      if (underYellow) target = Math.min(target, yellowFactor());
+      // ---- UNTER GELB, MIT LESEBODEN --------------------------------------------
+      //
+      // DER BEFUND IST ARITHMETIK UND KEINE MESSUNG: yellowFactor() ist YELLOW_KMH geteilt
+      // durch die Hoechstgeschwindigkeit, also 80/327 = 0,244. GHOST_READ_MIN ist 0,35 -
+      // die Drehzahl, unter der das Auto das gedruckte Muster nicht mehr liest, 0x00 meldet
+      // und vom Abgangsmelder nach vier Sekunden geparkt wird.
+      //
+      // Das Gelb-Tempo lag also SCHON IMMER unter der Leseschwelle. Unter gelber Flagge
+      // haette sich das ganze Feld nach vier Sekunden selbst geparkt.
+      //
+      // Der Boden ist dieselbe Zeile, die formationPace() seit jeher hat - dort steht sie
+      // mit derselben Begruendung, nur fuer die Einfuehrungsrunde. Das Gelb-Tempo eines
+      // Ghosts ist nach unten nicht frei waehlbar: es ist durch das Fahrzeug begrenzt und
+      // nicht durch Geschmack. Wer langsamer will, muss YELLOW_KMH erhoehen koennen - kann
+      // er nicht, weil das Auto dann nicht mehr liest.
+      if (underYellow) {
+        target = Math.min(target, Math.max(yellowFactor(), GHOST_READ_MIN));
+      }
       // ---- Tempoprofil statt eines einzigen Kurvenabschlags ----
       // Vorher gab es genau zwei Zustaende: "Kurve in Sicht" oder nicht, und beide bekamen
       // denselben Abschlag. Mit den gemessenen Haarnadelcodes geht es genauer, und das ist
@@ -5065,6 +5243,24 @@
         g.lastThrottle = throttle;
       }
 
+      // ---- DER BOXENSTOPP BREMST VOLL, AM REGLER VORBEI ---------------------------
+      //
+      // Bestellt ist ein ABRUPTES Stehenbleiben. Der Tempo-Regler kann das nicht: er ist
+      // ein PI-Glied mit rund 0,46 s Zeitkonstante und erreicht ein Ziel von null nur
+      // asymptotisch. Genau daran ist die erste Fassung dieses Boxenstopps haengen
+      // geblieben - die Haltephase wartete auf eine Schwelle, die nie kam.
+      //
+      // ALS LETZTES vor dem Lenken, damit kein Zweig darunter es noch aufweicht. Und Gas
+      // ausdruecklich auf null: Gas und Bremse zugleich waere ein Byte, das das Auto nicht
+      // versteht.
+      const pb = pitBremse(car);
+      if (pb !== null) {
+        brake = pb;
+        throttle = 0;
+        g.lastBrake = brake;
+        g.lastThrottle = throttle;
+      }
+
       // ---- steering ----
       // In guard-rail mode the CAR steers itself. Comparing the two halves of the 20.08
       // capture - before and after bit 5 came on at 37.8 s - the time spent off the track
@@ -5258,6 +5454,12 @@
     // dieses Takts, in der Simulation also die gefaelschte, und genau darauf kommt es an.
     ghostHupeSetzen(g, now);
     if (g.hupt) lights &= ~LIGHT_HEAD & 0xff;
+    // Und der Doppelblitz beim Herausfahren aus der Box - siehe pitBlinkSetzen().
+    // NACH der Lichthupe: die zwei koennen nicht zugleich laufen (die Hupe braucht eine
+    // Attacke, der Blitz einen Stopp), und die Reihenfolge ist trotzdem festgelegt, damit
+    // sie nicht dem Zufall gehoert.
+    pitBlinkSetzen(g, now);
+    if (g.pitBlink) lights &= ~LIGHT_HEAD & 0xff;
     // Unter Gelb blinken alle, und ein stehendes Auto blinkt schneller - so findet man auf
     // dem Tisch sofort, welches gemeint ist.
     if (flagState !== 'green' || car.parked) {

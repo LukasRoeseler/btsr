@@ -7778,32 +7778,44 @@
   // Bahn: wo ein Auto wirklich stehen bleibt, kann diese App nicht wissen - es meldet seine
   // Querlage nicht. Was sie zusichern kann, ist, dass zwei aufeinanderfolgende Autos
   // ENTGEGENGESETZT einschlagen und dass die Hinteren laenger rollen.
-  stAdd('Zieleinlauf: abwechselnd links und rechts an den Rand', () => {
+  stAdd('Zieleinlauf: in Kacheln gestaffelt, alle links an den Rand', () => {
     if (!window.OMEGA_TEST || !OMEGA_TEST.finishSeiten) {
       return { skip: true, mass: 'finishSeiten nicht vorhanden' };
     }
-    // SECHS und nicht vier: bei vier greift der Boden FINISH_ROLL_MIN nicht, und dann
-    // prueft der Lauf den Fall nicht, in dem zwei Autos dieselbe Rollzeit bekommen.
+    // ---- DIE ZUSAGE HAT SICH GEAENDERT, und das gehoert hierhin -------------------
+    //
+    // Bis v0.5.50 wechselten die Seiten ab (rechts, links, rechts ...) und die Staffel war
+    // eine ZEIT: der Fuehrende rollte 2000 ms, jeder dahinter 500 ms weniger. Gemeldet
+    // wurde: "aktuell rammen sie ineinander rein".
+    //
+    // Der Fehler ist, dass Zeit kein Abstand ist. Wie weit ein Auto in 500 ms rollt, haengt
+    // davon ab, wie schnell es ueber die Linie kam - und am Rennende sind die Tempi
+    // verschieden (einer greift gerade an, einer haelt Abstand, einer kommt aus der Box).
+    // Zwei Autos konnten dieselbe Stelle treffen.
+    //
+    // Jetzt zaehlt jedes Auto KACHELWECHSEL, und eine Kachel ist 43 cm bei 9,5 cm
+    // Fahrzeuglaenge - mehr als vier Fahrzeuglaengen Abstand, unabhaengig vom Tempo. Damit
+    // braucht es keine wechselnden Seiten mehr, und alle stehen links, wie bestellt: das
+    // Feld in einer Reihe, die andere Bahnhaelfte frei fuer das Auto des Fahrers.
     const r = OMEGA_TEST.finishSeiten(6);
     const fehler = [];
     if (!r || r.length !== 6) return { ok: false, mass: 'kein Lauf' };
+    // 1. ALLE LINKS. Byte 7 negativ ist links.
+    for (let i = 0; i < r.length; i++) {
+      if (!(r[i].seite < 0)) fehler.push('Auto ' + i + ': Seite ' + r[i].seite);
+    }
+    // 2. STRENG ABNEHMEND, und jetzt darf es streng sein: die Kachelstaffel hat keinen
+    //    Boden, der zwei Autos denselben Wert gibt. Der Letzte kommt auf null heraus.
     for (let i = 1; i < r.length; i++) {
-      if (Math.sign(r[i].seite) === Math.sign(r[i - 1].seite)) {
-        fehler.push('Auto ' + i + ' auf derselben Seite wie ' + (i - 1));
-      }
-      // DER FUEHRENDE ROLLT AM LAENGSTEN, nicht am kuerzesten - und diese Zeile ist die
-      // Berichtigung eines Fehlers, den ich selbst eingebaut hatte. Rollt der Hintere
-      // laenger, schrumpft der Abstand beim Anhalten, und das Auffahren wird schlimmer statt
-      // besser. Die Rechnung steht bei FINISH_ROLL_MAX.
-      // NICHT STRENG KLEINER, sondern nicht groesser - und das ist kein Aufweichen: ab
-      // dem fuenften Auto greift FINISH_ROLL_MIN, und dann sind zwei Rollzeiten gleich.
-      // Dort trennt der Seitenwechsel, und den prueft die Zeile darueber. Eine Forderung
-      // nach streng kleiner waere bei sechs Ghosts rot, ohne dass etwas kaputt ist.
-      if (r[i].rollMs > r[i - 1].rollMs) {
-        fehler.push('Auto ' + i + ' rollt laenger als ' + (i - 1) + ' - dann schiebt es auf');
+      if (!(r[i].kacheln < r[i - 1].kacheln)) {
+        fehler.push('Auto ' + i + ' rollt ' + r[i].kacheln + ' Kacheln, Auto ' + (i - 1)
+                    + ' nur ' + r[i - 1].kacheln + ' - dann schiebt es auf');
       }
     }
-    // Und der Lenkwert muss wirklich hinausgehen, mit dem Vorzeichen der Seite.
+    if (r[r.length - 1].kacheln !== 0) {
+      fehler.push('der Letzte rollt ' + r[r.length - 1].kacheln + ' statt 0 Kacheln');
+    }
+    // 3. Und der Lenkwert muss wirklich hinausgehen, mit dem Vorzeichen der Seite.
     for (const x of r) {
       if (Math.sign(x.steerRoll) !== Math.sign(x.seite) || Math.abs(x.steerRoll) < 0.9) {
         fehler.push('Lenkwert ' + x.steerRoll + ' passt nicht zur Seite ' + x.seite);
@@ -7812,8 +7824,18 @@
         fehler.push('Bremsphase lenkt anders als die Rollphase');
       }
     }
+    // 4. Und die Rollphase muss ENDEN, wenn die Kacheln gezaehlt sind - sonst rollt das
+    //    Auto weiter, und die Staffel waere eine Absichtserklaerung.
+    for (let i = 0; i < r.length; i++) {
+      if (r[i].phase !== 'brake') {
+        fehler.push('Auto ' + i + ' ist nach ' + r[i].kacheln + ' Kacheln in Phase '
+                    + r[i].phase + ' statt brake');
+      }
+    }
     return { ok: !fehler.length,
-             mass: r.map(x => (x.seite > 0 ? 'L' : 'R') + ' ' + x.rollMs + 'ms '
+             mass: r.map((x, i) => 'P' + (i + 1) + ' '
+                              + (x.seite > 0 ? 'rechts' : 'links') + ' '
+                              + x.kacheln + ' Kacheln, Lenk '
                               + x.steerRoll.toFixed(1)).join(' | ')
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });

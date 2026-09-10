@@ -2078,8 +2078,33 @@
         rx: { properties: { writeWithoutResponse: true },
               writeValueWithoutResponse(p) { pakete.push(Array.from(p)); return Promise.resolve(); } },
         ghost: { running: true },
+        // Der Kachelzaehler: die Rollphase endet an ihm und nicht an der Uhr.
+        tileCount: 0, tileCode: 0x02,
       };
+      // ---- EIN FELD IN DER GARAGE, damit dieses Auto ueberhaupt ausrollt -------------
+      //
+      // Seit v0.5.51 staffelt finishGhost() in KACHELN und liest dazu die Feldgroesse:
+      // der Letzte kommt auf null Kacheln heraus, damit die Reihe hinter der Linie dicht
+      // aufschliesst. Mit nur einem Auto in der Garage IST dieses Auto der Letzte - es
+      // bremst also sofort, und diese Sonde meldete "keine Ausrollphase".
+      //
+      // Die Meldung war richtig und die Frage falsch: gemessen werden soll die SEQUENZ,
+      // also braucht das Auto einen Platz weiter vorn. Drei Attrappen dahinter geben ihm
+      // drei Kacheln.
+      const merkGarage = garage.splice(0, garage.length);
+      const attrappen = [];
+      for (let i = 0; i < 3; i++) {
+        attrappen.push({ role: 'ghost', alias: 'X' + i, ghost: { running: false } });
+      }
+      garage.push(car);
+      for (const a of attrappen) garage.push(a);
+      finishSeitenZaehlerZuruecksetzen();
       finishGhost(car);
+      // Die Kacheln, die es rollen soll, gleich mitzaehlen - die Sonde dreht nur die Uhr
+      // zurueck und faehrt nicht wirklich.
+      if (car.ghost.finish) {
+        car.tileCount = (car.tileCount + (car.ghost.finish.kacheln || 0)) & 0xff;
+      }
       // Die Phase gehoert an das PAKET und nicht an den Takt: ein Takt, in dem die Phase
       // wechselt, schreibt kein Paket. Zwei Listen verschiedener Laenge nebeneinander zu
       // fuehren und mit demselben Index zu lesen war der Fehler - die Bremsphase sah dadurch
@@ -2111,9 +2136,12 @@
         gas: gasVon(b[6]),
         licht: b[14],
       }));
+      garage.splice(0, garage.length);
+      for (const c of merkGarage) garage.push(c);
       return { reihe, phasen, takte, schritt,
                kopf: LIGHT_HEAD, bremse: LIGHT_BRAKE,
-               blinks: FINISH_BLINKS, rollMs: FINISH_ROLL_MAX };
+               kacheln: car.ghost.finish ? car.ghost.finish.kacheln : null,
+               blinks: FINISH_BLINKS, rollMsMax: FINISH_ROLL_MS_MAX };
     },
 
     // ---- Hebt ein Start das Parkschild? -----------------------------------------
@@ -2455,12 +2483,24 @@
       try {
         finishSeitenZaehlerZuruecksetzen();
         const raus = [];
-        for (let i = 0; i < (n || 4); i++) {
+        // ---- ERST DAS GANZE FELD AUFSTELLEN, DANN EINLAUFEN LASSEN ------------------
+        //
+        // Seit die Staffel in Kacheln rechnet, liest finishGhost() die FELDGROESSE aus der
+        // Garage: der Letzte soll auf null Kacheln herauskommen. Der erste Anlauf dieser
+        // Sonde schob die Autos einzeln hinein und rief finishGhost() gleich danach - die
+        // Garage hatte dann bei jedem Auto genau ein Auto mehr, und jedes bekam null
+        // Kacheln. Die Sonde haette damit die Staffel geprueft, die sie selbst kaputt macht.
+        const zahl = n || 4;
+        const autos = [];
+        for (let i = 0; i < zahl; i++) {
           const gesendet = [];
-          const car = { role: 'ghost', alias: 'F' + i, tileCode: 0x02,
-                        testSenke: gesendet,
-                        ghost: { tileIndex: 0, engine: null } };
-          garage.push(car);
+          autos.push({ role: 'ghost', alias: 'F' + i, tileCode: 0x02,
+                       tileCount: 0, testSenke: gesendet,
+                       ghost: { tileIndex: 0, engine: null } });
+        }
+        for (const c of autos) garage.push(c);
+        for (const car of autos) {
+          const gesendet = car.testSenke;
           finishGhost(car);
           const f = car.ghost.finish;
           let uhr = echtNow();
@@ -2471,11 +2511,15 @@
             return gesendet.length ? gesendet[gesendet.length - 1].steer : null;
           };
           const steerRoll = holen();
-          uhr += (f.rollMs || 0) + 10;
+          // DIE KACHELN WEITERZAEHLEN, wie es die Meldungen taeten - die Rollphase endet
+          // jetzt an einem Zaehlerstand und nicht an der Uhr.
+          car.tileCount = (car.tileCount + (f.kacheln || 0)) & 0xff;
+          uhr += 50;
           ghostFinishTick(car);                  // Phasenwechsel auf 'brake'
           const steerBrake = holen();
           Date.now = echtNow;
-          raus.push({ seite: f.seite, rollMs: f.rollMs, steerRoll, steerBrake });
+          raus.push({ seite: f.seite, kacheln: f.kacheln, steerRoll, steerBrake,
+                      phase: car.ghost.finish ? car.ghost.finish.phase : null });
         }
         return raus;
       } finally {

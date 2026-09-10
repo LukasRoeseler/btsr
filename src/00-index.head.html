@@ -7161,9 +7161,14 @@
           <small>Ein Ghost f&auml;hrt auf der Start/Ziel-Kachel rechts an den Rand, bleibt
           ein paar Sekunden stehen und f&auml;hrt wieder los. Die Anfahrt beginnt schon auf
           der Kachel davor, im Formationstempo &ndash; ein Auto, das mit Renntempo &uuml;ber
-          die Linie kommt, braucht eine Kachel zum Verz&ouml;gern. Es gibt vier Boxen hintereinander:
-          Platz 1 auf der Start/Ziel-Kachel, Platz 2 eine Kachel sp&auml;ter und so
-          weiter. Wer gleichzeitig f&auml;llig ist, nimmt den n&auml;chsten freien und h&auml;lt
+          die Linie kommt, braucht eine Kachel zum Verz&ouml;gern. Standardm&auml;&szlig;ig AUS: ein Auto, das mitten
+          im Rennen stehen bleibt, liest man beim ersten Start als Fehler und nicht als
+          Feature. Der Ablauf ist absichtlich hart &ndash; eine Sekunde am rechten Rand mit
+          voller Bremse (am Tempo-Regler vorbei, der braucht f&uuml;r einen sauberen Halt
+          1,1&nbsp;s), dann ruckartig heraus in 0,5&nbsp;s, das ist die Grenze der
+          Querf&uuml;hrung, und dabei blinken die Lichter doppelt.
+          Es gibt vier Boxen hintereinander: Platz 1 auf der Start/Ziel-Kachel,
+          Platz 2 eine Kachel sp&auml;ter und so weiter. Wer gleichzeitig f&auml;llig ist, nimmt den n&auml;chsten freien und h&auml;lt
           eine Kachel dahinter; wer als F&uuml;nfter kommt, wartet, bis eine frei wird.
           Auf dem Weg zur eigenen Box f&auml;hrt er am Gegenrand vorbei &ndash; sonst
           w&uuml;rde er dem Stehenden ins Heck fahren. Gemessen bei einem Wetterwechsel
@@ -7180,7 +7185,7 @@
           nicht die Randlage, sondern dass die anderen auf der anderen Seite
           sind.
           <br>Regenreifen: setzt Regen ein, kommt jeder Ghost so früh wie möglich herein und rüstet um &ndash; und beim Wechsel zurück auf trocken genauso. Solange die falschen Reifen drauf sind, fährt er langsamer: 0,64 gegen 0,85 mit Regenreifen im Regen, abgeleitet aus derselben Grifftabelle, die dein Auto benutzt. Bei leichtem Regen ist der Slick noch vorn &ndash; der Nachteil kommt mit dem Wasser, nicht mit der Meldung. Ist dieser Schalter aus, können Ghosts keine falschen Reifen haben, sonst kröchen sie nach dem ersten Regen ohne Ausweg.</small></div>
-        <label class="tgl"><input type="checkbox" id="ghost-pit" checked><span></span></label></div>
+        <label class="tgl"><input type="checkbox" id="ghost-pit"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Ghost: Boxenstopp im freien Fahren
           <span class="wip-tag">experimentell</span>
           <small>Ob auch au&szlig;erhalb eines Rennens gepittet wird. Beim Losfahren aus der
@@ -7844,7 +7849,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.5.50</span></span>
+    <span class="foot-ver">v<span id="app-version">0.5.51</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
