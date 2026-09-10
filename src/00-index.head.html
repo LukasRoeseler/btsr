@@ -7131,7 +7131,7 @@
           schlechter &ndash; hier liegt der Tausch.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="ghost-quertempo" min="0.2" max="4" step="0.1" value="2">
+          <input type="range" id="ghost-quertempo" min="0.2" max="4" step="0.1" value="4">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="ghost-quertempo-val">2.0</span>
         </div></div>
@@ -7151,7 +7151,7 @@
           nimmt diesen Schutz zur&uuml;ck.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="ghost-gasdyn" min="0.3" max="4" step="0.1" value="1">
+          <input type="range" id="ghost-gasdyn" min="0.3" max="4" step="0.1" value="4">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="ghost-gasdyn-val">1.0</span>
         </div></div>
@@ -7254,6 +7254,8 @@
           <button type="button" class="mw-preset" data-linemodel="curvature">Kr&uuml;mmung</button>
           <button type="button" class="mw-preset sel" data-linemodel="laptime">Rundenzeit</button>
           <button type="button" class="mw-preset" data-linemodel="lateapex">Late Apex</button>
+          <button type="button" class="mw-preset" data-linemodel="dreistufig">3-stufig
+            <span class="wip-tag">experimentell</span></button>
         </div></div>
       <!-- DIE LINIE DIREKT NEBEN DER WAHL. Gemeldet: "ich habe 2 Ideallinie Modi, aber wenn
            ich dazwischen waehle, aendert sich die eingezeichnete Linie nicht." Sie aendert
@@ -7849,7 +7851,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.5.51</span></span>
+    <span class="foot-ver">v<span id="app-version">0.5.52</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine

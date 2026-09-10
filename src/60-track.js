@@ -1097,6 +1097,147 @@
              evals: auswertungen, accepted: 0 };
   }
 
+  // =====================================================================================
+  // DIE 3-STUFEN-LINIE
+  // =====================================================================================
+  //
+  // BESTELLT: "3 Spuren: links, mitte, aussen. Zusaetzliche Ideallinie '3-stufig', bei der
+  // ein Auto immer auf genau einer der Spuren faehrt. Die anderen funktionieren nicht. Bei
+  // Links-Rechts-Kombi soll er dann rechts anfahren und zwischen den Kurven nach links
+  // wechseln, dann faehrt der Ghost eine gute Linie."
+  //
+  // ---- WARUM DIE ANDEREN DREI "NICHT FUNKTIONIEREN", GEMESSEN ----------------------
+  //
+  // Die Vermutung war, dass der Linienversatz gar nicht am Servo ankommt. Das ist NICHT
+  // der Fall - gemessen auf SR3GLR2GR2G2 mit dem Rundenzeitmodell:
+  //
+  //     Linienversatz        Spanne 1,745  (also rund -0,87 bis +0,87)
+  //     Wunsch (Summe)       Spanne 1,134
+  //     am Servo             Spanne 1,404, also 96 % des Wunsches
+  //     je Kachel            Spannen von 16 bis 130 BYTE, von 127 moeglichen
+  //
+  // Der Befehl ist also gross. Was fehlt, ist etwas anderes, und die Kachelzahlen sagen es:
+  // Kachel 2 hat eine Spanne von 130 bei einem MITTELWERT von 41. Der Befehl schwingt - er
+  // laeuft in einer Kurve von aussen durch den Scheitel nach aussen und ist im Mittel
+  // fast null.
+  //
+  // Ein Auto auf einer Schiene folgt so etwas nicht. Der Schlitz haelt es, das Servo hat
+  // eine Stellzeit, und die Ratenbegrenzung des Ghosts hat noch eine - ein Befehl, der
+  // sich staendig aendert, bewegt es kaum. Was es bewegt, ist ein GEHALTENER Befehl, und
+  // genau das ist die Beobachtung des Nutzers: "nur wenn ich bei Fahrt die Querlage
+  // verschiebe, tut sich was, und beim Ueberholen". Beides sind gehaltene Befehle
+  // (ein fester Versatz, und attackSide = +/-1 ueber Sekunden).
+  //
+  // ---- ALSO: DREI SPUREN, GEHALTEN ------------------------------------------------
+  //
+  // Diese Linie nimmt nur drei Werte an - links, Mitte, rechts - und haelt jeden ueber ein
+  // ganzes Stueck Strecke. Sie ist damit KEINE Optimierung: sie hat keine Zielfunktion und
+  // sucht nichts. Sie ist eine Vorschrift, und ihre Begruendung ist nicht die Rundenzeit,
+  // sondern dass das Auto ihr folgen KANN.
+  //
+  // Die Vorschrift je Kurve, in Anteilen des Kurvenstuecks:
+  //
+  //     erste 35 %    AUSSEN      anfahren
+  //     mitte 30 %    INNEN       einlenken
+  //     letzte 35 %   AUSSEN      herauskommen
+  //
+  // Und auf der Geraden zwischen zwei Kurven: die Aussenseite der NAECHSTEN Kurve, ab der
+  // Mitte des geraden Stuecks. Bei einer Links-Rechts-Kombination ergibt das genau das
+  // bestellte Bild - rechts anfahren (aussen an der Linkskurve), zwischen den Kurven nach
+  // links wechseln (aussen an der Rechtskurve).
+  //
+  // DIE 35 PROZENT SIND DIE SCHIKANE. Gemeldet: "Schikane ist zB so eng, dass Ghosts am
+  // besten 500 ms aussen anfahren und dann voll nach innen einlenken, um aussen
+  // rauszukommen." Eine Kachel dauert bei Ghost-Vorgabetempo rund 700 ms; 35 Prozent eines
+  // zweikacheligen Kurvenstuecks sind 0,7 Kacheln, also rund 500 ms. Die Zahl ist damit
+  // nicht gewaehlt, sondern die Uebersetzung der Beobachtung.
+  //
+  // AUSSEN IST +dreht. Das ist nachgemessen und nicht Konvention: bei konstantem Versatz
+  // gibt +4 einen mittleren Bahnradius von 38,8 Einheiten, -4 nur 30,7 - der groessere
+  // Radius ist der aeussere. dreht ist +1 fuer eine Rechtskurve.
+  const SPUR_EIN = 0.35;      // Anteil des Kurvenstuecks, der aussen angefahren wird
+  const SPUR_MITTE = 0.30;    // Anteil, der innen gefahren wird
+  // Wie weit ein voller Spurwechsel geht. 1,0 heisst: bis an die Schranke, die "Kurven
+  // oeffnen" setzt - dieselbe Schranke wie bei den anderen Modellen, damit der Regler auch
+  // hier gilt und nicht nur bei drei von vier Linien.
+  const SPUR_VOLL = 1.0;
+
+  function dreiStufenLine(pts, nrm, o) {
+    const n = pts.length;
+    const tiles = o.tiles || [];
+    const closed = o.closed !== false;
+    // Dieselbe Schranke wie bei den anderen Modellen - siehe formLine.
+    const limit = (o.limit !== undefined ? o.limit : TRACK_HALF_W - 3);
+    const alpha = new Array(n).fill(0);
+    const laeufe = lineKurvenLaeufe(tiles, closed);
+    // OHNE KURVEN GIBT ES NICHTS ZU STAFFELN, und dann ist die Mitte richtig - nicht eine
+    // willkuerliche Seite. Derselbe Zweig, dessen Fehlen in v0.5.43 die ganze IIFE
+    // umgebracht hat, als ich lateApexLine geloescht habe.
+    if (!laeufe.length || !tiles.length) {
+      return { alpha, limit, span: 0, lapTime: null, startLapTime: null,
+               v: null, gain: 0, apex: [], par: [], evals: 0, accepted: 0 };
+    }
+    const tab = trackKachelTabelle(pts, tiles.length);
+    const at = (i) => closed ? ((i % n) + n) % n : Math.max(0, Math.min(n - 1, i));
+    // Je Kurvenlauf die Punktindizes, in Fahrtrichtung.
+    const stuecke = laeufe.map((lauf) => {
+      const idx = [];
+      for (let kk = lauf.von; kk <= lauf.bis; kk++) {
+        const t = ((kk % tiles.length) + tiles.length) % tiles.length;
+        for (let d = 0; d < tab.zahl[t]; d++) idx.push(at(tab.start[t] + d));
+      }
+      return { idx, dreht: lauf.dreht };
+    }).filter((s) => s.idx.length);
+    if (!stuecke.length) {
+      return { alpha, limit, span: 0, lapTime: null, startLapTime: null,
+               v: null, gain: 0, apex: [], par: [], evals: 0, accepted: 0 };
+    }
+    // ---- 1. Die Kurven selbst: aussen, innen, aussen ------------------------------
+    for (const st of stuecke) {
+      const m = st.idx.length;
+      const aussen = st.dreht * SPUR_VOLL * limit;
+      const innen = -st.dreht * SPUR_VOLL * limit;
+      const bisEin = Math.max(1, Math.round(m * SPUR_EIN));
+      const bisMitte = Math.min(m, bisEin + Math.max(1, Math.round(m * SPUR_MITTE)));
+      for (let q = 0; q < m; q++) {
+        alpha[st.idx[q]] = q < bisEin ? aussen : (q < bisMitte ? innen : aussen);
+      }
+    }
+    // ---- 2. Die Geraden dazwischen: ab der Mitte auf die Aussenseite der naechsten --
+    //
+    // AB DER MITTE und nicht sofort: das Auto kommt aussen aus der vorigen Kurve, und wenn
+    // die naechste andersherum geht, muss es die ganze Breite wechseln. Auf der ersten
+    // Haelfte bleibt es, wo es war - so ist der Wechsel EIN Befehl an einer Stelle und
+    // nicht ein Zickzack ueber die Gerade.
+    const paare = [];
+    for (let s = 0; s + 1 < stuecke.length; s++) paare.push([s, s + 1]);
+    if (closed && stuecke.length > 1) paare.push([stuecke.length - 1, 0]);
+    for (const [a, b] of paare) {
+      const vonIdx = stuecke[a].idx[stuecke[a].idx.length - 1];
+      const bisIdx = stuecke[b].idx[0];
+      // Die Punkte dazwischen, zyklisch.
+      const zwischen = [];
+      let i = at(vonIdx + 1), sicher = 0;
+      while (i !== bisIdx && sicher++ <= n) { zwischen.push(i); i = at(i + 1); }
+      if (!zwischen.length) continue;     // Kurven stossen direkt aneinander
+      const alt = stuecke[a].dreht * SPUR_VOLL * limit;    // aussen der vorigen
+      const neu = stuecke[b].dreht * SPUR_VOLL * limit;    // aussen der naechsten
+      const halb = Math.floor(zwischen.length / 2);
+      for (let q = 0; q < zwischen.length; q++) {
+        alpha[zwischen[q]] = q < halb ? alt : neu;
+      }
+    }
+    // Dieselbe Bahn-aus-alpha-Rechnung wie in formLine: Punkt plus Normale mal alpha.
+    const bahn = pts.map((p, i) => [p.x + nrm[i].x * alpha[i],
+                                    p.y + nrm[i].y * alpha[i]]);
+    const prof = lapTimeOf(bahn, closed, o);
+    return { alpha, limit, span: Math.max.apply(null, alpha.map(Math.abs)),
+             lapTime: prof.time, startLapTime: prof.time, v: prof.v, gain: 0,
+             // Kein Scheitel und keine Parameter: dieses Modell sucht nichts. Die Felder
+             // bleiben leer statt zu behaupten, es haette welche.
+             apex: [], par: [], evals: 0, accepted: 0 };
+  }
+
   // ---------------------------------------------------------------- Modellwahl
   //
   // 'curvature' ist das bisherige Modell, minimale Kruemmung, also der groesste moegliche
@@ -1132,7 +1273,9 @@
   // Die gueltigen Modellnamen an EINER Stelle. Vorher stand die Liste als zwei
   // Vergleiche in setLineModel und ein weiteres Mal als Bedingung in buildLine - beim
   // dritten Modell waeren das drei Orte fuer eine Liste gewesen.
-  const LINE_MODELLE = ['curvature', 'laptime', 'lateapex'];
+  // 'dreistufig' ist KEINE Optimierung und steht deshalb am Ende: die drei davor suchen
+  // ein Optimum, dieses folgt einer Vorschrift. Die Begruendung steht bei dreiStufenLine().
+  const LINE_MODELLE = ['curvature', 'laptime', 'lateapex', 'dreistufig'];
 
   function setLineModel(m) {
     if (LINE_MODELLE.indexOf(m) < 0) return;
@@ -1405,10 +1548,14 @@
     // parametrisieren. Dort bleiben die alten punktweisen Verfahren: sie brauchen kein
     // Layout, und ihre Zackigkeit ist ohne Kacheln auch nicht zu beheben.
     const mitLayout = !!(o.tiles && o.tiles.length);
+    // 'dreistufig' BRAUCHT das Layout: seine ganze Vorschrift ist "aussen an der naechsten
+    // Kurve", und ohne Kacheln gibt es keine naechste Kurve. Ohne Layout faellt es deshalb
+    // auf das punktweise Rundenzeitmodell zurueck - wie die anderen zwei layoutgebundenen.
     const line = !mitLayout
         ? (m === 'curvature' ? idealLine(pts, nrm, o) : lapTimeLine(pts, nrm, o))
       : m === 'curvature' ? formLine(pts, nrm, o, 'kurve', 0.15, 0.85)
       : m === 'lateapex' ? formLine(pts, nrm, o, 'zeit', LATE_APEX_MIN, LATE_APEX_MAX)
+      : m === 'dreistufig' ? dreiStufenLine(pts, nrm, o)
       : formLine(pts, nrm, o, 'zeit', 0.15, 0.85);
     line.model = m;
     line.grenzen = g;

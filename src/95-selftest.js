@@ -9273,12 +9273,30 @@
     const C = OMEGA_TEST.ghostSpeedControl;
     const teile = [], schlecht = [];
 
-    // 1. Erster Takt aus dem Stand: kein Vollgas. Die Ratenbegrenzung allein garantiert
-    //    das, unabhaengig von der Rampe - deshalb ist es hier pruefbar.
+    // 1. Erster Takt aus dem Stand: KEIN VOLLGAS. Die Ratenbegrenzung garantiert das,
+    //    unabhaengig von der Rampe - deshalb ist es hier pruefbar.
+    //
+    // ---- DIE SCHRANKE HAENGT AN DER ENTSCHLOSSENHEIT, und das ist eine Berichtigung ---
+    //
+    // Hier stand `t1 < 0.15`, eine feste Zahl. Sie war richtig, solange gasDynamik ab Werk
+    // auf 1,0 stand. Seit v0.5.52 steht es auf 4,0 - "Traegheit standardmaessig aus, auch
+    // zum Beschleunigen" war ausdruecklich bestellt -, und der Regler gibt im ersten Takt
+    // 0,29 statt 0,07.
+    //
+    // Der Test hat damit die BESTELLUNG als Fehler gemeldet, nicht einen Fehler. Was er
+    // sichern soll, ist die Rampe an sich: der erste Takt darf nicht schon voll sein.
+    // gasDynamik skaliert beide Verstaerkungen und beide Ratengrenzen linear, also skaliert
+    // die Schranke mit - 0,15 bei Entschlossenheit 1, 0,60 bei 4. Und ein Deckel bei 0,8
+    // bleibt: auch der entschlossenste Regler darf im ersten Takt nicht durchtreten.
+    const dyn = typeof ghostCfg !== 'undefined' ? Math.max(0.1, ghostCfg.gasDynamik || 1) : 1;
+    const grenze = Math.min(0.8, 0.15 * dyn);
     const g1 = {};
     const t1 = C(g1, 0.5, 0, 0.045).throttle;
-    teile.push('erster Takt Gas ' + t1.toFixed(2));
-    if (!(t1 < 0.15)) schlecht.push('erster Takt gibt ' + t1.toFixed(2) + ' Gas');
+    teile.push('erster Takt Gas ' + t1.toFixed(2) + ' (Grenze ' + grenze.toFixed(2)
+               + ' bei Entschlossenheit ' + dyn + ')');
+    if (!(t1 < grenze)) {
+      schlecht.push('erster Takt gibt ' + t1.toFixed(2) + ' Gas, Grenze ' + grenze.toFixed(2));
+    }
 
     // 2. Und nach einer Sekunde Takten ist es voll da - eine Begrenzung, die das Gas
     //    dauerhaft klein haelt, waere ein lahmes Auto und kein sanftes.

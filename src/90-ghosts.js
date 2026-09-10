@@ -1513,7 +1513,17 @@
     // machen ihn stetig, und eine Ratenbegrenzung gegen einen stetigen Sollwert muss nicht
     // mehr so eng sein. Sie bleibt trotzdem drin - als Schutz davor, dass ein
     // zurueckgestelltes Auto aus der Hand gerissen wird.
-    querTempo: 2.0,
+    // ---- TRAEGHEIT AB WERK AUS, wie bestellt --------------------------------------
+    //
+    // 4,0 ist das Maximum des Reglers, also die volle Bahnbreite in 250 ms statt in 500.
+    // Der Grund ist nicht Geschmack: die 3-Stufen-Linie schaltet zwischen drei GEHALTENEN
+    // Spuren um, und was zaehlt, ist die Zeit AUF einer Spur - nicht die Zeit auf dem Weg
+    // dorthin. Gemessen hat die 3-Stufen-Linie Kachelmittelwerte von 80 bis 93 Byte gegen
+    // 23 bis 56 beim Rundenzeitmodell; jede Millisekunde Ueberfahrt frisst davon.
+    //
+    // Der Regler bleibt: wer es weicher will, dreht ihn herunter. Er faengt bei 0,2 an,
+    // und das ist eine ganze Sekunde je Spurwechsel.
+    querTempo: 4.0,
     // ---- BREMS- UND GASVERHALTEN ---------------------------------------------------
     //
     // Gemeldet: "Bremsverhalten vor und Beschleunigungsverhalten nach Kurven der Ghosts soll
@@ -1537,7 +1547,14 @@
     // Ratenbegrenzung ist der Schutz davor, dass ein zurueckgestelltes Auto aus der Hand
     // gerissen wird - wer sie hochdreht, nimmt diesen Schutz zurueck, und der Hilfetext
     // sagt das.
-    gasDynamik: 1.0,
+    // Und dasselbe fuer das Gas - "auch zum Beschleunigen" war ausdruecklich bestellt.
+    // 4,0 skaliert beide Verstaerkungen und beide Ratengrenzen des Tempo-Reglers, ein Ghost
+    // greift damit sofort zu statt sich an sein Ziel heranzutasten.
+    //
+    // WAS DAS KOSTET, und es gehoert dazu: ein entschlossener Regler schiesst leichter
+    // ueber. Der Anti-Windup daneben ist genau dafuer da, und der Boden bei 0,3 laesst den
+    // alten, weichen Zustand jederzeit wieder einstellen.
+    gasDynamik: 4.0,
     // ---- GHOST-BOXENSTOPP ----------------------------------------------------------
     //
     // pitAn steht auf AN, obwohl es neu und experimentell ist: bestellt war ein Feature, das
@@ -5760,11 +5777,36 @@
     return 1 + ghostCfg.leaderBrakePct * lage;
   }
 
+  // Wie lange nach dem Start die Startaufstellung gilt. Zwei Kacheln bei rund 700 ms sind
+  // 1,4 s; 2500 ms decken das mit Reserve und enden, bevor die erste Kurve durch ist.
+  const GHOST_START_ENG_MS = 2500;
+
   function ghostLane(car) {
     const gs = garage.filter(c => c.role === 'ghost' && c.ghost);
     if (gs.length < 2) return 0;
     const k = gs.indexOf(car);
     if (k < 0) return 0;
+    // ---- AM START NUR ZWEI NEBENEINANDER -----------------------------------------
+    //
+    // BESTELLT: "Beim Start eines Rennens gut aufpassen, dass Autos nicht zu eng fahren
+    // (nur 2 nebeneinander und Abstand halten)."
+    //
+    // Die gleichmaessige Verteilung darunter nutzt die ganze Bahnbreite: bei sechs Autos
+    // sind das sechs Spuren auf 25 cm, also gut 4 cm je Auto bei 3,8 cm Fahrzeugbreite.
+    // Im Rennen ist das richtig - die Autos sind dann ueber die Runde verteilt und stehen
+    // nie alle gleichzeitig nebeneinander. IN DEN ERSTEN SEKUNDEN stehen sie es aber
+    // genau: sie starten zusammen und fahren dieselbe Linie.
+    //
+    // Also am Start nur ZWEI Spuren, links und rechts abwechselnd. Zwei Autos nebeneinander
+    // brauchen gemessen 30,4 Prozent der Bahnbreite (AUTO_BREIT in 60-track.js) - da ist
+    // Platz. Der LAENGSabstand kommt aus der Aufstellung selbst: die Startplaetze sind
+    // gestaffelt, und der Abstandhalter wirkt ab dem ersten Takt.
+    //
+    // NUR SOLANGE ES ENG IST. Nach GHOST_START_ENG_MS gilt wieder die volle Verteilung -
+    // eine dauerhafte Beschraenkung auf zwei Spuren waere ein Feld, das sich nie auffaechert.
+    if (raceStartedAt && Date.now() - raceStartedAt < GHOST_START_ENG_MS) {
+      return k % 2 === 0 ? -1 : 1;
+    }
     return (2 * k) / (gs.length - 1) - 1;
   }
 
