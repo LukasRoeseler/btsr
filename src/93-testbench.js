@@ -1997,6 +1997,52 @@
       }
     },
 
+    // ---- DIE ORTUNG DES FAHRERAUTOS, mit einer Attrappe ---------------------------
+    //
+    // Das Fahrerauto bekommt seit v0.5.54 dieselbe Ortung wie ein Ghost und daraus den
+    // Drei-Kachel-Vorausblick (Bytes 16-18). Ohne ihn faehrt es im Leitplanken-Modus
+    // geradeaus - das war die Meldung "gelbe Flagge klappt noch nicht".
+    //
+    // MIT EINER ATTRAPPE und nicht mit einem echten Auto: ein verbundenes Fahrzeug gibt es
+    // am Schreibtisch nicht, und die Ortung braucht keines - sie braucht einen Kachelzaehler
+    // und einen Kachelcode, also genau das, was eine Meldung liefert.
+    spielerOrtProbe(schritte, code) {
+      const merkPlayer = playerCar;
+      const merkTiles = currentTrackTiles;
+      const merkMode = trackMode;
+      try {
+        currentTrackTiles = codeToTrack(code || 'SR3GLR2GR2G2').tiles;
+        lineCache = null;
+        trackMode = 'on';
+        playerCar = { role: 'steuern', alias: 'Fahrer', tileCount: 0, tileCode: 0x02,
+                      modeBytes: null, ghost: null };
+        const reihe = [];
+        for (let k = 0; k < (schritte || 6); k++) {
+          playerCar.tileCount = (playerCar.tileCount + 1) & 0xff;
+          const idxVor = playerCar.ghost ? playerCar.ghost.tileIndex : null;
+          const naechste = ((idxVor === null ? 0 : idxVor + 1) % currentTrackTiles.length);
+          playerCar.tileCode = currentTrackTiles[naechste].type & 0xff;
+          spielerOrtTick();
+          reihe.push({ tile: playerCar.ghost ? playerCar.ghost.tileIndex : null,
+                       bytes: playerCar.modeBytes
+                         ? Object.keys(playerCar.modeBytes).map(Number).sort((a, b) => a - b)
+                         : null,
+                       vorausblick: playerCar.modeBytes
+                         ? [16, 17, 18].map((b) => playerCar.modeBytes[b]) : null });
+        }
+        // Und die Gegenprobe: OHNE Leitplanken-Modus gibt es keinen Vorausblick.
+        trackMode = 'off';
+        spielerOrtTick();
+        return { reihe, nurOrt: !!(playerCar.ghost && playerCar.ghost.nurOrt),
+                 ohneRail: playerCar.modeBytes };
+      } finally {
+        playerCar = merkPlayer;
+        currentTrackTiles = merkTiles;
+        trackMode = merkMode;
+        lineCache = null;
+      }
+    },
+
     simGas() {
       if (!simAn()) return null;
       return simState.autos.map((a) => {
@@ -2390,7 +2436,11 @@
                p: +p.toFixed(4),
                // Erwartete Wartezeit in Sekunden, sobald der Verfolger in Reichweite ist.
                wartenS: p > 0 ? +(SPICE_ATTACK_RETRY_MS / 1000 / p).toFixed(1) : null,
-               sperreMs: SPICE_PASS_BLOCK_MS };
+               sperreMs: SPICE_PASS_BLOCK_MS,
+               // Die Schwelle bleibt herausgegeben, obwohl der Platz jetzt immer 1 ist:
+               // damit eine Pruefung nachrechnen kann, dass 1 sie ueberschreitet - und
+               // damit auffaellt, wenn jemand sie ueber 1 setzt.
+               platzMin: SPICE_PASS_PLATZ_MIN };
     },
 
     ghostPassProbe(o) {
@@ -2537,9 +2587,13 @@
           };
           const steerRoll = holen();
           // DIE KACHELN WEITERZAEHLEN, wie es die Meldungen taeten - die Rollphase endet
-          // jetzt an einem Zaehlerstand und nicht an der Uhr.
+          // an einem Zaehlerstand UND an einer Mindestzeit.
           car.tileCount = (car.tileCount + (f.kacheln || 0)) & 0xff;
-          uhr += 50;
+          // UND DIE UHR UEBER DIE MINDESTROLLZEIT. FINISH_ROLL_MS_MIN gibt dem Ausschwenken
+          // seine Dauer - ohne sie haelt das Auto in der Mitte, und das war die Meldung
+          // "die Autos parken mitten auf der Bahn". Eine Sonde, die nur 50 ms weiterdreht,
+          // prueft die Staffel in einer Phase, die noch laeuft.
+          uhr += FINISH_ROLL_MS_MIN + 50;
           ghostFinishTick(car);                  // Phasenwechsel auf 'brake'
           const steerBrake = holen();
           Date.now = echtNow;
@@ -3245,7 +3299,7 @@
           car.ghost.yieldUntil = uhr + 1e9;
         }
         const tempo = [], ziel = [], vorsteuer = [], gang = [], drehzahl = [];
-        const phase = [], mix = [], naehern = [];
+        const phase = [], mix = [], naehern = [], linie = [];
         // Die Pakete VOR der Schleife wegzaehlen: startGhost() ruft stopGhost(), und das
         // schreibt eine Null-Nachricht. Sie hat keinen Takt und damit keinen Kanalwert.
         const vorLauf = bytes.length;
@@ -3334,6 +3388,11 @@
             drehzahl.push(e3 && e3.rpmRawAt
               ? Math.round(e3.rpmRawAt(e3.state.speedKmh, e3.state.currentGear)) : null);
             tempo.push(e3 ? +(e3.state.speedKmh / e3.config.topSpeedKmh).toFixed(4) : 0);
+            // Der LINIENVERSATZ im echten Fahrbetrieb. ghostLinieTrace() faelscht die
+            // Kacheluhr und bekommt deshalb saubere Phasen; hier faehrt das Auto wirklich,
+            // und die Phase ist eine Schaetzung. Der Unterschied zwischen den zwei Sonden
+            // ist genau die Frage, ob die Linie am Servo ankommt.
+            linie.push(+ghostLineOffset(car).toFixed(3));
           }
         }
         stopGhost(car);
@@ -3341,7 +3400,7 @@
         const roh = bytes.slice(vorLauf);
         return { lenk: roh.map(b => b[0]), gas: roh.map(b => b[1]),
                  kachel: roh.map(b => b[2]), tempo, ziel, vorsteuer, gang, drehzahl,
-                 phase, mix, naehern,
+                 phase, mix, naehern, linie,
                  // Die KRAEFTE an genau der Stelle, an der es klebt. Sagt thrust > resist
                  // und faehrt das Auto trotzdem nicht schneller, sitzt die Grenze nicht im
                  // Antrieb, sondern in e.update().

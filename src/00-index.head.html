@@ -6645,7 +6645,7 @@
           Frontmotor-GT3. Danach kannst du frei dar&uuml;ber verf&uuml;gen.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="phys-steerdamp" min="0" max="500" step="1" value="83">
+          <input type="range" id="phys-steerdamp" min="0" max="500" step="1" value="0">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="phys-steerdamp-val">83 ms</span>
         </div></div>
@@ -7022,7 +7022,7 @@
       <div class="opt-row"><div class="opt-label">Ghost-Tempo<small>Rundentempo der autonomen Autos. Gefahren brauchbar zwischen 40 und 60 Prozent. Der Regler beginnt bei 35 und nicht tiefer: darunter f&auml;hrt das Auto so langsam, dass es die gedruckte Strecke nicht mehr zuverl&auml;ssig &bdquo;liest&ldquo; &ndash; und dann fallen Vorausblick, Ideallinie und Kurvendrosselung alle drei aus.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="ghost-speed" min="0.35" max="1" step="0.05" value="0.5">
+          <input type="range" id="ghost-speed" min="0.35" max="1" step="0.05" value="0.55">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="ghost-speed-val">50%</span>
         </div></div>
@@ -7103,7 +7103,7 @@
           <small>Au&szlig;en anstellen, innen scheiteln, au&szlig;en heraus. Gemessen am mittleren Lenkbyte &uuml;ber 600 Takte: die Vorgabe ergibt 36 von 127, 100 Prozent ergeben 50, 200 Prozent ergeben 81 mit Spitzen am vollen Anschlag. Zum Vergleich schickt die Original-App ihren eigenen Ghosts im Mittel 32 und 47. &Uuml;ber 100 Prozent wirkt die Linie zus&auml;tzlich auch auf der Geraden voll statt nur zu einem Drittel &ndash; das Anbremsen von au&szlig;en ist die H&auml;lfte einer Ideallinie, und genau dort sieht man sie. Ohne gebaute oder gelernte Strecke f&auml;llt sie auf eine gr&ouml;bere Regel je Kachel zur&uuml;ck. Ganz ohne gelesene Streckencodes wirkt sie nicht, weil niemand wei&szlig;, wo das Auto ist. Ob es hilft, sagen Rundenzeit und Abg&auml;nge.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="ghost-line" min="0" max="2" step="0.05" value="1">
+          <input type="range" id="ghost-line" min="0" max="2" step="0.05" value="2">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="ghost-line-val">100%</span>
         </div></div>
@@ -7138,7 +7138,7 @@
           sein.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="ghost-exit" min="0" max="1" step="0.05" value="0.8">
+          <input type="range" id="ghost-exit" min="0" max="1" step="0.05" value="0">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="ghost-exit-val">80%</span>
         </div></div>
@@ -7282,9 +7282,9 @@
           und Abg&auml;nge.</small></div>
         <div class="row" style="gap:6px; flex-wrap:wrap">
           <button type="button" class="mw-preset" data-linemodel="curvature">Kr&uuml;mmung</button>
-          <button type="button" class="mw-preset sel" data-linemodel="laptime">Rundenzeit</button>
+          <button type="button" class="mw-preset" data-linemodel="laptime">Rundenzeit</button>
           <button type="button" class="mw-preset" data-linemodel="lateapex">Late Apex</button>
-          <button type="button" class="mw-preset" data-linemodel="dreistufig">3-stufig
+          <button type="button" class="mw-preset sel" data-linemodel="dreistufig">3-stufig
             <span class="wip-tag">experimentell</span></button>
         </div></div>
       <!-- DIE LINIE DIREKT NEBEN DER WAHL. Gemeldet: "ich habe 2 Ideallinie Modi, aber wenn
@@ -7309,14 +7309,14 @@
       <div class="opt-row"><div class="opt-label">Ghost: seitlicher Versatz <span class="wip-tag">WIP</span><small>Autos nebeneinander gehen auseinander, gleichm&auml;&szlig;ig &uuml;ber die Bahnbreite: bei zwei nach links und rechts, bei drei bleibt das mittlere mittig, bei vier auf Viertel. Vorher gab es nur zwei Seiten, und dann standen sich bei vier Autos zwei Paare weiter im Weg. Beim &Uuml;berholen weicht auch der Vorausfahrende aus, zur anderen Seite. Zwei Autos auf 25&nbsp;cm Bahnbreite brauchen beide H&auml;lften. Dieser Regler bestimmt auch, wie weit der Angreifer zur Seite geht: das ist ein Ausweichen und keine Linienwahl, h&auml;ngt also nicht an der Ideallinie. &Uuml;ber 100 Prozent geht die Anforderung bis an den vollen Anschlag &ndash; die Mitschnitte zeigen, dass das Auto die Schiene auch dort noch liest.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="ghost-lateral" min="0" max="2" step="0.05" value="0.8">
+          <input type="range" id="ghost-lateral" min="0" max="2" step="0.05" value="2">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="ghost-lateral-val">80%</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Ghost: eigene Spuren <span class="wip-tag">experimentell</span><small>Jeder Ghost h&auml;lt eine eigene, feste Linie &uuml;ber die Bahnbreite. Auf der Geraden gilt die Spur, in der Kurve die Ideallinie &ndash; so f&auml;hrt das Feld hintereinander, aber auf verschiedenen Linien, und sucht im Bogen trotzdem den Scheitel. Der &Uuml;bergang l&auml;uft mit 350&nbsp;ms nach, damit an der Kachelgrenze kein Ruck entsteht. Bis 100 Prozent bleibt in der Kurve die halbe Spur stehen: alle auf denselben Scheitel zu schicken w&auml;re realistisch, w&uuml;rde sie aber zusammenf&uuml;hren, und Ber&uuml;hrungen sind ohne R&uuml;ckmeldung zur Querlage nicht zur&uuml;ckzuregeln. &Uuml;ber 100 Prozent gilt die eigene Spur auch in der Kurve ganz &ndash; auf eigene Gefahr, denn dann bleiben sie sich auch im Bogen im Weg.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="ghost-lanes" min="0" max="2" step="0.05" value="0">
+          <input type="range" id="ghost-lanes" min="0" max="2" step="0.05" value="1">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="ghost-lanes-val">aus</span>
         </div></div>
@@ -7881,7 +7881,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.5.53</span></span>
+    <span class="foot-ver">v<span id="app-version">0.5.54</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine

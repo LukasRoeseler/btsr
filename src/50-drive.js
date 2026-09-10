@@ -174,10 +174,25 @@
       // Falls der gespeicherte Name unbekannt war, faellt applyLayout auf neutral zurueck -
       // dann muss die Auswahl mitkommen, sonst zeigt sie etwas anderes als das Modell.
       if ($('setting-layout').value !== name) $('setting-layout').value = name;
-      // applyLayout() hat gerade steerDaempfungMs aus dem Traegheitsmoment gesetzt. Der
-      // Regler muss mitkommen, sonst zeigt er einen Wert, der nicht mehr gilt - dieselbe
-      // Falle, gegen die drei Zeilen darueber die Auswahlliste nachgezogen wird.
-      steerDaempfungSetzen(physEngine.config.steerDaempfungMs, true);
+      // ---- DER REGLER IST DIE AUTORITAET, NICHT DAS LAYOUT ----------------------
+      //
+      // Hier stand `steerDaempfungSetzen(physEngine.config.steerDaempfungMs, true)`: das
+      // Layout hatte die Daempfung gerade aus dem Traegheitsmoment gesetzt, und der Regler
+      // kam mit. Das war richtig, solange die Vorgabe ohnehin der abgeleitete Wert war.
+      //
+      // Seit v0.5.54 steht die Vorgabe auf SOFORT (0 ms, vom Nutzer bestellt). Mit der alten
+      // Zeile waere sie nach dem ersten Fahrzeugwechsel wieder weg - man waehlt ein Layout
+      // und die Lenkung ist plötzlich wieder traege, ohne dass irgendwo steht, warum. Genau
+      // die Sorte stiller Ruecknahme, die man dem Geraet zuschreibt und nicht der App.
+      //
+      // Also umgekehrt: der Regler wird auf das Modell geschrieben und nicht das Modell auf
+      // den Regler. Die Ableitung aus dem Traegheitsmoment (steerDaempfungFor) bleibt im
+      // Modell und bleibt richtig - sie ist jetzt ein Vorschlag und keine Vorschrift.
+      // Anzeige und Modell stimmen weiter ueberein, und die Pruefung "Regler und Modell
+      // sagen beim Laden dasselbe" behaelt ihren Gegenstand.
+      if ($('phys-steerdamp')) {
+        steerDaempfungSetzen(parseFloat($('phys-steerdamp').value), false);
+      }
       zeigeLayoutDaten();
       markDrivetrainChartsDirty();
       if (melden) {
