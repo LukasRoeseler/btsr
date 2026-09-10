@@ -24,6 +24,20 @@
     steering: { type: 'axis', index: 0, invert: false, label: 'Linker Stick (X-Achse)' },
     downshift: { type: 'button', index: 2, label: 'Quadrat (PS) / X (Xbox)' },
     upshift: { type: 'button', index: 1, label: 'Kreis (PS) / B (Xbox)' },
+    // ---- DIE SCHIRMTASTEN SIND JETZT BELEGBAR ------------------------------------
+    //
+    // BESTELLT: "erlaube mir, die Tasten zum Durchschalten der Cockpitschirme neu zu
+    // belegen oder gar nicht zu belegen."
+    //
+    // Bis v0.5.53 waren sie FESTVERDRAHTET: der Abfragezweig las das Steuerkreuz direkt
+    // (dLeft/dRight) und blaetterte. Man konnte sie deshalb weder verschieben noch
+    // loswerden - und wer im Cockpit haeufig quer am Kreuz haengt, blaettert dauernd.
+    //
+    // Vorgabe bleibt das Steuerkreuz, damit sich fuer niemanden etwas aendert, der zufrieden
+    // ist. Sie stehen jetzt aber in derselben Liste wie Gas, Bremse und Lichthupe, also
+    // gilt fuer sie auch das Loeschen - eine leere Belegung heisst "gar nicht belegt".
+    schirmZurueck: { type: 'button', index: 14, label: 'Steuerkreuz links' },
+    schirmVor: { type: 'button', index: 15, label: 'Steuerkreuz rechts' },
     headlights: { type: 'button', index: 3, label: 'Dreieck (PS) / Y (Xbox)' },
     lightflash: { type: 'button', index: 11, label: 'R3 (rechten Stick drücken)' },
     // Boxenstopp auf Start/Options, Streckenansicht auf die linke Schulter.
@@ -83,6 +97,7 @@
     throttle: 'Gas', brake: 'Bremse', steering: 'Lenkung',
     downshift: 'Runterschalten', upshift: 'Hochschalten',
     headlights: 'Licht an/aus', lightflash: 'Lichthupe', pitstop: 'Boxenstopp',
+    schirmZurueck: 'Cockpit-Schirm zurück', schirmVor: 'Cockpit-Schirm vor',
     racestart: 'Rennen starten / abbrechen',
     scanmode: 'Leseart: Bahn oder Ausdruck',
     gearmode: 'Getriebe: Automatik oder von Hand',
@@ -270,6 +285,10 @@
   let padFlagFired = false;
 
   function bindingDescription(b) {
+    // LEER IST EIN GUELTIGER ZUSTAND, seit die Belegungen loeschbar sind ("oder gar nicht
+    // zu belegen"). readBindingValue() gibt fuer eine leere Belegung schon immer 0 zurueck -
+    // nur die Beschreibung fehlte, und ein b.label auf null wirft.
+    if (!b) return t('nicht belegt');
     if (b.label) return b.label;
     return b.type === 'axis' ? `Achse ${b.index}${b.invert ? ' (invertiert)' : ''}` : `Knopf ${b.index}`;
   }
@@ -374,9 +393,31 @@
       tr.innerHTML = `
         <td>${BIND_ACTION_LABELS[action]}</td>
         <td><span class="bind-value${listening ? ' bind-listening' : ''}">${listening ? 'Eingabe erwartet…' : bindingDescription(bindings[action])}</span></td>
-        <td><button data-action="${action}" ${listening ? 'disabled' : ''}>Neu zuweisen</button></td>
+        <td><button data-action="${action}" ${listening ? 'disabled' : ''}>Neu zuweisen</button>
+        <button data-loeschen="${action}" ${listening || !bindings[action] ? 'disabled' : ''}
+          title="Belegung entfernen">&times;</button></td>
       `;
       body.appendChild(tr);
+    });
+    // ---- LOESCHEN, und das ist die zweite Haelfte der Bestellung -----------------
+    //
+    // "erlaube mir, die Tasten [...] neu zu belegen ODER GAR NICHT ZU BELEGEN." Neu belegen
+    // ging schon, loeschen nicht - eine Aktion liess sich nur auf einen anderen Knopf
+    // schieben, nie loswerden.
+    //
+    // Gilt fuer ALLE Aktionen und nicht nur fuer die Schirmtasten: wer sein Gas auf ein
+    // Lenkrad legt, braucht das Gamepad-Gas nicht, und eine Doppelbelegung, die man nicht
+    // aufloesen kann, ist die Ursache von genau der Sorte Fehler, die man dem Geraet
+    // zuschreibt. readBindingValue() gibt fuer eine leere Belegung 0 zurueck, das war schon
+    // immer so - es fehlte nur der Weg, eine zu erzeugen.
+    body.querySelectorAll('button[data-loeschen]').forEach(btn => {
+      btn.onclick = () => {
+        const action = btn.dataset.loeschen;
+        bindings[action] = null;
+        saveBindings();
+        renderBindTable();
+        log('Belegung entfernt: ' + BIND_ACTION_LABELS[action], 'info');
+      };
     });
     body.querySelectorAll('button[data-action]').forEach(btn => {
       btn.onclick = () => {
@@ -6211,9 +6252,35 @@
       // Taste frisst, mit der man ihn verlaesst, ist eine Sackgasse.
       if (dUp && !prevDpad.up && !trackEditorPad('up') && !pitScreenPad('up')) nudgeSteerResponse(+0.1);
       if (dDown && !prevDpad.down && !trackEditorPad('down') && !pitScreenPad('down')) nudgeSteerResponse(-0.1);
-      if (dLeft && !prevDpad.left && !trackEditorPad('left')) cockpitScreenStep(-1);
-      if (dRight && !prevDpad.right && !trackEditorPad('right')) cockpitScreenStep(+1);
-      prevDpad.up = dUp; prevDpad.down = dDown; prevDpad.left = dLeft; prevDpad.right = dRight;
+      // ---- BLAETTERN UEBER DIE BELEGUNG, nicht ueber das Kreuz -------------------
+      //
+      // Hier stand `if (dLeft && ...) cockpitScreenStep(-1)`, also das Steuerkreuz
+      // festverdrahtet. Jetzt liest es dieselbe Belegung wie Gas und Lichthupe, mit dem
+      // Kreuz als Vorgabe - siehe schirmZurueck/schirmVor in den Vorgabebelegungen.
+      //
+      // ZWEI FOLGEN, und beide sind gewollt:
+      //
+      //   Wer sie umlegt, blaettert mit dem neuen Knopf. Das Kreuz ist dann frei.
+      //   Wer sie LOESCHT, blaettert mit dem Gamepad gar nicht mehr - der Knopf am Schirm
+      //   und der Finger bleiben. Genau das war bestellt ("oder gar nicht zu belegen").
+      //
+      // Die Prev-Flanken liegen weiter in prevDpad, auch wenn die Belegung nicht mehr das
+      // Kreuz ist: es ist der Speicher fuer "war im letzten Takt gedrueckt", und woher der
+      // Wert kam, ist ihm gleich. Zwei Speicher fuer dieselbe Flanke waeren die naechste
+      // Stelle, an der etwas auseinanderlaeuft.
+      const schirmZ = readBindingValue(pad, bindings.schirmZurueck) > BUTTON_CAPTURE_THRESHOLD;
+      const schirmV = readBindingValue(pad, bindings.schirmVor) > BUTTON_CAPTURE_THRESHOLD;
+      // trackEditorPad() bekommt weiter das KREUZ und nicht die Belegung: der
+      // Streckeneditor bewegt seinen Zeiger mit dem Kreuz, und das ist keine belegbare
+      // Aktion. Ohne diese Trennung wuerde ein umgelegtes Blaettern den Editor mitnehmen.
+      if (dLeft && !prevDpad.left && trackEditorPad('left')) { /* Editor hat sie */ }
+      else if (schirmZ && !prevDpad.left) cockpitScreenStep(-1);
+      if (dRight && !prevDpad.right && trackEditorPad('right')) { /* Editor hat sie */ }
+      else if (schirmV && !prevDpad.right) cockpitScreenStep(+1);
+      prevDpad.up = dUp; prevDpad.down = dDown;
+      // Die Flanken der BELEGUNG merken, nicht die des Kreuzes - sonst feuert ein
+      // umgelegter Knopf in jedem Takt, weil seine Flanke nie als verbraucht gilt.
+      prevDpad.left = schirmZ || dLeft; prevDpad.right = schirmV || dRight;
 
     }
     // Keep prev-flags fresh even while rebinding, otherwise they go stale and the first

@@ -6371,7 +6371,37 @@
     <div class="card subpage" id="sub-opt-feel">
       <button class="misc-back subpage-back" data-sub="">&larr; Einstellungen</button>
       <h2>Fahrgef&uuml;hl</h2>
-      <div class="opt-head" style="margin-top:0">Voreinstellungen</div>
+      <div class="opt-head" style="margin-top:0">Lenkunterst&uuml;tzung
+        <span class="wip-tag">experimentell</span></div>
+      <div class="opt-row"><div class="opt-label">Ab welcher Querlage korrigiert wird
+          <small>Wie weit du vom Mittelstreifen weg sein darfst, bevor die
+          Unterst&uuml;tzung zur&uuml;ckzieht. 0&nbsp;% hei&szlig;t: nie &ndash; erst am
+          Anschlag, also praktisch gar nicht. 100&nbsp;% hei&szlig;t: sofort, ab dem
+          ersten Grad. Zusammen mit der St&auml;rke darunter: beide auf 100&nbsp;% und das
+          Auto f&auml;hrt mittig, du gibst nur Gas.
+          <br>Was das Ma&szlig; NICHT ist: eine gemessene Querlage. Das Auto meldet nicht,
+          wo auf der Bahn es steht &ndash; gemeint ist dein eigener Lenkbefehl. Die
+          Unterst&uuml;tzung zieht also das zur&uuml;ck, was du anforderst, und nicht das,
+          was das Auto tut.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="assist-schwelle" min="0" max="100" step="5" value="0">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="assist-schwelle-val">0%</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Wie stark korrigiert wird
+          <small>Wieviel von deinem Lenkbefehl die Unterst&uuml;tzung zur&uuml;cknimmt,
+          wenn die Schwelle &uuml;berschritten ist. 0&nbsp;% ist die Vorgabe und
+          &auml;ndert nichts. Bei 50&nbsp;% lenkt es etwas mit, und zwar st&auml;rker, je
+          weiter du vom Mittelstreifen weg bist &ndash; direkt an der Schwelle greift es
+          nicht, am Anschlag voll.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="assist-staerke" min="0" max="100" step="5" value="0">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="assist-staerke-val">0%</span>
+        </div></div>
+      <div class="opt-head">Voreinstellungen</div>
       
       <div class="row" style="gap:8px; flex-wrap:wrap" id="preset-buttons"></div>
       <div class="muted" id="preset-status" style="margin-top:6px">&nbsp;</div>
@@ -7851,7 +7881,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.5.52</span></span>
+    <span class="foot-ver">v<span id="app-version">0.5.53</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -8313,8 +8343,8 @@
     "Wenn es anfängt zu regnen und wenn es aufhört. Beim Laden wird nichts gesagt, erst beim Wechsel.": "When it starts raining and when it stops. Nothing is said on load, only on a change.",
     "Gaskennlinie": "Throttle curve",
     "Anfahrschub": "Launch shove",
-    "Wie der Gasweg des Controllers auf die Beschleunigung abgebildet wird. Die Enden liegen immer fest: kein Gas heißt keine Beschleunigung, Vollgas heißt volle Beschleunigung – geändert wird nur, was dazwischen passiert. 1,0 ist die Gerade und ändert nichts. Über 1,0 streckt den unteren Bereich: ein Viertel Gasweg gibt bei 1,8 nur noch 8 % statt 25 %. Genau das braucht ein Trigger mit großer Totzone – ein DualShock 4 oder DualSense gibt schon bei leichtem Druck viel ab, und dann lässt sich kein Tempo halten. Unter 1,0 macht es umgekehrt spitzer, für Pedale mit langem Weg.": "How the controller’s throttle travel maps to acceleration. The ends are always fixed: no throttle means no acceleration, full throttle means full acceleration – only what happens in between changes. 1.0 is the straight line and changes nothing. Above 1.0 stretches the lower range: a quarter of the travel gives only 8 % instead of 25 % at 1.8. That is exactly what a trigger with a large dead zone needs – a DualShock 4 or DualSense already gives away a lot under light pressure, and then no speed can be held. Below 1.0 does the opposite and makes it sharper, for pedals with long travel.",
-    "Der Stößer, mit dem das Auto aus dem Stand losbricht. Ohne ihn bekommt es beim Anfahren ein Gasbyte, das zu klein ist, um es zu bewegen – es zuckt und steht. Mit ihm springt es dafür an: 16 % sind im Maßstab rund 47 km/h, und das ist der Sprung von null auf gefühlt 30, den man beim ersten Gasgeben spürt. Wieviel nötig ist, hängt am Untergrund: auf Teppich mehr als auf Laminat. Runter drehen, bis das Auto gerade noch sauber anfährt.": "The shove that breaks the car away from standstill. Without it the car gets a throttle byte too small to move it – it twitches and stays put. With it the car jumps instead: 16 % is about 47 km/h to scale, and that is the jump from zero to a felt 30 you notice on the first squeeze. How much is needed depends on the surface: more on carpet than on laminate. Turn it down until the car only just still pulls away cleanly.",
+    "Wie der Gasweg des Controllers auf die Beschleunigung abgebildet wird. Die Enden liegen immer fest: kein Gas heißt keine Beschleunigung, Vollgas heißt volle Beschleunigung – geändert wird nur, was dazwischen passiert. 1,0 ist die Gerade und ändert nichts. Über 1,0 streckt den unteren Bereich: ein Viertel Gasweg gibt bei 1,8 nur noch 8 % statt 25 %. Genau das braucht ein Trigger mit großer Totzone – ein DualShock 4 oder DualSense gibt schon bei leichtem Druck viel ab, und dann lässt sich kein Tempo halten. Unter 1,0 macht es umgekehrt spitzer, für Pedale mit langem Weg.": "How the controller’s throttle travel maps to acceleration. The ends are always fixed: no throttle means no acceleration, full throttle means full acceleration – only what happens in between changes. 1.0 is the straight line and changes nothing. Above 1.0 stretches the lower range: a quarter of the travel gives only 8 % instead of 25 % at 1.8. That is exactly what a trigger with a large dead zone needs – a DualShock 4 or DualSense already gives away a lot under light pressure, and then no speed can be held. Below 1.0 does the opposite and makes it sharper, for pedals with long travel.",
+    "Der Stößer, mit dem das Auto aus dem Stand losbricht. Ohne ihn bekommt es beim Anfahren ein Gasbyte, das zu klein ist, um es zu bewegen – es zuckt und steht. Mit ihm springt es dafür an: 16 % sind im Maßstab rund 47 km/h, und das ist der Sprung von null auf gefühlt 30, den man beim ersten Gasgeben spürt. Wieviel nötig ist, hängt am Untergrund: auf Teppich mehr als auf Laminat. Runter drehen, bis das Auto gerade noch sauber anfährt.": "The shove that breaks the car away from standstill. Without it the car gets a throttle byte too small to move it – it twitches and stays put. With it the car jumps instead: 16 % is about 47 km/h to scale, and that is the jump from zero to a felt 30 you notice on the first squeeze. How much is needed depends on the surface: more on carpet than on laminate. Turn it down until the car only just still pulls away cleanly.",
     "(fest)": "(fixed)",
     "(nicht real getestet).": "(not tested for real).",
     ") an, damit du live sehen kannst, was das Auto zurückmeldet, während du Kombinationen ausprobierst.": "): so you can watch live what the car reports back while you try combinations.",
@@ -9452,6 +9482,22 @@
       "How hard the car steers against a slide, measured from the rotation signal in byte 3 of the notifications. 50 per cent is the default that was asked for. What is uncertain about it, and it is two things at once: the signal is unconfirmed – it only varies once the car is moving, and flipped sign with cornering direction in exactly one recording. And it is uncalibrated: its scale is self-adjusting because the real amplitude is unknown. So the strength depends on the largest yaw value the session has seen so far. The “Drift probe” button under “Measure lateral offset” measures whether the signal moves at all under straight full throttle.",
     "Rennen":
       "Race",
+    "Wie weit du vom Mittelstreifen weg sein darfst, bevor die Unterstützung zurückzieht. 0 % heißt: nie – erst am Anschlag, also praktisch gar nicht. 100 % heißt: sofort, ab dem ersten Grad. Zusammen mit der Stärke darunter: beide auf 100 % und das Auto fährt mittig, du gibst nur Gas.":
+      "How far from the centre line you are allowed to be before the assist pulls back. 0 % means never – only at full lock, so effectively not at all. 100 % means immediately, from the first degree. Together with the strength below: both at 100 % and the car drives down the middle, you only give throttle.",
+    "Was das Maß NICHT ist: eine gemessene Querlage. Das Auto meldet nicht, wo auf der Bahn es steht – gemeint ist dein eigener Lenkbefehl. Die Unterstützung zieht also das zurück, was du anforderst, und nicht das, was das Auto tut.":
+      "What the measure is NOT: a measured lateral position. The car does not report where on the track it is – what is meant is your own steering command. The assist therefore pulls back what you ask for, not what the car does.",
+    "Wieviel von deinem Lenkbefehl die Unterstützung zurücknimmt, wenn die Schwelle überschritten ist. 0 % ist die Vorgabe und ändert nichts. Bei 50 % lenkt es etwas mit, und zwar stärker, je weiter du vom Mittelstreifen weg bist – direkt an der Schwelle greift es nicht, am Anschlag voll.":
+      "How much of your steering command the assist takes back once the threshold is exceeded. 0 % is the default and changes nothing. At 50 % it steers along somewhat, and more strongly the further you are from the centre line – right at the threshold it does not bite, at full lock it bites fully.",
+    "Cockpit-Schirm zurück":
+      "Cockpit screen back",
+    "Cockpit-Schirm vor":
+      "Cockpit screen forward",
+    "Lenkunterstützung":
+      "Steering assist",
+    "Ab welcher Querlage korrigiert wird":
+      "Lateral offset at which it corrects",
+    "Wie stark korrigiert wird":
+      "How strongly it corrects",
     "Langstrecken-Prototypen (WIP)":
       "Endurance prototypes (WIP)",
     "Tourenwagen, DTM und NASCAR (WIP)":
@@ -14733,6 +14779,106 @@
   // Quelldateien, aber diese Funktion laeuft erst zur Laufzeit - physicsStep() haengt am
   // 45-ms-Takt, und updateFlagUi() ruft sie nach dem Laden. Genau das galt fuer flagState
   // schon vorher.
+  // Der Zustand des Autopilot-Reglers. MODULWEIT, weil ghostSpeedControl() einen I-Anteil
+  // fuehrt - ein Zustand, der je Takt neu entsteht, ist keiner. Zuruecksetzen tut ihn
+  // autopilotZuruecksetzen(), gerufen wenn der Autopilot aussetzt: ein I-Anteil, der aus
+  // einer alten gelben Phase stehen bleibt, gibt beim naechsten Mal sofort Gas.
+  const autopilotRegler = {};
+  function autopilotZuruecksetzen() {
+    autopilotRegler.iTerm = 0;
+    autopilotRegler.lastThrottle = 0;
+    autopilotRegler.lastBrake = 0;
+    autopilotRegler.at = 0;
+  }
+
+  // ====================================================================================
+  // DIE LENKUNTERSTUETZUNG
+  // ====================================================================================
+  //
+  // BESTELLT: "Lenkunterstuetzung mit 2 Slidern: Schwelle fuer Querlage, ab wann
+  // Lenkkorrektur passiert, und Staerke, mit der korrigiert wird; jeweils zwischen 100
+  // (beide auf 100 = Auto faehrt mittig und ich gebe nur Gas), 50 % (es lenkt etwas mit,
+  // staerker wenn ich am Rand bin), zu 0 % (aktuell und Default)."
+  //
+  // ---- WAS DIE "QUERLAGE" HIER IST, UND WAS SIE NICHT IST ------------------------
+  //
+  // Sie ist DEIN LENKBEFEHL und keine Messung. Das Auto meldet nicht, wo auf der Bahn es
+  // steht - es gibt kein Byte dafuer, und deshalb gibt es in dieser App nirgends eine
+  // gemessene Querlage. Was die Unterstuetzung zurueckzieht, ist also die Anforderung und
+  // nicht die Lage. Auf der Schiene laeuft es auf dasselbe hinaus, solange man fahrt: mehr
+  // Lenkbefehl heisst weiter aussen. Im Stand heisst es nichts, und das ist der ehrliche
+  // Vorbehalt.
+  //
+  // ---- DIE RECHNUNG, UND WARUM ZIEHEN UND NICHT SKALIEREN ------------------------
+  //
+  // Der naheliegende Weg ist eine Skalierung: steer * (1 - staerke). Sie erfuellt die
+  // Bestellung NICHT - bei beiden Reglern auf 100 Prozent bliebe ein kleiner Lenkbefehl
+  // fast unveraendert, weil die Skalierung mit dem Betrag mitwaechst. "Auto faehrt mittig"
+  // waere damit nicht erreicht.
+  //
+  // Also eine KORREKTUR ZUR MITTE, addiert:
+  //
+  //     schwelleLage = 1 - schwelle        ab dieser Anforderung wird korrigiert
+  //     anteil       = (|s| - schwelleLage) / (1 - schwelleLage)     0 an der Schwelle, 1 am
+  //                                                                 Anschlag
+  //     s            = s - sign(s) * staerke * anteil
+  //
+  // Und damit stimmen genau die drei Punkte, die bestellt sind:
+  //
+  //     100 / 100   schwelleLage 0, anteil = |s|, Korrektur = -s  ->  s = 0 fuer JEDEN
+  //                 Eingang. Das Auto faehrt mittig, du gibst nur Gas.
+  //      50 /  50   unter 0,5 Anforderung passiert nichts; am Anschlag bleibt die Haelfte.
+  //                 "Es lenkt etwas mit, staerker wenn ich am Rand bin."
+  //       0 /   0   schwelleLage 1, anteil 0 am Anschlag  ->  keine Aenderung. Vorgabe.
+  //
+  // Die zwei Regler sind ABSICHTLICH getrennt und nicht ein einziger: "ab wann" und "wie
+  // stark" sind zwei Entscheidungen. Ein Regler dafuer waere eine Kurve, die jemand fuer
+  // einen gewaehlt hat.
+  let assistSchwelle = 0;      // 0..1
+  let assistStaerke = 0;       // 0..1
+
+  // Die zwei Regler. Prozent im Bedienelement, Anteil im Modell - dieselbe Aufteilung wie
+  // bei den anderen Prozentreglern.
+  function assistVerdrahten() {
+    const paare = [['assist-schwelle', (v) => { assistSchwelle = v; }],
+                   ['assist-staerke', (v) => { assistStaerke = v; }]];
+    for (const [id, setzen] of paare) {
+      const el = $(id);
+      if (!el) continue;
+      const zeigen = () => {
+        const p = Math.round(parseFloat(el.value) || 0);
+        setzen(p / 100);
+        const v = $(id + '-val');
+        if (v) v.textContent = p + '%';
+      };
+      el.addEventListener('input', zeigen);
+      el.addEventListener('change', zeigen);
+      // UND EINMAL BEIM LADEN. Genau das hat bei setting-fuel-drain gefehlt: das Markup
+      // stand auf 0, das Modell auf 3, und niemand merkte es, bis jemand den Regler anfasste.
+      zeigen();
+    }
+  }
+  assistVerdrahten();
+
+  function lenkHilfe(s) {
+    if (!(assistStaerke > 0)) return s;
+    const schwelleLage = 1 - assistSchwelle;
+    const spanne = 1 - schwelleLage;
+    // Schwelle 0 heisst schwelleLage 1 und Spanne 0: dann gibt es keinen Bereich, in dem
+    // korrigiert wird, und die Unterstuetzung ist aus. Ohne diese Zeile waere es eine
+    // Division durch null.
+    if (!(spanne > 1e-6)) return s;
+    const ueber = Math.abs(s) - schwelleLage;
+    if (!(ueber > 0)) return s;
+    const anteil = Math.min(1, ueber / spanne);
+    const korr = Math.sign(s) * assistStaerke * anteil;
+    // GEKLEMMT AUF DIE MITTE und nicht darueber hinaus: eine Korrektur, die stärker zieht
+    // als der Fahrer lenkt, wuerde das Auto auf die ANDERE Seite schicken. Das waere keine
+    // Unterstuetzung, sondern ein Gegenlenken.
+    const raus = s - korr;
+    return Math.sign(raus) === Math.sign(s) ? raus : 0;
+  }
+
   function autopilotGrund() {
     // Ausdruck-Stellung: nicht lenkfaehig. Ohne Leitplanken haelt sich das Auto nicht selbst
     // auf der Bahn, und ein Autopilot ohne Querregelung faehrt es geradeaus in die Bande.
@@ -14750,15 +14896,45 @@
 
   function autopilot(fahrerBremse) {
     const grund = autopilotGrund();
-    if (!grund) return null;
+    // AUSSETZER RAEUMEN DEN REGLER AUF. Ohne das traegt der I-Anteil ueber das Ende der
+    // gelben Phase hinaus und gibt beim naechsten Mal aus dem Stand Gas.
+    if (!grund) { autopilotZuruecksetzen(); return null; }
     const st = physEngine.state;
-    // DASSELBE Tempo wie die Ghosts, siehe formationPace(): sonst rollt das Feld mit 0,35
-    // und der Fahrer mit 0,271, und die Kolonne faellt beim Anrollen auseinander.
-    const ziel = grund === 'formation' ? formationPace() : yellowFactor();
+    // ---- WIE EIN GHOST, UND DAS IST DER BESTELLTE UNTERSCHIED ---------------------
+    //
+    // GEMELDET: "gelbe Flagge fuer mein Auto auf der Bahn fixen: es gibt nur Gas, sollte
+    // stattdessen aber wie ein Ghost und entsprechend gedrosselt weiterfahren."
+    //
+    // Hier stand ein roher P-Regler: throttle = err * 4, brake = -err * 3. Ein reiner
+    // P-Regler hat eine Beharrungsabweichung - er braucht eine Abweichung, um ueberhaupt Gas
+    // zu erzeugen -, und ohne Totband kippt er um den Zielwert. Auf dem Tisch liest sich das
+    // als "es gibt nur Gas": das Auto bekommt Gas, laeuft ueber das Ziel, bekommt Bremse,
+    // faellt darunter, und so weiter.
+    //
+    // Ein Ghost hat fuer genau dieses Problem ghostSpeedControl(): PI mit Totband und
+    // Ratengrenzen, und die Begruendung dafuer steht dort ausgeschrieben ("Ziel 35 Prozent,
+    // erreicht 24" war die gemessene Beharrungsabweichung des alten P-Reglers). Der Fahrer
+    // bekommt jetzt DENSELBEN Regler - "wie ein Ghost" ist wortwoertlich gemeint.
+    //
+    // Der Zustand liegt modulweit: der Regler hat einen I-Anteil, und ein Zustand, der bei
+    // jedem Takt neu angelegt wird, ist kein I-Anteil.
+    //
+    // UND DER LESEBODEN. yellowFactor() ist YELLOW_KMH/Hoechstgeschwindigkeit = 80/327 =
+    // 0,244, GHOST_READ_MIN ist 0,35: das Gelb-Tempo liegt unter der Drehzahl, bei der das
+    // Auto das gedruckte Muster noch liest. Im Leitplanken-Modus - und nur dort greift
+    // dieser Autopilot ueberhaupt - braucht das Auto genau diese Lesung, um sich auf der
+    // Bahn zu halten. Ohne den Boden waere der Autopilot also die Ursache dafuer, dass das
+    // Auto abfliegt. Dieselbe Zeile steht seit v0.5.51 auch bei den Ghosts.
+    const ziel = grund === 'formation'
+      ? formationPace()
+      : Math.max(yellowFactor(), GHOST_READ_MIN);
     const v = Math.abs(st.speedKmh) / physEngine.config.topSpeedKmh;
-    const err = ziel - v;
-    let throttle = Math.max(0, Math.min(1, err * 4));
-    let brake = Math.max(0, Math.min(1, -err * 3));
+    const dtA = Math.max(0.01, Math.min(0.25,
+      (Date.now() - (autopilotRegler.at || Date.now())) / 1000));
+    autopilotRegler.at = Date.now();
+    const geregelt = ghostSpeedControl(autopilotRegler, ziel, v, dtA);
+    let throttle = geregelt.throttle;
+    let brake = geregelt.brake;
     // DIE BREMSE DES FAHRERS GEWINNT, aber nur in der Einfuehrungsrunde. Dort rollt das Feld
     // in zwei Kolonnen dicht hintereinander, und ein Auto, das man nicht anhalten kann, ist
     // ein Auto, das rammt. Bei Gelb bleibt es absichtlich beim vollen Eingriff: dort ist der
@@ -14918,7 +15094,12 @@
     const gasKurve = gasKennlinie(Math.max(0, throttleY), physEngine.config.throttleGamma);
     let rawThrottle = fuelDamageDerate(gasKurve, fuelCut);
     let rawBrake = Math.max(0, -throttleY);
-    let steer = steerX;
+    // ---- DIE LENKUNTERSTUETZUNG WIRKT AUF DEN FAHRERWUNSCH ----------------------
+    //
+    // VOR dem Autopiloten: der ueberschreibt die Lenkung ohnehin ganz, und eine
+    // Unterstuetzung, die danach greift, wuerde in der Einfuehrungsrunde die
+    // Formationsspur zurueckziehen. Die Begruendung steht bei lenkHilfe().
+    let steer = lenkHilfe(steerX);
     // Bei gelber Flagge und in der Einfuehrungsrunde faehrt das Auto selbst. Siehe
     // autopilotGrund() fuer die zwei Gruende und autopilot() fuer die Regelung.
     const ap = autopilot(rawBrake);
@@ -24375,6 +24556,20 @@
     steering: { type: 'axis', index: 0, invert: false, label: 'Linker Stick (X-Achse)' },
     downshift: { type: 'button', index: 2, label: 'Quadrat (PS) / X (Xbox)' },
     upshift: { type: 'button', index: 1, label: 'Kreis (PS) / B (Xbox)' },
+    // ---- DIE SCHIRMTASTEN SIND JETZT BELEGBAR ------------------------------------
+    //
+    // BESTELLT: "erlaube mir, die Tasten zum Durchschalten der Cockpitschirme neu zu
+    // belegen oder gar nicht zu belegen."
+    //
+    // Bis v0.5.53 waren sie FESTVERDRAHTET: der Abfragezweig las das Steuerkreuz direkt
+    // (dLeft/dRight) und blaetterte. Man konnte sie deshalb weder verschieben noch
+    // loswerden - und wer im Cockpit haeufig quer am Kreuz haengt, blaettert dauernd.
+    //
+    // Vorgabe bleibt das Steuerkreuz, damit sich fuer niemanden etwas aendert, der zufrieden
+    // ist. Sie stehen jetzt aber in derselben Liste wie Gas, Bremse und Lichthupe, also
+    // gilt fuer sie auch das Loeschen - eine leere Belegung heisst "gar nicht belegt".
+    schirmZurueck: { type: 'button', index: 14, label: 'Steuerkreuz links' },
+    schirmVor: { type: 'button', index: 15, label: 'Steuerkreuz rechts' },
     headlights: { type: 'button', index: 3, label: 'Dreieck (PS) / Y (Xbox)' },
     lightflash: { type: 'button', index: 11, label: 'R3 (rechten Stick drücken)' },
     // Boxenstopp auf Start/Options, Streckenansicht auf die linke Schulter.
@@ -24434,6 +24629,7 @@
     throttle: 'Gas', brake: 'Bremse', steering: 'Lenkung',
     downshift: 'Runterschalten', upshift: 'Hochschalten',
     headlights: 'Licht an/aus', lightflash: 'Lichthupe', pitstop: 'Boxenstopp',
+    schirmZurueck: 'Cockpit-Schirm zurück', schirmVor: 'Cockpit-Schirm vor',
     racestart: 'Rennen starten / abbrechen',
     scanmode: 'Leseart: Bahn oder Ausdruck',
     gearmode: 'Getriebe: Automatik oder von Hand',
@@ -24621,6 +24817,10 @@
   let padFlagFired = false;
 
   function bindingDescription(b) {
+    // LEER IST EIN GUELTIGER ZUSTAND, seit die Belegungen loeschbar sind ("oder gar nicht
+    // zu belegen"). readBindingValue() gibt fuer eine leere Belegung schon immer 0 zurueck -
+    // nur die Beschreibung fehlte, und ein b.label auf null wirft.
+    if (!b) return t('nicht belegt');
     if (b.label) return b.label;
     return b.type === 'axis' ? `Achse ${b.index}${b.invert ? ' (invertiert)' : ''}` : `Knopf ${b.index}`;
   }
@@ -24725,9 +24925,31 @@
       tr.innerHTML = `
         <td>${BIND_ACTION_LABELS[action]}</td>
         <td><span class="bind-value${listening ? ' bind-listening' : ''}">${listening ? 'Eingabe erwartet…' : bindingDescription(bindings[action])}</span></td>
-        <td><button data-action="${action}" ${listening ? 'disabled' : ''}>Neu zuweisen</button></td>
+        <td><button data-action="${action}" ${listening ? 'disabled' : ''}>Neu zuweisen</button>
+        <button data-loeschen="${action}" ${listening || !bindings[action] ? 'disabled' : ''}
+          title="Belegung entfernen">&times;</button></td>
       `;
       body.appendChild(tr);
+    });
+    // ---- LOESCHEN, und das ist die zweite Haelfte der Bestellung -----------------
+    //
+    // "erlaube mir, die Tasten [...] neu zu belegen ODER GAR NICHT ZU BELEGEN." Neu belegen
+    // ging schon, loeschen nicht - eine Aktion liess sich nur auf einen anderen Knopf
+    // schieben, nie loswerden.
+    //
+    // Gilt fuer ALLE Aktionen und nicht nur fuer die Schirmtasten: wer sein Gas auf ein
+    // Lenkrad legt, braucht das Gamepad-Gas nicht, und eine Doppelbelegung, die man nicht
+    // aufloesen kann, ist die Ursache von genau der Sorte Fehler, die man dem Geraet
+    // zuschreibt. readBindingValue() gibt fuer eine leere Belegung 0 zurueck, das war schon
+    // immer so - es fehlte nur der Weg, eine zu erzeugen.
+    body.querySelectorAll('button[data-loeschen]').forEach(btn => {
+      btn.onclick = () => {
+        const action = btn.dataset.loeschen;
+        bindings[action] = null;
+        saveBindings();
+        renderBindTable();
+        log('Belegung entfernt: ' + BIND_ACTION_LABELS[action], 'info');
+      };
     });
     body.querySelectorAll('button[data-action]').forEach(btn => {
       btn.onclick = () => {
@@ -30562,9 +30784,35 @@
       // Taste frisst, mit der man ihn verlaesst, ist eine Sackgasse.
       if (dUp && !prevDpad.up && !trackEditorPad('up') && !pitScreenPad('up')) nudgeSteerResponse(+0.1);
       if (dDown && !prevDpad.down && !trackEditorPad('down') && !pitScreenPad('down')) nudgeSteerResponse(-0.1);
-      if (dLeft && !prevDpad.left && !trackEditorPad('left')) cockpitScreenStep(-1);
-      if (dRight && !prevDpad.right && !trackEditorPad('right')) cockpitScreenStep(+1);
-      prevDpad.up = dUp; prevDpad.down = dDown; prevDpad.left = dLeft; prevDpad.right = dRight;
+      // ---- BLAETTERN UEBER DIE BELEGUNG, nicht ueber das Kreuz -------------------
+      //
+      // Hier stand `if (dLeft && ...) cockpitScreenStep(-1)`, also das Steuerkreuz
+      // festverdrahtet. Jetzt liest es dieselbe Belegung wie Gas und Lichthupe, mit dem
+      // Kreuz als Vorgabe - siehe schirmZurueck/schirmVor in den Vorgabebelegungen.
+      //
+      // ZWEI FOLGEN, und beide sind gewollt:
+      //
+      //   Wer sie umlegt, blaettert mit dem neuen Knopf. Das Kreuz ist dann frei.
+      //   Wer sie LOESCHT, blaettert mit dem Gamepad gar nicht mehr - der Knopf am Schirm
+      //   und der Finger bleiben. Genau das war bestellt ("oder gar nicht zu belegen").
+      //
+      // Die Prev-Flanken liegen weiter in prevDpad, auch wenn die Belegung nicht mehr das
+      // Kreuz ist: es ist der Speicher fuer "war im letzten Takt gedrueckt", und woher der
+      // Wert kam, ist ihm gleich. Zwei Speicher fuer dieselbe Flanke waeren die naechste
+      // Stelle, an der etwas auseinanderlaeuft.
+      const schirmZ = readBindingValue(pad, bindings.schirmZurueck) > BUTTON_CAPTURE_THRESHOLD;
+      const schirmV = readBindingValue(pad, bindings.schirmVor) > BUTTON_CAPTURE_THRESHOLD;
+      // trackEditorPad() bekommt weiter das KREUZ und nicht die Belegung: der
+      // Streckeneditor bewegt seinen Zeiger mit dem Kreuz, und das ist keine belegbare
+      // Aktion. Ohne diese Trennung wuerde ein umgelegtes Blaettern den Editor mitnehmen.
+      if (dLeft && !prevDpad.left && trackEditorPad('left')) { /* Editor hat sie */ }
+      else if (schirmZ && !prevDpad.left) cockpitScreenStep(-1);
+      if (dRight && !prevDpad.right && trackEditorPad('right')) { /* Editor hat sie */ }
+      else if (schirmV && !prevDpad.right) cockpitScreenStep(+1);
+      prevDpad.up = dUp; prevDpad.down = dDown;
+      // Die Flanken der BELEGUNG merken, nicht die des Kreuzes - sonst feuert ein
+      // umgelegter Knopf in jedem Takt, weil seine Flanke nie als verbraucht gilt.
+      prevDpad.left = schirmZ || dLeft; prevDpad.right = schirmV || dRight;
 
     }
     // Keep prev-flags fresh even while rebinding, otherwise they go stale and the first
@@ -33574,6 +33822,31 @@
         return (fracs || [0, 0.5, 1]).map((f) =>
           +motorDrehzahl({ rpm: 1500 + f * 7500, rpmFrac: f }).toFixed(1));
       } finally { sampleEngine.car = merk; }
+    },
+
+    // ---- Die Lenkunterstuetzung, ueber die Bedienelemente gestellt -----------------
+    //
+    // UEBER DIE REGLER und nicht ueber die Variablen: die zwei Anteile entstehen aus den
+    // Bedienelementen (assistVerdrahten), und ein Prueflauf, der die Variablen direkt setzt,
+    // prueft die Rechnung ohne die Verdrahtung. Genau die war bei setting-fuel-drain der
+    // Fehler - Regler auf 0, Modell auf 3, und niemand merkte es.
+    lenkHilfeProbe(schwellePz, staerkePz, proben) {
+      if (typeof lenkHilfe !== 'function') return null;
+      const el = { s: $('assist-schwelle'), k: $('assist-staerke') };
+      if (!el.s || !el.k) return null;
+      const merk = { s: el.s.value, k: el.k.value };
+      try {
+        for (const [e, v] of [[el.s, schwellePz], [el.k, staerkePz]]) {
+          e.value = String(v);
+          e.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+        return (proben || [0.15, 0.5, 0.8, 1.0]).map((p) => +lenkHilfe(p).toFixed(4));
+      } finally {
+        for (const [e, v] of [[el.s, merk.s], [el.k, merk.k]]) {
+          e.value = v;
+          e.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+      }
     },
 
     simGas() {
@@ -41394,9 +41667,15 @@
     const schlecht = [];
     try {
       flagState = 'green'; trackMode = 'on';
+      // EINGESCHWUNGEN, nicht im ersten Takt: der Autopilot regelt seit v0.5.53 mit
+      // ghostSpeedControl(), und der ist ratenbegrenzt. Die Begruendung in ganzer Laenge
+      // steht beim Test "Autopilot nur auf der Bahn, und er regelt".
       const bei = (frac, bremse) => {
         physEngine.state.speedKmh = frac * physEngine.config.topSpeedKmh;
-        return autopilot(bremse || 0);
+        let r = autopilot(bremse || 0);
+        if (!r) return r;
+        for (let i = 0; i < 25; i++) r = autopilot(bremse || 0) || r;
+        return r;
       };
       // 1. Ohne Einfuehrungsrunde kein Eingriff.
       raceFormationLap = false;
@@ -43465,6 +43744,67 @@
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
+  // ---- Die Lenkunterstuetzung, an den drei bestellten Punkten ----
+  //
+  // BESTELLT: "Schwelle fuer Querlage, ab wann Lenkkorrektur passiert, und Staerke, mit der
+  // korrigiert wird; jeweils zwischen 100 (beide auf 100 = Auto faehrt mittig und ich gebe
+  // nur Gas), 50 % (es lenkt etwas mit, staerker wenn ich am Rand bin), zu 0 % (aktuell und
+  // Default)."
+  //
+  // Drei Punkte sind ausdruecklich genannt, also werden drei geprueft - und zwar UEBER DIE
+  // REGLER, nicht ueber die Variablen dahinter. Ein Test, der die Anteile direkt setzt,
+  // prueft die Rechnung ohne die Verdrahtung; genau dort lag bei setting-fuel-drain der
+  // Fehler (Regler auf 0, Modell auf 3, unbemerkt bis jemand ihn anfasste).
+  stAdd('Lenkunterstuetzung: die drei bestellten Punkte', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.lenkHilfeProbe) {
+      return { skip: true, mass: 'lenkHilfeProbe nicht vorhanden' };
+    }
+    const proben = [0.15, 0.5, 0.8, 1.0];
+    const aus = OMEGA_TEST.lenkHilfeProbe(0, 0, proben);
+    const halb = OMEGA_TEST.lenkHilfeProbe(50, 50, proben);
+    const voll = OMEGA_TEST.lenkHilfeProbe(100, 100, proben);
+    if (!aus || !halb || !voll) return { skip: true, mass: 'kein Lauf' };
+    const fehler = [];
+    // 1. VORGABE AENDERT NICHTS. Das ist die wichtigste Zeile: eine Unterstuetzung, die ab
+    //    Werk mitlenkt, waere eine Aenderung am Fahrgefuehl, die niemand bestellt hat.
+    for (let i = 0; i < proben.length; i++) {
+      if (Math.abs(aus[i] - proben[i]) > 1e-6) {
+        fehler.push('bei 0/0 wird ' + proben[i] + ' zu ' + aus[i]);
+      }
+    }
+    // 2. BEIDE AUF 100: das Auto faehrt mittig, egal was man lenkt.
+    for (let i = 0; i < proben.length; i++) {
+      if (voll[i] !== 0) fehler.push('bei 100/100 bleibt ' + voll[i] + ' uebrig');
+    }
+    // 3. BEI 50/50 unter der Schwelle nichts, darueber immer mehr. Das ist "es lenkt etwas
+    //    mit, staerker wenn ich am Rand bin" - und die Richtung ist die Zusage, nicht die
+    //    Zahl: eine feste 0,5 waere bei jeder Nachjustierung rot.
+    if (Math.abs(halb[0] - proben[0]) > 1e-6) {
+      fehler.push('bei 50/50 greift es schon bei ' + proben[0]);
+    }
+    for (let i = 2; i < proben.length; i++) {
+      if (!(halb[i] < proben[i] - 1e-6)) {
+        fehler.push('bei 50/50 wird ' + proben[i] + ' nicht zurueckgezogen');
+      }
+      // Und der ABZUG muss mit der Auslenkung wachsen.
+      const abzugHier = proben[i] - halb[i];
+      const abzugVor = proben[i - 1] - halb[i - 1];
+      if (!(abzugHier >= abzugVor - 1e-9)) {
+        fehler.push('der Abzug waechst nicht: ' + abzugVor.toFixed(2) + ' -> '
+                    + abzugHier.toFixed(2));
+      }
+    }
+    // 4. Und das Vorzeichen darf nie kippen - eine Korrektur, die staerker zieht als der
+    //    Fahrer lenkt, waere ein Gegenlenken und kein Assistent.
+    for (const reihe of [halb, voll]) {
+      for (const x of reihe) if (x < 0) fehler.push('Vorzeichen gekippt: ' + x);
+    }
+    return { ok: !fehler.length,
+             mass: '0/0: ' + aus.join('/') + ' | 50/50: ' + halb.join('/')
+                 + ' | 100/100: ' + voll.join('/')
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
   // ---- Zieleinlauf ----
   //
   // Vorher endete ein Rennen fuer die Ghosts mit stopGhost(): Nullen schreiben und
@@ -45528,9 +45868,49 @@
       // Ausdruecklich aus: dieser Test prueft den Grund "gelb", und ein von einem
       // vorherigen Test stehengelassenes true haette ihn auf den anderen Zweig geschickt.
       raceFormationLap = false;
+      // ---- EINGESCHWUNGEN MESSEN, NICHT IM ERSTEN TAKT -------------------------
+      //
+      // Seit v0.5.53 regelt der Autopilot mit ghostSpeedControl() - PI mit Totband und
+      // Ratengrenzen, derselbe Regler, den die Ghosts haben. Bestellt war "wie ein Ghost",
+      // und das ist der Unterschied: der alte rohe P-Regler (throttle = err * 4) hatte eine
+      // Beharrungsabweichung und kippte um den Zielwert, was sich auf dem Tisch als "es gibt
+      // nur Gas" liest.
+      //
+      // Ein ratenbegrenzter Regler gibt im ERSTEN Takt naturgemaess wenig - gemessen 0,06.
+      // Dieser Test las genau einen Takt und meldete "kein Gas". Die Zahl war richtig und
+      // die Frage falsch: das Auto faehrt nicht einen Takt, sondern im 45-ms-Takt weiter.
+      //
+      // Also 25 Takte, also gut eine Sekunde - dieselbe Zahl, die der Ghost-Reglertest
+      // schon benutzt ("nach 1,1 s ist es voll da").
       const bei = (kmh) => {
+        // ---- JEDER FALL AUS DEM STAND, und das ist Pruefhygiene ------------------
+        //
+        // Der Regler fuehrt einen I-Anteil, und der liegt modulweit - er ueberlebt also den
+        // Wechsel von einem Messpunkt zum naechsten. Ohne Ruecksetzen las dieser Test bei
+        // 80 km/h (dem Ziel) ein Gas von 0,72: das war der Arbeitspunkt, den die Messung bei
+        // 32 km/h davor aufgeladen hatte, und kein Fehler.
+        //
+        // Zurueckgesetzt wird ueber den vorgesehenen Weg: gruene Flagge heisst kein
+        // Autopilot, und autopilot() raeumt den Regler dann selbst auf. Eine eigene
+        // Ruecksetzfunktion von aussen zu rufen waere ein zweiter Weg in denselben Zustand.
+        const merkFlag = flagState;
+        flagState = 'green';
+        autopilot(0);
+        flagState = merkFlag;
         physEngine.state.speedKmh = kmh / REAL_SCALE;
-        return autopilot(0);
+        // EINGESCHWUNGEN, nicht im ersten Takt: seit v0.5.53 regelt der Autopilot mit
+        // ghostSpeedControl() - PI mit Totband und Ratengrenzen, derselbe Regler, den die
+        // Ghosts haben. Bestellt war "wie ein Ghost", und das ist der Unterschied: der alte
+        // rohe P-Regler (throttle = err * 4) brauchte eine Abweichung, um Gas zu erzeugen,
+        // und kippte um den Zielwert - auf dem Tisch liest sich das als "es gibt nur Gas".
+        //
+        // Ein ratenbegrenzter Regler gibt im ersten Takt naturgemaess wenig, gemessen 0,06.
+        // Dieser Test las genau einen Takt und meldete "kein Gas". 25 Takte sind gut eine
+        // Sekunde - dieselbe Zahl, die der Ghost-Reglertest benutzt.
+        let r = autopilot(0);
+        if (!r) return r;
+        for (let i = 0; i < 25; i++) r = autopilot(0) || r;
+        return r;
       };
       // 1. Gruen: gar kein Eingriff, egal wie schnell.
       flagState = 'green'; trackMode = 'on';
@@ -45538,11 +45918,28 @@
       // 2. Gelb, aber Ausdruck-Stellung: ebenfalls kein Eingriff.
       flagState = 'yellow'; trackMode = 'off';
       const ausdruck = bei(20);
-      // 3. Gelb auf der Bahn: regeln. YELLOW_KMH ist das Ziel.
+      // ---- 3. Gelb auf der Bahn: regeln. UND DAS ZIEL IST NICHT MEHR YELLOW_KMH ----
+      //
+      // Hier stand YELLOW_KMH = 80 als Zieltempo, und der Test las bei 80 km/h ein Gas von
+      // 0,72 statt des erwarteten Totbands. Die Zahl war richtig: seit v0.5.51 hat das
+      // Gelb-Tempo einen LESEBODEN.
+      //
+      // yellowFactor() ist YELLOW_KMH/Hoechstgeschwindigkeit = 80/327 = 0,244.
+      // GHOST_READ_MIN ist 0,35 - darunter liest das Auto das gedruckte Muster nicht mehr.
+      // Im Leitplanken-Modus, und nur dort greift dieser Autopilot, braucht das Auto genau
+      // diese Lesung, um sich auf der Bahn zu halten: ein Gelb-Tempo unter der Leseschwelle
+      // waere ein Autopilot, der das Auto von der Bahn faehrt.
+      //
+      // Das wirksame Gelb-Tempo ist deshalb 0,35 der Spitze, also rund 103 km/h angezeigt
+      // und nicht 80. Der Test rechnet es aus derselben Formel wie der Autopilot, damit die
+      // zwei nicht auseinanderlaufen - eine abgeschriebene 103 waere die naechste Zahl, die
+      // beim naechsten Reglerdreh falsch wird.
       trackMode = 'on';
-      const langsam = bei(YELLOW_KMH * 0.4);
-      const schnell = bei(YELLOW_KMH * 2.5);
-      const passend = bei(YELLOW_KMH);
+      const zielAnteil = Math.max(yellowFactor(), GHOST_READ_MIN);
+      const zielKmh = zielAnteil * physEngine.config.topSpeedKmh * REAL_SCALE;
+      const langsam = bei(zielKmh * 0.4);
+      const schnell = bei(zielKmh * 2.5);
+      const passend = bei(zielKmh);
       if (!langsam || !schnell || !passend) {
         return { ok: false, mass: 'greift auf der Bahn nicht' };
       }
@@ -45553,11 +45950,13 @@
       return { ok,
                mass: 'gruen ' + (gruen === null ? 'aus' : 'AN')
                      + ', Ausdruck ' + (ausdruck === null ? 'aus' : 'AN')
-                     + ' | bei ' + Math.round(YELLOW_KMH * 0.4) + ' km/h Gas '
+                     + ' | Ziel ' + Math.round(zielKmh) + ' km/h (Gelb ' + YELLOW_KMH
+                     + ', Leseboden hebt es)'
+                     + ' | bei ' + Math.round(zielKmh * 0.4) + ' km/h Gas '
                      + langsam.throttle.toFixed(2)
-                     + ', bei ' + Math.round(YELLOW_KMH * 2.5) + ' km/h Bremse '
+                     + ', bei ' + Math.round(zielKmh * 2.5) + ' km/h Bremse '
                      + schnell.brake.toFixed(2)
-                     + ', bei ' + YELLOW_KMH + ' km/h Gas ' + passend.throttle.toFixed(2)
+                     + ', bei ' + Math.round(zielKmh) + ' km/h Gas ' + passend.throttle.toFixed(2)
                      + ' Bremse ' + passend.brake.toFixed(2) };
     } finally {
       flagState = merk.flag;

@@ -5088,9 +5088,15 @@
     const schlecht = [];
     try {
       flagState = 'green'; trackMode = 'on';
+      // EINGESCHWUNGEN, nicht im ersten Takt: der Autopilot regelt seit v0.5.53 mit
+      // ghostSpeedControl(), und der ist ratenbegrenzt. Die Begruendung in ganzer Laenge
+      // steht beim Test "Autopilot nur auf der Bahn, und er regelt".
       const bei = (frac, bremse) => {
         physEngine.state.speedKmh = frac * physEngine.config.topSpeedKmh;
-        return autopilot(bremse || 0);
+        let r = autopilot(bremse || 0);
+        if (!r) return r;
+        for (let i = 0; i < 25; i++) r = autopilot(bremse || 0) || r;
+        return r;
       };
       // 1. Ohne Einfuehrungsrunde kein Eingriff.
       raceFormationLap = false;
@@ -7159,6 +7165,67 @@
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
+  // ---- Die Lenkunterstuetzung, an den drei bestellten Punkten ----
+  //
+  // BESTELLT: "Schwelle fuer Querlage, ab wann Lenkkorrektur passiert, und Staerke, mit der
+  // korrigiert wird; jeweils zwischen 100 (beide auf 100 = Auto faehrt mittig und ich gebe
+  // nur Gas), 50 % (es lenkt etwas mit, staerker wenn ich am Rand bin), zu 0 % (aktuell und
+  // Default)."
+  //
+  // Drei Punkte sind ausdruecklich genannt, also werden drei geprueft - und zwar UEBER DIE
+  // REGLER, nicht ueber die Variablen dahinter. Ein Test, der die Anteile direkt setzt,
+  // prueft die Rechnung ohne die Verdrahtung; genau dort lag bei setting-fuel-drain der
+  // Fehler (Regler auf 0, Modell auf 3, unbemerkt bis jemand ihn anfasste).
+  stAdd('Lenkunterstuetzung: die drei bestellten Punkte', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.lenkHilfeProbe) {
+      return { skip: true, mass: 'lenkHilfeProbe nicht vorhanden' };
+    }
+    const proben = [0.15, 0.5, 0.8, 1.0];
+    const aus = OMEGA_TEST.lenkHilfeProbe(0, 0, proben);
+    const halb = OMEGA_TEST.lenkHilfeProbe(50, 50, proben);
+    const voll = OMEGA_TEST.lenkHilfeProbe(100, 100, proben);
+    if (!aus || !halb || !voll) return { skip: true, mass: 'kein Lauf' };
+    const fehler = [];
+    // 1. VORGABE AENDERT NICHTS. Das ist die wichtigste Zeile: eine Unterstuetzung, die ab
+    //    Werk mitlenkt, waere eine Aenderung am Fahrgefuehl, die niemand bestellt hat.
+    for (let i = 0; i < proben.length; i++) {
+      if (Math.abs(aus[i] - proben[i]) > 1e-6) {
+        fehler.push('bei 0/0 wird ' + proben[i] + ' zu ' + aus[i]);
+      }
+    }
+    // 2. BEIDE AUF 100: das Auto faehrt mittig, egal was man lenkt.
+    for (let i = 0; i < proben.length; i++) {
+      if (voll[i] !== 0) fehler.push('bei 100/100 bleibt ' + voll[i] + ' uebrig');
+    }
+    // 3. BEI 50/50 unter der Schwelle nichts, darueber immer mehr. Das ist "es lenkt etwas
+    //    mit, staerker wenn ich am Rand bin" - und die Richtung ist die Zusage, nicht die
+    //    Zahl: eine feste 0,5 waere bei jeder Nachjustierung rot.
+    if (Math.abs(halb[0] - proben[0]) > 1e-6) {
+      fehler.push('bei 50/50 greift es schon bei ' + proben[0]);
+    }
+    for (let i = 2; i < proben.length; i++) {
+      if (!(halb[i] < proben[i] - 1e-6)) {
+        fehler.push('bei 50/50 wird ' + proben[i] + ' nicht zurueckgezogen');
+      }
+      // Und der ABZUG muss mit der Auslenkung wachsen.
+      const abzugHier = proben[i] - halb[i];
+      const abzugVor = proben[i - 1] - halb[i - 1];
+      if (!(abzugHier >= abzugVor - 1e-9)) {
+        fehler.push('der Abzug waechst nicht: ' + abzugVor.toFixed(2) + ' -> '
+                    + abzugHier.toFixed(2));
+      }
+    }
+    // 4. Und das Vorzeichen darf nie kippen - eine Korrektur, die staerker zieht als der
+    //    Fahrer lenkt, waere ein Gegenlenken und kein Assistent.
+    for (const reihe of [halb, voll]) {
+      for (const x of reihe) if (x < 0) fehler.push('Vorzeichen gekippt: ' + x);
+    }
+    return { ok: !fehler.length,
+             mass: '0/0: ' + aus.join('/') + ' | 50/50: ' + halb.join('/')
+                 + ' | 100/100: ' + voll.join('/')
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
   // ---- Zieleinlauf ----
   //
   // Vorher endete ein Rennen fuer die Ghosts mit stopGhost(): Nullen schreiben und
@@ -9222,9 +9289,49 @@
       // Ausdruecklich aus: dieser Test prueft den Grund "gelb", und ein von einem
       // vorherigen Test stehengelassenes true haette ihn auf den anderen Zweig geschickt.
       raceFormationLap = false;
+      // ---- EINGESCHWUNGEN MESSEN, NICHT IM ERSTEN TAKT -------------------------
+      //
+      // Seit v0.5.53 regelt der Autopilot mit ghostSpeedControl() - PI mit Totband und
+      // Ratengrenzen, derselbe Regler, den die Ghosts haben. Bestellt war "wie ein Ghost",
+      // und das ist der Unterschied: der alte rohe P-Regler (throttle = err * 4) hatte eine
+      // Beharrungsabweichung und kippte um den Zielwert, was sich auf dem Tisch als "es gibt
+      // nur Gas" liest.
+      //
+      // Ein ratenbegrenzter Regler gibt im ERSTEN Takt naturgemaess wenig - gemessen 0,06.
+      // Dieser Test las genau einen Takt und meldete "kein Gas". Die Zahl war richtig und
+      // die Frage falsch: das Auto faehrt nicht einen Takt, sondern im 45-ms-Takt weiter.
+      //
+      // Also 25 Takte, also gut eine Sekunde - dieselbe Zahl, die der Ghost-Reglertest
+      // schon benutzt ("nach 1,1 s ist es voll da").
       const bei = (kmh) => {
+        // ---- JEDER FALL AUS DEM STAND, und das ist Pruefhygiene ------------------
+        //
+        // Der Regler fuehrt einen I-Anteil, und der liegt modulweit - er ueberlebt also den
+        // Wechsel von einem Messpunkt zum naechsten. Ohne Ruecksetzen las dieser Test bei
+        // 80 km/h (dem Ziel) ein Gas von 0,72: das war der Arbeitspunkt, den die Messung bei
+        // 32 km/h davor aufgeladen hatte, und kein Fehler.
+        //
+        // Zurueckgesetzt wird ueber den vorgesehenen Weg: gruene Flagge heisst kein
+        // Autopilot, und autopilot() raeumt den Regler dann selbst auf. Eine eigene
+        // Ruecksetzfunktion von aussen zu rufen waere ein zweiter Weg in denselben Zustand.
+        const merkFlag = flagState;
+        flagState = 'green';
+        autopilot(0);
+        flagState = merkFlag;
         physEngine.state.speedKmh = kmh / REAL_SCALE;
-        return autopilot(0);
+        // EINGESCHWUNGEN, nicht im ersten Takt: seit v0.5.53 regelt der Autopilot mit
+        // ghostSpeedControl() - PI mit Totband und Ratengrenzen, derselbe Regler, den die
+        // Ghosts haben. Bestellt war "wie ein Ghost", und das ist der Unterschied: der alte
+        // rohe P-Regler (throttle = err * 4) brauchte eine Abweichung, um Gas zu erzeugen,
+        // und kippte um den Zielwert - auf dem Tisch liest sich das als "es gibt nur Gas".
+        //
+        // Ein ratenbegrenzter Regler gibt im ersten Takt naturgemaess wenig, gemessen 0,06.
+        // Dieser Test las genau einen Takt und meldete "kein Gas". 25 Takte sind gut eine
+        // Sekunde - dieselbe Zahl, die der Ghost-Reglertest benutzt.
+        let r = autopilot(0);
+        if (!r) return r;
+        for (let i = 0; i < 25; i++) r = autopilot(0) || r;
+        return r;
       };
       // 1. Gruen: gar kein Eingriff, egal wie schnell.
       flagState = 'green'; trackMode = 'on';
@@ -9232,11 +9339,28 @@
       // 2. Gelb, aber Ausdruck-Stellung: ebenfalls kein Eingriff.
       flagState = 'yellow'; trackMode = 'off';
       const ausdruck = bei(20);
-      // 3. Gelb auf der Bahn: regeln. YELLOW_KMH ist das Ziel.
+      // ---- 3. Gelb auf der Bahn: regeln. UND DAS ZIEL IST NICHT MEHR YELLOW_KMH ----
+      //
+      // Hier stand YELLOW_KMH = 80 als Zieltempo, und der Test las bei 80 km/h ein Gas von
+      // 0,72 statt des erwarteten Totbands. Die Zahl war richtig: seit v0.5.51 hat das
+      // Gelb-Tempo einen LESEBODEN.
+      //
+      // yellowFactor() ist YELLOW_KMH/Hoechstgeschwindigkeit = 80/327 = 0,244.
+      // GHOST_READ_MIN ist 0,35 - darunter liest das Auto das gedruckte Muster nicht mehr.
+      // Im Leitplanken-Modus, und nur dort greift dieser Autopilot, braucht das Auto genau
+      // diese Lesung, um sich auf der Bahn zu halten: ein Gelb-Tempo unter der Leseschwelle
+      // waere ein Autopilot, der das Auto von der Bahn faehrt.
+      //
+      // Das wirksame Gelb-Tempo ist deshalb 0,35 der Spitze, also rund 103 km/h angezeigt
+      // und nicht 80. Der Test rechnet es aus derselben Formel wie der Autopilot, damit die
+      // zwei nicht auseinanderlaufen - eine abgeschriebene 103 waere die naechste Zahl, die
+      // beim naechsten Reglerdreh falsch wird.
       trackMode = 'on';
-      const langsam = bei(YELLOW_KMH * 0.4);
-      const schnell = bei(YELLOW_KMH * 2.5);
-      const passend = bei(YELLOW_KMH);
+      const zielAnteil = Math.max(yellowFactor(), GHOST_READ_MIN);
+      const zielKmh = zielAnteil * physEngine.config.topSpeedKmh * REAL_SCALE;
+      const langsam = bei(zielKmh * 0.4);
+      const schnell = bei(zielKmh * 2.5);
+      const passend = bei(zielKmh);
       if (!langsam || !schnell || !passend) {
         return { ok: false, mass: 'greift auf der Bahn nicht' };
       }
@@ -9247,11 +9371,13 @@
       return { ok,
                mass: 'gruen ' + (gruen === null ? 'aus' : 'AN')
                      + ', Ausdruck ' + (ausdruck === null ? 'aus' : 'AN')
-                     + ' | bei ' + Math.round(YELLOW_KMH * 0.4) + ' km/h Gas '
+                     + ' | Ziel ' + Math.round(zielKmh) + ' km/h (Gelb ' + YELLOW_KMH
+                     + ', Leseboden hebt es)'
+                     + ' | bei ' + Math.round(zielKmh * 0.4) + ' km/h Gas '
                      + langsam.throttle.toFixed(2)
-                     + ', bei ' + Math.round(YELLOW_KMH * 2.5) + ' km/h Bremse '
+                     + ', bei ' + Math.round(zielKmh * 2.5) + ' km/h Bremse '
                      + schnell.brake.toFixed(2)
-                     + ', bei ' + YELLOW_KMH + ' km/h Gas ' + passend.throttle.toFixed(2)
+                     + ', bei ' + Math.round(zielKmh) + ' km/h Gas ' + passend.throttle.toFixed(2)
                      + ' Bremse ' + passend.brake.toFixed(2) };
     } finally {
       flagState = merk.flag;

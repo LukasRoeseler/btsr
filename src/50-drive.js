@@ -1655,6 +1655,106 @@
   // Quelldateien, aber diese Funktion laeuft erst zur Laufzeit - physicsStep() haengt am
   // 45-ms-Takt, und updateFlagUi() ruft sie nach dem Laden. Genau das galt fuer flagState
   // schon vorher.
+  // Der Zustand des Autopilot-Reglers. MODULWEIT, weil ghostSpeedControl() einen I-Anteil
+  // fuehrt - ein Zustand, der je Takt neu entsteht, ist keiner. Zuruecksetzen tut ihn
+  // autopilotZuruecksetzen(), gerufen wenn der Autopilot aussetzt: ein I-Anteil, der aus
+  // einer alten gelben Phase stehen bleibt, gibt beim naechsten Mal sofort Gas.
+  const autopilotRegler = {};
+  function autopilotZuruecksetzen() {
+    autopilotRegler.iTerm = 0;
+    autopilotRegler.lastThrottle = 0;
+    autopilotRegler.lastBrake = 0;
+    autopilotRegler.at = 0;
+  }
+
+  // ====================================================================================
+  // DIE LENKUNTERSTUETZUNG
+  // ====================================================================================
+  //
+  // BESTELLT: "Lenkunterstuetzung mit 2 Slidern: Schwelle fuer Querlage, ab wann
+  // Lenkkorrektur passiert, und Staerke, mit der korrigiert wird; jeweils zwischen 100
+  // (beide auf 100 = Auto faehrt mittig und ich gebe nur Gas), 50 % (es lenkt etwas mit,
+  // staerker wenn ich am Rand bin), zu 0 % (aktuell und Default)."
+  //
+  // ---- WAS DIE "QUERLAGE" HIER IST, UND WAS SIE NICHT IST ------------------------
+  //
+  // Sie ist DEIN LENKBEFEHL und keine Messung. Das Auto meldet nicht, wo auf der Bahn es
+  // steht - es gibt kein Byte dafuer, und deshalb gibt es in dieser App nirgends eine
+  // gemessene Querlage. Was die Unterstuetzung zurueckzieht, ist also die Anforderung und
+  // nicht die Lage. Auf der Schiene laeuft es auf dasselbe hinaus, solange man fahrt: mehr
+  // Lenkbefehl heisst weiter aussen. Im Stand heisst es nichts, und das ist der ehrliche
+  // Vorbehalt.
+  //
+  // ---- DIE RECHNUNG, UND WARUM ZIEHEN UND NICHT SKALIEREN ------------------------
+  //
+  // Der naheliegende Weg ist eine Skalierung: steer * (1 - staerke). Sie erfuellt die
+  // Bestellung NICHT - bei beiden Reglern auf 100 Prozent bliebe ein kleiner Lenkbefehl
+  // fast unveraendert, weil die Skalierung mit dem Betrag mitwaechst. "Auto faehrt mittig"
+  // waere damit nicht erreicht.
+  //
+  // Also eine KORREKTUR ZUR MITTE, addiert:
+  //
+  //     schwelleLage = 1 - schwelle        ab dieser Anforderung wird korrigiert
+  //     anteil       = (|s| - schwelleLage) / (1 - schwelleLage)     0 an der Schwelle, 1 am
+  //                                                                 Anschlag
+  //     s            = s - sign(s) * staerke * anteil
+  //
+  // Und damit stimmen genau die drei Punkte, die bestellt sind:
+  //
+  //     100 / 100   schwelleLage 0, anteil = |s|, Korrektur = -s  ->  s = 0 fuer JEDEN
+  //                 Eingang. Das Auto faehrt mittig, du gibst nur Gas.
+  //      50 /  50   unter 0,5 Anforderung passiert nichts; am Anschlag bleibt die Haelfte.
+  //                 "Es lenkt etwas mit, staerker wenn ich am Rand bin."
+  //       0 /   0   schwelleLage 1, anteil 0 am Anschlag  ->  keine Aenderung. Vorgabe.
+  //
+  // Die zwei Regler sind ABSICHTLICH getrennt und nicht ein einziger: "ab wann" und "wie
+  // stark" sind zwei Entscheidungen. Ein Regler dafuer waere eine Kurve, die jemand fuer
+  // einen gewaehlt hat.
+  let assistSchwelle = 0;      // 0..1
+  let assistStaerke = 0;       // 0..1
+
+  // Die zwei Regler. Prozent im Bedienelement, Anteil im Modell - dieselbe Aufteilung wie
+  // bei den anderen Prozentreglern.
+  function assistVerdrahten() {
+    const paare = [['assist-schwelle', (v) => { assistSchwelle = v; }],
+                   ['assist-staerke', (v) => { assistStaerke = v; }]];
+    for (const [id, setzen] of paare) {
+      const el = $(id);
+      if (!el) continue;
+      const zeigen = () => {
+        const p = Math.round(parseFloat(el.value) || 0);
+        setzen(p / 100);
+        const v = $(id + '-val');
+        if (v) v.textContent = p + '%';
+      };
+      el.addEventListener('input', zeigen);
+      el.addEventListener('change', zeigen);
+      // UND EINMAL BEIM LADEN. Genau das hat bei setting-fuel-drain gefehlt: das Markup
+      // stand auf 0, das Modell auf 3, und niemand merkte es, bis jemand den Regler anfasste.
+      zeigen();
+    }
+  }
+  assistVerdrahten();
+
+  function lenkHilfe(s) {
+    if (!(assistStaerke > 0)) return s;
+    const schwelleLage = 1 - assistSchwelle;
+    const spanne = 1 - schwelleLage;
+    // Schwelle 0 heisst schwelleLage 1 und Spanne 0: dann gibt es keinen Bereich, in dem
+    // korrigiert wird, und die Unterstuetzung ist aus. Ohne diese Zeile waere es eine
+    // Division durch null.
+    if (!(spanne > 1e-6)) return s;
+    const ueber = Math.abs(s) - schwelleLage;
+    if (!(ueber > 0)) return s;
+    const anteil = Math.min(1, ueber / spanne);
+    const korr = Math.sign(s) * assistStaerke * anteil;
+    // GEKLEMMT AUF DIE MITTE und nicht darueber hinaus: eine Korrektur, die stärker zieht
+    // als der Fahrer lenkt, wuerde das Auto auf die ANDERE Seite schicken. Das waere keine
+    // Unterstuetzung, sondern ein Gegenlenken.
+    const raus = s - korr;
+    return Math.sign(raus) === Math.sign(s) ? raus : 0;
+  }
+
   function autopilotGrund() {
     // Ausdruck-Stellung: nicht lenkfaehig. Ohne Leitplanken haelt sich das Auto nicht selbst
     // auf der Bahn, und ein Autopilot ohne Querregelung faehrt es geradeaus in die Bande.
@@ -1672,15 +1772,45 @@
 
   function autopilot(fahrerBremse) {
     const grund = autopilotGrund();
-    if (!grund) return null;
+    // AUSSETZER RAEUMEN DEN REGLER AUF. Ohne das traegt der I-Anteil ueber das Ende der
+    // gelben Phase hinaus und gibt beim naechsten Mal aus dem Stand Gas.
+    if (!grund) { autopilotZuruecksetzen(); return null; }
     const st = physEngine.state;
-    // DASSELBE Tempo wie die Ghosts, siehe formationPace(): sonst rollt das Feld mit 0,35
-    // und der Fahrer mit 0,271, und die Kolonne faellt beim Anrollen auseinander.
-    const ziel = grund === 'formation' ? formationPace() : yellowFactor();
+    // ---- WIE EIN GHOST, UND DAS IST DER BESTELLTE UNTERSCHIED ---------------------
+    //
+    // GEMELDET: "gelbe Flagge fuer mein Auto auf der Bahn fixen: es gibt nur Gas, sollte
+    // stattdessen aber wie ein Ghost und entsprechend gedrosselt weiterfahren."
+    //
+    // Hier stand ein roher P-Regler: throttle = err * 4, brake = -err * 3. Ein reiner
+    // P-Regler hat eine Beharrungsabweichung - er braucht eine Abweichung, um ueberhaupt Gas
+    // zu erzeugen -, und ohne Totband kippt er um den Zielwert. Auf dem Tisch liest sich das
+    // als "es gibt nur Gas": das Auto bekommt Gas, laeuft ueber das Ziel, bekommt Bremse,
+    // faellt darunter, und so weiter.
+    //
+    // Ein Ghost hat fuer genau dieses Problem ghostSpeedControl(): PI mit Totband und
+    // Ratengrenzen, und die Begruendung dafuer steht dort ausgeschrieben ("Ziel 35 Prozent,
+    // erreicht 24" war die gemessene Beharrungsabweichung des alten P-Reglers). Der Fahrer
+    // bekommt jetzt DENSELBEN Regler - "wie ein Ghost" ist wortwoertlich gemeint.
+    //
+    // Der Zustand liegt modulweit: der Regler hat einen I-Anteil, und ein Zustand, der bei
+    // jedem Takt neu angelegt wird, ist kein I-Anteil.
+    //
+    // UND DER LESEBODEN. yellowFactor() ist YELLOW_KMH/Hoechstgeschwindigkeit = 80/327 =
+    // 0,244, GHOST_READ_MIN ist 0,35: das Gelb-Tempo liegt unter der Drehzahl, bei der das
+    // Auto das gedruckte Muster noch liest. Im Leitplanken-Modus - und nur dort greift
+    // dieser Autopilot ueberhaupt - braucht das Auto genau diese Lesung, um sich auf der
+    // Bahn zu halten. Ohne den Boden waere der Autopilot also die Ursache dafuer, dass das
+    // Auto abfliegt. Dieselbe Zeile steht seit v0.5.51 auch bei den Ghosts.
+    const ziel = grund === 'formation'
+      ? formationPace()
+      : Math.max(yellowFactor(), GHOST_READ_MIN);
     const v = Math.abs(st.speedKmh) / physEngine.config.topSpeedKmh;
-    const err = ziel - v;
-    let throttle = Math.max(0, Math.min(1, err * 4));
-    let brake = Math.max(0, Math.min(1, -err * 3));
+    const dtA = Math.max(0.01, Math.min(0.25,
+      (Date.now() - (autopilotRegler.at || Date.now())) / 1000));
+    autopilotRegler.at = Date.now();
+    const geregelt = ghostSpeedControl(autopilotRegler, ziel, v, dtA);
+    let throttle = geregelt.throttle;
+    let brake = geregelt.brake;
     // DIE BREMSE DES FAHRERS GEWINNT, aber nur in der Einfuehrungsrunde. Dort rollt das Feld
     // in zwei Kolonnen dicht hintereinander, und ein Auto, das man nicht anhalten kann, ist
     // ein Auto, das rammt. Bei Gelb bleibt es absichtlich beim vollen Eingriff: dort ist der
@@ -1840,7 +1970,12 @@
     const gasKurve = gasKennlinie(Math.max(0, throttleY), physEngine.config.throttleGamma);
     let rawThrottle = fuelDamageDerate(gasKurve, fuelCut);
     let rawBrake = Math.max(0, -throttleY);
-    let steer = steerX;
+    // ---- DIE LENKUNTERSTUETZUNG WIRKT AUF DEN FAHRERWUNSCH ----------------------
+    //
+    // VOR dem Autopiloten: der ueberschreibt die Lenkung ohnehin ganz, und eine
+    // Unterstuetzung, die danach greift, wuerde in der Einfuehrungsrunde die
+    // Formationsspur zurueckziehen. Die Begruendung steht bei lenkHilfe().
+    let steer = lenkHilfe(steerX);
     // Bei gelber Flagge und in der Einfuehrungsrunde faehrt das Auto selbst. Siehe
     // autopilotGrund() fuer die zwei Gruende und autopilot() fuer die Regelung.
     const ap = autopilot(rawBrake);

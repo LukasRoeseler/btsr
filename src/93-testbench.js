@@ -1972,6 +1972,31 @@
       } finally { sampleEngine.car = merk; }
     },
 
+    // ---- Die Lenkunterstuetzung, ueber die Bedienelemente gestellt -----------------
+    //
+    // UEBER DIE REGLER und nicht ueber die Variablen: die zwei Anteile entstehen aus den
+    // Bedienelementen (assistVerdrahten), und ein Prueflauf, der die Variablen direkt setzt,
+    // prueft die Rechnung ohne die Verdrahtung. Genau die war bei setting-fuel-drain der
+    // Fehler - Regler auf 0, Modell auf 3, und niemand merkte es.
+    lenkHilfeProbe(schwellePz, staerkePz, proben) {
+      if (typeof lenkHilfe !== 'function') return null;
+      const el = { s: $('assist-schwelle'), k: $('assist-staerke') };
+      if (!el.s || !el.k) return null;
+      const merk = { s: el.s.value, k: el.k.value };
+      try {
+        for (const [e, v] of [[el.s, schwellePz], [el.k, staerkePz]]) {
+          e.value = String(v);
+          e.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+        return (proben || [0.15, 0.5, 0.8, 1.0]).map((p) => +lenkHilfe(p).toFixed(4));
+      } finally {
+        for (const [e, v] of [[el.s, merk.s], [el.k, merk.k]]) {
+          e.value = v;
+          e.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+      }
+    },
+
     simGas() {
       if (!simAn()) return null;
       return simState.autos.map((a) => {
