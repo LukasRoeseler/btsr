@@ -127,10 +127,10 @@
         // servoAngle bleibt normiert (-1 .. 1) - das Protokoll kennt nur Byte 7 als
         // int8, und eine Umrechnung in Grad und zurueck waere ein Rundungsfehler ohne
         // Gegenwert. Die 45 Grad sind die BEDEUTUNG von 1,0, nicht seine Einheit.
-        steerResponse: 2.0,      // live trim on the D-pad, 0.5 .. 3.0 in 10% steps.
-                                 // 200 % is the calibrated default: measured on the real
-                                 // car, that is what answers properly. The ceiling was
-                                 // raised from 2.0 so the default is not also the limit.
+        steerResponse: 2.5,      // live trim on the D-pad, 0.5 .. 3.0 in 10% steps.
+                                      // 150 % is the calibrated default: measured on the real
+                                      // car, that is what answers properly. The ceiling was
+                                      // raised from 2.0 so the default is not also the limit.
         speedSteerReduction: 0.35, // and only weighted by gear, see update()
         autoShift: true,  // Automatik als Standard
 
@@ -225,7 +225,7 @@
         // Jetzt: der ganze Zustand wird kopiert, tyreEffect stillgelegt, und der
         // Bezugszustand ist ein Rennstart - voller Tank, nominale Reifen, trockene Bahn.
         // Vor und nach einem kompletten Selbsttest messt derselbe Aufruf dasselbe.
-        brakeDecelBase: 0.72,
+        brakeDecelBase: 1.08,
         // 0, und das ist eine Entscheidung gegen den Fitter: der wollte -0,10, also eine
         // Bremse, die mit der Fahrt schwaecher wird. Der Luftanteil steckt schon im
         // Rollwiderstandsterm, der beim Bremsen mitwirkt - ein zweiter Term dafuer zaehlt ihn
@@ -317,7 +317,7 @@
         tyreHotPenalty: 0.38,  // Griffverlust bei durchgeheizten Reifen (v0.4: von 0,30)
         // v0.4 von 0,0018 herauf: bei 100 % war der Verschleiss ueber eine Rennlaenge
         // kaum zu merken. Jetzt abgefahren nach gut vier Minuten voller Attacke.
-        tyreWearRate: 0.0032,
+        tyreWearRate: 0.0064,
         // Faktor der REIFENMISCHUNG auf den Verschleiss, gesetzt von applySurface() in
         // 70-race.js. Eigenes Feld und nicht tyreWearRate selbst: zwei Orte fuer dieselbe
         // Zahl waren in diesem Projekt schon siebzehnmal eine Abweichung.
