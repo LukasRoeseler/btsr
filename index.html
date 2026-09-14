@@ -7960,7 +7960,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.6.11</span></span>
+    <span class="foot-ver">v<span id="app-version">0.6.12</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -9817,6 +9817,8 @@
       "yes",
     "nein":
       "no",
+    "voll":
+      "full",
     "weich":
       "soft",
     "mittel":
@@ -21720,13 +21722,25 @@
       const p = pitPlan || {};
       pitStandElapsed += dt;
 
-      // --- refuel ---
+      // --- refuel --- auf das GEWAEHLTE Ziel, nicht bis voll
       if (p.refuel && !pitDone.refuel) {
-        const addFuel = Math.min(100 - fuel, PIT_FUEL_PER_SEC * dt);
-        fuel += addFuel; pitFuelGained += addFuel;
-        if (fuel >= 99.95) { fuel = 100; pitDone.refuel = true;
-                             setPitLoop('fuel', false); pitChimeFuel();
-                             showHudToast(`Tank voll, ${fuelLiters(100)} l`); }
+        const ziel = tankZielNorm(p.refuel);
+        if (fuel >= ziel - 0.05) {
+          // ABTANKEN GIBT ES NICHT. Steht der Tank schon ueber dem Ziel, ist die Arbeit
+          // erledigt - ein negatives addFuel waere eine Pumpe, die absaugt, und die hat
+          // kein Boxenstopp. Ohne diesen Zweig liefe der Stand rueckwaerts.
+          pitDone.refuel = true;
+          setPitLoop('fuel', false);
+        } else {
+          const addFuel = Math.min(ziel - fuel, PIT_FUEL_PER_SEC * dt);
+          fuel += addFuel; pitFuelGained += addFuel;
+          if (fuel >= ziel - 0.05) {
+            fuel = ziel; pitDone.refuel = true;
+            setPitLoop('fuel', false); pitChimeFuel();
+            showHudToast(ziel >= 100 ? `Tank voll, ${fuelLiters(100)} l`
+                                     : `Getankt auf ${fuelLiters(ziel)} l`);
+          }
+        }
       }
       // --- repair --- non-linear, see repairRateAt()
       if (p.repair && !pitDone.repair) {
@@ -22592,18 +22606,75 @@
   function fuelSimOn() { return fuelDrainPerSec > 0; }
   function tyreSimOn() { return physEngine.config.tyreEffect > 0; }
 
+  // ====================================================================================
+  // DIE TANKMENGE: DREI STUFEN STATT JA/NEIN
+  // ====================================================================================
+  //
+  // BESTELLT: "Lass mich beim Tanken nicht zwischen ja und nein, sondern zwischen nein,
+  // 55 l (50 %) und voll (100 % / 110 l) waehlen."
+  //
+  // ---- WARUM DER PLAN TROTZDEM EIN WAHRHEITSWERT BLEIBEN DARF ---------------------
+  //
+  // pitPlan.refuel traegt jetzt eine ZAHL - 0, 50 oder 100. Und das ist der Grund, warum
+  // diese Aenderung so klein ausfaellt: 0 ist falsch, 50 und 100 sind wahr. Jede
+  // vorhandene Abfrage der Form `if (p.refuel)`, `!p.refuel` oder `pitPlanEmpty()` bleibt
+  // damit unveraendert richtig, ohne angefasst zu werden. Nur die Stellen, die den WERT
+  // brauchen - Ziel, Wort, Durchschalten -, muessen ihn lesen.
+  //
+  // Der Tank selbst bleibt intern 0..100; Liter sind seit v0.4 nur Anzeige
+  // (FUEL_TANK_LITERS und fuelLiters() in 50-drive.js).
+  const TANK_STUFEN = [0, 50, 100];
+
+  // ---- EIN WAHRHEITSWERT HEISST WEITER, WAS ER HIESS ----------------------------
+  //
+  // In einer gespeicherten Sicherung oder einer aelteren Voreinstellung steht `true`. Das
+  // muss weiter "voll" bedeuten und nicht 1 - sonst tankt ein geladener Plan einen Liter.
+  // EINE Stelle dafuer, damit nicht jeder Leser selbst raten muss, was true heisst.
+  //
+  // Und ein Wert, der auf keiner Stufe liegt (aus einer Datei, von Hand geaendert), wird
+  // auf die naechste gezogen statt verworfen: 60 ist erkennbar "halb gemeint".
+  function tankZielNorm(v) {
+    if (v === true) return 100;
+    if (v === false || v === null || v === undefined) return 0;
+    const n = Number(v);
+    if (!isFinite(n)) return 0;
+    let best = TANK_STUFEN[0];
+    for (const st of TANK_STUFEN) {
+      if (Math.abs(st - n) < Math.abs(best - n)) best = st;
+    }
+    return best;
+  }
+
+  function tankZielWeiter(v) {
+    const i = TANK_STUFEN.indexOf(tankZielNorm(v));
+    return TANK_STUFEN[(i + 1) % TANK_STUFEN.length];
+  }
+
+  // Das Wort in der Zeile. Die Liter werden GERECHNET und nicht geschrieben: 55 steht
+  // nirgends als Zahl, es ist die Haelfte von FUEL_TANK_LITERS. Wer den Tank aendert,
+  // aendert eine Zahl.
+  function tankZielWort(v) {
+    const z = tankZielNorm(v);
+    if (z <= 0) return t('nein');
+    if (z >= 100) return t('voll');
+    return fuelLiters(z) + ' l';
+  }
+
   // DIE EINE STELLE, an der aus der Vorwahl ein Plan wird. Was in pitVorwahl auf null
   // steht, entscheidet weiter die Lage - wer nichts vorwaehlt, bekommt genau den Plan von
   // vorher.
   function makePitPlan() {
     const auto = {
-      refuel: fuelSimOn() && fuel < 99.5,
+      refuel: (fuelSimOn() && fuel < 99.5) ? 100 : 0,
       tyres: tyreSimOn(),
       repair: damage > 0.5,
     };
     if (typeof pitVorwahl !== 'object' || !pitVorwahl) return auto;
     for (const k of ['refuel', 'tyres', 'repair']) {
-      if (pitVorwahl[k] !== null && pitVorwahl[k] !== undefined) auto[k] = !!pitVorwahl[k];
+      if (pitVorwahl[k] !== null && pitVorwahl[k] !== undefined) {
+        // Der Tank traegt eine Stufe, die beiden anderen einen Wahrheitswert.
+        auto[k] = k === 'refuel' ? tankZielNorm(pitVorwahl[k]) : !!pitVorwahl[k];
+      }
     }
     return auto;
   }
@@ -22757,12 +22828,18 @@
       // nichts zu tun. Statt zu schweigen wird VORGEWAEHLT: was hier gesetzt wird, uebernimmt
       // makePitPlan() beim Scharfstellen. Genau dafuer ist der Schirm waehrend der Fahrt da.
       const jetzt = pitVorwahlIst(zeile.id);
-      pitVorwahl[zeile.id] = !jetzt;
-      // DIESELBEN ZWEI WOERTER wie in der Zeile. Eine Meldung, die "AN" sagt, waehrend
-      // die Zeile darunter "ja" zeigt, ist ein drittes Vokabular fuer dieselbe Frage.
-      showHudToast(t(zeile.id === 'refuel' ? 'Tanken'
-                     : zeile.id === 'tyres' ? 'Reifen wechseln'
-                     : 'Reparieren') + ': ' + t(!jetzt ? 'ja' : 'nein'));
+      // DIESELBEN WOERTER wie in der Zeile. Eine Meldung, die "AN" sagt, waehrend die
+      // Zeile darunter "ja" zeigt, ist ein drittes Vokabular fuer dieselbe Frage.
+      if (zeile.id === 'refuel') {
+        // DREI STUFEN, also durchschalten und nicht umschalten.
+        const naechste = tankZielWeiter(jetzt);
+        pitVorwahl.refuel = naechste;
+        showHudToast(t('Tanken') + ': ' + tankZielWort(naechste));
+      } else {
+        pitVorwahl[zeile.id] = !jetzt;
+        showHudToast(t(zeile.id === 'tyres' ? 'Reifen wechseln' : 'Reparieren')
+                     + ': ' + t(!jetzt ? 'ja' : 'nein'));
+      }
     }
     pitScreenRender();
     return true;
@@ -22775,9 +22852,11 @@
   let pitVorwahl = { refuel: null, tyres: null, repair: null };
 
   function pitVorwahlIst(which) {
-    if (pitVorwahl[which] !== null) return pitVorwahl[which];
+    if (pitVorwahl[which] !== null) {
+      return which === 'refuel' ? tankZielNorm(pitVorwahl[which]) : pitVorwahl[which];
+    }
     // Der Vorgabewert ist das, was makePitPlan() ohne Vorwahl entscheiden wuerde.
-    if (which === 'refuel') return fuelSimOn() && fuel < 99.5;
+    if (which === 'refuel') return (fuelSimOn() && fuel < 99.5) ? 100 : 0;
     if (which === 'tyres') return tyreSimOn();
     if (which === 'repair') return damage > 0.5;
     return false;
@@ -22916,8 +22995,11 @@
     // eine Zeile hoeher, wo "Boxenstopp einleiten" bereit, Boxengasse, Arbeit laeuft oder
     // fertig sagt. Ihn hier ein zweites Mal zu tragen hiess, ihn zweimal lesen zu muessen,
     // um einmal zu wissen, ob getankt wird.
-    const ja = (pitState === 'servicing' && pitPlan) ? !!pitPlan[z.id] : pitVorwahlIst(z.id);
-    return { zahl, wort: ja ? t('ja') : t('nein'), ja };
+    const roh = (pitState === 'servicing' && pitPlan) ? pitPlan[z.id] : pitVorwahlIst(z.id);
+    // Der Tank hat drei Stufen und braucht deshalb sein eigenes Wort; `ja` bleibt fuer die
+    // Faerbung ein Wahrheitswert, und 0 ist falsch - das genuegt.
+    if (z.id === 'refuel') return { zahl, wort: tankZielWort(roh), ja: !!roh };
+    return { zahl, wort: roh ? t('ja') : t('nein'), ja: !!roh };
   }
 
   // ---- Rennuebersicht ----------------------------------------------------------------
@@ -23117,7 +23199,12 @@
   function describePitPlan(p) {
     if (pitPlanEmpty(p)) return `nur ${PIT_EMPTY_STOP_S.toFixed(0)} s Standzeit`;
     const parts = [];
-    if (p.refuel) parts.push('tanken');
+    // Wieviel getankt wird, gehoert in die Meldung: "tanken" allein laesst offen, ob der
+    // Stopp vier oder zwei Sekunden dauert, und genau das ist die Entscheidung dahinter.
+    if (p.refuel) {
+      const z = tankZielNorm(p.refuel);
+      parts.push(z >= 100 ? 'tanken' : 'tanken auf ' + fuelLiters(z) + ' l');
+    }
     if (p.tyres) parts.push('Reifen');
     if (p.repair) parts.push('reparieren');
     return parts.join(' + ');
@@ -23147,7 +23234,9 @@
       return true;
     }
     const before = describePitPlan(pitPlan);
-    const next = force === undefined ? !pitPlan[which] : !!force;
+    const next = which === 'refuel'
+      ? (force === undefined ? tankZielWeiter(pitPlan[which]) : tankZielNorm(force))
+      : (force === undefined ? !pitPlan[which] : !!force);
     pitPlan[which] = next;
     // Einen laufenden Reifenwechsel abwaehlen heisst: die alten Reifen bleiben drauf. Was
     // schon montiert ist, wird nicht abmontiert, die Uhr hoert nur auf zu zaehlen.
@@ -23156,7 +23245,16 @@
       pitTyreElapsed = 0;
       refreshPitThrottleLock();
     }
-    if (which === 'refuel' && !next) setPitLoop('fuel', false);
+    // ---- EIN NEUES ZIEL KANN DIE ARBEIT WIEDER OEFFNEN ODER SCHLIESSEN -----------
+    //
+    // Wer mitten im Stopp von "voll" auf "halb" schaltet und schon darueber steht, ist
+    // fertig - und wer von "nein" auf "voll" schaltet, ist es nicht mehr. Ohne diese Zeile
+    // bliebe pitDone stehen, wie es beim Einfahren gesetzt wurde, und der Tank wuerde
+    // entweder nie oder ewig laufen.
+    if (which === 'refuel') {
+      pitDone.refuel = !(tankZielNorm(next) > fuel + 0.05);
+      if (pitDone.refuel) setPitLoop('fuel', false);
+    }
     if (which === 'repair' && !next) setPitLoop('repair', false);
     const after = describePitPlan(pitPlan);
     if (after !== before) showHudToast(`Boxenstopp: ${after}`);
@@ -36560,6 +36658,77 @@
       }
     },
 
+    // ---- TANKT DER STOPP AUF DAS GEWAEHLTE ZIEL, ODER IMMER VOLL? ---------------
+    //
+    // BESTELLT: "nicht zwischen ja und nein, sondern zwischen nein, 55 l (50 %) und voll".
+    //
+    // Geprueft wird ueber pitLaneTick(), also die ECHTE Arbeitsschleife, und nicht ueber
+    // eine nachgerechnete Formel. Genau dort stand vorher das feste `100 - fuel`, und nur
+    // dort zeigt sich, ob das Ziel wirklich ankommt.
+    //
+    // Das Auto muss dafuer STEHEN (PIT_STANDSTILL_KMH), sonst verlaesst pitLaneTick() den
+    // Boxenstopp im ersten Takt - deshalb Tempo und Gas auf null.
+    tankZielProbe(o) {
+      const opt = o || {};
+      const st = physEngine.state;
+      const merk = { fuel, pitState, pitPlan, pitDone, pitLastTick, pitReady,
+                     pitStandElapsed, pitEmptyElapsed, pitFuelGained,
+                     kmh: st.speedKmh, gas: throttleY };
+      const echtNow = Date.now;
+      try {
+        let uhr = echtNow.call(Date);
+        Date.now = () => uhr;
+        st.speedKmh = 0;
+        throttleY = 0;
+        fuel = opt.start === undefined ? 10 : opt.start;
+        pitState = 'servicing';
+        pitPlan = { refuel: opt.ziel === undefined ? 50 : opt.ziel,
+                    tyres: false, repair: false };
+        pitDone = { refuel: false, tyres: false, repair: false };
+        pitReady = false;
+        pitStandElapsed = 0; pitEmptyElapsed = 0; pitFuelGained = 0;
+        pitLastTick = uhr;
+        const verlauf = [];
+        for (let i = 0; i < (opt.takte || 300); i++) {
+          uhr += 100;
+          pitLaneTick();
+          verlauf.push(+fuel.toFixed(2));
+          if (pitDone.refuel) break;
+        }
+        return { endstand: +fuel.toFixed(2), fertig: !!pitDone.refuel,
+                 takte: verlauf.length, getankt: +pitFuelGained.toFixed(2),
+                 verlauf: verlauf.slice(0, 6) };
+      } finally {
+        Date.now = echtNow;
+        fuel = merk.fuel; pitState = merk.pitState; pitPlan = merk.pitPlan;
+        pitDone = merk.pitDone; pitLastTick = merk.pitLastTick;
+        pitReady = merk.pitReady; pitStandElapsed = merk.pitStandElapsed;
+        pitEmptyElapsed = merk.pitEmptyElapsed; pitFuelGained = merk.pitFuelGained;
+        st.speedKmh = merk.kmh; throttleY = merk.gas;
+      }
+    },
+
+    // Die drei Stufen und ihre Woerter von aussen lesbar - dieselben Funktionen, die die
+    // Zeile im Boxenschirm benutzt.
+    tankStufenProbe() {
+      if (typeof tankZielNorm !== 'function') return null;
+      return {
+        stufen: TANK_STUFEN.slice(),
+        // Durchschalten, einmal rundherum plus einen Schritt: die Folge muss sich schliessen.
+        folge: (function () {
+          const out = [];
+          let v = 0;
+          for (let i = 0; i < 4; i++) { out.push(v); v = tankZielWeiter(v); }
+          return out;
+        }()),
+        // Und was aus Altwerten wird.
+        alt: { wahr: tankZielNorm(true), falsch: tankZielNorm(false),
+               nichts: tankZielNorm(null), daneben: tankZielNorm(60),
+               unsinn: tankZielNorm('x') },
+        worte: TANK_STUFEN.map((v) => tankZielWort(v)),
+      };
+    },
+
     // ---- DIE SEKTORZEITEN IN DER RUNDENTABELLE ----------------------------------
     //
     // BESTELLT: "Bei mehreren Sektoren die Sub-Zeiten (also Zeit je Sektor) im Zeiten-Screen
@@ -45689,6 +45858,70 @@
     return { ok: !fehler.length,
              mass: mit.zeilen + ' Sektorzeilen, ' + mit.beste + ' Bestwerte'
                  + ' | bei einem Sektor ' + ohne.zeilen
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
+  // ---- Tanken: drei Stufen, und der Stopp haelt sich daran ----
+  //
+  // BESTELLT: "Im Quick-Menue zum Pitstop lass mich durch Druecken von X beim Tanken nicht
+  // zwischen ja und nein, sondern zwischen nein, 55 l (50 %) und voll (100 % / 110 l)
+  // waehlen."
+  //
+  // ---- WARUM DAS UEBER pitLaneTick() GEPRUEFT WIRD -------------------------------
+  //
+  // Die Stufen im Menue zu setzen ist das Leichte. Die Wirkung stand woanders: in der
+  // Arbeitsschleife stand `Math.min(100 - fuel, ...)`, also ein festes Ziel von 100. Ein
+  // Test, der nur die Vorwahl liest, waere gruen gewesen, waehrend der Stopp weiter
+  // volltankt - deshalb faehrt dieser Test die echte Schleife.
+  stAdd('Tanken: drei Stufen, und der Stopp tankt auf die gewaehlte', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.tankZielProbe || !OMEGA_TEST.tankStufenProbe) {
+      return { skip: true, mass: 'tankZielProbe nicht vorhanden' };
+    }
+    const st = OMEGA_TEST.tankStufenProbe();
+    const halb = OMEGA_TEST.tankZielProbe({ start: 10, ziel: 50 });
+    const voll = OMEGA_TEST.tankZielProbe({ start: 10, ziel: 100 });
+    const drueber = OMEGA_TEST.tankZielProbe({ start: 80, ziel: 50 });
+    if (!st || !halb || !voll || !drueber) return { skip: true, mass: 'kein Lauf' };
+    const fehler = [];
+    // 1. DREI STUFEN, und das Durchschalten schliesst sich. Eine Folge, die bei 100 stehen
+    //    bleibt, waere eine Sackgasse - man kaeme nie wieder auf "nein".
+    if (st.folge.join(',') !== '0,50,100,0') {
+      fehler.push('Folge ' + st.folge.join('>') + ' statt 0>50>100>0');
+    }
+    // 2. DIE WOERTER, wie bestellt. "55 l" wird GERECHNET (halber Tank), steht also nicht
+    //    als Zahl im Code - ein Test auf den Text faengt trotzdem, wenn die Rechnung kippt.
+    if (st.worte.join('/') !== 'nein/55 l/voll') {
+      fehler.push('Worte ' + st.worte.join('/') + ' statt nein/55 l/voll');
+    }
+    // 3. EIN ALTER WAHRHEITSWERT HEISST WEITER, WAS ER HIESS. Eine gespeicherte Sicherung
+    //    traegt `true`, und das muss "voll" bleiben - als Zahl gelesen waere es ein Liter.
+    if (st.alt.wahr !== 100 || st.alt.falsch !== 0 || st.alt.nichts !== 0) {
+      fehler.push('Altwerte: true=' + st.alt.wahr + ', false=' + st.alt.falsch
+                  + ', null=' + st.alt.nichts);
+    }
+    // Und ein Wert neben der Stufe wird gezogen, nicht verworfen.
+    if (st.alt.daneben !== 50) fehler.push('60 wird zu ' + st.alt.daneben + ' statt 50');
+    // 4. DER STOPP HAELT BEI 50 UND NICHT BEI 100. Das ist die eigentliche Zusage.
+    if (Math.abs(halb.endstand - 50) > 0.2) {
+      fehler.push('Ziel 50 endet bei ' + halb.endstand);
+    }
+    // 5. UND VOLL BRAUCHT LAENGER ALS HALB. Ohne diese Zeile waere der Test auch gruen,
+    //    wenn beide Stufen sofort fertig waeren.
+    if (!(voll.endstand > 99.8)) fehler.push('Ziel 100 endet bei ' + voll.endstand);
+    if (!(voll.takte > halb.takte)) {
+      fehler.push('voll (' + voll.takte + ' Takte) nicht laenger als halb ('
+                  + halb.takte + ')');
+    }
+    // 6. ABTANKEN GIBT ES NICHT. Steht der Tank ueber dem Ziel, bleibt er stehen - ein
+    //    negatives addFuel waere eine Pumpe, die absaugt.
+    if (Math.abs(drueber.endstand - 80) > 0.01 || drueber.getankt !== 0) {
+      fehler.push('ueber dem Ziel: ' + drueber.endstand + ', getankt ' + drueber.getankt);
+    }
+    return { ok: !fehler.length,
+             mass: 'Folge ' + st.folge.join('>') + ' | ' + st.worte.join('/')
+                 + ' | ab 10 auf 50: ' + halb.endstand + ' in ' + halb.takte + ' Takten'
+                 + ', auf 100: ' + voll.endstand + ' in ' + voll.takte
+                 + ' | ab 80 auf 50: ' + drueber.endstand + ' (0 getankt)'
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 

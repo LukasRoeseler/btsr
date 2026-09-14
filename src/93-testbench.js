@@ -3844,6 +3844,77 @@
       }
     },
 
+    // ---- TANKT DER STOPP AUF DAS GEWAEHLTE ZIEL, ODER IMMER VOLL? ---------------
+    //
+    // BESTELLT: "nicht zwischen ja und nein, sondern zwischen nein, 55 l (50 %) und voll".
+    //
+    // Geprueft wird ueber pitLaneTick(), also die ECHTE Arbeitsschleife, und nicht ueber
+    // eine nachgerechnete Formel. Genau dort stand vorher das feste `100 - fuel`, und nur
+    // dort zeigt sich, ob das Ziel wirklich ankommt.
+    //
+    // Das Auto muss dafuer STEHEN (PIT_STANDSTILL_KMH), sonst verlaesst pitLaneTick() den
+    // Boxenstopp im ersten Takt - deshalb Tempo und Gas auf null.
+    tankZielProbe(o) {
+      const opt = o || {};
+      const st = physEngine.state;
+      const merk = { fuel, pitState, pitPlan, pitDone, pitLastTick, pitReady,
+                     pitStandElapsed, pitEmptyElapsed, pitFuelGained,
+                     kmh: st.speedKmh, gas: throttleY };
+      const echtNow = Date.now;
+      try {
+        let uhr = echtNow.call(Date);
+        Date.now = () => uhr;
+        st.speedKmh = 0;
+        throttleY = 0;
+        fuel = opt.start === undefined ? 10 : opt.start;
+        pitState = 'servicing';
+        pitPlan = { refuel: opt.ziel === undefined ? 50 : opt.ziel,
+                    tyres: false, repair: false };
+        pitDone = { refuel: false, tyres: false, repair: false };
+        pitReady = false;
+        pitStandElapsed = 0; pitEmptyElapsed = 0; pitFuelGained = 0;
+        pitLastTick = uhr;
+        const verlauf = [];
+        for (let i = 0; i < (opt.takte || 300); i++) {
+          uhr += 100;
+          pitLaneTick();
+          verlauf.push(+fuel.toFixed(2));
+          if (pitDone.refuel) break;
+        }
+        return { endstand: +fuel.toFixed(2), fertig: !!pitDone.refuel,
+                 takte: verlauf.length, getankt: +pitFuelGained.toFixed(2),
+                 verlauf: verlauf.slice(0, 6) };
+      } finally {
+        Date.now = echtNow;
+        fuel = merk.fuel; pitState = merk.pitState; pitPlan = merk.pitPlan;
+        pitDone = merk.pitDone; pitLastTick = merk.pitLastTick;
+        pitReady = merk.pitReady; pitStandElapsed = merk.pitStandElapsed;
+        pitEmptyElapsed = merk.pitEmptyElapsed; pitFuelGained = merk.pitFuelGained;
+        st.speedKmh = merk.kmh; throttleY = merk.gas;
+      }
+    },
+
+    // Die drei Stufen und ihre Woerter von aussen lesbar - dieselben Funktionen, die die
+    // Zeile im Boxenschirm benutzt.
+    tankStufenProbe() {
+      if (typeof tankZielNorm !== 'function') return null;
+      return {
+        stufen: TANK_STUFEN.slice(),
+        // Durchschalten, einmal rundherum plus einen Schritt: die Folge muss sich schliessen.
+        folge: (function () {
+          const out = [];
+          let v = 0;
+          for (let i = 0; i < 4; i++) { out.push(v); v = tankZielWeiter(v); }
+          return out;
+        }()),
+        // Und was aus Altwerten wird.
+        alt: { wahr: tankZielNorm(true), falsch: tankZielNorm(false),
+               nichts: tankZielNorm(null), daneben: tankZielNorm(60),
+               unsinn: tankZielNorm('x') },
+        worte: TANK_STUFEN.map((v) => tankZielWort(v)),
+      };
+    },
+
     // ---- DIE SEKTORZEITEN IN DER RUNDENTABELLE ----------------------------------
     //
     // BESTELLT: "Bei mehreren Sektoren die Sub-Zeiten (also Zeit je Sektor) im Zeiten-Screen

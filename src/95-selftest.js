@@ -7622,6 +7622,70 @@
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
+  // ---- Tanken: drei Stufen, und der Stopp haelt sich daran ----
+  //
+  // BESTELLT: "Im Quick-Menue zum Pitstop lass mich durch Druecken von X beim Tanken nicht
+  // zwischen ja und nein, sondern zwischen nein, 55 l (50 %) und voll (100 % / 110 l)
+  // waehlen."
+  //
+  // ---- WARUM DAS UEBER pitLaneTick() GEPRUEFT WIRD -------------------------------
+  //
+  // Die Stufen im Menue zu setzen ist das Leichte. Die Wirkung stand woanders: in der
+  // Arbeitsschleife stand `Math.min(100 - fuel, ...)`, also ein festes Ziel von 100. Ein
+  // Test, der nur die Vorwahl liest, waere gruen gewesen, waehrend der Stopp weiter
+  // volltankt - deshalb faehrt dieser Test die echte Schleife.
+  stAdd('Tanken: drei Stufen, und der Stopp tankt auf die gewaehlte', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.tankZielProbe || !OMEGA_TEST.tankStufenProbe) {
+      return { skip: true, mass: 'tankZielProbe nicht vorhanden' };
+    }
+    const st = OMEGA_TEST.tankStufenProbe();
+    const halb = OMEGA_TEST.tankZielProbe({ start: 10, ziel: 50 });
+    const voll = OMEGA_TEST.tankZielProbe({ start: 10, ziel: 100 });
+    const drueber = OMEGA_TEST.tankZielProbe({ start: 80, ziel: 50 });
+    if (!st || !halb || !voll || !drueber) return { skip: true, mass: 'kein Lauf' };
+    const fehler = [];
+    // 1. DREI STUFEN, und das Durchschalten schliesst sich. Eine Folge, die bei 100 stehen
+    //    bleibt, waere eine Sackgasse - man kaeme nie wieder auf "nein".
+    if (st.folge.join(',') !== '0,50,100,0') {
+      fehler.push('Folge ' + st.folge.join('>') + ' statt 0>50>100>0');
+    }
+    // 2. DIE WOERTER, wie bestellt. "55 l" wird GERECHNET (halber Tank), steht also nicht
+    //    als Zahl im Code - ein Test auf den Text faengt trotzdem, wenn die Rechnung kippt.
+    if (st.worte.join('/') !== 'nein/55 l/voll') {
+      fehler.push('Worte ' + st.worte.join('/') + ' statt nein/55 l/voll');
+    }
+    // 3. EIN ALTER WAHRHEITSWERT HEISST WEITER, WAS ER HIESS. Eine gespeicherte Sicherung
+    //    traegt `true`, und das muss "voll" bleiben - als Zahl gelesen waere es ein Liter.
+    if (st.alt.wahr !== 100 || st.alt.falsch !== 0 || st.alt.nichts !== 0) {
+      fehler.push('Altwerte: true=' + st.alt.wahr + ', false=' + st.alt.falsch
+                  + ', null=' + st.alt.nichts);
+    }
+    // Und ein Wert neben der Stufe wird gezogen, nicht verworfen.
+    if (st.alt.daneben !== 50) fehler.push('60 wird zu ' + st.alt.daneben + ' statt 50');
+    // 4. DER STOPP HAELT BEI 50 UND NICHT BEI 100. Das ist die eigentliche Zusage.
+    if (Math.abs(halb.endstand - 50) > 0.2) {
+      fehler.push('Ziel 50 endet bei ' + halb.endstand);
+    }
+    // 5. UND VOLL BRAUCHT LAENGER ALS HALB. Ohne diese Zeile waere der Test auch gruen,
+    //    wenn beide Stufen sofort fertig waeren.
+    if (!(voll.endstand > 99.8)) fehler.push('Ziel 100 endet bei ' + voll.endstand);
+    if (!(voll.takte > halb.takte)) {
+      fehler.push('voll (' + voll.takte + ' Takte) nicht laenger als halb ('
+                  + halb.takte + ')');
+    }
+    // 6. ABTANKEN GIBT ES NICHT. Steht der Tank ueber dem Ziel, bleibt er stehen - ein
+    //    negatives addFuel waere eine Pumpe, die absaugt.
+    if (Math.abs(drueber.endstand - 80) > 0.01 || drueber.getankt !== 0) {
+      fehler.push('ueber dem Ziel: ' + drueber.endstand + ', getankt ' + drueber.getankt);
+    }
+    return { ok: !fehler.length,
+             mass: 'Folge ' + st.folge.join('>') + ' | ' + st.worte.join('/')
+                 + ' | ab 10 auf 50: ' + halb.endstand + ' in ' + halb.takte + ' Takten'
+                 + ', auf 100: ' + voll.endstand + ' in ' + voll.takte
+                 + ' | ab 80 auf 50: ' + drueber.endstand + ' (0 getankt)'
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
   // ---- Boxenstopp: erst eine Sekunde am Rand FAHREN, dann bremsen ----
   //
   // GEMELDET: "Anhalten fuer Pitstop bei Ghosts ist immernoch mitten auf der Strecke und

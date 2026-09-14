@@ -1822,6 +1822,8 @@
       "yes",
     "nein":
       "no",
+    "voll":
+      "full",
     "weich":
       "soft",
     "mittel":
