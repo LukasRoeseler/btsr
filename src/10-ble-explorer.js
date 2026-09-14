@@ -1570,6 +1570,36 @@
       "How hard the car steers against a slide, measured from the rotation signal in byte 3 of the notifications. 50 per cent is the default that was asked for. What is uncertain about it, and it is two things at once: the signal is unconfirmed – it only varies once the car is moving, and flipped sign with cornering direction in exactly one recording. And it is uncalibrated: its scale is self-adjusting because the real amplitude is unknown. So the strength depends on the largest yaw value the session has seen so far. The “Drift probe” button under “Measure lateral offset” measures whether the signal moves at all under straight full throttle.",
     "Rennen":
       "Race",
+    "Danksagungen":
+      "Acknowledgements",
+    "Dieses Projekt steckt voller Dinge, die jemand anders herausgefunden, ausprobiert oder geduldig zurückgemeldet hat. Namentlich:":
+      "This project is full of things somebody else worked out, tried out or patiently reported back. By name:",
+    "Für das Feedback zum Steuern per RC-Funke über CH Control.":
+      "For the feedback on driving by RC transmitter through CH Control.",
+    "Fürs Teilen seines Wissens zu den Bluetooth-Protokollen.":
+      "For sharing his knowledge of the Bluetooth protocols.",
+    "Den Testern dort, für Rückmeldungen aus echten Rennen, die keine Simulation liefert.":
+      "To the testers there, for reports from real races that no simulation provides.",
+    "Woher die Klänge kommen":
+      "Where the sounds come from",
+    "Der allergrößte Teil der Klänge ist gerechnet und nicht aufgenommen: alle fünfundzwanzig Motoren mit ihren 132 Schleifen, dazu Bremsen- und Reifenquietschen, die Crash-Varianten, Schlagschrauber, Tankgeräusch, Karosseriereparatur und der Motorstart. Dort wird nichts abgespielt, sondern aus Zylinderzahl, Zündfolge und Krümmerlänge erzeugt.":
+      "The vast majority of the sounds are computed, not recorded: all twenty-five engines with their 132 loops, plus brake and tyre squeal, the crash variants, the impact wrench, the refuelling sound, the bodywork repair and the engine start. Nothing is played back there; it is generated from cylinder count, firing order and header length.",
+    "Die folgenden Klänge sind die Ausnahme: sie stammen aus echten Aufnahmen. Alle von Pixabay und unter der Pixabay-Lizenz, bis auf die eine eigene Aufnahme ganz unten. Die unbearbeiteten Quelldateien sind nicht Teil dieses Projekts.":
+      "The following sounds are the exception: they come from real recordings. All from Pixabay and under the Pixabay licence, except for the one own recording at the bottom. The unedited source files are not part of this project.",
+    "Hupen für die Lichthupe – sechs Aufnahmen, in dieser Reihenfolge Autohupe, Schiffshupe, Esel, Ziege und zwei Furztöne. Der letzte stammt von freesound community über Pixabay.":
+      "Horns for the headlight flash – six recordings, in this order car horn, ship horn, donkey, goat and two fart sounds. The last one is from freesound community via Pixabay.",
+    "Regen und Donner.":
+      "Rain and thunder.",
+    "Strecken-Ambience, also der Teppich und die Vorbeifahrten.":
+      "Track ambience, meaning the bed and the passing cars.",
+    "Der Motorklang der Corvette C6.":
+      "The engine sound of the Corvette C6.",
+    "Das Profil „Porsche (Aufnahme)“ ist keine Pixabay-Datei, sondern eine eigene Aufnahme. Es steht als eigenes Profil neben dem synthetischen Porsche, damit man beide vergleichen kann.":
+      "The profile “Porsche (recording)” is not a Pixabay file but an own recording. It sits as its own profile next to the synthetic Porsche so the two can be compared.",
+    "Das Motormodell folgt dem Ansatz von engine-sim unter der MIT-Lizenz; Zylinderzahlen, Drehzahlgrenzen und Kurbelwellenwinkel stammen aus dessen Motordefinitionen. Die vollständige Aufstellung mit allen Messwerten steht in der Datei CREDITS im Audio-Ordner.":
+      "The engine model follows the approach of engine-sim under the MIT licence; cylinder counts, rev limits and crankshaft angles come from its engine definitions. The full listing with all measurements is in the CREDITS file in the audio folder.",
+    "Code auf GitHub":
+      "Source on GitHub",
     "Zu wenige Runden für einen Verlauf. Ab der zweiten Runde wird hier gezeichnet.":
       "Too few laps for a chart. From the second lap on it is drawn here.",
     "Aus (Vorgabe): du steuerst ganz normal, dein Lenk-Input ist der Lenkwinkel – wie ohne diese App.":
