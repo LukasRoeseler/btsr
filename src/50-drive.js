@@ -1920,7 +1920,25 @@
              // Bei Gelb geradeaus - eine vorhersagbare Spur, damit man ein Auto von Hand
              // dazwischenstellen kann. In der Einfuehrungsrunde wie die Ghosts.
              steer: grund === 'formation' && typeof formationDriverOffset === 'function'
-               ? formationDriverOffset() : 0 };
+               ? formationDriverOffset() : 0,
+             // ---- OB ER UEBERHAUPT LENKEN DARF -------------------------------------
+             //
+             // Neben der Bahn nicht. Beide Werte, die er liefert - 0 bei Gelb und der
+             // Kolonnenversatz in der Einfuehrungsrunde -, sind QUERLAGEN und setzen
+             // voraus, dass das Auto sich selbst auf der Bahn haelt. Ohne Streckenlesung
+             // gehen die modeBytes nicht hinaus (spielerOrtTick, 90-ghosts.js), und dann
+             // liest das Auto dieselbe Null als RADSTELLUNG: es faehrt mit geraden Raedern
+             // weiter, und der Fahrer kann nichts dagegen tun.
+             //
+             // Genau das steht als Argument schon in der Doku ("ein Autopilot ohne
+             // Querregelung wuerde es geradeaus in die Bande fahren") - dort als Grund
+             // dafuer, dass der Autopilot im Ausdruck-Modus gar nicht anlaeuft. Neben der
+             // Bahn gilt es genauso, nur voruebergehend.
+             //
+             // GAS UND BREMSE BLEIBEN BEI IHM. Eine gelbe Flagge bleibt eine gelbe
+             // Flagge; hergegeben wird die Lenkung, damit man zurueckfahren kann, nicht
+             // die Tempobegrenzung.
+             lenkt: !abseitsJetzt() };
   }
 
   // ---- Abseits der Fahrbahn ----------------------------------------------------------
@@ -2079,7 +2097,12 @@
     // Bei gelber Flagge und in der Einfuehrungsrunde faehrt das Auto selbst. Siehe
     // autopilotGrund() fuer die zwei Gruende und autopilot() fuer die Regelung.
     const ap = autopilot(rawBrake);
-    if (ap) { rawThrottle = ap.throttle; rawBrake = ap.brake; steer = ap.steer; }
+    if (ap) {
+      rawThrottle = ap.throttle;
+      rawBrake = ap.brake;
+      // Die Lenkung nur, wenn er sie fuehren DARF - siehe `lenkt` in autopilot().
+      if (ap.lenkt) steer = ap.steer;
+    }
     // Abseits der Bahn gedeckelt, und zwar VOR der Physik. Genau das war der Fehler beim
     // Gasfaktor: er wirkte nach der Physik auf die Ausgabe, der Tacho zeigte volles Tempo
     // und das Auto fuhr langsamer. Hier sagen Anzeige und Auto dasselbe.

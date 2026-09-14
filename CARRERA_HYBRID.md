@@ -238,6 +238,7 @@ einzige Aktor in der Tabelle oben, der das tut:
 |---|---|---|
 | Gelbe Flagge | 80 km/h, mittig | null, damit die Spur vorhersagbar bleibt |
 | Einfuehrungsrunde (fliegender Start) | Boxentempo | Schlaengeln plus die Seite des Startplatzes |
+| … dabei neben der Bahn | unveraendert | **beim Fahrer** – siehe unten |
 
 Beides laeuft ueber `autopilotGrund()` in `src/50-drive.js`, das den GRUND zurueckgibt und
 nicht nur ein Ja: die Flaggenanzeige braucht ihn auch, und sie hatte die Bedingung bis
@@ -253,6 +254,18 @@ Eingaben, und es bleibt bei einem Sender, einer Physik und einer Anzeige.
 Ausdruck-Modus haelt sich das Auto nicht selbst auf der Bahn; ein Autopilot ohne
 Querregelung wuerde es geradeaus in die Bande fahren. Deshalb steigt `autopilotGrund()` bei
 `trackMode !== 'on'` aus, in beiden Lagen.
+
+**Und nur, solange das Auto die Bahn wirklich liest.** Dasselbe Argument gilt naemlich auch
+voruebergehend: liegt das Auto neben der Bahn, meldet Byte 12 keinen Code mehr, die
+modeBytes gehen nicht hinaus, und das Auto liest den Lenkwert wieder als Radstellung statt
+als Querlage. Ein Autopilot, der dann weiter „geradeaus" vorgibt, stellt die Raeder gerade –
+und der Fahrer kann nicht zurueckfahren. Seit v0.6.28 gibt der Autopilot in diesem Fall die
+LENKUNG her und behaelt Gas und Bremse: eine gelbe Flagge bleibt eine gelbe Flagge, aber
+lenken darf, wer es kann. Dieselbe Bedingung schaltet die drei Fahrhilfe-Modi zurueck.
+
+Gemessen wird das ueber `abseitsJetzt()` in `src/50-drive.js`, also entprellt: Byte 12
+flattert, und ein einzelnes 0x00 zwischen guten Lesungen ist Rauschen. Die Uebergabe braucht
+deshalb `offtrackEinMs`, ab Werk eine Sekunde.
 
 **Die Bremse des Fahrers gewinnt - in der Einfuehrungsrunde.** Dort rollt das Feld in zwei
 Kolonnen dicht hintereinander, und ein Auto, das man nicht anhalten kann, ist ein Auto, das

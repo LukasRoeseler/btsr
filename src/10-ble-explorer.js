@@ -943,6 +943,8 @@
       "Control mode",
     "Fahrhilfe, Fahrwerk, Getriebe, Masse und Reifen, Lenkung.":
       "Driver aid, suspension, gearbox, mass and tyres, steering.",
+    "Und sobald das Auto keinen Streckencode mehr liest – weil es neben der Bahn liegt –, bekommst du die volle Kontrolle zurück, damit du selbst zurückfahren kannst. Das gilt auch bei gelber Flagge: dort bleibt nur das Tempo gedrosselt, gelenkt wird von dir. Die Umschaltung braucht die Entprellzeit aus „Abseits: Verzögerung“ (ab Werk eine Sekunde), weil ein einzelner Aussetzer beim Überfahren einer Kachelkante sonst als Abflug gelesen würde.":
+      "And as soon as the car stops reading a track code – because it is off the track – you get full control back, so you can drive it back yourself. This applies under a yellow flag too: there only the speed stays limited, the steering is yours. The handover needs the debounce time from “Off-track: delay” (one second by default), because otherwise a single dropout while crossing a tile edge would read as leaving the track.",
     "Stoppen": "Stop",
     "Strecke aus Teilen bauen, drehen, als Code weitergeben. Alle elf Teiletypen der Original-App sind dabei, auch die Engstelle.":
       "Build a track from pieces, rotate it, pass it on as a code. All eleven piece types from the original app are included, the narrow section too.",

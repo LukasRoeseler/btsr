@@ -1997,6 +1997,7 @@
       if (!el) return null;
       const merk = { wert: el.value, flag: flagState, formation: raceFormationLap,
                      auto: playerCar,
+                     abseits: offtrackAktiv,
                      bytes: playerCar ? playerCar.modeBytes : undefined };
       const stellen = (v) => {
         el.value = v;
@@ -2030,6 +2031,33 @@
                        ? fahrhilfeVollGilt() : null };
           };
           je[modus] = { mitBytes: messen({ 10: 1, 15: 1 }), ohneBytes: messen(null) };
+
+          // ---- UND DIE ZWEITE ACHSE: liest das Auto ueberhaupt? ------------------
+          //
+          // BESTELLT: "Wenn das Auto selbst keine Strecke liest und ein Fahrhilfe modus
+          // an ist, gib mir die volle Kontrolle."
+          //
+          // GESETZT WIRD offtrackAktiv DIREKT und nicht ueber offtrackMelden(): die
+          // Entprellung braucht offtrackEinMs (ab Werk eine Sekunde) echter Zeit, und ein
+          // Prueflauf, der eine Sekunde wartet, wird nicht mehr gestartet. Geprueft wird
+          // hier die WIRKUNG des Zustands, nicht die Entprellung - die hat ihren eigenen
+          // Test.
+          offtrackAktiv = true;
+          if (playerCar) playerCar.modeBytes = { 10: 1, 15: 1 };
+          je[modus].abseits = {
+            // Gehen die modeBytes jetzt noch hinaus? Gefragt wird die Bedingung, die
+            // spielerOrtTick stellt - nachgebaut, weil sie dort in einem Zeitgeber steht.
+            bytesGehenRaus: trackMode === 'on' && driverAssistAktiv() && !abseitsJetzt(),
+            // Und lenkt der Autopilot noch? Das ist die zweite Haelfte der Bestellung.
+            apLenkt: (() => {
+              const merkFlag = flagState;
+              flagState = 'yellow';
+              const ap = autopilot(0);
+              flagState = merkFlag;
+              return ap ? !!ap.lenkt : null;
+            })(),
+          };
+          offtrackAktiv = false;
         }
         // Und die ODER-Haelfte: auf 'aus' gestellt muss der Autopilot trotzdem greifen,
         // wenn eine gelbe Flagge das verlangt.
@@ -2037,9 +2065,14 @@
         if (playerCar) playerCar.modeBytes = null;
         flagState = 'yellow';
         const trotzAus = driverAssistAktiv();
+        // MIT Lesung muss er lenken - sonst prueft die Zeile darueber nur, dass er es
+        // nie tut, und die ganze Unterscheidung waere leer.
+        const apLenktMitLesung = (() => { const ap = autopilot(0);
+                                          return ap ? !!ap.lenkt : null; })();
         return {
           je,
           trotzAus,
+          apLenktMitLesung,
           modi: FAHRHILFE_MODI.slice(),
           // Steht 'aus' im Markup vorgewaehlt? Das ist die Vorgabe, und sie stammt aus
           // dem Bedienelement - nicht aus einer Zuweisung im Skript.
@@ -2052,6 +2085,7 @@
         playerCar = merk.auto;
         flagState = merk.flag;
         raceFormationLap = merk.formation;
+        offtrackAktiv = merk.abseits;
       }
     },
 

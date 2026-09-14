@@ -7568,7 +7568,7 @@
   // Und der letzte Teil ist die Garantie aus v0.5.53: eine gelbe Flagge haelt das Auto
   // selbst, EGAL welcher Modus gewaehlt ist - sonst koennte diese Einstellung die
   // Gelbphasen-Regelung abschalten, was niemand bestellt hat.
-  stAdd('Fahrhilfe: drei Modi, und aus bleibt aus', () => {
+  stAdd('Fahrhilfe: drei Modi, aus bleibt aus, und ohne Streckenlesung lenkt der Fahrer', () => {
     if (!window.OMEGA_TEST || !OMEGA_TEST.driverAssistToggleProbe) {
       return { skip: true, mass: 'driverAssistToggleProbe nicht vorhanden' };
     }
@@ -7610,6 +7610,31 @@
       fehler.push('auf aus + gelbe Flagge: nicht aktiv (' + r.trotzAus + ')');
     }
 
+    // ---- 4b. LIEST DAS AUTO NICHTS, GEHOERT ALLES DEM FAHRER -------------------
+    //
+    // BESTELLT: "Wenn das Auto selbst keine Strecke liest und ein Fahrhilfe modus an ist,
+    // gib mir die volle Kontrolle, damit ich selbst zurueck auf die Strecke fahren kann."
+    //
+    // In JEDEM Modus geprueft, auch in 'aus' - dort ist es ohnehin so, und ein Test, der
+    // nur die zwei aktiven Modi prueft, wuerde eine Regression im Standard nicht sehen.
+    for (const m of ['aus', 'quer', 'voll']) {
+      const a = r.je[m].abseits;
+      if (!a) { fehler.push(m + ': Sonde meldet den Abseits-Fall nicht'); continue; }
+      if (a.bytesGehenRaus !== false) {
+        fehler.push(m + ': neben der Bahn gehen die modeBytes weiter hinaus');
+      }
+      if (a.apLenkt !== false) {
+        fehler.push(m + ': neben der Bahn lenkt der Autopilot weiter');
+      }
+    }
+    // UND DIE GEGENPROBE, ohne die der Block darueber nichts wert ist: mit Lesung MUSS
+    // der Autopilot lenken. Sonst waere "lenkt nicht" kein Rueckfall, sondern ein
+    // Autopilot, der nie lenkt.
+    if (r.apLenktMitLesung !== true) {
+      fehler.push('der Autopilot lenkt auch MIT Streckenlesung nicht ('
+                  + r.apLenktMitLesung + ') - dann prueft der Abseits-Fall nichts');
+    }
+
     // ---- 5. Drei Modi, nicht zwei und nicht vier -------------------------------
     if (r.auswahl.length !== 3 || r.modi.length !== 3) {
       fehler.push('Auswahl ' + JSON.stringify(r.auswahl)
@@ -7628,6 +7653,11 @@
                  + ' voll=' + r.je.voll.mitBytes.vollGilt
                  + ' (ohne Streckendaten ' + r.je.voll.ohneBytes.vollGilt + ')'
                  + ' | aus+gelb=' + r.trotzAus
+                 + ' | neben der Bahn: Bytes '
+                 + ['aus', 'quer', 'voll'].map((m) => r.je[m].abseits.bytesGehenRaus).join('/')
+                 + ', Autopilot lenkt '
+                 + ['aus', 'quer', 'voll'].map((m) => r.je[m].abseits.apLenkt).join('/')
+                 + ' (mit Lesung ' + r.apLenktMitLesung + ')'
                  + ' | Vorgabe ' + JSON.stringify(r.vorgabe)
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });

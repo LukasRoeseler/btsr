@@ -3933,7 +3933,24 @@
     // urspruenglich gedacht). Ausserhalb beider Faelle hat er keine Bedeutung: das Auto
     // haelt sich dann nicht selbst, und die Bytes 16-18 waeren eine Angabe an eine
     // Funktion, die nicht laeuft.
-    if (trackMode === 'on' && driverAssistAktiv()) {
+    // ---- UND NICHT, WENN DAS AUTO NEBEN DER BAHN LIEGT --------------------------
+    //
+    // BESTELLT: "Wenn das Auto selbst keine Strecke liest und ein Fahrhilfe modus an ist,
+    // gib mir die volle Kontrolle, damit ich selbst zurueck auf die Strecke fahren kann."
+    //
+    // abseitsJetzt() (50-drive.js) ist genau diese Tatsache, und zwar ENTPRELLT: Byte 12
+    // flattert, ein einzelnes 0x00 zwischen guten Lesungen ist Rauschen. Die Uebergabe
+    // braucht deshalb offtrackEinMs (ab Werk 1 s) - das steht im Hilfetext.
+    //
+    // ES PASST ZUR BEGRUENDUNG, DIE HIER SCHON STAND: ohne Lesung haelt sich das Auto
+    // nicht selbst, und die Bytes 16-18 waeren "eine Angabe an eine Funktion, die nicht
+    // laeuft". Neben der Bahn ist genau das der Fall - nur merkt man es dort, weil man
+    // zurueckfahren will und nicht kann.
+    //
+    // WAS DARAUS VON SELBST FOLGT, ohne eine zweite Bedingung: fahrhilfeVollGilt() liest
+    // playerCar.modeBytes und rechnet die Bedingung nicht nach. Sind die Bytes weg, gibt
+    // auch der Modus 'voll' die Lenkung her. Genau dafuer ist es so gebaut.
+    if (trackMode === 'on' && driverAssistAktiv() && !abseitsJetzt()) {
       const la = ghostLookahead(playerCar);
       playerCar.modeBytes = la
         ? Object.assign({ 10: AUTO_MODE.b10, 15: AUTO_MODE.b15 }, la)

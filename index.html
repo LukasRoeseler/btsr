@@ -6682,6 +6682,13 @@
           Ausdruck). Ohne beides steuerst du normal weiter &ndash; auch in Voll, denn ohne
           die Streckendaten w&uuml;rde ein Auto mit gerade gestellten R&auml;dern in die
           Bande fahren.
+          <br>Und sobald das Auto keinen Streckencode mehr liest &ndash; weil es neben der
+          Bahn liegt &ndash;, bekommst du die volle Kontrolle zur&uuml;ck, damit du selbst
+          zur&uuml;ckfahren kannst. Das gilt auch bei gelber Flagge: dort bleibt nur das
+          Tempo gedrosselt, gelenkt wird von dir. Die Umschaltung braucht die
+          Entprellzeit aus &bdquo;Abseits: Verz&ouml;gerung&ldquo; (ab Werk eine Sekunde),
+          weil ein einzelner Aussetzer beim &Uuml;berfahren einer Kachelkante sonst als
+          Abflug gelesen w&uuml;rde.
           <br>Bei gelber Flagge oder in der Einf&uuml;hrungsrunde h&auml;lt sich das Auto
           unabh&auml;ngig von dieser Einstellung selbst &ndash; das braucht die Regelung
           dort, damit sie greifen kann.</small></div>
@@ -8177,7 +8184,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.6.27</span></span>
+    <span class="foot-ver">v<span id="app-version">0.6.28</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -9155,6 +9162,8 @@
       "Control mode",
     "Fahrhilfe, Fahrwerk, Getriebe, Masse und Reifen, Lenkung.":
       "Driver aid, suspension, gearbox, mass and tyres, steering.",
+    "Und sobald das Auto keinen Streckencode mehr liest – weil es neben der Bahn liegt –, bekommst du die volle Kontrolle zurück, damit du selbst zurückfahren kannst. Das gilt auch bei gelber Flagge: dort bleibt nur das Tempo gedrosselt, gelenkt wird von dir. Die Umschaltung braucht die Entprellzeit aus „Abseits: Verzögerung“ (ab Werk eine Sekunde), weil ein einzelner Aussetzer beim Überfahren einer Kachelkante sonst als Abflug gelesen würde.":
+      "And as soon as the car stops reading a track code – because it is off the track – you get full control back, so you can drive it back yourself. This applies under a yellow flag too: there only the speed stays limited, the steering is yours. The handover needs the debounce time from “Off-track: delay” (one second by default), because otherwise a single dropout while crossing a tile edge would read as leaving the track.",
     "Stoppen": "Stop",
     "Strecke aus Teilen bauen, drehen, als Code weitergeben. Alle elf Teiletypen der Original-App sind dabei, auch die Engstelle.":
       "Build a track from pieces, rotate it, pass it on as a code. All eleven piece types from the original app are included, the narrow section too.",
@@ -15531,7 +15540,25 @@
              // Bei Gelb geradeaus - eine vorhersagbare Spur, damit man ein Auto von Hand
              // dazwischenstellen kann. In der Einfuehrungsrunde wie die Ghosts.
              steer: grund === 'formation' && typeof formationDriverOffset === 'function'
-               ? formationDriverOffset() : 0 };
+               ? formationDriverOffset() : 0,
+             // ---- OB ER UEBERHAUPT LENKEN DARF -------------------------------------
+             //
+             // Neben der Bahn nicht. Beide Werte, die er liefert - 0 bei Gelb und der
+             // Kolonnenversatz in der Einfuehrungsrunde -, sind QUERLAGEN und setzen
+             // voraus, dass das Auto sich selbst auf der Bahn haelt. Ohne Streckenlesung
+             // gehen die modeBytes nicht hinaus (spielerOrtTick, 90-ghosts.js), und dann
+             // liest das Auto dieselbe Null als RADSTELLUNG: es faehrt mit geraden Raedern
+             // weiter, und der Fahrer kann nichts dagegen tun.
+             //
+             // Genau das steht als Argument schon in der Doku ("ein Autopilot ohne
+             // Querregelung wuerde es geradeaus in die Bande fahren") - dort als Grund
+             // dafuer, dass der Autopilot im Ausdruck-Modus gar nicht anlaeuft. Neben der
+             // Bahn gilt es genauso, nur voruebergehend.
+             //
+             // GAS UND BREMSE BLEIBEN BEI IHM. Eine gelbe Flagge bleibt eine gelbe
+             // Flagge; hergegeben wird die Lenkung, damit man zurueckfahren kann, nicht
+             // die Tempobegrenzung.
+             lenkt: !abseitsJetzt() };
   }
 
   // ---- Abseits der Fahrbahn ----------------------------------------------------------
@@ -15690,7 +15717,12 @@
     // Bei gelber Flagge und in der Einfuehrungsrunde faehrt das Auto selbst. Siehe
     // autopilotGrund() fuer die zwei Gruende und autopilot() fuer die Regelung.
     const ap = autopilot(rawBrake);
-    if (ap) { rawThrottle = ap.throttle; rawBrake = ap.brake; steer = ap.steer; }
+    if (ap) {
+      rawThrottle = ap.throttle;
+      rawBrake = ap.brake;
+      // Die Lenkung nur, wenn er sie fuehren DARF - siehe `lenkt` in autopilot().
+      if (ap.lenkt) steer = ap.steer;
+    }
     // Abseits der Bahn gedeckelt, und zwar VOR der Physik. Genau das war der Fehler beim
     // Gasfaktor: er wirkte nach der Physik auf die Ausgabe, der Tacho zeigte volles Tempo
     // und das Auto fuhr langsamer. Hier sagen Anzeige und Auto dasselbe.
@@ -29758,7 +29790,24 @@
     // urspruenglich gedacht). Ausserhalb beider Faelle hat er keine Bedeutung: das Auto
     // haelt sich dann nicht selbst, und die Bytes 16-18 waeren eine Angabe an eine
     // Funktion, die nicht laeuft.
-    if (trackMode === 'on' && driverAssistAktiv()) {
+    // ---- UND NICHT, WENN DAS AUTO NEBEN DER BAHN LIEGT --------------------------
+    //
+    // BESTELLT: "Wenn das Auto selbst keine Strecke liest und ein Fahrhilfe modus an ist,
+    // gib mir die volle Kontrolle, damit ich selbst zurueck auf die Strecke fahren kann."
+    //
+    // abseitsJetzt() (50-drive.js) ist genau diese Tatsache, und zwar ENTPRELLT: Byte 12
+    // flattert, ein einzelnes 0x00 zwischen guten Lesungen ist Rauschen. Die Uebergabe
+    // braucht deshalb offtrackEinMs (ab Werk 1 s) - das steht im Hilfetext.
+    //
+    // ES PASST ZUR BEGRUENDUNG, DIE HIER SCHON STAND: ohne Lesung haelt sich das Auto
+    // nicht selbst, und die Bytes 16-18 waeren "eine Angabe an eine Funktion, die nicht
+    // laeuft". Neben der Bahn ist genau das der Fall - nur merkt man es dort, weil man
+    // zurueckfahren will und nicht kann.
+    //
+    // WAS DARAUS VON SELBST FOLGT, ohne eine zweite Bedingung: fahrhilfeVollGilt() liest
+    // playerCar.modeBytes und rechnet die Bedingung nicht nach. Sind die Bytes weg, gibt
+    // auch der Modus 'voll' die Lenkung her. Genau dafuer ist es so gebaut.
+    if (trackMode === 'on' && driverAssistAktiv() && !abseitsJetzt()) {
       const la = ghostLookahead(playerCar);
       playerCar.modeBytes = la
         ? Object.assign({ 10: AUTO_MODE.b10, 15: AUTO_MODE.b15 }, la)
@@ -35706,6 +35755,7 @@
       if (!el) return null;
       const merk = { wert: el.value, flag: flagState, formation: raceFormationLap,
                      auto: playerCar,
+                     abseits: offtrackAktiv,
                      bytes: playerCar ? playerCar.modeBytes : undefined };
       const stellen = (v) => {
         el.value = v;
@@ -35739,6 +35789,33 @@
                        ? fahrhilfeVollGilt() : null };
           };
           je[modus] = { mitBytes: messen({ 10: 1, 15: 1 }), ohneBytes: messen(null) };
+
+          // ---- UND DIE ZWEITE ACHSE: liest das Auto ueberhaupt? ------------------
+          //
+          // BESTELLT: "Wenn das Auto selbst keine Strecke liest und ein Fahrhilfe modus
+          // an ist, gib mir die volle Kontrolle."
+          //
+          // GESETZT WIRD offtrackAktiv DIREKT und nicht ueber offtrackMelden(): die
+          // Entprellung braucht offtrackEinMs (ab Werk eine Sekunde) echter Zeit, und ein
+          // Prueflauf, der eine Sekunde wartet, wird nicht mehr gestartet. Geprueft wird
+          // hier die WIRKUNG des Zustands, nicht die Entprellung - die hat ihren eigenen
+          // Test.
+          offtrackAktiv = true;
+          if (playerCar) playerCar.modeBytes = { 10: 1, 15: 1 };
+          je[modus].abseits = {
+            // Gehen die modeBytes jetzt noch hinaus? Gefragt wird die Bedingung, die
+            // spielerOrtTick stellt - nachgebaut, weil sie dort in einem Zeitgeber steht.
+            bytesGehenRaus: trackMode === 'on' && driverAssistAktiv() && !abseitsJetzt(),
+            // Und lenkt der Autopilot noch? Das ist die zweite Haelfte der Bestellung.
+            apLenkt: (() => {
+              const merkFlag = flagState;
+              flagState = 'yellow';
+              const ap = autopilot(0);
+              flagState = merkFlag;
+              return ap ? !!ap.lenkt : null;
+            })(),
+          };
+          offtrackAktiv = false;
         }
         // Und die ODER-Haelfte: auf 'aus' gestellt muss der Autopilot trotzdem greifen,
         // wenn eine gelbe Flagge das verlangt.
@@ -35746,9 +35823,14 @@
         if (playerCar) playerCar.modeBytes = null;
         flagState = 'yellow';
         const trotzAus = driverAssistAktiv();
+        // MIT Lesung muss er lenken - sonst prueft die Zeile darueber nur, dass er es
+        // nie tut, und die ganze Unterscheidung waere leer.
+        const apLenktMitLesung = (() => { const ap = autopilot(0);
+                                          return ap ? !!ap.lenkt : null; })();
         return {
           je,
           trotzAus,
+          apLenktMitLesung,
           modi: FAHRHILFE_MODI.slice(),
           // Steht 'aus' im Markup vorgewaehlt? Das ist die Vorgabe, und sie stammt aus
           // dem Bedienelement - nicht aus einer Zuweisung im Skript.
@@ -35761,6 +35843,7 @@
         playerCar = merk.auto;
         flagState = merk.flag;
         raceFormationLap = merk.formation;
+        offtrackAktiv = merk.abseits;
       }
     },
 
@@ -47424,7 +47507,7 @@
   // Und der letzte Teil ist die Garantie aus v0.5.53: eine gelbe Flagge haelt das Auto
   // selbst, EGAL welcher Modus gewaehlt ist - sonst koennte diese Einstellung die
   // Gelbphasen-Regelung abschalten, was niemand bestellt hat.
-  stAdd('Fahrhilfe: drei Modi, und aus bleibt aus', () => {
+  stAdd('Fahrhilfe: drei Modi, aus bleibt aus, und ohne Streckenlesung lenkt der Fahrer', () => {
     if (!window.OMEGA_TEST || !OMEGA_TEST.driverAssistToggleProbe) {
       return { skip: true, mass: 'driverAssistToggleProbe nicht vorhanden' };
     }
@@ -47466,6 +47549,31 @@
       fehler.push('auf aus + gelbe Flagge: nicht aktiv (' + r.trotzAus + ')');
     }
 
+    // ---- 4b. LIEST DAS AUTO NICHTS, GEHOERT ALLES DEM FAHRER -------------------
+    //
+    // BESTELLT: "Wenn das Auto selbst keine Strecke liest und ein Fahrhilfe modus an ist,
+    // gib mir die volle Kontrolle, damit ich selbst zurueck auf die Strecke fahren kann."
+    //
+    // In JEDEM Modus geprueft, auch in 'aus' - dort ist es ohnehin so, und ein Test, der
+    // nur die zwei aktiven Modi prueft, wuerde eine Regression im Standard nicht sehen.
+    for (const m of ['aus', 'quer', 'voll']) {
+      const a = r.je[m].abseits;
+      if (!a) { fehler.push(m + ': Sonde meldet den Abseits-Fall nicht'); continue; }
+      if (a.bytesGehenRaus !== false) {
+        fehler.push(m + ': neben der Bahn gehen die modeBytes weiter hinaus');
+      }
+      if (a.apLenkt !== false) {
+        fehler.push(m + ': neben der Bahn lenkt der Autopilot weiter');
+      }
+    }
+    // UND DIE GEGENPROBE, ohne die der Block darueber nichts wert ist: mit Lesung MUSS
+    // der Autopilot lenken. Sonst waere "lenkt nicht" kein Rueckfall, sondern ein
+    // Autopilot, der nie lenkt.
+    if (r.apLenktMitLesung !== true) {
+      fehler.push('der Autopilot lenkt auch MIT Streckenlesung nicht ('
+                  + r.apLenktMitLesung + ') - dann prueft der Abseits-Fall nichts');
+    }
+
     // ---- 5. Drei Modi, nicht zwei und nicht vier -------------------------------
     if (r.auswahl.length !== 3 || r.modi.length !== 3) {
       fehler.push('Auswahl ' + JSON.stringify(r.auswahl)
@@ -47484,6 +47592,11 @@
                  + ' voll=' + r.je.voll.mitBytes.vollGilt
                  + ' (ohne Streckendaten ' + r.je.voll.ohneBytes.vollGilt + ')'
                  + ' | aus+gelb=' + r.trotzAus
+                 + ' | neben der Bahn: Bytes '
+                 + ['aus', 'quer', 'voll'].map((m) => r.je[m].abseits.bytesGehenRaus).join('/')
+                 + ', Autopilot lenkt '
+                 + ['aus', 'quer', 'voll'].map((m) => r.je[m].abseits.apLenkt).join('/')
+                 + ' (mit Lesung ' + r.apLenktMitLesung + ')'
                  + ' | Vorgabe ' + JSON.stringify(r.vorgabe)
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
