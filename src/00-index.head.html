@@ -4303,7 +4303,9 @@
         <tr><td><strong>14</strong></td><td>Bitfeld</td><td><strong>Licht und Betriebsart.</strong> Bit&nbsp;1 (<code>0x02</code>) = Standlicht, Bit&nbsp;0 (<code>0x01</code>) = Bremslicht</td><td class="doc-sure">belegt</td></tr>
         <tr><td></td><td>Bit&nbsp;5 <code>0x20</code></td><td><strong>Auf der Bahn</strong>: Streckensensor an, Auto h&auml;lt sich selbst auf der Bahn. 87&nbsp;% Kachelwechsel gegen 7&nbsp;% ohne</td><td class="doc-sure">belegt</td></tr>
         <tr><td></td><td>Bit&nbsp;7 <code>0x80</code></td><td><strong>Ohne Bahn</strong>: Sensor AUS, Byte&nbsp;12 bleibt <code>0xff</code>. 0 Lesungen in 551 Fahrmeldungen</td><td class="doc-sure">belegt</td></tr>
-        <tr><td></td><td>Bit&nbsp;6 <code>0x40</code></td><td>kommt in beiden Betriebsarten vor, Bedeutung offen. Wir lassen es auf&nbsp;0</td><td class="doc-unknown">unbekannt</td></tr>
+        <tr><td></td><td>Bit&nbsp;2 <code>0x04</code></td><td><strong>Blinklicht.</strong> Am Auto erprobt (Paketvarianten-Pr&uuml;fstand, Entwicklertools): mit gesetztem Standlicht-Bit l&auml;sst dieses Bit den Scheinwerfer BLINKEN statt dauerhaft zu leuchten. Keine Helligkeitsstufe &ndash; eine eigene Betriebsart des Lichts</td><td class="doc-sure">belegt</td></tr>
+        <tr><td></td><td>Bit&nbsp;3 <code>0x08</code>, Bit&nbsp;4 <code>0x10</code></td><td>am Auto erprobt: kein sichtbarer Unterschied zum normal leuchtenden Licht. Keine zweite Helligkeitsstufe gefunden</td><td class="doc-sure">erprobt, ohne sichtbare Wirkung</td></tr>
+        <tr><td></td><td>Bit&nbsp;6 <code>0x40</code></td><td>kommt in beiden Betriebsarten vor. Am Auto erprobt: kein sichtbarer Unterschied zum normal leuchtenden Licht. Wir lassen es auf&nbsp;0</td><td class="doc-sure">erprobt, ohne sichtbare Wirkung</td></tr>
         <tr><td>15</td><td><code>0x04</code></td><td>konstant</td><td class="doc-sure">belegt</td></tr>
         <tr><td>16&ndash;18</td><td><code>0x00</code></td><td>ungenutzt</td><td class="doc-sure">belegt</td></tr>
         <tr><td>19</td><td>CRC-8</td><td>Polynom <code>0x31</code>, Startwert <code>0xFF</code>, &uuml;ber Byte&nbsp;0&ndash;18</td><td class="doc-sure">belegt</td></tr>
@@ -8212,7 +8214,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.6.30</span></span>
+    <span class="foot-ver">v<span id="app-version">0.6.31</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine

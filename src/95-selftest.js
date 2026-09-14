@@ -7746,6 +7746,56 @@
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
+  // ---- Ein stehendes Auto rutscht nicht quer ----
+  //
+  // BESTELLT: "Autos koennen nicht quer hin und herrutschen. Sie sollten sich entsprechend
+  // der angegebenen Regeln verhalten, aber auch nur die Querlage wechseln, wenn sie sich
+  // vorwaerts bewegen."
+  //
+  // BEFUND: querMax (die Ratenbegrenzung der Querlage) und der Kartennachlauf querSoll
+  // hingen beide nur an ghostCfg.querTempo und der vergangenen ZEIT - ein Auto bei 0 km/h
+  // wechselte seine Querlage genauso schnell wie eines bei Vollgas. Der Code kannte die
+  // Regel schon (siehe der Kommentar bei PIT_RAND_MS: "ein stehendes Auto bewegt sich nicht
+  // zur Seite, egal was im Lenkbyte steht"), war aber nur als Zeitphase vor dem Ausweichen
+  // umgesetzt, nicht in der Rechnung selbst.
+  //
+  // Behoben: beide Raten skalieren jetzt mit min(1, Tempo / GHOST_READ_MIN) - bei 0 km/h
+  // frieren sie vollstaendig ein, ab der Leseschwelle (0,35) gilt die volle, unveraenderte
+  // Rate wie zuvor.
+  stAdd('Querlage: ein stehendes Auto rutscht nicht, ein fahrendes schon', async () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.querlageStillstandProbe) {
+      return { skip: true, mass: 'querlageStillstandProbe nicht vorhanden' };
+    }
+    const still = await OMEGA_TEST.querlageStillstandProbe({ takte: 150 });
+    const fahren = await OMEGA_TEST.querlageStillstandProbe({ takte: 150, fahren: true });
+    if (!still || !fahren) return { skip: true, mass: 'kein Lauf' };
+    const fehler = [];
+    // 1. WIRKLICH STEHEND, sonst pruefte die Sonde ihre eigene Annahme nicht.
+    if (still.tempoMax !== 0) fehler.push('Sonde hat nicht wirklich 0 km/h gehalten');
+    // 2. UND DANN BEWEGT SICH NICHTS - weder das Servo-Ziel (querIst) noch der
+    //    Kartennachlauf (querSoll), ab dem zweiten Takt (der erste darf springen, siehe
+    //    oben: ein Auto muss irgendwo anfangen).
+    if (still.spanneIst !== 0) {
+      fehler.push('querIst rutscht im Stand um ' + still.spanneIst);
+    }
+    if (still.spanneSoll !== 0) {
+      fehler.push('querSoll rutscht im Stand um ' + still.spanneSoll);
+    }
+    // 3. GEGENPROBE: ein wirklich fahrendes Auto bewegt seine Querlage weiterhin - sonst
+    //    waere der Test oben aus dem falschen Grund gruen (er misst nichts, ueberhaupt).
+    if (!(fahren.tempoMax > 0.3)) {
+      fehler.push('Gegenprobe faehrt nicht (Tempo ' + fahren.tempoMax + ')');
+    }
+    if (!(fahren.spanneSoll > 0)) {
+      fehler.push('Gegenprobe: querSoll bewegt sich auch beim Fahren nicht');
+    }
+    return { ok: !fehler.length,
+             mass: 'im Stand: querIst-Spanne ' + still.spanneIst + ', querSoll-Spanne '
+                 + still.spanneSoll + ' | fahrend (Tempo ' + fahren.tempoMax.toFixed(2)
+                 + '): querSoll-Spanne ' + fahren.spanneSoll.toFixed(3)
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
   // ---- Die Anzeigetexte der Schieberegler sagen die Wahrheit ----
   //
   // NICHT BESTELLT, SONDERN AUFGEFALLEN, beim Zusammentragen der Zahlen fuer die

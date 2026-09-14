@@ -763,6 +763,31 @@ Manche Details lassen sich nur aus dem beobachteten Verhalten ableiten, nicht mi
 
 Diese Lücken ändern nichts am Grundprinzip: Ein Sensor liest die Strecke, ein Funkchip verbindet Auto und Handy, und die eigentliche Fahrphysik läuft im Auto selbst.
 
+### Byte 14, die restlichen Bits — erprobt am Auto, und die Antwort ist: kein Fernlicht
+
+Gefragt war, ob sich zwei Helligkeitsstufen (Abblend- und Fernlicht) bauen lassen. Byte 14
+hat ein einziges bestätigtes Scheinwerfer-Bit (Bit 1); vier weitere Bits waren nie gesetzt
+worden und standen offen — Bit 6 als "kommt in beiden Betriebsarten vor, Bedeutung offen",
+Bits 2 bis 4 als komplett unerprobt.
+
+Vier Paketvarianten im Mustererkennungs-Prüfstand (Entwicklertools) haben sie einzeln
+durchprobiert, jede mit gesetztem Scheinwerfer-Bit, am echten Auto:
+
+| Bit | Ergebnis |
+|---|---|
+| 2 (`0x04`) | **Das Licht blinkt.** Reproduzierbar — zweimal am selben Abend getestet, beide Male dasselbe Ergebnis. Keine Helligkeitsstufe, eine eigene Betriebsart. |
+| 3 (`0x08`) | Kein sichtbarer Unterschied zum normal leuchtenden Licht. |
+| 4 (`0x10`) | Kein sichtbarer Unterschied zum normal leuchtenden Licht. |
+| 6 (`0x40`) | Kein sichtbarer Unterschied zum normal leuchtenden Licht. |
+
+**Ergebnis: keine zwei Helligkeitsstufen gefunden.** Abblend-/Fernlicht ist mit diesem
+Protokoll nicht zu bauen — dafür wäre ein Bit nötig, das die Helligkeit sichtbar ändert statt
+zwischen "an", "aus" und "blinkt" zu wählen, und keines der vier unbekannten Bits tut das.
+
+Das **Blinklicht** (Bit 2) ist dagegen eine echte, bisher ungenutzte Fähigkeit — ein
+möglicher Baustein für eine Warnblinker- oder Notlicht-Funktion, sollte sie einmal bestellt
+werden. Bis dahin bleibt es unbenutzt, dokumentiert und nachgewiesen.
+
 ### Wieviel Querversatz vertraegt die Bahn? Gemessen — und die Antwort ist: keine Grenze
 
 Gefragt war, wie hoch der Lenkwert werden darf, bevor der Streckensensor abreisst — also

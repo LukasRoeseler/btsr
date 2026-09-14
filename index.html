@@ -4303,7 +4303,9 @@
         <tr><td><strong>14</strong></td><td>Bitfeld</td><td><strong>Licht und Betriebsart.</strong> Bit&nbsp;1 (<code>0x02</code>) = Standlicht, Bit&nbsp;0 (<code>0x01</code>) = Bremslicht</td><td class="doc-sure">belegt</td></tr>
         <tr><td></td><td>Bit&nbsp;5 <code>0x20</code></td><td><strong>Auf der Bahn</strong>: Streckensensor an, Auto h&auml;lt sich selbst auf der Bahn. 87&nbsp;% Kachelwechsel gegen 7&nbsp;% ohne</td><td class="doc-sure">belegt</td></tr>
         <tr><td></td><td>Bit&nbsp;7 <code>0x80</code></td><td><strong>Ohne Bahn</strong>: Sensor AUS, Byte&nbsp;12 bleibt <code>0xff</code>. 0 Lesungen in 551 Fahrmeldungen</td><td class="doc-sure">belegt</td></tr>
-        <tr><td></td><td>Bit&nbsp;6 <code>0x40</code></td><td>kommt in beiden Betriebsarten vor, Bedeutung offen. Wir lassen es auf&nbsp;0</td><td class="doc-unknown">unbekannt</td></tr>
+        <tr><td></td><td>Bit&nbsp;2 <code>0x04</code></td><td><strong>Blinklicht.</strong> Am Auto erprobt (Paketvarianten-Pr&uuml;fstand, Entwicklertools): mit gesetztem Standlicht-Bit l&auml;sst dieses Bit den Scheinwerfer BLINKEN statt dauerhaft zu leuchten. Keine Helligkeitsstufe &ndash; eine eigene Betriebsart des Lichts</td><td class="doc-sure">belegt</td></tr>
+        <tr><td></td><td>Bit&nbsp;3 <code>0x08</code>, Bit&nbsp;4 <code>0x10</code></td><td>am Auto erprobt: kein sichtbarer Unterschied zum normal leuchtenden Licht. Keine zweite Helligkeitsstufe gefunden</td><td class="doc-sure">erprobt, ohne sichtbare Wirkung</td></tr>
+        <tr><td></td><td>Bit&nbsp;6 <code>0x40</code></td><td>kommt in beiden Betriebsarten vor. Am Auto erprobt: kein sichtbarer Unterschied zum normal leuchtenden Licht. Wir lassen es auf&nbsp;0</td><td class="doc-sure">erprobt, ohne sichtbare Wirkung</td></tr>
         <tr><td>15</td><td><code>0x04</code></td><td>konstant</td><td class="doc-sure">belegt</td></tr>
         <tr><td>16&ndash;18</td><td><code>0x00</code></td><td>ungenutzt</td><td class="doc-sure">belegt</td></tr>
         <tr><td>19</td><td>CRC-8</td><td>Polynom <code>0x31</code>, Startwert <code>0xFF</code>, &uuml;ber Byte&nbsp;0&ndash;18</td><td class="doc-sure">belegt</td></tr>
@@ -8212,7 +8214,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.6.30</span></span>
+    <span class="foot-ver">v<span id="app-version">0.6.31</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -27631,20 +27633,25 @@
     if (el) ghostCfg[feld] = el.checked;
   }
 
-  // Per-tile behaviour, data-driven on purpose: the hairpin and left-curve codes are not
-  // known yet, and adding them must not require touching code.
-  // curve: 0 = gerade, 1 = 60-Grad-Kurve, 2 = Haarnadel. Die Zahl ist keine Kennung,
-  // sondern ein Mass fuer die Enge - das Tempoprofil unten rechnet damit.
-  const GHOST_TILE = {
-    0x01: { curve: 0 },   // start/finish, behaves like a straight
-    0x02: { curve: 0 },   // straight
-    0x03: { curve: 1 },   // 60-Grad-Kurve links
-    0x04: { curve: 1 },   // 60-Grad-Kurve rechts
-    0x05: { curve: 2 },   // Haarnadel links  (gemessen 24.08.)
-    0x06: { curve: 2 },   // Haarnadel rechts (gemessen 24.08.)
-  };
-
-  function ghostTileInfo(code) { return GHOST_TILE[code] || { curve: 0 }; }
+  // ---- WIE ENG IST DIE KACHEL, DIE DAS AUTO GERADE MELDET? -----------------------
+  //
+  // GHOST_TILE stand hier frueher als eigene, vom DRAHTCODE aus gelesene Tabelle mit vier
+  // Eintraegen (0x01-0x06). Seit den vier 30-Grad-Kurven und der Engstelle fehlte ihr genau
+  // das, was tileTightness() (weiter oben, fuer den layoutgestuetzten Vorausblick) laengst
+  // richtig kennt - ein Auto, das gerade wirklich auf einer 30-Grad-Kurve oder in der
+  // Engstelle stand, galt fuer DIESE Funktion als Gerade.
+  //
+  // Eine zweite Tabelle nachzutragen haette dieselbe Mehrdeutigkeit gebraucht, die
+  // codeZuTyp() (60-track.js) schon loest: Drahtcode 0x0a ist im Ausdruck-Modus START, im
+  // Bahn-Modus ENGSTELLE - MODUSABHAENGIG, und eine flache Tabelle ohne Modusbezug kann
+  // das nicht unterscheiden (GHOST_TILE haette 0x0a also blind einem der beiden zugewiesen,
+  // haette es je einen Eintrag dafuer gehabt).
+  //
+  // Also keine zweite Tabelle: codeZuTyp() macht aus dem Drahtcode den Kacheltyp, wie
+  // ueberall sonst auch, und tileTightness() bewertet ihn auf derselben Skala wie der
+  // Vorausblick. Zwei Wege, die dieselbe Frage beantworten, sind zwei Wege, die
+  // auseinanderlaufen koennen - jetzt gibt es nur noch einen.
+  function ghostTileInfo(code) { return { curve: tileTightness(codeZuTyp(code)) }; }
 
   // ---- Die Ortung gegen die GEMELDETE Schiene ausrichten ------------------------------
   //
@@ -27802,8 +27809,9 @@
     return t ? ortPasst(t.type, code) : null;
   }
 
-  // Wie eng ist ein Kachel-TYP aus der Karte? Dieselbe Skala wie GHOST_TILE.curve, nur aus
-  // dem Layout statt aus dem gemeldeten Code - der Vorausblick kennt nur das Layout.
+  // Wie eng ist ein Kachel-TYP? Dieselbe Skala, ob sie aus dem LAYOUT kommt (der
+  // Vorausblick kennt nur das) oder aus dem GEMELDETEN CODE (ghostTileInfo() oben liest
+  // sie ueber codeZuTyp() aus demselben Typ) - eine Skala fuer beide Wege.
   function tileTightness(t) {
     if (t === TILE_TYPE.HAIRPIN || t === TILE_TYPE.HAIRPIN_LEFT) return 2;
     // ---- DIE ENGSTELLE ZAEHLT WIE EINE HAARNADEL, wie bestellt --------------------
@@ -30753,11 +30761,28 @@
     const i0 = car.ghost ? car.ghost.tileIndex : null;
     if (!tiles || tiles.length < 3 || i0 === null || i0 === undefined) return null;
     // Every TILE_TYPE value already IS its own wire code (see the constant above), so
-    // this is now a plain pass-through for the three tile types that can appear here.
-    const code = (t) => (t === TILE_TYPE.START || t === TILE_TYPE.STRAIGHT
-                         || t === TILE_TYPE.CURVE_LEFT || t === TILE_TYPE.CURVE_RIGHT
-                         || t === TILE_TYPE.HAIRPIN_LEFT || t === TILE_TYPE.HAIRPIN)
-                        ? t : 0x02;
+    // this is now a plain pass-through for the tile types that can appear here.
+    //
+    // NACHGETRAGEN: die vier 30-Grad-Kurven fehlten hier, aus demselben Grund wie bei
+    // ghostTileInfo() weiter oben - ihr TILE_TYPE-Wert IST ihr Drahtcode, genau wie bei den
+    // sechs ohnehin schon durchgereichten Typen, und sie gingen bisher als Gerade (0x02)
+    // hinaus: das Auto bekam auf einer 30-Grad-Kurve die Ansage "als Naechstes: Gerade".
+    //
+    // DIE ENGSTELLE HAT KEINEN FESTEN DRAHTCODE - ihr Code ist modusabhaengig (0x0a nur im
+    // Bahn-Modus, siehe codeZuTyp() in 60-track.js). Im Ausdruck-Modus gibt es sie als
+    // Schienenteil ohnehin nicht wirklich, also faellt sie dort wie jeder unbekannte Typ auf
+    // Gerade zurueck.
+    const code = (t) => {
+      if (t === TILE_TYPE.START || t === TILE_TYPE.STRAIGHT
+          || t === TILE_TYPE.CURVE_LEFT || t === TILE_TYPE.CURVE_RIGHT
+          || t === TILE_TYPE.HAIRPIN_LEFT || t === TILE_TYPE.HAIRPIN
+          || t === TILE_TYPE.WEIT_LEFT || t === TILE_TYPE.WEIT_RIGHT
+          || t === TILE_TYPE.KLEIN_LEFT || t === TILE_TYPE.KLEIN_RIGHT) return t;
+      if (t === TILE_TYPE.ENGE) {
+        return (typeof trackMode === 'string' && trackMode === 'on') ? CODE_ENGE : 0x02;
+      }
+      return 0x02;
+    };
     const at = (k) => code(tiles[(i0 + k) % tiles.length].type);
     return { 16: at(0), 17: at(1), 18: at(2) };
   }
@@ -31557,10 +31582,10 @@
       // Bremsprofil: voller Bremsbedarf kostet das Doppelte dessen, was der Regler fuer eine
       // normale Kurve sagt.
       const abzugProfil = bd === null ? 0 : Math.min(0.85, 2 * ghostCfg.curveSlow * bd);
-      // Kachelregel: curveSlow beschreibt die 60-Grad-Kurve, die Haarnadel bekommt das
-      // Doppelte (GHOST_TILE[0x05].curve = 2), gedeckelt damit ein hoher Regler den Ghost
-      // nicht zum Stehen bringt. Mit dem Standardregler von 20 Prozent sind das 20 Prozent
-      // in der Kurve und 40 in der Haarnadel.
+      // Kachelregel: curveSlow beschreibt die 60-Grad-Kurve, Haarnadel und Engstelle
+      // bekommen das Doppelte (tileTightness() = 2), gedeckelt damit ein hoher Regler den
+      // Ghost nicht zum Stehen bringt. Mit dem Standardregler von 20 Prozent sind das
+      // 20 Prozent in der Kurve und 40 in der Haarnadel oder Engstelle.
       const abzugKachel = tight > 0 ? Math.min(0.85, ghostCfg.curveSlow * tight) : 0;
       target *= 1 - Math.max(abzugProfil, abzugKachel);
       // GESTAFFELT UEBER DAS GANZE FELD, nicht nur der Erste. Begruendung und Formel
@@ -31855,7 +31880,35 @@
         // Auf der Ideallinie selbst wirkt sie fast nicht: die aendert sich ueber eine Kachel
         // hinweg langsam. Sie greift genau dort, wo es gemeldet wurde - am Kacheltypwechsel,
         // am Beginn und Ende einer Attacke, und wenn die Ortung sich neu ausrichtet.
-        const querMax = Math.max(0, ghostCfg.querTempo) * dt;
+        //
+        // ---- UND SIE GILT NUR IN FAHRT, wie bestellt -----------------------------------
+        //
+        // GEMELDET: "Autos koennen nicht quer hin und herrutschen [...] auch nur die
+        // Querlage wechseln, wenn sie sich vorwaerts bewegen." Vorher haengte querMax
+        // ausschliesslich an ghostCfg.querTempo und dt - ein Auto bei 0 km/h wechselte die
+        // Querlage genauso schnell wie eines bei Vollgas, die volle Bahnbreite in 250 ms,
+        // ohne sich vom Fleck zu bewegen.
+        //
+        // Der Code kannte die Regel schon, nur nicht HIER: der Kommentar bei PIT_RAND_MS
+        // sagt "die Querbewegung an den Rand braucht [...] Fahrt: ein stehendes Auto bewegt
+        // sich nicht zur Seite, egal was im Lenkbyte steht" - umgesetzt aber nur als
+        // ZEITPHASE vor dem Ausweichen, nicht im Querzweig selbst. Ein Auto, das aus einem
+        // anderen Grund steht (Start, Vollbremsung, wartend hinter einem anderen), war davon
+        // nicht erfasst.
+        //
+        // PHYSIKALISCH RICHTIG: ein Auto verschiebt sich quer, WEIL es vorwaerts faehrt und
+        // die Raeder schraeg stehen - die Rate ist proportional zum Tempo, mit einer
+        // Nullstelle bei Stillstand.
+        //
+        // AB GHOST_READ_MIN (0,35 - derselben Leseschwelle, unter der das Auto die Bahn
+        // nicht mehr zuverlaessig liest, siehe dort) GILT DIE VOLLE RATE WIE BISHER. Jede
+        // Messung zu querTempo (siehe der Kommentar dort: "bei halbem Gas ... dauert eine
+        // halbe Kachel rund 0,63 s") ist an einem FAHRENDEN Auto entstanden - diese Kopplung
+        // aendert an keiner davon etwas, sie greift nur unterhalb der Geschwindigkeit, bei
+        // der ohnehin schon nichts mehr zuverlaessig funktioniert. `v` ist oben schon
+        // berechnet (fuer den Tempo-Regler) und muss hier nicht neu gelesen werden.
+        const tempoAnteil = Math.min(1, v / GHOST_READ_MIN);
+        const querMax = Math.max(0, ghostCfg.querTempo) * dt * tempoAnteil;
         const querAlt = g.querIst === undefined ? querRohSumme : g.querIst;
         const querDiff = querRohSumme - querAlt;
         g.querIst = Math.abs(querDiff) <= querMax
@@ -31883,7 +31936,39 @@
         // Traegheit einen Takt zu spaet greift.
         if (pitSperreRechts(car)) steer = Math.min(steer, 0);
         const querRoh = Math.max(-1, Math.min(1, steer));
-        g.querSoll = (g.querSoll || 0) + (querRoh - (g.querSoll || 0)) * 0.25;
+        // ---- DER NACHLAUF IST JETZT EINE ZEITKONSTANTE UND KEIN TAKTBRUCHTEIL ---------
+        //
+        // Hier stand ein fester Faktor 0,25 JE AUFRUF - richtig fuer den echten Sendetakt
+        // (CONTROL_SEND_INTERVAL_MS = 45 ms), aber in der Simulation falsch: dort ruft
+        // simTeilschritt() diese Funktion mit Schritten bis 60 ms auf, und ein fester Faktor
+        // je Aufruf haengt dann an der SCHRITTWEITE statt an der ZEIT - bei laengeren
+        // Schritten kam derselbe Bruchteil des Rests je Aufruf heraus, obwohl mehr Zeit
+        // vergangen war, also mehr haette nachlaufen muessen.
+        //
+        // 1 - 0,75^(dt / Sendetakt) ist dieselbe Zerfallskurve, nur nach der WIRKLICH
+        // vergangenen Zeit statt nach der Zahl der Aufrufe gerechnet: bei dt = Sendetakt
+        // kommt exakt 0,25 heraus wie bisher, bei jeder anderen Schrittweite die dazu
+        // konsistente Fortsetzung derselben Kurve.
+        //
+        // ---- UND AUCH DIESER NACHLAUF GILT NUR IN FAHRT ------------------------------
+        //
+        // GEMESSEN, und es ist der eigentliche Fund hinter der Meldung: g.querIst allein
+        // zu bremsen (oben) reicht NICHT. g.querSoll ist die fuer die KARTE gedachte
+        // zweite Groesse, und ihr Nachlauf lief bisher rein nach ZEIT, unabhaengig vom
+        // Tempo. Ein frisch gestarteter oder neu georteter Ghost setzt g.querIst beim
+        // allerersten Tick OHNE Ratenbegrenzung auf sein Ziel (siehe die "undefined"-Weiche
+        // oben - das ist gewollt, ein Auto muss irgendwo anfangen), und g.querSoll kroch
+        // von dort aus ueber mehrere Zehntelsekunden zu diesem Ziel - SICHTBAR, auch wenn
+        // das Auto in dieser Zeit kaum von der Stelle kam.
+        //
+        // Nachgemessen an einem frisch gestarteten, kaum beschleunigenden Auto (0,005 bis
+        // 0,1 km/h ueber 200 ms): g.querSoll wanderte in genau dieser Zeit von 0 auf -0,136 -
+        // eine deutlich sichtbare Bewegung des Kartenpunkts, obwohl das Auto praktisch stand.
+        // Derselbe tempoAnteil wie bei querMax macht den Nachlauf jetzt genauso langsam wie
+        // das Auto selbst: bei v = 0 friert er komplett ein.
+        const querSollFaktor = (1 - Math.pow(0.75, dt / (CONTROL_SEND_INTERVAL_MS / 1000)))
+                              * tempoAnteil;
+        g.querSoll = (g.querSoll || 0) + (querRoh - (g.querSoll || 0)) * querSollFaktor;
       } else {
         // Fallback for cars not in guard-rail mode: the old layout-plus-yaw controller.
         const dir = ghostTurnDir(car, 0);
@@ -32360,7 +32445,31 @@
     return out;
   }
 
-  function ghostAssignBias() {
+  // ---- dtSek: NUR gesetzt, wenn die SIMULATION ruft, sonst der echte Zeitgeber ------
+  //
+  // BESTELLT (mittelbar, ueber die Simulationskorrektur): "Autos [...] sollen sich
+  // entsprechend der angegebenen Regeln verhalten." GHOST_BIAS_STEP (0,25) ist fuer den
+  // echten Takt kalibriert - setInterval(ghostAssignBias, GHOST_BIAS_MS) ruft alle 200 ms,
+  // und der Kommentar bei GHOST_BIAS_STEP rechnet genau damit ("0,25 bei 200 ms Takt heisst
+  // voller Versatz nach 0,8 s").
+  //
+  // DIE SIMULATION LEGT IHRE AUTOS IN DIESELBE garage (90b-sim.js: garage.push), und der
+  // echte Zeitgeber sieht sie deshalb MIT - parallel zu dem expliziten Aufruf, den die
+  // Simulation selbst schon macht (simSchritt). Zwei Treiber auf demselben Wert heissen:
+  // der Versatz baut sich in der Simulation schneller auf, als querTempo hergibt, und zwar
+  // ungleichmaessig - abhaengig davon, wie oft der wirkliche Rechner in der Zwischenzeit
+  // eine echte Sekunde erlebt hat, nicht davon, wie viel SIMULIERTE Zeit vergangen ist.
+  //
+  // dtSek === undefined heisst "der echte Zeitgeber hat gerufen" - und genau dann, wenn eine
+  // Simulation laeuft, ist das die Doppelspur, die es nicht geben soll: die Simulation ruft
+  // explizit mit ihrem eigenen dt, also reicht das.
+  function ghostAssignBias(dtSek) {
+    if (dtSek === undefined && typeof simAn === 'function' && simAn()) return;
+    // Der Schritt skaliert mit der wirklich vergangenen Zeit, bezogen auf GHOST_BIAS_MS -
+    // bei dtSek === GHOST_BIAS_MS/1000 (der echte Zeitgeber) kommt exakt GHOST_BIAS_STEP
+    // heraus wie bisher.
+    const schritt = GHOST_BIAS_STEP
+      * ((dtSek === undefined ? GHOST_BIAS_MS / 1000 : Math.max(0, dtSek)) / (GHOST_BIAS_MS / 1000));
     const gs = garage.filter(c => c.role === 'ghost' && c.ghost);
     const want = new Map(gs.map(c => [c, 0]));
     // Erst die Gruppen bilden, dann die Seiten verteilen. Paarweise zuzuweisen war bei drei
@@ -32387,7 +32496,7 @@
       const t = want.get(c) || 0;
       const cur = c.ghost.bias || 0;
       const d = t - cur;
-      c.ghost.bias = Math.abs(d) <= GHOST_BIAS_STEP ? t : cur + Math.sign(d) * GHOST_BIAS_STEP;
+      c.ghost.bias = Math.abs(d) <= schritt ? t : cur + Math.sign(d) * schritt;
       // Einmal melden, wenn es greift - sonst sieht man nicht, ob die Logik ueberhaupt
       // ausloest, und "die fahren nicht versetzt" bleibt eine Vermutung.
       const near = t !== 0;
@@ -33082,6 +33191,19 @@
     }
     st.wandZuvor = wand;
     const gesamt = Math.max(1, Math.min(SIM_SPRUNG_MAX_MS, roh)) * (st.doppelt ? 2 : 1);
+    // ---- DER QUERVERSATZ GEGEN RAMMEN, EINMAL JE SCHRITT UND NICHT JE TEILSCHRITT ----
+    //
+    // Frueher stand dieser Aufruf in simTeilschritt() und lief damit bis zu fuenfmal fuer
+    // denselben simSchritt()-Aufruf (Teilschritte von bis zu 60 ms bei bis zu 250 ms
+    // Gesamtschritt). ghostAssignBias() traegt aber einen FESTEN Schritt je Aufruf
+    // (GHOST_BIAS_STEP, kalibriert auf den echten 200-ms-Zeitgeber) - je Teilschritt
+    // gerufen wuchs der Versatz also mit der Zahl der Teilschritte, nicht mit der
+    // vergangenen Zeit, und lief in der Simulation deutlich schneller auf als am echten
+    // Auto.
+    //
+    // Jetzt EINMAL je simSchritt(), mit der GESAMTEN vergangenen Zeit dieses Aufrufs als
+    // dtSek - ghostAssignBias() skaliert seinen Schritt selbst darauf (siehe dort).
+    ghostAssignBias(gesamt / 1000);
     let rest = gesamt;
     while (rest > 0.5) {
       const schritt = Math.min(SIM_TEIL_MAX_MS, rest);
@@ -33111,17 +33233,34 @@
         a.car.lastCodeAt = st.uhr;
         ghostTick(a.car);
       }
-      // Der Querversatz gegen Rammen laeuft am echten Auto auf einem eigenen Zeitgeber. Der
-      // greift hier nicht (er laeuft an der Wandzeit und sieht die Simulationsautos nur
-      // zufaellig), also wird er hier ausdruecklich mitgetaktet - sonst faehrt das ganze
-      // Feld auf einer Spur, und das waere ein anderes Rennen als das eingestellte.
-      ghostAssignBias();
+      // ghostAssignBias() laeuft jetzt in simSchritt() - einmal je Aufruf, mit der
+      // gesamten vergangenen Zeit, nicht mehr hier je Teilschritt. Siehe dort.
       // ---- Vom Gas zum Weg -----------------------------------------------------------
       for (const a of st.autos) {
         const g = a.car.ghost;
         if (!g || !g.engine) continue;
-        const v = Math.abs(g.engine.state.speedKmh || 0);
+        // ---- GEPARKT BEWEGT SICH NICHT, wie bestellt -----------------------------
+        //
+        // BESTELLT: "Autos [...] sollen [...] nur die Querlage wechseln, wenn sie sich
+        // vorwaerts bewegen" - und ein geparktes Auto bewegt sich gar nicht. Hier fehlte
+        // die Pruefung ganz: ein geparktes Auto rollte in der Simulation weiter, bis das
+        // Fahrzeugmodell es von selbst ausrollen liess (Gas 0, Bremse 0, Motorbremse) -
+        // es stand also nicht schlagartig, sondern schlich langsam aus.
+        if (a.car.parked) continue;
+        // ---- VORZEICHEN ERHALTEN, statt IMMER vorwaerts zu zaehlen ----------------
+        //
+        // Hier stand Math.abs(...): ein rueckwaerts rollendes Auto (Anfahrruck, Abstossen
+        // aus der Box, ein zurueckgesetzter Ghost) fuhr damit in der Simulation trotzdem
+        // VORWAERTS. speedKmh ist vorzeichenbehaftet (siehe virtualSpeed in 40-physics.js,
+        // "deliberately UNSIGNED" steht dort genau deshalb als Gegensatz dazu) - das
+        // Vorzeichen bleibt jetzt erhalten.
+        const v = g.engine.state.speedKmh || 0;
         a.s += simEinheitenProSek(v) * dt;
+        // Rueckwaerts ueber die Ziellinie: KEINE Runde abziehen, nur den Weg im Kreis
+        // halten. Eine "negative Runde" ist keine Groesse, die diese App irgendwo
+        // fuehrt - eine Rueckwaertsfahrt ueber die Linie waere ohnehin ein Sonderfall,
+        // den die Rundenzeitmessung am echten Auto genausowenig auffaengt.
+        if (a.s < 0) a.s += st.bahn.runde;
         // Runde voll? Der Weg wird gekuerzt, und die Zeit dieser Runde festgehalten.
         while (a.s >= st.bahn.runde) {
           a.s -= st.bahn.runde;
@@ -37622,6 +37761,109 @@
         // Die zwei Sondenautos wieder aus der Garage, sonst stehen sie in der Liste.
         for (let i = garage.length - 1; i >= 0; i--) {
           if (garage[i] && garage[i].alias && /^Sonde/.test(garage[i].alias)) garage.splice(i, 1);
+        }
+      }
+    },
+
+    // ---- QUERLAGE BEI STILLSTAND: darf sich ein stehendes Auto seitlich verschieben? ----
+    //
+    // BESTELLT: "Autos koennen nicht quer hin und herrutschen [...] auch nur die Querlage
+    // wechseln, wenn sie sich vorwaerts bewegen."
+    //
+    // ---- WARUM DIESE SONDE DIE GESCHWINDIGKEIT SELBST FESTNAGELT --------------------
+    //
+    // ghostCfg.speed auf 0 zu stellen reicht NICHT: das Auto rollt trotzdem minimal aus
+    // (Motorbremse, Reibung), bevor es wirklich bei 0 km/h ankommt, und in dieser kurzen
+    // Restfahrt darf sich die Querlage ja tatsaechlich noch bewegen - das ist ja der Sinn
+    // der Kopplung. Ein Test, der das nicht abfaengt, misst also ein Gemisch aus "faehrt
+    // noch ein bisschen" und "steht wirklich", und ein spaeter kleiner Rest-Ausschlag waere
+    // nicht zu unterscheiden von einem echten Fehler.
+    //
+    // Deshalb wird engine.state.speedKmh nach JEDEM Tick auf exakt 0 zurueckgesetzt - das
+    // Auto steht dann ab dem ZWEITEN Tick garantiert, und jede Bewegung der Querlage ab da
+    // ist eindeutig die Kopplung, nicht ein Restauslauf.
+    //
+    // UND WARUM DIE KACHEL EINGEFROREN WIRD: ghostTilePhase() (90-ghosts.js) schaetzt "wie
+    // weit durch die Kachel" rein aus VERGANGENER ZEIT, nicht aus gefahrener Strecke - ein
+    // bekannter, dokumentierter Rest (siehe der Kommentar dort und im Aufrufer). Ohne
+    // Einfrieren der Kachel wuerde die IDEALLINIE selbst am stehenden Auto weiterwandern,
+    // und die Sonde koennte nicht mehr unterscheiden, ob die Querlage wegen der Kopplung
+    // steht oder weil sich zufaellig auch das Ziel gerade nicht bewegt. tileMs riesig haelt
+    // das Ziel fest, wie es ein wirklich unbewegtes Auto haette (Byte 11 zaehlt nur bei
+    // echter Ueberfahrt weiter).
+    //
+    // GEMESSEN WIRD AB DEM ZWEITEN TAKT. Der erste Takt darf springen: g.querIst ist dort
+    // noch undefined und wird bewusst OHNE Ratenbegrenzung auf sein erstes Ziel gesetzt
+    // (siehe der Kommentar in ghostTick) - ein Auto muss irgendwo anfangen, und das ist
+    // kein Rutschen, sondern ein einmaliges Platzieren.
+    async querlageStillstandProbe(o) {
+      const opt = o || {};
+      const takte = opt.takte || 150;
+      const keepTiles = currentTrackTiles;
+      const merkCfg = JSON.parse(JSON.stringify(ghostCfg));
+      const echtNow = Date.now;
+      let car = null, zweit = null;
+      try {
+        const p = codeToTrack(opt.code || 'SG2H2G2R2');
+        currentTrackTiles = p.tiles;
+        lineCache = null;
+        ghostCfg.leaderBrake = false;
+        ghostCfg.speed = opt.fahren ? 0.55 : 0;
+        if (opt.cfg) Object.assign(ghostCfg, opt.cfg);
+        let uhr = echtNow();
+        Date.now = () => uhr;
+        car = { role: 'ghost', alias: 'SondeStillstand', writeInFlight: false,
+                tileCode: 0x02, tileCount: 0, lastCodeAt: uhr, yaw: 0, rx: null };
+        zweit = { role: 'ghost', alias: 'SondeStillstand2', writeInFlight: false,
+                  tileCode: 0x02, tileCount: 0, lastCodeAt: uhr, yaw: 0, rx: null };
+        garage.push(car, zweit);
+        startGhost(car);
+        startGhost(zweit);
+        ghostTaktLoeschen(car);
+        ghostTaktLoeschen(zweit);
+        car.ghost.freeRun = true;
+        car.ghost.bias = 0;
+        const querIst = [], querSoll = [], tempo = [];
+        for (let i = 0; i < takte; i++) {
+          uhr += 45;
+          ghostTick(car);
+          // ERST NACH dem Tick auf 0 zwingen: der Tick selbst hat das Tempo schon fuer
+          // DIESEN Durchlauf gelesen (in `v`), das Zuruecksetzen betrifft nur den naechsten.
+          //
+          // opt.fahren UEBERSPRINGT DAS ERZWINGEN - die Gegenprobe: ohne sie waere nicht
+          // zu unterscheiden, ob eine gruene Messung an der Kopplung liegt oder daran, dass
+          // dieser Prueflauf nie etwas Bewegliches misst.
+          if (!opt.fahren && car.ghost.engine) car.ghost.engine.state.speedKmh = 0;
+          querIst.push(car.ghost.querIst === undefined ? null : +car.ghost.querIst.toFixed(5));
+          querSoll.push(+(car.ghost.querSoll || 0).toFixed(5));
+          tempo.push(car.ghost.engine
+            ? +(car.ghost.engine.state.speedKmh / car.ghost.engine.config.topSpeedKmh).toFixed(5)
+            : 0);
+        }
+        // Ab Takt 2 (Index 1): Spannweite ueber den Rest des Laufs.
+        const ab2Ist = querIst.slice(1).filter((x) => x !== null);
+        const ab2Soll = querSoll.slice(1);
+        return {
+          takte, tempoMax: Math.max(...tempo),
+          querIst, querSoll,
+          spanneIst: ab2Ist.length ? Math.max(...ab2Ist) - Math.min(...ab2Ist) : 0,
+          spanneSoll: ab2Soll.length ? Math.max(...ab2Soll) - Math.min(...ab2Soll) : 0,
+          ersterTakt: { querIst: querIst[0], querSoll: querSoll[0] },
+        };
+      } finally {
+        Date.now = echtNow;
+        currentTrackTiles = keepTiles;
+        lineCache = null;
+        Object.keys(merkCfg).forEach((x) => { ghostCfg[x] = merkCfg[x]; });
+        for (const c of [car, zweit]) {
+          if (!c) continue;
+          ghostTaktLoeschen(c);
+          if (c.ghost) c.ghost.running = false;
+        }
+        for (let i = garage.length - 1; i >= 0; i--) {
+          if (garage[i] && garage[i].alias && /^SondeStillstand/.test(garage[i].alias)) {
+            garage.splice(i, 1);
+          }
         }
       }
     },
@@ -47749,6 +47991,56 @@
     return { ok: !fehler.length,
              mass: mit.zeilen + ' Sektorzeilen, ' + mit.beste + ' Bestwerte'
                  + ' | bei einem Sektor ' + ohne.zeilen
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
+  // ---- Ein stehendes Auto rutscht nicht quer ----
+  //
+  // BESTELLT: "Autos koennen nicht quer hin und herrutschen. Sie sollten sich entsprechend
+  // der angegebenen Regeln verhalten, aber auch nur die Querlage wechseln, wenn sie sich
+  // vorwaerts bewegen."
+  //
+  // BEFUND: querMax (die Ratenbegrenzung der Querlage) und der Kartennachlauf querSoll
+  // hingen beide nur an ghostCfg.querTempo und der vergangenen ZEIT - ein Auto bei 0 km/h
+  // wechselte seine Querlage genauso schnell wie eines bei Vollgas. Der Code kannte die
+  // Regel schon (siehe der Kommentar bei PIT_RAND_MS: "ein stehendes Auto bewegt sich nicht
+  // zur Seite, egal was im Lenkbyte steht"), war aber nur als Zeitphase vor dem Ausweichen
+  // umgesetzt, nicht in der Rechnung selbst.
+  //
+  // Behoben: beide Raten skalieren jetzt mit min(1, Tempo / GHOST_READ_MIN) - bei 0 km/h
+  // frieren sie vollstaendig ein, ab der Leseschwelle (0,35) gilt die volle, unveraenderte
+  // Rate wie zuvor.
+  stAdd('Querlage: ein stehendes Auto rutscht nicht, ein fahrendes schon', async () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.querlageStillstandProbe) {
+      return { skip: true, mass: 'querlageStillstandProbe nicht vorhanden' };
+    }
+    const still = await OMEGA_TEST.querlageStillstandProbe({ takte: 150 });
+    const fahren = await OMEGA_TEST.querlageStillstandProbe({ takte: 150, fahren: true });
+    if (!still || !fahren) return { skip: true, mass: 'kein Lauf' };
+    const fehler = [];
+    // 1. WIRKLICH STEHEND, sonst pruefte die Sonde ihre eigene Annahme nicht.
+    if (still.tempoMax !== 0) fehler.push('Sonde hat nicht wirklich 0 km/h gehalten');
+    // 2. UND DANN BEWEGT SICH NICHTS - weder das Servo-Ziel (querIst) noch der
+    //    Kartennachlauf (querSoll), ab dem zweiten Takt (der erste darf springen, siehe
+    //    oben: ein Auto muss irgendwo anfangen).
+    if (still.spanneIst !== 0) {
+      fehler.push('querIst rutscht im Stand um ' + still.spanneIst);
+    }
+    if (still.spanneSoll !== 0) {
+      fehler.push('querSoll rutscht im Stand um ' + still.spanneSoll);
+    }
+    // 3. GEGENPROBE: ein wirklich fahrendes Auto bewegt seine Querlage weiterhin - sonst
+    //    waere der Test oben aus dem falschen Grund gruen (er misst nichts, ueberhaupt).
+    if (!(fahren.tempoMax > 0.3)) {
+      fehler.push('Gegenprobe faehrt nicht (Tempo ' + fahren.tempoMax + ')');
+    }
+    if (!(fahren.spanneSoll > 0)) {
+      fehler.push('Gegenprobe: querSoll bewegt sich auch beim Fahren nicht');
+    }
+    return { ok: !fehler.length,
+             mass: 'im Stand: querIst-Spanne ' + still.spanneIst + ', querSoll-Spanne '
+                 + still.spanneSoll + ' | fahrend (Tempo ' + fahren.tempoMax.toFixed(2)
+                 + '): querSoll-Spanne ' + fahren.spanneSoll.toFixed(3)
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 

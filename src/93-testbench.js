@@ -3801,6 +3801,109 @@
       }
     },
 
+    // ---- QUERLAGE BEI STILLSTAND: darf sich ein stehendes Auto seitlich verschieben? ----
+    //
+    // BESTELLT: "Autos koennen nicht quer hin und herrutschen [...] auch nur die Querlage
+    // wechseln, wenn sie sich vorwaerts bewegen."
+    //
+    // ---- WARUM DIESE SONDE DIE GESCHWINDIGKEIT SELBST FESTNAGELT --------------------
+    //
+    // ghostCfg.speed auf 0 zu stellen reicht NICHT: das Auto rollt trotzdem minimal aus
+    // (Motorbremse, Reibung), bevor es wirklich bei 0 km/h ankommt, und in dieser kurzen
+    // Restfahrt darf sich die Querlage ja tatsaechlich noch bewegen - das ist ja der Sinn
+    // der Kopplung. Ein Test, der das nicht abfaengt, misst also ein Gemisch aus "faehrt
+    // noch ein bisschen" und "steht wirklich", und ein spaeter kleiner Rest-Ausschlag waere
+    // nicht zu unterscheiden von einem echten Fehler.
+    //
+    // Deshalb wird engine.state.speedKmh nach JEDEM Tick auf exakt 0 zurueckgesetzt - das
+    // Auto steht dann ab dem ZWEITEN Tick garantiert, und jede Bewegung der Querlage ab da
+    // ist eindeutig die Kopplung, nicht ein Restauslauf.
+    //
+    // UND WARUM DIE KACHEL EINGEFROREN WIRD: ghostTilePhase() (90-ghosts.js) schaetzt "wie
+    // weit durch die Kachel" rein aus VERGANGENER ZEIT, nicht aus gefahrener Strecke - ein
+    // bekannter, dokumentierter Rest (siehe der Kommentar dort und im Aufrufer). Ohne
+    // Einfrieren der Kachel wuerde die IDEALLINIE selbst am stehenden Auto weiterwandern,
+    // und die Sonde koennte nicht mehr unterscheiden, ob die Querlage wegen der Kopplung
+    // steht oder weil sich zufaellig auch das Ziel gerade nicht bewegt. tileMs riesig haelt
+    // das Ziel fest, wie es ein wirklich unbewegtes Auto haette (Byte 11 zaehlt nur bei
+    // echter Ueberfahrt weiter).
+    //
+    // GEMESSEN WIRD AB DEM ZWEITEN TAKT. Der erste Takt darf springen: g.querIst ist dort
+    // noch undefined und wird bewusst OHNE Ratenbegrenzung auf sein erstes Ziel gesetzt
+    // (siehe der Kommentar in ghostTick) - ein Auto muss irgendwo anfangen, und das ist
+    // kein Rutschen, sondern ein einmaliges Platzieren.
+    async querlageStillstandProbe(o) {
+      const opt = o || {};
+      const takte = opt.takte || 150;
+      const keepTiles = currentTrackTiles;
+      const merkCfg = JSON.parse(JSON.stringify(ghostCfg));
+      const echtNow = Date.now;
+      let car = null, zweit = null;
+      try {
+        const p = codeToTrack(opt.code || 'SG2H2G2R2');
+        currentTrackTiles = p.tiles;
+        lineCache = null;
+        ghostCfg.leaderBrake = false;
+        ghostCfg.speed = opt.fahren ? 0.55 : 0;
+        if (opt.cfg) Object.assign(ghostCfg, opt.cfg);
+        let uhr = echtNow();
+        Date.now = () => uhr;
+        car = { role: 'ghost', alias: 'SondeStillstand', writeInFlight: false,
+                tileCode: 0x02, tileCount: 0, lastCodeAt: uhr, yaw: 0, rx: null };
+        zweit = { role: 'ghost', alias: 'SondeStillstand2', writeInFlight: false,
+                  tileCode: 0x02, tileCount: 0, lastCodeAt: uhr, yaw: 0, rx: null };
+        garage.push(car, zweit);
+        startGhost(car);
+        startGhost(zweit);
+        ghostTaktLoeschen(car);
+        ghostTaktLoeschen(zweit);
+        car.ghost.freeRun = true;
+        car.ghost.bias = 0;
+        const querIst = [], querSoll = [], tempo = [];
+        for (let i = 0; i < takte; i++) {
+          uhr += 45;
+          ghostTick(car);
+          // ERST NACH dem Tick auf 0 zwingen: der Tick selbst hat das Tempo schon fuer
+          // DIESEN Durchlauf gelesen (in `v`), das Zuruecksetzen betrifft nur den naechsten.
+          //
+          // opt.fahren UEBERSPRINGT DAS ERZWINGEN - die Gegenprobe: ohne sie waere nicht
+          // zu unterscheiden, ob eine gruene Messung an der Kopplung liegt oder daran, dass
+          // dieser Prueflauf nie etwas Bewegliches misst.
+          if (!opt.fahren && car.ghost.engine) car.ghost.engine.state.speedKmh = 0;
+          querIst.push(car.ghost.querIst === undefined ? null : +car.ghost.querIst.toFixed(5));
+          querSoll.push(+(car.ghost.querSoll || 0).toFixed(5));
+          tempo.push(car.ghost.engine
+            ? +(car.ghost.engine.state.speedKmh / car.ghost.engine.config.topSpeedKmh).toFixed(5)
+            : 0);
+        }
+        // Ab Takt 2 (Index 1): Spannweite ueber den Rest des Laufs.
+        const ab2Ist = querIst.slice(1).filter((x) => x !== null);
+        const ab2Soll = querSoll.slice(1);
+        return {
+          takte, tempoMax: Math.max(...tempo),
+          querIst, querSoll,
+          spanneIst: ab2Ist.length ? Math.max(...ab2Ist) - Math.min(...ab2Ist) : 0,
+          spanneSoll: ab2Soll.length ? Math.max(...ab2Soll) - Math.min(...ab2Soll) : 0,
+          ersterTakt: { querIst: querIst[0], querSoll: querSoll[0] },
+        };
+      } finally {
+        Date.now = echtNow;
+        currentTrackTiles = keepTiles;
+        lineCache = null;
+        Object.keys(merkCfg).forEach((x) => { ghostCfg[x] = merkCfg[x]; });
+        for (const c of [car, zweit]) {
+          if (!c) continue;
+          ghostTaktLoeschen(c);
+          if (c.ghost) c.ghost.running = false;
+        }
+        for (let i = garage.length - 1; i >= 0; i--) {
+          if (garage[i] && garage[i].alias && /^SondeStillstand/.test(garage[i].alias)) {
+            garage.splice(i, 1);
+          }
+        }
+      }
+    },
+
     // ---- Laengs-G: zeigt es das Ergebnis oder die Anforderung? -----------------
     //
     // Gemeldet als "warum geht das rote simulierte Gyro nach hinten, wenn ich im Stand

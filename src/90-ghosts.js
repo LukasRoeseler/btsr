@@ -1707,20 +1707,25 @@
     if (el) ghostCfg[feld] = el.checked;
   }
 
-  // Per-tile behaviour, data-driven on purpose: the hairpin and left-curve codes are not
-  // known yet, and adding them must not require touching code.
-  // curve: 0 = gerade, 1 = 60-Grad-Kurve, 2 = Haarnadel. Die Zahl ist keine Kennung,
-  // sondern ein Mass fuer die Enge - das Tempoprofil unten rechnet damit.
-  const GHOST_TILE = {
-    0x01: { curve: 0 },   // start/finish, behaves like a straight
-    0x02: { curve: 0 },   // straight
-    0x03: { curve: 1 },   // 60-Grad-Kurve links
-    0x04: { curve: 1 },   // 60-Grad-Kurve rechts
-    0x05: { curve: 2 },   // Haarnadel links  (gemessen 24.08.)
-    0x06: { curve: 2 },   // Haarnadel rechts (gemessen 24.08.)
-  };
-
-  function ghostTileInfo(code) { return GHOST_TILE[code] || { curve: 0 }; }
+  // ---- WIE ENG IST DIE KACHEL, DIE DAS AUTO GERADE MELDET? -----------------------
+  //
+  // GHOST_TILE stand hier frueher als eigene, vom DRAHTCODE aus gelesene Tabelle mit vier
+  // Eintraegen (0x01-0x06). Seit den vier 30-Grad-Kurven und der Engstelle fehlte ihr genau
+  // das, was tileTightness() (weiter oben, fuer den layoutgestuetzten Vorausblick) laengst
+  // richtig kennt - ein Auto, das gerade wirklich auf einer 30-Grad-Kurve oder in der
+  // Engstelle stand, galt fuer DIESE Funktion als Gerade.
+  //
+  // Eine zweite Tabelle nachzutragen haette dieselbe Mehrdeutigkeit gebraucht, die
+  // codeZuTyp() (60-track.js) schon loest: Drahtcode 0x0a ist im Ausdruck-Modus START, im
+  // Bahn-Modus ENGSTELLE - MODUSABHAENGIG, und eine flache Tabelle ohne Modusbezug kann
+  // das nicht unterscheiden (GHOST_TILE haette 0x0a also blind einem der beiden zugewiesen,
+  // haette es je einen Eintrag dafuer gehabt).
+  //
+  // Also keine zweite Tabelle: codeZuTyp() macht aus dem Drahtcode den Kacheltyp, wie
+  // ueberall sonst auch, und tileTightness() bewertet ihn auf derselben Skala wie der
+  // Vorausblick. Zwei Wege, die dieselbe Frage beantworten, sind zwei Wege, die
+  // auseinanderlaufen koennen - jetzt gibt es nur noch einen.
+  function ghostTileInfo(code) { return { curve: tileTightness(codeZuTyp(code)) }; }
 
   // ---- Die Ortung gegen die GEMELDETE Schiene ausrichten ------------------------------
   //
@@ -1878,8 +1883,9 @@
     return t ? ortPasst(t.type, code) : null;
   }
 
-  // Wie eng ist ein Kachel-TYP aus der Karte? Dieselbe Skala wie GHOST_TILE.curve, nur aus
-  // dem Layout statt aus dem gemeldeten Code - der Vorausblick kennt nur das Layout.
+  // Wie eng ist ein Kachel-TYP? Dieselbe Skala, ob sie aus dem LAYOUT kommt (der
+  // Vorausblick kennt nur das) oder aus dem GEMELDETEN CODE (ghostTileInfo() oben liest
+  // sie ueber codeZuTyp() aus demselben Typ) - eine Skala fuer beide Wege.
   function tileTightness(t) {
     if (t === TILE_TYPE.HAIRPIN || t === TILE_TYPE.HAIRPIN_LEFT) return 2;
     // ---- DIE ENGSTELLE ZAEHLT WIE EINE HAARNADEL, wie bestellt --------------------
@@ -4829,11 +4835,28 @@
     const i0 = car.ghost ? car.ghost.tileIndex : null;
     if (!tiles || tiles.length < 3 || i0 === null || i0 === undefined) return null;
     // Every TILE_TYPE value already IS its own wire code (see the constant above), so
-    // this is now a plain pass-through for the three tile types that can appear here.
-    const code = (t) => (t === TILE_TYPE.START || t === TILE_TYPE.STRAIGHT
-                         || t === TILE_TYPE.CURVE_LEFT || t === TILE_TYPE.CURVE_RIGHT
-                         || t === TILE_TYPE.HAIRPIN_LEFT || t === TILE_TYPE.HAIRPIN)
-                        ? t : 0x02;
+    // this is now a plain pass-through for the tile types that can appear here.
+    //
+    // NACHGETRAGEN: die vier 30-Grad-Kurven fehlten hier, aus demselben Grund wie bei
+    // ghostTileInfo() weiter oben - ihr TILE_TYPE-Wert IST ihr Drahtcode, genau wie bei den
+    // sechs ohnehin schon durchgereichten Typen, und sie gingen bisher als Gerade (0x02)
+    // hinaus: das Auto bekam auf einer 30-Grad-Kurve die Ansage "als Naechstes: Gerade".
+    //
+    // DIE ENGSTELLE HAT KEINEN FESTEN DRAHTCODE - ihr Code ist modusabhaengig (0x0a nur im
+    // Bahn-Modus, siehe codeZuTyp() in 60-track.js). Im Ausdruck-Modus gibt es sie als
+    // Schienenteil ohnehin nicht wirklich, also faellt sie dort wie jeder unbekannte Typ auf
+    // Gerade zurueck.
+    const code = (t) => {
+      if (t === TILE_TYPE.START || t === TILE_TYPE.STRAIGHT
+          || t === TILE_TYPE.CURVE_LEFT || t === TILE_TYPE.CURVE_RIGHT
+          || t === TILE_TYPE.HAIRPIN_LEFT || t === TILE_TYPE.HAIRPIN
+          || t === TILE_TYPE.WEIT_LEFT || t === TILE_TYPE.WEIT_RIGHT
+          || t === TILE_TYPE.KLEIN_LEFT || t === TILE_TYPE.KLEIN_RIGHT) return t;
+      if (t === TILE_TYPE.ENGE) {
+        return (typeof trackMode === 'string' && trackMode === 'on') ? CODE_ENGE : 0x02;
+      }
+      return 0x02;
+    };
     const at = (k) => code(tiles[(i0 + k) % tiles.length].type);
     return { 16: at(0), 17: at(1), 18: at(2) };
   }
@@ -5633,10 +5656,10 @@
       // Bremsprofil: voller Bremsbedarf kostet das Doppelte dessen, was der Regler fuer eine
       // normale Kurve sagt.
       const abzugProfil = bd === null ? 0 : Math.min(0.85, 2 * ghostCfg.curveSlow * bd);
-      // Kachelregel: curveSlow beschreibt die 60-Grad-Kurve, die Haarnadel bekommt das
-      // Doppelte (GHOST_TILE[0x05].curve = 2), gedeckelt damit ein hoher Regler den Ghost
-      // nicht zum Stehen bringt. Mit dem Standardregler von 20 Prozent sind das 20 Prozent
-      // in der Kurve und 40 in der Haarnadel.
+      // Kachelregel: curveSlow beschreibt die 60-Grad-Kurve, Haarnadel und Engstelle
+      // bekommen das Doppelte (tileTightness() = 2), gedeckelt damit ein hoher Regler den
+      // Ghost nicht zum Stehen bringt. Mit dem Standardregler von 20 Prozent sind das
+      // 20 Prozent in der Kurve und 40 in der Haarnadel oder Engstelle.
       const abzugKachel = tight > 0 ? Math.min(0.85, ghostCfg.curveSlow * tight) : 0;
       target *= 1 - Math.max(abzugProfil, abzugKachel);
       // GESTAFFELT UEBER DAS GANZE FELD, nicht nur der Erste. Begruendung und Formel
@@ -5931,7 +5954,35 @@
         // Auf der Ideallinie selbst wirkt sie fast nicht: die aendert sich ueber eine Kachel
         // hinweg langsam. Sie greift genau dort, wo es gemeldet wurde - am Kacheltypwechsel,
         // am Beginn und Ende einer Attacke, und wenn die Ortung sich neu ausrichtet.
-        const querMax = Math.max(0, ghostCfg.querTempo) * dt;
+        //
+        // ---- UND SIE GILT NUR IN FAHRT, wie bestellt -----------------------------------
+        //
+        // GEMELDET: "Autos koennen nicht quer hin und herrutschen [...] auch nur die
+        // Querlage wechseln, wenn sie sich vorwaerts bewegen." Vorher haengte querMax
+        // ausschliesslich an ghostCfg.querTempo und dt - ein Auto bei 0 km/h wechselte die
+        // Querlage genauso schnell wie eines bei Vollgas, die volle Bahnbreite in 250 ms,
+        // ohne sich vom Fleck zu bewegen.
+        //
+        // Der Code kannte die Regel schon, nur nicht HIER: der Kommentar bei PIT_RAND_MS
+        // sagt "die Querbewegung an den Rand braucht [...] Fahrt: ein stehendes Auto bewegt
+        // sich nicht zur Seite, egal was im Lenkbyte steht" - umgesetzt aber nur als
+        // ZEITPHASE vor dem Ausweichen, nicht im Querzweig selbst. Ein Auto, das aus einem
+        // anderen Grund steht (Start, Vollbremsung, wartend hinter einem anderen), war davon
+        // nicht erfasst.
+        //
+        // PHYSIKALISCH RICHTIG: ein Auto verschiebt sich quer, WEIL es vorwaerts faehrt und
+        // die Raeder schraeg stehen - die Rate ist proportional zum Tempo, mit einer
+        // Nullstelle bei Stillstand.
+        //
+        // AB GHOST_READ_MIN (0,35 - derselben Leseschwelle, unter der das Auto die Bahn
+        // nicht mehr zuverlaessig liest, siehe dort) GILT DIE VOLLE RATE WIE BISHER. Jede
+        // Messung zu querTempo (siehe der Kommentar dort: "bei halbem Gas ... dauert eine
+        // halbe Kachel rund 0,63 s") ist an einem FAHRENDEN Auto entstanden - diese Kopplung
+        // aendert an keiner davon etwas, sie greift nur unterhalb der Geschwindigkeit, bei
+        // der ohnehin schon nichts mehr zuverlaessig funktioniert. `v` ist oben schon
+        // berechnet (fuer den Tempo-Regler) und muss hier nicht neu gelesen werden.
+        const tempoAnteil = Math.min(1, v / GHOST_READ_MIN);
+        const querMax = Math.max(0, ghostCfg.querTempo) * dt * tempoAnteil;
         const querAlt = g.querIst === undefined ? querRohSumme : g.querIst;
         const querDiff = querRohSumme - querAlt;
         g.querIst = Math.abs(querDiff) <= querMax
@@ -5959,7 +6010,39 @@
         // Traegheit einen Takt zu spaet greift.
         if (pitSperreRechts(car)) steer = Math.min(steer, 0);
         const querRoh = Math.max(-1, Math.min(1, steer));
-        g.querSoll = (g.querSoll || 0) + (querRoh - (g.querSoll || 0)) * 0.25;
+        // ---- DER NACHLAUF IST JETZT EINE ZEITKONSTANTE UND KEIN TAKTBRUCHTEIL ---------
+        //
+        // Hier stand ein fester Faktor 0,25 JE AUFRUF - richtig fuer den echten Sendetakt
+        // (CONTROL_SEND_INTERVAL_MS = 45 ms), aber in der Simulation falsch: dort ruft
+        // simTeilschritt() diese Funktion mit Schritten bis 60 ms auf, und ein fester Faktor
+        // je Aufruf haengt dann an der SCHRITTWEITE statt an der ZEIT - bei laengeren
+        // Schritten kam derselbe Bruchteil des Rests je Aufruf heraus, obwohl mehr Zeit
+        // vergangen war, also mehr haette nachlaufen muessen.
+        //
+        // 1 - 0,75^(dt / Sendetakt) ist dieselbe Zerfallskurve, nur nach der WIRKLICH
+        // vergangenen Zeit statt nach der Zahl der Aufrufe gerechnet: bei dt = Sendetakt
+        // kommt exakt 0,25 heraus wie bisher, bei jeder anderen Schrittweite die dazu
+        // konsistente Fortsetzung derselben Kurve.
+        //
+        // ---- UND AUCH DIESER NACHLAUF GILT NUR IN FAHRT ------------------------------
+        //
+        // GEMESSEN, und es ist der eigentliche Fund hinter der Meldung: g.querIst allein
+        // zu bremsen (oben) reicht NICHT. g.querSoll ist die fuer die KARTE gedachte
+        // zweite Groesse, und ihr Nachlauf lief bisher rein nach ZEIT, unabhaengig vom
+        // Tempo. Ein frisch gestarteter oder neu georteter Ghost setzt g.querIst beim
+        // allerersten Tick OHNE Ratenbegrenzung auf sein Ziel (siehe die "undefined"-Weiche
+        // oben - das ist gewollt, ein Auto muss irgendwo anfangen), und g.querSoll kroch
+        // von dort aus ueber mehrere Zehntelsekunden zu diesem Ziel - SICHTBAR, auch wenn
+        // das Auto in dieser Zeit kaum von der Stelle kam.
+        //
+        // Nachgemessen an einem frisch gestarteten, kaum beschleunigenden Auto (0,005 bis
+        // 0,1 km/h ueber 200 ms): g.querSoll wanderte in genau dieser Zeit von 0 auf -0,136 -
+        // eine deutlich sichtbare Bewegung des Kartenpunkts, obwohl das Auto praktisch stand.
+        // Derselbe tempoAnteil wie bei querMax macht den Nachlauf jetzt genauso langsam wie
+        // das Auto selbst: bei v = 0 friert er komplett ein.
+        const querSollFaktor = (1 - Math.pow(0.75, dt / (CONTROL_SEND_INTERVAL_MS / 1000)))
+                              * tempoAnteil;
+        g.querSoll = (g.querSoll || 0) + (querRoh - (g.querSoll || 0)) * querSollFaktor;
       } else {
         // Fallback for cars not in guard-rail mode: the old layout-plus-yaw controller.
         const dir = ghostTurnDir(car, 0);
@@ -6436,7 +6519,31 @@
     return out;
   }
 
-  function ghostAssignBias() {
+  // ---- dtSek: NUR gesetzt, wenn die SIMULATION ruft, sonst der echte Zeitgeber ------
+  //
+  // BESTELLT (mittelbar, ueber die Simulationskorrektur): "Autos [...] sollen sich
+  // entsprechend der angegebenen Regeln verhalten." GHOST_BIAS_STEP (0,25) ist fuer den
+  // echten Takt kalibriert - setInterval(ghostAssignBias, GHOST_BIAS_MS) ruft alle 200 ms,
+  // und der Kommentar bei GHOST_BIAS_STEP rechnet genau damit ("0,25 bei 200 ms Takt heisst
+  // voller Versatz nach 0,8 s").
+  //
+  // DIE SIMULATION LEGT IHRE AUTOS IN DIESELBE garage (90b-sim.js: garage.push), und der
+  // echte Zeitgeber sieht sie deshalb MIT - parallel zu dem expliziten Aufruf, den die
+  // Simulation selbst schon macht (simSchritt). Zwei Treiber auf demselben Wert heissen:
+  // der Versatz baut sich in der Simulation schneller auf, als querTempo hergibt, und zwar
+  // ungleichmaessig - abhaengig davon, wie oft der wirkliche Rechner in der Zwischenzeit
+  // eine echte Sekunde erlebt hat, nicht davon, wie viel SIMULIERTE Zeit vergangen ist.
+  //
+  // dtSek === undefined heisst "der echte Zeitgeber hat gerufen" - und genau dann, wenn eine
+  // Simulation laeuft, ist das die Doppelspur, die es nicht geben soll: die Simulation ruft
+  // explizit mit ihrem eigenen dt, also reicht das.
+  function ghostAssignBias(dtSek) {
+    if (dtSek === undefined && typeof simAn === 'function' && simAn()) return;
+    // Der Schritt skaliert mit der wirklich vergangenen Zeit, bezogen auf GHOST_BIAS_MS -
+    // bei dtSek === GHOST_BIAS_MS/1000 (der echte Zeitgeber) kommt exakt GHOST_BIAS_STEP
+    // heraus wie bisher.
+    const schritt = GHOST_BIAS_STEP
+      * ((dtSek === undefined ? GHOST_BIAS_MS / 1000 : Math.max(0, dtSek)) / (GHOST_BIAS_MS / 1000));
     const gs = garage.filter(c => c.role === 'ghost' && c.ghost);
     const want = new Map(gs.map(c => [c, 0]));
     // Erst die Gruppen bilden, dann die Seiten verteilen. Paarweise zuzuweisen war bei drei
@@ -6463,7 +6570,7 @@
       const t = want.get(c) || 0;
       const cur = c.ghost.bias || 0;
       const d = t - cur;
-      c.ghost.bias = Math.abs(d) <= GHOST_BIAS_STEP ? t : cur + Math.sign(d) * GHOST_BIAS_STEP;
+      c.ghost.bias = Math.abs(d) <= schritt ? t : cur + Math.sign(d) * schritt;
       // Einmal melden, wenn es greift - sonst sieht man nicht, ob die Logik ueberhaupt
       // ausloest, und "die fahren nicht versetzt" bleibt eine Vermutung.
       const near = t !== 0;
