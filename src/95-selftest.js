@@ -661,10 +661,25 @@
     if (!window.OMEGA_TEST || !OMEGA_TEST.physTyreAsym) {
       return { skip: true, mass: 'physTyreAsym nicht vorhanden' };
     }
-    const re = OMEGA_TEST.physTyreAsym({ steering: 0.7, sekunden: 40 });
-    const li = OMEGA_TEST.physTyreAsym({ steering: -0.7, sekunden: 40 });
+    // ---- DIE VERSCHLEISSRATE WIRD GESETZT, und das ist eine Berichtigung ----------
+    //
+    // Der Test behauptet: die Seitenverlagerung VERSCHIEBT nur, der Mittelwert bleibt. Das
+    // ist eine Aussage ueber die Normierung im Modell (die beiden Anteile summieren sich zu
+    // 2) - und sie gilt nur UNTERHALB der Saettigung. st.tyreWear4 ist auf 1 gedeckelt, und
+    // ein gedeckeltes Rad kann seinen Ueberschuss nicht mehr gegen das andere aufrechnen.
+    //
+    // Mit der Vorgaberate 0,0096 (dreifach seit v0.5.56) lief genau das: das belastete Rad
+    // stand nach 40 s auf 1,000, das entlastete auf 0,336, und der Mittelwert fiel auf
+    // 0,668 gegen 0,836 im symmetrischen Fall. Gemeldet als Fehler, war es keiner - der
+    // Test hatte nur seine eigene Voraussetzung verloren.
+    //
+    // Also setzt er die Rate selbst. Ein Test, der eine Modelleigenschaft behauptet, darf
+    // nicht an einer Kalibrierung haengen, die sich aendern darf.
+    const RATE = { tyreWearRate: 0.0032 };
+    const re = OMEGA_TEST.physTyreAsym({ steering: 0.7, sekunden: 40, cfg: RATE });
+    const li = OMEGA_TEST.physTyreAsym({ steering: -0.7, sekunden: 40, cfg: RATE });
     const sy = OMEGA_TEST.physTyreAsym({ steering: 0.7, sekunden: 40,
-                                         cfg: { tyreAsymEffect: 0 } });
+                                         cfg: Object.assign({ tyreAsymEffect: 0 }, RATE) });
     const ok = re.wearL > re.wearR * 2          // Rechtskurve nutzt links deutlich mehr
       && li.wearR > li.wearL * 2                // Linkskurve gespiegelt
       && Math.abs(re.mittel - sy.mittel) < 1e-4  // Mittelwert unveraendert
@@ -745,9 +760,11 @@
     if (!window.OMEGA_TEST || !OMEGA_TEST.physTyreAsym) {
       return { skip: true, mass: 'physTyreAsym nicht vorhanden' };
     }
-    const a = OMEGA_TEST.physTyreAsym({ steering: 0.8, sekunden: 20 });
+    // Dieselbe feste Rate wie im Test darueber, aus demselben Grund.
+    const RATE2 = { tyreWearRate: 0.0032 };
+    const a = OMEGA_TEST.physTyreAsym({ steering: 0.8, sekunden: 20, cfg: RATE2 });
     const sy = OMEGA_TEST.physTyreAsym({ steering: 0.8, sekunden: 20,
-                                         cfg: { tyreAsymEffect: 0 } });
+                                         cfg: Object.assign({ tyreAsymEffect: 0 }, RATE2) });
     if (!a.temp4 || !sy.temp4) return { skip: true, mass: 'temp4 nicht vorhanden' };
     const mit = x => (x[0] + x[1] + x[2] + x[3]) / 4;
     const ok =
@@ -758,7 +775,15 @@
       && Math.max.apply(null, sy.temp4) - Math.min.apply(null, sy.temp4) < 1e-6
       && Math.max.apply(null, sy.wear4) - Math.min.apply(null, sy.wear4) < 1e-9
       // Und der Verschleissmittelwert ist derselbe - die Verlagerung verschiebt nur.
-      && Math.abs(mit(a.wear4) - mit(sy.wear4)) < 1e-6;
+      //
+      // IM VERHAELTNIS und nicht absolut: der Mittelwert ist eine ueber 1000 Takte
+      // AUFSUMMIERTE Groesse, und das Rundungsrauschen darin waechst mit ihm. Eine feste
+      // Schranke von 1e-6 ist deshalb keine Aussage ueber das Modell, sondern eine ueber
+      // die gerade eingestellte Verschleissrate - bei dreifacher Rate wurde sie von
+      // 2e-6 reinem Fliesskommarest gerissen, ohne dass sich am Modell etwas geaendert
+      // hatte. 1e-5 RELATIV haelt die Aussage und den Rest auseinander.
+      && Math.abs(mit(a.wear4) - mit(sy.wear4))
+         <= 1e-5 * Math.max(1e-9, mit(sy.wear4));
     return { ok, mass: 'Temp ' + a.temp4.map(x => x.toFixed(0)).join('/')
       + ' | Versch ' + a.wear4.map(x => (x * 100).toFixed(1)).join('/')
       + ' | Mittel ' + (mit(a.wear4) * 100).toFixed(4) + '% gegen '

@@ -127,10 +127,18 @@
         // servoAngle bleibt normiert (-1 .. 1) - das Protokoll kennt nur Byte 7 als
         // int8, und eine Umrechnung in Grad und zurueck waere ein Rundungsfehler ohne
         // Gegenwert. Die 45 Grad sind die BEDEUTUNG von 1,0, nicht seine Einheit.
-        steerResponse: 2.5,      // live trim on the D-pad, 0.5 .. 3.0 in 10% steps.
-                                      // 150 % is the calibrated default: measured on the real
-                                      // car, that is what answers properly. The ceiling was
-                                      // raised from 2.0 so the default is not also the limit.
+        // ---- 3,0 = 150 PROZENT, und die zwei Zahlen sind nicht dieselbe Groesse ----
+        //
+        // Der Regler zeigt PROZENT, das Modell fuehrt einen FAKTOR: steerRespPct() rechnet
+        // v / STEER_RESP_REF * 100 mit REF = 2,0. Die bestellten 150 Prozent sind also 3,0
+        // und nicht 1,5 - hier stand eine Fassung lang 2,5 mit einem Kommentar, der 150
+        // Prozent behauptete. Das waren 125.
+        //
+        // Gelesen wird ohnehin der Regler: die Schleife in 50-drive.js ruft apply() schon
+        // beim Aufbau, das Markup gewinnt. Dieses Literal steht trotzdem richtig da, weil
+        // ein Vorgabewert, der etwas anderes sagt als das Bedienelement, die naechste
+        // halbe Stunde Suche ist.
+        steerResponse: 3.0,      // live trim on the D-pad, 0.5 .. 3.0 in 10% steps.
         speedSteerReduction: 0.35, // and only weighted by gear, see update()
         autoShift: true,  // Automatik als Standard
 
@@ -225,7 +233,17 @@
         // Jetzt: der ganze Zustand wird kopiert, tyreEffect stillgelegt, und der
         // Bezugszustand ist ein Rennstart - voller Tank, nominale Reifen, trockene Bahn.
         // Vor und nach einem kompletten Selbsttest messt derselbe Aufruf dasselbe.
-        brakeDecelBase: 1.08,
+        // ---- 0,72 UND NICHT 1,08, und das ist eine Ruecknahme ----------------------
+        //
+        // Hier stand 1,08. Der Wert kam aus einer fremden Aenderung am Repo, die "Fading
+        // plus 50 Prozent" umsetzen wollte - aber das ist NICHT das Fading. brakeDecelBase
+        // ist die GRUNDVERZOEGERUNG der Bremse, und BASE_BRAKE in 50-drive.js nimmt genau
+        // dieses Literal als Bezug fuer jede spaetere Skalierung. Ein Fuenfzigstel mehr
+        // hier heisst: die Bremse packt ueberall um die Haelfte staerker zu.
+        //
+        // Das Fading sitzt an einem eigenen Regler (setting-brake-fade-strength), und der
+        // steht jetzt auf 150 Prozent - dort, wo die Bestellung hingehoerte.
+        brakeDecelBase: 0.72,
         // 0, und das ist eine Entscheidung gegen den Fitter: der wollte -0,10, also eine
         // Bremse, die mit der Fahrt schwaecher wird. Der Luftanteil steckt schon im
         // Rollwiderstandsterm, der beim Bremsen mitwirkt - ein zweiter Term dafuer zaehlt ihn
@@ -316,8 +334,37 @@
         tyreColdPenalty: 0.35, // Griffverlust auf eiskalten Reifen
         tyreHotPenalty: 0.38,  // Griffverlust bei durchgeheizten Reifen (v0.4: von 0,30)
         // v0.4 von 0,0018 herauf: bei 100 % war der Verschleiss ueber eine Rennlaenge
-        // kaum zu merken. Jetzt abgefahren nach gut vier Minuten voller Attacke.
-        tyreWearRate: 0.0064,
+        // kaum zu merken.
+        //
+        // ---- UND JETZT AUF DAS DREIFACHE VON 0,0032, wie bestellt -------------------
+        //
+        // "Reifenverschleiss erhoehen auf die doppelte oder dreifache Geschwindigkeit
+        // (simuliere mal, sodass weiche Reifen kaputt sind, lange bevor der Tank leer
+        // ist)." Gemessen mit reifenStintProbe (93-testbench.js), Gas 0,85 und wechselndem
+        // Lenkeinschlag, Zeit bis der Satz durch ist:
+        //
+        //     Rate              weich     mittel     hart
+        //     0,0032 (1x)       213 s      365 s     595 s
+        //     0,0064 (2x)       118 s      194 s     308 s
+        //     0,0096 (3x)        86 s      137 s     213 s
+        //
+        // Das Dreifache, weil erst dort ein Satz weicher Reifen ueber eine uebliche
+        // Renndistanz UEBERHAUPT zur Entscheidung wird: 86 Sekunden sind rund zwoelf Runden.
+        //
+        // ---- WAS DABEI NICHT AUFGEHT, und es gehoert hierher ------------------------
+        //
+        // Die Klammer der Bestellung geht nicht auf, und zwar in keiner der beiden
+        // angebotenen Stufen. Derselbe Prueflauf misst den Tank bei einem Verbrauch von
+        // 3 %/s auf 39 Sekunden - der Tank ist also FRUEHER leer als jeder Reifensatz,
+        // auch bei 3x. Damit weiche Reifen "lange vor" dem Tank durch waeren, muesste die
+        // Rate bei rund 0,021 liegen, dem 6,6-fachen.
+        //
+        // GEAENDERT WIRD DAS HIER NICHT, aus einem Grund: der Tankverbrauch steht ab Werk
+        // auf 0, die Tanksimulation ist also aus, und dann sind die Reifen ohnehin das
+        // einzige, was zur Neige geht. Wer den Tank einschaltet, entscheidet mit dem
+        // Verbrauchsregler selbst, welche der beiden Groessen zuerst leer ist - unter
+        // etwa 1,4 %/s sind es die Reifen.
+        tyreWearRate: 0.0096,
         // Faktor der REIFENMISCHUNG auf den Verschleiss, gesetzt von applySurface() in
         // 70-race.js. Eigenes Feld und nicht tyreWearRate selbst: zwei Orte fuer dieselbe
         // Zahl waren in diesem Projekt schon siebzehnmal eine Abweichung.

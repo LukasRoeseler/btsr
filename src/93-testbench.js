@@ -3547,6 +3547,72 @@
       }
     },
 
+    // ---- WIE LANGE HAELT EIN SATZ REIFEN, UND WIE LANGE DER TANK? -----------------
+    //
+    // BESTELLT: "Reifenverschleiss erhoehen auf die doppelte oder dreifache Geschwindigkeit
+    // (simuliere mal, sodass weiche Reifen kaputt sind, lange bevor der Tank leer ist)."
+    //
+    // Also wird genau das gemessen und nicht geschaetzt: ein Stint gefahren, bis der Satz
+    // durch ist, und DERSELBE Gasverlauf durch die Tankrechnung geschickt.
+    //
+    // DER GASVERLAUF IST DER GEMEINSAME BEZUG. Der Tank leert sich nach
+    // |gas| * dt * Verbrauch (fuelDrainPerSec in 70-race.js), der Verschleiss haengt an
+    // Walkarbeit und Temperatur - zwei Groessen mit ganz verschiedenen Treibern. Sie an
+    // DERSELBEN Fahrt zu messen ist der einzige ehrliche Weg zu ihrem Verhaeltnis.
+    //
+    // ES WIRD GELENKT, und zwar wechselnd. Verschleiss entsteht aus Arbeit, und geradeaus
+    // Vollgas ist der SCHWAECHSTE Fall - ein Stint ohne Kurven liesse die Reifen laenger
+    // halten als jede echte Runde und wuerde die Antwort schoenen.
+    reifenStintProbe(o) {
+      const opt = o || {};
+      const e = physEngine, st = e.state;
+      const merk = OMEGA_TEST.zustandKopie(st);
+      const merkCfg = { rate: e.config.tyreWearRate, mix: e.config.tyreWearMix,
+                        eff: e.config.tyreEffect };
+      try {
+        if (opt.rate !== undefined) e.config.tyreWearRate = opt.rate;
+        e.config.tyreWearMix = opt.mix === undefined ? 1 : opt.mix;
+        e.config.tyreEffect = opt.tyreEffect === undefined ? 1 : opt.tyreEffect;
+        // Frischer Satz, Umgebungstemperatur: ein Stint faengt kalt an. Ohne das Zuruecksetzen
+        // erbt die Messung die Reifen des vorigen Laufs.
+        for (let i = 0; i < 4; i++) {
+          st.tyreWear4[i] = 0;
+          st.tyreTemp4[i] = e.config.tyreAmbientC;
+        }
+        st.tyreWear = 0; st.tyreWearL = 0; st.tyreWearR = 0;
+        st.tyreTempC = e.config.tyreAmbientC;
+        st.speedKmh = 0; st.virtualSpeed = 0; st.driveMode = 'forward';
+
+        const dt = CONTROL_SEND_INTERVAL_MS / 1000;
+        const gas = opt.throttle === undefined ? 0.85 : opt.throttle;
+        const lenkAmp = opt.lenk === undefined ? 0.55 : opt.lenk;
+        const drain = opt.drain === undefined ? 3 : opt.drain;
+        const maxS = opt.maxSekunden || 900;
+        let tank = 100, tSec = 0;
+        let reifenSek = null, reifen80 = null, tankSek = null;
+        while (tSec < maxS) {
+          const lenk = Math.sin(tSec * 1.1) * lenkAmp;
+          e.update({ steering: lenk, throttle: gas, brake: 0, headlights: false }, dt);
+          tank = Math.max(0, tank - Math.abs(gas) * dt * drain);
+          tSec += dt;
+          if (reifen80 === null && st.tyreWear >= 0.8) reifen80 = +tSec.toFixed(2);
+          if (reifenSek === null && st.tyreWear >= 0.999) reifenSek = +tSec.toFixed(2);
+          if (tankSek === null && tank <= 0) tankSek = +tSec.toFixed(2);
+          if (reifenSek !== null && tankSek !== null) break;
+        }
+        return { reifenSek, reifen80, tankSek,
+                 wearEnde: +st.tyreWear.toFixed(4),
+                 tempEnde: +st.tyreTempC.toFixed(1),
+                 gas, drain,
+                 rate: e.config.tyreWearRate, mix: e.config.tyreWearMix };
+      } finally {
+        e.config.tyreWearRate = merkCfg.rate;
+        e.config.tyreWearMix = merkCfg.mix;
+        e.config.tyreEffect = merkCfg.eff;
+        OMEGA_TEST.zustandZurueck(st, merk);
+      }
+    },
+
     // Die Reifenmischung von aussen setzen. Ein Wechsel geht in der App nur ueber einen
     // Boxenstopp, und den fuer eine Anzeigepruefung nachzuspielen waere ein halbes Rennen.
     // ALTE NAMEN BLEIBEN GUELTIG: 'slick' und 'wet' sind seit v0.5.18 'mittel' und

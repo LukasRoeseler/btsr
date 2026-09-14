@@ -6511,7 +6511,7 @@
       <div class="opt-row"><div class="opt-label">Tankgewicht<small>Voller Tank macht träger. Links = aus.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-fuelweight" min="0" max="1" step="0.05" value="0">
+          <input type="range" id="setting-fuelweight" min="0" max="1" step="0.05" value="1">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-fuelweight-val">100%</span>
         </div></div>
@@ -6539,7 +6539,7 @@
       
 
       <div class="opt-row"><div class="opt-label">Reifenw&auml;rmer<small>Start und Reifenwechsel auf Betriebstemperatur statt kalt. Aus hei&szlig;t: die ersten Runden fehlt Grip, bis die Reifen warm gefahren sind. An hei&szlig;t: sofort im Griff-Fenster, also 85 Grad. In der Formel 1 waren W&auml;rmedecken bis 2024 erlaubt und sind seit 2025 verboten; im GT-Sport sind sie meist untersagt. Hier ist es eine Einstellung und keine Regel.</small></div>
-        <label class="tgl"><input type="checkbox" id="setting-tyre-blankets" checked><span></span></label></div>
+        <label class="tgl"><input type="checkbox" id="setting-tyre-blankets"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Jedes Rad einzeln
           <small>Aus Nick- und Querverlagerung bekommt jedes der vier Räder seine eigene
           Last, und daraus folgen vier Temperaturen, vier Verschleißwerte und vier
@@ -6578,9 +6578,9 @@
           <small>&Uuml;ber 100&nbsp;% steigt die Heizrate, nicht der maximale Verlust.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-brake-fade-strength" min="0" max="2" step="0.05" value="1">
+          <input type="range" id="setting-brake-fade-strength" min="0" max="2" step="0.05" value="1.5">
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="setting-brake-fade-strength-val">100%</span>
+          <span class="opt-val" id="setting-brake-fade-strength-val">150%</span>
         </div></div>
 
 <div class="opt-head">Aerodynamik</div>
@@ -6604,9 +6604,9 @@
       <div class="opt-row"><div class="opt-label">Lenkansprechen<small>Auch auf dem Steuerkreuz hoch/runter &ndash; links/rechts bl&auml;ttert seit v0.5.18 die Cockpit-Schirme. Der volle Lenkeinschlag ist mechanisch 45&nbsp;Grad; bei 100&nbsp;% fordert voller Stick genau ihn an.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="phys-steerresp" min="0.5" max="3" step="0.05" value="2.4">
+          <input type="range" id="phys-steerresp" min="0.5" max="3" step="0.05" value="3">
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="phys-steerresp-val">100%</span>
+          <span class="opt-val" id="phys-steerresp-val">150%</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Lenkd&auml;mpfung
           <span class="wip-tag">WIP</span>
@@ -6643,9 +6643,9 @@
       <div class="opt-row"><div class="opt-label">Lenkwinkel-Kalibrierung<small>Für enge Strecken. Der Regler sitzt hinter dem Reibkreis: beim Anbremsen einer Kurve beschneidet der die Lenkung auf etwa 60 Prozent, und bei 200 Prozent erreicht dieser beschnittene Wunsch wieder den vollen Anschlag. Weiter als 45 Grad kann kein Wert lenken, das ist die Mechanik des Autos und nicht die App. Der Preis ist Feingefühl: je höher, desto früher liegt der Anschlag an und desto weniger sagt der letzte Teil des Sticks.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-steer-calib" min="1" max="3" step="0.05" value="2">
+          <input type="range" id="setting-steer-calib" min="1" max="3" step="0.05" value="2.5">
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="setting-steer-calib-val">200%</span>
+          <span class="opt-val" id="setting-steer-calib-val">250%</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Beschleunigungsfaktor<small>Feinabstimmung, 1.0 = die eingestellte Zeit.</small></div>
         <div class="opt-slider">
@@ -7865,7 +7865,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.5.55</span></span>
+    <span class="foot-ver">v<span id="app-version">0.6.2</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine

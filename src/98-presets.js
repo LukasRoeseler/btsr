@@ -69,7 +69,7 @@
            // 2,6 statt 3,2 s: gemessen brauchte das Motorbyte mit den alten Werten 24,9 s
            // Vollgas bis 90 %. Pro ist die Vorgabe und muss sich wie ein Auto anfuehlen,
            // nicht wie ein Anfahrversuch.
-           'setting-zero-to-top': 2.6, 'setting-coast-drag': 0.6, 'setting-fuelweight': 0,
+           'setting-zero-to-top': 2.6, 'setting-coast-drag': 0.6, 'setting-fuelweight': 1,
            // REIFENMODELL AN, seit v0.5.18. Pro ist die Vorgabe, und mit 0 waeren die
            // vier Mischungen ab Werk wirkungslos - ein Merkmal, das man erst durch einen
            // Regler freischalten muss, ist nicht geliefert. 1,0 ist das volle Modell und
@@ -83,11 +83,11 @@
            // und ein kalibriertes Modell soll in seiner Vorgabe auf seiner
            // Kalibrierung stehen. Die anderen Voreinstellungen behalten ihre Werte -
            // dort ist die Abweichung eine Abstimmung und keine Unstimmigkeit.
-           'setting-tyres': 1, 'phys-steerresp': 2.4, 'setting-brakebias': 62,
+           'setting-tyres': 1, 'phys-steerresp': 3, 'setting-brakebias': 62,
            // Lenkkalibrierung 200 Prozent: der Reibkreis beschneidet den Einschlag beim
            // Anbremsen auf etwa 60 Prozent, und das holt ihn zurueck. Gemessen bei 60 km/h
            // unter Bremsen: 35 Grad ohne, volle 45 Grad ab einem Drittel Stick mit.
-           'setting-steer-calib': 2.0,
+           'setting-steer-calib': 2.5,
            // Reibkreis 1,15, GEMESSEN. Bei Kalibrierung 200 Prozent waren 0,85 und 1,00 beide
            // unsichtbar (45 Grad rollend wie bremsend); 1,15 nimmt bei 80 km/h und
            // darueber 45 auf 26 Grad und laesst 40 bis 60 km/h unberuehrt. Ueber
@@ -96,7 +96,7 @@
            'setting-brake-steal': 1.15,
            // Waermer an, weil Pro die Vorgabe ist: wer zum ersten Mal faehrt, soll nicht drei
            // Runden auf Grip warten und das fuer das Fahrverhalten halten.
-           'setting-tyre-blankets': true,
+           'setting-tyre-blankets': false,
            'phys-accel': 1.0,
            'setting-fuel-drain': 0, 'setting-crash-count': 4,
            'setting-crash-damage': false,
@@ -113,7 +113,7 @@
            // Es kostet auch wenig: eine Einzelbremsung fadet gemessen nicht (241 Grad,
            // Fading beginnt bei 520), erst mehrere Bremszonen hintereinander kommen hinein.
            'setting-brake-fade': true,
-           'setting-brake-fade-strength': 1.0,
+           'setting-brake-fade-strength': 1.5,
            'setting-dirtyair': false,
            'setting-dirtyair-strength': 1.0,
            'setting-tyre-asym': true,   // Vorgabe im Markup seit v0.4.55, und die Vorgabe IST Pro
