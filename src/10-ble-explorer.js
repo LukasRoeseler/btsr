@@ -945,6 +945,18 @@
       "Driver aid, suspension, gearbox, mass and tyres, steering.",
     "Und sobald das Auto keinen Streckencode mehr liest – weil es neben der Bahn liegt –, bekommst du die volle Kontrolle zurück, damit du selbst zurückfahren kannst. Das gilt auch bei gelber Flagge: dort bleibt nur das Tempo gedrosselt, gelenkt wird von dir. Die Umschaltung braucht die Entprellzeit aus „Abseits: Verzögerung“ (ab Werk eine Sekunde), weil ein einzelner Aussetzer beim Überfahren einer Kachelkante sonst als Abflug gelesen würde.":
       "And as soon as the car stops reading a track code – because it is off the track – you get full control back, so you can drive it back yourself. This applies under a yellow flag too: there only the speed stays limited, the steering is yours. The handover needs the debounce time from “Off-track: delay” (one second by default), because otherwise a single dropout while crossing a tile edge would read as leaving the track.",
+    "Die vier Varianten „Licht an + Bit …“ sind anders zu prüfen: nicht mit Byte 12, sondern mit dem Auge.":
+      "The four “Light on + bit …” variants are checked differently: not with byte 12, but with your eyes.",
+    "Scheinwerfer einschalten, eine Variante wählen, aufs Auto schauen – wird das Vorderlicht heller, dunkler, oder ändert sich nichts? Byte 14 hat nach heutigem Stand genau ein Scheinwerfer-Bit; diese vier probieren aus, ob eines der bisher unbeobachteten Bits eine zweite Helligkeitsstufe auslöst. Ohne Auto ist hier nichts zu sehen.":
+      "Turn the headlights on, pick a variant, watch the car – does the headlight get brighter, dimmer, or does nothing change? As things stand, byte 14 has exactly one headlight bit; these four try whether one of the bits nobody has observed yet triggers a second brightness level. Without a car there is nothing to see here.",
+    "Licht an + Bit 2 (0x04)":
+      "Light on + bit 2 (0x04)",
+    "Licht an + Bit 3 (0x08)":
+      "Light on + bit 3 (0x08)",
+    "Licht an + Bit 4 (0x10)":
+      "Light on + bit 4 (0x10)",
+    "Licht an + Bit 6 (0x40)":
+      "Light on + bit 6 (0x40)",
     "Stoppen": "Stop",
     "Strecke aus Teilen bauen, drehen, als Code weitergeben. Alle elf Teiletypen der Original-App sind dabei, auch die Engstelle.":
       "Build a track from pieces, rotate it, pass it on as a code. All eleven piece types from the original app are included, the narrow section too.",

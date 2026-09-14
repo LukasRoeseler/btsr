@@ -127,6 +127,31 @@
     // What the app writes to its OWN ghosts: byte 10 = 0x20 and byte 15 bit 3.
     auto:    { label: 'Autonom: b10=0x20, b15=0x0c, Bit 5',
                bytes: { 10: 0x20, 14: LIGHT_HEAD | 0x20, 15: 0x0c } },
+
+    // ---- VIER VARIANTEN FUER DIE HELLIGKEITSFRAGE, mit gesetztem Lichtbit -----------
+    //
+    // GEFRAGT: "Kannst du 2 verschiedene Licht-Helligkeiten fuer das Vorderlicht
+    // einstellen? Falls ja, dann differenziere zwischen Abblendlicht und Fernlicht."
+    //
+    // BEFUND ZUERST: Byte 14 hat genau EIN Scheinwerfer-Bit (LIGHT_HEAD, 20-protocol.js),
+    // belegt an einem HCI-Mitschnitt mit drei erfassten Zustaenden und dazu passenden
+    // Pruefsummen. Abblend- und Fernlicht sind damit NICHT zu bauen, ohne vorher
+    // nachzusehen, ob es ueberhaupt ein zweites Bit dafuer gibt.
+    //
+    // Was es gibt: Bit 6 (0x40) kommt in beiden Betriebsarten vor, Bedeutung offen, wird
+    // auf 0 gelassen (siehe die Byte-14-Tabelle im Doku-Tab). Bits 2, 3 und 4 werden
+    // nirgends erwaehnt - nie gesetzt gesehen. Diese vier Varianten testen sie EINZELN,
+    // und zwar MIT gesetztem Lichtbit (anders als b14_20 bis b14_a0 oben, die das Licht
+    // ausdruecklich ausschalten, um den Streckensensor zu pruefen). Hier soll das
+    // Vorderlicht sichtbar an sein, damit ein Helligkeitsunterschied ueberhaupt zu sehen
+    // waere.
+    //
+    // GEMESSEN WIRD MIT DEM AUGE, nicht mit Byte 12 wie die Varianten oben - siehe den
+    // Anleitungstext daneben.
+    b14_licht4:  { label: 'Licht an + Bit 2 (0x04)', bytes: { 14: LIGHT_HEAD | 0x20 | 0x04 } },
+    b14_licht8:  { label: 'Licht an + Bit 3 (0x08)', bytes: { 14: LIGHT_HEAD | 0x20 | 0x08 } },
+    b14_licht10: { label: 'Licht an + Bit 4 (0x10)', bytes: { 14: LIGHT_HEAD | 0x20 | 0x10 } },
+    b14_licht40: { label: 'Licht an + Bit 6 (0x40)', bytes: { 14: LIGHT_HEAD | 0x20 | 0x40 } },
   };
 
   // Knoepfe aus der Variantenliste. Eine Quelle, nicht zwei.
