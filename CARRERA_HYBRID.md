@@ -603,6 +603,134 @@ Das Auto unterstützt Updates seiner eigenen Software über Bluetooth. Das nennt
 
 Das bedeutet: Der Hersteller kann über die App neue Firmware auf das Auto spielen, zum Beispiel um Fehler zu beheben oder das Fahrverhalten zu verbessern.
 
+## Abgleich mit der Protokollbeschreibung von seVen
+
+seVen hat eine byteweise Beschreibung des HYBRID-Protokolls geteilt. Sie stimmt in den
+tragenden Teilen mit dem überein, was hier unabhängig gemessen wurde — Rahmenlänge, Header
+`0xAF`, Byte 6 Tempo um die Neutrale `0xDF`, Byte 7 Servo, Byte 11 Zähler, Byte 12
+Kachelcode. Interessant sind die Stellen, an denen die beiden Quellen **auseinandergehen**.
+Jede davon ist entweder ein Gewinn für uns oder ein Hinweis für seVen.
+
+### 1. Die Rückwärtsgrenze — seVen erklärt eine offene Beobachtung
+
+In `10-ble-explorer.js` steht seit Langem ein Rätsel: volle Rückwärtsfahrt (Delta −127,
+Byte `0x60`) fährt **vorwärts**, halbe (Delta −64, Byte `0x9F`) fährt korrekt rückwärts.
+Deshalb ist `MIN_THROTTLE_DELTA` auf −64 geklemmt, mit dem Vermerk „bis die genaue Grenze
+gemessen ist".
+
+seVens Tabelle liefert die Grenze:
+
+| Bereich | Bedeutung |
+|---|---|
+| `0xE0`–`0xFF`, dann `0x00`–`0x6F` | vorwärts, 144 Stufen |
+| `0x80`–`0xDE` | rückwärts, 95 Stufen |
+
+`0x60` liegt damit **im Vorwärtsbereich** — genau die beobachtete Anomalie, und damit
+erklärt. Die sichere Rückwärtsgrenze ist Byte `0x80`, also Delta **−95** statt −64.
+
+**Vorschlag:** `MIN_THROTTLE_DELTA` auf −95. Das sind 48 % mehr Rückwärtsweg. Nicht
+ungeprüft übernehmen — am Auto nachfahren, weil die Klemme aus einer echten Beobachtung
+stammt und nicht aus einer Annahme.
+
+### 2. Drei Befehlsbytes, die wir konstant senden
+
+Unser Paket setzt sie fest; seVen beschreibt sie als Wahlmöglichkeiten:
+
+| Byte | wir senden | seVen |
+|---|---|---|
+| 8 | `0x80` | Fahrstil: `0x64` Arcade, `0x78` Realistisch |
+| 10 | `0x60` (Ghost: `0x20` / `0x30`) | Fahrassistent: `0x22` hoch, `0x42` mittel, `0x52` niedrig, `0x62` aus |
+| 12 | `0x01` | Hersteller: `0x01` Porsche, `0x02` BMW, `0x03` Ford |
+
+Unsere `0x80` und `0x60` kommen aus Mitschnitten der Original-App und funktionieren — sie
+stehen also nicht im Widerspruch, sondern sind vermutlich weitere gültige Werte oder eine
+andere Firmware-Fassung.
+
+**Vorschlag, in dieser Reihenfolge:** Byte 12 ist das risikoärmste und interessanteste —
+die App hat BMW- und Ford-Profile im Klang, und wenn das Auto seine eigene Fahrcharakteristik
+danach richtet, ließe sich das erstmals ausprobieren. Byte 8 (Arcade/Realistisch) wäre ein
+Fahrhilfe-Schalter in der **Hardware** statt in unserem Modell. Beides über den vorhandenen
+Byte-Prüfstand im Entwicklertab, der die Prüfsumme korrekt neu rechnet.
+
+### 3. Ein gemessenes Tempo, das wir nicht lesen
+
+seVen nennt **Byte 14 der Meldung** `speedFeedBack`, in derselben Kodierung wie das
+Befehlstempo (`0xDF` neutral). Wir lesen aus der Meldung heute Byte 3 (Gier), 10 (Akku),
+11 (Zähler) und 12 (Code) — **kein Tempo**. Die gesamte Geschwindigkeit der App ist
+gerechnet: Tacho, Ghost-Regelung, Rundenschätzung.
+
+**Das wäre die größte einzelne Verbesserung in dieser Liste.** Ein gemessenes Tempo würde
+den Tempo-Regler der Ghosts von einer Steuerung zu einer echten Regelung machen und die
+Leseschwellen-Diagnose (`GHOST_READ_MIN`) direkt beantworten, statt sie aus dem
+Kachelzähler zu erschließen.
+
+Zu prüfen ist es ohne Auto nicht. Der Weg: Byte 14 im Monitor mitschreiben, einmal langsam
+und einmal schnell fahren, und sehen, ob es sich mit dem Tacho bewegt.
+
+### 4. Sechs Kachelcodes, die wir nicht kennen
+
+| Code | seVen | wir |
+|---|---|---|
+| `0x01` | Start/Ziel | Start/Ziel (Ausdruck-Modus) |
+| `0x02` | Gerade 43,2 | Gerade |
+| `0x03` | Linkskurve 60 | Linkskurve |
+| `0x04` | Rechtskurve 60 | Rechtskurve |
+| `0x05` / `0x06` | Haarnadel links / rechts | dito |
+| `0x07` | **Boxengasse / lange Gerade** | — |
+| `0x08` / `0x09` | **große Kurve 30 links / rechts** | — |
+| `0x0A` | **NarrowSection** | **Start/Ziel (Bahn-Modus)** |
+| `0x0B` / `0x0C` | **kleine Kurve 30 links / rechts** | — |
+
+**Und hier haben WIR etwas, das seVens Beschreibung fehlt:** der Sensor hat **zwei
+Codetabellen**, eine je Betriebsart (Bahn-Modus über Byte 14 Bit 5, Ausdruck-Modus über
+Bit 7) — siehe oben. Dasselbe gedruckte Blatt meldet je nach Modus `0x01` oder `0x0a`. Eine
+flache Tabelle kann das nicht abbilden, und genau daran ist die Musterentzifferung hier
+monatelang falsch gelaufen.
+
+**Der Konflikt bei `0x0A` ist deshalb offen und praktisch wichtig:** Gilt seVens Tabelle im
+Bahn-Modus, dann ist `0x0A` eine **Engstelle** und keine Ziellinie — und wer ein solches
+Teil verbaut, bekäme bei jeder Überfahrt eine Phantomrunde gezählt. Gilt sie im
+Ausdruck-Modus, passt `0x01` zu unserer Tabelle und `0x0A` ist ein Papiercode, den wir
+nicht kennen.
+
+**Vorschlag:** seVen nach dem Modus fragen, in dem seine Tabelle gilt. Das ist die eine
+Frage, deren Antwort am meisten klärt.
+
+### 5. Die Akkuskala weicht ab
+
+| | untere Grenze | obere Grenze |
+|---|---|---|
+| wir (`batteryPercent`) | 111 | 155 |
+| seVen | 131 | 155 |
+
+Bei Rohwert 131 zeigen wir **45 %**, seVen sagt **0 %**. Das ist keine Kosmetik: wer sich
+auf die Anzeige verlässt, bliebe mitten im Rennen stehen.
+
+**Vorschlag:** nachmessen statt raten — ein Auto leerfahren und den kleinsten je gemeldeten
+Rohwert festhalten. Beide Zahlen sind Schätzungen, unsere ist nur älter.
+
+### 6. Wo unsere Messung stärker ist als die Beschreibung
+
+**Die Prüfsumme.** seVen nennt sie „XOR über Bytes 0…18". Wir rechnen **CRC-8 mit Polynom
+`0x31` und Startwert `0xFF`**, und das ist nicht theoretisch: `crc8()` reproduziert drei
+aufgezeichnete Prüfsummen aus echten Mitschnitten exakt (`0xA4`, `0x33`, `0x83`). Ein XOR
+täte das nicht. Die App fährt damit seit Monaten echte Autos — hier ist die Beschreibung
+vermutlich ungenau oder beschreibt eine andere Fassung.
+
+**Die Ziellinie in Byte 15.** seVen beschreibt eine Flanke von `0x00` auf `0x08`. Das deckt
+sich mit unserem `ZIEL_SPERRE_BIT = 0x08`, und wir haben es zusätzlich belegt: Bit 3 wird zu
+100 % geschrieben, aber nur zu 12 % gemeldet — also **kein Echo unseres eigenen Bytes,
+sondern eine Meldung des Autos**. Unabhängige Bestätigung in beide Richtungen.
+
+### 7. Was wir nicht zurückschicken
+
+seVen beschreibt für das manuelle Profil, dass die Bytes 16–18 die zuletzt bekannten
+`trackPosition` / `currentTile` / `previousTile` **an das Auto zurückgespiegelt** werden.
+Wir senden dort Nullen und füllen sie nur im Leitplanken-Modus mit dem Vorausblick.
+
+Ob das Auto die Rückspiegelung braucht, ist unbekannt. Es wäre aber die einfachste
+Erklärung, falls der Bahn-Modus ohne sie schlechter liest, als er könnte.
+
 ## Was noch nicht sicher bekannt ist
 
 Manche Details lassen sich nur aus dem beobachteten Verhalten ableiten, nicht mit letzter Sicherheit belegen. Dazu gehören:
