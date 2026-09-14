@@ -6449,7 +6449,13 @@
     // 1. NICHT GEPARKT. Zehn Sekunden Stillstand, also weit ueber der Bestaetigung.
     if (r.geparkt) fehler.push('waehrend des Stopps geparkt');
     // 2. Die Phasen in der Reihenfolge, und die Sequenz ENDET.
-    const soll = [null, 'anfahrt', 'halt', 'stand', 'raus', null];
+    //
+    // 'rand' ist seit v0.6.8 dabei: die bestellte Sekunde, in der am Rand GEFAHREN wird,
+    // bevor gebremst wird. Vorher gab pitBremse() in der Haltephase sofort volle Bremse,
+    // das Auto stand also, bevor die Querfuehrung es an den Rand bringen konnte - und eine
+    // Querfuehrung ohne Fahrt bewegt nichts. Das war die Meldung "haelt mitten auf der
+    // Strecke".
+    const soll = [null, 'anfahrt', 'rand', 'halt', 'stand', 'raus', null];
     if (r.folge.join('>') !== soll.join('>')) {
       fehler.push('Folge ' + r.folge.join('>') + ' statt ' + soll.join('>'));
     }
@@ -6459,7 +6465,9 @@
     //    Byte 7 positiv ist rechts, und das ist nicht Konvention, sondern nachgemessen: bei
     //    konstantem Versatz gibt +4 einen mittleren Bahnradius von 38,8 Einheiten, -4 nur
     //    30,7 - der groessere Radius ist der aeussere.
-    for (const ph of ['halt', 'stand']) {
+    // 'rand' MIT geprueft: das ist die Phase, an deren Ende das Auto am Rand sein soll -
+    // und der einzige Grund, warum es die Phase gibt.
+    for (const ph of ['rand', 'halt', 'stand']) {
       const q = r.querEnde ? r.querEnde[ph] : null;
       if (!(q >= 0.9)) fehler.push(ph + ': Querlage ' + q + ' statt am rechten Rand');
     }
@@ -7512,6 +7520,117 @@
     }
     return { ok: !fehler.length,
              mass: 'aus=' + r.aus + ', an=' + r.an + ', aus+gelb=' + r.trotzAus
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
+  // ---- Boxenstopp: erst eine Sekunde am Rand FAHREN, dann bremsen ----
+  //
+  // GEMELDET: "Anhalten fuer Pitstop bei Ghosts ist immernoch mitten auf der Strecke und
+  // nicht am Rand. Lass das Auto ruhig 1s lang am Rand fahren und dann relativ abrupt
+  // bremsen (Lichter waehrend der 1s und dem Stopp blinken lassen, nicht direkt auf 0, dann
+  // rutscht es vll und steht zu schraeg)."
+  //
+  // ---- WORAN ES LAG -------------------------------------------------------------
+  //
+  // Der Kommentar an PIT_BREMS_MS behauptete, die 1000 ms deckten "das Anbremsen UND das
+  // Stehen am Rand". Das taten sie nicht: pitBremse() gab in der Haltephase SOFORT volle
+  // Bremse. Das Auto stand also nach Bruchteilen einer Sekunde - genau dort, wo es die
+  // Boxenkachel erreicht hatte.
+  //
+  // Und dann bewegt es sich nicht mehr zur Seite. Die Querfuehrung braucht FAHRT: ein
+  // stehendes Auto geht nicht an den Rand, egal was im Lenkbyte steht. Deshalb "mitten auf
+  // der Strecke".
+  //
+  // Jetzt gibt es eine eigene Phase 'rand', in der GEFAHREN wird, und die Bremse laeuft
+  // ueber eine Rampe hoch statt zu schlagen.
+  stAdd('Boxenstopp: eine Sekunde am Rand fahren, dann gerampt bremsen', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.ghostPitProbe) {
+      return { skip: true, mass: 'ghostPitProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.ghostPitProbe({ laenge: 4, takte: 700 });
+    if (!r || !r.jePhase) return { skip: true, mass: 'kein Lauf' };
+    const fehler = [];
+    const P = r.jePhase;
+    // 1. DIE PHASE GIBT ES, und sie steht zwischen Anfahrt und Halt.
+    const soll = ['anfahrt', 'rand', 'halt', 'stand', 'raus'];
+    const echt = r.folge.filter(Boolean);
+    if (echt.join('>') !== soll.join('>')) {
+      fehler.push('Folge ' + echt.join('>') + ' statt ' + soll.join('>'));
+    }
+    // 2. IN 'rand' WIRD GEFAHREN, nicht gestanden. Das ist der Kern der Meldung: ohne
+    //    Fahrt gibt es keine Querbewegung. Bei 45 ms Takt sind 1000 ms rund 22 Takte.
+    if (P.rand) {
+      if (!(P.rand.takte >= 18 && P.rand.takte <= 28)) {
+        fehler.push('Randphase ' + P.rand.takte + ' Takte, erwartet rund 22');
+      }
+      if (!(P.rand.kmhEnde > 0.05)) {
+        fehler.push('steht schon in der Randphase (' + P.rand.kmhEnde + ' km/h)');
+      }
+    } else { fehler.push('keine Randphase'); }
+    // 3. UND AM ENDE DER RANDPHASE IST ES AM RAND. Das ist die eigentliche Zusage.
+    if (!(r.querEnde && r.querEnde.rand >= 0.95)) {
+      fehler.push('am Ende der Randphase nur bei ' + (r.querEnde || {}).rand);
+    }
+    // 4. DIE BREMSE LAEUFT HOCH. Ein Sprung von 0 auf 1 im ersten Takt waere genau das,
+    //    was "nicht direkt auf 0" ausschliesst.
+    const v = (P.halt && P.halt.bremseVerlauf) || [];
+    if (v.length < 3) {
+      fehler.push('kein Bremsverlauf aufgezeichnet');
+    } else if (!(v[0] < 0.2 && v[1] > v[0] && v[v.length - 1] >= 0.99)) {
+      fehler.push('Bremsverlauf ' + v.slice(0, 4).join('/') + ' ist keine Rampe');
+    }
+    // 5. ES BLINKT WAEHREND RANDFAHRT, BREMSEN UND STEHEN - nicht nur beim Herausfahren.
+    for (const ph of ['rand', 'halt', 'stand']) {
+      if (P[ph] && !(P[ph].dunkel > 0)) fehler.push('kein Blinken in Phase ' + ph);
+    }
+    // 6. UND ES PARKT SICH NICHT SELBST. Die Gnade muss ueber den ganzen Stopp halten.
+    if (r.geparkt) fehler.push('parkt sich waehrend des Stopps selbst');
+    return { ok: !fehler.length,
+             mass: echt.join('>')
+                 + ' | rand ' + (P.rand ? P.rand.takte + ' Takte, ' + P.rand.kmhEnde
+                                          + ' km/h, quer ' + r.querEnde.rand : '?')
+                 + ' | Bremse ' + v.slice(0, 5).join('/')
+                 + ' | dunkel ' + ['rand', 'halt', 'stand']
+                     .map((k) => k + ' ' + (P[k] ? P[k].dunkel : '?')).join(', ')
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
+  // ---- Auch das Auto des Fahrers blinkt im Boxenmodus ----
+  //
+  // BESTELLT: "Beim Pit-Modus sowohl bei gesteuertem Auto als auch NPC Lichter passend
+  // blinken lassen." "Passend" woertlich: derselbe Doppelblitz, den ein Ghost zeigt -
+  // pitBlinkMuster() wird von beiden benutzt, damit es nicht zwei Zeichen fuer dieselbe
+  // Sache gibt.
+  //
+  // Geprueft ueber resolveLights(), also die Funktion, die im Fahrtakt wirklich die Lichter
+  // setzt. Ein Test, der das Muster selbst nachrechnet, prueefte seine eigene Kopie.
+  stAdd('Boxenmodus: auch das Auto des Fahrers blinkt', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.spielerPitLichtProbe) {
+      return { skip: true, mass: 'spielerPitLichtProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.spielerPitLichtProbe({ dauerMs: 1600 });
+    if (!r) return { skip: true, mass: 'kein Lauf' };
+    const fehler = [];
+    // 1. OHNE BOXENMODUS KEIN BLINKEN. Ohne diese Zeile waere der Test auch mit einem
+    //    Dauerblinken gruen, und das waere schlimmer als gar keines.
+    if (r.aus.wechsel !== 0) fehler.push('blinkt ohne Boxenmodus (' + r.aus.wechsel + ')');
+    // 2. IN BEIDEN BOXENZUSTAENDEN BLINKT ES. 'limited' ist die Anfahrt mit Limiter,
+    //    'servicing' der Halt - beide gehoeren markiert.
+    for (const z of ['limited', 'servicing']) {
+      if (!(r[z].wechsel >= 4)) fehler.push(z + ': nur ' + r[z].wechsel + ' Wechsel');
+    }
+    // 3. UND ES IST EIN DOPPELBLITZ, kein Dauerflackern: zwei kurze dunkle Impulse von
+    //    90 ms in einer Periode von 780 ms sind 23 Prozent dunkel, also rund 77 Prozent
+    //    hell. Ein Blinken mit halber Einschaltdauer waere hier 50 Prozent.
+    for (const z of ['limited', 'servicing']) {
+      if (!(r[z].anAnteil > 0.68 && r[z].anAnteil < 0.86)) {
+        fehler.push(z + ': Hellanteil ' + r[z].anAnteil + ', erwartet rund 0,77');
+      }
+    }
+    return { ok: !fehler.length,
+             mass: 'aus ' + r.aus.wechsel + ' Wechsel | limited ' + r.limited.wechsel
+                 + ' (' + r.limited.anAnteil + ' hell) | servicing ' + r.servicing.wechsel
+                 + ' (' + r.servicing.anAnteil + ' hell)'
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 

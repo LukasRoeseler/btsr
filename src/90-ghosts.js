@@ -2605,6 +2605,26 @@
   // 1000 ms ist die bestellte Sekunde am Rand: sie deckt das Anbremsen UND das Stehen am
   // Rand, bevor die Standzeit zaehlt.
   const PIT_BREMS_MS = 1000;
+  // ---- DIE SEKUNDE AM RAND IST EINE EIGENE PHASE ---------------------------------
+  //
+  // GEMELDET: "Anhalten fuer Pitstop bei Ghosts ist immernoch mitten auf der Strecke und
+  // nicht am Rand. Lass das Auto ruhig 1s lang am Rand FAHREN und dann relativ abrupt
+  // bremsen."
+  //
+  // Der Kommentar an PIT_BREMS_MS behauptete, die 1000 ms deckten "das Anbremsen UND das
+  // Stehen am Rand". Das taten sie nicht: pitBremse() gab in der Haltephase sofort volle
+  // Bremse, also stand das Auto nach Bruchteilen einer Sekunde - und zwar dort, wo es die
+  // Boxenkachel erreicht hat. Die Querbewegung an den Rand braucht bei querTempo 4,0 aber
+  // 250 ms UND Fahrt: ein stehendes Auto bewegt sich nicht zur Seite, egal was im Lenkbyte
+  // steht. Genau das war "mitten auf der Strecke".
+  //
+  // Also eine eigene Phase, in der GEFAHREN wird - am Rand, mit Boxentempo.
+  const PIT_RAND_MS = 1000;
+  // Und die Bremse laeuft hoch statt zu schlagen. Bestellt: "relativ abrupt bremsen [...]
+  // nicht direkt auf 0, dann rutscht es vll und steht zu schraeg." 350 ms sind rund ein
+  // Drittel der Haltephase - deutlich kuerzer als die 460 ms Zeitkonstante des Reglers
+  // (also immer noch "abrupt"), aber lang genug, dass die Hinterachse nicht wegkommt.
+  const PIT_BREMS_RAMPE_MS = 350;
   const PIT_GNADE_MS = 1500;     // laufend erneuert, deckt die 900-ms-Bestaetigung doppelt
   // Querlage von +1 zurueck auf die Linie. KUERZER als die 1200 von vorher: bestellt ist
   // "ruckartiges Anfahren", und 500 ms sind an der Ratenbegrenzung (querTempo 2,0 schafft
@@ -2789,7 +2809,9 @@
   function pitZiel(car) {
     const p = car.ghost && car.ghost.pit;
     if (!p) return null;
-    if (p.phase === 'anfahrt') return formationPace();
+    // 'rand' faehrt weiter - das ist der Sinn der Phase: eine Sekunde am Rand ROLLEN,
+    // damit die Querbewegung ueberhaupt stattfinden kann.
+    if (p.phase === 'anfahrt' || p.phase === 'rand') return formationPace();
     if (p.phase === 'halt' || p.phase === 'stand') return 0;
     return null;               // 'raus' laeuft ueber die Anfahrrampe
   }
@@ -2807,7 +2829,17 @@
   function pitBremse(car) {
     const p = car.ghost && car.ghost.pit;
     if (!p) return null;
-    return (p.phase === 'halt' || p.phase === 'stand') ? 1 : null;
+    // In der Randphase wird NICHT gebremst - dort wird gefahren.
+    if (p.phase === 'stand') return 1;
+    if (p.phase !== 'halt') return null;
+    // ---- DIE RAMPE, und warum nicht sofort voll ----------------------------------
+    //
+    // "Relativ abrupt bremsen [...] nicht direkt auf 0, dann rutscht es vll und steht zu
+    // schraeg." Ein Schlag auf volle Bremse blockiert, und ein blockiertes Auto dreht sich
+    // um seine Hochachse, statt gerade stehen zu bleiben. Ueber PIT_BREMS_RAMPE_MS
+    // hochgefahren bleibt es "abrupt" (ein Drittel der Haltephase) und trotzdem gerade.
+    const seit = Date.now() - (p.at || 0);
+    return Math.max(0, Math.min(1, seit / PIT_BREMS_RAMPE_MS));
   }
 
   // ---- UND DER DOPPELBLITZ BEIM HERAUSFAHREN -------------------------------------
@@ -2815,8 +2847,13 @@
   // GESETZT WIRD ER IN ghostTick, gelesen ueberall - dieselbe Bauform und derselbe Grund
   // wie bei der Lichthupe (ghostHupeSetzen): in der Rennsimulation ist Date.now gefaelscht,
   // und eine Funktion, die die Uhr selbst fragt, gibt je nach Aufrufer eine andere Antwort.
-  function pitBlinkDunkel(seit) {
-    if (!(seit >= 0) || seit >= PIT_BLINK_MS) return false;
+  // Das Muster allein, ohne Enddatum: zwei kurze Impulse, dann eine Pause, endlos.
+  // HERAUSGEZOGEN, weil es zwei Aufrufer mit verschiedener Dauer hat - das Herausfahren
+  // blinkt begrenzt, die Randfahrt und der Stopp blinken, solange sie dauern. Und einen
+  // dritten: das Auto des Fahrers (resolveLights in 70-race.js). Drei Kopien desselben
+  // Rhythmus waeren drei Rhythmen, sobald jemand einen davon anfasst.
+  function pitBlinkMuster(seit) {
+    if (!(seit >= 0)) return false;
     const periode = 2 * (PIT_BLINK_AN_MS + PIT_BLINK_AUS_MS) + PIT_BLINK_PAUSE_MS;
     const t = seit % periode;
     if (t < PIT_BLINK_AN_MS) return true;
@@ -2824,9 +2861,23 @@
     return t >= zwei && t < zwei + PIT_BLINK_AN_MS;
   }
 
+  function pitBlinkDunkel(seit) {
+    if (!(seit >= 0) || seit >= PIT_BLINK_MS) return false;
+    return pitBlinkMuster(seit);
+  }
+
   function pitBlinkSetzen(g, now) {
     const p = g && g.pit;
-    g.pitBlink = !!(p && p.phase === 'raus' && pitBlinkDunkel(now - (p.at || 0)));
+    if (!p) { g.pitBlink = false; return; }
+    // BESTELLT: "Lichter waehrend der 1s und dem Stopp blinken lassen." Also durchgehend,
+    // solange die Randfahrt, das Anbremsen oder das Stehen dauert - nicht als begrenzte
+    // Folge. Beim Herausfahren bleibt es die begrenzte Folge (PIT_BLINK_MS), weil dort die
+    // Dauer nicht von einer Phase vorgegeben wird, sondern das Auto einfach wieder ins
+    // Feld faehrt.
+    const seit = now - (p.at || 0);
+    const dauernd = p.phase === 'rand' || p.phase === 'halt' || p.phase === 'stand';
+    g.pitBlink = dauernd ? pitBlinkMuster(seit)
+                         : !!(p.phase === 'raus' && pitBlinkDunkel(seit));
   }
 
   // Auf welchem Platz steht dieses Auto gerade still? -1, wenn es nicht steht. Fuer die
@@ -2912,8 +2963,16 @@
     const pk = pitKachelFuer(p.platz);
 
     if (p.phase === 'anfahrt') {
-      // Am eigenen Platz angekommen?
-      if (g.tileIndex === pk) { p.phase = 'halt'; p.at = now; }
+      // Am eigenen Platz angekommen? Dann NICHT sofort bremsen, sondern erst die bestellte
+      // Sekunde am Rand fahren - siehe PIT_RAND_MS.
+      if (g.tileIndex === pk) { p.phase = 'rand'; p.at = now; }
+      return true;
+    }
+    if (p.phase === 'rand') {
+      if (now - p.at >= PIT_RAND_MS) {
+        p.phase = 'halt'; p.at = now;
+        log(garageLabel(car) + ': am Rand, bremst ab.', 'info');
+      }
       return true;
     }
     if (p.phase === 'halt') {

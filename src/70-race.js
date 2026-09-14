@@ -3253,6 +3253,31 @@
       head = Math.floor(now / 90) % 2 === 0;    // fast, agitated flicker
     } else if (lightFx.fuel) {
       head = Math.floor(now / 350) % 2 === 0;   // slow, deliberate blink
+    } else if (pitState !== 'off') {
+      // ---- BOXENMODUS: DASSELBE BLINKEN WIE BEI EINEM GHOST -----------------------
+      //
+      // BESTELLT: "Beim Pit-Modus sowohl bei gesteuertem Auto als auch NPC Lichter passend
+      // blinken lassen."
+      //
+      // "Passend" heisst hier woertlich: DERSELBE Rhythmus, den ein Ghost in der Box
+      // zeigt. pitBlinkMuster() steht in 90-ghosts.js und wird von dort mitbenutzt - ein
+      // zweiter Doppelblitz mit eigenen Zahlen waere ein zweites Zeichen fuer dieselbe
+      // Sache, und spaetestens beim ersten Nachjustieren saehen die beiden verschieden aus.
+      //
+      // ZUR LADEZEIT gaebe es die Funktion noch nicht (90-ghosts.js ist eine SPAETERE
+      // Datei), zur Laufzeit schon: resolveLights() haengt am Fahrtakt. Die typeof-Pruefung
+      // ist trotzdem da, und sie ist sicher - bei einer function-Deklaration greift die
+      // Hochziehung, anders als bei einem let in der temporalen Todeszone.
+      //
+      // BEZUG IST DIE UHR und nicht der Beginn des Boxenmodus: der Fahrer faehrt selbst
+      // herein, es gibt also keinen Moment, ab dem gezaehlt wuerde. Das Muster ist ohnehin
+      // periodisch, die Phase ist damit beliebig.
+      //
+      // NACH Schaden und Tank, VOR nichts: eine leuchtende Warnung schlaegt eine Anzeige.
+      // Und die Lichthupe schlaegt alles, weil sie eine Absicht des Fahrers ist.
+      if (typeof pitBlinkMuster === 'function') {
+        head = pitBlinkMuster(now % 100000) ? !baseHead : baseHead;
+      }
     }
     // Rain light: the FIA-style double pulse on the rear lamp. An actual brake application
     // takes precedence — a rain light must never be mistaken for braking, or the other way

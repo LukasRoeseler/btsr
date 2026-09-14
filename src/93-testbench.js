@@ -3097,6 +3097,62 @@
       }
     },
 
+    // ---- BLINKT DAS AUTO DES FAHRERS IM BOXENMODUS? -----------------------------
+    //
+    // BESTELLT: "Beim Pit-Modus sowohl bei gesteuertem Auto als auch NPC Lichter passend
+    // blinken lassen."
+    //
+    // Geprueft wird ueber resolveLights() - dieselbe Funktion, die im Fahrtakt die Lichter
+    // des Fahrerautos zusammensetzt. Ein Prueflauf, der das Muster selbst nachrechnet,
+    // prueefte seine eigene Kopie und nicht die Verdrahtung.
+    //
+    // MIT GEFAELSCHTER UHR ueber eine volle Periode des Doppelblitzes (2 x 90 an, 2 x 90
+    // aus, 420 Pause = 780 ms), damit "es blinkt" nicht vom zufaelligen Moment des Aufrufs
+    // abhaengt, in dem der Prueflauf gerade laeuft.
+    spielerPitLichtProbe(o) {
+      const opt = o || {};
+      if (typeof resolveLights !== 'function') return null;
+      const merk = { ps: pitState, fx: Object.assign({}, lightFx) };
+      const echteNow = Date.now;
+      let uhr = echteNow.call(Date);
+      try {
+        Date.now = () => uhr;
+        // Keine anderen Lichtgruende: Lichthupe, Schaden und Tank schlagen den Boxenmodus
+        // absichtlich - der Prueflauf soll aber den Boxenmodus sehen.
+        lightFx.flashUntil = 0; lightFx.damage = false;
+        lightFx.fuel = false; lightFx.rain = false;
+        const lauf = (zustand) => {
+          pitState = zustand;
+          const reihe = [];
+          for (let t = 0; t < (opt.dauerMs || 1600); t += 20) {
+            uhr += 20;
+            reihe.push(resolveLights(true, false).head);
+          }
+          return reihe;
+        };
+        const aus = lauf('off');
+        const limited = lauf('limited');
+        const servicing = lauf('servicing');
+        const wechsel = (r) => r.filter((v, i) => i && v !== r[i - 1]).length;
+        return {
+          aus: { wechsel: wechsel(aus), anAnteil: +(aus.filter(Boolean).length / aus.length).toFixed(3) },
+          limited: { wechsel: wechsel(limited),
+                     anAnteil: +(limited.filter(Boolean).length / limited.length).toFixed(3) },
+          servicing: { wechsel: wechsel(servicing),
+                       anAnteil: +(servicing.filter(Boolean).length / servicing.length).toFixed(3) },
+        };
+      } finally {
+        Date.now = echteNow;
+        pitState = merk.ps;
+        Object.assign(lightFx, merk.fx);
+      }
+    },
+
+    // Die Boxenbremse von aussen ablesbar machen - die Sonde zeichnet sie je Takt auf.
+    pitBremseLesen(car) {
+      return typeof pitBremse === 'function' ? pitBremse(car) : null;
+    },
+
     ghostPitProbe(opt) {
       const o = opt || {};
       const merkGarage = garage.splice(0, garage.length);
@@ -3177,6 +3233,16 @@
                       quer: +(g0.querSoll || 0).toFixed(3),
                       kmh: g0.engine ? +(g0.engine.state.speedKmh || 0).toFixed(3) : null,
                       geparkt: !!autos[0].parked,
+                      // Das Blinken und die Bremse MIT aufzeichnen: beides ist bestellt
+                      // ("Lichter waehrend der 1s und dem Stopp", "nicht direkt auf 0"),
+                      // und beides ist nur waehrend des Laufs sichtbar - am Ende steht
+                      // nichts mehr davon da.
+                      blink: !!g0.pitBlink,
+                      bremse: (function () {
+                        const b = OMEGA_TEST.pitBremseLesen
+                          ? OMEGA_TEST.pitBremseLesen(autos[0]) : null;
+                        return b === null ? null : +b.toFixed(3);
+                      }()),
                       inhaber: autos.findIndex((c) => c.ghost.pit) });
         }
         // Zusammenfassung: die Phasenfolge, die Querlage je Phase, und ob geparkt wurde.
@@ -3208,7 +3274,25 @@
           querMin[k] = +Math.min.apply(null, querJe[k]).toFixed(3);
           querEnde[k] = querJe[k][querJe[k].length - 1];
         }
-        return { folge, querMin, querEnde, geparkt, mehrfach,
+        // Je Phase: wie viele Takte, wie viele davon dunkel, und der Bremsverlauf.
+        const jePhase = {};
+        for (const x of spur) {
+          if (!x.phase) continue;
+          const e = jePhase[x.phase] || (jePhase[x.phase] = { takte: 0, dunkel: 0,
+                                                             bremse: [], kmh: [] });
+          e.takte++;
+          if (x.blink) e.dunkel++;
+          if (x.bremse !== null) e.bremse.push(x.bremse);
+          if (x.kmh !== null) e.kmh.push(x.kmh);
+        }
+        for (const k of Object.keys(jePhase)) {
+          const e = jePhase[k];
+          e.bremseVerlauf = e.bremse.slice(0, 12);
+          e.kmhAnfang = e.kmh.length ? e.kmh[0] : null;
+          e.kmhEnde = e.kmh.length ? e.kmh[e.kmh.length - 1] : null;
+          delete e.bremse; delete e.kmh;
+        }
+        return { folge, querMin, querEnde, geparkt, mehrfach, jePhase,
                  andere: autos.slice(1).map((c) => ({
                    yieldSide: c.ghost.yieldSide || 0,
                    quer: +(c.ghost.querSoll || 0).toFixed(3),
