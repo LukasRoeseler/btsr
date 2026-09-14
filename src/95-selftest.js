@@ -7648,6 +7648,167 @@
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
+  // ---- Die Sicherung: hin, zurueck, und was dabei schiefgehen kann ----
+  //
+  // BESTELLT: "Wo ist in der Garage die Speichermoeglichkeit? Die Fahreinstellungen und
+  // globale Einstellungen (Autonamen, Rundenzeiten, letzter eingestellter Rennmodus, ...)
+  // sollen alle als Datei gespeichert und importiert werden koennen."
+  //
+  // ---- WARUM DIE PRAEFIXREGEL DER WICHTIGSTE TEIL IST ----------------------------
+  //
+  // Die Sicherung nimmt nicht eine Liste von Schluesseln, sondern alles mit den Praefixen
+  // chc. / carrera-hybrid / omegasim. Der Grund steht im Modul: eine Liste veraltet, und
+  // sie veraltet STILL - die Sicherung funktioniert weiter, nur ohne den neuen Schluessel.
+  //
+  // Genau das waere mir passiert. Zwoelf Schluessel-Konstanten stehen im Quelltext; der
+  // dreizehnte, carrera-hybrid-gamepad-bindings-v2 mit der ganzen Tastenbelegung, ist mir
+  // erst im localStorage eines laufenden Browsers aufgefallen.
+  //
+  // Die Liste in der Sonde ist deshalb UNABHAENGIG vom Modul aufgeschrieben. Ein Test, der
+  // sie aus dem Modul nimmt, prueft die Regel gegen sich selbst und ist immer gruen.
+  stAdd('Sicherung: jeder bekannte Speicherschluessel faellt unter die Praefixregel', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.sicherungProbe) {
+      return { skip: true, mass: 'sicherungProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.sicherungProbe();
+    if (!r) return { skip: true, mass: 'kein Lauf' };
+    const durch = r.bekannt.filter((x) => !x.erfasst).map((x) => x.k);
+    const fehler = [];
+    if (durch.length) {
+      fehler.push(durch.length + ' Schluessel fallen durch: ' + durch.join(', '));
+    }
+    // Und die Selbstsicherung darf NICHT im Buendel liegen: die Regler stehen dort schon
+    // in ihrem eigenen Abschnitt, und zweimal dieselbe Sache heisst entscheiden zu
+    // muessen, welche gewinnt.
+    if (r.autoDrin) fehler.push(r.autoKey + ' liegt im Buendel');
+    return { ok: !fehler.length,
+             mass: r.bekannt.length + ' Schluessel geprueft, ' + r.umschlag.ablagen
+                 + ' Ablagen und ' + r.umschlag.regler + ' Regler im Buendel'
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
+  // ---- HIN UND ZURUECK, MIT EINER AENDERUNG DAZWISCHEN --------------------------
+  //
+  // Der Kern: eine Sonde, die nur sichert und das JSON vorzeigt, prueft, dass JSON gebaut
+  // wird. Geprueft werden muss, dass ein SPAETERER Stand sich damit wieder zurueckbringen
+  // laesst - und das geht nur, wenn zwischendurch wirklich etwas anderes eingestellt war.
+  // Deshalb prueft dieser Test zuerst, ob das Verstellen ueberhaupt gewirkt hat.
+  stAdd('Sicherung: sichern, verstellen, zurueckladen - und der Wert ist wieder da', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.sicherungProbe) {
+      return { skip: true, mass: 'sicherungProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.sicherungProbe();
+    if (!r) return { skip: true, mass: 'kein Lauf' };
+    const fehler = [];
+    // 1. HAT DAS VERSTELLEN GEWIRKT? Ohne diese Zeile ist der ganze Test gruen, wenn sich
+    //    nie etwas geaendert hat - er prueft dann, dass 0,5 gleich 0,5 ist.
+    if (!r.verstellt) fehler.push('das Verstellen hat nicht gewirkt, nichts geprueft');
+    // 2. UND IST DER WERT ZURUECK?
+    if (r.werte.nachher !== r.werte.vorher) {
+      fehler.push(r.reglerId + ': ' + r.werte.vorher + ' -> ' + r.werte.zwischen
+                  + ' -> ' + r.werte.nachher);
+    }
+    // 3. ZUSAMMENGEFUEHRT UND NICHT ERSETZT: die zwischendurch angelegte Ablage ist noch
+    //    da. Das ist keine Nachlaessigkeit, sondern die Entscheidung - eine Sicherung von
+    //    vorletzter Woche darf nicht die Strecke von gestern loeschen.
+    if (!r.ablageBleibt) {
+      fehler.push('die zwischendurch angelegte Ablage wurde geloescht');
+    }
+    // 4. Und der Umschlag traegt, was er tragen soll.
+    if (r.umschlag.typ !== 'omegasim-sicherung') fehler.push('Typ ' + r.umschlag.typ);
+    if (!r.umschlag.app) fehler.push('keine App-Version im Umschlag');
+    return { ok: !fehler.length,
+             mass: r.reglerId + ' ' + r.werte.vorher + ' -> ' + r.werte.zwischen
+                 + ' -> ' + r.werte.nachher
+                 + ' | ' + r.bericht.nRegler + ' Regler, ' + r.bericht.nAblagen
+                 + ' Ablagen | Fassung ' + r.umschlag.app
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
+  // ---- DIE FUENF FAELLE, DIE SCHIEFGEHEN KOENNEN --------------------------------
+  //
+  // Alle fuenf an einer ECHTEN Sicherung verbogen, nicht an einer von Hand gebauten
+  // Attrappe: eine Attrappe besteht den Test auch dann noch, wenn das echte Format sich
+  // geaendert hat und die echte Sicherung durchfaellt.
+  //
+  // Der vierte ist der, der vorher fehlte. Der bestehende Preset-Import meldet, was die
+  // App nicht kennt - aber nicht, was die DATEI nicht kennt, und das ist der haeufigere
+  // Fall: jede Sicherung ist aelter als die App, in die sie geladen wird. Ein Regler, der
+  // stumm auf der Werksvorgabe stehen bleibt, sieht aus wie ein wiederhergestellter.
+  stAdd('Sicherung: fremder Typ, neuere Fassung, Wert ausserhalb, fehlende und fremde Werte',
+        () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.sicherungProbe) {
+      return { skip: true, mass: 'sicherungProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.sicherungProbe();
+    if (!r) return { skip: true, mass: 'kein Lauf' };
+    const f = r.falsch;
+    const fehler = [];
+    // 1. Eine fremde Datei wird abgelehnt, und zwar mit Begruendung.
+    if (!f.fremderTyp) fehler.push('fremder Typ wird angenommen');
+    // 2. Eine Sicherung aus einer NEUEREN App wird abgelehnt - und der Text sagt, was zu
+    //    tun ist. Stillschweigend die bekannten Felder zu nehmen waere schlimmer: man
+    //    haette dann einen halben Stand und keinen Hinweis darauf.
+    if (!f.neuereFassung) fehler.push('neuere Fassung wird angenommen');
+    if (f.neuereFassung && !/aktualisieren/i.test(f.neuereFassung)) {
+      fehler.push('neuere Fassung ohne Handlungshinweis: ' + f.neuereFassung);
+    }
+    // 3. Ein Wert ausserhalb des Reglerbereichs wird gemeldet und NICHT still auf die
+    //    Grenze gesetzt - das las sich sonst wie "hat geklappt".
+    if (!(f.wertAusserhalb && f.wertAusserhalb.length)) {
+      fehler.push('Wert ausserhalb des Bereichs wird durchgelassen');
+    }
+    // 4. Fehlende Regler werden BENANNT, nicht uebergangen.
+    if (!(f.fehlendeRegler && f.fehlendeRegler.length === 3)) {
+      fehler.push('fehlende Regler: ' + JSON.stringify(f.fehlendeRegler));
+    }
+    // 5. Und ein eingeschmuggelter Fremdschluessel kommt nicht in den localStorage.
+    if (!(f.fremdeAblage && f.fremdeAblage.length === 1)) {
+      fehler.push('fremde Ablage: ' + JSON.stringify(f.fremdeAblage));
+    }
+    return { ok: !fehler.length,
+             mass: 'abgelehnt: fremder Typ, Fassung ' + (f.neuereFassung ? 'ja' : 'NEIN')
+                 + ' | gemeldet: ' + (f.wertAusserhalb || []).length + ' unbrauchbar, '
+                 + (f.fehlendeRegler || []).length + ' fehlend, '
+                 + (f.fremdeAblage || []).length + ' fremd'
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
+  // ---- UND DIE REGLER UEBERLEBEN DEN NEUSTART -----------------------------------
+  //
+  // GEMESSEN, und es war die Ueberraschung dieses Umbaus: vorher ueberlebte KEIN EINZIGER
+  // der 106 Regler einen Neustart. Im localStorage standen sieben Schluessel - Sprache,
+  // Layout, Cockpit, Getriebe, Mehrspieler, Gamepad - und kein einziger Optionswert. Wer
+  // die Reifenabnutzung einstellte und den Browser schloss, fand sie beim naechsten Mal
+  // auf Werkseinstellung, ohne Hinweis.
+  //
+  // Was dieser Test NICHT kann: einen echten zweiten Ladevorgang herstellen. Er stellt den
+  // Regler zurueck und ruft autoSicherungLaden() - also denselben Aufruf, den das Laden
+  // macht. Das ist eine Nachstellung, und sie ist hier hingeschrieben, damit niemand sie
+  // fuer einen echten Neustart haelt.
+  stAdd('Selbstsicherung: ein verstellter Regler kommt beim Laden zurueck', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.autoSicherungProbe) {
+      return { skip: true, mass: 'autoSicherungProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.autoSicherungProbe();
+    if (!r) return { skip: true, mass: 'kein Lauf' };
+    const fehler = [];
+    if (r.abgelegt !== r.erwartet) {
+      fehler.push('abgelegt ' + r.abgelegt + ' statt ' + r.erwartet);
+    }
+    // Hat das Zuruecksetzen vor dem Laden gewirkt? Sonst prueft der Test nichts.
+    if (r.vorLaden === r.erwartet) fehler.push('vor dem Laden stand der Wert schon richtig');
+    if (r.nachLaden !== r.erwartet) {
+      fehler.push('nach dem Laden ' + r.nachLaden + ' statt ' + r.erwartet);
+    }
+    // Und der Umfang: die Selbstsicherung muss ALLE Regler tragen, nicht ein paar.
+    if (!(r.umfang >= 100)) fehler.push('nur ' + r.umfang + ' Regler abgedeckt');
+    return { ok: !fehler.length,
+             mass: r.reglerId + ': ' + r.vorLaden + ' -> ' + r.nachLaden
+                 + ' (abgelegt ' + r.abgelegt + ') | ' + r.umfang + ' Regler abgedeckt'
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
   // ---- Die Engstelle: gedrosselt, rechts hinein, links hinaus, und sichtbar ----
   //
   // BESTELLT: "Engstelle: Tempo so drosseln wie in Haarnadelkurve und am Anfang ganz rechts

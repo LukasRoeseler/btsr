@@ -917,6 +917,22 @@
     "Steht": "Stopped",
     "Steuerkreuz:": "D-pad:",
     "Steuern": "Drive",
+    "Sicherung":
+      "Backup",
+    "Alles, was diese App sich merkt, in einer Datei: Fahreinstellungen und Renneinstellungen, Autonamen und Farben, Streckenlayouts, die vollständige Rundenzeit-Historie, Motorwerkstatt, Aufnahmen und die Tastenbelegung des Gamepads.":
+      "Everything this app remembers, in one file: driving and race settings, car names and colours, track layouts, the complete lap time history, engine workshop, recordings and the gamepad button mapping.",
+    "Sicherung speichern":
+      "Save a backup",
+    "Laden führt zusammen und ersetzt nicht: was in der Sicherung steht, wird gesetzt, und was seither dazugekommen ist, bleibt. Eine Strecke von gestern überlebt also eine Sicherung von vorletzter Woche.":
+      "Loading merges rather than replaces: what the backup contains is applied, and whatever has been added since stays. So a track built yesterday survives a backup from the week before last.",
+    "Sicherung laden":
+      "Load a backup",
+    "Warum es diese Datei braucht.":
+      "Why this file is needed.",
+    "Die App legt alles im Browser ab, und ein Browser darf diesen Speicher aufräumen – beim Löschen von Websitedaten, im privaten Fenster, auf einem iPhone auch nach längerer Zeit ohne Besuch. Eine Abstimmung ist danach schnell wieder eingestellt, eine Rundenzeit-Historie nicht.":
+      "The app keeps everything in the browser, and a browser is allowed to clear that storage – when site data is deleted, in a private window, on an iPhone even after a longer time without a visit. A setup is quickly dialled in again afterwards, a lap time history is not.",
+    "Eine Sicherung lädt auch dann, wenn sie aus einer älteren Fassung stammt. Einstellungen, die es damals noch nicht gab, bleiben stehen und werden genannt – sie verschwinden nicht stillschweigend.":
+      "A backup loads even when it comes from an older version. Settings that did not exist back then keep their value and are named – they do not disappear silently.",
     "Stoppen": "Stop",
     "Strecke aus Teilen bauen, drehen, als Code weitergeben. Alle elf Teiletypen der Original-App sind dabei, auch die Engstelle.":
       "Build a track from pieces, rotate it, pass it on as a code. All eleven piece types from the original app are included, the narrow section too.",

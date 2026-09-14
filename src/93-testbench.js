@@ -4056,6 +4056,155 @@
       } finally { trackMode = merk; }
     },
 
+    // ---- DIE SICHERUNG, EINMAL HIN UND EINMAL ZURUECK ---------------------------
+    //
+    // BESTELLT: "Die Fahreinstellungen und globale Einstellungen (Autonamen, Rundenzeiten,
+    // letzter eingestellter Rennmodus, ...) sollen alle als Datei gespeichert und
+    // importiert werden koennen."
+    //
+    // ---- WARUM DIESE SONDE WIRKLICH VERAENDERT UND NICHT NUR LIEST --------------
+    //
+    // Eine Sonde, die nur sicherungLesen() aufruft und das Ergebnis vorzeigt, prueft, dass
+    // JSON gebaut wird. Das war nie die Frage. Die Frage ist, ob ein SPAETERER Stand sich
+    // damit wieder auf den fruehreren bringen laesst - und das ist erst geprueft, wenn
+    // zwischen Sichern und Laden wirklich etwas anderes eingestellt war.
+    //
+    // Ablauf: sichern, einen Regler und eine Ablage VERSTELLEN, zurueckladen, vergleichen.
+    // Am Ende wird der Stand von vorher wiederhergestellt - eine Pruefung, die die
+    // Einstellungen des Nutzers umwirft, wird beim zweiten Mal nicht mehr gestartet.
+    sicherungProbe(o) {
+      const opt = o || {};
+      if (typeof sicherungLesen !== 'function') return null;
+      const vorher = sicherungLesen();
+      // Ein Regler, an dem sich messen laesst: ein Schieber mit Bereich, damit ein
+      // veraenderter Wert auch ein gueltiger ist.
+      const el = sicherungRegler().find((x) => x.type === 'range' && +x.max > +x.min);
+      if (!el) return null;
+      const alt = +el.value;
+      const schritt = +el.step || 1;
+      const anders = alt + schritt <= +el.max ? alt + schritt : alt - schritt;
+      const PROBE_KEY = 'chc.sicherungsprobe.v1';
+      try {
+        // ---- 1. VERSTELLEN, damit es etwas zurueckzuholen gibt --------------------
+        presetSet(el.id, anders);
+        localStorage.setItem(PROBE_KEY, 'verstellt');
+        const zwischen = sicherungLesen();
+
+        // ---- 2. ZURUECKLADEN -----------------------------------------------------
+        const r = sicherungAnwenden(vorher);
+        const nachher = sicherungLesen();
+
+        // ---- 3. UND DIE FAELLE, DIE SCHIEFGEHEN KOENNEN --------------------------
+        //
+        // Alle mit EINER echten Sicherung als Grundlage, nur an einer Stelle verbogen -
+        // eine von Hand gebaute Attrappe wuerde auch dann noch bestehen, wenn das echte
+        // Format sich aendert.
+        const kopie = (x) => JSON.parse(JSON.stringify(x));
+        const falsch = {};
+        const fremd = kopie(vorher);
+        fremd.typ = 'irgendwas';
+        falsch.fremderTyp = sicherungPruefen(fremd).fehler || null;
+        const zukunft = kopie(vorher);
+        zukunft.version = SICHERUNG_VERSION + 1;
+        falsch.neuereFassung = sicherungPruefen(zukunft).fehler || null;
+        const kaputt = kopie(vorher);
+        kaputt.regler[el.id] = +el.max + 1000;
+        falsch.wertAusserhalb = sicherungPruefen(kaputt).bad || null;
+        const veraltet = kopie(vorher);
+        Object.keys(veraltet.regler).slice(0, 3).forEach((k) => delete veraltet.regler[k]);
+        falsch.fehlendeRegler = sicherungPruefen(veraltet).neu || null;
+        const geschmuggelt = kopie(vorher);
+        geschmuggelt.ablagen['boeser.schluessel'] = 'x';
+        falsch.fremdeAblage = sicherungPruefen(geschmuggelt).fremd || null;
+
+        return {
+          // Hat das Verstellen ueberhaupt gewirkt? Ohne diese Zeile koennte der ganze
+          // Test gruen sein, weil sich nie etwas geaendert hat.
+          verstellt: zwischen.regler[el.id] !== vorher.regler[el.id],
+          reglerId: el.id,
+          werte: { vorher: vorher.regler[el.id], zwischen: zwischen.regler[el.id],
+                   nachher: nachher.regler[el.id] },
+          // ---- ZUSAMMENGEFUEHRT UND NICHT ERSETZT ------------------------------
+          //
+          // Diese Sonde erwartete zuerst, dass die zwischendurch angelegte Ablage nach
+          // dem Laden verschwunden ist. Sie war noch da - und die ERWARTUNG war falsch,
+          // nicht der Code: eine Sicherung von vorletzter Woche darf nicht die Strecke
+          // loeschen, die gestern gebaut wurde. Begruendet in sicherungAnwenden().
+          //
+          // Geprueft wird deshalb genau das: der neue Schluessel ueberlebt, und die
+          // gesicherten Werte sind trotzdem zurueck.
+          ablageBleibt: nachher.ablagen[PROBE_KEY] === 'verstellt',
+          bericht: r,
+          umschlag: { typ: vorher.typ, version: vorher.version, app: vorher.app,
+                      regler: Object.keys(vorher.regler).length,
+                      ablagen: Object.keys(vorher.ablagen).length },
+          falsch,
+          // ---- DIE PRAEFIXREGEL GEGEN ALLE BEKANNTEN SCHLUESSEL ------------------
+          //
+          // Der wichtigste Teil. Die Liste steht HIER und nicht im Modul: sie ist die
+          // UNABHAENGIGE Aufzaehlung dessen, was die App ablegt, und ein Test, der die
+          // Liste aus dem Modul nimmt, prueft die Regel gegen sich selbst.
+          //
+          // Zwoelf davon stehen als Konstante im Quelltext, der dreizehnte
+          // (Gamepad-Belegung) ist mir erst im laufenden Browser aufgefallen.
+          bekannt: ['chc.cars.v1', 'chc.cockpit.v1', 'chc.cockpit.omega.v1',
+                    'chc.gearbox.v1', 'chc.layout.v1', 'chc.mp.v1',
+                    'chc.motorwerkstatt.v1', 'chc.presets.v1', 'chc.sessions.v1',
+                    'carrera-hybrid-macros', 'carrera-hybrid-tracks',
+                    'carrera-hybrid-gamepad-bindings-v2', 'omegasim-lang']
+            .map((k) => ({ k, erfasst: SICHERUNG_PRAEFIXE.some((p) => k.indexOf(p) === 0) })),
+          // Und die Selbstsicherung darf NICHT im Buendel liegen.
+          autoDrin: Object.prototype.hasOwnProperty.call(vorher.ablagen, AUTO_STORE),
+          autoKey: AUTO_STORE,
+        };
+      } finally {
+        try { localStorage.removeItem(PROBE_KEY); } catch (e) { /* egal */ }
+        presetSet(el.id, alt);
+        if (!opt.behalten) sicherungAnwenden(vorher);
+      }
+    },
+
+    // Ueberlebt ein Regler das Neuladen? Gemessen wird die ABLAGE und das Zurueckholen
+    // daraus - einen zweiten echten Ladevorgang kann eine Sonde in derselben Seite nicht
+    // herstellen, und ein Test, der vorgibt es zu tun, prueft seine eigene Nachstellung.
+    autoSicherungProbe() {
+      if (typeof autoSicherungSchreiben !== 'function') return null;
+      const el = sicherungRegler().find((x) => x.type === 'range' && +x.max > +x.min);
+      if (!el) return null;
+      const alt = +el.value;
+      const schritt = +el.step || 1;
+      const anders = alt + schritt <= +el.max ? alt + schritt : alt - schritt;
+      let vorherRoh = null;
+      try { vorherRoh = localStorage.getItem(AUTO_STORE); } catch (e) { /* privat */ }
+      try {
+        presetSet(el.id, anders);
+        autoSicherungSchreiben();
+        const abgelegt = JSON.parse(localStorage.getItem(AUTO_STORE) || '{}');
+        // Zurueckstellen, dann laden - so wie es beim Neustart geschieht: die Regler
+        // stehen auf den Markup-Vorgaben, und autoSicherungLaden() holt sie zurueck.
+        presetSet(el.id, alt);
+        const vorLaden = +document.getElementById(el.id).value;
+        const n = autoSicherungLaden();
+        return {
+          reglerId: el.id,
+          abgelegt: abgelegt[el.id],
+          erwartet: anders,
+          vorLaden,
+          nachLaden: +document.getElementById(el.id).value,
+          gesetzt: n,
+          // Wieviele Regler deckt die Selbstsicherung ab? Bricht diese Zahl ein, deckt
+          // sie etwas nicht mehr ab.
+          umfang: Object.keys(abgelegt).length,
+        };
+      } finally {
+        presetSet(el.id, alt);
+        try {
+          if (vorherRoh === null) localStorage.removeItem(AUTO_STORE);
+          else localStorage.setItem(AUTO_STORE, vorherRoh);
+        } catch (e) { /* privat */ }
+      }
+    },
+
     // ---- DIE ENGSTELLE, ABGEFAHREN -----------------------------------------------
     //
     // BESTELLT: "Engstelle: Tempo so drosseln wie in Haarnadelkurve und am Anfang ganz

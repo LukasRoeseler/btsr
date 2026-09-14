@@ -429,22 +429,24 @@
     presetSay(presetControls().length + ' Regler hineingeschrieben, jetzt kopieren.');
   });
 
-  $('preset-import').addEventListener('click', () => {
-    const raw = $('preset-json').value.trim();
-    if (!raw) { presetSay('Da steht nichts.'); return; }
-    let cfg;
-    try { cfg = JSON.parse(raw); } catch (e) { presetSay('Das ist kein JSON.'); return; }
-    if (!cfg || typeof cfg !== 'object') { presetSay('Das ist keine Abstimmung.'); return; }
-    // Checked against the controls, not trusted: this arrives by copy and paste, and a value
-    // outside a slider's range sets the slider to its limit without saying so - which reads
-    // as "it worked" when it did not.
+  // ---- DIE PRUEFUNG EINGEHENDER REGLERWERTE, FUER ALLE AUFRUFER ------------------
+  //
+  // Herausgezogen, weil die Sicherung in 98b-sicherung.js dieselbe Pruefung braucht. Sie
+  // NACHZUBAUEN waere der schlechtere Weg: dann gibt es zwei Vorstellungen davon, was ein
+  // brauchbarer Wert ist, und die eine erfaehrt nicht, wenn die andere sich aendert.
+  //
+  // GEPRUEFT UND NICHT GEGLAUBT: die Werte kommen aus einer Datei oder aus der
+  // Zwischenablage, und ein Wert ausserhalb des Reglerbereichs setzt den Regler still auf
+  // seine Grenze - was sich wie "hat geklappt" liest, obwohl es das nicht hat.
+  //
+  // Unbekannte Kennungen sind KEIN Fehler, sondern eine Meldung: phys-trailbrake gab es bis
+  // v0.3. Es wird bewusst NICHT auf setting-brakebias umgerechnet - ein Bonus auf die
+  // Lenkgrenze und ein Anteil der Bremskraft sind verschiedene Groessen, und eine erfundene
+  // Umrechnung waere schlimmer als ein ehrliches "uebergangen".
+  function presetPruefen(cfg) {
     const bad = [], unknown = [];
     for (const [id, val] of Object.entries(cfg)) {
       const el = document.getElementById(id);
-      // phys-trailbrake gab es bis v0.3. Es wird bewusst NICHT auf setting-brakebias
-      // umgerechnet: ein Bonus auf die Lenkgrenze und ein Anteil der Bremskraft sind
-      // verschiedene Groessen, und eine erfundene Umrechnung waere schlimmer als ein
-      // ehrliches "uebergangen".
       if (!el) { unknown.push(id); continue; }
       if (el.type === 'checkbox') continue;
       if (el.tagName === 'SELECT') {
@@ -454,6 +456,16 @@
         if (!isFinite(v) || v < +el.min || v > +el.max) bad.push(id + '=' + val);
       }
     }
+    return { bad, unknown };
+  }
+
+  $('preset-import').addEventListener('click', () => {
+    const raw = $('preset-json').value.trim();
+    if (!raw) { presetSay('Da steht nichts.'); return; }
+    let cfg;
+    try { cfg = JSON.parse(raw); } catch (e) { presetSay('Das ist kein JSON.'); return; }
+    if (!cfg || typeof cfg !== 'object') { presetSay('Das ist keine Abstimmung.'); return; }
+    const { bad, unknown } = presetPruefen(cfg);
     if (bad.length) { presetSay('Unbrauchbare Werte: ' + bad.join(', ')); return; }
     let n = 0;
     for (const [id, val] of Object.entries(cfg)) if (presetSet(id, val)) n++;
@@ -563,5 +575,3 @@
       });
     }
   }
-
-})();
