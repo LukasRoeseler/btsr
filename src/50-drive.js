@@ -110,6 +110,26 @@
     return kurz;
   }
 
+  // ---- DAS ZEICHEN FUER "WECHSELHAFT" ----------------------------------------------
+  //
+  // NEBEN der Lage und nicht an ihrer Stelle: waehrend des Verlaufs ist es trocken ODER
+  // nass, und wer nur "wechselhaft" sieht, weiss nicht, worauf er gerade faehrt. Sonne und
+  // Regen bleiben also die Hauptaussage, das Zeichen ist der Zusatz.
+  //
+  // EINE EIGENE FUNKTION, weil es zwei Aufrufer hat: die Fahrschleife (fuer den Fall, dass
+  // der Modus aus den Renneinstellungen kommt) und die Wetterkachel beim Klick. Ohne den
+  // zweiten erschien das Zeichen erst im naechsten Fahrtakt - und wenn das Cockpit gar
+  // nicht der aktive Schirm ist, nie.
+  //
+  // raceWxStart steht in einer SPAETEREN Datei. Zur Laufzeit ist es da; die typeof-Pruefung
+  // deckt nur den Fall ab, dass jemand diese Funktion beim Aufbau ruft.
+  function wxZeichenSetzen() {
+    const el = $('race-wx-wechsel');
+    if (!el) return;
+    el.style.display = (typeof raceWxStart === 'string' && raceWxStart === 'wechsel')
+      ? '' : 'none';
+  }
+
   function motorAnzeige() {
     const sel = $('sound-profile'), txt = $('race-act-sound-txt');
     if (!sel || !txt) return;
@@ -1382,6 +1402,10 @@
     $('race-wx-sun').style.display = wet ? 'none' : '';
     $('race-wx-rain').style.display = wet ? '' : 'none';
     $('race-wx-rain').style.color = wet ? '#5aa9ff' : '';
+    // Das Zeichen fuer "wechselhaft". Siehe wxZeichenSetzen() - es steht als eigene
+    // Funktion, weil die Wetterkachel es beim Klick SOFORT braucht und nicht erst im
+    // naechsten Fahrtakt.
+    wxZeichenSetzen();
     // G plot. Red is the simulation, green the car's own raw motion bytes — the two are
     // scaled independently on purpose: the real numbers are far noisier and much larger
     // relative to their range, so a shared scale would push one of them off the dial.

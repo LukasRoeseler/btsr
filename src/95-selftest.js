@@ -7648,6 +7648,64 @@
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
+  // ---- Die Wetterkachel schaltet durch drei Lagen ----
+  //
+  // BESTELLT: "Lass mich mit der Regenumschalttaste im Cockpitview bzw. durch
+  // Tippen/Klicken auf das Symbol auch noch zwischen sonnig, Regen und wechselhaft hin und
+  // herschalten (default: Sonne)."
+  //
+  // ---- WARUM DER VERLAUF MITGEPRUEFT WIRD ----------------------------------------
+  //
+  // "wechselhaft" ist keine Lage, sondern ein Verlauf - setWeather('wechsel') waere ein
+  // Wetter, das es nicht gibt. Der Verlauf lebt in raceWxStart und wird von
+  // wxWechselTick() gefahren. Eine Kachel, die den Modus setzt, ohne dass etwas geplant
+  // wird, sieht richtig aus und tut nichts: man waehlt "wechselhaft" und bekommt trocken,
+  // fuer immer. Genau das faengt der zweite Teil.
+  stAdd('Wetterkachel: drei Lagen, und wechselhaft wechselt wirklich', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.wxModusProbe) {
+      return { skip: true, mass: 'wxModusProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.wxModusProbe();
+    if (!r) return { skip: true, mass: 'kein Lauf' };
+    const fehler = [];
+    const modi = r.folge.map((x) => x.modus);
+    // 1. DREI LAGEN, und die Folge schliesst sich. Eine Folge, die bei "wechselhaft"
+    //    stehenbleibt, waere eine Sackgasse.
+    if (modi.join('>') !== 'dry>rain>wechsel>dry') {
+      fehler.push('Folge ' + modi.join('>') + ' statt dry>rain>wechsel>dry');
+    }
+    // 2. DIE LAGE FOLGT DEM MODUS - und "wechselhaft" beginnt trocken, weil ein Verlauf
+    //    irgendwo anfangen muss.
+    const wetter = r.folge.map((x) => x.wetter);
+    if (wetter[0] !== 'dry' || wetter[1] !== 'rain' || wetter[2] !== 'dry') {
+      fehler.push('Lagen ' + wetter.join('>'));
+    }
+    // 3. NUR BEI "wechselhaft" IST ETWAS GEPLANT. Ohne diese Zeile waere der Test auch
+    //    gruen, wenn der Verlauf dauernd mitlaeuft oder nie.
+    const geplant = r.folge.map((x) => x.geplant);
+    if (geplant[0] || geplant[1] || !geplant[2]) {
+      fehler.push('geplant: ' + geplant.join('/') + ' (erwartet nein/nein/ja)');
+    }
+    // 4. UND DAS ZEICHEN ERSCHEINT GENAU DANN. Es steht NEBEN der Lage und nicht an ihrer
+    //    Stelle: waehrend des Verlaufs ist es trocken oder nass, und wer nur
+    //    "wechselhaft" sieht, weiss nicht, worauf er faehrt.
+    const zeichen = r.folge.map((x) => x.zeichen);
+    if (zeichen[0] !== false || zeichen[1] !== false || zeichen[2] !== true) {
+      fehler.push('Zeichen: ' + zeichen.join('/') + ' (erwartet nein/nein/ja)');
+    }
+    // 5. UND DER VERLAUF DREHT WIRKLICH, mit vorgestellter Uhr. Das ist die Zeile, die den
+    //    Unterschied zwischen "Modus gesetzt" und "es passiert etwas" prueft.
+    if (!r.verlauf.gedreht) {
+      fehler.push('nach sieben Minuten immer noch ' + r.verlauf.nachher);
+    }
+    if (!r.verlauf.neuGeplant) fehler.push('nach dem Wechsel ist nichts neu geplant');
+    return { ok: !fehler.length,
+             mass: modi.join('>') + ' | Lagen ' + wetter.join('>')
+                 + ' | geplant ' + geplant.map((x) => (x ? 'ja' : 'nein')).join('/')
+                 + ' | Verlauf ' + r.verlauf.vorher + ' -> ' + r.verlauf.nachher
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
   // ---- Das Steuerkreuz schaltet Reifenwahl und Tankmenge ----
   //
   // BESTELLT: "D-Pad hoch und runter im Cockpit aendert nicht Lenkung oder Brakebias,
@@ -9120,14 +9178,21 @@
     let trocken = null, nachKlick = null, spaeter = null, lange = null, danach = null;
     try {
       // Trocken: KEINE Form darf ziehen. Das war Befund 1.
-      if (warRegen) box.click();
+      //
+      // UEBER DIE LAGE UND NICHT UEBER EINEN KLICK: die Kachel schaltet seit v0.6.17 durch
+      // DREI Lagen, ein Klick fuehrt also nicht mehr zuverlaessig nach "trocken". Der Test
+      // lief nur deshalb weiter, weil die Vorgabe trocken ist - er haette beim ersten
+      // Rennen im Regen still die falsche Lage gemessen.
+      if (OMEGA_TEST.wxModusSetzen) OMEGA_TEST.wxModusSetzen('dry');
+      else if (warRegen) box.click();
       OMEGA_TEST.wxSet(-1);
       OMEGA_TEST.wxSchritt(3);
       trocken = OMEGA_TEST.wxProbe().regen;
       if (trocken.aktiv !== 0) fehler.push(trocken.aktiv + ' Formen ziehen im Trockenen');
 
-      // Klick: sie starten AUSSERHALB des Bildes. Das Bild reicht bis etwa 0,8.
-      box.click();
+      // Regen: sie starten AUSSERHALB des Bildes. Das Bild reicht bis etwa 0,8.
+      if (OMEGA_TEST.wxModusSetzen) OMEGA_TEST.wxModusSetzen('rain');
+      else box.click();
       nachKlick = OMEGA_TEST.wxProbe().regen;
       if (!nachKlick.aktiv) fehler.push('nach dem Klick zieht keine Form');
       const vorn = nachKlick.laengs[nachKlick.laengs.length - 1];

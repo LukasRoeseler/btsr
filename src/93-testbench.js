@@ -3844,6 +3844,65 @@
       }
     },
 
+    // Die Wetterlage von aussen setzen, ueber denselben Weg wie die Kachel. Gebraucht vom
+    // Regenformen-Test, der vorher mit box.click() auf eine Lage zusteuerte - das ging,
+    // solange die Kachel ein Zwei-Wege-Schalter war, und haengt seit v0.6.17 am
+    // Anfangszustand.
+    wxModusSetzen(modus) {
+      return typeof wxModusSetzen === 'function' ? wxModusSetzen(modus) : null;
+    },
+
+    // ---- DIE DREI WETTERLAGEN AUF DER KACHEL ------------------------------------
+    //
+    // BESTELLT: "Lass mich mit der Regenumschalttaste im Cockpitview [...] auch noch
+    // zwischen sonnig, Regen und wechselhaft hin und herschalten (default: Sonne)."
+    //
+    // Geklickt wird die ECHTE Kachel. Ein Prueflauf, der wxModusWeiter() direkt ruft,
+    // prueft die Stufenfolge ohne die Verdrahtung - und die Verdrahtung ist hier die halbe
+    // Aenderung (die Kachel hing an einem Zwei-Wege-Schalter).
+    //
+    // MIT GEFAELSCHTER UHR fuer den Verlaufsteil: wxWechselTick() fragt Date.now(), und
+    // zwei bis sechs Minuten zu warten ist kein Prueflauf.
+    wxModusProbe() {
+      if (typeof wxModusSetzen !== 'function') return null;
+      const box = $('race-wx-box');
+      if (!box) return null;
+      const merk = { modus: raceWxStart, wetter: weather, at: wxWechselAt };
+      const echtNow = Date.now;
+      try {
+        // Von einer bekannten Lage aus, sonst haengt die Folge am Anfangszustand.
+        wxModusSetzen('dry');
+        const folge = [];
+        for (let i = 0; i < 4; i++) {
+          folge.push({ modus: raceWxStart, wetter: weather,
+                       geplant: wxWechselAt !== null,
+                       zeichen: $('race-wx-wechsel')
+                         ? $('race-wx-wechsel').style.display !== 'none' : null });
+          box.click();
+        }
+        // ---- UND LAEUFT DER VERLAUF WIRKLICH? ------------------------------------
+        //
+        // "wechselhaft" hat genau dann einen Wert, wenn es auch umschaltet. Die Uhr wird
+        // vorgestellt, bis der geplante Zeitpunkt erreicht ist, und dann geprueft, ob
+        // wxWechselTick() die Lage wirklich dreht.
+        wxModusSetzen('wechsel');
+        const vorher = weather;
+        let uhr = echtNow.call(Date);
+        Date.now = () => uhr;
+        // Der Plan liegt 2 bis 6 Minuten voraus; sieben Minuten deckt das mit Reserve.
+        uhr += 7 * 60000;
+        wxWechselTick();
+        const nachher = weather;
+        return { folge, verlauf: { vorher, nachher, gedreht: vorher !== nachher,
+                                   neuGeplant: wxWechselAt !== null } };
+      } finally {
+        Date.now = echtNow;
+        wxModusSetzen(merk.modus === 'wechsel' ? 'wechsel' : merk.modus);
+        weather = merk.wetter;
+        wxWechselAt = merk.at;
+      }
+    },
+
     // ---- WAS DAS STEUERKREUZ IM COCKPIT SCHALTET --------------------------------
     //
     // BESTELLT: "D-Pad oben schaltet Reifentypen durch [...] D-Pad runter schaltet die

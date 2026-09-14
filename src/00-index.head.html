@@ -319,6 +319,10 @@
      was das Wetter TUT, steht im Radar. */
   .wx-ico { position: absolute; top: 5px; left: 6px; z-index: 2; line-height: 0; }
   .wx-ico .gt3-ico { width: 15px; height: 15px; }
+  /* Das Zeichen fuer "wechselhaft". Klein und neben dem Lagesymbol, nicht an seiner
+     Stelle: die Lage bleibt die Hauptaussage, der Verlauf ist der Zusatz. */
+  .wx-wechsel { display: inline-block; margin-left: 2px; font-size: 11px; line-height: 1;
+    vertical-align: top; color: var(--accent, #5aa9ff); }
   /* Controller-Grafik. Die Farben kommen aus dem Vorbild-SVG, sind aber auf die
      Projektvariablen gezogen, damit sie bei einer Themenaenderung mitgehen. */
   .pad-wrap { overflow-x: auto; margin-top: 10px; }
@@ -3307,10 +3311,16 @@
           <div class="gt3-val sm" id="race-batt">&ndash;</div></div>
         <div class="gt3-box gt3-click" id="race-light-box" title="Licht an/aus" style="display:flex;align-items:center;justify-content:center">
           <div class="gt3-tell" style="width:100%"><svg class="gt3-lamp" id="race-light" viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" aria-label="Scheinwerfer"><path d="M 107 43 C 145 43 182 68 182 100 C 182 132 145 157 107 157 Z"/><path d="M28 71 89 52M28 96 89 77M28 121 89 102M28 146 89 127M28 171 89 152"/></svg></div></div>
-        <div class="gt3-box gt3-click gt3-wx" id="race-wx-box" title="Wetter umschalten">
+        <!-- ---- DREI LAGEN, UND DIE ANZEIGE ZEIGT BEIDE DINGE ----------------------
+             Sonne oder Regen sagen, was JETZT gilt - das ist die griffrelevante Tatsache.
+             Bei "wechselhaft" kommt ein kleines Zeichen dazu, statt die Lage durch ein
+             drittes Symbol zu ersetzen: waehrend des Verlaufs ist es trocken ODER nass, und
+             wer nur "wechselhaft" sieht, weiss nicht, worauf er gerade faehrt. -->
+        <div class="gt3-box gt3-click gt3-wx" id="race-wx-box"
+             title="Wetter umschalten: sonnig, Regen, wechselhaft">
           <canvas id="race-wx-radar" class="wx-radar" width="200" height="150"
                   aria-hidden="true"></canvas>
-          <div class="wx-ico"><svg class="gt3-ico" id="race-wx-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-label="Trocken"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.4M12 19.6V22M2 12h2.4M19.6 12H22M4.9 4.9l1.7 1.7M17.4 17.4l1.7 1.7M19.1 4.9l-1.7 1.7M6.6 17.4l-1.7 1.7"/></svg><svg class="gt3-ico" id="race-wx-rain" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-label="Regen" style="display:none"><path d="M6.5 14a4 4 0 0 1 .4-8 5.5 5.5 0 0 1 10.5 1.4A3.6 3.6 0 0 1 17.5 14z"/><path d="M8 17.5l-1 2.5M12 17.5l-1 2.5M16 17.5l-1 2.5"/></svg></div></div>
+          <div class="wx-ico"><svg class="gt3-ico" id="race-wx-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-label="Trocken"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.4M12 19.6V22M2 12h2.4M19.6 12H22M4.9 4.9l1.7 1.7M17.4 17.4l1.7 1.7M19.1 4.9l-1.7 1.7M6.6 17.4l-1.7 1.7"/></svg><svg class="gt3-ico" id="race-wx-rain" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-label="Regen" style="display:none"><path d="M6.5 14a4 4 0 0 1 .4-8 5.5 5.5 0 0 1 10.5 1.4A3.6 3.6 0 0 1 17.5 14z"/><path d="M8 17.5l-1 2.5M12 17.5l-1 2.5M16 17.5l-1 2.5"/></svg><span class="wx-wechsel" id="race-wx-wechsel" aria-label="wechselhaft" style="display:none" data-i18n-skip>&#8646;</span></div></div>
         <!-- Was auf dem Steuerkreuz liegt: hoch die Reifenwahl, runter die Tankmenge.
              Die Kachel und das Kreuz zeigen dieselben zwei Groessen.
 
@@ -7989,7 +7999,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.6.16</span></span>
+    <span class="foot-ver">v<span id="app-version">0.6.17</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine

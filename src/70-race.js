@@ -1403,7 +1403,60 @@
     showHudToast(headlightsOn ? 'Licht an' : 'Licht aus');
   };
 
-  $('race-wx-box').onclick = () => setWeather(weather === 'rain' ? 'dry' : 'rain');
+  // ====================================================================================
+  // DREI WETTERLAGEN AUF EINER KACHEL
+  // ====================================================================================
+  //
+  // BESTELLT: "Lass mich mit der Regenumschalttaste im Cockpitview bzw. durch
+  // Tippen/Klicken auf das Symbol auch noch zwischen sonnig, Regen und wechselhaft hin und
+  // herschalten (default: Sonne)."
+  //
+  // ---- "WECHSELHAFT" IST KEINE LAGE, SONDERN EIN VERLAUF -------------------------
+  //
+  // Das stand schon vor dieser Aenderung im Code, bei der Rennvorbereitung: setWeather()
+  // mit 'wechsel' zu rufen waere ein Wetter, das es nicht gibt. Der Verlauf lebt in
+  // raceWxStart und wird von wxWechselTick() gefahren, der alle 1-6 Minuten umschaltet.
+  //
+  // Deshalb schaltet diese Kachel den MODUS und nicht nur die Lage - und sie tut es ueber
+  // das Bedienelement race-wx-start samt seinem change-Ereignis, wie jede andere
+  // Cockpit-Kachel in dieser App. Ein zweiter Zustand daneben waere die naechste Stelle,
+  // an der Kachel und Renneinstellung auseinanderlaufen.
+  //
+  // BEIM WECHSEL IN 'wechsel' WIRD SOFORT GEPLANT. Ohne das stuende wxWechselAt auf dem
+  // Wert der letzten Rennvorbereitung - im freien Fahren also auf null, und dann passiert
+  // nie etwas: man waehlt "wechselhaft" und bekommt trocken, fuer immer.
+  const WX_MODI = ['dry', 'rain', 'wechsel'];
+
+  function wxModusSetzen(modus) {
+    const sel = $('race-wx-start');
+    if (sel) {
+      sel.value = modus;
+      sel.dispatchEvent(new Event('change', { bubbles: true }));
+    } else {
+      raceWxStart = modus;
+    }
+    if (modus === 'wechsel') {
+      // Der Verlauf beginnt trocken - dieselbe Entscheidung wie bei der Rennvorbereitung.
+      setWeather('dry');
+      wxWechselPlanen(false);
+      showHudToast(t('Wechselhaft'));
+    } else {
+      wxWechselAt = null;
+      setWeather(modus);
+    }
+    // SOFORT und nicht erst im naechsten Fahrtakt: wer auf die Kachel tippt, will die
+    // Antwort sehen. Und wenn das Cockpit nicht der aktive Schirm ist, kommt der Fahrtakt
+    // fuer diese Anzeige ohnehin nicht.
+    if (typeof wxZeichenSetzen === 'function') wxZeichenSetzen();
+    return modus;
+  }
+
+  function wxModusWeiter() {
+    const i = WX_MODI.indexOf(raceWxStart);
+    return wxModusSetzen(WX_MODI[(i < 0 ? 0 : i + 1) % WX_MODI.length]);
+  }
+
+  $('race-wx-box').onclick = () => wxModusWeiter();
 
   // Tank und Zustand sind nur WAEHREND eines Boxenstopps Schalter. Ausserhalb bleibt ein
   // Tipp wirkungslos, statt versehentlich etwas zu verstellen.
