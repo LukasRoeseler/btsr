@@ -2264,8 +2264,16 @@
 
      Dazu die untere Sicherheitszone: auf einem iPhone liegt sonst die Bedienleiste des
      Systems ueber der Palette. */
+  /* ---- KEINE HOEHE NEBEN inset: 0, und das ist der Kern ---------------------------
+     Hier stand zusaetzlich `height: 100dvh`. Bei `position: fixed; inset: 0` ist die Hoehe
+     aber SCHON bestimmt - der Kasten reicht von oben bis unten am Sichtfenster. Eine
+     zweite Angabe daneben kann nur eines: widersprechen. Und `height` gewinnt gegen den
+     unteren Versatz, also wird der Kasten genau so hoch, wie dvh gerade meldet.
+     Meldet ein Einbettungsrahmen dort die Fenster- statt der Vollbildhoehe - und das tun
+     welche -, ragt der Kasten unten hinaus, und was in der letzten Rasterzeile steht
+     (die Teile) liegt ausserhalb des Bildes. Genau die gemeldete Gestalt.
+     inset: 0 allein ist per Definition das Sichtfenster und kann nicht danebenliegen. */
   body.track-fs #track-fs-host { position: fixed; inset: 0; z-index: 200;
-    height: 100dvh;
     background: var(--bg); display: grid; grid-template-rows: 1fr auto;
     align-items: center; padding: 8px; gap: 6px;
     padding-bottom: max(8px, env(safe-area-inset-bottom)); }
@@ -2284,14 +2292,13 @@
      Karte und nicht an den Host: die Leisten sollen mittig bleiben. */
   body.track-fs #track-fs-host > #track-preview-svg { height: auto; min-height: 0;
     align-self: stretch; overflow: hidden; display: grid; place-items: center; }
-  /* DER WARNABSATZ GEHOERT NICHT INS VOLLBILD, und das ist der dritte Fehler. Er nahm dort
-     eine eigene Rasterzeile von 52 px - vier Zeilen Prosa ueber fehlende Kacheltypen, die
-     man beim Bauen nicht liest und die der Karte Platz wegnimmt. In der Seite bleibt er
-     stehen, dort ist er richtig.
-
-     Nebenwirkung, und eine erwuenschte: `grid-template-rows: auto 1fr auto` nennt drei
-     Zeilen, in Flusslage waren aber vier Kinder da - die vierte Zeile entstand implizit.
-     Jetzt stimmen Erklaerung und Wirklichkeit ueberein. */
+  /* Der Warnabsatz ueber die unvollstaendige Palette ist mit v0.6.18 ganz entfallen - die
+     fehlenden Kacheltypen sind vermessen und eingebaut. Die Regel bleibt trotzdem stehen:
+     sie sagt, dass in diesen Kasten keine Prosa gehoert. Ein Absatz nimmt hier eine eigene
+     Rasterzeile, und `grid-template-rows: auto 1fr auto` nennt genau drei - Aktionen,
+     Karte, Teile. Wer hier einen Satz einfuegt, schiebt die Teile in eine vierte,
+     implizite Zeile und damit aus dem Bild. Genau das war der gemeldete Fehler in seiner
+     zweiten Gestalt. */
   body.track-fs #track-fs-host > p { display: none; }
   /* EIN KNOPF, ZWEI ZUSTAENDE. Die Wahrheit ist die Klasse auf dem body - dieselbe, die
      das ganze Vollbild-Layout schaltet. Ausdruecklich ohne JS: waere der Zustand hier ein
@@ -2337,7 +2344,15 @@
   .tp-actions .tp-btn { border-color: var(--border); }
   /* Aktionen oben, Karte in der Mitte, Teile unten - so liegt das Steuerkreuz auf dem
      Bildschirm genauso wie in der Hand: hoch zu den Aktionen, runter zu den Teilen. */
-  body.track-fs #track-fs-host { grid-template-rows: auto 1fr auto; }
+  /* minmax(0, 1fr) UND NICHT 1fr. `1fr` ist `minmax(auto, 1fr)`, und dieses `auto` ist
+     eine UNTERGRENZE aus dem Inhalt: die Kartenzeile weigert sich dann, unter die
+     Mindesthoehe ihres Inhalts zu schrumpfen. Passt die Karte bei einem bestimmten
+     Seitenverhaeltnis nicht, waechst die Zeile ueber das Sichtfenster hinaus und schiebt
+     die Teile darunter heraus. Mit einer Untergrenze von 0 schrumpft sie, und die Teile
+     behalten ihre Zeile.
+     (Die Regel an der Karte setzt schon min-height: 0 und overflow: hidden - das deckt
+     den Fall fuer das Rasterkind ab, nicht aber die Spurberechnung selbst.) */
+  body.track-fs #track-fs-host { grid-template-rows: auto minmax(0, 1fr) auto; }
   body.track-fs .tp-btn { width: 46px; height: 46px; }
   /* Space usage, subtle, in a corner as asked. */
   /* The gamepad moves the REAL focus rather than a painted marker of its own, so keyboard,
@@ -7723,16 +7738,6 @@
             <span class="tp-cap tp-fs-aus">Schlie&szlig;en</span></button>
         </div>
         <div id="track-preview-svg"></div>
-        <p class="muted" style="border-left:3px solid var(--warn); padding-left:9px;
-           font-size:12px">
-          <b>Die Palette ist nicht vollst&auml;ndig.</b> Die Original-App hat neun
-          Kacheltypen, hier sind es sechs: es fehlen eine lange flache Kurve und eine
-          Keilkurve. Ihre Ma&szlig;e stehen nirgends &ndash; die Angabe oben im
-          Original-Editor ist der Umriss des <em>ganzen</em> Layouts und nicht der Kachel.
-          Sie kommen dazu, sobald eine Schlie&szlig;messung vorliegt: eine kleine
-          geschlossene Runde mit der neuen Kachel, und dann fallen Radius und Winkel
-          eindeutig heraus &ndash; so wie bei der Haarnadel.
-        </p>
         <div class="tp-bar" id="track-palette"></div>
         <span class="tp-space" id="track-space"></span>
       </div>
@@ -7999,7 +8004,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.6.17</span></span>
+    <span class="foot-ver">v<span id="app-version">0.6.18</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine

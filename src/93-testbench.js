@@ -3852,6 +3852,79 @@
       return typeof wxModusSetzen === 'function' ? wxModusSetzen(modus) : null;
     },
 
+    // ---- LIEGT IM EDITOR-VOLLBILD DIE PALETTE IM BILD? --------------------------
+    //
+    // GEMELDET: "Du musst noch den Vollbildmodus des Streckeneditors fixen, aktuell sehe ich
+    // die Streckenteile unten dann nicht."
+    //
+    // ---- WARUM DIESE SONDE DIE HOEHE VORGIBT --------------------------------------
+    //
+    // Nachgestellt werden konnte der Fehler nicht: bei 1024x768, 812x375 und 375x812 lag
+    // die Palette hier immer im Bild. Die Lage haengt aber an der Fensterhoehe und am
+    // Seitenverhaeltnis der Karte, und beides ist auf einem anderen Schirm anders. Eine
+    // Sonde, die nur die EIGENE Groesse misst, prueft also genau den Fall, der schon geht.
+    //
+    // Deshalb wird der Kasten fuer die Messung auf eine feste Hoehe gezwungen. Das ist
+    // nicht dasselbe wie ein echtes Fenster dieser Hoehe - Sicherheitszonen und
+    // Systemleisten fehlen -, aber es prueft die Rasterrechnung, und die ist der Teil, der
+    // kippen kann.
+    //
+    // GEMESSEN WIRD GEGEN DEN KASTEN und nicht gegen window.innerHeight: der Kasten IST im
+    // Vollbild das Sichtfenster (position: fixed; inset: 0), und nur so ist eine erzwungene
+    // Hoehe ueberhaupt aussagekraeftig.
+    editorVollbildProbe(hoehen) {
+      const host = $('track-fs-host');
+      const pal = $('track-palette');
+      const svg = $('track-preview-svg');
+      if (!host || !pal || !svg) return null;
+      const warFs = document.body.classList.contains('track-fs');
+      const merkH = host.style.height;
+      // ---- DEN REITER SICHTBAR MACHEN, sonst misst alles null ---------------------
+      //
+      // .tabpage ist display: none, solange der Reiter nicht aktiv ist - und ein Kind
+      // eines unsichtbaren Elements hat keine Groesse, auch nicht mit position: fixed.
+      // Der erste Anlauf dieser Sonde meldete deshalb bei JEDER Hoehe 0 px, und das sah
+      // wie ein Fehler im Raster aus. Es war einer in der Messung.
+      //
+      // UND DIE ZWEI EBENEN HABEN VERSCHIEDENE KLASSEN: ein Reiter wird mit `active`
+      // gezeigt (.tabpage.active), eine Unterseite mit `on` (.subpage.on). Der zweite
+      // Anlauf setzte beidemal `active` und maass weiter null - eine Klasse, die es an
+      // dieser Stelle nicht gibt, tut genau nichts.
+      const seite = host.closest('.tabpage');
+      const unter = host.closest('.subpage');
+      const warAktiv = seite ? seite.classList.contains('active') : true;
+      const warUnter = unter ? unter.classList.contains('on') : true;
+      try {
+        if (seite) seite.classList.add('active');
+        if (unter) unter.classList.add('on');
+        document.body.classList.add('track-fs');
+        const aus = [];
+        for (const h of (hoehen || [768, 480, 375, 320])) {
+          host.style.height = h + 'px';
+          // Ein Lesen erzwingen, damit das Raster neu gerechnet ist.
+          void host.offsetHeight;
+          const hk = host.getBoundingClientRect();
+          const pk = pal.getBoundingClientRect();
+          const sk = svg.getBoundingClientRect();
+          aus.push({
+            hoehe: h,
+            rows: getComputedStyle(host).gridTemplateRows,
+            // Der Abstand vom unteren Kastenrand: negativ heisst, die Palette ragt hinaus.
+            luft: +(hk.bottom - pk.bottom).toFixed(1),
+            paletteH: Math.round(pk.height),
+            karteH: Math.round(sk.height),
+            drin: pk.height > 0 && pk.bottom <= hk.bottom + 1,
+          });
+        }
+        return { messungen: aus, teile: pal.children.length };
+      } finally {
+        host.style.height = merkH;
+        if (!warFs) document.body.classList.remove('track-fs');
+        if (seite && !warAktiv) seite.classList.remove('active');
+        if (unter && !warUnter) unter.classList.remove('on');
+      }
+    },
+
     // ---- DIE DREI WETTERLAGEN AUF DER KACHEL ------------------------------------
     //
     // BESTELLT: "Lass mich mit der Regenumschalttaste im Cockpitview [...] auch noch

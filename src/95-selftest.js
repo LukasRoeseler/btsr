@@ -7648,6 +7648,61 @@
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
+  // ---- Editor-Vollbild: die Teile liegen im Bild ----
+  //
+  // GEMELDET: "Aktuell sehe ich die Streckenteile unten dann nicht."
+  //
+  // ---- WAS ICH NICHT NACHSTELLEN KONNTE, UND WAS ICH GEHAERTET HABE ---------------
+  //
+  // Bei 1024x768, 812x375 und 375x812 lag die Palette hier immer im Bild, auch mit zwoelf
+  // Kacheltypen. Der Fehler haengt also an einer Groesse, die ich nicht habe. Zwei Stellen
+  // koennen die Lage MECHANISCH kippen, und beide sind zu:
+  //
+  //   1. `height: 100dvh` NEBEN `inset: 0`. Bei fixer Lage mit inset: 0 ist die Hoehe schon
+  //      bestimmt; eine zweite Angabe kann nur widersprechen, und height gewinnt. Meldet
+  //      ein Einbettungsrahmen dort die Fenster- statt der Vollbildhoehe, ragt der Kasten
+  //      hinaus und die letzte Rasterzeile - die Teile - liegt draussen.
+  //   2. `1fr` ist `minmax(auto, 1fr)`, und dieses auto ist eine Untergrenze aus dem
+  //      Inhalt. Die Kartenzeile weigert sich dann zu schrumpfen und schiebt die Teile
+  //      heraus. Jetzt minmax(0, 1fr).
+  //
+  // Dieser Test misst die Rasterrechnung bei VORGEGEBENEN Hoehen - auch solchen, die dieser
+  // Schirm nicht hat. Er ist kein Ersatz fuer die Meldung vom echten Gerät, aber er faengt
+  // die Rechnung, und die ist der Teil, der kippen kann.
+  stAdd('Editor-Vollbild: die Teile liegen im Bild, auch auf niedrigen Schirmen', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.editorVollbildProbe) {
+      return { skip: true, mass: 'editorVollbildProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.editorVollbildProbe([900, 768, 600, 480, 375, 320]);
+    if (!r) return { skip: true, mass: 'Editorkasten nicht im Dokument' };
+    const fehler = [];
+    for (const m of r.messungen) {
+      // 1. DIE PALETTE IST IM KASTEN. Das ist die Zusage.
+      if (!m.drin) {
+        fehler.push(m.hoehe + ' px: Palette ragt ' + (-m.luft).toFixed(0) + ' px hinaus');
+      }
+      // 2. UND SIE HAT HOEHE. Eine Palette, die auf 0 zusammenfaellt, ist auch nicht da -
+      //    und sie waere "drin", also ohne diese Zeile unbemerkt.
+      if (!(m.paletteH > 10)) {
+        fehler.push(m.hoehe + ' px: Palette nur ' + m.paletteH + ' px hoch');
+      }
+      // 3. DIE KARTE SCHRUMPFT MIT, statt die Teile zu verdraengen. Das ist die Wirkung von
+      //    minmax(0, 1fr) - ohne sie bliebe die Kartenzeile stehen.
+      if (!(m.karteH >= 0)) fehler.push(m.hoehe + ' px: Karte ohne Hoehe');
+    }
+    // 4. UND DIE KARTE WIRD BEI KLEINEREM SCHIRM WIRKLICH KLEINER. Ohne diese Zeile waere
+    //    der Test auch gruen, wenn das Raster gar nicht reagiert.
+    const k = r.messungen.map((m) => m.karteH);
+    if (!(k[0] > k[k.length - 1])) {
+      fehler.push('Karte schrumpft nicht: ' + k.join(' > '));
+    }
+    return { ok: !fehler.length,
+             mass: r.teile + ' Teile | '
+                 + r.messungen.map((m) => m.hoehe + ': Karte ' + m.karteH
+                     + ', Teile ' + m.paletteH + ', Luft ' + m.luft).join(' | ')
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
   // ---- Die Wetterkachel schaltet durch drei Lagen ----
   //
   // BESTELLT: "Lass mich mit der Regenumschalttaste im Cockpitview bzw. durch

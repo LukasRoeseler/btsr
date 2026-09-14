@@ -2264,8 +2264,16 @@
 
      Dazu die untere Sicherheitszone: auf einem iPhone liegt sonst die Bedienleiste des
      Systems ueber der Palette. */
+  /* ---- KEINE HOEHE NEBEN inset: 0, und das ist der Kern ---------------------------
+     Hier stand zusaetzlich `height: 100dvh`. Bei `position: fixed; inset: 0` ist die Hoehe
+     aber SCHON bestimmt - der Kasten reicht von oben bis unten am Sichtfenster. Eine
+     zweite Angabe daneben kann nur eines: widersprechen. Und `height` gewinnt gegen den
+     unteren Versatz, also wird der Kasten genau so hoch, wie dvh gerade meldet.
+     Meldet ein Einbettungsrahmen dort die Fenster- statt der Vollbildhoehe - und das tun
+     welche -, ragt der Kasten unten hinaus, und was in der letzten Rasterzeile steht
+     (die Teile) liegt ausserhalb des Bildes. Genau die gemeldete Gestalt.
+     inset: 0 allein ist per Definition das Sichtfenster und kann nicht danebenliegen. */
   body.track-fs #track-fs-host { position: fixed; inset: 0; z-index: 200;
-    height: 100dvh;
     background: var(--bg); display: grid; grid-template-rows: 1fr auto;
     align-items: center; padding: 8px; gap: 6px;
     padding-bottom: max(8px, env(safe-area-inset-bottom)); }
@@ -2284,14 +2292,13 @@
      Karte und nicht an den Host: die Leisten sollen mittig bleiben. */
   body.track-fs #track-fs-host > #track-preview-svg { height: auto; min-height: 0;
     align-self: stretch; overflow: hidden; display: grid; place-items: center; }
-  /* DER WARNABSATZ GEHOERT NICHT INS VOLLBILD, und das ist der dritte Fehler. Er nahm dort
-     eine eigene Rasterzeile von 52 px - vier Zeilen Prosa ueber fehlende Kacheltypen, die
-     man beim Bauen nicht liest und die der Karte Platz wegnimmt. In der Seite bleibt er
-     stehen, dort ist er richtig.
-
-     Nebenwirkung, und eine erwuenschte: `grid-template-rows: auto 1fr auto` nennt drei
-     Zeilen, in Flusslage waren aber vier Kinder da - die vierte Zeile entstand implizit.
-     Jetzt stimmen Erklaerung und Wirklichkeit ueberein. */
+  /* Der Warnabsatz ueber die unvollstaendige Palette ist mit v0.6.18 ganz entfallen - die
+     fehlenden Kacheltypen sind vermessen und eingebaut. Die Regel bleibt trotzdem stehen:
+     sie sagt, dass in diesen Kasten keine Prosa gehoert. Ein Absatz nimmt hier eine eigene
+     Rasterzeile, und `grid-template-rows: auto 1fr auto` nennt genau drei - Aktionen,
+     Karte, Teile. Wer hier einen Satz einfuegt, schiebt die Teile in eine vierte,
+     implizite Zeile und damit aus dem Bild. Genau das war der gemeldete Fehler in seiner
+     zweiten Gestalt. */
   body.track-fs #track-fs-host > p { display: none; }
   /* EIN KNOPF, ZWEI ZUSTAENDE. Die Wahrheit ist die Klasse auf dem body - dieselbe, die
      das ganze Vollbild-Layout schaltet. Ausdruecklich ohne JS: waere der Zustand hier ein
@@ -2337,7 +2344,15 @@
   .tp-actions .tp-btn { border-color: var(--border); }
   /* Aktionen oben, Karte in der Mitte, Teile unten - so liegt das Steuerkreuz auf dem
      Bildschirm genauso wie in der Hand: hoch zu den Aktionen, runter zu den Teilen. */
-  body.track-fs #track-fs-host { grid-template-rows: auto 1fr auto; }
+  /* minmax(0, 1fr) UND NICHT 1fr. `1fr` ist `minmax(auto, 1fr)`, und dieses `auto` ist
+     eine UNTERGRENZE aus dem Inhalt: die Kartenzeile weigert sich dann, unter die
+     Mindesthoehe ihres Inhalts zu schrumpfen. Passt die Karte bei einem bestimmten
+     Seitenverhaeltnis nicht, waechst die Zeile ueber das Sichtfenster hinaus und schiebt
+     die Teile darunter heraus. Mit einer Untergrenze von 0 schrumpft sie, und die Teile
+     behalten ihre Zeile.
+     (Die Regel an der Karte setzt schon min-height: 0 und overflow: hidden - das deckt
+     den Fall fuer das Rasterkind ab, nicht aber die Spurberechnung selbst.) */
+  body.track-fs #track-fs-host { grid-template-rows: auto minmax(0, 1fr) auto; }
   body.track-fs .tp-btn { width: 46px; height: 46px; }
   /* Space usage, subtle, in a corner as asked. */
   /* The gamepad moves the REAL focus rather than a painted marker of its own, so keyboard,
@@ -7723,16 +7738,6 @@
             <span class="tp-cap tp-fs-aus">Schlie&szlig;en</span></button>
         </div>
         <div id="track-preview-svg"></div>
-        <p class="muted" style="border-left:3px solid var(--warn); padding-left:9px;
-           font-size:12px">
-          <b>Die Palette ist nicht vollst&auml;ndig.</b> Die Original-App hat neun
-          Kacheltypen, hier sind es sechs: es fehlen eine lange flache Kurve und eine
-          Keilkurve. Ihre Ma&szlig;e stehen nirgends &ndash; die Angabe oben im
-          Original-Editor ist der Umriss des <em>ganzen</em> Layouts und nicht der Kachel.
-          Sie kommen dazu, sobald eine Schlie&szlig;messung vorliegt: eine kleine
-          geschlossene Runde mit der neuen Kachel, und dann fallen Radius und Winkel
-          eindeutig heraus &ndash; so wie bei der Haarnadel.
-        </p>
         <div class="tp-bar" id="track-palette"></div>
         <span class="tp-space" id="track-space"></span>
       </div>
@@ -7999,7 +8004,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.6.17</span></span>
+    <span class="foot-ver">v<span id="app-version">0.6.18</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -8945,7 +8950,6 @@
     "Strafe je verpasstem Stopp (s)": "Penalty per missed stop (s)",
     "Strecke aus Teilen bauen, drehen, als Code weitergeben. Zwei Kurventypen der Original-App fehlen noch – ihre Maße sind nicht bekannt.":
       "Build a track from pieces, rotate it, pass it on as a code. Two curve types from the original app are still missing – their dimensions are not known.",
-    "Die Palette ist nicht vollständig.": "The palette is incomplete.",
     "Die Original-App hat neun Kacheltypen, hier sind es sechs: es fehlen eine lange flache Kurve und eine Keilkurve. Ihre Maße stehen nirgends – die Angabe oben im Original-Editor ist der Umriss des":
       "The original app has nine tile types, this one has six: a long shallow curve and a wedge curve are missing. Their dimensions are written down nowhere – the figure at the top of the original editor is the bounding box of the",
     "ganzen": "whole",
@@ -18444,20 +18448,64 @@
     el.textContent = `${Math.round(wCm)} × ${Math.round(hCm)} cm · ${currentTrackTiles.length} Teile`;
   }
 
-  // ---- Fullscreen for the editor ----
+  // ====================================================================================
+  // VOLLBILD FUER DEN EDITOR
+  // ====================================================================================
+  //
+  // GEMELDET: "Du musst noch den Vollbildmodus des Streckeneditors fixen, aktuell sehe ich
+  // die Streckenteile unten dann nicht."
+  //
+  // ---- DER BEFUND, und er war ein Widerspruch im eigenen Code --------------------
+  //
+  // Hier stand, richtig gedacht: `catch (e) { /* refused: the CSS layout still applies */ }`
+  // - verweigert der Browser das echte Vollbild, gilt die CSS-Lage trotzdem, und die ordnet
+  // Aktionen oben, Karte in der Mitte, Teile unten.
+  //
+  // Und drei Zeilen weiter nahm ein Horcher ihm das sofort wieder weg:
+  //
+  //     document.addEventListener('fullscreenchange', () => {
+  //       if (!document.fullscreenElement && body.classList.contains('track-fs')) exit...
+  //     });
+  //
+  // Ein VERWEIGERTER Wunsch loest dieses Ereignis ebenfalls aus (und ein fremdes Vollbild,
+  // das jemand verlaesst, auch). Die Bedingung fragte nur, ob die Klasse gesetzt ist - und
+  // die war sie gerade eben selbst. Also: Klasse an, Ereignis, Klasse aus. Der Knopf tat
+  // sichtbar nichts, die Seite blieb in ihrer normalen Lage, und dort steht die Palette
+  // unter dem Falz. GEMESSEN in einem Browser, der das Vollbild verweigert: nach dem Klick
+  // war die Klasse nicht gesetzt, die Palette lag bei y = 774 auf einem 768 px hohen
+  // Fenster.
+  //
+  // ---- DIE BEHEBUNG ------------------------------------------------------------
+  //
+  // Ein eigener Merker "waren wir WIRKLICH drin". Nur dann ist ein fullscreenchange ohne
+  // Element ein Verlassen; sonst ist es ein verweigerter Wunsch oder fremdes Rauschen, und
+  // die Lage bleibt.
+  //
+  // UND DIE KLASSE KOMMT ZUERST, vor der Anfrage. Sie ist das, was der Nutzer sieht; das
+  // echte Vollbild ist die Zugabe. Vorher wurde erst gewartet und dann geschaltet - bei
+  // einer Anfrage, die haengt oder einen Dialog zeigt, blieb der Editor bis dahin in der
+  // Seitenlage.
+  let trackFsDrin = false;
+
   async function enterTrackFullscreen() {
-    try {
-      const el = document.documentElement;
-      if (el.requestFullscreen) await el.requestFullscreen();
-      else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
-    } catch (e) { /* refused: the CSS layout still applies */ }
     document.body.classList.add('track-fs');
     // Nur noch der Textknopf in der Seite wird geschaltet. Der Umschalter in der Leiste
     // wechselt sein Symbol per CSS an derselben Klasse - eine Wahrheit, ein Ort.
     $('track-fs').hidden = true;
     refreshTrackPreview();
+    try {
+      const el = document.documentElement;
+      if (el.requestFullscreen) await el.requestFullscreen();
+      else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+    } catch (e) { /* refused: the CSS layout still applies */ }
+    // NACH der Anfrage gefragt und nicht vorher: erst jetzt steht fest, ob es geklappt hat.
+    trackFsDrin = !!(document.fullscreenElement || document.webkitFullscreenElement);
+    // Die Karte noch einmal, weil das echte Vollbild die Fenstergroesse aendert.
+    if (trackFsDrin) refreshTrackPreview();
   }
+
   async function exitTrackFullscreen() {
+    trackFsDrin = false;
     try {
       if (document.fullscreenElement && document.exitFullscreen) await document.exitFullscreen();
       else if (document.webkitFullscreenElement) document.webkitExitFullscreen();
@@ -18466,14 +18514,14 @@
     $('track-fs').hidden = false;
     refreshTrackPreview();
   }
+
   $('track-fs').onclick = enterTrackFullscreen;
   $('track-fs-toggle').onclick = () => (document.body.classList.contains('track-fs')
     ? exitTrackFullscreen() : enterTrackFullscreen());
-  // Leaving by Escape or a system gesture must put the buttons back too.
+  // Verlassen per Escape oder Systemgeste muss die Knoepfe zurueckstellen - aber NUR, wenn
+  // wir wirklich drin waren. Siehe den Befund oben.
   document.addEventListener('fullscreenchange', () => {
-    if (!document.fullscreenElement && document.body.classList.contains('track-fs')) {
-      exitTrackFullscreen();
-    }
+    if (!document.fullscreenElement && trackFsDrin) exitTrackFullscreen();
   });
 
   // ---- Gamepad, only while the editor is in fullscreen ----
@@ -36939,6 +36987,79 @@
       return typeof wxModusSetzen === 'function' ? wxModusSetzen(modus) : null;
     },
 
+    // ---- LIEGT IM EDITOR-VOLLBILD DIE PALETTE IM BILD? --------------------------
+    //
+    // GEMELDET: "Du musst noch den Vollbildmodus des Streckeneditors fixen, aktuell sehe ich
+    // die Streckenteile unten dann nicht."
+    //
+    // ---- WARUM DIESE SONDE DIE HOEHE VORGIBT --------------------------------------
+    //
+    // Nachgestellt werden konnte der Fehler nicht: bei 1024x768, 812x375 und 375x812 lag
+    // die Palette hier immer im Bild. Die Lage haengt aber an der Fensterhoehe und am
+    // Seitenverhaeltnis der Karte, und beides ist auf einem anderen Schirm anders. Eine
+    // Sonde, die nur die EIGENE Groesse misst, prueft also genau den Fall, der schon geht.
+    //
+    // Deshalb wird der Kasten fuer die Messung auf eine feste Hoehe gezwungen. Das ist
+    // nicht dasselbe wie ein echtes Fenster dieser Hoehe - Sicherheitszonen und
+    // Systemleisten fehlen -, aber es prueft die Rasterrechnung, und die ist der Teil, der
+    // kippen kann.
+    //
+    // GEMESSEN WIRD GEGEN DEN KASTEN und nicht gegen window.innerHeight: der Kasten IST im
+    // Vollbild das Sichtfenster (position: fixed; inset: 0), und nur so ist eine erzwungene
+    // Hoehe ueberhaupt aussagekraeftig.
+    editorVollbildProbe(hoehen) {
+      const host = $('track-fs-host');
+      const pal = $('track-palette');
+      const svg = $('track-preview-svg');
+      if (!host || !pal || !svg) return null;
+      const warFs = document.body.classList.contains('track-fs');
+      const merkH = host.style.height;
+      // ---- DEN REITER SICHTBAR MACHEN, sonst misst alles null ---------------------
+      //
+      // .tabpage ist display: none, solange der Reiter nicht aktiv ist - und ein Kind
+      // eines unsichtbaren Elements hat keine Groesse, auch nicht mit position: fixed.
+      // Der erste Anlauf dieser Sonde meldete deshalb bei JEDER Hoehe 0 px, und das sah
+      // wie ein Fehler im Raster aus. Es war einer in der Messung.
+      //
+      // UND DIE ZWEI EBENEN HABEN VERSCHIEDENE KLASSEN: ein Reiter wird mit `active`
+      // gezeigt (.tabpage.active), eine Unterseite mit `on` (.subpage.on). Der zweite
+      // Anlauf setzte beidemal `active` und maass weiter null - eine Klasse, die es an
+      // dieser Stelle nicht gibt, tut genau nichts.
+      const seite = host.closest('.tabpage');
+      const unter = host.closest('.subpage');
+      const warAktiv = seite ? seite.classList.contains('active') : true;
+      const warUnter = unter ? unter.classList.contains('on') : true;
+      try {
+        if (seite) seite.classList.add('active');
+        if (unter) unter.classList.add('on');
+        document.body.classList.add('track-fs');
+        const aus = [];
+        for (const h of (hoehen || [768, 480, 375, 320])) {
+          host.style.height = h + 'px';
+          // Ein Lesen erzwingen, damit das Raster neu gerechnet ist.
+          void host.offsetHeight;
+          const hk = host.getBoundingClientRect();
+          const pk = pal.getBoundingClientRect();
+          const sk = svg.getBoundingClientRect();
+          aus.push({
+            hoehe: h,
+            rows: getComputedStyle(host).gridTemplateRows,
+            // Der Abstand vom unteren Kastenrand: negativ heisst, die Palette ragt hinaus.
+            luft: +(hk.bottom - pk.bottom).toFixed(1),
+            paletteH: Math.round(pk.height),
+            karteH: Math.round(sk.height),
+            drin: pk.height > 0 && pk.bottom <= hk.bottom + 1,
+          });
+        }
+        return { messungen: aus, teile: pal.children.length };
+      } finally {
+        host.style.height = merkH;
+        if (!warFs) document.body.classList.remove('track-fs');
+        if (seite && !warAktiv) seite.classList.remove('active');
+        if (unter && !warUnter) unter.classList.remove('on');
+      }
+    },
+
     // ---- DIE DREI WETTERLAGEN AUF DER KACHEL ------------------------------------
     //
     // BESTELLT: "Lass mich mit der Regenumschalttaste im Cockpitview [...] auch noch
@@ -46281,6 +46402,61 @@
     return { ok: !fehler.length,
              mass: mit.zeilen + ' Sektorzeilen, ' + mit.beste + ' Bestwerte'
                  + ' | bei einem Sektor ' + ohne.zeilen
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
+  // ---- Editor-Vollbild: die Teile liegen im Bild ----
+  //
+  // GEMELDET: "Aktuell sehe ich die Streckenteile unten dann nicht."
+  //
+  // ---- WAS ICH NICHT NACHSTELLEN KONNTE, UND WAS ICH GEHAERTET HABE ---------------
+  //
+  // Bei 1024x768, 812x375 und 375x812 lag die Palette hier immer im Bild, auch mit zwoelf
+  // Kacheltypen. Der Fehler haengt also an einer Groesse, die ich nicht habe. Zwei Stellen
+  // koennen die Lage MECHANISCH kippen, und beide sind zu:
+  //
+  //   1. `height: 100dvh` NEBEN `inset: 0`. Bei fixer Lage mit inset: 0 ist die Hoehe schon
+  //      bestimmt; eine zweite Angabe kann nur widersprechen, und height gewinnt. Meldet
+  //      ein Einbettungsrahmen dort die Fenster- statt der Vollbildhoehe, ragt der Kasten
+  //      hinaus und die letzte Rasterzeile - die Teile - liegt draussen.
+  //   2. `1fr` ist `minmax(auto, 1fr)`, und dieses auto ist eine Untergrenze aus dem
+  //      Inhalt. Die Kartenzeile weigert sich dann zu schrumpfen und schiebt die Teile
+  //      heraus. Jetzt minmax(0, 1fr).
+  //
+  // Dieser Test misst die Rasterrechnung bei VORGEGEBENEN Hoehen - auch solchen, die dieser
+  // Schirm nicht hat. Er ist kein Ersatz fuer die Meldung vom echten Gerät, aber er faengt
+  // die Rechnung, und die ist der Teil, der kippen kann.
+  stAdd('Editor-Vollbild: die Teile liegen im Bild, auch auf niedrigen Schirmen', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.editorVollbildProbe) {
+      return { skip: true, mass: 'editorVollbildProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.editorVollbildProbe([900, 768, 600, 480, 375, 320]);
+    if (!r) return { skip: true, mass: 'Editorkasten nicht im Dokument' };
+    const fehler = [];
+    for (const m of r.messungen) {
+      // 1. DIE PALETTE IST IM KASTEN. Das ist die Zusage.
+      if (!m.drin) {
+        fehler.push(m.hoehe + ' px: Palette ragt ' + (-m.luft).toFixed(0) + ' px hinaus');
+      }
+      // 2. UND SIE HAT HOEHE. Eine Palette, die auf 0 zusammenfaellt, ist auch nicht da -
+      //    und sie waere "drin", also ohne diese Zeile unbemerkt.
+      if (!(m.paletteH > 10)) {
+        fehler.push(m.hoehe + ' px: Palette nur ' + m.paletteH + ' px hoch');
+      }
+      // 3. DIE KARTE SCHRUMPFT MIT, statt die Teile zu verdraengen. Das ist die Wirkung von
+      //    minmax(0, 1fr) - ohne sie bliebe die Kartenzeile stehen.
+      if (!(m.karteH >= 0)) fehler.push(m.hoehe + ' px: Karte ohne Hoehe');
+    }
+    // 4. UND DIE KARTE WIRD BEI KLEINEREM SCHIRM WIRKLICH KLEINER. Ohne diese Zeile waere
+    //    der Test auch gruen, wenn das Raster gar nicht reagiert.
+    const k = r.messungen.map((m) => m.karteH);
+    if (!(k[0] > k[k.length - 1])) {
+      fehler.push('Karte schrumpft nicht: ' + k.join(' > '));
+    }
+    return { ok: !fehler.length,
+             mass: r.teile + ' Teile | '
+                 + r.messungen.map((m) => m.hoehe + ': Karte ' + m.karteH
+                     + ', Teile ' + m.paletteH + ', Luft ' + m.luft).join(' | ')
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 

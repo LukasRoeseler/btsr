@@ -2582,20 +2582,64 @@
     el.textContent = `${Math.round(wCm)} × ${Math.round(hCm)} cm · ${currentTrackTiles.length} Teile`;
   }
 
-  // ---- Fullscreen for the editor ----
+  // ====================================================================================
+  // VOLLBILD FUER DEN EDITOR
+  // ====================================================================================
+  //
+  // GEMELDET: "Du musst noch den Vollbildmodus des Streckeneditors fixen, aktuell sehe ich
+  // die Streckenteile unten dann nicht."
+  //
+  // ---- DER BEFUND, und er war ein Widerspruch im eigenen Code --------------------
+  //
+  // Hier stand, richtig gedacht: `catch (e) { /* refused: the CSS layout still applies */ }`
+  // - verweigert der Browser das echte Vollbild, gilt die CSS-Lage trotzdem, und die ordnet
+  // Aktionen oben, Karte in der Mitte, Teile unten.
+  //
+  // Und drei Zeilen weiter nahm ein Horcher ihm das sofort wieder weg:
+  //
+  //     document.addEventListener('fullscreenchange', () => {
+  //       if (!document.fullscreenElement && body.classList.contains('track-fs')) exit...
+  //     });
+  //
+  // Ein VERWEIGERTER Wunsch loest dieses Ereignis ebenfalls aus (und ein fremdes Vollbild,
+  // das jemand verlaesst, auch). Die Bedingung fragte nur, ob die Klasse gesetzt ist - und
+  // die war sie gerade eben selbst. Also: Klasse an, Ereignis, Klasse aus. Der Knopf tat
+  // sichtbar nichts, die Seite blieb in ihrer normalen Lage, und dort steht die Palette
+  // unter dem Falz. GEMESSEN in einem Browser, der das Vollbild verweigert: nach dem Klick
+  // war die Klasse nicht gesetzt, die Palette lag bei y = 774 auf einem 768 px hohen
+  // Fenster.
+  //
+  // ---- DIE BEHEBUNG ------------------------------------------------------------
+  //
+  // Ein eigener Merker "waren wir WIRKLICH drin". Nur dann ist ein fullscreenchange ohne
+  // Element ein Verlassen; sonst ist es ein verweigerter Wunsch oder fremdes Rauschen, und
+  // die Lage bleibt.
+  //
+  // UND DIE KLASSE KOMMT ZUERST, vor der Anfrage. Sie ist das, was der Nutzer sieht; das
+  // echte Vollbild ist die Zugabe. Vorher wurde erst gewartet und dann geschaltet - bei
+  // einer Anfrage, die haengt oder einen Dialog zeigt, blieb der Editor bis dahin in der
+  // Seitenlage.
+  let trackFsDrin = false;
+
   async function enterTrackFullscreen() {
-    try {
-      const el = document.documentElement;
-      if (el.requestFullscreen) await el.requestFullscreen();
-      else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
-    } catch (e) { /* refused: the CSS layout still applies */ }
     document.body.classList.add('track-fs');
     // Nur noch der Textknopf in der Seite wird geschaltet. Der Umschalter in der Leiste
     // wechselt sein Symbol per CSS an derselben Klasse - eine Wahrheit, ein Ort.
     $('track-fs').hidden = true;
     refreshTrackPreview();
+    try {
+      const el = document.documentElement;
+      if (el.requestFullscreen) await el.requestFullscreen();
+      else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+    } catch (e) { /* refused: the CSS layout still applies */ }
+    // NACH der Anfrage gefragt und nicht vorher: erst jetzt steht fest, ob es geklappt hat.
+    trackFsDrin = !!(document.fullscreenElement || document.webkitFullscreenElement);
+    // Die Karte noch einmal, weil das echte Vollbild die Fenstergroesse aendert.
+    if (trackFsDrin) refreshTrackPreview();
   }
+
   async function exitTrackFullscreen() {
+    trackFsDrin = false;
     try {
       if (document.fullscreenElement && document.exitFullscreen) await document.exitFullscreen();
       else if (document.webkitFullscreenElement) document.webkitExitFullscreen();
@@ -2604,14 +2648,14 @@
     $('track-fs').hidden = false;
     refreshTrackPreview();
   }
+
   $('track-fs').onclick = enterTrackFullscreen;
   $('track-fs-toggle').onclick = () => (document.body.classList.contains('track-fs')
     ? exitTrackFullscreen() : enterTrackFullscreen());
-  // Leaving by Escape or a system gesture must put the buttons back too.
+  // Verlassen per Escape oder Systemgeste muss die Knoepfe zurueckstellen - aber NUR, wenn
+  // wir wirklich drin waren. Siehe den Befund oben.
   document.addEventListener('fullscreenchange', () => {
-    if (!document.fullscreenElement && document.body.classList.contains('track-fs')) {
-      exitTrackFullscreen();
-    }
+    if (!document.fullscreenElement && trackFsDrin) exitTrackFullscreen();
   });
 
   // ---- Gamepad, only while the editor is in fullscreen ----
