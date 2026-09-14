@@ -7648,6 +7648,121 @@
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
+  // ---- Mehrspieler: melden, holen, zeichnen ----
+  //
+  // Mehrspieler hatte bis v0.6.20 KEINE einzige Pruefung, weder hier noch im Prueflauf -
+  // bei einem Code, der seit rund siebzig Fassungen unberuehrt ist. Das war die groesste
+  // Luecke im Projekt.
+  //
+  // Geprueft mit einem fetch-Stummel: ein Test, der ein Programm auf dem PC voraussetzt,
+  // laeuft bei niemandem.
+  stAdd('Mehrspieler: eine Runde meldet, die Rangliste kommt an', async () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.mpProbe) {
+      return { skip: true, mass: 'mpProbe nicht vorhanden' };
+    }
+    const r = await OMEGA_TEST.mpProbe({ runden: [11500, 11200, 11800] });
+    if (!r) return { skip: true, mass: 'kein Lauf' };
+    const fehler = [];
+    // 1. EINE GEFAHRENE RUNDE SCHICKT EINEN BERICHT, und zwar als POST auf /mp/report.
+    const post = r.bericht.filter((b) => b.methode === 'POST' && b.pfad === '/mp/report');
+    if (!post.length) {
+      fehler.push('kein POST /mp/report: ' + JSON.stringify(r.bericht));
+    } else {
+      // 2. MIT DER RUNDENZAHL AUS DER COCKPIT-LISTE. Drei Zeiten sind drei Runden.
+      if (post[0].laps !== 3) fehler.push('laps ' + post[0].laps + ' statt 3');
+      // 3. UND MIT EINER KENNUNG. Ohne sie legt der Host bei jedem Bericht eine neue
+      //    Zeile an, und die Rangliste waechst statt sich zu aktualisieren.
+      if (!post[0].id) fehler.push('Bericht ohne Kennung');
+    }
+    // 4. DIE RANGLISTE WIRD GEHOLT UND GEZEICHNET.
+    if (!r.geholt.some((u) => u.indexOf('/mp/state') >= 0)) {
+      fehler.push('kein GET /mp/state');
+    }
+    if (!r.zeilen || r.zeilen.length !== 2) {
+      fehler.push((r.zeilen ? r.zeilen.length : 'keine') + ' Zeilen statt 2');
+    }
+    // 5. UND DER EIGENE NAME STEHT DRIN. Eine Rangliste ohne den eigenen Eintrag waere
+    //    genau der Fall, der beim Fahren auffaellt und beim Testen nicht.
+    if (r.zeilen && !r.zeilen.some((z) => z.indexOf('Pruefer') >= 0)) {
+      fehler.push('eigener Name fehlt: ' + JSON.stringify(r.zeilen));
+    }
+    return { ok: !fehler.length,
+             mass: (post.length ? 'POST laps ' + post[0].laps : 'kein POST')
+                 + ' | ' + (r.zeilen ? r.zeilen.length : 0) + ' Zeilen'
+                 + ' | ' + (r.status || '')
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
+  // ---- Mehrspieler: die Leitung reisst ab ----
+  //
+  // Der haeufigste Fall in der Praxis, und der einzige, der beim Fahren wirklich schmerzt:
+  // WLAN weg. Dann darf nichts werfen - jeder faehrt weiter, nur die Rangliste steht still.
+  // Und die Statuszeile muss es sagen, statt die alte Zahl stehenzulassen.
+  stAdd('Mehrspieler: ohne Leitung wirft nichts, und die Zeile sagt es', async () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.mpProbe) {
+      return { skip: true, mass: 'mpProbe nicht vorhanden' };
+    }
+    let r = null, wurf = null;
+    try {
+      r = await OMEGA_TEST.mpProbe({ leitungWeg: true });
+    } catch (e) { wurf = e.message; }
+    if (wurf) return { ok: false, mass: 'wirft: ' + wurf };
+    if (!r) return { skip: true, mass: 'kein Lauf' };
+    const fehler = [];
+    // Der Bericht wurde versucht - er darf nur nicht durchschlagen.
+    if (!r.bericht.length) fehler.push('es wurde nicht einmal versucht zu melden');
+    // Und die Statuszeile nennt das Problem.
+    if (!r.status || !/kein Kontakt|Kontakt/i.test(r.status)) {
+      fehler.push('Statuszeile sagt nichts: "' + r.status + '"');
+    }
+    return { ok: !fehler.length,
+             mass: r.bericht.length + ' Versuche, Zeile: "' + (r.status || '') + '"'
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
+  // ---- Die Anleitung im Mehrspieler-Reiter ----
+  //
+  // Das Skript stand dort bis v0.6.20 nur als Fliesstext: kein Link, nichts zum Kopieren,
+  // keine Reihenfolge. Wer es zum ersten Mal aufsetzt, braucht genau drei Dinge - den
+  // Befehl, die Adresse und die Reihenfolge -, und die standen nirgends zusammen.
+  stAdd('Mehrspieler-Anleitung: Befehl, Link und Kopierknoepfe sind da', () => {
+    const schritte = document.querySelectorAll('.mp-schritte li');
+    if (!schritte.length) return { ok: false, mass: 'keine Anleitung im Reiter' };
+    const fehler = [];
+    if (schritte.length < 4) fehler.push('nur ' + schritte.length + ' Schritte');
+    // Der Befehl steht da, und er nennt das Skript.
+    const cmd = $('mp-cmd') ? $('mp-cmd').textContent : '';
+    if (!/omegasim_host\.py/.test(cmd)) fehler.push('Befehl nennt das Skript nicht: ' + cmd);
+    // Ein anklickbarer Verweis auf die Datei - nicht nur ihr Name.
+    const link = document.querySelector('.mp-schritte a[href*="omegasim_host.py"]');
+    if (!link) fehler.push('kein Link auf das Skript');
+    // Und beide Kopierknoepfe sind verdrahtet (ein Knopf ohne Horcher sieht aus wie einer).
+    for (const id of ['mp-cmd-copy', 'mp-ov-copy']) {
+      if (!$(id)) fehler.push(id + ' fehlt');
+    }
+    // Die Uebersichtsadresse folgt dem eingetragenen Host, statt ein Beispiel zu bleiben.
+    const wirt = $('mp-host'), ov = $('mp-ov');
+    let gefolgt = null;
+    if (wirt && ov) {
+      const merk = wirt.value;
+      try {
+        wirt.value = 'http://10.0.0.7:9100';
+        wirt.dispatchEvent(new Event('input', { bubbles: true }));
+        gefolgt = ov.textContent.trim();
+        if (gefolgt.indexOf('10.0.0.7:9100') < 0) {
+          fehler.push('Uebersichtsadresse folgt dem Host nicht: ' + gefolgt);
+        }
+      } finally {
+        wirt.value = merk;
+        wirt.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+    }
+    return { ok: !fehler.length,
+             mass: schritte.length + ' Schritte, Befehl "' + cmd + '"'
+                 + (gefolgt ? ', Uebersicht folgt auf ' + gefolgt : '')
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
   // ---- Die sechs Kacheltypen aus seVens Bahn-Tabelle ----
   //
   // seVen hat bestaetigt, dass seine Codetabelle fuer den Bahn-Modus gilt. Damit sind sechs

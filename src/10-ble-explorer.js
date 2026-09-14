@@ -1396,8 +1396,6 @@
     // Mehrspieler Version A (v0.5). Alle GANZE Textknoten, kein Fragment - die
     // Erklaerabsaetze sind ohne inneres Markup geschrieben.
     "Mehrspieler im WLAN": "Multiplayer over Wi-Fi",
-    "Mehrere Telefone, jedes mit eigenem Auto, eine gemeinsame Rangliste. Auf dem PC laeuft dazu ein kleines Programm: python tools/omegasim_host.py": "Several phones, each with its own car, one shared leaderboard. A small program runs on the PC for it: python tools/omegasim_host.py",
-    "Ueber die Leitung gehen Rundenzahl, Rundenzeiten und Abgaenge. Keine Physik, keine Lenkwerte: jedes Telefon rechnet seine eigene Physik und haelt seine eigene Bluetooth-Verbindung. Reisst das WLAN ab, faehrt jeder weiter, nur die Rangliste steht still.": "What goes over the wire: lap count, lap times and departures. No physics, no steering values – each phone computes its own physics and holds its own Bluetooth connection. If the Wi-Fi drops, everyone keeps driving; only the leaderboard stands still.",
     "Gezaehlt werden GEMESSENE Runden, genau wie in der Rundenliste im Cockpit: die erste Ueberfahrt startet die Uhr, erst die zweite ergibt eine Zeit. Nach drei Ueberfahrten stehen also zwei Runden da. Bei Gleichstand fuehrt, wer zuerst dort war.": "Counted are MEASURED laps, exactly as in the cockpit lap list: the first crossing starts the clock, only the second yields a time. After three crossings the count shows two laps. On a tie, whoever got there first leads.",
     "Warum es experimentell ist, und der Grund ist eine Browserregel und kein Wackeln im Code: Web Bluetooth verlangt einen secure context. Das sind https, http://localhost und file. Eine Adresse wie http://192.168.1.50:8080 ist keiner – die App laedt dort, aber „Auto verbinden“ bleibt ohne Wirkung. Einmal je Telefon muss man in Chrome unter chrome://flags/#unsafely-treat-insecure-origin-as-secure die Adresse des Hosts eintragen und Chrome neu starten. Damit erklaert man diesen einen Ursprung fuer vertrauenswuerdig; im eigenen WLAN mit dem eigenen PC ist das vertretbar, aber es ist eine Ausnahme von einer Sicherheitsregel und keine Einstellung.": "Why it is experimental – and the reason is a browser rule, not shaky code: Web Bluetooth requires a secure context. Those are https, http://localhost and file. An address like http://192.168.1.50:8080 is not one – the app loads there, but “Connect car” has no effect. Once per phone you have to enter the host address in Chrome under chrome://flags/#unsafely-treat-insecure-origin-as-secure and restart Chrome. Doing so declares that one origin trustworthy; on your own Wi-Fi with your own PC that is defensible, but it is an exception to a security rule and not a setting.",
     "Der Ueberblicksschirm fuer den PC liegt beim Host unter /mp-overview.html. Er braucht kein Bluetooth und deshalb auch keine Freigabe: auf http://localhost ist er ohnehin ein secure context.": "The overview screen for the PC sits on the host at /mp-overview.html. It needs no Bluetooth and therefore no exemption: on http://localhost it is a secure context anyway.",
@@ -1830,6 +1828,33 @@
       "no",
     "voll":
       "full",
+    "Ueber die Leitung gehen Rundenzahl, Rundenzeiten und Abgaenge. Keine Physik, keine Lenkwerte: jedes Telefon rechnet seine eigene Physik und haelt seine eigene Bluetooth-Verbindung. Reisst das WLAN ab, faehrt jeder weiter, nur die Rangliste steht still.": "What goes over the wire: lap count, lap times and departures. No physics, no steering values – each phone computes its own physics and holds its own Bluetooth connection. If the Wi-Fi drops, everyone keeps driving; only the leaderboard stands still.",
+    "Mehrere Telefone, jedes mit eigenem Auto, eine gemeinsame Rangliste. Auf dem PC läuft dazu ein kleines Programm.":
+      "Several phones, each with its own car, one shared leaderboard. A small program runs on the PC for this.",
+    "Auf dem PC starten.":
+      "Start it on the PC.",
+    "Im Ordner des Projekts ein Fenster für die Eingabeaufforderung oder das Terminal öffnen und den Befehl ausführen:":
+      "In the project folder, open a command prompt or terminal window and run the command:",
+    "Das Programm liegt im Projekt und ist von hier aus direkt zu öffnen. Es schreibt beim Start die Adresse hin, unter der es erreichbar ist.":
+      "The program is part of the project and can be opened directly from here. On startup it prints the address it can be reached at.",
+    "Die Adresse an die Telefone geben.":
+      "Give the address to the phones.",
+    "Sie gehört oben in das Feld „Host-Adresse“ und hat die Form, die dort als Beispiel steht. Alle Geräte müssen im selben WLAN sein.":
+      "It goes into the “Host address” field above and has the form shown there as an example. All devices must be on the same Wi-Fi.",
+    "Namen eintragen und auf Mitmachen drücken.":
+      "Enter a name and press Join.",
+    "Der Name steht danach in der Rangliste. Jedes Telefon behält seinen eigenen Namen und seine eigene Kennung, auch nach einem Neuladen.":
+      "The name then appears in the leaderboard. Each phone keeps its own name and its own id, even after a reload.",
+    "Die Übersicht auf den Fernseher.":
+      "The overview on the TV.",
+    "Der Host liefert dafür eine eigene Seite in großer Schrift:":
+      "The host serves a dedicated page for this, in large type:",
+    "Sie zeigt die Rangliste und hat einen Knopf zum Zurücksetzen. Sonst nichts: sie ist zum Ansehen aus zwei Metern gedacht und nicht zum Bedienen.":
+      "It shows the leaderboard and has one button to reset it. Nothing else: it is meant to be read from two metres away, not operated.",
+    "Zwei Dinge, an denen es scheitern kann, und beide liegen nicht an der App.":
+      "Two things it can fail on, and neither is the app's doing.",
+    "Wird die App über eine verschlüsselte Verbindung geladen – etwa von der Projektseite –, blockiert der Browser jede Verbindung zu einer unverschlüsselten Adresse im WLAN; dann muss die App vom Host selbst geladen werden. Und bis Fassung 0.6.19 fehlten dem Host die Kopfzeilen für fremde Herkunft: Mitmachen ging nur, wenn die App vom Host kam. Wer eine ältere Fassung des Programms laufen hat, holt sie neu.":
+      "If the app is loaded over an encrypted connection – from the project page, say – the browser blocks every connection to an unencrypted address on the Wi-Fi; the app then has to be loaded from the host itself. And until release 0.6.19 the host was missing the cross-origin headers: joining only worked when the app came from the host. Anyone running an older copy of the program should fetch it again.",
     "Motorklang: rechte Hälfte weiter, linke zurück":
       "Engine sound: right half forward, left half back",
     "Die folgenden Klänge sind die Ausnahme: sie stammen aus echten Aufnahmen. Alle von Pixabay und unter der Pixabay-Lizenz. Die unbearbeiteten Quelldateien sind nicht Teil dieses Projekts.":

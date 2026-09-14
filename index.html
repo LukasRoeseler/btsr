@@ -2329,6 +2329,21 @@
   /* Everything outside the editor host is irrelevant while building. */
   body.track-fs > header, body.track-fs > nav.tabs { display: none; }
 
+  /* Die Mehrspieler-Anleitung: nummeriert, mit Luft, und die Befehle als eigene Zeile.
+     Sie stehen NICHT im Fliesstext - ein <code> mitten im Satz zerlegt den Textknoten,
+     und die Uebersetzung arbeitet je Textknoten. */
+  .mp-schritte { margin: 12px 0 14px 0; padding-left: 20px; font-size: 12.5px;
+    color: var(--muted); line-height: 1.55; }
+  .mp-schritte li { margin-bottom: 9px; }
+  .mp-schritte b { color: var(--ink); }
+  .mp-befehl { display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+    margin: 5px 0 4px 0; }
+  .mp-befehl code { background: var(--panel-2); border: 1px solid var(--border);
+    border-radius: 6px; padding: 5px 9px; font-size: 12px; color: var(--ink);
+    user-select: all; }
+  .mp-kopier { font-size: 11px; padding: 4px 9px; }
+  .mp-datei { display: inline-block; margin-top: 3px; font-size: 11.5px; }
+
   .tp-bar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
     justify-content: center; }
   .tp-btn { width: 54px; height: 54px; padding: 0; display: grid; place-items: center;
@@ -5924,8 +5939,62 @@
     <div class="card">
       <h2>Mehrspieler im WLAN <span class="wip-tag">experimentell</span></h2>
       <p class="muted">
-        Mehrere Telefone, jedes mit eigenem Auto, eine gemeinsame Rangliste. Auf dem PC laeuft
-        dazu ein kleines Programm: python tools/omegasim_host.py
+        Mehrere Telefone, jedes mit eigenem Auto, eine gemeinsame Rangliste. Auf dem PC
+        l&auml;uft dazu ein kleines Programm.
+      </p>
+
+      <!-- ---- DIE ANLEITUNG, UND WARUM SIE HIER STEHT --------------------------------
+           Das Skript war bisher nur als Fliesstext erwaehnt: kein Link, nichts zum
+           Kopieren, keine Reihenfolge. Wer es zum ersten Mal aufsetzt, braucht genau drei
+           Dinge - den Befehl, die Adresse und die Reihenfolge -, und alle drei standen
+           nirgends zusammen.
+
+           Die Befehle stehen in <code>, damit sie sich als Block markieren lassen; der
+           Knopf daneben legt sie in die Zwischenablage. Auszeichnung MITTEN im Satz wird
+           dabei vermieden (sie zerlegt den Textknoten und macht ihn unuebersetzbar) - die
+           Befehle stehen deshalb je in einer eigenen Zeile und nicht im Fliesstext. -->
+      <!-- ---- KEINE AUSZEICHNUNG MITTEN IM SATZ ----------------------------------
+           Ein <span> oder <code> INNERHALB eines Satzes zerlegt den Textknoten, und die
+           Uebersetzung arbeitet je Textknoten. Der erste Anlauf dieser Anleitung machte
+           genau das und hinterliess Bruchstuecke wie "Wird die App ueber" und "geladen -
+           etwa von der Projektseite -," - dieselbe Falle, vor der schon die Danksagungen
+           warnen, und ich bin hineingelaufen.
+
+           Deshalb hier durchgehend: EIN Satz ist EIN Knoten. Die fettgesetzte
+           Schrittueberschrift steht VOR dem Satz und ist selbst ein ganzer Satz; alles,
+           was nicht uebersetzt wird - Befehle und Adressen -, steht in einer eigenen
+           Zeile darunter und nicht im Fliesstext. -->
+      <ol class="mp-schritte">
+        <li><b>Auf dem PC starten.</b>
+          Im Ordner des Projekts ein Fenster f&uuml;r die Eingabeaufforderung oder das
+          Terminal &ouml;ffnen und den Befehl ausf&uuml;hren:
+          <span class="mp-befehl"><code id="mp-cmd" data-i18n-skip>python tools/omegasim_host.py --port 8080</code><button type="button" class="mp-kopier" id="mp-cmd-copy">Kopieren</button></span>
+          Das Programm liegt im Projekt und ist von hier aus direkt zu &ouml;ffnen. Es
+          schreibt beim Start die Adresse hin, unter der es erreichbar ist.
+          <a href="tools/omegasim_host.py" target="_blank" rel="noopener noreferrer"
+             class="mp-datei" data-i18n-skip>tools/omegasim_host.py</a></li>
+        <li><b>Die Adresse an die Telefone geben.</b>
+          Sie geh&ouml;rt oben in das Feld &bdquo;Host-Adresse&ldquo; und hat die Form, die
+          dort als Beispiel steht. Alle Ger&auml;te m&uuml;ssen im selben WLAN sein.</li>
+        <li><b>Namen eintragen und auf Mitmachen dr&uuml;cken.</b>
+          Der Name steht danach in der Rangliste. Jedes Telefon beh&auml;lt seinen eigenen
+          Namen und seine eigene Kennung, auch nach einem Neuladen.</li>
+        <li><b>Die &Uuml;bersicht auf den Fernseher.</b>
+          Der Host liefert daf&uuml;r eine eigene Seite in gro&szlig;er Schrift:
+          <span class="mp-befehl"><code id="mp-ov" data-i18n-skip>http://192.168.1.50:8080/mp-overview.html</code><button type="button" class="mp-kopier" id="mp-ov-copy">Kopieren</button></span>
+          Sie zeigt die Rangliste und hat einen Knopf zum Zur&uuml;cksetzen. Sonst nichts:
+          sie ist zum Ansehen aus zwei Metern gedacht und nicht zum Bedienen.</li>
+      </ol>
+
+      <p class="muted" style="font-size:11.5px; border-left:3px solid var(--info);
+         padding-left:9px">
+        <b>Zwei Dinge, an denen es scheitern kann, und beide liegen nicht an der App.</b>
+        Wird die App &uuml;ber eine verschl&uuml;sselte Verbindung geladen &ndash; etwa von
+        der Projektseite &ndash;, blockiert der Browser jede Verbindung zu einer
+        unverschl&uuml;sselten Adresse im WLAN; dann muss die App vom Host selbst geladen
+        werden. Und bis Fassung 0.6.19 fehlten dem Host die Kopfzeilen f&uuml;r fremde
+        Herkunft: Mitmachen ging nur, wenn die App vom Host kam. Wer eine &auml;ltere
+        Fassung des Programms laufen hat, holt sie neu.
       </p>
       <p class="muted" style="font-size:11.5px">
         Ueber die Leitung gehen Rundenzahl, Rundenzeiten und Abgaenge. Keine Physik, keine
@@ -8004,7 +8073,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.6.19</span></span>
+    <span class="foot-ver">v<span id="app-version">0.6.20</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -9435,8 +9504,6 @@
     // Mehrspieler Version A (v0.5). Alle GANZE Textknoten, kein Fragment - die
     // Erklaerabsaetze sind ohne inneres Markup geschrieben.
     "Mehrspieler im WLAN": "Multiplayer over Wi-Fi",
-    "Mehrere Telefone, jedes mit eigenem Auto, eine gemeinsame Rangliste. Auf dem PC laeuft dazu ein kleines Programm: python tools/omegasim_host.py": "Several phones, each with its own car, one shared leaderboard. A small program runs on the PC for it: python tools/omegasim_host.py",
-    "Ueber die Leitung gehen Rundenzahl, Rundenzeiten und Abgaenge. Keine Physik, keine Lenkwerte: jedes Telefon rechnet seine eigene Physik und haelt seine eigene Bluetooth-Verbindung. Reisst das WLAN ab, faehrt jeder weiter, nur die Rangliste steht still.": "What goes over the wire: lap count, lap times and departures. No physics, no steering values – each phone computes its own physics and holds its own Bluetooth connection. If the Wi-Fi drops, everyone keeps driving; only the leaderboard stands still.",
     "Gezaehlt werden GEMESSENE Runden, genau wie in der Rundenliste im Cockpit: die erste Ueberfahrt startet die Uhr, erst die zweite ergibt eine Zeit. Nach drei Ueberfahrten stehen also zwei Runden da. Bei Gleichstand fuehrt, wer zuerst dort war.": "Counted are MEASURED laps, exactly as in the cockpit lap list: the first crossing starts the clock, only the second yields a time. After three crossings the count shows two laps. On a tie, whoever got there first leads.",
     "Warum es experimentell ist, und der Grund ist eine Browserregel und kein Wackeln im Code: Web Bluetooth verlangt einen secure context. Das sind https, http://localhost und file. Eine Adresse wie http://192.168.1.50:8080 ist keiner – die App laedt dort, aber „Auto verbinden“ bleibt ohne Wirkung. Einmal je Telefon muss man in Chrome unter chrome://flags/#unsafely-treat-insecure-origin-as-secure die Adresse des Hosts eintragen und Chrome neu starten. Damit erklaert man diesen einen Ursprung fuer vertrauenswuerdig; im eigenen WLAN mit dem eigenen PC ist das vertretbar, aber es ist eine Ausnahme von einer Sicherheitsregel und keine Einstellung.": "Why it is experimental – and the reason is a browser rule, not shaky code: Web Bluetooth requires a secure context. Those are https, http://localhost and file. An address like http://192.168.1.50:8080 is not one – the app loads there, but “Connect car” has no effect. Once per phone you have to enter the host address in Chrome under chrome://flags/#unsafely-treat-insecure-origin-as-secure and restart Chrome. Doing so declares that one origin trustworthy; on your own Wi-Fi with your own PC that is defensible, but it is an exception to a security rule and not a setting.",
     "Der Ueberblicksschirm fuer den PC liegt beim Host unter /mp-overview.html. Er braucht kein Bluetooth und deshalb auch keine Freigabe: auf http://localhost ist er ohnehin ein secure context.": "The overview screen for the PC sits on the host at /mp-overview.html. It needs no Bluetooth and therefore no exemption: on http://localhost it is a secure context anyway.",
@@ -9869,6 +9936,33 @@
       "no",
     "voll":
       "full",
+    "Ueber die Leitung gehen Rundenzahl, Rundenzeiten und Abgaenge. Keine Physik, keine Lenkwerte: jedes Telefon rechnet seine eigene Physik und haelt seine eigene Bluetooth-Verbindung. Reisst das WLAN ab, faehrt jeder weiter, nur die Rangliste steht still.": "What goes over the wire: lap count, lap times and departures. No physics, no steering values – each phone computes its own physics and holds its own Bluetooth connection. If the Wi-Fi drops, everyone keeps driving; only the leaderboard stands still.",
+    "Mehrere Telefone, jedes mit eigenem Auto, eine gemeinsame Rangliste. Auf dem PC läuft dazu ein kleines Programm.":
+      "Several phones, each with its own car, one shared leaderboard. A small program runs on the PC for this.",
+    "Auf dem PC starten.":
+      "Start it on the PC.",
+    "Im Ordner des Projekts ein Fenster für die Eingabeaufforderung oder das Terminal öffnen und den Befehl ausführen:":
+      "In the project folder, open a command prompt or terminal window and run the command:",
+    "Das Programm liegt im Projekt und ist von hier aus direkt zu öffnen. Es schreibt beim Start die Adresse hin, unter der es erreichbar ist.":
+      "The program is part of the project and can be opened directly from here. On startup it prints the address it can be reached at.",
+    "Die Adresse an die Telefone geben.":
+      "Give the address to the phones.",
+    "Sie gehört oben in das Feld „Host-Adresse“ und hat die Form, die dort als Beispiel steht. Alle Geräte müssen im selben WLAN sein.":
+      "It goes into the “Host address” field above and has the form shown there as an example. All devices must be on the same Wi-Fi.",
+    "Namen eintragen und auf Mitmachen drücken.":
+      "Enter a name and press Join.",
+    "Der Name steht danach in der Rangliste. Jedes Telefon behält seinen eigenen Namen und seine eigene Kennung, auch nach einem Neuladen.":
+      "The name then appears in the leaderboard. Each phone keeps its own name and its own id, even after a reload.",
+    "Die Übersicht auf den Fernseher.":
+      "The overview on the TV.",
+    "Der Host liefert dafür eine eigene Seite in großer Schrift:":
+      "The host serves a dedicated page for this, in large type:",
+    "Sie zeigt die Rangliste und hat einen Knopf zum Zurücksetzen. Sonst nichts: sie ist zum Ansehen aus zwei Metern gedacht und nicht zum Bedienen.":
+      "It shows the leaderboard and has one button to reset it. Nothing else: it is meant to be read from two metres away, not operated.",
+    "Zwei Dinge, an denen es scheitern kann, und beide liegen nicht an der App.":
+      "Two things it can fail on, and neither is the app's doing.",
+    "Wird die App über eine verschlüsselte Verbindung geladen – etwa von der Projektseite –, blockiert der Browser jede Verbindung zu einer unverschlüsselten Adresse im WLAN; dann muss die App vom Host selbst geladen werden. Und bis Fassung 0.6.19 fehlten dem Host die Kopfzeilen für fremde Herkunft: Mitmachen ging nur, wenn die App vom Host kam. Wer eine ältere Fassung des Programms laufen hat, holt sie neu.":
+      "If the app is loaded over an encrypted connection – from the project page, say – the browser blocks every connection to an unencrypted address on the Wi-Fi; the app then has to be loaded from the host itself. And until release 0.6.19 the host was missing the cross-origin headers: joining only worked when the app came from the host. Anyone running an older copy of the program should fetch it again.",
     "Motorklang: rechte Hälfte weiter, linke zurück":
       "Engine sound: right half forward, left half back",
     "Die folgenden Klänge sind die Ausnahme: sie stammen aus echten Aufnahmen. Alle von Pixabay und unter der Pixabay-Lizenz. Die unbearbeiteten Quelldateien sind nicht Teil dieses Projekts.":
@@ -20112,6 +20206,17 @@
     garage.forEach(c => { c.race = { laps: [], lapStart: null, pending: null, seen: 0,
                                      lastActed: 0, lastCount: null }; });
     raceLapTimes = [];
+    // ---- UND DIE COCKPIT-RUNDEN AUCH, und das ist ein gemeldeter Fehler ------------
+    //
+    // dashLapTimes wurde beim Rennstart NIE zurueckgesetzt. Es ist die Liste der
+    // Ueberfahrten seit dem Laden der Seite - und genau diese Zahl meldet die App als
+    // "Runden" an den Mehrspieler-Host (mpEigenerStand in 97-sessions.js). Wer vor dem
+    // Rennen ein paar Runden frei gefahren ist, stand damit schon vor dem Start vorn.
+    //
+    // Der Kachelzaehler wird mitgenommen: ohne ihn zaehlt die erste Ueberfahrt nach dem
+    // Start als Rundenschluss einer Runde, die es nicht gab.
+    dashLapTimes = [];
+    dashLapStart = null;
     racePartialMs = null;
     // Same moment as the lap times: on/off-track is a statistic about THIS race, and
     // carrying a previous session's minutes into it would make the share meaningless.
@@ -21067,6 +21172,15 @@
     if (dashLapTimes.length) {
       const d = dashLapTimes.pop();
       if (dashLapStart !== null) dashLapStart -= d;
+      // ---- DIE RUECKNAHME GEHT AUCH AN DEN HOST ---------------------------------
+      //
+      // Ohne diese Zeile zeigte die Rangliste eine zurueckgenommene Runde weiter, bis das
+      // naechste Lebenszeichen sie ueberschrieb - bis zu fuenf Sekunden lang stand dort
+      // eine Runde, die die App selbst schon verworfen hatte.
+      //
+      // Defensiv gerufen, weil mpRundeGefahren in 97-sessions.js steht, einer SPAETEREN
+      // Datei - dieselbe Vorsicht wie an der Stelle, die eine gefahrene Runde meldet.
+      if (typeof mpRundeGefahren === 'function') mpRundeGefahren();
     }
     $('race-status').textContent = t('Rennen läuft, Runde') + ' ' + raceLapTimes.length;
     log('Runde zurueckgenommen (' + formatLapTime(weg.ms) + '): ' + warum, 'info');
@@ -37111,6 +37225,97 @@
       return typeof wxModusSetzen === 'function' ? wxModusSetzen(modus) : null;
     },
 
+    // ---- MEHRSPIELER, MIT EINEM FETCH-STUMMEL -----------------------------------
+    //
+    // Mehrspieler hatte bis v0.6.20 KEINE einzige Pruefung - weder hier noch im
+    // Selbsttest -, und der Code ist seit rund siebzig Fassungen unberuehrt. Das ist die
+    // groesste Luecke im ganzen Projekt gewesen.
+    //
+    // MIT EINEM STUMMEL statt eines echten Hosts: ein Prueflauf, der ein Programm auf dem
+    // PC voraussetzt, laeuft bei niemandem. Der Stummel zeichnet auf, WAS die App
+    // schicken wollte, und antwortet, was der Host antworten wuerde - damit ist beides
+    // pruefbar: der Bericht und das Zeichnen der Rangliste.
+    //
+    // Und der dritte Fall, der in der Praxis der haeufigste ist: die Leitung ist weg. Dann
+    // darf nichts werfen, und die Statuszeile muss es sagen.
+    // ASYNC, und das ist kein Schoenheitsfehler: der erste Anlauf gab aus dem try ein
+    // Promise zurueck und raeumte im finally auf. Das finally laeuft dann SOFORT - beim
+    // Zurueckgeben, nicht beim Fertigwerden -, also war mp.an schon wieder false, wenn
+    // mpHolen() lief. Gemessen: der Bericht ging raus, die Rangliste kam nie, und die
+    // Statuszeile sagte "nicht verbunden". Das sah nach einem Fehler in der App aus und
+    // war einer in der Messung.
+    async mpProbe(o) {
+      const opt = o || {};
+      const echtFetch = window.fetch;
+      const merk = { host: mp.host, name: mp.name, an: mp.an, timer: mp.timer,
+                     id: mp.id, letzter: mp.letzterBericht,
+                     runden: dashLapTimes.slice() };
+      const gesendet = [];
+      try {
+        // Kein Zeitgeber waehrend der Messung: mpJoin() startet einen, und ein Takt, der
+        // nach dem Prueflauf weiterlaeuft, meldet in fremde Laeufe hinein.
+        if (mp.timer) { clearInterval(mp.timer); mp.timer = null; }
+        mp.host = 'http://pruefhost:8080';
+        mp.name = opt.name || 'Pruefer';
+        mp.an = true;
+        dashLapTimes = (opt.runden || [11500, 11200, 11800]).slice();
+
+        window.fetch = (url, init) => {
+          gesendet.push({ url: String(url), methode: (init && init.method) || 'GET',
+                          rumpf: init && init.body ? JSON.parse(init.body) : null });
+          if (opt.leitungWeg) return Promise.reject(new Error('Netzwerk weg'));
+          if (String(url).indexOf('/mp/state') >= 0) {
+            return Promise.resolve({ ok: true, json: () => Promise.resolve({
+              // IN SEKUNDEN, wie das echte Protokoll: mpEigenerStand() teilt die
+              // Millisekunden der Rundenliste durch 1000, bevor es meldet. Der erste
+              // Anlauf dieses Stummels schickte Millisekunden, und die Rangliste zeigte
+              // brav "11200.00s" - kein Fehler der App, einer der Messung, und nur
+              // dadurch aufgefallen, dass die Zahl beim Lesen unsinnig aussah.
+              fahrer: opt.fahrer || [
+                { id: mp.id, name: mp.name, laps: 2, letzte: 11.2, beste: 11.2,
+                  abgaenge: 0, alter: 0.3 },
+                { id: 'x', name: 'Zweiter', laps: 2, letzte: 12.0, beste: 11.9,
+                  abgaenge: 1, alter: 14.0 },
+              ],
+              rennen: { start: 1, laps: 10, minutes: null, laufzeit: 42.0,
+                        restSekunden: null },
+              zeit: 1,
+            }) });
+          }
+          return Promise.resolve({ ok: true, json: () => Promise.resolve({ ok: true }) });
+        };
+
+        // 1. Eine gefahrene Runde meldet.
+        mpRundeGefahren();
+        await new Promise((r) => setTimeout(r, 30));
+        const nachRunde = gesendet.slice();
+        // 2. Und die Rangliste wird geholt und gezeichnet.
+        gesendet.length = 0;
+        await mpHolen();
+        const zeilen = $('mp-rows')
+          ? [...$('mp-rows').querySelectorAll('tr')].map((tr) =>
+              [...tr.children].map((td) => td.textContent.trim()).join('|'))
+          : null;
+        return {
+          bericht: nachRunde.map((g) => ({ methode: g.methode,
+            pfad: g.url.replace('http://pruefhost:8080', ''),
+            laps: g.rumpf ? g.rumpf.laps : null,
+            name: g.rumpf ? g.rumpf.name : null,
+            id: g.rumpf ? g.rumpf.id : null })),
+          geholt: gesendet.map((g) => g.url.replace('http://pruefhost:8080', '')),
+          zeilen,
+          status: $('mp-status') ? $('mp-status').textContent : null,
+        };
+      } finally {
+        window.fetch = echtFetch;
+        mp.host = merk.host; mp.name = merk.name; mp.an = merk.an;
+        mp.id = merk.id; mp.letzterBericht = merk.letzter;
+        if (mp.timer) { clearInterval(mp.timer); }
+        mp.timer = merk.timer;
+        dashLapTimes = merk.runden;
+      }
+    },
+
     // ---- WAS WIRD AUS EINEM GEMELDETEN CODE? ------------------------------------
     //
     // codeZuTyp() ist die eine Stelle, an der aus einem Byte des Autos eine Kachelart der
@@ -46557,6 +46762,121 @@
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
+  // ---- Mehrspieler: melden, holen, zeichnen ----
+  //
+  // Mehrspieler hatte bis v0.6.20 KEINE einzige Pruefung, weder hier noch im Prueflauf -
+  // bei einem Code, der seit rund siebzig Fassungen unberuehrt ist. Das war die groesste
+  // Luecke im Projekt.
+  //
+  // Geprueft mit einem fetch-Stummel: ein Test, der ein Programm auf dem PC voraussetzt,
+  // laeuft bei niemandem.
+  stAdd('Mehrspieler: eine Runde meldet, die Rangliste kommt an', async () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.mpProbe) {
+      return { skip: true, mass: 'mpProbe nicht vorhanden' };
+    }
+    const r = await OMEGA_TEST.mpProbe({ runden: [11500, 11200, 11800] });
+    if (!r) return { skip: true, mass: 'kein Lauf' };
+    const fehler = [];
+    // 1. EINE GEFAHRENE RUNDE SCHICKT EINEN BERICHT, und zwar als POST auf /mp/report.
+    const post = r.bericht.filter((b) => b.methode === 'POST' && b.pfad === '/mp/report');
+    if (!post.length) {
+      fehler.push('kein POST /mp/report: ' + JSON.stringify(r.bericht));
+    } else {
+      // 2. MIT DER RUNDENZAHL AUS DER COCKPIT-LISTE. Drei Zeiten sind drei Runden.
+      if (post[0].laps !== 3) fehler.push('laps ' + post[0].laps + ' statt 3');
+      // 3. UND MIT EINER KENNUNG. Ohne sie legt der Host bei jedem Bericht eine neue
+      //    Zeile an, und die Rangliste waechst statt sich zu aktualisieren.
+      if (!post[0].id) fehler.push('Bericht ohne Kennung');
+    }
+    // 4. DIE RANGLISTE WIRD GEHOLT UND GEZEICHNET.
+    if (!r.geholt.some((u) => u.indexOf('/mp/state') >= 0)) {
+      fehler.push('kein GET /mp/state');
+    }
+    if (!r.zeilen || r.zeilen.length !== 2) {
+      fehler.push((r.zeilen ? r.zeilen.length : 'keine') + ' Zeilen statt 2');
+    }
+    // 5. UND DER EIGENE NAME STEHT DRIN. Eine Rangliste ohne den eigenen Eintrag waere
+    //    genau der Fall, der beim Fahren auffaellt und beim Testen nicht.
+    if (r.zeilen && !r.zeilen.some((z) => z.indexOf('Pruefer') >= 0)) {
+      fehler.push('eigener Name fehlt: ' + JSON.stringify(r.zeilen));
+    }
+    return { ok: !fehler.length,
+             mass: (post.length ? 'POST laps ' + post[0].laps : 'kein POST')
+                 + ' | ' + (r.zeilen ? r.zeilen.length : 0) + ' Zeilen'
+                 + ' | ' + (r.status || '')
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
+  // ---- Mehrspieler: die Leitung reisst ab ----
+  //
+  // Der haeufigste Fall in der Praxis, und der einzige, der beim Fahren wirklich schmerzt:
+  // WLAN weg. Dann darf nichts werfen - jeder faehrt weiter, nur die Rangliste steht still.
+  // Und die Statuszeile muss es sagen, statt die alte Zahl stehenzulassen.
+  stAdd('Mehrspieler: ohne Leitung wirft nichts, und die Zeile sagt es', async () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.mpProbe) {
+      return { skip: true, mass: 'mpProbe nicht vorhanden' };
+    }
+    let r = null, wurf = null;
+    try {
+      r = await OMEGA_TEST.mpProbe({ leitungWeg: true });
+    } catch (e) { wurf = e.message; }
+    if (wurf) return { ok: false, mass: 'wirft: ' + wurf };
+    if (!r) return { skip: true, mass: 'kein Lauf' };
+    const fehler = [];
+    // Der Bericht wurde versucht - er darf nur nicht durchschlagen.
+    if (!r.bericht.length) fehler.push('es wurde nicht einmal versucht zu melden');
+    // Und die Statuszeile nennt das Problem.
+    if (!r.status || !/kein Kontakt|Kontakt/i.test(r.status)) {
+      fehler.push('Statuszeile sagt nichts: "' + r.status + '"');
+    }
+    return { ok: !fehler.length,
+             mass: r.bericht.length + ' Versuche, Zeile: "' + (r.status || '') + '"'
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
+  // ---- Die Anleitung im Mehrspieler-Reiter ----
+  //
+  // Das Skript stand dort bis v0.6.20 nur als Fliesstext: kein Link, nichts zum Kopieren,
+  // keine Reihenfolge. Wer es zum ersten Mal aufsetzt, braucht genau drei Dinge - den
+  // Befehl, die Adresse und die Reihenfolge -, und die standen nirgends zusammen.
+  stAdd('Mehrspieler-Anleitung: Befehl, Link und Kopierknoepfe sind da', () => {
+    const schritte = document.querySelectorAll('.mp-schritte li');
+    if (!schritte.length) return { ok: false, mass: 'keine Anleitung im Reiter' };
+    const fehler = [];
+    if (schritte.length < 4) fehler.push('nur ' + schritte.length + ' Schritte');
+    // Der Befehl steht da, und er nennt das Skript.
+    const cmd = $('mp-cmd') ? $('mp-cmd').textContent : '';
+    if (!/omegasim_host\.py/.test(cmd)) fehler.push('Befehl nennt das Skript nicht: ' + cmd);
+    // Ein anklickbarer Verweis auf die Datei - nicht nur ihr Name.
+    const link = document.querySelector('.mp-schritte a[href*="omegasim_host.py"]');
+    if (!link) fehler.push('kein Link auf das Skript');
+    // Und beide Kopierknoepfe sind verdrahtet (ein Knopf ohne Horcher sieht aus wie einer).
+    for (const id of ['mp-cmd-copy', 'mp-ov-copy']) {
+      if (!$(id)) fehler.push(id + ' fehlt');
+    }
+    // Die Uebersichtsadresse folgt dem eingetragenen Host, statt ein Beispiel zu bleiben.
+    const wirt = $('mp-host'), ov = $('mp-ov');
+    let gefolgt = null;
+    if (wirt && ov) {
+      const merk = wirt.value;
+      try {
+        wirt.value = 'http://10.0.0.7:9100';
+        wirt.dispatchEvent(new Event('input', { bubbles: true }));
+        gefolgt = ov.textContent.trim();
+        if (gefolgt.indexOf('10.0.0.7:9100') < 0) {
+          fehler.push('Uebersichtsadresse folgt dem Host nicht: ' + gefolgt);
+        }
+      } finally {
+        wirt.value = merk;
+        wirt.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+    }
+    return { ok: !fehler.length,
+             mass: schritte.length + ' Schritte, Befehl "' + cmd + '"'
+                 + (gefolgt ? ', Uebersicht folgt auf ' + gefolgt : '')
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
   // ---- Die sechs Kacheltypen aus seVens Bahn-Tabelle ----
   //
   // seVen hat bestaetigt, dass seine Codetabelle fuer den Bahn-Modus gilt. Damit sind sechs
@@ -50667,10 +50987,19 @@
     el.style.color = schlecht ? 'var(--bad)' : '';
   }
 
-  function mpUrl(pfad) {
-    let h = mp.host.trim().replace(/\/+$/, '');
+  // Die Adresse aufraeumen: Schraegstriche hinten weg, Schema davor, wenn keines da ist.
+  // HERAUSGEZOGEN, weil es zwei Aufrufer gibt - den Meldeweg (aus mp.host, also dem
+  // GESPEICHERTEN Wert) und die Anleitung (aus dem Eingabefeld, das schon etwas enthaelt,
+  // bevor jemand auf Mitmachen gedrueckt hat). Genau diese Verwechslung hat die
+  // Uebersichtsadresse zuerst als blosses "/mp-overview.html" ausgegeben.
+  function mpBasis(roh) {
+    let h = String(roh || '').trim().replace(/\/+$/, '');
     if (h && !/^https?:\/\//.test(h)) h = 'http://' + h;
-    return h + pfad;
+    return h;
+  }
+
+  function mpUrl(pfad) {
+    return mpBasis(mp.host) + pfad;
   }
 
   // Der eigene Stand. Er kommt aus DENSELBEN Variablen, aus denen das Cockpit liest -
@@ -50760,6 +51089,60 @@
   if ($('mp-name')) $('mp-name').value = mp.name;
   if ($('mp-join')) $('mp-join').addEventListener('click', mpJoin);
   if ($('mp-leave')) $('mp-leave').addEventListener('click', mpLeave);
+
+  // ---- DIE ZWEI KOPIERKNOEPFE DER ANLEITUNG ---------------------------------------
+  //
+  // Der Befehl und die Uebersichtsadresse werden abgetippt, wenn man sie nicht kopieren
+  // kann - und beide enthalten Zeichen, die man auf einem Telefon einzeln suchen muss.
+  //
+  // DIE ADRESSE WIRD ERGAENZT, sobald eine bekannt ist: im Feld steht nach dem ersten
+  // Mitmachen der echte Host, und dann ist eine Beispieladresse im Kopierpuffer ein
+  // Rueckschritt. Ohne Feld bleibt der Platzhalter stehen - er zeigt die FORM, und die ist
+  // das, was man beim ersten Mal braucht.
+  function mpUebersichtAdresse() {
+    // AUS DEM FELD und nicht aus mp.host: das Feld traegt die Adresse schon, bevor jemand
+    // auf Mitmachen gedrueckt hat - und genau dann liest man die Anleitung.
+    const basis = mpBasis($('mp-host') ? $('mp-host').value : '');
+    if (!basis) return 'http://192.168.1.50:8080/mp-overview.html';
+    return basis + '/mp-overview.html';
+  }
+
+  function mpKopieren(el, text) {
+    if (!el) return;
+    el.addEventListener('click', async () => {
+      const wert = typeof text === 'function' ? text() : text;
+      try {
+        await navigator.clipboard.writeText(wert);
+        showHudToast('Kopiert');
+      } catch (e) {
+        // Kein Zugriff auf die Zwischenablage (kein sicherer Kontext, oder verweigert):
+        // dann wird wenigstens markiert, damit ein Griff genuegt. Schweigen waere hier
+        // das Schlechteste - der Knopf saehe aus, als haette er gewirkt.
+        const code = el.parentElement && el.parentElement.querySelector('code');
+        if (code && window.getSelection) {
+          const r = document.createRange();
+          r.selectNodeContents(code);
+          const sel = window.getSelection();
+          sel.removeAllRanges();
+          sel.addRange(r);
+        }
+        showHudToast('Bitte von Hand kopieren');
+      }
+    });
+  }
+
+  mpKopieren($('mp-cmd-copy'), () => ($('mp-cmd') ? $('mp-cmd').textContent.trim() : ''));
+  mpKopieren($('mp-ov-copy'), mpUebersichtAdresse);
+  // Und die angezeigte Uebersichtsadresse mitziehen, sobald ein Host eingetragen ist.
+  if ($('mp-host') && $('mp-ov')) {
+    const zeigen = () => {
+      const a = mpUebersichtAdresse();
+      if ($('mp-ov').textContent.trim() !== a) $('mp-ov').textContent = a;
+    };
+    $('mp-host').addEventListener('input', zeigen);
+    $('mp-host').addEventListener('change', zeigen);
+    zeigen();
+  }
   // ============================== VOREINSTELLUNGEN ==============================
   // presetControls() sucht NUR in #tab-options. Die Karte verspricht "nicht die
   // Rennlaenge, nicht das Wetter, nicht die Strecke", und dieses Versprechen hing einmal

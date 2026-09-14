@@ -970,6 +970,17 @@
     garage.forEach(c => { c.race = { laps: [], lapStart: null, pending: null, seen: 0,
                                      lastActed: 0, lastCount: null }; });
     raceLapTimes = [];
+    // ---- UND DIE COCKPIT-RUNDEN AUCH, und das ist ein gemeldeter Fehler ------------
+    //
+    // dashLapTimes wurde beim Rennstart NIE zurueckgesetzt. Es ist die Liste der
+    // Ueberfahrten seit dem Laden der Seite - und genau diese Zahl meldet die App als
+    // "Runden" an den Mehrspieler-Host (mpEigenerStand in 97-sessions.js). Wer vor dem
+    // Rennen ein paar Runden frei gefahren ist, stand damit schon vor dem Start vorn.
+    //
+    // Der Kachelzaehler wird mitgenommen: ohne ihn zaehlt die erste Ueberfahrt nach dem
+    // Start als Rundenschluss einer Runde, die es nicht gab.
+    dashLapTimes = [];
+    dashLapStart = null;
     racePartialMs = null;
     // Same moment as the lap times: on/off-track is a statistic about THIS race, and
     // carrying a previous session's minutes into it would make the share meaningless.
@@ -1925,6 +1936,15 @@
     if (dashLapTimes.length) {
       const d = dashLapTimes.pop();
       if (dashLapStart !== null) dashLapStart -= d;
+      // ---- DIE RUECKNAHME GEHT AUCH AN DEN HOST ---------------------------------
+      //
+      // Ohne diese Zeile zeigte die Rangliste eine zurueckgenommene Runde weiter, bis das
+      // naechste Lebenszeichen sie ueberschrieb - bis zu fuenf Sekunden lang stand dort
+      // eine Runde, die die App selbst schon verworfen hatte.
+      //
+      // Defensiv gerufen, weil mpRundeGefahren in 97-sessions.js steht, einer SPAETEREN
+      // Datei - dieselbe Vorsicht wie an der Stelle, die eine gefahrene Runde meldet.
+      if (typeof mpRundeGefahren === 'function') mpRundeGefahren();
     }
     $('race-status').textContent = t('Rennen läuft, Runde') + ' ' + raceLapTimes.length;
     log('Runde zurueckgenommen (' + formatLapTime(weg.ms) + '): ' + warum, 'info');

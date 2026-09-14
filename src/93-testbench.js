@@ -3852,6 +3852,97 @@
       return typeof wxModusSetzen === 'function' ? wxModusSetzen(modus) : null;
     },
 
+    // ---- MEHRSPIELER, MIT EINEM FETCH-STUMMEL -----------------------------------
+    //
+    // Mehrspieler hatte bis v0.6.20 KEINE einzige Pruefung - weder hier noch im
+    // Selbsttest -, und der Code ist seit rund siebzig Fassungen unberuehrt. Das ist die
+    // groesste Luecke im ganzen Projekt gewesen.
+    //
+    // MIT EINEM STUMMEL statt eines echten Hosts: ein Prueflauf, der ein Programm auf dem
+    // PC voraussetzt, laeuft bei niemandem. Der Stummel zeichnet auf, WAS die App
+    // schicken wollte, und antwortet, was der Host antworten wuerde - damit ist beides
+    // pruefbar: der Bericht und das Zeichnen der Rangliste.
+    //
+    // Und der dritte Fall, der in der Praxis der haeufigste ist: die Leitung ist weg. Dann
+    // darf nichts werfen, und die Statuszeile muss es sagen.
+    // ASYNC, und das ist kein Schoenheitsfehler: der erste Anlauf gab aus dem try ein
+    // Promise zurueck und raeumte im finally auf. Das finally laeuft dann SOFORT - beim
+    // Zurueckgeben, nicht beim Fertigwerden -, also war mp.an schon wieder false, wenn
+    // mpHolen() lief. Gemessen: der Bericht ging raus, die Rangliste kam nie, und die
+    // Statuszeile sagte "nicht verbunden". Das sah nach einem Fehler in der App aus und
+    // war einer in der Messung.
+    async mpProbe(o) {
+      const opt = o || {};
+      const echtFetch = window.fetch;
+      const merk = { host: mp.host, name: mp.name, an: mp.an, timer: mp.timer,
+                     id: mp.id, letzter: mp.letzterBericht,
+                     runden: dashLapTimes.slice() };
+      const gesendet = [];
+      try {
+        // Kein Zeitgeber waehrend der Messung: mpJoin() startet einen, und ein Takt, der
+        // nach dem Prueflauf weiterlaeuft, meldet in fremde Laeufe hinein.
+        if (mp.timer) { clearInterval(mp.timer); mp.timer = null; }
+        mp.host = 'http://pruefhost:8080';
+        mp.name = opt.name || 'Pruefer';
+        mp.an = true;
+        dashLapTimes = (opt.runden || [11500, 11200, 11800]).slice();
+
+        window.fetch = (url, init) => {
+          gesendet.push({ url: String(url), methode: (init && init.method) || 'GET',
+                          rumpf: init && init.body ? JSON.parse(init.body) : null });
+          if (opt.leitungWeg) return Promise.reject(new Error('Netzwerk weg'));
+          if (String(url).indexOf('/mp/state') >= 0) {
+            return Promise.resolve({ ok: true, json: () => Promise.resolve({
+              // IN SEKUNDEN, wie das echte Protokoll: mpEigenerStand() teilt die
+              // Millisekunden der Rundenliste durch 1000, bevor es meldet. Der erste
+              // Anlauf dieses Stummels schickte Millisekunden, und die Rangliste zeigte
+              // brav "11200.00s" - kein Fehler der App, einer der Messung, und nur
+              // dadurch aufgefallen, dass die Zahl beim Lesen unsinnig aussah.
+              fahrer: opt.fahrer || [
+                { id: mp.id, name: mp.name, laps: 2, letzte: 11.2, beste: 11.2,
+                  abgaenge: 0, alter: 0.3 },
+                { id: 'x', name: 'Zweiter', laps: 2, letzte: 12.0, beste: 11.9,
+                  abgaenge: 1, alter: 14.0 },
+              ],
+              rennen: { start: 1, laps: 10, minutes: null, laufzeit: 42.0,
+                        restSekunden: null },
+              zeit: 1,
+            }) });
+          }
+          return Promise.resolve({ ok: true, json: () => Promise.resolve({ ok: true }) });
+        };
+
+        // 1. Eine gefahrene Runde meldet.
+        mpRundeGefahren();
+        await new Promise((r) => setTimeout(r, 30));
+        const nachRunde = gesendet.slice();
+        // 2. Und die Rangliste wird geholt und gezeichnet.
+        gesendet.length = 0;
+        await mpHolen();
+        const zeilen = $('mp-rows')
+          ? [...$('mp-rows').querySelectorAll('tr')].map((tr) =>
+              [...tr.children].map((td) => td.textContent.trim()).join('|'))
+          : null;
+        return {
+          bericht: nachRunde.map((g) => ({ methode: g.methode,
+            pfad: g.url.replace('http://pruefhost:8080', ''),
+            laps: g.rumpf ? g.rumpf.laps : null,
+            name: g.rumpf ? g.rumpf.name : null,
+            id: g.rumpf ? g.rumpf.id : null })),
+          geholt: gesendet.map((g) => g.url.replace('http://pruefhost:8080', '')),
+          zeilen,
+          status: $('mp-status') ? $('mp-status').textContent : null,
+        };
+      } finally {
+        window.fetch = echtFetch;
+        mp.host = merk.host; mp.name = merk.name; mp.an = merk.an;
+        mp.id = merk.id; mp.letzterBericht = merk.letzter;
+        if (mp.timer) { clearInterval(mp.timer); }
+        mp.timer = merk.timer;
+        dashLapTimes = merk.runden;
+      }
+    },
+
     // ---- WAS WIRD AUS EINEM GEMELDETEN CODE? ------------------------------------
     //
     // codeZuTyp() ist die eine Stelle, an der aus einem Byte des Autos eine Kachelart der

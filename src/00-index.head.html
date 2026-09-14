@@ -2329,6 +2329,21 @@
   /* Everything outside the editor host is irrelevant while building. */
   body.track-fs > header, body.track-fs > nav.tabs { display: none; }
 
+  /* Die Mehrspieler-Anleitung: nummeriert, mit Luft, und die Befehle als eigene Zeile.
+     Sie stehen NICHT im Fliesstext - ein <code> mitten im Satz zerlegt den Textknoten,
+     und die Uebersetzung arbeitet je Textknoten. */
+  .mp-schritte { margin: 12px 0 14px 0; padding-left: 20px; font-size: 12.5px;
+    color: var(--muted); line-height: 1.55; }
+  .mp-schritte li { margin-bottom: 9px; }
+  .mp-schritte b { color: var(--ink); }
+  .mp-befehl { display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+    margin: 5px 0 4px 0; }
+  .mp-befehl code { background: var(--panel-2); border: 1px solid var(--border);
+    border-radius: 6px; padding: 5px 9px; font-size: 12px; color: var(--ink);
+    user-select: all; }
+  .mp-kopier { font-size: 11px; padding: 4px 9px; }
+  .mp-datei { display: inline-block; margin-top: 3px; font-size: 11.5px; }
+
   .tp-bar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
     justify-content: center; }
   .tp-btn { width: 54px; height: 54px; padding: 0; display: grid; place-items: center;
@@ -5924,8 +5939,62 @@
     <div class="card">
       <h2>Mehrspieler im WLAN <span class="wip-tag">experimentell</span></h2>
       <p class="muted">
-        Mehrere Telefone, jedes mit eigenem Auto, eine gemeinsame Rangliste. Auf dem PC laeuft
-        dazu ein kleines Programm: python tools/omegasim_host.py
+        Mehrere Telefone, jedes mit eigenem Auto, eine gemeinsame Rangliste. Auf dem PC
+        l&auml;uft dazu ein kleines Programm.
+      </p>
+
+      <!-- ---- DIE ANLEITUNG, UND WARUM SIE HIER STEHT --------------------------------
+           Das Skript war bisher nur als Fliesstext erwaehnt: kein Link, nichts zum
+           Kopieren, keine Reihenfolge. Wer es zum ersten Mal aufsetzt, braucht genau drei
+           Dinge - den Befehl, die Adresse und die Reihenfolge -, und alle drei standen
+           nirgends zusammen.
+
+           Die Befehle stehen in <code>, damit sie sich als Block markieren lassen; der
+           Knopf daneben legt sie in die Zwischenablage. Auszeichnung MITTEN im Satz wird
+           dabei vermieden (sie zerlegt den Textknoten und macht ihn unuebersetzbar) - die
+           Befehle stehen deshalb je in einer eigenen Zeile und nicht im Fliesstext. -->
+      <!-- ---- KEINE AUSZEICHNUNG MITTEN IM SATZ ----------------------------------
+           Ein <span> oder <code> INNERHALB eines Satzes zerlegt den Textknoten, und die
+           Uebersetzung arbeitet je Textknoten. Der erste Anlauf dieser Anleitung machte
+           genau das und hinterliess Bruchstuecke wie "Wird die App ueber" und "geladen -
+           etwa von der Projektseite -," - dieselbe Falle, vor der schon die Danksagungen
+           warnen, und ich bin hineingelaufen.
+
+           Deshalb hier durchgehend: EIN Satz ist EIN Knoten. Die fettgesetzte
+           Schrittueberschrift steht VOR dem Satz und ist selbst ein ganzer Satz; alles,
+           was nicht uebersetzt wird - Befehle und Adressen -, steht in einer eigenen
+           Zeile darunter und nicht im Fliesstext. -->
+      <ol class="mp-schritte">
+        <li><b>Auf dem PC starten.</b>
+          Im Ordner des Projekts ein Fenster f&uuml;r die Eingabeaufforderung oder das
+          Terminal &ouml;ffnen und den Befehl ausf&uuml;hren:
+          <span class="mp-befehl"><code id="mp-cmd" data-i18n-skip>python tools/omegasim_host.py --port 8080</code><button type="button" class="mp-kopier" id="mp-cmd-copy">Kopieren</button></span>
+          Das Programm liegt im Projekt und ist von hier aus direkt zu &ouml;ffnen. Es
+          schreibt beim Start die Adresse hin, unter der es erreichbar ist.
+          <a href="tools/omegasim_host.py" target="_blank" rel="noopener noreferrer"
+             class="mp-datei" data-i18n-skip>tools/omegasim_host.py</a></li>
+        <li><b>Die Adresse an die Telefone geben.</b>
+          Sie geh&ouml;rt oben in das Feld &bdquo;Host-Adresse&ldquo; und hat die Form, die
+          dort als Beispiel steht. Alle Ger&auml;te m&uuml;ssen im selben WLAN sein.</li>
+        <li><b>Namen eintragen und auf Mitmachen dr&uuml;cken.</b>
+          Der Name steht danach in der Rangliste. Jedes Telefon beh&auml;lt seinen eigenen
+          Namen und seine eigene Kennung, auch nach einem Neuladen.</li>
+        <li><b>Die &Uuml;bersicht auf den Fernseher.</b>
+          Der Host liefert daf&uuml;r eine eigene Seite in gro&szlig;er Schrift:
+          <span class="mp-befehl"><code id="mp-ov" data-i18n-skip>http://192.168.1.50:8080/mp-overview.html</code><button type="button" class="mp-kopier" id="mp-ov-copy">Kopieren</button></span>
+          Sie zeigt die Rangliste und hat einen Knopf zum Zur&uuml;cksetzen. Sonst nichts:
+          sie ist zum Ansehen aus zwei Metern gedacht und nicht zum Bedienen.</li>
+      </ol>
+
+      <p class="muted" style="font-size:11.5px; border-left:3px solid var(--info);
+         padding-left:9px">
+        <b>Zwei Dinge, an denen es scheitern kann, und beide liegen nicht an der App.</b>
+        Wird die App &uuml;ber eine verschl&uuml;sselte Verbindung geladen &ndash; etwa von
+        der Projektseite &ndash;, blockiert der Browser jede Verbindung zu einer
+        unverschl&uuml;sselten Adresse im WLAN; dann muss die App vom Host selbst geladen
+        werden. Und bis Fassung 0.6.19 fehlten dem Host die Kopfzeilen f&uuml;r fremde
+        Herkunft: Mitmachen ging nur, wenn die App vom Host kam. Wer eine &auml;ltere
+        Fassung des Programms laufen hat, holt sie neu.
       </p>
       <p class="muted" style="font-size:11.5px">
         Ueber die Leitung gehen Rundenzahl, Rundenzeiten und Abgaenge. Keine Physik, keine
@@ -8004,7 +8073,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.6.19</span></span>
+    <span class="foot-ver">v<span id="app-version">0.6.20</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
