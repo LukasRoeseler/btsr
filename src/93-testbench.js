@@ -4100,6 +4100,42 @@
       } finally { trackMode = merk; }
     },
 
+    // ---- SAGEN DIE ANZEIGETEXTE DIE WAHRHEIT? -----------------------------------
+    //
+    // Gemessen, ungefragt: ZEHN Schieberegler zeigten beim Laden einen Text, der nicht zu
+    // ihrer Stellung passte - ghost-lanes stand auf 1 und zeigte "aus".
+    //
+    // ---- WIE MAN DAS UEBERHAUPT MESSEN KANN ------------------------------------
+    //
+    // Nicht durch Vergleich von Text und Zahl: der Text ist formatiert ("100%", "1.5 s",
+    // "aus", "rechts 64 von 127"), und ein Pruefer, der ihn zurueckrechnet, waere eine
+    // zweite Fassung jeder einzelnen Formatierung - und laege bei der naechsten Aenderung
+    // falsch.
+    //
+    // Gemessen wird stattdessen die EINZIGE Aussage, die formatunabhaengig gilt: der Text,
+    // den der Zuhoerer schreiben WUERDE, muss der Text sein, der schon dasteht. Also
+    // ablesen, ein 'input' ohne Nutzerhandlung feuern, wieder ablesen. Jede Abweichung ist
+    // ein Text, der nicht zu seinem Regler gehoert.
+    //
+    // Das taugt nur, weil die Zuhoerer idempotent sind - nachgemessen: ein zweiter
+    // Durchlauf aendert nichts. Waeren sie es nicht, wuerde diese Sonde selbst verstellen,
+    // was sie prueft.
+    reglerTexteProbe() {
+      const raus = [];
+      for (const el of document.querySelectorAll('input[type=range][id]')) {
+        const v = document.getElementById(el.id + '-val');
+        if (!v) continue;
+        const vorher = v.textContent.trim();
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+        const nachher = v.textContent.trim();
+        raus.push({ id: el.id, stand: el.value, vorher, nachher,
+                    stimmt: vorher === nachher });
+      }
+      return { geprueft: raus.length,
+               falsch: raus.filter((x) => !x.stimmt),
+               alle: raus };
+    },
+
     // ---- DIE SICHERUNG, EINMAL HIN UND EINMAL ZURUECK ---------------------------
     //
     // BESTELLT: "Die Fahreinstellungen und globale Einstellungen (Autonamen, Rundenzeiten,

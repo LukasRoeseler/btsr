@@ -611,14 +611,11 @@
     "Einstellungen": "Settings",
     "\u2190 Einstellungen": "\u2190 Settings",
     "F\u00fcnf Bereiche. Was das Auto": "Five areas. What the car",
-    ", steht unter Fahrgef\u00fchl; was es": "is under Handling; what it",
     "fährt": "drives",
     "hat": "has",
     ", unter Allgemein.": "is under General.",
     "Licht, Betriebsart, Akku, Tank, Schaden, Vibration.":
       "Lights, mode, battery, fuel, damage, vibration.",
-    "Fahrwerk, Getriebe, Masse und Reifen, Lenkung.":
-      "Chassis, gearbox, mass and tyres, steering.",
     "Motorsound, Ambience, Lautst\u00e4rken \u2013 und die Motorwerkstatt.":
       "Engine sound, ambience, volumes \u2013 and the engine workshop.",
     "Ghosts: Tempo, Linie, Rennw\u00fcrze, Lernen. Teilweise noch im Aufbau.":
@@ -943,6 +940,10 @@
       "Under a yellow flag or during the formation lap the car keeps itself on track regardless of this setting – the control there needs that in order to work.",
     "Querlage":
       "Lateral position",
+    "Steuerungsmodus":
+      "Control mode",
+    "Fahrhilfe, Fahrwerk, Getriebe, Masse und Reifen, Lenkung.":
+      "Driver aid, suspension, gearbox, mass and tyres, steering.",
     "Stoppen": "Stop",
     "Strecke aus Teilen bauen, drehen, als Code weitergeben. Alle elf Teiletypen der Original-App sind dabei, auch die Engstelle.":
       "Build a track from pieces, rotate it, pass it on as a code. All eleven piece types from the original app are included, the narrow section too.",

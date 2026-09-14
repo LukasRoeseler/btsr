@@ -327,6 +327,59 @@
   if (autoGeladen) {
     log('Einstellungen aus der letzten Sitzung geladen: ' + autoGeladen + ' Regler.', 'info');
   }
+  // ---- DIE ANZEIGETEXTE DER SCHIEBEREGLER, EINMAL BEIM LADEN --------------------
+  //
+  // GEMESSEN, und es war eine Ueberraschung: ZEHN Regler zeigten einen Text, der nicht zu
+  // ihrer Stellung passte. Der schlimmste war ghost-lanes - Regler auf 1, Anzeige "aus".
+  //
+  //     Kennung               steht auf   zeigte
+  //     ghost-lanes            1 (100 %)   "aus"
+  //     ghost-lateral          2            80 %
+  //     ghost-line             2           100 %
+  //     ghost-quertempo        4           2.0
+  //     ghost-exit             0            80 %
+  //     ghost-gasdyn           4           1.0
+  //     ghost-speed            0,55         50 %
+  //     setting-topspeed       1,8         160 %
+  //     setting-crash-count    4           10
+  //     setting-repair-time    4           10 s
+  //
+  // ---- DIE URSACHE IST EINE ZWEITE QUELLE FUER DENSELBEN WERT -------------------
+  //
+  // Der Zahlentext steht als statischer Inhalt im Markup, und die Zuhoerer schreiben ihn
+  // erst bei 'input'. Wer also die Vorgabe eines Reglers aendert - und genau das ist bei
+  // der Kalibrierung dutzendfach passiert -, laesst den alten Text stehen. Es gibt keine
+  // Meldung, nichts bricht, und die Anzeige luegt bis zur ersten Beruehrung des Reglers.
+  //
+  // ---- WARUM EIN DURCHLAUF UND NICHT ZEHN NACHGETRAGENE AUFRUFE ------------------
+  //
+  // ghost-quer-test (80-sound.js) und setting-tyres machen es richtig: Funktion benennen,
+  // an 'input' binden, einmal mit dem Markup-Wert aufrufen. Das zehnmal nachzutragen waere
+  // zehn Stellen, an denen Regler Nummer elf fehlt - dieselbe Begruendung wie bei
+  // updateGaragePresetRow(): ein Zuhoerer statt einer je Regler.
+  //
+  // NACHGEMESSEN, DASS ES FOLGENLOS IST: ein zweiter Durchlauf aendert nichts mehr (0 von
+  // 10 Abweichungen). Die Zuhoerer sind idempotent, sie lesen den Reglerstand und schreiben
+  // ihn zurueck - ein 'input' ohne Nutzerhandlung setzt also nichts anderes.
+  //
+  // HIER UND NICHT FRUEHER, aus demselben Grund wie die Selbstsicherung darueber: erst in
+  // dieser Datei sind alle Zuhoerer gebunden. In 80-sound.js gerufen waere es die Haelfte.
+  //
+  // Der Aufruf steht NACH autoSicherungLaden(), und das ist der Grund, warum mir der Fehler
+  // so lange entgangen ist: presetSet() feuert 'input' auf jeden Regler, eine vorhandene
+  // Selbstsicherung raeumt die Texte also nebenbei mit auf. Sichtbar war die Luege nur beim
+  // allerersten Start - und das ist genau der Fall, den ein neuer Nutzer sieht.
+  function reglerTexteAuffrischen() {
+    let n = 0;
+    for (const el of document.querySelectorAll('input[type=range][id]')) {
+      if (!document.getElementById(el.id + '-val')) continue;
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+      n++;
+    }
+    return n;
+  }
+  reglerTexteAuffrischen();
+
   // 'change' UND 'input': Auswahlfelder und Ankreuzfelder melden nur 'change', Schieber
   // melden beides. Beide zu nehmen kostet nichts, weil das Schreiben gebuendelt ist.
   document.addEventListener('change', (e) => {

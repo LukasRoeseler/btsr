@@ -7714,6 +7714,46 @@
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
+  // ---- Die Anzeigetexte der Schieberegler sagen die Wahrheit ----
+  //
+  // NICHT BESTELLT, SONDERN AUFGEFALLEN, beim Zusammentragen der Zahlen fuer die
+  // Ueberholmodell-Doku: die App zeigte fuer den seitlichen Versatz "80 %", waehrend der
+  // Regler auf 200 % stand. Ein Dokuabschnitt mit der richtigen Zahl haette neben einer
+  // Oberflaeche mit der falschen gestanden.
+  //
+  // Nachgemessen waren es ZEHN Regler:
+  //
+  //     ghost-lanes  1 -> "aus"      ghost-gasdyn         4   -> 1.0
+  //     ghost-lateral 2 -> 80 %      ghost-speed          0,55 -> 50 %
+  //     ghost-line    2 -> 100 %     setting-topspeed     1,8  -> 160 %
+  //     ghost-quertempo 4 -> 2.0     setting-crash-count  4    -> 10
+  //     ghost-exit    0 -> 80 %      setting-repair-time  4    -> 10 s
+  //
+  // ---- WARUM ES SO LANGE UNBEMERKT BLIEB ---------------------------------------
+  //
+  // Weil die Selbstsicherung (98b-sicherung.js) die Texte nebenbei aufraeumt: presetSet()
+  // feuert 'input' auf jeden Regler. Sichtbar war die Luege deshalb NUR beim allerersten
+  // Start ohne gespeicherte Einstellungen - und das ist genau, was ein neuer Nutzer sieht.
+  //
+  // ---- UND WARUM DIESER TEST NICHT DEN TEXT NACHRECHNET ------------------------
+  //
+  // Ein Pruefer, der aus dem Reglerstand "100%" oder "1.5 s" oder "aus" erzeugt, ist eine
+  // zweite Fassung jeder Formatierung und liegt bei der naechsten Aenderung falsch. Statt
+  // dessen wird gemessen, ob der Zuhoerer denselben Text schreiben WUERDE, der schon
+  // dasteht - die einzige Aussage, die ohne Kenntnis des Formats gilt.
+  stAdd('Reglertexte: jede Zahlenanzeige passt schon beim Laden zu ihrem Regler', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.reglerTexteProbe) {
+      return { skip: true, mass: 'reglerTexteProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.reglerTexteProbe();
+    if (!r || !r.geprueft) return { skip: true, mass: 'keine Regler mit Zahlenanzeige' };
+    const fehler = r.falsch.map((x) => x.id + ' steht auf ' + x.stand
+                                     + ', zeigt "' + x.vorher + '" statt "' + x.nachher + '"');
+    return { ok: !fehler.length,
+             mass: r.geprueft + ' Zahlenanzeigen geprueft, ' + r.falsch.length + ' falsch'
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
   // ---- Die Sicherung: hin, zurueck, und was dabei schiefgehen kann ----
   //
   // BESTELLT: "Wo ist in der Garage die Speichermoeglichkeit? Die Fahreinstellungen und

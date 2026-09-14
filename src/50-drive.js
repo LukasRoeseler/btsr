@@ -381,7 +381,7 @@
     physicsEnabled = (v === 'physik');
     physLastTime = null;
     if (melden) {
-      log('Fahrgefuehl: ' + (v === 'physik' ? 'Physik'
+      log('Steuerungsmodus: ' + (v === 'physik' ? 'Physik'
                              : v === 'drift' ? 'Drift (experimentell)'
                              : 'Aus, rohe Stickstellung'), 'info');
     }
