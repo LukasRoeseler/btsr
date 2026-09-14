@@ -1724,7 +1724,20 @@
   // alte 0x01), Boxengassen-Kacheln (0x100) melden nie einen und stimmen deshalb mit nichts.
   function ortPasst(typ, code) {
     if (typ === undefined || typ === null || code === undefined || code === null) return false;
+    // Ein Start/Ziel-CODE passt auf die Start/Ziel-KACHEL, egal in welcher Leseart sie
+    // gespeichert wurde - die Karte fuehrt 0x0a als kanonischen Typ, die Schiene meldet
+    // 0x01.
     if (isStartCode(code)) return isStartCode(typ) || typ === TILE_TYPE.START;
+    // ---- UND DIE UMKEHRUNG, die ohne diese Zeile falsch waere ---------------------
+    //
+    // TILE_TYPE.START ist 0x0a, und 0x0a ist im BAHN-Modus die ENGSTELLE. Dieselbe Zahl,
+    // zwei Bedeutungen - und der Vergleich `typ === code` darunter kennt den Unterschied
+    // nicht. Ohne diese Zeile wuerde jede ueberfahrene Engstelle eine Stimme fuer die
+    // Start/Ziel-Kachel abgeben und die Ortung um genau diese Stelle verschieben.
+    //
+    // Die Start-Kachel der Karte passt also NUR auf einen echten Start-Code, und der kommt
+    // eine Zeile darueber.
+    if (typ === TILE_TYPE.START) return false;
     return typ === code;
   }
 

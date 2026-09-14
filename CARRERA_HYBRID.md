@@ -43,15 +43,24 @@ Maßstab, Strichbreite, Schwärze, Papier. Er lag am Modus.
 
 | Bahn-Modus (Byte 14, Bit 5) | Ausdruck-Modus (Byte 14, Bit 7) |
 |---|---|
-| `0x02` Gerade | `0x01` Start/Ziel |
+| `0x01` Start/Ziel | `0x0a` Start/Ziel |
+| `0x02` Gerade | |
 | `0x03` Linkskurve | |
 | `0x04` Rechtskurve | |
 | `0x05` / `0x06` Haarnadel | |
-| `0x0a` Start/Ziel | |
+| `0x0a` **Engstelle** | |
 | `0x00` abseits der Bahn | |
 
 Die beiden Bits schließen sich aus. Wer Codes vergleicht, muss also den Modus mitnennen —
-`0x01` heißt auf Papier Start/Ziel, und auf der Schiene ist `0x0a` dasselbe.
+`0x0a` heißt auf Papier Start/Ziel, und auf der Schiene ist es eine **Engstelle**.
+
+> **Diese Tabelle stand bis v0.6.14 mit vertauschten Spalten hier.** Der Code-Kommentar in
+> `src/60-track.js` sagte das Richtige: `0x0a` ist am *gedruckten Blatt* im Ausdruck-Modus
+> gemessen (25.08.), über die Kunststoffschiene lag keine Messung vor. seVen hat auf
+> Rückfrage bestätigt, dass seine Tabelle für den Bahn-Modus gilt — damit ist `0x01` der
+> Schienencode, und beide Quellen stimmen überein. Die falsche Zuordnung in dieser Tabelle
+> war folgenreich: `isStartCode()` akzeptierte beide Codes modus-blind, also hätte jede
+> überfahrene Engstelle auf der Schiene eine Phantomrunde gezählt.
 
 Offen ist damit nur noch, welche Balkenfolgen `0x02` (Gerade) und `0x04` (Rechtskurve)
 tragen. Die Folge für `0x01` liegt vektorgenau vor, weil sie aus der Original-Druckvorlage

@@ -44,9 +44,24 @@
   // dieser Leseart erkannt wird. Was die Kunststoffschiene im Bahn-Modus sendet, ist damit
   // NICHT gemessen, und es koennen zwei Codesaetze sein - einer je Untergrund.
   //
-  // Genau deshalb bleibt 0x01 in START_CODES: es war die alte Annahme, und seit dem 26.08.
-  // hat es eine plausible Rolle als Code der Schiene. Auch das ist nicht gemessen, aber ein
-  // akzeptierter Wert kostet nichts und ein fehlender kostet die Rundenzaehlung.
+  // Genau deshalb blieb 0x01 lange in START_CODES: es war die alte Annahme, und seit dem
+  // 26.08. hat es eine plausible Rolle als Code der Schiene.
+  //
+  // ---- UND SEIT v0.6.14 IST DAS BESTAETIGT, von aussen -------------------------------
+  //
+  // seVen hat eine byteweise Protokollbeschreibung geteilt, und auf Rueckfrage bestaetigt,
+  // dass seine Codetabelle fuer den BAHN-MODUS gilt. Dort steht:
+  //
+  //     0x01  Start/Ziel        0x0A  Engstelle (NarrowSection)
+  //
+  // Das passt genau zu dem, was hier gemessen wurde - sobald man die Spalten richtig
+  // zuordnet: 0x0a ist am GEDRUCKTEN Blatt im Ausdruck-Modus gemessen, ueber die
+  // Kunststoffschiene war nie eine Messung da. (Die Tabelle in CARRERA_HYBRID.md hatte die
+  // beiden Spalten vertauscht; sie ist mit dieser Fassung berichtigt.)
+  //
+  // FOLGE, und sie ist der Grund fuer die Aenderung: eine Liste aus BEIDEN Codes ist
+  // modus-blind. Auf der Schiene wuerde damit jede ueberfahrene ENGSTELLE als Ziellinie
+  // gelten - eine Phantomrunde je Ueberfahrt, und das Streckenlernen faengt dort neu an.
   //
   // Vorher stand hier 0x01, und das war eine Annahme aus einem Foto - die Doku hat sie auch
   // als solche gekennzeichnet. Die Folgen der falschen Zahl waren erheblich und beide unsichtbar: die
@@ -64,6 +79,10 @@
   // Editor gilt weiter TILE_TYPE.START allein.
   const START_CODES = [0x0a, 0x01];
   const START_CODE_LEGACY = 0x01;
+  // Je Leseart einer, benannt statt aufgezaehlt: wer das liest, sieht sofort, welcher wo
+  // gilt. Die Liste darueber bleibt als Rueckfall und fuer isStartCode() ohne Leseart.
+  const START_CODE_RAIL = 0x01;    // Kunststoffschiene, Bahn-Modus (seVen, bestaetigt)
+  const START_CODE_PRINT = 0x0a;   // gedrucktes Blatt, Ausdruck-Modus (gemessen 25.08.)
   // AUS DER LISTE GELESEN und nicht daneben aufgezaehlt. Vorher stand hier
   // "c === 0x0a || c === START_CODE_LEGACY", und damit gab es die Tatsache "was gilt als
   // Start/Ziel" an ZWEI Orten - die Liste hatte keinen einzigen Leser und war die
@@ -71,7 +90,18 @@
   // sie als einzige Konstante ohne Leser gefunden.
   //
   // Wer einen dritten Code aufnimmt, aendert jetzt eine Stelle.
-  function isStartCode(c) { return START_CODES.indexOf(c) >= 0; }
+  // DIE LESEART ENTSCHEIDET. trackMode steht in 20-protocol.js ('on' = Bahn, 'off' =
+  // Ausdruck) und ist zur Laufzeit da; diese Funktion laeuft nie zur Aufbauzeit.
+  //
+  // Der Rueckfall auf die Liste bleibt fuer den Fall, dass trackMode (noch) nicht gesetzt
+  // ist - lieber ein Code zu viel akzeptiert als die Rundenzaehlung verloren, und genau so
+  // stand es hier vorher schon.
+  function isStartCode(c) {
+    if (typeof trackMode === 'string') {
+      return trackMode === 'on' ? c === START_CODE_RAIL : c === START_CODE_PRINT;
+    }
+    return START_CODES.indexOf(c) >= 0;
+  }
   // Code 0x00 means the sensor is reading NOTHING VALID, i.e. the car has left the track.
   // From the guard-rail capture of 20.08: every departure showed up as 0x00 together with the
   // tile counter racing (6 -> 8 -> 9 -> 15 -> 18 within three seconds), and 16 of 38

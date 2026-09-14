@@ -3189,12 +3189,38 @@
     }
     const tiles = codeToTrack('SG2H2G2R2G2H2G2R2').tiles;
     const schlecht = [];
-    // Richtig gemeldet: stimmt.
-    for (let i = 0; i < tiles.length; i++) {
-      if (OMEGA_TEST.ortStimmtProbe(undefined, i, tiles[i].type) !== true) {
-        schlecht.push('Kachel ' + i + ' (Typ ' + tiles[i].type + ') gilt als falsch');
+    const merkModus = trackMode;
+    try {
+      trackMode = 'on';
+      // ---- DER GEMELDETE CODE IST NICHT IMMER DER KARTENTYP ----------------------
+      //
+      // Fuer alle Kacheln ist er es: eine Linkskurve auf der Karte meldet 0x03. Nur bei
+      // START/ZIEL gehen die zwei auseinander - die Karte fuehrt 0x0a als kanonischen Typ,
+      // die Schiene meldet 0x01 (seVen, bestaetigt), und 0x0a IST auf der Schiene die
+      // Engstelle. Ein Test, der hier den Kartentyp meldet, prueft eine Meldung, die es
+      // auf der Schiene nicht gibt.
+      const codeFuer = (typ) => (typ === TILE_TYPE.START ? 0x01 : typ);
+      // Richtig gemeldet: stimmt.
+      for (let i = 0; i < tiles.length; i++) {
+        if (OMEGA_TEST.ortStimmtProbe(undefined, i, codeFuer(tiles[i].type)) !== true) {
+          schlecht.push('Kachel ' + i + ' (Typ ' + tiles[i].type + ') gilt als falsch');
+        }
       }
-    }
+      // ---- UND DIE KOLLISION, die ohne diese zwei Zeilen unbemerkt bliebe ---------
+      //
+      // TILE_TYPE.START ist 0x0a. Auf der Schiene meldet eine ENGSTELLE dieselbe Zahl -
+      // sie darf die Start/Ziel-Kachel also NICHT bestaetigen, sonst verschiebt jede
+      // Engstelle die Ortung um genau diese Stelle.
+      if (OMEGA_TEST.ortStimmtProbe(undefined, 0, 0x0a) !== false) {
+        schlecht.push('Bahn: 0x0a (Engstelle) bestaetigt die Start/Ziel-Kachel');
+      }
+      // Im AUSDRUCK ist 0x0a dagegen genau der Startcode und muss passen.
+      trackMode = 'off';
+      if (OMEGA_TEST.ortStimmtProbe(undefined, 0, 0x0a) !== true) {
+        schlecht.push('Ausdruck: 0x0a passt nicht auf die Start/Ziel-Kachel');
+      }
+      trackMode = 'on';
+    } finally { trackMode = merkModus; }
     // Eine Gerade gemeldet, wo eine Haarnadel liegt: stimmt nicht.
     const hp = tiles.findIndex((t) => t.type === 0x05 || t.type === 0x06);
     if (hp >= 0 && OMEGA_TEST.ortStimmtProbe(undefined, hp, 0x02) !== false) {
@@ -9735,19 +9761,25 @@
                    + ', Lenkgrenze ' + r.cap.toFixed(2) };
   });
 
-  // ---- Start/Ziel-Code zaehlt, Linkskurve nicht ----
+  // ---- Start/Ziel-Code zaehlt, und der Code haengt an der Leseart ----
   //
-  // Am 25.08. gemessen: das Original-Startziel-Blatt meldet 0x0a. Vorher stand hier 0x01,
-  // eine Annahme aus einem Foto - und die Rundenzaehlung prueft genau diesen Wert, hat auf
-  // dem Originalblatt also nie ausgeloest. Der Fehler war doppelt unsichtbar: ohne
-  // gedrucktes Blatt kommt ohnehin kein Code, und mit Blatt zaehlt niemand die Runden nach.
+  // Am 25.08. gemessen: das Original-Startziel-Blatt meldet 0x0a - und zwar im
+  // AUSDRUCK-Modus. Was die Kunststoffschiene meldet, war nie gemessen; akzeptiert wurden
+  // deshalb beide Codes, modus-blind.
   //
-  // Geprueft wird die WIRKUNG und nicht die Konstante. Eine Pruefung auf "START === 0x0a"
-  // waere mit der Konstante zusammen falsch gewesen und haette nichts gemerkt.
-  stAdd('Start/Ziel-Code zaehlt eine Runde', () => {
+  // ---- SEIT v0.6.14 IST DAS GETRENNT, und der Test prueft beide Seiten ----------
+  //
+  // seVen hat bestaetigt, dass seine Codetabelle fuer den Bahn-Modus gilt: dort ist 0x01
+  // Start/Ziel und 0x0a die ENGSTELLE. Eine Liste aus beiden Codes hiesse also, dass jede
+  // ueberfahrene Engstelle auf der Schiene eine Phantomrunde zaehlt.
+  //
+  // Deshalb wird jetzt JE LESEART geprueft, und die entscheidende Zeile ist die vierte:
+  // 0x0a darf auf der Schiene NICHT zaehlen. Ohne sie waere der Test auch mit der alten,
+  // modus-blinden Liste gruen.
+  stAdd('Start/Ziel-Code zaehlt, je Leseart ein anderer', () => {
     const gemerkt = { state: raceState, laps: raceLapTimes.slice(),
                       start: raceLapStart, dash: dashLapStart, part: racePartialMs,
-                      form: raceFormationLap };
+                      form: raceFormationLap, modus: trackMode };
     const anzeige = $('race-status') ? $('race-status').textContent : null;
     const echterSpieler = playerCar;
     try {
@@ -9786,20 +9818,35 @@
         }
         return raceLapTimes.length;
       };
-      const mit0a = zaehle(0x0a);
-      const mit03 = zaehle(0x03);
-      const mit01 = zaehle(0x01);
-      const mit02 = zaehle(0x02);
-      // 0x0a MUSS zaehlen, 0x03 (Linkskurve) und 0x02 (Gerade) duerfen nicht. 0x01 zaehlt
-      // weiter, weil es als frueher angenommener Wert absichtlich gueltig geblieben ist.
-      const ok = mit0a >= 1 && mit03 === 0 && mit02 === 0 && mit01 >= 1;
-      return { ok,
-               mass: '0x0a -> ' + mit0a + ' Runde(n), 0x03 Linkskurve -> ' + mit03
-                     + ', 0x02 Gerade -> ' + mit02 + ', 0x01 alt -> ' + mit01 };
+      // ---- BAHN: 0x01 zaehlt, 0x0a ist die Engstelle ----
+      trackMode = 'on';
+      const bahn01 = zaehle(0x01);
+      const bahn0a = zaehle(0x0a);
+      const bahn03 = zaehle(0x03);
+      const bahn02 = zaehle(0x02);
+      // ---- AUSDRUCK: umgekehrt ----
+      trackMode = 'off';
+      const pap0a = zaehle(0x0a);
+      const pap01 = zaehle(0x01);
+
+      const fehler = [];
+      if (!(bahn01 >= 1)) fehler.push('Bahn: 0x01 zaehlt nicht');
+      // DIE ZEILE, DIE DEN FEHLER FAENGT: eine Engstelle ist keine Ziellinie.
+      if (bahn0a !== 0) fehler.push('Bahn: 0x0a (Engstelle) zaehlt ' + bahn0a);
+      if (bahn03 !== 0) fehler.push('Bahn: 0x03 Linkskurve zaehlt ' + bahn03);
+      if (bahn02 !== 0) fehler.push('Bahn: 0x02 Gerade zaehlt ' + bahn02);
+      if (!(pap0a >= 1)) fehler.push('Ausdruck: 0x0a zaehlt nicht');
+      if (pap01 !== 0) fehler.push('Ausdruck: 0x01 zaehlt ' + pap01);
+      return { ok: !fehler.length,
+               mass: 'Bahn: 0x01 -> ' + bahn01 + ', 0x0a -> ' + bahn0a
+                     + ', 0x03 -> ' + bahn03 + ', 0x02 -> ' + bahn02
+                     + ' | Ausdruck: 0x0a -> ' + pap0a + ', 0x01 -> ' + pap01
+                     + (fehler.length ? ' || ' + fehler.join('; ') : '') };
     } finally {
       raceState = gemerkt.state; raceLapTimes = gemerkt.laps;
       raceLapStart = gemerkt.start; dashLapStart = gemerkt.dash;
       racePartialMs = gemerkt.part; raceFormationLap = gemerkt.form;
+      trackMode = gemerkt.modus;
       playerCar = echterSpieler;
       if (anzeige !== null) $('race-status').textContent = anzeige;
     }

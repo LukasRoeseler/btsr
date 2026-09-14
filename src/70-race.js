@@ -29,8 +29,21 @@
   let gyroRaw = { x: 0, y: 0, span: 8 };
   function formatLapTime(ms) { return (ms / 1000).toFixed(2) + 's'; }
 
+  // ---- DIE AKKUSKALA, nach seVens Angabe --------------------------------------------
+  //
+  // Hier stand 111 als untere Grenze. seVen nennt fuer dieselbe Groesse 131 bis 155, und
+  // der Unterschied ist keine Kosmetik: bei Rohwert 131 zeigte die App 45 PROZENT, wo der
+  // Akku leer ist. Wer sich darauf verlaesst, bleibt mitten im Rennen stehen.
+  //
+  // BEIDE ZAHLEN SIND SCHAETZUNGEN, unsere war nur aelter. Nachmessen heisst: ein Auto
+  // leerfahren und den kleinsten je gemeldeten Rohwert festhalten. Bis dahin ist die
+  // vorsichtigere Skala die richtige - eine Anzeige, die zu wenig verspricht, kostet
+  // nichts, eine die zu viel verspricht kostet das Rennen.
+  const AKKU_LEER = 131, AKKU_VOLL = 155;
+
   function batteryPercent(raw) {
-    return Math.max(0, Math.min(100, Math.round((raw - 111) / (155 - 111) * 100)));
+    return Math.max(0, Math.min(100,
+      Math.round((raw - AKKU_LEER) / (AKKU_VOLL - AKKU_LEER) * 100)));
   }
 
   // Hier stand renderLapList(), und es tat nichts: es schrieb in #dash-lap-list und
