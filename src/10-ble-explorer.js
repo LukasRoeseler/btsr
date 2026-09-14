@@ -1082,6 +1082,7 @@
     "Bremsbalance": "Brake bias",
     "Furz 2": "Fart 2",
     "Porsche 911 GT3 R: Boxer-6, Einzeldrosseln": "Porsche 911 GT3 R: flat-6, individual throttle bodies",
+    "Porsche 911 GT3 R dreckig: mehr Ventiltrieb, tiefer": "Porsche 911 GT3 R dirty: more valvetrain, lower",
     "Stra\u00dfen- und Rallyeklassiker (WIP)": "Road and rally classics (WIP)",
     "Lamborghini Countach LP500: V12, 60 Grad, sechs Weber":
       "Lamborghini Countach LP500: V12, 60 degrees, six Webers",
@@ -1582,10 +1583,8 @@
       "To the testers there, for reports from real races that no simulation provides.",
     "Woher die Klänge kommen":
       "Where the sounds come from",
-    "Der allergrößte Teil der Klänge ist gerechnet und nicht aufgenommen: alle fünfundzwanzig Motoren mit ihren 132 Schleifen, dazu Bremsen- und Reifenquietschen, die Crash-Varianten, Schlagschrauber, Tankgeräusch, Karosseriereparatur und der Motorstart. Dort wird nichts abgespielt, sondern aus Zylinderzahl, Zündfolge und Krümmerlänge erzeugt.":
-      "The vast majority of the sounds are computed, not recorded: all twenty-five engines with their 132 loops, plus brake and tyre squeal, the crash variants, the impact wrench, the refuelling sound, the bodywork repair and the engine start. Nothing is played back there; it is generated from cylinder count, firing order and header length.",
-    "Die folgenden Klänge sind die Ausnahme: sie stammen aus echten Aufnahmen. Alle von Pixabay und unter der Pixabay-Lizenz, bis auf die eine eigene Aufnahme ganz unten. Die unbearbeiteten Quelldateien sind nicht Teil dieses Projekts.":
-      "The following sounds are the exception: they come from real recordings. All from Pixabay and under the Pixabay licence, except for the one own recording at the bottom. The unedited source files are not part of this project.",
+    "Der allergrößte Teil der Klänge ist gerechnet und nicht aufgenommen: alle sechsundzwanzig Motoren mit ihren 137 Schleifen, dazu Bremsen- und Reifenquietschen, die Crash-Varianten, Schlagschrauber, Tankgeräusch, Karosseriereparatur und der Motorstart. Dort wird nichts abgespielt, sondern aus Zylinderzahl, Zündfolge und Krümmerlänge erzeugt.":
+      "The vast majority of the sounds are computed, not recorded: all twenty-six engines with their 137 loops, plus brake and tyre squeal, the crash variants, the impact wrench, the refuelling sound, the bodywork repair and the engine start. Nothing is played back there; it is generated from cylinder count, firing order and header length.",
     "Hupen für die Lichthupe – sechs Aufnahmen, in dieser Reihenfolge Autohupe, Schiffshupe, Esel, Ziege und zwei Furztöne. Der letzte stammt von freesound community über Pixabay.":
       "Horns for the headlight flash – six recordings, in this order car horn, ship horn, donkey, goat and two fart sounds. The last one is from freesound community via Pixabay.",
     "Regen und Donner.":
@@ -1594,8 +1593,6 @@
       "Track ambience, meaning the bed and the passing cars.",
     "Der Motorklang der Corvette C6.":
       "The engine sound of the Corvette C6.",
-    "Das Profil „Porsche (Aufnahme)“ ist keine Pixabay-Datei, sondern eine eigene Aufnahme. Es steht als eigenes Profil neben dem synthetischen Porsche, damit man beide vergleichen kann.":
-      "The profile “Porsche (recording)” is not a Pixabay file but an own recording. It sits as its own profile next to the synthetic Porsche so the two can be compared.",
     "Das Motormodell folgt dem Ansatz von engine-sim unter der MIT-Lizenz; Zylinderzahlen, Drehzahlgrenzen und Kurbelwellenwinkel stammen aus dessen Motordefinitionen. Die vollständige Aufstellung mit allen Messwerten steht in der Datei CREDITS im Audio-Ordner.":
       "The engine model follows the approach of engine-sim under the MIT licence; cylinder counts, rev limits and crankshaft angles come from its engine definitions. The full listing with all measurements is in the CREDITS file in the audio folder.",
     "Code auf GitHub":
@@ -1824,6 +1821,8 @@
       "no",
     "voll":
       "full",
+    "Die folgenden Klänge sind die Ausnahme: sie stammen aus echten Aufnahmen. Alle von Pixabay und unter der Pixabay-Lizenz. Die unbearbeiteten Quelldateien sind nicht Teil dieses Projekts.":
+      "The following sounds are the exception: they come from real recordings. All from Pixabay and under the Pixabay licence. The unedited source files are not part of this project.",
     "Tankmenge":
       "Fuel amount",
     "Reifen für den nächsten Boxenstopp (Steuerkreuz hoch). Vorgabe sind die aufgezogenen Reifen; passt die Wahl nicht zum Wetter, wird die Zeile angeschrieben.":

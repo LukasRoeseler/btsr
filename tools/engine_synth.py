@@ -416,6 +416,51 @@ CARS = {
         'clatter': 0.14, 'clatter_hz': 3200.0, 'drive': 2.5,
         'scatter_t': 0.005, 'scatter_g': 0.045, 'crackle': 0.42,
     },
+    # ---- DERSELBE MOTOR, NUR DRECKIG -----------------------------------------------
+    #
+    # BESTELLT: "Sounds noch etwas dreckiger und mechanischer machen, vor allem die tiefen
+    # (nicht alle neu machen, sondern dem Standard-Porsche-Sound nochmal als dreckige
+    # Variante genau hinter dem Default)."
+    #
+    # Also EIN zusaetzlicher Eintrag und keine Neuabstimmung der anderen 24. Alles, was den
+    # Motor ausmacht - Zylinderzahl, Zuendfolge, Rohrlaenge, Drehzahlband -, bleibt
+    # unveraendert: es ist derselbe 4,2-l-Boxer. Gedreht sind nur die Regler, die
+    # "schmutzig" und "mechanisch" bedeuten.
+    #
+    # ---- UND JEDER WERT BLEIBT IM GEMESSENEN BEREICH ------------------------------
+    #
+    # Ausgezaehlt ueber alle 25 vorhandenen Motoren (min bis max), daneben der Standardwert
+    # des 992 GT3 R und die Wahl hier:
+    #
+    #     Regler        Bereich        992 GT3 R   dreckig   warum
+    #     clatter       0,07 - 0,26       0,14      0,24     Ventiltrieb hoerbar
+    #     clatter_hz    1800 - 5200       3200      2000     TIEFER - das ist der Kern
+    #                                                        der Bestellung
+    #     drive          1,8 - 3,6         2,5       3,5     Saettigung, also Zerren
+    #     scatter_t    0,002 - 0,03      0,005     0,022     Zuendzeitpunkt ungleich
+    #     scatter_g     0,02 - 0,08      0,045     0,075     Zuendstaerke ungleich
+    #     bright        0,34 - 0,76       0,66      0,52     weniger Glanz, mehr Gewicht
+    #     res_q          3,2 - 9,0         6,5       4,8     breitere Resonanz
+    #     crackle       0,12 - 0,75       0,42      0,60     mehr Knallen im Schiebebetrieb
+    #
+    # Kein Wert verlaesst also den Bereich, den andere WIRKLICHE Motoren belegen. Das ist
+    # keine Vorsicht um ihrer selbst willen: ein Parameter jenseits des Gemessenen klingt
+    # nicht dreckiger, sondern kaputt - und die Grenzen des Synthesizers sind an keiner
+    # Stelle geprueft.
+    #
+    # NICHT ANGETASTET: noise bleibt bei 0,17. Das Zischen der sechs Einzeldrosseln IST das
+    # Merkmal dieses Motors (siehe den Kommentar oben) und kein Nebengeraeusch, das man zum
+    # Schmutz dazurechnet.
+    'p992gt3r_dreck': {
+        'label': 'Porsche 911 GT3 R, dreckig (4.2 Boxer-6, mechanisch)',
+        'banks': banks_from_order([1, 6, 2, 4, 3, 5], 6, 'half'), 'cylinders': 6,
+        'rpms': {'idle': 1200, 'mid': 5500, 'high': 8800},
+        'primary_in': 20.5, 'res_q': 4.8, 'partials': 6, 'ir_ms': 38.0,
+        'pulse_ms': 2.4, 'bright': 0.52,
+        'noise': 0.17, 'noise_hz': 2900.0,
+        'clatter': 0.24, 'clatter_hz': 2000.0, 'drive': 3.5,
+        'scatter_t': 0.022, 'scatter_g': 0.075, 'crackle': 0.60,
+    },
     'huracan': {
         'label': 'Huracan GT3 EVO2 / R8 LMS (5.2 V10, Split-Pin)',
         'banks': banks_from_order([1, 6, 5, 10, 2, 7, 3, 8, 4, 9], 10, 'half'),
