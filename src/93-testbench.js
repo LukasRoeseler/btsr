@@ -2589,6 +2589,47 @@
       return car;
     },
 
+    // ---- WER ROLLT WIE WEIT AUS? Die Reihenfolge der Ziellinie ------------------
+    //
+    // GEMELDET: "Ende des Rennens Ghosts anhalten: nicht der Platz soll bestimmen, wie weit
+    // die Autos vorm Anhalten am Rand rollen, sondern die Reihenfolge, mit der sie
+    // Start/Ziel passieren."
+    //
+    // Der Prueflauf stellt genau die Lage her, in der es schiefging: ein Feld, in dem
+    // EINIGE AUTOS STEHEN. Am Rennende laeuft garage.forEach in Garagenreihenfolge und ruft
+    // finishGhost fuer alle, die nicht auslaufen - die Stehenden also zuerst. Vorher nahmen
+    // sie damit die vorderen Staffelplaetze, und das erste wirklich ueberfahrende Auto fand
+    // sie belegt vor.
+    //
+    // Die Reihenfolge der Aufrufe hier ist deshalb dieselbe wie im Rennen: erst die
+    // Stehenden, dann die Fahrenden.
+    zieleinlaufFolgeProbe(o) {
+      const opt = o || {};
+      const merkGarage = garage.splice(0, garage.length);
+      try {
+        const geparkt = opt.geparkt || [true, false, false, true, false];
+        const autos = geparkt.map((p, i) => ({
+          role: 'ghost', alias: 'F' + i, tileCode: 0x02, tileCount: 0,
+          parked: p ? 'Prueflauf' : null, testSenke: [],
+          ghost: { tileIndex: 0, engine: null },
+        }));
+        for (const c of autos) garage.push(c);
+        const stehende = autos.filter((c) => c.parked);
+        const fahrende = autos.filter((c) => !c.parked);
+        finishSeitenZaehlerZuruecksetzen(fahrende.length);
+        for (const c of stehende) finishGhost(c);
+        for (const c of fahrende) finishGhost(c);
+        const lies = (c) => ({ alias: c.alias,
+                               kacheln: c.ghost.finish ? c.ghost.finish.kacheln : null });
+        return { rollende: fahrende.length,
+                 stehende: stehende.map(lies), fahrende: fahrende.map(lies) };
+      } finally {
+        garage.splice(0, garage.length);
+        merkGarage.forEach((c) => garage.push(c));
+        finishSeitenZaehlerZuruecksetzen();
+      }
+    },
+
     finishSeiten(n) {
       const merkGarage = garage.splice(0, garage.length);
       const echtNow = Date.now;

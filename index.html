@@ -7960,7 +7960,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.6.5</span></span>
+    <span class="foot-ver">v<span id="app-version">0.6.6</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -19893,6 +19893,16 @@
     // sofort, sonst wartete das Rennen auf ein Auto, das sich nicht bewegt.
     const willAuslaufen = auslaufen !== false;
     ghostAuslaufBis = willAuslaufen ? now + GHOST_AUSLAUF_MAX_MS : 0;
+    // ---- WIE VIELE LAUFEN AUS? Das ist der Nenner der Ausroll-Staffel -------------
+    //
+    // VOR der Schleife gezaehlt und nicht darin: die Schleife ruft finishGhost() bereits,
+    // und die Funktion braucht die Zahl schon beim ersten Aufruf. Dieselbe Bedingung wie
+    // unten, damit die beiden nicht auseinanderlaufen koennen.
+    const rollende = garage.filter(c => c.role === 'ghost'
+      && willAuslaufen && c.ghost && !c.parked && !c.ghost.finish).length;
+    if (typeof finishSeitenZaehlerZuruecksetzen === 'function') {
+      finishSeitenZaehlerZuruecksetzen(rollende);
+    }
     garage.forEach(c => {
       if (c.role !== 'ghost') return;
       const faehrt = willAuslaufen && c.ghost && !c.parked && !c.ghost.finish;
@@ -27779,7 +27789,24 @@
   }
 
   let finishSeiteZaehler = 0;
-  function finishSeitenZaehlerZuruecksetzen() { finishSeiteZaehler = 0; }
+  // ---- WIE VIELE AUTOS UEBERHAUPT AUSROLLEN ---------------------------------------
+  //
+  // GEMELDET: "Ende des Rennens Ghosts anhalten: nicht der Platz soll bestimmen, wie weit
+  // die Autos vorm Anhalten am Rand rollen, sondern die Reihenfolge, mit der sie Start/Ziel
+  // passieren."
+  //
+  // Die Staffel rechnet feld - 1 - platz, damit der LETZTE auf 0 herauskommt. "feld" war
+  // die Zahl ALLER Ghosts in der Garage - auch der stehenden, die gar nicht mehr rollen.
+  // Bei fuenf Autos, von denen zwei abgeflogen sind, bekam der erste Ueberfahrende damit
+  // 4 Kacheln statt 2: die zwei Stehenden waren im Nenner, aber nicht auf der Bahn.
+  //
+  // Hier steht deshalb, wie viele wirklich auslaufen. Gesetzt wird es in dem Moment, in dem
+  // die Zielflagge faellt - da ist bekannt, wer noch faehrt.
+  let finishRollFeld = 0;
+  function finishSeitenZaehlerZuruecksetzen(rollende) {
+    finishSeiteZaehler = 0;
+    finishRollFeld = rollende === undefined ? 0 : rollende;
+  }
 
   function finishGhost(car) {
     const g = car.ghost;
@@ -27792,11 +27819,27 @@
       g.pit = null;
       pitPlatzRaeumen(car);
     }
-    const platz = finishSeiteZaehler++;
-    // Die Feldgroesse: so viele Ghosts stehen in der Garage. Daraus zieht sich die Staffel,
-    // damit der LETZTE auf 0 herauskommt - bei drei Autos also 2, 1, 0 wie bestellt.
-    const feld = garage.filter((c) => c.ghost && c.role === 'ghost').length;
-    const kacheln = Math.max(0, Math.min(FINISH_KACHELN_MAX, feld - 1 - platz));
+    // ---- DIE STAFFEL HAENGT AN DER UEBERFAHRT, NICHT AM PLATZ -------------------
+    //
+    // Wer NICHT mehr rollt - ein abgeflogenes oder stehendes Auto -, nimmt keinen Platz in
+    // der Staffel. Vorher tat er es: am Rennende laeuft garage.forEach in GARAGENreihenfolge
+    // und ruft finishGhost fuer jeden, der nicht auslaeuft. Diese Autos bekamen also die
+    // vorderen Staffelplaetze, und das erste wirklich ueberfahrende Auto fand sie belegt
+    // vor. Die Reihenfolge am Rand war damit die der Garage und nicht die der Ziellinie.
+    //
+    // Jetzt zaehlt nur, wer wirklich faehrt. Ein stehendes Auto rollt null Kacheln - es
+    // steht ja schon, und eine Staffel fuer ein stehendes Auto ist eine Zahl ohne Wirkung.
+    const rollt = !car.parked;
+    const platz = rollt ? finishSeiteZaehler++ : -1;
+    // Der Nenner ist die Zahl der WIRKLICH auslaufenden Autos, gesetzt beim Fallen der
+    // Zielflagge. Faellt sie weg (freies Fahren, Abbruch), zaehlen wieder alle Ghosts -
+    // dann ist die alte Rechnung die einzige verfuegbare und immer noch besser als keine.
+    const feld = finishRollFeld > 0
+      ? finishRollFeld
+      : garage.filter((c) => c.ghost && c.role === 'ghost').length;
+    const kacheln = platz < 0
+      ? 0
+      : Math.max(0, Math.min(FINISH_KACHELN_MAX, feld - 1 - platz));
     g.finish = { phase: 'roll', at: Date.now(),
                  seite: FINISH_SEITE,
                  kacheln,
@@ -35035,6 +35078,47 @@
       startGhost(car);
       if (car.timer) { clearInterval(car.timer); car.timer = null; }
       return car;
+    },
+
+    // ---- WER ROLLT WIE WEIT AUS? Die Reihenfolge der Ziellinie ------------------
+    //
+    // GEMELDET: "Ende des Rennens Ghosts anhalten: nicht der Platz soll bestimmen, wie weit
+    // die Autos vorm Anhalten am Rand rollen, sondern die Reihenfolge, mit der sie
+    // Start/Ziel passieren."
+    //
+    // Der Prueflauf stellt genau die Lage her, in der es schiefging: ein Feld, in dem
+    // EINIGE AUTOS STEHEN. Am Rennende laeuft garage.forEach in Garagenreihenfolge und ruft
+    // finishGhost fuer alle, die nicht auslaufen - die Stehenden also zuerst. Vorher nahmen
+    // sie damit die vorderen Staffelplaetze, und das erste wirklich ueberfahrende Auto fand
+    // sie belegt vor.
+    //
+    // Die Reihenfolge der Aufrufe hier ist deshalb dieselbe wie im Rennen: erst die
+    // Stehenden, dann die Fahrenden.
+    zieleinlaufFolgeProbe(o) {
+      const opt = o || {};
+      const merkGarage = garage.splice(0, garage.length);
+      try {
+        const geparkt = opt.geparkt || [true, false, false, true, false];
+        const autos = geparkt.map((p, i) => ({
+          role: 'ghost', alias: 'F' + i, tileCode: 0x02, tileCount: 0,
+          parked: p ? 'Prueflauf' : null, testSenke: [],
+          ghost: { tileIndex: 0, engine: null },
+        }));
+        for (const c of autos) garage.push(c);
+        const stehende = autos.filter((c) => c.parked);
+        const fahrende = autos.filter((c) => !c.parked);
+        finishSeitenZaehlerZuruecksetzen(fahrende.length);
+        for (const c of stehende) finishGhost(c);
+        for (const c of fahrende) finishGhost(c);
+        const lies = (c) => ({ alias: c.alias,
+                               kacheln: c.ghost.finish ? c.ghost.finish.kacheln : null });
+        return { rollende: fahrende.length,
+                 stehende: stehende.map(lies), fahrende: fahrende.map(lies) };
+      } finally {
+        garage.splice(0, garage.length);
+        merkGarage.forEach((c) => garage.push(c));
+        finishSeitenZaehlerZuruecksetzen();
+      }
     },
 
     finishSeiten(n) {
@@ -45027,6 +45111,57 @@
     }
     return { ok: !fehler.length,
              mass: 'aus=' + r.aus + ', an=' + r.an + ', aus+gelb=' + r.trotzAus
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
+  // ---- Ausrollen am Ende: die Ziellinie bestimmt die Staffel, nicht die Garage ----
+  //
+  // GEMELDET: "Ende des Rennens Ghosts anhalten: nicht der Platz soll bestimmen, wie weit
+  // die Autos vorm Anhalten am Rand rollen, sondern die Reihenfolge, mit der sie Start/Ziel
+  // passieren."
+  //
+  // ---- WORAN ES LAG -------------------------------------------------------------
+  //
+  // Am Rennende laeuft garage.forEach in GARAGENreihenfolge und ruft finishGhost() fuer
+  // jeden, der nicht mehr auslaeuft - also fuer die stehenden und abgeflogenen Autos. Die
+  // bekamen damit die vorderen Staffelplaetze, und das erste Auto, das die Ziellinie
+  // wirklich ueberfuhr, fand sie belegt vor. Dazu stand im Nenner die Zahl ALLER Ghosts,
+  // auch der stehenden: bei fuenf Autos, von denen zwei abgeflogen sind, bekam der erste
+  // Ueberfahrende 4 Kacheln statt 2.
+  //
+  // Geprueft wird deshalb mit einem Feld, IN DEM AUTOS STEHEN - ein Test mit lauter
+  // fahrenden Autos waere auch mit der alten Rechnung gruen gewesen.
+  stAdd('Zieleinlauf: die Staffel haengt an der Ueberfahrt, nicht an der Garage', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.zieleinlaufFolgeProbe) {
+      return { skip: true, mass: 'zieleinlaufFolgeProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.zieleinlaufFolgeProbe({ geparkt: [true, false, false, true, false] });
+    if (!r) return { skip: true, mass: 'kein Lauf' };
+    const fehler = [];
+    // 1. STEHENDE ROLLEN NICHT. Sie stehen ja schon; eine Staffel fuer sie ist eine Zahl
+    //    ohne Wirkung - und vor allem darf sie den Fahrenden keinen Platz wegnehmen.
+    r.stehende.forEach((x) => {
+      if (x.kacheln !== 0) fehler.push(x.alias + ' steht, rollt aber ' + x.kacheln);
+    });
+    // 2. DIE FAHRENDEN BEKOMMEN 2, 1, 0 - in der Reihenfolge der Ueberfahrt. Das ist die
+    //    Bestellung aus der vorigen Runde ("erster faehrt 2 Schienen, zweiter 1, dritter
+    //    0"), jetzt an der richtigen Reihenfolge.
+    const soll = r.fahrende.map((x, i) => r.fahrende.length - 1 - i);
+    r.fahrende.forEach((x, i) => {
+      if (x.kacheln !== soll[i]) {
+        fehler.push(x.alias + ' als ' + (i + 1) + '. rollt ' + x.kacheln
+                    + ' statt ' + soll[i]);
+      }
+    });
+    // 3. UND DER LETZTE KOMMT AUF NULL heraus. Ohne diese Zeile waere auch eine Staffel
+    //    3/2/1 gruen, und dann haelt keiner dort, wo er soll.
+    const letzte = r.fahrende[r.fahrende.length - 1];
+    if (letzte && letzte.kacheln !== 0) fehler.push('der Letzte rollt ' + letzte.kacheln);
+    return { ok: !fehler.length,
+             mass: r.rollende + ' rollen: '
+                 + r.fahrende.map((x) => x.alias + '=' + x.kacheln).join('/')
+                 + ' | stehend: ' + (r.stehende.map((x) => x.alias + '=' + x.kacheln)
+                                      .join('/') || 'keine')
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 

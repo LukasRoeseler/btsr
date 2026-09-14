@@ -7515,6 +7515,57 @@
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
+  // ---- Ausrollen am Ende: die Ziellinie bestimmt die Staffel, nicht die Garage ----
+  //
+  // GEMELDET: "Ende des Rennens Ghosts anhalten: nicht der Platz soll bestimmen, wie weit
+  // die Autos vorm Anhalten am Rand rollen, sondern die Reihenfolge, mit der sie Start/Ziel
+  // passieren."
+  //
+  // ---- WORAN ES LAG -------------------------------------------------------------
+  //
+  // Am Rennende laeuft garage.forEach in GARAGENreihenfolge und ruft finishGhost() fuer
+  // jeden, der nicht mehr auslaeuft - also fuer die stehenden und abgeflogenen Autos. Die
+  // bekamen damit die vorderen Staffelplaetze, und das erste Auto, das die Ziellinie
+  // wirklich ueberfuhr, fand sie belegt vor. Dazu stand im Nenner die Zahl ALLER Ghosts,
+  // auch der stehenden: bei fuenf Autos, von denen zwei abgeflogen sind, bekam der erste
+  // Ueberfahrende 4 Kacheln statt 2.
+  //
+  // Geprueft wird deshalb mit einem Feld, IN DEM AUTOS STEHEN - ein Test mit lauter
+  // fahrenden Autos waere auch mit der alten Rechnung gruen gewesen.
+  stAdd('Zieleinlauf: die Staffel haengt an der Ueberfahrt, nicht an der Garage', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.zieleinlaufFolgeProbe) {
+      return { skip: true, mass: 'zieleinlaufFolgeProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.zieleinlaufFolgeProbe({ geparkt: [true, false, false, true, false] });
+    if (!r) return { skip: true, mass: 'kein Lauf' };
+    const fehler = [];
+    // 1. STEHENDE ROLLEN NICHT. Sie stehen ja schon; eine Staffel fuer sie ist eine Zahl
+    //    ohne Wirkung - und vor allem darf sie den Fahrenden keinen Platz wegnehmen.
+    r.stehende.forEach((x) => {
+      if (x.kacheln !== 0) fehler.push(x.alias + ' steht, rollt aber ' + x.kacheln);
+    });
+    // 2. DIE FAHRENDEN BEKOMMEN 2, 1, 0 - in der Reihenfolge der Ueberfahrt. Das ist die
+    //    Bestellung aus der vorigen Runde ("erster faehrt 2 Schienen, zweiter 1, dritter
+    //    0"), jetzt an der richtigen Reihenfolge.
+    const soll = r.fahrende.map((x, i) => r.fahrende.length - 1 - i);
+    r.fahrende.forEach((x, i) => {
+      if (x.kacheln !== soll[i]) {
+        fehler.push(x.alias + ' als ' + (i + 1) + '. rollt ' + x.kacheln
+                    + ' statt ' + soll[i]);
+      }
+    });
+    // 3. UND DER LETZTE KOMMT AUF NULL heraus. Ohne diese Zeile waere auch eine Staffel
+    //    3/2/1 gruen, und dann haelt keiner dort, wo er soll.
+    const letzte = r.fahrende[r.fahrende.length - 1];
+    if (letzte && letzte.kacheln !== 0) fehler.push('der Letzte rollt ' + letzte.kacheln);
+    return { ok: !fehler.length,
+             mass: r.rollende + ' rollen: '
+                 + r.fahrende.map((x) => x.alias + '=' + x.kacheln).join('/')
+                 + ' | stehend: ' + (r.stehende.map((x) => x.alias + '=' + x.kacheln)
+                                      .join('/') || 'keine')
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
   // ---- Die freie Fahrt sagt ihre Rundenzeiten an ----
   //
   // BESTELLT: "Ansagen fuer Rundenzeiten auch machen, wenn ich im Cockpit-Modus freie Fahrt

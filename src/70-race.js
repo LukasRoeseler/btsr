@@ -1076,6 +1076,16 @@
     // sofort, sonst wartete das Rennen auf ein Auto, das sich nicht bewegt.
     const willAuslaufen = auslaufen !== false;
     ghostAuslaufBis = willAuslaufen ? now + GHOST_AUSLAUF_MAX_MS : 0;
+    // ---- WIE VIELE LAUFEN AUS? Das ist der Nenner der Ausroll-Staffel -------------
+    //
+    // VOR der Schleife gezaehlt und nicht darin: die Schleife ruft finishGhost() bereits,
+    // und die Funktion braucht die Zahl schon beim ersten Aufruf. Dieselbe Bedingung wie
+    // unten, damit die beiden nicht auseinanderlaufen koennen.
+    const rollende = garage.filter(c => c.role === 'ghost'
+      && willAuslaufen && c.ghost && !c.parked && !c.ghost.finish).length;
+    if (typeof finishSeitenZaehlerZuruecksetzen === 'function') {
+      finishSeitenZaehlerZuruecksetzen(rollende);
+    }
     garage.forEach(c => {
       if (c.role !== 'ghost') return;
       const faehrt = willAuslaufen && c.ghost && !c.parked && !c.ghost.finish;
