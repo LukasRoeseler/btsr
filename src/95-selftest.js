@@ -7537,30 +7537,96 @@
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
-  // ---- Fahrhilfe: der Schalter greift, der Autopilot bleibt unabhaengig ----
+  // ---- Fahrhilfe: drei Modi, und der Standard bleibt der Standard ----
   //
-  // BESTELLT: "Gib mir einen Schalter, bei dem ich zwischen Fahrhilfemodus hin und her
-  // schalten kann. Wenn er aus ist, will ich ganz normal steuern koennen so wie sonst.
-  // Wenn er an ist, soll das Auto alleine lenken."
+  // BESTELLT: "Bei Einstellungen -> Fahrgefuehl -> Fahrhilfe: mach 3 Modi draus: aus
+  // (standard), voll (auto lenkt komplett selbst), und Querlage (auto lenkt selbst, aber
+  // mit nach links und rechts lenken bestimmt man die Querlage). Pass auf, dass du nicht
+  // wieder den Standard-Modus kaputt machst."
   //
-  // Drei Zustaende, und der dritte ist die Garantie, die schon v0.5.53 versprochen hat:
-  // eine gelbe Flagge haelt das Auto selbst, EGAL wie der Schalter steht - sonst wuerde
-  // dieser Schalter die Gelbphasen-Regelung wieder abschalten koennen, was niemand
-  // bestellt hat.
-  stAdd('Fahrhilfe: Schalter steuert, Autopilot bleibt unabhaengig', () => {
+  // ---- DIESER TEST IST ZUM GROESSTEN TEIL EIN TEST DES STANDARDS -----------------
+  //
+  // Die Warnung hat eine Vorgeschichte, und die ist der Grund fuer die ganze Einstellung:
+  // die modeBytes gingen in v0.5.54 ohne Zutun des Fahrers hinaus, gemeldet als "ich kann
+  // gar nicht mehr lenken und das Auto lenkt von alleine". Ein neuer Modus, der in diese
+  // Naehe kommt, muss deshalb an mehr gemessen werden als daran, dass er selbst geht.
+  //
+  // Geprueft wird also in allen drei Modi:
+  //
+  //   1. driverAssistAktiv() - gehen die modeBytes hinaus? aus: nein. quer und voll: ja.
+  //   2. fahrhilfeVollGilt() - wird der Lenk-Input unterdrueckt? NUR in 'voll', und NUR
+  //      wenn die modeBytes wirklich dabei sind.
+  //   3. Dass 'aus' im Markup vorgewaehlt ist, also ohne Zutun gilt.
+  //
+  // Punkt 2 ist der gefaehrliche. Ohne modeBytes liest das Auto die Null nicht als
+  // "Mitte der Bahn", sondern als RADSTELLUNG - es faehrt mit geraden Raedern in die
+  // Bande, und der Fahrer kann nichts dagegen tun. Deshalb messen wir jeden Modus zweimal:
+  // mit modeBytes und ohne.
+  //
+  // Und der letzte Teil ist die Garantie aus v0.5.53: eine gelbe Flagge haelt das Auto
+  // selbst, EGAL welcher Modus gewaehlt ist - sonst koennte diese Einstellung die
+  // Gelbphasen-Regelung abschalten, was niemand bestellt hat.
+  stAdd('Fahrhilfe: drei Modi, und aus bleibt aus', () => {
     if (!window.OMEGA_TEST || !OMEGA_TEST.driverAssistToggleProbe) {
       return { skip: true, mass: 'driverAssistToggleProbe nicht vorhanden' };
     }
     const r = OMEGA_TEST.driverAssistToggleProbe();
     if (!r) return { skip: true, mass: 'driver-assist nicht im Dokument' };
     const fehler = [];
-    if (r.aus !== false) fehler.push('Schalter aus, aber aktiv: ' + r.aus);
-    if (r.an !== true) fehler.push('Schalter an, aber nicht aktiv: ' + r.an);
-    if (r.trotzAus !== true) {
-      fehler.push('Schalter aus + gelbe Flagge: nicht aktiv (' + r.trotzAus + ')');
+
+    // ---- 1. DER STANDARD-MODUS, und das ist die Hauptsache ----------------------
+    if (r.je.aus.mitBytes.aktiv !== false) {
+      fehler.push('aus, aber modeBytes gingen hinaus');
     }
+    if (r.je.aus.mitBytes.vollGilt !== false || r.je.aus.ohneBytes.vollGilt !== false) {
+      fehler.push('aus, aber der Lenk-Input wird unterdrueckt');
+    }
+    // Und er gilt ohne Zutun: im Markup vorgewaehlt.
+    if (!(r.vorgabe.length === 1 && r.vorgabe[0] === 'aus')) {
+      fehler.push('Vorgabe im Markup ist ' + JSON.stringify(r.vorgabe) + ' statt ["aus"]');
+    }
+
+    // ---- 2. QUERLAGE: das Auto haelt sich, der Fahrer redet mit -----------------
+    if (r.je.quer.mitBytes.aktiv !== true) fehler.push('Querlage ist nicht aktiv');
+    if (r.je.quer.mitBytes.vollGilt !== false) {
+      fehler.push('Querlage unterdrueckt den Lenk-Input');
+    }
+
+    // ---- 3. VOLL: das Auto haelt sich UND bestimmt die Querlage ----------------
+    if (r.je.voll.mitBytes.aktiv !== true) fehler.push('voll ist nicht aktiv');
+    if (r.je.voll.mitBytes.vollGilt !== true) {
+      fehler.push('voll unterdrueckt den Lenk-Input nicht');
+    }
+    // Der wichtige Fall: OHNE modeBytes darf 'voll' nicht zugreifen.
+    if (r.je.voll.ohneBytes.vollGilt !== false) {
+      fehler.push('voll unterdrueckt den Lenk-Input auch OHNE modeBytes - das Auto faehrt'
+                  + ' dann mit geraden Raedern in die Bande');
+    }
+
+    // ---- 4. Und die gelbe Flagge bleibt unabhaengig ----------------------------
+    if (r.trotzAus !== true) {
+      fehler.push('auf aus + gelbe Flagge: nicht aktiv (' + r.trotzAus + ')');
+    }
+
+    // ---- 5. Drei Modi, nicht zwei und nicht vier -------------------------------
+    if (r.auswahl.length !== 3 || r.modi.length !== 3) {
+      fehler.push('Auswahl ' + JSON.stringify(r.auswahl)
+                  + ' gegen Modell ' + JSON.stringify(r.modi));
+    }
+    for (const m of r.modi) {
+      if (r.auswahl.indexOf(m) < 0) fehler.push('Modus ' + m + ' fehlt im Auswahlfeld');
+    }
+
     return { ok: !fehler.length,
-             mass: 'aus=' + r.aus + ', an=' + r.an + ', aus+gelb=' + r.trotzAus
+             mass: 'aktiv: aus=' + r.je.aus.mitBytes.aktiv
+                 + ' quer=' + r.je.quer.mitBytes.aktiv
+                 + ' voll=' + r.je.voll.mitBytes.aktiv
+                 + ' | Lenkung unterdrueckt: aus=' + r.je.aus.mitBytes.vollGilt
+                 + ' quer=' + r.je.quer.mitBytes.vollGilt
+                 + ' voll=' + r.je.voll.mitBytes.vollGilt
+                 + ' (ohne Streckendaten ' + r.je.voll.ohneBytes.vollGilt + ')'
+                 + ' | aus+gelb=' + r.trotzAus
+                 + ' | Vorgabe ' + JSON.stringify(r.vorgabe)
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 

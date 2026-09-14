@@ -1972,43 +1972,84 @@
       } finally { sampleEngine.car = merk; }
     },
 
-    // ---- Die Fahrhilfe: der Schalter, ueber das Bedienelement gestellt -------------
+    // ---- Die Fahrhilfe: drei Modi, ueber das Bedienelement gestellt ----------------
     //
-    // UEBER DEN SCHALTER und nicht ueber die Variable: driverAssistOn entsteht aus dem
-    // Bedienelement #driver-assist, und ein Prueflauf, der die Variable direkt setzt,
-    // prueft nicht, ob der Schalter selbst noch etwas bewirkt.
+    // UEBER DAS BEDIENELEMENT und nicht ueber die Variable: fahrhilfeModus entsteht aus
+    // #driver-assist, und ein Prueflauf, der die Variable direkt setzt, prueft nicht, ob
+    // das Bedienelement selbst noch etwas bewirkt.
     //
-    // GEPRUEFT WIRD driverAssistAktiv(), nicht driverAssistOn allein - sie ist die
+    // GEPRUEFT WIRD driverAssistAktiv() und NICHT fahrhilfeModus allein - sie ist die
     // tatsaechlich verwendete Groesse (spielerOrtTick fragt sie), und sie ist eine ODER-
     // Verknuepfung mit dem Autopiloten. flagState und raceFormationLap werden dafuer auf
     // 'green'/false gezwungen: sonst haengt das Ergebnis vom Rennzustand ab, in dem der
     // Prueflauf zufaellig laeuft, und ist nicht wiederholbar.
+    //
+    // ---- UND WAS SEIT DEN DREI MODI DAZUKOMMT ------------------------------------
+    //
+    // Die Warnung war ausdruecklich: "Pass auf, dass du nicht wieder den Standard-Modus
+    // kaputt machst." Der Prueflauf misst deshalb nicht nur driverAssistAktiv(), sondern
+    // auch, was mit dem LENK-INPUT geschieht - und zwar in allen drei Modi, mit und ohne
+    // vorhandene modeBytes. Das ist die Stelle, an der 'voll' den Standard beschaedigen
+    // koennte, und eine Pruefung, die nur die Modus-Zeichenkette liest, sieht davon nichts.
     driverAssistToggleProbe() {
       if (typeof driverAssistAktiv !== 'function') return null;
       const el = $('driver-assist');
       if (!el) return null;
-      const merk = { checked: el.checked, on: (typeof driverAssistOn !== 'undefined')
-                     ? driverAssistOn : null,
-                     flag: flagState, formation: raceFormationLap };
+      const merk = { wert: el.value, flag: flagState, formation: raceFormationLap,
+                     auto: playerCar,
+                     bytes: playerCar ? playerCar.modeBytes : undefined };
+      const stellen = (v) => {
+        el.value = v;
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+      };
       try {
         flagState = 'green';
         raceFormationLap = false;
-        el.checked = false;
-        el.dispatchEvent(new Event('change', { bubbles: true }));
-        const aus = driverAssistAktiv();
-        el.checked = true;
-        el.dispatchEvent(new Event('change', { bubbles: true }));
-        const an = driverAssistAktiv();
-        // Und mit dem Schalter wieder aus: der Autopilot muss trotzdem greifen koennen,
-        // wenn eine gelbe Flagge das verlangt - das ist die ODER-Haelfte der Bedingung.
-        el.checked = false;
-        el.dispatchEvent(new Event('change', { bubbles: true }));
+        // ---- EIN FAHRERAUTO MUSS DA SEIN, sonst misst diese Sonde nichts -------
+        //
+        // Beim ersten Lauf stand hier kein Ersatz, und 'voll' meldete vollGilt=false -
+        // richtig gemessen und trotzdem nichtssagend: fahrhilfeVollGilt() liest
+        // playerCar.modeBytes, und ohne verbundenes Auto ist playerCar null. Der Test
+        // waere in einem Browser ohne Auto immer gruen gewesen und haette genau den
+        // Fall nie geprueft, um den es geht.
+        //
+        // Dieselbe Attrappe wie in spielerOrtProbe, und aus demselben Grund.
+        if (!playerCar) {
+          playerCar = { role: 'steuern', alias: 'Pruefling', tileCount: 0,
+                        tileCode: 0x02, modeBytes: null, ghost: null };
+        }
+        const je = {};
+        for (const modus of ['aus', 'quer', 'voll']) {
+          stellen(modus);
+          // Mit modeBytes (also: das Auto haelt sich wirklich selbst) UND ohne. Der
+          // Unterschied ist der ganze Punkt von fahrhilfeVollGilt().
+          const messen = (bytes) => {
+            if (playerCar) playerCar.modeBytes = bytes;
+            return { aktiv: driverAssistAktiv(),
+                     vollGilt: typeof fahrhilfeVollGilt === 'function'
+                       ? fahrhilfeVollGilt() : null };
+          };
+          je[modus] = { mitBytes: messen({ 10: 1, 15: 1 }), ohneBytes: messen(null) };
+        }
+        // Und die ODER-Haelfte: auf 'aus' gestellt muss der Autopilot trotzdem greifen,
+        // wenn eine gelbe Flagge das verlangt.
+        stellen('aus');
+        if (playerCar) playerCar.modeBytes = null;
         flagState = 'yellow';
         const trotzAus = driverAssistAktiv();
-        return { aus, an, trotzAus };
+        return {
+          je,
+          trotzAus,
+          modi: FAHRHILFE_MODI.slice(),
+          // Steht 'aus' im Markup vorgewaehlt? Das ist die Vorgabe, und sie stammt aus
+          // dem Bedienelement - nicht aus einer Zuweisung im Skript.
+          vorgabe: [...el.options].filter((o) => o.defaultSelected).map((o) => o.value),
+          auswahl: [...el.options].map((o) => o.value),
+        };
       } finally {
-        el.checked = merk.checked;
-        el.dispatchEvent(new Event('change', { bubbles: true }));
+        stellen(merk.wert);
+        if (merk.auto && merk.bytes !== undefined) merk.auto.modeBytes = merk.bytes;
+        playerCar = merk.auto;
         flagState = merk.flag;
         raceFormationLap = merk.formation;
       }
@@ -2034,7 +2075,7 @@
       const merkPlayer = playerCar;
       const merkTiles = currentTrackTiles;
       const merkMode = trackMode;
-      const merkAssist = (typeof driverAssistOn !== 'undefined') ? driverAssistOn : null;
+      const merkAssist = (typeof fahrhilfeModus !== 'undefined') ? fahrhilfeModus : null;
       const merkFlag = flagState;
       const merkFormation = raceFormationLap;
       try {
@@ -2046,7 +2087,10 @@
         // driverAssistToggleProbe().
         flagState = 'green';
         raceFormationLap = false;
-        driverAssistOn = assistAn === undefined ? true : !!assistAn;
+        // 'quer' und nicht 'voll': diese Sonde prueft den Vorausblick, und der haengt an
+        // driverAssistAktiv() - fuer beide gleich. 'quer' ist der Modus, der dem alten
+        // eingeschalteten Schalter entspricht, also bleibt die Messung vergleichbar.
+        fahrhilfeModus = (assistAn === undefined || assistAn) ? 'quer' : 'aus';
         playerCar = { role: 'steuern', alias: 'Fahrer', tileCount: 0, tileCode: 0x02,
                       modeBytes: null, ghost: null };
         const reihe = [];
@@ -2073,7 +2117,7 @@
         playerCar = merkPlayer;
         currentTrackTiles = merkTiles;
         trackMode = merkMode;
-        if (merkAssist !== null) driverAssistOn = merkAssist;
+        if (merkAssist !== null) fahrhilfeModus = merkAssist;
         flagState = merkFlag;
         raceFormationLap = merkFormation;
         lineCache = null;

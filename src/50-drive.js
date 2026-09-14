@@ -1786,23 +1786,70 @@
   // gezogen - und war eine Software-Kruecke fuer genau das, was die Hardware selbst
   // besser kann, sobald sie den Vorausblick hat. Mit dem Schalter braucht es sie nicht
   // mehr.
-  let driverAssistOn = false;
+  // ---- DREI MODI STATT ZWEI, wie bestellt ---------------------------------------
+  //
+  // BESTELLT: "Bei Einstellungen -> Fahrgefuehl -> Fahrhilfe: mach 3 Modi draus: aus
+  // (standard), voll (auto lenkt komplett selbst), und Querlage (auto lenkt selbst, aber
+  // mit nach links und rechts lenken bestimmt man die Querlage). Pass auf, dass du nicht
+  // wieder den Standard-Modus kaputt machst."
+  //
+  //     aus   - Vorgabe. Der Lenk-Input IST der Lenkwinkel, keine modeBytes. Genau der
+  //             Zustand, der vorher mit dem ausgeschalteten Schalter galt.
+  //     quer  - was vorher der eingeschaltete Schalter war: modeBytes gehen hinaus, und
+  //             derselbe Lenk-Input bedeutet fuer das Auto die Querlage.
+  //     voll  - neu. Wie 'quer', aber der Lenk-Input wird NICHT weitergegeben: das Auto
+  //             bestimmt auch die Querlage selbst.
+  //
+  // ---- WARUM 'aus' DER ERSTE EINTRAG UND DER VORGABEWERT IST --------------------
+  //
+  // Weil er genau das bedeuten muss, was er bisher bedeutet hat. Die Warnung war
+  // ausdruecklich, und sie hat eine Vorgeschichte: die Fahrhilfe ist ueberhaupt nur
+  // entstanden, weil die modeBytes ohne Zutun des Fahrers hinausgingen und er "gar nicht
+  // mehr lenken" konnte. Der Vorgabewert ist deshalb nicht Geschmack, sondern der
+  // eigentliche Zweck der ganzen Einstellung.
+  const FAHRHILFE_MODI = ['aus', 'quer', 'voll'];
+  let fahrhilfeModus = 'aus';
 
-  // AN, wenn von Hand eingeschaltet ODER der Autopilot gerade greift (Gelb/Formation).
-  // autopilotGrund() steht weiter unten in dieser Datei; als Funktionsdeklaration ist sie
-  // bereits vorhanden, wenn diese Funktion tatsaechlich zum ersten Mal LAEUFT - das
-  // geschieht erst aus einem Zeitgeber, lange nach dem vollstaendigen Laden.
+  // AN, wenn ein Fahrhilfe-Modus gewaehlt ist ODER der Autopilot gerade greift
+  // (Gelb/Formation). autopilotGrund() steht weiter unten in dieser Datei; als
+  // Funktionsdeklaration ist sie bereits vorhanden, wenn diese Funktion tatsaechlich zum
+  // ersten Mal LAEUFT - das geschieht erst aus einem Zeitgeber, lange nach dem Laden.
+  //
+  // DER NAME BLEIBT, obwohl es jetzt drei Modi gibt: die Frage, die diese Funktion
+  // beantwortet, ist unveraendert "gehen die modeBytes hinaus", und daran haengt genau ein
+  // Aufrufer (spielerOrtTick in 90-ghosts.js). 'voll' und 'quer' unterscheiden sich NICHT
+  // darin, ob das Auto sich selbst haelt - nur darin, ob der Fahrer die Querlage mitredet.
   function driverAssistAktiv() {
-    return driverAssistOn || !!autopilotGrund();
+    return fahrhilfeModus !== 'aus' || !!autopilotGrund();
+  }
+
+  // ---- UND HIER LIEGT DIE FALLE, IN DIE ICH NICHT GETRETEN BIN ------------------
+  //
+  // 'voll' heisst: der Lenk-Input geht nicht mit hinaus. Das darf aber NUR gelten, wenn
+  // die modeBytes tatsaechlich hinausgehen - denn nur dann liest das Auto die Null als
+  // "Mitte der Bahn". Ohne modeBytes liest es sie als RADSTELLUNG, und dann faehrt es mit
+  // gerade gestellten Raedern in die naechste Bande, ohne dass der Fahrer eingreifen kann.
+  //
+  // Die modeBytes haengen an drei Dingen (spielerOrtTick, 90-ghosts.js:3936): Bahn-Stellung,
+  // driverAssistAktiv(), und einem Vorausblick, den es nur mit eingescannter Strecke gibt.
+  // Diese Funktion rechnet das NICHT nach, sondern liest das ERGEBNIS: playerCar.modeBytes.
+  // Eine nachgerechnete Bedingung waere eine zweite Fassung derselben Regel - und wenn die
+  // beiden auseinanderlaufen, faehrt das Auto in die Bande.
+  function fahrhilfeVollGilt() {
+    return fahrhilfeModus === 'voll'
+        && !!(typeof playerCar !== 'undefined' && playerCar && playerCar.modeBytes);
   }
 
   if ($('driver-assist')) {
     $('driver-assist').addEventListener('change', (e) => {
-      driverAssistOn = e.target.checked;
+      fahrhilfeModus = FAHRHILFE_MODI.indexOf(e.target.value) >= 0 ? e.target.value : 'aus';
     });
-    // Und einmal beim Laden aus dem Markup - dieselbe Regel wie bei jedem anderen Schalter:
-    // der Regler ist die Wahrheit, das Modell folgt ihm.
-    driverAssistOn = $('driver-assist').checked;
+    // Und einmal beim Laden aus dem Markup - dieselbe Regel wie bei jedem anderen Regler:
+    // das Bedienelement ist die Wahrheit, das Modell folgt ihm. Ein unbekannter Wert faellt
+    // auf 'aus' zurueck und nicht auf den ersten Eintrag: eine Fahrhilfe, die sich aus einer
+    // kaputten Sicherung heraus selbst einschaltet, ist genau der gemeldete Fehler.
+    const v = $('driver-assist').value;
+    fahrhilfeModus = FAHRHILFE_MODI.indexOf(v) >= 0 ? v : 'aus';
   }
 
   function autopilotGrund() {
@@ -2020,11 +2067,15 @@
     const gasKurve = gasKennlinie(Math.max(0, throttleY), physEngine.config.throttleGamma);
     let rawThrottle = fuelDamageDerate(gasKurve, fuelCut);
     let rawBrake = Math.max(0, -throttleY);
-    // Der rohe Lenk-Input geht unveraendert durch. Ist die Fahrhilfe an (siehe
+    // Der rohe Lenk-Input geht unveraendert durch. Steht die Fahrhilfe auf 'quer' (siehe
     // driverAssistAktiv() oben), aendert das NICHT diese Zahl, sondern nur, wie das Auto
     // sie versteht: modeBytes gehen dann mit hinaus (spielerOrtTick in 90-ghosts.js), und
     // dieselbe Zahl wird zur Querlage statt zum Lenkwinkel.
-    let steer = steerX;
+    //
+    // NUR 'voll' greift in die Zahl ein, und nur dann, wenn die modeBytes wirklich
+    // hinausgehen - die Begruendung steht bei fahrhilfeVollGilt(). In 'aus' und 'quer' ist
+    // diese Zeile dieselbe wie vorher.
+    let steer = fahrhilfeVollGilt() ? 0 : steerX;
     // Bei gelber Flagge und in der Einfuehrungsrunde faehrt das Auto selbst. Siehe
     // autopilotGrund() fuer die zwei Gruende und autopilot() fuer die Regelung.
     const ap = autopilot(rawBrake);

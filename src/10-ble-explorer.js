@@ -933,6 +933,16 @@
       "The app keeps everything in the browser, and a browser is allowed to clear that storage – when site data is deleted, in a private window, on an iPhone even after a longer time without a visit. A setup is quickly dialled in again afterwards, a lap time history is not.",
     "Eine Sicherung lädt auch dann, wenn sie aus einer älteren Fassung stammt. Einstellungen, die es damals noch nicht gab, bleiben stehen und werden genannt – sie verschwinden nicht stillschweigend.":
       "A backup loads even when it comes from an older version. Settings that did not exist back then keep their value and are named – they do not disappear silently.",
+    "Querlage: das Auto hält sich selbst auf der Bahn, so wie ein autonomer Ghost. Dein Lenk-Input bestimmt dabei nur noch, wo auf der Bahn – nach rechts heißt weiter rechts, nicht „mehr einschlagen“.":
+      "Lateral position: the car keeps itself on the track, like an autonomous ghost. Your steering input then only sets where on the track – right means further right, not “turn in more”.",
+    "Voll: wie Querlage, aber das Auto bestimmt auch die Querlage selbst. Lenken tut dann nichts mehr, Gas und Bremse bleiben bei dir.":
+      "Full: like lateral position, but the car sets the lateral position itself too. Steering then does nothing; throttle and brake stay with you.",
+    "Beide brauchen eine eingescannte Strecke und die Bahn-Stellung (nicht Ausdruck). Ohne beides steuerst du normal weiter – auch in Voll, denn ohne die Streckendaten würde ein Auto mit gerade gestellten Rädern in die Bande fahren.":
+      "Both need a scanned track and the rail setting (not printout). Without those you keep steering normally – in Full as well, because without the track data a car with its wheels held straight would drive into the barrier.",
+    "Bei gelber Flagge oder in der Einführungsrunde hält sich das Auto unabhängig von dieser Einstellung selbst – das braucht die Regelung dort, damit sie greifen kann.":
+      "Under a yellow flag or during the formation lap the car keeps itself on track regardless of this setting – the control there needs that in order to work.",
+    "Querlage":
+      "Lateral position",
     "Stoppen": "Stop",
     "Strecke aus Teilen bauen, drehen, als Code weitergeben. Alle elf Teiletypen der Original-App sind dabei, auch die Engstelle.":
       "Build a track from pieces, rotate it, pass it on as a code. All eleven piece types from the original app are included, the narrow section too.",
@@ -1622,10 +1632,6 @@
       "Too few laps for a chart. From the second lap on it is drawn here.",
     "Aus (Vorgabe): du steuerst ganz normal, dein Lenk-Input ist der Lenkwinkel – wie ohne diese App.":
       "Off (default): you steer completely normally, your steering input is the steering angle – same as without this app.",
-    "An: das Auto hält sich selbst auf der Bahn, so wie ein autonomer Ghost. Dein Lenk-Input bestimmt dabei nur noch die Querlage – nach rechts heißt weiter rechts auf der Bahn, nicht „mehr einschlagen“. Braucht eine eingescannte Strecke und die Bahn-Stellung (nicht Ausdruck); ohne beides ändert der Schalter nichts.":
-      "On: the car holds itself on the track, the same way an autonomous ghost does. Your steering input then only sets the lateral position – turning right means further right on the track, not “more lock”. Needs a scanned layout and the track setting (not printout); without both, this switch changes nothing.",
-    "Bei gelber Flagge oder in der Einführungsrunde hält sich das Auto unabhängig von diesem Schalter selbst – das braucht die Regelung dort, damit sie greifen kann.":
-      "Under a yellow flag or on the formation lap the car holds itself regardless of this switch – that control loop needs it to work at all.",
     "Cockpit-Schirm zurück":
       "Cockpit screen back",
     "Cockpit-Schirm vor":

@@ -6666,15 +6666,23 @@
       <div class="opt-row"><div class="opt-label">Fahrhilfe: Auto lenkt selbst
           <small>Aus (Vorgabe): du steuerst ganz normal, dein Lenk-Input ist der
           Lenkwinkel &ndash; wie ohne diese App.
-          <br>An: das Auto h&auml;lt sich selbst auf der Bahn, so wie ein autonomer
-          Ghost. Dein Lenk-Input bestimmt dabei nur noch die Querlage &ndash; nach rechts
-          hei&szlig;t weiter rechts auf der Bahn, nicht &bdquo;mehr einschlagen&ldquo;.
-          Braucht eine eingescannte Strecke und die Bahn-Stellung (nicht Ausdruck); ohne
-          beides &auml;ndert der Schalter nichts.
+          <br>Querlage: das Auto h&auml;lt sich selbst auf der Bahn, so wie ein autonomer
+          Ghost. Dein Lenk-Input bestimmt dabei nur noch, wo auf der Bahn &ndash; nach
+          rechts hei&szlig;t weiter rechts, nicht &bdquo;mehr einschlagen&ldquo;.
+          <br>Voll: wie Querlage, aber das Auto bestimmt auch die Querlage selbst. Lenken
+          tut dann nichts mehr, Gas und Bremse bleiben bei dir.
+          <br>Beide brauchen eine eingescannte Strecke und die Bahn-Stellung (nicht
+          Ausdruck). Ohne beides steuerst du normal weiter &ndash; auch in Voll, denn ohne
+          die Streckendaten w&uuml;rde ein Auto mit gerade gestellten R&auml;dern in die
+          Bande fahren.
           <br>Bei gelber Flagge oder in der Einf&uuml;hrungsrunde h&auml;lt sich das Auto
-          unabh&auml;ngig von diesem Schalter selbst &ndash; das braucht die Regelung
+          unabh&auml;ngig von dieser Einstellung selbst &ndash; das braucht die Regelung
           dort, damit sie greifen kann.</small></div>
-        <label class="tgl"><input type="checkbox" id="driver-assist"><span></span></label></div>
+        <select id="driver-assist">
+          <option value="aus" selected>aus</option>
+          <option value="quer">Querlage</option>
+          <option value="voll">voll</option>
+        </select></div>
       <div class="opt-head">Voreinstellungen</div>
       
       <div class="row" style="gap:8px; flex-wrap:wrap" id="preset-buttons"></div>
@@ -8150,7 +8158,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.6.23</span></span>
+    <span class="foot-ver">v<span id="app-version">0.6.24</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
