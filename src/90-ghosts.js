@@ -1882,7 +1882,22 @@
   // dem Layout statt aus dem gemeldeten Code - der Vorausblick kennt nur das Layout.
   function tileTightness(t) {
     if (t === TILE_TYPE.HAIRPIN || t === TILE_TYPE.HAIRPIN_LEFT) return 2;
+    // ---- DIE ENGSTELLE ZAEHLT WIE EINE HAARNADEL, wie bestellt --------------------
+    //
+    // "Engstelle: Tempo so drosseln wie in Haarnadelkurve." Und das ist nicht nur eine
+    // Ansage, es folgt aus der Sache: sie ist nicht eng im RADIUS, sondern in der BREITE -
+    // und was dort Tempo kostet, ist dasselbe wie in der Haarnadel, naemlich fehlender
+    // Platz fuer einen Fehler. Die Zwei ist ausserdem die Stufe, ab der die Ueberholsperre
+    // greift (SPICE_PASS_KEIN_HAARNADEL_VORAUS), und genau dort will man auch nicht
+    // nebeneinander fahren.
+    if (t === TILE_TYPE.ENGE) return 2;
     if (t === TILE_TYPE.CURVE_LEFT || t === TILE_TYPE.CURVE_RIGHT) return 1;
+    // Die kleine 30-Grad-Kurve hat DENSELBEN Radius wie die 60-Grad-Kurve, nur den halben
+    // Winkel - dieselbe Querbeschleunigung bei gleichem Tempo, also dieselbe Stufe.
+    if (t === TILE_TYPE.KLEIN_LEFT || t === TILE_TYPE.KLEIN_RIGHT) return 1;
+    // Die weite Kurve hat dreifachen Radius. Bei gleichem Tempo ein Drittel der
+    // Querbeschleunigung - sie braucht keine Drosselung, und eine zu verordnen hiesse,
+    // das Feld auf einer schnellen Kurve grundlos einzubremsen.
     return 0;
   }
 
@@ -1893,9 +1908,10 @@
     if (!tiles || tiles.length < 2 || car.ghost.tileIndex === null) return 0;
     const i = (car.ghost.tileIndex + (lookahead || 0)) % tiles.length;
     const t = tiles[i] && tiles[i].type;
-    if (t === TILE_TYPE.CURVE_RIGHT || t === TILE_TYPE.HAIRPIN) return 1;
-    if (t === TILE_TYPE.CURVE_LEFT || t === TILE_TYPE.HAIRPIN_LEFT) return -1;
-    return 0;
+    // EINE Tabelle fuer beide: ghostTurnOf steht weiter unten und beantwortet dieselbe
+    // Frage fuer einen Typ. Hier stand eine zweite Aufzaehlung, und beim Nachtragen der
+    // 30-Grad-Kurven habe ich prompt nur eine der beiden erwischt.
+    return ghostTurnOf(t);
   }
 
   // Wie weit sind wir durch die aktuelle Kachel? 0 am Anfang, 1 am Ende.
@@ -2123,8 +2139,10 @@
   const GHOST_LINE_STEER = 1.0;   // voller Linienversatz = voller Lenkausschlag
 
   function ghostTurnOf(t) {
-    return t === TILE_TYPE.CURVE_RIGHT || t === TILE_TYPE.HAIRPIN ? 1
-         : t === TILE_TYPE.CURVE_LEFT || t === TILE_TYPE.HAIRPIN_LEFT ? -1 : 0;
+    return t === TILE_TYPE.CURVE_RIGHT || t === TILE_TYPE.HAIRPIN
+        || t === TILE_TYPE.KLEIN_RIGHT || t === TILE_TYPE.WEIT_RIGHT ? 1
+         : t === TILE_TYPE.CURVE_LEFT || t === TILE_TYPE.HAIRPIN_LEFT
+        || t === TILE_TYPE.KLEIN_LEFT || t === TILE_TYPE.WEIT_LEFT ? -1 : 0;
   }
 
   // Der ZUSAMMENHAENGENDE Kurvenzug, in dem eine Kachel liegt: Anfang, Laenge, Position

@@ -278,6 +278,9 @@
   const TRACK_HAIRPIN_LEAD = TRACK_HAIRPIN_LEAD_CM * TRACK_UNITS_PER_CM;
   const TRACK_RADIUS = TRACK_RADIUS_CM * TRACK_UNITS_PER_CM;
   // "Radius 2": die weite 30-Grad-Kurve. Herleitung bei tileRadius().
+  // Wieviel die Engstelle je Seite hereinnimmt, als Anteil der halben Bahnbreite. Eine
+  // DARSTELLUNG und keine Messung - siehe die Begruendung an der Zeichenstelle.
+  const ENGE_ANTEIL = 0.34;
   const TRACK_R2_CM = 112;
   const TRACK_R2 = TRACK_R2_CM * TRACK_UNITS_PER_CM;
   const TRACK_TURN_DEG = 60;
@@ -1739,6 +1742,59 @@
       line.lapTime = prof.time;
       line.v = prof.v;
     }
+    // ---- DIE ENGSTELLE SCHREIBT IHRE EIGENE LINIE ---------------------------------
+    //
+    // BESTELLT: "Engstelle: [...] am Anfang ganz rechts fahren, dann ganz links."
+    //
+    // UEBER ALLEN MODELLEN, und das ist Absicht: das ist keine Geschmacksfrage der
+    // Ideallinie, sondern die Form des Teils. Ein Modell, das hier etwas anderes moechte,
+    // moechte durch die Absperrung. Deshalb steht der Griff hier, NACH der Modellwahl, und
+    // gilt fuer alle vier - so wie die Kachelart auch nicht vom Modell abhaengt.
+    //
+    // ---- VORSICHT MIT DEM VORZEICHEN, ich bin gerade selbst darauf hereingefallen ----
+    //
+    // Im LENKBEFEHL (Byte 7) ist rechts positiv. In alpha NICHT: alpha misst entlang der
+    // Normale, und trackNormals() dreht die Tangente um -90 Grad, zeigt also nach LINKS.
+    // Deshalb zeichnet die Boxenausbuchtung mit SIDE = -1 auf die rechte Seite, und deshalb
+    // steht in ghostLineOffset ein Minus vor alpha.
+    //
+    // "Ganz rechts" heisst hier also alpha = -gr, "ganz links" alpha = +gr. Wer die beiden
+    // Vorzeichenwelten verwechselt, bekommt eine Engstelle, die genau falsch herum faehrt -
+    // und sie sieht auf dem Bild plausibel aus, weil sie immer noch von einer Seite zur
+    // anderen geht.
+    //
+    // Der Wechsel laeuft ueber die mittleren 40 Prozent der Kachel und nicht sprunghaft in
+    // der Mitte: ein Sprung in der Linie ist ein Sprung im Lenkbefehl, und die Querfuehrung
+    // (die Ratenbegrenzung in ghostTick) braucht Weg, um ihm zu folgen.
+    //
+    // ---- 40 PROZENT SIND KNAPP, UND ZWAR NACHGEMESSEN -----------------------------
+    //
+    // In der laufenden Simulation braucht ein Ghost 990 ms fuer die Engstelle. Zwei
+    // Einheiten Querlage in 40 Prozent davon sind rund 5 Einheiten je Sekunde verlangt;
+    // ghostCfg.querTempo erlaubt ab Werk 4,0. Gemessen kam die Fuehrung auf 3,82 - sie
+    // laeuft also AM ANSCHLAG, und deshalb erreicht die Lage +0,93 / -0,90 statt genau
+    // +1 / -1. Das sieht man nicht, und weich ist es dadurch auch.
+    //
+    // WAS DARAUS FOLGT, und es steht hier, weil es sonst niemand merkt: wer das Quertempo
+    // herunterstellt, bekommt eine flachere Engstelle. Bei 2,0 - dem alten Vorgabewert -
+    // waere es noch etwa die halbe Breite. Eine breitere Rampe waere dagegen die falsche
+    // Antwort: sie wuerde die Zeit verkuerzen, in der das Auto wirklich ganz aussen steht,
+    // und genau die war bestellt.
+    if (o.tiles && o.tiles.length) {
+      const gr = (o.limit !== undefined ? o.limit : TRACK_HALF_W - 3);
+      for (let idx = 0; idx < o.tiles.length; idx++) {
+        if (!o.tiles[idx] || o.tiles[idx].type !== TILE_TYPE.ENGE) continue;
+        const treffer = [];
+        for (let i = 0; i < pts.length; i++) if (pts[i].tile === idx) treffer.push(i);
+        if (treffer.length < 2) continue;
+        for (let k = 0; k < treffer.length; k++) {
+          const u = k / (treffer.length - 1);        // 0 am Anfang, 1 am Ende
+          // Rampe: bis 0,30 ganz rechts, ab 0,70 ganz links, dazwischen linear.
+          const f = Math.max(0, Math.min(1, (u - 0.30) / 0.40));
+          line.alpha[treffer[k]] = gr * (2 * f - 1);   // -gr = rechts  ->  +gr = links
+        }
+      }
+    }
     line.span = Math.max(...line.alpha.map(Math.abs));
     line.exit = lineExitStaerke;
     return line;
@@ -2093,6 +2149,44 @@
         body += `<path d="${poly(inner)} L ${outer.slice().reverse().map(P2).join(' L ')} Z" fill="#14181f" stroke="none"/>`;
         const mid = outer[Math.floor(outer.length / 2)];
         body += `<text x="${(mid[0] + ox).toFixed(1)}" y="${(mid[1] + oy).toFixed(1)}" fill="#ffb02e" font-size="9" font-weight="700" text-anchor="middle">BOX</text>`;
+      });
+
+      // 2b) Die Engstelle: zwei Sperren, die von beiden Seiten hereinragen.
+      //
+      // BESTELLT: "grafisch hervorheben wie die Original-Engstelle."
+      //
+      // DIESELBE BAUFORM wie die Boxenausbuchtung darueber - je Kachel ueber p.tile und die
+      // Normalen -, nur nach INNEN statt nach aussen. Eine schmalere Fahrbahn zu zeichnen
+      // ginge nicht: die Strasse ist EIN breiter Strich entlang der Mittellinie, und eine
+      // Breite je Kachel hat ein Strich nicht.
+      //
+      // WIE SCHMAL SIE WIRKLICH IST, WEISS ICH NICHT. Die Breite ist nicht gemessen - aus
+      // den Bildern des Original-Editors laesst sie sich nicht ablesen. Was hier steht, ist
+      // also eine DARSTELLUNG und keine Massangabe: sie sagt "hier wird es eng", und die
+      // Zahl daneben ist ein Drittel je Seite, weil das sichtbar ist, ohne die Bahn
+      // zuzumauern. Sobald ein Mass vorliegt, gehoert es hierher.
+      tiles.forEach((tk, idx) => {
+        if (tk.type !== TILE_TYPE.ENGE) return;
+        const seg = pts.map((p, i) => ({ p, i })).filter(q => q.p.tile === idx);
+        if (seg.length < 3) return;
+        for (const SIDE of [1, -1]) {
+          const aussen = seg.map(q => [q.p.x + nrm[q.i].x * half * SIDE,
+                                       q.p.y + nrm[q.i].y * half * SIDE]);
+          const innen = seg.map((q, k) => {
+            // Null an beiden Enden, am tiefsten in der Mitte - wie die Boxenausbuchtung,
+            // nur mit umgekehrtem Vorzeichen. Eine Sperre mit Kante waere ein Teil, das
+            // man nicht anfahren kann.
+            const u = k / (seg.length - 1);
+            const tief = Math.sin(u * Math.PI) * half * ENGE_ANTEIL;
+            return [q.p.x + nrm[q.i].x * (half - tief) * SIDE,
+                    q.p.y + nrm[q.i].y * (half - tief) * SIDE];
+          });
+          body += `<path d="${poly(aussen)} L ${innen.slice().reverse().map(P2).join(' L ')} Z" `
+               + `fill="#3a2a12" stroke="#ffb02e" stroke-width="0.8" stroke-linejoin="round"/>`;
+        }
+        const m = seg[Math.floor(seg.length / 2)];
+        body += `<text x="${(m.p.x + ox).toFixed(1)}" y="${(m.p.y + oy + 3).toFixed(1)}" `
+             + `fill="#ffb02e" font-size="8" font-weight="700" text-anchor="middle">ENG</text>`;
       });
 
       // 3) Joints: a white tick across the roadway at every element boundary, so the

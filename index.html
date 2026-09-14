@@ -7749,8 +7749,8 @@
           <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 40 40 8l6 6L14 46H8z"/><path d="M34 14l6 6" stroke="var(--bad)"/></svg>
           <b>Editor <span class="wip-tag">WIP</span></b>
-          <span>Strecke aus Teilen bauen, drehen, als Code weitergeben. Zwei Kurventypen
-            der Original-App fehlen noch &ndash; ihre Ma&szlig;e sind nicht bekannt.</span>
+          <span>Strecke aus Teilen bauen, drehen, als Code weitergeben. Alle elf
+            Teiletypen der Original-App sind dabei, auch die Engstelle.</span>
         </button>
         <button class="misc-tile subpage-open" data-sub="print">
           <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
@@ -8100,7 +8100,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.6.21</span></span>
+    <span class="foot-ver">v<span id="app-version">0.6.22</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -9053,11 +9053,9 @@
     "Steuerkreuz:": "D-pad:",
     "Steuern": "Drive",
     "Stoppen": "Stop",
+    "Strecke aus Teilen bauen, drehen, als Code weitergeben. Alle elf Teiletypen der Original-App sind dabei, auch die Engstelle.":
+      "Build a track from pieces, rotate it, pass it on as a code. All eleven piece types from the original app are included, the narrow section too.",
     "Strafe je verpasstem Stopp (s)": "Penalty per missed stop (s)",
-    "Strecke aus Teilen bauen, drehen, als Code weitergeben. Zwei Kurventypen der Original-App fehlen noch – ihre Maße sind nicht bekannt.":
-      "Build a track from pieces, rotate it, pass it on as a code. Two curve types from the original app are still missing – their dimensions are not known.",
-    "Die Original-App hat neun Kacheltypen, hier sind es sechs: es fehlen eine lange flache Kurve und eine Keilkurve. Ihre Maße stehen nirgends – die Angabe oben im Original-Editor ist der Umriss des":
-      "The original app has nine tile types, this one has six: a long shallow curve and a wedge curve are missing. Their dimensions are written down nowhere – the figure at the top of the original editor is the bounding box of the",
     "ganzen": "whole",
     "Layouts und nicht der Kachel. Sie kommen dazu, sobald eine Schließmessung vorliegt: eine kleine geschlossene Runde mit der neuen Kachel, und dann fallen Radius und Winkel eindeutig heraus – so wie bei der Haarnadel.":
       "layout, not of the tile. They will be added once a closing measurement exists: a small closed loop with the new tile, and radius and angle fall out uniquely – the same way the hairpin was solved.",
@@ -16281,6 +16279,9 @@
   const TRACK_HAIRPIN_LEAD = TRACK_HAIRPIN_LEAD_CM * TRACK_UNITS_PER_CM;
   const TRACK_RADIUS = TRACK_RADIUS_CM * TRACK_UNITS_PER_CM;
   // "Radius 2": die weite 30-Grad-Kurve. Herleitung bei tileRadius().
+  // Wieviel die Engstelle je Seite hereinnimmt, als Anteil der halben Bahnbreite. Eine
+  // DARSTELLUNG und keine Messung - siehe die Begruendung an der Zeichenstelle.
+  const ENGE_ANTEIL = 0.34;
   const TRACK_R2_CM = 112;
   const TRACK_R2 = TRACK_R2_CM * TRACK_UNITS_PER_CM;
   const TRACK_TURN_DEG = 60;
@@ -17742,6 +17743,59 @@
       line.lapTime = prof.time;
       line.v = prof.v;
     }
+    // ---- DIE ENGSTELLE SCHREIBT IHRE EIGENE LINIE ---------------------------------
+    //
+    // BESTELLT: "Engstelle: [...] am Anfang ganz rechts fahren, dann ganz links."
+    //
+    // UEBER ALLEN MODELLEN, und das ist Absicht: das ist keine Geschmacksfrage der
+    // Ideallinie, sondern die Form des Teils. Ein Modell, das hier etwas anderes moechte,
+    // moechte durch die Absperrung. Deshalb steht der Griff hier, NACH der Modellwahl, und
+    // gilt fuer alle vier - so wie die Kachelart auch nicht vom Modell abhaengt.
+    //
+    // ---- VORSICHT MIT DEM VORZEICHEN, ich bin gerade selbst darauf hereingefallen ----
+    //
+    // Im LENKBEFEHL (Byte 7) ist rechts positiv. In alpha NICHT: alpha misst entlang der
+    // Normale, und trackNormals() dreht die Tangente um -90 Grad, zeigt also nach LINKS.
+    // Deshalb zeichnet die Boxenausbuchtung mit SIDE = -1 auf die rechte Seite, und deshalb
+    // steht in ghostLineOffset ein Minus vor alpha.
+    //
+    // "Ganz rechts" heisst hier also alpha = -gr, "ganz links" alpha = +gr. Wer die beiden
+    // Vorzeichenwelten verwechselt, bekommt eine Engstelle, die genau falsch herum faehrt -
+    // und sie sieht auf dem Bild plausibel aus, weil sie immer noch von einer Seite zur
+    // anderen geht.
+    //
+    // Der Wechsel laeuft ueber die mittleren 40 Prozent der Kachel und nicht sprunghaft in
+    // der Mitte: ein Sprung in der Linie ist ein Sprung im Lenkbefehl, und die Querfuehrung
+    // (die Ratenbegrenzung in ghostTick) braucht Weg, um ihm zu folgen.
+    //
+    // ---- 40 PROZENT SIND KNAPP, UND ZWAR NACHGEMESSEN -----------------------------
+    //
+    // In der laufenden Simulation braucht ein Ghost 990 ms fuer die Engstelle. Zwei
+    // Einheiten Querlage in 40 Prozent davon sind rund 5 Einheiten je Sekunde verlangt;
+    // ghostCfg.querTempo erlaubt ab Werk 4,0. Gemessen kam die Fuehrung auf 3,82 - sie
+    // laeuft also AM ANSCHLAG, und deshalb erreicht die Lage +0,93 / -0,90 statt genau
+    // +1 / -1. Das sieht man nicht, und weich ist es dadurch auch.
+    //
+    // WAS DARAUS FOLGT, und es steht hier, weil es sonst niemand merkt: wer das Quertempo
+    // herunterstellt, bekommt eine flachere Engstelle. Bei 2,0 - dem alten Vorgabewert -
+    // waere es noch etwa die halbe Breite. Eine breitere Rampe waere dagegen die falsche
+    // Antwort: sie wuerde die Zeit verkuerzen, in der das Auto wirklich ganz aussen steht,
+    // und genau die war bestellt.
+    if (o.tiles && o.tiles.length) {
+      const gr = (o.limit !== undefined ? o.limit : TRACK_HALF_W - 3);
+      for (let idx = 0; idx < o.tiles.length; idx++) {
+        if (!o.tiles[idx] || o.tiles[idx].type !== TILE_TYPE.ENGE) continue;
+        const treffer = [];
+        for (let i = 0; i < pts.length; i++) if (pts[i].tile === idx) treffer.push(i);
+        if (treffer.length < 2) continue;
+        for (let k = 0; k < treffer.length; k++) {
+          const u = k / (treffer.length - 1);        // 0 am Anfang, 1 am Ende
+          // Rampe: bis 0,30 ganz rechts, ab 0,70 ganz links, dazwischen linear.
+          const f = Math.max(0, Math.min(1, (u - 0.30) / 0.40));
+          line.alpha[treffer[k]] = gr * (2 * f - 1);   // -gr = rechts  ->  +gr = links
+        }
+      }
+    }
     line.span = Math.max(...line.alpha.map(Math.abs));
     line.exit = lineExitStaerke;
     return line;
@@ -18096,6 +18150,44 @@
         body += `<path d="${poly(inner)} L ${outer.slice().reverse().map(P2).join(' L ')} Z" fill="#14181f" stroke="none"/>`;
         const mid = outer[Math.floor(outer.length / 2)];
         body += `<text x="${(mid[0] + ox).toFixed(1)}" y="${(mid[1] + oy).toFixed(1)}" fill="#ffb02e" font-size="9" font-weight="700" text-anchor="middle">BOX</text>`;
+      });
+
+      // 2b) Die Engstelle: zwei Sperren, die von beiden Seiten hereinragen.
+      //
+      // BESTELLT: "grafisch hervorheben wie die Original-Engstelle."
+      //
+      // DIESELBE BAUFORM wie die Boxenausbuchtung darueber - je Kachel ueber p.tile und die
+      // Normalen -, nur nach INNEN statt nach aussen. Eine schmalere Fahrbahn zu zeichnen
+      // ginge nicht: die Strasse ist EIN breiter Strich entlang der Mittellinie, und eine
+      // Breite je Kachel hat ein Strich nicht.
+      //
+      // WIE SCHMAL SIE WIRKLICH IST, WEISS ICH NICHT. Die Breite ist nicht gemessen - aus
+      // den Bildern des Original-Editors laesst sie sich nicht ablesen. Was hier steht, ist
+      // also eine DARSTELLUNG und keine Massangabe: sie sagt "hier wird es eng", und die
+      // Zahl daneben ist ein Drittel je Seite, weil das sichtbar ist, ohne die Bahn
+      // zuzumauern. Sobald ein Mass vorliegt, gehoert es hierher.
+      tiles.forEach((tk, idx) => {
+        if (tk.type !== TILE_TYPE.ENGE) return;
+        const seg = pts.map((p, i) => ({ p, i })).filter(q => q.p.tile === idx);
+        if (seg.length < 3) return;
+        for (const SIDE of [1, -1]) {
+          const aussen = seg.map(q => [q.p.x + nrm[q.i].x * half * SIDE,
+                                       q.p.y + nrm[q.i].y * half * SIDE]);
+          const innen = seg.map((q, k) => {
+            // Null an beiden Enden, am tiefsten in der Mitte - wie die Boxenausbuchtung,
+            // nur mit umgekehrtem Vorzeichen. Eine Sperre mit Kante waere ein Teil, das
+            // man nicht anfahren kann.
+            const u = k / (seg.length - 1);
+            const tief = Math.sin(u * Math.PI) * half * ENGE_ANTEIL;
+            return [q.p.x + nrm[q.i].x * (half - tief) * SIDE,
+                    q.p.y + nrm[q.i].y * (half - tief) * SIDE];
+          });
+          body += `<path d="${poly(aussen)} L ${innen.slice().reverse().map(P2).join(' L ')} Z" `
+               + `fill="#3a2a12" stroke="#ffb02e" stroke-width="0.8" stroke-linejoin="round"/>`;
+        }
+        const m = seg[Math.floor(seg.length / 2)];
+        body += `<text x="${(m.p.x + ox).toFixed(1)}" y="${(m.p.y + oy + 3).toFixed(1)}" `
+             + `fill="#ffb02e" font-size="8" font-weight="700" text-anchor="middle">ENG</text>`;
       });
 
       // 3) Joints: a white tick across the roadway at every element boundary, so the
@@ -27454,7 +27546,22 @@
   // dem Layout statt aus dem gemeldeten Code - der Vorausblick kennt nur das Layout.
   function tileTightness(t) {
     if (t === TILE_TYPE.HAIRPIN || t === TILE_TYPE.HAIRPIN_LEFT) return 2;
+    // ---- DIE ENGSTELLE ZAEHLT WIE EINE HAARNADEL, wie bestellt --------------------
+    //
+    // "Engstelle: Tempo so drosseln wie in Haarnadelkurve." Und das ist nicht nur eine
+    // Ansage, es folgt aus der Sache: sie ist nicht eng im RADIUS, sondern in der BREITE -
+    // und was dort Tempo kostet, ist dasselbe wie in der Haarnadel, naemlich fehlender
+    // Platz fuer einen Fehler. Die Zwei ist ausserdem die Stufe, ab der die Ueberholsperre
+    // greift (SPICE_PASS_KEIN_HAARNADEL_VORAUS), und genau dort will man auch nicht
+    // nebeneinander fahren.
+    if (t === TILE_TYPE.ENGE) return 2;
     if (t === TILE_TYPE.CURVE_LEFT || t === TILE_TYPE.CURVE_RIGHT) return 1;
+    // Die kleine 30-Grad-Kurve hat DENSELBEN Radius wie die 60-Grad-Kurve, nur den halben
+    // Winkel - dieselbe Querbeschleunigung bei gleichem Tempo, also dieselbe Stufe.
+    if (t === TILE_TYPE.KLEIN_LEFT || t === TILE_TYPE.KLEIN_RIGHT) return 1;
+    // Die weite Kurve hat dreifachen Radius. Bei gleichem Tempo ein Drittel der
+    // Querbeschleunigung - sie braucht keine Drosselung, und eine zu verordnen hiesse,
+    // das Feld auf einer schnellen Kurve grundlos einzubremsen.
     return 0;
   }
 
@@ -27465,9 +27572,10 @@
     if (!tiles || tiles.length < 2 || car.ghost.tileIndex === null) return 0;
     const i = (car.ghost.tileIndex + (lookahead || 0)) % tiles.length;
     const t = tiles[i] && tiles[i].type;
-    if (t === TILE_TYPE.CURVE_RIGHT || t === TILE_TYPE.HAIRPIN) return 1;
-    if (t === TILE_TYPE.CURVE_LEFT || t === TILE_TYPE.HAIRPIN_LEFT) return -1;
-    return 0;
+    // EINE Tabelle fuer beide: ghostTurnOf steht weiter unten und beantwortet dieselbe
+    // Frage fuer einen Typ. Hier stand eine zweite Aufzaehlung, und beim Nachtragen der
+    // 30-Grad-Kurven habe ich prompt nur eine der beiden erwischt.
+    return ghostTurnOf(t);
   }
 
   // Wie weit sind wir durch die aktuelle Kachel? 0 am Anfang, 1 am Ende.
@@ -27695,8 +27803,10 @@
   const GHOST_LINE_STEER = 1.0;   // voller Linienversatz = voller Lenkausschlag
 
   function ghostTurnOf(t) {
-    return t === TILE_TYPE.CURVE_RIGHT || t === TILE_TYPE.HAIRPIN ? 1
-         : t === TILE_TYPE.CURVE_LEFT || t === TILE_TYPE.HAIRPIN_LEFT ? -1 : 0;
+    return t === TILE_TYPE.CURVE_RIGHT || t === TILE_TYPE.HAIRPIN
+        || t === TILE_TYPE.KLEIN_RIGHT || t === TILE_TYPE.WEIT_RIGHT ? 1
+         : t === TILE_TYPE.CURVE_LEFT || t === TILE_TYPE.HAIRPIN_LEFT
+        || t === TILE_TYPE.KLEIN_LEFT || t === TILE_TYPE.WEIT_LEFT ? -1 : 0;
   }
 
   // Der ZUSAMMENHAENGENDE Kurvenzug, in dem eine Kachel liegt: Anfang, Laenge, Position
@@ -37494,6 +37604,92 @@
       } finally { trackMode = merk; }
     },
 
+    // ---- DIE ENGSTELLE, ABGEFAHREN -----------------------------------------------
+    //
+    // BESTELLT: "Engstelle: Tempo so drosseln wie in Haarnadelkurve und am Anfang ganz
+    // rechts fahren, dann ganz links."
+    //
+    // Drei Zusagen, drei Messungen - und zwei davon koennen sich WIDERSPRECHEN, weshalb
+    // beide hier stehen muessen:
+    //
+    //   1. DIE LINIE geht von rechts nach links. Gemessen wird sie NICHT als alpha,
+    //      sondern als das, was ghostLineOffset daraus macht - also als LENKBEFEHL, in dem
+    //      rechts positiv ist. Damit faellt der Vorzeichenfehler auf, den ich beim Einbau
+    //      gemacht habe (alpha zeigt nach links, Byte 7 nach rechts): eine Sonde, die alpha
+    //      direkt liest, haette die falsch herum fahrende Engstelle bestaetigt.
+    //   2. DIE DROSSELUNG ist die der Haarnadel. Nicht "groesser null" - GLEICH, denn
+    //      genau das war die Ansage.
+    //   3. DER SCHWENK IST FAHRBAR. Die Querfuehrung in ghostTick ist ratenbegrenzt; ein
+    //      Sollwertsprung, dem sie nicht folgen kann, ist eine Linie auf dem Papier. Die
+    //      Sonde gibt deshalb aus, wieviel Querlage je Kachelanteil verlangt wird - eine
+    //      Zahl, die gegen die Rate gehalten werden kann.
+    engstelleProbe(code, schritte) {
+      if (typeof codeToTrack !== 'function' || typeof ghostLineOffset !== 'function') {
+        return null;
+      }
+      const keepTiles = currentTrackTiles;
+      try {
+        // Eine geschlossene Bahn mit genau EINER Engstelle. Sie ersetzt eine Gerade, was
+        // sie geometrisch auch ist - dadurch bleibt der Schluss der Bahn unberuehrt.
+        const p = codeToTrack(code || 'SR3EGR3G2');
+        const tiles = p.tiles;
+        const idx = tiles.findIndex((t) => t.type === TILE_TYPE.ENGE);
+        if (idx < 0) return null;
+        currentTrackTiles = tiles;
+        lineCache = null;
+        const lc = ghostLine();
+        const n = schritte || 9;
+        const car = { ghost: { tileIndex: idx, tileMs: 1000 }, tileAt: 0 };
+        const bahn = [];
+        for (let k = 0; k < n; k++) {
+          const ph = k / (n - 1);
+          car.tileAt = Date.now() - ph * car.ghost.tileMs * ghostTileLenFactor(idx);
+          bahn.push({ anteil: +ph.toFixed(2),
+                      lenk: +ghostLineOffset(car).toFixed(3) });
+        }
+        // Wie schnell muss die Querlage sich bewegen? Groesster Schritt zwischen zwei
+        // Messpunkten, umgerechnet auf einen ganzen Kachelanteil.
+        let sprung = 0;
+        for (let k = 1; k < bahn.length; k++) {
+          sprung = Math.max(sprung, Math.abs(bahn[k].lenk - bahn[k - 1].lenk));
+        }
+        return {
+          code: trackToCode(tiles),
+          kachel: idx,
+          bahn,
+          start: bahn[0].lenk,
+          ende: bahn[bahn.length - 1].lenk,
+          spanne: +(bahn[bahn.length - 1].lenk - bahn[0].lenk).toFixed(3),
+          proAnteil: +(sprung * (n - 1)).toFixed(3),
+          tight: {
+            enge: tileTightness(TILE_TYPE.ENGE),
+            haarnadel: tileTightness(TILE_TYPE.HAIRPIN),
+            kurve: tileTightness(TILE_TYPE.CURVE_RIGHT),
+            klein: tileTightness(TILE_TYPE.KLEIN_RIGHT),
+            weit: tileTightness(TILE_TYPE.WEIT_RIGHT),
+            gerade: tileTightness(TILE_TYPE.STRAIGHT),
+          },
+          // Und dreht die Karte die neuen Kurven in die richtige Richtung?
+          dreh: {
+            weitR: ghostTurnOf(TILE_TYPE.WEIT_RIGHT),
+            weitL: ghostTurnOf(TILE_TYPE.WEIT_LEFT),
+            kleinR: ghostTurnOf(TILE_TYPE.KLEIN_RIGHT),
+            kleinL: ghostTurnOf(TILE_TYPE.KLEIN_LEFT),
+          },
+          // Steht die Engstelle auch im Bild? Gezaehlt wird im gezeichneten SVG.
+          gezeichnet: (() => {
+            if (typeof renderTrackPreview !== 'function') return null;
+            const html = renderTrackPreview(tiles, 0, { detailed: true }).html;
+            return { eng: (html.match(/>ENG</g) || []).length,
+                     sperren: (html.match(/#3a2a12/g) || []).length };
+          })(),
+        };
+      } finally {
+        currentTrackTiles = keepTiles;
+        lineCache = null;
+      }
+    },
+
     // Die Palette des Editors von aussen lesbar - sie ist die Bedienseite der Kacheltypen.
     palettenProbe() {
       if (typeof TRACK_PALETTE === 'undefined') return null;
@@ -46915,6 +47111,72 @@
     return { ok: !fehler.length,
              mass: mit.zeilen + ' Sektorzeilen, ' + mit.beste + ' Bestwerte'
                  + ' | bei einem Sektor ' + ohne.zeilen
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
+  // ---- Die Engstelle: gedrosselt, rechts hinein, links hinaus, und sichtbar ----
+  //
+  // BESTELLT: "Engstelle: Tempo so drosseln wie in Haarnadelkurve und am Anfang ganz rechts
+  // fahren, dann ganz links. Ausserdem grafisch hervorheben wie die Original-Engstelle."
+  //
+  // ---- WARUM DER LENKBEFEHL GEMESSEN WIRD UND NICHT alpha -------------------------
+  //
+  // Weil ich beim Einbau genau hier falsch lag. alpha misst entlang der Normale, und die
+  // zeigt nach LINKS; im Lenkbyte ist rechts positiv. Meine erste Fassung setzte alpha auf
+  // +gr am Anfang mit dem Kommentar "rechts ist positiv" - und fuhr damit genau falsch
+  // herum. Eine Pruefung, die alpha direkt liest, haette das bestaetigt.
+  //
+  // In der laufenden Simulation nachgemessen (Bahn SR3EGR3G2, Engstelle auf Kachel 4):
+  // die Lage ging von -0,93 auf +0,90, der Lenkbefehl also von +0,93 rechts auf -0,90 links.
+  //
+  // ---- UND WARUM NICHT AUF GLEICHE BREMSANFORDERUNG WIE DIE HAARNADEL GEPRUEFT WIRD ---
+  //
+  // "So drosseln wie in Haarnadelkurve" ist eine Zusage ueber den EINGANG, nicht ueber das
+  // Ergebnis: tileTightness liefert fuer beide 2, und daran haengt ghostAheadTightest. Die
+  // Bremsprofile bleiben trotzdem verschieden, weil die Haarnadel zusaetzlich eine Kurve mit
+  // Radius ist und eine andere Kachellaenge hat. Gemessen auf derselben Bahn mit getauschter
+  // Kachel 4:
+  //
+  //     Kachel 4      Spitzenbremsanforderung
+  //     Engstelle              0,556
+  //     Haarnadel              0,464
+  //     Gerade                 0,222
+  //
+  // Geprueft wird deshalb die Gleichheit der STUFE - das ist die Zusage - und dass die
+  // Engstelle deutlich mehr verzoegert als dieselbe Bahn mit einer Geraden an der Stelle.
+  stAdd('Engstelle: wie eine Haarnadel gedrosselt, rechts hinein und links hinaus', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.engstelleProbe) {
+      return { skip: true, mass: 'engstelleProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.engstelleProbe();
+    if (!r) return { skip: true, mass: 'kein Lauf' };
+    const fehler = [];
+    // 1. DIE DROSSELUNG IST DIE DER HAARNADEL. Gleich, nicht nur groesser null.
+    if (r.tight.enge !== r.tight.haarnadel) {
+      fehler.push('Stufe ' + r.tight.enge + ' statt Haarnadel ' + r.tight.haarnadel);
+    }
+    // 2. RECHTS HINEIN, LINKS HINAUS - im Lenkbefehl, in dem rechts positiv ist.
+    if (!(r.start > 0.9)) fehler.push('beginnt bei ' + r.start + ' statt ganz rechts');
+    if (!(r.ende < -0.9)) fehler.push('endet bei ' + r.ende + ' statt ganz links');
+    // 3. UND SIE STEHT IM BILD. Ohne diese Zeile waere der Test auch gruen, wenn die
+    //    Engstelle nur gefahren, aber nicht gezeichnet wuerde.
+    if (r.gezeichnet && !(r.gezeichnet.eng === 1 && r.gezeichnet.sperren === 2)) {
+      fehler.push('gezeichnet: ' + JSON.stringify(r.gezeichnet));
+    }
+    // 4. DIE NEUEN 30-GRAD-KURVEN DREHEN. Sie haengen an derselben Tabelle, und beim
+    //    Nachtragen hatte ich erst nur eine der beiden Fassungen erwischt.
+    if (r.dreh.weitR !== 1 || r.dreh.weitL !== -1
+        || r.dreh.kleinR !== 1 || r.dreh.kleinL !== -1) {
+      fehler.push('30-Grad-Drehsinn: ' + JSON.stringify(r.dreh));
+    }
+    if (r.tight.klein !== r.tight.kurve) {
+      fehler.push('kleine 30-Grad-Kurve Stufe ' + r.tight.klein
+                  + ' statt wie die 60-Grad-Kurve ' + r.tight.kurve);
+    }
+    return { ok: !fehler.length,
+             mass: 'Stufe ' + r.tight.enge + ' (Haarnadel ' + r.tight.haarnadel + ')'
+                 + ' | Lenkung ' + r.start + ' -> ' + r.ende
+                 + ' | ' + (r.gezeichnet ? r.gezeichnet.sperren + ' Sperren' : 'ungezeichnet')
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 

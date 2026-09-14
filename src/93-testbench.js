@@ -4056,6 +4056,92 @@
       } finally { trackMode = merk; }
     },
 
+    // ---- DIE ENGSTELLE, ABGEFAHREN -----------------------------------------------
+    //
+    // BESTELLT: "Engstelle: Tempo so drosseln wie in Haarnadelkurve und am Anfang ganz
+    // rechts fahren, dann ganz links."
+    //
+    // Drei Zusagen, drei Messungen - und zwei davon koennen sich WIDERSPRECHEN, weshalb
+    // beide hier stehen muessen:
+    //
+    //   1. DIE LINIE geht von rechts nach links. Gemessen wird sie NICHT als alpha,
+    //      sondern als das, was ghostLineOffset daraus macht - also als LENKBEFEHL, in dem
+    //      rechts positiv ist. Damit faellt der Vorzeichenfehler auf, den ich beim Einbau
+    //      gemacht habe (alpha zeigt nach links, Byte 7 nach rechts): eine Sonde, die alpha
+    //      direkt liest, haette die falsch herum fahrende Engstelle bestaetigt.
+    //   2. DIE DROSSELUNG ist die der Haarnadel. Nicht "groesser null" - GLEICH, denn
+    //      genau das war die Ansage.
+    //   3. DER SCHWENK IST FAHRBAR. Die Querfuehrung in ghostTick ist ratenbegrenzt; ein
+    //      Sollwertsprung, dem sie nicht folgen kann, ist eine Linie auf dem Papier. Die
+    //      Sonde gibt deshalb aus, wieviel Querlage je Kachelanteil verlangt wird - eine
+    //      Zahl, die gegen die Rate gehalten werden kann.
+    engstelleProbe(code, schritte) {
+      if (typeof codeToTrack !== 'function' || typeof ghostLineOffset !== 'function') {
+        return null;
+      }
+      const keepTiles = currentTrackTiles;
+      try {
+        // Eine geschlossene Bahn mit genau EINER Engstelle. Sie ersetzt eine Gerade, was
+        // sie geometrisch auch ist - dadurch bleibt der Schluss der Bahn unberuehrt.
+        const p = codeToTrack(code || 'SR3EGR3G2');
+        const tiles = p.tiles;
+        const idx = tiles.findIndex((t) => t.type === TILE_TYPE.ENGE);
+        if (idx < 0) return null;
+        currentTrackTiles = tiles;
+        lineCache = null;
+        const lc = ghostLine();
+        const n = schritte || 9;
+        const car = { ghost: { tileIndex: idx, tileMs: 1000 }, tileAt: 0 };
+        const bahn = [];
+        for (let k = 0; k < n; k++) {
+          const ph = k / (n - 1);
+          car.tileAt = Date.now() - ph * car.ghost.tileMs * ghostTileLenFactor(idx);
+          bahn.push({ anteil: +ph.toFixed(2),
+                      lenk: +ghostLineOffset(car).toFixed(3) });
+        }
+        // Wie schnell muss die Querlage sich bewegen? Groesster Schritt zwischen zwei
+        // Messpunkten, umgerechnet auf einen ganzen Kachelanteil.
+        let sprung = 0;
+        for (let k = 1; k < bahn.length; k++) {
+          sprung = Math.max(sprung, Math.abs(bahn[k].lenk - bahn[k - 1].lenk));
+        }
+        return {
+          code: trackToCode(tiles),
+          kachel: idx,
+          bahn,
+          start: bahn[0].lenk,
+          ende: bahn[bahn.length - 1].lenk,
+          spanne: +(bahn[bahn.length - 1].lenk - bahn[0].lenk).toFixed(3),
+          proAnteil: +(sprung * (n - 1)).toFixed(3),
+          tight: {
+            enge: tileTightness(TILE_TYPE.ENGE),
+            haarnadel: tileTightness(TILE_TYPE.HAIRPIN),
+            kurve: tileTightness(TILE_TYPE.CURVE_RIGHT),
+            klein: tileTightness(TILE_TYPE.KLEIN_RIGHT),
+            weit: tileTightness(TILE_TYPE.WEIT_RIGHT),
+            gerade: tileTightness(TILE_TYPE.STRAIGHT),
+          },
+          // Und dreht die Karte die neuen Kurven in die richtige Richtung?
+          dreh: {
+            weitR: ghostTurnOf(TILE_TYPE.WEIT_RIGHT),
+            weitL: ghostTurnOf(TILE_TYPE.WEIT_LEFT),
+            kleinR: ghostTurnOf(TILE_TYPE.KLEIN_RIGHT),
+            kleinL: ghostTurnOf(TILE_TYPE.KLEIN_LEFT),
+          },
+          // Steht die Engstelle auch im Bild? Gezaehlt wird im gezeichneten SVG.
+          gezeichnet: (() => {
+            if (typeof renderTrackPreview !== 'function') return null;
+            const html = renderTrackPreview(tiles, 0, { detailed: true }).html;
+            return { eng: (html.match(/>ENG</g) || []).length,
+                     sperren: (html.match(/#3a2a12/g) || []).length };
+          })(),
+        };
+      } finally {
+        currentTrackTiles = keepTiles;
+        lineCache = null;
+      }
+    },
+
     // Die Palette des Editors von aussen lesbar - sie ist die Bedienseite der Kacheltypen.
     palettenProbe() {
       if (typeof TRACK_PALETTE === 'undefined') return null;

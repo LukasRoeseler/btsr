@@ -7648,6 +7648,72 @@
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
+  // ---- Die Engstelle: gedrosselt, rechts hinein, links hinaus, und sichtbar ----
+  //
+  // BESTELLT: "Engstelle: Tempo so drosseln wie in Haarnadelkurve und am Anfang ganz rechts
+  // fahren, dann ganz links. Ausserdem grafisch hervorheben wie die Original-Engstelle."
+  //
+  // ---- WARUM DER LENKBEFEHL GEMESSEN WIRD UND NICHT alpha -------------------------
+  //
+  // Weil ich beim Einbau genau hier falsch lag. alpha misst entlang der Normale, und die
+  // zeigt nach LINKS; im Lenkbyte ist rechts positiv. Meine erste Fassung setzte alpha auf
+  // +gr am Anfang mit dem Kommentar "rechts ist positiv" - und fuhr damit genau falsch
+  // herum. Eine Pruefung, die alpha direkt liest, haette das bestaetigt.
+  //
+  // In der laufenden Simulation nachgemessen (Bahn SR3EGR3G2, Engstelle auf Kachel 4):
+  // die Lage ging von -0,93 auf +0,90, der Lenkbefehl also von +0,93 rechts auf -0,90 links.
+  //
+  // ---- UND WARUM NICHT AUF GLEICHE BREMSANFORDERUNG WIE DIE HAARNADEL GEPRUEFT WIRD ---
+  //
+  // "So drosseln wie in Haarnadelkurve" ist eine Zusage ueber den EINGANG, nicht ueber das
+  // Ergebnis: tileTightness liefert fuer beide 2, und daran haengt ghostAheadTightest. Die
+  // Bremsprofile bleiben trotzdem verschieden, weil die Haarnadel zusaetzlich eine Kurve mit
+  // Radius ist und eine andere Kachellaenge hat. Gemessen auf derselben Bahn mit getauschter
+  // Kachel 4:
+  //
+  //     Kachel 4      Spitzenbremsanforderung
+  //     Engstelle              0,556
+  //     Haarnadel              0,464
+  //     Gerade                 0,222
+  //
+  // Geprueft wird deshalb die Gleichheit der STUFE - das ist die Zusage - und dass die
+  // Engstelle deutlich mehr verzoegert als dieselbe Bahn mit einer Geraden an der Stelle.
+  stAdd('Engstelle: wie eine Haarnadel gedrosselt, rechts hinein und links hinaus', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.engstelleProbe) {
+      return { skip: true, mass: 'engstelleProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.engstelleProbe();
+    if (!r) return { skip: true, mass: 'kein Lauf' };
+    const fehler = [];
+    // 1. DIE DROSSELUNG IST DIE DER HAARNADEL. Gleich, nicht nur groesser null.
+    if (r.tight.enge !== r.tight.haarnadel) {
+      fehler.push('Stufe ' + r.tight.enge + ' statt Haarnadel ' + r.tight.haarnadel);
+    }
+    // 2. RECHTS HINEIN, LINKS HINAUS - im Lenkbefehl, in dem rechts positiv ist.
+    if (!(r.start > 0.9)) fehler.push('beginnt bei ' + r.start + ' statt ganz rechts');
+    if (!(r.ende < -0.9)) fehler.push('endet bei ' + r.ende + ' statt ganz links');
+    // 3. UND SIE STEHT IM BILD. Ohne diese Zeile waere der Test auch gruen, wenn die
+    //    Engstelle nur gefahren, aber nicht gezeichnet wuerde.
+    if (r.gezeichnet && !(r.gezeichnet.eng === 1 && r.gezeichnet.sperren === 2)) {
+      fehler.push('gezeichnet: ' + JSON.stringify(r.gezeichnet));
+    }
+    // 4. DIE NEUEN 30-GRAD-KURVEN DREHEN. Sie haengen an derselben Tabelle, und beim
+    //    Nachtragen hatte ich erst nur eine der beiden Fassungen erwischt.
+    if (r.dreh.weitR !== 1 || r.dreh.weitL !== -1
+        || r.dreh.kleinR !== 1 || r.dreh.kleinL !== -1) {
+      fehler.push('30-Grad-Drehsinn: ' + JSON.stringify(r.dreh));
+    }
+    if (r.tight.klein !== r.tight.kurve) {
+      fehler.push('kleine 30-Grad-Kurve Stufe ' + r.tight.klein
+                  + ' statt wie die 60-Grad-Kurve ' + r.tight.kurve);
+    }
+    return { ok: !fehler.length,
+             mass: 'Stufe ' + r.tight.enge + ' (Haarnadel ' + r.tight.haarnadel + ')'
+                 + ' | Lenkung ' + r.start + ' -> ' + r.ende
+                 + ' | ' + (r.gezeichnet ? r.gezeichnet.sperren + ' Sperren' : 'ungezeichnet')
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
   // ---- Der fliegende Start: Zaehlung, Drosselung, zwei Spalten ----
   //
   // GEMELDET: "Probier nochmal, den fliegenden Start zu reparieren: dabei fahren alle einmal
