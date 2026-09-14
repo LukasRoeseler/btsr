@@ -1759,7 +1759,21 @@
         dashLastActedCode = code; dashLastActedAt = jetzt;
         log('Start/Ziel im Ausdruck-Modus: Musterkontakt gesetzt, Code 0x'
             + code.toString(16).padStart(2, '0') + '.', 'info');
-        if (playerLapCrossed()) { refreshMinimap(); }
+        // ---- DIESER AUFRUF IST KEINE ABFRAGE, und ich habe ihn genau deswegen einmal
+        //      versehentlich mitgeloescht -------------------------------------------
+        //
+        // Hier stand `if (playerLapCrossed()) { refreshMinimap(); }`. Beim Entfernen der
+        // Minikarte sah die Zeile wie eine Anzeigeaktualisierung aus und ging mit. Sie
+        // ist aber der einzige Weg, auf dem im Ausdruck-Modus eine Runde gezaehlt wird:
+        // playerLapCrossed() schiebt die Rundenzeit, meldet an den Mehrspieler-Host,
+        // loest den Doppler aus und zaehlt die Rennrunde. Der Rueckgabewert war nur die
+        // Frage, ob sich die Karte lohnt.
+        //
+        // Zwei Selbsttests haben es gemeldet ("Ausdruck-Modus zaehlt jede Ueberfahrt" und
+        // "Boxengasse: doppelter Ausdruck nimmt die Runde zurueck", beide 0 Runden). Der
+        // Aufruf steht deshalb jetzt fuer sich, ohne if - damit die naechste
+        // Anzeigenaufraeumung ihn nicht wieder mitnimmt.
+        playerLapCrossed();
         // Und DANACH die Doppelpruefung: die Runde ist gezaehlt, mit richtiger Zeit, und
         // wird zurueckgenommen falls sich der Kontakt als zweiter eines Paares erweist.
         pitDoubleCheck(jetzt);
@@ -1909,9 +1923,8 @@
       // VOR dem return, nicht danach: das return war die Stelle, an der die Pruefung
       // uebersprungen wurde.
       pitDoubleCheck(nowCode);
-      if (gezaehlt) { refreshMinimap(); return; }
+      if (gezaehlt) return;
     }
-    refreshMinimap();
   }
 
   // Was beim Ueberfahren von Start/Ziel fuer den FAHRER passiert. Herausgezogen, damit die
@@ -2162,22 +2175,22 @@
     return raceLapTimes.length * n + dashMinimapIndex + dashTilePhase();
   }
 
-  function refreshMinimap() {
-    // Die Minikarte ist entfernt worden. Die Positionsverfolgung dahinter bleibt: sie
-    // speist den Vorausblick der Ghosts und die Rundenzaehlung, und nur die Anzeige war
-    // doppelt. Der Aufruf bleibt deshalb stehen und tut nichts, wenn es kein Element gibt -
-    // ein blinder Zugriff darauf wuerde den Fahrtakt abbrechen.
-    const el = $('dash-minimap');
-    if (!el) return;
-    el.innerHTML = (currentTrackTiles.length === 0)
-      ? '<p class="muted" style="width:220px">kein Streckenlayout geladen</p>'
-      // DETAILED, wie im Editor: schwarze Fahrbahn, weisse Stossfugen, rot-weisse
-      // Randsteine links und blau-weisse rechts. Den Aufbau gab es laengst, hier wurde
-      // aber die einfache Fassung gezeichnet - eine graue Linie. Und `cars` statt
-      // `currentIndex`: nur so bekommen die Punkte Farbe, Kuerzel und Querlage.
-      : renderTrackPreview(currentTrackTiles, null,
-                           { detailed: true, cars: trackCarMarks() }).html;
-  }
+  // ---- HIER STAND refreshMinimap() -----------------------------------------------
+  //
+  // Entfernt mit der Anzeige, die es gezeichnet hat ("Wo steht das Auto" im
+  // Streckeneditor), und ZWINGEND mitentfernt: ein Element-Zugriff auf eine id, die es
+  // nicht mehr gibt, ist genau, was check_ids() in tools/build.py meldet. Eine Funktion,
+  // die nur noch mit einem Rueckfall auf ein fehlendes Element dastuende, waere kein
+  // Rest, sondern ein Fehler, der beim naechsten Build anschlaegt.
+  //
+  // NEBENBEI GELERNT: der Pruefer liest auch Kommentare. Die Aufrufform der Kennung in
+  // diesem Text hat ihn ausgeloest - und das ist richtig so, denn ein Pruefer, der
+  // Kommentare auslaesst, muesste JavaScript zerlegen koennen.
+  //
+  // WAS BLEIBT, und der Name verfuehrt zum Gegenteil: dashMinimapIndex ist keine
+  // Anzeige. Er ist die Ortung des Fahrerautos und speist den Vorausblick der Ghosts,
+  // dashTilePhase() und spielerOrtGes(). Er heisst nur so, weil die Minikarte sein
+  // erster Leser war.
 
   async function ensureDashboardStatusSubscribed() {
     const entry = charByUuid.get(NUS_TX);

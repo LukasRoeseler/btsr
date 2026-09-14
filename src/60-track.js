@@ -2675,7 +2675,6 @@
       };
     });
     $('track-rotation-val').textContent = trackRotationDeg + '°';
-    if (typeof refreshMinimap === 'function') refreshMinimap();
   }
 
   // Genau eine Start/Ziel-Kachel, und sie liegt auf Index 0. freshTrackTiles() legt sie

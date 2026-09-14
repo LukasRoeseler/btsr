@@ -2947,7 +2947,9 @@
     // Die drei Orte, jeder mit demselben Bild. Gemessen wird der GERECHNETE Grund: er ist
     // der Unterschied, um den es geht - Panelgrund im Editor, durchscheinendes Weiss auf dem
     // schwarzen Cockpitgrund des Uebersichtsschirms.
-    const ORTE = ['#track-preview-svg', '#dash-minimap', '.ov-karte'];
+    // ZWEI statt drei seit v0.6.26: #dash-minimap im Streckenreiter ist entfernt -
+    // dieselbe Karte stand daneben schon im Uebersichtsschirm des Cockpits.
+    const ORTE = ['#track-preview-svg', '.ov-karte'];
     const gruende = {};
     for (const sel of ORTE) {
       const host = document.querySelector(sel);

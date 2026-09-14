@@ -2206,10 +2206,12 @@
      renderTrackPreview() zeichnet nur noch: viewBox, Fahrbahn, Stossfugen, Randsteine,
      Punkte. Alles Aeussere steht hier, weil es vom ORT abhaengt und nicht vom Bild.
 
-     DREI ORTE ZEIGEN DASSELBE BILD, und jeder hat andere Randbedingungen:
+     ZWEI ORTE ZEIGEN DASSELBE BILD, und jeder hat andere Randbedingungen:
        #track-preview-svg   Editor: 520 px breit in der Seite, im Vollbild ohne Deckel
-       #dash-minimap        Streckenreiter: schmal, unter einem Absatz Text
        .ov-karte            Uebersichtsschirm: die HOEHE ist knapp, nicht die Breite
+
+     Der dritte war #dash-minimap im Streckenreiter, entfernt in v0.6.26: dieselbe
+     Karte stand daneben schon im Uebersichtsschirm des Cockpits.
 
      Der Grund ist hier --panel-2, weil das Bild in der Seite auf einer Karte liegt. Der
      Uebersichtsschirm ueberschreibt ihn: dort liegt es auf schwarzem Cockpitgrund, und eine
@@ -2217,9 +2219,6 @@
      Drahtgitter aus Randsteinen ohne Strasse dazwischen. */
   .tp-karte { background: var(--panel-2); border: 1px solid var(--border);
     border-radius: 6px; }
-  /* Der Streckenreiter: so breit wie die Spalte, gedeckelt. Diese Regel hat vorher gefehlt -
-     #dash-minimap hatte KEIN CSS und hing vollstaendig am Inline-Stil des Zeichners. */
-  #dash-minimap .tp-karte { width: 100%; max-width: 520px; height: auto; }
   /* Die Vorschau neben der Modellwahl. Gedeckelt in der HOEHE und nicht in der Breite: ein
      hochkantiges Layout wuerde sonst die halbe Seite fuellen. */
   /* EINE SPALTE, und das ist keine Kosmetik. .opt-row ist ein Raster
@@ -7920,15 +7919,19 @@
         <span class="muted" id="track-line-info" data-i18n-skip></span>
       </div>
 
-      <h3 style="font-size:14px; margin:16px 0 6px 0">Wo steht das Auto?</h3>
-      <p class="muted" style="font-size:11.5px">
-        Aus dem Cockpit hierher: dort war unter dem Schirm alles doppelt, die Position
-        aber nicht: und sie geh&ouml;rt neben die Strecke, auf die sie sich bezieht.
-        Die Lage ist eine Sch&auml;tzung aus Kachelz&auml;hler und Zeit, keine
-        Positionsmessung vom Auto.
-      </p>
-      <div id="dash-minimap"></div>
+      <!-- ---- HIER STAND "WO STEHT DAS AUTO" ---------------------------------
+           Entfernt, wie bestellt: "das ist ja schon im Cockpit screen eingebaut."
 
+           Das war die dritte Fassung derselben Anzeige. Sie sass einmal im Cockpit,
+           zog von dort hierher ("dort war unter dem Schirm alles doppelt"), und ist
+           inzwischen im Uebersichtsschirm des Cockpits wieder da - mit derselben
+           Karte, denselben Punkten und mehr Platz. Die Begruendung von damals gilt
+           also nicht mehr.
+
+           Die ORTUNG dahinter bleibt vollstaendig: dashMinimapIndex speist den
+           Vorausblick der Ghosts und die Rundenzaehlung. Der Name klingt nach
+           Anzeige, die Sache ist keine - deshalb steht das hier und nicht im
+           Loeschprotokoll. -->
       <div class="row" style="align-items:center; gap:8px; margin-top:14px">
         <label class="small" style="white-space:nowrap">Streckencode</label>
         <input type="text" id="track-code" readonly style="flex:1; min-width:120px; font-family:monospace">
@@ -8156,7 +8159,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.6.25</span></span>
+    <span class="foot-ver">v<span id="app-version">0.6.26</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine

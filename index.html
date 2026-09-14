@@ -2206,10 +2206,12 @@
      renderTrackPreview() zeichnet nur noch: viewBox, Fahrbahn, Stossfugen, Randsteine,
      Punkte. Alles Aeussere steht hier, weil es vom ORT abhaengt und nicht vom Bild.
 
-     DREI ORTE ZEIGEN DASSELBE BILD, und jeder hat andere Randbedingungen:
+     ZWEI ORTE ZEIGEN DASSELBE BILD, und jeder hat andere Randbedingungen:
        #track-preview-svg   Editor: 520 px breit in der Seite, im Vollbild ohne Deckel
-       #dash-minimap        Streckenreiter: schmal, unter einem Absatz Text
        .ov-karte            Uebersichtsschirm: die HOEHE ist knapp, nicht die Breite
+
+     Der dritte war #dash-minimap im Streckenreiter, entfernt in v0.6.26: dieselbe
+     Karte stand daneben schon im Uebersichtsschirm des Cockpits.
 
      Der Grund ist hier --panel-2, weil das Bild in der Seite auf einer Karte liegt. Der
      Uebersichtsschirm ueberschreibt ihn: dort liegt es auf schwarzem Cockpitgrund, und eine
@@ -2217,9 +2219,6 @@
      Drahtgitter aus Randsteinen ohne Strasse dazwischen. */
   .tp-karte { background: var(--panel-2); border: 1px solid var(--border);
     border-radius: 6px; }
-  /* Der Streckenreiter: so breit wie die Spalte, gedeckelt. Diese Regel hat vorher gefehlt -
-     #dash-minimap hatte KEIN CSS und hing vollstaendig am Inline-Stil des Zeichners. */
-  #dash-minimap .tp-karte { width: 100%; max-width: 520px; height: auto; }
   /* Die Vorschau neben der Modellwahl. Gedeckelt in der HOEHE und nicht in der Breite: ein
      hochkantiges Layout wuerde sonst die halbe Seite fuellen. */
   /* EINE SPALTE, und das ist keine Kosmetik. .opt-row ist ein Raster
@@ -7920,15 +7919,19 @@
         <span class="muted" id="track-line-info" data-i18n-skip></span>
       </div>
 
-      <h3 style="font-size:14px; margin:16px 0 6px 0">Wo steht das Auto?</h3>
-      <p class="muted" style="font-size:11.5px">
-        Aus dem Cockpit hierher: dort war unter dem Schirm alles doppelt, die Position
-        aber nicht: und sie geh&ouml;rt neben die Strecke, auf die sie sich bezieht.
-        Die Lage ist eine Sch&auml;tzung aus Kachelz&auml;hler und Zeit, keine
-        Positionsmessung vom Auto.
-      </p>
-      <div id="dash-minimap"></div>
+      <!-- ---- HIER STAND "WO STEHT DAS AUTO" ---------------------------------
+           Entfernt, wie bestellt: "das ist ja schon im Cockpit screen eingebaut."
 
+           Das war die dritte Fassung derselben Anzeige. Sie sass einmal im Cockpit,
+           zog von dort hierher ("dort war unter dem Schirm alles doppelt"), und ist
+           inzwischen im Uebersichtsschirm des Cockpits wieder da - mit derselben
+           Karte, denselben Punkten und mehr Platz. Die Begruendung von damals gilt
+           also nicht mehr.
+
+           Die ORTUNG dahinter bleibt vollstaendig: dashMinimapIndex speist den
+           Vorausblick der Ghosts und die Rundenzaehlung. Der Name klingt nach
+           Anzeige, die Sache ist keine - deshalb steht das hier und nicht im
+           Loeschprotokoll. -->
       <div class="row" style="align-items:center; gap:8px; margin-top:14px">
         <label class="small" style="white-space:nowrap">Streckencode</label>
         <input type="text" id="track-code" readonly style="flex:1; min-width:120px; font-family:monospace">
@@ -8156,7 +8159,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.6.25</span></span>
+    <span class="foot-ver">v<span id="app-version">0.6.26</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -8699,7 +8702,6 @@
     "Aufnahme": "Recording",
     "Aufnahme: nächsten Abschnitt markieren": "Recording: mark the next section",
     "Aus dem Cockpit hierher gezogen. Am Telefon wird geneigt oder ein Pad benutzt, am Rechner reichen die Pfeiltasten: aber ohne Pad und ohne Tastatur ist das hier die einzige Mausbedienung, deshalb ist sie nicht gelöscht.": "Moved here from the cockpit. On a phone you tilt or use a pad, on a computer the arrow keys are enough: but without a pad and without a keyboard this is the only mouse control, which is why it was not deleted.",
-    "Aus dem Cockpit hierher: dort war unter dem Schirm alles doppelt, die Position aber nicht: und sie gehört neben die Strecke, auf die sie sich bezieht. Die Lage ist eine Schätzung aus Kachelzähler und Zeit, keine Positionsmessung vom Auto.": "Moved here from the cockpit: everything below the dash was duplicated there, but the position was not: and it belongs next to the track it refers to. The position is an estimate from the tile counter and time, not a measurement from the car.",
     "Aus": "Off",
     "Aus: fährt auch ohne gedruckte Strecke. An: nur mit gelesenem Muster.": "Off: drives even without a printed track. On: only with a pattern read.",
     "Aus: rohe Stickstellung, ohne Gänge.": "Off: raw stick position, no gears.",
@@ -9376,7 +9378,6 @@
     "Wiedergabe-Log": "Replay log",
     "Wieviel": "How much",
     "Wird nach dem ersten Lauf gezeichnet: Geschwindigkeit und der": "Drawn after the first run: speed and the",
-    "Wo steht das Auto?": "Where is the car?",
     "Womit dieses Werkzeug die Haarnadel gefunden hat.": "How this tool found the hairpin.",
     "Wähle die Characteristic, an die Lenk-/Gas-Kommandos geschrieben werden sollen (wird beim Verbinden automatisch auf NUS RX gesetzt).": "Choose the characteristic the steering and throttle commands are written to (set to NUS RX automatically on connecting).",
     "ZU SCHNELL FÜR R": "TOO FAST FOR R",
@@ -18806,7 +18807,6 @@
       };
     });
     $('track-rotation-val').textContent = trackRotationDeg + '°';
-    if (typeof refreshMinimap === 'function') refreshMinimap();
   }
 
   // Genau eine Start/Ziel-Kachel, und sie liegt auf Index 0. freshTrackTiles() legt sie
@@ -21250,7 +21250,21 @@
         dashLastActedCode = code; dashLastActedAt = jetzt;
         log('Start/Ziel im Ausdruck-Modus: Musterkontakt gesetzt, Code 0x'
             + code.toString(16).padStart(2, '0') + '.', 'info');
-        if (playerLapCrossed()) { refreshMinimap(); }
+        // ---- DIESER AUFRUF IST KEINE ABFRAGE, und ich habe ihn genau deswegen einmal
+        //      versehentlich mitgeloescht -------------------------------------------
+        //
+        // Hier stand `if (playerLapCrossed()) { refreshMinimap(); }`. Beim Entfernen der
+        // Minikarte sah die Zeile wie eine Anzeigeaktualisierung aus und ging mit. Sie
+        // ist aber der einzige Weg, auf dem im Ausdruck-Modus eine Runde gezaehlt wird:
+        // playerLapCrossed() schiebt die Rundenzeit, meldet an den Mehrspieler-Host,
+        // loest den Doppler aus und zaehlt die Rennrunde. Der Rueckgabewert war nur die
+        // Frage, ob sich die Karte lohnt.
+        //
+        // Zwei Selbsttests haben es gemeldet ("Ausdruck-Modus zaehlt jede Ueberfahrt" und
+        // "Boxengasse: doppelter Ausdruck nimmt die Runde zurueck", beide 0 Runden). Der
+        // Aufruf steht deshalb jetzt fuer sich, ohne if - damit die naechste
+        // Anzeigenaufraeumung ihn nicht wieder mitnimmt.
+        playerLapCrossed();
         // Und DANACH die Doppelpruefung: die Runde ist gezaehlt, mit richtiger Zeit, und
         // wird zurueckgenommen falls sich der Kontakt als zweiter eines Paares erweist.
         pitDoubleCheck(jetzt);
@@ -21400,9 +21414,8 @@
       // VOR dem return, nicht danach: das return war die Stelle, an der die Pruefung
       // uebersprungen wurde.
       pitDoubleCheck(nowCode);
-      if (gezaehlt) { refreshMinimap(); return; }
+      if (gezaehlt) return;
     }
-    refreshMinimap();
   }
 
   // Was beim Ueberfahren von Start/Ziel fuer den FAHRER passiert. Herausgezogen, damit die
@@ -21653,22 +21666,22 @@
     return raceLapTimes.length * n + dashMinimapIndex + dashTilePhase();
   }
 
-  function refreshMinimap() {
-    // Die Minikarte ist entfernt worden. Die Positionsverfolgung dahinter bleibt: sie
-    // speist den Vorausblick der Ghosts und die Rundenzaehlung, und nur die Anzeige war
-    // doppelt. Der Aufruf bleibt deshalb stehen und tut nichts, wenn es kein Element gibt -
-    // ein blinder Zugriff darauf wuerde den Fahrtakt abbrechen.
-    const el = $('dash-minimap');
-    if (!el) return;
-    el.innerHTML = (currentTrackTiles.length === 0)
-      ? '<p class="muted" style="width:220px">kein Streckenlayout geladen</p>'
-      // DETAILED, wie im Editor: schwarze Fahrbahn, weisse Stossfugen, rot-weisse
-      // Randsteine links und blau-weisse rechts. Den Aufbau gab es laengst, hier wurde
-      // aber die einfache Fassung gezeichnet - eine graue Linie. Und `cars` statt
-      // `currentIndex`: nur so bekommen die Punkte Farbe, Kuerzel und Querlage.
-      : renderTrackPreview(currentTrackTiles, null,
-                           { detailed: true, cars: trackCarMarks() }).html;
-  }
+  // ---- HIER STAND refreshMinimap() -----------------------------------------------
+  //
+  // Entfernt mit der Anzeige, die es gezeichnet hat ("Wo steht das Auto" im
+  // Streckeneditor), und ZWINGEND mitentfernt: ein Element-Zugriff auf eine id, die es
+  // nicht mehr gibt, ist genau, was check_ids() in tools/build.py meldet. Eine Funktion,
+  // die nur noch mit einem Rueckfall auf ein fehlendes Element dastuende, waere kein
+  // Rest, sondern ein Fehler, der beim naechsten Build anschlaegt.
+  //
+  // NEBENBEI GELERNT: der Pruefer liest auch Kommentare. Die Aufrufform der Kennung in
+  // diesem Text hat ihn ausgeloest - und das ist richtig so, denn ein Pruefer, der
+  // Kommentare auslaesst, muesste JavaScript zerlegen koennen.
+  //
+  // WAS BLEIBT, und der Name verfuehrt zum Gegenteil: dashMinimapIndex ist keine
+  // Anzeige. Er ist die Ortung des Fahrerautos und speist den Vorausblick der Ghosts,
+  // dashTilePhase() und spielerOrtGes(). Er heisst nur so, weil die Minikarte sein
+  // erster Leser war.
 
   async function ensureDashboardStatusSubscribed() {
     const entry = charByUuid.get(NUS_TX);
@@ -42772,7 +42785,9 @@
     // Die drei Orte, jeder mit demselben Bild. Gemessen wird der GERECHNETE Grund: er ist
     // der Unterschied, um den es geht - Panelgrund im Editor, durchscheinendes Weiss auf dem
     // schwarzen Cockpitgrund des Uebersichtsschirms.
-    const ORTE = ['#track-preview-svg', '#dash-minimap', '.ov-karte'];
+    // ZWEI statt drei seit v0.6.26: #dash-minimap im Streckenreiter ist entfernt -
+    // dieselbe Karte stand daneben schon im Uebersichtsschirm des Cockpits.
+    const ORTE = ['#track-preview-svg', '.ov-karte'];
     const gruende = {};
     for (const sel of ORTE) {
       const host = document.querySelector(sel);
