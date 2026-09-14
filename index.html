@@ -5966,11 +5966,14 @@
            Zeile darunter und nicht im Fliesstext. -->
       <ol class="mp-schritte">
         <li><b>Auf dem PC starten.</b>
-          Im Ordner des Projekts ein Fenster f&uuml;r die Eingabeaufforderung oder das
-          Terminal &ouml;ffnen und den Befehl ausf&uuml;hren:
+          Am einfachsten mit einem Doppelklick auf die Startdatei. Sie sucht Python, startet
+          den Host und schreibt die Adresse hin, unter der er erreichbar ist.
+          <a href="Mehrspieler-Host starten.bat" download
+             class="mp-datei" data-i18n-skip>Mehrspieler-Host starten.bat</a>
+          Wer lieber selbst tippt, &ouml;ffnet im Projektordner ein Fenster f&uuml;r die
+          Eingabeaufforderung oder das Terminal und f&uuml;hrt diesen Befehl aus:
           <span class="mp-befehl"><code id="mp-cmd" data-i18n-skip>python tools/omegasim_host.py --port 8080</code><button type="button" class="mp-kopier" id="mp-cmd-copy">Kopieren</button></span>
-          Das Programm liegt im Projekt und ist von hier aus direkt zu &ouml;ffnen. Es
-          schreibt beim Start die Adresse hin, unter der es erreichbar ist.
+          Das Programm selbst liegt im Projekt und ist von hier aus direkt zu &ouml;ffnen.
           <a href="tools/omegasim_host.py" target="_blank" rel="noopener noreferrer"
              class="mp-datei" data-i18n-skip>tools/omegasim_host.py</a></li>
         <li><b>Die Adresse an die Telefone geben.</b>
@@ -5985,6 +5988,30 @@
           Sie zeigt die Rangliste und hat einen Knopf zum Zur&uuml;cksetzen. Sonst nichts:
           sie ist zum Ansehen aus zwei Metern gedacht und nicht zum Bedienen.</li>
       </ol>
+
+      <!-- ---- WARUM ES KEINEN KNOPF GIBT -----------------------------------------
+           Gefragt: "Gibt es nicht eine Moeglichkeit, das von dort zu starten? Reicht
+           dafuer nicht, die App zu installieren?"
+
+           Nein, und das ist keine fehlende Schnittstelle. Eine Webseite darf kein
+           Programm auf dem Rechner starten - darauf steht die ganze Sicherheit des
+           Browsers. Eine installierte PWA bekommt zwar mehr (Dateizugriff,
+           Benachrichtigungen, Offline-Betrieb), aber nie "beliebiges Programm
+           ausfuehren"; es gibt dafuer keine Schnittstelle, auch keine, die man
+           freischalten koennte.
+
+           Das Naechste, was man dem Knopf bringen kann, ist eine Datei, die man einmal
+           herunterlaedt und danach doppelklickt. Deshalb steht sie oben an erster Stelle. -->
+      <p class="muted" style="font-size:11.5px; border-left:3px solid var(--muted);
+         padding-left:9px">
+        <b>Warum es daf&uuml;r keinen Knopf in der App gibt.</b>
+        Eine Webseite darf kein Programm auf dem Rechner starten. Das ist keine fehlende
+        Schnittstelle, sondern die Grenze, auf der die Sicherheit des Browsers beruht, und
+        sie f&auml;llt auch dann nicht, wenn man die App installiert: eine installierte App
+        bekommt Dateizugriff und Offline-Betrieb, aber niemals das Recht, ein beliebiges
+        Programm auszuf&uuml;hren. Die Startdatei oben ist das N&auml;chste, was daran
+        herankommt &ndash; einmal herunterladen, danach gen&uuml;gt ein Doppelklick.
+      </p>
 
       <p class="muted" style="font-size:11.5px; border-left:3px solid var(--info);
          padding-left:9px">
@@ -8073,7 +8100,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.6.20</span></span>
+    <span class="foot-ver">v<span id="app-version">0.6.21</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -9936,15 +9963,21 @@
       "no",
     "voll":
       "full",
+    "Am einfachsten mit einem Doppelklick auf die Startdatei. Sie sucht Python, startet den Host und schreibt die Adresse hin, unter der er erreichbar ist.":
+      "The easiest way is a double-click on the launcher file. It finds Python, starts the host and prints the address it can be reached at.",
+    "Wer lieber selbst tippt, öffnet im Projektordner ein Fenster für die Eingabeaufforderung oder das Terminal und führt diesen Befehl aus:":
+      "If you would rather type it yourself, open a command prompt or terminal window in the project folder and run this command:",
+    "Das Programm selbst liegt im Projekt und ist von hier aus direkt zu öffnen.":
+      "The program itself is part of the project and can be opened directly from here.",
+    "Warum es dafür keinen Knopf in der App gibt.":
+      "Why there is no button for this in the app.",
+    "Eine Webseite darf kein Programm auf dem Rechner starten. Das ist keine fehlende Schnittstelle, sondern die Grenze, auf der die Sicherheit des Browsers beruht, und sie fällt auch dann nicht, wenn man die App installiert: eine installierte App bekommt Dateizugriff und Offline-Betrieb, aber niemals das Recht, ein beliebiges Programm auszuführen. Die Startdatei oben ist das Nächste, was daran herankommt – einmal herunterladen, danach genügt ein Doppelklick.":
+      "A web page may not start a program on the computer. This is not a missing interface but the boundary the browser's security rests on, and it does not fall when the app is installed either: an installed app gets file access and offline operation, but never the right to run an arbitrary program. The launcher file above is the closest thing to it – download it once, after that a double-click is enough.",
     "Ueber die Leitung gehen Rundenzahl, Rundenzeiten und Abgaenge. Keine Physik, keine Lenkwerte: jedes Telefon rechnet seine eigene Physik und haelt seine eigene Bluetooth-Verbindung. Reisst das WLAN ab, faehrt jeder weiter, nur die Rangliste steht still.": "What goes over the wire: lap count, lap times and departures. No physics, no steering values – each phone computes its own physics and holds its own Bluetooth connection. If the Wi-Fi drops, everyone keeps driving; only the leaderboard stands still.",
     "Mehrere Telefone, jedes mit eigenem Auto, eine gemeinsame Rangliste. Auf dem PC läuft dazu ein kleines Programm.":
       "Several phones, each with its own car, one shared leaderboard. A small program runs on the PC for this.",
     "Auf dem PC starten.":
       "Start it on the PC.",
-    "Im Ordner des Projekts ein Fenster für die Eingabeaufforderung oder das Terminal öffnen und den Befehl ausführen:":
-      "In the project folder, open a command prompt or terminal window and run the command:",
-    "Das Programm liegt im Projekt und ist von hier aus direkt zu öffnen. Es schreibt beim Start die Adresse hin, unter der es erreichbar ist.":
-      "The program is part of the project and can be opened directly from here. On startup it prints the address it can be reached at.",
     "Die Adresse an die Telefone geben.":
       "Give the address to the phones.",
     "Sie gehört oben in das Feld „Host-Adresse“ und hat die Form, die dort als Beispiel steht. Alle Geräte müssen im selben WLAN sein.":
@@ -26891,9 +26924,41 @@
   // Consequence, stated plainly: WITHOUT a layout a ghost can only hold a straight line. It
   // will run wide at the first curve and the cut-out below will stop it. That is a real
   // limitation, not a bug.
-  // Amplitude of the formation-lap weave, as a fraction of full lock. Small on purpose:
-  // it should read as warming tyres, not as a car out of control.
-  const GHOST_WEAVE = 0.22;
+  // ---- DAS SCHLAENGELN DARF DIE SPALTEN NICHT ZUDECKEN --------------------------
+  //
+  // GEMELDET: "Das Ganze in 2 Spalten und mit gedrosselter Geschwindigkeit."
+  //
+  // Die Zaehlung und die Drosselung stimmten - nachgemessen: die Runde endet bei der
+  // zweiten Ueberfahrt irgendeines Autos, und das Feld rollt auf formationPace() = 0,35.
+  // Die SPALTEN gab es nur in der Formel:
+  //
+  //     Schlaengeln 0,22 gegen Spaltenversatz 0,16
+  //     linke Spalte   -0,38 bis +0,06
+  //     rechte Spalte  -0,06 bis +0,38
+  //
+  // Die beiden Bereiche UEBERLAPPEN. Ein Auto der linken Spalte stand zeitweise rechts von
+  // einem der rechten - also kein Zweierzug, sondern ein schwingender Haufen. Der
+  // Kommentar am Versatz sagte sogar, er sei "etwas kleiner als die Schlaengelamplitude,
+  // damit die beiden Bewegungen sich nicht aufheben" - richtig gedacht fuer die Summe,
+  // falsch fuer den Zweck: was sich nicht aufheben darf, ist die TRENNUNG.
+  //
+  // Jetzt dominiert der Versatz, und die Bereiche beruehren sich nicht einmal:
+  //
+  //     linke Spalte   -0,48 bis -0,28
+  //     rechte Spalte  +0,28 bis +0,48
+  //
+  // Zwischen ihnen bleiben 0,56 des Anschlags frei, rund sieben Zentimeter Bahn.
+  //
+  // ---- UND DIE SUMME BLEIBT UNTER 0,5, weil das schon eine Zusage war -------------
+  //
+  // Ein Selbsttest fordert seit v0.4.53, dass Versatz und Schlaengeln ZUSAMMEN unter 0,5
+  // bleiben: was der Formationsversatz an Lenkbereich belegt, fehlt in der Kurve. Ein
+  // erster Anlauf hier stand bei 0,45 + 0,12 = 0,57 und hat den Test zu Recht gerissen.
+  // Die Grenze anzuheben waere gewesen, das Ziel hinter den Pfeil zu malen - 0,38 + 0,10
+  // trennt die Spalten genauso sauber und haelt sie ein.
+  //
+  // Das Schlaengeln bleibt - es soll nach Reifenwaermen aussehen -, nur kleiner.
+  const GHOST_WEAVE = 0.10;
   // Der Versatz der Zweierkolonne, in derselben Einheit wie das Schlaengeln: ein Anteil des
   // vollen Lenkeinschlags. Etwas kleiner als die Schlaengelamplitude, damit die beiden
   // Bewegungen sich nicht aufheben - zusammen bleiben sie unter 0,4, also weit vom Anschlag.
@@ -26901,7 +26966,7 @@
   // Er darf deutlicher ausfallen als der Versatz gegen das Rammen bei voller Fahrt: in der
   // Einfuehrungsrunde geht es mit Boxentempo zu, und dort verzeiht ein seitlicher Versatz
   // mehr.
-  const GHOST_GRID_OFFSET = 0.16;
+  const GHOST_GRID_OFFSET = 0.38;
   // DIE LESESCHWELLE. Unter diesem Anteil der Hoechstgeschwindigkeit faehrt das Auto so
   // langsam, dass es die gedruckte Strecke nicht mehr zuverlaessig liest - dann meldet Byte
   // 12 nur noch 0x00, der Vorausblick faellt aus, und der Abgangsmelder haelt das fuer "Bahn
@@ -37225,6 +37290,97 @@
       return typeof wxModusSetzen === 'function' ? wxModusSetzen(modus) : null;
     },
 
+    // ---- DER FLIEGENDE START, VON AUSSEN GEFAHREN -------------------------------
+    //
+    // GEMELDET: "Probier nochmal, den fliegenden Start zu reparieren: dabei fahren alle
+    // einmal ueber Start, und dann so lange, bis irgendeiner ueber Start faehrt, dann geben
+    // alle normal Gas. Das Ganze in 2 Spalten und mit gedrosselter Geschwindigkeit."
+    //
+    // Drei getrennte Zusagen, und diese Sonde misst alle drei einzeln:
+    //
+    //   1. WANN endet die Runde - bei der zweiten Ueberfahrt IRGENDEINES Autos.
+    //   2. WIE SCHNELL rollt das Feld dabei - gedrosselt auf das Formationstempo.
+    //   3. WIE STEHT es dabei - zwei Spalten, also benachbarte Startplaetze auf
+    //      verschiedenen Seiten.
+    //
+    // Ohne echte Autos: die Ueberfahrten werden gemeldet, wie es der Meldekanal taete.
+    fliegenderStartProbe(o) {
+      const opt = o || {};
+      const merk = { fs: raceFlying, zustand: raceState, formation: raceFormationLap,
+                     limit: limitFormation, gitter: raceGridOrder.slice(),
+                     zaehler: formationZaehler };
+      try {
+        raceFlying = true;
+        raceGridOrder = (opt.autos || ['a', 'b', 'c', 'd']).slice();
+        raceFormationLap = true;
+        formationZaehler = new Map();
+        limitFormation = formationPace();
+
+        // ---- DIE SPANNE JE SPALTE, ueber eine ganze Schlaengelperiode ------------
+        //
+        // Den Versatz bei Phase null abzulesen genuegt NICHT: formationOffset traegt
+        // Schlaengeln PLUS Kolonne, und die Frage ist, ob die beiden Spalten sich beim
+        // Schwingen ueberschneiden. Genau daran ist es gescheitert - der Versatz stand in
+        // der Formel, das Schlaengeln war groesser, und die Bereiche lagen uebereinander.
+        //
+        // Also wird eine volle Periode abgetastet (700 ms je Radiant, siehe
+        // formationOffset) und je Startplatz das Kleinste und Groesste festgehalten.
+        const spalten = raceGridOrder.map((id, i) => {
+          const halter = { weavePhase: 0 };
+          let min = Infinity, max = -Infinity;
+          for (let t = 0; t <= 4400; t += 25) {
+            const v = formationOffset(halter, i, t);
+            if (v < min) min = v;
+            if (v > max) max = v;
+          }
+          // GERADER PLATZ IST RECHTS. formationOffset rechnet (gridPos % 2 ? -1 : 1),
+          // ein gerader Platz bekommt also einen POSITIVEN Versatz - und positiv ist
+          // rechts (Byte 7, nachgemessen am Bahnradius). Ein erster Anlauf dieser Sonde
+          // hatte die Seiten vertauscht und meldete eine Trennung von -1,14: die Zahlen
+          // waren richtig, die Namen falsch, und das Vorzeichen machte aus einer sauberen
+          // Trennung eine Ueberschneidung.
+          return { id, platz: i, seite: i % 2 ? 'links' : 'rechts',
+                   min: +min.toFixed(3), max: +max.toFixed(3) };
+        });
+        // Ueberlappen die beiden Spalten? Das ist die eigentliche Zusage: positiv heisst,
+        // zwischen ihnen bleibt Bahn frei.
+        const links = spalten.filter((x) => x.seite === 'links');
+        const rechts = spalten.filter((x) => x.seite === 'rechts');
+        const trennung = (links.length && rechts.length)
+          ? +(Math.min.apply(null, rechts.map((x) => x.min))
+              - Math.max.apply(null, links.map((x) => x.max))).toFixed(3)
+          : null;
+
+        // Die Ueberfahrten der Reihe nach melden und festhalten, wann es gruen wird.
+        const verlauf = [];
+        const folge = opt.folge || ['a', 'b', 'c', 'd', 'a'];
+        for (const id of folge) {
+          const vorher = raceFormationLap;
+          formationUeberfahrt(id);
+          verlauf.push({ wer: id, nachher: raceFormationLap,
+                         beendet: vorher && !raceFormationLap });
+        }
+        return {
+          spalten,
+          // Positiv heisst: zwischen den Spalten bleibt Bahn frei. Null oder negativ
+          // heisst, sie ueberschneiden sich - und dann ist es kein Zweierzug.
+          trennung,
+          verlauf,
+          tempo: { formation: +formationPace().toFixed(3),
+                   limitNachher: +limitFormation.toFixed(3) },
+          nochFormation: raceFormationLap,
+        };
+      } finally {
+        raceFlying = merk.fs;
+        raceState = merk.zustand;
+        raceFormationLap = merk.formation;
+        limitFormation = merk.limit;
+        raceGridOrder = merk.gitter;
+        formationZaehler = merk.zaehler;
+        applySpeedLimit();
+      }
+    },
+
     // ---- MEHRSPIELER, MIT EINEM FETCH-STUMMEL -----------------------------------
     //
     // Mehrspieler hatte bis v0.6.20 KEINE einzige Pruefung - weder hier noch im
@@ -46759,6 +46915,76 @@
     return { ok: !fehler.length,
              mass: mit.zeilen + ' Sektorzeilen, ' + mit.beste + ' Bestwerte'
                  + ' | bei einem Sektor ' + ohne.zeilen
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
+  // ---- Der fliegende Start: Zaehlung, Drosselung, zwei Spalten ----
+  //
+  // GEMELDET: "Probier nochmal, den fliegenden Start zu reparieren: dabei fahren alle einmal
+  // ueber Start, und dann so lange, bis irgendeiner ueber Start faehrt, dann geben alle
+  // normal Gas. Das Ganze in 2 Spalten und mit gedrosselter Geschwindigkeit."
+  //
+  // ---- ZWEI DER DREI TEILE WAREN IN ORDNUNG, und das gehoert dazu ----------------
+  //
+  // Nachgemessen: die Runde endet bei der ZWEITEN Ueberfahrt irgendeines Autos (nicht bei
+  // der ersten, sonst waere sie vorbei, bevor sie anfaengt), und das Feld rollt auf
+  // formationPace(). Beides stimmte schon.
+  //
+  // DIE SPALTEN GAB ES NUR IN DER FORMEL. formationOffset traegt Schlaengeln PLUS Kolonne,
+  // und das Schlaengeln war mit 0,22 GROESSER als der Spaltenversatz mit 0,16:
+  //
+  //     linke Spalte   -0,38 bis +0,06
+  //     rechte Spalte  -0,06 bis +0,38
+  //
+  // Die Bereiche ueberlappten - ein Auto der linken Spalte stand zeitweise rechts von einem
+  // der rechten. Kein Zweierzug, sondern ein schwingender Haufen.
+  //
+  // Deshalb prueft dieser Test nicht den Versatz, sondern die TRENNUNG ueber eine ganze
+  // Schlaengelperiode. Eine Pruefung auf "der Versatz ist nicht null" waere auch vorher
+  // gruen gewesen.
+  stAdd('Fliegender Start: zwei getrennte Spalten, gedrosselt, und er endet richtig', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.fliegenderStartProbe) {
+      return { skip: true, mass: 'fliegenderStartProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.fliegenderStartProbe({ autos: ['a', 'b', 'c', 'd'],
+                                                folge: ['a', 'b', 'c', 'd', 'a'] });
+    if (!r) return { skip: true, mass: 'kein Lauf' };
+    const fehler = [];
+    // 1. DIE SPALTEN TRENNEN SICH WIRKLICH. Das ist der behobene Teil.
+    if (!(r.trennung > 0.2)) {
+      fehler.push('Spalten trennen sich nur um ' + r.trennung + ' (erwartet > 0,2)');
+    }
+    // 2. UND SIE LIEGEN AUF VERSCHIEDENEN SEITEN, benachbarte Plaetze abwechselnd. Ohne
+    //    diese Zeile waere der Test auch gruen, wenn alle vier auf derselben Seite stuenden
+    //    und sich nur unterschiedlich weit hinauslehnten.
+    for (let i = 1; i < r.spalten.length; i++) {
+      if (r.spalten[i].seite === r.spalten[i - 1].seite) {
+        fehler.push('Platz ' + i + ' und ' + (i + 1) + ' auf derselben Seite');
+        break;
+      }
+    }
+    // 3. DER ANSCHLAG WIRD NICHT ERREICHT. Schlaengeln plus Kolonne muessen zusammen
+    //    darunter bleiben, sonst faehrt das Feld in der Einfuehrungsrunde am Rand entlang.
+    const weit = Math.max.apply(null, r.spalten.map((x) => Math.max(Math.abs(x.min),
+                                                                   Math.abs(x.max))));
+    if (!(weit < 0.85)) fehler.push('bis ' + weit.toFixed(2) + ' vom Anschlag');
+    // 4. GEDROSSELT. formationPace() ist der Boden, unter dem das Auto die Bahn nicht mehr
+    //    liest - darunter darf die Drosselung nicht gehen, darueber ist sie keine.
+    if (!(r.tempo.formation > 0.2 && r.tempo.formation < 0.6)) {
+      fehler.push('Formationstempo ' + r.tempo.formation);
+    }
+    // 5. UND ER ENDET BEI DER ZWEITEN UEBERFAHRT IRGENDEINES AUTOS - nicht frueher.
+    const ende = r.verlauf.findIndex((v) => v.beendet);
+    if (ende !== 4) {
+      fehler.push('endet nach ' + (ende + 1) + ' Ueberfahrten statt nach 5');
+    }
+    if (r.nochFormation) fehler.push('Einfuehrungsrunde endet gar nicht');
+    return { ok: !fehler.length,
+             mass: 'Trennung ' + r.trennung + ' | Seiten '
+                 + r.spalten.map((x) => x.seite[0]).join('')
+                 + ' | bis ' + weit.toFixed(2) + ' Anschlag'
+                 + ' | Tempo ' + r.tempo.formation
+                 + ' | endet bei Ueberfahrt ' + (ende + 1)
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 

@@ -7648,6 +7648,76 @@
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
+  // ---- Der fliegende Start: Zaehlung, Drosselung, zwei Spalten ----
+  //
+  // GEMELDET: "Probier nochmal, den fliegenden Start zu reparieren: dabei fahren alle einmal
+  // ueber Start, und dann so lange, bis irgendeiner ueber Start faehrt, dann geben alle
+  // normal Gas. Das Ganze in 2 Spalten und mit gedrosselter Geschwindigkeit."
+  //
+  // ---- ZWEI DER DREI TEILE WAREN IN ORDNUNG, und das gehoert dazu ----------------
+  //
+  // Nachgemessen: die Runde endet bei der ZWEITEN Ueberfahrt irgendeines Autos (nicht bei
+  // der ersten, sonst waere sie vorbei, bevor sie anfaengt), und das Feld rollt auf
+  // formationPace(). Beides stimmte schon.
+  //
+  // DIE SPALTEN GAB ES NUR IN DER FORMEL. formationOffset traegt Schlaengeln PLUS Kolonne,
+  // und das Schlaengeln war mit 0,22 GROESSER als der Spaltenversatz mit 0,16:
+  //
+  //     linke Spalte   -0,38 bis +0,06
+  //     rechte Spalte  -0,06 bis +0,38
+  //
+  // Die Bereiche ueberlappten - ein Auto der linken Spalte stand zeitweise rechts von einem
+  // der rechten. Kein Zweierzug, sondern ein schwingender Haufen.
+  //
+  // Deshalb prueft dieser Test nicht den Versatz, sondern die TRENNUNG ueber eine ganze
+  // Schlaengelperiode. Eine Pruefung auf "der Versatz ist nicht null" waere auch vorher
+  // gruen gewesen.
+  stAdd('Fliegender Start: zwei getrennte Spalten, gedrosselt, und er endet richtig', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.fliegenderStartProbe) {
+      return { skip: true, mass: 'fliegenderStartProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.fliegenderStartProbe({ autos: ['a', 'b', 'c', 'd'],
+                                                folge: ['a', 'b', 'c', 'd', 'a'] });
+    if (!r) return { skip: true, mass: 'kein Lauf' };
+    const fehler = [];
+    // 1. DIE SPALTEN TRENNEN SICH WIRKLICH. Das ist der behobene Teil.
+    if (!(r.trennung > 0.2)) {
+      fehler.push('Spalten trennen sich nur um ' + r.trennung + ' (erwartet > 0,2)');
+    }
+    // 2. UND SIE LIEGEN AUF VERSCHIEDENEN SEITEN, benachbarte Plaetze abwechselnd. Ohne
+    //    diese Zeile waere der Test auch gruen, wenn alle vier auf derselben Seite stuenden
+    //    und sich nur unterschiedlich weit hinauslehnten.
+    for (let i = 1; i < r.spalten.length; i++) {
+      if (r.spalten[i].seite === r.spalten[i - 1].seite) {
+        fehler.push('Platz ' + i + ' und ' + (i + 1) + ' auf derselben Seite');
+        break;
+      }
+    }
+    // 3. DER ANSCHLAG WIRD NICHT ERREICHT. Schlaengeln plus Kolonne muessen zusammen
+    //    darunter bleiben, sonst faehrt das Feld in der Einfuehrungsrunde am Rand entlang.
+    const weit = Math.max.apply(null, r.spalten.map((x) => Math.max(Math.abs(x.min),
+                                                                   Math.abs(x.max))));
+    if (!(weit < 0.85)) fehler.push('bis ' + weit.toFixed(2) + ' vom Anschlag');
+    // 4. GEDROSSELT. formationPace() ist der Boden, unter dem das Auto die Bahn nicht mehr
+    //    liest - darunter darf die Drosselung nicht gehen, darueber ist sie keine.
+    if (!(r.tempo.formation > 0.2 && r.tempo.formation < 0.6)) {
+      fehler.push('Formationstempo ' + r.tempo.formation);
+    }
+    // 5. UND ER ENDET BEI DER ZWEITEN UEBERFAHRT IRGENDEINES AUTOS - nicht frueher.
+    const ende = r.verlauf.findIndex((v) => v.beendet);
+    if (ende !== 4) {
+      fehler.push('endet nach ' + (ende + 1) + ' Ueberfahrten statt nach 5');
+    }
+    if (r.nochFormation) fehler.push('Einfuehrungsrunde endet gar nicht');
+    return { ok: !fehler.length,
+             mass: 'Trennung ' + r.trennung + ' | Seiten '
+                 + r.spalten.map((x) => x.seite[0]).join('')
+                 + ' | bis ' + weit.toFixed(2) + ' Anschlag'
+                 + ' | Tempo ' + r.tempo.formation
+                 + ' | endet bei Ueberfahrt ' + (ende + 1)
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
   // ---- Mehrspieler: melden, holen, zeichnen ----
   //
   // Mehrspieler hatte bis v0.6.20 KEINE einzige Pruefung, weder hier noch im Prueflauf -

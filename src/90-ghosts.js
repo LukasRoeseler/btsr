@@ -1352,9 +1352,41 @@
   // Consequence, stated plainly: WITHOUT a layout a ghost can only hold a straight line. It
   // will run wide at the first curve and the cut-out below will stop it. That is a real
   // limitation, not a bug.
-  // Amplitude of the formation-lap weave, as a fraction of full lock. Small on purpose:
-  // it should read as warming tyres, not as a car out of control.
-  const GHOST_WEAVE = 0.22;
+  // ---- DAS SCHLAENGELN DARF DIE SPALTEN NICHT ZUDECKEN --------------------------
+  //
+  // GEMELDET: "Das Ganze in 2 Spalten und mit gedrosselter Geschwindigkeit."
+  //
+  // Die Zaehlung und die Drosselung stimmten - nachgemessen: die Runde endet bei der
+  // zweiten Ueberfahrt irgendeines Autos, und das Feld rollt auf formationPace() = 0,35.
+  // Die SPALTEN gab es nur in der Formel:
+  //
+  //     Schlaengeln 0,22 gegen Spaltenversatz 0,16
+  //     linke Spalte   -0,38 bis +0,06
+  //     rechte Spalte  -0,06 bis +0,38
+  //
+  // Die beiden Bereiche UEBERLAPPEN. Ein Auto der linken Spalte stand zeitweise rechts von
+  // einem der rechten - also kein Zweierzug, sondern ein schwingender Haufen. Der
+  // Kommentar am Versatz sagte sogar, er sei "etwas kleiner als die Schlaengelamplitude,
+  // damit die beiden Bewegungen sich nicht aufheben" - richtig gedacht fuer die Summe,
+  // falsch fuer den Zweck: was sich nicht aufheben darf, ist die TRENNUNG.
+  //
+  // Jetzt dominiert der Versatz, und die Bereiche beruehren sich nicht einmal:
+  //
+  //     linke Spalte   -0,48 bis -0,28
+  //     rechte Spalte  +0,28 bis +0,48
+  //
+  // Zwischen ihnen bleiben 0,56 des Anschlags frei, rund sieben Zentimeter Bahn.
+  //
+  // ---- UND DIE SUMME BLEIBT UNTER 0,5, weil das schon eine Zusage war -------------
+  //
+  // Ein Selbsttest fordert seit v0.4.53, dass Versatz und Schlaengeln ZUSAMMEN unter 0,5
+  // bleiben: was der Formationsversatz an Lenkbereich belegt, fehlt in der Kurve. Ein
+  // erster Anlauf hier stand bei 0,45 + 0,12 = 0,57 und hat den Test zu Recht gerissen.
+  // Die Grenze anzuheben waere gewesen, das Ziel hinter den Pfeil zu malen - 0,38 + 0,10
+  // trennt die Spalten genauso sauber und haelt sie ein.
+  //
+  // Das Schlaengeln bleibt - es soll nach Reifenwaermen aussehen -, nur kleiner.
+  const GHOST_WEAVE = 0.10;
   // Der Versatz der Zweierkolonne, in derselben Einheit wie das Schlaengeln: ein Anteil des
   // vollen Lenkeinschlags. Etwas kleiner als die Schlaengelamplitude, damit die beiden
   // Bewegungen sich nicht aufheben - zusammen bleiben sie unter 0,4, also weit vom Anschlag.
@@ -1362,7 +1394,7 @@
   // Er darf deutlicher ausfallen als der Versatz gegen das Rammen bei voller Fahrt: in der
   // Einfuehrungsrunde geht es mit Boxentempo zu, und dort verzeiht ein seitlicher Versatz
   // mehr.
-  const GHOST_GRID_OFFSET = 0.16;
+  const GHOST_GRID_OFFSET = 0.38;
   // DIE LESESCHWELLE. Unter diesem Anteil der Hoechstgeschwindigkeit faehrt das Auto so
   // langsam, dass es die gedruckte Strecke nicht mehr zuverlaessig liest - dann meldet Byte
   // 12 nur noch 0x00, der Vorausblick faellt aus, und der Abgangsmelder haelt das fuer "Bahn

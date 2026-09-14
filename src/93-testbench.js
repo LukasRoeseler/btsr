@@ -3852,6 +3852,97 @@
       return typeof wxModusSetzen === 'function' ? wxModusSetzen(modus) : null;
     },
 
+    // ---- DER FLIEGENDE START, VON AUSSEN GEFAHREN -------------------------------
+    //
+    // GEMELDET: "Probier nochmal, den fliegenden Start zu reparieren: dabei fahren alle
+    // einmal ueber Start, und dann so lange, bis irgendeiner ueber Start faehrt, dann geben
+    // alle normal Gas. Das Ganze in 2 Spalten und mit gedrosselter Geschwindigkeit."
+    //
+    // Drei getrennte Zusagen, und diese Sonde misst alle drei einzeln:
+    //
+    //   1. WANN endet die Runde - bei der zweiten Ueberfahrt IRGENDEINES Autos.
+    //   2. WIE SCHNELL rollt das Feld dabei - gedrosselt auf das Formationstempo.
+    //   3. WIE STEHT es dabei - zwei Spalten, also benachbarte Startplaetze auf
+    //      verschiedenen Seiten.
+    //
+    // Ohne echte Autos: die Ueberfahrten werden gemeldet, wie es der Meldekanal taete.
+    fliegenderStartProbe(o) {
+      const opt = o || {};
+      const merk = { fs: raceFlying, zustand: raceState, formation: raceFormationLap,
+                     limit: limitFormation, gitter: raceGridOrder.slice(),
+                     zaehler: formationZaehler };
+      try {
+        raceFlying = true;
+        raceGridOrder = (opt.autos || ['a', 'b', 'c', 'd']).slice();
+        raceFormationLap = true;
+        formationZaehler = new Map();
+        limitFormation = formationPace();
+
+        // ---- DIE SPANNE JE SPALTE, ueber eine ganze Schlaengelperiode ------------
+        //
+        // Den Versatz bei Phase null abzulesen genuegt NICHT: formationOffset traegt
+        // Schlaengeln PLUS Kolonne, und die Frage ist, ob die beiden Spalten sich beim
+        // Schwingen ueberschneiden. Genau daran ist es gescheitert - der Versatz stand in
+        // der Formel, das Schlaengeln war groesser, und die Bereiche lagen uebereinander.
+        //
+        // Also wird eine volle Periode abgetastet (700 ms je Radiant, siehe
+        // formationOffset) und je Startplatz das Kleinste und Groesste festgehalten.
+        const spalten = raceGridOrder.map((id, i) => {
+          const halter = { weavePhase: 0 };
+          let min = Infinity, max = -Infinity;
+          for (let t = 0; t <= 4400; t += 25) {
+            const v = formationOffset(halter, i, t);
+            if (v < min) min = v;
+            if (v > max) max = v;
+          }
+          // GERADER PLATZ IST RECHTS. formationOffset rechnet (gridPos % 2 ? -1 : 1),
+          // ein gerader Platz bekommt also einen POSITIVEN Versatz - und positiv ist
+          // rechts (Byte 7, nachgemessen am Bahnradius). Ein erster Anlauf dieser Sonde
+          // hatte die Seiten vertauscht und meldete eine Trennung von -1,14: die Zahlen
+          // waren richtig, die Namen falsch, und das Vorzeichen machte aus einer sauberen
+          // Trennung eine Ueberschneidung.
+          return { id, platz: i, seite: i % 2 ? 'links' : 'rechts',
+                   min: +min.toFixed(3), max: +max.toFixed(3) };
+        });
+        // Ueberlappen die beiden Spalten? Das ist die eigentliche Zusage: positiv heisst,
+        // zwischen ihnen bleibt Bahn frei.
+        const links = spalten.filter((x) => x.seite === 'links');
+        const rechts = spalten.filter((x) => x.seite === 'rechts');
+        const trennung = (links.length && rechts.length)
+          ? +(Math.min.apply(null, rechts.map((x) => x.min))
+              - Math.max.apply(null, links.map((x) => x.max))).toFixed(3)
+          : null;
+
+        // Die Ueberfahrten der Reihe nach melden und festhalten, wann es gruen wird.
+        const verlauf = [];
+        const folge = opt.folge || ['a', 'b', 'c', 'd', 'a'];
+        for (const id of folge) {
+          const vorher = raceFormationLap;
+          formationUeberfahrt(id);
+          verlauf.push({ wer: id, nachher: raceFormationLap,
+                         beendet: vorher && !raceFormationLap });
+        }
+        return {
+          spalten,
+          // Positiv heisst: zwischen den Spalten bleibt Bahn frei. Null oder negativ
+          // heisst, sie ueberschneiden sich - und dann ist es kein Zweierzug.
+          trennung,
+          verlauf,
+          tempo: { formation: +formationPace().toFixed(3),
+                   limitNachher: +limitFormation.toFixed(3) },
+          nochFormation: raceFormationLap,
+        };
+      } finally {
+        raceFlying = merk.fs;
+        raceState = merk.zustand;
+        raceFormationLap = merk.formation;
+        limitFormation = merk.limit;
+        raceGridOrder = merk.gitter;
+        formationZaehler = merk.zaehler;
+        applySpeedLimit();
+      }
+    },
+
     // ---- MEHRSPIELER, MIT EINEM FETCH-STUMMEL -----------------------------------
     //
     // Mehrspieler hatte bis v0.6.20 KEINE einzige Pruefung - weder hier noch im

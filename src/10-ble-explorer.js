@@ -1828,15 +1828,21 @@
       "no",
     "voll":
       "full",
+    "Am einfachsten mit einem Doppelklick auf die Startdatei. Sie sucht Python, startet den Host und schreibt die Adresse hin, unter der er erreichbar ist.":
+      "The easiest way is a double-click on the launcher file. It finds Python, starts the host and prints the address it can be reached at.",
+    "Wer lieber selbst tippt, öffnet im Projektordner ein Fenster für die Eingabeaufforderung oder das Terminal und führt diesen Befehl aus:":
+      "If you would rather type it yourself, open a command prompt or terminal window in the project folder and run this command:",
+    "Das Programm selbst liegt im Projekt und ist von hier aus direkt zu öffnen.":
+      "The program itself is part of the project and can be opened directly from here.",
+    "Warum es dafür keinen Knopf in der App gibt.":
+      "Why there is no button for this in the app.",
+    "Eine Webseite darf kein Programm auf dem Rechner starten. Das ist keine fehlende Schnittstelle, sondern die Grenze, auf der die Sicherheit des Browsers beruht, und sie fällt auch dann nicht, wenn man die App installiert: eine installierte App bekommt Dateizugriff und Offline-Betrieb, aber niemals das Recht, ein beliebiges Programm auszuführen. Die Startdatei oben ist das Nächste, was daran herankommt – einmal herunterladen, danach genügt ein Doppelklick.":
+      "A web page may not start a program on the computer. This is not a missing interface but the boundary the browser's security rests on, and it does not fall when the app is installed either: an installed app gets file access and offline operation, but never the right to run an arbitrary program. The launcher file above is the closest thing to it – download it once, after that a double-click is enough.",
     "Ueber die Leitung gehen Rundenzahl, Rundenzeiten und Abgaenge. Keine Physik, keine Lenkwerte: jedes Telefon rechnet seine eigene Physik und haelt seine eigene Bluetooth-Verbindung. Reisst das WLAN ab, faehrt jeder weiter, nur die Rangliste steht still.": "What goes over the wire: lap count, lap times and departures. No physics, no steering values – each phone computes its own physics and holds its own Bluetooth connection. If the Wi-Fi drops, everyone keeps driving; only the leaderboard stands still.",
     "Mehrere Telefone, jedes mit eigenem Auto, eine gemeinsame Rangliste. Auf dem PC läuft dazu ein kleines Programm.":
       "Several phones, each with its own car, one shared leaderboard. A small program runs on the PC for this.",
     "Auf dem PC starten.":
       "Start it on the PC.",
-    "Im Ordner des Projekts ein Fenster für die Eingabeaufforderung oder das Terminal öffnen und den Befehl ausführen:":
-      "In the project folder, open a command prompt or terminal window and run the command:",
-    "Das Programm liegt im Projekt und ist von hier aus direkt zu öffnen. Es schreibt beim Start die Adresse hin, unter der es erreichbar ist.":
-      "The program is part of the project and can be opened directly from here. On startup it prints the address it can be reached at.",
     "Die Adresse an die Telefone geben.":
       "Give the address to the phones.",
     "Sie gehört oben in das Feld „Host-Adresse“ und hat die Form, die dort als Beispiel steht. Alle Geräte müssen im selben WLAN sein.":

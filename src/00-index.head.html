@@ -5966,11 +5966,14 @@
            Zeile darunter und nicht im Fliesstext. -->
       <ol class="mp-schritte">
         <li><b>Auf dem PC starten.</b>
-          Im Ordner des Projekts ein Fenster f&uuml;r die Eingabeaufforderung oder das
-          Terminal &ouml;ffnen und den Befehl ausf&uuml;hren:
+          Am einfachsten mit einem Doppelklick auf die Startdatei. Sie sucht Python, startet
+          den Host und schreibt die Adresse hin, unter der er erreichbar ist.
+          <a href="Mehrspieler-Host starten.bat" download
+             class="mp-datei" data-i18n-skip>Mehrspieler-Host starten.bat</a>
+          Wer lieber selbst tippt, &ouml;ffnet im Projektordner ein Fenster f&uuml;r die
+          Eingabeaufforderung oder das Terminal und f&uuml;hrt diesen Befehl aus:
           <span class="mp-befehl"><code id="mp-cmd" data-i18n-skip>python tools/omegasim_host.py --port 8080</code><button type="button" class="mp-kopier" id="mp-cmd-copy">Kopieren</button></span>
-          Das Programm liegt im Projekt und ist von hier aus direkt zu &ouml;ffnen. Es
-          schreibt beim Start die Adresse hin, unter der es erreichbar ist.
+          Das Programm selbst liegt im Projekt und ist von hier aus direkt zu &ouml;ffnen.
           <a href="tools/omegasim_host.py" target="_blank" rel="noopener noreferrer"
              class="mp-datei" data-i18n-skip>tools/omegasim_host.py</a></li>
         <li><b>Die Adresse an die Telefone geben.</b>
@@ -5985,6 +5988,30 @@
           Sie zeigt die Rangliste und hat einen Knopf zum Zur&uuml;cksetzen. Sonst nichts:
           sie ist zum Ansehen aus zwei Metern gedacht und nicht zum Bedienen.</li>
       </ol>
+
+      <!-- ---- WARUM ES KEINEN KNOPF GIBT -----------------------------------------
+           Gefragt: "Gibt es nicht eine Moeglichkeit, das von dort zu starten? Reicht
+           dafuer nicht, die App zu installieren?"
+
+           Nein, und das ist keine fehlende Schnittstelle. Eine Webseite darf kein
+           Programm auf dem Rechner starten - darauf steht die ganze Sicherheit des
+           Browsers. Eine installierte PWA bekommt zwar mehr (Dateizugriff,
+           Benachrichtigungen, Offline-Betrieb), aber nie "beliebiges Programm
+           ausfuehren"; es gibt dafuer keine Schnittstelle, auch keine, die man
+           freischalten koennte.
+
+           Das Naechste, was man dem Knopf bringen kann, ist eine Datei, die man einmal
+           herunterlaedt und danach doppelklickt. Deshalb steht sie oben an erster Stelle. -->
+      <p class="muted" style="font-size:11.5px; border-left:3px solid var(--muted);
+         padding-left:9px">
+        <b>Warum es daf&uuml;r keinen Knopf in der App gibt.</b>
+        Eine Webseite darf kein Programm auf dem Rechner starten. Das ist keine fehlende
+        Schnittstelle, sondern die Grenze, auf der die Sicherheit des Browsers beruht, und
+        sie f&auml;llt auch dann nicht, wenn man die App installiert: eine installierte App
+        bekommt Dateizugriff und Offline-Betrieb, aber niemals das Recht, ein beliebiges
+        Programm auszuf&uuml;hren. Die Startdatei oben ist das N&auml;chste, was daran
+        herankommt &ndash; einmal herunterladen, danach gen&uuml;gt ein Doppelklick.
+      </p>
 
       <p class="muted" style="font-size:11.5px; border-left:3px solid var(--info);
          padding-left:9px">
@@ -8073,7 +8100,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.6.20</span></span>
+    <span class="foot-ver">v<span id="app-version">0.6.21</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
