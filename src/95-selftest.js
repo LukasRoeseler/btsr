@@ -7515,6 +7515,92 @@
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
+  // ---- Jede Linie im Positionsdiagramm hat einen hellen Saum ----
+  //
+  // GEMELDET: "Positionen Diagramm nach Rennen: hier sehe ich die schwarze Linie auf
+  // schwarzem Hintergrund nicht - ggf weissen Schatten hinzufuegen zu allen Linien."
+  //
+  // Die Linienfarbe ist die Autofarbe, und "Schwarz" ist #15171c - auf --bg #000000 ist das
+  // praktisch unsichtbar. Die App hat nur dieses eine, schwarze Thema, also gibt es keine
+  // Lage, in der das von selbst gut geht.
+  //
+  // GEZAEHLT UND NICHT GESUCHT: die Zusage ist, dass JEDE Linie einen Saum hat. Ein Test
+  // auf "kommt vor" waere auch dann gruen, wenn nur die erste einen bekaeme.
+  stAdd('Positionsdiagramm: jede Linie hat einen hellen Saum', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.positionsPlotProbe) {
+      return { skip: true, mass: 'positionsPlotProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.positionsPlotProbe({ farben: ['schwarz', 'rot', 'weiss'] });
+    if (!r) return { skip: true, mass: 'kein Lauf' };
+    const fehler = [];
+    if (!(r.linien >= 3)) fehler.push('nur ' + r.linien + ' Linien gezeichnet');
+    if (r.saeume !== r.linien) {
+      fehler.push(r.saeume + ' Saeume auf ' + r.linien + ' Linien');
+    }
+    // UND DIE REIHENFOLGE: alle Saeume VOR allen Linien. Zeichnete man je Auto Saum und
+    // Linie zusammen, deckte der Saum des letzten die Linie der frueheren zu.
+    if (!r.saumVorLinie) fehler.push('ein Saum steht hinter einer Linie');
+    return { ok: !fehler.length,
+             mass: r.linien + ' Linien, ' + r.saeume + ' Saeume, Saeume zuerst: '
+                 + r.saumVorLinie
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
+  // ---- Ein geparktes Auto laesst sich wieder wachruetteln ----
+  //
+  // GEMELDET: "Nach mehrmaligem Abfliegen blinken Ghosts nur noch. Warum? Wenn Gyro da ein
+  // paar Sekunden nichts meldet und ich sie dann kurz kopfueber halte oder schuettele,
+  // sollen sie immer weiterfahren koennen."
+  //
+  // ---- WORAN ES LAG, mit den Zahlen der alten Regel ------------------------------
+  //
+  // Der Ruhewert wurde als MEDIAN der Fenstersummen waehrend der ersten 1,2 Sekunden nach
+  // dem Parken gelernt. In genau diesen 1,2 Sekunden greift man nach dem Auto - es ist eben
+  // abgeflogen. Gelernt wurde also der Wert des HERUMTRAGENS.
+  //
+  // Auf der Folge dieses Prueflaufs nachgerechnet:
+  //
+  //     gelernter Ruhewert   960
+  //     Schwelle (x6)       5760
+  //     Schuetteln erreicht 2160   ->  haette NIE ausgeloest
+  //
+  // Und zwar dauerhaft, bis zum naechsten Parken. "Mehrmaliges Abfliegen" ist genau der
+  // Fall, in dem man jedes Mal schnell zugreift und deshalb jedes Mal wieder hoch lernt.
+  //
+  // Jetzt ist der Ruhewert das laufende MINIMUM (nach oben nie), und die Schwelle ist auf
+  // das Dreifache des Bodens gedeckelt. Gemessen: Schwelle 390 gegen 1480 bis 2160 beim
+  // Schuetteln.
+  stAdd('Abgeflogenes Auto: laesst sich wieder wachruetteln', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.schuettelProbe) {
+      return { skip: true, mass: 'schuettelProbe nicht vorhanden' };
+    }
+    const faelle = [
+      ['aufgehoben, zurueckgestellt, geruettelt', {}],
+      // OHNE Ruhephase: in der Hand geschuettelt, der Ruhewert bleibt hoch. Das ist der
+      // Fall, den erst der Deckel rettet - und er ist die Zusage "immer".
+      ['in der Hand geruettelt', { ohneRuhe: true }],
+      // Und mit einem Abriss im Meldestrom dazwischen.
+      ['nach vier Sekunden Funkstille', { lueckeMs: 4000 }],
+    ];
+    const fehler = [], zeilen = [];
+    for (const [name, opt] of faelle) {
+      const r = OMEGA_TEST.schuettelProbe(opt);
+      if (!r) { fehler.push(name + ': kein Lauf'); continue; }
+      const letzte = r.stufen[r.stufen.length - 1];
+      zeilen.push(name + ': ' + (r.entparkt ? 'faehrt' : 'BLEIBT STEHEN')
+                  + ' (' + letzte.wert + ' gegen ' + letzte.schwelle + ')');
+      // 1. ES MUSS WIEDER FAHREN. Das ist die ganze Bestellung.
+      if (!r.entparkt) fehler.push(name + ': bleibt geparkt');
+      // 2. UND DIE SCHWELLE MUSS ERREICHBAR BLEIBEN. Ohne diese Zeile waere der Test auch
+      //    mit einer Schwelle von 5760 gruen, solange das Schuetteln zufaellig darueber kaeme.
+      if (letzte.schwelle !== null && letzte.schwelle > 390 + 1e-9) {
+        fehler.push(name + ': Schwelle ' + letzte.schwelle + ' ueber dem Deckel 390');
+      }
+    }
+    return { ok: !fehler.length,
+             mass: zeilen.join(' | ') + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
   // ---- Zieleinlauf ----
   //
   // Vorher endete ein Rennen fuer die Ghosts mit stopGhost(): Nullen schreiben und

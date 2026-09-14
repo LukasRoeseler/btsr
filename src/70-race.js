@@ -691,7 +691,9 @@
     const cars = raceAllCars().filter(c => c.laps.length);
     const maxLap = Math.max(0, ...cars.map(c => c.laps.length));
     if (cars.length < 1 || maxLap < 2) {
-      host.innerHTML = '<p class="muted" style="margin:0">Zu wenige Runden f\u00fcr einen Verlauf '
+      // Der Punkt nach "Verlauf" fehlte - die beiden Bruchstuecke wurden ohne
+      // Satzzeichen aneinandergehaengt, und im Dokument stand "Verlauf Ab der zweiten".
+      host.innerHTML = '<p class="muted" style="margin:0">Zu wenige Runden f\u00fcr einen Verlauf. '
                      + 'Ab der zweiten Runde wird hier gezeichnet.</p>';
       return;
     }
@@ -731,14 +733,49 @@
       svg += `<text x="${x(k).toFixed(1)}" y="${H - 10}" text-anchor="middle" `
            + `font-family="monospace" font-size="11" fill="var(--muted)">${k + 1}</text>`;
     }
-    // One polyline per car, plus a dot on every lap it actually completed.
-    cars.forEach((c, i) => {
+    // ---- EIN HELLER SAUM UNTER JEDER LINIE -----------------------------------------
+    //
+    // GEMELDET: "Hier sehe ich die schwarze Linie auf schwarzem Hintergrund nicht - ggf
+    // weissen Schatten hinzufuegen zu allen Linien."
+    //
+    // Die Linienfarbe ist die AUTOFARBE, und die darf schwarz sein - der Hintergrund ist
+    // es auch (--bg: #000000, und die App hat nur dieses eine Thema). Ein schwarzes Auto
+    // war damit unsichtbar, und zwar nicht schlecht lesbar, sondern gar nicht da.
+    //
+    // ALLE Linien bekommen den Saum und nicht nur die dunklen. Eine Ausnahmeregel braeuchte
+    // eine Helligkeitsschwelle, und die waere bei jeder Farbe am Rand Geschmackssache;
+    // ausserdem trennt der Saum auch zwei bunte Linien, die sich kreuzen.
+    //
+    // IN ZWEI DURCHGAENGEN, und das ist der Punkt: erst alle Saeume, dann alle Linien.
+    // Zeichnete man je Auto Saum und Linie zusammen, deckte der Saum des zuletzt
+    // gezeichneten Autos die Linie der frueheren zu - aus einem Lesbarkeitsmittel waere ein
+    // Verdecker geworden.
+    const spuren = cars.map((c, i) => {
       const col = c.farbe || RACE_PLOT_COLORS[i % RACE_PLOT_COLORS.length];
       const pts = [];
       for (let k = 0; k < maxLap; k++) {
         if (pos[i][k] === undefined) continue;
         pts.push(`${x(k).toFixed(1)},${y(pos[i][k]).toFixed(1)}`);
       }
+      return { col, pts };
+    });
+
+    // Durchgang 1: die Saeume. Breiter als die Linie, damit links und rechts etwas
+    // stehenbleibt, und halbdurchsichtig - ein deckendes Weiss waere ein zweiter Strich.
+    const SAUM = 'rgba(255,255,255,0.55)';
+    spuren.forEach(({ pts }) => {
+      if (pts.length > 1) {
+        svg += `<polyline points="${pts.join(' ')}" fill="none" stroke="${SAUM}" `
+             + `stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>`;
+      }
+      pts.forEach(pt => {
+        const [px, py] = pt.split(',');
+        svg += `<circle cx="${px}" cy="${py}" r="4.6" fill="${SAUM}"/>`;
+      });
+    });
+
+    // Durchgang 2: die Linien selbst, in der Autofarbe.
+    spuren.forEach(({ col, pts }) => {
       if (pts.length > 1) {
         svg += `<polyline points="${pts.join(' ')}" fill="none" stroke="${col}" `
              + `stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
@@ -753,7 +790,10 @@
     // Legend underneath rather than inside: names can be long and would overlap the lines.
     const legend = cars.map((c, i) =>
       `<span style="display:inline-flex; align-items:center; gap:5px; margin-right:14px">`
-      + `<span style="width:12px; height:3px; background:${cars[i].farbe
+      // Derselbe Saum wie bei den Linien - ein schwarzes Kaestchen auf schwarzem Grund
+      // waere genauso unsichtbar gewesen wie die Linie, zu der es gehoert.
+      + `<span style="width:12px; height:3px; box-shadow:0 0 0 1px rgba(255,255,255,0.55); `
+      + `background:${cars[i].farbe
            || RACE_PLOT_COLORS[i % RACE_PLOT_COLORS.length]}"></span>`
       + `<span class="muted" style="font-size:12px">${c.name}</span></span>`).join('');
     host.innerHTML = svg + `<div style="margin-top:6px">${legend}</div>`;

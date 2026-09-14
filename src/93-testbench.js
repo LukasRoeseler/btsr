@@ -3547,6 +3547,123 @@
       }
     },
 
+    // ---- DAS POSITIONSDIAGRAMM, mit Attrappen in der Garage ----------------------
+    //
+    // GEMELDET: "Hier sehe ich die schwarze Linie auf schwarzem Hintergrund nicht."
+    //
+    // Geprueft wird der ECHTE Zeichenweg: die Attrappen gehen in die Garage, von der
+    // raceAllCars() liest, und renderPositionPlot() schreibt sein SVG in das Dokument. Ein
+    // Prueflauf, der das SVG selbst zusammensetzte, prueefte seine eigene Kopie.
+    //
+    // Die Garage wird im finally wiederhergestellt UND neu gezeichnet - ein Messaufruf, der
+    // ein Diagramm mit Sonden im Dokument stehen laesst, veraendert, was der Nutzer sieht.
+    positionsPlotProbe(o) {
+      const opt = o || {};
+      const merkGarage = garage.slice();
+      // Und der VORIGE Inhalt des Wirtes. Ihn am Ende neu zu ZEICHNEN waere nicht dasselbe:
+      // bei leerer Garage schreibt renderPositionPlot seinen Platzhaltertext hinein, und der
+      // stand dann im Dokument, obwohl der Nutzer nie ein Ergebnis geoeffnet hat. Genau
+      // daran sind zwei Sprachpruefungen haengengeblieben - ein Messaufruf darf nichts
+      // hinterlassen.
+      const wirt = $('race-position-plot');
+      const merkHtml = wirt ? wirt.innerHTML : null;
+      try {
+        garage.length = 0;
+        (opt.farben || ['schwarz', 'rot', 'weiss']).forEach((cid, i) => {
+          garage.push({ device: { id: 'sonde-plot-' + i, name: 'Sonde ' + i },
+                        alias: 'Sonde ' + i, role: 'ghost', colorId: cid, ghost: null,
+                        race: { laps: [{ ms: 7000 + i * 220 }, { ms: 7100 + i * 160 },
+                                       { ms: 6900 + i * 310 }, { ms: 7050 + i * 90 }] } });
+        });
+        renderPositionPlot();
+        const host = $('race-position-plot');
+        const html = host ? host.innerHTML : '';
+        // Ausgezaehlt statt nur "kommt vor": die Zusage ist, dass JEDE Linie einen Saum
+        // hat, und das ist eine Anzahl und kein Vorhandensein.
+        const saeume = (html.match(/<polyline[^>]*stroke="rgba\(255,255,255,0\.55\)"/g) || []).length;
+        const linien = (html.match(/<polyline[^>]*stroke="#/g) || []).length;
+        return { saeume, linien, laenge: html.length,
+                 saumVorLinie: html.indexOf('rgba(255,255,255,0.55)') < html.indexOf('stroke="#'),
+                 html: opt.html ? html : null };
+      } finally {
+        garage.length = 0;
+        merkGarage.forEach(c => garage.push(c));
+        if (wirt) wirt.innerHTML = merkHtml === null ? '' : merkHtml;
+      }
+    },
+
+    // ---- LAESST SICH EIN GEPARKTES AUTO WIEDER WACHRUETTELN? ---------------------
+    //
+    // GEMELDET: "Nach mehrmaligem Abfliegen blinken Ghosts nur noch. Warum? Wenn Gyro da
+    // ein paar Sekunden nichts meldet und ich sie dann kurz kopfueber halte oder schuettele,
+    // sollen sie immer weiterfahren koennen."
+    //
+    // DER PRUEFLAUF SPIELT GENAU DEN HERGANG NACH, in drei Abschnitten:
+    //
+    //     getragen     grosse, wechselnde Gyro-Werte - das Auto wird aufgehoben und
+    //                  zurueckgestellt, und zwar WAEHREND der Lernphase. Das ist der Fall,
+    //                  den man nach einem Abflug immer hat: man greift sofort zu.
+    //     ruhig        es liegt wieder
+    //     geschuettelt jemand ruettelt absichtlich
+    //
+    // Danach MUSS es fahren. Mit der alten Median-Lernphase tat es das nicht: sie lernte
+    // den Wert des Herumtragens als Ruhewert, und die Schwelle stand dauerhaft ausser
+    // Reichweite.
+    //
+    // MIT GEFAELSCHTER UHR, weil die Lernphase 1,2 Sekunden dauert und ein Prueflauf, der
+    // wirklich wartet, den ganzen Selbsttest aufhaelt. Date.now() wird nur fuer die Dauer
+    // des Laufs ersetzt und im finally zurueckgegeben.
+    schuettelProbe(o) {
+      const opt = o || {};
+      const echteNow = Date.now;
+      let uhr = echteNow.call(Date);
+      const car = { alias: 'Sonde-Ruettel', role: 'ghost', parked: null, shake: null,
+                    ghost: null, rx: null };
+      const paket = (v1, v3) => {
+        const b = new Uint8Array(19);
+        b[1] = v1 & 0xff; b[3] = v3 & 0xff;
+        return b;
+      };
+      const takt = (v1, v3, ms) => {
+        uhr += (ms === undefined ? 45 : ms);
+        shakeNotify(car, paket(v1, v3));
+      };
+      const stand = (phase) => ({ phase, geparkt: car.parked || null,
+                                  wert: car.shakeValue === undefined ? null : car.shakeValue,
+                                  schwelle: car.shakeThreshold === undefined
+                                            ? null : car.shakeThreshold });
+      try {
+        Date.now = () => uhr;
+        parkCar(car, opt.grund || 'Prueflauf');
+        const stufen = [];
+        // 1. GETRAGEN, und zwar die ganze Lernphase hindurch.
+        const tragenMs = opt.tragenMs === undefined ? 1400 : opt.tragenMs;
+        for (let t = 0; t < tragenMs; t += 45) {
+          const a = (Math.floor(t / 45) % 3) * 40 - 40;
+          takt(a, -a);
+        }
+        stufen.push(stand('getragen'));
+        // 1b. EINE LUECKE IM MELDESTROM, wenn bestellt: "wenn Gyro da ein paar Sekunden
+        //     nichts meldet". Ein einziger Takt mit grossem Zeitsprung - genau so sieht ein
+        //     Abriss von aussen aus.
+        if (opt.lueckeMs) {
+          takt(0, 0, opt.lueckeMs);
+          stufen.push(stand('nach der Luecke'));
+        }
+        // 2. HINGESTELLT: die Werte stehen still, das Fenster laeuft auf null.
+        if (opt.ohneRuhe !== true) {
+          for (let i = 0; i < 40; i++) takt(2, -2);
+          stufen.push(stand('ruhig'));
+        }
+        // 3. GESCHUETTELT.
+        for (let i = 0; i < 20; i++) { const a = (i % 2) ? 60 : -60; takt(a, -a); }
+        stufen.push(stand('geschuettelt'));
+        return { stufen, entparkt: !car.parked };
+      } finally {
+        Date.now = echteNow;
+      }
+    },
+
     // ---- WIE LANGE HAELT EIN SATZ REIFEN, UND WIE LANGE DER TANK? -----------------
     //
     // BESTELLT: "Reifenverschleiss erhoehen auf die doppelte oder dreifache Geschwindigkeit

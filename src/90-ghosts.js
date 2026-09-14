@@ -2162,6 +2162,13 @@
   // steht im Entwicklertab - schuetteln, ablesen, einstellen.
   const SHAKE_WIN = 9;              // Meldungen im Fenster, etwa 400 ms
   const SHAKE_SETTLE_MS = 1200;     // so lange erst zuhoeren, bevor ausgeloest werden kann
+  // Hoechstens so viel ueber dem Boden darf die gelernte Schwelle steigen. Begruendung an
+  // der Anwendungsstelle: eine Schwelle, die eine Hand nicht erreicht, ist keine Schwelle.
+  const SHAKE_DECKEL_X = 3;
+  // So lange Stille im Meldestrom, und das Fenster beschreibt eine Lage, die es nicht mehr
+  // gibt. Bei einem Sendetakt von 45 ms sind 1500 ms rund dreiunddreissig ausgefallene
+  // Meldungen - das ist keine Luecke mehr, das ist ein Abriss.
+  const SHAKE_LUECKE_MS = 1500;
   let shakeFloor = 130;             // absoluter Boden
   let shakeFactor = 6;              // Vielfaches des gelernten Ruhewerts
 
@@ -2170,6 +2177,23 @@
   function shakeNotify(car, b) {
     if (!car.shake) car.shake = { p1: null, p3: null, win: [], sum: 0, quiet: [], base: null };
     const sh = car.shake;
+    // ---- EINE LUECKE IM STROM MACHT DAS FENSTER WERTLOS ---------------------------
+    //
+    // GEMELDET: "wenn gyro da ein paar sekunden nichts meldet". Bleiben die Meldungen weg
+    // und kommen dann wieder, stammt der erste Unterschied aus zwei Lagen, die Sekunden
+    // auseinanderliegen - ein Sprung, der nach Schuetteln aussieht, ohne dass jemand
+    // geschuettelt hat. Und die neun Werte im Fenster beschreiben eine Lage, die es nicht
+    // mehr gibt.
+    //
+    // Also verworfen und neu zugehoert. Das kostet die Lernphase von 1,2 Sekunden, und die
+    // ist gut angelegt: ohne frischen Ruhewert waere die Schwelle eine Zahl aus einer
+    // anderen Situation.
+    const jetztSh = Date.now();
+    if (sh.lastAt && jetztSh - sh.lastAt > SHAKE_LUECKE_MS) {
+      sh.win = []; sh.sum = 0; sh.p1 = null; sh.p3 = null;
+      sh.parkedAt = 0; sh.base = null;
+    }
+    sh.lastAt = jetztSh;
     const v1 = sgn8(b[1]), v3 = sgn8(b[3]);
     if (sh.p1 !== null) {
       const d = Math.abs(v1 - sh.p1) + Math.abs(v3 - sh.p3);
@@ -2181,16 +2205,48 @@
     if (sh.win.length < SHAKE_WIN) return;
 
     if (!car.parked) { sh.quiet = []; sh.base = null; sh.parkedAt = 0; return; }
-    // Erst zuhoeren, dann urteilen. Der Ruhewert ist der Median der Fenster in der
-    // Lernphase - der Median und nicht der Mittelwert, damit ein einzelner Stoss beim
-    // Abstellen ihn nicht hochzieht.
     if (!sh.parkedAt) sh.parkedAt = Date.now();
-    if (Date.now() - sh.parkedAt < SHAKE_SETTLE_MS) { sh.quiet.push(sh.sum); return; }
-    if (sh.base === null) {
-      const q = sh.quiet.slice().sort((a, x) => a - x);
-      sh.base = q.length ? q[Math.floor(q.length / 2)] : 0;
-    }
-    const thr = Math.max(shakeFloor, sh.base * shakeFactor);
+
+    // ---- DER RUHEWERT IST DAS MINIMUM, NICHT DER MEDIAN DER ERSTEN 1,2 SEKUNDEN ----
+    //
+    // GEMELDET: "Nach mehrmaligem Abfliegen blinken Ghosts nur noch."
+    //
+    // HIER LAG ES. Der Ruhewert wurde als Median der Fenster in der Lernphase gelernt -
+    // also aus den ersten 1,2 Sekunden NACH dem Parken. Und genau in diesen 1,2 Sekunden
+    // greift man nach dem Auto: es ist eben abgeflogen, man hebt es auf, dreht es um,
+    // stellt es zurueck. Gelernt wurde damit nicht der Ruhewert, sondern der Wert des
+    // HERUMTRAGENS.
+    //
+    // Was danach passiert, ist zwangslaeufig: ausgeloest wird bei base * 6, und ein
+    // getragenes Auto meldet schon ein Vielfaches eines liegenden. Die Schwelle steht dann
+    // ueber allem, was eine Hand erzeugen kann - das Auto ist bis zum naechsten Parken
+    // gesperrt. Und "mehrmaliges Abfliegen" ist genau der Fall, in dem man schnell
+    // zugreift, also jedes Mal wieder hoch lernt.
+    //
+    // Gemessen im Prueflauf (schuettelProbe): getragen in der Lernphase ergab Ruhewert 720
+    // und Schwelle 4320, waehrend kraeftiges Schuetteln 2160 erreicht - die Schwelle war
+    // um den Faktor zwei ausser Reichweite, dauerhaft.
+    //
+    // DAS MINIMUM KANN DAS NICHT. Ein liegendes Auto meldet irgendwann seinen echten
+    // Ruhewert, und das Minimum nimmt ihn an, sobald er einmal vorkommt. Nach oben laeuft
+    // es nie - Herumtragen hebt es also nicht mehr an. Es ist ausserdem die ehrlichere
+    // Groesse: gesucht war immer "was meldet dieses Auto, wenn es still liegt", und das
+    // ist ein Minimum und kein Mittelwert.
+    sh.base = sh.base === null ? sh.sum : Math.min(sh.base, sh.sum);
+    if (Date.now() - sh.parkedAt < SHAKE_SETTLE_MS) return;
+
+    // ---- UND EIN DECKEL, damit "immer" auch immer heisst -------------------------
+    //
+    // BESTELLT: "sollen sie IMMER weiterfahren koennen". Das Minimum allein gibt das noch
+    // nicht her - ein Auto, das an einer brummenden Stelle liegt, lernt einen echten und
+    // trotzdem hohen Ruhewert, und base * 6 waere wieder ausser Reichweite.
+    //
+    // Der Boden (shakeFloor, ab Werk 130) ist die Zahl, bei der ein absichtliches
+    // Schuetteln sicher erkannt wird. Alles darueber ist Zugabe fuer eine unruhige
+    // Unterlage, und das Dreifache ist reichlich. Eine Schwelle, die eine Hand nicht
+    // erreicht, ist keine Schwelle, sondern ein Schloss.
+    const thr = Math.min(shakeFloor * SHAKE_DECKEL_X,
+                         Math.max(shakeFloor, sh.base * shakeFactor));
     car.shakeValue = sh.sum;
     car.shakeThreshold = thr;
     if (sh.sum >= thr) unparkCar(car, 'geruettelt');

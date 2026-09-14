@@ -7865,7 +7865,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.6.2</span></span>
+    <span class="foot-ver">v<span id="app-version">0.6.3</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -9466,6 +9466,8 @@
       "How hard the car steers against a slide, measured from the rotation signal in byte 3 of the notifications. 50 per cent is the default that was asked for. What is uncertain about it, and it is two things at once: the signal is unconfirmed – it only varies once the car is moving, and flipped sign with cornering direction in exactly one recording. And it is uncalibrated: its scale is self-adjusting because the real amplitude is unknown. So the strength depends on the largest yaw value the session has seen so far. The “Drift probe” button under “Measure lateral offset” measures whether the signal moves at all under straight full throttle.",
     "Rennen":
       "Race",
+    "Zu wenige Runden für einen Verlauf. Ab der zweiten Runde wird hier gezeichnet.":
+      "Too few laps for a chart. From the second lap on it is drawn here.",
     "Aus (Vorgabe): du steuerst ganz normal, dein Lenk-Input ist der Lenkwinkel – wie ohne diese App.":
       "Off (default): you steer completely normally, your steering input is the steering angle – same as without this app.",
     "An: das Auto hält sich selbst auf der Bahn, so wie ein autonomer Ghost. Dein Lenk-Input bestimmt dabei nur noch die Querlage – nach rechts heißt weiter rechts auf der Bahn, nicht „mehr einschlagen“. Braucht eine eingescannte Strecke und die Bahn-Stellung (nicht Ausdruck); ohne beides ändert der Schalter nichts.":
@@ -19377,7 +19379,9 @@
     const cars = raceAllCars().filter(c => c.laps.length);
     const maxLap = Math.max(0, ...cars.map(c => c.laps.length));
     if (cars.length < 1 || maxLap < 2) {
-      host.innerHTML = '<p class="muted" style="margin:0">Zu wenige Runden f\u00fcr einen Verlauf '
+      // Der Punkt nach "Verlauf" fehlte - die beiden Bruchstuecke wurden ohne
+      // Satzzeichen aneinandergehaengt, und im Dokument stand "Verlauf Ab der zweiten".
+      host.innerHTML = '<p class="muted" style="margin:0">Zu wenige Runden f\u00fcr einen Verlauf. '
                      + 'Ab der zweiten Runde wird hier gezeichnet.</p>';
       return;
     }
@@ -19417,14 +19421,49 @@
       svg += `<text x="${x(k).toFixed(1)}" y="${H - 10}" text-anchor="middle" `
            + `font-family="monospace" font-size="11" fill="var(--muted)">${k + 1}</text>`;
     }
-    // One polyline per car, plus a dot on every lap it actually completed.
-    cars.forEach((c, i) => {
+    // ---- EIN HELLER SAUM UNTER JEDER LINIE -----------------------------------------
+    //
+    // GEMELDET: "Hier sehe ich die schwarze Linie auf schwarzem Hintergrund nicht - ggf
+    // weissen Schatten hinzufuegen zu allen Linien."
+    //
+    // Die Linienfarbe ist die AUTOFARBE, und die darf schwarz sein - der Hintergrund ist
+    // es auch (--bg: #000000, und die App hat nur dieses eine Thema). Ein schwarzes Auto
+    // war damit unsichtbar, und zwar nicht schlecht lesbar, sondern gar nicht da.
+    //
+    // ALLE Linien bekommen den Saum und nicht nur die dunklen. Eine Ausnahmeregel braeuchte
+    // eine Helligkeitsschwelle, und die waere bei jeder Farbe am Rand Geschmackssache;
+    // ausserdem trennt der Saum auch zwei bunte Linien, die sich kreuzen.
+    //
+    // IN ZWEI DURCHGAENGEN, und das ist der Punkt: erst alle Saeume, dann alle Linien.
+    // Zeichnete man je Auto Saum und Linie zusammen, deckte der Saum des zuletzt
+    // gezeichneten Autos die Linie der frueheren zu - aus einem Lesbarkeitsmittel waere ein
+    // Verdecker geworden.
+    const spuren = cars.map((c, i) => {
       const col = c.farbe || RACE_PLOT_COLORS[i % RACE_PLOT_COLORS.length];
       const pts = [];
       for (let k = 0; k < maxLap; k++) {
         if (pos[i][k] === undefined) continue;
         pts.push(`${x(k).toFixed(1)},${y(pos[i][k]).toFixed(1)}`);
       }
+      return { col, pts };
+    });
+
+    // Durchgang 1: die Saeume. Breiter als die Linie, damit links und rechts etwas
+    // stehenbleibt, und halbdurchsichtig - ein deckendes Weiss waere ein zweiter Strich.
+    const SAUM = 'rgba(255,255,255,0.55)';
+    spuren.forEach(({ pts }) => {
+      if (pts.length > 1) {
+        svg += `<polyline points="${pts.join(' ')}" fill="none" stroke="${SAUM}" `
+             + `stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>`;
+      }
+      pts.forEach(pt => {
+        const [px, py] = pt.split(',');
+        svg += `<circle cx="${px}" cy="${py}" r="4.6" fill="${SAUM}"/>`;
+      });
+    });
+
+    // Durchgang 2: die Linien selbst, in der Autofarbe.
+    spuren.forEach(({ col, pts }) => {
       if (pts.length > 1) {
         svg += `<polyline points="${pts.join(' ')}" fill="none" stroke="${col}" `
              + `stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
@@ -19439,7 +19478,10 @@
     // Legend underneath rather than inside: names can be long and would overlap the lines.
     const legend = cars.map((c, i) =>
       `<span style="display:inline-flex; align-items:center; gap:5px; margin-right:14px">`
-      + `<span style="width:12px; height:3px; background:${cars[i].farbe
+      // Derselbe Saum wie bei den Linien - ein schwarzes Kaestchen auf schwarzem Grund
+      // waere genauso unsichtbar gewesen wie die Linie, zu der es gehoert.
+      + `<span style="width:12px; height:3px; box-shadow:0 0 0 1px rgba(255,255,255,0.55); `
+      + `background:${cars[i].farbe
            || RACE_PLOT_COLORS[i % RACE_PLOT_COLORS.length]}"></span>`
       + `<span class="muted" style="font-size:12px">${c.name}</span></span>`).join('');
     host.innerHTML = svg + `<div style="margin-top:6px">${legend}</div>`;
@@ -26779,6 +26821,13 @@
   // steht im Entwicklertab - schuetteln, ablesen, einstellen.
   const SHAKE_WIN = 9;              // Meldungen im Fenster, etwa 400 ms
   const SHAKE_SETTLE_MS = 1200;     // so lange erst zuhoeren, bevor ausgeloest werden kann
+  // Hoechstens so viel ueber dem Boden darf die gelernte Schwelle steigen. Begruendung an
+  // der Anwendungsstelle: eine Schwelle, die eine Hand nicht erreicht, ist keine Schwelle.
+  const SHAKE_DECKEL_X = 3;
+  // So lange Stille im Meldestrom, und das Fenster beschreibt eine Lage, die es nicht mehr
+  // gibt. Bei einem Sendetakt von 45 ms sind 1500 ms rund dreiunddreissig ausgefallene
+  // Meldungen - das ist keine Luecke mehr, das ist ein Abriss.
+  const SHAKE_LUECKE_MS = 1500;
   let shakeFloor = 130;             // absoluter Boden
   let shakeFactor = 6;              // Vielfaches des gelernten Ruhewerts
 
@@ -26787,6 +26836,23 @@
   function shakeNotify(car, b) {
     if (!car.shake) car.shake = { p1: null, p3: null, win: [], sum: 0, quiet: [], base: null };
     const sh = car.shake;
+    // ---- EINE LUECKE IM STROM MACHT DAS FENSTER WERTLOS ---------------------------
+    //
+    // GEMELDET: "wenn gyro da ein paar sekunden nichts meldet". Bleiben die Meldungen weg
+    // und kommen dann wieder, stammt der erste Unterschied aus zwei Lagen, die Sekunden
+    // auseinanderliegen - ein Sprung, der nach Schuetteln aussieht, ohne dass jemand
+    // geschuettelt hat. Und die neun Werte im Fenster beschreiben eine Lage, die es nicht
+    // mehr gibt.
+    //
+    // Also verworfen und neu zugehoert. Das kostet die Lernphase von 1,2 Sekunden, und die
+    // ist gut angelegt: ohne frischen Ruhewert waere die Schwelle eine Zahl aus einer
+    // anderen Situation.
+    const jetztSh = Date.now();
+    if (sh.lastAt && jetztSh - sh.lastAt > SHAKE_LUECKE_MS) {
+      sh.win = []; sh.sum = 0; sh.p1 = null; sh.p3 = null;
+      sh.parkedAt = 0; sh.base = null;
+    }
+    sh.lastAt = jetztSh;
     const v1 = sgn8(b[1]), v3 = sgn8(b[3]);
     if (sh.p1 !== null) {
       const d = Math.abs(v1 - sh.p1) + Math.abs(v3 - sh.p3);
@@ -26798,16 +26864,48 @@
     if (sh.win.length < SHAKE_WIN) return;
 
     if (!car.parked) { sh.quiet = []; sh.base = null; sh.parkedAt = 0; return; }
-    // Erst zuhoeren, dann urteilen. Der Ruhewert ist der Median der Fenster in der
-    // Lernphase - der Median und nicht der Mittelwert, damit ein einzelner Stoss beim
-    // Abstellen ihn nicht hochzieht.
     if (!sh.parkedAt) sh.parkedAt = Date.now();
-    if (Date.now() - sh.parkedAt < SHAKE_SETTLE_MS) { sh.quiet.push(sh.sum); return; }
-    if (sh.base === null) {
-      const q = sh.quiet.slice().sort((a, x) => a - x);
-      sh.base = q.length ? q[Math.floor(q.length / 2)] : 0;
-    }
-    const thr = Math.max(shakeFloor, sh.base * shakeFactor);
+
+    // ---- DER RUHEWERT IST DAS MINIMUM, NICHT DER MEDIAN DER ERSTEN 1,2 SEKUNDEN ----
+    //
+    // GEMELDET: "Nach mehrmaligem Abfliegen blinken Ghosts nur noch."
+    //
+    // HIER LAG ES. Der Ruhewert wurde als Median der Fenster in der Lernphase gelernt -
+    // also aus den ersten 1,2 Sekunden NACH dem Parken. Und genau in diesen 1,2 Sekunden
+    // greift man nach dem Auto: es ist eben abgeflogen, man hebt es auf, dreht es um,
+    // stellt es zurueck. Gelernt wurde damit nicht der Ruhewert, sondern der Wert des
+    // HERUMTRAGENS.
+    //
+    // Was danach passiert, ist zwangslaeufig: ausgeloest wird bei base * 6, und ein
+    // getragenes Auto meldet schon ein Vielfaches eines liegenden. Die Schwelle steht dann
+    // ueber allem, was eine Hand erzeugen kann - das Auto ist bis zum naechsten Parken
+    // gesperrt. Und "mehrmaliges Abfliegen" ist genau der Fall, in dem man schnell
+    // zugreift, also jedes Mal wieder hoch lernt.
+    //
+    // Gemessen im Prueflauf (schuettelProbe): getragen in der Lernphase ergab Ruhewert 720
+    // und Schwelle 4320, waehrend kraeftiges Schuetteln 2160 erreicht - die Schwelle war
+    // um den Faktor zwei ausser Reichweite, dauerhaft.
+    //
+    // DAS MINIMUM KANN DAS NICHT. Ein liegendes Auto meldet irgendwann seinen echten
+    // Ruhewert, und das Minimum nimmt ihn an, sobald er einmal vorkommt. Nach oben laeuft
+    // es nie - Herumtragen hebt es also nicht mehr an. Es ist ausserdem die ehrlichere
+    // Groesse: gesucht war immer "was meldet dieses Auto, wenn es still liegt", und das
+    // ist ein Minimum und kein Mittelwert.
+    sh.base = sh.base === null ? sh.sum : Math.min(sh.base, sh.sum);
+    if (Date.now() - sh.parkedAt < SHAKE_SETTLE_MS) return;
+
+    // ---- UND EIN DECKEL, damit "immer" auch immer heisst -------------------------
+    //
+    // BESTELLT: "sollen sie IMMER weiterfahren koennen". Das Minimum allein gibt das noch
+    // nicht her - ein Auto, das an einer brummenden Stelle liegt, lernt einen echten und
+    // trotzdem hohen Ruhewert, und base * 6 waere wieder ausser Reichweite.
+    //
+    // Der Boden (shakeFloor, ab Werk 130) ist die Zahl, bei der ein absichtliches
+    // Schuetteln sicher erkannt wird. Alles darueber ist Zugabe fuer eine unruhige
+    // Unterlage, und das Dreifache ist reichlich. Eine Schwelle, die eine Hand nicht
+    // erreicht, ist keine Schwelle, sondern ein Schloss.
+    const thr = Math.min(shakeFloor * SHAKE_DECKEL_X,
+                         Math.max(shakeFloor, sh.base * shakeFactor));
     car.shakeValue = sh.sum;
     car.shakeThreshold = thr;
     if (sh.sum >= thr) unparkCar(car, 'geruettelt');
@@ -35744,6 +35842,123 @@
       }
     },
 
+    // ---- DAS POSITIONSDIAGRAMM, mit Attrappen in der Garage ----------------------
+    //
+    // GEMELDET: "Hier sehe ich die schwarze Linie auf schwarzem Hintergrund nicht."
+    //
+    // Geprueft wird der ECHTE Zeichenweg: die Attrappen gehen in die Garage, von der
+    // raceAllCars() liest, und renderPositionPlot() schreibt sein SVG in das Dokument. Ein
+    // Prueflauf, der das SVG selbst zusammensetzte, prueefte seine eigene Kopie.
+    //
+    // Die Garage wird im finally wiederhergestellt UND neu gezeichnet - ein Messaufruf, der
+    // ein Diagramm mit Sonden im Dokument stehen laesst, veraendert, was der Nutzer sieht.
+    positionsPlotProbe(o) {
+      const opt = o || {};
+      const merkGarage = garage.slice();
+      // Und der VORIGE Inhalt des Wirtes. Ihn am Ende neu zu ZEICHNEN waere nicht dasselbe:
+      // bei leerer Garage schreibt renderPositionPlot seinen Platzhaltertext hinein, und der
+      // stand dann im Dokument, obwohl der Nutzer nie ein Ergebnis geoeffnet hat. Genau
+      // daran sind zwei Sprachpruefungen haengengeblieben - ein Messaufruf darf nichts
+      // hinterlassen.
+      const wirt = $('race-position-plot');
+      const merkHtml = wirt ? wirt.innerHTML : null;
+      try {
+        garage.length = 0;
+        (opt.farben || ['schwarz', 'rot', 'weiss']).forEach((cid, i) => {
+          garage.push({ device: { id: 'sonde-plot-' + i, name: 'Sonde ' + i },
+                        alias: 'Sonde ' + i, role: 'ghost', colorId: cid, ghost: null,
+                        race: { laps: [{ ms: 7000 + i * 220 }, { ms: 7100 + i * 160 },
+                                       { ms: 6900 + i * 310 }, { ms: 7050 + i * 90 }] } });
+        });
+        renderPositionPlot();
+        const host = $('race-position-plot');
+        const html = host ? host.innerHTML : '';
+        // Ausgezaehlt statt nur "kommt vor": die Zusage ist, dass JEDE Linie einen Saum
+        // hat, und das ist eine Anzahl und kein Vorhandensein.
+        const saeume = (html.match(/<polyline[^>]*stroke="rgba\(255,255,255,0\.55\)"/g) || []).length;
+        const linien = (html.match(/<polyline[^>]*stroke="#/g) || []).length;
+        return { saeume, linien, laenge: html.length,
+                 saumVorLinie: html.indexOf('rgba(255,255,255,0.55)') < html.indexOf('stroke="#'),
+                 html: opt.html ? html : null };
+      } finally {
+        garage.length = 0;
+        merkGarage.forEach(c => garage.push(c));
+        if (wirt) wirt.innerHTML = merkHtml === null ? '' : merkHtml;
+      }
+    },
+
+    // ---- LAESST SICH EIN GEPARKTES AUTO WIEDER WACHRUETTELN? ---------------------
+    //
+    // GEMELDET: "Nach mehrmaligem Abfliegen blinken Ghosts nur noch. Warum? Wenn Gyro da
+    // ein paar Sekunden nichts meldet und ich sie dann kurz kopfueber halte oder schuettele,
+    // sollen sie immer weiterfahren koennen."
+    //
+    // DER PRUEFLAUF SPIELT GENAU DEN HERGANG NACH, in drei Abschnitten:
+    //
+    //     getragen     grosse, wechselnde Gyro-Werte - das Auto wird aufgehoben und
+    //                  zurueckgestellt, und zwar WAEHREND der Lernphase. Das ist der Fall,
+    //                  den man nach einem Abflug immer hat: man greift sofort zu.
+    //     ruhig        es liegt wieder
+    //     geschuettelt jemand ruettelt absichtlich
+    //
+    // Danach MUSS es fahren. Mit der alten Median-Lernphase tat es das nicht: sie lernte
+    // den Wert des Herumtragens als Ruhewert, und die Schwelle stand dauerhaft ausser
+    // Reichweite.
+    //
+    // MIT GEFAELSCHTER UHR, weil die Lernphase 1,2 Sekunden dauert und ein Prueflauf, der
+    // wirklich wartet, den ganzen Selbsttest aufhaelt. Date.now() wird nur fuer die Dauer
+    // des Laufs ersetzt und im finally zurueckgegeben.
+    schuettelProbe(o) {
+      const opt = o || {};
+      const echteNow = Date.now;
+      let uhr = echteNow.call(Date);
+      const car = { alias: 'Sonde-Ruettel', role: 'ghost', parked: null, shake: null,
+                    ghost: null, rx: null };
+      const paket = (v1, v3) => {
+        const b = new Uint8Array(19);
+        b[1] = v1 & 0xff; b[3] = v3 & 0xff;
+        return b;
+      };
+      const takt = (v1, v3, ms) => {
+        uhr += (ms === undefined ? 45 : ms);
+        shakeNotify(car, paket(v1, v3));
+      };
+      const stand = (phase) => ({ phase, geparkt: car.parked || null,
+                                  wert: car.shakeValue === undefined ? null : car.shakeValue,
+                                  schwelle: car.shakeThreshold === undefined
+                                            ? null : car.shakeThreshold });
+      try {
+        Date.now = () => uhr;
+        parkCar(car, opt.grund || 'Prueflauf');
+        const stufen = [];
+        // 1. GETRAGEN, und zwar die ganze Lernphase hindurch.
+        const tragenMs = opt.tragenMs === undefined ? 1400 : opt.tragenMs;
+        for (let t = 0; t < tragenMs; t += 45) {
+          const a = (Math.floor(t / 45) % 3) * 40 - 40;
+          takt(a, -a);
+        }
+        stufen.push(stand('getragen'));
+        // 1b. EINE LUECKE IM MELDESTROM, wenn bestellt: "wenn Gyro da ein paar Sekunden
+        //     nichts meldet". Ein einziger Takt mit grossem Zeitsprung - genau so sieht ein
+        //     Abriss von aussen aus.
+        if (opt.lueckeMs) {
+          takt(0, 0, opt.lueckeMs);
+          stufen.push(stand('nach der Luecke'));
+        }
+        // 2. HINGESTELLT: die Werte stehen still, das Fenster laeuft auf null.
+        if (opt.ohneRuhe !== true) {
+          for (let i = 0; i < 40; i++) takt(2, -2);
+          stufen.push(stand('ruhig'));
+        }
+        // 3. GESCHUETTELT.
+        for (let i = 0; i < 20; i++) { const a = (i % 2) ? 60 : -60; takt(a, -a); }
+        stufen.push(stand('geschuettelt'));
+        return { stufen, entparkt: !car.parked };
+      } finally {
+        Date.now = echteNow;
+      }
+    },
+
     // ---- WIE LANGE HAELT EIN SATZ REIFEN, UND WIE LANGE DER TANK? -----------------
     //
     // BESTELLT: "Reifenverschleiss erhoehen auf die doppelte oder dreifache Geschwindigkeit
@@ -44599,6 +44814,92 @@
     return { ok: !fehler.length,
              mass: 'aus=' + r.aus + ', an=' + r.an + ', aus+gelb=' + r.trotzAus
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
+  // ---- Jede Linie im Positionsdiagramm hat einen hellen Saum ----
+  //
+  // GEMELDET: "Positionen Diagramm nach Rennen: hier sehe ich die schwarze Linie auf
+  // schwarzem Hintergrund nicht - ggf weissen Schatten hinzufuegen zu allen Linien."
+  //
+  // Die Linienfarbe ist die Autofarbe, und "Schwarz" ist #15171c - auf --bg #000000 ist das
+  // praktisch unsichtbar. Die App hat nur dieses eine, schwarze Thema, also gibt es keine
+  // Lage, in der das von selbst gut geht.
+  //
+  // GEZAEHLT UND NICHT GESUCHT: die Zusage ist, dass JEDE Linie einen Saum hat. Ein Test
+  // auf "kommt vor" waere auch dann gruen, wenn nur die erste einen bekaeme.
+  stAdd('Positionsdiagramm: jede Linie hat einen hellen Saum', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.positionsPlotProbe) {
+      return { skip: true, mass: 'positionsPlotProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.positionsPlotProbe({ farben: ['schwarz', 'rot', 'weiss'] });
+    if (!r) return { skip: true, mass: 'kein Lauf' };
+    const fehler = [];
+    if (!(r.linien >= 3)) fehler.push('nur ' + r.linien + ' Linien gezeichnet');
+    if (r.saeume !== r.linien) {
+      fehler.push(r.saeume + ' Saeume auf ' + r.linien + ' Linien');
+    }
+    // UND DIE REIHENFOLGE: alle Saeume VOR allen Linien. Zeichnete man je Auto Saum und
+    // Linie zusammen, deckte der Saum des letzten die Linie der frueheren zu.
+    if (!r.saumVorLinie) fehler.push('ein Saum steht hinter einer Linie');
+    return { ok: !fehler.length,
+             mass: r.linien + ' Linien, ' + r.saeume + ' Saeume, Saeume zuerst: '
+                 + r.saumVorLinie
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
+  // ---- Ein geparktes Auto laesst sich wieder wachruetteln ----
+  //
+  // GEMELDET: "Nach mehrmaligem Abfliegen blinken Ghosts nur noch. Warum? Wenn Gyro da ein
+  // paar Sekunden nichts meldet und ich sie dann kurz kopfueber halte oder schuettele,
+  // sollen sie immer weiterfahren koennen."
+  //
+  // ---- WORAN ES LAG, mit den Zahlen der alten Regel ------------------------------
+  //
+  // Der Ruhewert wurde als MEDIAN der Fenstersummen waehrend der ersten 1,2 Sekunden nach
+  // dem Parken gelernt. In genau diesen 1,2 Sekunden greift man nach dem Auto - es ist eben
+  // abgeflogen. Gelernt wurde also der Wert des HERUMTRAGENS.
+  //
+  // Auf der Folge dieses Prueflaufs nachgerechnet:
+  //
+  //     gelernter Ruhewert   960
+  //     Schwelle (x6)       5760
+  //     Schuetteln erreicht 2160   ->  haette NIE ausgeloest
+  //
+  // Und zwar dauerhaft, bis zum naechsten Parken. "Mehrmaliges Abfliegen" ist genau der
+  // Fall, in dem man jedes Mal schnell zugreift und deshalb jedes Mal wieder hoch lernt.
+  //
+  // Jetzt ist der Ruhewert das laufende MINIMUM (nach oben nie), und die Schwelle ist auf
+  // das Dreifache des Bodens gedeckelt. Gemessen: Schwelle 390 gegen 1480 bis 2160 beim
+  // Schuetteln.
+  stAdd('Abgeflogenes Auto: laesst sich wieder wachruetteln', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.schuettelProbe) {
+      return { skip: true, mass: 'schuettelProbe nicht vorhanden' };
+    }
+    const faelle = [
+      ['aufgehoben, zurueckgestellt, geruettelt', {}],
+      // OHNE Ruhephase: in der Hand geschuettelt, der Ruhewert bleibt hoch. Das ist der
+      // Fall, den erst der Deckel rettet - und er ist die Zusage "immer".
+      ['in der Hand geruettelt', { ohneRuhe: true }],
+      // Und mit einem Abriss im Meldestrom dazwischen.
+      ['nach vier Sekunden Funkstille', { lueckeMs: 4000 }],
+    ];
+    const fehler = [], zeilen = [];
+    for (const [name, opt] of faelle) {
+      const r = OMEGA_TEST.schuettelProbe(opt);
+      if (!r) { fehler.push(name + ': kein Lauf'); continue; }
+      const letzte = r.stufen[r.stufen.length - 1];
+      zeilen.push(name + ': ' + (r.entparkt ? 'faehrt' : 'BLEIBT STEHEN')
+                  + ' (' + letzte.wert + ' gegen ' + letzte.schwelle + ')');
+      // 1. ES MUSS WIEDER FAHREN. Das ist die ganze Bestellung.
+      if (!r.entparkt) fehler.push(name + ': bleibt geparkt');
+      // 2. UND DIE SCHWELLE MUSS ERREICHBAR BLEIBEN. Ohne diese Zeile waere der Test auch
+      //    mit einer Schwelle von 5760 gruen, solange das Schuetteln zufaellig darueber kaeme.
+      if (letzte.schwelle !== null && letzte.schwelle > 390 + 1e-9) {
+        fehler.push(name + ': Schwelle ' + letzte.schwelle + ' ueber dem Deckel 390');
+      }
+    }
+    return { ok: !fehler.length,
+             mass: zeilen.join(' | ') + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
   // ---- Zieleinlauf ----
