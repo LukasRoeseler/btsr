@@ -3818,6 +3818,32 @@
       }
     },
 
+    // ---- WIE VIELE SPUREN BENUTZT DAS FELD? -------------------------------------
+    //
+    // BESTELLT: "max 2 Autos nebeneinander". Die Zusage ist eine Eigenschaft der
+    // Spuraufteilung: gibt ghostLane() nur zwei verschiedene Werte aus, koennen per
+    // Konstruktion nicht drei Autos auf einer Hoehe nebeneinander liegen, ohne dieselbe
+    // Spur zu teilen.
+    //
+    // GEPRUEFT WIRD MIT VIELEN AUTOS. Bei zwei oder drei waere auch die alte, verteilende
+    // Rechnung noch unauffaellig - erst ab vier faechert sie sichtbar auf.
+    spurenProbe(n) {
+      const merkGarage = garage.splice(0, garage.length);
+      try {
+        const autos = [];
+        for (let i = 0; i < (n || 6); i++) {
+          autos.push({ role: 'ghost', alias: 'S' + i, ghost: { tileIndex: 0 } });
+        }
+        for (const c of autos) garage.push(c);
+        const spuren = autos.map((c) => ghostLane(c));
+        const eindeutig = [...new Set(spuren.map((x) => +x.toFixed(6)))].sort((a, b) => a - b);
+        return { spuren, eindeutig, autos: autos.length };
+      } finally {
+        garage.splice(0, garage.length);
+        merkGarage.forEach((c) => garage.push(c));
+      }
+    },
+
     // ---- DIE SEKTORZEITEN IN DER RUNDENTABELLE ----------------------------------
     //
     // BESTELLT: "Bei mehreren Sektoren die Sub-Zeiten (also Zeit je Sektor) im Zeiten-Screen

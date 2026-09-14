@@ -1064,47 +1064,62 @@
   // ---- Ghosts: eigene Spuren ----
   //
   // Am Auto ist das NICHT messbar - kein Byte meldet die Querlage, und deshalb steht in der
-  // Option auch "blind". Pruefbar ist die Rechnung, und drei Aussagen daran sind es wert:
-  // die Spuren muessen VERSCHIEDEN sein (sonst faehrt das Feld weiter in einer Reihe), sie
-  // muessen die ganze Breite ausnutzen, und ihre Summe muss null sein - ein Feld, das im
-  // Mittel zur Seite versetzt ist, faehrt nicht auf verschiedenen Linien, sondern schief.
-  stAdd('Ghost-Spuren: verschieden, volle Breite, im Mittel null', () => {
-    if (!window.OMEGA_TEST || !OMEGA_TEST.ghostLanes) {
-      return { skip: true, mass: 'ghostLanes nicht vorhanden' };
+  // Option auch "blind". Pruefbar ist die Rechnung.
+  //
+  // ---- DIESER TEST HAT SICH SELBST GEPRUEFT, und das ist der eigentliche Befund -----
+  //
+  // Er rechnete die Verteilungsformel (2k/(n-1) - 1) IN SEINER EIGENEN FUNKTION nach,
+  // statt ghostLane() zu rufen. Solange beide dasselbe taten, fiel das nicht auf. Als
+  // ghostLane() in v0.6.10 auf zwei Spuren umgestellt wurde, blieb dieser Test GRUEN und
+  // meldete weiter "5 Ghosts -1.0/-0.5/0.0/0.5/1.0" - eine Verteilung, die es nicht mehr
+  // gibt. Ein Test, der seine eigene Kopie prueft, kann nicht rot werden, wenn sich das
+  // Original aendert.
+  //
+  // Aufgefallen ist es nur, weil daneben ein zweiter Test stand, der die echte Funktion
+  // fragte - und die beiden gaben sich widersprechende Antworten, beide gruen.
+  //
+  // Jetzt fragt er ghostLane() ueber spurenProbe(), und die Zusagen sind die, die heute
+  // gelten. Was BLEIBT: die Spuren nutzen die volle Breite (+/-1) und benachbarte Autos
+  // liegen auf verschiedenen Seiten. Was WEGFAELLT: "alle n verschieden" und "Summe null" -
+  // mit zwei Spuren sind bei ungerader Anzahl zwangslaeufig mehr Autos auf einer Seite, und
+  // das ist eine Folge der bestellten Obergrenze und kein Fehler.
+  stAdd('Ghost-Spuren: volle Breite, Nachbarn auf verschiedenen Seiten', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.spurenProbe) {
+      return { skip: true, mass: 'spurenProbe nicht vorhanden' };
     }
-    const echt = OMEGA_TEST.ghostLanes();
-    // Die Rechnung selbst pruefen, unabhaengig davon, wieviele Ghosts gerade in der Garage
-    // stehen: das ist der Teil, der immer gilt.
-    const spuren = (n) => {
-      if (n < 2) return [0];
-      const out = [];
-      for (let k = 0; k < n; k++) out.push((2 * k) / (n - 1) - 1);
-      return out;
-    };
-    const schlecht = [];
+    const schlecht = [], zeilen = [];
     for (const n of [2, 3, 4, 5, 8]) {
-      const sp = spuren(n);
-      if (new Set(sp.map(x => x.toFixed(4))).size !== n) {
-        schlecht.push(n + ' Ghosts: nicht alle Spuren verschieden');
+      const r = OMEGA_TEST.spurenProbe(n);
+      if (!r) { schlecht.push(n + ': kein Lauf'); continue; }
+      zeilen.push(n + ': ' + r.spuren.join('/'));
+      // 1. DIE VOLLE BREITE. Zwei Spuren dicht beieinander waeren auch zwei Spuren und
+      //    wuerden die Trennung trotzdem nicht liefern.
+      for (const x of r.eindeutig) {
+        if (Math.abs(Math.abs(x) - 1) > 1e-9) schlecht.push(n + ': Spur ' + x + ' nicht aussen');
       }
-      if (Math.abs(sp[0] + 1) > 1e-9 || Math.abs(sp[n - 1] - 1) > 1e-9) {
-        schlecht.push(n + ' Ghosts: Breite nicht ausgenutzt (' + sp[0] + ' bis ' + sp[n - 1] + ')');
+      // 2. NACHBARN AUF VERSCHIEDENEN SEITEN. Das ist der Rest von "verschieden", der mit
+      //    zwei Spuren ueberhaupt noch eine Aussage sein kann - und die, auf die es
+      //    ankommt: zwei aufeinanderfolgende Startplaetze duerfen nicht dieselbe Spur haben.
+      for (let i = 1; i < r.spuren.length; i++) {
+        if (r.spuren[i] === r.spuren[i - 1]) {
+          schlecht.push(n + ': Platz ' + i + ' und ' + (i + 1) + ' auf derselben Spur');
+          break;
+        }
       }
-      const summe = sp.reduce((a, b) => a + b, 0);
-      if (Math.abs(summe) > 1e-9) schlecht.push(n + ' Ghosts: Summe ' + summe.toFixed(4));
+      // 3. BEI GERADER ANZAHL LIEGT DAS FELD IM MITTEL MITTIG. Bei ungerader kann es das
+      //    nicht - ein Auto bleibt uebrig.
+      if (n % 2 === 0) {
+        const summe = r.spuren.reduce((a, b) => a + b, 0);
+        if (Math.abs(summe) > 1e-9) schlecht.push(n + ': Summe ' + summe.toFixed(3));
+      }
     }
     // Ein einzelner Ghost faehrt die Mitte: ein Versatz waere dort ein Lenkfehler und keine
     // Linie.
-    if (spuren(1)[0] !== 0) schlecht.push('ein Ghost fährt nicht die Mitte');
-    // Und was das laufende Feld sagt, mitgemeldet - auch wenn es leer ist.
-    const jetzt = echt.length
-      ? echt.map(g => g.name + ' ' + g.spur.toFixed(2)).join(', ')
-      : 'keine Ghosts in der Garage';
+    const einer = OMEGA_TEST.spurenProbe(1);
+    if (einer && einer.spuren[0] !== 0) schlecht.push('ein Ghost faehrt nicht die Mitte');
     return { ok: !schlecht.length,
-             mass: '2 Ghosts ' + spuren(2).join('/') + ' | 3 ' + spuren(3).join('/')
-                   + ' | 5 ' + spuren(5).map(x => x.toFixed(1)).join('/')
-                   + ' || aktuell: ' + jetzt
-                   + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+             mass: zeilen.join(' | ')
+                 + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
   });
 
   // ---- Reifenwaermer ----
@@ -7521,6 +7536,49 @@
     return { ok: !fehler.length,
              mass: 'aus=' + r.aus + ', an=' + r.an + ', aus+gelb=' + r.trotzAus
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
+  // ---- Das Feld benutzt hoechstens zwei Spuren ----
+  //
+  // BESTELLT: "Abstaende weiter vergroessern zwischen Ghosts, sowohl beim hintereinander
+  // als auch nebeneinander fahren, max 2 Autos nebeneinander."
+  //
+  // ---- WARUM DIE ALTE VERTEILUNG NICHT AUFGING ----------------------------------
+  //
+  // ghostLane() verteilte die Autos gleichmaessig ueber die Bahnbreite. Bei sechs Autos
+  // sind das sechs Spuren auf 25 cm - gut 4 cm je Auto bei 3,8 cm Fahrzeugbreite, also
+  // 2 mm Luft zwischen zwei Nachbarn. Rechnerisch nebeneinander, praktisch aneinander.
+  //
+  // Zwei Spuren auf +1 und -1 sind dagegen die groesstmoegliche Quertrennung, die die Bahn
+  // hergibt, und die Obergrenze "hoechstens zwei nebeneinander" ist damit eine Eigenschaft
+  // der Aufteilung und keine Pruefung, die irgendwo greifen muss.
+  //
+  // GEPRUEFT MIT SECHS AUTOS: bei zwei oder drei waere auch die alte Rechnung unauffaellig.
+  stAdd('Ghost-Spuren: hoechstens zwei, und sie liegen aussen', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.spurenProbe) {
+      return { skip: true, mass: 'spurenProbe nicht vorhanden' };
+    }
+    const fehler = [], zeilen = [];
+    for (const n of [2, 4, 6]) {
+      const r = OMEGA_TEST.spurenProbe(n);
+      if (!r) { fehler.push(n + ' Autos: kein Lauf'); continue; }
+      zeilen.push(n + ': ' + r.eindeutig.join('/'));
+      // 1. HOECHSTENS ZWEI VERSCHIEDENE SPUREN. Das ist die Zusage.
+      if (r.eindeutig.length > 2) {
+        fehler.push(n + ' Autos benutzen ' + r.eindeutig.length + ' Spuren');
+      }
+      // 2. UND SIE LIEGEN AUSSEN, symmetrisch. Zwei Spuren dicht nebeneinander waeren auch
+      //    "zwei Spuren" und wuerden die Trennung trotzdem nicht liefern - die Zusage ist
+      //    der ABSTAND, nicht die Anzahl.
+      if (r.eindeutig.length === 2) {
+        const [a, b] = r.eindeutig;
+        if (Math.abs(a + b) > 1e-6 || Math.abs(Math.abs(a) - 1) > 1e-6) {
+          fehler.push(n + ' Autos: Spuren ' + a + '/' + b + ' statt -1/+1');
+        }
+      }
+    }
+    return { ok: !fehler.length,
+             mass: zeilen.join(' | ') + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
   // ---- Sektorzeiten stehen je Runde in der Zeitentabelle ----

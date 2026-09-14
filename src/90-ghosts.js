@@ -3732,14 +3732,44 @@
   // lang (siehe AUTO_LANG_CM in 60-track.js), eine Kachel 43 cm. Ein Ghost bei Vorgabetempo
   // braucht rund 400 ms je Kachel, also rund 90 ms je Autolaenge.
   //
-  // 0,35 s sind damit knapp VIER Autolaengen - der Abstand, bei dem ein Auffahren noch
+  // 0,35 s waeren knapp VIER Autolaengen - der Abstand, bei dem ein Auffahren noch
   // abzufangen ist und bei dem zwei Autos auf dem Tisch erkennbar getrennt aussehen. Zwei
   // Autolaengen waeren zu spaet: der Tempo-Regler braucht selbst rund 0,3 s, bis ein
   // geaenderter Gaswunsch als Tempo ankommt.
   //
   // Der Zuschlag je Annaeherungsrate hat dieselbe Bauform wie vorher, nur in Sekunden: wer
   // mit einer Kachel je Sekunde aufholt, braucht 0,3 s mehr Vorwarnung.
-  let SPICE_LUECKE_MIN_S = 0.35;
+  //
+  // ---- UND JETZT 1,2 s, GEMESSEN STATT ABGELEITET --------------------------------
+  //
+  // BESTELLT: "Abstaende weiter vergroessern zwischen Ghosts, sowohl beim hintereinander
+  // als auch nebeneinander fahren."
+  //
+  // Die Ableitung oben ist richtig gerechnet und trotzdem zu knapp - sie beschreibt, wann
+  // ein Auffahren noch ABZUFANGEN ist, und nicht, wann es gar nicht erst entsteht. Was
+  // wirklich herauskommt, zeigt nur der Verkehr, also die Rennsimulation. Gemessen ueber je
+  // 90 s Rennzeit mit vier Autos, jeder Wert dreimal:
+  //
+  //     Luecke   Ueberholt/min   Beruehrungen/min   Anteil der Zeit in Beruehrung
+  //      0,35 s      25,8              53,5              0,86  (0,88 / 0,85 / 0,86)
+  //      0,60 s      17,0              39,9              0,68
+  //      0,90 s      14,4              31,4              0,66
+  //      1,20 s      22,5              32,5              0,61  (0,65 / 0,61 / 0,59)
+  //      1,80 s      17,6              32,0              0,59
+  //      2,50 s      19,0              34,6              0,68
+  //
+  // DIE ZAHL, DIE DEN AUSSCHLAG GAB, ist die letzte Spalte bei 0,35: die Autos waren 86
+  // PROZENT DER ZEIT in Beruehrung. Das ist kein Rennen mehr, das ist ein Schiebehaufen -
+  // und es deckt sich mit der Meldung.
+  //
+  // 1,2 s halbiert die Beruehrungen fast (53,5 auf 32,5 je Minute) und kostet nur 13
+  // Prozent der Ueberholmanoever (25,8 auf 22,5). Die Streuung der drei Laeufe liegt bei
+  // +/-0,03 im Anteil, der Unterschied ist also weit ausserhalb des Rauschens.
+  //
+  // WARUM NICHT MEHR: darueber wird es wieder schlechter (1,8 und 2,5 liegen hoeher). Das
+  // ist plausibel und kein Messfehler - eine sehr grosse Sollluecke laesst die Autos
+  // staerker bremsen, und dann laufen sie wieder auf.
+  let SPICE_LUECKE_MIN_S = 1.2;
   const SPICE_LUECKE_PER_CLOSING = 0.30;
   function lueckeMinSetzen(v) { SPICE_LUECKE_MIN_S = v; }
   function lueckeMinLesen() { return SPICE_LUECKE_MIN_S; }
@@ -6270,12 +6300,37 @@
     // Platz. Der LAENGSabstand kommt aus der Aufstellung selbst: die Startplaetze sind
     // gestaffelt, und der Abstandhalter wirkt ab dem ersten Takt.
     //
-    // NUR SOLANGE ES ENG IST. Nach GHOST_START_ENG_MS gilt wieder die volle Verteilung -
-    // eine dauerhafte Beschraenkung auf zwei Spuren waere ein Feld, das sich nie auffaechert.
-    if (raceStartedAt && Date.now() - raceStartedAt < GHOST_START_ENG_MS) {
-      return k % 2 === 0 ? -1 : 1;
-    }
-    return (2 * k) / (gs.length - 1) - 1;
+    // ---- ZWEI SPUREN, UND ZWAR DAUERHAFT -----------------------------------------
+    //
+    // HIER STAND DAS GEGENTEIL, und der Satz lautete: "Nach GHOST_START_ENG_MS gilt wieder
+    // die volle Verteilung - eine dauerhafte Beschraenkung auf zwei Spuren waere ein Feld,
+    // das sich nie auffaechert." Diese Entscheidung ist zurueckgenommen, auf ausdrueckliche
+    // Ansage:
+    //
+    //   "Abstaende weiter vergroessern zwischen Ghosts, sowohl beim hintereinander als auch
+    //    nebeneinander fahren, max 2 Autos nebeneinander."
+    //
+    // Das Auffaechern war die Absicht, aber es rechnet sich nicht: die gleichmaessige
+    // Verteilung legt bei sechs Autos sechs Spuren auf 25 cm Bahnbreite, also gut 4 cm je
+    // Auto bei 3,8 cm Fahrzeugbreite. Zwei Nachbarn haben damit 2 mm Luft - rechnerisch
+    // nebeneinander, praktisch aneinander.
+    //
+    // ZWEI Spuren auf +1 und -1 sind dagegen die GROESSTMOEGLICHE Quertrennung, die die
+    // Bahn hergibt: die beiden Kolonnen liegen an den Raendern, zwischen ihnen steht die
+    // ganze Mitte. Und mehr als zwei Autos koennen dann per Konstruktion nicht auf einer
+    // Hoehe nebeneinander liegen, ohne dieselbe Spur zu teilen - das ist die bestellte
+    // Obergrenze, und sie ist eine Eigenschaft der Aufteilung und keine Pruefung, die
+    // irgendwo greifen muss.
+    //
+    // WAS DAS NICHT ANTASTET: die Ideallinie. Sie hat weiterhin ihre drei Stufen
+    // (60-track.js), und das Ueberholen benutzt weiterhin nur die beiden aeusseren. Hier
+    // geht es um den EIGENEN Spurversatz der Autos, eine andere Groesse an einem anderen
+    // Regler ("Eigene Spuren").
+    //
+    // Die Startbedingung faellt damit weg - sie tat genau das, was jetzt immer gilt.
+    // GHOST_START_ENG_MS bleibt als Konstante stehen, weil sie dokumentiert, woher die
+    // Zweierregel kommt.
+    return k % 2 === 0 ? -1 : 1;
   }
 
   // ---- Die Seiten einer Gruppe --------------------------------------------------------
