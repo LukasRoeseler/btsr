@@ -9534,26 +9534,94 @@
     };
   });
 
-  // ---- Lautsprecher-Knopf ----
+  // ---- Lautsprecher-Knopf: einmal rundherum, und in BEIDE Richtungen ----
   //
   // Er soll durch ALLE Eintraege schalten und beim ersten wieder ankommen. Ein Knopf, der
   // einen Eintrag ueberspringt, ist schwer zu bemerken: man merkt nur, dass ein Motor
   // "nicht dabei" ist.
-  stAdd('Lautsprecher-Knopf schaltet einmal rundherum', () => {
+  //
+  // ---- SEIT v0.6.16 HAT ER ZWEI HAELFTEN ------------------------------------------
+  //
+  // Bestellt: rechte Haelfte weiter, linke zurueck. Der Test klickte vorher mit
+  // knopf.click(), also OHNE Ortsangabe - clientX ist dabei 0, und ein Test, der nur so
+  // klickt, kann die beiden Haelften gar nicht auseinanderhalten. Er waere auch gruen
+  // geblieben, wenn beide Haelften rueckwaerts schalten.
+  //
+  // Jetzt wird mit echten Koordinaten geklickt, je einmal links und rechts vom
+  // Mittelpunkt, und zusaetzlich bleibt der ortlose Klick geprueft: er muss VORWAERTS
+  // gelten, weil das die Tastaturbedienung ist.
+  stAdd('Lautsprecher-Knopf: rundherum, und links zurueck, rechts vor', () => {
     const knopf = $('race-act-sound'), sel = $('sound-profile');
     if (!knopf || !sel) return { ok: null, mass: 'kein Knopf oder kein Menue' };
     const gemerkt = sel.value;
+    const fehler = [];
     try {
-      const gesehen = [];
       const n = sel.options.length;
-      // n+1 Kliks: nach n Kliks muss der Anfangswert wieder stehen.
-      for (let i = 0; i < n; i++) { knopf.click(); gesehen.push(sel.value); }
+      const kasten = knopf.getBoundingClientRect();
+      // Ein Klick mit Ort. Liegt der Knopf (noch) nicht im Bild, ist die Breite 0 und
+      // eine Haelfte nicht zu treffen - dann wird dieser Teil uebersprungen statt geraten.
+      const klick = (x) => knopf.dispatchEvent(new MouseEvent('click', {
+        bubbles: true, cancelable: true,
+        clientX: x, clientY: kasten.top + kasten.height / 2,
+      }));
+      const messbar = kasten.width > 8;
+
+      // 1. EINMAL RUNDHERUM, ueber die rechte Haelfte. Nach n Kliks steht der Anfang wieder.
+      const gesehen = [];
+      if (messbar) {
+        const rechts = kasten.left + kasten.width * 0.8;
+        for (let i = 0; i < n; i++) { klick(rechts); gesehen.push(sel.value); }
+      } else {
+        for (let i = 0; i < n; i++) { knopf.click(); gesehen.push(sel.value); }
+      }
       const einmalig = new Set(gesehen);
-      return {
-        ok: einmalig.size === n && sel.value === gemerkt,
-        mass: n + ' Eintraege, ' + einmalig.size + ' verschiedene gesehen, danach wieder '
-            + (sel.value === gemerkt ? 'am Anfang' : 'bei "' + sel.value + '"'),
-      };
+      if (einmalig.size !== n) {
+        fehler.push(einmalig.size + ' von ' + n + ' Eintraegen gesehen');
+      }
+      if (sel.value !== gemerkt) fehler.push('nach ' + n + ' Kliks nicht am Anfang');
+
+      // 2. UND DIE RICHTUNGEN SIND VERSCHIEDEN. Das ist die neue Zusage: ein Klick links
+      //    und einer rechts muessen auf VERSCHIEDENE Nachbarn fuehren.
+      let linksZiel = null, rechtsZiel = null;
+      if (messbar && n >= 3) {
+        const anfang = sel.value;
+        klick(kasten.left + kasten.width * 0.2); linksZiel = sel.value;
+        sel.value = anfang; sel.dispatchEvent(new Event('change', { bubbles: true }));
+        klick(kasten.left + kasten.width * 0.8); rechtsZiel = sel.value;
+        sel.value = anfang; sel.dispatchEvent(new Event('change', { bubbles: true }));
+        if (linksZiel === rechtsZiel) {
+          fehler.push('beide Haelften fuehren auf ' + linksZiel);
+        }
+        // Und zwar auf die BENACHBARTEN, nicht irgendwohin.
+        const werte = Array.prototype.map.call(sel.options, (o) => o.value);
+        const i0 = werte.indexOf(anfang);
+        if (werte[(i0 + 1) % n] !== rechtsZiel) {
+          fehler.push('rechts fuehrt auf ' + rechtsZiel + ' statt ' + werte[(i0 + 1) % n]);
+        }
+        if (werte[((i0 - 1) % n + n) % n] !== linksZiel) {
+          fehler.push('links fuehrt auf ' + linksZiel + ' statt '
+                      + werte[((i0 - 1) % n + n) % n]);
+        }
+      }
+
+      // 3. EIN KLICK OHNE ORT IST VORWAERTS - das ist die Tastatur, nicht die linke Haelfte.
+      let ohneOrt = null;
+      if (n >= 3) {
+        const anfang = sel.value;
+        knopf.click(); ohneOrt = sel.value;
+        const werte = Array.prototype.map.call(sel.options, (o) => o.value);
+        const i0 = werte.indexOf(anfang);
+        if (werte[(i0 + 1) % n] !== ohneOrt) {
+          fehler.push('ortloser Klick fuehrt auf ' + ohneOrt + ' statt vorwaerts');
+        }
+      }
+
+      return { ok: !fehler.length,
+               mass: n + ' Eintraege, ' + einmalig.size + ' verschiedene'
+                   + (messbar ? ' | links -> ' + linksZiel + ', rechts -> ' + rechtsZiel
+                              : ' | Knopf nicht im Bild, Haelften nicht geprueft')
+                   + ' | ohne Ort -> ' + ohneOrt
+                   + (fehler.length ? ' || ' + fehler.join('; ') : '') };
     } finally {
       if (sel.value !== gemerkt) {
         sel.value = gemerkt;

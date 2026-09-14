@@ -1246,6 +1246,17 @@
     gap: clamp(4px, 1vw, 9px); }
   .gt3-act-ico svg { width: clamp(14px, 3vw, 19px); height: clamp(14px, 3vw, 19px);
     flex: none; }
+  /* Die zwei Haelften des Klangknopfes. Die Pfeile liegen ABSOLUT an den Raendern, damit
+     Symbol und Name genau dort bleiben, wo sie vorher standen - ein zusaetzliches Flexkind
+     haette sie aus der Mitte geschoben, und geaendert werden sollte nur der Rand.
+     Gedaempft, weil sie eine Bedienhilfe sind und keine Anzeige: wer den Knopf kennt,
+     soll sie nicht mehr lesen muessen. */
+  .gt3-act-zwei { position: relative; }
+  .gt3-act-zwei .act-pfeil { position: absolute; top: 50%; transform: translateY(-50%);
+    font-size: clamp(12px, 2.4vw, 16px); line-height: 1; opacity: .42;
+    pointer-events: none; }
+  .gt3-act-zwei .act-pfeil.links { left: clamp(4px, 1vw, 9px); }
+  .gt3-act-zwei .act-pfeil.rechts { right: clamp(4px, 1vw, 9px); }
   .gt3-half .gt3-act { display: grid; justify-items: center; gap: 2px;
     padding: clamp(4px, .8vw, 8px) 2px; line-height: 1.15; }
   .gt3-half .gt3-act svg { width: clamp(15px, 3.4vw, 21px); height: clamp(15px, 3.4vw, 21px); }
@@ -3227,9 +3238,19 @@
         <!-- Der Motorklang gehoert ins Cockpit, weil man ihn im Fahren wechselt: das ist
              kein Einrichten, sondern Ausprobieren. MIT Namen und nicht nur mit dem Symbol -
              ein Knopf, der durch zehn Eintraege schaltet, muss sagen wo er steht, sonst
-             drueckt man blind und hoert erst beim Gasgeben, was passiert ist. -->
-        <button type="button" class="gt3-act gt3-act-ico" id="race-act-sound"
-                title="Motorklang durchschalten">
+             drueckt man blind und hoert erst beim Gasgeben, was passiert ist.
+
+             ---- ZWEI HAELFTEN, UND DIE PFEILE SAGEN ES ----------------------------
+             Bestellt: links zurueck, rechts vor. Bei 26 Eintraegen ist eine Richtung zu
+             wenig - wer einen Motor um eins verpasst, muss sonst 25 mal druecken.
+
+             Die Pfeile stehen ABSOLUT an den Raendern und nicht im Flexfluss. Das ist
+             Absicht: "am Button soll sich nichts aendern ausser den Pfeilen", und ein
+             zusaetzliches Flexkind haette Symbol und Name aus der Mitte geschoben. -->
+        <button type="button" class="gt3-act gt3-act-ico gt3-act-zwei" id="race-act-sound"
+                title="Motorklang: rechte H&auml;lfte weiter, linke zur&uuml;ck">
+          <span class="act-pfeil links" aria-hidden="true" data-i18n-skip>&lsaquo;</span>
+          <span class="act-pfeil rechts" aria-hidden="true" data-i18n-skip>&rsaquo;</span>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.2L12 5.5v13l-4.8-4H4z"/><path d="M16 9a4.2 4.2 0 0 1 0 6" stroke="var(--bad)"/><path d="M18.6 6.4a7.8 7.8 0 0 1 0 11.2" stroke="var(--bad)"/></svg>
           <span id="race-act-sound-txt">Motor</span></button>
@@ -6398,9 +6419,9 @@
       <div class="opt-row"><div class="opt-label">Tankverbrauch (%/s bei Vollgas)</div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-fuel-drain" min="0" max="10" step="0.1" value="0">
+          <input type="range" id="setting-fuel-drain" min="0" max="10" step="0.1" value="1">
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="setting-fuel-drain-val">3.0</span>
+          <span class="opt-val" id="setting-fuel-drain-val">1.0</span>
         </div></div>
       <!-- Boxengasse. Sie steht HIER und nicht im Streckentab, obwohl dort die
            Musterangaben liegen: die Frage "woran erkennt die App eine Boxengasse" ist eine
@@ -6444,7 +6465,7 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-crash-count-val">10</span>
         </div></div>
-      <div class="opt-row"><div class="opt-label">Schaden</div><label class="tgl"><input type="checkbox" id="setting-crash-damage"><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Schaden</div><label class="tgl"><input type="checkbox" id="setting-crash-damage" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Crash-Schwelle
           <small>Wie weit die Bewegungsbytes 1 und 3 vom gleitenden Mittel abweichen
           m&uuml;ssen, damit ein Sto&szlig; als Crash gilt. Niedriger hei&szlig;t
@@ -7968,7 +7989,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.6.15</span></span>
+    <span class="foot-ver">v<span id="app-version">0.6.16</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine

@@ -3107,7 +3107,29 @@
   let crashThreshold = 40;
   const CRASH_ROLLING_ALPHA = 0.15;
   const CRASH_REFRACTORY_MS = 1000; // avoid re-triggering repeatedly off one jolt
-  let fuelDrainPerSec = 3;       // % per second at full throttle magnitude (slider)
+  // ---- 1,0 %/s, UND DAS IST GEMESSEN -----------------------------------------------
+  //
+  // BESTELLT: "Tank und Schaden standardmaessig einschalten. Tankverbrauch wieder etwas
+  // weniger (so wie vorher)." Vorher stand der Regler auf 3, seit v0.5 auf 0 (also aus).
+  //
+  // Gemessen mit reifenStintProbe bei Gas 0,85 und der Verschleissrate 0,0096, die seit
+  // v0.6.2 gilt - Zeit bis der Tank leer ist gegen die Zeit bis weiche Reifen durch sind:
+  //
+  //     Verbrauch   Tank leer   weich durch   Reifen zuerst?
+  //       3,0 %/s      39 s        92 s        nein  (-53 s)
+  //       1,5 %/s      78 s        92 s        nein  (-13 s)
+  //       1,3 %/s      90,5 s      92 s        nein  (-1 s)
+  //       1,0 %/s     118 s        92 s        JA    (+26 s)
+  //
+  // 1,0 ist die erste Stufe, bei der die ursprueengliche Bestellung aufgeht: "simuliere mal,
+  // sodass weiche Reifen kaputt sind, lange bevor der Tank leer ist". Bei 1,3 - dem Wert,
+  // den das GT3-Preset seit Langem traegt - verfehlt sie es um EINE Sekunde.
+  //
+  // UND DIE WAHL WIRD ECHT: weiche Reifen sind bei 1,0 reifenbegrenzt (92 s), mittlere
+  // tankbegrenzt (145 s gegen 118 s Tank). Wer weich faehrt, holt Zeit und muss wegen der
+  // Reifen herein; wer mittel faehrt, faehrt laenger und muss wegen des Tanks herein. Das
+  // ist der Unterschied, wegen dessen es zwei Mischungen gibt.
+  let fuelDrainPerSec = 1;       // % per second at full throttle magnitude (slider)
   // ---- AUS DEM MARKUP LESEN, hier neben der Deklaration ----------------------------
   //
   // DER FEHLER, DEN DAS BEHEBT: es gab nur einen Zuhoerer in 50-drive.js. Das Markup traegt
@@ -3135,7 +3157,10 @@
   //
   // Gelesen wird jetzt aus dem Kaestchen (siehe die Verdrahtung weiter unten); dieser Wert
   // gilt nur, bis das Dokument da ist, und steht deshalb auf dem Markup-Wert.
-  let crashDetectionEnabled = false;
+  // Ab Werk AN, wie bestellt. Der Wert wird beim Laden ohnehin aus dem Schalter gelesen
+  // (ein paar Zeilen weiter); er steht hier trotzdem richtig, weil eine Vorgabe, die etwas
+  // anderes sagt als das Bedienelement, die naechste halbe Stunde Suche ist.
+  let crashDetectionEnabled = true;
   // AUS DEM MARKUP LESEN, und zwar HIER neben der Deklaration und nicht bei der Verdrahtung
   // in 50-drive.js: von dort waere es eine Zuweisung an ein let einer spaeteren Datei, also
   // temporale Todeszone. Genau das hat einen Anlauf lang den ganzen Aufbau abgebrochen.

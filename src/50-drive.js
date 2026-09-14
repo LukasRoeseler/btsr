@@ -118,13 +118,31 @@
   }
 
   if ($('race-act-sound')) {
-    $('race-act-sound').addEventListener('click', () => {
+    $('race-act-sound').addEventListener('click', (e) => {
       const sel = $('sound-profile');
       if (!sel) return;
       const brauchbar = Array.prototype.filter.call(sel.options, o => !o.disabled && !o.hidden);
       if (!brauchbar.length) return;
+      // ---- LINKE HAELFTE ZURUECK, RECHTE VOR -------------------------------------
+      //
+      // BESTELLT: "Wenn ich auf die rechte Haelfte des Buttons klicke, geht es zum
+      // naechsten und bei der linken Haelfte zum vorherigen Ton."
+      //
+      // Bei 26 Eintraegen ist eine Richtung zu wenig: wer einen Motor um eins verpasst,
+      // muesste sonst 25 mal druecken.
+      //
+      // EIN KLICK OHNE ORT GILT ALS VORWAERTS. Tastaturbedienung (Enter, Leertaste) und
+      // knopf.click() aus einem Prueflauf liefern clientX = 0 - das ist kein Klick auf die
+      // linke Haelfte, sondern gar keine Ortsangabe. Ohne diese Unterscheidung waere der
+      // Knopf per Tastatur rueckwaerts, und der vorhandene Selbsttest haette still die
+      // Gegenrichtung gemessen.
+      const kasten = e.currentTarget.getBoundingClientRect();
+      const hatOrt = typeof e.clientX === 'number' && (e.clientX > 0 || e.clientY > 0);
+      const richtung = (hatOrt && e.clientX < kasten.left + kasten.width / 2) ? -1 : 1;
       const jetzt = brauchbar.findIndex(o => o.value === sel.value);
-      const naechste = brauchbar[(jetzt + 1) % brauchbar.length];
+      const n = brauchbar.length;
+      // Modulo mit Vorzeichen: (-1 % n) ist in JavaScript -1 und nicht n-1.
+      const naechste = brauchbar[(((jetzt + richtung) % n) + n) % n];
       sel.value = naechste.value;
       sel.dispatchEvent(new Event('change', { bubbles: true }));
       motorAnzeige();

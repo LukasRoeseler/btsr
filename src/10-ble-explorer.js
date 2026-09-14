@@ -1821,6 +1821,8 @@
       "no",
     "voll":
       "full",
+    "Motorklang: rechte Hälfte weiter, linke zurück":
+      "Engine sound: right half forward, left half back",
     "Die folgenden Klänge sind die Ausnahme: sie stammen aus echten Aufnahmen. Alle von Pixabay und unter der Pixabay-Lizenz. Die unbearbeiteten Quelldateien sind nicht Teil dieses Projekts.":
       "The following sounds are the exception: they come from real recordings. All from Pixabay and under the Pixabay licence. The unedited source files are not part of this project.",
     "Tankmenge":

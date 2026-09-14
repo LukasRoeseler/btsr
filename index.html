@@ -1246,6 +1246,17 @@
     gap: clamp(4px, 1vw, 9px); }
   .gt3-act-ico svg { width: clamp(14px, 3vw, 19px); height: clamp(14px, 3vw, 19px);
     flex: none; }
+  /* Die zwei Haelften des Klangknopfes. Die Pfeile liegen ABSOLUT an den Raendern, damit
+     Symbol und Name genau dort bleiben, wo sie vorher standen - ein zusaetzliches Flexkind
+     haette sie aus der Mitte geschoben, und geaendert werden sollte nur der Rand.
+     Gedaempft, weil sie eine Bedienhilfe sind und keine Anzeige: wer den Knopf kennt,
+     soll sie nicht mehr lesen muessen. */
+  .gt3-act-zwei { position: relative; }
+  .gt3-act-zwei .act-pfeil { position: absolute; top: 50%; transform: translateY(-50%);
+    font-size: clamp(12px, 2.4vw, 16px); line-height: 1; opacity: .42;
+    pointer-events: none; }
+  .gt3-act-zwei .act-pfeil.links { left: clamp(4px, 1vw, 9px); }
+  .gt3-act-zwei .act-pfeil.rechts { right: clamp(4px, 1vw, 9px); }
   .gt3-half .gt3-act { display: grid; justify-items: center; gap: 2px;
     padding: clamp(4px, .8vw, 8px) 2px; line-height: 1.15; }
   .gt3-half .gt3-act svg { width: clamp(15px, 3.4vw, 21px); height: clamp(15px, 3.4vw, 21px); }
@@ -3227,9 +3238,19 @@
         <!-- Der Motorklang gehoert ins Cockpit, weil man ihn im Fahren wechselt: das ist
              kein Einrichten, sondern Ausprobieren. MIT Namen und nicht nur mit dem Symbol -
              ein Knopf, der durch zehn Eintraege schaltet, muss sagen wo er steht, sonst
-             drueckt man blind und hoert erst beim Gasgeben, was passiert ist. -->
-        <button type="button" class="gt3-act gt3-act-ico" id="race-act-sound"
-                title="Motorklang durchschalten">
+             drueckt man blind und hoert erst beim Gasgeben, was passiert ist.
+
+             ---- ZWEI HAELFTEN, UND DIE PFEILE SAGEN ES ----------------------------
+             Bestellt: links zurueck, rechts vor. Bei 26 Eintraegen ist eine Richtung zu
+             wenig - wer einen Motor um eins verpasst, muss sonst 25 mal druecken.
+
+             Die Pfeile stehen ABSOLUT an den Raendern und nicht im Flexfluss. Das ist
+             Absicht: "am Button soll sich nichts aendern ausser den Pfeilen", und ein
+             zusaetzliches Flexkind haette Symbol und Name aus der Mitte geschoben. -->
+        <button type="button" class="gt3-act gt3-act-ico gt3-act-zwei" id="race-act-sound"
+                title="Motorklang: rechte H&auml;lfte weiter, linke zur&uuml;ck">
+          <span class="act-pfeil links" aria-hidden="true" data-i18n-skip>&lsaquo;</span>
+          <span class="act-pfeil rechts" aria-hidden="true" data-i18n-skip>&rsaquo;</span>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.2L12 5.5v13l-4.8-4H4z"/><path d="M16 9a4.2 4.2 0 0 1 0 6" stroke="var(--bad)"/><path d="M18.6 6.4a7.8 7.8 0 0 1 0 11.2" stroke="var(--bad)"/></svg>
           <span id="race-act-sound-txt">Motor</span></button>
@@ -6398,9 +6419,9 @@
       <div class="opt-row"><div class="opt-label">Tankverbrauch (%/s bei Vollgas)</div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-fuel-drain" min="0" max="10" step="0.1" value="0">
+          <input type="range" id="setting-fuel-drain" min="0" max="10" step="0.1" value="1">
           <button type="button" data-step="1" aria-label="mehr">+</button>
-          <span class="opt-val" id="setting-fuel-drain-val">3.0</span>
+          <span class="opt-val" id="setting-fuel-drain-val">1.0</span>
         </div></div>
       <!-- Boxengasse. Sie steht HIER und nicht im Streckentab, obwohl dort die
            Musterangaben liegen: die Frage "woran erkennt die App eine Boxengasse" ist eine
@@ -6444,7 +6465,7 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-crash-count-val">10</span>
         </div></div>
-      <div class="opt-row"><div class="opt-label">Schaden</div><label class="tgl"><input type="checkbox" id="setting-crash-damage"><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Schaden</div><label class="tgl"><input type="checkbox" id="setting-crash-damage" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Crash-Schwelle
           <small>Wie weit die Bewegungsbytes 1 und 3 vom gleitenden Mittel abweichen
           m&uuml;ssen, damit ein Sto&szlig; als Crash gilt. Niedriger hei&szlig;t
@@ -7968,7 +7989,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.6.15</span></span>
+    <span class="foot-ver">v<span id="app-version">0.6.16</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -9824,6 +9845,8 @@
       "no",
     "voll":
       "full",
+    "Motorklang: rechte Hälfte weiter, linke zurück":
+      "Engine sound: right half forward, left half back",
     "Die folgenden Klänge sind die Ausnahme: sie stammen aus echten Aufnahmen. Alle von Pixabay und unter der Pixabay-Lizenz. Die unbearbeiteten Quelldateien sind nicht Teil dieses Projekts.":
       "The following sounds are the exception: they come from real recordings. All from Pixabay and under the Pixabay licence. The unedited source files are not part of this project.",
     "Tankmenge":
@@ -13459,13 +13482,31 @@
   }
 
   if ($('race-act-sound')) {
-    $('race-act-sound').addEventListener('click', () => {
+    $('race-act-sound').addEventListener('click', (e) => {
       const sel = $('sound-profile');
       if (!sel) return;
       const brauchbar = Array.prototype.filter.call(sel.options, o => !o.disabled && !o.hidden);
       if (!brauchbar.length) return;
+      // ---- LINKE HAELFTE ZURUECK, RECHTE VOR -------------------------------------
+      //
+      // BESTELLT: "Wenn ich auf die rechte Haelfte des Buttons klicke, geht es zum
+      // naechsten und bei der linken Haelfte zum vorherigen Ton."
+      //
+      // Bei 26 Eintraegen ist eine Richtung zu wenig: wer einen Motor um eins verpasst,
+      // muesste sonst 25 mal druecken.
+      //
+      // EIN KLICK OHNE ORT GILT ALS VORWAERTS. Tastaturbedienung (Enter, Leertaste) und
+      // knopf.click() aus einem Prueflauf liefern clientX = 0 - das ist kein Klick auf die
+      // linke Haelfte, sondern gar keine Ortsangabe. Ohne diese Unterscheidung waere der
+      // Knopf per Tastatur rueckwaerts, und der vorhandene Selbsttest haette still die
+      // Gegenrichtung gemessen.
+      const kasten = e.currentTarget.getBoundingClientRect();
+      const hatOrt = typeof e.clientX === 'number' && (e.clientX > 0 || e.clientY > 0);
+      const richtung = (hatOrt && e.clientX < kasten.left + kasten.width / 2) ? -1 : 1;
       const jetzt = brauchbar.findIndex(o => o.value === sel.value);
-      const naechste = brauchbar[(jetzt + 1) % brauchbar.length];
+      const n = brauchbar.length;
+      // Modulo mit Vorzeichen: (-1 % n) ist in JavaScript -1 und nicht n-1.
+      const naechste = brauchbar[(((jetzt + richtung) % n) + n) % n];
       sel.value = naechste.value;
       sel.dispatchEvent(new Event('change', { bubbles: true }));
       motorAnzeige();
@@ -22003,7 +22044,29 @@
   let crashThreshold = 40;
   const CRASH_ROLLING_ALPHA = 0.15;
   const CRASH_REFRACTORY_MS = 1000; // avoid re-triggering repeatedly off one jolt
-  let fuelDrainPerSec = 3;       // % per second at full throttle magnitude (slider)
+  // ---- 1,0 %/s, UND DAS IST GEMESSEN -----------------------------------------------
+  //
+  // BESTELLT: "Tank und Schaden standardmaessig einschalten. Tankverbrauch wieder etwas
+  // weniger (so wie vorher)." Vorher stand der Regler auf 3, seit v0.5 auf 0 (also aus).
+  //
+  // Gemessen mit reifenStintProbe bei Gas 0,85 und der Verschleissrate 0,0096, die seit
+  // v0.6.2 gilt - Zeit bis der Tank leer ist gegen die Zeit bis weiche Reifen durch sind:
+  //
+  //     Verbrauch   Tank leer   weich durch   Reifen zuerst?
+  //       3,0 %/s      39 s        92 s        nein  (-53 s)
+  //       1,5 %/s      78 s        92 s        nein  (-13 s)
+  //       1,3 %/s      90,5 s      92 s        nein  (-1 s)
+  //       1,0 %/s     118 s        92 s        JA    (+26 s)
+  //
+  // 1,0 ist die erste Stufe, bei der die ursprueengliche Bestellung aufgeht: "simuliere mal,
+  // sodass weiche Reifen kaputt sind, lange bevor der Tank leer ist". Bei 1,3 - dem Wert,
+  // den das GT3-Preset seit Langem traegt - verfehlt sie es um EINE Sekunde.
+  //
+  // UND DIE WAHL WIRD ECHT: weiche Reifen sind bei 1,0 reifenbegrenzt (92 s), mittlere
+  // tankbegrenzt (145 s gegen 118 s Tank). Wer weich faehrt, holt Zeit und muss wegen der
+  // Reifen herein; wer mittel faehrt, faehrt laenger und muss wegen des Tanks herein. Das
+  // ist der Unterschied, wegen dessen es zwei Mischungen gibt.
+  let fuelDrainPerSec = 1;       // % per second at full throttle magnitude (slider)
   // ---- AUS DEM MARKUP LESEN, hier neben der Deklaration ----------------------------
   //
   // DER FEHLER, DEN DAS BEHEBT: es gab nur einen Zuhoerer in 50-drive.js. Das Markup traegt
@@ -22031,7 +22094,10 @@
   //
   // Gelesen wird jetzt aus dem Kaestchen (siehe die Verdrahtung weiter unten); dieser Wert
   // gilt nur, bis das Dokument da ist, und steht deshalb auf dem Markup-Wert.
-  let crashDetectionEnabled = false;
+  // Ab Werk AN, wie bestellt. Der Wert wird beim Laden ohnehin aus dem Schalter gelesen
+  // (ein paar Zeilen weiter); er steht hier trotzdem richtig, weil eine Vorgabe, die etwas
+  // anderes sagt als das Bedienelement, die naechste halbe Stunde Suche ist.
+  let crashDetectionEnabled = true;
   // AUS DEM MARKUP LESEN, und zwar HIER neben der Deklaration und nicht bei der Verdrahtung
   // in 50-drive.js: von dort waere es eine Zuweisung an ein let einer spaeteren Datei, also
   // temporale Todeszone. Genau das hat einen Anlauf lang den ganzen Aufbau abgebrochen.
@@ -47958,26 +48024,94 @@
     };
   });
 
-  // ---- Lautsprecher-Knopf ----
+  // ---- Lautsprecher-Knopf: einmal rundherum, und in BEIDE Richtungen ----
   //
   // Er soll durch ALLE Eintraege schalten und beim ersten wieder ankommen. Ein Knopf, der
   // einen Eintrag ueberspringt, ist schwer zu bemerken: man merkt nur, dass ein Motor
   // "nicht dabei" ist.
-  stAdd('Lautsprecher-Knopf schaltet einmal rundherum', () => {
+  //
+  // ---- SEIT v0.6.16 HAT ER ZWEI HAELFTEN ------------------------------------------
+  //
+  // Bestellt: rechte Haelfte weiter, linke zurueck. Der Test klickte vorher mit
+  // knopf.click(), also OHNE Ortsangabe - clientX ist dabei 0, und ein Test, der nur so
+  // klickt, kann die beiden Haelften gar nicht auseinanderhalten. Er waere auch gruen
+  // geblieben, wenn beide Haelften rueckwaerts schalten.
+  //
+  // Jetzt wird mit echten Koordinaten geklickt, je einmal links und rechts vom
+  // Mittelpunkt, und zusaetzlich bleibt der ortlose Klick geprueft: er muss VORWAERTS
+  // gelten, weil das die Tastaturbedienung ist.
+  stAdd('Lautsprecher-Knopf: rundherum, und links zurueck, rechts vor', () => {
     const knopf = $('race-act-sound'), sel = $('sound-profile');
     if (!knopf || !sel) return { ok: null, mass: 'kein Knopf oder kein Menue' };
     const gemerkt = sel.value;
+    const fehler = [];
     try {
-      const gesehen = [];
       const n = sel.options.length;
-      // n+1 Kliks: nach n Kliks muss der Anfangswert wieder stehen.
-      for (let i = 0; i < n; i++) { knopf.click(); gesehen.push(sel.value); }
+      const kasten = knopf.getBoundingClientRect();
+      // Ein Klick mit Ort. Liegt der Knopf (noch) nicht im Bild, ist die Breite 0 und
+      // eine Haelfte nicht zu treffen - dann wird dieser Teil uebersprungen statt geraten.
+      const klick = (x) => knopf.dispatchEvent(new MouseEvent('click', {
+        bubbles: true, cancelable: true,
+        clientX: x, clientY: kasten.top + kasten.height / 2,
+      }));
+      const messbar = kasten.width > 8;
+
+      // 1. EINMAL RUNDHERUM, ueber die rechte Haelfte. Nach n Kliks steht der Anfang wieder.
+      const gesehen = [];
+      if (messbar) {
+        const rechts = kasten.left + kasten.width * 0.8;
+        for (let i = 0; i < n; i++) { klick(rechts); gesehen.push(sel.value); }
+      } else {
+        for (let i = 0; i < n; i++) { knopf.click(); gesehen.push(sel.value); }
+      }
       const einmalig = new Set(gesehen);
-      return {
-        ok: einmalig.size === n && sel.value === gemerkt,
-        mass: n + ' Eintraege, ' + einmalig.size + ' verschiedene gesehen, danach wieder '
-            + (sel.value === gemerkt ? 'am Anfang' : 'bei "' + sel.value + '"'),
-      };
+      if (einmalig.size !== n) {
+        fehler.push(einmalig.size + ' von ' + n + ' Eintraegen gesehen');
+      }
+      if (sel.value !== gemerkt) fehler.push('nach ' + n + ' Kliks nicht am Anfang');
+
+      // 2. UND DIE RICHTUNGEN SIND VERSCHIEDEN. Das ist die neue Zusage: ein Klick links
+      //    und einer rechts muessen auf VERSCHIEDENE Nachbarn fuehren.
+      let linksZiel = null, rechtsZiel = null;
+      if (messbar && n >= 3) {
+        const anfang = sel.value;
+        klick(kasten.left + kasten.width * 0.2); linksZiel = sel.value;
+        sel.value = anfang; sel.dispatchEvent(new Event('change', { bubbles: true }));
+        klick(kasten.left + kasten.width * 0.8); rechtsZiel = sel.value;
+        sel.value = anfang; sel.dispatchEvent(new Event('change', { bubbles: true }));
+        if (linksZiel === rechtsZiel) {
+          fehler.push('beide Haelften fuehren auf ' + linksZiel);
+        }
+        // Und zwar auf die BENACHBARTEN, nicht irgendwohin.
+        const werte = Array.prototype.map.call(sel.options, (o) => o.value);
+        const i0 = werte.indexOf(anfang);
+        if (werte[(i0 + 1) % n] !== rechtsZiel) {
+          fehler.push('rechts fuehrt auf ' + rechtsZiel + ' statt ' + werte[(i0 + 1) % n]);
+        }
+        if (werte[((i0 - 1) % n + n) % n] !== linksZiel) {
+          fehler.push('links fuehrt auf ' + linksZiel + ' statt '
+                      + werte[((i0 - 1) % n + n) % n]);
+        }
+      }
+
+      // 3. EIN KLICK OHNE ORT IST VORWAERTS - das ist die Tastatur, nicht die linke Haelfte.
+      let ohneOrt = null;
+      if (n >= 3) {
+        const anfang = sel.value;
+        knopf.click(); ohneOrt = sel.value;
+        const werte = Array.prototype.map.call(sel.options, (o) => o.value);
+        const i0 = werte.indexOf(anfang);
+        if (werte[(i0 + 1) % n] !== ohneOrt) {
+          fehler.push('ortloser Klick fuehrt auf ' + ohneOrt + ' statt vorwaerts');
+        }
+      }
+
+      return { ok: !fehler.length,
+               mass: n + ' Eintraege, ' + einmalig.size + ' verschiedene'
+                   + (messbar ? ' | links -> ' + linksZiel + ', rechts -> ' + rechtsZiel
+                              : ' | Knopf nicht im Bild, Haelften nicht geprueft')
+                   + ' | ohne Ort -> ' + ohneOrt
+                   + (fehler.length ? ' || ' + fehler.join('; ') : '') };
     } finally {
       if (sel.value !== gemerkt) {
         sel.value = gemerkt;
@@ -50064,8 +50198,8 @@
            // Runden auf Grip warten und das fuer das Fahrverhalten halten.
            'setting-tyre-blankets': false,
            'phys-accel': 1.0,
-           'setting-fuel-drain': 0, 'setting-crash-count': 4,
-           'setting-crash-damage': false,
+           'setting-fuel-drain': 1, 'setting-crash-count': 4,
+           'setting-crash-damage': true,
            'setting-crash-threshold': 40,
            'setting-repair-time': 4,
            // Block 4: Windschatten, Reifenasymmetrie und -druck bleiben bei Pro AUS - sie

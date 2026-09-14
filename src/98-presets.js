@@ -98,8 +98,8 @@
            // Runden auf Grip warten und das fuer das Fahrverhalten halten.
            'setting-tyre-blankets': false,
            'phys-accel': 1.0,
-           'setting-fuel-drain': 0, 'setting-crash-count': 4,
-           'setting-crash-damage': false,
+           'setting-fuel-drain': 1, 'setting-crash-count': 4,
+           'setting-crash-damage': true,
            'setting-crash-threshold': 40,
            'setting-repair-time': 4,
            // Block 4: Windschatten, Reifenasymmetrie und -druck bleiben bei Pro AUS - sie
