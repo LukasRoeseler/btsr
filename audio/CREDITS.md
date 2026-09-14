@@ -5,11 +5,11 @@ Gruppe fremdes Aufnahmematerial enthaelt.
 
 ## Vollstaendig synthetisch — kein Aufnahmematerial
 
-Sechsundzwanzig Motoren. Fuenfundzwanzig davon gehoeren zu einem wirklichen Auto, der
-sechsundzwanzigste ist eine zweite Abstimmung des ersten:
+Siebenundzwanzig Motoren. Fuenfundzwanzig davon gehoeren zu einem wirklichen Auto, zwei
+sind je eine zweite, dreckigere Abstimmung eines davon:
 
 * **GT- und GT3-Rennmotoren:** Porsche 911 GT3 R, Porsche 911 GT3 R "dreckig",
-  BMW M4 GT3, Ford Mustang GT3,
+  BMW M4 GT3, BMW M4 GT3 "dreckig", Ford Mustang GT3,
   Ferrari 296 GT3, Mercedes-AMG GT3, Corvette C6.R, Corvette C5-R,
   Corvette Z06 GT3.R, Aston Martin Vantage GT3, Huracan GT3 / R8 LMS
 * **Formel 1:** ein Motor nach dem Reglement 2026 (1,6-l-V6 Turbo-Hybrid)
@@ -27,17 +27,19 @@ Effekte (Bremsenquietschen, Reifenquietschen, Crash-Varianten, Schlagschrauber,
 Tankgeraeusch, Karosseriereparatur, Motorstart) sind von Grund auf gerechnet. Es wird nichts aus einer
 Aufnahme abgespielt.
 
-Die "dreckige" Fassung des 992 GT3 R ist derselbe Motor - gleiche Zylinderzahl, gleiche
-Zuendfolge, gleiche Rohrlaenge, gleiches Drehzahlband. Veraendert sind nur die Regler fuer
-Ventiltriebklappern (hoeher und TIEFER angesetzt), Saettigung, Zuendungleichheit und
-Klangfarbe, und jeder davon bleibt im Bereich, den die anderen Motoren belegen. Auch sie
-ist damit vollstaendig gerechnet und enthaelt kein Aufnahmematerial.
+Die "dreckigen" Fassungen des 992 GT3 R und des M4 GT3 sind derselbe Motor wie ihr
+Vorbild - gleiche Zylinderzahl, gleiche Zuendfolge, gleiche Rohrlaenge, gleiches
+Drehzahlband. Veraendert sind nur die Regler fuer Ventiltriebklappern (hoeher und
+TIEFER angesetzt), Saettigung, Zuendungleichheit und Klangfarbe, und jeder davon bleibt
+im Bereich, den die anderen Motoren belegen. Auch sie sind damit vollstaendig gerechnet
+und enthalten kein Aufnahmematerial.
 
 Jeder dieser Motoren hat **fuenf bis sieben** Schleifen: die drei verankerten Drehzahlbaender
 (`idle`, `mid`, `high`), dazu so viele Zwischenbaender, wie `band_ladder()` noetig findet —
 zwischen zwei Nachbarn darf hoechstens der Faktor 2,2 liegen, sonst hoert man den Sprung.
 Beim Formel 1 sind das zwei Zwischenbaender, bei Countach, Impreza und der NASCAR-Impala je
-drei, sonst eines. Zusammen sind es 132 Schleifen.
+drei, sonst eines. Zusammen sind es 132 Schleifen bei den fuenfundzwanzig Motoren nach
+wirklichem Vorbild, dazu je fuenf bei den beiden dreckigen Abstimmungen - macht 142.
 Sie werden nach Drehzahl ueberblendet. Dazu kommt eine Schubschleife (`over`) am mittleren
 Band, die
 parallel dazu nach **Last** eingeblendet wird. Voll auf Zug ab 36 % Gas, voller Schub unter

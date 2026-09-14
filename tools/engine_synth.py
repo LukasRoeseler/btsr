@@ -376,6 +376,54 @@ CARS = {
         'clatter': 0.08, 'clatter_hz': 2700.0, 'drive': 2.1,
         'scatter_t': 0.0045, 'scatter_g': 0.035, 'crackle': 0.52,
     },
+    # ---- DERSELBE MOTOR, NUR DRECKIG ------------------------------------------------
+    #
+    # BESTELLT: "Dreckigen Sound ebenfalls fuer BMW erstellen und den dreckigen
+    # Porsche sound als Default nehmen - beim Porsche klingt es viel besser."
+    #
+    # Also EIN zusaetzlicher Eintrag, geklont vom BMW, nicht eine Neuabstimmung. Alles,
+    # was den Motor ausmacht - Zylinderzahl, Zuendfolge, Rohrlaenge, Drehzahlband,
+    # 'turbo' und 'limiter' - bleibt unveraendert. Gedreht sind dieselben acht Regler wie
+    # beim Porsche-Ableger, in derselben RICHTUNG: mehr Ventiltrieb, tieferes Klappern,
+    # mehr Saettigung, ungleichere Zuendung, weniger Glanz, breitere Resonanz, mehr
+    # Knallen im Schiebebetrieb.
+    #
+    # ---- DIESELBE RICHTUNG, ANDERE STARTWERTE -------------------------------------
+    #
+    # Kein Wert ist vom Porsche kopiert - der BMW hat eine andere Grundabstimmung
+    # (clatter 0,08 gegen 0,14, drive 2,1 gegen 2,5, und so weiter), und ein kopierter
+    # Absolutwert waere an der falschen Stelle im Bereich gelandet. Verschoben ist
+    # deshalb um einen AEHNLICHEN Betrag, gemessen an derselben Bereichsbreite:
+    #
+    #     Regler        Bereich        M4 GT3    dreckig   warum
+    #     clatter       0,07 - 0,26      0,08      0,20     Ventiltrieb hoerbar
+    #     clatter_hz    1800 - 5200      2700      1900     TIEFER - das ist der Kern
+    #                                                       der Bestellung
+    #     drive          1,8 - 3,6        2,1       3,1     Saettigung, also Zerren
+    #     scatter_t    0,002 - 0,03     0,0045     0,020    Zuendzeitpunkt ungleich
+    #     scatter_g     0,02 - 0,08      0,035     0,065    Zuendstaerke ungleich
+    #     bright        0,34 - 0,76      0,48      0,38     weniger Glanz, mehr Gewicht
+    #     res_q          3,2 - 9,0        4,8       3,6     breitere Resonanz
+    #     crackle       0,12 - 0,75       0,52      0,64    mehr Knallen im Schiebebetrieb
+    #
+    # Jeder Wert bleibt im Bereich, den die 25 anderen Motoren belegen - dieselbe Regel
+    # wie beim Porsche-Ableger, aus demselben Grund: ein Parameter jenseits des
+    # Gemessenen klingt nicht dreckiger, sondern kaputt.
+    #
+    # NICHT ANGETASTET: 'turbo': True und 'noise'. Das Ladergeraeusch dieses Motors ist
+    # ein Merkmal (siehe der Kommentar am M4-Eintrag oben) und kein Schmutz, den man
+    # dazurechnet - dieselbe Unterscheidung wie beim Porsche mit seinen Einzeldrosseln.
+    'm4gt3_dreck': {
+        'turbo': True,
+        'label': 'BMW M4 GT3, dreckig (P58 3.0 Reihen-6, mechanisch)',
+        'banks': inline_from_order([1, 5, 3, 6, 2, 4], 6), 'cylinders': 6,
+        'limiter': 7200,
+        'rpms': {'idle': 1300, 'mid': 4300, 'high': 6800},
+        'primary_in': 23.5, 'res_q': 3.6, 'partials': 5, 'ir_ms': 46.0,
+        'pulse_ms': 3.1, 'bright': 0.38, 'noise': 0.13, 'noise_hz': 2200.0,
+        'clatter': 0.20, 'clatter_hz': 1900.0, 'drive': 3.1,
+        'scatter_t': 0.020, 'scatter_g': 0.065, 'crackle': 0.64,
+    },
     # ---- Porsche 911 GT3 R (v0.4) ----
     # Geliefert: Boxer-6, 4194 cm3, 104,5 x 81,5 mm, CR 13,2:1, Begrenzer 9250-9400/min,
     # Zuendfolge 1-6-2-4-3-5, sechs Einzeldrosseln, 3-in-1-Faecherkruemmer je Bank.
@@ -1242,10 +1290,28 @@ def main(nur=None):
     # deleted that entry, and since the app has 'corvette' in SAMPLE_CARS the profile simply
     # stopped working. Same mistake as the CREDITS.md one below, found the same way: by
     # reading the file the generator had just written instead of assuming.
+    # ---- encoding='utf-8' AUF BEIDEN SEITEN, und das ist keine Formsache -------------
+    #
+    # Gefunden beim Bauen von m4gt3_dreck: open() ohne encoding faellt auf die
+    # Systemvorgabe zurueck, unter Windows meist cp1252. json.dump() escaped mit
+    # ensure_ascii=True normalerweise jedes Nicht-ASCII-Zeichen zu einer \uXXXX-Folge,
+    # also sollte die Kodierung beim SCHREIBEN eigentlich gleichgueltig sein - aber genau
+    # das ist einmal schiefgegangen, vermutlich als dieses Skript einen frueheren
+    # manifest-Stand mit ROHEN UTF-8-Bytes (kein Escape, z. B. aus einer Handbearbeitung)
+    # unter cp1252 GELESEN hat: aus einem "ae" wurden dabei zwei einzelne Zeichen, die
+    # danach korrekt (aber falsch) escaped und so dauerhaft eingebrannt wurden.
+    #
+    # NACHGEMESSEN: 24 von 25 bestehenden Eintraegen trugen genau diesen Schaden im
+    # 'source'-Feld - nur p992gt3r_dreck war schon richtig, vermutlich aus einem Lauf auf
+    # einem Rechner mit UTF-8-Standard. Der Fehler betraf nur dieses eine Textfeld, das
+    # die App nirgends liest (80-sound.js nutzt rpmScale, crackle, turbo,
+    # idleRpm/limiterRpm, loops - nicht source oder label) - unschoen, aber folgenlos fuer
+    # den Klang. Trotzdem: falsche Daten bleiben falsch, bis sie repariert werden, auch
+    # wenn sie gerade niemand liest.
     path = os.path.join(OUT, 'loops.json')
     merged = {}
     if os.path.exists(path):
-        with open(path) as f:
+        with open(path, encoding='utf-8') as f:
             merged = json.load(f)
     for key, entry in manifest.items():
         # Keep any band already in the file that this run did not regenerate.
@@ -1254,7 +1320,7 @@ def main(nur=None):
         entry['loops'] = old
         merged[key] = entry
     kept = [k for k in merged if k not in manifest]
-    with open(path, 'w') as f:
+    with open(path, 'w', encoding='utf-8') as f:
         json.dump(merged, f, indent=1)
     if kept:
         print('')

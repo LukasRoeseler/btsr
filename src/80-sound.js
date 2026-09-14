@@ -91,7 +91,7 @@
     // DIESELBE REIHENFOLGE WIE IM MENUE. Fuer die Funktion ist sie belanglos - diese Liste
     // ist nur eine Mitgliedschaftspruefung -, aber zwei Listen derselben Sache in
     // unterschiedlicher Ordnung sind die naechste Verwechslung.
-    'p992gt3r', 'p992gt3r_dreck', 'm4gt3', 'mustang', 'f296gt3',
+    'p992gt3r', 'p992gt3r_dreck', 'm4gt3', 'm4gt3_dreck', 'mustang', 'f296gt3',
     'amggt3', 'c6r', 'c5r', 'z06gt3r', 'vantagegt3', 'huracan', 'f1_2026',
     // Vier historische Rennwagen, dazugekommen in v0.4.54 und als WIP gekennzeichnet: nach
     // Gehoer geprueft ist keiner von ihnen.
