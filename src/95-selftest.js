@@ -7515,6 +7515,98 @@
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
+  // ---- Ghosts ueberholen auch das Fahrerauto, und auf der richtigen Seite ----
+  //
+  // BESTELLT: "Ghosts sollen auch dem Fahrerauto ausweichen, wenn es langsamer faehrt."
+  //
+  // Zwei Dinge muessen stimmen, und beide waren offen:
+  //
+  //   1. ghostAhead() sieht das Fahrerauto seit v0.5.54 - ghostFieldRacing() nimmt
+  //      playerCar mit, sobald es einen Ortungssatz hat. Ob die Attacke daran wirklich
+  //      scharf wird, stand nie unter Pruefung.
+  //   2. Die Seitenwahl liest querSoll des Vorausfahrenden. Das Fahrerauto hatte keins,
+  //      qAnder fiel auf 0 zurueck, und der Angreifer ging IMMER nach links - auch wenn
+  //      der Fahrer genau dort fuhr. Seit v0.6.7 traegt der Sendeweg dieselbe Groesse ein,
+  //      die ein Ghost fuehrt: den geschickten Lenkbefehl, geglaettet und geklemmt.
+  //
+  // DER ZUFALL IST STILLGELEGT (Math.random auf 0): geprueft wird die ENTSCHEIDUNG, nicht
+  // die Wahrscheinlichkeit. Ein Test, der auf einen guten Wurf wartet, ist gelegentlich
+  // rot, ohne dass sich etwas geaendert haette.
+  stAdd('Ueberholen: das Fahrerauto ist ein Ziel, und die Seite folgt seiner Lage', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.spielerUeberholProbe) {
+      return { skip: true, mass: 'spielerUeberholProbe nicht vorhanden' };
+    }
+    const rechts = OMEGA_TEST.spielerUeberholProbe({ spielerQuer: 0.8 });
+    const links = OMEGA_TEST.spielerUeberholProbe({ spielerQuer: -0.8 });
+    if (!rechts || !links) return { skip: true, mass: 'kein Lauf' };
+    const fehler = [];
+    // 1. ES WIRD ANGESETZT. Ohne das ist alles Weitere gegenstandslos.
+    if (!rechts.angesetzt) fehler.push('kein Versuch gegen das Fahrerauto');
+    // 2. UND DAS ZIEL IST WIRKLICH DAS FAHRERAUTO - nicht null, nicht ein anderer.
+    if (rechts.ersterVersuch && !rechts.ersterVersuch.zielIstSpieler) {
+      fehler.push('passZiel ist nicht das Fahrerauto');
+    }
+    // 3. DIE SEITE FOLGT DER LAGE DES FAHRERS und ist nicht fest. Genau das ist der
+    //    Unterschied: faehrt er rechts, geht der Ghost links vorbei, und umgekehrt.
+    //    Ohne diese zwei Zeilen waere der Test auch mit der alten, festen Seite gruen.
+    if (rechts.ersterVersuch && rechts.ersterVersuch.seite !== -1) {
+      fehler.push('Fahrer rechts, Ghost geht ' + rechts.ersterVersuch.seite);
+    }
+    if (links.ersterVersuch && links.ersterVersuch.seite !== 1) {
+      fehler.push('Fahrer links, Ghost geht ' + links.ersterVersuch.seite);
+    }
+    return { ok: !fehler.length,
+             mass: 'Fahrer rechts -> Seite ' + (rechts.ersterVersuch || {}).seite
+                 + ', Fahrer links -> Seite ' + (links.ersterVersuch || {}).seite
+                 + ', sieht ' + (rechts.sieht ? rechts.sieht.wer : 'niemanden')
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
+  // ---- Ein gelungenes Ueberholmanoever endet auch als gelungenes ----
+  //
+  // g.passZiel wurde GELESEN (die Erfolgspruefung), GELOESCHT (beide Ausgaenge) und im
+  // Ghost-Literal auf null gesetzt - aber NIRGENDS zugewiesen. Damit war
+  //
+  //     durch = ziel && ziel.ghost && Fortschritt(ich) > Fortschritt(ziel) + CLEAR
+  //
+  // immer falsch: kein Manoever konnte ueber den Fortschritt enden, jedes lief in die
+  // Zeitsperre und wurde als "kommt nicht vorbei" verbucht - auch ein gelungenes. Dazu
+  // setzte jeder Abbruch eine Wiederholsperre.
+  //
+  // Aufgefallen ist es erst am Fahrerauto. Der bestehende ghostPassProbe setzt passZiel VON
+  // HAND, um die Sequenz zu starten, und hat den Fehler damit verdeckt - ein Prueflauf, der
+  // einen Zustand selbst herstellt, prueft nicht mehr, ob ihn jemand herstellt. Dieser Test
+  // laesst die Attacke deshalb SELBST scharf werden.
+  stAdd('Ueberholen: ein gelungenes Manoever erreicht die Einordnungsphase', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.spielerUeberholProbe) {
+      return { skip: true, mass: 'spielerUeberholProbe nicht vorhanden' };
+    }
+    const durch = OMEGA_TEST.spielerUeberholProbe({ spielerQuer: 0.8, vorbeiNach: 1200,
+                                                    dauerMs: 9000 });
+    const haengt = OMEGA_TEST.spielerUeberholProbe({ spielerQuer: 0.8, dauerMs: 9000 });
+    if (!durch || !haengt) return { skip: true, mass: 'kein Lauf' };
+    const fehler = [];
+    // 1. WER VORBEIKOMMT, ORDNET SICH EIN. 'rein' ist die Phase, die es vorher nie gab.
+    if (durch.phasenfolge.indexOf('rein') < 0) {
+      fehler.push('kommt vorbei, erreicht aber nie "rein": ' + durch.phasenfolge.join('>'));
+    }
+    // 2. UND DIE FOLGE IST VOLLSTAENDIG, in der richtigen Reihenfolge.
+    const soll = ['ansage', 'raus', 'vorbei', 'rein'];
+    if (durch.phasenfolge.join('>') !== soll.join('>')) {
+      fehler.push('Folge ' + durch.phasenfolge.join('>') + ' statt ' + soll.join('>'));
+    }
+    // 3. WER NICHT VORBEIKOMMT, ERREICHT 'rein' NICHT. Ohne diese Zeile waere der Test
+    //    auch dann gruen, wenn jedes Manoever als gelungen gaelte - und das waere die
+    //    Umkehrung desselben Fehlers.
+    if (haengt.phasenfolge.indexOf('rein') >= 0) {
+      fehler.push('kommt NICHT vorbei, meldet aber "rein"');
+    }
+    return { ok: !fehler.length,
+             mass: 'vorbei: ' + durch.phasenfolge.join('>')
+                 + ' | haengen geblieben: ' + haengt.phasenfolge.join('>')
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
   // ---- Ausrollen am Ende: die Ziellinie bestimmt die Staffel, nicht die Garage ----
   //
   // GEMELDET: "Ende des Rennens Ghosts anhalten: nicht der Platz soll bestimmen, wie weit

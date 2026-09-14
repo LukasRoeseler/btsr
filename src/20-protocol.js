@@ -233,6 +233,29 @@
     // prueft auf undefined.
     const modeBytes = (typeof playerCar !== 'undefined' && playerCar)
       ? playerCar.modeBytes : null;
+    // ---- DIE QUERLAGE DES FAHRERAUTOS, fuer die Ghosts -----------------------------
+    //
+    // BESTELLT: "Ghosts sollen auch dem Fahrerauto ausweichen, wenn es langsamer faehrt."
+    //
+    // Ein Ghost, der zum Ueberholen ansetzt, waehlt seine Seite aus g.querSoll des
+    // VORAUSFAHRENDEN - dessen angeforderter Querlage (90-ghosts.js, ghostSpice). Das
+    // Fahrerauto hatte keine: sein Ortungssatz aus spielerOrt() fuehrt nur den Ort, und
+    // querSoll entsteht sonst in der Ghost-Fahrschleife, die fuer ihn nie laeuft.
+    //
+    // Folge: qAnder fiel auf 0 zurueck, und der Angreifer ging IMMER nach links vorbei -
+    // auch wenn der Fahrer genau dort war. Die Seitenwahl war also nicht falsch berechnet,
+    // sie war gar nicht informiert.
+    //
+    // Hier steht dieselbe Groesse wie bei einem Ghost, und zwar aus demselben Grund: keine
+    // MESSUNG - das Auto meldet seine Querlage nicht -, sondern das, was die App ihm
+    // geschickt hat. Beim Ghost ist das der Lenkbefehl aus seiner Fahrschleife, hier der
+    // Lenkbefehl des Fahrers. Dieselbe Glaettung (0,25) und dieselbe Klemme (-1..1),
+    // damit die beiden Zahlen vergleichbar sind und nicht nur gleich heissen.
+    if (typeof playerCar !== 'undefined' && playerCar && playerCar.ghost) {
+      const pg = playerCar.ghost;
+      const roh = Math.max(-1, Math.min(1, steer));
+      pg.querSoll = (pg.querSoll || 0) + (roh - (pg.querSoll || 0)) * 0.25;
+    }
     const payload = buildCommandPacket(steer, throttle, undefined, modeBytes);
     recWrite(payload);
     // A car given the "Steuern" role in the garage becomes the write target. Falls back to

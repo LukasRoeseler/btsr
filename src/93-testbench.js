@@ -2480,6 +2480,91 @@
                platzMin: SPICE_PASS_PLATZ_MIN };
     },
 
+    // ---- SETZT EIN GHOST AM FAHRERAUTO AN, UND AUF WELCHER SEITE? ---------------
+    //
+    // BESTELLT: "Ghosts sollen auch dem Fahrerauto ausweichen, wenn es langsamer faehrt."
+    //
+    // Zwei getrennte Fragen, und die Sonde beantwortet beide:
+    //
+    //   1. WIRD ANGESETZT? ghostAhead() sieht das Fahrerauto seit v0.5.54, weil
+    //      ghostFieldRacing() playerCar mitnimmt, sobald es einen Ortungssatz hat. Ob die
+    //      Attacke daran aber wirklich scharf wird, stand nie unter Pruefung.
+    //   2. AUF WELCHER SEITE? Die Seitenwahl liest querSoll des Vorausfahrenden. Das
+    //      Fahrerauto hatte keins - qAnder fiel auf 0 zurueck, und der Angreifer ging
+    //      IMMER nach links, auch wenn der Fahrer genau dort fuhr.
+    //
+    // DER ZUFALL WIRD STILLGELEGT: die Attacke wuerfelt mit SPICE_ATTACK_P. Geprueft wird
+    // die ENTSCHEIDUNG, nicht die Wahrscheinlichkeit - ein Prueflauf, der auf einen guten
+    // Wurf wartet, ist gelegentlich rot, ohne dass sich etwas geaendert haette.
+    spielerUeberholProbe(o) {
+      const opt = o || {};
+      const merkGarage = garage.splice(0, garage.length);
+      const merkSpice = ghostCfg.wuerzeUeberholen;
+      const merkPlayer = playerCar;
+      const echtNow = Date.now;
+      const echtRandom = Math.random;
+      try {
+        ghostCfg.wuerzeUeberholen = true;
+        Math.random = () => 0;          // der Wurf gelingt immer
+        let uhr = echtNow.call(Date);
+        Date.now = () => uhr;
+
+        // Das Fahrerauto: ein Ortungssatz wie aus spielerOrt(), plus die Querlage, die
+        // seit v0.6.7 aus dem Sendeweg kommt.
+        const spieler = { role: 'player', alias: 'Fahrer', tileAt: 0, tileCode: 0x02,
+          ghost: { nurOrt: true, tilesTotal: 0.5, tileIndex: 0,
+                   querSoll: opt.spielerQuer === undefined ? 0.8 : opt.spielerQuer } };
+        const jaeger = { role: 'ghost', alias: 'G1', tileAt: 0, tileCode: 0x02,
+          ghost: { tilesTotal: 0, tileIndex: 0, form: 0, formAt: uhr, attackUntil: 0,
+                   closeSince: 0, mistakeUntil: 0, passPhase: null, passZiel: null,
+                   passSince: 0, passBlockUntil: 0, naehern: 0 } };
+        playerCar = spieler;
+        garage.push(jaeger, spieler);
+
+        const g = jaeger.ghost;
+        const reihe = [];
+        const phasen = [];
+        let scharfBei = null;
+        // Lange genug kleben lassen: SPICE_ATTACK_ARM_MS ist 900 ms.
+        for (let t = 0; t < (opt.dauerMs || 3000); t += 60) {
+          uhr += 60;
+          // ---- DAS MANOEVER AUCH ZU ENDE FAHREN ---------------------------------
+          //
+          // Nach opt.vorbeiNach zieht der Jaeger am Fahrerauto vorbei - der Fortschritt
+          // ueberholt den des anderen. Genau daran haengt die Erfolgspruefung "durch",
+          // und ohne diesen Schritt liefe jedes Manoever in die Zeitsperre und die
+          // Sonde koennte den Unterschied gar nicht zeigen.
+          if (scharfBei !== null && opt.vorbeiNach !== undefined
+              && t - scharfBei >= opt.vorbeiNach) {
+            jaeger.ghost.tilesTotal = spieler.ghost.tilesTotal + 1.0;
+          }
+          ghostSpice(jaeger, { tight: 0, dist: 99, key: 's' });
+          if (g.attackUntil && !reihe.length) {
+            scharfBei = t;
+            reihe.push({ tMs: t, seite: g.attackSide, phase: g.passPhase,
+                         zielIstSpieler: g.passZiel === spieler });
+          }
+          if (scharfBei !== null) phasen.push(g.passPhase);
+        }
+        const gesehen = [];
+        for (const p of phasen) if (p && gesehen[gesehen.length - 1] !== p) gesehen.push(p);
+        return { angesetzt: !!reihe.length,
+                 phasenfolge: gesehen,
+                 ersterVersuch: reihe[0] || null,
+                 sieht: (function () {
+                   const ah = ghostAhead(jaeger);
+                   return ah ? { wer: ah.car.alias, abstand: +ah.gap.toFixed(3) } : null;
+                 }()) };
+      } finally {
+        Date.now = echtNow;
+        Math.random = echtRandom;
+        ghostCfg.wuerzeUeberholen = merkSpice;
+        playerCar = merkPlayer;
+        garage.splice(0, garage.length);
+        merkGarage.forEach((c) => garage.push(c));
+      }
+    },
+
     ghostPassProbe(o) {
       const opt = o || {};
       const merkGarage = garage.splice(0, garage.length);

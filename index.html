@@ -7960,7 +7960,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.6.6</span></span>
+    <span class="foot-ver">v<span id="app-version">0.6.7</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -10469,6 +10469,29 @@
     // prueft auf undefined.
     const modeBytes = (typeof playerCar !== 'undefined' && playerCar)
       ? playerCar.modeBytes : null;
+    // ---- DIE QUERLAGE DES FAHRERAUTOS, fuer die Ghosts -----------------------------
+    //
+    // BESTELLT: "Ghosts sollen auch dem Fahrerauto ausweichen, wenn es langsamer faehrt."
+    //
+    // Ein Ghost, der zum Ueberholen ansetzt, waehlt seine Seite aus g.querSoll des
+    // VORAUSFAHRENDEN - dessen angeforderter Querlage (90-ghosts.js, ghostSpice). Das
+    // Fahrerauto hatte keine: sein Ortungssatz aus spielerOrt() fuehrt nur den Ort, und
+    // querSoll entsteht sonst in der Ghost-Fahrschleife, die fuer ihn nie laeuft.
+    //
+    // Folge: qAnder fiel auf 0 zurueck, und der Angreifer ging IMMER nach links vorbei -
+    // auch wenn der Fahrer genau dort war. Die Seitenwahl war also nicht falsch berechnet,
+    // sie war gar nicht informiert.
+    //
+    // Hier steht dieselbe Groesse wie bei einem Ghost, und zwar aus demselben Grund: keine
+    // MESSUNG - das Auto meldet seine Querlage nicht -, sondern das, was die App ihm
+    // geschickt hat. Beim Ghost ist das der Lenkbefehl aus seiner Fahrschleife, hier der
+    // Lenkbefehl des Fahrers. Dieselbe Glaettung (0,25) und dieselbe Klemme (-1..1),
+    // damit die beiden Zahlen vergleichbar sind und nicht nur gleich heissen.
+    if (typeof playerCar !== 'undefined' && playerCar && playerCar.ghost) {
+      const pg = playerCar.ghost;
+      const roh = Math.max(-1, Math.min(1, steer));
+      pg.querSoll = (pg.querSoll || 0) + (roh - (pg.querSoll || 0)) * 0.25;
+    }
     const payload = buildCommandPacket(steer, throttle, undefined, modeBytes);
     recWrite(payload);
     // A car given the "Steuern" role in the garage becomes the write target. Falls back to
@@ -28907,6 +28930,28 @@
         const lo = ghostLineOffset(car);
         g.attackSide = qAnder !== null ? (qAnder >= 0 ? -1 : 1)
                                        : (lo >= 0 ? -1 : 1);
+        // ---- WEN WIR UEBERHOLEN, UND WARUM DAS HIER FEHLTE ---------------------------
+        //
+        // g.passZiel wurde GELESEN (die Erfolgspruefung oben), GELOESCHT (beide Ausgaenge)
+        // und im Ghost-Literal auf null gesetzt - aber nirgends zugewiesen. Es war also
+        // immer null, und damit war
+        //
+        //     durch = ziel && ziel.ghost && Fortschritt(ich) > Fortschritt(ziel) + CLEAR
+        //
+        // IMMER FALSCH. Kein Manoever konnte je ueber den Fortschritt enden; jedes lief in
+        // die Zeitsperre SPICE_PASS_MAX_MS und wurde als "kommt nicht vorbei, ordnet sich
+        // wieder ein" verbucht - auch ein gelungenes. Dazu setzte jeder Abbruch eine
+        // Wiederholsperre, der Angreifer war danach also erst einmal aus dem Rennen.
+        //
+        // Das erklaert die Meldung "die Autos haben sich ewig gegenseitig angeschoben"
+        // besser als die Platzrechnung allein: selbst wenn angesetzt wurde, kam das
+        // Manoever nie zum Abschluss, sondern klebte bis zum Ablauf der Uhr nebeneinander.
+        //
+        // AUFGEFALLEN IST ES AM FAHRERAUTO, und nur weil der neue Prueflauf danach fragte.
+        // Der bestehende ghostPassProbe setzt passZiel VON HAND, um die Sequenz zu starten -
+        // er hat den Fehler damit jahrelang verdeckt. Ein Prueflauf, der einen Zustand
+        // selbst herstellt, prueft nicht mehr, ob ihn jemand herstellt.
+        g.passZiel = ah.car || null;
         // UND DER VORAUSFAHRENDE WEICHT MIT AUS, zur anderen Seite. Vorher wich nur einer
         // aus, und zwei Autos auf 25 cm Bahnbreite brauchen beide Haelften - gemeldet als
         // "beim Ueberholen beruehren sie sich stark".
@@ -34969,6 +35014,91 @@
                // damit eine Pruefung nachrechnen kann, dass 1 sie ueberschreitet - und
                // damit auffaellt, wenn jemand sie ueber 1 setzt.
                platzMin: SPICE_PASS_PLATZ_MIN };
+    },
+
+    // ---- SETZT EIN GHOST AM FAHRERAUTO AN, UND AUF WELCHER SEITE? ---------------
+    //
+    // BESTELLT: "Ghosts sollen auch dem Fahrerauto ausweichen, wenn es langsamer faehrt."
+    //
+    // Zwei getrennte Fragen, und die Sonde beantwortet beide:
+    //
+    //   1. WIRD ANGESETZT? ghostAhead() sieht das Fahrerauto seit v0.5.54, weil
+    //      ghostFieldRacing() playerCar mitnimmt, sobald es einen Ortungssatz hat. Ob die
+    //      Attacke daran aber wirklich scharf wird, stand nie unter Pruefung.
+    //   2. AUF WELCHER SEITE? Die Seitenwahl liest querSoll des Vorausfahrenden. Das
+    //      Fahrerauto hatte keins - qAnder fiel auf 0 zurueck, und der Angreifer ging
+    //      IMMER nach links, auch wenn der Fahrer genau dort fuhr.
+    //
+    // DER ZUFALL WIRD STILLGELEGT: die Attacke wuerfelt mit SPICE_ATTACK_P. Geprueft wird
+    // die ENTSCHEIDUNG, nicht die Wahrscheinlichkeit - ein Prueflauf, der auf einen guten
+    // Wurf wartet, ist gelegentlich rot, ohne dass sich etwas geaendert haette.
+    spielerUeberholProbe(o) {
+      const opt = o || {};
+      const merkGarage = garage.splice(0, garage.length);
+      const merkSpice = ghostCfg.wuerzeUeberholen;
+      const merkPlayer = playerCar;
+      const echtNow = Date.now;
+      const echtRandom = Math.random;
+      try {
+        ghostCfg.wuerzeUeberholen = true;
+        Math.random = () => 0;          // der Wurf gelingt immer
+        let uhr = echtNow.call(Date);
+        Date.now = () => uhr;
+
+        // Das Fahrerauto: ein Ortungssatz wie aus spielerOrt(), plus die Querlage, die
+        // seit v0.6.7 aus dem Sendeweg kommt.
+        const spieler = { role: 'player', alias: 'Fahrer', tileAt: 0, tileCode: 0x02,
+          ghost: { nurOrt: true, tilesTotal: 0.5, tileIndex: 0,
+                   querSoll: opt.spielerQuer === undefined ? 0.8 : opt.spielerQuer } };
+        const jaeger = { role: 'ghost', alias: 'G1', tileAt: 0, tileCode: 0x02,
+          ghost: { tilesTotal: 0, tileIndex: 0, form: 0, formAt: uhr, attackUntil: 0,
+                   closeSince: 0, mistakeUntil: 0, passPhase: null, passZiel: null,
+                   passSince: 0, passBlockUntil: 0, naehern: 0 } };
+        playerCar = spieler;
+        garage.push(jaeger, spieler);
+
+        const g = jaeger.ghost;
+        const reihe = [];
+        const phasen = [];
+        let scharfBei = null;
+        // Lange genug kleben lassen: SPICE_ATTACK_ARM_MS ist 900 ms.
+        for (let t = 0; t < (opt.dauerMs || 3000); t += 60) {
+          uhr += 60;
+          // ---- DAS MANOEVER AUCH ZU ENDE FAHREN ---------------------------------
+          //
+          // Nach opt.vorbeiNach zieht der Jaeger am Fahrerauto vorbei - der Fortschritt
+          // ueberholt den des anderen. Genau daran haengt die Erfolgspruefung "durch",
+          // und ohne diesen Schritt liefe jedes Manoever in die Zeitsperre und die
+          // Sonde koennte den Unterschied gar nicht zeigen.
+          if (scharfBei !== null && opt.vorbeiNach !== undefined
+              && t - scharfBei >= opt.vorbeiNach) {
+            jaeger.ghost.tilesTotal = spieler.ghost.tilesTotal + 1.0;
+          }
+          ghostSpice(jaeger, { tight: 0, dist: 99, key: 's' });
+          if (g.attackUntil && !reihe.length) {
+            scharfBei = t;
+            reihe.push({ tMs: t, seite: g.attackSide, phase: g.passPhase,
+                         zielIstSpieler: g.passZiel === spieler });
+          }
+          if (scharfBei !== null) phasen.push(g.passPhase);
+        }
+        const gesehen = [];
+        for (const p of phasen) if (p && gesehen[gesehen.length - 1] !== p) gesehen.push(p);
+        return { angesetzt: !!reihe.length,
+                 phasenfolge: gesehen,
+                 ersterVersuch: reihe[0] || null,
+                 sieht: (function () {
+                   const ah = ghostAhead(jaeger);
+                   return ah ? { wer: ah.car.alias, abstand: +ah.gap.toFixed(3) } : null;
+                 }()) };
+      } finally {
+        Date.now = echtNow;
+        Math.random = echtRandom;
+        ghostCfg.wuerzeUeberholen = merkSpice;
+        playerCar = merkPlayer;
+        garage.splice(0, garage.length);
+        merkGarage.forEach((c) => garage.push(c));
+      }
     },
 
     ghostPassProbe(o) {
@@ -45111,6 +45241,98 @@
     }
     return { ok: !fehler.length,
              mass: 'aus=' + r.aus + ', an=' + r.an + ', aus+gelb=' + r.trotzAus
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
+  // ---- Ghosts ueberholen auch das Fahrerauto, und auf der richtigen Seite ----
+  //
+  // BESTELLT: "Ghosts sollen auch dem Fahrerauto ausweichen, wenn es langsamer faehrt."
+  //
+  // Zwei Dinge muessen stimmen, und beide waren offen:
+  //
+  //   1. ghostAhead() sieht das Fahrerauto seit v0.5.54 - ghostFieldRacing() nimmt
+  //      playerCar mit, sobald es einen Ortungssatz hat. Ob die Attacke daran wirklich
+  //      scharf wird, stand nie unter Pruefung.
+  //   2. Die Seitenwahl liest querSoll des Vorausfahrenden. Das Fahrerauto hatte keins,
+  //      qAnder fiel auf 0 zurueck, und der Angreifer ging IMMER nach links - auch wenn
+  //      der Fahrer genau dort fuhr. Seit v0.6.7 traegt der Sendeweg dieselbe Groesse ein,
+  //      die ein Ghost fuehrt: den geschickten Lenkbefehl, geglaettet und geklemmt.
+  //
+  // DER ZUFALL IST STILLGELEGT (Math.random auf 0): geprueft wird die ENTSCHEIDUNG, nicht
+  // die Wahrscheinlichkeit. Ein Test, der auf einen guten Wurf wartet, ist gelegentlich
+  // rot, ohne dass sich etwas geaendert haette.
+  stAdd('Ueberholen: das Fahrerauto ist ein Ziel, und die Seite folgt seiner Lage', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.spielerUeberholProbe) {
+      return { skip: true, mass: 'spielerUeberholProbe nicht vorhanden' };
+    }
+    const rechts = OMEGA_TEST.spielerUeberholProbe({ spielerQuer: 0.8 });
+    const links = OMEGA_TEST.spielerUeberholProbe({ spielerQuer: -0.8 });
+    if (!rechts || !links) return { skip: true, mass: 'kein Lauf' };
+    const fehler = [];
+    // 1. ES WIRD ANGESETZT. Ohne das ist alles Weitere gegenstandslos.
+    if (!rechts.angesetzt) fehler.push('kein Versuch gegen das Fahrerauto');
+    // 2. UND DAS ZIEL IST WIRKLICH DAS FAHRERAUTO - nicht null, nicht ein anderer.
+    if (rechts.ersterVersuch && !rechts.ersterVersuch.zielIstSpieler) {
+      fehler.push('passZiel ist nicht das Fahrerauto');
+    }
+    // 3. DIE SEITE FOLGT DER LAGE DES FAHRERS und ist nicht fest. Genau das ist der
+    //    Unterschied: faehrt er rechts, geht der Ghost links vorbei, und umgekehrt.
+    //    Ohne diese zwei Zeilen waere der Test auch mit der alten, festen Seite gruen.
+    if (rechts.ersterVersuch && rechts.ersterVersuch.seite !== -1) {
+      fehler.push('Fahrer rechts, Ghost geht ' + rechts.ersterVersuch.seite);
+    }
+    if (links.ersterVersuch && links.ersterVersuch.seite !== 1) {
+      fehler.push('Fahrer links, Ghost geht ' + links.ersterVersuch.seite);
+    }
+    return { ok: !fehler.length,
+             mass: 'Fahrer rechts -> Seite ' + (rechts.ersterVersuch || {}).seite
+                 + ', Fahrer links -> Seite ' + (links.ersterVersuch || {}).seite
+                 + ', sieht ' + (rechts.sieht ? rechts.sieht.wer : 'niemanden')
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
+  // ---- Ein gelungenes Ueberholmanoever endet auch als gelungenes ----
+  //
+  // g.passZiel wurde GELESEN (die Erfolgspruefung), GELOESCHT (beide Ausgaenge) und im
+  // Ghost-Literal auf null gesetzt - aber NIRGENDS zugewiesen. Damit war
+  //
+  //     durch = ziel && ziel.ghost && Fortschritt(ich) > Fortschritt(ziel) + CLEAR
+  //
+  // immer falsch: kein Manoever konnte ueber den Fortschritt enden, jedes lief in die
+  // Zeitsperre und wurde als "kommt nicht vorbei" verbucht - auch ein gelungenes. Dazu
+  // setzte jeder Abbruch eine Wiederholsperre.
+  //
+  // Aufgefallen ist es erst am Fahrerauto. Der bestehende ghostPassProbe setzt passZiel VON
+  // HAND, um die Sequenz zu starten, und hat den Fehler damit verdeckt - ein Prueflauf, der
+  // einen Zustand selbst herstellt, prueft nicht mehr, ob ihn jemand herstellt. Dieser Test
+  // laesst die Attacke deshalb SELBST scharf werden.
+  stAdd('Ueberholen: ein gelungenes Manoever erreicht die Einordnungsphase', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.spielerUeberholProbe) {
+      return { skip: true, mass: 'spielerUeberholProbe nicht vorhanden' };
+    }
+    const durch = OMEGA_TEST.spielerUeberholProbe({ spielerQuer: 0.8, vorbeiNach: 1200,
+                                                    dauerMs: 9000 });
+    const haengt = OMEGA_TEST.spielerUeberholProbe({ spielerQuer: 0.8, dauerMs: 9000 });
+    if (!durch || !haengt) return { skip: true, mass: 'kein Lauf' };
+    const fehler = [];
+    // 1. WER VORBEIKOMMT, ORDNET SICH EIN. 'rein' ist die Phase, die es vorher nie gab.
+    if (durch.phasenfolge.indexOf('rein') < 0) {
+      fehler.push('kommt vorbei, erreicht aber nie "rein": ' + durch.phasenfolge.join('>'));
+    }
+    // 2. UND DIE FOLGE IST VOLLSTAENDIG, in der richtigen Reihenfolge.
+    const soll = ['ansage', 'raus', 'vorbei', 'rein'];
+    if (durch.phasenfolge.join('>') !== soll.join('>')) {
+      fehler.push('Folge ' + durch.phasenfolge.join('>') + ' statt ' + soll.join('>'));
+    }
+    // 3. WER NICHT VORBEIKOMMT, ERREICHT 'rein' NICHT. Ohne diese Zeile waere der Test
+    //    auch dann gruen, wenn jedes Manoever als gelungen gaelte - und das waere die
+    //    Umkehrung desselben Fehlers.
+    if (haengt.phasenfolge.indexOf('rein') >= 0) {
+      fehler.push('kommt NICHT vorbei, meldet aber "rein"');
+    }
+    return { ok: !fehler.length,
+             mass: 'vorbei: ' + durch.phasenfolge.join('>')
+                 + ' | haengen geblieben: ' + haengt.phasenfolge.join('>')
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 

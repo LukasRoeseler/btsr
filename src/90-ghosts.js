@@ -4085,6 +4085,28 @@
         const lo = ghostLineOffset(car);
         g.attackSide = qAnder !== null ? (qAnder >= 0 ? -1 : 1)
                                        : (lo >= 0 ? -1 : 1);
+        // ---- WEN WIR UEBERHOLEN, UND WARUM DAS HIER FEHLTE ---------------------------
+        //
+        // g.passZiel wurde GELESEN (die Erfolgspruefung oben), GELOESCHT (beide Ausgaenge)
+        // und im Ghost-Literal auf null gesetzt - aber nirgends zugewiesen. Es war also
+        // immer null, und damit war
+        //
+        //     durch = ziel && ziel.ghost && Fortschritt(ich) > Fortschritt(ziel) + CLEAR
+        //
+        // IMMER FALSCH. Kein Manoever konnte je ueber den Fortschritt enden; jedes lief in
+        // die Zeitsperre SPICE_PASS_MAX_MS und wurde als "kommt nicht vorbei, ordnet sich
+        // wieder ein" verbucht - auch ein gelungenes. Dazu setzte jeder Abbruch eine
+        // Wiederholsperre, der Angreifer war danach also erst einmal aus dem Rennen.
+        //
+        // Das erklaert die Meldung "die Autos haben sich ewig gegenseitig angeschoben"
+        // besser als die Platzrechnung allein: selbst wenn angesetzt wurde, kam das
+        // Manoever nie zum Abschluss, sondern klebte bis zum Ablauf der Uhr nebeneinander.
+        //
+        // AUFGEFALLEN IST ES AM FAHRERAUTO, und nur weil der neue Prueflauf danach fragte.
+        // Der bestehende ghostPassProbe setzt passZiel VON HAND, um die Sequenz zu starten -
+        // er hat den Fehler damit jahrelang verdeckt. Ein Prueflauf, der einen Zustand
+        // selbst herstellt, prueft nicht mehr, ob ihn jemand herstellt.
+        g.passZiel = ah.car || null;
         // UND DER VORAUSFAHRENDE WEICHT MIT AUS, zur anderen Seite. Vorher wich nur einer
         // aus, und zwei Autos auf 25 cm Bahnbreite brauchen beide Haelften - gemeldet als
         // "beim Ueberholen beruehren sie sich stark".
