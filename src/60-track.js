@@ -72,9 +72,50 @@
   // ausgeschlossen, dass eine Kunststoffschiene etwas anderes meldet als das gedruckte
   // Blatt, und einen Wert wegzunehmen, von dem wir nicht wissen ob er vorkommt, waere ein
   // Risiko ohne Gegenwert. Sobald eine Messung ihn ausschliesst, kann er weg.
+  // ---- DIE SECHS TEILE AUS seVens BAHN-TABELLE, seit v0.6.19 ----------------------
+  //
+  // Er hat auf Rueckfrage bestaetigt, dass seine Codetabelle fuer den BAHN-Modus gilt.
+  // Damit sind sechs Codes benannt, die hier bisher fehlten:
+  //
+  //     0x07  Boxengasse / lange Gerade      0x0B / 0x0C  kleine 30-Grad-Kurve L / R
+  //     0x08 / 0x09  grosse 30-Grad-Kurve L / R    0x0A  Engstelle
+  //
+  // ZWEI DAVON BEKOMMEN EINEN KUENSTLICHEN TYP, und zwar aus einem Grund, der sich nicht
+  // umgehen laesst: die KARTE fuehrt Start/Ziel seit jeher als 0x0a, und auf der Schiene
+  // ist 0x0a die Engstelle. Dieselbe Zahl, zwei Bedeutungen. Den Kartentyp zu aendern
+  // hiesse, jede gespeicherte Strecke zu wandern; also bekommt die Engstelle einen Wert
+  // ausserhalb des Bytebereichs - genau wie die Boxengasse ihn seit jeher hat.
+  //
+  // Die Uebersetzung zwischen GEMELDETEM CODE und KARTENTYP macht codeZuTyp() weiter unten,
+  // an einer Stelle.
   const TILE_TYPE = { START: 0x0a, STRAIGHT: 0x02, CURVE_RIGHT: 0x04, CURVE_LEFT: 0x03,
                       HAIRPIN_LEFT: 0x05, HAIRPIN: 0x06,
-                      PIT: 0x100 };
+                      // Grosse 30-Grad-Kurve ("Radius 2"): gemeldet als 0x08 / 0x09.
+                      WEIT_LEFT: 0x08, WEIT_RIGHT: 0x09,
+                      // Kleine 30-Grad-Kurve: gemeldet als 0x0B / 0x0C. Zwei davon ergeben
+                      // eine 60-Grad-Kurve - vom Nutzer so angegeben und hier nachgerechnet.
+                      KLEIN_LEFT: 0x0b, KLEIN_RIGHT: 0x0c,
+                      // Kuenstlich, siehe oben. PIT wird als 0x07 gemeldet, ENGE als 0x0a.
+                      PIT: 0x100, ENGE: 0x101 };
+
+  // Was das Auto meldet, ist nicht immer, was die Karte fuehrt. EINE Stelle dafuer.
+  const CODE_PIT = 0x07;
+  const CODE_ENGE = 0x0a;
+
+  function codeZuTyp(code) {
+    if (code === undefined || code === null) return code;
+    // Start/Ziel haengt an der Leseart - siehe isStartCode().
+    if (isStartCode(code)) return TILE_TYPE.START;
+    if (code === CODE_PIT) return TILE_TYPE.PIT;
+    // NUR AUF DER SCHIENE. Im Ausdruck-Modus IST 0x0a der Startcode, und der ist schon
+    // oben abgefangen - diese Zeile kann dort also gar nicht greifen. Sie steht trotzdem
+    // mit Bedingung da, weil eine Uebersetzung, die den Modus nicht nennt, die naechste
+    // Stelle ist, an der jemand die beiden verwechselt.
+    if (typeof trackMode === 'string' && trackMode === 'on' && code === CODE_ENGE) {
+      return TILE_TYPE.ENGE;
+    }
+    return code;
+  }
   // Alles, was als Start/Ziel gilt, wenn das AUTO einen Code meldet. Fuer Kacheltypen im
   // Editor gilt weiter TILE_TYPE.START allein.
   const START_CODES = [0x0a, 0x01];
@@ -159,6 +200,11 @@
     [TILE_TYPE.PIT]: 'Boxengasse',
     [TILE_TYPE.HAIRPIN]: 'Haarnadel rechts',
     [TILE_TYPE.HAIRPIN_LEFT]: 'Haarnadel links',
+    [TILE_TYPE.WEIT_LEFT]: 'Weite Kurve links',
+    [TILE_TYPE.WEIT_RIGHT]: 'Weite Kurve rechts',
+    [TILE_TYPE.KLEIN_LEFT]: 'Kleine Kurve links',
+    [TILE_TYPE.KLEIN_RIGHT]: 'Kleine Kurve rechts',
+    [TILE_TYPE.ENGE]: 'Engstelle',
     [TILE_OFFTRACK]: 'abseits der Bahn',
   };
 
@@ -231,7 +277,12 @@
   const TRACK_UNITS_PER_CM = TRACK_STEP / TRACK_TILE_CM;   // 0.930
   const TRACK_HAIRPIN_LEAD = TRACK_HAIRPIN_LEAD_CM * TRACK_UNITS_PER_CM;
   const TRACK_RADIUS = TRACK_RADIUS_CM * TRACK_UNITS_PER_CM;
+  // "Radius 2": die weite 30-Grad-Kurve. Herleitung bei tileRadius().
+  const TRACK_R2_CM = 112;
+  const TRACK_R2 = TRACK_R2_CM * TRACK_UNITS_PER_CM;
   const TRACK_TURN_DEG = 60;
+  // Die halbe Kurve. Zwei davon ergeben eine 60-Grad-Kurve, zwoelf einen Kreis.
+  const TRACK_30_DEG = 30;
 
   // One place decides how far a curved piece turns and how tight it is, so
   // trackCenterline() can never disagree about the geometry — they used to hardcode the same
@@ -241,15 +292,38 @@
     if (type === TILE_TYPE.CURVE_LEFT) return -TRACK_TURN_DEG;
     if (type === TILE_TYPE.HAIRPIN) return TRACK_HAIRPIN_DEG;
     if (type === TILE_TYPE.HAIRPIN_LEFT) return -TRACK_HAIRPIN_DEG;
+    // Beide 30-Grad-Teile drehen gleich WEIT; sie unterscheiden sich im RADIUS.
+    if (type === TILE_TYPE.WEIT_RIGHT || type === TILE_TYPE.KLEIN_RIGHT) return TRACK_30_DEG;
+    if (type === TILE_TYPE.WEIT_LEFT || type === TILE_TYPE.KLEIN_LEFT) return -TRACK_30_DEG;
     return 0;
   }
   function tileRadius(type) {
-    return (type === TILE_TYPE.HAIRPIN || type === TILE_TYPE.HAIRPIN_LEFT)
-      ? TRACK_HAIRPIN_RADIUS : TRACK_RADIUS;
+    if (type === TILE_TYPE.HAIRPIN || type === TILE_TYPE.HAIRPIN_LEFT) {
+      return TRACK_HAIRPIN_RADIUS;
+    }
+    // ---- DIE WEITE KURVE, AUSGEMESSEN ---------------------------------------------
+    //
+    // Aus einem Bild des Original-Editors: zwoelf dieser Teile plus zwei Geraden bilden ein
+    // geschlossenes Oval von 2,49 m x 2,93 m. Die Differenz der beiden Masse ist 0,44 m -
+    // also eine Kachellaenge, was TRACK_TILE_CM = 43 bestaetigt und zeigt, dass die Masse
+    // Aussenkanten sind. Aus 2R + Bahnbreite = 2,49 folgt R = 1,12 m.
+    //
+    // GEGENGEPRUEFT an einem Einzelteil: Start-Kachel plus eine Kurve misst im Editor
+    // 0,38 x 1,05 m. Gerechnet ergibt der Radius 40 cm Breite (gemessen 38), und die
+    // Laengendifferenz zwischen weiter und kleiner Kurve 38 cm (gemessen 37). Die Breite
+    // und die Differenz stimmen also; in der absoluten Laenge bleibt ein Versatz von rund
+    // 12 cm, der darauf deutet, dass die Start-Kachel kuerzer ist als eine volle Gerade.
+    // Das ist NICHT nachgemessen und gehoert auf den Teppich.
+    if (type === TILE_TYPE.WEIT_LEFT || type === TILE_TYPE.WEIT_RIGHT) return TRACK_R2;
+    // Die kleine 30-Grad-Kurve hat denselben Radius wie die 60-Grad-Kurve: zwei von ihnen
+    // ergeben eine. Vom Nutzer so angegeben, und die Zahl faellt damit ohne Messung heraus.
+    return TRACK_RADIUS;
   }
   function tileIsCurve(type) {
     return type === TILE_TYPE.CURVE_RIGHT || type === TILE_TYPE.CURVE_LEFT
-        || type === TILE_TYPE.HAIRPIN || type === TILE_TYPE.HAIRPIN_LEFT;
+        || type === TILE_TYPE.HAIRPIN || type === TILE_TYPE.HAIRPIN_LEFT
+        || type === TILE_TYPE.WEIT_LEFT || type === TILE_TYPE.WEIT_RIGHT
+        || type === TILE_TYPE.KLEIN_LEFT || type === TILE_TYPE.KLEIN_RIGHT;
   }
 
   // walkTrack() ist hier entfernt. Sie lief NIE - nichts rief sie auf - und sie war der
@@ -451,6 +525,18 @@
         heading += turn;
         x = out[out.length - 1].x; y = out[out.length - 1].y;
       } else {
+        // ---- DIE ENGSTELLE IST HIER EINE NORMALE GERADE, und das ist eine Luecke ----
+        //
+        // Sie ist SCHMALER als die uebrige Bahn - daher der Name. Wieviel schmaler, ist
+        // nicht gemessen: aus den Bildern des Original-Editors laesst sich ihre Breite
+        // nicht ablesen, und eine geratene Zahl waere eine Bahn, die an einer Stelle
+        // falsch eng gezeichnet ist. Die Breite steckt ausserdem als Konstante
+        // TRACK_HALF_W im Zeichner und nicht je Kachel; eine Breite je Punkt ist eine
+        // eigene Aenderung.
+        //
+        // WAS TROTZDEM SCHON WIRKT, und darum geht es zuerst: der Code 0x0a gilt auf der
+        // Schiene nicht mehr als Ziellinie (siehe isStartCode), die Kachel wird benannt und
+        // gezaehlt, und eine Ueberfahrt kostet keine Phantomrunde mehr.
         const len = tile.type === TILE_TYPE.PIT ? TRACK_STEP * 2 : TRACK_STEP;
         const rad = heading * Math.PI / 180;
         for (let i = 1; i <= n; i++) {
@@ -2273,7 +2359,14 @@
   const TRACK_CODE_LETTER = { [TILE_TYPE.START]: 'S', [TILE_TYPE.STRAIGHT]: 'G',
                               [TILE_TYPE.CURVE_RIGHT]: 'R', [TILE_TYPE.CURVE_LEFT]: 'L',
                               [TILE_TYPE.PIT]: 'B', [TILE_TYPE.HAIRPIN]: 'H',
-                              [TILE_TYPE.HAIRPIN_LEFT]: 'J' };
+                              [TILE_TYPE.HAIRPIN_LEFT]: 'J',
+                              // W/Q = Weite Kurve rechts/links, K/M = Kleine rechts/links,
+                              // E = Engstelle. Ausdruecklich KEIN I: es ist von einer 1 im
+                              // Code nicht zu unterscheiden, und der Leser nimmt Ziffern
+                              // als Wiederholungszahl.
+                              [TILE_TYPE.WEIT_RIGHT]: 'W', [TILE_TYPE.WEIT_LEFT]: 'Q',
+                              [TILE_TYPE.KLEIN_RIGHT]: 'K', [TILE_TYPE.KLEIN_LEFT]: 'M',
+                              [TILE_TYPE.ENGE]: 'E' };
   const TRACK_CODE_TYPE = Object.fromEntries(
     Object.entries(TRACK_CODE_LETTER).map(([k, v]) => [v, Number(k)]));
 
@@ -2518,11 +2611,27 @@
           + '<path d="M16 22 L16 19" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>' },
     { key: 'left',  type: () => TILE_TYPE.CURVE_LEFT,  cap: 'Links',
       icon: '<path d="M18 22 L18 13 A7 7 0 0 0 11 6 L4 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>' },
+    // Die kleine 30-Grad-Kurve: derselbe Radius wie die 60-Grad-Kurve, halber Winkel. Das
+    // Symbol zeigt deshalb denselben Bogen, nur frueher abgebrochen.
+    { key: 'klein-left', type: () => TILE_TYPE.KLEIN_LEFT, cap: '30\u00b0 L',
+      icon: '<path d="M16 22 L16 13 A7 7 0 0 0 12.2 6.8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>' },
+    // Die weite Kurve: gleicher Winkel, dreifacher Radius - also eine viel flachere Linie.
+    { key: 'weit-left', type: () => TILE_TYPE.WEIT_LEFT, cap: 'Weit L',
+      icon: '<path d="M15 22 L15 12 A20 20 0 0 0 9.5 3.2" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>' },
     { key: 'straight', type: () => TILE_TYPE.STRAIGHT, cap: 'Gerade',
       icon: '<path d="M12 22 L12 2" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>' },
+    // Die Engstelle: eine Gerade, die in der Mitte einspringt. Das Symbol sagt genau das,
+    // was die Kachel ist - die Breite selbst ist noch nicht gemessen (siehe trackCenterline).
+    { key: 'enge', type: () => TILE_TYPE.ENGE, cap: 'Enge',
+      icon: '<path d="M7 2 L7 8 L10 12 L10 22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>'
+          + '<path d="M17 2 L17 8 L14 12 L14 22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>' },
     { key: 'pit', type: () => TILE_TYPE.PIT, cap: 'Box',
       icon: '<path d="M8 22 L8 2" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>'
           + '<path d="M16 20 L16 9 A5 5 0 0 1 21 4" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="3 2.5" stroke-linecap="round"/>' },
+    { key: 'weit-right', type: () => TILE_TYPE.WEIT_RIGHT, cap: 'Weit R',
+      icon: '<path d="M9 22 L9 12 A20 20 0 0 1 14.5 3.2" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>' },
+    { key: 'klein-right', type: () => TILE_TYPE.KLEIN_RIGHT, cap: '30\u00b0 R',
+      icon: '<path d="M8 22 L8 13 A7 7 0 0 1 11.8 6.8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>' },
     { key: 'right', type: () => TILE_TYPE.CURVE_RIGHT, cap: 'Rechts',
       icon: '<path d="M6 22 L6 13 A7 7 0 0 1 13 6 L20 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>' },
     { key: 'hairpin', type: () => TILE_TYPE.HAIRPIN, cap: 'Haarnadel R',
@@ -3072,7 +3181,11 @@
       //     die alte Runde - sonst fehlt sie im Ring.
       //
       // Gemessen: ohne diese Unterscheidung lernte eine Runde aus sechs Teilen nur fuenf.
-      if (sperre && !isStartCode(best)) learn.seq.push({ type: best });
+      // UEBERSETZT und nicht roh: der Scanner schrieb bisher den gemeldeten Code direkt
+      // als Kachelart. Fuer Gerade und Kurven ist das dasselbe, fuer Boxengasse (0x07) und
+      // Engstelle (0x0a auf der Schiene) nicht - die Karte fuehrt dafuer eigene Typen,
+      // weil 0x0a dort schon Start/Ziel bedeutet.
+      if (sperre && !isStartCode(best)) learn.seq.push({ type: codeZuTyp(best) });
       learn.laps++;
       if (learn.seq.length >= 3) learnCommit();
       learn.seq = [{ type: TILE_TYPE.START }];

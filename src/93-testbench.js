@@ -3852,6 +3852,34 @@
       return typeof wxModusSetzen === 'function' ? wxModusSetzen(modus) : null;
     },
 
+    // ---- WAS WIRD AUS EINEM GEMELDETEN CODE? ------------------------------------
+    //
+    // codeZuTyp() ist die eine Stelle, an der aus einem Byte des Autos eine Kachelart der
+    // Karte wird. Sie muss die LESEART kennen: 0x0a ist auf der Schiene die Engstelle und
+    // im Ausdruck die Ziellinie.
+    codeTypProbe(codes) {
+      if (typeof codeZuTyp !== 'function') return null;
+      const merk = trackMode;
+      try {
+        const liste = codes || [0x01, 0x02, 0x03, 0x04, 0x05, 0x06,
+                                0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c];
+        const aus = {};
+        for (const modus of ['on', 'off']) {
+          trackMode = modus;
+          aus[modus] = liste.map((c) => codeZuTyp(c));
+        }
+        return { codes: liste, bahn: aus.on, ausdruck: aus.off,
+                 typen: { START: TILE_TYPE.START, PIT: TILE_TYPE.PIT,
+                          ENGE: TILE_TYPE.ENGE } };
+      } finally { trackMode = merk; }
+    },
+
+    // Die Palette des Editors von aussen lesbar - sie ist die Bedienseite der Kacheltypen.
+    palettenProbe() {
+      if (typeof TRACK_PALETTE === 'undefined') return null;
+      return TRACK_PALETTE.map((p) => ({ key: p.key, typ: p.type(), cap: p.cap }));
+    },
+
     // ---- LIEGT IM EDITOR-VOLLBILD DIE PALETTE IM BILD? --------------------------
     //
     // GEMELDET: "Du musst noch den Vollbildmodus des Streckeneditors fixen, aktuell sehe ich

@@ -7648,6 +7648,129 @@
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
+  // ---- Die sechs Kacheltypen aus seVens Bahn-Tabelle ----
+  //
+  // seVen hat bestaetigt, dass seine Codetabelle fuer den Bahn-Modus gilt. Damit sind sechs
+  // Teile benannt, die hier fehlten: Boxengasse (0x07), grosse 30-Grad-Kurve (0x08/0x09),
+  // Engstelle (0x0A) und kleine 30-Grad-Kurve (0x0B/0x0C).
+  //
+  // ---- DIE GEOMETRIE IST AUSGEMESSEN UND WIRD HIER NACHGERECHNET -----------------
+  //
+  // Der Nutzer hat zwei Aussagen geliefert, und beide sind pruefbar statt geglaubt:
+  //
+  //   1. "Wenn du 6 davon, dann eine Gerade, dann wieder 6 baust, kommst du wieder bei
+  //      Start/Ziel an." Das ist eine SCHLIESSBEDINGUNG - sie faellt nur fuer den
+  //      richtigen Radius aus, und sie prueft Winkel und Radius zugleich.
+  //   2. "2x 30-Grad-Kurve = 1x 60-Grad-Kurve." Zwei kleine Kurven muessen also auf
+  //      denselben Punkt und denselben Kurs fuehren wie eine grosse.
+  //
+  // Dazu das Aussenmass des Ovals aus dem Original-Editor: 2,49 x 2,93 m.
+  stAdd('Kacheltypen: das Oval schliesst, und zwei 30 ergeben eine 60', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.trackCenterline || !OMEGA_TEST.codeToTrack) {
+      return { skip: true, mass: 'trackCenterline nicht erreichbar' };
+    }
+    const fehler = [];
+    const bahn = (code) => OMEGA_TEST.trackCenterline(OMEGA_TEST.codeToTrack(code).tiles);
+
+    // 1. DAS OVAL SCHLIESST. Sechs weite Kurven, Gerade, sechs weite - und zurueck.
+    const oval = bahn('SW6GW6');
+    const a = oval[0], z = oval[oval.length - 1];
+    const luecke = Math.hypot(z.x - a.x, z.y - a.y);
+    if (!(luecke < 0.5)) fehler.push('Oval schliesst nicht: Luecke ' + luecke.toFixed(2));
+    const dreh = z.heading - a.heading;
+    if (Math.abs(dreh - 360) > 0.5) fehler.push('Drehung ' + dreh.toFixed(1) + ' statt 360');
+
+    // 2. UND ES HAT DAS GEMESSENE MASS. 2,49 x 2,93 m aus dem Original-Editor; das ist
+    //    die Zahl, aus der der Radius ueberhaupt stammt, also muss sie zurueckkommen.
+    //    Zwei Zentimeter Spielraum: die Vorlage ist ein abgelesenes Bild.
+    const proCm = 0.9302, breite = 25;
+    const xs = oval.map((q) => q.x), ys = oval.map((q) => q.y);
+    const ax = (Math.max.apply(null, xs) - Math.min.apply(null, xs)) / proCm + breite;
+    const ay = (Math.max.apply(null, ys) - Math.min.apply(null, ys)) / proCm + breite;
+    if (Math.abs(ax - 249) > 2) fehler.push('Oval breit ' + ax.toFixed(0) + ' statt 249 cm');
+    if (Math.abs(ay - 293) > 2) fehler.push('Oval hoch ' + ay.toFixed(0) + ' statt 293 cm');
+
+    // 3. ZWEI KLEINE ERGEBEN EINE GROSSE - Punkt UND Kurs. Nur den Kurs zu pruefen waere
+    //    zu wenig: der stimmt fuer jeden Radius.
+    const zwei = bahn('SKK'), eins = bahn('SR');
+    const e2 = zwei[zwei.length - 1], e1 = eins[eins.length - 1];
+    const ab = Math.hypot(e2.x - e1.x, e2.y - e1.y);
+    if (!(ab < 0.2)) fehler.push('2x30 endet ' + ab.toFixed(2) + ' neben 1x60');
+    if (Math.abs(e2.heading - e1.heading) > 0.2) {
+      fehler.push('Kurs ' + e2.heading.toFixed(1) + ' gegen ' + e1.heading.toFixed(1));
+    }
+    return { ok: !fehler.length,
+             mass: 'Oval Luecke ' + luecke.toFixed(2) + ', Drehung ' + dreh.toFixed(0)
+                 + ', aussen ' + ax.toFixed(0) + 'x' + ay.toFixed(0) + ' cm (gemessen 249x293)'
+                 + ' | 2x30 gegen 1x60: ' + ab.toFixed(2) + ' Einheiten Abstand'
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
+  // ---- Ein gemeldeter Code wird zur richtigen Kachelart ----
+  //
+  // Die KARTE fuehrt Start/Ziel als 0x0a, und auf der SCHIENE ist 0x0a die Engstelle -
+  // dieselbe Zahl, zwei Bedeutungen. codeZuTyp() ist die eine Stelle, die das aufloest;
+  // ohne sie zaehlte jede Engstelle eine Phantomrunde und verschoebe die Ortung.
+  stAdd('Kachelcodes: dieselbe Zahl, zwei Bedeutungen - je Leseart', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.codeTypProbe) {
+      return { skip: true, mass: 'codeTypProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.codeTypProbe();
+    if (!r) return { skip: true, mass: 'kein Lauf' };
+    const i = (c) => r.codes.indexOf(c);
+    const fehler = [];
+    // 1. 0x0A: Engstelle auf der Schiene, Ziellinie auf Papier. DAS ist der Kern.
+    if (r.bahn[i(0x0a)] !== r.typen.ENGE) {
+      fehler.push('Bahn 0x0a -> ' + r.bahn[i(0x0a)] + ', erwartet Engstelle');
+    }
+    if (r.ausdruck[i(0x0a)] !== r.typen.START) {
+      fehler.push('Ausdruck 0x0a -> ' + r.ausdruck[i(0x0a)] + ', erwartet Start');
+    }
+    // 2. 0x01 umgekehrt.
+    if (r.bahn[i(0x01)] !== r.typen.START) fehler.push('Bahn 0x01 ist nicht Start');
+    if (r.ausdruck[i(0x01)] === r.typen.START) fehler.push('Ausdruck 0x01 gilt als Start');
+    // 3. DIE BOXENGASSE hat einen kuenstlichen Typ, weil die Karte sie schon kannte.
+    if (r.bahn[i(0x07)] !== r.typen.PIT) fehler.push('0x07 ist nicht die Boxengasse');
+    // 4. UND DIE VIER 30-GRAD-KURVEN GEHEN UNVERAENDERT DURCH - sie kollidieren mit nichts.
+    for (const c of [0x08, 0x09, 0x0b, 0x0c]) {
+      if (r.bahn[i(c)] !== c) fehler.push('0x0' + c.toString(16) + ' wird uebersetzt');
+    }
+    // 5. Und die bekannten Codes bleiben, was sie waren.
+    for (const c of [0x02, 0x03, 0x04, 0x05, 0x06]) {
+      if (r.bahn[i(c)] !== c) fehler.push('0x0' + c.toString(16) + ' veraendert');
+    }
+    return { ok: !fehler.length,
+             mass: 'Bahn 0x0a -> Engstelle, Ausdruck 0x0a -> Start, 0x07 -> Boxengasse'
+                 + ', 30-Grad-Kurven unveraendert'
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
+  // ---- Die Palette kennt alle Kacheltypen ----
+  //
+  // Ein Typ, den die Geometrie kennt und die Palette nicht, ist ein Teil, das man nicht
+  // bauen kann - und das faellt nur auf, wenn jemand danach sucht.
+  stAdd('Editor-Palette: jeder Kacheltyp ist baubar', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.palettenProbe) {
+      return { skip: true, mass: 'palettenProbe nicht vorhanden' };
+    }
+    const pal = OMEGA_TEST.palettenProbe();
+    if (!pal) return { skip: true, mass: 'kein Lauf' };
+    const fehler = [];
+    const inPal = pal.map((p) => p.typ);
+    // Start/Ziel wird nicht gebaut - es ist der Anker, den jede Strecke schon hat.
+    const soll = ['STRAIGHT', 'CURVE_LEFT', 'CURVE_RIGHT', 'HAIRPIN', 'HAIRPIN_LEFT',
+                  'WEIT_LEFT', 'WEIT_RIGHT', 'KLEIN_LEFT', 'KLEIN_RIGHT', 'PIT', 'ENGE'];
+    for (const name of soll) {
+      const v = TILE_TYPE[name];
+      if (inPal.indexOf(v) < 0) fehler.push(name + ' fehlt in der Palette');
+    }
+    // Und jeder Eintrag hat eine Beschriftung - ein Knopf ohne Wort ist ein Ratespiel.
+    for (const p of pal) if (!p.cap) fehler.push(p.key + ' ohne Beschriftung');
+    return { ok: !fehler.length,
+             mass: pal.length + ' Teile: ' + pal.map((p) => p.cap).join(', ')
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
   // ---- Editor-Vollbild: die Teile liegen im Bild ----
   //
   // GEMELDET: "Aktuell sehe ich die Streckenteile unten dann nicht."
