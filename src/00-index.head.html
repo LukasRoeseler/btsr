@@ -3005,6 +3005,7 @@
   <button class="tab-btn" data-tab="school" data-parent="misc" hidden style="display:none">Programmierschule</button>
   <button class="tab-btn" data-tab="dev" data-parent="misc" hidden style="display:none">Entwickler</button>
   <button class="tab-btn" data-tab="selftest" data-parent="misc" hidden style="display:none">Selbsttest</button>
+  <button class="tab-btn" data-tab="probe" data-parent="misc" hidden style="display:none">Code-Sonde</button>
   </nav>
   </div>
   </div>
@@ -3783,6 +3784,13 @@
           <b>Selbsttest</b>
           <span>Ein Knopf, viele Messungen: l&auml;dt alles, rechnet die Physik
             richtig, passt die Linie, sind die T&ouml;ne heil.</span>
+        </button>
+        <button class="misc-tile goto-tab" data-tab="probe">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="21" cy="21" r="12" stroke-width="2.8"/><path d="M30 30l10 10" stroke="var(--bad)"/><path d="M21 15v12M15 21h12"/></svg>
+          <b>Code-Sonde</b>
+          <span>Was das Auto gerade unter sich liest, ungefiltert &ndash; mit Zeitleiste
+            der Codewechsel.</span>
         </button>
       </div>
     </div>
@@ -7813,13 +7821,6 @@
           <b>Druckvorlagen</b>
           <span>Start/Ziel und Boxengasse maßhaltig als SVG zum Ausdrucken.</span>
         </button>
-        <button class="misc-tile subpage-open" data-sub="probe">
-          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
-               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="21" cy="21" r="12" stroke-width="2.8"/><path d="M30 30l10 10" stroke="var(--bad)"/><path d="M21 15v12M15 21h12"/></svg>
-          <b>Code-Sonde</b>
-          <span>Was das Auto gerade unter sich liest, ungefiltert &ndash; mit Zeitleiste
-            der Codewechsel.</span>
-        </button>
       </div>
     </div>
     <div class="card subpage" id="sub-edit">
@@ -8109,15 +8110,32 @@
            - Hinweise auf die Musterblaetter, die es nicht mehr gibt
 
          Die Muster-Sonde und die Code-Zeitleiste sind NICHT mit weg: sie sind eine
-         allgemeine Streckendiagnose und stehen jetzt unter "Code-Sonde". An ihnen hingen
+         allgemeine Streckendiagnose und stehen unter "Code-Sonde" - seit v0.6.27 nicht
+         mehr hier, sondern als eigener Reiter in den Entwicklertools. An ihnen hingen
          drei Element-ids, und die haetten den Build gebrochen.
 
          Absichtlich ohne src= und href= aufgeschrieben: der Selbsttest sucht solche
          Verweise mit Zeichensuche, auch in Kommentaren.
     -->
 
-    <div class="card subpage" id="sub-probe">
-      <button class="misc-back subpage-back" data-sub="">&larr; Strecke</button>
+  </section>
+
+  <!-- ---- CODE-SONDE, eigener Reiter --------------------------------------------
+       Bestellt: "Code-Sonde in die Entwicklertools verschieben (aktuell unter
+       Strecke)."
+
+       EIGENER REITER UND KEINE UNTERSEITE, und der Grund ist die Bauart des
+       Zielreiters: "Entwicklertools" (tab-misc) ist eine Kachelseite, deren Kacheln
+       auf REITER zeigen (goto-tab), so wie Doku, Programmierschule, Entwickler und
+       Selbsttest. Eine Unterseite waere dort ein Fremdkoerper - und der Reiter
+       "Entwickler" (tab-dev), der Unterseiten haette, heisst in der Leiste anders.
+
+       Der Leistenknopf dazu ist versteckt und traegt data-parent="misc", damit die
+       Leiste waehrend der Anzeige "Entwicklertools" markiert laesst. Dasselbe Muster
+       wie bei den vier anderen. -->
+  <section class="tabpage" id="tab-probe">
+    <button class="misc-back goto-tab" data-tab="misc">&larr; Entwicklertools</button>
+    <div class="card">
       <h2>Code-Sonde</h2>
       <p class="muted" style="font-size:11.5px">
         Was das Auto gerade unter sich liest, ungefiltert. Die Anzeige zeigt den ROHEN
@@ -8145,9 +8163,9 @@
             <tbody data-i18n-skip id="tile-timeline"><tr><td colspan="4" class="muted">noch nichts</td></tr></tbody>
           </table>
           <button id="tile-timeline-clear" style="margin-top:7px">Zeitleiste leeren</button>
+        </div>
       </div>
     </div>
-
   </section>
 
 
@@ -8159,7 +8177,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.6.26</span></span>
+    <span class="foot-ver">v<span id="app-version">0.6.27</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
