@@ -1433,47 +1433,15 @@
     showHudToast(sw.checked ? 'SCHADENSSIMULATION AN' : 'SCHADENSSIMULATION AUS');
   }
 
-  // Die Bremsbalance-Skala im Cockpit ziehen.
+  // ---- DIE ZIEH-SKALA DER BREMSBALANCE IST HIER HERAUS ---------------------------
   //
-  // Ein Ding, das wie ein Regler aussieht und keiner ist, ist schlimmer als ein Symbol: man
-  // zieht daran, nichts passiert, und danach traut man auch dem Rest nicht.
+  // Sie sass in der Kachel .gt3-trim, und die traegt seit v0.6.13 die Reifenwahl und die
+  // Tankmenge - "die neuen Anzeigen ersetzen die alten". Ohne ihren Wirt haette
+  // bindeBiasSkala() beim Aufbau still mit `return` aufgehoert: eine Funktion, die nichts
+  // tut und danach aussieht, als taete sie etwas.
   //
-  // Der Weg geht ueber das Bedienelement in den Optionen und dessen 'input'-Ereignis, wie
-  // bei allen anderen Cockpit-Kacheln - dadurch ist die Synchronitaet da, ohne dass ein
-  // zweiter Zustand entsteht.
-  (function bindeBiasSkala() {
-    const row = $('race-bias-row');
-    const inp = $('setting-brakebias');
-    if (!row || !inp) return;
-    const lo = +inp.min, hi = +inp.max;
-    let zieht = false;
-
-    const setzen = (clientY) => {
-      const svg = row.querySelector('svg');
-      if (!svg) return;
-      const r = svg.getBoundingClientRect();
-      if (r.height < 4) return;
-      // Oben ist vorn, also von unten gerechnet.
-      const t = Math.max(0, Math.min(1, 1 - (clientY - r.top) / r.height));
-      const wert = Math.round(lo + t * (hi - lo));
-      if (String(wert) === inp.value) return;
-      inp.value = wert;
-      inp.dispatchEvent(new Event('input', { bubbles: true }));
-    };
-
-    row.addEventListener('pointerdown', (e) => {
-      zieht = true;
-      // Der Zeiger wird eingefangen, damit das Ziehen auch weitergeht, wenn der Finger die
-      // schmale Skala verlaesst - sie ist 14 px breit, und ohne das reisst jeder Zug ab.
-      try { row.setPointerCapture(e.pointerId); } catch (err) { /* alter Browser */ }
-      setzen(e.clientY);
-      e.preventDefault();
-    });
-    row.addEventListener('pointermove', (e) => { if (zieht) setzen(e.clientY); });
-    for (const ev of ['pointerup', 'pointercancel']) {
-      row.addEventListener(ev, () => { zieht = false; });
-    }
-  })();
+  // Die Bremsbalance bleibt erreichbar. Der Regler setting-brakebias in den Optionen war
+  // ohnehin der zweite Weg dorthin und ist jetzt der einzige.
 
   $('race-tyre-box').onclick = () => {
     // Waehrend eines Boxenstopps bedeutet ein Tipp auf diese Kachel "Reifenwechsel an/aus",
@@ -2624,8 +2592,42 @@
   // Wer im Trockenen Regenreifen aufziehen will, darf das; die Matrix bestraft es schon.
   let mischungWunsch = null;
 
+  // ---- DIE VORGABE IST, WAS DRAUF IST -------------------------------------------
+  //
+  // BESTELLT: "D-Pad oben schaltet Reifentypen durch und bestimmt, was beim naechsten
+  // Boxenstopp aufgezogen wird (default: aktuelle Reifen)."
+  //
+  // Hier stand `mischungWunsch || (weather === 'rain' ? 'regen' : 'mittel')`, also
+  // wetterpassend. Jetzt die aktuell montierte Mischung.
+  //
+  // DAS HAT EINE FOLGE, und sie steht hier und nicht im Verborgenen: ein geplanter Stopp
+  // im Regen zieht damit NICHT MEHR VON SELBST Regenreifen auf. Der Ausgleich ist keine
+  // zweite Automatik, sondern eine Anzeige - pitKachelStand() meldet mixWarnung, wenn die
+  // Wahl nicht zum Wetter passt, und die Kachel schreibt es an. Sichtbar ist besser als
+  // klug: wer im Regen auf Slicks bleibt, hat es dann selbst entschieden.
   function pitMischungWahl() {
-    return mischungWunsch || (weather === 'rain' ? 'regen' : 'mittel');
+    return mischungWunsch || tyres;
+  }
+
+  // Was die Abstimmungskachel im Cockpit zeigt: die Reifenwahl fuer den naechsten Stopp und
+  // die Tankmenge. EINE Funktion dafuer, weil die Kachel in einer FRUEHEREN Datei
+  // aktualisiert wird (50-drive.js) und sonst fuenf Groessen von hier lesen muesste - fuenf
+  // Zugriffe ueber eine Dateigrenze sind fuenf Stellen, an denen jemand eine vergisst.
+  function pitKachelStand() {
+    const mix = pitMischungWahl();
+    const tank = (pitState === 'servicing' && pitPlan)
+      ? pitPlan.refuel : pitVorwahlIst('refuel');
+    return {
+      mix,
+      mixName: mischungName(mix),
+      mixFarbe: mischungFarbe(mix),
+      mixRegen: mix === 'regen',
+      // Beide Richtungen sind ein Missverhaeltnis: Slicks im Regen und Regenreifen auf
+      // trockener Bahn kosten gleichermassen.
+      mixWarnung: (weather === 'rain') !== (mix === 'regen'),
+      tankWort: tankZielWort(tank),
+      tankAn: !!tankZielNorm(tank),
+    };
   }
 
   function pitMischungWeiter() {
@@ -3985,19 +3987,7 @@
       // pitToggle() steigt aus, solange kein Plan existiert - und ohne Plan gaebe es hier
       // nichts zu tun. Statt zu schweigen wird VORGEWAEHLT: was hier gesetzt wird, uebernimmt
       // makePitPlan() beim Scharfstellen. Genau dafuer ist der Schirm waehrend der Fahrt da.
-      const jetzt = pitVorwahlIst(zeile.id);
-      // DIESELBEN WOERTER wie in der Zeile. Eine Meldung, die "AN" sagt, waehrend die
-      // Zeile darunter "ja" zeigt, ist ein drittes Vokabular fuer dieselbe Frage.
-      if (zeile.id === 'refuel') {
-        // DREI STUFEN, also durchschalten und nicht umschalten.
-        const naechste = tankZielWeiter(jetzt);
-        pitVorwahl.refuel = naechste;
-        showHudToast(t('Tanken') + ': ' + tankZielWort(naechste));
-      } else {
-        pitVorwahl[zeile.id] = !jetzt;
-        showHudToast(t(zeile.id === 'tyres' ? 'Reifen wechseln' : 'Reparieren')
-                     + ': ' + t(!jetzt ? 'ja' : 'nein'));
-      }
+      pitVorwahlSchalten(zeile.id);
     }
     pitScreenRender();
     return true;
@@ -4018,6 +4008,41 @@
     if (which === 'tyres') return tyreSimOn();
     if (which === 'repair') return damage > 0.5;
     return false;
+  }
+
+  // ---- EINEN EINTRAG DER VORWAHL WEITERSCHALTEN ---------------------------------
+  //
+  // HERAUSGEZOGEN, weil es seit v0.6.13 zwei Bedienwege dorthin gibt: die Waehltaste im
+  // Boxenschirm und das Steuerkreuz nach unten. Zwei Kopien derselben Stufenfolge waeren
+  // die erste Stelle, an der Kachel und Menue auseinanderlaufen.
+  function pitVorwahlSchalten(which) {
+    // ---- LAEUFT SCHON EIN STOPP, GILT DER PLAN UND NICHT DIE VORWAHL -------------
+    //
+    // Dasselbe, was die Waehltaste im Boxenschirm tut (siehe pitScreenSelect). Ohne diese
+    // Weiche wuerde das Steuerkreuz mitten im Stopp die Vorwahl fuer den NAECHSTEN aendern,
+    // waehrend die Kachel daneben den LAUFENDEN zeigt - man drueckt, die Anzeige bleibt
+    // stehen, und beides ist richtig. Genau so entstehen zwei Wahrheiten.
+    if (pitState === 'servicing' && pitPlan) {
+      pitToggle(which);
+      return pitPlan[which];
+    }
+    const jetzt = pitVorwahlIst(which);
+    // DIESELBEN WOERTER wie in der Zeile. Eine Meldung, die "AN" sagt, waehrend die Zeile
+    // darunter "ja" zeigt, ist ein drittes Vokabular fuer dieselbe Frage.
+    if (which === 'refuel') {
+      // DREI STUFEN, also durchschalten und nicht umschalten.
+      const naechste = tankZielWeiter(jetzt);
+      pitVorwahl.refuel = naechste;
+      showHudToast(t('Tanken') + ': ' + tankZielWort(naechste));
+    } else {
+      pitVorwahl[which] = !jetzt;
+      showHudToast(t(which === 'tyres' ? 'Reifen wechseln' : 'Reparieren')
+                   + ': ' + t(!jetzt ? 'ja' : 'nein'));
+    }
+    // Der Boxenschirm zeigt dieselbe Vorwahl; wer sie vom Kreuz aus aendert, soll sie dort
+    // nicht veraltet vorfinden.
+    pitScreenRender();
+    return pitVorwahl[which];
   }
 
   function pitScreenRender() {

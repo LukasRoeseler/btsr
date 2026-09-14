@@ -1533,21 +1533,32 @@
     if (reifenKachel) reifenKachel.classList.toggle('sim-off',
       physEngine.config.tyreEffect <= 0);
 
-    // Dieselben zwei Groessen, die auf dem Steuerkreuz liegen - hoch/runter und
-    // links/rechts. Die Kachel zeigt, was das Kreuz verstellt, und nichts anderes.
-    $('race-trim-accel').textContent = Math.round(physEngine.config.brakeBias * 100) + '%';
-    // Die Marke auf der Skala. Der Bereich kommt aus dem Bedienelement und nicht aus
-    // Konstanten hier: eine zweite Kopie von min und max liefe beim naechsten Nachziehen
-    // auseinander.
-    const bm = $('race-bias-mark'), bi = $('setting-brakebias');
-    if (bm && bi) {
-      const lo = +bi.min, hi = +bi.max;
-      const t = Math.max(0, Math.min(1,
-        (physEngine.config.brakeBias * 100 - lo) / Math.max(1e-6, hi - lo)));
-      // Oben ist VORN, also wird t umgedreht: viel Balance vorn heisst kleine y-Koordinate.
-      bm.setAttribute('y', (2.5 + (1 - t) * 16.2).toFixed(2));
+    // ---- DIE ZWEI GROESSEN AUF DEM STEUERKREUZ: REIFENWAHL UND TANKMENGE --------
+    //
+    // Die Kachel zeigt, was das Kreuz verstellt, und nichts anderes - derselbe Satz wie
+    // vorher, nur sind es jetzt andere zwei Groessen. Bremsbalance und Lenkansprechen
+    // standen hier bis v0.6.13; beide sind an ihren Reglern in den Optionen geblieben.
+    //
+    // EINE Abfrage ueber die Dateigrenze: pitKachelStand() steht in 70-race.js und liefert
+    // alles Gebrauchte auf einmal. Fuenf einzelne Zugriffe waeren fuenf Stellen, an denen
+    // jemand eine vergisst - und die Funktion ist zur Laufzeit da, auch wenn sie in einer
+    // spaeteren Datei steht (Funktionsdeklarationen werden hochgezogen).
+    if (typeof pitKachelStand === 'function') {
+      const ps = pitKachelStand();
+      const tn = $('race-pit-tyre');
+      if (tn) tn.textContent = ps.mixName;
+      const ring = $('race-pit-tyre-ring');
+      if (ring) ring.setAttribute('stroke', ps.mixFarbe);
+      const rillen = $('race-pit-tyre-rillen');
+      if (rillen) rillen.style.display = ps.mixRegen ? '' : 'none';
+      const trow = $('race-pit-tyre-row');
+      if (trow) trow.classList.toggle('wx-warn', ps.mixWarnung);
+      const fn = $('race-pit-fuel');
+      if (fn) fn.textContent = ps.tankWort;
+      const frow = $('race-pit-fuel-row');
+      // "nein" ist kein Fehler, sondern eine Wahl - deshalb keine Warnfarbe, nur gedimmt.
+      if (frow) frow.classList.toggle('aus', !ps.tankAn);
     }
-    $('race-trim-steer').textContent = steerRespPct(physEngine.config.steerResponse) + '%';
 
     // Pit banner replaces the shift bar while the pit lane is active — impossible to miss,
     // which the old small field was not.

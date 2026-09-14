@@ -661,14 +661,10 @@
   // ein Stopp scharf ist - der Lenktrimm hoerte also mitten im Rennen ohne sichtbaren Grund
   // auf zu wirken. Was es konnte, kann der Boxenschirm vollstaendig und sichtbar.
 
-  function nudgeSteerResponse(delta) {
-    // Keep the options slider in step, otherwise menu and controller drift apart.
-    const input = $('phys-steerresp');
-    const v = Math.round(Math.max(0.5, Math.min(3, parseFloat(input.value) + delta)) * 10) / 10;
-    input.value = v;
-    input.dispatchEvent(new Event('input', { bubbles: true }));
-    showHudToast(`Lenkansprechen ${steerRespPct(v)}%`);
-  }
+  // nudgeSteerResponse() stand hier und hatte nach v0.6.13 keinen Aufrufer mehr: das
+  // Steuerkreuz schaltet jetzt Reifenwahl und Tankmenge. Das Lenkansprechen bleibt am
+  // Regler phys-steerresp in den Optionen, der ohnehin die Wahrheit trug - die Funktion
+  // hat ihn nur nachgezogen.
 
 
   // ================= Garage: several cars, and what each one does =================
@@ -6735,8 +6731,27 @@
       //
       // LINKS/RECHTS wird dem Boxenschirm ausdruecklich NICHT angeboten: ein Schirm, der die
       // Taste frisst, mit der man ihn verlaesst, ist eine Sackgasse.
-      if (dUp && !prevDpad.up && !trackEditorPad('up') && !pitScreenPad('up')) nudgeSteerResponse(+0.1);
-      if (dDown && !prevDpad.down && !trackEditorPad('down') && !pitScreenPad('down')) nudgeSteerResponse(-0.1);
+      // ---- HOCH/RUNTER: REIFENWAHL UND TANKMENGE -------------------------------
+      //
+      // BESTELLT: "D-Pad hoch und runter im Cockpit aendert nicht Lenkung oder Brakebias,
+      // sondern: D-Pad oben schaltet Reifentypen durch und bestimmt, was beim naechsten
+      // Boxenstopp aufgezogen wird. D-Pad runter schaltet die Tankmenge durch - nicht
+      // tanken, halb, voll."
+      //
+      // Hier stand nudgeSteerResponse(+-0,1). Die VORRANGKETTE bleibt unveraendert:
+      // Streckeneditor und Boxenschirm bekommen die Taste zuerst, und nur was sie nicht
+      // verbrauchen, landet hier. Getauscht ist allein das letzte Glied.
+      //
+      // DIESELBEN FUNKTIONEN wie im Boxenschirm: pitMischungWeiter() und
+      // pitVorwahlSchalten('refuel') sind die Wege, die auch die Waehltaste nimmt. Ein
+      // eigener Zweig fuers Kreuz waere ein zweiter Ort mit derselben Aufgabe - und der
+      // erste, an dem Kachel und Menue auseinanderlaufen.
+      if (dUp && !prevDpad.up && !trackEditorPad('up') && !pitScreenPad('up')) {
+        pitMischungWeiter();
+      }
+      if (dDown && !prevDpad.down && !trackEditorPad('down') && !pitScreenPad('down')) {
+        pitVorwahlSchalten('refuel');
+      }
       // ---- BLAETTERN UEBER DIE BELEGUNG, nicht ueber das Kreuz -------------------
       //
       // Hier stand `if (dLeft && ...) cockpitScreenStep(-1)`, also das Steuerkreuz

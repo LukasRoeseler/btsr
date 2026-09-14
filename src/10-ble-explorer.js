@@ -1824,6 +1824,12 @@
       "no",
     "voll":
       "full",
+    "Tankmenge":
+      "Fuel amount",
+    "Reifen für den nächsten Boxenstopp (Steuerkreuz hoch). Vorgabe sind die aufgezogenen Reifen; passt die Wahl nicht zum Wetter, wird die Zeile angeschrieben.":
+      "Tyres for the next pit stop (D-pad up). The default is whatever is fitted; if the choice does not match the weather, the row is marked.",
+    "Tankmenge für den nächsten Boxenstopp (Steuerkreuz runter): nein, halb oder voll.":
+      "Fuel amount for the next pit stop (D-pad down): none, half or full.",
     "weich":
       "soft",
     "mittel":

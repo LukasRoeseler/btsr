@@ -1458,6 +1458,13 @@
   .gt3-brakeT b { font-size: clamp(9px, 1.9vw, 12px); letter-spacing: 0; }
   .gt3-dim { opacity: .35; padding: 0 1px; }
   .gt3-bias svg { width: clamp(10px, 2vw, 14px); height: clamp(20px, 4vw, 30px); }
+  /* Die Reifenzeile wird angeschrieben, wenn die Wahl nicht zum Wetter passt. Kein
+     Blinken und kein Ausrufezeichen: die Zahl daneben bleibt lesbar, und die Farbe sagt
+     genug - sie ist dieselbe, mit der die App ueberall "das kostet dich was" meint. */
+  .gt3-trim-row.wx-warn b { color: var(--bad); }
+  /* "nein" beim Tanken ist kein Fehler, sondern eine Wahl - also gedimmt und nicht rot.
+     Dieselbe Abstufung, mit der die App ueberall "gilt gerade nicht" meint. */
+  .gt3-trim-row.aus b, .gt3-trim-row.aus svg { opacity: .45; }
   .gt3-trim-row b { font-family: var(--gt3-font); font-weight: 700;
     font-variant-numeric: tabular-nums;
     font-size: clamp(11px, 1.8vw, 17px); }
@@ -3283,50 +3290,43 @@
           <canvas id="race-wx-radar" class="wx-radar" width="200" height="150"
                   aria-hidden="true"></canvas>
           <div class="wx-ico"><svg class="gt3-ico" id="race-wx-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-label="Trocken"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.4M12 19.6V22M2 12h2.4M19.6 12H22M4.9 4.9l1.7 1.7M17.4 17.4l1.7 1.7M19.1 4.9l-1.7 1.7M6.6 17.4l-1.7 1.7"/></svg><svg class="gt3-ico" id="race-wx-rain" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-label="Regen" style="display:none"><path d="M6.5 14a4 4 0 0 1 .4-8 5.5 5.5 0 0 1 10.5 1.4A3.6 3.6 0 0 1 17.5 14z"/><path d="M8 17.5l-1 2.5M12 17.5l-1 2.5M16 17.5l-1 2.5"/></svg></div></div>
-        <!-- Was auf dem Steuerkreuz liegt: hoch/runter Bremsbalance, links/rechts
-             Lenkansprechen. Die Kachel und das Kreuz zeigen dieselben zwei Groessen.
+        <!-- Was auf dem Steuerkreuz liegt: hoch die Reifenwahl, runter die Tankmenge.
+             Die Kachel und das Kreuz zeigen dieselben zwei Groessen.
 
-             Je Zahl ein eigenes Symbol: vorher stand "100% . 100%" unter einer
-             Beschriftung, in der beide Groessen im Text steckten, und man musste wissen,
-             welche Zahl welche ist. Zwei ZEILEN und nicht zwei Spalten, weil die Kachel auf
-             375 px nur rund 85 px breit ist - zwei Spalten waeren 40 px, und darin steht
-             keine dreistellige Prozentzahl.
+             HIER STANDEN BREMSBALANCE UND LENKANSPRECHEN. Bestellt war der Tausch
+             ausdruecklich ("die neuen Anzeigen ersetzen die alten"), und er kostet nichts:
+             beide Groessen bleiben an ihren Reglern in den Optionen erreichbar. Was sie im
+             Cockpit verlieren, ist der schnelle Weg im Fahrbetrieb - und den brauchen
+             Reifenwahl und Tankmenge dringender, weil sie zu einer Entscheidung gehoeren,
+             die man WAEHREND der Fahrt trifft.
 
-             Das Lenkrad ist dasselbe wie auf der Optionen-Kachel "Fahrgefuehl": ein neues
-             Symbol fuer eine bekannte Sache waere eine zweite Vokabel. -->
+             Je Zahl ein eigenes Symbol, wie vorher: zwei ZEILEN und nicht zwei Spalten,
+             weil die Kachel auf 375 px nur rund 85 px breit ist.
+
+             Die Symbole sind die BEKANNTEN: der Reifen ist derselbe Ring, der auch in den
+             vier Reifenfeldern steckt, die Zapfsaeule dieselbe wie auf der Tankkachel
+             daneben. Ein neues Symbol fuer eine bekannte Sache waere eine zweite Vokabel. -->
         <div class="gt3-box gt3-trim">
-          <!-- Eine senkrechte Skala und kein zweiter Kreis: Bremsscheibe und Lenkrad
-               sahen als Kreis mit Speichen gleich aus. Die Skala sagt dreierlei auf einmal -
-               dass es eine Balance zwischen zwei Enden ist, wo sie steht, und dass man sie
-               schiebt. Letzteres entspricht der Geste auf dem Steuerkreuz, man muss die
-               Belegung also nicht wissen, sondern sieht sie.
+          <!-- Die Reifenwahl fuer den naechsten Stopp. Der Ring traegt die Mischungsfarbe
+               (weich rot, mittel gelb, hart weiss, Regen blau) - dieselbe Zuordnung wie in
+               der Reifenkachel und im Boxenschirm, aus mischungFarbe().
 
-               OBEN IST VORN. Die Begruendung dafuer war "hoch auf dem Kreuz nimmt die
-               Balance nach vorn", und seit v0.5.18 liegt die Balance nicht mehr auf dem
-               Kreuz. Die Richtung bleibt trotzdem, und zwar aus einem staerkeren Grund: sie
-               ist dieselbe wie beim Regler in den Optionen, dessen rechtes Ende "mehr vorn"
-               heisst, und dieselbe wie die Fahrzeugachse, an der man sie denkt. -->
-          <div class="gt3-trim-row gt3-bias" id="race-bias-row"
-               title="Bremsbalance, Anteil vorn. Ziehen oder Regler in den Optionen">
-            <svg viewBox="0 0 14 24" aria-label="Bremsbalance, Anteil vorn"
-                 preserveAspectRatio="none">
-              <path d="M7 2.5V21.5" stroke="rgba(255,255,255,.30)" stroke-width="2.2"
-                    stroke-linecap="round" fill="none"/>
-              <path d="M3.6 4.5h6.8M3.6 12h6.8M3.6 19.5h6.8" stroke="rgba(255,255,255,.22)"
-                    stroke-width="1.1" stroke-linecap="round" fill="none"/>
-              <rect id="race-bias-mark" x="1.4" y="10.6" width="11.2" height="2.8" rx="1.4"
-                    fill="var(--bad)"/>
-            </svg>
-            <b id="race-trim-accel">62%</b>
-          </div>
-          <!-- Hier standen die Scheibentemperaturen. Sie sitzen jetzt als Ring IN den
-               Reifen: eine Scheibe steckt in der Felge, und die Zuordnung vorn/hinten
-               ist dort dieselbe wie beim Reifen. Zweimal dasselbe waere in einer
-               77-px-Kachel Platzverschwendung. -->
-          <div class="gt3-trim-row" title="Lenkansprechen (Steuerkreuz hoch/runter)">
+               Die Rillen erscheinen nur beim Regenreifen, und auch das ist die vorhandene
+               Vokabel: der Tooltip der Reifenkachel sagt seit v0.5 "Rillen bedeuten
+               Regenreifen". -->
+          <div class="gt3-trim-row" id="race-pit-tyre-row"
+               title="Reifen f&uuml;r den n&auml;chsten Boxenstopp (Steuerkreuz hoch). Vorgabe sind die aufgezogenen Reifen; passt die Wahl nicht zum Wetter, wird die Zeile angeschrieben.">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
-                 stroke-linecap="round" aria-label="Lenkansprechen"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="2.4"/><path d="M12 3.5v6M6.2 17.4l4.2-3.1M17.8 17.4l-4.2-3.1" stroke="var(--bad)"/></svg>
-            <b id="race-trim-steer">100%</b>
+                 stroke-linecap="round" aria-label="Reifenwahl"><circle id="race-pit-tyre-ring" cx="12" cy="12" r="8.6" stroke="var(--muted)" stroke-width="3.4"/><circle cx="12" cy="12" r="3.4"/><g id="race-pit-tyre-rillen" style="display:none"><path d="M12 3.4v3.1M12 17.5v3.1M3.4 12h3.1M17.5 12h3.1"/></g></svg>
+            <b id="race-pit-tyre" data-i18n-skip>&ndash;</b>
+          </div>
+          <!-- Die Tankmenge: nein, 55 l oder voll. Dasselbe Wort wie im Boxenschirm, aus
+               tankZielWort() - drei Stufen, eine Vokabel. -->
+          <div class="gt3-trim-row" id="race-pit-fuel-row"
+               title="Tankmenge f&uuml;r den n&auml;chsten Boxenstopp (Steuerkreuz runter): nein, halb oder voll.">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+                 stroke-linecap="round" stroke-linejoin="round" aria-label="Tankmenge"><path d="M4 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16"/><path d="M3 21h13"/><path d="M4 10h10"/><path d="M18 21v-9a3 3 0 0 0-3-3"/><path d="M18 12h2a1 1 0 0 0 1-1V8l-3-3"/></svg>
+            <b id="race-pit-fuel" data-i18n-skip>&ndash;</b>
           </div></div>
         <div class="gt3-box gt3-gplot" id="race-gplot">
           <div class="gt3-lbl"><span style="color:#ff4d4d">Sim</span> &middot; <span style="color:#2ee06a">Roh</span></div>
@@ -7960,7 +7960,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.6.12</span></span>
+    <span class="foot-ver">v<span id="app-version">0.6.13</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -9819,6 +9819,12 @@
       "no",
     "voll":
       "full",
+    "Tankmenge":
+      "Fuel amount",
+    "Reifen für den nächsten Boxenstopp (Steuerkreuz hoch). Vorgabe sind die aufgezogenen Reifen; passt die Wahl nicht zum Wetter, wird die Zeile angeschrieben.":
+      "Tyres for the next pit stop (D-pad up). The default is whatever is fitted; if the choice does not match the weather, the row is marked.",
+    "Tankmenge für den nächsten Boxenstopp (Steuerkreuz runter): nein, halb oder voll.":
+      "Fuel amount for the next pit stop (D-pad down): none, half or full.",
     "weich":
       "soft",
     "mittel":
@@ -14861,21 +14867,32 @@
     if (reifenKachel) reifenKachel.classList.toggle('sim-off',
       physEngine.config.tyreEffect <= 0);
 
-    // Dieselben zwei Groessen, die auf dem Steuerkreuz liegen - hoch/runter und
-    // links/rechts. Die Kachel zeigt, was das Kreuz verstellt, und nichts anderes.
-    $('race-trim-accel').textContent = Math.round(physEngine.config.brakeBias * 100) + '%';
-    // Die Marke auf der Skala. Der Bereich kommt aus dem Bedienelement und nicht aus
-    // Konstanten hier: eine zweite Kopie von min und max liefe beim naechsten Nachziehen
-    // auseinander.
-    const bm = $('race-bias-mark'), bi = $('setting-brakebias');
-    if (bm && bi) {
-      const lo = +bi.min, hi = +bi.max;
-      const t = Math.max(0, Math.min(1,
-        (physEngine.config.brakeBias * 100 - lo) / Math.max(1e-6, hi - lo)));
-      // Oben ist VORN, also wird t umgedreht: viel Balance vorn heisst kleine y-Koordinate.
-      bm.setAttribute('y', (2.5 + (1 - t) * 16.2).toFixed(2));
+    // ---- DIE ZWEI GROESSEN AUF DEM STEUERKREUZ: REIFENWAHL UND TANKMENGE --------
+    //
+    // Die Kachel zeigt, was das Kreuz verstellt, und nichts anderes - derselbe Satz wie
+    // vorher, nur sind es jetzt andere zwei Groessen. Bremsbalance und Lenkansprechen
+    // standen hier bis v0.6.13; beide sind an ihren Reglern in den Optionen geblieben.
+    //
+    // EINE Abfrage ueber die Dateigrenze: pitKachelStand() steht in 70-race.js und liefert
+    // alles Gebrauchte auf einmal. Fuenf einzelne Zugriffe waeren fuenf Stellen, an denen
+    // jemand eine vergisst - und die Funktion ist zur Laufzeit da, auch wenn sie in einer
+    // spaeteren Datei steht (Funktionsdeklarationen werden hochgezogen).
+    if (typeof pitKachelStand === 'function') {
+      const ps = pitKachelStand();
+      const tn = $('race-pit-tyre');
+      if (tn) tn.textContent = ps.mixName;
+      const ring = $('race-pit-tyre-ring');
+      if (ring) ring.setAttribute('stroke', ps.mixFarbe);
+      const rillen = $('race-pit-tyre-rillen');
+      if (rillen) rillen.style.display = ps.mixRegen ? '' : 'none';
+      const trow = $('race-pit-tyre-row');
+      if (trow) trow.classList.toggle('wx-warn', ps.mixWarnung);
+      const fn = $('race-pit-fuel');
+      if (fn) fn.textContent = ps.tankWort;
+      const frow = $('race-pit-fuel-row');
+      // "nein" ist kein Fehler, sondern eine Wahl - deshalb keine Warnfarbe, nur gedimmt.
+      if (frow) frow.classList.toggle('aus', !ps.tankAn);
     }
-    $('race-trim-steer').textContent = steerRespPct(physEngine.config.steerResponse) + '%';
 
     // Pit banner replaces the shift bar while the pit lane is active — impossible to miss,
     // which the old small field was not.
@@ -20275,47 +20292,15 @@
     showHudToast(sw.checked ? 'SCHADENSSIMULATION AN' : 'SCHADENSSIMULATION AUS');
   }
 
-  // Die Bremsbalance-Skala im Cockpit ziehen.
+  // ---- DIE ZIEH-SKALA DER BREMSBALANCE IST HIER HERAUS ---------------------------
   //
-  // Ein Ding, das wie ein Regler aussieht und keiner ist, ist schlimmer als ein Symbol: man
-  // zieht daran, nichts passiert, und danach traut man auch dem Rest nicht.
+  // Sie sass in der Kachel .gt3-trim, und die traegt seit v0.6.13 die Reifenwahl und die
+  // Tankmenge - "die neuen Anzeigen ersetzen die alten". Ohne ihren Wirt haette
+  // bindeBiasSkala() beim Aufbau still mit `return` aufgehoert: eine Funktion, die nichts
+  // tut und danach aussieht, als taete sie etwas.
   //
-  // Der Weg geht ueber das Bedienelement in den Optionen und dessen 'input'-Ereignis, wie
-  // bei allen anderen Cockpit-Kacheln - dadurch ist die Synchronitaet da, ohne dass ein
-  // zweiter Zustand entsteht.
-  (function bindeBiasSkala() {
-    const row = $('race-bias-row');
-    const inp = $('setting-brakebias');
-    if (!row || !inp) return;
-    const lo = +inp.min, hi = +inp.max;
-    let zieht = false;
-
-    const setzen = (clientY) => {
-      const svg = row.querySelector('svg');
-      if (!svg) return;
-      const r = svg.getBoundingClientRect();
-      if (r.height < 4) return;
-      // Oben ist vorn, also von unten gerechnet.
-      const t = Math.max(0, Math.min(1, 1 - (clientY - r.top) / r.height));
-      const wert = Math.round(lo + t * (hi - lo));
-      if (String(wert) === inp.value) return;
-      inp.value = wert;
-      inp.dispatchEvent(new Event('input', { bubbles: true }));
-    };
-
-    row.addEventListener('pointerdown', (e) => {
-      zieht = true;
-      // Der Zeiger wird eingefangen, damit das Ziehen auch weitergeht, wenn der Finger die
-      // schmale Skala verlaesst - sie ist 14 px breit, und ohne das reisst jeder Zug ab.
-      try { row.setPointerCapture(e.pointerId); } catch (err) { /* alter Browser */ }
-      setzen(e.clientY);
-      e.preventDefault();
-    });
-    row.addEventListener('pointermove', (e) => { if (zieht) setzen(e.clientY); });
-    for (const ev of ['pointerup', 'pointercancel']) {
-      row.addEventListener(ev, () => { zieht = false; });
-    }
-  })();
+  // Die Bremsbalance bleibt erreichbar. Der Regler setting-brakebias in den Optionen war
+  // ohnehin der zweite Weg dorthin und ist jetzt der einzige.
 
   $('race-tyre-box').onclick = () => {
     // Waehrend eines Boxenstopps bedeutet ein Tipp auf diese Kachel "Reifenwechsel an/aus",
@@ -21466,8 +21451,42 @@
   // Wer im Trockenen Regenreifen aufziehen will, darf das; die Matrix bestraft es schon.
   let mischungWunsch = null;
 
+  // ---- DIE VORGABE IST, WAS DRAUF IST -------------------------------------------
+  //
+  // BESTELLT: "D-Pad oben schaltet Reifentypen durch und bestimmt, was beim naechsten
+  // Boxenstopp aufgezogen wird (default: aktuelle Reifen)."
+  //
+  // Hier stand `mischungWunsch || (weather === 'rain' ? 'regen' : 'mittel')`, also
+  // wetterpassend. Jetzt die aktuell montierte Mischung.
+  //
+  // DAS HAT EINE FOLGE, und sie steht hier und nicht im Verborgenen: ein geplanter Stopp
+  // im Regen zieht damit NICHT MEHR VON SELBST Regenreifen auf. Der Ausgleich ist keine
+  // zweite Automatik, sondern eine Anzeige - pitKachelStand() meldet mixWarnung, wenn die
+  // Wahl nicht zum Wetter passt, und die Kachel schreibt es an. Sichtbar ist besser als
+  // klug: wer im Regen auf Slicks bleibt, hat es dann selbst entschieden.
   function pitMischungWahl() {
-    return mischungWunsch || (weather === 'rain' ? 'regen' : 'mittel');
+    return mischungWunsch || tyres;
+  }
+
+  // Was die Abstimmungskachel im Cockpit zeigt: die Reifenwahl fuer den naechsten Stopp und
+  // die Tankmenge. EINE Funktion dafuer, weil die Kachel in einer FRUEHEREN Datei
+  // aktualisiert wird (50-drive.js) und sonst fuenf Groessen von hier lesen muesste - fuenf
+  // Zugriffe ueber eine Dateigrenze sind fuenf Stellen, an denen jemand eine vergisst.
+  function pitKachelStand() {
+    const mix = pitMischungWahl();
+    const tank = (pitState === 'servicing' && pitPlan)
+      ? pitPlan.refuel : pitVorwahlIst('refuel');
+    return {
+      mix,
+      mixName: mischungName(mix),
+      mixFarbe: mischungFarbe(mix),
+      mixRegen: mix === 'regen',
+      // Beide Richtungen sind ein Missverhaeltnis: Slicks im Regen und Regenreifen auf
+      // trockener Bahn kosten gleichermassen.
+      mixWarnung: (weather === 'rain') !== (mix === 'regen'),
+      tankWort: tankZielWort(tank),
+      tankAn: !!tankZielNorm(tank),
+    };
   }
 
   function pitMischungWeiter() {
@@ -22827,19 +22846,7 @@
       // pitToggle() steigt aus, solange kein Plan existiert - und ohne Plan gaebe es hier
       // nichts zu tun. Statt zu schweigen wird VORGEWAEHLT: was hier gesetzt wird, uebernimmt
       // makePitPlan() beim Scharfstellen. Genau dafuer ist der Schirm waehrend der Fahrt da.
-      const jetzt = pitVorwahlIst(zeile.id);
-      // DIESELBEN WOERTER wie in der Zeile. Eine Meldung, die "AN" sagt, waehrend die
-      // Zeile darunter "ja" zeigt, ist ein drittes Vokabular fuer dieselbe Frage.
-      if (zeile.id === 'refuel') {
-        // DREI STUFEN, also durchschalten und nicht umschalten.
-        const naechste = tankZielWeiter(jetzt);
-        pitVorwahl.refuel = naechste;
-        showHudToast(t('Tanken') + ': ' + tankZielWort(naechste));
-      } else {
-        pitVorwahl[zeile.id] = !jetzt;
-        showHudToast(t(zeile.id === 'tyres' ? 'Reifen wechseln' : 'Reparieren')
-                     + ': ' + t(!jetzt ? 'ja' : 'nein'));
-      }
+      pitVorwahlSchalten(zeile.id);
     }
     pitScreenRender();
     return true;
@@ -22860,6 +22867,41 @@
     if (which === 'tyres') return tyreSimOn();
     if (which === 'repair') return damage > 0.5;
     return false;
+  }
+
+  // ---- EINEN EINTRAG DER VORWAHL WEITERSCHALTEN ---------------------------------
+  //
+  // HERAUSGEZOGEN, weil es seit v0.6.13 zwei Bedienwege dorthin gibt: die Waehltaste im
+  // Boxenschirm und das Steuerkreuz nach unten. Zwei Kopien derselben Stufenfolge waeren
+  // die erste Stelle, an der Kachel und Menue auseinanderlaufen.
+  function pitVorwahlSchalten(which) {
+    // ---- LAEUFT SCHON EIN STOPP, GILT DER PLAN UND NICHT DIE VORWAHL -------------
+    //
+    // Dasselbe, was die Waehltaste im Boxenschirm tut (siehe pitScreenSelect). Ohne diese
+    // Weiche wuerde das Steuerkreuz mitten im Stopp die Vorwahl fuer den NAECHSTEN aendern,
+    // waehrend die Kachel daneben den LAUFENDEN zeigt - man drueckt, die Anzeige bleibt
+    // stehen, und beides ist richtig. Genau so entstehen zwei Wahrheiten.
+    if (pitState === 'servicing' && pitPlan) {
+      pitToggle(which);
+      return pitPlan[which];
+    }
+    const jetzt = pitVorwahlIst(which);
+    // DIESELBEN WOERTER wie in der Zeile. Eine Meldung, die "AN" sagt, waehrend die Zeile
+    // darunter "ja" zeigt, ist ein drittes Vokabular fuer dieselbe Frage.
+    if (which === 'refuel') {
+      // DREI STUFEN, also durchschalten und nicht umschalten.
+      const naechste = tankZielWeiter(jetzt);
+      pitVorwahl.refuel = naechste;
+      showHudToast(t('Tanken') + ': ' + tankZielWort(naechste));
+    } else {
+      pitVorwahl[which] = !jetzt;
+      showHudToast(t(which === 'tyres' ? 'Reifen wechseln' : 'Reparieren')
+                   + ': ' + t(!jetzt ? 'ja' : 'nein'));
+    }
+    // Der Boxenschirm zeigt dieselbe Vorwahl; wer sie vom Kreuz aus aendert, soll sie dort
+    // nicht veraltet vorfinden.
+    pitScreenRender();
+    return pitVorwahl[which];
   }
 
   function pitScreenRender() {
@@ -25670,14 +25712,10 @@
   // ein Stopp scharf ist - der Lenktrimm hoerte also mitten im Rennen ohne sichtbaren Grund
   // auf zu wirken. Was es konnte, kann der Boxenschirm vollstaendig und sichtbar.
 
-  function nudgeSteerResponse(delta) {
-    // Keep the options slider in step, otherwise menu and controller drift apart.
-    const input = $('phys-steerresp');
-    const v = Math.round(Math.max(0.5, Math.min(3, parseFloat(input.value) + delta)) * 10) / 10;
-    input.value = v;
-    input.dispatchEvent(new Event('input', { bubbles: true }));
-    showHudToast(`Lenkansprechen ${steerRespPct(v)}%`);
-  }
+  // nudgeSteerResponse() stand hier und hatte nach v0.6.13 keinen Aufrufer mehr: das
+  // Steuerkreuz schaltet jetzt Reifenwahl und Tankmenge. Das Lenkansprechen bleibt am
+  // Regler phys-steerresp in den Optionen, der ohnehin die Wahrheit trug - die Funktion
+  // hat ihn nur nachgezogen.
 
 
   // ================= Garage: several cars, and what each one does =================
@@ -31744,8 +31782,27 @@
       //
       // LINKS/RECHTS wird dem Boxenschirm ausdruecklich NICHT angeboten: ein Schirm, der die
       // Taste frisst, mit der man ihn verlaesst, ist eine Sackgasse.
-      if (dUp && !prevDpad.up && !trackEditorPad('up') && !pitScreenPad('up')) nudgeSteerResponse(+0.1);
-      if (dDown && !prevDpad.down && !trackEditorPad('down') && !pitScreenPad('down')) nudgeSteerResponse(-0.1);
+      // ---- HOCH/RUNTER: REIFENWAHL UND TANKMENGE -------------------------------
+      //
+      // BESTELLT: "D-Pad hoch und runter im Cockpit aendert nicht Lenkung oder Brakebias,
+      // sondern: D-Pad oben schaltet Reifentypen durch und bestimmt, was beim naechsten
+      // Boxenstopp aufgezogen wird. D-Pad runter schaltet die Tankmenge durch - nicht
+      // tanken, halb, voll."
+      //
+      // Hier stand nudgeSteerResponse(+-0,1). Die VORRANGKETTE bleibt unveraendert:
+      // Streckeneditor und Boxenschirm bekommen die Taste zuerst, und nur was sie nicht
+      // verbrauchen, landet hier. Getauscht ist allein das letzte Glied.
+      //
+      // DIESELBEN FUNKTIONEN wie im Boxenschirm: pitMischungWeiter() und
+      // pitVorwahlSchalten('refuel') sind die Wege, die auch die Waehltaste nimmt. Ein
+      // eigener Zweig fuers Kreuz waere ein zweiter Ort mit derselben Aufgabe - und der
+      // erste, an dem Kachel und Menue auseinanderlaufen.
+      if (dUp && !prevDpad.up && !trackEditorPad('up') && !pitScreenPad('up')) {
+        pitMischungWeiter();
+      }
+      if (dDown && !prevDpad.down && !trackEditorPad('down') && !pitScreenPad('down')) {
+        pitVorwahlSchalten('refuel');
+      }
       // ---- BLAETTERN UEBER DIE BELEGUNG, nicht ueber das Kreuz -------------------
       //
       // Hier stand `if (dLeft && ...) cockpitScreenStep(-1)`, also das Steuerkreuz
@@ -36655,6 +36712,71 @@
       } finally {
         garage.splice(0, garage.length);
         merkGarage.forEach((c) => garage.push(c));
+      }
+    },
+
+    // ---- WAS DAS STEUERKREUZ IM COCKPIT SCHALTET --------------------------------
+    //
+    // BESTELLT: "D-Pad oben schaltet Reifentypen durch [...] D-Pad runter schaltet die
+    // Tankmenge durch."
+    //
+    // Geprueft werden die FUNKTIONEN, die der Kreuz-Zweig ruft - pitMischungWeiter() und
+    // pitVorwahlSchalten('refuel') -, und dazu, dass die Kachel danach dasselbe sagt.
+    // Die Gamepad-Flanken selbst nachzustellen hiesse, einen Pad-Stummel an
+    // navigator.getGamepads zu haengen; das prueft die Tastenabfrage und nicht die
+    // Wirkung, und die Tastenabfrage hat ihren eigenen Test.
+    //
+    // DER RENNZUSTAND WIRD GESETZT: pitKachelStand() liest pitState, und ohne feste Lage
+    // haengt das Ergebnis daran, ob gerade ein Stopp laeuft.
+    kreuzSchaltProbe(o) {
+      const opt = o || {};
+      if (typeof pitMischungWeiter !== 'function'
+          || typeof pitVorwahlSchalten !== 'function'
+          || typeof pitKachelStand !== 'function') return null;
+      const merk = { wunsch: mischungWunsch, vorwahl: pitVorwahl.refuel,
+                     ps: pitState, wetter: weather, reifen: tyres };
+      try {
+        pitState = 'off';
+        weather = opt.wetter || 'dry';
+        tyres = opt.reifen || 'mittel';
+        mischungWunsch = null;
+        pitVorwahl.refuel = null;
+
+        // Erst der Ausgangsstand: die Vorgabe muss das sein, was aufgezogen ist.
+        const start = pitKachelStand();
+
+        // Reifen durchschalten, einmal rundherum plus einen Schritt.
+        const mixFolge = [];
+        for (let i = 0; i < 5; i++) {
+          mixFolge.push(pitKachelStand().mix);
+          pitMischungWeiter();
+        }
+
+        // Tankmenge durchschalten.
+        pitVorwahl.refuel = null;
+        const tankFolge = [];
+        for (let i = 0; i < 4; i++) {
+          tankFolge.push(pitKachelStand().tankWort);
+          pitVorwahlSchalten('refuel');
+        }
+
+        // Und die Warnung: Regen auf der Bahn, Slicks gewaehlt.
+        mischungWunsch = 'mittel';
+        weather = 'rain';
+        const nassMitSlick = pitKachelStand();
+        mischungWunsch = 'regen';
+        const nassMitRegen = pitKachelStand();
+
+        return { startMix: start.mix, startTank: start.tankWort,
+                 mixFolge, tankFolge,
+                 warnung: { slickImRegen: nassMitSlick.mixWarnung,
+                            regenImRegen: nassMitRegen.mixWarnung } };
+      } finally {
+        mischungWunsch = merk.wunsch;
+        pitVorwahl.refuel = merk.vorwahl;
+        pitState = merk.ps;
+        weather = merk.wetter;
+        tyres = merk.reifen;
       }
     },
 
@@ -45858,6 +45980,67 @@
     return { ok: !fehler.length,
              mass: mit.zeilen + ' Sektorzeilen, ' + mit.beste + ' Bestwerte'
                  + ' | bei einem Sektor ' + ohne.zeilen
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
+  // ---- Das Steuerkreuz schaltet Reifenwahl und Tankmenge ----
+  //
+  // BESTELLT: "D-Pad hoch und runter im Cockpit aendert nicht Lenkung oder Brakebias,
+  // sondern: D-Pad oben schaltet Reifentypen durch und bestimmt, was beim naechsten
+  // Boxenstopp aufgezogen wird (default: aktuelle Reifen). D-Pad runter schaltet die
+  // Tankmenge durch."
+  //
+  // Geprueft werden die Funktionen, die der Kreuz-Zweig ruft, und dass die Kachel danach
+  // dasselbe sagt. Dass das KREUZ sie ruft, steht eine Ebene tiefer und ist eine Zeile;
+  // dass die Vorrangkette (Editor, Boxenschirm) davor bleibt, ebenso.
+  stAdd('Steuerkreuz: Reifenwahl und Tankmenge, und die Kachel zeigt sie', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.kreuzSchaltProbe) {
+      return { skip: true, mass: 'kreuzSchaltProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.kreuzSchaltProbe({ wetter: 'dry', reifen: 'hart' });
+    if (!r) return { skip: true, mass: 'kein Lauf' };
+    const fehler = [];
+    // 1. DIE VORGABE IST, WAS AUFGEZOGEN IST. Vorher war sie wetterpassend ('mittel' bei
+    //    trockener Bahn) - mit 'hart' montiert faellt der Unterschied auf.
+    if (r.startMix !== 'hart') {
+      fehler.push('Vorgabe ist ' + r.startMix + ', aufgezogen war hart');
+    }
+    // 2. REIFEN DURCHSCHALTEN, und die Folge schliesst sich. Eine Folge, die stehenbleibt,
+    //    waere eine Sackgasse - man kaeme nie zur ersten Mischung zurueck.
+    const vier = r.mixFolge.slice(0, 4);
+    if (new Set(vier).size !== 4) {
+      fehler.push('nur ' + new Set(vier).size + ' verschiedene Mischungen: '
+                  + vier.join('>'));
+    }
+    if (r.mixFolge[4] !== r.mixFolge[0]) {
+      fehler.push('Folge schliesst nicht: ' + r.mixFolge.join('>'));
+    }
+    // 3. TANKMENGE DURCHSCHALTEN, dieselben drei Stufen wie im Boxenmenue. Ein eigener
+    //    Rhythmus fuers Kreuz waere die erste Stelle, an der die beiden Wege auseinander
+    //    laufen - deshalb wird der WORTLAUT geprueft und nicht nur "es aendert sich".
+    // Der STARTPUNKT haengt an der Lage (bei abgeschalteter Tanksimulation ist es
+    // "nein", bei laufender und halbleerem Tank "voll"), die MENGE der Stufen nicht.
+    // Deshalb wird die Menge geprueft und nicht die Reihenfolge ab einem festen Anfang -
+    // sonst waere der Test rot, sobald jemand den Verbrauchsregler anfasst.
+    const gesehen = r.tankFolge.slice(0, 3).slice().sort().join('/');
+    if (gesehen !== ['55 l', 'nein', 'voll'].sort().join('/')) {
+      fehler.push('Tankstufen ' + r.tankFolge.join('>'));
+    }
+    if (r.tankFolge[3] !== r.tankFolge[0]) {
+      fehler.push('Tankfolge schliesst nicht: ' + r.tankFolge.join('>'));
+    }
+    // 4. UND DIE WARNUNG GREIFT. Sie ist der Ausgleich dafuer, dass die Vorgabe nicht mehr
+    //    wetterpassend ist: ein Stopp im Regen zieht keine Regenreifen mehr von selbst auf,
+    //    also wird es angeschrieben. Ohne diese zwei Zeilen waere der Test auch mit einer
+    //    Warnung gruen, die immer oder nie leuchtet.
+    if (!r.warnung.slickImRegen) fehler.push('Slicks im Regen werden nicht angeschrieben');
+    if (r.warnung.regenImRegen) fehler.push('Regenreifen im Regen werden angeschrieben');
+    return { ok: !fehler.length,
+             mass: 'Vorgabe ' + r.startMix + '/' + r.startTank
+                 + ' | Reifen ' + r.mixFolge.join('>')
+                 + ' | Tank ' + r.tankFolge.join('>')
+                 + ' | Warnung Slick-im-Regen ' + r.warnung.slickImRegen
+                 + ', Regen-im-Regen ' + r.warnung.regenImRegen
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 

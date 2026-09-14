@@ -3844,6 +3844,71 @@
       }
     },
 
+    // ---- WAS DAS STEUERKREUZ IM COCKPIT SCHALTET --------------------------------
+    //
+    // BESTELLT: "D-Pad oben schaltet Reifentypen durch [...] D-Pad runter schaltet die
+    // Tankmenge durch."
+    //
+    // Geprueft werden die FUNKTIONEN, die der Kreuz-Zweig ruft - pitMischungWeiter() und
+    // pitVorwahlSchalten('refuel') -, und dazu, dass die Kachel danach dasselbe sagt.
+    // Die Gamepad-Flanken selbst nachzustellen hiesse, einen Pad-Stummel an
+    // navigator.getGamepads zu haengen; das prueft die Tastenabfrage und nicht die
+    // Wirkung, und die Tastenabfrage hat ihren eigenen Test.
+    //
+    // DER RENNZUSTAND WIRD GESETZT: pitKachelStand() liest pitState, und ohne feste Lage
+    // haengt das Ergebnis daran, ob gerade ein Stopp laeuft.
+    kreuzSchaltProbe(o) {
+      const opt = o || {};
+      if (typeof pitMischungWeiter !== 'function'
+          || typeof pitVorwahlSchalten !== 'function'
+          || typeof pitKachelStand !== 'function') return null;
+      const merk = { wunsch: mischungWunsch, vorwahl: pitVorwahl.refuel,
+                     ps: pitState, wetter: weather, reifen: tyres };
+      try {
+        pitState = 'off';
+        weather = opt.wetter || 'dry';
+        tyres = opt.reifen || 'mittel';
+        mischungWunsch = null;
+        pitVorwahl.refuel = null;
+
+        // Erst der Ausgangsstand: die Vorgabe muss das sein, was aufgezogen ist.
+        const start = pitKachelStand();
+
+        // Reifen durchschalten, einmal rundherum plus einen Schritt.
+        const mixFolge = [];
+        for (let i = 0; i < 5; i++) {
+          mixFolge.push(pitKachelStand().mix);
+          pitMischungWeiter();
+        }
+
+        // Tankmenge durchschalten.
+        pitVorwahl.refuel = null;
+        const tankFolge = [];
+        for (let i = 0; i < 4; i++) {
+          tankFolge.push(pitKachelStand().tankWort);
+          pitVorwahlSchalten('refuel');
+        }
+
+        // Und die Warnung: Regen auf der Bahn, Slicks gewaehlt.
+        mischungWunsch = 'mittel';
+        weather = 'rain';
+        const nassMitSlick = pitKachelStand();
+        mischungWunsch = 'regen';
+        const nassMitRegen = pitKachelStand();
+
+        return { startMix: start.mix, startTank: start.tankWort,
+                 mixFolge, tankFolge,
+                 warnung: { slickImRegen: nassMitSlick.mixWarnung,
+                            regenImRegen: nassMitRegen.mixWarnung } };
+      } finally {
+        mischungWunsch = merk.wunsch;
+        pitVorwahl.refuel = merk.vorwahl;
+        pitState = merk.ps;
+        weather = merk.wetter;
+        tyres = merk.reifen;
+      }
+    },
+
     // ---- TANKT DER STOPP AUF DAS GEWAEHLTE ZIEL, ODER IMMER VOLL? ---------------
     //
     // BESTELLT: "nicht zwischen ja und nein, sondern zwischen nein, 55 l (50 %) und voll".

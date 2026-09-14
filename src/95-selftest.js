@@ -7622,6 +7622,67 @@
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
+  // ---- Das Steuerkreuz schaltet Reifenwahl und Tankmenge ----
+  //
+  // BESTELLT: "D-Pad hoch und runter im Cockpit aendert nicht Lenkung oder Brakebias,
+  // sondern: D-Pad oben schaltet Reifentypen durch und bestimmt, was beim naechsten
+  // Boxenstopp aufgezogen wird (default: aktuelle Reifen). D-Pad runter schaltet die
+  // Tankmenge durch."
+  //
+  // Geprueft werden die Funktionen, die der Kreuz-Zweig ruft, und dass die Kachel danach
+  // dasselbe sagt. Dass das KREUZ sie ruft, steht eine Ebene tiefer und ist eine Zeile;
+  // dass die Vorrangkette (Editor, Boxenschirm) davor bleibt, ebenso.
+  stAdd('Steuerkreuz: Reifenwahl und Tankmenge, und die Kachel zeigt sie', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.kreuzSchaltProbe) {
+      return { skip: true, mass: 'kreuzSchaltProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.kreuzSchaltProbe({ wetter: 'dry', reifen: 'hart' });
+    if (!r) return { skip: true, mass: 'kein Lauf' };
+    const fehler = [];
+    // 1. DIE VORGABE IST, WAS AUFGEZOGEN IST. Vorher war sie wetterpassend ('mittel' bei
+    //    trockener Bahn) - mit 'hart' montiert faellt der Unterschied auf.
+    if (r.startMix !== 'hart') {
+      fehler.push('Vorgabe ist ' + r.startMix + ', aufgezogen war hart');
+    }
+    // 2. REIFEN DURCHSCHALTEN, und die Folge schliesst sich. Eine Folge, die stehenbleibt,
+    //    waere eine Sackgasse - man kaeme nie zur ersten Mischung zurueck.
+    const vier = r.mixFolge.slice(0, 4);
+    if (new Set(vier).size !== 4) {
+      fehler.push('nur ' + new Set(vier).size + ' verschiedene Mischungen: '
+                  + vier.join('>'));
+    }
+    if (r.mixFolge[4] !== r.mixFolge[0]) {
+      fehler.push('Folge schliesst nicht: ' + r.mixFolge.join('>'));
+    }
+    // 3. TANKMENGE DURCHSCHALTEN, dieselben drei Stufen wie im Boxenmenue. Ein eigener
+    //    Rhythmus fuers Kreuz waere die erste Stelle, an der die beiden Wege auseinander
+    //    laufen - deshalb wird der WORTLAUT geprueft und nicht nur "es aendert sich".
+    // Der STARTPUNKT haengt an der Lage (bei abgeschalteter Tanksimulation ist es
+    // "nein", bei laufender und halbleerem Tank "voll"), die MENGE der Stufen nicht.
+    // Deshalb wird die Menge geprueft und nicht die Reihenfolge ab einem festen Anfang -
+    // sonst waere der Test rot, sobald jemand den Verbrauchsregler anfasst.
+    const gesehen = r.tankFolge.slice(0, 3).slice().sort().join('/');
+    if (gesehen !== ['55 l', 'nein', 'voll'].sort().join('/')) {
+      fehler.push('Tankstufen ' + r.tankFolge.join('>'));
+    }
+    if (r.tankFolge[3] !== r.tankFolge[0]) {
+      fehler.push('Tankfolge schliesst nicht: ' + r.tankFolge.join('>'));
+    }
+    // 4. UND DIE WARNUNG GREIFT. Sie ist der Ausgleich dafuer, dass die Vorgabe nicht mehr
+    //    wetterpassend ist: ein Stopp im Regen zieht keine Regenreifen mehr von selbst auf,
+    //    also wird es angeschrieben. Ohne diese zwei Zeilen waere der Test auch mit einer
+    //    Warnung gruen, die immer oder nie leuchtet.
+    if (!r.warnung.slickImRegen) fehler.push('Slicks im Regen werden nicht angeschrieben');
+    if (r.warnung.regenImRegen) fehler.push('Regenreifen im Regen werden angeschrieben');
+    return { ok: !fehler.length,
+             mass: 'Vorgabe ' + r.startMix + '/' + r.startTank
+                 + ' | Reifen ' + r.mixFolge.join('>')
+                 + ' | Tank ' + r.tankFolge.join('>')
+                 + ' | Warnung Slick-im-Regen ' + r.warnung.slickImRegen
+                 + ', Regen-im-Regen ' + r.warnung.regenImRegen
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
   // ---- Tanken: drei Stufen, und der Stopp haelt sich daran ----
   //
   // BESTELLT: "Im Quick-Menue zum Pitstop lass mich durch Druecken von X beim Tanken nicht
