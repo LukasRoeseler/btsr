@@ -845,6 +845,92 @@ nicht zurückzuregeln. Ab 100 Prozent ist das aber eine ausdrückliche Bitte, un
 wächst linear bis auf voll bei 200 Prozent. **Unter 100 Prozent ändert sich nichts:** die
 Ausdrücke sind dort Zeichen für Zeichen die alten.
 
+### Das Überholmodell: wie ein Ghost ansetzt, ausweicht und sich wieder einordnet
+
+Gefragt: wie funktioniert das Überholen der Ghosts, wie es heute implementiert ist. Es
+steht nirgends zusammenhängend aufgeschrieben — die vollständigste Prosa dazu waren
+bisher die Hilfetexte der beiden Optionen „Überholmanöver" und „Abstand halten". Hier der
+Ablauf, Schritt für Schritt, mit den nachgemessenen Zahlen dazu.
+
+**Vier Phasen: `ansage → raus → vorbei → rein`.** Ein Verfolger, der `SPICE_ATTACK_RANGE`
+(1,3 Kacheln) oder näher heranrückt, sammelt Klebezeit (`g.closeSince`). Nach
+`SPICE_ATTACK_ARM_MS` (900 ms) würfelt er alle `SPICE_ATTACK_RETRY_MS` (1200 ms) mit
+Wahrscheinlichkeit `SPICE_ATTACK_P` (0,45) — erwartete Wartezeit bis zum nächsten Versuch
+rund 2,7 s. Fällt der Wurf, läuft:
+
+| Phase | Dauer / Ende | Versatz |
+|---|---|---|
+| `ansage` | `SPICE_ANSAGE_MS` (570 ms, zwei Lichthupenimpulse) | keiner — das Auto bewegt sich noch nicht zur Seite |
+| `raus` | `SPICE_ATTACK_SIDE_MS` (400 ms) | volle Seite |
+| `vorbei` | bis „durch" oder Abbruch | volle Seite, plus `SPICE_ATTACK_GAIN` Schub |
+| `rein` | `SPICE_PASS_TUCK_MS` (700 ms) | rampt linear auf 0 zurück |
+
+Die Lichthupe *vor* dem Ausschwenken ist Absicht: der Ablauf ist Ankündigung, dann erst
+Bewegung, nie beides gleichzeitig — ein Blitzen während des Ausschwenkens wäre eine
+Begleitung und keine Ankündigung.
+
+**Erfolg misst der Fortschritt, nicht die Uhr.** Vorbei ist ein Angreifer, wenn sein
+Streckenfortschritt den des Ziels um `SPICE_PASS_CLEAR` (0,45 Kacheln) übersteigt — nicht
+nach einer festen Zeit. Klappt es innerhalb von `SPICE_PASS_MAX_MS` (5 s) nicht, bricht er
+ab und ordnet sich ein, plus `SPICE_PASS_BLOCK_MS` (6 s) Sperre gegen den nächsten Versuch.
+Ohne diesen Abbruch klebte der Verfolger neben dem Vorausfahrenden, bis die Uhr ablief —
+und genau dort berühren sich zwei Autos am ehesten.
+
+**Die Seite ist die, auf der der andere nicht ist.** Gelesen aus der *gemeldeten Querlage
+des Vorausfahrenden* (`g.querSoll` des anderen Autos), nicht aus der eigenen Ideallinie —
+auf der Geraden ist das dasselbe, in der Kurve nicht.
+
+**Ausweichen ist ein Auftrag, kein Reflex.** Der Angreifer schreibt `yieldSide` /
+`yieldUntil` (`SPICE_ATTACK_MS`, 2600 ms) in das *andere* Auto — der Vorausfahrende weiß
+zu diesem Zeitpunkt noch nicht, dass hinter ihm einer ansetzt. Dieselbe Bauform wie beim
+Boxen-Ausweichen (`pitAusweichenSetzen()`).
+
+**Während eines Manövers ersetzt der Versatz die Ideallinie, er addiert nicht.** Das ist
+die tragende Eigenschaft, und sie ist eine Korrektur: vorher stand der Versatz des
+Angreifers gegen die volle Ideallinie des Vorausfahrenden — dessen `anteilA` war 0, seine
+Linie hatte also VOLLES Gewicht neben dem Ausweichen, und beide Kräfte hoben sich auf.
+Ergebnis: „die Autos haben sich ewig gegenseitig angeschoben." Jetzt gilt bei einer Attacke
+ein Zwei-Stufen-Modell — Angreifer voll auf seine Seite, Vorausfahrender voll auf die
+andere, die MITTE bleibt ausdrücklich leer (zwei Autos auf 25 cm Bahnbreite brauchen beide
+Hälften), und die Ideallinie ist währenddessen nicht abgeschwächt, sondern **gar nicht
+zuständig**.
+
+**Gesperrt ist eine Attacke in eine Haarnadel oder Engstelle hinein**
+(`SPICE_PASS_KEIN_HAARNADEL_VORAUS`, Reichweite 1 Kachel voraus) — ein Versuch dauert bis
+zu 5 s, eine Kachel bei Renntempo rund 0,7 s, wer davor ausholt ist beim Einlenken noch
+daneben. Die Engstelle zählt hier absichtlich wie eine Haarnadel (`tileTightness()`): eng
+ist sie nicht im Radius, sondern in der Breite, und genau dort will man nicht nebeneinander
+liegen. Zusätzlich gesperrt: unter gelber Flagge, und solange man selbst Abstand halten
+muss (`ghostCfg.wuerzeAbstand`, außer während der eigenen Attacke).
+
+**Die Abstandsregel rechnet in Zeit, nicht in Kacheln — und der Grund ist gemessen.** Der
+Kachelabstand hat unterhalb einer Fahrzeuglänge praktisch keine Auflösung: in 276
+Stichproben unter einer Autolänge meldete er in jedem einzelnen Fall genau 1,000. Ein
+Zeitlücken-Sweep (90 s, vier Autos, jeder Wert dreimal gefahren) zeigt, warum das wichtig
+ist:
+
+| Zeitlücke | Überholt/min | Berührungen/min | Anteil Zeit in Berührung |
+|---|---|---|---|
+| 0,35 s | 25,8 | 53,5 | **86 %** |
+| 1,2 s | 22,5 | 32,5 | 61 % |
+
+Bei 0,35 s waren die Autos 86 Prozent der Zeit in Berührung — „kein Rennen mehr, das ist
+ein Schiebehaufen." 1,2 s (der heutige Wert, `SPICE_LUECKE_MIN_S`) senkt die Berührungen
+fast auf die Hälfte und kostet dafür 13 Prozent der Überholmanöver — der Tausch, der
+gewählt wurde.
+
+Zwei Autos brauchen auf jeder Kachel 30,4 Prozent der Bahnbreite (2 × 3,8 cm auf 25 cm).
+Der Ausgangsbefund vor alledem: 7,7 Berührungen pro Minute, engster gemessener
+Längsabstand exakt 0 cm — die Autos überlappten vollständig.
+
+**Wichtig für die Einordnung dieser Zahlen:** sie stammen aus der Rennsimulation
+(„Rennen simulieren" im Entwicklertab), und die ist ausdrücklich „eine Aussage über das
+MODELL, nicht über den Teppich" — kein Byte meldet die wirkliche Querlage eines echten
+Autos. Gemessen wurde vor den Änderungen aus v0.6.31 (Querlage nur in Fahrt); eine erneute
+Messung mit dem aktuellen Stand steht noch aus, dürfte die Größenordnungen aber nicht
+verschieben — die Überholmechanik selbst (`ghostSpice()`) ist von jenem Umbau unberührt
+geblieben.
+
 ### Drift-Modus — und eine Voraussetzung, die nicht stimmte
 
 Das Fahrgefühl hat seit v0.5.18 drei Stellungen statt zweier: **Physik** (Drehmoment, Gänge,
