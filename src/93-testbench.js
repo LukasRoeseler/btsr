@@ -3547,6 +3547,67 @@
       }
     },
 
+    // ---- SAGT DIE FREIE FAHRT IHRE RUNDENZEITEN AN? -----------------------------
+    //
+    // BESTELLT: "Ansagen fuer Rundenzeiten auch machen, wenn ich im Cockpit-Modus freie
+    // Fahrt mache."
+    //
+    // Gefahren wird ueber playerLapCrossed(), also den ECHTEN Weg, den auch eine
+    // Ueberfahrt auf der Bahn nimmt. Ein Prueflauf, der speakLap() direkt riefe, prueefte
+    // die Stimme und nicht die Bedingung, an der es lag.
+    //
+    // Die Stimme wird durch eine Attrappe ersetzt (wie in ansagenFolge) und Date.now()
+    // gefaelscht, damit die Rundenzeiten genau die bestellten sind und nicht die
+    // Ausfuehrungsdauer dieses Prueflaufs.
+    freieRundeProbe(o) {
+      const opt = o || {};
+      const merk = { rs: raceState, rls: raceLapStart, dls: dashLapStart,
+                     dlt: dashLapTimes.slice(), form: raceFormationLap,
+                     sc: sectorCount, ss: sectorStart };
+      const echteNow = Date.now;
+      const echteStimme = window.speechSynthesis;
+      const gesagt = [];
+      let uhr = echteNow.call(Date);
+      try {
+        Object.defineProperty(window, 'speechSynthesis', {
+          configurable: true,
+          value: { cancel() {}, speak(u) { gesagt.push(u.text); } },
+        });
+        Date.now = () => uhr;
+        // KEIN Rennen - genau die Lage, in der bisher nichts gesagt wurde.
+        raceState = opt.raceState || 'idle';
+        raceFormationLap = false;
+        raceLapStart = null;
+        sectorCount = 1;          // keine Sektoren: jede Ueberfahrt ist eine Runde
+        sectorStart = null;
+        dashLapTimes.length = 0;
+        dashLapStart = null;
+
+        const zeiten = opt.zeiten || [9000, 8000, 8500];
+        const folge = [];
+        // Die erste Ueberfahrt setzt nur den Bezug: vorher gibt es keine Rundenzeit.
+        playerLapCrossed();
+        for (const ms of zeiten) {
+          uhr += ms;
+          const vorher = gesagt.length;
+          playerLapCrossed();
+          folge.push({ ms, gesagt: gesagt.length > vorher ? gesagt[gesagt.length - 1] : null });
+        }
+        return { folge, gesagt, runden: dashLapTimes.slice() };
+      } finally {
+        Date.now = echteNow;
+        if (echteStimme) {
+          Object.defineProperty(window, 'speechSynthesis',
+                                { configurable: true, value: echteStimme });
+        } else { delete window.speechSynthesis; }
+        raceState = merk.rs; raceLapStart = merk.rls; raceFormationLap = merk.form;
+        dashLapStart = merk.dls;
+        dashLapTimes.length = 0;
+        merk.dlt.forEach(x => dashLapTimes.push(x));
+        sectorCount = merk.sc; sectorStart = merk.ss;
+      }
+    },
+
     // ---- DAS POSITIONSDIAGRAMM, mit Attrappen in der Garage ----------------------
     //
     // GEMELDET: "Hier sehe ich die schwarze Linie auf schwarzem Hintergrund nicht."

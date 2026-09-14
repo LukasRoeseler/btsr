@@ -7515,6 +7515,70 @@
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
+  // ---- Die freie Fahrt sagt ihre Rundenzeiten an ----
+  //
+  // BESTELLT: "Ansagen fuer Rundenzeiten auch machen, wenn ich im Cockpit-Modus freie Fahrt
+  // mache." Und dazu: "Ton Standardwerte: alle Ansagen an."
+  //
+  // Die Rundenzeit gab es in der freien Fahrt laengst - dashLapTimes wird bei jeder
+  // Ueberfahrt gefuellt. Nur Ton und Stimme hingen am Rennzustand, das Cockpit zeigte die
+  // Zeit also an und sagte nichts dazu.
+  //
+  // GEFAHREN WIRD UEBER playerLapCrossed(), den echten Weg. Ein Prueflauf, der speakLap()
+  // direkt riefe, prueefte die Stimme und nicht die Bedingung, an der es lag.
+  stAdd('Freie Fahrt: Rundenzeiten werden angesagt', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.freieRundeProbe) {
+      return { skip: true, mass: 'freieRundeProbe nicht vorhanden' };
+    }
+    // Absichtlich so gewaehlt, dass die MITTLERE die schnellste ist: damit zeigt sich, ob
+    // die Bestzeit an der Zeit haengt und nicht an der Reihenfolge.
+    const r = OMEGA_TEST.freieRundeProbe({ zeiten: [9000, 8000, 8500] });
+    if (!r) return { skip: true, mass: 'kein Lauf' };
+    const fehler = [];
+    // 1. JEDE RUNDE WIRD ANGESAGT. Das ist die Bestellung.
+    const stumm = r.folge.filter((x) => !x.gesagt);
+    if (stumm.length) fehler.push(stumm.length + ' von ' + r.folge.length + ' Runden stumm');
+    // 2. UND DIE ZEIT STIMMT, nicht irgendein Satz. 9000 ms muessen als 9,0 vorkommen.
+    r.folge.forEach((x) => {
+      const soll = (x.ms / 1000).toFixed(1).replace('.', ',');
+      if (x.gesagt && x.gesagt.indexOf(soll) !== 0) {
+        fehler.push('bei ' + x.ms + ' ms gesagt: "' + x.gesagt + '", erwartet ' + soll);
+      }
+    });
+    // 3. BESTZEIT NUR EINMAL, und zwar bei der schnellsten. Die ERSTE Runde ist NICHT die
+    //    beste - sie ist die einzige, und ein Bestzeit-Ruf beim ersten Mal nimmt ihm die
+    //    Bedeutung fuer alle weiteren. Genau diese Regel gilt im Rennen auch.
+    const besten = r.folge.filter((x) => x.gesagt && /Bestzeit|best lap/i.test(x.gesagt));
+    if (besten.length !== 1) {
+      fehler.push(besten.length + ' Bestzeit-Ansagen statt genau einer');
+    } else if (besten[0].ms !== 8000) {
+      fehler.push('Bestzeit bei ' + besten[0].ms + ' ms statt bei 8000');
+    }
+    return { ok: !fehler.length,
+             mass: r.folge.map((x) => x.ms + ' ms -> ' + (x.gesagt || 'STUMM')).join(' | ')
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
+  // ---- Alle fuenf Ansagen stehen ab Werk an ----
+  //
+  // BESTELLT: "ton standardwerte: alle ansagen an." Vier der fuenf standen aus.
+  stAdd('Ton: alle fuenf Ansagen stehen ab Werk an', () => {
+    const IDS = ['setting-announce', 'setting-announce-damage', 'setting-announce-fuel',
+                 'setting-announce-tyre', 'setting-announce-rain'];
+    const aus = [], fehlt = [];
+    for (const id of IDS) {
+      const el = $(id);
+      if (!el) { fehlt.push(id); continue; }
+      // defaultChecked und nicht checked: gefragt ist die VORGABE aus dem Markup, nicht
+      // der Stand, den der Nutzer in dieser Sitzung eingestellt hat.
+      if (!el.defaultChecked) aus.push(id);
+    }
+    return { ok: !aus.length && !fehlt.length,
+             mass: (IDS.length - aus.length - fehlt.length) + ' von ' + IDS.length + ' an'
+                 + (aus.length ? ' | AUS: ' + aus.join(', ') : '')
+                 + (fehlt.length ? ' | fehlt: ' + fehlt.join(', ') : '') };
+  });
+
   // ---- Jede Linie im Positionsdiagramm hat einen hellen Saum ----
   //
   // GEMELDET: "Positionen Diagramm nach Rennen: hier sehe ich die schwarze Linie auf

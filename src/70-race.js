@@ -1991,6 +1991,30 @@
       // koennte diesen Satz nie treffen.
       else $('race-status').textContent =
         t('Rennen läuft, Runde') + ' ' + raceLapTimes.length;
+    } else if (dashLapTimes.length) {
+      // ---- FREIE FAHRT: dieselbe Rueckmeldung wie im Rennen -----------------------
+      //
+      // BESTELLT: "Ansagen fuer Rundenzeiten auch machen, wenn ich im Cockpit-Modus freie
+      // Fahrt mache."
+      //
+      // DIE ZEIT GAB ES HIER LAENGST: dashLapTimes wird bei JEDER Ueberfahrt gefuellt, ein
+      // paar Zeilen weiter oben, auch ohne Rennen. Nur Ton und Stimme hingen am
+      // Rennzustand - das Cockpit zeigte die Rundenzeit an und sagte nichts dazu.
+      //
+      // DER TON KOMMT MIT, nicht nur die Stimme. Im Rennen sind die zwei ein Paar, und der
+      // Grund steht dort: der Ton ist sofort da, die Stimme braucht eine Sekunde. Nur die
+      // Stimme zu geben hiesse, in der freien Fahrt auf die langsamere der beiden
+      // Rueckmeldungen zu warten.
+      //
+      // BESTZEIT WIRD GEGEN DIE FRUEHEREN gemessen, nicht gegen alle: die gerade gefahrene
+      // Runde steht schon in dashLapTimes, und ein Vergleich mit sich selbst macht jede
+      // Runde zur besten. Genau dieser Fehler ist im Rennzweig darueber ausdruecklich
+      // vermieden, und hier gilt er genauso.
+      const rundeMs = dashLapTimes[dashLapTimes.length - 1];
+      const frueher = dashLapTimes.slice(0, -1);
+      const istBest = frueher.length > 0 && rundeMs < Math.min.apply(null, frueher);
+      playLapChime(istBest);
+      speakLap(rundeMs, istBest);
     }
     return false;
   }
