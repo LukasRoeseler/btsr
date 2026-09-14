@@ -7746,6 +7746,43 @@
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
+  // ---- Der Wind im Regenradar kommt aus einer zufaelligen Richtung ----
+  //
+  // BESTELLT: "Wind im Regenradar aus zufaelliger Richtung kommen lassen (je Rennstart
+  // oder Reload - nicht wechseln waehrend der Simulation)."
+  stAdd('Regenradar: Windrichtung ist zufaellig und bleibt waehrend des Rennens stehen',
+        () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.windRichtungProbe) {
+      return { skip: true, mass: 'windRichtungProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.windRichtungProbe();
+    if (!r) return { skip: true, mass: 'kein Lauf' };
+    const fehler = [];
+    // 1. EINHEITSVEKTOR: sonst waere die Drehung in wxRadarDraw() keine reine Drehung,
+    //    sondern staucht die Regenformen mit.
+    if (!(Math.abs(r.einheitsvektor.min - 1) < 0.001
+          && Math.abs(r.einheitsvektor.max - 1) < 0.001)) {
+      fehler.push('kein Einheitsvektor: ' + r.einheitsvektor.min + ' bis ' + r.einheitsvektor.max);
+    }
+    // 2. WIRKLICH ZUFAELLIG: 20 Wuerfe muessen nicht alle gleich sein. (Ein einzelner
+    //    Treffer waere bei stetiger Verteilung praktisch unmoeglich - das ist keine
+    //    Glueckssache, sondern ein Zeichen, dass gar nicht gewuerfelt wird.)
+    if (!(r.unterschiedlicheRichtungen > 1)) {
+      fehler.push('20 Wuerfe ergaben nur eine Richtung - wird ueberhaupt gewuerfelt?');
+    }
+    // 3. UND STARTRACECOUNTDOWN() WUERFELT NEU. Ohne diesen Aufruf bliebe die Richtung
+    //    ueber die gesamte Sitzung hinweg dieselbe wie beim Laden - "je Reload", aber
+    //    nie "je Rennstart".
+    if (!r.rennstartRuftAuf) {
+      fehler.push('startRaceCountdown() ruft wxWindWuerfeln() nicht auf');
+    }
+    return { ok: !fehler.length,
+             mass: 'Laenge ' + r.einheitsvektor.min + '-' + r.einheitsvektor.max
+                 + ' | ' + r.unterschiedlicheRichtungen + '/' + r.gewuerfelt
+                 + ' Richtungen verschieden | Rennstart wuerfelt neu: ' + r.rennstartRuftAuf
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
   // ---- Ein stehendes Auto rutscht nicht quer ----
   //
   // BESTELLT: "Autos koennen nicht quer hin und herrutschen. Sie sollten sich entsprechend

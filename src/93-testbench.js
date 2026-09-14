@@ -4638,6 +4638,48 @@
       }
     },
 
+    // ---- DIE WINDRICHTUNG IM REGENRADAR ------------------------------------------
+    //
+    // BESTELLT: "Wind im Regenradar aus zufaelliger Richtung kommen lassen (je
+    // Rennstart oder Reload - nicht wechseln waehrend der Simulation)."
+    //
+    // ---- WARUM startRaceCountdown() HIER NICHT WIRKLICH GERUFEN WIRD ---------------
+    //
+    // Es raeumt Tank, Reifen, Rundenhistorie, Schadensanzeige und ein Dutzend anderer
+    // Dinge auf und setzt bei freiem Training sofort raceGreen() in Gang - eine Sonde,
+    // die das voll ausloest, muesste all das wieder herstellen, um einen laufenden
+    // Fahrbetrieb nicht zu verstellen. Kein anderer Prueflauf in dieser Datei ruft die
+    // Funktion direkt, aus genau diesem Grund.
+    //
+    // Gemessen wird deshalb ZWEIGETEILT: die eigentliche neue Logik (wxWindWuerfeln)
+    // direkt und vollstaendig, und die VERDRAHTUNG ("ruft startRaceCountdown sie auf")
+    // ueber den Quelltext der Funktion selbst - schwaecher als ein echter Aufruf, aber
+    // ohne das Risiko, den Zustand einer laufenden Sitzung zu verstellen.
+    windRichtungProbe() {
+      if (typeof wxWindWuerfeln !== 'function' || typeof WX_WIND === 'undefined') return null;
+      const merk = { x: WX_WIND.x, y: WX_WIND.y };
+      try {
+        // ---- 1. Einheitsvektor, ueber mehrere Wuerfe -----------------------------
+        const laengen = [], winkel = new Set();
+        for (let i = 0; i < 20; i++) {
+          wxWindWuerfeln();
+          laengen.push(+Math.hypot(WX_WIND.x, WX_WIND.y).toFixed(6));
+          winkel.add(WX_WIND.x.toFixed(4) + ',' + WX_WIND.y.toFixed(4));
+        }
+        // ---- 2. Verdrahtung: startRaceCountdown() ruft wxWindWuerfeln() ----------
+        const verdrahtet = typeof startRaceCountdown === 'function'
+          && /\bwxWindWuerfeln\s*\(\s*\)/.test(startRaceCountdown.toString());
+        return {
+          einheitsvektor: { min: Math.min(...laengen), max: Math.max(...laengen) },
+          gewuerfelt: laengen.length,
+          unterschiedlicheRichtungen: winkel.size,
+          rennstartRuftAuf: verdrahtet,
+        };
+      } finally {
+        WX_WIND.x = merk.x; WX_WIND.y = merk.y;
+      }
+    },
+
     // ---- WAS DAS STEUERKREUZ IM COCKPIT SCHALTET --------------------------------
     //
     // BESTELLT: "D-Pad oben schaltet Reifentypen durch [...] D-Pad runter schaltet die

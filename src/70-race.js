@@ -957,6 +957,11 @@
     // 'wechsel' ist keine Lage, sondern ein Verlauf: er beginnt trocken. setWeather() mit
     // 'wechsel' zu rufen waere ein Wetter, das es nicht gibt.
     setWeather(raceWxStart === 'rain' ? 'rain' : 'dry');
+    // NEUE WINDRICHTUNG FUER DIESES RENNEN, wie bestellt - je Rennstart neu gewuerfelt,
+    // danach unveraendert bis zum naechsten Start. Vor setWeather() waere auch gegangen;
+    // hier direkt danach steht es, weil beides zur selben "was fuer ein Rennen wird das"-
+    // Ansage am Start gehoert.
+    wxWindWuerfeln();
     fuel = Math.max(0, Math.min(100, raceFuelStartL / FUEL_TANK_LITERS * 100));
     updateDamageFuelUI();
     racePitDone = 0;
@@ -2257,7 +2262,28 @@
   // und mit dem Tempo der weissen Wolken braeuchten sie dafuer vierzehn Sekunden. Auf einem
   // echten Radar ist das ebenso - die Niederschlagsechos ziehen mit der Front, die hohe
   // Wolkendecke steht fast. Die Richtung ist dieselbe.
-  const WX_WIND = { x: 0.86, y: -0.51 };     // Zugrichtung, normiert
+  //
+  // ---- DIE RICHTUNG IST ZUFAELLIG, ABER NICHT WAEHREND DER FAHRT -----------------
+  //
+  // BESTELLT: "Wind im Regenradar aus zufaelliger Richtung kommen lassen (je Rennstart
+  // oder Reload - nicht wechseln waehrend der Simulation)."
+  //
+  // WX_WIND ist ein Einheitsvektor (cos, sin) eines zufaelligen Winkels - wxRadarDraw()
+  // benutzt ihn weiter unten als Drehmatrix, um die Laengs-/Querlage jeder Form (b.l,
+  // b.quer) auf Bildkoordinaten zu drehen. Ihn zu aendern heisst also nur, den Winkel neu
+  // zu wuerfeln; die Formen selbst wissen nichts von "Wind" und brauchen es auch nicht.
+  //
+  // GEWUERFELT WIRD AN GENAU ZWEI STELLEN: einmal hier, beim Laden des Skripts (deckt
+  // "bei Reload"), und ein zweites Mal in startRaceCountdown() (deckt "je Rennstart").
+  // Dazwischen, WAEHREND ein Rennen laeuft, schreibt kein Aufrufer WX_WIND - die Formen
+  // ziehen fuer die gesamte Dauer eines Rennens aus derselben Richtung, wie verlangt.
+  const WX_WIND = { x: 0.86, y: -0.51 };     // Zugrichtung, normiert - Vorgabe vor dem ersten Wurf
+  function wxWindWuerfeln() {
+    const winkel = Math.random() * 2 * Math.PI;
+    WX_WIND.x = Math.cos(winkel);
+    WX_WIND.y = Math.sin(winkel);
+  }
+  wxWindWuerfeln();
   const WX_AUS = 1.25;                        // ab hier ist eine Form aus dem Bild
   const WX_REGEN_V = WX_AUS / WX_RAMP_S;      // damit die erste nach der Rampe in der Mitte ist
   // 0,18 statt 0,34: die Formen sollen sich UEBERLAPPEN. Mit Luecken dazwischen sieht ein

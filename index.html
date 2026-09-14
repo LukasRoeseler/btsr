@@ -8258,7 +8258,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.6.32</span></span>
+    <span class="foot-ver">v<span id="app-version">0.6.33</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -20611,6 +20611,11 @@
     // 'wechsel' ist keine Lage, sondern ein Verlauf: er beginnt trocken. setWeather() mit
     // 'wechsel' zu rufen waere ein Wetter, das es nicht gibt.
     setWeather(raceWxStart === 'rain' ? 'rain' : 'dry');
+    // NEUE WINDRICHTUNG FUER DIESES RENNEN, wie bestellt - je Rennstart neu gewuerfelt,
+    // danach unveraendert bis zum naechsten Start. Vor setWeather() waere auch gegangen;
+    // hier direkt danach steht es, weil beides zur selben "was fuer ein Rennen wird das"-
+    // Ansage am Start gehoert.
+    wxWindWuerfeln();
     fuel = Math.max(0, Math.min(100, raceFuelStartL / FUEL_TANK_LITERS * 100));
     updateDamageFuelUI();
     racePitDone = 0;
@@ -21911,7 +21916,28 @@
   // und mit dem Tempo der weissen Wolken braeuchten sie dafuer vierzehn Sekunden. Auf einem
   // echten Radar ist das ebenso - die Niederschlagsechos ziehen mit der Front, die hohe
   // Wolkendecke steht fast. Die Richtung ist dieselbe.
-  const WX_WIND = { x: 0.86, y: -0.51 };     // Zugrichtung, normiert
+  //
+  // ---- DIE RICHTUNG IST ZUFAELLIG, ABER NICHT WAEHREND DER FAHRT -----------------
+  //
+  // BESTELLT: "Wind im Regenradar aus zufaelliger Richtung kommen lassen (je Rennstart
+  // oder Reload - nicht wechseln waehrend der Simulation)."
+  //
+  // WX_WIND ist ein Einheitsvektor (cos, sin) eines zufaelligen Winkels - wxRadarDraw()
+  // benutzt ihn weiter unten als Drehmatrix, um die Laengs-/Querlage jeder Form (b.l,
+  // b.quer) auf Bildkoordinaten zu drehen. Ihn zu aendern heisst also nur, den Winkel neu
+  // zu wuerfeln; die Formen selbst wissen nichts von "Wind" und brauchen es auch nicht.
+  //
+  // GEWUERFELT WIRD AN GENAU ZWEI STELLEN: einmal hier, beim Laden des Skripts (deckt
+  // "bei Reload"), und ein zweites Mal in startRaceCountdown() (deckt "je Rennstart").
+  // Dazwischen, WAEHREND ein Rennen laeuft, schreibt kein Aufrufer WX_WIND - die Formen
+  // ziehen fuer die gesamte Dauer eines Rennens aus derselben Richtung, wie verlangt.
+  const WX_WIND = { x: 0.86, y: -0.51 };     // Zugrichtung, normiert - Vorgabe vor dem ersten Wurf
+  function wxWindWuerfeln() {
+    const winkel = Math.random() * 2 * Math.PI;
+    WX_WIND.x = Math.cos(winkel);
+    WX_WIND.y = Math.sin(winkel);
+  }
+  wxWindWuerfeln();
   const WX_AUS = 1.25;                        // ab hier ist eine Form aus dem Bild
   const WX_REGEN_V = WX_AUS / WX_RAMP_S;      // damit die erste nach der Rampe in der Mitte ist
   // 0,18 statt 0,34: die Formen sollen sich UEBERLAPPEN. Mit Luecken dazwischen sieht ein
@@ -38646,6 +38672,48 @@
       }
     },
 
+    // ---- DIE WINDRICHTUNG IM REGENRADAR ------------------------------------------
+    //
+    // BESTELLT: "Wind im Regenradar aus zufaelliger Richtung kommen lassen (je
+    // Rennstart oder Reload - nicht wechseln waehrend der Simulation)."
+    //
+    // ---- WARUM startRaceCountdown() HIER NICHT WIRKLICH GERUFEN WIRD ---------------
+    //
+    // Es raeumt Tank, Reifen, Rundenhistorie, Schadensanzeige und ein Dutzend anderer
+    // Dinge auf und setzt bei freiem Training sofort raceGreen() in Gang - eine Sonde,
+    // die das voll ausloest, muesste all das wieder herstellen, um einen laufenden
+    // Fahrbetrieb nicht zu verstellen. Kein anderer Prueflauf in dieser Datei ruft die
+    // Funktion direkt, aus genau diesem Grund.
+    //
+    // Gemessen wird deshalb ZWEIGETEILT: die eigentliche neue Logik (wxWindWuerfeln)
+    // direkt und vollstaendig, und die VERDRAHTUNG ("ruft startRaceCountdown sie auf")
+    // ueber den Quelltext der Funktion selbst - schwaecher als ein echter Aufruf, aber
+    // ohne das Risiko, den Zustand einer laufenden Sitzung zu verstellen.
+    windRichtungProbe() {
+      if (typeof wxWindWuerfeln !== 'function' || typeof WX_WIND === 'undefined') return null;
+      const merk = { x: WX_WIND.x, y: WX_WIND.y };
+      try {
+        // ---- 1. Einheitsvektor, ueber mehrere Wuerfe -----------------------------
+        const laengen = [], winkel = new Set();
+        for (let i = 0; i < 20; i++) {
+          wxWindWuerfeln();
+          laengen.push(+Math.hypot(WX_WIND.x, WX_WIND.y).toFixed(6));
+          winkel.add(WX_WIND.x.toFixed(4) + ',' + WX_WIND.y.toFixed(4));
+        }
+        // ---- 2. Verdrahtung: startRaceCountdown() ruft wxWindWuerfeln() ----------
+        const verdrahtet = typeof startRaceCountdown === 'function'
+          && /\bwxWindWuerfeln\s*\(\s*\)/.test(startRaceCountdown.toString());
+        return {
+          einheitsvektor: { min: Math.min(...laengen), max: Math.max(...laengen) },
+          gewuerfelt: laengen.length,
+          unterschiedlicheRichtungen: winkel.size,
+          rennstartRuftAuf: verdrahtet,
+        };
+      } finally {
+        WX_WIND.x = merk.x; WX_WIND.y = merk.y;
+      }
+    },
+
     // ---- WAS DAS STEUERKREUZ IM COCKPIT SCHALTET --------------------------------
     //
     // BESTELLT: "D-Pad oben schaltet Reifentypen durch [...] D-Pad runter schaltet die
@@ -48035,6 +48103,43 @@
     return { ok: !fehler.length,
              mass: mit.zeilen + ' Sektorzeilen, ' + mit.beste + ' Bestwerte'
                  + ' | bei einem Sektor ' + ohne.zeilen
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
+  // ---- Der Wind im Regenradar kommt aus einer zufaelligen Richtung ----
+  //
+  // BESTELLT: "Wind im Regenradar aus zufaelliger Richtung kommen lassen (je Rennstart
+  // oder Reload - nicht wechseln waehrend der Simulation)."
+  stAdd('Regenradar: Windrichtung ist zufaellig und bleibt waehrend des Rennens stehen',
+        () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.windRichtungProbe) {
+      return { skip: true, mass: 'windRichtungProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.windRichtungProbe();
+    if (!r) return { skip: true, mass: 'kein Lauf' };
+    const fehler = [];
+    // 1. EINHEITSVEKTOR: sonst waere die Drehung in wxRadarDraw() keine reine Drehung,
+    //    sondern staucht die Regenformen mit.
+    if (!(Math.abs(r.einheitsvektor.min - 1) < 0.001
+          && Math.abs(r.einheitsvektor.max - 1) < 0.001)) {
+      fehler.push('kein Einheitsvektor: ' + r.einheitsvektor.min + ' bis ' + r.einheitsvektor.max);
+    }
+    // 2. WIRKLICH ZUFAELLIG: 20 Wuerfe muessen nicht alle gleich sein. (Ein einzelner
+    //    Treffer waere bei stetiger Verteilung praktisch unmoeglich - das ist keine
+    //    Glueckssache, sondern ein Zeichen, dass gar nicht gewuerfelt wird.)
+    if (!(r.unterschiedlicheRichtungen > 1)) {
+      fehler.push('20 Wuerfe ergaben nur eine Richtung - wird ueberhaupt gewuerfelt?');
+    }
+    // 3. UND STARTRACECOUNTDOWN() WUERFELT NEU. Ohne diesen Aufruf bliebe die Richtung
+    //    ueber die gesamte Sitzung hinweg dieselbe wie beim Laden - "je Reload", aber
+    //    nie "je Rennstart".
+    if (!r.rennstartRuftAuf) {
+      fehler.push('startRaceCountdown() ruft wxWindWuerfeln() nicht auf');
+    }
+    return { ok: !fehler.length,
+             mass: 'Laenge ' + r.einheitsvektor.min + '-' + r.einheitsvektor.max
+                 + ' | ' + r.unterschiedlicheRichtungen + '/' + r.gewuerfelt
+                 + ' Richtungen verschieden | Rennstart wuerfelt neu: ' + r.rennstartRuftAuf
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
