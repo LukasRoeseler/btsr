@@ -7523,6 +7523,47 @@
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
+  // ---- Sektorzeiten stehen je Runde in der Zeitentabelle ----
+  //
+  // BESTELLT: "Bei mehreren Sektoren die Sub-Zeiten (also Zeit je Sektor) im Zeiten-Screen
+  // anzeigen."
+  //
+  // NUR FUER DAS FAHRERAUTO, und das ist keine Sparmassnahme: sectorCrossed() haengt an
+  // playerLapCrossed(), die Sektorzeiten existieren also ausschliesslich fuer den Fahrer.
+  // Fuer einen Ghost eine Spalte zu zeichnen, die immer leer bliebe, waere eine Zusage, die
+  // die Messung nicht deckt.
+  //
+  // Geprueft ueber den ECHTEN Zeichenweg (renderRaceResults schreibt ins Dokument), nicht
+  // ueber eine nachgebaute Zeichenkette.
+  stAdd('Zeitentabelle: Sektorzeiten je Runde, Bestwerte hervorgehoben', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.sektorTabelleProbe) {
+      return { skip: true, mass: 'sektorTabelleProbe nicht vorhanden' };
+    }
+    // S1 am besten in Runde 1, S2 in Runde 2, S3 in Runde 1 - drei Bestwerte, verteilt.
+    // Alle drei in EINER Runde waere auch mit einer Regel "die schnellste Runde markieren"
+    // gruen, und das ist eine andere Aussage.
+    const runden = [[3000, 4000, 5000], [3100, 3800, 5200]];
+    const mit = OMEGA_TEST.sektorTabelleProbe({ sektoren: 3, runden });
+    const ohne = OMEGA_TEST.sektorTabelleProbe({ sektoren: 1, runden });
+    if (!mit || !ohne) return { skip: true, mass: 'kein Lauf' };
+    const fehler = [];
+    // 1. JEDE RUNDE BEKOMMT IHRE SEKTORZEILE.
+    if (mit.zeilen !== runden.length) {
+      fehler.push(mit.zeilen + ' Sektorzeilen auf ' + runden.length + ' Runden');
+    }
+    // 2. DIE BESTE ZEIT JE SEKTOR IST HERVORGEHOBEN - genau eine je Sektor. Das ist die
+    //    Zahl, wegen der man Sektorzeiten ansieht: sie sagt, WO die Runde verloren ging.
+    if (mit.beste !== 3) fehler.push(mit.beste + ' Bestwerte hervorgehoben statt 3');
+    // 3. BEI EINEM SEKTOR GIBT ES KEINE - "bei mehreren Sektoren" war die Bedingung, und
+    //    ein einzelner Sektor ist die Runde selbst. Ohne diese Zeile waere der Test auch
+    //    dann gruen, wenn die Zeile immer erschiene.
+    if (ohne.zeilen !== 0) fehler.push('bei einem Sektor trotzdem ' + ohne.zeilen + ' Zeilen');
+    return { ok: !fehler.length,
+             mass: mit.zeilen + ' Sektorzeilen, ' + mit.beste + ' Bestwerte'
+                 + ' | bei einem Sektor ' + ohne.zeilen
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
   // ---- Boxenstopp: erst eine Sekunde am Rand FAHREN, dann bremsen ----
   //
   // GEMELDET: "Anhalten fuer Pitstop bei Ghosts ist immernoch mitten auf der Strecke und

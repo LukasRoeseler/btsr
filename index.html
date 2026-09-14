@@ -7960,7 +7960,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.6.8</span></span>
+    <span class="foot-ver">v<span id="app-version">0.6.9</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -19440,12 +19440,53 @@
     const detail = $('race-results-laps');
     if (detail) {
       const maxLaps = Math.max(...cars.map(c => c.laps.length));
+      // ---- DIE SEKTORZEITEN JE RUNDE, wenn es mehrere Sektoren gibt ----------------
+      //
+      // BESTELLT: "Bei mehreren Sektoren die Sub-Zeiten (also Zeit je Sektor) im
+      // Zeiten-Screen anzeigen."
+      //
+      // NUR FUER DAS FAHRERAUTO, und das ist keine Sparmassnahme: sectorCrossed() haengt an
+      // playerLapCrossed(), die Sektorzeiten existieren also ausschliesslich fuer den
+      // Fahrer. Fuer einen Ghost eine Spalte zu zeichnen, die immer leer bliebe, waere eine
+      // Zusage, die die Messung nicht deckt.
+      //
+      // Die beste je gefahrene Zeit JE SEKTOR wird mitgerechnet und hervorgehoben - das ist
+      // die Zahl, wegen der man Sektorzeiten ueberhaupt ansieht: sie sagt, WO eine Runde
+      // verloren ging, und nicht nur dass sie es tat.
+      const mehrere = typeof sectorCount === 'number' && sectorCount > 1
+                      && sectorHistory.length > 0;
+      const besteS = [];
+      if (mehrere) {
+        for (let i = 0; i < sectorCount; i++) {
+          const werte = sectorHistory.map((r) => r[i]).filter((v) => v !== undefined);
+          besteS.push(werte.length ? Math.min.apply(null, werte) : null);
+        }
+      }
+      // Welche Spalte ist der Fahrer? Ueber die Rolle und nicht ueber den Namen - ein Auto
+      // mit dem Namen "Fahrer" waere sonst genug, um die Zeiten der falschen Spalte
+      // unterzuschieben.
+      const spielerIdx = cars.findIndex((c) => c.role !== 'ghost');
+      const sektorZeile = (k) => {
+        if (!mehrere || spielerIdx < 0) return '';
+        const r = sectorHistory[k];
+        if (!r || !r.length) return '';
+        const stuecke = r.map((ms, i) => {
+          const best = besteS[i] !== null && ms === besteS[i];
+          return '<span style="' + (best ? 'color:var(--good); font-weight:700' : '')
+               + '">S' + (i + 1) + ' ' + formatLapTime(ms) + '</span>';
+        }).join(' · ');
+        return '<div class="muted" style="font-size:11px; margin-top:2px">'
+             + stuecke + '</div>';
+      };
       const head = '<tr style="background:var(--panel-2)"><th style="' + td + '">Runde</th>'
         + cars.map(c => `<th style="${tdr}">${ergDot(c)}${c.name}</th>`).join('') + '</tr>';
       let body = '';
       for (let k = 0; k < maxLaps; k++) {
         body += `<tr><td style="${td}">${k + 1}</td>`
-          + cars.map(c => `<td style="${tdr}">${c.laps[k] ? formatLapTime(c.laps[k].ms) : '–'}</td>`).join('')
+          + cars.map((c, ci) => `<td style="${tdr}">`
+              + (c.laps[k] ? formatLapTime(c.laps[k].ms) : '–')
+              + (ci === spielerIdx ? sektorZeile(k) : '')
+              + '</td>').join('')
           + '</tr>';
       }
       detail.innerHTML = head + body;
@@ -36438,6 +36479,57 @@
       }
     },
 
+    // ---- DIE SEKTORZEITEN IN DER RUNDENTABELLE ----------------------------------
+    //
+    // BESTELLT: "Bei mehreren Sektoren die Sub-Zeiten (also Zeit je Sektor) im Zeiten-Screen
+    // anzeigen."
+    //
+    // Wie beim Positionsdiagramm ueber den ECHTEN Zeichenweg: Attrappen in die Garage,
+    // sectorHistory gefuellt, renderRaceResults() schreibt die Tabelle ins Dokument. Und
+    // wie dort wird der vorige Inhalt zurueckgelegt und nicht neu gezeichnet - ein
+    // Messaufruf darf nichts hinterlassen.
+    sektorTabelleProbe(o) {
+      const opt = o || {};
+      const merkGarage = garage.slice();
+      const merkSc = sectorCount;
+      const merkSh = sectorHistory.slice();
+      const wirt = $('race-results-laps');
+      const wirt2 = $('race-results-body');
+      const merkHtml = wirt ? wirt.innerHTML : null;
+      const merkHtml2 = wirt2 ? wirt2.innerHTML : null;
+      try {
+        garage.length = 0;
+        // Ein Fahrerauto und ein Ghost - damit sich zeigt, dass die Splits NUR in der
+        // Fahrerspalte stehen.
+        const runden = opt.runden || [[3000, 4000, 5000], [3100, 3800, 5200]];
+        const mk = (rolle, alias, cid, ms) => ({
+          device: { id: 'sonde-' + alias, name: alias }, alias, role: rolle, colorId: cid,
+          race: { laps: ms.map((x, i) => ({ lap: i + 1, ms: x })) },
+        });
+        garage.push(mk('steuern', 'Fahrer', 'rot', runden.map((r) => r.reduce((a, b) => a + b, 0))));
+        garage.push(mk('ghost', 'G1', 'blau', [12100, 12300]));
+        sectorCount = opt.sektoren === undefined ? 3 : opt.sektoren;
+        sectorHistory.length = 0;
+        runden.forEach((r) => sectorHistory.push(r.slice()));
+        renderRaceResults();
+        const html = wirt ? wirt.innerHTML : '';
+        // Ausgezaehlt: wie viele Zellen tragen eine Sektorzeile, und wie viele Bestwerte
+        // sind hervorgehoben.
+        const zeilen = (html.match(/S1 /g) || []).length;
+        const beste = (html.match(/color:var\(--good\); font-weight:700">S/g) || []).length;
+        return { zeilen, beste, laenge: html.length,
+                 html: opt.html ? html : null };
+      } finally {
+        garage.length = 0;
+        merkGarage.forEach((c) => garage.push(c));
+        sectorCount = merkSc;
+        sectorHistory.length = 0;
+        merkSh.forEach((x) => sectorHistory.push(x));
+        if (wirt) wirt.innerHTML = merkHtml === null ? '' : merkHtml;
+        if (wirt2) wirt2.innerHTML = merkHtml2 === null ? '' : merkHtml2;
+      }
+    },
+
     // ---- DAS POSITIONSDIAGRAMM, mit Attrappen in der Garage ----------------------
     //
     // GEMELDET: "Hier sehe ich die schwarze Linie auf schwarzem Hintergrund nicht."
@@ -45417,6 +45509,47 @@
     }
     return { ok: !fehler.length,
              mass: 'aus=' + r.aus + ', an=' + r.an + ', aus+gelb=' + r.trotzAus
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
+  // ---- Sektorzeiten stehen je Runde in der Zeitentabelle ----
+  //
+  // BESTELLT: "Bei mehreren Sektoren die Sub-Zeiten (also Zeit je Sektor) im Zeiten-Screen
+  // anzeigen."
+  //
+  // NUR FUER DAS FAHRERAUTO, und das ist keine Sparmassnahme: sectorCrossed() haengt an
+  // playerLapCrossed(), die Sektorzeiten existieren also ausschliesslich fuer den Fahrer.
+  // Fuer einen Ghost eine Spalte zu zeichnen, die immer leer bliebe, waere eine Zusage, die
+  // die Messung nicht deckt.
+  //
+  // Geprueft ueber den ECHTEN Zeichenweg (renderRaceResults schreibt ins Dokument), nicht
+  // ueber eine nachgebaute Zeichenkette.
+  stAdd('Zeitentabelle: Sektorzeiten je Runde, Bestwerte hervorgehoben', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.sektorTabelleProbe) {
+      return { skip: true, mass: 'sektorTabelleProbe nicht vorhanden' };
+    }
+    // S1 am besten in Runde 1, S2 in Runde 2, S3 in Runde 1 - drei Bestwerte, verteilt.
+    // Alle drei in EINER Runde waere auch mit einer Regel "die schnellste Runde markieren"
+    // gruen, und das ist eine andere Aussage.
+    const runden = [[3000, 4000, 5000], [3100, 3800, 5200]];
+    const mit = OMEGA_TEST.sektorTabelleProbe({ sektoren: 3, runden });
+    const ohne = OMEGA_TEST.sektorTabelleProbe({ sektoren: 1, runden });
+    if (!mit || !ohne) return { skip: true, mass: 'kein Lauf' };
+    const fehler = [];
+    // 1. JEDE RUNDE BEKOMMT IHRE SEKTORZEILE.
+    if (mit.zeilen !== runden.length) {
+      fehler.push(mit.zeilen + ' Sektorzeilen auf ' + runden.length + ' Runden');
+    }
+    // 2. DIE BESTE ZEIT JE SEKTOR IST HERVORGEHOBEN - genau eine je Sektor. Das ist die
+    //    Zahl, wegen der man Sektorzeiten ansieht: sie sagt, WO die Runde verloren ging.
+    if (mit.beste !== 3) fehler.push(mit.beste + ' Bestwerte hervorgehoben statt 3');
+    // 3. BEI EINEM SEKTOR GIBT ES KEINE - "bei mehreren Sektoren" war die Bedingung, und
+    //    ein einzelner Sektor ist die Runde selbst. Ohne diese Zeile waere der Test auch
+    //    dann gruen, wenn die Zeile immer erschiene.
+    if (ohne.zeilen !== 0) fehler.push('bei einem Sektor trotzdem ' + ohne.zeilen + ' Zeilen');
+    return { ok: !fehler.length,
+             mass: mit.zeilen + ' Sektorzeilen, ' + mit.beste + ' Bestwerte'
+                 + ' | bei einem Sektor ' + ohne.zeilen
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 

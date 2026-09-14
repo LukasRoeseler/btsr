@@ -600,12 +600,53 @@
     const detail = $('race-results-laps');
     if (detail) {
       const maxLaps = Math.max(...cars.map(c => c.laps.length));
+      // ---- DIE SEKTORZEITEN JE RUNDE, wenn es mehrere Sektoren gibt ----------------
+      //
+      // BESTELLT: "Bei mehreren Sektoren die Sub-Zeiten (also Zeit je Sektor) im
+      // Zeiten-Screen anzeigen."
+      //
+      // NUR FUER DAS FAHRERAUTO, und das ist keine Sparmassnahme: sectorCrossed() haengt an
+      // playerLapCrossed(), die Sektorzeiten existieren also ausschliesslich fuer den
+      // Fahrer. Fuer einen Ghost eine Spalte zu zeichnen, die immer leer bliebe, waere eine
+      // Zusage, die die Messung nicht deckt.
+      //
+      // Die beste je gefahrene Zeit JE SEKTOR wird mitgerechnet und hervorgehoben - das ist
+      // die Zahl, wegen der man Sektorzeiten ueberhaupt ansieht: sie sagt, WO eine Runde
+      // verloren ging, und nicht nur dass sie es tat.
+      const mehrere = typeof sectorCount === 'number' && sectorCount > 1
+                      && sectorHistory.length > 0;
+      const besteS = [];
+      if (mehrere) {
+        for (let i = 0; i < sectorCount; i++) {
+          const werte = sectorHistory.map((r) => r[i]).filter((v) => v !== undefined);
+          besteS.push(werte.length ? Math.min.apply(null, werte) : null);
+        }
+      }
+      // Welche Spalte ist der Fahrer? Ueber die Rolle und nicht ueber den Namen - ein Auto
+      // mit dem Namen "Fahrer" waere sonst genug, um die Zeiten der falschen Spalte
+      // unterzuschieben.
+      const spielerIdx = cars.findIndex((c) => c.role !== 'ghost');
+      const sektorZeile = (k) => {
+        if (!mehrere || spielerIdx < 0) return '';
+        const r = sectorHistory[k];
+        if (!r || !r.length) return '';
+        const stuecke = r.map((ms, i) => {
+          const best = besteS[i] !== null && ms === besteS[i];
+          return '<span style="' + (best ? 'color:var(--good); font-weight:700' : '')
+               + '">S' + (i + 1) + ' ' + formatLapTime(ms) + '</span>';
+        }).join(' · ');
+        return '<div class="muted" style="font-size:11px; margin-top:2px">'
+             + stuecke + '</div>';
+      };
       const head = '<tr style="background:var(--panel-2)"><th style="' + td + '">Runde</th>'
         + cars.map(c => `<th style="${tdr}">${ergDot(c)}${c.name}</th>`).join('') + '</tr>';
       let body = '';
       for (let k = 0; k < maxLaps; k++) {
         body += `<tr><td style="${td}">${k + 1}</td>`
-          + cars.map(c => `<td style="${tdr}">${c.laps[k] ? formatLapTime(c.laps[k].ms) : '–'}</td>`).join('')
+          + cars.map((c, ci) => `<td style="${tdr}">`
+              + (c.laps[k] ? formatLapTime(c.laps[k].ms) : '–')
+              + (ci === spielerIdx ? sektorZeile(k) : '')
+              + '</td>').join('')
           + '</tr>';
       }
       detail.innerHTML = head + body;

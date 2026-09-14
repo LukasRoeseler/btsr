@@ -3818,6 +3818,57 @@
       }
     },
 
+    // ---- DIE SEKTORZEITEN IN DER RUNDENTABELLE ----------------------------------
+    //
+    // BESTELLT: "Bei mehreren Sektoren die Sub-Zeiten (also Zeit je Sektor) im Zeiten-Screen
+    // anzeigen."
+    //
+    // Wie beim Positionsdiagramm ueber den ECHTEN Zeichenweg: Attrappen in die Garage,
+    // sectorHistory gefuellt, renderRaceResults() schreibt die Tabelle ins Dokument. Und
+    // wie dort wird der vorige Inhalt zurueckgelegt und nicht neu gezeichnet - ein
+    // Messaufruf darf nichts hinterlassen.
+    sektorTabelleProbe(o) {
+      const opt = o || {};
+      const merkGarage = garage.slice();
+      const merkSc = sectorCount;
+      const merkSh = sectorHistory.slice();
+      const wirt = $('race-results-laps');
+      const wirt2 = $('race-results-body');
+      const merkHtml = wirt ? wirt.innerHTML : null;
+      const merkHtml2 = wirt2 ? wirt2.innerHTML : null;
+      try {
+        garage.length = 0;
+        // Ein Fahrerauto und ein Ghost - damit sich zeigt, dass die Splits NUR in der
+        // Fahrerspalte stehen.
+        const runden = opt.runden || [[3000, 4000, 5000], [3100, 3800, 5200]];
+        const mk = (rolle, alias, cid, ms) => ({
+          device: { id: 'sonde-' + alias, name: alias }, alias, role: rolle, colorId: cid,
+          race: { laps: ms.map((x, i) => ({ lap: i + 1, ms: x })) },
+        });
+        garage.push(mk('steuern', 'Fahrer', 'rot', runden.map((r) => r.reduce((a, b) => a + b, 0))));
+        garage.push(mk('ghost', 'G1', 'blau', [12100, 12300]));
+        sectorCount = opt.sektoren === undefined ? 3 : opt.sektoren;
+        sectorHistory.length = 0;
+        runden.forEach((r) => sectorHistory.push(r.slice()));
+        renderRaceResults();
+        const html = wirt ? wirt.innerHTML : '';
+        // Ausgezaehlt: wie viele Zellen tragen eine Sektorzeile, und wie viele Bestwerte
+        // sind hervorgehoben.
+        const zeilen = (html.match(/S1 /g) || []).length;
+        const beste = (html.match(/color:var\(--good\); font-weight:700">S/g) || []).length;
+        return { zeilen, beste, laenge: html.length,
+                 html: opt.html ? html : null };
+      } finally {
+        garage.length = 0;
+        merkGarage.forEach((c) => garage.push(c));
+        sectorCount = merkSc;
+        sectorHistory.length = 0;
+        merkSh.forEach((x) => sectorHistory.push(x));
+        if (wirt) wirt.innerHTML = merkHtml === null ? '' : merkHtml;
+        if (wirt2) wirt2.innerHTML = merkHtml2 === null ? '' : merkHtml2;
+      }
+    },
+
     // ---- DAS POSITIONSDIAGRAMM, mit Attrappen in der Garage ----------------------
     //
     // GEMELDET: "Hier sehe ich die schwarze Linie auf schwarzem Hintergrund nicht."
