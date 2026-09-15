@@ -661,10 +661,13 @@ herausgekommen, die ohne den Modus nicht aufgefallen wären.
 | Motorstimme | ja | ein zweiter Ablageort, **geteilte** Puffer, eigene Stereoseite |
 | Rundenzählung, Rangliste, CSV | ja | **nichts.** Lief schon je Auto, für jedes verbundene |
 | eigener Cockpit-Schirm | ja | ein Registry-Eintrag plus Malfunktion |
-| Boxenstopp (Tanken, Reparatur, Reifen) | nein | eigenes Vorhaben: 27 Größen, 633 Fundstellen |
-| Ampel, Flaggen, Einführungsrunde | nein | eigenes Vorhaben: ein Rennen für zwei Menschen |
-| Motorton-Zusatzkette, Doppler | nein | ein Bus mit 15 Feldern; der Doppler gehört zur Runde von Auto 1 |
-| Aufnahme, die drei Rundenzeiten im Cockpit | nein | gehören Auto 1; Auto 2 hat sie auf seinem Schirm |
+| gelbe Flagge, Einführungsrunde | ja | `autopilotGrund()` war schon global; ein Regler und ein Kolonnen-Halter je Auto |
+| Boxenstopp: tanken, reparieren | ja | eine **schmale** eigene Maschine, gut 120 Zeilen |
+| Boxenstopp: Vorwahl, Reifenwechsel | nein | Vorwahl ist der Boxenschirm; die Reifenwahl ist global |
+| Motorton-Zusatzkette | nein | 75 Fundstellen auf einem Bus mit 15 Feldern — siehe unten |
+| Doppler | nein | gehört zur Runde von Auto 1 |
+| Aufnahme | nein | zwei Spuren in einer Datei wären ein anderes Dateiformat |
+| die drei Rundenzeiten im Cockpit | nein | gehören Auto 1; Auto 2 hat seine auf seinem Schirm |
 
 **Zwei Fehler in meiner Aufwandsschätzung, und beide in dieselbe Richtung.** Die Ortung galt
 als klein und war es; die *Rundenzählung* galt als der größte Posten und kostete gar nichts.
@@ -742,6 +745,13 @@ ausgeliefert) und auf jetzt.
 **Auf beiden Ständen identisch**, jede Zahl. Und bei eingeschaltetem Modus ohne zugeteiltes
 Auto 2 ebenfalls — der Schalter allein ändert die Ghost-Rechnung nicht.
 
+Nachgemessen nach **allen** Etappen (v0.6.54, also inklusive gelber Flagge und Boxenstopp):
+dieselben drei Saaten, dieselben Zahlen, dieselbe Zahl der Würfe. Eine Warnung aus eigener
+Erfahrung dabei: beim zweiten Durchgang schien Saat 4711 abzuweichen (85 Würfe statt 72), und
+das war ein Fehler in **meiner** Messung, nicht im Code — ich hatte 60 statt 45 Sekunden
+gefahren. Wer diesen Vergleich wiederholt, muss jede Option gleich setzen; ein Parameter
+daneben sieht genauso aus wie eine Regression.
+
 Die **Zahl der Würfe** ist dabei die scharfste Aussage: hätte der Umbau irgendwo einen
 zusätzlichen `Math.random()`-Aufruf eingebaut, wäre die ganze Folge verschoben und jede Zahl
 danach anders. 81 gegen 81 heißt: kein einziger dazugekommen.
@@ -781,6 +791,19 @@ Gemessen an den Web-Audio-Knoten, Motor `p992gt3r` mit vier Leistungsbändern:
 Die Überblendung wandert also mit der Drehzahl, und die Gewichte summieren auf 1 — sonst hätte
 die Lautstärke ein Loch oder eine Beule im Band. **Wie es klingt, entscheidet der Teppich**;
 das ist keine Zusicherung dieser Messung.
+
+**Was Auto 2 am Ton noch fehlt, und was es kosten würde.** Die Zusatzkette — Turbopfeifen,
+Knaller beim Schalten, das Pulsen am Begrenzer und der lastabhängige Tiefpass — hängt an
+*einem* Bus: `xs` mit 15 Feldern, ein Knotenbaum von acht Web-Audio-Knoten, und **75
+Fundstellen** von `xs.` über die Datei verteilt. Die Rechnung selbst (`extrasWerte`) ist schon
+knotenfrei und ließe sich auf einen Halter parametrisieren; der Bus, `xKnall()` und
+`xAbblasen()` müssten es ebenfalls.
+
+Das ist vom Umfang der Sample-Motor-Umbau noch einmal, nur breiter gestreut — und der Nutzen
+ist der kleinste aller offenen Punkte: Auto 2 hat seinen Motorton mit Stereotrennung, es
+fehlen die Verzierungen. Das Risiko trifft dabei den Ton von **Auto 1**. Solange die Vorgabe
+"ein Auto mit Ghosts muss bleiben, was es war" gilt, ist das der falsche Tausch; hier steht
+die Zahl, damit die Entscheidung nicht neu geschätzt werden muss.
 
 **Beim Messen von Web Audio: warten.** Alle Verstellungen laufen über `setTargetAtTime()`,
 also über eine Rampe. `AudioParam.value` gleich danach gelesen ist noch der *alte* Wert — der
