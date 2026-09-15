@@ -1192,3 +1192,43 @@ Schlüssel waren Layout und Linienmodell — die **Fahrgrenzen** fehlten, obwohl
 ihnen hängt. Wer in der Werkstatt Antrieb, Reifen oder Masse wechselte, bekam weiter die
 Rundenzeit des alten Fahrzeugs angezeigt. Eine Kennung der vier Werte im Schlüssel heilt das
 von selbst.
+
+### Wie genau die Kennzahlensonde ist — und was daraus folgt
+
+Die Rennsimulation zählt Berührungen und Überholmanöver, und seit v0.6.36 holt eine Sonde
+diese Zahlen ab. Bevor man Abstimmungen darauf stützt, muss man wissen, wie genau sie sind.
+Gemessen wurde das direkt: **drei identische Einstellungen**, je vier Läufe von 90 s, fünf
+Autos.
+
+| Variante | Ber./min | Überh./min | Ber. je Überh. | Feld-Spanne | Runde |
+|---|---|---|---|---|---|
+| A (Vorgabe) | 29,3 | 17,3 | 1,67 | 0,356 s | 12,26 s |
+| B (Vorgabe) | 21,5 | 17,4 | 1,39 | 0,327 s | 12,23 s |
+| C (Vorgabe) | 20,8 | 20,2 | 1,05 | 0,310 s | 12,21 s |
+| **Spanne** | **8,5 (41 %)** | **2,9 (17 %)** | **0,62 (48 %)** | **0,046 (13 %)** | **0,055 (0,4 %)** |
+
+Das ist unbequem und wichtig:
+
+* **Rundenzeit** rauscht mit 0,4 %. Das ist die einzige Zahl, mit der man einen Unterschied
+  von wenigen Prozent belegen kann.
+* **Feld-Spanne** (Streuung der mittleren Rundenzeit *zwischen* den Autos) rauscht mit 13 %
+  — brauchbar für Unterschiede ab etwa einem Drittel.
+* **Überholmanöver** rauschen mit 17 %, **Berührungen** mit 41 %, und **Berührungen je
+  Überholmanöver** mit 48 % — als Quotient zweier rauschender Zahlen am meisten, obwohl sie
+  sich am klügsten liest.
+
+**Einmal selbst darauf hereingefallen:** mit drei Läufen sah der Windschatten wie +35 %
+Überholmanöver bei gleichen Berührungen aus (14,0 → 18,9). Mit **sechs** Läufen war der
+Unterschied exakt null (17,25 gegen 17,22). Fast wäre daraus eine geänderte Vorgabe geworden.
+
+Die Regel, die daraus folgt: eine Aussage über Berührungen oder Überholmanöver braucht
+entweder einen **Faktor** — wie der Abstandhalter mit 9,7 oder das Tempoprofil mit +57 %
+Rundenzeit — oder viel mehr Läufe, als sich bezahlen lassen. Für alles Feinere ist die
+Rundenzeit die Zahl, und wo die nichts sagt, sagt die Sonde nichts.
+
+Deshalb ist **keine** Vorgabe der Ghost-Schalter geändert worden. Gemessen wurden alle neun
+einzeln; keiner zeigte einen Vorteil außerhalb des Rauschens, und eine Vorgabe nach Gefühl
+zu ändern wäre genau das, was diese Sonde verhindern soll. Was bleibt, sind Schalter mit
+ehrlichen Hilfetexten — und drei Befunde, die groß genug waren, um zu zählen: der
+Abstandhalter (Faktor 9,7 auf die Berührungen), das Tempoprofil als Tempogrenze (+57 %
+Rundenzeit, deshalb verworfen) und der Fahrercharakter (Feld-Spanne 0,12 → 0,27 s).

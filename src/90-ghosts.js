@@ -3877,9 +3877,21 @@
   // einer schon gemessenen Entscheidung - seit v0.5.44 haengt die Erlaubnis ausdruecklich
   // NICHT an der Kachelart, sondern am freien Platz, und genau aus diesem Grund.
   //
-  // Die Seitenwache dagegen bleibt: gleiche Beruehrungen, 40 Prozent MEHR
-  // Ueberholmanoever, 30 Prozent weniger Beruehrungen je Manoever. Sie unterdrueckt nicht,
-  // sie lenkt um - der Angreifer geht auf die freie Seite statt in den Abbruch.
+  // Die Seitenwache dagegen bleibt, und ihre Zahlen sahen gut aus: gleiche Beruehrungen,
+  // 40 Prozent mehr Ueberholmanoever, 30 Prozent weniger Beruehrungen je Manoever.
+  //
+  // NACHTRAG, UND ER GEHOERT DAZU: das Rauschen dieser Sonde ist spaeter gemessen worden
+  // (drei IDENTISCHE Einstellungen, siehe ghostSweep in 93-testbench.js) und liegt bei 41
+  // Prozent auf den Beruehrungen und 17 Prozent auf den Ueberholmanoevern. Die 40 Prozent
+  // oben sind damit NICHT belegt - sie liegen in derselben Groesse wie der Unterschied
+  // zweier gleicher Laeufe.
+  //
+  // Die Wache bleibt trotzdem, und zwar aus dem Grund, der keine Messung braucht: in eine
+  // Seite hineinzuschwenken, auf der schon ein Auto liegt, ist falsch, egal was die Statistik
+  // dazu sagt. Belegt ist der MECHANISMUS durch den Selbsttest ("eine belegte Seite gilt als
+  // belegt"), nicht die Rate. Die Gelegenheitsrechnung ist dagegen um einen FAKTOR
+  // eingebrochen (17,6 auf 3,3 Beruehrungen bei 7,8 auf 1,8 Ueberholmanoevern) - das liegt
+  // weit ausserhalb des Rauschens und bleibt ein gueltiger Befund.
 
   // ====================================================================================
   // VERTEIDIGEN, UND ZWAR EINMAL

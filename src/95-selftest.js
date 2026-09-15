@@ -7162,8 +7162,14 @@
   // AUSSEN, also auf die Gegenseite der naechsten Kurve.
   //
   // Gemessen in der Kennzahlensonde, vier Autos, 120 s, je drei Laeufe: Ueberholmanoever
-  // 12,7 -> 15,3 je Minute (+21 %), Beruehrungen 15,7 -> 19,7, Rundenzeit 12,18 -> 12,56 s.
-  // Aus dem Fehler wird also wirklich eine Gelegenheit.
+  // 12,7 -> 15,3 je Minute, Beruehrungen 15,7 -> 19,7, Rundenzeit 12,18 -> 12,56 s.
+  //
+  // WAS DAVON BELEGT IST: die RUNDENZEIT. Sie rauscht mit 0,4 Prozent, der Unterschied
+  // betraegt 3 Prozent - ein Fehler kostet also messbar Zeit. Die +21 Prozent
+  // Ueberholmanoever liegen dagegen im Rauschen (17 Prozent) und sind ein Hinweis. Dass aus
+  // dem Fehler eine Gelegenheit wird, ist damit plausibel und nicht bewiesen; belegt ist
+  // hier nur, DASS der Querausschlag entsteht - und das ist die Frage, die ein Selbsttest
+  // ueberhaupt beantworten kann.
   stAdd('Fehler: kostet Tempo und traegt nach aussen', () => {
     if (!window.OMEGA_TEST || !OMEGA_TEST.fehlerProbe) {
       return { skip: true, mass: 'fehlerProbe nicht vorhanden' };
@@ -7249,8 +7255,13 @@
   // die andere (weicht).
   //
   // Gemessen, vier Autos, 90 s, je drei Laeufe: Beruehrungen 16,0 -> 14,2, Ueberholmanoever
-  // 13,1 -> 9,8. Ein Viertel weniger Ueberholmanoever bei etwas weniger Beruehrungen - genau
-  // das, was Verteidigen bedeutet. Deshalb ist es ein Schalter und keine Vorgabe.
+  // 13,1 -> 9,8. Das liest sich als "ein Viertel weniger Ueberholmanoever", liegt aber im
+  // Rauschen dieser Sonde (17 Prozent auf Ueberholmanoevern, 41 auf Beruehrungen - drei
+  // identische Einstellungen unterscheiden sich um so viel). Belegt ist damit nur, dass es
+  // nicht MEHR Ueberholmanoever gibt; die Richtung ist plausibel und nicht bewiesen.
+  //
+  // Ein Schalter und keine Vorgabe ist es aus einem Grund, der keine Messung braucht: es
+  // aendert, wer wem Platz macht, und das ist eine Geschmacksfrage.
   stAdd('Verteidigen: gedeckt statt gewichen', () => {
     if (!window.OMEGA_TEST || !OMEGA_TEST.verteidigenProbe) {
       return { skip: true, mass: 'verteidigenProbe nicht vorhanden' };
@@ -7324,9 +7335,13 @@
   //     ohne Wache    17,6 Beruehrungen/min    7,8 Ueberholmanoever/min   2,33 je Manoever
   //     mit Wache     17,8                    10,9                       1,62
   //
-  // Gleiche Beruehrungen, 40 Prozent MEHR Ueberholmanoever, 30 Prozent weniger
-  // Beruehrungen je Manoever: die Wache unterdrueckt nicht, sie lenkt um - der Angreifer
-  // geht auf die freie Seite statt in den Abbruch.
+  // NACHTRAG: das Rauschen der Sonde ist spaeter gemessen worden und liegt bei 41 Prozent
+  // (Beruehrungen) und 17 Prozent (Ueberholmanoever) - drei IDENTISCHE Einstellungen
+  // unterscheiden sich um so viel. Die Zahlen oben sind damit ein Hinweis und kein Beleg.
+  //
+  // DESHALB PRUEFT DIESER TEST DEN MECHANISMUS UND NICHT DIE RATE: in eine Seite
+  // hineinzuschwenken, auf der schon ein Auto liegt, ist falsch, unabhaengig davon, was
+  // die Statistik dazu sagt. Genau das ist hier pruefbar, und zwar ohne Rauschen.
   stAdd('Ueberholen: eine belegte Seite gilt als belegt', () => {
     if (!window.OMEGA_TEST || !OMEGA_TEST.seitenFreiProbe) {
       return { skip: true, mass: 'seitenFreiProbe nicht vorhanden' };

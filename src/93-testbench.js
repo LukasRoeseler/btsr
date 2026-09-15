@@ -2449,13 +2449,45 @@
     // Beruehrungen zu grob. Diese Sonde ruft deshalb IMMER mit SIM_TAKT_MS und nimmt
     // keine Schrittweite als Angabe an.
     //
-    // ---- DREI LAEUFE, weil nichts gesaet ist ---------------------------------------
+    // ====================================================================================
+    // DAS RAUSCHEN DIESER SONDE - GEMESSEN, UND ES IST GROSS
+    // ====================================================================================
     //
     // Sieben Stellen in 90-ghosts.js wuerfeln (Tagesform, Fehler, Attacke, Boxenfenster,
-    // Lernen), und keine davon ist gesaet. Die Streuung ueber die Laeufe ist deshalb Teil
-    // des Ergebnisses und keine Stoerung: eine Einstellung, deren Vorsprung kleiner ist
-    // als die Spanne ihrer eigenen Wiederholungen, ist nicht besser - sie ist einmal
-    // besser gelaufen. `spanne` steht deshalb neben jedem Mittelwert.
+    // Lernen), und keine davon ist gesaet. Wie viel davon im Ergebnis landet, ist nicht
+    // geschaetzt, sondern gemessen: DREI IDENTISCHE Einstellungen, je vier Laeufe von 90 s,
+    // fuenf Autos.
+    //
+    //     Variante        Ber/min   Ueb/min   Ber je Ueb   Feld-Spanne   Runde
+    //     A (Vorgabe)      29,3      17,3       1,67         0,356      12,26 s
+    //     B (Vorgabe)      21,5      17,4       1,39         0,327      12,23 s
+    //     C (Vorgabe)      20,8      20,2       1,05         0,310      12,21 s
+    //     Spanne            8,5 (41%) 2,9 (17%) 0,62 (48%)   0,046 (13%) 0,055 (0,4%)
+    //
+    // WAS DARAUS FOLGT, und es ist unbequem:
+    //
+    //   Rundenzeit        0,4 Prozent Rauschen. Die einzige Zahl, mit der man einen
+    //                     Unterschied von wenigen Prozent belegen kann.
+    //   Feld-Spanne       13 Prozent. Brauchbar fuer Unterschiede ab etwa einem Drittel.
+    //   Ueberholmanoever  17 Prozent, und das ist der GUENSTIGE Fall dieser Reihe.
+    //   Beruehrungen      41 Prozent. Ein gemessener "Gewinn" von 20 Prozent ist hier
+    //                     nichts - er ist die halbe Spanne zweier gleicher Einstellungen.
+    //   Ber je Ueb        48 Prozent. Als Quotient zweier rauschender Zahlen rauscht sie
+    //                     am meisten, obwohl sie sich am klügsten liest.
+    //
+    // EINMAL SELBST DARAUF HEREINGEFALLEN, und das gehoert hierher: mit drei Laeufen sah
+    // der Windschatten wie +35 Prozent Ueberholmanoever bei gleichen Beruehrungen aus
+    // (14,0 -> 18,9). Mit SECHS Laeufen war der Unterschied exakt null (17,25 gegen 17,22).
+    // Fast waere daraus eine geaenderte Vorgabe geworden.
+    //
+    // DIE REGEL, die daraus folgt: eine Aussage ueber Beruehrungen oder Ueberholmanoever
+    // braucht entweder einen FAKTOR (wie der Abstandhalter mit 9,7) oder viel mehr Laeufe,
+    // als sich hier bezahlen lassen. Fuer alles Feinere ist die Rundenzeit die Zahl - und
+    // wo die nichts sagt, sagt diese Sonde nichts.
+    //
+    // `spanne` steht deshalb neben JEDEM Mittelwert, und sie ist nicht Zierde: eine
+    // Einstellung, deren Vorsprung kleiner ist als die Spanne ihrer eigenen Wiederholungen,
+    // ist nicht besser - sie ist einmal besser gelaufen.
     //
     // BOXENSTOPPS SIND AUS, solange eine Variante sie nicht ausdruecklich einschaltet: ein
     // stehendes Auto in der Boxengasse erzeugt Beruehrungen und Rangwechsel, die nichts

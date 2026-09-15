@@ -8292,7 +8292,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.6.42</span></span>
+    <span class="foot-ver">v<span id="app-version">0.6.43</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -29924,9 +29924,21 @@
   // einer schon gemessenen Entscheidung - seit v0.5.44 haengt die Erlaubnis ausdruecklich
   // NICHT an der Kachelart, sondern am freien Platz, und genau aus diesem Grund.
   //
-  // Die Seitenwache dagegen bleibt: gleiche Beruehrungen, 40 Prozent MEHR
-  // Ueberholmanoever, 30 Prozent weniger Beruehrungen je Manoever. Sie unterdrueckt nicht,
-  // sie lenkt um - der Angreifer geht auf die freie Seite statt in den Abbruch.
+  // Die Seitenwache dagegen bleibt, und ihre Zahlen sahen gut aus: gleiche Beruehrungen,
+  // 40 Prozent mehr Ueberholmanoever, 30 Prozent weniger Beruehrungen je Manoever.
+  //
+  // NACHTRAG, UND ER GEHOERT DAZU: das Rauschen dieser Sonde ist spaeter gemessen worden
+  // (drei IDENTISCHE Einstellungen, siehe ghostSweep in 93-testbench.js) und liegt bei 41
+  // Prozent auf den Beruehrungen und 17 Prozent auf den Ueberholmanoevern. Die 40 Prozent
+  // oben sind damit NICHT belegt - sie liegen in derselben Groesse wie der Unterschied
+  // zweier gleicher Laeufe.
+  //
+  // Die Wache bleibt trotzdem, und zwar aus dem Grund, der keine Messung braucht: in eine
+  // Seite hineinzuschwenken, auf der schon ein Auto liegt, ist falsch, egal was die Statistik
+  // dazu sagt. Belegt ist der MECHANISMUS durch den Selbsttest ("eine belegte Seite gilt als
+  // belegt"), nicht die Rate. Die Gelegenheitsrechnung ist dagegen um einen FAKTOR
+  // eingebrochen (17,6 auf 3,3 Beruehrungen bei 7,8 auf 1,8 Ueberholmanoevern) - das liegt
+  // weit ausserhalb des Rauschens und bleibt ein gueltiger Befund.
 
   // ====================================================================================
   // VERTEIDIGEN, UND ZWAR EINMAL
@@ -37261,13 +37273,45 @@
     // Beruehrungen zu grob. Diese Sonde ruft deshalb IMMER mit SIM_TAKT_MS und nimmt
     // keine Schrittweite als Angabe an.
     //
-    // ---- DREI LAEUFE, weil nichts gesaet ist ---------------------------------------
+    // ====================================================================================
+    // DAS RAUSCHEN DIESER SONDE - GEMESSEN, UND ES IST GROSS
+    // ====================================================================================
     //
     // Sieben Stellen in 90-ghosts.js wuerfeln (Tagesform, Fehler, Attacke, Boxenfenster,
-    // Lernen), und keine davon ist gesaet. Die Streuung ueber die Laeufe ist deshalb Teil
-    // des Ergebnisses und keine Stoerung: eine Einstellung, deren Vorsprung kleiner ist
-    // als die Spanne ihrer eigenen Wiederholungen, ist nicht besser - sie ist einmal
-    // besser gelaufen. `spanne` steht deshalb neben jedem Mittelwert.
+    // Lernen), und keine davon ist gesaet. Wie viel davon im Ergebnis landet, ist nicht
+    // geschaetzt, sondern gemessen: DREI IDENTISCHE Einstellungen, je vier Laeufe von 90 s,
+    // fuenf Autos.
+    //
+    //     Variante        Ber/min   Ueb/min   Ber je Ueb   Feld-Spanne   Runde
+    //     A (Vorgabe)      29,3      17,3       1,67         0,356      12,26 s
+    //     B (Vorgabe)      21,5      17,4       1,39         0,327      12,23 s
+    //     C (Vorgabe)      20,8      20,2       1,05         0,310      12,21 s
+    //     Spanne            8,5 (41%) 2,9 (17%) 0,62 (48%)   0,046 (13%) 0,055 (0,4%)
+    //
+    // WAS DARAUS FOLGT, und es ist unbequem:
+    //
+    //   Rundenzeit        0,4 Prozent Rauschen. Die einzige Zahl, mit der man einen
+    //                     Unterschied von wenigen Prozent belegen kann.
+    //   Feld-Spanne       13 Prozent. Brauchbar fuer Unterschiede ab etwa einem Drittel.
+    //   Ueberholmanoever  17 Prozent, und das ist der GUENSTIGE Fall dieser Reihe.
+    //   Beruehrungen      41 Prozent. Ein gemessener "Gewinn" von 20 Prozent ist hier
+    //                     nichts - er ist die halbe Spanne zweier gleicher Einstellungen.
+    //   Ber je Ueb        48 Prozent. Als Quotient zweier rauschender Zahlen rauscht sie
+    //                     am meisten, obwohl sie sich am klügsten liest.
+    //
+    // EINMAL SELBST DARAUF HEREINGEFALLEN, und das gehoert hierher: mit drei Laeufen sah
+    // der Windschatten wie +35 Prozent Ueberholmanoever bei gleichen Beruehrungen aus
+    // (14,0 -> 18,9). Mit SECHS Laeufen war der Unterschied exakt null (17,25 gegen 17,22).
+    // Fast waere daraus eine geaenderte Vorgabe geworden.
+    //
+    // DIE REGEL, die daraus folgt: eine Aussage ueber Beruehrungen oder Ueberholmanoever
+    // braucht entweder einen FAKTOR (wie der Abstandhalter mit 9,7) oder viel mehr Laeufe,
+    // als sich hier bezahlen lassen. Fuer alles Feinere ist die Rundenzeit die Zahl - und
+    // wo die nichts sagt, sagt diese Sonde nichts.
+    //
+    // `spanne` steht deshalb neben JEDEM Mittelwert, und sie ist nicht Zierde: eine
+    // Einstellung, deren Vorsprung kleiner ist als die Spanne ihrer eigenen Wiederholungen,
+    // ist nicht besser - sie ist einmal besser gelaufen.
     //
     // BOXENSTOPPS SIND AUS, solange eine Variante sie nicht ausdruecklich einschaltet: ein
     // stehendes Auto in der Boxengasse erzeugt Beruehrungen und Rangwechsel, die nichts
@@ -49066,8 +49110,14 @@
   // AUSSEN, also auf die Gegenseite der naechsten Kurve.
   //
   // Gemessen in der Kennzahlensonde, vier Autos, 120 s, je drei Laeufe: Ueberholmanoever
-  // 12,7 -> 15,3 je Minute (+21 %), Beruehrungen 15,7 -> 19,7, Rundenzeit 12,18 -> 12,56 s.
-  // Aus dem Fehler wird also wirklich eine Gelegenheit.
+  // 12,7 -> 15,3 je Minute, Beruehrungen 15,7 -> 19,7, Rundenzeit 12,18 -> 12,56 s.
+  //
+  // WAS DAVON BELEGT IST: die RUNDENZEIT. Sie rauscht mit 0,4 Prozent, der Unterschied
+  // betraegt 3 Prozent - ein Fehler kostet also messbar Zeit. Die +21 Prozent
+  // Ueberholmanoever liegen dagegen im Rauschen (17 Prozent) und sind ein Hinweis. Dass aus
+  // dem Fehler eine Gelegenheit wird, ist damit plausibel und nicht bewiesen; belegt ist
+  // hier nur, DASS der Querausschlag entsteht - und das ist die Frage, die ein Selbsttest
+  // ueberhaupt beantworten kann.
   stAdd('Fehler: kostet Tempo und traegt nach aussen', () => {
     if (!window.OMEGA_TEST || !OMEGA_TEST.fehlerProbe) {
       return { skip: true, mass: 'fehlerProbe nicht vorhanden' };
@@ -49153,8 +49203,13 @@
   // die andere (weicht).
   //
   // Gemessen, vier Autos, 90 s, je drei Laeufe: Beruehrungen 16,0 -> 14,2, Ueberholmanoever
-  // 13,1 -> 9,8. Ein Viertel weniger Ueberholmanoever bei etwas weniger Beruehrungen - genau
-  // das, was Verteidigen bedeutet. Deshalb ist es ein Schalter und keine Vorgabe.
+  // 13,1 -> 9,8. Das liest sich als "ein Viertel weniger Ueberholmanoever", liegt aber im
+  // Rauschen dieser Sonde (17 Prozent auf Ueberholmanoevern, 41 auf Beruehrungen - drei
+  // identische Einstellungen unterscheiden sich um so viel). Belegt ist damit nur, dass es
+  // nicht MEHR Ueberholmanoever gibt; die Richtung ist plausibel und nicht bewiesen.
+  //
+  // Ein Schalter und keine Vorgabe ist es aus einem Grund, der keine Messung braucht: es
+  // aendert, wer wem Platz macht, und das ist eine Geschmacksfrage.
   stAdd('Verteidigen: gedeckt statt gewichen', () => {
     if (!window.OMEGA_TEST || !OMEGA_TEST.verteidigenProbe) {
       return { skip: true, mass: 'verteidigenProbe nicht vorhanden' };
@@ -49228,9 +49283,13 @@
   //     ohne Wache    17,6 Beruehrungen/min    7,8 Ueberholmanoever/min   2,33 je Manoever
   //     mit Wache     17,8                    10,9                       1,62
   //
-  // Gleiche Beruehrungen, 40 Prozent MEHR Ueberholmanoever, 30 Prozent weniger
-  // Beruehrungen je Manoever: die Wache unterdrueckt nicht, sie lenkt um - der Angreifer
-  // geht auf die freie Seite statt in den Abbruch.
+  // NACHTRAG: das Rauschen der Sonde ist spaeter gemessen worden und liegt bei 41 Prozent
+  // (Beruehrungen) und 17 Prozent (Ueberholmanoever) - drei IDENTISCHE Einstellungen
+  // unterscheiden sich um so viel. Die Zahlen oben sind damit ein Hinweis und kein Beleg.
+  //
+  // DESHALB PRUEFT DIESER TEST DEN MECHANISMUS UND NICHT DIE RATE: in eine Seite
+  // hineinzuschwenken, auf der schon ein Auto liegt, ist falsch, unabhaengig davon, was
+  // die Statistik dazu sagt. Genau das ist hier pruefbar, und zwar ohne Rauschen.
   stAdd('Ueberholen: eine belegte Seite gilt als belegt', () => {
     if (!window.OMEGA_TEST || !OMEGA_TEST.seitenFreiProbe) {
       return { skip: true, mass: 'seitenFreiProbe nicht vorhanden' };
