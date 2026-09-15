@@ -8425,7 +8425,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.6.44</span></span>
+    <span class="foot-ver">v<span id="app-version">0.6.45</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -11998,6 +11998,21 @@
 
   class CarreraPhysicsEngine {
     constructor() {
+      // ---- WEM GEHOERT DIESE INSTANZ? --------------------------------------------------
+      //
+      // GEMELDET: "Gamepad 2 hat nichts zu tun, vibriert aber mit, wenn Gamepad 1
+      // vibriert." Der Befund liegt hier: seit es physEngine2 gibt, laufen die Meldungen
+      // des Getriebes fuer BEIDE Autos durch dieselben drei globalen Wege - showHudToast
+      // (ein Band), padRumble (bis v0.6.44 alle Pads) und playShiftSound (eine Stimme).
+      // Ein Schaltvorgang von Auto 2 schrieb damit "1. Gang" in das Band von Spieler 1 und
+      // ruettelte dessen Pad.
+      //
+      // Die Nummer steht auf der INSTANZ und ausdruecklich nicht in config: config wird
+      // beim Anschalten des Modus von Auto 1 nach Auto 2 KOPIERT
+      // (physEngine2Abgleichen in 50-drive.js), und die Besitzernummer mitzukopieren waere
+      // genau der Fehler, den dieses Feld behebt. Ausserhalb von config kann das nicht
+      // passieren.
+      this.spieler = 1;
       this.config = {
         accelerationFactor: 1.0, // fine-tune multiplier on top of the calibrated scale
         // Von null bis zum vollen Ausschlag, in Millisekunden. 83 ist NICHT gewaehlt,
@@ -13477,7 +13492,7 @@
           if (inputs.brake > 0.8 && st.speedKmh > cfg.topSpeedKmh * 0.15) {
             st.absActive = true;
             const now = Date.now();
-            if (now - st.lastAbsRumble > 140) { st.lastAbsRumble = now; padRumble(0.18, 0.1, 60, 'abs'); }
+            if (now - st.lastAbsRumble > 140) { st.lastAbsRumble = now; this.ruck(0.18, 0.1, 60, 'abs'); }
           }
         } else if (inNeutral) {
           // Out of gear the engine is disconnected from the wheels: revving it does nothing
@@ -13788,6 +13803,27 @@
     //
     // Also werden die zwei Bedeutungen getrennt. Vorgabe ist 'knopf', damit alle vorhandenen
     // Aufrufe von aussen - Tastatur, Pad, Ghosts, Programmierschule - unveraendert bleiben.
+    // ---- Die drei Wege nach draussen, je Instanz --------------------------------------
+    //
+    // SECHZEHN AUFRUFSTELLEN IM GETRIEBE, EINE ADRESSE. Die Alternative waere gewesen, an
+    // jeder der sechzehn Stellen `this.spieler` mitzugeben - und die siebzehnte, die
+    // jemand spaeter einbaut, haette es vergessen. Dieselbe Ueberlegung wie bei
+    // RUMBLE_ARTEN weiter unten: die Frage gehoert an DIE eine Stelle.
+    meldung(txt) {
+      // MIT KENNZEICHNUNG, nicht verschwiegen: das Meldungsband ist EINES, und "1. Gang"
+      // ohne Absender ist im Zwei-Spieler-Modus eine Nachricht, die man auf sein eigenes
+      // Auto bezieht. Ein eigenes Band fuer Auto 2 waere der naechste Schritt; das Praefix
+      // ist der ehrliche Zwischenstand und kostet keine Flaeche.
+      showHudToast(this.spieler === 2 ? 'P2: ' + txt : txt);
+    }
+
+    ruck(strong, weak, ms, art) { padRumble(strong, weak, ms, art, this.spieler); }
+
+    // Der Schaltton bekommt den Spieler MIT, obwohl 80-sound.js ihn heute noch nicht
+    // auswertet: der Motorton von Auto 2 kommt in einem eigenen Schritt, und dann soll
+    // nicht noch einmal die Physikklasse angefasst werden muessen.
+    schaltTon(dir) { playShiftSound(dir, this.spieler); }
+
     triggerShift(direction, quelle) {
       const st = this.state, cfg = this.config;
       const stopped = Math.abs(st.speedKmh) < cfg.reverseStandstillKmh;
@@ -13811,8 +13847,8 @@
           if (direction > 0) {
             st.driveMode = 'forward'; st.currentGear = 0;
             st.speedKmh = 0; st.neutralRpm = 0;
-            showHudToast('Vorw\u00e4rts'); padRumble(0.3, 0.2, 90, 'schalt');
-            playShiftSound(1);
+            this.meldung('Vorw\u00e4rts'); this.ruck(0.3, 0.2, 90, 'schalt');
+            this.schaltTon(1);
           }
           return;
         }
@@ -13820,12 +13856,12 @@
           if (langsam) {
             st.driveMode = 'reverse'; st.currentGear = 0;
             st.speedKmh = 0; st.neutralRpm = 0;
-            showHudToast('R\u00fcckw\u00e4rtsgang'); padRumble(0.3, 0.2, 90, 'schalt');
-            playShiftSound(-1);
+            this.meldung('R\u00fcckw\u00e4rtsgang'); this.ruck(0.3, 0.2, 90, 'schalt');
+            this.schaltTon(-1);
           } else {
             // Sagen, WARUM nichts passiert. Ein Knopf, der schweigend nichts tut, sieht
             // kaputt aus - und genau so ist dieser Fehler gemeldet worden.
-            showHudToast('ZU SCHNELL F\u00dcR R');
+            this.meldung('ZU SCHNELL F\u00dcR R');
           }
         }
         return;
@@ -13834,8 +13870,8 @@
       if (st.driveMode === 'reverse') {
         if (direction > 0 && stopped) {
           st.driveMode = 'neutral'; st.speedKmh = 0; st.neutralRpm = 0;
-          showHudToast('Leerlauf'); padRumble(0.3, 0.2, 90, 'schalt');
-          playShiftSound(1);
+          this.meldung('Leerlauf'); this.ruck(0.3, 0.2, 90, 'schalt');
+          this.schaltTon(1);
         }
         return;
       }
@@ -13845,20 +13881,20 @@
           st.driveMode = 'forward'; st.currentGear = 0; st.neutralRpm = 0;
           st.isShifting = true;
           st.shiftLeft = cfg.shiftMs / 1000;
-          showHudToast('1. Gang'); padRumble(0.15, 0.1, 40, 'schalt');
-          playShiftSound(1);
+          this.meldung('1. Gang'); this.ruck(0.15, 0.1, 40, 'schalt');
+          this.schaltTon(1);
         } else if (stopped) {
           st.driveMode = 'reverse'; st.speedKmh = 0; st.neutralRpm = 0;
-          showHudToast('Rückwärtsgang'); padRumble(0.3, 0.2, 90, 'schalt');
-          playShiftSound(-1);
+          this.meldung('Rückwärtsgang'); this.ruck(0.3, 0.2, 90, 'schalt');
+          this.schaltTon(-1);
         }
         return;
       }
 
       if (direction < 0 && st.currentGear === 0) {
         st.driveMode = 'neutral'; st.neutralRpm = 0;
-        showHudToast('Leerlauf'); padRumble(0.2, 0.12, 60, 'schalt');
-        playShiftSound(-1);
+        this.meldung('Leerlauf'); this.ruck(0.2, 0.12, 60, 'schalt');
+        this.schaltTon(-1);
         return;
       }
 
@@ -13872,8 +13908,8 @@
       st.currentGear = next;
       // Short and light: six shifts inside three seconds with a long pattern is a
       // pneumatic drill in the hand.
-      padRumble(0.15, 0.1, 40, 'schalt');
-      playShiftSound(direction);
+      this.ruck(0.15, 0.1, 40, 'schalt');
+      this.schaltTon(direction);
     }
   }
 
@@ -13914,22 +13950,50 @@
   // Der Rueckgabewert sagt, ob die Schalter den Stoss DURCHGELASSEN haben - nicht, ob ein
   // Controller ihn ausgefuehrt hat. Damit ist die Schalterlogik ohne Hardware pruefbar, und
   // genau die ist bei siebzehn Aufrufstellen die Stelle, an der man sich vertut.
-  function padRumble(strong, weak, ms, art) {
+  // ---- WER SOLL ES SPUEREN? ----------------------------------------------------------
+  //
+  // GEMELDET: "Gamepad 2 hat nichts zu tun, vibriert aber mit, wenn Gamepad 1 vibriert."
+  //
+  // NACHGESEHEN, und der Befund ist eindeutig: ruettle() lief durch navigator.getGamepads()
+  // und stiess JEDEN Pad an, der einen Motor hat. Mit einem Spieler war das richtig und
+  // ungeprueft zugleich - es gab nur einen Pad, also traf "alle" immer den richtigen.
+  //
+  // Schlimmer noch: die vier Schaltstoesse stehen INNERHALB der Physikklasse, und seit es
+  // physEngine2 gibt, laufen sie fuer beide Autos. Ein Schaltvorgang von Auto 2 ruettelte
+  // damit den Pad von Spieler 1 - und umgekehrt. Das ist keine Kosmetik: ein Stoss, der zu
+  // einem Vorgang gehoert, den man nicht ausgeloest hat, liest sich als Fehlfunktion.
+  //
+  // `wer` ist deshalb ab jetzt Teil des Aufrufs, mit 1 als Vorgabe: die dreiundzwanzig
+  // vorhandenen Aufrufstellen bleiben unveraendert und meinen weiterhin Spieler 1.
+  //
+  // UND OHNE ZWEI-SPIELER-MODUS BLEIBT ES, WIE ES WAR - alle Pads. Das ist Absicht und
+  // keine Faulheit: wer mit Lenkrad UND Pad am selben Auto sitzt, hat heute Vibration in
+  // beiden, und diese Aenderung soll ihm nichts wegnehmen. Erst wenn es wirklich zwei
+  // Spieler gibt, gibt es auch zwei Adressen.
+  function rumblePad(wer) {
+    if (typeof zweiSpieler === 'undefined' || !zweiSpieler) return null;   // alle
+    if (typeof padsFuerSpieler !== 'function') return null;
+    const sp = padsFuerSpieler();
+    return (wer === 2 ? sp.p2 : sp.p1) || undefined;   // undefined = niemand
+  }
+
+  function padRumble(strong, weak, ms, art, wer) {
     if (!rumbleOn) return false;
     // Eine unbekannte Art brummt - das ist Absicht. Wer eine neue Stelle einbaut und das
     // Etikett vergisst, bekommt ein Brummen und merkt es; ein stilles Verschlucken waere
     // ein Feature, das niemand vermisst, bis es fehlt.
     if (art && RUMBLE_ARTEN[art] === false) return false;
+    const ziel = rumblePad(wer);
     ruettle({
       duration: ms, startDelay: 0,
       strongMagnitude: Math.max(0, Math.min(1, strong)),
       weakMagnitude: Math.max(0, Math.min(1, weak)),
-    });
+    }, ziel);
     // EIN ZWEITER WEG, KEIN ZWEITER AUFRUF. Die achtzehn Aufrufstellen bleiben unberuehrt;
     // ob eine Art auch die Trigger bewegt, steht in TRIGGER_ARTEN und nicht bei ihnen.
     if (triggerRumbleOn && art && TRIGGER_ARTEN[art]) {
       const [li, re] = TRIGGER_ARTEN[art];
-      triggerRuettle(li, re, ms);
+      triggerRuettle(li, re, ms, ziel);
     }
     return true;
   }
@@ -13948,11 +14012,25 @@
   // UND AUSDRUECKLICH KEIN RUECKFALL auf 'dual-rumble': das wuerde vortaeuschen, die Trigger
   // haetten reagiert. Der Nutzer soll in den Optionen lesen koennen, dass sein Pad es nicht
   // kann - und nicht ein Brummen in den Griffen dafuer halten.
-  function triggerRuettle(links, rechts, ms) {
-    let erreicht = 0;
+  // `ziel` ist DREIWERTIG, und das ist die ganze Bauform:
+  //   null       -> alle Pads (ein Spieler, wie bisher)
+  //   ein Pad    -> genau dieser
+  //   undefined  -> keiner (der Spieler hat gerade keinen Pad)
+  // Eine leere Liste und "alle" auseinanderhalten zu koennen ist der Grund, warum hier
+  // nicht einfach ein Array steht.
+  function zielPads(ziel) {
+    if (ziel === undefined) return [];
+    if (ziel) return [ziel];
     try {
       const pads = navigator.getGamepads ? navigator.getGamepads() : [];
-      for (const p of Array.from(pads)) {
+      return Array.from(pads);
+    } catch (e) { return []; }
+  }
+
+  function triggerRuettle(links, rechts, ms, ziel) {
+    let erreicht = 0;
+    try {
+      for (const p of zielPads(ziel)) {
         const akt = p && p.vibrationActuator;
         if (!akt || typeof akt.playEffect !== 'function') continue;
         if (!Array.isArray(akt.effects) || akt.effects.indexOf('trigger-rumble') < 0) continue;
@@ -13981,11 +14059,10 @@
   //
   // Also alle. Zwei Aufrufe auf dasselbe Geraet sind harmlos - der zweite ueberschreibt den
   // ersten -, ein stiller Fehlgriff ist es nicht.
-  function ruettle(effekt) {
+  function ruettle(effekt, ziel) {
     let erreicht = 0;
     try {
-      const pads = navigator.getGamepads ? navigator.getGamepads() : [];
-      for (const p of Array.from(pads)) {
+      for (const p of zielPads(ziel)) {
         if (!p || !p.vibrationActuator) continue;
         if (typeof p.vibrationActuator.playEffect !== 'function') continue;
         erreicht++;
@@ -14039,6 +14116,7 @@
   // losgeht. Die rund sechzig Regler im Optionentab schreiben weiterhin nur auf
   // physEngine.config - sie zu verdoppeln waere ein zweiter Ort fuer jede Zahl.
   const physEngine2 = new CarreraPhysicsEngine();
+  physEngine2.spieler = 2;   // siehe den Konstruktor: Meldung, Ruck und Ton gehen dorthin
   let phys2LastTime = null;
   // AN als Standard, weil die Original-App es praktisch immer an hat und ein beleuchtetes
   // Auto auf dem Tisch besser zu sehen ist.
@@ -16273,6 +16351,20 @@
     //      cockpitInhaltHoehe() - die Einpassung wuerde im Einzelspiel rund 9 px Platz
     //      verschenken. Mit der Klasse gibt es die Zeile nur, wenn es sie braucht.
     document.body.classList.toggle('zwei-spieler', zweiSpieler);
+    // DAS KAESTCHEN GEHT MIT. Der Modus laesst sich seit v0.6.45 auch aus der Garage
+    // einschalten (siehe setCarRole in 90-ghosts.js), und ein Schalter, der "aus" zeigt,
+    // waehrend zwei Autos fahren, ist genau die Luege, die der Selbsttest "Schalter und
+    // Spiegel sagen beim Laden dasselbe" sucht.
+    //
+    // OHNE Ereignis: .checked zu setzen loest kein 'change' aus, der Zuhoerer laeuft also
+    // nicht zurueck in diese Funktion. Die Selbstsicherung schreibt gebuendelt auf
+    // 'change'/'input' - deshalb wird sie hier von Hand angestossen, sonst ist der Modus
+    // nach dem Neuladen wieder aus.
+    const kaestchen = $('opt-zwei-an');
+    if (kaestchen && kaestchen.checked !== zweiSpieler) {
+      kaestchen.checked = zweiSpieler;
+      if (typeof autoSicherungPlanen === 'function') autoSicherungPlanen();
+    }
     if (typeof renderGarage === 'function') renderGarage();
     if (typeof zweiSpielerKachelZeichnen === 'function') zweiSpielerKachelZeichnen();
     // Die Hoehe des Cockpits aendert sich mit der neuen Zeile, im Vollbild also auch der
@@ -27342,6 +27434,29 @@
     // Auto, das zugleich Auto 1 und Auto 2 waere, bekaeme im selben Herzschlag zwei
     // Pakete mit verschiedenem Gas - genau das Stottern, das der eine Herzschlag
     // beseitigt hat.
+    //
+    // ---- DER KNOPF SCHALTET DEN MODUS SELBST EIN --------------------------------------
+    //
+    // GEMELDET: "Es werden 2 Autos und 2 Controller erkannt, aber nur eins funktioniert.
+    // In der Garage muesste ich doch beim zweiten Auto 'Spieler 2' angeben koennen? Ich
+    // kann aber nur eins zum Steuern auswaehlen."
+    //
+    // Und das war genau so gebaut: der vierte Knopf erschien nur, wenn der Schalter in
+    // einem ANDEREN Reiter schon an war. Wer in der Garage anfaengt - und dort faengt
+    // jeder an, dort stehen die Autos -, sieht drei Knoepfe und schliesst daraus, dass es
+    // den Modus nicht gibt. Die Kachel machte es schlimmer: sie zeigt "2 Controller
+    // erkannt" auch bei abgeschaltetem Modus, das liest sich wie "fertig".
+    //
+    // Zwei Aenderungen, und beide gehen in dieselbe Richtung - die Reihenfolge darf keine
+    // Rolle spielen: der Knopf ist jetzt IMMER da, und wer ihn drueckt, schaltet damit den
+    // Modus ein. Nichts Verstecktes: es wird gemeldet und ins Band geschrieben, und das
+    // Kaestchen in den Optionen geht mit (siehe zweiSpielerSetzen in 50-drive.js).
+    if (role === 'player2' && !zweiSpieler) {
+      if (typeof zweiSpielerSetzen === 'function') zweiSpielerSetzen(true);
+      showHudToast('2-SPIELER-MODUS AN');
+      log('2-Spieler-Modus eingeschaltet, weil eine Rolle "Spieler 2" vergeben wurde.',
+          'info');
+    }
     if (role === 'player2') {
       garage.forEach(c => { if (c !== car && c.role === 'player2') c.role = 'none'; });
       playerCar2 = car;
@@ -27432,9 +27547,10 @@
             ${car.blinking ? '<span class="gar-blink">&nbsp;blinkt&hellip;</span>' : ''}</div></div>
         <div class="gar-roles">
           <button data-role="player" class="${car.role === 'player' ? 'on' : ''}">Steuern</button>
-          ${zweiSpieler ? `
           <button data-role="player2" class="${car.role === 'player2' ? 'on zwei' : ''}"
-                  >Spieler&nbsp;2</button>` : ''}
+                  title="${zweiSpieler ? 'Zweites Auto, zweiter Controller'
+                          : 'Schaltet den 2-Spieler-Modus ein und weist dieses Auto zu'}"
+                  >Spieler&nbsp;2</button>
           <button data-role="ghost" class="${car.role === 'ghost' ? 'on ghost' : ''}">Ghost</button>
           <button data-role="none" class="${car.role === 'none' ? 'on off' : ''}">Aus</button>
         </div>
@@ -35367,6 +35483,103 @@
     // Kastenhoehe misst, wuerde die Verkleinerung mitmessen und immer gruen sein.
     // `b` ist die Kastenbreite und gilt nur im Vollbild - ohne sie prueft ein breites
     // Testfenster eine Lage, in die ein Handy nie geraet.
+    // Den Modus von aussen lesen und stellen. Ein Prueflauf, der ihn voraussetzt, ist auf
+    // Sand gebaut: er steht in der Selbstsicherung und kann beim Start schon an sein.
+    // Gestellt wird OHNE zweiSpielerSetzen() - der Prueflauf will die Weiche, nicht die
+    // Nebenwirkungen (Garage neu zeichnen, Cockpit neu einpassen, Rolle zuruecknehmen).
+    zweiSpielerLage() { return zweiSpieler; },
+    zweiSpielerStellen(an) { zweiSpieler = !!an; return zweiSpieler; },
+
+    // ---- Wohin geht der Vibrationsstoss? --------------------------------------------
+    //
+    // Ohne Hardware ist die WAHL pruefbar, die Ausfuehrung nicht - und die Wahl war der
+    // Fehler. rumblePad() gibt dreiwertig zurueck: null heisst "alle Pads" (ein Spieler,
+    // Verhalten wie vor v0.6.45), ein Pad heisst genau dieser, undefined heisst niemand.
+    rumbleZielProbe() {
+      const vorher = zweiSpieler;
+      try {
+        zweiSpieler = false;
+        const aus = [rumblePad(1), rumblePad(2)].map(nenn);
+        zweiSpieler = true;
+        const an = [rumblePad(1), rumblePad(2)].map(nenn);
+        return { aus, an, pads: padsSortiert().length };
+      } finally { zweiSpieler = vorher; }
+      function nenn(z) {
+        return z === null ? 'alle' : z === undefined ? 'niemand'
+             : String(z.id || 'pad').slice(0, 24);
+      }
+    },
+
+    // ---- Die Rollenknoepfe in der Garage --------------------------------------------
+    //
+    // WARUM DAS EINE SONDE BRAUCHT. Die Garagenzeile wird von renderGarage() aus einem
+    // Textbaustein erzeugt, und ihre Knoepfe existieren nur, wenn ein Auto verbunden ist.
+    // Genau deshalb ist der gemeldete Fehler durch alle 220 Selbsttests gekommen: der
+    // vierte Knopf fehlte, und kein Test hatte je eine Garagenzeile gesehen.
+    //
+    // Die Sonde stellt ein Auto in die Garage, laesst zeichnen, liest die Knoepfe und
+    // raeumt auf. Eine Attrappe genuegt: renderGarage() liest von einem Auto nur tag,
+    // device.id, role, alias, colorId und ghostSpeed.
+    garagenZeileProbe(o) {
+      const opt = o || {};
+      const vorherZwei = zweiSpieler;
+      const attrappe = { role: opt.role || 'none', device: { id: 'probe-garage' },
+                         alias: '', colorId: null, sim: false };
+      garage.push(attrappe);
+      try {
+        if (opt.zwei !== undefined) zweiSpieler = !!opt.zwei;
+        renderGarage();
+        const zeilen = Array.from(($('gar-list') || { children: [] }).children);
+        const meine = zeilen[zeilen.length - 1];
+        const knoepfe = meine
+          ? Array.from(meine.querySelectorAll('button[data-role]')).map((b) => ({
+              rolle: b.dataset.role,
+              text: b.textContent.replace(/\s+/g, ' ').trim(),
+              an: b.classList.contains('on'),
+            }))
+          : [];
+        return { zeilen: zeilen.length, knoepfe,
+                 rollen: knoepfe.map((k) => k.rolle),
+                 randklasse: meine ? meine.className : null };
+      } finally {
+        const i = garage.indexOf(attrappe);
+        if (i >= 0) garage.splice(i, 1);
+        zweiSpieler = vorherZwei;
+        renderGarage();
+      }
+    },
+
+    // Und der Weg, den der gemeldete Fehler genommen haette: Knopf druecken, obwohl der
+    // Modus aus ist. Danach muss der Modus an sein UND das Auto zugeteilt.
+    garagenRolleProbe() {
+      const vorher = { zwei: zweiSpieler, p2: playerCar2,
+                       kaestchen: ($('opt-zwei-an') || {}).checked };
+      const attrappe = { role: 'none', device: { id: 'probe-rolle' },
+                         alias: '', colorId: null, sim: false, testSenke: [] };
+      garage.push(attrappe);
+      try {
+        if (typeof zweiSpielerSetzen === 'function') zweiSpielerSetzen(false);
+        const vorZwei = zweiSpieler;
+        setCarRole(attrappe, 'player2');
+        return {
+          vorherAus: vorZwei === false,
+          danachAn: zweiSpieler === true,
+          rolle: attrappe.role,
+          istAuto2: playerCar2 === attrappe,
+          kaestchenAn: !!($('opt-zwei-an') || {}).checked,
+        };
+      } finally {
+        if (playerCar2 === attrappe) playerCar2 = null;
+        const i = garage.indexOf(attrappe);
+        if (i >= 0) garage.splice(i, 1);
+        if (typeof zweiSpielerSetzen === 'function') zweiSpielerSetzen(vorher.zwei);
+        playerCar2 = vorher.p2;
+        const k = $('opt-zwei-an');
+        if (k) k.checked = !!vorher.kaestchen;
+        renderGarage();
+      }
+    },
+
     // ---- Der Zwei-Spieler-Modus, am Sendeweg gemessen -------------------------------
     //
     // GEMESSEN WIRD, WAS HINAUSGEHT, und nicht, was eine Funktion sich vornimmt. Genau
@@ -52196,6 +52409,98 @@
   // Die Liste ist GEPFLEGT, und das ist hier richtig: sie IST die Zusicherung. Sie stammt
   // aus einer Suche ueber alle Kaestchen, deren Listener "X = e.target.checked" schreibt.
   // Ein neuer Schalter gehoert hinein.
+  // ---- Die Garagenzeile hat vier Rollenknoepfe -------------------------------------
+  //
+  // DIESER TEST HAETTE DEN GEMELDETEN FEHLER GEFUNDEN, und keiner der 220 anderen konnte
+  // es: die Knoepfe der Garage entstehen erst, wenn ein Auto verbunden ist, und kein Test
+  // hatte je eine Garagenzeile gesehen. Der vierte Knopf war deshalb in v0.6.44
+  // ausgeliefert, ohne dass ihn jemals etwas gezeichnet hat - er hing an einer Bedingung,
+  // die in der Garage nie erfuellt war.
+  //
+  // Gemeldet als: "Ich kann aber nur eins zum Steuern auswaehlen."
+  stAdd('Garage: jede Zeile hat vier Rollen, auch bei abgeschaltetem Modus', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.garagenZeileProbe) {
+      return { skip: true, mass: 'garagenZeileProbe nicht vorhanden' };
+    }
+    const SOLL = ['player', 'player2', 'ghost', 'none'];
+    const aus = OMEGA_TEST.garagenZeileProbe({ zwei: false });
+    const an = OMEGA_TEST.garagenZeileProbe({ zwei: true, role: 'player2' });
+    const maengel = [];
+    // Der Kern: AUCH bei abgeschaltetem Modus. Sonst ist die Reihenfolge, in der man die
+    // App bedient, eine Voraussetzung - und das war der Fehler.
+    if (aus.rollen.join(',') !== SOLL.join(',')) {
+      maengel.push('Modus aus: ' + (aus.rollen.join(',') || 'keine Knoepfe'));
+    }
+    if (an.rollen.join(',') !== SOLL.join(',')) {
+      maengel.push('Modus an: ' + (an.rollen.join(',') || 'keine Knoepfe'));
+    }
+    // Und die Zuteilung muss sichtbar sein, sonst weiss niemand, welches Auto Auto 2 ist.
+    const marke = an.knoepfe.find((k) => k.rolle === 'player2');
+    if (!marke || !marke.an) maengel.push('zugeteiltes Auto 2 nicht hervorgehoben');
+    if (!/is-zwei/.test(an.randklasse || '')) maengel.push('Zeilenrand nicht gekennzeichnet');
+    return { ok: !maengel.length,
+             mass: aus.rollen.length + ' Knoepfe aus, ' + an.rollen.length + ' an'
+                 + (maengel.length ? ' | ' + maengel.join(', ')
+                                   : ' | vier Rollen in beiden Lagen') };
+  });
+
+  // ---- Und der Knopf schaltet den Modus selbst ein ---------------------------------
+  //
+  // Die zweite Haelfte derselben Meldung: der Modus lag in einem anderen Reiter, die
+  // Autos liegen in der Garage. Wer dort auf "Spieler 2" drueckt, meint es - also wird
+  // eingeschaltet, statt den Druck zu verschlucken. Geprueft wird MIT dem Kaestchen, denn
+  // ein Schalter, der "aus" zeigt, waehrend zwei Autos fahren, ist die naechste Meldung.
+  stAdd('Garage: "Spieler 2" schaltet den Modus ein und teilt zu', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.garagenRolleProbe) {
+      return { skip: true, mass: 'garagenRolleProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.garagenRolleProbe();
+    const maengel = [];
+    if (!r.vorherAus) maengel.push('Ausgangslage war nicht "aus"');
+    if (!r.danachAn) maengel.push('Modus blieb aus');
+    if (r.rolle !== 'player2') maengel.push('Rolle ist ' + r.rolle);
+    if (!r.istAuto2) maengel.push('playerCar2 nicht gesetzt');
+    if (!r.kaestchenAn) maengel.push('Kaestchen in den Optionen blieb aus');
+    return { ok: !maengel.length,
+             mass: (maengel.length ? maengel.join(', ')
+                    : 'aus -> an, Rolle player2, Kaestchen folgt') };
+  });
+
+  // ---- Der Vibrationsstoss hat eine Adresse ----------------------------------------
+  //
+  // GEMELDET: "Gamepad 2 hat nichts zu tun, vibriert aber mit, wenn Gamepad 1 vibriert."
+  // ruettle() lief durch alle Pads, und die vier Schaltstoesse stehen in der Physikklasse -
+  // also ruettelte ein Schaltvorgang von Auto 2 den Pad von Spieler 1.
+  //
+  // Geprueft wird die WAHL, nicht die Ausfuehrung: ohne Hardware gibt es keinen Pad, den
+  // man spueren koennte. Die Wahl war der Fehler.
+  //
+  // Und die zweite Zusicherung ist die, die niemandem etwas wegnimmt: mit EINEM Spieler
+  // bleibt es bei "alle Pads" - wer Lenkrad und Pad am selben Auto hat, behaelt beides.
+  stAdd('Vibration: mit zwei Spielern hat jeder Stoss eine Adresse', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.rumbleZielProbe) {
+      return { skip: true, mass: 'rumbleZielProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.rumbleZielProbe();
+    const maengel = [];
+    if (r.aus[0] !== 'alle' || r.aus[1] !== 'alle') {
+      maengel.push('ein Spieler: ' + r.aus.join('/') + ' statt alle/alle');
+    }
+    // Mit zwei Spielern darf NIE "alle" herauskommen. Ob dort ein Pad oder "niemand"
+    // steht, haengt an der Hardware - beides ist richtig, "alle" ist es nicht.
+    if (r.an.indexOf('alle') >= 0) {
+      maengel.push('zwei Spieler: ' + r.an.join('/') + ' enthaelt "alle"');
+    }
+    // Und die zwei Adressen muessen verschieden sein, sobald es zwei Pads gibt.
+    if (r.pads >= 2 && r.an[0] === r.an[1]) {
+      maengel.push('zwei Pads, aber beide Spieler zeigen auf ' + r.an[0]);
+    }
+    return { ok: !maengel.length,
+             mass: r.pads + ' Pads | ein Spieler ' + r.aus.join('/')
+                 + ' | zwei Spieler ' + r.an.join('/')
+                 + (maengel.length ? ' | ' + maengel.join(', ') : '') };
+  });
+
   // ---- Zwei Spieler: kommt beim zweiten Auto wirklich etwas an? ---------------------
   //
   // DIE FRAGE, DIE SICH NICHT ERSCHLIESSEN LAESST. "Beide koennen fahren" ist eine Aussage
@@ -52357,7 +52662,23 @@
   // ging die Wette daneben, passierte gar nichts - still.
   //
   // Zwei Aufrufe auf dasselbe Geraet sind harmlos, ein stiller Fehlgriff nicht.
-  stAdd('Controller-Vibration erreicht JEDEN Pad mit Ruettler', () => {
+  // ---- UMGESCHRIEBEN IN v0.6.45, UND ZWAR WEIL DIE ZUSICHERUNG FALSCH WURDE ----------
+  //
+  // Dieser Test hiess "erreicht JEDEN Pad mit Ruettler" und verlangte genau das: ein Stoss
+  // trifft alle Pads. Mit einem Spieler ist das richtig - wer Lenkrad UND Pad am selben
+  // Auto hat, will Vibration in beiden.
+  //
+  // Mit zwei Spielern ist es falsch, und es war der gemeldete Fehler: "Gamepad 2 hat nichts
+  // zu tun, vibriert aber mit, wenn Gamepad 1 vibriert." Die Schaltstoesse stehen in der
+  // Physikklasse und laufen damit fuer beide Autos - ein Schaltvorgang von Auto 2 ruettelte
+  // den Pad von Spieler 1.
+  //
+  // Der Test prueft jetzt BEIDE Regime, denn beide sind zugesichert:
+  //   ein Spieler  -> alle Pads mit Ruettler, der stumme nicht (wie bisher)
+  //   zwei Spieler -> genau EINER, und zwar der des gemeinten Spielers
+  //
+  // Der Schalterteil ("aus ist aus") bleibt unveraendert - er gilt in beiden Regimen.
+  stAdd('Controller-Vibration: ein Spieler alle Pads, zwei Spieler je einen', () => {
     if (typeof padRumble !== 'function') return { skip: true, mass: 'padRumble nicht da' };
     const echt = navigator.getGamepads;
     const sw = $('setting-vibration');
@@ -52372,10 +52693,26 @@
       // Der ROHE zuerst in der Liste - so wie Windows es liefert, wenn es schiefgeht.
       // Drei Eintraege: die zwei Zwillinge und ein Pad OHNE Ruettler. Der dritte ist die
       // Gegenprobe - er darf nicht in der Liste der Getroffenen auftauchen.
-      const ohne = { mapping: 'standard', id: 'stumm', connected: true,
+      // ---- WARUM DER STUMME PAD ROH ZUGEORDNET IST ------------------------------
+      //
+      // Hier stand mapping: 'standard', und der erste Lauf des neuen Teils ist genau daran
+      // gescheitert - richtig gemessen, falsch erwartet: padsSortiert() stellt zugeordnete
+      // Pads vor rohe, also waere der STUMME Pad der von Spieler 2 geworden, und Spieler 2
+      // haette korrekt nichts gespuert. Das ist ein echter Fall, aber nicht der Fall
+      // dieses Tests - er will wissen, ob zwei Spieler zwei VERSCHIEDENE Adressen
+      // bekommen. Roh und als letzter in der Liste macht die Zuteilung eindeutig:
+      // zugeordnet -> Spieler 1, roh -> Spieler 2, stumm -> uebrig.
+      const ohne = { mapping: '', id: 'stumm', connected: true,
                      axes: [0, 0, 0, 0], buttons: [] };
       navigator.getGamepads = () => [mk('', 'roh'), mk('standard', 'zugeordnet'), ohne];
       if (sw && !sw.checked) { sw.checked = true; sw.dispatchEvent(new Event('change', { bubbles: true })); }
+      // ---- EIN SPIELER: alle Pads mit Ruettler ------------------------------------
+      // Der Modus wird hier ausdruecklich gesetzt und nicht vorausgesetzt: er steht in der
+      // Selbstsicherung, ein Test darf also nicht davon ausgehen, dass er aus ist. Genau
+      // daran ist dieser Test beim ersten Lauf nach v0.6.45 gescheitert - richtig
+      // gemessen, falsch erwartet.
+      const zweiVorher = OMEGA_TEST.zweiSpielerLage ? OMEGA_TEST.zweiSpielerLage() : null;
+      if (OMEGA_TEST.zweiSpielerStellen) OMEGA_TEST.zweiSpielerStellen(false);
       padRumble(0.6, 0.3, 90);
       // BEIDE, und beide mit 'dual-rumble'. Ein Pad OHNE Ruettler steht mit in der Liste und
       // darf nicht mitgezaehlt werden - sonst waere "alle" nur eine Schleife und keine
@@ -52383,14 +52720,30 @@
       const namen = rufe.map(r => r.name).sort().join(',');
       const anGetroffen = namen === 'roh,zugeordnet'
                           && rufe.every(r => r.art === 'dual-rumble');
-      // Und aus muss aus sein.
+      // ---- ZWEI SPIELER: genau einer, und der richtige ----------------------------
+      // padsSortiert() stellt zugeordnete Pads vor rohe, Spieler 1 bekommt also
+      // 'zugeordnet' und Spieler 2 'roh'. Der stumme Pad hat keinen Ruettler und kommt in
+      // keinem Fall vor.
+      rufe.length = 0;
+      if (OMEGA_TEST.zweiSpielerStellen) OMEGA_TEST.zweiSpielerStellen(true);
+      padRumble(0.6, 0.3, 90, null, 1);
+      const eins = rufe.map(r => r.name).join(',');
+      rufe.length = 0;
+      padRumble(0.6, 0.3, 90, null, 2);
+      const zwei = rufe.map(r => r.name).join(',');
+      const getrennt = eins === 'zugeordnet' && zwei === 'roh';
+      if (OMEGA_TEST.zweiSpielerStellen) OMEGA_TEST.zweiSpielerStellen(!!zweiVorher);
+      // Und aus muss aus sein - in beiden Regimen dieselbe Zusicherung.
       rufe.length = 0;
       if (sw) { sw.checked = false; sw.dispatchEvent(new Event('change', { bubbles: true })); }
       padRumble(0.6, 0.3, 90);
       const ausStill = rufe.length === 0;
-      return { ok: anGetroffen && ausStill,
-               mass: (anGetroffen ? 'an: beide Pads geruettelt'
-                                  : 'an: FALSCH, ' + JSON.stringify(namen))
+      return { ok: anGetroffen && getrennt && ausStill,
+               mass: (anGetroffen ? 'ein Spieler: beide Pads'
+                                  : 'ein Spieler: FALSCH, ' + JSON.stringify(namen))
+                   + ' | ' + (getrennt ? 'zwei Spieler: 1=zugeordnet, 2=roh'
+                                       : 'zwei Spieler: FALSCH, 1=' + JSON.stringify(eins)
+                                         + ' 2=' + JSON.stringify(zwei))
                    + ' | ' + (ausStill ? 'aus: still' : 'aus: RUETTELT TROTZDEM') };
     } finally {
       navigator.getGamepads = echt;

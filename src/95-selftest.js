@@ -9594,6 +9594,98 @@
   // Die Liste ist GEPFLEGT, und das ist hier richtig: sie IST die Zusicherung. Sie stammt
   // aus einer Suche ueber alle Kaestchen, deren Listener "X = e.target.checked" schreibt.
   // Ein neuer Schalter gehoert hinein.
+  // ---- Die Garagenzeile hat vier Rollenknoepfe -------------------------------------
+  //
+  // DIESER TEST HAETTE DEN GEMELDETEN FEHLER GEFUNDEN, und keiner der 220 anderen konnte
+  // es: die Knoepfe der Garage entstehen erst, wenn ein Auto verbunden ist, und kein Test
+  // hatte je eine Garagenzeile gesehen. Der vierte Knopf war deshalb in v0.6.44
+  // ausgeliefert, ohne dass ihn jemals etwas gezeichnet hat - er hing an einer Bedingung,
+  // die in der Garage nie erfuellt war.
+  //
+  // Gemeldet als: "Ich kann aber nur eins zum Steuern auswaehlen."
+  stAdd('Garage: jede Zeile hat vier Rollen, auch bei abgeschaltetem Modus', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.garagenZeileProbe) {
+      return { skip: true, mass: 'garagenZeileProbe nicht vorhanden' };
+    }
+    const SOLL = ['player', 'player2', 'ghost', 'none'];
+    const aus = OMEGA_TEST.garagenZeileProbe({ zwei: false });
+    const an = OMEGA_TEST.garagenZeileProbe({ zwei: true, role: 'player2' });
+    const maengel = [];
+    // Der Kern: AUCH bei abgeschaltetem Modus. Sonst ist die Reihenfolge, in der man die
+    // App bedient, eine Voraussetzung - und das war der Fehler.
+    if (aus.rollen.join(',') !== SOLL.join(',')) {
+      maengel.push('Modus aus: ' + (aus.rollen.join(',') || 'keine Knoepfe'));
+    }
+    if (an.rollen.join(',') !== SOLL.join(',')) {
+      maengel.push('Modus an: ' + (an.rollen.join(',') || 'keine Knoepfe'));
+    }
+    // Und die Zuteilung muss sichtbar sein, sonst weiss niemand, welches Auto Auto 2 ist.
+    const marke = an.knoepfe.find((k) => k.rolle === 'player2');
+    if (!marke || !marke.an) maengel.push('zugeteiltes Auto 2 nicht hervorgehoben');
+    if (!/is-zwei/.test(an.randklasse || '')) maengel.push('Zeilenrand nicht gekennzeichnet');
+    return { ok: !maengel.length,
+             mass: aus.rollen.length + ' Knoepfe aus, ' + an.rollen.length + ' an'
+                 + (maengel.length ? ' | ' + maengel.join(', ')
+                                   : ' | vier Rollen in beiden Lagen') };
+  });
+
+  // ---- Und der Knopf schaltet den Modus selbst ein ---------------------------------
+  //
+  // Die zweite Haelfte derselben Meldung: der Modus lag in einem anderen Reiter, die
+  // Autos liegen in der Garage. Wer dort auf "Spieler 2" drueckt, meint es - also wird
+  // eingeschaltet, statt den Druck zu verschlucken. Geprueft wird MIT dem Kaestchen, denn
+  // ein Schalter, der "aus" zeigt, waehrend zwei Autos fahren, ist die naechste Meldung.
+  stAdd('Garage: "Spieler 2" schaltet den Modus ein und teilt zu', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.garagenRolleProbe) {
+      return { skip: true, mass: 'garagenRolleProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.garagenRolleProbe();
+    const maengel = [];
+    if (!r.vorherAus) maengel.push('Ausgangslage war nicht "aus"');
+    if (!r.danachAn) maengel.push('Modus blieb aus');
+    if (r.rolle !== 'player2') maengel.push('Rolle ist ' + r.rolle);
+    if (!r.istAuto2) maengel.push('playerCar2 nicht gesetzt');
+    if (!r.kaestchenAn) maengel.push('Kaestchen in den Optionen blieb aus');
+    return { ok: !maengel.length,
+             mass: (maengel.length ? maengel.join(', ')
+                    : 'aus -> an, Rolle player2, Kaestchen folgt') };
+  });
+
+  // ---- Der Vibrationsstoss hat eine Adresse ----------------------------------------
+  //
+  // GEMELDET: "Gamepad 2 hat nichts zu tun, vibriert aber mit, wenn Gamepad 1 vibriert."
+  // ruettle() lief durch alle Pads, und die vier Schaltstoesse stehen in der Physikklasse -
+  // also ruettelte ein Schaltvorgang von Auto 2 den Pad von Spieler 1.
+  //
+  // Geprueft wird die WAHL, nicht die Ausfuehrung: ohne Hardware gibt es keinen Pad, den
+  // man spueren koennte. Die Wahl war der Fehler.
+  //
+  // Und die zweite Zusicherung ist die, die niemandem etwas wegnimmt: mit EINEM Spieler
+  // bleibt es bei "alle Pads" - wer Lenkrad und Pad am selben Auto hat, behaelt beides.
+  stAdd('Vibration: mit zwei Spielern hat jeder Stoss eine Adresse', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.rumbleZielProbe) {
+      return { skip: true, mass: 'rumbleZielProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.rumbleZielProbe();
+    const maengel = [];
+    if (r.aus[0] !== 'alle' || r.aus[1] !== 'alle') {
+      maengel.push('ein Spieler: ' + r.aus.join('/') + ' statt alle/alle');
+    }
+    // Mit zwei Spielern darf NIE "alle" herauskommen. Ob dort ein Pad oder "niemand"
+    // steht, haengt an der Hardware - beides ist richtig, "alle" ist es nicht.
+    if (r.an.indexOf('alle') >= 0) {
+      maengel.push('zwei Spieler: ' + r.an.join('/') + ' enthaelt "alle"');
+    }
+    // Und die zwei Adressen muessen verschieden sein, sobald es zwei Pads gibt.
+    if (r.pads >= 2 && r.an[0] === r.an[1]) {
+      maengel.push('zwei Pads, aber beide Spieler zeigen auf ' + r.an[0]);
+    }
+    return { ok: !maengel.length,
+             mass: r.pads + ' Pads | ein Spieler ' + r.aus.join('/')
+                 + ' | zwei Spieler ' + r.an.join('/')
+                 + (maengel.length ? ' | ' + maengel.join(', ') : '') };
+  });
+
   // ---- Zwei Spieler: kommt beim zweiten Auto wirklich etwas an? ---------------------
   //
   // DIE FRAGE, DIE SICH NICHT ERSCHLIESSEN LAESST. "Beide koennen fahren" ist eine Aussage
@@ -9755,7 +9847,23 @@
   // ging die Wette daneben, passierte gar nichts - still.
   //
   // Zwei Aufrufe auf dasselbe Geraet sind harmlos, ein stiller Fehlgriff nicht.
-  stAdd('Controller-Vibration erreicht JEDEN Pad mit Ruettler', () => {
+  // ---- UMGESCHRIEBEN IN v0.6.45, UND ZWAR WEIL DIE ZUSICHERUNG FALSCH WURDE ----------
+  //
+  // Dieser Test hiess "erreicht JEDEN Pad mit Ruettler" und verlangte genau das: ein Stoss
+  // trifft alle Pads. Mit einem Spieler ist das richtig - wer Lenkrad UND Pad am selben
+  // Auto hat, will Vibration in beiden.
+  //
+  // Mit zwei Spielern ist es falsch, und es war der gemeldete Fehler: "Gamepad 2 hat nichts
+  // zu tun, vibriert aber mit, wenn Gamepad 1 vibriert." Die Schaltstoesse stehen in der
+  // Physikklasse und laufen damit fuer beide Autos - ein Schaltvorgang von Auto 2 ruettelte
+  // den Pad von Spieler 1.
+  //
+  // Der Test prueft jetzt BEIDE Regime, denn beide sind zugesichert:
+  //   ein Spieler  -> alle Pads mit Ruettler, der stumme nicht (wie bisher)
+  //   zwei Spieler -> genau EINER, und zwar der des gemeinten Spielers
+  //
+  // Der Schalterteil ("aus ist aus") bleibt unveraendert - er gilt in beiden Regimen.
+  stAdd('Controller-Vibration: ein Spieler alle Pads, zwei Spieler je einen', () => {
     if (typeof padRumble !== 'function') return { skip: true, mass: 'padRumble nicht da' };
     const echt = navigator.getGamepads;
     const sw = $('setting-vibration');
@@ -9770,10 +9878,26 @@
       // Der ROHE zuerst in der Liste - so wie Windows es liefert, wenn es schiefgeht.
       // Drei Eintraege: die zwei Zwillinge und ein Pad OHNE Ruettler. Der dritte ist die
       // Gegenprobe - er darf nicht in der Liste der Getroffenen auftauchen.
-      const ohne = { mapping: 'standard', id: 'stumm', connected: true,
+      // ---- WARUM DER STUMME PAD ROH ZUGEORDNET IST ------------------------------
+      //
+      // Hier stand mapping: 'standard', und der erste Lauf des neuen Teils ist genau daran
+      // gescheitert - richtig gemessen, falsch erwartet: padsSortiert() stellt zugeordnete
+      // Pads vor rohe, also waere der STUMME Pad der von Spieler 2 geworden, und Spieler 2
+      // haette korrekt nichts gespuert. Das ist ein echter Fall, aber nicht der Fall
+      // dieses Tests - er will wissen, ob zwei Spieler zwei VERSCHIEDENE Adressen
+      // bekommen. Roh und als letzter in der Liste macht die Zuteilung eindeutig:
+      // zugeordnet -> Spieler 1, roh -> Spieler 2, stumm -> uebrig.
+      const ohne = { mapping: '', id: 'stumm', connected: true,
                      axes: [0, 0, 0, 0], buttons: [] };
       navigator.getGamepads = () => [mk('', 'roh'), mk('standard', 'zugeordnet'), ohne];
       if (sw && !sw.checked) { sw.checked = true; sw.dispatchEvent(new Event('change', { bubbles: true })); }
+      // ---- EIN SPIELER: alle Pads mit Ruettler ------------------------------------
+      // Der Modus wird hier ausdruecklich gesetzt und nicht vorausgesetzt: er steht in der
+      // Selbstsicherung, ein Test darf also nicht davon ausgehen, dass er aus ist. Genau
+      // daran ist dieser Test beim ersten Lauf nach v0.6.45 gescheitert - richtig
+      // gemessen, falsch erwartet.
+      const zweiVorher = OMEGA_TEST.zweiSpielerLage ? OMEGA_TEST.zweiSpielerLage() : null;
+      if (OMEGA_TEST.zweiSpielerStellen) OMEGA_TEST.zweiSpielerStellen(false);
       padRumble(0.6, 0.3, 90);
       // BEIDE, und beide mit 'dual-rumble'. Ein Pad OHNE Ruettler steht mit in der Liste und
       // darf nicht mitgezaehlt werden - sonst waere "alle" nur eine Schleife und keine
@@ -9781,14 +9905,30 @@
       const namen = rufe.map(r => r.name).sort().join(',');
       const anGetroffen = namen === 'roh,zugeordnet'
                           && rufe.every(r => r.art === 'dual-rumble');
-      // Und aus muss aus sein.
+      // ---- ZWEI SPIELER: genau einer, und der richtige ----------------------------
+      // padsSortiert() stellt zugeordnete Pads vor rohe, Spieler 1 bekommt also
+      // 'zugeordnet' und Spieler 2 'roh'. Der stumme Pad hat keinen Ruettler und kommt in
+      // keinem Fall vor.
+      rufe.length = 0;
+      if (OMEGA_TEST.zweiSpielerStellen) OMEGA_TEST.zweiSpielerStellen(true);
+      padRumble(0.6, 0.3, 90, null, 1);
+      const eins = rufe.map(r => r.name).join(',');
+      rufe.length = 0;
+      padRumble(0.6, 0.3, 90, null, 2);
+      const zwei = rufe.map(r => r.name).join(',');
+      const getrennt = eins === 'zugeordnet' && zwei === 'roh';
+      if (OMEGA_TEST.zweiSpielerStellen) OMEGA_TEST.zweiSpielerStellen(!!zweiVorher);
+      // Und aus muss aus sein - in beiden Regimen dieselbe Zusicherung.
       rufe.length = 0;
       if (sw) { sw.checked = false; sw.dispatchEvent(new Event('change', { bubbles: true })); }
       padRumble(0.6, 0.3, 90);
       const ausStill = rufe.length === 0;
-      return { ok: anGetroffen && ausStill,
-               mass: (anGetroffen ? 'an: beide Pads geruettelt'
-                                  : 'an: FALSCH, ' + JSON.stringify(namen))
+      return { ok: anGetroffen && getrennt && ausStill,
+               mass: (anGetroffen ? 'ein Spieler: beide Pads'
+                                  : 'ein Spieler: FALSCH, ' + JSON.stringify(namen))
+                   + ' | ' + (getrennt ? 'zwei Spieler: 1=zugeordnet, 2=roh'
+                                       : 'zwei Spieler: FALSCH, 1=' + JSON.stringify(eins)
+                                         + ' 2=' + JSON.stringify(zwei))
                    + ' | ' + (ausStill ? 'aus: still' : 'aus: RUETTELT TROTZDEM') };
     } finally {
       navigator.getGamepads = echt;

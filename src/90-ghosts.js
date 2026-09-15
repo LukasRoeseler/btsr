@@ -937,6 +937,29 @@
     // Auto, das zugleich Auto 1 und Auto 2 waere, bekaeme im selben Herzschlag zwei
     // Pakete mit verschiedenem Gas - genau das Stottern, das der eine Herzschlag
     // beseitigt hat.
+    //
+    // ---- DER KNOPF SCHALTET DEN MODUS SELBST EIN --------------------------------------
+    //
+    // GEMELDET: "Es werden 2 Autos und 2 Controller erkannt, aber nur eins funktioniert.
+    // In der Garage muesste ich doch beim zweiten Auto 'Spieler 2' angeben koennen? Ich
+    // kann aber nur eins zum Steuern auswaehlen."
+    //
+    // Und das war genau so gebaut: der vierte Knopf erschien nur, wenn der Schalter in
+    // einem ANDEREN Reiter schon an war. Wer in der Garage anfaengt - und dort faengt
+    // jeder an, dort stehen die Autos -, sieht drei Knoepfe und schliesst daraus, dass es
+    // den Modus nicht gibt. Die Kachel machte es schlimmer: sie zeigt "2 Controller
+    // erkannt" auch bei abgeschaltetem Modus, das liest sich wie "fertig".
+    //
+    // Zwei Aenderungen, und beide gehen in dieselbe Richtung - die Reihenfolge darf keine
+    // Rolle spielen: der Knopf ist jetzt IMMER da, und wer ihn drueckt, schaltet damit den
+    // Modus ein. Nichts Verstecktes: es wird gemeldet und ins Band geschrieben, und das
+    // Kaestchen in den Optionen geht mit (siehe zweiSpielerSetzen in 50-drive.js).
+    if (role === 'player2' && !zweiSpieler) {
+      if (typeof zweiSpielerSetzen === 'function') zweiSpielerSetzen(true);
+      showHudToast('2-SPIELER-MODUS AN');
+      log('2-Spieler-Modus eingeschaltet, weil eine Rolle "Spieler 2" vergeben wurde.',
+          'info');
+    }
     if (role === 'player2') {
       garage.forEach(c => { if (c !== car && c.role === 'player2') c.role = 'none'; });
       playerCar2 = car;
@@ -1027,9 +1050,10 @@
             ${car.blinking ? '<span class="gar-blink">&nbsp;blinkt&hellip;</span>' : ''}</div></div>
         <div class="gar-roles">
           <button data-role="player" class="${car.role === 'player' ? 'on' : ''}">Steuern</button>
-          ${zweiSpieler ? `
           <button data-role="player2" class="${car.role === 'player2' ? 'on zwei' : ''}"
-                  >Spieler&nbsp;2</button>` : ''}
+                  title="${zweiSpieler ? 'Zweites Auto, zweiter Controller'
+                          : 'Schaltet den 2-Spieler-Modus ein und weist dieses Auto zu'}"
+                  >Spieler&nbsp;2</button>
           <button data-role="ghost" class="${car.role === 'ghost' ? 'on ghost' : ''}">Ghost</button>
           <button data-role="none" class="${car.role === 'none' ? 'on off' : ''}">Aus</button>
         </div>

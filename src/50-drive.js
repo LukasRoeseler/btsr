@@ -18,6 +18,7 @@
   // losgeht. Die rund sechzig Regler im Optionentab schreiben weiterhin nur auf
   // physEngine.config - sie zu verdoppeln waere ein zweiter Ort fuer jede Zahl.
   const physEngine2 = new CarreraPhysicsEngine();
+  physEngine2.spieler = 2;   // siehe den Konstruktor: Meldung, Ruck und Ton gehen dorthin
   let phys2LastTime = null;
   // AN als Standard, weil die Original-App es praktisch immer an hat und ein beleuchtetes
   // Auto auf dem Tisch besser zu sehen ist.
@@ -2252,6 +2253,20 @@
     //      cockpitInhaltHoehe() - die Einpassung wuerde im Einzelspiel rund 9 px Platz
     //      verschenken. Mit der Klasse gibt es die Zeile nur, wenn es sie braucht.
     document.body.classList.toggle('zwei-spieler', zweiSpieler);
+    // DAS KAESTCHEN GEHT MIT. Der Modus laesst sich seit v0.6.45 auch aus der Garage
+    // einschalten (siehe setCarRole in 90-ghosts.js), und ein Schalter, der "aus" zeigt,
+    // waehrend zwei Autos fahren, ist genau die Luege, die der Selbsttest "Schalter und
+    // Spiegel sagen beim Laden dasselbe" sucht.
+    //
+    // OHNE Ereignis: .checked zu setzen loest kein 'change' aus, der Zuhoerer laeuft also
+    // nicht zurueck in diese Funktion. Die Selbstsicherung schreibt gebuendelt auf
+    // 'change'/'input' - deshalb wird sie hier von Hand angestossen, sonst ist der Modus
+    // nach dem Neuladen wieder aus.
+    const kaestchen = $('opt-zwei-an');
+    if (kaestchen && kaestchen.checked !== zweiSpieler) {
+      kaestchen.checked = zweiSpieler;
+      if (typeof autoSicherungPlanen === 'function') autoSicherungPlanen();
+    }
     if (typeof renderGarage === 'function') renderGarage();
     if (typeof zweiSpielerKachelZeichnen === 'function') zweiSpielerKachelZeichnen();
     // Die Hoehe des Cockpits aendert sich mit der neuen Zeile, im Vollbild also auch der

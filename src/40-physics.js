@@ -106,6 +106,21 @@
 
   class CarreraPhysicsEngine {
     constructor() {
+      // ---- WEM GEHOERT DIESE INSTANZ? --------------------------------------------------
+      //
+      // GEMELDET: "Gamepad 2 hat nichts zu tun, vibriert aber mit, wenn Gamepad 1
+      // vibriert." Der Befund liegt hier: seit es physEngine2 gibt, laufen die Meldungen
+      // des Getriebes fuer BEIDE Autos durch dieselben drei globalen Wege - showHudToast
+      // (ein Band), padRumble (bis v0.6.44 alle Pads) und playShiftSound (eine Stimme).
+      // Ein Schaltvorgang von Auto 2 schrieb damit "1. Gang" in das Band von Spieler 1 und
+      // ruettelte dessen Pad.
+      //
+      // Die Nummer steht auf der INSTANZ und ausdruecklich nicht in config: config wird
+      // beim Anschalten des Modus von Auto 1 nach Auto 2 KOPIERT
+      // (physEngine2Abgleichen in 50-drive.js), und die Besitzernummer mitzukopieren waere
+      // genau der Fehler, den dieses Feld behebt. Ausserhalb von config kann das nicht
+      // passieren.
+      this.spieler = 1;
       this.config = {
         accelerationFactor: 1.0, // fine-tune multiplier on top of the calibrated scale
         // Von null bis zum vollen Ausschlag, in Millisekunden. 83 ist NICHT gewaehlt,
@@ -1585,7 +1600,7 @@
           if (inputs.brake > 0.8 && st.speedKmh > cfg.topSpeedKmh * 0.15) {
             st.absActive = true;
             const now = Date.now();
-            if (now - st.lastAbsRumble > 140) { st.lastAbsRumble = now; padRumble(0.18, 0.1, 60, 'abs'); }
+            if (now - st.lastAbsRumble > 140) { st.lastAbsRumble = now; this.ruck(0.18, 0.1, 60, 'abs'); }
           }
         } else if (inNeutral) {
           // Out of gear the engine is disconnected from the wheels: revving it does nothing
@@ -1896,6 +1911,27 @@
     //
     // Also werden die zwei Bedeutungen getrennt. Vorgabe ist 'knopf', damit alle vorhandenen
     // Aufrufe von aussen - Tastatur, Pad, Ghosts, Programmierschule - unveraendert bleiben.
+    // ---- Die drei Wege nach draussen, je Instanz --------------------------------------
+    //
+    // SECHZEHN AUFRUFSTELLEN IM GETRIEBE, EINE ADRESSE. Die Alternative waere gewesen, an
+    // jeder der sechzehn Stellen `this.spieler` mitzugeben - und die siebzehnte, die
+    // jemand spaeter einbaut, haette es vergessen. Dieselbe Ueberlegung wie bei
+    // RUMBLE_ARTEN weiter unten: die Frage gehoert an DIE eine Stelle.
+    meldung(txt) {
+      // MIT KENNZEICHNUNG, nicht verschwiegen: das Meldungsband ist EINES, und "1. Gang"
+      // ohne Absender ist im Zwei-Spieler-Modus eine Nachricht, die man auf sein eigenes
+      // Auto bezieht. Ein eigenes Band fuer Auto 2 waere der naechste Schritt; das Praefix
+      // ist der ehrliche Zwischenstand und kostet keine Flaeche.
+      showHudToast(this.spieler === 2 ? 'P2: ' + txt : txt);
+    }
+
+    ruck(strong, weak, ms, art) { padRumble(strong, weak, ms, art, this.spieler); }
+
+    // Der Schaltton bekommt den Spieler MIT, obwohl 80-sound.js ihn heute noch nicht
+    // auswertet: der Motorton von Auto 2 kommt in einem eigenen Schritt, und dann soll
+    // nicht noch einmal die Physikklasse angefasst werden muessen.
+    schaltTon(dir) { playShiftSound(dir, this.spieler); }
+
     triggerShift(direction, quelle) {
       const st = this.state, cfg = this.config;
       const stopped = Math.abs(st.speedKmh) < cfg.reverseStandstillKmh;
@@ -1919,8 +1955,8 @@
           if (direction > 0) {
             st.driveMode = 'forward'; st.currentGear = 0;
             st.speedKmh = 0; st.neutralRpm = 0;
-            showHudToast('Vorw\u00e4rts'); padRumble(0.3, 0.2, 90, 'schalt');
-            playShiftSound(1);
+            this.meldung('Vorw\u00e4rts'); this.ruck(0.3, 0.2, 90, 'schalt');
+            this.schaltTon(1);
           }
           return;
         }
@@ -1928,12 +1964,12 @@
           if (langsam) {
             st.driveMode = 'reverse'; st.currentGear = 0;
             st.speedKmh = 0; st.neutralRpm = 0;
-            showHudToast('R\u00fcckw\u00e4rtsgang'); padRumble(0.3, 0.2, 90, 'schalt');
-            playShiftSound(-1);
+            this.meldung('R\u00fcckw\u00e4rtsgang'); this.ruck(0.3, 0.2, 90, 'schalt');
+            this.schaltTon(-1);
           } else {
             // Sagen, WARUM nichts passiert. Ein Knopf, der schweigend nichts tut, sieht
             // kaputt aus - und genau so ist dieser Fehler gemeldet worden.
-            showHudToast('ZU SCHNELL F\u00dcR R');
+            this.meldung('ZU SCHNELL F\u00dcR R');
           }
         }
         return;
@@ -1942,8 +1978,8 @@
       if (st.driveMode === 'reverse') {
         if (direction > 0 && stopped) {
           st.driveMode = 'neutral'; st.speedKmh = 0; st.neutralRpm = 0;
-          showHudToast('Leerlauf'); padRumble(0.3, 0.2, 90, 'schalt');
-          playShiftSound(1);
+          this.meldung('Leerlauf'); this.ruck(0.3, 0.2, 90, 'schalt');
+          this.schaltTon(1);
         }
         return;
       }
@@ -1953,20 +1989,20 @@
           st.driveMode = 'forward'; st.currentGear = 0; st.neutralRpm = 0;
           st.isShifting = true;
           st.shiftLeft = cfg.shiftMs / 1000;
-          showHudToast('1. Gang'); padRumble(0.15, 0.1, 40, 'schalt');
-          playShiftSound(1);
+          this.meldung('1. Gang'); this.ruck(0.15, 0.1, 40, 'schalt');
+          this.schaltTon(1);
         } else if (stopped) {
           st.driveMode = 'reverse'; st.speedKmh = 0; st.neutralRpm = 0;
-          showHudToast('Rückwärtsgang'); padRumble(0.3, 0.2, 90, 'schalt');
-          playShiftSound(-1);
+          this.meldung('Rückwärtsgang'); this.ruck(0.3, 0.2, 90, 'schalt');
+          this.schaltTon(-1);
         }
         return;
       }
 
       if (direction < 0 && st.currentGear === 0) {
         st.driveMode = 'neutral'; st.neutralRpm = 0;
-        showHudToast('Leerlauf'); padRumble(0.2, 0.12, 60, 'schalt');
-        playShiftSound(-1);
+        this.meldung('Leerlauf'); this.ruck(0.2, 0.12, 60, 'schalt');
+        this.schaltTon(-1);
         return;
       }
 
@@ -1980,8 +2016,8 @@
       st.currentGear = next;
       // Short and light: six shifts inside three seconds with a long pattern is a
       // pneumatic drill in the hand.
-      padRumble(0.15, 0.1, 40, 'schalt');
-      playShiftSound(direction);
+      this.ruck(0.15, 0.1, 40, 'schalt');
+      this.schaltTon(direction);
     }
   }
 
@@ -2022,22 +2058,50 @@
   // Der Rueckgabewert sagt, ob die Schalter den Stoss DURCHGELASSEN haben - nicht, ob ein
   // Controller ihn ausgefuehrt hat. Damit ist die Schalterlogik ohne Hardware pruefbar, und
   // genau die ist bei siebzehn Aufrufstellen die Stelle, an der man sich vertut.
-  function padRumble(strong, weak, ms, art) {
+  // ---- WER SOLL ES SPUEREN? ----------------------------------------------------------
+  //
+  // GEMELDET: "Gamepad 2 hat nichts zu tun, vibriert aber mit, wenn Gamepad 1 vibriert."
+  //
+  // NACHGESEHEN, und der Befund ist eindeutig: ruettle() lief durch navigator.getGamepads()
+  // und stiess JEDEN Pad an, der einen Motor hat. Mit einem Spieler war das richtig und
+  // ungeprueft zugleich - es gab nur einen Pad, also traf "alle" immer den richtigen.
+  //
+  // Schlimmer noch: die vier Schaltstoesse stehen INNERHALB der Physikklasse, und seit es
+  // physEngine2 gibt, laufen sie fuer beide Autos. Ein Schaltvorgang von Auto 2 ruettelte
+  // damit den Pad von Spieler 1 - und umgekehrt. Das ist keine Kosmetik: ein Stoss, der zu
+  // einem Vorgang gehoert, den man nicht ausgeloest hat, liest sich als Fehlfunktion.
+  //
+  // `wer` ist deshalb ab jetzt Teil des Aufrufs, mit 1 als Vorgabe: die dreiundzwanzig
+  // vorhandenen Aufrufstellen bleiben unveraendert und meinen weiterhin Spieler 1.
+  //
+  // UND OHNE ZWEI-SPIELER-MODUS BLEIBT ES, WIE ES WAR - alle Pads. Das ist Absicht und
+  // keine Faulheit: wer mit Lenkrad UND Pad am selben Auto sitzt, hat heute Vibration in
+  // beiden, und diese Aenderung soll ihm nichts wegnehmen. Erst wenn es wirklich zwei
+  // Spieler gibt, gibt es auch zwei Adressen.
+  function rumblePad(wer) {
+    if (typeof zweiSpieler === 'undefined' || !zweiSpieler) return null;   // alle
+    if (typeof padsFuerSpieler !== 'function') return null;
+    const sp = padsFuerSpieler();
+    return (wer === 2 ? sp.p2 : sp.p1) || undefined;   // undefined = niemand
+  }
+
+  function padRumble(strong, weak, ms, art, wer) {
     if (!rumbleOn) return false;
     // Eine unbekannte Art brummt - das ist Absicht. Wer eine neue Stelle einbaut und das
     // Etikett vergisst, bekommt ein Brummen und merkt es; ein stilles Verschlucken waere
     // ein Feature, das niemand vermisst, bis es fehlt.
     if (art && RUMBLE_ARTEN[art] === false) return false;
+    const ziel = rumblePad(wer);
     ruettle({
       duration: ms, startDelay: 0,
       strongMagnitude: Math.max(0, Math.min(1, strong)),
       weakMagnitude: Math.max(0, Math.min(1, weak)),
-    });
+    }, ziel);
     // EIN ZWEITER WEG, KEIN ZWEITER AUFRUF. Die achtzehn Aufrufstellen bleiben unberuehrt;
     // ob eine Art auch die Trigger bewegt, steht in TRIGGER_ARTEN und nicht bei ihnen.
     if (triggerRumbleOn && art && TRIGGER_ARTEN[art]) {
       const [li, re] = TRIGGER_ARTEN[art];
-      triggerRuettle(li, re, ms);
+      triggerRuettle(li, re, ms, ziel);
     }
     return true;
   }
@@ -2056,11 +2120,25 @@
   // UND AUSDRUECKLICH KEIN RUECKFALL auf 'dual-rumble': das wuerde vortaeuschen, die Trigger
   // haetten reagiert. Der Nutzer soll in den Optionen lesen koennen, dass sein Pad es nicht
   // kann - und nicht ein Brummen in den Griffen dafuer halten.
-  function triggerRuettle(links, rechts, ms) {
-    let erreicht = 0;
+  // `ziel` ist DREIWERTIG, und das ist die ganze Bauform:
+  //   null       -> alle Pads (ein Spieler, wie bisher)
+  //   ein Pad    -> genau dieser
+  //   undefined  -> keiner (der Spieler hat gerade keinen Pad)
+  // Eine leere Liste und "alle" auseinanderhalten zu koennen ist der Grund, warum hier
+  // nicht einfach ein Array steht.
+  function zielPads(ziel) {
+    if (ziel === undefined) return [];
+    if (ziel) return [ziel];
     try {
       const pads = navigator.getGamepads ? navigator.getGamepads() : [];
-      for (const p of Array.from(pads)) {
+      return Array.from(pads);
+    } catch (e) { return []; }
+  }
+
+  function triggerRuettle(links, rechts, ms, ziel) {
+    let erreicht = 0;
+    try {
+      for (const p of zielPads(ziel)) {
         const akt = p && p.vibrationActuator;
         if (!akt || typeof akt.playEffect !== 'function') continue;
         if (!Array.isArray(akt.effects) || akt.effects.indexOf('trigger-rumble') < 0) continue;
@@ -2089,11 +2167,10 @@
   //
   // Also alle. Zwei Aufrufe auf dasselbe Geraet sind harmlos - der zweite ueberschreibt den
   // ersten -, ein stiller Fehlgriff ist es nicht.
-  function ruettle(effekt) {
+  function ruettle(effekt, ziel) {
     let erreicht = 0;
     try {
-      const pads = navigator.getGamepads ? navigator.getGamepads() : [];
-      for (const p of Array.from(pads)) {
+      for (const p of zielPads(ziel)) {
         if (!p || !p.vibrationActuator) continue;
         if (typeof p.vibrationActuator.playEffect !== 'function') continue;
         erreicht++;

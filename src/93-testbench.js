@@ -29,6 +29,103 @@
     // Kastenhoehe misst, wuerde die Verkleinerung mitmessen und immer gruen sein.
     // `b` ist die Kastenbreite und gilt nur im Vollbild - ohne sie prueft ein breites
     // Testfenster eine Lage, in die ein Handy nie geraet.
+    // Den Modus von aussen lesen und stellen. Ein Prueflauf, der ihn voraussetzt, ist auf
+    // Sand gebaut: er steht in der Selbstsicherung und kann beim Start schon an sein.
+    // Gestellt wird OHNE zweiSpielerSetzen() - der Prueflauf will die Weiche, nicht die
+    // Nebenwirkungen (Garage neu zeichnen, Cockpit neu einpassen, Rolle zuruecknehmen).
+    zweiSpielerLage() { return zweiSpieler; },
+    zweiSpielerStellen(an) { zweiSpieler = !!an; return zweiSpieler; },
+
+    // ---- Wohin geht der Vibrationsstoss? --------------------------------------------
+    //
+    // Ohne Hardware ist die WAHL pruefbar, die Ausfuehrung nicht - und die Wahl war der
+    // Fehler. rumblePad() gibt dreiwertig zurueck: null heisst "alle Pads" (ein Spieler,
+    // Verhalten wie vor v0.6.45), ein Pad heisst genau dieser, undefined heisst niemand.
+    rumbleZielProbe() {
+      const vorher = zweiSpieler;
+      try {
+        zweiSpieler = false;
+        const aus = [rumblePad(1), rumblePad(2)].map(nenn);
+        zweiSpieler = true;
+        const an = [rumblePad(1), rumblePad(2)].map(nenn);
+        return { aus, an, pads: padsSortiert().length };
+      } finally { zweiSpieler = vorher; }
+      function nenn(z) {
+        return z === null ? 'alle' : z === undefined ? 'niemand'
+             : String(z.id || 'pad').slice(0, 24);
+      }
+    },
+
+    // ---- Die Rollenknoepfe in der Garage --------------------------------------------
+    //
+    // WARUM DAS EINE SONDE BRAUCHT. Die Garagenzeile wird von renderGarage() aus einem
+    // Textbaustein erzeugt, und ihre Knoepfe existieren nur, wenn ein Auto verbunden ist.
+    // Genau deshalb ist der gemeldete Fehler durch alle 220 Selbsttests gekommen: der
+    // vierte Knopf fehlte, und kein Test hatte je eine Garagenzeile gesehen.
+    //
+    // Die Sonde stellt ein Auto in die Garage, laesst zeichnen, liest die Knoepfe und
+    // raeumt auf. Eine Attrappe genuegt: renderGarage() liest von einem Auto nur tag,
+    // device.id, role, alias, colorId und ghostSpeed.
+    garagenZeileProbe(o) {
+      const opt = o || {};
+      const vorherZwei = zweiSpieler;
+      const attrappe = { role: opt.role || 'none', device: { id: 'probe-garage' },
+                         alias: '', colorId: null, sim: false };
+      garage.push(attrappe);
+      try {
+        if (opt.zwei !== undefined) zweiSpieler = !!opt.zwei;
+        renderGarage();
+        const zeilen = Array.from(($('gar-list') || { children: [] }).children);
+        const meine = zeilen[zeilen.length - 1];
+        const knoepfe = meine
+          ? Array.from(meine.querySelectorAll('button[data-role]')).map((b) => ({
+              rolle: b.dataset.role,
+              text: b.textContent.replace(/\s+/g, ' ').trim(),
+              an: b.classList.contains('on'),
+            }))
+          : [];
+        return { zeilen: zeilen.length, knoepfe,
+                 rollen: knoepfe.map((k) => k.rolle),
+                 randklasse: meine ? meine.className : null };
+      } finally {
+        const i = garage.indexOf(attrappe);
+        if (i >= 0) garage.splice(i, 1);
+        zweiSpieler = vorherZwei;
+        renderGarage();
+      }
+    },
+
+    // Und der Weg, den der gemeldete Fehler genommen haette: Knopf druecken, obwohl der
+    // Modus aus ist. Danach muss der Modus an sein UND das Auto zugeteilt.
+    garagenRolleProbe() {
+      const vorher = { zwei: zweiSpieler, p2: playerCar2,
+                       kaestchen: ($('opt-zwei-an') || {}).checked };
+      const attrappe = { role: 'none', device: { id: 'probe-rolle' },
+                         alias: '', colorId: null, sim: false, testSenke: [] };
+      garage.push(attrappe);
+      try {
+        if (typeof zweiSpielerSetzen === 'function') zweiSpielerSetzen(false);
+        const vorZwei = zweiSpieler;
+        setCarRole(attrappe, 'player2');
+        return {
+          vorherAus: vorZwei === false,
+          danachAn: zweiSpieler === true,
+          rolle: attrappe.role,
+          istAuto2: playerCar2 === attrappe,
+          kaestchenAn: !!($('opt-zwei-an') || {}).checked,
+        };
+      } finally {
+        if (playerCar2 === attrappe) playerCar2 = null;
+        const i = garage.indexOf(attrappe);
+        if (i >= 0) garage.splice(i, 1);
+        if (typeof zweiSpielerSetzen === 'function') zweiSpielerSetzen(vorher.zwei);
+        playerCar2 = vorher.p2;
+        const k = $('opt-zwei-an');
+        if (k) k.checked = !!vorher.kaestchen;
+        renderGarage();
+      }
+    },
+
     // ---- Der Zwei-Spieler-Modus, am Sendeweg gemessen -------------------------------
     //
     // GEMESSEN WIRD, WAS HINAUSGEHT, und nicht, was eine Funktion sich vornimmt. Genau
