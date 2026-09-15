@@ -720,6 +720,10 @@
     "Welcher der beiden erkannten Controller Auto 1 fährt. Die Reihenfolge kommt vom Browser und ist nicht wählbar: hier ist der Schalter dafür.":
       "Which of the two detected controllers drives car 1. The order comes from the browser and cannot be chosen: this is the switch for it.",
     "Was gerade erkannt ist": "What is detected right now",
+    "Kein Autopilot unter gelber Flagge und keine Einführungsrunde für Auto 2: beide hängen an Zählern des Rennens, die es nur einmal gibt.":
+      "No autopilot under a yellow flag and no formation lap for car 2: both hang off race counters that exist only once.",
+    "Dazu eine eigene Ortung auf der Strecke, und daran hängt mehr, als es klingt: die Ghosts weichen Auto 2 aus und wählen ihre Überholseite nach seiner Querlage, es erscheint auf der Streckenkarte, die Fahrhilfe und der Leitplanken-Modus gelten auch für ihn, und neben der Bahn wird sein Gas gedrosselt und sein Controller brummt – sein eigener, nicht der von Auto 1.":
+      "Plus a track position of its own, and more hangs off that than it sounds: the ghosts avoid car 2 and pick their passing side from its lateral offset, it shows up on the track map, the driver aid and guard-rail mode apply to it too, and off the track its throttle is capped and its controller rumbles – its own, not car 1's.",
     "Drücke an jedem Controller einmal einen Knopf – der Browser meldet ein Pad erst nach der ersten Eingabe. Beide Controller benutzen dieselbe Tastenbelegung aus der Kachel „Controller“.":
       "Press one button on each controller – the browser only reports a pad after its first input. Both controllers use the same button mapping from the “Controller” tile.",
     "Was Auto 2 in dieser Fassung nicht hat": "What car 2 does not have in this version",
@@ -729,10 +733,6 @@
       "Fuel and damage count for car 1 only. Two unequal rule sets would be worse than none – the mode is meant to be fair.",
     "Der Motorklang folgt Auto 1. Es gibt einen Tongenerator.":
       "The engine sound follows car 1. There is one tone generator.",
-    "Keine Fahrhilfe, kein Leitplanken-Modus und kein Autopilot unter Gelb für Auto 2: alle drei rechnen mit dem geführten Ort des Fahrerautos.":
-      "No driver aid, no guard-rail mode and no autopilot under yellow for car 2: all three work off the tracked position of the driver's car.",
-    "Ghosts weichen Auto 2 nicht aus – sie kennen seinen Ort nicht. Am besten ohne Ghosts fahren.":
-      "Ghosts do not avoid car 2 – they do not know where it is. Best driven without ghosts.",
     "Rundenzählung, Ergebnistabelle und Aufnahme gelten für Auto 1.":
       "Lap counting, the results table and recording apply to car 1.",
     ": eine eigene Fahrphysik mit eigenen Gängen, eigener Drehzahl, eigenem Tempo und eigenen Temperaturen. Die Einstellungen aus „Fahrgefühl“ werden bei jedem Anschalten übernommen, damit beide Autos gleich fahren.":

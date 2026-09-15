@@ -36,6 +36,68 @@
     zweiSpielerLage() { return zweiSpieler; },
     zweiSpielerStellen(an) { zweiSpieler = !!an; return zweiSpieler; },
 
+    // ---- SEHEN DIE GHOSTS AUTO 2? ---------------------------------------------------
+    //
+    // Die Frage laesst sich nicht aus der Zuteilung ableiten, und sie hat genau eine
+    // richtige Antwort: Auto 2 muss im FELD stehen. Daran haengt alles Weitere - ghostAhead
+    // findet den Vorausfahrenden nur dort, der Abstandhalter zaehlt nur das Feld, und die
+    // Seitenwahl beim Ueberholen fragt die Querlage eines Autos, das im Feld steht.
+    //
+    // Gemessen wird deshalb an ghostFieldRacing() UND an ghostAhead(): das zweite ist der
+    // Weg, den ein Ghost wirklich nimmt. Ein Test, der nur die Liste prueft, haette den
+    // Fehler "im Feld, aber ohne Ortungssatz" nicht gesehen.
+    //
+    // Und die Gegenprobe gehoert dazu: mit abgeschaltetem Modus darf Auto 2 NICHT im Feld
+    // stehen. Sonst wichen die Ghosts im Einzelspiel einem Auto aus, das niemand fuehrt.
+    zweiSpielerFeldProbe() {
+      const merkGarage = garage.slice();
+      const vorher = { zwei: zweiSpieler, p2: playerCar2, p1: playerCar };
+      const echtNow = Date.now;
+      let uhr = 1000000;
+      try {
+        Date.now = () => uhr;
+        garage.splice(0, garage.length);
+        // Ein Ghost hinten, Auto 2 eine halbe Kachel voraus. Der Ortungssatz von Auto 2 ist
+        // der, den spielerOrt() anlegt - `nurOrt`, ohne Motor.
+        const ghost = { role: 'ghost', alias: 'G', tileAt: uhr, tileCode: 0x02,
+                        ghost: { tilesTotal: 0, tileIndex: 0, tileMs: 500, tileStart: uhr,
+                                 tileRing: [], form: 0, naehern: 0 } };
+        const auto2 = { role: 'player2', alias: 'P2', tileAt: uhr, tileCode: 0x02,
+                        device: { id: 'probe-feld' },
+                        ghost: { nurOrt: true, tilesTotal: 0.5, tileIndex: 0, tileMs: 500,
+                                 tileStart: uhr, tileRing: [], querSoll: 0.4 } };
+        garage.push(ghost, auto2);
+        playerCar = null;      // damit nur Auto 2 im Feld stehen kann
+        playerCar2 = auto2;
+
+        zweiSpieler = false;
+        const ausFeld = ghostFieldRacing().length;
+        const ausVoraus = ghostAhead(ghost);
+
+        zweiSpieler = true;
+        const anFeld = ghostFieldRacing();
+        const anVoraus = ghostAhead(ghost);
+
+        return {
+          ausFeld, ausVoraus: ausVoraus ? (ausVoraus.car.alias || '?') : null,
+          anFeld: anFeld.length,
+          anEnthaeltAuto2: anFeld.indexOf(auto2) >= 0,
+          anVoraus: anVoraus ? (anVoraus.car.alias || '?') : null,
+          anAbstand: anVoraus ? +anVoraus.gap.toFixed(3) : null,
+          // Die Querlage ist die Zahl, aus der der Angreifer seine Seite waehlt. Ueber
+          // ghostQuerLage() gelesen, also genau so, wie der Angreifer es tut.
+          querLage: typeof ghostQuerLage === 'function' ? ghostQuerLage(auto2) : null,
+        };
+      } finally {
+        Date.now = echtNow;
+        garage.splice(0, garage.length);
+        merkGarage.forEach((c) => garage.push(c));
+        zweiSpieler = vorher.zwei;
+        playerCar2 = vorher.p2;
+        playerCar = vorher.p1;
+      }
+    },
+
     // ---- Wohin geht der Vibrationsstoss? --------------------------------------------
     //
     // Ohne Hardware ist die WAHL pruefbar, die Ausfuehrung nicht - und die Wahl war der

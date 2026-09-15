@@ -1358,6 +1358,19 @@
     if (code !== 0xff && code !== TILE_OFFTRACK) car.lastCodeAt = Date.now();
     if (code !== car.tileCode) { car.tileCode = code; }
     if (car.tileCount !== b[11]) { car.tileCount = b[11]; car.tileAt = Date.now(); }
+    // ---- DAS ABSEITS VON AUTO 2, aus SEINEN Bytes --------------------------------
+    //
+    // Fuer Auto 1 macht das handleDashboardBytes() in 70-race.js - und das laeuft nur fuer
+    // das Fahrerauto (die Zeile `if (car === playerCar)` ein paar Zeilen weiter unten).
+    // Auto 2 hat denselben Anspruch auf die entprellte Antwort: davon haengen seine
+    // Abseits-Drosselung, sein Rumpeln und die Frage ab, ob die Fahrhilfe die Lenkung
+    // hergeben muss.
+    //
+    // ENTPRELLT und nicht car.tileCode direkt: Byte 12 flattert, ein einzelnes 0x00
+    // zwischen guten Lesungen ist Rauschen - dieselbe Begruendung wie bei offtrackEinMs.
+    if (zweiSpieler && car === playerCar2) {
+      offtrackMelden((b[12] & 0xff) === TILE_OFFTRACK, 2);
+    }
     // Der Streckenscan haengt jetzt an DIESEM Strom. Er hatte eine eigene Anmeldung ueber
     // charByUuid, und die wird nur von exploreServices() im Entwickler-Tab gefuellt - nach
     // einer Verbindung ueber die Garage war sie leer und der Scan brach mit "NUS TX nicht
@@ -4310,37 +4323,56 @@
   // Streckenkarte (trackCarMarks liest car.ghost) und im Feld fuer den Abstandhalter
   // (ghostFieldRacing hat den Fall `c === playerCar` seit jeher vorgesehen - er lief nur
   // nie, weil das Objekt fehlte).
-  function spielerOrt() {
-    if (typeof playerCar === 'undefined' || !playerCar) return null;
-    if (!playerCar.ghost) {
-      playerCar.ghost = { nurOrt: true, tileIndex: null, lastCount: playerCar.tileCount,
-                          tileStart: 0, tileRing: [], tilesTotal: 0, laps: 0,
-                          ortStimmen: null, kurveMix: 0 };
+  // ---- UND SEIT v0.6.46 FUER ZWEI AUTOS -----------------------------------------------
+  //
+  // Der Ortungssatz lag schon immer AUF DEM AUTO (car.ghost), nicht in einer globalen
+  // Groesse - nur der Zugriff darauf las `playerCar` fest. Das ist der Grund, warum die
+  // Ortung von Auto 2 der billigste der offenen Punkte war: es fehlte ein Argument, kein
+  // Datenmodell.
+  //
+  // Damit bekommt Auto 2: die Ghosts weichen ihm aus (es steht jetzt im Feld), es
+  // erscheint auf der Streckenkarte, und die Fahrhilfe samt Leitplanken-Modus gilt auch
+  // fuer ihn - alles drei haengt allein an diesem Satz.
+  //
+  // `car.tileCount` und `car.tileCode` kommen fuer JEDES verbundene Auto aus dem
+  // Meldungsstrom (siehe die Stelle bei car.tileAt weiter oben). Es braucht also keinen
+  // zweiten Meldungsweg, und genau das war die Sorge, die im Hilfetext der Kachel stand.
+  function spielerOrt(car) {
+    const c = car || (typeof playerCar !== 'undefined' ? playerCar : null);
+    if (!c) return null;
+    if (!c.ghost) {
+      c.ghost = { nurOrt: true, tileIndex: null, lastCount: c.tileCount,
+                  tileStart: 0, tileRing: [], tilesTotal: 0, laps: 0,
+                  ortStimmen: null, kurveMix: 0 };
     }
-    return playerCar.ghost.nurOrt ? playerCar.ghost : null;
+    return c.ghost.nurOrt ? c.ghost : null;
   }
 
-  function spielerOrtTick() {
-    const g = spielerOrt();
+  function spielerOrtTick(auto) {
+    // `auto` ist das gemeinte Auto. Ohne Argument ist es das Fahrerauto, damit jeder
+    // vorhandene Aufruf unveraendert gueltig bleibt.
+    const c = auto || playerCar;
+    if (!c) return;
+    const g = spielerOrt(c);
     if (!g || !currentTrackTiles || currentTrackTiles.length < 3) return;
     const now = Date.now();
     // Kachelwechsel: DIESELBE Buchfuehrung wie in ghostTick, nur ohne Antrieb. Sie steht
     // hier ein zweites Mal und nicht als gemeinsame Funktion, weil der Ghost-Zweig noch
     // Lernbilanz, Rundenuhr und Abgangsmelder daran haengt - eine Funktion, die beides
     // bedient, haette fuer den halben Aufrufer immer die falschen Argumente.
-    if (playerCar.tileCount !== null && playerCar.tileCount !== undefined
-        && playerCar.tileCount !== g.lastCount) {
+    if (c.tileCount !== null && c.tileCount !== undefined
+        && c.tileCount !== g.lastCount) {
       if (g.tileStart) {
         g.tileRing.push(now - g.tileStart);
         if (g.tileRing.length > GHOST_ZAEHLER_FENSTER) g.tileRing.shift();
       }
       g.tileStart = now;
-      g.lastCount = playerCar.tileCount;
+      g.lastCount = c.tileCount;
       g.tileIndex = g.tileIndex === null ? 0 : (g.tileIndex + 1) % currentTrackTiles.length;
       g.tilesTotal = (g.tilesTotal || 0) + 1;
       // Und die Ausrichtung ueber den gemeldeten Code. Sie braucht einen Startwert, den die
       // Zeile darueber liefert - ortAbgleich() VERFEINERT den Index, es setzt ihn nicht.
-      ortAbgleich(playerCar);
+      ortAbgleich(c);
     }
     // ---- DER VORAUSBLICK, und nur wenn die Fahrhilfe wirklich greift -------------
     //
@@ -4374,22 +4406,37 @@
     // WAS DARAUS VON SELBST FOLGT, ohne eine zweite Bedingung: fahrhilfeVollGilt() liest
     // playerCar.modeBytes und rechnet die Bedingung nicht nach. Sind die Bytes weg, gibt
     // auch der Modus 'voll' die Lenkung her. Genau dafuer ist es so gebaut.
-    if (trackMode === 'on' && driverAssistAktiv() && !abseitsJetzt()) {
-      const la = ghostLookahead(playerCar);
-      playerCar.modeBytes = la
+    // `wer` entscheidet, WESSEN Abseits gefragt wird. Ohne das haette Auto 2 die Lenkung
+    // abgegeben, sobald Auto 1 neben der Bahn liegt - und genau darum ging es bei der
+    // Bestellung "gib mir die volle Kontrolle, damit ich selbst zurueck auf die Strecke
+    // fahren kann".
+    const wer = (typeof playerCar2 !== 'undefined' && c === playerCar2) ? 2 : 1;
+    if (trackMode === 'on' && driverAssistAktiv() && !abseitsJetztFuer(wer)) {
+      const la = ghostLookahead(c);
+      c.modeBytes = la
         ? Object.assign({ 10: AUTO_MODE.b10, 15: AUTO_MODE.b15 }, la)
         : null;
     } else {
-      playerCar.modeBytes = null;
+      c.modeBytes = null;
     }
   }
 
   // Im Sendetakt, damit der Vorausblick zu dem Paket passt, mit dem er hinausgeht. Ein
   // eigener, langsamerer Takt waere ein Vorausblick, der der Lenkung nachlaeuft.
-  setInterval(spielerOrtTick, CONTROL_SEND_INTERVAL_MS);
+  // EIN Takt fuer beide Autos, und die Reihenfolge ist fest. Ein zweiter setInterval waere
+  // dieselbe Falle wie zwei Sendewege: zwei Buchfuehrungen, die sich im Wechsel
+  // ueberschreiben koennten, wo eine Schleife genuegt.
+  setInterval(() => {
+    spielerOrtTick(playerCar);
+    if (zweiSpieler && playerCar2) spielerOrtTick(playerCar2);
+  }, CONTROL_SEND_INTERVAL_MS);
 
   function ghostFieldRacing() {
-    return garage.filter(c => c.ghost && (c.role === 'ghost' || c === playerCar));
+    // Auto 2 gehoert ins Feld, sobald es fuehrt UND einen Ortungssatz hat. Beides
+    // geprueft und nicht nur die Rolle: ohne eingescannte Strecke gibt es keinen Satz, und
+    // ein Auto ohne Ort im Feld waere fuer jeden Abstand eine Null.
+    return garage.filter(c => c.ghost && (c.role === 'ghost' || c === playerCar
+                                          || (zweiSpieler && c === playerCar2)));
   }
 
   // ---- Die beste bekannte Querlage EINES Autos, egal welcher Art -------------------
@@ -7335,9 +7382,16 @@
     // Es geht in die SEITENVERGABE ein und bekommt selbst keinen Versatz geschrieben: ein
     // Mensch laesst sich nicht verteilen. Sein Platz in der Reihe belegt eine Seite, die
     // Ghosts nehmen die anderen - genau das, was "ausweichen" heisst.
-    const feld = (typeof playerCar !== 'undefined' && playerCar && playerCar.ghost
-                  && gs.indexOf(playerCar) < 0)
-      ? gs.concat([playerCar]) : gs;
+    // Beide Fahrerautos gehoeren ins Feld, wenn sie einen Ortungssatz haben. Die Pruefung
+    // auf gs.indexOf ist keine Vorsicht, sondern notwendig: ghostFieldRacing() gibt sie
+    // inzwischen selbst mit heraus, und ein Auto zweimal im Feld waere fuer den
+    // Abstandhalter ein Auto, das sich selbst blockiert.
+    let feld = gs;
+    const dazu = (auto) => {
+      if (auto && auto.ghost && feld.indexOf(auto) < 0) feld = feld.concat([auto]);
+    };
+    if (typeof playerCar !== 'undefined') dazu(playerCar);
+    if (typeof playerCar2 !== 'undefined' && zweiSpieler) dazu(playerCar2);
     const want = new Map(gs.map(c => [c, 0]));
     // Erst die Gruppen bilden, dann die Seiten verteilen. Paarweise zuzuweisen war bei drei
     // Autos auf derselben Kachel falsch: die Paare (A,B), (A,C) und (B,C) schrieben

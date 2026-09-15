@@ -8006,11 +8006,9 @@
           fair sein.</span>
         <kbd>Ton</kbd><span>Der Motorklang folgt Auto&nbsp;1. Es gibt einen
           Tongenerator.</span>
-        <kbd>Hilfe</kbd><span>Keine Fahrhilfe, kein Leitplanken-Modus und kein Autopilot
-          unter Gelb f&uuml;r Auto&nbsp;2: alle drei rechnen mit dem gef&uuml;hrten Ort des
-          Fahrerautos.</span>
-        <kbd>Ghost</kbd><span>Ghosts weichen Auto&nbsp;2 nicht aus &ndash; sie kennen
-          seinen Ort nicht. Am besten ohne Ghosts fahren.</span>
+        <kbd>Gelb</kbd><span>Kein Autopilot unter gelber Flagge und keine
+          Einf&uuml;hrungsrunde f&uuml;r Auto&nbsp;2: beide h&auml;ngen an Z&auml;hlern des
+          Rennens, die es nur einmal gibt.</span>
         <kbd>Runden</kbd><span>Rundenz&auml;hlung, Ergebnistabelle und Aufnahme gelten
           f&uuml;r Auto&nbsp;1.</span>
       </div>
@@ -8018,6 +8016,12 @@
         G&auml;ngen, eigener Drehzahl, eigenem Tempo und eigenen Temperaturen. Die
         Einstellungen aus &bdquo;Fahrgef&uuml;hl&ldquo; werden bei jedem Anschalten
         &uuml;bernommen, damit beide Autos gleich fahren.</p>
+      <p class="muted">Dazu eine eigene Ortung auf der Strecke, und daran h&auml;ngt mehr,
+        als es klingt: die Ghosts weichen Auto&nbsp;2 aus und w&auml;hlen ihre
+        &Uuml;berholseite nach seiner Querlage, es erscheint auf der Streckenkarte, die
+        Fahrhilfe und der Leitplanken-Modus gelten auch f&uuml;r ihn, und neben der Bahn
+        wird sein Gas gedrosselt und sein Controller brummt &ndash; sein eigener,
+        nicht der von Auto&nbsp;1.</p>
     </div>
 
   </section>
@@ -8425,7 +8429,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.6.45</span></span>
+    <span class="foot-ver">v<span id="app-version">0.6.46</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -9180,6 +9184,10 @@
     "Welcher der beiden erkannten Controller Auto 1 fährt. Die Reihenfolge kommt vom Browser und ist nicht wählbar: hier ist der Schalter dafür.":
       "Which of the two detected controllers drives car 1. The order comes from the browser and cannot be chosen: this is the switch for it.",
     "Was gerade erkannt ist": "What is detected right now",
+    "Kein Autopilot unter gelber Flagge und keine Einführungsrunde für Auto 2: beide hängen an Zählern des Rennens, die es nur einmal gibt.":
+      "No autopilot under a yellow flag and no formation lap for car 2: both hang off race counters that exist only once.",
+    "Dazu eine eigene Ortung auf der Strecke, und daran hängt mehr, als es klingt: die Ghosts weichen Auto 2 aus und wählen ihre Überholseite nach seiner Querlage, es erscheint auf der Streckenkarte, die Fahrhilfe und der Leitplanken-Modus gelten auch für ihn, und neben der Bahn wird sein Gas gedrosselt und sein Controller brummt – sein eigener, nicht der von Auto 1.":
+      "Plus a track position of its own, and more hangs off that than it sounds: the ghosts avoid car 2 and pick their passing side from its lateral offset, it shows up on the track map, the driver aid and guard-rail mode apply to it too, and off the track its throttle is capped and its controller rumbles – its own, not car 1's.",
     "Drücke an jedem Controller einmal einen Knopf – der Browser meldet ein Pad erst nach der ersten Eingabe. Beide Controller benutzen dieselbe Tastenbelegung aus der Kachel „Controller“.":
       "Press one button on each controller – the browser only reports a pad after its first input. Both controllers use the same button mapping from the “Controller” tile.",
     "Was Auto 2 in dieser Fassung nicht hat": "What car 2 does not have in this version",
@@ -9189,10 +9197,6 @@
       "Fuel and damage count for car 1 only. Two unequal rule sets would be worse than none – the mode is meant to be fair.",
     "Der Motorklang folgt Auto 1. Es gibt einen Tongenerator.":
       "The engine sound follows car 1. There is one tone generator.",
-    "Keine Fahrhilfe, kein Leitplanken-Modus und kein Autopilot unter Gelb für Auto 2: alle drei rechnen mit dem geführten Ort des Fahrerautos.":
-      "No driver aid, no guard-rail mode and no autopilot under yellow for car 2: all three work off the tracked position of the driver's car.",
-    "Ghosts weichen Auto 2 nicht aus – sie kennen seinen Ort nicht. Am besten ohne Ghosts fahren.":
-      "Ghosts do not avoid car 2 – they do not know where it is. Best driven without ghosts.",
     "Rundenzählung, Ergebnistabelle und Aufnahme gelten für Auto 1.":
       "Lap counting, the results table and recording apply to car 1.",
     ": eine eigene Fahrphysik mit eigenen Gängen, eigener Drehzahl, eigenem Tempo und eigenen Temperaturen. Die Einstellungen aus „Fahrgefühl“ werden bei jedem Anschalten übernommen, damit beide Autos gleich fahren.":
@@ -11251,13 +11255,33 @@
     let steer = physicsEnabled ? physOut2Steer : p2Steer;
     const throttle = physicsEnabled ? physOut2Throttle : p2Throttle;
     if (driftModus) steer = driftGegenlenken(steer);
-    // KEIN VORAUSBLICK, und das ist eine Entscheidung und kein Vergessen. Die Bytes 16-18
-    // kommen aus ghostLookahead() am gerechneten ORT des Autos, und den fuehrt fuer das
-    // Fahrerauto spielerOrtTick() (90-ghosts.js) - eine Buchfuehrung, die es genau einmal
-    // gibt und die an playerCar haengt. Ohne sie hat Auto 2 keine Fahrhilfe und keinen
-    // Leitplanken-Modus; es faehrt, was der Daumen sagt. Steht so im Hilfetext.
+    // ---- MIT VORAUSBLICK, seit v0.6.46 ---------------------------------------------
+    //
+    // Hier stand "KEIN VORAUSBLICK, und das ist eine Entscheidung und kein Vergessen" -
+    // mit der Begruendung, die Ortung haenge an playerCar. Das war richtig beschrieben und
+    // ist behoben: spielerOrtTick() nimmt jetzt ein Auto (90-ghosts.js) und laeuft im
+    // selben Takt fuer beide. Damit hat Auto 2 Fahrhilfe und Leitplanken-Modus.
+    //
+    // Gesetzt wird playerCar2.modeBytes dort, im selben 45-ms-Takt wie dieses Paket - und
+    // null, wenn keine Strecke eingescannt ist oder der Wagen neben der Bahn liegt. Dann
+    // ist das Paket genau das von vorher.
+    //
+    // ---- UND DIE QUERLAGE, damit die Ghosts ihn sehen ------------------------------
+    //
+    // Dieselben drei Zeilen wie fuer Auto 1 in sendControlValue(), aus demselben Grund:
+    // ein Ghost, der zum Ueberholen ansetzt, waehlt seine Seite aus g.querSoll des
+    // Vorausfahrenden. Ohne diese Zahl faellt sie auf 0 zurueck, und der Angreifer geht
+    // immer links vorbei - auch wenn Auto 2 genau dort faehrt. Keine MESSUNG, sondern das,
+    // was die App geschickt hat; dieselbe Glaettung (0,25) und dieselbe Klemme, damit die
+    // Zahlen der beiden Autos vergleichbar sind und nicht nur gleich heissen.
+    if (playerCar2.ghost) {
+      const pg = playerCar2.ghost;
+      const roh = Math.max(-1, Math.min(1, steer));
+      pg.querSoll = (pg.querSoll || 0) + (roh - (pg.querSoll || 0)) * 0.25;
+    }
     writeToCar(playerCar2, steer, throttle,
-               trackModeBit() | (headlightsOn ? LIGHT_HEAD : 0), null);
+               trackModeBit() | (headlightsOn ? LIGHT_HEAD : 0),
+               playerCar2.modeBytes || null);
   }
   setInterval(controlHeartbeat, CONTROL_SEND_INTERVAL_MS);
 
@@ -14116,6 +14140,7 @@
   // losgeht. Die rund sechzig Regler im Optionentab schreiben weiterhin nur auf
   // physEngine.config - sie zu verdoppeln waere ein zweiter Ort fuer jede Zahl.
   const physEngine2 = new CarreraPhysicsEngine();
+  let offtrack2RumbleAt = 0;
   physEngine2.spieler = 2;   // siehe den Konstruktor: Meldung, Ruck und Ton gehen dorthin
   let phys2LastTime = null;
   // AN als Standard, weil die Original-App es praktisch immer an hat und ein beleuchtetes
@@ -16090,9 +16115,38 @@
   // stand schon in der Fusszeile, die ANZAHL nicht.
   let offtrackZaehler = 0;
 
-  // Gerufen aus dem Meldekanal in 70-race.js, also je Paket.
-  function offtrackMelden(abseits) {
+  // ---- UND DASSELBE FUER AUTO 2 ------------------------------------------------------
+  //
+  // Die drei Groessen darueber gelten fuer Auto 1 und bleiben, was sie sind: acht Stellen
+  // lesen sie, der Pruefstand SCHREIBT sie (offtrackAktiv = true in 93-testbench.js), und
+  // vier Selbsttests haengen daran. Sie in Zugriffsfunktionen zu verwandeln waere ein
+  // Umbau, der mit dem Zwei-Spieler-Modus nichts zu tun hat.
+  //
+  // Auto 2 bekommt deshalb einen eigenen Satz derselben drei Zahlen, und `abseitsSatz()`
+  // versteckt die Asymmetrie an EINER Stelle. Das ist bewusst die kleine Fassung, und der
+  // Grund steht hier, damit niemand sie fuer Schlamperei haelt: ein dritter Spieler waere
+  // der Moment, in dem daraus ein Datensatz je Auto werden muss.
+  const abseitsZwei = { seit: null, wiederSeit: null, aktiv: false, zaehler: 0 };
+
+  // Gerufen aus dem Meldekanal in 70-race.js (Auto 1) und aus dem Meldestrom je Auto in
+  // 90-ghosts.js (Auto 2), also je Paket. `wer` ist 1, wenn nichts dasteht.
+  function offtrackMelden(abseits, wer) {
     const jetzt = Date.now();
+    if (wer === 2) {
+      const a = abseitsZwei;
+      if (abseits) {
+        a.wiederSeit = null;
+        if (a.seit === null) a.seit = jetzt;
+        if (!a.aktiv && jetzt - a.seit >= offtrackEinMs) { a.aktiv = true; a.zaehler++; }
+      } else {
+        a.seit = null;
+        if (a.wiederSeit === null) a.wiederSeit = jetzt;
+        if (a.aktiv && jetzt - a.wiederSeit >= OFFTRACK_AUS_MS) a.aktiv = false;
+      }
+      // KEINE Anzeige: das Abseits-Schild im Cockpit gehoert Auto 1. Fuer Auto 2 steht es
+      // auf dessen eigenem Schirm (siehe den Cockpit-Schirm "Auto 2").
+      return;
+    }
     if (abseits) {
       offtrackWiederSeit = null;
       if (offtrackSeit === null) offtrackSeit = jetzt;
@@ -16106,6 +16160,22 @@
       if (offtrackAktiv && jetzt - offtrackWiederSeit >= OFFTRACK_AUS_MS) offtrackAktiv = false;
     }
     offtrackAnzeige();
+  }
+
+  // Die zwei Fragen von oben, jetzt mit Adressat. Fuer `wer === 1` ist es Wort fuer Wort
+  // dieselbe Antwort wie vorher - deshalb rufen die acht vorhandenen Stellen weiter
+  // abseitsJetzt() und offtrackGilt() und muessen nicht angefasst werden.
+  function abseitsJetztFuer(wer) {
+    if (wer === 2) return abseitsZwei.aktiv && trackMode === 'on';
+    return abseitsJetzt();
+  }
+
+  function offtrackGiltFuer(wer) {
+    return offtrackEffekt && abseitsJetztFuer(wer);
+  }
+
+  function abseitsZaehlerFuer(wer) {
+    return wer === 2 ? abseitsZwei.zaehler : offtrackZaehler;
   }
 
   // Wirkt nur im Bahn-Modus. Im Ausdruck-Modus ist der Streckensensor abgeschaltet
@@ -16285,7 +16355,23 @@
     // Dieselbe Kennlinie und derselbe Regler wie bei Spieler 1: der Daumen soll sich auf
     // beiden Pads gleich anfuehlen.
     const gasKurve = gasKennlinie(Math.max(0, p2Throttle), physEngine2.config.throttleGamma);
-    const out = physEngine2.update({ steering: p2Steer, throttle: gasKurve,
+    // ---- ABSEITS DER BAHN AUCH FUER AUTO 2 --------------------------------------------
+    //
+    // VOR der Physik, genau wie bei Auto 1 - und die Begruendung dort ist es wert,
+    // wiederholt zu werden: ein Gasfaktor NACH der Physik zeigte im Tacho volles Tempo,
+    // waehrend das Auto langsamer fuhr. Hier sagen Anzeige und Auto dasselbe.
+    let gas = gasKurve;
+    if (offtrackGiltFuer(2)) gas = Math.min(gas, OFFTRACK_GAS);
+    // Und das Rumpeln, an seinen eigenen Pad. Bis v0.6.45 waere es der Pad von Spieler 1
+    // gewesen; jetzt hat jeder Stoss eine Adresse.
+    if (abseitsJetztFuer(2)) {
+      const jetzt = Date.now();
+      if (jetzt - offtrack2RumbleAt >= OFFTRACK_RUMBLE_MS - 40) {
+        offtrack2RumbleAt = jetzt;
+        padRumble(0.12, 0.34, OFFTRACK_RUMBLE_MS, 'abseits', 2);
+      }
+    }
+    const out = physEngine2.update({ steering: p2Steer, throttle: gas,
                                      brake: Math.max(0, -p2Throttle),
                                      headlights: headlightsOn }, dt);
     updateRaceScreen2(physEngine2.state);
@@ -27855,6 +27941,19 @@
     if (code !== 0xff && code !== TILE_OFFTRACK) car.lastCodeAt = Date.now();
     if (code !== car.tileCode) { car.tileCode = code; }
     if (car.tileCount !== b[11]) { car.tileCount = b[11]; car.tileAt = Date.now(); }
+    // ---- DAS ABSEITS VON AUTO 2, aus SEINEN Bytes --------------------------------
+    //
+    // Fuer Auto 1 macht das handleDashboardBytes() in 70-race.js - und das laeuft nur fuer
+    // das Fahrerauto (die Zeile `if (car === playerCar)` ein paar Zeilen weiter unten).
+    // Auto 2 hat denselben Anspruch auf die entprellte Antwort: davon haengen seine
+    // Abseits-Drosselung, sein Rumpeln und die Frage ab, ob die Fahrhilfe die Lenkung
+    // hergeben muss.
+    //
+    // ENTPRELLT und nicht car.tileCode direkt: Byte 12 flattert, ein einzelnes 0x00
+    // zwischen guten Lesungen ist Rauschen - dieselbe Begruendung wie bei offtrackEinMs.
+    if (zweiSpieler && car === playerCar2) {
+      offtrackMelden((b[12] & 0xff) === TILE_OFFTRACK, 2);
+    }
     // Der Streckenscan haengt jetzt an DIESEM Strom. Er hatte eine eigene Anmeldung ueber
     // charByUuid, und die wird nur von exploreServices() im Entwickler-Tab gefuellt - nach
     // einer Verbindung ueber die Garage war sie leer und der Scan brach mit "NUS TX nicht
@@ -30807,37 +30906,56 @@
   // Streckenkarte (trackCarMarks liest car.ghost) und im Feld fuer den Abstandhalter
   // (ghostFieldRacing hat den Fall `c === playerCar` seit jeher vorgesehen - er lief nur
   // nie, weil das Objekt fehlte).
-  function spielerOrt() {
-    if (typeof playerCar === 'undefined' || !playerCar) return null;
-    if (!playerCar.ghost) {
-      playerCar.ghost = { nurOrt: true, tileIndex: null, lastCount: playerCar.tileCount,
-                          tileStart: 0, tileRing: [], tilesTotal: 0, laps: 0,
-                          ortStimmen: null, kurveMix: 0 };
+  // ---- UND SEIT v0.6.46 FUER ZWEI AUTOS -----------------------------------------------
+  //
+  // Der Ortungssatz lag schon immer AUF DEM AUTO (car.ghost), nicht in einer globalen
+  // Groesse - nur der Zugriff darauf las `playerCar` fest. Das ist der Grund, warum die
+  // Ortung von Auto 2 der billigste der offenen Punkte war: es fehlte ein Argument, kein
+  // Datenmodell.
+  //
+  // Damit bekommt Auto 2: die Ghosts weichen ihm aus (es steht jetzt im Feld), es
+  // erscheint auf der Streckenkarte, und die Fahrhilfe samt Leitplanken-Modus gilt auch
+  // fuer ihn - alles drei haengt allein an diesem Satz.
+  //
+  // `car.tileCount` und `car.tileCode` kommen fuer JEDES verbundene Auto aus dem
+  // Meldungsstrom (siehe die Stelle bei car.tileAt weiter oben). Es braucht also keinen
+  // zweiten Meldungsweg, und genau das war die Sorge, die im Hilfetext der Kachel stand.
+  function spielerOrt(car) {
+    const c = car || (typeof playerCar !== 'undefined' ? playerCar : null);
+    if (!c) return null;
+    if (!c.ghost) {
+      c.ghost = { nurOrt: true, tileIndex: null, lastCount: c.tileCount,
+                  tileStart: 0, tileRing: [], tilesTotal: 0, laps: 0,
+                  ortStimmen: null, kurveMix: 0 };
     }
-    return playerCar.ghost.nurOrt ? playerCar.ghost : null;
+    return c.ghost.nurOrt ? c.ghost : null;
   }
 
-  function spielerOrtTick() {
-    const g = spielerOrt();
+  function spielerOrtTick(auto) {
+    // `auto` ist das gemeinte Auto. Ohne Argument ist es das Fahrerauto, damit jeder
+    // vorhandene Aufruf unveraendert gueltig bleibt.
+    const c = auto || playerCar;
+    if (!c) return;
+    const g = spielerOrt(c);
     if (!g || !currentTrackTiles || currentTrackTiles.length < 3) return;
     const now = Date.now();
     // Kachelwechsel: DIESELBE Buchfuehrung wie in ghostTick, nur ohne Antrieb. Sie steht
     // hier ein zweites Mal und nicht als gemeinsame Funktion, weil der Ghost-Zweig noch
     // Lernbilanz, Rundenuhr und Abgangsmelder daran haengt - eine Funktion, die beides
     // bedient, haette fuer den halben Aufrufer immer die falschen Argumente.
-    if (playerCar.tileCount !== null && playerCar.tileCount !== undefined
-        && playerCar.tileCount !== g.lastCount) {
+    if (c.tileCount !== null && c.tileCount !== undefined
+        && c.tileCount !== g.lastCount) {
       if (g.tileStart) {
         g.tileRing.push(now - g.tileStart);
         if (g.tileRing.length > GHOST_ZAEHLER_FENSTER) g.tileRing.shift();
       }
       g.tileStart = now;
-      g.lastCount = playerCar.tileCount;
+      g.lastCount = c.tileCount;
       g.tileIndex = g.tileIndex === null ? 0 : (g.tileIndex + 1) % currentTrackTiles.length;
       g.tilesTotal = (g.tilesTotal || 0) + 1;
       // Und die Ausrichtung ueber den gemeldeten Code. Sie braucht einen Startwert, den die
       // Zeile darueber liefert - ortAbgleich() VERFEINERT den Index, es setzt ihn nicht.
-      ortAbgleich(playerCar);
+      ortAbgleich(c);
     }
     // ---- DER VORAUSBLICK, und nur wenn die Fahrhilfe wirklich greift -------------
     //
@@ -30871,22 +30989,37 @@
     // WAS DARAUS VON SELBST FOLGT, ohne eine zweite Bedingung: fahrhilfeVollGilt() liest
     // playerCar.modeBytes und rechnet die Bedingung nicht nach. Sind die Bytes weg, gibt
     // auch der Modus 'voll' die Lenkung her. Genau dafuer ist es so gebaut.
-    if (trackMode === 'on' && driverAssistAktiv() && !abseitsJetzt()) {
-      const la = ghostLookahead(playerCar);
-      playerCar.modeBytes = la
+    // `wer` entscheidet, WESSEN Abseits gefragt wird. Ohne das haette Auto 2 die Lenkung
+    // abgegeben, sobald Auto 1 neben der Bahn liegt - und genau darum ging es bei der
+    // Bestellung "gib mir die volle Kontrolle, damit ich selbst zurueck auf die Strecke
+    // fahren kann".
+    const wer = (typeof playerCar2 !== 'undefined' && c === playerCar2) ? 2 : 1;
+    if (trackMode === 'on' && driverAssistAktiv() && !abseitsJetztFuer(wer)) {
+      const la = ghostLookahead(c);
+      c.modeBytes = la
         ? Object.assign({ 10: AUTO_MODE.b10, 15: AUTO_MODE.b15 }, la)
         : null;
     } else {
-      playerCar.modeBytes = null;
+      c.modeBytes = null;
     }
   }
 
   // Im Sendetakt, damit der Vorausblick zu dem Paket passt, mit dem er hinausgeht. Ein
   // eigener, langsamerer Takt waere ein Vorausblick, der der Lenkung nachlaeuft.
-  setInterval(spielerOrtTick, CONTROL_SEND_INTERVAL_MS);
+  // EIN Takt fuer beide Autos, und die Reihenfolge ist fest. Ein zweiter setInterval waere
+  // dieselbe Falle wie zwei Sendewege: zwei Buchfuehrungen, die sich im Wechsel
+  // ueberschreiben koennten, wo eine Schleife genuegt.
+  setInterval(() => {
+    spielerOrtTick(playerCar);
+    if (zweiSpieler && playerCar2) spielerOrtTick(playerCar2);
+  }, CONTROL_SEND_INTERVAL_MS);
 
   function ghostFieldRacing() {
-    return garage.filter(c => c.ghost && (c.role === 'ghost' || c === playerCar));
+    // Auto 2 gehoert ins Feld, sobald es fuehrt UND einen Ortungssatz hat. Beides
+    // geprueft und nicht nur die Rolle: ohne eingescannte Strecke gibt es keinen Satz, und
+    // ein Auto ohne Ort im Feld waere fuer jeden Abstand eine Null.
+    return garage.filter(c => c.ghost && (c.role === 'ghost' || c === playerCar
+                                          || (zweiSpieler && c === playerCar2)));
   }
 
   // ---- Die beste bekannte Querlage EINES Autos, egal welcher Art -------------------
@@ -33832,9 +33965,16 @@
     // Es geht in die SEITENVERGABE ein und bekommt selbst keinen Versatz geschrieben: ein
     // Mensch laesst sich nicht verteilen. Sein Platz in der Reihe belegt eine Seite, die
     // Ghosts nehmen die anderen - genau das, was "ausweichen" heisst.
-    const feld = (typeof playerCar !== 'undefined' && playerCar && playerCar.ghost
-                  && gs.indexOf(playerCar) < 0)
-      ? gs.concat([playerCar]) : gs;
+    // Beide Fahrerautos gehoeren ins Feld, wenn sie einen Ortungssatz haben. Die Pruefung
+    // auf gs.indexOf ist keine Vorsicht, sondern notwendig: ghostFieldRacing() gibt sie
+    // inzwischen selbst mit heraus, und ein Auto zweimal im Feld waere fuer den
+    // Abstandhalter ein Auto, das sich selbst blockiert.
+    let feld = gs;
+    const dazu = (auto) => {
+      if (auto && auto.ghost && feld.indexOf(auto) < 0) feld = feld.concat([auto]);
+    };
+    if (typeof playerCar !== 'undefined') dazu(playerCar);
+    if (typeof playerCar2 !== 'undefined' && zweiSpieler) dazu(playerCar2);
     const want = new Map(gs.map(c => [c, 0]));
     // Erst die Gruppen bilden, dann die Seiten verteilen. Paarweise zuzuweisen war bei drei
     // Autos auf derselben Kachel falsch: die Paare (A,B), (A,C) und (B,C) schrieben
@@ -35489,6 +35629,68 @@
     // Nebenwirkungen (Garage neu zeichnen, Cockpit neu einpassen, Rolle zuruecknehmen).
     zweiSpielerLage() { return zweiSpieler; },
     zweiSpielerStellen(an) { zweiSpieler = !!an; return zweiSpieler; },
+
+    // ---- SEHEN DIE GHOSTS AUTO 2? ---------------------------------------------------
+    //
+    // Die Frage laesst sich nicht aus der Zuteilung ableiten, und sie hat genau eine
+    // richtige Antwort: Auto 2 muss im FELD stehen. Daran haengt alles Weitere - ghostAhead
+    // findet den Vorausfahrenden nur dort, der Abstandhalter zaehlt nur das Feld, und die
+    // Seitenwahl beim Ueberholen fragt die Querlage eines Autos, das im Feld steht.
+    //
+    // Gemessen wird deshalb an ghostFieldRacing() UND an ghostAhead(): das zweite ist der
+    // Weg, den ein Ghost wirklich nimmt. Ein Test, der nur die Liste prueft, haette den
+    // Fehler "im Feld, aber ohne Ortungssatz" nicht gesehen.
+    //
+    // Und die Gegenprobe gehoert dazu: mit abgeschaltetem Modus darf Auto 2 NICHT im Feld
+    // stehen. Sonst wichen die Ghosts im Einzelspiel einem Auto aus, das niemand fuehrt.
+    zweiSpielerFeldProbe() {
+      const merkGarage = garage.slice();
+      const vorher = { zwei: zweiSpieler, p2: playerCar2, p1: playerCar };
+      const echtNow = Date.now;
+      let uhr = 1000000;
+      try {
+        Date.now = () => uhr;
+        garage.splice(0, garage.length);
+        // Ein Ghost hinten, Auto 2 eine halbe Kachel voraus. Der Ortungssatz von Auto 2 ist
+        // der, den spielerOrt() anlegt - `nurOrt`, ohne Motor.
+        const ghost = { role: 'ghost', alias: 'G', tileAt: uhr, tileCode: 0x02,
+                        ghost: { tilesTotal: 0, tileIndex: 0, tileMs: 500, tileStart: uhr,
+                                 tileRing: [], form: 0, naehern: 0 } };
+        const auto2 = { role: 'player2', alias: 'P2', tileAt: uhr, tileCode: 0x02,
+                        device: { id: 'probe-feld' },
+                        ghost: { nurOrt: true, tilesTotal: 0.5, tileIndex: 0, tileMs: 500,
+                                 tileStart: uhr, tileRing: [], querSoll: 0.4 } };
+        garage.push(ghost, auto2);
+        playerCar = null;      // damit nur Auto 2 im Feld stehen kann
+        playerCar2 = auto2;
+
+        zweiSpieler = false;
+        const ausFeld = ghostFieldRacing().length;
+        const ausVoraus = ghostAhead(ghost);
+
+        zweiSpieler = true;
+        const anFeld = ghostFieldRacing();
+        const anVoraus = ghostAhead(ghost);
+
+        return {
+          ausFeld, ausVoraus: ausVoraus ? (ausVoraus.car.alias || '?') : null,
+          anFeld: anFeld.length,
+          anEnthaeltAuto2: anFeld.indexOf(auto2) >= 0,
+          anVoraus: anVoraus ? (anVoraus.car.alias || '?') : null,
+          anAbstand: anVoraus ? +anVoraus.gap.toFixed(3) : null,
+          // Die Querlage ist die Zahl, aus der der Angreifer seine Seite waehlt. Ueber
+          // ghostQuerLage() gelesen, also genau so, wie der Angreifer es tut.
+          querLage: typeof ghostQuerLage === 'function' ? ghostQuerLage(auto2) : null,
+        };
+      } finally {
+        Date.now = echtNow;
+        garage.splice(0, garage.length);
+        merkGarage.forEach((c) => garage.push(c));
+        zweiSpieler = vorher.zwei;
+        playerCar2 = vorher.p2;
+        playerCar = vorher.p1;
+      }
+    },
 
     // ---- Wohin geht der Vibrationsstoss? --------------------------------------------
     //
@@ -52409,6 +52611,48 @@
   // Die Liste ist GEPFLEGT, und das ist hier richtig: sie IST die Zusicherung. Sie stammt
   // aus einer Suche ueber alle Kaestchen, deren Listener "X = e.target.checked" schreibt.
   // Ein neuer Schalter gehoert hinein.
+  // ---- Die Ghosts sehen Auto 2 ------------------------------------------------------
+  //
+  // DIE AUSSAGE, DIE IM HILFETEXT STAND UND JETZT NICHT MEHR STIMMT. Bis v0.6.45 hiess es
+  // dort "Ghosts weichen Auto 2 nicht aus - sie kennen seinen Ort nicht. Am besten ohne
+  // Ghosts fahren." Der Grund war ein fehlendes Argument, kein fehlendes Datenmodell:
+  // spielerOrt() legte den Ortungssatz immer schon AUF DAS AUTO, las aber playerCar fest.
+  //
+  // Geprueft wird an ghostFieldRacing() UND an ghostAhead(). Das zweite ist der Weg, den
+  // ein Ghost wirklich nimmt - ein Test, der nur die Liste zaehlt, haette "im Feld, aber
+  // ohne Ortungssatz" nicht gesehen, und ein Auto ohne Ort ist fuer jeden Abstand eine
+  // Null.
+  //
+  // Die Gegenprobe gehoert dazu und ist die wichtigere: mit abgeschaltetem Modus darf
+  // Auto 2 NICHT im Feld stehen. Sonst wichen die Ghosts im Einzelspiel einem Auto aus,
+  // das niemand fuehrt.
+  stAdd('Zwei Spieler: die Ghosts haben Auto 2 im Feld', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.zweiSpielerFeldProbe) {
+      return { skip: true, mass: 'zweiSpielerFeldProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.zweiSpielerFeldProbe();
+    const maengel = [];
+    if (r.ausFeld !== 1) maengel.push('Modus aus: ' + r.ausFeld + ' im Feld statt 1');
+    if (r.ausVoraus !== null) maengel.push('Modus aus: sieht ' + r.ausVoraus + ' voraus');
+    if (r.anFeld !== 2) maengel.push('Modus an: ' + r.anFeld + ' im Feld statt 2');
+    if (!r.anEnthaeltAuto2) maengel.push('Auto 2 fehlt im Feld');
+    if (r.anVoraus !== 'P2') maengel.push('sieht ' + r.anVoraus + ' voraus statt P2');
+    // Der Abstand ist gestellt: Auto 2 steht eine halbe Kachel voraus.
+    if (r.anAbstand === null || Math.abs(r.anAbstand - 0.5) > 0.05) {
+      maengel.push('Abstand ' + r.anAbstand + ' statt 0,5 Kacheln');
+    }
+    // Und die Querlage muss ankommen, sonst waehlt der Angreifer seine Seite blind - genau
+    // der Fehler, der beim Fahrerauto schon einmal behoben wurde.
+    if (r.querLage === null || Math.abs(r.querLage - 0.4) > 1e-6) {
+      maengel.push('Querlage ' + r.querLage + ' statt 0,4');
+    }
+    return { ok: !maengel.length,
+             mass: 'aus: ' + r.ausFeld + ' im Feld, nichts voraus | an: ' + r.anFeld
+                 + ' im Feld, voraus ' + r.anVoraus + ' bei ' + r.anAbstand
+                 + ' Kacheln, Querlage ' + r.querLage
+                 + (maengel.length ? ' | ' + maengel.join(', ') : '') };
+  });
+
   // ---- Die Garagenzeile hat vier Rollenknoepfe -------------------------------------
   //
   // DIESER TEST HAETTE DEN GEMELDETEN FEHLER GEFUNDEN, und keiner der 220 anderen konnte

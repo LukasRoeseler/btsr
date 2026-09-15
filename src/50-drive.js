@@ -18,6 +18,7 @@
   // losgeht. Die rund sechzig Regler im Optionentab schreiben weiterhin nur auf
   // physEngine.config - sie zu verdoppeln waere ein zweiter Ort fuer jede Zahl.
   const physEngine2 = new CarreraPhysicsEngine();
+  let offtrack2RumbleAt = 0;
   physEngine2.spieler = 2;   // siehe den Konstruktor: Meldung, Ruck und Ton gehen dorthin
   let phys2LastTime = null;
   // AN als Standard, weil die Original-App es praktisch immer an hat und ein beleuchtetes
@@ -1992,9 +1993,38 @@
   // stand schon in der Fusszeile, die ANZAHL nicht.
   let offtrackZaehler = 0;
 
-  // Gerufen aus dem Meldekanal in 70-race.js, also je Paket.
-  function offtrackMelden(abseits) {
+  // ---- UND DASSELBE FUER AUTO 2 ------------------------------------------------------
+  //
+  // Die drei Groessen darueber gelten fuer Auto 1 und bleiben, was sie sind: acht Stellen
+  // lesen sie, der Pruefstand SCHREIBT sie (offtrackAktiv = true in 93-testbench.js), und
+  // vier Selbsttests haengen daran. Sie in Zugriffsfunktionen zu verwandeln waere ein
+  // Umbau, der mit dem Zwei-Spieler-Modus nichts zu tun hat.
+  //
+  // Auto 2 bekommt deshalb einen eigenen Satz derselben drei Zahlen, und `abseitsSatz()`
+  // versteckt die Asymmetrie an EINER Stelle. Das ist bewusst die kleine Fassung, und der
+  // Grund steht hier, damit niemand sie fuer Schlamperei haelt: ein dritter Spieler waere
+  // der Moment, in dem daraus ein Datensatz je Auto werden muss.
+  const abseitsZwei = { seit: null, wiederSeit: null, aktiv: false, zaehler: 0 };
+
+  // Gerufen aus dem Meldekanal in 70-race.js (Auto 1) und aus dem Meldestrom je Auto in
+  // 90-ghosts.js (Auto 2), also je Paket. `wer` ist 1, wenn nichts dasteht.
+  function offtrackMelden(abseits, wer) {
     const jetzt = Date.now();
+    if (wer === 2) {
+      const a = abseitsZwei;
+      if (abseits) {
+        a.wiederSeit = null;
+        if (a.seit === null) a.seit = jetzt;
+        if (!a.aktiv && jetzt - a.seit >= offtrackEinMs) { a.aktiv = true; a.zaehler++; }
+      } else {
+        a.seit = null;
+        if (a.wiederSeit === null) a.wiederSeit = jetzt;
+        if (a.aktiv && jetzt - a.wiederSeit >= OFFTRACK_AUS_MS) a.aktiv = false;
+      }
+      // KEINE Anzeige: das Abseits-Schild im Cockpit gehoert Auto 1. Fuer Auto 2 steht es
+      // auf dessen eigenem Schirm (siehe den Cockpit-Schirm "Auto 2").
+      return;
+    }
     if (abseits) {
       offtrackWiederSeit = null;
       if (offtrackSeit === null) offtrackSeit = jetzt;
@@ -2008,6 +2038,22 @@
       if (offtrackAktiv && jetzt - offtrackWiederSeit >= OFFTRACK_AUS_MS) offtrackAktiv = false;
     }
     offtrackAnzeige();
+  }
+
+  // Die zwei Fragen von oben, jetzt mit Adressat. Fuer `wer === 1` ist es Wort fuer Wort
+  // dieselbe Antwort wie vorher - deshalb rufen die acht vorhandenen Stellen weiter
+  // abseitsJetzt() und offtrackGilt() und muessen nicht angefasst werden.
+  function abseitsJetztFuer(wer) {
+    if (wer === 2) return abseitsZwei.aktiv && trackMode === 'on';
+    return abseitsJetzt();
+  }
+
+  function offtrackGiltFuer(wer) {
+    return offtrackEffekt && abseitsJetztFuer(wer);
+  }
+
+  function abseitsZaehlerFuer(wer) {
+    return wer === 2 ? abseitsZwei.zaehler : offtrackZaehler;
   }
 
   // Wirkt nur im Bahn-Modus. Im Ausdruck-Modus ist der Streckensensor abgeschaltet
@@ -2187,7 +2233,23 @@
     // Dieselbe Kennlinie und derselbe Regler wie bei Spieler 1: der Daumen soll sich auf
     // beiden Pads gleich anfuehlen.
     const gasKurve = gasKennlinie(Math.max(0, p2Throttle), physEngine2.config.throttleGamma);
-    const out = physEngine2.update({ steering: p2Steer, throttle: gasKurve,
+    // ---- ABSEITS DER BAHN AUCH FUER AUTO 2 --------------------------------------------
+    //
+    // VOR der Physik, genau wie bei Auto 1 - und die Begruendung dort ist es wert,
+    // wiederholt zu werden: ein Gasfaktor NACH der Physik zeigte im Tacho volles Tempo,
+    // waehrend das Auto langsamer fuhr. Hier sagen Anzeige und Auto dasselbe.
+    let gas = gasKurve;
+    if (offtrackGiltFuer(2)) gas = Math.min(gas, OFFTRACK_GAS);
+    // Und das Rumpeln, an seinen eigenen Pad. Bis v0.6.45 waere es der Pad von Spieler 1
+    // gewesen; jetzt hat jeder Stoss eine Adresse.
+    if (abseitsJetztFuer(2)) {
+      const jetzt = Date.now();
+      if (jetzt - offtrack2RumbleAt >= OFFTRACK_RUMBLE_MS - 40) {
+        offtrack2RumbleAt = jetzt;
+        padRumble(0.12, 0.34, OFFTRACK_RUMBLE_MS, 'abseits', 2);
+      }
+    }
+    const out = physEngine2.update({ steering: p2Steer, throttle: gas,
                                      brake: Math.max(0, -p2Throttle),
                                      headlights: headlightsOn }, dt);
     updateRaceScreen2(physEngine2.state);

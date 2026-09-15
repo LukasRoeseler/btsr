@@ -390,13 +390,33 @@
     let steer = physicsEnabled ? physOut2Steer : p2Steer;
     const throttle = physicsEnabled ? physOut2Throttle : p2Throttle;
     if (driftModus) steer = driftGegenlenken(steer);
-    // KEIN VORAUSBLICK, und das ist eine Entscheidung und kein Vergessen. Die Bytes 16-18
-    // kommen aus ghostLookahead() am gerechneten ORT des Autos, und den fuehrt fuer das
-    // Fahrerauto spielerOrtTick() (90-ghosts.js) - eine Buchfuehrung, die es genau einmal
-    // gibt und die an playerCar haengt. Ohne sie hat Auto 2 keine Fahrhilfe und keinen
-    // Leitplanken-Modus; es faehrt, was der Daumen sagt. Steht so im Hilfetext.
+    // ---- MIT VORAUSBLICK, seit v0.6.46 ---------------------------------------------
+    //
+    // Hier stand "KEIN VORAUSBLICK, und das ist eine Entscheidung und kein Vergessen" -
+    // mit der Begruendung, die Ortung haenge an playerCar. Das war richtig beschrieben und
+    // ist behoben: spielerOrtTick() nimmt jetzt ein Auto (90-ghosts.js) und laeuft im
+    // selben Takt fuer beide. Damit hat Auto 2 Fahrhilfe und Leitplanken-Modus.
+    //
+    // Gesetzt wird playerCar2.modeBytes dort, im selben 45-ms-Takt wie dieses Paket - und
+    // null, wenn keine Strecke eingescannt ist oder der Wagen neben der Bahn liegt. Dann
+    // ist das Paket genau das von vorher.
+    //
+    // ---- UND DIE QUERLAGE, damit die Ghosts ihn sehen ------------------------------
+    //
+    // Dieselben drei Zeilen wie fuer Auto 1 in sendControlValue(), aus demselben Grund:
+    // ein Ghost, der zum Ueberholen ansetzt, waehlt seine Seite aus g.querSoll des
+    // Vorausfahrenden. Ohne diese Zahl faellt sie auf 0 zurueck, und der Angreifer geht
+    // immer links vorbei - auch wenn Auto 2 genau dort faehrt. Keine MESSUNG, sondern das,
+    // was die App geschickt hat; dieselbe Glaettung (0,25) und dieselbe Klemme, damit die
+    // Zahlen der beiden Autos vergleichbar sind und nicht nur gleich heissen.
+    if (playerCar2.ghost) {
+      const pg = playerCar2.ghost;
+      const roh = Math.max(-1, Math.min(1, steer));
+      pg.querSoll = (pg.querSoll || 0) + (roh - (pg.querSoll || 0)) * 0.25;
+    }
     writeToCar(playerCar2, steer, throttle,
-               trackModeBit() | (headlightsOn ? LIGHT_HEAD : 0), null);
+               trackModeBit() | (headlightsOn ? LIGHT_HEAD : 0),
+               playerCar2.modeBytes || null);
   }
   setInterval(controlHeartbeat, CONTROL_SEND_INTERVAL_MS);
 

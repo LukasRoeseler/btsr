@@ -9594,6 +9594,48 @@
   // Die Liste ist GEPFLEGT, und das ist hier richtig: sie IST die Zusicherung. Sie stammt
   // aus einer Suche ueber alle Kaestchen, deren Listener "X = e.target.checked" schreibt.
   // Ein neuer Schalter gehoert hinein.
+  // ---- Die Ghosts sehen Auto 2 ------------------------------------------------------
+  //
+  // DIE AUSSAGE, DIE IM HILFETEXT STAND UND JETZT NICHT MEHR STIMMT. Bis v0.6.45 hiess es
+  // dort "Ghosts weichen Auto 2 nicht aus - sie kennen seinen Ort nicht. Am besten ohne
+  // Ghosts fahren." Der Grund war ein fehlendes Argument, kein fehlendes Datenmodell:
+  // spielerOrt() legte den Ortungssatz immer schon AUF DAS AUTO, las aber playerCar fest.
+  //
+  // Geprueft wird an ghostFieldRacing() UND an ghostAhead(). Das zweite ist der Weg, den
+  // ein Ghost wirklich nimmt - ein Test, der nur die Liste zaehlt, haette "im Feld, aber
+  // ohne Ortungssatz" nicht gesehen, und ein Auto ohne Ort ist fuer jeden Abstand eine
+  // Null.
+  //
+  // Die Gegenprobe gehoert dazu und ist die wichtigere: mit abgeschaltetem Modus darf
+  // Auto 2 NICHT im Feld stehen. Sonst wichen die Ghosts im Einzelspiel einem Auto aus,
+  // das niemand fuehrt.
+  stAdd('Zwei Spieler: die Ghosts haben Auto 2 im Feld', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.zweiSpielerFeldProbe) {
+      return { skip: true, mass: 'zweiSpielerFeldProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.zweiSpielerFeldProbe();
+    const maengel = [];
+    if (r.ausFeld !== 1) maengel.push('Modus aus: ' + r.ausFeld + ' im Feld statt 1');
+    if (r.ausVoraus !== null) maengel.push('Modus aus: sieht ' + r.ausVoraus + ' voraus');
+    if (r.anFeld !== 2) maengel.push('Modus an: ' + r.anFeld + ' im Feld statt 2');
+    if (!r.anEnthaeltAuto2) maengel.push('Auto 2 fehlt im Feld');
+    if (r.anVoraus !== 'P2') maengel.push('sieht ' + r.anVoraus + ' voraus statt P2');
+    // Der Abstand ist gestellt: Auto 2 steht eine halbe Kachel voraus.
+    if (r.anAbstand === null || Math.abs(r.anAbstand - 0.5) > 0.05) {
+      maengel.push('Abstand ' + r.anAbstand + ' statt 0,5 Kacheln');
+    }
+    // Und die Querlage muss ankommen, sonst waehlt der Angreifer seine Seite blind - genau
+    // der Fehler, der beim Fahrerauto schon einmal behoben wurde.
+    if (r.querLage === null || Math.abs(r.querLage - 0.4) > 1e-6) {
+      maengel.push('Querlage ' + r.querLage + ' statt 0,4');
+    }
+    return { ok: !maengel.length,
+             mass: 'aus: ' + r.ausFeld + ' im Feld, nichts voraus | an: ' + r.anFeld
+                 + ' im Feld, voraus ' + r.anVoraus + ' bei ' + r.anAbstand
+                 + ' Kacheln, Querlage ' + r.querLage
+                 + (maengel.length ? ' | ' + maengel.join(', ') : '') };
+  });
+
   // ---- Die Garagenzeile hat vier Rollenknoepfe -------------------------------------
   //
   // DIESER TEST HAETTE DEN GEMELDETEN FEHLER GEFUNDEN, und keiner der 220 anderen konnte
