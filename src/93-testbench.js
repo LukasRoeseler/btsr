@@ -1948,6 +1948,101 @@
                lueckeMax: luecke.length ? Math.max.apply(null, luecke) : null };
     },
 
+    // ---- EIN STEHENDES AUTO AUF DER STRECKE: WEICHEN DIE ANDEREN AUS? -------------
+    //
+    // Zwei Attrappen: A steht (car.parked), B kommt eine Kachel dahinter. Gefragt wird, ob
+    // hindernisSetzen() B einen Ausweichbefehl WEG von A gibt - und ob die Seite an A's
+    // Querlage haengt und nicht fest ist.
+    hindernisProbe(opt) {
+      const o = opt || {};
+      const merkGarage = garage.splice(0, garage.length);
+      const merkTiles = currentTrackTiles;
+      const merkFlag = flagState;
+      const autos = [];
+      try {
+        currentTrackTiles = codeToTrack('SG2R3G2R3').tiles;
+        lineCache = null;
+        flagState = 'green';
+        const a = OMEGA_TEST.attrappeGhost('A');   // der Steher
+        const b = OMEGA_TEST.attrappeGhost('B');   // kommt heran
+        garage.push(a); garage.push(b);
+        autos.push(a, b);
+        a.ghost.tileIndex = 2; a.ghost.tilesTotal = 2; a.ghost.tileMs = 700;
+        b.ghost.tileIndex = 1; b.ghost.tilesTotal = 1; b.ghost.tileMs = 700;
+        a.ghost.querSoll = o.querLage === undefined ? 0.6 : o.querLage;
+        a.parked = 'Prueflauf';
+        b.ghost.yieldSide = 0; b.ghost.yieldUntil = 0;
+        hindernisSetzen(a);
+        const nah = { yieldSide: b.ghost.yieldSide || 0,
+                      gilt: !!(b.ghost.yieldUntil && b.ghost.yieldUntil > Date.now()) };
+        // Gegenprobe: dasselbe Auto WEIT weg - dann darf nichts gesetzt werden.
+        b.ghost.yieldSide = 0; b.ghost.yieldUntil = 0;
+        b.ghost.tileIndex = 6; b.ghost.tilesTotal = 6;
+        hindernisSetzen(a);
+        const weit = { yieldSide: b.ghost.yieldSide || 0,
+                       gilt: !!(b.ghost.yieldUntil && b.ghost.yieldUntil > Date.now()) };
+        return { nah, weit, stehtBei: o.querLage === undefined ? 0.6 : o.querLage };
+      } finally {
+        flagState = merkFlag;
+        garage.splice(0, garage.length);
+        for (const c of autos) { c.parked = null; stopGhost(c); }
+        for (const c of merkGarage) garage.push(c);
+        currentTrackTiles = merkTiles;
+        lineCache = null;
+      }
+    },
+
+    // ---- KOSTET EIN FEHLER AUCH DIE LINIE? ----------------------------------------
+    //
+    // Der Verbremser zog bisher nur Tempo ab. Diese Sonde erzwingt einen (Math.random auf
+    // 0, eine enge Kachel voraus) und liest, was ghostSpice() zurueckgibt: Tempofaktor UND
+    // Querausschlag.
+    fehlerProbe() {
+      const merkGarage = garage.splice(0, garage.length);
+      const merkTiles = currentTrackTiles;
+      const merkCfg = Object.assign({}, ghostCfg);
+      const echtRandom = Math.random;
+      const autos = [];
+      try {
+        currentTrackTiles = codeToTrack('SG2R3G2R3').tiles;
+        lineCache = null;
+        Object.assign(ghostCfg, WUERZE_AUS);
+        ghostCfg.wuerzeFehler = true;
+        Math.random = () => 0;
+        const a = OMEGA_TEST.attrappeGhost('F');
+        garage.push(a);
+        autos.push(a);
+        // DIE KACHEL DAVOR SUCHEN, statt eine zu raten: gewuerfelt wird nur, wenn eine
+        // enge Kachel in DIST <= 1 liegt (ghostSpice), und wo die liegt, haengt am Layout.
+        const tiles = currentTrackTiles;
+        let start = 0;
+        for (let i = 0; i < tiles.length; i++) {
+          if (tileTightness(tiles[(i + 1) % tiles.length].type) > 0) { start = i; break; }
+        }
+        a.ghost.tileIndex = start; a.ghost.tilesTotal = start; a.ghost.tileMs = 700;
+        const eng = ghostAheadTightest(a, 2);
+        // DIE KENNUNG SETZT SONST ghostTick(), nicht ghostAheadTightest(): ohne sie ist
+        // aheadTight.key undefined, und `g.mistakeArmed !== aheadTight.key` ist beim ersten
+        // Aufruf falsch - es wird also NIE gewuerfelt. Genau darauf ist diese Sonde beim
+        // ersten Anlauf hereingefallen: sie meldete "kein Fehler" und meinte "kein Wurf".
+        eng.key = a.ghost.tileIndex + ':' + eng.dist;
+        const spice = ghostSpice(a, eng);
+        return { faktor: +(spice.factor || 1).toFixed(4),
+                 fehlerQuer: +(spice.fehlerQuer || 0).toFixed(4),
+                 engVoraus: { tight: eng.tight, dist: eng.dist },
+                 fehlerLaeuft: !!(a.ghost.mistakeUntil
+                                  && a.ghost.mistakeUntil > Date.now()) };
+      } finally {
+        Math.random = echtRandom;
+        garage.splice(0, garage.length);
+        for (const c of autos) stopGhost(c);
+        for (const c of merkGarage) garage.push(c);
+        Object.assign(ghostCfg, merkCfg);
+        currentTrackTiles = merkTiles;
+        lineCache = null;
+      }
+    },
+
     // ---- FAHRERCHARAKTER: GEZOGEN, IN DER SPANNE, UND VERSCHIEDEN -----------------
     //
     // Geprueft wird das ZIEHEN, nicht die Wirkung: die Wirkung haengt an fuenf Groessen und

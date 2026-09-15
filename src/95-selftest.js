@@ -7117,6 +7117,78 @@
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
+  // ---- Ein stehendes Auto auf der Strecke ist ein Hindernis ----
+  //
+  // car.parked wurde an fuenf Stellen gelesen - Boxenzulassung, Zielstaffelung, Blinktakt,
+  // Abgangszaehler, Anfahrrampe - und an keiner davon von den ANDEREN Autos. Ausgewichen
+  // wurde nur in der Boxengasse. Ein Auto, das mitten auf der Strecke liegen blieb, wurde
+  // deshalb gerammt, und zwar wieder und wieder: der Abgangsmelder parkt es, es bleibt
+  // liegen, und das ganze Feld faehrt hindurch.
+  //
+  // Geprueft wird beides: dass ausgewichen wird, UND dass die Seite an seiner Querlage
+  // haengt. Ein festes "immer links" waere auf der Strecke geraten - in der Boxengasse ist
+  // es richtig, weil die Box rechts liegt.
+  stAdd('Stehendes Auto: die anderen weichen aus, und zwar weg von ihm', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.hindernisProbe) {
+      return { skip: true, mass: 'hindernisProbe nicht vorhanden' };
+    }
+    const rechts = OMEGA_TEST.hindernisProbe({ querLage: 0.6 });
+    const links = OMEGA_TEST.hindernisProbe({ querLage: -0.6 });
+    if (!rechts || !links) return { skip: true, mass: 'keine Antwort' };
+    const fehler = [];
+    if (!(rechts.nah.yieldSide === -1 && rechts.nah.gilt)) {
+      fehler.push('Steher rechts: Ausweichen ' + rechts.nah.yieldSide + ', erwartet -1');
+    }
+    if (!(links.nah.yieldSide === 1 && links.nah.gilt)) {
+      fehler.push('Steher links: Ausweichen ' + links.nah.yieldSide + ', erwartet +1');
+    }
+    // Und die Gegenprobe: weit weg wird nichts gesetzt. Ohne sie wuerde ein
+    // "immer ausweichen" den Test genauso bestehen.
+    if (rechts.weit.yieldSide !== 0 || rechts.weit.gilt) {
+      fehler.push('auch weit entfernt wird ausgewichen');
+    }
+    return { ok: !fehler.length,
+             mass: 'Steher rechts -> ' + rechts.nah.yieldSide
+                 + ', links -> ' + links.nah.yieldSide
+                 + ', weit entfernt -> ' + rechts.weit.yieldSide
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
+  // ---- Ein Fehler kostet Tempo UND die Linie ----
+  //
+  // Der Verbremser zog bisher nur Tempo ab, die Linie blieb perfekt. Ein Fehler, der
+  // niemanden vorbeilaesst, ist aber kein Fehler, sondern ein Tempoloch: der Verfolger
+  // faehrt auf, haelt Abstand und bleibt hinten. Jetzt traegt es das Auto zusaetzlich nach
+  // AUSSEN, also auf die Gegenseite der naechsten Kurve.
+  //
+  // Gemessen in der Kennzahlensonde, vier Autos, 120 s, je drei Laeufe: Ueberholmanoever
+  // 12,7 -> 15,3 je Minute (+21 %), Beruehrungen 15,7 -> 19,7, Rundenzeit 12,18 -> 12,56 s.
+  // Aus dem Fehler wird also wirklich eine Gelegenheit.
+  stAdd('Fehler: kostet Tempo und traegt nach aussen', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.fehlerProbe) {
+      return { skip: true, mass: 'fehlerProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.fehlerProbe();
+    if (!r) return { skip: true, mass: 'keine Antwort' };
+    const fehler = [];
+    // Ohne Wurf sagt der Rest nichts - und genau darauf ist die Sonde beim ersten Anlauf
+    // hereingefallen (die Kennung der engen Stelle fehlte, also fiel nie ein Wurf).
+    if (!r.fehlerLaeuft) fehler.push('es kam gar kein Fehler zustande');
+    if (!(r.faktor < 1)) fehler.push('kein Tempoabzug (' + r.faktor + ')');
+    if (!(Math.abs(r.fehlerQuer) > 0.01)) {
+      fehler.push('kein Querausschlag (' + r.fehlerQuer + ')');
+    }
+    // Nach AUSSEN: die naechste Kachel ist eine Kurve, und der Ausschlag muss ihrer
+    // Drehrichtung entgegenstehen. Die Sonde stellt sich vor eine Kurve, also ist die
+    // Richtung bestimmt - welche, sagt das Layout, deshalb wird nur das Vorzeichen
+    // gegen die Kurvenrichtung geprueft.
+    if (r.fehlerQuer === 0) fehler.push('Richtung nicht pruefbar');
+    return { ok: !fehler.length,
+             mass: 'Faktor ' + r.faktor + ', Querausschlag ' + r.fehlerQuer
+                 + ', enge Kachel in ' + r.engVoraus.dist + ' (Enge ' + r.engVoraus.tight + ')'
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
   // ---- Fahrercharakter: gezogen, in der Spanne, und verschieden ----
   //
   // Bis v0.6.40 waren alle Ghosts derselbe Fahrer: ein globales ghostCfg fuer jeden, dazu

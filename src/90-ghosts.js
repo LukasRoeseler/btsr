@@ -3124,6 +3124,44 @@
   // dieselbe Begruendung wie beim Ueberholen: der Vorausfahrende weiss nicht, dass hinter ihm
   // einer ansetzt, und ein Ghost, der jeden Takt selbst nachsieht, waere dieselbe Rechnung
   // n-mal.
+  // ====================================================================================
+  // EIN STEHENDES AUTO IST EIN HINDERNIS, NICHT NUR EIN EINTRAG
+  // ====================================================================================
+  //
+  // car.parked wurde bisher an fuenf Stellen gelesen - Boxenzulassung, Zielstaffelung,
+  // Blinktakt, Abgangszaehler, Anfahrrampe - und an keiner davon von den ANDEREN Autos.
+  // Ausgewichen wurde nur in der Boxengasse (pitAusweichenSetzen). Ein Auto, das mitten auf
+  // der Strecke liegen bleibt, wurde deshalb gerammt, und zwar wieder und wieder: der
+  // Abgangsmelder parkt es, es bleibt liegen, und das ganze Feld faehrt hindurch.
+  //
+  // DIESELBE BAUFORM WIE BEI DER BOXENGASSE, und aus denselben zwei Gruenden: Push statt
+  // Poll (das stehende Auto weiss, dass es steht - die anderen wissen es nicht), und
+  // laufend erneuert statt einmal gesetzt (wer erst spaeter herankommt, soll es auch
+  // erfahren). Die SEITE kommt hier aber aus seiner letzten Querlage und ist nicht fest
+  // links: in der Boxengasse liegt die Box rechts, auf der Strecke kann es ueberall liegen.
+  const HINDERNIS_VORAUS = 2.0;    // Kacheln Vorwarnung
+  const HINDERNIS_MS = 400;        // wie beim Boxenstopp, laufend erneuert
+  function hindernisSetzen(steher) {
+    const n = currentTrackTiles.length;
+    const ort = ghostOrt(steher);
+    if (ort === null || !n) return;
+    // Weg von ihm: liegt er rechts, geht es nach links. Ohne bekannte Querlage gilt die
+    // Mitte, und dann ist links so gut wie rechts - dieselbe Wahl wie in der Boxengasse.
+    const q = ghostQuerLage(steher);
+    const seite = (q === null || q >= 0) ? -1 : 1;
+    const now = Date.now();
+    for (const c of garage) {
+      if (c === steher || !c.ghost || c.role !== 'ghost' || c.parked) continue;
+      const meins = ghostOrt(c);
+      if (meins === null) continue;
+      let d = (ort - meins) % n;
+      if (d < 0) d += n;                        // wie weit VOR mir liegt er
+      if (d > HINDERNIS_VORAUS) continue;
+      c.ghost.yieldSide = seite;
+      c.ghost.yieldUntil = now + HINDERNIS_MS;
+    }
+  }
+
   function pitAusweichenSetzen(pitCar) {
     const now = Date.now();
     for (const c of garage) {
@@ -3655,6 +3693,7 @@
   const SPICE_MISTAKE_P = 0.055;   // Wahrscheinlichkeit je angebremster Kurve
   const SPICE_MISTAKE_MS = [420, 900];
   const SPICE_MISTAKE_CUT = 0.45;  // wieviel Tempo der Fehler kostet
+  const SPICE_FEHLER_QUER = 0.35;  // und wieviel Querlage - nach aussen getragen
   const SPICE_SLIP_TILES = 1.3;    // bis hierher wirkt Windschatten
   const SPICE_SLIP_GAIN = 0.11;
   const SPICE_ATTACK_MS = 2600;
@@ -4491,7 +4530,24 @@
     if (ghostCfg.wuerzeFehler && aheadTight.tight > 0 && aheadTight.dist <= 1) {
       if (g.mistakeArmed !== aheadTight.key) {
         g.mistakeArmed = aheadTight.key;
-        if (Math.random() < SPICE_MISTAKE_P * ghostCharakter(car).fehler) {
+        // ---- WANN EIN FEHLER WAHRSCHEINLICHER IST ---------------------------------
+        //
+        // Eine konstante Wahrscheinlichkeit ist die Behauptung, dass Nass, falsche Reifen
+        // und Druck von hinten nichts aendern. Alle drei Groessen liegen vor und werden
+        // anderswo schon benutzt; hier skalieren sie dieselbe Wuerfelzahl.
+        //
+        // Der Druck ist der interessante: er macht aus einem Fehler eine FOLGE des
+        // Hinterherfahrens, und damit entsteht das Bild, das man aus dem Rennsport kennt -
+        // wer bedraengt wird, macht Fehler.
+        const nass = ghostNassAnteil();
+        const druck = (() => {
+          const h = ghostHinterMir(car);
+          return !!(h && h.gap <= SPICE_BLAU_REICHWEITE);
+        })();
+        const fehlerFaktor = (1 + 0.8 * nass)
+                           * (reifenPassen(car) ? 1 : 1.5)
+                           * (druck ? 1.3 : 1);
+        if (Math.random() < SPICE_MISTAKE_P * ghostCharakter(car).fehler * fehlerFaktor) {
           const d = SPICE_MISTAKE_MS[0]
                   + Math.random() * (SPICE_MISTAKE_MS[1] - SPICE_MISTAKE_MS[0]);
           g.mistakeUntil = now + d;
@@ -4501,7 +4557,27 @@
     } else if (aheadTight.tight === 0) {
       g.mistakeArmed = null;
     }
-    if (g.mistakeUntil && now < g.mistakeUntil) f *= (1 - SPICE_MISTAKE_CUT);
+    // ---- UND DER FEHLER KOSTET AUCH DIE LINIE ------------------------------------
+    //
+    // Bisher zog ein Verbremser nur Tempo ab - die Linie blieb perfekt. Ein Fehler, der
+    // niemanden vorbeilaesst, ist aber kein Fehler, sondern ein Tempoloch: der Verfolger
+    // faehrt auf, haelt Abstand und bleibt hinten.
+    //
+    // NACH AUSSEN getragen, also auf die Gegenseite der naechsten Kurve - das ist, was
+    // beim Verbremsen wirklich passiert. Der Ausschlag ist ADDITIV und modest (kein
+    // Ersetzen der Linie wie beim Ueberholen): SPICE_FEHLER_QUER von einem Anschlag, der
+    // bei 1,0 liegt, also gut ein Drittel der halben Bahnbreite. Ein voller Versatz waere
+    // ein Abflug, und den entscheidet die Bahn und nicht dieser Regler.
+    let fehlerQuer = 0;
+    if (g.mistakeUntil && now < g.mistakeUntil) {
+      f *= (1 - SPICE_MISTAKE_CUT);
+      let drehung = 0;
+      for (let k = 0; k <= SPICE_SEITE_VORAUS && drehung === 0; k++) {
+        drehung = ghostTurnDir(car, k);
+      }
+      const lo2 = ghostLineOffset(car);
+      fehlerQuer = SPICE_FEHLER_QUER * (drehung !== 0 ? -drehung : (lo2 >= 0 ? 1 : -1));
+    }
 
     const ah = ghostAhead(car);
     const onStraight = aheadTight.tight === 0;
@@ -4859,7 +4935,8 @@
         : (g.attackSide || 0);
     // haeltAbstand geht mit hinaus, weil der Aufrufer den Vorrang entscheiden muss - siehe
     // dort. Hier waere er falsch: das Feld zusammenzuhalten ist keine Wuerze.
-    return { factor: f, attack: versatz, phase: g.passPhase || null, haeltAbstand };
+    return { factor: f, attack: versatz, phase: g.passPhase || null, haeltAbstand,
+             fehlerQuer };
   }
 
   // ---- Die Ideallinie ----
@@ -6136,6 +6213,11 @@
       parkCar(car, 'Bahn verlassen');
     }
     const offTrack = !!car.parked;
+    // Wer steht, warnt die anderen - solange das Rennen laeuft und er nicht in der
+    // Boxengasse steht, wo pitAusweichenSetzen() ohnehin jede 400 ms schreibt. Unter Gelb
+    // nicht: dort fahren alle mittig, und ein Ausweichbefehl waere wirkungslos (siehe die
+    // Auswahl von `quer` weiter unten).
+    if (offTrack && !g.pit && flagState === 'green') hindernisSetzen(car);
     // g.auslauf: das Rennen ist gewertet, dieses Auto faehrt aber seine angefangene Runde
     // noch zu Ende. Ohne diesen Zweig steht es in dem Moment still, in dem die Flagge
     // faellt - und genau das war der Bericht.
@@ -6569,7 +6651,9 @@
           : ghostLineOffset(car) * ghostCfg.line * GHOST_LINE_STEER * linieGewicht;
         const querRohSumme = quer
               + g.bias * ghostCfg.lateral * 0.25
-              + ghostLane(car) * ghostCfg.lanes * GHOST_LANE_STEER * spurGewicht;
+              + ghostLane(car) * ghostCfg.lanes * GHOST_LANE_STEER * spurGewicht
+              // Der Querausschlag eines Verbremsers, additiv - siehe SPICE_FEHLER_QUER.
+              + (spice.fehlerQuer || 0);
         // ---- QUERTRAEGHEIT: eine RATENBEGRENZUNG und kein Tiefpass ------------------
         //
         // Der Unterschied ist wichtig. Ein Tiefpass (neu = alt + (soll-alt) * k) naehert sich
