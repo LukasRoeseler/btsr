@@ -2239,6 +2239,16 @@
     // wiederholt zu werden: ein Gasfaktor NACH der Physik zeigte im Tacho volles Tempo,
     // waehrend das Auto langsamer fuhr. Hier sagen Anzeige und Auto dasselbe.
     let gas = gasKurve;
+    // ---- SCHADEN KOSTET LEISTUNG, AUCH BEI AUTO 2 ---------------------------------
+    //
+    // Dieselbe Kennlinie wie bei Auto 1: bis zu 30 Prozent weniger Gas mit dem Schaden,
+    // halbe Leistung im Totalschaden, und darunter ein BODEN - sonst liegt der Notlauf
+    // unter minMoveThrottle, und dort zuckt das Auto statt zu fahren.
+    //
+    // Das zweite Argument ist 1 und nicht undefined: undefined liesse fuelCutTarget()
+    // rechnen, also den TANK VON AUTO 1. Ein Auto, dem der Sprit eines anderen ausgeht,
+    // waere schwer zu erklaeren. Der eigene Tank kommt im naechsten Schritt.
+    gas = fuelDamageDerate(gas, 1, 2);
     if (offtrackGiltFuer(2)) gas = Math.min(gas, OFFTRACK_GAS);
     // Und das Rumpeln, an seinen eigenen Pad. Bis v0.6.45 waere es der Pad von Spieler 1
     // gewesen; jetzt hat jeder Stoss eine Adresse.

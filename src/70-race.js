@@ -1565,6 +1565,10 @@
   // times or the race state — it is a "get me driving again" button, not a restart.
   function resetCarState() {
     damage = 0;
+    // Auto 2 mit. Es hat keine Boxenreparatur (siehe schadenZwei), also ist dieser Knopf
+    // der einzige Weg zurueck - und ein Knopf, der nur das halbe Feld zuruecksetzt, waere
+    // schlimmer als keiner.
+    schadenZweiZuruecksetzen();
     fuel = 100;
     resetTyres();
     updateDamageFuelUI();
@@ -3194,8 +3198,22 @@
   // not a validated impact reading.
   let fuel = 100;
   let damage = 0;
-  let crashRollingAvg1 = null, crashRollingAvg3 = null;
-  let lastCrashTime = 0;
+  // ---- DER ERKENNUNGSZUSTAND, JE AUTO ------------------------------------------------
+  //
+  // Hier standen vier Modulgroessen: crashRollingAvg1/3, lastCrashTime und abseitsBis.
+  // Gepruefft habe ich, wer sie ausser detectCrash() liest - niemand im Betrieb, nur ein
+  // Selbsttest, der sie sichert und zuruecklegt. Damit war der Umbau auf einen Satz je Auto
+  // billig, und er ist die richtige Form: die Alternative waere ein zweiter Detektor
+  // gewesen, und zwei Kopien derselben Schwellenlogik laufen auseinander.
+  //
+  // Der Schluessel ist die Spielernummer und nicht das Auto selbst: die Erkennung haengt am
+  // SPIELER (Auto 1 ist immer playerCar), und ein Auto, das die Rolle wechselt, soll nicht
+  // seinen halb gefuellten Mittelwert mitnehmen.
+  const crashLage = {
+    1: { avg1: null, avg3: null, letzter: 0, gnadeBis: 0 },
+    2: { avg1: null, avg3: null, letzter: 0, gnadeBis: 0 },
+  };
+  function crashLageVon(wer) { return crashLage[wer === 2 ? 2 : 1]; }
   // Ereignisse JE RUNDE, fuer den Rundenzeit-Plot. raceLapEvents[i] gehoert zu
   // raceLapTimes[i] - die Rundennummer ist der Index, genau wie dort, und sie zweimal zu
   // fuehren waere die Gelegenheit, dass sie auseinanderlaufen.
@@ -3213,6 +3231,54 @@
   // car really stops switching that light rather than only the display pretending.
   const LIGHT_DEAD_DAMAGE = 50;
   const lightDamage = { front: false, rear: false };
+
+  // ---- UND DER SCHADEN VON AUTO 2 ----------------------------------------------------
+  //
+  // `damage` und `lightDamage` bleiben Auto 1: 68 bzw. 16 Fundstellen, daran haengen die
+  // Anzeige, der Schadensbalken, die Boxenreparatur, die Ansagen und das Rennergebnis.
+  // Auto 2 bekommt einen eigenen Satz derselben zwei Groessen - dieselbe Bauform wie beim
+  // Abseits in 50-drive.js und mit derselben Begruendung: ein dritter Spieler waere der
+  // Moment, in dem daraus ein Datensatz je Auto wird.
+  //
+  // Was Auto 2 damit HAT: Crasherkennung, Schadensfortschritt, Tempoverlust beim Aufprall,
+  // Leistungsverlust mit dem Schaden, Notlauf ab 100 Prozent, ausgefallene Lampen.
+  // Was es NICHT hat: eine Reparatur, denn die gibt es nur in der Boxengasse, und die
+  // Boxen-Zustandsmaschine hat 27 Groessen und 633 Fundstellen. Zuruecksetzen geht ueber
+  // den Rennstart und ueber die Taste R.
+  const schadenZwei = { wert: 0, licht: { front: false, rear: false } };
+
+  // Wessen Lampenschaden gilt fuer die Pakete DIESES Autos?
+  //
+  // ---- EIN ECHTER FEHLER, BEIM ZWEI-SPIELER-UMBAU GEFUNDEN --------------------------
+  //
+  // buildCommandPacket() maskiert kaputte Lampen "an der einen Stelle, durch die jedes
+  // Paket geht" - und las dabei das globale lightDamage. Folge, unabhaengig vom
+  // Zwei-Spieler-Modus: sobald das FAHRERAUTO ueber 50 Prozent Schaden hatte, flackerten
+  // die Scheinwerfer ALLER Ghosts mit. Das ist nicht erwuenscht, es war nur nie aufgefallen,
+  // weil Schaden und Ghosts selten zusammen gefahren wurden.
+  //
+  // Die Maske bleibt, wo sie ist - das Argument dort ist richtig. Sie fragt nur nicht mehr
+  // eine globale Groesse, sondern das Auto.
+  const KEIN_LICHTSCHADEN = { front: false, rear: false };
+  function lichtSchadenVon(car) {
+    if (!car) return KEIN_LICHTSCHADEN;
+    if (typeof playerCar !== 'undefined' && car === playerCar) return lightDamage;
+    if (typeof playerCar2 !== 'undefined' && car === playerCar2) return schadenZwei.licht;
+    return KEIN_LICHTSCHADEN;
+  }
+
+  // Der Schadenswert je Spieler, fuer alles, was ihn nur LIEST.
+  function schadenVon(wer) { return wer === 2 ? schadenZwei.wert : damage; }
+
+  // Zuruecksetzen. Eine eigene Funktion und kein Griff in die Felder von aussen: der
+  // Satz hat drei Bestandteile, und wer nur `wert` auf null setzt, laesst ausgefallene
+  // Lampen stehen - genau die Falle, die bei lightDamage schon einmal zugeschlagen hat
+  // (siehe die Notiz bei updateDamageFuelUI).
+  function schadenZweiZuruecksetzen() {
+    schadenZwei.wert = 0;
+    schadenZwei.licht.front = false;
+    schadenZwei.licht.rear = false;
+  }
   // Einstellbar seit v0.5. Sie stand als Konstante hier - dieselbe Fehlerklasse wie
   // leaderBrakePct und ghostCfg.lineModel: eine Einstellung, die niemand einstellen konnte.
   // Die 40 bleibt die Vorgabe, denn mit ihr ist die Erkennung gebaut und geprueft.
@@ -3318,13 +3384,17 @@
   const OFFTRACK_GNADE_MS = 1200;
   let abseitsBis = 0;
 
-  function detectCrash(bytes) {
+  // `wer` ist 1, wenn nichts dasteht - die vorhandene Aufrufstelle in
+  // handleDashboardBytes() bleibt damit unveraendert. Auto 2 meldet sich aus dem Meldestrom
+  // je Auto in 90-ghosts.js.
+  function detectCrash(bytes, wer) {
     if (!crashDetectionEnabled) return;
+    const L = crashLageVon(wer);
     const v1 = s8signed(bytes[1]), v3 = s8signed(bytes[3]);
-    if (crashRollingAvg1 === null) { crashRollingAvg1 = v1; crashRollingAvg3 = v3; return; }
-    const dev = Math.abs(v1 - crashRollingAvg1) + Math.abs(v3 - crashRollingAvg3);
-    crashRollingAvg1 += (v1 - crashRollingAvg1) * CRASH_ROLLING_ALPHA;
-    crashRollingAvg3 += (v3 - crashRollingAvg3) * CRASH_ROLLING_ALPHA;
+    if (L.avg1 === null) { L.avg1 = v1; L.avg3 = v3; return; }
+    const dev = Math.abs(v1 - L.avg1) + Math.abs(v3 - L.avg3);
+    L.avg1 += (v1 - L.avg1) * CRASH_ROLLING_ALPHA;
+    L.avg3 += (v3 - L.avg3) * CRASH_ROLLING_ALPHA;
     const now = Date.now();
 
     // ---- Ein Auto neben der Bahn wird AUFGEHOBEN, und das ist kein Crash ---------------
@@ -3342,19 +3412,20 @@
     // Die Schwelle heraufzusetzen waere dieselbe Falle einen Schritt weiter: ein Aufprall
     // auf der Bahn soll weiter zaehlen. Was hier fehlt, ist der Unterschied zwischen einer
     // Kollision und einer Hand.
-    if (typeof abseitsJetzt === 'function' && abseitsJetzt()) {
-      abseitsBis = now + OFFTRACK_GNADE_MS;
+    if (typeof abseitsJetztFuer === 'function' && abseitsJetztFuer(wer === 2 ? 2 : 1)) {
+      L.gnadeBis = now + OFFTRACK_GNADE_MS;
       // Das gleitende Mittel laeuft weiter (siehe oben), es kommt also nach dem Aufsetzen
       // nicht aus einem kalten Zustand zurueck - sonst waere die erste echte Beruehrung
       // danach unsichtbar.
       return;
     }
-    if (now < abseitsBis) return;
+    if (now < L.gnadeBis) return;
 
-    if (dev > crashThreshold && now - lastCrashTime > CRASH_REFRACTORY_MS) {
-      lastCrashTime = now;
-      lapEventAkku.crash += 1;
-      registerCrash();
+    if (dev > crashThreshold && now - L.letzter > CRASH_REFRACTORY_MS) {
+      L.letzter = now;
+      // Der Rundenzaehler der Ereignisse gehoert dem Rennen, und das Rennen faehrt Auto 1.
+      if (wer !== 2) lapEventAkku.crash += 1;
+      registerCrash(wer);
     }
   }
 
@@ -3365,22 +3436,33 @@
   //   reversing                 -> rear    (you backed into something)
   //   essentially stationary    -> rear    (something ran into you)
   //   moving forward            -> front
-  function crashEnd() {
-    const st = physEngine.state;
+  function crashEnd(wer) {
+    const st = (wer === 2 ? physEngine2 : physEngine).state;
     if (st.currentGear < 0) return 'rear';
     if (Math.abs(st.speedKmh) * REAL_SCALE < 12) return 'rear';
     return 'front';
   }
 
-  function registerCrash() {
-    damage = Math.min(100, damage + 100 / crashesToTotal);
-    const end = crashEnd();
-    if (damage >= LIGHT_DEAD_DAMAGE && !lightDamage[end]) {
-      lightDamage[end] = true;
-      log(end === 'front' ? 'Frontschaden: Scheinwerfer ausgefallen.'
-                          : 'Heckschaden: Rueckleuchten ausgefallen.', 'err');
-      showHudToast(end === 'front' ? 'SCHEINWERFER AUS' : 'RUECKLEUCHTEN AUS');
-      updateLightTellTales();
+  function registerCrash(wer) {
+    const zwei = wer === 2;
+    // EINE Funktion fuer beide Autos und nicht zwei: die Schadensrechnung ist dieselbe, nur
+    // der Ablageort und der Adressat der Rueckmeldungen unterscheiden sich. Zwei Kopien
+    // waeren zwei Orte, an denen der naechste Schadensmechanismus vergessen wird.
+    const motor = zwei ? physEngine2 : physEngine;
+    const licht = zwei ? schadenZwei.licht : lightDamage;
+    const pre = zwei ? 'P2: ' : '';
+    if (zwei) schadenZwei.wert = Math.min(100, schadenZwei.wert + 100 / crashesToTotal);
+    else damage = Math.min(100, damage + 100 / crashesToTotal);
+    const stand = zwei ? schadenZwei.wert : damage;
+    const end = crashEnd(wer);
+    if (stand >= LIGHT_DEAD_DAMAGE && !licht[end]) {
+      licht[end] = true;
+      log(pre + (end === 'front' ? 'Frontschaden: Scheinwerfer ausgefallen.'
+                                 : 'Heckschaden: Rueckleuchten ausgefallen.'), 'err');
+      showHudToast(pre + (end === 'front' ? 'SCHEINWERFER AUS' : 'RUECKLEUCHTEN AUS'));
+      // Die Kontrollleuchten im Cockpit gehoeren Auto 1. Fuer Auto 2 steht der Zustand auf
+      // seinem eigenen Schirm.
+      if (!zwei) updateLightTellTales();
     }
     // DIE WUCHT, und sie wird VOR der naechsten Zeile genommen: die kuerzt das Tempo auf
     // 30 Prozent, und danach waere jeder Aufprall gleich schwach.
@@ -3388,18 +3470,21 @@
     // Hier stand ein fester Wert mit dem Vermerk "medium, per user spec". Eine Groesse fuer
     // die Staerke gibt es aber: mit welchem Tempo man einschlaegt. Ein Einschlag bei
     // Hoechstgeschwindigkeit soll sich nicht anfuehlen wie ein Anstupsen in der Boxengasse.
-    const wucht = Math.max(0, Math.min(1, Math.abs(physEngine.state.speedKmh)
-                                          / Math.max(0.01, physEngine.config.topSpeedKmh)));
+    const wucht = Math.max(0, Math.min(1, Math.abs(motor.state.speedKmh)
+                                          / Math.max(0.01, motor.config.topSpeedKmh)));
     // An impact scrubs off most of the speed at once — the one case where the car should
     // NOT roll out gently. Everything else decays via the coast drag in the engine.
-    physEngine.state.speedKmh *= 0.3;
-    updateDamageFuelUI();
+    motor.state.speedKmh *= 0.3;
+    if (!zwei) updateDamageFuelUI();
+    else if (typeof updateRaceScreen2 === 'function') updateRaceScreen2(physEngine2.state);
     if (!playCrashFx()) playCrashSound(); // sample variants first, synth burst as fallback
     // Der untere Wert liegt ueber dem alten festen (0,6 / 0,4 / 220 ms): auch ein
     // langsamer Aufprall soll deutlicher sein als bisher. Oben laeuft es auf den vollen
     // Ausschlag hinaus.
+    // AN SEINEN EIGENEN PAD. Bis v0.6.45 ging jeder Stoss an alle - ein Aufprall von Auto 2
+    // war damit im Pad von Spieler 1 zu spueren, und das liest sich als eigener Crash.
     padRumble(0.65 + 0.35 * wucht, 0.45 + 0.35 * wucht,
-              Math.round(240 + 160 * wucht), 'crash');
+              Math.round(240 + 160 * wucht), 'crash', zwei ? 2 : 1);
     // Hier stand ein Crash-Indikator, dessen Element es nicht mehr gibt: #crash-indicator
     // kam im gebauten Dokument genau einmal vor, naemlich hier. Die Stelle prueft zwar mit
     // if (ind), griff im Zeitgeber danach aber UNGESCHUETZT auf ind.style zu - der Fehler kam
@@ -3409,8 +3494,8 @@
     //
     // Rueckmeldung gibt es genug - Schadensbalken, Geraeusch, Rumble, Protokoll -, nur nicht
     // auf dem Rennschirm. Also dort eine Meldung.
-    showHudToast('CRASH · SCHADEN ' + Math.round(damage) + ' %');
-    log(`Crash erkannt, Schaden +${Math.round(100 / crashesToTotal)}%.`, 'err');
+    showHudToast(pre + 'CRASH · SCHADEN ' + Math.round(stand) + ' %');
+    log(pre + `Crash erkannt, Schaden +${Math.round(100 / crashesToTotal)}%.`, 'err');
   }
 
   // PLACEHOLDER: the real BLE command for the car's headlights/brake light is still
@@ -3796,21 +3881,25 @@
   //
   // Ohne Argument gilt der Sofortwert. Damit sagt fuelDamageDerate(1) bei leerem Tank
   // weiterhin genau FUEL_CUT_EMPTY, und der vorhandene Test prueft unveraendert weiter.
-  function fuelDamageDerate(throttle, cut) {
+  // `wer` waehlt den Schadenswert und den Motor. Ohne Angabe ist es Auto 1, die vorhandene
+  // Aufrufstelle in physicsStep() bleibt also unveraendert.
+  function fuelDamageDerate(throttle, cut, wer) {
     let out = throttle;
+    const schaden = schadenVon(wer);
+    const motor = wer === 2 ? physEngine2 : physEngine;
     const c = cut === undefined ? fuelCutTarget() : cut;
     if (c < 1) out = Math.max(-c, Math.min(c, out));
-    out *= 1 - (damage / 100) * 0.3;
+    out *= 1 - (schaden / 100) * 0.3;
     // Totalled: limp home. Deliberately still drivable so the car never strands itself
     // out on the track — a pit stop clears it.
-    if (damage >= 100) out *= 0.5;
+    if (schaden >= 100) out *= 0.5;
     // ...except it did not. Empty tank AND total damage multiplied down to 0.0525, well
     // below minMoveThrottle (0.16), which is the byte range where the car twitches instead
     // of moving: the same dead band that caused the crawling near standstill, reached by a
     // different path. So while the driver is actually asking for throttle, the limp value
     // gets a FLOOR rather than only a series of reductions. It stays humiliatingly slow,
     // but it moves, which is the entire point of a limp mode.
-    const floor = physEngine.config.minMoveThrottle * 1.05;
+    const floor = motor.config.minMoveThrottle * 1.05;
     if (throttle > 0.02 && out > 0 && out < floor) out = floor;
     if (throttle < -0.02 && out < 0 && out > -floor) out = -floor;
     return out;

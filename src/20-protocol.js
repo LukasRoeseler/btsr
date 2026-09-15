@@ -96,7 +96,10 @@
     return (((bucket * 2654435761) >>> 0) / 4294967296) > 0.86;
   }
 
-  function buildCommandPacket(steerFloat, throttleFloat, lightOverride, byteOverride) {
+  // `schadenLicht` ist der Lampenschaden DIESES Autos. Ohne Angabe gilt der globale - also
+  // der von Auto 1, und damit bleibt jeder vorhandene Aufruf Wort fuer Wort derselbe.
+  function buildCommandPacket(steerFloat, throttleFloat, lightOverride, byteOverride,
+                              schadenLicht) {
     // Full mechanical lock. The old "Maximaler Lenkausschlag" option scaled this down to
     // 85 of 127 steps by default, i.e. the car was never asked for more than two thirds
     // of the steering it has.
@@ -113,8 +116,20 @@
     // Zuckungen. Die Maskierung bleibt an dieser Stelle, und dadurch gilt weiterhin, was
     // eine UND-Verknuepfung ohnehin leistet - ist das Licht gar nicht eingeschaltet, aendert
     // das Flackern nichts, weil das Bit dann so oder so nicht gesetzt ist.
-    if (lightDamage.front && !lampFlicker(0)) lb &= ~LIGHT_HEAD & 0xff;
-    if (lightDamage.rear && !lampFlicker(1)) lb &= ~LIGHT_BRAKE & 0xff;
+    //
+    // ---- UND SIE FRAGT SEIT v0.6.47 DAS AUTO --------------------------------------
+    //
+    // Hier stand `lightDamage`, die globale Groesse - und die gehoert dem Fahrerauto. Folge,
+    // und sie ist ein echter Fehler unabhaengig vom Zwei-Spieler-Modus: sobald das
+    // Fahrerauto ueber 50 Prozent Schaden hatte, flackerten die Scheinwerfer ALLER Ghosts
+    // mit. Aufgefallen ist es erst, als Auto 2 seinen eigenen Schaden bekam.
+    //
+    // Die Maske bleibt an dieser Stelle, das Argument darueber ist richtig. Sie fragt nur
+    // nicht mehr eine globale Groesse, sondern das Auto - siehe lichtSchadenVon() in
+    // 70-race.js und den Aufruf in writeToCar().
+    const ls = schadenLicht || lightDamage;
+    if (ls.front && !lampFlicker(0)) lb &= ~LIGHT_HEAD & 0xff;
+    if (ls.rear && !lampFlicker(1)) lb &= ~LIGHT_BRAKE & 0xff;
     const body = [0xaf, 0x00, 0x00, 0x00, 0x00, 0x00, throttleByte, steerByte, 0x80, steerByte, 0x60, 0x00, 0x01, 0x00, lb, 0x04, 0x00, 0x00, 0x00];
     // The probe rewrites individual bytes BEFORE the checksum, so every variant still
     // carries a valid CRC — otherwise the car would simply drop the packet and the

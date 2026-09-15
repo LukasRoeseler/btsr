@@ -36,6 +36,130 @@
     zweiSpielerLage() { return zweiSpieler; },
     zweiSpielerStellen(an) { zweiSpieler = !!an; return zweiSpieler; },
 
+    // Der Erkennungszustand eines Spielers, zum Sichern und Zuruecklegen in Prueflaeufen.
+    // Herausgegeben wird das OBJEKT und keine Kopie: ein Prueflauf muss ihn setzen koennen.
+    crashLage(wer) { return crashLageVon(wer); },
+
+    // Der Schadensstand von Auto 2, lesbar und setzbar. Zwei getrennte Wege, weil das
+    // Setzen im Prueflauf eine andere Sache ist als das Lesen einer Messung.
+    schadenZweiLesen() {
+      return { wert: schadenZwei.wert,
+               licht: { front: schadenZwei.licht.front, rear: schadenZwei.licht.rear } };
+    },
+    schadenZweiSetzen(wert, front, rear) {
+      schadenZwei.wert = wert;
+      schadenZwei.licht.front = !!front;
+      schadenZwei.licht.rear = !!rear;
+      return this.schadenZweiLesen();
+    },
+
+    // ---- NIMMT AUTO 2 SCHADEN, UND TRIFFT ER NUR IHN? --------------------------------
+    //
+    // DER GANZE WEG, nicht die Funktion. Das ist in diesem Projekt einmal teuer geworden:
+    // detectCrash() war definiert, hatte eine Schwelle, hatte einen Schalter - und wurde
+    // nie aufgerufen. Ein Prueflauf, der die Funktion ruft, haette gruen gemeldet.
+    //
+    // Gemessen wird deshalb ab den BYTES: sie gehen durch denselben Meldestrom, durch den
+    // ein echtes Auto meldet, und heraus kommt der Schadensstand.
+    //
+    // Und die zweite Haelfte ist die wichtigere: der Schaden von Auto 2 darf den von
+    // Auto 1 NICHT beruehren, und umgekehrt. Drei Zahlen dazu - Schadensstand, und je eine
+    // Lampenmaske aus einem wirklich gebauten Paket.
+    schadenZweiProbe(o) {
+      const opt = o || {};
+      const merkGarage = garage.slice();
+      const vorher = { zwei: zweiSpieler, p1: playerCar, p2: playerCar2,
+                       dmg: damage, an: crashDetectionEnabled,
+                       schwelle: crashThreshold };
+      const L1 = crashLageVon(1), L2 = crashLageVon(2);
+      const merkL = { a: { ...L1 }, b: { ...L2 } };
+      const merkZwei = this.schadenZweiLesen();
+      const echtNow = Date.now;
+      let uhr = 2000000;
+      try {
+        Date.now = () => uhr;
+        crashDetectionEnabled = true;
+        damage = 0;
+        this.schadenZweiSetzen(0, false, false);
+        for (const L of [L1, L2]) { L.avg1 = null; L.avg3 = null; L.letzter = 0; L.gnadeBis = 0; }
+        garage.splice(0, garage.length);
+        const auto2 = { device: { id: 'probe-schaden2' }, role: 'player2', rx: null,
+                        tileCode: 0x02, tileCount: 0, lastCodeAt: 0, yaw: 0, ghost: null,
+                        testSenke: [], alias: 'P2' };
+        const ghost = { device: { id: 'probe-ghost' }, role: 'ghost', rx: null,
+                        tileCode: 0x02, tileCount: 0, lastCodeAt: 0, yaw: 0,
+                        ghost: { tilesTotal: 0, tileIndex: 0 }, testSenke: [], alias: 'G' };
+        garage.push(auto2, ghost);
+        playerCar = null;
+        playerCar2 = auto2;
+        zweiSpieler = true;
+
+        // Ein ruhiger Strom setzt das gleitende Mittel, dann ein Stoss. Genau wie beim
+        // Test fuer Auto 1: erst Ruhe, dann die Abweichung, sonst gibt es kein Mittel,
+        // von dem etwas abweichen koennte.
+        // ueber feedNotify(), also durch onCarNotify() - genau den Weg, den ein echtes
+        // Auto nimmt. Ein Prueflauf, der detectCrash() direkt ruft, haette den toten
+        // Aufruf von damals nicht gesehen.
+        const stoss = (v1, v3) => {
+          const b = new Uint8Array(19);
+          b[1] = v1 & 0xff; b[3] = v3 & 0xff; b[11] = 0; b[12] = 0x02;
+          this.feedNotify(b, { car: auto2 });
+        };
+        const wieOft = opt.stoesse === undefined ? 1 : opt.stoesse;
+        for (let i = 0; i < 12; i++) { uhr += 45; stoss(0, 0); }
+        for (let k = 0; k < wieOft; k++) {
+          uhr += 2000;   // ueber die Sperrzeit hinaus
+          stoss(120, 120);
+          uhr += 45;
+          stoss(0, 0);
+        }
+        const nachStoss = this.schadenZweiLesen();
+
+        // Die Lampenmaske, aus wirklich gebauten Paketen. Auto 2 auf Totalschaden setzen
+        // und dann fragen: welches Bit geht bei wem hinaus?
+        this.schadenZweiSetzen(100, true, true);
+        const maske = (car) => {
+          car.testSenke.length = 0;
+          // Ueber lichtSchadenVon(), also genau den Weg, den writeToCar() nimmt.
+          const pkt = buildCommandPacket(0, 0, LIGHT_HEAD | LIGHT_BRAKE, null,
+                                         lichtSchadenVon(car));
+          return { kopf: !!(pkt[14] & LIGHT_HEAD), brems: !!(pkt[14] & LIGHT_BRAKE) };
+        };
+        // lampFlicker() hat einen Zeitanteil: ueberwiegend dunkel mit kurzen Zuckungen.
+        // Ueber mehrere Zeitpunkte gemessen, sonst faengt man zufaellig einen Zucker.
+        const ueberZeit = (car) => {
+          let hell = 0;
+          for (let i = 0; i < 40; i++) { uhr += 70; if (maske(car).kopf) hell++; }
+          return hell;
+        };
+        const hellAuto2 = ueberZeit(auto2);
+        const hellGhost = ueberZeit(ghost);
+
+        return {
+          schadenNachStoss: +nachStoss.wert.toFixed(2),
+          schrittSoll: +(100 / crashesToTotal).toFixed(2),
+          lichtAuto2: nachStoss.licht,
+          schadenAutoEins: damage,
+          // Von 40 Zeitpunkten: wie oft war der Scheinwerfer AN? Bei Totalschaden muss das
+          // selten sein, beim Ghost immer.
+          hellAuto2, hellGhost, zeitpunkte: 40,
+        };
+      } finally {
+        Date.now = echtNow;
+        garage.splice(0, garage.length);
+        merkGarage.forEach((c) => garage.push(c));
+        zweiSpieler = vorher.zwei;
+        playerCar = vorher.p1;
+        playerCar2 = vorher.p2;
+        damage = vorher.dmg;
+        crashDetectionEnabled = vorher.an;
+        crashThreshold = vorher.schwelle;
+        Object.assign(L1, merkL.a);
+        Object.assign(L2, merkL.b);
+        this.schadenZweiSetzen(merkZwei.wert, merkZwei.licht.front, merkZwei.licht.rear);
+      }
+    },
+
     // ---- SEHEN DIE GHOSTS AUTO 2? ---------------------------------------------------
     //
     // Die Frage laesst sich nicht aus der Zuteilung ableiten, und sie hat genau eine

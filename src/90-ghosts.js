@@ -889,7 +889,11 @@
     if (!car.rx || car.writeInFlight) return;
     car.writeInFlight = true;
     try {
-      const pkt = buildCommandPacket(steer, throttle, lightBits, modeBytes);
+      // Der Lampenschaden DIESES Autos. Fuer einen Ghost ist das "keiner" - bis v0.6.46
+      // erbte er den Schaden des Fahrerautos, und seine Scheinwerfer flackerten mit.
+      const pkt = buildCommandPacket(steer, throttle, lightBits, modeBytes,
+                                     typeof lichtSchadenVon === 'function'
+                                       ? lichtSchadenVon(car) : undefined);
       recWrite(pkt, garageLabel(car));
       if (car.rx.properties.writeWithoutResponse) await car.rx.writeValueWithoutResponse(pkt);
       else await car.rx.writeValueWithResponse(pkt);
@@ -1370,6 +1374,15 @@
     // zwischen guten Lesungen ist Rauschen - dieselbe Begruendung wie bei offtrackEinMs.
     if (zweiSpieler && car === playerCar2) {
       offtrackMelden((b[12] & 0xff) === TILE_OFFTRACK, 2);
+      // ---- UND DIE CRASHERKENNUNG, aus SEINEN Bytes 1 und 3 ----------------------
+      //
+      // Dieselbe Funktion wie fuer Auto 1, mit eigenem gleitenden Mittel und eigener
+      // Sperrzeit (crashLage in 70-race.js). Ein zweiter Detektor waere eine zweite Kopie
+      // derselben Schwellenlogik - und zwei Kopien laufen auseinander.
+      //
+      // WICHTIG, dass es HIER steht und nicht in handleDashboardBytes(): das laeuft nur
+      // fuer das Fahrerauto. Genau deshalb hatte Auto 2 bis v0.6.46 keinen Schaden.
+      detectCrash(b, 2);
     }
     // Der Streckenscan haengt jetzt an DIESEM Strom. Er hatte eine eigene Anmeldung ueber
     // charByUuid, und die wird nur von exploreServices() im Entwickler-Tab gefuellt - nach

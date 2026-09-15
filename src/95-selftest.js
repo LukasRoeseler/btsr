@@ -9594,6 +9594,58 @@
   // Die Liste ist GEPFLEGT, und das ist hier richtig: sie IST die Zusicherung. Sie stammt
   // aus einer Suche ueber alle Kaestchen, deren Listener "X = e.target.checked" schreibt.
   // Ein neuer Schalter gehoert hinein.
+  // ---- Auto 2 nimmt Schaden, und zwar nur es selbst --------------------------------
+  //
+  // VIER AUSSAGEN IN EINEM LAUF, und die dritte war ein echter, vorhandener Fehler.
+  //
+  //   1. Ein Stoss auf den Bytes 1 und 3 von Auto 2 erhoeht SEINEN Schaden. Gemessen ab
+  //      den Bytes und nicht durch einen Aufruf von detectCrash(): genau hier war einmal
+  //      ein toter Aufruf, und ein Prueflauf, der die Funktion ruft, haette gruen
+  //      gemeldet ("Schaden ist angeschaltet, aber wenn ich am Auto ruettele passiert
+  //      nichts").
+  //   2. Ab LIGHT_DEAD_DAMAGE faellt eine Lampe aus, und zwar die richtige - im Stand
+  //      hinten, weil dann etwas in EINEN hineingefahren ist.
+  //   3. DER GHOST BLEIBT HELL. Bis v0.6.46 las buildCommandPacket() den globalen
+  //      Lampenschaden, und damit flackerten bei ueber 50 Prozent Schaden am Fahrerauto
+  //      die Scheinwerfer ALLER Ghosts mit. Das ist kein Zwei-Spieler-Fehler, es ist nur
+  //      erst dort aufgefallen.
+  //   4. Der Schaden von Auto 1 bleibt unberuehrt.
+  //
+  // Die Lampe wird ueber VIERZIG Zeitpunkte gemessen und nicht an einem: lampFlicker()
+  // macht einen Wackelkontakt - ueberwiegend dunkel mit kurzen Zuckungen -, und ein
+  // einzelner Zeitpunkt faengt zufaellig einen Zucker.
+  stAdd('Zwei Spieler: Auto 2 nimmt eigenen Schaden, der Ghost bleibt hell', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.schadenZweiProbe) {
+      return { skip: true, mass: 'schadenZweiProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.schadenZweiProbe({ stoesse: 3 });
+    const maengel = [];
+    const soll = 3 * r.schrittSoll;
+    if (Math.abs(r.schadenNachStoss - soll) > 0.01) {
+      maengel.push('Schaden ' + r.schadenNachStoss + ' statt ' + soll);
+    }
+    if (!r.lichtAuto2.rear) maengel.push('Rueckleuchte haelt ueber ' + soll + ' % Schaden');
+    if (r.schadenAutoEins !== 0) {
+      maengel.push('Auto 1 bekam ' + r.schadenAutoEins + ' % mit');
+    }
+    // Der Ghost muss an JEDEM der vierzig Zeitpunkte hell sein - sein Lampenschaden ist
+    // nicht "selten", sondern nicht vorhanden.
+    if (r.hellGhost !== r.zeitpunkte) {
+      maengel.push('Ghost nur ' + r.hellGhost + '/' + r.zeitpunkte + ' hell');
+    }
+    // Und Auto 2 muss ueberwiegend dunkel sein. Die Grenze ist grosszuegig, weil der
+    // Wackelkontakt ein Zeitanteil ist und kein festes Muster - gemessen 5 von 40.
+    if (r.hellAuto2 > r.zeitpunkte * 0.5) {
+      maengel.push('Auto 2 trotz Totalschaden ' + r.hellAuto2 + '/' + r.zeitpunkte + ' hell');
+    }
+    return { ok: !maengel.length,
+             mass: r.schadenNachStoss + ' % nach 3 Stoessen (Auto 1: ' + r.schadenAutoEins
+                 + ' %) | Lampe hinten ' + (r.lichtAuto2.rear ? 'aus' : 'an')
+                 + ' | hell: Auto 2 ' + r.hellAuto2 + '/' + r.zeitpunkte
+                 + ', Ghost ' + r.hellGhost + '/' + r.zeitpunkte
+                 + (maengel.length ? ' | ' + maengel.join(', ') : '') };
+  });
+
   // ---- Die Ghosts sehen Auto 2 ------------------------------------------------------
   //
   // DIE AUSSAGE, DIE IM HILFETEXT STAND UND JETZT NICHT MEHR STIMMT. Bis v0.6.45 hiess es
@@ -11802,12 +11854,18 @@
       return { skip: true, mass: 'feedNotify nicht vorhanden' };
     }
     const sw = $('setting-crash-damage');
+    // Der Erkennungszustand liegt seit v0.6.47 in einem Satz je Spieler (crashLage in
+    // 70-race.js) - vorher waren es vier Modulgroessen, und dieser Test war ihr einziger
+    // Leser ausserhalb von detectCrash(). Gesichert und zurueckgelegt wird derselbe
+    // Zustand wie vorher, nur unter seinem neuen Namen.
+    const L = OMEGA_TEST.crashLage ? OMEGA_TEST.crashLage(1) : null;
     const gemerkt = { sp: playerCar, dmg: damage,
                       an: crashDetectionEnabled,
-                      a1: crashRollingAvg1, a3: crashRollingAvg3, lt: lastCrashTime };
+                      a1: L && L.avg1, a3: L && L.avg3, lt: L && L.letzter,
+                      gb: L && L.gnadeBis };
     try {
       crashDetectionEnabled = true;
-      crashRollingAvg1 = null; crashRollingAvg3 = null; lastCrashTime = 0;
+      if (L) { L.avg1 = null; L.avg3 = null; L.letzter = 0; L.gnadeBis = 0; }
       damage = 0;
       const attrappe = { device: { id: 'st-crash', name: 'Pruefwagen' }, role: 'player',
                          rx: null, tx: null, tileCode: 0xff, tileCount: null,
@@ -11831,8 +11889,8 @@
     } finally {
       playerCar = gemerkt.sp; damage = gemerkt.dmg;
       crashDetectionEnabled = gemerkt.an;
-      crashRollingAvg1 = gemerkt.a1; crashRollingAvg3 = gemerkt.a3;
-      lastCrashTime = gemerkt.lt;
+      if (L) { L.avg1 = gemerkt.a1; L.avg3 = gemerkt.a3; L.gnadeBis = gemerkt.gb; }
+      if (L) L.letzter = gemerkt.lt;
       updateDamageFuelUI();
     }
   });

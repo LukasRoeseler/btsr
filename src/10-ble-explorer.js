@@ -729,8 +729,10 @@
     "Was Auto 2 in dieser Fassung nicht hat": "What car 2 does not have in this version",
     "Ehrlicher als es zu verschweigen – jeder Punkt hängt an einem Zähler oder einer Ortung, die es nur einmal gibt:":
       "More honest than leaving it out – every item hangs off a counter or a position estimate that exists only once:",
-    "Sprit und Schaden zählen nur für Auto 1. Zwei ungleiche Regelsätze wären schlimmer als keiner – der Modus soll fair sein.":
-      "Fuel and damage count for car 1 only. Two unequal rule sets would be worse than none – the mode is meant to be fair.",
+    "Sprit zählt nur für Auto 1, und eine Boxenreparatur gibt es für Auto 2 nicht – die Boxengasse ist eine Zustandsmaschine mit 27 Größen. Sein Schaden geht mit dem Rücksetzknopf und der Taste R zurück.":
+      "Fuel counts for car 1 only, and there is no pit repair for car 2 – the pit lane is a state machine with 27 variables. Its damage is cleared by the reset button and the R key.",
+    "Dazu einen eigenen Schaden: Crasherkennung aus seinen eigenen Sensorbytes, Leistungsverlust mit dem Schaden, Notlauf im Totalschaden und ausgefallene Lampen – und die Kontrollleuchten des einen sagen nichts mehr über das andere Auto.":
+      "Plus damage of its own: crash detection from its own sensor bytes, power lost with damage, limp mode when totalled, and lamps that fail – and one car's tell-tales no longer say anything about the other.",
     "Der Motorklang folgt Auto 1. Es gibt einen Tongenerator.":
       "The engine sound follows car 1. There is one tone generator.",
     "Rundenzählung, Ergebnistabelle und Aufnahme gelten für Auto 1.":
