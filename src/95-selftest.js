@@ -9594,6 +9594,71 @@
   // Die Liste ist GEPFLEGT, und das ist hier richtig: sie IST die Zusicherung. Sie stammt
   // aus einer Suche ueber alle Kaestchen, deren Listener "X = e.target.checked" schreibt.
   // Ein neuer Schalter gehoert hinein.
+  // ---- Auto 2 verbraucht Sprit, und ein leerer Tank kostet ihn Leistung ------------
+  //
+  // VIER AUSSAGEN, und die vierte ist ein Fehler, den dieser Prueflauf gefunden hat.
+  //
+  //   1. Der Stand sinkt nach Gas und Zeit, mit DEMSELBEN Regler wie bei Auto 1. Gemessen
+  //      bei Vollgas: 100 auf 96,04 Prozent in 3,96 s, Regler 1 Prozent je Sekunde.
+  //   2. Das Tankgewicht traegt in seiner Fahrphysik: massFactor 1,30 bei vollem Tank,
+  //      1,00 bei leerem - das sind die 30 Prozent aus fuelMassSpan.
+  //   3. Der leere Tank nimmt das Gas ueber die RAMPE weg und nicht in einem Takt.
+  //      Gemessen liegt der Deckel unterwegs bei 0,164 und laeuft auf 0,15 zu. Ein Sprung
+  //      von 1,0 auf 0,15 war bei Auto 1 als "abrupt abbremsen" gemeldet.
+  //   4. Der Tank von Auto 1 sinkt NICHT mit.
+  //
+  // GEFUNDEN HAT DIESER LAUF AUSSERDEM: bei negativem dt STEIGT der Tankstand, weil
+  // `stand - gas * dt * rate` dann eine Addition ist. Der Prueflauf stellte die Uhr
+  // zurueck, und der Tank ging von 1,5 auf 5,5 Prozent. Im Betrieb laeuft Date.now()
+  // monoton, der Fall kam also nie vor - "kam nie vor" ist aber Glueck und kein Schutz.
+  // dt ist jetzt bei BEIDEN Autos auf nicht-negativ geklemmt.
+  stAdd('Zwei Spieler: Auto 2 hat einen eigenen Tank', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.tankZweiProbe) {
+      return { skip: true, mass: 'tankZweiProbe nicht vorhanden' };
+    }
+    const voll = OMEGA_TEST.tankZweiProbe({ sekunden: 4, start: 100 });
+    const leer = OMEGA_TEST.tankZweiProbe({ sekunden: 4, start: 1.5 });
+    const maengel = [];
+    // 1. Verbrauch: Vollgas, also gilt der Regler unmittelbar. Die Sekunden kommen aus
+    //    der Reihe selbst, damit die Pruefung nicht an der Taktzahl klebt.
+    const dauer = voll.reihe[voll.reihe.length - 1].s;
+    const soll = voll.verbrauchRegler * dauer;
+    const ist = voll.tankAnfang - voll.tankEnde;
+    if (Math.abs(ist - soll) > 0.05) {
+      maengel.push('Verbrauch ' + ist.toFixed(2) + ' statt ' + soll.toFixed(2) + ' %');
+    }
+    // 1b. Und monoton fallend - ein Tank, der irgendwo steigt, ist der gefundene Fehler.
+    for (let i = 1; i < voll.reihe.length; i++) {
+      if (voll.reihe[i].tank > voll.reihe[i - 1].tank + 1e-9) {
+        maengel.push('Tank steigt bei ' + voll.reihe[i].s + ' s');
+        break;
+      }
+    }
+    // 2. Tankgewicht: voll schwerer als leer, und der Abstand muss deutlich sein.
+    const mVoll = voll.reihe[0].masse, mLeer = leer.reihe[leer.reihe.length - 1].masse;
+    if (!(mVoll > mLeer + 0.1)) {
+      maengel.push('Tankgewicht wirkt nicht: voll ' + mVoll + ', leer ' + mLeer);
+    }
+    // 3. Die Rampe: der Deckel muss ZWISCHEN dem Notwert und 1 liegen, wenn der Tank
+    //    gerade leer geworden ist. Genau auf 0,15 waere ein Sprung, genau auf 1 keine
+    //    Wirkung.
+    if (!(leer.cutJetzt > leer.cutLeer && leer.cutJetzt < 1)) {
+      maengel.push('Deckel ' + leer.cutJetzt + ' nicht auf der Rampe zwischen '
+                   + leer.cutLeer + ' und 1');
+    }
+    if (leer.tankEnde !== 0) maengel.push('Tank nicht leergefahren: ' + leer.tankEnde);
+    // 4. Auto 1 unberuehrt, in beiden Laeufen.
+    if (voll.tankAutoEins !== 100 || leer.tankAutoEins !== 100) {
+      maengel.push('Tank von Auto 1 bei ' + voll.tankAutoEins + '/' + leer.tankAutoEins);
+    }
+    return { ok: !maengel.length,
+             mass: 'Vollgas ' + dauer + ' s: ' + voll.tankAnfang + ' auf ' + voll.tankEnde
+                 + ' % (Regler ' + voll.verbrauchRegler + ' %/s) | Masse ' + mVoll
+                 + ' voll, ' + mLeer + ' leer | Deckel leer ' + leer.cutJetzt
+                 + ' | Auto 1 ' + voll.tankAutoEins + ' %'
+                 + (maengel.length ? ' | ' + maengel.join(', ') : '') };
+  });
+
   // ---- Auto 2 nimmt Schaden, und zwar nur es selbst --------------------------------
   //
   // VIER AUSSAGEN IN EINEM LAUF, und die dritte war ein echter, vorhandener Fehler.

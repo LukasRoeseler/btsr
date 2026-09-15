@@ -53,6 +53,90 @@
       return this.schadenZweiLesen();
     },
 
+    // ---- VERBRAUCHT AUTO 2, UND WAS KOSTET IHN DER LEERE TANK? ----------------------
+    //
+    // Drei Fragen in einem Lauf, und die dritte ist die, an der man sich vertut:
+    //
+    //   1. Sinkt der Stand nach Gas und Zeit, mit DEMSELBEN Regler wie bei Auto 1?
+    //   2. Traegt das Tankgewicht in seiner Fahrphysik (st.fuelLoad -> massFactor)?
+    //   3. Nimmt ein leerer Tank das Gas ueber die RAMPE weg und nicht in einem Takt?
+    //      Der Sprung von 1,0 auf 0,15 war bei Auto 1 als "abrupt abbremsen" gemeldet,
+    //      und eine zweite Rampe, die es nicht tut, waere derselbe Fehler noch einmal.
+    //
+    // Und die Gegenprobe: der Tank von Auto 1 darf nicht mitsinken.
+    tankZweiProbe(o) {
+      const opt = o || {};
+      const sekunden = opt.sekunden === undefined ? 4 : opt.sekunden;
+      const start = opt.start === undefined ? 100 : opt.start;
+      const uhrEcht = Date.now;
+      const perfEcht = performance.now;
+      const vorher = { zwei: zweiSpieler, p2: playerCar2, gas: p2Throttle,
+                       steer: p2Steer, phys: physicsEnabled, fuel1: fuel,
+                       tank2: tankZweiStand() };
+      const a2 = { device: { id: 'probe-tank' }, role: 'player2', rx: null,
+                   testSenke: [], alias: 'P2' };
+      const reihe = [];
+      try {
+        let t = 1000000;
+        Date.now = () => t;
+        performance.now = () => t;
+        zweiSpieler = true;
+        physicsEnabled = true;
+        playerCar2 = a2;
+        p2Steer = 0;
+        p2Throttle = 1;
+        fuel = 100;
+        physEngine2.reset();
+        physEngine2Abgleichen();
+        tankZweiFuellen(start);
+        // DEN VERBRAUCHSTAKT VERGESSEN, sonst rechnet der erste Takt ein dt zwischen der
+        // echten Uhr (oder der gefaelschten des vorigen Laufs) und dieser hier. Genau daran
+        // ist dieser Prueflauf beim ersten Mal gescheitert: der Tank ging von 1,5 auf 5,5
+        // Prozent nach oben. Der Befund war echt und steckte im Verbrauch, nicht in der
+        // Sonde - siehe die Klemme bei dt in fuelTankTick().
+        tankZweiTaktVergessen();
+        phys2TaktVergessen();
+        const takte = Math.round(sekunden * 1000 / CONTROL_SEND_INTERVAL_MS);
+        for (let i = 0; i < takte; i++) {
+          spielerZweiSenden();
+          if (i % 10 === 0 || i === takte - 1) {
+            reihe.push({
+              s: +(i * CONTROL_SEND_INTERVAL_MS / 1000).toFixed(2),
+              tank: +tankZweiStand().toFixed(2),
+              last: +(physEngine2.state.fuelLoad || 0).toFixed(3),
+              masse: +(physEngine2.state.massFactor || 0).toFixed(4),
+              gas: +(physOut2Throttle || 0).toFixed(3),
+              kmh: +(Math.abs(physEngine2.state.speedKmh) * REAL_SCALE).toFixed(1),
+            });
+          }
+          t += CONTROL_SEND_INTERVAL_MS;
+        }
+        return {
+          takte, verbrauchRegler: fuelDrainPerSec,
+          reihe,
+          tankAnfang: start, tankEnde: +tankZweiStand().toFixed(2),
+          tankAutoEins: fuel,
+          // Der Deckel, wie er gerade steht. Bei leerem Tank laeuft er auf FUEL_CUT_EMPTY
+          // zu, und die Rampe ist daran zu erkennen, dass er unterwegs ZWISCHEN den beiden
+          // Werten liegt.
+          cutJetzt: +tankZweiCutRampe(0).toFixed(4),
+          cutLeer: FUEL_CUT_EMPTY,
+        };
+      } finally {
+        Date.now = uhrEcht;
+        performance.now = perfEcht;
+        zweiSpieler = vorher.zwei;
+        playerCar2 = vorher.p2;
+        p2Throttle = vorher.gas;
+        p2Steer = vorher.steer;
+        physicsEnabled = vorher.phys;
+        fuel = vorher.fuel1;
+        tankZweiFuellen(vorher.tank2);
+        physEngine2.reset();
+        if (typeof updateRaceScreen2 === 'function') updateRaceScreen2(physEngine2.state);
+      }
+    },
+
     // ---- NIMMT AUTO 2 SCHADEN, UND TRIFFT ER NUR IHN? --------------------------------
     //
     // DER GANZE WEG, nicht die Funktion. Das ist in diesem Projekt einmal teuer geworden:

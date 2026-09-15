@@ -729,8 +729,10 @@
     "Was Auto 2 in dieser Fassung nicht hat": "What car 2 does not have in this version",
     "Ehrlicher als es zu verschweigen – jeder Punkt hängt an einem Zähler oder einer Ortung, die es nur einmal gibt:":
       "More honest than leaving it out – every item hangs off a counter or a position estimate that exists only once:",
-    "Sprit zählt nur für Auto 1, und eine Boxenreparatur gibt es für Auto 2 nicht – die Boxengasse ist eine Zustandsmaschine mit 27 Größen. Sein Schaden geht mit dem Rücksetzknopf und der Taste R zurück.":
-      "Fuel counts for car 1 only, and there is no pit repair for car 2 – the pit lane is a state machine with 27 variables. Its damage is cleared by the reset button and the R key.",
+    "Kein Boxenstopp für Auto 2: kein Nachtanken, keine Reparatur, kein Reifenwechsel – die Boxengasse ist eine Zustandsmaschine mit 27 Größen. Tank und Schaden gehen mit dem Rücksetzknopf, der Taste R und dem Rennstart zurück; am Start haben beide Autos dieselbe Spritmenge.":
+      "No pit stop for car 2: no refuelling, no repair, no tyre change – the pit lane is a state machine with 27 variables. Fuel and damage are cleared by the reset button, the R key and a race start; at the start both cars have the same amount of fuel.",
+    "Dazu einen eigenen Tank: Verbrauch nach Gas und Zeit mit demselben Regler wie Auto 1, das Tankgewicht in seiner Fahrphysik, die Warnstufen als Meldung und den Notlauf des leeren Tanks – und der geht über eine Rampe zu, nicht in einem Takt.":
+      "Plus a fuel tank of its own: consumption by throttle and time on the same slider as car 1, the fuel weight in its driving model, the warning levels as a message, and the limp mode of an empty tank – which closes over a ramp, not in one tick.",
     "Dazu einen eigenen Schaden: Crasherkennung aus seinen eigenen Sensorbytes, Leistungsverlust mit dem Schaden, Notlauf im Totalschaden und ausgefallene Lampen – und die Kontrollleuchten des einen sagen nichts mehr über das andere Auto.":
       "Plus damage of its own: crash detection from its own sensor bytes, power lost with damage, limp mode when totalled, and lamps that fail – and one car's tell-tales no longer say anything about the other.",
     "Der Motorklang folgt Auto 1. Es gibt einen Tongenerator.":

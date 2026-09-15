@@ -963,6 +963,11 @@
     // Ansage am Start gehoert.
     wxWindWuerfeln();
     fuel = Math.max(0, Math.min(100, raceFuelStartL / FUEL_TANK_LITERS * 100));
+    // BEIDE Autos mit derselben Startmenge und beide schadenfrei. Ein Rennen, in dem das
+    // eine Auto voll und das andere halb leer startet, waere kein Rennen - das ist die
+    // Zusage, unter der der Zwei-Spieler-Modus gebaut ist.
+    tankZweiFuellen(fuel);
+    schadenZweiZuruecksetzen();
     updateDamageFuelUI();
     racePitDone = 0;
     syncRaceGridOrder();
@@ -1569,6 +1574,7 @@
     // der einzige Weg zurueck - und ein Knopf, der nur das halbe Feld zuruecksetzt, waere
     // schlimmer als keiner.
     schadenZweiZuruecksetzen();
+    tankZweiFuellen(100);
     fuel = 100;
     resetTyres();
     updateDamageFuelUI();
@@ -3247,6 +3253,24 @@
   // den Rennstart und ueber die Taste R.
   const schadenZwei = { wert: 0, licht: { front: false, rear: false } };
 
+  // ---- UND DER TANK VON AUTO 2 -------------------------------------------------------
+  //
+  // Dieselbe Bauform wie beim Schaden und beim Abseits. `stand` ist Prozent wie `fuel`,
+  // damit die Zahlen vergleichbar sind und nicht nur gleich heissen.
+  //
+  // Was Auto 2 damit HAT: Verbrauch nach Gas und Zeit, Tankgewicht in der Fahrphysik, die
+  // Warnstufen als Meldung, den Deckel des leeren Tanks und dessen Rampe.
+  // Was es NICHT hat: das Nachtanken. Das gibt es nur in der Boxengasse, und deren
+  // Zustandsmaschine hat 27 Groessen und 633 Fundstellen - ein zweites Nachtanken ist ein
+  // eigenes Vorhaben und kein Anhang. Vollgetankt wird ueber den Ruecksetzknopf, die
+  // Taste R und den Rennstart.
+  const tankZwei = { stand: 100, cut: 1, letzterTick: null };
+
+  function tankZweiFuellen(prozent) {
+    tankZwei.stand = Math.max(0, Math.min(100, prozent === undefined ? 100 : prozent));
+    tankZwei.cut = 1;
+  }
+
   // Wessen Lampenschaden gilt fuer die Pakete DIESES Autos?
   //
   // ---- EIN ECHTER FEHLER, BEIM ZWEI-SPIELER-UMBAU GEFUNDEN --------------------------
@@ -3825,10 +3849,28 @@
   //
   // Der Verbrauch bleibt unveraendert an derselben Groesse wie vorher: eine andere Bezugsgroesse
   // haette die Tankreichweite still verschoben, und die ist gegen das Fahren eingestellt.
-  function fuelTankTick(throttle) {
+  // `wer` ist 1, wenn nichts dasteht - die Aufrufstelle in sendControlValue() bleibt
+  // unveraendert. Auto 2 ruft es aus physicsStep2().
+  //
+  // ZWEI DINGE SIND FUER AUTO 2 ABSICHTLICH ANDERS, und beide sind Anzeige und nicht
+  // Regel: der Balken im Cockpit gehoert Auto 1 (fuer Auto 2 steht der Stand auf seinem
+  // eigenen Schirm), und die Boxen-Ausnahme `pitState !== 'servicing'` gilt nur fuer
+  // Auto 1, weil nur Auto 1 in die Box fahren kann.
+  function fuelTankTick(throttle, wer) {
+    if (wer === 2) return tankZweiTick(throttle);
     const now = Date.now();
     if (fuelLastTickTime !== null && pitState !== 'servicing') {
-      const dt = Math.min(0.5, (now - fuelLastTickTime) / 1000);
+      // ---- NIE NEGATIV, und das ist keine Vorsicht, sondern ein gefundener Fehler ----
+      //
+      // Ein negatives dt laesst den Tank STEIGEN: stand - gas * dt * rate wird mit dt < 0
+      // zu einer Addition. Gefunden hat es ein Prueflauf, der die Uhr faelscht und dabei
+      // ZURUECK stellte - der Tank ging von 1,5 auf 5,5 Prozent.
+      //
+      // Im Betrieb laeuft Date.now() monoton, der Fall kam also nie vor. "Kam nie vor" ist
+      // aber kein Schutz, sondern Glueck: eine Zeitumstellung des Systems, eine
+      // Zeitsynchronisierung im Hintergrund oder der naechste Prueflauf genuegen. Und ein
+      // Tank, der voller wird, ist ein Fehler, den man niemandem erklaeren kann.
+      const dt = Math.max(0, Math.min(0.5, (now - fuelLastTickTime) / 1000));
       const fuelBefore = fuel;
       fuel = Math.max(0, fuel - Math.abs(throttle) * dt * fuelDrainPerSec);
       // Edge-triggered: without this it would rumble again on every 45ms heartbeat.
@@ -3856,6 +3898,36 @@
     fuelLastTickTime = now;
   }
 
+  function tankZweiTick(throttle) {
+    const now = Date.now();
+    if (tankZwei.letzterTick !== null) {
+      const dt = Math.max(0, Math.min(0.5, (now - tankZwei.letzterTick) / 1000));
+      const vorher = tankZwei.stand;
+      // DERSELBE Verbrauchsregler wie bei Auto 1. Zwei Regler waeren zwei Zahlen fuer
+      // dieselbe Sache - und ungleiche Regeln waeren schlimmer als keine, das ist die
+      // Zusage, unter der dieser Modus gebaut ist.
+      tankZwei.stand = Math.max(0, tankZwei.stand
+                                   - Math.abs(throttle) * dt * fuelDrainPerSec);
+      // Flankengetriggert, wie bei Auto 1: ohne das brummte es in jedem 45-ms-Takt neu.
+      if (vorher > 0 && tankZwei.stand <= 0) {
+        padRumble(0.2, 0.12, 160, 'meldung', 2);
+        log('P2: Tank leer.', 'err');
+      }
+      for (const w of FUEL_WARNINGS) {
+        if (vorher > w.pct && tankZwei.stand <= w.pct) {
+          // OHNE Tonfolge: playFuelWarning() ist eine Stimme, und zwei Warnfolgen
+          // uebereinander sind fuer beide Fahrer nicht mehr zuzuordnen. Der Stoss geht an
+          // seinen Pad, die Meldung ins Band - beides hat eine Adresse.
+          padRumble(0.2, 0.12, 160, 'meldung', 2);
+          showHudToast('P2: Tank ' + fuelLiters(tankZwei.stand) + ' l');
+          log('P2: Tankwarnung bei ' + w.pct + ' %.', 'warn');
+        }
+      }
+    }
+    physEngine2.state.fuelLoad = Math.max(0, Math.min(1, tankZwei.stand / 100));
+    tankZwei.letzterTick = now;
+  }
+
   // The derate ALONE, with no side effects, so it can be asked twice per tick without
   // draining the tank twice. That split is the whole point: physicsStep() was feeding the
   // RAW stick value into the simulation while this reduction only ever reached the car, so
@@ -3872,7 +3944,26 @@
   // ohne zu wissen warum.
   const FUEL_CUT_EMPTY = 0.15;
   const FUEL_CUT_TAU = 0.6;
-  function fuelCutTarget() { return fuel <= 0 ? FUEL_CUT_EMPTY : 1; }
+  function fuelCutTarget(wer) {
+    const stand = wer === 2 ? tankZwei.stand : fuel;
+    return stand <= 0 ? FUEL_CUT_EMPTY : 1;
+  }
+
+  // Die Rampe von Auto 2. Sie laeuft in physicsStep2(), also dort, wo es ein verlaessliches
+  // dt gibt - genau wie bei Auto 1, und aus demselben Grund: ein Tank, der leer wird, soll
+  // das Gas ueber knapp zwei Sekunden wegnehmen und nicht in einem Takt.
+  function tankZweiCutRampe(dt) {
+    const ziel = fuelCutTarget(2);
+    if (ziel > tankZwei.cut) tankZwei.cut = ziel;          // Tanken wirkt sofort
+    else tankZwei.cut += (ziel - tankZwei.cut) * (1 - Math.exp(-dt / FUEL_CUT_TAU));
+    return tankZwei.cut;
+  }
+
+  function tankZweiStand() { return tankZwei.stand; }
+
+  // Den Verbrauchstakt vergessen. Gebraucht von Prueflaeufen mit eigener Zeitbasis:
+  // ohne das rechnet der erste Takt ein dt zwischen zwei verschiedenen Uhren.
+  function tankZweiTaktVergessen() { tankZwei.letzterTick = null; }
 
   // `cut` ist ein ARGUMENT und kein Zustand hier drin: diese Funktion ist
   // seitenwirkungsfrei, und das soll sie bleiben. Die Rampe laeuft in physicsStep(), also an
@@ -3887,7 +3978,7 @@
     let out = throttle;
     const schaden = schadenVon(wer);
     const motor = wer === 2 ? physEngine2 : physEngine;
-    const c = cut === undefined ? fuelCutTarget() : cut;
+    const c = cut === undefined ? fuelCutTarget(wer) : cut;
     if (c < 1) out = Math.max(-c, Math.min(c, out));
     out *= 1 - (schaden / 100) * 0.3;
     // Totalled: limp home. Deliberately still drivable so the car never strands itself

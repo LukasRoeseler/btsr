@@ -19,6 +19,9 @@
   // physEngine.config - sie zu verdoppeln waere ein zweiter Ort fuer jede Zahl.
   const physEngine2 = new CarreraPhysicsEngine();
   let offtrack2RumbleAt = 0;
+  // Den Physiktakt von Auto 2 vergessen. Dasselbe Bedürfnis wie beim Tank: ein
+  // Prueflauf mit eigener Zeitbasis darf nicht ein dt zwischen zwei Uhren rechnen.
+  function phys2TaktVergessen() { phys2LastTime = null; }
   physEngine2.spieler = 2;   // siehe den Konstruktor: Meldung, Ruck und Ton gehen dorthin
   let phys2LastTime = null;
   // AN als Standard, weil die Original-App es praktisch immer an hat und ein beleuchtetes
@@ -2245,10 +2248,18 @@
     // halbe Leistung im Totalschaden, und darunter ein BODEN - sonst liegt der Notlauf
     // unter minMoveThrottle, und dort zuckt das Auto statt zu fahren.
     //
-    // Das zweite Argument ist 1 und nicht undefined: undefined liesse fuelCutTarget()
-    // rechnen, also den TANK VON AUTO 1. Ein Auto, dem der Sprit eines anderen ausgeht,
-    // waere schwer zu erklaeren. Der eigene Tank kommt im naechsten Schritt.
-    gas = fuelDamageDerate(gas, 1, 2);
+    // ---- UND DER EIGENE TANK, seit v0.6.48 ----------------------------------------
+    //
+    // Hier stand als zweites Argument eine feste 1 mit dem Vermerk "der eigene Tank kommt
+    // im naechsten Schritt". Jetzt ist er da: der Verbrauch laeuft in tankZweiTick(), die
+    // Rampe des leeren Tanks in tankZweiCutRampe() - hier, weil dies die einzige Stelle mit
+    // einem verlaesslichen dt ist, dasselbe Argument wie bei Auto 1.
+    //
+    // REIHENFOLGE WIE BEI AUTO 1: erst die Kennlinie (sie beschreibt, was der Daumen
+    // MEINT), dann Tank und Schaden (sie beschreiben, was das Auto daraus machen kann).
+    // Andersherum wuerde die Kennlinie einen halbleeren Tank mitkruemmen.
+    fuelTankTick(p2Throttle, 2);
+    gas = fuelDamageDerate(gas, tankZweiCutRampe(dt), 2);
     if (offtrackGiltFuer(2)) gas = Math.min(gas, OFFTRACK_GAS);
     // Und das Rumpeln, an seinen eigenen Pad. Bis v0.6.45 waere es der Pad von Spieler 1
     // gewesen; jetzt hat jeder Stoss eine Adresse.

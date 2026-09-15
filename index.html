@@ -8001,10 +8001,11 @@
       <p class="muted">Ehrlicher als es zu verschweigen &ndash; jeder Punkt h&auml;ngt an
         einem Z&auml;hler oder einer Ortung, die es nur einmal gibt:</p>
       <div class="help-grid">
-        <kbd>Tank</kbd><span>Sprit z&auml;hlt nur f&uuml;r Auto&nbsp;1, und eine
-          Boxenreparatur gibt es f&uuml;r Auto&nbsp;2 nicht &ndash; die Boxengasse ist eine
-          Zustandsmaschine mit 27&nbsp;Gr&ouml;&szlig;en. Sein Schaden geht mit dem
-          R&uuml;cksetzknopf und der Taste&nbsp;R zur&uuml;ck.</span>
+        <kbd>Box</kbd><span>Kein Boxenstopp f&uuml;r Auto&nbsp;2: kein Nachtanken, keine
+          Reparatur, kein Reifenwechsel &ndash; die Boxengasse ist eine Zustandsmaschine mit
+          27&nbsp;Gr&ouml;&szlig;en. Tank und Schaden gehen mit dem R&uuml;cksetzknopf, der
+          Taste&nbsp;R und dem Rennstart zur&uuml;ck; am Start haben beide Autos dieselbe
+          Spritmenge.</span>
         <kbd>Ton</kbd><span>Der Motorklang folgt Auto&nbsp;1. Es gibt einen
           Tongenerator.</span>
         <kbd>Gelb</kbd><span>Kein Autopilot unter gelber Flagge und keine
@@ -8017,6 +8018,10 @@
         G&auml;ngen, eigener Drehzahl, eigenem Tempo und eigenen Temperaturen. Die
         Einstellungen aus &bdquo;Fahrgef&uuml;hl&ldquo; werden bei jedem Anschalten
         &uuml;bernommen, damit beide Autos gleich fahren.</p>
+      <p class="muted">Dazu einen eigenen Tank: Verbrauch nach Gas und Zeit mit demselben
+        Regler wie Auto&nbsp;1, das Tankgewicht in seiner Fahrphysik, die Warnstufen als
+        Meldung und den Notlauf des leeren Tanks &ndash; und der geht &uuml;ber eine Rampe
+        zu, nicht in einem Takt.</p>
       <p class="muted">Dazu einen eigenen Schaden: Crasherkennung aus seinen eigenen
         Sensorbytes, Leistungsverlust mit dem Schaden, Notlauf im Totalschaden und
         ausgefallene Lampen &ndash; und die Kontrollleuchten des einen sagen nichts mehr
@@ -8434,7 +8439,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.6.47</span></span>
+    <span class="foot-ver">v<span id="app-version">0.6.48</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -9198,8 +9203,10 @@
     "Was Auto 2 in dieser Fassung nicht hat": "What car 2 does not have in this version",
     "Ehrlicher als es zu verschweigen – jeder Punkt hängt an einem Zähler oder einer Ortung, die es nur einmal gibt:":
       "More honest than leaving it out – every item hangs off a counter or a position estimate that exists only once:",
-    "Sprit zählt nur für Auto 1, und eine Boxenreparatur gibt es für Auto 2 nicht – die Boxengasse ist eine Zustandsmaschine mit 27 Größen. Sein Schaden geht mit dem Rücksetzknopf und der Taste R zurück.":
-      "Fuel counts for car 1 only, and there is no pit repair for car 2 – the pit lane is a state machine with 27 variables. Its damage is cleared by the reset button and the R key.",
+    "Kein Boxenstopp für Auto 2: kein Nachtanken, keine Reparatur, kein Reifenwechsel – die Boxengasse ist eine Zustandsmaschine mit 27 Größen. Tank und Schaden gehen mit dem Rücksetzknopf, der Taste R und dem Rennstart zurück; am Start haben beide Autos dieselbe Spritmenge.":
+      "No pit stop for car 2: no refuelling, no repair, no tyre change – the pit lane is a state machine with 27 variables. Fuel and damage are cleared by the reset button, the R key and a race start; at the start both cars have the same amount of fuel.",
+    "Dazu einen eigenen Tank: Verbrauch nach Gas und Zeit mit demselben Regler wie Auto 1, das Tankgewicht in seiner Fahrphysik, die Warnstufen als Meldung und den Notlauf des leeren Tanks – und der geht über eine Rampe zu, nicht in einem Takt.":
+      "Plus a fuel tank of its own: consumption by throttle and time on the same slider as car 1, the fuel weight in its driving model, the warning levels as a message, and the limp mode of an empty tank – which closes over a ramp, not in one tick.",
     "Dazu einen eigenen Schaden: Crasherkennung aus seinen eigenen Sensorbytes, Leistungsverlust mit dem Schaden, Notlauf im Totalschaden und ausgefallene Lampen – und die Kontrollleuchten des einen sagen nichts mehr über das andere Auto.":
       "Plus damage of its own: crash detection from its own sensor bytes, power lost with damage, limp mode when totalled, and lamps that fail – and one car's tell-tales no longer say anything about the other.",
     "Der Motorklang folgt Auto 1. Es gibt einen Tongenerator.":
@@ -11739,6 +11746,7 @@
     // Die Taste nimmt Auto 2 mit, sonst setzt sie nur das halbe Feld zurueck.
     if (k === 'r' && !e.repeat) { fuel = 100; damage = 0;
                                   schadenZweiZuruecksetzen();
+                                  tankZweiFuellen(100);
                                   updateDamageFuelUI();
                                   showHudToast('Tank und Zustand zurückgesetzt'); }
     // X wird jetzt GEHALTEN, siehe FLAG_HOLD_MS. Der Tastendruck startet nur den Balken;
@@ -14166,6 +14174,9 @@
   // physEngine.config - sie zu verdoppeln waere ein zweiter Ort fuer jede Zahl.
   const physEngine2 = new CarreraPhysicsEngine();
   let offtrack2RumbleAt = 0;
+  // Den Physiktakt von Auto 2 vergessen. Dasselbe Bedürfnis wie beim Tank: ein
+  // Prueflauf mit eigener Zeitbasis darf nicht ein dt zwischen zwei Uhren rechnen.
+  function phys2TaktVergessen() { phys2LastTime = null; }
   physEngine2.spieler = 2;   // siehe den Konstruktor: Meldung, Ruck und Ton gehen dorthin
   let phys2LastTime = null;
   // AN als Standard, weil die Original-App es praktisch immer an hat und ein beleuchtetes
@@ -16392,10 +16403,18 @@
     // halbe Leistung im Totalschaden, und darunter ein BODEN - sonst liegt der Notlauf
     // unter minMoveThrottle, und dort zuckt das Auto statt zu fahren.
     //
-    // Das zweite Argument ist 1 und nicht undefined: undefined liesse fuelCutTarget()
-    // rechnen, also den TANK VON AUTO 1. Ein Auto, dem der Sprit eines anderen ausgeht,
-    // waere schwer zu erklaeren. Der eigene Tank kommt im naechsten Schritt.
-    gas = fuelDamageDerate(gas, 1, 2);
+    // ---- UND DER EIGENE TANK, seit v0.6.48 ----------------------------------------
+    //
+    // Hier stand als zweites Argument eine feste 1 mit dem Vermerk "der eigene Tank kommt
+    // im naechsten Schritt". Jetzt ist er da: der Verbrauch laeuft in tankZweiTick(), die
+    // Rampe des leeren Tanks in tankZweiCutRampe() - hier, weil dies die einzige Stelle mit
+    // einem verlaesslichen dt ist, dasselbe Argument wie bei Auto 1.
+    //
+    // REIHENFOLGE WIE BEI AUTO 1: erst die Kennlinie (sie beschreibt, was der Daumen
+    // MEINT), dann Tank und Schaden (sie beschreiben, was das Auto daraus machen kann).
+    // Andersherum wuerde die Kennlinie einen halbleeren Tank mitkruemmen.
+    fuelTankTick(p2Throttle, 2);
+    gas = fuelDamageDerate(gas, tankZweiCutRampe(dt), 2);
     if (offtrackGiltFuer(2)) gas = Math.min(gas, OFFTRACK_GAS);
     // Und das Rumpeln, an seinen eigenen Pad. Bis v0.6.45 waere es der Pad von Spieler 1
     // gewesen; jetzt hat jeder Stoss eine Adresse.
@@ -21235,6 +21254,11 @@
     // Ansage am Start gehoert.
     wxWindWuerfeln();
     fuel = Math.max(0, Math.min(100, raceFuelStartL / FUEL_TANK_LITERS * 100));
+    // BEIDE Autos mit derselben Startmenge und beide schadenfrei. Ein Rennen, in dem das
+    // eine Auto voll und das andere halb leer startet, waere kein Rennen - das ist die
+    // Zusage, unter der der Zwei-Spieler-Modus gebaut ist.
+    tankZweiFuellen(fuel);
+    schadenZweiZuruecksetzen();
     updateDamageFuelUI();
     racePitDone = 0;
     syncRaceGridOrder();
@@ -21841,6 +21865,7 @@
     // der einzige Weg zurueck - und ein Knopf, der nur das halbe Feld zuruecksetzt, waere
     // schlimmer als keiner.
     schadenZweiZuruecksetzen();
+    tankZweiFuellen(100);
     fuel = 100;
     resetTyres();
     updateDamageFuelUI();
@@ -23519,6 +23544,24 @@
   // den Rennstart und ueber die Taste R.
   const schadenZwei = { wert: 0, licht: { front: false, rear: false } };
 
+  // ---- UND DER TANK VON AUTO 2 -------------------------------------------------------
+  //
+  // Dieselbe Bauform wie beim Schaden und beim Abseits. `stand` ist Prozent wie `fuel`,
+  // damit die Zahlen vergleichbar sind und nicht nur gleich heissen.
+  //
+  // Was Auto 2 damit HAT: Verbrauch nach Gas und Zeit, Tankgewicht in der Fahrphysik, die
+  // Warnstufen als Meldung, den Deckel des leeren Tanks und dessen Rampe.
+  // Was es NICHT hat: das Nachtanken. Das gibt es nur in der Boxengasse, und deren
+  // Zustandsmaschine hat 27 Groessen und 633 Fundstellen - ein zweites Nachtanken ist ein
+  // eigenes Vorhaben und kein Anhang. Vollgetankt wird ueber den Ruecksetzknopf, die
+  // Taste R und den Rennstart.
+  const tankZwei = { stand: 100, cut: 1, letzterTick: null };
+
+  function tankZweiFuellen(prozent) {
+    tankZwei.stand = Math.max(0, Math.min(100, prozent === undefined ? 100 : prozent));
+    tankZwei.cut = 1;
+  }
+
   // Wessen Lampenschaden gilt fuer die Pakete DIESES Autos?
   //
   // ---- EIN ECHTER FEHLER, BEIM ZWEI-SPIELER-UMBAU GEFUNDEN --------------------------
@@ -24097,10 +24140,28 @@
   //
   // Der Verbrauch bleibt unveraendert an derselben Groesse wie vorher: eine andere Bezugsgroesse
   // haette die Tankreichweite still verschoben, und die ist gegen das Fahren eingestellt.
-  function fuelTankTick(throttle) {
+  // `wer` ist 1, wenn nichts dasteht - die Aufrufstelle in sendControlValue() bleibt
+  // unveraendert. Auto 2 ruft es aus physicsStep2().
+  //
+  // ZWEI DINGE SIND FUER AUTO 2 ABSICHTLICH ANDERS, und beide sind Anzeige und nicht
+  // Regel: der Balken im Cockpit gehoert Auto 1 (fuer Auto 2 steht der Stand auf seinem
+  // eigenen Schirm), und die Boxen-Ausnahme `pitState !== 'servicing'` gilt nur fuer
+  // Auto 1, weil nur Auto 1 in die Box fahren kann.
+  function fuelTankTick(throttle, wer) {
+    if (wer === 2) return tankZweiTick(throttle);
     const now = Date.now();
     if (fuelLastTickTime !== null && pitState !== 'servicing') {
-      const dt = Math.min(0.5, (now - fuelLastTickTime) / 1000);
+      // ---- NIE NEGATIV, und das ist keine Vorsicht, sondern ein gefundener Fehler ----
+      //
+      // Ein negatives dt laesst den Tank STEIGEN: stand - gas * dt * rate wird mit dt < 0
+      // zu einer Addition. Gefunden hat es ein Prueflauf, der die Uhr faelscht und dabei
+      // ZURUECK stellte - der Tank ging von 1,5 auf 5,5 Prozent.
+      //
+      // Im Betrieb laeuft Date.now() monoton, der Fall kam also nie vor. "Kam nie vor" ist
+      // aber kein Schutz, sondern Glueck: eine Zeitumstellung des Systems, eine
+      // Zeitsynchronisierung im Hintergrund oder der naechste Prueflauf genuegen. Und ein
+      // Tank, der voller wird, ist ein Fehler, den man niemandem erklaeren kann.
+      const dt = Math.max(0, Math.min(0.5, (now - fuelLastTickTime) / 1000));
       const fuelBefore = fuel;
       fuel = Math.max(0, fuel - Math.abs(throttle) * dt * fuelDrainPerSec);
       // Edge-triggered: without this it would rumble again on every 45ms heartbeat.
@@ -24128,6 +24189,36 @@
     fuelLastTickTime = now;
   }
 
+  function tankZweiTick(throttle) {
+    const now = Date.now();
+    if (tankZwei.letzterTick !== null) {
+      const dt = Math.max(0, Math.min(0.5, (now - tankZwei.letzterTick) / 1000));
+      const vorher = tankZwei.stand;
+      // DERSELBE Verbrauchsregler wie bei Auto 1. Zwei Regler waeren zwei Zahlen fuer
+      // dieselbe Sache - und ungleiche Regeln waeren schlimmer als keine, das ist die
+      // Zusage, unter der dieser Modus gebaut ist.
+      tankZwei.stand = Math.max(0, tankZwei.stand
+                                   - Math.abs(throttle) * dt * fuelDrainPerSec);
+      // Flankengetriggert, wie bei Auto 1: ohne das brummte es in jedem 45-ms-Takt neu.
+      if (vorher > 0 && tankZwei.stand <= 0) {
+        padRumble(0.2, 0.12, 160, 'meldung', 2);
+        log('P2: Tank leer.', 'err');
+      }
+      for (const w of FUEL_WARNINGS) {
+        if (vorher > w.pct && tankZwei.stand <= w.pct) {
+          // OHNE Tonfolge: playFuelWarning() ist eine Stimme, und zwei Warnfolgen
+          // uebereinander sind fuer beide Fahrer nicht mehr zuzuordnen. Der Stoss geht an
+          // seinen Pad, die Meldung ins Band - beides hat eine Adresse.
+          padRumble(0.2, 0.12, 160, 'meldung', 2);
+          showHudToast('P2: Tank ' + fuelLiters(tankZwei.stand) + ' l');
+          log('P2: Tankwarnung bei ' + w.pct + ' %.', 'warn');
+        }
+      }
+    }
+    physEngine2.state.fuelLoad = Math.max(0, Math.min(1, tankZwei.stand / 100));
+    tankZwei.letzterTick = now;
+  }
+
   // The derate ALONE, with no side effects, so it can be asked twice per tick without
   // draining the tank twice. That split is the whole point: physicsStep() was feeding the
   // RAW stick value into the simulation while this reduction only ever reached the car, so
@@ -24144,7 +24235,26 @@
   // ohne zu wissen warum.
   const FUEL_CUT_EMPTY = 0.15;
   const FUEL_CUT_TAU = 0.6;
-  function fuelCutTarget() { return fuel <= 0 ? FUEL_CUT_EMPTY : 1; }
+  function fuelCutTarget(wer) {
+    const stand = wer === 2 ? tankZwei.stand : fuel;
+    return stand <= 0 ? FUEL_CUT_EMPTY : 1;
+  }
+
+  // Die Rampe von Auto 2. Sie laeuft in physicsStep2(), also dort, wo es ein verlaessliches
+  // dt gibt - genau wie bei Auto 1, und aus demselben Grund: ein Tank, der leer wird, soll
+  // das Gas ueber knapp zwei Sekunden wegnehmen und nicht in einem Takt.
+  function tankZweiCutRampe(dt) {
+    const ziel = fuelCutTarget(2);
+    if (ziel > tankZwei.cut) tankZwei.cut = ziel;          // Tanken wirkt sofort
+    else tankZwei.cut += (ziel - tankZwei.cut) * (1 - Math.exp(-dt / FUEL_CUT_TAU));
+    return tankZwei.cut;
+  }
+
+  function tankZweiStand() { return tankZwei.stand; }
+
+  // Den Verbrauchstakt vergessen. Gebraucht von Prueflaeufen mit eigener Zeitbasis:
+  // ohne das rechnet der erste Takt ein dt zwischen zwei verschiedenen Uhren.
+  function tankZweiTaktVergessen() { tankZwei.letzterTick = null; }
 
   // `cut` ist ein ARGUMENT und kein Zustand hier drin: diese Funktion ist
   // seitenwirkungsfrei, und das soll sie bleiben. Die Rampe laeuft in physicsStep(), also an
@@ -24159,7 +24269,7 @@
     let out = throttle;
     const schaden = schadenVon(wer);
     const motor = wer === 2 ? physEngine2 : physEngine;
-    const c = cut === undefined ? fuelCutTarget() : cut;
+    const c = cut === undefined ? fuelCutTarget(wer) : cut;
     if (c < 1) out = Math.max(-c, Math.min(c, out));
     out *= 1 - (schaden / 100) * 0.3;
     // Totalled: limp home. Deliberately still drivable so the car never strands itself
@@ -35782,6 +35892,90 @@
       schadenZwei.licht.front = !!front;
       schadenZwei.licht.rear = !!rear;
       return this.schadenZweiLesen();
+    },
+
+    // ---- VERBRAUCHT AUTO 2, UND WAS KOSTET IHN DER LEERE TANK? ----------------------
+    //
+    // Drei Fragen in einem Lauf, und die dritte ist die, an der man sich vertut:
+    //
+    //   1. Sinkt der Stand nach Gas und Zeit, mit DEMSELBEN Regler wie bei Auto 1?
+    //   2. Traegt das Tankgewicht in seiner Fahrphysik (st.fuelLoad -> massFactor)?
+    //   3. Nimmt ein leerer Tank das Gas ueber die RAMPE weg und nicht in einem Takt?
+    //      Der Sprung von 1,0 auf 0,15 war bei Auto 1 als "abrupt abbremsen" gemeldet,
+    //      und eine zweite Rampe, die es nicht tut, waere derselbe Fehler noch einmal.
+    //
+    // Und die Gegenprobe: der Tank von Auto 1 darf nicht mitsinken.
+    tankZweiProbe(o) {
+      const opt = o || {};
+      const sekunden = opt.sekunden === undefined ? 4 : opt.sekunden;
+      const start = opt.start === undefined ? 100 : opt.start;
+      const uhrEcht = Date.now;
+      const perfEcht = performance.now;
+      const vorher = { zwei: zweiSpieler, p2: playerCar2, gas: p2Throttle,
+                       steer: p2Steer, phys: physicsEnabled, fuel1: fuel,
+                       tank2: tankZweiStand() };
+      const a2 = { device: { id: 'probe-tank' }, role: 'player2', rx: null,
+                   testSenke: [], alias: 'P2' };
+      const reihe = [];
+      try {
+        let t = 1000000;
+        Date.now = () => t;
+        performance.now = () => t;
+        zweiSpieler = true;
+        physicsEnabled = true;
+        playerCar2 = a2;
+        p2Steer = 0;
+        p2Throttle = 1;
+        fuel = 100;
+        physEngine2.reset();
+        physEngine2Abgleichen();
+        tankZweiFuellen(start);
+        // DEN VERBRAUCHSTAKT VERGESSEN, sonst rechnet der erste Takt ein dt zwischen der
+        // echten Uhr (oder der gefaelschten des vorigen Laufs) und dieser hier. Genau daran
+        // ist dieser Prueflauf beim ersten Mal gescheitert: der Tank ging von 1,5 auf 5,5
+        // Prozent nach oben. Der Befund war echt und steckte im Verbrauch, nicht in der
+        // Sonde - siehe die Klemme bei dt in fuelTankTick().
+        tankZweiTaktVergessen();
+        phys2TaktVergessen();
+        const takte = Math.round(sekunden * 1000 / CONTROL_SEND_INTERVAL_MS);
+        for (let i = 0; i < takte; i++) {
+          spielerZweiSenden();
+          if (i % 10 === 0 || i === takte - 1) {
+            reihe.push({
+              s: +(i * CONTROL_SEND_INTERVAL_MS / 1000).toFixed(2),
+              tank: +tankZweiStand().toFixed(2),
+              last: +(physEngine2.state.fuelLoad || 0).toFixed(3),
+              masse: +(physEngine2.state.massFactor || 0).toFixed(4),
+              gas: +(physOut2Throttle || 0).toFixed(3),
+              kmh: +(Math.abs(physEngine2.state.speedKmh) * REAL_SCALE).toFixed(1),
+            });
+          }
+          t += CONTROL_SEND_INTERVAL_MS;
+        }
+        return {
+          takte, verbrauchRegler: fuelDrainPerSec,
+          reihe,
+          tankAnfang: start, tankEnde: +tankZweiStand().toFixed(2),
+          tankAutoEins: fuel,
+          // Der Deckel, wie er gerade steht. Bei leerem Tank laeuft er auf FUEL_CUT_EMPTY
+          // zu, und die Rampe ist daran zu erkennen, dass er unterwegs ZWISCHEN den beiden
+          // Werten liegt.
+          cutJetzt: +tankZweiCutRampe(0).toFixed(4),
+          cutLeer: FUEL_CUT_EMPTY,
+        };
+      } finally {
+        Date.now = uhrEcht;
+        performance.now = perfEcht;
+        zweiSpieler = vorher.zwei;
+        playerCar2 = vorher.p2;
+        p2Throttle = vorher.gas;
+        p2Steer = vorher.steer;
+        physicsEnabled = vorher.phys;
+        fuel = vorher.fuel1;
+        tankZweiFuellen(vorher.tank2);
+        physEngine2.reset();
+        if (typeof updateRaceScreen2 === 'function') updateRaceScreen2(physEngine2.state);
+      }
     },
 
     // ---- NIMMT AUTO 2 SCHADEN, UND TRIFFT ER NUR IHN? --------------------------------
@@ -52872,6 +53066,71 @@
   // Die Liste ist GEPFLEGT, und das ist hier richtig: sie IST die Zusicherung. Sie stammt
   // aus einer Suche ueber alle Kaestchen, deren Listener "X = e.target.checked" schreibt.
   // Ein neuer Schalter gehoert hinein.
+  // ---- Auto 2 verbraucht Sprit, und ein leerer Tank kostet ihn Leistung ------------
+  //
+  // VIER AUSSAGEN, und die vierte ist ein Fehler, den dieser Prueflauf gefunden hat.
+  //
+  //   1. Der Stand sinkt nach Gas und Zeit, mit DEMSELBEN Regler wie bei Auto 1. Gemessen
+  //      bei Vollgas: 100 auf 96,04 Prozent in 3,96 s, Regler 1 Prozent je Sekunde.
+  //   2. Das Tankgewicht traegt in seiner Fahrphysik: massFactor 1,30 bei vollem Tank,
+  //      1,00 bei leerem - das sind die 30 Prozent aus fuelMassSpan.
+  //   3. Der leere Tank nimmt das Gas ueber die RAMPE weg und nicht in einem Takt.
+  //      Gemessen liegt der Deckel unterwegs bei 0,164 und laeuft auf 0,15 zu. Ein Sprung
+  //      von 1,0 auf 0,15 war bei Auto 1 als "abrupt abbremsen" gemeldet.
+  //   4. Der Tank von Auto 1 sinkt NICHT mit.
+  //
+  // GEFUNDEN HAT DIESER LAUF AUSSERDEM: bei negativem dt STEIGT der Tankstand, weil
+  // `stand - gas * dt * rate` dann eine Addition ist. Der Prueflauf stellte die Uhr
+  // zurueck, und der Tank ging von 1,5 auf 5,5 Prozent. Im Betrieb laeuft Date.now()
+  // monoton, der Fall kam also nie vor - "kam nie vor" ist aber Glueck und kein Schutz.
+  // dt ist jetzt bei BEIDEN Autos auf nicht-negativ geklemmt.
+  stAdd('Zwei Spieler: Auto 2 hat einen eigenen Tank', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.tankZweiProbe) {
+      return { skip: true, mass: 'tankZweiProbe nicht vorhanden' };
+    }
+    const voll = OMEGA_TEST.tankZweiProbe({ sekunden: 4, start: 100 });
+    const leer = OMEGA_TEST.tankZweiProbe({ sekunden: 4, start: 1.5 });
+    const maengel = [];
+    // 1. Verbrauch: Vollgas, also gilt der Regler unmittelbar. Die Sekunden kommen aus
+    //    der Reihe selbst, damit die Pruefung nicht an der Taktzahl klebt.
+    const dauer = voll.reihe[voll.reihe.length - 1].s;
+    const soll = voll.verbrauchRegler * dauer;
+    const ist = voll.tankAnfang - voll.tankEnde;
+    if (Math.abs(ist - soll) > 0.05) {
+      maengel.push('Verbrauch ' + ist.toFixed(2) + ' statt ' + soll.toFixed(2) + ' %');
+    }
+    // 1b. Und monoton fallend - ein Tank, der irgendwo steigt, ist der gefundene Fehler.
+    for (let i = 1; i < voll.reihe.length; i++) {
+      if (voll.reihe[i].tank > voll.reihe[i - 1].tank + 1e-9) {
+        maengel.push('Tank steigt bei ' + voll.reihe[i].s + ' s');
+        break;
+      }
+    }
+    // 2. Tankgewicht: voll schwerer als leer, und der Abstand muss deutlich sein.
+    const mVoll = voll.reihe[0].masse, mLeer = leer.reihe[leer.reihe.length - 1].masse;
+    if (!(mVoll > mLeer + 0.1)) {
+      maengel.push('Tankgewicht wirkt nicht: voll ' + mVoll + ', leer ' + mLeer);
+    }
+    // 3. Die Rampe: der Deckel muss ZWISCHEN dem Notwert und 1 liegen, wenn der Tank
+    //    gerade leer geworden ist. Genau auf 0,15 waere ein Sprung, genau auf 1 keine
+    //    Wirkung.
+    if (!(leer.cutJetzt > leer.cutLeer && leer.cutJetzt < 1)) {
+      maengel.push('Deckel ' + leer.cutJetzt + ' nicht auf der Rampe zwischen '
+                   + leer.cutLeer + ' und 1');
+    }
+    if (leer.tankEnde !== 0) maengel.push('Tank nicht leergefahren: ' + leer.tankEnde);
+    // 4. Auto 1 unberuehrt, in beiden Laeufen.
+    if (voll.tankAutoEins !== 100 || leer.tankAutoEins !== 100) {
+      maengel.push('Tank von Auto 1 bei ' + voll.tankAutoEins + '/' + leer.tankAutoEins);
+    }
+    return { ok: !maengel.length,
+             mass: 'Vollgas ' + dauer + ' s: ' + voll.tankAnfang + ' auf ' + voll.tankEnde
+                 + ' % (Regler ' + voll.verbrauchRegler + ' %/s) | Masse ' + mVoll
+                 + ' voll, ' + mLeer + ' leer | Deckel leer ' + leer.cutJetzt
+                 + ' | Auto 1 ' + voll.tankAutoEins + ' %'
+                 + (maengel.length ? ' | ' + maengel.join(', ') : '') };
+  });
+
   // ---- Auto 2 nimmt Schaden, und zwar nur es selbst --------------------------------
   //
   // VIER AUSSAGEN IN EINEM LAUF, und die dritte war ein echter, vorhandener Fehler.

@@ -350,6 +350,7 @@
     // Die Taste nimmt Auto 2 mit, sonst setzt sie nur das halbe Feld zurueck.
     if (k === 'r' && !e.repeat) { fuel = 100; damage = 0;
                                   schadenZweiZuruecksetzen();
+                                  tankZweiFuellen(100);
                                   updateDamageFuelUI();
                                   showHudToast('Tank und Zustand zurückgesetzt'); }
     // X wird jetzt GEHALTEN, siehe FLAG_HOLD_MS. Der Tastendruck startet nur den Balken;
