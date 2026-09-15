@@ -53,6 +53,86 @@
       return this.schadenZweiLesen();
     },
 
+    // ---- KLINGT DIE ZWEITE MOTORSTIMME, UND AUF DER RICHTIGEN SEITE? -----------------
+    //
+    // GEMESSEN WIRD AN DEN WEB-AUDIO-KNOTEN, nicht am Ohr. Was sich pruefen laesst, ist,
+    // ob die Stimme ueberhaupt existiert, ob ihre Baender Verstaerkung bekommen, ob die
+    // Abspielrate mit der Drehzahl geht und wo sie im Stereobild sitzt. Wie es KLINGT,
+    // entscheidet der Teppich - das steht so im Commit und nicht als Zusicherung hier.
+    //
+    // Die Puffer werden geteilt (je Motormodell, nicht je Auto), und genau das wird
+    // mitgeprueft: zwei Stimmen, dieselben Puffer, verschiedene Verstaerkungen.
+    async stimmeZweiProbe(o) {
+      const opt = o || {};
+      // Ohne Tonkontext gibt es keine Knoten. Der Browser legt ihn erst nach einer
+      // Nutzerhandlung an, ein Prueflauf ohne Klick kommt also hier heraus - und das
+      // ist ein SKIP und kein Fehler. Gesagt wird, WAS fehlt: sonst sucht man am
+      // falschen Ende.
+      if (!audioCtx || !sampleEngine.ready) {
+        return { keinKontext: true, kontext: !!audioCtx,
+                 zustand: audioCtx ? audioCtx.state : null,
+                 schleifen: !!sampleEngine.ready, laedt: !!sampleEngine.loading,
+                 motoren: Object.keys(sampleEngine.buffers || {}).length };
+      }
+      // ---- WARTEN IST HIER PFLICHT, und das war beim ersten Anlauf der Fehler ---------
+      //
+      // Alle Verstellungen im Tonzweig laufen ueber setTargetAtTime(), also ueber eine
+      // RAMPE mit Zeitkonstante. `AudioParam.value` gleich danach gelesen ist noch der
+      // ALTE Wert - gemessen kamen vier Abspielraten von genau 1 und vier Verstaerkungen
+      // von genau 0 heraus, und das sah nach einer stummen Stimme aus, obwohl nur die
+      // Rampe noch nicht gelaufen war.
+      //
+      // Gewartet wird auf der UHR DES TONKONTEXTS und nicht auf setTimeout: der
+      // Vorschaubereich kann verborgen sein, und dort drosselt der Browser Zeitgeber auf
+      // einen Takt je Sekunde. Die Audiouhr laeuft weiter, sie haengt an der Soundkarte.
+      const warte = async (sek) => {
+        const bis = audioCtx.currentTime + sek;
+        while (audioCtx.currentTime < bis) {
+          await new Promise((r) => {
+            const c = new MessageChannel();
+            c.port1.onmessage = r;
+            c.port2.postMessage(0);
+          });
+        }
+      };
+      const vorher = { zwei: zweiSpieler, gas: p2Throttle, phys: physicsEnabled };
+      try {
+        zweiSpieler = true;
+        if (typeof stimmeZweiSetzen === 'function') stimmeZweiSetzen(true);
+        if (!stimmeZwei.nodes) return { keineStimme: true };
+        const z0 = stimmeZweiLage(), e0 = stimmeEinsLage();
+        const aufbau = {
+          zweiBaender: z0.baender, einsBaender: e0.baender,
+          zweiSeite: z0.seite, einsSeite: e0.seite,
+          // Dieselben Puffer, nicht zwei Kopien: sie liegen je MOTORMODELL.
+          gleichePuffer: z0.puffer === e0.puffer && z0.puffer !== null,
+          modell: z0.modell,
+        };
+        // Zwei Drehzahlen, je mit Wartezeit. Die Abspielraten muessen sich unterscheiden -
+        // eine Stimme, deren Rate mit der Drehzahl nicht geht, spielt eine Schleife und
+        // keinen Motor.
+        const bei = async (rpm) => {
+          updateSampleEngineIn(stimmeZwei, rpm, 0.8, false, physEngine2, 1);
+          await warte(0.35);
+          const z = stimmeZweiLage();
+          return { raten: z.raten, verst: z.verst, master: z.master,
+                   summe: +z.verst.reduce((a, b) => a + b, 0).toFixed(3) };
+        };
+        const tief = await bei(opt.tief === undefined ? 2200 : opt.tief);
+        const hoch = await bei(opt.hoch === undefined ? 7000 : opt.hoch);
+        // Und still: bei `silent` muss der Meister zurueck auf null.
+        updateSampleEngineIn(stimmeZwei, 2200, 0, true, physEngine2, 1);
+        await warte(0.4);
+        const still = stimmeZweiLage().master;
+        return Object.assign(aufbau, { tief, hoch, still });
+      } finally {
+        zweiSpieler = vorher.zwei;
+        p2Throttle = vorher.gas;
+        physicsEnabled = vorher.phys;
+        if (typeof stimmeZweiSetzen === 'function') stimmeZweiSetzen(vorher.zwei);
+      }
+    },
+
     // ---- VERBRAUCHT AUTO 2, UND WAS KOSTET IHN DER LEERE TANK? ----------------------
     //
     // Drei Fragen in einem Lauf, und die dritte ist die, an der man sich vertut:

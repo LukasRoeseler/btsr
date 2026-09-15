@@ -735,8 +735,10 @@
       "Plus a fuel tank of its own: consumption by throttle and time on the same slider as car 1, the fuel weight in its driving model, the warning levels as a message, and the limp mode of an empty tank – which closes over a ramp, not in one tick.",
     "Dazu einen eigenen Schaden: Crasherkennung aus seinen eigenen Sensorbytes, Leistungsverlust mit dem Schaden, Notlauf im Totalschaden und ausgefallene Lampen – und die Kontrollleuchten des einen sagen nichts mehr über das andere Auto.":
       "Plus damage of its own: crash detection from its own sensor bytes, power lost with damage, limp mode when totalled, and lamps that fail – and one car's tell-tales no longer say anything about the other.",
-    "Der Motorklang folgt Auto 1. Es gibt einen Tongenerator.":
-      "The engine sound follows car 1. There is one tone generator.",
+    "Auto 2 hat keine Zusatzkette am Motorklang: kein Turbopfeifen, keine Knaller, kein Begrenzer-Takt – die hängen an einem Bus. Und keinen Doppler, der gehört zur Runde von Auto 1.":
+      "Car 2 has no extras chain on its engine sound: no turbo whistle, no pops, no limiter pulsing – those hang off one bus. And no doppler, which belongs to car 1's lap.",
+    "Dazu eine eigene Motorstimme, und die sitzt auf der anderen Stereoseite – links Auto 1, rechts Auto 2. Das ist keine Kosmetik: zwei Motoren im selben Drehzahlband aus einem Lautsprecher klingen wie ein verstimmter Motor und nicht wie zwei Autos. Auch der Schaltklang kommt von der Seite des Autos, das geschaltet hat. Beide fahren dasselbe Motormodell, das aus dem Cockpit gewählte.":
+      "Plus an engine voice of its own, and it sits on the other stereo side – car 1 left, car 2 right. That is not decoration: two engines in the same rev band from one speaker sound like one out-of-tune engine, not like two cars. The shift sound comes from the side of the car that shifted, too. Both run the same engine model, the one chosen in the cockpit.",
     "Rundenzählung, Ergebnistabelle und Aufnahme gelten für Auto 1.":
       "Lap counting, the results table and recording apply to car 1.",
     ": eine eigene Fahrphysik mit eigenen Gängen, eigener Drehzahl, eigenem Tempo und eigenen Temperaturen. Die Einstellungen aus „Fahrgefühl“ werden bei jedem Anschalten übernommen, damit beide Autos gleich fahren.":

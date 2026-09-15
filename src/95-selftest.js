@@ -9594,6 +9594,78 @@
   // Die Liste ist GEPFLEGT, und das ist hier richtig: sie IST die Zusicherung. Sie stammt
   // aus einer Suche ueber alle Kaestchen, deren Listener "X = e.target.checked" schreibt.
   // Ein neuer Schalter gehoert hinein.
+  // ---- Auto 2 hat eine eigene Motorstimme, auf der anderen Stereoseite -------------
+  //
+  // FUENF AUSSAGEN, und keine davon ist "es klingt gut" - das entscheidet der Teppich.
+  // Pruefbar ist, ob die Stimme ueberhaupt spielt und ob sie sich mit der Drehzahl
+  // bewegt:
+  //
+  //   1. Sie existiert und hat so viele Leistungsbaender wie die von Auto 1.
+  //   2. Sie benutzt DIESELBEN Puffer - sie liegen je Motormodell, nicht je Auto. 132
+  //      Schleifen ein zweites Mal zu laden waere Verdopplung fuer nichts.
+  //   3. Die Ueberblendung WANDERT mit der Drehzahl: bei 2200 tragen die unteren Baender,
+  //      bei 7000 die oberen. Eine Stimme, deren Gewichte stehenbleiben, spielt eine
+  //      Schleife und keinen Motor.
+  //   4. Die Gewichte summieren sich auf 1 - sonst hat die Lautstaerke ein Loch oder eine
+  //      Beule im Drehzahlband.
+  //   5. Sie sitzt auf der ANDEREN Stereoseite als Auto 1. Das ist keine Kosmetik: zwei
+  //      Motoren im selben Drehzahlband aus einem Lautsprecher klingen wie ein
+  //      verstimmter Motor und nicht wie zwei Autos.
+  //
+  // WARTEN IST TEIL DER MESSUNG. Alle Verstellungen laufen ueber setTargetAtTime(), also
+  // ueber eine Rampe; `AudioParam.value` gleich danach gelesen ist noch der alte Wert.
+  // Beim ersten Anlauf kamen vier Raten von genau 1 und vier Gewichte von genau 0 heraus,
+  // und das sah nach einer stummen Stimme aus. Die Sonde wartet jetzt auf der Uhr des
+  // Tonkontexts - nicht auf setTimeout, denn bei verborgenem Vorschaubereich drosselt der
+  // Browser Zeitgeber auf einen Takt je Sekunde.
+  stAdd('Zwei Spieler: Auto 2 hat eine eigene Motorstimme', async () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.stimmeZweiProbe) {
+      return { skip: true, mass: 'stimmeZweiProbe nicht vorhanden' };
+    }
+    const r = await OMEGA_TEST.stimmeZweiProbe({ tief: 2200, hoch: 7000 });
+    if (r.keinKontext) {
+      // KEIN FEHLER. Der Browser legt den Tonkontext erst nach einer Nutzerhandlung an,
+      // und die Schleifen kommen asynchron - 132 Dateien.
+      return { skip: true,
+               mass: 'kein Tonkontext: Kontext ' + r.kontext + ', Schleifen ' + r.schleifen
+                     + (r.laedt ? ' (laedt noch)' : '') + ', Motoren ' + r.motoren };
+    }
+    if (r.keineStimme) return { ok: false, mass: 'die zweite Stimme startete nicht' };
+    const maengel = [];
+    if (!(r.zweiBaender > 0) || r.zweiBaender !== r.einsBaender) {
+      maengel.push('Baender ' + r.zweiBaender + ' gegen ' + r.einsBaender);
+    }
+    if (!r.gleichePuffer) maengel.push('nicht dieselben Schleifenpuffer');
+    // Die Ueberblendung muss wandern: das schwerste Band unten darf nicht auch oben das
+    // schwerste sein.
+    const schwerst = (v) => v.indexOf(Math.max.apply(null, v));
+    if (schwerst(r.tief.verst) === schwerst(r.hoch.verst)) {
+      maengel.push('dasselbe Band traegt bei 2200 und 7000 (Index '
+                   + schwerst(r.tief.verst) + ')');
+    }
+    for (const [name, m] of [['tief', r.tief], ['hoch', r.hoch]]) {
+      if (Math.abs(m.summe - 1) > 0.02) {
+        maengel.push(name + ': Gewichte summieren auf ' + m.summe + ' statt 1');
+      }
+      if (!(m.master > 0.05)) maengel.push(name + ': Meister bei ' + m.master);
+    }
+    // Und die Abspielraten muessen sich zwischen den zwei Drehzahlen bewegen.
+    const bewegt = r.tief.raten.some((x, i) => Math.abs(x - r.hoch.raten[i]) > 0.05);
+    if (!bewegt) maengel.push('Abspielraten aendern sich mit der Drehzahl nicht');
+    // Still muss still sein.
+    if (!(r.still < 0.02)) maengel.push('still, aber Meister bei ' + r.still);
+    // Und die Seiten getrennt, in entgegengesetzter Richtung.
+    if (!(r.zweiSeite * r.einsSeite < 0) || Math.abs(r.zweiSeite) < 0.2) {
+      maengel.push('Stereoseiten ' + r.einsSeite + ' / ' + r.zweiSeite);
+    }
+    return { ok: !maengel.length,
+             mass: r.modell + ', ' + r.zweiBaender + ' Baender, Puffer geteilt | 2200: '
+                 + r.tief.verst.join('/') + ' | 7000: ' + r.hoch.verst.join('/')
+                 + ' | Seite ' + r.einsSeite + ' gegen ' + r.zweiSeite
+                 + ' | still ' + r.still
+                 + (maengel.length ? ' | ' + maengel.join(', ') : '') };
+  });
+
   // ---- Auto 2 verbraucht Sprit, und ein leerer Tank kostet ihn Leistung ------------
   //
   // VIER AUSSAGEN, und die vierte ist ein Fehler, den dieser Prueflauf gefunden hat.

@@ -2956,6 +2956,48 @@
   body.race-fs.race-turn #race-dash .gt3-foot { display: none; }
   body.race-fs.race-turn #race-dash .gt3-strip {
     grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 3px; }
+  /* ---- DIE ZWEITE ZEILE IM GEDREHTEN VOLLBILD -----------------------------------------
+     GEMESSEN, UND ES WAR EIN ECHTER MANGEL: mit der Zeile brauchte das Cockpit auf
+     740 x 330 (gedreht) 691 px bei 646 verfuegbaren - der Skalierungsfaktor stand schon auf
+     seinem Boden von 0,5 und es ragten 45 px hinaus. Ohne Modus passte es mit Ueberstand 0.
+     Gefunden hat es der vorhandene Test "Cockpit passt im Vollbild, quer wie gedreht",
+     nachdem der Vorschaubereich wieder Masse hatte.
+
+     Gespart wird an der BESCHRIFTUNG und nicht an den Zahlen: die drei Werte stehen in
+     derselben Reihenfolge wie die grossen Instrumente darueber, und wer das Cockpit
+     gedreht auf einem Telefon haelt, hat sie zwei Zeilen hoeher schon gelesen. Die Zahlen
+     bleiben so gross, dass man sie im Fahren trifft. */
+  /* IN JEDEM VOLLBILD, quer wie gedreht. Hier stand `.race-turn` mit, und das war zu
+     eng gefasst: gemessen riss der QUER-Fall (race-fs ohne race-turn) bei 915 x 412 um
+     21 px und bei 844 x 390 um 44 px. Der gedrehte Fall ist nur der auffaelligere. */
+  body.race-fs #race-dash .gt3-p2 { padding-top: 2px; gap: 4px; }
+  body.race-fs #race-dash .gt3-p2 .gt3-lbl { display: none; }
+  body.race-fs #race-dash .gt3-p2 .gt3-val {
+    font-size: clamp(12px, 2.2vw, 17px); line-height: 1.02; }
+  body.race-fs #race-dash .gt3-p2 .gt3-val.big {
+    font-size: clamp(13px, 2.5vw, 19px); }
+  /* Die Polsterung der drei Kaesten auf null: sie stammt von den grossen Instrumenten,
+     und dort trennt sie Werte mit Beschriftung. Hier steht je Kasten EINE Zahl, und die
+     Trennung macht schon die Spaltenluecke. Gemessen sind das rund 14 px Hoehe im
+     gedrehten Vollbild - der Unterschied zwischen "passt" und "ragt heraus". */
+  body.race-fs #race-dash .gt3-p2 .gt3-box { padding: 0; box-shadow: none; }
+  /* Die Marke "SPIELER 2" faellt im Vollbild weg wie .gt3-marke und .gt3-foot: bei drei
+     Werten in der Reihenfolge der grossen Instrumente darueber ist sie entbehrlich, und
+     im gedrehten Vollbild zaehlt jeder Pixel Hoehe. */
+  body.race-fs #race-dash .gt3-p2-marke { display: none; }
+  /* Die Notabschaltung. Gesetzt von cockpitVollbildPassung(), wenn der
+     Skalierungsfaktor am Boden steht und es trotzdem nicht reicht - die Begruendung
+     samt Messwerten steht dort. */
+  #race-dash.p2-weg .gt3-p2 { display: none; }
+  /* UND DIE RASTERZEILE MIT. Nur das Kind zu verbergen liess die Zeile stehen: die Felder
+     sind benannt, und cockpitInhaltHoehe() liest grid-template-rows - eine leere Zeile
+     zaehlt mit ihrer Luecke weiter mit. Gemessen blieben davon 9 px uebrig, genau die
+     Luecke. Dieselbe Falle, die am Anfang die Entscheidung fuer die Klasse am body statt
+     eines verborgenen Kindes begruendet hat. */
+  body.zwei-spieler #race-dash.p2-weg {
+    grid-template-areas: "flag flag flag" "shift shift shift" "left gear right"
+                         "strip strip strip" "banner banner banner"
+                         "foot foot foot" "toast toast toast" "marke marke marke"; }
   body.race-fs .race-bar { position: fixed; z-index: 201; top: 8px; left: 8px; }
   body.race-fs.race-turn .race-bar { top: auto; bottom: 8px; left: 8px; }
 
@@ -8006,8 +8048,9 @@
           27&nbsp;Gr&ouml;&szlig;en. Tank und Schaden gehen mit dem R&uuml;cksetzknopf, der
           Taste&nbsp;R und dem Rennstart zur&uuml;ck; am Start haben beide Autos dieselbe
           Spritmenge.</span>
-        <kbd>Ton</kbd><span>Der Motorklang folgt Auto&nbsp;1. Es gibt einen
-          Tongenerator.</span>
+        <kbd>Ton</kbd><span>Auto&nbsp;2 hat keine Zusatzkette am Motorklang: kein
+          Turbopfeifen, keine Knaller, kein Begrenzer-Takt &ndash; die h&auml;ngen an
+          einem Bus. Und keinen Doppler, der geh&ouml;rt zur Runde von Auto&nbsp;1.</span>
         <kbd>Gelb</kbd><span>Kein Autopilot unter gelber Flagge und keine
           Einf&uuml;hrungsrunde f&uuml;r Auto&nbsp;2: beide h&auml;ngen an Z&auml;hlern des
           Rennens, die es nur einmal gibt.</span>
@@ -8018,6 +8061,12 @@
         G&auml;ngen, eigener Drehzahl, eigenem Tempo und eigenen Temperaturen. Die
         Einstellungen aus &bdquo;Fahrgef&uuml;hl&ldquo; werden bei jedem Anschalten
         &uuml;bernommen, damit beide Autos gleich fahren.</p>
+      <p class="muted">Dazu eine eigene Motorstimme, und die sitzt auf der anderen
+        Stereoseite &ndash; links Auto&nbsp;1, rechts Auto&nbsp;2. Das ist keine Kosmetik:
+        zwei Motoren im selben Drehzahlband aus einem Lautsprecher klingen wie ein
+        verstimmter Motor und nicht wie zwei Autos. Auch der Schaltklang kommt von der
+        Seite des Autos, das geschaltet hat. Beide fahren dasselbe Motormodell, das aus dem
+        Cockpit gew&auml;hlte.</p>
       <p class="muted">Dazu einen eigenen Tank: Verbrauch nach Gas und Zeit mit demselben
         Regler wie Auto&nbsp;1, das Tankgewicht in seiner Fahrphysik, die Warnstufen als
         Meldung und den Notlauf des leeren Tanks &ndash; und der geht &uuml;ber eine Rampe
@@ -8439,7 +8488,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.6.48</span></span>
+    <span class="foot-ver">v<span id="app-version">0.6.49</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
