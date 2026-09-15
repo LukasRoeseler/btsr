@@ -7117,6 +7117,52 @@
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
+  // ---- Ueberholen: kein Ansatz in eine belegte Seite ----
+  //
+  // DIE FEHLERKLASSE, und sie ist gemessen: ghostAhead() sieht nur den naechsten nach
+  // FORTSCHRITT. Ein Auto DANEBEN hat praktisch denselben Fortschritt und ist damit
+  // unsichtbar - der Angreifer schwenkte auf eine Seite aus, auf der schon einer lag.
+  // Gemeldet war das als "die Autos haben sich viel geschoben", mit vier Ghosts.
+  //
+  // ghostSeitenFrei() liest jetzt die Querlagen aller Autos in Reichweite. Gemessen, vier
+  // Autos, 90 s, je drei Laeufe, im selben Durchlauf gegeneinander:
+  //
+  //     ohne Wache    17,6 Beruehrungen/min    7,8 Ueberholmanoever/min   2,33 je Manoever
+  //     mit Wache     17,8                    10,9                       1,62
+  //
+  // Gleiche Beruehrungen, 40 Prozent MEHR Ueberholmanoever, 30 Prozent weniger
+  // Beruehrungen je Manoever: die Wache unterdrueckt nicht, sie lenkt um - der Angreifer
+  // geht auf die freie Seite statt in den Abbruch.
+  stAdd('Ueberholen: eine belegte Seite gilt als belegt', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.seitenFreiProbe) {
+      return { skip: true, mass: 'seitenFreiProbe nicht vorhanden' };
+    }
+    const faelle = [
+      // Nachbarn rechts (positiv) -> rechts belegt, links frei.
+      ['einer rechts', [0.5], { '-1': true, '1': false }],
+      ['einer links', [-0.5], { '-1': false, '1': true }],
+      ['beide Seiten', [0.5, -0.5], { '-1': false, '1': false }],
+      // Mittig liegende Nachbarn belegen keine Seite: sie sind das Ziel, nicht das
+      // Hindernis, und die Mitte bleibt beim Manoever ohnehin leer.
+      ['beide mittig', [0.1, -0.1], { '-1': true, '1': true }],
+    ];
+    const fehler = [], zeilen = [];
+    for (const [name, lagen, soll] of faelle) {
+      const r = OMEGA_TEST.seitenFreiProbe(lagen);
+      if (!r) { fehler.push(name + ': keine Antwort'); continue; }
+      zeilen.push(name + ' -> links ' + (r['-1'] ? 'frei' : 'belegt')
+                  + ', rechts ' + (r['1'] ? 'frei' : 'belegt'));
+      for (const s of ['-1', '1']) {
+        if (!!r[s] !== soll[s]) {
+          fehler.push(name + ': Seite ' + s + ' ist ' + (r[s] ? 'frei' : 'belegt')
+                      + ', erwartet ' + (soll[s] ? 'frei' : 'belegt'));
+        }
+      }
+    }
+    return { ok: !fehler.length,
+             mass: zeilen.join(' | ') + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
   // ---- Die Kachelphase: der Weg schaetzt besser als die Uhr ----
   //
   // Die Phase innerhalb einer Kachel indexiert Ideallinie und Bremsprofil, ist also die

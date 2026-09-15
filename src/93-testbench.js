@@ -1948,6 +1948,47 @@
                lueckeMax: luecke.length ? Math.max.apply(null, luecke) : null };
     },
 
+    // ---- WELCHE SEITE IST BELEGT? -------------------------------------------------
+    //
+    // ghostSeitenFrei() ist der Wachhund, der ein Ueberholmanoever nicht in ein drittes
+    // Auto hinein ansetzen laesst. Er liest die Querlagen aller Autos in Reichweite - eine
+    // Groesse, die sonst nur im Fahrbetrieb entsteht -, deshalb stellt diese Sonde die Lage
+    // von Hand her: drei Attrappen auf derselben Kachel, Querlagen wie bestellt.
+    //
+    // Die Garage wird ausgetauscht und im finally zurueckgegeben, wie bei jeder Sonde hier.
+    seitenFreiProbe(lagen) {
+      const merkGarage = garage.splice(0, garage.length);
+      const merkTiles = currentTrackTiles;
+      const autos = [];
+      try {
+        currentTrackTiles = codeToTrack('SG2R3G2R3').tiles;
+        lineCache = null;
+        const liste = lagen || [0.5, -0.5];
+        // Das erste Auto ist das PRUEFENDE, die weiteren sind die Nachbarn.
+        for (let i = 0; i <= liste.length; i++) {
+          const car = OMEGA_TEST.attrappeGhost('S' + i);
+          garage.push(car);
+          autos.push(car);
+          car.ghost.tileIndex = 0;
+          car.ghost.tilesTotal = 0;
+          car.ghost.laps = 0;
+          // Der Prueflauf selbst liegt mittig, die Nachbarn dort, wo bestellt.
+          car.ghost.querSoll = i === 0 ? 0 : liste[i - 1];
+          // Ohne Kacheldauer gibt ghostAbstandSek() null zurueck, und ghostNahe() faellt
+          // auf den Kachelvergleich zurueck - genau das ist hier gewollt: alle auf einer
+          // Kachel heisst nebeneinander, ohne dass eine Uhr mitspielen muss.
+          car.ghost.tileMs = 0;
+        }
+        return ghostSeitenFrei(autos[0]);
+      } finally {
+        garage.splice(0, garage.length);
+        for (const c of autos) stopGhost(c);
+        for (const c of merkGarage) garage.push(c);
+        currentTrackTiles = merkTiles;
+        lineCache = null;
+      }
+    },
+
     // ====================================================================================
     // DIE KACHELPHASE GEGEN DIE WAHRHEIT
     // ====================================================================================

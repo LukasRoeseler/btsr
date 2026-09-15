@@ -3753,6 +3753,42 @@
   function ghostHupt(car) {
     return !!(car && car.ghost && car.ghost.hupt);
   }
+  // Wie weit voraus nach der naechsten Kurve gesucht wird, wenn beide Seiten frei sind.
+  // Vier Kacheln sind bei 43 cm gut anderthalb Meter - weiter voraus entscheidet man nicht,
+  // auf welcher Seite man JETZT vorbeigeht.
+  const SPICE_SEITE_VORAUS = 4;
+
+  // ====================================================================================
+  // GELEGENHEIT STATT WUERFEL: GEBAUT, GEMESSEN, VERWORFEN
+  // ====================================================================================
+  //
+  // Angesetzt wird nach 900 ms Kleben alle 1200 ms mit fester Wahrscheinlichkeit. Der
+  // naheliegende Einwand: das fragt nicht, ob ueberhaupt Platz zum Vorbeikommen ist - ein
+  // Versuch, der zwanzig Zentimeter vor dem Kurveneingang beginnt, ist der, der als "sie
+  // haben sich ewig geschoben" endet.
+  //
+  // Gebaut war ein Gelegenheitsfaktor aus Reststrecke bis zur naechsten engen Kachel
+  // (ghostAheadTightest mit groesserer Tiefe) und Annaeherungsrate. Gemessen, vier Autos,
+  // 90 s, je drei Laeufe, mit der Seitenwache getrennt geschaltet:
+  //
+  //     Variante                Ber/min   Ueb/min   Ber je Ueb
+  //     nichts davon             17,6       7,8        2,33
+  //     nur Seitenwache          17,8      10,9        1,62
+  //     nur Gelegenheit (3)       3,3       1,8        2,20
+  //     nur Gelegenheit (1)       6,0       3,1        1,99
+  //     beides                    2,4       1,3        2,17
+  //
+  // DER FAKTOR IST EIN REINER UNTERDRUECKER: er senkt Beruehrungen und Ueberholmanoever im
+  // gleichen Verhaeltnis (2,2 gegen 2,33 - unveraendert), es passiert nur insgesamt weniger.
+  // Der Grund ist die Strecke: auf dreizehn Kacheln mit neun Kurven gibt es keine drei
+  // Kacheln Gerade, also gibt es nach dieser Regel nie eine Gelegenheit. Und er widerspricht
+  // einer schon gemessenen Entscheidung - seit v0.5.44 haengt die Erlaubnis ausdruecklich
+  // NICHT an der Kachelart, sondern am freien Platz, und genau aus diesem Grund.
+  //
+  // Die Seitenwache dagegen bleibt: gleiche Beruehrungen, 40 Prozent MEHR
+  // Ueberholmanoever, 30 Prozent weniger Beruehrungen je Manoever. Sie unterdrueckt nicht,
+  // sie lenkt um - der Angreifer geht auf die freie Seite statt in den Abbruch.
+
   const SPICE_PASS_CLEAR = 0.45;       // Kacheln VOR dem anderen = geschafft
   const SPICE_PASS_BLOCK_MS = 6000;    // Sperre nach einem Abbruch
 
@@ -4076,6 +4112,53 @@
     return garage.filter(c => c.ghost && (c.role === 'ghost' || c === playerCar));
   }
 
+  // ---- Die beste bekannte Querlage EINES Autos, egal welcher Art -------------------
+  //
+  // EINE Funktion fuer alle drei Aufrufer, und der Grund ist ein behobener Fehler: die
+  // Seitenwahl beim Ueberholen las `ah.car.ghost.querSoll` direkt. Fuer einen Ghost ist das
+  // richtig; fuer das Fahrerauto entsteht dieselbe Zahl an einer ANDEREN Stelle
+  // (sendControlValue in 20-protocol.js fuehrt sie aus dem Lenkbefehl des Fahrers nach),
+  // und wer das nicht weiss, haelt das Fahrerauto fuer querlagenlos.
+  //
+  // Es ist KEINE Messung: kein Byte meldet die Querlage. Es ist das, was die App dem Auto
+  // geschickt hat - beim Ghost aus seiner Fahrschleife, beim Fahrer aus dem Stick. Dieselbe
+  // Glaettung, dieselbe Klemme, damit die Zahlen vergleichbar sind.
+  function ghostQuerLage(car) {
+    const g = car && car.ghost;
+    if (!g || g.querSoll === undefined || g.querSoll === null) return null;
+    return Math.max(-1, Math.min(1, g.querSoll));
+  }
+
+  // ---- Welche Seite ist von einem DRITTEN Auto belegt? ------------------------------
+  //
+  // GEMELDETER ZUSAMMENHANG: "die Autos haben sich viel geschoben", und zwar mit vier
+  // Ghosts. ghostAhead() sieht nur den naechsten nach Fortschritt - ein Auto DANEBEN hat
+  // praktisch denselben Fortschritt und ist damit unsichtbar. Der Angreifer schwenkte also
+  // auf eine Seite aus, auf der schon einer lag.
+  //
+  // Geprueft werden alle Autos in Reichweite von GHOST_NAH_SEK (0,6 s) - dieselbe
+  // Nachbarschaft, die auch die Querverteilung benutzt, damit die zwei nicht verschiedene
+  // Vorstellungen von "nebeneinander" haben. Zurueck kommt je Seite, ob sie frei ist.
+  //
+  // SPICE_PASS_PLATZ_MIN ist das Mass: zwei Autos brauchen 30,4 Prozent der Bahnbreite,
+  // eine Seite gilt also als belegt, wenn dort einer innerhalb dieses Abstands liegt.
+  function ghostSeitenFrei(car) {
+    const frei = { '-1': true, '1': true };
+    const feld = ghostFieldRacing();
+    for (const o of feld) {
+      if (o === car || !o.ghost) continue;
+      if (!ghostNahe(car, o)) continue;
+      const q = ghostQuerLage(o);
+      if (q === null) continue;
+      // Wer klar auf einer Seite liegt, belegt sie. Wer mittig liegt, belegt keine - dann
+      // ist er das Ziel und nicht das Hindernis, und die Mitte wird beim Manoever ohnehin
+      // freigelassen (siehe das 2-Stufen-Modell in ghostTick).
+      if (q <= -SPICE_PASS_PLATZ_MIN) frei['-1'] = false;
+      if (q >= SPICE_PASS_PLATZ_MIN) frei['1'] = false;
+    }
+    return frei;
+  }
+
   // Das Auto direkt voraus und der Abstand in Kacheln. null, wenn keiner voraus ist.
   function ghostAhead(car) {
     const me = ghostProgress(car);
@@ -4223,6 +4306,12 @@
 
     const ah = ghostAhead(car);
     const onStraight = aheadTight.tight === 0;
+    // DIE ANNAEHERUNGSRATE GENAU EINMAL JE TAKT, und deshalb steht sie hier oben. Sie ist
+    // eine ABLEITUNG mit Zustand (g.gapLast, g.gapAt): ein zweiter Aufruf im selben Takt
+    // saehe dt ~ 0 und wuerde die Glaettung mit Unsinn fuettern. Gelesen wird sie vom
+    // Abstandhalter weiter unten; sie steht hier oben, damit die Reihenfolge der Aufrufe
+    // nicht daran haengt, welcher Zweig gerade laeuft.
+    const naehern = ghostClosing(car, ah ? ah.gap : null);
 
     // 3. Windschatten
     if (ghostCfg.wuerzeWindschatten && ah && ah.gap <= SPICE_SLIP_TILES && onStraight) {
@@ -4326,10 +4415,15 @@
     // richtig: ohne Karte weiss niemand, was kommt.
     const haarnadelVoraus = aheadTight.tight >= 2
                             && aheadTight.dist <= SPICE_PASS_KEIN_HAARNADEL_VORAUS;
+    // Auf BEIDEN Seiten einer: dann gibt es keinen Weg vorbei, und ein Versuch endet im
+    // Schieben. Die Wahl selbst steht weiter unten; hier wird nur nicht angesetzt.
+    const seitenFrei = ghostSeitenFrei(car);
+    const irgendeineSeiteFrei = seitenFrei['-1'] || seitenFrei['1'];
     if (ghostCfg.wuerzeUeberholen
         && !g.attackUntil && g.closeSince && now - g.closeSince > SPICE_ATTACK_ARM_MS
         && platz >= SPICE_PASS_PLATZ_MIN
         && !haarnadelVoraus
+        && irgendeineSeiteFrei
         && now > (g.passBlockUntil || 0)
         && now - (g.attackTriedAt || 0) > SPICE_ATTACK_RETRY_MS) {
       g.attackTriedAt = now;
@@ -4351,14 +4445,37 @@
         // dort weicht der Vorausfahrende gerade aus, hat eine eigene Spur oder liegt sonst
         // irgendwo, und die eigene Linie sagt darueber nichts.
         //
-        // g.querSoll des ANDEREN ist die Groesse, die es dazu gibt: seine angeforderte
-        // Querlage, traege nachgefuehrt. Sie ist keine Messung - das Auto meldet seine
-        // Querlage nicht -, aber sie ist das, was die App ihm geschickt hat, und damit die
-        // beste verfuegbare Aussage. Ohne Vorausfahrenden bleibt die alte Regel.
-        const qAnder = (ah.car && ah.car.ghost) ? (ah.car.ghost.querSoll || 0) : null;
+        // Die Querlage des ANDEREN ist die Groesse, die es dazu gibt (ghostQuerLage): seine
+        // angeforderte Querlage, traege nachgefuehrt. Keine Messung - das Auto meldet seine
+        // Querlage nicht -, aber das, was die App ihm geschickt hat, und damit die beste
+        // verfuegbare Aussage. Ohne Vorausfahrenden bleibt die alte Regel.
+        const qAnder = ah.car ? ghostQuerLage(ah.car) : null;
         const lo = ghostLineOffset(car);
-        g.attackSide = qAnder !== null ? (qAnder >= 0 ? -1 : 1)
-                                       : (lo >= 0 ? -1 : 1);
+        let seite = qAnder !== null ? (qAnder >= 0 ? -1 : 1)
+                                    : (lo >= 0 ? -1 : 1);
+        // ---- UND JETZT MIT RUECKSICHT AUF DRITTE UND AUF DIE NAECHSTE KURVE ---------
+        //
+        // 1. Ist die gewaehlte Seite von einem Dritten belegt, wird gewechselt - liegt auf
+        //    BEIDEN einer, wird gar nicht angesetzt (die Pruefung steht in der Bedingung
+        //    oben, hier ist nur noch die Wahl). Begruendung bei ghostSeitenFrei().
+        //
+        // 2. Sind beide Seiten frei, gewinnt die INNENSEITE der naechsten Kurve. Ein
+        //    Manoever, das aussen zu Ende geht, wird am naechsten Kurvenausgang wieder
+        //    eingesammelt: der Ueberholte hat dann die kuerzere Linie und zieht vorbei.
+        //    Die Richtung kommt aus demselben Vorausblick, der ohnehin schon gerechnet ist.
+        const frei = seitenFrei;
+        if (!frei[String(seite)] && frei[String(-seite)]) seite = -seite;
+        else if (frei['-1'] && frei['1']) {
+          // Die ERSTE Kurve in Reichweite, nicht die naechste Kachel: dazwischen liegen
+          // meist Geraden, und ghostTurnDir() gibt fuer die 0. Gesucht ist die Richtung,
+          // in die es als naechstes geht - innen ist die Seite, in die gedreht wird.
+          let drehung = 0;
+          for (let k = 1; k <= SPICE_SEITE_VORAUS && drehung === 0; k++) {
+            drehung = ghostTurnDir(car, k);
+          }
+          if (drehung !== 0) seite = drehung;
+        }
+        g.attackSide = seite;
         // ---- WEN WIR UEBERHOLEN, UND WARUM DAS HIER FEHLTE ---------------------------
         //
         // g.passZiel wurde GELESEN (die Erfolgspruefung oben), GELOESCHT (beide Ausgaenge)
@@ -4408,7 +4525,6 @@
     // Annaeherung ist eine Sekunde bis zur Beruehrung, eine Kachel bei gleichem Tempo ist
     // unbegrenzt. Nicht waehrend einer Attacke: wer angreift, darf dichter heran, sonst gibt
     // es kein Ueberholen.
-    const naehern = ghostClosing(car, ah ? ah.gap : null);
     let haeltAbstand = false;
     // ---- ZUERST DIE ZEITLUECKE, DANN DER KACHELABSTAND ALS RUECKFALL ---------------
     //
@@ -6750,6 +6866,20 @@
     const schritt = GHOST_BIAS_STEP
       * ((dtSek === undefined ? GHOST_BIAS_MS / 1000 : Math.max(0, dtSek)) / (GHOST_BIAS_MS / 1000));
     const gs = garage.filter(c => c.role === 'ghost' && c.ghost);
+    // ---- DAS FAHRERAUTO ZAEHLT BEI DER VERTEILUNG MIT, bekommt aber keinen Wert -----
+    //
+    // GEFRAGT: "Weichen die Ghosts dann auch meinem gesteuerten Auto aus?" Beim Ueberholen
+    // ja (ghostSpice liest seine Querlage), bei der Querverteilung gegen Rammen war es
+    // NICHT so: diese Liste hiess `role === 'ghost'`, das Fahrerauto war unsichtbar. Die
+    // Ghosts faecherten also untereinander auf und fuhren dabei durch die Stelle, an der
+    // der Fahrer lag.
+    //
+    // Es geht in die SEITENVERGABE ein und bekommt selbst keinen Versatz geschrieben: ein
+    // Mensch laesst sich nicht verteilen. Sein Platz in der Reihe belegt eine Seite, die
+    // Ghosts nehmen die anderen - genau das, was "ausweichen" heisst.
+    const feld = (typeof playerCar !== 'undefined' && playerCar && playerCar.ghost
+                  && gs.indexOf(playerCar) < 0)
+      ? gs.concat([playerCar]) : gs;
     const want = new Map(gs.map(c => [c, 0]));
     // Erst die Gruppen bilden, dann die Seiten verteilen. Paarweise zuzuweisen war bei drei
     // Autos auf derselben Kachel falsch: die Paare (A,B), (A,C) und (B,C) schrieben
@@ -6760,7 +6890,9 @@
     // tileIndex, und der ist beim Start null: das Feld fuhr die ersten Sekunden auf einer
     // Spur, genau dort, wo es am dichtesten ist.
     const fresh = raceStartedAt && (Date.now() - raceStartedAt) < GHOST_GRID_MS;
-    const near = fresh ? gs : gs.filter(c => gs.some(o => o !== c && ghostNahe(c, o)));
+    // `feld` statt `gs` auf BEIDEN Seiten: wer nebeneinander faehrt, entscheidet sich
+    // gegen das ganze Feld einschliesslich des Fahrerautos - siehe oben.
+    const near = fresh ? feld : feld.filter(c => feld.some(o => o !== c && ghostNahe(c, o)));
     // Nach dem Ort sortiert, damit die Seiten stabil bleiben, solange sie nebeneinander
     // fahren, und nicht bei jedem Aufruf tauschen. Der Ort statt der Kachelnummer: auf
     // derselben Kachel gab die Kachelnummer keine Ordnung her, und dann entschied der
