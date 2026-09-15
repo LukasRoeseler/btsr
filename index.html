@@ -4958,6 +4958,25 @@
         werden <em>sollte</em>; ob es geschieht, wei&szlig; niemand.
       </p>
       <p class="muted">
+        <strong>Welche Stelle der Linie gilt gerade?</strong> Das Auto meldet nur, <em>dass</em>
+        es eine neue Kachel betreten hat &ndash; nicht, wo darauf. Die Phase darin kam deshalb
+        aus der verstrichenen <em>Zeit</em>, geteilt durch die gemessene mittlere Dauer dieses
+        Kacheltyps. Eine Dauer vermischt aber L&auml;nge und Tempo: beim Anbremsen dauert die
+        Kachel l&auml;nger als ihr Mittel, die Phase l&auml;uft voraus &ndash; genau am
+        Kurveneingang, wo sie Ideallinie und Bremsprofil indexiert.
+      </p>
+      <p class="muted">
+        Jetzt kommt sie aus dem <strong>Weg</strong>: das Tempo wird &uuml;ber die Kachel
+        aufintegriert und durch den gleitenden Mittelwert des wirklich gefahrenen Wegs dieses
+        Kacheltyps geteilt. Der Weg zwischen zwei Z&auml;hlerspr&uuml;ngen ist eine geometrische
+        Konstante und h&auml;ngt nicht am Gas. Gegen die wahre Phase der Rennsimulation
+        gemessen: mittlerer Betragsfehler <b>0,097 &rarr; 0,073</b>, Anteil der Takte am
+        Phasendeckel <b>6,2 &rarr; 0&nbsp;Prozent</b>, je Kachel erreichte H&ouml;chstphase
+        <b>0,86 &rarr; 0,95</b>. Solange ein Kacheltyp noch keine zwei Messungen hat, gilt
+        weiter die Uhr; das Fahrerauto bleibt dauerhaft bei ihr, weil es keinen gerechneten
+        Motor hat.
+      </p>
+      <p class="muted">
         Der <strong>Streckencode</strong> (z.&nbsp;B. <code>SG2R3G2R3B@90</code>) ist ein Buchstabe
         je Element mit Wiederholungszahl, dazu die Ausrichtung: S&nbsp;Start, G&nbsp;Gerade,
         R&nbsp;rechts, L&nbsp;links, B&nbsp;Boxengasse. Absichtlich kein Base64: einen Code,
@@ -8233,7 +8252,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.6.36</span></span>
+    <span class="foot-ver">v<span id="app-version">0.6.37</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -27901,7 +27920,7 @@
   // Kachelindex kennt, kann Anstellen, Scheitel und Herausfahren nicht trennen.
   const GHOST_TILE_MS_MIN = 250;    // schneller ist keine Kachel je gefahren worden
   const GHOST_TILE_MS_MAX = 4000;
-  function ghostTilePhase(car) {
+  function ghostTilePhaseZeit(car) {
     const g = car.ghost;
     if (!g || !car.tileAt) return 0;
     // Die mitgefuehrte Dauer ist ein Mittel ueber ALLE Kacheln. Eine Haarnadel ist aber
@@ -27911,6 +27930,108 @@
     // Haarnadel. Die relative Laenge kommt aus der Abtastdichte der Mittellinie, die
     // trackCenterline() ohnehin nach Drehwinkel vergibt.
     return Math.max(0, Math.min(1, (Date.now() - car.tileAt) / ghostTileDauer(g)));
+  }
+
+  // ====================================================================================
+  // DIE PHASE AUS DEM WEG, und warum sie besser schaetzt als die Uhr
+  // ====================================================================================
+  //
+  // Die Zeitschaetzung darueber teilt die verstrichene Zeit durch eine gemessene MITTLERE
+  // Dauer dieses Kacheltyps. Sie ist damit genau dort am schlechtesten, wo sie am
+  // wichtigsten ist: beim Anbremsen dauert die Kachel laenger als das Mittel, die Phase
+  // laeuft also voraus - und sie indexiert die Ideallinie und das Bremsprofil. Der Ghost
+  // haelt sich fuer weiter am Scheitel, als er ist. Gemessen klebte sie 3 bis 10 Prozent
+  // jeder Kachel am Deckel.
+  //
+  // DER WEG HAT DIESEN FEHLER NICHT, und zwar aus einem Grund, der keine Feinheit ist: der
+  // Weg zwischen zwei Zaehlersprüngen ist eine GEOMETRISCHE KONSTANTE und haengt nicht am
+  // Gas, waehrend die Dauer Laenge und Tempo vermischt. Ein langsam gefahrenes Stueck
+  // dauert laenger, ist aber nicht laenger.
+  //
+  // UND ER IST SELBSTKALIBRIEREND. `erwartet` ist nicht die gerechnete Kachellaenge,
+  // sondern ein Mittel ueber den TATSAECHLICH aufintegrierten Weg zwischen zwei Sprüngen.
+  // Damit kuerzt sich jeder konstante Skalenfehler des Tempomodells heraus - und das ist
+  // wichtig, weil das Tempo eines Ghosts kein Messwert ist, sondern der Zustand seines
+  // eigenen gerechneten Motors. Dasselbe gilt fuer die bis zu einen Takt (45 ms) spaete
+  // Sprungerkennung: sie steckt in Zaehler UND Nenner.
+  //
+  // ---- WAS DABEI NEU SCHIEFGEHEN KANN, und es ist das Gegenteil von vorher ----------
+  //
+  // Die Zeitphase kann nur nach OBEN scheitern: sie erreicht 1 und bleibt dort. Die
+  // Wegphase kann UNTERSCHREITEN - erreicht sie das Kachelende nicht, fehlt der Ideallinie
+  // das letzte Stueck JEDER Kachel, und beim Wechsel springt der Versatz. Genau das
+  // verbietet der Kommentar unter ghostTilePhase(), und genau das hat der Selbsttest
+  // "Ideallinie stetig" schon einmal mit 2,48 Eigenschritten gefangen.
+  //
+  // Zwei Sicherungen dagegen:
+  //
+  //   1. Ein Messwert geht nur in das Mittel ein, wenn er zwischen 0,4 und 2,5 mal der
+  //      gerechneten Kachellaenge liegt - dieselbe Bauform wie GHOST_TILE_MS_MIN/MAX bei
+  //      der Zeitmessung, aus demselben Grund: ein von Hand zurueckgestelltes oder
+  //      angeschobenes Auto liefert sonst EINEN Ausreisser, der diesen Kacheltyp dauerhaft
+  //      verbiegt.
+  //   2. Zwei Messungen je Typ, bevor der Weg das Sagen hat (GHOST_DAUER_MIN_N, dieselbe
+  //      Schwelle wie bei der Dauer). Bis dahin gilt die Uhr.
+  //
+  // Und das FAHRERAUTO bleibt bei der Uhr, ohne Sonderfall: playerCar.ghost ist `nurOrt`
+  // und hat keinen Motor (siehe spielerOrt()), also gibt es dort kein Tempo zu
+  // integrieren, g.kachelWeg bleibt undefiniert und ghostTileWegSoll() liefert null.
+  //
+  // ---- ES BLEIBT BEI EINER ORTSDEFINITION, und das ist eine Entscheidung -----------
+  //
+  // Damit schaetzen zwei Autos ihre Phase moeglicherweise verschieden: ein Ghost aus dem
+  // Weg, das Fahrerauto aus der Uhr. Naheliegend waere, fuer ABSTAENDE beide auf die Uhr
+  // zu zwingen, damit die Differenz aus einer Quelle kommt. Das ist hier bewusst NICHT
+  // gemacht, aus zwei Gruenden:
+  //
+  //   1. ghostOrt() ist die EINE Ortsdefinition dieser Datei (siehe den Kommentar dort) -
+  //      sie wieder aufzuspalten waere genau der Zustand, aus dem sie entstanden ist.
+  //   2. Der Abstand, auf den es ankommt, haengt gar nicht an der Phase: der Abstandhalter
+  //      rechnet seit v0.5.47 mit der ZEITLUECKE aus Kachelstempeln
+  //      (ghostZeitLuecke), und der Kachelabstand daneben hat unterhalb einer Kachel
+  //      ohnehin keine Aufloesung - gemessen meldete er in 1517 nahen Stichproben jedes
+  //      Mal glatt 1,00.
+  //
+  // Beide Seiten die jeweils BESSERE Schaetzung benutzen zu lassen ist deshalb der
+  // kleinere Fehler, nicht der groessere.
+  const GHOST_WEG_MIN_F = 0.4;
+  const GHOST_WEG_MAX_F = 2.5;
+
+  function ghostNoteTileWeg(car, weg, typ) {
+    const g = car.ghost;
+    if (!g || typ === null || typ === undefined || !(weg > 0)) return;
+    const soll = tileLength(typ);
+    if (!(soll > 0)) return;
+    if (weg < GHOST_WEG_MIN_F * soll || weg > GHOST_WEG_MAX_F * soll) return;
+    g.tileWegTyp = g.tileWegTyp || {};
+    g.tileWegTypN = g.tileWegTypN || {};
+    g.tileWegTyp[typ] = g.tileWegTyp[typ] ? g.tileWegTyp[typ] * 0.7 + weg * 0.3 : weg;
+    g.tileWegTypN[typ] = (g.tileWegTypN[typ] || 0) + 1;
+  }
+
+  // Der erwartete Weg ueber die Kachel, auf der das Auto GERADE liegt. null heisst "noch
+  // nicht genug gemessen" - dann gilt die Uhr, und das ist ein ehrliches Ergebnis.
+  function ghostTileWegSoll(g) {
+    const tiles = currentTrackTiles;
+    const i = g.tileIndex;
+    const typ = (tiles && i !== null && i !== undefined && tiles[i]) ? tiles[i].type : null;
+    if (typ === null) return null;
+    if (!g.tileWegTyp || !g.tileWegTypN) return null;
+    if (!(g.tileWegTypN[typ] >= GHOST_DAUER_MIN_N)) return null;
+    return g.tileWegTyp[typ] > 0 ? g.tileWegTyp[typ] : null;
+  }
+
+  function ghostTilePhaseWeg(car) {
+    const g = car.ghost;
+    if (!g || g.kachelWeg === undefined) return null;
+    const soll = ghostTileWegSoll(g);
+    if (soll === null) return null;
+    return Math.max(0, Math.min(1, g.kachelWeg / soll));
+  }
+
+  function ghostTilePhase(car) {
+    const w = ghostTilePhaseWeg(car);
+    return w === null ? ghostTilePhaseZeit(car) : w;
   }
 
   // ---- WARUM DIE PHASE HART BEI 1 ENDET, und zwar mit Absicht ------------------------
@@ -30941,6 +31062,10 @@
                   // Die Kachelabstaende der letzten Wechsel, fuer die Plausibilitaet des
                   // Zaehlers. Leer heisst "noch nichts gesehen", und dann zaehlt er nicht.
                   tileRing: [],
+                  // Der aufintegrierte Weg auf der aktuellen Kachel, in Zeichnungseinheiten.
+                  // Er traegt die Kachelphase, sobald dieser Kacheltyp zweimal gemessen ist -
+                  // siehe ghostTilePhaseWeg().
+                  kachelWeg: 0,
                   // Startgnade: siehe GHOST_START_GNADE_MS. Ohne sie kommt ein geparktes
                   // Auto nie wieder hoch, weil es zum Lesen fahren muesste und zum Fahren
                   // gelesen haben muesste.
@@ -31266,6 +31391,19 @@
     // Zieleinlauf hat Vorrang vor allem anderen: keine Linie, keine Wuerze, kein
     // Leitplanken-Modus. Steht die Sequenz, gilt nur noch sie.
     if (g.finish) { ghostFinishTick(car); return; }
+    // ---- DEN WEG AUF DIESER KACHEL MITFUEHREN, und zwar HIER OBEN --------------------
+    //
+    // Vor dem Kachelwechselblock, und das ist die richtige Reihenfolge: das Tempo im
+    // Motorzustand ist das der VERGANGENEN dt, der Weg dieses Takts gehoert also noch zur
+    // alten Kachel. Integriert man nach dem Wechsel, waere er der neuen zugeschlagen.
+    //
+    // In Zeichnungseinheiten (KMH_TO_UNITS aus 60-track.js), damit der Wert mit
+    // tileLength() vergleichbar ist - die Plausibilitaetsgrenzen in ghostNoteTileWeg()
+    // brauchen genau diesen Vergleich.
+    if (g.engine && g.engine.state) {
+      g.kachelWeg = (g.kachelWeg || 0)
+        + Math.abs(g.engine.state.speedKmh || 0) * KMH_TO_UNITS * dt;
+    }
     const e = g.engine, cfg = e.config;
     // Die Oberflaeche aus Wetter und aufgezogenem Reifen, JEDEN TAKT. Nicht nur beim
     // Wetterwechsel: wxRainLevel() ist eine Rampe ueber fuenf Sekunden, ein einmaliges
@@ -31283,6 +31421,10 @@
         const verlassen = (currentTrackTiles && currentTrackTiles[g.tileIndex])
           ? currentTrackTiles[g.tileIndex].type : null;
         ghostNoteTileTime(car, now - g.tileStart, verlassen);
+        // UND DERSELBE MESSWERT IN WEG. Dieselbe Gelegenheit, derselbe Typ, dieselbe
+        // Schwelle von zwei Messungen - nur dass diese Groesse nicht am Gas haengt.
+        // Begruendung bei ghostNoteTileWeg().
+        ghostNoteTileWeg(car, g.kachelWeg || 0, verlassen);
         // Die letzten Abstaende getrennt mitfuehren: ghostNoteTileTime mittelt fuer den
         // Vorausblick, hier wird die RATE gebraucht, und ein Mittel verschleift genau den
         // Ausschlag, an dem ein Abflug zu erkennen ist.
@@ -31291,6 +31433,10 @@
         if (g.tileRing.length > GHOST_ZAEHLER_FENSTER) g.tileRing.shift();
       }
       g.tileStart = now;
+      // Der Wegzaehler faengt mit der neuen Kachel neu an. NICHT auf den Restweg gesetzt:
+      // der Zaehlersprung IST die Kachelgrenze, und ein Rest waere die Behauptung, man
+      // wuesste, wieviel davon noch zur alten gehoerte.
+      g.kachelWeg = 0;
       g.tilesTotal = (g.tilesTotal || 0) + 1;
       g.lastCount = car.tileCount;
       g.tileIndex = g.tileIndex === null ? 0 : g.tileIndex + 1;
@@ -35915,6 +36061,12 @@
     simAufloesung(takte) {
       if (!simAn()) return null;
       const kachel = [], luecke = [];
+      // Und der WAHRE Abstand daneben, fuer dieselben Abtastungen. Er beantwortet die
+      // Frage, die "wieviele verschiedene Werte" offen laesst: FOLGT der gemeldete Abstand
+      // dem wirklichen, oder hat er nur viele Werte? Seit die Kachelphase aus dem Weg kommt
+      // (ghostTilePhaseWeg) hat er Zwischenwerte - ohne diesen Vergleich waere nicht zu
+      // sagen, ob sie etwas bedeuten.
+      let abwSumme = 0, abwN = 0;
       const n = takte || 1200;
       for (let k = 0; k < n; k++) {
         // simSchritt() gibt NICHTS zurueck - der erste Anlauf stand hier auf
@@ -35928,16 +36080,189 @@
         if (!z) break;
         for (const a of (z.abstand || [])) {
           if (a.wahr === null || a.wahr === undefined || a.wahr >= 1.0) continue;
-          if (a.gemeldet !== null) kachel.push(a.gemeldet);
+          if (a.gemeldet !== null) {
+            kachel.push(a.gemeldet);
+            abwSumme += Math.abs(a.gemeldet - a.wahr);
+            abwN++;
+          }
           if (a.luecke !== null) luecke.push(a.luecke);
         }
       }
       return { proben: kachel.length,
                kachelWerte: [...new Set(kachel)].sort((x, y) => x - y),
+               kachelVerschieden: new Set(kachel).size,
+               // Mittlere Abweichung des GEMELDETEN vom WAHREN Abstand, in Kacheln, fuer
+               // die nahen Abtastungen.
+               kachelAbweichung: abwN ? +(abwSumme / abwN).toFixed(3) : null,
                lueckeVerschieden: new Set(luecke).size,
                lueckeMessbar: luecke.length,
                lueckeMin: luecke.length ? Math.min.apply(null, luecke) : null,
                lueckeMax: luecke.length ? Math.max.apply(null, luecke) : null };
+    },
+
+    // ====================================================================================
+    // DIE KACHELPHASE GEGEN DIE WAHRHEIT
+    // ====================================================================================
+    //
+    // Die Phase innerhalb einer Kachel ist eine ERSCHLIESSUNG: das Auto meldet nur, DASS
+    // der Kachelzaehler gewechselt hat. Sie indexiert aber die Ideallinie und das
+    // Bremsprofil, ist also die Groesse, auf der das ganze Fahrmodell steht.
+    //
+    // IN DER SIMULATION IST DIE WAHRHEIT BEKANNT: simOrt() rechnet die Phase aus der
+    // wirklichen Bogenlaenge (90b-sim.js), und simZustand() gibt sie als autos[].phase
+    // heraus. Diese Sonde stellt beide Schaetzer daneben - die Uhr
+    // (ghostTilePhaseZeit) und den Weg (ghostTilePhaseWeg) - und zwar im SELBEN Lauf,
+    // damit der Vergleich nicht zwei verschiedene Rennen vergleicht.
+    //
+    // Ausgegeben werden nicht nur mittlere Fehler, sondern die zwei RAENDER, weil dort die
+    // Fehler sitzen, die man sieht:
+    //
+    //   klebt      Anteil der Abtastungen mit Schaetzung >= 0,995. Die Zeitphase deckelt
+    //              bei 1 und bleibt dort stehen; gemessen waren das 3 bis 10 Prozent jeder
+    //              Kachel, und in dieser Zeit friert der Linienversatz ein.
+    //   kurz       Anteil der Kacheln, auf denen die Schaetzung NIE ueber 0,95 kam. Das ist
+    //              der NEUE Fehler, den der Weg einfuehren kann: fehlt der Linie das letzte
+    //              Stueck jeder Kachel, springt der Versatz an der Naht - genau das, was der
+    //              Selbsttest "Ideallinie stetig" einmal mit 2,48 Eigenschritten gefangen
+    //              hat.
+    //
+    // `kurz` wird ausdruecklich als HOECHSTE auf einer Kachel erreichte Phase gemessen und
+    // nicht als Wert im Takt des Wechsels. Der erste Anlauf tat Letzteres und verglich
+    // damit Ungleiches: die Simulation setzt car.tileAt im Bewegungsteil DESSELBEN Takts
+    // zurueck (die Zeitphase steht dort also schon auf 0), waehrend der Ghost seinen
+    // Wegzaehler erst im naechsten Takt zurueckstellt (die Wegphase steht noch auf 1).
+    // Gemessen ergab das kurz = 1,00 gegen 0,51 - eine Zahl, die nur die Reihenfolge
+    // innerhalb von simSchritt() beschreibt. Die Hoechstphase je Kachel ist von dieser
+    // Reihenfolge unabhaengig.
+    //
+    // WAS DIESE MESSUNG NICHT ZEIGT, und das gehoert dazu: in der Simulation reiten
+    // Schaetzung und Wahrheit auf DEMSELBEN Temposignal - der Motor, der den Weg liefert,
+    // treibt auch a.s. Der Vergleich zeigt also Konvergenz und nicht Teppichtreue. Wer
+    // Letztere prueft, verstellt zusaetzlich das Verhaeltnis von Modell zu Wirklichkeit;
+    // dafuer gibt es ghostLinieTrace mit `kurvenFaktor`.
+    //
+    // ---- ZWEI FALLEN, IN DIE DIESE SONDE BEIM ERSTEN ANLAUF BEIDE GETRETEN IST -------
+    //
+    // 1. DIE UHR. ghostTilePhaseZeit() rechnet Date.now() - car.tileAt, und die
+    //    Simulation setzt car.tileAt auf IHRE Uhr (st.uhr), die 100 Mal schneller laeuft
+    //    als die Wanduhr. Wer die Schaetzer NACH simSchritt() liest, vergleicht also eine
+    //    Wandzeit mit einem Zeitstempel weit in der Zukunft: die Differenz ist negativ, der
+    //    Deckel macht 0 daraus, und die Zeitphase meldete glatte 0 mit einem mittleren
+    //    Fehler von -0,49 - also genau den Mittelwert einer gleichverteilten Phase. Die
+    //    Auswertung steht deshalb in derselben Uhrfaelschung wie die Ticks, synchron
+    //    eingeklammert und im finally zurueckgestellt.
+    //
+    // 2. DER TAKT AM KACHELRAND. simSchritt() ruft erst ghostTick(), bewegt DANN die Autos
+    //    und setzt erst danach den Kachelzaehler. Im Takt eines Kachelwechsels liegt das
+    //    Auto fuer die Simulation also schon auf der neuen Kachel (wahre Phase ~0,02),
+    //    waehrend der Ghost seinen Wechsel erst im naechsten Takt sieht und noch auf der
+    //    alten schaetzt (~0,98). Ein Fehlervergleich in diesem Takt misst die Reihenfolge
+    //    innerhalb von simSchritt() und nicht die Schaetzung - er waere ein Fehler von
+    //    fast 1,0, und zwar bei JEDEM Kachelwechsel. Gezaehlt wird deshalb nur, wo Ghost
+    //    und Simulation dieselbe Kachel meinen (g.tileIndex === a.kachel); die Zahl der
+    //    uebersprungenen Takte geht als `randTakte` mit hinaus, damit niemand glaubt, hier
+    //    werde etwas versteckt.
+    async phaseWahrheitProbe(opt) {
+      if (typeof simStart !== 'function' || typeof simZustand !== 'function') return null;
+      const o = opt || {};
+      const takte = o.takte || 1600;
+      const autos = Math.max(2, Math.min(6, o.autos || 4));
+      const stell = (id, v) => {
+        const e = $(id);
+        if (!e) return;
+        if (e.type === 'checkbox') { e.checked = !!v; } else { e.value = String(v); }
+        e.dispatchEvent(new Event('change', { bubbles: true }));
+      };
+      const merkFeld = { g: ($('sim-ghosts') || {}).value, l: ($('sim-laps') || {}).value,
+                         f: !!($('sim-fast') || {}).checked };
+      const merkCfg = Object.assign({}, ghostCfg);
+      // Je Schaetzer: Fehlersumme, Betragssumme, Zahl der Abtastungen, Klebeanteil und die
+      // Verteilung der je Kachel erreichten Hoechstphase.
+      const bau = () => ({ n: 0, summe: 0, betrag: 0, klebt: 0, kacheln: 0, kurz: 0,
+                           hoechstSumme: 0 });
+      const zeit = bau(), weg = bau();
+      let ohneWeg = 0, randTakte = 0;
+      try {
+        stell('sim-ghosts', String(autos));
+        stell('sim-laps', '10');
+        stell('sim-fast', false);
+        ghostCfg.pitAn = false;           // ein Boxenstopp ist keine Kachelfahrt
+        simStart();
+        if (!simAn()) return null;
+        // Je Auto: der Zaehlerstand, den der GHOST zuletzt gesehen hat (an ihm haengt sein
+        // eigener Kachelwechsel), und die bisher hoechste Schaetzung auf dieser Kachel.
+        const vorCount = [], hoch = [];
+        const kachelAbschluss = (i) => {
+          const h = hoch[i];
+          if (!h) return;
+          if (h.pz !== null) {
+            zeit.kacheln++; zeit.hoechstSumme += h.pz; if (h.pz < 0.95) zeit.kurz++;
+          }
+          if (h.pw !== null) {
+            weg.kacheln++; weg.hoechstSumme += h.pw; if (h.pw < 0.95) weg.kurz++;
+          }
+          hoch[i] = null;
+        };
+        for (let k = 0; k < takte; k++) {
+          simSchritt(SIM_TAKT_MS);
+          if (!simAn()) break;
+          const z = simZustand();
+          if (!z) break;
+          // DIE UHR DER SIMULATION, fuer die Dauer der Auswertung - siehe Falle 1 oben.
+          const echtNow = Date.now;
+          Date.now = () => simState.uhr;
+          try {
+            z.autos.forEach((a, i) => {
+              const car = (simState && simState.autos[i]) ? simState.autos[i].car : null;
+              if (!car || !car.ghost) return;
+              const g = car.ghost;
+              // Hat der GHOST seinen Kachelwechsel bemerkt? Dann ist die vorige Kachel
+              // abgeschlossen und ihre Hoechstphase steht fest.
+              if (vorCount[i] !== undefined && vorCount[i] !== g.lastCount) kachelAbschluss(i);
+              vorCount[i] = g.lastCount;
+              const pz = ghostTilePhaseZeit(car);
+              const pw = ghostTilePhaseWeg(car);
+              if (pw === null) ohneWeg++;
+              if (!hoch[i]) hoch[i] = { pz: null, pw: null };
+              if (pz !== null && pz !== undefined) {
+                hoch[i].pz = Math.max(hoch[i].pz === null ? -1 : hoch[i].pz, pz);
+              }
+              if (pw !== null && pw !== undefined) {
+                hoch[i].pw = Math.max(hoch[i].pw === null ? -1 : hoch[i].pw, pw);
+              }
+              // Der Fehlervergleich nur, wo beide dieselbe Kachel meinen - siehe Falle 2.
+              if (g.tileIndex !== a.kachel) { randTakte++; return; }
+              const wahr = a.phase;
+              const nimm = (s, p) => {
+                if (p === null || p === undefined) return;
+                s.n++; s.summe += (p - wahr); s.betrag += Math.abs(p - wahr);
+                if (p >= 0.995) s.klebt++;
+              };
+              nimm(zeit, pz);
+              nimm(weg, pw);
+            });
+          } finally {
+            Date.now = echtNow;
+          }
+        }
+      } finally {
+        Object.assign(ghostCfg, merkCfg);
+        if (simAn()) simStop('Phasenpruefung');
+        stell('sim-ghosts', merkFeld.g);
+        stell('sim-laps', merkFeld.l);
+        stell('sim-fast', merkFeld.f);
+      }
+      const fertig = (s) => (s.n ? {
+        proben: s.n,
+        mittelFehler: +(s.summe / s.n).toFixed(4),     // mit Vorzeichen: laeuft sie vor?
+        mittelBetrag: +(s.betrag / s.n).toFixed(4),
+        klebt: +(s.klebt / s.n).toFixed(4),
+        kacheln: s.kacheln,
+        hoechstMittel: s.kacheln ? +(s.hoechstSumme / s.kacheln).toFixed(4) : null,
+        kurz: s.kacheln ? +(s.kurz / s.kacheln).toFixed(4) : null,
+      } : null);
+      return { zeit: fertig(zeit), weg: fertig(weg),
+               ohneWegProben: ohneWeg, randTakte };
     },
 
     // ====================================================================================
@@ -44167,10 +44492,28 @@
         if (a.zeiten.length !== a.laps) {
           schlecht.push(a.name + ': ' + a.laps + ' Runden, aber ' + a.zeiten.length + ' Zeiten');
         }
-        // STEHENDER START: die erste Runde muss die langsamste sein. Waere sie es nicht,
-        // liefe die Uhr nicht mit dem Weg - der haeufigste Fehler bei so einer Schleife.
-        if (a.zeiten.length >= 2 && !(a.zeiten[0] > a.zeiten[1])) {
-          schlecht.push(a.name + ': erste Runde nicht die langsamste ('
+        // STEHENDER START: die erste Runde darf nicht SCHNELLER sein als die zweite. Waere
+        // sie es, liefe die Uhr nicht mit dem Weg - der haeufigste Fehler bei so einer
+        // Schleife.
+        //
+        // ---- GLEICHSTAND IST ERLAUBT, und das ist eine Berichtigung ------------------
+        //
+        // Hier stand `>`, also STRENG langsamer. Das ist mit der Kachelphase aus dem Weg
+        // gefallen, und zwar an einem Gleichstand: gemessen 25470/25470/23580 ms. Zwei
+        // Gruende treffen zusammen, und keiner davon ist der Fehler, den diese Zeile sucht:
+        //
+        //   1. Die Uhr der Simulation laeuft in festen 45-ms-Schritten. Rundenzeiten sind
+        //      damit gerastert, und zwei Runden koennen auf denselben Schrittzaehler fallen.
+        //   2. Die erste Runde wird noch mit der ZEITschaetzung gefahren - die Weg-EMA
+        //      braucht zwei Messungen je Kacheltyp (GHOST_DAUER_MIN_N) und greift erst ab
+        //      Runde zwei. Der Unterschied zwischen Runde eins und zwei ist dadurch kleiner
+        //      geworden, und genau das hat den Gleichstand moeglich gemacht.
+        //
+        // Der Wachhund bleibt scharf: eine erste Runde, die WIRKLICH schneller ist, faellt
+        // weiter durch, und Uhr (90000 ms), Weg (s > 0) und die Gleichheit von Runden und
+        // Zeiten werden unabhaengig davon geprueft.
+        if (a.zeiten.length >= 2 && !(a.zeiten[0] >= a.zeiten[1])) {
+          schlecht.push(a.name + ': erste Runde schneller als die zweite ('
                         + a.zeiten.map((t) => Math.round(t)).join('/') + ')');
         }
         // Das Tempo im Bereich des Modells: der Ghost-Regler steht auf einem Bruchteil der
@@ -47572,7 +47915,28 @@
   // Reglern und schwankt je Lauf um dreissig Prozent, die Aufloesung ist eine Eigenschaft
   // der Groesse. Sie ist der Grund, warum das eine funktioniert und das andere nicht - und
   // wenn sie verlorengeht, faellt der Abstandhalter still auf seinen alten Zustand zurueck.
-  stAdd('Abstand: die Zeitluecke hat Aufloesung, der Kachelabstand nicht', async () => {
+  //
+  // ====================================================================================
+  // UND DANN IST DER STOLPERDRAHT AUSGELOEST, GENAU WIE BESTELLT
+  // ====================================================================================
+  //
+  // Hier stand: "Der Kachelabstand hat bei nahen Autos genau einen Wert. Faellt diese Zeile
+  // eines Tages, ist der Kachelabstand besser geworden - dann gehoert die Begruendung oben
+  // ueberprueft, und deshalb ist es eine Pruefung und keine Notiz."
+  //
+  // Sie ist gefallen, und der Grund ist die Kachelphase aus dem WEG (ghostTilePhaseWeg in
+  // 90-ghosts.js). Der gemeldete Abstand ist Kachelzaehlerdifferenz PLUS Phasendifferenz;
+  // solange die Phase aus der Uhr kam, hatten zwei Autos mit gleichem Tempo dieselbe Phase,
+  // und sie fiel aus der Differenz heraus - uebrig blieb eine ganze Zahl. Die Wegphase
+  // haengt am eigenen aufintegrierten Weg jedes Autos, also bleibt die Differenz stehen.
+  //
+  // WAS JETZT GEPRUEFT WIRD, ist deshalb eine andere und schaerfere Frage: der gemeldete
+  // Abstand hat nicht nur viele Werte, er FOLGT dem wahren. Viele Werte allein waeren auch
+  // Rauschen; die mittlere Abweichung sagt, ob sie etwas bedeuten.
+  //
+  // Die Zeitluecke bleibt die Groesse des Abstandhalters und wird weiter geprueft. Ihr
+  // Vorsprung ist kleiner geworden, und das gehoert in die Doku und nicht wegretuschiert.
+  stAdd('Abstand: Zeitluecke und Kachelabstand haben Aufloesung', async () => {
     if (!window.OMEGA_TEST || !OMEGA_TEST.simAufloesung) {
       return { skip: true, mass: 'simAufloesung nicht vorhanden' };
     }
@@ -47612,12 +47976,14 @@
     }
     if (!r || !r.proben) return { skip: true, mass: 'keine nahen Proben im Lauf' };
     const fehler = [];
-    // 1. DER BEFUND SELBST: der Kachelabstand hat bei nahen Autos genau einen Wert. Faellt
-    //    diese Zeile eines Tages, ist der Kachelabstand besser geworden - dann gehoert die
-    //    Begruendung oben ueberprueft, und deshalb ist es eine Pruefung und keine Notiz.
-    if (r.kachelWerte.length > 2) {
-      fehler.push('der Kachelabstand hat ' + r.kachelWerte.length
-                  + ' Werte (' + r.kachelWerte.join(',') + ') - die Begruendung oben pruefen');
+    // 1. DER KACHELABSTAND FOLGT DEM WAHREN. Eine halbe Kachel (21 cm) ist die Huerde: mit
+    //    der alten Zeitphase meldete er in diesem Bereich immer 1,00, die Abweichung lag
+    //    also bei rund einer halben Kachel im Mittel und konnte nie besser werden.
+    if (r.kachelAbweichung === null) {
+      fehler.push('keine Abweichung messbar');
+    } else if (!(r.kachelAbweichung < 0.5)) {
+      fehler.push('der gemeldete Abstand weicht im Mittel um ' + r.kachelAbweichung
+                  + ' Kacheln vom wahren ab - er folgt ihm nicht');
     }
     // 2. UND DIE ZEITLUECKE HAT VIELE. Zehn verschiedene Werte sind eine niedrige Huerde und
     //    absichtlich so: gemessen waren es 21, und der Test soll nicht bei jedem
@@ -47633,10 +47999,71 @@
       fehler.push('nur ' + (anteil * 100).toFixed(0) + ' % der nahen Proben messbar');
     }
     return { ok: !fehler.length,
-             mass: r.proben + ' nahe Proben | Kachelabstand: ' + r.kachelWerte.join(',')
+             mass: r.proben + ' nahe Proben | Kachelabstand: ' + r.kachelVerschieden
+                 + ' Werte, im Mittel ' + r.kachelAbweichung + ' Kacheln neben dem wahren'
                  + ' | Zeitluecke: ' + r.lueckeVerschieden + ' Werte von '
                  + r.lueckeMin + ' bis ' + r.lueckeMax + ' s, '
                  + (anteil * 100).toFixed(0) + ' % messbar'
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
+  // ---- Die Kachelphase: der Weg schaetzt besser als die Uhr ----
+  //
+  // Die Phase innerhalb einer Kachel indexiert Ideallinie und Bremsprofil, ist also die
+  // Groesse, auf der das Fahrmodell steht - und sie ist eine Erschliessung: das Auto meldet
+  // nur, DASS der Kachelzaehler gewechselt hat. Seit v0.6.37 kommt sie aus dem
+  // aufintegrierten WEG statt aus der Uhr (ghostTilePhaseWeg in 90-ghosts.js), mit der
+  // Zeitschaetzung als Rueckfall, bis ein Kacheltyp zweimal gemessen ist.
+  //
+  // GEMESSEN gegen die wahre Phase der Simulation (die aus der wirklichen Bogenlaenge
+  // kommt), vier Autos, 1600 Takte, beide Schaetzer im selben Lauf:
+  //
+  //     Kennzahl                        Uhr      Weg
+  //     mittlerer Betragsfehler        0,097    0,073     -25 %
+  //     klebt bei >= 0,995             6,2 %    0,0 %     der Linienversatz friert nicht mehr
+  //     Hoechstphase je Kachel         0,861    0,949     das letzte Stueck wird indexiert
+  //     Kacheln nie ueber 0,95         63,0 %   48,0 %
+  //
+  // Der Weg ist in allen vier Zahlen besser. Die Pruefung fordert genau das, und nicht die
+  // Zahlen selbst: sie haengen an Strecke, Autozahl und Laufzeit.
+  //
+  // WAS DER WEG NICHT BEHEBT, und das steht hier, damit es niemand sucht: sein
+  // Vorzeichenfehler ist GROESSER (-0,073 gegen -0,029), er laeuft also systematisch etwas
+  // hinterher. Das ist die Meldeverzoegerung des Kachelzaehlers, die beide Schaetzer haben -
+  // die Uhr versteckt sie nur, weil ihr Deckel bei 1 die Schaetzung am Kachelende nach oben
+  // druckt. Ein ehrliches Hinterherlaufen ist einem versteckten vorzuziehen, vor allem weil
+  // genau dieses Kleben den Linienversatz einfror.
+  stAdd('Kachelphase: der Weg schaetzt besser als die Uhr', async () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.phaseWahrheitProbe) {
+      return { skip: true, mass: 'phaseWahrheitProbe nicht vorhanden' };
+    }
+    const r = await OMEGA_TEST.phaseWahrheitProbe({ takte: 1200, autos: 4 });
+    if (!r || !r.zeit || !r.weg) return { skip: true, mass: 'kein Lauf - keine Strecke?' };
+    const fehler = [];
+    if (!(r.weg.mittelBetrag < r.zeit.mittelBetrag)) {
+      fehler.push('Betragsfehler Weg ' + r.weg.mittelBetrag
+                  + ' nicht besser als Uhr ' + r.zeit.mittelBetrag);
+    }
+    if (!(r.weg.klebt <= r.zeit.klebt)) {
+      fehler.push('Weg klebt ' + r.weg.klebt + ', Uhr nur ' + r.zeit.klebt);
+    }
+    if (!(r.weg.hoechstMittel > r.zeit.hoechstMittel)) {
+      fehler.push('Hoechstphase Weg ' + r.weg.hoechstMittel
+                  + ' nicht besser als Uhr ' + r.zeit.hoechstMittel);
+    }
+    // Und die Wegschaetzung muss ueberhaupt gegriffen haben: ohne Messungen je Kacheltyp
+    // faellt sie auf die Uhr zurueck, und dann vergleicht dieser Test die Uhr mit sich
+    // selbst - gruen, aber ohne Aussage.
+    if (!(r.weg.proben > 0.5 * r.zeit.proben)) {
+      fehler.push('die Wegschaetzung lag nur in ' + r.weg.proben + ' von '
+                  + r.zeit.proben + ' Abtastungen vor');
+    }
+    return { ok: !fehler.length,
+             mass: 'Betrag ' + r.zeit.mittelBetrag + ' -> ' + r.weg.mittelBetrag
+                 + ' | klebt ' + r.zeit.klebt + ' -> ' + r.weg.klebt
+                 + ' | Hoechstphase ' + r.zeit.hoechstMittel + ' -> ' + r.weg.hoechstMittel
+                 + ' | kurz ' + r.zeit.kurz + ' -> ' + r.weg.kurz
+                 + ' | ' + r.weg.proben + ' von ' + r.zeit.proben + ' Abtastungen mit Weg'
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 

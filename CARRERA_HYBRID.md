@@ -1084,3 +1084,59 @@ Gemessen, Anteil der Takte am Phasendeckel in Kurven:
 
 Und die Kurvenspanne des gesendeten Bytes steigt dabei von 55 auf **58–61 von 127** — der
 Ausgang ist zurück.
+
+### Und ab v0.6.37 kommt die Phase aus dem Weg, nicht aus der Uhr
+
+Die Dauer je Typ hat den Deckel entschärft, aber die Größe selbst bleibt falsch gewählt: eine
+**Dauer** vermischt Länge und Tempo. Beim Anbremsen dauert die Kachel länger als ihr Mittel,
+die Phase läuft also voraus — und zwar genau am Kurveneingang, wo sie Ideallinie *und*
+Bremsprofil indexiert. Der Ghost hält sich für weiter am Scheitel, als er ist.
+
+Der **Weg** zwischen zwei Zählersprüngen hat diesen Fehler nicht: er ist eine geometrische
+Konstante und hängt nicht am Gas. Ein langsam gefahrenes Stück dauert länger, ist aber nicht
+länger. Also wird jetzt das Tempo des Ghosts über die Kachel aufintegriert und durch einen
+gleitenden Mittelwert des **tatsächlich** gefahrenen Wegs je Kacheltyp geteilt.
+
+Das ist **selbstkalibrierend**, und das ist der Punkt: das Tempo eines Ghosts ist kein
+Messwert, sondern der Zustand seines eigenen gerechneten Motors. Jeder konstante Skalenfehler
+darin kürzt sich in `Weg ÷ erwarteter Weg` heraus, ebenso die bis zu einen Takt (45 ms) späte
+Sprungerkennung — sie steckt in Zähler und Nenner.
+
+Gemessen gegen die **wahre** Phase der Rennsimulation (die aus der wirklichen Bogenlänge
+kommt), vier Autos, 1600 Takte, beide Schätzer im selben Lauf:
+
+| Kennzahl | Uhr | Weg | |
+|---|---|---|---|
+| mittlerer Betragsfehler | 0,097 | **0,073** | −25 % |
+| klebt bei ≥ 0,995 | 6,2 % | **0,0 %** | der Linienversatz friert nicht mehr ein |
+| Höchstphase je Kachel | 0,861 | **0,949** | das letzte Stück wird indexiert |
+| Kacheln nie über 0,95 | 63 % | **48 %** | |
+
+**Was der Weg nicht behebt:** sein Vorzeichenfehler ist größer (−0,073 gegen −0,029), er läuft
+also systematisch etwas hinterher. Das ist die Meldeverzögerung des Kachelzählers, die beide
+Schätzer haben — die Uhr versteckt sie nur, weil ihr Deckel bei 1 die Schätzung am Kachelende
+nach oben drückt. Ein ehrliches Hinterherlaufen ist einem versteckten vorzuziehen, vor allem
+weil genau dieses Kleben den Linienversatz einfror.
+
+Das **Fahrerauto** bleibt bei der Uhr, ohne Sonderfall: sein `ghost`-Satz ist `nurOrt` und hat
+keinen Motor, also gibt es dort kein Tempo zu integrieren, und der Rückfall greift von selbst.
+
+### Ein Nebenbefund, der eine alte Begründung umdreht
+
+Der **gemeldete Kachelabstand** hatte unterhalb einer Kachel keine Auflösung: in 1517 nahen
+Stichproben meldete er jedes Mal genau 1,00. Grund war die Phase — zwei Autos mit gleichem
+Tempo hatten dieselbe, und sie fiel aus der Differenz heraus. Genau deshalb rechnet der
+Abstandhalter seit v0.5.47 mit der **Zeitlücke** aus Kachelstempeln, und genau deshalb steht
+`SPICE_GAP_MIN` auf 1,2 Kacheln: eine Schwelle von 0,7 konnte nie auslösen.
+
+Mit der Wegphase hängt die Phase am eigenen aufintegrierten Weg jedes Autos, also bleibt die
+Differenz stehen. Gemessen, nahe Abtastungen mit wahrem Abstand unter einer Kachel:
+
+| | vorher | nachher |
+|---|---|---|
+| verschiedene gemeldete Werte | 1 (immer 1,00) | **490** |
+| mittlere Abweichung vom wahren Abstand | ~0,5 Kacheln (21 cm) | **0,07 Kacheln (3 cm)** |
+
+Der Kachelabstand ist damit brauchbar geworden. Die Zeitlücke bleibt die Größe, mit der der
+Abstandhalter arbeitet — geändert wird daran hier nichts, aber die Begründung für `1,2` ist
+nicht mehr die Auflösung, sondern nur noch die gemessene Reihe dahinter.

@@ -4958,6 +4958,25 @@
         werden <em>sollte</em>; ob es geschieht, wei&szlig; niemand.
       </p>
       <p class="muted">
+        <strong>Welche Stelle der Linie gilt gerade?</strong> Das Auto meldet nur, <em>dass</em>
+        es eine neue Kachel betreten hat &ndash; nicht, wo darauf. Die Phase darin kam deshalb
+        aus der verstrichenen <em>Zeit</em>, geteilt durch die gemessene mittlere Dauer dieses
+        Kacheltyps. Eine Dauer vermischt aber L&auml;nge und Tempo: beim Anbremsen dauert die
+        Kachel l&auml;nger als ihr Mittel, die Phase l&auml;uft voraus &ndash; genau am
+        Kurveneingang, wo sie Ideallinie und Bremsprofil indexiert.
+      </p>
+      <p class="muted">
+        Jetzt kommt sie aus dem <strong>Weg</strong>: das Tempo wird &uuml;ber die Kachel
+        aufintegriert und durch den gleitenden Mittelwert des wirklich gefahrenen Wegs dieses
+        Kacheltyps geteilt. Der Weg zwischen zwei Z&auml;hlerspr&uuml;ngen ist eine geometrische
+        Konstante und h&auml;ngt nicht am Gas. Gegen die wahre Phase der Rennsimulation
+        gemessen: mittlerer Betragsfehler <b>0,097 &rarr; 0,073</b>, Anteil der Takte am
+        Phasendeckel <b>6,2 &rarr; 0&nbsp;Prozent</b>, je Kachel erreichte H&ouml;chstphase
+        <b>0,86 &rarr; 0,95</b>. Solange ein Kacheltyp noch keine zwei Messungen hat, gilt
+        weiter die Uhr; das Fahrerauto bleibt dauerhaft bei ihr, weil es keinen gerechneten
+        Motor hat.
+      </p>
+      <p class="muted">
         Der <strong>Streckencode</strong> (z.&nbsp;B. <code>SG2R3G2R3B@90</code>) ist ein Buchstabe
         je Element mit Wiederholungszahl, dazu die Ausrichtung: S&nbsp;Start, G&nbsp;Gerade,
         R&nbsp;rechts, L&nbsp;links, B&nbsp;Boxengasse. Absichtlich kein Base64: einen Code,
@@ -8233,7 +8252,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.6.36</span></span>
+    <span class="foot-ver">v<span id="app-version">0.6.37</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine

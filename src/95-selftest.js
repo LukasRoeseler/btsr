@@ -3591,10 +3591,28 @@
         if (a.zeiten.length !== a.laps) {
           schlecht.push(a.name + ': ' + a.laps + ' Runden, aber ' + a.zeiten.length + ' Zeiten');
         }
-        // STEHENDER START: die erste Runde muss die langsamste sein. Waere sie es nicht,
-        // liefe die Uhr nicht mit dem Weg - der haeufigste Fehler bei so einer Schleife.
-        if (a.zeiten.length >= 2 && !(a.zeiten[0] > a.zeiten[1])) {
-          schlecht.push(a.name + ': erste Runde nicht die langsamste ('
+        // STEHENDER START: die erste Runde darf nicht SCHNELLER sein als die zweite. Waere
+        // sie es, liefe die Uhr nicht mit dem Weg - der haeufigste Fehler bei so einer
+        // Schleife.
+        //
+        // ---- GLEICHSTAND IST ERLAUBT, und das ist eine Berichtigung ------------------
+        //
+        // Hier stand `>`, also STRENG langsamer. Das ist mit der Kachelphase aus dem Weg
+        // gefallen, und zwar an einem Gleichstand: gemessen 25470/25470/23580 ms. Zwei
+        // Gruende treffen zusammen, und keiner davon ist der Fehler, den diese Zeile sucht:
+        //
+        //   1. Die Uhr der Simulation laeuft in festen 45-ms-Schritten. Rundenzeiten sind
+        //      damit gerastert, und zwei Runden koennen auf denselben Schrittzaehler fallen.
+        //   2. Die erste Runde wird noch mit der ZEITschaetzung gefahren - die Weg-EMA
+        //      braucht zwei Messungen je Kacheltyp (GHOST_DAUER_MIN_N) und greift erst ab
+        //      Runde zwei. Der Unterschied zwischen Runde eins und zwei ist dadurch kleiner
+        //      geworden, und genau das hat den Gleichstand moeglich gemacht.
+        //
+        // Der Wachhund bleibt scharf: eine erste Runde, die WIRKLICH schneller ist, faellt
+        // weiter durch, und Uhr (90000 ms), Weg (s > 0) und die Gleichheit von Runden und
+        // Zeiten werden unabhaengig davon geprueft.
+        if (a.zeiten.length >= 2 && !(a.zeiten[0] >= a.zeiten[1])) {
+          schlecht.push(a.name + ': erste Runde schneller als die zweite ('
                         + a.zeiten.map((t) => Math.round(t)).join('/') + ')');
         }
         // Das Tempo im Bereich des Modells: der Ghost-Regler steht auf einem Bruchteil der
@@ -6996,7 +7014,28 @@
   // Reglern und schwankt je Lauf um dreissig Prozent, die Aufloesung ist eine Eigenschaft
   // der Groesse. Sie ist der Grund, warum das eine funktioniert und das andere nicht - und
   // wenn sie verlorengeht, faellt der Abstandhalter still auf seinen alten Zustand zurueck.
-  stAdd('Abstand: die Zeitluecke hat Aufloesung, der Kachelabstand nicht', async () => {
+  //
+  // ====================================================================================
+  // UND DANN IST DER STOLPERDRAHT AUSGELOEST, GENAU WIE BESTELLT
+  // ====================================================================================
+  //
+  // Hier stand: "Der Kachelabstand hat bei nahen Autos genau einen Wert. Faellt diese Zeile
+  // eines Tages, ist der Kachelabstand besser geworden - dann gehoert die Begruendung oben
+  // ueberprueft, und deshalb ist es eine Pruefung und keine Notiz."
+  //
+  // Sie ist gefallen, und der Grund ist die Kachelphase aus dem WEG (ghostTilePhaseWeg in
+  // 90-ghosts.js). Der gemeldete Abstand ist Kachelzaehlerdifferenz PLUS Phasendifferenz;
+  // solange die Phase aus der Uhr kam, hatten zwei Autos mit gleichem Tempo dieselbe Phase,
+  // und sie fiel aus der Differenz heraus - uebrig blieb eine ganze Zahl. Die Wegphase
+  // haengt am eigenen aufintegrierten Weg jedes Autos, also bleibt die Differenz stehen.
+  //
+  // WAS JETZT GEPRUEFT WIRD, ist deshalb eine andere und schaerfere Frage: der gemeldete
+  // Abstand hat nicht nur viele Werte, er FOLGT dem wahren. Viele Werte allein waeren auch
+  // Rauschen; die mittlere Abweichung sagt, ob sie etwas bedeuten.
+  //
+  // Die Zeitluecke bleibt die Groesse des Abstandhalters und wird weiter geprueft. Ihr
+  // Vorsprung ist kleiner geworden, und das gehoert in die Doku und nicht wegretuschiert.
+  stAdd('Abstand: Zeitluecke und Kachelabstand haben Aufloesung', async () => {
     if (!window.OMEGA_TEST || !OMEGA_TEST.simAufloesung) {
       return { skip: true, mass: 'simAufloesung nicht vorhanden' };
     }
@@ -7036,12 +7075,14 @@
     }
     if (!r || !r.proben) return { skip: true, mass: 'keine nahen Proben im Lauf' };
     const fehler = [];
-    // 1. DER BEFUND SELBST: der Kachelabstand hat bei nahen Autos genau einen Wert. Faellt
-    //    diese Zeile eines Tages, ist der Kachelabstand besser geworden - dann gehoert die
-    //    Begruendung oben ueberprueft, und deshalb ist es eine Pruefung und keine Notiz.
-    if (r.kachelWerte.length > 2) {
-      fehler.push('der Kachelabstand hat ' + r.kachelWerte.length
-                  + ' Werte (' + r.kachelWerte.join(',') + ') - die Begruendung oben pruefen');
+    // 1. DER KACHELABSTAND FOLGT DEM WAHREN. Eine halbe Kachel (21 cm) ist die Huerde: mit
+    //    der alten Zeitphase meldete er in diesem Bereich immer 1,00, die Abweichung lag
+    //    also bei rund einer halben Kachel im Mittel und konnte nie besser werden.
+    if (r.kachelAbweichung === null) {
+      fehler.push('keine Abweichung messbar');
+    } else if (!(r.kachelAbweichung < 0.5)) {
+      fehler.push('der gemeldete Abstand weicht im Mittel um ' + r.kachelAbweichung
+                  + ' Kacheln vom wahren ab - er folgt ihm nicht');
     }
     // 2. UND DIE ZEITLUECKE HAT VIELE. Zehn verschiedene Werte sind eine niedrige Huerde und
     //    absichtlich so: gemessen waren es 21, und der Test soll nicht bei jedem
@@ -7057,10 +7098,71 @@
       fehler.push('nur ' + (anteil * 100).toFixed(0) + ' % der nahen Proben messbar');
     }
     return { ok: !fehler.length,
-             mass: r.proben + ' nahe Proben | Kachelabstand: ' + r.kachelWerte.join(',')
+             mass: r.proben + ' nahe Proben | Kachelabstand: ' + r.kachelVerschieden
+                 + ' Werte, im Mittel ' + r.kachelAbweichung + ' Kacheln neben dem wahren'
                  + ' | Zeitluecke: ' + r.lueckeVerschieden + ' Werte von '
                  + r.lueckeMin + ' bis ' + r.lueckeMax + ' s, '
                  + (anteil * 100).toFixed(0) + ' % messbar'
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
+  // ---- Die Kachelphase: der Weg schaetzt besser als die Uhr ----
+  //
+  // Die Phase innerhalb einer Kachel indexiert Ideallinie und Bremsprofil, ist also die
+  // Groesse, auf der das Fahrmodell steht - und sie ist eine Erschliessung: das Auto meldet
+  // nur, DASS der Kachelzaehler gewechselt hat. Seit v0.6.37 kommt sie aus dem
+  // aufintegrierten WEG statt aus der Uhr (ghostTilePhaseWeg in 90-ghosts.js), mit der
+  // Zeitschaetzung als Rueckfall, bis ein Kacheltyp zweimal gemessen ist.
+  //
+  // GEMESSEN gegen die wahre Phase der Simulation (die aus der wirklichen Bogenlaenge
+  // kommt), vier Autos, 1600 Takte, beide Schaetzer im selben Lauf:
+  //
+  //     Kennzahl                        Uhr      Weg
+  //     mittlerer Betragsfehler        0,097    0,073     -25 %
+  //     klebt bei >= 0,995             6,2 %    0,0 %     der Linienversatz friert nicht mehr
+  //     Hoechstphase je Kachel         0,861    0,949     das letzte Stueck wird indexiert
+  //     Kacheln nie ueber 0,95         63,0 %   48,0 %
+  //
+  // Der Weg ist in allen vier Zahlen besser. Die Pruefung fordert genau das, und nicht die
+  // Zahlen selbst: sie haengen an Strecke, Autozahl und Laufzeit.
+  //
+  // WAS DER WEG NICHT BEHEBT, und das steht hier, damit es niemand sucht: sein
+  // Vorzeichenfehler ist GROESSER (-0,073 gegen -0,029), er laeuft also systematisch etwas
+  // hinterher. Das ist die Meldeverzoegerung des Kachelzaehlers, die beide Schaetzer haben -
+  // die Uhr versteckt sie nur, weil ihr Deckel bei 1 die Schaetzung am Kachelende nach oben
+  // druckt. Ein ehrliches Hinterherlaufen ist einem versteckten vorzuziehen, vor allem weil
+  // genau dieses Kleben den Linienversatz einfror.
+  stAdd('Kachelphase: der Weg schaetzt besser als die Uhr', async () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.phaseWahrheitProbe) {
+      return { skip: true, mass: 'phaseWahrheitProbe nicht vorhanden' };
+    }
+    const r = await OMEGA_TEST.phaseWahrheitProbe({ takte: 1200, autos: 4 });
+    if (!r || !r.zeit || !r.weg) return { skip: true, mass: 'kein Lauf - keine Strecke?' };
+    const fehler = [];
+    if (!(r.weg.mittelBetrag < r.zeit.mittelBetrag)) {
+      fehler.push('Betragsfehler Weg ' + r.weg.mittelBetrag
+                  + ' nicht besser als Uhr ' + r.zeit.mittelBetrag);
+    }
+    if (!(r.weg.klebt <= r.zeit.klebt)) {
+      fehler.push('Weg klebt ' + r.weg.klebt + ', Uhr nur ' + r.zeit.klebt);
+    }
+    if (!(r.weg.hoechstMittel > r.zeit.hoechstMittel)) {
+      fehler.push('Hoechstphase Weg ' + r.weg.hoechstMittel
+                  + ' nicht besser als Uhr ' + r.zeit.hoechstMittel);
+    }
+    // Und die Wegschaetzung muss ueberhaupt gegriffen haben: ohne Messungen je Kacheltyp
+    // faellt sie auf die Uhr zurueck, und dann vergleicht dieser Test die Uhr mit sich
+    // selbst - gruen, aber ohne Aussage.
+    if (!(r.weg.proben > 0.5 * r.zeit.proben)) {
+      fehler.push('die Wegschaetzung lag nur in ' + r.weg.proben + ' von '
+                  + r.zeit.proben + ' Abtastungen vor');
+    }
+    return { ok: !fehler.length,
+             mass: 'Betrag ' + r.zeit.mittelBetrag + ' -> ' + r.weg.mittelBetrag
+                 + ' | klebt ' + r.zeit.klebt + ' -> ' + r.weg.klebt
+                 + ' | Hoechstphase ' + r.zeit.hoechstMittel + ' -> ' + r.weg.hoechstMittel
+                 + ' | kurz ' + r.zeit.kurz + ' -> ' + r.weg.kurz
+                 + ' | ' + r.weg.proben + ' von ' + r.zeit.proben + ' Abtastungen mit Weg'
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 

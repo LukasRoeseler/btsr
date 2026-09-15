@@ -1933,7 +1933,7 @@
   // Kachelindex kennt, kann Anstellen, Scheitel und Herausfahren nicht trennen.
   const GHOST_TILE_MS_MIN = 250;    // schneller ist keine Kachel je gefahren worden
   const GHOST_TILE_MS_MAX = 4000;
-  function ghostTilePhase(car) {
+  function ghostTilePhaseZeit(car) {
     const g = car.ghost;
     if (!g || !car.tileAt) return 0;
     // Die mitgefuehrte Dauer ist ein Mittel ueber ALLE Kacheln. Eine Haarnadel ist aber
@@ -1943,6 +1943,108 @@
     // Haarnadel. Die relative Laenge kommt aus der Abtastdichte der Mittellinie, die
     // trackCenterline() ohnehin nach Drehwinkel vergibt.
     return Math.max(0, Math.min(1, (Date.now() - car.tileAt) / ghostTileDauer(g)));
+  }
+
+  // ====================================================================================
+  // DIE PHASE AUS DEM WEG, und warum sie besser schaetzt als die Uhr
+  // ====================================================================================
+  //
+  // Die Zeitschaetzung darueber teilt die verstrichene Zeit durch eine gemessene MITTLERE
+  // Dauer dieses Kacheltyps. Sie ist damit genau dort am schlechtesten, wo sie am
+  // wichtigsten ist: beim Anbremsen dauert die Kachel laenger als das Mittel, die Phase
+  // laeuft also voraus - und sie indexiert die Ideallinie und das Bremsprofil. Der Ghost
+  // haelt sich fuer weiter am Scheitel, als er ist. Gemessen klebte sie 3 bis 10 Prozent
+  // jeder Kachel am Deckel.
+  //
+  // DER WEG HAT DIESEN FEHLER NICHT, und zwar aus einem Grund, der keine Feinheit ist: der
+  // Weg zwischen zwei Zaehlersprüngen ist eine GEOMETRISCHE KONSTANTE und haengt nicht am
+  // Gas, waehrend die Dauer Laenge und Tempo vermischt. Ein langsam gefahrenes Stueck
+  // dauert laenger, ist aber nicht laenger.
+  //
+  // UND ER IST SELBSTKALIBRIEREND. `erwartet` ist nicht die gerechnete Kachellaenge,
+  // sondern ein Mittel ueber den TATSAECHLICH aufintegrierten Weg zwischen zwei Sprüngen.
+  // Damit kuerzt sich jeder konstante Skalenfehler des Tempomodells heraus - und das ist
+  // wichtig, weil das Tempo eines Ghosts kein Messwert ist, sondern der Zustand seines
+  // eigenen gerechneten Motors. Dasselbe gilt fuer die bis zu einen Takt (45 ms) spaete
+  // Sprungerkennung: sie steckt in Zaehler UND Nenner.
+  //
+  // ---- WAS DABEI NEU SCHIEFGEHEN KANN, und es ist das Gegenteil von vorher ----------
+  //
+  // Die Zeitphase kann nur nach OBEN scheitern: sie erreicht 1 und bleibt dort. Die
+  // Wegphase kann UNTERSCHREITEN - erreicht sie das Kachelende nicht, fehlt der Ideallinie
+  // das letzte Stueck JEDER Kachel, und beim Wechsel springt der Versatz. Genau das
+  // verbietet der Kommentar unter ghostTilePhase(), und genau das hat der Selbsttest
+  // "Ideallinie stetig" schon einmal mit 2,48 Eigenschritten gefangen.
+  //
+  // Zwei Sicherungen dagegen:
+  //
+  //   1. Ein Messwert geht nur in das Mittel ein, wenn er zwischen 0,4 und 2,5 mal der
+  //      gerechneten Kachellaenge liegt - dieselbe Bauform wie GHOST_TILE_MS_MIN/MAX bei
+  //      der Zeitmessung, aus demselben Grund: ein von Hand zurueckgestelltes oder
+  //      angeschobenes Auto liefert sonst EINEN Ausreisser, der diesen Kacheltyp dauerhaft
+  //      verbiegt.
+  //   2. Zwei Messungen je Typ, bevor der Weg das Sagen hat (GHOST_DAUER_MIN_N, dieselbe
+  //      Schwelle wie bei der Dauer). Bis dahin gilt die Uhr.
+  //
+  // Und das FAHRERAUTO bleibt bei der Uhr, ohne Sonderfall: playerCar.ghost ist `nurOrt`
+  // und hat keinen Motor (siehe spielerOrt()), also gibt es dort kein Tempo zu
+  // integrieren, g.kachelWeg bleibt undefiniert und ghostTileWegSoll() liefert null.
+  //
+  // ---- ES BLEIBT BEI EINER ORTSDEFINITION, und das ist eine Entscheidung -----------
+  //
+  // Damit schaetzen zwei Autos ihre Phase moeglicherweise verschieden: ein Ghost aus dem
+  // Weg, das Fahrerauto aus der Uhr. Naheliegend waere, fuer ABSTAENDE beide auf die Uhr
+  // zu zwingen, damit die Differenz aus einer Quelle kommt. Das ist hier bewusst NICHT
+  // gemacht, aus zwei Gruenden:
+  //
+  //   1. ghostOrt() ist die EINE Ortsdefinition dieser Datei (siehe den Kommentar dort) -
+  //      sie wieder aufzuspalten waere genau der Zustand, aus dem sie entstanden ist.
+  //   2. Der Abstand, auf den es ankommt, haengt gar nicht an der Phase: der Abstandhalter
+  //      rechnet seit v0.5.47 mit der ZEITLUECKE aus Kachelstempeln
+  //      (ghostZeitLuecke), und der Kachelabstand daneben hat unterhalb einer Kachel
+  //      ohnehin keine Aufloesung - gemessen meldete er in 1517 nahen Stichproben jedes
+  //      Mal glatt 1,00.
+  //
+  // Beide Seiten die jeweils BESSERE Schaetzung benutzen zu lassen ist deshalb der
+  // kleinere Fehler, nicht der groessere.
+  const GHOST_WEG_MIN_F = 0.4;
+  const GHOST_WEG_MAX_F = 2.5;
+
+  function ghostNoteTileWeg(car, weg, typ) {
+    const g = car.ghost;
+    if (!g || typ === null || typ === undefined || !(weg > 0)) return;
+    const soll = tileLength(typ);
+    if (!(soll > 0)) return;
+    if (weg < GHOST_WEG_MIN_F * soll || weg > GHOST_WEG_MAX_F * soll) return;
+    g.tileWegTyp = g.tileWegTyp || {};
+    g.tileWegTypN = g.tileWegTypN || {};
+    g.tileWegTyp[typ] = g.tileWegTyp[typ] ? g.tileWegTyp[typ] * 0.7 + weg * 0.3 : weg;
+    g.tileWegTypN[typ] = (g.tileWegTypN[typ] || 0) + 1;
+  }
+
+  // Der erwartete Weg ueber die Kachel, auf der das Auto GERADE liegt. null heisst "noch
+  // nicht genug gemessen" - dann gilt die Uhr, und das ist ein ehrliches Ergebnis.
+  function ghostTileWegSoll(g) {
+    const tiles = currentTrackTiles;
+    const i = g.tileIndex;
+    const typ = (tiles && i !== null && i !== undefined && tiles[i]) ? tiles[i].type : null;
+    if (typ === null) return null;
+    if (!g.tileWegTyp || !g.tileWegTypN) return null;
+    if (!(g.tileWegTypN[typ] >= GHOST_DAUER_MIN_N)) return null;
+    return g.tileWegTyp[typ] > 0 ? g.tileWegTyp[typ] : null;
+  }
+
+  function ghostTilePhaseWeg(car) {
+    const g = car.ghost;
+    if (!g || g.kachelWeg === undefined) return null;
+    const soll = ghostTileWegSoll(g);
+    if (soll === null) return null;
+    return Math.max(0, Math.min(1, g.kachelWeg / soll));
+  }
+
+  function ghostTilePhase(car) {
+    const w = ghostTilePhaseWeg(car);
+    return w === null ? ghostTilePhaseZeit(car) : w;
   }
 
   // ---- WARUM DIE PHASE HART BEI 1 ENDET, und zwar mit Absicht ------------------------
@@ -4973,6 +5075,10 @@
                   // Die Kachelabstaende der letzten Wechsel, fuer die Plausibilitaet des
                   // Zaehlers. Leer heisst "noch nichts gesehen", und dann zaehlt er nicht.
                   tileRing: [],
+                  // Der aufintegrierte Weg auf der aktuellen Kachel, in Zeichnungseinheiten.
+                  // Er traegt die Kachelphase, sobald dieser Kacheltyp zweimal gemessen ist -
+                  // siehe ghostTilePhaseWeg().
+                  kachelWeg: 0,
                   // Startgnade: siehe GHOST_START_GNADE_MS. Ohne sie kommt ein geparktes
                   // Auto nie wieder hoch, weil es zum Lesen fahren muesste und zum Fahren
                   // gelesen haben muesste.
@@ -5298,6 +5404,19 @@
     // Zieleinlauf hat Vorrang vor allem anderen: keine Linie, keine Wuerze, kein
     // Leitplanken-Modus. Steht die Sequenz, gilt nur noch sie.
     if (g.finish) { ghostFinishTick(car); return; }
+    // ---- DEN WEG AUF DIESER KACHEL MITFUEHREN, und zwar HIER OBEN --------------------
+    //
+    // Vor dem Kachelwechselblock, und das ist die richtige Reihenfolge: das Tempo im
+    // Motorzustand ist das der VERGANGENEN dt, der Weg dieses Takts gehoert also noch zur
+    // alten Kachel. Integriert man nach dem Wechsel, waere er der neuen zugeschlagen.
+    //
+    // In Zeichnungseinheiten (KMH_TO_UNITS aus 60-track.js), damit der Wert mit
+    // tileLength() vergleichbar ist - die Plausibilitaetsgrenzen in ghostNoteTileWeg()
+    // brauchen genau diesen Vergleich.
+    if (g.engine && g.engine.state) {
+      g.kachelWeg = (g.kachelWeg || 0)
+        + Math.abs(g.engine.state.speedKmh || 0) * KMH_TO_UNITS * dt;
+    }
     const e = g.engine, cfg = e.config;
     // Die Oberflaeche aus Wetter und aufgezogenem Reifen, JEDEN TAKT. Nicht nur beim
     // Wetterwechsel: wxRainLevel() ist eine Rampe ueber fuenf Sekunden, ein einmaliges
@@ -5315,6 +5434,10 @@
         const verlassen = (currentTrackTiles && currentTrackTiles[g.tileIndex])
           ? currentTrackTiles[g.tileIndex].type : null;
         ghostNoteTileTime(car, now - g.tileStart, verlassen);
+        // UND DERSELBE MESSWERT IN WEG. Dieselbe Gelegenheit, derselbe Typ, dieselbe
+        // Schwelle von zwei Messungen - nur dass diese Groesse nicht am Gas haengt.
+        // Begruendung bei ghostNoteTileWeg().
+        ghostNoteTileWeg(car, g.kachelWeg || 0, verlassen);
         // Die letzten Abstaende getrennt mitfuehren: ghostNoteTileTime mittelt fuer den
         // Vorausblick, hier wird die RATE gebraucht, und ein Mittel verschleift genau den
         // Ausschlag, an dem ein Abflug zu erkennen ist.
@@ -5323,6 +5446,10 @@
         if (g.tileRing.length > GHOST_ZAEHLER_FENSTER) g.tileRing.shift();
       }
       g.tileStart = now;
+      // Der Wegzaehler faengt mit der neuen Kachel neu an. NICHT auf den Restweg gesetzt:
+      // der Zaehlersprung IST die Kachelgrenze, und ein Rest waere die Behauptung, man
+      // wuesste, wieviel davon noch zur alten gehoerte.
+      g.kachelWeg = 0;
       g.tilesTotal = (g.tilesTotal || 0) + 1;
       g.lastCount = car.tileCount;
       g.tileIndex = g.tileIndex === null ? 0 : g.tileIndex + 1;

@@ -1909,6 +1909,12 @@
     simAufloesung(takte) {
       if (!simAn()) return null;
       const kachel = [], luecke = [];
+      // Und der WAHRE Abstand daneben, fuer dieselben Abtastungen. Er beantwortet die
+      // Frage, die "wieviele verschiedene Werte" offen laesst: FOLGT der gemeldete Abstand
+      // dem wirklichen, oder hat er nur viele Werte? Seit die Kachelphase aus dem Weg kommt
+      // (ghostTilePhaseWeg) hat er Zwischenwerte - ohne diesen Vergleich waere nicht zu
+      // sagen, ob sie etwas bedeuten.
+      let abwSumme = 0, abwN = 0;
       const n = takte || 1200;
       for (let k = 0; k < n; k++) {
         // simSchritt() gibt NICHTS zurueck - der erste Anlauf stand hier auf
@@ -1922,16 +1928,189 @@
         if (!z) break;
         for (const a of (z.abstand || [])) {
           if (a.wahr === null || a.wahr === undefined || a.wahr >= 1.0) continue;
-          if (a.gemeldet !== null) kachel.push(a.gemeldet);
+          if (a.gemeldet !== null) {
+            kachel.push(a.gemeldet);
+            abwSumme += Math.abs(a.gemeldet - a.wahr);
+            abwN++;
+          }
           if (a.luecke !== null) luecke.push(a.luecke);
         }
       }
       return { proben: kachel.length,
                kachelWerte: [...new Set(kachel)].sort((x, y) => x - y),
+               kachelVerschieden: new Set(kachel).size,
+               // Mittlere Abweichung des GEMELDETEN vom WAHREN Abstand, in Kacheln, fuer
+               // die nahen Abtastungen.
+               kachelAbweichung: abwN ? +(abwSumme / abwN).toFixed(3) : null,
                lueckeVerschieden: new Set(luecke).size,
                lueckeMessbar: luecke.length,
                lueckeMin: luecke.length ? Math.min.apply(null, luecke) : null,
                lueckeMax: luecke.length ? Math.max.apply(null, luecke) : null };
+    },
+
+    // ====================================================================================
+    // DIE KACHELPHASE GEGEN DIE WAHRHEIT
+    // ====================================================================================
+    //
+    // Die Phase innerhalb einer Kachel ist eine ERSCHLIESSUNG: das Auto meldet nur, DASS
+    // der Kachelzaehler gewechselt hat. Sie indexiert aber die Ideallinie und das
+    // Bremsprofil, ist also die Groesse, auf der das ganze Fahrmodell steht.
+    //
+    // IN DER SIMULATION IST DIE WAHRHEIT BEKANNT: simOrt() rechnet die Phase aus der
+    // wirklichen Bogenlaenge (90b-sim.js), und simZustand() gibt sie als autos[].phase
+    // heraus. Diese Sonde stellt beide Schaetzer daneben - die Uhr
+    // (ghostTilePhaseZeit) und den Weg (ghostTilePhaseWeg) - und zwar im SELBEN Lauf,
+    // damit der Vergleich nicht zwei verschiedene Rennen vergleicht.
+    //
+    // Ausgegeben werden nicht nur mittlere Fehler, sondern die zwei RAENDER, weil dort die
+    // Fehler sitzen, die man sieht:
+    //
+    //   klebt      Anteil der Abtastungen mit Schaetzung >= 0,995. Die Zeitphase deckelt
+    //              bei 1 und bleibt dort stehen; gemessen waren das 3 bis 10 Prozent jeder
+    //              Kachel, und in dieser Zeit friert der Linienversatz ein.
+    //   kurz       Anteil der Kacheln, auf denen die Schaetzung NIE ueber 0,95 kam. Das ist
+    //              der NEUE Fehler, den der Weg einfuehren kann: fehlt der Linie das letzte
+    //              Stueck jeder Kachel, springt der Versatz an der Naht - genau das, was der
+    //              Selbsttest "Ideallinie stetig" einmal mit 2,48 Eigenschritten gefangen
+    //              hat.
+    //
+    // `kurz` wird ausdruecklich als HOECHSTE auf einer Kachel erreichte Phase gemessen und
+    // nicht als Wert im Takt des Wechsels. Der erste Anlauf tat Letzteres und verglich
+    // damit Ungleiches: die Simulation setzt car.tileAt im Bewegungsteil DESSELBEN Takts
+    // zurueck (die Zeitphase steht dort also schon auf 0), waehrend der Ghost seinen
+    // Wegzaehler erst im naechsten Takt zurueckstellt (die Wegphase steht noch auf 1).
+    // Gemessen ergab das kurz = 1,00 gegen 0,51 - eine Zahl, die nur die Reihenfolge
+    // innerhalb von simSchritt() beschreibt. Die Hoechstphase je Kachel ist von dieser
+    // Reihenfolge unabhaengig.
+    //
+    // WAS DIESE MESSUNG NICHT ZEIGT, und das gehoert dazu: in der Simulation reiten
+    // Schaetzung und Wahrheit auf DEMSELBEN Temposignal - der Motor, der den Weg liefert,
+    // treibt auch a.s. Der Vergleich zeigt also Konvergenz und nicht Teppichtreue. Wer
+    // Letztere prueft, verstellt zusaetzlich das Verhaeltnis von Modell zu Wirklichkeit;
+    // dafuer gibt es ghostLinieTrace mit `kurvenFaktor`.
+    //
+    // ---- ZWEI FALLEN, IN DIE DIESE SONDE BEIM ERSTEN ANLAUF BEIDE GETRETEN IST -------
+    //
+    // 1. DIE UHR. ghostTilePhaseZeit() rechnet Date.now() - car.tileAt, und die
+    //    Simulation setzt car.tileAt auf IHRE Uhr (st.uhr), die 100 Mal schneller laeuft
+    //    als die Wanduhr. Wer die Schaetzer NACH simSchritt() liest, vergleicht also eine
+    //    Wandzeit mit einem Zeitstempel weit in der Zukunft: die Differenz ist negativ, der
+    //    Deckel macht 0 daraus, und die Zeitphase meldete glatte 0 mit einem mittleren
+    //    Fehler von -0,49 - also genau den Mittelwert einer gleichverteilten Phase. Die
+    //    Auswertung steht deshalb in derselben Uhrfaelschung wie die Ticks, synchron
+    //    eingeklammert und im finally zurueckgestellt.
+    //
+    // 2. DER TAKT AM KACHELRAND. simSchritt() ruft erst ghostTick(), bewegt DANN die Autos
+    //    und setzt erst danach den Kachelzaehler. Im Takt eines Kachelwechsels liegt das
+    //    Auto fuer die Simulation also schon auf der neuen Kachel (wahre Phase ~0,02),
+    //    waehrend der Ghost seinen Wechsel erst im naechsten Takt sieht und noch auf der
+    //    alten schaetzt (~0,98). Ein Fehlervergleich in diesem Takt misst die Reihenfolge
+    //    innerhalb von simSchritt() und nicht die Schaetzung - er waere ein Fehler von
+    //    fast 1,0, und zwar bei JEDEM Kachelwechsel. Gezaehlt wird deshalb nur, wo Ghost
+    //    und Simulation dieselbe Kachel meinen (g.tileIndex === a.kachel); die Zahl der
+    //    uebersprungenen Takte geht als `randTakte` mit hinaus, damit niemand glaubt, hier
+    //    werde etwas versteckt.
+    async phaseWahrheitProbe(opt) {
+      if (typeof simStart !== 'function' || typeof simZustand !== 'function') return null;
+      const o = opt || {};
+      const takte = o.takte || 1600;
+      const autos = Math.max(2, Math.min(6, o.autos || 4));
+      const stell = (id, v) => {
+        const e = $(id);
+        if (!e) return;
+        if (e.type === 'checkbox') { e.checked = !!v; } else { e.value = String(v); }
+        e.dispatchEvent(new Event('change', { bubbles: true }));
+      };
+      const merkFeld = { g: ($('sim-ghosts') || {}).value, l: ($('sim-laps') || {}).value,
+                         f: !!($('sim-fast') || {}).checked };
+      const merkCfg = Object.assign({}, ghostCfg);
+      // Je Schaetzer: Fehlersumme, Betragssumme, Zahl der Abtastungen, Klebeanteil und die
+      // Verteilung der je Kachel erreichten Hoechstphase.
+      const bau = () => ({ n: 0, summe: 0, betrag: 0, klebt: 0, kacheln: 0, kurz: 0,
+                           hoechstSumme: 0 });
+      const zeit = bau(), weg = bau();
+      let ohneWeg = 0, randTakte = 0;
+      try {
+        stell('sim-ghosts', String(autos));
+        stell('sim-laps', '10');
+        stell('sim-fast', false);
+        ghostCfg.pitAn = false;           // ein Boxenstopp ist keine Kachelfahrt
+        simStart();
+        if (!simAn()) return null;
+        // Je Auto: der Zaehlerstand, den der GHOST zuletzt gesehen hat (an ihm haengt sein
+        // eigener Kachelwechsel), und die bisher hoechste Schaetzung auf dieser Kachel.
+        const vorCount = [], hoch = [];
+        const kachelAbschluss = (i) => {
+          const h = hoch[i];
+          if (!h) return;
+          if (h.pz !== null) {
+            zeit.kacheln++; zeit.hoechstSumme += h.pz; if (h.pz < 0.95) zeit.kurz++;
+          }
+          if (h.pw !== null) {
+            weg.kacheln++; weg.hoechstSumme += h.pw; if (h.pw < 0.95) weg.kurz++;
+          }
+          hoch[i] = null;
+        };
+        for (let k = 0; k < takte; k++) {
+          simSchritt(SIM_TAKT_MS);
+          if (!simAn()) break;
+          const z = simZustand();
+          if (!z) break;
+          // DIE UHR DER SIMULATION, fuer die Dauer der Auswertung - siehe Falle 1 oben.
+          const echtNow = Date.now;
+          Date.now = () => simState.uhr;
+          try {
+            z.autos.forEach((a, i) => {
+              const car = (simState && simState.autos[i]) ? simState.autos[i].car : null;
+              if (!car || !car.ghost) return;
+              const g = car.ghost;
+              // Hat der GHOST seinen Kachelwechsel bemerkt? Dann ist die vorige Kachel
+              // abgeschlossen und ihre Hoechstphase steht fest.
+              if (vorCount[i] !== undefined && vorCount[i] !== g.lastCount) kachelAbschluss(i);
+              vorCount[i] = g.lastCount;
+              const pz = ghostTilePhaseZeit(car);
+              const pw = ghostTilePhaseWeg(car);
+              if (pw === null) ohneWeg++;
+              if (!hoch[i]) hoch[i] = { pz: null, pw: null };
+              if (pz !== null && pz !== undefined) {
+                hoch[i].pz = Math.max(hoch[i].pz === null ? -1 : hoch[i].pz, pz);
+              }
+              if (pw !== null && pw !== undefined) {
+                hoch[i].pw = Math.max(hoch[i].pw === null ? -1 : hoch[i].pw, pw);
+              }
+              // Der Fehlervergleich nur, wo beide dieselbe Kachel meinen - siehe Falle 2.
+              if (g.tileIndex !== a.kachel) { randTakte++; return; }
+              const wahr = a.phase;
+              const nimm = (s, p) => {
+                if (p === null || p === undefined) return;
+                s.n++; s.summe += (p - wahr); s.betrag += Math.abs(p - wahr);
+                if (p >= 0.995) s.klebt++;
+              };
+              nimm(zeit, pz);
+              nimm(weg, pw);
+            });
+          } finally {
+            Date.now = echtNow;
+          }
+        }
+      } finally {
+        Object.assign(ghostCfg, merkCfg);
+        if (simAn()) simStop('Phasenpruefung');
+        stell('sim-ghosts', merkFeld.g);
+        stell('sim-laps', merkFeld.l);
+        stell('sim-fast', merkFeld.f);
+      }
+      const fertig = (s) => (s.n ? {
+        proben: s.n,
+        mittelFehler: +(s.summe / s.n).toFixed(4),     // mit Vorzeichen: laeuft sie vor?
+        mittelBetrag: +(s.betrag / s.n).toFixed(4),
+        klebt: +(s.klebt / s.n).toFixed(4),
+        kacheln: s.kacheln,
+        hoechstMittel: s.kacheln ? +(s.hoechstSumme / s.kacheln).toFixed(4) : null,
+        kurz: s.kacheln ? +(s.kurz / s.kacheln).toFixed(4) : null,
+      } : null);
+      return { zeit: fertig(zeit), weg: fertig(weg),
+               ohneWegProben: ohneWeg, randTakte };
     },
 
     // ====================================================================================
