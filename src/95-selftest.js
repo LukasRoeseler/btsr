@@ -7064,6 +7064,84 @@
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
+  // ---- Die Kennzahlensonde misst, was sie messen soll ----
+  //
+  // WAS HIER GEPRUEFT WIRD, ist die SONDE und nicht die Abstimmung. Die Frage lautet: sieht
+  // sie einen Unterschied, von dem wir unabhaengig wissen, dass er da ist?
+  //
+  // ---- UND WARUM NICHT DIE ZEITLUECKE, obwohl sie der bekannte Fall ist -----------
+  //
+  // Der erste Anlauf stellte 0,35 s gegen 1,2 s - den Sweep, auf dem
+  // SPICE_LUECKE_MIN_S = 1,2 steht. Mit der Sonde nachgemessen, vier Autos, drei Laeufe
+  // von 90 s:
+  //
+  //     Zeitluecke   Beruehrungen/min   Spanne   Ueberholmanoever/min   Spanne
+  //      0,35 s           43,6            4,7           19,3            8,6
+  //      1,20 s           26,0            8,7           12,0           10,0
+  //
+  // Die Richtung stimmt und deckt sich mit der Reihe von damals. Als PRUEFUNG taugt sie
+  // trotzdem nicht: bei einem einzigen Lauf - und mehr kann ein Selbsttest nicht bezahlen -
+  // liegt die Streuung in derselben Groessenordnung wie der Unterschied. Ein Test, der
+  // jedes zwanzigste Mal grundlos rot ist, wird nach dem dritten Mal nicht mehr gelesen.
+  //
+  // Genommen wird deshalb der Fall, der um einen FAKTOR auseinanderliegt: mit und ohne
+  // Abstandhalter. Gemessen mit derselben Sonde, drei Laeufe von 90 s:
+  //
+  //     mit Abstandhalter     26,0 Beruehrungen/min, 12,0 Ueberholmanoever/min
+  //     ohne Abstandhalter   107,6 Beruehrungen/min,  2,9 Ueberholmanoever/min
+  //
+  // Das ist der Vierfache, und die zweite Spalte ist der Grund, warum der Abstandhalter
+  // ueberhaupt existiert: ohne ihn schieben die Autos, statt zu ueberholen.
+  stAdd('Kennzahlensonde: der Abstandhalter ist messbar', async () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.ghostSweep) {
+      return { skip: true, mass: 'ghostSweep nicht vorhanden' };
+    }
+    const r = await OMEGA_TEST.ghostSweep(
+      [{ name: 'mit' }, { name: 'ohne', cfg: { wuerzeAbstand: false } }],
+      { sekunden: 60, laeufe: 1, autos: 4, aufwaermSekunden: 10 });
+    if (!r || !r.varianten || r.varianten.length !== 2) {
+      return { skip: true, mass: 'die Sonde gab keine zwei Varianten zurueck' };
+    }
+    const mit = r.varianten[0].mittel, ohne = r.varianten[1].mittel;
+    if (!mit || !ohne) return { skip: true, mass: 'kein gueltiger Lauf - keine Strecke?' };
+    const fehler = [];
+    // 1. Ueberhaupt Betrieb. Ohne Beruehrungen UND ohne Ueberholmanoever ist nicht
+    //    entscheidbar, ob die Sonde schweigt oder die Autos brav fahren.
+    if (!(ohne.beruehrungenProMin > 0)) fehler.push('ohne Abstandhalter keine Beruehrung');
+    if (!(mit.ueberholtProMin > 0)) fehler.push('mit Abstandhalter kein Ueberholmanoever');
+    // 2. DER FAKTOR. 1,5 ist die Huerde bei gemessenen 4,1 - der Test soll anschlagen, wenn
+    //    der Unterschied VERSCHWINDET, und nicht, wenn er sich aendert.
+    if (!(ohne.beruehrungenProMin > 1.5 * mit.beruehrungenProMin)) {
+      fehler.push('ohne Abstandhalter nur ' + ohne.beruehrungenProMin
+                  + ' gegen ' + mit.beruehrungenProMin
+                  + ' Beruehrungen/min - der Abstandhalter ist nicht messbar');
+    }
+    // 3. Die Zahlen muessen zueinander passen: der Anteil der Zeit in Beruehrung ist durch
+    //    die Zahl der Paare geteilt und kann deshalb nicht ueber 1 liegen. Laege er
+    //    darueber, waere die Normierung in der Sonde falsch - genau die Falle, die
+    //    kontaktMs als Summe UEBER ALLE PAARE aufstellt.
+    for (const v of r.varianten) {
+      const a = v.mittel && v.mittel.kontaktAnteil;
+      if (a !== null && a !== undefined && !(a >= 0 && a <= 1)) {
+        fehler.push(v.name + ': Beruehrungsanteil ' + a + ' liegt ausserhalb 0..1');
+      }
+    }
+    // 4. Und das Messfenster muss das bestellte sein: die Grundlinie zieht das Aufwaermen
+    //    ab, also muessen rund 60 s herauskommen und nicht 70.
+    if (!(mit.sekundenEcht >= 55 && mit.sekundenEcht <= 65)) {
+      fehler.push('Messfenster ' + mit.sekundenEcht + ' s statt 60 - die Grundlinie greift nicht');
+    }
+    return { ok: !fehler.length,
+             mass: 'mit ' + mit.beruehrungenProMin + ' Ber./min, ' + mit.ueberholtProMin
+                 + ' Ueberh./min, Anteil ' + mit.kontaktAnteil
+                 + ' | ohne ' + ohne.beruehrungenProMin + ' Ber./min, '
+                 + ohne.ueberholtProMin + ' Ueberh./min, Anteil ' + ohne.kontaktAnteil
+                 + ' | Faktor ' + (ohne.beruehrungenProMin
+                                   / Math.max(0.1, mit.beruehrungenProMin)).toFixed(1)
+                 + ', Fenster ' + mit.sekundenEcht + ' s'
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
   // ---- Jeder Motor dreht in seinem eigenen Band ----
   //
   // GEMELDET: "Der Ton klingt etwas zu hoch" zum BMW M4 GT3. Der Befund war nachrechenbar

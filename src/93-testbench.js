@@ -1934,6 +1934,250 @@
                lueckeMax: luecke.length ? Math.max.apply(null, luecke) : null };
     },
 
+    // ====================================================================================
+    // DIE KENNZAHLENSONDE: BERUEHRUNGEN UND UEBERHOLMANOEVER JE MINUTE
+    // ====================================================================================
+    //
+    // WOZU, und das ist ein Befund und keine Idee: die Simulation zaehlt `kontakte`,
+    // `kontaktMs`, `kontaktEngst` und `ueberholt` (90b-sim.js), und KEINE Zeile im ganzen
+    // Quelltext hat diese vier Zahlen je gelesen. Die Sweeps, auf denen
+    // SPICE_LUECKE_MIN_S = 1,2 und SPICE_ATTACK_RANGE = 1,3 stehen, sind von Hand aus der
+    // Konsole gefahren; ihre Tabellen stehen als Kommentar in 90-ghosts.js und sind nicht
+    // nachrechenbar. Jede weitere Aenderung am Fahrverhalten waere damit eine Behauptung
+    // gegen eine Erinnerung.
+    //
+    // Hinein geht eine Liste von Einstellungen, heraus kommt eine Tabelle:
+    //
+    //   await OMEGA_TEST.ghostSweep([
+    //     { name: 'heute' },
+    //     { name: 'enge Luecke', lueckeMinS: 0.35 },
+    //     { name: 'ohne Abstand', cfg: { wuerzeAbstand: false } },
+    //   ], { sekunden: 90, laeufe: 3 })
+    //
+    // Eine Variante verstellt `ghostCfg` (Feld `cfg`) und die drei Groessen, die als
+    // `let` mit Setzer liegen, weil sie fuer genau solche Reihen so gebaut wurden:
+    // `lueckeMinS`, `attackRange`, `gapMin`.
+    //
+    // ---- WAS DIE VIER ZAHLEN WIRKLICH BEDEUTEN, und zwei davon ueberraschen ----------
+    //
+    //   kontakte      FLANKEN je Paar, mit 1000 ms Sperre (simKontakteTick). Eine
+    //                 Beruehrung, die zwei Sekunden anhaelt, ist eine.
+    //   kontaktMs     Summe UEBER ALLE PAARE. Bei vier Autos gibt es sechs Paare, der Wert
+    //                 kann also groesser sein als die verstrichene Zeit - ein "Anteil der
+    //                 Zeit in Beruehrung" ist er erst geteilt durch die Zahl der Paare, und
+    //                 genau das tut `kontaktAnteil` unten.
+    //   kontaktEngst  wird NUR beim Zaehlen einer neuen Flanke fortgeschrieben, ist also
+    //                 der engste Laengsabstand IM MOMENT DES EINSETZENS und nicht das
+    //                 Minimum ueber den Lauf. Der Name in simZustand() sagt das nicht,
+    //                 deshalb steht es hier.
+    //   ueberholt     gesicherte Rangwechsel mit Hysterese ueber eine Autolaenge.
+    //
+    // ---- DER TAKT IST FEST, und das ist kein Detail ---------------------------------
+    //
+    // simKontakteTick() laeuft einmal je simSchritt() und schreibt pauschal SIM_TAKT_MS
+    // auf kontaktMs - unabhaengig davon, mit welcher Schrittweite simSchritt() gerufen
+    // wurde. Mit einer groesseren Schrittweite (simSchritt teilt intern bis
+    // SIM_TEIL_MAX_MS = 60) waere die Beruehrungsdauer untererfasst und die Abtastung der
+    // Beruehrungen zu grob. Diese Sonde ruft deshalb IMMER mit SIM_TAKT_MS und nimmt
+    // keine Schrittweite als Angabe an.
+    //
+    // ---- DREI LAEUFE, weil nichts gesaet ist ---------------------------------------
+    //
+    // Sieben Stellen in 90-ghosts.js wuerfeln (Tagesform, Fehler, Attacke, Boxenfenster,
+    // Lernen), und keine davon ist gesaet. Die Streuung ueber die Laeufe ist deshalb Teil
+    // des Ergebnisses und keine Stoerung: eine Einstellung, deren Vorsprung kleiner ist
+    // als die Spanne ihrer eigenen Wiederholungen, ist nicht besser - sie ist einmal
+    // besser gelaufen. `spanne` steht deshalb neben jedem Mittelwert.
+    //
+    // BOXENSTOPPS SIND AUS, solange eine Variante sie nicht ausdruecklich einschaltet: ein
+    // stehendes Auto in der Boxengasse erzeugt Beruehrungen und Rangwechsel, die nichts
+    // mit dem Fahren zu tun haben. Dieselbe Vorsichtsmassnahme trifft der vorhandene Test
+    // zur Zeitluecke, und aus demselben Grund.
+    //
+    // ---- DIE AUFWAERMZEIT, und sie ist nachgemessen und nicht vorsichtshalber -------
+    //
+    // Der Start ist ein Knaeuel: alle Autos stehen auf derselben Stelle, ghostAssignBias()
+    // verteilt sie erst ueber GHOST_GRID_MS = 6000 ms, und in diesen Sekunden fallen
+    // Beruehrungen an, die nichts ueber das Fahren sagen. Wie stark das wiegt, zeigt der
+    // Vergleich derselben zwei Einstellungen ueber verschiedene Laufzeiten (vier Autos):
+    //
+    //     Fenster                     Zeitluecke 0,35   Zeitluecke 1,2
+    //      20 s ohne Aufwaermen             51,1              48,0     kein Unterschied
+    //      90 s ohne Aufwaermen             43,6              26,0     der bekannte
+    //      20 s nach 10 s Aufwaermen        50,0              20,0     derselbe, in einem
+    //                                                                  Viertel der Zeit
+    //
+    // (Beruehrungen je Minute, vier Autos, je drei Laeufe.) Bei 20 s ohne Aufwaermen ist
+    // der Start der halbe Lauf und deckt den Unterschied vollstaendig zu. Die Sonde zaehlt
+    // deshalb erst nach `aufwaermSekunden` (Vorgabe 10): die vier Zaehler der Simulation
+    // laufen monoton, also wird ihr Stand nach dem Aufwaermen als GRUNDLINIE gemerkt und am
+    // Ende abgezogen. Damit ist das Fenster sauber, ohne dass die Simulation etwas
+    // zuruecksetzen muss - und kurze Laeufe werden brauchbar, was fuer jede Reihe zaehlt,
+    // die viele Einstellungen durchfahren soll.
+    //
+    // AUSNAHME: `engstCm` ist ein Minimum und kein Zaehler - es laesst sich nicht abziehen
+    // und gilt deshalb fuer den GANZEN Lauf, Aufwaermen eingeschlossen.
+    //
+    // ---- WAS DIE SONDE NICHT AUFLOEST, und das gehoert dazu ------------------------
+    //
+    // Gemessen ueber drei Laeufe von 90 s streuen die Ueberholmanoever um 8,6 bzw. 10,0 je
+    // Minute - also um so viel, wie der Unterschied zwischen den beiden Einstellungen
+    // betraegt (19,3 gegen 12,0). Fuer Beruehrungen reichen drei Laeufe (Streuung 4,7 und
+    // 8,7 bei einem Unterschied von 17,6), fuer Ueberholmanoever nicht. Wer eine Aussage
+    // ueber das Ueberholen braucht, nimmt mehr Laeufe - und liest in jedem Fall die
+    // Spanne neben dem Mittelwert, bevor er einen Unterschied behauptet.
+    async ghostSweep(varianten, opt) {
+      if (typeof simStart !== 'function' || typeof simZustand !== 'function') return null;
+      const o = opt || {};
+      const sekunden = Math.max(5, o.sekunden || 90);
+      const laeufe = Math.max(1, o.laeufe || 3);
+      const autos = Math.max(2, Math.min(6, o.autos || 4));
+      const aufwaerm = o.aufwaermSekunden === undefined ? 10 : Math.max(0, o.aufwaermSekunden);
+      const schritte = Math.round(sekunden * 1000 / SIM_TAKT_MS);
+      const aufwaermSchritte = Math.round(aufwaerm * 1000 / SIM_TAKT_MS);
+      const liste = (varianten && varianten.length) ? varianten : [{ name: 'heute' }];
+      const paare = autos * (autos - 1) / 2;
+      // Auswahlfelder werden ueber ein 'change' gestellt und auf GUELTIGKEIT geprueft: ein
+      // Wert, den ein Auswahlfeld nicht hat, laesst es auf seinem alten stehen, und die
+      // Simulation faellt still auf ihre Vorgabe zurueck.
+      const stell = (id, v) => {
+        const e = $(id);
+        if (!e) return;
+        if (e.type === 'checkbox') { e.checked = !!v; } else { e.value = String(v); }
+        e.dispatchEvent(new Event('change', { bubbles: true }));
+      };
+      const merkFeld = { g: ($('sim-ghosts') || {}).value, l: ($('sim-laps') || {}).value,
+                         f: !!($('sim-fast') || {}).checked };
+      // ghostCfg traegt nur Zahlen und Wahrheitswerte - eine flache Kopie genuegt, und sie
+      // ist die Wahrheit, gegen die JEDER Lauf zurueckgesetzt wird. Ohne das Zuruecksetzen
+      // je Lauf traegt die dritte Variante die Einstellung der zweiten mit sich.
+      const merkCfg = Object.assign({}, ghostCfg);
+      const merkLuecke = lueckeMinLesen(), merkRange = attackRangeLesen();
+      const merkGap = gapMinLesen();
+      const zahl = (x, n) => (x === null || x === undefined || !isFinite(x)
+        ? null : +x.toFixed(n === undefined ? 2 : n));
+      // Der Stand der vier Zaehler nach dem Aufwaermen. Alle laufen monoton, also ist die
+      // Differenz das Messfenster - siehe der Kommentar oben.
+      const grundlinie = (z) => ({
+        uhrMs: z.uhrMs, kontakte: z.kontakte, ueberholt: z.ueberholt,
+        kontaktMs: z.kontaktMs,
+        // Je Auto die Zahl der bis hierher gefahrenen Runden: eine Rundenzeit aus dem
+        // Aufwaermfenster gehoert nicht ins Ergebnis.
+        runden: (z.autos || []).map((a) => (a.zeiten || []).length),
+      });
+      // Die Kennzahlen EINES Laufs, aus dem letzten gueltigen Zustand und der Grundlinie.
+      const kennzahlen = (z, basis) => {
+        const b = basis || { uhrMs: 0, kontakte: 0, ueberholt: 0, kontaktMs: 0, runden: [] };
+        const dauerMs = Math.max(1, z.uhrMs - b.uhrMs);
+        const min = dauerMs / 60000;
+        const kontakte = z.kontakte - b.kontakte;
+        const ueberholt = z.ueberholt - b.ueberholt;
+        const kontaktMs = z.kontaktMs - b.kontaktMs;
+        const runden = [];
+        (z.autos || []).forEach((a, i) => {
+          // Die erste Runde eines Autos faellt immer heraus: sie beginnt aus dem Stand, und
+          // der vorhandene Test "die Autos fahren, und die Zeiten stimmen" haelt
+          // ausdruecklich fest, dass sie deshalb die langsamste ist. Dazu faellt alles
+          // heraus, was vor der Grundlinie lag.
+          const ab = Math.max(1, (b.runden && b.runden[i]) || 0);
+          for (let k = ab; k < (a.zeiten || []).length; k++) runden.push(a.zeiten[k] / 1000);
+        });
+        return {
+          sekundenEcht: zahl(dauerMs / 1000, 1),
+          kontakte, ueberholt,
+          beruehrungenProMin: zahl(kontakte / min, 1),
+          ueberholtProMin: zahl(ueberholt / min, 1),
+          beruehrungJeUeberholen: ueberholt ? zahl(kontakte / ueberholt) : null,
+          // Anteil der Zeit, in der EIN Paar in Beruehrung ist - siehe der Kommentar oben.
+          kontaktAnteil: zahl(kontaktMs / Math.max(1, dauerMs * paare), 3),
+          // Kein Zaehler, sondern ein Minimum: gilt fuer den ganzen Lauf, Aufwaermen
+          // eingeschlossen.
+          engstCm: z.kontaktEngstCm,
+          rundenZahl: runden.length,
+          besteRundeS: runden.length ? zahl(Math.min.apply(null, runden), 2) : null,
+          mittlereRundeS: runden.length
+            ? zahl(runden.reduce((s, x) => s + x, 0) / runden.length, 2) : null,
+        };
+      };
+      // Mittelwert und SPANNE ueber die Laeufe. Die Spanne ist die eigentliche Aussage:
+      // ohne sie liest man drei Nachkommastellen und haelt Rauschen fuer Fortschritt.
+      const mitteln = (arr) => {
+        const gut = arr.filter(Boolean);
+        if (!gut.length) return null;
+        const aus = { laeufe: gut.length };
+        for (const k of ['beruehrungenProMin', 'ueberholtProMin', 'beruehrungJeUeberholen',
+                         'kontaktAnteil', 'mittlereRundeS', 'besteRundeS', 'sekundenEcht']) {
+          const w = gut.map((g) => g[k]).filter((x) => x !== null && x !== undefined);
+          if (!w.length) { aus[k] = null; aus[k + 'Spanne'] = null; continue; }
+          aus[k] = zahl(w.reduce((s, x) => s + x, 0) / w.length, 3);
+          aus[k + 'Spanne'] = zahl(Math.max.apply(null, w) - Math.min.apply(null, w), 3);
+        }
+        return aus;
+      };
+      const aus = [];
+      try {
+        stell('sim-ghosts', String(autos));
+        stell('sim-laps', '10');       // die groesste Option; siehe den Abbruch unten
+        stell('sim-fast', false);
+        for (const v of liste) {
+          const laeufeAus = [];
+          for (let r = 0; r < laeufe; r++) {
+            Object.assign(ghostCfg, merkCfg);
+            lueckeMinSetzen(merkLuecke);
+            attackRangeSetzen(merkRange);
+            gapMinSetzen(merkGap);
+            ghostCfg.pitAn = false;
+            if (v.cfg) Object.assign(ghostCfg, v.cfg);
+            if (v.lueckeMinS !== undefined) lueckeMinSetzen(v.lueckeMinS);
+            if (v.attackRange !== undefined) attackRangeSetzen(v.attackRange);
+            if (v.gapMin !== undefined) gapMinSetzen(v.gapMin);
+            simStart();
+            if (!simAn()) { laeufeAus.push(null); continue; }
+            let letzter = simZustand();
+            // Aufwaermen: fahren, aber nicht zaehlen. Danach die Grundlinie merken.
+            for (let k = 0; k < aufwaermSchritte && simAn(); k++) {
+              simSchritt(SIM_TAKT_MS);
+              const z = simZustand();
+              if (z) letzter = z;
+              if ((k % 400) === 399 && typeof stLuft === 'function') await stLuft();
+            }
+            const basis = letzter ? grundlinie(letzter) : null;
+            for (let k = 0; k < schritte; k++) {
+              simSchritt(SIM_TAKT_MS);
+              // ALLE DURCH heisst: die Simulation hat sich selbst beendet, und simZustand()
+              // gibt danach null. Der letzte gueltige Stand ist dann das Ergebnis, und
+              // `sekundenEcht` macht sichtbar, dass der Lauf kuerzer war als bestellt -
+              // die Kennzahlen sind Raten je Minute und bleiben damit vergleichbar.
+              if (!simAn()) break;
+              const z = simZustand();
+              if (z) letzter = z;
+              // Dem Browser Luft lassen, ohne einen Zeitgeber zu benutzen: im verborgenen
+              // Fenster sind Zeitgeber auf 1 Hz gedrosselt, ein setTimeout(0) je Takt
+              // waere also eine halbe Stunde je Lauf.
+              if ((k % 400) === 399 && typeof stLuft === 'function') await stLuft();
+            }
+            laeufeAus.push(letzter ? kennzahlen(letzter, basis) : null);
+            if (simAn()) simStop('Kennzahlensonde');
+            if (typeof stLuft === 'function') await stLuft();
+          }
+          aus.push({ name: v.name || '?', einzeln: laeufeAus, mittel: mitteln(laeufeAus) });
+        }
+      } finally {
+        // Zuruecksetzen steht VORNE und das Riskanteste zuerst: eine Aufraeumzeile, die
+        // wirft, macht alle folgenden unerreichbar.
+        Object.assign(ghostCfg, merkCfg);
+        lueckeMinSetzen(merkLuecke);
+        attackRangeSetzen(merkRange);
+        gapMinSetzen(merkGap);
+        if (simAn()) simStop('Kennzahlensonde');
+        stell('sim-ghosts', merkFeld.g);
+        stell('sim-laps', merkFeld.l);
+        stell('sim-fast', merkFeld.f);
+      }
+      return { sekunden, laeufe, autos, paare, aufwaermSekunden: aufwaerm,
+               takt: SIM_TAKT_MS, varianten: aus };
+    },
+
     // ---- DAS DREHZAHLBAND JE MOTOR ------------------------------------------------
     //
     // Zwei Fragen in einer Sonde, und beide sind der Zweck der Aenderung:
