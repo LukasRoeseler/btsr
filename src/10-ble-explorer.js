@@ -692,6 +692,14 @@
     "Ghost: Führenden bremsen": "Ghost: hold the leader back",
     "Ghost: Ideallinie": "Ghost: racing line",
     "Ghost: Kurvendrosselung": "Ghost: corner slowdown",
+    "Verteidigen": "Defending",
+    "Bisher gibt der Vorausfahrende immer nach. Mit dieser Einstellung deckt er die angegriffene Seite in der Hälfte der Fälle ab, statt zu weichen; der Angreifer wechselt dann einmal die Seite oder bricht ab. Nur EINMAL decken und kein Hin und Her – die Bahn ist 25 cm breit, zwei Autos brauchen 30 % davon, und Wedeln wäre auf dieser Breite ein Rammen mit Ansage.":
+      "Until now the car ahead always gave way. With this setting it covers the attacked side in half the cases instead of yielding; the attacker then switches sides once or aborts. Covering happens ONCE, with no weaving – the track is 25 cm wide, two cars need 30 % of it, and weaving at that width would be ramming with advance notice.",
+    "Nachgeben bleibt Pflicht unter gelber Flagge, in der Boxengasse und beim Überrundet-Werden. Das Fahrerauto verteidigt nie: es lässt sich nicht steuern, das entscheidest du selbst.":
+      "Yielding stays mandatory under a yellow flag, in the pit lane and when being lapped. The driver's car never defends: it cannot be steered by the app – that is your call.",
+    "Blaue Flagge": "Blue flag",
+    "Wer eine ganze Runde zurück ist und einen Schnelleren im Nacken hat, geht von selbst nach außen und lupft leicht – statt sich fünf Sekunden zu wehren und danach sechs Sekunden gesperrt zu sein. Der Schnellere bekommt die Ideallinie, kein Vier-Phasen-Manöver nötig.":
+      "A car a full lap down with a faster one behind moves aside by itself and lifts slightly – instead of fighting for five seconds and then being blocked for six. The faster car gets the racing line, no four-phase manoeuvre needed.",
     "Ghost: Leitplanken-Modus": "Ghost: guard-rail mode",
     "Ghost: Linienmodell": "Ghost: line model",
     "Ghost: lernt von Runde zu Runde": "Ghost: learns lap by lap",

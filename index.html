@@ -7463,6 +7463,24 @@
           Geraden: in der Kurve w&auml;re es Abtriebsverlust, also das Gegenteil, und das
           bildet die Physik der Ghosts nicht ab.</small></div>
         <label class="tgl"><input type="checkbox" id="ghost-w-slip"><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Verteidigen
+          <span class="wip-tag">experimentell</span>
+          <small>Bisher gibt der Vorausfahrende immer nach. Mit dieser Einstellung deckt er
+          die angegriffene Seite in der H&auml;lfte der F&auml;lle ab, statt zu weichen; der
+          Angreifer wechselt dann einmal die Seite oder bricht ab. Nur EINMAL decken und kein
+          Hin und Her &ndash; die Bahn ist 25&nbsp;cm breit, zwei Autos brauchen 30&nbsp;%
+          davon, und Wedeln w&auml;re auf dieser Breite ein Rammen mit Ansage.
+          <br>Nachgeben bleibt Pflicht unter gelber Flagge, in der Boxengasse und beim
+          &Uuml;berrundet-Werden. Das Fahrerauto verteidigt nie: es l&auml;sst sich nicht
+          steuern, das entscheidest du selbst.</small></div>
+        <label class="tgl"><input type="checkbox" id="ghost-w-defend"><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Blaue Flagge
+          <span class="wip-tag">experimentell</span>
+          <small>Wer eine ganze Runde zur&uuml;ck ist und einen Schnelleren im Nacken hat,
+          geht von selbst nach au&szlig;en und lupft leicht &ndash; statt sich f&uuml;nf
+          Sekunden zu wehren und danach sechs Sekunden gesperrt zu sein. Der Schnellere
+          bekommt die Ideallinie, kein Vier-Phasen-Man&ouml;ver n&ouml;tig.</small></div>
+        <label class="tgl"><input type="checkbox" id="ghost-w-blau"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Ghost: Ideallinie <span class="wip-tag">WIP</span>
           <!-- Seit v0.5.9 wirkt dieser Regler deutlich staerker: der Deckel aus
                learnSteerCap() ging von 0,55 auf 1,0, gemessen an dem, was die Original-App
@@ -8252,7 +8270,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.6.39</span></span>
+    <span class="foot-ver">v<span id="app-version">0.6.40</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -8979,6 +8997,14 @@
     "Ghost: Führenden bremsen": "Ghost: hold the leader back",
     "Ghost: Ideallinie": "Ghost: racing line",
     "Ghost: Kurvendrosselung": "Ghost: corner slowdown",
+    "Verteidigen": "Defending",
+    "Bisher gibt der Vorausfahrende immer nach. Mit dieser Einstellung deckt er die angegriffene Seite in der Hälfte der Fälle ab, statt zu weichen; der Angreifer wechselt dann einmal die Seite oder bricht ab. Nur EINMAL decken und kein Hin und Her – die Bahn ist 25 cm breit, zwei Autos brauchen 30 % davon, und Wedeln wäre auf dieser Breite ein Rammen mit Ansage.":
+      "Until now the car ahead always gave way. With this setting it covers the attacked side in half the cases instead of yielding; the attacker then switches sides once or aborts. Covering happens ONCE, with no weaving – the track is 25 cm wide, two cars need 30 % of it, and weaving at that width would be ramming with advance notice.",
+    "Nachgeben bleibt Pflicht unter gelber Flagge, in der Boxengasse und beim Überrundet-Werden. Das Fahrerauto verteidigt nie: es lässt sich nicht steuern, das entscheidest du selbst.":
+      "Yielding stays mandatory under a yellow flag, in the pit lane and when being lapped. The driver's car never defends: it cannot be steered by the app – that is your call.",
+    "Blaue Flagge": "Blue flag",
+    "Wer eine ganze Runde zurück ist und einen Schnelleren im Nacken hat, geht von selbst nach außen und lupft leicht – statt sich fünf Sekunden zu wehren und danach sechs Sekunden gesperrt zu sein. Der Schnellere bekommt die Ideallinie, kein Vier-Phasen-Manöver nötig.":
+      "A car a full lap down with a faster one behind moves aside by itself and lifts slightly – instead of fighting for five seconds and then being blocked for six. The faster car gets the racing line, no four-phase manoeuvre needed.",
     "Ghost: Leitplanken-Modus": "Ghost: guard-rail mode",
     "Ghost: Linienmodell": "Ghost: line model",
     "Ghost: lernt von Runde zu Runde": "Ghost: learns lap by lap",
@@ -25359,6 +25385,8 @@
     ['ghost-w-form', 'wuerzeForm'],
     ['ghost-w-fehler', 'wuerzeFehler'],
     ['ghost-w-slip', 'wuerzeWindschatten'],
+    ['ghost-w-defend', 'wuerzeVerteidigen'],
+    ['ghost-w-blau', 'wuerzeBlau'],
     // Die zwei Boxenstopp-Schalter. Sie gehoeren in dieselbe Liste, weil sie dieselbe Form
     // haben - Kaestchen an, Feld true - und nicht, weil sie mit der Wuerze zu tun haetten.
     ['ghost-pit', 'pitAn'],
@@ -27655,6 +27683,11 @@
     wuerzeForm: false,
     wuerzeFehler: false,
     wuerzeWindschatten: false,
+    // Verteidigen und blaue Flagge. Beide Standard AUS: sie aendern, wer wem Platz macht,
+    // und das soll niemand ungefragt bekommen. Welche Vorgabe taugt, entscheidet die
+    // Kennzahlensonde in einem eigenen Schritt.
+    wuerzeVerteidigen: false,
+    wuerzeBlau: false,
     // Lernen von Runde zu Runde, standardmaessig aus: es aendert das Fahrverhalten ueber
     // ein Rennen hinweg, und das soll niemand ungefragt bekommen.
     learnPace: false,
@@ -29577,10 +29610,12 @@
   // Fahrverhalten OHNE Zutaten messen will, nimmt das - und ein sechster Baustein laesst
   // dann nicht neun Prueffstaende still durchfallen, weil jeder seine eigene Liste haette.
   const WUERZE_AUS = { wuerzeUeberholen: false, wuerzeAbstand: false, wuerzeForm: false,
-                       wuerzeFehler: false, wuerzeWindschatten: false };
+                       wuerzeFehler: false, wuerzeWindschatten: false,
+                       wuerzeVerteidigen: false, wuerzeBlau: false };
   function wuerzeAn() {
     return !!(ghostCfg.wuerzeUeberholen || ghostCfg.wuerzeAbstand || ghostCfg.wuerzeForm
-              || ghostCfg.wuerzeFehler || ghostCfg.wuerzeWindschatten);
+              || ghostCfg.wuerzeFehler || ghostCfg.wuerzeWindschatten
+              || ghostCfg.wuerzeVerteidigen || ghostCfg.wuerzeBlau);
   }
 
   const SPICE_FORM_MS = 2600;      // wie oft die Tagesform fortgeschrieben wird
@@ -29775,6 +29810,48 @@
   // Die Seitenwache dagegen bleibt: gleiche Beruehrungen, 40 Prozent MEHR
   // Ueberholmanoever, 30 Prozent weniger Beruehrungen je Manoever. Sie unterdrueckt nicht,
   // sie lenkt um - der Angreifer geht auf die freie Seite statt in den Abbruch.
+
+  // ====================================================================================
+  // VERTEIDIGEN, UND ZWAR EINMAL
+  // ====================================================================================
+  //
+  // Bisher gibt der Vorausfahrende IMMER nach: der Angreifer schreibt ihm yieldSide auf das
+  // Auto, und zwar auf die Gegenseite seines eigenen Versatzes. Das ist der groesste
+  // Unterschied zu einem Rennen - ein Feld, in dem niemand seine Position verteidigt, ist
+  // eine Kolonne mit Reihenfolgewechseln.
+  //
+  // NEU, und mit Absicht klein: mit SPICE_DEFEND_P deckt der Vorausfahrende die angegriffene
+  // Seite EINMAL ab, statt zu weichen. Kein Hin-und-Her-Wedeln - die Bahn ist 25 cm breit,
+  // zwei Autos brauchen 30,4 Prozent davon, und Wedeln waere auf dieser Breite ein Rammen
+  // mit Ansage. Der Angreifer entscheidet daraufhin neu: einmal die Seite wechseln, wenn die
+  // andere frei ist, sonst abbrechen (der Abbruchweg mit seiner 6-Sekunden-Sperre ist der,
+  // den es ohnehin gibt).
+  //
+  // IMMER NACHGEBEN BLEIBT PFLICHT in vier Faellen, und keiner davon ist Geschmack:
+  //
+  //   unter Gelb           dort gilt mittig fahren, damit man ein Auto dazwischenstellen kann
+  //   in der Boxengasse    pitAusweichenSetzen() schreibt dort ohnehin jede 400 ms neu
+  //   beim Ueberrundet-Werden   dafuer gibt es die blaue Flagge weiter unten
+  //   das Fahrerauto       es laesst sich nicht steuern; ein yieldSide darauf ist wirkungslos
+  const SPICE_DEFEND_P = 0.5;          // wie oft verteidigt wird, wenn es erlaubt ist
+
+  // ====================================================================================
+  // BLAUE FLAGGE: WER EINE RUNDE ZURUECK IST, MACHT PLATZ
+  // ====================================================================================
+  //
+  // Es gab kein Ueberrunden. flagState kennt gruen, gelb und Neustart; ein Rundenrueckstand
+  // wurde nirgends gebildet - obwohl ghostProgress() absolute Kacheln seit dem Start liefert
+  // und g.laps die Runden zaehlt, die Differenz also eine Subtraktion ist.
+  //
+  // Die Folge war ein Bild, das es im Rennsport nicht gibt: der Fuehrende kaempft fuenf
+  // Sekunden gegen einen Ueberrundeten, bricht ab und ist danach sechs Sekunden gesperrt.
+  //
+  // Wer eine Runde zurueck ist und einen Schnelleren hinter sich hat, geht deshalb von SELBST
+  // zur Seite - nach AUSSEN, damit der Schnellere die Ideallinie bekommt - und lupft leicht.
+  // Kein Vier-Phasen-Manoever, keine Wuerfel: das ist keine Attacke, sondern ein Aus-dem-Weg.
+  const SPICE_BLAU_REICHWEITE = 1.6;   // Kacheln, ab denen "er kommt" gilt
+  const SPICE_BLAU_LIFT = 0.12;        // so viel Tempo gibt der Ueberrundete ab
+  const SPICE_BLAU_MS = 1600;          // so lange gilt das Platzmachen je Erneuerung
 
   const SPICE_PASS_CLEAR = 0.45;       // Kacheln VOR dem anderen = geschafft
   const SPICE_PASS_BLOCK_MS = 6000;    // Sperre nach einem Abbruch
@@ -30146,6 +30223,32 @@
     return frei;
   }
 
+  // ---- Wer faehrt AUF DER RUNDE dicht hinter mir? ----------------------------------
+  //
+  // NICHT ueber ghostProgress(), und das ist der Kern: der Fortschritt ist absolut
+  // (Runden * Kachelzahl + Ort), also hat wer mich ueberrundet MEHR davon als ich. Er waere
+  // damit "voraus" - und die blaue Flagge, die ihn finden soll, faende nie jemanden. Genau
+  // dieser Denkfehler steckte im ersten Anlauf.
+  //
+  // Gesucht ist die Lage AUF DER RUNDE (ghostOrt: Kachel plus Phase, ohne Runden), mit
+  // Ueberlauf an der Ziellinie. Wer eine Runde zurueck ist, sieht seinen Ueberrunder damit
+  // dort, wo er wirklich ist: kurz hinter ihm auf derselben Runde.
+  function ghostHinterMir(car) {
+    const n = currentTrackTiles.length;
+    const me = ghostOrt(car);
+    if (me === null || !n) return null;
+    let best = null, bestGap = Infinity;
+    for (const o of ghostFieldRacing()) {
+      if (o === car) continue;
+      const seins = ghostOrt(o);
+      if (seins === null) continue;
+      let gap = (me - seins) % n;
+      if (gap < 0) gap += n;                 // ueber die Ziellinie hinweg
+      if (gap > 0 && gap < bestGap) { bestGap = gap; best = o; }
+    }
+    return best ? { car: best, gap: bestGap } : null;
+  }
+
   // Das Auto direkt voraus und der Abstand in Kacheln. null, wenn keiner voraus ist.
   function ghostAhead(car) {
     const me = ghostProgress(car);
@@ -30334,6 +30437,35 @@
       } else if (g.passPhase === 'raus' && seit > SPICE_ATTACK_SIDE_MS) {
         g.passPhase = 'vorbei';
       }
+      // ---- WIRD MEINE SEITE GEDECKT? Dann einmal wechseln, sonst abbrechen ----------
+      //
+      // Der Vorausfahrende kann die angegriffene Seite abdecken (siehe SPICE_DEFEND_P), und
+      // dann steht der Angreifer neben ihm statt an ihm vorbei. Gelesen wird dieselbe
+      // Groesse wie ueberall, seine Querlage - nicht ein Merker "er verteidigt": ob er
+      // WIRKLICH dort liegt, sagt nur die Querlage, und ein Merker waere ein zweiter Ort
+      // fuer dieselbe Aussage.
+      //
+      // EINMAL wechseln, nicht dauernd: zwei Autos, die sich abwechselnd die Seite
+      // zuschieben, sind genau das Bild, das der Abbruch verhindern soll.
+      if ((g.passPhase === 'raus' || g.passPhase === 'vorbei') && ziel && ziel.ghost
+          && g.attackSide) {
+        const qz = ghostQuerLage(ziel);
+        const gedeckt = qz !== null && Math.abs(qz) >= SPICE_PASS_PLATZ_MIN
+                        && Math.sign(qz) === Math.sign(g.attackSide);
+        if (gedeckt) {
+          const frei = ghostSeitenFrei(car);
+          if (!g.seiteGewechselt && frei[String(-g.attackSide)]) {
+            g.attackSide = -g.attackSide;
+            g.seiteGewechselt = true;
+            g.passSince = now;          // der Versuch faengt mit der neuen Seite neu an
+            log(garageLabel(car) + ': Seite gedeckt, wechselt.', 'info');
+          } else {
+            g.attackUntil = 0; g.attackSide = 0; g.passZiel = null; g.passPhase = null;
+            g.passBlockUntil = now + SPICE_PASS_BLOCK_MS;
+            log(garageLabel(car) + ': Seite gedeckt, bricht ab.', 'info');
+          }
+        }
+      }
       if (g.passPhase === 'rein' && now - g.passAt > SPICE_PASS_TUCK_MS) {
         g.attackUntil = 0; g.attackSide = 0; g.passZiel = null; g.passPhase = null;
       } else if (g.passPhase !== 'rein' && seit > SPICE_PASS_MAX_MS) {
@@ -30492,19 +30624,71 @@
         // Gesetzt wird es am ANDEREN Auto, und das ist Absicht: der Vorausfahrende weiss
         // nicht, dass hinter ihm einer ansetzt, und soll es hier erfahren. Ein Ghost, der
         // jeden Takt selbst nachsieht, ob ihn wer angreift, waere dieselbe Rechnung n-mal.
-        if (ah.car && ah.car.ghost) {
-          ah.car.ghost.yieldSide = -g.attackSide;
-          ah.car.ghost.yieldUntil = now + SPICE_ATTACK_MS;
+        //
+        // ---- ODER ER VERTEIDIGT, und dann deckt er die angegriffene Seite ab --------
+        //
+        // Begruendung, Wahrscheinlichkeit und die vier Faelle, in denen Nachgeben Pflicht
+        // bleibt, stehen bei SPICE_DEFEND_P. Geschrieben wird dieselbe Groesse wie beim
+        // Ausweichen, nur mit umgekehrtem Vorzeichen - der Vorausfahrende geht AUF die
+        // Seite, auf der der Angreifer vorbei will.
+        let verteidigt = false;
+        if (ah.car && ah.car.ghost && !ah.car.ghost.nurOrt && ghostCfg.wuerzeVerteidigen
+            && flagState === 'green' && !ah.car.ghost.pit
+            && !(ah.car.ghost.laps < g.laps)           // Ueberrundete verteidigen nicht
+            && Math.random() < SPICE_DEFEND_P) {
+          verteidigt = true;
         }
+        if (ah.car && ah.car.ghost) {
+          ah.car.ghost.yieldSide = verteidigt ? g.attackSide : -g.attackSide;
+          ah.car.ghost.yieldUntil = now + SPICE_ATTACK_MS;
+          ah.car.ghost.verteidigt = verteidigt;
+        }
+        g.seiteGewechselt = false;      // einmal wechseln ist erlaubt, siehe unten
         log(garageLabel(car) + ': setzt zum Ueberholen an, '
-            + (ah.car ? garageLabel(ah.car) + ' weicht aus.' : 'freie Bahn.'), 'info');
-        showHudToast(garageLabel(car).toUpperCase() + ' ATTACKIERT');
+            + (ah.car ? garageLabel(ah.car) + (verteidigt ? ' verteidigt.' : ' weicht aus.')
+                      : 'freie Bahn.'), 'info');
+        showHudToast(garageLabel(car).toUpperCase()
+                     + (verteidigt ? ' ATTACKIERT, WIRD GEDECKT' : ' ATTACKIERT'));
       }
     }
     // Der Schub gilt NUR in der Phase 'vorbei': in 'raus' baut sich erst der Versatz auf,
     // in 'rein' ist das Manoever gelaufen und ein Schub waere nur noch Draengeln.
     if (g.attackUntil && g.passPhase === 'vorbei') {
       f *= 1 + SPICE_ATTACK_GAIN;
+    }
+
+    // ---- BLAUE FLAGGE: EINE RUNDE ZURUECK, ALSO AUS DEM WEG ------------------------
+    //
+    // Begruendung bei SPICE_BLAU_REICHWEITE. Die Rundendifferenz ist eine Subtraktion auf
+    // g.laps; wer auf der Runde dicht hinter mir faehrt, kommt aus ghostHinterMir() - und
+    // warum das NICHT ueber den Fortschritt geht, steht dort.
+    //
+    // ZUR SEITE UND NICHT NUR LANGSAMER: ein Ueberrundeter, der nur lupft, bleibt auf der
+    // Ideallinie und damit im Weg. Nach AUSSEN - der Schnellere soll die Linie bekommen -,
+    // und die Aussenseite ist die Gegenseite der naechsten Kurve. Ohne Kurve in Reichweite
+    // bleibt die Gegenseite der eigenen Linie.
+    //
+    // Und WAEHREND einer eigenen Attacke nicht: wer selbst gerade an einem Dritten vorbei
+    // ist, hat ein Manoever laufen, und zwei Querbefehle auf einem Auto sind einer zu viel.
+    if (ghostCfg.wuerzeBlau && !g.attackUntil) {
+      const hinten = ghostHinterMir(car);
+      if (hinten && hinten.car.ghost && hinten.gap <= SPICE_BLAU_REICHWEITE
+          && (hinten.car.ghost.laps || 0) > (g.laps || 0)) {
+        let drehung = 0;
+        for (let k = 1; k <= SPICE_SEITE_VORAUS && drehung === 0; k++) {
+          drehung = ghostTurnDir(car, k);
+        }
+        const lo = ghostLineOffset(car);
+        g.yieldSide = drehung !== 0 ? -drehung : (lo >= 0 ? -1 : 1);
+        g.yieldUntil = Math.max(g.yieldUntil || 0, now + SPICE_BLAU_MS);
+        f *= 1 - SPICE_BLAU_LIFT;
+        // Einmal melden, nicht je Takt: der Zustand haelt Sekunden, die Meldung nicht.
+        if (!g.blauSeit || now - g.blauSeit > 4000) {
+          g.blauSeit = now;
+          log(garageLabel(car) + ': eine Runde zurueck, macht Platz fuer '
+              + garageLabel(hinten.car) + '.', 'info');
+        }
+      }
     }
 
     // 6. Abstand halten, mit ZEITLUECKE statt festem Kachelabstand. Der noetige Abstand
@@ -36310,6 +36494,123 @@
                lueckeMax: luecke.length ? Math.max.apply(null, luecke) : null };
     },
 
+    // ---- VERTEIDIGEN: DECKT DER VORAUSFAHRENDE DIE SEITE AB? ----------------------
+    //
+    // Zwei Attrappen, der Angreifer dicht hinter dem Vorausfahrenden und lange genug
+    // klebend. Math.random wird auf 0 gestellt - der Wurf gelingt dann immer, und zwar
+    // BEIDE: das Ansetzen und die Verteidigungsentscheidung. Was geprueft werden soll, ist
+    // nicht der Zufall, sondern das Vorzeichen.
+    //
+    //   ohne Verteidigen   der Vorausfahrende weicht zur GEGENSEITE des Angreifers
+    //   mit Verteidigen    er geht auf DESSEN Seite und deckt sie ab
+    verteidigenProbe(opt) {
+      const o = opt || {};
+      const merkGarage = garage.splice(0, garage.length);
+      const merkTiles = currentTrackTiles;
+      const merkCfg = Object.assign({}, ghostCfg);
+      const merkFlag = flagState;
+      const echtRandom = Math.random;
+      const autos = [];
+      try {
+        currentTrackTiles = codeToTrack(o.code || 'SG2R3G2R3').tiles;
+        lineCache = null;
+        Object.assign(ghostCfg, WUERZE_AUS);
+        ghostCfg.wuerzeUeberholen = true;
+        ghostCfg.wuerzeVerteidigen = !!o.verteidigen;
+        flagState = 'green';
+        Math.random = () => 0;
+        const a = OMEGA_TEST.attrappeGhost('A');   // vorne
+        const b = OMEGA_TEST.attrappeGhost('B');   // hinten, greift an
+        garage.push(a); garage.push(b);
+        autos.push(a, b);
+        a.ghost.tileIndex = 2; a.ghost.tilesTotal = 2; a.ghost.laps = 1; a.ghost.tileMs = 700;
+        b.ghost.tileIndex = 1; b.ghost.tilesTotal = 1; b.ghost.laps = 1; b.ghost.tileMs = 700;
+        // Der Vorausfahrende liegt rechts. NACHGEMESSEN entscheidet das die Seite hier
+        // trotzdem nicht: die beiden liegen 0,7 s auseinander, also ausserhalb von
+        // GHOST_NAH_SEK, und damit sieht ghostSeitenFrei() keinen Nachbarn - beide Seiten
+        // sind frei, und dann gewinnt die Innenseite der naechsten Kurve (rechts auf
+        // dieser Strecke). Die Sonde prueft deshalb das VORZEICHENVERHAELTNIS von
+        // attackSide und yieldSide und nicht eine bestimmte Seite.
+        a.ghost.querSoll = 0.5; b.ghost.querSoll = 0;
+        // Lange genug geklebt, damit die Scharfstellung vorbei ist.
+        b.ghost.closeSince = Date.now() - (SPICE_ATTACK_ARM_MS + 500);
+        ghostSpice(b, ghostAheadTightest(b, 2));
+        return {
+          attackSide: b.ghost.attackSide || 0,
+          yieldSide: a.ghost.yieldSide || 0,
+          verteidigt: !!a.ghost.verteidigt,
+          phase: b.ghost.passPhase || null,
+          // Deckt er die Seite ab, auf der der Angreifer vorbei will?
+          deckt: (b.ghost.attackSide || 0) !== 0
+                 && Math.sign(a.ghost.yieldSide || 0) === Math.sign(b.ghost.attackSide || 0),
+        };
+      } finally {
+        Math.random = echtRandom;
+        flagState = merkFlag;
+        garage.splice(0, garage.length);
+        for (const c of autos) stopGhost(c);
+        for (const c of merkGarage) garage.push(c);
+        Object.assign(ghostCfg, merkCfg);
+        currentTrackTiles = merkTiles;
+        lineCache = null;
+      }
+    },
+
+    // ---- BLAUE FLAGGE: MACHT DER UEBERRUNDETE PLATZ? ------------------------------
+    //
+    // Die Lage von Hand hergestellt, weil sie in einem Lauf selten ist und weil sie an einer
+    // Stelle haengt, die leicht falsch herum gedacht wird: wer ueberrundet, hat MEHR
+    // Fortschritt (Runden mal Kachelzahl plus Ort) und steht damit in der Wertung vorn,
+    // waehrend er auf der Runde HINTER dem Ueberrundeten faehrt. Die Sonde prueft genau
+    // diese Unterscheidung mit.
+    //
+    // Zwei Attrappen: A liegt eine Kachel voraus und hat eine Runde WENIGER, B kommt dicht
+    // hinter ihm. Gefragt wird, was ghostSpice() fuer A daraus macht - Querversatz und
+    // Tempofaktor.
+    blaueFlaggeProbe(opt) {
+      const o = opt || {};
+      const merkGarage = garage.splice(0, garage.length);
+      const merkTiles = currentTrackTiles;
+      const merkCfg = Object.assign({}, ghostCfg);
+      const autos = [];
+      try {
+        currentTrackTiles = codeToTrack(o.code || 'SG2R3G2R3').tiles;
+        lineCache = null;
+        Object.assign(ghostCfg, WUERZE_AUS);
+        ghostCfg.wuerzeBlau = o.aus ? false : true;
+        const a = OMEGA_TEST.attrappeGhost('A');   // der Ueberrundete
+        const b = OMEGA_TEST.attrappeGhost('B');   // der Ueberrunder
+        garage.push(a); garage.push(b);
+        autos.push(a, b);
+        // A eine Kachel voraus AUF DER RUNDE, aber eine Runde zurueck in der Wertung.
+        a.ghost.tileIndex = 2; a.ghost.tilesTotal = 2; a.ghost.laps = 1; a.ghost.tileMs = 700;
+        b.ghost.tileIndex = 1; b.ghost.tilesTotal = 1; b.ghost.laps = 2; b.ghost.tileMs = 700;
+        a.ghost.querSoll = 0; b.ghost.querSoll = 0;
+        const vorher = { yieldSide: a.ghost.yieldSide || 0, yieldUntil: a.ghost.yieldUntil || 0 };
+        // aheadTight wie im Fahrbetrieb: ghostSpice() erwartet das Ergebnis von
+        // ghostAheadTightest() und liest daraus tight/dist/key.
+        const spice = ghostSpice(a, ghostAheadTightest(a, 2));
+        return {
+          vorher,
+          yieldSide: a.ghost.yieldSide || 0,
+          weichtAus: !!(a.ghost.yieldUntil && a.ghost.yieldUntil > Date.now()),
+          faktor: +(spice.factor || 1).toFixed(4),
+          // Und die Gegenrichtung: sieht A den Ueberrunder ueberhaupt als Hintermann?
+          hinterMir: (() => {
+            const h = ghostHinterMir(a);
+            return h ? { name: h.car.alias, gap: +h.gap.toFixed(3) } : null;
+          })(),
+        };
+      } finally {
+        garage.splice(0, garage.length);
+        for (const c of autos) stopGhost(c);
+        for (const c of merkGarage) garage.push(c);
+        Object.assign(ghostCfg, merkCfg);
+        currentTrackTiles = merkTiles;
+        lineCache = null;
+      }
+    },
+
     // ---- WELCHE SEITE IST BELEGT? -------------------------------------------------
     //
     // ghostSeitenFrei() ist der Wachhund, der ein Ueberholmanoever nicht in ein drittes
@@ -36735,6 +37036,21 @@
             if (v.gapMin !== undefined) gapMinSetzen(v.gapMin);
             simStart();
             if (!simAn()) { laeufeAus.push(null); continue; }
+            // ---- UNTERSCHIEDLICH SCHNELLE AUTOS, wenn bestellt --------------------
+            //
+            // Mit gleicher Einstellung fahren alle gleich schnell, und dann gibt es kein
+            // Ueberrunden - die blaue Flagge waere nicht messbar. `tempoSpanne` verteilt
+            // car.ghostSpeed linear ueber das Feld, symmetrisch um ghostCfg.speed. Es geht
+            // NACH simStart(), weil erst dort die Autos existieren; ghostTick liest den
+            // Wert je Takt, also greift er sofort.
+            if (o.tempoSpanne > 0 && simState && simState.autos.length > 1) {
+              const n2 = simState.autos.length;
+              simState.autos.forEach((a, i) => {
+                const rel = n2 > 1 ? (i / (n2 - 1) - 0.5) : 0;    // -0,5 bis +0,5
+                a.car.ghostSpeed = Math.max(0.35, Math.min(1,
+                  (ghostCfg.speed || 0.55) + rel * o.tempoSpanne));
+              });
+            }
             let letzter = simZustand();
             // Aufwaermen: fahren, aber nicht zaehlen. Danach die Grundlinie merken.
             for (let k = 0; k < aufwaermSchritte && simAn(); k++) {
@@ -36783,7 +37099,8 @@
         stell('sim-fast', merkFeld.f);
       }
       return { sekunden, laeufe, autos, paare, aufwaermSekunden: aufwaerm,
-               code: o.code || null, takt: SIM_TAKT_MS, varianten: aus };
+               code: o.code || null, tempoSpanne: o.tempoSpanne || 0,
+               takt: SIM_TAKT_MS, varianten: aus };
     },
 
     // ---- DAS DREHZAHLBAND JE MOTOR ------------------------------------------------
@@ -48295,6 +48612,80 @@
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
+  // ---- Verteidigen: der Vorausfahrende deckt die angegriffene Seite ab ----
+  //
+  // Bis v0.6.39 gab der Vorausfahrende IMMER nach - der Angreifer schrieb ihm yieldSide auf
+  // die Gegenseite seines eigenen Versatzes. Ein Feld, in dem niemand seine Position
+  // verteidigt, ist eine Kolonne mit Reihenfolgewechseln.
+  //
+  // Geprueft wird das VORZEICHENVERHAELTNIS und nicht eine bestimmte Seite: welche Seite
+  // der Angreifer waehlt, haengt an Querlagen und der naechsten Kurve, und das ist woanders
+  // geprueft. Hier zaehlt nur, ob der Vorausfahrende AUF diese Seite geht (deckt) oder auf
+  // die andere (weicht).
+  //
+  // Gemessen, vier Autos, 90 s, je drei Laeufe: Beruehrungen 16,0 -> 14,2, Ueberholmanoever
+  // 13,1 -> 9,8. Ein Viertel weniger Ueberholmanoever bei etwas weniger Beruehrungen - genau
+  // das, was Verteidigen bedeutet. Deshalb ist es ein Schalter und keine Vorgabe.
+  stAdd('Verteidigen: gedeckt statt gewichen', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.verteidigenProbe) {
+      return { skip: true, mass: 'verteidigenProbe nicht vorhanden' };
+    }
+    const ohne = OMEGA_TEST.verteidigenProbe({ verteidigen: false });
+    const mit = OMEGA_TEST.verteidigenProbe({ verteidigen: true });
+    const fehler = [];
+    if (!ohne || !mit) return { skip: true, mass: 'keine Antwort' };
+    // Ueberhaupt angesetzt? Ohne Attacke sagt der Rest nichts.
+    if (!ohne.attackSide || !mit.attackSide) fehler.push('es wurde nicht angesetzt');
+    // Ohne Verteidigen: Gegenseite. Mit Verteidigen: dieselbe Seite.
+    if (ohne.deckt) fehler.push('ohne Verteidigen wurde trotzdem gedeckt');
+    if (!mit.deckt) fehler.push('mit Verteidigen wurde nicht gedeckt');
+    if (ohne.verteidigt) fehler.push('ohne Verteidigen ist der Merker gesetzt');
+    if (!mit.verteidigt) fehler.push('mit Verteidigen fehlt der Merker');
+    return { ok: !fehler.length,
+             mass: 'ohne: Angriff ' + ohne.attackSide + ', Ausweichen ' + ohne.yieldSide
+                 + ' | mit: Angriff ' + mit.attackSide + ', Ausweichen ' + mit.yieldSide
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
+  // ---- Blaue Flagge: der Ueberrundete macht Platz ----
+  //
+  // Es gab kein Ueberrunden: flagState kennt gruen, gelb und Neustart, und ein
+  // Rundenrueckstand wurde nirgends gebildet. Das Bild davor gibt es im Rennsport nicht -
+  // der Fuehrende kaempft fuenf Sekunden gegen einen Ueberrundeten und ist danach sechs
+  // Sekunden gesperrt.
+  //
+  // DER FEHLER, DEN DIESE PRUEFUNG FESTHAELT, steckte im ersten Anlauf: gesucht wurde der
+  // Hintermann ueber ghostProgress(). Der ist absolut (Runden mal Kachelzahl plus Ort), also
+  // hat wer mich UEBERRUNDET mehr davon - er waere "voraus", und die blaue Flagge faende
+  // nie jemanden. Richtig ist die Lage AUF DER RUNDE, mit Ueberlauf an der Ziellinie.
+  stAdd('Blaue Flagge: eine Runde zurueck heisst Platz machen', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.blaueFlaggeProbe) {
+      return { skip: true, mass: 'blaueFlaggeProbe nicht vorhanden' };
+    }
+    const an = OMEGA_TEST.blaueFlaggeProbe({});
+    const aus = OMEGA_TEST.blaueFlaggeProbe({ aus: true });
+    if (!an || !aus) return { skip: true, mass: 'keine Antwort' };
+    const fehler = [];
+    // 1. Der Ueberrunder muss ueberhaupt als Hintermann erkannt werden - das ist die Zeile,
+    //    in der der Denkfehler steckte.
+    if (!an.hinterMir) fehler.push('der Ueberrunder wird nicht als Hintermann erkannt');
+    // 2. Zur Seite UND gelupft.
+    if (!an.yieldSide) fehler.push('kein Querversatz gesetzt');
+    if (!an.weichtAus) fehler.push('das Platzmachen laeuft nicht');
+    if (!(an.faktor < 1)) fehler.push('kein Tempoabzug (' + an.faktor + ')');
+    // 3. Und ohne Schalter passiert nichts.
+    if (aus.yieldSide || aus.weichtAus || aus.faktor !== 1) {
+      fehler.push('mit ausgeschaltetem Schalter passiert trotzdem etwas ('
+                  + aus.yieldSide + '/' + aus.faktor + ')');
+    }
+    return { ok: !fehler.length,
+             mass: 'an: Seite ' + an.yieldSide + ', Faktor ' + an.faktor
+                 + ', Hintermann ' + (an.hinterMir ? an.hinterMir.name + ' bei '
+                                      + an.hinterMir.gap + ' Kacheln' : 'keiner')
+                 + ' | aus: Seite ' + aus.yieldSide + ', Faktor ' + aus.faktor
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
   // ---- Ueberholen: kein Ansatz in eine belegte Seite ----
   //
   // DIE FEHLERKLASSE, und sie ist gemessen: ghostAhead() sieht nur den naechsten nach
@@ -50576,6 +50967,8 @@
       ['ghost-w-form', () => ghostCfg.wuerzeForm],
       ['ghost-w-fehler', () => ghostCfg.wuerzeFehler],
       ['ghost-w-slip', () => ghostCfg.wuerzeWindschatten],
+      ['ghost-w-defend', () => ghostCfg.wuerzeVerteidigen],
+      ['ghost-w-blau', () => ghostCfg.wuerzeBlau],
       ['ghost-learn', () => ghostCfg.learn],
       ['ghost-learn-pace', () => ghostCfg.learnPace],
       ['ghost-needcode', () => ghostCfg.needCode],

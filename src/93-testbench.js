@@ -1948,6 +1948,123 @@
                lueckeMax: luecke.length ? Math.max.apply(null, luecke) : null };
     },
 
+    // ---- VERTEIDIGEN: DECKT DER VORAUSFAHRENDE DIE SEITE AB? ----------------------
+    //
+    // Zwei Attrappen, der Angreifer dicht hinter dem Vorausfahrenden und lange genug
+    // klebend. Math.random wird auf 0 gestellt - der Wurf gelingt dann immer, und zwar
+    // BEIDE: das Ansetzen und die Verteidigungsentscheidung. Was geprueft werden soll, ist
+    // nicht der Zufall, sondern das Vorzeichen.
+    //
+    //   ohne Verteidigen   der Vorausfahrende weicht zur GEGENSEITE des Angreifers
+    //   mit Verteidigen    er geht auf DESSEN Seite und deckt sie ab
+    verteidigenProbe(opt) {
+      const o = opt || {};
+      const merkGarage = garage.splice(0, garage.length);
+      const merkTiles = currentTrackTiles;
+      const merkCfg = Object.assign({}, ghostCfg);
+      const merkFlag = flagState;
+      const echtRandom = Math.random;
+      const autos = [];
+      try {
+        currentTrackTiles = codeToTrack(o.code || 'SG2R3G2R3').tiles;
+        lineCache = null;
+        Object.assign(ghostCfg, WUERZE_AUS);
+        ghostCfg.wuerzeUeberholen = true;
+        ghostCfg.wuerzeVerteidigen = !!o.verteidigen;
+        flagState = 'green';
+        Math.random = () => 0;
+        const a = OMEGA_TEST.attrappeGhost('A');   // vorne
+        const b = OMEGA_TEST.attrappeGhost('B');   // hinten, greift an
+        garage.push(a); garage.push(b);
+        autos.push(a, b);
+        a.ghost.tileIndex = 2; a.ghost.tilesTotal = 2; a.ghost.laps = 1; a.ghost.tileMs = 700;
+        b.ghost.tileIndex = 1; b.ghost.tilesTotal = 1; b.ghost.laps = 1; b.ghost.tileMs = 700;
+        // Der Vorausfahrende liegt rechts. NACHGEMESSEN entscheidet das die Seite hier
+        // trotzdem nicht: die beiden liegen 0,7 s auseinander, also ausserhalb von
+        // GHOST_NAH_SEK, und damit sieht ghostSeitenFrei() keinen Nachbarn - beide Seiten
+        // sind frei, und dann gewinnt die Innenseite der naechsten Kurve (rechts auf
+        // dieser Strecke). Die Sonde prueft deshalb das VORZEICHENVERHAELTNIS von
+        // attackSide und yieldSide und nicht eine bestimmte Seite.
+        a.ghost.querSoll = 0.5; b.ghost.querSoll = 0;
+        // Lange genug geklebt, damit die Scharfstellung vorbei ist.
+        b.ghost.closeSince = Date.now() - (SPICE_ATTACK_ARM_MS + 500);
+        ghostSpice(b, ghostAheadTightest(b, 2));
+        return {
+          attackSide: b.ghost.attackSide || 0,
+          yieldSide: a.ghost.yieldSide || 0,
+          verteidigt: !!a.ghost.verteidigt,
+          phase: b.ghost.passPhase || null,
+          // Deckt er die Seite ab, auf der der Angreifer vorbei will?
+          deckt: (b.ghost.attackSide || 0) !== 0
+                 && Math.sign(a.ghost.yieldSide || 0) === Math.sign(b.ghost.attackSide || 0),
+        };
+      } finally {
+        Math.random = echtRandom;
+        flagState = merkFlag;
+        garage.splice(0, garage.length);
+        for (const c of autos) stopGhost(c);
+        for (const c of merkGarage) garage.push(c);
+        Object.assign(ghostCfg, merkCfg);
+        currentTrackTiles = merkTiles;
+        lineCache = null;
+      }
+    },
+
+    // ---- BLAUE FLAGGE: MACHT DER UEBERRUNDETE PLATZ? ------------------------------
+    //
+    // Die Lage von Hand hergestellt, weil sie in einem Lauf selten ist und weil sie an einer
+    // Stelle haengt, die leicht falsch herum gedacht wird: wer ueberrundet, hat MEHR
+    // Fortschritt (Runden mal Kachelzahl plus Ort) und steht damit in der Wertung vorn,
+    // waehrend er auf der Runde HINTER dem Ueberrundeten faehrt. Die Sonde prueft genau
+    // diese Unterscheidung mit.
+    //
+    // Zwei Attrappen: A liegt eine Kachel voraus und hat eine Runde WENIGER, B kommt dicht
+    // hinter ihm. Gefragt wird, was ghostSpice() fuer A daraus macht - Querversatz und
+    // Tempofaktor.
+    blaueFlaggeProbe(opt) {
+      const o = opt || {};
+      const merkGarage = garage.splice(0, garage.length);
+      const merkTiles = currentTrackTiles;
+      const merkCfg = Object.assign({}, ghostCfg);
+      const autos = [];
+      try {
+        currentTrackTiles = codeToTrack(o.code || 'SG2R3G2R3').tiles;
+        lineCache = null;
+        Object.assign(ghostCfg, WUERZE_AUS);
+        ghostCfg.wuerzeBlau = o.aus ? false : true;
+        const a = OMEGA_TEST.attrappeGhost('A');   // der Ueberrundete
+        const b = OMEGA_TEST.attrappeGhost('B');   // der Ueberrunder
+        garage.push(a); garage.push(b);
+        autos.push(a, b);
+        // A eine Kachel voraus AUF DER RUNDE, aber eine Runde zurueck in der Wertung.
+        a.ghost.tileIndex = 2; a.ghost.tilesTotal = 2; a.ghost.laps = 1; a.ghost.tileMs = 700;
+        b.ghost.tileIndex = 1; b.ghost.tilesTotal = 1; b.ghost.laps = 2; b.ghost.tileMs = 700;
+        a.ghost.querSoll = 0; b.ghost.querSoll = 0;
+        const vorher = { yieldSide: a.ghost.yieldSide || 0, yieldUntil: a.ghost.yieldUntil || 0 };
+        // aheadTight wie im Fahrbetrieb: ghostSpice() erwartet das Ergebnis von
+        // ghostAheadTightest() und liest daraus tight/dist/key.
+        const spice = ghostSpice(a, ghostAheadTightest(a, 2));
+        return {
+          vorher,
+          yieldSide: a.ghost.yieldSide || 0,
+          weichtAus: !!(a.ghost.yieldUntil && a.ghost.yieldUntil > Date.now()),
+          faktor: +(spice.factor || 1).toFixed(4),
+          // Und die Gegenrichtung: sieht A den Ueberrunder ueberhaupt als Hintermann?
+          hinterMir: (() => {
+            const h = ghostHinterMir(a);
+            return h ? { name: h.car.alias, gap: +h.gap.toFixed(3) } : null;
+          })(),
+        };
+      } finally {
+        garage.splice(0, garage.length);
+        for (const c of autos) stopGhost(c);
+        for (const c of merkGarage) garage.push(c);
+        Object.assign(ghostCfg, merkCfg);
+        currentTrackTiles = merkTiles;
+        lineCache = null;
+      }
+    },
+
     // ---- WELCHE SEITE IST BELEGT? -------------------------------------------------
     //
     // ghostSeitenFrei() ist der Wachhund, der ein Ueberholmanoever nicht in ein drittes
@@ -2373,6 +2490,21 @@
             if (v.gapMin !== undefined) gapMinSetzen(v.gapMin);
             simStart();
             if (!simAn()) { laeufeAus.push(null); continue; }
+            // ---- UNTERSCHIEDLICH SCHNELLE AUTOS, wenn bestellt --------------------
+            //
+            // Mit gleicher Einstellung fahren alle gleich schnell, und dann gibt es kein
+            // Ueberrunden - die blaue Flagge waere nicht messbar. `tempoSpanne` verteilt
+            // car.ghostSpeed linear ueber das Feld, symmetrisch um ghostCfg.speed. Es geht
+            // NACH simStart(), weil erst dort die Autos existieren; ghostTick liest den
+            // Wert je Takt, also greift er sofort.
+            if (o.tempoSpanne > 0 && simState && simState.autos.length > 1) {
+              const n2 = simState.autos.length;
+              simState.autos.forEach((a, i) => {
+                const rel = n2 > 1 ? (i / (n2 - 1) - 0.5) : 0;    // -0,5 bis +0,5
+                a.car.ghostSpeed = Math.max(0.35, Math.min(1,
+                  (ghostCfg.speed || 0.55) + rel * o.tempoSpanne));
+              });
+            }
             let letzter = simZustand();
             // Aufwaermen: fahren, aber nicht zaehlen. Danach die Grundlinie merken.
             for (let k = 0; k < aufwaermSchritte && simAn(); k++) {
@@ -2421,7 +2553,8 @@
         stell('sim-fast', merkFeld.f);
       }
       return { sekunden, laeufe, autos, paare, aufwaermSekunden: aufwaerm,
-               code: o.code || null, takt: SIM_TAKT_MS, varianten: aus };
+               code: o.code || null, tempoSpanne: o.tempoSpanne || 0,
+               takt: SIM_TAKT_MS, varianten: aus };
     },
 
     // ---- DAS DREHZAHLBAND JE MOTOR ------------------------------------------------

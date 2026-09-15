@@ -7117,6 +7117,80 @@
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
+  // ---- Verteidigen: der Vorausfahrende deckt die angegriffene Seite ab ----
+  //
+  // Bis v0.6.39 gab der Vorausfahrende IMMER nach - der Angreifer schrieb ihm yieldSide auf
+  // die Gegenseite seines eigenen Versatzes. Ein Feld, in dem niemand seine Position
+  // verteidigt, ist eine Kolonne mit Reihenfolgewechseln.
+  //
+  // Geprueft wird das VORZEICHENVERHAELTNIS und nicht eine bestimmte Seite: welche Seite
+  // der Angreifer waehlt, haengt an Querlagen und der naechsten Kurve, und das ist woanders
+  // geprueft. Hier zaehlt nur, ob der Vorausfahrende AUF diese Seite geht (deckt) oder auf
+  // die andere (weicht).
+  //
+  // Gemessen, vier Autos, 90 s, je drei Laeufe: Beruehrungen 16,0 -> 14,2, Ueberholmanoever
+  // 13,1 -> 9,8. Ein Viertel weniger Ueberholmanoever bei etwas weniger Beruehrungen - genau
+  // das, was Verteidigen bedeutet. Deshalb ist es ein Schalter und keine Vorgabe.
+  stAdd('Verteidigen: gedeckt statt gewichen', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.verteidigenProbe) {
+      return { skip: true, mass: 'verteidigenProbe nicht vorhanden' };
+    }
+    const ohne = OMEGA_TEST.verteidigenProbe({ verteidigen: false });
+    const mit = OMEGA_TEST.verteidigenProbe({ verteidigen: true });
+    const fehler = [];
+    if (!ohne || !mit) return { skip: true, mass: 'keine Antwort' };
+    // Ueberhaupt angesetzt? Ohne Attacke sagt der Rest nichts.
+    if (!ohne.attackSide || !mit.attackSide) fehler.push('es wurde nicht angesetzt');
+    // Ohne Verteidigen: Gegenseite. Mit Verteidigen: dieselbe Seite.
+    if (ohne.deckt) fehler.push('ohne Verteidigen wurde trotzdem gedeckt');
+    if (!mit.deckt) fehler.push('mit Verteidigen wurde nicht gedeckt');
+    if (ohne.verteidigt) fehler.push('ohne Verteidigen ist der Merker gesetzt');
+    if (!mit.verteidigt) fehler.push('mit Verteidigen fehlt der Merker');
+    return { ok: !fehler.length,
+             mass: 'ohne: Angriff ' + ohne.attackSide + ', Ausweichen ' + ohne.yieldSide
+                 + ' | mit: Angriff ' + mit.attackSide + ', Ausweichen ' + mit.yieldSide
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
+  // ---- Blaue Flagge: der Ueberrundete macht Platz ----
+  //
+  // Es gab kein Ueberrunden: flagState kennt gruen, gelb und Neustart, und ein
+  // Rundenrueckstand wurde nirgends gebildet. Das Bild davor gibt es im Rennsport nicht -
+  // der Fuehrende kaempft fuenf Sekunden gegen einen Ueberrundeten und ist danach sechs
+  // Sekunden gesperrt.
+  //
+  // DER FEHLER, DEN DIESE PRUEFUNG FESTHAELT, steckte im ersten Anlauf: gesucht wurde der
+  // Hintermann ueber ghostProgress(). Der ist absolut (Runden mal Kachelzahl plus Ort), also
+  // hat wer mich UEBERRUNDET mehr davon - er waere "voraus", und die blaue Flagge faende
+  // nie jemanden. Richtig ist die Lage AUF DER RUNDE, mit Ueberlauf an der Ziellinie.
+  stAdd('Blaue Flagge: eine Runde zurueck heisst Platz machen', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.blaueFlaggeProbe) {
+      return { skip: true, mass: 'blaueFlaggeProbe nicht vorhanden' };
+    }
+    const an = OMEGA_TEST.blaueFlaggeProbe({});
+    const aus = OMEGA_TEST.blaueFlaggeProbe({ aus: true });
+    if (!an || !aus) return { skip: true, mass: 'keine Antwort' };
+    const fehler = [];
+    // 1. Der Ueberrunder muss ueberhaupt als Hintermann erkannt werden - das ist die Zeile,
+    //    in der der Denkfehler steckte.
+    if (!an.hinterMir) fehler.push('der Ueberrunder wird nicht als Hintermann erkannt');
+    // 2. Zur Seite UND gelupft.
+    if (!an.yieldSide) fehler.push('kein Querversatz gesetzt');
+    if (!an.weichtAus) fehler.push('das Platzmachen laeuft nicht');
+    if (!(an.faktor < 1)) fehler.push('kein Tempoabzug (' + an.faktor + ')');
+    // 3. Und ohne Schalter passiert nichts.
+    if (aus.yieldSide || aus.weichtAus || aus.faktor !== 1) {
+      fehler.push('mit ausgeschaltetem Schalter passiert trotzdem etwas ('
+                  + aus.yieldSide + '/' + aus.faktor + ')');
+    }
+    return { ok: !fehler.length,
+             mass: 'an: Seite ' + an.yieldSide + ', Faktor ' + an.faktor
+                 + ', Hintermann ' + (an.hinterMir ? an.hinterMir.name + ' bei '
+                                      + an.hinterMir.gap + ' Kacheln' : 'keiner')
+                 + ' | aus: Seite ' + aus.yieldSide + ', Faktor ' + aus.faktor
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
   // ---- Ueberholen: kein Ansatz in eine belegte Seite ----
   //
   // DIE FEHLERKLASSE, und sie ist gemessen: ghostAhead() sieht nur den naechsten nach
@@ -9398,6 +9472,8 @@
       ['ghost-w-form', () => ghostCfg.wuerzeForm],
       ['ghost-w-fehler', () => ghostCfg.wuerzeFehler],
       ['ghost-w-slip', () => ghostCfg.wuerzeWindschatten],
+      ['ghost-w-defend', () => ghostCfg.wuerzeVerteidigen],
+      ['ghost-w-blau', () => ghostCfg.wuerzeBlau],
       ['ghost-learn', () => ghostCfg.learn],
       ['ghost-learn-pace', () => ghostCfg.learnPace],
       ['ghost-needcode', () => ghostCfg.needCode],
