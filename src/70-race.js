@@ -3310,6 +3310,161 @@
   // Der Schadenswert je Spieler, fuer alles, was ihn nur LIEST.
   function schadenVon(wer) { return wer === 2 ? schadenZwei.wert : damage; }
 
+  // ====================================================================================
+  // DER BOXENSTOPP VON AUTO 2
+  // ====================================================================================
+  //
+  // ABSICHTLICH SCHMAL, und diesmal ist die Begruendung eine gezaehlte: die
+  // Zustandsmaschine von Auto 1 hat 27 modulweite Groessen und 633 Fundstellen. Sie traegt
+  // die Vorwahl im Boxenschirm, drei Ausloesearten, das Ausfahrtmuster, den
+  // Nachlauf-Wecker, vier Tonschleifen, den Reifenwechsel mit gewuerfelter Dauer, das
+  // Rad-Abnehmen, die Doppelrunden-Regel und die Rennstatistik. Sie zu verdoppeln waere
+  // ein eigenes Vorhaben - und eine halb verdoppelte Zustandsmaschine ist schlimmer als
+  // eine schmale eigene, weil man ihr ansieht, dass sie vollstaendig sein wollte.
+  //
+  // WAS AUTO 2 BEKOMMT, und es ist genau das, was den Modus fair macht: es kann tanken
+  // und sich reparieren lassen. Mit denselben Raten wie Auto 1 (PIT_FUEL_PER_SEC,
+  // repairRateAt) - ungleiche Raten waeren schlimmer als kein Stopp.
+  //
+  // WAS ES NICHT BEKOMMT:
+  //   keine Vorwahl        es tankt voll und repariert ganz. Die Vorwahl ist ein
+  //                        Bedienvorgang auf dem Boxenschirm, und den gibt es nur einmal.
+  //   keinen Reifenwechsel die Reifenwahl (`tyres`) ist eine globale Einstellung - ein
+  //                        Wechsel "auf weich" fuer EIN Auto waere eine Aussage, die das
+  //                        Modell nicht trennen kann. Die Temperaturen kuehlen im Stand
+  //                        ohnehin von selbst, und die sind je Auto.
+  //   keine Ausloesung     durch ein Streckenmuster; es geht ueber den Knopf auf seinem
+  //                        Schirm. Das Ausfahrtmuster gehoert der Boxengasse von Auto 1.
+  //
+  // DER TEMPODECKEL MUSS EIN EIGENER SEIN: der von Auto 1 laeuft ueber topSpeedScale in
+  // sendControlValue(), und diesen Weg nimmt Auto 2 gar nicht (es geht ueber writeToCar,
+  // wie ein Ghost). Das ist kein Mangel, sondern die Folge des einen Sendetakts - und es
+  // heisst umgekehrt auch, dass das Boxenlimit von Auto 1 Auto 2 nicht ausbremst.
+  const boxZwei = { lage: 'aus', standS: 0, getankt: 0, repariert: 0,
+                    fertig: false, letzterTick: null, gemeldet: false };
+
+  function boxZweiLage() { return boxZwei.lage; }
+  function boxZweiFertig() { return boxZwei.fertig; }
+
+  // Der Tempodeckel, den der Stopp auf Auto 2 legt. Dieselbe Zahl wie bei Auto 1, damit
+  // beide mit demselben Limit durch die Gasse rollen.
+  function boxZweiDeckel() {
+    return boxZwei.lage === 'aus' ? 1 : PIT_SPEED_FACTOR;
+  }
+
+  function boxZweiAnfordern() {
+    if (!zweiSpieler || !playerCar2) {
+      showHudToast('P2: KEIN AUTO ZUGETEILT');
+      return false;
+    }
+    if (boxZwei.lage !== 'aus') {
+      // Nochmal druecken bricht ab - dieselbe Bedienung wie bei Auto 1 (dort zweimal kurz).
+      boxZweiEnde('abgebrochen');
+      return false;
+    }
+    boxZwei.lage = 'angefordert';
+    boxZwei.standS = 0;
+    boxZwei.getankt = 0;
+    boxZwei.repariert = 0;
+    boxZwei.fertig = false;
+    boxZwei.gemeldet = false;
+    boxZwei.letzterTick = null;
+    showHudToast('P2: BOXENSTOPP \u2013 ANHALTEN');
+    log('P2: Boxenstopp angefordert, Tempolimit '
+        + Math.round(PIT_SPEED_FACTOR * 100) + ' %. Zum Beginnen anhalten.', 'info');
+    return true;
+  }
+
+  function boxZweiEnde(warum) {
+    if (boxZwei.lage === 'aus') return;
+    const getankt = boxZwei.getankt, rep = boxZwei.repariert, stand = boxZwei.standS;
+    boxZwei.lage = 'aus';
+    boxZwei.fertig = false;
+    boxZwei.letzterTick = null;
+    if (warum === 'abgebrochen') {
+      showHudToast('P2: BOXENSTOPP ABGEBROCHEN');
+      log('P2: Boxenstopp abgebrochen.', 'info');
+      return;
+    }
+    log('P2: Boxenstopp beendet nach ' + stand.toFixed(1) + ' s, '
+        + fuelLiters(getankt) + ' l getankt, ' + Math.round(rep) + ' % repariert.', 'info');
+  }
+
+  // Gerufen aus physicsStep2(), also im 45-ms-Takt von Auto 2 - dort gibt es ein
+  // verlaessliches dt, und dieselbe Begruendung steht bei fuelTankTick().
+  function boxZweiTick() {
+    if (boxZwei.lage === 'aus') { boxZwei.letzterTick = null; return; }
+    const now = Date.now();
+    const dt = boxZwei.letzterTick !== null
+      ? Math.max(0, Math.min(0.5, (now - boxZwei.letzterTick) / 1000)) : 0;
+    boxZwei.letzterTick = now;
+
+    // Steht das Auto? Absolutwert, sonst erfuellt Rueckwaertsfahren die Bedingung - genau
+    // diese Falle steht bei Auto 1 schon beschrieben.
+    const steht = Math.abs(physEngine2.state.speedKmh) < PIT_STANDSTILL_KMH
+                  && Math.abs(p2Throttle) < 0.1;
+
+    if (boxZwei.lage === 'angefordert') {
+      if (steht) {
+        boxZwei.lage = 'service';
+        showHudToast('P2: SERVICE LAEUFT');
+      }
+      return;
+    }
+
+    // lage === 'service'
+    if (!steht) {
+      // Losgefahren. Fertig oder nicht - ein Stopp, den man abbricht, ist ein Abbruch.
+      boxZweiEnde(boxZwei.fertig ? 'fertig' : 'abgebrochen');
+      return;
+    }
+    boxZwei.standS += dt;
+
+    // --- Tanken, auf VOLL. Dieselbe Rate wie bei Auto 1.
+    const tank = tankZweiStand();
+    if (tank < 100 - 0.05) {
+      const dazu = Math.min(100 - tank, PIT_FUEL_PER_SEC * dt);
+      tankZweiFuellen(tank + dazu);
+      boxZwei.getankt += dazu;
+    }
+    // --- Reparieren, mit derselben nichtlinearen Rate.
+    const schaden = schadenVon(2);
+    if (schaden > 0.05) {
+      const weg = Math.min(schaden, repairRateAt(schaden) * dt);
+      schadenZweiSetzenIntern(schaden - weg);
+      boxZwei.repariert += weg;
+    }
+
+    const fertig = tankZweiStand() >= 100 - 0.05 && schadenVon(2) <= 0.05;
+    // Und ein FLACHER MINDESTAUFENTHALT, wenn es nichts zu tun gab: sonst ist ein
+    // Boxenstopp bei vollem Tank und heilem Auto kostenlos. Dieselbe Zahl wie bei Auto 1.
+    const genug = boxZwei.standS >= PIT_EMPTY_STOP_S;
+    if (fertig && genug && !boxZwei.fertig) {
+      boxZwei.fertig = true;
+      showHudToast('P2: FERTIG, LOSFAHREN!');
+      padRumble(0.35, 0.2, 200, 'box', 2);
+      log('P2: Boxenstopp fertig nach ' + boxZwei.standS.toFixed(1) + ' s.', 'info');
+    } else if (!fertig) {
+      // Brummen, solange gearbeitet wird - an SEINEN Pad.
+      if (!boxZwei.gemeldet || now % 1000 < 60) {
+        boxZwei.gemeldet = true;
+        padRumble(0.16, 0.10, 200, 'box', 2);
+      }
+    }
+  }
+
+  // Der Schaden von Auto 2 von innen gesetzt. Eine eigene Funktion, weil
+  // schadenZweiZuruecksetzen() auf null setzt und die Lampen mitnimmt - beim Reparieren
+  // soll der Wert SINKEN, und die Lampen gehen erst bei null wieder an.
+  function schadenZweiSetzenIntern(wert) {
+    schadenZwei.wert = Math.max(0, Math.min(100, wert));
+    if (schadenZwei.wert <= 0.05) {
+      schadenZwei.wert = 0;
+      schadenZwei.licht.front = false;
+      schadenZwei.licht.rear = false;
+    }
+  }
+
   // Zuruecksetzen. Eine eigene Funktion und kein Griff in die Felder von aussen: der
   // Satz hat drei Bestandteile, und wer nur `wert` auf null setzt, laesst ausgefallene
   // Lampen stehen - genau die Falle, die bei lightDamage schon einmal zugeschlagen hat

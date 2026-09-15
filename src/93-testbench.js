@@ -53,6 +53,96 @@
       return this.schadenZweiLesen();
     },
 
+    // ---- TANKT UND REPARIERT DER BOXENSTOPP VON AUTO 2? ------------------------------
+    //
+    // DREI FRAGEN, und die dritte ist die, die den Modus fair macht:
+    //   1. Laeuft die Folge? angefordert -> (anhalten) -> Service -> fertig -> (losfahren)
+    //   2. Steigt der Tank und sinkt der Schaden, mit DENSELBEN Raten wie bei Auto 1?
+    //   3. Deckelt der Stopp das Tempo, und zwar mit dem eigenen Deckel - der von Auto 1
+    //      laeuft ueber topSpeedScale in sendControlValue(), und diesen Weg nimmt Auto 2
+    //      gar nicht.
+    //
+    // Der Prueflauf faelscht die Uhr und stellt p2Throttle selbst: der Stopp beginnt erst
+    // im Stillstand, und "Stillstand" heisst hier auch "Daumen weg".
+    async boxZweiProbe(o) {
+      const opt = o || {};
+      const uhrEcht = Date.now, perfEcht = performance.now;
+      const merk = { zwei: zweiSpieler, p2: playerCar2, gas: p2Throttle, steer: p2Steer,
+                     phys: physicsEnabled, tank: tankZweiStand(),
+                     schaden: this.schadenZweiLesen() };
+      const a2 = { device: { id: 'probe-box' }, role: 'player2', alias: 'P2',
+                   rx: null, testSenke: [] };
+      const reihe = [];
+      try {
+        let t = 4000000;
+        Date.now = () => t;
+        performance.now = () => t;
+        zweiSpieler = true;
+        physicsEnabled = true;
+        playerCar2 = a2;
+        physEngine2.reset();
+        physEngine2Abgleichen();
+        tankZweiFuellen(opt.tank === undefined ? 30 : opt.tank);
+        this.schadenZweiSetzen(opt.schaden === undefined ? 40 : opt.schaden, true, true);
+        tankZweiTaktVergessen();
+        phys2TaktVergessen();
+        p2Steer = 0;
+        p2Throttle = 0;                 // steht, Daumen weg
+        const lagen = [];
+        const anfordern = boxZweiAnfordern();
+        lagen.push(boxZweiLage());
+        const takte = Math.round((opt.sekunden === undefined ? 12 : opt.sekunden)
+                                 * 1000 / CONTROL_SEND_INTERVAL_MS);
+        for (let i = 0; i < takte; i++) {
+          spielerZweiSenden();
+          const l = boxZweiLage();
+          if (lagen[lagen.length - 1] !== l) lagen.push(l);
+          if (i % 20 === 0 || i === takte - 1) {
+            reihe.push({
+              s: +(i * CONTROL_SEND_INTERVAL_MS / 1000).toFixed(2),
+              lage: l, tank: +tankZweiStand().toFixed(2),
+              schaden: +schadenVon(2).toFixed(2),
+              deckel: boxZweiDeckel(), fertig: boxZweiFertig(),
+            });
+          }
+          t += CONTROL_SEND_INTERVAL_MS;
+        }
+        const fertigNach = reihe.find((x) => x.fertig);
+        // Und das Losfahren beendet den Stopp.
+        p2Throttle = 1;
+        for (let i = 0; i < 6; i++) { spielerZweiSenden(); t += CONTROL_SEND_INTERVAL_MS; }
+        lagen.push(boxZweiLage());
+        return {
+          anfordern, lagen, reihe,
+          tankAnfang: opt.tank === undefined ? 30 : opt.tank,
+          schadenAnfang: opt.schaden === undefined ? 40 : opt.schaden,
+          tankEnde: +tankZweiStand().toFixed(2),
+          schadenEnde: +schadenVon(2).toFixed(2),
+          lichtEnde: this.schadenZweiLesen().licht,
+          fertigNachS: fertigNach ? fertigNach.s : null,
+          // Die Raten, mit denen Auto 1 arbeitet - zum Vergleich in einem Zug.
+          rateTank: PIT_FUEL_PER_SEC, mindestStandS: PIT_EMPTY_STOP_S,
+          deckelSoll: PIT_SPEED_FACTOR,
+        };
+      } finally {
+        Date.now = uhrEcht;
+        performance.now = perfEcht;
+        if (typeof boxZweiAnfordern === 'function' && boxZweiLage() !== 'aus') {
+          boxZweiAnfordern();     // bricht ab
+        }
+        zweiSpieler = merk.zwei;
+        playerCar2 = merk.p2;
+        p2Throttle = merk.gas;
+        p2Steer = merk.steer;
+        physicsEnabled = merk.phys;
+        tankZweiFuellen(merk.tank);
+        this.schadenZweiSetzen(merk.schaden.wert, merk.schaden.licht.front,
+                          merk.schaden.licht.rear);
+        physEngine2.reset();
+        if (typeof updateRaceScreen2 === 'function') updateRaceScreen2(physEngine2.state);
+      }
+    },
+
     // ---- GILT DIE GELBE FLAGGE AUCH FUER AUTO 2? -------------------------------------
     //
     // DIE FRAGE, die diesen Punkt zum wertvollsten der offenen gemacht hat: ohne den

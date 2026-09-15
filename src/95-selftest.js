@@ -9638,6 +9638,78 @@
   // Die Liste ist GEPFLEGT, und das ist hier richtig: sie IST die Zusicherung. Sie stammt
   // aus einer Suche ueber alle Kaestchen, deren Listener "X = e.target.checked" schreibt.
   // Ein neuer Schalter gehoert hinein.
+  // ---- Der Boxenstopp von Auto 2 tankt und repariert -------------------------------
+  //
+  // DER LETZTE DER OFFENEN PUNKTE, und er ist der, der den Modus fair macht: ohne ihn
+  // bleibt Auto 2 mit leerem Tank stehen, waehrend Auto 1 nachtanken kann.
+  //
+  // ABSICHTLICH SCHMAL, und die Begruendung ist gezaehlt: die Zustandsmaschine von Auto 1
+  // hat 27 modulweite Groessen und 633 Fundstellen - Vorwahl im Boxenschirm, drei
+  // Ausloesearten, Ausfahrtmuster, Nachlauf-Wecker, vier Tonschleifen, Reifenwechsel mit
+  // gewuerfelter Dauer, Rad-Abnehmen, Doppelrunden-Regel, Rennstatistik. Eine halb
+  // verdoppelte Zustandsmaschine ist schlimmer als eine schmale eigene.
+  //
+  // Auto 2 tankt VOLL und repariert GANZ, ohne Vorwahl und ohne Reifenwechsel - die
+  // Reifenwahl ist eine globale Einstellung, und "auf weich" fuer EIN Auto ist eine
+  // Aussage, die das Modell nicht trennen kann.
+  //
+  // VIER AUSSAGEN:
+  //   1. Die Folge laeuft: angefordert -> Service (im Stillstand) -> fertig -> aus
+  //      (beim Losfahren).
+  //   2. DIESELBEN RATEN wie bei Auto 1. Ungleiche Raten waeren schlimmer als kein Stopp,
+  //      und das ist die Zusage, unter der dieser Modus gebaut ist. Geprueft wird gegen
+  //      PIT_FUEL_PER_SEC selbst, nicht gegen eine abgeschriebene Zahl.
+  //   3. Der Tempodeckel ist ein EIGENER. Der von Auto 1 laeuft ueber topSpeedScale in
+  //      sendControlValue(), und diesen Weg nimmt Auto 2 gar nicht - es geht ueber
+  //      writeToCar(), wie ein Ghost.
+  //   4. Die ausgefallenen Lampen gehen wieder an. Genau das hatte die Reparatur von
+  //      Auto 1 einmal nicht getan (es gab keine Zuweisung lightDamage.front = false), und
+  //      der Kommentar dort steht noch als Mahnung.
+  stAdd('Zwei Spieler: der Boxenstopp von Auto 2 tankt und repariert', async () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.boxZweiProbe) {
+      return { skip: true, mass: 'boxZweiProbe nicht vorhanden' };
+    }
+    const r = await OMEGA_TEST.boxZweiProbe({ sekunden: 12, tank: 30, schaden: 40 });
+    const maengel = [];
+    if (!r.anfordern) maengel.push('Anfordern abgelehnt');
+    // 1. Die Folge. 'angefordert' muss dabei sein, sonst begann der Service ohne Anhalten.
+    const soll = ['angefordert', 'service', 'aus'];
+    if (r.lagen.join('>') !== soll.join('>')) {
+      maengel.push('Folge ' + r.lagen.join('>') + ' statt ' + soll.join('>'));
+    }
+    // 2. Die Tankrate, aus zwei Abtastpunkten der Reihe gerechnet.
+    const a = r.reihe[0], b = r.reihe[1];
+    if (a && b && b.s > a.s) {
+      const rate = (b.tank - a.tank) / (b.s - a.s);
+      if (Math.abs(rate - r.rateTank) > 0.5) {
+        maengel.push('Tankrate ' + rate.toFixed(1) + ' statt ' + r.rateTank + ' %/s');
+      }
+    }
+    if (!(r.tankEnde > 99)) maengel.push('Tank endet bei ' + r.tankEnde);
+    if (r.schadenEnde !== 0) maengel.push('Schaden endet bei ' + r.schadenEnde);
+    // 3. Der Deckel, solange der Stopp laeuft.
+    const ungedeckelt = r.reihe.filter((x) => x.lage !== 'aus'
+                                        && Math.abs(x.deckel - r.deckelSoll) > 1e-9);
+    if (ungedeckelt.length) {
+      maengel.push(ungedeckelt.length + ' Takte ohne Tempodeckel');
+    }
+    // 4. Die Lampen.
+    if (r.lichtEnde.front || r.lichtEnde.rear) {
+      maengel.push('Lampen bleiben aus: ' + JSON.stringify(r.lichtEnde));
+    }
+    // Und der Mindestaufenthalt: fertig darf nicht vor PIT_EMPTY_STOP_S gemeldet werden.
+    if (r.fertigNachS !== null && r.fertigNachS < r.mindestStandS - 0.5) {
+      maengel.push('fertig nach ' + r.fertigNachS + ' s, Mindestaufenthalt '
+                   + r.mindestStandS + ' s');
+    }
+    return { ok: !maengel.length,
+             mass: 'Tank ' + r.tankAnfang + '->' + r.tankEnde + ' %, Schaden '
+                 + r.schadenAnfang + '->' + r.schadenEnde + ' %, fertig nach '
+                 + r.fertigNachS + ' s | Deckel ' + r.deckelSoll.toFixed(3)
+                 + ' | ' + r.lagen.join('>')
+                 + (maengel.length ? ' | ' + maengel.join(', ') : '') };
+  });
+
   // ---- Die gelbe Flagge gilt auch fuer Auto 2 --------------------------------------
   //
   // DER WERTVOLLSTE DER OFFENEN PUNKTE, und der Grund ist einfach: ohne den Autopiloten

@@ -1436,9 +1436,38 @@
     if (rundeK) rundeK.textContent = ms.length ? 'Runde ' + ms.length : '';
     const fuss = $('p2s-fuss');
     if (fuss) {
-      fuss.textContent = car ? garageLabel(car)
-        : 'In der Garage einem Auto die Rolle "Spieler 2" geben.';
+      // ---- DER ZUSTAND DES BOXENSTOPPS steht hier, wo der Knopf ist -----------------
+      //
+      // Sonst muesste man aus dem Meldungsband schliessen, was gerade laeuft - und das
+      // Band gehoert beiden Autos und ist nach 1,5 s wieder leer.
+      const lage = typeof boxZweiLage === 'function' ? boxZweiLage() : 'aus';
+      if (!car) {
+        fuss.textContent = 'In der Garage einem Auto die Rolle "Spieler 2" geben.';
+      } else if (lage === 'angefordert') {
+        fuss.textContent = garageLabel(car) + ' \u00b7 Boxenstopp: anhalten';
+      } else if (lage === 'service') {
+        const offen = [];
+        if (tank < 100 - 0.05) offen.push('tankt');
+        if (schaden > 0.05) offen.push('repariert');
+        fuss.textContent = garageLabel(car) + ' \u00b7 '
+          + (boxZweiFertig() ? 'fertig, losfahren!' : 'Service: ' + (offen.join(', ') || 'Standzeit'));
+      } else {
+        fuss.textContent = garageLabel(car);
+      }
+      const knopf = $('p2s-act-pit');
+      if (knopf) {
+        knopf.classList.toggle('warn', lage !== 'aus');
+        knopf.disabled = !car;
+      }
     }
+  }
+
+  if ($('p2s-act-pit')) {
+    $('p2s-act-pit').addEventListener('click', () => {
+      // Defensiv gerufen: 70-race.js wird SPAETER gebaut. Zur Laufzeit ist die Funktion da.
+      if (typeof boxZweiAnfordern === 'function') boxZweiAnfordern();
+      if (typeof p2ScreenRender === 'function') p2ScreenRender();
+    });
   }
 
   // Einen Wert schreiben UND, wenn er sich geaendert hat, die Anzeige 1 px nach unten
@@ -2424,6 +2453,16 @@
     // Andersherum wuerde die Kennlinie einen halbleeren Tank mitkruemmen.
     fuelTankTick(p2Throttle, 2);
     gas = fuelDamageDerate(gas, tankZweiCutRampe(dt), 2);
+    // ---- BOXENSTOPP, seit v0.6.54 -------------------------------------------------
+    //
+    // Der Takt zuerst, der Deckel danach: der Takt entscheidet ueber die Lage (angefordert,
+    // Service, aus), und der Deckel liest sie. Umgekehrt haette der Deckel einen Takt lang
+    // die alte Lage.
+    //
+    // EIN EIGENER DECKEL, weil der von Auto 1 ueber topSpeedScale in sendControlValue()
+    // laeuft - und diesen Weg nimmt Auto 2 nicht (es geht ueber writeToCar, wie ein Ghost).
+    boxZweiTick();
+    gas = Math.min(gas, boxZweiDeckel());
     // ---- GELBE FLAGGE UND EINFUEHRUNGSRUNDE, seit v0.6.53 -------------------------
     //
     // Der wertvollste der offenen Punkte, und der Grund ist einfach: ohne ihn faehrt

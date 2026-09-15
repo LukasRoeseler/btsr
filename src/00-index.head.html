@@ -1688,6 +1688,12 @@
     .p2s-grid .gt3-val.sm { font-size: clamp(13px, 4vw, 19px); }
   }
   #race-p2screen { grid-template-rows: auto minmax(0, 1fr) auto; }
+  /* Knopf links, Zustandstext rechts daneben - der Knopf behaelt seine Breite, der Text
+     nimmt den Rest. Ein Knopf ueber die ganze Breite waere im Fahren ein Ziel, das man
+     nicht verfehlen KANN, und genau das will man bei einem Boxenstopp nicht. */
+  .p2s-fuss { display: flex; align-items: center; gap: clamp(8px, 1.6vw, 14px); }
+  .p2s-fuss .gt3-act { flex: none; }
+  .p2s-fuss .schirm-fuss { min-width: 0; }
 
   .schirm-kopf { display: flex; align-items: baseline; gap: 10px;
     font-size: clamp(8px, 1.1vw, 11px); letter-spacing: .12em;
@@ -3676,7 +3682,14 @@
           <div class="gt3-box"><div class="gt3-lbl">Beste Runde</div>
             <div class="gt3-val sm gt3-ok" id="p2s-lap-best" data-i18n-skip>&ndash;</div></div>
         </div>
-        <div class="schirm-fuss" id="p2s-fuss" data-i18n-skip></div>
+        <!-- DER BOXENSTOPP VON AUTO 2 HAT SEINEN KNOPF HIER, und nicht im Hauptschirm:
+             dort liegt der Knopf von Auto 1, und zwei gleich aussehende Boxenknoepfe
+             nebeneinander sind die Bedienung, bei der man im Fahren daneben greift.
+             Nochmal druecken bricht ab - dieselbe Bedienung wie bei Auto 1. -->
+        <div class="p2s-fuss">
+          <button type="button" class="gt3-act" id="p2s-act-pit">Boxenstopp</button>
+          <div class="schirm-fuss" id="p2s-fuss" data-i18n-skip></div>
+        </div>
       </div>
 
       <div class="gt3-banner" id="hud-toast-wrap"><span id="hud-toast"></span></div>
@@ -8147,11 +8160,10 @@
       <p class="muted">Ehrlicher als es zu verschweigen &ndash; jeder Punkt h&auml;ngt an
         einem Z&auml;hler oder einer Ortung, die es nur einmal gibt:</p>
       <div class="help-grid">
-        <kbd>Box</kbd><span>Kein Boxenstopp f&uuml;r Auto&nbsp;2: kein Nachtanken, keine
-          Reparatur, kein Reifenwechsel &ndash; die Boxengasse ist eine Zustandsmaschine mit
-          27&nbsp;Gr&ouml;&szlig;en. Tank und Schaden gehen mit dem R&uuml;cksetzknopf, der
-          Taste&nbsp;R und dem Rennstart zur&uuml;ck; am Start haben beide Autos dieselbe
-          Spritmenge.</span>
+        <kbd>Box</kbd><span>Der Boxenstopp von Auto&nbsp;2 ist schmal: er tankt voll und
+          repariert ganz, ohne Vorwahl und ohne Reifenwechsel. Die Reifenwahl ist eine
+          globale Einstellung &ndash; &bdquo;auf weich&ldquo; f&uuml;r ein einzelnes Auto
+          ist eine Aussage, die das Modell nicht trennen kann.</span>
         <kbd>Ton</kbd><span>Auto&nbsp;2 hat keine Zusatzkette am Motorklang: kein
           Turbopfeifen, keine Knaller, kein Begrenzer-Takt &ndash; die h&auml;ngen an
           einem Bus. Und keinen Doppler, der geh&ouml;rt zur Runde von Auto&nbsp;1.</span>
@@ -8169,6 +8181,14 @@
         Pfeil oben links oder dem Steuerkreuz auf &bdquo;Auto&nbsp;2&ldquo;. Dort stehen
         Tank, Zustand, Reifen- und Bremsentemperatur und seine Rundenzeiten. Ist der Modus
         aus, wird der Schirm beim Bl&auml;ttern &uuml;bersprungen.</p>
+      <p class="muted">Und ein Boxenstopp: der Knopf daf&uuml;r steht auf dem Schirm von
+        Auto&nbsp;2, nicht neben dem von Auto&nbsp;1 &ndash; zwei gleich aussehende
+        Boxenkn&ouml;pfe nebeneinander sind die Bedienung, bei der man im Fahren daneben
+        greift. Anfordern, anhalten, warten, losfahren; nochmal dr&uuml;cken bricht ab. Es
+        tankt mit denselben 22&nbsp;%/s wie Auto&nbsp;1 und repariert mit derselben
+        nichtlinearen Rate &ndash; ungleiche Raten w&auml;ren schlimmer als kein Stopp.
+        W&auml;hrend des Stopps gilt dasselbe Tempolimit, aber als eigener Deckel: der von
+        Auto&nbsp;1 l&auml;uft &uuml;ber einen Weg, den Auto&nbsp;2 gar nicht nimmt.</p>
       <p class="muted">Und die Rennleitung gilt f&uuml;r beide: bei gelber Flagge regelt
         Auto&nbsp;2 auf dasselbe Tempo herunter wie das ganze Feld &ndash; gemessen 100 von
         103&nbsp;km/h Zieltempo, gegen einen Daumen auf Vollgas &ndash;, und in der
@@ -8608,7 +8628,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.6.53</span></span>
+    <span class="foot-ver">v<span id="app-version">0.6.54</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
