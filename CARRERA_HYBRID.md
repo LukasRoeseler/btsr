@@ -1140,3 +1140,55 @@ Differenz stehen. Gemessen, nahe Abtastungen mit wahrem Abstand unter einer Kach
 Der Kachelabstand ist damit brauchbar geworden. Die Zeitlücke bleibt die Größe, mit der der
 Abstandhalter arbeitet — geändert wird daran hier nichts, aber die Begründung für `1,2` ist
 nicht mehr die Auflösung, sondern nur noch die gemessene Reihe dahinter.
+
+### Zwei naheliegende Verbesserungen, gemessen und verworfen
+
+Beide sahen nach einer Lücke aus, beide sind gebaut, gemessen und wieder entfernt worden.
+Die Zahlen stehen hier, damit sie niemand ein zweites Mal baut.
+
+**1. Das Tempoprofil der Ideallinie als Tempogrenze.** `lapTimeOf()` rechnet für jede Linie
+ein vollständiges Profil `v[]` je Abtastpunkt — Kurvengrenze, Vorwärts- und
+Rückwärtsdurchlauf, Bremszonen an der richtigen Stelle. Es lag ungenutzt da, und der
+naheliegende Griff wäre, es als Obergrenze auf das Ghost-Tempo zu legen. Gemessen auf zwei
+Haarnadeln (`SG2H2G2J2`), vier Autos, 90 s, je drei Läufe:
+
+| | Rundenzeit | Berührungen/min | Überholmanöver/min |
+|---|---|---|---|
+| Deckel aus | **16,32 s** | **15,3** | **9,8** |
+| Deckel an | 25,56 s | 78,9 | 1,5 |
+
+57 Prozent langsamer, und die Autos schieben statt zu überholen. Der Grund ist grundsätzlich
+und keine Abstimmungsfrage: die Kurvengrenze im Profil ist `sqrt(aLat / Krümmung)`, also die
+Grenze eines **freien** Fahrzeugs. Ein Auto auf der Schiene bekommt seine Querkraft von der
+Schiene; seine Grenze liegt weit darüber. Das Profil ist gebaut, um **Linien zu vergleichen**
+— dafür ist die Annahme richtig, und dort bleibt es.
+
+**2. Ein Bremspunkt statt der reaktiven Bremse.** Gebremst wird nur, wenn das Auto schon zu
+schnell *ist*. Ein Bremspunkt — „ab dieser Entfernung muss ich bremsen, um die Kurve zu
+treffen" — wäre die Lehrbuchform: `a = (v² − vZiel²) / (2s)`, Bremsbefehl `a / aBrk`,
+Zieltempo aus der Kachelregel, Entfernung aus `tileLength()` minus dem auf der Kachel schon
+gefahrenen Weg. Gemessen mit `ghostDriveProbe`:
+
+| Ghost-Tempo | nötiger Bremsweg | höchster Bremsbefehl |
+|---|---|---|
+| 55 % | 1,7 cm | 0,032 |
+| 80 % | 2,0 cm | 0,032 |
+| 100 % | 1,4 cm | 0,140 |
+
+**Eine Kachel ist 43 cm lang.** Der Bremsweg beträgt also rund vier Prozent einer Kachel: das
+Auto legt die Tempodifferenz zur Kurve in zwei Zentimetern ab. Ein Bremspunkt beschreibt
+damit nichts — er liegt immer innerhalb des Takts, in dem der reaktive Regler ohnehin schon
+bremst. In der Rennsimulation entsprechend: 16,227 gegen 16,240 s Rundenzeit, 16,2 gegen 16,0
+Berührungen je Minute, beides innerhalb der Streuung von drei Läufen.
+
+Das liegt **nicht** an `aBrk` — beim Bremsen hilft die Schiene nicht, die Größe ist richtig.
+Es liegt an `v²`: Verzögerung skaliert nicht mit der Fahrzeuggröße, Bremswege aber mit dem
+Quadrat des Tempos. Ein Modellauto bei 4 km/h Modelltempo braucht Zentimeter, wo ein
+wirkliches Auto bei 200 km/h hundert Meter braucht. Selbst am Anschlag des
+Spitzentempo-Reglers bleibt es unter einem Sechstel einer Kachel.
+
+**Was aus dem Versuch geblieben ist:** ein stiller Fehler im Zwischenspeicher der Linie. Sein
+Schlüssel waren Layout und Linienmodell — die **Fahrgrenzen** fehlten, obwohl `lapTime` an
+ihnen hängt. Wer in der Werkstatt Antrieb, Reifen oder Masse wechselte, bekam weiter die
+Rundenzeit des alten Fahrzeugs angezeigt. Eine Kennung der vier Werte im Schlüssel heilt das
+von selbst.

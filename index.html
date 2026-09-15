@@ -8252,7 +8252,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.6.37</span></span>
+    <span class="foot-ver">v<span id="app-version">0.6.38</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -30538,8 +30538,26 @@
     if (!tiles || tiles.length < 3) return null;
     // Das Modell gehoert in den Schluessel: sonst behaelt der Zwischenspeicher die Linie
     // des alten Modells, und der Schalter waere ohne Wirkung, bis sich das Layout aendert.
+    //
+    // ---- UND DIE FAHRGRENZEN AUCH, und das war ein stiller Fehler -------------------
+    //
+    // `lapTime` in diesem Zwischenspeicher ist die Rundenzeit, die buildLine() ueber
+    // lapTimeOf() rechnet - und die haengt an vMax, aAcc, aBrk und aLat des EINGESTELLTEN
+    // Fahrzeugs (fahrGrenzen() in 60-track.js liest physEngine.config). Wer in der
+    // Werkstatt Antrieb, Reifen oder Masse wechselt, aendert damit die Rundenzeit der
+    // Linie; der Zwischenspeicher hat es nicht gemerkt, weil Layout und Modell dieselben
+    // blieben, und die Anzeige zeigte weiter die Zeit des alten Fahrzeugs.
+    //
+    // Eine Kennung der vier Zahlen im Schluessel heilt das von selbst - besser als eine
+    // weitere Stelle, an der jemand ghostLineCacheLeeren() rufen muss und es irgendwann
+    // vergisst.
+    const gz = (typeof fahrGrenzen === 'function') ? fahrGrenzen() : null;
+    const grenzKennung = gz
+      ? [gz.vMax, gz.aAcc, gz.aBrk, gz.aLat].map((x) => Math.round(x * 1000)).join('/')
+      : '';
     if (lineCache && lineCache.tiles === tiles
-        && lineCache.model === getLineModel()) return lineCache;
+        && lineCache.model === getLineModel()
+        && lineCache.grenzKennung === grenzKennung) return lineCache;
     const pts = trackCenterline(tiles);
     if (pts.length < 8) return null;
     const nrm = trackNormals(pts);
@@ -30571,10 +30589,33 @@
       if (r.start < 0) r.start = i;
       r.count++;
     });
+    // ---- WARUM DAS TEMPOPROFIL v[] HIER NICHT LIEGT, obwohl es fertig dasteht -------
+    //
+    // lapTimeOf() rechnet fuer jede Linie ein vollstaendiges Tempoprofil v[] je
+    // Abtastpunkt, und jedes Linienmodell gibt es heraus. Der naheliegende Griff waere,
+    // es als Tempodeckel zu nehmen. GEMESSEN IST DAS FALSCH, und zwar deutlich - zwei
+    // Haarnadeln (SG2H2G2J2), vier Autos, 90 s, je drei Laeufe:
+    //
+    //     Deckel aus    16,32 s Runde    15,3 Beruehrungen/min     9,8 Ueberholmanoever/min
+    //     Deckel an     25,56 s Runde    78,9 Beruehrungen/min     1,5 Ueberholmanoever/min
+    //
+    // 57 Prozent langsamer, und die Autos schieben statt zu ueberholen. Der Grund ist
+    // grundsaetzlich und keine Abstimmungsfrage: die Kurvengrenze im Profil ist
+    // sqrt(aLat / Kruemmung), also die Grenze eines FREIEN Fahrzeugs. Ein Auto auf der
+    // Schiene bekommt seine Querkraft von der Schiene; seine Grenze liegt weit darueber.
+    // Das Profil ist gebaut, um LINIEN ZU VERGLEICHEN - dafuer ist die Annahme richtig und
+    // dort bleibt es. Als Tempogrenze fuer ein schienengefuehrtes Auto ist es die falsche
+    // Groesse, und ein Feld, das niemand liest, waere die naechste Stelle, an der jemand
+    // denkt, es taete etwas.
+    //
+    // Dasselbe Schicksal hat der Bremspunkt, der aus dem Profil folgen sollte - dort lag
+    // es nicht an aLat, sondern am Quadrat des Tempos. Die Zahlen stehen bei
+    // ghostAheadTightest() weiter unten.
     lineCache = { tiles, alpha: line.alpha, limit: line.limit, span: line.span,
                   brake, ranges, closed, points: pts.length,
                   model: line.model, lapTime: line.lapTime || null,
-                  gain: line.gain || 0 };
+                  gain: line.gain || 0,
+                  grenzKennung };
     return lineCache;
   }
 
@@ -30895,6 +30936,43 @@
     const i = ghostLineIndex(lc, g.tileIndex, ghostTilePhase(car));
     return i === null ? null : lc.brake[i];
   }
+
+  // ====================================================================================
+  // EIN BREMSPUNKT WAERE HIER KEINE GROESSE - GEMESSEN, NICHT GEAHNT
+  // ====================================================================================
+  //
+  // Gebremst wird ausschliesslich reaktiv: der Regler sieht eine Abweichung vom Ziel und
+  // bremst proportional (GHOST_KP_BREMSE), dazu ein Boden aus dem Bremsprofil der Linie.
+  // Einen Bremspunkt - "ab dieser Entfernung muss ich bremsen, um die Kurve zu treffen" -
+  // gibt es nirgends, und das sieht nach einer Luecke aus. Sie ist gebaut, gemessen und
+  // wieder entfernt worden; die Zahlen stehen hier, damit es niemand ein zweites Mal baut.
+  //
+  // Gerechnet wurde die Lehrbuchform: noetige Verzoegerung a = (v² - vZiel²) / (2 s),
+  // Bremsbefehl a / aBrk. Zieltempo aus der Kachelregel, Entfernung aus tileLength() minus
+  // dem auf der Kachel schon gefahrenen Weg (g.kachelWeg), aBrk aus fahrGrenzen(). Vier
+  // Kacheln Vorausschau. Gemessen mit ghostDriveProbe auf zwei Haarnadeln (SG2H2G2J2):
+  //
+  //     Ghost-Tempo   noetiger Bremsweg   hoechster Bremsbefehl
+  //        55 %             1,7 cm               0,032
+  //        80 %             2,0 cm               0,032
+  //       100 %             1,4 cm               0,140
+  //
+  // EINE KACHEL IST 43 CM LANG. Der Bremsweg betraegt also rund vier Prozent einer Kachel -
+  // das Auto legt die Tempodifferenz zur Kurve in zwei Zentimetern ab. Ein Bremspunkt
+  // beschreibt damit nichts: er liegt immer INNERHALB des Takts, in dem der reaktive
+  // Regler ohnehin schon bremst. In der Rennsimulation war die Wirkung entsprechend:
+  // Rundenzeit 16,227 gegen 16,240 s, Beruehrungen 16,2 gegen 16,0 je Minute - beides
+  // innerhalb der Streuung von drei Laeufen.
+  //
+  // WARUM DAS SO IST, und es ist kein Zufall dieser Abstimmung: die Verzoegerung eines
+  // Fahrzeugs skaliert mit seiner Groesse nicht mit, die Bremswege aber mit dem QUADRAT
+  // des Tempos. Ein Modellauto bei 4 km/h Modelltempo braucht deshalb Zentimeter, wo ein
+  // wirkliches Auto bei 200 km/h hundert Meter braucht. Selbst am Anschlag des
+  // Spitzentempo-Reglers bleibt es unter einem Sechstel einer Kachel.
+  //
+  // Was NICHT daran liegt: aBrk. Die Groesse ist richtig - beim Bremsen hilft die Schiene
+  // nicht, anders als bei der Querbeschleunigung (siehe den Kommentar bei lineCache). Es
+  // liegt an v²: bei diesen Tempi ist der Bremsweg einfach klein.
 
   // Die engste Kachel in den naechsten n Schritten, und wie weit sie weg ist. Daraus baut
   // ghostTick sein Tempoprofil: vor einer Haarnadel muss frueher und tiefer verzoegert
@@ -36383,10 +36461,26 @@
       // ist die Wahrheit, gegen die JEDER Lauf zurueckgesetzt wird. Ohne das Zuruecksetzen
       // je Lauf traegt die dritte Variante die Einstellung der zweiten mit sich.
       const merkCfg = Object.assign({}, ghostCfg);
+      // Die STRECKE als Angabe, im Muster der uebrigen Sonden. Ohne sie misst die Sonde
+      // immer die Vorgabestrecke der Simulation (SR3GLR2GR2G2, dreizehn Kacheln ohne
+      // Haarnadel) - und genau die Haarnadel ist der Fall, in dem ein Ghost abfliegt.
+      const merkTiles = currentTrackTiles;
       const merkLuecke = lueckeMinLesen(), merkRange = attackRangeLesen();
       const merkGap = gapMinLesen();
       const zahl = (x, n) => (x === null || x === undefined || !isFinite(x)
         ? null : +x.toFixed(n === undefined ? 2 : n));
+      // ABGAENGE zaehlen, und zwar als FLANKE. Sie stehen in keinem Zaehler der Simulation,
+      // sind aber die Zahl, die ueber eine Kurvenabstimmung entscheidet: ein Ghost, der
+      // schneller ist und dabei abfliegt, ist nicht schneller. `geparkt` je Auto kommt aus
+      // simZustand(), der Uebergang falsch -> wahr ist ein Abgang.
+      const abgangZaehler = (vor, z) => {
+        let neu = 0;
+        (z.autos || []).forEach((a, i) => {
+          if (a.geparkt && !vor[i]) neu++;
+          vor[i] = !!a.geparkt;
+        });
+        return neu;
+      };
       // Der Stand der vier Zaehler nach dem Aufwaermen. Alle laufen monoton, also ist die
       // Differenz das Messfenster - siehe der Kommentar oben.
       const grundlinie = (z) => ({
@@ -36397,7 +36491,7 @@
         runden: (z.autos || []).map((a) => (a.zeiten || []).length),
       });
       // Die Kennzahlen EINES Laufs, aus dem letzten gueltigen Zustand und der Grundlinie.
-      const kennzahlen = (z, basis) => {
+      const kennzahlen = (z, basis, abgaenge) => {
         const b = basis || { uhrMs: 0, kontakte: 0, ueberholt: 0, kontaktMs: 0, runden: [] };
         const dauerMs = Math.max(1, z.uhrMs - b.uhrMs);
         const min = dauerMs / 60000;
@@ -36424,6 +36518,8 @@
           // Kein Zaehler, sondern ein Minimum: gilt fuer den ganzen Lauf, Aufwaermen
           // eingeschlossen.
           engstCm: z.kontaktEngstCm,
+          abgaenge: abgaenge || 0,
+          abgaengeProMin: zahl((abgaenge || 0) / min, 2),
           rundenZahl: runden.length,
           besteRundeS: runden.length ? zahl(Math.min.apply(null, runden), 2) : null,
           mittlereRundeS: runden.length
@@ -36437,7 +36533,8 @@
         if (!gut.length) return null;
         const aus = { laeufe: gut.length };
         for (const k of ['beruehrungenProMin', 'ueberholtProMin', 'beruehrungJeUeberholen',
-                         'kontaktAnteil', 'mittlereRundeS', 'besteRundeS', 'sekundenEcht']) {
+                         'kontaktAnteil', 'abgaengeProMin', 'mittlereRundeS', 'besteRundeS',
+                         'sekundenEcht']) {
           const w = gut.map((g) => g[k]).filter((x) => x !== null && x !== undefined);
           if (!w.length) { aus[k] = null; aus[k + 'Spanne'] = null; continue; }
           aus[k] = zahl(w.reduce((s, x) => s + x, 0) / w.length, 3);
@@ -36447,6 +36544,7 @@
       };
       const aus = [];
       try {
+        if (o.code) { currentTrackTiles = codeToTrack(o.code).tiles; lineCache = null; }
         stell('sim-ghosts', String(autos));
         stell('sim-laps', '10');       // die groesste Option; siehe den Abbruch unten
         stell('sim-fast', false);
@@ -36473,6 +36571,11 @@
               if ((k % 400) === 399 && typeof stLuft === 'function') await stLuft();
             }
             const basis = letzter ? grundlinie(letzter) : null;
+            // Der Parkzustand nach dem Aufwaermen ist der Anfangsstand: ein Auto, das
+            // schon vor dem Fenster lag, ist kein Abgang IN diesem Fenster.
+            const parkVor = (letzter && letzter.autos)
+              ? letzter.autos.map((a) => !!a.geparkt) : [];
+            let abgaenge = 0;
             for (let k = 0; k < schritte; k++) {
               simSchritt(SIM_TAKT_MS);
               // ALLE DURCH heisst: die Simulation hat sich selbst beendet, und simZustand()
@@ -36481,13 +36584,13 @@
               // die Kennzahlen sind Raten je Minute und bleiben damit vergleichbar.
               if (!simAn()) break;
               const z = simZustand();
-              if (z) letzter = z;
+              if (z) { letzter = z; abgaenge += abgangZaehler(parkVor, z); }
               // Dem Browser Luft lassen, ohne einen Zeitgeber zu benutzen: im verborgenen
               // Fenster sind Zeitgeber auf 1 Hz gedrosselt, ein setTimeout(0) je Takt
               // waere also eine halbe Stunde je Lauf.
               if ((k % 400) === 399 && typeof stLuft === 'function') await stLuft();
             }
-            laeufeAus.push(letzter ? kennzahlen(letzter, basis) : null);
+            laeufeAus.push(letzter ? kennzahlen(letzter, basis, abgaenge) : null);
             if (simAn()) simStop('Kennzahlensonde');
             if (typeof stLuft === 'function') await stLuft();
           }
@@ -36501,12 +36604,13 @@
         attackRangeSetzen(merkRange);
         gapMinSetzen(merkGap);
         if (simAn()) simStop('Kennzahlensonde');
+        if (o.code) { currentTrackTiles = merkTiles; lineCache = null; }
         stell('sim-ghosts', merkFeld.g);
         stell('sim-laps', merkFeld.l);
         stell('sim-fast', merkFeld.f);
       }
       return { sekunden, laeufe, autos, paare, aufwaermSekunden: aufwaerm,
-               takt: SIM_TAKT_MS, varianten: aus };
+               code: o.code || null, takt: SIM_TAKT_MS, varianten: aus };
     },
 
     // ---- DAS DREHZAHLBAND JE MOTOR ------------------------------------------------
@@ -44492,30 +44596,8 @@
         if (a.zeiten.length !== a.laps) {
           schlecht.push(a.name + ': ' + a.laps + ' Runden, aber ' + a.zeiten.length + ' Zeiten');
         }
-        // STEHENDER START: die erste Runde darf nicht SCHNELLER sein als die zweite. Waere
-        // sie es, liefe die Uhr nicht mit dem Weg - der haeufigste Fehler bei so einer
-        // Schleife.
-        //
-        // ---- GLEICHSTAND IST ERLAUBT, und das ist eine Berichtigung ------------------
-        //
-        // Hier stand `>`, also STRENG langsamer. Das ist mit der Kachelphase aus dem Weg
-        // gefallen, und zwar an einem Gleichstand: gemessen 25470/25470/23580 ms. Zwei
-        // Gruende treffen zusammen, und keiner davon ist der Fehler, den diese Zeile sucht:
-        //
-        //   1. Die Uhr der Simulation laeuft in festen 45-ms-Schritten. Rundenzeiten sind
-        //      damit gerastert, und zwei Runden koennen auf denselben Schrittzaehler fallen.
-        //   2. Die erste Runde wird noch mit der ZEITschaetzung gefahren - die Weg-EMA
-        //      braucht zwei Messungen je Kacheltyp (GHOST_DAUER_MIN_N) und greift erst ab
-        //      Runde zwei. Der Unterschied zwischen Runde eins und zwei ist dadurch kleiner
-        //      geworden, und genau das hat den Gleichstand moeglich gemacht.
-        //
-        // Der Wachhund bleibt scharf: eine erste Runde, die WIRKLICH schneller ist, faellt
-        // weiter durch, und Uhr (90000 ms), Weg (s > 0) und die Gleichheit von Runden und
-        // Zeiten werden unabhaengig davon geprueft.
-        if (a.zeiten.length >= 2 && !(a.zeiten[0] >= a.zeiten[1])) {
-          schlecht.push(a.name + ': erste Runde schneller als die zweite ('
-                        + a.zeiten.map((t) => Math.round(t)).join('/') + ')');
-        }
+        // Die Rundenzeiten je Auto werden unten UEBER DAS FELD geprueft - siehe dort,
+        // warum nicht je Auto.
         // Das Tempo im Bereich des Modells: der Ghost-Regler steht auf einem Bruchteil der
         // Modellhoechstgeschwindigkeit, und Kurven kosten davon. Zwischen 5 und 100 Prozent
         // ist weit gefasst - gefangen wird eine Umrechnung, die um Zehnerpotenzen irrt.
@@ -44524,6 +44606,39 @@
         if (!(anteil > 0.05 && anteil < 1.05)) {
           schlecht.push(a.name + ': ' + (a.kmh || 0).toFixed(2) + ' km/h sind '
                         + (anteil * 100).toFixed(0) + ' % der Modellspitze');
+        }
+      }
+      // ---- STEHENDER START: DIE ERSTE RUNDE IST DIE LANGSAMSTE, ueber das FELD -------
+      //
+      // Die Aussage prueft, dass die Uhr mit dem WEG laeuft - der haeufigste Fehler bei so
+      // einer Schleife waere, beides zu entkoppeln, und dann waeren alle Runden gleich
+      // schnell oder die erste die schnellste.
+      //
+      // ---- JE AUTO WAR SIE ZU STRENG, und zwar aus einem echten Grund ---------------
+      //
+      // Hier stand die Pruefung je Auto (`zeiten[0] > zeiten[1]`). Sie ist zweimal
+      // gefallen, ohne dass etwas kaputt war:
+      //
+      //   25470/25470/23580   ein exakter GLEICHSTAND. Die Uhr der Simulation laeuft in
+      //                       festen 45-ms-Schritten, Rundenzeiten sind also gerastert.
+      //   25290/25515/24660   eine echte Umkehrung um 225 ms, also 0,9 Prozent.
+      //
+      // Der zweite Fall ist VERKEHR und nicht die Uhr: vier Autos auf dreizehn Kacheln mit
+      // eingeschaltetem Abstandhalter kosten einander mehr als der stehende Start kostet,
+      // und wer in Runde zwei hinter einem Langsameren haengt, faehrt sie langsamer als
+      // seine erste. Das ist kein Fehler, sondern der Zweck des Abstandhalters.
+      //
+      // Ueber das FELD bleibt die Aussage gueltig: der stehende Start kostet JEDES Auto,
+      // Verkehr ist dagegen ein Nullsummenspiel - was einer verliert, gewinnt ein anderer.
+      // Der Mittelwert der ersten Runden muss deshalb ueber dem der zweiten liegen.
+      const ersteRunden = z.autos.map((a) => a.zeiten[0]).filter((t) => t > 0);
+      const zweiteRunden = z.autos.map((a) => a.zeiten[1]).filter((t) => t > 0);
+      if (ersteRunden.length >= 2 && zweiteRunden.length >= 2) {
+        const mit = (arr) => arr.reduce((s, x) => s + x, 0) / arr.length;
+        const m1 = mit(ersteRunden), m2 = mit(zweiteRunden);
+        if (!(m1 > m2)) {
+          schlecht.push('erste Runden im Mittel ' + Math.round(m1) + ' ms, zweite '
+                        + Math.round(m2) + ' ms - der stehende Start kostet nichts');
         }
       }
       // Die Karte und die Tafel muessen bestueckt sein - man soll ja zusehen.

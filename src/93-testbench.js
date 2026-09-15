@@ -2231,10 +2231,26 @@
       // ist die Wahrheit, gegen die JEDER Lauf zurueckgesetzt wird. Ohne das Zuruecksetzen
       // je Lauf traegt die dritte Variante die Einstellung der zweiten mit sich.
       const merkCfg = Object.assign({}, ghostCfg);
+      // Die STRECKE als Angabe, im Muster der uebrigen Sonden. Ohne sie misst die Sonde
+      // immer die Vorgabestrecke der Simulation (SR3GLR2GR2G2, dreizehn Kacheln ohne
+      // Haarnadel) - und genau die Haarnadel ist der Fall, in dem ein Ghost abfliegt.
+      const merkTiles = currentTrackTiles;
       const merkLuecke = lueckeMinLesen(), merkRange = attackRangeLesen();
       const merkGap = gapMinLesen();
       const zahl = (x, n) => (x === null || x === undefined || !isFinite(x)
         ? null : +x.toFixed(n === undefined ? 2 : n));
+      // ABGAENGE zaehlen, und zwar als FLANKE. Sie stehen in keinem Zaehler der Simulation,
+      // sind aber die Zahl, die ueber eine Kurvenabstimmung entscheidet: ein Ghost, der
+      // schneller ist und dabei abfliegt, ist nicht schneller. `geparkt` je Auto kommt aus
+      // simZustand(), der Uebergang falsch -> wahr ist ein Abgang.
+      const abgangZaehler = (vor, z) => {
+        let neu = 0;
+        (z.autos || []).forEach((a, i) => {
+          if (a.geparkt && !vor[i]) neu++;
+          vor[i] = !!a.geparkt;
+        });
+        return neu;
+      };
       // Der Stand der vier Zaehler nach dem Aufwaermen. Alle laufen monoton, also ist die
       // Differenz das Messfenster - siehe der Kommentar oben.
       const grundlinie = (z) => ({
@@ -2245,7 +2261,7 @@
         runden: (z.autos || []).map((a) => (a.zeiten || []).length),
       });
       // Die Kennzahlen EINES Laufs, aus dem letzten gueltigen Zustand und der Grundlinie.
-      const kennzahlen = (z, basis) => {
+      const kennzahlen = (z, basis, abgaenge) => {
         const b = basis || { uhrMs: 0, kontakte: 0, ueberholt: 0, kontaktMs: 0, runden: [] };
         const dauerMs = Math.max(1, z.uhrMs - b.uhrMs);
         const min = dauerMs / 60000;
@@ -2272,6 +2288,8 @@
           // Kein Zaehler, sondern ein Minimum: gilt fuer den ganzen Lauf, Aufwaermen
           // eingeschlossen.
           engstCm: z.kontaktEngstCm,
+          abgaenge: abgaenge || 0,
+          abgaengeProMin: zahl((abgaenge || 0) / min, 2),
           rundenZahl: runden.length,
           besteRundeS: runden.length ? zahl(Math.min.apply(null, runden), 2) : null,
           mittlereRundeS: runden.length
@@ -2285,7 +2303,8 @@
         if (!gut.length) return null;
         const aus = { laeufe: gut.length };
         for (const k of ['beruehrungenProMin', 'ueberholtProMin', 'beruehrungJeUeberholen',
-                         'kontaktAnteil', 'mittlereRundeS', 'besteRundeS', 'sekundenEcht']) {
+                         'kontaktAnteil', 'abgaengeProMin', 'mittlereRundeS', 'besteRundeS',
+                         'sekundenEcht']) {
           const w = gut.map((g) => g[k]).filter((x) => x !== null && x !== undefined);
           if (!w.length) { aus[k] = null; aus[k + 'Spanne'] = null; continue; }
           aus[k] = zahl(w.reduce((s, x) => s + x, 0) / w.length, 3);
@@ -2295,6 +2314,7 @@
       };
       const aus = [];
       try {
+        if (o.code) { currentTrackTiles = codeToTrack(o.code).tiles; lineCache = null; }
         stell('sim-ghosts', String(autos));
         stell('sim-laps', '10');       // die groesste Option; siehe den Abbruch unten
         stell('sim-fast', false);
@@ -2321,6 +2341,11 @@
               if ((k % 400) === 399 && typeof stLuft === 'function') await stLuft();
             }
             const basis = letzter ? grundlinie(letzter) : null;
+            // Der Parkzustand nach dem Aufwaermen ist der Anfangsstand: ein Auto, das
+            // schon vor dem Fenster lag, ist kein Abgang IN diesem Fenster.
+            const parkVor = (letzter && letzter.autos)
+              ? letzter.autos.map((a) => !!a.geparkt) : [];
+            let abgaenge = 0;
             for (let k = 0; k < schritte; k++) {
               simSchritt(SIM_TAKT_MS);
               // ALLE DURCH heisst: die Simulation hat sich selbst beendet, und simZustand()
@@ -2329,13 +2354,13 @@
               // die Kennzahlen sind Raten je Minute und bleiben damit vergleichbar.
               if (!simAn()) break;
               const z = simZustand();
-              if (z) letzter = z;
+              if (z) { letzter = z; abgaenge += abgangZaehler(parkVor, z); }
               // Dem Browser Luft lassen, ohne einen Zeitgeber zu benutzen: im verborgenen
               // Fenster sind Zeitgeber auf 1 Hz gedrosselt, ein setTimeout(0) je Takt
               // waere also eine halbe Stunde je Lauf.
               if ((k % 400) === 399 && typeof stLuft === 'function') await stLuft();
             }
-            laeufeAus.push(letzter ? kennzahlen(letzter, basis) : null);
+            laeufeAus.push(letzter ? kennzahlen(letzter, basis, abgaenge) : null);
             if (simAn()) simStop('Kennzahlensonde');
             if (typeof stLuft === 'function') await stLuft();
           }
@@ -2349,12 +2374,13 @@
         attackRangeSetzen(merkRange);
         gapMinSetzen(merkGap);
         if (simAn()) simStop('Kennzahlensonde');
+        if (o.code) { currentTrackTiles = merkTiles; lineCache = null; }
         stell('sim-ghosts', merkFeld.g);
         stell('sim-laps', merkFeld.l);
         stell('sim-fast', merkFeld.f);
       }
       return { sekunden, laeufe, autos, paare, aufwaermSekunden: aufwaerm,
-               takt: SIM_TAKT_MS, varianten: aus };
+               code: o.code || null, takt: SIM_TAKT_MS, varianten: aus };
     },
 
     // ---- DAS DREHZAHLBAND JE MOTOR ------------------------------------------------

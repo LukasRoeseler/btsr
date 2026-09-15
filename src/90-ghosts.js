@@ -4551,8 +4551,26 @@
     if (!tiles || tiles.length < 3) return null;
     // Das Modell gehoert in den Schluessel: sonst behaelt der Zwischenspeicher die Linie
     // des alten Modells, und der Schalter waere ohne Wirkung, bis sich das Layout aendert.
+    //
+    // ---- UND DIE FAHRGRENZEN AUCH, und das war ein stiller Fehler -------------------
+    //
+    // `lapTime` in diesem Zwischenspeicher ist die Rundenzeit, die buildLine() ueber
+    // lapTimeOf() rechnet - und die haengt an vMax, aAcc, aBrk und aLat des EINGESTELLTEN
+    // Fahrzeugs (fahrGrenzen() in 60-track.js liest physEngine.config). Wer in der
+    // Werkstatt Antrieb, Reifen oder Masse wechselt, aendert damit die Rundenzeit der
+    // Linie; der Zwischenspeicher hat es nicht gemerkt, weil Layout und Modell dieselben
+    // blieben, und die Anzeige zeigte weiter die Zeit des alten Fahrzeugs.
+    //
+    // Eine Kennung der vier Zahlen im Schluessel heilt das von selbst - besser als eine
+    // weitere Stelle, an der jemand ghostLineCacheLeeren() rufen muss und es irgendwann
+    // vergisst.
+    const gz = (typeof fahrGrenzen === 'function') ? fahrGrenzen() : null;
+    const grenzKennung = gz
+      ? [gz.vMax, gz.aAcc, gz.aBrk, gz.aLat].map((x) => Math.round(x * 1000)).join('/')
+      : '';
     if (lineCache && lineCache.tiles === tiles
-        && lineCache.model === getLineModel()) return lineCache;
+        && lineCache.model === getLineModel()
+        && lineCache.grenzKennung === grenzKennung) return lineCache;
     const pts = trackCenterline(tiles);
     if (pts.length < 8) return null;
     const nrm = trackNormals(pts);
@@ -4584,10 +4602,33 @@
       if (r.start < 0) r.start = i;
       r.count++;
     });
+    // ---- WARUM DAS TEMPOPROFIL v[] HIER NICHT LIEGT, obwohl es fertig dasteht -------
+    //
+    // lapTimeOf() rechnet fuer jede Linie ein vollstaendiges Tempoprofil v[] je
+    // Abtastpunkt, und jedes Linienmodell gibt es heraus. Der naheliegende Griff waere,
+    // es als Tempodeckel zu nehmen. GEMESSEN IST DAS FALSCH, und zwar deutlich - zwei
+    // Haarnadeln (SG2H2G2J2), vier Autos, 90 s, je drei Laeufe:
+    //
+    //     Deckel aus    16,32 s Runde    15,3 Beruehrungen/min     9,8 Ueberholmanoever/min
+    //     Deckel an     25,56 s Runde    78,9 Beruehrungen/min     1,5 Ueberholmanoever/min
+    //
+    // 57 Prozent langsamer, und die Autos schieben statt zu ueberholen. Der Grund ist
+    // grundsaetzlich und keine Abstimmungsfrage: die Kurvengrenze im Profil ist
+    // sqrt(aLat / Kruemmung), also die Grenze eines FREIEN Fahrzeugs. Ein Auto auf der
+    // Schiene bekommt seine Querkraft von der Schiene; seine Grenze liegt weit darueber.
+    // Das Profil ist gebaut, um LINIEN ZU VERGLEICHEN - dafuer ist die Annahme richtig und
+    // dort bleibt es. Als Tempogrenze fuer ein schienengefuehrtes Auto ist es die falsche
+    // Groesse, und ein Feld, das niemand liest, waere die naechste Stelle, an der jemand
+    // denkt, es taete etwas.
+    //
+    // Dasselbe Schicksal hat der Bremspunkt, der aus dem Profil folgen sollte - dort lag
+    // es nicht an aLat, sondern am Quadrat des Tempos. Die Zahlen stehen bei
+    // ghostAheadTightest() weiter unten.
     lineCache = { tiles, alpha: line.alpha, limit: line.limit, span: line.span,
                   brake, ranges, closed, points: pts.length,
                   model: line.model, lapTime: line.lapTime || null,
-                  gain: line.gain || 0 };
+                  gain: line.gain || 0,
+                  grenzKennung };
     return lineCache;
   }
 
@@ -4908,6 +4949,43 @@
     const i = ghostLineIndex(lc, g.tileIndex, ghostTilePhase(car));
     return i === null ? null : lc.brake[i];
   }
+
+  // ====================================================================================
+  // EIN BREMSPUNKT WAERE HIER KEINE GROESSE - GEMESSEN, NICHT GEAHNT
+  // ====================================================================================
+  //
+  // Gebremst wird ausschliesslich reaktiv: der Regler sieht eine Abweichung vom Ziel und
+  // bremst proportional (GHOST_KP_BREMSE), dazu ein Boden aus dem Bremsprofil der Linie.
+  // Einen Bremspunkt - "ab dieser Entfernung muss ich bremsen, um die Kurve zu treffen" -
+  // gibt es nirgends, und das sieht nach einer Luecke aus. Sie ist gebaut, gemessen und
+  // wieder entfernt worden; die Zahlen stehen hier, damit es niemand ein zweites Mal baut.
+  //
+  // Gerechnet wurde die Lehrbuchform: noetige Verzoegerung a = (v² - vZiel²) / (2 s),
+  // Bremsbefehl a / aBrk. Zieltempo aus der Kachelregel, Entfernung aus tileLength() minus
+  // dem auf der Kachel schon gefahrenen Weg (g.kachelWeg), aBrk aus fahrGrenzen(). Vier
+  // Kacheln Vorausschau. Gemessen mit ghostDriveProbe auf zwei Haarnadeln (SG2H2G2J2):
+  //
+  //     Ghost-Tempo   noetiger Bremsweg   hoechster Bremsbefehl
+  //        55 %             1,7 cm               0,032
+  //        80 %             2,0 cm               0,032
+  //       100 %             1,4 cm               0,140
+  //
+  // EINE KACHEL IST 43 CM LANG. Der Bremsweg betraegt also rund vier Prozent einer Kachel -
+  // das Auto legt die Tempodifferenz zur Kurve in zwei Zentimetern ab. Ein Bremspunkt
+  // beschreibt damit nichts: er liegt immer INNERHALB des Takts, in dem der reaktive
+  // Regler ohnehin schon bremst. In der Rennsimulation war die Wirkung entsprechend:
+  // Rundenzeit 16,227 gegen 16,240 s, Beruehrungen 16,2 gegen 16,0 je Minute - beides
+  // innerhalb der Streuung von drei Laeufen.
+  //
+  // WARUM DAS SO IST, und es ist kein Zufall dieser Abstimmung: die Verzoegerung eines
+  // Fahrzeugs skaliert mit seiner Groesse nicht mit, die Bremswege aber mit dem QUADRAT
+  // des Tempos. Ein Modellauto bei 4 km/h Modelltempo braucht deshalb Zentimeter, wo ein
+  // wirkliches Auto bei 200 km/h hundert Meter braucht. Selbst am Anschlag des
+  // Spitzentempo-Reglers bleibt es unter einem Sechstel einer Kachel.
+  //
+  // Was NICHT daran liegt: aBrk. Die Groesse ist richtig - beim Bremsen hilft die Schiene
+  // nicht, anders als bei der Querbeschleunigung (siehe den Kommentar bei lineCache). Es
+  // liegt an v²: bei diesen Tempi ist der Bremsweg einfach klein.
 
   // Die engste Kachel in den naechsten n Schritten, und wie weit sie weg ist. Daraus baut
   // ghostTick sein Tempoprofil: vor einer Haarnadel muss frueher und tiefer verzoegert

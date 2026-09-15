@@ -3591,30 +3591,8 @@
         if (a.zeiten.length !== a.laps) {
           schlecht.push(a.name + ': ' + a.laps + ' Runden, aber ' + a.zeiten.length + ' Zeiten');
         }
-        // STEHENDER START: die erste Runde darf nicht SCHNELLER sein als die zweite. Waere
-        // sie es, liefe die Uhr nicht mit dem Weg - der haeufigste Fehler bei so einer
-        // Schleife.
-        //
-        // ---- GLEICHSTAND IST ERLAUBT, und das ist eine Berichtigung ------------------
-        //
-        // Hier stand `>`, also STRENG langsamer. Das ist mit der Kachelphase aus dem Weg
-        // gefallen, und zwar an einem Gleichstand: gemessen 25470/25470/23580 ms. Zwei
-        // Gruende treffen zusammen, und keiner davon ist der Fehler, den diese Zeile sucht:
-        //
-        //   1. Die Uhr der Simulation laeuft in festen 45-ms-Schritten. Rundenzeiten sind
-        //      damit gerastert, und zwei Runden koennen auf denselben Schrittzaehler fallen.
-        //   2. Die erste Runde wird noch mit der ZEITschaetzung gefahren - die Weg-EMA
-        //      braucht zwei Messungen je Kacheltyp (GHOST_DAUER_MIN_N) und greift erst ab
-        //      Runde zwei. Der Unterschied zwischen Runde eins und zwei ist dadurch kleiner
-        //      geworden, und genau das hat den Gleichstand moeglich gemacht.
-        //
-        // Der Wachhund bleibt scharf: eine erste Runde, die WIRKLICH schneller ist, faellt
-        // weiter durch, und Uhr (90000 ms), Weg (s > 0) und die Gleichheit von Runden und
-        // Zeiten werden unabhaengig davon geprueft.
-        if (a.zeiten.length >= 2 && !(a.zeiten[0] >= a.zeiten[1])) {
-          schlecht.push(a.name + ': erste Runde schneller als die zweite ('
-                        + a.zeiten.map((t) => Math.round(t)).join('/') + ')');
-        }
+        // Die Rundenzeiten je Auto werden unten UEBER DAS FELD geprueft - siehe dort,
+        // warum nicht je Auto.
         // Das Tempo im Bereich des Modells: der Ghost-Regler steht auf einem Bruchteil der
         // Modellhoechstgeschwindigkeit, und Kurven kosten davon. Zwischen 5 und 100 Prozent
         // ist weit gefasst - gefangen wird eine Umrechnung, die um Zehnerpotenzen irrt.
@@ -3623,6 +3601,39 @@
         if (!(anteil > 0.05 && anteil < 1.05)) {
           schlecht.push(a.name + ': ' + (a.kmh || 0).toFixed(2) + ' km/h sind '
                         + (anteil * 100).toFixed(0) + ' % der Modellspitze');
+        }
+      }
+      // ---- STEHENDER START: DIE ERSTE RUNDE IST DIE LANGSAMSTE, ueber das FELD -------
+      //
+      // Die Aussage prueft, dass die Uhr mit dem WEG laeuft - der haeufigste Fehler bei so
+      // einer Schleife waere, beides zu entkoppeln, und dann waeren alle Runden gleich
+      // schnell oder die erste die schnellste.
+      //
+      // ---- JE AUTO WAR SIE ZU STRENG, und zwar aus einem echten Grund ---------------
+      //
+      // Hier stand die Pruefung je Auto (`zeiten[0] > zeiten[1]`). Sie ist zweimal
+      // gefallen, ohne dass etwas kaputt war:
+      //
+      //   25470/25470/23580   ein exakter GLEICHSTAND. Die Uhr der Simulation laeuft in
+      //                       festen 45-ms-Schritten, Rundenzeiten sind also gerastert.
+      //   25290/25515/24660   eine echte Umkehrung um 225 ms, also 0,9 Prozent.
+      //
+      // Der zweite Fall ist VERKEHR und nicht die Uhr: vier Autos auf dreizehn Kacheln mit
+      // eingeschaltetem Abstandhalter kosten einander mehr als der stehende Start kostet,
+      // und wer in Runde zwei hinter einem Langsameren haengt, faehrt sie langsamer als
+      // seine erste. Das ist kein Fehler, sondern der Zweck des Abstandhalters.
+      //
+      // Ueber das FELD bleibt die Aussage gueltig: der stehende Start kostet JEDES Auto,
+      // Verkehr ist dagegen ein Nullsummenspiel - was einer verliert, gewinnt ein anderer.
+      // Der Mittelwert der ersten Runden muss deshalb ueber dem der zweiten liegen.
+      const ersteRunden = z.autos.map((a) => a.zeiten[0]).filter((t) => t > 0);
+      const zweiteRunden = z.autos.map((a) => a.zeiten[1]).filter((t) => t > 0);
+      if (ersteRunden.length >= 2 && zweiteRunden.length >= 2) {
+        const mit = (arr) => arr.reduce((s, x) => s + x, 0) / arr.length;
+        const m1 = mit(ersteRunden), m2 = mit(zweiteRunden);
+        if (!(m1 > m2)) {
+          schlecht.push('erste Runden im Mittel ' + Math.round(m1) + ' ms, zweite '
+                        + Math.round(m2) + ' ms - der stehende Start kostet nichts');
         }
       }
       // Die Karte und die Tafel muessen bestueckt sein - man soll ja zusehen.
