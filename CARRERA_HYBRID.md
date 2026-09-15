@@ -643,17 +643,105 @@ Stand, eigene Physikinstanz für Auto 2:
 60 Takte, 60 Pakete — kein Ausfall. Die zweite Cockpit-Zeile stimmte in jedem Abtastpunkt mit
 dem Zustand überein.
 
-Was das zweite Auto **nicht** hat, hängt ausnahmslos an einem Zähler oder einer Ortung, die es
-im Programm nur einmal gibt: Tank und Schaden, Motorton, Rundenzählung und Ergebnistabelle,
-Fahrhilfe, Leitplanken-Modus, Autopilot unter Gelb, Windschatten — und die Ghosts weichen ihm
-nicht aus, weil sie seinen Ort nicht kennen. Zwei ungleiche Regelsätze wären schlimmer als
-keine; der Modus ist deshalb bewusst schmal und trägt in den Optionen den Vermerk
-"experimentell".
+#### Was Auto 2 hat, und was es kostete
 
-Die Kosten der zweiten Cockpit-Zeile, gemessen an der Einpassung (`cockpitPassung`): der
-Bedarf steigt von 511 auf 597 px, und bei abgeschaltetem Modus bleibt er **unverändert** bei
-511 — die Rasterzeile entsteht erst mit der Klasse am `body`, ein verborgenes Kind hätte auch
-leer noch Zeile plus Lücke gekostet.
+Die erste Fassung (v0.6.44) war bewusst schmal: eigene Fahrphysik, nichts weiter. Die Liste
+der Grenzen ist in v0.6.45 bis v0.6.50 abgearbeitet worden, und dabei sind fünf Dinge
+herausgekommen, die ohne den Modus nicht aufgefallen wären.
+
+| Baustein | Stand | Was es wirklich kostete |
+|---|---|---|
+| Fahrphysik | ja | eine zweite Instanz, sonst nichts |
+| Ortung auf der Strecke | ja | **ein Argument.** `spielerOrt()` legte den Satz immer schon auf das Auto, las aber `playerCar` fest |
+| Ghosts weichen aus | ja | folgt aus der Ortung: Auto 2 steht im Feld, `ghostAhead()` findet es |
+| Fahrhilfe, Leitplanken-Modus | ja | folgt aus der Ortung |
+| Abseits-Drosselung, Rumpeln | ja | ein entprellter Satz je Auto |
+| Schaden, Lampenausfall | ja | ein Satz je Auto; der Detektor wurde verallgemeinert, nicht verdoppelt |
+| Tank, Verbrauch, Notlauf | ja | ein Satz je Auto, derselbe Verbrauchsregler |
+| Motorstimme | ja | ein zweiter Ablageort, **geteilte** Puffer, eigene Stereoseite |
+| Rundenzählung, Rangliste, CSV | ja | **nichts.** Lief schon je Auto, für jedes verbundene |
+| eigener Cockpit-Schirm | ja | ein Registry-Eintrag plus Malfunktion |
+| Boxenstopp (Tanken, Reparatur, Reifen) | nein | eigenes Vorhaben: 27 Größen, 633 Fundstellen |
+| Ampel, Flaggen, Einführungsrunde | nein | eigenes Vorhaben: ein Rennen für zwei Menschen |
+| Motorton-Zusatzkette, Doppler | nein | ein Bus mit 15 Feldern; der Doppler gehört zur Runde von Auto 1 |
+| Aufnahme, die drei Rundenzeiten im Cockpit | nein | gehören Auto 1; Auto 2 hat sie auf seinem Schirm |
+
+**Zwei Fehler in meiner Aufwandsschätzung, und beide in dieselbe Richtung.** Die Ortung galt
+als klein und war es; die *Rundenzählung* galt als der größte Posten und kostete gar nichts.
+Der Grund ist derselbe: ich hatte auf die 27 modulweiten Rennzustandsgrößen geschaut
+(`raceState`, Ampel, Flaggen) und `carRaceNotify()` übersehen, das `car.race` für **jedes**
+verbundene Auto führt, "whatever its role". Die 27 Größen betreffen das Rennen, nicht die
+Zählung. Wer den nächsten Posten schätzt: erst nachsehen, wo die Größe wirklich liegt.
+
+#### Drei Fehler, die erst der zweite Spieler sichtbar gemacht hat
+
+Alle drei betrafen den Einzelspielbetrieb und waren nur nie aufgefallen.
+
+1. **Der Vibrationsstoß hatte keine Adresse.** `ruettle()` lief durch
+   `navigator.getGamepads()` und stieß jeden Pad mit Motor an. Mit einem Spieler war das
+   richtig und ungeprüft zugleich. Dazu: die vier Schaltstöße stehen *in* der Physikklasse
+   und liefen damit für beide Autos — ein Schaltvorgang von Auto 2 rüttelte den Pad von
+   Spieler 1 und schrieb "1. Gang" in dessen Meldungsband.
+2. **Die Lampenmaske war global.** `buildCommandPacket()` maskiert kaputte Lampen "an der
+   einen Stelle, durch die jedes Paket geht" — und las dabei das globale `lightDamage`. Folge:
+   sobald das Fahrerauto über 50 % Schaden hatte, flackerten die Scheinwerfer **aller Ghosts**
+   mit. Gemessen: von 40 Zeitpunkten war der Scheinwerfer eines Ghosts vorher in 5 hell, jetzt
+   in 40.
+3. **Ein negatives `dt` ließ den Tank steigen.** `stand - gas * dt * rate` ist mit `dt < 0`
+   eine Addition. Gefunden hat es ein Prüflauf, der die Uhr fälschte und dabei zurückstellte:
+   der Tank ging von 1,5 auf 5,5 Prozent. Im Betrieb läuft `Date.now()` monoton, der Fall kam
+   also nie vor — "kam nie vor" ist aber Glück und kein Schutz. `dt` ist jetzt bei beiden
+   Autos auf nicht-negativ geklemmt.
+
+#### Die Kosten im Cockpit, gemessen
+
+Die zweite Zeile (Drehzahl, Gang, Tempo von Auto 2) kostet in der Seite 86 px:
+Bedarf 511 → 597 px. Bei abgeschaltetem Modus bleibt er **unverändert** bei 511 — die
+Rasterzeile entsteht erst mit der Klasse am `body`; ein verborgenes Kind hätte auch leer noch
+Zeile plus Lücke gekostet.
+
+Im Vollbild reichte das nicht. Gemessen mit dem Test "Cockpit passt im Vollbild, quer wie
+gedreht":
+
+| Schirm | ohne Modus | Zeile voll | kompakt | kompakt + Notabschaltung |
+|---|---|---|---|---|
+| 915 × 412 | passt | 21 px darüber | passt | passt |
+| 844 × 390 | passt | 3 px darüber | passt | passt |
+| 740 × 330 | am Boden | 92 px darüber | 72 px | passt |
+
+Drei Stufen: im Vollbild fallen Beschriftung, Marke und Kastenpolsterung weg; reicht das nicht
+und steht der Skalierungsfaktor schon auf seinem Boden von 0,5, wird die Zeile ganz
+ausgeblendet — **mit** ihrer Rasterzeile, denn ein verborgenes Kind lässt Zeile samt Lücke in
+`cockpitInhaltHoehe()` stehen (davon blieben genau 9 px übrig). Die Entscheidung steht in JS
+und nicht in einer Media Query: die Einpassung bekommt ihre Maße *vorgegeben*, eine Media
+Query sähe die echte Fensterhöhe und der Test wäre grün, ohne dass auf dem Gerät etwas besser
+ist.
+
+#### Der Ton ist eine Mischungs- und keine Programmierfrage
+
+Zwei Motoren im selben Drehzahlband aus einem Lautsprecher klingen wie *ein* verstimmter
+Motor. Die zweite Stimme sitzt deshalb auf der anderen Stereoseite (Auto 1 links, Auto 2
+rechts, ±0,55 — nicht ±1, ganz außen klingt es abgeschnitten), und der Schaltklang kommt von
+der Seite des Autos, das geschaltet hat. Die Schleifenpuffer werden **geteilt**: sie liegen je
+Motormodell, nicht je Auto.
+
+Gemessen an den Web-Audio-Knoten, Motor `p992gt3r` mit vier Leistungsbändern:
+
+| Drehzahl | Gewichte der vier Bänder | Summe | Meister |
+|---|---|---|---|
+| 2200 | 0,269 / 0,730 / 0 / 0 | 0,999 | 0,636 |
+| 7000 | 0,000 / 0,001 / 0,545 / 0,454 | 1,000 | 0,637 |
+| still | | | 0,0002 |
+
+Die Überblendung wandert also mit der Drehzahl, und die Gewichte summieren auf 1 — sonst hätte
+die Lautstärke ein Loch oder eine Beule im Band. **Wie es klingt, entscheidet der Teppich**;
+das ist keine Zusicherung dieser Messung.
+
+**Beim Messen von Web Audio: warten.** Alle Verstellungen laufen über `setTargetAtTime()`,
+also über eine Rampe. `AudioParam.value` gleich danach gelesen ist noch der *alte* Wert — der
+erste Anlauf ergab vier Abspielraten von genau 1 und vier Gewichte von genau 0, was nach einer
+stummen Stimme aussah. Gewartet wird auf der Uhr des Tonkontexts, nicht auf `setTimeout`: bei
+verborgenem Vorschaubereich drosselt der Browser Zeitgeber auf einen Takt je Sekunde.
 
 ## Firmware-Updates
 
