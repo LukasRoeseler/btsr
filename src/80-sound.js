@@ -1080,6 +1080,8 @@
     ['ghost-w-slip', 'wuerzeWindschatten'],
     ['ghost-w-defend', 'wuerzeVerteidigen'],
     ['ghost-w-blau', 'wuerzeBlau'],
+    ['ghost-charakter', 'charakter'],
+    ['ghost-w-start', 'wuerzeStart'],
     // Die zwei Boxenstopp-Schalter. Sie gehoeren in dieselbe Liste, weil sie dieselbe Form
     // haben - Kaestchen an, Feld true - und nicht, weil sie mit der Wuerze zu tun haetten.
     ['ghost-pit', 'pitAn'],

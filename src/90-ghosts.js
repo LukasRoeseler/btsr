@@ -930,6 +930,36 @@
     log(`${garageLabel(car)}: Rolle ${role === 'player' ? 'Steuern' : role === 'ghost' ? 'Ghost' : 'keine'}`, 'info');
   }
 
+  // ---- Der Fahrercharakter als Zeile in der Garage --------------------------------
+  //
+  // NUR ANZEIGE und kein Regler: der Charakter wird je Rennen gewuerfelt (siehe
+  // charakterZiehen()), und ein Schieber daran waere ein Wert, den der naechste Start
+  // ueberschreibt. Wer einzelne Autos verschieden einstellen will, hat den Temporegler
+  // darueber - der ist dauerhaft.
+  //
+  // Vor dem Start gibt es noch keinen Satz: dann steht dort, dass gewuerfelt wird. Die
+  // Zeile erscheint ueberhaupt nur fuer Ghosts und nur bei eingeschaltetem Schalter,
+  // damit die Garage nicht mit Zahlen zugeht, die gerade nichts tun.
+  //
+  // charakterZiehen() und ghostCfg stehen WEITER UNTEN in dieser Datei. Das ist kein
+  // Problem, weil diese Funktion erst beim Zeichnen laeuft, also lange nach dem Aufbau -
+  // dieselbe Hochziehung, auf der auch renderGarage() selbst beruht.
+  function charakterZeile(car) {
+    if (car.role !== 'ghost' || !ghostCfg.charakter) return '';
+    const ch = car.ghost && car.ghost.charakter;
+    if (!ch) {
+      return '<div class="gar-speed"><label>Charakter</label>'
+           + '<b>wird beim Start gewürfelt</b></div>';
+    }
+    const p = (x) => Math.round(x * 100) + '%';
+    const versatz = ch.pitVersatz > 0 ? '+' + ch.pitVersatz : String(ch.pitVersatz);
+    return '<div class="gar-speed"><label>Charakter</label><b>Angriff ' + p(ch.angriff)
+         + ' · Verteidigung ' + p(ch.verteidigung)
+         + ' · Fehler ' + p(ch.fehler)
+         + ' · Kurve ' + p(ch.kurvenAbzug)
+         + ' · Box ' + versatz + '</b></div>';
+  }
+
   function renderGarage() {
     const list = $('gar-list');
     if (!list) return;
@@ -985,7 +1015,8 @@
           <b></b>
           <button class="gar-speed-reset" data-act="speedreset"
                   title="Zurueck auf die Vorgabe aus den Optionen">&#8635;</button>
-        </div>` : ''}`;
+        </div>` : ''}
+        ${charakterZeile(car)}`;
       // Clicking the row itself identifies the car; the buttons must not also blink it.
       row.onclick = (e) => { if (!e.target.closest('button')) blinkCar(car); };
       row.querySelectorAll('button[data-role]').forEach(b => {
@@ -1673,6 +1704,9 @@
     // Kennzahlensonde in einem eigenen Schritt.
     wuerzeVerteidigen: false,
     wuerzeBlau: false,
+    // Fahrercharakter je Auto und Rennen, und die Startreaktion. Beide Standard AUS.
+    charakter: false,
+    wuerzeStart: false,
     // Lernen von Runde zu Runde, standardmaessig aus: es aendert das Fahrverhalten ueber
     // ein Rennen hinweg, und das soll niemand ungefragt bekommen.
     learnPace: false,
@@ -3105,7 +3139,17 @@
   function pitFaelligZiehen(g) {
     const lo = Math.max(1, Math.round(ghostCfg.pitRundenMin));
     const hi = Math.max(lo, Math.round(ghostCfg.pitRundenMax));
-    g.pitFaellig = (g.laps || 0) + lo + Math.floor(Math.random() * (hi - lo + 1));
+    // Das Boxenfenster dieses Fahrers, um seinen Charakter verschoben. Bisher zog jedes
+    // Auto aus demselben Band, also stoppten bei fuenf Ghosts regelmaessig zwei in
+    // derselben Runde - eine Strategie, die keine ist. Der Versatz haelt das Band, schiebt
+    // es aber je Auto; der Boden bei einer Runde bleibt, damit niemand in der ersten Runde
+    // pittet.
+    //
+    // KEIN ghostCharakter(g) hier: diese Funktion bekommt den GHOST-Satz und nicht das
+    // Auto, und sie laeuft aus dem Literal heraus, in dem der Satz gerade entsteht.
+    const versatz = (ghostCfg.charakter && g.charakter) ? (g.charakter.pitVersatz || 0) : 0;
+    const zufall = Math.floor(Math.random() * (hi - lo + 1));
+    g.pitFaellig = (g.laps || 0) + Math.max(1, lo + zufall + versatz);
   }
 
   // Darf dieses Auto jetzt pitten? Die Geltung steht hier und nicht verstreut.
@@ -3596,11 +3640,13 @@
   // dann nicht neun Prueffstaende still durchfallen, weil jeder seine eigene Liste haette.
   const WUERZE_AUS = { wuerzeUeberholen: false, wuerzeAbstand: false, wuerzeForm: false,
                        wuerzeFehler: false, wuerzeWindschatten: false,
-                       wuerzeVerteidigen: false, wuerzeBlau: false };
+                       wuerzeVerteidigen: false, wuerzeBlau: false,
+                       wuerzeStart: false };
   function wuerzeAn() {
     return !!(ghostCfg.wuerzeUeberholen || ghostCfg.wuerzeAbstand || ghostCfg.wuerzeForm
               || ghostCfg.wuerzeFehler || ghostCfg.wuerzeWindschatten
-              || ghostCfg.wuerzeVerteidigen || ghostCfg.wuerzeBlau);
+              || ghostCfg.wuerzeVerteidigen || ghostCfg.wuerzeBlau
+              || ghostCfg.wuerzeStart);
   }
 
   const SPICE_FORM_MS = 2600;      // wie oft die Tagesform fortgeschrieben wird
@@ -3819,6 +3865,84 @@
   //   beim Ueberrundet-Werden   dafuer gibt es die blaue Flagge weiter unten
   //   das Fahrerauto       es laesst sich nicht steuern; ein yieldSide darauf ist wirkungslos
   const SPICE_DEFEND_P = 0.5;          // wie oft verteidigt wird, wenn es erlaubt ist
+
+  // ====================================================================================
+  // FAHRERCHARAKTER: VIER FAKTOREN UND EIN BOXENFENSTER, JE AUTO UND RENNEN
+  // ====================================================================================
+  //
+  // WAS FEHLTE: alle Ghosts sind derselbe Fahrer. Es gibt car.ghostSpeed (ein Tempo je
+  // Auto) und car.learn, alles andere steht in EINEM globalen ghostCfg - dieselbe
+  // Angriffslust, dieselbe Fehlerneigung, dasselbe Boxenfenster fuer jeden. Zwei Autos mit
+  // gleicher Einstellung fahren deshalb gleich, und das Feld wirkt als Kolonne.
+  //
+  // FUENF WERTE, und jeder skaliert genau eine Groesse, die es schon gibt - kein neues
+  // Verhalten, sondern das vorhandene unterschiedlich eingestellt:
+  //
+  //   angriff        die Wahrscheinlichkeit, ein Ueberholmanoever anzusetzen
+  //   verteidigung   die Wahrscheinlichkeit, die angegriffene Seite zu decken
+  //   fehler         die Wahrscheinlichkeit, sich zu verbremsen
+  //   kurvenAbzug    der Tempoabzug in Kurven. UNTER 1 heisst mutiger: er gibt weniger
+  //                  Tempo ab. Der Name sagt, was er multipliziert, und nicht, wie es sich
+  //                  anfuehlt - "Mut" waere ein Wert, bei dem groesser besser ist, und
+  //                  genau diese Umkehrung vergisst man beim naechsten Lesen.
+  //   pitVersatz     Runden, um die das Boxenfenster dieses Autos verschoben ist
+  //
+  // JE RENNEN NEU GEWUERFELT, wie bestellt. Gezogen wird im car.ghost-Literal von
+  // startGhost() - das ist der EINZIGE Startweg, den echtes Rennen (launchGhosts) und
+  // Rennsimulation (simStart) gemeinsam haben, und `car.ghost` wird dort ohnehin komplett
+  // ersetzt. "Je Rennen neu" ist damit eine Eigenschaft der Ablage und braucht keine
+  // eigene Ruecksetzung. Nichts davon wird in chc.cars.v1 gespeichert.
+  //
+  // DIE SPANNE IST SCHMAL, und das ist Absicht: +/-25 Prozent auf eine Wahrscheinlichkeit
+  // sind im Rennen sichtbar, ohne dass ein Auto zum Statisten wird. Das Tempo bleibt
+  // ausdruecklich draussen - dafuer gibt es car.ghostSpeed und den Regler in der Garage.
+  const CHARAKTER_SPANNE = 0.25;
+  const CHARAKTER_PIT_VERSATZ = 2;     // Runden nach beiden Seiten
+  function charakterZiehen() {
+    const f = () => 1 + (Math.random() * 2 - 1) * CHARAKTER_SPANNE;
+    return {
+      angriff: +f().toFixed(3),
+      verteidigung: +f().toFixed(3),
+      fehler: +f().toFixed(3),
+      kurvenAbzug: +f().toFixed(3),
+      pitVersatz: Math.round((Math.random() * 2 - 1) * CHARAKTER_PIT_VERSATZ),
+    };
+  }
+
+  // Der Charakter eines Autos, oder die Eins, wenn es keinen hat. EIN Zugang, damit jeder
+  // Aufrufer denselben Rueckfall bekommt: ohne Schalter, ohne Ghost-Satz und beim
+  // Fahrerauto gilt ueberall 1,0 - also genau das Verhalten von vorher.
+  // ---- STARTREAKTION: nicht alle loesen gleichzeitig aus ---------------------------
+  //
+  // Es gab kein Reaktionsmodell: alle Ghosts fahren im selben Takt los, sobald gruen ist.
+  // Der Start ist aber das erste, was man von einem Rennen sieht - und gemessen ist er
+  // ohnehin die dichteste Phase (in den ersten zehn Sekunden 82 Beruehrungen je Minute
+  // gegen 34 im Dauerbetrieb, und dabei 2 statt 24 Ueberholmanoever: ein Schiebehaufen).
+  //
+  // 80 bis 300 ms sind die Spanne, die ein Mensch am Startknopf auch hat. Danach gilt fuer
+  // 2,5 s ein Vorsichtsfaktor - die erste Kurve ist die, in der ein Feld sich selbst
+  // aufraeumt oder eben nicht. 2500 ms sind dieselbe Zahl, mit der GHOST_START_ENG_MS die
+  // Zweispurigkeit am Start begruendet, und aus demselben Grund: nach zwei Kacheln ist die
+  // erste Kurve durch.
+  //
+  // NUR IM ECHTEN RENNEN, und das gehoert gesagt: es haengt an raceStartedAt, das
+  // raceGreen() setzt. simStart() geht nicht durch raceGreen - die Kennzahlensonde sieht
+  // diesen Baustein also nicht, und eine Messung dazu waere eine Messung von nichts.
+  const GHOST_START_REAKTION_MS = [80, 300];
+  const GHOST_START_VORSICHT_MS = 2500;
+  const GHOST_START_VORSICHT = 0.85;
+  function startReaktionZiehen() {
+    const [lo, hi] = GHOST_START_REAKTION_MS;
+    return Math.round(lo + Math.random() * (hi - lo));
+  }
+
+  const CHARAKTER_EINS = { angriff: 1, verteidigung: 1, fehler: 1, kurvenAbzug: 1,
+                           pitVersatz: 0 };
+  function ghostCharakter(car) {
+    if (!ghostCfg.charakter) return CHARAKTER_EINS;
+    const g = car && car.ghost;
+    return (g && g.charakter) ? g.charakter : CHARAKTER_EINS;
+  }
 
   // ====================================================================================
   // BLAUE FLAGGE: WER EINE RUNDE ZURUECK IST, MACHT PLATZ
@@ -4367,7 +4491,7 @@
     if (ghostCfg.wuerzeFehler && aheadTight.tight > 0 && aheadTight.dist <= 1) {
       if (g.mistakeArmed !== aheadTight.key) {
         g.mistakeArmed = aheadTight.key;
-        if (Math.random() < SPICE_MISTAKE_P) {
+        if (Math.random() < SPICE_MISTAKE_P * ghostCharakter(car).fehler) {
           const d = SPICE_MISTAKE_MS[0]
                   + Math.random() * (SPICE_MISTAKE_MS[1] - SPICE_MISTAKE_MS[0]);
           g.mistakeUntil = now + d;
@@ -4531,7 +4655,8 @@
         && now > (g.passBlockUntil || 0)
         && now - (g.attackTriedAt || 0) > SPICE_ATTACK_RETRY_MS) {
       g.attackTriedAt = now;
-      if (Math.random() < SPICE_ATTACK_P * platz) {
+      // Die Angriffslust dieses Fahrers multipliziert mit - siehe charakterZiehen().
+      if (Math.random() < SPICE_ATTACK_P * platz * ghostCharakter(car).angriff) {
         // attackUntil bleibt als "eine Sequenz laeuft"-Marke; die Phasen entscheiden.
         // Die Obergrenze steht jetzt bei SPICE_PASS_MAX_MS, nicht bei SPICE_ATTACK_MS.
         // Die Obergrenze deckt die Ansage MIT ab: attackUntil ist die Marke "eine
@@ -4620,7 +4745,8 @@
         if (ah.car && ah.car.ghost && !ah.car.ghost.nurOrt && ghostCfg.wuerzeVerteidigen
             && flagState === 'green' && !ah.car.ghost.pit
             && !(ah.car.ghost.laps < g.laps)           // Ueberrundete verteidigen nicht
-            && Math.random() < SPICE_DEFEND_P) {
+            // Die Neigung des VORAUSFAHRENDEN entscheidet, nicht die des Angreifers.
+            && Math.random() < SPICE_DEFEND_P * ghostCharakter(ah.car).verteidigung) {
           verteidigt = true;
         }
         if (ah.car && ah.car.ghost) {
@@ -5425,6 +5551,15 @@
                   // Die Kachelabstaende der letzten Wechsel, fuer die Plausibilitaet des
                   // Zaehlers. Leer heisst "noch nichts gesehen", und dann zaehlt er nicht.
                   tileRing: [],
+                  // Der Fahrercharakter, EINMAL je Rennen gezogen - Begruendung und die
+                  // fuenf Werte stehen bei charakterZiehen(). Er wird immer gezogen, auch
+                  // wenn der Schalter aus ist: ghostCharakter() gibt dann die Eins zurueck,
+                  // und ein Einschalten mitten im Rennen findet einen fertigen Charakter
+                  // statt eines halben.
+                  charakter: charakterZiehen(),
+                  // Die Reaktionszeit dieses Fahrers am Start, in Millisekunden. Auch sie
+                  // wird immer gezogen und nur bei eingeschaltetem Schalter gelesen.
+                  startReaktion: startReaktionZiehen(),
                   // Der aufintegrierte Weg auf der aktuellen Kachel, in Zeichnungseinheiten.
                   // Er traegt die Kachelphase, sobald dieser Kacheltyp zweimal gemessen ist -
                   // siehe ghostTilePhaseWeg().
@@ -6132,12 +6267,15 @@
         : Math.max(here, ahead.dist <= reach ? ahead.tight : 0);
       // Bremsprofil: voller Bremsbedarf kostet das Doppelte dessen, was der Regler fuer eine
       // normale Kurve sagt.
-      const abzugProfil = bd === null ? 0 : Math.min(0.85, 2 * ghostCfg.curveSlow * bd);
+      // Der Kurvenabzug dieses Fahrers: unter 1 gibt er weniger Tempo ab als der Regler
+      // sagt, ueber 1 mehr. Er wirkt auf BEIDE Abzuege, weil beide dasselbe meinen.
+      const curveSlowIch = ghostCfg.curveSlow * ghostCharakter(car).kurvenAbzug;
+      const abzugProfil = bd === null ? 0 : Math.min(0.85, 2 * curveSlowIch * bd);
       // Kachelregel: curveSlow beschreibt die 60-Grad-Kurve, Haarnadel und Engstelle
       // bekommen das Doppelte (tileTightness() = 2), gedeckelt damit ein hoher Regler den
       // Ghost nicht zum Stehen bringt. Mit dem Standardregler von 20 Prozent sind das
       // 20 Prozent in der Kurve und 40 in der Haarnadel oder Engstelle.
-      const abzugKachel = tight > 0 ? Math.min(0.85, ghostCfg.curveSlow * tight) : 0;
+      const abzugKachel = tight > 0 ? Math.min(0.85, curveSlowIch * tight) : 0;
       target *= 1 - Math.max(abzugProfil, abzugKachel);
       // GESTAFFELT UEBER DAS GANZE FELD, nicht nur der Erste. Begruendung und Formel
       // stehen bei ghostFeldStaffel(); ein Rennen ist ausdruecklich nicht Bedingung, auch im
@@ -6178,6 +6316,18 @@
       // sagt. Das ist NICHT das Boxentempo - siehe formationPace(): darunter liest das Auto
       // die Bahn nicht mehr.
       if (raceFormationLap) target = Math.min(target, formationPace());
+      // ---- STARTREAKTION UND VORSICHT IN DER ERSTEN KURVE ---------------------------
+      //
+      // Begruendung und Zahlen stehen bei GHOST_START_REAKTION_MS. Es steht NEBEN der
+      // Einfuehrungsrunde, weil es dieselbe Art Griff ist - eine Obergrenze in der
+      // Startphase - und vor der Anfahrrampe, die ihre eigene Aufgabe hat.
+      if (ghostCfg.wuerzeStart && raceStartedAt && g.startReaktion) {
+        const seitGruen = now - raceStartedAt;
+        if (seitGruen < g.startReaktion) target = 0;
+        else if (seitGruen < g.startReaktion + GHOST_START_VORSICHT_MS) {
+          target *= GHOST_START_VORSICHT;
+        }
+      }
 
       // ---- Die Anfahrrampe, MIT BODEN ------------------------------------------------
       //

@@ -1948,6 +1948,42 @@
                lueckeMax: luecke.length ? Math.max.apply(null, luecke) : null };
     },
 
+    // ---- FAHRERCHARAKTER: GEZOGEN, IN DER SPANNE, UND VERSCHIEDEN -----------------
+    //
+    // Geprueft wird das ZIEHEN, nicht die Wirkung: die Wirkung haengt an fuenf Groessen und
+    // ist in der Kennzahlensonde zu sehen (die Rundenzeit-Spanne im Feld verdoppelt sich).
+    // Hier geht es um die Zusicherungen, die man an einer Zufallszahl ueberhaupt pruefen
+    // kann: liegt sie im dokumentierten Band, und sind die Autos verschieden?
+    //
+    // attrappeGhost() ruft startGhost(), und dort wird gezogen - die Sonde muss also nichts
+    // weiter tun als Autos anzulegen und hinzusehen.
+    charakterProbe(n) {
+      const zahl = Math.max(2, Math.min(8, n || 6));
+      const autos = [];
+      try {
+        for (let i = 0; i < zahl; i++) autos.push(OMEGA_TEST.attrappeGhost('C' + i));
+        const werte = autos.map((c) => c.ghost.charakter);
+        const reaktionen = autos.map((c) => c.ghost.startReaktion);
+        const felder = ['angriff', 'verteidigung', 'fehler', 'kurvenAbzug'];
+        const spanne = {};
+        for (const f of felder) {
+          const w = werte.map((x) => x && x[f]).filter((x) => typeof x === 'number');
+          spanne[f] = w.length ? { min: Math.min.apply(null, w), max: Math.max.apply(null, w),
+                                   verschieden: new Set(w).size } : null;
+        }
+        return {
+          autos: zahl,
+          spanne,
+          pitVersatz: werte.map((x) => x && x.pitVersatz),
+          reaktionMin: Math.min.apply(null, reaktionen),
+          reaktionMax: Math.max.apply(null, reaktionen),
+          reaktionVerschieden: new Set(reaktionen).size,
+        };
+      } finally {
+        for (const c of autos) stopGhost(c);
+      }
+    },
+
     // ---- VERTEIDIGEN: DECKT DER VORAUSFAHRENDE DIE SEITE AB? ----------------------
     //
     // Zwei Attrappen, der Angreifer dicht hinter dem Vorausfahrenden und lange genug
@@ -2427,13 +2463,22 @@
         const ueberholt = z.ueberholt - b.ueberholt;
         const kontaktMs = z.kontaktMs - b.kontaktMs;
         const runden = [];
+        // Und je Auto getrennt: die Spanne ZWISCHEN den Autos sagt, ob das Feld
+        // unterschiedlich schnell ist - die Frage, an der sich der Fahrercharakter
+        // entscheidet. Der Mittelwert ueber alle Autos kann dabei gleich bleiben.
+        const jeAuto = [];
         (z.autos || []).forEach((a, i) => {
           // Die erste Runde eines Autos faellt immer heraus: sie beginnt aus dem Stand, und
           // der vorhandene Test "die Autos fahren, und die Zeiten stimmen" haelt
           // ausdruecklich fest, dass sie deshalb die langsamste ist. Dazu faellt alles
           // heraus, was vor der Grundlinie lag.
           const ab = Math.max(1, (b.runden && b.runden[i]) || 0);
-          for (let k = ab; k < (a.zeiten || []).length; k++) runden.push(a.zeiten[k] / 1000);
+          const meine = [];
+          for (let k = ab; k < (a.zeiten || []).length; k++) {
+            runden.push(a.zeiten[k] / 1000);
+            meine.push(a.zeiten[k] / 1000);
+          }
+          if (meine.length) jeAuto.push(meine.reduce((x, y) => x + y, 0) / meine.length);
         });
         return {
           sekundenEcht: zahl(dauerMs / 1000, 1),
@@ -2449,6 +2494,9 @@
           abgaenge: abgaenge || 0,
           abgaengeProMin: zahl((abgaenge || 0) / min, 2),
           rundenZahl: runden.length,
+          // Spanne der mittleren Rundenzeit ZWISCHEN den Autos, in Sekunden.
+          rundeSpanneAutos: jeAuto.length > 1
+            ? zahl(Math.max.apply(null, jeAuto) - Math.min.apply(null, jeAuto), 3) : null,
           besteRundeS: runden.length ? zahl(Math.min.apply(null, runden), 2) : null,
           mittlereRundeS: runden.length
             ? zahl(runden.reduce((s, x) => s + x, 0) / runden.length, 2) : null,
@@ -2462,7 +2510,7 @@
         const aus = { laeufe: gut.length };
         for (const k of ['beruehrungenProMin', 'ueberholtProMin', 'beruehrungJeUeberholen',
                          'kontaktAnteil', 'abgaengeProMin', 'mittlereRundeS', 'besteRundeS',
-                         'sekundenEcht']) {
+                         'rundeSpanneAutos', 'sekundenEcht']) {
           const w = gut.map((g) => g[k]).filter((x) => x !== null && x !== undefined);
           if (!w.length) { aus[k] = null; aus[k + 'Spanne'] = null; continue; }
           aus[k] = zahl(w.reduce((s, x) => s + x, 0) / w.length, 3);

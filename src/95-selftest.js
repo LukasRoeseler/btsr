@@ -7117,6 +7117,54 @@
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
+  // ---- Fahrercharakter: gezogen, in der Spanne, und verschieden ----
+  //
+  // Bis v0.6.40 waren alle Ghosts derselbe Fahrer: ein globales ghostCfg fuer jeden, dazu
+  // car.ghostSpeed. Jetzt wuerfelt jedes Auto zu Rennbeginn vier Faktoren (+/-25 %) und ein
+  // Boxenfenster; gezogen wird im car.ghost-Literal von startGhost(), dem einzigen
+  // Startweg, den echtes Rennen und Simulation gemeinsam haben.
+  //
+  // GEPRUEFT WIRD DAS ZIEHEN und nicht die Wirkung - an einer Zufallszahl ist die Spanne
+  // pruefbar, der Einzelwert nicht. Die Wirkung steht in der Kennzahlensonde: fuenf Autos,
+  // 120 s, je drei Laeufe, Spanne der mittleren Rundenzeit ZWISCHEN den Autos 0,122 s ohne
+  // gegen 0,274 s mit Charakter, bei einer Streuung von 0,095 bzw. 0,055 - der Unterschied
+  // liegt also ausserhalb des Rauschens. Beruehrungen und Ueberholmanoever gehen dabei
+  // zurueck (24,0 -> 10,8 und 13,2 -> 7,5), weil ein unterschiedlich schnelles Feld sich
+  // auseinanderzieht. Das ist der Preis und in der Oberflaeche benannt.
+  stAdd('Fahrercharakter: gezogen, in der Spanne, und verschieden', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.charakterProbe) {
+      return { skip: true, mass: 'charakterProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.charakterProbe(6);
+    if (!r) return { skip: true, mass: 'keine Antwort' };
+    const fehler = [], zeilen = [];
+    // 1. Jeder Faktor liegt in der dokumentierten Spanne. 0,75 bis 1,25 sind
+    //    CHARAKTER_SPANNE = 0,25 nach beiden Seiten.
+    for (const f of ['angriff', 'verteidigung', 'fehler', 'kurvenAbzug']) {
+      const s = r.spanne[f];
+      if (!s) { fehler.push(f + ': nicht gezogen'); continue; }
+      zeilen.push(f + ' ' + s.min.toFixed(2) + '-' + s.max.toFixed(2));
+      if (s.min < 0.75 || s.max > 1.25) {
+        fehler.push(f + ' liegt mit ' + s.min + '..' + s.max + ' ausserhalb 0,75..1,25');
+      }
+      // 2. Und die Autos sind verschieden. Bei sechs Zuegen aus einem stetigen Bereich
+      //    waeren zwei gleiche ein Zufall von praktisch null - alle gleich heisst, dass
+      //    gar nicht je Auto gezogen wird.
+      if (s.verschieden < 2) fehler.push(f + ': alle sechs Autos haben denselben Wert');
+    }
+    // 3. Die Startreaktion, dieselben zwei Fragen.
+    if (!(r.reaktionMin >= 80 && r.reaktionMax <= 300)) {
+      fehler.push('Startreaktion ' + r.reaktionMin + '..' + r.reaktionMax
+                  + ' ms ausserhalb 80..300');
+    }
+    if (r.reaktionVerschieden < 2) fehler.push('alle Autos haben dieselbe Startreaktion');
+    return { ok: !fehler.length,
+             mass: zeilen.join(', ') + ' | Reaktion ' + r.reaktionMin + '-' + r.reaktionMax
+                 + ' ms (' + r.reaktionVerschieden + ' verschiedene)'
+                 + ' | Boxenversatz ' + r.pitVersatz.join(',')
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
   // ---- Verteidigen: der Vorausfahrende deckt die angegriffene Seite ab ----
   //
   // Bis v0.6.39 gab der Vorausfahrende IMMER nach - der Angreifer schrieb ihm yieldSide auf
@@ -9474,6 +9522,8 @@
       ['ghost-w-slip', () => ghostCfg.wuerzeWindschatten],
       ['ghost-w-defend', () => ghostCfg.wuerzeVerteidigen],
       ['ghost-w-blau', () => ghostCfg.wuerzeBlau],
+      ['ghost-charakter', () => ghostCfg.charakter],
+      ['ghost-w-start', () => ghostCfg.wuerzeStart],
       ['ghost-learn', () => ghostCfg.learn],
       ['ghost-learn-pace', () => ghostCfg.learnPace],
       ['ghost-needcode', () => ghostCfg.needCode],

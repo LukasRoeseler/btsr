@@ -7481,6 +7481,28 @@
           Sekunden zu wehren und danach sechs Sekunden gesperrt zu sein. Der Schnellere
           bekommt die Ideallinie, kein Vier-Phasen-Man&ouml;ver n&ouml;tig.</small></div>
         <label class="tgl"><input type="checkbox" id="ghost-w-blau"><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Fahrercharakter
+          <span class="wip-tag">experimentell</span>
+          <small>Bisher sind alle Ghosts derselbe Fahrer: ein globaler Satz Regler f&uuml;r
+          jeden. Mit dieser Einstellung w&uuml;rfelt jedes Auto zu Rennbeginn vier Faktoren
+          in einer Spanne von &plusmn;25&nbsp;% &ndash; Angriffslust, Verteidigung,
+          Fehlerneigung und Kurvenabzug &ndash; und ein eigenes Boxenfenster von bis zu zwei
+          Runden Versatz.
+          <br>Es ist kein neues Verhalten, sondern das vorhandene unterschiedlich
+          eingestellt. Das Tempo bleibt ausdr&uuml;cklich drau&szlig;en: daf&uuml;r gibt es
+          den Regler je Auto in der Garage. Angezeigt wird der Charakter dort ebenfalls,
+          sobald das Rennen l&auml;uft.</small></div>
+        <label class="tgl"><input type="checkbox" id="ghost-charakter"><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Startreaktion
+          <span class="wip-tag">experimentell</span>
+          <small>Bisher l&ouml;sen alle im selben Takt aus. Jetzt hat jedes Auto eine eigene
+          Reaktionszeit zwischen 80 und 300&nbsp;ms &ndash; die Spanne, die ein Mensch am
+          Startknopf auch hat &ndash; und f&auml;hrt die ersten 2,5&nbsp;Sekunden mit
+          85&nbsp;% Tempo, weil die erste Kurve die ist, in der sich ein Feld selbst
+          aufr&auml;umt. Gemessen ist der Start ohnehin die dichteste Phase: 82
+          Ber&uuml;hrungen je Minute in den ersten zehn Sekunden gegen 34 im Dauerbetrieb,
+          und dabei 2 statt 24 &Uuml;berholman&ouml;ver.</small></div>
+        <label class="tgl"><input type="checkbox" id="ghost-w-start"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Ghost: Ideallinie <span class="wip-tag">WIP</span>
           <!-- Seit v0.5.9 wirkt dieser Regler deutlich staerker: der Deckel aus
                learnSteerCap() ging von 0,55 auf 1,0, gemessen an dem, was die Original-App
@@ -8270,7 +8292,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.6.40</span></span>
+    <span class="foot-ver">v<span id="app-version">0.6.41</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
