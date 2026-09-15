@@ -678,6 +678,10 @@
 
   const garage = [];        // every connected car, in connection order
   let playerCar = null;     // the one the gamepad drives; sendControlValue writes here
+  // Das Auto von Spieler 2, im Zwei-Spieler-Modus. Es wird NICHT von sendControlValue
+  // beschickt, sondern von writeToCar() aus dem Herzschlag - siehe die Begruendung bei
+  // zweiSpieler in 10-ble-explorer.js.
+  let playerCar2 = null;
 
   // ---------------------------------------------------------------- Kennung je Auto
   //
@@ -915,6 +919,11 @@
     }, 150);
   }
 
+  // ROLLENNAMEN, und 'player2' ist der vierte. Dass er 'player2' heisst und nicht
+  // 'player_2' oder 'spieler2', hat einen Grund: er wird in `chc.cars.v1` gespeichert
+  // (97-sessions.js schreibt car.role mit), und ein umbenannter Rollenname wuerde jede
+  // gespeicherte Garage einer aelteren Fassung ungueltig machen. Also: englisch wie die
+  // drei anderen, und ab jetzt fest.
   function setCarRole(car, role) {
     if (role === 'player') {
       // Exactly one player. Anything that was the player falls back to no role rather than
@@ -924,10 +933,25 @@
     } else if (playerCar === car) {
       playerCar = null;
     }
+    // Und dasselbe fuer Auto 2. Die beiden Rollen sind GEGENSEITIG ausschliessend: ein
+    // Auto, das zugleich Auto 1 und Auto 2 waere, bekaeme im selben Herzschlag zwei
+    // Pakete mit verschiedenem Gas - genau das Stottern, das der eine Herzschlag
+    // beseitigt hat.
+    if (role === 'player2') {
+      garage.forEach(c => { if (c !== car && c.role === 'player2') c.role = 'none'; });
+      playerCar2 = car;
+    } else if (playerCar2 === car) {
+      playerCar2 = null;
+      // Sonst faehrt das Auto mit dem letzten gesendeten Gas weiter: writeToCar() schickt
+      // nur, was es bekommt, und ohne Rolle bekommt es nichts mehr.
+      writeToCar(car, 0, 0, trackModeBit() | (headlightsOn ? LIGHT_HEAD : 0));
+    }
     car.role = role;
     if (role !== 'ghost') stopGhost(car);
     renderGarage();
-    log(`${garageLabel(car)}: Rolle ${role === 'player' ? 'Steuern' : role === 'ghost' ? 'Ghost' : 'keine'}`, 'info');
+    const name = role === 'player' ? 'Steuern' : role === 'player2' ? 'Spieler 2'
+               : role === 'ghost' ? 'Ghost' : 'keine';
+    log(`${garageLabel(car)}: Rolle ${name}`, 'info');
   }
 
   // ---- Der Fahrercharakter als Zeile in der Garage --------------------------------
@@ -985,6 +1009,7 @@
     echte.forEach((car, i) => {
       const row = document.createElement('div');
       row.className = 'gar-row' + (car.role === 'player' ? ' is-player'
+                                 : car.role === 'player2' ? ' is-zwei'
                                  : car.role === 'ghost' ? ' is-ghost' : '');
       const f = carColor(car);
       row.innerHTML = `
@@ -1002,6 +1027,9 @@
             ${car.blinking ? '<span class="gar-blink">&nbsp;blinkt&hellip;</span>' : ''}</div></div>
         <div class="gar-roles">
           <button data-role="player" class="${car.role === 'player' ? 'on' : ''}">Steuern</button>
+          ${zweiSpieler ? `
+          <button data-role="player2" class="${car.role === 'player2' ? 'on zwei' : ''}"
+                  >Spieler&nbsp;2</button>` : ''}
           <button data-role="ghost" class="${car.role === 'ghost' ? 'on ghost' : ''}">Ghost</button>
           <button data-role="none" class="${car.role === 'none' ? 'on off' : ''}">Aus</button>
         </div>
@@ -1254,8 +1282,12 @@
       });
       garage.push(car);
       carAssign(car);
-      // First car connected takes the wheel, as requested.
-      if (!playerCar) setCarRole(car, 'player'); else renderGarage();
+      // First car connected takes the wheel, as requested. Im Zwei-Spieler-Modus nimmt
+      // das ZWEITE Auto den zweiten Platz - sonst muesste man nach jedem Verbinden in die
+      // Garage, und der Modus soll "zwei Autos verbinden und losfahren" sein.
+      if (!playerCar) setCarRole(car, 'player');
+      else if (zweiSpieler && !playerCar2) setCarRole(car, 'player2');
+      else renderGarage();
       log(`${garageLabel(car)} verbunden (${garage.length} insgesamt).`, 'info');
       playFx(fxBuffers.start[$('sound-profile').value] || fxBuffers.start.porsche, 0.85);
     } catch (err) {
@@ -7496,13 +7528,137 @@
     }
   }
 
-  function pollGamepad() {
+  // ====================================================================================
+  // WELCHES PAD FAEHRT WELCHEN SPIELER?
+  // ====================================================================================
+  //
+  // Die Reihenfolge, in der der Browser die Pads auflistet, IST die Zuordnung: das erste
+  // brauchbare fahrt Spieler 1, das naechste andere Spieler 2. Kein Auswahlfeld je Pad, und
+  // das ist eine Entscheidung: die Kennungen (`pad.id`) sind bei zwei gleichen Controllern
+  // identisch, die Indizes wechseln beim Aus- und Einstecken, und ein Feld, das man nach
+  // jedem Neustart neu stellen muss, ist schlechter als ein Knopf zum Tauschen. Den gibt
+  // es: padTauschen dreht die beiden um, und die Optionenkachel zeigt, wer gerade welches
+  // hat.
+  //
+  // MIT VORRANG FUER STANDARD-MAPPING, wie bisher: Windows zeigt denselben Controller oft
+  // zweimal (einmal gemappt, einmal als rohes HID-Gerät), und das rohe hat sinnlose
+  // Achsnummern. Deshalb werden erst die gemappten genommen und die rohen nur, wenn sonst
+  // keine da sind - vorher entschied `find()` das fuer ein Pad, jetzt fuer die Liste.
+  let padTauschen = false;
+  function padTauschenSetzen(v) { padTauschen = !!v; }
+  function padTauschenLesen() { return padTauschen; }
+  function padsSortiert() {
     const pads = navigator.getGamepads ? navigator.getGamepads() : [];
-    // Prefer a standard-mapping pad: Windows often exposes the same physical controller
-    // twice (e.g. a DualSense over Bluetooth showing up as both a mapped and a raw HID
-    // device), and picking the raw one gives meaningless axis/button indices.
     const list = Array.from(pads).filter(p => p);
-    const pad = list.find(p => p.mapping === 'standard') || list[0];
+    const gemappt = list.filter(p => p.mapping === 'standard');
+    const roh = list.filter(p => p.mapping !== 'standard');
+    return gemappt.concat(roh);
+  }
+  function padsFuerSpieler() {
+    const sortiert = padsSortiert();
+    const a = sortiert[0] || null;
+    const b = sortiert.length > 1 ? sortiert[1] : null;
+    return padTauschen ? { p1: b, p2: a } : { p1: a, p2: b };
+  }
+
+  // ---- Die Bedienung der Kachel "2 Spieler" ---------------------------------------
+  //
+  // Zwei Ankreuzfelder und zwei Textzeilen. Die Felder werden von 98b-sicherung.js von
+  // selbst gespeichert und wiederhergestellt (es findet jedes input[id] in einer .opt-row
+  // unter #tab-options), und presetSet() feuert dabei 'change' - deshalb genuegt HIER ein
+  // Zuhoerer, und es braucht keine eigene Ablage.
+  //
+  // WARUM DIE LISTE GETAKTET WIRD und nicht auf ein Ereignis wartet: die Gamepad-API
+  // liefert keine verlaessliche Meldung, wenn sich ein Pad nach dem ersten Knopfdruck
+  // anmeldet ('gamepadconnected' kommt, 'gamepaddisconnected' bei manchen Pads nicht).
+  // Eine Sekunde ist fuer eine Anzeige, auf die man beim Einrichten schaut, genug - und
+  // sie laeuft nur, wenn die Unterseite offen ist. Genau dafuer gibt es unterseiteOffen().
+  function zweiSpielerKachelZeichnen() {
+    const padZeile = $('zwei-pads');
+    if (padZeile) {
+      const sortiert = padsSortiert();
+      const spieler = padsFuerSpieler();
+      // Der NAME und nicht nur die Zahl: wer zwei verschiedene Pads anschliesst, will
+      // sehen, welches welches ist - "Controller 1" sagt darueber nichts.
+      const nenn = (pad) => pad ? String(pad.id).slice(0, 40) : 'keiner';
+      padZeile.textContent = sortiert.length === 0
+        ? 'Kein Controller erkannt.'
+        : 'Auto 1: ' + nenn(spieler.p1) + ' — Auto 2: ' + nenn(spieler.p2)
+          + (sortiert.length === 1 ? ' (nur ein Controller erkannt)' : '');
+    }
+    const autoZeile = $('zwei-autos');
+    if (autoZeile) {
+      const eins = playerCar ? garageLabel(playerCar) : 'keins';
+      const zwei = playerCar2 ? garageLabel(playerCar2) : 'keins';
+      autoZeile.textContent = zweiSpieler
+        ? 'Auto 1: ' + eins + ' — Auto 2: ' + zwei
+          + (playerCar2 ? '' : ' (in der Garage einem Auto die Rolle "Spieler 2" geben)')
+        : 'Der Modus ist aus.';
+    }
+  }
+
+  if ($('opt-zwei-an')) {
+    $('opt-zwei-an').addEventListener('change', (e) => {
+      zweiSpielerSetzen(e.target.checked);
+      zweiSpielerKachelZeichnen();
+    });
+  }
+  if ($('opt-zwei-tausch')) {
+    $('opt-zwei-tausch').addEventListener('change', (e) => {
+      padTauschenSetzen(e.target.checked);
+      zweiSpielerKachelZeichnen();
+    });
+  }
+  setInterval(() => {
+    // Nur bei offener Unterseite. Ein Takt, der im Fahren durch die Pad-Liste laeuft, waere
+    // Arbeit fuer eine Anzeige, die niemand sieht - und der Sendetakt hat Vorrang.
+    const seite = $('sub-opt-zwei');
+    if (seite && seite.classList.contains('on')) zweiSpielerKachelZeichnen();
+  }, 1000);
+
+  // ---- Der ganze Eingang von Spieler 2 -------------------------------------------
+  //
+  // Dieselben Bindungen wie Spieler 1, und zwar dasselbe Objekt: zwei Controller mit
+  // verschiedenen Belegungen waeren zwei Tabellen, zwei Speicherorte und zwei Stellen zum
+  // Vergessen. Wer auf gleichen Pads spielt, will ohnehin gleiche Knoepfe.
+  //
+  // Geschrieben wird DIREKT auf p2Steer/p2Throttle und nicht ueber applySteerInput(): die
+  // Schiedsstelle in 30-input.js verteilt EIN Paar Werte unter mehreren Quellen, und
+  // Spieler 2 hat nur eine Quelle. Sie hier mitzubenutzen hiesse, dass sein Gas das von
+  // Spieler 1 ueberschreibt.
+  let p2PrevDown = false, p2PrevUp = false;
+  function pollPad2(pad) {
+    if (!pad) {
+      // Kein zweites Pad: Spieler 2 steht. Ohne diese zwei Zeilen behielte er den letzten
+      // Wert und faehrt weiter, wenn man den Controller abzieht - genau der Fehler, der in
+      // diesem Projekt schon einmal ein Auto von allein fahren liess.
+      p2Steer = 0; p2Throttle = 0;
+      return;
+    }
+    const gas = applyDeadzone(Math.max(0, readBindingValue(pad, bindings.throttle)), TRIGGER_DEADZONE);
+    const bremse = applyDeadzone(Math.max(0, readBindingValue(pad, bindings.brake)), TRIGGER_DEADZONE);
+    p2Steer = applyDeadzone(readBindingValue(pad, bindings.steering));
+    p2Throttle = gas - bremse;
+    // Schalten, flankengetriggert wie bei Spieler 1. Ohne das koennte ein Spieler 2 mit
+    // Handschaltung nicht schalten - und die Handschaltung ist eine Einstellung, die fuer
+    // beide gilt.
+    const abNow = readBindingValue(pad, bindings.downshift) > BUTTON_CAPTURE_THRESHOLD;
+    const aufNow = readBindingValue(pad, bindings.upshift) > BUTTON_CAPTURE_THRESHOLD;
+    if (abNow && !p2PrevDown && physicsEnabled && !physEngine2.state.isShifting) {
+      physEngine2.triggerShift(-1);
+    }
+    if (aufNow && !p2PrevUp && physicsEnabled && !physEngine2.state.isShifting) {
+      physEngine2.triggerShift(1);
+    }
+    p2PrevDown = abNow; p2PrevUp = aufNow;
+  }
+
+  function pollGamepad() {
+    const spieler = padsFuerSpieler();
+    // Spieler 2 zuerst, und ohne Bedingung auf `pad`: sein Eingang muss auch dann auf null
+    // gehen, wenn Spieler 1 gar kein Pad hat (der Rumpf darunter kehrt dann frueh zurueck).
+    if (zweiSpieler) pollPad2(spieler.p2); else { p2Steer = 0; p2Throttle = 0; }
+    const pad = spieler.p1;
     if (!pad) {
       // Do NOT tear the loop down here: a Bluetooth pad can drop out of the snapshot for
       // a frame or two, and killing the loop on that would need a fresh connect event to

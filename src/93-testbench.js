@@ -29,6 +29,146 @@
     // Kastenhoehe misst, wuerde die Verkleinerung mitmessen und immer gruen sein.
     // `b` ist die Kastenbreite und gilt nur im Vollbild - ohne sie prueft ein breites
     // Testfenster eine Lage, in die ein Handy nie geraet.
+    // ---- Der Zwei-Spieler-Modus, am Sendeweg gemessen -------------------------------
+    //
+    // GEMESSEN WIRD, WAS HINAUSGEHT, und nicht, was eine Funktion sich vornimmt. Genau
+    // dieser Unterschied hat beim Zieleinlauf einen Fehler verdeckt: die Seite war
+    // zugeteilt und landete im Gas-Platz. car.testSenke ist deshalb schon da; hier wird
+    // sie fuer zwei Autos gleichzeitig benutzt.
+    //
+    // Der Prueflauf stellt sich seine eigene Lage her - zwei Attrappen, kein Funk - und
+    // gibt im finally jeden angefassten Zustand zurueck. Ohne das bliebe der Modus nach
+    // einem Selbsttest an, und das naechste Rennen haette ein zweites Auto, das niemand
+    // bestellt hat.
+    zweiSpielerProbe(o) {
+      const opt = o || {};
+      const vorher = {
+        zwei: zweiSpieler, p1: playerCar, p2: playerCar2,
+        phys: physicsEnabled, steer: p2Steer, gas: p2Throttle,
+      };
+      const mach = (tag) => ({
+        tag, role: 'none', device: { id: 'probe-' + tag }, testSenke: [],
+        ghost: null, modeBytes: null,
+      });
+      const a1 = mach('P1'), a2 = mach('P2');
+      try {
+        playerCar = a1;
+        playerCar2 = a2;
+        // OHNE PHYSIK, absichtlich: mit ihr haengt das Gas an einer Motordrehzahl, die
+        // sich zwischen zwei Aufrufen aendert, und der Prueflauf wuerde messen, wie schnell
+        // ein Motor anspringt. Ohne sie geht p2Throttle unveraendert hinaus, und das ist
+        // die Frage - kommt die Zahl beim richtigen Auto an?
+        physicsEnabled = false;
+        p2Steer = opt.steer === undefined ? 0.4 : opt.steer;
+        p2Throttle = opt.gas === undefined ? 0.7 : opt.gas;
+        // Erst AUS: es darf nichts hinausgehen.
+        zweiSpieler = false;
+        spielerZweiSenden();
+        const ausPakete = a2.testSenke.length;
+        // Dann AN.
+        zweiSpieler = true;
+        spielerZweiSenden();
+        const anPakete = a2.testSenke.slice(ausPakete);
+        // Und ohne zugeteiltes Auto 2: auch dann nichts. anAutoEins ist dabei die zweite
+        // Zusicherung und die wichtigere - dieser Weg darf Auto 1 NIE anfassen. Taete er
+        // es, bekaeme Auto 1 im selben Takt zwei Pakete mit verschiedenem Gas, und genau
+        // das ist das Stottern, das der eine Herzschlag beseitigt hat.
+        playerCar2 = null;
+        spielerZweiSenden();
+        return {
+          ausPakete,
+          anPakete: anPakete.length,
+          ohneAuto: a2.testSenke.length - ausPakete - anPakete.length,
+          letztes: anPakete.length ? anPakete[anPakete.length - 1] : null,
+          anAutoEins: a1.testSenke.length,
+          gewuenscht: { steer: p2Steer, gas: p2Throttle },
+        };
+      } finally {
+        zweiSpieler = vorher.zwei;
+        playerCar = vorher.p1;
+        playerCar2 = vorher.p2;
+        physicsEnabled = vorher.phys;
+        p2Steer = vorher.steer;
+        p2Throttle = vorher.gas;
+      }
+    },
+
+    // ---- Und faehrt Auto 2 wirklich? ------------------------------------------------
+    //
+    // Die Sonde darueber prueft den WEG. Diese prueft die FAHRT: dass eine eigene
+    // Physikinstanz Gas annimmt, dreht, schaltet und dass die zweite Anzeige im Cockpit
+    // dabei mitgeht. Das ist die Aussage, die bestellt war ("beide fahren koennen"), und
+    // sie laesst sich nicht aus der Zuteilung ableiten.
+    //
+    // DIE UHR WIRD GEFAELSCHT, und zwar performance.now(): physicsStep2() holt sein dt
+    // daraus, und zwei Aufrufe in derselben Millisekunde haetten dt = 0 - gemessen waere
+    // dann ein Motor, der nicht anspringt, obwohl er es tut. Dieselbe Bauform wie bei den
+    // Ghost-Sonden, die Date.now faelschen, und mit derselben Pflicht: im finally zurueck.
+    //
+    // Der Prueflauf laeuft SYNCHRON durch. Das ist kein Zufall: der echte Herzschlag feuert
+    // alle 45 ms und wuerde die gefaelschte Uhr sehen. Ohne ein einziges await kann er
+    // nicht dazwischenkommen.
+    zweiSpielerFahrtProbe(o) {
+      const opt = o || {};
+      const schritte = opt.schritte || 60;      // 60 x 45 ms = 2,7 s
+      const uhrEcht = performance.now;
+      const vorher = {
+        zwei: zweiSpieler, p2: playerCar2, steer: p2Steer, gas: p2Throttle,
+        phys: physicsEnabled,
+      };
+      const a2 = { tag: 'P2', role: 'player2', device: { id: 'probe-fahrt' }, testSenke: [] };
+      const verlauf = [];
+      try {
+        physEngine2.reset();
+        physEngine2Abgleichen();
+        zweiSpieler = true;
+        physicsEnabled = true;
+        playerCar2 = a2;
+        p2Steer = 0;
+        p2Throttle = opt.gas === undefined ? 1 : opt.gas;
+        let t = uhrEcht.call(performance);
+        performance.now = () => t;
+        // Der erste Schritt setzt nur phys2LastTime; ab dem zweiten ist dt echt.
+        for (let i = 0; i < schritte; i++) {
+          spielerZweiSenden();
+          if (i % 10 === 0 || i === schritte - 1) {
+            verlauf.push({
+              s: +(i * 0.045).toFixed(2),
+              rpm: Math.round(motorDrehzahl(physEngine2.state)),
+              kmh: +(Math.abs(physEngine2.state.speedKmh) * REAL_SCALE).toFixed(1),
+              gang: gearLabel(physEngine2.state),
+              anzeigeRpm: ($('race2-rpm') || {}).textContent,
+              anzeigeKmh: ($('race2-speed') || {}).textContent,
+            });
+          }
+          t += CONTROL_SEND_INTERVAL_MS;
+        }
+        const letzt = verlauf[verlauf.length - 1];
+        return {
+          schritte, pakete: a2.testSenke.length, verlauf,
+          // Und die Gegenprobe, dass Auto 1 unberuehrt blieb: seine Physik darf von
+          // diesem Weg nichts gesehen haben.
+          eigenerMotor: physEngine2.state !== physEngine.state,
+          eigeneGaenge: physEngine2.config.gears !== physEngine.config.gears,
+          endeRpm: letzt.rpm, endeKmh: letzt.kmh, endeGang: letzt.gang,
+          anzeigeStimmt: letzt.anzeigeRpm === String(letzt.rpm)
+                      && letzt.anzeigeKmh === String(Math.round(letzt.kmh)),
+          letztesPaket: a2.testSenke[a2.testSenke.length - 1] || null,
+        };
+      } finally {
+        performance.now = uhrEcht;
+        zweiSpieler = vorher.zwei;
+        playerCar2 = vorher.p2;
+        p2Steer = vorher.steer;
+        p2Throttle = vorher.gas;
+        physicsEnabled = vorher.phys;
+        physEngine2.reset();
+        // Die Anzeige wieder auf den Ruhestand, sonst stehen im Cockpit die Zahlen einer
+        // Messfahrt, die niemand gefahren hat.
+        updateRaceScreen2(physEngine2.state);
+      }
+    },
+
     cockpitPassung(h, b) { return cockpitPassung(h, b); },
 
     // ---- Die Cockpit-Schirme, von aussen bedienbar ----------------------------------

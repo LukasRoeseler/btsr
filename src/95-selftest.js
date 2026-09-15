@@ -9594,6 +9594,86 @@
   // Die Liste ist GEPFLEGT, und das ist hier richtig: sie IST die Zusicherung. Sie stammt
   // aus einer Suche ueber alle Kaestchen, deren Listener "X = e.target.checked" schreibt.
   // Ein neuer Schalter gehoert hinein.
+  // ---- Zwei Spieler: kommt beim zweiten Auto wirklich etwas an? ---------------------
+  //
+  // DIE FRAGE, DIE SICH NICHT ERSCHLIESSEN LAESST. "Beide koennen fahren" ist eine Aussage
+  // ueber Pakete auf zwei BLE-Kennungen, nicht ueber Zuteilungen in der Garage. Gemessen
+  // wird deshalb an car.testSenke - derselben Senke, die beim Zieleinlauf einen Fehler
+  // gefunden hat, den die Zuteilung nicht zeigte.
+  //
+  // Drei Zusicherungen, und die dritte ist die, die im Betrieb weh tut:
+  //   1. Schalter aus  -> kein Paket an Auto 2 (sonst faehrt es im Einzelspiel mit)
+  //   2. Schalter an   -> genau ein Paket je Herzschlag, mit dem gewuenschten Gas
+  //   3. immer         -> NIE ein Paket an Auto 1 aus diesem Weg. Zwei Pakete mit
+  //                       verschiedenem Gas in einem Takt sind genau das Stottern, das der
+  //                       eine Sendetakt in v0.5.8 beseitigt hat.
+  stAdd('Zwei Spieler: das zweite Auto bekommt eigene Pakete', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.zweiSpielerProbe) {
+      return { skip: true, mass: 'zweiSpielerProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.zweiSpielerProbe({ steer: 0.4, gas: 0.7 });
+    const maengel = [];
+    if (r.ausPakete !== 0) maengel.push('aus: ' + r.ausPakete + ' Pakete statt 0');
+    if (r.anPakete !== 1) maengel.push('an: ' + r.anPakete + ' Pakete statt 1');
+    if (r.ohneAuto !== 0) maengel.push('ohne Auto 2: ' + r.ohneAuto + ' Pakete statt 0');
+    if (r.anAutoEins !== 0) maengel.push('Auto 1 bekam ' + r.anAutoEins + ' Pakete');
+    if (r.letztes) {
+      if (Math.abs(r.letztes.throttle - r.gewuenscht.gas) > 1e-9) {
+        maengel.push('Gas ' + r.letztes.throttle + ' statt ' + r.gewuenscht.gas);
+      }
+      if (Math.abs(r.letztes.steer - r.gewuenscht.steer) > 1e-9) {
+        maengel.push('Lenkung ' + r.letztes.steer + ' statt ' + r.gewuenscht.steer);
+      }
+    }
+    return { ok: !maengel.length,
+             mass: 'aus ' + r.ausPakete + ' | an ' + r.anPakete + ' | ohne Auto '
+                 + r.ohneAuto + ' | an Auto 1 ' + r.anAutoEins
+                 + (maengel.length ? ' | ' + maengel.join(', ') : ' | wie erwartet') };
+  });
+
+  // ---- Und faehrt Auto 2? -----------------------------------------------------------
+  //
+  // Die Fortsetzung des Tests darueber, und die Aussage, die bestellt war: "beide fahren
+  // koennen". Dass ein Paket hinausgeht, heisst noch nicht, dass ein Auto beschleunigt -
+  // dafuer braucht es eine eigene Physikinstanz, die Gas annimmt und schaltet.
+  //
+  // DIE GETRENNTE GANGTABELLE ist die Zusicherung, die man beim Bauen am leichtesten
+  // verliert: Object.assign(physEngine2.config, physEngine.config) kopiert die Tabelle als
+  // REFERENZ, und dann schriebe ein Schaltvorgang von Auto 2 in die Gaenge von Auto 1.
+  // Genau diese Falle steht bei den Ghosts schon einmal beschrieben; hier wird sie geprueft.
+  //
+  // Gemessen wird bis 2,7 s Vollgas. Die Zahl ist nicht willkuerlich: der zweite Gang
+  // faellt in dieses Fenster, und damit ist auch das Schalten mitgeprueft.
+  stAdd('Zwei Spieler: Auto 2 hat eine eigene Physik und faehrt', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.zweiSpielerFahrtProbe) {
+      return { skip: true, mass: 'zweiSpielerFahrtProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.zweiSpielerFahrtProbe({ schritte: 60, gas: 1 });
+    const maengel = [];
+    if (r.pakete !== r.schritte) {
+      maengel.push(r.pakete + ' Pakete auf ' + r.schritte + ' Takte');
+    }
+    if (!r.eigenerMotor) maengel.push('teilt den Motorzustand mit Auto 1');
+    if (!r.eigeneGaenge) maengel.push('teilt die Gangtabelle mit Auto 1');
+    // Vollgas aus dem Stand: unter 40 km/h in 2,7 s faehrt nichts. Die gemessene Zahl ist
+    // 76,5 - die Schwelle liegt bewusst weit darunter, weil der Test die FAHRT prueft und
+    // nicht die Abstimmung des Antriebs.
+    if (!(r.endeKmh > 40)) maengel.push('nur ' + r.endeKmh + ' km/h nach 2,7 s');
+    if (r.endeGang === 'N' || r.endeGang === 'R') {
+      maengel.push('steht noch in Gang ' + r.endeGang);
+    }
+    if (!r.anzeigeStimmt) maengel.push('die zweite Anzeige weicht vom Zustand ab');
+    // Und die Kurve muss steigen und nicht nur am Ende hoch sein.
+    const kmh = r.verlauf.map((v) => v.kmh);
+    for (let i = 2; i < kmh.length; i++) {
+      if (kmh[i] < kmh[i - 1]) { maengel.push('Tempo fiel bei ' + r.verlauf[i].s + ' s'); break; }
+    }
+    return { ok: !maengel.length,
+             mass: r.endeKmh + ' km/h, Gang ' + r.endeGang + ', ' + r.endeRpm + ' 1/min nach 2,7 s'
+                 + ' | ' + r.pakete + ' Pakete'
+                 + (maengel.length ? ' | ' + maengel.join(', ') : ' | eigene Physik, Anzeige folgt') };
+  });
+
   stAdd('Schalter und Spiegel sagen beim Laden dasselbe', () => {
     const PAARE = [
       ['amb-enable', () => ambienceEnabled],
@@ -9629,6 +9709,11 @@
       ['setting-tyre-blankets', () => physEngine.config.tyreBlankets],
       ['setting-vibration', () => rumbleOn],
       ['sound-enable', () => soundEnabled],
+      // Die zwei Schalter des Zwei-Spieler-Modus. Der erste ist der wichtigere: stehen
+      // Kaestchen und Variable verschieden, zeigt das Cockpit eine zweite Zeile und der
+      // Herzschlag schickt nichts an Auto 2 - oder umgekehrt.
+      ['opt-zwei-an', () => zweiSpieler],
+      ['opt-zwei-tausch', () => padTauschenLesen()],
     ];
     const schlecht = [], fehlt = [];
     let geprueft = 0;

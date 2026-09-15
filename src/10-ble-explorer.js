@@ -708,6 +708,35 @@
     "Blaue Flagge": "Blue flag",
     "Wer eine ganze Runde zurück ist und einen Schnelleren im Nacken hat, geht von selbst nach außen und lupft leicht – statt sich fünf Sekunden zu wehren und danach sechs Sekunden gesperrt zu sein. Der Schnellere bekommt die Ideallinie, kein Vier-Phasen-Manöver nötig.":
       "A car a full lap down with a faster one behind moves aside by itself and lifts slightly – instead of fighting for five seconds and then being blocked for six. The faster car gets the racing line, no four-phase manoeuvre needed.",
+    // ---- Die Kachel "2 Spieler" ------------------------------------------------------
+    "2 Spieler": "2 players",
+    "Zwei Autos, zwei Controller, beide Drehzahlen im Cockpit. Im Aufbau.":
+      "Two cars, two controllers, both rev counters in the cockpit. Work in progress.",
+    "Der Modus": "The mode",
+    "2-Spieler-Modus": "Two-player mode",
+    "Zwei Autos, zwei Controller, ein Rennen auf derselben Strecke. Angeschaltet bekommt jede Zeile in der Garage einen vierten Knopf „Spieler 2“, und das Cockpit zeigt unter den großen Instrumenten eine zweite Zeile mit Drehzahl, Gang und Tempo des zweiten Autos. Beide Autos werden aus demselben 45-ms-Sendetakt bedient – getrennte Takte waren die Ursache des Stotterns mit echtem Controller, und dieser Modus wiederholt den Fehler nicht.":
+      "Two cars, two controllers, one race on the same track. Switched on, every garage row gets a fourth button “Player 2”, and the cockpit shows a second line below the big instruments with the revs, gear and speed of the second car. Both cars are served from the same 45 ms send heartbeat – separate heartbeats were the cause of the stutter with a real controller, and this mode does not repeat that mistake.",
+    "Controller tauschen": "Swap controllers",
+    "Welcher der beiden erkannten Controller Auto 1 fährt. Die Reihenfolge kommt vom Browser und ist nicht wählbar: hier ist der Schalter dafür.":
+      "Which of the two detected controllers drives car 1. The order comes from the browser and cannot be chosen: this is the switch for it.",
+    "Was gerade erkannt ist": "What is detected right now",
+    "Drücke an jedem Controller einmal einen Knopf – der Browser meldet ein Pad erst nach der ersten Eingabe. Beide Controller benutzen dieselbe Tastenbelegung aus der Kachel „Controller“.":
+      "Press one button on each controller – the browser only reports a pad after its first input. Both controllers use the same button mapping from the “Controller” tile.",
+    "Was Auto 2 in dieser Fassung nicht hat": "What car 2 does not have in this version",
+    "Ehrlicher als es zu verschweigen – jeder Punkt hängt an einem Zähler oder einer Ortung, die es nur einmal gibt:":
+      "More honest than leaving it out – every item hangs off a counter or a position estimate that exists only once:",
+    "Sprit und Schaden zählen nur für Auto 1. Zwei ungleiche Regelsätze wären schlimmer als keiner – der Modus soll fair sein.":
+      "Fuel and damage count for car 1 only. Two unequal rule sets would be worse than none – the mode is meant to be fair.",
+    "Der Motorklang folgt Auto 1. Es gibt einen Tongenerator.":
+      "The engine sound follows car 1. There is one tone generator.",
+    "Keine Fahrhilfe, kein Leitplanken-Modus und kein Autopilot unter Gelb für Auto 2: alle drei rechnen mit dem geführten Ort des Fahrerautos.":
+      "No driver aid, no guard-rail mode and no autopilot under yellow for car 2: all three work off the tracked position of the driver's car.",
+    "Ghosts weichen Auto 2 nicht aus – sie kennen seinen Ort nicht. Am besten ohne Ghosts fahren.":
+      "Ghosts do not avoid car 2 – they do not know where it is. Best driven without ghosts.",
+    "Rundenzählung, Ergebnistabelle und Aufnahme gelten für Auto 1.":
+      "Lap counting, the results table and recording apply to car 1.",
+    ": eine eigene Fahrphysik mit eigenen Gängen, eigener Drehzahl, eigenem Tempo und eigenen Temperaturen. Die Einstellungen aus „Fahrgefühl“ werden bei jedem Anschalten übernommen, damit beide Autos gleich fahren.":
+      ": a driving model of its own, with its own gears, revs, speed and temperatures. The settings from “Driving feel” are copied over every time the mode is switched on, so that both cars drive alike.",
     "Ghost: Leitplanken-Modus": "Ghost: guard-rail mode",
     "Ghost: Linienmodell": "Ghost: line model",
     "Ghost: lernt von Runde zu Runde": "Ghost: learns lap by lap",
@@ -2214,6 +2243,12 @@
     if (key === 'opt-ghosts' && typeof linemodellKarteZeichnen === 'function') {
       try { linemodellKarteZeichnen(); } catch (e) { /* keine Strecke, kein Bild */ }
     }
+    // Dasselbe fuer die Pad- und Autoliste auf der Zwei-Spieler-Seite: sie wird im Sekunden-
+    // takt aufgefrischt, aber erst wenn die Seite offen ist - ohne diesen Ruf stuende beim
+    // Aufschlagen bis zu eine Sekunde lang ein Gedankenstrich.
+    if (key === 'opt-zwei' && typeof zweiSpielerKachelZeichnen === 'function') {
+      zweiSpielerKachelZeichnen();
+    }
     window.scrollTo(0, 0);
   }
   document.querySelectorAll('.subpage-open').forEach(el => {
@@ -2306,6 +2341,34 @@
 
   // ---- Control tab: virtual stick + throttle ----
   let steerX = 0, throttleY = 0;
+
+  // ====================================================================================
+  // ZWEI SPIELER AN EINEM RECHNER
+  // ====================================================================================
+  //
+  // BESTELLT: "Wenn ich ihn anschalte, will ich 2 Autos und 2 Gamepads verbinden und beide
+  // fahren koennen."
+  //
+  // Die App war an vier Stellen ausdruecklich einspielerig, und die stehen weit
+  // auseinander: EIN Pad wird gewaehlt (pollGamepad in 90-ghosts.js), EIN Paar
+  // steerX/throttleY nimmt jede Eingabequelle auf (die Schiedsstelle in 30-input.js), EIN
+  // physEngine gehoert dem Spieler (50-drive.js), und EIN playerCar ist das Ziel jedes
+  // Pakets (sendControlValue in 20-protocol.js).
+  //
+  // ---- WARUM SPIELER 2 EINEN EIGENEN, SCHMALEN WEG BEKOMMT -----------------------
+  //
+  // Nicht die Schiedsstelle zu verdoppeln, sondern sie zu umgehen: Spieler 2 fahrt
+  // ausschliesslich mit dem GAMEPAD. Damit braucht er keine Quellenverwaltung - es gibt
+  // nichts, worueber Tastatur, Maus und Pad sich einigen muessten -, und diese zwei Zahlen
+  // sind sein ganzer Eingang. Tastatur, Bildschirmknueppel und alle Sonderknoepfe des Pads
+  // (Wetter, Boxenstopp, Rennstart, Streckeneditor) bleiben bei Spieler 1, und das ist
+  // Absicht: zwei Leute, die sich gegenseitig das Wetter umstellen, sind kein Rennen.
+  //
+  // HIER DEKLARIERT, weil die Leser in SPAETEREN Dateien stehen (Fahrphysik in 50, Pad in
+  // 90) und der Schreiber der Kachel ebenfalls. Ein let in 90 waere fuer 50 die temporale
+  // Todeszone - genau die Falle, die in diesem Projekt schon einen Regler gekostet hat.
+  let zweiSpieler = false;
+  let p2Steer = 0, p2Throttle = 0;
 
   // Real CH command-packet protocol, reverse-engineered from a genuine
   // Android Bluetooth HCI snoop log of the official app (2026-08-13) and cross-checked

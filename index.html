@@ -1121,6 +1121,33 @@
                          "strip strip strip" "banner banner banner"
                          "foot foot foot" "toast toast toast" "marke marke marke"; }
 
+  /* ---- Die zweite Anzeige, nur im Zwei-Spieler-Modus -----------------------------------
+     EIN ZUSAETZLICHES FELD IM RASTER, und es entsteht erst mit der Klasse am Body. Die
+     Felder des Cockpits sind benannt; eine Zeile, die immer da ist und nur leer bleibt,
+     zaehlt in cockpitInhaltHoehe() trotzdem mit Luecke mit und kostet die Einpassung im
+     Einzelspiel rund 9 px. Deshalb wird die Feldliste umgesetzt statt ein Kind verborgen.
+
+     Die Zeile steht UNTER den grossen Instrumenten und ueber dem Kachelstreifen: der
+     Fahrer von Auto 1 schaut in die Mitte, der von Auto 2 eine Zeile tiefer, und keiner
+     von beiden muss an einer Bedienkachel vorbeisehen. Bewusst schmal - Drehzahl, Gang,
+     Tempo. Alles Weitere steht auf den anderen Schirmen, so bestellt. */
+  .gt3-p2 { display: none; grid-area: p2; }
+  body.zwei-spieler .gt3 {
+    grid-template-areas: "flag flag flag" "shift shift shift" "left gear right"
+                         "p2 p2 p2"
+                         "strip strip strip" "banner banner banner"
+                         "foot foot foot" "toast toast toast" "marke marke marke"; }
+  body.zwei-spieler .gt3-p2 {
+    display: grid; align-items: center; gap: clamp(4px, .8vw, 9px);
+    /* Die Beschriftung schmal, die drei Werte gleich breit: der Blick soll die Zahlen
+       treffen und nicht den Namen. */
+    grid-template-columns: auto repeat(3, minmax(0, 1fr));
+    border-top: 1px solid #262e3d; padding-top: clamp(3px, .6vw, 7px); }
+  .gt3-p2-marke {
+    font: 600 clamp(9px, 1.5vw, 12px)/1.1 var(--mono, ui-monospace, monospace);
+    letter-spacing: .08em; text-transform: uppercase; color: var(--gt3-dim, #7d8aa3);
+    writing-mode: horizontal-tb; padding-right: clamp(3px, .8vw, 8px); }
+
   /* DAS DECKGLAS. Drei Dinge, die eine Anzeige von einer Farbflaeche unterscheiden, und
      alle drei sind Aussehen und keine Aussage:
 
@@ -2744,6 +2771,7 @@
     font-size: 11px; color: var(--muted); pointer-events: none; }
   body.track-fs .tp-space { right: 14px; bottom: 68px; }
   .gar-row.is-player { border-color: var(--good); }
+  .gar-row.is-zwei { border-color: #3d8bff; }
   .gar-row.is-ghost { border-color: #7a6bd0; }
   .gar-id { font-size: 11px; color: var(--muted); font-family: monospace; }
   /* Ein Segmentschalter statt drei einzelner Knoepfe: die drei Rollen schliessen sich
@@ -2759,6 +2787,10 @@
   .gar-roles button:first-child { border-left: 0; }
   .gar-roles button:hover { background: var(--tint-2); color: var(--text); }
   .gar-roles button.on { background: var(--good); color: #04170c; font-weight: 700; }
+  /* Spieler 2 in seiner eigenen Farbe - blau, weil Gruen (Auto 1) und Violett (Ghost)
+     schon belegt sind und ein zweiter gruener Knopf in derselben Reihe nicht
+     unterscheidbar waere. Kontrast gegen #06121f: 8,4. */
+  .gar-roles button.on.zwei { background: #3d8bff; color: #06121f; font-weight: 700; }
   .gar-roles button.on.ghost { background: #7a6bd0; color: #f2eeff; }
   .gar-roles button.on.off { background: var(--panel-3); color: var(--text); }
   /* Tempo je Ghost, direkt in der Zeile. Eine eigene Rasterzeile, damit der Regler die
@@ -3291,6 +3323,23 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.2L12 5.5v13l-4.8-4H4z"/><path d="M16 9a4.2 4.2 0 0 1 0 6" stroke="var(--bad)"/><path d="M18.6 6.4a7.8 7.8 0 0 1 0 11.2" stroke="var(--bad)"/></svg>
           <span id="race-act-sound-txt">Motor</span></button>
+      </div>
+
+      <!-- SPIELER 2. Dieselben drei Werte, dieselben Klassen, dieselbe Schreibweise wie
+           oben - eine zweite Anzeige, die anders aussieht, liest sich als anderes Auto und
+           nicht als zweiter Fahrer. Geschrieben wird sie von updateRaceScreen2() in
+           50-drive.js, aus einer eigenen Physikinstanz (physEngine2). -->
+      <div class="gt3-p2">
+        <div class="gt3-p2-marke">Spieler 2</div>
+        <div class="gt3-box" style="text-align:center">
+          <div class="gt3-lbl">1/min</div>
+          <div class="gt3-val" id="race2-rpm">1500</div></div>
+        <div class="gt3-box" style="text-align:center">
+          <div class="gt3-lbl">Gang</div>
+          <div class="gt3-val" id="race2-gear">N</div></div>
+        <div class="gt3-box" style="text-align:center">
+          <div class="gt3-lbl">km/h</div>
+          <div class="gt3-val big" id="race2-speed">0</div></div>
       </div>
 
       <div class="gt3-strip">
@@ -4374,6 +4423,28 @@
         Ebenso gibt es <em>eine</em> Eingabeschlichtung: jede Quelle meldet sich pro Achse an und darf nur
         schreiben, solange sie ausgelenkt ist, plus genau einmal beim Loslassen. Sonst &uuml;berschreibt ein
         mit 60&nbsp;Hz laufendes Gamepad st&auml;ndig die Tastatur mit Nullen.
+      </p>
+
+      <h3 style="font-size:14px; margin:16px 0 6px 0">Zwei Spieler auf demselben Takt</h3>
+      <p class="muted">
+        Der 2-Spieler-Modus ist der Beweis daf&uuml;r, dass die Regel tr&auml;gt: das zweite Auto bekommt
+        <em>keinen</em> eigenen Takt, sondern wird im selben 45-ms-Herzschlag direkt nach dem ersten
+        beschickt. Jedes Auto hat seine eigene Sperre (<code>writeInFlight</code>), ein langsamer Funkweg
+        l&auml;sst also nur beim eigenen Auto einen Takt aus und h&auml;lt das andere nicht auf &ndash;
+        genau das Verhalten, das die Ghosts schon haben.
+      </p>
+      <p class="muted">
+        Der Eingang von Spieler&nbsp;2 geht bewusst <em>nicht</em> durch die Eingabeschlichtung. Sie
+        verteilt <em>ein</em> Wertepaar unter mehreren Quellen &ndash; Spieler&nbsp;2 h&auml;tte darin
+        keine zweite Achse, sondern w&uuml;rde Spieler&nbsp;1 &uuml;berschreiben. Er schreibt deshalb auf
+        sein eigenes Wertepaar, und die Tastenbelegung teilen beide Controller.
+      </p>
+      <p class="muted">
+        Was Auto&nbsp;2 nicht hat, h&auml;ngt ausnahmslos an einem Z&auml;hler oder einer Ortung, die es
+        nur einmal gibt: Tank und Schaden, Motorton, Rundenz&auml;hlung, Fahrhilfe, Leitplanken-Modus und
+        das Ausweichen der Ghosts. Es hat eine eigene Fahrphysik &ndash; eigene G&auml;nge, Drehzahl,
+        Temperaturen &ndash; und die Gangtabelle wird beim Anschalten <em>kopiert</em> und nicht geteilt,
+        sonst schriebe ein Schaltvorgang von Auto&nbsp;2 in die G&auml;nge von Auto&nbsp;1.
       </p>
     </div>
 
@@ -6486,6 +6557,15 @@
           <b>Controller</b>
           <span>Erkennung, Tastenbelegung, eigene Zuordnung.</span>
         </button>
+        <!-- ZWEI CONTROLLER, zwei Autos. Das Symbol ist absichtlich der Controller aus der
+             Kachel darueber, zweimal und versetzt - nicht zwei Autos: was man verbindet,
+             sind Controller, und wer hier landet, sucht den Modus fuer den zweiten. -->
+        <button class="misc-tile subpage-open" data-sub="opt-zwei">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="9" width="28" height="14" rx="7"/><path d="M11 14v4M9 16h4"/><circle cx="24" cy="16" r="1.8"/><rect x="17" y="25" width="28" height="14" rx="7" stroke="var(--bad)"/><path d="M25 30v4M23 32h4" stroke="var(--bad)"/><circle cx="38" cy="32" r="1.8" stroke="var(--bad)"/></svg>
+          <b>2&nbsp;Spieler</b>
+          <span>Zwei Autos, zwei Controller, beide Drehzahlen im Cockpit. Im Aufbau.</span>
+        </button>
       </div>
     </div>
     <div class="card subpage" id="sub-opt-general">
@@ -7887,6 +7967,59 @@
          bleiben - die betrifft die Tabelle nicht, Tasten sind fest. -->
     </div>
 
+    <div class="card subpage" id="sub-opt-zwei">
+      <button class="misc-back subpage-back" data-sub="">&larr; Einstellungen</button>
+      <h2>2&nbsp;Spieler</h2>
+      <div class="opt-head">Der Modus</div>
+      <div class="opt-row"><div class="opt-label">2-Spieler-Modus<span
+          class="wip-tag">experimentell</span><small>Zwei Autos, zwei Controller, ein
+          Rennen auf derselben Strecke. Angeschaltet bekommt jede Zeile in der Garage einen
+          vierten Knopf &bdquo;Spieler&nbsp;2&ldquo;, und das Cockpit zeigt unter den
+          gro&szlig;en Instrumenten eine zweite Zeile mit Drehzahl, Gang und Tempo des
+          zweiten Autos. Beide Autos werden aus demselben 45-ms-Sendetakt bedient &ndash;
+          getrennte Takte waren die Ursache des Stotterns mit echtem Controller, und dieser
+          Modus wiederholt den Fehler nicht.</small></div>
+        <label class="tgl"><input type="checkbox" id="opt-zwei-an"></label></div>
+      <div class="opt-row"><div class="opt-label">Controller tauschen<small>Welcher der
+          beiden erkannten Controller Auto&nbsp;1 f&auml;hrt. Die Reihenfolge kommt vom
+          Browser und ist nicht w&auml;hlbar: hier ist der Schalter daf&uuml;r.</small></div>
+        <label class="tgl"><input type="checkbox" id="opt-zwei-tausch"></label></div>
+
+      <div class="opt-head">Was gerade erkannt ist</div>
+      <!-- data-i18n-skip, wie bei jeder Zustandsmeldung in dieser App: der Inhalt wird
+           zur Laufzeit geschrieben (zweiSpielerKachelZeichnen in 90-ghosts.js) und
+           enthaelt Controller-Namen und Autobezeichnungen. Ein Woerterbucheintrag kann
+           darauf nicht passen, und ohne das Merkmal meldet der Sprachtest zu Recht
+           deutschen Text im englischen Modus. -->
+      <p class="muted" id="zwei-pads" data-i18n-skip>&ndash;</p>
+      <p class="muted" id="zwei-autos" data-i18n-skip>&ndash;</p>
+      <p class="muted">Dr&uuml;cke an jedem Controller einmal einen Knopf &ndash; der
+        Browser meldet ein Pad erst nach der ersten Eingabe. Beide Controller benutzen
+        dieselbe Tastenbelegung aus der Kachel &bdquo;Controller&ldquo;.</p>
+
+      <div class="opt-head">Was Auto&nbsp;2 in dieser Fassung nicht hat</div>
+      <p class="muted">Ehrlicher als es zu verschweigen &ndash; jeder Punkt h&auml;ngt an
+        einem Z&auml;hler oder einer Ortung, die es nur einmal gibt:</p>
+      <div class="help-grid">
+        <kbd>Tank</kbd><span>Sprit und Schaden z&auml;hlen nur f&uuml;r Auto&nbsp;1. Zwei
+          ungleiche Regels&auml;tze w&auml;ren schlimmer als keiner &ndash; der Modus soll
+          fair sein.</span>
+        <kbd>Ton</kbd><span>Der Motorklang folgt Auto&nbsp;1. Es gibt einen
+          Tongenerator.</span>
+        <kbd>Hilfe</kbd><span>Keine Fahrhilfe, kein Leitplanken-Modus und kein Autopilot
+          unter Gelb f&uuml;r Auto&nbsp;2: alle drei rechnen mit dem gef&uuml;hrten Ort des
+          Fahrerautos.</span>
+        <kbd>Ghost</kbd><span>Ghosts weichen Auto&nbsp;2 nicht aus &ndash; sie kennen
+          seinen Ort nicht. Am besten ohne Ghosts fahren.</span>
+        <kbd>Runden</kbd><span>Rundenz&auml;hlung, Ergebnistabelle und Aufnahme gelten
+          f&uuml;r Auto&nbsp;1.</span>
+      </div>
+      <p class="muted">Was Auto&nbsp;2 <b>hat</b>: eine eigene Fahrphysik mit eigenen
+        G&auml;ngen, eigener Drehzahl, eigenem Tempo und eigenen Temperaturen. Die
+        Einstellungen aus &bdquo;Fahrgef&uuml;hl&ldquo; werden bei jedem Anschalten
+        &uuml;bernommen, damit beide Autos gleich fahren.</p>
+    </div>
+
   </section>
 
   <!-- TRACK TAB -->
@@ -8292,7 +8425,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.6.43</span></span>
+    <span class="foot-ver">v<span id="app-version">0.6.44</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -9035,6 +9168,35 @@
     "Blaue Flagge": "Blue flag",
     "Wer eine ganze Runde zurück ist und einen Schnelleren im Nacken hat, geht von selbst nach außen und lupft leicht – statt sich fünf Sekunden zu wehren und danach sechs Sekunden gesperrt zu sein. Der Schnellere bekommt die Ideallinie, kein Vier-Phasen-Manöver nötig.":
       "A car a full lap down with a faster one behind moves aside by itself and lifts slightly – instead of fighting for five seconds and then being blocked for six. The faster car gets the racing line, no four-phase manoeuvre needed.",
+    // ---- Die Kachel "2 Spieler" ------------------------------------------------------
+    "2 Spieler": "2 players",
+    "Zwei Autos, zwei Controller, beide Drehzahlen im Cockpit. Im Aufbau.":
+      "Two cars, two controllers, both rev counters in the cockpit. Work in progress.",
+    "Der Modus": "The mode",
+    "2-Spieler-Modus": "Two-player mode",
+    "Zwei Autos, zwei Controller, ein Rennen auf derselben Strecke. Angeschaltet bekommt jede Zeile in der Garage einen vierten Knopf „Spieler 2“, und das Cockpit zeigt unter den großen Instrumenten eine zweite Zeile mit Drehzahl, Gang und Tempo des zweiten Autos. Beide Autos werden aus demselben 45-ms-Sendetakt bedient – getrennte Takte waren die Ursache des Stotterns mit echtem Controller, und dieser Modus wiederholt den Fehler nicht.":
+      "Two cars, two controllers, one race on the same track. Switched on, every garage row gets a fourth button “Player 2”, and the cockpit shows a second line below the big instruments with the revs, gear and speed of the second car. Both cars are served from the same 45 ms send heartbeat – separate heartbeats were the cause of the stutter with a real controller, and this mode does not repeat that mistake.",
+    "Controller tauschen": "Swap controllers",
+    "Welcher der beiden erkannten Controller Auto 1 fährt. Die Reihenfolge kommt vom Browser und ist nicht wählbar: hier ist der Schalter dafür.":
+      "Which of the two detected controllers drives car 1. The order comes from the browser and cannot be chosen: this is the switch for it.",
+    "Was gerade erkannt ist": "What is detected right now",
+    "Drücke an jedem Controller einmal einen Knopf – der Browser meldet ein Pad erst nach der ersten Eingabe. Beide Controller benutzen dieselbe Tastenbelegung aus der Kachel „Controller“.":
+      "Press one button on each controller – the browser only reports a pad after its first input. Both controllers use the same button mapping from the “Controller” tile.",
+    "Was Auto 2 in dieser Fassung nicht hat": "What car 2 does not have in this version",
+    "Ehrlicher als es zu verschweigen – jeder Punkt hängt an einem Zähler oder einer Ortung, die es nur einmal gibt:":
+      "More honest than leaving it out – every item hangs off a counter or a position estimate that exists only once:",
+    "Sprit und Schaden zählen nur für Auto 1. Zwei ungleiche Regelsätze wären schlimmer als keiner – der Modus soll fair sein.":
+      "Fuel and damage count for car 1 only. Two unequal rule sets would be worse than none – the mode is meant to be fair.",
+    "Der Motorklang folgt Auto 1. Es gibt einen Tongenerator.":
+      "The engine sound follows car 1. There is one tone generator.",
+    "Keine Fahrhilfe, kein Leitplanken-Modus und kein Autopilot unter Gelb für Auto 2: alle drei rechnen mit dem geführten Ort des Fahrerautos.":
+      "No driver aid, no guard-rail mode and no autopilot under yellow for car 2: all three work off the tracked position of the driver's car.",
+    "Ghosts weichen Auto 2 nicht aus – sie kennen seinen Ort nicht. Am besten ohne Ghosts fahren.":
+      "Ghosts do not avoid car 2 – they do not know where it is. Best driven without ghosts.",
+    "Rundenzählung, Ergebnistabelle und Aufnahme gelten für Auto 1.":
+      "Lap counting, the results table and recording apply to car 1.",
+    ": eine eigene Fahrphysik mit eigenen Gängen, eigener Drehzahl, eigenem Tempo und eigenen Temperaturen. Die Einstellungen aus „Fahrgefühl“ werden bei jedem Anschalten übernommen, damit beide Autos gleich fahren.":
+      ": a driving model of its own, with its own gears, revs, speed and temperatures. The settings from “Driving feel” are copied over every time the mode is switched on, so that both cars drive alike.",
     "Ghost: Leitplanken-Modus": "Ghost: guard-rail mode",
     "Ghost: Linienmodell": "Ghost: line model",
     "Ghost: lernt von Runde zu Runde": "Ghost: learns lap by lap",
@@ -10541,6 +10703,12 @@
     if (key === 'opt-ghosts' && typeof linemodellKarteZeichnen === 'function') {
       try { linemodellKarteZeichnen(); } catch (e) { /* keine Strecke, kein Bild */ }
     }
+    // Dasselbe fuer die Pad- und Autoliste auf der Zwei-Spieler-Seite: sie wird im Sekunden-
+    // takt aufgefrischt, aber erst wenn die Seite offen ist - ohne diesen Ruf stuende beim
+    // Aufschlagen bis zu eine Sekunde lang ein Gedankenstrich.
+    if (key === 'opt-zwei' && typeof zweiSpielerKachelZeichnen === 'function') {
+      zweiSpielerKachelZeichnen();
+    }
     window.scrollTo(0, 0);
   }
   document.querySelectorAll('.subpage-open').forEach(el => {
@@ -10633,6 +10801,34 @@
 
   // ---- Control tab: virtual stick + throttle ----
   let steerX = 0, throttleY = 0;
+
+  // ====================================================================================
+  // ZWEI SPIELER AN EINEM RECHNER
+  // ====================================================================================
+  //
+  // BESTELLT: "Wenn ich ihn anschalte, will ich 2 Autos und 2 Gamepads verbinden und beide
+  // fahren koennen."
+  //
+  // Die App war an vier Stellen ausdruecklich einspielerig, und die stehen weit
+  // auseinander: EIN Pad wird gewaehlt (pollGamepad in 90-ghosts.js), EIN Paar
+  // steerX/throttleY nimmt jede Eingabequelle auf (die Schiedsstelle in 30-input.js), EIN
+  // physEngine gehoert dem Spieler (50-drive.js), und EIN playerCar ist das Ziel jedes
+  // Pakets (sendControlValue in 20-protocol.js).
+  //
+  // ---- WARUM SPIELER 2 EINEN EIGENEN, SCHMALEN WEG BEKOMMT -----------------------
+  //
+  // Nicht die Schiedsstelle zu verdoppeln, sondern sie zu umgehen: Spieler 2 fahrt
+  // ausschliesslich mit dem GAMEPAD. Damit braucht er keine Quellenverwaltung - es gibt
+  // nichts, worueber Tastatur, Maus und Pad sich einigen muessten -, und diese zwei Zahlen
+  // sind sein ganzer Eingang. Tastatur, Bildschirmknueppel und alle Sonderknoepfe des Pads
+  // (Wetter, Boxenstopp, Rennstart, Streckeneditor) bleiben bei Spieler 1, und das ist
+  // Absicht: zwei Leute, die sich gegenseitig das Wetter umstellen, sind kein Rennen.
+  //
+  // HIER DEKLARIERT, weil die Leser in SPAETEREN Dateien stehen (Fahrphysik in 50, Pad in
+  // 90) und der Schreiber der Kachel ebenfalls. Ein let in 90 waere fuer 50 die temporale
+  // Todeszone - genau die Falle, die in diesem Projekt schon einen Regler gekostet hat.
+  let zweiSpieler = false;
+  let p2Steer = 0, p2Throttle = 0;
 
   // Real CH command-packet protocol, reverse-engineered from a genuine
   // Android Bluetooth HCI snoop log of the official app (2026-08-13) and cross-checked
@@ -10957,6 +11153,9 @@
   // Datei, die ihn braucht, kann das nicht passieren.
   let ghostQuerTest = 0;
   let physOutSteer = 0, physOutThrottle = 0;
+  // Und dasselbe Paar fuer Spieler 2. Es steht neben dem ersten, weil es dieselbe Rolle
+  // hat: der geformte Ausgang der Physik, den der Herzschlag verschickt.
+  let physOut2Steer = 0, physOut2Throttle = 0;
 
   const CONTROL_SEND_INTERVAL_MS = 45; // matches the real app's observed command cadence
 
@@ -11017,6 +11216,48 @@
     let throttle = physicsEnabled ? physOutThrottle : throttleY;
     if (driftModus) steer = driftGegenlenken(steer);
     sendControlValue(steer, throttle);
+    spielerZweiSenden();
+  }
+
+  // ---- SPIELER 2 FAEHRT AUS DEM SELBEN HERZSCHLAG ------------------------------------
+  //
+  // UND DAS IST KEINE ORDNUNGSFRAGE. Vor v0.5.8 hatte das Fahrerauto einen eigenen
+  // Sendeweg, und das Ergebnis war das gemeldete Stottern mit echtem Controller: zwei
+  // Quellen schrieben ungetaktet in dieselbe BLE-Kennung, Pakete ueberholten sich, und der
+  // Wagen ruckelte. Ein eigener Takt fuer Spieler 2 waere genau derselbe Fehler noch
+  // einmal - nur diesmal mit zwei Autos, bei denen niemand sagen koennte, welches der
+  // beiden stottert.
+  //
+  // Zwei Autos, EIN Takt, zwei Kennungen: die Reihenfolge im Takt ist fest (erst 1, dann
+  // 2), und jedes Auto hat sein eigenes writeInFlight in writeToCar(). Damit kann ein
+  // langsamer Funkweg das andere Auto nicht aufhalten - er laesst nur beim eigenen Auto
+  // einen Takt aus, und das ist genau das Verhalten, das die Ghosts seit einem Jahr haben.
+  //
+  // NICHT ueber sendControlValue(): die Funktion ist der Weg des FAHRERAUTOS und tut auf
+  // dem Weg noch sechs Dinge, die es nur einmal gibt - Makro mitschneiden, Spritverbrauch
+  // zaehlen, den Motorton nachfuehren, die Hoechstgeschwindigkeit deckeln, die
+  // Batteriekompensation und die Querlage fuer die Ghosts. Jedes davon fuer zwei Autos
+  // hiesse: zwei Makros, zwei Tanks, zwei Toene. Spieler 2 nimmt deshalb writeToCar() -
+  // denselben Weg, den jeder Ghost nimmt.
+  //
+  // WAS ER DAMIT NICHT HAT, und es gehoert ausgesprochen statt versteckt: keinen
+  // Motorton (es gibt einen Tongenerator), keinen Spritverbrauch, keinen Makro-
+  // Mitschnitt und keinen Hoechstgeschwindigkeitsregler. Das steht so im Hilfetext der
+  // Kachel.
+  function spielerZweiSenden() {
+    if (!zweiSpieler) return;
+    if (typeof playerCar2 === 'undefined' || !playerCar2) return;
+    physicsStep2();
+    let steer = physicsEnabled ? physOut2Steer : p2Steer;
+    const throttle = physicsEnabled ? physOut2Throttle : p2Throttle;
+    if (driftModus) steer = driftGegenlenken(steer);
+    // KEIN VORAUSBLICK, und das ist eine Entscheidung und kein Vergessen. Die Bytes 16-18
+    // kommen aus ghostLookahead() am gerechneten ORT des Autos, und den fuehrt fuer das
+    // Fahrerauto spielerOrtTick() (90-ghosts.js) - eine Buchfuehrung, die es genau einmal
+    // gibt und die an playerCar haengt. Ohne sie hat Auto 2 keine Fahrhilfe und keinen
+    // Leitplanken-Modus; es faehrt, was der Daumen sagt. Steht so im Hilfetext.
+    writeToCar(playerCar2, steer, throttle,
+               trackModeBit() | (headlightsOn ? LIGHT_HEAD : 0), null);
   }
   setInterval(controlHeartbeat, CONTROL_SEND_INTERVAL_MS);
 
@@ -13787,6 +14028,18 @@
 
   const physEngine = new CarreraPhysicsEngine();
   let physLastTime = null;
+  // ---- DIE ZWEITE INSTANZ, fuer Spieler 2 ----------------------------------------
+  //
+  // Dieselbe Klasse, ein zweites Mal gebaut - genau wie jeder Ghost eine eigene bekommt
+  // (startGhost in 90-ghosts.js). Die Klasse ist also nicht nur mehrfach instanziierbar,
+  // sie wird es seit Langem auch. Einspielerig war allein DIESER Griff hier.
+  //
+  // Die Einstellungen werden bei jedem Umschalten uebernommen (siehe zweiSpielerSetzen):
+  // beide Autos sollen sich gleich anfuehlen, sonst ist das Rennen entschieden, bevor es
+  // losgeht. Die rund sechzig Regler im Optionentab schreiben weiterhin nur auf
+  // physEngine.config - sie zu verdoppeln waere ein zweiter Ort fuer jede Zahl.
+  const physEngine2 = new CarreraPhysicsEngine();
+  let phys2LastTime = null;
   // AN als Standard, weil die Original-App es praktisch immer an hat und ein beleuchtetes
   // Auto auf dem Tisch besser zu sehen ist.
   //
@@ -15920,6 +16173,111 @@
     trackDistance(physEngine.state.speedKmh * REAL_SCALE, dt);
     physOutSteer = out.servoAngle;
     physOutThrottle = out.motorPWM;
+  }
+
+  // ====================================================================================
+  // DIE FAHRPHYSIK VON SPIELER 2
+  // ====================================================================================
+  //
+  // ABSICHTLICH SCHMAL. physicsStep() darueber ist gewachsen, weil es alles traegt, was am
+  // Fahrerauto haengt: Tank und Schaden, den Autopiloten unter Gelb, die Drosselung abseits
+  // der Bahn, das Rumpeln im Controller, den Windschatten und die gefahrene Strecke. Jede
+  // dieser Groessen haengt an der ORTUNG des Fahrerautos (spielerOrt in 90-ghosts.js) oder
+  // an einem Zaehler, den es nur einmal gibt.
+  //
+  // Diese Funktion rechnet deshalb genau das, was "beide koennen fahren" braucht:
+  // Gaskennlinie, Fahrphysik, Anzeige. Was Spieler 2 in dieser Fassung NICHT hat, steht
+  // wortwoertlich im Hilfetext der Kachel, damit es niemand sucht:
+  //
+  //   kein Sprit und kein Schaden   sie sind globale Zaehler (70-race.js) und waeren fuer
+  //                                zwei Autos zwei Zaehler. Ungleiche Regeln waeren
+  //                                schlimmer als keine: der Modus soll fair sein.
+  //   kein Autopilot unter Gelb     er greift auf die Ortung des Fahrerautos zu
+  //   keine Abseits-Drosselung      dieselbe Ortung
+  //   kein Windschatten            dito
+  //
+  // Was er HAT: eine eigene Physikinstanz, also eigene Gaenge, eigene Drehzahl, eigenes
+  // Tempo, eigene Reifen- und Bremsentemperatur - alles, was den Wagen fahren laesst.
+  function physicsStep2() {
+    if (!physicsEnabled) { phys2LastTime = null; return; }
+    const now = performance.now();
+    const dt = phys2LastTime ? Math.min(0.25, (now - phys2LastTime) / 1000)
+                             : CONTROL_SEND_INTERVAL_MS / 1000;
+    phys2LastTime = now;
+    // Dieselbe Kennlinie und derselbe Regler wie bei Spieler 1: der Daumen soll sich auf
+    // beiden Pads gleich anfuehlen.
+    const gasKurve = gasKennlinie(Math.max(0, p2Throttle), physEngine2.config.throttleGamma);
+    const out = physEngine2.update({ steering: p2Steer, throttle: gasKurve,
+                                     brake: Math.max(0, -p2Throttle),
+                                     headlights: headlightsOn }, dt);
+    updateRaceScreen2(physEngine2.state);
+    physOut2Steer = out.servoAngle;
+    physOut2Throttle = out.motorPWM;
+  }
+
+  // Die zweite Anzeige im Cockpit: Drehzahl, Gang und Tempo von Spieler 2. Sie ist
+  // verborgen, solange der Modus aus ist - und damit aus der Hoehenrechnung des Cockpits
+  // heraus (cockpitInhaltHoehe liest grid-template-rows, ein verborgener Bereich traegt
+  // nichts bei).
+  function updateRaceScreen2(st) {
+    if (!st) return;
+    const rpm = $('race2-rpm');
+    if (rpm) rpm.textContent = Math.round(motorDrehzahl(st));
+    const kmh = $('race2-speed');
+    if (kmh) kmh.textContent = Math.round(Math.abs(st.speedKmh) * REAL_SCALE);
+    const gang = $('race2-gear');
+    if (gang) gang.textContent = gearLabel(st);
+  }
+
+  // Beim Umschalten die Einstellungen uebernehmen. Die rund sechzig Regler im Optionentab
+  // schreiben nur auf physEngine.config; sie zu verdoppeln waere ein zweiter Ort fuer jede
+  // Zahl. Also wird hier kopiert, und zwar bei JEDEM Einschalten - wer zwischendurch am
+  // Fahrgefuehl gedreht hat, bekommt es fuer beide Autos.
+  //
+  // Die Gangtabelle wird MIT kopiert, aber als eigene Objekte: derselbe Satz Zahlen, nicht
+  // dieselben Objekte. Sonst schriebe ein Schaltvorgang von Spieler 2 in die Gaenge von
+  // Spieler 1 (genau diese Falle steht bei den Ghosts schon einmal beschrieben).
+  function physEngine2Abgleichen() {
+    Object.assign(physEngine2.config, physEngine.config);
+    if (Array.isArray(physEngine.config.gears)) {
+      physEngine2.config.gears = physEngine.config.gears.map(g => Object.assign({}, g));
+    }
+  }
+
+  function zweiSpielerSetzen(an) {
+    zweiSpieler = !!an;
+    if (zweiSpieler) physEngine2Abgleichen();
+    else {
+      p2Steer = 0; p2Throttle = 0; physOut2Steer = 0; physOut2Throttle = 0;
+      // AUSSCHALTEN IST EIN HALTEBEFEHL, und zwar aus einem Grund, der beim Bauen leicht
+      // untergeht: writeToCar() schickt nur, was es bekommt. Wird der Modus WAEHREND der
+      // Fahrt abgeschaltet, hoert der Herzschlag einfach auf zu senden - und das Auto
+      // behaelt das letzte Gas und faehrt allein weiter. Genau dieser Fehler ist in diesem
+      // Projekt schon einmal passiert (Pad abgezogen, Auto fuhr weiter), deshalb geht die
+      // Rolle zurueck: setCarRole('none') schickt dabei die Null.
+      //
+      // Die Rolle ZURUECKZUNEHMEN und nicht nur stillzulegen ist ausserdem das, was man in
+      // der Garage sieht: ohne den Modus gibt es den vierten Knopf nicht, und eine Zeile
+      // mit einer Rolle, die kein Knopf anzeigt, waere ein Zustand ohne Bedienung.
+      if (typeof playerCar2 !== 'undefined' && playerCar2
+          && typeof setCarRole === 'function') {
+        setCarRole(playerCar2, 'none');
+      }
+    }
+    // EINE KLASSE AM BODY, nicht das hidden-Merkmal an der Zeile. Zwei Gruende, und der
+    // zweite ist der wichtige:
+    //   1. `hidden` und eine Regel mit `display` streiten; wer eine der beiden spaeter
+    //      anfasst, hat eine Zeile, die sich nicht mehr verbergen laesst.
+    //   2. Die Rasterfelder des Cockpits sind BENANNT (grid-template-areas, .gt3 im
+    //      Kopf). Ein zusaetzliches Feld waere auch leer noch eine Zeile samt Luecke in
+    //      cockpitInhaltHoehe() - die Einpassung wuerde im Einzelspiel rund 9 px Platz
+    //      verschenken. Mit der Klasse gibt es die Zeile nur, wenn es sie braucht.
+    document.body.classList.toggle('zwei-spieler', zweiSpieler);
+    if (typeof renderGarage === 'function') renderGarage();
+    if (typeof zweiSpielerKachelZeichnen === 'function') zweiSpielerKachelZeichnen();
+    // Die Hoehe des Cockpits aendert sich mit der neuen Zeile, im Vollbild also auch der
+    // Skalierungsfaktor. Ohne diesen Ruf steht die Zeile im Vollbild unter dem Rand.
+    cockpitPassung();
   }
 
   // Hier stand die Lenkung ueber den Neigungssensor des Telefons. Sie ist entfernt: mit
@@ -26725,6 +27083,10 @@
 
   const garage = [];        // every connected car, in connection order
   let playerCar = null;     // the one the gamepad drives; sendControlValue writes here
+  // Das Auto von Spieler 2, im Zwei-Spieler-Modus. Es wird NICHT von sendControlValue
+  // beschickt, sondern von writeToCar() aus dem Herzschlag - siehe die Begruendung bei
+  // zweiSpieler in 10-ble-explorer.js.
+  let playerCar2 = null;
 
   // ---------------------------------------------------------------- Kennung je Auto
   //
@@ -26962,6 +27324,11 @@
     }, 150);
   }
 
+  // ROLLENNAMEN, und 'player2' ist der vierte. Dass er 'player2' heisst und nicht
+  // 'player_2' oder 'spieler2', hat einen Grund: er wird in `chc.cars.v1` gespeichert
+  // (97-sessions.js schreibt car.role mit), und ein umbenannter Rollenname wuerde jede
+  // gespeicherte Garage einer aelteren Fassung ungueltig machen. Also: englisch wie die
+  // drei anderen, und ab jetzt fest.
   function setCarRole(car, role) {
     if (role === 'player') {
       // Exactly one player. Anything that was the player falls back to no role rather than
@@ -26971,10 +27338,25 @@
     } else if (playerCar === car) {
       playerCar = null;
     }
+    // Und dasselbe fuer Auto 2. Die beiden Rollen sind GEGENSEITIG ausschliessend: ein
+    // Auto, das zugleich Auto 1 und Auto 2 waere, bekaeme im selben Herzschlag zwei
+    // Pakete mit verschiedenem Gas - genau das Stottern, das der eine Herzschlag
+    // beseitigt hat.
+    if (role === 'player2') {
+      garage.forEach(c => { if (c !== car && c.role === 'player2') c.role = 'none'; });
+      playerCar2 = car;
+    } else if (playerCar2 === car) {
+      playerCar2 = null;
+      // Sonst faehrt das Auto mit dem letzten gesendeten Gas weiter: writeToCar() schickt
+      // nur, was es bekommt, und ohne Rolle bekommt es nichts mehr.
+      writeToCar(car, 0, 0, trackModeBit() | (headlightsOn ? LIGHT_HEAD : 0));
+    }
     car.role = role;
     if (role !== 'ghost') stopGhost(car);
     renderGarage();
-    log(`${garageLabel(car)}: Rolle ${role === 'player' ? 'Steuern' : role === 'ghost' ? 'Ghost' : 'keine'}`, 'info');
+    const name = role === 'player' ? 'Steuern' : role === 'player2' ? 'Spieler 2'
+               : role === 'ghost' ? 'Ghost' : 'keine';
+    log(`${garageLabel(car)}: Rolle ${name}`, 'info');
   }
 
   // ---- Der Fahrercharakter als Zeile in der Garage --------------------------------
@@ -27032,6 +27414,7 @@
     echte.forEach((car, i) => {
       const row = document.createElement('div');
       row.className = 'gar-row' + (car.role === 'player' ? ' is-player'
+                                 : car.role === 'player2' ? ' is-zwei'
                                  : car.role === 'ghost' ? ' is-ghost' : '');
       const f = carColor(car);
       row.innerHTML = `
@@ -27049,6 +27432,9 @@
             ${car.blinking ? '<span class="gar-blink">&nbsp;blinkt&hellip;</span>' : ''}</div></div>
         <div class="gar-roles">
           <button data-role="player" class="${car.role === 'player' ? 'on' : ''}">Steuern</button>
+          ${zweiSpieler ? `
+          <button data-role="player2" class="${car.role === 'player2' ? 'on zwei' : ''}"
+                  >Spieler&nbsp;2</button>` : ''}
           <button data-role="ghost" class="${car.role === 'ghost' ? 'on ghost' : ''}">Ghost</button>
           <button data-role="none" class="${car.role === 'none' ? 'on off' : ''}">Aus</button>
         </div>
@@ -27301,8 +27687,12 @@
       });
       garage.push(car);
       carAssign(car);
-      // First car connected takes the wheel, as requested.
-      if (!playerCar) setCarRole(car, 'player'); else renderGarage();
+      // First car connected takes the wheel, as requested. Im Zwei-Spieler-Modus nimmt
+      // das ZWEITE Auto den zweiten Platz - sonst muesste man nach jedem Verbinden in die
+      // Garage, und der Modus soll "zwei Autos verbinden und losfahren" sein.
+      if (!playerCar) setCarRole(car, 'player');
+      else if (zweiSpieler && !playerCar2) setCarRole(car, 'player2');
+      else renderGarage();
       log(`${garageLabel(car)} verbunden (${garage.length} insgesamt).`, 'info');
       playFx(fxBuffers.start[$('sound-profile').value] || fxBuffers.start.porsche, 0.85);
     } catch (err) {
@@ -33543,13 +33933,137 @@
     }
   }
 
-  function pollGamepad() {
+  // ====================================================================================
+  // WELCHES PAD FAEHRT WELCHEN SPIELER?
+  // ====================================================================================
+  //
+  // Die Reihenfolge, in der der Browser die Pads auflistet, IST die Zuordnung: das erste
+  // brauchbare fahrt Spieler 1, das naechste andere Spieler 2. Kein Auswahlfeld je Pad, und
+  // das ist eine Entscheidung: die Kennungen (`pad.id`) sind bei zwei gleichen Controllern
+  // identisch, die Indizes wechseln beim Aus- und Einstecken, und ein Feld, das man nach
+  // jedem Neustart neu stellen muss, ist schlechter als ein Knopf zum Tauschen. Den gibt
+  // es: padTauschen dreht die beiden um, und die Optionenkachel zeigt, wer gerade welches
+  // hat.
+  //
+  // MIT VORRANG FUER STANDARD-MAPPING, wie bisher: Windows zeigt denselben Controller oft
+  // zweimal (einmal gemappt, einmal als rohes HID-Gerät), und das rohe hat sinnlose
+  // Achsnummern. Deshalb werden erst die gemappten genommen und die rohen nur, wenn sonst
+  // keine da sind - vorher entschied `find()` das fuer ein Pad, jetzt fuer die Liste.
+  let padTauschen = false;
+  function padTauschenSetzen(v) { padTauschen = !!v; }
+  function padTauschenLesen() { return padTauschen; }
+  function padsSortiert() {
     const pads = navigator.getGamepads ? navigator.getGamepads() : [];
-    // Prefer a standard-mapping pad: Windows often exposes the same physical controller
-    // twice (e.g. a DualSense over Bluetooth showing up as both a mapped and a raw HID
-    // device), and picking the raw one gives meaningless axis/button indices.
     const list = Array.from(pads).filter(p => p);
-    const pad = list.find(p => p.mapping === 'standard') || list[0];
+    const gemappt = list.filter(p => p.mapping === 'standard');
+    const roh = list.filter(p => p.mapping !== 'standard');
+    return gemappt.concat(roh);
+  }
+  function padsFuerSpieler() {
+    const sortiert = padsSortiert();
+    const a = sortiert[0] || null;
+    const b = sortiert.length > 1 ? sortiert[1] : null;
+    return padTauschen ? { p1: b, p2: a } : { p1: a, p2: b };
+  }
+
+  // ---- Die Bedienung der Kachel "2 Spieler" ---------------------------------------
+  //
+  // Zwei Ankreuzfelder und zwei Textzeilen. Die Felder werden von 98b-sicherung.js von
+  // selbst gespeichert und wiederhergestellt (es findet jedes input[id] in einer .opt-row
+  // unter #tab-options), und presetSet() feuert dabei 'change' - deshalb genuegt HIER ein
+  // Zuhoerer, und es braucht keine eigene Ablage.
+  //
+  // WARUM DIE LISTE GETAKTET WIRD und nicht auf ein Ereignis wartet: die Gamepad-API
+  // liefert keine verlaessliche Meldung, wenn sich ein Pad nach dem ersten Knopfdruck
+  // anmeldet ('gamepadconnected' kommt, 'gamepaddisconnected' bei manchen Pads nicht).
+  // Eine Sekunde ist fuer eine Anzeige, auf die man beim Einrichten schaut, genug - und
+  // sie laeuft nur, wenn die Unterseite offen ist. Genau dafuer gibt es unterseiteOffen().
+  function zweiSpielerKachelZeichnen() {
+    const padZeile = $('zwei-pads');
+    if (padZeile) {
+      const sortiert = padsSortiert();
+      const spieler = padsFuerSpieler();
+      // Der NAME und nicht nur die Zahl: wer zwei verschiedene Pads anschliesst, will
+      // sehen, welches welches ist - "Controller 1" sagt darueber nichts.
+      const nenn = (pad) => pad ? String(pad.id).slice(0, 40) : 'keiner';
+      padZeile.textContent = sortiert.length === 0
+        ? 'Kein Controller erkannt.'
+        : 'Auto 1: ' + nenn(spieler.p1) + ' — Auto 2: ' + nenn(spieler.p2)
+          + (sortiert.length === 1 ? ' (nur ein Controller erkannt)' : '');
+    }
+    const autoZeile = $('zwei-autos');
+    if (autoZeile) {
+      const eins = playerCar ? garageLabel(playerCar) : 'keins';
+      const zwei = playerCar2 ? garageLabel(playerCar2) : 'keins';
+      autoZeile.textContent = zweiSpieler
+        ? 'Auto 1: ' + eins + ' — Auto 2: ' + zwei
+          + (playerCar2 ? '' : ' (in der Garage einem Auto die Rolle "Spieler 2" geben)')
+        : 'Der Modus ist aus.';
+    }
+  }
+
+  if ($('opt-zwei-an')) {
+    $('opt-zwei-an').addEventListener('change', (e) => {
+      zweiSpielerSetzen(e.target.checked);
+      zweiSpielerKachelZeichnen();
+    });
+  }
+  if ($('opt-zwei-tausch')) {
+    $('opt-zwei-tausch').addEventListener('change', (e) => {
+      padTauschenSetzen(e.target.checked);
+      zweiSpielerKachelZeichnen();
+    });
+  }
+  setInterval(() => {
+    // Nur bei offener Unterseite. Ein Takt, der im Fahren durch die Pad-Liste laeuft, waere
+    // Arbeit fuer eine Anzeige, die niemand sieht - und der Sendetakt hat Vorrang.
+    const seite = $('sub-opt-zwei');
+    if (seite && seite.classList.contains('on')) zweiSpielerKachelZeichnen();
+  }, 1000);
+
+  // ---- Der ganze Eingang von Spieler 2 -------------------------------------------
+  //
+  // Dieselben Bindungen wie Spieler 1, und zwar dasselbe Objekt: zwei Controller mit
+  // verschiedenen Belegungen waeren zwei Tabellen, zwei Speicherorte und zwei Stellen zum
+  // Vergessen. Wer auf gleichen Pads spielt, will ohnehin gleiche Knoepfe.
+  //
+  // Geschrieben wird DIREKT auf p2Steer/p2Throttle und nicht ueber applySteerInput(): die
+  // Schiedsstelle in 30-input.js verteilt EIN Paar Werte unter mehreren Quellen, und
+  // Spieler 2 hat nur eine Quelle. Sie hier mitzubenutzen hiesse, dass sein Gas das von
+  // Spieler 1 ueberschreibt.
+  let p2PrevDown = false, p2PrevUp = false;
+  function pollPad2(pad) {
+    if (!pad) {
+      // Kein zweites Pad: Spieler 2 steht. Ohne diese zwei Zeilen behielte er den letzten
+      // Wert und faehrt weiter, wenn man den Controller abzieht - genau der Fehler, der in
+      // diesem Projekt schon einmal ein Auto von allein fahren liess.
+      p2Steer = 0; p2Throttle = 0;
+      return;
+    }
+    const gas = applyDeadzone(Math.max(0, readBindingValue(pad, bindings.throttle)), TRIGGER_DEADZONE);
+    const bremse = applyDeadzone(Math.max(0, readBindingValue(pad, bindings.brake)), TRIGGER_DEADZONE);
+    p2Steer = applyDeadzone(readBindingValue(pad, bindings.steering));
+    p2Throttle = gas - bremse;
+    // Schalten, flankengetriggert wie bei Spieler 1. Ohne das koennte ein Spieler 2 mit
+    // Handschaltung nicht schalten - und die Handschaltung ist eine Einstellung, die fuer
+    // beide gilt.
+    const abNow = readBindingValue(pad, bindings.downshift) > BUTTON_CAPTURE_THRESHOLD;
+    const aufNow = readBindingValue(pad, bindings.upshift) > BUTTON_CAPTURE_THRESHOLD;
+    if (abNow && !p2PrevDown && physicsEnabled && !physEngine2.state.isShifting) {
+      physEngine2.triggerShift(-1);
+    }
+    if (aufNow && !p2PrevUp && physicsEnabled && !physEngine2.state.isShifting) {
+      physEngine2.triggerShift(1);
+    }
+    p2PrevDown = abNow; p2PrevUp = aufNow;
+  }
+
+  function pollGamepad() {
+    const spieler = padsFuerSpieler();
+    // Spieler 2 zuerst, und ohne Bedingung auf `pad`: sein Eingang muss auch dann auf null
+    // gehen, wenn Spieler 1 gar kein Pad hat (der Rumpf darunter kehrt dann frueh zurueck).
+    if (zweiSpieler) pollPad2(spieler.p2); else { p2Steer = 0; p2Throttle = 0; }
+    const pad = spieler.p1;
     if (!pad) {
       // Do NOT tear the loop down here: a Bluetooth pad can drop out of the snapshot for
       // a frame or two, and killing the loop on that would need a fresh connect event to
@@ -34853,6 +35367,146 @@
     // Kastenhoehe misst, wuerde die Verkleinerung mitmessen und immer gruen sein.
     // `b` ist die Kastenbreite und gilt nur im Vollbild - ohne sie prueft ein breites
     // Testfenster eine Lage, in die ein Handy nie geraet.
+    // ---- Der Zwei-Spieler-Modus, am Sendeweg gemessen -------------------------------
+    //
+    // GEMESSEN WIRD, WAS HINAUSGEHT, und nicht, was eine Funktion sich vornimmt. Genau
+    // dieser Unterschied hat beim Zieleinlauf einen Fehler verdeckt: die Seite war
+    // zugeteilt und landete im Gas-Platz. car.testSenke ist deshalb schon da; hier wird
+    // sie fuer zwei Autos gleichzeitig benutzt.
+    //
+    // Der Prueflauf stellt sich seine eigene Lage her - zwei Attrappen, kein Funk - und
+    // gibt im finally jeden angefassten Zustand zurueck. Ohne das bliebe der Modus nach
+    // einem Selbsttest an, und das naechste Rennen haette ein zweites Auto, das niemand
+    // bestellt hat.
+    zweiSpielerProbe(o) {
+      const opt = o || {};
+      const vorher = {
+        zwei: zweiSpieler, p1: playerCar, p2: playerCar2,
+        phys: physicsEnabled, steer: p2Steer, gas: p2Throttle,
+      };
+      const mach = (tag) => ({
+        tag, role: 'none', device: { id: 'probe-' + tag }, testSenke: [],
+        ghost: null, modeBytes: null,
+      });
+      const a1 = mach('P1'), a2 = mach('P2');
+      try {
+        playerCar = a1;
+        playerCar2 = a2;
+        // OHNE PHYSIK, absichtlich: mit ihr haengt das Gas an einer Motordrehzahl, die
+        // sich zwischen zwei Aufrufen aendert, und der Prueflauf wuerde messen, wie schnell
+        // ein Motor anspringt. Ohne sie geht p2Throttle unveraendert hinaus, und das ist
+        // die Frage - kommt die Zahl beim richtigen Auto an?
+        physicsEnabled = false;
+        p2Steer = opt.steer === undefined ? 0.4 : opt.steer;
+        p2Throttle = opt.gas === undefined ? 0.7 : opt.gas;
+        // Erst AUS: es darf nichts hinausgehen.
+        zweiSpieler = false;
+        spielerZweiSenden();
+        const ausPakete = a2.testSenke.length;
+        // Dann AN.
+        zweiSpieler = true;
+        spielerZweiSenden();
+        const anPakete = a2.testSenke.slice(ausPakete);
+        // Und ohne zugeteiltes Auto 2: auch dann nichts. anAutoEins ist dabei die zweite
+        // Zusicherung und die wichtigere - dieser Weg darf Auto 1 NIE anfassen. Taete er
+        // es, bekaeme Auto 1 im selben Takt zwei Pakete mit verschiedenem Gas, und genau
+        // das ist das Stottern, das der eine Herzschlag beseitigt hat.
+        playerCar2 = null;
+        spielerZweiSenden();
+        return {
+          ausPakete,
+          anPakete: anPakete.length,
+          ohneAuto: a2.testSenke.length - ausPakete - anPakete.length,
+          letztes: anPakete.length ? anPakete[anPakete.length - 1] : null,
+          anAutoEins: a1.testSenke.length,
+          gewuenscht: { steer: p2Steer, gas: p2Throttle },
+        };
+      } finally {
+        zweiSpieler = vorher.zwei;
+        playerCar = vorher.p1;
+        playerCar2 = vorher.p2;
+        physicsEnabled = vorher.phys;
+        p2Steer = vorher.steer;
+        p2Throttle = vorher.gas;
+      }
+    },
+
+    // ---- Und faehrt Auto 2 wirklich? ------------------------------------------------
+    //
+    // Die Sonde darueber prueft den WEG. Diese prueft die FAHRT: dass eine eigene
+    // Physikinstanz Gas annimmt, dreht, schaltet und dass die zweite Anzeige im Cockpit
+    // dabei mitgeht. Das ist die Aussage, die bestellt war ("beide fahren koennen"), und
+    // sie laesst sich nicht aus der Zuteilung ableiten.
+    //
+    // DIE UHR WIRD GEFAELSCHT, und zwar performance.now(): physicsStep2() holt sein dt
+    // daraus, und zwei Aufrufe in derselben Millisekunde haetten dt = 0 - gemessen waere
+    // dann ein Motor, der nicht anspringt, obwohl er es tut. Dieselbe Bauform wie bei den
+    // Ghost-Sonden, die Date.now faelschen, und mit derselben Pflicht: im finally zurueck.
+    //
+    // Der Prueflauf laeuft SYNCHRON durch. Das ist kein Zufall: der echte Herzschlag feuert
+    // alle 45 ms und wuerde die gefaelschte Uhr sehen. Ohne ein einziges await kann er
+    // nicht dazwischenkommen.
+    zweiSpielerFahrtProbe(o) {
+      const opt = o || {};
+      const schritte = opt.schritte || 60;      // 60 x 45 ms = 2,7 s
+      const uhrEcht = performance.now;
+      const vorher = {
+        zwei: zweiSpieler, p2: playerCar2, steer: p2Steer, gas: p2Throttle,
+        phys: physicsEnabled,
+      };
+      const a2 = { tag: 'P2', role: 'player2', device: { id: 'probe-fahrt' }, testSenke: [] };
+      const verlauf = [];
+      try {
+        physEngine2.reset();
+        physEngine2Abgleichen();
+        zweiSpieler = true;
+        physicsEnabled = true;
+        playerCar2 = a2;
+        p2Steer = 0;
+        p2Throttle = opt.gas === undefined ? 1 : opt.gas;
+        let t = uhrEcht.call(performance);
+        performance.now = () => t;
+        // Der erste Schritt setzt nur phys2LastTime; ab dem zweiten ist dt echt.
+        for (let i = 0; i < schritte; i++) {
+          spielerZweiSenden();
+          if (i % 10 === 0 || i === schritte - 1) {
+            verlauf.push({
+              s: +(i * 0.045).toFixed(2),
+              rpm: Math.round(motorDrehzahl(physEngine2.state)),
+              kmh: +(Math.abs(physEngine2.state.speedKmh) * REAL_SCALE).toFixed(1),
+              gang: gearLabel(physEngine2.state),
+              anzeigeRpm: ($('race2-rpm') || {}).textContent,
+              anzeigeKmh: ($('race2-speed') || {}).textContent,
+            });
+          }
+          t += CONTROL_SEND_INTERVAL_MS;
+        }
+        const letzt = verlauf[verlauf.length - 1];
+        return {
+          schritte, pakete: a2.testSenke.length, verlauf,
+          // Und die Gegenprobe, dass Auto 1 unberuehrt blieb: seine Physik darf von
+          // diesem Weg nichts gesehen haben.
+          eigenerMotor: physEngine2.state !== physEngine.state,
+          eigeneGaenge: physEngine2.config.gears !== physEngine.config.gears,
+          endeRpm: letzt.rpm, endeKmh: letzt.kmh, endeGang: letzt.gang,
+          anzeigeStimmt: letzt.anzeigeRpm === String(letzt.rpm)
+                      && letzt.anzeigeKmh === String(Math.round(letzt.kmh)),
+          letztesPaket: a2.testSenke[a2.testSenke.length - 1] || null,
+        };
+      } finally {
+        performance.now = uhrEcht;
+        zweiSpieler = vorher.zwei;
+        playerCar2 = vorher.p2;
+        p2Steer = vorher.steer;
+        p2Throttle = vorher.gas;
+        physicsEnabled = vorher.phys;
+        physEngine2.reset();
+        // Die Anzeige wieder auf den Ruhestand, sonst stehen im Cockpit die Zahlen einer
+        // Messfahrt, die niemand gefahren hat.
+        updateRaceScreen2(physEngine2.state);
+      }
+    },
+
     cockpitPassung(h, b) { return cockpitPassung(h, b); },
 
     // ---- Die Cockpit-Schirme, von aussen bedienbar ----------------------------------
@@ -51542,6 +52196,86 @@
   // Die Liste ist GEPFLEGT, und das ist hier richtig: sie IST die Zusicherung. Sie stammt
   // aus einer Suche ueber alle Kaestchen, deren Listener "X = e.target.checked" schreibt.
   // Ein neuer Schalter gehoert hinein.
+  // ---- Zwei Spieler: kommt beim zweiten Auto wirklich etwas an? ---------------------
+  //
+  // DIE FRAGE, DIE SICH NICHT ERSCHLIESSEN LAESST. "Beide koennen fahren" ist eine Aussage
+  // ueber Pakete auf zwei BLE-Kennungen, nicht ueber Zuteilungen in der Garage. Gemessen
+  // wird deshalb an car.testSenke - derselben Senke, die beim Zieleinlauf einen Fehler
+  // gefunden hat, den die Zuteilung nicht zeigte.
+  //
+  // Drei Zusicherungen, und die dritte ist die, die im Betrieb weh tut:
+  //   1. Schalter aus  -> kein Paket an Auto 2 (sonst faehrt es im Einzelspiel mit)
+  //   2. Schalter an   -> genau ein Paket je Herzschlag, mit dem gewuenschten Gas
+  //   3. immer         -> NIE ein Paket an Auto 1 aus diesem Weg. Zwei Pakete mit
+  //                       verschiedenem Gas in einem Takt sind genau das Stottern, das der
+  //                       eine Sendetakt in v0.5.8 beseitigt hat.
+  stAdd('Zwei Spieler: das zweite Auto bekommt eigene Pakete', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.zweiSpielerProbe) {
+      return { skip: true, mass: 'zweiSpielerProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.zweiSpielerProbe({ steer: 0.4, gas: 0.7 });
+    const maengel = [];
+    if (r.ausPakete !== 0) maengel.push('aus: ' + r.ausPakete + ' Pakete statt 0');
+    if (r.anPakete !== 1) maengel.push('an: ' + r.anPakete + ' Pakete statt 1');
+    if (r.ohneAuto !== 0) maengel.push('ohne Auto 2: ' + r.ohneAuto + ' Pakete statt 0');
+    if (r.anAutoEins !== 0) maengel.push('Auto 1 bekam ' + r.anAutoEins + ' Pakete');
+    if (r.letztes) {
+      if (Math.abs(r.letztes.throttle - r.gewuenscht.gas) > 1e-9) {
+        maengel.push('Gas ' + r.letztes.throttle + ' statt ' + r.gewuenscht.gas);
+      }
+      if (Math.abs(r.letztes.steer - r.gewuenscht.steer) > 1e-9) {
+        maengel.push('Lenkung ' + r.letztes.steer + ' statt ' + r.gewuenscht.steer);
+      }
+    }
+    return { ok: !maengel.length,
+             mass: 'aus ' + r.ausPakete + ' | an ' + r.anPakete + ' | ohne Auto '
+                 + r.ohneAuto + ' | an Auto 1 ' + r.anAutoEins
+                 + (maengel.length ? ' | ' + maengel.join(', ') : ' | wie erwartet') };
+  });
+
+  // ---- Und faehrt Auto 2? -----------------------------------------------------------
+  //
+  // Die Fortsetzung des Tests darueber, und die Aussage, die bestellt war: "beide fahren
+  // koennen". Dass ein Paket hinausgeht, heisst noch nicht, dass ein Auto beschleunigt -
+  // dafuer braucht es eine eigene Physikinstanz, die Gas annimmt und schaltet.
+  //
+  // DIE GETRENNTE GANGTABELLE ist die Zusicherung, die man beim Bauen am leichtesten
+  // verliert: Object.assign(physEngine2.config, physEngine.config) kopiert die Tabelle als
+  // REFERENZ, und dann schriebe ein Schaltvorgang von Auto 2 in die Gaenge von Auto 1.
+  // Genau diese Falle steht bei den Ghosts schon einmal beschrieben; hier wird sie geprueft.
+  //
+  // Gemessen wird bis 2,7 s Vollgas. Die Zahl ist nicht willkuerlich: der zweite Gang
+  // faellt in dieses Fenster, und damit ist auch das Schalten mitgeprueft.
+  stAdd('Zwei Spieler: Auto 2 hat eine eigene Physik und faehrt', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.zweiSpielerFahrtProbe) {
+      return { skip: true, mass: 'zweiSpielerFahrtProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.zweiSpielerFahrtProbe({ schritte: 60, gas: 1 });
+    const maengel = [];
+    if (r.pakete !== r.schritte) {
+      maengel.push(r.pakete + ' Pakete auf ' + r.schritte + ' Takte');
+    }
+    if (!r.eigenerMotor) maengel.push('teilt den Motorzustand mit Auto 1');
+    if (!r.eigeneGaenge) maengel.push('teilt die Gangtabelle mit Auto 1');
+    // Vollgas aus dem Stand: unter 40 km/h in 2,7 s faehrt nichts. Die gemessene Zahl ist
+    // 76,5 - die Schwelle liegt bewusst weit darunter, weil der Test die FAHRT prueft und
+    // nicht die Abstimmung des Antriebs.
+    if (!(r.endeKmh > 40)) maengel.push('nur ' + r.endeKmh + ' km/h nach 2,7 s');
+    if (r.endeGang === 'N' || r.endeGang === 'R') {
+      maengel.push('steht noch in Gang ' + r.endeGang);
+    }
+    if (!r.anzeigeStimmt) maengel.push('die zweite Anzeige weicht vom Zustand ab');
+    // Und die Kurve muss steigen und nicht nur am Ende hoch sein.
+    const kmh = r.verlauf.map((v) => v.kmh);
+    for (let i = 2; i < kmh.length; i++) {
+      if (kmh[i] < kmh[i - 1]) { maengel.push('Tempo fiel bei ' + r.verlauf[i].s + ' s'); break; }
+    }
+    return { ok: !maengel.length,
+             mass: r.endeKmh + ' km/h, Gang ' + r.endeGang + ', ' + r.endeRpm + ' 1/min nach 2,7 s'
+                 + ' | ' + r.pakete + ' Pakete'
+                 + (maengel.length ? ' | ' + maengel.join(', ') : ' | eigene Physik, Anzeige folgt') };
+  });
+
   stAdd('Schalter und Spiegel sagen beim Laden dasselbe', () => {
     const PAARE = [
       ['amb-enable', () => ambienceEnabled],
@@ -51577,6 +52311,11 @@
       ['setting-tyre-blankets', () => physEngine.config.tyreBlankets],
       ['setting-vibration', () => rumbleOn],
       ['sound-enable', () => soundEnabled],
+      // Die zwei Schalter des Zwei-Spieler-Modus. Der erste ist der wichtigere: stehen
+      // Kaestchen und Variable verschieden, zeigt das Cockpit eine zweite Zeile und der
+      // Herzschlag schickt nichts an Auto 2 - oder umgekehrt.
+      ['opt-zwei-an', () => zweiSpieler],
+      ['opt-zwei-tausch', () => padTauschenLesen()],
     ];
     const schlecht = [], fehlt = [];
     let geprueft = 0;

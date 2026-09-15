@@ -1121,6 +1121,33 @@
                          "strip strip strip" "banner banner banner"
                          "foot foot foot" "toast toast toast" "marke marke marke"; }
 
+  /* ---- Die zweite Anzeige, nur im Zwei-Spieler-Modus -----------------------------------
+     EIN ZUSAETZLICHES FELD IM RASTER, und es entsteht erst mit der Klasse am Body. Die
+     Felder des Cockpits sind benannt; eine Zeile, die immer da ist und nur leer bleibt,
+     zaehlt in cockpitInhaltHoehe() trotzdem mit Luecke mit und kostet die Einpassung im
+     Einzelspiel rund 9 px. Deshalb wird die Feldliste umgesetzt statt ein Kind verborgen.
+
+     Die Zeile steht UNTER den grossen Instrumenten und ueber dem Kachelstreifen: der
+     Fahrer von Auto 1 schaut in die Mitte, der von Auto 2 eine Zeile tiefer, und keiner
+     von beiden muss an einer Bedienkachel vorbeisehen. Bewusst schmal - Drehzahl, Gang,
+     Tempo. Alles Weitere steht auf den anderen Schirmen, so bestellt. */
+  .gt3-p2 { display: none; grid-area: p2; }
+  body.zwei-spieler .gt3 {
+    grid-template-areas: "flag flag flag" "shift shift shift" "left gear right"
+                         "p2 p2 p2"
+                         "strip strip strip" "banner banner banner"
+                         "foot foot foot" "toast toast toast" "marke marke marke"; }
+  body.zwei-spieler .gt3-p2 {
+    display: grid; align-items: center; gap: clamp(4px, .8vw, 9px);
+    /* Die Beschriftung schmal, die drei Werte gleich breit: der Blick soll die Zahlen
+       treffen und nicht den Namen. */
+    grid-template-columns: auto repeat(3, minmax(0, 1fr));
+    border-top: 1px solid #262e3d; padding-top: clamp(3px, .6vw, 7px); }
+  .gt3-p2-marke {
+    font: 600 clamp(9px, 1.5vw, 12px)/1.1 var(--mono, ui-monospace, monospace);
+    letter-spacing: .08em; text-transform: uppercase; color: var(--gt3-dim, #7d8aa3);
+    writing-mode: horizontal-tb; padding-right: clamp(3px, .8vw, 8px); }
+
   /* DAS DECKGLAS. Drei Dinge, die eine Anzeige von einer Farbflaeche unterscheiden, und
      alle drei sind Aussehen und keine Aussage:
 
@@ -2744,6 +2771,7 @@
     font-size: 11px; color: var(--muted); pointer-events: none; }
   body.track-fs .tp-space { right: 14px; bottom: 68px; }
   .gar-row.is-player { border-color: var(--good); }
+  .gar-row.is-zwei { border-color: #3d8bff; }
   .gar-row.is-ghost { border-color: #7a6bd0; }
   .gar-id { font-size: 11px; color: var(--muted); font-family: monospace; }
   /* Ein Segmentschalter statt drei einzelner Knoepfe: die drei Rollen schliessen sich
@@ -2759,6 +2787,10 @@
   .gar-roles button:first-child { border-left: 0; }
   .gar-roles button:hover { background: var(--tint-2); color: var(--text); }
   .gar-roles button.on { background: var(--good); color: #04170c; font-weight: 700; }
+  /* Spieler 2 in seiner eigenen Farbe - blau, weil Gruen (Auto 1) und Violett (Ghost)
+     schon belegt sind und ein zweiter gruener Knopf in derselben Reihe nicht
+     unterscheidbar waere. Kontrast gegen #06121f: 8,4. */
+  .gar-roles button.on.zwei { background: #3d8bff; color: #06121f; font-weight: 700; }
   .gar-roles button.on.ghost { background: #7a6bd0; color: #f2eeff; }
   .gar-roles button.on.off { background: var(--panel-3); color: var(--text); }
   /* Tempo je Ghost, direkt in der Zeile. Eine eigene Rasterzeile, damit der Regler die
@@ -3291,6 +3323,23 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.2L12 5.5v13l-4.8-4H4z"/><path d="M16 9a4.2 4.2 0 0 1 0 6" stroke="var(--bad)"/><path d="M18.6 6.4a7.8 7.8 0 0 1 0 11.2" stroke="var(--bad)"/></svg>
           <span id="race-act-sound-txt">Motor</span></button>
+      </div>
+
+      <!-- SPIELER 2. Dieselben drei Werte, dieselben Klassen, dieselbe Schreibweise wie
+           oben - eine zweite Anzeige, die anders aussieht, liest sich als anderes Auto und
+           nicht als zweiter Fahrer. Geschrieben wird sie von updateRaceScreen2() in
+           50-drive.js, aus einer eigenen Physikinstanz (physEngine2). -->
+      <div class="gt3-p2">
+        <div class="gt3-p2-marke">Spieler 2</div>
+        <div class="gt3-box" style="text-align:center">
+          <div class="gt3-lbl">1/min</div>
+          <div class="gt3-val" id="race2-rpm">1500</div></div>
+        <div class="gt3-box" style="text-align:center">
+          <div class="gt3-lbl">Gang</div>
+          <div class="gt3-val" id="race2-gear">N</div></div>
+        <div class="gt3-box" style="text-align:center">
+          <div class="gt3-lbl">km/h</div>
+          <div class="gt3-val big" id="race2-speed">0</div></div>
       </div>
 
       <div class="gt3-strip">
@@ -4374,6 +4423,28 @@
         Ebenso gibt es <em>eine</em> Eingabeschlichtung: jede Quelle meldet sich pro Achse an und darf nur
         schreiben, solange sie ausgelenkt ist, plus genau einmal beim Loslassen. Sonst &uuml;berschreibt ein
         mit 60&nbsp;Hz laufendes Gamepad st&auml;ndig die Tastatur mit Nullen.
+      </p>
+
+      <h3 style="font-size:14px; margin:16px 0 6px 0">Zwei Spieler auf demselben Takt</h3>
+      <p class="muted">
+        Der 2-Spieler-Modus ist der Beweis daf&uuml;r, dass die Regel tr&auml;gt: das zweite Auto bekommt
+        <em>keinen</em> eigenen Takt, sondern wird im selben 45-ms-Herzschlag direkt nach dem ersten
+        beschickt. Jedes Auto hat seine eigene Sperre (<code>writeInFlight</code>), ein langsamer Funkweg
+        l&auml;sst also nur beim eigenen Auto einen Takt aus und h&auml;lt das andere nicht auf &ndash;
+        genau das Verhalten, das die Ghosts schon haben.
+      </p>
+      <p class="muted">
+        Der Eingang von Spieler&nbsp;2 geht bewusst <em>nicht</em> durch die Eingabeschlichtung. Sie
+        verteilt <em>ein</em> Wertepaar unter mehreren Quellen &ndash; Spieler&nbsp;2 h&auml;tte darin
+        keine zweite Achse, sondern w&uuml;rde Spieler&nbsp;1 &uuml;berschreiben. Er schreibt deshalb auf
+        sein eigenes Wertepaar, und die Tastenbelegung teilen beide Controller.
+      </p>
+      <p class="muted">
+        Was Auto&nbsp;2 nicht hat, h&auml;ngt ausnahmslos an einem Z&auml;hler oder einer Ortung, die es
+        nur einmal gibt: Tank und Schaden, Motorton, Rundenz&auml;hlung, Fahrhilfe, Leitplanken-Modus und
+        das Ausweichen der Ghosts. Es hat eine eigene Fahrphysik &ndash; eigene G&auml;nge, Drehzahl,
+        Temperaturen &ndash; und die Gangtabelle wird beim Anschalten <em>kopiert</em> und nicht geteilt,
+        sonst schriebe ein Schaltvorgang von Auto&nbsp;2 in die G&auml;nge von Auto&nbsp;1.
       </p>
     </div>
 
@@ -6486,6 +6557,15 @@
           <b>Controller</b>
           <span>Erkennung, Tastenbelegung, eigene Zuordnung.</span>
         </button>
+        <!-- ZWEI CONTROLLER, zwei Autos. Das Symbol ist absichtlich der Controller aus der
+             Kachel darueber, zweimal und versetzt - nicht zwei Autos: was man verbindet,
+             sind Controller, und wer hier landet, sucht den Modus fuer den zweiten. -->
+        <button class="misc-tile subpage-open" data-sub="opt-zwei">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="9" width="28" height="14" rx="7"/><path d="M11 14v4M9 16h4"/><circle cx="24" cy="16" r="1.8"/><rect x="17" y="25" width="28" height="14" rx="7" stroke="var(--bad)"/><path d="M25 30v4M23 32h4" stroke="var(--bad)"/><circle cx="38" cy="32" r="1.8" stroke="var(--bad)"/></svg>
+          <b>2&nbsp;Spieler</b>
+          <span>Zwei Autos, zwei Controller, beide Drehzahlen im Cockpit. Im Aufbau.</span>
+        </button>
       </div>
     </div>
     <div class="card subpage" id="sub-opt-general">
@@ -7887,6 +7967,59 @@
          bleiben - die betrifft die Tabelle nicht, Tasten sind fest. -->
     </div>
 
+    <div class="card subpage" id="sub-opt-zwei">
+      <button class="misc-back subpage-back" data-sub="">&larr; Einstellungen</button>
+      <h2>2&nbsp;Spieler</h2>
+      <div class="opt-head">Der Modus</div>
+      <div class="opt-row"><div class="opt-label">2-Spieler-Modus<span
+          class="wip-tag">experimentell</span><small>Zwei Autos, zwei Controller, ein
+          Rennen auf derselben Strecke. Angeschaltet bekommt jede Zeile in der Garage einen
+          vierten Knopf &bdquo;Spieler&nbsp;2&ldquo;, und das Cockpit zeigt unter den
+          gro&szlig;en Instrumenten eine zweite Zeile mit Drehzahl, Gang und Tempo des
+          zweiten Autos. Beide Autos werden aus demselben 45-ms-Sendetakt bedient &ndash;
+          getrennte Takte waren die Ursache des Stotterns mit echtem Controller, und dieser
+          Modus wiederholt den Fehler nicht.</small></div>
+        <label class="tgl"><input type="checkbox" id="opt-zwei-an"></label></div>
+      <div class="opt-row"><div class="opt-label">Controller tauschen<small>Welcher der
+          beiden erkannten Controller Auto&nbsp;1 f&auml;hrt. Die Reihenfolge kommt vom
+          Browser und ist nicht w&auml;hlbar: hier ist der Schalter daf&uuml;r.</small></div>
+        <label class="tgl"><input type="checkbox" id="opt-zwei-tausch"></label></div>
+
+      <div class="opt-head">Was gerade erkannt ist</div>
+      <!-- data-i18n-skip, wie bei jeder Zustandsmeldung in dieser App: der Inhalt wird
+           zur Laufzeit geschrieben (zweiSpielerKachelZeichnen in 90-ghosts.js) und
+           enthaelt Controller-Namen und Autobezeichnungen. Ein Woerterbucheintrag kann
+           darauf nicht passen, und ohne das Merkmal meldet der Sprachtest zu Recht
+           deutschen Text im englischen Modus. -->
+      <p class="muted" id="zwei-pads" data-i18n-skip>&ndash;</p>
+      <p class="muted" id="zwei-autos" data-i18n-skip>&ndash;</p>
+      <p class="muted">Dr&uuml;cke an jedem Controller einmal einen Knopf &ndash; der
+        Browser meldet ein Pad erst nach der ersten Eingabe. Beide Controller benutzen
+        dieselbe Tastenbelegung aus der Kachel &bdquo;Controller&ldquo;.</p>
+
+      <div class="opt-head">Was Auto&nbsp;2 in dieser Fassung nicht hat</div>
+      <p class="muted">Ehrlicher als es zu verschweigen &ndash; jeder Punkt h&auml;ngt an
+        einem Z&auml;hler oder einer Ortung, die es nur einmal gibt:</p>
+      <div class="help-grid">
+        <kbd>Tank</kbd><span>Sprit und Schaden z&auml;hlen nur f&uuml;r Auto&nbsp;1. Zwei
+          ungleiche Regels&auml;tze w&auml;ren schlimmer als keiner &ndash; der Modus soll
+          fair sein.</span>
+        <kbd>Ton</kbd><span>Der Motorklang folgt Auto&nbsp;1. Es gibt einen
+          Tongenerator.</span>
+        <kbd>Hilfe</kbd><span>Keine Fahrhilfe, kein Leitplanken-Modus und kein Autopilot
+          unter Gelb f&uuml;r Auto&nbsp;2: alle drei rechnen mit dem gef&uuml;hrten Ort des
+          Fahrerautos.</span>
+        <kbd>Ghost</kbd><span>Ghosts weichen Auto&nbsp;2 nicht aus &ndash; sie kennen
+          seinen Ort nicht. Am besten ohne Ghosts fahren.</span>
+        <kbd>Runden</kbd><span>Rundenz&auml;hlung, Ergebnistabelle und Aufnahme gelten
+          f&uuml;r Auto&nbsp;1.</span>
+      </div>
+      <p class="muted">Was Auto&nbsp;2 <b>hat</b>: eine eigene Fahrphysik mit eigenen
+        G&auml;ngen, eigener Drehzahl, eigenem Tempo und eigenen Temperaturen. Die
+        Einstellungen aus &bdquo;Fahrgef&uuml;hl&ldquo; werden bei jedem Anschalten
+        &uuml;bernommen, damit beide Autos gleich fahren.</p>
+    </div>
+
   </section>
 
   <!-- TRACK TAB -->
@@ -8292,7 +8425,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.6.43</span></span>
+    <span class="foot-ver">v<span id="app-version">0.6.44</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine

@@ -619,6 +619,42 @@ Das ergibt zwei getrennte Funkverbindungen:
 1. Bluetooth: Handy zu seinem eigenen Auto (Steuerung).
 2. WLAN: Handy zu Handy (Rennorganisation).
 
+### Zwei Spieler auf einem Handy
+
+OmegaSim macht es anders als die Original-App: **ein** Gerät verbindet sich mit **beiden**
+Autos und bedient sie aus **einem** 45-ms-Sendetakt. Das ist kein Sparen, sondern die einzige
+Bauform, die in diesem Projekt gemessen funktioniert hat — getrennte Sendewege für zwei
+Ziele waren die Ursache des Stotterns mit echtem Controller (v0.5.8, siehe "Ein einziger
+Schreiber" im Doku-Reiter). Jedes Auto hat seine eigene Schreibsperre, ein langsamer Funkweg
+lässt also nur beim eigenen Auto einen Takt aus.
+
+Gemessen mit dem Prüfstand `OMEGA_TEST.zweiSpielerFahrtProbe`, 60 Takte Vollgas aus dem
+Stand, eigene Physikinstanz für Auto 2:
+
+| Zeit | Drehzahl | Tempo | Gang |
+|---|---|---|---|
+| 0,45 s | 1500 | 13,1 km/h | 1 |
+| 0,90 s | 3052 | 26,8 km/h | 1 |
+| 1,35 s | 4723 | 40,7 km/h | 1 |
+| 1,80 s | 6422 | 54,9 km/h | 1 |
+| 2,25 s | 8095 | 68,8 km/h | 1 |
+| 2,65 s | 5771 | 76,5 km/h | 2 |
+
+60 Takte, 60 Pakete — kein Ausfall. Die zweite Cockpit-Zeile stimmte in jedem Abtastpunkt mit
+dem Zustand überein.
+
+Was das zweite Auto **nicht** hat, hängt ausnahmslos an einem Zähler oder einer Ortung, die es
+im Programm nur einmal gibt: Tank und Schaden, Motorton, Rundenzählung und Ergebnistabelle,
+Fahrhilfe, Leitplanken-Modus, Autopilot unter Gelb, Windschatten — und die Ghosts weichen ihm
+nicht aus, weil sie seinen Ort nicht kennen. Zwei ungleiche Regelsätze wären schlimmer als
+keine; der Modus ist deshalb bewusst schmal und trägt in den Optionen den Vermerk
+"experimentell".
+
+Die Kosten der zweiten Cockpit-Zeile, gemessen an der Einpassung (`cockpitPassung`): der
+Bedarf steigt von 511 auf 597 px, und bei abgeschaltetem Modus bleibt er **unverändert** bei
+511 — die Rasterzeile entsteht erst mit der Klasse am `body`, ein verborgenes Kind hätte auch
+leer noch Zeile plus Lücke gekostet.
+
 ## Firmware-Updates
 
 Das Auto unterstützt Updates seiner eigenen Software über Bluetooth. Das nennt man "Over-the-Air-Update" oder kurz OTA-Update. Dafür wird ein Standardverfahren von Nordic Semiconductor genutzt, das bei sehr vielen Bluetooth-Geräten zum Einsatz kommt.

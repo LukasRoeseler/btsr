@@ -7,6 +7,18 @@
 
   const physEngine = new CarreraPhysicsEngine();
   let physLastTime = null;
+  // ---- DIE ZWEITE INSTANZ, fuer Spieler 2 ----------------------------------------
+  //
+  // Dieselbe Klasse, ein zweites Mal gebaut - genau wie jeder Ghost eine eigene bekommt
+  // (startGhost in 90-ghosts.js). Die Klasse ist also nicht nur mehrfach instanziierbar,
+  // sie wird es seit Langem auch. Einspielerig war allein DIESER Griff hier.
+  //
+  // Die Einstellungen werden bei jedem Umschalten uebernommen (siehe zweiSpielerSetzen):
+  // beide Autos sollen sich gleich anfuehlen, sonst ist das Rennen entschieden, bevor es
+  // losgeht. Die rund sechzig Regler im Optionentab schreiben weiterhin nur auf
+  // physEngine.config - sie zu verdoppeln waere ein zweiter Ort fuer jede Zahl.
+  const physEngine2 = new CarreraPhysicsEngine();
+  let phys2LastTime = null;
   // AN als Standard, weil die Original-App es praktisch immer an hat und ein beleuchtetes
   // Auto auf dem Tisch besser zu sehen ist.
   //
@@ -2140,6 +2152,111 @@
     trackDistance(physEngine.state.speedKmh * REAL_SCALE, dt);
     physOutSteer = out.servoAngle;
     physOutThrottle = out.motorPWM;
+  }
+
+  // ====================================================================================
+  // DIE FAHRPHYSIK VON SPIELER 2
+  // ====================================================================================
+  //
+  // ABSICHTLICH SCHMAL. physicsStep() darueber ist gewachsen, weil es alles traegt, was am
+  // Fahrerauto haengt: Tank und Schaden, den Autopiloten unter Gelb, die Drosselung abseits
+  // der Bahn, das Rumpeln im Controller, den Windschatten und die gefahrene Strecke. Jede
+  // dieser Groessen haengt an der ORTUNG des Fahrerautos (spielerOrt in 90-ghosts.js) oder
+  // an einem Zaehler, den es nur einmal gibt.
+  //
+  // Diese Funktion rechnet deshalb genau das, was "beide koennen fahren" braucht:
+  // Gaskennlinie, Fahrphysik, Anzeige. Was Spieler 2 in dieser Fassung NICHT hat, steht
+  // wortwoertlich im Hilfetext der Kachel, damit es niemand sucht:
+  //
+  //   kein Sprit und kein Schaden   sie sind globale Zaehler (70-race.js) und waeren fuer
+  //                                zwei Autos zwei Zaehler. Ungleiche Regeln waeren
+  //                                schlimmer als keine: der Modus soll fair sein.
+  //   kein Autopilot unter Gelb     er greift auf die Ortung des Fahrerautos zu
+  //   keine Abseits-Drosselung      dieselbe Ortung
+  //   kein Windschatten            dito
+  //
+  // Was er HAT: eine eigene Physikinstanz, also eigene Gaenge, eigene Drehzahl, eigenes
+  // Tempo, eigene Reifen- und Bremsentemperatur - alles, was den Wagen fahren laesst.
+  function physicsStep2() {
+    if (!physicsEnabled) { phys2LastTime = null; return; }
+    const now = performance.now();
+    const dt = phys2LastTime ? Math.min(0.25, (now - phys2LastTime) / 1000)
+                             : CONTROL_SEND_INTERVAL_MS / 1000;
+    phys2LastTime = now;
+    // Dieselbe Kennlinie und derselbe Regler wie bei Spieler 1: der Daumen soll sich auf
+    // beiden Pads gleich anfuehlen.
+    const gasKurve = gasKennlinie(Math.max(0, p2Throttle), physEngine2.config.throttleGamma);
+    const out = physEngine2.update({ steering: p2Steer, throttle: gasKurve,
+                                     brake: Math.max(0, -p2Throttle),
+                                     headlights: headlightsOn }, dt);
+    updateRaceScreen2(physEngine2.state);
+    physOut2Steer = out.servoAngle;
+    physOut2Throttle = out.motorPWM;
+  }
+
+  // Die zweite Anzeige im Cockpit: Drehzahl, Gang und Tempo von Spieler 2. Sie ist
+  // verborgen, solange der Modus aus ist - und damit aus der Hoehenrechnung des Cockpits
+  // heraus (cockpitInhaltHoehe liest grid-template-rows, ein verborgener Bereich traegt
+  // nichts bei).
+  function updateRaceScreen2(st) {
+    if (!st) return;
+    const rpm = $('race2-rpm');
+    if (rpm) rpm.textContent = Math.round(motorDrehzahl(st));
+    const kmh = $('race2-speed');
+    if (kmh) kmh.textContent = Math.round(Math.abs(st.speedKmh) * REAL_SCALE);
+    const gang = $('race2-gear');
+    if (gang) gang.textContent = gearLabel(st);
+  }
+
+  // Beim Umschalten die Einstellungen uebernehmen. Die rund sechzig Regler im Optionentab
+  // schreiben nur auf physEngine.config; sie zu verdoppeln waere ein zweiter Ort fuer jede
+  // Zahl. Also wird hier kopiert, und zwar bei JEDEM Einschalten - wer zwischendurch am
+  // Fahrgefuehl gedreht hat, bekommt es fuer beide Autos.
+  //
+  // Die Gangtabelle wird MIT kopiert, aber als eigene Objekte: derselbe Satz Zahlen, nicht
+  // dieselben Objekte. Sonst schriebe ein Schaltvorgang von Spieler 2 in die Gaenge von
+  // Spieler 1 (genau diese Falle steht bei den Ghosts schon einmal beschrieben).
+  function physEngine2Abgleichen() {
+    Object.assign(physEngine2.config, physEngine.config);
+    if (Array.isArray(physEngine.config.gears)) {
+      physEngine2.config.gears = physEngine.config.gears.map(g => Object.assign({}, g));
+    }
+  }
+
+  function zweiSpielerSetzen(an) {
+    zweiSpieler = !!an;
+    if (zweiSpieler) physEngine2Abgleichen();
+    else {
+      p2Steer = 0; p2Throttle = 0; physOut2Steer = 0; physOut2Throttle = 0;
+      // AUSSCHALTEN IST EIN HALTEBEFEHL, und zwar aus einem Grund, der beim Bauen leicht
+      // untergeht: writeToCar() schickt nur, was es bekommt. Wird der Modus WAEHREND der
+      // Fahrt abgeschaltet, hoert der Herzschlag einfach auf zu senden - und das Auto
+      // behaelt das letzte Gas und faehrt allein weiter. Genau dieser Fehler ist in diesem
+      // Projekt schon einmal passiert (Pad abgezogen, Auto fuhr weiter), deshalb geht die
+      // Rolle zurueck: setCarRole('none') schickt dabei die Null.
+      //
+      // Die Rolle ZURUECKZUNEHMEN und nicht nur stillzulegen ist ausserdem das, was man in
+      // der Garage sieht: ohne den Modus gibt es den vierten Knopf nicht, und eine Zeile
+      // mit einer Rolle, die kein Knopf anzeigt, waere ein Zustand ohne Bedienung.
+      if (typeof playerCar2 !== 'undefined' && playerCar2
+          && typeof setCarRole === 'function') {
+        setCarRole(playerCar2, 'none');
+      }
+    }
+    // EINE KLASSE AM BODY, nicht das hidden-Merkmal an der Zeile. Zwei Gruende, und der
+    // zweite ist der wichtige:
+    //   1. `hidden` und eine Regel mit `display` streiten; wer eine der beiden spaeter
+    //      anfasst, hat eine Zeile, die sich nicht mehr verbergen laesst.
+    //   2. Die Rasterfelder des Cockpits sind BENANNT (grid-template-areas, .gt3 im
+    //      Kopf). Ein zusaetzliches Feld waere auch leer noch eine Zeile samt Luecke in
+    //      cockpitInhaltHoehe() - die Einpassung wuerde im Einzelspiel rund 9 px Platz
+    //      verschenken. Mit der Klasse gibt es die Zeile nur, wenn es sie braucht.
+    document.body.classList.toggle('zwei-spieler', zweiSpieler);
+    if (typeof renderGarage === 'function') renderGarage();
+    if (typeof zweiSpielerKachelZeichnen === 'function') zweiSpielerKachelZeichnen();
+    // Die Hoehe des Cockpits aendert sich mit der neuen Zeile, im Vollbild also auch der
+    // Skalierungsfaktor. Ohne diesen Ruf steht die Zeile im Vollbild unter dem Rand.
+    cockpitPassung();
   }
 
   // Hier stand die Lenkung ueber den Neigungssensor des Telefons. Sie ist entfernt: mit

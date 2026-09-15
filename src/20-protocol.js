@@ -292,6 +292,9 @@
   // Datei, die ihn braucht, kann das nicht passieren.
   let ghostQuerTest = 0;
   let physOutSteer = 0, physOutThrottle = 0;
+  // Und dasselbe Paar fuer Spieler 2. Es steht neben dem ersten, weil es dieselbe Rolle
+  // hat: der geformte Ausgang der Physik, den der Herzschlag verschickt.
+  let physOut2Steer = 0, physOut2Throttle = 0;
 
   const CONTROL_SEND_INTERVAL_MS = 45; // matches the real app's observed command cadence
 
@@ -352,6 +355,48 @@
     let throttle = physicsEnabled ? physOutThrottle : throttleY;
     if (driftModus) steer = driftGegenlenken(steer);
     sendControlValue(steer, throttle);
+    spielerZweiSenden();
+  }
+
+  // ---- SPIELER 2 FAEHRT AUS DEM SELBEN HERZSCHLAG ------------------------------------
+  //
+  // UND DAS IST KEINE ORDNUNGSFRAGE. Vor v0.5.8 hatte das Fahrerauto einen eigenen
+  // Sendeweg, und das Ergebnis war das gemeldete Stottern mit echtem Controller: zwei
+  // Quellen schrieben ungetaktet in dieselbe BLE-Kennung, Pakete ueberholten sich, und der
+  // Wagen ruckelte. Ein eigener Takt fuer Spieler 2 waere genau derselbe Fehler noch
+  // einmal - nur diesmal mit zwei Autos, bei denen niemand sagen koennte, welches der
+  // beiden stottert.
+  //
+  // Zwei Autos, EIN Takt, zwei Kennungen: die Reihenfolge im Takt ist fest (erst 1, dann
+  // 2), und jedes Auto hat sein eigenes writeInFlight in writeToCar(). Damit kann ein
+  // langsamer Funkweg das andere Auto nicht aufhalten - er laesst nur beim eigenen Auto
+  // einen Takt aus, und das ist genau das Verhalten, das die Ghosts seit einem Jahr haben.
+  //
+  // NICHT ueber sendControlValue(): die Funktion ist der Weg des FAHRERAUTOS und tut auf
+  // dem Weg noch sechs Dinge, die es nur einmal gibt - Makro mitschneiden, Spritverbrauch
+  // zaehlen, den Motorton nachfuehren, die Hoechstgeschwindigkeit deckeln, die
+  // Batteriekompensation und die Querlage fuer die Ghosts. Jedes davon fuer zwei Autos
+  // hiesse: zwei Makros, zwei Tanks, zwei Toene. Spieler 2 nimmt deshalb writeToCar() -
+  // denselben Weg, den jeder Ghost nimmt.
+  //
+  // WAS ER DAMIT NICHT HAT, und es gehoert ausgesprochen statt versteckt: keinen
+  // Motorton (es gibt einen Tongenerator), keinen Spritverbrauch, keinen Makro-
+  // Mitschnitt und keinen Hoechstgeschwindigkeitsregler. Das steht so im Hilfetext der
+  // Kachel.
+  function spielerZweiSenden() {
+    if (!zweiSpieler) return;
+    if (typeof playerCar2 === 'undefined' || !playerCar2) return;
+    physicsStep2();
+    let steer = physicsEnabled ? physOut2Steer : p2Steer;
+    const throttle = physicsEnabled ? physOut2Throttle : p2Throttle;
+    if (driftModus) steer = driftGegenlenken(steer);
+    // KEIN VORAUSBLICK, und das ist eine Entscheidung und kein Vergessen. Die Bytes 16-18
+    // kommen aus ghostLookahead() am gerechneten ORT des Autos, und den fuehrt fuer das
+    // Fahrerauto spielerOrtTick() (90-ghosts.js) - eine Buchfuehrung, die es genau einmal
+    // gibt und die an playerCar haengt. Ohne sie hat Auto 2 keine Fahrhilfe und keinen
+    // Leitplanken-Modus; es faehrt, was der Daumen sagt. Steht so im Hilfetext.
+    writeToCar(playerCar2, steer, throttle,
+               trackModeBit() | (headlightsOn ? LIGHT_HEAD : 0), null);
   }
   setInterval(controlHeartbeat, CONTROL_SEND_INTERVAL_MS);
 
