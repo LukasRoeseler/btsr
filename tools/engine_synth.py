@@ -509,6 +509,66 @@ CARS = {
         'clatter': 0.24, 'clatter_hz': 2000.0, 'drive': 3.5,
         'scatter_t': 0.022, 'scatter_g': 0.075, 'crackle': 0.60,
     },
+    # ---- NOCH EINMAL DRECKIGER, UND DIESMAL MIT EINEM NEUEN MECHANISMUS -------------
+    #
+    # BESTELLT: "Baue noch eine dreckige Variante vom Porsche (dreckig 2)." Im Menue
+    # direkt HINTER der ersten dreckigen Variante, wie bestellt - derselbe Grund wie
+    # dort: man vergleicht mit dem direkten Nachbarn, nicht mit einem Eintrag zwanzig
+    # Zeilen weiter unten.
+    #
+    # ---- WARUM DIE REGLER ALLEIN NICHT MEHR VIEL HERGEBEN --------------------------
+    #
+    # Ausgezaehlt ueber alle 27 Motoren liegen clatter, drive, scatter_t und scatter_g
+    # der ERSTEN dreckigen Fassung schon nahe an ihrer gemessenen Obergrenze - sie noch
+    # weiter aufzudrehen waere keine zweite Stufe mehr, sondern derselbe Regler am
+    # Anschlag. "Dreckiger" braucht hier also eine ZWEITE ART Unordnung, keine groessere
+    # Zahl.
+    #
+    # ---- ZWEI NEUE, OPTIONALE REGLER IN synth_loop() -------------------------------
+    #
+    # gain_wobble   ersetzt den bisher FEST verdrahteten Wert 0,02 fuer die
+    #               Zuendungleichheit von Takt zu Takt (oben auf dem festen
+    #               Zylindercharakter). Alle 27 bisherigen Motoren bleiben unangetastet,
+    #               weil 0,02 ihr Vorgabewert bleibt - dieser Motor dreht ihn auf 0,05,
+    #               mehr als doppelt so viel Streuung im Verbrennungsdruck.
+    #
+    # clatter_variiert  war bisher gar nicht vorhanden: JEDER Ventiltrieb-Klick im
+    #               ganzen Loop war derselbe abgespielte Abdruck (metal_tick() einmal
+    #               gerufen, nur unterschiedlich laut gestempelt) - bei einem Motor mit
+    #               vielen Klicks im Loop wiederholt sich also derselbe Klang. Auf True
+    #               gestellt baut jedes einzelne Klicken seinen EIGENEN metal_tick() mit
+    #               neuer Zufallsphase je Partialton. Dieselbe Funktion, nur oefter
+    #               gerufen - keine neue Klangquelle, keine Lizenzfrage.
+    #
+    # Beide Regler bleiben fuer die anderen 27 Motoren auf ihrer Vorgabe (0,02 bzw.
+    # False) und aendern an deren Klang nichts.
+    #
+    # ---- UND DIE ZAHLEN, MODERAT WEITERGEDREHT ------------------------------------
+    #
+    #     Regler        Bereich        dreckig    dreckig 2   warum
+    #     clatter       0,07 - 0,26      0,24        0,25      kaum noch Luft nach oben
+    #     clatter_hz    1800 - 5200      2000        1850      naeher an der Untergrenze
+    #     drive          1,8 - 3,6        3,5         3,6      an der Obergrenze
+    #     scatter_t    0,002 - 0,03      0,022       0,027     naeher an der Obergrenze
+    #     scatter_g     0,02 - 0,08      0,075       0,079     naeher an der Obergrenze
+    #     bright        0,34 - 0,76       0,52        0,42      weiter herunter
+    #     res_q          3,2 - 9,0         4,8         3,8      weiter herunter
+    #     crackle       0,12 - 0,75       0,60        0,68      weiter herauf
+    #
+    # NICHT ANGETASTET, aus demselben Grund wie bei der ersten dreckigen Fassung: noise
+    # bleibt bei 0,17 - das Zischen der sechs Einzeldrosseln ist ein Merkmal des Motors,
+    # kein Schmutz.
+    'p992gt3r_dreck2': {
+        'label': 'Porsche 911 GT3 R, dreckig 2 (4.2 Boxer-6, ungleichmaessig)',
+        'banks': banks_from_order([1, 6, 2, 4, 3, 5], 6, 'half'), 'cylinders': 6,
+        'rpms': {'idle': 1200, 'mid': 5500, 'high': 8800},
+        'primary_in': 20.5, 'res_q': 3.8, 'partials': 6, 'ir_ms': 38.0,
+        'pulse_ms': 2.4, 'bright': 0.42,
+        'noise': 0.17, 'noise_hz': 2900.0,
+        'clatter': 0.25, 'clatter_hz': 1850.0, 'drive': 3.6,
+        'scatter_t': 0.027, 'scatter_g': 0.079, 'crackle': 0.68,
+        'gain_wobble': 0.05, 'clatter_variiert': True,
+    },
     'huracan': {
         'label': 'Huracan GT3 EVO2 / R8 LMS (5.2 V10, Split-Pin)',
         'banks': banks_from_order([1, 6, 5, 10, 2, 7, 3, 8, 4, 9], 10, 'half'),
@@ -1081,7 +1141,12 @@ def synth_loop(cfg, rpm, seed, load=1.0):
                 # by the ear as character) and a much smaller cycle-to-cycle wobble.
                 t += (dt_cyl[j] + rng.normal(0, 0.0015)) * cycle_s
                 i = int(round(t * SR)) % n
-                gain = g_cyl[j] * (1.0 + rng.normal(0, 0.02)) * (0.30 + 0.70 * load)
+                # 'gain_wobble': wie ungleich der Verbrennungsdruck von Takt zu Takt ist,
+                # OBEN AUF dem festen Zylindercharakter (g_cyl). 0,02 ist der Wert, den
+                # jeder Motor bisher fest hatte - ein optionaler Regler, damit ein einzelner
+                # Motor unruhiger klingen kann, ohne die anderen 27 anzufassen.
+                gain = g_cyl[j] * (1.0 + rng.normal(0, cfg.get('gain_wobble', 0.02))) \
+                    * (0.30 + 0.70 * load)
                 idx = (np.arange(pulse_len) + i) % n
                 np.add.at(train, idx, pulse * gain)
         out += circ_conv(train, exhaust_ir(n, cfg, rng))
@@ -1090,7 +1155,14 @@ def synth_loop(cfg, rpm, seed, load=1.0):
     # This is the mechanical layer that was missing entirely, and its absence is a large
     # part of why the engines sounded like an oscillator rather than machinery.
     if cfg.get('clatter', 0) > 0:
-        tick = metal_tick(max(8, int(0.010 * SR)), cfg['clatter_hz'], rng)
+        # 'clatter_variiert': jeder Klick war bisher DERSELBE Abdruck, nur unterschiedlich
+        # laut gestempelt - ein Motor mit vielen Klicks im Loop wiederholt also denselben
+        # Klang. False (Vorgabe, alle bisherigen 27 Motoren) haelt genau dieses Verhalten;
+        # True baut fuer JEDES Ereignis einen frischen metal_tick() mit neuer Zufallsphase
+        # je Partialton - dieselbe Funktion, oefter gerufen, keine neue Klangquelle.
+        variiert = cfg.get('clatter_variiert', False)
+        tick_len = max(8, int(0.010 * SR))
+        tick = None if variiert else metal_tick(tick_len, cfg['clatter_hz'], rng)
         clat = np.zeros(n, dtype=np.float32)
         per_cycle = max(2, cfg['cylinders'] // 2)
         for c in range(cycles):
@@ -1098,8 +1170,9 @@ def synth_loop(cfg, rpm, seed, load=1.0):
                 t = (c + (k + 0.35) / per_cycle) * cycle_s
                 t += rng.normal(0, 0.01) * cycle_s
                 i = int(round(t * SR)) % n
-                idx = (np.arange(len(tick)) + i) % n
-                np.add.at(clat, idx, tick * (0.7 + 0.6 * rng.random()))
+                this_tick = metal_tick(tick_len, cfg['clatter_hz'], rng) if variiert else tick
+                idx = (np.arange(len(this_tick)) + i) % n
+                np.add.at(clat, idx, this_tick * (0.7 + 0.6 * rng.random()))
         # Off the power the mechanism is a LARGER share of what is left, because the
         # combustion it normally hides behind has gone quiet.
         out += cfg['clatter'] * (1.0 + 1.6 * (1.0 - load)) * clat / (np.max(np.abs(clat)) + 1e-9)

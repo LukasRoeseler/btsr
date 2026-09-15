@@ -1289,5 +1289,51 @@
   },
   "idleRpm": 1300,
   "limiterRpm": 7200
+ },
+ "p992gt3r_dreck2": {
+  "label": "Porsche 911 GT3 R, dreckig 2 (4.2 Boxer-6, ungleichmaessig)",
+  "cylinders": 6,
+  "source": "vollst\u00e4ndig synthetisiert (Modell nach engine-sim, MIT)",
+  "crackle": 0.68,
+  "turbo": false,
+  "loops": {
+   "idle": {
+    "file": "p992gt3r_dreck2_idle.ogg",
+    "baseRpm": 1200,
+    "firingHz": 60.0,
+    "seconds": 2.0,
+    "load": 1.0
+   },
+   "low": {
+    "file": "p992gt3r_dreck2_low.ogg",
+    "baseRpm": 2569,
+    "firingHz": 128.5,
+    "seconds": 2.0086,
+    "load": 1.0
+   },
+   "mid": {
+    "file": "p992gt3r_dreck2_mid.ogg",
+    "baseRpm": 5500,
+    "firingHz": 275.0,
+    "seconds": 2.0073,
+    "load": 1.0
+   },
+   "high": {
+    "file": "p992gt3r_dreck2_high.ogg",
+    "baseRpm": 8800,
+    "firingHz": 440.0,
+    "seconds": 2.0045,
+    "load": 1.0
+   },
+   "over": {
+    "file": "p992gt3r_dreck2_over.ogg",
+    "baseRpm": 5500,
+    "firingHz": 275.0,
+    "seconds": 2.0073,
+    "load": 0.0
+   }
+  },
+  "idleRpm": 1200,
+  "limiterRpm": 8800
  }
 }

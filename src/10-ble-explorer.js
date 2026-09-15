@@ -959,6 +959,8 @@
       "Light on + bit 6 (0x40)",
     "BMW M4 GT3 dreckig: mehr Ventiltrieb, tiefer":
       "BMW M4 GT3 dirty: more valvetrain, lower",
+    "Porsche 911 GT3 R dreckig 2: ungleichmäßiger":
+      "Porsche 911 GT3 R dirty 2: more uneven",
     "Stoppen": "Stop",
     "Strecke aus Teilen bauen, drehen, als Code weitergeben. Alle elf Teiletypen der Original-App sind dabei, auch die Engstelle.":
       "Build a track from pieces, rotate it, pass it on as a code. All eleven piece types from the original app are included, the narrow section too.",
@@ -1629,8 +1631,8 @@
       "To the testers there, for reports from real races that no simulation provides.",
     "Woher die Klänge kommen":
       "Where the sounds come from",
-    "Der allergrößte Teil der Klänge ist gerechnet und nicht aufgenommen: alle siebenundzwanzig Motoren mit ihren 142 Schleifen, dazu Bremsen- und Reifenquietschen, die Crash-Varianten, Schlagschrauber, Tankgeräusch, Karosseriereparatur und der Motorstart. Dort wird nichts abgespielt, sondern aus Zylinderzahl, Zündfolge und Krümmerlänge erzeugt.":
-      "The vast majority of the sounds are computed, not recorded: all twenty-seven engines with their 142 loops, plus brake and tyre squeal, the crash variants, the impact wrench, the refuelling sound, the bodywork repair and the engine start. Nothing is played back there; it is generated from cylinder count, firing order and header length.",
+    "Der allergrößte Teil der Klänge ist gerechnet und nicht aufgenommen: alle achtundzwanzig Motoren mit ihren 147 Schleifen, dazu Bremsen- und Reifenquietschen, die Crash-Varianten, Schlagschrauber, Tankgeräusch, Karosseriereparatur und der Motorstart. Dort wird nichts abgespielt, sondern aus Zylinderzahl, Zündfolge und Krümmerlänge erzeugt.":
+      "The vast majority of the sounds are computed, not recorded: all twenty-eight engines with their 147 loops, plus brake and tyre squeal, the crash variants, the impact wrench, the refuelling sound, the bodywork repair and the engine start. Nothing is played back there; it is generated from cylinder count, firing order and header length.",
     "Hupen für die Lichthupe – sechs Aufnahmen, in dieser Reihenfolge Autohupe, Schiffshupe, Esel, Ziege und zwei Furztöne. Der letzte stammt von freesound community über Pixabay.":
       "Horns for the headlight flash – six recordings, in this order car horn, ship horn, donkey, goat and two fart sounds. The last one is from freesound community via Pixabay.",
     "Regen und Donner.":
