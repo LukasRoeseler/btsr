@@ -2101,11 +2101,55 @@
         if (rows !== rows0) schlecht.push(liste[i] + ': Rasterzeilen aendern sich');
         if (Math.abs(f - f0) > 1e-9) schlecht.push(liste[i] + ': Faktor ' + f + ' statt ' + f0);
       }
-      // Und er laeuft im Kreis: nach so vielen Schritten wie Schirme ist man wieder da.
-      OMEGA_TEST.schirmZu(liste[0]);
-      for (let i = 0; i < liste.length; i++) OMEGA_TEST.schirmStep(+1);
-      if (OMEGA_TEST.schirmIst() !== liste[0]) schlecht.push('laeuft nicht im Kreis');
-      teile.push(liste.length + ' Schirme, Umlauf ok');
+      // ---- UND ER LAEUFT IM KREIS ------------------------------------------------
+      //
+      // Nach so vielen Schritten, wie es BLAETTERBARE Schirme gibt, ist man wieder da.
+      // Hier stand `liste.length`, also die Gesamtzahl, und das war richtig, solange jeder
+      // Schirm blaetterbar war. Seit es den Schirm von Auto 2 gibt, stimmt es nicht mehr:
+      // er wird uebersprungen, solange der Zwei-Spieler-Modus aus ist, und vier Schritte
+      // landen dann einen Schirm daneben.
+      //
+      // Aufgefallen ist es erst, als der Modus bei einem Prueflauf AUS war - vorher stand
+      // er in diesem Browserprofil auf "an", und der Test hat monatelang nur die eine
+      // Lage geprueft. Deshalb werden jetzt BEIDE gefahren.
+      const umlauf = (wieViele, wo) => {
+        OMEGA_TEST.schirmZu(liste[0]);
+        for (let i = 0; i < wieViele; i++) OMEGA_TEST.schirmStep(+1);
+        if (OMEGA_TEST.schirmIst() !== liste[0]) {
+          schlecht.push('laeuft nicht im Kreis (' + wo + ', ' + wieViele + ' Schritte, '
+                        + 'gelandet auf ' + OMEGA_TEST.schirmIst() + ')');
+          return false;
+        }
+        return true;
+      };
+      const merkZwei = OMEGA_TEST.zweiSpielerLage ? OMEGA_TEST.zweiSpielerLage() : null;
+      const blaetter = () => (OMEGA_TEST.schirmListeBlaetterbar
+        ? OMEGA_TEST.schirmListeBlaetterbar() : liste);
+      if (OMEGA_TEST.zweiSpielerStellen) {
+        OMEGA_TEST.zweiSpielerStellen(false);
+        const b1 = blaetter();
+        umlauf(b1.length, 'ein Spieler');
+        teile.push('ein Spieler: ' + b1.length + ' blaetterbar');
+        OMEGA_TEST.zweiSpielerStellen(true);
+        const b2 = blaetter();
+        umlauf(b2.length, 'zwei Spieler');
+        teile.push('zwei Spieler: ' + b2.length + ' blaetterbar');
+        // Und der gesperrte Schirm darf im Einzelspiel WIRKLICH nicht auftauchen.
+        OMEGA_TEST.zweiSpielerStellen(false);
+        OMEGA_TEST.schirmZu(liste[0]);
+        const gesehen = [];
+        for (let i = 0; i < liste.length + 2; i++) {
+          OMEGA_TEST.schirmStep(+1);
+          gesehen.push(OMEGA_TEST.schirmIst());
+        }
+        if (gesehen.indexOf('auto2') >= 0) {
+          schlecht.push('auto2 im Einzelspiel erreichbar: ' + gesehen.join('>'));
+        }
+        OMEGA_TEST.zweiSpielerStellen(!!merkZwei);
+      } else {
+        umlauf(liste.length, 'alle');
+        teile.push(liste.length + ' Schirme, Umlauf ok');
+      }
     } finally {
       OMEGA_TEST.schirmZu(merk);
     }
@@ -9594,6 +9638,137 @@
   // Die Liste ist GEPFLEGT, und das ist hier richtig: sie IST die Zusicherung. Sie stammt
   // aus einer Suche ueber alle Kaestchen, deren Listener "X = e.target.checked" schreibt.
   // Ein neuer Schalter gehoert hinein.
+  // ---- Der Einzelspielbetrieb rechnet reproduzierbar -------------------------------
+  //
+  // WOZU DIESER TEST DA IST. Bestellt war: "Wichtig ist vor allem, dass ein Auto mit
+  // Ghosts weiterhin funktioniert wie bisher." Nachgewiesen wurde das durch einen
+  // Vergleich mit dem Stand VOR dem Zwei-Spieler-Umbau (v0.6.43, als Datei neben der
+  // laufenden Fassung ausgeliefert): bei gesetztem Zufallsgenerator kamen aus beiden
+  // Staenden Zahl fuer Zahl dieselben Werte.
+  //
+  //   Saat        Wuerfe  Beruehrungen  Ueberholt  Rundenspanne  beste    mittlere
+  //   20260915    81      13            15         0,304         11,07 s  12,33 s
+  //   4711        72      15             8         0,480         11,34 s  12,29 s
+  //   99991       79      11             9         0,255         11,56 s  12,13 s
+  //
+  // Identisch auf beiden Staenden, und bei eingeschaltetem Modus (ohne zugeteiltes
+  // Auto 2) ebenfalls. Die ZAHL DER WUERFE ist dabei die scharfste Aussage: haette der
+  // Umbau irgendwo einen zusaetzlichen Math.random()-Aufruf eingebaut, waere die ganze
+  // Folge verschoben und jede Zahl danach anders.
+  //
+  // Der Vergleichsstand ist naturgemaess nicht dauerhaft pruefbar - sein Quelltext ist
+  // weg. Was DIESER Test festhaelt, ist die Eigenschaft, auf der der Vergleich beruht:
+  // dass die Ghost-Rechnung bei gesetztem Generator reproduzierbar ist. Ein
+  // versehentlicher Nichtdeterminismus - eine echte Uhr im Rechenweg, eine Reihenfolge
+  // aus einem Objekt, ein zweiter Generator - macht sie kaputt, und dann ist der naechste
+  // Vergleich dieser Art nicht mehr moeglich.
+  //
+  // ABSICHTLICH KEIN GOLDEN MASTER. Die Zahlen oben stehen als Beleg im Kommentar und
+  // nicht als Zusicherung im Code: sie gegen feste Werte zu pruefen hiesse, dass jede
+  // gewollte Aenderung am Ghost-Verhalten diesen Test rot macht - und ein Test, der bei
+  // gewollten Aenderungen rot wird, wird abgeschaltet.
+  stAdd('Ghosts: bei gesetztem Zufall rechnet die Simulation reproduzierbar', async () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.ghostSweep) {
+      return { skip: true, mass: 'ghostSweep nicht vorhanden' };
+    }
+    const echt = Math.random;
+    const lauf = async (saat) => {
+      let x = saat >>> 0, n = 0;
+      Math.random = () => {
+        n++;
+        x ^= x << 13; x >>>= 0;
+        x ^= x >> 17;
+        x ^= x << 5; x >>>= 0;
+        return x / 4294967296;
+      };
+      const r = await OMEGA_TEST.ghostSweep([{ name: 'det' }],
+        { sekunden: 20, laeufe: 1, autos: 3, aufwaermSekunden: 5 });
+      const m = r.varianten[0].einzeln[0];
+      return { wuerfe: n, k: m.kontakte, u: m.ueberholt,
+               rs: m.rundeSpanneAutos, mr: m.mittlereRundeS, br: m.besteRundeS };
+    };
+    try {
+      const a = await lauf(20260915);
+      const b = await lauf(20260915);
+      // Und eine ANDERE Saat muss etwas anderes ergeben - sonst prueft der Test nur, dass
+      // die Simulation gar nicht auf den Generator hoert.
+      const c = await lauf(4711);
+      const gleich = JSON.stringify(a) === JSON.stringify(b);
+      const anders = JSON.stringify(a) !== JSON.stringify(c);
+      const maengel = [];
+      if (!gleich) {
+        maengel.push('zweimal dieselbe Saat, verschiedene Zahlen: '
+                     + JSON.stringify(a) + ' gegen ' + JSON.stringify(b));
+      }
+      if (!anders) maengel.push('andere Saat, dieselben Zahlen - der Wuerfel wirkt nicht');
+      return { ok: !maengel.length,
+               mass: a.wuerfe + ' Wuerfe, ' + a.k + ' Beruehrungen, ' + a.u
+                   + ' Ueberholmanoever, Runde ' + a.mr + ' s'
+                   + (gleich ? ' | zweiter Lauf gleich' : '')
+                   + (anders ? ' | andere Saat anders' : '')
+                   + (maengel.length ? ' | ' + maengel.join('; ') : '') };
+    } finally { Math.random = echt; }
+  });
+
+  // ---- Die Sicherung sagt, was im Browser liegt ------------------------------------
+  //
+  // BESTELLT: "Zeige bei der Sicherung noch an, ob irgendetwas geladen ist, sodass ich es
+  // weiss, bevor dann das Auto wieder als generisches weisses 'alpha' verbunden wird."
+  //
+  // Die Aussage, die wirklich zaehlt, ist die ueber die AUTOS: carAssign() holt Name und
+  // Farbe aus chc.cars.v1 anhand der Geraete-Kennung. Liegt dort nichts, bekommt das
+  // naechste Auto den naechsten freien Namen und die naechste freie Farbe - und das laesst
+  // sich nach dem Verbinden nur von Hand richten.
+  //
+  // Drei Lagen werden geprueft, und die dritte ist die, an der man sich vertut:
+  //   1. Bestand mit Autos    -> Zahl, Namen und Farbpunkte stehen da
+  //   2. leere Ablage         -> die Zeile sagt AUSDRUECKLICH "Alpha in Weiss", statt nur
+  //                              nichts anzuzeigen. Eine leere Zeile beantwortet die Frage
+  //                              nicht, sie verschweigt sie.
+  //   3. Autos OHNE Namen     -> dann steht die FARBE als Kennung. Ein Auto, das man nie
+  //                              umbenannt hat, ist gemerkt und soll nicht wie "nichts
+  //                              gemerkt" aussehen.
+  stAdd('Sicherung: die Zeile sagt, was im Browser liegt', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.sicherungLageProbe) {
+      return { skip: true, mass: 'sicherungLageProbe nicht vorhanden' };
+    }
+    const mit = OMEGA_TEST.sicherungLageProbe({ autos: {
+      'p1': { color: 'rot', alias: 'Renner' },
+      'p2': { color: 'blau', alias: 'Zweiter' },
+    } });
+    if (mit.keinSpeicher) return { skip: true, mass: 'localStorage nicht verfuegbar' };
+    const ohne = OMEGA_TEST.sicherungLageProbe({ autos: null });
+    const namenlos = OMEGA_TEST.sicherungLageProbe({ autos: {
+      'p9': { color: 'weiss', alias: '' },
+    } });
+    const maengel = [];
+    // 1.
+    if (mit.lage.autos.length !== 2) maengel.push('mit: ' + mit.lage.autos.length + ' Autos');
+    if (!/Renner/.test(mit.text) || !/Zweiter/.test(mit.text)) {
+      maengel.push('mit: Namen fehlen');
+    }
+    if (mit.farbpunkte !== 2) maengel.push('mit: ' + mit.farbpunkte + ' Farbpunkte statt 2');
+    if (mit.leer) maengel.push('mit: als leer gekennzeichnet');
+    // 2. Die leere Lage muss die FOLGE nennen, nicht nur schweigen.
+    if (!/Alpha/.test(ohne.text)) maengel.push('ohne: "Alpha" nicht genannt');
+    // Und sie muss sagen, dass keine Autos gemerkt sind - auch wenn sonst etwas liegt
+    // (Einstellungen zaehlen nicht als Auto).
+    if (!/[Kk]eine? Auto/.test(ohne.text)) maengel.push('ohne: sagt nicht "keine Autos"');
+    if (ohne.lage.autos.length !== 0) maengel.push('ohne: ' + ohne.lage.autos.length + ' Autos');
+    // 3.
+    if (namenlos.lage.autos.length !== 1) {
+      maengel.push('namenlos: ' + namenlos.lage.autos.length + ' Autos');
+    }
+    if (namenlos.autoNamen.length !== 1 || !namenlos.autoNamen[0]) {
+      maengel.push('namenlos: keine Kennung, sondern ' + JSON.stringify(namenlos.autoNamen));
+    }
+    return { ok: !maengel.length,
+             mass: 'mit 2 Autos: ' + JSON.stringify(mit.autoNamen)
+                 + ' | leer: ' + (/Alpha/.test(ohne.text) ? 'nennt Alpha' : 'schweigt')
+                 + ' | ohne Namen: ' + JSON.stringify(namenlos.autoNamen)
+                 + (maengel.length ? ' | ' + maengel.join(', ') : '') };
+  });
+
   // ---- Der Cockpit-Schirm von Auto 2 -----------------------------------------------
   //
   // So bestellt: "Drehzahl und Geschwindigkeit fuer beide Autos; alle weiteren

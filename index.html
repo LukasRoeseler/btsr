@@ -2796,6 +2796,24 @@
   body.track-fs .tp-space { right: 14px; bottom: 68px; }
   .gar-row.is-player { border-color: var(--good); }
   .gar-row.is-zwei { border-color: #3d8bff; }
+  /* Die Bestandszeile der Sicherung. Ein Kasten mit linker Kante, wie die Hinweise
+     darunter - sie ist eine AUSSAGE ueber den Zustand und kein Bedienelement, und die
+     Kante sagt das, ohne einen zweiten Knopf zu erfinden.
+
+     Die Kante ist gruen, wenn etwas liegt, und gedeckt, wenn nichts liegt: "nichts
+     gespeichert" ist keine Warnung - beim ersten Start ist es der richtige Zustand. */
+  .sich-lage { font-size: 12px; line-height: 1.5; color: var(--text);
+    background: var(--panel-2); border-left: 3px solid var(--good);
+    border-radius: 0 7px 7px 0; padding: 8px 11px; margin-bottom: 10px; }
+  .sich-lage.leer { border-left-color: var(--border); color: var(--muted); }
+  .sich-lage b { color: var(--text); }
+  .sich-lage .sich-punkte { display: flex; flex-wrap: wrap; gap: 4px 12px;
+    margin-top: 5px; }
+  .sich-lage .sich-punkt { white-space: nowrap; }
+  /* Die Farbpunkte der gemerkten Autos, damit "weiss" nicht nur ein Wort ist. */
+  .sich-lage .sich-auto { display: inline-flex; align-items: center; gap: 5px; }
+  .sich-lage .sich-farbe { width: 9px; height: 9px; border-radius: 50%;
+    border: 1px solid rgba(255,255,255,.35); flex: none; }
   .gar-row.is-ghost { border-color: #7a6bd0; }
   .gar-id { font-size: 11px; color: var(--muted); font-family: monospace; }
   /* Ein Segmentschalter statt drei einzelner Knoepfe: die drei Rollen schliessen sich
@@ -6213,6 +6231,21 @@
         Rundenzeit-Historie, Motorwerkstatt, Aufnahmen und die Tastenbelegung des
         Gamepads.
       </p>
+      <!-- ---- WAS GERADE IM BROWSER LIEGT -------------------------------------------
+           BESTELLT: "Zeige bei der Sicherung noch an, ob irgendetwas geladen ist, sodass
+           ich es weiss, bevor dann das Auto wieder als generisches weisses 'alpha'
+           verbunden wird."
+
+           Der Kern der Meldung sind die gemerkten AUTOS: carAssign() holt Name und Farbe
+           aus chc.cars.v1 anhand der Geraete-Kennung. Liegt dort nichts, bekommt das
+           naechste Auto den naechsten freien Namen und die naechste freie Farbe - und
+           genau das ist der Moment, den man VORHER wissen will, weil er sich nach dem
+           Verbinden nur noch von Hand richten laesst.
+
+           Die Zeile steht VOR den Knoepfen und nicht darunter: sie ist die Lage, die
+           Knoepfe sind die Handlung. Und sie steht in der GARAGE, also dort, wo man
+           verbindet. -->
+      <div class="sich-lage" id="sich-lage" data-i18n-skip>&nbsp;</div>
       <div class="row" style="gap:8px; flex-wrap:wrap">
         <button class="primary" id="sich-export">Sicherung speichern</button>
         <button id="sich-import">Sicherung laden</button>
@@ -8569,7 +8602,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.6.51</span></span>
+    <span class="foot-ver">v<span id="app-version">0.6.52</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -28006,6 +28039,10 @@
     const all = carStore();
     all[String(car.device.id)] = { color: car.colorId, alias: car.alias || '' };
     try { localStorage.setItem(CAR_STORE, JSON.stringify(all)); } catch (e) { /* privat */ }
+    // Die Bestandszeile der Sicherung nennt die gemerkten Autos - sie muss also mitgehen,
+    // sobald hier eines dazukommt oder seinen Namen aendert. Defensiv gerufen, weil
+    // 98b-sicherung.js SPAETER gebaut wird: zur Laufzeit ist die Funktion da.
+    if (typeof lageZeichnen === 'function') lageZeichnen();
   }
 
   // Farbe fuer ein neu verbundenes Auto. Gemerktes hat Vorrang, sonst die naechste noch
@@ -36358,6 +36395,49 @@
       return this.schadenZweiLesen();
     },
 
+    // ---- SAGT DIE SICHERUNG, WAS IM BROWSER LIEGT? -----------------------------------
+    //
+    // BESTELLT: "Zeige bei der Sicherung noch an, ob irgendetwas geladen ist, sodass ich es
+    // weiss, bevor dann das Auto wieder als generisches weisses 'alpha' verbunden wird."
+    //
+    // Der Prueflauf setzt einen Bestand in die Ablage, laesst zeichnen, liest die Zeile und
+    // legt den Bestand zurueck. DIE ABLAGE WIRD WIRKLICH ANGEFASST, und das ist der Grund
+    // fuer das ausfuehrliche finally: eine Messung, die dem Nutzer seine gemerkten Autos
+    // wegnimmt, waere schlimmer als keine Messung.
+    sicherungLageProbe(o) {
+      const opt = o || {};
+      const schluessel = 'chc.cars.v1';
+      let merk = null, hatte = false;
+      try { merk = localStorage.getItem(schluessel); hatte = merk !== null; }
+      catch (e) { return { keinSpeicher: true }; }
+      try {
+        if (opt.autos === null) {
+          try { localStorage.removeItem(schluessel); } catch (e) { /* privat */ }
+        } else if (opt.autos) {
+          try { localStorage.setItem(schluessel, JSON.stringify(opt.autos)); }
+          catch (e) { /* privat */ }
+        }
+        const l = lageZeichnen();
+        const el = $('sich-lage');
+        return {
+          lage: l,
+          leer: el ? el.classList.contains('leer') : null,
+          text: el ? el.textContent.replace(/\s+/g, ' ').trim() : null,
+          // Die Farbpunkte: sie kommen aus derselben Tabelle wie carAssign(), damit die
+          // Zeile nicht eine andere Farbe zeigt als das Auto nachher hat.
+          farbpunkte: el ? el.querySelectorAll('.sich-farbe').length : 0,
+          autoNamen: el ? Array.from(el.querySelectorAll('.sich-auto'))
+            .map((x) => x.textContent.trim()) : [],
+        };
+      } finally {
+        try {
+          if (hatte) localStorage.setItem(schluessel, merk);
+          else localStorage.removeItem(schluessel);
+        } catch (e) { /* privat */ }
+        lageZeichnen();
+      }
+    },
+
     // ---- DER SCHIRM VON AUTO 2: blaetterbar, und zeigt er etwas? ---------------------
     //
     // Zwei Dinge, die auseinanderfallen koennen: die REGISTRY (ist der Schirm erreichbar,
@@ -37042,6 +37122,13 @@
     // Tastendruck neu messen - und beide Schirme haetten verschiedene Faktoren, das Cockpit
     // wuerde also beim Blaettern seine Groesse aendern.
     schirmListe() { return COCKPIT_SCREENS.map((s) => s.id); },
+    // Und welche davon gerade BLAETTERBAR sind. Seit es den Schirm von Auto 2 gibt, sind
+    // das nicht mehr zwangslaeufig alle: er wird uebersprungen, solange der
+    // Zwei-Spieler-Modus aus ist. Ein Prueflauf, der den Umlauf mit der Gesamtzahl
+    // nachrechnet, landet dann einen Schirm daneben - genau das ist passiert.
+    schirmListeBlaetterbar() {
+      return COCKPIT_SCREENS.filter((s) => cockpitScreenGilt(s)).map((s) => s.id);
+    },
     schirmIst() { return cockpitScreenIst().id; },
     schirmStep(d) { cockpitScreenStep(d); return cockpitScreenIst().id; },
     schirmZu(id) { cockpitScreenZu(id); return cockpitScreenIst().id; },
@@ -46229,11 +46316,55 @@
         if (rows !== rows0) schlecht.push(liste[i] + ': Rasterzeilen aendern sich');
         if (Math.abs(f - f0) > 1e-9) schlecht.push(liste[i] + ': Faktor ' + f + ' statt ' + f0);
       }
-      // Und er laeuft im Kreis: nach so vielen Schritten wie Schirme ist man wieder da.
-      OMEGA_TEST.schirmZu(liste[0]);
-      for (let i = 0; i < liste.length; i++) OMEGA_TEST.schirmStep(+1);
-      if (OMEGA_TEST.schirmIst() !== liste[0]) schlecht.push('laeuft nicht im Kreis');
-      teile.push(liste.length + ' Schirme, Umlauf ok');
+      // ---- UND ER LAEUFT IM KREIS ------------------------------------------------
+      //
+      // Nach so vielen Schritten, wie es BLAETTERBARE Schirme gibt, ist man wieder da.
+      // Hier stand `liste.length`, also die Gesamtzahl, und das war richtig, solange jeder
+      // Schirm blaetterbar war. Seit es den Schirm von Auto 2 gibt, stimmt es nicht mehr:
+      // er wird uebersprungen, solange der Zwei-Spieler-Modus aus ist, und vier Schritte
+      // landen dann einen Schirm daneben.
+      //
+      // Aufgefallen ist es erst, als der Modus bei einem Prueflauf AUS war - vorher stand
+      // er in diesem Browserprofil auf "an", und der Test hat monatelang nur die eine
+      // Lage geprueft. Deshalb werden jetzt BEIDE gefahren.
+      const umlauf = (wieViele, wo) => {
+        OMEGA_TEST.schirmZu(liste[0]);
+        for (let i = 0; i < wieViele; i++) OMEGA_TEST.schirmStep(+1);
+        if (OMEGA_TEST.schirmIst() !== liste[0]) {
+          schlecht.push('laeuft nicht im Kreis (' + wo + ', ' + wieViele + ' Schritte, '
+                        + 'gelandet auf ' + OMEGA_TEST.schirmIst() + ')');
+          return false;
+        }
+        return true;
+      };
+      const merkZwei = OMEGA_TEST.zweiSpielerLage ? OMEGA_TEST.zweiSpielerLage() : null;
+      const blaetter = () => (OMEGA_TEST.schirmListeBlaetterbar
+        ? OMEGA_TEST.schirmListeBlaetterbar() : liste);
+      if (OMEGA_TEST.zweiSpielerStellen) {
+        OMEGA_TEST.zweiSpielerStellen(false);
+        const b1 = blaetter();
+        umlauf(b1.length, 'ein Spieler');
+        teile.push('ein Spieler: ' + b1.length + ' blaetterbar');
+        OMEGA_TEST.zweiSpielerStellen(true);
+        const b2 = blaetter();
+        umlauf(b2.length, 'zwei Spieler');
+        teile.push('zwei Spieler: ' + b2.length + ' blaetterbar');
+        // Und der gesperrte Schirm darf im Einzelspiel WIRKLICH nicht auftauchen.
+        OMEGA_TEST.zweiSpielerStellen(false);
+        OMEGA_TEST.schirmZu(liste[0]);
+        const gesehen = [];
+        for (let i = 0; i < liste.length + 2; i++) {
+          OMEGA_TEST.schirmStep(+1);
+          gesehen.push(OMEGA_TEST.schirmIst());
+        }
+        if (gesehen.indexOf('auto2') >= 0) {
+          schlecht.push('auto2 im Einzelspiel erreichbar: ' + gesehen.join('>'));
+        }
+        OMEGA_TEST.zweiSpielerStellen(!!merkZwei);
+      } else {
+        umlauf(liste.length, 'alle');
+        teile.push(liste.length + ' Schirme, Umlauf ok');
+      }
     } finally {
       OMEGA_TEST.schirmZu(merk);
     }
@@ -53722,6 +53853,137 @@
   // Die Liste ist GEPFLEGT, und das ist hier richtig: sie IST die Zusicherung. Sie stammt
   // aus einer Suche ueber alle Kaestchen, deren Listener "X = e.target.checked" schreibt.
   // Ein neuer Schalter gehoert hinein.
+  // ---- Der Einzelspielbetrieb rechnet reproduzierbar -------------------------------
+  //
+  // WOZU DIESER TEST DA IST. Bestellt war: "Wichtig ist vor allem, dass ein Auto mit
+  // Ghosts weiterhin funktioniert wie bisher." Nachgewiesen wurde das durch einen
+  // Vergleich mit dem Stand VOR dem Zwei-Spieler-Umbau (v0.6.43, als Datei neben der
+  // laufenden Fassung ausgeliefert): bei gesetztem Zufallsgenerator kamen aus beiden
+  // Staenden Zahl fuer Zahl dieselben Werte.
+  //
+  //   Saat        Wuerfe  Beruehrungen  Ueberholt  Rundenspanne  beste    mittlere
+  //   20260915    81      13            15         0,304         11,07 s  12,33 s
+  //   4711        72      15             8         0,480         11,34 s  12,29 s
+  //   99991       79      11             9         0,255         11,56 s  12,13 s
+  //
+  // Identisch auf beiden Staenden, und bei eingeschaltetem Modus (ohne zugeteiltes
+  // Auto 2) ebenfalls. Die ZAHL DER WUERFE ist dabei die scharfste Aussage: haette der
+  // Umbau irgendwo einen zusaetzlichen Math.random()-Aufruf eingebaut, waere die ganze
+  // Folge verschoben und jede Zahl danach anders.
+  //
+  // Der Vergleichsstand ist naturgemaess nicht dauerhaft pruefbar - sein Quelltext ist
+  // weg. Was DIESER Test festhaelt, ist die Eigenschaft, auf der der Vergleich beruht:
+  // dass die Ghost-Rechnung bei gesetztem Generator reproduzierbar ist. Ein
+  // versehentlicher Nichtdeterminismus - eine echte Uhr im Rechenweg, eine Reihenfolge
+  // aus einem Objekt, ein zweiter Generator - macht sie kaputt, und dann ist der naechste
+  // Vergleich dieser Art nicht mehr moeglich.
+  //
+  // ABSICHTLICH KEIN GOLDEN MASTER. Die Zahlen oben stehen als Beleg im Kommentar und
+  // nicht als Zusicherung im Code: sie gegen feste Werte zu pruefen hiesse, dass jede
+  // gewollte Aenderung am Ghost-Verhalten diesen Test rot macht - und ein Test, der bei
+  // gewollten Aenderungen rot wird, wird abgeschaltet.
+  stAdd('Ghosts: bei gesetztem Zufall rechnet die Simulation reproduzierbar', async () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.ghostSweep) {
+      return { skip: true, mass: 'ghostSweep nicht vorhanden' };
+    }
+    const echt = Math.random;
+    const lauf = async (saat) => {
+      let x = saat >>> 0, n = 0;
+      Math.random = () => {
+        n++;
+        x ^= x << 13; x >>>= 0;
+        x ^= x >> 17;
+        x ^= x << 5; x >>>= 0;
+        return x / 4294967296;
+      };
+      const r = await OMEGA_TEST.ghostSweep([{ name: 'det' }],
+        { sekunden: 20, laeufe: 1, autos: 3, aufwaermSekunden: 5 });
+      const m = r.varianten[0].einzeln[0];
+      return { wuerfe: n, k: m.kontakte, u: m.ueberholt,
+               rs: m.rundeSpanneAutos, mr: m.mittlereRundeS, br: m.besteRundeS };
+    };
+    try {
+      const a = await lauf(20260915);
+      const b = await lauf(20260915);
+      // Und eine ANDERE Saat muss etwas anderes ergeben - sonst prueft der Test nur, dass
+      // die Simulation gar nicht auf den Generator hoert.
+      const c = await lauf(4711);
+      const gleich = JSON.stringify(a) === JSON.stringify(b);
+      const anders = JSON.stringify(a) !== JSON.stringify(c);
+      const maengel = [];
+      if (!gleich) {
+        maengel.push('zweimal dieselbe Saat, verschiedene Zahlen: '
+                     + JSON.stringify(a) + ' gegen ' + JSON.stringify(b));
+      }
+      if (!anders) maengel.push('andere Saat, dieselben Zahlen - der Wuerfel wirkt nicht');
+      return { ok: !maengel.length,
+               mass: a.wuerfe + ' Wuerfe, ' + a.k + ' Beruehrungen, ' + a.u
+                   + ' Ueberholmanoever, Runde ' + a.mr + ' s'
+                   + (gleich ? ' | zweiter Lauf gleich' : '')
+                   + (anders ? ' | andere Saat anders' : '')
+                   + (maengel.length ? ' | ' + maengel.join('; ') : '') };
+    } finally { Math.random = echt; }
+  });
+
+  // ---- Die Sicherung sagt, was im Browser liegt ------------------------------------
+  //
+  // BESTELLT: "Zeige bei der Sicherung noch an, ob irgendetwas geladen ist, sodass ich es
+  // weiss, bevor dann das Auto wieder als generisches weisses 'alpha' verbunden wird."
+  //
+  // Die Aussage, die wirklich zaehlt, ist die ueber die AUTOS: carAssign() holt Name und
+  // Farbe aus chc.cars.v1 anhand der Geraete-Kennung. Liegt dort nichts, bekommt das
+  // naechste Auto den naechsten freien Namen und die naechste freie Farbe - und das laesst
+  // sich nach dem Verbinden nur von Hand richten.
+  //
+  // Drei Lagen werden geprueft, und die dritte ist die, an der man sich vertut:
+  //   1. Bestand mit Autos    -> Zahl, Namen und Farbpunkte stehen da
+  //   2. leere Ablage         -> die Zeile sagt AUSDRUECKLICH "Alpha in Weiss", statt nur
+  //                              nichts anzuzeigen. Eine leere Zeile beantwortet die Frage
+  //                              nicht, sie verschweigt sie.
+  //   3. Autos OHNE Namen     -> dann steht die FARBE als Kennung. Ein Auto, das man nie
+  //                              umbenannt hat, ist gemerkt und soll nicht wie "nichts
+  //                              gemerkt" aussehen.
+  stAdd('Sicherung: die Zeile sagt, was im Browser liegt', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.sicherungLageProbe) {
+      return { skip: true, mass: 'sicherungLageProbe nicht vorhanden' };
+    }
+    const mit = OMEGA_TEST.sicherungLageProbe({ autos: {
+      'p1': { color: 'rot', alias: 'Renner' },
+      'p2': { color: 'blau', alias: 'Zweiter' },
+    } });
+    if (mit.keinSpeicher) return { skip: true, mass: 'localStorage nicht verfuegbar' };
+    const ohne = OMEGA_TEST.sicherungLageProbe({ autos: null });
+    const namenlos = OMEGA_TEST.sicherungLageProbe({ autos: {
+      'p9': { color: 'weiss', alias: '' },
+    } });
+    const maengel = [];
+    // 1.
+    if (mit.lage.autos.length !== 2) maengel.push('mit: ' + mit.lage.autos.length + ' Autos');
+    if (!/Renner/.test(mit.text) || !/Zweiter/.test(mit.text)) {
+      maengel.push('mit: Namen fehlen');
+    }
+    if (mit.farbpunkte !== 2) maengel.push('mit: ' + mit.farbpunkte + ' Farbpunkte statt 2');
+    if (mit.leer) maengel.push('mit: als leer gekennzeichnet');
+    // 2. Die leere Lage muss die FOLGE nennen, nicht nur schweigen.
+    if (!/Alpha/.test(ohne.text)) maengel.push('ohne: "Alpha" nicht genannt');
+    // Und sie muss sagen, dass keine Autos gemerkt sind - auch wenn sonst etwas liegt
+    // (Einstellungen zaehlen nicht als Auto).
+    if (!/[Kk]eine? Auto/.test(ohne.text)) maengel.push('ohne: sagt nicht "keine Autos"');
+    if (ohne.lage.autos.length !== 0) maengel.push('ohne: ' + ohne.lage.autos.length + ' Autos');
+    // 3.
+    if (namenlos.lage.autos.length !== 1) {
+      maengel.push('namenlos: ' + namenlos.lage.autos.length + ' Autos');
+    }
+    if (namenlos.autoNamen.length !== 1 || !namenlos.autoNamen[0]) {
+      maengel.push('namenlos: keine Kennung, sondern ' + JSON.stringify(namenlos.autoNamen));
+    }
+    return { ok: !maengel.length,
+             mass: 'mit 2 Autos: ' + JSON.stringify(mit.autoNamen)
+                 + ' | leer: ' + (/Alpha/.test(ohne.text) ? 'nennt Alpha' : 'schweigt')
+                 + ' | ohne Namen: ' + JSON.stringify(namenlos.autoNamen)
+                 + (maengel.length ? ' | ' + maengel.join(', ') : '') };
+  });
+
   // ---- Der Cockpit-Schirm von Auto 2 -----------------------------------------------
   //
   // So bestellt: "Drehzahl und Geschwindigkeit fuer beide Autos; alle weiteren
@@ -58514,6 +58776,122 @@
     return n;
   }
 
+  // ---- WAS LIEGT GERADE IM BROWSER? ------------------------------------------------
+  //
+  // BESTELLT: "Zeige bei der Sicherung noch an, ob irgendetwas geladen ist, sodass ich es
+  // weiss, bevor dann das Auto wieder als generisches weisses 'alpha' verbunden wird."
+  //
+  // DIE AUTOS SIND DER KERN, und deshalb stehen sie zuerst und mit NAMEN: carAssign() in
+  // 90-ghosts.js holt Name und Farbe aus chc.cars.v1 anhand der Geraete-Kennung. Liegt
+  // dort nichts, bekommt das naechste Auto den naechsten freien Namen ("Alpha") und die
+  // naechste freie Farbe. Das ist der Moment, den man VORHER wissen will - nachher laesst
+  // er sich nur noch von Hand richten.
+  //
+  // GEZAEHLT WIRD, WAS WIRKLICH DA IST, und nicht, was da sein koennte: jede Zeile kommt
+  // aus einem Blick in die Ablage. Eine Liste der Ablagen mit "vorhanden/nicht vorhanden"
+  // waere eine Aufzaehlung von Namen, die niemandem sagt, ob sein Auto seinen Namen
+  // behaelt.
+  const LAGE_ABLAGEN = [
+    // Schluessel, Name, und wie man den Inhalt zaehlt. `zahl` gibt null zurueck, wenn es
+    // nichts zu zaehlen gibt - dann wird die Zeile weggelassen.
+    ['chc.layout.v1', 'Streckenlayout', (v) => (v && Object.keys(v).length) || null],
+    ['carrera-hybrid-tracks', 'Strecken', (v) => (Array.isArray(v) ? v.length : null)],
+    ['chc.sessions.v1', 'Sitzungen', (v) => (Array.isArray(v) ? v.length
+                                             : (v && v.sitzungen ? v.sitzungen.length : null))],
+    ['carrera-hybrid-macros', 'Aufnahmen', (v) => (Array.isArray(v) ? v.length
+                                                   : (v ? Object.keys(v).length : null))],
+    ['chc.motorwerkstatt.v1', 'Motorwerkstatt', (v) => (v && Object.keys(v).length) || null],
+    ['chc.presets.v1', 'eigene Voreinstellungen', (v) => (v && Object.keys(v).length) || null],
+    ['carrera-hybrid-gamepad-bindings-v2', 'Tastenbelegung',
+      (v) => (v && Object.keys(v).length ? 1 : null)],
+  ];
+
+  function lageLesen() {
+    const hol = (k) => {
+      let roh = null;
+      try { roh = localStorage.getItem(k); } catch (e) { return null; }
+      if (!roh) return null;
+      try { return JSON.parse(roh); } catch (e) { return null; }
+    };
+    // Die Autos, mit Name und Farbe. Die Geraete-Kennung bleibt DRAUSSEN: sie ist lang,
+    // sagt niemandem etwas, und sie ist die einzige Angabe hier, die ein Geraet
+    // identifiziert.
+    const autos = [];
+    const roh = hol('chc.cars.v1') || {};
+    for (const k of Object.keys(roh)) {
+      const e = roh[k] || {};
+      autos.push({ alias: e.alias || '', colorId: e.color || null });
+    }
+    const regler = hol(AUTO_STORE);
+    return {
+      autos,
+      regler: regler && typeof regler === 'object' ? Object.keys(regler).length : 0,
+      posten: LAGE_ABLAGEN.map(([k, name, zahl]) => {
+        const v = hol(k);
+        const n = v === null ? null : zahl(v);
+        return n ? { name, n } : null;
+      }).filter(Boolean),
+    };
+  }
+
+  function lageZeichnen() {
+    const el = $('sich-lage');
+    if (!el) return null;
+    const l = lageLesen();
+    // Die Farbe eines gemerkten Autos aus derselben Tabelle, aus der carAssign() sie
+    // nimmt - sonst zeigt die Zeile eine andere Farbe als das Auto nachher hat.
+    const farbe = (id) => {
+      if (typeof CAR_COLORS === 'undefined') return null;
+      const c = CAR_COLORS.find((x) => x.id === id);
+      return c ? c : null;
+    };
+    const teile = [];
+    if (l.autos.length) {
+      const namen = l.autos.map((a, i) => {
+        const f = farbe(a.colorId);
+        const punkt = f ? '<span class="sich-farbe" style="background:' + f.hex
+                          + '"></span>' : '';
+        // Ohne eingetragenen Namen zeigt die Zeile die FARBE als Kennung - genau die
+        // bekommt das Auto beim Verbinden auch wieder.
+        const wie = a.alias ? a.alias : (f ? f.name : 'ohne Namen');
+        return '<span class="sich-auto">' + punkt + wie + '</span>';
+      });
+      teile.push('<span class="sich-punkt"><b>' + l.autos.length + ' Auto'
+                 + (l.autos.length === 1 ? '' : 's') + ' gemerkt:</b> '
+                 + namen.join(', ') + '</span>');
+    }
+    if (l.regler) {
+      teile.push('<span class="sich-punkt">' + l.regler + ' Einstellungen</span>');
+    }
+    for (const p of l.posten) {
+      teile.push('<span class="sich-punkt">' + p.n + ' ' + p.name + '</span>');
+    }
+    const leer = !l.autos.length && !l.regler && !l.posten.length;
+    el.classList.toggle('leer', leer);
+    if (leer) {
+      el.innerHTML = '<b>Im Browser liegt nichts.</b> Ein neu verbundenes Auto bekommt '
+                   + 'den n\u00e4chsten freien Namen und die n\u00e4chste freie Farbe '
+                   + '\u2013 das erste also &bdquo;Alpha&ldquo; in Wei\u00df.';
+    } else {
+      let kopf = '<b>Im Browser liegt:</b>';
+      // UND DIE FOLGE FUER DAS NAECHSTE AUTO, ausgesprochen. Ohne sie muss man aus
+      // "0 Autos gemerkt" selbst schliessen, was beim Verbinden passiert.
+      let fuss = l.autos.length
+        ? 'Ein bekanntes Auto bekommt seinen Namen und seine Farbe zur\u00fcck; ein neues '
+          + 'den n\u00e4chsten freien.'
+        : '<b>Keine Autos gemerkt</b> \u2013 ein neu verbundenes bekommt '
+          + '&bdquo;Alpha&ldquo; in Wei\u00df.';
+      el.innerHTML = kopf + '<div class="sich-punkte">' + teile.join('') + '</div>'
+                   + '<div style="margin-top:5px">' + fuss + '</div>';
+    }
+    return l;
+  }
+
+  // Beim Laden, und nach jedem Einlesen oder Loeschen. Die Garage ruft sie beim Verbinden
+  // nicht: dort aendert sich der Bestand erst, wenn ein Name oder eine Farbe gesetzt wird,
+  // und dann laeuft carRemember() - siehe den Ruf in renderGarage().
+  lageZeichnen();
+
   // ---- DIE BEDIENUNG IN DER GARAGE ------------------------------------------------
   function sicherungSagen(t, art) {
     const el = $('sich-status');
@@ -58578,6 +58956,8 @@
       }
       const r = sicherungAnwenden(b);
       sicherungSagen(sicherungBericht(r), r.fehler ? 'bad' : 'ok');
+      // Der Bestand hat sich gerade geaendert - die Lage neu hinschreiben.
+      lageZeichnen();
       if (!r.fehler) {
         // Die Ablagen werden erst beim Laden gelesen - Strecken, Sitzungen, Autonamen,
         // Gamepad. Ehrlich hingeschrieben statt selbst neu zu laden: ein erzwungenes
@@ -58585,6 +58965,7 @@
         sicherungSagen(sicherungBericht(r)
           + ' Strecken, Rundenzeiten, Autonamen und Tastenbelegung sind nach einem Neuladen'
           + ' der Seite da.', 'ok');
+        lageZeichnen();
       }
     };
   }

@@ -242,6 +242,122 @@
     return n;
   }
 
+  // ---- WAS LIEGT GERADE IM BROWSER? ------------------------------------------------
+  //
+  // BESTELLT: "Zeige bei der Sicherung noch an, ob irgendetwas geladen ist, sodass ich es
+  // weiss, bevor dann das Auto wieder als generisches weisses 'alpha' verbunden wird."
+  //
+  // DIE AUTOS SIND DER KERN, und deshalb stehen sie zuerst und mit NAMEN: carAssign() in
+  // 90-ghosts.js holt Name und Farbe aus chc.cars.v1 anhand der Geraete-Kennung. Liegt
+  // dort nichts, bekommt das naechste Auto den naechsten freien Namen ("Alpha") und die
+  // naechste freie Farbe. Das ist der Moment, den man VORHER wissen will - nachher laesst
+  // er sich nur noch von Hand richten.
+  //
+  // GEZAEHLT WIRD, WAS WIRKLICH DA IST, und nicht, was da sein koennte: jede Zeile kommt
+  // aus einem Blick in die Ablage. Eine Liste der Ablagen mit "vorhanden/nicht vorhanden"
+  // waere eine Aufzaehlung von Namen, die niemandem sagt, ob sein Auto seinen Namen
+  // behaelt.
+  const LAGE_ABLAGEN = [
+    // Schluessel, Name, und wie man den Inhalt zaehlt. `zahl` gibt null zurueck, wenn es
+    // nichts zu zaehlen gibt - dann wird die Zeile weggelassen.
+    ['chc.layout.v1', 'Streckenlayout', (v) => (v && Object.keys(v).length) || null],
+    ['carrera-hybrid-tracks', 'Strecken', (v) => (Array.isArray(v) ? v.length : null)],
+    ['chc.sessions.v1', 'Sitzungen', (v) => (Array.isArray(v) ? v.length
+                                             : (v && v.sitzungen ? v.sitzungen.length : null))],
+    ['carrera-hybrid-macros', 'Aufnahmen', (v) => (Array.isArray(v) ? v.length
+                                                   : (v ? Object.keys(v).length : null))],
+    ['chc.motorwerkstatt.v1', 'Motorwerkstatt', (v) => (v && Object.keys(v).length) || null],
+    ['chc.presets.v1', 'eigene Voreinstellungen', (v) => (v && Object.keys(v).length) || null],
+    ['carrera-hybrid-gamepad-bindings-v2', 'Tastenbelegung',
+      (v) => (v && Object.keys(v).length ? 1 : null)],
+  ];
+
+  function lageLesen() {
+    const hol = (k) => {
+      let roh = null;
+      try { roh = localStorage.getItem(k); } catch (e) { return null; }
+      if (!roh) return null;
+      try { return JSON.parse(roh); } catch (e) { return null; }
+    };
+    // Die Autos, mit Name und Farbe. Die Geraete-Kennung bleibt DRAUSSEN: sie ist lang,
+    // sagt niemandem etwas, und sie ist die einzige Angabe hier, die ein Geraet
+    // identifiziert.
+    const autos = [];
+    const roh = hol('chc.cars.v1') || {};
+    for (const k of Object.keys(roh)) {
+      const e = roh[k] || {};
+      autos.push({ alias: e.alias || '', colorId: e.color || null });
+    }
+    const regler = hol(AUTO_STORE);
+    return {
+      autos,
+      regler: regler && typeof regler === 'object' ? Object.keys(regler).length : 0,
+      posten: LAGE_ABLAGEN.map(([k, name, zahl]) => {
+        const v = hol(k);
+        const n = v === null ? null : zahl(v);
+        return n ? { name, n } : null;
+      }).filter(Boolean),
+    };
+  }
+
+  function lageZeichnen() {
+    const el = $('sich-lage');
+    if (!el) return null;
+    const l = lageLesen();
+    // Die Farbe eines gemerkten Autos aus derselben Tabelle, aus der carAssign() sie
+    // nimmt - sonst zeigt die Zeile eine andere Farbe als das Auto nachher hat.
+    const farbe = (id) => {
+      if (typeof CAR_COLORS === 'undefined') return null;
+      const c = CAR_COLORS.find((x) => x.id === id);
+      return c ? c : null;
+    };
+    const teile = [];
+    if (l.autos.length) {
+      const namen = l.autos.map((a, i) => {
+        const f = farbe(a.colorId);
+        const punkt = f ? '<span class="sich-farbe" style="background:' + f.hex
+                          + '"></span>' : '';
+        // Ohne eingetragenen Namen zeigt die Zeile die FARBE als Kennung - genau die
+        // bekommt das Auto beim Verbinden auch wieder.
+        const wie = a.alias ? a.alias : (f ? f.name : 'ohne Namen');
+        return '<span class="sich-auto">' + punkt + wie + '</span>';
+      });
+      teile.push('<span class="sich-punkt"><b>' + l.autos.length + ' Auto'
+                 + (l.autos.length === 1 ? '' : 's') + ' gemerkt:</b> '
+                 + namen.join(', ') + '</span>');
+    }
+    if (l.regler) {
+      teile.push('<span class="sich-punkt">' + l.regler + ' Einstellungen</span>');
+    }
+    for (const p of l.posten) {
+      teile.push('<span class="sich-punkt">' + p.n + ' ' + p.name + '</span>');
+    }
+    const leer = !l.autos.length && !l.regler && !l.posten.length;
+    el.classList.toggle('leer', leer);
+    if (leer) {
+      el.innerHTML = '<b>Im Browser liegt nichts.</b> Ein neu verbundenes Auto bekommt '
+                   + 'den n\u00e4chsten freien Namen und die n\u00e4chste freie Farbe '
+                   + '\u2013 das erste also &bdquo;Alpha&ldquo; in Wei\u00df.';
+    } else {
+      let kopf = '<b>Im Browser liegt:</b>';
+      // UND DIE FOLGE FUER DAS NAECHSTE AUTO, ausgesprochen. Ohne sie muss man aus
+      // "0 Autos gemerkt" selbst schliessen, was beim Verbinden passiert.
+      let fuss = l.autos.length
+        ? 'Ein bekanntes Auto bekommt seinen Namen und seine Farbe zur\u00fcck; ein neues '
+          + 'den n\u00e4chsten freien.'
+        : '<b>Keine Autos gemerkt</b> \u2013 ein neu verbundenes bekommt '
+          + '&bdquo;Alpha&ldquo; in Wei\u00df.';
+      el.innerHTML = kopf + '<div class="sich-punkte">' + teile.join('') + '</div>'
+                   + '<div style="margin-top:5px">' + fuss + '</div>';
+    }
+    return l;
+  }
+
+  // Beim Laden, und nach jedem Einlesen oder Loeschen. Die Garage ruft sie beim Verbinden
+  // nicht: dort aendert sich der Bestand erst, wenn ein Name oder eine Farbe gesetzt wird,
+  // und dann laeuft carRemember() - siehe den Ruf in renderGarage().
+  lageZeichnen();
+
   // ---- DIE BEDIENUNG IN DER GARAGE ------------------------------------------------
   function sicherungSagen(t, art) {
     const el = $('sich-status');
@@ -306,6 +422,8 @@
       }
       const r = sicherungAnwenden(b);
       sicherungSagen(sicherungBericht(r), r.fehler ? 'bad' : 'ok');
+      // Der Bestand hat sich gerade geaendert - die Lage neu hinschreiben.
+      lageZeichnen();
       if (!r.fehler) {
         // Die Ablagen werden erst beim Laden gelesen - Strecken, Sitzungen, Autonamen,
         // Gamepad. Ehrlich hingeschrieben statt selbst neu zu laden: ein erzwungenes
@@ -313,6 +431,7 @@
         sicherungSagen(sicherungBericht(r)
           + ' Strecken, Rundenzeiten, Autonamen und Tastenbelegung sind nach einem Neuladen'
           + ' der Seite da.', 'ok');
+        lageZeichnen();
       }
     };
   }

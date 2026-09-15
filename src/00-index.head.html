@@ -2796,6 +2796,24 @@
   body.track-fs .tp-space { right: 14px; bottom: 68px; }
   .gar-row.is-player { border-color: var(--good); }
   .gar-row.is-zwei { border-color: #3d8bff; }
+  /* Die Bestandszeile der Sicherung. Ein Kasten mit linker Kante, wie die Hinweise
+     darunter - sie ist eine AUSSAGE ueber den Zustand und kein Bedienelement, und die
+     Kante sagt das, ohne einen zweiten Knopf zu erfinden.
+
+     Die Kante ist gruen, wenn etwas liegt, und gedeckt, wenn nichts liegt: "nichts
+     gespeichert" ist keine Warnung - beim ersten Start ist es der richtige Zustand. */
+  .sich-lage { font-size: 12px; line-height: 1.5; color: var(--text);
+    background: var(--panel-2); border-left: 3px solid var(--good);
+    border-radius: 0 7px 7px 0; padding: 8px 11px; margin-bottom: 10px; }
+  .sich-lage.leer { border-left-color: var(--border); color: var(--muted); }
+  .sich-lage b { color: var(--text); }
+  .sich-lage .sich-punkte { display: flex; flex-wrap: wrap; gap: 4px 12px;
+    margin-top: 5px; }
+  .sich-lage .sich-punkt { white-space: nowrap; }
+  /* Die Farbpunkte der gemerkten Autos, damit "weiss" nicht nur ein Wort ist. */
+  .sich-lage .sich-auto { display: inline-flex; align-items: center; gap: 5px; }
+  .sich-lage .sich-farbe { width: 9px; height: 9px; border-radius: 50%;
+    border: 1px solid rgba(255,255,255,.35); flex: none; }
   .gar-row.is-ghost { border-color: #7a6bd0; }
   .gar-id { font-size: 11px; color: var(--muted); font-family: monospace; }
   /* Ein Segmentschalter statt drei einzelner Knoepfe: die drei Rollen schliessen sich
@@ -6213,6 +6231,21 @@
         Rundenzeit-Historie, Motorwerkstatt, Aufnahmen und die Tastenbelegung des
         Gamepads.
       </p>
+      <!-- ---- WAS GERADE IM BROWSER LIEGT -------------------------------------------
+           BESTELLT: "Zeige bei der Sicherung noch an, ob irgendetwas geladen ist, sodass
+           ich es weiss, bevor dann das Auto wieder als generisches weisses 'alpha'
+           verbunden wird."
+
+           Der Kern der Meldung sind die gemerkten AUTOS: carAssign() holt Name und Farbe
+           aus chc.cars.v1 anhand der Geraete-Kennung. Liegt dort nichts, bekommt das
+           naechste Auto den naechsten freien Namen und die naechste freie Farbe - und
+           genau das ist der Moment, den man VORHER wissen will, weil er sich nach dem
+           Verbinden nur noch von Hand richten laesst.
+
+           Die Zeile steht VOR den Knoepfen und nicht darunter: sie ist die Lage, die
+           Knoepfe sind die Handlung. Und sie steht in der GARAGE, also dort, wo man
+           verbindet. -->
+      <div class="sich-lage" id="sich-lage" data-i18n-skip>&nbsp;</div>
       <div class="row" style="gap:8px; flex-wrap:wrap">
         <button class="primary" id="sich-export">Sicherung speichern</button>
         <button id="sich-import">Sicherung laden</button>
@@ -8569,7 +8602,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.6.51</span></span>
+    <span class="foot-ver">v<span id="app-version">0.6.52</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine

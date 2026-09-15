@@ -53,6 +53,49 @@
       return this.schadenZweiLesen();
     },
 
+    // ---- SAGT DIE SICHERUNG, WAS IM BROWSER LIEGT? -----------------------------------
+    //
+    // BESTELLT: "Zeige bei der Sicherung noch an, ob irgendetwas geladen ist, sodass ich es
+    // weiss, bevor dann das Auto wieder als generisches weisses 'alpha' verbunden wird."
+    //
+    // Der Prueflauf setzt einen Bestand in die Ablage, laesst zeichnen, liest die Zeile und
+    // legt den Bestand zurueck. DIE ABLAGE WIRD WIRKLICH ANGEFASST, und das ist der Grund
+    // fuer das ausfuehrliche finally: eine Messung, die dem Nutzer seine gemerkten Autos
+    // wegnimmt, waere schlimmer als keine Messung.
+    sicherungLageProbe(o) {
+      const opt = o || {};
+      const schluessel = 'chc.cars.v1';
+      let merk = null, hatte = false;
+      try { merk = localStorage.getItem(schluessel); hatte = merk !== null; }
+      catch (e) { return { keinSpeicher: true }; }
+      try {
+        if (opt.autos === null) {
+          try { localStorage.removeItem(schluessel); } catch (e) { /* privat */ }
+        } else if (opt.autos) {
+          try { localStorage.setItem(schluessel, JSON.stringify(opt.autos)); }
+          catch (e) { /* privat */ }
+        }
+        const l = lageZeichnen();
+        const el = $('sich-lage');
+        return {
+          lage: l,
+          leer: el ? el.classList.contains('leer') : null,
+          text: el ? el.textContent.replace(/\s+/g, ' ').trim() : null,
+          // Die Farbpunkte: sie kommen aus derselben Tabelle wie carAssign(), damit die
+          // Zeile nicht eine andere Farbe zeigt als das Auto nachher hat.
+          farbpunkte: el ? el.querySelectorAll('.sich-farbe').length : 0,
+          autoNamen: el ? Array.from(el.querySelectorAll('.sich-auto'))
+            .map((x) => x.textContent.trim()) : [],
+        };
+      } finally {
+        try {
+          if (hatte) localStorage.setItem(schluessel, merk);
+          else localStorage.removeItem(schluessel);
+        } catch (e) { /* privat */ }
+        lageZeichnen();
+      }
+    },
+
     // ---- DER SCHIRM VON AUTO 2: blaetterbar, und zeigt er etwas? ---------------------
     //
     // Zwei Dinge, die auseinanderfallen koennen: die REGISTRY (ist der Schirm erreichbar,
@@ -737,6 +780,13 @@
     // Tastendruck neu messen - und beide Schirme haetten verschiedene Faktoren, das Cockpit
     // wuerde also beim Blaettern seine Groesse aendern.
     schirmListe() { return COCKPIT_SCREENS.map((s) => s.id); },
+    // Und welche davon gerade BLAETTERBAR sind. Seit es den Schirm von Auto 2 gibt, sind
+    // das nicht mehr zwangslaeufig alle: er wird uebersprungen, solange der
+    // Zwei-Spieler-Modus aus ist. Ein Prueflauf, der den Umlauf mit der Gesamtzahl
+    // nachrechnet, landet dann einen Schirm daneben - genau das ist passiert.
+    schirmListeBlaetterbar() {
+      return COCKPIT_SCREENS.filter((s) => cockpitScreenGilt(s)).map((s) => s.id);
+    },
     schirmIst() { return cockpitScreenIst().id; },
     schirmStep(d) { cockpitScreenStep(d); return cockpitScreenIst().id; },
     schirmZu(id) { cockpitScreenZu(id); return cockpitScreenIst().id; },

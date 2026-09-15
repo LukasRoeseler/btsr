@@ -717,6 +717,51 @@ und nicht in einer Media Query: die Einpassung bekommt ihre Maße *vorgegeben*, 
 Query sähe die echte Fensterhöhe und der Test wäre grün, ohne dass auf dem Gerät etwas besser
 ist.
 
+#### Bleibt ein Auto mit Ghosts, was es war? Gemessen: ja, Zahl für Zahl
+
+Die Frage ist die wichtigste am ganzen Umbau, und sie lässt sich nicht durch Hinsehen
+beantworten: der Zwei-Spieler-Modus hat `padRumble`, `buildCommandPacket`, `detectCrash`,
+`fuelTankTick`, `fuelDamageDerate`, `spielerOrt`, `ghostFieldRacing`, `startSampleEngine`,
+`cockpitVollbildPassung` und ein Dutzend weitere gemeinsame Stellen angefasst.
+
+Ein Mittelwertvergleich reicht dafür nicht. Drei Läufe à 60 s ergaben zwischen v0.6.43 und
+HEAD (Modus aus) Unterschiede von +28 % bei den Berührungen und +24 % bei den
+Überholmanövern — beides innerhalb oder nahe am gemessenen Rauschpegel, aber eben nicht
+*belegbar* gleich.
+
+Deshalb **deterministisch**: `Math.random` durch einen gesetzten xorshift-Generator ersetzt,
+derselbe Lauf auf dem Stand vor dem Umbau (als Datei neben der laufenden Fassung
+ausgeliefert) und auf jetzt.
+
+| Saat | Würfe | Berührungen | Überholt | Rundenspanne | beste | mittlere |
+|---|---|---|---|---|---|---|
+| 20260915 | 81 | 13 | 15 | 0,304 | 11,07 s | 12,33 s |
+| 4711 | 72 | 15 | 8 | 0,480 | 11,34 s | 12,29 s |
+| 99991 | 79 | 11 | 9 | 0,255 | 11,56 s | 12,13 s |
+
+**Auf beiden Ständen identisch**, jede Zahl. Und bei eingeschaltetem Modus ohne zugeteiltes
+Auto 2 ebenfalls — der Schalter allein ändert die Ghost-Rechnung nicht.
+
+Die **Zahl der Würfe** ist dabei die scharfste Aussage: hätte der Umbau irgendwo einen
+zusätzlichen `Math.random()`-Aufruf eingebaut, wäre die ganze Folge verschoben und jede Zahl
+danach anders. 81 gegen 81 heißt: kein einziger dazugekommen.
+
+Der Vergleichsstand ist naturgemäß nicht dauerhaft prüfbar. Was der Selbsttest "Ghosts: bei
+gesetztem Zufall rechnet die Simulation reproduzierbar" festhält, ist die Eigenschaft, auf der
+der Vergleich beruht — dass die Rechnung bei gesetztem Generator reproduzierbar ist. Ein
+versehentlicher Nichtdeterminismus (eine echte Uhr im Rechenweg, eine Reihenfolge aus einem
+Objekt) macht sie kaputt, und dann ist der nächste Vergleich dieser Art nicht mehr möglich.
+Absichtlich **kein** Golden Master: die Zahlen oben stehen als Beleg im Kommentar, nicht als
+Zusicherung im Code — ein Test, der bei jeder gewollten Ghost-Änderung rot wird, wird
+abgeschaltet.
+
+**Und ein Befund fiel dabei ab, der nichts mit zwei Spielern zu tun hat.** Der Test
+"Schirmwechsel ändert die Einpassung nicht" rechnete den Umlauf mit der *Gesamtzahl* der
+Cockpit-Schirme nach. Das war richtig, solange jeder blätterbar war; mit dem übersprungenen
+Schirm von Auto 2 landet man einen daneben. Aufgefallen ist es erst, als der Modus bei einem
+Prüflauf **aus** war — vorher stand er in diesem Browserprofil auf "an", und der Test hat nur
+die eine Lage geprüft. Er fährt jetzt beide.
+
 #### Der Ton ist eine Mischungs- und keine Programmierfrage
 
 Zwei Motoren im selben Drehzahlband aus einem Lautsprecher klingen wie *ein* verstimmter

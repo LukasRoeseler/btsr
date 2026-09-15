@@ -725,6 +725,10 @@
     const all = carStore();
     all[String(car.device.id)] = { color: car.colorId, alias: car.alias || '' };
     try { localStorage.setItem(CAR_STORE, JSON.stringify(all)); } catch (e) { /* privat */ }
+    // Die Bestandszeile der Sicherung nennt die gemerkten Autos - sie muss also mitgehen,
+    // sobald hier eines dazukommt oder seinen Namen aendert. Defensiv gerufen, weil
+    // 98b-sicherung.js SPAETER gebaut wird: zur Laufzeit ist die Funktion da.
+    if (typeof lageZeichnen === 'function') lageZeichnen();
   }
 
   // Farbe fuer ein neu verbundenes Auto. Gemerktes hat Vorrang, sonst die naechste noch
