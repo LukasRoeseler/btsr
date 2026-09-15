@@ -9594,6 +9594,108 @@
   // Die Liste ist GEPFLEGT, und das ist hier richtig: sie IST die Zusicherung. Sie stammt
   // aus einer Suche ueber alle Kaestchen, deren Listener "X = e.target.checked" schreibt.
   // Ein neuer Schalter gehoert hinein.
+  // ---- Der Cockpit-Schirm von Auto 2 -----------------------------------------------
+  //
+  // So bestellt: "Drehzahl und Geschwindigkeit fuer beide Autos; alle weiteren
+  // Einstellungen auf weiteren Screens." Die zweite Zeile im Hauptschirm traegt die zwei
+  // Werte, die man im Fahren braucht; Tank, Zustand, Temperaturen und Rundenzeiten stehen
+  // auf diesem vierten Schirm.
+  //
+  // Geprueft werden zwei Dinge, die auseinanderfallen koennen:
+  //
+  //   DIE REGISTRY - der Schirm ist erreichbar, aber NUR im Modus. Ohne ihn wird er beim
+  //   Blaettern uebersprungen; ein vierter Schirm, auf dem im Einzelspiel alle Zahlen
+  //   stehenbleiben, waere schlimmer als keiner. Und liegt er vorne, wenn der Modus
+  //   ausgeht, muss er verlassen werden - sonst kommt der Pfeil nicht zurueck, weil das
+  //   Blaettern ihn ja gerade ueberspringt.
+  //
+  //   DIE MALFUNKTION - dort stehen Zahlen, und die richtigen. Der Prueftisch stellt Tank
+  //   auf 40 Prozent und zwei Runden ein; beides muss durchkommen.
+  //
+  // Eine Falle, die dieser Test gefangen hat: `st.brakeTempC` gibt es nicht. Das Modell
+  // fuehrt brakeTemp4[] und brakeTempF/R. Gemessen kamen 0 Grad heraus, waehrend der
+  // Reifen 20 zeigte - ein Feldname, den ich mir gemerkt statt nachgesehen hatte.
+  stAdd('Zwei Spieler: der Cockpit-Schirm von Auto 2', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.schirmZweiProbe) {
+      return { skip: true, mass: 'schirmZweiProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.schirmZweiProbe();
+    const maengel = [];
+    if (r.liste.indexOf('auto2') < 0) maengel.push('Schirm nicht in der Registry');
+    // Ohne Modus: auto2 darf in fuenf Schritten nicht auftauchen.
+    if (r.ohne.indexOf('auto2') >= 0) {
+      maengel.push('ohne Modus erreichbar: ' + r.ohne.join('>'));
+    }
+    // Mit Modus: er muss auftauchen, und der Umlauf muss vollstaendig sein.
+    if (r.mit.indexOf('auto2') < 0) maengel.push('mit Modus nicht erreichbar: ' + r.mit.join('>'));
+    if (r.nachAus !== 'main') maengel.push('nach dem Abschalten noch auf ' + r.nachAus);
+    // Die Zahlen. Tank 40 Prozent von 110 Litern sind 44.
+    if (!/44 l/.test(r.werte.tank || '')) maengel.push('Tank zeigt ' + r.werte.tank);
+    if (!/100/.test(r.werte.zustand || '')) maengel.push('Zustand zeigt ' + r.werte.zustand);
+    // Die Temperaturen muessen eine Zahl ueber null tragen - 0 Grad war der gefundene
+    // Fehler (falscher Feldname).
+    for (const [name, wert] of [['Reifen', r.werte.reifen], ['Bremse', r.werte.bremse]]) {
+      const zahl = parseFloat(String(wert));
+      if (!(zahl > 0)) maengel.push(name + ' zeigt ' + wert);
+    }
+    // Die Rundenzeiten aus car.race: letzte 20,9 s, beste ebenfalls 20,9 s.
+    if (!/20[.,]9/.test(r.werte.letzte || '')) maengel.push('letzte Runde ' + r.werte.letzte);
+    if (!/20[.,]9/.test(r.werte.beste || '')) maengel.push('beste Runde ' + r.werte.beste);
+    if (!/P2/.test(r.werte.fuss || '')) maengel.push('Fusszeile nennt das Auto nicht');
+    return { ok: !maengel.length,
+             mass: 'ohne ' + r.ohne.join('>') + ' | mit ' + r.mit.join('>')
+                 + ' | Tank ' + r.werte.tank + ', Zustand ' + r.werte.zustand
+                 + ', Reifen ' + r.werte.reifen + ', Bremse ' + r.werte.bremse
+                 + ', beste ' + r.werte.beste
+                 + (maengel.length ? ' | ' + maengel.join(', ') : '') };
+  });
+
+  // ---- Auto 2 zaehlt Runden und steht in der Rangliste -----------------------------
+  //
+  // MEINE AUFWANDSSCHAETZUNG WAR HIER FALSCH, und das gehoert in den Testkopf, damit es
+  // nicht noch einmal jemand aus der Ferne schaetzt: die Rundenzaehlung galt als der
+  // groesste offene Posten des Zwei-Spieler-Modus - 27 modulweite Rennzustandsgroessen,
+  // Sektorlogik, Ergebnistabelle, CSV. Nachgesehen fuehrt carRaceNotify() aber `car.race`
+  // mit Rundenliste, Rundenuhr und Sperrflanke fuer JEDES verbundene Auto, "whatever its
+  // role", und raceAllCars() liest die ganze Garage. Auto 2 zaehlte seine Runden also
+  // schon. Die 27 Groessen betreffen das RENNEN von Auto 1 - Ampel, Flaggen,
+  // Einfuehrungsrunde -, nicht die Zaehlung.
+  //
+  // Geprueft wird deshalb, was wirklich offen war:
+  //   1. Auto 2 steht in der Uebersicht, mit seiner Rolle und seinen Runden.
+  //   2. Es hat einen ORT. Ohne ihn waere seine Position in der ersten Runde die
+  //      Reihenfolge der Garage, also erfunden - genau das, was der Kommentar bei
+  //      raceAllCars() als "schlechter als keine Uebersicht" bezeichnet.
+  //   3. Die Rangliste sortiert es richtig ein: mehr Runden zuerst, dann die kleinere
+  //      Gesamtzeit.
+  stAdd('Zwei Spieler: Auto 2 zaehlt Runden und steht in der Rangliste', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.rundenZweiProbe) {
+      return { skip: true, mass: 'rundenZweiProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.rundenZweiProbe();
+    const maengel = [];
+    if (r.autos !== 3) maengel.push(r.autos + ' Autos in der Uebersicht statt 3');
+    if (!r.hatAutoZwei) maengel.push('Auto 2 fehlt in der Uebersicht');
+    if (r.rundenAutoZwei !== 1) {
+      maengel.push('Auto 2 mit ' + r.rundenAutoZwei + ' Runden statt 1');
+    }
+    if (typeof r.ortAutoZwei !== 'number') {
+      maengel.push('Auto 2 ohne Ort (' + r.ortAutoZwei + ')');
+    }
+    if (r.rollen.indexOf('player2') < 0) maengel.push('Rolle player2 nicht durchgereicht');
+    // Der Prueftisch gibt dem Ghost 3 Runden, Auto 1 zwei, Auto 2 eine. Genau diese
+    // Reihenfolge muss herauskommen - sie prueft die Sortierung und nicht die Zahlen.
+    const soll = ['1:G/ghost', '2:P1/player', '3:P2/player2'];
+    if (r.reihenfolge.join(' ') !== soll.join(' ')) {
+      maengel.push('Rangliste ' + r.reihenfolge.join(' ') + ' statt ' + soll.join(' '));
+    }
+    return { ok: !maengel.length,
+             mass: r.autos + ' Autos, Rollen ' + r.rollen.join('/')
+                 + ' | Auto 2: ' + r.rundenAutoZwei + ' Runde, Ort ' + r.ortAutoZwei
+                 + ' | ' + r.reihenfolge.join(' ')
+                 + (maengel.length ? ' | ' + maengel.join(', ') : '') };
+  });
+
   // ---- Auto 2 hat eine eigene Motorstimme, auf der anderen Stereoseite -------------
   //
   // FUENF AUSSAGEN, und keine davon ist "es klingt gut" - das entscheidet der Teppich.

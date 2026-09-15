@@ -53,6 +53,118 @@
       return this.schadenZweiLesen();
     },
 
+    // ---- DER SCHIRM VON AUTO 2: blaetterbar, und zeigt er etwas? ---------------------
+    //
+    // Zwei Dinge, die auseinanderfallen koennen: die REGISTRY (ist der Schirm erreichbar,
+    // und nur im Modus?) und die MALFUNKTION (stehen dort Zahlen, und die richtigen?).
+    //
+    // Der Schirm wird beim Blaettern uebersprungen, solange der Modus aus ist. Die
+    // Alternative waere eine Liste gewesen, deren LAENGE sich aendert - und an ihr haengen
+    // der Schirmzaehler, die Punkte unter dem Pfeil und zwei Selbsttests.
+    schirmZweiProbe() {
+      const vorher = { zwei: zweiSpieler, schirm: cockpitScreenIst().id,
+                       p2: playerCar2, tank: tankZweiStand() };
+      const merkGarage = garage.slice();
+      try {
+        // ---- Erst die Registry, ohne Modus --------------------------------------
+        if (typeof zweiSpielerSetzen === 'function') zweiSpielerSetzen(false);
+        cockpitScreenZu('main');
+        const ohne = [];
+        for (let i = 0; i < 5; i++) { cockpitScreenStep(1); ohne.push(cockpitScreenIst().id); }
+        // ---- Dann mit Modus ------------------------------------------------------
+        if (typeof zweiSpielerSetzen === 'function') zweiSpielerSetzen(true);
+        cockpitScreenZu('main');
+        const mit = [];
+        for (let i = 0; i < 5; i++) { cockpitScreenStep(1); mit.push(cockpitScreenIst().id); }
+        // ---- Und die Zahlen -----------------------------------------------------
+        const a2 = { device: { id: 'probe-schirm' }, role: 'player2', alias: 'P2',
+                     rx: null, testSenke: [], colorId: null,
+                     race: { laps: [{ lap: 1, ms: 21500 }, { lap: 2, ms: 20900 }] } };
+        garage.push(a2);
+        playerCar2 = a2;
+        tankZweiFuellen(40);
+        cockpitScreenZu('auto2');
+        p2ScreenRender();
+        const lies = (id) => { const e = $(id); return e ? e.textContent : null; };
+        const werte = {
+          rpm: lies('p2s-rpm'), tempo: lies('p2s-speed'), gang: lies('p2s-gear'),
+          tank: lies('p2s-fuel'), zustand: lies('p2s-cond'),
+          reifen: lies('p2s-tyre'), bremse: lies('p2s-brake'),
+          letzte: lies('p2s-lap-last'), beste: lies('p2s-lap-best'),
+          lage: lies('p2s-kopf-lage'), fuss: lies('p2s-fuss'),
+        };
+        // Und dass der Schirm beim Abschalten verlassen wird.
+        if (typeof zweiSpielerSetzen === 'function') zweiSpielerSetzen(false);
+        const nachAus = cockpitScreenIst().id;
+        return { liste: COCKPIT_SCREENS.map((x) => x.id), ohne, mit, werte, nachAus };
+      } finally {
+        const i = garage.indexOf(garage.find((c) => c.device
+                                            && c.device.id === 'probe-schirm'));
+        if (i >= 0) garage.splice(i, 1);
+        garage.splice(0, garage.length);
+        merkGarage.forEach((c) => garage.push(c));
+        playerCar2 = vorher.p2;
+        tankZweiFuellen(vorher.tank);
+        if (typeof zweiSpielerSetzen === 'function') zweiSpielerSetzen(vorher.zwei);
+        cockpitScreenZu(vorher.schirm);
+      }
+    },
+
+    // ---- STEHT AUTO 2 IN DER RUNDENUEBERSICHT? ---------------------------------------
+    //
+    // DIE AUFWANDSSCHAETZUNG WAR HIER FALSCH, und das gehoert aufgeschrieben: die
+    // Rundenzaehlung galt als der groesste offene Posten - 27 modulweite Rennzustands-
+    // groessen, Sektorlogik, Ergebnistabelle, CSV. Nachgesehen habe ich dann
+    // carRaceNotify(): es fuehrt `car.race` mit Rundenliste, Rundenuhr und Sperrflanke
+    // fuer JEDES verbundene Auto, "whatever its role", und raceAllCars() liest die ganze
+    // Garage. Auto 2 zaehlte seine Runden also schon; die 27 Groessen betreffen das
+    // Rennen von Auto 1 (Ampel, Flaggen, Einfuehrungsrunde), nicht die Zaehlung.
+    //
+    // Geprueft wird deshalb genau das: Auto 2 steht in der Uebersicht, mit seinen Runden
+    // UND mit einem Ort - ohne Ort waere seine Position in der ersten Runde die
+    // Reihenfolge der Garage, also erfunden.
+    rundenZweiProbe() {
+      const merkGarage = garage.slice();
+      const vorher = { zwei: zweiSpieler, p1: playerCar, p2: playerCar2 };
+      try {
+        garage.splice(0, garage.length);
+        const mk = (rolle, name, runden) => ({
+          role: rolle, alias: name, device: { id: 'probe-' + name }, colorId: null,
+          tileCode: 0x02, tileCount: 3,
+          ghost: { nurOrt: rolle !== 'ghost', tileIndex: 2, tilesTotal: 2.5,
+                   tileMs: 500, tileStart: Date.now(), tileRing: [], laps: runden.length },
+          race: { laps: runden.map((ms, i) => ({ lap: i + 1, ms, off: 0 })),
+                  lapStart: null, pending: null, seen: 0, lastActed: 0, lastCount: null },
+        });
+        const a1 = mk('player', 'P1', [21000, 20500]);
+        const a2 = mk('player2', 'P2', [20800]);
+        const g = mk('ghost', 'G', [21500, 21200, 21100]);
+        garage.push(a1, a2, g);
+        playerCar = a1;
+        playerCar2 = a2;
+        zweiSpieler = true;
+        const alle = raceAllCars();
+        const zeile = alle.find((c) => c.name === 'P2');
+        return {
+          autos: alle.length,
+          rollen: alle.map((c) => c.role),
+          hatAutoZwei: !!zeile,
+          rundenAutoZwei: zeile ? zeile.laps.length : null,
+          ortAutoZwei: zeile ? zeile.ort : null,
+          ortAutoEins: (alle.find((c) => c.name === 'P1') || {}).ort,
+          // Und die Rangliste: wer steht wo? Sortiert wird nach Runden, dann Gesamtzeit.
+          // ovDaten() gibt die fertige Rangliste zurueck: Position, Name, Rolle, Luecke.
+          reihenfolge: ovDaten().map((x) => x.pos + ':' + x.name + '/' + x.rolle),
+        };
+      } finally {
+        garage.splice(0, garage.length);
+        merkGarage.forEach((c) => garage.push(c));
+        zweiSpieler = vorher.zwei;
+        playerCar = vorher.p1;
+        playerCar2 = vorher.p2;
+      }
+    },
+
     // ---- KLINGT DIE ZWEITE MOTORSTIMME, UND AUF DER RICHTIGEN SEITE? -----------------
     //
     // GEMESSEN WIRD AN DEN WEB-AUDIO-KNOTEN, nicht am Ohr. Was sich pruefen laesst, ist,

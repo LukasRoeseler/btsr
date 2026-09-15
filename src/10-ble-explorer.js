@@ -710,6 +710,9 @@
       "A car a full lap down with a faster one behind moves aside by itself and lifts slightly – instead of fighting for five seconds and then being blocked for six. The faster car gets the racing line, no four-phase manoeuvre needed.",
     // ---- Die Kachel "2 Spieler" ------------------------------------------------------
     "2 Spieler": "2 players",
+    "Auto 2": "Car 2",
+    "Und ein eigener Cockpit-Schirm: blättere im Cockpit mit dem Pfeil oben links oder dem Steuerkreuz auf „Auto 2“. Dort stehen Tank, Zustand, Reifen- und Bremsentemperatur und seine Rundenzeiten. Ist der Modus aus, wird der Schirm beim Blättern übersprungen.":
+      "And a cockpit screen of its own: page through the cockpit with the arrow at the top left or the D-pad to “Car 2”. It shows fuel, condition, tyre and brake temperature, and its lap times. With the mode off, the screen is skipped while paging.",
     "Zwei Autos, zwei Controller, beide Drehzahlen im Cockpit. Im Aufbau.":
       "Two cars, two controllers, both rev counters in the cockpit. Work in progress.",
     "Der Modus": "The mode",
@@ -739,8 +742,10 @@
       "Car 2 has no extras chain on its engine sound: no turbo whistle, no pops, no limiter pulsing – those hang off one bus. And no doppler, which belongs to car 1's lap.",
     "Dazu eine eigene Motorstimme, und die sitzt auf der anderen Stereoseite – links Auto 1, rechts Auto 2. Das ist keine Kosmetik: zwei Motoren im selben Drehzahlband aus einem Lautsprecher klingen wie ein verstimmter Motor und nicht wie zwei Autos. Auch der Schaltklang kommt von der Seite des Autos, das geschaltet hat. Beide fahren dasselbe Motormodell, das aus dem Cockpit gewählte.":
       "Plus an engine voice of its own, and it sits on the other stereo side – car 1 left, car 2 right. That is not decoration: two engines in the same rev band from one speaker sound like one out-of-tune engine, not like two cars. The shift sound comes from the side of the car that shifted, too. Both run the same engine model, the one chosen in the cockpit.",
-    "Rundenzählung, Ergebnistabelle und Aufnahme gelten für Auto 1.":
-      "Lap counting, the results table and recording apply to car 1.",
+    "Die drei Rundenzeiten im Cockpit – aktuelle, letzte, beste – und die Aufnahme gehören Auto 1. Seine eigenen Zeiten stehen in der Rundenübersicht.":
+      "The three lap times in the cockpit – current, last, best – and the recording belong to car 1. Its own times are in the lap overview.",
+    "Dazu zählt Auto 2 seine Runden mit: es steht in der Rundenübersicht, in der Rangliste während des Rennens und im Ergebnis samt CSV. Das war keine Arbeit, sondern ein Irrtum in meiner Schätzung – die Rundenzählung lief schon immer je Auto, für jedes verbundene, egal welche Rolle. Die Zielflagge wartet jetzt auf beide Fahrer statt nur auf einen.":
+      "Car 2 counts its laps too: it appears in the lap overview, in the running order during the race, and in the result including the CSV. That took no work, it corrected a mistake in my estimate – lap counting always ran per car, for every connected one, whatever its role. The chequered flag now waits for both drivers instead of just one.",
     ": eine eigene Fahrphysik mit eigenen Gängen, eigener Drehzahl, eigenem Tempo und eigenen Temperaturen. Die Einstellungen aus „Fahrgefühl“ werden bei jedem Anschalten übernommen, damit beide Autos gleich fahren.":
       ": a driving model of its own, with its own gears, revs, speed and temperatures. The settings from “Driving feel” are copied over every time the mode is switched on, so that both cars drive alike.",
     "Ghost: Leitplanken-Modus": "Ghost: guard-rail mode",

@@ -302,7 +302,15 @@
     // "Steuern", darf die Flagge nicht fallen, weil ein Ghost zuerst ueber die Linie kommt -
     // dann waere die angefangene Runde des Fahrers abgeschnitten. Mit Fahrer gilt weiter
     // dessen Ueberfahrt, genau wie vorher.
-    if (warFinishing && !garage.some(c => c.role === 'player')) finishRace();
+    // ---- UND AUF AUTO 2 EBENSO -----------------------------------------------------
+    //
+    // Die Bedingung war "nur ohne Fahrer": ist ein Auto auf "Steuern", darf die Flagge
+    // nicht fallen, weil ein Ghost zuerst ueber die Linie kommt - sonst waere die
+    // angefangene Runde des Fahrers abgeschnitten. Mit zwei Fahrern gilt dasselbe zweimal,
+    // und ohne diese Zeile waere die abgeschnittene Runde die von Auto 2.
+    const fahrer = (c) => c.role === 'player'
+                          || (zweiSpieler && c.role === 'player2');
+    if (warFinishing && !garage.some(fahrer)) finishRace();
   }
 
   // ---- Testtaste Q: eine Runde zaehlen, ohne sie zu fahren ----
@@ -313,7 +321,10 @@
   //   Shift+Q    eine Runde fuer JEDES Auto im Rennen, damit die Tabelle mehrspaltig wird
   function debugCountLap(all) {
     if (all) {
-      const cars = garage.filter(c => c.role === 'player' || c.role === 'ghost');
+      // Auto 2 gehoert dazu, sonst macht Shift+Q die Tabelle mehrspaltig OHNE es - und
+      // genau dafuer ist die Taste da.
+      const cars = garage.filter(c => c.role === 'player' || c.role === 'ghost'
+                                      || (zweiSpieler && c.role === 'player2'));
       cars.forEach(c => { if (c !== playerCar) carLapCrossed(c); });
       if (playerCar) carLapCrossed(playerCar);
       playerLapCrossed();
@@ -343,6 +354,11 @@
     // erfundene Reihenfolge zeigt, ist schlechter als keine.
     const out = garage.map(c => ({ name: garageLabel(c), role: c.role,
                                    farbe: carColor(c).hex, kennung: c.tag,
+                                   // Der Ort auf der Schiene. Auto 2 geht ueber
+                                   // ghostOrtGes(): es hat seit v0.6.46 einen eigenen
+                                   // Ortungssatz, und der ist genau der, aus dem ein Ghost
+                                   // seinen Ort rechnet. spielerOrtGes() ist die Fassung
+                                   // ohne Argument und gilt nur fuer Auto 1.
                                    ort: (c.role === 'player'
                                      ? spielerOrtGes()
                                      : (typeof ghostOrtGes === 'function' ? ghostOrtGes(c) : null)),

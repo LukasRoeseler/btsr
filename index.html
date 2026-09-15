@@ -1663,7 +1663,16 @@
     overflow: hidden;
   }
   #race-dash[data-screen="pit"] #race-pitscreen,
+  #race-dash[data-screen="auto2"] #race-p2screen,
   #race-dash[data-screen="uebersicht"] #race-ovscreen { display: grid; }
+  /* Neun Kaesten, und sie sollen auf dem Telefon nicht zu Streifen werden: drei Spalten
+     bis 560 px, darueber fuenf. Dieselbe Bauform wie beim Kachelstreifen. */
+  .p2s-grid { display: grid; gap: clamp(3px, .7vw, 8px);
+    grid-template-columns: repeat(5, minmax(0, 1fr)); align-content: start; }
+  @media (max-width: 560px) {
+    .p2s-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  }
+  #race-p2screen { grid-template-rows: auto minmax(0, 1fr) auto; }
 
   .schirm-kopf { display: flex; align-items: baseline; gap: 10px;
     font-size: clamp(8px, 1.1vw, 11px); letter-spacing: .12em;
@@ -3596,6 +3605,45 @@
              aus. -->
         <div class="ov-karte" id="ov-karte" data-i18n-skip></div>
         <div class="schirm-fuss" id="ov-fuss" data-i18n-skip></div>
+      </div>
+
+      <!-- DER SCHIRM VON AUTO 2. Er traegt alles, was der zweiten Zeile im Hauptschirm
+           nicht passt: Tank, Schaden, Reifen- und Bremsentemperatur, Rundenzeiten.
+
+           So bestellt: "Drehzahl und Geschwindigkeit fuer beide Autos; alle weiteren
+           Einstellungen auf weiteren Screens." Die zweite Zeile im Hauptschirm zeigt die
+           zwei Werte, die man im Fahren braucht - der Rest steht hier, einen Tastendruck
+           entfernt.
+
+           Die Werte werden von p2ScreenRender() in 50-drive.js geschrieben und sind
+           deshalb data-i18n-skip: es sind Messwerte, keine Oberflaeche. -->
+      <div class="gt3-schirm" id="race-p2screen">
+        <div class="schirm-kopf"><b>Auto 2</b><span class="wip-tag">experimentell</span>
+          <span id="p2s-kopf-lage" data-i18n-skip>&ndash;</span>
+          <span style="margin-left:auto" id="p2s-kopf-runde" data-i18n-skip></span></div>
+        <div class="p2s-grid">
+          <div class="gt3-box"><div class="gt3-lbl">1/min</div>
+            <div class="gt3-val" id="p2s-rpm" data-i18n-skip>1500</div></div>
+          <div class="gt3-box"><div class="gt3-lbl">km/h</div>
+            <div class="gt3-val" id="p2s-speed" data-i18n-skip>0</div></div>
+          <div class="gt3-box"><div class="gt3-lbl">Gang</div>
+            <div class="gt3-val" id="p2s-gear" data-i18n-skip>N</div></div>
+          <div class="gt3-box"><div class="gt3-lbl">Tank</div>
+            <div class="gt3-val sm" id="p2s-fuel" data-i18n-skip>100 l</div>
+            <div class="gt3-bar"><i id="p2s-fuel-bar"></i></div></div>
+          <div class="gt3-box"><div class="gt3-lbl">Zustand</div>
+            <div class="gt3-val sm" id="p2s-cond" data-i18n-skip>100&nbsp;%</div>
+            <div class="gt3-bar"><i id="p2s-cond-bar"></i></div></div>
+          <div class="gt3-box"><div class="gt3-lbl">Reifen</div>
+            <div class="gt3-val sm" id="p2s-tyre" data-i18n-skip>20&deg;</div></div>
+          <div class="gt3-box"><div class="gt3-lbl">Bremse</div>
+            <div class="gt3-val sm" id="p2s-brake" data-i18n-skip>20&deg;</div></div>
+          <div class="gt3-box"><div class="gt3-lbl">Letzte Runde</div>
+            <div class="gt3-val sm" id="p2s-lap-last" data-i18n-skip>&ndash;</div></div>
+          <div class="gt3-box"><div class="gt3-lbl">Beste Runde</div>
+            <div class="gt3-val sm gt3-ok" id="p2s-lap-best" data-i18n-skip>&ndash;</div></div>
+        </div>
+        <div class="schirm-fuss" id="p2s-fuss" data-i18n-skip></div>
       </div>
 
       <div class="gt3-banner" id="hud-toast-wrap"><span id="hud-toast"></span></div>
@@ -8054,13 +8102,23 @@
         <kbd>Gelb</kbd><span>Kein Autopilot unter gelber Flagge und keine
           Einf&uuml;hrungsrunde f&uuml;r Auto&nbsp;2: beide h&auml;ngen an Z&auml;hlern des
           Rennens, die es nur einmal gibt.</span>
-        <kbd>Runden</kbd><span>Rundenz&auml;hlung, Ergebnistabelle und Aufnahme gelten
-          f&uuml;r Auto&nbsp;1.</span>
+        <kbd>Zeiten</kbd><span>Die drei Rundenzeiten im Cockpit &ndash; aktuelle, letzte,
+          beste &ndash; und die Aufnahme geh&ouml;ren Auto&nbsp;1. Seine eigenen Zeiten
+          stehen in der Rundenübersicht.</span>
       </div>
       <p class="muted">Was Auto&nbsp;2 <b>hat</b>: eine eigene Fahrphysik mit eigenen
         G&auml;ngen, eigener Drehzahl, eigenem Tempo und eigenen Temperaturen. Die
         Einstellungen aus &bdquo;Fahrgef&uuml;hl&ldquo; werden bei jedem Anschalten
         &uuml;bernommen, damit beide Autos gleich fahren.</p>
+      <p class="muted">Und ein eigener Cockpit-Schirm: bl&auml;ttere im Cockpit mit dem
+        Pfeil oben links oder dem Steuerkreuz auf &bdquo;Auto&nbsp;2&ldquo;. Dort stehen
+        Tank, Zustand, Reifen- und Bremsentemperatur und seine Rundenzeiten. Ist der Modus
+        aus, wird der Schirm beim Bl&auml;ttern &uuml;bersprungen.</p>
+      <p class="muted">Dazu z&auml;hlt Auto&nbsp;2 seine Runden mit: es steht in der
+        Rundenübersicht, in der Rangliste w&auml;hrend des Rennens und im Ergebnis samt
+        CSV. Das war keine Arbeit, sondern ein Irrtum in meiner Sch&auml;tzung &ndash; die
+        Rundenz&auml;hlung lief schon immer je Auto, f&uuml;r jedes verbundene, egal welche
+        Rolle. Die Zielflagge wartet jetzt auf beide Fahrer statt nur auf einen.</p>
       <p class="muted">Dazu eine eigene Motorstimme, und die sitzt auf der anderen
         Stereoseite &ndash; links Auto&nbsp;1, rechts Auto&nbsp;2. Das ist keine Kosmetik:
         zwei Motoren im selben Drehzahlband aus einem Lautsprecher klingen wie ein
@@ -8488,7 +8546,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.6.49</span></span>
+    <span class="foot-ver">v<span id="app-version">0.6.50</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -9233,6 +9291,9 @@
       "A car a full lap down with a faster one behind moves aside by itself and lifts slightly – instead of fighting for five seconds and then being blocked for six. The faster car gets the racing line, no four-phase manoeuvre needed.",
     // ---- Die Kachel "2 Spieler" ------------------------------------------------------
     "2 Spieler": "2 players",
+    "Auto 2": "Car 2",
+    "Und ein eigener Cockpit-Schirm: blättere im Cockpit mit dem Pfeil oben links oder dem Steuerkreuz auf „Auto 2“. Dort stehen Tank, Zustand, Reifen- und Bremsentemperatur und seine Rundenzeiten. Ist der Modus aus, wird der Schirm beim Blättern übersprungen.":
+      "And a cockpit screen of its own: page through the cockpit with the arrow at the top left or the D-pad to “Car 2”. It shows fuel, condition, tyre and brake temperature, and its lap times. With the mode off, the screen is skipped while paging.",
     "Zwei Autos, zwei Controller, beide Drehzahlen im Cockpit. Im Aufbau.":
       "Two cars, two controllers, both rev counters in the cockpit. Work in progress.",
     "Der Modus": "The mode",
@@ -9262,8 +9323,10 @@
       "Car 2 has no extras chain on its engine sound: no turbo whistle, no pops, no limiter pulsing – those hang off one bus. And no doppler, which belongs to car 1's lap.",
     "Dazu eine eigene Motorstimme, und die sitzt auf der anderen Stereoseite – links Auto 1, rechts Auto 2. Das ist keine Kosmetik: zwei Motoren im selben Drehzahlband aus einem Lautsprecher klingen wie ein verstimmter Motor und nicht wie zwei Autos. Auch der Schaltklang kommt von der Seite des Autos, das geschaltet hat. Beide fahren dasselbe Motormodell, das aus dem Cockpit gewählte.":
       "Plus an engine voice of its own, and it sits on the other stereo side – car 1 left, car 2 right. That is not decoration: two engines in the same rev band from one speaker sound like one out-of-tune engine, not like two cars. The shift sound comes from the side of the car that shifted, too. Both run the same engine model, the one chosen in the cockpit.",
-    "Rundenzählung, Ergebnistabelle und Aufnahme gelten für Auto 1.":
-      "Lap counting, the results table and recording apply to car 1.",
+    "Die drei Rundenzeiten im Cockpit – aktuelle, letzte, beste – und die Aufnahme gehören Auto 1. Seine eigenen Zeiten stehen in der Rundenübersicht.":
+      "The three lap times in the cockpit – current, last, best – and the recording belong to car 1. Its own times are in the lap overview.",
+    "Dazu zählt Auto 2 seine Runden mit: es steht in der Rundenübersicht, in der Rangliste während des Rennens und im Ergebnis samt CSV. Das war keine Arbeit, sondern ein Irrtum in meiner Schätzung – die Rundenzählung lief schon immer je Auto, für jedes verbundene, egal welche Rolle. Die Zielflagge wartet jetzt auf beide Fahrer statt nur auf einen.":
+      "Car 2 counts its laps too: it appears in the lap overview, in the running order during the race, and in the result including the CSV. That took no work, it corrected a mistake in my estimate – lap counting always ran per car, for every connected one, whatever its role. The chequered flag now waits for both drivers instead of just one.",
     ": eine eigene Fahrphysik mit eigenen Gängen, eigener Drehzahl, eigenem Tempo und eigenen Temperaturen. Die Einstellungen aus „Fahrgefühl“ werden bei jedem Anschalten übernommen, damit beide Autos gleich fahren.":
       ": a driving model of its own, with its own gears, revs, speed and temperatures. The settings from “Driving feel” are copied over every time the mode is switched on, so that both cars drive alike.",
     "Ghost: Leitplanken-Modus": "Ghost: guard-rail mode",
@@ -14879,6 +14942,15 @@
       malen: () => pitScreenRender() },
     { id: 'uebersicht', name: 'Rennen',
       malen: () => ovScreenRender() },
+    // ---- NUR IM ZWEI-SPIELER-MODUS BLAETTERBAR ---------------------------------------
+    //
+    // Der Eintrag steht IMMER in der Liste und wird beim Blaettern uebersprungen, solange
+    // der Modus aus ist. Die Alternative waere eine Liste, deren LAENGE sich aendert - und
+    // an ihr haengen der Schirmzaehler, die Punkte unter dem Pfeil und zwei Selbsttests.
+    // Eine Liste, die beim Umschalten kuerzer wird, verschiebt den gerade gezeigten Schirm.
+    { id: 'auto2', name: 'Auto 2',
+      nurZweiSpieler: true,
+      malen: () => p2ScreenRender() },
   ];
   let cockpitScreen = 0;
 
@@ -14909,7 +14981,26 @@
     // sechs Layoutlaeufe auf einen Tastendruck waehrend der Fahrt.
   }
 
-  function cockpitScreenStep(d) { cockpitScreenSet(cockpitScreen + d); }
+  // Ist dieser Schirm gerade blaetterbar? Nur der Schirm von Auto 2 kennt eine Sperre,
+  // und ohne sie waere im Einzelspiel ein vierter Schirm zu durchblaettern, auf dem alle
+  // Zahlen stehen bleiben - schlimmer als ein Schirm, den es nicht gibt.
+  function cockpitScreenGilt(s) {
+    if (!s) return false;
+    if (s.nurZweiSpieler) return typeof zweiSpieler !== 'undefined' && !!zweiSpieler;
+    return true;
+  }
+
+  // SCHRITTWEISE UND MIT ABBRUCH. Die Schleife laeuft hoechstens so oft, wie es Schirme
+  // gibt: sonst dreht sie sich ewig, wenn einmal jeder Schirm gesperrt waere.
+  function cockpitScreenStep(d) {
+    const n = COCKPIT_SCREENS.length;
+    const richtung = d >= 0 ? 1 : -1;
+    let i = cockpitScreen;
+    for (let k = 0; k < n; k++) {
+      i = ((i + richtung) % n + n) % n;
+      if (cockpitScreenGilt(COCKPIT_SCREENS[i])) { cockpitScreenSet(i); return; }
+    }
+  }
 
   // Was die Waehltaste auf DIESEM Schirm tut. Rueckgabe true heisst "verbraucht".
   //
@@ -15546,6 +15637,78 @@
     return String(st.currentGear + 1);
   }
 
+
+  // ---- DER SCHIRM VON AUTO 2 ---------------------------------------------------------
+  //
+  // Alles, was der zweiten Zeile im Hauptschirm nicht passt: Tank, Schaden, Reifen- und
+  // Bremsentemperatur, Rundenzeiten. So bestellt - "Drehzahl und Geschwindigkeit fuer
+  // beide Autos; alle weiteren Einstellungen auf weiteren Screens."
+  //
+  // GEZEICHNET WIRD NUR, WENN ER VORNE LIEGT (cockpitScreenSet ruft malen(), und der Takt
+  // unten prueft es): neun Werte je 45 ms auf einen unsichtbaren Schirm zu schreiben waere
+  // Arbeit fuer niemanden, und der Sendetakt hat Vorrang.
+  function p2ScreenRender() {
+    const st = physEngine2.state;
+    schreibeWert($('p2s-rpm'), Math.round(motorDrehzahl(st)));
+    schreibeWert($('p2s-speed'), Math.round(Math.abs(st.speedKmh) * REAL_SCALE));
+    schreibeWert($('p2s-gear'), gearLabel(st));
+    // Tank und Zustand in derselben Schreibweise wie bei Auto 1 - Liter und Prozent, und
+    // der Zustand ist der KEHRWERT des Schadens: full green at the start. Ein Balken, der
+    // WAECHST, wenn etwas schlechter wird, liest sich rueckwaerts.
+    const tank = typeof tankZweiStand === 'function' ? tankZweiStand() : 0;
+    schreibeWert($('p2s-fuel'), fuelLiters(tank) + ' l');
+    const tb = $('p2s-fuel-bar');
+    if (tb) {
+      tb.style.width = Math.max(0, tank) + '%';
+      tb.style.background = tank < 20 ? '#ffb02e' : '#2ee06a';
+    }
+    const schaden = typeof schadenVon === 'function' ? schadenVon(2) : 0;
+    const zustand = Math.max(0, 100 - schaden);
+    schreibeWert($('p2s-cond'), Math.round(zustand) + ' %');
+    const zb = $('p2s-cond-bar');
+    if (zb) {
+      zb.style.width = zustand + '%';
+      zb.style.background = zustand < 50 ? '#ff5252' : zustand < 80 ? '#ffb02e' : '#2ee06a';
+    }
+    // Reifen und Bremse aus SEINEM Zustand. Die Temperaturen liegen in der Physikinstanz,
+    // sind also von Anfang an je Auto getrennt gewesen - das ist der Teil, der nie gefehlt
+    // hat.
+    //
+    // VIER RAEDER, EIN WERT. Das Modell fuehrt tyreTemp4[] und brakeTemp4[] (und als
+    // Rueckfall tyreTempC bzw. brakeTempF/brakeTempR) - die Reifenkachel von Auto 1 zeigt
+    // alle vier. Hier steht das MITTEL: auf diesem Schirm hat eine Zahl je Groesse Platz,
+    // und die Frage "sind die Reifen warm" ist damit beantwortet.
+    //
+    // `brakeTempC` GIBT ES NICHT, und das stand hier einen Anlauf lang: der Wert kam als
+    // 0 Grad heraus, waehrend der Reifen 20 zeigte. Ein Feldname, den ich mir gemerkt
+    // statt nachgesehen habe.
+    const mittel = (a) => (a && a.length)
+      ? a.reduce((x, y) => x + y, 0) / a.length : null;
+    const reifen = mittel(st.tyreTemp4) !== null ? mittel(st.tyreTemp4) : (st.tyreTempC || 0);
+    const bremse = mittel(st.brakeTemp4) !== null ? mittel(st.brakeTemp4)
+      : ((st.brakeTempF || 0) + (st.brakeTempR || 0)) / 2;
+    schreibeWert($('p2s-tyre'), Math.round(reifen) + '\u00b0');
+    schreibeWert($('p2s-brake'), Math.round(bremse) + '\u00b0');
+    // Die Rundenzeiten aus car.race - dieselbe Quelle, aus der die Rundenuebersicht liest.
+    const car = typeof playerCar2 !== 'undefined' ? playerCar2 : null;
+    const runden = (car && car.race && car.race.laps) || [];
+    const ms = runden.map((l) => l.ms);
+    schreibeWert($('p2s-lap-last'), ms.length ? formatLapTime(ms[ms.length - 1]) : '\u2013');
+    schreibeWert($('p2s-lap-best'), ms.length ? formatLapTime(Math.min.apply(null, ms)) : '\u2013');
+    const lage = $('p2s-kopf-lage');
+    if (lage) {
+      lage.textContent = !car ? 'kein Auto zugeteilt'
+        : (abseitsJetztFuer(2) ? 'neben der Bahn'
+           : (schaden >= 100 ? 'Notlauf' : (tank <= 0 ? 'Tank leer' : 'auf der Bahn')));
+    }
+    const rundeK = $('p2s-kopf-runde');
+    if (rundeK) rundeK.textContent = ms.length ? 'Runde ' + ms.length : '';
+    const fuss = $('p2s-fuss');
+    if (fuss) {
+      fuss.textContent = car ? garageLabel(car)
+        : 'In der Garage einem Auto die Rolle "Spieler 2" geben.';
+    }
+  }
 
   // Einen Wert schreiben UND, wenn er sich geaendert hat, die Anzeige 1 px nach unten
   // setzen. 80 ms, dann zurueck: eine Anzeige mit Masse setzt sich kurz, ein Textfeld nicht.
@@ -16586,6 +16749,12 @@
     //      cockpitInhaltHoehe() - die Einpassung wuerde im Einzelspiel rund 9 px Platz
     //      verschenken. Mit der Klasse gibt es die Zeile nur, wenn es sie braucht.
     document.body.classList.toggle('zwei-spieler', zweiSpieler);
+    // Liegt der Schirm von Auto 2 vorne, wenn der Modus ausgeht, muss er verlassen werden -
+    // sonst starrt man auf neun Zahlen, die niemand mehr nachfuehrt, und der Pfeil kommt
+    // nicht zurueck (cockpitScreenStep ueberspringt ihn dann ja gerade).
+    if (!zweiSpieler && cockpitScreenIst() && cockpitScreenIst().nurZweiSpieler) {
+      cockpitScreenZu('main');
+    }
     // DAS KAESTCHEN GEHT MIT. Der Modus laesst sich seit v0.6.45 auch aus der Garage
     // einschalten (siehe setCarRole in 90-ghosts.js), und ein Schalter, der "aus" zeigt,
     // waehrend zwei Autos fahren, ist genau die Luege, die der Selbsttest "Schalter und
@@ -20688,7 +20857,15 @@
     // "Steuern", darf die Flagge nicht fallen, weil ein Ghost zuerst ueber die Linie kommt -
     // dann waere die angefangene Runde des Fahrers abgeschnitten. Mit Fahrer gilt weiter
     // dessen Ueberfahrt, genau wie vorher.
-    if (warFinishing && !garage.some(c => c.role === 'player')) finishRace();
+    // ---- UND AUF AUTO 2 EBENSO -----------------------------------------------------
+    //
+    // Die Bedingung war "nur ohne Fahrer": ist ein Auto auf "Steuern", darf die Flagge
+    // nicht fallen, weil ein Ghost zuerst ueber die Linie kommt - sonst waere die
+    // angefangene Runde des Fahrers abgeschnitten. Mit zwei Fahrern gilt dasselbe zweimal,
+    // und ohne diese Zeile waere die abgeschnittene Runde die von Auto 2.
+    const fahrer = (c) => c.role === 'player'
+                          || (zweiSpieler && c.role === 'player2');
+    if (warFinishing && !garage.some(fahrer)) finishRace();
   }
 
   // ---- Testtaste Q: eine Runde zaehlen, ohne sie zu fahren ----
@@ -20699,7 +20876,10 @@
   //   Shift+Q    eine Runde fuer JEDES Auto im Rennen, damit die Tabelle mehrspaltig wird
   function debugCountLap(all) {
     if (all) {
-      const cars = garage.filter(c => c.role === 'player' || c.role === 'ghost');
+      // Auto 2 gehoert dazu, sonst macht Shift+Q die Tabelle mehrspaltig OHNE es - und
+      // genau dafuer ist die Taste da.
+      const cars = garage.filter(c => c.role === 'player' || c.role === 'ghost'
+                                      || (zweiSpieler && c.role === 'player2'));
       cars.forEach(c => { if (c !== playerCar) carLapCrossed(c); });
       if (playerCar) carLapCrossed(playerCar);
       playerLapCrossed();
@@ -20729,6 +20909,11 @@
     // erfundene Reihenfolge zeigt, ist schlechter als keine.
     const out = garage.map(c => ({ name: garageLabel(c), role: c.role,
                                    farbe: carColor(c).hex, kennung: c.tag,
+                                   // Der Ort auf der Schiene. Auto 2 geht ueber
+                                   // ghostOrtGes(): es hat seit v0.6.46 einen eigenen
+                                   // Ortungssatz, und der ist genau der, aus dem ein Ghost
+                                   // seinen Ort rechnet. spielerOrtGes() ist die Fassung
+                                   // ohne Argument und gilt nur fuer Auto 1.
                                    ort: (c.role === 'player'
                                      ? spielerOrtGes()
                                      : (typeof ghostOrtGes === 'function' ? ghostOrtGes(c) : null)),
@@ -36148,6 +36333,118 @@
       schadenZwei.licht.front = !!front;
       schadenZwei.licht.rear = !!rear;
       return this.schadenZweiLesen();
+    },
+
+    // ---- DER SCHIRM VON AUTO 2: blaetterbar, und zeigt er etwas? ---------------------
+    //
+    // Zwei Dinge, die auseinanderfallen koennen: die REGISTRY (ist der Schirm erreichbar,
+    // und nur im Modus?) und die MALFUNKTION (stehen dort Zahlen, und die richtigen?).
+    //
+    // Der Schirm wird beim Blaettern uebersprungen, solange der Modus aus ist. Die
+    // Alternative waere eine Liste gewesen, deren LAENGE sich aendert - und an ihr haengen
+    // der Schirmzaehler, die Punkte unter dem Pfeil und zwei Selbsttests.
+    schirmZweiProbe() {
+      const vorher = { zwei: zweiSpieler, schirm: cockpitScreenIst().id,
+                       p2: playerCar2, tank: tankZweiStand() };
+      const merkGarage = garage.slice();
+      try {
+        // ---- Erst die Registry, ohne Modus --------------------------------------
+        if (typeof zweiSpielerSetzen === 'function') zweiSpielerSetzen(false);
+        cockpitScreenZu('main');
+        const ohne = [];
+        for (let i = 0; i < 5; i++) { cockpitScreenStep(1); ohne.push(cockpitScreenIst().id); }
+        // ---- Dann mit Modus ------------------------------------------------------
+        if (typeof zweiSpielerSetzen === 'function') zweiSpielerSetzen(true);
+        cockpitScreenZu('main');
+        const mit = [];
+        for (let i = 0; i < 5; i++) { cockpitScreenStep(1); mit.push(cockpitScreenIst().id); }
+        // ---- Und die Zahlen -----------------------------------------------------
+        const a2 = { device: { id: 'probe-schirm' }, role: 'player2', alias: 'P2',
+                     rx: null, testSenke: [], colorId: null,
+                     race: { laps: [{ lap: 1, ms: 21500 }, { lap: 2, ms: 20900 }] } };
+        garage.push(a2);
+        playerCar2 = a2;
+        tankZweiFuellen(40);
+        cockpitScreenZu('auto2');
+        p2ScreenRender();
+        const lies = (id) => { const e = $(id); return e ? e.textContent : null; };
+        const werte = {
+          rpm: lies('p2s-rpm'), tempo: lies('p2s-speed'), gang: lies('p2s-gear'),
+          tank: lies('p2s-fuel'), zustand: lies('p2s-cond'),
+          reifen: lies('p2s-tyre'), bremse: lies('p2s-brake'),
+          letzte: lies('p2s-lap-last'), beste: lies('p2s-lap-best'),
+          lage: lies('p2s-kopf-lage'), fuss: lies('p2s-fuss'),
+        };
+        // Und dass der Schirm beim Abschalten verlassen wird.
+        if (typeof zweiSpielerSetzen === 'function') zweiSpielerSetzen(false);
+        const nachAus = cockpitScreenIst().id;
+        return { liste: COCKPIT_SCREENS.map((x) => x.id), ohne, mit, werte, nachAus };
+      } finally {
+        const i = garage.indexOf(garage.find((c) => c.device
+                                            && c.device.id === 'probe-schirm'));
+        if (i >= 0) garage.splice(i, 1);
+        garage.splice(0, garage.length);
+        merkGarage.forEach((c) => garage.push(c));
+        playerCar2 = vorher.p2;
+        tankZweiFuellen(vorher.tank);
+        if (typeof zweiSpielerSetzen === 'function') zweiSpielerSetzen(vorher.zwei);
+        cockpitScreenZu(vorher.schirm);
+      }
+    },
+
+    // ---- STEHT AUTO 2 IN DER RUNDENUEBERSICHT? ---------------------------------------
+    //
+    // DIE AUFWANDSSCHAETZUNG WAR HIER FALSCH, und das gehoert aufgeschrieben: die
+    // Rundenzaehlung galt als der groesste offene Posten - 27 modulweite Rennzustands-
+    // groessen, Sektorlogik, Ergebnistabelle, CSV. Nachgesehen habe ich dann
+    // carRaceNotify(): es fuehrt `car.race` mit Rundenliste, Rundenuhr und Sperrflanke
+    // fuer JEDES verbundene Auto, "whatever its role", und raceAllCars() liest die ganze
+    // Garage. Auto 2 zaehlte seine Runden also schon; die 27 Groessen betreffen das
+    // Rennen von Auto 1 (Ampel, Flaggen, Einfuehrungsrunde), nicht die Zaehlung.
+    //
+    // Geprueft wird deshalb genau das: Auto 2 steht in der Uebersicht, mit seinen Runden
+    // UND mit einem Ort - ohne Ort waere seine Position in der ersten Runde die
+    // Reihenfolge der Garage, also erfunden.
+    rundenZweiProbe() {
+      const merkGarage = garage.slice();
+      const vorher = { zwei: zweiSpieler, p1: playerCar, p2: playerCar2 };
+      try {
+        garage.splice(0, garage.length);
+        const mk = (rolle, name, runden) => ({
+          role: rolle, alias: name, device: { id: 'probe-' + name }, colorId: null,
+          tileCode: 0x02, tileCount: 3,
+          ghost: { nurOrt: rolle !== 'ghost', tileIndex: 2, tilesTotal: 2.5,
+                   tileMs: 500, tileStart: Date.now(), tileRing: [], laps: runden.length },
+          race: { laps: runden.map((ms, i) => ({ lap: i + 1, ms, off: 0 })),
+                  lapStart: null, pending: null, seen: 0, lastActed: 0, lastCount: null },
+        });
+        const a1 = mk('player', 'P1', [21000, 20500]);
+        const a2 = mk('player2', 'P2', [20800]);
+        const g = mk('ghost', 'G', [21500, 21200, 21100]);
+        garage.push(a1, a2, g);
+        playerCar = a1;
+        playerCar2 = a2;
+        zweiSpieler = true;
+        const alle = raceAllCars();
+        const zeile = alle.find((c) => c.name === 'P2');
+        return {
+          autos: alle.length,
+          rollen: alle.map((c) => c.role),
+          hatAutoZwei: !!zeile,
+          rundenAutoZwei: zeile ? zeile.laps.length : null,
+          ortAutoZwei: zeile ? zeile.ort : null,
+          ortAutoEins: (alle.find((c) => c.name === 'P1') || {}).ort,
+          // Und die Rangliste: wer steht wo? Sortiert wird nach Runden, dann Gesamtzeit.
+          // ovDaten() gibt die fertige Rangliste zurueck: Position, Name, Rolle, Luecke.
+          reihenfolge: ovDaten().map((x) => x.pos + ':' + x.name + '/' + x.rolle),
+        };
+      } finally {
+        garage.splice(0, garage.length);
+        merkGarage.forEach((c) => garage.push(c));
+        zweiSpieler = vorher.zwei;
+        playerCar = vorher.p1;
+        playerCar2 = vorher.p2;
+      }
     },
 
     // ---- KLINGT DIE ZWEITE MOTORSTIMME, UND AUF DER RICHTIGEN SEITE? -----------------
@@ -53402,6 +53699,108 @@
   // Die Liste ist GEPFLEGT, und das ist hier richtig: sie IST die Zusicherung. Sie stammt
   // aus einer Suche ueber alle Kaestchen, deren Listener "X = e.target.checked" schreibt.
   // Ein neuer Schalter gehoert hinein.
+  // ---- Der Cockpit-Schirm von Auto 2 -----------------------------------------------
+  //
+  // So bestellt: "Drehzahl und Geschwindigkeit fuer beide Autos; alle weiteren
+  // Einstellungen auf weiteren Screens." Die zweite Zeile im Hauptschirm traegt die zwei
+  // Werte, die man im Fahren braucht; Tank, Zustand, Temperaturen und Rundenzeiten stehen
+  // auf diesem vierten Schirm.
+  //
+  // Geprueft werden zwei Dinge, die auseinanderfallen koennen:
+  //
+  //   DIE REGISTRY - der Schirm ist erreichbar, aber NUR im Modus. Ohne ihn wird er beim
+  //   Blaettern uebersprungen; ein vierter Schirm, auf dem im Einzelspiel alle Zahlen
+  //   stehenbleiben, waere schlimmer als keiner. Und liegt er vorne, wenn der Modus
+  //   ausgeht, muss er verlassen werden - sonst kommt der Pfeil nicht zurueck, weil das
+  //   Blaettern ihn ja gerade ueberspringt.
+  //
+  //   DIE MALFUNKTION - dort stehen Zahlen, und die richtigen. Der Prueftisch stellt Tank
+  //   auf 40 Prozent und zwei Runden ein; beides muss durchkommen.
+  //
+  // Eine Falle, die dieser Test gefangen hat: `st.brakeTempC` gibt es nicht. Das Modell
+  // fuehrt brakeTemp4[] und brakeTempF/R. Gemessen kamen 0 Grad heraus, waehrend der
+  // Reifen 20 zeigte - ein Feldname, den ich mir gemerkt statt nachgesehen hatte.
+  stAdd('Zwei Spieler: der Cockpit-Schirm von Auto 2', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.schirmZweiProbe) {
+      return { skip: true, mass: 'schirmZweiProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.schirmZweiProbe();
+    const maengel = [];
+    if (r.liste.indexOf('auto2') < 0) maengel.push('Schirm nicht in der Registry');
+    // Ohne Modus: auto2 darf in fuenf Schritten nicht auftauchen.
+    if (r.ohne.indexOf('auto2') >= 0) {
+      maengel.push('ohne Modus erreichbar: ' + r.ohne.join('>'));
+    }
+    // Mit Modus: er muss auftauchen, und der Umlauf muss vollstaendig sein.
+    if (r.mit.indexOf('auto2') < 0) maengel.push('mit Modus nicht erreichbar: ' + r.mit.join('>'));
+    if (r.nachAus !== 'main') maengel.push('nach dem Abschalten noch auf ' + r.nachAus);
+    // Die Zahlen. Tank 40 Prozent von 110 Litern sind 44.
+    if (!/44 l/.test(r.werte.tank || '')) maengel.push('Tank zeigt ' + r.werte.tank);
+    if (!/100/.test(r.werte.zustand || '')) maengel.push('Zustand zeigt ' + r.werte.zustand);
+    // Die Temperaturen muessen eine Zahl ueber null tragen - 0 Grad war der gefundene
+    // Fehler (falscher Feldname).
+    for (const [name, wert] of [['Reifen', r.werte.reifen], ['Bremse', r.werte.bremse]]) {
+      const zahl = parseFloat(String(wert));
+      if (!(zahl > 0)) maengel.push(name + ' zeigt ' + wert);
+    }
+    // Die Rundenzeiten aus car.race: letzte 20,9 s, beste ebenfalls 20,9 s.
+    if (!/20[.,]9/.test(r.werte.letzte || '')) maengel.push('letzte Runde ' + r.werte.letzte);
+    if (!/20[.,]9/.test(r.werte.beste || '')) maengel.push('beste Runde ' + r.werte.beste);
+    if (!/P2/.test(r.werte.fuss || '')) maengel.push('Fusszeile nennt das Auto nicht');
+    return { ok: !maengel.length,
+             mass: 'ohne ' + r.ohne.join('>') + ' | mit ' + r.mit.join('>')
+                 + ' | Tank ' + r.werte.tank + ', Zustand ' + r.werte.zustand
+                 + ', Reifen ' + r.werte.reifen + ', Bremse ' + r.werte.bremse
+                 + ', beste ' + r.werte.beste
+                 + (maengel.length ? ' | ' + maengel.join(', ') : '') };
+  });
+
+  // ---- Auto 2 zaehlt Runden und steht in der Rangliste -----------------------------
+  //
+  // MEINE AUFWANDSSCHAETZUNG WAR HIER FALSCH, und das gehoert in den Testkopf, damit es
+  // nicht noch einmal jemand aus der Ferne schaetzt: die Rundenzaehlung galt als der
+  // groesste offene Posten des Zwei-Spieler-Modus - 27 modulweite Rennzustandsgroessen,
+  // Sektorlogik, Ergebnistabelle, CSV. Nachgesehen fuehrt carRaceNotify() aber `car.race`
+  // mit Rundenliste, Rundenuhr und Sperrflanke fuer JEDES verbundene Auto, "whatever its
+  // role", und raceAllCars() liest die ganze Garage. Auto 2 zaehlte seine Runden also
+  // schon. Die 27 Groessen betreffen das RENNEN von Auto 1 - Ampel, Flaggen,
+  // Einfuehrungsrunde -, nicht die Zaehlung.
+  //
+  // Geprueft wird deshalb, was wirklich offen war:
+  //   1. Auto 2 steht in der Uebersicht, mit seiner Rolle und seinen Runden.
+  //   2. Es hat einen ORT. Ohne ihn waere seine Position in der ersten Runde die
+  //      Reihenfolge der Garage, also erfunden - genau das, was der Kommentar bei
+  //      raceAllCars() als "schlechter als keine Uebersicht" bezeichnet.
+  //   3. Die Rangliste sortiert es richtig ein: mehr Runden zuerst, dann die kleinere
+  //      Gesamtzeit.
+  stAdd('Zwei Spieler: Auto 2 zaehlt Runden und steht in der Rangliste', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.rundenZweiProbe) {
+      return { skip: true, mass: 'rundenZweiProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.rundenZweiProbe();
+    const maengel = [];
+    if (r.autos !== 3) maengel.push(r.autos + ' Autos in der Uebersicht statt 3');
+    if (!r.hatAutoZwei) maengel.push('Auto 2 fehlt in der Uebersicht');
+    if (r.rundenAutoZwei !== 1) {
+      maengel.push('Auto 2 mit ' + r.rundenAutoZwei + ' Runden statt 1');
+    }
+    if (typeof r.ortAutoZwei !== 'number') {
+      maengel.push('Auto 2 ohne Ort (' + r.ortAutoZwei + ')');
+    }
+    if (r.rollen.indexOf('player2') < 0) maengel.push('Rolle player2 nicht durchgereicht');
+    // Der Prueftisch gibt dem Ghost 3 Runden, Auto 1 zwei, Auto 2 eine. Genau diese
+    // Reihenfolge muss herauskommen - sie prueft die Sortierung und nicht die Zahlen.
+    const soll = ['1:G/ghost', '2:P1/player', '3:P2/player2'];
+    if (r.reihenfolge.join(' ') !== soll.join(' ')) {
+      maengel.push('Rangliste ' + r.reihenfolge.join(' ') + ' statt ' + soll.join(' '));
+    }
+    return { ok: !maengel.length,
+             mass: r.autos + ' Autos, Rollen ' + r.rollen.join('/')
+                 + ' | Auto 2: ' + r.rundenAutoZwei + ' Runde, Ort ' + r.ortAutoZwei
+                 + ' | ' + r.reihenfolge.join(' ')
+                 + (maengel.length ? ' | ' + maengel.join(', ') : '') };
+  });
+
   // ---- Auto 2 hat eine eigene Motorstimme, auf der anderen Stereoseite -------------
   //
   // FUENF AUSSAGEN, und keine davon ist "es klingt gut" - das entscheidet der Teppich.

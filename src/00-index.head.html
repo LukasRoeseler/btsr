@@ -1663,7 +1663,16 @@
     overflow: hidden;
   }
   #race-dash[data-screen="pit"] #race-pitscreen,
+  #race-dash[data-screen="auto2"] #race-p2screen,
   #race-dash[data-screen="uebersicht"] #race-ovscreen { display: grid; }
+  /* Neun Kaesten, und sie sollen auf dem Telefon nicht zu Streifen werden: drei Spalten
+     bis 560 px, darueber fuenf. Dieselbe Bauform wie beim Kachelstreifen. */
+  .p2s-grid { display: grid; gap: clamp(3px, .7vw, 8px);
+    grid-template-columns: repeat(5, minmax(0, 1fr)); align-content: start; }
+  @media (max-width: 560px) {
+    .p2s-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  }
+  #race-p2screen { grid-template-rows: auto minmax(0, 1fr) auto; }
 
   .schirm-kopf { display: flex; align-items: baseline; gap: 10px;
     font-size: clamp(8px, 1.1vw, 11px); letter-spacing: .12em;
@@ -3596,6 +3605,45 @@
              aus. -->
         <div class="ov-karte" id="ov-karte" data-i18n-skip></div>
         <div class="schirm-fuss" id="ov-fuss" data-i18n-skip></div>
+      </div>
+
+      <!-- DER SCHIRM VON AUTO 2. Er traegt alles, was der zweiten Zeile im Hauptschirm
+           nicht passt: Tank, Schaden, Reifen- und Bremsentemperatur, Rundenzeiten.
+
+           So bestellt: "Drehzahl und Geschwindigkeit fuer beide Autos; alle weiteren
+           Einstellungen auf weiteren Screens." Die zweite Zeile im Hauptschirm zeigt die
+           zwei Werte, die man im Fahren braucht - der Rest steht hier, einen Tastendruck
+           entfernt.
+
+           Die Werte werden von p2ScreenRender() in 50-drive.js geschrieben und sind
+           deshalb data-i18n-skip: es sind Messwerte, keine Oberflaeche. -->
+      <div class="gt3-schirm" id="race-p2screen">
+        <div class="schirm-kopf"><b>Auto 2</b><span class="wip-tag">experimentell</span>
+          <span id="p2s-kopf-lage" data-i18n-skip>&ndash;</span>
+          <span style="margin-left:auto" id="p2s-kopf-runde" data-i18n-skip></span></div>
+        <div class="p2s-grid">
+          <div class="gt3-box"><div class="gt3-lbl">1/min</div>
+            <div class="gt3-val" id="p2s-rpm" data-i18n-skip>1500</div></div>
+          <div class="gt3-box"><div class="gt3-lbl">km/h</div>
+            <div class="gt3-val" id="p2s-speed" data-i18n-skip>0</div></div>
+          <div class="gt3-box"><div class="gt3-lbl">Gang</div>
+            <div class="gt3-val" id="p2s-gear" data-i18n-skip>N</div></div>
+          <div class="gt3-box"><div class="gt3-lbl">Tank</div>
+            <div class="gt3-val sm" id="p2s-fuel" data-i18n-skip>100 l</div>
+            <div class="gt3-bar"><i id="p2s-fuel-bar"></i></div></div>
+          <div class="gt3-box"><div class="gt3-lbl">Zustand</div>
+            <div class="gt3-val sm" id="p2s-cond" data-i18n-skip>100&nbsp;%</div>
+            <div class="gt3-bar"><i id="p2s-cond-bar"></i></div></div>
+          <div class="gt3-box"><div class="gt3-lbl">Reifen</div>
+            <div class="gt3-val sm" id="p2s-tyre" data-i18n-skip>20&deg;</div></div>
+          <div class="gt3-box"><div class="gt3-lbl">Bremse</div>
+            <div class="gt3-val sm" id="p2s-brake" data-i18n-skip>20&deg;</div></div>
+          <div class="gt3-box"><div class="gt3-lbl">Letzte Runde</div>
+            <div class="gt3-val sm" id="p2s-lap-last" data-i18n-skip>&ndash;</div></div>
+          <div class="gt3-box"><div class="gt3-lbl">Beste Runde</div>
+            <div class="gt3-val sm gt3-ok" id="p2s-lap-best" data-i18n-skip>&ndash;</div></div>
+        </div>
+        <div class="schirm-fuss" id="p2s-fuss" data-i18n-skip></div>
       </div>
 
       <div class="gt3-banner" id="hud-toast-wrap"><span id="hud-toast"></span></div>
@@ -8054,13 +8102,23 @@
         <kbd>Gelb</kbd><span>Kein Autopilot unter gelber Flagge und keine
           Einf&uuml;hrungsrunde f&uuml;r Auto&nbsp;2: beide h&auml;ngen an Z&auml;hlern des
           Rennens, die es nur einmal gibt.</span>
-        <kbd>Runden</kbd><span>Rundenz&auml;hlung, Ergebnistabelle und Aufnahme gelten
-          f&uuml;r Auto&nbsp;1.</span>
+        <kbd>Zeiten</kbd><span>Die drei Rundenzeiten im Cockpit &ndash; aktuelle, letzte,
+          beste &ndash; und die Aufnahme geh&ouml;ren Auto&nbsp;1. Seine eigenen Zeiten
+          stehen in der Rundenübersicht.</span>
       </div>
       <p class="muted">Was Auto&nbsp;2 <b>hat</b>: eine eigene Fahrphysik mit eigenen
         G&auml;ngen, eigener Drehzahl, eigenem Tempo und eigenen Temperaturen. Die
         Einstellungen aus &bdquo;Fahrgef&uuml;hl&ldquo; werden bei jedem Anschalten
         &uuml;bernommen, damit beide Autos gleich fahren.</p>
+      <p class="muted">Und ein eigener Cockpit-Schirm: bl&auml;ttere im Cockpit mit dem
+        Pfeil oben links oder dem Steuerkreuz auf &bdquo;Auto&nbsp;2&ldquo;. Dort stehen
+        Tank, Zustand, Reifen- und Bremsentemperatur und seine Rundenzeiten. Ist der Modus
+        aus, wird der Schirm beim Bl&auml;ttern &uuml;bersprungen.</p>
+      <p class="muted">Dazu z&auml;hlt Auto&nbsp;2 seine Runden mit: es steht in der
+        Rundenübersicht, in der Rangliste w&auml;hrend des Rennens und im Ergebnis samt
+        CSV. Das war keine Arbeit, sondern ein Irrtum in meiner Sch&auml;tzung &ndash; die
+        Rundenz&auml;hlung lief schon immer je Auto, f&uuml;r jedes verbundene, egal welche
+        Rolle. Die Zielflagge wartet jetzt auf beide Fahrer statt nur auf einen.</p>
       <p class="muted">Dazu eine eigene Motorstimme, und die sitzt auf der anderen
         Stereoseite &ndash; links Auto&nbsp;1, rechts Auto&nbsp;2. Das ist keine Kosmetik:
         zwei Motoren im selben Drehzahlband aus einem Lautsprecher klingen wie ein
@@ -8488,7 +8546,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.6.49</span></span>
+    <span class="foot-ver">v<span id="app-version">0.6.50</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine

@@ -673,6 +673,15 @@
       malen: () => pitScreenRender() },
     { id: 'uebersicht', name: 'Rennen',
       malen: () => ovScreenRender() },
+    // ---- NUR IM ZWEI-SPIELER-MODUS BLAETTERBAR ---------------------------------------
+    //
+    // Der Eintrag steht IMMER in der Liste und wird beim Blaettern uebersprungen, solange
+    // der Modus aus ist. Die Alternative waere eine Liste, deren LAENGE sich aendert - und
+    // an ihr haengen der Schirmzaehler, die Punkte unter dem Pfeil und zwei Selbsttests.
+    // Eine Liste, die beim Umschalten kuerzer wird, verschiebt den gerade gezeigten Schirm.
+    { id: 'auto2', name: 'Auto 2',
+      nurZweiSpieler: true,
+      malen: () => p2ScreenRender() },
   ];
   let cockpitScreen = 0;
 
@@ -703,7 +712,26 @@
     // sechs Layoutlaeufe auf einen Tastendruck waehrend der Fahrt.
   }
 
-  function cockpitScreenStep(d) { cockpitScreenSet(cockpitScreen + d); }
+  // Ist dieser Schirm gerade blaetterbar? Nur der Schirm von Auto 2 kennt eine Sperre,
+  // und ohne sie waere im Einzelspiel ein vierter Schirm zu durchblaettern, auf dem alle
+  // Zahlen stehen bleiben - schlimmer als ein Schirm, den es nicht gibt.
+  function cockpitScreenGilt(s) {
+    if (!s) return false;
+    if (s.nurZweiSpieler) return typeof zweiSpieler !== 'undefined' && !!zweiSpieler;
+    return true;
+  }
+
+  // SCHRITTWEISE UND MIT ABBRUCH. Die Schleife laeuft hoechstens so oft, wie es Schirme
+  // gibt: sonst dreht sie sich ewig, wenn einmal jeder Schirm gesperrt waere.
+  function cockpitScreenStep(d) {
+    const n = COCKPIT_SCREENS.length;
+    const richtung = d >= 0 ? 1 : -1;
+    let i = cockpitScreen;
+    for (let k = 0; k < n; k++) {
+      i = ((i + richtung) % n + n) % n;
+      if (cockpitScreenGilt(COCKPIT_SCREENS[i])) { cockpitScreenSet(i); return; }
+    }
+  }
 
   // Was die Waehltaste auf DIESEM Schirm tut. Rueckgabe true heisst "verbraucht".
   //
@@ -1340,6 +1368,78 @@
     return String(st.currentGear + 1);
   }
 
+
+  // ---- DER SCHIRM VON AUTO 2 ---------------------------------------------------------
+  //
+  // Alles, was der zweiten Zeile im Hauptschirm nicht passt: Tank, Schaden, Reifen- und
+  // Bremsentemperatur, Rundenzeiten. So bestellt - "Drehzahl und Geschwindigkeit fuer
+  // beide Autos; alle weiteren Einstellungen auf weiteren Screens."
+  //
+  // GEZEICHNET WIRD NUR, WENN ER VORNE LIEGT (cockpitScreenSet ruft malen(), und der Takt
+  // unten prueft es): neun Werte je 45 ms auf einen unsichtbaren Schirm zu schreiben waere
+  // Arbeit fuer niemanden, und der Sendetakt hat Vorrang.
+  function p2ScreenRender() {
+    const st = physEngine2.state;
+    schreibeWert($('p2s-rpm'), Math.round(motorDrehzahl(st)));
+    schreibeWert($('p2s-speed'), Math.round(Math.abs(st.speedKmh) * REAL_SCALE));
+    schreibeWert($('p2s-gear'), gearLabel(st));
+    // Tank und Zustand in derselben Schreibweise wie bei Auto 1 - Liter und Prozent, und
+    // der Zustand ist der KEHRWERT des Schadens: full green at the start. Ein Balken, der
+    // WAECHST, wenn etwas schlechter wird, liest sich rueckwaerts.
+    const tank = typeof tankZweiStand === 'function' ? tankZweiStand() : 0;
+    schreibeWert($('p2s-fuel'), fuelLiters(tank) + ' l');
+    const tb = $('p2s-fuel-bar');
+    if (tb) {
+      tb.style.width = Math.max(0, tank) + '%';
+      tb.style.background = tank < 20 ? '#ffb02e' : '#2ee06a';
+    }
+    const schaden = typeof schadenVon === 'function' ? schadenVon(2) : 0;
+    const zustand = Math.max(0, 100 - schaden);
+    schreibeWert($('p2s-cond'), Math.round(zustand) + ' %');
+    const zb = $('p2s-cond-bar');
+    if (zb) {
+      zb.style.width = zustand + '%';
+      zb.style.background = zustand < 50 ? '#ff5252' : zustand < 80 ? '#ffb02e' : '#2ee06a';
+    }
+    // Reifen und Bremse aus SEINEM Zustand. Die Temperaturen liegen in der Physikinstanz,
+    // sind also von Anfang an je Auto getrennt gewesen - das ist der Teil, der nie gefehlt
+    // hat.
+    //
+    // VIER RAEDER, EIN WERT. Das Modell fuehrt tyreTemp4[] und brakeTemp4[] (und als
+    // Rueckfall tyreTempC bzw. brakeTempF/brakeTempR) - die Reifenkachel von Auto 1 zeigt
+    // alle vier. Hier steht das MITTEL: auf diesem Schirm hat eine Zahl je Groesse Platz,
+    // und die Frage "sind die Reifen warm" ist damit beantwortet.
+    //
+    // `brakeTempC` GIBT ES NICHT, und das stand hier einen Anlauf lang: der Wert kam als
+    // 0 Grad heraus, waehrend der Reifen 20 zeigte. Ein Feldname, den ich mir gemerkt
+    // statt nachgesehen habe.
+    const mittel = (a) => (a && a.length)
+      ? a.reduce((x, y) => x + y, 0) / a.length : null;
+    const reifen = mittel(st.tyreTemp4) !== null ? mittel(st.tyreTemp4) : (st.tyreTempC || 0);
+    const bremse = mittel(st.brakeTemp4) !== null ? mittel(st.brakeTemp4)
+      : ((st.brakeTempF || 0) + (st.brakeTempR || 0)) / 2;
+    schreibeWert($('p2s-tyre'), Math.round(reifen) + '\u00b0');
+    schreibeWert($('p2s-brake'), Math.round(bremse) + '\u00b0');
+    // Die Rundenzeiten aus car.race - dieselbe Quelle, aus der die Rundenuebersicht liest.
+    const car = typeof playerCar2 !== 'undefined' ? playerCar2 : null;
+    const runden = (car && car.race && car.race.laps) || [];
+    const ms = runden.map((l) => l.ms);
+    schreibeWert($('p2s-lap-last'), ms.length ? formatLapTime(ms[ms.length - 1]) : '\u2013');
+    schreibeWert($('p2s-lap-best'), ms.length ? formatLapTime(Math.min.apply(null, ms)) : '\u2013');
+    const lage = $('p2s-kopf-lage');
+    if (lage) {
+      lage.textContent = !car ? 'kein Auto zugeteilt'
+        : (abseitsJetztFuer(2) ? 'neben der Bahn'
+           : (schaden >= 100 ? 'Notlauf' : (tank <= 0 ? 'Tank leer' : 'auf der Bahn')));
+    }
+    const rundeK = $('p2s-kopf-runde');
+    if (rundeK) rundeK.textContent = ms.length ? 'Runde ' + ms.length : '';
+    const fuss = $('p2s-fuss');
+    if (fuss) {
+      fuss.textContent = car ? garageLabel(car)
+        : 'In der Garage einem Auto die Rolle "Spieler 2" geben.';
+    }
+  }
 
   // Einen Wert schreiben UND, wenn er sich geaendert hat, die Anzeige 1 px nach unten
   // setzen. 80 ms, dann zurueck: eine Anzeige mit Masse setzt sich kurz, ein Textfeld nicht.
@@ -2380,6 +2480,12 @@
     //      cockpitInhaltHoehe() - die Einpassung wuerde im Einzelspiel rund 9 px Platz
     //      verschenken. Mit der Klasse gibt es die Zeile nur, wenn es sie braucht.
     document.body.classList.toggle('zwei-spieler', zweiSpieler);
+    // Liegt der Schirm von Auto 2 vorne, wenn der Modus ausgeht, muss er verlassen werden -
+    // sonst starrt man auf neun Zahlen, die niemand mehr nachfuehrt, und der Pfeil kommt
+    // nicht zurueck (cockpitScreenStep ueberspringt ihn dann ja gerade).
+    if (!zweiSpieler && cockpitScreenIst() && cockpitScreenIst().nurZweiSpieler) {
+      cockpitScreenZu('main');
+    }
     // DAS KAESTCHEN GEHT MIT. Der Modus laesst sich seit v0.6.45 auch aus der Garage
     // einschalten (siehe setCarRole in 90-ghosts.js), und ein Schalter, der "aus" zeigt,
     // waehrend zwei Autos fahren, ist genau die Luege, die der Selbsttest "Schalter und
