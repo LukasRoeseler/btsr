@@ -258,15 +258,65 @@ def band_ladder(rpms):
     return out
 
 
+# =====================================================================================
+# JEDER MOTOR KLINGT JETZT UNGLEICHMAESSIGER UND MECHANISCHER
+# =====================================================================================
+#
+# Bis v0.6.34 stand das nur an zwei Nebeneintraegen (Porsche und BMW, je einmal
+# "schmutzig" abgestimmt) neben ihrem sauberen Original. BESTELLT: alle Motoren neu in
+# diesem Stil, und zwar als ERSATZ des jeweiligen Originals, nicht als weiterer
+# Eintrag daneben - der Vergleich zwischen "sauber" und "mechanisch" war nur ein
+# Zwischenschritt, das Ergebnis ist jetzt der einzige Klang jedes Motors.
+#
+# ---- ACHT REGLER, IN EINER FESTEN RICHTUNG, UM EINEN FESTEN ANTEIL DES RESTWEGS ----
+#
+# clatter, drive, scatter_t und scatter_g steigen; clatter_hz, bright und res_q sinken;
+# crackle steigt. Jeder der 25 Motoren wandert dabei 40% des Abstands zwischen seinem
+# EIGENEN alten Wert und dem Rand, den ALLE Motoren zusammen fuer diesen Regler
+# aufspannen (siehe die Kommentare zu den beiden frueheren Einzelabstimmungen, aus
+# denen dieser Rand ausgezaehlt wurde: clatter 0,07-0,26, clatter_hz 1800-5200, drive
+# 1,8-3,6, scatter_t 0,002-0,03, scatter_g 0,02-0,08, bright 0,34-0,76, res_q 3,2-9,0,
+# crackle 0,12-0,75). Das ist keine einzelne Zahl fuer alle: ein Motor, der schon nahe
+# am Rand stand (etwa der Impreza bei scatter_t), bewegt sich kaum, einer am anderen
+# Ende (etwa der Formel 1 bei crackle) deutlich - und KEIN Wert verlaesst dabei den
+# Bereich, den ein anderer wirklicher Motor in diesem Satz schon belegt.
+#
+# Unveraendert bleiben bei allen 25: Zylinderzahl, Zuendfolge, Bankaufteilung,
+# Rohrlaenge, Drehzahlband, 'turbo' und 'noise' - das sind Merkmale des jeweiligen
+# Motors (Einzeldrosseln, Lader, Vergaser), kein Schmutz, den man dazurechnet.
+#
+# ---- UND ZWEI ECHTE MECHANISMEN, NICHT NUR GROESSERE ZAHLEN ------------------------
+#
+# gain_wobble   ersetzt den bisher FEST verdrahteten Wert 0,02 fuer die
+#               Zuendungleichheit von Takt zu Takt, oben auf dem festen
+#               Zylindercharakter (cylinder_scatter()). Alle 25 Motoren setzen ihn
+#               jetzt auf 0,05 - mehr als doppelt so viel Streuung im
+#               Verbrennungsdruck. Der alte Vorgabewert 0,02 bleibt in synth_loop()
+#               als Rueckfall fuer jeden zukuenftigen Motor, der ihn nicht setzt.
+#
+# clatter_variiert   war vorher gar nicht vorhanden: JEDER Ventiltrieb-Klick im
+#               ganzen Loop war derselbe abgespielte Abdruck (metal_tick() einmal
+#               gerufen, nur unterschiedlich laut gestempelt) - bei vielen Klicks im
+#               Loop wiederholte sich also derselbe Klang. Auf True gestellt baut
+#               jedes einzelne Klicken seinen EIGENEN metal_tick() mit neuer
+#               Zufallsphase je Partialton. Dieselbe Funktion, nur oefter gerufen -
+#               keine neue Klangquelle, keine Lizenzfrage. Alle 25 Motoren setzen ihn
+#               jetzt auf True.
+#
+# Beide Regler bleiben in synth_loop() opt-in mit dem alten Verhalten als Vorgabe -
+# nicht weil noch ein Motor das alte Verhalten braucht, sondern weil ein neuer Motor,
+# der eines Tages ohne diese beiden Zeilen eingetragen wird, nicht heimlich denselben
+# Klang bekommen soll wie die anderen 25.
 CARS = {
     'mustang': {
         'label': 'Ford Mustang GT3 (V8, Cross-Plane)',
         'banks': cross_plane_v8(), 'cylinders': 8,
         'rpms': {'idle': 1200, 'mid': 3900, 'high': 7000},
-        'primary_in': 35.54, 'res_q': 6.0, 'partials': 6, 'ir_ms': 60.0,
-        'pulse_ms': 4.0, 'bright': 0.55, 'noise': 0.07, 'noise_hz': 1500.0,
-        'clatter': 0.20, 'clatter_hz': 2200.0, 'drive': 3.0,
-        'scatter_t': 0.008, 'scatter_g': 0.07, 'crackle': 0.45,
+        'primary_in': 35.54, 'res_q': 4.88, 'partials': 6, 'ir_ms': 60.0,
+        'pulse_ms': 4.0, 'bright': 0.47, 'noise': 0.07, 'noise_hz': 1500.0,
+        'clatter': 0.22, 'clatter_hz': 2040.0, 'drive': 3.24,
+        'scatter_t': 0.0168, 'scatter_g': 0.074, 'crackle': 0.57,
+        'gain_wobble': 0.05, 'clatter_variiert': True,
     },
     # ---- Sieben Rennmotoren aus den gelieferten technischen Angaben ----
     #
@@ -284,10 +334,11 @@ CARS = {
         'rpms': {'idle': 1100, 'mid': 4000, 'high': 7200},
         # Ein Stossstangenmotor mit langen Kruemmern: tief, viel Saettigung, hoerbarer
         # Ventiltrieb. 29 Zoll ist die Laenge, die engine-sim fuer den LS ansetzt.
-        'primary_in': 32.0, 'res_q': 6.5, 'partials': 6, 'ir_ms': 62.0,
-        'pulse_ms': 4.2, 'bright': 0.52, 'noise': 0.07, 'noise_hz': 1450.0,
-        'clatter': 0.23, 'clatter_hz': 2100.0, 'drive': 3.2,
-        'scatter_t': 0.008, 'scatter_g': 0.07, 'crackle': 0.45,
+        'primary_in': 32.0, 'res_q': 5.18, 'partials': 6, 'ir_ms': 62.0,
+        'pulse_ms': 4.2, 'bright': 0.45, 'noise': 0.07, 'noise_hz': 1450.0,
+        'clatter': 0.24, 'clatter_hz': 1980.0, 'drive': 3.36,
+        'scatter_t': 0.0168, 'scatter_g': 0.074, 'crackle': 0.57,
+        'gain_wobble': 0.05, 'clatter_variiert': True,
     },
     'c5r': {
         'label': 'Corvette C5-R (LS1.R 7.0 V8, Cross-Plane)',
@@ -304,10 +355,11 @@ CARS = {
         'rpms': {'idle': 1050, 'mid': 3800, 'high': 6400},
         # 30 Zoll gegen 32 beim C6.R: die Seitenrohre des C5-R sind kuerzer, weil sie vor der
         # Hinterachse austreten. 113 Hz gegen 106.
-        'primary_in': 30.0, 'res_q': 6.4, 'partials': 6, 'ir_ms': 58.0,
-        'pulse_ms': 4.0, 'bright': 0.55, 'noise': 0.11, 'noise_hz': 2000.0,
-        'clatter': 0.22, 'clatter_hz': 2100.0, 'drive': 3.1,
-        'scatter_t': 0.008, 'scatter_g': 0.07, 'crackle': 0.48,
+        'primary_in': 30.0, 'res_q': 5.12, 'partials': 6, 'ir_ms': 58.0,
+        'pulse_ms': 4.0, 'bright': 0.47, 'noise': 0.11, 'noise_hz': 2000.0,
+        'clatter': 0.24, 'clatter_hz': 1980.0, 'drive': 3.3,
+        'scatter_t': 0.0168, 'scatter_g': 0.074, 'crackle': 0.59,
+        'gain_wobble': 0.05, 'clatter_variiert': True,
     },
     'z06gt3r': {
         'label': 'Corvette Z06 GT3.R (LT6.R 5.5 V8, Flat-Plane)',
@@ -321,19 +373,21 @@ CARS = {
         # Haelften-Nummerierung genau die gleichmaessigen 180 Grad, die hier gebaut werden.
         'banks': even_v_banks(8), 'cylinders': 8,
         'rpms': {'idle': 1300, 'mid': 5200, 'high': 8600},
-        'primary_in': 20.0, 'res_q': 8.5, 'partials': 7, 'ir_ms': 42.0,
-        'pulse_ms': 2.3, 'bright': 0.73, 'noise': 0.05, 'noise_hz': 3300.0,
-        'clatter': 0.11, 'clatter_hz': 3500.0, 'drive': 2.3,
-        'scatter_t': 0.004, 'scatter_g': 0.03, 'crackle': 0.62,
+        'primary_in': 20.0, 'res_q': 6.38, 'partials': 7, 'ir_ms': 42.0,
+        'pulse_ms': 2.3, 'bright': 0.57, 'noise': 0.05, 'noise_hz': 3300.0,
+        'clatter': 0.17, 'clatter_hz': 2820.0, 'drive': 2.82,
+        'scatter_t': 0.0144, 'scatter_g': 0.05, 'crackle': 0.67,
+        'gain_wobble': 0.05, 'clatter_variiert': True,
     },
     'amggt3': {
         'label': 'Mercedes-AMG GT3 (M159 6.2 V8, Cross-Plane)',
         'banks': banks_from_order([1, 5, 4, 2, 6, 3, 7, 8], 8, 'half'), 'cylinders': 8,
         'rpms': {'idle': 1200, 'mid': 4400, 'high': 7700},
-        'primary_in': 29.0, 'res_q': 6.5, 'partials': 6, 'ir_ms': 54.0,
-        'pulse_ms': 3.7, 'bright': 0.58, 'noise': 0.06, 'noise_hz': 1700.0,
-        'clatter': 0.15, 'clatter_hz': 2500.0, 'drive': 2.9,
-        'scatter_t': 0.007, 'scatter_g': 0.055, 'crackle': 0.50,
+        'primary_in': 29.0, 'res_q': 5.18, 'partials': 6, 'ir_ms': 54.0,
+        'pulse_ms': 3.7, 'bright': 0.48, 'noise': 0.06, 'noise_hz': 1700.0,
+        'clatter': 0.19, 'clatter_hz': 2220.0, 'drive': 3.18,
+        'scatter_t': 0.0162, 'scatter_g': 0.065, 'crackle': 0.60,
+        'gain_wobble': 0.05, 'clatter_variiert': True,
     },
     'f296gt3': {
         # Aufgeladen: der 296 GT3 ist ein Twin-Turbo-V6. Das MODELL hat keinen Lader
@@ -343,10 +397,11 @@ CARS = {
         'label': 'Ferrari 296 GT3 (F163CE 3.0 V6 120 Grad, ohne Lader)',
         'banks': banks_from_order([1, 2, 3, 4, 5, 6], 6, 'oddeven'), 'cylinders': 6,
         'rpms': {'idle': 1400, 'mid': 5000, 'high': 8000},
-        'primary_in': 18.0, 'res_q': 5.0, 'partials': 5, 'ir_ms': 40.0,
-        'pulse_ms': 2.6, 'bright': 0.50, 'noise': 0.15, 'noise_hz': 2400.0,
-        'clatter': 0.09, 'clatter_hz': 3000.0, 'drive': 2.0,
-        'scatter_t': 0.005, 'scatter_g': 0.04, 'crackle': 0.55,
+        'primary_in': 18.0, 'res_q': 4.28, 'partials': 5, 'ir_ms': 40.0,
+        'pulse_ms': 2.6, 'bright': 0.44, 'noise': 0.15, 'noise_hz': 2400.0,
+        'clatter': 0.16, 'clatter_hz': 2520.0, 'drive': 2.64,
+        'scatter_t': 0.015, 'scatter_g': 0.056, 'crackle': 0.63,
+        'gain_wobble': 0.05, 'clatter_variiert': True,
     },
     'm4gt3': {
         # Aufgeladen: P58 Twin-Turbo. Siehe f296gt3.
@@ -371,58 +426,11 @@ CARS = {
         # Hub 90,0 - ein langhubiger Reihensechser, also ausdruecklich kein Dreher.
         'limiter': 7200,
         'rpms': {'idle': 1300, 'mid': 4300, 'high': 6800},
-        'primary_in': 23.5, 'res_q': 4.8, 'partials': 5, 'ir_ms': 46.0,
-        'pulse_ms': 3.1, 'bright': 0.48, 'noise': 0.13, 'noise_hz': 2200.0,
-        'clatter': 0.08, 'clatter_hz': 2700.0, 'drive': 2.1,
-        'scatter_t': 0.0045, 'scatter_g': 0.035, 'crackle': 0.52,
-    },
-    # ---- DERSELBE MOTOR, NUR DRECKIG ------------------------------------------------
-    #
-    # BESTELLT: "Dreckigen Sound ebenfalls fuer BMW erstellen und den dreckigen
-    # Porsche sound als Default nehmen - beim Porsche klingt es viel besser."
-    #
-    # Also EIN zusaetzlicher Eintrag, geklont vom BMW, nicht eine Neuabstimmung. Alles,
-    # was den Motor ausmacht - Zylinderzahl, Zuendfolge, Rohrlaenge, Drehzahlband,
-    # 'turbo' und 'limiter' - bleibt unveraendert. Gedreht sind dieselben acht Regler wie
-    # beim Porsche-Ableger, in derselben RICHTUNG: mehr Ventiltrieb, tieferes Klappern,
-    # mehr Saettigung, ungleichere Zuendung, weniger Glanz, breitere Resonanz, mehr
-    # Knallen im Schiebebetrieb.
-    #
-    # ---- DIESELBE RICHTUNG, ANDERE STARTWERTE -------------------------------------
-    #
-    # Kein Wert ist vom Porsche kopiert - der BMW hat eine andere Grundabstimmung
-    # (clatter 0,08 gegen 0,14, drive 2,1 gegen 2,5, und so weiter), und ein kopierter
-    # Absolutwert waere an der falschen Stelle im Bereich gelandet. Verschoben ist
-    # deshalb um einen AEHNLICHEN Betrag, gemessen an derselben Bereichsbreite:
-    #
-    #     Regler        Bereich        M4 GT3    dreckig   warum
-    #     clatter       0,07 - 0,26      0,08      0,20     Ventiltrieb hoerbar
-    #     clatter_hz    1800 - 5200      2700      1900     TIEFER - das ist der Kern
-    #                                                       der Bestellung
-    #     drive          1,8 - 3,6        2,1       3,1     Saettigung, also Zerren
-    #     scatter_t    0,002 - 0,03     0,0045     0,020    Zuendzeitpunkt ungleich
-    #     scatter_g     0,02 - 0,08      0,035     0,065    Zuendstaerke ungleich
-    #     bright        0,34 - 0,76      0,48      0,38     weniger Glanz, mehr Gewicht
-    #     res_q          3,2 - 9,0        4,8       3,6     breitere Resonanz
-    #     crackle       0,12 - 0,75       0,52      0,64    mehr Knallen im Schiebebetrieb
-    #
-    # Jeder Wert bleibt im Bereich, den die 25 anderen Motoren belegen - dieselbe Regel
-    # wie beim Porsche-Ableger, aus demselben Grund: ein Parameter jenseits des
-    # Gemessenen klingt nicht dreckiger, sondern kaputt.
-    #
-    # NICHT ANGETASTET: 'turbo': True und 'noise'. Das Ladergeraeusch dieses Motors ist
-    # ein Merkmal (siehe der Kommentar am M4-Eintrag oben) und kein Schmutz, den man
-    # dazurechnet - dieselbe Unterscheidung wie beim Porsche mit seinen Einzeldrosseln.
-    'm4gt3_dreck': {
-        'turbo': True,
-        'label': 'BMW M4 GT3, dreckig (P58 3.0 Reihen-6, mechanisch)',
-        'banks': inline_from_order([1, 5, 3, 6, 2, 4], 6), 'cylinders': 6,
-        'limiter': 7200,
-        'rpms': {'idle': 1300, 'mid': 4300, 'high': 6800},
-        'primary_in': 23.5, 'res_q': 3.6, 'partials': 5, 'ir_ms': 46.0,
-        'pulse_ms': 3.1, 'bright': 0.38, 'noise': 0.13, 'noise_hz': 2200.0,
-        'clatter': 0.20, 'clatter_hz': 1900.0, 'drive': 3.1,
-        'scatter_t': 0.020, 'scatter_g': 0.065, 'crackle': 0.64,
+        'primary_in': 23.5, 'res_q': 4.16, 'partials': 5, 'ir_ms': 46.0,
+        'pulse_ms': 3.1, 'bright': 0.42, 'noise': 0.13, 'noise_hz': 2200.0,
+        'clatter': 0.15, 'clatter_hz': 2340.0, 'drive': 2.7,
+        'scatter_t': 0.0147, 'scatter_g': 0.053, 'crackle': 0.61,
+        'gain_wobble': 0.05, 'clatter_variiert': True,
     },
     # ---- Porsche 911 GT3 R (v0.4) ----
     # Geliefert: Boxer-6, 4194 cm3, 104,5 x 81,5 mm, CR 13,2:1, Begrenzer 9250-9400/min,
@@ -455,118 +463,14 @@ CARS = {
         # Zoll und 148 Hz, weil DAS ein Strassenmotor ist: ein Rennkruemmer ist kuerzer, und
         # kuerzer heisst hoeher. 165 Hz liegt noch unter der Zuendrate bei 5500/min
         # (275 Hz), es droehnt also nicht.
-        'primary_in': 20.5, 'res_q': 6.5, 'partials': 6, 'ir_ms': 38.0,
-        'pulse_ms': 2.4, 'bright': 0.66,
+        'primary_in': 20.5, 'res_q': 5.18, 'partials': 6, 'ir_ms': 38.0,
+        'pulse_ms': 2.4, 'bright': 0.53,
         # 0,17 ist der hoechste Rauschanteil aller acht: das sind die sechs Einzeldrosseln.
         # Sie haben keinen gemeinsamen Sammler, der das Ansauggeraeusch daempft - das
         # Zischen IST bei diesem Motor ein Merkmal und kein Nebengeraeusch.
         'noise': 0.17, 'noise_hz': 2900.0,
-        'clatter': 0.14, 'clatter_hz': 3200.0, 'drive': 2.5,
-        'scatter_t': 0.005, 'scatter_g': 0.045, 'crackle': 0.42,
-    },
-    # ---- DERSELBE MOTOR, NUR DRECKIG -----------------------------------------------
-    #
-    # BESTELLT: "Sounds noch etwas dreckiger und mechanischer machen, vor allem die tiefen
-    # (nicht alle neu machen, sondern dem Standard-Porsche-Sound nochmal als dreckige
-    # Variante genau hinter dem Default)."
-    #
-    # Also EIN zusaetzlicher Eintrag und keine Neuabstimmung der anderen 24. Alles, was den
-    # Motor ausmacht - Zylinderzahl, Zuendfolge, Rohrlaenge, Drehzahlband -, bleibt
-    # unveraendert: es ist derselbe 4,2-l-Boxer. Gedreht sind nur die Regler, die
-    # "schmutzig" und "mechanisch" bedeuten.
-    #
-    # ---- UND JEDER WERT BLEIBT IM GEMESSENEN BEREICH ------------------------------
-    #
-    # Ausgezaehlt ueber alle 25 vorhandenen Motoren (min bis max), daneben der Standardwert
-    # des 992 GT3 R und die Wahl hier:
-    #
-    #     Regler        Bereich        992 GT3 R   dreckig   warum
-    #     clatter       0,07 - 0,26       0,14      0,24     Ventiltrieb hoerbar
-    #     clatter_hz    1800 - 5200       3200      2000     TIEFER - das ist der Kern
-    #                                                        der Bestellung
-    #     drive          1,8 - 3,6         2,5       3,5     Saettigung, also Zerren
-    #     scatter_t    0,002 - 0,03      0,005     0,022     Zuendzeitpunkt ungleich
-    #     scatter_g     0,02 - 0,08      0,045     0,075     Zuendstaerke ungleich
-    #     bright        0,34 - 0,76       0,66      0,52     weniger Glanz, mehr Gewicht
-    #     res_q          3,2 - 9,0         6,5       4,8     breitere Resonanz
-    #     crackle       0,12 - 0,75       0,42      0,60     mehr Knallen im Schiebebetrieb
-    #
-    # Kein Wert verlaesst also den Bereich, den andere WIRKLICHE Motoren belegen. Das ist
-    # keine Vorsicht um ihrer selbst willen: ein Parameter jenseits des Gemessenen klingt
-    # nicht dreckiger, sondern kaputt - und die Grenzen des Synthesizers sind an keiner
-    # Stelle geprueft.
-    #
-    # NICHT ANGETASTET: noise bleibt bei 0,17. Das Zischen der sechs Einzeldrosseln IST das
-    # Merkmal dieses Motors (siehe den Kommentar oben) und kein Nebengeraeusch, das man zum
-    # Schmutz dazurechnet.
-    'p992gt3r_dreck': {
-        'label': 'Porsche 911 GT3 R, dreckig (4.2 Boxer-6, mechanisch)',
-        'banks': banks_from_order([1, 6, 2, 4, 3, 5], 6, 'half'), 'cylinders': 6,
-        'rpms': {'idle': 1200, 'mid': 5500, 'high': 8800},
-        'primary_in': 20.5, 'res_q': 4.8, 'partials': 6, 'ir_ms': 38.0,
-        'pulse_ms': 2.4, 'bright': 0.52,
-        'noise': 0.17, 'noise_hz': 2900.0,
-        'clatter': 0.24, 'clatter_hz': 2000.0, 'drive': 3.5,
-        'scatter_t': 0.022, 'scatter_g': 0.075, 'crackle': 0.60,
-    },
-    # ---- NOCH EINMAL DRECKIGER, UND DIESMAL MIT EINEM NEUEN MECHANISMUS -------------
-    #
-    # BESTELLT: "Baue noch eine dreckige Variante vom Porsche (dreckig 2)." Im Menue
-    # direkt HINTER der ersten dreckigen Variante, wie bestellt - derselbe Grund wie
-    # dort: man vergleicht mit dem direkten Nachbarn, nicht mit einem Eintrag zwanzig
-    # Zeilen weiter unten.
-    #
-    # ---- WARUM DIE REGLER ALLEIN NICHT MEHR VIEL HERGEBEN --------------------------
-    #
-    # Ausgezaehlt ueber alle 27 Motoren liegen clatter, drive, scatter_t und scatter_g
-    # der ERSTEN dreckigen Fassung schon nahe an ihrer gemessenen Obergrenze - sie noch
-    # weiter aufzudrehen waere keine zweite Stufe mehr, sondern derselbe Regler am
-    # Anschlag. "Dreckiger" braucht hier also eine ZWEITE ART Unordnung, keine groessere
-    # Zahl.
-    #
-    # ---- ZWEI NEUE, OPTIONALE REGLER IN synth_loop() -------------------------------
-    #
-    # gain_wobble   ersetzt den bisher FEST verdrahteten Wert 0,02 fuer die
-    #               Zuendungleichheit von Takt zu Takt (oben auf dem festen
-    #               Zylindercharakter). Alle 27 bisherigen Motoren bleiben unangetastet,
-    #               weil 0,02 ihr Vorgabewert bleibt - dieser Motor dreht ihn auf 0,05,
-    #               mehr als doppelt so viel Streuung im Verbrennungsdruck.
-    #
-    # clatter_variiert  war bisher gar nicht vorhanden: JEDER Ventiltrieb-Klick im
-    #               ganzen Loop war derselbe abgespielte Abdruck (metal_tick() einmal
-    #               gerufen, nur unterschiedlich laut gestempelt) - bei einem Motor mit
-    #               vielen Klicks im Loop wiederholt sich also derselbe Klang. Auf True
-    #               gestellt baut jedes einzelne Klicken seinen EIGENEN metal_tick() mit
-    #               neuer Zufallsphase je Partialton. Dieselbe Funktion, nur oefter
-    #               gerufen - keine neue Klangquelle, keine Lizenzfrage.
-    #
-    # Beide Regler bleiben fuer die anderen 27 Motoren auf ihrer Vorgabe (0,02 bzw.
-    # False) und aendern an deren Klang nichts.
-    #
-    # ---- UND DIE ZAHLEN, MODERAT WEITERGEDREHT ------------------------------------
-    #
-    #     Regler        Bereich        dreckig    dreckig 2   warum
-    #     clatter       0,07 - 0,26      0,24        0,25      kaum noch Luft nach oben
-    #     clatter_hz    1800 - 5200      2000        1850      naeher an der Untergrenze
-    #     drive          1,8 - 3,6        3,5         3,6      an der Obergrenze
-    #     scatter_t    0,002 - 0,03      0,022       0,027     naeher an der Obergrenze
-    #     scatter_g     0,02 - 0,08      0,075       0,079     naeher an der Obergrenze
-    #     bright        0,34 - 0,76       0,52        0,42      weiter herunter
-    #     res_q          3,2 - 9,0         4,8         3,8      weiter herunter
-    #     crackle       0,12 - 0,75       0,60        0,68      weiter herauf
-    #
-    # NICHT ANGETASTET, aus demselben Grund wie bei der ersten dreckigen Fassung: noise
-    # bleibt bei 0,17 - das Zischen der sechs Einzeldrosseln ist ein Merkmal des Motors,
-    # kein Schmutz.
-    'p992gt3r_dreck2': {
-        'label': 'Porsche 911 GT3 R, dreckig 2 (4.2 Boxer-6, ungleichmaessig)',
-        'banks': banks_from_order([1, 6, 2, 4, 3, 5], 6, 'half'), 'cylinders': 6,
-        'rpms': {'idle': 1200, 'mid': 5500, 'high': 8800},
-        'primary_in': 20.5, 'res_q': 3.8, 'partials': 6, 'ir_ms': 38.0,
-        'pulse_ms': 2.4, 'bright': 0.42,
-        'noise': 0.17, 'noise_hz': 2900.0,
-        'clatter': 0.25, 'clatter_hz': 1850.0, 'drive': 3.6,
-        'scatter_t': 0.027, 'scatter_g': 0.079, 'crackle': 0.68,
+        'clatter': 0.19, 'clatter_hz': 2640.0, 'drive': 2.94,
+        'scatter_t': 0.015, 'scatter_g': 0.059, 'crackle': 0.55,
         'gain_wobble': 0.05, 'clatter_variiert': True,
     },
     'huracan': {
@@ -574,10 +478,11 @@ CARS = {
         'banks': banks_from_order([1, 6, 5, 10, 2, 7, 3, 8, 4, 9], 10, 'half'),
         'cylinders': 10,
         'rpms': {'idle': 1400, 'mid': 5400, 'high': 8700},
-        'primary_in': 46.0, 'res_q': 9.0, 'partials': 8, 'ir_ms': 50.0,
-        'pulse_ms': 1.9, 'bright': 0.76, 'noise': 0.05, 'noise_hz': 3700.0,
-        'clatter': 0.11, 'clatter_hz': 3900.0, 'drive': 2.2,
-        'scatter_t': 0.003, 'scatter_g': 0.028, 'crackle': 0.48,
+        'primary_in': 46.0, 'res_q': 6.68, 'partials': 8, 'ir_ms': 50.0,
+        'pulse_ms': 1.9, 'bright': 0.59, 'noise': 0.05, 'noise_hz': 3700.0,
+        'clatter': 0.17, 'clatter_hz': 3060.0, 'drive': 2.76,
+        'scatter_t': 0.0138, 'scatter_g': 0.049, 'crackle': 0.59,
+        'gain_wobble': 0.05, 'clatter_variiert': True,
     },
     'vantagegt3': {
         'label': 'Aston Martin Vantage GT3 (M177 4.0 V8, ohne Lader)',
@@ -586,10 +491,11 @@ CARS = {
         # Rohr, weniger Helligkeit, mehr Ansaugrauschen.
         'banks': banks_from_order([1, 5, 4, 2, 6, 3, 7, 8], 8, 'half'), 'cylinders': 8,
         'rpms': {'idle': 1200, 'mid': 4200, 'high': 7200},
-        'primary_in': 26.0, 'res_q': 5.5, 'partials': 5, 'ir_ms': 48.0,
-        'pulse_ms': 3.5, 'bright': 0.46, 'noise': 0.14, 'noise_hz': 1900.0,
-        'clatter': 0.13, 'clatter_hz': 2400.0, 'drive': 2.5,
-        'scatter_t': 0.0065, 'scatter_g': 0.05, 'crackle': 0.58,
+        'primary_in': 26.0, 'res_q': 4.58, 'partials': 5, 'ir_ms': 48.0,
+        'pulse_ms': 3.5, 'bright': 0.41, 'noise': 0.14, 'noise_hz': 1900.0,
+        'clatter': 0.18, 'clatter_hz': 2160.0, 'drive': 2.94,
+        'scatter_t': 0.0159, 'scatter_g': 0.062, 'crackle': 0.65,
+        'gain_wobble': 0.05, 'clatter_variiert': True,
     },
     # ---- Formel 1, Reglement 2026 --------------------------------------------------
     #
@@ -613,7 +519,8 @@ CARS = {
     #   Nebengeraeusch: was man von einem 2026er Auto hoert, ist zu einem guten Teil
     #   Ansaugen und Turbine und nicht der Auspuff.
     #
-    #   crackle 0,12 ist der niedrigste Wert im ganzen Satz. Ein Turbo daempft die
+    #   crackle 0,37 ist trotz der Verschiebung nach oben (siehe der Kommentar vor CARS)
+    #   immer noch der niedrigste Wert im ganzen Satz. Ein Turbo daempft die
     #   Schubknaller, und ab 2026 gibt es ausserdem keinen Ueberschuss zu verknallen.
     'f1_2026': {
         # Aufgeladen: 1,6-l-V6 mit Turbo, und bei diesem Motor ist der Lader das
@@ -623,9 +530,10 @@ CARS = {
         'banks': banks_from_order([1, 4, 2, 5, 3, 6], 6, 'half'), 'cylinders': 6,
         'rpms': {'idle': 4200, 'mid': 8500, 'high': 12500},
         'primary_in': 17.0, 'res_q': 3.2, 'partials': 7, 'ir_ms': 26.0,
-        'pulse_ms': 1.3, 'bright': 0.58, 'noise': 0.2, 'noise_hz': 4200.0,
-        'clatter': 0.07, 'clatter_hz': 5200.0, 'drive': 1.8,
-        'scatter_t': 0.002, 'scatter_g': 0.02, 'crackle': 0.12,
+        'pulse_ms': 1.3, 'bright': 0.48, 'noise': 0.2, 'noise_hz': 4200.0,
+        'clatter': 0.15, 'clatter_hz': 3840.0, 'drive': 2.52,
+        'scatter_t': 0.0132, 'scatter_g': 0.044, 'crackle': 0.37,
+        'gain_wobble': 0.05, 'clatter_variiert': True,
     },
     # ---- Vier historische Rennwagen [WIP] -------------------------------------------
     #
@@ -649,10 +557,11 @@ CARS = {
         # Lange Seitenrohre ohne Daempfer, vier Weber-Doppelvergaser: das tiefste und
         # rauheste Rohr im ganzen Satz, mit hoerbarem Ventiltrieb (Stossstangen, starre
         # Stoessel) und viel Ansauggeraeusch.
-        'primary_in': 34.0, 'res_q': 5.8, 'partials': 6, 'ir_ms': 64.0,
-        'pulse_ms': 4.6, 'bright': 0.50, 'noise': 0.09, 'noise_hz': 1300.0,
-        'clatter': 0.24, 'clatter_hz': 2000.0, 'drive': 3.5,
-        'scatter_t': 0.009, 'scatter_g': 0.075, 'crackle': 0.40,
+        'primary_in': 34.0, 'res_q': 4.76, 'partials': 6, 'ir_ms': 64.0,
+        'pulse_ms': 4.6, 'bright': 0.44, 'noise': 0.09, 'noise_hz': 1300.0,
+        'clatter': 0.25, 'clatter_hz': 1920.0, 'drive': 3.54,
+        'scatter_t': 0.0174, 'scatter_g': 0.077, 'crackle': 0.54,
+        'gain_wobble': 0.05, 'clatter_variiert': True,
     },
     'lolat70': {
         'label': 'Lola T70 Mk3B (Chevrolet 5.0 V8, Cross-Plane)',
@@ -662,10 +571,11 @@ CARS = {
         'banks': banks_from_order([1, 8, 4, 3, 6, 5, 7, 2], 8, 'oddeven'), 'cylinders': 8,
         'rpms': {'idle': 1000, 'mid': 4600, 'high': 7000},
         # Kurze Stummelrohre seitlich am Heck: weniger Bass als der GT40, mehr Kante.
-        'primary_in': 26.0, 'res_q': 6.2, 'partials': 6, 'ir_ms': 56.0,
-        'pulse_ms': 4.0, 'bright': 0.56, 'noise': 0.08, 'noise_hz': 1600.0,
-        'clatter': 0.22, 'clatter_hz': 2200.0, 'drive': 3.3,
-        'scatter_t': 0.008, 'scatter_g': 0.07, 'crackle': 0.48,
+        'primary_in': 26.0, 'res_q': 5.0, 'partials': 6, 'ir_ms': 56.0,
+        'pulse_ms': 4.0, 'bright': 0.47, 'noise': 0.08, 'noise_hz': 1600.0,
+        'clatter': 0.24, 'clatter_hz': 2040.0, 'drive': 3.42,
+        'scatter_t': 0.0168, 'scatter_g': 0.074, 'crackle': 0.59,
+        'gain_wobble': 0.05, 'clatter_variiert': True,
     },
     'f330p4': {
         'label': 'Ferrari 330 P4 / 412P (4.0 V12, 60 Grad)',
@@ -679,10 +589,11 @@ CARS = {
         # 20 Zoll ist die Laenge, die engine-sim fuer den Ferrari-V12 ansetzt. Ein 60-Grad-V12
         # zuendet alle 60 Grad, bei 8200 also 820 Hz - der hoechste Zuendtakt im Satz, und
         # genau daraus kommt das Kreischen. Sechs Weber-Doppelvergaser: hoerbares Ansaugen.
-        'primary_in': 20.0, 'res_q': 7.0, 'partials': 7, 'ir_ms': 34.0,
-        'pulse_ms': 1.5, 'bright': 0.74, 'noise': 0.11, 'noise_hz': 3000.0,
-        'clatter': 0.12, 'clatter_hz': 3600.0, 'drive': 2.4,
-        'scatter_t': 0.0045, 'scatter_g': 0.035, 'crackle': 0.50,
+        'primary_in': 20.0, 'res_q': 5.48, 'partials': 7, 'ir_ms': 34.0,
+        'pulse_ms': 1.5, 'bright': 0.58, 'noise': 0.11, 'noise_hz': 3000.0,
+        'clatter': 0.18, 'clatter_hz': 2880.0, 'drive': 2.88,
+        'scatter_t': 0.0147, 'scatter_g': 0.053, 'crackle': 0.60,
+        'gain_wobble': 0.05, 'clatter_variiert': True,
     },
     'mc12': {
         'label': 'Maserati MC12 (6.0 V12, 65 Grad)',
@@ -692,10 +603,11 @@ CARS = {
         # Mehr Hubraum, laengere Rohre, tiefer und satter als der 330 P4 - und weniger
         # Schubknaller, weil eine Einspritzung von 2004 im Schub abschaltet, wo sechs
         # Vergaser weiter nachliefern.
-        'primary_in': 22.0, 'res_q': 6.6, 'partials': 7, 'ir_ms': 38.0,
-        'pulse_ms': 1.9, 'bright': 0.68, 'noise': 0.10, 'noise_hz': 2800.0,
-        'clatter': 0.10, 'clatter_hz': 3400.0, 'drive': 2.6,
-        'scatter_t': 0.005, 'scatter_g': 0.04, 'crackle': 0.44,
+        'primary_in': 22.0, 'res_q': 5.24, 'partials': 7, 'ir_ms': 38.0,
+        'pulse_ms': 1.9, 'bright': 0.54, 'noise': 0.10, 'noise_hz': 2800.0,
+        'clatter': 0.16, 'clatter_hz': 2760.0, 'drive': 3.0,
+        'scatter_t': 0.015, 'scatter_g': 0.056, 'crackle': 0.56,
+        'gain_wobble': 0.05, 'clatter_variiert': True,
     },
     # ---- Zwei Strassen- und Rallyeklassiker (v0.5.18) ----
     #
@@ -716,14 +628,15 @@ CARS = {
         # GEWAEHLT und nicht abgeleitet: 26 Zoll gegen die 20 des P4. Ein Strassenauspuff hat
         # laengere Rohre und einen Daempfer, und laenger heisst tiefer - 26 Zoll ergeben rund
         # 130 Hz gegen 169 beim Rennmotor. Der Countach soll satt klingen und nicht kreischen.
-        'primary_in': 26.0, 'res_q': 6.2, 'partials': 7, 'ir_ms': 42.0,
-        'pulse_ms': 2.1, 'bright': 0.64,
+        'primary_in': 26.0, 'res_q': 5.0, 'partials': 7, 'ir_ms': 42.0,
+        'pulse_ms': 2.1, 'bright': 0.52,
         # 0,14: sechs Weber-Doppelvergaser ohne gemeinsamen Sammler, also hoerbares Ansaugen -
         # derselbe Grund wie bei den Einzeldrosseln des Porsche, nur eine Stufe tiefer, weil
         # ein Vergaser weniger zischt als eine Drosselklappe.
         'noise': 0.14, 'noise_hz': 2400.0,
-        'clatter': 0.14, 'clatter_hz': 3200.0, 'drive': 2.5,
-        'scatter_t': 0.006, 'scatter_g': 0.05, 'crackle': 0.40,
+        'clatter': 0.19, 'clatter_hz': 2640.0, 'drive': 2.94,
+        'scatter_t': 0.0156, 'scatter_g': 0.062, 'crackle': 0.54,
+        'gain_wobble': 0.05, 'clatter_variiert': True,
     },
     # ---- Ein Langstrecken-Prototyp [WIP] ------------------------------------------
     'listerstorm': {
@@ -739,14 +652,15 @@ CARS = {
         # 22 Zoll ergibt 154 Hz - zwischen dem Rennkruemmer des P4 (20 Zoll, 169 Hz) und dem
         # Strassenauspuff des Countach (26 Zoll, 130 Hz). Ein LMP hat gleich lange
         # Rennkruemmer, aber laengere Wege zum Heck als ein Sportwagen von 1967.
-        'primary_in': 22.0, 'res_q': 6.0, 'partials': 7, 'ir_ms': 40.0,
-        'pulse_ms': 2.2, 'bright': 0.68,
+        'primary_in': 22.0, 'res_q': 4.88, 'partials': 7, 'ir_ms': 40.0,
+        'pulse_ms': 2.2, 'bright': 0.54,
         # 0,15: Einzeldrosseln UND Luftmengenbegrenzer. Der Begrenzer ist der Grund, warum es
         # nicht mehr ist - er sitzt vor den Drosseln und daempft das Ansauggeraeusch, das die
         # Drosseln erzeugen. Zwei Dinge, die in verschiedene Richtungen ziehen.
         'noise': 0.15, 'noise_hz': 2600.0,
-        'clatter': 0.12, 'clatter_hz': 3300.0, 'drive': 2.4,
-        'scatter_t': 0.005, 'scatter_g': 0.045, 'crackle': 0.50,
+        'clatter': 0.18, 'clatter_hz': 2700.0, 'drive': 2.88,
+        'scatter_t': 0.015, 'scatter_g': 0.059, 'crackle': 0.60,
+        'gain_wobble': 0.05, 'clatter_variiert': True,
     },
     # ---- Tourenwagen, DTM und NASCAR [WIP] ----------------------------------------
     'rs5dtm': {
@@ -762,20 +676,21 @@ CARS = {
         # 13 Zoll: der kuerzeste Weg im ganzen Satz, weil dahinter sofort der Lader sitzt.
         # 260 Hz Resonanz - und bei 6200/min liegt die Zuendrate bei 207 Hz, die Resonanz
         # also knapp darueber. Das ist gewollt: dieser Motor soll oben nicht droehnen.
-        'primary_in': 13.0, 'res_q': 3.4, 'partials': 6, 'ir_ms': 23.0,
-        'pulse_ms': 1.5, 'bright': 0.46,
+        'primary_in': 13.0, 'res_q': 3.32, 'partials': 6, 'ir_ms': 23.0,
+        'pulse_ms': 1.5, 'bright': 0.41,
         # 0,22 ist der hoechste Rauschanteil im ganzen Satz, und das ist begruendet: 2,5 bis
         # 3,5 bar Ladedruck durch einen einzigen Garrett, dazu die Antilag-Anlage. Was man
         # bei einem Class-1-Wagen hoert, ist zur Haelfte Luft.
         'noise': 0.22, 'noise_hz': 3600.0,
-        'clatter': 0.09, 'clatter_hz': 4200.0, 'drive': 2.5,
-        'scatter_t': 0.003, 'scatter_g': 0.025,
+        'clatter': 0.16, 'clatter_hz': 3240.0, 'drive': 2.94,
+        'scatter_t': 0.0138, 'scatter_g': 0.047,
         # 0,75 - hoeher als alles andere hier (bisher hoechstens 0,62 beim Flat-Plane-V8).
         # ANTILAG IST GENAU DAS, was crackle modelliert: bei geschlossener Drosselklappe
         # wird weiter eingespritzt und gezuendet, damit der Lader auf Druck bleibt, und die
         # Verbrennung findet im Abgasstrang statt. Es ist hier also kein Effekt, sondern der
         # Betriebszustand.
         'crackle': 0.75,
+        'gain_wobble': 0.05, 'clatter_variiert': True,
     },
     'impalanascar': {
         'label': 'Chevrolet Impala SS NASCAR 2010 (R07 5.8 V8, Cross-Plane)',
@@ -796,12 +711,13 @@ CARS = {
         'rpms': {'idle': 1000, 'mid': 5500, 'high': 8800},
         # 30 Zoll, also 113 Hz. Lange Tri-Y-Kruemmer und ein Rohr ohne Daempfer bis unter die
         # Tuer - die Laenge macht den Bass, die fehlende Daempfung die Helligkeit.
-        'primary_in': 30.0, 'res_q': 6.8, 'partials': 6, 'ir_ms': 52.0,
-        'pulse_ms': 3.4, 'bright': 0.62, 'noise': 0.09, 'noise_hz': 1500.0,
+        'primary_in': 30.0, 'res_q': 5.36, 'partials': 6, 'ir_ms': 52.0,
+        'pulse_ms': 3.4, 'bright': 0.51, 'noise': 0.09, 'noise_hz': 1500.0,
         # 0,26 Klappern: Rollenstoessel, sehr steile Nocken und ein Ventiltrieb, der bei
         # 9000/min an der Grenze arbeitet. Der lauteste Ventiltrieb im Satz.
-        'clatter': 0.26, 'clatter_hz': 2000.0, 'drive': 3.6,
-        'scatter_t': 0.007, 'scatter_g': 0.06, 'crackle': 0.55,
+        'clatter': 0.26, 'clatter_hz': 1920.0, 'drive': 3.6,
+        'scatter_t': 0.0162, 'scatter_g': 0.068, 'crackle': 0.63,
+        'gain_wobble': 0.05, 'clatter_variiert': True,
     },
     # ---- Zwei Gruppe-5-Wagen von 1981 [WIP] ---------------------------------------
     'capri_zakspeed': {
@@ -815,14 +731,15 @@ CARS = {
         'rpms': {'idle': 1800, 'mid': 5800, 'high': 9000},
         # 14 Zoll bis zum KKK-K37: 241 Hz. Etwas laenger als beim RS5, weil der Lader hier
         # neben dem Motor sitzt und nicht direkt am Kruemmerflansch.
-        'primary_in': 14.0, 'res_q': 3.6, 'partials': 5, 'ir_ms': 24.0,
-        'pulse_ms': 1.6, 'bright': 0.42,
+        'primary_in': 14.0, 'res_q': 3.44, 'partials': 5, 'ir_ms': 24.0,
+        'pulse_ms': 1.6, 'bright': 0.39,
         # Verdichtung 7,2:1 - die niedrigste hier, und der Grund fuer die geringe Helligkeit:
         # ein so niedrig verdichteter Motor hat einen weicheren Druckanstieg, und dahinter
         # sitzt ein Lader mit 2,2 bar, der als Daempfer wirkt.
         'noise': 0.20, 'noise_hz': 3000.0,
-        'clatter': 0.10, 'clatter_hz': 3800.0, 'drive': 2.6,
-        'scatter_t': 0.004, 'scatter_g': 0.03, 'crackle': 0.30,
+        'clatter': 0.16, 'clatter_hz': 3000.0, 'drive': 3.0,
+        'scatter_t': 0.0144, 'scatter_g': 0.05, 'crackle': 0.48,
+        'gain_wobble': 0.05, 'clatter_variiert': True,
     },
     'p935k4': {
         'label': 'Porsche 935 K4 Kremer 1981 (3.2 Flat-6, Twin-Turbo)',
@@ -839,14 +756,15 @@ CARS = {
         'rpms': {'idle': 1200, 'mid': 5200, 'high': 8000},
         # 16 Zoll: 211 Hz gegen die 165 des 992 GT3 R. Kuerzer, weil der Weg nur bis zu den
         # zwei KKK-Ladern geht.
-        'primary_in': 16.0, 'res_q': 4.4, 'partials': 6, 'ir_ms': 30.0,
-        'pulse_ms': 2.0, 'bright': 0.44,
+        'primary_in': 16.0, 'res_q': 3.92, 'partials': 6, 'ir_ms': 30.0,
+        'pulse_ms': 2.0, 'bright': 0.40,
         # 0,19: zwei Lader mit 1,7 bar und die Abblaseventile. Fast so viel wie beim 992 GT3 R
         # mit seinen Einzeldrosseln (0,17), aber aus dem entgegengesetzten Grund - dort ist es
         # das Ansaugen, hier der Ladedruck.
         'noise': 0.19, 'noise_hz': 3400.0,
-        'clatter': 0.13, 'clatter_hz': 3400.0, 'drive': 2.7,
-        'scatter_t': 0.005, 'scatter_g': 0.04, 'crackle': 0.35,
+        'clatter': 0.18, 'clatter_hz': 2760.0, 'drive': 3.06,
+        'scatter_t': 0.015, 'scatter_g': 0.056, 'crackle': 0.51,
+        'gain_wobble': 0.05, 'clatter_variiert': True,
     },
     # ---- Drei amerikanische Strassenmotoren [WIP] ---------------------------------
     #
@@ -878,13 +796,15 @@ CARS = {
         'rpms': {'idle': 750, 'mid': 3600, 'high': 6200},
         # 38 Zoll: 89 Hz, der tiefste Motor im Satz bis auf den Blazer. 840 PS aus 6,2 l mit
         # 1,0 bar Ladedruck geben den haertesten Druckanstieg hier, deshalb drive 3,6.
-        'primary_in': 38.0, 'res_q': 6.6, 'partials': 6, 'ir_ms': 66.0,
-        'pulse_ms': 4.4, 'bright': 0.42, 'noise': 0.11, 'noise_hz': 1200.0,
-        'clatter': 0.20, 'clatter_hz': 1900.0, 'drive': 3.6,
-        'scatter_t': 0.009, 'scatter_g': 0.075,
-        # 0,30: ein Strassenauto mit Katalysatoren und Daempfern knallt wenig. Der Demon hat
-        # allerdings eine Abgasklappe, also nicht null.
-        'crackle': 0.30,
+        'primary_in': 38.0, 'res_q': 5.24, 'partials': 6, 'ir_ms': 66.0,
+        'pulse_ms': 4.4, 'bright': 0.39, 'noise': 0.11, 'noise_hz': 1200.0,
+        'clatter': 0.22, 'clatter_hz': 1860.0, 'drive': 3.6,
+        'scatter_t': 0.0174, 'scatter_g': 0.077,
+        # 0,48: ein Strassenauto mit Katalysatoren und Daempfern knallt an sich wenig,
+        # der Demon hat aber eine Abgasklappe - deshalb liegt er trotz der allgemeinen
+        # Verschiebung nach oben (siehe der Kommentar vor CARS) nicht am oberen Rand.
+        'crackle': 0.48,
+        'gain_wobble': 0.05, 'clatter_variiert': True,
     },
     'mustang68': {
         'label': 'Ford Mustang 390 GT 1968 (6.4 FE V8, Cross-Plane)',
@@ -898,12 +818,13 @@ CARS = {
         'rpms': {'idle': 700, 'mid': 2600, 'high': 5200},
         # 39 Zoll gegen die 34 des GT40. Der Rennwagen hat kurze Seitenrohre ohne Daempfer,
         # das Strassenauto eine Anlage bis zum Heck - 86 Hz gegen 99.
-        'primary_in': 39.0, 'res_q': 6.0, 'partials': 6, 'ir_ms': 68.0,
-        'pulse_ms': 4.5, 'bright': 0.40,
+        'primary_in': 39.0, 'res_q': 4.88, 'partials': 6, 'ir_ms': 68.0,
+        'pulse_ms': 4.5, 'bright': 0.38,
         # Holley-Vierfachvergaser: hoerbares Ansaugen, aber tief und ohne Zischen.
         'noise': 0.07, 'noise_hz': 1100.0,
-        'clatter': 0.21, 'clatter_hz': 1900.0, 'drive': 3.4,
-        'scatter_t': 0.009, 'scatter_g': 0.075, 'crackle': 0.28,
+        'clatter': 0.23, 'clatter_hz': 1860.0, 'drive': 3.48,
+        'scatter_t': 0.0174, 'scatter_g': 0.077, 'crackle': 0.47,
+        'gain_wobble': 0.05, 'clatter_variiert': True,
     },
     'blazer90': {
         'label': 'Chevrolet Blazer 1990 (5.7 Small Block V8, TBI)',
@@ -918,19 +839,21 @@ CARS = {
         'rpms': {'idle': 650, 'mid': 2200, 'high': 4300},
         # 40 Zoll: 84 Hz, der tiefste hier. Ein Serien-Gelaendewagen von 1990 hat einen
         # grossen Daempfer und ein langes Rohr - siehe den Vorbehalt am Gruppenkopf.
-        'primary_in': 40.0, 'res_q': 5.6, 'partials': 5, 'ir_ms': 72.0,
+        'primary_in': 40.0, 'res_q': 4.64, 'partials': 5, 'ir_ms': 72.0,
         'pulse_ms': 4.8, 'bright': 0.34,
         # Einspritzung in den Drosselkoerper, ein einziges Ventil: das leiseste Ansaugen im
         # Satz. Ein Vergaser rauscht mehr, Einzeldrosseln viel mehr.
         'noise': 0.06, 'noise_hz': 900.0,
         # Gusseisenkopf, Stossstangen, hydraulische Stoessel: hoerbar, aber weicher als bei
         # den Rennmotoren mit starren Stoesseln.
-        'clatter': 0.20, 'clatter_hz': 1800.0, 'drive': 3.4,
-        'scatter_t': 0.010, 'scatter_g': 0.08,
-        # 0,15, das niedrigste hier ausser dem Formel 1: 9,1:1 Verdichtung, Katalysator und
-        # ein Steuergeraet von 1990, das im Schub die Einspritzung abschaltet. Da knallt
-        # nichts.
-        'crackle': 0.15,
+        'clatter': 0.22, 'clatter_hz': 1800.0, 'drive': 3.48,
+        'scatter_t': 0.018, 'scatter_g': 0.08,
+        # 0,39, trotz der allgemeinen Verschiebung nach oben (siehe der Kommentar vor
+        # CARS) das zweitniedrigste hier nach dem Formel 1: 9,1:1 Verdichtung,
+        # Katalysator und ein Steuergeraet von 1990, das im Schub die Einspritzung
+        # abschaltet - da knallt wenig.
+        'crackle': 0.39,
+        'gain_wobble': 0.05, 'clatter_variiert': True,
     },
     'impreza99': {
         'label': 'Subaru Impreza WRX STI 1999 (EJ20 2.0 Boxer-4, Turbo)',
@@ -954,15 +877,16 @@ CARS = {
         # WAS ES NICHT IST: das Modell WUERFELT diesen Versatz (fest verankert am Seed), es
         # rechnet ihn nicht aus Rohrlaengen. Die Art der Unregelmaessigkeit stimmt, ihr
         # genaues Muster ist gewaehlt. Genau derselbe Vorbehalt wie beim Bankwinkel der V12.
-        'scatter_t': 0.030, 'scatter_g': 0.06,
+        'scatter_t': 0.030, 'scatter_g': 0.068,
         # Kurze Rohre bis zum Turbolader, dahinter ein Daempfer: hoehere Resonanz als die
         # V12, aber gedeckt. 17 Zoll ergeben rund 199 Hz.
-        'primary_in': 17.0, 'res_q': 4.2, 'partials': 4, 'ir_ms': 52.0,
+        'primary_in': 17.0, 'res_q': 3.8, 'partials': 4, 'ir_ms': 52.0,
         # Breiter Puls und wenig Helligkeit: ein Turbo daempft die Druckspitze, das ist der
         # Grund, warum ein aufgeladener Motor dumpfer klingt als ein Sauger gleicher Groesse.
-        'pulse_ms': 4.6, 'bright': 0.38, 'noise': 0.09, 'noise_hz': 1600.0,
-        'clatter': 0.10, 'clatter_hz': 2400.0, 'drive': 2.8,
-        'crackle': 0.55,
+        'pulse_ms': 4.6, 'bright': 0.36, 'noise': 0.09, 'noise_hz': 1600.0,
+        'clatter': 0.16, 'clatter_hz': 2160.0, 'drive': 3.12,
+        'crackle': 0.63,
+        'gain_wobble': 0.05, 'clatter_variiert': True,
     },
 }
 
@@ -1142,9 +1066,10 @@ def synth_loop(cfg, rpm, seed, load=1.0):
                 t += (dt_cyl[j] + rng.normal(0, 0.0015)) * cycle_s
                 i = int(round(t * SR)) % n
                 # 'gain_wobble': wie ungleich der Verbrennungsdruck von Takt zu Takt ist,
-                # OBEN AUF dem festen Zylindercharakter (g_cyl). 0,02 ist der Wert, den
-                # jeder Motor bisher fest hatte - ein optionaler Regler, damit ein einzelner
-                # Motor unruhiger klingen kann, ohne die anderen 27 anzufassen.
+                # OBEN AUF dem festen Zylindercharakter (g_cyl). 0,02 war der Wert, den
+                # jeder Motor bis v0.6.34 fest hatte; alle 25 Motoren in CARS setzen ihn
+                # inzwischen auf 0,05 (siehe der Kommentar vor CARS). Der Rueckfall 0,02
+                # bleibt fuer einen zukuenftigen Motor, der ihn nicht setzt.
                 gain = g_cyl[j] * (1.0 + rng.normal(0, cfg.get('gain_wobble', 0.02))) \
                     * (0.30 + 0.70 * load)
                 idx = (np.arange(pulse_len) + i) % n
@@ -1155,11 +1080,13 @@ def synth_loop(cfg, rpm, seed, load=1.0):
     # This is the mechanical layer that was missing entirely, and its absence is a large
     # part of why the engines sounded like an oscillator rather than machinery.
     if cfg.get('clatter', 0) > 0:
-        # 'clatter_variiert': jeder Klick war bisher DERSELBE Abdruck, nur unterschiedlich
-        # laut gestempelt - ein Motor mit vielen Klicks im Loop wiederholt also denselben
-        # Klang. False (Vorgabe, alle bisherigen 27 Motoren) haelt genau dieses Verhalten;
-        # True baut fuer JEDES Ereignis einen frischen metal_tick() mit neuer Zufallsphase
-        # je Partialton - dieselbe Funktion, oefter gerufen, keine neue Klangquelle.
+        # 'clatter_variiert': jeder Klick war bis v0.6.34 DERSELBE Abdruck, nur
+        # unterschiedlich laut gestempelt - ein Motor mit vielen Klicks im Loop
+        # wiederholte also denselben Klang. Alle 25 Motoren in CARS setzen ihn
+        # inzwischen auf True (siehe der Kommentar vor CARS); True baut fuer JEDES
+        # Ereignis einen frischen metal_tick() mit neuer Zufallsphase je Partialton -
+        # dieselbe Funktion, oefter gerufen, keine neue Klangquelle. Der Rueckfall
+        # False bleibt fuer einen zukuenftigen Motor, der ihn nicht setzt.
         variiert = cfg.get('clatter_variiert', False)
         tick_len = max(8, int(0.010 * SR))
         tick = None if variiert else metal_tick(tick_len, cfg['clatter_hz'], rng)
