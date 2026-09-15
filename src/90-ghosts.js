@@ -1567,10 +1567,17 @@
   // Versatz ist ein kleiner Anstoss auf diese Null. Das Linienmodell der Ghosts haengt an
   // ihrem Kachelzustand in car.ghost, den das Fahrerauto nicht hat - und in einer
   // Einfuehrungsrunde geht es ohnehin ums Rollen in Formation und nicht um die Ideallinie.
+  // ZWEI HALTER, weil der Versatz einen ZUSTAND hat: formationOffset() wuerfelt beim ersten
+  // Aufruf eine Schlaengelphase und legt sie im Halter ab. Ein gemeinsamer Halter hiesse,
+  // dass beide Autos im Gleichschritt schlaengeln - in einer Zweierkolonne ist das genau
+  // das, was man nicht will.
   const formationFahrer = {};
-  function formationDriverOffset() {
-    const car = garage.find(c => c.role === 'player');
-    return formationOffset(formationFahrer, gridPosOf(car), Date.now());
+  const formationFahrerZwei = {};
+  function formationDriverOffset(car) {
+    const c = car || garage.find(x => x.role === 'player');
+    const halter = (typeof playerCar2 !== 'undefined' && c && c === playerCar2)
+      ? formationFahrerZwei : formationFahrer;
+    return formationOffset(halter, gridPosOf(c), Date.now());
   }
   const GHOST_OFFTRACK_MS = 1500;   // measured: tiles last 0.4-2.7 s with no 0xff between
   // Wie lange 0x00 stehen muss, bevor der Ghost anhaelt. Vorher hielt ein EINZIGES 0x00-Paket

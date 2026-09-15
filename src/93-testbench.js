@@ -53,6 +53,92 @@
       return this.schadenZweiLesen();
     },
 
+    // ---- GILT DIE GELBE FLAGGE AUCH FUER AUTO 2? -------------------------------------
+    //
+    // DIE FRAGE, die diesen Punkt zum wertvollsten der offenen gemacht hat: ohne den
+    // Autopiloten faehrt Auto 2 bei Gelb mit VOLLGAS in eine Kolonne, die alle anderen
+    // gerade einhalten. Eine gelbe Flagge, die fuer ein Auto im Feld nicht gilt, ist keine.
+    //
+    // Gemessen wird am GAS, das hinausgeht, und am erreichten Tempo - nicht daran, ob eine
+    // Funktion gerufen wurde. Vollgas bleibt dabei die ganze Zeit anliegen: der Autopilot
+    // muss GEGEN den Daumen regeln, das ist sein Sinn.
+    //
+    // Die Bahn/Ausdruck-Stellung muss auf 'on' stehen, sonst laeuft der Autopilot
+    // ueberhaupt nicht (autopilotGrund: ohne Leitplanken haelt sich das Auto nicht selbst
+    // auf der Bahn, und ein Autopilot ohne Querregelung faehrt es in die Bande).
+    async gelbZweiProbe(o) {
+      const opt = o || {};
+      const uhrEcht = Date.now, perfEcht = performance.now;
+      const merk = { zwei: zweiSpieler, p2: playerCar2, gas: p2Throttle, steer: p2Steer,
+                     phys: physicsEnabled, flagge: flagState, bahn: trackMode,
+                     formation: typeof raceFormationLap !== 'undefined'
+                       ? raceFormationLap : null };
+      const a2 = { device: { id: 'probe-gelb' }, role: 'player2', alias: 'P2',
+                   rx: null, testSenke: [] };
+      const reihe = [];
+      try {
+        let t = 3000000;
+        Date.now = () => t;
+        performance.now = () => t;
+        zweiSpieler = true;
+        physicsEnabled = true;
+        playerCar2 = a2;
+        trackMode = 'on';
+        if (typeof raceFormationLap !== 'undefined') raceFormationLap = false;
+        physEngine2.reset();
+        physEngine2Abgleichen();
+        tankZweiFuellen(100);
+        tankZweiTaktVergessen();
+        phys2TaktVergessen();
+        autopilotZuruecksetzen(2);
+        p2Steer = 0;
+        p2Throttle = 1;          // Vollgas, die ganze Zeit
+        flagState = opt.flagge || 'yellow';
+        const takte = Math.round((opt.sekunden === undefined ? 8 : opt.sekunden)
+                                 * 1000 / CONTROL_SEND_INTERVAL_MS);
+        for (let i = 0; i < takte; i++) {
+          spielerZweiSenden();
+          if (i % 20 === 0 || i === takte - 1) {
+            reihe.push({
+              s: +(i * CONTROL_SEND_INTERVAL_MS / 1000).toFixed(2),
+              gas: +(physOut2Throttle || 0).toFixed(3),
+              anteil: +(Math.abs(physEngine2.state.speedKmh)
+                        / physEngine2.config.topSpeedKmh).toFixed(3),
+              kmh: +(Math.abs(physEngine2.state.speedKmh) * REAL_SCALE).toFixed(1),
+            });
+          }
+          t += CONTROL_SEND_INTERVAL_MS;
+        }
+        const letzte = reihe.slice(-3);
+        return {
+          flagge: flagState,
+          ziel: Math.max(yellowFactor(), GHOST_READ_MIN),
+          zielKmh: +(Math.max(yellowFactor(), GHOST_READ_MIN)
+                     * physEngine2.config.topSpeedKmh * REAL_SCALE).toFixed(1),
+          reihe,
+          // Der Mittelwert der letzten drei Abtastpunkte: dort ist der Regler eingelaufen.
+          endAnteil: +(letzte.reduce((a, x) => a + x.anteil, 0) / letzte.length).toFixed(3),
+          endKmh: +(letzte.reduce((a, x) => a + x.kmh, 0) / letzte.length).toFixed(1),
+          daumen: p2Throttle,
+        };
+      } finally {
+        Date.now = uhrEcht;
+        performance.now = perfEcht;
+        flagState = merk.flagge;
+        trackMode = merk.bahn;
+        if (typeof raceFormationLap !== 'undefined') raceFormationLap = merk.formation;
+        zweiSpieler = merk.zwei;
+        playerCar2 = merk.p2;
+        p2Throttle = merk.gas;
+        p2Steer = merk.steer;
+        physicsEnabled = merk.phys;
+        autopilotZuruecksetzen();
+        physEngine2.reset();
+        tankZweiFuellen(100);
+        if (typeof updateRaceScreen2 === 'function') updateRaceScreen2(physEngine2.state);
+      }
+    },
+
     // ---- SAGT DIE SICHERUNG, WAS IM BROWSER LIEGT? -----------------------------------
     //
     // BESTELLT: "Zeige bei der Sicherung noch an, ob irgendetwas geladen ist, sodass ich es

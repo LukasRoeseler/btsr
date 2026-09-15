@@ -1880,12 +1880,25 @@
   // fuehrt - ein Zustand, der je Takt neu entsteht, ist keiner. Zuruecksetzen tut ihn
   // autopilotZuruecksetzen(), gerufen wenn der Autopilot aussetzt: ein I-Anteil, der aus
   // einer alten gelben Phase stehen bleibt, gibt beim naechsten Mal sofort Gas.
+  // EIN REGLER JE AUTO, und das ist keine Symmetrie um ihrer selbst willen: der Regler hat
+  // einen I-Anteil. Ein gemeinsamer Zustand hiesse, dass die Abweichung von Auto 1 das Gas
+  // von Auto 2 mitbestimmt - und umgekehrt. Genau davor warnt der Kommentar in autopilot()
+  // schon fuer den Fall "Zustand je Takt neu angelegt": ein Zustand, den man teilt, ist
+  // ebenso wenig ein I-Anteil wie einer, den man wegwirft.
   const autopilotRegler = {};
-  function autopilotZuruecksetzen() {
-    autopilotRegler.iTerm = 0;
-    autopilotRegler.lastThrottle = 0;
-    autopilotRegler.lastBrake = 0;
-    autopilotRegler.at = 0;
+  const autopilotRegler2 = {};
+  // `wer` waehlt den Regler. OHNE Angabe werden BEIDE geraeumt, und das ist die richtige
+  // Vorgabe: die vorhandenen Aufrufstellen raeumen auf, wenn die gelbe Phase endet oder ein
+  // Rennen beginnt - das gilt fuer das ganze Feld und nicht fuer ein Auto.
+  function autopilotZuruecksetzen(wer) {
+    const leeren = (r) => {
+      r.iTerm = 0;
+      r.lastThrottle = 0;
+      r.lastBrake = 0;
+      r.at = 0;
+    };
+    if (wer === undefined) { leeren(autopilotRegler); leeren(autopilotRegler2); return; }
+    leeren(wer === 2 ? autopilotRegler2 : autopilotRegler);
   }
 
   // ====================================================================================
@@ -2020,12 +2033,24 @@
     return flagState === 'yellow' ? 'yellow' : null;
   }
 
-  function autopilot(fahrerBremse) {
+  // ---- UND ER GILT SEIT v0.6.53 FUER BEIDE AUTOS -------------------------------------
+  //
+  // Der Grund, warum das der wertvollste der offenen Punkte war: ohne ihn faehrt Auto 2
+  // bei gelber Flagge mit Vollgas in eine Kolonne, die alle anderen gerade einhalten. Eine
+  // gelbe Flagge, die fuer ein Auto im Feld nicht gilt, ist keine gelbe Flagge.
+  //
+  // Moeglich wurde es durch die Ortung aus v0.6.46: autopilotGrund() ist global (Flagge,
+  // Einfuehrungsrunde, Bahn/Ausdruck-Stellung), der Rest haengt am Auto - Motor, Regler,
+  // Kolonnenversatz, Abseits-Antwort. `wer` ist 1, wenn nichts dasteht.
+  function autopilot(fahrerBremse, wer) {
+    const zwei = wer === 2;
     const grund = autopilotGrund();
     // AUSSETZER RAEUMEN DEN REGLER AUF. Ohne das traegt der I-Anteil ueber das Ende der
     // gelben Phase hinaus und gibt beim naechsten Mal aus dem Stand Gas.
-    if (!grund) { autopilotZuruecksetzen(); return null; }
-    const st = physEngine.state;
+    if (!grund) { autopilotZuruecksetzen(wer); return null; }
+    const motor = zwei ? physEngine2 : physEngine;
+    const regler = zwei ? autopilotRegler2 : autopilotRegler;
+    const st = motor.state;
     // ---- WIE EIN GHOST, UND DAS IST DER BESTELLTE UNTERSCHIED ---------------------
     //
     // GEMELDET: "gelbe Flagge fuer mein Auto auf der Bahn fixen: es gibt nur Gas, sollte
@@ -2054,11 +2079,11 @@
     const ziel = grund === 'formation'
       ? formationPace()
       : Math.max(yellowFactor(), GHOST_READ_MIN);
-    const v = Math.abs(st.speedKmh) / physEngine.config.topSpeedKmh;
+    const v = Math.abs(st.speedKmh) / motor.config.topSpeedKmh;
     const dtA = Math.max(0.01, Math.min(0.25,
-      (Date.now() - (autopilotRegler.at || Date.now())) / 1000));
-    autopilotRegler.at = Date.now();
-    const geregelt = ghostSpeedControl(autopilotRegler, ziel, v, dtA);
+      (Date.now() - (regler.at || Date.now())) / 1000));
+    regler.at = Date.now();
+    const geregelt = ghostSpeedControl(regler, ziel, v, dtA);
     let throttle = geregelt.throttle;
     let brake = geregelt.brake;
     // DIE BREMSE DES FAHRERS GEWINNT, aber nur in der Einfuehrungsrunde. Dort rollt das Feld
@@ -2072,8 +2097,11 @@
     return { grund, throttle, brake,
              // Bei Gelb geradeaus - eine vorhersagbare Spur, damit man ein Auto von Hand
              // dazwischenstellen kann. In der Einfuehrungsrunde wie die Ghosts.
+             // Der Kolonnenversatz SEINES Autos: er haengt am Startplatz
+             // (gridPosOf) und an einer eigenen Schlaengelphase - zwei Autos in
+             // einer Zweierkolonne sollen nicht auf derselben Spur rollen.
              steer: grund === 'formation' && typeof formationDriverOffset === 'function'
-               ? formationDriverOffset() : 0,
+               ? formationDriverOffset(zwei ? playerCar2 : playerCar) : 0,
              // ---- OB ER UEBERHAUPT LENKEN DARF -------------------------------------
              //
              // Neben der Bahn nicht. Beide Werte, die er liefert - 0 bei Gelb und der
@@ -2091,7 +2119,7 @@
              // GAS UND BREMSE BLEIBEN BEI IHM. Eine gelbe Flagge bleibt eine gelbe
              // Flagge; hergegeben wird die Lenkung, damit man zurueckfahren kann, nicht
              // die Tempobegrenzung.
-             lenkt: !abseitsJetzt() };
+             lenkt: !abseitsJetztFuer(zwei ? 2 : 1) };
   }
 
   // ---- Abseits der Fahrbahn ----------------------------------------------------------
@@ -2396,6 +2424,23 @@
     // Andersherum wuerde die Kennlinie einen halbleeren Tank mitkruemmen.
     fuelTankTick(p2Throttle, 2);
     gas = fuelDamageDerate(gas, tankZweiCutRampe(dt), 2);
+    // ---- GELBE FLAGGE UND EINFUEHRUNGSRUNDE, seit v0.6.53 -------------------------
+    //
+    // Der wertvollste der offenen Punkte, und der Grund ist einfach: ohne ihn faehrt
+    // Auto 2 bei Gelb mit Vollgas in eine Kolonne, die alle anderen gerade einhalten.
+    // Eine gelbe Flagge, die fuer ein Auto im Feld nicht gilt, ist keine.
+    //
+    // DIESELBE Reihenfolge wie bei Auto 1: der Autopilot setzt Gas und Bremse NACH Tank
+    // und Schaden. Ein Notlauf bleibt ein Notlauf, auch unter Gelb.
+    let lenkung = p2Steer;
+    let bremse = Math.max(0, -p2Throttle);
+    const ap2 = autopilot(bremse, 2);
+    if (ap2) {
+      gas = ap2.throttle;
+      bremse = ap2.brake;
+      // Die Lenkung nur, wenn er sie fuehren DARF - siehe `lenkt` in autopilot().
+      if (ap2.lenkt) lenkung = ap2.steer;
+    }
     if (offtrackGiltFuer(2)) gas = Math.min(gas, OFFTRACK_GAS);
     // Und das Rumpeln, an seinen eigenen Pad. Bis v0.6.45 waere es der Pad von Spieler 1
     // gewesen; jetzt hat jeder Stoss eine Adresse.
@@ -2406,8 +2451,8 @@
         padRumble(0.12, 0.34, OFFTRACK_RUMBLE_MS, 'abseits', 2);
       }
     }
-    const out = physEngine2.update({ steering: p2Steer, throttle: gas,
-                                     brake: Math.max(0, -p2Throttle),
+    const out = physEngine2.update({ steering: lenkung, throttle: gas,
+                                     brake: bremse,
                                      headlights: headlightsOn }, dt);
     updateRaceScreen2(physEngine2.state);
     // Der Motorton von Auto 2, aus SEINER Drehzahl - dieselbe Zahl, die seine Anzeige

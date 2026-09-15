@@ -9638,6 +9638,69 @@
   // Die Liste ist GEPFLEGT, und das ist hier richtig: sie IST die Zusicherung. Sie stammt
   // aus einer Suche ueber alle Kaestchen, deren Listener "X = e.target.checked" schreibt.
   // Ein neuer Schalter gehoert hinein.
+  // ---- Die gelbe Flagge gilt auch fuer Auto 2 --------------------------------------
+  //
+  // DER WERTVOLLSTE DER OFFENEN PUNKTE, und der Grund ist einfach: ohne den Autopiloten
+  // faehrt Auto 2 bei Gelb mit VOLLGAS in eine Kolonne, die alle anderen gerade einhalten.
+  // Eine gelbe Flagge, die fuer ein Auto im Feld nicht gilt, ist keine gelbe Flagge.
+  //
+  // Moeglich wurde es durch die Ortung aus v0.6.46: autopilotGrund() ist global (Flagge,
+  // Einfuehrungsrunde, Bahn/Ausdruck-Stellung), alles andere haengt am Auto - Motor,
+  // Regler, Kolonnenversatz, Abseits-Antwort.
+  //
+  // Gemessen wird am GAS, das hinausgeht, und am erreichten Tempo. Der Daumen bleibt dabei
+  // die ganze Zeit auf Vollgas: der Autopilot muss GEGEN ihn regeln, das ist sein Sinn.
+  //
+  // DREI AUSSAGEN:
+  //   1. Bei Gelb laeuft das Auto auf den Zielwert ein - Trefferquote wie bei den Ghosts.
+  //   2. Bei Gruen tut es das NICHT. Ohne diese Gegenprobe koennte der Test auch einen
+  //      Motor gruen melden, der einfach nie schneller wird.
+  //   3. Es regelt SANFT. Ein Sprung von Vollgas auf ein Viertel war bei Auto 1 als
+  //      "es gibt nur Gas" gemeldet - der rohe P-Regler kippte um den Zielwert. Geprueft
+  //      wird deshalb, dass das Tempo monoton steigt und nirgends ueberschwingt.
+  //
+  // EIN EIGENER REGLER JE AUTO ist dabei keine Symmetrie um ihrer selbst willen: der
+  // Regler hat einen I-Anteil, und ein geteilter Zustand hiesse, dass die Abweichung von
+  // Auto 1 das Gas von Auto 2 mitbestimmt.
+  stAdd('Zwei Spieler: die gelbe Flagge gilt auch fuer Auto 2', async () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.gelbZweiProbe) {
+      return { skip: true, mass: 'gelbZweiProbe nicht vorhanden' };
+    }
+    const gelb = await OMEGA_TEST.gelbZweiProbe({ sekunden: 8, flagge: 'yellow' });
+    const gruen = await OMEGA_TEST.gelbZweiProbe({ sekunden: 8, flagge: 'green' });
+    const maengel = [];
+    if (gelb.daumen !== 1) maengel.push('der Daumen lag nicht auf Vollgas');
+    // 1. Trefferquote gegen den Zielwert. Dieselbe Spanne, die auch fuer die Ghosts gilt
+    //    ("Ghost erreicht sein eingestelltes Tempo", 0,88 bis 1,12).
+    const quote = gelb.endAnteil / Math.max(1e-6, gelb.ziel);
+    if (!(quote > 0.85 && quote < 1.15)) {
+      maengel.push('Trefferquote ' + quote.toFixed(3) + ' (' + gelb.endAnteil
+                   + ' von ' + gelb.ziel + ')');
+    }
+    // 2. Gegenprobe: bei Gruen deutlich schneller.
+    if (!(gruen.endAnteil > gelb.endAnteil * 1.15)) {
+      maengel.push('bei Gruen nur ' + gruen.endAnteil + ' gegen ' + gelb.endAnteil
+                   + ' bei Gelb - die Flagge wirkt nicht');
+    }
+    // 3. Sanft: das Tempo steigt monoton und schwingt nicht ueber den Zielwert hinaus.
+    //    Eine kleine Toleranz, weil der Regler am Ende noch einlaeuft.
+    for (let i = 1; i < gelb.reihe.length; i++) {
+      if (gelb.reihe[i].kmh < gelb.reihe[i - 1].kmh - 0.5) {
+        maengel.push('Tempo fiel bei ' + gelb.reihe[i].s + ' s - der Regler kippt');
+        break;
+      }
+    }
+    const spitze = Math.max.apply(null, gelb.reihe.map((x) => x.anteil));
+    if (spitze > gelb.ziel * 1.15) {
+      maengel.push('schwingt auf ' + spitze + ' ueber das Ziel ' + gelb.ziel);
+    }
+    return { ok: !maengel.length,
+             mass: 'Gelb: ' + gelb.endKmh + ' km/h von ' + gelb.zielKmh
+                 + ' (Quote ' + quote.toFixed(2) + ') | Gruen: ' + gruen.endKmh
+                 + ' km/h | Daumen voll'
+                 + (maengel.length ? ' | ' + maengel.join(', ') : '') };
+  });
+
   // ---- Der Einzelspielbetrieb rechnet reproduzierbar -------------------------------
   //
   // WOZU DIESER TEST DA IST. Bestellt war: "Wichtig ist vor allem, dass ein Auto mit

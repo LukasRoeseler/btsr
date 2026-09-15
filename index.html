@@ -8155,9 +8155,8 @@
         <kbd>Ton</kbd><span>Auto&nbsp;2 hat keine Zusatzkette am Motorklang: kein
           Turbopfeifen, keine Knaller, kein Begrenzer-Takt &ndash; die h&auml;ngen an
           einem Bus. Und keinen Doppler, der geh&ouml;rt zur Runde von Auto&nbsp;1.</span>
-        <kbd>Gelb</kbd><span>Kein Autopilot unter gelber Flagge und keine
-          Einf&uuml;hrungsrunde f&uuml;r Auto&nbsp;2: beide h&auml;ngen an Z&auml;hlern des
-          Rennens, die es nur einmal gibt.</span>
+        <kbd>Aufnahme</kbd><span>Der Makro-Mitschnitt zeichnet Auto&nbsp;1 auf. Zwei
+          Spuren in einer Aufnahme w&auml;ren ein anderes Dateiformat.</span>
         <kbd>Zeiten</kbd><span>Die drei Rundenzeiten im Cockpit &ndash; aktuelle, letzte,
           beste &ndash; und die Aufnahme geh&ouml;ren Auto&nbsp;1. Seine eigenen Zeiten
           stehen in der Rundenübersicht.</span>
@@ -8170,6 +8169,13 @@
         Pfeil oben links oder dem Steuerkreuz auf &bdquo;Auto&nbsp;2&ldquo;. Dort stehen
         Tank, Zustand, Reifen- und Bremsentemperatur und seine Rundenzeiten. Ist der Modus
         aus, wird der Schirm beim Bl&auml;ttern &uuml;bersprungen.</p>
+      <p class="muted">Und die Rennleitung gilt f&uuml;r beide: bei gelber Flagge regelt
+        Auto&nbsp;2 auf dasselbe Tempo herunter wie das ganze Feld &ndash; gemessen 100 von
+        103&nbsp;km/h Zieltempo, gegen einen Daumen auf Vollgas &ndash;, und in der
+        Einf&uuml;hrungsrunde rollt es in der Kolonne mit, auf seiner eigenen Seite und mit
+        eigener Schl&auml;ngelphase. Jedes Auto hat dabei seinen eigenen Regler: der hat
+        einen I-Anteil, und ein geteilter w&uuml;rde die Abweichung des einen Autos in das
+        Gas des anderen tragen.</p>
       <p class="muted">Dazu z&auml;hlt Auto&nbsp;2 seine Runden mit: es steht in der
         Rundenübersicht, in der Rangliste w&auml;hrend des Rennens und im Ergebnis samt
         CSV. Das war keine Arbeit, sondern ein Irrtum in meiner Sch&auml;tzung &ndash; die
@@ -8602,7 +8608,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.6.52</span></span>
+    <span class="foot-ver">v<span id="app-version">0.6.53</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -9360,8 +9366,10 @@
     "Welcher der beiden erkannten Controller Auto 1 fährt. Die Reihenfolge kommt vom Browser und ist nicht wählbar: hier ist der Schalter dafür.":
       "Which of the two detected controllers drives car 1. The order comes from the browser and cannot be chosen: this is the switch for it.",
     "Was gerade erkannt ist": "What is detected right now",
-    "Kein Autopilot unter gelber Flagge und keine Einführungsrunde für Auto 2: beide hängen an Zählern des Rennens, die es nur einmal gibt.":
-      "No autopilot under a yellow flag and no formation lap for car 2: both hang off race counters that exist only once.",
+    "Der Makro-Mitschnitt zeichnet Auto 1 auf. Zwei Spuren in einer Aufnahme wären ein anderes Dateiformat.":
+      "The macro recorder records car 1. Two tracks in one recording would be a different file format.",
+    "Und die Rennleitung gilt für beide: bei gelber Flagge regelt Auto 2 auf dasselbe Tempo herunter wie das ganze Feld – gemessen 100 von 103 km/h Zieltempo, gegen einen Daumen auf Vollgas –, und in der Einführungsrunde rollt es in der Kolonne mit, auf seiner eigenen Seite und mit eigener Schlängelphase. Jedes Auto hat dabei seinen eigenen Regler: der hat einen I-Anteil, und ein geteilter würde die Abweichung des einen Autos in das Gas des anderen tragen.":
+      "And race control applies to both: under a yellow flag car 2 slows to the same pace as the rest of the field – measured 100 of a 103 km/h target, against a thumb held at full throttle – and on the formation lap it rolls along in the column, on its own side and with its own weave phase. Each car has its own controller: it has an integral term, and a shared one would carry one car's error into the other car's throttle.",
     "Dazu eine eigene Ortung auf der Strecke, und daran hängt mehr, als es klingt: die Ghosts weichen Auto 2 aus und wählen ihre Überholseite nach seiner Querlage, es erscheint auf der Streckenkarte, die Fahrhilfe und der Leitplanken-Modus gelten auch für ihn, und neben der Bahn wird sein Gas gedrosselt und sein Controller brummt – sein eigener, nicht der von Auto 1.":
       "Plus a track position of its own, and more hangs off that than it sounds: the ghosts avoid car 2 and pick their passing side from its lateral offset, it shows up on the track map, the driver aid and guard-rail mode apply to it too, and off the track its throttle is capped and its controller rumbles – its own, not car 1's.",
     "Drücke an jedem Controller einmal einen Knopf – der Browser meldet ein Pad erst nach der ersten Eingabe. Beide Controller benutzen dieselbe Tastenbelegung aus der Kachel „Controller“.":
@@ -16205,12 +16213,25 @@
   // fuehrt - ein Zustand, der je Takt neu entsteht, ist keiner. Zuruecksetzen tut ihn
   // autopilotZuruecksetzen(), gerufen wenn der Autopilot aussetzt: ein I-Anteil, der aus
   // einer alten gelben Phase stehen bleibt, gibt beim naechsten Mal sofort Gas.
+  // EIN REGLER JE AUTO, und das ist keine Symmetrie um ihrer selbst willen: der Regler hat
+  // einen I-Anteil. Ein gemeinsamer Zustand hiesse, dass die Abweichung von Auto 1 das Gas
+  // von Auto 2 mitbestimmt - und umgekehrt. Genau davor warnt der Kommentar in autopilot()
+  // schon fuer den Fall "Zustand je Takt neu angelegt": ein Zustand, den man teilt, ist
+  // ebenso wenig ein I-Anteil wie einer, den man wegwirft.
   const autopilotRegler = {};
-  function autopilotZuruecksetzen() {
-    autopilotRegler.iTerm = 0;
-    autopilotRegler.lastThrottle = 0;
-    autopilotRegler.lastBrake = 0;
-    autopilotRegler.at = 0;
+  const autopilotRegler2 = {};
+  // `wer` waehlt den Regler. OHNE Angabe werden BEIDE geraeumt, und das ist die richtige
+  // Vorgabe: die vorhandenen Aufrufstellen raeumen auf, wenn die gelbe Phase endet oder ein
+  // Rennen beginnt - das gilt fuer das ganze Feld und nicht fuer ein Auto.
+  function autopilotZuruecksetzen(wer) {
+    const leeren = (r) => {
+      r.iTerm = 0;
+      r.lastThrottle = 0;
+      r.lastBrake = 0;
+      r.at = 0;
+    };
+    if (wer === undefined) { leeren(autopilotRegler); leeren(autopilotRegler2); return; }
+    leeren(wer === 2 ? autopilotRegler2 : autopilotRegler);
   }
 
   // ====================================================================================
@@ -16345,12 +16366,24 @@
     return flagState === 'yellow' ? 'yellow' : null;
   }
 
-  function autopilot(fahrerBremse) {
+  // ---- UND ER GILT SEIT v0.6.53 FUER BEIDE AUTOS -------------------------------------
+  //
+  // Der Grund, warum das der wertvollste der offenen Punkte war: ohne ihn faehrt Auto 2
+  // bei gelber Flagge mit Vollgas in eine Kolonne, die alle anderen gerade einhalten. Eine
+  // gelbe Flagge, die fuer ein Auto im Feld nicht gilt, ist keine gelbe Flagge.
+  //
+  // Moeglich wurde es durch die Ortung aus v0.6.46: autopilotGrund() ist global (Flagge,
+  // Einfuehrungsrunde, Bahn/Ausdruck-Stellung), der Rest haengt am Auto - Motor, Regler,
+  // Kolonnenversatz, Abseits-Antwort. `wer` ist 1, wenn nichts dasteht.
+  function autopilot(fahrerBremse, wer) {
+    const zwei = wer === 2;
     const grund = autopilotGrund();
     // AUSSETZER RAEUMEN DEN REGLER AUF. Ohne das traegt der I-Anteil ueber das Ende der
     // gelben Phase hinaus und gibt beim naechsten Mal aus dem Stand Gas.
-    if (!grund) { autopilotZuruecksetzen(); return null; }
-    const st = physEngine.state;
+    if (!grund) { autopilotZuruecksetzen(wer); return null; }
+    const motor = zwei ? physEngine2 : physEngine;
+    const regler = zwei ? autopilotRegler2 : autopilotRegler;
+    const st = motor.state;
     // ---- WIE EIN GHOST, UND DAS IST DER BESTELLTE UNTERSCHIED ---------------------
     //
     // GEMELDET: "gelbe Flagge fuer mein Auto auf der Bahn fixen: es gibt nur Gas, sollte
@@ -16379,11 +16412,11 @@
     const ziel = grund === 'formation'
       ? formationPace()
       : Math.max(yellowFactor(), GHOST_READ_MIN);
-    const v = Math.abs(st.speedKmh) / physEngine.config.topSpeedKmh;
+    const v = Math.abs(st.speedKmh) / motor.config.topSpeedKmh;
     const dtA = Math.max(0.01, Math.min(0.25,
-      (Date.now() - (autopilotRegler.at || Date.now())) / 1000));
-    autopilotRegler.at = Date.now();
-    const geregelt = ghostSpeedControl(autopilotRegler, ziel, v, dtA);
+      (Date.now() - (regler.at || Date.now())) / 1000));
+    regler.at = Date.now();
+    const geregelt = ghostSpeedControl(regler, ziel, v, dtA);
     let throttle = geregelt.throttle;
     let brake = geregelt.brake;
     // DIE BREMSE DES FAHRERS GEWINNT, aber nur in der Einfuehrungsrunde. Dort rollt das Feld
@@ -16397,8 +16430,11 @@
     return { grund, throttle, brake,
              // Bei Gelb geradeaus - eine vorhersagbare Spur, damit man ein Auto von Hand
              // dazwischenstellen kann. In der Einfuehrungsrunde wie die Ghosts.
+             // Der Kolonnenversatz SEINES Autos: er haengt am Startplatz
+             // (gridPosOf) und an einer eigenen Schlaengelphase - zwei Autos in
+             // einer Zweierkolonne sollen nicht auf derselben Spur rollen.
              steer: grund === 'formation' && typeof formationDriverOffset === 'function'
-               ? formationDriverOffset() : 0,
+               ? formationDriverOffset(zwei ? playerCar2 : playerCar) : 0,
              // ---- OB ER UEBERHAUPT LENKEN DARF -------------------------------------
              //
              // Neben der Bahn nicht. Beide Werte, die er liefert - 0 bei Gelb und der
@@ -16416,7 +16452,7 @@
              // GAS UND BREMSE BLEIBEN BEI IHM. Eine gelbe Flagge bleibt eine gelbe
              // Flagge; hergegeben wird die Lenkung, damit man zurueckfahren kann, nicht
              // die Tempobegrenzung.
-             lenkt: !abseitsJetzt() };
+             lenkt: !abseitsJetztFuer(zwei ? 2 : 1) };
   }
 
   // ---- Abseits der Fahrbahn ----------------------------------------------------------
@@ -16721,6 +16757,23 @@
     // Andersherum wuerde die Kennlinie einen halbleeren Tank mitkruemmen.
     fuelTankTick(p2Throttle, 2);
     gas = fuelDamageDerate(gas, tankZweiCutRampe(dt), 2);
+    // ---- GELBE FLAGGE UND EINFUEHRUNGSRUNDE, seit v0.6.53 -------------------------
+    //
+    // Der wertvollste der offenen Punkte, und der Grund ist einfach: ohne ihn faehrt
+    // Auto 2 bei Gelb mit Vollgas in eine Kolonne, die alle anderen gerade einhalten.
+    // Eine gelbe Flagge, die fuer ein Auto im Feld nicht gilt, ist keine.
+    //
+    // DIESELBE Reihenfolge wie bei Auto 1: der Autopilot setzt Gas und Bremse NACH Tank
+    // und Schaden. Ein Notlauf bleibt ein Notlauf, auch unter Gelb.
+    let lenkung = p2Steer;
+    let bremse = Math.max(0, -p2Throttle);
+    const ap2 = autopilot(bremse, 2);
+    if (ap2) {
+      gas = ap2.throttle;
+      bremse = ap2.brake;
+      // Die Lenkung nur, wenn er sie fuehren DARF - siehe `lenkt` in autopilot().
+      if (ap2.lenkt) lenkung = ap2.steer;
+    }
     if (offtrackGiltFuer(2)) gas = Math.min(gas, OFFTRACK_GAS);
     // Und das Rumpeln, an seinen eigenen Pad. Bis v0.6.45 waere es der Pad von Spieler 1
     // gewesen; jetzt hat jeder Stoss eine Adresse.
@@ -16731,8 +16784,8 @@
         padRumble(0.12, 0.34, OFFTRACK_RUMBLE_MS, 'abseits', 2);
       }
     }
-    const out = physEngine2.update({ steering: p2Steer, throttle: gas,
-                                     brake: Math.max(0, -p2Throttle),
+    const out = physEngine2.update({ steering: lenkung, throttle: gas,
+                                     brake: bremse,
                                      headlights: headlightsOn }, dt);
     updateRaceScreen2(physEngine2.state);
     // Der Motorton von Auto 2, aus SEINER Drehzahl - dieselbe Zahl, die seine Anzeige
@@ -28881,10 +28934,17 @@
   // Versatz ist ein kleiner Anstoss auf diese Null. Das Linienmodell der Ghosts haengt an
   // ihrem Kachelzustand in car.ghost, den das Fahrerauto nicht hat - und in einer
   // Einfuehrungsrunde geht es ohnehin ums Rollen in Formation und nicht um die Ideallinie.
+  // ZWEI HALTER, weil der Versatz einen ZUSTAND hat: formationOffset() wuerfelt beim ersten
+  // Aufruf eine Schlaengelphase und legt sie im Halter ab. Ein gemeinsamer Halter hiesse,
+  // dass beide Autos im Gleichschritt schlaengeln - in einer Zweierkolonne ist das genau
+  // das, was man nicht will.
   const formationFahrer = {};
-  function formationDriverOffset() {
-    const car = garage.find(c => c.role === 'player');
-    return formationOffset(formationFahrer, gridPosOf(car), Date.now());
+  const formationFahrerZwei = {};
+  function formationDriverOffset(car) {
+    const c = car || garage.find(x => x.role === 'player');
+    const halter = (typeof playerCar2 !== 'undefined' && c && c === playerCar2)
+      ? formationFahrerZwei : formationFahrer;
+    return formationOffset(halter, gridPosOf(c), Date.now());
   }
   const GHOST_OFFTRACK_MS = 1500;   // measured: tiles last 0.4-2.7 s with no 0xff between
   // Wie lange 0x00 stehen muss, bevor der Ghost anhaelt. Vorher hielt ein EINZIGES 0x00-Paket
@@ -36393,6 +36453,92 @@
       schadenZwei.licht.front = !!front;
       schadenZwei.licht.rear = !!rear;
       return this.schadenZweiLesen();
+    },
+
+    // ---- GILT DIE GELBE FLAGGE AUCH FUER AUTO 2? -------------------------------------
+    //
+    // DIE FRAGE, die diesen Punkt zum wertvollsten der offenen gemacht hat: ohne den
+    // Autopiloten faehrt Auto 2 bei Gelb mit VOLLGAS in eine Kolonne, die alle anderen
+    // gerade einhalten. Eine gelbe Flagge, die fuer ein Auto im Feld nicht gilt, ist keine.
+    //
+    // Gemessen wird am GAS, das hinausgeht, und am erreichten Tempo - nicht daran, ob eine
+    // Funktion gerufen wurde. Vollgas bleibt dabei die ganze Zeit anliegen: der Autopilot
+    // muss GEGEN den Daumen regeln, das ist sein Sinn.
+    //
+    // Die Bahn/Ausdruck-Stellung muss auf 'on' stehen, sonst laeuft der Autopilot
+    // ueberhaupt nicht (autopilotGrund: ohne Leitplanken haelt sich das Auto nicht selbst
+    // auf der Bahn, und ein Autopilot ohne Querregelung faehrt es in die Bande).
+    async gelbZweiProbe(o) {
+      const opt = o || {};
+      const uhrEcht = Date.now, perfEcht = performance.now;
+      const merk = { zwei: zweiSpieler, p2: playerCar2, gas: p2Throttle, steer: p2Steer,
+                     phys: physicsEnabled, flagge: flagState, bahn: trackMode,
+                     formation: typeof raceFormationLap !== 'undefined'
+                       ? raceFormationLap : null };
+      const a2 = { device: { id: 'probe-gelb' }, role: 'player2', alias: 'P2',
+                   rx: null, testSenke: [] };
+      const reihe = [];
+      try {
+        let t = 3000000;
+        Date.now = () => t;
+        performance.now = () => t;
+        zweiSpieler = true;
+        physicsEnabled = true;
+        playerCar2 = a2;
+        trackMode = 'on';
+        if (typeof raceFormationLap !== 'undefined') raceFormationLap = false;
+        physEngine2.reset();
+        physEngine2Abgleichen();
+        tankZweiFuellen(100);
+        tankZweiTaktVergessen();
+        phys2TaktVergessen();
+        autopilotZuruecksetzen(2);
+        p2Steer = 0;
+        p2Throttle = 1;          // Vollgas, die ganze Zeit
+        flagState = opt.flagge || 'yellow';
+        const takte = Math.round((opt.sekunden === undefined ? 8 : opt.sekunden)
+                                 * 1000 / CONTROL_SEND_INTERVAL_MS);
+        for (let i = 0; i < takte; i++) {
+          spielerZweiSenden();
+          if (i % 20 === 0 || i === takte - 1) {
+            reihe.push({
+              s: +(i * CONTROL_SEND_INTERVAL_MS / 1000).toFixed(2),
+              gas: +(physOut2Throttle || 0).toFixed(3),
+              anteil: +(Math.abs(physEngine2.state.speedKmh)
+                        / physEngine2.config.topSpeedKmh).toFixed(3),
+              kmh: +(Math.abs(physEngine2.state.speedKmh) * REAL_SCALE).toFixed(1),
+            });
+          }
+          t += CONTROL_SEND_INTERVAL_MS;
+        }
+        const letzte = reihe.slice(-3);
+        return {
+          flagge: flagState,
+          ziel: Math.max(yellowFactor(), GHOST_READ_MIN),
+          zielKmh: +(Math.max(yellowFactor(), GHOST_READ_MIN)
+                     * physEngine2.config.topSpeedKmh * REAL_SCALE).toFixed(1),
+          reihe,
+          // Der Mittelwert der letzten drei Abtastpunkte: dort ist der Regler eingelaufen.
+          endAnteil: +(letzte.reduce((a, x) => a + x.anteil, 0) / letzte.length).toFixed(3),
+          endKmh: +(letzte.reduce((a, x) => a + x.kmh, 0) / letzte.length).toFixed(1),
+          daumen: p2Throttle,
+        };
+      } finally {
+        Date.now = uhrEcht;
+        performance.now = perfEcht;
+        flagState = merk.flagge;
+        trackMode = merk.bahn;
+        if (typeof raceFormationLap !== 'undefined') raceFormationLap = merk.formation;
+        zweiSpieler = merk.zwei;
+        playerCar2 = merk.p2;
+        p2Throttle = merk.gas;
+        p2Steer = merk.steer;
+        physicsEnabled = merk.phys;
+        autopilotZuruecksetzen();
+        physEngine2.reset();
+        tankZweiFuellen(100);
+        if (typeof updateRaceScreen2 === 'function') updateRaceScreen2(physEngine2.state);
+      }
     },
 
     // ---- SAGT DIE SICHERUNG, WAS IM BROWSER LIEGT? -----------------------------------
@@ -53853,6 +53999,69 @@
   // Die Liste ist GEPFLEGT, und das ist hier richtig: sie IST die Zusicherung. Sie stammt
   // aus einer Suche ueber alle Kaestchen, deren Listener "X = e.target.checked" schreibt.
   // Ein neuer Schalter gehoert hinein.
+  // ---- Die gelbe Flagge gilt auch fuer Auto 2 --------------------------------------
+  //
+  // DER WERTVOLLSTE DER OFFENEN PUNKTE, und der Grund ist einfach: ohne den Autopiloten
+  // faehrt Auto 2 bei Gelb mit VOLLGAS in eine Kolonne, die alle anderen gerade einhalten.
+  // Eine gelbe Flagge, die fuer ein Auto im Feld nicht gilt, ist keine gelbe Flagge.
+  //
+  // Moeglich wurde es durch die Ortung aus v0.6.46: autopilotGrund() ist global (Flagge,
+  // Einfuehrungsrunde, Bahn/Ausdruck-Stellung), alles andere haengt am Auto - Motor,
+  // Regler, Kolonnenversatz, Abseits-Antwort.
+  //
+  // Gemessen wird am GAS, das hinausgeht, und am erreichten Tempo. Der Daumen bleibt dabei
+  // die ganze Zeit auf Vollgas: der Autopilot muss GEGEN ihn regeln, das ist sein Sinn.
+  //
+  // DREI AUSSAGEN:
+  //   1. Bei Gelb laeuft das Auto auf den Zielwert ein - Trefferquote wie bei den Ghosts.
+  //   2. Bei Gruen tut es das NICHT. Ohne diese Gegenprobe koennte der Test auch einen
+  //      Motor gruen melden, der einfach nie schneller wird.
+  //   3. Es regelt SANFT. Ein Sprung von Vollgas auf ein Viertel war bei Auto 1 als
+  //      "es gibt nur Gas" gemeldet - der rohe P-Regler kippte um den Zielwert. Geprueft
+  //      wird deshalb, dass das Tempo monoton steigt und nirgends ueberschwingt.
+  //
+  // EIN EIGENER REGLER JE AUTO ist dabei keine Symmetrie um ihrer selbst willen: der
+  // Regler hat einen I-Anteil, und ein geteilter Zustand hiesse, dass die Abweichung von
+  // Auto 1 das Gas von Auto 2 mitbestimmt.
+  stAdd('Zwei Spieler: die gelbe Flagge gilt auch fuer Auto 2', async () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.gelbZweiProbe) {
+      return { skip: true, mass: 'gelbZweiProbe nicht vorhanden' };
+    }
+    const gelb = await OMEGA_TEST.gelbZweiProbe({ sekunden: 8, flagge: 'yellow' });
+    const gruen = await OMEGA_TEST.gelbZweiProbe({ sekunden: 8, flagge: 'green' });
+    const maengel = [];
+    if (gelb.daumen !== 1) maengel.push('der Daumen lag nicht auf Vollgas');
+    // 1. Trefferquote gegen den Zielwert. Dieselbe Spanne, die auch fuer die Ghosts gilt
+    //    ("Ghost erreicht sein eingestelltes Tempo", 0,88 bis 1,12).
+    const quote = gelb.endAnteil / Math.max(1e-6, gelb.ziel);
+    if (!(quote > 0.85 && quote < 1.15)) {
+      maengel.push('Trefferquote ' + quote.toFixed(3) + ' (' + gelb.endAnteil
+                   + ' von ' + gelb.ziel + ')');
+    }
+    // 2. Gegenprobe: bei Gruen deutlich schneller.
+    if (!(gruen.endAnteil > gelb.endAnteil * 1.15)) {
+      maengel.push('bei Gruen nur ' + gruen.endAnteil + ' gegen ' + gelb.endAnteil
+                   + ' bei Gelb - die Flagge wirkt nicht');
+    }
+    // 3. Sanft: das Tempo steigt monoton und schwingt nicht ueber den Zielwert hinaus.
+    //    Eine kleine Toleranz, weil der Regler am Ende noch einlaeuft.
+    for (let i = 1; i < gelb.reihe.length; i++) {
+      if (gelb.reihe[i].kmh < gelb.reihe[i - 1].kmh - 0.5) {
+        maengel.push('Tempo fiel bei ' + gelb.reihe[i].s + ' s - der Regler kippt');
+        break;
+      }
+    }
+    const spitze = Math.max.apply(null, gelb.reihe.map((x) => x.anteil));
+    if (spitze > gelb.ziel * 1.15) {
+      maengel.push('schwingt auf ' + spitze + ' ueber das Ziel ' + gelb.ziel);
+    }
+    return { ok: !maengel.length,
+             mass: 'Gelb: ' + gelb.endKmh + ' km/h von ' + gelb.zielKmh
+                 + ' (Quote ' + quote.toFixed(2) + ') | Gruen: ' + gruen.endKmh
+                 + ' km/h | Daumen voll'
+                 + (maengel.length ? ' | ' + maengel.join(', ') : '') };
+  });
+
   // ---- Der Einzelspielbetrieb rechnet reproduzierbar -------------------------------
   //
   // WOZU DIESER TEST DA IST. Bestellt war: "Wichtig ist vor allem, dass ein Auto mit
