@@ -8680,7 +8680,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.6.59</span></span>
+    <span class="foot-ver">v<span id="app-version">0.6.60</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -11588,8 +11588,14 @@
       const roh = Math.max(-1, Math.min(1, steer));
       pg.querSoll = (pg.querSoll || 0) + (roh - (pg.querSoll || 0)) * 0.25;
     }
+    // Die Lichthupe von Auto 2 legt sich UEBER headlightsOn, genau wie resolveLights()
+    // es fuer Auto 1 tut - defensiv gerufen, weil headlichtZwei() in 70-race.js steht,
+    // einer SPAETEREN Datei; zur Laufzeit (dieser Takt laeuft erst nach dem vollstaendigen
+    // Aufbau) ist sie da.
+    const kopflicht2 = typeof headlichtZwei === 'function'
+      ? headlichtZwei(headlightsOn) : headlightsOn;
     writeToCar(playerCar2, steer, throttle,
-               trackModeBit() | (headlightsOn ? LIGHT_HEAD : 0),
+               trackModeBit() | (kopflicht2 ? LIGHT_HEAD : 0),
                playerCar2.modeBytes || null);
   }
   setInterval(controlHeartbeat, CONTROL_SEND_INTERVAL_MS);
@@ -24702,6 +24708,34 @@
     playFlashSound();
   }
 
+  // ---- DIESELBE LICHTHUPE FUER AUTO 2 -----------------------------------------------
+  //
+  // BESTELLT: "Spieler 2 soll auch funktionierende Knoepfe haben fuer: ... Lichthupe."
+  //
+  // EIN EIGENER ZUSTAND, keine Erweiterung von lightFx.flashUntil: die Lichthupe ist die
+  // Absicht EINES Fahrers an das Auto vor ihm. Ein gemeinsamer Zustand liesse Spieler 1s
+  // Knopf auch Auto 2 blitzen lassen und umgekehrt - zwei Fahrer, ein Blinklicht waere
+  // keine Lichthupe mehr, sondern ein Zufall.
+  let flash2Until = 0;
+  function triggerHeadlightFlash2() {
+    if (Date.now() < flash2Until) return;
+    flash2Until = Date.now() + FLASH_MS;
+    showHudToast('P2: Lichthupe');
+    playFlashSound();
+  }
+
+  // Der Kopfblitz von Auto 2, gerufen aus spielerZweiSenden() in 20-protocol.js. Dieselbe
+  // Rechnung wie im Blitzteil von resolveLights() oben (FLASH_MS/FLASH_PERIOD_MS/
+  // FLASH_ON_MS sind gemeinsame Konstanten), aber OHNE Schaden-, Tank- oder Regenlicht -
+  // die haengen an Zaehlern, die es fuer Auto 2 in dieser schmalen Fassung nicht gibt.
+  function headlichtZwei(baseHead) {
+    const now = Date.now();
+    if (now >= flash2Until) return baseHead;
+    const elapsed = FLASH_MS - (flash2Until - now);
+    const on = (elapsed % FLASH_PERIOD_MS) < FLASH_ON_MS;
+    return on ? !baseHead : baseHead;
+  }
+
   // Drei Toene zur Wahl, alle gerechnet und keine Aufnahme. Pixabay-Material haette ich
   // herunterladen muessen, und das ist ein Schritt nach draussen, den ich nicht ohne
   // Rueckfrage gehe - dazu kommt die Anweisung, Toene selbst zu erzeugen. Standard aus: ein
@@ -35539,6 +35573,9 @@
   // Spieler 2 hat nur eine Quelle. Sie hier mitzubenutzen hiesse, dass sein Gas das von
   // Spieler 1 ueberschreibt.
   let p2PrevDown = false, p2PrevUp = false;
+  // Licht, Lichthupe, Boxenstopp - dieselbe Flankenerkennung wie beim Schalten oben,
+  // eigene Merker, weil es Spieler 2s EIGENER Griff zum Knopf ist.
+  let p2PrevHeadlights = false, p2PrevFlash = false, p2PrevPitstop = false;
   function pollPad2(pad) {
     if (!pad) {
       // Kein zweites Pad: Spieler 2 steht. Ohne diese zwei Zeilen behielte er den letzten
@@ -35563,6 +35600,48 @@
       physEngine2.triggerShift(1);
     }
     p2PrevDown = abNow; p2PrevUp = aufNow;
+
+    // ---- LICHT, LICHTHUPE, BOXENSTOPP - DIESELBE BELEGUNG WIE SPIELER 1 -------------
+    //
+    // BESTELLT: "Spieler 2 soll auch funktionierende Knoepfe haben fuer: Licht,
+    // Boxenstopp, Lichthupe (Belegung auf Gamepad wie Spieler 1)."
+    //
+    // `bindings` ist EIN gemeinsames Objekt (siehe die Begruendung am Kopf dieser
+    // Funktion: "Dieselben Bindungen wie Spieler 1 ... Wer auf gleichen Pads spielt,
+    // will ohnehin gleiche Knoepfe"), also liest Spieler 2 dieselben Tasten wie Spieler 1
+    // - nur an SEINEM Pad.
+    //
+    // Lichthupe: eigener Zustand (triggerHeadlightFlash2 in 70-race.js) und keine
+    // Erweiterung der Lichthupe von Auto 1 - sie ist die Absicht EINES Fahrers an das
+    // Auto vor IHM, und ein gemeinsamer Zustand liesse Spieler 1s Knopf auch Auto 2s
+    // Licht blitzen lassen.
+    const flashNow2 = readBindingValue(pad, bindings.lightflash) > BUTTON_CAPTURE_THRESHOLD;
+    if (flashNow2 && !p2PrevFlash && typeof triggerHeadlightFlash2 === 'function') {
+      triggerHeadlightFlash2();
+    }
+    p2PrevFlash = flashNow2;
+
+    // Licht an/aus ist dagegen eine GLOBALE Einstellung (headlightsOn gilt fuer beide
+    // Autos, siehe die Begruendung bei "globale Einstellungen gelten fuer beide" in
+    // 20-protocol.js) - Spieler 2 darf sie deshalb genauso umschalten wie Spieler 1, und
+    // beide Autos zeigen danach denselben Stand.
+    const headNow2 = readBindingValue(pad, bindings.headlights) > BUTTON_CAPTURE_THRESHOLD;
+    if (headNow2 && !p2PrevHeadlights) {
+      headlightsOn = !headlightsOn;
+      const cb = $('dash-head-toggle');
+      if (cb) cb.checked = headlightsOn;
+      showHudToast(headlightsOn ? 'Licht an' : 'Licht aus');
+    }
+    p2PrevHeadlights = headNow2;
+
+    // Boxenstopp: derselbe Griff wie der Knopf auf dem Vergleichsschirm
+    // (boxZweiAnfordern in 70-race.js) - er fordert an und bricht bei erneutem Druck ab,
+    // genau wie bei Spieler 1.
+    const pitstopNow2 = readBindingValue(pad, bindings.pitstop) > BUTTON_CAPTURE_THRESHOLD;
+    if (pitstopNow2 && !p2PrevPitstop && typeof boxZweiAnfordern === 'function') {
+      boxZweiAnfordern();
+    }
+    p2PrevPitstop = pitstopNow2;
   }
 
   function pollGamepad() {
@@ -38034,6 +38113,55 @@
     schirmZu(id) { cockpitScreenZu(id); return cockpitScreenIst().id; },
     // Und der Weg, den das Steuerkreuz wirklich nimmt - nicht nur die Registry.
     schirmPad(dir) { return pitScreenPad(dir); },
+    // ---- HAT SPIELER 2 DIESELBEN KNOEPFE WIE SPIELER 1? -----------------------------
+    //
+    // BESTELLT: "Spieler 2 soll auch funktionierende Knoepfe haben fuer: Licht,
+    // Boxenstopp, Lichthupe (Belegung auf Gamepad wie Spieler 1)."
+    //
+    // Ein Pad mit genau den drei Standard-Knoepfen gedrueckt (Index 3/9/11, siehe
+    // BINDING_DEFAULTS), einmal durch pollPad2() geschickt - derselbe Weg, den ein echter
+    // Controller nimmt. Geprueft wird die WIRKUNG: headlightsOn kippt, boxZweiLage()
+    // wechselt aus 'aus', und die Lichthupe von Auto 2 sperrt sich selbst gegen einen
+    // zweiten Aufruf, solange sie noch blitzt.
+    p2KnopfProbe() {
+      const merk = { head: headlightsOn, zwei: zweiSpieler, p2: playerCar2 };
+      const a2 = { device: { id: 'probe-p2knopf' }, role: 'player2', rx: null, testSenke: [] };
+      try {
+        zweiSpieler = true;
+        playerCar2 = a2;
+        const knopf = (i) => ({ pressed: true, value: 1 });
+        const los = () => ({ pressed: false, value: 0 });
+        const pad = { axes: [0, 0, 0, 0], buttons: Array(20).fill(0).map(() => los()) };
+        pad.buttons[3] = knopf();   // headlights
+        pad.buttons[9] = knopf();   // pitstop
+        pad.buttons[11] = knopf();  // lightflash
+        const vorLage = (typeof boxZweiLage === 'function') ? boxZweiLage() : null;
+        pollPad2(pad);
+        return {
+          lichtKippte: headlightsOn !== merk.head,
+          // Ein zweiter Aufruf, solange die erste Lichthupe noch blitzt, darf
+          // flash2Until NICHT verlaengern - sonst haette man eine Dauerlichthupe statt
+          // drei Impulsen. flash2Until steht in 70-race.js, einer FRUEHEREN Datei, ist
+          // also zur Laufzeit direkt lesbar.
+          lichthupeSperrt: (() => {
+            const vorher = flash2Until;
+            triggerHeadlightFlash2();
+            return flash2Until === vorher;
+          })(),
+          boxLageVorher: vorLage,
+          boxLageNachher: (typeof boxZweiLage === 'function') ? boxZweiLage() : null,
+        };
+      } finally {
+        headlightsOn = merk.head;
+        const cb = $('dash-head-toggle');
+        if (cb) cb.checked = merk.head;
+        zweiSpieler = merk.zwei;
+        playerCar2 = merk.p2;
+        if (typeof boxZweiAnfordern === 'function' && boxZweiLage() !== 'aus') {
+          boxZweiAnfordern();
+        }
+      }
+    },
     // UEBER DEN VERTEILER und nicht direkt auf pitScreenSelect(): gefragt ist, was die
     // Taste auf dem GERADE offenen Schirm tut, und genau diese Entscheidung war der Ort
     // des gemeldeten Fehlers. Ein Zugang, der sie ueberspringt, prueft die falsche Sache.

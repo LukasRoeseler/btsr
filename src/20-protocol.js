@@ -448,8 +448,14 @@
       const roh = Math.max(-1, Math.min(1, steer));
       pg.querSoll = (pg.querSoll || 0) + (roh - (pg.querSoll || 0)) * 0.25;
     }
+    // Die Lichthupe von Auto 2 legt sich UEBER headlightsOn, genau wie resolveLights()
+    // es fuer Auto 1 tut - defensiv gerufen, weil headlichtZwei() in 70-race.js steht,
+    // einer SPAETEREN Datei; zur Laufzeit (dieser Takt laeuft erst nach dem vollstaendigen
+    // Aufbau) ist sie da.
+    const kopflicht2 = typeof headlichtZwei === 'function'
+      ? headlichtZwei(headlightsOn) : headlightsOn;
     writeToCar(playerCar2, steer, throttle,
-               trackModeBit() | (headlightsOn ? LIGHT_HEAD : 0),
+               trackModeBit() | (kopflicht2 ? LIGHT_HEAD : 0),
                playerCar2.modeBytes || null);
   }
   setInterval(controlHeartbeat, CONTROL_SEND_INTERVAL_MS);

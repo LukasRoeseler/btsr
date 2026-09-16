@@ -7729,6 +7729,9 @@
   // Spieler 2 hat nur eine Quelle. Sie hier mitzubenutzen hiesse, dass sein Gas das von
   // Spieler 1 ueberschreibt.
   let p2PrevDown = false, p2PrevUp = false;
+  // Licht, Lichthupe, Boxenstopp - dieselbe Flankenerkennung wie beim Schalten oben,
+  // eigene Merker, weil es Spieler 2s EIGENER Griff zum Knopf ist.
+  let p2PrevHeadlights = false, p2PrevFlash = false, p2PrevPitstop = false;
   function pollPad2(pad) {
     if (!pad) {
       // Kein zweites Pad: Spieler 2 steht. Ohne diese zwei Zeilen behielte er den letzten
@@ -7753,6 +7756,48 @@
       physEngine2.triggerShift(1);
     }
     p2PrevDown = abNow; p2PrevUp = aufNow;
+
+    // ---- LICHT, LICHTHUPE, BOXENSTOPP - DIESELBE BELEGUNG WIE SPIELER 1 -------------
+    //
+    // BESTELLT: "Spieler 2 soll auch funktionierende Knoepfe haben fuer: Licht,
+    // Boxenstopp, Lichthupe (Belegung auf Gamepad wie Spieler 1)."
+    //
+    // `bindings` ist EIN gemeinsames Objekt (siehe die Begruendung am Kopf dieser
+    // Funktion: "Dieselben Bindungen wie Spieler 1 ... Wer auf gleichen Pads spielt,
+    // will ohnehin gleiche Knoepfe"), also liest Spieler 2 dieselben Tasten wie Spieler 1
+    // - nur an SEINEM Pad.
+    //
+    // Lichthupe: eigener Zustand (triggerHeadlightFlash2 in 70-race.js) und keine
+    // Erweiterung der Lichthupe von Auto 1 - sie ist die Absicht EINES Fahrers an das
+    // Auto vor IHM, und ein gemeinsamer Zustand liesse Spieler 1s Knopf auch Auto 2s
+    // Licht blitzen lassen.
+    const flashNow2 = readBindingValue(pad, bindings.lightflash) > BUTTON_CAPTURE_THRESHOLD;
+    if (flashNow2 && !p2PrevFlash && typeof triggerHeadlightFlash2 === 'function') {
+      triggerHeadlightFlash2();
+    }
+    p2PrevFlash = flashNow2;
+
+    // Licht an/aus ist dagegen eine GLOBALE Einstellung (headlightsOn gilt fuer beide
+    // Autos, siehe die Begruendung bei "globale Einstellungen gelten fuer beide" in
+    // 20-protocol.js) - Spieler 2 darf sie deshalb genauso umschalten wie Spieler 1, und
+    // beide Autos zeigen danach denselben Stand.
+    const headNow2 = readBindingValue(pad, bindings.headlights) > BUTTON_CAPTURE_THRESHOLD;
+    if (headNow2 && !p2PrevHeadlights) {
+      headlightsOn = !headlightsOn;
+      const cb = $('dash-head-toggle');
+      if (cb) cb.checked = headlightsOn;
+      showHudToast(headlightsOn ? 'Licht an' : 'Licht aus');
+    }
+    p2PrevHeadlights = headNow2;
+
+    // Boxenstopp: derselbe Griff wie der Knopf auf dem Vergleichsschirm
+    // (boxZweiAnfordern in 70-race.js) - er fordert an und bricht bei erneutem Druck ab,
+    // genau wie bei Spieler 1.
+    const pitstopNow2 = readBindingValue(pad, bindings.pitstop) > BUTTON_CAPTURE_THRESHOLD;
+    if (pitstopNow2 && !p2PrevPitstop && typeof boxZweiAnfordern === 'function') {
+      boxZweiAnfordern();
+    }
+    p2PrevPitstop = pitstopNow2;
   }
 
   function pollGamepad() {

@@ -3810,6 +3810,34 @@
     playFlashSound();
   }
 
+  // ---- DIESELBE LICHTHUPE FUER AUTO 2 -----------------------------------------------
+  //
+  // BESTELLT: "Spieler 2 soll auch funktionierende Knoepfe haben fuer: ... Lichthupe."
+  //
+  // EIN EIGENER ZUSTAND, keine Erweiterung von lightFx.flashUntil: die Lichthupe ist die
+  // Absicht EINES Fahrers an das Auto vor ihm. Ein gemeinsamer Zustand liesse Spieler 1s
+  // Knopf auch Auto 2 blitzen lassen und umgekehrt - zwei Fahrer, ein Blinklicht waere
+  // keine Lichthupe mehr, sondern ein Zufall.
+  let flash2Until = 0;
+  function triggerHeadlightFlash2() {
+    if (Date.now() < flash2Until) return;
+    flash2Until = Date.now() + FLASH_MS;
+    showHudToast('P2: Lichthupe');
+    playFlashSound();
+  }
+
+  // Der Kopfblitz von Auto 2, gerufen aus spielerZweiSenden() in 20-protocol.js. Dieselbe
+  // Rechnung wie im Blitzteil von resolveLights() oben (FLASH_MS/FLASH_PERIOD_MS/
+  // FLASH_ON_MS sind gemeinsame Konstanten), aber OHNE Schaden-, Tank- oder Regenlicht -
+  // die haengen an Zaehlern, die es fuer Auto 2 in dieser schmalen Fassung nicht gibt.
+  function headlichtZwei(baseHead) {
+    const now = Date.now();
+    if (now >= flash2Until) return baseHead;
+    const elapsed = FLASH_MS - (flash2Until - now);
+    const on = (elapsed % FLASH_PERIOD_MS) < FLASH_ON_MS;
+    return on ? !baseHead : baseHead;
+  }
+
   // Drei Toene zur Wahl, alle gerechnet und keine Aufnahme. Pixabay-Material haette ich
   // herunterladen muessen, und das ist ein Schritt nach draussen, den ich nicht ohne
   // Rueckfrage gehe - dazu kommt die Anweisung, Toene selbst zu erzeugen. Standard aus: ein

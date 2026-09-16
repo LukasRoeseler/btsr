@@ -1189,6 +1189,55 @@
     schirmZu(id) { cockpitScreenZu(id); return cockpitScreenIst().id; },
     // Und der Weg, den das Steuerkreuz wirklich nimmt - nicht nur die Registry.
     schirmPad(dir) { return pitScreenPad(dir); },
+    // ---- HAT SPIELER 2 DIESELBEN KNOEPFE WIE SPIELER 1? -----------------------------
+    //
+    // BESTELLT: "Spieler 2 soll auch funktionierende Knoepfe haben fuer: Licht,
+    // Boxenstopp, Lichthupe (Belegung auf Gamepad wie Spieler 1)."
+    //
+    // Ein Pad mit genau den drei Standard-Knoepfen gedrueckt (Index 3/9/11, siehe
+    // BINDING_DEFAULTS), einmal durch pollPad2() geschickt - derselbe Weg, den ein echter
+    // Controller nimmt. Geprueft wird die WIRKUNG: headlightsOn kippt, boxZweiLage()
+    // wechselt aus 'aus', und die Lichthupe von Auto 2 sperrt sich selbst gegen einen
+    // zweiten Aufruf, solange sie noch blitzt.
+    p2KnopfProbe() {
+      const merk = { head: headlightsOn, zwei: zweiSpieler, p2: playerCar2 };
+      const a2 = { device: { id: 'probe-p2knopf' }, role: 'player2', rx: null, testSenke: [] };
+      try {
+        zweiSpieler = true;
+        playerCar2 = a2;
+        const knopf = (i) => ({ pressed: true, value: 1 });
+        const los = () => ({ pressed: false, value: 0 });
+        const pad = { axes: [0, 0, 0, 0], buttons: Array(20).fill(0).map(() => los()) };
+        pad.buttons[3] = knopf();   // headlights
+        pad.buttons[9] = knopf();   // pitstop
+        pad.buttons[11] = knopf();  // lightflash
+        const vorLage = (typeof boxZweiLage === 'function') ? boxZweiLage() : null;
+        pollPad2(pad);
+        return {
+          lichtKippte: headlightsOn !== merk.head,
+          // Ein zweiter Aufruf, solange die erste Lichthupe noch blitzt, darf
+          // flash2Until NICHT verlaengern - sonst haette man eine Dauerlichthupe statt
+          // drei Impulsen. flash2Until steht in 70-race.js, einer FRUEHEREN Datei, ist
+          // also zur Laufzeit direkt lesbar.
+          lichthupeSperrt: (() => {
+            const vorher = flash2Until;
+            triggerHeadlightFlash2();
+            return flash2Until === vorher;
+          })(),
+          boxLageVorher: vorLage,
+          boxLageNachher: (typeof boxZweiLage === 'function') ? boxZweiLage() : null,
+        };
+      } finally {
+        headlightsOn = merk.head;
+        const cb = $('dash-head-toggle');
+        if (cb) cb.checked = merk.head;
+        zweiSpieler = merk.zwei;
+        playerCar2 = merk.p2;
+        if (typeof boxZweiAnfordern === 'function' && boxZweiLage() !== 'aus') {
+          boxZweiAnfordern();
+        }
+      }
+    },
     // UEBER DEN VERTEILER und nicht direkt auf pitScreenSelect(): gefragt ist, was die
     // Taste auf dem GERADE offenen Schirm tut, und genau diese Entscheidung war der Ort
     // des gemeldeten Fehlers. Ein Zugang, der sie ueberspringt, prueft die falsche Sache.
