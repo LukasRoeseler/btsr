@@ -1121,33 +1121,6 @@
                          "strip strip strip" "banner banner banner"
                          "foot foot foot" "toast toast toast" "marke marke marke"; }
 
-  /* ---- Die zweite Anzeige, nur im Zwei-Spieler-Modus -----------------------------------
-     EIN ZUSAETZLICHES FELD IM RASTER, und es entsteht erst mit der Klasse am Body. Die
-     Felder des Cockpits sind benannt; eine Zeile, die immer da ist und nur leer bleibt,
-     zaehlt in cockpitInhaltHoehe() trotzdem mit Luecke mit und kostet die Einpassung im
-     Einzelspiel rund 9 px. Deshalb wird die Feldliste umgesetzt statt ein Kind verborgen.
-
-     Die Zeile steht UNTER den grossen Instrumenten und ueber dem Kachelstreifen: der
-     Fahrer von Auto 1 schaut in die Mitte, der von Auto 2 eine Zeile tiefer, und keiner
-     von beiden muss an einer Bedienkachel vorbeisehen. Bewusst schmal - Drehzahl, Gang,
-     Tempo. Alles Weitere steht auf den anderen Schirmen, so bestellt. */
-  .gt3-p2 { display: none; grid-area: p2; }
-  body.zwei-spieler .gt3 {
-    grid-template-areas: "flag flag flag" "shift shift shift" "left gear right"
-                         "p2 p2 p2"
-                         "strip strip strip" "banner banner banner"
-                         "foot foot foot" "toast toast toast" "marke marke marke"; }
-  body.zwei-spieler .gt3-p2 {
-    display: grid; align-items: center; gap: clamp(4px, .8vw, 9px);
-    /* Die Beschriftung schmal, die drei Werte gleich breit: der Blick soll die Zahlen
-       treffen und nicht den Namen. */
-    grid-template-columns: auto repeat(3, minmax(0, 1fr));
-    border-top: 1px solid #262e3d; padding-top: clamp(3px, .6vw, 7px); }
-  .gt3-p2-marke {
-    font: 600 clamp(9px, 1.5vw, 12px)/1.1 var(--mono, ui-monospace, monospace);
-    letter-spacing: .08em; text-transform: uppercase; color: var(--gt3-dim, #7d8aa3);
-    writing-mode: horizontal-tb; padding-right: clamp(3px, .8vw, 8px); }
-
   /* DAS DECKGLAS. Drei Dinge, die eine Anzeige von einer Farbflaeche unterscheiden, und
      alle drei sind Aussehen und keine Aussage:
 
@@ -3071,48 +3044,6 @@
   body.race-fs.race-turn #race-dash .gt3-foot { display: none; }
   body.race-fs.race-turn #race-dash .gt3-strip {
     grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 3px; }
-  /* ---- DIE ZWEITE ZEILE IM GEDREHTEN VOLLBILD -----------------------------------------
-     GEMESSEN, UND ES WAR EIN ECHTER MANGEL: mit der Zeile brauchte das Cockpit auf
-     740 x 330 (gedreht) 691 px bei 646 verfuegbaren - der Skalierungsfaktor stand schon auf
-     seinem Boden von 0,5 und es ragten 45 px hinaus. Ohne Modus passte es mit Ueberstand 0.
-     Gefunden hat es der vorhandene Test "Cockpit passt im Vollbild, quer wie gedreht",
-     nachdem der Vorschaubereich wieder Masse hatte.
-
-     Gespart wird an der BESCHRIFTUNG und nicht an den Zahlen: die drei Werte stehen in
-     derselben Reihenfolge wie die grossen Instrumente darueber, und wer das Cockpit
-     gedreht auf einem Telefon haelt, hat sie zwei Zeilen hoeher schon gelesen. Die Zahlen
-     bleiben so gross, dass man sie im Fahren trifft. */
-  /* IN JEDEM VOLLBILD, quer wie gedreht. Hier stand `.race-turn` mit, und das war zu
-     eng gefasst: gemessen riss der QUER-Fall (race-fs ohne race-turn) bei 915 x 412 um
-     21 px und bei 844 x 390 um 44 px. Der gedrehte Fall ist nur der auffaelligere. */
-  body.race-fs #race-dash .gt3-p2 { padding-top: 2px; gap: 4px; }
-  body.race-fs #race-dash .gt3-p2 .gt3-lbl { display: none; }
-  body.race-fs #race-dash .gt3-p2 .gt3-val {
-    font-size: clamp(12px, 2.2vw, 17px); line-height: 1.02; }
-  body.race-fs #race-dash .gt3-p2 .gt3-val.big {
-    font-size: clamp(13px, 2.5vw, 19px); }
-  /* Die Polsterung der drei Kaesten auf null: sie stammt von den grossen Instrumenten,
-     und dort trennt sie Werte mit Beschriftung. Hier steht je Kasten EINE Zahl, und die
-     Trennung macht schon die Spaltenluecke. Gemessen sind das rund 14 px Hoehe im
-     gedrehten Vollbild - der Unterschied zwischen "passt" und "ragt heraus". */
-  body.race-fs #race-dash .gt3-p2 .gt3-box { padding: 0; box-shadow: none; }
-  /* Die Marke "SPIELER 2" faellt im Vollbild weg wie .gt3-marke und .gt3-foot: bei drei
-     Werten in der Reihenfolge der grossen Instrumente darueber ist sie entbehrlich, und
-     im gedrehten Vollbild zaehlt jeder Pixel Hoehe. */
-  body.race-fs #race-dash .gt3-p2-marke { display: none; }
-  /* Die Notabschaltung. Gesetzt von cockpitVollbildPassung(), wenn der
-     Skalierungsfaktor am Boden steht und es trotzdem nicht reicht - die Begruendung
-     samt Messwerten steht dort. */
-  #race-dash.p2-weg .gt3-p2 { display: none; }
-  /* UND DIE RASTERZEILE MIT. Nur das Kind zu verbergen liess die Zeile stehen: die Felder
-     sind benannt, und cockpitInhaltHoehe() liest grid-template-rows - eine leere Zeile
-     zaehlt mit ihrer Luecke weiter mit. Gemessen blieben davon 9 px uebrig, genau die
-     Luecke. Dieselbe Falle, die am Anfang die Entscheidung fuer die Klasse am body statt
-     eines verborgenen Kindes begruendet hat. */
-  body.zwei-spieler #race-dash.p2-weg {
-    grid-template-areas: "flag flag flag" "shift shift shift" "left gear right"
-                         "strip strip strip" "banner banner banner"
-                         "foot foot foot" "toast toast toast" "marke marke marke"; }
   body.race-fs .race-bar { position: fixed; z-index: 201; top: 8px; left: 8px; }
   body.race-fs.race-turn .race-bar { top: auto; bottom: 8px; left: 8px; }
 
@@ -3480,23 +3411,6 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.2L12 5.5v13l-4.8-4H4z"/><path d="M16 9a4.2 4.2 0 0 1 0 6" stroke="var(--bad)"/><path d="M18.6 6.4a7.8 7.8 0 0 1 0 11.2" stroke="var(--bad)"/></svg>
           <span id="race-act-sound-txt">Motor</span></button>
-      </div>
-
-      <!-- SPIELER 2. Dieselben drei Werte, dieselben Klassen, dieselbe Schreibweise wie
-           oben - eine zweite Anzeige, die anders aussieht, liest sich als anderes Auto und
-           nicht als zweiter Fahrer. Geschrieben wird sie von updateRaceScreen2() in
-           50-drive.js, aus einer eigenen Physikinstanz (physEngine2). -->
-      <div class="gt3-p2">
-        <div class="gt3-p2-marke">Spieler 2</div>
-        <div class="gt3-box" style="text-align:center">
-          <div class="gt3-lbl">1/min</div>
-          <div class="gt3-val" id="race2-rpm">1500</div></div>
-        <div class="gt3-box" style="text-align:center">
-          <div class="gt3-lbl">Gang</div>
-          <div class="gt3-val" id="race2-gear">N</div></div>
-        <div class="gt3-box" style="text-align:center">
-          <div class="gt3-lbl">km/h</div>
-          <div class="gt3-val big" id="race2-speed">0</div></div>
       </div>
 
       <div class="gt3-strip">
@@ -8260,9 +8174,10 @@
       <div class="opt-row"><div class="opt-label">2-Spieler-Modus<span
           class="wip-tag">experimentell</span><small>Zwei Autos, zwei Controller, ein
           Rennen auf derselben Strecke. Angeschaltet bekommt jede Zeile in der Garage einen
-          vierten Knopf &bdquo;Spieler&nbsp;2&ldquo;, und das Cockpit zeigt unter den
-          gro&szlig;en Instrumenten eine zweite Zeile mit Drehzahl, Gang und Tempo des
-          zweiten Autos. Beide Autos werden aus demselben 45-ms-Sendetakt bedient &ndash;
+          vierten Knopf &bdquo;Spieler&nbsp;2&ldquo;, und im Cockpit kommt ein vierter Schirm
+          &bdquo;Beide&ldquo; dazu, der Tempo, Drehzahl, Tank, Zustand, Reifen, Bremse und
+          Akku beider Autos nebeneinander zeigt. Der Hauptschirm bleibt Auto&nbsp;1
+          vorbehalten. Beide Autos werden aus demselben 45-ms-Sendetakt bedient &ndash;
           getrennte Takte waren die Ursache des Stotterns mit echtem Controller, und dieser
           Modus wiederholt den Fehler nicht.</small></div>
         <label class="tgl"><input type="checkbox" id="opt-zwei-an"></label></div>
@@ -8765,7 +8680,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.6.57</span></span>
+    <span class="foot-ver">v<span id="app-version">0.6.58</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -9527,8 +9442,9 @@
       "Two cars, two controllers, both rev counters in the cockpit. Work in progress.",
     "Der Modus": "The mode",
     "2-Spieler-Modus": "Two-player mode",
-    "Zwei Autos, zwei Controller, ein Rennen auf derselben Strecke. Angeschaltet bekommt jede Zeile in der Garage einen vierten Knopf „Spieler 2“, und das Cockpit zeigt unter den großen Instrumenten eine zweite Zeile mit Drehzahl, Gang und Tempo des zweiten Autos. Beide Autos werden aus demselben 45-ms-Sendetakt bedient – getrennte Takte waren die Ursache des Stotterns mit echtem Controller, und dieser Modus wiederholt den Fehler nicht.":
-      "Two cars, two controllers, one race on the same track. Switched on, every garage row gets a fourth button “Player 2”, and the cockpit shows a second line below the big instruments with the revs, gear and speed of the second car. Both cars are served from the same 45 ms send heartbeat – separate heartbeats were the cause of the stutter with a real controller, and this mode does not repeat that mistake.",
+    "Zwei Autos, zwei Controller, ein Rennen auf derselben Strecke. Angeschaltet bekommt jede Zeile in der Garage einen vierten Knopf „Spieler 2“, und im Cockpit kommt ein vierter Schirm „Beide“ dazu, der Tempo, Drehzahl, Tank, Zustand, Reifen, Bremse und Akku beider Autos nebeneinander zeigt. Der Hauptschirm bleibt Auto 1 vorbehalten. Beide Autos werden aus demselben 45-ms-Sendetakt bedient – getrennte Takte waren die Ursache des Stotterns mit echtem Controller, und dieser Modus wiederholt den Fehler nicht.":
+      "Two cars, two controllers, one race on the same track. Switched on, every garage row gets a fourth button “Player 2”, and the cockpit gains a fourth screen “Both” showing speed, revs, fuel, condition, tyres, brakes and battery of both cars side by side. The main screen stays car 1's alone. Both cars are served from the same 45 ms send heartbeat – separate heartbeats were the cause of the stutter with a real controller, and this mode does not repeat that mistake.",
+
     "Controller tauschen": "Swap controllers",
     "Welcher der beiden erkannten Controller Auto 1 fährt. Die Reihenfolge kommt vom Browser und ist nicht wählbar: hier ist der Schalter dafür.":
       "Which of the two detected controllers drives car 1. The order comes from the browser and cannot be chosen: this is the switch for it.",
@@ -15420,39 +15336,6 @@
       s = naechst;
       if (fertig) break;
     }
-    // ---- WENN ES AM BODEN NICHT REICHT, FAELLT DIE ZEILE VON AUTO 2 WEG --------------
-    //
-    // GEMESSEN, im Test "Cockpit passt im Vollbild, quer wie gedreht":
-    //
-    //   Schirm        ohne Modus   mit Modus, Zeile voll   mit Modus, Zeile kompakt
-    //   915 x 412     passt        21 px darueber          passt
-    //   844 x 390     passt         3 px darueber          passt
-    //   740 x 330     41 darueber  92 px darueber          72 px darueber
-    //
-    // Die kompakte Fassung (ohne Beschriftung, ohne Polsterung) reicht fuer die zwei
-    // grossen Groessen. Auf 740 x 330 passt das Cockpit AUCH OHNE den Modus nicht - der
-    // Faktor steht dort auf seinem Boden von 0,5, und das ist ein eigener, aelterer
-    // Mangel. Aber der Zwei-Spieler-Modus darf ihn nicht VERSCHLIMMERN: eine Anzeige, die
-    // 31 px mehr abschneidet als vorher, nimmt dem Fahrer die Schaltlampen weg.
-    //
-    // Also: ist der Faktor am Boden und es reicht trotzdem nicht, wird die zweite Zeile
-    // ausgeblendet und einmal nachgerechnet. Die Werte von Auto 2 sind dann nicht
-    // verloren - sie stehen auf seinem eigenen Cockpit-Schirm.
-    //
-    // WARUM IN JS UND NICHT ALS MEDIA QUERY: die Einpassung bekommt ihre Masse
-    // VORGEGEBEN (der Test prueft Groessen, die das Fenster gerade nicht hat). Eine Media
-    // Query saehe die echte Fensterhoehe und wuerde im Test nie greifen - die Pruefung
-    // waere dann gruen, ohne dass auf dem Geraet etwas besser waere.
-    let zeileWeg = false;
-    if (braucht > da && s <= RACE_FS_MIN_SCALE + 1e-6
-        && document.body.classList.contains('zwei-spieler')) {
-      el.classList.add('p2-weg');
-      zeileWeg = true;
-      cockpitVollbildMasse(el, schirmB, schirmH, s);
-      da = el.clientHeight;
-      braucht = cockpitInhaltHoehe(el);
-    }
-
     // Der letzte Schritt kann knapp ueber das Ziel gegangen sein. Dann lieber eine Spur
     // kleiner als ein abgeschnittener Rand - abgeschnitten war der gemeldete Fehler.
     cockpitVollbildMasse(el, schirmB, schirmH, s);
@@ -15468,7 +15351,7 @@
       braucht = cockpitInhaltHoehe(el);
     }
     return { vollbild: true, gedreht, schirmB, schirmH, faktor: +s.toFixed(3),
-             braucht: Math.round(braucht), da, zeileWeg,
+             braucht: Math.round(braucht), da,
              amBoden: s <= RACE_FS_MIN_SCALE + 1e-6,
              passt: braucht <= da + 1,
              ueberstand: Math.max(0, Math.round(braucht - da)) };
@@ -15480,9 +15363,6 @@
     el.style.width = '';
     el.style.height = '';
     el.style.removeProperty('--race-scale');
-    // Und die Notabschaltung der zweiten Zeile zuruecknehmen. Ohne das fehlt sie nach
-    // einmaligem Vollbild auf einem engen Schirm auch in der Seite - und dort ist Platz.
-    el.classList.remove('p2-weg');
   }
 
   // `breiteFuerTest` gilt nur im Vollbild: in der Seite steht die Breite des Cockpits in
@@ -17105,27 +16985,12 @@
     const out = physEngine2.update({ steering: lenkung, throttle: gas,
                                      brake: bremse,
                                      headlights: headlightsOn }, dt);
-    updateRaceScreen2(physEngine2.state);
     // Der Motorton von Auto 2, aus SEINER Drehzahl - dieselbe Zahl, die seine Anzeige
     // bekommt. Defensiv gerufen, weil 80-sound.js SPAETER gebaut wird: zur Laufzeit ist die
     // Funktion da, zur Ladezeit waere ein Zugriff die temporale Todeszone.
     if (typeof updateEngineSound2 === 'function') updateEngineSound2();
     physOut2Steer = out.servoAngle;
     physOut2Throttle = out.motorPWM;
-  }
-
-  // Die zweite Anzeige im Cockpit: Drehzahl, Gang und Tempo von Spieler 2. Sie ist
-  // verborgen, solange der Modus aus ist - und damit aus der Hoehenrechnung des Cockpits
-  // heraus (cockpitInhaltHoehe liest grid-template-rows, ein verborgener Bereich traegt
-  // nichts bei).
-  function updateRaceScreen2(st) {
-    if (!st) return;
-    const rpm = $('race2-rpm');
-    if (rpm) rpm.textContent = Math.round(motorDrehzahl(st));
-    const kmh = $('race2-speed');
-    if (kmh) kmh.textContent = Math.round(Math.abs(st.speedKmh) * REAL_SCALE);
-    const gang = $('race2-gear');
-    if (gang) gang.textContent = gearLabel(st);
   }
 
   // Beim Umschalten die Einstellungen uebernehmen. Die rund sechzig Regler im Optionentab
@@ -17199,15 +17064,6 @@
         setCarRole(playerCar2, 'none');
       }
     }
-    // EINE KLASSE AM BODY, nicht das hidden-Merkmal an der Zeile. Zwei Gruende, und der
-    // zweite ist der wichtige:
-    //   1. `hidden` und eine Regel mit `display` streiten; wer eine der beiden spaeter
-    //      anfasst, hat eine Zeile, die sich nicht mehr verbergen laesst.
-    //   2. Die Rasterfelder des Cockpits sind BENANNT (grid-template-areas, .gt3 im
-    //      Kopf). Ein zusaetzliches Feld waere auch leer noch eine Zeile samt Luecke in
-    //      cockpitInhaltHoehe() - die Einpassung wuerde im Einzelspiel rund 9 px Platz
-    //      verschenken. Mit der Klasse gibt es die Zeile nur, wenn es sie braucht.
-    document.body.classList.toggle('zwei-spieler', zweiSpieler);
     // Liegt der Schirm von Auto 2 vorne, wenn der Modus ausgeht, muss er verlassen werden -
     // sonst starrt man auf neun Zahlen, die niemand mehr nachfuehrt, und der Pfeil kommt
     // nicht zurueck (cockpitScreenStep ueberspringt ihn dann ja gerade).
@@ -24714,7 +24570,6 @@
     // NOT roll out gently. Everything else decays via the coast drag in the engine.
     motor.state.speedKmh *= 0.3;
     if (!zwei) updateDamageFuelUI();
-    else if (typeof updateRaceScreen2 === 'function') updateRaceScreen2(physEngine2.state);
     if (!playCrashFx()) playCrashSound(); // sample variants first, synth burst as fallback
     // Der untere Wert liegt ueber dem alten festen (0,6 / 0,4 / 220 ms): auch ein
     // langsamer Aufprall soll deutlicher sein als bisher. Oben laeuft es auf den vollen
@@ -37320,7 +37175,6 @@
         this.schadenZweiSetzen(merk.schaden.wert, merk.schaden.licht.front,
                           merk.schaden.licht.rear);
         physEngine2.reset();
-        if (typeof updateRaceScreen2 === 'function') updateRaceScreen2(physEngine2.state);
       }
     },
 
@@ -37406,7 +37260,6 @@
         autopilotZuruecksetzen();
         physEngine2.reset();
         tankZweiFuellen(100);
-        if (typeof updateRaceScreen2 === 'function') updateRaceScreen2(physEngine2.state);
       }
     },
 
@@ -37740,7 +37593,6 @@
         fuel = vorher.fuel1;
         tankZweiFuellen(vorher.tank2);
         physEngine2.reset();
-        if (typeof updateRaceScreen2 === 'function') updateRaceScreen2(physEngine2.state);
       }
     },
 
@@ -38114,8 +37966,6 @@
               rpm: Math.round(motorDrehzahl(physEngine2.state)),
               kmh: +(Math.abs(physEngine2.state.speedKmh) * REAL_SCALE).toFixed(1),
               gang: gearLabel(physEngine2.state),
-              anzeigeRpm: ($('race2-rpm') || {}).textContent,
-              anzeigeKmh: ($('race2-speed') || {}).textContent,
             });
           }
           t += CONTROL_SEND_INTERVAL_MS;
@@ -38128,8 +37978,6 @@
           eigenerMotor: physEngine2.state !== physEngine.state,
           eigeneGaenge: physEngine2.config.gears !== physEngine.config.gears,
           endeRpm: letzt.rpm, endeKmh: letzt.kmh, endeGang: letzt.gang,
-          anzeigeStimmt: letzt.anzeigeRpm === String(letzt.rpm)
-                      && letzt.anzeigeKmh === String(Math.round(letzt.kmh)),
           letztesPaket: a2.testSenke[a2.testSenke.length - 1] || null,
         };
       } finally {
@@ -38140,9 +37988,6 @@
         p2Throttle = vorher.gas;
         physicsEnabled = vorher.phys;
         physEngine2.reset();
-        // Die Anzeige wieder auf den Ruhestand, sonst stehen im Cockpit die Zahlen einer
-        // Messfahrt, die niemand gefahren hat.
-        updateRaceScreen2(physEngine2.state);
       }
     },
 
@@ -55781,7 +55626,6 @@
     if (r.endeGang === 'N' || r.endeGang === 'R') {
       maengel.push('steht noch in Gang ' + r.endeGang);
     }
-    if (!r.anzeigeStimmt) maengel.push('die zweite Anzeige weicht vom Zustand ab');
     // Und die Kurve muss steigen und nicht nur am Ende hoch sein.
     const kmh = r.verlauf.map((v) => v.kmh);
     for (let i = 2; i < kmh.length; i++) {

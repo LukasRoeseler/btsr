@@ -10533,7 +10533,6 @@
     if (r.endeGang === 'N' || r.endeGang === 'R') {
       maengel.push('steht noch in Gang ' + r.endeGang);
     }
-    if (!r.anzeigeStimmt) maengel.push('die zweite Anzeige weicht vom Zustand ab');
     // Und die Kurve muss steigen und nicht nur am Ende hoch sein.
     const kmh = r.verlauf.map((v) => v.kmh);
     for (let i = 2; i < kmh.length; i++) {

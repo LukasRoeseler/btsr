@@ -901,39 +901,6 @@
       s = naechst;
       if (fertig) break;
     }
-    // ---- WENN ES AM BODEN NICHT REICHT, FAELLT DIE ZEILE VON AUTO 2 WEG --------------
-    //
-    // GEMESSEN, im Test "Cockpit passt im Vollbild, quer wie gedreht":
-    //
-    //   Schirm        ohne Modus   mit Modus, Zeile voll   mit Modus, Zeile kompakt
-    //   915 x 412     passt        21 px darueber          passt
-    //   844 x 390     passt         3 px darueber          passt
-    //   740 x 330     41 darueber  92 px darueber          72 px darueber
-    //
-    // Die kompakte Fassung (ohne Beschriftung, ohne Polsterung) reicht fuer die zwei
-    // grossen Groessen. Auf 740 x 330 passt das Cockpit AUCH OHNE den Modus nicht - der
-    // Faktor steht dort auf seinem Boden von 0,5, und das ist ein eigener, aelterer
-    // Mangel. Aber der Zwei-Spieler-Modus darf ihn nicht VERSCHLIMMERN: eine Anzeige, die
-    // 31 px mehr abschneidet als vorher, nimmt dem Fahrer die Schaltlampen weg.
-    //
-    // Also: ist der Faktor am Boden und es reicht trotzdem nicht, wird die zweite Zeile
-    // ausgeblendet und einmal nachgerechnet. Die Werte von Auto 2 sind dann nicht
-    // verloren - sie stehen auf seinem eigenen Cockpit-Schirm.
-    //
-    // WARUM IN JS UND NICHT ALS MEDIA QUERY: die Einpassung bekommt ihre Masse
-    // VORGEGEBEN (der Test prueft Groessen, die das Fenster gerade nicht hat). Eine Media
-    // Query saehe die echte Fensterhoehe und wuerde im Test nie greifen - die Pruefung
-    // waere dann gruen, ohne dass auf dem Geraet etwas besser waere.
-    let zeileWeg = false;
-    if (braucht > da && s <= RACE_FS_MIN_SCALE + 1e-6
-        && document.body.classList.contains('zwei-spieler')) {
-      el.classList.add('p2-weg');
-      zeileWeg = true;
-      cockpitVollbildMasse(el, schirmB, schirmH, s);
-      da = el.clientHeight;
-      braucht = cockpitInhaltHoehe(el);
-    }
-
     // Der letzte Schritt kann knapp ueber das Ziel gegangen sein. Dann lieber eine Spur
     // kleiner als ein abgeschnittener Rand - abgeschnitten war der gemeldete Fehler.
     cockpitVollbildMasse(el, schirmB, schirmH, s);
@@ -949,7 +916,7 @@
       braucht = cockpitInhaltHoehe(el);
     }
     return { vollbild: true, gedreht, schirmB, schirmH, faktor: +s.toFixed(3),
-             braucht: Math.round(braucht), da, zeileWeg,
+             braucht: Math.round(braucht), da,
              amBoden: s <= RACE_FS_MIN_SCALE + 1e-6,
              passt: braucht <= da + 1,
              ueberstand: Math.max(0, Math.round(braucht - da)) };
@@ -961,9 +928,6 @@
     el.style.width = '';
     el.style.height = '';
     el.style.removeProperty('--race-scale');
-    // Und die Notabschaltung der zweiten Zeile zuruecknehmen. Ohne das fehlt sie nach
-    // einmaligem Vollbild auf einem engen Schirm auch in der Seite - und dort ist Platz.
-    el.classList.remove('p2-weg');
   }
 
   // `breiteFuerTest` gilt nur im Vollbild: in der Seite steht die Breite des Cockpits in
@@ -2586,27 +2550,12 @@
     const out = physEngine2.update({ steering: lenkung, throttle: gas,
                                      brake: bremse,
                                      headlights: headlightsOn }, dt);
-    updateRaceScreen2(physEngine2.state);
     // Der Motorton von Auto 2, aus SEINER Drehzahl - dieselbe Zahl, die seine Anzeige
     // bekommt. Defensiv gerufen, weil 80-sound.js SPAETER gebaut wird: zur Laufzeit ist die
     // Funktion da, zur Ladezeit waere ein Zugriff die temporale Todeszone.
     if (typeof updateEngineSound2 === 'function') updateEngineSound2();
     physOut2Steer = out.servoAngle;
     physOut2Throttle = out.motorPWM;
-  }
-
-  // Die zweite Anzeige im Cockpit: Drehzahl, Gang und Tempo von Spieler 2. Sie ist
-  // verborgen, solange der Modus aus ist - und damit aus der Hoehenrechnung des Cockpits
-  // heraus (cockpitInhaltHoehe liest grid-template-rows, ein verborgener Bereich traegt
-  // nichts bei).
-  function updateRaceScreen2(st) {
-    if (!st) return;
-    const rpm = $('race2-rpm');
-    if (rpm) rpm.textContent = Math.round(motorDrehzahl(st));
-    const kmh = $('race2-speed');
-    if (kmh) kmh.textContent = Math.round(Math.abs(st.speedKmh) * REAL_SCALE);
-    const gang = $('race2-gear');
-    if (gang) gang.textContent = gearLabel(st);
   }
 
   // Beim Umschalten die Einstellungen uebernehmen. Die rund sechzig Regler im Optionentab
@@ -2680,15 +2629,6 @@
         setCarRole(playerCar2, 'none');
       }
     }
-    // EINE KLASSE AM BODY, nicht das hidden-Merkmal an der Zeile. Zwei Gruende, und der
-    // zweite ist der wichtige:
-    //   1. `hidden` und eine Regel mit `display` streiten; wer eine der beiden spaeter
-    //      anfasst, hat eine Zeile, die sich nicht mehr verbergen laesst.
-    //   2. Die Rasterfelder des Cockpits sind BENANNT (grid-template-areas, .gt3 im
-    //      Kopf). Ein zusaetzliches Feld waere auch leer noch eine Zeile samt Luecke in
-    //      cockpitInhaltHoehe() - die Einpassung wuerde im Einzelspiel rund 9 px Platz
-    //      verschenken. Mit der Klasse gibt es die Zeile nur, wenn es sie braucht.
-    document.body.classList.toggle('zwei-spieler', zweiSpieler);
     // Liegt der Schirm von Auto 2 vorne, wenn der Modus ausgeht, muss er verlassen werden -
     // sonst starrt man auf neun Zahlen, die niemand mehr nachfuehrt, und der Pfeil kommt
     // nicht zurueck (cockpitScreenStep ueberspringt ihn dann ja gerade).

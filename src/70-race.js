@@ -3700,7 +3700,6 @@
     // NOT roll out gently. Everything else decays via the coast drag in the engine.
     motor.state.speedKmh *= 0.3;
     if (!zwei) updateDamageFuelUI();
-    else if (typeof updateRaceScreen2 === 'function') updateRaceScreen2(physEngine2.state);
     if (!playCrashFx()) playCrashSound(); // sample variants first, synth burst as fallback
     // Der untere Wert liegt ueber dem alten festen (0,6 / 0,4 / 220 ms): auch ein
     // langsamer Aufprall soll deutlicher sein als bisher. Oben laeuft es auf den vollen

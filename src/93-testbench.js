@@ -352,7 +352,6 @@
         this.schadenZweiSetzen(merk.schaden.wert, merk.schaden.licht.front,
                           merk.schaden.licht.rear);
         physEngine2.reset();
-        if (typeof updateRaceScreen2 === 'function') updateRaceScreen2(physEngine2.state);
       }
     },
 
@@ -438,7 +437,6 @@
         autopilotZuruecksetzen();
         physEngine2.reset();
         tankZweiFuellen(100);
-        if (typeof updateRaceScreen2 === 'function') updateRaceScreen2(physEngine2.state);
       }
     },
 
@@ -772,7 +770,6 @@
         fuel = vorher.fuel1;
         tankZweiFuellen(vorher.tank2);
         physEngine2.reset();
-        if (typeof updateRaceScreen2 === 'function') updateRaceScreen2(physEngine2.state);
       }
     },
 
@@ -1146,8 +1143,6 @@
               rpm: Math.round(motorDrehzahl(physEngine2.state)),
               kmh: +(Math.abs(physEngine2.state.speedKmh) * REAL_SCALE).toFixed(1),
               gang: gearLabel(physEngine2.state),
-              anzeigeRpm: ($('race2-rpm') || {}).textContent,
-              anzeigeKmh: ($('race2-speed') || {}).textContent,
             });
           }
           t += CONTROL_SEND_INTERVAL_MS;
@@ -1160,8 +1155,6 @@
           eigenerMotor: physEngine2.state !== physEngine.state,
           eigeneGaenge: physEngine2.config.gears !== physEngine.config.gears,
           endeRpm: letzt.rpm, endeKmh: letzt.kmh, endeGang: letzt.gang,
-          anzeigeStimmt: letzt.anzeigeRpm === String(letzt.rpm)
-                      && letzt.anzeigeKmh === String(Math.round(letzt.kmh)),
           letztesPaket: a2.testSenke[a2.testSenke.length - 1] || null,
         };
       } finally {
@@ -1172,9 +1165,6 @@
         p2Throttle = vorher.gas;
         physicsEnabled = vorher.phys;
         physEngine2.reset();
-        // Die Anzeige wieder auf den Ruhestand, sonst stehen im Cockpit die Zahlen einer
-        // Messfahrt, die niemand gefahren hat.
-        updateRaceScreen2(physEngine2.state);
       }
     },
 
