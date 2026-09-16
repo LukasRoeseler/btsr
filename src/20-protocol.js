@@ -403,7 +403,26 @@
     if (typeof playerCar2 === 'undefined' || !playerCar2) return;
     physicsStep2();
     let steer = physicsEnabled ? physOut2Steer : p2Steer;
-    const throttle = physicsEnabled ? physOut2Throttle : p2Throttle;
+    let throttle = physicsEnabled ? physOut2Throttle : p2Throttle;
+    // ---- DIE ZWEI GLOBALEN, DIE NICHT IN config STEHEN -----------------------------
+    //
+    // BESTELLT: "Globale einstellungen gelten für beide autos gleichermaßen."
+    //
+    // Die Abstimmung wandert ueber physEngine2Abgleichen() von selbst herueber (siehe den
+    // Zuhoerer in 50-drive.js). Diese zwei nicht: sie sitzen im Sendeweg von Auto 1, und
+    // den nimmt Auto 2 gar nicht - es geht ueber writeToCar(), wie ein Ghost.
+    //
+    //   topSpeedScale             der Regler "Geschwindigkeit". NUR nach vorn, aus
+    //                             demselben Grund wie bei Auto 1: er drosselte sonst auch
+    //                             die BREMSE und den Rueckwaertsgang, und bei 20 Prozent
+    //                             bremste das Auto mit einem Fuenftel.
+    //   batteryCompensationScale  gleicht den sinkenden Akku aus. Sie liest den Akkustand
+    //                             des FAHRERAUTOS; fuer Auto 2 ist das eine Naeherung, und
+    //                             eine gemeinsame Naeherung ist hier besser als gar keine -
+    //                             zwei Autos mit verschieden kompensierten Akkus waeren im
+    //                             Rennen ungleich schnell, ohne dass man den Grund sieht.
+    if (throttle > 0) throttle *= topSpeedScale;
+    throttle *= batteryCompensationScale();
     if (driftModus) steer = driftGegenlenken(steer);
     // ---- MIT VORAUSBLICK, seit v0.6.46 ---------------------------------------------
     //

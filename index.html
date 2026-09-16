@@ -1665,35 +1665,85 @@
   #race-dash[data-screen="pit"] #race-pitscreen,
   #race-dash[data-screen="auto2"] #race-p2screen,
   #race-dash[data-screen="uebersicht"] #race-ovscreen { display: grid; }
-  /* NEUN KAESTEN, ALSO DREI MAL DREI. Hier standen fuenf Spalten, und das ergab 5 + 4 -
-     eine angebrochene zweite Zeile und darunter die halbe Schirmflaeche leer, waehrend die
-     Zahlen so klein blieben wie im Kachelstreifen. Ein Schirm, den man im Fahren liest,
-     soll seine Flaeche in Schriftgroesse umsetzen.
+  /* ---- DER VERGLEICHSSCHIRM ------------------------------------------------------
+     ZWEI SPALTEN NEBENEINANDER, auch auf dem Telefon. Untereinander waere es kein
+     Vergleich mehr, sondern zweimal dieselbe Liste - und der ganze Zweck dieses Schirms
+     ist, dass das Auge waagerecht springen kann.
 
-     Die Zahlen deshalb eine Stufe groesser als im Streifen und die Kaesten gestreckt:
-     align-content: stretch verteilt die drei Zeilen ueber die Hoehe, statt sie oben
-     zusammenzuschieben. */
-  .p2s-grid { display: grid; gap: clamp(4px, .8vw, 10px);
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    grid-auto-rows: minmax(0, 1fr); align-content: stretch; }
-  .p2s-grid .gt3-val { font-size: clamp(17px, 3.4vw, 30px); }
-  .p2s-grid .gt3-val.sm { font-size: clamp(15px, 2.8vw, 25px); }
-  /* IM VOLLBILD ZURUECK AUF FUENF SPALTEN, und zwar wegen der Hoehe: dort ist sie knapp
-     (siehe die Notabschaltung der zweiten Zeile), und zwei Zeilen brauchen weniger als
-     drei. Der Schirm ist dann breiter als hoch, also passt das auch zur Form. */
-  body.race-fs .p2s-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+     Deshalb 1fr/1fr und nicht auto: beide Spalten sind exakt gleich breit, damit
+     gleichnamige Werte auf derselben Hoehe stehen. Eine Trennlinie in der Mitte statt
+     eines Rahmens um jede Spalte - ein Rahmen macht aus zwei Spalten zwei Kaesten. */
+  /* GESTRECKT und nicht oben zusammengeschoben: der Schirm ist hoch, und mit
+     align-content: start blieb die untere Haelfte leer, waehrend die Zahlen klein blieben.
+     Die Spalte verteilt ihre fuenf Bloecke ueber die Hoehe - Kopf, Lampen, Tacho, Werte,
+     Boxenknopf -, und der Knopf landet damit von selbst unten, wo man ihn sucht. */
+  .vgl-grid { display: grid; grid-template-columns: 1fr 1fr;
+    gap: clamp(8px, 1.8vw, 20px); align-content: stretch; min-width: 0; }
+  .vgl-spalte { display: flex; flex-direction: column; justify-content: space-between;
+    gap: clamp(4px, .9vw, 9px); min-width: 0; }
+  /* ---- DIE GROSSE LAMPENLEISTE DES COCKPITS BLEIBT HIER DUNKEL ---------------------
+     Sie gehoert zum Rahmen und zeigt immer Auto 1. Auf diesem Schirm hat jede Spalte ihre
+     eigene Leiste, und zwei Leisten fuer dasselbe Auto uebereinander sind die Frage
+     "welche gilt jetzt?" - genau die soll ein Vergleichsschirm nicht stellen. Verborgen
+     und nicht entfernt: sie ist ein Rasterfeld des Cockpits, und ein fehlendes Feld
+     verschoebe die Einpassung (cockpitInhaltHoehe liest grid-template-rows). */
+  #race-dash[data-screen="auto2"] #race-shift { visibility: hidden; }
+  .vgl-spalte + .vgl-spalte { border-left: 1px solid #262e3d;
+    padding-left: clamp(8px, 1.8vw, 20px); }
+  .vgl-kopf { display: flex; align-items: baseline; gap: 7px; min-width: 0; }
+  .vgl-marke { font: 700 clamp(9px, 1.5vw, 12px)/1.1 var(--mono, ui-monospace, monospace);
+    letter-spacing: .08em; text-transform: uppercase; color: var(--good); flex: none; }
+  .vgl-marke.zwei { color: #3d8bff; }
+  .vgl-name { font-size: clamp(9px, 1.4vw, 12px); color: var(--gt3-strip-ink);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* Die Lampenleiste je Spalte: dieselbe Klasse wie oben, nur flacher - sie steht hier
+     neben einer zweiten und soll den Tacho nicht ueberragen. */
+  .vgl-shift { height: clamp(6px, 1.1vw, 10px); }
+  .vgl-tempo { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
+  .vgl-tempo .gt3-val.big { font-size: clamp(26px, 5.2vw, 48px); line-height: 1; }
+  .vgl-einheit { font-size: clamp(8px, 1.2vw, 11px); letter-spacing: .1em;
+    text-transform: uppercase; color: var(--gt3-strip-ink); }
+  .vgl-gang { margin-left: auto; font: 700 clamp(15px, 2.6vw, 26px)/1 var(--mono, ui-monospace, monospace);
+    color: var(--gt3-tile-ink); }
+  /* Fuenf Werte je Spalte, also zwei Reihen zu drei und zwei. Auf dem Telefon bleiben es
+     drei Spalten - die Kaesten sind schmal, aber die Zahlen darin kurz. */
+  .vgl-werte { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: clamp(3px, .7vw, 8px); }
+  .vgl-werte .gt3-val.sm { font-size: clamp(12px, 2.1vw, 18px); }
+  .vgl-werte .gt3-box { padding: clamp(2px, .5vw, 5px) clamp(3px, .6vw, 6px); }
+  .vgl-box { margin-top: auto; }
+  .vgl-fuss { display: flex; align-items: center; gap: clamp(8px, 1.6vw, 14px);
+    min-width: 0; }
+  .vgl-fuss .gt3-act { flex: none; }
+  /* ---- EINE ZEILE, UND SIE MUSS ES AUCH BLEIBEN -----------------------------------
+     Hier stand `min-width: 0; overflow: hidden; text-overflow: ellipsis` OHNE
+     `white-space: nowrap`, und damit tut das Ellipsis nichts: der Text bricht weiter um.
+     Gemessen wurde die Fusszeile dadurch 440 px hoch - der Satz brach bei wenigen Pixeln
+     Breite in rund 45 Zeilen und schob den ganzen Vergleich aus dem Schirm.
+     `flex: 1` gibt ihr die Breite, `nowrap` haelt sie auf einer Zeile, und erst dann
+     greift das Ellipsis. Die drei gehoeren zusammen. */
+  .vgl-fuss .schirm-fuss { flex: 1 1 auto; min-width: 0; white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis; }
   @media (max-width: 560px) {
-    .p2s-grid { gap: 4px; }
-    .p2s-grid .gt3-val { font-size: clamp(15px, 4.6vw, 22px); }
-    .p2s-grid .gt3-val.sm { font-size: clamp(13px, 4vw, 19px); }
+    .vgl-grid { gap: 6px; }
+    .vgl-spalte + .vgl-spalte { padding-left: 6px; }
+    .vgl-werte { gap: 3px; }
   }
-  #race-p2screen { grid-template-rows: auto minmax(0, 1fr) auto; }
-  /* Knopf links, Zustandstext rechts daneben - der Knopf behaelt seine Breite, der Text
-     nimmt den Rest. Ein Knopf ueber die ganze Breite waere im Fahren ein Ziel, das man
-     nicht verfehlen KANN, und genau das will man bei einem Boxenstopp nicht. */
-  .p2s-fuss { display: flex; align-items: center; gap: clamp(8px, 1.6vw, 14px); }
-  .p2s-fuss .gt3-act { flex: none; }
-  .p2s-fuss .schirm-fuss { min-width: 0; }
+  /* ---- DIESER SCHIRM IST EINE FLEX-SPALTE UND KEIN RASTER --------------------------
+     Hier stand `grid-template-rows: auto minmax(0, 1fr) auto`, und gemessen kam
+     "13,8px 0px 660px" heraus: das mittlere Feld bekam NULL Hoehe, die Spalten liefen
+     ueber, und der untere Teil des Schirms blieb leer. Mit drei Kindern, von denen das
+     mittlere den Rest nehmen soll, ist eine Flex-Spalte die Form, die das ohne Umweg
+     sagt - und `min-height: 0` ist dabei der Teil, den man vergisst: ohne ihn darf ein
+     Flex-Kind nicht kleiner werden als sein Inhalt, und dann laeuft es wieder ueber.
+
+     Die Regel ueberschreibt `display: grid` aus .gt3-schirm und muss deshalb dieselbe
+     Bedingung tragen wie die Einblendung, sonst gilt sie auch fuer den verborgenen
+     Schirm - das waere folgenlos, aber es waere auch nicht wahr. */
+  #race-dash[data-screen="auto2"] #race-p2screen {
+    display: flex; flex-direction: column; gap: clamp(4px, .8vw, 9px); }
+  #race-dash[data-screen="auto2"] #race-p2screen > .vgl-grid {
+    flex: 1 1 auto; min-height: 0; }
 
   .schirm-kopf { display: flex; align-items: baseline; gap: 10px;
     font-size: clamp(8px, 1.1vw, 11px); letter-spacing: .12em;
@@ -2839,6 +2889,19 @@
      schon belegt sind und ein zweiter gruener Knopf in derselben Reihe nicht
      unterscheidbar waere. Kontrast gegen #06121f: 8,4. */
   .gar-roles button.on.zwei { background: #3d8bff; color: #06121f; font-weight: 700; }
+  /* DER EINZIGE ROLLENKNOPF MIT KENNZEICHNUNG, und er traegt sie zweizeilig: "Spieler 2
+     experimentell" nebeneinander waere breiter als die drei anderen Knoepfe zusammen.
+     Die Leiste waechst dadurch von 38 auf rund 46 px - das ist der Preis dafuer, dass man
+     die Kennzeichnung dort liest, wo man den Modus einschaltet, und nicht erst in den
+     Optionen. */
+  .gar-roles button.gar-rolle-zwei {
+    display: inline-flex; flex-direction: column; align-items: center; gap: 1px;
+    line-height: 1.15; padding-top: 5px; padding-bottom: 5px; }
+  .gar-roles button.gar-rolle-zwei .wip-tag {
+    font-size: 8.5px; letter-spacing: .06em; opacity: .85; }
+  /* Auf dem gelben Grund des eingeschalteten Knopfes braucht die Kennzeichnung eine
+     dunkle Tinte - der wip-tag bringt seine eigene mit, und die ist hell. */
+  .gar-roles button.on.zwei .wip-tag { background: rgba(6,18,31,.22); color: #06121f; }
   .gar-roles button.on.ghost { background: #7a6bd0; color: #f2eeff; }
   .gar-roles button.on.off { background: var(--panel-3); color: var(--text); }
   /* Tempo je Ghost, direkt in der Zeile. Eine eigene Rasterzeile, damit der Regler die
@@ -3656,38 +3719,96 @@
 
            Die Werte werden von p2ScreenRender() in 50-drive.js geschrieben und sind
            deshalb data-i18n-skip: es sind Messwerte, keine Oberflaeche. -->
+      <!-- ---- DER VERGLEICHSSCHIRM: BEIDE AUTOS NEBENEINANDER -----------------------
+           BESTELLT: "Statt nur Player 2 soll er das Nötigste von Player 1 und 2 haben:
+           Geschwindigkeit, Drehzahllichter, schaden, reifen, tank, bremse, akku,
+           motorsound."
+
+           ZWEI SPALTEN UND NICHT ZWEI SCHIRME. Der Sinn dieses Schirms ist der VERGLEICH -
+           wer hat mehr Sprit, wessen Reifen sind kaelter, wer hat mehr Schaden. Zwei
+           Schirme, zwischen denen man blaettert, beantworten genau diese Frage nicht.
+
+           Die Reihenfolge der Werte ist in beiden Spalten dieselbe, und das ist keine
+           Symmetrie um ihrer selbst willen: beim Vergleichen springt das Auge waagerecht,
+           und eine Spalte mit anderer Reihenfolge macht daraus ein Suchen.
+
+           Der Motorklang steht UNTEN und EINMAL: beide Autos fahren dasselbe Modell. Ein
+           zweiter Klangknopf waere ein Bedienelement, das nichts anderes tut als der
+           erste. -->
       <div class="gt3-schirm" id="race-p2screen">
-        <div class="schirm-kopf"><b>Auto 2</b><span class="wip-tag">experimentell</span>
+        <div class="schirm-kopf"><b>Beide Autos</b><span class="wip-tag">experimentell</span>
           <span id="p2s-kopf-lage" data-i18n-skip>&ndash;</span>
           <span style="margin-left:auto" id="p2s-kopf-runde" data-i18n-skip></span></div>
-        <div class="p2s-grid">
-          <div class="gt3-box"><div class="gt3-lbl">1/min</div>
-            <div class="gt3-val" id="p2s-rpm" data-i18n-skip>1500</div></div>
-          <div class="gt3-box"><div class="gt3-lbl">km/h</div>
-            <div class="gt3-val" id="p2s-speed" data-i18n-skip>0</div></div>
-          <div class="gt3-box"><div class="gt3-lbl">Gang</div>
-            <div class="gt3-val" id="p2s-gear" data-i18n-skip>N</div></div>
-          <div class="gt3-box"><div class="gt3-lbl">Tank</div>
-            <div class="gt3-val sm" id="p2s-fuel" data-i18n-skip>100 l</div>
-            <div class="gt3-bar"><i id="p2s-fuel-bar"></i></div></div>
-          <div class="gt3-box"><div class="gt3-lbl">Zustand</div>
-            <div class="gt3-val sm" id="p2s-cond" data-i18n-skip>100&nbsp;%</div>
-            <div class="gt3-bar"><i id="p2s-cond-bar"></i></div></div>
-          <div class="gt3-box"><div class="gt3-lbl">Reifen</div>
-            <div class="gt3-val sm" id="p2s-tyre" data-i18n-skip>20&deg;</div></div>
-          <div class="gt3-box"><div class="gt3-lbl">Bremse</div>
-            <div class="gt3-val sm" id="p2s-brake" data-i18n-skip>20&deg;</div></div>
-          <div class="gt3-box"><div class="gt3-lbl">Letzte Runde</div>
-            <div class="gt3-val sm" id="p2s-lap-last" data-i18n-skip>&ndash;</div></div>
-          <div class="gt3-box"><div class="gt3-lbl">Beste Runde</div>
-            <div class="gt3-val sm gt3-ok" id="p2s-lap-best" data-i18n-skip>&ndash;</div></div>
+
+        <div class="vgl-grid">
+          <!-- ---- AUTO 1 ---- -->
+          <div class="vgl-spalte">
+            <div class="vgl-kopf"><span class="vgl-marke">Spieler 1</span>
+              <span class="vgl-name" id="vgl1-name" data-i18n-skip>&ndash;</span></div>
+            <div class="gt3-shift vgl-shift" id="vgl1-shift">
+              <span></span><span></span><span></span><span></span><span></span>
+              <span></span><span></span><span></span><span></span><span></span>
+            </div>
+            <div class="vgl-tempo"><span class="gt3-val big" id="vgl1-speed"
+                 data-i18n-skip>0</span><span class="vgl-einheit">km/h</span>
+              <span class="vgl-gang" id="vgl1-gear" data-i18n-skip>N</span></div>
+            <div class="vgl-werte">
+              <div class="gt3-box"><div class="gt3-lbl">Tank</div>
+                <div class="gt3-val sm" id="vgl1-fuel" data-i18n-skip>110 l</div>
+                <div class="gt3-bar"><i id="vgl1-fuel-bar"></i></div></div>
+              <div class="gt3-box"><div class="gt3-lbl">Zustand</div>
+                <div class="gt3-val sm" id="vgl1-cond" data-i18n-skip>100&nbsp;%</div>
+                <div class="gt3-bar"><i id="vgl1-cond-bar"></i></div></div>
+              <div class="gt3-box"><div class="gt3-lbl">Reifen</div>
+                <div class="gt3-val sm" id="vgl1-tyre" data-i18n-skip>20&deg;</div></div>
+              <div class="gt3-box"><div class="gt3-lbl">Bremse</div>
+                <div class="gt3-val sm" id="vgl1-brake" data-i18n-skip>20&deg;</div></div>
+              <div class="gt3-box"><div class="gt3-lbl">Akku</div>
+                <div class="gt3-val sm" id="vgl1-batt" data-i18n-skip>&ndash;</div></div>
+            </div>
+            <button type="button" class="gt3-act vgl-box" id="vgl1-act-pit">Boxenstopp</button>
+          </div>
+
+          <!-- ---- AUTO 2 ---- -->
+          <div class="vgl-spalte">
+            <div class="vgl-kopf"><span class="vgl-marke zwei">Spieler 2</span>
+              <span class="vgl-name" id="vgl2-name" data-i18n-skip>&ndash;</span></div>
+            <div class="gt3-shift vgl-shift" id="vgl2-shift">
+              <span></span><span></span><span></span><span></span><span></span>
+              <span></span><span></span><span></span><span></span><span></span>
+            </div>
+            <div class="vgl-tempo"><span class="gt3-val big" id="vgl2-speed"
+                 data-i18n-skip>0</span><span class="vgl-einheit">km/h</span>
+              <span class="vgl-gang" id="vgl2-gear" data-i18n-skip>N</span></div>
+            <div class="vgl-werte">
+              <div class="gt3-box"><div class="gt3-lbl">Tank</div>
+                <div class="gt3-val sm" id="vgl2-fuel" data-i18n-skip>110 l</div>
+                <div class="gt3-bar"><i id="vgl2-fuel-bar"></i></div></div>
+              <div class="gt3-box"><div class="gt3-lbl">Zustand</div>
+                <div class="gt3-val sm" id="vgl2-cond" data-i18n-skip>100&nbsp;%</div>
+                <div class="gt3-bar"><i id="vgl2-cond-bar"></i></div></div>
+              <div class="gt3-box"><div class="gt3-lbl">Reifen</div>
+                <div class="gt3-val sm" id="vgl2-tyre" data-i18n-skip>20&deg;</div></div>
+              <div class="gt3-box"><div class="gt3-lbl">Bremse</div>
+                <div class="gt3-val sm" id="vgl2-brake" data-i18n-skip>20&deg;</div></div>
+              <div class="gt3-box"><div class="gt3-lbl">Akku</div>
+                <div class="gt3-val sm" id="vgl2-batt" data-i18n-skip>&ndash;</div></div>
+            </div>
+            <button type="button" class="gt3-act vgl-box" id="p2s-act-pit">Boxenstopp</button>
+          </div>
         </div>
-        <!-- DER BOXENSTOPP VON AUTO 2 HAT SEINEN KNOPF HIER, und nicht im Hauptschirm:
-             dort liegt der Knopf von Auto 1, und zwei gleich aussehende Boxenknoepfe
-             nebeneinander sind die Bedienung, bei der man im Fahren daneben greift.
-             Nochmal druecken bricht ab - dieselbe Bedienung wie bei Auto 1. -->
-        <div class="p2s-fuss">
-          <button type="button" class="gt3-act" id="p2s-act-pit">Boxenstopp</button>
+
+        <div class="vgl-fuss">
+          <!-- Der Motorklang gilt fuer beide: dasselbe Modell, zwei Stimmen auf zwei
+               Stereoseiten. Derselbe Knopf wie im Hauptschirm, damit man ihn auch hier
+               erreicht - wer vergleicht, probiert. -->
+          <button type="button" class="gt3-act gt3-act-ico gt3-act-zwei" id="vgl-act-sound"
+                  title="Motorklang f&uuml;r beide Autos: rechte H&auml;lfte weiter, linke zur&uuml;ck">
+            <span class="act-pfeil links" aria-hidden="true" data-i18n-skip>&lsaquo;</span>
+            <span class="act-pfeil rechts" aria-hidden="true" data-i18n-skip>&rsaquo;</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.2L12 5.5v13l-4.8-4H4z"/><path d="M16 9a4.2 4.2 0 0 1 0 6" stroke="var(--bad)"/><path d="M18.6 6.4a7.8 7.8 0 0 1 0 11.2" stroke="var(--bad)"/></svg>
+            <span id="vgl-act-sound-txt" data-i18n-skip>Motor</span></button>
           <div class="schirm-fuss" id="p2s-fuss" data-i18n-skip></div>
         </div>
       </div>
@@ -8179,18 +8300,22 @@
         G&auml;ngen, eigener Drehzahl, eigenem Tempo und eigenen Temperaturen. Die
         Einstellungen aus &bdquo;Fahrgef&uuml;hl&ldquo; werden bei jedem Anschalten
         &uuml;bernommen, damit beide Autos gleich fahren.</p>
-      <p class="muted">Und ein eigener Cockpit-Schirm: bl&auml;ttere im Cockpit mit dem
-        Pfeil oben links oder dem Steuerkreuz auf &bdquo;Auto&nbsp;2&ldquo;. Dort stehen
-        Tank, Zustand, Reifen- und Bremsentemperatur und seine Rundenzeiten. Ist der Modus
-        aus, wird der Schirm beim Bl&auml;ttern &uuml;bersprungen.</p>
-      <p class="muted">Und ein Boxenstopp: der Knopf daf&uuml;r steht auf dem Schirm von
-        Auto&nbsp;2, nicht neben dem von Auto&nbsp;1 &ndash; zwei gleich aussehende
-        Boxenkn&ouml;pfe nebeneinander sind die Bedienung, bei der man im Fahren daneben
-        greift. Anfordern, anhalten, warten, losfahren; nochmal dr&uuml;cken bricht ab. Es
-        tankt mit denselben 22&nbsp;%/s wie Auto&nbsp;1 und repariert mit derselben
-        nichtlinearen Rate &ndash; ungleiche Raten w&auml;ren schlimmer als kein Stopp.
-        W&auml;hrend des Stopps gilt dasselbe Tempolimit, aber als eigener Deckel: der von
-        Auto&nbsp;1 l&auml;uft &uuml;ber einen Weg, den Auto&nbsp;2 gar nicht nimmt.</p>
+      <p class="muted">Und ein Vergleichsschirm: bl&auml;ttere im Cockpit mit dem Pfeil
+        oben links oder dem Steuerkreuz auf &bdquo;Beide&ldquo;. Dort stehen beide Autos
+        <em>nebeneinander</em> &ndash; Tempo, Schaltlichter, Gang, Tank, Zustand, Reifen-
+        und Bremsentemperatur und Akku, in beiden Spalten in derselben Reihenfolge, damit
+        das Auge waagerecht springen kann. Dazu die Boxenkn&ouml;pfe beider Autos und der
+        Motorklang, der f&uuml;r beide gilt. Ist der Modus aus, wird der Schirm beim
+        Bl&auml;ttern &uuml;bersprungen.</p>
+      <p class="muted">Und ein Boxenstopp, unabh&auml;ngig vom anderen Auto: w&auml;hrend
+        eines in der Box steht, verbraucht das andere weiter. Beide Kn&ouml;pfe stehen auf
+        dem Vergleichsschirm &bdquo;Beide&ldquo;, links f&uuml;r Auto&nbsp;1 und rechts
+        f&uuml;r Auto&nbsp;2. Anfordern, <b>bremsen und anhalten</b>, warten, losfahren;
+        nochmal dr&uuml;cken bricht ab. Der Service beginnt erst im Stillstand &ndash; das
+        Auto rollt mit &uuml;ber 200&nbsp;km/h aus, deshalb steht in der Fu&szlig;zeile, wie
+        weit es noch ist. Getankt wird mit denselben 22&nbsp;%/s wie bei Auto&nbsp;1 und
+        repariert mit derselben Rate; ungleiche Raten w&auml;ren schlimmer als kein
+        Stopp.</p>
       <p class="muted">Und die Rennleitung gilt f&uuml;r beide: bei gelber Flagge regelt
         Auto&nbsp;2 auf dasselbe Tempo herunter wie das ganze Feld &ndash; gemessen 100 von
         103&nbsp;km/h Zieltempo, gegen einen Daumen auf Vollgas &ndash;, und in der
@@ -8213,6 +8338,12 @@
         Regler wie Auto&nbsp;1, das Tankgewicht in seiner Fahrphysik, die Warnstufen als
         Meldung und den Notlauf des leeren Tanks &ndash; und der geht &uuml;ber eine Rampe
         zu, nicht in einem Takt.</p>
+      <p class="muted">Alle globalen Einstellungen gelten f&uuml;r beide Autos: die
+        Abstimmung aus &bdquo;Fahrgef&uuml;hl&ldquo; wandert bei jeder &Auml;nderung
+        sofort her&uuml;ber, und Tank, Schaden, Reifenverschlei&szlig;, Wetter, die
+        H&ouml;chstgeschwindigkeit und die Batteriekompensation wirken auf beide
+        gleicherma&szlig;en. Zwei Autos mit verschiedener Abstimmung w&auml;ren kein
+        faires Rennen.</p>
       <p class="muted">Dazu einen eigenen Schaden: Crasherkennung aus seinen eigenen
         Sensorbytes, Leistungsverlust mit dem Schaden, Notlauf im Totalschaden und
         ausgefallene Lampen &ndash; und die Kontrollleuchten des einen sagen nichts mehr
@@ -8630,7 +8761,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.6.55</span></span>
+    <span class="foot-ver">v<span id="app-version">0.6.56</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -9376,8 +9507,17 @@
     // ---- Die Kachel "2 Spieler" ------------------------------------------------------
     "2 Spieler": "2 players",
     "Auto 2": "Car 2",
-    "Und ein eigener Cockpit-Schirm: blättere im Cockpit mit dem Pfeil oben links oder dem Steuerkreuz auf „Auto 2“. Dort stehen Tank, Zustand, Reifen- und Bremsentemperatur und seine Rundenzeiten. Ist der Modus aus, wird der Schirm beim Blättern übersprungen.":
-      "And a cockpit screen of its own: page through the cockpit with the arrow at the top left or the D-pad to “Car 2”. It shows fuel, condition, tyre and brake temperature, and its lap times. With the mode off, the screen is skipped while paging.",
+    "Und ein Vergleichsschirm: blättere im Cockpit mit dem Pfeil oben links oder dem Steuerkreuz auf „Beide“. Dort stehen beide Autos":
+      "And a comparison screen: page through the cockpit with the arrow at the top left or the D-pad to “Both”. It shows both cars",
+    "– Tempo, Schaltlichter, Gang, Tank, Zustand, Reifen- und Bremsentemperatur und Akku, in beiden Spalten in derselben Reihenfolge, damit das Auge waagerecht springen kann. Dazu die Boxenknöpfe beider Autos und der Motorklang, der für beide gilt. Ist der Modus aus, wird der Schirm beim Blättern übersprungen.":
+      "– speed, shift lights, gear, fuel, condition, tyre and brake temperature and battery, in the same order in both columns so the eye can move sideways. Plus the pit buttons of both cars and the engine sound, which applies to both. With the mode off, the screen is skipped while paging.",
+    "Und ein Boxenstopp, unabhängig vom anderen Auto: während eines in der Box steht, verbraucht das andere weiter. Beide Knöpfe stehen auf dem Vergleichsschirm „Beide“, links für Auto 1 und rechts für Auto 2. Anfordern,":
+      "And a pit stop, independent of the other car: while one is stopped, the other keeps burning fuel. Both buttons sit on the “Both” comparison screen, left for car 1 and right for car 2. Request,",
+    ", warten, losfahren; nochmal drücken bricht ab. Der Service beginnt erst im Stillstand – das Auto rollt mit über 200 km/h aus, deshalb steht in der Fußzeile, wie weit es noch ist. Getankt wird mit denselben 22 %/s wie bei Auto 1 und repariert mit derselben Rate; ungleiche Raten wären schlimmer als kein Stopp.":
+      ", wait, drive off; pressing again aborts. The service only starts at a standstill – the car coasts from over 200 km/h, so the footer says how far it still is. Refuelling runs at the same 22 %/s as car 1 and repairs at the same rate; unequal rates would be worse than no stop.",
+    "Alle globalen Einstellungen gelten für beide Autos: die Abstimmung aus „Fahrgefühl“ wandert bei jeder Änderung sofort herüber, und Tank, Schaden, Reifenverschleiß, Wetter, die Höchstgeschwindigkeit und die Batteriekompensation wirken auf beide gleichermaßen. Zwei Autos mit verschiedener Abstimmung wären kein faires Rennen.":
+      "All global settings apply to both cars: the setup from “Driving feel” carries over on every change, and fuel, damage, tyre wear, weather, the top-speed cap and the battery compensation affect both alike. Two cars with different setups would not be a fair race.",
+    "bremsen und anhalten": "brake and stop",
     "Zwei Autos, zwei Controller, beide Drehzahlen im Cockpit. Im Aufbau.":
       "Two cars, two controllers, both rev counters in the cockpit. Work in progress.",
     "Der Modus": "The mode",
@@ -9401,8 +9541,6 @@
       "More honest than leaving it out – every item hangs off a counter or a position estimate that exists only once:",
     "Der Boxenstopp von Auto 2 ist schmal: er tankt voll und repariert ganz, ohne Vorwahl und ohne Reifenwechsel. Die Reifenwahl ist eine globale Einstellung – „auf weich“ für ein einzelnes Auto ist eine Aussage, die das Modell nicht trennen kann.":
       "Car 2's pit stop is a narrow one: it fills the tank and repairs fully, with no pre-selection and no tyre change. The tyre compound is a global setting – \"switch to softs\" for a single car is a statement the model cannot separate.",
-    "Und ein Boxenstopp: der Knopf dafür steht auf dem Schirm von Auto 2, nicht neben dem von Auto 1 – zwei gleich aussehende Boxenknöpfe nebeneinander sind die Bedienung, bei der man im Fahren daneben greift. Anfordern, anhalten, warten, losfahren; nochmal drücken bricht ab. Es tankt mit denselben 22 %/s wie Auto 1 und repariert mit derselben nichtlinearen Rate – ungleiche Raten wären schlimmer als kein Stopp. Während des Stopps gilt dasselbe Tempolimit, aber als eigener Deckel: der von Auto 1 läuft über einen Weg, den Auto 2 gar nicht nimmt.":
-      "And a pit stop: its button sits on car 2's own screen, not next to car 1's – two identical-looking pit buttons side by side are the kind of control you grab wrongly while driving. Request, stop, wait, drive off; pressing again aborts. It refuels at the same 22 %/s as car 1 and repairs at the same non-linear rate – unequal rates would be worse than no stop. The same speed limit applies during the stop, but as its own cap: car 1's runs through a path car 2 does not take.",
     "Dazu einen eigenen Tank: Verbrauch nach Gas und Zeit mit demselben Regler wie Auto 1, das Tankgewicht in seiner Fahrphysik, die Warnstufen als Meldung und den Notlauf des leeren Tanks – und der geht über eine Rampe zu, nicht in einem Takt.":
       "Plus a fuel tank of its own: consumption by throttle and time on the same slider as car 1, the fuel weight in its driving model, the warning levels as a message, and the limp mode of an empty tank – which closes over a ramp, not in one tick.",
     "Dazu einen eigenen Schaden: Crasherkennung aus seinen eigenen Sensorbytes, Leistungsverlust mit dem Schaden, Notlauf im Totalschaden und ausgefallene Lampen – und die Kontrollleuchten des einen sagen nichts mehr über das andere Auto.":
@@ -11484,7 +11622,26 @@
     if (typeof playerCar2 === 'undefined' || !playerCar2) return;
     physicsStep2();
     let steer = physicsEnabled ? physOut2Steer : p2Steer;
-    const throttle = physicsEnabled ? physOut2Throttle : p2Throttle;
+    let throttle = physicsEnabled ? physOut2Throttle : p2Throttle;
+    // ---- DIE ZWEI GLOBALEN, DIE NICHT IN config STEHEN -----------------------------
+    //
+    // BESTELLT: "Globale einstellungen gelten für beide autos gleichermaßen."
+    //
+    // Die Abstimmung wandert ueber physEngine2Abgleichen() von selbst herueber (siehe den
+    // Zuhoerer in 50-drive.js). Diese zwei nicht: sie sitzen im Sendeweg von Auto 1, und
+    // den nimmt Auto 2 gar nicht - es geht ueber writeToCar(), wie ein Ghost.
+    //
+    //   topSpeedScale             der Regler "Geschwindigkeit". NUR nach vorn, aus
+    //                             demselben Grund wie bei Auto 1: er drosselte sonst auch
+    //                             die BREMSE und den Rueckwaertsgang, und bei 20 Prozent
+    //                             bremste das Auto mit einem Fuenftel.
+    //   batteryCompensationScale  gleicht den sinkenden Akku aus. Sie liest den Akkustand
+    //                             des FAHRERAUTOS; fuer Auto 2 ist das eine Naeherung, und
+    //                             eine gemeinsame Naeherung ist hier besser als gar keine -
+    //                             zwei Autos mit verschieden kompensierten Akkus waeren im
+    //                             Rennen ungleich schnell, ohne dass man den Grund sieht.
+    if (throttle > 0) throttle *= topSpeedScale;
+    throttle *= batteryCompensationScale();
     if (driftModus) steer = driftGegenlenken(steer);
     // ---- MIT VORAUSBLICK, seit v0.6.46 ---------------------------------------------
     //
@@ -15036,7 +15193,10 @@
     // der Modus aus ist. Die Alternative waere eine Liste, deren LAENGE sich aendert - und
     // an ihr haengen der Schirmzaehler, die Punkte unter dem Pfeil und zwei Selbsttests.
     // Eine Liste, die beim Umschalten kuerzer wird, verschiebt den gerade gezeigten Schirm.
-    { id: 'auto2', name: 'Auto 2',
+    // Der Name ist "Beide" und nicht mehr "Auto 2": der Schirm zeigt seit v0.6.56 beide
+    // Autos nebeneinander. Die id bleibt `auto2` - sie steht in gespeicherten Zustaenden
+    // und in Prueflaeufen, und ein Name im Menue ist kein Grund, eine Kennung zu aendern.
+    { id: 'auto2', name: 'Beide',
       nurZweiSpieler: true,
       malen: () => p2ScreenRender() },
   ];
@@ -15735,87 +15895,138 @@
   // GEZEICHNET WIRD NUR, WENN ER VORNE LIEGT (cockpitScreenSet ruft malen(), und der Takt
   // unten prueft es): neun Werte je 45 ms auf einen unsichtbaren Schirm zu schreiben waere
   // Arbeit fuer niemanden, und der Sendetakt hat Vorrang.
-  function p2ScreenRender() {
-    const st = physEngine2.state;
-    schreibeWert($('p2s-rpm'), Math.round(motorDrehzahl(st)));
-    schreibeWert($('p2s-speed'), Math.round(Math.abs(st.speedKmh) * REAL_SCALE));
-    schreibeWert($('p2s-gear'), gearLabel(st));
-    // Tank und Zustand in derselben Schreibweise wie bei Auto 1 - Liter und Prozent, und
-    // der Zustand ist der KEHRWERT des Schadens: full green at the start. Ein Balken, der
-    // WAECHST, wenn etwas schlechter wird, liest sich rueckwaerts.
-    const tank = typeof tankZweiStand === 'function' ? tankZweiStand() : 0;
-    schreibeWert($('p2s-fuel'), fuelLiters(tank) + ' l');
-    const tb = $('p2s-fuel-bar');
+  // ---- DER VERGLEICHSSCHIRM: BEIDE AUTOS NEBENEINANDER ------------------------------
+  //
+  // BESTELLT: "Statt nur Player 2 soll er das Nötigste von Player 1 und 2 haben:
+  // Geschwindigkeit, Drehzahllichter, schaden, reifen, tank, bremse, akku, motorsound."
+  //
+  // EINE Funktion fuer beide Spalten, mit einem Praefix als Argument. Zwei Kopien waeren
+  // zwei Orte, an denen die naechste Groesse nur in einer Spalte landet - und in einem
+  // Vergleich ist genau das der Fehler, den man am spaetesten bemerkt, weil die Spalte
+  // ja etwas anzeigt.
+  //
+  // GEZEICHNET WIRD NUR, WENN ER VORNE LIEGT: der Takt in 70-race.js ruft malen() des
+  // vorderen Schirms, alle 120 ms. Vierzehn Werte je 45 ms auf einen unsichtbaren Schirm
+  // zu schreiben waere Arbeit fuer niemanden, und der Sendetakt hat Vorrang.
+  function vglSpalte(pre, car, motor, tank, schaden) {
+    const st = motor.state;
+    // Die Schaltlichter aus SEINER Drehzahl. Dieselbe Funktion wie die grosse Leiste im
+    // Cockpit - siehe schaltLampen(), dort steht auch die Farbregel.
+    schaltLampen($(pre + '-shift'), st.rpmFrac, st.onLimiter);
+    schreibeWert($(pre + '-speed'), Math.round(Math.abs(st.speedKmh) * REAL_SCALE));
+    schreibeWert($(pre + '-gear'), gearLabel(st));
+    schreibeWert($(pre + '-name'), car ? garageLabel(car) : 'kein Auto');
+    // Tank in Litern, wie ueberall sonst in dieser App.
+    schreibeWert($(pre + '-fuel'), fuelLiters(tank) + ' l');
+    const tb = $(pre + '-fuel-bar');
     if (tb) {
-      tb.style.width = Math.max(0, tank) + '%';
+      tb.style.width = Math.max(0, Math.min(100, tank)) + '%';
       tb.style.background = tank < 20 ? '#ffb02e' : '#2ee06a';
     }
-    const schaden = typeof schadenVon === 'function' ? schadenVon(2) : 0;
+    // ZUSTAND und nicht Schaden: voll gruen am Anfang, und jeder Crash nimmt ein Stueck
+    // heraus. Ein Balken, der WAECHST, wenn etwas schlechter wird, liest sich rueckwaerts -
+    // dieselbe Entscheidung wie beim Schadensbalken von Auto 1.
     const zustand = Math.max(0, 100 - schaden);
-    schreibeWert($('p2s-cond'), Math.round(zustand) + ' %');
-    const zb = $('p2s-cond-bar');
+    schreibeWert($(pre + '-cond'), Math.round(zustand) + ' %');
+    const zb = $(pre + '-cond-bar');
     if (zb) {
       zb.style.width = zustand + '%';
       zb.style.background = zustand < 50 ? '#ff5252' : zustand < 80 ? '#ffb02e' : '#2ee06a';
     }
-    // Reifen und Bremse aus SEINEM Zustand. Die Temperaturen liegen in der Physikinstanz,
-    // sind also von Anfang an je Auto getrennt gewesen - das ist der Teil, der nie gefehlt
-    // hat.
-    //
-    // VIER RAEDER, EIN WERT. Das Modell fuehrt tyreTemp4[] und brakeTemp4[] (und als
-    // Rueckfall tyreTempC bzw. brakeTempF/brakeTempR) - die Reifenkachel von Auto 1 zeigt
-    // alle vier. Hier steht das MITTEL: auf diesem Schirm hat eine Zahl je Groesse Platz,
+    // VIER RAEDER, EIN WERT. Das Modell fuehrt tyreTemp4[] und brakeTemp4[] (Rueckfall
+    // tyreTempC bzw. brakeTempF/R). Hier steht das Mittel: eine Zahl je Groesse hat Platz,
     // und die Frage "sind die Reifen warm" ist damit beantwortet.
     //
-    // `brakeTempC` GIBT ES NICHT, und das stand hier einen Anlauf lang: der Wert kam als
-    // 0 Grad heraus, waehrend der Reifen 20 zeigte. Ein Feldname, den ich mir gemerkt
-    // statt nachgesehen habe.
-    const mittel = (a) => (a && a.length)
-      ? a.reduce((x, y) => x + y, 0) / a.length : null;
+    // `brakeTempC` GIBT ES NICHT - der Name stand hier einen Anlauf lang und ergab 0 Grad,
+    // waehrend der Reifen 20 zeigte.
+    const mittel = (a) => (a && a.length) ? a.reduce((x, y) => x + y, 0) / a.length : null;
     const reifen = mittel(st.tyreTemp4) !== null ? mittel(st.tyreTemp4) : (st.tyreTempC || 0);
     const bremse = mittel(st.brakeTemp4) !== null ? mittel(st.brakeTemp4)
       : ((st.brakeTempF || 0) + (st.brakeTempR || 0)) / 2;
-    schreibeWert($('p2s-tyre'), Math.round(reifen) + '\u00b0');
-    schreibeWert($('p2s-brake'), Math.round(bremse) + '\u00b0');
-    // Die Rundenzeiten aus car.race - dieselbe Quelle, aus der die Rundenuebersicht liest.
-    const car = typeof playerCar2 !== 'undefined' ? playerCar2 : null;
-    const runden = (car && car.race && car.race.laps) || [];
-    const ms = runden.map((l) => l.ms);
-    schreibeWert($('p2s-lap-last'), ms.length ? formatLapTime(ms[ms.length - 1]) : '\u2013');
-    schreibeWert($('p2s-lap-best'), ms.length ? formatLapTime(Math.min.apply(null, ms)) : '\u2013');
-    const lage = $('p2s-kopf-lage');
-    if (lage) {
-      lage.textContent = !car ? 'kein Auto zugeteilt'
-        : (abseitsJetztFuer(2) ? 'neben der Bahn'
-           : (schaden >= 100 ? 'Notlauf' : (tank <= 0 ? 'Tank leer' : 'auf der Bahn')));
+    schreibeWert($(pre + '-tyre'), Math.round(reifen) + '\u00b0');
+    schreibeWert($(pre + '-brake'), Math.round(bremse) + '\u00b0');
+    // Der Akku kommt aus Byte 10 des Autos (car.battery, in 90-ghosts.js je Auto gesetzt) -
+    // eine gemessene Groesse und keine gerechnete. Ohne Auto oder ohne Meldung: ein Strich,
+    // und keine erfundene Zahl.
+    const roh = car && car.battery !== undefined && car.battery !== null ? car.battery : null;
+    schreibeWert($(pre + '-batt'), roh === null ? '\u2013' : batteryPercent(roh) + ' %');
+  }
+
+  function p2ScreenRender() {
+    vglSpalte('vgl1', typeof playerCar !== 'undefined' ? playerCar : null,
+              physEngine, typeof fuel === 'number' ? fuel : 0,
+              typeof damage === 'number' ? damage : 0);
+    vglSpalte('vgl2', typeof playerCar2 !== 'undefined' ? playerCar2 : null,
+              physEngine2,
+              typeof tankZweiStand === 'function' ? tankZweiStand() : 0,
+              typeof schadenVon === 'function' ? schadenVon(2) : 0);
+
+    // ---- DER KOPF: die Lage von Auto 2, weil sie die veraenderliche ist ---------------
+    const car2 = typeof playerCar2 !== 'undefined' ? playerCar2 : null;
+    const lage = typeof boxZweiLage === 'function' ? boxZweiLage() : 'aus';
+    const kopf = $('p2s-kopf-lage');
+    if (kopf) {
+      kopf.textContent = !zweiSpieler ? 'Modus aus'
+        : (!car2 ? 'Auto 2 nicht zugeteilt'
+           : (abseitsJetztFuer(2) ? 'Auto 2 neben der Bahn' : 'beide auf der Bahn'));
     }
     const rundeK = $('p2s-kopf-runde');
-    if (rundeK) rundeK.textContent = ms.length ? 'Runde ' + ms.length : '';
+    if (rundeK) {
+      const r1 = ((typeof playerCar !== 'undefined' && playerCar && playerCar.race
+                   && playerCar.race.laps) || []).length;
+      const r2 = ((car2 && car2.race && car2.race.laps) || []).length;
+      rundeK.textContent = 'Runden ' + r1 + ' : ' + r2;
+    }
+
+    // ---- DIE FUSSZEILE SAGT, WAS DER BOXENSTOPP GERADE BRAUCHT -----------------------
+    //
+    // GEMELDET: "Tanken soll unabhängig bei beiden klappen." Gemessen tut es das - beide
+    // Autos tanken gleichzeitig und unabhaengig. Was fehlte, war die RUECKMELDUNG: der
+    // Service beginnt erst im Stillstand, und das Auto rollt mit ueber 200 km/h aus. Der
+    // Coast-Drag allein bringt es in acht Sekunden nur auf 174 - wer den Knopf drueckt und
+    // wartet, sieht nichts passieren und haelt es fuer kaputt.
+    //
+    // Also steht hier jetzt, WIE WEIT es noch ist: Tempo gegen Schwelle. Und der zweite
+    // Teil der Bedingung steht mit dabei, weil er nicht zu erraten ist - waehrend man auf
+    // der Bremse steht, beginnt der Service nicht (Math.abs(p2Throttle) < 0.1, dieselbe
+    // Regel wie bei Auto 1).
     const fuss = $('p2s-fuss');
     if (fuss) {
-      // ---- DER ZUSTAND DES BOXENSTOPPS steht hier, wo der Knopf ist -----------------
-      //
-      // Sonst muesste man aus dem Meldungsband schliessen, was gerade laeuft - und das
-      // Band gehoert beiden Autos und ist nach 1,5 s wieder leer.
-      const lage = typeof boxZweiLage === 'function' ? boxZweiLage() : 'aus';
-      if (!car) {
+      if (!zweiSpieler) {
+        fuss.textContent = 'Der 2-Spieler-Modus ist aus \u2013 rechts steht nichts.';
+      } else if (!car2) {
         fuss.textContent = 'In der Garage einem Auto die Rolle "Spieler 2" geben.';
       } else if (lage === 'angefordert') {
-        fuss.textContent = garageLabel(car) + ' \u00b7 Boxenstopp: anhalten';
+        const kmh = Math.abs(physEngine2.state.speedKmh) * REAL_SCALE;
+        const schwelle = PIT_STANDSTILL_KMH * REAL_SCALE;
+        fuss.textContent = 'P2 Boxenstopp: bremsen und anhalten \u2013 '
+          + Math.round(kmh) + ' km/h, nötig unter ' + Math.round(schwelle)
+          + ', dann Finger vom Gas.';
       } else if (lage === 'service') {
         const offen = [];
-        if (tank < 100 - 0.05) offen.push('tankt');
-        if (schaden > 0.05) offen.push('repariert');
-        fuss.textContent = garageLabel(car) + ' \u00b7 '
-          + (boxZweiFertig() ? 'fertig, losfahren!' : 'Service: ' + (offen.join(', ') || 'Standzeit'));
+        if (tankZweiStand() < 100 - 0.05) offen.push('tankt');
+        if (schadenVon(2) > 0.05) offen.push('repariert');
+        fuss.textContent = boxZweiFertig()
+          ? 'P2 Boxenstopp: fertig, losfahren!'
+          : 'P2 Boxenstopp: ' + (offen.join(', ') || 'Standzeit laeuft');
       } else {
-        fuss.textContent = garageLabel(car);
+        fuss.textContent = 'Boxenstopp: links f\u00fcr Auto 1, rechts f\u00fcr Auto 2.';
       }
-      const knopf = $('p2s-act-pit');
-      if (knopf) {
-        knopf.classList.toggle('warn', lage !== 'aus');
-        knopf.disabled = !car;
-      }
+    }
+    const knopf2 = $('p2s-act-pit');
+    if (knopf2) {
+      knopf2.classList.toggle('warn', lage !== 'aus');
+      knopf2.disabled = !zweiSpieler || !car2;
+    }
+    const knopf1 = $('vgl1-act-pit');
+    if (knopf1) {
+      knopf1.classList.toggle('warn',
+        typeof pitState !== 'undefined' && pitState !== 'off');
+    }
+    const ton = $('vgl-act-sound-txt');
+    if (ton) {
+      const q = $('race-act-sound-txt');
+      ton.textContent = q ? q.textContent : 'Motor';
     }
   }
 
@@ -15823,11 +16034,35 @@
     $('p2s-act-pit').addEventListener('click', () => {
       // Defensiv gerufen: 70-race.js wird SPAETER gebaut. Zur Laufzeit ist die Funktion da.
       if (typeof boxZweiAnfordern === 'function') boxZweiAnfordern();
-      if (typeof p2ScreenRender === 'function') p2ScreenRender();
+      p2ScreenRender();
     });
   }
-
-  // Einen Wert schreiben UND, wenn er sich geaendert hat, die Anzeige 1 px nach unten
+  // Die zwei Knoepfe fuer Auto 1 leiten auf die vorhandenen weiter, statt ihre Wirkung zu
+  // verdoppeln: ein zweiter Weg in den Boxenstopp waere ein zweiter Ort, an dem die
+  // Vorwahl entsteht - und die Vorwahl gibt es genau einmal, auf dem Boxenschirm.
+  if ($('vgl1-act-pit')) {
+    $('vgl1-act-pit').addEventListener('click', () => {
+      const q = $('race-act-pit');
+      if (q) q.click();
+      p2ScreenRender();
+    });
+  }
+  if ($('vgl-act-sound')) {
+    $('vgl-act-sound').addEventListener('click', (e) => {
+      // Die Haelfte des Knopfes entscheidet ueber die Richtung - dieselbe Bedienung wie im
+      // Hauptschirm. Weitergereicht wird an den dortigen Knopf, damit es EINEN Weg durch
+      // die Motorliste gibt.
+      const q = $('race-act-sound');
+      if (!q) return;
+      const r = e.currentTarget.getBoundingClientRect();
+      const links = (e.clientX - r.left) < r.width / 2;
+      const ev = new MouseEvent('click', { bubbles: true, clientX:
+        links ? q.getBoundingClientRect().left + 4
+              : q.getBoundingClientRect().right - 4 });
+      q.dispatchEvent(ev);
+      p2ScreenRender();
+    });
+  }
   // setzen. 80 ms, dann zurueck: eine Anzeige mit Masse setzt sich kurz, ein Textfeld nicht.
   //
   // DER VERGLEICH IST DER GANZE PUNKT. Der Schirm wird jeden Takt neu geschrieben; ohne ihn
@@ -15849,6 +16084,43 @@
     el.classList.remove('gt3-tick');
     void el.offsetWidth;
     el.classList.add('gt3-tick');
+  }
+
+  // ---- DIE SCHALTLICHTER, EINE WAHRHEIT FUER JEDE LEISTE ------------------------------
+  //
+  // Herausgeloest, weil es seit v0.6.56 ZWEI Leisten gibt: die grosse im Cockpit und je
+  // eine je Auto auf dem Vergleichsschirm. Zwei Kopien dieser Farbregel waeren zwei Orte,
+  // an denen jemand die blauen Lampen verschiebt.
+  //
+  // Gruen, dann rot, dann BLAU fuer die letzten zwei. Das blaue Paar UEBER dem roten und
+  // nicht darunter ist das, was echte GT3-Lenkraeder benutzen, und es macht den Streifen
+  // lesbar, ohne Lampen zu zaehlen.
+  function schaltLampen(host, frac, amBegrenzer) {
+    if (!host) return;
+    const lamps = host.children;
+    const n = lamps.length;
+    const f = Math.max(0, Math.min(1, frac || 0));
+    for (let i = 0; i < n; i++) {
+      const lit = f >= (i + 1) / n;
+      let col = '#12161f';
+      if (lit) {
+        if (i >= n - 2) col = '#3d8bff';
+        else if (i >= n - 5) col = '#ff3b3b';
+        else col = '#2ee06a';
+      }
+      lamps[i].style.background = col;
+      lamps[i].style.boxShadow = lit
+        ? 'inset 0 0 0 1px rgba(255,255,255,.25), 0 0 6px ' + col
+        : 'inset 0 0 0 1px #262e3d';
+    }
+    // On the limiter the whole strip flashes blue, which no steady pattern can be mistaken
+    // for.
+    if (amBegrenzer && Math.floor(Date.now() / 90) % 2 === 0) {
+      for (let i = 0; i < n; i++) {
+        lamps[i].style.background = '#3d8bff';
+        lamps[i].style.boxShadow = '0 0 8px #3d8bff';
+      }
+    }
   }
 
   // out ist HERAUS, und zwar weil es nicht benutzt wurde: die Anzeige liest alles aus dem
@@ -15883,29 +16155,7 @@
     // not below it, is what real GT3 wheels use for "shift now", and it makes the strip
     // readable without counting lamps.
     const frac = Math.max(0, Math.min(1, st.rpmFrac));
-    const lamps = $('race-shift').children;
-    const n = lamps.length;
-    for (let i = 0; i < n; i++) {
-      const lit = frac >= (i + 1) / n;
-      let col = '#12161f';
-      if (lit) {
-        if (i >= n - 2) col = '#3d8bff';
-        else if (i >= n - 5) col = '#ff3b3b';
-        else col = '#2ee06a';
-      }
-      lamps[i].style.background = col;
-      lamps[i].style.boxShadow = lit
-        ? 'inset 0 0 0 1px rgba(255,255,255,.25), 0 0 6px ' + col
-        : 'inset 0 0 0 1px #262e3d';
-    }
-    // On the limiter the whole strip flashes blue, which no steady pattern can be mistaken
-    // for.
-    if (st.onLimiter && Math.floor(Date.now() / 90) % 2 === 0) {
-      for (let i = 0; i < n; i++) {
-        lamps[i].style.background = '#3d8bff';
-        lamps[i].style.boxShadow = '0 0 8px #3d8bff';
-      }
-    }
+    schaltLampen($('race-shift'), frac, st.onLimiter);
 
     // ABS is a real flag in the model, so it earns a cell. Traction control does not exist
     // in this drivetrain and therefore gets no cell, rather than a permanent zero.
@@ -16886,6 +17136,38 @@
     if (Array.isArray(physEngine.config.gears)) {
       physEngine2.config.gears = physEngine.config.gears.map(g => Object.assign({}, g));
     }
+  }
+
+  // ---- GLOBALE EINSTELLUNGEN GELTEN FUER BEIDE AUTOS ---------------------------------
+  //
+  // BESTELLT: "Globale einstellungen gelten für beide autos gleichermaßen: fahrgefühl
+  // optionen, ob tank etc. an/aus".
+  //
+  // Bis v0.6.55 kopierte physEngine2Abgleichen() die Abstimmung nur BEIM ANSCHALTEN des
+  // Modus. Wer danach am Fahrgefuehl drehte, verstellte nur Auto 1 - und zwei Autos mit
+  // verschiedener Abstimmung sind kein faires Rennen, sondern ein Fehler, den man erst im
+  // Fahren merkt.
+  //
+  // EIN ZUHOERER STATT SECHSUNDZWANZIG. Die Abstimmung wird an 26 einzelnen Stellen
+  // geschrieben (accelerationFactor, brakeBias, steerResponse, tyreEffect, ...). Jede
+  // davon um eine Kopierzeile zu ergaenzen waeren 26 Gelegenheiten, die 27. zu vergessen -
+  // dieselbe Ueberlegung, die in 98b-sicherung.js zu EINEM Zuhoerer fuer alle Regler
+  // gefuehrt hat ("ein Zuhoerer statt einer je Regler").
+  //
+  // 'input' UND 'change': Schieber melden beides, Auswahlfelder und Ankreuzfelder nur
+  // 'change'. Beide zu nehmen kostet nichts, weil das Kopieren billig ist und nur bei
+  // eingeschaltetem Modus ueberhaupt laeuft.
+  //
+  // WAS NICHT UEBER config LAEUFT, steht weiter unten in spielerZweiSenden(): die
+  // Hoechstgeschwindigkeit und die Batteriekompensation sitzen im Sendeweg von Auto 1, den
+  // Auto 2 gar nicht nimmt.
+  for (const art of ['input', 'change']) {
+    document.addEventListener(art, (e) => {
+      if (!zweiSpieler) return;
+      const el = e.target;
+      if (!el || !el.closest || !el.closest('#tab-options, #tab-race')) return;
+      physEngine2Abgleichen();
+    }, true);
   }
 
   function zweiSpielerSetzen(an) {
@@ -28643,10 +28925,10 @@
             ${car.blinking ? '<span class="gar-blink">&nbsp;blinkt&hellip;</span>' : ''}</div></div>
         <div class="gar-roles">
           <button data-role="player" class="${car.role === 'player' ? 'on' : ''}">Steuern</button>
-          <button data-role="player2" class="${car.role === 'player2' ? 'on zwei' : ''}"
+          <button data-role="player2" class="gar-rolle-zwei ${car.role === 'player2' ? 'on zwei' : ''}"
                   title="${zweiSpieler ? 'Zweites Auto, zweiter Controller'
                           : 'Schaltet den 2-Spieler-Modus ein und weist dieses Auto zu'}"
-                  >Spieler&nbsp;2</button>
+                  ><span>Spieler&nbsp;2</span><span class="wip-tag">experimentell</span></button>
           <button data-role="ghost" class="${car.role === 'ghost' ? 'on ghost' : ''}">Ghost</button>
           <button data-role="none" class="${car.role === 'none' ? 'on off' : ''}">Aus</button>
         </div>
@@ -36673,6 +36955,139 @@
       return this.schadenZweiLesen();
     },
 
+    // ---- TANKEN BEIDE UNABHAENGIG? ---------------------------------------------------
+    //
+    // BESTELLT: "Tanken soll unabhängig bei beiden klappen."
+    //
+    // Der Prueflauf laesst BEIDE gleichzeitig tanken - Auto 1 ueber seinen Boxenstopp,
+    // Auto 2 ueber seinen - und misst, ob sich die zwei stoeren. Die Falle, auf die es
+    // ankommt: fuelTankTick() von Auto 1 hat die Ausnahme `pitState !== 'servicing'`, damit
+    // der Tank nicht sinkt, waehrend gepumpt wird. Gilt diese Ausnahme versehentlich auch
+    // fuer Auto 2, verbraucht es waehrend eines fremden Boxenstopps nichts - und umgekehrt
+    // waere ein Boxenstopp von Auto 2, der Auto 1 den Verbrauch abstellt, ebenso falsch.
+    //
+    // Gemessen wird deshalb an BEIDEN Staenden gleichzeitig, mit Gas auf beiden.
+    async tankenBeideProbe(o) {
+      const opt = o || {};
+      const uhrEcht = Date.now, perfEcht = performance.now;
+      const merk = { zwei: zweiSpieler, p1: playerCar, p2: playerCar2,
+                     gas: p2Throttle, steer: p2Steer, phys: physicsEnabled,
+                     fuel1: fuel, tank2: tankZweiStand(), pit: pitState,
+                     plan: pitPlan, drain: fuelDrainPerSec, gasEins: throttleY };
+      const a1 = { device: { id: 'probe-t1' }, role: 'player', alias: 'P1', rx: null,
+                   testSenke: [] };
+      const a2 = { device: { id: 'probe-t2' }, role: 'player2', alias: 'P2', rx: null,
+                   testSenke: [] };
+      const reihe = [];
+      try {
+        let t = 5000000;
+        Date.now = () => t;
+        performance.now = () => t;
+        zweiSpieler = true;
+        physicsEnabled = true;
+        playerCar = a1;
+        playerCar2 = a2;
+        fuelDrainPerSec = opt.drain === undefined ? 1 : opt.drain;
+        fuel = opt.start === undefined ? 40 : opt.start;
+        tankZweiFuellen(opt.start === undefined ? 40 : opt.start);
+        tankZweiTaktVergessen();
+        phys2TaktVergessen();
+        physEngine2.reset();
+        physEngine2Abgleichen();
+        p2Steer = 0;
+
+        // ---- Abschnitt 1: BEIDE fahren. Beide Staende muessen sinken. -------------
+        p2Throttle = 1;
+        throttleY = 1;
+        const takte = Math.round((opt.sekunden === undefined ? 4 : opt.sekunden)
+                                 * 1000 / CONTROL_SEND_INTERVAL_MS);
+        for (let i = 0; i < takte; i++) {
+          fuelTankTick(1);          // der Weg von Auto 1, wie in sendControlValue()
+          spielerZweiSenden();      // darin steckt fuelTankTick(p2Throttle, 2)
+          if (i % 20 === 0 || i === takte - 1) {
+            reihe.push({ abschnitt: 'fahren', s: +(i * 0.045).toFixed(2),
+                         t1: +fuel.toFixed(2), t2: +tankZweiStand().toFixed(2) });
+          }
+          t += CONTROL_SEND_INTERVAL_MS;
+        }
+        const nachFahren = { t1: +fuel.toFixed(2), t2: +tankZweiStand().toFixed(2) };
+
+        // ---- Abschnitt 2: Auto 1 IN DER BOX, Auto 2 faehrt weiter ----------------
+        // Auto 1 steht und wird betankt; Auto 2 gibt Gas. Der Stand von Auto 1 muss
+        // STEIGEN, der von Auto 2 weiter SINKEN.
+        throttleY = 0;
+        pitPlan = { refuel: 100, tyres: false, repair: false };
+        pitState = 'servicing';
+        const takte2 = Math.round((opt.sekunden === undefined ? 4 : opt.sekunden)
+                                  * 1000 / CONTROL_SEND_INTERVAL_MS);
+        for (let i = 0; i < takte2; i++) {
+          // Die Boxenpumpe von Auto 1, so wie pitLaneTick() sie rechnet.
+          const dt = CONTROL_SEND_INTERVAL_MS / 1000;
+          if (fuel < 100) fuel = Math.min(100, fuel + PIT_FUEL_PER_SEC * dt);
+          fuelTankTick(0);
+          spielerZweiSenden();
+          if (i % 20 === 0 || i === takte2 - 1) {
+            reihe.push({ abschnitt: 'box1', s: +(i * 0.045).toFixed(2),
+                         t1: +fuel.toFixed(2), t2: +tankZweiStand().toFixed(2) });
+          }
+          t += CONTROL_SEND_INTERVAL_MS;
+        }
+        const nachBox1 = { t1: +fuel.toFixed(2), t2: +tankZweiStand().toFixed(2) };
+
+        // ---- Abschnitt 3: Auto 2 IN DER BOX, Auto 1 faehrt weiter ----------------
+        pitState = 'off';
+        pitPlan = null;
+        throttleY = 1;
+        // BREMSEN, nicht nur Gas weg: das Auto rollt mit ueber 200 km/h, und der
+        // Coast-Drag allein bringt es in acht Sekunden nur auf 174. Genau das ist der
+        // gemeldete Fall - der Knopf war gedrueckt, und "nichts passierte".
+        p2Throttle = opt.bremsen === false ? 0 : -1;
+        boxZweiAnfordern();
+        const takte3 = Math.round((opt.sekunden === undefined ? 4 : opt.sekunden)
+                                  * 1000 / CONTROL_SEND_INTERVAL_MS);
+        for (let i = 0; i < takte3; i++) {
+          fuelTankTick(1);
+          // Bremsen, bis es fast steht - dann den Finger weg. Der Service verlangt beides:
+          // langsam UND kein Eingang (Math.abs(p2Throttle) < 0.1), sonst begaenne er,
+          // waehrend man noch auf der Bremse steht.
+          if (opt.bremsen !== false
+              && Math.abs(physEngine2.state.speedKmh) * REAL_SCALE < 8) p2Throttle = 0;
+          spielerZweiSenden();
+          if (i % 20 === 0 || i === takte3 - 1) {
+            reihe.push({ abschnitt: 'box2', s: +(i * 0.045).toFixed(2),
+                         t1: +fuel.toFixed(2), t2: +tankZweiStand().toFixed(2),
+                         lage: boxZweiLage(),
+                         kmh: +(Math.abs(physEngine2.state.speedKmh) * REAL_SCALE).toFixed(1),
+                         schwelle: +(PIT_STANDSTILL_KMH * REAL_SCALE).toFixed(1) });
+          }
+          t += CONTROL_SEND_INTERVAL_MS;
+        }
+        const nachBox2 = { t1: +fuel.toFixed(2), t2: +tankZweiStand().toFixed(2) };
+        return { start: opt.start === undefined ? 40 : opt.start,
+                 nachFahren, nachBox1, nachBox2, reihe,
+                 drain: fuelDrainPerSec, pumpe: PIT_FUEL_PER_SEC };
+      } finally {
+        Date.now = uhrEcht;
+        performance.now = perfEcht;
+        if (typeof boxZweiAnfordern === 'function' && boxZweiLage() !== 'aus') {
+          boxZweiAnfordern();
+        }
+        zweiSpieler = merk.zwei;
+        playerCar = merk.p1;
+        playerCar2 = merk.p2;
+        p2Throttle = merk.gas;
+        p2Steer = merk.steer;
+        throttleY = merk.gasEins;
+        physicsEnabled = merk.phys;
+        fuel = merk.fuel1;
+        fuelDrainPerSec = merk.drain;
+        pitState = merk.pit;
+        pitPlan = merk.plan;
+        tankZweiFuellen(merk.tank2);
+        physEngine2.reset();
+      }
+    },
+
     // ---- TANKT UND REPARIERT DER BOXENSTOPP VON AUTO 2? ------------------------------
     //
     // DREI FRAGEN, und die dritte ist die, die den Modus fair macht:
@@ -36902,7 +37317,7 @@
     // der Schirmzaehler, die Punkte unter dem Pfeil und zwei Selbsttests.
     schirmZweiProbe() {
       const vorher = { zwei: zweiSpieler, schirm: cockpitScreenIst().id,
-                       p2: playerCar2, tank: tankZweiStand() };
+                       p2: playerCar2, tank: tankZweiStand(), fuel };
       const merkGarage = garage.slice();
       try {
         // ---- Erst die Registry, ohne Modus --------------------------------------
@@ -36917,20 +37332,34 @@
         for (let i = 0; i < 5; i++) { cockpitScreenStep(1); mit.push(cockpitScreenIst().id); }
         // ---- Und die Zahlen -----------------------------------------------------
         const a2 = { device: { id: 'probe-schirm' }, role: 'player2', alias: 'P2',
-                     rx: null, testSenke: [], colorId: null,
+                     rx: null, testSenke: [], colorId: null, battery: 200,
                      race: { laps: [{ lap: 1, ms: 21500 }, { lap: 2, ms: 20900 }] } };
         garage.push(a2);
         playerCar2 = a2;
+        // ZWEI VERSCHIEDENE Tankstaende: nur so faellt auf, wenn eine Spalte das falsche
+        // Auto zeigt. Bei gleichen Zahlen saehe der Fehler wie ein Erfolg aus.
+        const merkFuel = fuel;
+        fuel = 80;
         tankZweiFuellen(40);
         cockpitScreenZu('auto2');
         p2ScreenRender();
         const lies = (id) => { const e = $(id); return e ? e.textContent : null; };
+        // Seit v0.6.56 zeigt der Schirm BEIDE Autos - also werden beide Spalten gelesen.
+        // Die Gegenprobe steckt darin: Spalte 1 muss den Tank von Auto 1 zeigen und nicht
+        // den von Auto 2. Eine Spalte, die zweimal dasselbe Auto zeigt, sieht auf den
+        // ersten Blick richtig aus.
         const werte = {
-          rpm: lies('p2s-rpm'), tempo: lies('p2s-speed'), gang: lies('p2s-gear'),
-          tank: lies('p2s-fuel'), zustand: lies('p2s-cond'),
-          reifen: lies('p2s-tyre'), bremse: lies('p2s-brake'),
-          letzte: lies('p2s-lap-last'), beste: lies('p2s-lap-best'),
-          lage: lies('p2s-kopf-lage'), fuss: lies('p2s-fuss'),
+          tempo1: lies('vgl1-speed'), tempo2: lies('vgl2-speed'),
+          gang1: lies('vgl1-gear'), gang2: lies('vgl2-gear'),
+          name1: lies('vgl1-name'), name2: lies('vgl2-name'),
+          tank1: lies('vgl1-fuel'), tank: lies('vgl2-fuel'),
+          zustand1: lies('vgl1-cond'), zustand: lies('vgl2-cond'),
+          reifen: lies('vgl2-tyre'), bremse: lies('vgl2-brake'),
+          akku1: lies('vgl1-batt'), akku2: lies('vgl2-batt'),
+          lampen1: ($('vgl1-shift') || { children: [] }).children.length,
+          lampen2: ($('vgl2-shift') || { children: [] }).children.length,
+          lage: lies('p2s-kopf-lage'), runden: lies('p2s-kopf-runde'),
+          fuss: lies('p2s-fuss'),
         };
         // Und dass der Schirm beim Abschalten verlassen wird.
         if (typeof zweiSpielerSetzen === 'function') zweiSpielerSetzen(false);
@@ -36944,6 +37373,7 @@
         merkGarage.forEach((c) => garage.push(c));
         playerCar2 = vorher.p2;
         tankZweiFuellen(vorher.tank);
+        if (typeof vorher.fuel === 'number') fuel = vorher.fuel;
         if (typeof zweiSpielerSetzen === 'function') zweiSpielerSetzen(vorher.zwei);
         cockpitScreenZu(vorher.schirm);
       }
@@ -37480,6 +37910,9 @@
           letztes: anPakete.length ? anPakete[anPakete.length - 1] : null,
           anAutoEins: a1.testSenke.length,
           gewuenscht: { steer: p2Steer, gas: p2Throttle },
+          // Die zwei globalen Faktoren, die im Sendeweg liegen - der Test rechnet damit
+          // die Zusage nach, statt eine Zahl abzuschreiben.
+          topSpeedScale, battScale: batteryCompensationScale(),
         };
       } finally {
         zweiSpieler = vorher.zwei;
@@ -54307,6 +54740,64 @@
   // Die Liste ist GEPFLEGT, und das ist hier richtig: sie IST die Zusicherung. Sie stammt
   // aus einer Suche ueber alle Kaestchen, deren Listener "X = e.target.checked" schreibt.
   // Ein neuer Schalter gehoert hinein.
+  // ---- Beide tanken unabhaengig voneinander ----------------------------------------
+  //
+  // BESTELLT: "Tanken soll unabhängig bei beiden klappen."
+  //
+  // Gemessen tut es das - und der Prueflauf zeigt, WORAN der Eindruck lag, dass es nicht
+  // klappt: der Service beginnt erst im Stillstand, und das Auto rollt mit ueber 200 km/h
+  // aus. Der Coast-Drag allein bringt es in acht Sekunden nur auf 174. Wer den Knopf
+  // drueckt und wartet, sieht nichts passieren. Behoben wurde die RUECKMELDUNG (die
+  // Fusszeile nennt jetzt Tempo und Schwelle), nicht die Mechanik - anhalten muss man bei
+  // Auto 1 genauso.
+  //
+  // DREI ABSCHNITTE, und jeder prueft eine Richtung der Unabhaengigkeit:
+  //   1. beide fahren            -> beide Staende sinken
+  //   2. Auto 1 in der Box       -> A1 steigt, A2 sinkt WEITER
+  //   3. Auto 2 in der Box       -> A2 steigt, A1 sinkt WEITER
+  //
+  // Abschnitt 2 ist der, auf den es ankommt: fuelTankTick() von Auto 1 hat die Ausnahme
+  // `pitState !== 'servicing'`, damit der Tank nicht sinkt, waehrend gepumpt wird. Gilt
+  // diese Ausnahme versehentlich auch fuer Auto 2, verbraucht es waehrend eines FREMDEN
+  // Boxenstopps nichts - ein Fehler, den man im Rennen als "mein Tank haelt ewig" erlebt
+  // und nie einem Boxenstopp des anderen zuschreiben wuerde.
+  stAdd('Zwei Spieler: beide tanken unabhaengig voneinander', async () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.tankenBeideProbe) {
+      return { skip: true, mass: 'tankenBeideProbe nicht vorhanden' };
+    }
+    const r = await OMEGA_TEST.tankenBeideProbe({ sekunden: 10, start: 40, drain: 1 });
+    const maengel = [];
+    // 1. Beide fahren: beide sinken, und zwar gleich viel (derselbe Regler, dasselbe Gas).
+    if (!(r.nachFahren.t1 < r.start) || !(r.nachFahren.t2 < r.start)) {
+      maengel.push('fahren: ' + r.start + ' -> ' + r.nachFahren.t1 + '/' + r.nachFahren.t2);
+    }
+    if (Math.abs(r.nachFahren.t1 - r.nachFahren.t2) > 0.2) {
+      maengel.push('fahren: ungleich verbraucht, ' + r.nachFahren.t1 + ' gegen '
+                   + r.nachFahren.t2);
+    }
+    // 2. Auto 1 in der Box: A1 steigt, A2 sinkt weiter.
+    if (!(r.nachBox1.t1 > r.nachFahren.t1)) {
+      maengel.push('Box 1: A1 stieg nicht (' + r.nachFahren.t1 + ' -> ' + r.nachBox1.t1 + ')');
+    }
+    if (!(r.nachBox1.t2 < r.nachFahren.t2 - 0.5)) {
+      maengel.push('Box 1: A2 verbrauchte nicht weiter (' + r.nachFahren.t2 + ' -> '
+                   + r.nachBox1.t2 + ') - die Boxen-Ausnahme von Auto 1 greift zu weit');
+    }
+    // 3. Auto 2 in der Box: A2 steigt, A1 sinkt weiter.
+    if (!(r.nachBox2.t2 > r.nachBox1.t2)) {
+      maengel.push('Box 2: A2 stieg nicht (' + r.nachBox1.t2 + ' -> ' + r.nachBox2.t2 + ')');
+    }
+    if (!(r.nachBox2.t1 < r.nachBox1.t1 - 0.5)) {
+      maengel.push('Box 2: A1 verbrauchte nicht weiter (' + r.nachBox1.t1 + ' -> '
+                   + r.nachBox2.t1 + ')');
+    }
+    return { ok: !maengel.length,
+             mass: 'fahren ' + r.start + '->' + r.nachFahren.t1 + '/' + r.nachFahren.t2
+                 + ' | Box A1: ' + r.nachBox1.t1 + '/' + r.nachBox1.t2
+                 + ' | Box A2: ' + r.nachBox2.t1 + '/' + r.nachBox2.t2
+                 + (maengel.length ? ' | ' + maengel.join(', ') : '') };
+  });
+
   // ---- Der Boxenstopp von Auto 2 tankt und repariert -------------------------------
   //
   // DER LETZTE DER OFFENEN PUNKTE, und er ist der, der den Modus fair macht: ohne ihn
@@ -54573,59 +55064,68 @@
                  + (maengel.length ? ' | ' + maengel.join(', ') : '') };
   });
 
-  // ---- Der Cockpit-Schirm von Auto 2 -----------------------------------------------
+  // ---- Der Vergleichsschirm: beide Autos nebeneinander -----------------------------
   //
-  // So bestellt: "Drehzahl und Geschwindigkeit fuer beide Autos; alle weiteren
-  // Einstellungen auf weiteren Screens." Die zweite Zeile im Hauptschirm traegt die zwei
-  // Werte, die man im Fahren braucht; Tank, Zustand, Temperaturen und Rundenzeiten stehen
-  // auf diesem vierten Schirm.
+  // BESTELLT: "Statt nur Player 2 soll er das Nötigste von Player 1 und 2 haben:
+  // Geschwindigkeit, Drehzahllichter, schaden, reifen, tank, bremse, akku, motorsound."
   //
-  // Geprueft werden zwei Dinge, die auseinanderfallen koennen:
+  // DIE ZUSICHERUNG, DIE MAN AM LEICHTESTEN VERLIERT: die zwei Spalten muessen zwei
+  // VERSCHIEDENE Autos zeigen. Eine Spalte, die zweimal dasselbe Auto anzeigt, sieht auf
+  // den ersten Blick vollkommen richtig aus - sie ist ja gefuellt. Der Prueftisch stellt
+  // deshalb zwei verschiedene Tankstaende ein (80 % und 40 %) und verlangt, dass beide
+  // ankommen.
   //
-  //   DIE REGISTRY - der Schirm ist erreichbar, aber NUR im Modus. Ohne ihn wird er beim
-  //   Blaettern uebersprungen; ein vierter Schirm, auf dem im Einzelspiel alle Zahlen
-  //   stehenbleiben, waere schlimmer als keiner. Und liegt er vorne, wenn der Modus
-  //   ausgeht, muss er verlassen werden - sonst kommt der Pfeil nicht zurueck, weil das
-  //   Blaettern ihn ja gerade ueberspringt.
+  // Dazu die Registry-Aussagen, die schon vorher galten: der Schirm ist nur im
+  // Zwei-Spieler-Modus blaetterbar, und liegt er vorne, wenn der Modus ausgeht, wird er
+  // verlassen - sonst kommt der Pfeil nicht zurueck, weil das Blaettern ihn ueberspringt.
   //
-  //   DIE MALFUNKTION - dort stehen Zahlen, und die richtigen. Der Prueftisch stellt Tank
-  //   auf 40 Prozent und zwei Runden ein; beides muss durchkommen.
-  //
-  // Eine Falle, die dieser Test gefangen hat: `st.brakeTempC` gibt es nicht. Das Modell
-  // fuehrt brakeTemp4[] und brakeTempF/R. Gemessen kamen 0 Grad heraus, waehrend der
-  // Reifen 20 zeigte - ein Feldname, den ich mir gemerkt statt nachgesehen hatte.
-  stAdd('Zwei Spieler: der Cockpit-Schirm von Auto 2', () => {
+  // Eine Falle, die dieser Test schon einmal gefangen hat: `st.brakeTempC` gibt es nicht.
+  // Das Modell fuehrt brakeTemp4[] und brakeTempF/R. Gemessen kamen 0 Grad heraus, waehrend
+  // der Reifen 20 zeigte.
+  stAdd('Zwei Spieler: der Vergleichsschirm zeigt beide Autos', () => {
     if (!window.OMEGA_TEST || !OMEGA_TEST.schirmZweiProbe) {
       return { skip: true, mass: 'schirmZweiProbe nicht vorhanden' };
     }
     const r = OMEGA_TEST.schirmZweiProbe();
+    const w = r.werte;
     const maengel = [];
     if (r.liste.indexOf('auto2') < 0) maengel.push('Schirm nicht in der Registry');
-    // Ohne Modus: auto2 darf in fuenf Schritten nicht auftauchen.
     if (r.ohne.indexOf('auto2') >= 0) {
       maengel.push('ohne Modus erreichbar: ' + r.ohne.join('>'));
     }
-    // Mit Modus: er muss auftauchen, und der Umlauf muss vollstaendig sein.
     if (r.mit.indexOf('auto2') < 0) maengel.push('mit Modus nicht erreichbar: ' + r.mit.join('>'));
     if (r.nachAus !== 'main') maengel.push('nach dem Abschalten noch auf ' + r.nachAus);
-    // Die Zahlen. Tank 40 Prozent von 110 Litern sind 44.
-    if (!/44 l/.test(r.werte.tank || '')) maengel.push('Tank zeigt ' + r.werte.tank);
-    if (!/100/.test(r.werte.zustand || '')) maengel.push('Zustand zeigt ' + r.werte.zustand);
-    // Die Temperaturen muessen eine Zahl ueber null tragen - 0 Grad war der gefundene
-    // Fehler (falscher Feldname).
-    for (const [name, wert] of [['Reifen', r.werte.reifen], ['Bremse', r.werte.bremse]]) {
-      const zahl = parseFloat(String(wert));
-      if (!(zahl > 0)) maengel.push(name + ' zeigt ' + wert);
+    // ---- Die beiden Spalten zeigen VERSCHIEDENE Autos --------------------------
+    // 80 % von 110 l sind 88, 40 % sind 44.
+    if (!/88 l/.test(w.tank1 || '')) maengel.push('Spalte 1 zeigt Tank ' + w.tank1);
+    if (!/44 l/.test(w.tank || '')) maengel.push('Spalte 2 zeigt Tank ' + w.tank);
+    if (w.tank1 === w.tank) maengel.push('beide Spalten zeigen denselben Tank');
+    if (w.name2 !== 'P2') maengel.push('Spalte 2 nennt ' + w.name2 + ' statt P2');
+    // ---- Die bestellten Groessen sind da --------------------------------------
+    if (w.lampen1 !== 10 || w.lampen2 !== 10) {
+      maengel.push('Lampen ' + w.lampen1 + '/' + w.lampen2 + ' statt 10/10');
     }
-    // Die Rundenzeiten aus car.race: letzte 20,9 s, beste ebenfalls 20,9 s.
-    if (!/20[.,]9/.test(r.werte.letzte || '')) maengel.push('letzte Runde ' + r.werte.letzte);
-    if (!/20[.,]9/.test(r.werte.beste || '')) maengel.push('beste Runde ' + r.werte.beste);
-    if (!/P2/.test(r.werte.fuss || '')) maengel.push('Fusszeile nennt das Auto nicht');
+    for (const [name, wert] of [['Tempo 1', w.tempo1], ['Tempo 2', w.tempo2],
+                                ['Gang 1', w.gang1], ['Gang 2', w.gang2],
+                                ['Zustand 1', w.zustand1], ['Zustand 2', w.zustand]]) {
+      if (wert === null || wert === '') maengel.push(name + ' fehlt');
+    }
+    // Reifen und Bremse muessen eine Zahl ueber null tragen - 0 Grad war der gefundene
+    // Fehler (falscher Feldname).
+    for (const [name, wert] of [['Reifen', w.reifen], ['Bremse', w.bremse]]) {
+      if (!(parseFloat(String(wert)) > 0)) maengel.push(name + ' zeigt ' + wert);
+    }
+    // Der Akku ist eine GEMESSENE Groesse: ohne Meldung ein Strich, mit Meldung Prozent.
+    // Der Prueftisch gibt Auto 2 einen Akkustand und Auto 1 keinen - beides muss man sehen.
+    if (!/%/.test(w.akku2 || '')) maengel.push('Akku 2 zeigt ' + w.akku2);
+    if (!/\u2013|-/.test(w.akku1 || '')) maengel.push('Akku 1 zeigt ' + w.akku1 + ' statt eines Strichs');
+    // Und der Rundenstand beider Autos im Kopf.
+    if (!/0\s*:\s*2/.test(w.runden || '')) maengel.push('Rundenstand ' + w.runden);
     return { ok: !maengel.length,
              mass: 'ohne ' + r.ohne.join('>') + ' | mit ' + r.mit.join('>')
-                 + ' | Tank ' + r.werte.tank + ', Zustand ' + r.werte.zustand
-                 + ', Reifen ' + r.werte.reifen + ', Bremse ' + r.werte.bremse
-                 + ', beste ' + r.werte.beste
+                 + ' | Tank ' + w.tank1 + ' gegen ' + w.tank
+                 + ' | Akku ' + w.akku1 + ' / ' + w.akku2
+                 + ' | ' + w.runden
                  + (maengel.length ? ' | ' + maengel.join(', ') : '') };
   });
 
@@ -55022,8 +55522,22 @@
     if (r.ohneAuto !== 0) maengel.push('ohne Auto 2: ' + r.ohneAuto + ' Pakete statt 0');
     if (r.anAutoEins !== 0) maengel.push('Auto 1 bekam ' + r.anAutoEins + ' Pakete');
     if (r.letztes) {
-      if (Math.abs(r.letztes.throttle - r.gewuenscht.gas) > 1e-9) {
-        maengel.push('Gas ' + r.letztes.throttle + ' statt ' + r.gewuenscht.gas);
+      // ---- DAS GAS TRAEGT DIE GLOBALEN FAKTOREN, seit v0.6.56 ----------------------
+      //
+      // Hier stand der ROHE Wunschwert, und der Test wurde rot, als die
+      // Hoechstgeschwindigkeit und die Batteriekompensation auch fuer Auto 2 zu gelten
+      // begannen (gemessen 1,26 statt 0,7). Das war die richtige Aenderung und die falsche
+      // Erwartung: beide Faktoren liegen im Sendeweg von Auto 1, und "globale
+      // Einstellungen gelten fuer beide" heisst genau, dass Auto 2 sie auch bekommt.
+      //
+      // Geprueft wird jetzt gegen dieselbe Rechnung, die sendControlValue() fuer Auto 1
+      // macht - also gegen die ZUSAGE und nicht gegen eine abgeschriebene Zahl. Ohne
+      // Klemme, wie dort: gedeckelt wird erst in buildCommandPacket().
+      const sollGas = r.gewuenscht.gas * r.topSpeedScale * r.battScale;
+      if (Math.abs(r.letztes.throttle - sollGas) > 1e-6) {
+        maengel.push('Gas ' + r.letztes.throttle + ' statt ' + sollGas.toFixed(4)
+                     + ' (Wunsch ' + r.gewuenscht.gas + ' x Tempo ' + r.topSpeedScale
+                     + ' x Akku ' + r.battScale.toFixed(3) + ')');
       }
       if (Math.abs(r.letztes.steer - r.gewuenscht.steer) > 1e-9) {
         maengel.push('Lenkung ' + r.letztes.steer + ' statt ' + r.gewuenscht.steer);

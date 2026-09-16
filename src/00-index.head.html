@@ -1665,35 +1665,85 @@
   #race-dash[data-screen="pit"] #race-pitscreen,
   #race-dash[data-screen="auto2"] #race-p2screen,
   #race-dash[data-screen="uebersicht"] #race-ovscreen { display: grid; }
-  /* NEUN KAESTEN, ALSO DREI MAL DREI. Hier standen fuenf Spalten, und das ergab 5 + 4 -
-     eine angebrochene zweite Zeile und darunter die halbe Schirmflaeche leer, waehrend die
-     Zahlen so klein blieben wie im Kachelstreifen. Ein Schirm, den man im Fahren liest,
-     soll seine Flaeche in Schriftgroesse umsetzen.
+  /* ---- DER VERGLEICHSSCHIRM ------------------------------------------------------
+     ZWEI SPALTEN NEBENEINANDER, auch auf dem Telefon. Untereinander waere es kein
+     Vergleich mehr, sondern zweimal dieselbe Liste - und der ganze Zweck dieses Schirms
+     ist, dass das Auge waagerecht springen kann.
 
-     Die Zahlen deshalb eine Stufe groesser als im Streifen und die Kaesten gestreckt:
-     align-content: stretch verteilt die drei Zeilen ueber die Hoehe, statt sie oben
-     zusammenzuschieben. */
-  .p2s-grid { display: grid; gap: clamp(4px, .8vw, 10px);
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    grid-auto-rows: minmax(0, 1fr); align-content: stretch; }
-  .p2s-grid .gt3-val { font-size: clamp(17px, 3.4vw, 30px); }
-  .p2s-grid .gt3-val.sm { font-size: clamp(15px, 2.8vw, 25px); }
-  /* IM VOLLBILD ZURUECK AUF FUENF SPALTEN, und zwar wegen der Hoehe: dort ist sie knapp
-     (siehe die Notabschaltung der zweiten Zeile), und zwei Zeilen brauchen weniger als
-     drei. Der Schirm ist dann breiter als hoch, also passt das auch zur Form. */
-  body.race-fs .p2s-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+     Deshalb 1fr/1fr und nicht auto: beide Spalten sind exakt gleich breit, damit
+     gleichnamige Werte auf derselben Hoehe stehen. Eine Trennlinie in der Mitte statt
+     eines Rahmens um jede Spalte - ein Rahmen macht aus zwei Spalten zwei Kaesten. */
+  /* GESTRECKT und nicht oben zusammengeschoben: der Schirm ist hoch, und mit
+     align-content: start blieb die untere Haelfte leer, waehrend die Zahlen klein blieben.
+     Die Spalte verteilt ihre fuenf Bloecke ueber die Hoehe - Kopf, Lampen, Tacho, Werte,
+     Boxenknopf -, und der Knopf landet damit von selbst unten, wo man ihn sucht. */
+  .vgl-grid { display: grid; grid-template-columns: 1fr 1fr;
+    gap: clamp(8px, 1.8vw, 20px); align-content: stretch; min-width: 0; }
+  .vgl-spalte { display: flex; flex-direction: column; justify-content: space-between;
+    gap: clamp(4px, .9vw, 9px); min-width: 0; }
+  /* ---- DIE GROSSE LAMPENLEISTE DES COCKPITS BLEIBT HIER DUNKEL ---------------------
+     Sie gehoert zum Rahmen und zeigt immer Auto 1. Auf diesem Schirm hat jede Spalte ihre
+     eigene Leiste, und zwei Leisten fuer dasselbe Auto uebereinander sind die Frage
+     "welche gilt jetzt?" - genau die soll ein Vergleichsschirm nicht stellen. Verborgen
+     und nicht entfernt: sie ist ein Rasterfeld des Cockpits, und ein fehlendes Feld
+     verschoebe die Einpassung (cockpitInhaltHoehe liest grid-template-rows). */
+  #race-dash[data-screen="auto2"] #race-shift { visibility: hidden; }
+  .vgl-spalte + .vgl-spalte { border-left: 1px solid #262e3d;
+    padding-left: clamp(8px, 1.8vw, 20px); }
+  .vgl-kopf { display: flex; align-items: baseline; gap: 7px; min-width: 0; }
+  .vgl-marke { font: 700 clamp(9px, 1.5vw, 12px)/1.1 var(--mono, ui-monospace, monospace);
+    letter-spacing: .08em; text-transform: uppercase; color: var(--good); flex: none; }
+  .vgl-marke.zwei { color: #3d8bff; }
+  .vgl-name { font-size: clamp(9px, 1.4vw, 12px); color: var(--gt3-strip-ink);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* Die Lampenleiste je Spalte: dieselbe Klasse wie oben, nur flacher - sie steht hier
+     neben einer zweiten und soll den Tacho nicht ueberragen. */
+  .vgl-shift { height: clamp(6px, 1.1vw, 10px); }
+  .vgl-tempo { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
+  .vgl-tempo .gt3-val.big { font-size: clamp(26px, 5.2vw, 48px); line-height: 1; }
+  .vgl-einheit { font-size: clamp(8px, 1.2vw, 11px); letter-spacing: .1em;
+    text-transform: uppercase; color: var(--gt3-strip-ink); }
+  .vgl-gang { margin-left: auto; font: 700 clamp(15px, 2.6vw, 26px)/1 var(--mono, ui-monospace, monospace);
+    color: var(--gt3-tile-ink); }
+  /* Fuenf Werte je Spalte, also zwei Reihen zu drei und zwei. Auf dem Telefon bleiben es
+     drei Spalten - die Kaesten sind schmal, aber die Zahlen darin kurz. */
+  .vgl-werte { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: clamp(3px, .7vw, 8px); }
+  .vgl-werte .gt3-val.sm { font-size: clamp(12px, 2.1vw, 18px); }
+  .vgl-werte .gt3-box { padding: clamp(2px, .5vw, 5px) clamp(3px, .6vw, 6px); }
+  .vgl-box { margin-top: auto; }
+  .vgl-fuss { display: flex; align-items: center; gap: clamp(8px, 1.6vw, 14px);
+    min-width: 0; }
+  .vgl-fuss .gt3-act { flex: none; }
+  /* ---- EINE ZEILE, UND SIE MUSS ES AUCH BLEIBEN -----------------------------------
+     Hier stand `min-width: 0; overflow: hidden; text-overflow: ellipsis` OHNE
+     `white-space: nowrap`, und damit tut das Ellipsis nichts: der Text bricht weiter um.
+     Gemessen wurde die Fusszeile dadurch 440 px hoch - der Satz brach bei wenigen Pixeln
+     Breite in rund 45 Zeilen und schob den ganzen Vergleich aus dem Schirm.
+     `flex: 1` gibt ihr die Breite, `nowrap` haelt sie auf einer Zeile, und erst dann
+     greift das Ellipsis. Die drei gehoeren zusammen. */
+  .vgl-fuss .schirm-fuss { flex: 1 1 auto; min-width: 0; white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis; }
   @media (max-width: 560px) {
-    .p2s-grid { gap: 4px; }
-    .p2s-grid .gt3-val { font-size: clamp(15px, 4.6vw, 22px); }
-    .p2s-grid .gt3-val.sm { font-size: clamp(13px, 4vw, 19px); }
+    .vgl-grid { gap: 6px; }
+    .vgl-spalte + .vgl-spalte { padding-left: 6px; }
+    .vgl-werte { gap: 3px; }
   }
-  #race-p2screen { grid-template-rows: auto minmax(0, 1fr) auto; }
-  /* Knopf links, Zustandstext rechts daneben - der Knopf behaelt seine Breite, der Text
-     nimmt den Rest. Ein Knopf ueber die ganze Breite waere im Fahren ein Ziel, das man
-     nicht verfehlen KANN, und genau das will man bei einem Boxenstopp nicht. */
-  .p2s-fuss { display: flex; align-items: center; gap: clamp(8px, 1.6vw, 14px); }
-  .p2s-fuss .gt3-act { flex: none; }
-  .p2s-fuss .schirm-fuss { min-width: 0; }
+  /* ---- DIESER SCHIRM IST EINE FLEX-SPALTE UND KEIN RASTER --------------------------
+     Hier stand `grid-template-rows: auto minmax(0, 1fr) auto`, und gemessen kam
+     "13,8px 0px 660px" heraus: das mittlere Feld bekam NULL Hoehe, die Spalten liefen
+     ueber, und der untere Teil des Schirms blieb leer. Mit drei Kindern, von denen das
+     mittlere den Rest nehmen soll, ist eine Flex-Spalte die Form, die das ohne Umweg
+     sagt - und `min-height: 0` ist dabei der Teil, den man vergisst: ohne ihn darf ein
+     Flex-Kind nicht kleiner werden als sein Inhalt, und dann laeuft es wieder ueber.
+
+     Die Regel ueberschreibt `display: grid` aus .gt3-schirm und muss deshalb dieselbe
+     Bedingung tragen wie die Einblendung, sonst gilt sie auch fuer den verborgenen
+     Schirm - das waere folgenlos, aber es waere auch nicht wahr. */
+  #race-dash[data-screen="auto2"] #race-p2screen {
+    display: flex; flex-direction: column; gap: clamp(4px, .8vw, 9px); }
+  #race-dash[data-screen="auto2"] #race-p2screen > .vgl-grid {
+    flex: 1 1 auto; min-height: 0; }
 
   .schirm-kopf { display: flex; align-items: baseline; gap: 10px;
     font-size: clamp(8px, 1.1vw, 11px); letter-spacing: .12em;
@@ -2839,6 +2889,19 @@
      schon belegt sind und ein zweiter gruener Knopf in derselben Reihe nicht
      unterscheidbar waere. Kontrast gegen #06121f: 8,4. */
   .gar-roles button.on.zwei { background: #3d8bff; color: #06121f; font-weight: 700; }
+  /* DER EINZIGE ROLLENKNOPF MIT KENNZEICHNUNG, und er traegt sie zweizeilig: "Spieler 2
+     experimentell" nebeneinander waere breiter als die drei anderen Knoepfe zusammen.
+     Die Leiste waechst dadurch von 38 auf rund 46 px - das ist der Preis dafuer, dass man
+     die Kennzeichnung dort liest, wo man den Modus einschaltet, und nicht erst in den
+     Optionen. */
+  .gar-roles button.gar-rolle-zwei {
+    display: inline-flex; flex-direction: column; align-items: center; gap: 1px;
+    line-height: 1.15; padding-top: 5px; padding-bottom: 5px; }
+  .gar-roles button.gar-rolle-zwei .wip-tag {
+    font-size: 8.5px; letter-spacing: .06em; opacity: .85; }
+  /* Auf dem gelben Grund des eingeschalteten Knopfes braucht die Kennzeichnung eine
+     dunkle Tinte - der wip-tag bringt seine eigene mit, und die ist hell. */
+  .gar-roles button.on.zwei .wip-tag { background: rgba(6,18,31,.22); color: #06121f; }
   .gar-roles button.on.ghost { background: #7a6bd0; color: #f2eeff; }
   .gar-roles button.on.off { background: var(--panel-3); color: var(--text); }
   /* Tempo je Ghost, direkt in der Zeile. Eine eigene Rasterzeile, damit der Regler die
@@ -3656,38 +3719,96 @@
 
            Die Werte werden von p2ScreenRender() in 50-drive.js geschrieben und sind
            deshalb data-i18n-skip: es sind Messwerte, keine Oberflaeche. -->
+      <!-- ---- DER VERGLEICHSSCHIRM: BEIDE AUTOS NEBENEINANDER -----------------------
+           BESTELLT: "Statt nur Player 2 soll er das Nötigste von Player 1 und 2 haben:
+           Geschwindigkeit, Drehzahllichter, schaden, reifen, tank, bremse, akku,
+           motorsound."
+
+           ZWEI SPALTEN UND NICHT ZWEI SCHIRME. Der Sinn dieses Schirms ist der VERGLEICH -
+           wer hat mehr Sprit, wessen Reifen sind kaelter, wer hat mehr Schaden. Zwei
+           Schirme, zwischen denen man blaettert, beantworten genau diese Frage nicht.
+
+           Die Reihenfolge der Werte ist in beiden Spalten dieselbe, und das ist keine
+           Symmetrie um ihrer selbst willen: beim Vergleichen springt das Auge waagerecht,
+           und eine Spalte mit anderer Reihenfolge macht daraus ein Suchen.
+
+           Der Motorklang steht UNTEN und EINMAL: beide Autos fahren dasselbe Modell. Ein
+           zweiter Klangknopf waere ein Bedienelement, das nichts anderes tut als der
+           erste. -->
       <div class="gt3-schirm" id="race-p2screen">
-        <div class="schirm-kopf"><b>Auto 2</b><span class="wip-tag">experimentell</span>
+        <div class="schirm-kopf"><b>Beide Autos</b><span class="wip-tag">experimentell</span>
           <span id="p2s-kopf-lage" data-i18n-skip>&ndash;</span>
           <span style="margin-left:auto" id="p2s-kopf-runde" data-i18n-skip></span></div>
-        <div class="p2s-grid">
-          <div class="gt3-box"><div class="gt3-lbl">1/min</div>
-            <div class="gt3-val" id="p2s-rpm" data-i18n-skip>1500</div></div>
-          <div class="gt3-box"><div class="gt3-lbl">km/h</div>
-            <div class="gt3-val" id="p2s-speed" data-i18n-skip>0</div></div>
-          <div class="gt3-box"><div class="gt3-lbl">Gang</div>
-            <div class="gt3-val" id="p2s-gear" data-i18n-skip>N</div></div>
-          <div class="gt3-box"><div class="gt3-lbl">Tank</div>
-            <div class="gt3-val sm" id="p2s-fuel" data-i18n-skip>100 l</div>
-            <div class="gt3-bar"><i id="p2s-fuel-bar"></i></div></div>
-          <div class="gt3-box"><div class="gt3-lbl">Zustand</div>
-            <div class="gt3-val sm" id="p2s-cond" data-i18n-skip>100&nbsp;%</div>
-            <div class="gt3-bar"><i id="p2s-cond-bar"></i></div></div>
-          <div class="gt3-box"><div class="gt3-lbl">Reifen</div>
-            <div class="gt3-val sm" id="p2s-tyre" data-i18n-skip>20&deg;</div></div>
-          <div class="gt3-box"><div class="gt3-lbl">Bremse</div>
-            <div class="gt3-val sm" id="p2s-brake" data-i18n-skip>20&deg;</div></div>
-          <div class="gt3-box"><div class="gt3-lbl">Letzte Runde</div>
-            <div class="gt3-val sm" id="p2s-lap-last" data-i18n-skip>&ndash;</div></div>
-          <div class="gt3-box"><div class="gt3-lbl">Beste Runde</div>
-            <div class="gt3-val sm gt3-ok" id="p2s-lap-best" data-i18n-skip>&ndash;</div></div>
+
+        <div class="vgl-grid">
+          <!-- ---- AUTO 1 ---- -->
+          <div class="vgl-spalte">
+            <div class="vgl-kopf"><span class="vgl-marke">Spieler 1</span>
+              <span class="vgl-name" id="vgl1-name" data-i18n-skip>&ndash;</span></div>
+            <div class="gt3-shift vgl-shift" id="vgl1-shift">
+              <span></span><span></span><span></span><span></span><span></span>
+              <span></span><span></span><span></span><span></span><span></span>
+            </div>
+            <div class="vgl-tempo"><span class="gt3-val big" id="vgl1-speed"
+                 data-i18n-skip>0</span><span class="vgl-einheit">km/h</span>
+              <span class="vgl-gang" id="vgl1-gear" data-i18n-skip>N</span></div>
+            <div class="vgl-werte">
+              <div class="gt3-box"><div class="gt3-lbl">Tank</div>
+                <div class="gt3-val sm" id="vgl1-fuel" data-i18n-skip>110 l</div>
+                <div class="gt3-bar"><i id="vgl1-fuel-bar"></i></div></div>
+              <div class="gt3-box"><div class="gt3-lbl">Zustand</div>
+                <div class="gt3-val sm" id="vgl1-cond" data-i18n-skip>100&nbsp;%</div>
+                <div class="gt3-bar"><i id="vgl1-cond-bar"></i></div></div>
+              <div class="gt3-box"><div class="gt3-lbl">Reifen</div>
+                <div class="gt3-val sm" id="vgl1-tyre" data-i18n-skip>20&deg;</div></div>
+              <div class="gt3-box"><div class="gt3-lbl">Bremse</div>
+                <div class="gt3-val sm" id="vgl1-brake" data-i18n-skip>20&deg;</div></div>
+              <div class="gt3-box"><div class="gt3-lbl">Akku</div>
+                <div class="gt3-val sm" id="vgl1-batt" data-i18n-skip>&ndash;</div></div>
+            </div>
+            <button type="button" class="gt3-act vgl-box" id="vgl1-act-pit">Boxenstopp</button>
+          </div>
+
+          <!-- ---- AUTO 2 ---- -->
+          <div class="vgl-spalte">
+            <div class="vgl-kopf"><span class="vgl-marke zwei">Spieler 2</span>
+              <span class="vgl-name" id="vgl2-name" data-i18n-skip>&ndash;</span></div>
+            <div class="gt3-shift vgl-shift" id="vgl2-shift">
+              <span></span><span></span><span></span><span></span><span></span>
+              <span></span><span></span><span></span><span></span><span></span>
+            </div>
+            <div class="vgl-tempo"><span class="gt3-val big" id="vgl2-speed"
+                 data-i18n-skip>0</span><span class="vgl-einheit">km/h</span>
+              <span class="vgl-gang" id="vgl2-gear" data-i18n-skip>N</span></div>
+            <div class="vgl-werte">
+              <div class="gt3-box"><div class="gt3-lbl">Tank</div>
+                <div class="gt3-val sm" id="vgl2-fuel" data-i18n-skip>110 l</div>
+                <div class="gt3-bar"><i id="vgl2-fuel-bar"></i></div></div>
+              <div class="gt3-box"><div class="gt3-lbl">Zustand</div>
+                <div class="gt3-val sm" id="vgl2-cond" data-i18n-skip>100&nbsp;%</div>
+                <div class="gt3-bar"><i id="vgl2-cond-bar"></i></div></div>
+              <div class="gt3-box"><div class="gt3-lbl">Reifen</div>
+                <div class="gt3-val sm" id="vgl2-tyre" data-i18n-skip>20&deg;</div></div>
+              <div class="gt3-box"><div class="gt3-lbl">Bremse</div>
+                <div class="gt3-val sm" id="vgl2-brake" data-i18n-skip>20&deg;</div></div>
+              <div class="gt3-box"><div class="gt3-lbl">Akku</div>
+                <div class="gt3-val sm" id="vgl2-batt" data-i18n-skip>&ndash;</div></div>
+            </div>
+            <button type="button" class="gt3-act vgl-box" id="p2s-act-pit">Boxenstopp</button>
+          </div>
         </div>
-        <!-- DER BOXENSTOPP VON AUTO 2 HAT SEINEN KNOPF HIER, und nicht im Hauptschirm:
-             dort liegt der Knopf von Auto 1, und zwei gleich aussehende Boxenknoepfe
-             nebeneinander sind die Bedienung, bei der man im Fahren daneben greift.
-             Nochmal druecken bricht ab - dieselbe Bedienung wie bei Auto 1. -->
-        <div class="p2s-fuss">
-          <button type="button" class="gt3-act" id="p2s-act-pit">Boxenstopp</button>
+
+        <div class="vgl-fuss">
+          <!-- Der Motorklang gilt fuer beide: dasselbe Modell, zwei Stimmen auf zwei
+               Stereoseiten. Derselbe Knopf wie im Hauptschirm, damit man ihn auch hier
+               erreicht - wer vergleicht, probiert. -->
+          <button type="button" class="gt3-act gt3-act-ico gt3-act-zwei" id="vgl-act-sound"
+                  title="Motorklang f&uuml;r beide Autos: rechte H&auml;lfte weiter, linke zur&uuml;ck">
+            <span class="act-pfeil links" aria-hidden="true" data-i18n-skip>&lsaquo;</span>
+            <span class="act-pfeil rechts" aria-hidden="true" data-i18n-skip>&rsaquo;</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.2L12 5.5v13l-4.8-4H4z"/><path d="M16 9a4.2 4.2 0 0 1 0 6" stroke="var(--bad)"/><path d="M18.6 6.4a7.8 7.8 0 0 1 0 11.2" stroke="var(--bad)"/></svg>
+            <span id="vgl-act-sound-txt" data-i18n-skip>Motor</span></button>
           <div class="schirm-fuss" id="p2s-fuss" data-i18n-skip></div>
         </div>
       </div>
@@ -8179,18 +8300,22 @@
         G&auml;ngen, eigener Drehzahl, eigenem Tempo und eigenen Temperaturen. Die
         Einstellungen aus &bdquo;Fahrgef&uuml;hl&ldquo; werden bei jedem Anschalten
         &uuml;bernommen, damit beide Autos gleich fahren.</p>
-      <p class="muted">Und ein eigener Cockpit-Schirm: bl&auml;ttere im Cockpit mit dem
-        Pfeil oben links oder dem Steuerkreuz auf &bdquo;Auto&nbsp;2&ldquo;. Dort stehen
-        Tank, Zustand, Reifen- und Bremsentemperatur und seine Rundenzeiten. Ist der Modus
-        aus, wird der Schirm beim Bl&auml;ttern &uuml;bersprungen.</p>
-      <p class="muted">Und ein Boxenstopp: der Knopf daf&uuml;r steht auf dem Schirm von
-        Auto&nbsp;2, nicht neben dem von Auto&nbsp;1 &ndash; zwei gleich aussehende
-        Boxenkn&ouml;pfe nebeneinander sind die Bedienung, bei der man im Fahren daneben
-        greift. Anfordern, anhalten, warten, losfahren; nochmal dr&uuml;cken bricht ab. Es
-        tankt mit denselben 22&nbsp;%/s wie Auto&nbsp;1 und repariert mit derselben
-        nichtlinearen Rate &ndash; ungleiche Raten w&auml;ren schlimmer als kein Stopp.
-        W&auml;hrend des Stopps gilt dasselbe Tempolimit, aber als eigener Deckel: der von
-        Auto&nbsp;1 l&auml;uft &uuml;ber einen Weg, den Auto&nbsp;2 gar nicht nimmt.</p>
+      <p class="muted">Und ein Vergleichsschirm: bl&auml;ttere im Cockpit mit dem Pfeil
+        oben links oder dem Steuerkreuz auf &bdquo;Beide&ldquo;. Dort stehen beide Autos
+        <em>nebeneinander</em> &ndash; Tempo, Schaltlichter, Gang, Tank, Zustand, Reifen-
+        und Bremsentemperatur und Akku, in beiden Spalten in derselben Reihenfolge, damit
+        das Auge waagerecht springen kann. Dazu die Boxenkn&ouml;pfe beider Autos und der
+        Motorklang, der f&uuml;r beide gilt. Ist der Modus aus, wird der Schirm beim
+        Bl&auml;ttern &uuml;bersprungen.</p>
+      <p class="muted">Und ein Boxenstopp, unabh&auml;ngig vom anderen Auto: w&auml;hrend
+        eines in der Box steht, verbraucht das andere weiter. Beide Kn&ouml;pfe stehen auf
+        dem Vergleichsschirm &bdquo;Beide&ldquo;, links f&uuml;r Auto&nbsp;1 und rechts
+        f&uuml;r Auto&nbsp;2. Anfordern, <b>bremsen und anhalten</b>, warten, losfahren;
+        nochmal dr&uuml;cken bricht ab. Der Service beginnt erst im Stillstand &ndash; das
+        Auto rollt mit &uuml;ber 200&nbsp;km/h aus, deshalb steht in der Fu&szlig;zeile, wie
+        weit es noch ist. Getankt wird mit denselben 22&nbsp;%/s wie bei Auto&nbsp;1 und
+        repariert mit derselben Rate; ungleiche Raten w&auml;ren schlimmer als kein
+        Stopp.</p>
       <p class="muted">Und die Rennleitung gilt f&uuml;r beide: bei gelber Flagge regelt
         Auto&nbsp;2 auf dasselbe Tempo herunter wie das ganze Feld &ndash; gemessen 100 von
         103&nbsp;km/h Zieltempo, gegen einen Daumen auf Vollgas &ndash;, und in der
@@ -8213,6 +8338,12 @@
         Regler wie Auto&nbsp;1, das Tankgewicht in seiner Fahrphysik, die Warnstufen als
         Meldung und den Notlauf des leeren Tanks &ndash; und der geht &uuml;ber eine Rampe
         zu, nicht in einem Takt.</p>
+      <p class="muted">Alle globalen Einstellungen gelten f&uuml;r beide Autos: die
+        Abstimmung aus &bdquo;Fahrgef&uuml;hl&ldquo; wandert bei jeder &Auml;nderung
+        sofort her&uuml;ber, und Tank, Schaden, Reifenverschlei&szlig;, Wetter, die
+        H&ouml;chstgeschwindigkeit und die Batteriekompensation wirken auf beide
+        gleicherma&szlig;en. Zwei Autos mit verschiedener Abstimmung w&auml;ren kein
+        faires Rennen.</p>
       <p class="muted">Dazu einen eigenen Schaden: Crasherkennung aus seinen eigenen
         Sensorbytes, Leistungsverlust mit dem Schaden, Notlauf im Totalschaden und
         ausgefallene Lampen &ndash; und die Kontrollleuchten des einen sagen nichts mehr
@@ -8630,7 +8761,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.6.55</span></span>
+    <span class="foot-ver">v<span id="app-version">0.6.56</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine

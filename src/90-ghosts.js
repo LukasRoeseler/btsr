@@ -1058,10 +1058,10 @@
             ${car.blinking ? '<span class="gar-blink">&nbsp;blinkt&hellip;</span>' : ''}</div></div>
         <div class="gar-roles">
           <button data-role="player" class="${car.role === 'player' ? 'on' : ''}">Steuern</button>
-          <button data-role="player2" class="${car.role === 'player2' ? 'on zwei' : ''}"
+          <button data-role="player2" class="gar-rolle-zwei ${car.role === 'player2' ? 'on zwei' : ''}"
                   title="${zweiSpieler ? 'Zweites Auto, zweiter Controller'
                           : 'Schaltet den 2-Spieler-Modus ein und weist dieses Auto zu'}"
-                  >Spieler&nbsp;2</button>
+                  ><span>Spieler&nbsp;2</span><span class="wip-tag">experimentell</span></button>
           <button data-role="ghost" class="${car.role === 'ghost' ? 'on ghost' : ''}">Ghost</button>
           <button data-role="none" class="${car.role === 'none' ? 'on off' : ''}">Aus</button>
         </div>

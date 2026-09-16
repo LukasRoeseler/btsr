@@ -679,7 +679,10 @@
     // der Modus aus ist. Die Alternative waere eine Liste, deren LAENGE sich aendert - und
     // an ihr haengen der Schirmzaehler, die Punkte unter dem Pfeil und zwei Selbsttests.
     // Eine Liste, die beim Umschalten kuerzer wird, verschiebt den gerade gezeigten Schirm.
-    { id: 'auto2', name: 'Auto 2',
+    // Der Name ist "Beide" und nicht mehr "Auto 2": der Schirm zeigt seit v0.6.56 beide
+    // Autos nebeneinander. Die id bleibt `auto2` - sie steht in gespeicherten Zustaenden
+    // und in Prueflaeufen, und ein Name im Menue ist kein Grund, eine Kennung zu aendern.
+    { id: 'auto2', name: 'Beide',
       nurZweiSpieler: true,
       malen: () => p2ScreenRender() },
   ];
@@ -1378,87 +1381,138 @@
   // GEZEICHNET WIRD NUR, WENN ER VORNE LIEGT (cockpitScreenSet ruft malen(), und der Takt
   // unten prueft es): neun Werte je 45 ms auf einen unsichtbaren Schirm zu schreiben waere
   // Arbeit fuer niemanden, und der Sendetakt hat Vorrang.
-  function p2ScreenRender() {
-    const st = physEngine2.state;
-    schreibeWert($('p2s-rpm'), Math.round(motorDrehzahl(st)));
-    schreibeWert($('p2s-speed'), Math.round(Math.abs(st.speedKmh) * REAL_SCALE));
-    schreibeWert($('p2s-gear'), gearLabel(st));
-    // Tank und Zustand in derselben Schreibweise wie bei Auto 1 - Liter und Prozent, und
-    // der Zustand ist der KEHRWERT des Schadens: full green at the start. Ein Balken, der
-    // WAECHST, wenn etwas schlechter wird, liest sich rueckwaerts.
-    const tank = typeof tankZweiStand === 'function' ? tankZweiStand() : 0;
-    schreibeWert($('p2s-fuel'), fuelLiters(tank) + ' l');
-    const tb = $('p2s-fuel-bar');
+  // ---- DER VERGLEICHSSCHIRM: BEIDE AUTOS NEBENEINANDER ------------------------------
+  //
+  // BESTELLT: "Statt nur Player 2 soll er das Nötigste von Player 1 und 2 haben:
+  // Geschwindigkeit, Drehzahllichter, schaden, reifen, tank, bremse, akku, motorsound."
+  //
+  // EINE Funktion fuer beide Spalten, mit einem Praefix als Argument. Zwei Kopien waeren
+  // zwei Orte, an denen die naechste Groesse nur in einer Spalte landet - und in einem
+  // Vergleich ist genau das der Fehler, den man am spaetesten bemerkt, weil die Spalte
+  // ja etwas anzeigt.
+  //
+  // GEZEICHNET WIRD NUR, WENN ER VORNE LIEGT: der Takt in 70-race.js ruft malen() des
+  // vorderen Schirms, alle 120 ms. Vierzehn Werte je 45 ms auf einen unsichtbaren Schirm
+  // zu schreiben waere Arbeit fuer niemanden, und der Sendetakt hat Vorrang.
+  function vglSpalte(pre, car, motor, tank, schaden) {
+    const st = motor.state;
+    // Die Schaltlichter aus SEINER Drehzahl. Dieselbe Funktion wie die grosse Leiste im
+    // Cockpit - siehe schaltLampen(), dort steht auch die Farbregel.
+    schaltLampen($(pre + '-shift'), st.rpmFrac, st.onLimiter);
+    schreibeWert($(pre + '-speed'), Math.round(Math.abs(st.speedKmh) * REAL_SCALE));
+    schreibeWert($(pre + '-gear'), gearLabel(st));
+    schreibeWert($(pre + '-name'), car ? garageLabel(car) : 'kein Auto');
+    // Tank in Litern, wie ueberall sonst in dieser App.
+    schreibeWert($(pre + '-fuel'), fuelLiters(tank) + ' l');
+    const tb = $(pre + '-fuel-bar');
     if (tb) {
-      tb.style.width = Math.max(0, tank) + '%';
+      tb.style.width = Math.max(0, Math.min(100, tank)) + '%';
       tb.style.background = tank < 20 ? '#ffb02e' : '#2ee06a';
     }
-    const schaden = typeof schadenVon === 'function' ? schadenVon(2) : 0;
+    // ZUSTAND und nicht Schaden: voll gruen am Anfang, und jeder Crash nimmt ein Stueck
+    // heraus. Ein Balken, der WAECHST, wenn etwas schlechter wird, liest sich rueckwaerts -
+    // dieselbe Entscheidung wie beim Schadensbalken von Auto 1.
     const zustand = Math.max(0, 100 - schaden);
-    schreibeWert($('p2s-cond'), Math.round(zustand) + ' %');
-    const zb = $('p2s-cond-bar');
+    schreibeWert($(pre + '-cond'), Math.round(zustand) + ' %');
+    const zb = $(pre + '-cond-bar');
     if (zb) {
       zb.style.width = zustand + '%';
       zb.style.background = zustand < 50 ? '#ff5252' : zustand < 80 ? '#ffb02e' : '#2ee06a';
     }
-    // Reifen und Bremse aus SEINEM Zustand. Die Temperaturen liegen in der Physikinstanz,
-    // sind also von Anfang an je Auto getrennt gewesen - das ist der Teil, der nie gefehlt
-    // hat.
-    //
-    // VIER RAEDER, EIN WERT. Das Modell fuehrt tyreTemp4[] und brakeTemp4[] (und als
-    // Rueckfall tyreTempC bzw. brakeTempF/brakeTempR) - die Reifenkachel von Auto 1 zeigt
-    // alle vier. Hier steht das MITTEL: auf diesem Schirm hat eine Zahl je Groesse Platz,
+    // VIER RAEDER, EIN WERT. Das Modell fuehrt tyreTemp4[] und brakeTemp4[] (Rueckfall
+    // tyreTempC bzw. brakeTempF/R). Hier steht das Mittel: eine Zahl je Groesse hat Platz,
     // und die Frage "sind die Reifen warm" ist damit beantwortet.
     //
-    // `brakeTempC` GIBT ES NICHT, und das stand hier einen Anlauf lang: der Wert kam als
-    // 0 Grad heraus, waehrend der Reifen 20 zeigte. Ein Feldname, den ich mir gemerkt
-    // statt nachgesehen habe.
-    const mittel = (a) => (a && a.length)
-      ? a.reduce((x, y) => x + y, 0) / a.length : null;
+    // `brakeTempC` GIBT ES NICHT - der Name stand hier einen Anlauf lang und ergab 0 Grad,
+    // waehrend der Reifen 20 zeigte.
+    const mittel = (a) => (a && a.length) ? a.reduce((x, y) => x + y, 0) / a.length : null;
     const reifen = mittel(st.tyreTemp4) !== null ? mittel(st.tyreTemp4) : (st.tyreTempC || 0);
     const bremse = mittel(st.brakeTemp4) !== null ? mittel(st.brakeTemp4)
       : ((st.brakeTempF || 0) + (st.brakeTempR || 0)) / 2;
-    schreibeWert($('p2s-tyre'), Math.round(reifen) + '\u00b0');
-    schreibeWert($('p2s-brake'), Math.round(bremse) + '\u00b0');
-    // Die Rundenzeiten aus car.race - dieselbe Quelle, aus der die Rundenuebersicht liest.
-    const car = typeof playerCar2 !== 'undefined' ? playerCar2 : null;
-    const runden = (car && car.race && car.race.laps) || [];
-    const ms = runden.map((l) => l.ms);
-    schreibeWert($('p2s-lap-last'), ms.length ? formatLapTime(ms[ms.length - 1]) : '\u2013');
-    schreibeWert($('p2s-lap-best'), ms.length ? formatLapTime(Math.min.apply(null, ms)) : '\u2013');
-    const lage = $('p2s-kopf-lage');
-    if (lage) {
-      lage.textContent = !car ? 'kein Auto zugeteilt'
-        : (abseitsJetztFuer(2) ? 'neben der Bahn'
-           : (schaden >= 100 ? 'Notlauf' : (tank <= 0 ? 'Tank leer' : 'auf der Bahn')));
+    schreibeWert($(pre + '-tyre'), Math.round(reifen) + '\u00b0');
+    schreibeWert($(pre + '-brake'), Math.round(bremse) + '\u00b0');
+    // Der Akku kommt aus Byte 10 des Autos (car.battery, in 90-ghosts.js je Auto gesetzt) -
+    // eine gemessene Groesse und keine gerechnete. Ohne Auto oder ohne Meldung: ein Strich,
+    // und keine erfundene Zahl.
+    const roh = car && car.battery !== undefined && car.battery !== null ? car.battery : null;
+    schreibeWert($(pre + '-batt'), roh === null ? '\u2013' : batteryPercent(roh) + ' %');
+  }
+
+  function p2ScreenRender() {
+    vglSpalte('vgl1', typeof playerCar !== 'undefined' ? playerCar : null,
+              physEngine, typeof fuel === 'number' ? fuel : 0,
+              typeof damage === 'number' ? damage : 0);
+    vglSpalte('vgl2', typeof playerCar2 !== 'undefined' ? playerCar2 : null,
+              physEngine2,
+              typeof tankZweiStand === 'function' ? tankZweiStand() : 0,
+              typeof schadenVon === 'function' ? schadenVon(2) : 0);
+
+    // ---- DER KOPF: die Lage von Auto 2, weil sie die veraenderliche ist ---------------
+    const car2 = typeof playerCar2 !== 'undefined' ? playerCar2 : null;
+    const lage = typeof boxZweiLage === 'function' ? boxZweiLage() : 'aus';
+    const kopf = $('p2s-kopf-lage');
+    if (kopf) {
+      kopf.textContent = !zweiSpieler ? 'Modus aus'
+        : (!car2 ? 'Auto 2 nicht zugeteilt'
+           : (abseitsJetztFuer(2) ? 'Auto 2 neben der Bahn' : 'beide auf der Bahn'));
     }
     const rundeK = $('p2s-kopf-runde');
-    if (rundeK) rundeK.textContent = ms.length ? 'Runde ' + ms.length : '';
+    if (rundeK) {
+      const r1 = ((typeof playerCar !== 'undefined' && playerCar && playerCar.race
+                   && playerCar.race.laps) || []).length;
+      const r2 = ((car2 && car2.race && car2.race.laps) || []).length;
+      rundeK.textContent = 'Runden ' + r1 + ' : ' + r2;
+    }
+
+    // ---- DIE FUSSZEILE SAGT, WAS DER BOXENSTOPP GERADE BRAUCHT -----------------------
+    //
+    // GEMELDET: "Tanken soll unabhängig bei beiden klappen." Gemessen tut es das - beide
+    // Autos tanken gleichzeitig und unabhaengig. Was fehlte, war die RUECKMELDUNG: der
+    // Service beginnt erst im Stillstand, und das Auto rollt mit ueber 200 km/h aus. Der
+    // Coast-Drag allein bringt es in acht Sekunden nur auf 174 - wer den Knopf drueckt und
+    // wartet, sieht nichts passieren und haelt es fuer kaputt.
+    //
+    // Also steht hier jetzt, WIE WEIT es noch ist: Tempo gegen Schwelle. Und der zweite
+    // Teil der Bedingung steht mit dabei, weil er nicht zu erraten ist - waehrend man auf
+    // der Bremse steht, beginnt der Service nicht (Math.abs(p2Throttle) < 0.1, dieselbe
+    // Regel wie bei Auto 1).
     const fuss = $('p2s-fuss');
     if (fuss) {
-      // ---- DER ZUSTAND DES BOXENSTOPPS steht hier, wo der Knopf ist -----------------
-      //
-      // Sonst muesste man aus dem Meldungsband schliessen, was gerade laeuft - und das
-      // Band gehoert beiden Autos und ist nach 1,5 s wieder leer.
-      const lage = typeof boxZweiLage === 'function' ? boxZweiLage() : 'aus';
-      if (!car) {
+      if (!zweiSpieler) {
+        fuss.textContent = 'Der 2-Spieler-Modus ist aus \u2013 rechts steht nichts.';
+      } else if (!car2) {
         fuss.textContent = 'In der Garage einem Auto die Rolle "Spieler 2" geben.';
       } else if (lage === 'angefordert') {
-        fuss.textContent = garageLabel(car) + ' \u00b7 Boxenstopp: anhalten';
+        const kmh = Math.abs(physEngine2.state.speedKmh) * REAL_SCALE;
+        const schwelle = PIT_STANDSTILL_KMH * REAL_SCALE;
+        fuss.textContent = 'P2 Boxenstopp: bremsen und anhalten \u2013 '
+          + Math.round(kmh) + ' km/h, nötig unter ' + Math.round(schwelle)
+          + ', dann Finger vom Gas.';
       } else if (lage === 'service') {
         const offen = [];
-        if (tank < 100 - 0.05) offen.push('tankt');
-        if (schaden > 0.05) offen.push('repariert');
-        fuss.textContent = garageLabel(car) + ' \u00b7 '
-          + (boxZweiFertig() ? 'fertig, losfahren!' : 'Service: ' + (offen.join(', ') || 'Standzeit'));
+        if (tankZweiStand() < 100 - 0.05) offen.push('tankt');
+        if (schadenVon(2) > 0.05) offen.push('repariert');
+        fuss.textContent = boxZweiFertig()
+          ? 'P2 Boxenstopp: fertig, losfahren!'
+          : 'P2 Boxenstopp: ' + (offen.join(', ') || 'Standzeit laeuft');
       } else {
-        fuss.textContent = garageLabel(car);
+        fuss.textContent = 'Boxenstopp: links f\u00fcr Auto 1, rechts f\u00fcr Auto 2.';
       }
-      const knopf = $('p2s-act-pit');
-      if (knopf) {
-        knopf.classList.toggle('warn', lage !== 'aus');
-        knopf.disabled = !car;
-      }
+    }
+    const knopf2 = $('p2s-act-pit');
+    if (knopf2) {
+      knopf2.classList.toggle('warn', lage !== 'aus');
+      knopf2.disabled = !zweiSpieler || !car2;
+    }
+    const knopf1 = $('vgl1-act-pit');
+    if (knopf1) {
+      knopf1.classList.toggle('warn',
+        typeof pitState !== 'undefined' && pitState !== 'off');
+    }
+    const ton = $('vgl-act-sound-txt');
+    if (ton) {
+      const q = $('race-act-sound-txt');
+      ton.textContent = q ? q.textContent : 'Motor';
     }
   }
 
@@ -1466,11 +1520,35 @@
     $('p2s-act-pit').addEventListener('click', () => {
       // Defensiv gerufen: 70-race.js wird SPAETER gebaut. Zur Laufzeit ist die Funktion da.
       if (typeof boxZweiAnfordern === 'function') boxZweiAnfordern();
-      if (typeof p2ScreenRender === 'function') p2ScreenRender();
+      p2ScreenRender();
     });
   }
-
-  // Einen Wert schreiben UND, wenn er sich geaendert hat, die Anzeige 1 px nach unten
+  // Die zwei Knoepfe fuer Auto 1 leiten auf die vorhandenen weiter, statt ihre Wirkung zu
+  // verdoppeln: ein zweiter Weg in den Boxenstopp waere ein zweiter Ort, an dem die
+  // Vorwahl entsteht - und die Vorwahl gibt es genau einmal, auf dem Boxenschirm.
+  if ($('vgl1-act-pit')) {
+    $('vgl1-act-pit').addEventListener('click', () => {
+      const q = $('race-act-pit');
+      if (q) q.click();
+      p2ScreenRender();
+    });
+  }
+  if ($('vgl-act-sound')) {
+    $('vgl-act-sound').addEventListener('click', (e) => {
+      // Die Haelfte des Knopfes entscheidet ueber die Richtung - dieselbe Bedienung wie im
+      // Hauptschirm. Weitergereicht wird an den dortigen Knopf, damit es EINEN Weg durch
+      // die Motorliste gibt.
+      const q = $('race-act-sound');
+      if (!q) return;
+      const r = e.currentTarget.getBoundingClientRect();
+      const links = (e.clientX - r.left) < r.width / 2;
+      const ev = new MouseEvent('click', { bubbles: true, clientX:
+        links ? q.getBoundingClientRect().left + 4
+              : q.getBoundingClientRect().right - 4 });
+      q.dispatchEvent(ev);
+      p2ScreenRender();
+    });
+  }
   // setzen. 80 ms, dann zurueck: eine Anzeige mit Masse setzt sich kurz, ein Textfeld nicht.
   //
   // DER VERGLEICH IST DER GANZE PUNKT. Der Schirm wird jeden Takt neu geschrieben; ohne ihn
@@ -1492,6 +1570,43 @@
     el.classList.remove('gt3-tick');
     void el.offsetWidth;
     el.classList.add('gt3-tick');
+  }
+
+  // ---- DIE SCHALTLICHTER, EINE WAHRHEIT FUER JEDE LEISTE ------------------------------
+  //
+  // Herausgeloest, weil es seit v0.6.56 ZWEI Leisten gibt: die grosse im Cockpit und je
+  // eine je Auto auf dem Vergleichsschirm. Zwei Kopien dieser Farbregel waeren zwei Orte,
+  // an denen jemand die blauen Lampen verschiebt.
+  //
+  // Gruen, dann rot, dann BLAU fuer die letzten zwei. Das blaue Paar UEBER dem roten und
+  // nicht darunter ist das, was echte GT3-Lenkraeder benutzen, und es macht den Streifen
+  // lesbar, ohne Lampen zu zaehlen.
+  function schaltLampen(host, frac, amBegrenzer) {
+    if (!host) return;
+    const lamps = host.children;
+    const n = lamps.length;
+    const f = Math.max(0, Math.min(1, frac || 0));
+    for (let i = 0; i < n; i++) {
+      const lit = f >= (i + 1) / n;
+      let col = '#12161f';
+      if (lit) {
+        if (i >= n - 2) col = '#3d8bff';
+        else if (i >= n - 5) col = '#ff3b3b';
+        else col = '#2ee06a';
+      }
+      lamps[i].style.background = col;
+      lamps[i].style.boxShadow = lit
+        ? 'inset 0 0 0 1px rgba(255,255,255,.25), 0 0 6px ' + col
+        : 'inset 0 0 0 1px #262e3d';
+    }
+    // On the limiter the whole strip flashes blue, which no steady pattern can be mistaken
+    // for.
+    if (amBegrenzer && Math.floor(Date.now() / 90) % 2 === 0) {
+      for (let i = 0; i < n; i++) {
+        lamps[i].style.background = '#3d8bff';
+        lamps[i].style.boxShadow = '0 0 8px #3d8bff';
+      }
+    }
   }
 
   // out ist HERAUS, und zwar weil es nicht benutzt wurde: die Anzeige liest alles aus dem
@@ -1526,29 +1641,7 @@
     // not below it, is what real GT3 wheels use for "shift now", and it makes the strip
     // readable without counting lamps.
     const frac = Math.max(0, Math.min(1, st.rpmFrac));
-    const lamps = $('race-shift').children;
-    const n = lamps.length;
-    for (let i = 0; i < n; i++) {
-      const lit = frac >= (i + 1) / n;
-      let col = '#12161f';
-      if (lit) {
-        if (i >= n - 2) col = '#3d8bff';
-        else if (i >= n - 5) col = '#ff3b3b';
-        else col = '#2ee06a';
-      }
-      lamps[i].style.background = col;
-      lamps[i].style.boxShadow = lit
-        ? 'inset 0 0 0 1px rgba(255,255,255,.25), 0 0 6px ' + col
-        : 'inset 0 0 0 1px #262e3d';
-    }
-    // On the limiter the whole strip flashes blue, which no steady pattern can be mistaken
-    // for.
-    if (st.onLimiter && Math.floor(Date.now() / 90) % 2 === 0) {
-      for (let i = 0; i < n; i++) {
-        lamps[i].style.background = '#3d8bff';
-        lamps[i].style.boxShadow = '0 0 8px #3d8bff';
-      }
-    }
+    schaltLampen($('race-shift'), frac, st.onLimiter);
 
     // ABS is a real flag in the model, so it earns a cell. Traction control does not exist
     // in this drivetrain and therefore gets no cell, rather than a permanent zero.
@@ -2529,6 +2622,38 @@
     if (Array.isArray(physEngine.config.gears)) {
       physEngine2.config.gears = physEngine.config.gears.map(g => Object.assign({}, g));
     }
+  }
+
+  // ---- GLOBALE EINSTELLUNGEN GELTEN FUER BEIDE AUTOS ---------------------------------
+  //
+  // BESTELLT: "Globale einstellungen gelten für beide autos gleichermaßen: fahrgefühl
+  // optionen, ob tank etc. an/aus".
+  //
+  // Bis v0.6.55 kopierte physEngine2Abgleichen() die Abstimmung nur BEIM ANSCHALTEN des
+  // Modus. Wer danach am Fahrgefuehl drehte, verstellte nur Auto 1 - und zwei Autos mit
+  // verschiedener Abstimmung sind kein faires Rennen, sondern ein Fehler, den man erst im
+  // Fahren merkt.
+  //
+  // EIN ZUHOERER STATT SECHSUNDZWANZIG. Die Abstimmung wird an 26 einzelnen Stellen
+  // geschrieben (accelerationFactor, brakeBias, steerResponse, tyreEffect, ...). Jede
+  // davon um eine Kopierzeile zu ergaenzen waeren 26 Gelegenheiten, die 27. zu vergessen -
+  // dieselbe Ueberlegung, die in 98b-sicherung.js zu EINEM Zuhoerer fuer alle Regler
+  // gefuehrt hat ("ein Zuhoerer statt einer je Regler").
+  //
+  // 'input' UND 'change': Schieber melden beides, Auswahlfelder und Ankreuzfelder nur
+  // 'change'. Beide zu nehmen kostet nichts, weil das Kopieren billig ist und nur bei
+  // eingeschaltetem Modus ueberhaupt laeuft.
+  //
+  // WAS NICHT UEBER config LAEUFT, steht weiter unten in spielerZweiSenden(): die
+  // Hoechstgeschwindigkeit und die Batteriekompensation sitzen im Sendeweg von Auto 1, den
+  // Auto 2 gar nicht nimmt.
+  for (const art of ['input', 'change']) {
+    document.addEventListener(art, (e) => {
+      if (!zweiSpieler) return;
+      const el = e.target;
+      if (!el || !el.closest || !el.closest('#tab-options, #tab-race')) return;
+      physEngine2Abgleichen();
+    }, true);
   }
 
   function zweiSpielerSetzen(an) {

@@ -53,6 +53,139 @@
       return this.schadenZweiLesen();
     },
 
+    // ---- TANKEN BEIDE UNABHAENGIG? ---------------------------------------------------
+    //
+    // BESTELLT: "Tanken soll unabhängig bei beiden klappen."
+    //
+    // Der Prueflauf laesst BEIDE gleichzeitig tanken - Auto 1 ueber seinen Boxenstopp,
+    // Auto 2 ueber seinen - und misst, ob sich die zwei stoeren. Die Falle, auf die es
+    // ankommt: fuelTankTick() von Auto 1 hat die Ausnahme `pitState !== 'servicing'`, damit
+    // der Tank nicht sinkt, waehrend gepumpt wird. Gilt diese Ausnahme versehentlich auch
+    // fuer Auto 2, verbraucht es waehrend eines fremden Boxenstopps nichts - und umgekehrt
+    // waere ein Boxenstopp von Auto 2, der Auto 1 den Verbrauch abstellt, ebenso falsch.
+    //
+    // Gemessen wird deshalb an BEIDEN Staenden gleichzeitig, mit Gas auf beiden.
+    async tankenBeideProbe(o) {
+      const opt = o || {};
+      const uhrEcht = Date.now, perfEcht = performance.now;
+      const merk = { zwei: zweiSpieler, p1: playerCar, p2: playerCar2,
+                     gas: p2Throttle, steer: p2Steer, phys: physicsEnabled,
+                     fuel1: fuel, tank2: tankZweiStand(), pit: pitState,
+                     plan: pitPlan, drain: fuelDrainPerSec, gasEins: throttleY };
+      const a1 = { device: { id: 'probe-t1' }, role: 'player', alias: 'P1', rx: null,
+                   testSenke: [] };
+      const a2 = { device: { id: 'probe-t2' }, role: 'player2', alias: 'P2', rx: null,
+                   testSenke: [] };
+      const reihe = [];
+      try {
+        let t = 5000000;
+        Date.now = () => t;
+        performance.now = () => t;
+        zweiSpieler = true;
+        physicsEnabled = true;
+        playerCar = a1;
+        playerCar2 = a2;
+        fuelDrainPerSec = opt.drain === undefined ? 1 : opt.drain;
+        fuel = opt.start === undefined ? 40 : opt.start;
+        tankZweiFuellen(opt.start === undefined ? 40 : opt.start);
+        tankZweiTaktVergessen();
+        phys2TaktVergessen();
+        physEngine2.reset();
+        physEngine2Abgleichen();
+        p2Steer = 0;
+
+        // ---- Abschnitt 1: BEIDE fahren. Beide Staende muessen sinken. -------------
+        p2Throttle = 1;
+        throttleY = 1;
+        const takte = Math.round((opt.sekunden === undefined ? 4 : opt.sekunden)
+                                 * 1000 / CONTROL_SEND_INTERVAL_MS);
+        for (let i = 0; i < takte; i++) {
+          fuelTankTick(1);          // der Weg von Auto 1, wie in sendControlValue()
+          spielerZweiSenden();      // darin steckt fuelTankTick(p2Throttle, 2)
+          if (i % 20 === 0 || i === takte - 1) {
+            reihe.push({ abschnitt: 'fahren', s: +(i * 0.045).toFixed(2),
+                         t1: +fuel.toFixed(2), t2: +tankZweiStand().toFixed(2) });
+          }
+          t += CONTROL_SEND_INTERVAL_MS;
+        }
+        const nachFahren = { t1: +fuel.toFixed(2), t2: +tankZweiStand().toFixed(2) };
+
+        // ---- Abschnitt 2: Auto 1 IN DER BOX, Auto 2 faehrt weiter ----------------
+        // Auto 1 steht und wird betankt; Auto 2 gibt Gas. Der Stand von Auto 1 muss
+        // STEIGEN, der von Auto 2 weiter SINKEN.
+        throttleY = 0;
+        pitPlan = { refuel: 100, tyres: false, repair: false };
+        pitState = 'servicing';
+        const takte2 = Math.round((opt.sekunden === undefined ? 4 : opt.sekunden)
+                                  * 1000 / CONTROL_SEND_INTERVAL_MS);
+        for (let i = 0; i < takte2; i++) {
+          // Die Boxenpumpe von Auto 1, so wie pitLaneTick() sie rechnet.
+          const dt = CONTROL_SEND_INTERVAL_MS / 1000;
+          if (fuel < 100) fuel = Math.min(100, fuel + PIT_FUEL_PER_SEC * dt);
+          fuelTankTick(0);
+          spielerZweiSenden();
+          if (i % 20 === 0 || i === takte2 - 1) {
+            reihe.push({ abschnitt: 'box1', s: +(i * 0.045).toFixed(2),
+                         t1: +fuel.toFixed(2), t2: +tankZweiStand().toFixed(2) });
+          }
+          t += CONTROL_SEND_INTERVAL_MS;
+        }
+        const nachBox1 = { t1: +fuel.toFixed(2), t2: +tankZweiStand().toFixed(2) };
+
+        // ---- Abschnitt 3: Auto 2 IN DER BOX, Auto 1 faehrt weiter ----------------
+        pitState = 'off';
+        pitPlan = null;
+        throttleY = 1;
+        // BREMSEN, nicht nur Gas weg: das Auto rollt mit ueber 200 km/h, und der
+        // Coast-Drag allein bringt es in acht Sekunden nur auf 174. Genau das ist der
+        // gemeldete Fall - der Knopf war gedrueckt, und "nichts passierte".
+        p2Throttle = opt.bremsen === false ? 0 : -1;
+        boxZweiAnfordern();
+        const takte3 = Math.round((opt.sekunden === undefined ? 4 : opt.sekunden)
+                                  * 1000 / CONTROL_SEND_INTERVAL_MS);
+        for (let i = 0; i < takte3; i++) {
+          fuelTankTick(1);
+          // Bremsen, bis es fast steht - dann den Finger weg. Der Service verlangt beides:
+          // langsam UND kein Eingang (Math.abs(p2Throttle) < 0.1), sonst begaenne er,
+          // waehrend man noch auf der Bremse steht.
+          if (opt.bremsen !== false
+              && Math.abs(physEngine2.state.speedKmh) * REAL_SCALE < 8) p2Throttle = 0;
+          spielerZweiSenden();
+          if (i % 20 === 0 || i === takte3 - 1) {
+            reihe.push({ abschnitt: 'box2', s: +(i * 0.045).toFixed(2),
+                         t1: +fuel.toFixed(2), t2: +tankZweiStand().toFixed(2),
+                         lage: boxZweiLage(),
+                         kmh: +(Math.abs(physEngine2.state.speedKmh) * REAL_SCALE).toFixed(1),
+                         schwelle: +(PIT_STANDSTILL_KMH * REAL_SCALE).toFixed(1) });
+          }
+          t += CONTROL_SEND_INTERVAL_MS;
+        }
+        const nachBox2 = { t1: +fuel.toFixed(2), t2: +tankZweiStand().toFixed(2) };
+        return { start: opt.start === undefined ? 40 : opt.start,
+                 nachFahren, nachBox1, nachBox2, reihe,
+                 drain: fuelDrainPerSec, pumpe: PIT_FUEL_PER_SEC };
+      } finally {
+        Date.now = uhrEcht;
+        performance.now = perfEcht;
+        if (typeof boxZweiAnfordern === 'function' && boxZweiLage() !== 'aus') {
+          boxZweiAnfordern();
+        }
+        zweiSpieler = merk.zwei;
+        playerCar = merk.p1;
+        playerCar2 = merk.p2;
+        p2Throttle = merk.gas;
+        p2Steer = merk.steer;
+        throttleY = merk.gasEins;
+        physicsEnabled = merk.phys;
+        fuel = merk.fuel1;
+        fuelDrainPerSec = merk.drain;
+        pitState = merk.pit;
+        pitPlan = merk.plan;
+        tankZweiFuellen(merk.tank2);
+        physEngine2.reset();
+      }
+    },
+
     // ---- TANKT UND REPARIERT DER BOXENSTOPP VON AUTO 2? ------------------------------
     //
     // DREI FRAGEN, und die dritte ist die, die den Modus fair macht:
@@ -282,7 +415,7 @@
     // der Schirmzaehler, die Punkte unter dem Pfeil und zwei Selbsttests.
     schirmZweiProbe() {
       const vorher = { zwei: zweiSpieler, schirm: cockpitScreenIst().id,
-                       p2: playerCar2, tank: tankZweiStand() };
+                       p2: playerCar2, tank: tankZweiStand(), fuel };
       const merkGarage = garage.slice();
       try {
         // ---- Erst die Registry, ohne Modus --------------------------------------
@@ -297,20 +430,34 @@
         for (let i = 0; i < 5; i++) { cockpitScreenStep(1); mit.push(cockpitScreenIst().id); }
         // ---- Und die Zahlen -----------------------------------------------------
         const a2 = { device: { id: 'probe-schirm' }, role: 'player2', alias: 'P2',
-                     rx: null, testSenke: [], colorId: null,
+                     rx: null, testSenke: [], colorId: null, battery: 200,
                      race: { laps: [{ lap: 1, ms: 21500 }, { lap: 2, ms: 20900 }] } };
         garage.push(a2);
         playerCar2 = a2;
+        // ZWEI VERSCHIEDENE Tankstaende: nur so faellt auf, wenn eine Spalte das falsche
+        // Auto zeigt. Bei gleichen Zahlen saehe der Fehler wie ein Erfolg aus.
+        const merkFuel = fuel;
+        fuel = 80;
         tankZweiFuellen(40);
         cockpitScreenZu('auto2');
         p2ScreenRender();
         const lies = (id) => { const e = $(id); return e ? e.textContent : null; };
+        // Seit v0.6.56 zeigt der Schirm BEIDE Autos - also werden beide Spalten gelesen.
+        // Die Gegenprobe steckt darin: Spalte 1 muss den Tank von Auto 1 zeigen und nicht
+        // den von Auto 2. Eine Spalte, die zweimal dasselbe Auto zeigt, sieht auf den
+        // ersten Blick richtig aus.
         const werte = {
-          rpm: lies('p2s-rpm'), tempo: lies('p2s-speed'), gang: lies('p2s-gear'),
-          tank: lies('p2s-fuel'), zustand: lies('p2s-cond'),
-          reifen: lies('p2s-tyre'), bremse: lies('p2s-brake'),
-          letzte: lies('p2s-lap-last'), beste: lies('p2s-lap-best'),
-          lage: lies('p2s-kopf-lage'), fuss: lies('p2s-fuss'),
+          tempo1: lies('vgl1-speed'), tempo2: lies('vgl2-speed'),
+          gang1: lies('vgl1-gear'), gang2: lies('vgl2-gear'),
+          name1: lies('vgl1-name'), name2: lies('vgl2-name'),
+          tank1: lies('vgl1-fuel'), tank: lies('vgl2-fuel'),
+          zustand1: lies('vgl1-cond'), zustand: lies('vgl2-cond'),
+          reifen: lies('vgl2-tyre'), bremse: lies('vgl2-brake'),
+          akku1: lies('vgl1-batt'), akku2: lies('vgl2-batt'),
+          lampen1: ($('vgl1-shift') || { children: [] }).children.length,
+          lampen2: ($('vgl2-shift') || { children: [] }).children.length,
+          lage: lies('p2s-kopf-lage'), runden: lies('p2s-kopf-runde'),
+          fuss: lies('p2s-fuss'),
         };
         // Und dass der Schirm beim Abschalten verlassen wird.
         if (typeof zweiSpielerSetzen === 'function') zweiSpielerSetzen(false);
@@ -324,6 +471,7 @@
         merkGarage.forEach((c) => garage.push(c));
         playerCar2 = vorher.p2;
         tankZweiFuellen(vorher.tank);
+        if (typeof vorher.fuel === 'number') fuel = vorher.fuel;
         if (typeof zweiSpielerSetzen === 'function') zweiSpielerSetzen(vorher.zwei);
         cockpitScreenZu(vorher.schirm);
       }
@@ -860,6 +1008,9 @@
           letztes: anPakete.length ? anPakete[anPakete.length - 1] : null,
           anAutoEins: a1.testSenke.length,
           gewuenscht: { steer: p2Steer, gas: p2Throttle },
+          // Die zwei globalen Faktoren, die im Sendeweg liegen - der Test rechnet damit
+          // die Zusage nach, statt eine Zahl abzuschreiben.
+          topSpeedScale, battScale: batteryCompensationScale(),
         };
       } finally {
         zweiSpieler = vorher.zwei;

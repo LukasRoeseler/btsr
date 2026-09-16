@@ -9638,6 +9638,64 @@
   // Die Liste ist GEPFLEGT, und das ist hier richtig: sie IST die Zusicherung. Sie stammt
   // aus einer Suche ueber alle Kaestchen, deren Listener "X = e.target.checked" schreibt.
   // Ein neuer Schalter gehoert hinein.
+  // ---- Beide tanken unabhaengig voneinander ----------------------------------------
+  //
+  // BESTELLT: "Tanken soll unabhängig bei beiden klappen."
+  //
+  // Gemessen tut es das - und der Prueflauf zeigt, WORAN der Eindruck lag, dass es nicht
+  // klappt: der Service beginnt erst im Stillstand, und das Auto rollt mit ueber 200 km/h
+  // aus. Der Coast-Drag allein bringt es in acht Sekunden nur auf 174. Wer den Knopf
+  // drueckt und wartet, sieht nichts passieren. Behoben wurde die RUECKMELDUNG (die
+  // Fusszeile nennt jetzt Tempo und Schwelle), nicht die Mechanik - anhalten muss man bei
+  // Auto 1 genauso.
+  //
+  // DREI ABSCHNITTE, und jeder prueft eine Richtung der Unabhaengigkeit:
+  //   1. beide fahren            -> beide Staende sinken
+  //   2. Auto 1 in der Box       -> A1 steigt, A2 sinkt WEITER
+  //   3. Auto 2 in der Box       -> A2 steigt, A1 sinkt WEITER
+  //
+  // Abschnitt 2 ist der, auf den es ankommt: fuelTankTick() von Auto 1 hat die Ausnahme
+  // `pitState !== 'servicing'`, damit der Tank nicht sinkt, waehrend gepumpt wird. Gilt
+  // diese Ausnahme versehentlich auch fuer Auto 2, verbraucht es waehrend eines FREMDEN
+  // Boxenstopps nichts - ein Fehler, den man im Rennen als "mein Tank haelt ewig" erlebt
+  // und nie einem Boxenstopp des anderen zuschreiben wuerde.
+  stAdd('Zwei Spieler: beide tanken unabhaengig voneinander', async () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.tankenBeideProbe) {
+      return { skip: true, mass: 'tankenBeideProbe nicht vorhanden' };
+    }
+    const r = await OMEGA_TEST.tankenBeideProbe({ sekunden: 10, start: 40, drain: 1 });
+    const maengel = [];
+    // 1. Beide fahren: beide sinken, und zwar gleich viel (derselbe Regler, dasselbe Gas).
+    if (!(r.nachFahren.t1 < r.start) || !(r.nachFahren.t2 < r.start)) {
+      maengel.push('fahren: ' + r.start + ' -> ' + r.nachFahren.t1 + '/' + r.nachFahren.t2);
+    }
+    if (Math.abs(r.nachFahren.t1 - r.nachFahren.t2) > 0.2) {
+      maengel.push('fahren: ungleich verbraucht, ' + r.nachFahren.t1 + ' gegen '
+                   + r.nachFahren.t2);
+    }
+    // 2. Auto 1 in der Box: A1 steigt, A2 sinkt weiter.
+    if (!(r.nachBox1.t1 > r.nachFahren.t1)) {
+      maengel.push('Box 1: A1 stieg nicht (' + r.nachFahren.t1 + ' -> ' + r.nachBox1.t1 + ')');
+    }
+    if (!(r.nachBox1.t2 < r.nachFahren.t2 - 0.5)) {
+      maengel.push('Box 1: A2 verbrauchte nicht weiter (' + r.nachFahren.t2 + ' -> '
+                   + r.nachBox1.t2 + ') - die Boxen-Ausnahme von Auto 1 greift zu weit');
+    }
+    // 3. Auto 2 in der Box: A2 steigt, A1 sinkt weiter.
+    if (!(r.nachBox2.t2 > r.nachBox1.t2)) {
+      maengel.push('Box 2: A2 stieg nicht (' + r.nachBox1.t2 + ' -> ' + r.nachBox2.t2 + ')');
+    }
+    if (!(r.nachBox2.t1 < r.nachBox1.t1 - 0.5)) {
+      maengel.push('Box 2: A1 verbrauchte nicht weiter (' + r.nachBox1.t1 + ' -> '
+                   + r.nachBox2.t1 + ')');
+    }
+    return { ok: !maengel.length,
+             mass: 'fahren ' + r.start + '->' + r.nachFahren.t1 + '/' + r.nachFahren.t2
+                 + ' | Box A1: ' + r.nachBox1.t1 + '/' + r.nachBox1.t2
+                 + ' | Box A2: ' + r.nachBox2.t1 + '/' + r.nachBox2.t2
+                 + (maengel.length ? ' | ' + maengel.join(', ') : '') };
+  });
+
   // ---- Der Boxenstopp von Auto 2 tankt und repariert -------------------------------
   //
   // DER LETZTE DER OFFENEN PUNKTE, und er ist der, der den Modus fair macht: ohne ihn
@@ -9904,59 +9962,68 @@
                  + (maengel.length ? ' | ' + maengel.join(', ') : '') };
   });
 
-  // ---- Der Cockpit-Schirm von Auto 2 -----------------------------------------------
+  // ---- Der Vergleichsschirm: beide Autos nebeneinander -----------------------------
   //
-  // So bestellt: "Drehzahl und Geschwindigkeit fuer beide Autos; alle weiteren
-  // Einstellungen auf weiteren Screens." Die zweite Zeile im Hauptschirm traegt die zwei
-  // Werte, die man im Fahren braucht; Tank, Zustand, Temperaturen und Rundenzeiten stehen
-  // auf diesem vierten Schirm.
+  // BESTELLT: "Statt nur Player 2 soll er das Nötigste von Player 1 und 2 haben:
+  // Geschwindigkeit, Drehzahllichter, schaden, reifen, tank, bremse, akku, motorsound."
   //
-  // Geprueft werden zwei Dinge, die auseinanderfallen koennen:
+  // DIE ZUSICHERUNG, DIE MAN AM LEICHTESTEN VERLIERT: die zwei Spalten muessen zwei
+  // VERSCHIEDENE Autos zeigen. Eine Spalte, die zweimal dasselbe Auto anzeigt, sieht auf
+  // den ersten Blick vollkommen richtig aus - sie ist ja gefuellt. Der Prueftisch stellt
+  // deshalb zwei verschiedene Tankstaende ein (80 % und 40 %) und verlangt, dass beide
+  // ankommen.
   //
-  //   DIE REGISTRY - der Schirm ist erreichbar, aber NUR im Modus. Ohne ihn wird er beim
-  //   Blaettern uebersprungen; ein vierter Schirm, auf dem im Einzelspiel alle Zahlen
-  //   stehenbleiben, waere schlimmer als keiner. Und liegt er vorne, wenn der Modus
-  //   ausgeht, muss er verlassen werden - sonst kommt der Pfeil nicht zurueck, weil das
-  //   Blaettern ihn ja gerade ueberspringt.
+  // Dazu die Registry-Aussagen, die schon vorher galten: der Schirm ist nur im
+  // Zwei-Spieler-Modus blaetterbar, und liegt er vorne, wenn der Modus ausgeht, wird er
+  // verlassen - sonst kommt der Pfeil nicht zurueck, weil das Blaettern ihn ueberspringt.
   //
-  //   DIE MALFUNKTION - dort stehen Zahlen, und die richtigen. Der Prueftisch stellt Tank
-  //   auf 40 Prozent und zwei Runden ein; beides muss durchkommen.
-  //
-  // Eine Falle, die dieser Test gefangen hat: `st.brakeTempC` gibt es nicht. Das Modell
-  // fuehrt brakeTemp4[] und brakeTempF/R. Gemessen kamen 0 Grad heraus, waehrend der
-  // Reifen 20 zeigte - ein Feldname, den ich mir gemerkt statt nachgesehen hatte.
-  stAdd('Zwei Spieler: der Cockpit-Schirm von Auto 2', () => {
+  // Eine Falle, die dieser Test schon einmal gefangen hat: `st.brakeTempC` gibt es nicht.
+  // Das Modell fuehrt brakeTemp4[] und brakeTempF/R. Gemessen kamen 0 Grad heraus, waehrend
+  // der Reifen 20 zeigte.
+  stAdd('Zwei Spieler: der Vergleichsschirm zeigt beide Autos', () => {
     if (!window.OMEGA_TEST || !OMEGA_TEST.schirmZweiProbe) {
       return { skip: true, mass: 'schirmZweiProbe nicht vorhanden' };
     }
     const r = OMEGA_TEST.schirmZweiProbe();
+    const w = r.werte;
     const maengel = [];
     if (r.liste.indexOf('auto2') < 0) maengel.push('Schirm nicht in der Registry');
-    // Ohne Modus: auto2 darf in fuenf Schritten nicht auftauchen.
     if (r.ohne.indexOf('auto2') >= 0) {
       maengel.push('ohne Modus erreichbar: ' + r.ohne.join('>'));
     }
-    // Mit Modus: er muss auftauchen, und der Umlauf muss vollstaendig sein.
     if (r.mit.indexOf('auto2') < 0) maengel.push('mit Modus nicht erreichbar: ' + r.mit.join('>'));
     if (r.nachAus !== 'main') maengel.push('nach dem Abschalten noch auf ' + r.nachAus);
-    // Die Zahlen. Tank 40 Prozent von 110 Litern sind 44.
-    if (!/44 l/.test(r.werte.tank || '')) maengel.push('Tank zeigt ' + r.werte.tank);
-    if (!/100/.test(r.werte.zustand || '')) maengel.push('Zustand zeigt ' + r.werte.zustand);
-    // Die Temperaturen muessen eine Zahl ueber null tragen - 0 Grad war der gefundene
-    // Fehler (falscher Feldname).
-    for (const [name, wert] of [['Reifen', r.werte.reifen], ['Bremse', r.werte.bremse]]) {
-      const zahl = parseFloat(String(wert));
-      if (!(zahl > 0)) maengel.push(name + ' zeigt ' + wert);
+    // ---- Die beiden Spalten zeigen VERSCHIEDENE Autos --------------------------
+    // 80 % von 110 l sind 88, 40 % sind 44.
+    if (!/88 l/.test(w.tank1 || '')) maengel.push('Spalte 1 zeigt Tank ' + w.tank1);
+    if (!/44 l/.test(w.tank || '')) maengel.push('Spalte 2 zeigt Tank ' + w.tank);
+    if (w.tank1 === w.tank) maengel.push('beide Spalten zeigen denselben Tank');
+    if (w.name2 !== 'P2') maengel.push('Spalte 2 nennt ' + w.name2 + ' statt P2');
+    // ---- Die bestellten Groessen sind da --------------------------------------
+    if (w.lampen1 !== 10 || w.lampen2 !== 10) {
+      maengel.push('Lampen ' + w.lampen1 + '/' + w.lampen2 + ' statt 10/10');
     }
-    // Die Rundenzeiten aus car.race: letzte 20,9 s, beste ebenfalls 20,9 s.
-    if (!/20[.,]9/.test(r.werte.letzte || '')) maengel.push('letzte Runde ' + r.werte.letzte);
-    if (!/20[.,]9/.test(r.werte.beste || '')) maengel.push('beste Runde ' + r.werte.beste);
-    if (!/P2/.test(r.werte.fuss || '')) maengel.push('Fusszeile nennt das Auto nicht');
+    for (const [name, wert] of [['Tempo 1', w.tempo1], ['Tempo 2', w.tempo2],
+                                ['Gang 1', w.gang1], ['Gang 2', w.gang2],
+                                ['Zustand 1', w.zustand1], ['Zustand 2', w.zustand]]) {
+      if (wert === null || wert === '') maengel.push(name + ' fehlt');
+    }
+    // Reifen und Bremse muessen eine Zahl ueber null tragen - 0 Grad war der gefundene
+    // Fehler (falscher Feldname).
+    for (const [name, wert] of [['Reifen', w.reifen], ['Bremse', w.bremse]]) {
+      if (!(parseFloat(String(wert)) > 0)) maengel.push(name + ' zeigt ' + wert);
+    }
+    // Der Akku ist eine GEMESSENE Groesse: ohne Meldung ein Strich, mit Meldung Prozent.
+    // Der Prueftisch gibt Auto 2 einen Akkustand und Auto 1 keinen - beides muss man sehen.
+    if (!/%/.test(w.akku2 || '')) maengel.push('Akku 2 zeigt ' + w.akku2);
+    if (!/\u2013|-/.test(w.akku1 || '')) maengel.push('Akku 1 zeigt ' + w.akku1 + ' statt eines Strichs');
+    // Und der Rundenstand beider Autos im Kopf.
+    if (!/0\s*:\s*2/.test(w.runden || '')) maengel.push('Rundenstand ' + w.runden);
     return { ok: !maengel.length,
              mass: 'ohne ' + r.ohne.join('>') + ' | mit ' + r.mit.join('>')
-                 + ' | Tank ' + r.werte.tank + ', Zustand ' + r.werte.zustand
-                 + ', Reifen ' + r.werte.reifen + ', Bremse ' + r.werte.bremse
-                 + ', beste ' + r.werte.beste
+                 + ' | Tank ' + w.tank1 + ' gegen ' + w.tank
+                 + ' | Akku ' + w.akku1 + ' / ' + w.akku2
+                 + ' | ' + w.runden
                  + (maengel.length ? ' | ' + maengel.join(', ') : '') };
   });
 
@@ -10353,8 +10420,22 @@
     if (r.ohneAuto !== 0) maengel.push('ohne Auto 2: ' + r.ohneAuto + ' Pakete statt 0');
     if (r.anAutoEins !== 0) maengel.push('Auto 1 bekam ' + r.anAutoEins + ' Pakete');
     if (r.letztes) {
-      if (Math.abs(r.letztes.throttle - r.gewuenscht.gas) > 1e-9) {
-        maengel.push('Gas ' + r.letztes.throttle + ' statt ' + r.gewuenscht.gas);
+      // ---- DAS GAS TRAEGT DIE GLOBALEN FAKTOREN, seit v0.6.56 ----------------------
+      //
+      // Hier stand der ROHE Wunschwert, und der Test wurde rot, als die
+      // Hoechstgeschwindigkeit und die Batteriekompensation auch fuer Auto 2 zu gelten
+      // begannen (gemessen 1,26 statt 0,7). Das war die richtige Aenderung und die falsche
+      // Erwartung: beide Faktoren liegen im Sendeweg von Auto 1, und "globale
+      // Einstellungen gelten fuer beide" heisst genau, dass Auto 2 sie auch bekommt.
+      //
+      // Geprueft wird jetzt gegen dieselbe Rechnung, die sendControlValue() fuer Auto 1
+      // macht - also gegen die ZUSAGE und nicht gegen eine abgeschriebene Zahl. Ohne
+      // Klemme, wie dort: gedeckelt wird erst in buildCommandPacket().
+      const sollGas = r.gewuenscht.gas * r.topSpeedScale * r.battScale;
+      if (Math.abs(r.letztes.throttle - sollGas) > 1e-6) {
+        maengel.push('Gas ' + r.letztes.throttle + ' statt ' + sollGas.toFixed(4)
+                     + ' (Wunsch ' + r.gewuenscht.gas + ' x Tempo ' + r.topSpeedScale
+                     + ' x Akku ' + r.battScale.toFixed(3) + ')');
       }
       if (Math.abs(r.letztes.steer - r.gewuenscht.steer) > 1e-9) {
         maengel.push('Lenkung ' + r.letztes.steer + ' statt ' + r.gewuenscht.steer);
