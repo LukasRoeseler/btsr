@@ -764,8 +764,30 @@
   // NUR VORWAERTS mit dem Finger. cockpitScreenStep() rechnet modulo, der letzte Schirm
   // fuehrt also zum ersten zurueck - eine zweite Richtung waere ein zweiter Knopf fuer eine
   // Bewegung, die man mit zwei Tipps ohnehin hat. Auf dem Steuerkreuz bleiben beide.
+  //
+  // ---- ENTPRELLT, seit v0.6.58 ------------------------------------------------------
+  //
+  // GEMELDET: "der vierte Screen ist manchmal nicht ansteuerbar" - und nachgestellt:
+  // zwei schnelle Klicks auf DIESEN Knopf, von "Rennen" aus, ueberspringen "Beide" und
+  // landen auf "Cockpit". cockpitScreenStep() selbst ist zustandslos richtig (jeder
+  // einzelne Schritt geht genau einen Schirm weiter) - das Problem ist die FOLGE zweier
+  // Schritte in kurzer Zeit, sei es durch einen ungeduldigen Doppel-Tipp (das Umschalten
+  // gibt sofort ein Toast und einen neuen Punkt, aber auf einem ausgelasteten Bild kann
+  // das einen Wimpernschlag brauchen) oder durch eine doppelt ausgeloeste Click-Meldung
+  // des Browsers auf Touch-Geraeten.
+  //
+  // Eine Sperre von 220 ms nach jedem ERFOLGREICHEN Schritt filtert beides, ohne
+  // absichtliches schnelles Weiterblaettern spuerbar zu bremsen - vier Schirme in einer
+  // Sekunde bleiben moeglich. Das Steuerkreuz braucht das nicht: es hat seine eigene
+  // Flankenerkennung (prevDpad), die pro Poll-Takt (45 ms) hoechstens einmal ausloest.
+  let schirmKlickSperreBis = 0;
   if ($('race-screen-next')) {
-    $('race-screen-next').addEventListener('click', () => cockpitScreenStep(+1));
+    $('race-screen-next').addEventListener('click', () => {
+      const jetzt = Date.now();
+      if (jetzt < schirmKlickSperreBis) return;
+      schirmKlickSperreBis = jetzt + 220;
+      cockpitScreenStep(+1);
+    });
   }
   cockpitPunkteMalen();
 
