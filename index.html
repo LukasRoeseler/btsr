@@ -1966,6 +1966,10 @@
        damit die beiden nicht unterschiedlich hoch nebeneinander stehen. */
     min-height: 44px; }
   .gt3-act:hover { background: var(--gt3-btn-hover); }
+  /* Abgeblendet: der Knopf ist da und bleibt druckbar (er gibt dann den Grund aus), aber
+     er sieht nicht mehr nach "hier geht es los" aus. Kein disabled - ein Knopf, der auf
+     einen Druck gar nicht reagiert, erklaert sich nicht. */
+  .gt3-act.gedimmt { opacity: .45; }
   .gt3-act.armed { background: #1c7a4d; color: #eafff1; }
   .gt3-act.warn { background: #b8860b; color: #100c02; }
   /* Eigene Klasse statt .warn: die trug ein dunkles Goldbraun (#b8860b), und eine gelbe
@@ -8228,7 +8232,7 @@
     <div class="opt-head">Tastatur: Test und Fehlersuche am PC</div>
     <div class="help-grid">
       <kbd>W</kbd><span>Wetter umschalten (Regen / trocken)</span>
-      <kbd>P</kbd><span>Boxenstopp, erneut zweimal kurz dr&uuml;cken bricht ab</span>
+      <kbd>P</kbd><span>Boxenstopp an, erneut dr&uuml;cken bricht ab. Bei der Ausl&ouml;sung &bdquo;doppelter Ausdruck&ldquo; l&ouml;st die Taste nicht aus &ndash; dort z&auml;hlt nur das zweimalige &Uuml;berfahren.</span>
       <kbd>C</kbd><span>Crash ausl&ouml;sen: Schaden, Ger&auml;usch und Rumble wie im Betrieb</span>
       <kbd>F</kbd><span>Tank auf 5&nbsp;% setzen, um den Notlauf zu pr&uuml;fen</span>
       <kbd>R</kbd><span>Tank und Zustand zur&uuml;cksetzen</span>
@@ -8761,7 +8765,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.6.56</span></span>
+    <span class="foot-ver">v<span id="app-version">0.6.57</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
@@ -9344,7 +9348,8 @@
     "Boxengasse, Katalognummer 14": "Pit lane, catalogue number 14",
     "Boxenstopp auf Knopfdruck": "Pit stop at the touch of a button",
     "Boxenstopp": "Pit stop",
-    "Boxenstopp, erneut zweimal kurz drücken bricht ab": "Pit stop, two more short presses abort it",
+    "Boxenstopp an, erneut drücken bricht ab. Bei der Auslösung „doppelter Ausdruck“ löst die Taste nicht aus – dort zählt nur das zweimalige Überfahren.":
+      "Pit stop on, press again to abort. With the trigger set to \"double print\" the key does not arm it – there only driving over the print twice counts.",
     "Boxer": "Flat",
     "Bremse": "Brake",
     "Bremse:": "Brake:",
@@ -21548,10 +21553,16 @@
   // zurueck, ohne zu wissen, dass gerade Gelb ist. Jetzt gewinnt immer das strengste
   // Limit, und es gibt nur einen Schreiber.
   const YELLOW_KMH = 80;
-  // Wie lange der Pit-Limiter hoechstens an bleibt, wenn das Ausfahrtmuster nicht gelesen
-  // wird. Fuenf Sekunden sind bei Boxengassentempo etwa zwei Kacheln - lang genug, um
-  // wirklich hinauszufahren, kurz genug, dass es kein verlorenes Rennen ist.
-  const PIT_LIMITER_MAX_MS = 5000;
+  // Hier standen PIT_LIMITER_MAX_MS (5000) und ein Zeitgeber, der den Pit-Limiter nach
+  // fuenf Sekunden von selbst abschaltete. Beide sind in v0.6.57 entfallen: die Frist traf
+  // nicht die Ausfahrt, fuer die sie gedacht war, sondern die ANFAHRT - wer nach dem
+  // Druecken nicht binnen fuenf Sekunden anhielt, verlor seinen Boxenstopp lautlos. Die
+  // ganze Begruendung steht bei setPitState().
+  //
+  // `pitLimiterTimer` bleibt als Groesse stehen und wird beim Zustandswechsel geraeumt:
+  // ein Zeitgeber, den eine spaetere Fassung wieder stellt, soll nicht ueber einen
+  // Zustandswechsel hinweg feuern. Die Zeile kostet nichts und schliesst eine Luecke, die
+  // man sonst erst im Betrieb findet.
   let pitLimiterTimer = null;
   let limitPit = 1, limitYellow = 1, limitFormation = 1;
   function applySpeedLimit() {
@@ -22621,10 +22632,25 @@
     }
     const p = $('race-act-pit');
     if (p) {
-      p.textContent = pitState === 'off' ? 'Boxenstopp'
-                    : pitState === 'limited' ? 'Limiter aktiv \u00b7 2\u00d7 = Abbruch'
-                    : 'Service \u00b7 2\u00d7 = Abbruch';
+      // ---- DER KNOPF SAGT, WAS ER GERADE TUT -------------------------------------
+      //
+      // "2x = Abbruch" stand hier und stimmt seit v0.6.57 nicht mehr: ein Druck genuegt.
+      // Und im Doppelausdruck-Modus loest er gar nichts aus - das steht dann AUF dem
+      // Knopf, statt dass ein Druck nur eine Meldung erzeugt. Ein Knopf, der aussieht wie
+      // immer und nichts tut, ist die Bedienung, die man fuer kaputt haelt.
+      const nurDoppelt = pitTrigger === 'double' && pitState === 'off';
+      p.textContent = nurDoppelt ? 'Box: 2\u00d7 Ausdruck'
+                    : pitState === 'off' ? 'Boxenstopp'
+                    : pitState === 'limited' ? 'Limiter aktiv \u00b7 Abbruch'
+                    : 'Service \u00b7 Abbruch';
       p.classList.toggle('armed', pitState !== 'off');
+      // Abgeblendet und nicht disabled: ein disabled-Knopf gibt keine Rueckmeldung mehr,
+      // und wer ihn trotzdem drueckt, soll den Grund erfahren (requestPitStop meldet ihn).
+      p.classList.toggle('gedimmt', nurDoppelt);
+      p.title = nurDoppelt
+        ? 'Die Ausloesung steht auf "doppelter Ausdruck": zweimal ueber den '
+          + 'Start-Ausdruck fahren, innerhalb von ' + (PIT_DOUBLE_WINDOW_MS / 1000) + ' s.'
+        : '';
     }
   }
   setInterval(updateRaceActButtons, 400);
@@ -23880,20 +23906,28 @@
     limitPit = (next === 'off') ? 1
              : (pitTrigger === 'double' ? PIT_DOUBLE_SPEED_FACTOR : PIT_SPEED_FACTOR);
     applySpeedLimit();
-    // Nachlauf-Wecker. Das Ausfahrtmuster wird nicht immer gelesen - ein Muster, das
-    // nicht gelesen wird, laesst den Limiter sonst bis zum Rundenende an, und das ist der
-    // Unterschied zwischen "Boxenstopp" und "Rennen gelaufen". Fuenf Sekunden nach dem
-    // Ende der Arbeit geht er von selbst aus.
+    // ---- DER NACHLAUF-WECKER IST WEG, UND ZWAR WEIL ER DEN FALSCHEN FALL TRAF ------
+    //
+    // GEMELDET: "Boxenstoppknopf: Wenn ich ihn aktiviere, ist er dann nicht solange aktiv,
+    // bis ich ihn deaktiviere oder bis ich stehen bleibe? So sollte es sein."
+    //
+    // Hier stand ein Zeitgeber ueber PIT_LIMITER_MAX_MS (5 s) mit der Begruendung, das
+    // AUSFAHRTMUSTER werde nicht immer gelesen und der Limiter bliebe sonst bis zum
+    // Rundenende an. Die Begruendung war richtig - fuer einen Uebergang, den es nicht mehr
+    // gibt: 'limited' wird heute an genau drei Stellen gesetzt, und alle drei sind
+    // ANFAHRTEN (Knopf, Boxenmarker, doppelter Ausdruck). Die Ausfahrt laeuft ueber
+    // setPitState('off') in pitLaneTick, sobald das Auto nach dem Service wieder rollt.
+    //
+    // Der Wecker beendete damit ausschliesslich die ANFAHRT: wer nach dem Druecken nicht
+    // binnen fuenf Sekunden zum Stehen kam, verlor seinen Boxenstopp lautlos. Genau das
+    // war die Meldung.
+    //
+    // Der Limiter bleibt jetzt an, bis eines von drei Dingen passiert: anhalten (der
+    // Service beginnt), abbrechen (ein Druck auf den Knopf), oder - nur im
+    // Doppelausdruck-Modus - das Fenster PIT_DOUBLE_LIMIT_MS laeuft ab. Das prueft
+    // pitLaneTick selbst, und dort ist die Frist Teil der Bedienung und kein
+    // Sicherheitsnetz.
     if (pitLimiterTimer) { clearTimeout(pitLimiterTimer); pitLimiterTimer = null; }
-    if (next === 'limited') {
-      pitLimiterTimer = setTimeout(() => {
-        pitLimiterTimer = null;
-        if (pitState !== 'limited') return;
-        log('Pit-Limiter nach ' + (PIT_LIMITER_MAX_MS / 1000) + ' s von selbst aus: '
-            + 'das Ausfahrtmuster wurde nicht gelesen.', 'info');
-        setPitState('off');
-      }, PIT_LIMITER_MAX_MS);
-    }
     if (next === 'servicing') {
       pitServiceStart = Date.now();
       pitFuelGained = 0; pitDamageRepaired = 0;
@@ -25225,7 +25259,9 @@
   // Aborting takes TWO presses in quick succession. A single press used to cancel, which
   // is the wrong default for a button you reach for while driving: one stray press in the
   // pit lane threw away the stop. Two presses inside the window is a deliberate act.
-  const PIT_CANCEL_WINDOW_MS = 700;
+  // PIT_CANCEL_WINDOW_MS (700 ms) ist mit dem Doppeltippen entfallen - siehe
+  // requestPitStop(). `pitLastPress` bleibt: es haelt fest, wann zuletzt gedrueckt wurde,
+  // und der Pruefstand liest es.
   // After an abort the pit marker must stay quiet for a moment, or cancelling while still
   // standing on the marker would immediately re-arm the limiter.
   const PIT_REARM_BLOCK_MS = 2500;
@@ -25970,23 +26006,53 @@
     }
   }
 
+  // ---- EIN DRUCK AN, EIN DRUCK AUS ---------------------------------------------------
+  //
+  // GEMELDET: "Und zum Deaktivieren nur 1x drücken statt 2x."
+  //
+  // Hier verlangte der Abbruch ein Doppeltippen binnen PIT_CANCEL_WINDOW_MS (700 ms), und
+  // der erste Druck meldete nur "Nochmal druecken zum Abbrechen". Das war als Schutz gegen
+  // versehentliches Abbrechen gedacht; der Preis ist, dass der haeufige Fall (ich will
+  // wieder raus) zwei Handlungen kostet und der seltene (ich habe mich vertippt) keine.
+  //
+  // DIE SPERRE BLEIBT: pitRearmBlockedUntil verhindert, dass der Boxenmarker das Auto
+  // sofort wieder hineinzieht, waehrend es noch auf dem Muster steht. Das ist ein anderer
+  // Schutz als das Doppeltippen und hat mit der Bedienung nichts zu tun.
+  //
+  // ---- UND IM DOPPELAUSDRUCK-MODUS LOEST DER KNOPF NICHTS AUS -----------------------
+  //
+  // BESTELLT: "Wenn dieser Modus aktiviert ist, sollte Pitten per Knopfdruck deaktiviert
+  // sein - nur Pitten durch Ueberfahren von 2 Ausdrucken innerhalb von X Sekunden sollte
+  // den Pit-Modus aktivieren."
+  //
+  // ABBRECHEN bleibt trotzdem moeglich, und das ist Absicht: eine Ausloesung wegzunehmen
+  // ist eine Regel, einen laufenden Vorgang nicht beenden zu koennen waere eine Falle.
+  // Sichtbar gemacht wird es am Knopf: er ist im Doppelausdruck-Modus abgeblendet, solange
+  // nichts laeuft (updateRaceActButtons).
   function requestPitStop() {
     const now = Date.now();
-    const doubleTap = now - pitLastPress <= PIT_CANCEL_WINDOW_MS;
     pitLastPress = now;
 
     if (pitState === 'off') {
+      if (pitTrigger === 'double') {
+        showHudToast('NUR ÜBER DEN DOPPELTEN AUSDRUCK');
+        log('Boxenstopp per Knopf abgelehnt: die Ausloesung steht auf "doppelter '
+            + 'Ausdruck". Zweimal ueber den Start-Ausdruck fahren, innerhalb von '
+            + (PIT_DOUBLE_WINDOW_MS / 1000) + ' s.', 'info');
+        return;
+      }
       setPitState('limited');
-      return;
-    }
-    if (!doubleTap) {
-      showHudToast('Nochmal drücken zum Abbrechen');
       return;
     }
     // Abort. Whatever the crew had started is discarded: no fuel, no repair, and stopping
     // afterwards does nothing, because the state machine is back to off.
     const wasServicing = pitState === 'servicing';
     pitRearmBlockedUntil = now + PIT_REARM_BLOCK_MS;
+    // Das Fenster des doppelten Ausdrucks mit schliessen: sonst haelt pitLaneTick es fuer
+    // offen und meldet gleich darauf "BOXENGASSE VORBEI" fuer einen Stopp, den es nicht
+    // mehr gibt.
+    pitDoubleArmedUntil = 0;
+    pitDoubleFirstAt = 0;
     setPitState('off');
     showHudToast(wasServicing ? 'Boxenstopp abgebrochen' : 'Boxengasse abgebrochen');
     log('Boxenstopp abgebrochen, kein Sprit, keine Reparatur.', 'info');
@@ -36953,6 +37019,86 @@
       schadenZwei.licht.front = !!front;
       schadenZwei.licht.rear = !!rear;
       return this.schadenZweiLesen();
+    },
+
+    // ---- DER BOXENKNOPF: an, aus, und wie lange er haelt -----------------------------
+    //
+    // DREI BESTELLUNGEN AUF EINMAL, und alle drei sind Bedienung:
+    //
+    //   1. "Wenn ich ihn aktiviere, ist er dann nicht solange aktiv, bis ich ihn
+    //      deaktiviere oder bis ich stehen bleibe?" - bis v0.6.56 beendete ein Zeitgeber
+    //      die ANFAHRT nach fuenf Sekunden, lautlos.
+    //   2. "Zum Deaktivieren nur 1x drücken statt 2x."
+    //   3. Im Doppelausdruck-Modus loest der Knopf gar nichts aus.
+    //
+    // DIE UHR WIRD GEFAELSCHT, weil Aussage 1 eine Aussage ueber ZEIT ist: der Prueflauf
+    // laesst zwanzig Sekunden vergehen, ohne zwanzig Sekunden zu warten. Der Zeitgeber
+    // selbst lief ueber setTimeout und laesst sich so nicht ueberspringen - deshalb wird
+    // zusaetzlich geprueft, dass ueberhaupt KEINER mehr gestellt wird (pitLimiterOffen).
+    pitKnopfProbe(o) {
+      const opt = o || {};
+      const echtNow = Date.now;
+      const merk = { state: pitState, trigger: pitTrigger, an: pitLaneEnabled,
+                     plan: pitPlan, doppeltBis: pitDoubleArmedUntil,
+                     ersterAt: pitDoubleFirstAt, sperre: pitRearmBlockedUntil,
+                     letzter: pitLastPress };
+      let uhr = 6000000;
+      try {
+        Date.now = () => uhr;
+        pitLaneEnabled = true;
+        pitTrigger = opt.trigger || 'button';
+        pitRearmBlockedUntil = 0;
+        pitLastPress = 0;
+        setPitState('off');
+
+        // ---- Ein Druck: an ------------------------------------------------------
+        requestPitStop();
+        const nachEins = pitState;
+        // Ein Zeitgeber, der die Anfahrt beendet, darf gar nicht erst gestellt sein.
+        const weckerGestellt = !!pitLimiterTimer;
+
+        // ---- Zeit vergeht: der Limiter muss BLEIBEN -----------------------------
+        // Zwanzig Sekunden, also das Vierfache der alten Frist von fuenf.
+        uhr += (opt.sekunden === undefined ? 20 : opt.sekunden) * 1000;
+        const nachWarten = pitState;
+
+        // ---- Noch ein Druck: aus, mit EINEM Druck -------------------------------
+        // Bewusst weit nach dem alten Doppeltipp-Fenster von 700 ms: frueher haette
+        // genau das nur die Meldung "Nochmal druecken" erzeugt.
+        requestPitStop();
+        const nachZwei = pitState;
+
+        // ---- Und der Doppelausdruck-Modus: der Knopf loest nicht aus ------------
+        pitTrigger = 'double';
+        pitRearmBlockedUntil = 0;
+        setPitState('off');
+        uhr += 5000;
+        requestPitStop();
+        const doppeltNachDruck = pitState;
+        // Abbrechen muss trotzdem gehen: dafuer von Hand hineinsetzen.
+        setPitState('limited');
+        uhr += 1000;
+        requestPitStop();
+        const doppeltNachAbbruch = pitState;
+
+        return { nachEins, weckerGestellt, nachWarten, nachZwei,
+                 doppeltNachDruck, doppeltNachAbbruch,
+                 gewartetS: opt.sekunden === undefined ? 20 : opt.sekunden,
+                 // Die alte Frist als Literal: PIT_LIMITER_MAX_MS gibt es nicht mehr.
+                 // Sie steht hier, damit der Testkopf sagen kann, wogegen gemessen wird.
+                 alteFristS: 5 };
+      } finally {
+        Date.now = echtNow;
+        if (pitLimiterTimer) { clearTimeout(pitLimiterTimer); pitLimiterTimer = null; }
+        pitTrigger = merk.trigger;
+        setPitState(merk.state);
+        pitLaneEnabled = merk.an;
+        pitPlan = merk.plan;
+        pitDoubleArmedUntil = merk.doppeltBis;
+        pitDoubleFirstAt = merk.ersterAt;
+        pitRearmBlockedUntil = merk.sperre;
+        pitLastPress = merk.letzter;
+      }
     },
 
     // ---- TANKEN BEIDE UNABHAENGIG? ---------------------------------------------------
@@ -54740,6 +54886,61 @@
   // Die Liste ist GEPFLEGT, und das ist hier richtig: sie IST die Zusicherung. Sie stammt
   // aus einer Suche ueber alle Kaestchen, deren Listener "X = e.target.checked" schreibt.
   // Ein neuer Schalter gehoert hinein.
+  // ---- Der Boxenknopf: ein Druck an, ein Druck aus, und er haelt ------------------
+  //
+  // DREI BESTELLUNGEN, alle drei Bedienung:
+  //
+  //   1. "Wenn ich ihn aktiviere, ist er dann nicht solange aktiv, bis ich ihn deaktiviere
+  //      oder bis ich stehen bleibe? So sollte es sein."
+  //   2. "Und zum Deaktivieren nur 1x drücken statt 2x."
+  //   3. "Pit Modus mit Doppelausdruck: ... sollte Pitten per Knopfdruck deaktiviert sein."
+  //
+  // ZU 1 GEHOERT EIN BEFUND, der aelter ist als dieser Test. Ein Zeitgeber beendete den
+  // Limiter nach fuenf Sekunden, mit der Begruendung, das AUSFAHRTMUSTER werde nicht immer
+  // gelesen. Die Begruendung war richtig - fuer einen Uebergang, den es nicht mehr gibt:
+  // 'limited' wird an drei Stellen gesetzt, und alle drei sind ANFAHRTEN. Die Ausfahrt
+  // laeuft ueber setPitState('off'). Der Wecker beendete also ausschliesslich die Anfahrt,
+  // und wer nicht binnen fuenf Sekunden anhielt, verlor den Stopp lautlos.
+  //
+  // Geprueft wird ueber eine GEFAELSCHTE UHR mit zwanzig Sekunden, dem Vierfachen der
+  // alten Frist. Und zusaetzlich, dass gar kein Zeitgeber mehr gestellt wird: ein
+  // setTimeout laesst sich mit einer gefaelschten Uhr nicht ueberspringen, die Zeitprobe
+  // allein wuerde den Fehler also nicht fangen.
+  //
+  // ZU 3: abbrechen bleibt moeglich. Eine Ausloesung wegzunehmen ist eine Regel, einen
+  // laufenden Vorgang nicht beenden zu koennen waere eine Falle.
+  stAdd('Boxenknopf: ein Druck an, ein Druck aus, und er laeuft nicht ab', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.pitKnopfProbe) {
+      return { skip: true, mass: 'pitKnopfProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.pitKnopfProbe({ sekunden: 20 });
+    const maengel = [];
+    // 1. Ein Druck schaltet an.
+    if (r.nachEins !== 'limited') maengel.push('ein Druck ergab ' + r.nachEins);
+    // 1b. Kein Zeitgeber, der die Anfahrt beendet.
+    if (r.weckerGestellt) maengel.push('es wird wieder ein Nachlauf-Wecker gestellt');
+    // 1c. Und nach dem Vierfachen der alten Frist steht er immer noch.
+    if (r.nachWarten !== 'limited') {
+      maengel.push('nach ' + r.gewartetS + ' s war er ' + r.nachWarten
+                   + ' (alte Frist ' + r.alteFristS + ' s)');
+    }
+    // 2. EIN weiterer Druck schaltet aus - lange nach dem alten Doppeltipp-Fenster.
+    if (r.nachZwei !== 'off') maengel.push('zweiter Druck ergab ' + r.nachZwei);
+    // 3. Im Doppelausdruck-Modus loest der Knopf nicht aus ...
+    if (r.doppeltNachDruck !== 'off') {
+      maengel.push('Doppelausdruck-Modus: Knopf loeste aus (' + r.doppeltNachDruck + ')');
+    }
+    // ... kann aber abbrechen.
+    if (r.doppeltNachAbbruch !== 'off') {
+      maengel.push('Doppelausdruck-Modus: Abbruch ging nicht (' + r.doppeltNachAbbruch + ')');
+    }
+    return { ok: !maengel.length,
+             mass: 'an nach 1 Druck | nach ' + r.gewartetS + ' s noch ' + r.nachWarten
+                 + ' (alte Frist ' + r.alteFristS + ' s, kein Wecker mehr) | aus nach 1 Druck'
+                 + ' | Doppelausdruck: keine Ausloesung, Abbruch geht'
+                 + (maengel.length ? ' | ' + maengel.join(', ') : '') };
+  });
+
   // ---- Beide tanken unabhaengig voneinander ----------------------------------------
   //
   // BESTELLT: "Tanken soll unabhängig bei beiden klappen."

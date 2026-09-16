@@ -53,6 +53,86 @@
       return this.schadenZweiLesen();
     },
 
+    // ---- DER BOXENKNOPF: an, aus, und wie lange er haelt -----------------------------
+    //
+    // DREI BESTELLUNGEN AUF EINMAL, und alle drei sind Bedienung:
+    //
+    //   1. "Wenn ich ihn aktiviere, ist er dann nicht solange aktiv, bis ich ihn
+    //      deaktiviere oder bis ich stehen bleibe?" - bis v0.6.56 beendete ein Zeitgeber
+    //      die ANFAHRT nach fuenf Sekunden, lautlos.
+    //   2. "Zum Deaktivieren nur 1x drücken statt 2x."
+    //   3. Im Doppelausdruck-Modus loest der Knopf gar nichts aus.
+    //
+    // DIE UHR WIRD GEFAELSCHT, weil Aussage 1 eine Aussage ueber ZEIT ist: der Prueflauf
+    // laesst zwanzig Sekunden vergehen, ohne zwanzig Sekunden zu warten. Der Zeitgeber
+    // selbst lief ueber setTimeout und laesst sich so nicht ueberspringen - deshalb wird
+    // zusaetzlich geprueft, dass ueberhaupt KEINER mehr gestellt wird (pitLimiterOffen).
+    pitKnopfProbe(o) {
+      const opt = o || {};
+      const echtNow = Date.now;
+      const merk = { state: pitState, trigger: pitTrigger, an: pitLaneEnabled,
+                     plan: pitPlan, doppeltBis: pitDoubleArmedUntil,
+                     ersterAt: pitDoubleFirstAt, sperre: pitRearmBlockedUntil,
+                     letzter: pitLastPress };
+      let uhr = 6000000;
+      try {
+        Date.now = () => uhr;
+        pitLaneEnabled = true;
+        pitTrigger = opt.trigger || 'button';
+        pitRearmBlockedUntil = 0;
+        pitLastPress = 0;
+        setPitState('off');
+
+        // ---- Ein Druck: an ------------------------------------------------------
+        requestPitStop();
+        const nachEins = pitState;
+        // Ein Zeitgeber, der die Anfahrt beendet, darf gar nicht erst gestellt sein.
+        const weckerGestellt = !!pitLimiterTimer;
+
+        // ---- Zeit vergeht: der Limiter muss BLEIBEN -----------------------------
+        // Zwanzig Sekunden, also das Vierfache der alten Frist von fuenf.
+        uhr += (opt.sekunden === undefined ? 20 : opt.sekunden) * 1000;
+        const nachWarten = pitState;
+
+        // ---- Noch ein Druck: aus, mit EINEM Druck -------------------------------
+        // Bewusst weit nach dem alten Doppeltipp-Fenster von 700 ms: frueher haette
+        // genau das nur die Meldung "Nochmal druecken" erzeugt.
+        requestPitStop();
+        const nachZwei = pitState;
+
+        // ---- Und der Doppelausdruck-Modus: der Knopf loest nicht aus ------------
+        pitTrigger = 'double';
+        pitRearmBlockedUntil = 0;
+        setPitState('off');
+        uhr += 5000;
+        requestPitStop();
+        const doppeltNachDruck = pitState;
+        // Abbrechen muss trotzdem gehen: dafuer von Hand hineinsetzen.
+        setPitState('limited');
+        uhr += 1000;
+        requestPitStop();
+        const doppeltNachAbbruch = pitState;
+
+        return { nachEins, weckerGestellt, nachWarten, nachZwei,
+                 doppeltNachDruck, doppeltNachAbbruch,
+                 gewartetS: opt.sekunden === undefined ? 20 : opt.sekunden,
+                 // Die alte Frist als Literal: PIT_LIMITER_MAX_MS gibt es nicht mehr.
+                 // Sie steht hier, damit der Testkopf sagen kann, wogegen gemessen wird.
+                 alteFristS: 5 };
+      } finally {
+        Date.now = echtNow;
+        if (pitLimiterTimer) { clearTimeout(pitLimiterTimer); pitLimiterTimer = null; }
+        pitTrigger = merk.trigger;
+        setPitState(merk.state);
+        pitLaneEnabled = merk.an;
+        pitPlan = merk.plan;
+        pitDoubleArmedUntil = merk.doppeltBis;
+        pitDoubleFirstAt = merk.ersterAt;
+        pitRearmBlockedUntil = merk.sperre;
+        pitLastPress = merk.letzter;
+      }
+    },
+
     // ---- TANKEN BEIDE UNABHAENGIG? ---------------------------------------------------
     //
     // BESTELLT: "Tanken soll unabhängig bei beiden klappen."

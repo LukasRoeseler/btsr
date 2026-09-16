@@ -548,7 +548,8 @@
     "Boxengasse, Katalognummer 14": "Pit lane, catalogue number 14",
     "Boxenstopp auf Knopfdruck": "Pit stop at the touch of a button",
     "Boxenstopp": "Pit stop",
-    "Boxenstopp, erneut zweimal kurz drücken bricht ab": "Pit stop, two more short presses abort it",
+    "Boxenstopp an, erneut drücken bricht ab. Bei der Auslösung „doppelter Ausdruck“ löst die Taste nicht aus – dort zählt nur das zweimalige Überfahren.":
+      "Pit stop on, press again to abort. With the trigger set to \"double print\" the key does not arm it – there only driving over the print twice counts.",
     "Boxer": "Flat",
     "Bremse": "Brake",
     "Bremse:": "Brake:",

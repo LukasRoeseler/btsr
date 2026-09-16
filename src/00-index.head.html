@@ -1966,6 +1966,10 @@
        damit die beiden nicht unterschiedlich hoch nebeneinander stehen. */
     min-height: 44px; }
   .gt3-act:hover { background: var(--gt3-btn-hover); }
+  /* Abgeblendet: der Knopf ist da und bleibt druckbar (er gibt dann den Grund aus), aber
+     er sieht nicht mehr nach "hier geht es los" aus. Kein disabled - ein Knopf, der auf
+     einen Druck gar nicht reagiert, erklaert sich nicht. */
+  .gt3-act.gedimmt { opacity: .45; }
   .gt3-act.armed { background: #1c7a4d; color: #eafff1; }
   .gt3-act.warn { background: #b8860b; color: #100c02; }
   /* Eigene Klasse statt .warn: die trug ein dunkles Goldbraun (#b8860b), und eine gelbe
@@ -8228,7 +8232,7 @@
     <div class="opt-head">Tastatur: Test und Fehlersuche am PC</div>
     <div class="help-grid">
       <kbd>W</kbd><span>Wetter umschalten (Regen / trocken)</span>
-      <kbd>P</kbd><span>Boxenstopp, erneut zweimal kurz dr&uuml;cken bricht ab</span>
+      <kbd>P</kbd><span>Boxenstopp an, erneut dr&uuml;cken bricht ab. Bei der Ausl&ouml;sung &bdquo;doppelter Ausdruck&ldquo; l&ouml;st die Taste nicht aus &ndash; dort z&auml;hlt nur das zweimalige &Uuml;berfahren.</span>
       <kbd>C</kbd><span>Crash ausl&ouml;sen: Schaden, Ger&auml;usch und Rumble wie im Betrieb</span>
       <kbd>F</kbd><span>Tank auf 5&nbsp;% setzen, um den Notlauf zu pr&uuml;fen</span>
       <kbd>R</kbd><span>Tank und Zustand zur&uuml;cksetzen</span>
@@ -8761,7 +8765,7 @@
      kosten. Im Vollbild ist sie ausgeblendet. -->
 <footer id="app-footer">
   <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.6.56</span></span>
+    <span class="foot-ver">v<span id="app-version">0.6.57</span></span>
     <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
     <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
          unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine

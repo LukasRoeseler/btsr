@@ -9638,6 +9638,61 @@
   // Die Liste ist GEPFLEGT, und das ist hier richtig: sie IST die Zusicherung. Sie stammt
   // aus einer Suche ueber alle Kaestchen, deren Listener "X = e.target.checked" schreibt.
   // Ein neuer Schalter gehoert hinein.
+  // ---- Der Boxenknopf: ein Druck an, ein Druck aus, und er haelt ------------------
+  //
+  // DREI BESTELLUNGEN, alle drei Bedienung:
+  //
+  //   1. "Wenn ich ihn aktiviere, ist er dann nicht solange aktiv, bis ich ihn deaktiviere
+  //      oder bis ich stehen bleibe? So sollte es sein."
+  //   2. "Und zum Deaktivieren nur 1x drücken statt 2x."
+  //   3. "Pit Modus mit Doppelausdruck: ... sollte Pitten per Knopfdruck deaktiviert sein."
+  //
+  // ZU 1 GEHOERT EIN BEFUND, der aelter ist als dieser Test. Ein Zeitgeber beendete den
+  // Limiter nach fuenf Sekunden, mit der Begruendung, das AUSFAHRTMUSTER werde nicht immer
+  // gelesen. Die Begruendung war richtig - fuer einen Uebergang, den es nicht mehr gibt:
+  // 'limited' wird an drei Stellen gesetzt, und alle drei sind ANFAHRTEN. Die Ausfahrt
+  // laeuft ueber setPitState('off'). Der Wecker beendete also ausschliesslich die Anfahrt,
+  // und wer nicht binnen fuenf Sekunden anhielt, verlor den Stopp lautlos.
+  //
+  // Geprueft wird ueber eine GEFAELSCHTE UHR mit zwanzig Sekunden, dem Vierfachen der
+  // alten Frist. Und zusaetzlich, dass gar kein Zeitgeber mehr gestellt wird: ein
+  // setTimeout laesst sich mit einer gefaelschten Uhr nicht ueberspringen, die Zeitprobe
+  // allein wuerde den Fehler also nicht fangen.
+  //
+  // ZU 3: abbrechen bleibt moeglich. Eine Ausloesung wegzunehmen ist eine Regel, einen
+  // laufenden Vorgang nicht beenden zu koennen waere eine Falle.
+  stAdd('Boxenknopf: ein Druck an, ein Druck aus, und er laeuft nicht ab', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.pitKnopfProbe) {
+      return { skip: true, mass: 'pitKnopfProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.pitKnopfProbe({ sekunden: 20 });
+    const maengel = [];
+    // 1. Ein Druck schaltet an.
+    if (r.nachEins !== 'limited') maengel.push('ein Druck ergab ' + r.nachEins);
+    // 1b. Kein Zeitgeber, der die Anfahrt beendet.
+    if (r.weckerGestellt) maengel.push('es wird wieder ein Nachlauf-Wecker gestellt');
+    // 1c. Und nach dem Vierfachen der alten Frist steht er immer noch.
+    if (r.nachWarten !== 'limited') {
+      maengel.push('nach ' + r.gewartetS + ' s war er ' + r.nachWarten
+                   + ' (alte Frist ' + r.alteFristS + ' s)');
+    }
+    // 2. EIN weiterer Druck schaltet aus - lange nach dem alten Doppeltipp-Fenster.
+    if (r.nachZwei !== 'off') maengel.push('zweiter Druck ergab ' + r.nachZwei);
+    // 3. Im Doppelausdruck-Modus loest der Knopf nicht aus ...
+    if (r.doppeltNachDruck !== 'off') {
+      maengel.push('Doppelausdruck-Modus: Knopf loeste aus (' + r.doppeltNachDruck + ')');
+    }
+    // ... kann aber abbrechen.
+    if (r.doppeltNachAbbruch !== 'off') {
+      maengel.push('Doppelausdruck-Modus: Abbruch ging nicht (' + r.doppeltNachAbbruch + ')');
+    }
+    return { ok: !maengel.length,
+             mass: 'an nach 1 Druck | nach ' + r.gewartetS + ' s noch ' + r.nachWarten
+                 + ' (alte Frist ' + r.alteFristS + ' s, kein Wecker mehr) | aus nach 1 Druck'
+                 + ' | Doppelausdruck: keine Ausloesung, Abbruch geht'
+                 + (maengel.length ? ' | ' + maengel.join(', ') : '') };
+  });
+
   // ---- Beide tanken unabhaengig voneinander ----------------------------------------
   //
   // BESTELLT: "Tanken soll unabhängig bei beiden klappen."
