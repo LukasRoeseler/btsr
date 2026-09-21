@@ -177,6 +177,65 @@
                                  : OMEGA_TEST.lineModelle.length + ' Modelle, alle benannt' };
   });
 
+  // ---- 3-stufige Ideallinie: die Haarnadel bekommt nur zwei Stufen -----------------
+  //
+  // BESTELLT (Phase 12, Punkt 7): "Ideallinie Haarnadel ueberarbeiten (kurz aussen, dann
+  // so weit wie moeglich innen)." Jede andere Kurve behaelt aussen-innen-aussen; nur die
+  // Haarnadel bekommt kurz aussen, dann innen fuer den GESAMTEN Rest - keine Rueckkehr
+  // nach aussen innerhalb der Kachel selbst.
+  stAdd('3-stufige Ideallinie: Haarnadel kurz aussen, dann durchgehend innen', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.compareLines || !OMEGA_TEST.setLineModel) {
+      return { skip: true, mass: 'Pruefzugang nicht vorhanden' };
+    }
+    const merkModel = OMEGA_TEST.getLineModel();
+    const schlecht = [], teile = [];
+    try {
+      OMEGA_TEST.setLineModel('dreistufig');
+      // SG3HG3: Start, drei Geraden, EINE Haarnadel (Links), drei Geraden - die Haarnadel
+      // sitzt allein auf Kachel 4 und grenzt an keine andere Kurve.
+      const p = OMEGA_TEST.codeToTrack('SG3HG3');
+      const steps = 24;
+      const rows = OMEGA_TEST.compareLines(p.tiles, steps);
+      const haarnadel = rows.filter((r) => r.tile === 4).map((r) => r.calc);
+      // 1. KURZ AUSSEN: die ersten Werte sind aussen (negativ, Linkskurve dreht -1).
+      const ersterVorzeichenwechsel = haarnadel.findIndex((v, i) => i > 0
+        && Math.sign(v) !== Math.sign(haarnadel[0]) && Math.abs(v) > 0.5);
+      teile.push('Vorzeichenwechsel bei Schritt ' + ersterVorzeichenwechsel + ' von ' + steps);
+      if (!(ersterVorzeichenwechsel > 0 && ersterVorzeichenwechsel <= steps * 0.25)) {
+        schlecht.push('Aussenphase nicht kurz (Wechsel bei ' + ersterVorzeichenwechsel
+                       + ', erwartet bis ' + Math.round(steps * 0.25) + ')');
+      }
+      // 2. DANACH DURCHGEHEND INNEN: kein weiterer Vorzeichenwechsel bis zum Kachelende.
+      const rest = haarnadel.slice(ersterVorzeichenwechsel > 0 ? ersterVorzeichenwechsel : 0);
+      const zweiterWechsel = rest.findIndex((v, i) => i > 0
+        && Math.sign(v) !== Math.sign(rest[0]) && Math.abs(v) > 0.5);
+      teile.push('zweiter Wechsel: ' + (zweiterWechsel < 0 ? 'keiner' : 'bei ' + zweiterWechsel));
+      if (zweiterWechsel >= 0) {
+        schlecht.push('Haarnadel kehrt vor Kachelende nach aussen zurueck (dritte Stufe)');
+      }
+      // 3. GEGENPROBE: eine normale, EINZELNE Kurvenkachel (derselbe Aufbau wie die
+      //    Haarnadel oben - ein isolierter Ein-Kachel-Lauf) behaelt ihre dritte Stufe.
+      //    SG3R3G3 waere hier die falsche Gegenprobe: drei gleichsinnige Kurvenkacheln
+      //    bilden EINEN Lauf (lineKurvenLaeufe), und die drei Stufen verteilen sich dann
+      //    ueber alle drei Kacheln zusammen - Kachel 4 allein zeigt dort nie eine
+      //    Rueckkehr nach aussen, unabhaengig von dieser Aenderung.
+      const p2 = OMEGA_TEST.codeToTrack('SG3RG3');
+      const rows2 = OMEGA_TEST.compareLines(p2.tiles, steps);
+      const kurve = rows2.filter((r) => r.tile === 4).map((r) => r.calc);
+      const w1 = kurve.findIndex((v, i) => i > 0
+        && Math.sign(v) !== Math.sign(kurve[0]) && Math.abs(v) > 0.5);
+      const restKurve = kurve.slice(w1 > 0 ? w1 : 0);
+      const w2 = restKurve.findIndex((v, i) => i > 0
+        && Math.sign(v) !== Math.sign(restKurve[0]) && Math.abs(v) > 0.5);
+      teile.push('Gegenprobe 60-Grad-Kurve, zweiter Wechsel: ' + (w2 < 0 ? 'keiner' : 'bei ' + w2));
+      if (w2 < 0) schlecht.push('normale Kurve hat ihre dritte Stufe verloren');
+    } finally {
+      OMEGA_TEST.setLineModel(merkModel);
+    }
+    return { ok: schlecht.length === 0,
+             mass: teile.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
   // ---- 6. Kachelphase ----
   // Eine Haarnadel ist dreimal so lang wie eine Gerade. Rechnet die Phase mit einer
   // mittleren Kacheldauer, steht sie dort nach einem Drittel auf 1 und der Linienversatz

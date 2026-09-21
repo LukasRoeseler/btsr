@@ -3093,7 +3093,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.7.18</span></span>
+        <span class="foot-ver">v<span id="app-version">0.7.19</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -19089,6 +19089,18 @@
   // Radius ist der aeussere. dreht ist +1 fuer eine Rechtskurve.
   const SPUR_EIN = 0.35;      // Anteil des Kurvenstuecks, der aussen angefahren wird
   const SPUR_MITTE = 0.30;    // Anteil, der innen gefahren wird
+  // BESTELLT (Phase 12, Punkt 7): "Ideallinie Haarnadel ueberarbeiten (kurz aussen, dann
+  // so weit wie moeglich innen)." SPUR_EIN/SPUR_MITTE oben gelten fuer JEDE Kurve
+  // gleich, ob 60 Grad oder Haarnadel - eine Haarnadel bekam damit dieselbe kurze
+  // Aussenphase wie eine offene Kurve und schwenkte dann schon wieder aussen, bevor der
+  // Scheitel ueberhaupt erreicht war.
+  //
+  // NUR ZWEI STUFEN statt drei, wie bestellt: kurz aussen anstellen (SPUR_EIN_HAARNADEL,
+  // deutlich kuerzer als SPUR_EIN), dann fuer den GESAMTEN Rest des Kurvenstuecks innen
+  // bleiben - keine dritte, wieder aussen ziehende Stufe innerhalb der Haarnadel selbst.
+  // Der Ruecksprung nach aussen fuer die folgende Gerade/Kurve passiert ohnehin schon
+  // ausserhalb dieser Funktion (Abschnitt "2. Die Geraden" weiter unten).
+  const SPUR_EIN_HAARNADEL = 0.15;
   // Wie weit ein voller Spurwechsel geht. 1,0 heisst: bis an die Schranke, die "Kurven
   // oeffnen" setzt - dieselbe Schranke wie bei den anderen Modellen, damit der Regler auch
   // hier gilt und nicht nur bei drei von vier Linien.
@@ -19114,24 +19126,38 @@
     }
     const tab = trackKachelTabelle(pts, tiles.length);
     const at = (i) => closed ? ((i % n) + n) % n : Math.max(0, Math.min(n - 1, i));
-    // Je Kurvenlauf die Punktindizes, in Fahrtrichtung.
+    // Je Kurvenlauf die Punktindizes, in Fahrtrichtung - und ob eine Haarnadel/Engstelle
+    // darunter ist: ein Lauf kann mehrere gleichsinnige Kacheln zusammenfassen
+    // (lineKurvenLaeufe), eine davon reicht, um den ganzen Lauf als Haarnadel zu fahren.
     const stuecke = laeufe.map((lauf) => {
       const idx = [];
+      let haarnadel = false;
       for (let kk = lauf.von; kk <= lauf.bis; kk++) {
         const t = ((kk % tiles.length) + tiles.length) % tiles.length;
+        if (tileTightness(tiles[t].type) >= 2) haarnadel = true;
         for (let d = 0; d < tab.zahl[t]; d++) idx.push(at(tab.start[t] + d));
       }
-      return { idx, dreht: lauf.dreht };
+      return { idx, dreht: lauf.dreht, haarnadel };
     }).filter((s) => s.idx.length);
     if (!stuecke.length) {
       return { alpha, limit, span: 0, lapTime: null, startLapTime: null,
                v: null, gain: 0, apex: [], par: [], evals: 0, accepted: 0 };
     }
-    // ---- 1. Die Kurven selbst: aussen, innen, aussen ------------------------------
+    // ---- 1. Die Kurven selbst: aussen, innen, aussen - ausser bei der Haarnadel -----
+    //
+    // BESTELLT: "kurz aussen, dann so weit wie moeglich innen." Eine Haarnadel bekommt
+    // nur zwei Stufen: kurz aussen anstellen (SPUR_EIN_HAARNADEL), dann innen fuer den
+    // GESAMTEN Rest des Kurvenstuecks - keine dritte, wieder aussen ziehende Stufe. Jede
+    // andere Kurve faehrt weiter aussen-innen-aussen wie bisher.
     for (const st of stuecke) {
       const m = st.idx.length;
       const aussen = st.dreht * SPUR_VOLL * limit;
       const innen = -st.dreht * SPUR_VOLL * limit;
+      if (st.haarnadel) {
+        const bisEin = Math.max(1, Math.round(m * SPUR_EIN_HAARNADEL));
+        for (let q = 0; q < m; q++) alpha[st.idx[q]] = q < bisEin ? aussen : innen;
+        continue;
+      }
       const bisEin = Math.max(1, Math.round(m * SPUR_EIN));
       const bisMitte = Math.min(m, bisEin + Math.max(1, Math.round(m * SPUR_MITTE)));
       for (let q = 0; q < m; q++) {
@@ -46680,6 +46706,65 @@
     return { ok: fehlt.length === 0,
              mass: fehlt.length ? fehlt.join(', ') + ' ohne Namen'
                                  : OMEGA_TEST.lineModelle.length + ' Modelle, alle benannt' };
+  });
+
+  // ---- 3-stufige Ideallinie: die Haarnadel bekommt nur zwei Stufen -----------------
+  //
+  // BESTELLT (Phase 12, Punkt 7): "Ideallinie Haarnadel ueberarbeiten (kurz aussen, dann
+  // so weit wie moeglich innen)." Jede andere Kurve behaelt aussen-innen-aussen; nur die
+  // Haarnadel bekommt kurz aussen, dann innen fuer den GESAMTEN Rest - keine Rueckkehr
+  // nach aussen innerhalb der Kachel selbst.
+  stAdd('3-stufige Ideallinie: Haarnadel kurz aussen, dann durchgehend innen', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.compareLines || !OMEGA_TEST.setLineModel) {
+      return { skip: true, mass: 'Pruefzugang nicht vorhanden' };
+    }
+    const merkModel = OMEGA_TEST.getLineModel();
+    const schlecht = [], teile = [];
+    try {
+      OMEGA_TEST.setLineModel('dreistufig');
+      // SG3HG3: Start, drei Geraden, EINE Haarnadel (Links), drei Geraden - die Haarnadel
+      // sitzt allein auf Kachel 4 und grenzt an keine andere Kurve.
+      const p = OMEGA_TEST.codeToTrack('SG3HG3');
+      const steps = 24;
+      const rows = OMEGA_TEST.compareLines(p.tiles, steps);
+      const haarnadel = rows.filter((r) => r.tile === 4).map((r) => r.calc);
+      // 1. KURZ AUSSEN: die ersten Werte sind aussen (negativ, Linkskurve dreht -1).
+      const ersterVorzeichenwechsel = haarnadel.findIndex((v, i) => i > 0
+        && Math.sign(v) !== Math.sign(haarnadel[0]) && Math.abs(v) > 0.5);
+      teile.push('Vorzeichenwechsel bei Schritt ' + ersterVorzeichenwechsel + ' von ' + steps);
+      if (!(ersterVorzeichenwechsel > 0 && ersterVorzeichenwechsel <= steps * 0.25)) {
+        schlecht.push('Aussenphase nicht kurz (Wechsel bei ' + ersterVorzeichenwechsel
+                       + ', erwartet bis ' + Math.round(steps * 0.25) + ')');
+      }
+      // 2. DANACH DURCHGEHEND INNEN: kein weiterer Vorzeichenwechsel bis zum Kachelende.
+      const rest = haarnadel.slice(ersterVorzeichenwechsel > 0 ? ersterVorzeichenwechsel : 0);
+      const zweiterWechsel = rest.findIndex((v, i) => i > 0
+        && Math.sign(v) !== Math.sign(rest[0]) && Math.abs(v) > 0.5);
+      teile.push('zweiter Wechsel: ' + (zweiterWechsel < 0 ? 'keiner' : 'bei ' + zweiterWechsel));
+      if (zweiterWechsel >= 0) {
+        schlecht.push('Haarnadel kehrt vor Kachelende nach aussen zurueck (dritte Stufe)');
+      }
+      // 3. GEGENPROBE: eine normale, EINZELNE Kurvenkachel (derselbe Aufbau wie die
+      //    Haarnadel oben - ein isolierter Ein-Kachel-Lauf) behaelt ihre dritte Stufe.
+      //    SG3R3G3 waere hier die falsche Gegenprobe: drei gleichsinnige Kurvenkacheln
+      //    bilden EINEN Lauf (lineKurvenLaeufe), und die drei Stufen verteilen sich dann
+      //    ueber alle drei Kacheln zusammen - Kachel 4 allein zeigt dort nie eine
+      //    Rueckkehr nach aussen, unabhaengig von dieser Aenderung.
+      const p2 = OMEGA_TEST.codeToTrack('SG3RG3');
+      const rows2 = OMEGA_TEST.compareLines(p2.tiles, steps);
+      const kurve = rows2.filter((r) => r.tile === 4).map((r) => r.calc);
+      const w1 = kurve.findIndex((v, i) => i > 0
+        && Math.sign(v) !== Math.sign(kurve[0]) && Math.abs(v) > 0.5);
+      const restKurve = kurve.slice(w1 > 0 ? w1 : 0);
+      const w2 = restKurve.findIndex((v, i) => i > 0
+        && Math.sign(v) !== Math.sign(restKurve[0]) && Math.abs(v) > 0.5);
+      teile.push('Gegenprobe 60-Grad-Kurve, zweiter Wechsel: ' + (w2 < 0 ? 'keiner' : 'bei ' + w2));
+      if (w2 < 0) schlecht.push('normale Kurve hat ihre dritte Stufe verloren');
+    } finally {
+      OMEGA_TEST.setLineModel(merkModel);
+    }
+    return { ok: schlecht.length === 0,
+             mass: teile.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
   });
 
   // ---- 6. Kachelphase ----

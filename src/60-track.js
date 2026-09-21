@@ -1276,6 +1276,18 @@
   // Radius ist der aeussere. dreht ist +1 fuer eine Rechtskurve.
   const SPUR_EIN = 0.35;      // Anteil des Kurvenstuecks, der aussen angefahren wird
   const SPUR_MITTE = 0.30;    // Anteil, der innen gefahren wird
+  // BESTELLT (Phase 12, Punkt 7): "Ideallinie Haarnadel ueberarbeiten (kurz aussen, dann
+  // so weit wie moeglich innen)." SPUR_EIN/SPUR_MITTE oben gelten fuer JEDE Kurve
+  // gleich, ob 60 Grad oder Haarnadel - eine Haarnadel bekam damit dieselbe kurze
+  // Aussenphase wie eine offene Kurve und schwenkte dann schon wieder aussen, bevor der
+  // Scheitel ueberhaupt erreicht war.
+  //
+  // NUR ZWEI STUFEN statt drei, wie bestellt: kurz aussen anstellen (SPUR_EIN_HAARNADEL,
+  // deutlich kuerzer als SPUR_EIN), dann fuer den GESAMTEN Rest des Kurvenstuecks innen
+  // bleiben - keine dritte, wieder aussen ziehende Stufe innerhalb der Haarnadel selbst.
+  // Der Ruecksprung nach aussen fuer die folgende Gerade/Kurve passiert ohnehin schon
+  // ausserhalb dieser Funktion (Abschnitt "2. Die Geraden" weiter unten).
+  const SPUR_EIN_HAARNADEL = 0.15;
   // Wie weit ein voller Spurwechsel geht. 1,0 heisst: bis an die Schranke, die "Kurven
   // oeffnen" setzt - dieselbe Schranke wie bei den anderen Modellen, damit der Regler auch
   // hier gilt und nicht nur bei drei von vier Linien.
@@ -1301,24 +1313,38 @@
     }
     const tab = trackKachelTabelle(pts, tiles.length);
     const at = (i) => closed ? ((i % n) + n) % n : Math.max(0, Math.min(n - 1, i));
-    // Je Kurvenlauf die Punktindizes, in Fahrtrichtung.
+    // Je Kurvenlauf die Punktindizes, in Fahrtrichtung - und ob eine Haarnadel/Engstelle
+    // darunter ist: ein Lauf kann mehrere gleichsinnige Kacheln zusammenfassen
+    // (lineKurvenLaeufe), eine davon reicht, um den ganzen Lauf als Haarnadel zu fahren.
     const stuecke = laeufe.map((lauf) => {
       const idx = [];
+      let haarnadel = false;
       for (let kk = lauf.von; kk <= lauf.bis; kk++) {
         const t = ((kk % tiles.length) + tiles.length) % tiles.length;
+        if (tileTightness(tiles[t].type) >= 2) haarnadel = true;
         for (let d = 0; d < tab.zahl[t]; d++) idx.push(at(tab.start[t] + d));
       }
-      return { idx, dreht: lauf.dreht };
+      return { idx, dreht: lauf.dreht, haarnadel };
     }).filter((s) => s.idx.length);
     if (!stuecke.length) {
       return { alpha, limit, span: 0, lapTime: null, startLapTime: null,
                v: null, gain: 0, apex: [], par: [], evals: 0, accepted: 0 };
     }
-    // ---- 1. Die Kurven selbst: aussen, innen, aussen ------------------------------
+    // ---- 1. Die Kurven selbst: aussen, innen, aussen - ausser bei der Haarnadel -----
+    //
+    // BESTELLT: "kurz aussen, dann so weit wie moeglich innen." Eine Haarnadel bekommt
+    // nur zwei Stufen: kurz aussen anstellen (SPUR_EIN_HAARNADEL), dann innen fuer den
+    // GESAMTEN Rest des Kurvenstuecks - keine dritte, wieder aussen ziehende Stufe. Jede
+    // andere Kurve faehrt weiter aussen-innen-aussen wie bisher.
     for (const st of stuecke) {
       const m = st.idx.length;
       const aussen = st.dreht * SPUR_VOLL * limit;
       const innen = -st.dreht * SPUR_VOLL * limit;
+      if (st.haarnadel) {
+        const bisEin = Math.max(1, Math.round(m * SPUR_EIN_HAARNADEL));
+        for (let q = 0; q < m; q++) alpha[st.idx[q]] = q < bisEin ? aussen : innen;
+        continue;
+      }
       const bisEin = Math.max(1, Math.round(m * SPUR_EIN));
       const bisMitte = Math.min(m, bisEin + Math.max(1, Math.round(m * SPUR_MITTE)));
       for (let q = 0; q < m; q++) {
