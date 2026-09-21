@@ -5,7 +5,8 @@ Gruppe fremdes Aufnahmematerial enthaelt.
 
 ## Vollstaendig synthetisch — kein Aufnahmematerial
 
-Fuenfundzwanzig Motoren, und jeder gehoert zu einem wirklichen Auto:
+Siebenundzwanzig Motoren, und jeder gehoert zu einem wirklichen Auto (oder in zwei
+neuen Faellen: gehoeren sollte - siehe der WIP-Abschnitt weiter unten):
 
 * **GT- und GT3-Rennmotoren:** Porsche 911 GT3 R, BMW M4 GT3, Ford Mustang GT3,
   Ferrari 296 GT3, Mercedes-AMG GT3, Corvette C6.R, Corvette C5-R,
@@ -25,13 +26,13 @@ Effekte (Bremsenquietschen, Reifenquietschen, Crash-Varianten, Schlagschrauber,
 Tankgeraeusch, Karosseriereparatur, Motorstart) sind von Grund auf gerechnet. Es wird nichts aus einer
 Aufnahme abgespielt.
 
-Jeder dieser 25 Motoren klingt seit v0.6.35 ungleichmaessiger und mechanischer als in
+Jeder der urspruenglichen 25 Motoren klingt seit v0.6.35 ungleichmaessiger und mechanischer als in
 seiner ersten Fassung: staerker gestreute Zuendungleichheit von Takt zu Takt
 (`gain_wobble`), ein Ventiltrieb-Klick, der bei JEDEM einzelnen Klicken neu berechnet
 wird statt denselben Abdruck nur unterschiedlich laut zu stempeln (`clatter_variiert`),
 dazu mehr Klappern, tieferes Klappern, mehr Saettigung, ungleichere Zuendung, weniger
 Glanz, breitere Resonanz und mehr Knallen im Schiebebetrieb - jeder Regler um einen
-festen Anteil des Abstands zu dem Rand verschoben, den alle 25 Motoren zusammen fuer
+festen Anteil des Abstands zu dem Rand verschoben, den diese 25 Motoren zusammen fuer
 diesen Regler aufspannen (siehe der Kommentar vor `CARS` in `tools/engine_synth.py`).
 Kein Wert verlaesst dabei den Bereich, den ein anderer wirklicher Motor in diesem Satz
 schon belegt. Auch das bleibt eine reine Rechnung ueber dieselbe Klangerzeugung - keine
@@ -41,7 +42,8 @@ Jeder dieser Motoren hat **fuenf bis sieben** Schleifen: die drei verankerten Dr
 (`idle`, `mid`, `high`), dazu so viele Zwischenbaender, wie `band_ladder()` noetig findet —
 zwischen zwei Nachbarn darf hoechstens der Faktor 2,2 liegen, sonst hoert man den Sprung.
 Beim Formel 1 sind das zwei Zwischenbaender, bei Countach, Impreza und der NASCAR-Impala je
-drei, sonst eines. Zusammen sind es 132 Schleifen bei den fuenfundzwanzig Motoren.
+drei, sonst eines. Zusammen sind es 142 Schleifen bei den siebenundzwanzig Motoren
+(inklusive der zwei WIP-Alltagsklassiker weiter unten).
 Sie werden nach Drehzahl ueberblendet. Dazu kommt eine Schubschleife (`over`) am mittleren
 Band, die
 parallel dazu nach **Last** eingeblendet wird. Voll auf Zug ab 36 % Gas, voller Schub unter
@@ -137,6 +139,43 @@ Druckspitze, und genau darum klingt ein aufgeladener Motor dumpfer als ein Sauge
 Groesse.
 
 Damit sind es **16 Motoren mit 85 Schleifendateien**.
+
+### Was in v0.7.10 dazugekommen ist — zwei Alltagsklassiker, als WIP
+
+BESTELLT: "motorsounds: ford tudor slantback 1937 und vw käfer 1300 (herbie)."
+
+| Schluessel | Motor | Was Angabe ist | Zuendfolge, Bankaufteilung |
+|---|---|---|---|
+| `fordtudor37` | Ford Tudor Slantback 1937 | 3,6-l-Flathead-V8 (221 ci), 90 Grad, Cross-Plane, ~85 PS, ~3800/min | 1-5-4-8-6-3-7-2, Haelften (dieselbe Folge wie `cross_plane_v8()`) |
+| `kaefer1300` | VW Kaefer 1300 | 1,3-l-Boxer-4, luftgekuehlt, ~40 PS, ~4200/min | 1-4-3-2, Haelften (VW-Zaehlung: 1/2 eine Bank, 3/4 die andere) |
+
+**Beide sind als WIP gekennzeichnet, und zwar staerker als die bisherigen WIP-Eintraege
+oben.** Bei jenen war zumindest die Geometrie (Zylinderzahl, Zuendfolge, Bankaufteilung)
+einer mitgelieferten technischen Tabelle entnommen. Hier gibt es keine solche Tabelle -
+die Geometrie stammt aus allgemein bekannten Angaben zu diesen beiden Motorenfamilien
+(Ford-Flathead-V8, VW-Typ-1-Boxer), recherchiert und nicht gemessen. Die sieben
+Klangregler sind, wie bei allen 25 Motoren zuvor, nach Gehoer gesetzt - nur eben noch
+nicht GEHOERT: diese Umgebung kann keinen Ton abspielen. Beide Eintraege sollten nach dem
+ersten Anhoeren nachgezogen werden, bevor sie als fertig gelten.
+
+**Der Flathead-V8** teilt sich Zuendfolge und Bankmuster mit `cross_plane_v8()` - der Ford
+Flathead ist ein Motor aus derselben 90-Grad-Cross-Plane-Familie wie die spaeteren
+amerikanischen Small-Blocks, nur mit seitlichen statt obenliegenden Ventilen. Genau diese
+seitliche Ventilanordnung fuehrt beide Auspuffkanaele einer Bank siamesisch durch den
+Motorblock zueinander, bevor sie den Kopf verlassen - der bekannte Grund, warum ein
+Flathead gedaempft statt scharf klingt, umgesetzt als die niedrigste Helligkeit
+(`bright` 0,26) im ganzen Satz.
+
+**Der Kaefer-Boxer** bekommt denselben Bauartcharakter wie der Subaru oben (siehe die
+Begruendung bei `impreza99`): zwei Zuendungen je Bank im Abstand von 180 Grad, dann 540
+Grad Pause, weil auch hier zwei ungleich lange Kruemmerrohre zu einem gemeinsamen Sammler
+fuehren. Die VW-eigene Zylinderzaehlung (1/2 eine Bank, 3/4 die andere) unterscheidet sich
+von der des Subaru (1/3 eine Bank, 2/4 die andere), ergibt aber dieselbe physikalische
+Bankstruktur. Das bekannte Kaefer-Klappern - Luftkuehlung ohne daempfenden Wassermantel,
+dazu das Luefterrad auf der Kurbelwelle - ist hier nur als erhoehter `clatter`-Wert
+angenaehert; das Luefterraeuschen selbst kennt dieses Modell nicht.
+
+Damit sind es **27 Motoren mit 142 Schleifendateien**.
 
 ### Was in v0.4.52 herausgefallen ist
 

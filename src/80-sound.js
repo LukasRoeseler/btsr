@@ -113,6 +113,13 @@
     'listerstorm', 'rs5dtm', 'impalanascar',
     'capri_zakspeed', 'p935k4',
     'demon', 'mustang68', 'blazer90',
+    // ---- ZWEI ALLTAGSKLASSIKER VOR 1970, WIP -----------------------------------------
+    //
+    // BESTELLT: "motorsounds: ford tudor slantback 1937 und vw käfer 1300 (herbie)."
+    // Anders als alle bisherigen WIP-Motoren ist hier nicht nur der Klang ungehoert,
+    // sondern auch die Geometrie (Zylinderzahl, Zuendfolge, Bankaufteilung) recherchiert
+    // statt einer mitgelieferten technischen Tabelle entnommen - siehe audio/CREDITS.md.
+    'fordtudor37', 'kaefer1300',
   ];
   // KEINE FESTE LISTE MEHR. Bis v0.4.55 stand hier ['idle','mid','high'], und genau diese
   // Liste war die Annahme, die den Ton kaputt gemacht hat: sie kannte drei Namen, also konnte
