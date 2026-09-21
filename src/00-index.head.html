@@ -1226,6 +1226,15 @@
     text-shadow: var(--gt3-glow);
     font-size: clamp(14px, 2.6vw, 27px); }
   .gt3-val.sm { font-size: clamp(11px, 1.8vw, 18px); }
+  /* BESTELLT: "cockpit: gyro soll genau eine kachel einnehmen und nicht das Layout vom
+     Rest beeinflussen je nach den werten, die angezeigt werden." Der Text hier wechselt
+     zwischen "aus", "12°/s" und "120°/s · 999%" - lang genug, um in der schmalen Kachel
+     (max-width 72px) auf eine zweite Zeile umzubrechen, und genau das machte die ganze
+     .gt3-strip-Zeile hoeher, sobald der Wert lang genug wurde: eine Grid-Zeile richtet
+     sich nach ihrer hoechsten Zelle. tabular-nums (siehe .gt3-val oben) haelt schon die
+     ZIFFERN gleich breit, aber nicht die Zeilenzahl - dafuer nowrap/ellipsis, genau wie
+     .gt3-lbl direkt darueber es schon fuer die Beschriftung tut. */
+  #race-gplot .gt3-val { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .gt3-val.big { font-size: clamp(20px, 4.2vw, 44px); }
 
   /* Als Knopf: keine Knopfoptik, aber ein Zeiger und eine Trefferflaeche. */
@@ -3035,7 +3044,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.7.2</span></span>
+        <span class="foot-ver">v<span id="app-version">0.7.3</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>

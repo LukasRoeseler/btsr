@@ -1016,7 +1016,11 @@
   // ueber `!(platz > 0)` still aus - die Einpassung bei Groessenaenderung hat nie
   // stattgefunden.
   window.addEventListener('resize', () => cockpitPassung());
-  window.addEventListener('orientationchange', () => setTimeout(cockpitPassung, 120));
+  // syncRaceRotation() und nicht nur cockpitPassung(): eine Drehung des Geraets kann die
+  // Hochkant/Quer-Frage selbst aendern (race-turn), nicht nur die Einpassung darin. Vorher
+  // stand hier nur cockpitPassung() - die Einpassung zog nach, aber die race-turn-Klasse
+  // blieb auf dem Stand vor der Drehung stehen.
+  window.addEventListener('orientationchange', () => setTimeout(syncRaceRotation, 120));
   document.querySelectorAll('[data-tab="race"]').forEach((b) => {
     b.addEventListener('click', () => setTimeout(cockpitPassung, 60));
   });
@@ -1329,7 +1333,13 @@
     document.body.classList.add('race-fs');
     syncRaceRotation();
     // Das Vollbild braucht einen Takt, bis der Browser die neue Fenstergroesse meldet.
-    setTimeout(() => cockpitPassung(), 120);
+    // syncRaceRotation() und nicht nur cockpitPassung(): raceIsPortrait() liest
+    // window.innerWidth/innerHeight, und die koennen direkt nach requestFullscreen()/
+    // orientation.lock() noch die ALTEN Masse zeigen - der erste Aufruf oben setzt
+    // race-turn dann falsch, und cockpitPassung() allein haette daran nichts mehr
+    // geaendert, weil sie die Klasse nur LIEST statt neu zu entscheiden. GEMELDET: "Full
+    // screen im cockpit klappt manchmal nicht, vll wegen gleichzeitigem Drehen."
+    setTimeout(() => syncRaceRotation(), 120);
     $('race-fs').hidden = true; $('race-fs-exit').hidden = false;
   }
 
