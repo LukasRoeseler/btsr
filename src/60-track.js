@@ -1949,7 +1949,12 @@
   // surface, white joints between elements, kerbs, ideal line. Without it you get the thin
   // line the dashboard minimap needs, where a 220px map has no room for any of that.
   //
-  // Kerb colours follow the direction of travel: LEFT is blue/white, RIGHT is red/white.
+  // Kerb colours follow the direction of travel: LEFT is red/white, RIGHT is blue/white.
+  // BESTELLT: "im Strecken-Editor sind die blaue und rote Randbegrenzung vertauscht
+  // angegeben" - geprueft und es ist nur DIESER Satz, der es falsch sagte. Der Code
+  // (kerbLeft/kerbRight weiter unten) und der Selbsttest ("CH-Aussehen ... rot links,
+  // blau rechts") stimmten schon vorher ueberein; nur zwei Kommentare an dieser und der
+  // naechsten Stelle behaupteten das Gegenteil.
   // They are drawn as a solid white line with a dashed coloured line on top, which is how a
   // real kerb alternates, and it needs no per-block geometry.
   // How hard a car would be braking at each sample of a path, 0 = on the power,
@@ -2201,12 +2206,10 @@
         body += `<path d="M ${P2(A)} L ${P2(B)}" stroke="#ffffff" stroke-width="1.6" opacity=".85"/>`;
       }
 
-      // 4) Kerbs. Right = red/white, left = blue/white, both relative to travel direction.
-      // SIGN CHECK, because the old names were backwards and the legend followed them:
-      // trackNormals() rotates the tangent by -90 degrees, so a POSITIVE offset is the
-      // driver's LEFT. Heading north the tangent is (0,-1) and the normal comes out (-1,0),
-      // which on screen (y downwards) points left. The colours happened to be right anyway;
-      // the labels were not.
+      // 4) Kerbs. Left = red/white, right = blue/white, both relative to travel direction.
+      // SIGN CHECK: trackNormals() rotates the tangent by -90 degrees, so a POSITIVE
+      // offset is the driver's LEFT. Heading north the tangent is (0,-1) and the normal
+      // comes out (-1,0), which on screen (y downwards) points left.
       const kerbLeft = offsetPath(pts, nrm, half + TRACK_KERB_W / 2);
       const kerbRight = offsetPath(pts, nrm, -(half + TRACK_KERB_W / 2));
       const kw = TRACK_KERB_W;
