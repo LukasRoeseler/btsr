@@ -700,6 +700,9 @@
     "Ghost: Ideallinie": "Ghost: racing line",
     "Ghost: Kurvendrosselung": "Ghost: corner slowdown",
     "Ghost: Rennhärte": "Ghost: race hardness",
+    "Ghost: Rückweg nach einem Abgang": "Ghost: recovery after leaving the track",
+    "Statt sofort zu parken, versucht das Auto bis zu 3 Sekunden, selbst auf die Strecke zurückzufahren - anhand der zuletzt bekannten Stelle und der Ideallinie dort. Kommt es dabei nicht voran (vermutlich ein Hindernis), oder gelingt es in 3 Sekunden nicht, parkt es wie bisher. Es muss nicht an derselben Stelle wieder auffahren.":
+      "Instead of parking right away, the car tries for up to 3 seconds to steer itself back onto the track - based on the last known spot and the racing line there. If it makes no progress (likely an obstacle), or doesn't succeed within 3 seconds, it parks as before. It doesn't have to rejoin at the same spot.",
     "Wie oft und wie schnell Ghosts einen Überholversuch starten. Weich: seltener, geduldiger, mehr Abstand - ein Feld, das sauber und leicht versetzt hintereinanderfährt. Hart: häufiger, schneller, eine kleinere Lücke reicht schon. 50% ist die bisherige, gemessene Abstimmung.":
       "How often and how quickly ghosts start an overtaking attempt. Soft: rarer, more patient, more space - a field that runs cleanly and slightly staggered, nose to tail. Hard: more often, quicker, a smaller gap is already enough. 50% is the previous, measured tuning.",
     "Verteidigen": "Defending",

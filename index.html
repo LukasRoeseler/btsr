@@ -3093,7 +3093,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.7.20</span></span>
+        <span class="foot-ver">v<span id="app-version">0.7.21</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -7911,6 +7911,10 @@
           Ber&uuml;hrungen je Minute in den ersten zehn Sekunden gegen 34 im Dauerbetrieb,
           und dabei 2 statt 24 &Uuml;berholman&ouml;ver.</small></div>
         <label class="tgl"><input type="checkbox" id="ghost-w-start"><span></span></label></div>
+      <!-- BESTELLT (Phase 12, Punkt 8): "mach einen Schalter in die Ghost Optionen, wo ich
+           es abschalten kann." Standard AUS - ungeprueft an einem echten Auto. -->
+      <div class="opt-row"><div class="opt-label">Ghost: Rückweg nach einem Abgang <span class="wip-tag">experimentell</span><small>Statt sofort zu parken, versucht das Auto bis zu 3 Sekunden, selbst auf die Strecke zurückzufahren - anhand der zuletzt bekannten Stelle und der Ideallinie dort. Kommt es dabei nicht voran (vermutlich ein Hindernis), oder gelingt es in 3 Sekunden nicht, parkt es wie bisher. Es muss nicht an derselben Stelle wieder auffahren.</small></div>
+        <label class="tgl"><input type="checkbox" id="ghost-w-recovery"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Ghost: Ideallinie <span class="wip-tag">WIP</span>
           <!-- Seit v0.5.9 wirkt dieser Regler deutlich staerker: der Deckel aus
                learnSteerCap() ging von 0,55 auf 1,0, gemessen an dem, was die Original-App
@@ -9527,6 +9531,9 @@
     "Ghost: Ideallinie": "Ghost: racing line",
     "Ghost: Kurvendrosselung": "Ghost: corner slowdown",
     "Ghost: Rennhärte": "Ghost: race hardness",
+    "Ghost: Rückweg nach einem Abgang": "Ghost: recovery after leaving the track",
+    "Statt sofort zu parken, versucht das Auto bis zu 3 Sekunden, selbst auf die Strecke zurückzufahren - anhand der zuletzt bekannten Stelle und der Ideallinie dort. Kommt es dabei nicht voran (vermutlich ein Hindernis), oder gelingt es in 3 Sekunden nicht, parkt es wie bisher. Es muss nicht an derselben Stelle wieder auffahren.":
+      "Instead of parking right away, the car tries for up to 3 seconds to steer itself back onto the track - based on the last known spot and the racing line there. If it makes no progress (likely an obstacle), or doesn't succeed within 3 seconds, it parks as before. It doesn't have to rejoin at the same spot.",
     "Wie oft und wie schnell Ghosts einen Überholversuch starten. Weich: seltener, geduldiger, mehr Abstand - ein Feld, das sauber und leicht versetzt hintereinanderfährt. Hart: häufiger, schneller, eine kleinere Lücke reicht schon. 50% ist die bisherige, gemessene Abstimmung.":
       "How often and how quickly ghosts start an overtaking attempt. Soft: rarer, more patient, more space - a field that runs cleanly and slightly staggered, nose to tail. Hard: more often, quicker, a smaller gap is already enough. 50% is the previous, measured tuning.",
     "Verteidigen": "Defending",
@@ -27981,6 +27988,7 @@
     ['ghost-w-blau', 'wuerzeBlau'],
     ['ghost-charakter', 'charakter'],
     ['ghost-w-start', 'wuerzeStart'],
+    ['ghost-w-recovery', 'wuerzeRecovery'],
     // Die zwei Boxenstopp-Schalter. Sie gehoeren in dieselbe Liste, weil sie dieselbe Form
     // haben - Kaestchen an, Feld true - und nicht, weil sie mit der Wuerze zu tun haetten.
     ['ghost-pit', 'pitAn'],
@@ -30356,6 +30364,20 @@
   // was Byte 12 dazwischen meldet. Das unterscheidet, was Zeit allein nicht unterscheiden
   // kann, naemlich einen Ausfall der Lesung von einem Abflug.
   const GHOST_OFFTRACK_CONFIRM_MS = 900;
+  // BESTELLT (Phase 12, Punkt 8): "auf Basis der bekannten Strecke und des bekannten
+  // Ortes... zurueckfahren, zumindest fuer 3s versuchen - ausser es faehrt in der Zeit
+  // irgendwo gegen." Drei Sekunden ab dem bestaetigten Abgang (GHOST_OFFTRACK_CONFIRM_MS
+  // davor zaehlt nicht mit, das Auto haelt sich bis dahin noch fuer "auf der Bahn").
+  const GHOST_RECOVER_MS = 3000;
+  // "Faehrt irgendwo gegen": die vorhandene Kollisionserkennung (detectCrash() in
+  // 70-race.js) hilft hier NICHT - sie schaltet sich waehrend abseitsJetzt() bewusst ab,
+  // weil sie eine Bordsteinkante sonst staendig als Aufprall meldet (siehe deren eigene
+  // Begruendung). Ein Ghost hat ausserdem gar keine echten detectCrash()-Bytes, nur sein
+  // simuliertes Tempo. Der Ersatz hier ist gröber, aber robust: WER NICHT VORANKOMMT,
+  // OBWOHL GAS ANLIEGT, STEHT VOR ETWAS. Ungeprueft an einem echten Auto - deshalb der
+  // Schalter in den Optionen.
+  const GHOST_RECOVER_STUCK_V = 0.05;    // Anteil der Hoechstgeschwindigkeit
+  const GHOST_RECOVER_STUCK_MS = 500;    // so lange muss es anliegen, kein Fehlalarm
   // Wie frisch muss der letzte Kachelwechsel sein, damit der Zaehler als LAUFEND gilt?
   // GHOST_TILE_MS_MAX ist die laengste je gefahrene Kachel; wer darueber liegt, steht.
   const GHOST_ZAEHLER_FRISCH_MS = 4000;
@@ -30579,6 +30601,12 @@
     // Strecke liegen hat, kann es einschalten - dann haelt sich das Auto selbst auf der Bahn
     // und faehrt nur dort, wo es weiss, wo es ist.
     needCode: false,
+    // BESTELLT (Phase 12, Punkt 8): "Recovery-Funktion... aber mach einen Schalter, wo
+    // ich es abschalten kann." Standard AUS, wie wuerzeVerteidigen/wuerzeBlau: ein
+    // missglueckter Rueckweg waere schlimmer als der bisherige, sichere Halt (siehe die
+    // Begruendung bei ghostRecoveryVersuchen()), und das ist ungeprueft an einem echten
+    // Auto - wer es einschaltet, tut es mit offenen Augen.
+    wuerzeRecovery: false,
   };
 
   // ---- Der Anfangsabgleich der fuenf Wuerz-Kaestchen ---------------------------------
@@ -32284,6 +32312,7 @@
     car.parked = null;
     if (car.ghost) {
       car.ghost.cutOut = false; car.ghost.offSince = 0;
+      car.ghost.recoverUntil = 0; car.ghost.recoverStuckSince = 0;
       car.ghost.unparkAt = Date.now();
       // ---- DIE GNADE GILT AUCH HIER, und das war die gemeldete Luecke ------------------
       //
@@ -34572,6 +34601,10 @@
     // Fahren mit Begleitung" behauptete.
     car.ghost = { engine: e, tileIndex: null, lastCount: car.tileCount,
                   lastTick: 0, bias: 0, laps: 0, cutOut: false, freeRun: false,
+                  // Recovery-Versuch nach einem Abgang - siehe ghostRecoveryTick().
+                  // recoverUntil > 0 heisst "wird gerade versucht", recoverStuckSince > 0
+                  // heisst "seit hier steht das Tempo, moeglicherweise ein Aufprall".
+                  recoverUntil: 0, recoverStuckSince: 0,
                   // Faehrt dieser Ghost? NICHT car.timer pruefen: der wird erst in einem
                   // setTimeout gesetzt, damit vier Autos nicht in derselben Millisekunde
                   // senden - im Moment des Klicks ist er noch null.
@@ -34966,7 +34999,15 @@
     ghostOberflaecheSetzen(car);
 
     // Follow the tile counter so we know where on the layout we are.
-    if (car.tileCount !== null && car.tileCount !== g.lastCount) {
+    //
+    // NICHT WAEHREND EINES RECOVERY-VERSUCHS (g.recoverUntil): GEMESSEN bei
+    // GHOST_ZAEHLER_FRISCH_MS/zaehlerLaeuft weiter unten - der Kachelzaehler laeuft auch
+    // NEBEN der Bahn weiter, nur ungewoehnlich schnell ("er rast"). Ohne diese Ausnahme
+    // wuerde g.tileIndex waehrend des Versuchs dem rasenden Zaehler folgen und "die
+    // bekannte Stelle" waere nach wenigen hundert Millisekunden nicht mehr die Stelle, an
+    // der die Strecke verlassen wurde, sondern irgendeine spaetere - die Ideallinie
+    // laenke dann auf eine falsche, sich staendig aendernde Zielkachel.
+    if (!g.recoverUntil && car.tileCount !== null && car.tileCount !== g.lastCount) {
       // Die Dauer der gerade verlassenen Kachel, fuer die Phasenschaetzung der Linie.
       if (g.tileStart) {
         // DER TYP DER GERADE VERLASSENEN Kachel, also der von g.tileIndex - er wird erst
@@ -35188,8 +35229,57 @@
     const gnade = g.gnadeBis && now < g.gnadeBis;
     const parken = !gnade && !raceFormationLap
                    && (offConfirmed || (ghostCfg.needCode && noCode && !zaehlerLaeuft));
+    // ---- RECOVERY: erst versuchen zurueckzufahren, dann erst parken ------------------
+    //
+    // BESTELLT (Phase 12, Punkt 8): "Auf Basis der bekannten Strecke und des bekannten
+    // Ortes, an dem die Strecke verlassen wird, soll das Auto auf die Strecke
+    // zurückfahren, zumindest es für 3s versuchen - außer, es fährt in der Zeit irgendwo
+    // gegen. Es muss nicht an derselben Stelle wieder auffahren, nur irgendwo auf der
+    // Strecke."
+    //
+    // "AUF BASIS DER BEKANNTEN STRECKE" ist woertlich zu nehmen: car.parked bleibt
+    // waehrend des Versuchs ausdruecklich UNGESETZT, also bleibt offTrack unten false,
+    // und der normale Fahrblock weiter unten (`if (armed && !offTrack)`) rechnet ganz
+    // normal weiter - mit dem letzten bekannten g.tileIndex, der beim Ausfall der Lesung
+    // einfach stehenbleibt (siehe "Follow the tile counter" weiter oben). Die Ideallinie
+    // lenkt also dahin, wo die Strecke laut Karte an dieser Stelle als naechstes hinfuehrt
+    // - genau "auf Basis des bekannten Ortes", ohne eine zweite, eigene Lenkrechnung.
+    // Eine eigene Rueckweg-Geometrie zu erfinden waere hier das groessere Risiko gewesen:
+    // eine falsch herum geratene Lenkrichtung wuerde das Auto WEITER von der Strecke weg
+    // lenken statt zurueck, und genau davor warnt die Bestellung ausdruecklich.
     if (parken && !car.parked) {
-      parkCar(car, 'Bahn verlassen');
+      if (ghostCfg.wuerzeRecovery) {
+        if (!g.recoverUntil) g.recoverUntil = now + GHOST_RECOVER_MS;
+        if (now < g.recoverUntil) {
+          // "FAEHRT ES IRGENDWO GEGEN": kein Bytesignal verfuegbar (siehe die Begruendung
+          // bei GHOST_RECOVER_STUCK_V), also der groebere, aber robuste Ersatz - Gas liegt
+          // an (armed weiter unten), aber das Tempo bleibt nahe null.
+          const topKmh = g.engine && g.engine.config ? g.engine.config.topSpeedKmh : 0;
+          const vAnteil = (g.engine && g.engine.state && topKmh)
+            ? Math.abs(g.engine.state.speedKmh || 0) / topKmh : 0;
+          if (vAnteil < GHOST_RECOVER_STUCK_V) {
+            if (!g.recoverStuckSince) g.recoverStuckSince = now;
+            else if (now - g.recoverStuckSince > GHOST_RECOVER_STUCK_MS) {
+              log(garageLabel(car) + ': Rückweg abgebrochen, kein Vorankommen (vermutlich '
+                  + 'ein Hindernis).', 'err');
+              parkCar(car, 'Bahn verlassen');
+            }
+          } else {
+            g.recoverStuckSince = 0;
+          }
+        } else {
+          log(garageLabel(car) + ': Rückweg nach ' + (GHOST_RECOVER_MS / 1000)
+              + ' s nicht gefunden.', 'err');
+          parkCar(car, 'Bahn verlassen');
+        }
+      } else {
+        parkCar(car, 'Bahn verlassen');
+      }
+    } else if (g.recoverUntil) {
+      // parken ist nicht (mehr) noetig, waehrend ein Versuch lief - der Rueckweg hat
+      // funktioniert, nicht zwingend an derselben Stelle, wie bestellt.
+      log(garageLabel(car) + ': Rückweg gefunden, wieder auf der Bahn.', 'info');
+      g.recoverUntil = 0; g.recoverStuckSince = 0;
     }
     const offTrack = !!car.parked;
     // Wer steht, warnt die anderen - solange das Rennen laeuft und er nicht in der
@@ -43020,6 +43110,80 @@
       startGhost(car);
       if (car.timer) { clearInterval(car.timer); car.timer = null; }
       return car;
+    },
+
+    // ---- RECOVERY: erst der Rueckweg, dann erst parken -----------------------------
+    //
+    // Faehrt ghostTick() ueber eine gefaelschte Uhr, mit car.tileCode auf 0x00 gehalten -
+    // dieselbe Lage wie ein bestaetigter Abgang. o.speedFactor haelt g.engine.state.speed
+    // ueber der Steckenbleiben-Schwelle (ghostTick() selbst schreibt die Physik nicht
+    // fort, also bliebe sie sonst bei 0 stehen und jeder Versuch saehe wie ein Hindernis
+    // aus). o.erfolgBeiMs laesst den Code ab diesem Zeitpunkt wieder gueltig werden.
+    recoveryProbe(o) {
+      const opt = o || {};
+      const merkGarage = garage.splice(0, garage.length);
+      const merkTiles = currentTrackTiles;
+      const merkRecovery = ghostCfg.wuerzeRecovery;
+      const merkFlag = flagState;
+      const echtNow = Date.now;
+      try {
+        currentTrackTiles = codeToTrack(opt.code || 'SG4R4G4').tiles;
+        lineCache = null;
+        ghostCfg.wuerzeRecovery = opt.an !== false;
+        flagState = 'green';
+        const car = OMEGA_TEST.attrappeGhost('W');
+        garage.push(car);
+        car.ghost.freeRun = true;
+        // Die STARTGNADE (drei Sekunden nach jedem Start/Zuruecksetzen, siehe deren
+        // Begruendung bei parken()) ist ein ANDERER Mechanismus als diese Probe pruefen
+        // soll - ausdruecklich geloescht, sonst maskiert sie die ersten drei Sekunden
+        // jedes Laufs.
+        car.ghost.gnadeBis = 0;
+        car.ghost.tileIndex = 2;
+        car.tileCode = 0x02;
+        car.tileCount = 5;
+        // attrappeGhost() liefert die Physik unkalibriert (topSpeedKmh im einstelligen
+        // Bereich) - fuer diese Probe ohne Bedeutung, ausser fuer die Steckenbleiben-
+        // Schwelle, die ein GEMESSENES Vielfaches der Hoechstgeschwindigkeit ist. Auf
+        // einen realistischen Wert gesetzt, damit dieser Anteil etwas misst.
+        if (car.ghost.engine && car.ghost.engine.config) {
+          car.ghost.engine.config.topSpeedKmh = 300;
+        }
+        let uhr = echtNow();
+        Date.now = () => uhr;
+        const schritt = 60;
+        const gesamt = opt.dauerMs !== undefined ? opt.dauerMs : 5000;
+        const verlauf = [];
+        for (let t = 0; t < gesamt; t += schritt) {
+          uhr += schritt;
+          car.tileCode = (opt.erfolgBeiMs !== undefined && t >= opt.erfolgBeiMs) ? 0x02 : 0x00;
+          // steckenBleiben simuliert ein wirklich blockiertes Auto: ghostTick() rechnet
+          // die Physik selbst fort (Gas liegt an, das Tempo steigt sonst von selbst), ein
+          // einmaliges Setzen vor der Schleife wuerde also nach dem ersten Takt schon
+          // wieder ueberschrieben sein. Nur ein Hindernis haelt das Tempo Takt fuer Takt
+          // unten - deshalb hier und nicht einmalig vor der Schleife.
+          if (opt.steckenBleiben && car.ghost.engine && car.ghost.engine.state) {
+            car.ghost.engine.state.speedKmh = 0;
+          } else if (t === 0 && car.ghost.engine && car.ghost.engine.state) {
+            car.ghost.engine.state.speedKmh =
+              (opt.speedFactor === undefined ? 0.3 : opt.speedFactor)
+              * car.ghost.engine.config.topSpeedKmh;
+          }
+          ghostTick(car);
+          verlauf.push({ t, parked: car.parked, versucht: !!car.ghost.recoverUntil });
+          if (car.parked) break;
+        }
+        return { geparkt: car.parked, versuchLief: verlauf.some((v) => v.versucht),
+                 letztesT: verlauf.length ? verlauf[verlauf.length - 1].t : 0, verlauf };
+      } finally {
+        Date.now = echtNow;
+        garage.splice(0, garage.length);
+        for (const c of merkGarage) garage.push(c);
+        currentTrackTiles = merkTiles;
+        lineCache = null;
+        ghostCfg.wuerzeRecovery = merkRecovery;
+        flagState = merkFlag;
+      }
     },
 
     // ---- WER ROLLT WIE WEIT AUS? Die Reihenfolge der Ziellinie ------------------
@@ -57686,6 +57850,7 @@
       ['ghost-w-blau', () => ghostCfg.wuerzeBlau],
       ['ghost-charakter', () => ghostCfg.charakter],
       ['ghost-w-start', () => ghostCfg.wuerzeStart],
+      ['ghost-w-recovery', () => ghostCfg.wuerzeRecovery],
       ['ghost-learn', () => ghostCfg.learn],
       ['ghost-learn-pace', () => ghostCfg.learnPace],
       ['ghost-needcode', () => ghostCfg.needCode],
@@ -58304,6 +58469,57 @@
       currentTrackTiles = merkTiles;
       lineCache = null;
     }
+  });
+
+  // ---- Recovery nach einem Abgang: erst versuchen, dann erst parken ----------------
+  //
+  // BESTELLT (Phase 12, Punkt 8): "Auf Basis der bekannten Strecke und des bekannten
+  // Ortes... zurückfahren, zumindest es für 3s versuchen - außer, es fährt in der Zeit
+  // irgendwo gegen. Es muss nicht an derselben Stelle wieder auffahren." Und: "mach
+  // einen Schalter in die Ghost Optionen, wo ich es abschalten kann."
+  //
+  // Vier Faelle, alle ueber dieselbe Sonde (recoveryProbe): der Schalter aus verhaelt
+  // sich wie bisher (sofort parken), an gibt bis zu drei Sekunden Zeit, ein
+  // wiedergefundener Code laesst den Versuch erfolgreich enden, und ein Auto, das nicht
+  // vorankommt (simuliert: die Physik wird jeden Takt auf 0 zurueckgesetzt, als stuende
+  // es vor einem Hindernis), gibt VOR den drei Sekunden auf.
+  stAdd('Recovery: erst der Rückweg, dann erst parken - mit Schalter', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.recoveryProbe) {
+      return { skip: true, mass: 'recoveryProbe nicht vorhanden' };
+    }
+    const fehler = [], teile = [];
+    // 1. AUSGESCHALTET: sofort parken, wie vor dieser Aenderung - kein Versuch.
+    const aus = OMEGA_TEST.recoveryProbe({ dauerMs: 2000, an: false });
+    teile.push('aus: parkt bei ' + aus.letztesT + ' ms, Versuch ' + aus.versuchLief);
+    if (aus.versuchLief) fehler.push('ausgeschaltet versucht trotzdem einen Rueckweg');
+    if (!aus.geparkt) fehler.push('ausgeschaltet parkt gar nicht');
+    // 2. ANGESCHALTET, KEIN CODE JEMALS: nach den vollen ~3,9 s parken (0,9 s
+    //    Bestaetigung + 3 s Versuch), nicht sofort.
+    const zeitAb = OMEGA_TEST.recoveryProbe({ dauerMs: 5000 });
+    teile.push('Zeit ab: parkt bei ' + zeitAb.letztesT + ' ms');
+    if (!zeitAb.geparkt) fehler.push('parkt nach Ablauf der Zeit gar nicht');
+    if (!(zeitAb.letztesT >= 3800 && zeitAb.letztesT <= 4200)) {
+      fehler.push('Zeit ab: parkt bei ' + zeitAb.letztesT + ' ms statt rund 3900');
+    }
+    // 3. CODE KOMMT WAEHREND DES VERSUCHS ZURUECK: Erfolg, kein Parken - und nicht
+    //    zwingend an derselben Stelle, wie bestellt (die Sonde prueft nur, DASS es
+    //    weiterfaehrt, nicht WO - "wo" ist schon durch buildLine()/die Ideallinie
+    //    getestet, siehe die anderen Ideallinien-Tests).
+    const erfolg = OMEGA_TEST.recoveryProbe({ dauerMs: 3000, erfolgBeiMs: 1500 });
+    teile.push('Erfolg: geparkt ' + !!erfolg.geparkt + ', Versuch ' + erfolg.versuchLief);
+    if (erfolg.geparkt) fehler.push('parkt trotz wiedergefundenem Code');
+    if (!erfolg.versuchLief) fehler.push('kein Versuch lief, obwohl der Code zurueckkam');
+    // 4. KEIN VORANKOMMEN ("faehrt irgendwo gegen"): fruehzeitig aufgeben, deutlich vor
+    //    den vollen 3 Sekunden.
+    const stecken = OMEGA_TEST.recoveryProbe({ dauerMs: 3000, steckenBleiben: true });
+    teile.push('steckt: parkt bei ' + stecken.letztesT + ' ms');
+    if (!stecken.geparkt) fehler.push('steckengeblieben parkt gar nicht');
+    if (!(stecken.letztesT < zeitAb.letztesT - 500)) {
+      fehler.push('steckengeblieben gibt nicht frueher auf als der volle Zeitablauf ('
+                   + stecken.letztesT + ' ms)');
+    }
+    return { ok: fehler.length === 0,
+             mass: teile.join(' | ') + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
   // ---- Zieleinlauf: abwechselnd links und rechts ----

@@ -5070,6 +5070,80 @@
       return car;
     },
 
+    // ---- RECOVERY: erst der Rueckweg, dann erst parken -----------------------------
+    //
+    // Faehrt ghostTick() ueber eine gefaelschte Uhr, mit car.tileCode auf 0x00 gehalten -
+    // dieselbe Lage wie ein bestaetigter Abgang. o.speedFactor haelt g.engine.state.speed
+    // ueber der Steckenbleiben-Schwelle (ghostTick() selbst schreibt die Physik nicht
+    // fort, also bliebe sie sonst bei 0 stehen und jeder Versuch saehe wie ein Hindernis
+    // aus). o.erfolgBeiMs laesst den Code ab diesem Zeitpunkt wieder gueltig werden.
+    recoveryProbe(o) {
+      const opt = o || {};
+      const merkGarage = garage.splice(0, garage.length);
+      const merkTiles = currentTrackTiles;
+      const merkRecovery = ghostCfg.wuerzeRecovery;
+      const merkFlag = flagState;
+      const echtNow = Date.now;
+      try {
+        currentTrackTiles = codeToTrack(opt.code || 'SG4R4G4').tiles;
+        lineCache = null;
+        ghostCfg.wuerzeRecovery = opt.an !== false;
+        flagState = 'green';
+        const car = OMEGA_TEST.attrappeGhost('W');
+        garage.push(car);
+        car.ghost.freeRun = true;
+        // Die STARTGNADE (drei Sekunden nach jedem Start/Zuruecksetzen, siehe deren
+        // Begruendung bei parken()) ist ein ANDERER Mechanismus als diese Probe pruefen
+        // soll - ausdruecklich geloescht, sonst maskiert sie die ersten drei Sekunden
+        // jedes Laufs.
+        car.ghost.gnadeBis = 0;
+        car.ghost.tileIndex = 2;
+        car.tileCode = 0x02;
+        car.tileCount = 5;
+        // attrappeGhost() liefert die Physik unkalibriert (topSpeedKmh im einstelligen
+        // Bereich) - fuer diese Probe ohne Bedeutung, ausser fuer die Steckenbleiben-
+        // Schwelle, die ein GEMESSENES Vielfaches der Hoechstgeschwindigkeit ist. Auf
+        // einen realistischen Wert gesetzt, damit dieser Anteil etwas misst.
+        if (car.ghost.engine && car.ghost.engine.config) {
+          car.ghost.engine.config.topSpeedKmh = 300;
+        }
+        let uhr = echtNow();
+        Date.now = () => uhr;
+        const schritt = 60;
+        const gesamt = opt.dauerMs !== undefined ? opt.dauerMs : 5000;
+        const verlauf = [];
+        for (let t = 0; t < gesamt; t += schritt) {
+          uhr += schritt;
+          car.tileCode = (opt.erfolgBeiMs !== undefined && t >= opt.erfolgBeiMs) ? 0x02 : 0x00;
+          // steckenBleiben simuliert ein wirklich blockiertes Auto: ghostTick() rechnet
+          // die Physik selbst fort (Gas liegt an, das Tempo steigt sonst von selbst), ein
+          // einmaliges Setzen vor der Schleife wuerde also nach dem ersten Takt schon
+          // wieder ueberschrieben sein. Nur ein Hindernis haelt das Tempo Takt fuer Takt
+          // unten - deshalb hier und nicht einmalig vor der Schleife.
+          if (opt.steckenBleiben && car.ghost.engine && car.ghost.engine.state) {
+            car.ghost.engine.state.speedKmh = 0;
+          } else if (t === 0 && car.ghost.engine && car.ghost.engine.state) {
+            car.ghost.engine.state.speedKmh =
+              (opt.speedFactor === undefined ? 0.3 : opt.speedFactor)
+              * car.ghost.engine.config.topSpeedKmh;
+          }
+          ghostTick(car);
+          verlauf.push({ t, parked: car.parked, versucht: !!car.ghost.recoverUntil });
+          if (car.parked) break;
+        }
+        return { geparkt: car.parked, versuchLief: verlauf.some((v) => v.versucht),
+                 letztesT: verlauf.length ? verlauf[verlauf.length - 1].t : 0, verlauf };
+      } finally {
+        Date.now = echtNow;
+        garage.splice(0, garage.length);
+        for (const c of merkGarage) garage.push(c);
+        currentTrackTiles = merkTiles;
+        lineCache = null;
+        ghostCfg.wuerzeRecovery = merkRecovery;
+        flagState = merkFlag;
+      }
+    },
+
     // ---- WER ROLLT WIE WEIT AUS? Die Reihenfolge der Ziellinie ------------------
     //
     // GEMELDET: "Ende des Rennens Ghosts anhalten: nicht der Platz soll bestimmen, wie weit

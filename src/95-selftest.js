@@ -11084,6 +11084,7 @@
       ['ghost-w-blau', () => ghostCfg.wuerzeBlau],
       ['ghost-charakter', () => ghostCfg.charakter],
       ['ghost-w-start', () => ghostCfg.wuerzeStart],
+      ['ghost-w-recovery', () => ghostCfg.wuerzeRecovery],
       ['ghost-learn', () => ghostCfg.learn],
       ['ghost-learn-pace', () => ghostCfg.learnPace],
       ['ghost-needcode', () => ghostCfg.needCode],
@@ -11702,6 +11703,57 @@
       currentTrackTiles = merkTiles;
       lineCache = null;
     }
+  });
+
+  // ---- Recovery nach einem Abgang: erst versuchen, dann erst parken ----------------
+  //
+  // BESTELLT (Phase 12, Punkt 8): "Auf Basis der bekannten Strecke und des bekannten
+  // Ortes... zurückfahren, zumindest es für 3s versuchen - außer, es fährt in der Zeit
+  // irgendwo gegen. Es muss nicht an derselben Stelle wieder auffahren." Und: "mach
+  // einen Schalter in die Ghost Optionen, wo ich es abschalten kann."
+  //
+  // Vier Faelle, alle ueber dieselbe Sonde (recoveryProbe): der Schalter aus verhaelt
+  // sich wie bisher (sofort parken), an gibt bis zu drei Sekunden Zeit, ein
+  // wiedergefundener Code laesst den Versuch erfolgreich enden, und ein Auto, das nicht
+  // vorankommt (simuliert: die Physik wird jeden Takt auf 0 zurueckgesetzt, als stuende
+  // es vor einem Hindernis), gibt VOR den drei Sekunden auf.
+  stAdd('Recovery: erst der Rückweg, dann erst parken - mit Schalter', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.recoveryProbe) {
+      return { skip: true, mass: 'recoveryProbe nicht vorhanden' };
+    }
+    const fehler = [], teile = [];
+    // 1. AUSGESCHALTET: sofort parken, wie vor dieser Aenderung - kein Versuch.
+    const aus = OMEGA_TEST.recoveryProbe({ dauerMs: 2000, an: false });
+    teile.push('aus: parkt bei ' + aus.letztesT + ' ms, Versuch ' + aus.versuchLief);
+    if (aus.versuchLief) fehler.push('ausgeschaltet versucht trotzdem einen Rueckweg');
+    if (!aus.geparkt) fehler.push('ausgeschaltet parkt gar nicht');
+    // 2. ANGESCHALTET, KEIN CODE JEMALS: nach den vollen ~3,9 s parken (0,9 s
+    //    Bestaetigung + 3 s Versuch), nicht sofort.
+    const zeitAb = OMEGA_TEST.recoveryProbe({ dauerMs: 5000 });
+    teile.push('Zeit ab: parkt bei ' + zeitAb.letztesT + ' ms');
+    if (!zeitAb.geparkt) fehler.push('parkt nach Ablauf der Zeit gar nicht');
+    if (!(zeitAb.letztesT >= 3800 && zeitAb.letztesT <= 4200)) {
+      fehler.push('Zeit ab: parkt bei ' + zeitAb.letztesT + ' ms statt rund 3900');
+    }
+    // 3. CODE KOMMT WAEHREND DES VERSUCHS ZURUECK: Erfolg, kein Parken - und nicht
+    //    zwingend an derselben Stelle, wie bestellt (die Sonde prueft nur, DASS es
+    //    weiterfaehrt, nicht WO - "wo" ist schon durch buildLine()/die Ideallinie
+    //    getestet, siehe die anderen Ideallinien-Tests).
+    const erfolg = OMEGA_TEST.recoveryProbe({ dauerMs: 3000, erfolgBeiMs: 1500 });
+    teile.push('Erfolg: geparkt ' + !!erfolg.geparkt + ', Versuch ' + erfolg.versuchLief);
+    if (erfolg.geparkt) fehler.push('parkt trotz wiedergefundenem Code');
+    if (!erfolg.versuchLief) fehler.push('kein Versuch lief, obwohl der Code zurueckkam');
+    // 4. KEIN VORANKOMMEN ("faehrt irgendwo gegen"): fruehzeitig aufgeben, deutlich vor
+    //    den vollen 3 Sekunden.
+    const stecken = OMEGA_TEST.recoveryProbe({ dauerMs: 3000, steckenBleiben: true });
+    teile.push('steckt: parkt bei ' + stecken.letztesT + ' ms');
+    if (!stecken.geparkt) fehler.push('steckengeblieben parkt gar nicht');
+    if (!(stecken.letztesT < zeitAb.letztesT - 500)) {
+      fehler.push('steckengeblieben gibt nicht frueher auf als der volle Zeitablauf ('
+                   + stecken.letztesT + ' ms)');
+    }
+    return { ok: fehler.length === 0,
+             mass: teile.join(' | ') + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
   // ---- Zieleinlauf: abwechselnd links und rechts ----

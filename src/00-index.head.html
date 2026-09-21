@@ -3093,7 +3093,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.7.20</span></span>
+        <span class="foot-ver">v<span id="app-version">0.7.21</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -7911,6 +7911,10 @@
           Ber&uuml;hrungen je Minute in den ersten zehn Sekunden gegen 34 im Dauerbetrieb,
           und dabei 2 statt 24 &Uuml;berholman&ouml;ver.</small></div>
         <label class="tgl"><input type="checkbox" id="ghost-w-start"><span></span></label></div>
+      <!-- BESTELLT (Phase 12, Punkt 8): "mach einen Schalter in die Ghost Optionen, wo ich
+           es abschalten kann." Standard AUS - ungeprueft an einem echten Auto. -->
+      <div class="opt-row"><div class="opt-label">Ghost: Rückweg nach einem Abgang <span class="wip-tag">experimentell</span><small>Statt sofort zu parken, versucht das Auto bis zu 3 Sekunden, selbst auf die Strecke zurückzufahren - anhand der zuletzt bekannten Stelle und der Ideallinie dort. Kommt es dabei nicht voran (vermutlich ein Hindernis), oder gelingt es in 3 Sekunden nicht, parkt es wie bisher. Es muss nicht an derselben Stelle wieder auffahren.</small></div>
+        <label class="tgl"><input type="checkbox" id="ghost-w-recovery"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Ghost: Ideallinie <span class="wip-tag">WIP</span>
           <!-- Seit v0.5.9 wirkt dieser Regler deutlich staerker: der Deckel aus
                learnSteerCap() ging von 0,55 auf 1,0, gemessen an dem, was die Original-App
