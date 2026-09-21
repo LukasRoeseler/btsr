@@ -1,7 +1,8 @@
 # Klangquellen
 
-Zwei klar getrennte Gruppen. Der Unterschied ist wichtig, weil nur die eine
-Gruppe fremdes Aufnahmematerial enthaelt.
+Drei klar getrennte Gruppen. Der Unterschied ist wichtig, weil nur eine davon
+fremdes Aufnahmematerial enthaelt, und eine dritte weder das eine noch das
+andere ist - eine Systemstimme, kein Mensch und keine Physik.
 
 ## Vollstaendig synthetisch — kein Aufnahmematerial
 
@@ -276,6 +277,36 @@ Baenke ungleich zuenden — daher das Blubbern.
 
 Die Fahrzeugnamen bezeichnen das nachempfundene Motorkonzept, nicht eine
 Aufnahme des jeweiligen Fahrzeugs.
+
+## Ansagen: eine Windows-Systemstimme, keine Aufnahme eines Menschen
+
+BESTELLT: "Kannst du die englischen und deutschen Ansagen zu Regen usw. aufnehmen
+und dann einen Funk-Filter draufsetzen, sodass es auch klappt, wenn ein Browser es
+nicht unterstuetzt? Rundenzeiten geht natuerlich nicht, das kann computergeneriert
+bleiben." "Aufgenommen" heisst hier: vorab in eine Datei gerendert, nicht von einem
+Menschen gesprochen. `tools/voice_synth.py` erzeugt die fuenf festen Meldungen
+(Schaden kritisch, Tank fast leer, Reifen abgefahren, Regen an, Regen aus) je
+einmal auf Deutsch und Englisch ueber die zwei auf dem Baurechner installierten
+Windows-Stimmen (`Microsoft Hedda Desktop` fuer Deutsch, `Microsoft Zira Desktop`
+fuer Englisch, ueber .NET System.Speech), dann durch einen Bandpass (320-3000 Hz),
+eine leichte Saettigung und einen Auf-/Abschaltklick, alles in `tools/voice_synth.py`
+selbst (numpy, keine weitere Bibliothek).
+
+Das ist derselbe Funk-Effekt, den ein fruehrer, inzwischen wieder entfernter
+Live-Filter in `ansage()` (`src/80-sound.js`) auf der ECHTEN Browserstimme
+versucht hatte - siehe der Kommentar dort. Er scheiterte an genau einer Stelle:
+`SpeechSynthesisUtterance` gibt der Seite keinen Audioknoten, es gibt also nichts,
+wo ein Filter dazwischen koennte. Eine vorab gerenderte Datei hat dieses Problem
+nicht - sie ist ein ganz normaler `AudioBuffer`, geladen und abgespielt genau wie
+jeder Motor- oder Effektton (`loadVoiceSamples()`/`playAnsageClip()` in
+`src/80-sound.js`, `audio/voice.json`).
+
+**Sie ersetzen die live gesprochene Ansage nicht.** Jeder Browser mit
+`speechSynthesis` hoert weiterhin die echte, live erzeugte Stimme wie bisher,
+unveraendert - die Aufnahmen greifen nur als Fallback, wenn es `speechSynthesis`
+gar nicht gibt. Rundenzeiten haben aus demselben Grund keine Aufnahme: sie tragen
+eine Zahl, die sich jede Runde aendert, eine feste Datei kann sie nicht sagen -
+sie bleiben live und fallen ohne `speechSynthesis` einfach aus, wie zuvor.
 
 ## Aus Pixabay-Aufnahmen geschnitten (lizenzfrei)
 

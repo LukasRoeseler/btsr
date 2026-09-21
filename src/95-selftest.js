@@ -4519,6 +4519,75 @@
              mass: gefallen + ' Meldungen, ' + r.gesagt.length + ' Saetze (soll 0 und 0)' };
   });
 
+  // ---- Ohne speechSynthesis: dieselbe Regel zieht die richtige Aufnahme -------------
+  //
+  // BESTELLT: "einen Funk-Filter draufsetzen, sodass es auch klappt, wenn ein Browser es
+  // nicht unterstuetzt." Dieselbe Zustandsfolge wie im Test darueber (dieselben fuenf
+  // Meldungen, derselbe Fall-und-Erholung), aber diesmal OHNE speechSynthesis im
+  // Fenster - ansage() muss auf playAnsageClip() ausweichen. Wichtig ist der SCHLUESSEL:
+  // 'rain' hat zwei Aufnahmen (an/aus), und eine falsche Zuordnung wuerde "es regnet"
+  // abspielen, wenn der Regen gerade aufhoert.
+  stAdd('Ansagen ohne speechSynthesis: die richtige Aufnahme je Meldung', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.ansagenFunkProbe) {
+      return { skip: true, mass: 'ansagenFunkProbe nicht vorhanden' };
+    }
+    const voll = { health: 1, fuel: 1, tyre: 1, rain: false };
+    const folge = [
+      voll,
+      { health: 0.5, fuel: 0.5, tyre: 0.5, rain: false },
+      { health: 0.08, fuel: 1, tyre: 1, rain: false },   // Schaden faellt
+      { health: 0.05, fuel: 1, tyre: 1, rain: false },   // Gegenprobe: nicht nochmal
+      { health: 0.03, fuel: 0.09, tyre: 1, rain: false },// Tank faellt
+      { health: 1, fuel: 0.05, tyre: 0.07, rain: true }, // Reifen und Regen an
+      { health: 1, fuel: 1, tyre: 1, rain: true },       // Gegenprobe: Regen steht
+      voll,                                              // Regen hoert auf
+      { health: 0.05, fuel: 1, tyre: 1, rain: false },   // Schaden wieder scharf
+    ];
+    const r = OMEGA_TEST.ansagenFunkProbe(folge);
+    const schluessel = r.abgespielt.map((m) => (m || '').split('/')[0]);
+    const soll = ['damage', 'fuel', 'tyre', 'rainstart', 'rainstop', 'damage'];
+    const schlecht = [];
+    if (schluessel.length !== soll.length) {
+      schlecht.push(schluessel.length + ' Aufnahmen statt ' + soll.length);
+    }
+    for (let i = 0; i < Math.min(schluessel.length, soll.length); i++) {
+      if (schluessel[i] !== soll[i]) {
+        schlecht.push('Schritt ' + i + ': "' + schluessel[i] + '" statt "' + soll[i] + '"');
+      }
+    }
+    return { ok: schlecht.length === 0,
+             mass: schluessel.join(' ') + ' (Umgebung hatte speechSynthesis: '
+                   + r.hatteSpeechEcht + ')' + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // ---- Jede der fuenf Meldungen hat eine Aufnahme in beiden Sprachen ----------------
+  //
+  // Statischer Gegencheck zur Regel oben: die Regel kann den richtigen SCHLUESSEL
+  // ziehen und trotzdem leer ausgehen, wenn audio/voice.json eine Sprache oder eine
+  // Meldung vergisst. tools/voice_synth.py schreibt die Datei; dieser Test haelt sie
+  // gegen die fuenf Schluessel, die ansage()/ansagenPruefen() tatsaechlich benutzen.
+  stAdd('Ansage-Aufnahmen: fuenf Meldungen, beide Sprachen, im Manifest', async () => {
+    if (location.protocol === 'file:') {
+      return { skip: true, mass: 'ohne Server kein Manifest' };
+    }
+    let man;
+    try {
+      man = await fetch('audio/voice.json', { cache: 'reload' }).then((r) => r.json());
+    } catch (e) { return { skip: true, mass: 'Manifest nicht ladbar: ' + e.message }; }
+    const erwartet = ['damage', 'fuel', 'tyre', 'rainstart', 'rainstop'];
+    const schlecht = [];
+    for (const k of erwartet) {
+      if (!man[k]) { schlecht.push(k + ' fehlt ganz'); continue; }
+      for (const spr of ['de', 'en']) {
+        if (!man[k][spr]) schlecht.push(k + '/' + spr + ' fehlt');
+      }
+    }
+    for (const k of Object.keys(man)) if (erwartet.indexOf(k) < 0) schlecht.push(k + ' unerwartet im Manifest');
+    return { ok: schlecht.length === 0,
+             mass: erwartet.length + ' Meldungen x 2 Sprachen geprueft'
+                   + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
   // ---- Gaskennlinie und Anfahrschub ----
   //
   // DIE ZUSICHERUNG DER AUFGABE war woertlich: "0 % input -> 0 % Beschleunigung und

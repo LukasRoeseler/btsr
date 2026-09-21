@@ -3093,7 +3093,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.7.12</span></span>
+        <span class="foot-ver">v<span id="app-version">0.7.13</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -26588,6 +26588,7 @@
       if (audioCtx.state === 'suspended') audioCtx.resume();
       loadEngineSamples(); // needs the AudioContext, so it can only start from here
       loadFxSamples();
+      loadVoiceSamples();
       loadAmbience();
     }
     document.removeEventListener('pointerdown', unlockAudioOnFirstGesture);
@@ -26603,6 +26604,7 @@
       if (audioCtx.state === 'suspended') audioCtx.resume();
       loadEngineSamples();
       loadFxSamples();
+      loadVoiceSamples();
       loadAmbience();
       refreshAmbienceGains();
     } else if (engineGain) {
@@ -26870,6 +26872,49 @@
     }
   }
 
+  // ---- Vorab aufgenommene Ansagen, fuer Browser ohne speechSynthesis ----------------
+  //
+  // BESTELLT: "die englischen und deutschen Ansagen zu Regen usw. aufnehmen und einen
+  // Funk-Filter draufsetzen, sodass es auch klappt, wenn ein Browser es nicht
+  // unterstuetzt." Aufgenommen im Sinn von tools/voice_synth.py: eine Windows-Stimme
+  // (nicht der Nutzer), gerendert und band-begrenzt VOR dem Ausliefern - siehe die
+  // Begruendung dort und den Kommentar ueber ansage() weiter unten. Fuenf Meldungen
+  // ('damage', 'fuel', 'tyre', 'rainstart', 'rainstop'), keine mit 'lap': Rundenzeiten
+  // tragen eine Zahl, die sich jede Runde aendert, eine feste Aufnahme kann sie nicht
+  // sagen - das bleibt live speechSynthesis und faellt ohne sie einfach aus, wie bisher.
+  const voiceBuffers = {};
+
+  async function loadVoiceSamples() {
+    if (!audioCtx) return;
+    try {
+      const res = await fetch('audio/voice.json', { cache: 'reload' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const manifest = await res.json();
+      for (const key of Object.keys(manifest)) {
+        voiceBuffers[key] = {};
+        for (const spr of Object.keys(manifest[key])) {
+          const r = await fetch('audio/' + manifest[key][spr]);
+          if (!r.ok) throw new Error(manifest[key][spr]);
+          voiceBuffers[key][spr] = await audioCtx.decodeAudioData(await r.arrayBuffer());
+        }
+      }
+    } catch (err) {
+      // Duldsam wie loadFxSamples(): ohne audio/voice.json bleibt der Funk-Ersatz einfach
+      // aus, und Browser MIT speechSynthesis sind davon ohnehin nicht betroffen.
+      log('Keine Ansage-Aufnahmen gefunden, Funk-Ersatz bleibt aus.', 'info');
+    }
+  }
+
+  // Die aufgenommene Ansage abspielen, wenn es sie gibt - sonst false, genau wie ein
+  // gescheiterter ansage()-Aufruf. `key` ist meist gleich `art` (siehe ansage()), nur
+  // 'rain' hat zwei Aufnahmen (an/aus) und braucht den spezifischeren Schluessel.
+  function playAnsageClip(key) {
+    const satz = voiceBuffers[key];
+    const puffer = satz && satz[lang];
+    if (!puffer) return false;
+    return playFx(puffer, 1.0);
+  }
+
   // `seite` ist -1..1 und optional. Sie dient EINEM Zweck: einen Einmalklang dem Auto
   // zuzuordnen, das ihn erzeugt hat. Ohne Angabe bleibt er mittig, also genau wie bisher.
   function playFx(buffer, gainVal, seite) {
@@ -27007,16 +27052,23 @@
   const ansageAn = { lap: true, damage: false, fuel: false, tyre: false, rain: false };
   const ansageLatch = { damage: false, fuel: false, tyre: false, rain: null };
 
-  // HIER STAND DER FUNKFILTER, und er ist auf Bitte des Nutzers wieder heraus. Was er
-  // konnte: Knacken beim Aufschalten, ein Rauschteppich darunter, Knacken beim Loslassen,
-  // und eine Stimme, die schneller und flacher spricht. Was er NICHT konnte, und was ihn
-  // am Ende halbherzig machte: die Stimme selbst bandbegrenzen - speechSynthesis liefert
-  // keinen Audioknoten, es gibt also nichts, wo ein Filter dazwischen koennte.
+  // HIER STAND DER FUNKFILTER als Live-Effekt auf der Browserstimme, und er ist auf Bitte
+  // des Nutzers wieder heraus. Was er konnte: Knacken beim Aufschalten, ein Rauschteppich
+  // darunter, Knacken beim Loslassen, eine Stimme, die schneller und flacher spricht. Was
+  // er NICHT konnte, und was ihn am Ende halbherzig machte: die Stimme selbst
+  // bandbegrenzen - speechSynthesis liefert keinen Audioknoten, es gibt also nichts, wo
+  // ein Filter dazwischen koennte.
+  //
+  // DESHALB JETZT VORAB GERENDERT statt live gefiltert (tools/voice_synth.py): eine
+  // Datei ist ein ganz normaler AudioBuffer, genau wie Motor- und Effektton, und der
+  // Funk-Filter wirkt dort direkt auf die Stimme. Nur als FALLBACK: hat der Browser
+  // speechSynthesis, bleibt es bei der live gesprochenen Stimme wie bisher - die Aufnahme
+  // greift erst, wenn es sie gar nicht gibt.
 
   // ---- Der gemeinsame Kern ---------------------------------------------------------
-  function ansage(art, text) {
+  function ansage(art, text, klangSchluessel) {
     if (!ansageAn[art]) return false;
-    if (!('speechSynthesis' in window)) return false;
+    if (!('speechSynthesis' in window)) return playAnsageClip(klangSchluessel || art);
     try {
       // ABBRECHEN VOR DEM SPRECHEN. Zwei Meldungen kurz hintereinander duerfen sich nicht
       // stapeln - sonst laeuft die Stimme der Gegenwart nach und meldet den Tank, waehrend
@@ -27098,7 +27150,9 @@
         // "hoert" nicht wie "hört".
         const t = w.rain ? (de ? 'Es regnet' : 'Rain has started')
                          : (de ? 'Der Regen hört auf' : 'The rain is stopping');
-        if (ansage('rain', t)) raus.push('rain');
+        // Zwei Aufnahmen fuer eine Meldung: 'rain' hat einen Text an und einen aus, der
+        // Fallback braucht den spezifischeren Schluessel, um die richtige zu waehlen.
+        if (ansage('rain', t, w.rain ? 'rainstart' : 'rainstop')) raus.push('rain');
       }
     }
     return raus;
@@ -39272,6 +39326,14 @@
         // durch eine Attrappe - geprueft wird die REGEL, nicht das Betriebssystem.
         const echt = window.speechSynthesis;
         const gesagt = [];
+        // ansageLatch ist EIN geteiltes Objekt fuer die ganze Laufzeit, nicht je Probe
+        // neu. GEFUNDEN beim Bauen des Funk-Ersatz-Tests darunter: die Probe
+        // 'ausgeschaltet ist wirklich aus' setzt die Flanken auch bei ausgeschalteten
+        // Kaestchen (ansagenPruefen() haengt die Flanke nicht an ansage()s Erfolg),
+        // und der naechste Test in der Datei erbte ein bereits 'rain: true' geflanktes
+        // Latch - eine Meldung fiel, die zur eigenen Zustandsfolge gar nicht gehoerte.
+        const merkLatch = Object.assign({}, ansageLatch);
+        Object.assign(ansageLatch, { damage: false, fuel: false, tyre: false, rain: null });
         try {
           Object.defineProperty(window, 'speechSynthesis', {
             configurable: true,
@@ -39286,6 +39348,66 @@
           } else {
             delete window.speechSynthesis;
           }
+          Object.assign(ansageLatch, merkLatch);
+        }
+      } finally {
+        Object.keys(merk).forEach((art) => {
+          const el = $(kaesten[art]);
+          if (!el) return;
+          el.checked = merk[art];
+          el.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+      }
+    },
+    // ---- Derselbe Ablauf, aber OHNE speechSynthesis: der Funk-Ersatz -------------
+    //
+    // GEMESSEN werden soll die REGEL (welcher Aufnahme-Schluessel bei welcher Meldung
+    // gezogen wird), nicht das Zuspielen selbst - dafuer braucht es weder ein echtes
+    // AudioContext noch echte Dateien. playFx() wird deshalb durch eine Attrappe
+    // ersetzt, die nur festhaelt, WELCHER voiceBuffers-Eintrag ankam; voiceBuffers
+    // selbst bekommt fuer die Dauer der Probe fuenf erfundene, eindeutig markierte
+    // Eintraege, damit die Attrappe den Schluessel zurueckverfolgen kann.
+    ansagenFunkProbe(schritte) {
+      const kaesten = { lap: 'setting-announce', damage: 'setting-announce-damage',
+                        fuel: 'setting-announce-fuel', tyre: 'setting-announce-tyre',
+                        rain: 'setting-announce-rain' };
+      const merk = {};
+      try {
+        Object.keys(kaesten).forEach((art) => {
+          const el = $(kaesten[art]);
+          if (!el) return;
+          merk[art] = el.checked;
+          el.checked = true;
+          el.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+        const echtHatSpeech = 'speechSynthesis' in window;
+        const echtSpeech = echtHatSpeech ? window.speechSynthesis : undefined;
+        const echtPlayFx = playFx;
+        const echtBuffers = Object.assign({}, voiceBuffers);
+        Object.keys(voiceBuffers).forEach((k) => delete voiceBuffers[k]);
+        ['damage', 'fuel', 'tyre', 'rainstart', 'rainstop'].forEach((k) => {
+          voiceBuffers[k] = { de: { markiert: k + '/de' }, en: { markiert: k + '/en' } };
+        });
+        const abgespielt = [];
+        playFx = (puffer) => { abgespielt.push(puffer && puffer.markiert); return true; };
+        // Siehe der Kommentar bei ansagenFolge() weiter oben: ansageLatch ist geteilter
+        // Zustand, eine vorangegangene Probe kann eine Flanke hinterlassen haben, die
+        // zu DIESER Zustandsfolge nicht gehoert.
+        const merkLatch = Object.assign({}, ansageLatch);
+        Object.assign(ansageLatch, { damage: false, fuel: false, tyre: false, rain: null });
+        try {
+          delete window.speechSynthesis;
+          const folge = schritte.map((w) => ({ w, fiel: ansagenPruefen(w) }));
+          return { folge, abgespielt, hatteSpeechEcht: echtHatSpeech };
+        } finally {
+          playFx = echtPlayFx;
+          Object.keys(voiceBuffers).forEach((k) => delete voiceBuffers[k]);
+          Object.keys(echtBuffers).forEach((k) => { voiceBuffers[k] = echtBuffers[k]; });
+          if (echtHatSpeech) {
+            Object.defineProperty(window, 'speechSynthesis',
+                                  { configurable: true, value: echtSpeech });
+          }
+          Object.assign(ansageLatch, merkLatch);
         }
       } finally {
         Object.keys(merk).forEach((art) => {
@@ -50752,6 +50874,75 @@
     const gefallen = r.folge.reduce((a, x) => a + x.fiel.length, 0);
     return { ok: gefallen === 0 && r.gesagt.length === 0,
              mass: gefallen + ' Meldungen, ' + r.gesagt.length + ' Saetze (soll 0 und 0)' };
+  });
+
+  // ---- Ohne speechSynthesis: dieselbe Regel zieht die richtige Aufnahme -------------
+  //
+  // BESTELLT: "einen Funk-Filter draufsetzen, sodass es auch klappt, wenn ein Browser es
+  // nicht unterstuetzt." Dieselbe Zustandsfolge wie im Test darueber (dieselben fuenf
+  // Meldungen, derselbe Fall-und-Erholung), aber diesmal OHNE speechSynthesis im
+  // Fenster - ansage() muss auf playAnsageClip() ausweichen. Wichtig ist der SCHLUESSEL:
+  // 'rain' hat zwei Aufnahmen (an/aus), und eine falsche Zuordnung wuerde "es regnet"
+  // abspielen, wenn der Regen gerade aufhoert.
+  stAdd('Ansagen ohne speechSynthesis: die richtige Aufnahme je Meldung', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.ansagenFunkProbe) {
+      return { skip: true, mass: 'ansagenFunkProbe nicht vorhanden' };
+    }
+    const voll = { health: 1, fuel: 1, tyre: 1, rain: false };
+    const folge = [
+      voll,
+      { health: 0.5, fuel: 0.5, tyre: 0.5, rain: false },
+      { health: 0.08, fuel: 1, tyre: 1, rain: false },   // Schaden faellt
+      { health: 0.05, fuel: 1, tyre: 1, rain: false },   // Gegenprobe: nicht nochmal
+      { health: 0.03, fuel: 0.09, tyre: 1, rain: false },// Tank faellt
+      { health: 1, fuel: 0.05, tyre: 0.07, rain: true }, // Reifen und Regen an
+      { health: 1, fuel: 1, tyre: 1, rain: true },       // Gegenprobe: Regen steht
+      voll,                                              // Regen hoert auf
+      { health: 0.05, fuel: 1, tyre: 1, rain: false },   // Schaden wieder scharf
+    ];
+    const r = OMEGA_TEST.ansagenFunkProbe(folge);
+    const schluessel = r.abgespielt.map((m) => (m || '').split('/')[0]);
+    const soll = ['damage', 'fuel', 'tyre', 'rainstart', 'rainstop', 'damage'];
+    const schlecht = [];
+    if (schluessel.length !== soll.length) {
+      schlecht.push(schluessel.length + ' Aufnahmen statt ' + soll.length);
+    }
+    for (let i = 0; i < Math.min(schluessel.length, soll.length); i++) {
+      if (schluessel[i] !== soll[i]) {
+        schlecht.push('Schritt ' + i + ': "' + schluessel[i] + '" statt "' + soll[i] + '"');
+      }
+    }
+    return { ok: schlecht.length === 0,
+             mass: schluessel.join(' ') + ' (Umgebung hatte speechSynthesis: '
+                   + r.hatteSpeechEcht + ')' + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // ---- Jede der fuenf Meldungen hat eine Aufnahme in beiden Sprachen ----------------
+  //
+  // Statischer Gegencheck zur Regel oben: die Regel kann den richtigen SCHLUESSEL
+  // ziehen und trotzdem leer ausgehen, wenn audio/voice.json eine Sprache oder eine
+  // Meldung vergisst. tools/voice_synth.py schreibt die Datei; dieser Test haelt sie
+  // gegen die fuenf Schluessel, die ansage()/ansagenPruefen() tatsaechlich benutzen.
+  stAdd('Ansage-Aufnahmen: fuenf Meldungen, beide Sprachen, im Manifest', async () => {
+    if (location.protocol === 'file:') {
+      return { skip: true, mass: 'ohne Server kein Manifest' };
+    }
+    let man;
+    try {
+      man = await fetch('audio/voice.json', { cache: 'reload' }).then((r) => r.json());
+    } catch (e) { return { skip: true, mass: 'Manifest nicht ladbar: ' + e.message }; }
+    const erwartet = ['damage', 'fuel', 'tyre', 'rainstart', 'rainstop'];
+    const schlecht = [];
+    for (const k of erwartet) {
+      if (!man[k]) { schlecht.push(k + ' fehlt ganz'); continue; }
+      for (const spr of ['de', 'en']) {
+        if (!man[k][spr]) schlecht.push(k + '/' + spr + ' fehlt');
+      }
+    }
+    for (const k of Object.keys(man)) if (erwartet.indexOf(k) < 0) schlecht.push(k + ' unerwartet im Manifest');
+    return { ok: schlecht.length === 0,
+             mass: erwartet.length + ' Meldungen x 2 Sprachen geprueft'
+                   + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
   });
 
   // ---- Gaskennlinie und Anfahrschub ----

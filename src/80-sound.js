@@ -33,6 +33,7 @@
       if (audioCtx.state === 'suspended') audioCtx.resume();
       loadEngineSamples(); // needs the AudioContext, so it can only start from here
       loadFxSamples();
+      loadVoiceSamples();
       loadAmbience();
     }
     document.removeEventListener('pointerdown', unlockAudioOnFirstGesture);
@@ -48,6 +49,7 @@
       if (audioCtx.state === 'suspended') audioCtx.resume();
       loadEngineSamples();
       loadFxSamples();
+      loadVoiceSamples();
       loadAmbience();
       refreshAmbienceGains();
     } else if (engineGain) {
@@ -315,6 +317,49 @@
     }
   }
 
+  // ---- Vorab aufgenommene Ansagen, fuer Browser ohne speechSynthesis ----------------
+  //
+  // BESTELLT: "die englischen und deutschen Ansagen zu Regen usw. aufnehmen und einen
+  // Funk-Filter draufsetzen, sodass es auch klappt, wenn ein Browser es nicht
+  // unterstuetzt." Aufgenommen im Sinn von tools/voice_synth.py: eine Windows-Stimme
+  // (nicht der Nutzer), gerendert und band-begrenzt VOR dem Ausliefern - siehe die
+  // Begruendung dort und den Kommentar ueber ansage() weiter unten. Fuenf Meldungen
+  // ('damage', 'fuel', 'tyre', 'rainstart', 'rainstop'), keine mit 'lap': Rundenzeiten
+  // tragen eine Zahl, die sich jede Runde aendert, eine feste Aufnahme kann sie nicht
+  // sagen - das bleibt live speechSynthesis und faellt ohne sie einfach aus, wie bisher.
+  const voiceBuffers = {};
+
+  async function loadVoiceSamples() {
+    if (!audioCtx) return;
+    try {
+      const res = await fetch('audio/voice.json', { cache: 'reload' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const manifest = await res.json();
+      for (const key of Object.keys(manifest)) {
+        voiceBuffers[key] = {};
+        for (const spr of Object.keys(manifest[key])) {
+          const r = await fetch('audio/' + manifest[key][spr]);
+          if (!r.ok) throw new Error(manifest[key][spr]);
+          voiceBuffers[key][spr] = await audioCtx.decodeAudioData(await r.arrayBuffer());
+        }
+      }
+    } catch (err) {
+      // Duldsam wie loadFxSamples(): ohne audio/voice.json bleibt der Funk-Ersatz einfach
+      // aus, und Browser MIT speechSynthesis sind davon ohnehin nicht betroffen.
+      log('Keine Ansage-Aufnahmen gefunden, Funk-Ersatz bleibt aus.', 'info');
+    }
+  }
+
+  // Die aufgenommene Ansage abspielen, wenn es sie gibt - sonst false, genau wie ein
+  // gescheiterter ansage()-Aufruf. `key` ist meist gleich `art` (siehe ansage()), nur
+  // 'rain' hat zwei Aufnahmen (an/aus) und braucht den spezifischeren Schluessel.
+  function playAnsageClip(key) {
+    const satz = voiceBuffers[key];
+    const puffer = satz && satz[lang];
+    if (!puffer) return false;
+    return playFx(puffer, 1.0);
+  }
+
   // `seite` ist -1..1 und optional. Sie dient EINEM Zweck: einen Einmalklang dem Auto
   // zuzuordnen, das ihn erzeugt hat. Ohne Angabe bleibt er mittig, also genau wie bisher.
   function playFx(buffer, gainVal, seite) {
@@ -452,16 +497,23 @@
   const ansageAn = { lap: true, damage: false, fuel: false, tyre: false, rain: false };
   const ansageLatch = { damage: false, fuel: false, tyre: false, rain: null };
 
-  // HIER STAND DER FUNKFILTER, und er ist auf Bitte des Nutzers wieder heraus. Was er
-  // konnte: Knacken beim Aufschalten, ein Rauschteppich darunter, Knacken beim Loslassen,
-  // und eine Stimme, die schneller und flacher spricht. Was er NICHT konnte, und was ihn
-  // am Ende halbherzig machte: die Stimme selbst bandbegrenzen - speechSynthesis liefert
-  // keinen Audioknoten, es gibt also nichts, wo ein Filter dazwischen koennte.
+  // HIER STAND DER FUNKFILTER als Live-Effekt auf der Browserstimme, und er ist auf Bitte
+  // des Nutzers wieder heraus. Was er konnte: Knacken beim Aufschalten, ein Rauschteppich
+  // darunter, Knacken beim Loslassen, eine Stimme, die schneller und flacher spricht. Was
+  // er NICHT konnte, und was ihn am Ende halbherzig machte: die Stimme selbst
+  // bandbegrenzen - speechSynthesis liefert keinen Audioknoten, es gibt also nichts, wo
+  // ein Filter dazwischen koennte.
+  //
+  // DESHALB JETZT VORAB GERENDERT statt live gefiltert (tools/voice_synth.py): eine
+  // Datei ist ein ganz normaler AudioBuffer, genau wie Motor- und Effektton, und der
+  // Funk-Filter wirkt dort direkt auf die Stimme. Nur als FALLBACK: hat der Browser
+  // speechSynthesis, bleibt es bei der live gesprochenen Stimme wie bisher - die Aufnahme
+  // greift erst, wenn es sie gar nicht gibt.
 
   // ---- Der gemeinsame Kern ---------------------------------------------------------
-  function ansage(art, text) {
+  function ansage(art, text, klangSchluessel) {
     if (!ansageAn[art]) return false;
-    if (!('speechSynthesis' in window)) return false;
+    if (!('speechSynthesis' in window)) return playAnsageClip(klangSchluessel || art);
     try {
       // ABBRECHEN VOR DEM SPRECHEN. Zwei Meldungen kurz hintereinander duerfen sich nicht
       // stapeln - sonst laeuft die Stimme der Gegenwart nach und meldet den Tank, waehrend
@@ -543,7 +595,9 @@
         // "hoert" nicht wie "hört".
         const t = w.rain ? (de ? 'Es regnet' : 'Rain has started')
                          : (de ? 'Der Regen hört auf' : 'The rain is stopping');
-        if (ansage('rain', t)) raus.push('rain');
+        // Zwei Aufnahmen fuer eine Meldung: 'rain' hat einen Text an und einen aus, der
+        // Fallback braucht den spezifischeren Schluessel, um die richtige zu waehlen.
+        if (ansage('rain', t, w.rain ? 'rainstart' : 'rainstop')) raus.push('rain');
       }
     }
     return raus;

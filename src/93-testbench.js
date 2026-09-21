@@ -1583,6 +1583,14 @@
         // durch eine Attrappe - geprueft wird die REGEL, nicht das Betriebssystem.
         const echt = window.speechSynthesis;
         const gesagt = [];
+        // ansageLatch ist EIN geteiltes Objekt fuer die ganze Laufzeit, nicht je Probe
+        // neu. GEFUNDEN beim Bauen des Funk-Ersatz-Tests darunter: die Probe
+        // 'ausgeschaltet ist wirklich aus' setzt die Flanken auch bei ausgeschalteten
+        // Kaestchen (ansagenPruefen() haengt die Flanke nicht an ansage()s Erfolg),
+        // und der naechste Test in der Datei erbte ein bereits 'rain: true' geflanktes
+        // Latch - eine Meldung fiel, die zur eigenen Zustandsfolge gar nicht gehoerte.
+        const merkLatch = Object.assign({}, ansageLatch);
+        Object.assign(ansageLatch, { damage: false, fuel: false, tyre: false, rain: null });
         try {
           Object.defineProperty(window, 'speechSynthesis', {
             configurable: true,
@@ -1597,6 +1605,66 @@
           } else {
             delete window.speechSynthesis;
           }
+          Object.assign(ansageLatch, merkLatch);
+        }
+      } finally {
+        Object.keys(merk).forEach((art) => {
+          const el = $(kaesten[art]);
+          if (!el) return;
+          el.checked = merk[art];
+          el.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+      }
+    },
+    // ---- Derselbe Ablauf, aber OHNE speechSynthesis: der Funk-Ersatz -------------
+    //
+    // GEMESSEN werden soll die REGEL (welcher Aufnahme-Schluessel bei welcher Meldung
+    // gezogen wird), nicht das Zuspielen selbst - dafuer braucht es weder ein echtes
+    // AudioContext noch echte Dateien. playFx() wird deshalb durch eine Attrappe
+    // ersetzt, die nur festhaelt, WELCHER voiceBuffers-Eintrag ankam; voiceBuffers
+    // selbst bekommt fuer die Dauer der Probe fuenf erfundene, eindeutig markierte
+    // Eintraege, damit die Attrappe den Schluessel zurueckverfolgen kann.
+    ansagenFunkProbe(schritte) {
+      const kaesten = { lap: 'setting-announce', damage: 'setting-announce-damage',
+                        fuel: 'setting-announce-fuel', tyre: 'setting-announce-tyre',
+                        rain: 'setting-announce-rain' };
+      const merk = {};
+      try {
+        Object.keys(kaesten).forEach((art) => {
+          const el = $(kaesten[art]);
+          if (!el) return;
+          merk[art] = el.checked;
+          el.checked = true;
+          el.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+        const echtHatSpeech = 'speechSynthesis' in window;
+        const echtSpeech = echtHatSpeech ? window.speechSynthesis : undefined;
+        const echtPlayFx = playFx;
+        const echtBuffers = Object.assign({}, voiceBuffers);
+        Object.keys(voiceBuffers).forEach((k) => delete voiceBuffers[k]);
+        ['damage', 'fuel', 'tyre', 'rainstart', 'rainstop'].forEach((k) => {
+          voiceBuffers[k] = { de: { markiert: k + '/de' }, en: { markiert: k + '/en' } };
+        });
+        const abgespielt = [];
+        playFx = (puffer) => { abgespielt.push(puffer && puffer.markiert); return true; };
+        // Siehe der Kommentar bei ansagenFolge() weiter oben: ansageLatch ist geteilter
+        // Zustand, eine vorangegangene Probe kann eine Flanke hinterlassen haben, die
+        // zu DIESER Zustandsfolge nicht gehoert.
+        const merkLatch = Object.assign({}, ansageLatch);
+        Object.assign(ansageLatch, { damage: false, fuel: false, tyre: false, rain: null });
+        try {
+          delete window.speechSynthesis;
+          const folge = schritte.map((w) => ({ w, fiel: ansagenPruefen(w) }));
+          return { folge, abgespielt, hatteSpeechEcht: echtHatSpeech };
+        } finally {
+          playFx = echtPlayFx;
+          Object.keys(voiceBuffers).forEach((k) => delete voiceBuffers[k]);
+          Object.keys(echtBuffers).forEach((k) => { voiceBuffers[k] = echtBuffers[k]; });
+          if (echtHatSpeech) {
+            Object.defineProperty(window, 'speechSynthesis',
+                                  { configurable: true, value: echtSpeech });
+          }
+          Object.assign(ansageLatch, merkLatch);
         }
       } finally {
         Object.keys(merk).forEach((art) => {
