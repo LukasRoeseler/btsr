@@ -2037,6 +2037,20 @@
     "Klassiker: Walnuss und Chrom": "Classic: walnut and chrome",
     "Motorton-Zusätze": "Engine sound extras",
     "Sechs mechanische Geräusche über dem Motorton, alle an diesem einen Schalter – zum Vergleichen einfach ausschalten. Nichts davon ist eine Aufnahme, alle sechs sind gerechnet und hängen an Werten, die die Simulation ohnehin führt: die Höhen laufen mit der Last (ein Motor im Schub ist dunkler und nicht nur leiser), am Begrenzer stottert die Zündung mit 28 Hz, beim Gaswegnehmen knallt es im Auspuff, beim Hochschalten unter Last einmal kräftig, das Getriebe heult mit der Raddrehzahl statt mit der Motordrehzahl, und die drei aufgeladenen Motoren bekommen ein Laderpfeifen samt Abblasen. Wie stark ein Motor knallt, steht je Motor in den Tondaten – der Formel 1 mit Turbo knallt kaum, der Flat-Plane-V8 ohne Lader am meisten. Was hier absichtlich NICHT drin ist: eine Hörposition. Cockpit gegen Verfolgerkamera ändert nicht den Klang, sondern das Mischungsverhältnis von Auspuff, Ansaugung und Mechanik, und die stecken heute alle drei in einer Schleife.": "Six mechanical noises on top of the engine sound, all on this one switch – turn it off to compare. None of them is a recording; all six are calculated and hang on values the simulation keeps anyway: the highs follow the load (an engine on a closed throttle is darker, not just quieter), at the limiter the ignition stutters at 28 Hz, lifting off the throttle pops in the exhaust, an upshift under load bangs once, the gearbox whines with wheel speed rather than engine speed, and the three forced-induction engines get a turbo whistle with a blow-off. How much an engine pops is stored per engine in the sound data – the turbocharged Formula 1 barely pops, the naturally aspirated flat-plane V8 the most. What is deliberately NOT in here: a listening position. Cockpit versus chase camera does not change the sound but the balance between exhaust, intake and mechanics, and today all three sit in one loop.",
+    "Zahlensysteme": "Number systems",
+    "Binär- und Hex-Trainer: eine vierstellige Zahl, du übersetzt sie in Dezimal.": "Binary and hex trainer: a four-digit number, you translate it to decimal.",
+    "Zwei kurze Trainer, kein Zeitdruck: eine vierstellige Zahl im jeweiligen Zahlensystem, du tippst die passende Dezimalzahl ein und bekommst sofort Bescheid, dazu eine laufende Trefferquote.": "Two short trainers, no time pressure: a four-digit number in the respective number system, you type in the matching decimal number and get an immediate answer, plus a running score.",
+    "Binär-Trainer": "Binary trainer",
+    "Vier Stellen, nur 0 und 1 – also Werte von 0 bis 15.": "Four digits, only 0 and 1 – so values from 0 to 15.",
+    "Prüfen": "Check",
+    "Neue Zahl": "New number",
+    "Dezimal?": "Decimal?",
+    "Hex-Trainer": "Hex trainer",
+    "Vier Stellen, 0–9 und A–F – also Werte von 0 bis 65535.": "Four digits, 0–9 and A–F – so values from 0 to 65535.",
+    "Noch keine Antwort.": "No answer yet.",
+    "__R__ von __V__ richtig.": "__R__ of __V__ correct.",
+    "Richtig!": "Correct!",
+    "Leider nicht - richtig wäre __X__ gewesen.": "Not quite - __X__ would have been correct.",
   };
 
   // ============================================================================
