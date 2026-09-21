@@ -327,6 +327,30 @@
     $('preset-json').value = JSON.stringify(presetRead());
   }
 
+  // ---- WERKSEINSTELLUNG, ohne eigenen Eintrag in PRESETS ---------------------------
+  //
+  // BESTELLT: "in garage weiterer button zum 'standard wiederherstellen' fuer die
+  // Einstellungen". Es gibt fuenf kuratierte Abstimmungen (Arcade..Realismus GT3), aber
+  // keine neutrale "Standard"-Abstimmung, und eine von Hand gepflegte sechste waere eine
+  // zweite Quelle fuer Zahlen, die bereits an EINER Stelle stehen: den Attributen im
+  // Markup. defaultValue/defaultChecked lesen genau die Werte, mit denen jeder Regler
+  // ausgeliefert wird - das ist die Werkseinstellung per Definition, nicht per Abschrift.
+  //
+  // Die Rueckmeldung bleibt unuebersetzt wie alle presetSay()-Meldungen (variable Zahl):
+  // "was hier fehlt, bleibt deutsch stehen", siehe die Begruendung ueber I18N_EN.
+  function restoreFactoryDefaults() {
+    let n = 0;
+    for (const el of presetControls()) {
+      const val = el.type === 'checkbox' ? el.defaultChecked : el.defaultValue;
+      if (presetSet(el.id, val)) n++;
+    }
+    presetSay('Werkseinstellung: ' + n + ' Regler zur\u00fcckgesetzt.');
+    $('preset-json').value = JSON.stringify(presetRead());
+  }
+  if ($('gar-restore-defaults')) {
+    $('gar-restore-defaults').addEventListener('click', restoreFactoryDefaults);
+  }
+
   // Die Knoepfe werden aus PRESETS GEBAUT statt einzeln gebunden. Vorher standen drei
   // Zeilen im Markup und drei im Skript, und ein vierter Eintrag haette an beiden Stellen
   // nachgetragen werden muessen - genau die Art Doppelpflege, die man beim fuenften

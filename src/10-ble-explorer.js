@@ -105,18 +105,6 @@
     return new Uint8Array(bytes);
   }
 
-  function setConnected(isConnected) {
-    // Jede Anzeige hier einzeln geprueft: der Punkt und der Trennen-Knopf in der Kopfzeile
-    // sind entfernt worden, und ein blinder Zugriff auf einen von beiden wuerde beim
-    // Verbinden eine Ausnahme werfen - also genau in dem Moment, in dem am wenigsten Zeit
-    // ist, sie zu suchen.
-    // Nur noch der Verbindungsknopf. Der Punkt und der Trennen-Knopf in der Kopfzeile sind
-    // entfallen, und der Verbindungszustand steht in der Fusszeile des Cockpits - eine
-    // zweite Anzeige dafuer waere ohnehin eine zweite Wahrheit.
-    const bc = $('btn-connect');
-    if (bc) bc.disabled = isConnected;
-  }
-
   // ---- Woran liegt es, wenn keine Autos auftauchen? ----------------------------------
   //
   // VIER FAELLE, und sie brauchen vier verschiedene Antworten. Bis v0.5.16 bekamen alle
@@ -189,7 +177,6 @@
       log(`Gerät ausgewählt: ${device.name} (${device.id})`, 'info');
       device.addEventListener('gattserverdisconnected', onDisconnected);
       server = await device.gatt.connect();
-      setConnected(true);
       // Exactly one starter sound per successful connection.
       playFx(fxBuffers.start[$('sound-profile').value] || fxBuffers.start.porsche, 0.85);
       log('GATT-Server verbunden.', 'info');
@@ -201,13 +188,11 @@
   }
 
   function onDisconnected() {
-    setConnected(false);
     log('Verbindung getrennt.', 'err');
   }
 
   async function disconnect() {
     if (device && device.gatt.connected) device.gatt.disconnect();
-    setConnected(false);
   }
 
   function propsToList(props) {
@@ -374,15 +359,9 @@
   };
 
   $('btn-clear-log').onclick = () => { logEl.innerHTML = ''; };
-  // Der gruene Knopf oben macht jetzt dasselbe wie der in der Garage. Vorher hing er am
-  // BLE-Explorer, der KEIN Auto in der Garage anlegt - wer ihn benutzte, war verbunden, hatte
-  // aber kein Auto, dem er eine Rolle geben konnte. Zwei Knoepfe mit demselben Wort und
-  // verschiedener Wirkung sind eine Falle, keine Auswahl.
-  $('btn-connect').onclick = () => garageConnect();
-  // Der Trennen-Knopf in der Kopfzeile ist entfernt: er rief disconnect() des BLE-Explorers
-  // auf und liess ein ueber die Garage verbundenes Auto unberuehrt - er tat also nichts, genau
-  // wie der Verbinden-Knopf daneben, bevor der umgehaengt wurde. Getrennt wird pro Auto in
-  // der Garage, und das funktioniert.
+  // BESTELLT: "auto verbinden soll nur in garage tab moeglich sein" - der globale
+  // Verbindungsknopf in der Kopfzeile ist damit ganz entfallen, nicht nur umgehaengt.
+  // Verbunden wird jetzt ausschliesslich ueber #gar-connect in der Garage.
   $('dev-explore').onclick = connect;
 
 
@@ -501,6 +480,15 @@
     "Anzeigen wie auf einem echten GT3-HUD": "Readouts like a real GT3 dash",
     "Attacke": "Attack",
     "Auf Standard zurücksetzen": "Reset to defaults",
+    "Standard wiederherstellen": "Restore defaults",
+    "Zur Garage": "To the garage",
+    "Zum Cockpit →": "To the cockpit →",
+    "Jedes Auto einzeln per Klick verbinden – Web Bluetooth verlangt das so.":
+      "Connect each car individually with its own click – Web Bluetooth requires it.",
+    "Klick auf eine Zeile lässt die Lichter blinken":
+      "Click a row to flash that car's lights",
+    "Der Browser darf diesen Speicher jederzeit leeren – diese Datei ist die Rückversicherung. Laden führt zusammen statt zu ersetzen: nichts Neueres geht verloren, auch eine ältere Sicherung lädt noch.":
+      "The browser may clear this storage at any time – this file is the fallback. Loading merges instead of replacing: nothing newer is lost, and an older backup still loads.",
     "Auf den neuen Blättern steht ein 100-mm-Kontrollmaß. Nachmessen ist der einzige Weg, den Druckmaßstab zu prüfen, denn eine Druckvorschau sagt dazu nichts.": "The new sheets carry a 100 mm check measure. Measuring it is the only way to verify the print scale, because a print preview says nothing about it.",
     "Auf der Bahn": "On track",
     "Aufgeladen, dieses Modell hat keinen Lader.": "Turbocharged, this model has no turbo.",
@@ -2064,8 +2052,7 @@
     // blinder Fleck, der sich selbst versteckt. Gefunden hat es ein Abzug ueber das ganze
     // body, nicht ueber diese Liste.
     return [document.querySelector('header'), document.querySelector('main'),
-            $('app-footer'), $('race-summary'),
-            $('lb-wrap')].filter(Boolean);
+            $('race-summary'), $('lb-wrap')].filter(Boolean);
   }
 
   // Einen Teilbaum in die aktuelle Sprache bringen. Wird beim Umschalten fuer alles und

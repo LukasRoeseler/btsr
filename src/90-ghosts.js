@@ -1314,12 +1314,13 @@
       });
       garage.push(car);
       carAssign(car);
-      // First car connected takes the wheel, as requested. Im Zwei-Spieler-Modus nimmt
-      // das ZWEITE Auto den zweiten Platz - sonst muesste man nach jedem Verbinden in die
-      // Garage, und der Modus soll "zwei Autos verbinden und losfahren" sein.
+      // First car connected takes the wheel, as requested. BESTELLT: "1. Verbundene auto =
+      // steuern, alle weiteren ghost (nicht player 2)" - jedes weitere Auto wird jetzt IMMER
+      // Ghost, unabhaengig vom Zwei-Spieler-Modus. Spieler 2 bleibt eine bewusste manuelle
+      // Zuweisung ueber den Rollen-Knopf in der Garage (setCarRole schaltet dabei weiterhin
+      // von selbst den Zwei-Spieler-Modus an, siehe dort).
       if (!playerCar) setCarRole(car, 'player');
-      else if (zweiSpieler && !playerCar2) setCarRole(car, 'player2');
-      else renderGarage();
+      else setCarRole(car, 'ghost');
       log(`${garageLabel(car)} verbunden (${garage.length} insgesamt).`, 'info');
       playFx(fxBuffers.start[$('sound-profile').value] || fxBuffers.start.porsche, 0.85);
     } catch (err) {

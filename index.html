@@ -112,90 +112,34 @@
     height: 3px; background: linear-gradient(90deg, var(--navy) 0%, var(--navy) 60%, var(--bad) 60%, var(--bad) 64%, var(--navy) 64%);
   }
   header {
-    /* block, NOT flex. This one word was the bug: when the tab row moved inside the header,
-       the old flex rule laid .hdr-top and nav.tabs out SIDE BY SIDE. Measured at 375x812 the
-       tab row started at x=554 with 926px of overflow, i.e. entirely off a phone screen -
-       which is why the tabs could not be reached in portrait. They were never hidden, they
-       were parked outside the viewport. */
+    /* Nur noch die Reiterleiste lebt hier - Logo und globaler Verbindungsknopf sind auf die
+       Startseite bzw. in die Garage gezogen (BESTELLT: "omega Logo oben auch rausnehmen,
+       sodass nichts ueber der navigation oben ist", "auto verbinden soll nur in garage tab
+       moeglich sein"). position: sticky haelt die Leiste am oberen Rand, waehrend main
+       darunter scrollt. Im Renn-/Strecken-Vollbild deckt die jeweilige fixed-inset-Ebene
+       (z-index 200, #race-dash bzw. #track-fs-host) sie ohnehin zu - dieselbe Ueberdeckung,
+       die vorher schon den nicht ausgeblendeten Rest des Kopfes verdeckt hat. */
     display: block;
-    padding: 0; background: var(--brand-bg); color: var(--ink); position: relative;
+    padding: 0; background: var(--brand-bg); color: var(--ink);
+    position: sticky; top: 0;
   }
   header::after {
     /* faint concept-sketch style speed lines etched into the header */
     content: ''; position: absolute; inset: 0; pointer-events: none; opacity: .07;
     background-image: repeating-linear-gradient(-8deg, transparent 0 22px, var(--ink) 22px 23px);
   }
-  /* Two rows, not one. The tabs belong in the header, but eight of them next to a logo,
-     a status line and two buttons cannot share a line on a phone - and the header is the one
-     strip that must survive every width. */
-  /* flex, not grid. A grid with a positional 1fr breaks the moment something is hidden:
-     display:none removes an item from the grid entirely, so hiding the wordmark on a phone
-     shifted every later item one column left and the 1fr landed on the connect button,
-     stretching it to 225px. flex has no positional columns to slip, and nowrap (the default)
-     already guarantees the row cannot break and push the tabs off screen. */
-  .hdr-top {
-    display: flex; flex-wrap: nowrap; align-items: center; gap: 12px;
-    padding: 10px 16px 8px 16px; position: relative; z-index: 1;
-  }
-  .hdr-top .spacer { flex: 1 1 auto; min-width: 0; }
-  /* The logo is the way back to the home screen, so it has to be a real button. */
-  .hdr-logo {
-    background: none; border: 0; padding: 0; margin: 0; cursor: pointer;
-    display: flex; align-items: center; min-height: 0; border-radius: 4px;
-  }
-  .hdr-logo:hover { background: var(--tint-2); }
-  .hdr-btn {
-    display: inline-flex; align-items: center; gap: 7px; padding: 7px 12px;
-    font-weight: 700; letter-spacing: .04em; white-space: nowrap;
-  }
-  .hdr-btn svg { width: 16px; height: 16px; flex: none; }
-  #btn-connect { background: var(--good); border-color: var(--good); color: #04170c; }
-  #btn-connect:hover:not(:disabled) { background: #5ce89b; border-color: #5ce89b; }
-  #btn-disconnect { background: var(--bad); border-color: var(--bad); color: #1a0406; }
-  #btn-disconnect:hover:not(:disabled) { background: #ff7b7b; border-color: #ff7b7b; }
-
-  @media (max-width: 700px) {
-    /* The wordmark goes, the logo carries the brand. The connection state was a word and a
-       dot saying the same thing twice; on a phone only the dot survives, and the word moves
-       into the button's accessible name so nothing is lost for a screen reader. */
-    header h1 { display: none; }
-    .hdr-btn .lbl { display: none; }
-    .hdr-btn { padding: 7px 10px; }
-    .hdr-top { gap: 9px; padding: 8px 12px 6px 12px; }
-  }
 
   /* Landscape on a phone: every pixel of height belongs to the track, not to the chrome. */
   @media (orientation: landscape) and (max-height: 520px) {
-    .hdr-top { padding: 4px 12px; gap: 8px; }
-    .hdr-logo svg { width: 26px; height: 26px; }
     nav.tabs button { padding: 6px 12px; min-height: 34px; }
   }
 
-  /* In the cockpit the header shrinks to its smallest useful form. body.race-mode was
-     already being toggled on every tab switch but had no rule at all - dead code until now. */
-  body.race-mode .hdr-top { padding: 4px 12px; }
-  body.race-mode header h1 { display: none; }
   body.race-mode header::after { display: none; }
   /* Driving on a phone held sideways: the header was taking 21 % of the screen height for a
      logo and two buttons. In the cockpit it gets the minimum that still lets you leave. */
   @media (orientation: landscape) and (max-height: 520px) {
-    body.race-mode .hdr-top { padding: 2px 10px; gap: 6px; }
-    body.race-mode .hdr-logo svg { width: 22px; height: 22px; }
-    body.race-mode .hdr-btn { padding: 4px 8px; min-height: 30px; }
     body.race-mode nav.tabs button { padding: 3px 10px; min-height: 26px; font-size: 10.5px; }
   }
-  header .logo { flex-shrink: 0; position: relative; z-index: 1; }
-  header h1 {
-    font-size: 19px; margin: 0; font-weight: 800; letter-spacing: .10em;
-    text-transform: uppercase; position: relative; z-index: 1;
-    text-shadow: 1px 0 0 var(--glitch-r), -1px 0 0 var(--glitch-c);
-  }
-  /* Der Verbindungspunkt in der Kopfzeile ist entfernt. Er sagte ohnehin nur etwas ueber
-     die Verbindung des BLE-Explorers, nicht ueber die Autos in der Garage - und die Garage
-     zeigt es pro Auto, wo es hingehoert. setConnected() prueft jede Anzeige einzeln, damit
-     das Fehlen hier nichts wirft. */
-  header .status { font-size: 13px; color: var(--muted); position: relative; z-index: 1; }
-  header .spacer { flex: 1; }
   button {
     background: var(--panel-2); color: var(--ink); border: 1.5px solid var(--border-strong);
     border-radius: 6px; padding: 8px 14px; font-size: 14px; cursor: pointer; font-weight: 500;
@@ -447,49 +391,27 @@
   .misc-back:hover { color: var(--ink); background: none; }
 
   main { padding: 24px; max-width: 1100px; margin: 0 auto; }
-  /* ---- Fusszeile ---- */
-  /* ---- DER FUSS: ganz schwarz, mit einer Glitchlinie nach oben ------------------
-     Bestellt: "footer aufraeumen: ganz schwarzer hintergrund, glitchlinie als abgrenzung
-     zu dem darueber".
-
-     Das Schwarz muss DECKEN, und dafuer braucht der Fuss eine Ebene. #glitch-bands liegt
-     als position:fixed mit z-index 0 ueber dem ganzen Fenster; ein Fuss ohne eigene Ebene
-     steht darunter, und die Streifen liefen quer durch ihn hindurch. main und header haben
-     ihre Ebene aus genau diesem Grund - der Fuss fehlte in der Regel.
-
-     Die Breite geht ueber das Fenster, die INHALTE bleiben bei 1100 px. Ein Balken, der auf
-     Inhaltsbreite endet, ist kein Abschluss der Seite, sondern ein Kasten darin. */
-  #app-footer {
-    position: relative; z-index: 1;
-    background: #000; width: 100%;
-    display: flex; justify-content: space-between; align-items: center;
-    gap: 14px; padding: 18px 24px 20px 24px;
-    font-size: 11.5px; color: var(--muted); letter-spacing: .04em;
+  /* ---- STARTSEITE: VERSION, LIZENZ, SPRACHE GANZ OBEN ---------------------------
+     BESTELLT: "version und code auf github nur auf landing page anzeigen, version weit
+     oben" und "sprachwechselbutton [...] oben auf startseite 1x nur anzeigen, nicht im
+     footer". Vorher stand das alles im globalen #app-footer, sichtbar auf JEDEM Tab, mit
+     der Version ganz unten. Jetzt lebt es nur noch hier, ganz oben auf der Startseite -
+     unter denselben IDs (#app-version, #lang-toggle), die anderswo gelesen/geschrieben
+     werden (95-selftest.js, 98b-sicherung.js, 10-ble-explorer.js): nur der Ort und der
+     Name des Containers sind neu. */
+  .home-topbar {
+    display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;
+    gap: 8px 14px; padding: 10px clamp(18px, 4vw, 44px);
+    background: #000; color: var(--muted); font-size: 11.5px; letter-spacing: .04em;
+    border-bottom: 1px solid var(--border);
   }
-  /* Die Glitchlinie. Kein durchgehender Strich, sondern versetzte Stuecke in denselben
-     zwei Kanalfarben, die auch die Ueberschriften versetzen (--glitch-r / --glitch-c) -
-     so gehoert die Kante zur Bildsprache der App und ist nicht nur ein Rahmen.
-     Zwei Lagen uebereinander, um 1 px versetzt: das ist derselbe Kniff wie beim
-     text-shadow der Ueberschriften, nur waagerecht. */
-  #app-footer::before {
-    content: ''; position: absolute; left: 0; right: 0; top: 0; height: 2px;
-    background:
-      linear-gradient(90deg, var(--glitch-c) 0 14%, transparent 14% 17%,
-                      var(--border-strong) 17% 52%, transparent 52% 55%,
-                      var(--glitch-r) 55% 63%, transparent 63% 68%,
-                      var(--border-strong) 68% 91%, transparent 91% 94%,
-                      var(--glitch-c) 94% 100%);
+  .home-topbar .foot-left { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .home-topbar .foot-ver { font-family: monospace; color: var(--ink); }
+  .home-topbar .foot-dim { opacity: .55; }
+  .home-topbar .foot-code {
+    color: var(--muted); text-decoration: none; border-bottom: 1px solid var(--border-strong);
   }
-  #app-footer::after {
-    content: ''; position: absolute; left: 0; right: 0; top: 2px; height: 1px;
-    background:
-      linear-gradient(90deg, transparent 0 9%, var(--glitch-r) 9% 13%,
-                      transparent 13% 58%, var(--glitch-c) 58% 61%,
-                      transparent 61% 100%);
-    opacity: .7;
-  }
-  /* Die Inhalte bleiben auf Lesebreite, auch wenn der Balken durchlaeuft. */
-  #app-footer > .foot-left, #app-footer > .foot-right { max-width: 1100px; }
+  .home-topbar .foot-code:hover { color: var(--ink); border-bottom-color: var(--ink); }
   /* Danksagungen: Name und Satz untereinander, Quelldateien klein und einfarbig.
      Die Quellzeile ist bewusst ein eigenes Element und kein <code> im Satz - siehe die
      Begruendung im Markup. */
@@ -504,20 +426,6 @@
     font-family: monospace; font-size: 11px; color: var(--muted);
     opacity: .7; word-break: break-all;
   }
-  #app-footer .foot-code {
-    color: var(--muted); text-decoration: none;
-    border-bottom: 1px solid var(--border-strong);
-  }
-  #app-footer .foot-code:hover { color: var(--ink); border-bottom-color: var(--ink); }
-  #app-footer .foot-left { display: flex; align-items: center; gap: 10px; }
-  #app-footer .foot-ver { font-family: monospace; color: var(--ink); }
-  #app-footer .foot-dim { opacity: .55; }
-  /* Der Haftungshinweis darf umbrechen und die Versionsangabe nicht wegdruecken. */
-  #app-footer .foot-legal { max-width: 44ch; line-height: 1.35; }
-  @media (max-width: 700px) {
-    #app-footer .foot-left { flex-wrap: wrap; }
-    #app-footer .foot-legal { max-width: none; flex-basis: 100%; }
-  }
   /* Der Sprachschalter braucht eine Flaeche, keine nackte Beschriftung. Gemessen war er
      36 px breit bei 44 px Hoehe - ein Streifen, den man auf dem Telefon nicht trifft. Die
      Hoehe kam von der globalen Knopfregel, die Breite von nichts. 44 px ist der Richtwert
@@ -530,22 +438,9 @@
     font: inherit; letter-spacing: .1em; color: var(--muted); cursor: pointer;
   }
   #lang-toggle:hover { background: var(--panel-3); color: var(--ink); }
-  /* Telefon: mehr Luft und groessere Schrift. Die Zierzeile "OmegaSim - MIT" faellt weg -
-     sie ist Dekoration und drueckt auf einem 375er Schirm die zwei Angaben zusammen, auf
-     die es ankommt. */
-  /* Der schwebende Hilfe-Knopf sitzt fest am rechten unteren Rand (gemessen 42 x 44,
-     14 px vom Rand, z-index 60) und lag damit GENAU ueber der rechten Haelfte von DE/EN,
-     dort wo "EN" steht - ein Tipp dort oeffnete die Hilfe statt umzuschalten.
-     Ausgewichen wird WAAGERECHT und nicht senkrecht: eine Reserve nach unten kostete im
-     Querformat 76 px von 375 px Bildhoehe, gemessen 132 px Fusszeile. Der Seitenversatz
-     kostet nichts. Bis 1150 px, weil erst darueber die Fusszeile (max. 1100 breit,
-     zentriert) den rechten Rand nicht mehr erreicht. */
-  @media (max-width: 1150px) {
-    #app-footer .foot-right { margin-right: 58px; }
-  }
   @media (max-width: 700px) {
-    #app-footer { padding: 14px 16px 22px 16px; font-size: 12.5px; gap: 10px; }
-    #app-footer .foot-brand { display: none; }
+    .home-topbar { padding: 10px 16px; font-size: 12.5px; gap: 8px 10px; }
+    .home-topbar .foot-brand { display: none; }
     #lang-toggle { min-width: 104px; }
   }
   /* Die aktive Sprache steht hell, die andere gedimmt - ein Umschalter, der zeigt, was
@@ -568,7 +463,6 @@
      stehen: sie ist harmlos, und sie ist der Beleg dafuer, dass diese Falle in diesem
      Projekt schon einmal zugeschnappt hat. */
   [hidden] { display: none !important; }
-  body.race-fs #app-footer, body.track-fs #app-footer { display: none; }
   .tabpage { display: none; }
   .tabpage.active { display: block; }
   .card {
@@ -2480,7 +2374,12 @@
   }
   /* Not in the cockpit: a coloured line across a dash reads as a warning, not as style. */
   body.race-mode #glitch-bands { display: none; }
-  main, header { position: relative; z-index: 1; }
+  /* Getrennt von "header": eine Regel main + header positionierte beide gleich, und
+     "position: relative" hier haette die sticky-Positionierung oben ueberschrieben (letzte
+     Regel gewinnt bei gleicher Spezifitaet). z-index 1 bleibt fuer beide - das legt sie ueber
+     #glitch-bands (position:fixed, z-index 0). */
+  main { position: relative; z-index: 1; }
+  header { z-index: 1; }
 
   /* ---- Rohcode-Monitor ---- */
   .cm-now { font-family: monospace; font-size: 26px; font-weight: 800; letter-spacing: .04em; }
@@ -3058,54 +2957,26 @@
 </head>
 <body>
 
+<!-- Das Omega-Sprite: nur die Formen, die anderswo per <use href="#om"> und
+     mask="url(#om-sN)" wiederverwendet werden (Startseite, Info-Tab). Unsichtbar (0x0,
+     position:absolute) - seine EIGENE Zeichnung stand vorher im jetzt entfernten
+     Logo-Knopf der Kopfzeile, nur die <defs> selbst muessen bleiben, sonst brechen die
+     anderen Stellen, die per href darauf verweisen. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <path id="om" d="M 112 370 L 200 370 C 192 328, 172 290, 172 236 C 172 150, 210 102, 256 102 C 302 102, 340 150, 340 236 C 340 290, 320 328, 312 370 L 400 370 L 400 310 C 368 310, 350 286, 388 236 C 410 200, 412 160, 388 116 C 358 62, 308 42, 256 42 C 204 42, 154 62, 124 116 C 100 160, 102 200, 124 236 C 162 286, 144 310, 112 310 Z" fill-rule="evenodd"/>
+    <mask id="om-s1"><rect x="0" y="115" width="512" height="20" fill="#fff"/></mask>
+    <mask id="om-s2"><rect x="0" y="210" width="512" height="35" fill="#fff"/></mask>
+    <mask id="om-s3"><rect x="0" y="305" width="512" height="22" fill="#fff"/></mask>
+  </defs>
+</svg>
+
+<!-- Nur noch die Reiterleiste: Logo und globaler Verbindungsknopf sind weg (BESTELLT:
+     "omega Logo oben auch rausnehmen, sodass nichts ueber der navigation oben ist",
+     "auto verbinden soll nur in garage tab moeglich sein"). Der Weg zur Startseite ist
+     jetzt ohne eigenen Knopf: es gibt ohnehin keinen sichtbaren Reiter dafuer, sie ist
+     nur der Zustand beim Laden. -->
 <header>
-  <div class="hdr-top">
-  <button class="hdr-logo" id="btn-home" aria-label="Startseite" title="Startseite">
-  <!-- Das gelieferte Omega, reduziert fuer 34 px. Weggelassen: Hintergrundverlauf und
-       Raster (bei dieser Groesse ein grauer Fleck), die schwebenden Glitch-Pixel (einzelne
-       Fehlpixel) und die zweite textbasierte Omega-Lage (dieselbe Form doppelt). Behalten:
-       die Form, die drei Kanalversaetze und die drei Schnitte - das ist das Zeichen. -->
-  <svg class="logo" width="34" height="34" viewBox="0 0 512 512"
-       xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-    <defs>
-      <path id="om" d="M 112 370 L 200 370 C 192 328, 172 290, 172 236 C 172 150, 210 102, 256 102 C 302 102, 340 150, 340 236 C 340 290, 320 328, 312 370 L 400 370 L 400 310 C 368 310, 350 286, 388 236 C 410 200, 412 160, 388 116 C 358 62, 308 42, 256 42 C 204 42, 154 62, 124 116 C 100 160, 102 200, 124 236 C 162 286, 144 310, 112 310 Z" fill-rule="evenodd"/>
-      <mask id="om-s1"><rect x="0" y="115" width="512" height="20" fill="#fff"/></mask>
-      <mask id="om-s2"><rect x="0" y="210" width="512" height="35" fill="#fff"/></mask>
-      <mask id="om-s3"><rect x="0" y="305" width="512" height="22" fill="#fff"/></mask>
-    </defs>
-    <use href="#om" x="-18" y="-12" fill="#00E5FF" opacity=".45"/>
-    <use href="#om" x="22" y="14" fill="#FF0055" opacity=".5"/>
-    <use href="#om" x="32" y="-6" fill="#00FF66" opacity=".25"/>
-    <use href="#om" fill="#F4F6FB"/>
-    <g mask="url(#om-s1)" transform="translate(-32,0)">
-      <use href="#om" fill="#FF0055" opacity=".6"/>
-      <line x1="0" y1="115" x2="512" y2="115" stroke="#00E5FF" stroke-width="3" opacity=".9"/>
-    </g>
-    <g mask="url(#om-s2)" transform="translate(42,0)">
-      <use href="#om" fill="#00E5FF" opacity=".6"/>
-      <line x1="0" y1="210" x2="512" y2="210" stroke="#FF0055" stroke-width="4" opacity=".95"/>
-      <line x1="0" y1="245" x2="512" y2="245" stroke="#00FF66" stroke-width="2.5" opacity=".85"/>
-    </g>
-    <g mask="url(#om-s3)" transform="translate(-24,0)">
-      <use href="#om" fill="#F4F6FB" opacity=".3"/>
-      <line x1="0" y1="305" x2="512" y2="305" stroke="#00FF66" stroke-width="3" opacity=".85"/>
-    </g>
-  </svg>
-  </button>
-  <h1>OmegaSim</h1>
-  <div class="spacer"></div>
-  <button class="hdr-btn" id="btn-connect" aria-label="Auto verbinden">
-    <svg viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="square"
-         aria-hidden="true">
-      <path d="M12 5v14M5 12h14" stroke="#00E5FF" opacity=".55" transform="translate(-1.6,-1.1)"/>
-      <path d="M12 5v14M5 12h14" stroke="#FF0055" opacity=".6" transform="translate(1.8,1.2)"/>
-      <path d="M12 5v14M5 12h14" stroke="currentColor"/>
-      <path d="M5 10.4h14" stroke="#00FF66" stroke-width="1.4" opacity=".9"
-            transform="translate(2.6,0)"/>
-    </svg><span class="lbl">Verbinden</span></button>
-  </div>
-  <!-- The tab row lives inside the header now, so the whole navigation is one block. -->
-  <div class="tabs-wrap">
   <div class="tabs-wrap" id="tabs-wrap">
   <nav class="tabs">
   <button class="tab-btn active" data-tab="home" hidden style="display:none">Home</button>
@@ -3127,7 +2998,6 @@
   <button class="tab-btn" data-tab="selftest" data-parent="misc" hidden style="display:none">Selbsttest</button>
   <button class="tab-btn" data-tab="probe" data-parent="misc" hidden style="display:none">Code-Sonde</button>
   </nav>
-  </div>
   </div>
 </header>
 
@@ -3156,6 +3026,20 @@
        the button is hidden because the logo is the way in. Cheaper and far less code than a
        parallel show/hide mechanism next to the one that already works. -->
   <section class="tabpage active" id="tab-home">
+    <!-- Version, Lizenz, Quellcode und Sprache: vorher der globale Fuss auf jedem Tab,
+         jetzt nur noch hier, ganz oben auf der Startseite (BESTELLT, siehe die Begruendung
+         bei .home-topbar in der Kopfzeilen-CSS). -->
+    <div class="home-topbar">
+      <span class="foot-left">
+        <span class="foot-ver">v<span id="app-version">0.7.1</span></span>
+        <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
+        <a class="foot-code" href="https://github.com/Luuke42/omegasim"
+           target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
+      </span>
+      <button type="button" id="lang-toggle" aria-label="Sprache wechseln / switch language">
+        <b id="lang-de">DE</b><span class="foot-dim">/</span><b id="lang-en">EN</b>
+      </button>
+    </div>
     <div class="home-hero" id="home-hero">
       <div class="home-bg" id="home-bg"></div>
       <svg class="home-mark" viewBox="0 0 512 512" aria-hidden="true">
@@ -3185,7 +3069,7 @@
         mit deinem eigenen Streckenaufbau.</p>
       <div class="home-cta">
         <button class="primary" id="home-go">Auto verbinden</button>
-        <button id="home-fs">Cockpit</button>
+        <button id="home-garage">Zur Garage</button>
         <!-- Ab Werk verborgen. Er erscheint nur, wenn der Browser die Installation
              tatsaechlich anbietet - ein Knopf, der immer dasteht und manchmal nichts tut,
              sieht wie ein Fehler aus. -->
@@ -6234,10 +6118,9 @@
     <div class="card">
       <h2>Garage</h2>
       <p class="muted">
-        Jedes Auto braucht einen eigenen Klick auf &bdquo;Auto verbinden&ldquo;, Web Bluetooth
-        verlangt f&uuml;r jede Verbindung eine eigene Nutzergeste, das l&auml;sst sich nicht umgehen.
-        <strong>Klick auf eine Zeile l&auml;sst die Lichter dieses Autos blinken</strong>, damit du
-        siehst, welches Auto in der Liste welches auf dem Tisch ist.
+        Jedes Auto einzeln per Klick verbinden &ndash; Web Bluetooth verlangt das so.
+        <strong>Klick auf eine Zeile l&auml;sst die Lichter blinken</strong>, damit du siehst,
+        welches Auto in der Liste welches auf dem Tisch ist.
       </p>
       <!-- Der Hinweis steht VOR dem Knopf und nicht in einer Fehlermeldung danach: wer
            die App ueber das WLAN vom Host-Programm holt, hat gar kein Web Bluetooth, und
@@ -6252,6 +6135,10 @@
         <button id="gar-stop-ghosts" disabled>Ghosts anhalten</button>
         <button class="primary" id="gar-go" disabled>Losfahren</button>
       </div>
+      <!-- BESTELLT: "Im Garage Tab ueber den Autos Link zum Cockpit stattdessen einfuegen"
+           (statt des entfernten Cockpit-Knopfs auf der Startseite). -->
+      <button class="goto-tab" id="gar-to-cockpit" data-tab="race"
+              style="margin-bottom:10px">Zum Cockpit &rarr;</button>
       <div id="gar-list"></div>
       <!-- Abstimmung direkt hier waehlbar, sobald ein Auto gesteuert wird. Dieselbe
            Funktion wie in den Optionen, deshalb ziehen die Regler dort automatisch nach. -->
@@ -6262,6 +6149,13 @@
           Optionen, die Regler dort ziehen mit.
         </div>
         <div class="row" style="gap:8px; flex-wrap:wrap" id="gar-preset-buttons"></div>
+        <!-- BESTELLT: "in garage weiterer button zum 'standard wiederherstellen' fuer die
+             Einstellungen". Dieselbe Reglermenge wie die Voreinstellungen daneben
+             (presetControls(), auf #tab-options beschraenkt) - nur eben auf den vom
+             Hersteller ausgelieferten Wert statt auf eine der fuenf Abstimmungen. -->
+        <div class="row" style="gap:8px; margin-top:8px">
+          <button id="gar-restore-defaults">Standard wiederherstellen</button>
+        </div>
       </div>
     </div>
 
@@ -6309,21 +6203,9 @@
            data-i18n-skip>&nbsp;</div>
       <p class="muted" style="font-size:11.5px; border-left:3px solid var(--info);
          padding-left:9px; margin-top:12px">
-        <b>Warum es diese Datei braucht.</b>
-        Die App legt alles im Browser ab, und ein Browser darf diesen Speicher
-        aufr&auml;umen &ndash; beim L&ouml;schen von Websitedaten, im privaten Fenster,
-        auf einem iPhone auch nach l&auml;ngerer Zeit ohne Besuch. Eine Abstimmung ist
-        danach schnell wieder eingestellt, eine Rundenzeit-Historie nicht.
-      </p>
-      <p class="muted" style="font-size:11.5px">
-        Eine Sicherung l&auml;dt auch dann, wenn sie aus einer &auml;lteren Fassung
-        stammt. Einstellungen, die es damals noch nicht gab, bleiben stehen und werden
-        genannt &ndash; sie verschwinden nicht stillschweigend.
-      </p>
-      <p class="muted" style="font-size:11.5px">
-        Laden f&uuml;hrt zusammen und ersetzt nicht: was in der Sicherung steht, wird
-        gesetzt, und was seither dazugekommen ist, bleibt. Eine Strecke von gestern
-        &uuml;berlebt also eine Sicherung von vorletzter Woche.
+        Der Browser darf diesen Speicher jederzeit leeren &ndash; diese Datei ist die
+        R&uuml;ckversicherung. Laden f&uuml;hrt zusammen statt zu ersetzen: nichts Neueres
+        geht verloren, auch eine &auml;ltere Sicherung l&auml;dt noch.
       </p>
     </div>
   </section>
@@ -8675,31 +8557,6 @@
 
 </main>
 
-<!-- Fusszeile. Links die Version, rechts die Sprache. Beides gehoert hierher und nicht in
-     die Kopfzeile: es wird selten gebraucht und soll auf dem Telefon keine Zeile Hoehe
-     kosten. Im Vollbild ist sie ausgeblendet. -->
-<footer id="app-footer">
-  <span class="foot-left">
-    <span class="foot-ver">v<span id="app-version">0.6.60</span></span>
-    <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
-    <!-- Zur Klarstellung, und weil "Carrera" im ganzen Projekt vorkommt: das hier ist ein
-         unabhaengiges Hobbyprojekt. Kein Firmenzeichen, keine Genehmigung, keine
-         Verbindung. Steht data-i18n-skip, weil der Satz auf Englisch stehen bleibt - er
-         richtet sich an jeden, nicht nur an deutsche Leser. -->
-    <!-- Der Quelltext. data-i18n-skip steht NICHT dran: "Code auf GitHub" ist ein Satz
-         und gehoert uebersetzt, die Adresse selbst nicht. -->
-    <a class="foot-code" href="https://github.com/Luuke42/omegasim"
-       target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
-    <span class="foot-dim foot-legal" data-i18n-skip>Independent project, not affiliated
-      with, endorsed by or connected to Carrera.</span>
-  </span>
-  <span class="foot-right">
-    <button type="button" id="lang-toggle" aria-label="Sprache wechseln / switch language">
-      <b id="lang-de">DE</b><span class="foot-dim">/</span><b id="lang-en">EN</b>
-    </button>
-  </span>
-</footer>
-
 <!-- Lightbox fuer Diagramme. Steht ausserhalb von main, damit kein Tab sie ausblendet. -->
 <div class="lb-wrap" id="lb-wrap" role="dialog" aria-modal="true" aria-label="Diagramm gross">
   <div class="lb-box">
@@ -8820,18 +8677,6 @@
     return new Uint8Array(bytes);
   }
 
-  function setConnected(isConnected) {
-    // Jede Anzeige hier einzeln geprueft: der Punkt und der Trennen-Knopf in der Kopfzeile
-    // sind entfernt worden, und ein blinder Zugriff auf einen von beiden wuerde beim
-    // Verbinden eine Ausnahme werfen - also genau in dem Moment, in dem am wenigsten Zeit
-    // ist, sie zu suchen.
-    // Nur noch der Verbindungsknopf. Der Punkt und der Trennen-Knopf in der Kopfzeile sind
-    // entfallen, und der Verbindungszustand steht in der Fusszeile des Cockpits - eine
-    // zweite Anzeige dafuer waere ohnehin eine zweite Wahrheit.
-    const bc = $('btn-connect');
-    if (bc) bc.disabled = isConnected;
-  }
-
   // ---- Woran liegt es, wenn keine Autos auftauchen? ----------------------------------
   //
   // VIER FAELLE, und sie brauchen vier verschiedene Antworten. Bis v0.5.16 bekamen alle
@@ -8904,7 +8749,6 @@
       log(`Gerät ausgewählt: ${device.name} (${device.id})`, 'info');
       device.addEventListener('gattserverdisconnected', onDisconnected);
       server = await device.gatt.connect();
-      setConnected(true);
       // Exactly one starter sound per successful connection.
       playFx(fxBuffers.start[$('sound-profile').value] || fxBuffers.start.porsche, 0.85);
       log('GATT-Server verbunden.', 'info');
@@ -8916,13 +8760,11 @@
   }
 
   function onDisconnected() {
-    setConnected(false);
     log('Verbindung getrennt.', 'err');
   }
 
   async function disconnect() {
     if (device && device.gatt.connected) device.gatt.disconnect();
-    setConnected(false);
   }
 
   function propsToList(props) {
@@ -9089,15 +8931,9 @@
   };
 
   $('btn-clear-log').onclick = () => { logEl.innerHTML = ''; };
-  // Der gruene Knopf oben macht jetzt dasselbe wie der in der Garage. Vorher hing er am
-  // BLE-Explorer, der KEIN Auto in der Garage anlegt - wer ihn benutzte, war verbunden, hatte
-  // aber kein Auto, dem er eine Rolle geben konnte. Zwei Knoepfe mit demselben Wort und
-  // verschiedener Wirkung sind eine Falle, keine Auswahl.
-  $('btn-connect').onclick = () => garageConnect();
-  // Der Trennen-Knopf in der Kopfzeile ist entfernt: er rief disconnect() des BLE-Explorers
-  // auf und liess ein ueber die Garage verbundenes Auto unberuehrt - er tat also nichts, genau
-  // wie der Verbinden-Knopf daneben, bevor der umgehaengt wurde. Getrennt wird pro Auto in
-  // der Garage, und das funktioniert.
+  // BESTELLT: "auto verbinden soll nur in garage tab moeglich sein" - der globale
+  // Verbindungsknopf in der Kopfzeile ist damit ganz entfallen, nicht nur umgehaengt.
+  // Verbunden wird jetzt ausschliesslich ueber #gar-connect in der Garage.
   $('dev-explore').onclick = connect;
 
 
@@ -9216,6 +9052,15 @@
     "Anzeigen wie auf einem echten GT3-HUD": "Readouts like a real GT3 dash",
     "Attacke": "Attack",
     "Auf Standard zurücksetzen": "Reset to defaults",
+    "Standard wiederherstellen": "Restore defaults",
+    "Zur Garage": "To the garage",
+    "Zum Cockpit →": "To the cockpit →",
+    "Jedes Auto einzeln per Klick verbinden – Web Bluetooth verlangt das so.":
+      "Connect each car individually with its own click – Web Bluetooth requires it.",
+    "Klick auf eine Zeile lässt die Lichter blinken":
+      "Click a row to flash that car's lights",
+    "Der Browser darf diesen Speicher jederzeit leeren – diese Datei ist die Rückversicherung. Laden führt zusammen statt zu ersetzen: nichts Neueres geht verloren, auch eine ältere Sicherung lädt noch.":
+      "The browser may clear this storage at any time – this file is the fallback. Loading merges instead of replacing: nothing newer is lost, and an older backup still loads.",
     "Auf den neuen Blättern steht ein 100-mm-Kontrollmaß. Nachmessen ist der einzige Weg, den Druckmaßstab zu prüfen, denn eine Druckvorschau sagt dazu nichts.": "The new sheets carry a 100 mm check measure. Measuring it is the only way to verify the print scale, because a print preview says nothing about it.",
     "Auf der Bahn": "On track",
     "Aufgeladen, dieses Modell hat keinen Lader.": "Turbocharged, this model has no turbo.",
@@ -10779,8 +10624,7 @@
     // blinder Fleck, der sich selbst versteckt. Gefunden hat es ein Abzug ueber das ganze
     // body, nicht ueber diese Liste.
     return [document.querySelector('header'), document.querySelector('main'),
-            $('app-footer'), $('race-summary'),
-            $('lb-wrap')].filter(Boolean);
+            $('race-summary'), $('lb-wrap')].filter(Boolean);
   }
 
   // Einen Teilbaum in die aktuelle Sprache bringen. Wird beim Umschalten fuer alles und
@@ -29158,12 +29002,13 @@
       });
       garage.push(car);
       carAssign(car);
-      // First car connected takes the wheel, as requested. Im Zwei-Spieler-Modus nimmt
-      // das ZWEITE Auto den zweiten Platz - sonst muesste man nach jedem Verbinden in die
-      // Garage, und der Modus soll "zwei Autos verbinden und losfahren" sein.
+      // First car connected takes the wheel, as requested. BESTELLT: "1. Verbundene auto =
+      // steuern, alle weiteren ghost (nicht player 2)" - jedes weitere Auto wird jetzt IMMER
+      // Ghost, unabhaengig vom Zwei-Spieler-Modus. Spieler 2 bleibt eine bewusste manuelle
+      // Zuweisung ueber den Rollen-Knopf in der Garage (setCarRole schaltet dabei weiterhin
+      // von selbst den Zwei-Spieler-Modus an, siehe dort).
       if (!playerCar) setCarRole(car, 'player');
-      else if (zweiSpieler && !playerCar2) setCarRole(car, 'player2');
-      else renderGarage();
+      else setCarRole(car, 'ghost');
       log(`${garageLabel(car)} verbunden (${garage.length} insgesamt).`, 'info');
       playFx(fxBuffers.start[$('sound-profile').value] || fxBuffers.start.porsche, 0.85);
     } catch (err) {
@@ -58561,7 +58406,6 @@
     });
   });
 
-  $('btn-home').addEventListener('click', () => showTab('home'));
   // Der erste Knopf verbindet direkt, statt in die Garage zu schicken: von der Startseite
   // aus ist "Auto verbinden" das, was man als erstes will, und der Bluetooth-Dialog braucht
   // ohnehin einen Klick. Danach steht das Auto in der Garage und die Seite wechselt dorthin,
@@ -58570,9 +58414,10 @@
     showTab('garage');
     await garageConnect();
   });
-  // Cockpit, nicht Vollbild. Vollbild ist dort in der Ecke einen Klick entfernt, und wer von
-  // der Startseite kommt, will erst einmal sehen, wo er landet.
-  $('home-fs').addEventListener('click', () => showTab('race'));
+  // BESTELLT: "Landing page nur mit Link zur Garage und nicht Cockpit Button." Der Logo-Knopf
+  // (frueher der Weg zurueck zur Startseite) ist mit der Kopfzeile entfallen; die Startseite
+  // ist jetzt nur noch der Zustand beim ersten Laden.
+  $('home-garage').addEventListener('click', () => showTab('garage'));
 
   // It is the landing view, so it starts running.
   homeStart();
@@ -59580,6 +59425,30 @@
     presetSay(p.label + ': ' + n + ' Regler gesetzt'
               + (missing.length ? ', nicht gefunden: ' + missing.join(', ') : ''));
     $('preset-json').value = JSON.stringify(presetRead());
+  }
+
+  // ---- WERKSEINSTELLUNG, ohne eigenen Eintrag in PRESETS ---------------------------
+  //
+  // BESTELLT: "in garage weiterer button zum 'standard wiederherstellen' fuer die
+  // Einstellungen". Es gibt fuenf kuratierte Abstimmungen (Arcade..Realismus GT3), aber
+  // keine neutrale "Standard"-Abstimmung, und eine von Hand gepflegte sechste waere eine
+  // zweite Quelle fuer Zahlen, die bereits an EINER Stelle stehen: den Attributen im
+  // Markup. defaultValue/defaultChecked lesen genau die Werte, mit denen jeder Regler
+  // ausgeliefert wird - das ist die Werkseinstellung per Definition, nicht per Abschrift.
+  //
+  // Die Rueckmeldung bleibt unuebersetzt wie alle presetSay()-Meldungen (variable Zahl):
+  // "was hier fehlt, bleibt deutsch stehen", siehe die Begruendung ueber I18N_EN.
+  function restoreFactoryDefaults() {
+    let n = 0;
+    for (const el of presetControls()) {
+      const val = el.type === 'checkbox' ? el.defaultChecked : el.defaultValue;
+      if (presetSet(el.id, val)) n++;
+    }
+    presetSay('Werkseinstellung: ' + n + ' Regler zur\u00fcckgesetzt.');
+    $('preset-json').value = JSON.stringify(presetRead());
+  }
+  if ($('gar-restore-defaults')) {
+    $('gar-restore-defaults').addEventListener('click', restoreFactoryDefaults);
   }
 
   // Die Knoepfe werden aus PRESETS GEBAUT statt einzeln gebunden. Vorher standen drei
