@@ -7,28 +7,85 @@
   // FRUEHERE, allgemeine Menuenavigation (siehe der Kommentar bei pollGamepad() in
   // 90-ghosts.js) griff auf jedem Tab und jedem fokussierbaren Element und wurde deshalb
   // wieder ausgebaut - eine Fehlbedienung verstellte einen Regler, den niemand im Blick
-  // hatte. Diese Fassung wirkt NUR auf dem Optionen-Tab (menuNavActive() prueft das
-  // selbst), und ein Regler AENDERT SICH NICHT durch den blossen Fokus: er muss erst mit
-  // der Waehltaste "angewaehlt" werden (menuNavArmed), bevor links/rechts seinen Wert
-  // veraendert. Cockpit-Schirme (Box, Renneinstellungen) haben ihre eigene, laengst
-  // gemessene Zeilenauswahl (pitScreenPad/raceScreenPad, cockpitScreenWaehlen) und
-  // werden hier nicht verdoppelt - flagTasteTick() und die Tastatur (30-input.js) reihen
+  // hatte. Diese Fassung bleibt vorsichtig, obwohl sie inzwischen (nach einem ersten
+  // erfolgreichen Testlauf, BESTELLT: "jetzt ueberall so anlegen") auf JEDEM Tab
+  // wirkt, mit EINER Ausnahme: dem Cockpit-Hauptschirm waehrend der Fahrt (siehe
+  // menuNavContainer()) - und ein Regler AENDERT SICH weiterhin NICHT durch den
+  // blossen Fokus: er muss erst mit der Waehltaste "angewaehlt" werden (menuNavArmed),
+  // bevor links/rechts seinen Wert veraendert. Die Box- und Renneinstellungen-Schirme
+  // im Cockpit haben ihre eigene, laengst gemessene Zeilenauswahl
+  // (pitScreenPad/raceScreenPad, cockpitScreenWaehlen) und werden hier nicht
+  // verdoppelt - flagTasteTick() und die Tastatur (30-input.js) reihen
   // menuNavActivate() nur als NEUE, erste Stufe vor die bestehende Kette ein.
 
   let menuNavIndex = 0;
   let menuNavArmed = false;
   let menuNavContextKey = null;
-  let menuNavHoldStart = null, menuNavHoldDir = null, menuNavLastStep = 0;
-  const MENU_NAV_HOLD_DELAY_MS = 400;
-  const MENU_NAV_HOLD_REPEAT_MS = 120;
 
-  // Der Container, dessen Zeilen gerade gelten: die offene Unterseite, oder - wenn keine
-  // offen ist - die Kachelseite selbst. null ausserhalb des Optionen-Tabs.
+  // ---- Halten mit Beschleunigung ----
+  //
+  // BESTELLT: "wenn ich bei einer Skala den rechts Button gedrueckt halte, soll die
+  // Aenderungsgeschwindigkeit schneller zunehmen (nach 0.5s gedrueckt halten in
+  // groesseren Schritten aendern, bis ich 0.5s nicht links/rechts gedrueckt habe)."
+  //
+  // EIN Zustand fuer beide Eingabewege: das Gamepad ruft menuNavAdjustGehalten() JEDEN
+  // Takt mit dem rohen Tastendruck auf (es gibt kein natives Wiederholen), die Tastatur
+  // bei jedem keydown (auch den vom Betriebssystem wiederholten - das native Wiederholen
+  // ersetzt hier nur den Zeitgeber, die Beschleunigung rechnet trotzdem diese Uhr) und
+  // bei jedem keyup mit gehalten=false.
+  let menuNavHoldDir = null;         // 'left' | 'right' | null
+  let menuNavHoldStart = 0;          // Beginn des AKTUELLEN Zugs (siehe menuNavHoldReleasedAt)
+  let menuNavHoldReleasedAt = null;  // wann zuletzt losgelassen wurde, null waehrend gehalten
+  let menuNavLastStep = 0;
+  const MENU_NAV_REPEAT_START_MS = 300;  // erstes Wiederholen nach dem ersten Schritt
+  const MENU_NAV_REPEAT_MS = 120;        // Wiederholrate vor der Beschleunigung
+  const MENU_NAV_ACCEL_MS = 500;         // ab so lange gehalten: groessere Schritte
+  const MENU_NAV_REPEAT_FAST_MS = 70;    // Wiederholrate NACH der Beschleunigung
+  const MENU_NAV_STEP_BIG = 5;           // Schrittvielfaches NACH der Beschleunigung
+  const MENU_NAV_RESET_GAP_MS = 500;     // so lange Pause loescht den Zug (siehe oben)
+
+  // ---- Subtile Schaltsounds ----
+  //
+  // BESTELLT: "wenn ich im Menue navigiere, sollen subtile angenehme Schaltsounds
+  // kommen." playTone() (70-race.js) prueft selbst, ob Ton ueberhaupt an ist - kein
+  // eigenes Gatter hier noetig. Laut und kurz wie das leiseste bestehende Beispiel im
+  // Projekt (80-sound.js, das Boxenstopp-Klicken), nicht wie die kraeftigeren
+  // Renn-Toene.
+  function menuNavTonBewegen() { playTone(520, 0.035, 'sine', 0.05); }
+  function menuNavTonAktivieren() { playTone(720, 0.05, 'sine', 0.08); }
+  function menuNavTonAnwaehlen() {
+    playTone(640, 0.04, 'triangle', 0.06);
+    setTimeout(() => playTone(880, 0.04, 'triangle', 0.05), 40);
+  }
+  function menuNavTonAbwaehlen() {
+    playTone(880, 0.04, 'triangle', 0.05);
+    setTimeout(() => playTone(640, 0.04, 'triangle', 0.06), 40);
+  }
+  function menuNavTonVerstellen() { playTone(560, 0.025, 'sine', 0.04); }
+
+  function menuNavSichtbar(el) { return el.offsetParent !== null; }
+
+  // Der Container, dessen Zeilen gerade gelten: die offene Unterseite eines Tabs, oder
+  // - wenn keine offen ist - dessen Kachel-/Startseite, oder - sonst - der ganze Tab.
+  // null nur, wenn kein Tab aktiv ist (kommt praktisch nie vor) ODER auf dem
+  // Cockpit-Tab: JEDER seiner Schirme hat schon eine eigene, laengst gemessene
+  // Zeilenauswahl - der Hauptschirm gar keine (dort wird gefahren, und ein
+  // Fokusraster ueber der Fahranzeige waere Ablenkung statt Hilfe - genau die
+  // Fehlbedienung, wegen der die fruehere, allgemeine Fassung schon einmal ausgebaut
+  // wurde), Box und Renneinstellungen ihre eigene (pitScreenPad/raceScreenPad,
+  // cockpitScreenWaehlen). Eine generische Zeilenliste WUERDE dort etwas finden
+  // (button-Elemente gibt es auf jedem Schirm) und genau deshalb die bestehende,
+  // getestete Auswahl verdoppeln/uebertoenen - siehe den gefundenen Fehler "Waehltaste:
+  // nach dem Boxenmenue nimmt der Cockpitschirm sie wieder". Der ganze Tab bleibt
+  // deshalb aussen vor, nicht nur sein Hauptschirm.
   function menuNavContainer() {
-    const tab = $('tab-options');
-    if (!tab || !tab.classList.contains('active')) return null;
+    const tab = document.querySelector('.tabpage.active');
+    if (!tab || tab.id === 'tab-race') return null;
     const openSub = tab.querySelector('.subpage.on');
-    return openSub || $('sub-home-options');
+    if (openSub) return openSub;
+    const homeSub = tab.querySelector('.subpage-home');
+    if (homeSub) return homeSub;
+    return tab;
   }
 
   // EINZELN abgefragt und nicht als eine Komma-Liste: querySelector() mit mehreren
@@ -43,31 +100,49 @@
       || row.querySelector('button:not(.opt-label button)');
   }
 
+  function menuNavKindOf(control) {
+    if (control.type === 'checkbox') return 'toggle';
+    if (control.type === 'range') return 'range';
+    if (control.tagName === 'SELECT') return 'select';
+    if (control.type === 'text' || control.type === 'number') return 'text';
+    return 'button';
+  }
+
   // DOM-Reihenfolge ist Bildschirm-Reihenfolge: weder .opt-row noch .misc-tile werden
-  // per CSS umsortiert (siehe die Recherche zu dieser Phase). Nur SICHTBARE Zeilen
-  // zaehlen - offsetParent ist null bei jedem display:none, egal ob ueber eine
-  // Media-Query, ein bedingtes Feature oder eine geschlossene Unterseite.
+  // per CSS umsortiert. Drei Muster, der Reihe nach versucht:
+  //
+  //   1. Kacheln (.misc-tile) - die Kachel-/Startseiten von Entwicklertools, Optionen
+  //      und Strecke.
+  //   2. Einstellungszeilen (.opt-row) - die Optionen-Unterseiten.
+  //   3. GENERELLER FALL - jedes sichtbare Bedienelement in DOM-Reihenfolge, fuer Tabs
+  //      ohne eines der beiden obigen Muster (Garage, Mehrspieler, ...). Die Zeile IST
+  //      hier das Element selbst: es gibt keine umschliessende .opt-row/.misc-tile, an
+  //      der sich der Fokusrahmen zeigen liesse.
+  //
+  // Nur SICHTBARE Zeilen zaehlen - offsetParent ist null bei jedem display:none, egal
+  // ob ueber eine Media-Query, ein bedingtes Feature oder eine geschlossene Unterseite.
   function menuNavRows() {
     const host = menuNavContainer();
     if (!host) return [];
-    if (host.id === 'sub-home-options') {
-      return [...host.querySelectorAll('.misc-tile')]
-        .filter((el) => el.offsetParent !== null)
-        .map((el) => ({ el, kind: 'tile', control: el }));
-    }
-    const rows = [];
+    const tiles = [...host.querySelectorAll('.misc-tile')].filter(menuNavSichtbar);
+    if (tiles.length) return tiles.map((el) => ({ el, kind: 'tile', control: el }));
+
+    const optRows = [...host.querySelectorAll('.opt-row')].filter(menuNavSichtbar);
     const back = host.querySelector('.subpage-back');
-    if (back && back.offsetParent !== null) rows.push({ el: back, kind: 'button', control: back });
-    [...host.querySelectorAll('.opt-row')].forEach((row) => {
-      if (row.offsetParent === null) return;
-      const control = menuNavControlFor(row);
-      if (!control) return;
-      let kind = 'button';
-      if (control.type === 'checkbox') kind = 'toggle';
-      else if (control.type === 'range') kind = 'range';
-      else if (control.tagName === 'SELECT') kind = 'select';
-      rows.push({ el: row, kind, control });
-    });
+    const rows = [];
+    if (back && menuNavSichtbar(back)) rows.push({ el: back, kind: 'button', control: back });
+    if (optRows.length) {
+      optRows.forEach((row) => {
+        const control = menuNavControlFor(row);
+        if (!control) return;
+        rows.push({ el: row, kind: menuNavKindOf(control), control });
+      });
+      return rows;
+    }
+    [...host.querySelectorAll(
+      'button:not(.subpage-back), select, input[type="checkbox"], input[type="range"], '
+      + 'input[type="number"], input[type="text"], a[href]',
+    )].filter(menuNavSichtbar).forEach((el) => rows.push({ el, kind: menuNavKindOf(el), control: el }));
     return rows;
   }
 
@@ -82,7 +157,7 @@
   function menuNavEnsureContext() {
     const key = menuNavContextNow();
     if (key !== menuNavContextKey) {
-      // Den Optionen-Tab verlassen: menuNavRender() scrollt document.body (nicht das
+      // Den Kontext verlassen: menuNavRender() scrollt document.body (nicht das
       // Fenster) fuer jede fokussierte Zeile, und dieser Bildlauf blieb sonst stehen -
       // ein anderer Tab konnte so scheinbar grundlos mitten im Bild aufschlagen, obwohl
       // niemand ihn dorthin gescrollt hat.
@@ -118,11 +193,12 @@
     menuNavArmed = false;
     menuNavIndex = ((menuNavIndex + (dir === 'up' ? -1 : 1)) % rows.length + rows.length) % rows.length;
     menuNavRender();
+    menuNavTonBewegen();
   }
 
   // X/Enter auf der fokussierten Zeile: Kachel/Knopf -> klicken, Kontrollkaestchen ->
   // umschalten, Regler/Auswahlfeld -> an- oder abwaehlen (kein Klick, kein Wertwechsel -
-  // das macht erst menuNavAdjust()).
+  // das macht erst menuNavAdjust()), Textfeld -> fokussieren und Inhalt markieren.
   function menuNavActivate() {
     menuNavEnsureContext();
     const rows = menuNavRows();
@@ -131,10 +207,17 @@
     if (row.kind === 'range' || row.kind === 'select') {
       menuNavArmed = !menuNavArmed;
       menuNavRender();
+      if (menuNavArmed) menuNavTonAnwaehlen(); else menuNavTonAbwaehlen();
       return;
     }
     menuNavArmed = false;
-    row.control.click();
+    if (row.kind === 'text') {
+      row.control.focus();
+      if (typeof row.control.select === 'function') row.control.select();
+    } else {
+      row.control.click();
+    }
+    menuNavTonAktivieren();
     // Ein Klick kann den Kontext aendern (eine Kachel oeffnet ihre Unterseite) -
     // menuNavEnsureContext() faengt das ab, bevor neu gezeichnet wird.
     menuNavEnsureContext();
@@ -143,21 +226,26 @@
 
   // links/rechts auf einer ANGEWAEHLTEN Zeile. Gibt zurueck, ob sie das gebraucht hat -
   // false heisst "nichts angewaehlt", und dann darf der Aufrufer die Taste fuer etwas
-  // anderes nehmen (Tabwechsel, Cockpit-Schirm blaettern).
-  function menuNavAdjust(dir) {
+  // anderes nehmen (Tabwechsel, Cockpit-Schirm blaettern). `gross` multipliziert die
+  // Schrittweite (siehe die Beschleunigung oben).
+  function menuNavAdjust(dir, gross) {
     menuNavEnsureContext();
     if (!menuNavArmed) return false;
     const rows = menuNavRows();
     if (!rows.length) return false;
     const row = rows[menuNavIndex];
+    const schritte = gross ? MENU_NAV_STEP_BIG : 1;
     if (row.kind === 'range') {
-      if (dir === 'left') row.control.stepDown(); else row.control.stepUp();
+      for (let i = 0; i < schritte; i++) {
+        if (dir === 'left') row.control.stepDown(); else row.control.stepUp();
+      }
       row.control.dispatchEvent(new Event('input', { bubbles: true }));
       row.control.dispatchEvent(new Event('change', { bubbles: true }));
     } else if (row.kind === 'select') {
       const n = row.control.options.length;
       const i0 = row.control.selectedIndex;
-      const i1 = dir === 'left' ? Math.max(0, i0 - 1) : Math.min(n - 1, i0 + 1);
+      const roh = i0 + (dir === 'left' ? -schritte : schritte);
+      const i1 = Math.max(0, Math.min(n - 1, roh));
       if (i1 !== i0) {
         row.control.selectedIndex = i1;
         row.control.dispatchEvent(new Event('change', { bubbles: true }));
@@ -166,33 +254,47 @@
       return false;
     }
     menuNavRender();
+    menuNavTonVerstellen();
     return true;
   }
 
-  // Gamepad-Fassung von menuNavAdjust(): bekommt JEDEN Takt den rohen Tastendruck
-  // (nicht nur die steigende Flanke), damit Halten wiederholt - erste Stufe sofort,
-  // danach alle MENU_NAV_HOLD_REPEAT_MS. Tastatur braucht das nicht: dort erledigt die
-  // vom Betriebssystem ohnehin wiederholten keydown-Ereignisse dasselbe (siehe
-  // 30-input.js).
-  function menuNavAdjustPad(dir, held) {
-    if (!held) {
-      if (menuNavHoldDir === dir) { menuNavHoldStart = null; menuNavHoldDir = null; }
+  // GEMEINSAME Fassung fuer Gamepad UND Tastatur: bekommt bei jedem Gamepad-Takt bzw.
+  // jedem Tastatur-keydown/keyup den aktuellen Haltezustand (gehalten=true/false), egal
+  // ob dabei ein natives Wiederholen mitlief oder nicht - die Beschleunigung rechnet
+  // ausschliesslich mit Date.now() und ist deshalb fuer beide Eingabewege gleich.
+  function menuNavAdjustGehalten(dir, gehalten) {
+    const jetzt = Date.now();
+    if (!gehalten) {
+      if (menuNavHoldDir === dir) menuNavHoldReleasedAt = jetzt;
       return;
     }
-    const now = Date.now();
-    if (menuNavHoldDir !== dir) {
+    // Neuer Zug: anderer Knopf, oder die Pause seit dem letzten Loslassen war lang genug
+    // (BESTELLT: "bis ich 0.5s nicht links/rechts gedrueckt habe").
+    const neu = menuNavHoldDir !== dir
+      || (menuNavHoldReleasedAt !== null && jetzt - menuNavHoldReleasedAt >= MENU_NAV_RESET_GAP_MS);
+    if (neu) {
       menuNavHoldDir = dir;
-      menuNavHoldStart = now;
-      menuNavLastStep = now;
-      menuNavAdjust(dir);
+      menuNavHoldStart = jetzt;
+      menuNavHoldReleasedAt = null;
+      menuNavLastStep = jetzt;
+      menuNavAdjust(dir, false);
       return;
     }
-    if (now - menuNavHoldStart >= MENU_NAV_HOLD_DELAY_MS
-        && now - menuNavLastStep >= MENU_NAV_HOLD_REPEAT_MS) {
-      menuNavLastStep = now;
-      menuNavAdjust(dir);
+    menuNavHoldReleasedAt = null; // wieder im selben Zug
+    const seitZugbeginn = jetzt - menuNavHoldStart;
+    const beschleunigt = seitZugbeginn >= MENU_NAV_ACCEL_MS;
+    const naechsterSchrittNach = menuNavLastStep === menuNavHoldStart
+      ? MENU_NAV_REPEAT_START_MS
+      : (beschleunigt ? MENU_NAV_REPEAT_FAST_MS : MENU_NAV_REPEAT_MS);
+    if (jetzt - menuNavLastStep >= naechsterSchrittNach) {
+      menuNavLastStep = jetzt;
+      menuNavAdjust(dir, beschleunigt);
     }
   }
+
+  // Gamepad-Name des obigen, damit der Aufrufer in 90-ghosts.js nicht raten muss, dass
+  // er denselben Zustand mit der Tastatur teilt.
+  function menuNavAdjustPad(dir, held) { menuNavAdjustGehalten(dir, held); }
 
   // Tabwechsel per rohem Steuerkreuz (nicht belegbar - siehe die Begruendung bei
   // pollGamepad()). Ueberspringt versteckte Tab-Knoepfe (data-parent, hidden) genau wie

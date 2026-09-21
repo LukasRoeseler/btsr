@@ -2059,6 +2059,7 @@
     "Keine geschlossene Runde erkannt - nochmal versuchen.": "No closed lap detected - try again.",
     "Reifenwahl weiter": "Next tyre choice",
     "Tankmenge weiter": "Next fuel amount",
+    "L3 (linken Stick drücken)": "L3 (press left stick)",
   };
 
   // ============================================================================

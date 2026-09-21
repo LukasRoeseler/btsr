@@ -383,9 +383,13 @@
   .sess-row { font-size: 12.5px; line-height: 1.6; padding: 2px 0 2px 9px;
               border-left: 2px solid var(--line); color: var(--muted); }
   .sess-row b { font-family: monospace; color: var(--ink); margin-right: 4px; }
+  /* Einspaltig, seit Phase 13 auf Wunsch: die Menuenavigation bewegt den Fokus nur
+     hoch/runter (links/rechts wechselt den Tab bzw. verstellt einen angewaehlten
+     Regler) - in mehreren Spalten waeren Kacheln rechts einer Zeile per D-Pad gar
+     nicht erreichbar gewesen. */
   .misc-grid {
     display: grid; gap: 14px;
-    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    grid-template-columns: 1fr;
   }
   .misc-tile {
     display: flex; flex-direction: column; align-items: flex-start; gap: 10px;
@@ -3129,7 +3133,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.7.26</span></span>
+        <span class="foot-ver">v<span id="app-version">0.7.27</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>

@@ -93,6 +93,13 @@
     // beim Lenken drueckt. Und die Streckenansicht verlaesst das Cockpit - genau der
     // Grund, aus dem L1 sie nicht mehr traegt.
     trackview: { type: 'none', index: -1, label: 'nicht belegt' },
+    // L3 (linken Stick eindruecken) schaltet seit Phase 13 das Vollbild um - im Cockpit
+    // race-fs, im Streckeneditor track-fs (siehe pollGamepad()). BESTELLT. Dieselbe
+    // Sorge wie oben (ein versehentliches Eindruecken beim Lenken) gilt auch hier, ist
+    // aber bewusst in Kauf genommen: anders als eine Aktion WAEHREND der Fahrt ist ein
+    // Vollbildwechsel jederzeit folgenlos rueckgaengig zu machen (derselbe Knopf noch
+    // einmal), und ein Umschalten mitten im Rennen aendert nichts an Tempo oder Kurs.
+    fullscreenToggle: { type: 'button', index: 10, label: 'L3 (linken Stick drücken)' },
     // Nicht belegt. Das Touchpad wird vom System als Zeiger erkannt, also loest ein Tippen
     // gleichzeitig einen Klick irgendwo in der Seite aus - eine Belegung darauf kaempft mit
     // dem Cursor. Frei zuweisbar bleibt es, nur eben nicht ab Werk.
@@ -109,6 +116,7 @@
     yellowflag: 'Gelbe Flagge (1 s halten)',
     weather: 'Wetter umschalten',
     trackview: 'Streckenansicht',
+    fullscreenToggle: 'Vollbild umschalten',
     resetcar: 'Auto zurücksetzen',
   };
 
@@ -328,6 +336,7 @@
   // Die drei neuen Aktionen. padFlagFired merkt sich, dass die Sekunde in DIESEM Druck schon
   // voll war - ohne das wuerde die Flagge im Takt danach gleich wieder umgeschaltet.
   let prevTyreSelect = false, prevFuelSelect = false, prevYellowFlag = false;
+  let prevFsToggle = false;
   let padFlagFired = false;
 
   function bindingDescription(b) {
@@ -8248,6 +8257,23 @@
       const fuelNow = readBindingValue(pad, bindings.fuelSelect) > BUTTON_CAPTURE_THRESHOLD;
       if (fuelNow && !prevFuelSelect) pitVorwahlSchalten('refuel');
       prevFuelSelect = fuelNow;
+
+      // L3: Vollbild umschalten - im Cockpit race-fs, im Streckeneditor track-fs. Nach
+      // dem aktiven TAB entschieden und nicht nach der Kachel, damit ein Druck ausserhalb
+      // beider Tabs (Garage, Optionen, ...) folgenlos bleibt.
+      const fsToggleNow = readBindingValue(pad, bindings.fullscreenToggle) > BUTTON_CAPTURE_THRESHOLD;
+      if (fsToggleNow && !prevFsToggle) {
+        const aktiverTab = document.querySelector('.tab-btn.active');
+        const tabName = aktiverTab ? aktiverTab.dataset.tab : null;
+        if (tabName === 'race') {
+          if (document.body.classList.contains('race-fs')) exitRaceFullscreen();
+          else enterRaceFullscreen();
+        } else if (tabName === 'track') {
+          if (document.body.classList.contains('track-fs')) exitTrackFullscreen();
+          else enterTrackFullscreen();
+        }
+      }
+      prevFsToggle = fsToggleNow;
 
       // Gelbe Flagge auf HALTEN. Dieselben zwei Funktionen wie die Taste X, nicht eine
       // zweite Fassung der Logik: flagHoldPress startet den Ladebalken, flagHoldRelease(true)

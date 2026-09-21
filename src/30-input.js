@@ -385,11 +385,18 @@
     // ansteuern. JEDES keydown zaehlt, auch die vom Betriebssystem wiederholten waehrend
     // eine Taste gehalten wird - genau das ist die bestellte Wiederholung beim Halten,
     // ohne einen eigenen Zeitgeber wie am Gamepad (dort gibt es kein natives Wiederholen).
+    // links/rechts auf einer ANGEWAEHLTEN Zeile geht ueber menuNavAdjustGehalten() - sie
+    // teilt sich den Beschleunigungszustand mit dem Gamepad (50b-menu-nav.js), das native
+    // Wiederholen des Betriebssystems ersetzt hier nur dessen eigenen Zeitgeber. Ohne
+    // Anwahl geht die Taste unveraendert an den Tabwechsel, wie am Gamepad auch.
     if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key) && menuNavActive()) {
       if (e.key === 'ArrowUp') menuNavMove('up');
       else if (e.key === 'ArrowDown') menuNavMove('down');
-      else if (e.key === 'ArrowLeft') { if (!menuNavAdjust('left')) menuNavTabWechsel(-1); }
-      else if (e.key === 'ArrowRight') { if (!menuNavAdjust('right')) menuNavTabWechsel(1); }
+      else if (e.key === 'ArrowLeft') {
+        if (menuNavArmed) menuNavAdjustGehalten('left', true); else menuNavTabWechsel(-1);
+      } else if (e.key === 'ArrowRight') {
+        if (menuNavArmed) menuNavAdjustGehalten('right', true); else menuNavTabWechsel(1);
+      }
       return;
     }
     keys.add(e.key);
@@ -400,6 +407,8 @@
     // passiert - ein halber Druck darf keine halbe Wirkung haben.
     const kUp = (e.key || '').toLowerCase();
     if (kUp === 'x' || kUp === 'enter') flagHoldRelease(false);
+    if (e.key === 'ArrowLeft') menuNavAdjustGehalten('left', false);
+    else if (e.key === 'ArrowRight') menuNavAdjustGehalten('right', false);
   });
   // Auch bei blur, sonst haengt der Balken, wenn das Fenster waehrend des Haltens den Fokus
   // verliert - und der naechste Druck waere wirkungslos, weil flagHoldStart noch belegt ist.
