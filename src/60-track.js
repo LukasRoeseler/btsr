@@ -1949,12 +1949,15 @@
   // surface, white joints between elements, kerbs, ideal line. Without it you get the thin
   // line the dashboard minimap needs, where a 220px map has no room for any of that.
   //
-  // Kerb colours follow the direction of travel: LEFT is red/white, RIGHT is blue/white.
-  // BESTELLT: "im Strecken-Editor sind die blaue und rote Randbegrenzung vertauscht
-  // angegeben" - geprueft und es ist nur DIESER Satz, der es falsch sagte. Der Code
-  // (kerbLeft/kerbRight weiter unten) und der Selbsttest ("CH-Aussehen ... rot links,
-  // blau rechts") stimmten schon vorher ueberein; nur zwei Kommentare an dieser und der
-  // naechsten Stelle behaupteten das Gegenteil.
+  // Kerb colours follow the direction of travel: LEFT is blue/white, RIGHT is red/white.
+  // BESTELLT (erste Runde): "im Strecken-Editor sind die blaue und rote Randbegrenzung
+  // vertauscht angegeben" - damals geprueft: Code und Selbsttest stimmten miteinander
+  // ueberein (rot links, blau rechts), nur zwei Kommentare behaupteten das Gegenteil, also
+  // wurden nur die Kommentare berichtigt.
+  // BESTELLT (zweite Runde, nach Gegenpruefung am echten Auto): "Linker Rand soll blau und
+  // rechter Rand rot in Fahrtrichtung sein, das ist noch verkehrt herum." Diesmal war die
+  // Uebereinstimmung selbst falsch herum - jetzt sind Farbzuordnung UND Kommentare
+  // gedreht (kerbLeft/kerbRight weiter unten).
   // They are drawn as a solid white line with a dashed coloured line on top, which is how a
   // real kerb alternates, and it needs no per-block geometry.
   // How hard a car would be braking at each sample of a path, 0 = on the power,
@@ -2206,7 +2209,12 @@
         body += `<path d="M ${P2(A)} L ${P2(B)}" stroke="#ffffff" stroke-width="1.6" opacity=".85"/>`;
       }
 
-      // 4) Kerbs. Left = red/white, right = blue/white, both relative to travel direction.
+      // 4) Kerbs. Left = blue/white, right = red/white, both relative to travel direction.
+      // BESTELLT (nach Gegenpruefung am echten Auto): "Linker Rand soll blau und rechter
+      // Rand rot in Fahrtrichtung sein, das ist noch verkehrt herum." Vorher stand hier
+      // rot links / blau rechts - das stimmte zwischen Code und Selbsttest ueberein
+      // (siehe Phase 9), war aber gegen die reale Bahn beides falsch herum. Nur die
+      // Farbzuordnung dreht sich, die Geometrie (SIGN CHECK unten) bleibt unveraendert.
       // SIGN CHECK: trackNormals() rotates the tangent by -90 degrees, so a POSITIVE
       // offset is the driver's LEFT. Heading north the tangent is (0,-1) and the normal
       // comes out (-1,0), which on screen (y downwards) points left.
@@ -2215,7 +2223,7 @@
       const kw = TRACK_KERB_W;
       // Brighter than the real kerb paint, on purpose: these are drawn on a dark track view
       // now, and the actual #b3131f / #1565c0 came out at under 3:1 against it.
-      [[kerbLeft, '#ff5c5c'], [kerbRight, '#5aa9ff']].forEach(([path, col]) => {
+      [[kerbLeft, '#5aa9ff'], [kerbRight, '#ff5c5c']].forEach(([path, col]) => {
         body += `<path d="${poly(path)}" fill="none" stroke="#ffffff" stroke-width="${kw}" stroke-linecap="butt"/>`;
         body += `<path d="${poly(path)}" fill="none" stroke="${col}" stroke-width="${kw}" stroke-linecap="butt" stroke-dasharray="7 7"/>`;
       });

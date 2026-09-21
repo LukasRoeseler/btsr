@@ -3090,6 +3090,7 @@
       }
     },
     setLineModel, getLineModel, buildLine, getLineExit, lapTimeOf, fahrGrenzen,
+    lineModelle: LINE_MODELLE, linienmodellName: LINIENMODELL_NAME,
     // Die Sperre selbst herausgegeben: eine Pruefung soll fragen koennen, WANN sie gilt,
     // statt es aus Kachelindizes nachzubauen.
     pitSperreRechts, pitKachel, pitFaelligZiehen,

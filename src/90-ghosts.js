@@ -7613,11 +7613,17 @@
   //
   // Nur REINE Funktionen, kein Zustand, kein Schreibzugriff. Was hier steht, kann eine
   // Pruefung aufrufen, ohne ein Auto zu verbinden oder auf eine Zeitmessung zu warten.
-  // Die drei Modellnamen fuer die Oberflaeche. Als EINE Tabelle, weil sie an drei Stellen
-  // gebraucht werden - Meldung, Vorschau und Selbsttest - und drei Kopien einer Zuordnung
-  // der Weg zu drei verschiedenen Namen fuer dasselbe Modell sind.
+  // Die Modellnamen fuer die Oberflaeche. Als EINE Tabelle, weil sie an drei Stellen
+  // gebraucht werden - Meldung, Vorschau und Selbsttest - und mehrere Kopien einer Zuordnung
+  // der Weg zu mehreren verschiedenen Namen fuer dasselbe Modell sind.
+  //
+  // GEMELDET: "steht 'undefined ist gewaehlt'." 'dreistufig' ist die VORGABE (lineModel in
+  // 60-track.js) und fehlte hier - wer die Voreinstellung nie angefasst hatte, sah die
+  // Meldung von Anfang an. Derselbe Name wie am Knopf im Streckeneditor ("3-stufig",
+  // data-linemodel="dreistufig", 00-index.head.html).
   const LINIENMODELL_NAME = {
     curvature: 'Kr\u00fcmmung', laptime: 'Rundenzeit', lateapex: 'Late Apex',
+    dreistufig: '3-stufig',
   };
 
   // ---- Die gewaehlte Linie zeigen, direkt neben der Wahl ----

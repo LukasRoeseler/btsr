@@ -160,6 +160,23 @@
                       : proben.length + ' Layouts ohne Sprung' };
   });
 
+  // ---- Jedes Linienmodell hat einen Anzeigenamen ----
+  //
+  // GEMELDET: "steht 'undefined ist gewaehlt'." Ursache: 'dreistufig' ist die VORGABE
+  // (lineModel in 60-track.js), fehlte aber in LINIENMODELL_NAME (90-ghosts.js) - wer die
+  // Voreinstellung nie angefasst hatte, sah die Meldung von Anfang an. Diese Pruefung haelt
+  // die beiden Listen zusammen, damit ein neues Modell (Phase 12: "aussen nach innen" und
+  // zwei weitere) nicht denselben Fehler wiederholt.
+  stAdd('Jedes Linienmodell hat einen Anzeigenamen', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.lineModelle || !OMEGA_TEST.linienmodellName) {
+      return { skip: true, mass: 'Pruefzugang nicht vorhanden' };
+    }
+    const fehlt = OMEGA_TEST.lineModelle.filter((m) => !OMEGA_TEST.linienmodellName[m]);
+    return { ok: fehlt.length === 0,
+             mass: fehlt.length ? fehlt.join(', ') + ' ohne Namen'
+                                 : OMEGA_TEST.lineModelle.length + ' Modelle, alle benannt' };
+  });
+
   // ---- 6. Kachelphase ----
   // Eine Haarnadel ist dreimal so lang wie eine Gerade. Rechnet die Phase mit einer
   // mittleren Kacheldauer, steht sie dort nach einem Drittel auf 1 und der Linienversatz
@@ -2282,7 +2299,9 @@
     if (!(dL > 3 && dR > 3)) schlecht.push('Querlage bewegt den Punkt nicht');
     const dLR = Math.hypot(letzt(links).x - letzt(rechts).x, letzt(links).y - letzt(rechts).y);
     if (!(dLR > dL && dLR > dR)) schlecht.push('links und rechts liegen nicht auf zwei Seiten');
-    // 4. Das CH-Aussehen: schwarze Fahrbahn, rot links, blau rechts.
+    // 4. Das CH-Aussehen: schwarze Fahrbahn, blauer und roter Randstein (welche Seite
+    // welche Farbe traegt, prueft diese Stelle nicht - siehe kerbLeft/kerbRight in
+    // 60-track.js fuer die Zuordnung selbst).
     const f = mitte.farben || [];
     for (const [farbe, was] of [['#14181f', 'Fahrbahn'], ['#ff5c5c', 'roter Randstein'],
                                 ['#5aa9ff', 'blauer Randstein'], ['#ffffff', 'Stossfugen']]) {

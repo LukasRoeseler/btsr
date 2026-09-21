@@ -2418,10 +2418,15 @@
   body.race-mode #glitch-bands { display: none; }
   /* Getrennt von "header": eine Regel main + header positionierte beide gleich, und
      "position: relative" hier haette die sticky-Positionierung oben ueberschrieben (letzte
-     Regel gewinnt bei gleicher Spezifitaet). z-index 1 bleibt fuer beide - das legt sie ueber
-     #glitch-bands (position:fixed, z-index 0). */
+     Regel gewinnt bei gleicher Spezifitaet).
+     GEMELDET: "Text aus Tabs ueberlagert sich mit den Tabs oben." Bei gleichem z-index (1)
+     gewinnt beim Ueberlappen das spaetere Element im DOM - main kommt nach header, also
+     malte eine hochgescrollte Kachel die sticky-Reiterleiste einfach zu, sobald sie beim
+     Scrollen an dieselbe Bildschirmstelle kam. header braucht einen hoeheren Wert als main,
+     damit sie sichtbar obenauf bleibt; #glitch-bands (position:fixed, z-index 0) bleibt fuer
+     beide weiterhin darunter. */
   main { position: relative; z-index: 1; }
-  header { z-index: 1; }
+  header { z-index: 2; }
 
   /* ---- Rohcode-Monitor ---- */
   .cm-now { font-family: monospace; font-size: 26px; font-weight: 800; letter-spacing: .04em; }
@@ -3088,7 +3093,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.7.11</span></span>
+        <span class="foot-ver">v<span id="app-version">0.7.12</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -3481,11 +3486,17 @@
       <div class="gt3-banner" id="gt3-offtrack" style="display:none">ABSEITS
         &middot; GAS GEDROSSELT</div>
       <div class="gt3-banner" id="gt3-pit"><span id="race-pit-text">PIT LIMITER ENGAGED</span></div>
+      <!-- GEMELDET: "Das hier entfernen aus dem Cockpit: '- km/h echt / auf der Bahn 0:00
+           abseits 0:00 / -'" - drei Werkstatt-Anzeigen, die im Cockpit wie unausgefuellte
+           Platzhalter aussahen. Sie bleiben im Dokument und werden weiter befuellt (die
+           echte Geschwindigkeit fuer die REAL_SCALE-Kalibrierung, die Bahnzeit fuer den
+           CSV-Export der Rennergebnisse, das Muster-Abzeichen fuer den Ausdruck-Modus) -
+           nur nicht mehr sichtbar im Cockpit selbst. -->
       <div class="gt3-foot">
-        <span><b id="dash-real-kmh">&ndash;</b> km/h echt <i id="dash-real-ratio"></i></span>
-        <span>auf der Bahn <b id="dash-time-on">0:00</b> &middot; abseits
+        <span hidden><b id="dash-real-kmh">&ndash;</b> km/h echt <i id="dash-real-ratio"></i></span>
+        <span hidden>auf der Bahn <b id="dash-time-on">0:00</b> &middot; abseits
           <b id="dash-time-off">0:00</b> <i id="dash-time-share"></i></span>
-        <span id="dash-offtrack">&ndash;</span>
+        <span id="dash-offtrack" hidden>&ndash;</span>
         <span id="dash-vehicle-name" class="gt3-foot-name">nicht verbunden</span>
         <span id="dash-light-dmg" style="color:#ff5252"></span>
       </div>
@@ -8508,8 +8519,8 @@
       </div>
       <p class="muted" style="font-size:11.5px; margin-top:6px">
         Schwarz ist die Fahrbahn, wei&szlig;e Striche trennen die Streckenteile. Randsteine in
-        Fahrtrichtung: <b style="color:var(--bad)">links rot-wei&szlig;</b>,
-        <b style="color:var(--info)">rechts blau-wei&szlig;</b>: die Boxengasse liegt
+        Fahrtrichtung: <b style="color:var(--info)">links blau-wei&szlig;</b>,
+        <b style="color:var(--bad)">rechts rot-wei&szlig;</b>: die Boxengasse liegt
         deshalb rechts. Ihre Breite ist <b>9,5&nbsp;%</b> der Fahrbahnbreite, ausgemessen aus
         den Streckenkarten der Original-App. Die
         d&uuml;nne farbige Linie ist die berechnete Ideallinie, kr&uuml;mmungs&auml;rmster

@@ -610,7 +610,6 @@
     "An einem echten GT3 kalibriert": "Calibrated against a real GT3",
     "Von Hand schalten, 3,2 s auf 100 (die gemessene Reihe, gegen die die Physik gefittet ist), voller Reifenverschleiß und volles Tankgewicht. Wenig Grip, schwache Bremse, langes Ausrollen. Ein Fahrfehler kostet hier Zeit.":
       "Manual gearbox, 3.2 s to 100 (the measured series the physics was fitted against), full tyre wear and full fuel weight. Little grip, weak brakes, long coasting. A mistake costs time here.",
-    "Weniger Leistung, mehr Reserve": "Less power, more reserve",
     "Von Hand schalten, 4,4 s auf 100, Reifenverschleiß und Tankgewicht wie GT3, aber mehr Grip und eine gutmütigere Bremse. Die Klasse darunter fährt sich nicht leichter, weil sie mehr verzeiht, sondern weil sie langsamer ist.":
       "Manual gearbox, 4.4 s to 100, tyre wear and fuel weight as GT3, but more grip and gentler brakes. The class below is not easier because it forgives more, but because it is slower.",
     "Das schärfste, was das Modell hergibt": "The sharpest the model has",
@@ -1366,7 +1365,7 @@
     "langsam": "slow",
     "lenken links": "steer left",
     "lenken rechts": "steer right",
-    "links rot-weiß": "left red-and-white",
+    "links blau-weiß": "left blue-and-white",
     "links": "left",
     "links, sie hat sehr wohl eigene Codes, und sie fügen sich in das Muster der anderen:": "left, it does have codes of its own, and they fit the pattern of the others:",
     "links/rechts für die 60-Grad-Kurve,": "left/right for the 60-degree curve,",
@@ -1385,7 +1384,7 @@
     "nur Byte 10 = 0x30": "byte 10 = 0x30 only",
     "oder": "or",
     "quer": "landscape",
-    "rechts blau-weiß": "right blue-and-white",
+    "rechts rot-weiß": "right red-and-white",
     "rechts und": "right and",
     "rechts": "right",
     "rot beim Bremsen": "red under braking",
@@ -1484,7 +1483,7 @@
     "Reifenverschleiß, Reifentemperatur, Bremstemperatur": "Tyre wear, tyre temperature, brake temperature",
     "Wettersimulation": "Weather simulation",
     "Alles hier schreibt rohe Bytes zum Auto und liest rohe Bytes zurück. Das ist Werkbank und kein Merkmal: die Pakete tragen gültige Prüfsummen, aber was das Auto mit einem selbst zusammengesetzten Paket macht, ist nicht vorhersagbar. Zum Fahren wird nichts davon gebraucht.": "Everything here writes raw bytes to the car and reads raw bytes back. This is a workbench, not a feature: the packets carry valid checksums, but what the car does with a hand-assembled packet is not predictable. None of it is needed for driving.",
-    "Automatik, 2,6 s auf 100, voller Grip, Reifenmodell an und kein Tankgewicht. Lenkkalibrierung 200 Prozent, damit auch enge Strecken gehen – der volle Einschlag liegt bei etwa einem Drittel Stick an. Fading und Windschatten sind aus; sie stehen ab GT4 zur Verfügung.": "Automatic, 2.6 s to 100, full grip, tyre model on and no fuel weight. Steering calibration 200 percent so that tight tracks work too – full lock arrives at about a third of stick travel. Fade and dirty air are off; they are available from GT4 upwards.",
+    "Automatik, 2,6 s auf 100, voller Grip, Reifenmodell an und kein Tankgewicht. Lenkkalibrierung 200 Prozent, damit auch enge Strecken gehen – der volle Einschlag liegt bei etwa einem Drittel Stick an. Fading und Windschatten sind aus; sie stehen ab GT3 zur Verfügung.": "Automatic, 2.6 s to 100, full grip, tyre model on and no fuel weight. Steering calibration 200 percent so that tight tracks work too – full lock arrives at about a third of stick travel. Fade and dirty air are off; they are available from GT3 upwards.",
     "Crash-Schwelle": "Crash threshold",
     "Wie weit die Bewegungsbytes 1 und 3 vom gleitenden Mittel abweichen müssen, damit ein Stoß als Crash gilt. Niedriger heißt empfindlicher: schon ein Rempler zählt. Höher heißt, dass nur ein echter Einschlag zählt. 40 ist der Wert, mit dem die Erkennung gebaut und geprüft wurde – stand bis v0.5 als Konstante im Code, war also eine Einstellung, die niemand einstellen konnte.": "How far the motion bytes 1 and 3 must deviate from the running mean for a jolt to count as a crash. Lower means more sensitive: even a nudge counts. Higher means only a real impact counts. 40 is the value the detection was built and tested with – it was a constant in the code until v0.5, so it was a setting nobody could set.",
     "R3 (rechten Stick drücken)": "R3 (press right stick)",
@@ -1578,7 +1577,6 @@
     "Automatik, 3,3 s auf 100, voller Grip – kein zusätzlicher Reifenschlupf, sondern mehr Gewichtsverlagerung (40 % statt 30 %) und träges Einschwingen (160 statt 80 ms): das Auto lädt sich beim Bremsen und Gasgeben spürbar um, wie ein Sportwagen mit echtem Gewicht statt ein Rennwagen mit Abtrieb. Die Bremse ist deutlich weicher als GT3, dafür länger im Bremsweg.":
       "Automatic, 3.3 s to 100, full grip – no extra tyre slip, but more weight transfer (40% instead of 30%) and a sluggish settle (160 instead of 80 ms): the car noticeably shifts its weight under braking and throttle, like a sports car with real weight instead of a race car with downforce. The brake is distinctly softer than GT3, with a longer stopping distance in exchange.",
     "Von Hand schalten, 2,9 s auf 100, Reifenverschleiß und Tankgewicht knapp zur Hälfte. Bremsfading, Windschatten und ungleicher Verschleiß sind voll an. Die harte, gegen echte Werte kalibrierte Fassung steht daneben als Realismus GT3.": "Shift by hand, 2.9 s to 100, tyre wear and fuel weight at just under half. Brake fade, dirty air and uneven wear are fully on. The hard version, calibrated against real figures, sits next to it as Realism GT3.",
-    "Automatik, 3,1 s auf 100, Reifenverschleiß und Tankgewicht knapp halb so stark wie im Realismus-GT3. Die Klasse direkt neben Pro: Bremsfading, Windschatten und ungleicher Verschleiß sind an, aber gutmütig eingestellt, und die Lenkkalibrierung liegt bei 175 Prozent.": "Automatic, 3.1 s to 100, tyre wear and fuel weight just under half as strong as in the Realism GT3. The class right next to Pro: brake fade, dirty air and uneven wear are on, but set gently, and the steering calibration sits at 175 percent.",
     "Das schärfste der fahrbaren": "The sharpest of the driveable ones",
     "Von Hand schalten, 2,5 s auf 100, stärkster Reifenverschleiß der drei Klassen und die kürzeste Bremse. Die am feinsten dosierbare Lenkung, langes Ausrollen, und Windschatten wirkt am stärksten. Reifenwärmer an.": "Shift by hand, 2.5 s to 100, the strongest tyre wear of the three classes and the shortest brake. The most finely metered steering, long coasting, and dirty air bites hardest. Tyre blankets on.",
     "Realismus GT3": "Realism GT3",

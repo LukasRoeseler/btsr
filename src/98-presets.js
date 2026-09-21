@@ -57,13 +57,67 @@
            // das Byte genau proportional zum Tacho, also die kalibrierte Fassung.
            'setting-topspeed': 2.0 },
     },
+    // ---- GT7 / SPORT: SPORTWAGEN-GEFUEHL STATT RENNWAGEN ----------------------------
+    //
+    // BESTELLT: "weiterer handling modus: es soll sich so anfuehlen, wie wenn ich einen
+    // Sportwagen in Gran Turismo 7 steuere (statt gt3 auto), also mit Gewicht." Geklaert
+    // mit dem Nutzer: "mehr Traegheit/Gewichtsverlagerung, weicheres Bremsgefuehl" -
+    // AUSDRUECKLICH NICHT mehr Reifenschlupf (setting-grip bleibt auf 1,0, wie Arcade
+    // und Pro).
+    //
+    // BESTELLT (spaeter): "GT7 Modus umbenennen zu 'Sport'". Der Objektschluessel bleibt
+    // gt7 (nirgends sonst im Code referenziert, siehe presetControls()/PRESET_ALIAS -
+    // eine Umbenennung dort haette nichts eingespart), nur das sichtbare label aendert
+    // sich. Ausserdem an die zweite Stelle geruckt (Voreinstellungsreihenfolge: Arcade,
+    // Sport, Pro, GT3, F1, Realismus GT3), direkt hinter Arcade.
+    //
+    // DIE BEIDEN NEUEN REGLER TRAGEN DEN UNTERSCHIED: phys-transfer-k (Gewichtsverlagerung,
+    // 30 % -> 40 %) und phys-load-tau (Traegheit dabei, 80 -> 160 ms) sind die einzigen
+    // Werte hier, die es vor diesem Preset im Markup noch gar nicht gab - siehe die
+    // Begruendung bei ihren opt-rows im Fahrgefuehl-Tab. Alles andere sind vorhandene
+    // Regler, auf einen Sportwagen statt einen Rennwagen hin gestimmt: langsamer auf
+    // Tempo (3,3 s statt Pros 2,6), weniger Abtrieb-Ausrollen, weichere Bremse (0,95
+    // statt GT3s 1,15) und ein etwas nachsichtigerer Reibkreis - ein Sportwagen bestraft
+    // Bremsen-und-Lenken-zugleich weniger hart als ein Rennwagen mit Slicks.
+    gt7: {
+      label: 'Sport',
+      kurz: 'Sportwagen-Gefühl statt Rennwagen: mehr Gewicht, weichere Bremse',
+      text: 'Automatik, 3,3 s auf 100, voller Grip – kein zusätzlicher Reifenschlupf, '
+          + 'sondern mehr Gewichtsverlagerung (40 % statt 30 %) und träges Einschwingen '
+          + '(160 statt 80 ms): das Auto lädt sich beim Bremsen und Gasgeben spürbar um, '
+          + 'wie ein Sportwagen mit echtem Gewicht statt ein Rennwagen mit Abtrieb. Die '
+          + 'Bremse ist deutlich weicher als GT3, dafür länger im Bremsweg.',
+      v: { 'setting-grip': 1.0, 'setting-brakepower': 0.95, 'setting-autoshift': true,
+           'setting-zero-to-top': 3.3, 'setting-coast-drag': 0.7, 'setting-fuelweight': 0.5,
+           'setting-tyres': 1.0, 'phys-steerresp': 2.0, 'setting-brakebias': 58,
+           'setting-steer-calib': 2.0,
+           'phys-accel': 1.0,
+           'setting-crash-threshold': 45,
+           // Nachsichtiger als jede Rennklasse: ein Sportwagen mit Strassenreifen
+           // verliert beim gleichzeitigen Bremsen und Lenken weniger, weil er ohnehin
+           // nicht am Limit eines Rennreifens faehrt.
+           'setting-brake-steal': 0.9,
+           'setting-tyre-blankets': true,
+           'setting-fuel-drain': 0.8, 'setting-crash-count': 4,
+           'setting-crash-damage': false,
+           'setting-repair-time': 6,
+           'setting-brake-fade': false,
+           'setting-brake-fade-strength': 1.0,
+           'setting-dirtyair': false,
+           'setting-dirtyair-strength': 1.0,
+           'setting-tyre-asym': false,
+           'setting-tyre-pressure': 1.8,
+           'setting-topspeed': 1.7,
+           // DER EIGENTLICHE UNTERSCHIED: siehe die Begruendung am Kopf dieses Presets.
+           'phys-transfer-k': 0.4, 'phys-load-tau': 160 },
+    },
     pro: {
       label: 'Pro',
       kurz: 'Halb so weit zwischen Arcade und Realismus GT3',
       text: 'Automatik, 2,6 s auf 100, voller Grip, Reifenmodell an und kein '
           + 'Tankgewicht. Lenkkalibrierung 200 Prozent, damit auch enge Strecken gehen '
           + '– der volle Einschlag liegt bei etwa einem Drittel Stick an. Fading und '
-          + 'Windschatten sind aus; sie stehen ab GT4 zur Verfügung.',
+          + 'Windschatten sind aus; sie stehen ab GT3 zur Verfügung.',
       // AUTOMATIK, obwohl Pro sonst die Zwischenstufe zu GT3 ist. Pro ist seit v0.5 die
       // Vorgabe, und wer beim ersten Start von Hand schalten muss und es nicht weiss, bleibt
       // im 1. Gang haengen - dann ist das Auto genau so traege, wie gemeldet wurde. Von Hand
@@ -157,37 +211,6 @@
            // das Byte genau proportional zum Tacho, also die kalibrierte Fassung.
            'setting-topspeed': 1.45 },
     },
-    gt4: {
-      label: 'GT4',
-      kurz: 'Weniger Leistung, mehr Reserve',
-      text: 'Automatik, 3,1 s auf 100, Reifenverschleiß und Tankgewicht knapp halb so stark wie im Realismus-GT3. Die Klasse direkt neben Pro: Bremsfading, Windschatten und ungleicher Verschleiß sind an, aber gutmütig eingestellt, und die Lenkkalibrierung liegt bei 175 Prozent.',
-      v: { 'setting-grip': 0.95, 'setting-brakepower': 1.3, 'setting-autoshift': true,
-           'setting-zero-to-top': 3.1, 'setting-coast-drag': 0.75, 'setting-fuelweight': 0.3,
-           'setting-tyres': 0.45, 'phys-steerresp': 2.15, 'setting-brakebias': 59,
-           // Lenkkalibrierung 1,0 heisst: der uebertragene Winkel ist genau der gerechnete.
-           // Die Klassen ab GT3 sind gegen gemessenes Verhalten abgestimmt, und eine
-           // Kalibrierung darauf waere ein Aufschlag auf eine Messung.
-           'setting-steer-calib': 1.75,
-           'phys-accel': 1.0,
-           'setting-crash-threshold': 40,
-           // Etwas gutmuetiger als GT3, wie die ganze Klasse.
-           'setting-brake-steal': 1.05,
-           // Waermer aus, wie GT3.
-           'setting-tyre-blankets': true,
-           'setting-fuel-drain': 0.7, 'setting-crash-count': 4,
-           'setting-crash-damage': false,
-           'setting-repair-time': 8,
-           // Block 4: Bremsfading, Windschatten, Reifenasymmetrie und -druck.
-           'setting-brake-fade': true,
-           'setting-brake-fade-strength': 0.95,
-           'setting-dirtyair': true,
-           'setting-dirtyair-strength': 0.95,
-           'setting-tyre-asym': true,
-           'setting-tyre-pressure': 1.8,
-           // Gasfaktor: wie frueh das Auto volle Motorleistung bekommt. 1,0 ist
-           // das Byte genau proportional zum Tacho, also die kalibrierte Fassung.
-           'setting-topspeed': 1.6 },
-    },
     f1: {
       label: 'F1',
       kurz: 'Das schärfste der fahrbaren',
@@ -220,54 +243,6 @@
            // Gasfaktor: wie frueh das Auto volle Motorleistung bekommt. 1,0 ist
            // das Byte genau proportional zum Tacho, also die kalibrierte Fassung.
            'setting-topspeed': 1.6 },
-    },
-    // ---- GT7: SPORTWAGEN-GEFUEHL STATT RENNWAGEN ------------------------------------
-    //
-    // BESTELLT: "weiterer handling modus: es soll sich so anfuehlen, wie wenn ich einen
-    // Sportwagen in Gran Turismo 7 steuere (statt gt3 auto), also mit Gewicht." Geklaert
-    // mit dem Nutzer: "mehr Traegheit/Gewichtsverlagerung, weicheres Bremsgefuehl" -
-    // AUSDRUECKLICH NICHT mehr Reifenschlupf (setting-grip bleibt auf 1,0, wie Arcade
-    // und Pro).
-    //
-    // DIE BEIDEN NEUEN REGLER TRAGEN DEN UNTERSCHIED: phys-transfer-k (Gewichtsverlagerung,
-    // 30 % -> 40 %) und phys-load-tau (Traegheit dabei, 80 -> 160 ms) sind die einzigen
-    // Werte hier, die es vor diesem Preset im Markup noch gar nicht gab - siehe die
-    // Begruendung bei ihren opt-rows im Fahrgefuehl-Tab. Alles andere sind vorhandene
-    // Regler, auf einen Sportwagen statt einen Rennwagen hin gestimmt: langsamer auf
-    // Tempo (3,3 s statt Pros 2,6), weniger Abtrieb-Ausrollen, weichere Bremse (0,95
-    // statt GT3s 1,15) und ein etwas nachsichtigerer Reibkreis - ein Sportwagen bestraft
-    // Bremsen-und-Lenken-zugleich weniger hart als ein Rennwagen mit Slicks.
-    gt7: {
-      label: 'GT7',
-      kurz: 'Sportwagen-Gefühl statt Rennwagen: mehr Gewicht, weichere Bremse',
-      text: 'Automatik, 3,3 s auf 100, voller Grip – kein zusätzlicher Reifenschlupf, '
-          + 'sondern mehr Gewichtsverlagerung (40 % statt 30 %) und träges Einschwingen '
-          + '(160 statt 80 ms): das Auto lädt sich beim Bremsen und Gasgeben spürbar um, '
-          + 'wie ein Sportwagen mit echtem Gewicht statt ein Rennwagen mit Abtrieb. Die '
-          + 'Bremse ist deutlich weicher als GT3, dafür länger im Bremsweg.',
-      v: { 'setting-grip': 1.0, 'setting-brakepower': 0.95, 'setting-autoshift': true,
-           'setting-zero-to-top': 3.3, 'setting-coast-drag': 0.7, 'setting-fuelweight': 0.5,
-           'setting-tyres': 1.0, 'phys-steerresp': 2.0, 'setting-brakebias': 58,
-           'setting-steer-calib': 2.0,
-           'phys-accel': 1.0,
-           'setting-crash-threshold': 45,
-           // Nachsichtiger als jede Rennklasse: ein Sportwagen mit Strassenreifen
-           // verliert beim gleichzeitigen Bremsen und Lenken weniger, weil er ohnehin
-           // nicht am Limit eines Rennreifens faehrt.
-           'setting-brake-steal': 0.9,
-           'setting-tyre-blankets': true,
-           'setting-fuel-drain': 0.8, 'setting-crash-count': 4,
-           'setting-crash-damage': false,
-           'setting-repair-time': 6,
-           'setting-brake-fade': false,
-           'setting-brake-fade-strength': 1.0,
-           'setting-dirtyair': false,
-           'setting-dirtyair-strength': 1.0,
-           'setting-tyre-asym': false,
-           'setting-tyre-pressure': 1.8,
-           'setting-topspeed': 1.7,
-           // DER EIGENTLICHE UNTERSCHIED: siehe die Begruendung am Kopf dieses Presets.
-           'phys-transfer-k': 0.4, 'phys-load-tau': 160 },
     },
     // DIE KALIBRIERTE FASSUNG, und sie steht hier, damit sie nicht verlorengeht.
     //
