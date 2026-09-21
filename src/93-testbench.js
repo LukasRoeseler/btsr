@@ -3533,6 +3533,34 @@
       }
     },
 
+    // ---- REICHWEITE DER HAARNADEL-UEBERHOLSPERRE ----------------------------------
+    //
+    // ghostHaarnadelInSicht() ist der eigene, laengere Vorausblick fuer die
+    // Ueberholsperre (SPICE_PASS_KEIN_HAARNADEL_VORAUS) - anders als
+    // ghostAheadTightest() (Bremskurve, kuerzere feste Reichweite) fragt er nur "liegt
+    // UEBERHAUPT eine Haarnadel in den naechsten N Kacheln", ohne die naeheste,
+    // weniger enge Kurve dabei zu verschlucken.
+    spicePassKeinHaarnadelVoraus: SPICE_PASS_KEIN_HAARNADEL_VORAUS,
+    haarnadelInSichtProbe(code, tileIndex, depth) {
+      const merkGarage = garage.splice(0, garage.length);
+      const merkTiles = currentTrackTiles;
+      const autos = [];
+      try {
+        currentTrackTiles = codeToTrack(code).tiles;
+        lineCache = null;
+        const a = OMEGA_TEST.attrappeGhost('N');
+        garage.push(a); autos.push(a);
+        a.ghost.tileIndex = tileIndex;
+        return ghostHaarnadelInSicht(a, depth);
+      } finally {
+        garage.splice(0, garage.length);
+        for (const c of autos) stopGhost(c);
+        for (const c of merkGarage) garage.push(c);
+        currentTrackTiles = merkTiles;
+        lineCache = null;
+      }
+    },
+
     // ---- FAHRERCHARAKTER: GEZOGEN, IN DER SPANNE, UND VERSCHIEDEN -----------------
     //
     // Geprueft wird das ZIEHEN, nicht die Wirkung: die Wirkung haengt an fuenf Groessen und
@@ -5751,7 +5779,8 @@
           // Kleben halten, damit die Zuendbedingung immer erfuellt ist.
           hinten.ghost.closeSince = uhr - 5000;
           ghostSpice(hinten, { tight: o.tight || 0,
-                               dist: o.dist === undefined ? 99 : o.dist, key: 'p' });
+                               dist: o.dist === undefined ? 99 : o.dist, key: 'p' },
+                     o.haarnadelNah);
           if (hinten.ghost.attackUntil) {
             gestartet++;
             // Zuruecksetzen und weiter wuerfeln.

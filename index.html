@@ -3093,7 +3093,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.7.14</span></span>
+        <span class="foot-ver">v<span id="app-version">0.7.15</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -29705,7 +29705,7 @@
         ${car.role === 'ghost' ? `
         <div class="gar-speed">
           <label>Tempo</label>
-          <input type="range" min="0.3" max="1" step="0.05"
+          <input type="range" min="${GHOST_READ_MIN}" max="1" step="0.05"
                  value="${car.ghostSpeed === undefined || car.ghostSpeed === null
                           ? ghostCfg.speed : car.ghostSpeed}">
           <b></b>
@@ -32784,9 +32784,14 @@
   const SPICE_PASS_PLATZ_MIN = 0.30;   // darunter passt kein zweites Auto daneben
   // Nicht in eine HAARNADEL hinein ansetzen. Das bleibt gesperrt, und zwar nicht wegen der
   // Kachelart, sondern weil der Versuch dort zwangslaeufig IN der Haarnadel endet: eine
-  // Attacke dauert bis zu 5 s, eine Kachel bei Ghost-Tempo rund 0,7 s. Wer 60 cm vor einer
-  // Haarnadel ausholt, ist beim Einlenken noch daneben.
-  const SPICE_PASS_KEIN_HAARNADEL_VORAUS = 1;   // Kacheln Vorausblick
+  // Attacke dauert bis zu 5 s, eine Kachel bei Ghost-Tempo rund 0,7 s - fuer eine
+  // abgeschlossene Attacke braucht es also mehrere Kacheln Vorlauf, nicht eine einzige.
+  //
+  // BESTELLT: "Kein Überholen, wenn eines der nächsten 4 Teile die Haarnadel ist." 1 auf
+  // 4 angehoben - deckt damit einen guten Teil, aber nicht die vollen ~7 Kacheln einer
+  // kompletten 5-s-Attacke ab; 4 ist die vom Nutzer benannte Zahl und keine Herleitung
+  // aus der Zeitrechnung oben.
+  const SPICE_PASS_KEIN_HAARNADEL_VORAUS = 4;   // Kacheln Vorausblick
 
   // ---- 2. ZEITLUECKE STATT KACHELABSTAND -------------------------------------------
   //
@@ -33304,7 +33309,12 @@
 
   // Alle fuenf Bausteine auf das Zieltempo. Rueckgabe: der Faktor, und ob gerade attackiert
   // wird (das braucht die Linie, nicht das Tempo).
-  function ghostSpice(car, aheadTight) {
+  // haarnadelNah ist OPTIONAL, mit Absicht: alle bestehenden Aufrufer (auch die
+  // zahlreichen Pruefstellen, die ghostSpice() direkt mit einem erfundenen aheadTight
+  // rufen) sollen ihr altes Verhalten unveraendert behalten. Nur wer die tatsaechliche,
+  // laengere Reichweite von SPICE_PASS_KEIN_HAARNADEL_VORAUS braucht (ghostTick(), siehe
+  // dort), gibt sie ausdruecklich mit.
+  function ghostSpice(car, aheadTight, haarnadelNah) {
     const g = car.ghost, now = Date.now();
     if (!wuerzeAn()) { g.attackUntil = 0; return { factor: 1, attack: 0 }; }
 
@@ -33500,11 +33510,19 @@
     // rechnet und deren Ergebnis niemand liest, ist kein Beleg fuer eine Begruendung -
     // sie ist die naechste Stelle, an der jemand denkt, sie taete etwas.
     const platz = 1;
-    // In eine Haarnadel hinein wird nicht angesetzt - siehe die Konstante. aheadTight kommt
-    // aus dem Layout; ohne Layout ist tight 0 und die Bedingung faellt weg, und das ist
-    // richtig: ohne Karte weiss niemand, was kommt.
-    const haarnadelVoraus = aheadTight.tight >= 2
-                            && aheadTight.dist <= SPICE_PASS_KEIN_HAARNADEL_VORAUS;
+    // In eine Haarnadel hinein wird nicht angesetzt - siehe die Konstante.
+    //
+    // haarnadelNah kommt, wenn gegeben, aus einem EIGENEN Scan (ghostHaarnadelInSicht)
+    // mit der vollen Reichweite von SPICE_PASS_KEIN_HAARNADEL_VORAUS. Der Rueckfall auf
+    // aheadTight ist fuer Aufrufer da, die haarnadelNah nicht mitgeben (die Bremskurve in
+    // ghostTick() braucht ihr aheadTight mit einer eigenen, KUERZEREN Reichweite, und
+    // dieselbe Reichweite auf hier anzuwenden wuerde eine naehere, weniger enge Kurve
+    // verschlucken - siehe die Begruendung bei ghostHaarnadelInSicht()). Ohne Layout
+    // liefert keiner der beiden Wege eine Haarnadel, und das ist richtig: ohne Karte
+    // weiss niemand, was kommt.
+    const haarnadelVoraus = haarnadelNah !== undefined ? haarnadelNah
+                            : (aheadTight.tight >= 2
+                               && aheadTight.dist <= SPICE_PASS_KEIN_HAARNADEL_VORAUS);
     // Auf BEIDEN Seiten einer: dann gibt es keinen Weg vorbei, und ein Versuch endet im
     // Schieben. Die Wahl selbst steht weiter unten; hier wird nur nicht angesetzt.
     const seitenFrei = ghostSeitenFrei(car);
@@ -34261,6 +34279,24 @@
       if (tg > out.tight) { out.tight = tg; out.dist = k; }
     }
     return out;
+  }
+
+  // Eigener, laengerer Vorausblick NUR fuer die Ueberholsperre vor der Haarnadel -
+  // ghostAheadTightest() haelt die TIGHTESTE Kachel im Bereich fest und ueberschreibt
+  // dabei ihre Distanz, sobald eine engere Kachel WEITER HINTEN gefunden wird. Fuer die
+  // Bremskurve (deren Frage ist "was kommt und wie eng") ist das richtig; fuer "liegt
+  // UEBERHAUPT eine Haarnadel in den naechsten N Kacheln" waere es falsch - eine normale
+  // Kurve auf Kachel 1 wuerde die naeher liegende, weniger enge Kachel verschlucken,
+  // sobald bei Kachel 3 eine Haarnadel folgt, und die Bremskurve verloere ihre Kachel 1.
+  // Deshalb ein eigener, einfacherer Scan: nur die blosse ANWESENHEIT zaehlt.
+  function ghostHaarnadelInSicht(car, depth) {
+    const tiles = currentTrackTiles;
+    if (!tiles || tiles.length < 2 || !car.ghost || car.ghost.tileIndex === null) return false;
+    for (let k = 0; k <= depth; k++) {
+      const t = tiles[(car.ghost.tileIndex + k) % tiles.length];
+      if (tileTightness(t && t.type) >= 2) return true;
+    }
+    return false;
   }
 
   // The three tile types the car is about to meet, in the form the original app sent them.
@@ -35088,7 +35124,13 @@
       const kurveJetzt = Math.min(1, Math.max(here, ahead.dist <= 1 ? ahead.tight : 0));
       g.kurveMix = g.kurveMix === undefined ? kurveJetzt
         : g.kurveMix + (kurveJetzt - g.kurveMix) * Math.min(1, dt / GHOST_MIX_TAU);
-      const spice = underYellow ? { factor: 1, attack: 0 } : ghostSpice(car, ahead);
+      // Eigener, laengerer Scan fuer die Ueberholsperre: `ahead` oben ist mit Absicht auf
+      // 2 Kacheln gedeckelt (fuer kurveJetzt richtig so), SPICE_PASS_KEIN_HAARNADEL_VORAUS
+      // braucht aber bis zu 4 - siehe ghostHaarnadelInSicht() und der dritte Parameter von
+      // ghostSpice().
+      const haarnadelNah = ghostHaarnadelInSicht(car, SPICE_PASS_KEIN_HAARNADEL_VORAUS);
+      const spice = underYellow ? { factor: 1, attack: 0 }
+                                 : ghostSpice(car, ahead, haarnadelNah);
       target *= spice.factor;
       // Was gilt: die Kachel unter dem Auto, oder die naechste enge in Reichweite. Die
       // Reichweite haengt von der Enge ab - vor einer Haarnadel zwei Kacheln, vor einer
@@ -41286,6 +41328,34 @@
       }
     },
 
+    // ---- REICHWEITE DER HAARNADEL-UEBERHOLSPERRE ----------------------------------
+    //
+    // ghostHaarnadelInSicht() ist der eigene, laengere Vorausblick fuer die
+    // Ueberholsperre (SPICE_PASS_KEIN_HAARNADEL_VORAUS) - anders als
+    // ghostAheadTightest() (Bremskurve, kuerzere feste Reichweite) fragt er nur "liegt
+    // UEBERHAUPT eine Haarnadel in den naechsten N Kacheln", ohne die naeheste,
+    // weniger enge Kurve dabei zu verschlucken.
+    spicePassKeinHaarnadelVoraus: SPICE_PASS_KEIN_HAARNADEL_VORAUS,
+    haarnadelInSichtProbe(code, tileIndex, depth) {
+      const merkGarage = garage.splice(0, garage.length);
+      const merkTiles = currentTrackTiles;
+      const autos = [];
+      try {
+        currentTrackTiles = codeToTrack(code).tiles;
+        lineCache = null;
+        const a = OMEGA_TEST.attrappeGhost('N');
+        garage.push(a); autos.push(a);
+        a.ghost.tileIndex = tileIndex;
+        return ghostHaarnadelInSicht(a, depth);
+      } finally {
+        garage.splice(0, garage.length);
+        for (const c of autos) stopGhost(c);
+        for (const c of merkGarage) garage.push(c);
+        currentTrackTiles = merkTiles;
+        lineCache = null;
+      }
+    },
+
     // ---- FAHRERCHARAKTER: GEZOGEN, IN DER SPANNE, UND VERSCHIEDEN -----------------
     //
     // Geprueft wird das ZIEHEN, nicht die Wirkung: die Wirkung haengt an fuenf Groessen und
@@ -43504,7 +43574,8 @@
           // Kleben halten, damit die Zuendbedingung immer erfuellt ist.
           hinten.ghost.closeSince = uhr - 5000;
           ghostSpice(hinten, { tight: o.tight || 0,
-                               dist: o.dist === undefined ? 99 : o.dist, key: 'p' });
+                               dist: o.dist === undefined ? 99 : o.dist, key: 'p' },
+                     o.haarnadelNah);
           if (hinten.ghost.attackUntil) {
             gestartet++;
             // Zuruecksetzen und weiter wuerfeln.
@@ -53936,6 +54007,44 @@
   // DESHALB PRUEFT DIESER TEST DEN MECHANISMUS UND NICHT DIE RATE: in eine Seite
   // hineinzuschwenken, auf der schon ein Auto liegt, ist falsch, unabhaengig davon, was
   // die Statistik dazu sagt. Genau das ist hier pruefbar, und zwar ohne Rauschen.
+  // ---- Ueberholsperre vor der Haarnadel: Reichweite wirklich 4 Kacheln -------------
+  //
+  // BESTELLT: "Kein Überholen, wenn eines der nächsten 4 Teile die Haarnadel ist."
+  // SPICE_PASS_KEIN_HAARNADEL_VORAUS stand vorher bei 1 und wurde auf 4 angehoben -
+  // ABER die Stelle, die sie tatsaechlich prueft (ghostSpice() ueber aheadTight),
+  // bekam ihren Vorausblick von ghostAheadTightest(car, 2), fest auf 2 Kacheln
+  // gedeckelt. Eine Konstante zu erhoehen, deren Eingabe schon vorher abgeschnitten
+  // ist, aendert nichts - derselbe Fehler wie beim Ideallinien-Umschalter, der einen
+  // Tab weiter lag. Deshalb ein eigener Scan, ghostHaarnadelInSicht(), der nur "liegt
+  // ueberhaupt eine Haarnadel in den naechsten N Kacheln" fragt.
+  stAdd('Haarnadel-Ueberholsperre: die Reichweite kommt wirklich an', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.haarnadelInSichtProbe) {
+      return { skip: true, mass: 'haarnadelInSichtProbe nicht vorhanden' };
+    }
+    const depth = OMEGA_TEST.spicePassKeinHaarnadelVoraus;
+    // SG4HG4: Start, vier Geraden, Haarnadel, vier Geraden - die Haarnadel sitzt auf
+    // Kachelindex 5.
+    const code = 'SG4HG4';
+    const faelle = [
+      // [Kachelindex des Autos, erwartet Haarnadel-in-Sicht]
+      [1, true],   // Haarnadel 4 Kacheln voraus - genau an der Grenze
+      [2, true],   // 3 Kacheln voraus
+      [0, false],  // 5 Kacheln voraus - ausserhalb der Reichweite
+    ];
+    const fehler = [], zeilen = [];
+    for (const [idx, soll] of faelle) {
+      const r = OMEGA_TEST.haarnadelInSichtProbe(code, idx, depth);
+      zeilen.push('Kachel ' + idx + ': ' + (r ? 'in Sicht' : 'nicht in Sicht'));
+      if (!!r !== soll) {
+        fehler.push('Kachel ' + idx + ': ' + (r ? 'in Sicht' : 'nicht in Sicht')
+                     + ' statt ' + (soll ? 'in Sicht' : 'nicht in Sicht'));
+      }
+    }
+    return { ok: fehler.length === 0,
+             mass: 'Reichweite ' + depth + ' | ' + zeilen.join(', ')
+                   + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
   stAdd('Ueberholen: eine belegte Seite gilt als belegt', () => {
     if (!window.OMEGA_TEST || !OMEGA_TEST.seitenFreiProbe) {
       return { skip: true, mass: 'seitenFreiProbe nicht vorhanden' };
@@ -57770,8 +57879,13 @@
       const wenig = lauf({ code: 0x02, tileIndex: 3, kurveMix: 1 });
       const hnFrei = lauf({ code: 0x06, tileIndex: 1, kurveMix: 0 });
       const hnVoll = lauf({ code: 0x06, tileIndex: 1, kurveMix: 1 });
-      const vorHn = lauf({ code: 0x02, tileIndex: 3, kurveMix: 0, tight: 2, dist: 1 });
-      const fernHn = lauf({ code: 0x02, tileIndex: 3, kurveMix: 0, tight: 2, dist: 3 });
+      // BESTELLT (Phase 12, Punkt 4): "Kein Überholen, wenn eines der nächsten 4 Teile
+      // die Haarnadel ist." Vorher tight/dist selbst gesetzt (Reichweite war 1) - jetzt
+      // ueber den dritten ghostSpice()-Parameter, weil die Reichweite (4) nicht mehr aus
+      // dem im Fahrbetrieb ohnehin nur 2 Kacheln tiefen aheadTight kommt (siehe
+      // ghostHaarnadelInSicht() und der Kommentar bei ghostSpice() in 90-ghosts.js).
+      const vorHn = lauf({ code: 0x02, tileIndex: 3, kurveMix: 0, haarnadelNah: true });
+      const fernHn = lauf({ code: 0x02, tileIndex: 3, kurveMix: 0, haarnadelNah: false });
       for (const [nm, r] of [['viel Platz', viel], ['wenig Platz', wenig],
                              ['Haarnadel frei', hnFrei], ['Haarnadel voll', hnVoll],
                              ['vor Haarnadel', vorHn], ['fern Haarnadel', fernHn]]) {
@@ -57795,11 +57909,11 @@
       if (!(hnVoll.gestartet > 0)) {
         fehler.push('Haarnadelkachel mit voller Linie: kein Versuch');
       }
-      // 4. WAS SPERRT, IST DIE HAARNADEL VORAUS. Sie ist der einzige Ort, an dem zwei Autos
-      //    nebeneinander wirklich nicht passen, und sie ist die Sperre, die von der alten
-      //    Regel uebrig bleibt.
+      // 4. WAS SPERRT, IST DIE HAARNADEL VORAUS - innerhalb der Reichweite gesperrt,
+      //    ausserhalb frei. Sie ist der einzige Ort, an dem zwei Autos nebeneinander
+      //    wirklich nicht passen.
       if (vorHn.gestartet) fehler.push('vor der Haarnadel ' + vorHn.gestartet + ' Versuche');
-      if (!(fernHn.gestartet > 0)) fehler.push('drei Kacheln vor der Haarnadel keiner');
+      if (!(fernHn.gestartet > 0)) fehler.push('Haarnadel ausser Reichweite: kein Versuch');
     } finally {
       currentTrackTiles = merkTiles;
       lineCache = null;

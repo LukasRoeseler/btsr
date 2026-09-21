@@ -7569,6 +7569,44 @@
   // DESHALB PRUEFT DIESER TEST DEN MECHANISMUS UND NICHT DIE RATE: in eine Seite
   // hineinzuschwenken, auf der schon ein Auto liegt, ist falsch, unabhaengig davon, was
   // die Statistik dazu sagt. Genau das ist hier pruefbar, und zwar ohne Rauschen.
+  // ---- Ueberholsperre vor der Haarnadel: Reichweite wirklich 4 Kacheln -------------
+  //
+  // BESTELLT: "Kein Überholen, wenn eines der nächsten 4 Teile die Haarnadel ist."
+  // SPICE_PASS_KEIN_HAARNADEL_VORAUS stand vorher bei 1 und wurde auf 4 angehoben -
+  // ABER die Stelle, die sie tatsaechlich prueft (ghostSpice() ueber aheadTight),
+  // bekam ihren Vorausblick von ghostAheadTightest(car, 2), fest auf 2 Kacheln
+  // gedeckelt. Eine Konstante zu erhoehen, deren Eingabe schon vorher abgeschnitten
+  // ist, aendert nichts - derselbe Fehler wie beim Ideallinien-Umschalter, der einen
+  // Tab weiter lag. Deshalb ein eigener Scan, ghostHaarnadelInSicht(), der nur "liegt
+  // ueberhaupt eine Haarnadel in den naechsten N Kacheln" fragt.
+  stAdd('Haarnadel-Ueberholsperre: die Reichweite kommt wirklich an', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.haarnadelInSichtProbe) {
+      return { skip: true, mass: 'haarnadelInSichtProbe nicht vorhanden' };
+    }
+    const depth = OMEGA_TEST.spicePassKeinHaarnadelVoraus;
+    // SG4HG4: Start, vier Geraden, Haarnadel, vier Geraden - die Haarnadel sitzt auf
+    // Kachelindex 5.
+    const code = 'SG4HG4';
+    const faelle = [
+      // [Kachelindex des Autos, erwartet Haarnadel-in-Sicht]
+      [1, true],   // Haarnadel 4 Kacheln voraus - genau an der Grenze
+      [2, true],   // 3 Kacheln voraus
+      [0, false],  // 5 Kacheln voraus - ausserhalb der Reichweite
+    ];
+    const fehler = [], zeilen = [];
+    for (const [idx, soll] of faelle) {
+      const r = OMEGA_TEST.haarnadelInSichtProbe(code, idx, depth);
+      zeilen.push('Kachel ' + idx + ': ' + (r ? 'in Sicht' : 'nicht in Sicht'));
+      if (!!r !== soll) {
+        fehler.push('Kachel ' + idx + ': ' + (r ? 'in Sicht' : 'nicht in Sicht')
+                     + ' statt ' + (soll ? 'in Sicht' : 'nicht in Sicht'));
+      }
+    }
+    return { ok: fehler.length === 0,
+             mass: 'Reichweite ' + depth + ' | ' + zeilen.join(', ')
+                   + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
   stAdd('Ueberholen: eine belegte Seite gilt als belegt', () => {
     if (!window.OMEGA_TEST || !OMEGA_TEST.seitenFreiProbe) {
       return { skip: true, mass: 'seitenFreiProbe nicht vorhanden' };
@@ -11403,8 +11441,13 @@
       const wenig = lauf({ code: 0x02, tileIndex: 3, kurveMix: 1 });
       const hnFrei = lauf({ code: 0x06, tileIndex: 1, kurveMix: 0 });
       const hnVoll = lauf({ code: 0x06, tileIndex: 1, kurveMix: 1 });
-      const vorHn = lauf({ code: 0x02, tileIndex: 3, kurveMix: 0, tight: 2, dist: 1 });
-      const fernHn = lauf({ code: 0x02, tileIndex: 3, kurveMix: 0, tight: 2, dist: 3 });
+      // BESTELLT (Phase 12, Punkt 4): "Kein Überholen, wenn eines der nächsten 4 Teile
+      // die Haarnadel ist." Vorher tight/dist selbst gesetzt (Reichweite war 1) - jetzt
+      // ueber den dritten ghostSpice()-Parameter, weil die Reichweite (4) nicht mehr aus
+      // dem im Fahrbetrieb ohnehin nur 2 Kacheln tiefen aheadTight kommt (siehe
+      // ghostHaarnadelInSicht() und der Kommentar bei ghostSpice() in 90-ghosts.js).
+      const vorHn = lauf({ code: 0x02, tileIndex: 3, kurveMix: 0, haarnadelNah: true });
+      const fernHn = lauf({ code: 0x02, tileIndex: 3, kurveMix: 0, haarnadelNah: false });
       for (const [nm, r] of [['viel Platz', viel], ['wenig Platz', wenig],
                              ['Haarnadel frei', hnFrei], ['Haarnadel voll', hnVoll],
                              ['vor Haarnadel', vorHn], ['fern Haarnadel', fernHn]]) {
@@ -11428,11 +11471,11 @@
       if (!(hnVoll.gestartet > 0)) {
         fehler.push('Haarnadelkachel mit voller Linie: kein Versuch');
       }
-      // 4. WAS SPERRT, IST DIE HAARNADEL VORAUS. Sie ist der einzige Ort, an dem zwei Autos
-      //    nebeneinander wirklich nicht passen, und sie ist die Sperre, die von der alten
-      //    Regel uebrig bleibt.
+      // 4. WAS SPERRT, IST DIE HAARNADEL VORAUS - innerhalb der Reichweite gesperrt,
+      //    ausserhalb frei. Sie ist der einzige Ort, an dem zwei Autos nebeneinander
+      //    wirklich nicht passen.
       if (vorHn.gestartet) fehler.push('vor der Haarnadel ' + vorHn.gestartet + ' Versuche');
-      if (!(fernHn.gestartet > 0)) fehler.push('drei Kacheln vor der Haarnadel keiner');
+      if (!(fernHn.gestartet > 0)) fehler.push('Haarnadel ausser Reichweite: kein Versuch');
     } finally {
       currentTrackTiles = merkTiles;
       lineCache = null;

@@ -1208,7 +1208,7 @@
         ${car.role === 'ghost' ? `
         <div class="gar-speed">
           <label>Tempo</label>
-          <input type="range" min="0.3" max="1" step="0.05"
+          <input type="range" min="${GHOST_READ_MIN}" max="1" step="0.05"
                  value="${car.ghostSpeed === undefined || car.ghostSpeed === null
                           ? ghostCfg.speed : car.ghostSpeed}">
           <b></b>
@@ -4287,9 +4287,14 @@
   const SPICE_PASS_PLATZ_MIN = 0.30;   // darunter passt kein zweites Auto daneben
   // Nicht in eine HAARNADEL hinein ansetzen. Das bleibt gesperrt, und zwar nicht wegen der
   // Kachelart, sondern weil der Versuch dort zwangslaeufig IN der Haarnadel endet: eine
-  // Attacke dauert bis zu 5 s, eine Kachel bei Ghost-Tempo rund 0,7 s. Wer 60 cm vor einer
-  // Haarnadel ausholt, ist beim Einlenken noch daneben.
-  const SPICE_PASS_KEIN_HAARNADEL_VORAUS = 1;   // Kacheln Vorausblick
+  // Attacke dauert bis zu 5 s, eine Kachel bei Ghost-Tempo rund 0,7 s - fuer eine
+  // abgeschlossene Attacke braucht es also mehrere Kacheln Vorlauf, nicht eine einzige.
+  //
+  // BESTELLT: "Kein Überholen, wenn eines der nächsten 4 Teile die Haarnadel ist." 1 auf
+  // 4 angehoben - deckt damit einen guten Teil, aber nicht die vollen ~7 Kacheln einer
+  // kompletten 5-s-Attacke ab; 4 ist die vom Nutzer benannte Zahl und keine Herleitung
+  // aus der Zeitrechnung oben.
+  const SPICE_PASS_KEIN_HAARNADEL_VORAUS = 4;   // Kacheln Vorausblick
 
   // ---- 2. ZEITLUECKE STATT KACHELABSTAND -------------------------------------------
   //
@@ -4807,7 +4812,12 @@
 
   // Alle fuenf Bausteine auf das Zieltempo. Rueckgabe: der Faktor, und ob gerade attackiert
   // wird (das braucht die Linie, nicht das Tempo).
-  function ghostSpice(car, aheadTight) {
+  // haarnadelNah ist OPTIONAL, mit Absicht: alle bestehenden Aufrufer (auch die
+  // zahlreichen Pruefstellen, die ghostSpice() direkt mit einem erfundenen aheadTight
+  // rufen) sollen ihr altes Verhalten unveraendert behalten. Nur wer die tatsaechliche,
+  // laengere Reichweite von SPICE_PASS_KEIN_HAARNADEL_VORAUS braucht (ghostTick(), siehe
+  // dort), gibt sie ausdruecklich mit.
+  function ghostSpice(car, aheadTight, haarnadelNah) {
     const g = car.ghost, now = Date.now();
     if (!wuerzeAn()) { g.attackUntil = 0; return { factor: 1, attack: 0 }; }
 
@@ -5003,11 +5013,19 @@
     // rechnet und deren Ergebnis niemand liest, ist kein Beleg fuer eine Begruendung -
     // sie ist die naechste Stelle, an der jemand denkt, sie taete etwas.
     const platz = 1;
-    // In eine Haarnadel hinein wird nicht angesetzt - siehe die Konstante. aheadTight kommt
-    // aus dem Layout; ohne Layout ist tight 0 und die Bedingung faellt weg, und das ist
-    // richtig: ohne Karte weiss niemand, was kommt.
-    const haarnadelVoraus = aheadTight.tight >= 2
-                            && aheadTight.dist <= SPICE_PASS_KEIN_HAARNADEL_VORAUS;
+    // In eine Haarnadel hinein wird nicht angesetzt - siehe die Konstante.
+    //
+    // haarnadelNah kommt, wenn gegeben, aus einem EIGENEN Scan (ghostHaarnadelInSicht)
+    // mit der vollen Reichweite von SPICE_PASS_KEIN_HAARNADEL_VORAUS. Der Rueckfall auf
+    // aheadTight ist fuer Aufrufer da, die haarnadelNah nicht mitgeben (die Bremskurve in
+    // ghostTick() braucht ihr aheadTight mit einer eigenen, KUERZEREN Reichweite, und
+    // dieselbe Reichweite auf hier anzuwenden wuerde eine naehere, weniger enge Kurve
+    // verschlucken - siehe die Begruendung bei ghostHaarnadelInSicht()). Ohne Layout
+    // liefert keiner der beiden Wege eine Haarnadel, und das ist richtig: ohne Karte
+    // weiss niemand, was kommt.
+    const haarnadelVoraus = haarnadelNah !== undefined ? haarnadelNah
+                            : (aheadTight.tight >= 2
+                               && aheadTight.dist <= SPICE_PASS_KEIN_HAARNADEL_VORAUS);
     // Auf BEIDEN Seiten einer: dann gibt es keinen Weg vorbei, und ein Versuch endet im
     // Schieben. Die Wahl selbst steht weiter unten; hier wird nur nicht angesetzt.
     const seitenFrei = ghostSeitenFrei(car);
@@ -5764,6 +5782,24 @@
       if (tg > out.tight) { out.tight = tg; out.dist = k; }
     }
     return out;
+  }
+
+  // Eigener, laengerer Vorausblick NUR fuer die Ueberholsperre vor der Haarnadel -
+  // ghostAheadTightest() haelt die TIGHTESTE Kachel im Bereich fest und ueberschreibt
+  // dabei ihre Distanz, sobald eine engere Kachel WEITER HINTEN gefunden wird. Fuer die
+  // Bremskurve (deren Frage ist "was kommt und wie eng") ist das richtig; fuer "liegt
+  // UEBERHAUPT eine Haarnadel in den naechsten N Kacheln" waere es falsch - eine normale
+  // Kurve auf Kachel 1 wuerde die naeher liegende, weniger enge Kachel verschlucken,
+  // sobald bei Kachel 3 eine Haarnadel folgt, und die Bremskurve verloere ihre Kachel 1.
+  // Deshalb ein eigener, einfacherer Scan: nur die blosse ANWESENHEIT zaehlt.
+  function ghostHaarnadelInSicht(car, depth) {
+    const tiles = currentTrackTiles;
+    if (!tiles || tiles.length < 2 || !car.ghost || car.ghost.tileIndex === null) return false;
+    for (let k = 0; k <= depth; k++) {
+      const t = tiles[(car.ghost.tileIndex + k) % tiles.length];
+      if (tileTightness(t && t.type) >= 2) return true;
+    }
+    return false;
   }
 
   // The three tile types the car is about to meet, in the form the original app sent them.
@@ -6591,7 +6627,13 @@
       const kurveJetzt = Math.min(1, Math.max(here, ahead.dist <= 1 ? ahead.tight : 0));
       g.kurveMix = g.kurveMix === undefined ? kurveJetzt
         : g.kurveMix + (kurveJetzt - g.kurveMix) * Math.min(1, dt / GHOST_MIX_TAU);
-      const spice = underYellow ? { factor: 1, attack: 0 } : ghostSpice(car, ahead);
+      // Eigener, laengerer Scan fuer die Ueberholsperre: `ahead` oben ist mit Absicht auf
+      // 2 Kacheln gedeckelt (fuer kurveJetzt richtig so), SPICE_PASS_KEIN_HAARNADEL_VORAUS
+      // braucht aber bis zu 4 - siehe ghostHaarnadelInSicht() und der dritte Parameter von
+      // ghostSpice().
+      const haarnadelNah = ghostHaarnadelInSicht(car, SPICE_PASS_KEIN_HAARNADEL_VORAUS);
+      const spice = underYellow ? { factor: 1, attack: 0 }
+                                 : ghostSpice(car, ahead, haarnadelNah);
       target *= spice.factor;
       // Was gilt: die Kachel unter dem Auto, oder die naechste enge in Reichweite. Die
       // Reichweite haengt von der Enge ab - vor einer Haarnadel zwei Kacheln, vor einer
