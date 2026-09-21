@@ -1668,7 +1668,10 @@
     $('race-light').classList.toggle('on', !!raceLampHead);
 
     $('race-fuel').textContent = fuelLiters(fuel) + ' l';
-    $('race-fuel-bar').style.width = Math.max(0, fuel) + '%';
+    // BESTELLT: "balken für tank und schaden breiter und vertikal (oben = voll)."
+    // .gt3-bar-v verankert die Fuellung unten (align-items:flex-end), height statt
+    // width laesst sie also nach OBEN wachsen.
+    $('race-fuel-bar').style.height = Math.max(0, fuel) + '%';
     $('race-fuel-bar').style.background = fuel < 20 ? '#ffb02e' : '#2ee06a';
     // Condition, not damage: full green at the start, and every crash takes a piece out.
     // A bar that GROWS as things get worse reads backwards at a glance. Every other bar on
@@ -1677,10 +1680,16 @@
     // no crash, repair or pit-stop arithmetic had to be touched.
     const health = Math.max(0, Math.min(100, 100 - damage));
     $('race-dmg').textContent = Math.round(health) + '%';
-    $('race-dmg-bar').style.width = health + '%';
+    $('race-dmg-bar').style.height = health + '%';
     $('race-dmg-bar').style.background = health <= 20 ? '#ff5252'
                                        : (health <= 55 ? '#ffb02e' : '#2ee06a');
-    $('race-batt').textContent = dashBattery === null ? '\u2013' : batteryPercent(dashBattery) + '%';
+    // BESTELLT: "f\u00fcr batterie ebenfalls balken machen" - vorher stand hier nur die
+    // Prozentzahl. null heisst "noch kein Dashboard-Byte gelesen" (siehe dashBattery in
+    // 60-track.js), der Balken bleibt dann leer statt eine falsche Zahl zu zeigen.
+    const battPct = dashBattery === null ? null : batteryPercent(dashBattery);
+    $('race-batt').textContent = battPct === null ? '\u2013' : battPct + '%';
+    $('race-batt-bar').style.height = (battPct === null ? 0 : battPct) + '%';
+    $('race-batt-bar').style.background = battPct !== null && battPct < 20 ? '#ffb02e' : '#2ee06a';
 
     const live = !!(device && device.gatt && device.gatt.connected);
     // race-conn und race-track sassen in der entfernten Kachel "Strecke". Der

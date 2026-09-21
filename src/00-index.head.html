@@ -1408,6 +1408,16 @@
   .gt3-bar { height: clamp(5px, 1.2vw, 10px); background: #04060b; border-radius: 0;
     overflow: hidden; margin-top: 3px; }
   .gt3-bar > i { display: block; height: 100%; width: 0; transition: width .15s linear; }
+  /* BESTELLT: "cockpit: balken für tank und schaden breiter und vertikal (oben = voll)
+     und für batterie ebenfalls balken machen." Eigene Klasse statt .gt3-bar umzubauen:
+     .gt3-bar traegt auch die Boxenschirm- und Vergleichsschirm-Balken, die schmal und
+     waagerecht bleiben (dort ist der Balken einer von mehreren Werten in einer Zeile,
+     kein eigenes Feld wie im Hauptstreifen). align-items:flex-end haelt die Fuellung
+     unten verankert, waechst also nach oben - "oben = voll". */
+  .gt3-bar-v { width: clamp(10px, 2.4vw, 18px); height: clamp(38px, 8vw, 60px);
+    background: #04060b; border-radius: 0; overflow: hidden; margin: 4px auto 0 auto;
+    display: flex; align-items: flex-end; }
+  .gt3-bar-v > i { display: block; width: 100%; height: 0; transition: height .15s linear; }
   /* Gelbe Flagge. Der Streifen liegt oben im Schirm und ist die einzige Anzeige, die
      waehrend einer gelben Phase etwas Neues sagt - deshalb gelb und nicht dezent. */
   /* Der Ladebalken der Halten-Geste. Er liegt HINTER der Beschriftung als eigene Schicht,
@@ -3070,7 +3080,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.7.6</span></span>
+        <span class="foot-ver">v<span id="app-version">0.7.7</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -3340,11 +3350,11 @@
         <div class="gt3-box gt3-click pit-tile" data-pit="refuel"
              title="Tanksimulation an/aus, beim Boxenstopp: Tanken an/aus"><svg class="gt3-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-label="Tank"><path d="M4 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16"/><path d="M3 21h13"/><path d="M4 10h10"/><path d="M18 21v-9a3 3 0 0 0-3-3"/><path d="M18 12h2a1 1 0 0 0 1-1V8l-3-3"/></svg>
           <div class="gt3-val sm" id="race-fuel">100%</div>
-          <div class="gt3-bar"><i id="race-fuel-bar"></i></div></div>
+          <div class="gt3-bar-v"><i id="race-fuel-bar"></i></div></div>
         <div class="gt3-box gt3-click pit-tile" data-pit="repair"
              title="Schadenssimulation an/aus, beim Boxenstopp: Reparatur an/aus"><svg class="gt3-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-label="Zustand"><path d="M19.3 8.2 L19.2 9.3 L18.8 10.3 L18.0 11.2 L17.1 11.8 L16.0 12.1 L14.9 12.0 L13.9 11.7 L13.0 11.0 L12.3 10.1 L12.0 9.1 L11.9 8.0 L12.2 6.9 L12.8 6.0 L13.7 5.2 L14.7 4.8 L15.8 4.7"/><path d="M13.0 11.0 L8.5 15.5"/></svg>
           <div class="gt3-val sm" id="race-dmg">100%</div>
-          <div class="gt3-bar"><i id="race-dmg-bar"></i></div></div>
+          <div class="gt3-bar-v"><i id="race-dmg-bar"></i></div></div>
         <!-- VIER Felder in Fahrzeuganordnung statt Ring und Balken. Zwei Balken
              uebereinander liest niemand als "links und rechts": ein Balken ist ein Vorrat,
              kein Ort.
@@ -3384,7 +3394,10 @@
           </div>
           <div class="gt3-val sm" id="race-tyre-temp">&ndash;</div></div>
         <div class="gt3-box"><svg class="gt3-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-label="Akku"><rect x="2" y="7" width="17" height="10" rx="2"/><path d="M22 11v2"/><path d="M6 10v4M9.5 10v4M13 10v4"/></svg>
-          <div class="gt3-val sm" id="race-batt">&ndash;</div></div>
+          <div class="gt3-val sm" id="race-batt">&ndash;</div>
+          <!-- BESTELLT: "für batterie ebenfalls balken machen" - vorher nur die
+               Prozentzahl, kein Balken wie bei Tank und Schaden. -->
+          <div class="gt3-bar-v"><i id="race-batt-bar"></i></div></div>
         <div class="gt3-box gt3-click" id="race-light-box" title="Licht an/aus" style="display:flex;align-items:center;justify-content:center">
           <div class="gt3-tell" style="width:100%"><svg class="gt3-lamp" id="race-light" viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" aria-label="Scheinwerfer"><path d="M 107 43 C 145 43 182 68 182 100 C 182 132 145 157 107 157 Z"/><path d="M28 71 89 52M28 96 89 77M28 121 89 102M28 146 89 127M28 171 89 152"/></svg></div></div>
         <!-- ---- DREI LAGEN, UND DIE ANZEIGE ZEIGT BEIDE DINGE ----------------------
