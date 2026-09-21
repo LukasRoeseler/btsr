@@ -3093,7 +3093,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.7.16</span></span>
+        <span class="foot-ver">v<span id="app-version">0.7.17</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -7778,8 +7778,10 @@
         <span class="wip-tag">WIP</span> gekennzeichnet, samt dem, was ihnen fehlt.
       </p>
 <div class="opt-head">Autonome Gegner</div>
-      <div class="opt-row"><div class="opt-label">Ghost: Leitplanken-Modus<small>Das Auto hält sich selbst auf der Bahn, der Ghost gibt nur Gas.</small></div>
-        <label class="tgl"><input type="checkbox" id="ghost-rail" checked><span></span></label></div>
+      <!-- BESTELLT (Phase 12, Punkt 13): "Leitplankenmodus nicht abschaltbar." Das
+           Kontrollkaestchen ist raus, ghostCfg.railMode (90-ghosts.js) bleibt fest auf
+           true - ein Ghost ohne Leitplanken-Modus lenkt ueberhaupt nicht (nur Gas plus
+           Anti-Rammen-Versatz), und dafuer gab es keinen einzigen Grund, ihn zu waehlen. -->
       <div class="opt-row"><div class="opt-label">Ghost-Tempo<small>Rundentempo der autonomen Autos. Gefahren brauchbar zwischen 40 und 60 Prozent. Der Regler beginnt bei 35 und nicht tiefer: darunter f&auml;hrt das Auto so langsam, dass es die gedruckte Strecke nicht mehr zuverl&auml;ssig &bdquo;liest&ldquo; &ndash; und dann fallen Vorausblick, Ideallinie und Kurvendrosselung alle drei aus.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>

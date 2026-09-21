@@ -3093,7 +3093,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.7.16</span></span>
+        <span class="foot-ver">v<span id="app-version">0.7.17</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -7778,8 +7778,10 @@
         <span class="wip-tag">WIP</span> gekennzeichnet, samt dem, was ihnen fehlt.
       </p>
 <div class="opt-head">Autonome Gegner</div>
-      <div class="opt-row"><div class="opt-label">Ghost: Leitplanken-Modus<small>Das Auto hält sich selbst auf der Bahn, der Ghost gibt nur Gas.</small></div>
-        <label class="tgl"><input type="checkbox" id="ghost-rail" checked><span></span></label></div>
+      <!-- BESTELLT (Phase 12, Punkt 13): "Leitplankenmodus nicht abschaltbar." Das
+           Kontrollkaestchen ist raus, ghostCfg.railMode (90-ghosts.js) bleibt fest auf
+           true - ein Ghost ohne Leitplanken-Modus lenkt ueberhaupt nicht (nur Gas plus
+           Anti-Rammen-Versatz), und dafuer gab es keinen einzigen Grund, ihn zu waehlen. -->
       <div class="opt-row"><div class="opt-label">Ghost-Tempo<small>Rundentempo der autonomen Autos. Gefahren brauchbar zwischen 40 und 60 Prozent. Der Regler beginnt bei 35 und nicht tiefer: darunter f&auml;hrt das Auto so langsam, dass es die gedruckte Strecke nicht mehr zuverl&auml;ssig &bdquo;liest&ldquo; &ndash; und dann fallen Vorausblick, Ideallinie und Kurvendrosselung alle drei aus.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
@@ -9383,7 +9385,6 @@
     "Crashs, bis Fahrzeug ruckelt": "Crashes until the car judders",
     "Cross-Plane (ungleiche Bänke)": "Cross-plane (uneven banks)",
     "Dann gilt keine der beiden Regeln, und es braucht mehr als ein bekanntes Paar. Die acht Probeblätter darunter sind dafür gebaut.": "Then neither rule holds, and more than one known pair is needed. The eight probe sheets below are built for that.",
-    "Das Auto hält sich selbst auf der Bahn, der Ghost gibt nur Gas.": "The car keeps itself on the track; the ghost only works the throttle.",
     "Das Frequenzbild des Rohrs. Die blaue Marke ist die Viertelwellenresonanz": "The frequency picture of the pipe. The blue mark is the quarter-wave resonance",
     "Das bekannte Muster beginnt in Fahrtrichtung mit vier dünnen Balken. Von einer Fassung ist berichtet, dass sie auch ohne drei davon erkannt wurde – der Vorlauf ist also kein Nutzdatum, sondern die Strecke, an der sich der Leser auf die schmale Modulbreite einstellt.": "In the driving direction, the known pattern begins with four thin bars. One version is reported to have been recognised without three of them, so the lead-in is not payload but the stretch over which the reader settles on the narrow module width.",
     "Das ist der ganze Trick: eine": "That is the whole trick: one",
@@ -9579,7 +9580,6 @@
       "Car 2 counts its laps too: it appears in the lap overview, in the running order during the race, and in the result including the CSV. That took no work, it corrected a mistake in my estimate – lap counting always ran per car, for every connected one, whatever its role. The chequered flag now waits for both drivers instead of just one.",
     ": eine eigene Fahrphysik mit eigenen Gängen, eigener Drehzahl, eigenem Tempo und eigenen Temperaturen. Die Einstellungen aus „Fahrgefühl“ werden bei jedem Anschalten übernommen, damit beide Autos gleich fahren.":
       ": a driving model of its own, with its own gears, revs, speed and temperatures. The settings from “Driving feel” are copied over every time the mode is switched on, so that both cars drive alike.",
-    "Ghost: Leitplanken-Modus": "Ghost: guard-rail mode",
     "Ghost: Linienmodell": "Ghost: line model",
     "Ghost: lernt von Runde zu Runde": "Ghost: learns lap by lap",
     "Ghost: seitlicher Versatz": "Ghost: lateral offset",
@@ -27996,12 +27996,6 @@
     ambienceVolume = parseFloat(e.target.value);
     $('amb-volume-val').textContent = Math.round(ambienceVolume * 100) + '%';
     refreshAmbienceGains();
-  });
-
-  // Both models fade to nothing at the left end, so "off" is genuinely the old behaviour
-  // rather than a very small amount of the new one.
-  $('ghost-rail').addEventListener('change', (e) => {
-    ghostCfg.railMode = e.target.checked;
   });
 
   // renderGarage() wird mitgerufen: sonst zeigt die Garagenzeile weiter die alte Zahl,
@@ -57351,7 +57345,9 @@
       ['ghost-learn', () => ghostCfg.learn],
       ['ghost-learn-pace', () => ghostCfg.learnPace],
       ['ghost-needcode', () => ghostCfg.needCode],
-      ['ghost-rail', () => ghostCfg.railMode],
+      // ghost-rail ist raus (Phase 12, Punkt 13): der Leitplanken-Modus ist nicht mehr
+      // abschaltbar, es gibt also kein Kaestchen mehr, das hier gegen ghostCfg.railMode
+      // stehen koennte.
       // Die zwei Boxenstopp-Schalter.
       ['ghost-pit', () => ghostCfg.pitAn],
       ['ghost-pit-free', () => ghostCfg.pitFrei],

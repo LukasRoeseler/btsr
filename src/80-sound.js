@@ -1433,12 +1433,6 @@
     refreshAmbienceGains();
   });
 
-  // Both models fade to nothing at the left end, so "off" is genuinely the old behaviour
-  // rather than a very small amount of the new one.
-  $('ghost-rail').addEventListener('change', (e) => {
-    ghostCfg.railMode = e.target.checked;
-  });
-
   // renderGarage() wird mitgerufen: sonst zeigt die Garagenzeile weiter die alte Zahl,
   // obwohl die Vorgabe sich geaendert hat - und die Zeile ist genau die Stelle, an der man
   // nachsieht, ob es gewirkt hat.

@@ -10904,7 +10904,9 @@
       ['ghost-learn', () => ghostCfg.learn],
       ['ghost-learn-pace', () => ghostCfg.learnPace],
       ['ghost-needcode', () => ghostCfg.needCode],
-      ['ghost-rail', () => ghostCfg.railMode],
+      // ghost-rail ist raus (Phase 12, Punkt 13): der Leitplanken-Modus ist nicht mehr
+      // abschaltbar, es gibt also kein Kaestchen mehr, das hier gegen ghostCfg.railMode
+      // stehen koennte.
       // Die zwei Boxenstopp-Schalter.
       ['ghost-pit', () => ghostCfg.pitAn],
       ['ghost-pit-free', () => ghostCfg.pitFrei],
