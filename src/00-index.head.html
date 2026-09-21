@@ -569,6 +569,10 @@
   .bind-value { font-family: monospace; background: var(--panel-2); border: 1px solid var(--border); border-radius: 4px; padding: 3px 8px; }
   .bind-listening { border-color: var(--bad); color: var(--bad); animation: pulse 1s infinite; }
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+  /* Der Spieler-Umschalter ueber der Bindungstabelle - derselbe "ausgewaehlt"-Ausdruck wie
+     .mode-tile.sel (Balken links statt nur Farbe, siehe die Begruendung dort). */
+  .bind-player-btn.sel { color: var(--ink); border-color: var(--bad);
+    box-shadow: inset 3px 0 0 var(--bad); background: var(--panel-3); }
   .pad-dot { display:inline-block; width:9px; height:9px; border-radius:50%; background:var(--panel-3); margin-right:6px; }
   .pad-dot.on { background: var(--good); }
 
@@ -3031,7 +3035,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.7.1</span></span>
+        <span class="foot-ver">v<span id="app-version">0.7.2</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -7991,6 +7995,13 @@
         X (links) = runterschalten, B (rechts) = hochschalten: wie bei einem Xbox-Controller. Klicke
         "Neu zuweisen" und betätige dann den gewünschten Knopf/Stick/Trigger am Controller.
       </p>
+      <!-- BESTELLT: "baue ein, dass sich Tasten von 2 Spielern unabhaengig zuweisen
+           lassen." Nur sichtbar im Zwei-Spieler-Modus (bindPlayerRowZeichnen in
+           90-ghosts.js) - ohne ihn gibt es nur Spieler 1s Belegung, wie bisher. -->
+      <div class="row" id="bind-player-row" hidden style="gap:8px; margin-bottom:10px">
+        <button type="button" class="bind-player-btn sel" data-spieler="1">Spieler 1</button>
+        <button type="button" class="bind-player-btn" data-spieler="2">Spieler 2</button>
+      </div>
       <table class="bind-table">
         <thead><tr><th>Aktion</th><th>Belegung</th><th></th></tr></thead>
         <tbody id="bind-table-body"></tbody>

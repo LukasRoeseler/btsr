@@ -481,6 +481,8 @@
     "Attacke": "Attack",
     "Auf Standard zurücksetzen": "Reset to defaults",
     "Standard wiederherstellen": "Restore defaults",
+    "Spieler 1": "Player 1",
+    "Spieler 2": "Player 2",
     "Zur Garage": "To the garage",
     "Zum Cockpit →": "To the cockpit →",
     "Jedes Auto einzeln per Klick verbinden – Web Bluetooth verlangt das so.":

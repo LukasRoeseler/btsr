@@ -1192,15 +1192,18 @@
     // ---- HAT SPIELER 2 DIESELBEN KNOEPFE WIE SPIELER 1? -----------------------------
     //
     // BESTELLT: "Spieler 2 soll auch funktionierende Knoepfe haben fuer: Licht,
-    // Boxenstopp, Lichthupe (Belegung auf Gamepad wie Spieler 1)."
+    // Boxenstopp, Lichthupe (Belegung auf Gamepad wie Spieler 1)." Und spaeter: "Lichter
+    // an/aus sollen unabhaengig voneinander klappen" - deshalb prueft dieser Lauf jetzt
+    // headlightsOn2 und nicht mehr das gemeinsame headlightsOn.
     //
     // Ein Pad mit genau den drei Standard-Knoepfen gedrueckt (Index 3/9/11, siehe
     // BINDING_DEFAULTS), einmal durch pollPad2() geschickt - derselbe Weg, den ein echter
-    // Controller nimmt. Geprueft wird die WIRKUNG: headlightsOn kippt, boxZweiLage()
-    // wechselt aus 'aus', und die Lichthupe von Auto 2 sperrt sich selbst gegen einen
-    // zweiten Aufruf, solange sie noch blitzt.
+    // Controller nimmt. Geprueft wird die WIRKUNG: headlightsOn2 kippt (und headlightsOn,
+    // Auto 1s Licht, bleibt UNBERUEHRT), boxZweiLage() wechselt aus 'aus', und die
+    // Lichthupe von Auto 2 sperrt sich selbst gegen einen zweiten Aufruf, solange sie noch
+    // blitzt.
     p2KnopfProbe() {
-      const merk = { head: headlightsOn, zwei: zweiSpieler, p2: playerCar2 };
+      const merk = { head1: headlightsOn, head2: headlightsOn2, zwei: zweiSpieler, p2: playerCar2 };
       const a2 = { device: { id: 'probe-p2knopf' }, role: 'player2', rx: null, testSenke: [] };
       try {
         zweiSpieler = true;
@@ -1214,7 +1217,8 @@
         const vorLage = (typeof boxZweiLage === 'function') ? boxZweiLage() : null;
         pollPad2(pad);
         return {
-          lichtKippte: headlightsOn !== merk.head,
+          lichtKippte: headlightsOn2 !== merk.head2,
+          licht1Unberuehrt: headlightsOn === merk.head1,
           // Ein zweiter Aufruf, solange die erste Lichthupe noch blitzt, darf
           // flash2Until NICHT verlaengern - sonst haette man eine Dauerlichthupe statt
           // drei Impulsen. flash2Until steht in 70-race.js, einer FRUEHEREN Datei, ist
@@ -1228,14 +1232,21 @@
           boxLageNachher: (typeof boxZweiLage === 'function') ? boxZweiLage() : null,
         };
       } finally {
-        headlightsOn = merk.head;
-        const cb = $('dash-head-toggle');
-        if (cb) cb.checked = merk.head;
-        zweiSpieler = merk.zwei;
-        playerCar2 = merk.p2;
+        headlightsOn = merk.head1;
+        headlightsOn2 = merk.head2;
+        // REIHENFOLGE WICHTIG: boxZweiAnfordern() bricht nur ab, wenn zweiSpieler/
+        // playerCar2 noch die TESTWERTE tragen - es lehnt sonst sofort mit "KEIN AUTO
+        // ZUGETEILT" ab (siehe sein eigener Kopf) und boxZwei.lage bliebe auf
+        // 'angefordert' haengen. Genau das ist hier passiert: die Wiederherstellung
+        // stand VOR diesem Aufruf, der Abbruch griff nie, und jeder folgende Test sah
+        // Auto 2 unter dem Boxen-Tempodeckel - gemeldet an "eigene Physik" und "gelbe
+        // Flagge", die beide auf einmal viel zu langsam waren. Erst abbrechen, DANN
+        // zuruecksetzen, wie es boxZweiProbe() nebenan schon immer tut.
         if (typeof boxZweiAnfordern === 'function' && boxZweiLage() !== 'aus') {
           boxZweiAnfordern();
         }
+        zweiSpieler = merk.zwei;
+        playerCar2 = merk.p2;
       }
     },
     // UEBER DEN VERTEILER und nicht direkt auf pitScreenSelect(): gefragt ist, was die
@@ -1367,6 +1378,55 @@
         bindRuhe = null;
         Object.keys(bindings).forEach((k) => delete bindings[k]);
         Object.keys(merkB).forEach((k) => { bindings[k] = merkB[k]; });
+      }
+    },
+
+    // ---- ZWEI BELEGUNGEN, UNABHAENGIG VONEINANDER ------------------------------------
+    //
+    // BESTELLT: "baue ein, dass sich Tasten von 2 Spielern unabhaengig zuweisen lassen."
+    // Dieselbe Aktion (headlights) einmal als Spieler 1 auf Knopf 6 legen, dann als
+    // Spieler 2 auf Knopf 10 - und pruefen, dass jede Zuweisung nur IHRE eigene Belegung
+    // aendert. bindEditSpieler entscheidet, welche Tabelle tryCaptureBinding() gerade
+    // beschreibt (siehe activeBindings() weiter oben in 90-ghosts.js).
+    bindSpielerProbe() {
+      const merkB = JSON.parse(JSON.stringify(bindings));
+      const merkB2 = JSON.parse(JSON.stringify(bindings2));
+      const merkL = listeningFor, merkS = bindEditSpieler;
+      try {
+        const pad = (knopfIndex) => ({
+          axes: [0, 0, 0, 0],
+          buttons: Array(12).fill(0).map((_, i) => ({ value: i === knopfIndex ? 1 : 0,
+                                                        pressed: i === knopfIndex })),
+        });
+        bindEditSpieler = 1;
+        listeningFor = 'headlights';
+        bindRuhe = null;
+        tryCaptureBinding(pad(-1));   // Ruhelage nehmen
+        tryCaptureBinding(pad(6));    // Druck: Knopf 6
+        const p1Danach = { ...bindings.headlights };
+        const p2UnberuehrtVorher = JSON.stringify(bindings2.headlights) === JSON.stringify(merkB2.headlights);
+
+        bindEditSpieler = 2;
+        listeningFor = 'headlights';
+        bindRuhe = null;
+        tryCaptureBinding(pad(-1));
+        tryCaptureBinding(pad(10));   // Druck: ANDERER Knopf
+        const p2Danach = { ...bindings2.headlights };
+
+        return {
+          p1Index: p1Danach.index, p2Index: p2Danach.index,
+          p2UnberuehrtVonP1: p2UnberuehrtVorher,
+          p1UnberuehrtVonP2: bindings.headlights && bindings.headlights.index === 6,
+          unabhaengig: p1Danach.index !== p2Danach.index,
+        };
+      } finally {
+        listeningFor = merkL;
+        bindRuhe = null;
+        bindEditSpieler = merkS;
+        Object.keys(bindings).forEach((k) => delete bindings[k]);
+        Object.keys(merkB).forEach((k) => { bindings[k] = merkB[k]; });
+        Object.keys(bindings2).forEach((k) => delete bindings2[k]);
+        Object.keys(merkB2).forEach((k) => { bindings2[k] = merkB2[k]; });
       }
     },
     // ---- Die Zustandsansagen, ohne Stimme und ohne Rennen -------------------------

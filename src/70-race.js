@@ -3370,7 +3370,8 @@
   // wie ein Ghost). Das ist kein Mangel, sondern die Folge des einen Sendetakts - und es
   // heisst umgekehrt auch, dass das Boxenlimit von Auto 1 Auto 2 nicht ausbremst.
   const boxZwei = { lage: 'aus', standS: 0, getankt: 0, repariert: 0,
-                    fertig: false, letzterTick: null, gemeldet: false };
+                    fertig: false, tankFertig: false, reparaturFertig: false,
+                    letzterTick: null, gemeldet: false };
 
   function boxZweiLage() { return boxZwei.lage; }
   function boxZweiFertig() { return boxZwei.fertig; }
@@ -3396,6 +3397,8 @@
     boxZwei.getankt = 0;
     boxZwei.repariert = 0;
     boxZwei.fertig = false;
+    boxZwei.tankFertig = false;
+    boxZwei.reparaturFertig = false;
     boxZwei.gemeldet = false;
     boxZwei.letzterTick = null;
     showHudToast('P2: BOXENSTOPP \u2013 ANHALTEN');
@@ -3449,19 +3452,39 @@
     }
     boxZwei.standS += dt;
 
-    // --- Tanken, auf VOLL. Dieselbe Rate wie bei Auto 1.
-    const tank = tankZweiStand();
-    if (tank < 100 - 0.05) {
-      const dazu = Math.min(100 - tank, PIT_FUEL_PER_SEC * dt);
-      tankZweiFuellen(tank + dazu);
-      boxZwei.getankt += dazu;
+    // --- Tanken, auf VOLL. Dieselbe Rate wie bei Auto 1, und BESTELLT: "Boxensound
+    // fuer Player 2 soll da sein" - derselbe Chime wie Auto 1 (pitChimeFuel), Ton ist
+    // ohnehin nicht an eine Stereoseite gebunden. Kein Chime, wenn der Tank schon voll
+    // war, als der Stopp begann: dann ist nichts geschehen, das eine Meldung verdient -
+    // dieselbe Regel wie bei Auto 1s pitDone.refuel.
+    if (!boxZwei.tankFertig) {
+      const tank = tankZweiStand();
+      if (tank >= 100 - 0.05) {
+        boxZwei.tankFertig = true;
+      } else {
+        const dazu = Math.min(100 - tank, PIT_FUEL_PER_SEC * dt);
+        tankZweiFuellen(tank + dazu);
+        boxZwei.getankt += dazu;
+        if (tank + dazu >= 100 - 0.05) {
+          boxZwei.tankFertig = true;
+          pitChimeFuel();
+        }
+      }
     }
-    // --- Reparieren, mit derselben nichtlinearen Rate.
-    const schaden = schadenVon(2);
-    if (schaden > 0.05) {
-      const weg = Math.min(schaden, repairRateAt(schaden) * dt);
-      schadenZweiSetzenIntern(schaden - weg);
-      boxZwei.repariert += weg;
+    // --- Reparieren, mit derselben nichtlinearen Rate, derselben Regel fuer den Chime.
+    if (!boxZwei.reparaturFertig) {
+      const schaden = schadenVon(2);
+      if (schaden <= 0.05) {
+        boxZwei.reparaturFertig = true;
+      } else {
+        const weg = Math.min(schaden, repairRateAt(schaden) * dt);
+        schadenZweiSetzenIntern(schaden - weg);
+        boxZwei.repariert += weg;
+        if (schaden - weg <= 0.05) {
+          boxZwei.reparaturFertig = true;
+          pitChimeRepair();
+        }
+      }
     }
 
     const fertig = tankZweiStand() >= 100 - 0.05 && schadenVon(2) <= 0.05;
@@ -3471,6 +3494,7 @@
     if (fertig && genug && !boxZwei.fertig) {
       boxZwei.fertig = true;
       showHudToast('P2: FERTIG, LOSFAHREN!');
+      pitChimeReady();
       padRumble(0.35, 0.2, 200, 'box', 2);
       log('P2: Boxenstopp fertig nach ' + boxZwei.standS.toFixed(1) + ' s.', 'info');
     } else if (!fertig) {

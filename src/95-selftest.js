@@ -9823,6 +9823,55 @@
                  + (maengel.length ? ' | ' + maengel.join(', ') : '') };
   });
 
+  // ---- Spieler 2s Knoepfe: eigenes Licht, eigene Lichthupe, eigener Boxenstopp -------
+  //
+  // BESTELLT (v0.6.60): "Spieler 2 soll auch funktionierende Knoepfe haben fuer: Licht,
+  // Boxenstopp, Lichthupe." Und spaeter: "Lichter an/aus sollen unabhaengig voneinander
+  // klappen" - p2KnopfProbe() in 93-testbench.js gab es schon seit v0.6.60, nur diese
+  // stAdd()-Zeile fehlte: der Pruefstand wurde nie an den Selbsttest angeschlossen, und
+  // die Faehigkeit lief seither ungeprueft mit.
+  stAdd('Spieler 2: Licht, Lichthupe und Boxenstopp reagieren auf seine Knoepfe', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.p2KnopfProbe) {
+      return { skip: true, mass: 'p2KnopfProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.p2KnopfProbe();
+    const maengel = [];
+    if (!r.lichtKippte) maengel.push('Licht von Auto 2 kippte nicht');
+    if (!r.licht1Unberuehrt) maengel.push('Licht von Auto 1 hat mitgekippt');
+    if (!r.lichthupeSperrt) maengel.push('Lichthupe liess sich waehrend des Blitzens verlaengern');
+    if (r.boxLageNachher === 'aus' || r.boxLageNachher === r.boxLageVorher) {
+      maengel.push('Boxenstopp: ' + r.boxLageVorher + ' -> ' + r.boxLageNachher);
+    }
+    return { ok: !maengel.length,
+             mass: 'Licht kippte (Auto 1 unberuehrt) | Lichthupe gesperrt waehrend des '
+                 + 'Blitzens | Box ' + r.boxLageVorher + ' -> ' + r.boxLageNachher
+                 + (maengel.length ? ' | ' + maengel.join(', ') : '') };
+  });
+
+  // ---- Zwei Belegungen, unabhaengig voneinander --------------------------------------
+  //
+  // BESTELLT: "baue ein, dass sich Tasten von 2 Spielern unabhaengig zuweisen lassen."
+  // Vorher lasen pollGamepad() und pollPad2() dasselbe bindings-Objekt; Spieler 2 konnte
+  // seine Tasten nur mitaendern, nie eigene setzen. Geprueft wird ueber bindSpielerProbe():
+  // dieselbe Aktion einmal fuer jeden Spieler auf einen anderen Knopf gelegt, und keine
+  // der beiden Zuweisungen darf die andere beruehren.
+  stAdd('Controller: Spieler 1 und Spieler 2 haben unabhaengige Belegungen', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.bindSpielerProbe) {
+      return { skip: true, mass: 'bindSpielerProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.bindSpielerProbe();
+    const maengel = [];
+    if (r.p1Index !== 6) maengel.push('Spieler 1 landete auf Knopf ' + r.p1Index + ' statt 6');
+    if (r.p2Index !== 10) maengel.push('Spieler 2 landete auf Knopf ' + r.p2Index + ' statt 10');
+    if (!r.p2UnberuehrtVonP1) maengel.push('Spieler 1s Zuweisung hat Spieler 2s Belegung veraendert');
+    if (!r.p1UnberuehrtVonP2) maengel.push('Spieler 2s Zuweisung hat Spieler 1s Belegung veraendert');
+    if (!r.unabhaengig) maengel.push('beide landeten auf demselben Knopf');
+    return { ok: !maengel.length,
+             mass: 'P1 -> Knopf ' + r.p1Index + ', P2 -> Knopf ' + r.p2Index
+                 + ', je unberuehrt von der anderen Zuweisung'
+                 + (maengel.length ? ' | ' + maengel.join(', ') : '') };
+  });
+
   // ---- Die gelbe Flagge gilt auch fuer Auto 2 --------------------------------------
   //
   // DER WERTVOLLSTE DER OFFENEN PUNKTE, und der Grund ist einfach: ohne den Autopiloten

@@ -189,8 +189,13 @@
   //
   // Gemeldet wird sie, nicht still behoben: ein Knopf, der heimlich seine Bedeutung
   // wechselt, ist der naechste Fehlerbericht.
-  function resolveBindingCollisions(b) {
-    const namen = Object.keys(DEFAULT_BINDINGS);
+  // `defaults` als Parameter (Vorgabe: DEFAULT_BINDINGS) und nicht fest verdrahtet, seit
+  // es eine zweite Belegung gibt (bindings2 fuer Spieler 2, siehe dort): beide teilen sich
+  // dieselbe Werksbelegung, aber der Aufloeser muss gegen die Vorgaben DER Belegung pruefen,
+  // die er gerade aufraeumt, nicht immer gegen die von Spieler 1.
+  function resolveBindingCollisions(b, defaults) {
+    const VORGABE = defaults || DEFAULT_BINDINGS;
+    const namen = Object.keys(VORGABE);
     // Eingang -> Liste der Aktionen, die dort liegen.
     const belegt = new Map();
     const dazu = (k, n) => {
@@ -209,7 +214,7 @@
     // ist eine Entscheidung und kein Versehen.
     for (const n of namen) {
       const k = bindingKey(b[n]);
-      if (k && k === bindingKey(DEFAULT_BINDINGS[n])) dazu(k, n);
+      if (k && k === bindingKey(VORGABE[n])) dazu(k, n);
     }
 
     // ZWEITER DURCHGANG: alle anderen. Wer auf einen schon belegten Eingang zeigt, geht auf
@@ -223,7 +228,7 @@
       if (!dort.length) { dazu(k, n); continue; }
       const vorher = (b[n] && b[n].label) || k;
       const mit = dort.map(x => BIND_ACTION_LABELS[x] || x).join(' und ');
-      const vk = bindingKey(DEFAULT_BINDINGS[n]);
+      const vk = bindingKey(VORGABE[n]);
       if (vk && !(belegt.get(vk) || []).length) {
         b[n] = { ...DEFAULT_BINDINGS[n] };
         dazu(vk, n);
@@ -256,6 +261,42 @@
     delete bindings.__kollisionen;
     saveBindings();
   }
+
+  // ---- DIESELBE BELEGUNG, EIN ZWEITES MAL - FUER SPIELER 2 -------------------------
+  //
+  // BESTELLT: "baue ein, dass sich Tasten von 2 Spielern unabhaengig zuweisen lassen."
+  // Bis hierher lasen pollGamepad() und pollPad2() dasselbe `bindings`-Objekt; Spieler 2
+  // konnte seine Tasten also nur MITAENDERN, nie eigene setzen.
+  //
+  // KEINE MIGRATION noetig: migrateBindings() raeumt Layouts auf, die es nur fuer Spieler 1
+  // je gab (die alten Vorgaben vor v0.5/v0.5.1/v0.4.50) - eine frische zweite Belegung hat
+  // diese Geschichte nicht. Kollisionen INNERHALB von Spieler 2s eigener Belegung sind
+  // trotzdem moeglich (zwei Aktionen von Hand auf denselben Knopf gelegt), deshalb laeuft
+  // resolveBindingCollisions() genauso mit, nur gegen DEFAULT_BINDINGS2 statt DEFAULT_BINDINGS
+  // - und DEFAULT_BINDINGS2 ist bewusst dieselbe Werksbelegung wie Spieler 1s, weil beide auf
+  // ihrem EIGENEN Pad sitzen und ein gleiches Layout auf zwei Controllern keine Kollision ist.
+  const GAMEPAD_BINDINGS_KEY2 = 'carrera-hybrid-gamepad-bindings-v2-p2';
+  const DEFAULT_BINDINGS2 = DEFAULT_BINDINGS;
+  function loadBindings2() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(GAMEPAD_BINDINGS_KEY2) || 'null');
+      if (!saved) return { ...DEFAULT_BINDINGS2 };
+      return resolveBindingCollisions({ ...DEFAULT_BINDINGS2, ...saved }, DEFAULT_BINDINGS2);
+    } catch { return { ...DEFAULT_BINDINGS2 }; }
+  }
+  function saveBindings2() { localStorage.setItem(GAMEPAD_BINDINGS_KEY2, JSON.stringify(bindings2)); }
+  let bindings2 = loadBindings2();
+  if (bindings2.__kollisionen) {
+    for (const zeile of bindings2.__kollisionen) log('Controller (Spieler 2): ' + zeile, 'notify');
+    delete bindings2.__kollisionen;
+    saveBindings2();
+  }
+
+  // Welche Belegung die Tabelle/Grafik/Erfassung gerade bearbeitet. 1 ist die Vorgabe, weil
+  // die Kachel ohne Zwei-Spieler-Modus gar keine Wahl anzeigt (siehe bindPlayerRowZeichnen).
+  let bindEditSpieler = 1;
+  function activeBindings() { return bindEditSpieler === 2 ? bindings2 : bindings; }
+  function activeSaveBindings() { return bindEditSpieler === 2 ? saveBindings2() : saveBindings(); }
   if (bindings.__migrated3) {
     delete bindings.__migrated3;
     saveBindings();
@@ -358,8 +399,9 @@
       if (!el) continue;
       // Alle Aktionen, die auf diesem Bedienelement liegen. Mehrzahl mit Absicht: eine
       // Doppelbelegung ist erlaubt und soll sichtbar sein, nicht verschwiegen.
+      const ab = activeBindings();
       const treffer = Object.keys(BIND_ACTION_LABELS).filter((a) => {
-        const b = bindings[a];
+        const b = ab[a];
         return b && b.type === c.typ && b.index === c.index;
       });
       // Durch t(), weil der Text hier ENTSTEHT und nicht im Markup steht - der
@@ -380,11 +422,30 @@
   // gebaut wurde.
   if (typeof i18nOnLangChange === 'function') i18nOnLangChange(padDiagramRender);
 
+  // ---- DER SPIELER-UMSCHALTER UEBER DER TABELLE -------------------------------------
+  //
+  // Nur sichtbar, wenn der Zwei-Spieler-Modus an ist - ohne ihn gibt es nichts zum
+  // Umschalten, und ein Umschalter mit einer einzigen sinnvollen Stellung ist eine Frage
+  // ohne Antwort. Bleibt der Modus aus, editiert die Tabelle stillschweigend Spieler 1s
+  // Belegung weiter, wie vor dieser Aenderung.
+  function bindPlayerRowZeichnen() {
+    const row = $('bind-player-row');
+    if (!row) return;
+    const zeigen = typeof zweiSpieler !== 'undefined' && zweiSpieler;
+    row.hidden = !zeigen;
+    if (!zeigen) bindEditSpieler = 1;
+    row.querySelectorAll('.bind-player-btn').forEach(b => {
+      b.classList.toggle('sel', Number(b.dataset.spieler) === bindEditSpieler);
+    });
+  }
+
   function renderBindTable() {
     // Die Grafik zieht hier mit. renderBindTable() ist die EINE Stelle, die nach jeder
     // Zuweisung laeuft; sie an sieben Aufrufstellen einzeln nachzuziehen waere die
     // Gelegenheit, eine zu vergessen.
     padDiagramRender();
+    bindPlayerRowZeichnen();
+    const ab = activeBindings();
     const body = $('bind-table-body');
     body.innerHTML = '';
     Object.keys(BIND_ACTION_LABELS).forEach(action => {
@@ -392,9 +453,9 @@
       const listening = listeningFor === action;
       tr.innerHTML = `
         <td>${BIND_ACTION_LABELS[action]}</td>
-        <td><span class="bind-value${listening ? ' bind-listening' : ''}">${listening ? 'Eingabe erwartet…' : bindingDescription(bindings[action])}</span></td>
+        <td><span class="bind-value${listening ? ' bind-listening' : ''}">${listening ? 'Eingabe erwartet…' : bindingDescription(ab[action])}</span></td>
         <td><button data-action="${action}" ${listening ? 'disabled' : ''}>Neu zuweisen</button>
-        <button data-loeschen="${action}" ${listening || !bindings[action] ? 'disabled' : ''}
+        <button data-loeschen="${action}" ${listening || !ab[action] ? 'disabled' : ''}
           title="Belegung entfernen">&times;</button></td>
       `;
       body.appendChild(tr);
@@ -413,10 +474,11 @@
     body.querySelectorAll('button[data-loeschen]').forEach(btn => {
       btn.onclick = () => {
         const action = btn.dataset.loeschen;
-        bindings[action] = null;
-        saveBindings();
+        activeBindings()[action] = null;
+        activeSaveBindings();
         renderBindTable();
-        log('Belegung entfernt: ' + BIND_ACTION_LABELS[action], 'info');
+        log('Belegung entfernt (Spieler ' + bindEditSpieler + '): '
+            + BIND_ACTION_LABELS[action], 'info');
       };
     });
     body.querySelectorAll('button[data-action]').forEach(btn => {
@@ -429,6 +491,21 @@
       };
     });
   }
+  if ($('bind-player-row')) {
+    $('bind-player-row').querySelectorAll('.bind-player-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const ziel = Number(btn.dataset.spieler);
+        if (ziel === bindEditSpieler) return;
+        // Ein Wechsel mitten in der Erfassung wuerde die Eingabe des naechsten
+        // Knopfdrucks der FALSCHEN Belegung zuschreiben - deshalb abbrechen statt
+        // umzuschalten.
+        listeningFor = null;
+        bindRuhe = null;
+        bindEditSpieler = ziel;
+        renderBindTable();
+      });
+    });
+  }
   renderBindTable();
   // Hier stand der Aufruf von renderHelpPad(): die Controller-Belegung ein zweites Mal, nur
   // lesbar. Sie war doppelt - die zuweisbare Tabelle in derselben Karte zeigt dasselbe und
@@ -436,10 +513,10 @@
   // Fehlerklasse wie eine tote Element-id.
 
   $('bind-reset').onclick = () => {
-    bindings = { ...DEFAULT_BINDINGS };
-    saveBindings();
+    if (bindEditSpieler === 2) { bindings2 = { ...DEFAULT_BINDINGS2 }; saveBindings2(); }
+    else { bindings = { ...DEFAULT_BINDINGS }; saveBindings(); }
     renderBindTable();
-    log('Tastenbelegung auf Standard zurückgesetzt.', 'info');
+    log('Tastenbelegung (Spieler ' + bindEditSpieler + ') auf Standard zurückgesetzt.', 'info');
   };
 
   const AXIS_CAPTURE_THRESHOLD = 0.6;
@@ -483,6 +560,7 @@
   function tryCaptureBinding(pad) {
     if (!listeningFor) return;
     const action = listeningFor;
+    const ziel = activeBindings();
     if (!bindRuhe) { bindRuheNehmen(pad); return; }
     let bester = null;
     for (let i = 0; i < pad.axes.length; i++) {
@@ -508,7 +586,7 @@
       // Die Richtung: hat sich die Achse nach unten bewegt, ist sie invertiert. Gemessen
       // wird gegen die RUHELAGE und nicht gegen null.
       const invert = bester.jetzt < bester.ruhe;
-      bindings[action] = {
+      ziel[action] = {
         type: 'axis', index: bester.i, invert,
         // Die gelernte Spanne, siehe achsWert(). Sie startet an dem, was bisher gesehen
         // wurde, und waechst mit jeder Bewegung.
@@ -517,13 +595,15 @@
         max: Math.max(bester.ruhe, bester.jetzt),
         label: `Achse ${bester.i}${invert ? ' (invertiert)' : ''}`,
       };
-      log(`Zuordnung gesetzt: ${BIND_ACTION_LABELS[action]} -> Achse ${bester.i}`
-          + ` (Ruhe ${bester.ruhe.toFixed(2)}, Ausschlag ${bester.d.toFixed(2)})`, 'info');
+      log(`Zuordnung gesetzt (Spieler ${bindEditSpieler}): ${BIND_ACTION_LABELS[action]} `
+          + `-> Achse ${bester.i} (Ruhe ${bester.ruhe.toFixed(2)}, `
+          + `Ausschlag ${bester.d.toFixed(2)})`, 'info');
     } else {
-      bindings[action] = { type: 'button', index: bester.i, label: `Knopf ${bester.i}` };
-      log(`Zuordnung gesetzt: ${BIND_ACTION_LABELS[action]} -> Knopf ${bester.i}`, 'info');
+      ziel[action] = { type: 'button', index: bester.i, label: `Knopf ${bester.i}` };
+      log(`Zuordnung gesetzt (Spieler ${bindEditSpieler}): ${BIND_ACTION_LABELS[action]} `
+          + `-> Knopf ${bester.i}`, 'info');
     }
-    saveBindings();
+    activeSaveBindings();
     listeningFor = null;
     bindRuhe = null;
     renderBindTable();
@@ -974,8 +1054,9 @@
     } else if (playerCar2 === car) {
       playerCar2 = null;
       // Sonst faehrt das Auto mit dem letzten gesendeten Gas weiter: writeToCar() schickt
-      // nur, was es bekommt, und ohne Rolle bekommt es nichts mehr.
-      writeToCar(car, 0, 0, trackModeBit() | (headlightsOn ? LIGHT_HEAD : 0));
+      // nur, was es bekommt, und ohne Rolle bekommt es nichts mehr. headlightsOn2, weil es
+      // SEIN Licht ist, nicht Auto 1s.
+      writeToCar(car, 0, 0, trackModeBit() | (headlightsOn2 ? LIGHT_HEAD : 0));
     }
     car.role = role;
     if (role !== 'ghost') stopGhost(car);
@@ -7741,15 +7822,29 @@
       p2Steer = 0; p2Throttle = 0;
       return;
     }
-    const gas = applyDeadzone(Math.max(0, readBindingValue(pad, bindings.throttle)), TRIGGER_DEADZONE);
-    const bremse = applyDeadzone(Math.max(0, readBindingValue(pad, bindings.brake)), TRIGGER_DEADZONE);
-    p2Steer = applyDeadzone(readBindingValue(pad, bindings.steering));
+    // ---- ERFASSUNG FUER SPIELER 2s EIGENE BELEGUNG ---------------------------------
+    //
+    // BESTELLT: "baue ein, dass sich Tasten von 2 Spielern unabhaengig zuweisen lassen."
+    // Wird gerade Spieler 2s Tabelle bearbeitet (bindEditSpieler === 2, siehe die
+    // Bindungstabelle weiter oben), hoert SEIN Pad auf den naechsten Knopfdruck - genau
+    // wie pollGamepad() es fuer Spieler 1 tut, nur auf dem jeweils anderen Pad. Ohne diese
+    // Abzweigung wuerde Spieler 2 hier weiterfahren, waehrend seine eigene Zuordnung
+    // wartet - und ein Tritt aufs Gas waere die naechste "Zuordnung".
+    if (listeningFor && bindEditSpieler === 2) {
+      tryCaptureBinding(pad);
+      return;
+    }
+    // bindings2: Spieler 2s EIGENE Belegung (siehe die Begruendung bei GAMEPAD_BINDINGS_KEY2
+    // weiter oben) - vorher las diese Funktion `bindings`, also Spieler 1s Tabelle mit.
+    const gas = applyDeadzone(Math.max(0, readBindingValue(pad, bindings2.throttle)), TRIGGER_DEADZONE);
+    const bremse = applyDeadzone(Math.max(0, readBindingValue(pad, bindings2.brake)), TRIGGER_DEADZONE);
+    p2Steer = applyDeadzone(readBindingValue(pad, bindings2.steering));
     p2Throttle = gas - bremse;
     // Schalten, flankengetriggert wie bei Spieler 1. Ohne das koennte ein Spieler 2 mit
     // Handschaltung nicht schalten - und die Handschaltung ist eine Einstellung, die fuer
     // beide gilt.
-    const abNow = readBindingValue(pad, bindings.downshift) > BUTTON_CAPTURE_THRESHOLD;
-    const aufNow = readBindingValue(pad, bindings.upshift) > BUTTON_CAPTURE_THRESHOLD;
+    const abNow = readBindingValue(pad, bindings2.downshift) > BUTTON_CAPTURE_THRESHOLD;
+    const aufNow = readBindingValue(pad, bindings2.upshift) > BUTTON_CAPTURE_THRESHOLD;
     if (abNow && !p2PrevDown && physicsEnabled && !physEngine2.state.isShifting) {
       physEngine2.triggerShift(-1);
     }
@@ -7772,29 +7867,26 @@
     // Erweiterung der Lichthupe von Auto 1 - sie ist die Absicht EINES Fahrers an das
     // Auto vor IHM, und ein gemeinsamer Zustand liesse Spieler 1s Knopf auch Auto 2s
     // Licht blitzen lassen.
-    const flashNow2 = readBindingValue(pad, bindings.lightflash) > BUTTON_CAPTURE_THRESHOLD;
+    const flashNow2 = readBindingValue(pad, bindings2.lightflash) > BUTTON_CAPTURE_THRESHOLD;
     if (flashNow2 && !p2PrevFlash && typeof triggerHeadlightFlash2 === 'function') {
       triggerHeadlightFlash2();
     }
     p2PrevFlash = flashNow2;
 
-    // Licht an/aus ist dagegen eine GLOBALE Einstellung (headlightsOn gilt fuer beide
-    // Autos, siehe die Begruendung bei "globale Einstellungen gelten fuer beide" in
-    // 20-protocol.js) - Spieler 2 darf sie deshalb genauso umschalten wie Spieler 1, und
-    // beide Autos zeigen danach denselben Stand.
-    const headNow2 = readBindingValue(pad, bindings.headlights) > BUTTON_CAPTURE_THRESHOLD;
+    // Licht an/aus ist jetzt SEIN EIGENES Licht (headlightsOn2) und nicht mehr das von
+    // Auto 1 - siehe die Begruendung bei headlightsOn2 in 50-drive.js. Kein Kaestchen zum
+    // Mitziehen: #dash-head-toggle gehoert allein Auto 1.
+    const headNow2 = readBindingValue(pad, bindings2.headlights) > BUTTON_CAPTURE_THRESHOLD;
     if (headNow2 && !p2PrevHeadlights) {
-      headlightsOn = !headlightsOn;
-      const cb = $('dash-head-toggle');
-      if (cb) cb.checked = headlightsOn;
-      showHudToast(headlightsOn ? 'Licht an' : 'Licht aus');
+      headlightsOn2 = !headlightsOn2;
+      showHudToast(headlightsOn2 ? 'P2: Licht an' : 'P2: Licht aus');
     }
     p2PrevHeadlights = headNow2;
 
     // Boxenstopp: derselbe Griff wie der Knopf auf dem Vergleichsschirm
     // (boxZweiAnfordern in 70-race.js) - er fordert an und bricht bei erneutem Druck ab,
     // genau wie bei Spieler 1.
-    const pitstopNow2 = readBindingValue(pad, bindings.pitstop) > BUTTON_CAPTURE_THRESHOLD;
+    const pitstopNow2 = readBindingValue(pad, bindings2.pitstop) > BUTTON_CAPTURE_THRESHOLD;
     if (pitstopNow2 && !p2PrevPitstop && typeof boxZweiAnfordern === 'function') {
       boxZweiAnfordern();
     }
@@ -7821,7 +7913,10 @@
     padConnected = true;
     padLastPollTime = performance.now();
 
-    if (listeningFor) {
+    // Nur abfangen, wenn hier auch wirklich Spieler 1s Belegung dran ist - waehrend
+    // Spieler 2s Tabelle bearbeitet wird (bindEditSpieler === 2), soll Spieler 1
+    // weiterfahren koennen, statt fuer eine fremde Zuordnung stillzustehen.
+    if (listeningFor && bindEditSpieler !== 2) {
       tryCaptureBinding(pad);
     } else {
       const throttleRaw = applyDeadzone(Math.max(0, readBindingValue(pad, bindings.throttle)), TRIGGER_DEADZONE);

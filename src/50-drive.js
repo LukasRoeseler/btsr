@@ -33,6 +33,16 @@
   // aus. Die Korrelation war echt, aber nicht ursaechlich - 422 Pakete sind rund 20 Sekunden
   // und lagen am Sitzungsanfang, bevor etwas ueberfahren wurde.
   let headlightsOn = true;
+  // ---- AUTO 2 BEKOMMT EIN EIGENES LICHT -----------------------------------------
+  //
+  // BESTELLT: "splitscreen: Lichter an/aus sollen unabhaengig voneinander klappen."
+  //
+  // Bis hierher war headlightsOn EINE gemeinsame Variable, siehe headlichtZwei() in
+  // 70-race.js: Auto 2 legte nur seine eigene Lichthupe darueber, das Dauerlicht war
+  // Auto 1s Schalter. Jetzt hat Auto 2 seinen eigenen - kein UI-Element dafuer noetig,
+  // die Gamepad-Taste in pollPad2() reicht (dieselbe Begruendung wie bei der Lichthupe:
+  // eine Absicht EINES Fahrers, kein gemeinsamer Zustand).
+  let headlightsOn2 = true;
   let raceLampHead = false;  // resolved headlight state, for the racing screen
 
   // Eine Stelle fuer die Leseart, zwei Bedienelemente darauf: der Schalter in den Optionen
@@ -2673,6 +2683,11 @@
     }
     if (typeof renderGarage === 'function') renderGarage();
     if (typeof zweiSpielerKachelZeichnen === 'function') zweiSpielerKachelZeichnen();
+    // Der Spieler-Umschalter ueber der Bindungstabelle erscheint/verschwindet mit dem
+    // Modus (siehe bindPlayerRowZeichnen in 90-ghosts.js, ueber renderBindTable erreicht).
+    // Ohne diesen Ruf blieb er stehen, wie er beim Laden war, bis die naechste Zuordnung
+    // oder ein Neuladen ihn zufaellig nachzog.
+    if (typeof renderBindTable === 'function') renderBindTable();
     // Die Hoehe des Cockpits aendert sich mit der neuen Zeile, im Vollbild also auch der
     // Skalierungsfaktor. Ohne diesen Ruf steht die Zeile im Vollbild unter dem Rand.
     cockpitPassung();
