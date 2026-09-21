@@ -201,7 +201,17 @@
   // Zwischen der ersten und der zweiten Ueberfahrt EINES Autos liegt dagegen immer eine
   // volle Runde, egal wo es gestanden hat. Die Regel braucht dafuer weder eine
   // Positionsbestimmung noch die Aufstellung; sie folgt aus der Bahn.
-  const FORMATION_UEBERFAHRTEN = 2;
+  //
+  // BESTELLT (Phase 12, Punkt 1): "Startaufstellung soll laenger in zwei Spalten bleiben."
+  // GHOST_GRID_OFFSET/GHOST_WEAVE (90-ghosts.js) bleiben unveraendert - der Zweierzug
+  // selbst war schon richtig getrennt (siehe der Test "Fliegender Start: zwei getrennte
+  // Spalten..."), nur die Zeit, die das Feld darin verbringt, war mit EINER
+  // Einfuehrungsrunde knapp. formationOffset() wird ausschliesslich waehrend
+  // raceFormationLap angewendet (90-ghosts.js:6854, 50-drive.js:2239), also verlaengert
+  // dieselbe Zahl beides zugleich: die Zweierkolonne UND die gedrosselte Runde vor
+  // Gruen - genau wie bei einer echten Formationsrunde ueblich, wenn sie mehr als eine
+  // Runde dauert. Von 2 auf 3: eine zusaetzliche volle Runde im Zweierzug.
+  const FORMATION_UEBERFAHRTEN = 3;
 
   // Je Auto gezaehlt, und "der Erste" ist deshalb kein eigener Begriff: wer als Erster bei
   // zwei ankommt, IST der Erste. Eine Rangliste waere ein zweiter Ort fuer dieselbe Aussage.

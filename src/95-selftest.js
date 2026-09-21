@@ -8801,8 +8801,11 @@
     if (!window.OMEGA_TEST || !OMEGA_TEST.fliegenderStartProbe) {
       return { skip: true, mass: 'fliegenderStartProbe nicht vorhanden' };
     }
+    // BESTELLT (Phase 12, Punkt 1): "Startaufstellung soll laenger in zwei Spalten
+    // bleiben" - FORMATION_UEBERFAHRTEN ist von 2 auf 3 gestiegen (70-race.js), die
+    // Runde braucht jetzt die DRITTE Ueberfahrt irgendeines Autos, nicht mehr die zweite.
     const r = OMEGA_TEST.fliegenderStartProbe({ autos: ['a', 'b', 'c', 'd'],
-                                                folge: ['a', 'b', 'c', 'd', 'a'] });
+                                                folge: ['a', 'b', 'c', 'd', 'a', 'b', 'c', 'd', 'a'] });
     if (!r) return { skip: true, mass: 'kein Lauf' };
     const fehler = [];
     // 1. DIE SPALTEN TRENNEN SICH WIRKLICH. Das ist der behobene Teil.
@@ -8828,10 +8831,10 @@
     if (!(r.tempo.formation > 0.2 && r.tempo.formation < 0.6)) {
       fehler.push('Formationstempo ' + r.tempo.formation);
     }
-    // 5. UND ER ENDET BEI DER ZWEITEN UEBERFAHRT IRGENDEINES AUTOS - nicht frueher.
+    // 5. UND ER ENDET BEI DER DRITTEN UEBERFAHRT IRGENDEINES AUTOS - nicht frueher.
     const ende = r.verlauf.findIndex((v) => v.beendet);
-    if (ende !== 4) {
-      fehler.push('endet nach ' + (ende + 1) + ' Ueberfahrten statt nach 5');
+    if (ende !== 8) {
+      fehler.push('endet nach ' + (ende + 1) + ' Ueberfahrten statt nach 9');
     }
     if (r.nochFormation) fehler.push('Einfuehrungsrunde endet gar nicht');
     return { ok: !fehler.length,
