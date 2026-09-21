@@ -301,6 +301,55 @@
              mass: teile.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
   });
 
+  // ---- Ideallinie "Aussen-Innen": hart an der Kurve, sanft auf der Geraden ---------
+  //
+  // BESTELLT (Phase 12, Punkt 14): "Kurvenfolge gleicher Richtung aussen anfahren, mit
+  // Kurvenbeginn hart nach innen bis Kurvenende, bei Geradenfolgen sanfter Uebergang
+  // zur jeweiligen Aussenseite."
+  stAdd('Ideallinie "Aussen-Innen": hart in der Kurve, sanft auf der Geraden', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.compareLines || !OMEGA_TEST.setLineModel) {
+      return { skip: true, mass: 'Pruefzugang nicht vorhanden' };
+    }
+    const merkModel = OMEGA_TEST.getLineModel();
+    const schlecht = [], teile = [];
+    try {
+      OMEGA_TEST.setLineModel('aussenin');
+      // SG2RG2RG2: zwei gleichsinnige Rechtskurven (Kachel 3 und 6) mit einer zwei
+      // Kacheln langen Geraden dazwischen (4, 5) - genau der Fall, den die Bestellung
+      // beschreibt: eine Kurvenfolge UND eine Geradenfolge dazwischen.
+      const p = OMEGA_TEST.codeToTrack('SG2RG2RG2');
+      const rows = OMEGA_TEST.compareLines(p.tiles, 8);
+      const proTile = {};
+      for (const r of rows) (proTile[r.tile] = proTile[r.tile] || []).push(+r.calc.toFixed(3));
+      teile.push('Kachel 3 (Kurve): ' + proTile[3].join(','));
+      teile.push('Kachel 4+5 (Gerade): ' + proTile[4].join(',') + ' / ' + proTile[5].join(','));
+      teile.push('Kachel 6 (Kurve): ' + proTile[6].join(','));
+      // 1. HART: die Kurve steht von der ALLERERSTEN Kachel an auf voller Staerke, kein
+      //    Uebergang wie bei dreiStufenLine (dort erst nach SPUR_EIN aussen).
+      if (!proTile[3].every((v) => Math.abs(v) === 1)) {
+        schlecht.push('Kurve (Kachel 3) nicht durchgehend auf voller Staerke: ' + proTile[3].join(','));
+      }
+      if (!proTile[6].every((v) => Math.abs(v) === 1)) {
+        schlecht.push('Kurve (Kachel 6) nicht durchgehend auf voller Staerke: ' + proTile[6].join(','));
+      }
+      // 2. GEGENSINNIG: die Kurve steht innen, die Geradenfolge davor endet aussen -
+      //    entgegengesetztes Vorzeichen, sonst waere "aussen anfahren" bedeutungslos.
+      const kurvenWert = proTile[3][0];
+      const geradeEnde = proTile[5][proTile[5].length - 1];
+      if (Math.sign(geradeEnde) === Math.sign(kurvenWert) || geradeEnde === 0) {
+        schlecht.push('Geradenende (' + geradeEnde + ') nicht gegensinnig zur Kurve (' + kurvenWert + ')');
+      }
+      // 3. SANFT: die Geradenfolge beginnt in der Mitte (0) und geht erst zum Ende hin
+      //    nach aussen - kein harter Sprung gleich zu Beginn der Geraden.
+      if (proTile[4][0] !== 0) schlecht.push('Gerade beginnt nicht in der Mitte: ' + proTile[4][0]);
+      if (proTile[5][0] !== 0) schlecht.push('Uebergang beginnt schon an Kachel 5, Schritt 0');
+    } finally {
+      OMEGA_TEST.setLineModel(merkModel);
+    }
+    return { ok: schlecht.length === 0,
+             mass: teile.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
   // ---- 6. Kachelphase ----
   // Eine Haarnadel ist dreimal so lang wie eine Gerade. Rechnet die Phase mit einer
   // mittleren Kacheldauer, steht sie dort nach einem Drittel auf 1 und der Linienversatz

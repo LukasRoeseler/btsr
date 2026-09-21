@@ -1296,6 +1296,60 @@
   // ist Mitte. Begruendung an der Anwendungsstelle.
   const SPUR_GERADE_ANFAHRT = 0.40;
 
+  // ---- Geraden zwischen zwei Kurvenlaeufen: MITTE, dann die Aussenseite der naechsten
+  // Kurve - herausgezogen aus dreiStufenLine(), weil aussenInnenLine() (Phase 12,
+  // Punkt 14: "bei Geradenfolgen sanfter Uebergang zur jeweiligen Aussenseite")
+  // denselben Abschnitt unveraendert braucht. `stuecke` ist eine Liste von
+  // { idx, dreht }, wie sie beide Aufrufer schon aufbauen.
+  //
+  // DIE MITTE GEHOERT DAZU, und das ist eine Berichtigung. Der erste Anlauf liess die
+  // erste Haelfte der Geraden auf der Aussenseite der VORIGEN Kurve stehen und wechselte
+  // dann. Gemessen nahm die Linie damit auf drei geprueften Layouts genau ZWEI Werte an -
+  // +/-8,63, die Mitte kam nie vor. Eine "3-stufige" Linie, die nur zwei Stufen benutzt,
+  // ist keine, und schlimmer: der Unterschied zum 2-Stufen-Ausweichen beim Ueberholen
+  // (SPUR_PASS_AUSSEN in 90-ghosts.js) waere damit leer gewesen. Dort ist die Mitte
+  // ausdruecklich verboten, damit sich zwei Autos die Bahn teilen koennen - ein Verbot,
+  // das nichts verbietet, ist keine Zusage.
+  //
+  // Also drei Stufen mit drei Aufgaben:
+  //
+  //     Kurve     (siehe der jeweilige Aufrufer)     die Kurve selbst
+  //     Gerade    MITTE                              bis kurz vor der naechsten Kurve
+  //     Gerade    aussen der naechsten Kurve         das letzte Stueck, zum Anfahren
+  //
+  // Und die Mitte auf der Geraden ist nicht nur Kosmetik: dort ist zu beiden Seiten Platz,
+  // also kann ein Verfolger vorbei - egal auf welcher Seite. Ein Auto, das die Gerade am
+  // Rand entlangfaehrt, macht genau eine Seite auf.
+  //
+  // SPUR_GERADE_ANFAHRT ist der Anteil der Geraden, der schon zum Anfahren gehoert. 40
+  // Prozent: bei querTempo 4,0 dauert ein voller Spurwechsel 250 ms, eine Kachel bei
+  // Vorgabetempo rund 700 ms - 40 Prozent einer einkacheligen Geraden sind 280 ms und
+  // damit gerade genug. Kuerzer waere ein Anfahren, das erst am Kurveneingang ankommt.
+  function linieGeradenAussenAnfahrt(alpha, stuecke, at, n, limit, spurVoll, closed) {
+    const paare = [];
+    for (let s = 0; s + 1 < stuecke.length; s++) paare.push([s, s + 1]);
+    if (closed && stuecke.length > 1) paare.push([stuecke.length - 1, 0]);
+    for (const [a, b] of paare) {
+      const vonIdx = stuecke[a].idx[stuecke[a].idx.length - 1];
+      const bisIdx = stuecke[b].idx[0];
+      // Die Punkte dazwischen, zyklisch.
+      const zwischen = [];
+      let i = at(vonIdx + 1), sicher = 0;
+      while (i !== bisIdx && sicher++ <= n) { zwischen.push(i); i = at(i + 1); }
+      if (!zwischen.length) continue;     // Kurven stossen direkt aneinander
+      const neu = stuecke[b].dreht * spurVoll * limit;    // aussen der naechsten
+      // Ab hier gehoert die Gerade zum Anfahren der naechsten Kurve. Mindestens ein Punkt,
+      // damit auch eine sehr kurze Gerade noch vorpositioniert - sonst faehrt das Auto den
+      // Kurveneingang aus der Mitte an, und das ist genau der Fall, den SPUR_EIN vermeidet.
+      const abAnfahrt = Math.max(0, zwischen.length
+                                    - Math.max(1, Math.round(zwischen.length
+                                                             * SPUR_GERADE_ANFAHRT)));
+      for (let q = 0; q < zwischen.length; q++) {
+        alpha[zwischen[q]] = q < abAnfahrt ? 0 : neu;
+      }
+    }
+  }
+
   function dreiStufenLine(pts, nrm, o) {
     const n = pts.length;
     const tiles = o.tiles || [];
@@ -1352,52 +1406,9 @@
       }
     }
     // ---- 2. Die Geraden: MITTE, dann die Aussenseite der naechsten Kurve ----------
-    //
-    // DIE MITTE GEHOERT DAZU, und das ist eine Berichtigung. Der erste Anlauf liess die
-    // erste Haelfte der Geraden auf der Aussenseite der VORIGEN Kurve stehen und wechselte
-    // dann. Gemessen nahm die Linie damit auf drei geprueften Layouts genau ZWEI Werte an -
-    // +/-8,63, die Mitte kam nie vor. Eine "3-stufige" Linie, die nur zwei Stufen benutzt,
-    // ist keine, und schlimmer: der Unterschied zum 2-Stufen-Ausweichen beim Ueberholen
-    // (SPUR_PASS_AUSSEN in 90-ghosts.js) waere damit leer gewesen. Dort ist die Mitte
-    // ausdruecklich verboten, damit sich zwei Autos die Bahn teilen koennen - ein Verbot,
-    // das nichts verbietet, ist keine Zusage.
-    //
-    // Also drei Stufen mit drei Aufgaben:
-    //
-    //     Kurve     aussen - innen - aussen        die Kurve selbst
-    //     Gerade    MITTE                          bis kurz vor der naechsten Kurve
-    //     Gerade    aussen der naechsten Kurve     das letzte Stueck, zum Anfahren
-    //
-    // Und die Mitte auf der Geraden ist nicht nur Kosmetik: dort ist zu beiden Seiten Platz,
-    // also kann ein Verfolger vorbei - egal auf welcher Seite. Ein Auto, das die Gerade am
-    // Rand entlangfaehrt, macht genau eine Seite auf.
-    //
-    // SPUR_GERADE_ANFAHRT ist der Anteil der Geraden, der schon zum Anfahren gehoert. 40
-    // Prozent: bei querTempo 4,0 dauert ein voller Spurwechsel 250 ms, eine Kachel bei
-    // Vorgabetempo rund 700 ms - 40 Prozent einer einkacheligen Geraden sind 280 ms und
-    // damit gerade genug. Kuerzer waere ein Anfahren, das erst am Kurveneingang ankommt.
-    const paare = [];
-    for (let s = 0; s + 1 < stuecke.length; s++) paare.push([s, s + 1]);
-    if (closed && stuecke.length > 1) paare.push([stuecke.length - 1, 0]);
-    for (const [a, b] of paare) {
-      const vonIdx = stuecke[a].idx[stuecke[a].idx.length - 1];
-      const bisIdx = stuecke[b].idx[0];
-      // Die Punkte dazwischen, zyklisch.
-      const zwischen = [];
-      let i = at(vonIdx + 1), sicher = 0;
-      while (i !== bisIdx && sicher++ <= n) { zwischen.push(i); i = at(i + 1); }
-      if (!zwischen.length) continue;     // Kurven stossen direkt aneinander
-      const neu = stuecke[b].dreht * SPUR_VOLL * limit;    // aussen der naechsten
-      // Ab hier gehoert die Gerade zum Anfahren der naechsten Kurve. Mindestens ein Punkt,
-      // damit auch eine sehr kurze Gerade noch vorpositioniert - sonst faehrt das Auto den
-      // Kurveneingang aus der Mitte an, und das ist genau der Fall, den SPUR_EIN vermeidet.
-      const abAnfahrt = Math.max(0, zwischen.length
-                                    - Math.max(1, Math.round(zwischen.length
-                                                             * SPUR_GERADE_ANFAHRT)));
-      for (let q = 0; q < zwischen.length; q++) {
-        alpha[zwischen[q]] = q < abAnfahrt ? 0 : neu;
-      }
-    }
+    // Siehe linieGeradenAussenAnfahrt() - derselbe Abschnitt, herausgezogen, weil
+    // aussenInnenLine() (Phase 12, Punkt 14) ihn unveraendert mitbenutzt.
+    linieGeradenAussenAnfahrt(alpha, stuecke, at, n, limit, SPUR_VOLL, closed);
     // Dieselbe Bahn-aus-alpha-Rechnung wie in formLine: Punkt plus Normale mal alpha.
     const bahn = pts.map((p, i) => [p.x + nrm[i].x * alpha[i],
                                     p.y + nrm[i].y * alpha[i]]);
@@ -1406,6 +1417,57 @@
              lapTime: prof.time, startLapTime: prof.time, v: prof.v, gain: 0,
              // Kein Scheitel und keine Parameter: dieses Modell sucht nichts. Die Felder
              // bleiben leer statt zu behaupten, es haette welche.
+             apex: [], par: [], evals: 0, accepted: 0 };
+  }
+
+  // ---- Aussen nach innen: hart an jeder Kurve, sanft auf jeder Geraden --------------
+  //
+  // BESTELLT (Phase 12, Punkt 14): "Kurvenfolge gleicher Richtung aussen anfahren, mit
+  // Kurvenbeginn hart nach innen bis Kurvenende, bei Geradenfolgen sanfter Uebergang zur
+  // jeweiligen Aussenseite."
+  //
+  // Das "aussen anfahren" IST linieGeradenAussenAnfahrt() - dieselbe Funktion, die
+  // dreiStufenLine() fuer ihre Geraden benutzt, unveraendert uebernommen. Neu ist nur
+  // die Kurve selbst: keine Aussenphase am Kurvenbeginn wie bei dreiStufenLine (dort
+  // SPUR_EIN, bei der Haarnadel SPUR_EIN_HAARNADEL) - hier ist JEDE Kurve von der
+  // ERSTEN bis zur LETZTEN Kachel voll innen, "hart" im Wortsinn: kein Uebergang
+  // innerhalb der Kurve, die volle Staerke steht schon auf der allerersten Kachel.
+  function aussenInnenLine(pts, nrm, o) {
+    const n = pts.length;
+    const tiles = o.tiles || [];
+    const closed = o.closed !== false;
+    const limit = (o.limit !== undefined ? o.limit : TRACK_HALF_W - 3);
+    const alpha = new Array(n).fill(0);
+    const laeufe = lineKurvenLaeufe(tiles, closed);
+    if (!laeufe.length || !tiles.length) {
+      return { alpha, limit, span: 0, lapTime: null, startLapTime: null,
+               v: null, gain: 0, apex: [], par: [], evals: 0, accepted: 0 };
+    }
+    const tab = trackKachelTabelle(pts, tiles.length);
+    const at = (i) => closed ? ((i % n) + n) % n : Math.max(0, Math.min(n - 1, i));
+    const stuecke = laeufe.map((lauf) => {
+      const idx = [];
+      for (let kk = lauf.von; kk <= lauf.bis; kk++) {
+        const t = ((kk % tiles.length) + tiles.length) % tiles.length;
+        for (let d = 0; d < tab.zahl[t]; d++) idx.push(at(tab.start[t] + d));
+      }
+      return { idx, dreht: lauf.dreht };
+    }).filter((s) => s.idx.length);
+    if (!stuecke.length) {
+      return { alpha, limit, span: 0, lapTime: null, startLapTime: null,
+               v: null, gain: 0, apex: [], par: [], evals: 0, accepted: 0 };
+    }
+    // ---- 1. Die Kurven: von der ersten bis zur letzten Kachel voll innen -----------
+    for (const st of stuecke) {
+      const innen = -st.dreht * SPUR_VOLL * limit;
+      for (const idx of st.idx) alpha[idx] = innen;
+    }
+    // ---- 2. Die Geraden: MITTE, dann die Aussenseite der naechsten Kurve ----------
+    linieGeradenAussenAnfahrt(alpha, stuecke, at, n, limit, SPUR_VOLL, closed);
+    const bahn = pts.map((p, i) => [p.x + nrm[i].x * alpha[i], p.y + nrm[i].y * alpha[i]]);
+    const prof = lapTimeOf(bahn, closed, o);
+    return { alpha, limit, span: Math.max.apply(null, alpha.map(Math.abs)),
+             lapTime: prof.time, startLapTime: prof.time, v: prof.v, gain: 0,
              apex: [], par: [], evals: 0, accepted: 0 };
   }
 
@@ -1434,6 +1496,16 @@
   // kurze Kurve zwischen zwei Geraden zieht die Linie also nur teilweise nach innen
   // statt sie hart umzuschalten, und eine Schikane (links-rechts kurz hintereinander)
   // mittelt sich teilweise gegeneinander weg statt zweimal hart zu springen.
+  //
+  // BESTELLT (Nachtrag): "mach, dass sie schraeg ueber die Geraden geht, nicht dann von
+  // jeder Schiene auf die naechste ein Sprung passiert." Der Mittelwert selbst stand
+  // schon richtig da, wurde aber als FLACHES Plateau je Kachel aufgetragen - der Sprung
+  // sass exakt an jeder Kachelgrenze. Jetzt ist jede Kachel eine eigene Rampe: sie
+  // beginnt an ihrem eigenen Wert (drehMittel[t], "wo ich jetzt bin") und lauft bis zum
+  // Kachelende linear auf den Wert der NAECHSTEN Kachel zu ("wohin ich als naechstes
+  // muss") - am Kachelende, also am Anfang der naechsten, steht dadurch schon derselbe
+  // Wert, mit dem die naechste Rampe beginnt. Keine zwei Kacheln behaupten an ihrer
+  // gemeinsamen Grenze mehr zwei verschiedene Werte.
   function innenGemitteltLine(pts, nrm, o) {
     const n = pts.length;
     const tiles = o.tiles || [];
@@ -1463,8 +1535,19 @@
       return zahl ? summe / zahl : 0;
     });
     for (let t = 0; t < tCount; t++) {
-      const innen = -drehMittel[t] * SPUR_VOLL * limit;
-      for (let d = 0; d < tab.zahl[t]; d++) alpha[at(tab.start[t] + d)] = innen;
+      const m = tab.zahl[t];
+      const hatNaechste = closed || t + 1 < tCount;
+      const ziel = hatNaechste ? drehMittel[(t + 1) % tCount] : drehMittel[t];
+      for (let d = 0; d < m; d++) {
+        // Anteil nach INDEX und nicht nach Weglaenge: anders als bei
+        // lineGeradenPlan()/lineGeradenAnwenden() (fuer die Geraden ZWISCHEN zwei
+        // Kurven bei dreiStufenLine/aussenInnenLine) hat hier JEDE einzelne Kachel
+        // ihren eigenen, bedeutungsvollen Zielwert - eine Weglaengen-Gewichtung ueber
+        // mehrere Kacheln hinweg wuerde diese einzelnen Ziele wieder verschlucken.
+        const frac = m > 0 ? d / m : 0;
+        const wert = drehMittel[t] + (ziel - drehMittel[t]) * frac;
+        alpha[at(tab.start[t] + d)] = -wert * SPUR_VOLL * limit;
+      }
     }
     const bahn = pts.map((p, i) => [p.x + nrm[i].x * alpha[i], p.y + nrm[i].y * alpha[i]]);
     const prof = lapTimeOf(bahn, closed, o);
@@ -1520,7 +1603,8 @@
   // dritten Modell waeren das drei Orte fuer eine Liste gewesen.
   // 'dreistufig' ist KEINE Optimierung und steht deshalb am Ende: die drei davor suchen
   // ein Optimum, dieses folgt einer Vorschrift. Die Begruendung steht bei dreiStufenLine().
-  const LINE_MODELLE = ['curvature', 'laptime', 'lateapex', 'dreistufig', 'mitte', 'innen3'];
+  const LINE_MODELLE = ['curvature', 'laptime', 'lateapex', 'dreistufig', 'mitte', 'innen3',
+                        'aussenin'];
 
   function setLineModel(m) {
     if (LINE_MODELLE.indexOf(m) < 0) return;
@@ -1811,6 +1895,7 @@
       : m === 'lateapex' ? formLine(pts, nrm, o, 'zeit', LATE_APEX_MIN, LATE_APEX_MAX)
       : m === 'dreistufig' ? dreiStufenLine(pts, nrm, o)
       : m === 'innen3' ? innenGemitteltLine(pts, nrm, o)
+      : m === 'aussenin' ? aussenInnenLine(pts, nrm, o)
       : formLine(pts, nrm, o, 'zeit', 0.15, 0.85);
     line.model = m;
     line.grenzen = g;

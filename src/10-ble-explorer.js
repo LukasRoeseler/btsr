@@ -502,6 +502,7 @@
     "Karteileichen entstehen, weil der Browser Autos nicht dauerhaft stabil wiedererkennt (neues Profil, anderer Browser) – hier lassen sie sich einzeln oder alle auf einmal entfernen.":
       "Stale entries happen because the browser doesn't recognize cars reliably long-term (new profile, different browser) – here they can be removed one by one or all at once.",
     "Zur Garage": "To the garage",
+    "Zur Startseite": "To the home page",
     "Zum Cockpit →": "To the cockpit →",
     "Jedes Auto einzeln per Klick verbinden – Web Bluetooth verlangt das so.":
       "Connect each car individually with its own click – Web Bluetooth requires it.",
@@ -700,6 +701,7 @@
     "Ghost: Ideallinie": "Ghost: racing line",
     "Ghost: Kurvendrosselung": "Ghost: corner slowdown",
     "Ghost: Rennhärte": "Ghost: race hardness",
+    "Außen-Innen": "Outside-inside",
     "Ghost: Rückweg nach einem Abgang": "Ghost: recovery after leaving the track",
     "Statt sofort zu parken, versucht das Auto bis zu 3 Sekunden, selbst auf die Strecke zurückzufahren - anhand der zuletzt bekannten Stelle und der Ideallinie dort. Kommt es dabei nicht voran (vermutlich ein Hindernis), oder gelingt es in 3 Sekunden nicht, parkt es wie bisher. Es muss nicht an derselben Stelle wieder auffahren.":
       "Instead of parking right away, the car tries for up to 3 seconds to steer itself back onto the track - based on the last known spot and the racing line there. If it makes no progress (likely an obstacle), or doesn't succeed within 3 seconds, it parks as before. It doesn't have to rejoin at the same spot.",
@@ -1101,6 +1103,8 @@
     "Um wie viel langsamer.": "By how much slower.",
     "nicht umgesetzt": "not implemented",
     "Teilweise im Aufbau.": "Partly under construction.",
+    "Kurvendrosselung, Ideallinie und Linienmodell wirken nur, wenn eine Strecke mit mindestens drei Teilen vorliegt – entweder im Editor gebaut oder beim Fahren gelernt. Ohne Streckenlayout rechnen sie mit einer Null.":
+      "Corner slowdown, racing line and line model only work once a track with at least three parts exists – either built in the editor or learned while driving. Without a track layout they compute with a zero.",
     "Drei der Regler hier wirken nur, wenn eine Strecke mit mindestens drei Teilen vorliegt – entweder im Editor gebaut oder beim Fahren gelernt. Ohne Streckenlayout rechnen sie mit einer Null. Sie sind unten mit":
       "Three of the sliders here only work once a track of at least three pieces exists – either built in the editor or learned while driving. Without a layout they multiply by zero. They are marked below with",
     "gekennzeichnet, samt dem, was ihnen fehlt.":
