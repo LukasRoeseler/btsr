@@ -1969,6 +1969,15 @@
   .opt-head[data-grp="7"] { border-left-color: hsl(320 60% 62%); }
   .opt-head[data-grp="8"] { border-left-color: hsl( 20 75% 58%); }
   .opt-row:last-child { border-bottom: none; }
+  /* ---- Menuenavigation (Phase 13): der sichtbare Fokus ----
+     Ohne diese Markierung waere die neue Navigation blind zu bedienen - man saehe der
+     Zeile nicht an, dass hoch/runter und X gerade SIE meinen. Rot (--bad, hier als
+     Akzentfarbe, nicht als Fehleranzeige - derselbe Gebrauch wie beim aktiven Tab und
+     den .sel-Kacheln im Projekt) fuer "fokussiert", Gruen (--good) sobald ein Regler
+     ANGEWAEHLT ist und links/rechts seinen Wert aendern statt den Tab zu wechseln. */
+  .menu-nav-sel { outline: 3px solid var(--bad); outline-offset: -2px; }
+  .opt-row.menu-nav-sel, .misc-tile.menu-nav-sel { border-radius: 8px; }
+  .menu-nav-armed { outline-color: var(--good); }
   .opt-label { font-size: 13.5px; line-height: 1.35; min-width: 0; }
   .opt-label small { display: block; color: var(--muted); font-size: 11px;
     margin-top: 3px; line-height: 1.4; }
@@ -3120,7 +3129,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.7.25</span></span>
+        <span class="foot-ver">v<span id="app-version">0.7.26</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -10981,6 +10990,8 @@
     "lernt…": "learning…",
     "__N__ Teile gelernt.": "__N__ pieces learned.",
     "Keine geschlossene Runde erkannt - nochmal versuchen.": "No closed lap detected - try again.",
+    "Reifenwahl weiter": "Next tyre choice",
+    "Tankmenge weiter": "Next fuel amount",
   };
 
   // ============================================================================
@@ -12296,8 +12307,12 @@
     // DIESELBE REGEL WIE AM CONTROLLER: der Schirm entscheidet. Stuende hier nur
     // flagHoldPress(), gaebe die Tastatur im Boxenmenue Gelb, waehrend der Controller dort
     // waehlt - zwei Bedeutungen fuer eine Taste, unterschieden durch das Eingabegeraet.
-    if (k === 'x' && !e.repeat) {
-      if (cockpitScreenIst().id !== 'main') cockpitScreenWaehlen();
+    // 'enter' spiegelt 'x' Taste fuer Taste (Phase 13: Menuenavigation ohne Gamepad
+    // pruefbar) - dieselbe Drei-Stufen-Kette wie am Controller: Menuenavigation vor
+    // Cockpit-Schirm vor gelber Flagge.
+    if ((k === 'x' || k === 'enter') && !e.repeat) {
+      if (menuNavActive()) menuNavActivate();
+      else if (cockpitScreenIst().id !== 'main') cockpitScreenWaehlen();
       else flagHoldPress();
     }
     if (k === 'q' && !e.repeat) debugCountLap(e.shiftKey);
@@ -12312,13 +12327,26 @@
   });
   window.addEventListener('keydown', (e) => {
     if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)) e.preventDefault();
+    // Phase 13: auf dem Optionen-Tab lenken die Pfeiltasten die Menuenavigation statt zu
+    // steuern - sonst wuerde ein Fokuswechsel gleichzeitig das (nicht sichtbare) Auto
+    // ansteuern. JEDES keydown zaehlt, auch die vom Betriebssystem wiederholten waehrend
+    // eine Taste gehalten wird - genau das ist die bestellte Wiederholung beim Halten,
+    // ohne einen eigenen Zeitgeber wie am Gamepad (dort gibt es kein natives Wiederholen).
+    if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key) && menuNavActive()) {
+      if (e.key === 'ArrowUp') menuNavMove('up');
+      else if (e.key === 'ArrowDown') menuNavMove('down');
+      else if (e.key === 'ArrowLeft') { if (!menuNavAdjust('left')) menuNavTabWechsel(-1); }
+      else if (e.key === 'ArrowRight') { if (!menuNavAdjust('right')) menuNavTabWechsel(1); }
+      return;
+    }
     keys.add(e.key);
   });
   window.addEventListener('keyup', (e) => {
     keys.delete(e.key);
     // Loslassen der Halten-Geste. Zu frueh losgelassen heisst ausdruecklich: nichts
     // passiert - ein halber Druck darf keine halbe Wirkung haben.
-    if ((e.key || '').toLowerCase() === 'x') flagHoldRelease(false);
+    const kUp = (e.key || '').toLowerCase();
+    if (kUp === 'x' || kUp === 'enter') flagHoldRelease(false);
   });
   // Auch bei blur, sonst haengt der Balken, wenn das Fenster waehrend des Haltens den Fokus
   // verliert - und der naechste Druck waere wirkungslos, weil flagHoldStart noch belegt ist.
@@ -12330,10 +12358,16 @@
   // handled generically by applySteerInput/applyThrottleInput for every source.
   setInterval(() => {
     let sx = 0, ty = 0;
-    if (keys.has('ArrowLeft')) sx -= 1;
-    if (keys.has('ArrowRight')) sx += 1;
-    if (keys.has('ArrowUp')) ty += 1;
-    if (keys.has('ArrowDown')) ty -= 1;
+    // Phase 13 Sicherheitsnetz: waehrend die Pfeiltasten die Menuenavigation bedienen,
+    // duerfen sie nicht GLEICHZEITIG das Auto steuern - auch nicht aus einer Taste, die
+    // noch aus der Zeit VOR dem Wechsel auf den Optionen-Tab in `keys` haengt (z.B. ein
+    // Klick mit der Maus auf den Tab waehrend eine Pfeiltaste physisch gehalten wird).
+    if (!menuNavActive()) {
+      if (keys.has('ArrowLeft')) sx -= 1;
+      if (keys.has('ArrowRight')) sx += 1;
+      if (keys.has('ArrowUp')) ty += 1;
+      if (keys.has('ArrowDown')) ty -= 1;
+    }
     if (keys.has(' ')) { sx = 0; ty = 0; }
     applySteerInput(SRC.KEY, sx);
     applyThrottleInput(SRC.KEY, ty);
@@ -17945,6 +17979,213 @@
   $('lab-subscribe').onclick = labSubscribeTx;
 
   labRenderBytes();
+
+  // ============================ MENUENAVIGATION (Phase 13, WIP) ======================
+  //
+  // BESTELLT: D-Pad/Pfeiltasten navigieren im Cockpit und in den Optionen, X/Enter
+  // bestaetigt oder waehlt einen Regler an.
+  //
+  // ENG GESCHNITTEN, aus einer bereits gemachten Erfahrung dieses Projekts: eine
+  // FRUEHERE, allgemeine Menuenavigation (siehe der Kommentar bei pollGamepad() in
+  // 90-ghosts.js) griff auf jedem Tab und jedem fokussierbaren Element und wurde deshalb
+  // wieder ausgebaut - eine Fehlbedienung verstellte einen Regler, den niemand im Blick
+  // hatte. Diese Fassung wirkt NUR auf dem Optionen-Tab (menuNavActive() prueft das
+  // selbst), und ein Regler AENDERT SICH NICHT durch den blossen Fokus: er muss erst mit
+  // der Waehltaste "angewaehlt" werden (menuNavArmed), bevor links/rechts seinen Wert
+  // veraendert. Cockpit-Schirme (Box, Renneinstellungen) haben ihre eigene, laengst
+  // gemessene Zeilenauswahl (pitScreenPad/raceScreenPad, cockpitScreenWaehlen) und
+  // werden hier nicht verdoppelt - flagTasteTick() und die Tastatur (30-input.js) reihen
+  // menuNavActivate() nur als NEUE, erste Stufe vor die bestehende Kette ein.
+
+  let menuNavIndex = 0;
+  let menuNavArmed = false;
+  let menuNavContextKey = null;
+  let menuNavHoldStart = null, menuNavHoldDir = null, menuNavLastStep = 0;
+  const MENU_NAV_HOLD_DELAY_MS = 400;
+  const MENU_NAV_HOLD_REPEAT_MS = 120;
+
+  // Der Container, dessen Zeilen gerade gelten: die offene Unterseite, oder - wenn keine
+  // offen ist - die Kachelseite selbst. null ausserhalb des Optionen-Tabs.
+  function menuNavContainer() {
+    const tab = $('tab-options');
+    if (!tab || !tab.classList.contains('active')) return null;
+    const openSub = tab.querySelector('.subpage.on');
+    return openSub || $('sub-home-options');
+  }
+
+  // EINZELN abgefragt und nicht als eine Komma-Liste: querySelector() mit mehreren
+  // durch Komma getrennten Mustern liefert das erste Element in DOKUMENT-Reihenfolge,
+  // nicht das erste PASSENDE Muster in der Liste - eine Reglerzeile mit einem "-"-Knopf
+  // VOR dem eigentlichen input[range] lieferte deshalb den Knopf, nicht den Regler.
+  function menuNavControlFor(row) {
+    return row.querySelector('input[type="checkbox"]')
+      || row.querySelector('input[type="range"]')
+      || row.querySelector('select')
+      || row.querySelector('input[type="number"], input[type="text"]')
+      || row.querySelector('button:not(.opt-label button)');
+  }
+
+  // DOM-Reihenfolge ist Bildschirm-Reihenfolge: weder .opt-row noch .misc-tile werden
+  // per CSS umsortiert (siehe die Recherche zu dieser Phase). Nur SICHTBARE Zeilen
+  // zaehlen - offsetParent ist null bei jedem display:none, egal ob ueber eine
+  // Media-Query, ein bedingtes Feature oder eine geschlossene Unterseite.
+  function menuNavRows() {
+    const host = menuNavContainer();
+    if (!host) return [];
+    if (host.id === 'sub-home-options') {
+      return [...host.querySelectorAll('.misc-tile')]
+        .filter((el) => el.offsetParent !== null)
+        .map((el) => ({ el, kind: 'tile', control: el }));
+    }
+    const rows = [];
+    const back = host.querySelector('.subpage-back');
+    if (back && back.offsetParent !== null) rows.push({ el: back, kind: 'button', control: back });
+    [...host.querySelectorAll('.opt-row')].forEach((row) => {
+      if (row.offsetParent === null) return;
+      const control = menuNavControlFor(row);
+      if (!control) return;
+      let kind = 'button';
+      if (control.type === 'checkbox') kind = 'toggle';
+      else if (control.type === 'range') kind = 'range';
+      else if (control.tagName === 'SELECT') kind = 'select';
+      rows.push({ el: row, kind, control });
+    });
+    return rows;
+  }
+
+  function menuNavContextNow() {
+    const host = menuNavContainer();
+    return host ? host.id : null;
+  }
+
+  // Wechselt der Kontext (Unterseite auf/zu, Kachel geoeffnet, Tab verlassen), faengt
+  // ganz von vorn an - ein gemerkter Index aus einer anderen Zeilenliste zeigt sonst auf
+  // eine zufaellige Stelle, sobald man zurueckkommt.
+  function menuNavEnsureContext() {
+    const key = menuNavContextNow();
+    if (key !== menuNavContextKey) {
+      // Den Optionen-Tab verlassen: menuNavRender() scrollt document.body (nicht das
+      // Fenster) fuer jede fokussierte Zeile, und dieser Bildlauf blieb sonst stehen -
+      // ein anderer Tab konnte so scheinbar grundlos mitten im Bild aufschlagen, obwohl
+      // niemand ihn dorthin gescrollt hat.
+      if (menuNavContextKey !== null && key === null) document.body.scrollTop = 0;
+      menuNavContextKey = key;
+      menuNavIndex = 0;
+      menuNavArmed = false;
+    }
+  }
+
+  function menuNavActive() {
+    menuNavEnsureContext();
+    return menuNavRows().length > 0;
+  }
+
+  function menuNavRender() {
+    document.querySelectorAll('.menu-nav-sel').forEach((el) => {
+      el.classList.remove('menu-nav-sel', 'menu-nav-armed');
+    });
+    const rows = menuNavRows();
+    if (!rows.length) return;
+    menuNavIndex = ((menuNavIndex % rows.length) + rows.length) % rows.length;
+    const row = rows[menuNavIndex];
+    row.el.classList.add('menu-nav-sel');
+    if (menuNavArmed) row.el.classList.add('menu-nav-armed');
+    if (typeof row.el.scrollIntoView === 'function') row.el.scrollIntoView({ block: 'nearest' });
+  }
+
+  function menuNavMove(dir) {
+    menuNavEnsureContext();
+    const rows = menuNavRows();
+    if (!rows.length) return;
+    menuNavArmed = false;
+    menuNavIndex = ((menuNavIndex + (dir === 'up' ? -1 : 1)) % rows.length + rows.length) % rows.length;
+    menuNavRender();
+  }
+
+  // X/Enter auf der fokussierten Zeile: Kachel/Knopf -> klicken, Kontrollkaestchen ->
+  // umschalten, Regler/Auswahlfeld -> an- oder abwaehlen (kein Klick, kein Wertwechsel -
+  // das macht erst menuNavAdjust()).
+  function menuNavActivate() {
+    menuNavEnsureContext();
+    const rows = menuNavRows();
+    if (!rows.length) return;
+    const row = rows[menuNavIndex];
+    if (row.kind === 'range' || row.kind === 'select') {
+      menuNavArmed = !menuNavArmed;
+      menuNavRender();
+      return;
+    }
+    menuNavArmed = false;
+    row.control.click();
+    // Ein Klick kann den Kontext aendern (eine Kachel oeffnet ihre Unterseite) -
+    // menuNavEnsureContext() faengt das ab, bevor neu gezeichnet wird.
+    menuNavEnsureContext();
+    menuNavRender();
+  }
+
+  // links/rechts auf einer ANGEWAEHLTEN Zeile. Gibt zurueck, ob sie das gebraucht hat -
+  // false heisst "nichts angewaehlt", und dann darf der Aufrufer die Taste fuer etwas
+  // anderes nehmen (Tabwechsel, Cockpit-Schirm blaettern).
+  function menuNavAdjust(dir) {
+    menuNavEnsureContext();
+    if (!menuNavArmed) return false;
+    const rows = menuNavRows();
+    if (!rows.length) return false;
+    const row = rows[menuNavIndex];
+    if (row.kind === 'range') {
+      if (dir === 'left') row.control.stepDown(); else row.control.stepUp();
+      row.control.dispatchEvent(new Event('input', { bubbles: true }));
+      row.control.dispatchEvent(new Event('change', { bubbles: true }));
+    } else if (row.kind === 'select') {
+      const n = row.control.options.length;
+      const i0 = row.control.selectedIndex;
+      const i1 = dir === 'left' ? Math.max(0, i0 - 1) : Math.min(n - 1, i0 + 1);
+      if (i1 !== i0) {
+        row.control.selectedIndex = i1;
+        row.control.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    } else {
+      return false;
+    }
+    menuNavRender();
+    return true;
+  }
+
+  // Gamepad-Fassung von menuNavAdjust(): bekommt JEDEN Takt den rohen Tastendruck
+  // (nicht nur die steigende Flanke), damit Halten wiederholt - erste Stufe sofort,
+  // danach alle MENU_NAV_HOLD_REPEAT_MS. Tastatur braucht das nicht: dort erledigt die
+  // vom Betriebssystem ohnehin wiederholten keydown-Ereignisse dasselbe (siehe
+  // 30-input.js).
+  function menuNavAdjustPad(dir, held) {
+    if (!held) {
+      if (menuNavHoldDir === dir) { menuNavHoldStart = null; menuNavHoldDir = null; }
+      return;
+    }
+    const now = Date.now();
+    if (menuNavHoldDir !== dir) {
+      menuNavHoldDir = dir;
+      menuNavHoldStart = now;
+      menuNavLastStep = now;
+      menuNavAdjust(dir);
+      return;
+    }
+    if (now - menuNavHoldStart >= MENU_NAV_HOLD_DELAY_MS
+        && now - menuNavLastStep >= MENU_NAV_HOLD_REPEAT_MS) {
+      menuNavLastStep = now;
+      menuNavAdjust(dir);
+    }
+  }
+
+  // Tabwechsel per rohem Steuerkreuz (nicht belegbar - siehe die Begruendung bei
+  // pollGamepad()). Ueberspringt versteckte Tab-Knoepfe (data-parent, hidden) genau wie
+  // die sichtbare Leiste sie ueberspringt.
+  function menuNavTabWechsel(d) {
+    const buttons = [...document.querySelectorAll('.tab-btn')].filter((b) => b.offsetParent !== null);
+    if (!buttons.length) return;
+    const now = buttons.findIndex((b) => b.classList.contains('active'));
+    const i = (((now < 0 ? 0 : now) + (d >= 0 ? 1 : -1)) % buttons.length + buttons.length) % buttons.length;
+    buttons[i].click();
+  }
 
   // =========================================================================
   // Die Strecke: Modell, Geometrie, Editor, Scan
@@ -28877,9 +29118,14 @@
     //
     // Die rechte Schulter bleibt das Rennen, die Trigger bleiben Gas und Bremse.
     pitstop: { type: 'button', index: 9, label: 'Options (PS) / Start (Xbox)' },
-    // LB und RB machen jetzt die zwei Umschaltungen, die man WAEHREND der Fahrt braucht:
-    // welche Kodierung gelesen wird, und ob von Hand geschaltet wird. Beide sind
-    // Fahrentscheidungen und gehoeren unter die Zeigefinger.
+    // LB/RB machen seit Phase 13 (Controller-Umbau) die Reifen-/Tankvorwahl - dieselben
+    // zwei Funktionen, die vorher am Steuerkreuz hoch/runter hingen. Das Kreuz ist damit
+    // frei fuer die neue Menuenavigation (siehe D-Pad hoch/runter weiter unten).
+    //
+    // Leseart (Bahn/Ausdruck) und Getriebe (Automatik/von Hand), die vorher hier lagen,
+    // haben KEINE Gamepad-Belegung mehr - ersatzlos, wie bestellt ("kein Ersatzknopf,
+    // keine Einbindung in die neue Menue-Navigation noetig"). Beide bleiben reine
+    // Tipp-/Klick-Schalter in den Optionen.
     //
     // Rennen starten zieht dafuer um, und seit v0.5.1 auf Select: Kreuz traegt die gelbe
     // Flagge, weil "X" in PlayStation-Namen genau diese Taste ist - die alte Beschriftung
@@ -28888,8 +29134,8 @@
     // Die Streckenansicht ist ab Werk UNBELEGT. Sie lag auf L3, und der linke Stick soll
     // beim Lenken nichts ausloesen; ausserdem verlaesst sie das Cockpit. Das Touchpad bleibt
     // ebenfalls frei, weil das System es als Zeiger fuehrt.
-    scanmode: { type: 'button', index: 4, label: 'L1 (PS) / LB (Xbox)' },
-    gearmode: { type: 'button', index: 5, label: 'R1 (PS) / RB (Xbox)' },
+    tyreSelect: { type: 'button', index: 4, label: 'L1 (PS) / LB (Xbox)' },
+    fuelSelect: { type: 'button', index: 5, label: 'R1 (PS) / RB (Xbox)' },
     // X hat ZWEI Bedeutungen: kurz ist Runterschalten, eine Sekunde gehalten die gelbe
     // Flagge - genau wie die Taste X auf der Tastatur. Das Halten ist der Schutz: die gelbe
     // Flagge bremst jedes Auto auf 40 km/h, und ein Knopf, der das mit einem Antippen tut,
@@ -28927,8 +29173,8 @@
     headlights: 'Licht an/aus', lightflash: 'Lichthupe', pitstop: 'Boxenstopp',
     schirmZurueck: 'Cockpit-Schirm zurück', schirmVor: 'Cockpit-Schirm vor',
     racestart: 'Rennen starten / abbrechen',
-    scanmode: 'Leseart: Bahn oder Ausdruck',
-    gearmode: 'Getriebe: Automatik oder von Hand',
+    tyreSelect: 'Reifenwahl weiter',
+    fuelSelect: 'Tankmenge weiter',
     yellowflag: 'Gelbe Flagge (1 s halten)',
     weather: 'Wetter umschalten',
     trackview: 'Streckenansicht',
@@ -29150,7 +29396,7 @@
   let prevDownshift = false, prevUpshift = false, prevHeadlights = false;
   // Die drei neuen Aktionen. padFlagFired merkt sich, dass die Sekunde in DIESEM Druck schon
   // voll war - ohne das wuerde die Flagge im Takt danach gleich wieder umgeschaltet.
-  let prevScanMode = false, prevGearMode = false, prevYellowFlag = false;
+  let prevTyreSelect = false, prevFuelSelect = false, prevYellowFlag = false;
   let padFlagFired = false;
 
   function bindingDescription(b) {
@@ -32628,7 +32874,12 @@
   // worden. Der Ladebalken startet auf den anderen Schirmen gar nicht erst, statt bei 40
   // Prozent stehenzubleiben.
   function flagTasteTick(flagNow) {
-    if (cockpitScreenIst().id !== 'main') {
+    // NEUE ERSTE STUFE (Phase 13): auf dem Optionen-Tab bestaetigt/waehlt dieselbe
+    // Taste die fokussierte Zeile der Menuenavigation an - noch vor der Frage, welcher
+    // Cockpit-Schirm gerade offen ist (der ist dann ohnehin nicht der aktive Tab).
+    if (menuNavActive()) {
+      if (flagNow && !prevYellowFlag) menuNavActivate();
+    } else if (cockpitScreenIst().id !== 'main') {
       if (flagNow && !prevYellowFlag) cockpitScreenWaehlen();
     } else {
       if (flagNow && !prevYellowFlag) { padFlagFired = false; flagHoldPress(); }
@@ -37057,26 +37308,15 @@
       if (trackViewNow && !prevTrackView) toggleTrackView();
       prevTrackView = trackViewNow;
 
-      // Leseart und Getriebe gehen ueber die Bedienelemente in den Optionen und deren
-      // 'change'-Ereignis - wie der Knopf im Cockpit und die Reifenkachel. Damit gibt es
-      // keinen zweiten Zustand, und die Optionen ziehen von selbst nach.
-      const scanNow = readBindingValue(pad, bindings.scanmode) > BUTTON_CAPTURE_THRESHOLD;
-      if (scanNow && !prevScanMode) {
-        const sw = $('setting-ontrack');
-        if (sw) { sw.checked = !sw.checked; sw.dispatchEvent(new Event('change', { bubbles: true })); }
-      }
-      prevScanMode = scanNow;
+      // LB/RB: Reifenwahl und Tankvorwahl, dieselben Funktionen, die vorher am
+      // Steuerkreuz hoch/runter hingen (siehe die Begruendung bei den Bindings oben).
+      const tyreNow = readBindingValue(pad, bindings.tyreSelect) > BUTTON_CAPTURE_THRESHOLD;
+      if (tyreNow && !prevTyreSelect) pitMischungWeiter();
+      prevTyreSelect = tyreNow;
 
-      const gearNow = readBindingValue(pad, bindings.gearmode) > BUTTON_CAPTURE_THRESHOLD;
-      if (gearNow && !prevGearMode) {
-        const sw = $('setting-autoshift');
-        if (sw) {
-          sw.checked = !sw.checked;
-          sw.dispatchEvent(new Event('change', { bubbles: true }));
-          showHudToast(sw.checked ? 'AUTOMATIK' : 'VON HAND');
-        }
-      }
-      prevGearMode = gearNow;
+      const fuelNow = readBindingValue(pad, bindings.fuelSelect) > BUTTON_CAPTURE_THRESHOLD;
+      if (fuelNow && !prevFuelSelect) pitVorwahlSchalten('refuel');
+      prevFuelSelect = fuelNow;
 
       // Gelbe Flagge auf HALTEN. Dieselben zwei Funktionen wie die Taste X, nicht eine
       // zweite Fassung der Logik: flagHoldPress startet den Ladebalken, flagHoldRelease(true)
@@ -37110,82 +37350,78 @@
       const dLeft = padDpad(pad, 'left'), dRight = padDpad(pad, 'right');
       // Two consumers can claim the D-pad before the normal bindings see it: the track
       // editor in fullscreen, and an armed pit stop. Each returns true when it took the
-      // press, so at every other moment the pad keeps its usual job (accel and steering
-      // trim) — the meaning is never changed permanently, only while something is
-      // genuinely waiting for a decision.
-      // Nur noch zwei Verbraucher vor der Fahrfunktion: der Streckeneditor im Vollbild und
-      // ein scharfer Boxenstopp. Die allgemeine Menuenavigation ist ausgebaut - sie griff auf
-      // jedem Tab und auf jedes fokussierbare Element, und genau daraus kamen die
-      // Fehlbedienungen: ein Druck aufs Steuerkreuz verstellte irgendeinen Regler, den man
-      // gerade nicht im Blick hatte. Die Programmierschule hing an derselben Kette und ist
-      // mit ausgebaut; sie laesst sich weiterhin mit Maus und Finger bedienen.
-      // NEUE BELEGUNG seit v0.5.18, auf Wunsch:
+      // press, so at every other moment the pad keeps its usual job — the meaning is
+      // never changed permanently, only while something is genuinely waiting for a
+      // decision.
       //
-      //   hoch/runter    Lenkansprechen (vorher: Bremsbalance)
-      //   links/rechts   Cockpit-Schirm blaettern (vorher: Lenkansprechen)
+      // ---- PHASE 13: HOCH/RUNTER IST JETZT DIE MENUENAVIGATION -----------------------
       //
-      // Die Bremsbalance behaelt zwei Wege - den Regler in den Optionen und die Zieh-Skala
-      // im Cockpit -, und das genuegt fuer eine Groesse, die man einmal je Stint nachzieht.
+      // Der Kommentar, der hier bis Phase 13 stand, dokumentierte genau die Lehre, die
+      // diese Phase ernst nimmt: eine FRUEHERE, allgemeine Menuenavigation griff auf
+      // JEDEM Tab und JEDEM fokussierbaren Element, und genau daraus kamen die
+      // Fehlbedienungen. Diesmal ist sie eng geschnitten:
       //
-      // LINKS/RECHTS wird dem Boxenschirm ausdruecklich NICHT angeboten: ein Schirm, der die
-      // Taste frisst, mit der man ihn verlaesst, ist eine Sackgasse.
-      // ---- HOCH/RUNTER: REIFENWAHL UND TANKMENGE -------------------------------
+      //   - Nur auf dem Optionen-Tab passiert ueberhaupt etwas (menuNavMove()/
+      //     menuNavActive() pruefen das selbst, siehe 50b-menu-nav.js) - auf jedem
+      //     anderen Tab (Cockpit auf dem Hauptschirm, Garage, Strecke, ...) ist
+      //     hoch/runter ein Aufruf ins Leere.
+      //   - Regler und Auswahlfelder AENDERN SICH NICHT durch den Fokus allein: sie
+      //     muessen erst mit der Waehltaste "angewaehlt" werden (menuNavArmed), bevor
+      //     links/rechts ihren Wert veraendert. Ein Fokuswechsel kann also nie
+      //     versehentlich einen Wert kippen - nur ein zweiter, bewusster Tastendruck.
       //
-      // BESTELLT: "D-Pad hoch und runter im Cockpit aendert nicht Lenkung oder Brakebias,
-      // sondern: D-Pad oben schaltet Reifentypen durch und bestimmt, was beim naechsten
-      // Boxenstopp aufgezogen wird. D-Pad runter schaltet die Tankmenge durch - nicht
-      // tanken, halb, voll."
-      //
-      // Hier stand nudgeSteerResponse(+-0,1). Die VORRANGKETTE bleibt unveraendert:
-      // Streckeneditor und Boxenschirm bekommen die Taste zuerst, und nur was sie nicht
-      // verbrauchen, landet hier. Getauscht ist allein das letzte Glied.
-      //
-      // DIESELBEN FUNKTIONEN wie im Boxenschirm: pitMischungWeiter() und
-      // pitVorwahlSchalten('refuel') sind die Wege, die auch die Waehltaste nimmt. Ein
-      // eigener Zweig fuers Kreuz waere ein zweiter Ort mit derselben Aufgabe - und der
-      // erste, an dem Kachel und Menue auseinanderlaufen.
-      // raceScreenPad(): derselbe Griff wie pitScreenPad() daneben, fuer den neuen
-      // Renneinstellungen-Schirm - siehe die Begruendung dort (70-race.js). Beide geben
-      // false zurueck, solange ihr eigener Schirm nicht der aktive ist, stoeren also
-      // einander nicht.
+      // pitScreenPad()/raceScreenPad() bekommen die Taste weiterhin ZUERST: auf dem
+      // Boxen- oder Renneinstellungen-Schirm gilt weiter ihre eigene, laengst gemessene
+      // Zeilenauswahl - menuNavMove() greift nur, wenn beide ablehnen (auf dem
+      // Optionen-Tab tun sie das immer, weil dort keiner der beiden Schirme aktiv ist).
       if (dUp && !prevDpad.up && !trackEditorPad('up') && !pitScreenPad('up')
           && !raceScreenPad('up')) {
-        pitMischungWeiter();
+        menuNavMove('up');
       }
       if (dDown && !prevDpad.down && !trackEditorPad('down') && !pitScreenPad('down')
           && !raceScreenPad('down')) {
-        pitVorwahlSchalten('refuel');
+        menuNavMove('down');
       }
-      // ---- BLAETTERN UEBER DIE BELEGUNG, nicht ueber das Kreuz -------------------
+      // ---- LINKS/RECHTS: REGLER, VOLLBILD-SCHIRME, ODER TABS -------------------------
       //
-      // Hier stand `if (dLeft && ...) cockpitScreenStep(-1)`, also das Steuerkreuz
-      // festverdrahtet. Jetzt liest es dieselbe Belegung wie Gas und Lichthupe, mit dem
-      // Kreuz als Vorgabe - siehe schirmZurueck/schirmVor in den Vorgabebelegungen.
+      // BESTELLT: "D-Pad links/rechts wechselt TABS - ausser bei einem angewaehlten
+      // Regler (dort verstellt es den Wert; gedrueckt halten beschleunigt) und ausser im
+      // Cockpit-Vollbild, wo es weiterhin die Cockpit-Schirme durchblaettert wie heute."
       //
-      // ZWEI FOLGEN, und beide sind gewollt:
-      //
-      //   Wer sie umlegt, blaettert mit dem neuen Knopf. Das Kreuz ist dann frei.
-      //   Wer sie LOESCHT, blaettert mit dem Gamepad gar nicht mehr - der Knopf am Schirm
-      //   und der Finger bleiben. Genau das war bestellt ("oder gar nicht zu belegen").
-      //
-      // Die Prev-Flanken liegen weiter in prevDpad, auch wenn die Belegung nicht mehr das
-      // Kreuz ist: es ist der Speicher fuer "war im letzten Takt gedrueckt", und woher der
-      // Wert kam, ist ihm gleich. Zwei Speicher fuer dieselbe Flanke waeren die naechste
-      // Stelle, an der etwas auseinanderlaeuft.
-      const schirmZ = readBindingValue(pad, bindings.schirmZurueck) > BUTTON_CAPTURE_THRESHOLD;
-      const schirmV = readBindingValue(pad, bindings.schirmVor) > BUTTON_CAPTURE_THRESHOLD;
-      // trackEditorPad() bekommt weiter das KREUZ und nicht die Belegung: der
-      // Streckeneditor bewegt seinen Zeiger mit dem Kreuz, und das ist keine belegbare
-      // Aktion. Ohne diese Trennung wuerde ein umgelegtes Blaettern den Editor mitnehmen.
-      if (dLeft && !prevDpad.left && trackEditorPad('left')) { /* Editor hat sie */ }
-      else if (schirmZ && !prevDpad.left) cockpitScreenStep(-1);
-      if (dRight && !prevDpad.right && trackEditorPad('right')) { /* Editor hat sie */ }
-      else if (schirmV && !prevDpad.right) cockpitScreenStep(+1);
+      // ANGEWAEHLTER REGLER GEHT JEDEM TAKT, nicht nur auf der steigenden Flanke - genau
+      // das ist die bestellte Wiederholung beim Halten. menuNavAdjustPad() fuehrt ihren
+      // eigenen kleinen Zeitgeber (erste Stufe sofort, danach alle 120 ms) und ist damit
+      // der EINZIGE Verbraucher, solange etwas angewaehlt ist: der Streckeneditor, das
+      // Blaettern der Cockpit-Schirme und der neue Tabwechsel bekommen die Taste gar
+      // nicht erst angeboten - ein angewaehlter Regler darf durch nichts anderes
+      // unterbrochen werden.
+      if (menuNavArmed) {
+        menuNavAdjustPad('left', dLeft);
+        menuNavAdjustPad('right', dRight);
+        // Auch hier merken, sonst sieht der andere Zweig beim Loslassen des Reglers eine
+        // veraltete Flanke und feuert einmal ins Leere (Editor/Tabwechsel), obwohl das
+        // Kreuz in Wahrheit schon laenger gehalten wird.
+        prevDpad.left = dLeft; prevDpad.right = dRight;
+      } else {
+        // schirmZurueck/schirmVor bleiben die belegbare Aktion, aber NUR NOCH im
+        // Cockpit-Vollbild wirksam - ausserhalb ist sie durch den neuen Tabwechsel
+        // ersetzt, der das rohe Steuerkreuz liest (dieselbe Begruendung wie beim alten
+        // "festverdrahtet vs. belegbar": der Tabwechsel ist keine Fahrentscheidung, die
+        // man umlegen wollen wuerde).
+        const raceFs = document.body.classList.contains('race-fs');
+        const schirmZ = readBindingValue(pad, bindings.schirmZurueck) > BUTTON_CAPTURE_THRESHOLD;
+        const schirmV = readBindingValue(pad, bindings.schirmVor) > BUTTON_CAPTURE_THRESHOLD;
+        if (dLeft && !prevDpad.left && trackEditorPad('left')) { /* Editor hat sie */ }
+        else if (raceFs && schirmZ && !prevDpad.left) cockpitScreenStep(-1);
+        else if (!raceFs && dLeft && !prevDpad.left) menuNavTabWechsel(-1);
+        if (dRight && !prevDpad.right && trackEditorPad('right')) { /* Editor hat sie */ }
+        else if (raceFs && schirmV && !prevDpad.right) cockpitScreenStep(+1);
+        else if (!raceFs && dRight && !prevDpad.right) menuNavTabWechsel(+1);
+        // Die Flanken der BELEGUNG merken, nicht die des Kreuzes - sonst feuert ein
+        // umgelegter Knopf in jedem Takt, weil seine Flanke nie als verbraucht gilt.
+        prevDpad.left = schirmZ || dLeft; prevDpad.right = schirmV || dRight;
+      }
       prevDpad.up = dUp; prevDpad.down = dDown;
-      // Die Flanken der BELEGUNG merken, nicht die des Kreuzes - sonst feuert ein
-      // umgelegter Knopf in jedem Takt, weil seine Flanke nie als verbraucht gilt.
-      prevDpad.left = schirmZ || dLeft; prevDpad.right = schirmV || dRight;
-
     }
     // Keep prev-flags fresh even while rebinding, otherwise they go stale and the first
     // press after a rebind is swallowed (or fires twice).
@@ -38420,6 +38656,21 @@
   //      sie und stellt sie von Hand.
 
   window.OMEGA_TEST = {
+    // ---- Menuenavigation (Phase 13, 50b-menu-nav.js) --------------------------------
+    //
+    // Reine Durchreichen zu den modulinternen Funktionen - keine eigene Logik, damit ein
+    // Prueflauf genau das misst, was auch Gamepad und Tastatur aufrufen, nicht eine
+    // zweite, nachgebaute Fassung.
+    menuNavRowsLesen() {
+      return menuNavRows().map((r) => ({ kind: r.kind, text: (r.el.textContent || '').trim().slice(0, 40) }));
+    },
+    menuNavIndexLesen() { return menuNavIndex; },
+    menuNavArmedLesen() { return menuNavArmed; },
+    menuNavBewegen(dir) { menuNavMove(dir); },
+    menuNavAusloesen() { menuNavActivate(); },
+    menuNavVerstellen(dir) { return menuNavAdjust(dir); },
+    menuNavAktiv() { return menuNavActive(); },
+
     // ---- Passt das Cockpit in die Bildschirmhoehe? ---------------------------------
     //
     // Gemessen wird an der EINPASSUNG selbst: sie gibt zurueck, wieviel Platz da ist,
@@ -48569,11 +48820,11 @@
     const a = OMEGA_TEST.padResolve({
       pitstop: { type: 'button', index: 9, label: 'Start / Options' },
       trackview: { type: 'button', index: 4, label: 'LB / L1' } });
-    teile.push('gepflanzt: scanmode ' + a.scanmode.label + ', trackview ' + a.trackview.label);
-    if (schluessel(a.scanmode) !== schluessel(vorgabe.scanmode)) {
-      schlecht.push('scanmode nicht mehr auf LB');
+    teile.push('gepflanzt: tyreSelect ' + a.tyreSelect.label + ', trackview ' + a.trackview.label);
+    if (schluessel(a.tyreSelect) !== schluessel(vorgabe.tyreSelect)) {
+      schlecht.push('tyreSelect nicht mehr auf LB');
     }
-    if (schluessel(a.trackview) === schluessel(a.scanmode)) {
+    if (schluessel(a.trackview) === schluessel(a.tyreSelect)) {
       schlecht.push('trackview liegt weiter auf LB');
     }
     if (!a.__kollisionen || !a.__kollisionen.length) schlecht.push('Kollision nicht gemeldet');
@@ -58934,6 +59185,118 @@
   // wiedergefundener Code laesst den Versuch erfolgreich enden, und ein Auto, das nicht
   // vorankommt (simuliert: die Physik wird jeden Takt auf 0 zurueckgesetzt, als stuende
   // es vor einem Hindernis), gibt VOR den drei Sekunden auf.
+  stAdd('Menuenavigation: Kacheln, Regler anwaehlen, Kontrollkaestchen, zurueck', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.menuNavRowsLesen) {
+      return { skip: true, mass: 'menuNavRowsLesen nicht vorhanden' };
+    }
+    const merkTab = document.querySelector('.tab-btn.active');
+    const merkTabName = merkTab ? merkTab.dataset.tab : null;
+    // Ein Wechsel auf einen anderen Tab loest exitRaceFullscreen() aus (showTab(),
+    // 10-ble-explorer.js), und ein blosser Klick zurueck stellt das Vollbild NICHT
+    // wieder her - eine Einbahnstrasse. Vorsichtshalber gemerkt, auch wenn der
+    // tatsaechlich gefundene Nebeneffekt (siehe merkScroll) ein anderer war.
+    const merkFs = document.body.classList.contains('race-fs');
+    // GEFUNDEN BEIM BAUEN: menuNavRender() scrollt die fokussierte Zeile ins Bild
+    // (scrollIntoView), und dieser Bildlauf blieb auch nach dem Zurueckwechseln auf den
+    // urspruenglichen Tab stehen - document.body, nicht das Fenster, ist hier der
+    // scrollende Container. Ein spaeterer Test (der Lautsprecher-Knopf) berechnet seine
+    // Klickpunkte aus der Kastenposition, und die verschob sich durch den stehen
+    // gebliebenen Bildlauf genug, dass beide Haelften auf denselben Nachbarn trafen -
+    // ohne jeden Bezug zu dem, was dieser Test hier eigentlich prueft.
+    const merkScroll = document.body.scrollTop;
+    const fehler = [], teile = [];
+    try {
+      document.querySelector('.tab-btn[data-tab="options"]').click();
+      document.querySelectorAll('#tab-options .subpage').forEach((p) => p.classList.remove('on'));
+
+      // 1. Kachelseite: mehrere Kacheln, alle vom Typ "tile", in DOM-Reihenfolge.
+      const topRows = OMEGA_TEST.menuNavRowsLesen();
+      if (topRows.length < 5 || !topRows.every((r) => r.kind === 'tile')) {
+        fehler.push('Kachelseite: ' + topRows.length + ' Zeilen, nicht alle "tile"');
+      }
+      teile.push(topRows.length + ' Kacheln');
+
+      // 2. Eine Unterseite mit allen drei Reglertypen oeffnen.
+      document.querySelector('button.misc-tile.subpage-open[data-sub="opt-feel"]').click();
+      const rows = OMEGA_TEST.menuNavRowsLesen();
+      if (!rows.some((r) => r.kind === 'range')) fehler.push('kein Regler erkannt');
+      if (!rows.some((r) => r.kind === 'toggle')) fehler.push('kein Kontrollkaestchen erkannt');
+      if (!rows.some((r) => r.kind === 'select')) fehler.push('kein Auswahlfeld erkannt');
+
+      const springeZu = (kind) => {
+        const ziel = rows.findIndex((r) => r.kind === kind);
+        const jetzt = OMEGA_TEST.menuNavIndexLesen();
+        const d = ziel - jetzt;
+        for (let i = 0; i < Math.abs(d); i++) OMEGA_TEST.menuNavBewegen(d > 0 ? 'down' : 'up');
+        return ziel;
+      };
+
+      // 3. Regler: erst anwaehlen (Fokus allein darf NICHTS aendern), dann verstellen,
+      //    dann wieder zurueck - das ist die ganze Absicherung gegen die Fehlbedienung,
+      //    wegen der die alte Menuenavigation einmal ausgebaut wurde (siehe 50b-menu-nav.js).
+      springeZu('range');
+      const rangeEl = document.querySelector('.menu-nav-sel input[type="range"]');
+      const vorRegler = rangeEl.value;
+      if (OMEGA_TEST.menuNavArmedLesen()) fehler.push('Regler ist schon angewaehlt, ohne X');
+      const stummVerstellt = OMEGA_TEST.menuNavVerstellen('right');
+      if (stummVerstellt || rangeEl.value !== vorRegler) {
+        fehler.push('Fokus allein hat den Regler schon veraendert');
+      }
+      OMEGA_TEST.menuNavAusloesen(); // anwaehlen
+      if (!OMEGA_TEST.menuNavArmedLesen()) fehler.push('X hat den Regler nicht angewaehlt');
+      if (!OMEGA_TEST.menuNavVerstellen('right')) fehler.push('rechts hat den angewaehlten Regler nicht verstellt');
+      if (rangeEl.value === vorRegler) fehler.push('Reglerwert nach rechts unveraendert');
+      OMEGA_TEST.menuNavVerstellen('left'); // zurueck auf den Ausgangswert
+      if (rangeEl.value !== vorRegler) {
+        fehler.push('Regler nach rechts+links nicht wieder bei ' + vorRegler + ' (ist ' + rangeEl.value + ')');
+      }
+      OMEGA_TEST.menuNavAusloesen(); // abwaehlen
+      if (OMEGA_TEST.menuNavArmedLesen()) fehler.push('zweites X hat den Regler nicht abgewaehlt');
+      teile.push('Regler ' + vorRegler + ': unveraendert bei blossem Fokus, hin und zurueck bei An-/Verstellen');
+
+      // 4. Kontrollkaestchen umschalten und zuruecksetzen.
+      springeZu('toggle');
+      const cb = document.querySelector('.menu-nav-sel input[type="checkbox"]');
+      const vorCb = cb.checked;
+      OMEGA_TEST.menuNavAusloesen();
+      if (cb.checked === vorCb) fehler.push('Kontrollkaestchen nicht umgeschaltet');
+      OMEGA_TEST.menuNavAusloesen();
+      if (cb.checked !== vorCb) fehler.push('Kontrollkaestchen nach zweimal X nicht am Ausgangswert');
+
+      // 5. Die Zurueck-Zeile (Index 0) fuehrt auf die Kachelseite. Erst zur Kachelseite
+      //    und zurueck in die Unterseite - dieselbe Unterseite erneut oeffnen wuerde den
+      //    Kontext (und damit den gemerkten Index) NICHT zuruecksetzen, siehe
+      //    menuNavEnsureContext() in 50b-menu-nav.js.
+      document.querySelectorAll('#tab-options .subpage').forEach((p) => p.classList.remove('on'));
+      // menuNavAktiv() und NICHT menuNavRowsLesen(): nur menuNavActive() ruft
+      // menuNavEnsureContext() auf und setzt damit den Index zurueck - eine reine
+      // Zeilenabfrage tut das bewusst nicht (sie soll den Zustand nicht nebenbei
+      // veraendern), und genau das hat dieser Test beim ersten Anlauf uebersehen.
+      OMEGA_TEST.menuNavAktiv();
+      document.querySelector('button.misc-tile.subpage-open[data-sub="opt-feel"]').click();
+      if (OMEGA_TEST.menuNavIndexLesen() !== 0) fehler.push('Unterseite oeffnet nicht auf Index 0');
+      OMEGA_TEST.menuNavAusloesen();
+      if (document.getElementById('sub-opt-feel').classList.contains('on')) {
+        fehler.push('Zurueck-Zeile hat die Unterseite nicht geschlossen');
+      }
+    } finally {
+      document.querySelectorAll('#tab-options .subpage').forEach((p) => p.classList.remove('on'));
+      if (merkTabName) {
+        const btn = document.querySelector('.tab-btn[data-tab="' + merkTabName + '"]');
+        if (btn) btn.click();
+      }
+      // Der Klick oben hat exitRaceFullscreen() schon ausgeloest, als dieser Test auf
+      // den Optionen-Tab wechselte (showTab() tut das bei jedem Tab ausser Rennen) - ein
+      // Klick zurueck auf den Renn-Tab holt das Vollbild NICHT von selbst zurueck.
+      if (merkFs && !document.body.classList.contains('race-fs')
+          && typeof enterRaceFullscreen === 'function') {
+        enterRaceFullscreen();
+      }
+      document.body.scrollTop = merkScroll;
+    }
+    return { ok: fehler.length === 0, mass: fehler.length ? fehler.join('; ') : teile.join(' | ') };
+  });
+
   stAdd('Strecke aus der Aufnahme lernen: Knopf sperrt sich waehrend der Wiedergabe', async () => {
     if (!window.OMEGA_TEST || !OMEGA_TEST.macroLearnProbe) {
       return { skip: true, mass: 'macroLearnProbe nicht vorhanden' };

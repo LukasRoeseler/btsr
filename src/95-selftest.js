@@ -1401,11 +1401,11 @@
     const a = OMEGA_TEST.padResolve({
       pitstop: { type: 'button', index: 9, label: 'Start / Options' },
       trackview: { type: 'button', index: 4, label: 'LB / L1' } });
-    teile.push('gepflanzt: scanmode ' + a.scanmode.label + ', trackview ' + a.trackview.label);
-    if (schluessel(a.scanmode) !== schluessel(vorgabe.scanmode)) {
-      schlecht.push('scanmode nicht mehr auf LB');
+    teile.push('gepflanzt: tyreSelect ' + a.tyreSelect.label + ', trackview ' + a.trackview.label);
+    if (schluessel(a.tyreSelect) !== schluessel(vorgabe.tyreSelect)) {
+      schlecht.push('tyreSelect nicht mehr auf LB');
     }
-    if (schluessel(a.trackview) === schluessel(a.scanmode)) {
+    if (schluessel(a.trackview) === schluessel(a.tyreSelect)) {
       schlecht.push('trackview liegt weiter auf LB');
     }
     if (!a.__kollisionen || !a.__kollisionen.length) schlecht.push('Kollision nicht gemeldet');
@@ -11766,6 +11766,118 @@
   // wiedergefundener Code laesst den Versuch erfolgreich enden, und ein Auto, das nicht
   // vorankommt (simuliert: die Physik wird jeden Takt auf 0 zurueckgesetzt, als stuende
   // es vor einem Hindernis), gibt VOR den drei Sekunden auf.
+  stAdd('Menuenavigation: Kacheln, Regler anwaehlen, Kontrollkaestchen, zurueck', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.menuNavRowsLesen) {
+      return { skip: true, mass: 'menuNavRowsLesen nicht vorhanden' };
+    }
+    const merkTab = document.querySelector('.tab-btn.active');
+    const merkTabName = merkTab ? merkTab.dataset.tab : null;
+    // Ein Wechsel auf einen anderen Tab loest exitRaceFullscreen() aus (showTab(),
+    // 10-ble-explorer.js), und ein blosser Klick zurueck stellt das Vollbild NICHT
+    // wieder her - eine Einbahnstrasse. Vorsichtshalber gemerkt, auch wenn der
+    // tatsaechlich gefundene Nebeneffekt (siehe merkScroll) ein anderer war.
+    const merkFs = document.body.classList.contains('race-fs');
+    // GEFUNDEN BEIM BAUEN: menuNavRender() scrollt die fokussierte Zeile ins Bild
+    // (scrollIntoView), und dieser Bildlauf blieb auch nach dem Zurueckwechseln auf den
+    // urspruenglichen Tab stehen - document.body, nicht das Fenster, ist hier der
+    // scrollende Container. Ein spaeterer Test (der Lautsprecher-Knopf) berechnet seine
+    // Klickpunkte aus der Kastenposition, und die verschob sich durch den stehen
+    // gebliebenen Bildlauf genug, dass beide Haelften auf denselben Nachbarn trafen -
+    // ohne jeden Bezug zu dem, was dieser Test hier eigentlich prueft.
+    const merkScroll = document.body.scrollTop;
+    const fehler = [], teile = [];
+    try {
+      document.querySelector('.tab-btn[data-tab="options"]').click();
+      document.querySelectorAll('#tab-options .subpage').forEach((p) => p.classList.remove('on'));
+
+      // 1. Kachelseite: mehrere Kacheln, alle vom Typ "tile", in DOM-Reihenfolge.
+      const topRows = OMEGA_TEST.menuNavRowsLesen();
+      if (topRows.length < 5 || !topRows.every((r) => r.kind === 'tile')) {
+        fehler.push('Kachelseite: ' + topRows.length + ' Zeilen, nicht alle "tile"');
+      }
+      teile.push(topRows.length + ' Kacheln');
+
+      // 2. Eine Unterseite mit allen drei Reglertypen oeffnen.
+      document.querySelector('button.misc-tile.subpage-open[data-sub="opt-feel"]').click();
+      const rows = OMEGA_TEST.menuNavRowsLesen();
+      if (!rows.some((r) => r.kind === 'range')) fehler.push('kein Regler erkannt');
+      if (!rows.some((r) => r.kind === 'toggle')) fehler.push('kein Kontrollkaestchen erkannt');
+      if (!rows.some((r) => r.kind === 'select')) fehler.push('kein Auswahlfeld erkannt');
+
+      const springeZu = (kind) => {
+        const ziel = rows.findIndex((r) => r.kind === kind);
+        const jetzt = OMEGA_TEST.menuNavIndexLesen();
+        const d = ziel - jetzt;
+        for (let i = 0; i < Math.abs(d); i++) OMEGA_TEST.menuNavBewegen(d > 0 ? 'down' : 'up');
+        return ziel;
+      };
+
+      // 3. Regler: erst anwaehlen (Fokus allein darf NICHTS aendern), dann verstellen,
+      //    dann wieder zurueck - das ist die ganze Absicherung gegen die Fehlbedienung,
+      //    wegen der die alte Menuenavigation einmal ausgebaut wurde (siehe 50b-menu-nav.js).
+      springeZu('range');
+      const rangeEl = document.querySelector('.menu-nav-sel input[type="range"]');
+      const vorRegler = rangeEl.value;
+      if (OMEGA_TEST.menuNavArmedLesen()) fehler.push('Regler ist schon angewaehlt, ohne X');
+      const stummVerstellt = OMEGA_TEST.menuNavVerstellen('right');
+      if (stummVerstellt || rangeEl.value !== vorRegler) {
+        fehler.push('Fokus allein hat den Regler schon veraendert');
+      }
+      OMEGA_TEST.menuNavAusloesen(); // anwaehlen
+      if (!OMEGA_TEST.menuNavArmedLesen()) fehler.push('X hat den Regler nicht angewaehlt');
+      if (!OMEGA_TEST.menuNavVerstellen('right')) fehler.push('rechts hat den angewaehlten Regler nicht verstellt');
+      if (rangeEl.value === vorRegler) fehler.push('Reglerwert nach rechts unveraendert');
+      OMEGA_TEST.menuNavVerstellen('left'); // zurueck auf den Ausgangswert
+      if (rangeEl.value !== vorRegler) {
+        fehler.push('Regler nach rechts+links nicht wieder bei ' + vorRegler + ' (ist ' + rangeEl.value + ')');
+      }
+      OMEGA_TEST.menuNavAusloesen(); // abwaehlen
+      if (OMEGA_TEST.menuNavArmedLesen()) fehler.push('zweites X hat den Regler nicht abgewaehlt');
+      teile.push('Regler ' + vorRegler + ': unveraendert bei blossem Fokus, hin und zurueck bei An-/Verstellen');
+
+      // 4. Kontrollkaestchen umschalten und zuruecksetzen.
+      springeZu('toggle');
+      const cb = document.querySelector('.menu-nav-sel input[type="checkbox"]');
+      const vorCb = cb.checked;
+      OMEGA_TEST.menuNavAusloesen();
+      if (cb.checked === vorCb) fehler.push('Kontrollkaestchen nicht umgeschaltet');
+      OMEGA_TEST.menuNavAusloesen();
+      if (cb.checked !== vorCb) fehler.push('Kontrollkaestchen nach zweimal X nicht am Ausgangswert');
+
+      // 5. Die Zurueck-Zeile (Index 0) fuehrt auf die Kachelseite. Erst zur Kachelseite
+      //    und zurueck in die Unterseite - dieselbe Unterseite erneut oeffnen wuerde den
+      //    Kontext (und damit den gemerkten Index) NICHT zuruecksetzen, siehe
+      //    menuNavEnsureContext() in 50b-menu-nav.js.
+      document.querySelectorAll('#tab-options .subpage').forEach((p) => p.classList.remove('on'));
+      // menuNavAktiv() und NICHT menuNavRowsLesen(): nur menuNavActive() ruft
+      // menuNavEnsureContext() auf und setzt damit den Index zurueck - eine reine
+      // Zeilenabfrage tut das bewusst nicht (sie soll den Zustand nicht nebenbei
+      // veraendern), und genau das hat dieser Test beim ersten Anlauf uebersehen.
+      OMEGA_TEST.menuNavAktiv();
+      document.querySelector('button.misc-tile.subpage-open[data-sub="opt-feel"]').click();
+      if (OMEGA_TEST.menuNavIndexLesen() !== 0) fehler.push('Unterseite oeffnet nicht auf Index 0');
+      OMEGA_TEST.menuNavAusloesen();
+      if (document.getElementById('sub-opt-feel').classList.contains('on')) {
+        fehler.push('Zurueck-Zeile hat die Unterseite nicht geschlossen');
+      }
+    } finally {
+      document.querySelectorAll('#tab-options .subpage').forEach((p) => p.classList.remove('on'));
+      if (merkTabName) {
+        const btn = document.querySelector('.tab-btn[data-tab="' + merkTabName + '"]');
+        if (btn) btn.click();
+      }
+      // Der Klick oben hat exitRaceFullscreen() schon ausgeloest, als dieser Test auf
+      // den Optionen-Tab wechselte (showTab() tut das bei jedem Tab ausser Rennen) - ein
+      // Klick zurueck auf den Renn-Tab holt das Vollbild NICHT von selbst zurueck.
+      if (merkFs && !document.body.classList.contains('race-fs')
+          && typeof enterRaceFullscreen === 'function') {
+        enterRaceFullscreen();
+      }
+      document.body.scrollTop = merkScroll;
+    }
+    return { ok: fehler.length === 0, mass: fehler.length ? fehler.join('; ') : teile.join(' | ') };
+  });
+
   stAdd('Strecke aus der Aufnahme lernen: Knopf sperrt sich waehrend der Wiedergabe', async () => {
     if (!window.OMEGA_TEST || !OMEGA_TEST.macroLearnProbe) {
       return { skip: true, mass: 'macroLearnProbe nicht vorhanden' };

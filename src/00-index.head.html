@@ -1969,6 +1969,15 @@
   .opt-head[data-grp="7"] { border-left-color: hsl(320 60% 62%); }
   .opt-head[data-grp="8"] { border-left-color: hsl( 20 75% 58%); }
   .opt-row:last-child { border-bottom: none; }
+  /* ---- Menuenavigation (Phase 13): der sichtbare Fokus ----
+     Ohne diese Markierung waere die neue Navigation blind zu bedienen - man saehe der
+     Zeile nicht an, dass hoch/runter und X gerade SIE meinen. Rot (--bad, hier als
+     Akzentfarbe, nicht als Fehleranzeige - derselbe Gebrauch wie beim aktiven Tab und
+     den .sel-Kacheln im Projekt) fuer "fokussiert", Gruen (--good) sobald ein Regler
+     ANGEWAEHLT ist und links/rechts seinen Wert aendern statt den Tab zu wechseln. */
+  .menu-nav-sel { outline: 3px solid var(--bad); outline-offset: -2px; }
+  .opt-row.menu-nav-sel, .misc-tile.menu-nav-sel { border-radius: 8px; }
+  .menu-nav-armed { outline-color: var(--good); }
   .opt-label { font-size: 13.5px; line-height: 1.35; min-width: 0; }
   .opt-label small { display: block; color: var(--muted); font-size: 11px;
     margin-top: 3px; line-height: 1.4; }
@@ -3120,7 +3129,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.7.25</span></span>
+        <span class="foot-ver">v<span id="app-version">0.7.26</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>

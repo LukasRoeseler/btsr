@@ -49,9 +49,14 @@
     //
     // Die rechte Schulter bleibt das Rennen, die Trigger bleiben Gas und Bremse.
     pitstop: { type: 'button', index: 9, label: 'Options (PS) / Start (Xbox)' },
-    // LB und RB machen jetzt die zwei Umschaltungen, die man WAEHREND der Fahrt braucht:
-    // welche Kodierung gelesen wird, und ob von Hand geschaltet wird. Beide sind
-    // Fahrentscheidungen und gehoeren unter die Zeigefinger.
+    // LB/RB machen seit Phase 13 (Controller-Umbau) die Reifen-/Tankvorwahl - dieselben
+    // zwei Funktionen, die vorher am Steuerkreuz hoch/runter hingen. Das Kreuz ist damit
+    // frei fuer die neue Menuenavigation (siehe D-Pad hoch/runter weiter unten).
+    //
+    // Leseart (Bahn/Ausdruck) und Getriebe (Automatik/von Hand), die vorher hier lagen,
+    // haben KEINE Gamepad-Belegung mehr - ersatzlos, wie bestellt ("kein Ersatzknopf,
+    // keine Einbindung in die neue Menue-Navigation noetig"). Beide bleiben reine
+    // Tipp-/Klick-Schalter in den Optionen.
     //
     // Rennen starten zieht dafuer um, und seit v0.5.1 auf Select: Kreuz traegt die gelbe
     // Flagge, weil "X" in PlayStation-Namen genau diese Taste ist - die alte Beschriftung
@@ -60,8 +65,8 @@
     // Die Streckenansicht ist ab Werk UNBELEGT. Sie lag auf L3, und der linke Stick soll
     // beim Lenken nichts ausloesen; ausserdem verlaesst sie das Cockpit. Das Touchpad bleibt
     // ebenfalls frei, weil das System es als Zeiger fuehrt.
-    scanmode: { type: 'button', index: 4, label: 'L1 (PS) / LB (Xbox)' },
-    gearmode: { type: 'button', index: 5, label: 'R1 (PS) / RB (Xbox)' },
+    tyreSelect: { type: 'button', index: 4, label: 'L1 (PS) / LB (Xbox)' },
+    fuelSelect: { type: 'button', index: 5, label: 'R1 (PS) / RB (Xbox)' },
     // X hat ZWEI Bedeutungen: kurz ist Runterschalten, eine Sekunde gehalten die gelbe
     // Flagge - genau wie die Taste X auf der Tastatur. Das Halten ist der Schutz: die gelbe
     // Flagge bremst jedes Auto auf 40 km/h, und ein Knopf, der das mit einem Antippen tut,
@@ -99,8 +104,8 @@
     headlights: 'Licht an/aus', lightflash: 'Lichthupe', pitstop: 'Boxenstopp',
     schirmZurueck: 'Cockpit-Schirm zurück', schirmVor: 'Cockpit-Schirm vor',
     racestart: 'Rennen starten / abbrechen',
-    scanmode: 'Leseart: Bahn oder Ausdruck',
-    gearmode: 'Getriebe: Automatik oder von Hand',
+    tyreSelect: 'Reifenwahl weiter',
+    fuelSelect: 'Tankmenge weiter',
     yellowflag: 'Gelbe Flagge (1 s halten)',
     weather: 'Wetter umschalten',
     trackview: 'Streckenansicht',
@@ -322,7 +327,7 @@
   let prevDownshift = false, prevUpshift = false, prevHeadlights = false;
   // Die drei neuen Aktionen. padFlagFired merkt sich, dass die Sekunde in DIESEM Druck schon
   // voll war - ohne das wuerde die Flagge im Takt danach gleich wieder umgeschaltet.
-  let prevScanMode = false, prevGearMode = false, prevYellowFlag = false;
+  let prevTyreSelect = false, prevFuelSelect = false, prevYellowFlag = false;
   let padFlagFired = false;
 
   function bindingDescription(b) {
@@ -3800,7 +3805,12 @@
   // worden. Der Ladebalken startet auf den anderen Schirmen gar nicht erst, statt bei 40
   // Prozent stehenzubleiben.
   function flagTasteTick(flagNow) {
-    if (cockpitScreenIst().id !== 'main') {
+    // NEUE ERSTE STUFE (Phase 13): auf dem Optionen-Tab bestaetigt/waehlt dieselbe
+    // Taste die fokussierte Zeile der Menuenavigation an - noch vor der Frage, welcher
+    // Cockpit-Schirm gerade offen ist (der ist dann ohnehin nicht der aktive Tab).
+    if (menuNavActive()) {
+      if (flagNow && !prevYellowFlag) menuNavActivate();
+    } else if (cockpitScreenIst().id !== 'main') {
       if (flagNow && !prevYellowFlag) cockpitScreenWaehlen();
     } else {
       if (flagNow && !prevYellowFlag) { padFlagFired = false; flagHoldPress(); }
@@ -8229,26 +8239,15 @@
       if (trackViewNow && !prevTrackView) toggleTrackView();
       prevTrackView = trackViewNow;
 
-      // Leseart und Getriebe gehen ueber die Bedienelemente in den Optionen und deren
-      // 'change'-Ereignis - wie der Knopf im Cockpit und die Reifenkachel. Damit gibt es
-      // keinen zweiten Zustand, und die Optionen ziehen von selbst nach.
-      const scanNow = readBindingValue(pad, bindings.scanmode) > BUTTON_CAPTURE_THRESHOLD;
-      if (scanNow && !prevScanMode) {
-        const sw = $('setting-ontrack');
-        if (sw) { sw.checked = !sw.checked; sw.dispatchEvent(new Event('change', { bubbles: true })); }
-      }
-      prevScanMode = scanNow;
+      // LB/RB: Reifenwahl und Tankvorwahl, dieselben Funktionen, die vorher am
+      // Steuerkreuz hoch/runter hingen (siehe die Begruendung bei den Bindings oben).
+      const tyreNow = readBindingValue(pad, bindings.tyreSelect) > BUTTON_CAPTURE_THRESHOLD;
+      if (tyreNow && !prevTyreSelect) pitMischungWeiter();
+      prevTyreSelect = tyreNow;
 
-      const gearNow = readBindingValue(pad, bindings.gearmode) > BUTTON_CAPTURE_THRESHOLD;
-      if (gearNow && !prevGearMode) {
-        const sw = $('setting-autoshift');
-        if (sw) {
-          sw.checked = !sw.checked;
-          sw.dispatchEvent(new Event('change', { bubbles: true }));
-          showHudToast(sw.checked ? 'AUTOMATIK' : 'VON HAND');
-        }
-      }
-      prevGearMode = gearNow;
+      const fuelNow = readBindingValue(pad, bindings.fuelSelect) > BUTTON_CAPTURE_THRESHOLD;
+      if (fuelNow && !prevFuelSelect) pitVorwahlSchalten('refuel');
+      prevFuelSelect = fuelNow;
 
       // Gelbe Flagge auf HALTEN. Dieselben zwei Funktionen wie die Taste X, nicht eine
       // zweite Fassung der Logik: flagHoldPress startet den Ladebalken, flagHoldRelease(true)
@@ -8282,82 +8281,78 @@
       const dLeft = padDpad(pad, 'left'), dRight = padDpad(pad, 'right');
       // Two consumers can claim the D-pad before the normal bindings see it: the track
       // editor in fullscreen, and an armed pit stop. Each returns true when it took the
-      // press, so at every other moment the pad keeps its usual job (accel and steering
-      // trim) — the meaning is never changed permanently, only while something is
-      // genuinely waiting for a decision.
-      // Nur noch zwei Verbraucher vor der Fahrfunktion: der Streckeneditor im Vollbild und
-      // ein scharfer Boxenstopp. Die allgemeine Menuenavigation ist ausgebaut - sie griff auf
-      // jedem Tab und auf jedes fokussierbare Element, und genau daraus kamen die
-      // Fehlbedienungen: ein Druck aufs Steuerkreuz verstellte irgendeinen Regler, den man
-      // gerade nicht im Blick hatte. Die Programmierschule hing an derselben Kette und ist
-      // mit ausgebaut; sie laesst sich weiterhin mit Maus und Finger bedienen.
-      // NEUE BELEGUNG seit v0.5.18, auf Wunsch:
+      // press, so at every other moment the pad keeps its usual job — the meaning is
+      // never changed permanently, only while something is genuinely waiting for a
+      // decision.
       //
-      //   hoch/runter    Lenkansprechen (vorher: Bremsbalance)
-      //   links/rechts   Cockpit-Schirm blaettern (vorher: Lenkansprechen)
+      // ---- PHASE 13: HOCH/RUNTER IST JETZT DIE MENUENAVIGATION -----------------------
       //
-      // Die Bremsbalance behaelt zwei Wege - den Regler in den Optionen und die Zieh-Skala
-      // im Cockpit -, und das genuegt fuer eine Groesse, die man einmal je Stint nachzieht.
+      // Der Kommentar, der hier bis Phase 13 stand, dokumentierte genau die Lehre, die
+      // diese Phase ernst nimmt: eine FRUEHERE, allgemeine Menuenavigation griff auf
+      // JEDEM Tab und JEDEM fokussierbaren Element, und genau daraus kamen die
+      // Fehlbedienungen. Diesmal ist sie eng geschnitten:
       //
-      // LINKS/RECHTS wird dem Boxenschirm ausdruecklich NICHT angeboten: ein Schirm, der die
-      // Taste frisst, mit der man ihn verlaesst, ist eine Sackgasse.
-      // ---- HOCH/RUNTER: REIFENWAHL UND TANKMENGE -------------------------------
+      //   - Nur auf dem Optionen-Tab passiert ueberhaupt etwas (menuNavMove()/
+      //     menuNavActive() pruefen das selbst, siehe 50b-menu-nav.js) - auf jedem
+      //     anderen Tab (Cockpit auf dem Hauptschirm, Garage, Strecke, ...) ist
+      //     hoch/runter ein Aufruf ins Leere.
+      //   - Regler und Auswahlfelder AENDERN SICH NICHT durch den Fokus allein: sie
+      //     muessen erst mit der Waehltaste "angewaehlt" werden (menuNavArmed), bevor
+      //     links/rechts ihren Wert veraendert. Ein Fokuswechsel kann also nie
+      //     versehentlich einen Wert kippen - nur ein zweiter, bewusster Tastendruck.
       //
-      // BESTELLT: "D-Pad hoch und runter im Cockpit aendert nicht Lenkung oder Brakebias,
-      // sondern: D-Pad oben schaltet Reifentypen durch und bestimmt, was beim naechsten
-      // Boxenstopp aufgezogen wird. D-Pad runter schaltet die Tankmenge durch - nicht
-      // tanken, halb, voll."
-      //
-      // Hier stand nudgeSteerResponse(+-0,1). Die VORRANGKETTE bleibt unveraendert:
-      // Streckeneditor und Boxenschirm bekommen die Taste zuerst, und nur was sie nicht
-      // verbrauchen, landet hier. Getauscht ist allein das letzte Glied.
-      //
-      // DIESELBEN FUNKTIONEN wie im Boxenschirm: pitMischungWeiter() und
-      // pitVorwahlSchalten('refuel') sind die Wege, die auch die Waehltaste nimmt. Ein
-      // eigener Zweig fuers Kreuz waere ein zweiter Ort mit derselben Aufgabe - und der
-      // erste, an dem Kachel und Menue auseinanderlaufen.
-      // raceScreenPad(): derselbe Griff wie pitScreenPad() daneben, fuer den neuen
-      // Renneinstellungen-Schirm - siehe die Begruendung dort (70-race.js). Beide geben
-      // false zurueck, solange ihr eigener Schirm nicht der aktive ist, stoeren also
-      // einander nicht.
+      // pitScreenPad()/raceScreenPad() bekommen die Taste weiterhin ZUERST: auf dem
+      // Boxen- oder Renneinstellungen-Schirm gilt weiter ihre eigene, laengst gemessene
+      // Zeilenauswahl - menuNavMove() greift nur, wenn beide ablehnen (auf dem
+      // Optionen-Tab tun sie das immer, weil dort keiner der beiden Schirme aktiv ist).
       if (dUp && !prevDpad.up && !trackEditorPad('up') && !pitScreenPad('up')
           && !raceScreenPad('up')) {
-        pitMischungWeiter();
+        menuNavMove('up');
       }
       if (dDown && !prevDpad.down && !trackEditorPad('down') && !pitScreenPad('down')
           && !raceScreenPad('down')) {
-        pitVorwahlSchalten('refuel');
+        menuNavMove('down');
       }
-      // ---- BLAETTERN UEBER DIE BELEGUNG, nicht ueber das Kreuz -------------------
+      // ---- LINKS/RECHTS: REGLER, VOLLBILD-SCHIRME, ODER TABS -------------------------
       //
-      // Hier stand `if (dLeft && ...) cockpitScreenStep(-1)`, also das Steuerkreuz
-      // festverdrahtet. Jetzt liest es dieselbe Belegung wie Gas und Lichthupe, mit dem
-      // Kreuz als Vorgabe - siehe schirmZurueck/schirmVor in den Vorgabebelegungen.
+      // BESTELLT: "D-Pad links/rechts wechselt TABS - ausser bei einem angewaehlten
+      // Regler (dort verstellt es den Wert; gedrueckt halten beschleunigt) und ausser im
+      // Cockpit-Vollbild, wo es weiterhin die Cockpit-Schirme durchblaettert wie heute."
       //
-      // ZWEI FOLGEN, und beide sind gewollt:
-      //
-      //   Wer sie umlegt, blaettert mit dem neuen Knopf. Das Kreuz ist dann frei.
-      //   Wer sie LOESCHT, blaettert mit dem Gamepad gar nicht mehr - der Knopf am Schirm
-      //   und der Finger bleiben. Genau das war bestellt ("oder gar nicht zu belegen").
-      //
-      // Die Prev-Flanken liegen weiter in prevDpad, auch wenn die Belegung nicht mehr das
-      // Kreuz ist: es ist der Speicher fuer "war im letzten Takt gedrueckt", und woher der
-      // Wert kam, ist ihm gleich. Zwei Speicher fuer dieselbe Flanke waeren die naechste
-      // Stelle, an der etwas auseinanderlaeuft.
-      const schirmZ = readBindingValue(pad, bindings.schirmZurueck) > BUTTON_CAPTURE_THRESHOLD;
-      const schirmV = readBindingValue(pad, bindings.schirmVor) > BUTTON_CAPTURE_THRESHOLD;
-      // trackEditorPad() bekommt weiter das KREUZ und nicht die Belegung: der
-      // Streckeneditor bewegt seinen Zeiger mit dem Kreuz, und das ist keine belegbare
-      // Aktion. Ohne diese Trennung wuerde ein umgelegtes Blaettern den Editor mitnehmen.
-      if (dLeft && !prevDpad.left && trackEditorPad('left')) { /* Editor hat sie */ }
-      else if (schirmZ && !prevDpad.left) cockpitScreenStep(-1);
-      if (dRight && !prevDpad.right && trackEditorPad('right')) { /* Editor hat sie */ }
-      else if (schirmV && !prevDpad.right) cockpitScreenStep(+1);
+      // ANGEWAEHLTER REGLER GEHT JEDEM TAKT, nicht nur auf der steigenden Flanke - genau
+      // das ist die bestellte Wiederholung beim Halten. menuNavAdjustPad() fuehrt ihren
+      // eigenen kleinen Zeitgeber (erste Stufe sofort, danach alle 120 ms) und ist damit
+      // der EINZIGE Verbraucher, solange etwas angewaehlt ist: der Streckeneditor, das
+      // Blaettern der Cockpit-Schirme und der neue Tabwechsel bekommen die Taste gar
+      // nicht erst angeboten - ein angewaehlter Regler darf durch nichts anderes
+      // unterbrochen werden.
+      if (menuNavArmed) {
+        menuNavAdjustPad('left', dLeft);
+        menuNavAdjustPad('right', dRight);
+        // Auch hier merken, sonst sieht der andere Zweig beim Loslassen des Reglers eine
+        // veraltete Flanke und feuert einmal ins Leere (Editor/Tabwechsel), obwohl das
+        // Kreuz in Wahrheit schon laenger gehalten wird.
+        prevDpad.left = dLeft; prevDpad.right = dRight;
+      } else {
+        // schirmZurueck/schirmVor bleiben die belegbare Aktion, aber NUR NOCH im
+        // Cockpit-Vollbild wirksam - ausserhalb ist sie durch den neuen Tabwechsel
+        // ersetzt, der das rohe Steuerkreuz liest (dieselbe Begruendung wie beim alten
+        // "festverdrahtet vs. belegbar": der Tabwechsel ist keine Fahrentscheidung, die
+        // man umlegen wollen wuerde).
+        const raceFs = document.body.classList.contains('race-fs');
+        const schirmZ = readBindingValue(pad, bindings.schirmZurueck) > BUTTON_CAPTURE_THRESHOLD;
+        const schirmV = readBindingValue(pad, bindings.schirmVor) > BUTTON_CAPTURE_THRESHOLD;
+        if (dLeft && !prevDpad.left && trackEditorPad('left')) { /* Editor hat sie */ }
+        else if (raceFs && schirmZ && !prevDpad.left) cockpitScreenStep(-1);
+        else if (!raceFs && dLeft && !prevDpad.left) menuNavTabWechsel(-1);
+        if (dRight && !prevDpad.right && trackEditorPad('right')) { /* Editor hat sie */ }
+        else if (raceFs && schirmV && !prevDpad.right) cockpitScreenStep(+1);
+        else if (!raceFs && dRight && !prevDpad.right) menuNavTabWechsel(+1);
+        // Die Flanken der BELEGUNG merken, nicht die des Kreuzes - sonst feuert ein
+        // umgelegter Knopf in jedem Takt, weil seine Flanke nie als verbraucht gilt.
+        prevDpad.left = schirmZ || dLeft; prevDpad.right = schirmV || dRight;
+      }
       prevDpad.up = dUp; prevDpad.down = dDown;
-      // Die Flanken der BELEGUNG merken, nicht die des Kreuzes - sonst feuert ein
-      // umgelegter Knopf in jedem Takt, weil seine Flanke nie als verbraucht gilt.
-      prevDpad.left = schirmZ || dLeft; prevDpad.right = schirmV || dRight;
-
     }
     // Keep prev-flags fresh even while rebinding, otherwise they go stale and the first
     // press after a rebind is swallowed (or fires twice).

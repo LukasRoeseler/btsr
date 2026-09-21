@@ -2057,6 +2057,8 @@
     "lernt…": "learning…",
     "__N__ Teile gelernt.": "__N__ pieces learned.",
     "Keine geschlossene Runde erkannt - nochmal versuchen.": "No closed lap detected - try again.",
+    "Reifenwahl weiter": "Next tyre choice",
+    "Tankmenge weiter": "Next fuel amount",
   };
 
   // ============================================================================

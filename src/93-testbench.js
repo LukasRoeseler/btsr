@@ -22,6 +22,21 @@
   //      sie und stellt sie von Hand.
 
   window.OMEGA_TEST = {
+    // ---- Menuenavigation (Phase 13, 50b-menu-nav.js) --------------------------------
+    //
+    // Reine Durchreichen zu den modulinternen Funktionen - keine eigene Logik, damit ein
+    // Prueflauf genau das misst, was auch Gamepad und Tastatur aufrufen, nicht eine
+    // zweite, nachgebaute Fassung.
+    menuNavRowsLesen() {
+      return menuNavRows().map((r) => ({ kind: r.kind, text: (r.el.textContent || '').trim().slice(0, 40) }));
+    },
+    menuNavIndexLesen() { return menuNavIndex; },
+    menuNavArmedLesen() { return menuNavArmed; },
+    menuNavBewegen(dir) { menuNavMove(dir); },
+    menuNavAusloesen() { menuNavActivate(); },
+    menuNavVerstellen(dir) { return menuNavAdjust(dir); },
+    menuNavAktiv() { return menuNavActive(); },
+
     // ---- Passt das Cockpit in die Bildschirmhoehe? ---------------------------------
     //
     // Gemessen wird an der EINPASSUNG selbst: sie gibt zurueck, wieviel Platz da ist,

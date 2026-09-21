@@ -360,8 +360,12 @@
     // DIESELBE REGEL WIE AM CONTROLLER: der Schirm entscheidet. Stuende hier nur
     // flagHoldPress(), gaebe die Tastatur im Boxenmenue Gelb, waehrend der Controller dort
     // waehlt - zwei Bedeutungen fuer eine Taste, unterschieden durch das Eingabegeraet.
-    if (k === 'x' && !e.repeat) {
-      if (cockpitScreenIst().id !== 'main') cockpitScreenWaehlen();
+    // 'enter' spiegelt 'x' Taste fuer Taste (Phase 13: Menuenavigation ohne Gamepad
+    // pruefbar) - dieselbe Drei-Stufen-Kette wie am Controller: Menuenavigation vor
+    // Cockpit-Schirm vor gelber Flagge.
+    if ((k === 'x' || k === 'enter') && !e.repeat) {
+      if (menuNavActive()) menuNavActivate();
+      else if (cockpitScreenIst().id !== 'main') cockpitScreenWaehlen();
       else flagHoldPress();
     }
     if (k === 'q' && !e.repeat) debugCountLap(e.shiftKey);
@@ -376,13 +380,26 @@
   });
   window.addEventListener('keydown', (e) => {
     if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)) e.preventDefault();
+    // Phase 13: auf dem Optionen-Tab lenken die Pfeiltasten die Menuenavigation statt zu
+    // steuern - sonst wuerde ein Fokuswechsel gleichzeitig das (nicht sichtbare) Auto
+    // ansteuern. JEDES keydown zaehlt, auch die vom Betriebssystem wiederholten waehrend
+    // eine Taste gehalten wird - genau das ist die bestellte Wiederholung beim Halten,
+    // ohne einen eigenen Zeitgeber wie am Gamepad (dort gibt es kein natives Wiederholen).
+    if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key) && menuNavActive()) {
+      if (e.key === 'ArrowUp') menuNavMove('up');
+      else if (e.key === 'ArrowDown') menuNavMove('down');
+      else if (e.key === 'ArrowLeft') { if (!menuNavAdjust('left')) menuNavTabWechsel(-1); }
+      else if (e.key === 'ArrowRight') { if (!menuNavAdjust('right')) menuNavTabWechsel(1); }
+      return;
+    }
     keys.add(e.key);
   });
   window.addEventListener('keyup', (e) => {
     keys.delete(e.key);
     // Loslassen der Halten-Geste. Zu frueh losgelassen heisst ausdruecklich: nichts
     // passiert - ein halber Druck darf keine halbe Wirkung haben.
-    if ((e.key || '').toLowerCase() === 'x') flagHoldRelease(false);
+    const kUp = (e.key || '').toLowerCase();
+    if (kUp === 'x' || kUp === 'enter') flagHoldRelease(false);
   });
   // Auch bei blur, sonst haengt der Balken, wenn das Fenster waehrend des Haltens den Fokus
   // verliert - und der naechste Druck waere wirkungslos, weil flagHoldStart noch belegt ist.
@@ -394,10 +411,16 @@
   // handled generically by applySteerInput/applyThrottleInput for every source.
   setInterval(() => {
     let sx = 0, ty = 0;
-    if (keys.has('ArrowLeft')) sx -= 1;
-    if (keys.has('ArrowRight')) sx += 1;
-    if (keys.has('ArrowUp')) ty += 1;
-    if (keys.has('ArrowDown')) ty -= 1;
+    // Phase 13 Sicherheitsnetz: waehrend die Pfeiltasten die Menuenavigation bedienen,
+    // duerfen sie nicht GLEICHZEITIG das Auto steuern - auch nicht aus einer Taste, die
+    // noch aus der Zeit VOR dem Wechsel auf den Optionen-Tab in `keys` haengt (z.B. ein
+    // Klick mit der Maus auf den Tab waehrend eine Pfeiltaste physisch gehalten wird).
+    if (!menuNavActive()) {
+      if (keys.has('ArrowLeft')) sx -= 1;
+      if (keys.has('ArrowRight')) sx += 1;
+      if (keys.has('ArrowUp')) ty += 1;
+      if (keys.has('ArrowDown')) ty -= 1;
+    }
     if (keys.has(' ')) { sx = 0; ty = 0; }
     applySteerInput(SRC.KEY, sx);
     applyThrottleInput(SRC.KEY, ty);
