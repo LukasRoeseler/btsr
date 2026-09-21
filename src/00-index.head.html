@@ -3088,7 +3088,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.7.10</span></span>
+        <span class="foot-ver">v<span id="app-version">0.7.11</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -6235,9 +6235,15 @@
         <button id="gar-disconnect-all">Alle trennen</button>
         <span class="muted" id="gar-count">keine Autos verbunden</span>
         <div class="spacer" style="flex:1"></div>
+        <!-- BESTELLT: "streckenscan soll ein button in der garage sein neben dem ersten
+             auto. Es soll dann mit querlage = 0 in mittlerem Tempo über die strecke
+             fahren und anhalten, wenn ein geschlossener rundkurs gemessen wurde." -->
+        <button id="gar-scan-start" title="Faehrt automatisch eine Runde und uebernimmt sie, sobald sie als geschlossener Rundkurs erkannt ist">Streckenscan</button>
+        <button id="gar-scan-stop" hidden>Scan abbrechen</button>
         <button id="gar-stop-ghosts" disabled>Ghosts anhalten</button>
         <button class="primary" id="gar-go" disabled>Losfahren</button>
       </div>
+      <p class="muted" id="gar-scan-status" style="font-size:11.5px; margin:-6px 0 10px 0" data-i18n-skip></p>
       <!-- BESTELLT: "Im Garage Tab ueber den Autos Link zum Cockpit stattdessen einfuegen"
            (statt des entfernten Cockpit-Knopfs auf der Startseite). -->
       <button class="goto-tab" id="gar-to-cockpit" data-tab="race"

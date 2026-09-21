@@ -1410,6 +1410,67 @@
       }
     },
 
+    // Die Versuchsgrenze aus 60-track.js, damit ein Test sie nicht als eigene Zahl
+    // abschreiben muss - zwei Orte fuer dieselbe Zahl laufen sonst auseinander.
+    garageScanVersucheMax: GARAGE_SCAN_VERSUCHE_MAX,
+
+    // ---- GARAGENSCAN: SCHLIESST DIE RUNDE, UND WENN NICHT, WIRD ES NOCHMAL VERSUCHT ---
+    //
+    // BESTELLT: "Wenn es dann wieder ueber start faehrt, muss die strecke geschlossen
+    // sein. Wenn nicht, dann miss noch eine runde, und pruefe wieder." Gefuettert wird
+    // garageScanTick() mit gebauten Meldepaketen, derselbe Aufbau wie lernProbe() daneben.
+    // `runde` ist EIN Runde-Abschnitt (ohne die Start/Ziel-Kachel, die kommt aus dem
+    // Anker); je `opt.laeufe` Wiederholungen simulieren so viele gefahrene Runden.
+    garageScanProbe(runde, o) {
+      const opt = o || {};
+      const merkTiles = currentTrackTiles;
+      const merkAktiv = garageScan.aktiv, merkCar = garageScan.car, merkSeq = garageScan.seq,
+            merkVersuch = garageScan.versuch;
+      const echtNow = Date.now;
+      const a1 = { device: { id: 'probe-garagenscan' }, role: 'player', testSenke: [] };
+      try {
+        currentTrackTiles = [];
+        garageScan.aktiv = true;
+        garageScan.car = a1;
+        garageScan.seq = [];
+        garageScan.started = false;
+        garageScan.sperreVor = false;
+        garageScan.sperreFlanke = false;
+        garageScan.versuch = 1;
+        garageScan.lastCount = null;
+        garageScan.votes = {};
+        let uhr = echtNow();
+        Date.now = () => uhr;
+        let zaehler = 0;
+        const paket = (code, sperre) => {
+          const b = new Array(16).fill(0);
+          b[11] = zaehler & 0xff; b[12] = code; b[15] = sperre ? 0x08 : 0x00;
+          return b;
+        };
+        const laeufe = opt.laeufe || 1;
+        for (let r = 0; r < laeufe && garageScan.aktiv; r++) {
+          for (let i = 0; i < runde.length; i++) {
+            const sperre = i === 0;   // dieselbe Konvention wie bei lernProbe: Anker am ersten Teil
+            for (let k = 0; k < 4; k++) {
+              uhr += 70;
+              garageScanTick(paket(runde[i], sperre && k < 3));
+            }
+            zaehler++;
+          }
+        }
+        return { aktiv: garageScan.aktiv, teile: currentTrackTiles.length,
+                 versuch: garageScan.versuch };
+      } finally {
+        Date.now = echtNow;
+        garageScan.aktiv = merkAktiv;
+        garageScan.car = merkCar;
+        garageScan.seq = merkSeq;
+        garageScan.versuch = merkVersuch;
+        currentTrackTiles = merkTiles;
+        lineCache = null;
+      }
+    },
+
     // ---- Eine RC-Fernbedienung belegen, ohne eine zu haben --------------------------
     //
     // Nachgebaut wird, was gemeldet wurde: Achsen, die NICHT bei null ruhen. Ein

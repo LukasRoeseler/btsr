@@ -3356,6 +3356,153 @@
   $('track-scan-start').onclick = startTrackScan;
   $('track-scan-stop').onclick = stopTrackScan;
 
+  // ---- STRECKENSCAN AUS DER GARAGE: MIT AUTOPILOT, MIT SCHLUSSPRUEFUNG ---------------
+  //
+  // BESTELLT: "Streckenscan ueberarbeiten: fange mit Scan erst an, wenn auto ueber start
+  // gefahren ist. Wenn es dann wieder ueber start faehrt, muss die strecke geschlossen
+  // sein. Wenn nicht, dann miss noch eine runde, und pruefe wieder. Ausserdem soll
+  // streckenscan ein button in der garage sein neben dem ersten auto. Es soll dann mit
+  // querlage = 0 in mittlerem Tempo ueber die strecke fahren und anhalten, wenn ein
+  // geschlossener Rundkurs gemessen wurde."
+  //
+  // EIGENE, KLEINERE ZUSTANDSMASCHINE statt learnTick() wiederzuverwenden: learnTick()
+  // haengt am IMMER LAUFENDEN Hintergrundlernen (ghostCfg.learn) und uebernimmt die
+  // zweite Ueberfahrt UNGEPRUEFT - genau die Pruefung, die hier verlangt ist, fehlt dort.
+  // Ihre Zustaende zu teilen hiesse, das Hintergrundlernen mitten in einem Scan
+  // anzuhalten oder zwei Verbraucher an einem Zustand haengen zu lassen; eine eigene,
+  // kleine Maschine ist die kleinere Aenderung. trackSchluss()/trackCenterline() (siehe
+  // oben) sind bereits gebaut und gemessen - genau das Werkzeug fuer "ist es ein
+  // geschlossener Rundkurs".
+  const garageScan = { aktiv: false, car: null, seq: [], started: false,
+                       sperreVor: false, sperreFlanke: false, versuch: 0,
+                       lastCount: null, votes: {} };
+  const GARAGE_SCAN_VERSUCHE_MAX = 5;
+
+  function garageScanSperre(bytes) {
+    const jetzt = (bytes[15] & 0x08) !== 0;
+    if (jetzt && !garageScan.sperreVor) garageScan.sperreFlanke = true;
+    garageScan.sperreVor = jetzt;
+  }
+
+  function garageScanStatus(text) {
+    const el = $('gar-scan-status');
+    if (el) el.textContent = text;
+  }
+
+  function garageScanAbbrechen(meldung) {
+    garageScan.aktiv = false;
+    garageScan.car = null;
+    const gehen = $('gar-scan-start'), stopp = $('gar-scan-stop');
+    if (gehen) { gehen.hidden = false; gehen.disabled = false; }
+    if (stopp) stopp.hidden = true;
+    if (meldung) garageScanStatus(meldung);
+  }
+
+  function garageScanStart() {
+    if (trackScanning) {
+      alert('Der manuelle Streckeneditor-Scan läuft noch – dort zuerst stoppen.');
+      return;
+    }
+    const car = playerCar || garage.find((c) => c.role === 'player') || garage[0];
+    if (!car) { alert('Kein Auto verbunden. Erst in der Garage verbinden.'); return; }
+    garageScan.aktiv = true;
+    garageScan.car = car;
+    garageScan.seq = [];
+    garageScan.started = false;
+    garageScan.sperreVor = false;
+    garageScan.sperreFlanke = false;
+    garageScan.versuch = 1;
+    garageScan.lastCount = null;
+    garageScan.votes = {};
+    const gehen = $('gar-scan-start'), stopp = $('gar-scan-stop');
+    if (gehen) gehen.hidden = true;
+    if (stopp) stopp.hidden = false;
+    garageScanStatus('Wartet auf die erste Überfahrt von Start/Ziel …');
+    log('Garagenscan gestartet: ' + garageLabel(car)
+        + ' fährt mit Autopilot (Querlage 0, Formationstempo), bis der Rundkurs '
+        + 'geschlossen gemessen wurde.', 'info');
+  }
+
+  function garageScanStop() {
+    garageScanAbbrechen('Scan abgebrochen.');
+    log('Garagenscan von Hand abgebrochen.', 'info');
+  }
+
+  function garageScanTick(bytes) {
+    if (!garageScan.aktiv) return;
+    garageScanSperre(bytes);
+    const counter = bytes[11], type = bytes[12];
+    if (garageScan.lastCount === null) {
+      garageScan.lastCount = counter; garageScan.votes = {}; return;
+    }
+    if (counter === garageScan.lastCount) {
+      garageScan.votes[type] = (garageScan.votes[type] || 0) + 1;
+      return;
+    }
+    let best = null, bestN = -1;
+    for (const [t, c] of Object.entries(garageScan.votes)) {
+      const ty = parseInt(t, 10);
+      if (ty === 0xff || ty === TILE_OFFTRACK) continue;
+      if (c > bestN) { bestN = c; best = ty; }
+    }
+    garageScan.lastCount = counter;
+    garageScan.votes = {};
+    const sperre = garageScan.sperreFlanke;
+    garageScan.sperreFlanke = false;
+    if (best === null) return;
+    // ZWEI ANKER, dieselbe Begruendung wie bei learnTick() oben.
+    const anker = sperre || isStartCode(best);
+    if (!garageScan.started) {
+      if (!anker) return;
+      garageScan.started = true;
+      garageScan.seq = [{ type: TILE_TYPE.START }];
+      garageScanStatus('Scan läuft: 1 Teil (Auto fährt automatisch) …');
+      return;
+    }
+    if (anker) {
+      if (sperre && !isStartCode(best)) garageScan.seq.push({ type: codeZuTyp(best) });
+      // ---- DIE SCHLUSSPRUEFUNG, und genau das ist die Bestellung -------------------
+      const schluss = trackSchluss(trackCenterline(garageScan.seq));
+      if (schluss.closed && garageScan.seq.length >= 3) {
+        currentTrackTiles = garageScan.seq;
+        refreshTrackPreview();
+        const wie = 'Lücke ' + schluss.lueckeCm.toFixed(1) + ' cm, Winkel '
+          + schluss.winkel.toFixed(1) + '°';
+        garageScanAbbrechen('Fertig: ' + garageScan.seq.length + ' Teile, Rundkurs '
+          + 'geschlossen (' + wie + ').');
+        showHudToast('STRECKE GESCANNT: ' + garageScan.seq.length + ' TEILE');
+        log('Garagenscan fertig: ' + garageScan.seq.length + ' Teile, geschlossen (' + wie
+            + ') nach ' + garageScan.versuch + ' Versuch(en).', 'info');
+        return;
+      }
+      // NICHT GESCHLOSSEN: noch eine Runde messen, wie bestellt - statt aufzugeben.
+      garageScan.versuch++;
+      if (garageScan.versuch > GARAGE_SCAN_VERSUCHE_MAX) {
+        garageScanAbbrechen('Abgebrochen: nach ' + GARAGE_SCAN_VERSUCHE_MAX + ' Versuchen '
+          + 'schliesst die gemessene Runde nicht (zuletzt ' + garageScan.seq.length
+          + ' Teile, Lücke ' + schluss.lueckeCm.toFixed(1) + ' cm). Bitte von Hand prüfen.');
+        log('Garagenscan aufgegeben nach ' + GARAGE_SCAN_VERSUCHE_MAX + ' Versuchen.', 'err');
+        return;
+      }
+      garageScanStatus('Runde ' + (garageScan.versuch - 1) + ' schliesst nicht (Lücke '
+        + schluss.lueckeCm.toFixed(1) + ' cm, Winkel ' + schluss.winkel.toFixed(1)
+        + '°) – miss noch eine Runde …');
+      log('Garagenscan: Runde schliesst nicht (Lücke ' + schluss.lueckeCm.toFixed(1)
+          + ' cm, Winkel ' + schluss.winkel.toFixed(1) + '°), Versuch ' + garageScan.versuch
+          + ' von ' + GARAGE_SCAN_VERSUCHE_MAX + ' …', 'info');
+      garageScan.seq = [{ type: TILE_TYPE.START }];
+      return;
+    }
+    garageScan.seq.push({ type: best });
+    if (garageScan.seq.length > 60) {
+      garageScanAbbrechen('Abgebrochen: 60 Teile ohne zweite Start/Ziel-Überfahrt.');
+      log('Garagenscan verworfen: 60 Teile ohne zweite Start/Ziel-Ueberfahrt.', 'err');
+    }
+  }
+
+  if ($('gar-scan-start')) $('gar-scan-start').onclick = garageScanStart;
+  if ($('gar-scan-stop')) $('gar-scan-stop').onclick = garageScanStop;
+
   // ---- Race dashboard: live battery/off-track/minimap-position/lap-timing ----
   // Battery is a rough two-point estimate (0x9b/155≈100%, 0x90/144≈75%, observed in an
   // earlier session) — not a calibrated formula, just enough for a rough gauge.

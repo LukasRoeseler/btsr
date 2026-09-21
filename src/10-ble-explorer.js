@@ -1760,6 +1760,8 @@
     "Chevrolet Blazer 1990: Small-Block-V8, TBI, 5,7 l":
       "Chevrolet Blazer 1990: small-block V8, TBI, 5.7 l",
     "Alltagsklassiker vor 1970 (WIP)": "Everyday classics before 1970 (WIP)",
+    "Streckenscan": "Track scan",
+    "Scan abbrechen": "Cancel scan",
     "Ford Tudor Slantback 1937: Flathead-V8, 3,6 l":
       "Ford Tudor Slantback 1937: flathead V8, 3.6 l",
     "VW Käfer 1300: Boxer-4, luftgekühlt":

@@ -1534,9 +1534,19 @@
     // gefunden" ab. Genau derselbe Fehler war beim Armaturenbrett schon einmal gefunden und
     // dort behoben worden (siehe den Kommentar oben), beim Scan blieb er stehen.
     if (trackScanning && trackScanCar === car) trackScanBytes(b);
-    // Lernen laeuft nur, wenn nicht gerade von Hand gescannt wird - beide gleichzeitig in
-    // dieselbe Karte schreiben zu lassen waere ein Wettlauf.
-    if (!trackScanning && (car === playerCar || car.role === 'ghost')) {
+    // BESTELLT: "Streckenscan ... button in der garage." Eigener Verbraucher, siehe die
+    // Begruendung bei garageScan in 60-track.js - laeuft nur fuer SEIN Auto und nur,
+    // solange nicht auch noch von Hand gescannt wird (derselbe Wettlauf-Grund wie unten).
+    if (typeof garageScan !== 'undefined' && garageScan.aktiv && garageScan.car === car
+        && !trackScanning) {
+      garageScanTick(b);
+    }
+    // Lernen laeuft nur, wenn nicht gerade von Hand ODER aus der Garage gescannt wird -
+    // alle drei gleichzeitig in dieselbe Karte schreiben zu lassen waere ein Wettlauf.
+    // Sonst haette der Garagenscan seine eigene, GEPRUEFTE Runde noch nicht fertig, waehrend
+    // learnTick() schon eine UNGEPRUEFTE committet - genau die Pruefung, die bestellt wurde.
+    const garagenscanLaeuft = typeof garageScan !== 'undefined' && garageScan.aktiv;
+    if (!trackScanning && !garagenscanLaeuft && (car === playerCar || car.role === 'ghost')) {
       // Das erste passende Auto bekommt das Lernen und behaelt es, bis zurueckgesetzt wird.
       // Der Fahrer hat Vorrang: er faehrt die Runde bewusst, ein Ghost faehrt, was er kann.
       if (!learn.car || (car === playerCar && learn.car !== playerCar)) {

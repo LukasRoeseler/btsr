@@ -4621,6 +4621,52 @@
              mass: teile.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
   });
 
+  // ---- Garagenscan: schliesst die Runde nicht, dann wird nochmal gemessen ----
+  //
+  // BESTELLT: "Wenn es dann wieder ueber start faehrt, muss die strecke geschlossen sein.
+  // Wenn nicht, dann miss noch eine runde, und pruefe wieder." Zwei reale Kachelfolgen
+  // (SR3G2R3G schliesst, SR3GR3G nicht - eine Kachel/43 cm Luecke fehlt), aus
+  // codeToTrack() gewonnen, nicht erfunden.
+  stAdd('Garagenscan: schliesst die Runde nicht, wird eine weitere gemessen', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.garageScanProbe) {
+      return { skip: true, mass: 'garageScanProbe nicht vorhanden' };
+    }
+    const schlecht = [], teile = [];
+    // SR3G2R3G, MIT der Start-Kachel an Position 0 - deren Rohcode ist ohne Bedeutung
+    // (er wird immer durch den kuenstlichen Start-Typ ersetzt, siehe learnTick), aber
+    // die Position selbst zaehlt als eine Kachel der Runde. Schliesst (Luecke ~0).
+    const schliesst = [0x0a, 0x04, 0x04, 0x04, 0x02, 0x02, 0x04, 0x04, 0x04, 0x02];
+    // SR3GR3G - eine Gerade weniger - schliesst NICHT (43 cm Luecke).
+    const schliesstNicht = [0x0a, 0x04, 0x04, 0x04, 0x02, 0x04, 0x04, 0x04, 0x02];
+
+    const r1 = OMEGA_TEST.garageScanProbe(schliesst, { laeufe: 2 });
+    teile.push('schliessende Runde: ' + r1.teile + ' Teile nach ' + r1.versuch + ' Versuch(en)');
+    if (r1.aktiv) schlecht.push('schliessende Runde: Scan lief danach noch');
+    if (r1.teile !== schliesst.length) {
+      schlecht.push('schliessende Runde: ' + r1.teile + ' Teile statt ' + schliesst.length);
+    }
+    if (r1.versuch !== 1) schlecht.push('schliessende Runde brauchte ' + r1.versuch + ' statt 1 Versuch');
+
+    // EIN Lauf mit der NICHT schliessenden Folge: der Scan muss WEITERLAUFEN (Versuch 2),
+    // nicht aufgeben und nicht faelschlich uebernehmen.
+    const r2 = OMEGA_TEST.garageScanProbe(schliesstNicht, { laeufe: 2 });
+    teile.push('nicht schliessend, 1 Lauf: aktiv=' + r2.aktiv + ', Versuch ' + r2.versuch
+      + ', ' + r2.teile + ' Teile uebernommen');
+    if (!r2.aktiv) schlecht.push('nach einer nicht schliessenden Runde bricht der Scan ab statt es erneut zu versuchen');
+    if (r2.versuch !== 2) schlecht.push('Versuchszaehler steht auf ' + r2.versuch + ' statt 2');
+    if (r2.teile !== 0) schlecht.push('nicht schliessende Runde wurde trotzdem uebernommen (' + r2.teile + ' Teile)');
+
+    // GENUG WIEDERHOLUNGEN der nicht schliessenden Folge: der Scan muss aufgeben, nicht
+    // endlos weiterlaufen.
+    const max = OMEGA_TEST.garageScanVersucheMax || 5;
+    const r3 = OMEGA_TEST.garageScanProbe(schliesstNicht, { laeufe: max + 1 });
+    teile.push('nicht schliessend, ' + (max + 1) + ' Laeufe: aktiv=' + r3.aktiv);
+    if (r3.aktiv) schlecht.push('nach ' + (max + 1) + ' erfolglosen Versuchen laeuft der Scan immer noch');
+
+    return { ok: schlecht.length === 0,
+             mass: teile.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
   // ---- Ghosts: anhalten nur, wenn es wirklich vorbei ist ----
   //
   // GEMELDET: "sie fahren stumpf ihre Spur, keine Querlage. Und nach einer Weile bleiben

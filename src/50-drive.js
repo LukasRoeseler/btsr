@@ -2256,13 +2256,32 @@
   // Kolonnenversatz, Abseits-Antwort. `wer` ist 1, wenn nichts dasteht.
   function autopilot(fahrerBremse, wer) {
     const zwei = wer === 2;
+    const motor = zwei ? physEngine2 : physEngine;
+    const regler = zwei ? autopilotRegler2 : autopilotRegler;
+    const st = motor.state;
+    // ---- STRECKENSCAN: EIGENE, FRUEHE ABZWEIGUNG ----------------------------------
+    //
+    // BESTELLT: "Streckenscan ... mit querlage = 0 in mittlerem Tempo ueber die Strecke
+    // fahren und anhalten, wenn ein geschlossener Rundkurs gemessen wurde." Nicht ueber
+    // autopilotGrund(): die beantwortet eine GLOBALE Frage (Gelb/Einfuehrungsrunde gelten
+    // fuer beide Autos gleichermassen), ein Scan betrifft aber GENAU EIN Auto -
+    // garageScan.car in 60-track.js. Ein globales 'scan' wuerde das jeweils andere Auto
+    // mit hineinziehen, auch wenn nur eines tatsaechlich gescannt wird.
+    const meinAuto = zwei ? (typeof playerCar2 !== 'undefined' ? playerCar2 : null) : playerCar;
+    if (typeof garageScan !== 'undefined' && garageScan.aktiv && garageScan.car === meinAuto) {
+      const v = Math.abs(st.speedKmh) / motor.config.topSpeedKmh;
+      const dt = Math.max(0.01, Math.min(0.25, (Date.now() - (regler.at || Date.now())) / 1000));
+      regler.at = Date.now();
+      // formationPace(): dasselbe Mindesttempo wie die Einfuehrungsrunde - hoch genug,
+      // um die Streckencodes zuverlaessig zu lesen (siehe GHOST_READ_MIN dort).
+      const geregelt = ghostSpeedControl(regler, formationPace(), v, dt);
+      return { grund: 'scan', throttle: geregelt.throttle, brake: geregelt.brake,
+               steer: 0, lenkt: !abseitsJetztFuer(zwei ? 2 : 1) };
+    }
     const grund = autopilotGrund();
     // AUSSETZER RAEUMEN DEN REGLER AUF. Ohne das traegt der I-Anteil ueber das Ende der
     // gelben Phase hinaus und gibt beim naechsten Mal aus dem Stand Gas.
     if (!grund) { autopilotZuruecksetzen(wer); return null; }
-    const motor = zwei ? physEngine2 : physEngine;
-    const regler = zwei ? autopilotRegler2 : autopilotRegler;
-    const st = motor.state;
     // ---- WIE EIN GHOST, UND DAS IST DER BESTELLTE UNTERSCHIED ---------------------
     //
     // GEMELDET: "gelbe Flagge fuer mein Auto auf der Bahn fixen: es gibt nur Gas, sollte
