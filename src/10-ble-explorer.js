@@ -2051,6 +2051,12 @@
     "__R__ von __V__ richtig.": "__R__ of __V__ correct.",
     "Richtig!": "Correct!",
     "Leider nicht - richtig wäre __X__ gewesen.": "Not quite - __X__ would have been correct.",
+    "Strecke aus der Aufnahme lernen": "Learn track from the recording",
+    "Fährst du mehrere Runden in einer Aufnahme, kann die App daraus das Streckenlayout ableiten – derselbe Weg, den „Strecke beim Fahren lernen“ sonst live geht, nur diesmal aus der Wiedergabe statt aus der eigenen Hand. Braucht ein verbundenes Auto in der Rolle „Steuern“: die Wiedergabe fährt wirklich, das Auto meldet seine echten Streckencodes, und daraus entsteht die Karte unten. Ohne geschlossene Runde in der Aufnahme bleibt sie leer.": "If you drive several laps in one recording, the app can derive the track layout from it – the same path „learn while driving“ otherwise takes live, just from the replay this time instead of from your own hand. Needs a connected car in the „drive“ role: the replay really drives, the car reports its real track codes, and the map below is built from that. Without a closed lap in the recording it stays empty.",
+    "Strecke aus dieser Aufnahme lernen": "Learn track from this recording",
+    "lernt…": "learning…",
+    "__N__ Teile gelernt.": "__N__ pieces learned.",
+    "Keine geschlossene Runde erkannt - nochmal versuchen.": "No closed lap detected - try again.",
   };
 
   // ============================================================================

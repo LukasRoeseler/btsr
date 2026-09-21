@@ -5144,6 +5144,52 @@
       }
     },
 
+    // ---- STRECKE AUS DER AUFNAHME LERNEN (90c-macro-track.js) -------------------
+    //
+    // Faehrt den echten Klickpfad ab statt macroLearnFertig() direkt aufzurufen: genau die
+    // Verdrahtung (Knopf sperrt sich waehrend der Wiedergabe, chk-loop wird erzwungen aus,
+    // macroPlaybackDoneCallback feuert genau einmal) ist der Teil, der neu ist - das Lernen
+    // selbst und die Wiedergabe sind anderswo schon gemessen.
+    async macroLearnProbe(o) {
+      const opt = o || {};
+      const merkMacro = macro, merkRecording = recording, merkPlaying = playing;
+      const merkLoop = $('chk-loop') ? $('chk-loop').checked : false;
+      const merkLearn = ghostCfg.learn;
+      const merkTiles = currentTrackTiles;
+      const merkCallback = macroPlaybackDoneCallback;
+      try {
+        macro = opt.macro || [{ t: 0, steer: 0, throttle: 0 }, { t: 0, steer: 0, throttle: 0 }];
+        recording = false; playing = false;
+        if ($('chk-loop')) $('chk-loop').checked = true; // muss der Knopf selbst ausschalten
+        macroLearnRefreshButton();
+        const vorKlick = { disabled: $('btn-macro-learn-track').disabled };
+        $('btn-macro-learn-track').click();
+        const waehrend = {
+          disabled: $('btn-macro-learn-track').disabled,
+          playing,
+          loopAus: $('chk-loop') ? !$('chk-loop').checked : null,
+        };
+        // t:0-Schritte feuern beim naechsten Tick - kurz warten reicht, ohne auf die echten
+        // Wiedergabe-Verzoegerungen angewiesen zu sein.
+        await new Promise((r) => setTimeout(r, 60));
+        const danach = {
+          disabled: $('btn-macro-learn-track').disabled,
+          playing,
+          status: $('macro-learn-status').textContent,
+          learnWiederhergestellt: ghostCfg.learn === merkLearn,
+        };
+        return { ok: true, mass: JSON.stringify({ vorKlick, waehrend, danach }),
+                 vorKlick, waehrend, danach };
+      } finally {
+        macro = merkMacro; recording = merkRecording; playing = merkPlaying;
+        if ($('chk-loop')) $('chk-loop').checked = merkLoop;
+        ghostCfg.learn = merkLearn;
+        currentTrackTiles = merkTiles;
+        macroPlaybackDoneCallback = merkCallback;
+        macroLearnRefreshButton();
+      }
+    },
+
     // ---- WER ROLLT WIE WEIT AUS? Die Reihenfolge der Ziellinie ------------------
     //
     // GEMELDET: "Ende des Rennens Ghosts anhalten: nicht der Platz soll bestimmen, wie weit

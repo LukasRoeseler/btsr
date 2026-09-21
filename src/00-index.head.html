@@ -3120,7 +3120,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.7.24</span></span>
+        <span class="foot-ver">v<span id="app-version">0.7.25</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -6229,6 +6229,24 @@
     <div class="card">
       <h2>Wiedergabe-Log</h2>
       <div id="play-log" class="muted" style="font-family:monospace;font-size:12px;min-height:20px">noch keine Wiedergabe.</div>
+    </div>
+
+    <div class="card">
+      <h2>Strecke aus der Aufnahme lernen <span class="wip-tag">WIP</span></h2>
+      <p class="muted">
+        Fährst du mehrere Runden in einer Aufnahme, kann die App daraus das
+        Streckenlayout ableiten &ndash; derselbe Weg, den &bdquo;Strecke beim Fahren
+        lernen&ldquo; sonst live geht, nur diesmal aus der Wiedergabe statt aus der
+        eigenen Hand. Braucht ein verbundenes Auto in der Rolle &bdquo;Steuern&ldquo;:
+        die Wiedergabe f&auml;hrt wirklich, das Auto meldet seine echten Streckencodes,
+        und daraus entsteht die Karte unten. Ohne geschlossene Runde in der Aufnahme
+        bleibt sie leer.
+      </p>
+      <div class="row">
+        <button id="btn-macro-learn-track" disabled>Strecke aus dieser Aufnahme lernen</button>
+        <span class="muted" id="macro-learn-status"></span>
+      </div>
+      <div id="macro-learn-karte" class="tp-karte-halter" style="margin-top:10px"></div>
     </div>
     </div>
 

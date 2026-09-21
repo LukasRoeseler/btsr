@@ -2940,6 +2940,10 @@
   let macro = [];          // [{t, steer, throttle}]
   let recordStartTime = 0;
   let playTimers = [];
+  // Einmaliger Haken fuer "eine Wiedergabe ist fertig" - gesetzt von 90c-macro-track.js,
+  // hier nur aufgerufen und sofort wieder geloescht. Kein neuer Zustand fuer eine spaetere
+  // Datei, sondern derselbe Punkt, an dem stopPlayback() ohnehin schon "fertig" weiss.
+  let macroPlaybackDoneCallback = null;
 
   function loadMacroStore() {
     try { return JSON.parse(localStorage.getItem(MACRO_STORE_KEY) || '{}'); }
@@ -3015,6 +3019,11 @@
     $('btn-stop-play').disabled = true;
     releaseInput(SRC.MACRO);
     playLog(playLog.lastMsg = 'Wiedergabe beendet.');
+    if (macroPlaybackDoneCallback) {
+      const fn = macroPlaybackDoneCallback;
+      macroPlaybackDoneCallback = null;
+      fn();
+    }
   }
 
   $('btn-stop-play').onclick = stopPlayback;

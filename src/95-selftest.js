@@ -11766,6 +11766,23 @@
   // wiedergefundener Code laesst den Versuch erfolgreich enden, und ein Auto, das nicht
   // vorankommt (simuliert: die Physik wird jeden Takt auf 0 zurueckgesetzt, als stuende
   // es vor einem Hindernis), gibt VOR den drei Sekunden auf.
+  stAdd('Strecke aus der Aufnahme lernen: Knopf sperrt sich waehrend der Wiedergabe', async () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.macroLearnProbe) {
+      return { skip: true, mass: 'macroLearnProbe nicht vorhanden' };
+    }
+    const r = await OMEGA_TEST.macroLearnProbe({});
+    const fehler = [];
+    if (r.vorKlick.disabled) fehler.push('Knopf blieb gesperrt, obwohl eine Aufnahme vorliegt');
+    if (!r.waehrend.disabled) fehler.push('Knopf sperrt sich waehrend der Wiedergabe nicht');
+    if (!r.waehrend.playing) fehler.push('playing wurde beim Klick nicht gesetzt');
+    if (!r.waehrend.loopAus) fehler.push('Endlosschleife wurde nicht erzwungen ausgeschaltet');
+    if (r.danach.disabled) fehler.push('Knopf bleibt nach der Wiedergabe gesperrt');
+    if (r.danach.playing) fehler.push('playing wurde nach der Wiedergabe nicht zurueckgesetzt');
+    if (!r.danach.learnWiederhergestellt) fehler.push('ghostCfg.learn wurde nicht zurueckgesetzt');
+    if (!r.danach.status) fehler.push('kein Statustext nach der Wiedergabe');
+    return { ok: fehler.length === 0, mass: fehler.length ? fehler.join('; ') : r.mass };
+  });
+
   stAdd('Recovery: erst der Rückweg, dann erst parken - mit Schalter', () => {
     if (!window.OMEGA_TEST || !OMEGA_TEST.recoveryProbe) {
       return { skip: true, mass: 'recoveryProbe nicht vorhanden' };
