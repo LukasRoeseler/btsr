@@ -9920,6 +9920,25 @@
                  + (maengel.length ? ' | ' + maengel.join(', ') : '') };
   });
 
+  // ---- Die Rennuhr startet mit der ersten Bewegung, nicht mit Gruen ------------------
+  //
+  // BESTELLT: "Zeit soll anfangen zu zaehlen, sobald das erste Auto sich in Bewegung
+  // setzt." Ein stehendes Fahrerauto (0 km/h) darf raceMoveErkannt() nicht ausloesen,
+  // dasselbe Auto bei Fahrt (25 km/h) muss es - sonst ginge wieder eine Reaktionszeit in
+  // die erste Rundenzeit ein.
+  stAdd('Rennuhr: startet mit der ersten Bewegung, nicht mit Gruen', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.raceBewegungsProbe) {
+      return { skip: true, mass: 'raceBewegungsProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.raceBewegungsProbe();
+    const maengel = [];
+    if (r.ruhig) maengel.push('stehendes Auto (0 km/h) loest die Uhr schon aus');
+    if (!r.bewegt) maengel.push('fahrendes Auto (25 km/h) loest die Uhr nicht aus');
+    return { ok: !maengel.length,
+             mass: 'stehend: keine Ausloesung | fahrend: Ausloesung'
+                 + (maengel.length ? ' | ' + maengel.join(', ') : '') };
+  });
+
   // ---- Die gelbe Flagge gilt auch fuer Auto 2 --------------------------------------
   //
   // DER WERTVOLLSTE DER OFFENEN PUNKTE, und der Grund ist einfach: ohne den Autopiloten

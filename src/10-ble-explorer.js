@@ -487,6 +487,7 @@
     "ohne Bedeutung": "no effect",
     "starten": "start",
     "abbrechen": "cancel",
+    "wartet auf die erste Bewegung": "waiting for the first movement",
     "Keine gemerkten Autos.": "No remembered cars.",
     "Alle gemerkten Autos wirklich löschen?": "Really delete all remembered cars?",
     "Karteileichen entstehen, weil der Browser Autos nicht dauerhaft stabil wiedererkennt (neues Profil, anderer Browser) – hier lassen sie sich einzeln oder alle auf einmal entfernen.":

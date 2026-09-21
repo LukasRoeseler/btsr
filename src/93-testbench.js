@@ -1295,6 +1295,31 @@
         $('race-limit').dispatchEvent(new Event('input', { bubbles: true }));
       }
     },
+    // ---- ERSTE BEWEGUNG STATT GRUEN --------------------------------------------------
+    //
+    // BESTELLT: "Zeit soll anfangen zu zaehlen, sobald das erste Auto sich in Bewegung
+    // setzt." Ein Fahrerauto stehend (0 km/h) darf raceMoveErkannt() nicht ausloesen,
+    // dasselbe Auto bei Fahrt (25 km/h) muss es. garage.push()/pop() ist absichtlich
+    // synchron und ohne await dazwischen - kein Renderlauf sieht das Platzhalterauto.
+    raceBewegungsProbe() {
+      const merk = { playerCar, zweiSpieler, speed: physEngine.state.speedKmh };
+      const a1 = { device: { id: 'probe-bewegung' }, role: 'player', testSenke: [] };
+      try {
+        garage.push(a1);
+        playerCar = a1;
+        zweiSpieler = false;
+        physEngine.state.speedKmh = 0;
+        const ruhig = raceMoveErkannt();
+        physEngine.state.speedKmh = 25;
+        const bewegt = raceMoveErkannt();
+        return { ruhig, bewegt };
+      } finally {
+        garage.pop();
+        playerCar = merk.playerCar;
+        zweiSpieler = merk.zweiSpieler;
+        physEngine.state.speedKmh = merk.speed;
+      }
+    },
     // Die Waehltaste selbst, so wie pollGamepad sie sieht: true heisst gedrueckt. Damit
     // laesst sich eine FOLGE fahren - druecken, loslassen, blaettern, wieder druecken -,
     // und nur in einer Folge war der Fehler zu sehen.

@@ -3080,7 +3080,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.7.7</span></span>
+        <span class="foot-ver">v<span id="app-version">0.7.8</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -9187,6 +9187,7 @@
     "ohne Bedeutung": "no effect",
     "starten": "start",
     "abbrechen": "cancel",
+    "wartet auf die erste Bewegung": "waiting for the first movement",
     "Keine gemerkten Autos.": "No remembered cars.",
     "Alle gemerkten Autos wirklich löschen?": "Really delete all remembered cars?",
     "Karteileichen entstehen, weil der Browser Autos nicht dauerhaft stabil wiedererkennt (neues Profil, anderer Browser) – hier lassen sie sich einzeln oder alle auf einmal entfernen.":
@@ -20990,6 +20991,11 @@
   // bleibt, wo das Rennen aufgehoert hat.
   let racePartialMs = null;
   let raceLapStart = null;
+  // BESTELLT: "Zeit soll anfangen zu zaehlen, sobald das erste Auto sich in Bewegung
+  // setzt." true zwischen Gruen und der ersten erkannten Bewegung - siehe raceGreen()
+  // und raceMoveErkannt() weiter unten. raceLapStart/raceStartedAt bleiben in dieser
+  // Zeit null.
+  let raceAwaitingMove = false;
   let raceLapTimes = []; // [{lap, ms}], oldest first; rendered newest-first
   let raceCountdownTimer = null;
 
@@ -21052,8 +21058,38 @@
     return raceStartedAt !== null && (Date.now() - raceStartedAt) >= raceLimit * 60000;
   }
 
+  // ---- Die erste Bewegung nach Gruen -------------------------------------------------
+  //
+  // BESTELLT: "Zeit soll anfangen zu zaehlen, sobald das erste Auto sich in Bewegung
+  // setzt." Beobachtet wird das FAHRERAUTO (bzw. beide, im Zwei-Spieler-Modus) und nicht
+  // die Ghosts: die fahren beim Gruen ohnehin autonom los, waehrend ein Mensch eine echte
+  // Reaktionszeit hat - und genau die soll nicht in die erste Rundenzeit einfliessen.
+  //
+  // FAEHRT NIEMAND, WARTET NIEMAND: ohne ein Auto auf "Steuern" (auch nicht auf "Spieler
+  // 2") gibt es keine Reaktion, auf die zu warten waere - dieselbe Bedingung wie bei der
+  // Zielflagge weiter oben (finishRace() ohne Fahrer im Feld).
+  function raceMoveErkannt() {
+    const SCHWELLE_KMH = 3;   // etwas ueber dem Standrauschen des Sensors
+    const fahrer = (c) => c.role === 'player' || (zweiSpieler && c.role === 'player2');
+    if (!garage.some(fahrer)) return true;
+    if (playerCar && Math.abs(physEngine.state.speedKmh) > SCHWELLE_KMH) return true;
+    if (zweiSpieler && playerCar2
+        && Math.abs(physEngine2.state.speedKmh) > SCHWELLE_KMH) return true;
+    return false;
+  }
+
   function raceClockTick() {
     if (raceState !== 'racing') return;
+    if (raceAwaitingMove) {
+      if (!raceMoveErkannt()) {
+        const el = $('race-clock');
+        if (el) el.textContent = t('wartet auf die erste Bewegung');
+        return;
+      }
+      raceAwaitingMove = false;
+      raceLapStart = Date.now();
+      raceStartedAt = Date.now();
+    }
     maybeSwitchRaceWeather();
     wxWechselTick();
     const el = $('race-clock');
@@ -22003,7 +22039,12 @@
     // sich, und dann ist die Einfuehrungsrunde beim naechsten Start sofort vorbei.
     formationZaehler = new Map();
     raceState = 'racing';
-    raceLapStart = Date.now();
+    // BESTELLT: "Zeit soll anfangen zu zaehlen, sobald das erste Auto sich in Bewegung
+    // setzt." Vorher liefen raceLapStart/raceStartedAt vom Moment des Gruen an - eine
+    // Reaktionszeit am Start ging damit von der ersten Rundenzeit ab. Beide bleiben jetzt
+    // null, bis raceClockTick() ueber raceMoveErkannt() die erste Bewegung sieht.
+    raceLapStart = null;
+    raceAwaitingMove = true;
     launchGhosts();   // green means green for everyone
     if (raceFormationLap) {
       // formationPace() und nicht PIT_SPEED_FACTOR: der Deckel muss zum Ziel des
@@ -22020,7 +22061,9 @@
     // nur den Anfang.
     if (typeof cockpitScreenZu === 'function') cockpitScreenZu('uebersicht');
 
-    raceStartedAt = Date.now();
+    // raceStartedAt bleibt null, bis raceClockTick() Bewegung sieht - siehe die
+    // Begruendung oben bei raceLapStart.
+    raceStartedAt = null;
     if (raceClockTimer) clearInterval(raceClockTimer);
     raceClockTimer = setInterval(raceClockTick, 250);
     $('race-status').textContent = raceFormationLap
@@ -22073,6 +22116,7 @@
     racePartialMs = raceLapStart !== null ? now - raceLapStart
                   : (dashLapStart !== null ? now - dashLapStart : null);
     raceLapStart = null;
+    raceAwaitingMove = false;
     dashLapStart = null;
     garage.forEach(c => { if (c.race) c.race.lapStart = null; });
     // Whatever happened, the formation lap is over and its speed limit goes with it.
@@ -38526,6 +38570,31 @@
         $('race-mode').dispatchEvent(new Event('change', { bubbles: true }));
         $('race-limit').value = merk.limit;
         $('race-limit').dispatchEvent(new Event('input', { bubbles: true }));
+      }
+    },
+    // ---- ERSTE BEWEGUNG STATT GRUEN --------------------------------------------------
+    //
+    // BESTELLT: "Zeit soll anfangen zu zaehlen, sobald das erste Auto sich in Bewegung
+    // setzt." Ein Fahrerauto stehend (0 km/h) darf raceMoveErkannt() nicht ausloesen,
+    // dasselbe Auto bei Fahrt (25 km/h) muss es. garage.push()/pop() ist absichtlich
+    // synchron und ohne await dazwischen - kein Renderlauf sieht das Platzhalterauto.
+    raceBewegungsProbe() {
+      const merk = { playerCar, zweiSpieler, speed: physEngine.state.speedKmh };
+      const a1 = { device: { id: 'probe-bewegung' }, role: 'player', testSenke: [] };
+      try {
+        garage.push(a1);
+        playerCar = a1;
+        zweiSpieler = false;
+        physEngine.state.speedKmh = 0;
+        const ruhig = raceMoveErkannt();
+        physEngine.state.speedKmh = 25;
+        const bewegt = raceMoveErkannt();
+        return { ruhig, bewegt };
+      } finally {
+        garage.pop();
+        playerCar = merk.playerCar;
+        zweiSpieler = merk.zweiSpieler;
+        physEngine.state.speedKmh = merk.speed;
       }
     },
     // Die Waehltaste selbst, so wie pollGamepad sie sieht: true heisst gedrueckt. Damit
@@ -55606,6 +55675,25 @@
     return { ok: !maengel.length,
              mass: 'genau eine Zeile ausgewaehlt, hoch/runter bewegt sie mit Umlauf, '
                  + 'Renntyp ' + r.modeVorWahl + ' -> ' + r.modeNachWahl + ' auf #race-mode selbst'
+                 + (maengel.length ? ' | ' + maengel.join(', ') : '') };
+  });
+
+  // ---- Die Rennuhr startet mit der ersten Bewegung, nicht mit Gruen ------------------
+  //
+  // BESTELLT: "Zeit soll anfangen zu zaehlen, sobald das erste Auto sich in Bewegung
+  // setzt." Ein stehendes Fahrerauto (0 km/h) darf raceMoveErkannt() nicht ausloesen,
+  // dasselbe Auto bei Fahrt (25 km/h) muss es - sonst ginge wieder eine Reaktionszeit in
+  // die erste Rundenzeit ein.
+  stAdd('Rennuhr: startet mit der ersten Bewegung, nicht mit Gruen', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.raceBewegungsProbe) {
+      return { skip: true, mass: 'raceBewegungsProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.raceBewegungsProbe();
+    const maengel = [];
+    if (r.ruhig) maengel.push('stehendes Auto (0 km/h) loest die Uhr schon aus');
+    if (!r.bewegt) maengel.push('fahrendes Auto (25 km/h) loest die Uhr nicht aus');
+    return { ok: !maengel.length,
+             mass: 'stehend: keine Ausloesung | fahrend: Ausloesung'
                  + (maengel.length ? ' | ' + maengel.join(', ') : '') };
   });
 

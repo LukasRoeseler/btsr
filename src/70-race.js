@@ -65,6 +65,11 @@
   // bleibt, wo das Rennen aufgehoert hat.
   let racePartialMs = null;
   let raceLapStart = null;
+  // BESTELLT: "Zeit soll anfangen zu zaehlen, sobald das erste Auto sich in Bewegung
+  // setzt." true zwischen Gruen und der ersten erkannten Bewegung - siehe raceGreen()
+  // und raceMoveErkannt() weiter unten. raceLapStart/raceStartedAt bleiben in dieser
+  // Zeit null.
+  let raceAwaitingMove = false;
   let raceLapTimes = []; // [{lap, ms}], oldest first; rendered newest-first
   let raceCountdownTimer = null;
 
@@ -127,8 +132,38 @@
     return raceStartedAt !== null && (Date.now() - raceStartedAt) >= raceLimit * 60000;
   }
 
+  // ---- Die erste Bewegung nach Gruen -------------------------------------------------
+  //
+  // BESTELLT: "Zeit soll anfangen zu zaehlen, sobald das erste Auto sich in Bewegung
+  // setzt." Beobachtet wird das FAHRERAUTO (bzw. beide, im Zwei-Spieler-Modus) und nicht
+  // die Ghosts: die fahren beim Gruen ohnehin autonom los, waehrend ein Mensch eine echte
+  // Reaktionszeit hat - und genau die soll nicht in die erste Rundenzeit einfliessen.
+  //
+  // FAEHRT NIEMAND, WARTET NIEMAND: ohne ein Auto auf "Steuern" (auch nicht auf "Spieler
+  // 2") gibt es keine Reaktion, auf die zu warten waere - dieselbe Bedingung wie bei der
+  // Zielflagge weiter oben (finishRace() ohne Fahrer im Feld).
+  function raceMoveErkannt() {
+    const SCHWELLE_KMH = 3;   // etwas ueber dem Standrauschen des Sensors
+    const fahrer = (c) => c.role === 'player' || (zweiSpieler && c.role === 'player2');
+    if (!garage.some(fahrer)) return true;
+    if (playerCar && Math.abs(physEngine.state.speedKmh) > SCHWELLE_KMH) return true;
+    if (zweiSpieler && playerCar2
+        && Math.abs(physEngine2.state.speedKmh) > SCHWELLE_KMH) return true;
+    return false;
+  }
+
   function raceClockTick() {
     if (raceState !== 'racing') return;
+    if (raceAwaitingMove) {
+      if (!raceMoveErkannt()) {
+        const el = $('race-clock');
+        if (el) el.textContent = t('wartet auf die erste Bewegung');
+        return;
+      }
+      raceAwaitingMove = false;
+      raceLapStart = Date.now();
+      raceStartedAt = Date.now();
+    }
     maybeSwitchRaceWeather();
     wxWechselTick();
     const el = $('race-clock');
@@ -1078,7 +1113,12 @@
     // sich, und dann ist die Einfuehrungsrunde beim naechsten Start sofort vorbei.
     formationZaehler = new Map();
     raceState = 'racing';
-    raceLapStart = Date.now();
+    // BESTELLT: "Zeit soll anfangen zu zaehlen, sobald das erste Auto sich in Bewegung
+    // setzt." Vorher liefen raceLapStart/raceStartedAt vom Moment des Gruen an - eine
+    // Reaktionszeit am Start ging damit von der ersten Rundenzeit ab. Beide bleiben jetzt
+    // null, bis raceClockTick() ueber raceMoveErkannt() die erste Bewegung sieht.
+    raceLapStart = null;
+    raceAwaitingMove = true;
     launchGhosts();   // green means green for everyone
     if (raceFormationLap) {
       // formationPace() und nicht PIT_SPEED_FACTOR: der Deckel muss zum Ziel des
@@ -1095,7 +1135,9 @@
     // nur den Anfang.
     if (typeof cockpitScreenZu === 'function') cockpitScreenZu('uebersicht');
 
-    raceStartedAt = Date.now();
+    // raceStartedAt bleibt null, bis raceClockTick() Bewegung sieht - siehe die
+    // Begruendung oben bei raceLapStart.
+    raceStartedAt = null;
     if (raceClockTimer) clearInterval(raceClockTimer);
     raceClockTimer = setInterval(raceClockTick, 250);
     $('race-status').textContent = raceFormationLap
@@ -1148,6 +1190,7 @@
     racePartialMs = raceLapStart !== null ? now - raceLapStart
                   : (dashLapStart !== null ? now - dashLapStart : null);
     raceLapStart = null;
+    raceAwaitingMove = false;
     dashLapStart = null;
     garage.forEach(c => { if (c.race) c.race.lapStart = null; });
     // Whatever happened, the formation lap is over and its speed limit goes with it.
