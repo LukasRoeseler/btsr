@@ -484,6 +484,9 @@
     "Spieler 1": "Player 1",
     "Spieler 2": "Player 2",
     "Alle löschen": "Delete all",
+    "ohne Bedeutung": "no effect",
+    "starten": "start",
+    "abbrechen": "cancel",
     "Keine gemerkten Autos.": "No remembered cars.",
     "Alle gemerkten Autos wirklich löschen?": "Really delete all remembered cars?",
     "Karteileichen entstehen, weil der Browser Autos nicht dauerhaft stabil wiedererkennt (neues Profil, anderer Browser) – hier lassen sie sich einzeln oder alle auf einmal entfernen.":

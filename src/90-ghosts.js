@@ -8130,10 +8130,16 @@
       // pitVorwahlSchalten('refuel') sind die Wege, die auch die Waehltaste nimmt. Ein
       // eigener Zweig fuers Kreuz waere ein zweiter Ort mit derselben Aufgabe - und der
       // erste, an dem Kachel und Menue auseinanderlaufen.
-      if (dUp && !prevDpad.up && !trackEditorPad('up') && !pitScreenPad('up')) {
+      // raceScreenPad(): derselbe Griff wie pitScreenPad() daneben, fuer den neuen
+      // Renneinstellungen-Schirm - siehe die Begruendung dort (70-race.js). Beide geben
+      // false zurueck, solange ihr eigener Schirm nicht der aktive ist, stoeren also
+      // einander nicht.
+      if (dUp && !prevDpad.up && !trackEditorPad('up') && !pitScreenPad('up')
+          && !raceScreenPad('up')) {
         pitMischungWeiter();
       }
-      if (dDown && !prevDpad.down && !trackEditorPad('down') && !pitScreenPad('down')) {
+      if (dDown && !prevDpad.down && !trackEditorPad('down') && !pitScreenPad('down')
+          && !raceScreenPad('down')) {
         pitVorwahlSchalten('refuel');
       }
       // ---- BLAETTERN UEBER DIE BELEGUNG, nicht ueber das Kreuz -------------------

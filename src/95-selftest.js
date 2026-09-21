@@ -9895,6 +9895,31 @@
                  + (maengel.length ? ' | ' + maengel.join(', ') : '') };
   });
 
+  // ---- Renneinstellungen-Schirm: Navigation und Sync mit dem Tab ---------------------
+  //
+  // BESTELLT: "cockpit: weiteren screen mit Renneinstellungen einfuegen (wie pit screen
+  // bedienbar [...] einstellungen sollten mit denen in renneinstellungen synchronisiert
+  // sein)." Geprueft wird, dass genau eine Zeile ausgewaehlt ist, hoch/runter sie
+  // verschiebt, ein voller Umlauf ueber alle drei Zeilen zur Ausgangszeile zurueckkehrt,
+  // und dass eine Aenderung ueber den Schirm dasselbe Element schreibt wie der Tab
+  // (#race-mode) statt eine zweite Kopie zu fuehren.
+  stAdd('Cockpit: Renneinstellungen-Schirm bedienbar und synchron mit dem Tab', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.raceEinstellungenSchirmProbe) {
+      return { skip: true, mass: 'raceEinstellungenSchirmProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.raceEinstellungenSchirmProbe();
+    const maengel = [];
+    if (!r.screenErreichbar) maengel.push('Schirm "renneinstellungen" nicht erreichbar');
+    if (!r.nurEineZeileVorher) maengel.push('keine oder mehrere Zeilen ausgewaehlt');
+    if (!r.bewegtSich) maengel.push('"runter" bewegt die Auswahl nicht');
+    if (!r.umlaufKehrtZurueck) maengel.push('drei Schritte "runter" kehren nicht zur Ausgangszeile zurueck');
+    if (r.modeNachWahl === r.modeVorWahl) maengel.push('Waehltaste auf "Renntyp" aendert #race-mode nicht');
+    return { ok: !maengel.length,
+             mass: 'genau eine Zeile ausgewaehlt, hoch/runter bewegt sie mit Umlauf, '
+                 + 'Renntyp ' + r.modeVorWahl + ' -> ' + r.modeNachWahl + ' auf #race-mode selbst'
+                 + (maengel.length ? ' | ' + maengel.join(', ') : '') };
+  });
+
   // ---- Die gelbe Flagge gilt auch fuer Auto 2 --------------------------------------
   //
   // DER WERTVOLLSTE DER OFFENEN PUNKTE, und der Grund ist einfach: ohne den Autopiloten

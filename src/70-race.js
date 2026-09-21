@@ -4768,6 +4768,104 @@
     return { zahl, wort: roh ? t('ja') : t('nein'), ja: !!roh };
   }
 
+  // ---- Renneinstellungen-Schirm -------------------------------------------------------
+  //
+  // BESTELLT: "cockpit: weiteren screen mit Renneinstellungen einfuegen (wie pit screen
+  // bedienbar, optionen: renntyp, dauer/runden, start/abbrechen; einstellungen sollten
+  // mit denen in renneinstellungen synchronisiert sein)." Dieselbe Bauform wie der
+  // Boxenschirm (RACE_SETTINGS_ROWS/raceScreenSel/raceScreenPad/raceScreenSelect/
+  // raceScreenRender).
+  //
+  // GESCHRIEBEN WIRD UEBER DIESELBEN ELEMENTE wie im Renneinstellungen-Tab (#race-mode,
+  // #race-limit) statt in eine eigene Kopie - value setzen und dasselbe Ereignis
+  // ausloesen, genau wie es die Mode-Kacheln und Wetterknoepfe dort schon tun (siehe
+  // syncRaceModeTiles). Eine zweite Kopie von raceMode/raceLimit waere die naechste
+  // Stelle, an der Schirm und Tab auseinanderlaufen.
+  const RACE_SETTINGS_ROWS = [
+    { id: 'mode', el: 'rs-row-mode', wert: 'rs-wert-mode' },
+    { id: 'limit', el: 'rs-row-limit', wert: 'rs-wert-limit' },
+    { id: 'go', el: 'rs-row-go', wert: 'rs-wert-go' },
+  ];
+  let raceScreenSel = 0;
+  const RACE_MODE_ORDER = ['practice', 'endurance', 'qualifying', 'laps'];
+
+  function raceScreenOffen() {
+    return typeof cockpitScreenIst === 'function'
+           && cockpitScreenIst().id === 'renneinstellungen';
+  }
+
+  // Hoch/runter bewegt die Auswahl, wie beim Boxenschirm - links/rechts bleibt frei, damit
+  // der Schirm die Taste nicht frisst, mit der man ihn verlaesst.
+  function raceScreenPad(dir) {
+    if (!raceScreenOffen()) return false;
+    if (dir !== 'up' && dir !== 'down') return false;
+    const n = RACE_SETTINGS_ROWS.length;
+    raceScreenSel = ((raceScreenSel + (dir === 'up' ? -1 : 1)) % n + n) % n;
+    raceScreenRender();
+    return true;
+  }
+
+  // idVorgabe: derselbe Kunstgriff wie bei pitScreenSelect(idVorgabe) - ein Pruefstand
+  // kann damit gezielt EINE Zeile ausloesen, ohne vorher per pad('down') dorthin zu
+  // navigieren.
+  function raceScreenSelect(idVorgabe) {
+    if (!raceScreenOffen() && idVorgabe === undefined) return false;
+    const zeile = idVorgabe !== undefined
+      ? RACE_SETTINGS_ROWS.find((z) => z.id === idVorgabe)
+      : RACE_SETTINGS_ROWS[raceScreenSel];
+    if (!zeile) return false;
+    if (zeile.id === 'mode') {
+      const i = RACE_MODE_ORDER.indexOf(raceMode);
+      const naechster = RACE_MODE_ORDER[(i + 1) % RACE_MODE_ORDER.length];
+      $('race-mode').value = naechster;
+      $('race-mode').dispatchEvent(new Event('change', { bubbles: true }));
+    } else if (zeile.id === 'limit') {
+      // Deaktiviert bei freiem Training, genau wie das Feld im Tab - eine Zahl, die dort
+      // ohne Bedeutung ist, soll es hier auch bleiben.
+      if (!$('race-limit').disabled) {
+        const max = parseInt($('race-limit').max, 10) || 120;
+        const min = parseInt($('race-limit').min, 10) || 1;
+        let neu = raceLimit + 1;
+        if (neu > max) neu = min;
+        $('race-limit').value = neu;
+        $('race-limit').dispatchEvent(new Event('input', { bubbles: true }));
+      }
+    } else if (zeile.id === 'go') {
+      toggleRace();
+    }
+    raceScreenRender();
+    return true;
+  }
+
+  function raceScreenRender() {
+    if (!$('race-settingsscreen')) return;
+    const m = RACE_MODES[raceMode];
+    schreibeWert($('rs-kopf-lage'), ($('race-status') || {}).textContent || '');
+    for (let i = 0; i < RACE_SETTINGS_ROWS.length; i++) {
+      const z = RACE_SETTINGS_ROWS[i];
+      const el = $(z.el);
+      if (el) el.classList.toggle('pr-sel', i === raceScreenSel);
+      const w = $(z.wert);
+      if (!w) continue;
+      let text = '';
+      if (z.id === 'mode') text = m.label;
+      else if (z.id === 'limit') {
+        text = $('race-limit').disabled ? t('ohne Bedeutung') : (raceLimit + ' ' + m.unit);
+      } else if (z.id === 'go') {
+        const live = raceState === 'racing' || raceState === 'countdown'
+                     || raceState === 'finishing';
+        text = live ? t('abbrechen') : t('starten');
+      }
+      schreibeWert(w, text);
+    }
+    const fuss = $('rs-fuss');
+    if (fuss) {
+      const b = (typeof bindings === 'object' && bindings && bindings.yellowflag)
+        ? bindingDescription(bindings.yellowflag) : 'nicht belegt';
+      fuss.textContent = 'Steuerkreuz hoch/runter waehlt · ' + b + ' schaltet';
+    }
+  }
+
   // ---- Rennuebersicht ----------------------------------------------------------------
   //
   // WAS HIER GEMESSEN IST UND WAS NICHT, und das gehoert an den Anfang: Runden, Zeiten und

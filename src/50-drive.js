@@ -683,6 +683,13 @@
       malen: () => pitScreenRender() },
     { id: 'uebersicht', name: 'Rennen',
       malen: () => ovScreenRender() },
+    // BESTELLT: "cockpit: weiteren screen mit Renneinstellungen einfuegen." waehlen()
+    // ist generisch verdrahtet (cockpitScreenWaehlen()), pad() ist es NICHT - siehe die
+    // Begruendung bei raceScreenPad() in 70-race.js und den Aufruf in pollGamepad()
+    // (90-ghosts.js), der ihn genau wie pitScreenPad() von Hand mit einbindet.
+    { id: 'renneinstellungen', name: 'Renneinstellungen',
+      waehlen: () => raceScreenSelect(),
+      malen: () => raceScreenRender() },
     // ---- NUR IM ZWEI-SPIELER-MODUS BLAETTERBAR ---------------------------------------
     //
     // Der Eintrag steht IMMER in der Liste und wird beim Blaettern uebersprungen, solange

@@ -1253,6 +1253,48 @@
     // Taste auf dem GERADE offenen Schirm tut, und genau diese Entscheidung war der Ort
     // des gemeldeten Fehlers. Ein Zugang, der sie ueberspringt, prueft die falsche Sache.
     schirmWaehlen() { return cockpitScreenWaehlen(); },
+
+    // ---- RENNEINSTELLUNGEN-SCHIRM: NAVIGATION UND SYNC MIT DEM TAB -------------------
+    //
+    // BESTELLT: "cockpit: weiteren screen mit Renneinstellungen einfuegen [...]
+    // einstellungen sollten mit denen in renneinstellungen synchronisiert sein." Geprueft
+    // wird die Auswahl (hoch/runter, mit Umlauf ueber drei Zeilen) und dass eine
+    // Aenderung ueber den Schirm dieselben Elemente schreibt wie der Tab (#race-mode/
+    // #race-limit) - keine zweite Kopie von raceMode/raceLimit. raceScreenSelect(id)
+    // loest gezielt EINE Zeile aus, ohne vorher zu ihr zu navigieren (derselbe
+    // Kunstgriff wie pitScreenSelect(idVorgabe)).
+    raceEinstellungenSchirmProbe() {
+      const merk = { screen: cockpitScreen, sel: raceScreenSel,
+                     mode: $('race-mode').value, limit: raceLimit };
+      const zeilen = ['rs-row-mode', 'rs-row-limit', 'rs-row-go'];
+      const wer = () => zeilen.findIndex((id) => document.getElementById(id).classList.contains('pr-sel'));
+      try {
+        cockpitScreenZu('renneinstellungen');
+        const start = wer();
+        raceScreenPad('down');
+        const nachEinem = wer();
+        raceScreenPad('down'); raceScreenPad('down');   // Umlauf: drei Zeilen, drei Schritte
+        const nachUmlauf = wer();
+        $('race-mode').value = 'practice';
+        $('race-mode').dispatchEvent(new Event('change', { bubbles: true }));
+        raceScreenSelect('mode');
+        const modeNachWahl = $('race-mode').value;
+        return {
+          screenErreichbar: cockpitScreenIst().id === 'renneinstellungen',
+          nurEineZeileVorher: [start].every((i) => i >= 0),
+          bewegtSich: nachEinem !== start,
+          umlaufKehrtZurueck: nachUmlauf === start,
+          modeVorWahl: 'practice', modeNachWahl,
+        };
+      } finally {
+        cockpitScreenSet(merk.screen);
+        raceScreenSel = merk.sel;
+        $('race-mode').value = merk.mode;
+        $('race-mode').dispatchEvent(new Event('change', { bubbles: true }));
+        $('race-limit').value = merk.limit;
+        $('race-limit').dispatchEvent(new Event('input', { bubbles: true }));
+      }
+    },
     // Die Waehltaste selbst, so wie pollGamepad sie sieht: true heisst gedrueckt. Damit
     // laesst sich eine FOLGE fahren - druecken, loslassen, blaettern, wieder druecken -,
     // und nur in einer Folge war der Fehler zu sehen.

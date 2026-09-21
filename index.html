@@ -150,6 +150,12 @@
   button.primary:hover { background: var(--navy-2); }
   button.danger { background: var(--bad); border-color: var(--bad); color: #1a0406; }
   button.danger:hover { filter: brightness(1.1); }
+  /* Dasselbe Gruen, das vorher der globale Verbindungsknopf im Kopf trug (entfallen mit
+     der Kopfzeile, siehe die Begruendung bei .home-topbar) - "Start" ist dieselbe Sorte
+     Zusage wie "Verbinden". */
+  .race-go { background: var(--good); border-color: var(--good); color: #04170c;
+    font-weight: 700; }
+  .race-go:hover:not(:disabled) { background: #5ce89b; border-color: #5ce89b; }
   header button { background: var(--tint-2); color: var(--ink); border-color: var(--border-strong); position: relative; z-index: 1; }
   header button:hover { background: var(--tint-3); }
   header button.primary { background: var(--ink); color: var(--brand-bg); border-color: var(--ink); }
@@ -1544,6 +1550,7 @@
   }
   #race-dash[data-screen="pit"] #race-pitscreen,
   #race-dash[data-screen="auto2"] #race-p2screen,
+  #race-dash[data-screen="renneinstellungen"] #race-settingsscreen,
   #race-dash[data-screen="uebersicht"] #race-ovscreen { display: grid; }
   /* ---- DER VERGLEICHSSCHIRM ------------------------------------------------------
      ZWEI SPALTEN NEBENEINANDER, auch auf dem Telefon. Untereinander waere es kein
@@ -1687,6 +1694,10 @@
   .pr-zahl { font-size: clamp(10px, 1.6vw, 17px); font-family: monospace;
     text-align: right; color: var(--gt3-tile-ink); white-space: nowrap; }
   .pr-bild > .pr-wert { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  /* Die Renneinstellungen-Zeilen fuellen die Zahlenspalte nie (kein Messwert wie Liter
+     oder Prozent) - der Platz geht an den Wert, sonst schneidet "Freies Training" (15
+     Zeichen) auf den 13ch der Vorgabe ab. */
+  #race-settingsscreen .pr-bild { grid-template-columns: 0 minmax(0, 1fr) 17ch; }
   .pit-bar { margin-top: 0; width: 100%; }
   /* Die vier Reifen in Fahrzeuganordnung, klein: zwei Spalten, zwei Zeilen. Kein Spalt in
      der Mitte wie im Streifen - hier ist die Zeile 20 px hoch, und ein Spalt darin waere
@@ -3007,7 +3018,12 @@
   <button class="tab-btn" data-tab="race">Cockpit</button>
   <button class="tab-btn" data-tab="options">Optionen</button>
   <button class="tab-btn" data-tab="track">Strecke</button>
-  <button class="tab-btn" data-tab="control">Renneinstellungen</button>
+  <!-- BESTELLT: "Renneinstellungen als eine kachel in den optionen tab verschieben (an
+       3. Stelle)." Der Reiter bleibt als tabpage bestehen (cockpitScreenZu/showTab und
+       #sum-details zeigen weiter data-tab="control"), nur der Knopf in der Hauptleiste
+       ist weg - erreichbar jetzt ueber die Kachel in den Einstellungen, genau wie Doku/
+       Programmierschule/Entwickler/Selbsttest/Code-Sonde ueber Entwicklertools. -->
+  <button class="tab-btn" data-tab="control" data-parent="options" hidden style="display:none">Renneinstellungen</button>
   <button class="tab-btn" data-tab="mp">Mehrspieler</button>
   <button class="tab-btn" data-tab="info">Info</button>
   <button class="tab-btn" data-tab="misc">Entwicklertools</button>
@@ -3054,7 +3070,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.7.4</span></span>
+        <span class="foot-ver">v<span id="app-version">0.7.5</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -3532,6 +3548,39 @@
              aus. -->
         <div class="ov-karte" id="ov-karte" data-i18n-skip></div>
         <div class="schirm-fuss" id="ov-fuss" data-i18n-skip></div>
+      </div>
+
+      <!-- ---- RENNEINSTELLUNGEN ALS EIGENER COCKPIT-SCHIRM --------------------------
+           BESTELLT: "cockpit: weiteren screen mit Renneinstellungen einfuegen (wie pit
+           screen bedienbar, optionen: renntyp, dauer/runden, start/abbrechen;
+           einstellungen sollten mit denen in renneinstellungen synchronisiert sein)."
+           Dieselben CSS-Klassen wie der Boxenschirm (.pit-row/.pr-pfeil/.pr-name/
+           .pr-bild/.pr-wert sind generisch, nicht auf #race-pitscreen beschraenkt). -->
+      <div class="gt3-schirm" id="race-settingsscreen">
+        <div class="schirm-kopf"><b>Renneinstellungen</b>
+          <span id="rs-kopf-lage" data-i18n-skip>&ndash;</span></div>
+        <div class="pit-row" id="rs-row-mode">
+          <span class="pr-pfeil" aria-hidden="true">&#9656;</span>
+          <span class="pr-name">Renntyp</span>
+          <span class="pr-bild">
+            <span class="pr-zahl" id="rs-zahl-mode" data-i18n-skip></span>
+            <span></span>
+            <span class="pr-wert" id="rs-wert-mode" data-i18n-skip>&ndash;</span></span></div>
+        <div class="pit-row" id="rs-row-limit">
+          <span class="pr-pfeil" aria-hidden="true">&#9656;</span>
+          <span class="pr-name">Dauer/Runden</span>
+          <span class="pr-bild">
+            <span class="pr-zahl" id="rs-zahl-limit" data-i18n-skip></span>
+            <span></span>
+            <span class="pr-wert" id="rs-wert-limit" data-i18n-skip>&ndash;</span></span></div>
+        <div class="pit-row" id="rs-row-go">
+          <span class="pr-pfeil" aria-hidden="true">&#9656;</span>
+          <span class="pr-name">Rennen starten/abbrechen</span>
+          <span class="pr-bild">
+            <span class="pr-zahl" id="rs-zahl-go" data-i18n-skip></span>
+            <span></span>
+            <span class="pr-wert" id="rs-wert-go" data-i18n-skip>&ndash;</span></span></div>
+        <div class="schirm-fuss" id="rs-fuss" data-i18n-skip></div>
       </div>
 
       <!-- DER SCHIRM VON AUTO 2. Er traegt alles, was der zweiten Zeile im Hauptschirm
@@ -6388,8 +6437,21 @@
   </section>
 
   <section class="tabpage" id="tab-control">
+    <button class="misc-back goto-tab" data-tab="options">&larr; Einstellungen</button>
     <div class="card" id="race-card">
       <h2>Rennmodus <span class="wip-tag">WIP</span></h2>
+      <!-- BESTELLT: "Renneinstellungen: ganz oben die knoepfe zum Rennen starten
+           hintun, statt mitten auf der seite. Knoepfe noch farblich passend machen
+           (start = gruen)." Vorher standen sie ganz unten, nach neun Reglerzeilen -
+           wer nur starten wollte, musste an allem vorbeiscrollen. #race-start-btn
+           bekommt dasselbe Gruen, das vorher #btn-connect trug (siehe die Begruendung
+           bei .home-topbar in der Kopfzeilen-CSS), #race-stop-btn die globale
+           .danger-Klasse, die es bisher im Markup nirgends benutzte. -->
+      <div class="row" style="gap:10px; margin-bottom:14px">
+        <button id="race-start-btn" class="race-go">🏁 Rennen starten</button>
+        <button id="race-stop-btn" class="danger" disabled>Rennen abbrechen</button>
+        <span class="muted" id="race-clock" style="font-family:monospace"></span>
+      </div>
       <div class="row" style="align-items:center; gap:18px; flex-wrap:wrap">
         <div style="display:flex; gap:8px">
           <span class="race-light" id="race-light-1"></span>
@@ -6553,11 +6615,6 @@
         <input type="number" id="race-pit-penalty" value="10" min="0" max="300" step="1" style="width:84px"></div>
       <div class="opt-row"><div class="opt-label">Tank beim Start (l)</div>
         <input type="number" id="race-fuel-start" value="110" min="5" max="110" step="5" style="width:84px"></div>
-      <div class="row" style="margin-top:12px; gap:10px">
-        <button id="race-start-btn">🏁 Rennen starten</button>
-        <button id="race-stop-btn" disabled>Rennen abbrechen</button>
-        <span class="muted" id="race-clock" style="font-family:monospace"></span>
-      </div>
       <p class="muted" style="margin-top:8px; font-size:11.5px">
         Eine Runde zählt, sobald das Auto das Start/Ziel-Muster auf der Strecke überfährt
         (dasselbe Signal, das auch der Streckenscanner ausliest): kein eigener Sensor in der App.
@@ -6643,6 +6700,17 @@
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="24" cy="24" r="16"/><circle cx="24" cy="24" r="5"/><path d="M24 8v11M13 33l8-6M35 33l-8-6" stroke="var(--bad)"/></svg>
           <b>Fahrgef&uuml;hl</b>
           <span>Fahrhilfe, Fahrwerk, Getriebe, Masse und Reifen, Lenkung.</span>
+        </button>
+        <!-- BESTELLT: "Renneinstellungen als eine kachel in den optionen tab verschieben
+             (an 3. Stelle)." goto-tab statt subpage-open: die Karte dahinter ist ein
+             eigenes tabpage (#tab-control) und bleibt es - nur der Knopf in der
+             Hauptleiste ist weg (siehe dort). Dieselbe Klasse traegt schon die drei
+             Kacheln unter "Entwicklertools". -->
+        <button class="misc-tile goto-tab" data-tab="control">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 6v36"/><path d="M10 8h24l-5 7 5 7H10" fill="var(--bad)" stroke="var(--bad)" stroke-linejoin="round"/></svg>
+          <b>Renneinstellungen</b>
+          <span>Renntyp, Dauer, Wetter, Pflichtstopps, Rennen starten.</span>
         </button>
         <button class="misc-tile subpage-open" data-sub="opt-sound">
           <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
@@ -9103,6 +9171,9 @@
     "Spieler 1": "Player 1",
     "Spieler 2": "Player 2",
     "Alle löschen": "Delete all",
+    "ohne Bedeutung": "no effect",
+    "starten": "start",
+    "abbrechen": "cancel",
     "Keine gemerkten Autos.": "No remembered cars.",
     "Alle gemerkten Autos wirklich löschen?": "Really delete all remembered cars?",
     "Karteileichen entstehen, weil der Browser Autos nicht dauerhaft stabil wiedererkennt (neues Profil, anderer Browser) – hier lassen sie sich einzeln oder alle auf einmal entfernen.":
@@ -15023,6 +15094,13 @@
       malen: () => pitScreenRender() },
     { id: 'uebersicht', name: 'Rennen',
       malen: () => ovScreenRender() },
+    // BESTELLT: "cockpit: weiteren screen mit Renneinstellungen einfuegen." waehlen()
+    // ist generisch verdrahtet (cockpitScreenWaehlen()), pad() ist es NICHT - siehe die
+    // Begruendung bei raceScreenPad() in 70-race.js und den Aufruf in pollGamepad()
+    // (90-ghosts.js), der ihn genau wie pitScreenPad() von Hand mit einbindet.
+    { id: 'renneinstellungen', name: 'Renneinstellungen',
+      waehlen: () => raceScreenSelect(),
+      malen: () => raceScreenRender() },
     // ---- NUR IM ZWEI-SPIELER-MODUS BLAETTERBAR ---------------------------------------
     //
     // Der Eintrag steht IMMER in der Liste und wird beim Blaettern uebersprungen, solange
@@ -25590,6 +25668,104 @@
     return { zahl, wort: roh ? t('ja') : t('nein'), ja: !!roh };
   }
 
+  // ---- Renneinstellungen-Schirm -------------------------------------------------------
+  //
+  // BESTELLT: "cockpit: weiteren screen mit Renneinstellungen einfuegen (wie pit screen
+  // bedienbar, optionen: renntyp, dauer/runden, start/abbrechen; einstellungen sollten
+  // mit denen in renneinstellungen synchronisiert sein)." Dieselbe Bauform wie der
+  // Boxenschirm (RACE_SETTINGS_ROWS/raceScreenSel/raceScreenPad/raceScreenSelect/
+  // raceScreenRender).
+  //
+  // GESCHRIEBEN WIRD UEBER DIESELBEN ELEMENTE wie im Renneinstellungen-Tab (#race-mode,
+  // #race-limit) statt in eine eigene Kopie - value setzen und dasselbe Ereignis
+  // ausloesen, genau wie es die Mode-Kacheln und Wetterknoepfe dort schon tun (siehe
+  // syncRaceModeTiles). Eine zweite Kopie von raceMode/raceLimit waere die naechste
+  // Stelle, an der Schirm und Tab auseinanderlaufen.
+  const RACE_SETTINGS_ROWS = [
+    { id: 'mode', el: 'rs-row-mode', wert: 'rs-wert-mode' },
+    { id: 'limit', el: 'rs-row-limit', wert: 'rs-wert-limit' },
+    { id: 'go', el: 'rs-row-go', wert: 'rs-wert-go' },
+  ];
+  let raceScreenSel = 0;
+  const RACE_MODE_ORDER = ['practice', 'endurance', 'qualifying', 'laps'];
+
+  function raceScreenOffen() {
+    return typeof cockpitScreenIst === 'function'
+           && cockpitScreenIst().id === 'renneinstellungen';
+  }
+
+  // Hoch/runter bewegt die Auswahl, wie beim Boxenschirm - links/rechts bleibt frei, damit
+  // der Schirm die Taste nicht frisst, mit der man ihn verlaesst.
+  function raceScreenPad(dir) {
+    if (!raceScreenOffen()) return false;
+    if (dir !== 'up' && dir !== 'down') return false;
+    const n = RACE_SETTINGS_ROWS.length;
+    raceScreenSel = ((raceScreenSel + (dir === 'up' ? -1 : 1)) % n + n) % n;
+    raceScreenRender();
+    return true;
+  }
+
+  // idVorgabe: derselbe Kunstgriff wie bei pitScreenSelect(idVorgabe) - ein Pruefstand
+  // kann damit gezielt EINE Zeile ausloesen, ohne vorher per pad('down') dorthin zu
+  // navigieren.
+  function raceScreenSelect(idVorgabe) {
+    if (!raceScreenOffen() && idVorgabe === undefined) return false;
+    const zeile = idVorgabe !== undefined
+      ? RACE_SETTINGS_ROWS.find((z) => z.id === idVorgabe)
+      : RACE_SETTINGS_ROWS[raceScreenSel];
+    if (!zeile) return false;
+    if (zeile.id === 'mode') {
+      const i = RACE_MODE_ORDER.indexOf(raceMode);
+      const naechster = RACE_MODE_ORDER[(i + 1) % RACE_MODE_ORDER.length];
+      $('race-mode').value = naechster;
+      $('race-mode').dispatchEvent(new Event('change', { bubbles: true }));
+    } else if (zeile.id === 'limit') {
+      // Deaktiviert bei freiem Training, genau wie das Feld im Tab - eine Zahl, die dort
+      // ohne Bedeutung ist, soll es hier auch bleiben.
+      if (!$('race-limit').disabled) {
+        const max = parseInt($('race-limit').max, 10) || 120;
+        const min = parseInt($('race-limit').min, 10) || 1;
+        let neu = raceLimit + 1;
+        if (neu > max) neu = min;
+        $('race-limit').value = neu;
+        $('race-limit').dispatchEvent(new Event('input', { bubbles: true }));
+      }
+    } else if (zeile.id === 'go') {
+      toggleRace();
+    }
+    raceScreenRender();
+    return true;
+  }
+
+  function raceScreenRender() {
+    if (!$('race-settingsscreen')) return;
+    const m = RACE_MODES[raceMode];
+    schreibeWert($('rs-kopf-lage'), ($('race-status') || {}).textContent || '');
+    for (let i = 0; i < RACE_SETTINGS_ROWS.length; i++) {
+      const z = RACE_SETTINGS_ROWS[i];
+      const el = $(z.el);
+      if (el) el.classList.toggle('pr-sel', i === raceScreenSel);
+      const w = $(z.wert);
+      if (!w) continue;
+      let text = '';
+      if (z.id === 'mode') text = m.label;
+      else if (z.id === 'limit') {
+        text = $('race-limit').disabled ? t('ohne Bedeutung') : (raceLimit + ' ' + m.unit);
+      } else if (z.id === 'go') {
+        const live = raceState === 'racing' || raceState === 'countdown'
+                     || raceState === 'finishing';
+        text = live ? t('abbrechen') : t('starten');
+      }
+      schreibeWert(w, text);
+    }
+    const fuss = $('rs-fuss');
+    if (fuss) {
+      const b = (typeof bindings === 'object' && bindings && bindings.yellowflag)
+        ? bindingDescription(bindings.yellowflag) : 'nicht belegt';
+      fuss.textContent = 'Steuerkreuz hoch/runter waehlt · ' + b + ' schaltet';
+    }
+  }
+
   // ---- Rennuebersicht ----------------------------------------------------------------
   //
   // WAS HIER GEMESSEN IST UND WAS NICHT, und das gehoert an den Anfang: Runden, Zeiten und
@@ -35922,10 +36098,16 @@
       // pitVorwahlSchalten('refuel') sind die Wege, die auch die Waehltaste nimmt. Ein
       // eigener Zweig fuers Kreuz waere ein zweiter Ort mit derselben Aufgabe - und der
       // erste, an dem Kachel und Menue auseinanderlaufen.
-      if (dUp && !prevDpad.up && !trackEditorPad('up') && !pitScreenPad('up')) {
+      // raceScreenPad(): derselbe Griff wie pitScreenPad() daneben, fuer den neuen
+      // Renneinstellungen-Schirm - siehe die Begruendung dort (70-race.js). Beide geben
+      // false zurueck, solange ihr eigener Schirm nicht der aktive ist, stoeren also
+      // einander nicht.
+      if (dUp && !prevDpad.up && !trackEditorPad('up') && !pitScreenPad('up')
+          && !raceScreenPad('up')) {
         pitMischungWeiter();
       }
-      if (dDown && !prevDpad.down && !trackEditorPad('down') && !pitScreenPad('down')) {
+      if (dDown && !prevDpad.down && !trackEditorPad('down') && !pitScreenPad('down')
+          && !raceScreenPad('down')) {
         pitVorwahlSchalten('refuel');
       }
       // ---- BLAETTERN UEBER DIE BELEGUNG, nicht ueber das Kreuz -------------------
@@ -38279,6 +38461,48 @@
     // Taste auf dem GERADE offenen Schirm tut, und genau diese Entscheidung war der Ort
     // des gemeldeten Fehlers. Ein Zugang, der sie ueberspringt, prueft die falsche Sache.
     schirmWaehlen() { return cockpitScreenWaehlen(); },
+
+    // ---- RENNEINSTELLUNGEN-SCHIRM: NAVIGATION UND SYNC MIT DEM TAB -------------------
+    //
+    // BESTELLT: "cockpit: weiteren screen mit Renneinstellungen einfuegen [...]
+    // einstellungen sollten mit denen in renneinstellungen synchronisiert sein." Geprueft
+    // wird die Auswahl (hoch/runter, mit Umlauf ueber drei Zeilen) und dass eine
+    // Aenderung ueber den Schirm dieselben Elemente schreibt wie der Tab (#race-mode/
+    // #race-limit) - keine zweite Kopie von raceMode/raceLimit. raceScreenSelect(id)
+    // loest gezielt EINE Zeile aus, ohne vorher zu ihr zu navigieren (derselbe
+    // Kunstgriff wie pitScreenSelect(idVorgabe)).
+    raceEinstellungenSchirmProbe() {
+      const merk = { screen: cockpitScreen, sel: raceScreenSel,
+                     mode: $('race-mode').value, limit: raceLimit };
+      const zeilen = ['rs-row-mode', 'rs-row-limit', 'rs-row-go'];
+      const wer = () => zeilen.findIndex((id) => document.getElementById(id).classList.contains('pr-sel'));
+      try {
+        cockpitScreenZu('renneinstellungen');
+        const start = wer();
+        raceScreenPad('down');
+        const nachEinem = wer();
+        raceScreenPad('down'); raceScreenPad('down');   // Umlauf: drei Zeilen, drei Schritte
+        const nachUmlauf = wer();
+        $('race-mode').value = 'practice';
+        $('race-mode').dispatchEvent(new Event('change', { bubbles: true }));
+        raceScreenSelect('mode');
+        const modeNachWahl = $('race-mode').value;
+        return {
+          screenErreichbar: cockpitScreenIst().id === 'renneinstellungen',
+          nurEineZeileVorher: [start].every((i) => i >= 0),
+          bewegtSich: nachEinem !== start,
+          umlaufKehrtZurueck: nachUmlauf === start,
+          modeVorWahl: 'practice', modeNachWahl,
+        };
+      } finally {
+        cockpitScreenSet(merk.screen);
+        raceScreenSel = merk.sel;
+        $('race-mode').value = merk.mode;
+        $('race-mode').dispatchEvent(new Event('change', { bubbles: true }));
+        $('race-limit').value = merk.limit;
+        $('race-limit').dispatchEvent(new Event('input', { bubbles: true }));
+      }
+    },
     // Die Waehltaste selbst, so wie pollGamepad sie sieht: true heisst gedrueckt. Damit
     // laesst sich eine FOLGE fahren - druecken, loslassen, blaettern, wieder druecken -,
     // und nur in einer Folge war der Fehler zu sehen.
@@ -55332,6 +55556,31 @@
     if (!r.leerHinweis) maengel.push('kein Hinweistext bei leerer Liste');
     return { ok: !maengel.length,
              mass: '2 -> 1 (gezielt) -> 0 (alle), leerer Hinweis erscheint'
+                 + (maengel.length ? ' | ' + maengel.join(', ') : '') };
+  });
+
+  // ---- Renneinstellungen-Schirm: Navigation und Sync mit dem Tab ---------------------
+  //
+  // BESTELLT: "cockpit: weiteren screen mit Renneinstellungen einfuegen (wie pit screen
+  // bedienbar [...] einstellungen sollten mit denen in renneinstellungen synchronisiert
+  // sein)." Geprueft wird, dass genau eine Zeile ausgewaehlt ist, hoch/runter sie
+  // verschiebt, ein voller Umlauf ueber alle drei Zeilen zur Ausgangszeile zurueckkehrt,
+  // und dass eine Aenderung ueber den Schirm dasselbe Element schreibt wie der Tab
+  // (#race-mode) statt eine zweite Kopie zu fuehren.
+  stAdd('Cockpit: Renneinstellungen-Schirm bedienbar und synchron mit dem Tab', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.raceEinstellungenSchirmProbe) {
+      return { skip: true, mass: 'raceEinstellungenSchirmProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.raceEinstellungenSchirmProbe();
+    const maengel = [];
+    if (!r.screenErreichbar) maengel.push('Schirm "renneinstellungen" nicht erreichbar');
+    if (!r.nurEineZeileVorher) maengel.push('keine oder mehrere Zeilen ausgewaehlt');
+    if (!r.bewegtSich) maengel.push('"runter" bewegt die Auswahl nicht');
+    if (!r.umlaufKehrtZurueck) maengel.push('drei Schritte "runter" kehren nicht zur Ausgangszeile zurueck');
+    if (r.modeNachWahl === r.modeVorWahl) maengel.push('Waehltaste auf "Renntyp" aendert #race-mode nicht');
+    return { ok: !maengel.length,
+             mass: 'genau eine Zeile ausgewaehlt, hoch/runter bewegt sie mit Umlauf, '
+                 + 'Renntyp ' + r.modeVorWahl + ' -> ' + r.modeNachWahl + ' auf #race-mode selbst'
                  + (maengel.length ? ' | ' + maengel.join(', ') : '') };
   });
 
