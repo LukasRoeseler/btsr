@@ -5760,9 +5760,13 @@
     ghostPassArming(tileCode, versuche, opt) {
       const merkGarage = garage.splice(0, garage.length);
       const merkSpice = ghostCfg.wuerzeUeberholen;
+      const merkFormation = raceFormationLap;
       const echtNow = Date.now;
       try {
         ghostCfg.wuerzeUeberholen = true;
+        // Ausdruecklich gesetzt statt dem Zufall des zuletzt gelaufenen Tests ueberlassen -
+        // raceFormationLap ist geteilter Zustand, siehe der Fund bei ansageLatch.
+        raceFormationLap = !!(opt && opt.formationLap);
         let uhr = echtNow();
         Date.now = () => uhr;
         const o = opt || {};
@@ -5800,6 +5804,7 @@
         garage.splice(0, garage.length);
         merkGarage.forEach(c => garage.push(c));
         ghostCfg.wuerzeUeberholen = merkSpice;
+        raceFormationLap = merkFormation;
       }
     },
 

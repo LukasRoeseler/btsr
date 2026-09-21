@@ -11485,6 +11485,40 @@
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
+  // ---- Kein Überholen in der Einführungsrunde ----
+  //
+  // BESTELLT (Phase 12, Punkt 11): "Kein Überholen in der Einführungsrunde." Im
+  // Formationstempo faehrt das Feld in der Zweierkolonne (formationOffset(),
+  // FORMATION_UEBERFAHRTEN) - ein Ueberholversuch wuerde sie aufloesen.
+  stAdd('Kein Überholen in der Einführungsrunde', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.ghostPassArming) {
+      return { skip: true, mass: 'ghostPassArming nicht vorhanden' };
+    }
+    const merkTiles = currentTrackTiles;
+    try {
+      currentTrackTiles = codeToTrack('SG4HG3').tiles;
+      lineCache = null;
+      const frei = OMEGA_TEST.ghostPassArming(0x02, 1500,
+        { tileIndex: 3, kurveMix: 0, formationLap: false });
+      const formation = OMEGA_TEST.ghostPassArming(0x02, 1500,
+        { tileIndex: 3, kurveMix: 0, formationLap: true });
+      const fehler = [];
+      // GEGENPROBE ZUERST: dieselbe Lage muss ausserhalb der Einfuehrungsrunde wie
+      // gehabt ansetzen, sonst waere ein spaeteres "keine Versuche" bedeutungslos.
+      if (!(frei.gestartet > 0)) fehler.push('ausserhalb der Einfuehrungsrunde kein Versuch');
+      if (formation.gestartet) {
+        fehler.push('in der Einfuehrungsrunde ' + formation.gestartet + ' Versuche');
+      }
+      return { ok: !fehler.length,
+               mass: 'frei ' + frei.gestartet + ' Versuche | Einfuehrungsrunde '
+                   + formation.gestartet + ' Versuche (1500 Takte je Lauf)'
+                   + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+    } finally {
+      currentTrackTiles = merkTiles;
+      lineCache = null;
+    }
+  });
+
   // ---- Zieleinlauf: abwechselnd links und rechts ----
   //
   // GEMELDET: "Nach dem Rennen rammen die Ghosts alle ineinander hinein. Mache es so, dass

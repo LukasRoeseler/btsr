@@ -5030,7 +5030,11 @@
     // Schieben. Die Wahl selbst steht weiter unten; hier wird nur nicht angesetzt.
     const seitenFrei = ghostSeitenFrei(car);
     const irgendeineSeiteFrei = seitenFrei['-1'] || seitenFrei['1'];
-    if (ghostCfg.wuerzeUeberholen
+    // BESTELLT: "Kein Überholen in der Einführungsrunde." Im Formationstempo faehrt das
+    // Feld ohnehin in der Zweierkolonne (formationOffset()) - ein Ueberholversuch wuerde
+    // genau diese Kolonne aufloesen, und bei Boxentempo ist dafuer kein Grund: dort geht
+    // es nicht um Position, sondern darum, geordnet zur Ziellinie zu kommen.
+    if (ghostCfg.wuerzeUeberholen && !raceFormationLap
         && !g.attackUntil && g.closeSince && now - g.closeSince > SPICE_ATTACK_ARM_MS
         && platz >= SPICE_PASS_PLATZ_MIN
         && !haarnadelVoraus
