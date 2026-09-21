@@ -809,7 +809,65 @@
     // sobald hier eines dazukommt oder seinen Namen aendert. Defensiv gerufen, weil
     // 98b-sicherung.js SPAETER gebaut wird: zur Laufzeit ist die Funktion da.
     if (typeof lageZeichnen === 'function') lageZeichnen();
+    carStoreListeZeichnen();
   }
+
+  // ---- AUTO-VERWALTUNG: die gemerkte Liste ansehen und aufraeumen ------------------
+  //
+  // BESTELLT: "in garage weiterer button zum Standard..." nein, das ist die Sicherung
+  // daneben - hier ist die eigentliche Bestellung: eine manuelle Liste fuer chc.cars.v1,
+  // "nur eine manuelle Liste (ansehen, einzeln oder gesammelt loeschen). Kein
+  // automatisches Aufraeumen nach Zeit." carStore()/carRemember()/carAssign() konnten
+  // bislang nur WACHSEN - kein Weg, eine Karteileiche wieder loszuwerden.
+  //
+  // Die Geraete-Kennung bleibt im data-id (verschluesselt fuer den Fall eines Doppel-
+  // punkts oder Anfuehrungszeichens darin - eine BluetoothDevice.id ist ein UUID-artiger
+  // String, aber ungeprueft von aussen), nie im sichtbaren Text: sie sagt niemandem etwas
+  // und ist lang genug, um jede Zeile zu sprengen.
+  function carStoreListeZeichnen() {
+    const host = $('car-store-liste');
+    if (!host) return;
+    const roh = carStore();
+    const ids = Object.keys(roh);
+    const alleBtn = $('car-store-alle-loeschen');
+    if (alleBtn) alleBtn.hidden = ids.length < 2;
+    if (!ids.length) {
+      host.innerHTML = '<span class="muted" style="font-size:12px">'
+                      + t('Keine gemerkten Autos.') + '</span>';
+      return;
+    }
+    host.innerHTML = ids.map((id) => {
+      const e = roh[id] || {};
+      const f = CAR_COLORS.find((c) => c.id === e.color) || CAR_COLORS[0];
+      const wie = (e.alias ? e.alias : f.name).replace(/</g, '&lt;');
+      return '<span class="car-store-zeile" data-id="' + encodeURIComponent(id) + '">'
+           + '<span class="car-store-farbe" style="background:' + f.hex + '"></span>'
+           + wie
+           + '<button type="button" class="car-store-loeschen" title="Löschen"'
+           + ' data-i18n-skip>&times;</button></span>';
+    }).join('');
+    host.querySelectorAll('.car-store-loeschen').forEach((btn) => {
+      btn.onclick = () => {
+        const id = decodeURIComponent(btn.closest('.car-store-zeile').dataset.id);
+        const roh2 = carStore();
+        delete roh2[id];
+        try { localStorage.setItem(CAR_STORE, JSON.stringify(roh2)); } catch (e) { /* privat */ }
+        carStoreListeZeichnen();
+        if (typeof lageZeichnen === 'function') lageZeichnen();
+        log('Gemerktes Auto entfernt.', 'info');
+      };
+    });
+  }
+  if ($('car-store-alle-loeschen')) {
+    $('car-store-alle-loeschen').addEventListener('click', () => {
+      if (!confirm(t('Alle gemerkten Autos wirklich löschen?'))) return;
+      try { localStorage.removeItem(CAR_STORE); } catch (e) { /* privat */ }
+      carStoreListeZeichnen();
+      if (typeof lageZeichnen === 'function') lageZeichnen();
+      log('Alle gemerkten Autos entfernt.', 'info');
+    });
+  }
+  carStoreListeZeichnen();
 
   // Farbe fuer ein neu verbundenes Auto. Gemerktes hat Vorrang, sonst die naechste noch
   // freie Farbe der Reihe - zwei Autos in derselben Farbe waeren keine Zuordnung.

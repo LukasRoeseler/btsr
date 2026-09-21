@@ -2275,6 +2275,41 @@
       return JSON.parse(JSON.stringify(DEFAULT_BINDINGS));
     },
 
+    // ---- AUTO-VERWALTUNG: einzeln und gesammelt loeschen -----------------------------
+    //
+    // BESTELLT: "in garage weiterer button zum ... Auto-Verwaltung [...] nur eine
+    // manuelle Liste (ansehen, einzeln oder gesammelt loeschen)." Zwei gepflanzte
+    // Eintraege in chc.cars.v1, dann ueber die ECHTEN Knoepfe im DOM loeschen (nicht
+    // ueber carStore() direkt) - der Test soll die Bedienung pruefen, nicht nur die
+    // Datenschicht darunter.
+    carStoreLoeschProbe() {
+      const echt = localStorage.getItem(CAR_STORE);
+      const echtConfirm = window.confirm;
+      try {
+        localStorage.setItem(CAR_STORE, JSON.stringify({
+          a: { color: 'rot', alias: 'X' }, b: { color: 'blau', alias: 'Y' },
+        }));
+        carStoreListeZeichnen();
+        const vorEinzeln = Object.keys(carStore()).length;
+        const zeileA = document.querySelector('.car-store-zeile[data-id="a"]');
+        if (zeileA) zeileA.querySelector('.car-store-loeschen').click();
+        const nachEinzeln = Object.keys(carStore());
+        window.confirm = () => true;
+        const alleBtn = $('car-store-alle-loeschen');
+        if (alleBtn) alleBtn.click();
+        return {
+          vorEinzeln, nachEinzeln,
+          nachAlle: Object.keys(carStore()).length,
+          leerHinweis: ($('car-store-liste') || {}).textContent || '',
+        };
+      } finally {
+        window.confirm = echtConfirm;
+        if (echt === null) { try { localStorage.removeItem(CAR_STORE); } catch (e) { /* privat */ } }
+        else { try { localStorage.setItem(CAR_STORE, echt); } catch (e) { /* privat */ } }
+        carStoreListeZeichnen();
+      }
+    },
+
     // Die Getriebearten: was drinsteht, was daraus gerechnet wird, und die Pendelreserve.
     //
     // MITGEGEBEN WIRD AUCH DAS GERECHNETE - ratioRef und rpmScale -, genau darum: der Test

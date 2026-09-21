@@ -2759,6 +2759,16 @@
   .sich-lage .sich-auto { display: inline-flex; align-items: center; gap: 5px; }
   .sich-lage .sich-farbe { width: 9px; height: 9px; border-radius: 50%;
     border: 1px solid rgba(255,255,255,.35); flex: none; }
+  /* Auto-Verwaltung: dieselbe Farbpunkt-Idee wie .sich-farbe, nur als eigene Zeile mit
+     Loeschknopf statt als Teil eines Fliesstexts. */
+  .car-store-zeile { display: inline-flex; align-items: center; gap: 5px;
+    background: var(--panel-2); border: 1px solid var(--border); border-radius: 20px;
+    padding: 3px 3px 3px 9px; font-size: 12px; }
+  .car-store-farbe { width: 9px; height: 9px; border-radius: 50%;
+    border: 1px solid rgba(255,255,255,.35); flex: none; }
+  .car-store-loeschen { background: none; border: none; padding: 2px 6px; cursor: pointer;
+    color: var(--muted); font-size: 13px; line-height: 1; border-radius: 50%; }
+  .car-store-loeschen:hover { color: var(--bad); background: var(--panel-3); }
   .gar-row.is-ghost { border-color: #7a6bd0; }
   .gar-id { font-size: 11px; color: var(--muted); font-family: monospace; }
   /* Ein Segmentschalter statt drei einzelner Knoepfe: die drei Rollen schliessen sich
@@ -3044,7 +3054,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.7.3</span></span>
+        <span class="foot-ver">v<span id="app-version">0.7.4</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -6207,6 +6217,23 @@
            Knoepfe sind die Handlung. Und sie steht in der GARAGE, also dort, wo man
            verbindet. -->
       <div class="sich-lage" id="sich-lage" data-i18n-skip>&nbsp;</div>
+      <!-- ---- AUTO-VERWALTUNG: die gemerkten Autos einzeln oder gesammelt loeschen -----
+           BESTELLT (Auto-Verwaltung, Phase 4): eine manuelle Liste, nichts Automatisches.
+           Der Grund fuer Karteileichen hier ist ehrlich genannt und nicht wegerklaert:
+           BluetoothDevice.id ist browser-lokal und nicht dauerhaft stabil - ein geleertes
+           Profil oder ein Browserwechsel vergibt eine neue Kennung, und das alte Auto
+           bleibt als eigener Eintrag stehen. -->
+      <div class="row" style="gap:8px; align-items:flex-start; margin-top:6px">
+        <div id="car-store-liste" style="display:flex; flex-wrap:wrap; gap:6px; flex:1"
+             data-i18n-skip></div>
+        <button type="button" id="car-store-alle-loeschen" style="font-size:12px"
+                hidden>Alle l&ouml;schen</button>
+      </div>
+      <p class="muted" style="font-size:11px; margin-top:4px">
+        Karteileichen entstehen, weil der Browser Autos nicht dauerhaft stabil
+        wiedererkennt (neues Profil, anderer Browser) &ndash; hier lassen sie sich
+        einzeln oder alle auf einmal entfernen.
+      </p>
       <div class="row" style="gap:8px; flex-wrap:wrap">
         <button class="primary" id="sich-export">Sicherung speichern</button>
         <button id="sich-import">Sicherung laden</button>
@@ -9075,6 +9102,11 @@
     "Standard wiederherstellen": "Restore defaults",
     "Spieler 1": "Player 1",
     "Spieler 2": "Player 2",
+    "Alle löschen": "Delete all",
+    "Keine gemerkten Autos.": "No remembered cars.",
+    "Alle gemerkten Autos wirklich löschen?": "Really delete all remembered cars?",
+    "Karteileichen entstehen, weil der Browser Autos nicht dauerhaft stabil wiedererkennt (neues Profil, anderer Browser) – hier lassen sie sich einzeln oder alle auf einmal entfernen.":
+      "Stale entries happen because the browser doesn't recognize cars reliably long-term (new profile, different browser) – here they can be removed one by one or all at once.",
     "Zur Garage": "To the garage",
     "Zum Cockpit →": "To the cockpit →",
     "Jedes Auto einzeln per Klick verbinden – Web Bluetooth verlangt das so.":
@@ -28569,7 +28601,65 @@
     // sobald hier eines dazukommt oder seinen Namen aendert. Defensiv gerufen, weil
     // 98b-sicherung.js SPAETER gebaut wird: zur Laufzeit ist die Funktion da.
     if (typeof lageZeichnen === 'function') lageZeichnen();
+    carStoreListeZeichnen();
   }
+
+  // ---- AUTO-VERWALTUNG: die gemerkte Liste ansehen und aufraeumen ------------------
+  //
+  // BESTELLT: "in garage weiterer button zum Standard..." nein, das ist die Sicherung
+  // daneben - hier ist die eigentliche Bestellung: eine manuelle Liste fuer chc.cars.v1,
+  // "nur eine manuelle Liste (ansehen, einzeln oder gesammelt loeschen). Kein
+  // automatisches Aufraeumen nach Zeit." carStore()/carRemember()/carAssign() konnten
+  // bislang nur WACHSEN - kein Weg, eine Karteileiche wieder loszuwerden.
+  //
+  // Die Geraete-Kennung bleibt im data-id (verschluesselt fuer den Fall eines Doppel-
+  // punkts oder Anfuehrungszeichens darin - eine BluetoothDevice.id ist ein UUID-artiger
+  // String, aber ungeprueft von aussen), nie im sichtbaren Text: sie sagt niemandem etwas
+  // und ist lang genug, um jede Zeile zu sprengen.
+  function carStoreListeZeichnen() {
+    const host = $('car-store-liste');
+    if (!host) return;
+    const roh = carStore();
+    const ids = Object.keys(roh);
+    const alleBtn = $('car-store-alle-loeschen');
+    if (alleBtn) alleBtn.hidden = ids.length < 2;
+    if (!ids.length) {
+      host.innerHTML = '<span class="muted" style="font-size:12px">'
+                      + t('Keine gemerkten Autos.') + '</span>';
+      return;
+    }
+    host.innerHTML = ids.map((id) => {
+      const e = roh[id] || {};
+      const f = CAR_COLORS.find((c) => c.id === e.color) || CAR_COLORS[0];
+      const wie = (e.alias ? e.alias : f.name).replace(/</g, '&lt;');
+      return '<span class="car-store-zeile" data-id="' + encodeURIComponent(id) + '">'
+           + '<span class="car-store-farbe" style="background:' + f.hex + '"></span>'
+           + wie
+           + '<button type="button" class="car-store-loeschen" title="Löschen"'
+           + ' data-i18n-skip>&times;</button></span>';
+    }).join('');
+    host.querySelectorAll('.car-store-loeschen').forEach((btn) => {
+      btn.onclick = () => {
+        const id = decodeURIComponent(btn.closest('.car-store-zeile').dataset.id);
+        const roh2 = carStore();
+        delete roh2[id];
+        try { localStorage.setItem(CAR_STORE, JSON.stringify(roh2)); } catch (e) { /* privat */ }
+        carStoreListeZeichnen();
+        if (typeof lageZeichnen === 'function') lageZeichnen();
+        log('Gemerktes Auto entfernt.', 'info');
+      };
+    });
+  }
+  if ($('car-store-alle-loeschen')) {
+    $('car-store-alle-loeschen').addEventListener('click', () => {
+      if (!confirm(t('Alle gemerkten Autos wirklich löschen?'))) return;
+      try { localStorage.removeItem(CAR_STORE); } catch (e) { /* privat */ }
+      carStoreListeZeichnen();
+      if (typeof lageZeichnen === 'function') lageZeichnen();
+      log('Alle gemerkten Autos entfernt.', 'info');
+    });
+  }
+  carStoreListeZeichnen();
 
   // Farbe fuer ein neu verbundenes Auto. Gemerktes hat Vorrang, sonst die naechste noch
   // freie Farbe der Reihe - zwei Autos in derselben Farbe waeren keine Zuordnung.
@@ -39209,6 +39299,41 @@
     },
     padDefaults() {
       return JSON.parse(JSON.stringify(DEFAULT_BINDINGS));
+    },
+
+    // ---- AUTO-VERWALTUNG: einzeln und gesammelt loeschen -----------------------------
+    //
+    // BESTELLT: "in garage weiterer button zum ... Auto-Verwaltung [...] nur eine
+    // manuelle Liste (ansehen, einzeln oder gesammelt loeschen)." Zwei gepflanzte
+    // Eintraege in chc.cars.v1, dann ueber die ECHTEN Knoepfe im DOM loeschen (nicht
+    // ueber carStore() direkt) - der Test soll die Bedienung pruefen, nicht nur die
+    // Datenschicht darunter.
+    carStoreLoeschProbe() {
+      const echt = localStorage.getItem(CAR_STORE);
+      const echtConfirm = window.confirm;
+      try {
+        localStorage.setItem(CAR_STORE, JSON.stringify({
+          a: { color: 'rot', alias: 'X' }, b: { color: 'blau', alias: 'Y' },
+        }));
+        carStoreListeZeichnen();
+        const vorEinzeln = Object.keys(carStore()).length;
+        const zeileA = document.querySelector('.car-store-zeile[data-id="a"]');
+        if (zeileA) zeileA.querySelector('.car-store-loeschen').click();
+        const nachEinzeln = Object.keys(carStore());
+        window.confirm = () => true;
+        const alleBtn = $('car-store-alle-loeschen');
+        if (alleBtn) alleBtn.click();
+        return {
+          vorEinzeln, nachEinzeln,
+          nachAlle: Object.keys(carStore()).length,
+          leerHinweis: ($('car-store-liste') || {}).textContent || '',
+        };
+      } finally {
+        window.confirm = echtConfirm;
+        if (echt === null) { try { localStorage.removeItem(CAR_STORE); } catch (e) { /* privat */ } }
+        else { try { localStorage.setItem(CAR_STORE, echt); } catch (e) { /* privat */ } }
+        carStoreListeZeichnen();
+      }
     },
 
     // Die Getriebearten: was drinsteht, was daraus gerechnet wird, und die Pendelreserve.
@@ -55184,6 +55309,29 @@
     return { ok: !maengel.length,
              mass: 'P1 -> Knopf ' + r.p1Index + ', P2 -> Knopf ' + r.p2Index
                  + ', je unberuehrt von der anderen Zuweisung'
+                 + (maengel.length ? ' | ' + maengel.join(', ') : '') };
+  });
+
+  // ---- Auto-Verwaltung: gemerkte Autos einzeln und gesammelt loeschen ----------------
+  //
+  // BESTELLT: "in garage weiterer button ... Auto-Verwaltung [...] nur eine manuelle
+  // Liste (ansehen, einzeln oder gesammelt loeschen)." Zwei gepflanzte Eintraege, einer
+  // per Knopf geloescht, dann beide per "Alle loeschen" - carStoreLoeschProbe() bedient
+  // dabei die echten DOM-Knoepfe statt carStore() selbst zu manipulieren.
+  stAdd('Garage: gemerkte Autos lassen sich einzeln und gesammelt loeschen', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.carStoreLoeschProbe) {
+      return { skip: true, mass: 'carStoreLoeschProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.carStoreLoeschProbe();
+    const maengel = [];
+    if (r.vorEinzeln !== 2) maengel.push('vor dem Loeschen ' + r.vorEinzeln + ' statt 2');
+    if (r.nachEinzeln.length !== 1 || r.nachEinzeln[0] !== 'b') {
+      maengel.push('nach Einzel-Loeschen: ' + JSON.stringify(r.nachEinzeln) + ' statt ["b"]');
+    }
+    if (r.nachAlle !== 0) maengel.push('nach "Alle loeschen" bleiben ' + r.nachAlle);
+    if (!r.leerHinweis) maengel.push('kein Hinweistext bei leerer Liste');
+    return { ok: !maengel.length,
+             mass: '2 -> 1 (gezielt) -> 0 (alle), leerer Hinweis erscheint'
                  + (maengel.length ? ' | ' + maengel.join(', ') : '') };
   });
 

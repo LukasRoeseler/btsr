@@ -9872,6 +9872,29 @@
                  + (maengel.length ? ' | ' + maengel.join(', ') : '') };
   });
 
+  // ---- Auto-Verwaltung: gemerkte Autos einzeln und gesammelt loeschen ----------------
+  //
+  // BESTELLT: "in garage weiterer button ... Auto-Verwaltung [...] nur eine manuelle
+  // Liste (ansehen, einzeln oder gesammelt loeschen)." Zwei gepflanzte Eintraege, einer
+  // per Knopf geloescht, dann beide per "Alle loeschen" - carStoreLoeschProbe() bedient
+  // dabei die echten DOM-Knoepfe statt carStore() selbst zu manipulieren.
+  stAdd('Garage: gemerkte Autos lassen sich einzeln und gesammelt loeschen', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.carStoreLoeschProbe) {
+      return { skip: true, mass: 'carStoreLoeschProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.carStoreLoeschProbe();
+    const maengel = [];
+    if (r.vorEinzeln !== 2) maengel.push('vor dem Loeschen ' + r.vorEinzeln + ' statt 2');
+    if (r.nachEinzeln.length !== 1 || r.nachEinzeln[0] !== 'b') {
+      maengel.push('nach Einzel-Loeschen: ' + JSON.stringify(r.nachEinzeln) + ' statt ["b"]');
+    }
+    if (r.nachAlle !== 0) maengel.push('nach "Alle loeschen" bleiben ' + r.nachAlle);
+    if (!r.leerHinweis) maengel.push('kein Hinweistext bei leerer Liste');
+    return { ok: !maengel.length,
+             mass: '2 -> 1 (gezielt) -> 0 (alle), leerer Hinweis erscheint'
+                 + (maengel.length ? ' | ' + maengel.join(', ') : '') };
+  });
+
   // ---- Die gelbe Flagge gilt auch fuer Auto 2 --------------------------------------
   //
   // DER WERTVOLLSTE DER OFFENEN PUNKTE, und der Grund ist einfach: ohne den Autopiloten

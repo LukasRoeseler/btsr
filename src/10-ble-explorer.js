@@ -483,6 +483,11 @@
     "Standard wiederherstellen": "Restore defaults",
     "Spieler 1": "Player 1",
     "Spieler 2": "Player 2",
+    "Alle löschen": "Delete all",
+    "Keine gemerkten Autos.": "No remembered cars.",
+    "Alle gemerkten Autos wirklich löschen?": "Really delete all remembered cars?",
+    "Karteileichen entstehen, weil der Browser Autos nicht dauerhaft stabil wiedererkennt (neues Profil, anderer Browser) – hier lassen sie sich einzeln oder alle auf einmal entfernen.":
+      "Stale entries happen because the browser doesn't recognize cars reliably long-term (new profile, different browser) – here they can be removed one by one or all at once.",
     "Zur Garage": "To the garage",
     "Zum Cockpit →": "To the cockpit →",
     "Jedes Auto einzeln per Klick verbinden – Web Bluetooth verlangt das so.":
