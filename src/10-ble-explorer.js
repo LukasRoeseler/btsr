@@ -699,6 +699,9 @@
     "Ghost: Führenden bremsen": "Ghost: hold the leader back",
     "Ghost: Ideallinie": "Ghost: racing line",
     "Ghost: Kurvendrosselung": "Ghost: corner slowdown",
+    "Ghost: Rennhärte": "Ghost: race hardness",
+    "Wie oft und wie schnell Ghosts einen Überholversuch starten. Weich: seltener, geduldiger, mehr Abstand - ein Feld, das sauber und leicht versetzt hintereinanderfährt. Hart: häufiger, schneller, eine kleinere Lücke reicht schon. 50% ist die bisherige, gemessene Abstimmung.":
+      "How often and how quickly ghosts start an overtaking attempt. Soft: rarer, more patient, more space - a field that runs cleanly and slightly staggered, nose to tail. Hard: more often, quicker, a smaller gap is already enough. 50% is the previous, measured tuning.",
     "Verteidigen": "Defending",
     "Fahrercharakter": "Driver character",
     "Bisher sind alle Ghosts derselbe Fahrer: ein globaler Satz Regler für jeden. Mit dieser Einstellung würfelt jedes Auto zu Rennbeginn vier Faktoren in einer Spanne von ±25 % – Angriffslust, Verteidigung, Fehlerneigung und Kurvenabzug – und ein eigenes Boxenfenster von bis zu zwei Runden Versatz.":

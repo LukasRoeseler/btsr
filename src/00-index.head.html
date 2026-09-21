@@ -3093,7 +3093,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.7.17</span></span>
+        <span class="foot-ver">v<span id="app-version">0.7.18</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -7788,6 +7788,18 @@
           <input type="range" id="ghost-speed" min="0.35" max="1" step="0.05" value="0.55">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="ghost-speed-val">50%</span>
+        </div></div>
+      <!-- BESTELLT (Phase 12, Punkte 5+6): "Weniger Ueberholmanoever, mehr sauberes
+           Hintereinanderfahren, mit Regler" und "Ueberholmanoever nur, wenn Autos dicht
+           hintereinander sind." EIN Regler fuer fuenf schon bestehende, einzeln gemessene
+           Werte (siehe ghostRennhaerteAnwenden() in 90-ghosts.js) - bei 50% (Vorgabe)
+           unveraendert gegenueber vorher. -->
+      <div class="opt-row"><div class="opt-label">Ghost: Rennhärte<small>Wie oft und wie schnell Ghosts einen Überholversuch starten. Weich: seltener, geduldiger, mehr Abstand - ein Feld, das sauber und leicht versetzt hintereinanderfährt. Hart: häufiger, schneller, eine kleinere Lücke reicht schon. 50% ist die bisherige, gemessene Abstimmung.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="ghost-hardness" min="0" max="100" step="5" value="50">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="ghost-hardness-val">50%</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Ghost: Kurvendrosselung <span class="wip-tag">WIP</span><small>Wie viel Tempo in Kurven abgegeben wird. <b>Braucht ein Streckenlayout</b>: ohne gelesene oder gebaute Kacheln wei&szlig; der Ghost nicht, wo eine Kurve ist, und der Regler multipliziert eine Null.</small></div>
         <div class="opt-slider">

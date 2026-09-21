@@ -3940,8 +3940,11 @@
   const SPICE_SLIP_TILES = 1.3;    // bis hierher wirkt Windschatten
   const SPICE_SLIP_GAIN = 0.11;
   const SPICE_ATTACK_MS = 2600;
-  const SPICE_ATTACK_ARM_MS = 900;  // so lange muss man kleben, bevor es losgeht
-  const SPICE_ATTACK_P = 0.45;      // und dann wird gewuerfelt, sonst ist es kein Rennen
+  // let statt const, aus demselben Grund wie SPICE_ATTACK_RANGE weiter unten: der neue
+  // Rennhaerte-Regler (siehe ghostRennhaerteAnwenden()) skaliert sie, und ein Pruefaufruf
+  // soll sie ausserdem gezielt setzen koennen.
+  let SPICE_ATTACK_ARM_MS = 900;  // so lange muss man kleben, bevor es losgeht
+  let SPICE_ATTACK_P = 0.45;      // und dann wird gewuerfelt, sonst ist es kein Rennen
   // WIE NAH "in Reichweite" ist, und das MUSS ueber SPICE_GAP_MIN liegen.
   //
   // Vorher stand hier 0,9 als Zahl im Code, waehrend der Abstandhalter ab 0,7 lupft (plus
@@ -3958,6 +3961,10 @@
   let SPICE_ATTACK_RANGE = 1.3;
   function attackRangeSetzen(v) { SPICE_ATTACK_RANGE = v; }
   function attackRangeLesen() { return SPICE_ATTACK_RANGE; }
+  function attackPSetzen(v) { SPICE_ATTACK_P = v; }
+  function attackPLesen() { return SPICE_ATTACK_P; }
+  function attackArmMsSetzen(v) { SPICE_ATTACK_ARM_MS = v; }
+  function attackArmMsLesen() { return SPICE_ATTACK_ARM_MS; }
   // WIE OFT gewuerfelt wird. Vorher alle 4000 ms: bei Wuerze 0,4 ist die
   // Wahrscheinlichkeit 0,18 je Versuch, also eine Attacke pro 22 Sekunden durchgehenden
   // Klebens. Das liest sich nicht als Rennen, sondern als Kolonne.
@@ -4452,6 +4459,40 @@
   function gapMinSetzen(v) { SPICE_GAP_MIN = v; }
   function gapMinLesen() { return SPICE_GAP_MIN; }
   const SPICE_GAP_LIFT = 0.26;  // hoechster Tempoabzug bei Beruehrung
+
+  // ---- RENNHAERTE: EIN REGLER FUER FUENF WERTE --------------------------------------
+  //
+  // BESTELLT (Phase 12, Punkte 5+6): "Weniger Ueberholmanoever, mehr sauberes
+  // Hintereinanderfahren (leicht versetzt), mit Regler" und "Ueberholmanoever nur, wenn
+  // Autos dicht hintereinander sind."
+  //
+  // FUENF WERTE STATT EINEM NEUEN VERHALTEN: alle fuenf existieren schon und sind
+  // einzeln GEMESSEN eingestellt (SPICE_ATTACK_RANGE gegen SPICE_GAP_MIN, siehe deren
+  // eigene Begruendung; SPICE_LUECKE_MIN_S gegen eine Sweep-Tabelle mit Beruehrungen je
+  // Minute, siehe darueber). Ein Regler, der sie unabhaengig voneinander verstellt,
+  // wuerde diese Messungen zerreissen - deshalb skaliert EIN Faktor alle fuenf gemeinsam,
+  // und bei 50 % (Vorgabe) kommt exakt der bisherige, gemessene Wert jedes einzelnen
+  // heraus. Wer den Regler nie anfasst, faehrt also unveraendert weiter.
+  //
+  // RICHTUNG: haerter (>50 %) heisst haeufiger angreifen (SPICE_ATTACK_P hoch), schneller
+  // zuenden (SPICE_ATTACK_ARM_MS runter) und eine kleinere Luecke reicht schon
+  // (SPICE_LUECKE_MIN_S/SPICE_GAP_MIN runter). Weicher (<50 %) ist die Umkehrung -
+  // seltener, geduldiger, mehr Abstand verlangt, damit ein Feld ohne haeufige Attacken
+  // sauber und leicht versetzt hintereinander bleibt statt zu kleben.
+  //
+  // SPICE_ATTACK_RANGE faehrt MIT DEMSELBEN Faktor wie die Luecken-Schwellen (nicht mit
+  // dem Angriffsfaktor): das haelt die dokumentierte Ungleichung RANGE > GAP_MIN bei
+  // jeder Reglerstellung automatisch ein, weil beide Seiten gleich skaliert werden.
+  function ghostRennhaerteAnwenden(intensitaet) {
+    const i = Math.max(0, Math.min(1, intensitaet));
+    const zu = i / 0.5;         // 0..2, 1 bei 50 % - fuer haeufiger/schneller
+    const von = 1.5 - i;        // 1.5..0.5, 1 bei 50 % - fuer Luecken/Reichweite
+    attackPSetzen(0.45 * zu);
+    attackArmMsSetzen(900 * von);
+    lueckeMinSetzen(1.2 * von);
+    gapMinSetzen(1.2 * von);
+    attackRangeSetzen(1.3 * von);
+  }
 
   // Fortschritt in Kacheln seit dem Start, mit Bruchteil. Absichtlich NICHT ueber den
   // Kachelindex der Karte: ohne eingescannte Strecke gibt es keinen, und Abstaende soll man

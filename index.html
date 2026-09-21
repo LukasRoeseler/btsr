@@ -3093,7 +3093,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.7.17</span></span>
+        <span class="foot-ver">v<span id="app-version">0.7.18</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -7789,6 +7789,18 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="ghost-speed-val">50%</span>
         </div></div>
+      <!-- BESTELLT (Phase 12, Punkte 5+6): "Weniger Ueberholmanoever, mehr sauberes
+           Hintereinanderfahren, mit Regler" und "Ueberholmanoever nur, wenn Autos dicht
+           hintereinander sind." EIN Regler fuer fuenf schon bestehende, einzeln gemessene
+           Werte (siehe ghostRennhaerteAnwenden() in 90-ghosts.js) - bei 50% (Vorgabe)
+           unveraendert gegenueber vorher. -->
+      <div class="opt-row"><div class="opt-label">Ghost: Rennhärte<small>Wie oft und wie schnell Ghosts einen Überholversuch starten. Weich: seltener, geduldiger, mehr Abstand - ein Feld, das sauber und leicht versetzt hintereinanderfährt. Hart: häufiger, schneller, eine kleinere Lücke reicht schon. 50% ist die bisherige, gemessene Abstimmung.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="ghost-hardness" min="0" max="100" step="5" value="50">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="ghost-hardness-val">50%</span>
+        </div></div>
       <div class="opt-row"><div class="opt-label">Ghost: Kurvendrosselung <span class="wip-tag">WIP</span><small>Wie viel Tempo in Kurven abgegeben wird. <b>Braucht ein Streckenlayout</b>: ohne gelesene oder gebaute Kacheln wei&szlig; der Ghost nicht, wo eine Kurve ist, und der Regler multipliziert eine Null.</small></div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
@@ -9512,6 +9524,9 @@
     "Ghost: Führenden bremsen": "Ghost: hold the leader back",
     "Ghost: Ideallinie": "Ghost: racing line",
     "Ghost: Kurvendrosselung": "Ghost: corner slowdown",
+    "Ghost: Rennhärte": "Ghost: race hardness",
+    "Wie oft und wie schnell Ghosts einen Überholversuch starten. Weich: seltener, geduldiger, mehr Abstand - ein Feld, das sauber und leicht versetzt hintereinanderfährt. Hart: häufiger, schneller, eine kleinere Lücke reicht schon. 50% ist die bisherige, gemessene Abstimmung.":
+      "How often and how quickly ghosts start an overtaking attempt. Soft: rarer, more patient, more space - a field that runs cleanly and slightly staggered, nose to tail. Hard: more often, quicker, a smaller gap is already enough. 50% is the previous, measured tuning.",
     "Verteidigen": "Defending",
     "Fahrercharakter": "Driver character",
     "Bisher sind alle Ghosts derselbe Fahrer: ein globaler Satz Regler für jeden. Mit dieser Einstellung würfelt jedes Auto zu Rennbeginn vier Faktoren in einer Spanne von ±25 % – Angriffslust, Verteidigung, Fehlerneigung und Kurvenabzug – und ein eigenes Boxenfenster von bis zu zwei Runden Versatz.":
@@ -28006,6 +28021,12 @@
     $('ghost-speed-val').textContent = Math.round(ghostCfg.speed * 100) + '%';
     if (typeof renderGarage === 'function') renderGarage();
   });
+  // Ein Regler fuer fuenf Werte - siehe ghostRennhaerteAnwenden() in 90-ghosts.js fuer die
+  // Skalierung und die Begruendung, warum 50 % genau die bisherige Abstimmung ergibt.
+  $('ghost-hardness').addEventListener('input', (e) => {
+    ghostRennhaerteAnwenden(parseFloat(e.target.value) / 100);
+    $('ghost-hardness-val').textContent = e.target.value + '%';
+  });
   $('ghost-curve').addEventListener('input', (e) => {
     ghostCfg.curveSlow = parseFloat(e.target.value);
     $('ghost-curve-val').textContent = Math.round(ghostCfg.curveSlow * 100) + '%';
@@ -32431,8 +32452,11 @@
   const SPICE_SLIP_TILES = 1.3;    // bis hierher wirkt Windschatten
   const SPICE_SLIP_GAIN = 0.11;
   const SPICE_ATTACK_MS = 2600;
-  const SPICE_ATTACK_ARM_MS = 900;  // so lange muss man kleben, bevor es losgeht
-  const SPICE_ATTACK_P = 0.45;      // und dann wird gewuerfelt, sonst ist es kein Rennen
+  // let statt const, aus demselben Grund wie SPICE_ATTACK_RANGE weiter unten: der neue
+  // Rennhaerte-Regler (siehe ghostRennhaerteAnwenden()) skaliert sie, und ein Pruefaufruf
+  // soll sie ausserdem gezielt setzen koennen.
+  let SPICE_ATTACK_ARM_MS = 900;  // so lange muss man kleben, bevor es losgeht
+  let SPICE_ATTACK_P = 0.45;      // und dann wird gewuerfelt, sonst ist es kein Rennen
   // WIE NAH "in Reichweite" ist, und das MUSS ueber SPICE_GAP_MIN liegen.
   //
   // Vorher stand hier 0,9 als Zahl im Code, waehrend der Abstandhalter ab 0,7 lupft (plus
@@ -32449,6 +32473,10 @@
   let SPICE_ATTACK_RANGE = 1.3;
   function attackRangeSetzen(v) { SPICE_ATTACK_RANGE = v; }
   function attackRangeLesen() { return SPICE_ATTACK_RANGE; }
+  function attackPSetzen(v) { SPICE_ATTACK_P = v; }
+  function attackPLesen() { return SPICE_ATTACK_P; }
+  function attackArmMsSetzen(v) { SPICE_ATTACK_ARM_MS = v; }
+  function attackArmMsLesen() { return SPICE_ATTACK_ARM_MS; }
   // WIE OFT gewuerfelt wird. Vorher alle 4000 ms: bei Wuerze 0,4 ist die
   // Wahrscheinlichkeit 0,18 je Versuch, also eine Attacke pro 22 Sekunden durchgehenden
   // Klebens. Das liest sich nicht als Rennen, sondern als Kolonne.
@@ -32943,6 +32971,40 @@
   function gapMinSetzen(v) { SPICE_GAP_MIN = v; }
   function gapMinLesen() { return SPICE_GAP_MIN; }
   const SPICE_GAP_LIFT = 0.26;  // hoechster Tempoabzug bei Beruehrung
+
+  // ---- RENNHAERTE: EIN REGLER FUER FUENF WERTE --------------------------------------
+  //
+  // BESTELLT (Phase 12, Punkte 5+6): "Weniger Ueberholmanoever, mehr sauberes
+  // Hintereinanderfahren (leicht versetzt), mit Regler" und "Ueberholmanoever nur, wenn
+  // Autos dicht hintereinander sind."
+  //
+  // FUENF WERTE STATT EINEM NEUEN VERHALTEN: alle fuenf existieren schon und sind
+  // einzeln GEMESSEN eingestellt (SPICE_ATTACK_RANGE gegen SPICE_GAP_MIN, siehe deren
+  // eigene Begruendung; SPICE_LUECKE_MIN_S gegen eine Sweep-Tabelle mit Beruehrungen je
+  // Minute, siehe darueber). Ein Regler, der sie unabhaengig voneinander verstellt,
+  // wuerde diese Messungen zerreissen - deshalb skaliert EIN Faktor alle fuenf gemeinsam,
+  // und bei 50 % (Vorgabe) kommt exakt der bisherige, gemessene Wert jedes einzelnen
+  // heraus. Wer den Regler nie anfasst, faehrt also unveraendert weiter.
+  //
+  // RICHTUNG: haerter (>50 %) heisst haeufiger angreifen (SPICE_ATTACK_P hoch), schneller
+  // zuenden (SPICE_ATTACK_ARM_MS runter) und eine kleinere Luecke reicht schon
+  // (SPICE_LUECKE_MIN_S/SPICE_GAP_MIN runter). Weicher (<50 %) ist die Umkehrung -
+  // seltener, geduldiger, mehr Abstand verlangt, damit ein Feld ohne haeufige Attacken
+  // sauber und leicht versetzt hintereinander bleibt statt zu kleben.
+  //
+  // SPICE_ATTACK_RANGE faehrt MIT DEMSELBEN Faktor wie die Luecken-Schwellen (nicht mit
+  // dem Angriffsfaktor): das haelt die dokumentierte Ungleichung RANGE > GAP_MIN bei
+  // jeder Reglerstellung automatisch ein, weil beide Seiten gleich skaliert werden.
+  function ghostRennhaerteAnwenden(intensitaet) {
+    const i = Math.max(0, Math.min(1, intensitaet));
+    const zu = i / 0.5;         // 0..2, 1 bei 50 % - fuer haeufiger/schneller
+    const von = 1.5 - i;        // 1.5..0.5, 1 bei 50 % - fuer Luecken/Reichweite
+    attackPSetzen(0.45 * zu);
+    attackArmMsSetzen(900 * von);
+    lueckeMinSetzen(1.2 * von);
+    gapMinSetzen(1.2 * von);
+    attackRangeSetzen(1.3 * von);
+  }
 
   // Fortschritt in Kacheln seit dem Start, mit Bruchteil. Absichtlich NICHT ueber den
   // Kachelindex der Karte: ohne eingescannte Strecke gibt es keinen, und Abstaende soll man
@@ -40965,6 +41027,8 @@
     gapMinSetzen, gapMinLesen,
     lueckeMinSetzen, lueckeMinLesen, ghostZeitLuecke,
     attackRangeSetzen, attackRangeLesen,
+    attackPSetzen, attackPLesen, attackArmMsSetzen, attackArmMsLesen,
+    ghostRennhaerteAnwenden,
     // Der Tankverbrauch, damit die Spiegelpruefung ihn vergleichen kann. Als Funktion und
     // nicht als Wert: ein let wird kopiert, eine Funktion liest.
     fuelDrain: () => fuelDrainPerSec,
@@ -51907,6 +51971,65 @@
                    + ' (Fenster ' + r.fenster + ') | Wurf alle ' + r.wurfMs + ' ms mit p='
                    + r.p + ' -> ' + r.wartenS + ' s bei Wuerze ' + r.wuerze
                    + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // ---- Rennhaerte: ein Regler, fuenf Werte, 50% ruehrt nichts an ----
+  //
+  // BESTELLT (Phase 12, Punkte 5+6): der neue Regler darf die bestehende, gemessene
+  // Abstimmung nicht verschieben, solange niemand ihn anfasst - und er muss die
+  // Ungleichung SPICE_ATTACK_RANGE > SPICE_GAP_MIN bei JEDER Stellung einhalten, sonst
+  // kommt genau die Pendel-Situation zurueck, die SPICE_ATTACK_RANGE=1,3 beheben sollte
+  // (siehe deren Begruendung).
+  stAdd('Rennhärte: 50% unveraendert, Reichweite bleibt ueber dem Mindestabstand', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.ghostRennhaerteAnwenden) {
+      return { skip: true, mass: 'ghostRennhaerteAnwenden nicht vorhanden' };
+    }
+    const merk = { p: OMEGA_TEST.attackPLesen(), arm: OMEGA_TEST.attackArmMsLesen(),
+                   luecke: OMEGA_TEST.lueckeMinLesen(), gap: OMEGA_TEST.gapMinLesen(),
+                   range: OMEGA_TEST.attackRangeLesen() };
+    const schlecht = [], zeilen = [];
+    try {
+      // 1. BEI 50% EXAKT DIE BISHERIGEN ZAHLEN.
+      OMEGA_TEST.ghostRennhaerteAnwenden(0.5);
+      const soll = { p: 0.45, arm: 900, luecke: 1.2, gap: 1.2, range: 1.3 };
+      const ist50 = { p: OMEGA_TEST.attackPLesen(), arm: OMEGA_TEST.attackArmMsLesen(),
+                      luecke: OMEGA_TEST.lueckeMinLesen(), gap: OMEGA_TEST.gapMinLesen(),
+                      range: OMEGA_TEST.attackRangeLesen() };
+      for (const k of Object.keys(soll)) {
+        if (Math.abs(ist50[k] - soll[k]) > 1e-9) {
+          schlecht.push('bei 50%: ' + k + ' = ' + ist50[k] + ' statt ' + soll[k]);
+        }
+      }
+      zeilen.push('50%: p=' + ist50.p + ' arm=' + ist50.arm + ' luecke=' + ist50.luecke
+                  + ' gap=' + ist50.gap + ' range=' + ist50.range);
+      // 2. HAERTER GREIFT HAEUFIGER UND SCHNELLER, WEICHER SELTENER UND GEDULDIGER.
+      OMEGA_TEST.ghostRennhaerteAnwenden(1.0);
+      const ist100 = { p: OMEGA_TEST.attackPLesen(), arm: OMEGA_TEST.attackArmMsLesen(),
+                       range: OMEGA_TEST.attackRangeLesen(), gap: OMEGA_TEST.gapMinLesen() };
+      OMEGA_TEST.ghostRennhaerteAnwenden(0.0);
+      const ist0 = { p: OMEGA_TEST.attackPLesen(), arm: OMEGA_TEST.attackArmMsLesen(),
+                     range: OMEGA_TEST.attackRangeLesen(), gap: OMEGA_TEST.gapMinLesen() };
+      zeilen.push('100%: p=' + ist100.p + ' arm=' + ist100.arm);
+      zeilen.push('0%: p=' + ist0.p + ' arm=' + ist0.arm);
+      if (!(ist100.p > ist50.p)) schlecht.push('haerter wuerfelt nicht haeufiger');
+      if (!(ist100.arm < ist50.arm)) schlecht.push('haerter zuendet nicht schneller');
+      if (!(ist0.p < ist50.p)) schlecht.push('weicher wuerfelt nicht seltener');
+      if (!(ist0.arm > ist50.arm)) schlecht.push('weicher zuendet nicht geduldiger');
+      // 3. DIE UNGLEICHUNG HAELT BEI JEDER STELLUNG - sonst kommt das Pendeln zurueck,
+      //    das SPICE_ATTACK_RANGE=1,3 beheben sollte.
+      for (const i of [0, 0.25, 0.5, 0.75, 1.0]) {
+        OMEGA_TEST.ghostRennhaerteAnwenden(i);
+        const range = OMEGA_TEST.attackRangeLesen(), gap = OMEGA_TEST.gapMinLesen();
+        if (!(range > gap)) {
+          schlecht.push('bei ' + i + ': Reichweite ' + range + ' nicht ueber Mindestabstand ' + gap);
+        }
+      }
+    } finally {
+      attackPSetzen(merk.p); attackArmMsSetzen(merk.arm);
+      lueckeMinSetzen(merk.luecke); gapMinSetzen(merk.gap); attackRangeSetzen(merk.range);
+    }
+    return { ok: schlecht.length === 0,
+             mass: zeilen.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
   });
 
   // ---- Autopilot in der Einfuehrungsrunde ----

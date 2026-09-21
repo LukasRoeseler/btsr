@@ -1441,6 +1441,12 @@
     $('ghost-speed-val').textContent = Math.round(ghostCfg.speed * 100) + '%';
     if (typeof renderGarage === 'function') renderGarage();
   });
+  // Ein Regler fuer fuenf Werte - siehe ghostRennhaerteAnwenden() in 90-ghosts.js fuer die
+  // Skalierung und die Begruendung, warum 50 % genau die bisherige Abstimmung ergibt.
+  $('ghost-hardness').addEventListener('input', (e) => {
+    ghostRennhaerteAnwenden(parseFloat(e.target.value) / 100);
+    $('ghost-hardness-val').textContent = e.target.value + '%';
+  });
   $('ghost-curve').addEventListener('input', (e) => {
     ghostCfg.curveSlow = parseFloat(e.target.value);
     $('ghost-curve-val').textContent = Math.round(ghostCfg.curveSlow * 100) + '%';

@@ -3172,6 +3172,8 @@
     gapMinSetzen, gapMinLesen,
     lueckeMinSetzen, lueckeMinLesen, ghostZeitLuecke,
     attackRangeSetzen, attackRangeLesen,
+    attackPSetzen, attackPLesen, attackArmMsSetzen, attackArmMsLesen,
+    ghostRennhaerteAnwenden,
     // Der Tankverbrauch, damit die Spiegelpruefung ihn vergleichen kann. Als Funktion und
     // nicht als Wert: ein let wird kopiert, eine Funktion liest.
     fuelDrain: () => fuelDrainPerSec,

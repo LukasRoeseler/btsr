@@ -5468,6 +5468,65 @@
                    + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
   });
 
+  // ---- Rennhaerte: ein Regler, fuenf Werte, 50% ruehrt nichts an ----
+  //
+  // BESTELLT (Phase 12, Punkte 5+6): der neue Regler darf die bestehende, gemessene
+  // Abstimmung nicht verschieben, solange niemand ihn anfasst - und er muss die
+  // Ungleichung SPICE_ATTACK_RANGE > SPICE_GAP_MIN bei JEDER Stellung einhalten, sonst
+  // kommt genau die Pendel-Situation zurueck, die SPICE_ATTACK_RANGE=1,3 beheben sollte
+  // (siehe deren Begruendung).
+  stAdd('Rennhärte: 50% unveraendert, Reichweite bleibt ueber dem Mindestabstand', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.ghostRennhaerteAnwenden) {
+      return { skip: true, mass: 'ghostRennhaerteAnwenden nicht vorhanden' };
+    }
+    const merk = { p: OMEGA_TEST.attackPLesen(), arm: OMEGA_TEST.attackArmMsLesen(),
+                   luecke: OMEGA_TEST.lueckeMinLesen(), gap: OMEGA_TEST.gapMinLesen(),
+                   range: OMEGA_TEST.attackRangeLesen() };
+    const schlecht = [], zeilen = [];
+    try {
+      // 1. BEI 50% EXAKT DIE BISHERIGEN ZAHLEN.
+      OMEGA_TEST.ghostRennhaerteAnwenden(0.5);
+      const soll = { p: 0.45, arm: 900, luecke: 1.2, gap: 1.2, range: 1.3 };
+      const ist50 = { p: OMEGA_TEST.attackPLesen(), arm: OMEGA_TEST.attackArmMsLesen(),
+                      luecke: OMEGA_TEST.lueckeMinLesen(), gap: OMEGA_TEST.gapMinLesen(),
+                      range: OMEGA_TEST.attackRangeLesen() };
+      for (const k of Object.keys(soll)) {
+        if (Math.abs(ist50[k] - soll[k]) > 1e-9) {
+          schlecht.push('bei 50%: ' + k + ' = ' + ist50[k] + ' statt ' + soll[k]);
+        }
+      }
+      zeilen.push('50%: p=' + ist50.p + ' arm=' + ist50.arm + ' luecke=' + ist50.luecke
+                  + ' gap=' + ist50.gap + ' range=' + ist50.range);
+      // 2. HAERTER GREIFT HAEUFIGER UND SCHNELLER, WEICHER SELTENER UND GEDULDIGER.
+      OMEGA_TEST.ghostRennhaerteAnwenden(1.0);
+      const ist100 = { p: OMEGA_TEST.attackPLesen(), arm: OMEGA_TEST.attackArmMsLesen(),
+                       range: OMEGA_TEST.attackRangeLesen(), gap: OMEGA_TEST.gapMinLesen() };
+      OMEGA_TEST.ghostRennhaerteAnwenden(0.0);
+      const ist0 = { p: OMEGA_TEST.attackPLesen(), arm: OMEGA_TEST.attackArmMsLesen(),
+                     range: OMEGA_TEST.attackRangeLesen(), gap: OMEGA_TEST.gapMinLesen() };
+      zeilen.push('100%: p=' + ist100.p + ' arm=' + ist100.arm);
+      zeilen.push('0%: p=' + ist0.p + ' arm=' + ist0.arm);
+      if (!(ist100.p > ist50.p)) schlecht.push('haerter wuerfelt nicht haeufiger');
+      if (!(ist100.arm < ist50.arm)) schlecht.push('haerter zuendet nicht schneller');
+      if (!(ist0.p < ist50.p)) schlecht.push('weicher wuerfelt nicht seltener');
+      if (!(ist0.arm > ist50.arm)) schlecht.push('weicher zuendet nicht geduldiger');
+      // 3. DIE UNGLEICHUNG HAELT BEI JEDER STELLUNG - sonst kommt das Pendeln zurueck,
+      //    das SPICE_ATTACK_RANGE=1,3 beheben sollte.
+      for (const i of [0, 0.25, 0.5, 0.75, 1.0]) {
+        OMEGA_TEST.ghostRennhaerteAnwenden(i);
+        const range = OMEGA_TEST.attackRangeLesen(), gap = OMEGA_TEST.gapMinLesen();
+        if (!(range > gap)) {
+          schlecht.push('bei ' + i + ': Reichweite ' + range + ' nicht ueber Mindestabstand ' + gap);
+        }
+      }
+    } finally {
+      attackPSetzen(merk.p); attackArmMsSetzen(merk.arm);
+      lueckeMinSetzen(merk.luecke); gapMinSetzen(merk.gap); attackRangeSetzen(merk.range);
+    }
+    return { ok: schlecht.length === 0,
+             mass: zeilen.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
   // ---- Autopilot in der Einfuehrungsrunde ----
   //
   // DER BEFUND, der diesen Test noetig gemacht hat: raceFormationLap kam in 50-drive.js -
