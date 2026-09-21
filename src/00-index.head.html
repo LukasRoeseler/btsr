@@ -262,6 +262,14 @@
     margin: 8px 0 10px 0; padding-left: 14px;
     border-left: 2px solid var(--gt3-line-soft); }
   .opt-note-h { font-weight: 700; }
+  /* Die Input/Output-Kurve neben Gas- und Lenkkennlinie. Kein Vorbild im Projekt - erste
+     Fassung. Gestrichelt die Gerade (1,0) zum Vergleich, durchgezogen die eingestellte
+     Kurve; beide teilen sich denselben 0..100/60..0-Rahmen, damit eine Gerade wirklich
+     als 45-Grad-Diagonale erscheint. */
+  .curve-plot { width: 100%; max-width: 170px; height: 62px; margin-top: 8px; display: block; }
+  .curve-axis { stroke: var(--border); stroke-width: 1; }
+  .curve-diag { stroke: var(--border); stroke-width: 1; stroke-dasharray: 3 3; fill: none; }
+  .curve-line { stroke: var(--info); stroke-width: 2; fill: none; }
   /* ---- Regenradar in der Wetterkachel ----
      Das Canvas liegt UNTER dem Symbol und fuellt die Kachel. Es ist nicht anklickbar, damit
      der Klick weiter auf der Kachel landet - sie schaltet das Wetter. */
@@ -3080,7 +3088,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.7.8</span></span>
+        <span class="foot-ver">v<span id="app-version">0.7.9</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -7140,7 +7148,10 @@
       <div class="opt-row"><div class="opt-label">Bremswirkung</div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-brakepower" min="0.3" max="1.5" step="0.05" value="1.4">
+          <!-- max von 1.5 auf 2.5: Arcade brauchte BESTELLT "die Bremskraft um 50%
+               verstaerken" mehr Kopf, als der alte Deckel (1.5) hatte - der Arcade-Wert
+               selbst stand schon genau AUF dem alten Maximum. -->
+          <input type="range" id="setting-brakepower" min="0.3" max="2.5" step="0.05" value="1.4">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-brakepower-val">1.00</span>
         </div></div>
@@ -7272,6 +7283,33 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="phys-steerresp-val">150%</span>
         </div></div>
+      <!-- BESTELLT: "wie beschleunigungskurve auch lenkkurve einbauen als option mit
+           slider (wenn ich nur ganz leicht stick lenke, dann soll der lenkausschlag
+           weniger sein als jetzt). Bei beiden die input/output uebersetzungskurve
+           anzeigen. Standard beim lenken etwas unempfindlicher bei wenig input." -
+           physEngine.config.steerExpo war bisher eine feste Konstante (1.15, siehe
+           40-physics.js), ohne Regler. Dieselbe Kurvenfamilie wie die Gaskennlinie
+           (x^gamma, hier mit Vorzeichen), nur bipolar (-1..1 statt 0..1). Vorgabe jetzt
+           1.3 statt 1.15 - unempfindlicher bei wenig Ausschlag, aber bewusst nicht am
+           1.5, das sich frueher "unwillig" anfuehlte (siehe Kommentar dort). -->
+      <div class="opt-row"><div class="opt-label">Lenkkennlinie <span class="wip-tag">WIP</span>
+          <small>Wie der Lenkweg des Sticks auf den Lenkausschlag abgebildet wird -
+          dieselbe Kurvenform wie die Gaskennlinie, nur mit Vorzeichen (Links/Rechts).
+          1,0 ist die Gerade. &Uuml;ber 1,0 macht kleine Ausschl&auml;ge um die Mitte
+          unempfindlicher: ein leicht angetippter Stick lenkt dann weniger ein als
+          bisher, der volle Anschlag bleibt unver&auml;ndert der volle Anschlag.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="setting-steer-expo" min="0.6" max="3" step="0.05" value="1.3">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-steer-expo-val">1.30</span>
+        </div>
+        <svg class="curve-plot" viewBox="0 0 100 60" preserveAspectRatio="none" aria-hidden="true">
+          <line x1="0" y1="60" x2="100" y2="60" class="curve-axis"/>
+          <line x1="0" y1="0" x2="0" y2="60" class="curve-axis"/>
+          <path class="curve-diag" d="M0,60 L100,0"/>
+          <path id="setting-steer-expo-plot" class="curve-line" d=""/>
+        </svg></div>
       <div class="opt-row"><div class="opt-label">Lenkd&auml;mpfung
           <span class="wip-tag">WIP</span>
           <small>Wie lange das Servo von der Mittelstellung bis zum vollen aktuell
@@ -7325,7 +7363,17 @@
           <input type="range" id="setting-throttle-gamma" min="0.6" max="3" step="0.05" value="1">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-throttle-gamma-val">1.00 linear</span>
-        </div></div>
+        </div>
+        <!-- BESTELLT: "Bei beiden die input/output uebersetzungskurve anzeigen." Die
+             gestrichelte Diagonale ist die Gerade (1,0) zum Vergleich, durchgezogen die
+             aktuell eingestellte Kurve - kennlinienPlotZeichnen() in 50-drive.js zeichnet
+             beide Kurven (Gas und Lenkung) mit derselben Funktion. -->
+        <svg class="curve-plot" viewBox="0 0 100 60" preserveAspectRatio="none" aria-hidden="true">
+          <line x1="0" y1="60" x2="100" y2="60" class="curve-axis"/>
+          <line x1="0" y1="0" x2="0" y2="60" class="curve-axis"/>
+          <path class="curve-diag" d="M0,60 L100,0"/>
+          <path id="setting-throttle-gamma-plot" class="curve-line" d=""/>
+        </svg></div>
       <div class="opt-row"><div class="opt-label">Anfahrschub <span class="wip-tag">WIP</span>
           <small>Der St&ouml;&szlig;er, mit dem das Auto aus dem Stand losbricht. Ohne ihn bekommt es beim Anfahren ein Gasbyte, das zu klein ist, um es zu bewegen &ndash; es zuckt und steht. Mit ihm springt es daf&uuml;r an: 16&nbsp;% sind im Ma&szlig;stab rund 47&nbsp;km/h, und das ist der Sprung von null auf gef&uuml;hlt 30, den man beim ersten Gasgeben sp&uuml;rt. Wieviel n&ouml;tig ist, h&auml;ngt am Untergrund: auf Teppich mehr als auf Laminat. Runter drehen, bis das Auto gerade noch sauber anf&auml;hrt.</small></div>
         <div class="opt-slider">
@@ -7345,7 +7393,35 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-brakebias-val">62% vorn</span>
         </div></div>
-      
+      <!-- BESTELLT: "weiterer handling modus: es soll sich so anfuehlen, wie wenn ich
+           einen Sportwagen in Gran Turismo 7 steuere (statt gt3 auto), also mit
+           Gewicht." Geklaert: "mehr Traegheit/Gewichtsverlagerung, weicheres
+           Bremsgefuehl" (nicht mehr Reifenschlupf). transferK/loadTau steuern das schon
+           im Fahrtakt (st.loadFront in 40-physics.js), hatten aber noch keinen Regler -
+           beide werden fuer den neuen GT7-Preset gebraucht. -->
+      <div class="opt-row"><div class="opt-label">Gewichtsverlagerung <span class="wip-tag">WIP</span>
+          <small>Wieviel Radlast beim vollen Bremsen oder Beschleunigen von einer Achse
+          zur anderen wandert. Mehr f&uuml;hlt sich nach einem schwereren Auto an - mehr
+          Last auf der Vorderachse beim Bremsen, mehr auf der Hinterachse beim Gas.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="phys-transfer-k" min="0.15" max="0.5" step="0.01" value="0.3">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="phys-transfer-k-val">30%</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Tr&auml;gheit der Gewichtsverlagerung
+          <span class="wip-tag">WIP</span>
+          <small>Wie schnell die Karosserie beim Bremsen oder Gasgeben in die neue
+          Radlast einschwingt. Kurz wirkt spritzig und direkt, lang wirkt schwer und
+          tr&auml;ge - wie ein Auto, das erst noch merklich nach vorn oder hinten
+          sackt.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="phys-load-tau" min="40" max="250" step="5" value="80">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="phys-load-tau-val">80 ms</span>
+        </div></div>
+
     </div>
     <div class="card subpage" id="sub-opt-sound">
       <button class="misc-back subpage-back" data-sub="">&larr; Einstellungen</button>

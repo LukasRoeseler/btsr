@@ -19,11 +19,14 @@
       label: 'Arcade',
       kurz: 'Der ursprüngliche Sim-Modus',
       text: 'Automatik, 2,0 s auf 100, voller Grip, kein Reifenverschleiß und kein '
-          + 'Tankgewicht. Die Bremse steht am Anschlag, also der kürzeste Bremsweg von '
-          + 'allen, und die Lenkkalibrierung auf 250 Prozent: der volle Einschlag liegt '
+          + 'Tankgewicht. Die Bremse ist die kräftigste von allen, also der kürzeste '
+          + 'Bremsweg, und die Lenkkalibrierung auf 250 Prozent: der volle Einschlag liegt '
           + 'schon bei einem Viertel Stick an. 50 Abgänge erlaubt, kein Schaden. Zum '
           + 'Fahren ohne Nachdenken.',
-      v: { 'setting-grip': 1.0, 'setting-brakepower': 1.5, 'setting-autoshift': true,
+      // BESTELLT: "bei arcade die bremskraft verstaerken um 50%" - von 1.5 (dem alten
+      // Deckel des Reglers) auf 2.25. Der Regler selbst hat jetzt Platz bis 2.5, siehe
+      // #setting-brakepower im Markup.
+      v: { 'setting-grip': 1.0, 'setting-brakepower': 2.25, 'setting-autoshift': true,
            'setting-zero-to-top': 2.0, 'setting-coast-drag': 0.4, 'setting-fuelweight': 0,
            'setting-tyres': 0, 'phys-steerresp': 2.6, 'setting-brakebias': 56,
            // Die engste Lenkung von allen: bei 250 Prozent liegt der volle Anschlag schon
@@ -217,6 +220,54 @@
            // Gasfaktor: wie frueh das Auto volle Motorleistung bekommt. 1,0 ist
            // das Byte genau proportional zum Tacho, also die kalibrierte Fassung.
            'setting-topspeed': 1.6 },
+    },
+    // ---- GT7: SPORTWAGEN-GEFUEHL STATT RENNWAGEN ------------------------------------
+    //
+    // BESTELLT: "weiterer handling modus: es soll sich so anfuehlen, wie wenn ich einen
+    // Sportwagen in Gran Turismo 7 steuere (statt gt3 auto), also mit Gewicht." Geklaert
+    // mit dem Nutzer: "mehr Traegheit/Gewichtsverlagerung, weicheres Bremsgefuehl" -
+    // AUSDRUECKLICH NICHT mehr Reifenschlupf (setting-grip bleibt auf 1,0, wie Arcade
+    // und Pro).
+    //
+    // DIE BEIDEN NEUEN REGLER TRAGEN DEN UNTERSCHIED: phys-transfer-k (Gewichtsverlagerung,
+    // 30 % -> 40 %) und phys-load-tau (Traegheit dabei, 80 -> 160 ms) sind die einzigen
+    // Werte hier, die es vor diesem Preset im Markup noch gar nicht gab - siehe die
+    // Begruendung bei ihren opt-rows im Fahrgefuehl-Tab. Alles andere sind vorhandene
+    // Regler, auf einen Sportwagen statt einen Rennwagen hin gestimmt: langsamer auf
+    // Tempo (3,3 s statt Pros 2,6), weniger Abtrieb-Ausrollen, weichere Bremse (0,95
+    // statt GT3s 1,15) und ein etwas nachsichtigerer Reibkreis - ein Sportwagen bestraft
+    // Bremsen-und-Lenken-zugleich weniger hart als ein Rennwagen mit Slicks.
+    gt7: {
+      label: 'GT7',
+      kurz: 'Sportwagen-Gefühl statt Rennwagen: mehr Gewicht, weichere Bremse',
+      text: 'Automatik, 3,3 s auf 100, voller Grip – kein zusätzlicher Reifenschlupf, '
+          + 'sondern mehr Gewichtsverlagerung (40 % statt 30 %) und träges Einschwingen '
+          + '(160 statt 80 ms): das Auto lädt sich beim Bremsen und Gasgeben spürbar um, '
+          + 'wie ein Sportwagen mit echtem Gewicht statt ein Rennwagen mit Abtrieb. Die '
+          + 'Bremse ist deutlich weicher als GT3, dafür länger im Bremsweg.',
+      v: { 'setting-grip': 1.0, 'setting-brakepower': 0.95, 'setting-autoshift': true,
+           'setting-zero-to-top': 3.3, 'setting-coast-drag': 0.7, 'setting-fuelweight': 0.5,
+           'setting-tyres': 1.0, 'phys-steerresp': 2.0, 'setting-brakebias': 58,
+           'setting-steer-calib': 2.0,
+           'phys-accel': 1.0,
+           'setting-crash-threshold': 45,
+           // Nachsichtiger als jede Rennklasse: ein Sportwagen mit Strassenreifen
+           // verliert beim gleichzeitigen Bremsen und Lenken weniger, weil er ohnehin
+           // nicht am Limit eines Rennreifens faehrt.
+           'setting-brake-steal': 0.9,
+           'setting-tyre-blankets': true,
+           'setting-fuel-drain': 0.8, 'setting-crash-count': 4,
+           'setting-crash-damage': false,
+           'setting-repair-time': 6,
+           'setting-brake-fade': false,
+           'setting-brake-fade-strength': 1.0,
+           'setting-dirtyair': false,
+           'setting-dirtyair-strength': 1.0,
+           'setting-tyre-asym': false,
+           'setting-tyre-pressure': 1.8,
+           'setting-topspeed': 1.7,
+           // DER EIGENTLICHE UNTERSCHIED: siehe die Begruendung am Kopf dieses Presets.
+           'phys-transfer-k': 0.4, 'phys-load-tau': 160 },
     },
     // DIE KALIBRIERTE FASSUNG, und sie steht hier, damit sie nicht verlorengeht.
     //

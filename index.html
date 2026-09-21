@@ -262,6 +262,14 @@
     margin: 8px 0 10px 0; padding-left: 14px;
     border-left: 2px solid var(--gt3-line-soft); }
   .opt-note-h { font-weight: 700; }
+  /* Die Input/Output-Kurve neben Gas- und Lenkkennlinie. Kein Vorbild im Projekt - erste
+     Fassung. Gestrichelt die Gerade (1,0) zum Vergleich, durchgezogen die eingestellte
+     Kurve; beide teilen sich denselben 0..100/60..0-Rahmen, damit eine Gerade wirklich
+     als 45-Grad-Diagonale erscheint. */
+  .curve-plot { width: 100%; max-width: 170px; height: 62px; margin-top: 8px; display: block; }
+  .curve-axis { stroke: var(--border); stroke-width: 1; }
+  .curve-diag { stroke: var(--border); stroke-width: 1; stroke-dasharray: 3 3; fill: none; }
+  .curve-line { stroke: var(--info); stroke-width: 2; fill: none; }
   /* ---- Regenradar in der Wetterkachel ----
      Das Canvas liegt UNTER dem Symbol und fuellt die Kachel. Es ist nicht anklickbar, damit
      der Klick weiter auf der Kachel landet - sie schaltet das Wetter. */
@@ -3080,7 +3088,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.7.8</span></span>
+        <span class="foot-ver">v<span id="app-version">0.7.9</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -7140,7 +7148,10 @@
       <div class="opt-row"><div class="opt-label">Bremswirkung</div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
-          <input type="range" id="setting-brakepower" min="0.3" max="1.5" step="0.05" value="1.4">
+          <!-- max von 1.5 auf 2.5: Arcade brauchte BESTELLT "die Bremskraft um 50%
+               verstaerken" mehr Kopf, als der alte Deckel (1.5) hatte - der Arcade-Wert
+               selbst stand schon genau AUF dem alten Maximum. -->
+          <input type="range" id="setting-brakepower" min="0.3" max="2.5" step="0.05" value="1.4">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-brakepower-val">1.00</span>
         </div></div>
@@ -7272,6 +7283,33 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="phys-steerresp-val">150%</span>
         </div></div>
+      <!-- BESTELLT: "wie beschleunigungskurve auch lenkkurve einbauen als option mit
+           slider (wenn ich nur ganz leicht stick lenke, dann soll der lenkausschlag
+           weniger sein als jetzt). Bei beiden die input/output uebersetzungskurve
+           anzeigen. Standard beim lenken etwas unempfindlicher bei wenig input." -
+           physEngine.config.steerExpo war bisher eine feste Konstante (1.15, siehe
+           40-physics.js), ohne Regler. Dieselbe Kurvenfamilie wie die Gaskennlinie
+           (x^gamma, hier mit Vorzeichen), nur bipolar (-1..1 statt 0..1). Vorgabe jetzt
+           1.3 statt 1.15 - unempfindlicher bei wenig Ausschlag, aber bewusst nicht am
+           1.5, das sich frueher "unwillig" anfuehlte (siehe Kommentar dort). -->
+      <div class="opt-row"><div class="opt-label">Lenkkennlinie <span class="wip-tag">WIP</span>
+          <small>Wie der Lenkweg des Sticks auf den Lenkausschlag abgebildet wird -
+          dieselbe Kurvenform wie die Gaskennlinie, nur mit Vorzeichen (Links/Rechts).
+          1,0 ist die Gerade. &Uuml;ber 1,0 macht kleine Ausschl&auml;ge um die Mitte
+          unempfindlicher: ein leicht angetippter Stick lenkt dann weniger ein als
+          bisher, der volle Anschlag bleibt unver&auml;ndert der volle Anschlag.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="setting-steer-expo" min="0.6" max="3" step="0.05" value="1.3">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-steer-expo-val">1.30</span>
+        </div>
+        <svg class="curve-plot" viewBox="0 0 100 60" preserveAspectRatio="none" aria-hidden="true">
+          <line x1="0" y1="60" x2="100" y2="60" class="curve-axis"/>
+          <line x1="0" y1="0" x2="0" y2="60" class="curve-axis"/>
+          <path class="curve-diag" d="M0,60 L100,0"/>
+          <path id="setting-steer-expo-plot" class="curve-line" d=""/>
+        </svg></div>
       <div class="opt-row"><div class="opt-label">Lenkd&auml;mpfung
           <span class="wip-tag">WIP</span>
           <small>Wie lange das Servo von der Mittelstellung bis zum vollen aktuell
@@ -7325,7 +7363,17 @@
           <input type="range" id="setting-throttle-gamma" min="0.6" max="3" step="0.05" value="1">
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-throttle-gamma-val">1.00 linear</span>
-        </div></div>
+        </div>
+        <!-- BESTELLT: "Bei beiden die input/output uebersetzungskurve anzeigen." Die
+             gestrichelte Diagonale ist die Gerade (1,0) zum Vergleich, durchgezogen die
+             aktuell eingestellte Kurve - kennlinienPlotZeichnen() in 50-drive.js zeichnet
+             beide Kurven (Gas und Lenkung) mit derselben Funktion. -->
+        <svg class="curve-plot" viewBox="0 0 100 60" preserveAspectRatio="none" aria-hidden="true">
+          <line x1="0" y1="60" x2="100" y2="60" class="curve-axis"/>
+          <line x1="0" y1="0" x2="0" y2="60" class="curve-axis"/>
+          <path class="curve-diag" d="M0,60 L100,0"/>
+          <path id="setting-throttle-gamma-plot" class="curve-line" d=""/>
+        </svg></div>
       <div class="opt-row"><div class="opt-label">Anfahrschub <span class="wip-tag">WIP</span>
           <small>Der St&ouml;&szlig;er, mit dem das Auto aus dem Stand losbricht. Ohne ihn bekommt es beim Anfahren ein Gasbyte, das zu klein ist, um es zu bewegen &ndash; es zuckt und steht. Mit ihm springt es daf&uuml;r an: 16&nbsp;% sind im Ma&szlig;stab rund 47&nbsp;km/h, und das ist der Sprung von null auf gef&uuml;hlt 30, den man beim ersten Gasgeben sp&uuml;rt. Wieviel n&ouml;tig ist, h&auml;ngt am Untergrund: auf Teppich mehr als auf Laminat. Runter drehen, bis das Auto gerade noch sauber anf&auml;hrt.</small></div>
         <div class="opt-slider">
@@ -7345,7 +7393,35 @@
           <button type="button" data-step="1" aria-label="mehr">+</button>
           <span class="opt-val" id="setting-brakebias-val">62% vorn</span>
         </div></div>
-      
+      <!-- BESTELLT: "weiterer handling modus: es soll sich so anfuehlen, wie wenn ich
+           einen Sportwagen in Gran Turismo 7 steuere (statt gt3 auto), also mit
+           Gewicht." Geklaert: "mehr Traegheit/Gewichtsverlagerung, weicheres
+           Bremsgefuehl" (nicht mehr Reifenschlupf). transferK/loadTau steuern das schon
+           im Fahrtakt (st.loadFront in 40-physics.js), hatten aber noch keinen Regler -
+           beide werden fuer den neuen GT7-Preset gebraucht. -->
+      <div class="opt-row"><div class="opt-label">Gewichtsverlagerung <span class="wip-tag">WIP</span>
+          <small>Wieviel Radlast beim vollen Bremsen oder Beschleunigen von einer Achse
+          zur anderen wandert. Mehr f&uuml;hlt sich nach einem schwereren Auto an - mehr
+          Last auf der Vorderachse beim Bremsen, mehr auf der Hinterachse beim Gas.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="phys-transfer-k" min="0.15" max="0.5" step="0.01" value="0.3">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="phys-transfer-k-val">30%</span>
+        </div></div>
+      <div class="opt-row"><div class="opt-label">Tr&auml;gheit der Gewichtsverlagerung
+          <span class="wip-tag">WIP</span>
+          <small>Wie schnell die Karosserie beim Bremsen oder Gasgeben in die neue
+          Radlast einschwingt. Kurz wirkt spritzig und direkt, lang wirkt schwer und
+          tr&auml;ge - wie ein Auto, das erst noch merklich nach vorn oder hinten
+          sackt.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="phys-load-tau" min="40" max="250" step="5" value="80">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="phys-load-tau-val">80 ms</span>
+        </div></div>
+
     </div>
     <div class="card subpage" id="sub-opt-sound">
       <button class="misc-back subpage-back" data-sub="">&larr; Einstellungen</button>
@@ -9109,6 +9185,15 @@
     "Regen ansagen": "Announce rain",
     "Wenn es anfängt zu regnen und wenn es aufhört. Beim Laden wird nichts gesagt, erst beim Wechsel.": "When it starts raining and when it stops. Nothing is said on load, only on a change.",
     "Gaskennlinie": "Throttle curve",
+    "Lenkkennlinie": "Steering curve",
+    "Gewichtsverlagerung": "Weight transfer",
+    "Wieviel Radlast beim vollen Bremsen oder Beschleunigen von einer Achse zur anderen wandert. Mehr fühlt sich nach einem schwereren Auto an - mehr Last auf der Vorderachse beim Bremsen, mehr auf der Hinterachse beim Gas.":
+      "How much wheel load shifts from one axle to the other under full braking or acceleration. More feels like a heavier car - more load on the front axle under braking, more on the rear under throttle.",
+    "Trägheit der Gewichtsverlagerung": "Weight transfer inertia",
+    "Wie schnell die Karosserie beim Bremsen oder Gasgeben in die neue Radlast einschwingt. Kurz wirkt spritzig und direkt, lang wirkt schwer und träge - wie ein Auto, das erst noch merklich nach vorn oder hinten sackt.":
+      "How quickly the body settles into the new wheel load under braking or throttle. Short feels sharp and direct, long feels heavy and sluggish - like a car that visibly dips forward or aft first.",
+    "Wie der Lenkweg des Sticks auf den Lenkausschlag abgebildet wird - dieselbe Kurvenform wie die Gaskennlinie, nur mit Vorzeichen (Links/Rechts). 1,0 ist die Gerade. Über 1,0 macht kleine Ausschläge um die Mitte unempfindlicher: ein leicht angetippter Stick lenkt dann weniger ein als bisher, der volle Anschlag bleibt unverändert der volle Anschlag.":
+      "How the stick's travel maps to the steering angle - the same curve shape as the throttle curve, just signed (left/right). 1.0 is the straight line. Above 1.0 makes small deflections near the centre less sensitive: a lightly nudged stick then steers less than before, full lock stays full lock.",
     "Anfahrschub": "Launch shove",
     "Wie der Gasweg des Controllers auf die Beschleunigung abgebildet wird. Die Enden liegen immer fest: kein Gas heißt keine Beschleunigung, Vollgas heißt volle Beschleunigung – geändert wird nur, was dazwischen passiert. 1,0 ist die Gerade und ändert nichts. Über 1,0 streckt den unteren Bereich: ein Viertel Gasweg gibt bei 1,8 nur noch 8 % statt 25 %. Genau das braucht ein Trigger mit großer Totzone – ein DualShock 4 oder DualSense gibt schon bei leichtem Druck viel ab, und dann lässt sich kein Tempo halten. Unter 1,0 macht es umgekehrt spitzer, für Pedale mit langem Weg.": "How the controller’s throttle travel maps to acceleration. The ends are always fixed: no throttle means no acceleration, full throttle means full acceleration – only what happens in between changes. 1.0 is the straight line and changes nothing. Above 1.0 stretches the lower range: a quarter of the travel gives only 8 % instead of 25 % at 1.8. That is exactly what a trigger with a large dead zone needs – a DualShock 4 or DualSense already gives away a lot under light pressure, and then no speed can be held. Below 1.0 does the opposite and makes it sharper, for pedals with long travel.",
     "Der Stößer, mit dem das Auto aus dem Stand losbricht. Ohne ihn bekommt es beim Anfahren ein Gasbyte, das zu klein ist, um es zu bewegen – es zuckt und steht. Mit ihm springt es dafür an: 16 % sind im Maßstab rund 47 km/h, und das ist der Sprung von null auf gefühlt 30, den man beim ersten Gasgeben spürt. Wieviel nötig ist, hängt am Untergrund: auf Teppich mehr als auf Laminat. Runter drehen, bis das Auto gerade noch sauber anfährt.": "The shove that breaks the car away from standstill. Without it the car gets a throttle byte too small to move it – it twitches and stays put. With it the car jumps instead: 16 % is about 47 km/h to scale, and that is the jump from zero to a felt 30 you notice on the first squeeze. How much is needed depends on the surface: more on carpet than on laminate. Turn it down until the car only just still pulls away cleanly.",
@@ -10166,7 +10251,7 @@
     "Kurve, Blatt 1": "Curve, sheet 1",
     "Kurve, Blatt 2": "Curve, sheet 2",
     // Pro als Vorgabe (v0.5): geaenderte Preset-Texte, Gasfaktor, vier Reifen.
-    "Automatik, 2,0 s auf 100, voller Grip, kein Reifenverschleiß und kein Tankgewicht. Die Bremse steht am Anschlag, also der kürzeste Bremsweg von allen, und die Lenkkalibrierung auf 250 Prozent: der volle Einschlag liegt schon bei einem Viertel Stick an. 50 Abgänge erlaubt, kein Schaden. Zum Fahren ohne Nachdenken.": "Automatic, 2.0 s to 100, full grip, no tyre wear and no fuel weight. The brake is at its stop, so the shortest braking distance of them all, and steering calibration at 250 percent: full lock arrives at a quarter of stick travel. 50 departures allowed, no damage. For driving without thinking.",
+    "Automatik, 2,0 s auf 100, voller Grip, kein Reifenverschleiß und kein Tankgewicht. Die Bremse ist die kräftigste von allen, also der kürzeste Bremsweg, und die Lenkkalibrierung auf 250 Prozent: der volle Einschlag liegt schon bei einem Viertel Stick an. 50 Abgänge erlaubt, kein Schaden. Zum Fahren ohne Nachdenken.": "Automatic, 2.0 s to 100, full grip, no tyre wear and no fuel weight. The brake is the strongest of them all, so the shortest braking distance, and steering calibration at 250 percent: full lock arrives at a quarter of stick travel. 50 departures allowed, no damage. For driving without thinking.",
     "Von Hand schalten, 2,4 s auf 100, stärkster Reifenverschleiß, volles Tankgewicht, die am feinsten dosierbare Lenkung (52 % des Anschlags bei vollem Stick, man muss also weit ziehen) und die kürzeste Bremse. Das Ausrollen ist kurz, weil der Luftwiderstand hier die größte Einzelkraft ist.": "Manual shifting, 2.4 s to 100, the strongest tyre wear, full fuel weight, the most finely metered steering (52 % of the lock at full stick, so you have to pull a long way) and the shortest braking. The coast-down is short because drag is the largest single force here.",
     "Gasfaktor": "Throttle factor",
     "Faktor auf das Motorbyte, das zum Auto geht. Das Byte ist Tempo geteilt durch Simulations-Höchstgeschwindigkeit; bei 100 % bekommt das Auto also erst volle Leistung, wenn die Simulation ihre Höchstgeschwindigkeit erreicht hat, und das dauert gemessen fast 25 Sekunden Vollgas. Über 100 % erreicht es die volle Leistung früher, ohne dass der Tacho anders skaliert. Das ist auch ehrlicher als es klingt: das Modellauto fährt real 5,9 km/h, egal was die Simulation glaubt – dieser Faktor ist die Abbildung zwischen beidem, und dass er früher genau 1 war, war eine Annahme und keine Messung.": "Factor applied to the motor byte that goes to the car. The byte is speed divided by the simulated top speed, so at 100 % the car only gets full power once the simulation has reached its top speed – and that takes a measured 25 seconds of full throttle. Above 100 % it reaches full power sooner without the speedometer scaling differently. That is also more honest than it sounds: the model car really does 5.9 km/h whatever the simulation believes – this factor is the mapping between the two, and the fact that it used to be exactly 1 was an assumption, not a measurement.",
@@ -10264,6 +10349,10 @@
     "Am Grenzbereich, im Stil von Gran Turismo: Lautstärke und Tonhöhe laufen stetig mit der Querausnutzung des Reibkreises, Einsatz ab 60 Prozent – also ab etwa 98 km/h bei vollem Lenkausschlag, ab 197 km/h bei halbem, und bei einem Viertel Ausschlag nie. Eine Haarnadel quietscht, eine lange schnelle Kurve nicht. Bis v0.4.55 stand die Schwelle bei 85 Prozent und war damit unerreichbar: gemessen kommt die Querausnutzung erst bei 265 km/h dorthin, weil der Lenkausschlag mit dem Tempo beschnitten wird. Es hat deshalb nie gequietscht.": "At the limit, in the style of Gran Turismo: volume and pitch run continuously with the lateral use of the friction circle, starting at 60 per cent – so from about 98 km/h at full lock, from 197 km/h at half, and at a quarter of lock never. A hairpin squeals, a long fast corner does not. Up to v0.4.55 the threshold sat at 85 per cent and was therefore unreachable: measured, the lateral use only gets there at 265 km/h, because the steering lock is cut back with speed. It therefore never squealed.",
     "Mehrspieler": "Multiplayer",
     "Sportlich, mit Simulationstiefe": "Sporty, with simulation depth",
+    "Sportwagen-Gefühl statt Rennwagen: mehr Gewicht, weichere Bremse":
+      "Sports car feel instead of a race car: more weight, softer brakes",
+    "Automatik, 3,3 s auf 100, voller Grip – kein zusätzlicher Reifenschlupf, sondern mehr Gewichtsverlagerung (40 % statt 30 %) und träges Einschwingen (160 statt 80 ms): das Auto lädt sich beim Bremsen und Gasgeben spürbar um, wie ein Sportwagen mit echtem Gewicht statt ein Rennwagen mit Abtrieb. Die Bremse ist deutlich weicher als GT3, dafür länger im Bremsweg.":
+      "Automatic, 3.3 s to 100, full grip – no extra tyre slip, but more weight transfer (40% instead of 30%) and a sluggish settle (160 instead of 80 ms): the car noticeably shifts its weight under braking and throttle, like a sports car with real weight instead of a race car with downforce. The brake is distinctly softer than GT3, with a longer stopping distance in exchange.",
     "Von Hand schalten, 2,9 s auf 100, Reifenverschleiß und Tankgewicht knapp zur Hälfte. Bremsfading, Windschatten und ungleicher Verschleiß sind voll an. Die harte, gegen echte Werte kalibrierte Fassung steht daneben als Realismus GT3.": "Shift by hand, 2.9 s to 100, tyre wear and fuel weight at just under half. Brake fade, dirty air and uneven wear are fully on. The hard version, calibrated against real figures, sits next to it as Realism GT3.",
     "Automatik, 3,1 s auf 100, Reifenverschleiß und Tankgewicht knapp halb so stark wie im Realismus-GT3. Die Klasse direkt neben Pro: Bremsfading, Windschatten und ungleicher Verschleiß sind an, aber gutmütig eingestellt, und die Lenkkalibrierung liegt bei 175 Prozent.": "Automatic, 3.1 s to 100, tyre wear and fuel weight just under half as strong as in the Realism GT3. The class right next to Pro: brake fade, dirty air and uneven wear are on, but set gently, and the steering calibration sits at 175 percent.",
     "Das schärfste der fahrbaren": "The sharpest of the driveable ones",
@@ -12247,6 +12336,19 @@
     return Math.pow(v, gamma);
   }
 
+  // ---- Die Lenkkennlinie: dieselbe Kurve, mit Vorzeichen -----------------------------
+  //
+  // BESTELLT: "wie beschleunigungskurve auch lenkkurve einbauen als option mit slider."
+  // x^gamma ist nur fuer x >= 0 definiert (ein negativer Betrag hoch einem nicht-ganzen
+  // Exponenten ist NaN) - deshalb Betrag und Vorzeichen getrennt, wie es der Fahrtakt
+  // vorher schon inline tat. Herausgezogen, damit Kurve und Visualisierung (siehe
+  // kennlinienPlotZeichnen in 50-drive.js) und der Fahrtakt dieselbe Rechnung teilen.
+  function lenkKennlinie(x, expo) {
+    const v = Math.max(-1, Math.min(1, x));
+    if (!(expo > 0) || expo === 1) return v;
+    return Math.sign(v) * Math.pow(Math.abs(v), expo);
+  }
+
   // Die Nickgrenzen, GERECHNET aus der statischen Achslast und dem Verlagerungsanteil.
   //
   // Als Funktionen und nicht als Konfigurationsfelder: ein Feld muesste nach jeder Aenderung
@@ -12347,7 +12449,11 @@
         // Lenkansprechen 2,0 sind 12 Anschlaege je Sekunde, also 83 ms. Damit faehrt die
         // App mit der Vorgabe genauso wie vorher.
         steerDaempfungMs: Math.round(1000 / (STEER_RATE_REF * STEER_RESP_REF)),
-        steerExpo: 1.15,         // near-linear: 1.5 made the car feel unwilling to turn
+        // BESTELLT: "Standard beim lenken etwas unempfindlicher bei wenig input." Von
+        // 1.15 auf 1.3 angehoben - deutlich unter der 1.5, die sich "unwillig" anfuehlte
+        // (siehe der alte Kommentar hier), aber ueber der bisherigen Vorgabe. Jetzt ueber
+        // #setting-steer-expo einstellbar, dieser Wert ist nur noch der Anfangswert.
+        steerExpo: 1.3,
         // Der volle Lenkausschlag ist MECHANISCH 45 Grad. Das stand nirgends, und damit
         // war steerResponse eine Zahl ohne Einheit: der Regler ging von 0,5 bis 3,0, und
         // was 2,0 bedeutete, wusste nur die Kalibrierung. Jetzt ist die Groesse im Modell,
@@ -13910,9 +14016,10 @@
       }
 
       // Expo curve for a softer centre. Kept mild: a strong expo is what made the car feel
-      // reluctant to turn, and more angle was explicitly wanted.
-      const expoSteer = Math.sign(inputs.steering)
-                      * Math.pow(Math.abs(inputs.steering), cfg.steerExpo);
+      // reluctant to turn, and more angle was explicitly wanted. lenkKennlinie() and not
+      // the formula inline: the settings slider's curve preview must compute exactly the
+      // same thing as the car actually drives.
+      const expoSteer = lenkKennlinie(inputs.steering, cfg.steerExpo);
 
       // Authority falls off with speed, but only in the higher gears. In 1st gear the car
       // keeps everything it has, because that is where the tight stuff gets driven.
@@ -15030,6 +15137,36 @@
   window.addEventListener('gamepadconnected', triggerLageZeigen);
   window.addEventListener('gamepaddisconnected', triggerLageZeigen);
 
+  // ---- DIE INPUT/OUTPUT-KURVE, fuer Gas- UND Lenkkennlinie -------------------------
+  //
+  // BESTELLT: "Bei beiden die input/output uebersetzungskurve anzeigen." Eine Funktion
+  // fuer beide Regler statt zwei fast identischer Zeichenroutinen: beide sind dieselbe
+  // Kurvenfamilie (x^gamma, mit oder ohne Vorzeichen), nur mit anderem Wertebereich -
+  // 0..1 fuers Gas, -1..1 fuer die Lenkung.
+  //
+  // GESAMPELT UND NICHT ANALYTISCH GEZEICHNET: eine SVG-Kurve durch 24 Stuetzpunkte
+  // sieht bei diesen glatten Potenzfunktionen von einer geraden Linie nicht zu
+  // unterscheiden aus, und ein Pfad aus Geradenstuecken bleibt bei jedem Exponenten
+  // gleich einfach zu bauen - keine Bezier-Naeherung noetig.
+  function kennlinienPlotZeichnen(pathId, fn, xMin, xMax) {
+    const el = $(pathId);
+    if (!el) return;
+    const N = 24;
+    const spanne = xMax - xMin;
+    const pts = [];
+    for (let i = 0; i <= N; i++) {
+      const x = xMin + spanne * i / N;
+      const y = fn(x);
+      // x waagerecht 0..100, y senkrecht 60..0 (oben = groesster Wert) - derselbe
+      // Wertebereich [xMin, xMax] fuer beide Achsen, weil Eingang und Ausgang bei
+      // beiden Kennlinien denselben Bereich teilen.
+      const px = (x - xMin) / spanne * 100;
+      const py = 60 - (y - xMin) / spanne * 60;
+      pts.push(px.toFixed(1) + ',' + py.toFixed(1));
+    }
+    el.setAttribute('d', 'M' + pts.join(' L'));
+  }
+
   // GASKENNLINIE und ANFAHRSCHUB. Beide lesen ihren Anfangswert AUS DEM MARKUP und
   // haengen sich danach an 'input' - dasselbe Muster wie bei setting-vibration, wo der
   // fehlende Anfangsabgleich schon einmal einen toten Schalter ergeben hat.
@@ -15044,6 +15181,22 @@
     const viertel = Math.round(100 * Math.pow(0.25, g));
     $('setting-throttle-gamma-val').textContent =
       g.toFixed(2) + (nah ? ' linear' : ' \u00b7 \u00bc Weg = ' + viertel + '%');
+    kennlinienPlotZeichnen('setting-throttle-gamma-plot', (x) => gasKennlinie(x, g), 0, 1);
+  }
+  // LENKKENNLINIE. BESTELLT: "wie beschleunigungskurve auch lenkkurve einbauen als
+  // option mit slider." Dieselbe Kurvenfamilie wie oben, bipolar - siehe expoSteer in
+  // 40-physics.js, das genau diese Rechnung (Vorzeichen mal Betrag hoch Exponent) im
+  // Fahrtakt schon ausfuehrt.
+  function lenkKennlinieAnwenden() {
+    const el = $('setting-steer-expo');
+    if (!el) return;
+    const e = parseFloat(el.value);
+    physEngine.config.steerExpo = e;
+    const nah = Math.abs(e - 1) < 0.001;
+    const viertel = Math.round(100 * Math.pow(0.25, e));
+    $('setting-steer-expo-val').textContent =
+      e.toFixed(2) + (nah ? ' linear' : ' \u00b7 \u00bc Weg = ' + viertel + '%');
+    kennlinienPlotZeichnen('setting-steer-expo-plot', (x) => lenkKennlinie(x, e), -1, 1);
   }
   function anfahrschubAnwenden() {
     const el = $('setting-minmove');
@@ -15057,6 +15210,10 @@
   if ($('setting-throttle-gamma')) {
     gasKennlinieAnwenden();
     $('setting-throttle-gamma').addEventListener('input', gasKennlinieAnwenden);
+  }
+  if ($('setting-steer-expo')) {
+    lenkKennlinieAnwenden();
+    $('setting-steer-expo').addEventListener('input', lenkKennlinieAnwenden);
   }
   if ($('setting-minmove')) {
     anfahrschubAnwenden();
@@ -15465,6 +15622,24 @@
     physEngine.config.brakeBias = pct / 100;
     $('setting-brakebias-val').textContent = pct + '% vorn';
   });
+
+  // BESTELLT (GT7-Fahrmodus): "mehr Traegheit/Gewichtsverlagerung." transferK/loadTau
+  // steuern st.loadFront schon im Fahrtakt (siehe 40-physics.js), hatten aber keinen
+  // Regler - beide braucht der neue GT7-Preset.
+  if ($('phys-transfer-k')) {
+    $('phys-transfer-k').addEventListener('input', (e) => {
+      const v = parseFloat(e.target.value);
+      physEngine.config.transferK = v;
+      $('phys-transfer-k-val').textContent = Math.round(v * 100) + '%';
+    });
+  }
+  if ($('phys-load-tau')) {
+    $('phys-load-tau').addEventListener('input', (e) => {
+      const ms = parseInt(e.target.value, 10);
+      physEngine.config.loadTau = ms / 1000;
+      $('phys-load-tau-val').textContent = ms + ' ms';
+    });
+  }
 
   // ---- Block 4: Bremstemperatur, Windschatten, Reifen -------------------------------
   //
@@ -38825,12 +39000,15 @@
     },
     // Die Gaskennlinie als reine Rechnung, siehe gasKennlinie() in 40-physics.js.
     gasKennlinie,
+    // Dieselbe Rechnung, bipolar - siehe lenkKennlinie() in 40-physics.js.
+    lenkKennlinie,
     // Und der gelebte Zustand der zwei Regler, damit ein Test die VERDRAHTUNG prueft und
     // nicht nur die Formel: ein Regler, der rechnet und nichts setzt, waere sonst gruen.
     fahrgefuehlWerte() {
       return { throttleGamma: physEngine.config.throttleGamma,
                minMoveThrottle: physEngine.config.minMoveThrottle,
-               topSpeedKmh: physEngine.config.topSpeedKmh, massstab: REAL_SCALE };
+               topSpeedKmh: physEngine.config.topSpeedKmh, massstab: REAL_SCALE,
+               steerExpo: physEngine.config.steerExpo };
     },
 
     // ---- Haelt der Ghost an, wenn er anhalten soll - und nur dann? ------------------
@@ -50330,6 +50508,55 @@
              mass: teile.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
   });
 
+  // ---- Lenkkennlinie: Enden fest, Vorzeichen erhalten, Regler verdrahtet ----
+  //
+  // BESTELLT: "wie beschleunigungskurve auch lenkkurve einbauen als option mit slider."
+  // Dieselben Zusicherungen wie bei der Gaskennlinie, bipolar: -1 bleibt -1, 0 bleibt 0,
+  // 1 bleibt 1, fuer jeden Exponenten - und das Vorzeichen darf sich nie umdrehen.
+  stAdd('Lenkkennlinie: Enden fest, Vorzeichen erhalten, Regler verdrahtet', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.lenkKennlinie || !OMEGA_TEST.fahrgefuehlWerte) {
+      return { skip: true, mass: 'lenkKennlinie nicht vorhanden' };
+    }
+    const f = OMEGA_TEST.lenkKennlinie;
+    const schlecht = [], teile = [];
+    for (const e of [0.6, 1, 1.3, 1.8, 2.5, 3]) {
+      if (f(0, e) !== 0) schlecht.push('e=' + e + ': f(0) = ' + f(0, e));
+      if (Math.abs(f(1, e) - 1) > 1e-12) schlecht.push('e=' + e + ': f(1) = ' + f(1, e));
+      if (Math.abs(f(-1, e) + 1) > 1e-12) schlecht.push('e=' + e + ': f(-1) = ' + f(-1, e));
+      // Streng steigend ueber den GANZEN Bereich, sonst gaebe es einen Lenkweg, der
+      // weniger Ausschlag gibt als ein kleinerer davor.
+      let vor = -2;
+      for (let x = -1; x <= 1.0001; x += 0.1) {
+        const y = f(x, e);
+        if (y <= vor) { schlecht.push('e=' + e + ' nicht steigend bei x=' + x.toFixed(2)); break; }
+        vor = y;
+      }
+    }
+    const v1 = f(0.25, 1), v18 = f(0.25, 1.8);
+    teile.push('¼ Ausschlag bei 1,0/1,8: ' + (v1 * 100).toFixed(0) + '/' + (v18 * 100).toFixed(0) + '%');
+    if (!(v18 < v1)) schlecht.push('Exponent ueber 1 macht kleine Ausschlaege nicht unempfindlicher');
+    for (const x of [0.1, 0.37, 0.5, 0.9]) {
+      if (f(x, 1) !== x) schlecht.push('1,0 ist nicht die Gerade bei ' + x);
+    }
+
+    const el = $('setting-steer-expo'), val = $('setting-steer-expo-val');
+    if (!el) return { ok: false, mass: 'Regler fehlt im Markup' };
+    const merk = el.value;
+    try {
+      el.value = '2.2'; el.dispatchEvent(new Event('input', { bubbles: true }));
+      const w = OMEGA_TEST.fahrgefuehlWerte();
+      teile.push('Regler 2,2 -> Physik ' + w.steerExpo);
+      if (Math.abs(w.steerExpo - 2.2) > 1e-9) {
+        schlecht.push('der Regler setzt steerExpo nicht (' + w.steerExpo + ')');
+      }
+      if (!/2\.20/.test(val.textContent)) schlecht.push('Anzeige: ' + val.textContent);
+    } finally {
+      el.value = merk; el.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+    return { ok: schlecht.length === 0,
+             mass: teile.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
   // ---- Ghosts: anhalten nur, wenn es wirklich vorbei ist ----
   //
   // GEMELDET: "sie fahren stumpf ihre Spur, keine Querlage. Und nach einer Weile bleiben
@@ -59905,11 +60132,14 @@
       label: 'Arcade',
       kurz: 'Der ursprüngliche Sim-Modus',
       text: 'Automatik, 2,0 s auf 100, voller Grip, kein Reifenverschleiß und kein '
-          + 'Tankgewicht. Die Bremse steht am Anschlag, also der kürzeste Bremsweg von '
-          + 'allen, und die Lenkkalibrierung auf 250 Prozent: der volle Einschlag liegt '
+          + 'Tankgewicht. Die Bremse ist die kräftigste von allen, also der kürzeste '
+          + 'Bremsweg, und die Lenkkalibrierung auf 250 Prozent: der volle Einschlag liegt '
           + 'schon bei einem Viertel Stick an. 50 Abgänge erlaubt, kein Schaden. Zum '
           + 'Fahren ohne Nachdenken.',
-      v: { 'setting-grip': 1.0, 'setting-brakepower': 1.5, 'setting-autoshift': true,
+      // BESTELLT: "bei arcade die bremskraft verstaerken um 50%" - von 1.5 (dem alten
+      // Deckel des Reglers) auf 2.25. Der Regler selbst hat jetzt Platz bis 2.5, siehe
+      // #setting-brakepower im Markup.
+      v: { 'setting-grip': 1.0, 'setting-brakepower': 2.25, 'setting-autoshift': true,
            'setting-zero-to-top': 2.0, 'setting-coast-drag': 0.4, 'setting-fuelweight': 0,
            'setting-tyres': 0, 'phys-steerresp': 2.6, 'setting-brakebias': 56,
            // Die engste Lenkung von allen: bei 250 Prozent liegt der volle Anschlag schon
@@ -60103,6 +60333,54 @@
            // Gasfaktor: wie frueh das Auto volle Motorleistung bekommt. 1,0 ist
            // das Byte genau proportional zum Tacho, also die kalibrierte Fassung.
            'setting-topspeed': 1.6 },
+    },
+    // ---- GT7: SPORTWAGEN-GEFUEHL STATT RENNWAGEN ------------------------------------
+    //
+    // BESTELLT: "weiterer handling modus: es soll sich so anfuehlen, wie wenn ich einen
+    // Sportwagen in Gran Turismo 7 steuere (statt gt3 auto), also mit Gewicht." Geklaert
+    // mit dem Nutzer: "mehr Traegheit/Gewichtsverlagerung, weicheres Bremsgefuehl" -
+    // AUSDRUECKLICH NICHT mehr Reifenschlupf (setting-grip bleibt auf 1,0, wie Arcade
+    // und Pro).
+    //
+    // DIE BEIDEN NEUEN REGLER TRAGEN DEN UNTERSCHIED: phys-transfer-k (Gewichtsverlagerung,
+    // 30 % -> 40 %) und phys-load-tau (Traegheit dabei, 80 -> 160 ms) sind die einzigen
+    // Werte hier, die es vor diesem Preset im Markup noch gar nicht gab - siehe die
+    // Begruendung bei ihren opt-rows im Fahrgefuehl-Tab. Alles andere sind vorhandene
+    // Regler, auf einen Sportwagen statt einen Rennwagen hin gestimmt: langsamer auf
+    // Tempo (3,3 s statt Pros 2,6), weniger Abtrieb-Ausrollen, weichere Bremse (0,95
+    // statt GT3s 1,15) und ein etwas nachsichtigerer Reibkreis - ein Sportwagen bestraft
+    // Bremsen-und-Lenken-zugleich weniger hart als ein Rennwagen mit Slicks.
+    gt7: {
+      label: 'GT7',
+      kurz: 'Sportwagen-Gefühl statt Rennwagen: mehr Gewicht, weichere Bremse',
+      text: 'Automatik, 3,3 s auf 100, voller Grip – kein zusätzlicher Reifenschlupf, '
+          + 'sondern mehr Gewichtsverlagerung (40 % statt 30 %) und träges Einschwingen '
+          + '(160 statt 80 ms): das Auto lädt sich beim Bremsen und Gasgeben spürbar um, '
+          + 'wie ein Sportwagen mit echtem Gewicht statt ein Rennwagen mit Abtrieb. Die '
+          + 'Bremse ist deutlich weicher als GT3, dafür länger im Bremsweg.',
+      v: { 'setting-grip': 1.0, 'setting-brakepower': 0.95, 'setting-autoshift': true,
+           'setting-zero-to-top': 3.3, 'setting-coast-drag': 0.7, 'setting-fuelweight': 0.5,
+           'setting-tyres': 1.0, 'phys-steerresp': 2.0, 'setting-brakebias': 58,
+           'setting-steer-calib': 2.0,
+           'phys-accel': 1.0,
+           'setting-crash-threshold': 45,
+           // Nachsichtiger als jede Rennklasse: ein Sportwagen mit Strassenreifen
+           // verliert beim gleichzeitigen Bremsen und Lenken weniger, weil er ohnehin
+           // nicht am Limit eines Rennreifens faehrt.
+           'setting-brake-steal': 0.9,
+           'setting-tyre-blankets': true,
+           'setting-fuel-drain': 0.8, 'setting-crash-count': 4,
+           'setting-crash-damage': false,
+           'setting-repair-time': 6,
+           'setting-brake-fade': false,
+           'setting-brake-fade-strength': 1.0,
+           'setting-dirtyair': false,
+           'setting-dirtyair-strength': 1.0,
+           'setting-tyre-asym': false,
+           'setting-tyre-pressure': 1.8,
+           'setting-topspeed': 1.7,
+           // DER EIGENTLICHE UNTERSCHIED: siehe die Begruendung am Kopf dieses Presets.
+           'phys-transfer-k': 0.4, 'phys-load-tau': 160 },
     },
     // DIE KALIBRIERTE FASSUNG, und sie steht hier, damit sie nicht verlorengeht.
     //

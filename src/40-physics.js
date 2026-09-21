@@ -28,6 +28,19 @@
     return Math.pow(v, gamma);
   }
 
+  // ---- Die Lenkkennlinie: dieselbe Kurve, mit Vorzeichen -----------------------------
+  //
+  // BESTELLT: "wie beschleunigungskurve auch lenkkurve einbauen als option mit slider."
+  // x^gamma ist nur fuer x >= 0 definiert (ein negativer Betrag hoch einem nicht-ganzen
+  // Exponenten ist NaN) - deshalb Betrag und Vorzeichen getrennt, wie es der Fahrtakt
+  // vorher schon inline tat. Herausgezogen, damit Kurve und Visualisierung (siehe
+  // kennlinienPlotZeichnen in 50-drive.js) und der Fahrtakt dieselbe Rechnung teilen.
+  function lenkKennlinie(x, expo) {
+    const v = Math.max(-1, Math.min(1, x));
+    if (!(expo > 0) || expo === 1) return v;
+    return Math.sign(v) * Math.pow(Math.abs(v), expo);
+  }
+
   // Die Nickgrenzen, GERECHNET aus der statischen Achslast und dem Verlagerungsanteil.
   //
   // Als Funktionen und nicht als Konfigurationsfelder: ein Feld muesste nach jeder Aenderung
@@ -128,7 +141,11 @@
         // Lenkansprechen 2,0 sind 12 Anschlaege je Sekunde, also 83 ms. Damit faehrt die
         // App mit der Vorgabe genauso wie vorher.
         steerDaempfungMs: Math.round(1000 / (STEER_RATE_REF * STEER_RESP_REF)),
-        steerExpo: 1.15,         // near-linear: 1.5 made the car feel unwilling to turn
+        // BESTELLT: "Standard beim lenken etwas unempfindlicher bei wenig input." Von
+        // 1.15 auf 1.3 angehoben - deutlich unter der 1.5, die sich "unwillig" anfuehlte
+        // (siehe der alte Kommentar hier), aber ueber der bisherigen Vorgabe. Jetzt ueber
+        // #setting-steer-expo einstellbar, dieser Wert ist nur noch der Anfangswert.
+        steerExpo: 1.3,
         // Der volle Lenkausschlag ist MECHANISCH 45 Grad. Das stand nirgends, und damit
         // war steerResponse eine Zahl ohne Einheit: der Regler ging von 0,5 bis 3,0, und
         // was 2,0 bedeutete, wusste nur die Kalibrierung. Jetzt ist die Groesse im Modell,
@@ -1691,9 +1708,10 @@
       }
 
       // Expo curve for a softer centre. Kept mild: a strong expo is what made the car feel
-      // reluctant to turn, and more angle was explicitly wanted.
-      const expoSteer = Math.sign(inputs.steering)
-                      * Math.pow(Math.abs(inputs.steering), cfg.steerExpo);
+      // reluctant to turn, and more angle was explicitly wanted. lenkKennlinie() and not
+      // the formula inline: the settings slider's curve preview must compute exactly the
+      // same thing as the car actually drives.
+      const expoSteer = lenkKennlinie(inputs.steering, cfg.steerExpo);
 
       // Authority falls off with speed, but only in the higher gears. In 1st gear the car
       // keeps everything it has, because that is where the tight stuff gets driven.

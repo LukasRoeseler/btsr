@@ -605,6 +605,36 @@
   window.addEventListener('gamepadconnected', triggerLageZeigen);
   window.addEventListener('gamepaddisconnected', triggerLageZeigen);
 
+  // ---- DIE INPUT/OUTPUT-KURVE, fuer Gas- UND Lenkkennlinie -------------------------
+  //
+  // BESTELLT: "Bei beiden die input/output uebersetzungskurve anzeigen." Eine Funktion
+  // fuer beide Regler statt zwei fast identischer Zeichenroutinen: beide sind dieselbe
+  // Kurvenfamilie (x^gamma, mit oder ohne Vorzeichen), nur mit anderem Wertebereich -
+  // 0..1 fuers Gas, -1..1 fuer die Lenkung.
+  //
+  // GESAMPELT UND NICHT ANALYTISCH GEZEICHNET: eine SVG-Kurve durch 24 Stuetzpunkte
+  // sieht bei diesen glatten Potenzfunktionen von einer geraden Linie nicht zu
+  // unterscheiden aus, und ein Pfad aus Geradenstuecken bleibt bei jedem Exponenten
+  // gleich einfach zu bauen - keine Bezier-Naeherung noetig.
+  function kennlinienPlotZeichnen(pathId, fn, xMin, xMax) {
+    const el = $(pathId);
+    if (!el) return;
+    const N = 24;
+    const spanne = xMax - xMin;
+    const pts = [];
+    for (let i = 0; i <= N; i++) {
+      const x = xMin + spanne * i / N;
+      const y = fn(x);
+      // x waagerecht 0..100, y senkrecht 60..0 (oben = groesster Wert) - derselbe
+      // Wertebereich [xMin, xMax] fuer beide Achsen, weil Eingang und Ausgang bei
+      // beiden Kennlinien denselben Bereich teilen.
+      const px = (x - xMin) / spanne * 100;
+      const py = 60 - (y - xMin) / spanne * 60;
+      pts.push(px.toFixed(1) + ',' + py.toFixed(1));
+    }
+    el.setAttribute('d', 'M' + pts.join(' L'));
+  }
+
   // GASKENNLINIE und ANFAHRSCHUB. Beide lesen ihren Anfangswert AUS DEM MARKUP und
   // haengen sich danach an 'input' - dasselbe Muster wie bei setting-vibration, wo der
   // fehlende Anfangsabgleich schon einmal einen toten Schalter ergeben hat.
@@ -619,6 +649,22 @@
     const viertel = Math.round(100 * Math.pow(0.25, g));
     $('setting-throttle-gamma-val').textContent =
       g.toFixed(2) + (nah ? ' linear' : ' \u00b7 \u00bc Weg = ' + viertel + '%');
+    kennlinienPlotZeichnen('setting-throttle-gamma-plot', (x) => gasKennlinie(x, g), 0, 1);
+  }
+  // LENKKENNLINIE. BESTELLT: "wie beschleunigungskurve auch lenkkurve einbauen als
+  // option mit slider." Dieselbe Kurvenfamilie wie oben, bipolar - siehe expoSteer in
+  // 40-physics.js, das genau diese Rechnung (Vorzeichen mal Betrag hoch Exponent) im
+  // Fahrtakt schon ausfuehrt.
+  function lenkKennlinieAnwenden() {
+    const el = $('setting-steer-expo');
+    if (!el) return;
+    const e = parseFloat(el.value);
+    physEngine.config.steerExpo = e;
+    const nah = Math.abs(e - 1) < 0.001;
+    const viertel = Math.round(100 * Math.pow(0.25, e));
+    $('setting-steer-expo-val').textContent =
+      e.toFixed(2) + (nah ? ' linear' : ' \u00b7 \u00bc Weg = ' + viertel + '%');
+    kennlinienPlotZeichnen('setting-steer-expo-plot', (x) => lenkKennlinie(x, e), -1, 1);
   }
   function anfahrschubAnwenden() {
     const el = $('setting-minmove');
@@ -632,6 +678,10 @@
   if ($('setting-throttle-gamma')) {
     gasKennlinieAnwenden();
     $('setting-throttle-gamma').addEventListener('input', gasKennlinieAnwenden);
+  }
+  if ($('setting-steer-expo')) {
+    lenkKennlinieAnwenden();
+    $('setting-steer-expo').addEventListener('input', lenkKennlinieAnwenden);
   }
   if ($('setting-minmove')) {
     anfahrschubAnwenden();
@@ -1040,6 +1090,24 @@
     physEngine.config.brakeBias = pct / 100;
     $('setting-brakebias-val').textContent = pct + '% vorn';
   });
+
+  // BESTELLT (GT7-Fahrmodus): "mehr Traegheit/Gewichtsverlagerung." transferK/loadTau
+  // steuern st.loadFront schon im Fahrtakt (siehe 40-physics.js), hatten aber keinen
+  // Regler - beide braucht der neue GT7-Preset.
+  if ($('phys-transfer-k')) {
+    $('phys-transfer-k').addEventListener('input', (e) => {
+      const v = parseFloat(e.target.value);
+      physEngine.config.transferK = v;
+      $('phys-transfer-k-val').textContent = Math.round(v * 100) + '%';
+    });
+  }
+  if ($('phys-load-tau')) {
+    $('phys-load-tau').addEventListener('input', (e) => {
+      const ms = parseInt(e.target.value, 10);
+      physEngine.config.loadTau = ms / 1000;
+      $('phys-load-tau-val').textContent = ms + ' ms';
+    });
+  }
 
   // ---- Block 4: Bremstemperatur, Windschatten, Reifen -------------------------------
   //

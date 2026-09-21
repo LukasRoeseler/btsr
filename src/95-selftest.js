@@ -4572,6 +4572,55 @@
              mass: teile.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
   });
 
+  // ---- Lenkkennlinie: Enden fest, Vorzeichen erhalten, Regler verdrahtet ----
+  //
+  // BESTELLT: "wie beschleunigungskurve auch lenkkurve einbauen als option mit slider."
+  // Dieselben Zusicherungen wie bei der Gaskennlinie, bipolar: -1 bleibt -1, 0 bleibt 0,
+  // 1 bleibt 1, fuer jeden Exponenten - und das Vorzeichen darf sich nie umdrehen.
+  stAdd('Lenkkennlinie: Enden fest, Vorzeichen erhalten, Regler verdrahtet', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.lenkKennlinie || !OMEGA_TEST.fahrgefuehlWerte) {
+      return { skip: true, mass: 'lenkKennlinie nicht vorhanden' };
+    }
+    const f = OMEGA_TEST.lenkKennlinie;
+    const schlecht = [], teile = [];
+    for (const e of [0.6, 1, 1.3, 1.8, 2.5, 3]) {
+      if (f(0, e) !== 0) schlecht.push('e=' + e + ': f(0) = ' + f(0, e));
+      if (Math.abs(f(1, e) - 1) > 1e-12) schlecht.push('e=' + e + ': f(1) = ' + f(1, e));
+      if (Math.abs(f(-1, e) + 1) > 1e-12) schlecht.push('e=' + e + ': f(-1) = ' + f(-1, e));
+      // Streng steigend ueber den GANZEN Bereich, sonst gaebe es einen Lenkweg, der
+      // weniger Ausschlag gibt als ein kleinerer davor.
+      let vor = -2;
+      for (let x = -1; x <= 1.0001; x += 0.1) {
+        const y = f(x, e);
+        if (y <= vor) { schlecht.push('e=' + e + ' nicht steigend bei x=' + x.toFixed(2)); break; }
+        vor = y;
+      }
+    }
+    const v1 = f(0.25, 1), v18 = f(0.25, 1.8);
+    teile.push('¼ Ausschlag bei 1,0/1,8: ' + (v1 * 100).toFixed(0) + '/' + (v18 * 100).toFixed(0) + '%');
+    if (!(v18 < v1)) schlecht.push('Exponent ueber 1 macht kleine Ausschlaege nicht unempfindlicher');
+    for (const x of [0.1, 0.37, 0.5, 0.9]) {
+      if (f(x, 1) !== x) schlecht.push('1,0 ist nicht die Gerade bei ' + x);
+    }
+
+    const el = $('setting-steer-expo'), val = $('setting-steer-expo-val');
+    if (!el) return { ok: false, mass: 'Regler fehlt im Markup' };
+    const merk = el.value;
+    try {
+      el.value = '2.2'; el.dispatchEvent(new Event('input', { bubbles: true }));
+      const w = OMEGA_TEST.fahrgefuehlWerte();
+      teile.push('Regler 2,2 -> Physik ' + w.steerExpo);
+      if (Math.abs(w.steerExpo - 2.2) > 1e-9) {
+        schlecht.push('der Regler setzt steerExpo nicht (' + w.steerExpo + ')');
+      }
+      if (!/2\.20/.test(val.textContent)) schlecht.push('Anzeige: ' + val.textContent);
+    } finally {
+      el.value = merk; el.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+    return { ok: schlecht.length === 0,
+             mass: teile.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
   // ---- Ghosts: anhalten nur, wenn es wirklich vorbei ist ----
   //
   // GEMELDET: "sie fahren stumpf ihre Spur, keine Querlage. Und nach einer Weile bleiben
