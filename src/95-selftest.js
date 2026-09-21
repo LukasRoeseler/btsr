@@ -236,6 +236,71 @@
              mass: teile.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
   });
 
+  // ---- Zwei neue Ideallinien: Fahrbahnmitte und Innen (gemittelt) -------------------
+  //
+  // BESTELLT (Phase 12, Punkt 12): "Zwei weitere Ideallinien-Modi (Fahrbahnmitte; innere
+  // Seite gemittelt ueber die naechsten 3 Teile)."
+  stAdd('Ideallinie "Fahrbahnmitte": Versatz immer null', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.compareLines || !OMEGA_TEST.setLineModel) {
+      return { skip: true, mass: 'Pruefzugang nicht vorhanden' };
+    }
+    const merkModel = OMEGA_TEST.getLineModel();
+    let alleNull = true, n = 0;
+    try {
+      OMEGA_TEST.setLineModel('mitte');
+      // Ein Layout mit Kurven UND Haarnadel - "Mitte" darf sich davon nicht beeindrucken
+      // lassen.
+      const p = OMEGA_TEST.codeToTrack('SG3HG3R2G3');
+      const rows = OMEGA_TEST.compareLines(p.tiles, 8);
+      n = rows.length;
+      alleNull = rows.every((r) => r.calc === 0);
+    } finally {
+      OMEGA_TEST.setLineModel(merkModel);
+    }
+    return { ok: alleNull, mass: n + ' Punkte geprueft, ' + (alleNull ? 'alle 0' : 'nicht alle 0') };
+  });
+
+  stAdd('Ideallinie "Innen (gemittelt)": weicher Verlauf ueber drei Kacheln', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.compareLines || !OMEGA_TEST.setLineModel) {
+      return { skip: true, mass: 'Pruefzugang nicht vorhanden' };
+    }
+    const merkModel = OMEGA_TEST.getLineModel();
+    const schlecht = [], teile = [];
+    try {
+      OMEGA_TEST.setLineModel('innen3');
+      // G3R6G3 MIT der eingefuegten Start-Kachel (codeToTrack stellt sie voran): drei
+      // Geraden, sechs gleichsinnige Kurven, drei Geraden - 13 Kacheln, Index 0 = Start.
+      const p = OMEGA_TEST.codeToTrack('G3R6G3');
+      const rows = OMEGA_TEST.compareLines(p.tiles, 4);
+      const proTile = [];
+      for (const r of rows) if (proTile[r.tile] === undefined) proTile[r.tile] = +r.calc.toFixed(4);
+      teile.push(proTile.join(','));
+      // 1. TIEF VOR DER KURVE (Kachel 0, Start + zwei Geraden voraus): unbeeindruckt, null.
+      if (proTile[0] !== 0) schlecht.push('Kachel 0 (weit vor der Kurve): ' + proTile[0] + ' statt 0');
+      // 2. WEICHER ANSTIEG auf den drei Geraden vor der Kurve: jede Kachel naeher an der
+      //    Kurve zieht STAERKER, nicht sprunghaft.
+      if (!(proTile[1] < proTile[2] && proTile[2] < proTile[3])) {
+        schlecht.push('kein monotoner Anstieg vor der Kurve: ' + [proTile[1], proTile[2], proTile[3]].join(','));
+      }
+      // 3. VOLL AUSGENUTZT MITTEN IM KURVENZUG: mit zwei weiteren gleichsinnigen Kacheln
+      //    voraus ist der Mittelwert exakt 1 (alle drei Kacheln des Fensters drehen gleich).
+      if (Math.abs(proTile[4] - 1) > 1e-6 || Math.abs(proTile[5] - 1) > 1e-6) {
+        schlecht.push('nicht voll ausgenutzt mitten im Kurvenzug: ' + proTile[4] + ',' + proTile[5]);
+      }
+      // 4. WEICHER ABSTIEG zum Kurvenende hin, aus demselben Grund wie der Anstieg.
+      if (!(proTile[7] > proTile[8] && proTile[8] > proTile[9])) {
+        schlecht.push('kein monotoner Abstieg zum Kurvenende: ' + [proTile[7], proTile[8], proTile[9]].join(','));
+      }
+      // 5. NACH DER KURVE SOFORT WIEDER NULL: das Modell schaut nur vorwaerts, keine
+      //    Nachwirkung auf die folgende Gerade.
+      if (proTile[10] !== 0) schlecht.push('Kachel nach der Kurve nicht null: ' + proTile[10]);
+    } finally {
+      OMEGA_TEST.setLineModel(merkModel);
+    }
+    return { ok: schlecht.length === 0,
+             mass: teile.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
   // ---- 6. Kachelphase ----
   // Eine Haarnadel ist dreimal so lang wie eine Gerade. Rechnet die Phase mit einer
   // mittleren Kacheldauer, steht sie dort nach einem Drittel auf 1 und der Linienversatz

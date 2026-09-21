@@ -7710,7 +7710,7 @@
   // data-linemodel="dreistufig", 00-index.head.html).
   const LINIENMODELL_NAME = {
     curvature: 'Kr\u00fcmmung', laptime: 'Rundenzeit', lateapex: 'Late Apex',
-    dreistufig: '3-stufig',
+    dreistufig: '3-stufig', mitte: 'Fahrbahnmitte', innen3: 'Innen (gemittelt)',
   };
 
   // ---- Die gewaehlte Linie zeigen, direkt neben der Wahl ----

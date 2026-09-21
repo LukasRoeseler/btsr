@@ -3093,7 +3093,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.7.19</span></span>
+        <span class="foot-ver">v<span id="app-version">0.7.20</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -8101,6 +8101,8 @@
           <button type="button" class="mw-preset" data-linemodel="lateapex">Late Apex</button>
           <button type="button" class="mw-preset sel" data-linemodel="dreistufig">3-stufig
             <span class="wip-tag">experimentell</span></button>
+          <button type="button" class="mw-preset" data-linemodel="mitte">Fahrbahnmitte</button>
+          <button type="button" class="mw-preset" data-linemodel="innen3">Innen (gemittelt)</button>
         </div></div>
       <!-- DIE LINIE DIREKT NEBEN DER WAHL. Gemeldet: "ich habe 2 Ideallinie Modi, aber wenn
            ich dazwischen waehle, aendert sich die eingezeichnete Linie nicht." Sie aendert
@@ -19222,6 +19224,70 @@
              apex: [], par: [], evals: 0, accepted: 0 };
   }
 
+  // ---- Fahrbahnmitte: die denkbar einfachste Linie ----------------------------------
+  //
+  // BESTELLT (Phase 12, Punkt 12): ein Modus, der schlicht die Mitte der Fahrbahn haelt -
+  // kein Scheitel, keine Seite, kein Layout noetig. Braucht kein `tiles`, weil es nichts
+  // gibt, das es daraus lesen muesste.
+  function mitteLine(pts, nrm, o) {
+    const n = pts.length;
+    const closed = o.closed !== false;
+    const alpha = new Array(n).fill(0);
+    const bahn = pts.map((p) => [p.x, p.y]);
+    const prof = lapTimeOf(bahn, closed, o);
+    return { alpha, limit: (o.limit !== undefined ? o.limit : TRACK_HALF_W - 3), span: 0,
+             lapTime: prof.time, startLapTime: prof.time, v: prof.v, gain: 0,
+             apex: [], par: [], evals: 0, accepted: 0 };
+  }
+
+  // ---- Innenseite, gemittelt ueber die naechsten drei Kacheln -----------------------
+  //
+  // BESTELLT (Phase 12, Punkt 12): "innere Seite gemittelt ueber die naechsten 3 Teile."
+  // Anders als dreiStufenLine() (springt an jeder Kachelgrenze hart zwischen aussen und
+  // innen) mittelt dieses Modell die Drehrichtung (kurvenDrehung(), -1/0/+1) der
+  // aktuellen Kachel und der beiden folgenden zu EINEM weichen Wert je Kachel - eine
+  // kurze Kurve zwischen zwei Geraden zieht die Linie also nur teilweise nach innen
+  // statt sie hart umzuschalten, und eine Schikane (links-rechts kurz hintereinander)
+  // mittelt sich teilweise gegeneinander weg statt zweimal hart zu springen.
+  function innenGemitteltLine(pts, nrm, o) {
+    const n = pts.length;
+    const tiles = o.tiles || [];
+    const closed = o.closed !== false;
+    const limit = (o.limit !== undefined ? o.limit : TRACK_HALF_W - 3);
+    const alpha = new Array(n).fill(0);
+    if (!tiles.length) {
+      const bahn = pts.map((p) => [p.x, p.y]);
+      const prof = lapTimeOf(bahn, closed, o);
+      return { alpha, limit, span: 0, lapTime: prof.time, startLapTime: prof.time,
+               v: prof.v, gain: 0, apex: [], par: [], evals: 0, accepted: 0 };
+    }
+    const tCount = tiles.length;
+    const tab = trackKachelTabelle(pts, tCount);
+    const at = (i) => closed ? ((i % n) + n) % n : Math.max(0, Math.min(n - 1, i));
+    // Am offenen Streckenende (nicht closed) wird nicht ueber das Ende hinaus gemittelt -
+    // die letzten Kacheln mitteln also ueber weniger als drei, statt faelschlich mit der
+    // ersten Kachel der Strecke weiterzurechnen.
+    const drehMittel = tiles.map((t, i) => {
+      let summe = 0, zahl = 0;
+      for (let k = 0; k < 3; k++) {
+        const idx = i + k;
+        if (!closed && idx >= tCount) break;
+        summe += kurvenDrehung(tiles[closed ? idx % tCount : idx].type);
+        zahl++;
+      }
+      return zahl ? summe / zahl : 0;
+    });
+    for (let t = 0; t < tCount; t++) {
+      const innen = -drehMittel[t] * SPUR_VOLL * limit;
+      for (let d = 0; d < tab.zahl[t]; d++) alpha[at(tab.start[t] + d)] = innen;
+    }
+    const bahn = pts.map((p, i) => [p.x + nrm[i].x * alpha[i], p.y + nrm[i].y * alpha[i]]);
+    const prof = lapTimeOf(bahn, closed, o);
+    return { alpha, limit, span: Math.max.apply(null, alpha.map(Math.abs)),
+             lapTime: prof.time, startLapTime: prof.time, v: prof.v, gain: 0,
+             apex: [], par: [], evals: 0, accepted: 0 };
+  }
+
   // ---------------------------------------------------------------- Modellwahl
   //
   // 'curvature' ist das bisherige Modell, minimale Kruemmung, also der groesste moegliche
@@ -19269,7 +19335,7 @@
   // dritten Modell waeren das drei Orte fuer eine Liste gewesen.
   // 'dreistufig' ist KEINE Optimierung und steht deshalb am Ende: die drei davor suchen
   // ein Optimum, dieses folgt einer Vorschrift. Die Begruendung steht bei dreiStufenLine().
-  const LINE_MODELLE = ['curvature', 'laptime', 'lateapex', 'dreistufig'];
+  const LINE_MODELLE = ['curvature', 'laptime', 'lateapex', 'dreistufig', 'mitte', 'innen3'];
 
   function setLineModel(m) {
     if (LINE_MODELLE.indexOf(m) < 0) return;
@@ -19550,11 +19616,16 @@
     // 'dreistufig' BRAUCHT das Layout: seine ganze Vorschrift ist "aussen an der naechsten
     // Kurve", und ohne Kacheln gibt es keine naechste Kurve. Ohne Layout faellt es deshalb
     // auf das punktweise Rundenzeitmodell zurueck - wie die anderen zwei layoutgebundenen.
-    const line = !mitLayout
+    // 'mitte' braucht kein Layout und wird deshalb VOR der mitLayout-Weiche entschieden -
+    // die einzige Ausnahme, weil es die einzige Linie ist, der ein Layout schlicht
+    // gleichgueltig ist.
+    const line = m === 'mitte' ? mitteLine(pts, nrm, o)
+      : !mitLayout
         ? (m === 'curvature' ? idealLine(pts, nrm, o) : lapTimeLine(pts, nrm, o))
       : m === 'curvature' ? formLine(pts, nrm, o, 'kurve', 0.15, 0.85)
       : m === 'lateapex' ? formLine(pts, nrm, o, 'zeit', LATE_APEX_MIN, LATE_APEX_MAX)
       : m === 'dreistufig' ? dreiStufenLine(pts, nrm, o)
+      : m === 'innen3' ? innenGemitteltLine(pts, nrm, o)
       : formLine(pts, nrm, o, 'zeit', 0.15, 0.85);
     line.model = m;
     line.grenzen = g;
@@ -36248,7 +36319,7 @@
   // data-linemodel="dreistufig", 00-index.head.html).
   const LINIENMODELL_NAME = {
     curvature: 'Kr\u00fcmmung', laptime: 'Rundenzeit', lateapex: 'Late Apex',
-    dreistufig: '3-stufig',
+    dreistufig: '3-stufig', mitte: 'Fahrbahnmitte', innen3: 'Innen (gemittelt)',
   };
 
   // ---- Die gewaehlte Linie zeigen, direkt neben der Wahl ----
@@ -46760,6 +46831,71 @@
         && Math.sign(v) !== Math.sign(restKurve[0]) && Math.abs(v) > 0.5);
       teile.push('Gegenprobe 60-Grad-Kurve, zweiter Wechsel: ' + (w2 < 0 ? 'keiner' : 'bei ' + w2));
       if (w2 < 0) schlecht.push('normale Kurve hat ihre dritte Stufe verloren');
+    } finally {
+      OMEGA_TEST.setLineModel(merkModel);
+    }
+    return { ok: schlecht.length === 0,
+             mass: teile.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // ---- Zwei neue Ideallinien: Fahrbahnmitte und Innen (gemittelt) -------------------
+  //
+  // BESTELLT (Phase 12, Punkt 12): "Zwei weitere Ideallinien-Modi (Fahrbahnmitte; innere
+  // Seite gemittelt ueber die naechsten 3 Teile)."
+  stAdd('Ideallinie "Fahrbahnmitte": Versatz immer null', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.compareLines || !OMEGA_TEST.setLineModel) {
+      return { skip: true, mass: 'Pruefzugang nicht vorhanden' };
+    }
+    const merkModel = OMEGA_TEST.getLineModel();
+    let alleNull = true, n = 0;
+    try {
+      OMEGA_TEST.setLineModel('mitte');
+      // Ein Layout mit Kurven UND Haarnadel - "Mitte" darf sich davon nicht beeindrucken
+      // lassen.
+      const p = OMEGA_TEST.codeToTrack('SG3HG3R2G3');
+      const rows = OMEGA_TEST.compareLines(p.tiles, 8);
+      n = rows.length;
+      alleNull = rows.every((r) => r.calc === 0);
+    } finally {
+      OMEGA_TEST.setLineModel(merkModel);
+    }
+    return { ok: alleNull, mass: n + ' Punkte geprueft, ' + (alleNull ? 'alle 0' : 'nicht alle 0') };
+  });
+
+  stAdd('Ideallinie "Innen (gemittelt)": weicher Verlauf ueber drei Kacheln', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.compareLines || !OMEGA_TEST.setLineModel) {
+      return { skip: true, mass: 'Pruefzugang nicht vorhanden' };
+    }
+    const merkModel = OMEGA_TEST.getLineModel();
+    const schlecht = [], teile = [];
+    try {
+      OMEGA_TEST.setLineModel('innen3');
+      // G3R6G3 MIT der eingefuegten Start-Kachel (codeToTrack stellt sie voran): drei
+      // Geraden, sechs gleichsinnige Kurven, drei Geraden - 13 Kacheln, Index 0 = Start.
+      const p = OMEGA_TEST.codeToTrack('G3R6G3');
+      const rows = OMEGA_TEST.compareLines(p.tiles, 4);
+      const proTile = [];
+      for (const r of rows) if (proTile[r.tile] === undefined) proTile[r.tile] = +r.calc.toFixed(4);
+      teile.push(proTile.join(','));
+      // 1. TIEF VOR DER KURVE (Kachel 0, Start + zwei Geraden voraus): unbeeindruckt, null.
+      if (proTile[0] !== 0) schlecht.push('Kachel 0 (weit vor der Kurve): ' + proTile[0] + ' statt 0');
+      // 2. WEICHER ANSTIEG auf den drei Geraden vor der Kurve: jede Kachel naeher an der
+      //    Kurve zieht STAERKER, nicht sprunghaft.
+      if (!(proTile[1] < proTile[2] && proTile[2] < proTile[3])) {
+        schlecht.push('kein monotoner Anstieg vor der Kurve: ' + [proTile[1], proTile[2], proTile[3]].join(','));
+      }
+      // 3. VOLL AUSGENUTZT MITTEN IM KURVENZUG: mit zwei weiteren gleichsinnigen Kacheln
+      //    voraus ist der Mittelwert exakt 1 (alle drei Kacheln des Fensters drehen gleich).
+      if (Math.abs(proTile[4] - 1) > 1e-6 || Math.abs(proTile[5] - 1) > 1e-6) {
+        schlecht.push('nicht voll ausgenutzt mitten im Kurvenzug: ' + proTile[4] + ',' + proTile[5]);
+      }
+      // 4. WEICHER ABSTIEG zum Kurvenende hin, aus demselben Grund wie der Anstieg.
+      if (!(proTile[7] > proTile[8] && proTile[8] > proTile[9])) {
+        schlecht.push('kein monotoner Abstieg zum Kurvenende: ' + [proTile[7], proTile[8], proTile[9]].join(','));
+      }
+      // 5. NACH DER KURVE SOFORT WIEDER NULL: das Modell schaut nur vorwaerts, keine
+      //    Nachwirkung auf die folgende Gerade.
+      if (proTile[10] !== 0) schlecht.push('Kachel nach der Kurve nicht null: ' + proTile[10]);
     } finally {
       OMEGA_TEST.setLineModel(merkModel);
     }

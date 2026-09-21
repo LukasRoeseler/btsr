@@ -1409,6 +1409,70 @@
              apex: [], par: [], evals: 0, accepted: 0 };
   }
 
+  // ---- Fahrbahnmitte: die denkbar einfachste Linie ----------------------------------
+  //
+  // BESTELLT (Phase 12, Punkt 12): ein Modus, der schlicht die Mitte der Fahrbahn haelt -
+  // kein Scheitel, keine Seite, kein Layout noetig. Braucht kein `tiles`, weil es nichts
+  // gibt, das es daraus lesen muesste.
+  function mitteLine(pts, nrm, o) {
+    const n = pts.length;
+    const closed = o.closed !== false;
+    const alpha = new Array(n).fill(0);
+    const bahn = pts.map((p) => [p.x, p.y]);
+    const prof = lapTimeOf(bahn, closed, o);
+    return { alpha, limit: (o.limit !== undefined ? o.limit : TRACK_HALF_W - 3), span: 0,
+             lapTime: prof.time, startLapTime: prof.time, v: prof.v, gain: 0,
+             apex: [], par: [], evals: 0, accepted: 0 };
+  }
+
+  // ---- Innenseite, gemittelt ueber die naechsten drei Kacheln -----------------------
+  //
+  // BESTELLT (Phase 12, Punkt 12): "innere Seite gemittelt ueber die naechsten 3 Teile."
+  // Anders als dreiStufenLine() (springt an jeder Kachelgrenze hart zwischen aussen und
+  // innen) mittelt dieses Modell die Drehrichtung (kurvenDrehung(), -1/0/+1) der
+  // aktuellen Kachel und der beiden folgenden zu EINEM weichen Wert je Kachel - eine
+  // kurze Kurve zwischen zwei Geraden zieht die Linie also nur teilweise nach innen
+  // statt sie hart umzuschalten, und eine Schikane (links-rechts kurz hintereinander)
+  // mittelt sich teilweise gegeneinander weg statt zweimal hart zu springen.
+  function innenGemitteltLine(pts, nrm, o) {
+    const n = pts.length;
+    const tiles = o.tiles || [];
+    const closed = o.closed !== false;
+    const limit = (o.limit !== undefined ? o.limit : TRACK_HALF_W - 3);
+    const alpha = new Array(n).fill(0);
+    if (!tiles.length) {
+      const bahn = pts.map((p) => [p.x, p.y]);
+      const prof = lapTimeOf(bahn, closed, o);
+      return { alpha, limit, span: 0, lapTime: prof.time, startLapTime: prof.time,
+               v: prof.v, gain: 0, apex: [], par: [], evals: 0, accepted: 0 };
+    }
+    const tCount = tiles.length;
+    const tab = trackKachelTabelle(pts, tCount);
+    const at = (i) => closed ? ((i % n) + n) % n : Math.max(0, Math.min(n - 1, i));
+    // Am offenen Streckenende (nicht closed) wird nicht ueber das Ende hinaus gemittelt -
+    // die letzten Kacheln mitteln also ueber weniger als drei, statt faelschlich mit der
+    // ersten Kachel der Strecke weiterzurechnen.
+    const drehMittel = tiles.map((t, i) => {
+      let summe = 0, zahl = 0;
+      for (let k = 0; k < 3; k++) {
+        const idx = i + k;
+        if (!closed && idx >= tCount) break;
+        summe += kurvenDrehung(tiles[closed ? idx % tCount : idx].type);
+        zahl++;
+      }
+      return zahl ? summe / zahl : 0;
+    });
+    for (let t = 0; t < tCount; t++) {
+      const innen = -drehMittel[t] * SPUR_VOLL * limit;
+      for (let d = 0; d < tab.zahl[t]; d++) alpha[at(tab.start[t] + d)] = innen;
+    }
+    const bahn = pts.map((p, i) => [p.x + nrm[i].x * alpha[i], p.y + nrm[i].y * alpha[i]]);
+    const prof = lapTimeOf(bahn, closed, o);
+    return { alpha, limit, span: Math.max.apply(null, alpha.map(Math.abs)),
+             lapTime: prof.time, startLapTime: prof.time, v: prof.v, gain: 0,
+             apex: [], par: [], evals: 0, accepted: 0 };
+  }
+
   // ---------------------------------------------------------------- Modellwahl
   //
   // 'curvature' ist das bisherige Modell, minimale Kruemmung, also der groesste moegliche
@@ -1456,7 +1520,7 @@
   // dritten Modell waeren das drei Orte fuer eine Liste gewesen.
   // 'dreistufig' ist KEINE Optimierung und steht deshalb am Ende: die drei davor suchen
   // ein Optimum, dieses folgt einer Vorschrift. Die Begruendung steht bei dreiStufenLine().
-  const LINE_MODELLE = ['curvature', 'laptime', 'lateapex', 'dreistufig'];
+  const LINE_MODELLE = ['curvature', 'laptime', 'lateapex', 'dreistufig', 'mitte', 'innen3'];
 
   function setLineModel(m) {
     if (LINE_MODELLE.indexOf(m) < 0) return;
@@ -1737,11 +1801,16 @@
     // 'dreistufig' BRAUCHT das Layout: seine ganze Vorschrift ist "aussen an der naechsten
     // Kurve", und ohne Kacheln gibt es keine naechste Kurve. Ohne Layout faellt es deshalb
     // auf das punktweise Rundenzeitmodell zurueck - wie die anderen zwei layoutgebundenen.
-    const line = !mitLayout
+    // 'mitte' braucht kein Layout und wird deshalb VOR der mitLayout-Weiche entschieden -
+    // die einzige Ausnahme, weil es die einzige Linie ist, der ein Layout schlicht
+    // gleichgueltig ist.
+    const line = m === 'mitte' ? mitteLine(pts, nrm, o)
+      : !mitLayout
         ? (m === 'curvature' ? idealLine(pts, nrm, o) : lapTimeLine(pts, nrm, o))
       : m === 'curvature' ? formLine(pts, nrm, o, 'kurve', 0.15, 0.85)
       : m === 'lateapex' ? formLine(pts, nrm, o, 'zeit', LATE_APEX_MIN, LATE_APEX_MAX)
       : m === 'dreistufig' ? dreiStufenLine(pts, nrm, o)
+      : m === 'innen3' ? innenGemitteltLine(pts, nrm, o)
       : formLine(pts, nrm, o, 'zeit', 0.15, 0.85);
     line.model = m;
     line.grenzen = g;
