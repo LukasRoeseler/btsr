@@ -11797,8 +11797,13 @@
       }
       teile.push(topRows.length + ' Kacheln');
 
-      // 2. Eine Unterseite mit allen drei Reglertypen oeffnen.
+      // 2. Eine Unterseite mit allen drei Reglertypen oeffnen. Der ERSTE Bewegen-Aufruf
+      //    in einem frischen Kontext zeigt nur Zeile 0 und bewegt noch nicht (siehe
+      //    menuNavGezeigt in 50b-menu-nav.js) - hier verbraucht, damit springeZu()
+      //    darunter mit normaler "ein Aufruf = ein Schritt"-Rechnung auskommt.
       document.querySelector('button.misc-tile.subpage-open[data-sub="opt-feel"]').click();
+      OMEGA_TEST.menuNavBewegen('down');
+      if (OMEGA_TEST.menuNavIndexLesen() !== 0) fehler.push('erster Tastendruck bewegt schon, statt nur zu zeigen');
       const rows = OMEGA_TEST.menuNavRowsLesen();
       if (!rows.some((r) => r.kind === 'range')) fehler.push('kein Regler erkannt');
       if (!rows.some((r) => r.kind === 'toggle')) fehler.push('kein Kontrollkaestchen erkannt');

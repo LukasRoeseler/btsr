@@ -2984,6 +2984,11 @@
      scale() UND NICHT zoom: unter zoom loesen die vw-Anteile im Cockpit gegen den Schirm
      auf und wachsen im Rahmen des Elements mit 1/f mit. Gemessen Bedarf zu Platz: 1,36 bei
      Faktor 1 und 1,20 bei Faktor 0,5 - das konvergiert nicht. */
+  /* BESTELLT: "Im Cockpit fullscreen die Tabs oben ausblenden." #race-dash liegt zwar
+     mit z-index:200 schon ueber dem Header (z-index:2), aber ausdruecklich verboten ist
+     ehrlicher als "sollte eigentlich schon verdeckt sein" - und display:none nimmt dem
+     Header auch seinen Platz im Layout weg, den position:fixed sonst freiliesse. */
+  body.race-fs header { display: none; }
   body.race-fs #race-dash { position: fixed; inset: 0; z-index: 200; border-radius: 0;
     display: grid; align-content: center;
     transform-origin: top left;
@@ -3133,7 +3138,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.7.27</span></span>
+        <span class="foot-ver">v<span id="app-version">0.7.28</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>

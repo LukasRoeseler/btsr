@@ -538,6 +538,11 @@
   const DEADZONE = 0.12;
 
   const TRIGGER_DEADZONE = 0.06; // a slightly drifting trigger shouldn't creep the car
+  // Rechter Stick als Bildlauf (Phase 13, BESTELLT). ~18px je Takt bei vollem Ausschlag,
+  // bei ueblichen ~60 Takten/s also rund 1000px/s - schnell genug, um eine lange
+  // Optionenseite zuegig zu durchqueren, aber nicht so schnell, dass ein kurzer Ausschlag
+  // gleich ueber das Ziel hinausschiesst.
+  const PAD_SCROLL_SPEED = 18;
 
   // Rescale rather than hard-cut, so leaving the deadzone eases in from 0 instead of
   // jumping straight to 0.12 — the hard cut made small steering corrections feel notchy.
@@ -8216,8 +8221,12 @@
       // Headlights on/off, edge-triggered. Drives the same checkbox the options menu uses
       // so the two can never disagree.
       const headNow = readBindingValue(pad, bindings.headlights) > BUTTON_CAPTURE_THRESHOLD;
-      // Triangle: reset in the editor, headlights otherwise.
-      if (headNow && !prevHeadlights && trackEditorPad('reset')) {
+      // Dreieck: dreht im Streckeneditor die Strecke, sonst das Licht. BESTELLT (Phase
+      // 13, Playstation-Belegung): "Dreieck zum Drehen." Reset (die ganze Strecke
+      // loeschen) hat seitdem keine eigene Gamepad-Taste mehr - nur noch per Klick auf
+      // "Leeren", ausdruecklich: eine so folgenreiche Aktion muss niemand versehentlich
+      // mit dem Steuerkreuz-Nachbarn treffen.
+      if (headNow && !prevHeadlights && trackEditorPad('rotate')) {
         // consumed by the editor
       } else if (headNow && !prevHeadlights) {
         headlightsOn = !headlightsOn;
@@ -8275,11 +8284,32 @@
       }
       prevFsToggle = fsToggleNow;
 
-      // Gelbe Flagge auf HALTEN. Dieselben zwei Funktionen wie die Taste X, nicht eine
-      // zweite Fassung der Logik: flagHoldPress startet den Ladebalken, flagHoldRelease(true)
-      // loest aus. Zu frueh losgelassen passiert nichts - ein halber Druck darf keine halbe
-      // Wirkung haben.
-      flagTasteTick(readBindingValue(pad, bindings.yellowflag) > BUTTON_CAPTURE_THRESHOLD);
+      // Rechter Stick hoch/runter: Bildlauf auf jeder Seite, ausser im Vollbild (Cockpit
+      // oder Streckeneditor) - dort soll der Stick nichts tun, weder verstellen noch
+      // scrollen. Achse 3 ist im Standard-Mapping die Y-Achse des rechten Sticks.
+      // BESTELLT.
+      const rechtsY = applyDeadzone((pad.axes || [])[3] || 0);
+      if (rechtsY && !document.body.classList.contains('race-fs')
+          && !document.body.classList.contains('track-fs')) {
+        document.body.scrollTop += rechtsY * PAD_SCROLL_SPEED;
+      }
+
+      // Gelbe Flagge auf HALTEN, aber im Streckeneditor-Vollbild bestaetigt dieselbe
+      // Taste (Kreuz/X) stattdessen die gewaehlte Aktion/Kachel - BESTELLT (Phase 13,
+      // Playstation-Belegung): "mit X bestaetigen, dass das Teil gesetzt wird." Die
+      // Flanke wird auch dann gemerkt, wenn der Editor sie verbraucht, sonst bestaetigt
+      // ein gehaltener Knopf jeden Takt erneut, weil flagTasteTick() (und mit ihr
+      // prevYellowFlag) diesen Takt ja gar nicht laeuft.
+      const yellowflagNow = readBindingValue(pad, bindings.yellowflag) > BUTTON_CAPTURE_THRESHOLD;
+      if (yellowflagNow && !prevYellowFlag && trackEditorPad('confirm')) {
+        prevYellowFlag = yellowflagNow;
+      } else {
+        // Dieselben zwei Funktionen wie die Taste X auf der Tastatur, nicht eine zweite
+        // Fassung der Logik: flagHoldPress startet den Ladebalken, flagHoldRelease(true)
+        // loest aus. Zu frueh losgelassen passiert nichts - ein halber Druck darf keine
+        // halbe Wirkung haben.
+        flagTasteTick(yellowflagNow);
+      }
 
       const resetNow = readBindingValue(pad, bindings.resetcar) > BUTTON_CAPTURE_THRESHOLD;
       if (resetNow && !prevResetCar) resetCarState();
@@ -8290,9 +8320,11 @@
       // No gear-range guards here any more: triggerShift() does its own bounds checking
       // and needs to see a downshift AT gear 0 (that is how manual mode selects reverse)
       // and an upshift while in reverse (how it comes back out).
-      // X / Square and B / Circle are shift buttons while driving and build/undo in the
-      // editor. The editor gets first refusal, and only in fullscreen.
-      if (downshiftNow && !prevDownshift && !trackEditorPad('confirm')
+      // Quadrat/Square ist ab Phase 13 nur noch Runterschalten, ohne Sonderfall im
+      // Editor - Bestaetigen liegt jetzt auf Kreuz/X (siehe oben). Kreis/Circle bleibt
+      // Hochschalten UND Rueckgaengig im Editor, wie bestellt ("Kreis zum Rueckgaengig
+      // ist super").
+      if (downshiftNow && !prevDownshift
           && physicsEnabled && !physEngine.state.isShifting) {
         physEngine.triggerShift(-1);
       }

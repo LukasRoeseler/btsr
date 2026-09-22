@@ -361,10 +361,11 @@
     // flagHoldPress(), gaebe die Tastatur im Boxenmenue Gelb, waehrend der Controller dort
     // waehlt - zwei Bedeutungen fuer eine Taste, unterschieden durch das Eingabegeraet.
     // 'enter' spiegelt 'x' Taste fuer Taste (Phase 13: Menuenavigation ohne Gamepad
-    // pruefbar) - dieselbe Drei-Stufen-Kette wie am Controller: Menuenavigation vor
-    // Cockpit-Schirm vor gelber Flagge.
+    // pruefbar) - dieselbe Kette wie am Controller: Streckeneditor-Bestaetigen vor
+    // Menuenavigation vor Cockpit-Schirm vor gelber Flagge.
     if ((k === 'x' || k === 'enter') && !e.repeat) {
-      if (menuNavActive()) menuNavActivate();
+      if (trackEditorPad('confirm')) { /* vom Editor verbraucht */ }
+      else if (menuNavActive()) menuNavActivate();
       else if (cockpitScreenIst().id !== 'main') cockpitScreenWaehlen();
       else flagHoldPress();
     }

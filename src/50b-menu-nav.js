@@ -21,6 +21,12 @@
   let menuNavIndex = 0;
   let menuNavArmed = false;
   let menuNavContextKey = null;
+  // GEFUNDEN BEIM TESTEN: "runter" in einem frischen Menue huepfte gleich zum ZWEITEN
+  // Eintrag, weil der erste Tastendruck den gemerkten Index 0 sofort um eins verschob,
+  // ohne ihn je gezeigt zu haben. menuNavGezeigt haelt fest, ob der aktuelle Kontext
+  // schon einmal gezeichnet wurde - der erste Tastendruck zeigt nur Zeile 0, erst der
+  // naechste bewegt wirklich.
+  let menuNavGezeigt = false;
 
   // ---- Halten mit Beschleunigung ----
   //
@@ -81,6 +87,12 @@
   function menuNavContainer() {
     const tab = document.querySelector('.tabpage.active');
     if (!tab || tab.id === 'tab-race') return null;
+    // Der Streckeneditor im VOLLBILD hat sein eigenes, vollstaendiges D-Pad-Schema
+    // (trackEditorPad(), 60-track.js: hoch/runter/links/rechts/bestaetigen/rueckgaengig/
+    // drehen) - eine generische Zeilenliste wuerde X/Kreuz/Dreieck dort wegschnappen,
+    // bevor trackEditorPad() sie sieht. Ausserhalb des Vollbilds (Kachelseite, Editor
+    // per Maus) gilt die normale Navigation weiter.
+    if (tab.id === 'tab-track' && document.body.classList.contains('track-fs')) return null;
     const openSub = tab.querySelector('.subpage.on');
     if (openSub) return openSub;
     const homeSub = tab.querySelector('.subpage-home');
@@ -165,6 +177,7 @@
       menuNavContextKey = key;
       menuNavIndex = 0;
       menuNavArmed = false;
+      menuNavGezeigt = false;
     }
   }
 
@@ -191,7 +204,13 @@
     const rows = menuNavRows();
     if (!rows.length) return;
     menuNavArmed = false;
-    menuNavIndex = ((menuNavIndex + (dir === 'up' ? -1 : 1)) % rows.length + rows.length) % rows.length;
+    // Der ERSTE Tastendruck in einem frischen Menue zeigt nur Zeile 0 - er bewegt noch
+    // nicht. Sonst huepft "runter" sofort zur zweiten Zeile, ohne dass die erste je zu
+    // sehen war.
+    if (menuNavGezeigt) {
+      menuNavIndex = ((menuNavIndex + (dir === 'up' ? -1 : 1)) % rows.length + rows.length) % rows.length;
+    }
+    menuNavGezeigt = true;
     menuNavRender();
     menuNavTonBewegen();
   }
@@ -203,6 +222,7 @@
     menuNavEnsureContext();
     const rows = menuNavRows();
     if (!rows.length) return;
+    menuNavGezeigt = true;
     const row = rows[menuNavIndex];
     if (row.kind === 'range' || row.kind === 'select') {
       menuNavArmed = !menuNavArmed;

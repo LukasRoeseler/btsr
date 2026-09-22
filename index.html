@@ -2984,6 +2984,11 @@
      scale() UND NICHT zoom: unter zoom loesen die vw-Anteile im Cockpit gegen den Schirm
      auf und wachsen im Rahmen des Elements mit 1/f mit. Gemessen Bedarf zu Platz: 1,36 bei
      Faktor 1 und 1,20 bei Faktor 0,5 - das konvergiert nicht. */
+  /* BESTELLT: "Im Cockpit fullscreen die Tabs oben ausblenden." #race-dash liegt zwar
+     mit z-index:200 schon ueber dem Header (z-index:2), aber ausdruecklich verboten ist
+     ehrlicher als "sollte eigentlich schon verdeckt sein" - und display:none nimmt dem
+     Header auch seinen Platz im Layout weg, den position:fixed sonst freiliesse. */
+  body.race-fs header { display: none; }
   body.race-fs #race-dash { position: fixed; inset: 0; z-index: 200; border-radius: 0;
     display: grid; align-content: center;
     transform-origin: top left;
@@ -3133,7 +3138,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.7.27</span></span>
+        <span class="foot-ver">v<span id="app-version">0.7.28</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -12313,10 +12318,11 @@
     // flagHoldPress(), gaebe die Tastatur im Boxenmenue Gelb, waehrend der Controller dort
     // waehlt - zwei Bedeutungen fuer eine Taste, unterschieden durch das Eingabegeraet.
     // 'enter' spiegelt 'x' Taste fuer Taste (Phase 13: Menuenavigation ohne Gamepad
-    // pruefbar) - dieselbe Drei-Stufen-Kette wie am Controller: Menuenavigation vor
-    // Cockpit-Schirm vor gelber Flagge.
+    // pruefbar) - dieselbe Kette wie am Controller: Streckeneditor-Bestaetigen vor
+    // Menuenavigation vor Cockpit-Schirm vor gelber Flagge.
     if ((k === 'x' || k === 'enter') && !e.repeat) {
-      if (menuNavActive()) menuNavActivate();
+      if (trackEditorPad('confirm')) { /* vom Editor verbraucht */ }
+      else if (menuNavActive()) menuNavActivate();
       else if (cockpitScreenIst().id !== 'main') cockpitScreenWaehlen();
       else flagHoldPress();
     }
@@ -18017,6 +18023,12 @@
   let menuNavIndex = 0;
   let menuNavArmed = false;
   let menuNavContextKey = null;
+  // GEFUNDEN BEIM TESTEN: "runter" in einem frischen Menue huepfte gleich zum ZWEITEN
+  // Eintrag, weil der erste Tastendruck den gemerkten Index 0 sofort um eins verschob,
+  // ohne ihn je gezeigt zu haben. menuNavGezeigt haelt fest, ob der aktuelle Kontext
+  // schon einmal gezeichnet wurde - der erste Tastendruck zeigt nur Zeile 0, erst der
+  // naechste bewegt wirklich.
+  let menuNavGezeigt = false;
 
   // ---- Halten mit Beschleunigung ----
   //
@@ -18077,6 +18089,12 @@
   function menuNavContainer() {
     const tab = document.querySelector('.tabpage.active');
     if (!tab || tab.id === 'tab-race') return null;
+    // Der Streckeneditor im VOLLBILD hat sein eigenes, vollstaendiges D-Pad-Schema
+    // (trackEditorPad(), 60-track.js: hoch/runter/links/rechts/bestaetigen/rueckgaengig/
+    // drehen) - eine generische Zeilenliste wuerde X/Kreuz/Dreieck dort wegschnappen,
+    // bevor trackEditorPad() sie sieht. Ausserhalb des Vollbilds (Kachelseite, Editor
+    // per Maus) gilt die normale Navigation weiter.
+    if (tab.id === 'tab-track' && document.body.classList.contains('track-fs')) return null;
     const openSub = tab.querySelector('.subpage.on');
     if (openSub) return openSub;
     const homeSub = tab.querySelector('.subpage-home');
@@ -18161,6 +18179,7 @@
       menuNavContextKey = key;
       menuNavIndex = 0;
       menuNavArmed = false;
+      menuNavGezeigt = false;
     }
   }
 
@@ -18187,7 +18206,13 @@
     const rows = menuNavRows();
     if (!rows.length) return;
     menuNavArmed = false;
-    menuNavIndex = ((menuNavIndex + (dir === 'up' ? -1 : 1)) % rows.length + rows.length) % rows.length;
+    // Der ERSTE Tastendruck in einem frischen Menue zeigt nur Zeile 0 - er bewegt noch
+    // nicht. Sonst huepft "runter" sofort zur zweiten Zeile, ohne dass die erste je zu
+    // sehen war.
+    if (menuNavGezeigt) {
+      menuNavIndex = ((menuNavIndex + (dir === 'up' ? -1 : 1)) % rows.length + rows.length) % rows.length;
+    }
+    menuNavGezeigt = true;
     menuNavRender();
     menuNavTonBewegen();
   }
@@ -18199,6 +18224,7 @@
     menuNavEnsureContext();
     const rows = menuNavRows();
     if (!rows.length) return;
+    menuNavGezeigt = true;
     const row = rows[menuNavIndex];
     if (row.kind === 'range' || row.kind === 'select') {
       menuNavArmed = !menuNavArmed;
@@ -29723,6 +29749,11 @@
   const DEADZONE = 0.12;
 
   const TRIGGER_DEADZONE = 0.06; // a slightly drifting trigger shouldn't creep the car
+  // Rechter Stick als Bildlauf (Phase 13, BESTELLT). ~18px je Takt bei vollem Ausschlag,
+  // bei ueblichen ~60 Takten/s also rund 1000px/s - schnell genug, um eine lange
+  // Optionenseite zuegig zu durchqueren, aber nicht so schnell, dass ein kurzer Ausschlag
+  // gleich ueber das Ziel hinausschiesst.
+  const PAD_SCROLL_SPEED = 18;
 
   // Rescale rather than hard-cut, so leaving the deadzone eases in from 0 instead of
   // jumping straight to 0.12 — the hard cut made small steering corrections feel notchy.
@@ -37401,8 +37432,12 @@
       // Headlights on/off, edge-triggered. Drives the same checkbox the options menu uses
       // so the two can never disagree.
       const headNow = readBindingValue(pad, bindings.headlights) > BUTTON_CAPTURE_THRESHOLD;
-      // Triangle: reset in the editor, headlights otherwise.
-      if (headNow && !prevHeadlights && trackEditorPad('reset')) {
+      // Dreieck: dreht im Streckeneditor die Strecke, sonst das Licht. BESTELLT (Phase
+      // 13, Playstation-Belegung): "Dreieck zum Drehen." Reset (die ganze Strecke
+      // loeschen) hat seitdem keine eigene Gamepad-Taste mehr - nur noch per Klick auf
+      // "Leeren", ausdruecklich: eine so folgenreiche Aktion muss niemand versehentlich
+      // mit dem Steuerkreuz-Nachbarn treffen.
+      if (headNow && !prevHeadlights && trackEditorPad('rotate')) {
         // consumed by the editor
       } else if (headNow && !prevHeadlights) {
         headlightsOn = !headlightsOn;
@@ -37460,11 +37495,32 @@
       }
       prevFsToggle = fsToggleNow;
 
-      // Gelbe Flagge auf HALTEN. Dieselben zwei Funktionen wie die Taste X, nicht eine
-      // zweite Fassung der Logik: flagHoldPress startet den Ladebalken, flagHoldRelease(true)
-      // loest aus. Zu frueh losgelassen passiert nichts - ein halber Druck darf keine halbe
-      // Wirkung haben.
-      flagTasteTick(readBindingValue(pad, bindings.yellowflag) > BUTTON_CAPTURE_THRESHOLD);
+      // Rechter Stick hoch/runter: Bildlauf auf jeder Seite, ausser im Vollbild (Cockpit
+      // oder Streckeneditor) - dort soll der Stick nichts tun, weder verstellen noch
+      // scrollen. Achse 3 ist im Standard-Mapping die Y-Achse des rechten Sticks.
+      // BESTELLT.
+      const rechtsY = applyDeadzone((pad.axes || [])[3] || 0);
+      if (rechtsY && !document.body.classList.contains('race-fs')
+          && !document.body.classList.contains('track-fs')) {
+        document.body.scrollTop += rechtsY * PAD_SCROLL_SPEED;
+      }
+
+      // Gelbe Flagge auf HALTEN, aber im Streckeneditor-Vollbild bestaetigt dieselbe
+      // Taste (Kreuz/X) stattdessen die gewaehlte Aktion/Kachel - BESTELLT (Phase 13,
+      // Playstation-Belegung): "mit X bestaetigen, dass das Teil gesetzt wird." Die
+      // Flanke wird auch dann gemerkt, wenn der Editor sie verbraucht, sonst bestaetigt
+      // ein gehaltener Knopf jeden Takt erneut, weil flagTasteTick() (und mit ihr
+      // prevYellowFlag) diesen Takt ja gar nicht laeuft.
+      const yellowflagNow = readBindingValue(pad, bindings.yellowflag) > BUTTON_CAPTURE_THRESHOLD;
+      if (yellowflagNow && !prevYellowFlag && trackEditorPad('confirm')) {
+        prevYellowFlag = yellowflagNow;
+      } else {
+        // Dieselben zwei Funktionen wie die Taste X auf der Tastatur, nicht eine zweite
+        // Fassung der Logik: flagHoldPress startet den Ladebalken, flagHoldRelease(true)
+        // loest aus. Zu frueh losgelassen passiert nichts - ein halber Druck darf keine
+        // halbe Wirkung haben.
+        flagTasteTick(yellowflagNow);
+      }
 
       const resetNow = readBindingValue(pad, bindings.resetcar) > BUTTON_CAPTURE_THRESHOLD;
       if (resetNow && !prevResetCar) resetCarState();
@@ -37475,9 +37531,11 @@
       // No gear-range guards here any more: triggerShift() does its own bounds checking
       // and needs to see a downshift AT gear 0 (that is how manual mode selects reverse)
       // and an upshift while in reverse (how it comes back out).
-      // X / Square and B / Circle are shift buttons while driving and build/undo in the
-      // editor. The editor gets first refusal, and only in fullscreen.
-      if (downshiftNow && !prevDownshift && !trackEditorPad('confirm')
+      // Quadrat/Square ist ab Phase 13 nur noch Runterschalten, ohne Sonderfall im
+      // Editor - Bestaetigen liegt jetzt auf Kreuz/X (siehe oben). Kreis/Circle bleibt
+      // Hochschalten UND Rueckgaengig im Editor, wie bestellt ("Kreis zum Rueckgaengig
+      // ist super").
+      if (downshiftNow && !prevDownshift
           && physicsEnabled && !physEngine.state.isShifting) {
         physEngine.triggerShift(-1);
       }
@@ -59358,8 +59416,13 @@
       }
       teile.push(topRows.length + ' Kacheln');
 
-      // 2. Eine Unterseite mit allen drei Reglertypen oeffnen.
+      // 2. Eine Unterseite mit allen drei Reglertypen oeffnen. Der ERSTE Bewegen-Aufruf
+      //    in einem frischen Kontext zeigt nur Zeile 0 und bewegt noch nicht (siehe
+      //    menuNavGezeigt in 50b-menu-nav.js) - hier verbraucht, damit springeZu()
+      //    darunter mit normaler "ein Aufruf = ein Schritt"-Rechnung auskommt.
       document.querySelector('button.misc-tile.subpage-open[data-sub="opt-feel"]').click();
+      OMEGA_TEST.menuNavBewegen('down');
+      if (OMEGA_TEST.menuNavIndexLesen() !== 0) fehler.push('erster Tastendruck bewegt schon, statt nur zu zeigen');
       const rows = OMEGA_TEST.menuNavRowsLesen();
       if (!rows.some((r) => r.kind === 'range')) fehler.push('kein Regler erkannt');
       if (!rows.some((r) => r.kind === 'toggle')) fehler.push('kein Kontrollkaestchen erkannt');
