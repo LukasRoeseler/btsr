@@ -2007,11 +2007,15 @@
     // direkt darunter), hat ohnehin keinen Streckencode zum Lernen, und automatisches Lernen
     // ohne dessen Wissen ueberraschte mit einer Strecke, die niemand angefordert hatte.
     learn: false,
-    // BESTELLT: Standard jetzt AN (vorher AUS). Die fruehere Begruendung fuer AUS -
-    // "ich starte das Rennen und nichts passiert", weil ein Ghost ohne Streckencode stand -
-    // gilt unveraendert; die Abwaegung fiel jetzt andersherum aus. Wer KEINE gedruckte
-    // Strecke hat, muss es jetzt selbst ausschalten.
-    needCode: true,
+    // BESTELLT, dann wieder zurueckgenommen: kurzzeitig stand hier AN. "Ich starte das
+    // Rennen und nichts passiert" - ein Ghost ohne Streckencode PARKTE einfach, statt
+    // ohne Karte weiterzufahren. Standard bleibt deshalb AUS: ohne Streckenwissen soll
+    // der Ghost fahren (die Ideallinien-Faelle fallen dann ohnehin auf 0 Lenkversatz
+    // zurueck, siehe ghostLineHeuristic()/ghostLineFromCode() - er faehrt also geradeaus/
+    // in der Bahnmitte statt zu parken), nicht stehen bleiben. Wer gedruckte Strecke
+    // liegen hat, kann es einschalten - dann haelt sich das Auto selbst auf der Bahn und
+    // faehrt nur dort, wo es weiss, wo es ist.
+    needCode: false,
     // BESTELLT (Phase 12, Punkt 8): "Recovery-Funktion... aber mach einen Schalter, wo
     // ich es abschalten kann." Standard AUS, wie wuerzeVerteidigen/wuerzeBlau: ein
     // missglueckter Rueckweg waere schlimmer als der bisherige, sichere Halt (siehe die
@@ -6557,11 +6561,14 @@
     // Cut-out. Two detectors, and the first one is new: code 0x00 IS the off-track report,
     // so there is no need to wait for a timeout. The timeout stays as a backstop for the case
     // where notifications stop arriving altogether, which 0x00 cannot cover.
-    // Ohne Streckencode haelt der Ghost an. Das ist die richtige Vorsicht, solange eine
-    // gedruckte Strecke liegt - aber solange keine liegt, hat das Auto NIE einen Code
-    // gemeldet (!car.lastCodeAt), und dann faehrt der Ghost gar nicht erst los. Von aussen
-    // sieht das aus wie ein kaputtes Feature. Der Schalter erlaubt Fahren ohne Codes; das
-    // Auto haelt sich dann nicht selbst auf der Bahn, deshalb ist er standardmaessig an.
+    // Ohne Streckencode haelt der Ghost an - aber nur, wenn ghostCfg.needCode das verlangt
+    // (siehe die Parkbedingung unten). Solange keine gedruckte Strecke liegt, hat das Auto
+    // NIE einen Code gemeldet (!car.lastCodeAt), und ein Ghost, der das PARKEN verlangt,
+    // faehrt dann gar nicht erst los - von aussen sieht das aus wie ein kaputtes Feature.
+    // Deshalb ist needCode standardmaessig AUS: der Ghost faehrt dann auch ohne jedes
+    // Streckenwissen weiter (die Ideallinien-Faelle fallen auf 0 Lenkversatz zurueck, er
+    // haelt sich also nicht selbst auf der Bahn und ist auf die Leitplanke angewiesen).
+    // Wer gedruckte Strecke liegen hat, kann needCode einschalten.
     const noCode = !car.lastCodeAt || (now - car.lastCodeAt > GHOST_OFFTRACK_MS);
     // 0x00 muss STEHEN, nicht nur einmal auftreten. Ohne diese Entprellung hielt ein
     // einzelnes 0x00-Paket den Ghost sofort an, und weil solche Pakete zwischen zwei

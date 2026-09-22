@@ -1184,7 +1184,7 @@
      und ein zentriertes Symbol ueber einem Wort wirkt dort verloren. */
   .gt3-act-ico { display: flex; align-items: center; justify-content: center;
     gap: clamp(4px, 1vw, 9px); }
-  .gt3-act-ico svg { width: clamp(14px, 3vw, 19px); height: clamp(14px, 3vw, 19px);
+  .gt3-act-ico svg { width: clamp(15px, 3.2vw, 20px); height: clamp(15px, 3.2vw, 20px);
     flex: none; }
   /* Die zwei Haelften des Klangknopfes. Die Pfeile liegen ABSOLUT an den Raendern, damit
      Symbol und Name genau dort bleiben, wo sie vorher standen - ein zusaetzliches Flexkind
@@ -1198,9 +1198,9 @@
   .gt3-act-zwei .act-pfeil.links { left: clamp(4px, 1vw, 9px); }
   .gt3-act-zwei .act-pfeil.rechts { right: clamp(4px, 1vw, 9px); }
   .gt3-half .gt3-act { display: grid; justify-items: center; gap: 2px;
-    padding: clamp(4px, .8vw, 8px) 2px; line-height: 1.15; }
-  .gt3-half .gt3-act svg { width: clamp(15px, 3.4vw, 21px); height: clamp(15px, 3.4vw, 21px); }
-  .gt3-half .gt3-act span { font-size: clamp(9px, 1.5vw, 13px); }
+    padding: clamp(4px, .7vw, 7px) 2px; line-height: 1.15; }
+  .gt3-half .gt3-act svg { width: clamp(16px, 3.5vw, 21px); height: clamp(16px, 3.5vw, 21px); }
+  .gt3-half .gt3-act span { font-size: clamp(9.5px, 1.5vw, 13px); }
   .gt3-gear { grid-area: gear; display: grid; gap: clamp(3px, .6vw, 7px);
     align-content: center; }
   .gt3-right { grid-area: right; display: grid; gap: clamp(4px, .8vw, 9px);
@@ -1882,23 +1882,32 @@
   .gt3-wx .gt3-ico { width: clamp(24px, 4.4vw, 44px); }
   .gt3-gplot svg { width: 100%; max-width: clamp(44px, 7vw, 72px); height: auto;
     display: block; margin: 0 auto; }
-  /* BESTELLT: eigene, zentrale und groessere Kachel statt einer von acht schmalen in
-     .gt3-strip. grid-area: gyro (siehe .gt3 grid-template-areas) traegt sie als volle
-     Zeile; place-items zentriert Kreis und Zahl darin, und beide werden deutlich groesser
-     als in der alten Streifen-Kachel. */
-  .gt3-gyro-tile { grid-area: gyro; display: grid; place-items: center; gap: clamp(2px, .8vw, 6px);
-    padding: clamp(6px, 1.4vw, 14px); }
-  .gt3-gyro-tile svg { max-width: clamp(90px, 20vw, 170px); }
-  .gt3-gyro-tile .gt3-val { font-size: clamp(13px, 2.4vw, 20px); }
+  /* Eigene, zentrale Kachel statt einer von acht schmalen in .gt3-strip. grid-area: gyro
+     (siehe .gt3 grid-template-areas) traegt sie als volle Zeile.
+     BESTELLT (Korrektur): die erste Fassung machte den Kreis so gross, dass die Zeile den
+     Rest der Anzeige verdraengte - bei einer insgesamt fest eingepassten Cockpithoehe
+     (cockpitPassung() skaliert alles gemeinsam) drueckt eine hohe Gyro-Zeile jede andere
+     Zeile kleiner. Deutlich zurueckgenommen, kleiner als die urspruengliche Fassung, aber
+     immer noch eine eigene, gut lesbare Zeile statt der alten 40-px-Streifenkachel. */
+  .gt3-gyro-tile { grid-area: gyro; display: flex; align-items: center;
+    justify-content: center; gap: clamp(4px, .9vw, 8px);
+    padding: 0; margin: clamp(-12px, -1.6vw, -7px) 0; }
+  .gt3-gyro-tile svg { max-width: clamp(20px, 3.6vw, 30px); flex: none; }
+  .gt3-gyro-text { display: grid; gap: 1px; justify-items: start; }
+  .gt3-gyro-tile .gt3-val { font-size: clamp(9px, 1.4vw, 12px); }
 
   /* Full-width banner. Amber, wide, unmissable: the pit limiter is the one state where
      not noticing costs a penalty. */
   /* Touch controls on the dash. Big enough for a thumb, and they sit in the columns
      rather than floating, so nothing covers a reading. */
+  /* BESTELLT: "die Tasten fuer Boxenstopp, Gelbe Flagge, Lesemodus, Fahrmodus, aber auch
+     Rennen starten und Sound alle hoeher" - dafuer nach unten Platz geschaffen, indem die
+     Gyro-Kachel (siehe .gt3-gyro-tile) kleiner wurde. Alle sechs Knoepfe teilen sich diese
+     Basisklasse, ein hoeherer Mindestwert hier wirkt also auf alle gleichzeitig. */
   .gt3-act { width: 100%; margin-top: 4px; padding: 9px 6px; border: 0; border-radius: 0;
     background: var(--gt3-btn); color: var(--gt3-btn-ink); font-weight: 700;
     font-family: inherit;
-    font-size: clamp(10px, 1.6vw, 14px); letter-spacing: .04em; cursor: pointer;
+    font-size: clamp(10px, 1.75vw, 15px); letter-spacing: .04em; cursor: pointer;
     /* 44 statt 40: das sind die zwei Knoepfe, die man waehrend der Fahrt trifft, also
        gehoeren sie auf die volle Beruehrflaeche. Gilt fuer Boxenstopp UND gelbe Flagge,
        damit die beiden nicht unterschiedlich hoch nebeneinander stehen. */
@@ -3133,7 +3142,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.7.37</span></span>
+        <span class="foot-ver">v<span id="app-version">0.7.38</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -3522,9 +3531,12 @@
       <!-- BESTELLT: "Gyro soll zentral auf einer eigenen Kachel angezeigt werden" - vorher
            war er eine Kachel unter acht schmalen in .gt3-strip, genauso gequetscht wie Tank
            oder Akku. Jetzt eine eigene volle Zeile zwischen dem Hauptblock und der
-           Streifen-Zeile, mit entsprechend groesserem Kreis und groesserer Zahl. -->
+           Streifen-Zeile.
+           BESTELLT (Korrektur): Kreis, Beschriftung und Zahl standen zunaechst UNTEREINANDER
+           (drei Zeilen in einer Spalte) - das kostete mehr Hoehe als noetig und drueckte den
+           Rest der Anzeige klein. Jetzt NEBENEINANDER (Kreis links, Beschriftung+Zahl in
+           einer schmalen Spalte rechts), die ganze Kachel ist also nur noch eine Zeile hoch. -->
       <div class="gt3-box gt3-gplot gt3-gyro-tile" id="race-gplot">
-        <div class="gt3-lbl"><span style="color:#ff4d4d">Sim</span> &middot; <span style="color:#2ee06a">Roh</span></div>
         <svg viewBox="0 0 100 100" aria-label="Querkraft und L&auml;ngskraft">
           <circle cx="50" cy="50" r="46" fill="#04060b" stroke="#2a3346"/>
           <circle cx="50" cy="50" r="31" fill="none" stroke="#1e2634"/>
@@ -3533,12 +3545,15 @@
           <circle id="race-g-real" cx="50" cy="50" r="4.5" fill="#2ee06a" opacity=".85"/>
           <circle id="race-g-sim" cx="50" cy="50" r="5" fill="#ff4d4d"/>
         </svg>
+        <div class="gt3-gyro-text">
+        <div class="gt3-lbl"><span style="color:#ff4d4d">Sim</span> &middot; <span style="color:#2ee06a">Roh</span></div>
         <!-- Das Einspurmodell in ZWEI Zahlen, und beide sind Instrument: keine davon
              stellt die Lenkung. Gierrate ist, wie schnell das Auto sich dreht;
              Ausnutzung ist, wieviel von der verf&uuml;gbaren Haftung das Man&ouml;ver
              verlangt. &Uuml;ber 100 Prozent hei&szlig;t: so f&auml;hrt kein Auto durch
              diese Kurve. -->
-        <div class="gt3-val" id="race-yaw">&ndash;</div></div>
+        <div class="gt3-val" id="race-yaw">&ndash;</div>
+        </div></div>
 
       <div class="gt3-banner" id="gt3-flag"><span id="race-flag"></span></div>
       <!-- Ein Auto, das von selbst langsamer wird und im Controller brummt, sieht ohne
@@ -8336,7 +8351,7 @@
       <div class="opt-row"><div class="opt-label">Ghost braucht Streckencode
           <small>Aus: f&auml;hrt auch ohne gedruckte Strecke. An: nur mit gelesenem
           Muster.</small></div>
-        <label class="tgl"><input type="checkbox" id="ghost-needcode" checked><span></span></label></div>
+        <label class="tgl"><input type="checkbox" id="ghost-needcode"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Ghost: Feld zusammenhalten<small>Gestaffelt &uuml;ber den ganzen Platz: der Erste f&auml;hrt um den Abschlag langsamer, der Letzte um denselben Betrag schneller, die Feldmitte unver&auml;ndert. Damit bleibt das mittlere Tempo gleich &ndash; w&uuml;rde nur gebremst, w&auml;re dies in Wahrheit ein Schalter, der alle langsamer macht. Vorher wirkte es nur auf den Erstplatzierten, und dann waren die ersten beiden beieinander und der Rest blieb, wo er war. Wirkt auch ohne Rennen, aber erst ab zwei Ghosts: mit einem einzigen ist dieser eine gleichzeitig Erster und Letzter.</small></div>
         <label class="tgl"><input type="checkbox" id="ghost-leader" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Ghost: St&auml;rke der Staffel
@@ -8518,9 +8533,11 @@
           repariert ganz, ohne Vorwahl und ohne Reifenwechsel. Die Reifenwahl ist eine
           globale Einstellung &ndash; &bdquo;auf weich&ldquo; f&uuml;r ein einzelnes Auto
           ist eine Aussage, die das Modell nicht trennen kann.</span>
-        <kbd>Ton</kbd><span>Auto&nbsp;2 hat keine Zusatzkette am Motorklang: kein
-          Turbopfeifen, keine Knaller, kein Begrenzer-Takt &ndash; die h&auml;ngen an
-          einem Bus. Und keinen Doppler, der geh&ouml;rt zur Runde von Auto&nbsp;1.</span>
+        <kbd>Ton</kbd><span>Das Motormodell selbst darf Auto&nbsp;2 seit Kurzem frei
+          w&auml;hlen (eigener Knopf auf dem Vergleichsschirm &bdquo;Beide&ldquo;). Was
+          es weiterhin nicht hat, ist eine eigene Zusatzkette: kein Turbopfeifen, keine
+          Knaller, kein Begrenzer-Takt &ndash; die h&auml;ngen an einem Bus. Und keinen
+          Doppler, der geh&ouml;rt zur Runde von Auto&nbsp;1.</span>
         <kbd>Aufnahme</kbd><span>Der Makro-Mitschnitt zeichnet Auto&nbsp;1 auf. Zwei
           Spuren in einer Aufnahme w&auml;ren ein anderes Dateiformat.</span>
         <kbd>Zeiten</kbd><span>Die drei Rundenzeiten im Cockpit &ndash; aktuelle, letzte,
@@ -8535,8 +8552,9 @@
         oben links oder dem Steuerkreuz auf &bdquo;Beide&ldquo;. Dort stehen beide Autos
         <em>nebeneinander</em> &ndash; Tempo, Schaltlichter, Gang, Tank, Zustand, Reifen-
         und Bremsentemperatur und Akku, in beiden Spalten in derselben Reihenfolge, damit
-        das Auge waagerecht springen kann. Dazu die Boxenkn&ouml;pfe beider Autos und der
-        Motorklang, der f&uuml;r beide gilt. Ist der Modus aus, wird der Schirm beim
+        das Auge waagerecht springen kann. Dazu die Boxenkn&ouml;pfe beider Autos und je
+        ein eigener Motor-Knopf &ndash; Auto&nbsp;2 darf einen anderen Motor fahren als
+        Auto&nbsp;1, muss aber nicht. Ist der Modus aus, wird der Schirm beim
         Bl&auml;ttern &uuml;bersprungen.</p>
       <p class="muted">Und ein Boxenstopp, unabh&auml;ngig vom anderen Auto: w&auml;hrend
         eines in der Box steht, verbraucht das andere weiter. Beide Kn&ouml;pfe stehen auf
@@ -8563,8 +8581,9 @@
         Stereoseite &ndash; links Auto&nbsp;1, rechts Auto&nbsp;2. Das ist keine Kosmetik:
         zwei Motoren im selben Drehzahlband aus einem Lautsprecher klingen wie ein
         verstimmter Motor und nicht wie zwei Autos. Auch der Schaltklang kommt von der
-        Seite des Autos, das geschaltet hat. Beide fahren dasselbe Motormodell, das aus dem
-        Cockpit gew&auml;hlte.</p>
+        Seite des Autos, das geschaltet hat. Beide fahren mit derselben Vorgabe los, d&uuml;rfen
+        aber verschiedene Motoren spielen &ndash; je ein eigener Knopf auf dem
+        Vergleichsschirm &bdquo;Beide&ldquo;.</p>
       <p class="muted">Dazu einen eigenen Tank: Verbrauch nach Gas und Zeit mit demselben
         Regler wie Auto&nbsp;1, das Tankgewicht in seiner Fahrphysik, die Warnstufen als
         Meldung und den Notlauf des leeren Tanks &ndash; und der geht &uuml;ber eine Rampe

@@ -1184,7 +1184,7 @@
      und ein zentriertes Symbol ueber einem Wort wirkt dort verloren. */
   .gt3-act-ico { display: flex; align-items: center; justify-content: center;
     gap: clamp(4px, 1vw, 9px); }
-  .gt3-act-ico svg { width: clamp(14px, 3vw, 19px); height: clamp(14px, 3vw, 19px);
+  .gt3-act-ico svg { width: clamp(15px, 3.2vw, 20px); height: clamp(15px, 3.2vw, 20px);
     flex: none; }
   /* Die zwei Haelften des Klangknopfes. Die Pfeile liegen ABSOLUT an den Raendern, damit
      Symbol und Name genau dort bleiben, wo sie vorher standen - ein zusaetzliches Flexkind
@@ -1198,9 +1198,9 @@
   .gt3-act-zwei .act-pfeil.links { left: clamp(4px, 1vw, 9px); }
   .gt3-act-zwei .act-pfeil.rechts { right: clamp(4px, 1vw, 9px); }
   .gt3-half .gt3-act { display: grid; justify-items: center; gap: 2px;
-    padding: clamp(4px, .8vw, 8px) 2px; line-height: 1.15; }
-  .gt3-half .gt3-act svg { width: clamp(15px, 3.4vw, 21px); height: clamp(15px, 3.4vw, 21px); }
-  .gt3-half .gt3-act span { font-size: clamp(9px, 1.5vw, 13px); }
+    padding: clamp(4px, .7vw, 7px) 2px; line-height: 1.15; }
+  .gt3-half .gt3-act svg { width: clamp(16px, 3.5vw, 21px); height: clamp(16px, 3.5vw, 21px); }
+  .gt3-half .gt3-act span { font-size: clamp(9.5px, 1.5vw, 13px); }
   .gt3-gear { grid-area: gear; display: grid; gap: clamp(3px, .6vw, 7px);
     align-content: center; }
   .gt3-right { grid-area: right; display: grid; gap: clamp(4px, .8vw, 9px);
@@ -1882,23 +1882,32 @@
   .gt3-wx .gt3-ico { width: clamp(24px, 4.4vw, 44px); }
   .gt3-gplot svg { width: 100%; max-width: clamp(44px, 7vw, 72px); height: auto;
     display: block; margin: 0 auto; }
-  /* BESTELLT: eigene, zentrale und groessere Kachel statt einer von acht schmalen in
-     .gt3-strip. grid-area: gyro (siehe .gt3 grid-template-areas) traegt sie als volle
-     Zeile; place-items zentriert Kreis und Zahl darin, und beide werden deutlich groesser
-     als in der alten Streifen-Kachel. */
-  .gt3-gyro-tile { grid-area: gyro; display: grid; place-items: center; gap: clamp(2px, .8vw, 6px);
-    padding: clamp(6px, 1.4vw, 14px); }
-  .gt3-gyro-tile svg { max-width: clamp(90px, 20vw, 170px); }
-  .gt3-gyro-tile .gt3-val { font-size: clamp(13px, 2.4vw, 20px); }
+  /* Eigene, zentrale Kachel statt einer von acht schmalen in .gt3-strip. grid-area: gyro
+     (siehe .gt3 grid-template-areas) traegt sie als volle Zeile.
+     BESTELLT (Korrektur): die erste Fassung machte den Kreis so gross, dass die Zeile den
+     Rest der Anzeige verdraengte - bei einer insgesamt fest eingepassten Cockpithoehe
+     (cockpitPassung() skaliert alles gemeinsam) drueckt eine hohe Gyro-Zeile jede andere
+     Zeile kleiner. Deutlich zurueckgenommen, kleiner als die urspruengliche Fassung, aber
+     immer noch eine eigene, gut lesbare Zeile statt der alten 40-px-Streifenkachel. */
+  .gt3-gyro-tile { grid-area: gyro; display: flex; align-items: center;
+    justify-content: center; gap: clamp(4px, .9vw, 8px);
+    padding: 0; margin: clamp(-12px, -1.6vw, -7px) 0; }
+  .gt3-gyro-tile svg { max-width: clamp(20px, 3.6vw, 30px); flex: none; }
+  .gt3-gyro-text { display: grid; gap: 1px; justify-items: start; }
+  .gt3-gyro-tile .gt3-val { font-size: clamp(9px, 1.4vw, 12px); }
 
   /* Full-width banner. Amber, wide, unmissable: the pit limiter is the one state where
      not noticing costs a penalty. */
   /* Touch controls on the dash. Big enough for a thumb, and they sit in the columns
      rather than floating, so nothing covers a reading. */
+  /* BESTELLT: "die Tasten fuer Boxenstopp, Gelbe Flagge, Lesemodus, Fahrmodus, aber auch
+     Rennen starten und Sound alle hoeher" - dafuer nach unten Platz geschaffen, indem die
+     Gyro-Kachel (siehe .gt3-gyro-tile) kleiner wurde. Alle sechs Knoepfe teilen sich diese
+     Basisklasse, ein hoeherer Mindestwert hier wirkt also auf alle gleichzeitig. */
   .gt3-act { width: 100%; margin-top: 4px; padding: 9px 6px; border: 0; border-radius: 0;
     background: var(--gt3-btn); color: var(--gt3-btn-ink); font-weight: 700;
     font-family: inherit;
-    font-size: clamp(10px, 1.6vw, 14px); letter-spacing: .04em; cursor: pointer;
+    font-size: clamp(10px, 1.75vw, 15px); letter-spacing: .04em; cursor: pointer;
     /* 44 statt 40: das sind die zwei Knoepfe, die man waehrend der Fahrt trifft, also
        gehoeren sie auf die volle Beruehrflaeche. Gilt fuer Boxenstopp UND gelbe Flagge,
        damit die beiden nicht unterschiedlich hoch nebeneinander stehen. */
@@ -3133,7 +3142,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.7.37</span></span>
+        <span class="foot-ver">v<span id="app-version">0.7.38</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -3522,9 +3531,12 @@
       <!-- BESTELLT: "Gyro soll zentral auf einer eigenen Kachel angezeigt werden" - vorher
            war er eine Kachel unter acht schmalen in .gt3-strip, genauso gequetscht wie Tank
            oder Akku. Jetzt eine eigene volle Zeile zwischen dem Hauptblock und der
-           Streifen-Zeile, mit entsprechend groesserem Kreis und groesserer Zahl. -->
+           Streifen-Zeile.
+           BESTELLT (Korrektur): Kreis, Beschriftung und Zahl standen zunaechst UNTEREINANDER
+           (drei Zeilen in einer Spalte) - das kostete mehr Hoehe als noetig und drueckte den
+           Rest der Anzeige klein. Jetzt NEBENEINANDER (Kreis links, Beschriftung+Zahl in
+           einer schmalen Spalte rechts), die ganze Kachel ist also nur noch eine Zeile hoch. -->
       <div class="gt3-box gt3-gplot gt3-gyro-tile" id="race-gplot">
-        <div class="gt3-lbl"><span style="color:#ff4d4d">Sim</span> &middot; <span style="color:#2ee06a">Roh</span></div>
         <svg viewBox="0 0 100 100" aria-label="Querkraft und L&auml;ngskraft">
           <circle cx="50" cy="50" r="46" fill="#04060b" stroke="#2a3346"/>
           <circle cx="50" cy="50" r="31" fill="none" stroke="#1e2634"/>
@@ -3533,12 +3545,15 @@
           <circle id="race-g-real" cx="50" cy="50" r="4.5" fill="#2ee06a" opacity=".85"/>
           <circle id="race-g-sim" cx="50" cy="50" r="5" fill="#ff4d4d"/>
         </svg>
+        <div class="gt3-gyro-text">
+        <div class="gt3-lbl"><span style="color:#ff4d4d">Sim</span> &middot; <span style="color:#2ee06a">Roh</span></div>
         <!-- Das Einspurmodell in ZWEI Zahlen, und beide sind Instrument: keine davon
              stellt die Lenkung. Gierrate ist, wie schnell das Auto sich dreht;
              Ausnutzung ist, wieviel von der verf&uuml;gbaren Haftung das Man&ouml;ver
              verlangt. &Uuml;ber 100 Prozent hei&szlig;t: so f&auml;hrt kein Auto durch
              diese Kurve. -->
-        <div class="gt3-val" id="race-yaw">&ndash;</div></div>
+        <div class="gt3-val" id="race-yaw">&ndash;</div>
+        </div></div>
 
       <div class="gt3-banner" id="gt3-flag"><span id="race-flag"></span></div>
       <!-- Ein Auto, das von selbst langsamer wird und im Controller brummt, sieht ohne
@@ -8336,7 +8351,7 @@
       <div class="opt-row"><div class="opt-label">Ghost braucht Streckencode
           <small>Aus: f&auml;hrt auch ohne gedruckte Strecke. An: nur mit gelesenem
           Muster.</small></div>
-        <label class="tgl"><input type="checkbox" id="ghost-needcode" checked><span></span></label></div>
+        <label class="tgl"><input type="checkbox" id="ghost-needcode"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Ghost: Feld zusammenhalten<small>Gestaffelt &uuml;ber den ganzen Platz: der Erste f&auml;hrt um den Abschlag langsamer, der Letzte um denselben Betrag schneller, die Feldmitte unver&auml;ndert. Damit bleibt das mittlere Tempo gleich &ndash; w&uuml;rde nur gebremst, w&auml;re dies in Wahrheit ein Schalter, der alle langsamer macht. Vorher wirkte es nur auf den Erstplatzierten, und dann waren die ersten beiden beieinander und der Rest blieb, wo er war. Wirkt auch ohne Rennen, aber erst ab zwei Ghosts: mit einem einzigen ist dieser eine gleichzeitig Erster und Letzter.</small></div>
         <label class="tgl"><input type="checkbox" id="ghost-leader" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Ghost: St&auml;rke der Staffel
@@ -8518,9 +8533,11 @@
           repariert ganz, ohne Vorwahl und ohne Reifenwechsel. Die Reifenwahl ist eine
           globale Einstellung &ndash; &bdquo;auf weich&ldquo; f&uuml;r ein einzelnes Auto
           ist eine Aussage, die das Modell nicht trennen kann.</span>
-        <kbd>Ton</kbd><span>Auto&nbsp;2 hat keine Zusatzkette am Motorklang: kein
-          Turbopfeifen, keine Knaller, kein Begrenzer-Takt &ndash; die h&auml;ngen an
-          einem Bus. Und keinen Doppler, der geh&ouml;rt zur Runde von Auto&nbsp;1.</span>
+        <kbd>Ton</kbd><span>Das Motormodell selbst darf Auto&nbsp;2 seit Kurzem frei
+          w&auml;hlen (eigener Knopf auf dem Vergleichsschirm &bdquo;Beide&ldquo;). Was
+          es weiterhin nicht hat, ist eine eigene Zusatzkette: kein Turbopfeifen, keine
+          Knaller, kein Begrenzer-Takt &ndash; die h&auml;ngen an einem Bus. Und keinen
+          Doppler, der geh&ouml;rt zur Runde von Auto&nbsp;1.</span>
         <kbd>Aufnahme</kbd><span>Der Makro-Mitschnitt zeichnet Auto&nbsp;1 auf. Zwei
           Spuren in einer Aufnahme w&auml;ren ein anderes Dateiformat.</span>
         <kbd>Zeiten</kbd><span>Die drei Rundenzeiten im Cockpit &ndash; aktuelle, letzte,
@@ -8535,8 +8552,9 @@
         oben links oder dem Steuerkreuz auf &bdquo;Beide&ldquo;. Dort stehen beide Autos
         <em>nebeneinander</em> &ndash; Tempo, Schaltlichter, Gang, Tank, Zustand, Reifen-
         und Bremsentemperatur und Akku, in beiden Spalten in derselben Reihenfolge, damit
-        das Auge waagerecht springen kann. Dazu die Boxenkn&ouml;pfe beider Autos und der
-        Motorklang, der f&uuml;r beide gilt. Ist der Modus aus, wird der Schirm beim
+        das Auge waagerecht springen kann. Dazu die Boxenkn&ouml;pfe beider Autos und je
+        ein eigener Motor-Knopf &ndash; Auto&nbsp;2 darf einen anderen Motor fahren als
+        Auto&nbsp;1, muss aber nicht. Ist der Modus aus, wird der Schirm beim
         Bl&auml;ttern &uuml;bersprungen.</p>
       <p class="muted">Und ein Boxenstopp, unabh&auml;ngig vom anderen Auto: w&auml;hrend
         eines in der Box steht, verbraucht das andere weiter. Beide Kn&ouml;pfe stehen auf
@@ -8563,8 +8581,9 @@
         Stereoseite &ndash; links Auto&nbsp;1, rechts Auto&nbsp;2. Das ist keine Kosmetik:
         zwei Motoren im selben Drehzahlband aus einem Lautsprecher klingen wie ein
         verstimmter Motor und nicht wie zwei Autos. Auch der Schaltklang kommt von der
-        Seite des Autos, das geschaltet hat. Beide fahren dasselbe Motormodell, das aus dem
-        Cockpit gew&auml;hlte.</p>
+        Seite des Autos, das geschaltet hat. Beide fahren mit derselben Vorgabe los, d&uuml;rfen
+        aber verschiedene Motoren spielen &ndash; je ein eigener Knopf auf dem
+        Vergleichsschirm &bdquo;Beide&ldquo;.</p>
       <p class="muted">Dazu einen eigenen Tank: Verbrauch nach Gas und Zeit mit demselben
         Regler wie Auto&nbsp;1, das Tankgewicht in seiner Fahrphysik, die Warnstufen als
         Meldung und den Notlauf des leeren Tanks &ndash; und der geht &uuml;ber eine Rampe
@@ -9730,8 +9749,8 @@
     "Auto 2": "Car 2",
     "Und ein Vergleichsschirm: blättere im Cockpit mit dem Pfeil oben links oder dem Steuerkreuz auf „Beide“. Dort stehen beide Autos":
       "And a comparison screen: page through the cockpit with the arrow at the top left or the D-pad to “Both”. It shows both cars",
-    "– Tempo, Schaltlichter, Gang, Tank, Zustand, Reifen- und Bremsentemperatur und Akku, in beiden Spalten in derselben Reihenfolge, damit das Auge waagerecht springen kann. Dazu die Boxenknöpfe beider Autos und der Motorklang, der für beide gilt. Ist der Modus aus, wird der Schirm beim Blättern übersprungen.":
-      "– speed, shift lights, gear, fuel, condition, tyre and brake temperature and battery, in the same order in both columns so the eye can move sideways. Plus the pit buttons of both cars and the engine sound, which applies to both. With the mode off, the screen is skipped while paging.",
+    "– Tempo, Schaltlichter, Gang, Tank, Zustand, Reifen- und Bremsentemperatur und Akku, in beiden Spalten in derselben Reihenfolge, damit das Auge waagerecht springen kann. Dazu die Boxenknöpfe beider Autos und je ein eigener Motor-Knopf – Auto 2 darf einen anderen Motor fahren als Auto 1, muss aber nicht. Ist der Modus aus, wird der Schirm beim Blättern übersprungen.":
+      "– speed, shift lights, gear, fuel, condition, tyre and brake temperature and battery, in the same order in both columns so the eye can move sideways. Plus the pit buttons of both cars and an engine-sound button each – car 2 may run a different engine than car 1, but does not have to. With the mode off, the screen is skipped while paging.",
     "Und ein Boxenstopp, unabhängig vom anderen Auto: während eines in der Box steht, verbraucht das andere weiter. Beide Knöpfe stehen auf dem Vergleichsschirm „Beide“, links für Auto 1 und rechts für Auto 2. Anfordern,":
       "And a pit stop, independent of the other car: while one is stopped, the other keeps burning fuel. Both buttons sit on the “Both” comparison screen, left for car 1 and right for car 2. Request,",
     ", warten, losfahren; nochmal drücken bricht ab. Der Service beginnt erst im Stillstand – das Auto rollt mit über 200 km/h aus, deshalb steht in der Fußzeile, wie weit es noch ist. Getankt wird mit denselben 22 %/s wie bei Auto 1 und repariert mit derselben Rate; ungleiche Raten wären schlimmer als kein Stopp.":
@@ -9767,10 +9786,10 @@
       "Plus a fuel tank of its own: consumption by throttle and time on the same slider as car 1, the fuel weight in its driving model, the warning levels as a message, and the limp mode of an empty tank – which closes over a ramp, not in one tick.",
     "Dazu einen eigenen Schaden: Crasherkennung aus seinen eigenen Sensorbytes, Leistungsverlust mit dem Schaden, Notlauf im Totalschaden und ausgefallene Lampen – und die Kontrollleuchten des einen sagen nichts mehr über das andere Auto.":
       "Plus damage of its own: crash detection from its own sensor bytes, power lost with damage, limp mode when totalled, and lamps that fail – and one car's tell-tales no longer say anything about the other.",
-    "Auto 2 hat keine Zusatzkette am Motorklang: kein Turbopfeifen, keine Knaller, kein Begrenzer-Takt – die hängen an einem Bus. Und keinen Doppler, der gehört zur Runde von Auto 1.":
-      "Car 2 has no extras chain on its engine sound: no turbo whistle, no pops, no limiter pulsing – those hang off one bus. And no doppler, which belongs to car 1's lap.",
-    "Dazu eine eigene Motorstimme, und die sitzt auf der anderen Stereoseite – links Auto 1, rechts Auto 2. Das ist keine Kosmetik: zwei Motoren im selben Drehzahlband aus einem Lautsprecher klingen wie ein verstimmter Motor und nicht wie zwei Autos. Auch der Schaltklang kommt von der Seite des Autos, das geschaltet hat. Beide fahren dasselbe Motormodell, das aus dem Cockpit gewählte.":
-      "Plus an engine voice of its own, and it sits on the other stereo side – car 1 left, car 2 right. That is not decoration: two engines in the same rev band from one speaker sound like one out-of-tune engine, not like two cars. The shift sound comes from the side of the car that shifted, too. Both run the same engine model, the one chosen in the cockpit.",
+    "Das Motormodell selbst darf Auto 2 seit Kurzem frei wählen (eigener Knopf auf dem Vergleichsschirm „Beide“). Was es weiterhin nicht hat, ist eine eigene Zusatzkette: kein Turbopfeifen, keine Knaller, kein Begrenzer-Takt – die hängen an einem Bus. Und keinen Doppler, der gehört zur Runde von Auto 1.":
+      "Car 2 has recently become free to choose its own engine model (a button of its own on the “Both” comparison screen). What it still does not have is extras of its own: no turbo whistle, no pops, no limiter pulsing – those hang off one bus. And no doppler, which belongs to car 1's lap.",
+    "Dazu eine eigene Motorstimme, und die sitzt auf der anderen Stereoseite – links Auto 1, rechts Auto 2. Das ist keine Kosmetik: zwei Motoren im selben Drehzahlband aus einem Lautsprecher klingen wie ein verstimmter Motor und nicht wie zwei Autos. Auch der Schaltklang kommt von der Seite des Autos, das geschaltet hat. Beide fahren mit derselben Vorgabe los, dürfen aber verschiedene Motoren spielen – je ein eigener Knopf auf dem Vergleichsschirm „Beide“.":
+      "Plus an engine voice of its own, and it sits on the other stereo side – car 1 left, car 2 right. That is not decoration: two engines in the same rev band from one speaker sound like one out-of-tune engine, not like two cars. The shift sound comes from the side of the car that shifted, too. Both start out with the same choice, but may play different engines – an engine-sound button of its own on the “Both” comparison screen.",
     "Die drei Rundenzeiten im Cockpit – aktuelle, letzte, beste – und die Aufnahme gehören Auto 1. Seine eigenen Zeiten stehen in der Rundenübersicht.":
       "The three lap times in the cockpit – current, last, best – and the recording belong to car 1. Its own times are in the lap overview.",
     "Dazu zählt Auto 2 seine Runden mit: es steht in der Rundenübersicht, in der Rangliste während des Rennens und im Ergebnis samt CSV. Das war keine Arbeit, sondern ein Irrtum in meiner Schätzung – die Rundenzählung lief schon immer je Auto, für jedes verbundene, egal welche Rolle. Die Zielflagge wartet jetzt auf beide Fahrer statt nur auf einen.":
@@ -31300,11 +31319,15 @@
     // direkt darunter), hat ohnehin keinen Streckencode zum Lernen, und automatisches Lernen
     // ohne dessen Wissen ueberraschte mit einer Strecke, die niemand angefordert hatte.
     learn: false,
-    // BESTELLT: Standard jetzt AN (vorher AUS). Die fruehere Begruendung fuer AUS -
-    // "ich starte das Rennen und nichts passiert", weil ein Ghost ohne Streckencode stand -
-    // gilt unveraendert; die Abwaegung fiel jetzt andersherum aus. Wer KEINE gedruckte
-    // Strecke hat, muss es jetzt selbst ausschalten.
-    needCode: true,
+    // BESTELLT, dann wieder zurueckgenommen: kurzzeitig stand hier AN. "Ich starte das
+    // Rennen und nichts passiert" - ein Ghost ohne Streckencode PARKTE einfach, statt
+    // ohne Karte weiterzufahren. Standard bleibt deshalb AUS: ohne Streckenwissen soll
+    // der Ghost fahren (die Ideallinien-Faelle fallen dann ohnehin auf 0 Lenkversatz
+    // zurueck, siehe ghostLineHeuristic()/ghostLineFromCode() - er faehrt also geradeaus/
+    // in der Bahnmitte statt zu parken), nicht stehen bleiben. Wer gedruckte Strecke
+    // liegen hat, kann es einschalten - dann haelt sich das Auto selbst auf der Bahn und
+    // faehrt nur dort, wo es weiss, wo es ist.
+    needCode: false,
     // BESTELLT (Phase 12, Punkt 8): "Recovery-Funktion... aber mach einen Schalter, wo
     // ich es abschalten kann." Standard AUS, wie wuerzeVerteidigen/wuerzeBlau: ein
     // missglueckter Rueckweg waere schlimmer als der bisherige, sichere Halt (siehe die
@@ -35850,11 +35873,14 @@
     // Cut-out. Two detectors, and the first one is new: code 0x00 IS the off-track report,
     // so there is no need to wait for a timeout. The timeout stays as a backstop for the case
     // where notifications stop arriving altogether, which 0x00 cannot cover.
-    // Ohne Streckencode haelt der Ghost an. Das ist die richtige Vorsicht, solange eine
-    // gedruckte Strecke liegt - aber solange keine liegt, hat das Auto NIE einen Code
-    // gemeldet (!car.lastCodeAt), und dann faehrt der Ghost gar nicht erst los. Von aussen
-    // sieht das aus wie ein kaputtes Feature. Der Schalter erlaubt Fahren ohne Codes; das
-    // Auto haelt sich dann nicht selbst auf der Bahn, deshalb ist er standardmaessig an.
+    // Ohne Streckencode haelt der Ghost an - aber nur, wenn ghostCfg.needCode das verlangt
+    // (siehe die Parkbedingung unten). Solange keine gedruckte Strecke liegt, hat das Auto
+    // NIE einen Code gemeldet (!car.lastCodeAt), und ein Ghost, der das PARKEN verlangt,
+    // faehrt dann gar nicht erst los - von aussen sieht das aus wie ein kaputtes Feature.
+    // Deshalb ist needCode standardmaessig AUS: der Ghost faehrt dann auch ohne jedes
+    // Streckenwissen weiter (die Ideallinien-Faelle fallen auf 0 Lenkversatz zurueck, er
+    // haelt sich also nicht selbst auf der Bahn und ist auf die Leitplanke angewiesen).
+    // Wer gedruckte Strecke liegen hat, kann needCode einschalten.
     const noCode = !car.lastCodeAt || (now - car.lastCodeAt > GHOST_OFFTRACK_MS);
     // 0x00 muss STEHEN, nicht nur einmal auftreten. Ohne diese Entprellung hielt ein
     // einzelnes 0x00-Paket den Ghost sofort an, und weil solche Pakete zwischen zwei
