@@ -1625,6 +1625,14 @@
         // Latch - eine Meldung fiel, die zur eigenen Zustandsfolge gar nicht gehoerte.
         const merkLatch = Object.assign({}, ansageLatch);
         Object.assign(ansageLatch, { damage: false, fuel: false, tyre: false, rain: null });
+        // BESTELLT: die Aufnahme hat jetzt IMMER Vorrang vor der Live-Stimme (ansage()),
+        // nicht nur ohne speechSynthesis. Diese Probe will aber ausdruecklich den
+        // Live-Pfad beobachten (ueber die Attrappe unten) - ist der Browser, in dem der
+        // Selbsttest laeuft, schon einmal durch eine Nutzergeste gelaufen, waeren
+        // voiceBuffers echt gefuellt und playAnsageClip() wuerde zuerst greifen, bevor
+        // die Attrappe je einen Satz sieht. Fuer die Dauer der Probe deshalb leer.
+        const echtBuffers = Object.assign({}, voiceBuffers);
+        Object.keys(voiceBuffers).forEach((k) => delete voiceBuffers[k]);
         try {
           Object.defineProperty(window, 'speechSynthesis', {
             configurable: true,
@@ -1640,6 +1648,8 @@
             delete window.speechSynthesis;
           }
           Object.assign(ansageLatch, merkLatch);
+          Object.keys(voiceBuffers).forEach((k) => delete voiceBuffers[k]);
+          Object.assign(voiceBuffers, echtBuffers);
         }
       } finally {
         Object.keys(merk).forEach((art) => {
@@ -1707,6 +1717,45 @@
           el.checked = merk[art];
           el.dispatchEvent(new Event('change', { bubbles: true }));
         });
+      }
+    },
+    // ---- Die Aufnahme hat Vorrang, auch WENN es speechSynthesis gibt --------------
+    //
+    // BESTELLT (Korrektur): zuerst war die Aufnahme nur ein Fallback fuer Browser ohne
+    // speechSynthesis - das war aber praktisch nie zu hoeren, weil fast jeder Browser
+    // eines hat. Jetzt hat die Aufnahme IMMER Vorrang. Diese Probe laesst BEIDE Wege
+    // gleichzeitig verfuegbar (echte Attrappen-Buffer UND ein speechSynthesis-Double)
+    // und prueft, welcher tatsaechlich gezogen wird.
+    ansagenVorrangProbe() {
+      const echtHatSpeech = 'speechSynthesis' in window;
+      const echtSpeech = echtHatSpeech ? window.speechSynthesis : undefined;
+      const echtPlayFx = playFx;
+      const echtBuffers = Object.assign({}, voiceBuffers);
+      Object.keys(voiceBuffers).forEach((k) => delete voiceBuffers[k]);
+      voiceBuffers.damage = { de: { markiert: 'damage/de' }, en: { markiert: 'damage/en' } };
+      const abgespielt = [];
+      playFx = (puffer) => { abgespielt.push(puffer && puffer.markiert); return true; };
+      const gesagt = [];
+      const merkLatch = Object.assign({}, ansageLatch);
+      Object.assign(ansageLatch, { damage: false, fuel: false, tyre: false, rain: null });
+      try {
+        Object.defineProperty(window, 'speechSynthesis', {
+          configurable: true,
+          value: { cancel() {}, speak(u) { gesagt.push(u.text); } },
+        });
+        const fiel = ansagenPruefen({ health: 0.05 });
+        return { fiel, abgespielt, gesagt };
+      } finally {
+        playFx = echtPlayFx;
+        Object.keys(voiceBuffers).forEach((k) => delete voiceBuffers[k]);
+        Object.assign(voiceBuffers, echtBuffers);
+        if (echtHatSpeech) {
+          Object.defineProperty(window, 'speechSynthesis',
+                                { configurable: true, value: echtSpeech });
+        } else {
+          delete window.speechSynthesis;
+        }
+        Object.assign(ansageLatch, merkLatch);
       }
     },
     // Die Gaskennlinie als reine Rechnung, siehe gasKennlinie() in 40-physics.js.

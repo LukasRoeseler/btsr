@@ -3154,7 +3154,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.7.40</span></span>
+        <span class="foot-ver">v<span id="app-version">0.7.41</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -27920,16 +27920,21 @@
   // bandbegrenzen - speechSynthesis liefert keinen Audioknoten, es gibt also nichts, wo
   // ein Filter dazwischen koennte.
   //
-  // DESHALB JETZT VORAB GERENDERT statt live gefiltert (tools/voice_synth.py): eine
-  // Datei ist ein ganz normaler AudioBuffer, genau wie Motor- und Effektton, und der
-  // Funk-Filter wirkt dort direkt auf die Stimme. Nur als FALLBACK: hat der Browser
-  // speechSynthesis, bleibt es bei der live gesprochenen Stimme wie bisher - die Aufnahme
-  // greift erst, wenn es sie gar nicht gibt.
-
-  // ---- Der gemeinsame Kern ---------------------------------------------------------
+  // DESHALB VORAB GERENDERT statt live gefiltert (tools/voice_synth.py): eine Datei ist
+  // ein ganz normaler AudioBuffer, genau wie Motor- und Effektton, und der Funk-Filter
+  // wirkt dort direkt auf die Stimme.
+  //
+  // BESTELLT (Korrektur): zuerst nur als Fallback fuer Browser ohne speechSynthesis
+  // gedacht - "damit es auch klappt, wenn ein Browser es nicht unterstuetzt". Gemessen
+  // hat fast jeder Browser speechSynthesis, also waere der Funk-Klang praktisch nie zu
+  // hoeren gewesen. Die Aufnahme hat jetzt IMMER Vorrang vor der Live-Stimme, fuer die
+  // fuenf Meldungen, die eine besitzen; live bleibt nur 'lap' (die Rundenzeit aendert
+  // sich jede Runde, eine feste Aufnahme kann sie nicht sagen) und der seltene Fall, dass
+  // die Aufnahme selbst fehlt (Datei nicht geladen, Sprache ohne Aufnahme).
   function ansage(art, text, klangSchluessel) {
     if (!ansageAn[art]) return false;
-    if (!('speechSynthesis' in window)) return playAnsageClip(klangSchluessel || art);
+    if (art !== 'lap' && playAnsageClip(klangSchluessel || art)) return true;
+    if (!('speechSynthesis' in window)) return false;
     try {
       // ABBRECHEN VOR DEM SPRECHEN. Zwei Meldungen kurz hintereinander duerfen sich nicht
       // stapeln - sonst laeuft die Stimme der Gegenwart nach und meldet den Tank, waehrend
@@ -40827,6 +40832,14 @@
         // Latch - eine Meldung fiel, die zur eigenen Zustandsfolge gar nicht gehoerte.
         const merkLatch = Object.assign({}, ansageLatch);
         Object.assign(ansageLatch, { damage: false, fuel: false, tyre: false, rain: null });
+        // BESTELLT: die Aufnahme hat jetzt IMMER Vorrang vor der Live-Stimme (ansage()),
+        // nicht nur ohne speechSynthesis. Diese Probe will aber ausdruecklich den
+        // Live-Pfad beobachten (ueber die Attrappe unten) - ist der Browser, in dem der
+        // Selbsttest laeuft, schon einmal durch eine Nutzergeste gelaufen, waeren
+        // voiceBuffers echt gefuellt und playAnsageClip() wuerde zuerst greifen, bevor
+        // die Attrappe je einen Satz sieht. Fuer die Dauer der Probe deshalb leer.
+        const echtBuffers = Object.assign({}, voiceBuffers);
+        Object.keys(voiceBuffers).forEach((k) => delete voiceBuffers[k]);
         try {
           Object.defineProperty(window, 'speechSynthesis', {
             configurable: true,
@@ -40842,6 +40855,8 @@
             delete window.speechSynthesis;
           }
           Object.assign(ansageLatch, merkLatch);
+          Object.keys(voiceBuffers).forEach((k) => delete voiceBuffers[k]);
+          Object.assign(voiceBuffers, echtBuffers);
         }
       } finally {
         Object.keys(merk).forEach((art) => {
@@ -40909,6 +40924,45 @@
           el.checked = merk[art];
           el.dispatchEvent(new Event('change', { bubbles: true }));
         });
+      }
+    },
+    // ---- Die Aufnahme hat Vorrang, auch WENN es speechSynthesis gibt --------------
+    //
+    // BESTELLT (Korrektur): zuerst war die Aufnahme nur ein Fallback fuer Browser ohne
+    // speechSynthesis - das war aber praktisch nie zu hoeren, weil fast jeder Browser
+    // eines hat. Jetzt hat die Aufnahme IMMER Vorrang. Diese Probe laesst BEIDE Wege
+    // gleichzeitig verfuegbar (echte Attrappen-Buffer UND ein speechSynthesis-Double)
+    // und prueft, welcher tatsaechlich gezogen wird.
+    ansagenVorrangProbe() {
+      const echtHatSpeech = 'speechSynthesis' in window;
+      const echtSpeech = echtHatSpeech ? window.speechSynthesis : undefined;
+      const echtPlayFx = playFx;
+      const echtBuffers = Object.assign({}, voiceBuffers);
+      Object.keys(voiceBuffers).forEach((k) => delete voiceBuffers[k]);
+      voiceBuffers.damage = { de: { markiert: 'damage/de' }, en: { markiert: 'damage/en' } };
+      const abgespielt = [];
+      playFx = (puffer) => { abgespielt.push(puffer && puffer.markiert); return true; };
+      const gesagt = [];
+      const merkLatch = Object.assign({}, ansageLatch);
+      Object.assign(ansageLatch, { damage: false, fuel: false, tyre: false, rain: null });
+      try {
+        Object.defineProperty(window, 'speechSynthesis', {
+          configurable: true,
+          value: { cancel() {}, speak(u) { gesagt.push(u.text); } },
+        });
+        const fiel = ansagenPruefen({ health: 0.05 });
+        return { fiel, abgespielt, gesagt };
+      } finally {
+        playFx = echtPlayFx;
+        Object.keys(voiceBuffers).forEach((k) => delete voiceBuffers[k]);
+        Object.assign(voiceBuffers, echtBuffers);
+        if (echtHatSpeech) {
+          Object.defineProperty(window, 'speechSynthesis',
+                                { configurable: true, value: echtSpeech });
+        } else {
+          delete window.speechSynthesis;
+        }
+        Object.assign(ansageLatch, merkLatch);
       }
     },
     // Die Gaskennlinie als reine Rechnung, siehe gasKennlinie() in 40-physics.js.
@@ -52703,7 +52757,9 @@
   // BESTELLT: "einen Funk-Filter draufsetzen, sodass es auch klappt, wenn ein Browser es
   // nicht unterstuetzt." Dieselbe Zustandsfolge wie im Test darueber (dieselben fuenf
   // Meldungen, derselbe Fall-und-Erholung), aber diesmal OHNE speechSynthesis im
-  // Fenster - ansage() muss auf playAnsageClip() ausweichen. Wichtig ist der SCHLUESSEL:
+  // Fenster. Die Aufnahme greift seit der Korrektur oben ohnehin IMMER zuerst - dieser
+  // Test bleibt trotzdem stehen, weil er den Fall abdeckt, in dem es gar keine
+  // Live-Stimme gibt, mit der man sich verwechseln koennte. Wichtig ist der SCHLUESSEL:
   // 'rain' hat zwei Aufnahmen (an/aus), und eine falsche Zuordnung wuerde "es regnet"
   // abspielen, wenn der Regen gerade aufhoert.
   stAdd('Ansagen ohne speechSynthesis: die richtige Aufnahme je Meldung', () => {
@@ -52737,6 +52793,32 @@
     return { ok: schlecht.length === 0,
              mass: schluessel.join(' ') + ' (Umgebung hatte speechSynthesis: '
                    + r.hatteSpeechEcht + ')' + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // ---- Die Aufnahme hat Vorrang, auch mit speechSynthesis im Fenster ---------------
+  //
+  // BESTELLT (Korrektur): "Aufnahmen immer benutzen." Vorher griff die Aufnahme nur,
+  // wenn der Browser gar kein speechSynthesis hatte - das war praktisch nie der Fall,
+  // der Funk-Klang also so gut wie nie zu hoeren. Diese Probe haelt BEIDE Wege
+  // gleichzeitig bereit und prueft, dass die Aufnahme gezogen wird, nicht die
+  // Live-Stimme.
+  stAdd('Ansagen: die Aufnahme hat Vorrang vor der Live-Stimme', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.ansagenVorrangProbe) {
+      return { skip: true, mass: 'ansagenVorrangProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.ansagenVorrangProbe();
+    const schlecht = [];
+    if (r.fiel.indexOf('damage') < 0) schlecht.push('damage ist nicht gefallen');
+    if (r.abgespielt.length !== 1 || r.abgespielt[0] !== 'damage/de') {
+      schlecht.push('Aufnahme ' + JSON.stringify(r.abgespielt) + ' statt ["damage/de"]');
+    }
+    if (r.gesagt.length !== 0) {
+      schlecht.push('Live-Stimme wurde trotzdem gerufen: ' + r.gesagt.join(', '));
+    }
+    return { ok: schlecht.length === 0,
+             mass: 'gefallen: ' + r.fiel.join(',') + ' | Aufnahme: ' + r.abgespielt.join(',')
+                 + ' | Live-Saetze: ' + r.gesagt.length
+                 + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
   });
 
   // ---- Jede der fuenf Meldungen hat eine Aufnahme in beiden Sprachen ----------------

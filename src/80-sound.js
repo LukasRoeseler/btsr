@@ -508,16 +508,21 @@
   // bandbegrenzen - speechSynthesis liefert keinen Audioknoten, es gibt also nichts, wo
   // ein Filter dazwischen koennte.
   //
-  // DESHALB JETZT VORAB GERENDERT statt live gefiltert (tools/voice_synth.py): eine
-  // Datei ist ein ganz normaler AudioBuffer, genau wie Motor- und Effektton, und der
-  // Funk-Filter wirkt dort direkt auf die Stimme. Nur als FALLBACK: hat der Browser
-  // speechSynthesis, bleibt es bei der live gesprochenen Stimme wie bisher - die Aufnahme
-  // greift erst, wenn es sie gar nicht gibt.
-
-  // ---- Der gemeinsame Kern ---------------------------------------------------------
+  // DESHALB VORAB GERENDERT statt live gefiltert (tools/voice_synth.py): eine Datei ist
+  // ein ganz normaler AudioBuffer, genau wie Motor- und Effektton, und der Funk-Filter
+  // wirkt dort direkt auf die Stimme.
+  //
+  // BESTELLT (Korrektur): zuerst nur als Fallback fuer Browser ohne speechSynthesis
+  // gedacht - "damit es auch klappt, wenn ein Browser es nicht unterstuetzt". Gemessen
+  // hat fast jeder Browser speechSynthesis, also waere der Funk-Klang praktisch nie zu
+  // hoeren gewesen. Die Aufnahme hat jetzt IMMER Vorrang vor der Live-Stimme, fuer die
+  // fuenf Meldungen, die eine besitzen; live bleibt nur 'lap' (die Rundenzeit aendert
+  // sich jede Runde, eine feste Aufnahme kann sie nicht sagen) und der seltene Fall, dass
+  // die Aufnahme selbst fehlt (Datei nicht geladen, Sprache ohne Aufnahme).
   function ansage(art, text, klangSchluessel) {
     if (!ansageAn[art]) return false;
-    if (!('speechSynthesis' in window)) return playAnsageClip(klangSchluessel || art);
+    if (art !== 'lap' && playAnsageClip(klangSchluessel || art)) return true;
+    if (!('speechSynthesis' in window)) return false;
     try {
       // ABBRECHEN VOR DEM SPRECHEN. Zwei Meldungen kurz hintereinander duerfen sich nicht
       // stapeln - sonst laeuft die Stimme der Gegenwart nach und meldet den Tank, waehrend

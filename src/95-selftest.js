@@ -4697,7 +4697,9 @@
   // BESTELLT: "einen Funk-Filter draufsetzen, sodass es auch klappt, wenn ein Browser es
   // nicht unterstuetzt." Dieselbe Zustandsfolge wie im Test darueber (dieselben fuenf
   // Meldungen, derselbe Fall-und-Erholung), aber diesmal OHNE speechSynthesis im
-  // Fenster - ansage() muss auf playAnsageClip() ausweichen. Wichtig ist der SCHLUESSEL:
+  // Fenster. Die Aufnahme greift seit der Korrektur oben ohnehin IMMER zuerst - dieser
+  // Test bleibt trotzdem stehen, weil er den Fall abdeckt, in dem es gar keine
+  // Live-Stimme gibt, mit der man sich verwechseln koennte. Wichtig ist der SCHLUESSEL:
   // 'rain' hat zwei Aufnahmen (an/aus), und eine falsche Zuordnung wuerde "es regnet"
   // abspielen, wenn der Regen gerade aufhoert.
   stAdd('Ansagen ohne speechSynthesis: die richtige Aufnahme je Meldung', () => {
@@ -4731,6 +4733,32 @@
     return { ok: schlecht.length === 0,
              mass: schluessel.join(' ') + ' (Umgebung hatte speechSynthesis: '
                    + r.hatteSpeechEcht + ')' + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // ---- Die Aufnahme hat Vorrang, auch mit speechSynthesis im Fenster ---------------
+  //
+  // BESTELLT (Korrektur): "Aufnahmen immer benutzen." Vorher griff die Aufnahme nur,
+  // wenn der Browser gar kein speechSynthesis hatte - das war praktisch nie der Fall,
+  // der Funk-Klang also so gut wie nie zu hoeren. Diese Probe haelt BEIDE Wege
+  // gleichzeitig bereit und prueft, dass die Aufnahme gezogen wird, nicht die
+  // Live-Stimme.
+  stAdd('Ansagen: die Aufnahme hat Vorrang vor der Live-Stimme', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.ansagenVorrangProbe) {
+      return { skip: true, mass: 'ansagenVorrangProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.ansagenVorrangProbe();
+    const schlecht = [];
+    if (r.fiel.indexOf('damage') < 0) schlecht.push('damage ist nicht gefallen');
+    if (r.abgespielt.length !== 1 || r.abgespielt[0] !== 'damage/de') {
+      schlecht.push('Aufnahme ' + JSON.stringify(r.abgespielt) + ' statt ["damage/de"]');
+    }
+    if (r.gesagt.length !== 0) {
+      schlecht.push('Live-Stimme wurde trotzdem gerufen: ' + r.gesagt.join(', '));
+    }
+    return { ok: schlecht.length === 0,
+             mass: 'gefallen: ' + r.fiel.join(',') + ' | Aufnahme: ' + r.abgespielt.join(',')
+                 + ' | Live-Saetze: ' + r.gesagt.length
+                 + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
   });
 
   // ---- Jede der fuenf Meldungen hat eine Aufnahme in beiden Sprachen ----------------
