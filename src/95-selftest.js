@@ -11974,6 +11974,85 @@
     return { ok: fehler.length === 0, mass: fehler.length ? fehler.join('; ') : teile.join(' | ') };
   });
 
+  stAdd('Pfad aus der Aufnahme: Physik bewegt den Wagen wirklich', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.macroPfadRekonstruieren) {
+      return { skip: true, mass: 'macroPfadRekonstruieren nicht vorhanden' };
+    }
+    const fehler = [], teile = [];
+    // Vollgas geradeaus, dann eine Kurve - ohne echtes Auto, ohne echte Wiedergabe.
+    const geradeaus = [];
+    for (let t = 0; t <= 1500; t += 45) geradeaus.push({ t, steer: 0, throttle: 1 });
+    const punkteGerade = OMEGA_TEST.macroPfadRekonstruieren(geradeaus);
+    if (!punkteGerade || punkteGerade.length < 10) {
+      fehler.push('keine oder zu kurze Punktfolge fuer Vollgas geradeaus');
+    } else {
+      const letzter = punkteGerade[punkteGerade.length - 1];
+      if (Math.abs(letzter.x) < 1) fehler.push('Vollgas geradeaus hat sich kaum bewegt (x=' + letzter.x.toFixed(3) + ')');
+      if (Math.abs(letzter.y) > 0.5) fehler.push('geradeaus, aber y ist nicht 0 (' + letzter.y.toFixed(3) + ')');
+      teile.push('geradeaus: x=' + letzter.x.toFixed(1) + ' nach ' + punkteGerade.length + ' Punkten');
+    }
+
+    const kurve = geradeaus.concat(
+      Array.from({ length: 20 }, (_, i) => ({ t: 1545 + i * 45, steer: 0.6, throttle: 0.8 })),
+    );
+    const punkteKurve = OMEGA_TEST.macroPfadRekonstruieren(kurve);
+    if (!punkteKurve || punkteKurve.length < 10) {
+      fehler.push('keine Punktfolge fuer die Kurvenfahrt');
+    } else {
+      const letzter = punkteKurve[punkteKurve.length - 1];
+      if (Math.abs(letzter.y) < 1) fehler.push('Lenkeinschlag hat die Bahn nicht seitlich verschoben');
+      teile.push('nach Kurve: y=' + letzter.y.toFixed(1));
+    }
+
+    // Leere/zu kurze Aufnahme darf nicht abstuerzen.
+    if (OMEGA_TEST.macroPfadRekonstruieren([]) !== null) fehler.push('leere Aufnahme liefert kein null');
+    if (OMEGA_TEST.macroPfadRekonstruieren([{ t: 0, steer: 0, throttle: 0 }]) !== null) {
+      fehler.push('einzelner Punkt liefert kein null');
+    }
+    return { ok: fehler.length === 0, mass: fehler.length ? fehler.join('; ') : teile.join(' | ') };
+  });
+
+  stAdd('Aufnahme: Start/Ziel-Ueberfahrt wird als Rundenzeit erkannt', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.aufnahmeRundenTickAufrufen) {
+      return { skip: true, mass: 'aufnahmeRundenTickAufrufen nicht vorhanden' };
+    }
+    const merkStand = OMEGA_TEST.aufnahmeZustandSichern();
+    const echtNow = Date.now;
+    const fehler = [];
+    let runden = [];
+    try {
+      // Zwei Byte-Muster: "gerade ueberfahren" (Sperre-Bit gesetzt) und "gerade nicht" -
+      // eine steigende Flanke zaehlt, ein Dauerzustand nicht. Date.now() gefaelscht und
+      // ueber TILE_REPEAT_BLOCK_MS hinweg vorgestellt: zwei echte Ueberfahrten liegen nie
+      // im selben Millisekunde, die Entprellung wuerde eine zweite, sofortige sonst
+      // (richtigerweise) verwerfen.
+      let fake = 1000000;
+      Date.now = () => fake;
+      const paket = (sperre) => {
+        const b = new Array(16).fill(0);
+        if (sperre) b[15] = 0x08;
+        return b;
+      };
+      OMEGA_TEST.aufnahmeRundenTickAufrufen(paket(false));
+      OMEGA_TEST.aufnahmeRundenTickAufrufen(paket(true)); // 1. Ueberfahrt (Rundenbeginn)
+      OMEGA_TEST.aufnahmeRundenTickAufrufen(paket(true)); // haelt - keine zweite Flanke
+      OMEGA_TEST.aufnahmeRundenTickAufrufen(paket(false));
+      fake += 1500; // eine "Runde" von 1,5 s, ausserhalb der Entprellzeit
+      OMEGA_TEST.aufnahmeRundenTickAufrufen(paket(true)); // 2. Ueberfahrt (1 Runde vorbei)
+      runden = OMEGA_TEST.aufnahmeRundenLesen();
+      if (runden.length < 1) fehler.push('keine Runde erkannt nach zwei Ueberfahrten');
+      else if (typeof runden[runden.length - 1].ms !== 'number') fehler.push('Runde ohne Zeit');
+      else if (Math.abs(runden[runden.length - 1].ms - 1500) > 1) {
+        fehler.push('Rundenzeit stimmt nicht (' + runden[runden.length - 1].ms + ' statt 1500)');
+      }
+    } finally {
+      Date.now = echtNow;
+      OMEGA_TEST.aufnahmeZustandZuruecksetzen(merkStand);
+    }
+    return { ok: fehler.length === 0,
+             mass: fehler.length ? fehler.join('; ') : runden.length + ' Runde(n) erkannt' };
+  });
+
   stAdd('Strecke aus der Aufnahme lernen: Knopf sperrt sich waehrend der Wiedergabe', async () => {
     if (!window.OMEGA_TEST || !OMEGA_TEST.macroLearnProbe) {
       return { skip: true, mass: 'macroLearnProbe nicht vorhanden' };

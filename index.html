@@ -3154,7 +3154,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.7.30</span></span>
+        <span class="foot-ver">v<span id="app-version">0.7.31</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -4194,6 +4194,25 @@
         <span class="muted" id="macro-learn-status"></span>
       </div>
       <div id="macro-learn-karte" class="tp-karte-halter" style="margin-top:10px"></div>
+    </div>
+
+    <div class="card">
+      <h2>Streckenzeichnung aus der Aufnahme <span class="wip-tag">WIP</span></h2>
+      <p class="muted">
+        Rechnet die gefahrene Linie rein rechnerisch aus &ndash; &uuml;ber dieselbe Physik,
+        die auch ein Ghost bekommt, nicht aus echten Streckencodes. Funktioniert deshalb
+        AUCH ohne CH-Bahn, nur mit einem Ausdruck darunter. Braucht trotzdem Start/Ziel-
+        &Uuml;berfahrten in der Aufnahme f&uuml;r Rundengrenzen und Rundenzeiten &ndash;
+        ohne sie bleibt es bei einer einzigen offenen Linie. Eine Ann&auml;herung: ohne
+        echte Ortsmessung kann die Linie &uuml;ber mehrere Runden hinweg abdriften, auch
+        wenn das Auto real an dieselbe Stelle zur&uuml;ckkehrt.
+      </p>
+      <div class="row">
+        <button id="btn-macro-pfad-zeichnen" disabled>Zeichnung erstellen</button>
+        <span class="muted" id="macro-pfad-status"></span>
+      </div>
+      <div id="macro-pfad-karte" style="margin-top:10px"></div>
+      <p class="muted" id="macro-pfad-runden" style="font-size:12px; margin-top:8px"></p>
     </div>
   </section>
 
@@ -11038,6 +11057,13 @@
     "Aufnahme-Modus": "Recording mode",
     "Eine echte Fahrt aufzeichnen, exakt nachfahren, und daraus eine Streckenzeichnung ableiten.": "Record a real drive, replay it exactly, and derive a track drawing from it.",
     "Fahr die Strecke einmal manuell (Tab \"Fahren\", Joystick/Gas oder Pfeiltasten). Während der Aufnahme werden Lenk- und Gaswerte mit Zeitstempel mitgeschrieben. Bei der Wiedergabe sendet die App exakt dieselbe Sequenz erneut an die Ziel-Characteristic - egal ob dabei eine echte CH-Bahn oder nur ein Ausdruck unter dem Auto liegt.": "Drive the track once by hand (the \"Drive\" tab, joystick/throttle or arrow keys). During recording, steering and throttle values are written down with timestamps. On replay the app sends exactly the same sequence again to the target characteristic - whether a real CH track or just a printout is under the car.",
+    "Streckenzeichnung aus der Aufnahme": "Track drawing from the recording",
+    "Rechnet die gefahrene Linie rein rechnerisch aus – über dieselbe Physik, die auch ein Ghost bekommt, nicht aus echten Streckencodes. Funktioniert deshalb AUCH ohne CH-Bahn, nur mit einem Ausdruck darunter. Braucht trotzdem Start/Ziel- Überfahrten in der Aufnahme für Rundengrenzen und Rundenzeiten – ohne sie bleibt es bei einer einzigen offenen Linie. Eine Annäherung: ohne echte Ortsmessung kann die Linie über mehrere Runden hinweg abdriften, auch wenn das Auto real an dieselbe Stelle zurückkehrt.": "Computes the driven line purely by calculation – via the same physics a ghost gets, not from real track codes. So it ALSO works without a CH track, just with a printout underneath. It still needs start/finish crossings in the recording for lap boundaries and lap times – without them it stays a single open line. An approximation: without real position measurement the line can drift over several laps, even though the car really returns to the same spot.",
+    "Zeichnung erstellen": "Create drawing",
+    "Keine Aufnahme vorhanden.": "No recording available.",
+    "__N__ Punkte, rein rechnerisch (Koppelnavigation).": "__N__ points, purely computed (dead reckoning).",
+    "Runde __N__: __S__ s": "Lap __N__: __S__ s",
+    "Keine Start/Ziel-Überfahrt in dieser Aufnahme erkannt - keine Rundenzeiten.": "No start/finish crossing detected in this recording - no lap times.",
   };
 
   // ============================================================================
@@ -30781,6 +30807,11 @@
     // Garage alone had no telemetry at all, because the dashboard subscription hangs off
     // the BLE explorer's discovery, which the Garage does not use.
     if (car === playerCar) handleDashboardBytes(b);
+    // Aufnahme-Modus: Start/Ziel-Ueberfahrten waehrend einer laufenden Aufzeichnung
+    // mitschreiben (90c-macro-track.js) - EIGENER Zustand, nicht ueber car.race/
+    // raceState, die eine laufende Wertung voraussetzen und ausserhalb eines
+    // gestarteten Rennens gar nichts in car.race.laps ablegen wuerden.
+    if (recording && car === playerCar) aufnahmeRundenTick(b);
     const code = b[12];
     // Der Monitor bekommt JEDEN Wert, auch die, die alles andere hier verwirft - er ist
     // genau dafuer da, einen unbekannten Code zu finden.
@@ -38473,6 +38504,185 @@
     });
   }
 
+  // ============================ RUNDEN WAEHREND DER AUFNAHME (Start/Ziel) ============
+  //
+  // BESTELLT: "Wichtig bei der Aufzeichnung sollte noch das Start/Ziel Target sein
+  // (Ausdruck-Modus)... ich will, dass beruecksichtigt wird, wie schnell das Auto ueber
+  // start/ziel faehrt (bei der ersten Runde ist es ja langsamer)."
+  //
+  // EIGENER, VON RENNZUSTAND UNABHAENGIGER Zaehler: car.race/carRaceNotify() (70-race.js)
+  // legt nur waehrend eines GESTARTETEN Rennens Rundenzeiten ab (raceState==='racing') -
+  // eine Aufnahme soll aber auch beim einfachen freien Fahren Runden erkennen. Dieselbe,
+  // schon gemessene Erkennung wird trotzdem wiederverwendet und nicht neu erfunden:
+  // zielSperreFlanke() (Byte 15 Bit 3, funktioniert auch im Ausdruck-Modus, dieselbe
+  // Bevorzugung wie in carRaceNotify()) mit Rueckfall auf echte Streckencodes.
+  let aufnahmeRunden = [];       // [{tStart, tEnde, ms}] in Makro-Millisekunden
+  let aufnahmeRundenT0 = null;
+  let aufnahmeRState = null;
+
+  function aufnahmeRundenTick(b) {
+    if (!aufnahmeRState) {
+      aufnahmeRState = { pending: null, seen: 0, lastCount: null, sperreVor: false,
+                          sperreGesehen: false, lastActed: 0 };
+    }
+    const r = aufnahmeRState, jetzt = Date.now();
+    let ueberfahren = false;
+    const sperreJetzt = (b[15] & ZIEL_SPERRE_BIT) !== 0;
+    if (sperreJetzt && !r.sperreVor) {
+      r.sperreGesehen = true;
+      if (jetzt - r.lastActed >= TILE_REPEAT_BLOCK_MS) { r.lastActed = jetzt; ueberfahren = true; }
+    }
+    r.sperreVor = sperreJetzt;
+    // Rueckfall nur, solange dieses Auto die Sperre noch nie gemeldet hat - sonst zaehlt
+    // dieselbe Ueberfahrt doppelt (einmal je Erkennungsweg), genau wie in carRaceNotify().
+    if (!ueberfahren && !r.sperreGesehen) {
+      const code = b[12], count = b[11];
+      if (code !== r.pending) { r.pending = code; r.seen = 1; } else {
+        r.seen++;
+        if (r.seen >= 2) {
+          if (r.lastCount === null) {
+            r.lastCount = count;
+          } else if (count !== r.lastCount) {
+            r.lastCount = count;
+            if (isStartCode(code) && jetzt - r.lastActed >= TILE_REPEAT_BLOCK_MS) {
+              r.lastActed = jetzt;
+              ueberfahren = true;
+            }
+          }
+        }
+      }
+    }
+    if (!ueberfahren) return;
+    const t = jetzt - recordStartTime;
+    if (aufnahmeRundenT0 !== null) {
+      aufnahmeRunden.push({ tStart: aufnahmeRundenT0, tEnde: t, ms: t - aufnahmeRundenT0 });
+    }
+    aufnahmeRundenT0 = t;
+  }
+
+  if ($('btn-record')) {
+    // ZUSAETZLICHER Zuhoerer, nicht anstelle des bestehenden (der ist eine .onclick-
+    // Zuweisung in 50-drive.js) - er laeuft NACH ihr, `recording` traegt also schon den
+    // NEUEN Wert: wahr heisst "gerade erst gestartet", und nur dann wird zurueckgesetzt.
+    $('btn-record').addEventListener('click', () => {
+      if (recording) { aufnahmeRunden = []; aufnahmeRundenT0 = null; aufnahmeRState = null; }
+    });
+  }
+
+  // ============================ PFAD AUS DER AUFNAHME (Physik, ohne Bahn) =============
+  //
+  // BESTELLT: "Ich m&ouml;chte aus den aufgezeichneten Werten eine Zeichnung." Anders als
+  // "Strecke aus der Aufnahme lernen" oben (das braucht ein verbundenes Auto, das echte
+  // Streckencodes meldet) rechnet dieser Weg die gefahrene Linie AUSSCHLIESSLICH aus den
+  // gespeicherten Lenk-/Gaswerten - ueber dieselbe Physik-Engine, die auch ein Ghost
+  // bekommt (CarreraPhysicsEngine, 40-physics.js), aber als eigene, isolierte Instanz und
+  // rein im Speicher: kein Auto noetig, keine Echtzeit-Wiedergabe. Das ist der Teil, der
+  // AUCH im Ausdruck-Modus funktioniert, weil er nie auf einen Streckencode angewiesen
+  // ist.
+  //
+  // OHNE Ortsmessung ist das Koppelnavigation: jeder Schritt baut auf dem vorigen auf, und
+  // kleine Fehler summieren sich. Eine "Schliesskorrektur" ueber die echten Start/Ziel-
+  // Zeiten (aufnahmeRunden oben) waere denkbar, ist hier aber bewusst NICHT gebaut - ein
+  // Korrekturschritt, der falsch ist, saehe fuer den Blick aufs Bild schlimmer aus als eine
+  // ehrlich unkorrigierte, offene Linie. Was WIRKLICH gemessen ist und bleibt: die
+  // Rundenzeiten aus aufnahmeRunden, angezeigt neben der Zeichnung.
+  const SIM_KMH_ZU_CM_S_PFAD = 100000 / 3600;
+
+  function macroPfadRekonstruieren(macroArr) {
+    if (!macroArr || macroArr.length < 2) return null;
+    const engine = new CarreraPhysicsEngine();
+    Object.assign(engine.config, physEngine.config);
+    engine.config.gears = physEngine.config.gears;
+    if (typeof engine.calibrateAccel === 'function') engine.calibrateAccel();
+    engine.state.driveMode = 'forward';
+    engine.state.currentGear = 0;
+
+    let x = 0, y = 0, heading = 0, letzteT = 0;
+    const punkte = [{ x, y, t: 0 }];
+    for (const schritt of macroArr) {
+      const dtRoh = (schritt.t - letzteT) / 1000;
+      letzteT = schritt.t;
+      if (dtRoh <= 0) continue;
+      // Gedeckelt: eine Luecke in der Aufzeichnung (z.B. nach einem Import) darf nicht als
+      // ein einziger Riesenschritt in die Physik einfliessen.
+      const dt = Math.min(dtRoh, 0.25);
+      engine.update({
+        steering: schritt.steer,
+        throttle: Math.max(0, schritt.throttle),
+        brake: Math.max(0, -schritt.throttle),
+        headlights: false,
+      }, dt);
+      const v = engine.state.speedKmh;
+      const strecke = v * SIM_KMH_ZU_CM_S_PFAD * TRACK_UNITS_PER_CM * dt;
+      heading += (engine.state.yawRate || 0) * dt;
+      x += strecke * Math.cos(heading);
+      y += strecke * Math.sin(heading);
+      punkte.push({ x, y, t: schritt.t });
+    }
+    return punkte;
+  }
+
+  // Eigene, kleine SVG-Zeichnung statt renderTrackPreview(): die nimmt zwingend ein
+  // Kachel-Array (trackCenterline()), hier gibt es aber eine durchgehende Punktfolge ohne
+  // Kacheln. Dieselbe Idee wie dort (Begrenzungsrahmen ausmessen, mit Rand zentrieren),
+  // nur fuer eine Linie statt fuer eine Streckenmitte plus Ideallinie.
+  function macroPfadSvgZeichnen(punkte) {
+    if (!punkte || punkte.length < 2) return '';
+    const pad = 20;
+    const xs = punkte.map((p) => p.x), ys = punkte.map((p) => p.y);
+    const minX = Math.min(...xs), maxX = Math.max(...xs);
+    const minY = Math.min(...ys), maxY = Math.max(...ys);
+    const w = Math.max(1, maxX - minX) + pad * 2, h = Math.max(1, maxY - minY) + pad * 2;
+    const ox = pad - minX, oy = pad - minY;
+    const P = (p) => (p.x + ox).toFixed(1) + ' ' + (p.y + oy).toFixed(1);
+    const bahn = 'M ' + punkte.map(P).join(' L ');
+    const start = punkte[0];
+    return '<svg viewBox="0 0 ' + w.toFixed(0) + ' ' + h.toFixed(0) + '" '
+      + 'style="width:100%;height:auto;max-height:50vh;background:var(--panel);'
+      + 'border:1px solid var(--border);border-radius:8px">'
+      + '<path d="' + bahn + '" fill="none" stroke="var(--bad)" stroke-width="3" '
+      + 'stroke-linecap="round" stroke-linejoin="round"/>'
+      + '<circle cx="' + (start.x + ox).toFixed(1) + '" cy="' + (start.y + oy).toFixed(1)
+      + '" r="6" fill="var(--good)"/>'
+      + '</svg>';
+  }
+
+  function macroPfadRefreshButton() {
+    const btn = $('btn-macro-pfad-zeichnen');
+    if (btn) btn.disabled = macro.length === 0;
+  }
+  ['btn-record', 'btn-play', 'btn-stop-play', 'btn-load-macro'].forEach((id) => {
+    if ($(id)) $(id).addEventListener('click', macroPfadRefreshButton);
+  });
+  if ($('macro-import')) $('macro-import').addEventListener('change', macroPfadRefreshButton);
+  macroPfadRefreshButton();
+
+  if ($('btn-macro-pfad-zeichnen')) {
+    $('btn-macro-pfad-zeichnen').addEventListener('click', () => {
+      const punkte = macroPfadRekonstruieren(macro);
+      const karte = $('macro-pfad-karte');
+      const status = $('macro-pfad-status');
+      const rundenEl = $('macro-pfad-runden');
+      if (!punkte) {
+        if (status) status.textContent = t('Keine Aufnahme vorhanden.');
+        if (karte) karte.innerHTML = '';
+        if (rundenEl) rundenEl.textContent = '';
+        return;
+      }
+      if (karte) karte.innerHTML = macroPfadSvgZeichnen(punkte);
+      if (status) {
+        status.textContent = t('__N__ Punkte, rein rechnerisch (Koppelnavigation).')
+          .replace('__N__', punkte.length);
+      }
+      if (rundenEl) {
+        rundenEl.innerHTML = aufnahmeRunden.length
+          ? aufnahmeRunden.map((r, i) => t('Runde __N__: __S__ s')
+              .replace('__N__', i + 1).replace('__S__', (r.ms / 1000).toFixed(2))).join('<br>')
+          : t('Keine Start/Ziel-Überfahrt in dieser Aufnahme erkannt - keine Rundenzeiten.');
+      }
+    });
+  }
+
   // ============================== ALS APP INSTALLIERBAR ==============================
   //
   // Rein zusaetzlich. Im Browser laeuft alles unveraendert weiter; wer nichts installiert,
@@ -38944,6 +39154,21 @@
     // Tastatur teilen sie sich, siehe 50b-menu-nav.js) - ein Prueflauf kann so echte
     // Zeitspannen durchspielen statt die einzelnen Schritte direkt aufzurufen.
     menuNavGehalten(dir, gehalten) { menuNavAdjustGehalten(dir, gehalten); },
+
+    // ---- Pfad aus der Aufnahme (Physik, ohne Bahn) - 90c-macro-track.js -------------
+    macroLesen() { return macro.map((s) => ({ ...s })); },
+    macroPfadRekonstruieren(macroArr) { return macroPfadRekonstruieren(macroArr); },
+    aufnahmeRundenLesen() { return aufnahmeRunden.map((r) => ({ ...r })); },
+    aufnahmeRundenTickAufrufen(bytes) { aufnahmeRundenTick(bytes); },
+    // Speichern/Zuruecksetzen fuer Pruefablaeufe, die den geteilten Rundenzustand nicht
+    // stehen lassen duerfen - ein echter, gerade laufender Aufnahmeversuch soll von einem
+    // Selbsttest nichts mitbekommen.
+    aufnahmeZustandSichern() {
+      return { runden: aufnahmeRunden, t0: aufnahmeRundenT0, r: aufnahmeRState };
+    },
+    aufnahmeZustandZuruecksetzen(stand) {
+      aufnahmeRunden = stand.runden; aufnahmeRundenT0 = stand.t0; aufnahmeRState = stand.r;
+    },
 
     // ---- Passt das Cockpit in die Bildschirmhoehe? ---------------------------------
     //
@@ -59665,6 +59890,85 @@
       document.body.scrollTop = merkScroll;
     }
     return { ok: fehler.length === 0, mass: fehler.length ? fehler.join('; ') : teile.join(' | ') };
+  });
+
+  stAdd('Pfad aus der Aufnahme: Physik bewegt den Wagen wirklich', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.macroPfadRekonstruieren) {
+      return { skip: true, mass: 'macroPfadRekonstruieren nicht vorhanden' };
+    }
+    const fehler = [], teile = [];
+    // Vollgas geradeaus, dann eine Kurve - ohne echtes Auto, ohne echte Wiedergabe.
+    const geradeaus = [];
+    for (let t = 0; t <= 1500; t += 45) geradeaus.push({ t, steer: 0, throttle: 1 });
+    const punkteGerade = OMEGA_TEST.macroPfadRekonstruieren(geradeaus);
+    if (!punkteGerade || punkteGerade.length < 10) {
+      fehler.push('keine oder zu kurze Punktfolge fuer Vollgas geradeaus');
+    } else {
+      const letzter = punkteGerade[punkteGerade.length - 1];
+      if (Math.abs(letzter.x) < 1) fehler.push('Vollgas geradeaus hat sich kaum bewegt (x=' + letzter.x.toFixed(3) + ')');
+      if (Math.abs(letzter.y) > 0.5) fehler.push('geradeaus, aber y ist nicht 0 (' + letzter.y.toFixed(3) + ')');
+      teile.push('geradeaus: x=' + letzter.x.toFixed(1) + ' nach ' + punkteGerade.length + ' Punkten');
+    }
+
+    const kurve = geradeaus.concat(
+      Array.from({ length: 20 }, (_, i) => ({ t: 1545 + i * 45, steer: 0.6, throttle: 0.8 })),
+    );
+    const punkteKurve = OMEGA_TEST.macroPfadRekonstruieren(kurve);
+    if (!punkteKurve || punkteKurve.length < 10) {
+      fehler.push('keine Punktfolge fuer die Kurvenfahrt');
+    } else {
+      const letzter = punkteKurve[punkteKurve.length - 1];
+      if (Math.abs(letzter.y) < 1) fehler.push('Lenkeinschlag hat die Bahn nicht seitlich verschoben');
+      teile.push('nach Kurve: y=' + letzter.y.toFixed(1));
+    }
+
+    // Leere/zu kurze Aufnahme darf nicht abstuerzen.
+    if (OMEGA_TEST.macroPfadRekonstruieren([]) !== null) fehler.push('leere Aufnahme liefert kein null');
+    if (OMEGA_TEST.macroPfadRekonstruieren([{ t: 0, steer: 0, throttle: 0 }]) !== null) {
+      fehler.push('einzelner Punkt liefert kein null');
+    }
+    return { ok: fehler.length === 0, mass: fehler.length ? fehler.join('; ') : teile.join(' | ') };
+  });
+
+  stAdd('Aufnahme: Start/Ziel-Ueberfahrt wird als Rundenzeit erkannt', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.aufnahmeRundenTickAufrufen) {
+      return { skip: true, mass: 'aufnahmeRundenTickAufrufen nicht vorhanden' };
+    }
+    const merkStand = OMEGA_TEST.aufnahmeZustandSichern();
+    const echtNow = Date.now;
+    const fehler = [];
+    let runden = [];
+    try {
+      // Zwei Byte-Muster: "gerade ueberfahren" (Sperre-Bit gesetzt) und "gerade nicht" -
+      // eine steigende Flanke zaehlt, ein Dauerzustand nicht. Date.now() gefaelscht und
+      // ueber TILE_REPEAT_BLOCK_MS hinweg vorgestellt: zwei echte Ueberfahrten liegen nie
+      // im selben Millisekunde, die Entprellung wuerde eine zweite, sofortige sonst
+      // (richtigerweise) verwerfen.
+      let fake = 1000000;
+      Date.now = () => fake;
+      const paket = (sperre) => {
+        const b = new Array(16).fill(0);
+        if (sperre) b[15] = 0x08;
+        return b;
+      };
+      OMEGA_TEST.aufnahmeRundenTickAufrufen(paket(false));
+      OMEGA_TEST.aufnahmeRundenTickAufrufen(paket(true)); // 1. Ueberfahrt (Rundenbeginn)
+      OMEGA_TEST.aufnahmeRundenTickAufrufen(paket(true)); // haelt - keine zweite Flanke
+      OMEGA_TEST.aufnahmeRundenTickAufrufen(paket(false));
+      fake += 1500; // eine "Runde" von 1,5 s, ausserhalb der Entprellzeit
+      OMEGA_TEST.aufnahmeRundenTickAufrufen(paket(true)); // 2. Ueberfahrt (1 Runde vorbei)
+      runden = OMEGA_TEST.aufnahmeRundenLesen();
+      if (runden.length < 1) fehler.push('keine Runde erkannt nach zwei Ueberfahrten');
+      else if (typeof runden[runden.length - 1].ms !== 'number') fehler.push('Runde ohne Zeit');
+      else if (Math.abs(runden[runden.length - 1].ms - 1500) > 1) {
+        fehler.push('Rundenzeit stimmt nicht (' + runden[runden.length - 1].ms + ' statt 1500)');
+      }
+    } finally {
+      Date.now = echtNow;
+      OMEGA_TEST.aufnahmeZustandZuruecksetzen(merkStand);
+    }
+    return { ok: fehler.length === 0,
+             mass: fehler.length ? fehler.join('; ') : runden.length + ' Runde(n) erkannt' };
   });
 
   stAdd('Strecke aus der Aufnahme lernen: Knopf sperrt sich waehrend der Wiedergabe', async () => {

@@ -2065,6 +2065,13 @@
     "Aufnahme-Modus": "Recording mode",
     "Eine echte Fahrt aufzeichnen, exakt nachfahren, und daraus eine Streckenzeichnung ableiten.": "Record a real drive, replay it exactly, and derive a track drawing from it.",
     "Fahr die Strecke einmal manuell (Tab \"Fahren\", Joystick/Gas oder Pfeiltasten). Während der Aufnahme werden Lenk- und Gaswerte mit Zeitstempel mitgeschrieben. Bei der Wiedergabe sendet die App exakt dieselbe Sequenz erneut an die Ziel-Characteristic - egal ob dabei eine echte CH-Bahn oder nur ein Ausdruck unter dem Auto liegt.": "Drive the track once by hand (the \"Drive\" tab, joystick/throttle or arrow keys). During recording, steering and throttle values are written down with timestamps. On replay the app sends exactly the same sequence again to the target characteristic - whether a real CH track or just a printout is under the car.",
+    "Streckenzeichnung aus der Aufnahme": "Track drawing from the recording",
+    "Rechnet die gefahrene Linie rein rechnerisch aus – über dieselbe Physik, die auch ein Ghost bekommt, nicht aus echten Streckencodes. Funktioniert deshalb AUCH ohne CH-Bahn, nur mit einem Ausdruck darunter. Braucht trotzdem Start/Ziel- Überfahrten in der Aufnahme für Rundengrenzen und Rundenzeiten – ohne sie bleibt es bei einer einzigen offenen Linie. Eine Annäherung: ohne echte Ortsmessung kann die Linie über mehrere Runden hinweg abdriften, auch wenn das Auto real an dieselbe Stelle zurückkehrt.": "Computes the driven line purely by calculation – via the same physics a ghost gets, not from real track codes. So it ALSO works without a CH track, just with a printout underneath. It still needs start/finish crossings in the recording for lap boundaries and lap times – without them it stays a single open line. An approximation: without real position measurement the line can drift over several laps, even though the car really returns to the same spot.",
+    "Zeichnung erstellen": "Create drawing",
+    "Keine Aufnahme vorhanden.": "No recording available.",
+    "__N__ Punkte, rein rechnerisch (Koppelnavigation).": "__N__ points, purely computed (dead reckoning).",
+    "Runde __N__: __S__ s": "Lap __N__: __S__ s",
+    "Keine Start/Ziel-Überfahrt in dieser Aufnahme erkannt - keine Rundenzeiten.": "No start/finish crossing detected in this recording - no lap times.",
   };
 
   // ============================================================================

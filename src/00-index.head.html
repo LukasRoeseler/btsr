@@ -3154,7 +3154,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.7.30</span></span>
+        <span class="foot-ver">v<span id="app-version">0.7.31</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -4194,6 +4194,25 @@
         <span class="muted" id="macro-learn-status"></span>
       </div>
       <div id="macro-learn-karte" class="tp-karte-halter" style="margin-top:10px"></div>
+    </div>
+
+    <div class="card">
+      <h2>Streckenzeichnung aus der Aufnahme <span class="wip-tag">WIP</span></h2>
+      <p class="muted">
+        Rechnet die gefahrene Linie rein rechnerisch aus &ndash; &uuml;ber dieselbe Physik,
+        die auch ein Ghost bekommt, nicht aus echten Streckencodes. Funktioniert deshalb
+        AUCH ohne CH-Bahn, nur mit einem Ausdruck darunter. Braucht trotzdem Start/Ziel-
+        &Uuml;berfahrten in der Aufnahme f&uuml;r Rundengrenzen und Rundenzeiten &ndash;
+        ohne sie bleibt es bei einer einzigen offenen Linie. Eine Ann&auml;herung: ohne
+        echte Ortsmessung kann die Linie &uuml;ber mehrere Runden hinweg abdriften, auch
+        wenn das Auto real an dieselbe Stelle zur&uuml;ckkehrt.
+      </p>
+      <div class="row">
+        <button id="btn-macro-pfad-zeichnen" disabled>Zeichnung erstellen</button>
+        <span class="muted" id="macro-pfad-status"></span>
+      </div>
+      <div id="macro-pfad-karte" style="margin-top:10px"></div>
+      <p class="muted" id="macro-pfad-runden" style="font-size:12px; margin-top:8px"></p>
     </div>
   </section>
 

@@ -41,6 +41,21 @@
     // Zeitspannen durchspielen statt die einzelnen Schritte direkt aufzurufen.
     menuNavGehalten(dir, gehalten) { menuNavAdjustGehalten(dir, gehalten); },
 
+    // ---- Pfad aus der Aufnahme (Physik, ohne Bahn) - 90c-macro-track.js -------------
+    macroLesen() { return macro.map((s) => ({ ...s })); },
+    macroPfadRekonstruieren(macroArr) { return macroPfadRekonstruieren(macroArr); },
+    aufnahmeRundenLesen() { return aufnahmeRunden.map((r) => ({ ...r })); },
+    aufnahmeRundenTickAufrufen(bytes) { aufnahmeRundenTick(bytes); },
+    // Speichern/Zuruecksetzen fuer Pruefablaeufe, die den geteilten Rundenzustand nicht
+    // stehen lassen duerfen - ein echter, gerade laufender Aufnahmeversuch soll von einem
+    // Selbsttest nichts mitbekommen.
+    aufnahmeZustandSichern() {
+      return { runden: aufnahmeRunden, t0: aufnahmeRundenT0, r: aufnahmeRState };
+    },
+    aufnahmeZustandZuruecksetzen(stand) {
+      aufnahmeRunden = stand.runden; aufnahmeRundenT0 = stand.t0; aufnahmeRState = stand.r;
+    },
+
     // ---- Passt das Cockpit in die Bildschirmhoehe? ---------------------------------
     //
     // Gemessen wird an der EINPASSUNG selbst: sie gibt zurueck, wieviel Platz da ist,

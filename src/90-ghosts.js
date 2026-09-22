@@ -1508,6 +1508,11 @@
     // Garage alone had no telemetry at all, because the dashboard subscription hangs off
     // the BLE explorer's discovery, which the Garage does not use.
     if (car === playerCar) handleDashboardBytes(b);
+    // Aufnahme-Modus: Start/Ziel-Ueberfahrten waehrend einer laufenden Aufzeichnung
+    // mitschreiben (90c-macro-track.js) - EIGENER Zustand, nicht ueber car.race/
+    // raceState, die eine laufende Wertung voraussetzen und ausserhalb eines
+    // gestarteten Rennens gar nichts in car.race.laps ablegen wuerden.
+    if (recording && car === playerCar) aufnahmeRundenTick(b);
     const code = b[12];
     // Der Monitor bekommt JEDEN Wert, auch die, die alles andere hier verwirft - er ist
     // genau dafuer da, einen unbekannten Code zu finden.
