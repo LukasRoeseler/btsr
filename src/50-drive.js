@@ -1546,21 +1546,22 @@
               typeof tankZweiStand === 'function' ? tankZweiStand() : 0,
               typeof schadenVon === 'function' ? schadenVon(2) : 0);
 
-    // ---- DER KOPF: die Lage von Auto 2, weil sie die veraenderliche ist ---------------
+    // ---- DIE RUNDENZAHL, jetzt je Auto neben seinem eigenen Namen -------------------
+    // BESTELLT: vorher stand eine gemeinsame Kopfzeile ("Runden 3 : 5") ueber beiden
+    // Spalten; die ist mitsamt Titel und Lage-Meldung weg, die Zahl steht jetzt einzeln
+    // auf Hoehe von "Spieler 1"/"Spieler 2".
     const car2 = typeof playerCar2 !== 'undefined' ? playerCar2 : null;
     const lage = typeof boxZweiLage === 'function' ? boxZweiLage() : 'aus';
-    const kopf = $('p2s-kopf-lage');
-    if (kopf) {
-      kopf.textContent = !zweiSpieler ? 'Modus aus'
-        : (!car2 ? 'Auto 2 nicht zugeteilt'
-           : (abseitsJetztFuer(2) ? 'Auto 2 neben der Bahn' : 'beide auf der Bahn'));
-    }
-    const rundeK = $('p2s-kopf-runde');
-    if (rundeK) {
+    const r1z = $('vgl1-runde');
+    if (r1z) {
       const r1 = ((typeof playerCar !== 'undefined' && playerCar && playerCar.race
                    && playerCar.race.laps) || []).length;
+      r1z.textContent = 'Runde ' + r1;
+    }
+    const r2z = $('vgl2-runde');
+    if (r2z) {
       const r2 = ((car2 && car2.race && car2.race.laps) || []).length;
-      rundeK.textContent = 'Runden ' + r1 + ' : ' + r2;
+      r2z.textContent = 'Runde ' + r2;
     }
 
     // ---- DIE FUSSZEILE SAGT, WAS DER BOXENSTOPP GERADE BRAUCHT -----------------------

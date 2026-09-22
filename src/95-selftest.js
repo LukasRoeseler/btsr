@@ -10644,13 +10644,15 @@
     // Der Prueftisch gibt Auto 2 einen Akkustand und Auto 1 keinen - beides muss man sehen.
     if (!/%/.test(w.akku2 || '')) maengel.push('Akku 2 zeigt ' + w.akku2);
     if (!/\u2013|-/.test(w.akku1 || '')) maengel.push('Akku 1 zeigt ' + w.akku1 + ' statt eines Strichs');
-    // Und der Rundenstand beider Autos im Kopf.
-    if (!/0\s*:\s*2/.test(w.runden || '')) maengel.push('Rundenstand ' + w.runden);
+    // Und der Rundenstand je Auto, seit BESTELLT die gemeinsame Kopfzeile durch je eine
+    // Zahl neben "Spieler 1"/"Spieler 2" ersetzt hat.
+    if (!/0/.test(w.runden1 || '')) maengel.push('Rundenstand Auto 1: ' + w.runden1);
+    if (!/2/.test(w.runden2 || '')) maengel.push('Rundenstand Auto 2: ' + w.runden2);
     return { ok: !maengel.length,
              mass: 'ohne ' + r.ohne.join('>') + ' | mit ' + r.mit.join('>')
                  + ' | Tank ' + w.tank1 + ' gegen ' + w.tank
                  + ' | Akku ' + w.akku1 + ' / ' + w.akku2
-                 + ' | ' + w.runden
+                 + ' | ' + w.runden1 + ' / ' + w.runden2
                  + (maengel.length ? ' | ' + maengel.join(', ') : '') };
   });
 

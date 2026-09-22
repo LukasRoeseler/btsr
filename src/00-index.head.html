@@ -1622,9 +1622,29 @@
   .vgl-marke.zwei { color: #3d8bff; }
   .vgl-name { font-size: clamp(9px, 1.4vw, 12px); color: var(--gt3-strip-ink);
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* BESTELLT: die Rundenzahl stand oben in der jetzt entfernten Kopfzeile, gemeinsam
+     fuer beide Autos ("Runden 3 : 5"). Jetzt je eine Zahl auf Hoehe von "Spieler 1"/
+     "Spieler 2", rechtsbuendig in ihrer eigenen Spalte. */
+  .vgl-runde { margin-left: auto; flex: none; font-size: clamp(9px, 1.4vw, 12px);
+    color: var(--gt3-strip-ink); white-space: nowrap; }
   /* Die Lampenleiste je Spalte: dieselbe Klasse wie oben, nur flacher - sie steht hier
-     neben einer zweiten und soll den Tacho nicht ueberragen. */
+     neben einer zweiten und soll den Tacho nicht ueberragen.
+     BESTELLT: "Mach die Lichter rechteckig, dann muessen sie nicht so hoch wie breit
+     sein (bei runden Kreisen), und dann ist nach unten mehr Platz." .gt3-shift > span
+     erzwingt aspect-ratio: 1 (ein Kreis ist immer so hoch wie breit) - hier aufgehoben,
+     denn 20 breite Kacheln je Spalte auf halber Bildschirmbreite waeren als Kreis
+     zwangslaeufig hoch. Der Wandbogen (translateY je Position, gedacht fuer runde
+     Lichter am Lenkradkranz) ist bei Rechtecken kein sinnvolles Bild mehr und deshalb
+     zurueckgesetzt. Nur diese Klasse aendert sich - das Hauptcockpit (.gt3-shift ohne
+     .vgl-shift) bleibt rund. */
   .vgl-shift { height: clamp(6px, 1.1vw, 10px); }
+  /* ID-Selektor, nicht .vgl-shift > span: die Bogenstellung fuer runde Lichter
+     (.gt3-shift > span:nth-child(1) usw., weiter oben) traegt zwei Klassen/Pseudoklassen
+     Spezifitaet - eine einzelne Klasse hier wuerde dagegen verlieren, Reihenfolge hin
+     oder her. #vgl1-shift/#vgl2-shift sind die einzigen zwei Traeger dieser Klasse und
+     schlagen jede Klassenregel zuverlaessig. */
+  #vgl1-shift > span, #vgl2-shift > span { aspect-ratio: auto; height: 100%;
+    max-width: none; border-radius: 2px; transform: none; }
   .vgl-tempo { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
   .vgl-tempo .gt3-val.big { font-size: clamp(26px, 5.2vw, 48px); line-height: 1; }
   .vgl-einheit { font-size: clamp(8px, 1.2vw, 11px); letter-spacing: .1em;
@@ -3134,7 +3154,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.7.39</span></span>
+        <span class="foot-ver">v<span id="app-version">0.7.40</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -3703,16 +3723,17 @@
            jetzt je EINEN Knopf pro Auto, direkt unter dessen Boxenstopp-Knopf in seiner
            eigenen Spalte - dieselbe Anordnung wie die zwei Boxenstopp-Knoepfe, die dadurch
            nebeneinander stehen. -->
+      <!-- BESTELLT: die Kopfzeile ("Beide Autos", das Etikett, die Lage-Meldung und die
+           gemeinsame Rundenzahl) ist weg - "Auto 2 nicht zugeteilt" darin war ohnehin
+           redundant mit dem "kein Auto" neben dem Spielernamen. Die Rundenzahl steht jetzt
+           je Spalte neben "Spieler 1"/"Spieler 2", auf derselben Zeile wie der Name. -->
       <div class="gt3-schirm" id="race-p2screen">
-        <div class="schirm-kopf"><b>Beide Autos</b><span class="wip-tag">experimentell</span>
-          <span id="p2s-kopf-lage" data-i18n-skip>&ndash;</span>
-          <span style="margin-left:auto" id="p2s-kopf-runde" data-i18n-skip></span></div>
-
         <div class="vgl-grid">
           <!-- ---- AUTO 1 ---- -->
           <div class="vgl-spalte">
             <div class="vgl-kopf"><span class="vgl-marke">Spieler 1</span>
-              <span class="vgl-name" id="vgl1-name" data-i18n-skip>&ndash;</span></div>
+              <span class="vgl-name" id="vgl1-name" data-i18n-skip>&ndash;</span>
+              <span class="vgl-runde" id="vgl1-runde" data-i18n-skip></span></div>
             <div class="gt3-shift vgl-shift" id="vgl1-shift">
               <span></span><span></span><span></span><span></span><span></span>
               <span></span><span></span><span></span><span></span><span></span>
@@ -3755,7 +3776,8 @@
           <!-- ---- AUTO 2 ---- -->
           <div class="vgl-spalte">
             <div class="vgl-kopf"><span class="vgl-marke zwei">Spieler 2</span>
-              <span class="vgl-name" id="vgl2-name" data-i18n-skip>&ndash;</span></div>
+              <span class="vgl-name" id="vgl2-name" data-i18n-skip>&ndash;</span>
+              <span class="vgl-runde" id="vgl2-runde" data-i18n-skip></span></div>
             <div class="gt3-shift vgl-shift" id="vgl2-shift">
               <span></span><span></span><span></span><span></span><span></span>
               <span></span><span></span><span></span><span></span><span></span>

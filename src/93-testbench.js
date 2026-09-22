@@ -568,7 +568,7 @@
           akku1: lies('vgl1-batt'), akku2: lies('vgl2-batt'),
           lampen1: ($('vgl1-shift') || { children: [] }).children.length,
           lampen2: ($('vgl2-shift') || { children: [] }).children.length,
-          lage: lies('p2s-kopf-lage'), runden: lies('p2s-kopf-runde'),
+          runden1: lies('vgl1-runde'), runden2: lies('vgl2-runde'),
           fuss: lies('p2s-fuss'),
         };
         // Und dass der Schirm beim Abschalten verlassen wird.
