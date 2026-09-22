@@ -36,6 +36,10 @@
     menuNavAusloesen() { menuNavActivate(); },
     menuNavVerstellen(dir) { return menuNavAdjust(dir); },
     menuNavAktiv() { return menuNavActive(); },
+    // Durchreichen der gemeinsamen Halten/Beschleunigen-Zustandsmaschine (Gamepad UND
+    // Tastatur teilen sie sich, siehe 50b-menu-nav.js) - ein Prueflauf kann so echte
+    // Zeitspannen durchspielen statt die einzelnen Schritte direkt aufzurufen.
+    menuNavGehalten(dir, gehalten) { menuNavAdjustGehalten(dir, gehalten); },
 
     // ---- Passt das Cockpit in die Bildschirmhoehe? ---------------------------------
     //

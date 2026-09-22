@@ -364,7 +364,8 @@
     // pruefbar) - dieselbe Kette wie am Controller: Streckeneditor-Bestaetigen vor
     // Menuenavigation vor Cockpit-Schirm vor gelber Flagge.
     if ((k === 'x' || k === 'enter') && !e.repeat) {
-      if (trackEditorPad('confirm')) { /* vom Editor verbraucht */ }
+      if (optInfoOffen()) optInfoSchliessen();
+      else if (trackEditorPad('confirm')) { /* vom Editor verbraucht */ }
       else if (menuNavActive()) menuNavActivate();
       else if (cockpitScreenIst().id !== 'main') cockpitScreenWaehlen();
       else flagHoldPress();
@@ -377,7 +378,16 @@
       recMark(label);
     }
     if (k === '?' || (k === '/' && e.shiftKey)) { if (!e.repeat) toggleHelp(); }
-    if (k === 'escape') { toggleHelp(false); hideRaceSummary(); }
+    // optInfoSchliessen() ZUERST: toggleHelp() ist eine tote Referenz (keine solche
+    // Funktion existiert mehr im Projekt, siehe die Fundstelle) und wirft bei jedem
+    // Escape/? - stuende sie vorn, wuerde sie diese Zeile nie bis zum Popup kommen
+    // lassen. Unabhaengiger Fund, nicht Teil dieser Bestellung - dem Nutzer gemeldet,
+    // nicht stillschweigend "repariert".
+    if (k === 'escape') {
+      if (optInfoOffen()) optInfoSchliessen();
+      toggleHelp(false);
+      hideRaceSummary();
+    }
   });
   window.addEventListener('keydown', (e) => {
     if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)) e.preventDefault();

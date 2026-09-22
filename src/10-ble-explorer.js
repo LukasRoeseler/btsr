@@ -2060,6 +2060,7 @@
     "Reifenwahl weiter": "Next tyre choice",
     "Tankmenge weiter": "Next fuel amount",
     "L3 (linken Stick drücken)": "L3 (press left stick)",
+    "Erklärung anzeigen": "Show explanation",
   };
 
   // ============================================================================

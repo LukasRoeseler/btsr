@@ -32,23 +32,25 @@
   //
   // BESTELLT: "wenn ich bei einer Skala den rechts Button gedrueckt halte, soll die
   // Aenderungsgeschwindigkeit schneller zunehmen (nach 0.5s gedrueckt halten in
-  // groesseren Schritten aendern, bis ich 0.5s nicht links/rechts gedrueckt habe)."
+  // groesseren Schritten aendern)." PRAEZISIERT, nachdem die erste Fassung eine
+  // Gnadenfrist nach dem Loslassen gab (ein kurzes Antippen kurz nach einem Zug blieb im
+  // schnellen Modus): "wenn ich die Taste loslasse und druecke, soll SOFORT wieder
+  // kleinschrittig adjustiert werden." Jedes Loslassen setzt die Beschleunigung deshalb
+  // ausnahmslos zurueck - nur DURCHGEHENDES Halten ueber MENU_NAV_ACCEL_MS beschleunigt.
   //
   // EIN Zustand fuer beide Eingabewege: das Gamepad ruft menuNavAdjustGehalten() JEDEN
   // Takt mit dem rohen Tastendruck auf (es gibt kein natives Wiederholen), die Tastatur
   // bei jedem keydown (auch den vom Betriebssystem wiederholten - das native Wiederholen
   // ersetzt hier nur den Zeitgeber, die Beschleunigung rechnet trotzdem diese Uhr) und
   // bei jedem keyup mit gehalten=false.
-  let menuNavHoldDir = null;         // 'left' | 'right' | null
-  let menuNavHoldStart = 0;          // Beginn des AKTUELLEN Zugs (siehe menuNavHoldReleasedAt)
-  let menuNavHoldReleasedAt = null;  // wann zuletzt losgelassen wurde, null waehrend gehalten
+  let menuNavHoldDir = null;         // 'left' | 'right' | null, null sofort beim Loslassen
+  let menuNavHoldStart = 0;          // Beginn des AKTUELLEN, durchgehenden Zugs
   let menuNavLastStep = 0;
   const MENU_NAV_REPEAT_START_MS = 300;  // erstes Wiederholen nach dem ersten Schritt
   const MENU_NAV_REPEAT_MS = 120;        // Wiederholrate vor der Beschleunigung
-  const MENU_NAV_ACCEL_MS = 500;         // ab so lange gehalten: groessere Schritte
+  const MENU_NAV_ACCEL_MS = 500;         // ab so lange DURCHGEHEND gehalten: groessere Schritte
   const MENU_NAV_REPEAT_FAST_MS = 70;    // Wiederholrate NACH der Beschleunigung
   const MENU_NAV_STEP_BIG = 5;           // Schrittvielfaches NACH der Beschleunigung
-  const MENU_NAV_RESET_GAP_MS = 500;     // so lange Pause loescht den Zug (siehe oben)
 
   // ---- Subtile Schaltsounds ----
   //
@@ -146,8 +148,13 @@
     if (optRows.length) {
       optRows.forEach((row) => {
         const control = menuNavControlFor(row);
-        if (!control) return;
-        rows.push({ el: row, kind: menuNavKindOf(control), control });
+        if (control) rows.push({ el: row, kind: menuNavKindOf(control), control });
+        // Der Info-Knopf (98c-opt-info.js) bekommt einen EIGENEN Eintrag, direkt nach
+        // der Zeile, die er erklaert - er kann nicht dasselbe Element wie oben sein,
+        // sonst waere er hinter dem Regler/Kontrollkaestchen nie erreichbar (siehe die
+        // Rangfolge in menuNavControlFor()).
+        const info = row.querySelector('.opt-info-btn');
+        if (info && menuNavSichtbar(info)) rows.push({ el: info, kind: 'button', control: info });
       });
       return rows;
     }
@@ -200,6 +207,10 @@
   }
 
   function menuNavMove(dir) {
+    // Waehrend das Info-Popup offen ist (98c-opt-info.js), soll hoch/runter NICHT den
+    // dahinterliegenden, unsichtbaren Fokus verschieben - der naechste Blick nach dem
+    // Schliessen saehe sonst eine andere Zeile ausgewaehlt, als man verlassen hatte.
+    if (optInfoOffen()) return;
     menuNavEnsureContext();
     const rows = menuNavRows();
     if (!rows.length) return;
@@ -249,6 +260,10 @@
   // anderes nehmen (Tabwechsel, Cockpit-Schirm blaettern). `gross` multipliziert die
   // Schrittweite (siehe die Beschleunigung oben).
   function menuNavAdjust(dir, gross) {
+    // "Verbraucht" und nicht "false" (siehe unten): waehrend das Info-Popup offen ist,
+    // soll links/rechts weder einen Regler verstellen noch - ueber den false-Rueckgabewert
+    // - den Aufrufer zum Tabwechsel verleiten. Ein offenes Modal blockiert beides.
+    if (optInfoOffen()) return true;
     menuNavEnsureContext();
     if (!menuNavArmed) return false;
     const rows = menuNavRows();
@@ -285,22 +300,20 @@
   function menuNavAdjustGehalten(dir, gehalten) {
     const jetzt = Date.now();
     if (!gehalten) {
-      if (menuNavHoldDir === dir) menuNavHoldReleasedAt = jetzt;
+      // Sofort und ausnahmslos zuruecksetzen - BESTELLT: "wenn ich die Taste loslasse
+      // und druecke, soll sofort wieder kleinschrittig adjustiert werden." Keine
+      // Gnadenfrist mehr: nur ein wirklich DURCHGEHENDER Zug beschleunigt.
+      menuNavHoldDir = null;
       return;
     }
-    // Neuer Zug: anderer Knopf, oder die Pause seit dem letzten Loslassen war lang genug
-    // (BESTELLT: "bis ich 0.5s nicht links/rechts gedrueckt habe").
-    const neu = menuNavHoldDir !== dir
-      || (menuNavHoldReleasedAt !== null && jetzt - menuNavHoldReleasedAt >= MENU_NAV_RESET_GAP_MS);
+    const neu = menuNavHoldDir !== dir;
     if (neu) {
       menuNavHoldDir = dir;
       menuNavHoldStart = jetzt;
-      menuNavHoldReleasedAt = null;
       menuNavLastStep = jetzt;
       menuNavAdjust(dir, false);
       return;
     }
-    menuNavHoldReleasedAt = null; // wieder im selben Zug
     const seitZugbeginn = jetzt - menuNavHoldStart;
     const beschleunigt = seitZugbeginn >= MENU_NAV_ACCEL_MS;
     const naechsterSchrittNach = menuNavLastStep === menuNavHoldStart
@@ -320,6 +333,9 @@
   // pollGamepad()). Ueberspringt versteckte Tab-Knoepfe (data-parent, hidden) genau wie
   // die sichtbare Leiste sie ueberspringt.
   function menuNavTabWechsel(d) {
+    // Kein Tabwechsel hinter einem offenen Info-Popup - sonst landet man beim
+    // Schliessen ueberraschend auf einem anderen Tab, als man verlassen hatte.
+    if (optInfoOffen()) return;
     const buttons = [...document.querySelectorAll('.tab-btn')].filter((b) => b.offsetParent !== null);
     if (!buttons.length) return;
     const now = buttons.findIndex((b) => b.classList.contains('active'));

@@ -2725,6 +2725,21 @@
      was man lesen will. Auf dem Telefon wird also gescrollt statt geschrumpft. */
   .lb-body svg { width: 100%; min-width: 640px; height: auto; display: block; }
   .lb-note { font-size: 12px; color: var(--muted); margin: 10px 0 0 0; }
+  /* ---- Info-Popup fuer Optionen-Beschreibungen (Phase 13) ----
+     Dieselbe Lightbox wie fuer die grossen Diagramme (94-engine-workshop.js), nur mit
+     Text statt einem geklonten SVG - .lb-text begrenzt die Breite auf Lesemass, die
+     1100px der Diagrammfassung waeren fuer einen Absatz Fliesstext unpassend breit. */
+  .lb-box.lb-text { max-width: min(480px, 92vw); }
+  .opt-info-text { font-size: 13.5px; line-height: 1.55; color: var(--ink); }
+  /* Das "i" sitzt direkt hinter dem Zeilentitel, an derselben Stelle, an der bisher die
+     lange Erklaerung begann - sichtbar, aber klein genug, um nicht wie ein weiteres
+     Bedienelement der Zeile selbst auszusehen. */
+  .opt-info-btn { display: inline-flex; align-items: center; justify-content: center;
+    width: 16px; height: 16px; margin-left: 6px; padding: 0; vertical-align: middle;
+    border: 1px solid var(--border); border-radius: 50%; background: var(--panel);
+    color: var(--muted); font: italic 11px/1 Georgia, serif; cursor: pointer; }
+  .opt-info-btn:hover, .opt-info-btn:focus-visible { color: var(--ink); border-color: var(--muted); }
+  .opt-info-versteckt { display: none !important; }
   /* Der Hinweis, dass ein Bild anklickbar ist. Ohne ihn probiert es niemand aus. */
   .mw-chart { position: relative; }
   .mw-chart .mw-zoom { position: absolute; top: 6px; right: 8px; font-size: 10px;
@@ -3138,7 +3153,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.7.28</span></span>
+        <span class="foot-ver">v<span id="app-version">0.7.29</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -11002,6 +11017,7 @@
     "Reifenwahl weiter": "Next tyre choice",
     "Tankmenge weiter": "Next fuel amount",
     "L3 (linken Stick drücken)": "L3 (press left stick)",
+    "Erklärung anzeigen": "Show explanation",
   };
 
   // ============================================================================
@@ -12321,7 +12337,8 @@
     // pruefbar) - dieselbe Kette wie am Controller: Streckeneditor-Bestaetigen vor
     // Menuenavigation vor Cockpit-Schirm vor gelber Flagge.
     if ((k === 'x' || k === 'enter') && !e.repeat) {
-      if (trackEditorPad('confirm')) { /* vom Editor verbraucht */ }
+      if (optInfoOffen()) optInfoSchliessen();
+      else if (trackEditorPad('confirm')) { /* vom Editor verbraucht */ }
       else if (menuNavActive()) menuNavActivate();
       else if (cockpitScreenIst().id !== 'main') cockpitScreenWaehlen();
       else flagHoldPress();
@@ -12334,7 +12351,16 @@
       recMark(label);
     }
     if (k === '?' || (k === '/' && e.shiftKey)) { if (!e.repeat) toggleHelp(); }
-    if (k === 'escape') { toggleHelp(false); hideRaceSummary(); }
+    // optInfoSchliessen() ZUERST: toggleHelp() ist eine tote Referenz (keine solche
+    // Funktion existiert mehr im Projekt, siehe die Fundstelle) und wirft bei jedem
+    // Escape/? - stuende sie vorn, wuerde sie diese Zeile nie bis zum Popup kommen
+    // lassen. Unabhaengiger Fund, nicht Teil dieser Bestellung - dem Nutzer gemeldet,
+    // nicht stillschweigend "repariert".
+    if (k === 'escape') {
+      if (optInfoOffen()) optInfoSchliessen();
+      toggleHelp(false);
+      hideRaceSummary();
+    }
   });
   window.addEventListener('keydown', (e) => {
     if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)) e.preventDefault();
@@ -18034,23 +18060,25 @@
   //
   // BESTELLT: "wenn ich bei einer Skala den rechts Button gedrueckt halte, soll die
   // Aenderungsgeschwindigkeit schneller zunehmen (nach 0.5s gedrueckt halten in
-  // groesseren Schritten aendern, bis ich 0.5s nicht links/rechts gedrueckt habe)."
+  // groesseren Schritten aendern)." PRAEZISIERT, nachdem die erste Fassung eine
+  // Gnadenfrist nach dem Loslassen gab (ein kurzes Antippen kurz nach einem Zug blieb im
+  // schnellen Modus): "wenn ich die Taste loslasse und druecke, soll SOFORT wieder
+  // kleinschrittig adjustiert werden." Jedes Loslassen setzt die Beschleunigung deshalb
+  // ausnahmslos zurueck - nur DURCHGEHENDES Halten ueber MENU_NAV_ACCEL_MS beschleunigt.
   //
   // EIN Zustand fuer beide Eingabewege: das Gamepad ruft menuNavAdjustGehalten() JEDEN
   // Takt mit dem rohen Tastendruck auf (es gibt kein natives Wiederholen), die Tastatur
   // bei jedem keydown (auch den vom Betriebssystem wiederholten - das native Wiederholen
   // ersetzt hier nur den Zeitgeber, die Beschleunigung rechnet trotzdem diese Uhr) und
   // bei jedem keyup mit gehalten=false.
-  let menuNavHoldDir = null;         // 'left' | 'right' | null
-  let menuNavHoldStart = 0;          // Beginn des AKTUELLEN Zugs (siehe menuNavHoldReleasedAt)
-  let menuNavHoldReleasedAt = null;  // wann zuletzt losgelassen wurde, null waehrend gehalten
+  let menuNavHoldDir = null;         // 'left' | 'right' | null, null sofort beim Loslassen
+  let menuNavHoldStart = 0;          // Beginn des AKTUELLEN, durchgehenden Zugs
   let menuNavLastStep = 0;
   const MENU_NAV_REPEAT_START_MS = 300;  // erstes Wiederholen nach dem ersten Schritt
   const MENU_NAV_REPEAT_MS = 120;        // Wiederholrate vor der Beschleunigung
-  const MENU_NAV_ACCEL_MS = 500;         // ab so lange gehalten: groessere Schritte
+  const MENU_NAV_ACCEL_MS = 500;         // ab so lange DURCHGEHEND gehalten: groessere Schritte
   const MENU_NAV_REPEAT_FAST_MS = 70;    // Wiederholrate NACH der Beschleunigung
   const MENU_NAV_STEP_BIG = 5;           // Schrittvielfaches NACH der Beschleunigung
-  const MENU_NAV_RESET_GAP_MS = 500;     // so lange Pause loescht den Zug (siehe oben)
 
   // ---- Subtile Schaltsounds ----
   //
@@ -18148,8 +18176,13 @@
     if (optRows.length) {
       optRows.forEach((row) => {
         const control = menuNavControlFor(row);
-        if (!control) return;
-        rows.push({ el: row, kind: menuNavKindOf(control), control });
+        if (control) rows.push({ el: row, kind: menuNavKindOf(control), control });
+        // Der Info-Knopf (98c-opt-info.js) bekommt einen EIGENEN Eintrag, direkt nach
+        // der Zeile, die er erklaert - er kann nicht dasselbe Element wie oben sein,
+        // sonst waere er hinter dem Regler/Kontrollkaestchen nie erreichbar (siehe die
+        // Rangfolge in menuNavControlFor()).
+        const info = row.querySelector('.opt-info-btn');
+        if (info && menuNavSichtbar(info)) rows.push({ el: info, kind: 'button', control: info });
       });
       return rows;
     }
@@ -18202,6 +18235,10 @@
   }
 
   function menuNavMove(dir) {
+    // Waehrend das Info-Popup offen ist (98c-opt-info.js), soll hoch/runter NICHT den
+    // dahinterliegenden, unsichtbaren Fokus verschieben - der naechste Blick nach dem
+    // Schliessen saehe sonst eine andere Zeile ausgewaehlt, als man verlassen hatte.
+    if (optInfoOffen()) return;
     menuNavEnsureContext();
     const rows = menuNavRows();
     if (!rows.length) return;
@@ -18251,6 +18288,10 @@
   // anderes nehmen (Tabwechsel, Cockpit-Schirm blaettern). `gross` multipliziert die
   // Schrittweite (siehe die Beschleunigung oben).
   function menuNavAdjust(dir, gross) {
+    // "Verbraucht" und nicht "false" (siehe unten): waehrend das Info-Popup offen ist,
+    // soll links/rechts weder einen Regler verstellen noch - ueber den false-Rueckgabewert
+    // - den Aufrufer zum Tabwechsel verleiten. Ein offenes Modal blockiert beides.
+    if (optInfoOffen()) return true;
     menuNavEnsureContext();
     if (!menuNavArmed) return false;
     const rows = menuNavRows();
@@ -18287,22 +18328,20 @@
   function menuNavAdjustGehalten(dir, gehalten) {
     const jetzt = Date.now();
     if (!gehalten) {
-      if (menuNavHoldDir === dir) menuNavHoldReleasedAt = jetzt;
+      // Sofort und ausnahmslos zuruecksetzen - BESTELLT: "wenn ich die Taste loslasse
+      // und druecke, soll sofort wieder kleinschrittig adjustiert werden." Keine
+      // Gnadenfrist mehr: nur ein wirklich DURCHGEHENDER Zug beschleunigt.
+      menuNavHoldDir = null;
       return;
     }
-    // Neuer Zug: anderer Knopf, oder die Pause seit dem letzten Loslassen war lang genug
-    // (BESTELLT: "bis ich 0.5s nicht links/rechts gedrueckt habe").
-    const neu = menuNavHoldDir !== dir
-      || (menuNavHoldReleasedAt !== null && jetzt - menuNavHoldReleasedAt >= MENU_NAV_RESET_GAP_MS);
+    const neu = menuNavHoldDir !== dir;
     if (neu) {
       menuNavHoldDir = dir;
       menuNavHoldStart = jetzt;
-      menuNavHoldReleasedAt = null;
       menuNavLastStep = jetzt;
       menuNavAdjust(dir, false);
       return;
     }
-    menuNavHoldReleasedAt = null; // wieder im selben Zug
     const seitZugbeginn = jetzt - menuNavHoldStart;
     const beschleunigt = seitZugbeginn >= MENU_NAV_ACCEL_MS;
     const naechsterSchrittNach = menuNavLastStep === menuNavHoldStart
@@ -18322,6 +18361,9 @@
   // pollGamepad()). Ueberspringt versteckte Tab-Knoepfe (data-parent, hidden) genau wie
   // die sichtbare Leiste sie ueberspringt.
   function menuNavTabWechsel(d) {
+    // Kein Tabwechsel hinter einem offenen Info-Popup - sonst landet man beim
+    // Schliessen ueberraschend auf einem anderen Tab, als man verlassen hatte.
+    if (optInfoOffen()) return;
     const buttons = [...document.querySelectorAll('.tab-btn')].filter((b) => b.offsetParent !== null);
     if (!buttons.length) return;
     const now = buttons.findIndex((b) => b.classList.contains('active'));
@@ -33030,7 +33072,15 @@
   // worden. Der Ladebalken startet auf den anderen Schirmen gar nicht erst, statt bei 40
   // Prozent stehenzubleiben.
   function flagTasteTick(flagNow) {
-    // NEUE ERSTE STUFE (Phase 13): auf dem Optionen-Tab bestaetigt/waehlt dieselbe
+    // ALLERERSTE STUFE: ist das Info-Popup offen (98c-opt-info.js), schliesst dieselbe
+    // Taste nur IHN - alles dahinter (Menuenavigation, Cockpit-Schirm, gelbe Flagge)
+    // bleibt unberuehrt, waehrend ein Modal offen ist.
+    if (optInfoOffen()) {
+      if (flagNow && !prevYellowFlag) optInfoSchliessen();
+      prevYellowFlag = flagNow;
+      return;
+    }
+    // NEUE STUFE (Phase 13): auf dem Optionen-Tab bestaetigt/waehlt dieselbe
     // Taste die fokussierte Zeile der Menuenavigation an - noch vor der Frage, welcher
     // Cockpit-Schirm gerade offen ist (der ist dann ohnehin nicht der aktive Tab).
     if (menuNavActive()) {
@@ -38870,6 +38920,10 @@
     menuNavAusloesen() { menuNavActivate(); },
     menuNavVerstellen(dir) { return menuNavAdjust(dir); },
     menuNavAktiv() { return menuNavActive(); },
+    // Durchreichen der gemeinsamen Halten/Beschleunigen-Zustandsmaschine (Gamepad UND
+    // Tastatur teilen sie sich, siehe 50b-menu-nav.js) - ein Prueflauf kann so echte
+    // Zeitspannen durchspielen statt die einzelnen Schritte direkt aufzurufen.
+    menuNavGehalten(dir, gehalten) { menuNavAdjustGehalten(dir, gehalten); },
 
     // ---- Passt das Cockpit in die Bildschirmhoehe? ---------------------------------
     //
@@ -59385,6 +59439,92 @@
   // wiedergefundener Code laesst den Versuch erfolgreich enden, und ein Auto, das nicht
   // vorankommt (simuliert: die Physik wird jeden Takt auf 0 zurueckgesetzt, als stuende
   // es vor einem Hindernis), gibt VOR den drei Sekunden auf.
+  stAdd('Menuenavigation: Loslassen setzt die Beschleunigung sofort zurueck', async () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.menuNavGehalten) {
+      return { skip: true, mass: 'menuNavGehalten nicht vorhanden' };
+    }
+    const merkTab = document.querySelector('.tab-btn.active');
+    const merkTabName = merkTab ? merkTab.dataset.tab : null;
+    const fehler = [], teile = [];
+    let rangeEl = null, vor = null;
+    try {
+      document.querySelector('.tab-btn[data-tab="options"]').click();
+      document.querySelectorAll('#tab-options .subpage').forEach((p) => p.classList.remove('on'));
+      // Den Kontext EINMAL auf die (jetzt geschlossene) Kachelseite synchronisieren,
+      // bevor die Unterseite oeffnet - sonst kann ein vorheriger Testlauf, der
+      // menuNavContextKey schon auf "sub-opt-feel" stehen liess, den kommenden
+      // Wechsel dorthin als "keine Aenderung" verpassen (menuNavEnsureContext()
+      // vergleicht nur den Schluessel, nicht ob wirklich zwischendurch etwas anderes
+      // sichtbar war).
+      OMEGA_TEST.menuNavAktiv();
+      document.querySelector('button.misc-tile.subpage-open[data-sub="opt-feel"]').click();
+      const rows = OMEGA_TEST.menuNavRowsLesen();
+      const rangeIdx = rows.findIndex((r) => r.kind === 'range');
+      if (rangeIdx < 0) {
+        fehler.push('kein Regler in opt-feel gefunden');
+      } else {
+        OMEGA_TEST.menuNavBewegen('down');
+        for (let i = 0; i < rangeIdx; i++) OMEGA_TEST.menuNavBewegen('down');
+        OMEGA_TEST.menuNavAusloesen();
+        rangeEl = document.querySelector('.menu-nav-sel input[type="range"]');
+        const step = +rangeEl.step || 1;
+        vor = +rangeEl.value; // der ECHTE Ausgangswert - der wird am Ende wiederhergestellt
+        // Fuer den Zug selbst auf das Minimum setzen: sonst kann ein Regler, der
+        // zufaellig nah an seinem Maximum stand, waehrend des langen Zugs dort ankommen
+        // und stehenbleiben - stepUp() an der Obergrenze aendert nichts mehr, und das
+        // saehe wie eine fehlende Beschleunigung aus, waere aber nur zu wenig Platz
+        // nach oben.
+        rangeEl.value = rangeEl.min;
+        rangeEl.dispatchEvent(new Event('input', { bubbles: true }));
+        rangeEl.dispatchEvent(new Event('change', { bubbles: true }));
+        const start = +rangeEl.value;
+
+        // Ein Zug, lang genug gehalten, um die Beschleunigung zu erreichen (die
+        // simulierten Zwischenschritte spielen den Zeitgeber ab, den ein Gamepad-Takt
+        // sonst liefert).
+        OMEGA_TEST.menuNavGehalten('right', true);
+        for (let t = 0; t < 900; t += 40) {
+          await new Promise((r) => setTimeout(r, 40));
+          OMEGA_TEST.menuNavGehalten('right', true);
+        }
+        const beschleunigtGesehen = (+rangeEl.value - start) / step > 8; // deutlich mehr als 1er-Schritte
+        OMEGA_TEST.menuNavGehalten('right', false); // loslassen
+        const nachHalten = +rangeEl.value;
+
+        // Kurz warten (kuerzer als die alte, jetzt entfernte Gnadenfrist waere gewesen),
+        // dann neu druecken - BESTELLT: sofort wieder kleinschrittig. In die GEGENRICHTUNG
+        // (links): der lange, beschleunigte Zug nach rechts kann den Regler bis an sein
+        // Maximum getrieben haben, und ein weiterer Schritt nach rechts waere dort ohne
+        // Wirkung - unabhaengig davon, ob er klein oder gross gewesen waere.
+        await new Promise((r) => setTimeout(r, 100));
+        OMEGA_TEST.menuNavGehalten('left', true);
+        const nachNeuemDruck = +rangeEl.value;
+        OMEGA_TEST.menuNavGehalten('left', false);
+
+        const frischerSchritt = +(nachHalten - nachNeuemDruck).toFixed(6);
+        if (!beschleunigtGesehen) fehler.push('kein Anzeichen einer Beschleunigung waehrend des langen Zugs gesehen');
+        if (Math.abs(frischerSchritt - step) > 1e-9) {
+          fehler.push('frischer Druck nach dem Loslassen war kein Einzelschritt (' + frischerSchritt + ' statt ' + step + ')');
+        }
+        teile.push('lang gehalten: +' + (nachHalten - start).toFixed(2) + ', frischer Druck danach: +' + frischerSchritt);
+      }
+    } finally {
+      // Den Reglerwert zuruecksetzen, den dieser Test selbst verstellt hat - eine
+      // echte Einstellung des Nutzers darf ein Prueflauf nicht veraendert zurueckgeben.
+      if (rangeEl && vor !== null) {
+        rangeEl.value = vor;
+        rangeEl.dispatchEvent(new Event('input', { bubbles: true }));
+        rangeEl.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+      document.querySelectorAll('#tab-options .subpage').forEach((p) => p.classList.remove('on'));
+      if (merkTabName) {
+        const btn = document.querySelector('.tab-btn[data-tab="' + merkTabName + '"]');
+        if (btn) btn.click();
+      }
+    }
+    return { ok: fehler.length === 0, mass: fehler.length ? fehler.join('; ') : teile.join(' | ') };
+  });
+
   stAdd('Menuenavigation: Kacheln, Regler anwaehlen, Kontrollkaestchen, zurueck', () => {
     if (!window.OMEGA_TEST || !OMEGA_TEST.menuNavRowsLesen) {
       return { skip: true, mass: 'menuNavRowsLesen nicht vorhanden' };
@@ -59416,10 +59556,15 @@
       }
       teile.push(topRows.length + ' Kacheln');
 
-      // 2. Eine Unterseite mit allen drei Reglertypen oeffnen. Der ERSTE Bewegen-Aufruf
-      //    in einem frischen Kontext zeigt nur Zeile 0 und bewegt noch nicht (siehe
-      //    menuNavGezeigt in 50b-menu-nav.js) - hier verbraucht, damit springeZu()
-      //    darunter mit normaler "ein Aufruf = ein Schritt"-Rechnung auskommt.
+      // 2. Eine Unterseite mit allen drei Reglertypen oeffnen. menuNavAktiv() ZUERST
+      //    (siehe die Begruendung bei einem frueheren Test in dieser Datei): sonst kann
+      //    ein vorheriger Testlauf, der menuNavContextKey schon auf "sub-opt-feel"
+      //    stehen liess, den Kontextwechsel hierher verpassen. Der ERSTE Bewegen-Aufruf
+      //    in einem WIRKLICH frischen Kontext zeigt nur Zeile 0 und bewegt noch nicht
+      //    (siehe menuNavGezeigt in 50b-menu-nav.js) - hier verbraucht, damit
+      //    springeZu() darunter mit normaler "ein Aufruf = ein Schritt"-Rechnung
+      //    auskommt.
+      OMEGA_TEST.menuNavAktiv();
       document.querySelector('button.misc-tile.subpage-open[data-sub="opt-feel"]').click();
       OMEGA_TEST.menuNavBewegen('down');
       if (OMEGA_TEST.menuNavIndexLesen() !== 0) fehler.push('erster Tastendruck bewegt schon, statt nur zu zeigen');
@@ -63566,6 +63711,86 @@
     if (e.target && e.target.closest
         && e.target.closest('#tab-options, #tab-control')) autoSicherungPlanen();
   }, true);
+  // ============================ INFO-POPUP FUER OPTIONEN (Phase 13) ==================
+  //
+  // BESTELLT: "Schiebe alle Infos zu den Optionen in ein Pop-up mit 'i' im Kreis. Wenn
+  // ich drauftippe, geht das auf. Ansonsten ist es nicht sichtbar, mit Controller kann
+  // ich es nicht ansteuern."
+  //
+  // DIE ERKLAERUNG BLEIBT IM MARKUP, wird nur versteckt und in der schon vorhandenen
+  // Lightbox gezeigt (siehe lightboxOpen/lightboxClose, 94-engine-workshop.js, dort fuer
+  // grosse Diagramme gebaut) - dieselbe Lightbox, nur mit Text statt einem geklonten SVG.
+  // Eine zweite Kopie von 108 Erklaerungstexten irgendwo in JS waere die Gelegenheit,
+  // eine Aenderung nur an einer Stelle nachzuziehen.
+  //
+  // EIN EIGENER ZEILENEINTRAG FUER DEN KNOPF: menuNavRows() (50b-menu-nav.js) waehlt je
+  // Zeile GENAU EIN Bedienelement, mit fester Rangfolge (Kontrollkaestchen vor Regler vor
+  // Auswahlfeld vor Textfeld vor Knopf) - ein Info-Knopf IN derselben Zeile waere fuer
+  // die Menuenavigation nie erreichbar, weil Regler/Kontrollkaestchen immer zuerst
+  // gewaehlt werden. Die Anpassung dafuer steht in menuNavRows() selbst.
+
+  function optInfoEinrichten() {
+    document.querySelectorAll('.opt-row').forEach((row) => {
+      const label = row.querySelector('.opt-label');
+      if (!label) return;
+      const small = label.querySelector('small');
+      if (!small || small.classList.contains('opt-info-versteckt')) return;
+      // Nicht ueber childNodes[0] geraten: manche Titel stecken selbst in einem <span>
+      // (z.B. id="race-limit-label" fuer Werte, die JS nachfuehrt), dann ist das erste
+      // Kind kein Textknoten und label.textContent haette faelschlich auch die
+      // Erklaerung mitgenommen. Stattdessen ein Klon OHNE die <small> - was danach an
+      // Text uebrig ist, ist der Titel, unabhaengig davon, wie er aufgebaut ist.
+      const klon = label.cloneNode(true);
+      const smallImKlon = klon.querySelector('small');
+      if (smallImKlon) smallImKlon.remove();
+      const titel = klon.textContent.trim();
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'opt-info-btn';
+      btn.textContent = 'i';
+      btn.setAttribute('aria-label', t('Erklärung anzeigen') + (titel ? ': ' + titel : ''));
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        optInfoOeffnen(titel, small.innerHTML);
+      });
+      label.insertBefore(btn, small);
+      small.classList.add('opt-info-versteckt');
+    });
+  }
+
+  function optInfoOeffnen(titel, html) {
+    // lbQuelle gehoert der Diagramm-Lightbox (94-engine-workshop.js): auf null gesetzt,
+    // damit ein spaeteres lightboxRefresh() (bei einem gedrehten Regler) nicht versucht,
+    // ein Diagramm ueber diesen Text zu zeichnen.
+    lbQuelle = null;
+    $('lb-title').textContent = titel;
+    $('lb-note').textContent = '';
+    $('lb-body').innerHTML = '';
+    const div = document.createElement('div');
+    div.className = 'opt-info-text';
+    div.innerHTML = html;
+    $('lb-body').appendChild(div);
+    const box = $('lb-wrap').querySelector('.lb-box');
+    if (box) box.classList.add('lb-text');
+    $('lb-wrap').classList.add('on');
+  }
+
+  // lightboxClose() raeumt .lb-body/lbQuelle schon auf; hier zusaetzlich die
+  // Breitenklasse zuruecknehmen, die nur der Textfassung gehoert - ein danach
+  // geoeffnetes Diagramm soll wieder seine volle Breite bekommen.
+  function optInfoSchliessen() {
+    const box = $('lb-wrap') && $('lb-wrap').querySelector('.lb-box');
+    if (box) box.classList.remove('lb-text');
+    lightboxClose();
+  }
+
+  function optInfoOffen() {
+    const el = $('lb-wrap');
+    return !!(el && el.classList.contains('on'));
+  }
+
+  optInfoEinrichten();
+
 
   // ---- ENDE DES GEMEINSAMEN GUELTIGKEITSBEREICHS --------------------------------
   //

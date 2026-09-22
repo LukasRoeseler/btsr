@@ -11766,6 +11766,92 @@
   // wiedergefundener Code laesst den Versuch erfolgreich enden, und ein Auto, das nicht
   // vorankommt (simuliert: die Physik wird jeden Takt auf 0 zurueckgesetzt, als stuende
   // es vor einem Hindernis), gibt VOR den drei Sekunden auf.
+  stAdd('Menuenavigation: Loslassen setzt die Beschleunigung sofort zurueck', async () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.menuNavGehalten) {
+      return { skip: true, mass: 'menuNavGehalten nicht vorhanden' };
+    }
+    const merkTab = document.querySelector('.tab-btn.active');
+    const merkTabName = merkTab ? merkTab.dataset.tab : null;
+    const fehler = [], teile = [];
+    let rangeEl = null, vor = null;
+    try {
+      document.querySelector('.tab-btn[data-tab="options"]').click();
+      document.querySelectorAll('#tab-options .subpage').forEach((p) => p.classList.remove('on'));
+      // Den Kontext EINMAL auf die (jetzt geschlossene) Kachelseite synchronisieren,
+      // bevor die Unterseite oeffnet - sonst kann ein vorheriger Testlauf, der
+      // menuNavContextKey schon auf "sub-opt-feel" stehen liess, den kommenden
+      // Wechsel dorthin als "keine Aenderung" verpassen (menuNavEnsureContext()
+      // vergleicht nur den Schluessel, nicht ob wirklich zwischendurch etwas anderes
+      // sichtbar war).
+      OMEGA_TEST.menuNavAktiv();
+      document.querySelector('button.misc-tile.subpage-open[data-sub="opt-feel"]').click();
+      const rows = OMEGA_TEST.menuNavRowsLesen();
+      const rangeIdx = rows.findIndex((r) => r.kind === 'range');
+      if (rangeIdx < 0) {
+        fehler.push('kein Regler in opt-feel gefunden');
+      } else {
+        OMEGA_TEST.menuNavBewegen('down');
+        for (let i = 0; i < rangeIdx; i++) OMEGA_TEST.menuNavBewegen('down');
+        OMEGA_TEST.menuNavAusloesen();
+        rangeEl = document.querySelector('.menu-nav-sel input[type="range"]');
+        const step = +rangeEl.step || 1;
+        vor = +rangeEl.value; // der ECHTE Ausgangswert - der wird am Ende wiederhergestellt
+        // Fuer den Zug selbst auf das Minimum setzen: sonst kann ein Regler, der
+        // zufaellig nah an seinem Maximum stand, waehrend des langen Zugs dort ankommen
+        // und stehenbleiben - stepUp() an der Obergrenze aendert nichts mehr, und das
+        // saehe wie eine fehlende Beschleunigung aus, waere aber nur zu wenig Platz
+        // nach oben.
+        rangeEl.value = rangeEl.min;
+        rangeEl.dispatchEvent(new Event('input', { bubbles: true }));
+        rangeEl.dispatchEvent(new Event('change', { bubbles: true }));
+        const start = +rangeEl.value;
+
+        // Ein Zug, lang genug gehalten, um die Beschleunigung zu erreichen (die
+        // simulierten Zwischenschritte spielen den Zeitgeber ab, den ein Gamepad-Takt
+        // sonst liefert).
+        OMEGA_TEST.menuNavGehalten('right', true);
+        for (let t = 0; t < 900; t += 40) {
+          await new Promise((r) => setTimeout(r, 40));
+          OMEGA_TEST.menuNavGehalten('right', true);
+        }
+        const beschleunigtGesehen = (+rangeEl.value - start) / step > 8; // deutlich mehr als 1er-Schritte
+        OMEGA_TEST.menuNavGehalten('right', false); // loslassen
+        const nachHalten = +rangeEl.value;
+
+        // Kurz warten (kuerzer als die alte, jetzt entfernte Gnadenfrist waere gewesen),
+        // dann neu druecken - BESTELLT: sofort wieder kleinschrittig. In die GEGENRICHTUNG
+        // (links): der lange, beschleunigte Zug nach rechts kann den Regler bis an sein
+        // Maximum getrieben haben, und ein weiterer Schritt nach rechts waere dort ohne
+        // Wirkung - unabhaengig davon, ob er klein oder gross gewesen waere.
+        await new Promise((r) => setTimeout(r, 100));
+        OMEGA_TEST.menuNavGehalten('left', true);
+        const nachNeuemDruck = +rangeEl.value;
+        OMEGA_TEST.menuNavGehalten('left', false);
+
+        const frischerSchritt = +(nachHalten - nachNeuemDruck).toFixed(6);
+        if (!beschleunigtGesehen) fehler.push('kein Anzeichen einer Beschleunigung waehrend des langen Zugs gesehen');
+        if (Math.abs(frischerSchritt - step) > 1e-9) {
+          fehler.push('frischer Druck nach dem Loslassen war kein Einzelschritt (' + frischerSchritt + ' statt ' + step + ')');
+        }
+        teile.push('lang gehalten: +' + (nachHalten - start).toFixed(2) + ', frischer Druck danach: +' + frischerSchritt);
+      }
+    } finally {
+      // Den Reglerwert zuruecksetzen, den dieser Test selbst verstellt hat - eine
+      // echte Einstellung des Nutzers darf ein Prueflauf nicht veraendert zurueckgeben.
+      if (rangeEl && vor !== null) {
+        rangeEl.value = vor;
+        rangeEl.dispatchEvent(new Event('input', { bubbles: true }));
+        rangeEl.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+      document.querySelectorAll('#tab-options .subpage').forEach((p) => p.classList.remove('on'));
+      if (merkTabName) {
+        const btn = document.querySelector('.tab-btn[data-tab="' + merkTabName + '"]');
+        if (btn) btn.click();
+      }
+    }
+    return { ok: fehler.length === 0, mass: fehler.length ? fehler.join('; ') : teile.join(' | ') };
+  });
+
   stAdd('Menuenavigation: Kacheln, Regler anwaehlen, Kontrollkaestchen, zurueck', () => {
     if (!window.OMEGA_TEST || !OMEGA_TEST.menuNavRowsLesen) {
       return { skip: true, mass: 'menuNavRowsLesen nicht vorhanden' };
@@ -11797,10 +11883,15 @@
       }
       teile.push(topRows.length + ' Kacheln');
 
-      // 2. Eine Unterseite mit allen drei Reglertypen oeffnen. Der ERSTE Bewegen-Aufruf
-      //    in einem frischen Kontext zeigt nur Zeile 0 und bewegt noch nicht (siehe
-      //    menuNavGezeigt in 50b-menu-nav.js) - hier verbraucht, damit springeZu()
-      //    darunter mit normaler "ein Aufruf = ein Schritt"-Rechnung auskommt.
+      // 2. Eine Unterseite mit allen drei Reglertypen oeffnen. menuNavAktiv() ZUERST
+      //    (siehe die Begruendung bei einem frueheren Test in dieser Datei): sonst kann
+      //    ein vorheriger Testlauf, der menuNavContextKey schon auf "sub-opt-feel"
+      //    stehen liess, den Kontextwechsel hierher verpassen. Der ERSTE Bewegen-Aufruf
+      //    in einem WIRKLICH frischen Kontext zeigt nur Zeile 0 und bewegt noch nicht
+      //    (siehe menuNavGezeigt in 50b-menu-nav.js) - hier verbraucht, damit
+      //    springeZu() darunter mit normaler "ein Aufruf = ein Schritt"-Rechnung
+      //    auskommt.
+      OMEGA_TEST.menuNavAktiv();
       document.querySelector('button.misc-tile.subpage-open[data-sub="opt-feel"]').click();
       OMEGA_TEST.menuNavBewegen('down');
       if (OMEGA_TEST.menuNavIndexLesen() !== 0) fehler.push('erster Tastendruck bewegt schon, statt nur zu zeigen');

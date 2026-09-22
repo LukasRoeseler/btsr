@@ -3819,7 +3819,15 @@
   // worden. Der Ladebalken startet auf den anderen Schirmen gar nicht erst, statt bei 40
   // Prozent stehenzubleiben.
   function flagTasteTick(flagNow) {
-    // NEUE ERSTE STUFE (Phase 13): auf dem Optionen-Tab bestaetigt/waehlt dieselbe
+    // ALLERERSTE STUFE: ist das Info-Popup offen (98c-opt-info.js), schliesst dieselbe
+    // Taste nur IHN - alles dahinter (Menuenavigation, Cockpit-Schirm, gelbe Flagge)
+    // bleibt unberuehrt, waehrend ein Modal offen ist.
+    if (optInfoOffen()) {
+      if (flagNow && !prevYellowFlag) optInfoSchliessen();
+      prevYellowFlag = flagNow;
+      return;
+    }
+    // NEUE STUFE (Phase 13): auf dem Optionen-Tab bestaetigt/waehlt dieselbe
     // Taste die fokussierte Zeile der Menuenavigation an - noch vor der Frage, welcher
     // Cockpit-Schirm gerade offen ist (der ist dann ohnehin nicht der aktive Tab).
     if (menuNavActive()) {
