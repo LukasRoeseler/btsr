@@ -1996,7 +1996,7 @@
      den .sel-Kacheln im Projekt) fuer "fokussiert", Gruen (--good) sobald ein Regler
      ANGEWAEHLT ist und links/rechts seinen Wert aendern statt den Tab zu wechseln. */
   .menu-nav-sel { outline: 3px solid var(--bad); outline-offset: -2px; }
-  .opt-row.menu-nav-sel, .misc-tile.menu-nav-sel { border-radius: 8px; }
+  .opt-row.menu-nav-sel, .misc-tile.menu-nav-sel, .mw-row.menu-nav-sel { border-radius: 8px; }
   .menu-nav-armed { outline-color: var(--good); }
   .opt-label { font-size: 13.5px; line-height: 1.35; min-width: 0; }
   .opt-label small { display: block; color: var(--muted); font-size: 11px;
@@ -3133,7 +3133,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.7.35</span></span>
+        <span class="foot-ver">v<span id="app-version">0.7.36</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -18228,7 +18228,16 @@
     const tiles = [...host.querySelectorAll('.misc-tile')].filter(menuNavSichtbar);
     if (tiles.length) return tiles.map((el) => ({ el, kind: 'tile', control: el }));
 
-    const optRows = [...host.querySelectorAll('.opt-row')].filter(menuNavSichtbar);
+    // .mw-row gehoert dazu: die Motorwerkstatt sitzt als eigenes Raster am Ende der
+    // Tonseite (.mw-grid, zwei Spalten ab 720px), zwischen lauter .opt-row-Zeilen. Ohne
+    // sie hier mit aufzunehmen, waere jede Motorwerkstatt-Regelung fuer diese Funktion
+    // unsichtbar, sobald auch nur eine einzige .opt-row auf derselben Unterseite steht -
+    // genau das war "Motorwerkstatt so umsortieren, dass ich sie auch mit d-pad bedienen
+    // kann": sie liess sich bislang gar nicht erreichen, nicht nur schlecht sortiert.
+    // querySelectorAll haelt bei einer Selektorliste die DOKUMENT-Reihenfolge, nicht die
+    // Reihenfolge der Selektoren - .opt-row- und .mw-row-Zeilen bleiben also gemischt in
+    // ihrer Bildschirmreihenfolge.
+    const optRows = [...host.querySelectorAll('.opt-row, .mw-row')].filter(menuNavSichtbar);
     const back = host.querySelector('.subpage-back');
     const rows = [];
     if (back && menuNavSichtbar(back)) rows.push({ el: back, kind: 'button', control: back });
@@ -59717,6 +59726,40 @@
       }
     }
     return { ok: fehler.length === 0, mass: fehler.length ? fehler.join('; ') : teile.join(' | ') };
+  });
+
+  // ---- Motorwerkstatt per D-Pad erreichbar ----
+  //
+  // BESTELLT: "Motorwerkstatt so umsortieren, dass ich sie auch mit d-pad bedienen
+  // kann." Der Befund beim Bauen: sie liess sich ueberhaupt nicht erreichen, nicht nur
+  // schlecht sortiert - menuNavRows() sah auf der Tonseite lauter .opt-row-Zeilen UND
+  // kehrte deshalb sofort zurueck, bevor die .mw-row-Zeilen der Werkstatt (ein anderes
+  // Raster, ganz unten auf derselben Unterseite) ueberhaupt betrachtet wurden. Jetzt
+  // zaehlt .mw-row mit, in derselben Abfrage wie .opt-row.
+  stAdd('Menuenavigation: Motorwerkstatt-Regler sind erreichbar', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.menuNavRowsLesen) {
+      return { skip: true, mass: 'menuNavRowsLesen nicht vorhanden' };
+    }
+    const merkTab = document.querySelector('.tab-btn.active');
+    const merkTabName = merkTab ? merkTab.dataset.tab : null;
+    try {
+      document.querySelector('.tab-btn[data-tab="options"]').click();
+      document.querySelectorAll('#tab-options .subpage').forEach((p) => p.classList.remove('on'));
+      OMEGA_TEST.menuNavAktiv();
+      document.querySelector('button.misc-tile.subpage-open[data-sub="opt-sound"]').click();
+      const rows = OMEGA_TEST.menuNavRowsLesen();
+      const mwZeile = document.getElementById('mw-cyl')
+        ? document.getElementById('mw-cyl').closest('.mw-row') : null;
+      const zylIdx = rows.findIndex((r) => r.text.indexOf('Zylinder') >= 0);
+      return { ok: !!mwZeile && zylIdx >= 0,
+               mass: rows.length + ' Zeilen insgesamt, "Zylinder" bei Index ' + zylIdx };
+    } finally {
+      document.querySelectorAll('#tab-options .subpage').forEach((p) => p.classList.remove('on'));
+      if (merkTabName) {
+        const btn = document.querySelector('.tab-btn[data-tab="' + merkTabName + '"]');
+        if (btn) btn.click();
+      }
+    }
   });
 
   stAdd('Menuenavigation: Kacheln, Regler anwaehlen, Kontrollkaestchen, zurueck', () => {

@@ -141,7 +141,16 @@
     const tiles = [...host.querySelectorAll('.misc-tile')].filter(menuNavSichtbar);
     if (tiles.length) return tiles.map((el) => ({ el, kind: 'tile', control: el }));
 
-    const optRows = [...host.querySelectorAll('.opt-row')].filter(menuNavSichtbar);
+    // .mw-row gehoert dazu: die Motorwerkstatt sitzt als eigenes Raster am Ende der
+    // Tonseite (.mw-grid, zwei Spalten ab 720px), zwischen lauter .opt-row-Zeilen. Ohne
+    // sie hier mit aufzunehmen, waere jede Motorwerkstatt-Regelung fuer diese Funktion
+    // unsichtbar, sobald auch nur eine einzige .opt-row auf derselben Unterseite steht -
+    // genau das war "Motorwerkstatt so umsortieren, dass ich sie auch mit d-pad bedienen
+    // kann": sie liess sich bislang gar nicht erreichen, nicht nur schlecht sortiert.
+    // querySelectorAll haelt bei einer Selektorliste die DOKUMENT-Reihenfolge, nicht die
+    // Reihenfolge der Selektoren - .opt-row- und .mw-row-Zeilen bleiben also gemischt in
+    // ihrer Bildschirmreihenfolge.
+    const optRows = [...host.querySelectorAll('.opt-row, .mw-row')].filter(menuNavSichtbar);
     const back = host.querySelector('.subpage-back');
     const rows = [];
     if (back && menuNavSichtbar(back)) rows.push({ el: back, kind: 'button', control: back });

@@ -11852,6 +11852,40 @@
     return { ok: fehler.length === 0, mass: fehler.length ? fehler.join('; ') : teile.join(' | ') };
   });
 
+  // ---- Motorwerkstatt per D-Pad erreichbar ----
+  //
+  // BESTELLT: "Motorwerkstatt so umsortieren, dass ich sie auch mit d-pad bedienen
+  // kann." Der Befund beim Bauen: sie liess sich ueberhaupt nicht erreichen, nicht nur
+  // schlecht sortiert - menuNavRows() sah auf der Tonseite lauter .opt-row-Zeilen UND
+  // kehrte deshalb sofort zurueck, bevor die .mw-row-Zeilen der Werkstatt (ein anderes
+  // Raster, ganz unten auf derselben Unterseite) ueberhaupt betrachtet wurden. Jetzt
+  // zaehlt .mw-row mit, in derselben Abfrage wie .opt-row.
+  stAdd('Menuenavigation: Motorwerkstatt-Regler sind erreichbar', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.menuNavRowsLesen) {
+      return { skip: true, mass: 'menuNavRowsLesen nicht vorhanden' };
+    }
+    const merkTab = document.querySelector('.tab-btn.active');
+    const merkTabName = merkTab ? merkTab.dataset.tab : null;
+    try {
+      document.querySelector('.tab-btn[data-tab="options"]').click();
+      document.querySelectorAll('#tab-options .subpage').forEach((p) => p.classList.remove('on'));
+      OMEGA_TEST.menuNavAktiv();
+      document.querySelector('button.misc-tile.subpage-open[data-sub="opt-sound"]').click();
+      const rows = OMEGA_TEST.menuNavRowsLesen();
+      const mwZeile = document.getElementById('mw-cyl')
+        ? document.getElementById('mw-cyl').closest('.mw-row') : null;
+      const zylIdx = rows.findIndex((r) => r.text.indexOf('Zylinder') >= 0);
+      return { ok: !!mwZeile && zylIdx >= 0,
+               mass: rows.length + ' Zeilen insgesamt, "Zylinder" bei Index ' + zylIdx };
+    } finally {
+      document.querySelectorAll('#tab-options .subpage').forEach((p) => p.classList.remove('on'));
+      if (merkTabName) {
+        const btn = document.querySelector('.tab-btn[data-tab="' + merkTabName + '"]');
+        if (btn) btn.click();
+      }
+    }
+  });
+
   stAdd('Menuenavigation: Kacheln, Regler anwaehlen, Kontrollkaestchen, zurueck', () => {
     if (!window.OMEGA_TEST || !OMEGA_TEST.menuNavRowsLesen) {
       return { skip: true, mass: 'menuNavRowsLesen nicht vorhanden' };
