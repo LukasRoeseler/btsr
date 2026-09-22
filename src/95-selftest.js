@@ -13548,6 +13548,44 @@
     }
   });
 
+  // ---- Simulation aus: Zustand zurueck aufs Ideal ----
+  //
+  // BESTELLT: "Wenn ich Schaden, Reifen, etc. ausstelle, soll der Zustand auf das Ideal
+  // zurueckgesetzt werden. Sonst passiert es, dass das Auto 'kaputt' ist, ich Schaden
+  // ausstelle, und es so bleibt, bis ich Pitstop mache." Reifen hatten das schon
+  // (reifenReglerAnwenden ruft resetTyres() bei v===0) - dieser Test prueft die zwei neu
+  // hinzugekommenen Faelle, Schaden und Tank, ueber genau die Kaestchen/Regler, die der
+  // Nutzer auch bedient.
+  stAdd('Simulation aus setzt Schaden/Tank aufs Ideal zurueck', () => {
+    const gemerkt = { dmg: damage, fuel: fuel, an: crashDetectionEnabled,
+                      drain: fuelDrainPerSec };
+    try {
+      crashDetectionEnabled = true;
+      damage = 47;
+      $('setting-crash-damage').checked = false;
+      $('setting-crash-damage').dispatchEvent(new Event('change'));
+      const dmgNachAus = damage;
+
+      fuelDrainPerSec = 1.5;
+      fuel = 63;
+      $('setting-fuel-drain').value = '0';
+      $('setting-fuel-drain').dispatchEvent(new Event('input'));
+      const fuelNachAus = fuel;
+
+      return { ok: dmgNachAus === 0 && fuelNachAus === 100,
+               mass: 'Schaden nach Aus ' + dmgNachAus + ' %, Tank nach Aus '
+                     + fuelNachAus + ' %' };
+    } finally {
+      damage = gemerkt.dmg; fuel = gemerkt.fuel;
+      crashDetectionEnabled = gemerkt.an; fuelDrainPerSec = gemerkt.drain;
+      $('setting-crash-damage').checked = gemerkt.an;
+      $('setting-fuel-drain').value = String(gemerkt.drain);
+      $('setting-crash-count').disabled = !gemerkt.an;
+      $('setting-fuel-drain-val').textContent = gemerkt.drain.toFixed(1);
+      updateDamageFuelUI();
+    }
+  });
+
   // ---- Die Bremsbalance wirkt, und in welcher Richtung ----
   //
   // Ihr Vorgaenger, ein Bonus auf maxSteerLimit, wurde im 1. Gang (gearFrac = 0, also

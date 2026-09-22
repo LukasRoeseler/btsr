@@ -1195,6 +1195,11 @@
   $('setting-fuel-drain').addEventListener('input', (e) => {
     fuelDrainPerSec = parseFloat(e.target.value);
     $('setting-fuel-drain-val').textContent = fuelDrainPerSec.toFixed(1);
+    // BESTELLT: "Wenn ich Schaden, Reifen, etc. ausstelle, soll der Zustand auf das Ideal
+    // zurueckgesetzt werden." Sonst blieb ein leergefahrener Tank leer, obwohl die
+    // Simulation aus ist, bis zum naechsten Boxenstopp - ein abgeschaltetes Modell soll
+    // keine Spuren hinterlassen.
+    if (fuelDrainPerSec === 0) fuel = 100;
   });
 
   // Der Regler laeuft ueber den INDEX dieser Liste, nicht ueber den Wert: ein
@@ -1225,6 +1230,10 @@
     crashDetectionEnabled = e.target.checked;
     // Der Zaehler "Crashs bis Schadensbalken voll" ist ohne Schadensmodell bedeutungslos.
     $('setting-crash-count').disabled = !e.target.checked;
+    // BESTELLT: "Wenn ich Schaden, Reifen, etc. ausstelle, soll der Zustand auf das Ideal
+    // zurueckgesetzt werden." Sonst blieb ein kaputtes Auto kaputt, obwohl das Schadensmodell
+    // aus ist, bis zum naechsten Boxenstopp.
+    if (!e.target.checked) damage = 0;
     log('Schadensmodell ' + (e.target.checked ? 'an' : 'aus') + '.', 'info');
   });
 
