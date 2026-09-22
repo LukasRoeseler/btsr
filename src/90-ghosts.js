@@ -2003,13 +2003,15 @@
     // der Streckenscan von Hand macht, nur nebenbei. Sobald eine Runde geschlossen ist, wird
     // sie als Strecke uebernommen, wenn noch keine da ist, und ab dann hat der Ghost seinen
     // Vorausblick und bremst vor Kurven.
-    learn: true,
-    // Standard AUS. Anders herum war es die haeufigste Ursache fuer "ich starte das Rennen
-    // und nichts passiert": ohne gedrucktes Muster meldet das Auto nie einen Code, und dann
-    // stand der Ghost. Vorsicht, die nichts faehrt, ist keine Vorsicht. Wer gedruckte
-    // Strecke liegen hat, kann es einschalten - dann haelt sich das Auto selbst auf der Bahn
-    // und faehrt nur dort, wo es weiss, wo es ist.
-    needCode: false,
+    // BESTELLT: Standard jetzt AUS (vorher AN) - wer needCode nicht eigens einschaltet (siehe
+    // direkt darunter), hat ohnehin keinen Streckencode zum Lernen, und automatisches Lernen
+    // ohne dessen Wissen ueberraschte mit einer Strecke, die niemand angefordert hatte.
+    learn: false,
+    // BESTELLT: Standard jetzt AN (vorher AUS). Die fruehere Begruendung fuer AUS -
+    // "ich starte das Rennen und nichts passiert", weil ein Ghost ohne Streckencode stand -
+    // gilt unveraendert; die Abwaegung fiel jetzt andersherum aus. Wer KEINE gedruckte
+    // Strecke hat, muss es jetzt selbst ausschalten.
+    needCode: true,
     // BESTELLT (Phase 12, Punkt 8): "Recovery-Funktion... aber mach einen Schalter, wo
     // ich es abschalten kann." Standard AUS, wie wuerzeVerteidigen/wuerzeBlau: ein
     // missglueckter Rueckweg waere schlimmer als der bisherige, sichere Halt (siehe die

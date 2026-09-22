@@ -3125,7 +3125,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.7.32</span></span>
+        <span class="foot-ver">v<span id="app-version">0.7.33</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -3569,7 +3569,7 @@
              wo das Auge ohnehin zuerst hinsieht, und nicht nur im Wort daneben. -->
         <div class="schirm-kopf pit-kopf">
           <span class="pit-zeichen" id="pit-zeichen" aria-hidden="true">P</span>
-          <span class="pit-kopf-text"><b>Box</b><span class="wip-tag">WIP</span>
+          <span class="pit-kopf-text"><b>Box</b>
             <span id="pit-kopf-lage" data-i18n-skip>aus</span></span>
           <span style="margin-left:auto" id="pit-kopf-zeit" data-i18n-skip></span></div>
         <div class="pit-row" id="pit-row-go">
@@ -3624,7 +3624,7 @@
       </div>
 
       <div class="gt3-schirm" id="race-ovscreen">
-        <div class="schirm-kopf"><b>Rennen</b><span class="wip-tag">WIP</span><span id="ov-kopf-lage" data-i18n-skip>&ndash;</span>
+        <div class="schirm-kopf"><b>Rennen</b><span id="ov-kopf-lage" data-i18n-skip>&ndash;</span>
           <span style="margin-left:auto" id="ov-kopf-runde" data-i18n-skip></span></div>
         <div class="ov-tab" id="ov-tab"></div>
         <!-- DIE STRECKE NEBEN DER TABELLE, nicht darunter: das Cockpit ist breit und flach,
@@ -3972,6 +3972,8 @@
           <span class="muted">F&uuml;rs Teilen seines Wissens zu den Bluetooth-Protokollen.</span></li>
         <li><span class="dank-wer" data-i18n-skip>Carrera Hybrid Players Discord</span>
           <span class="muted">Den Testern dort, f&uuml;r R&uuml;ckmeldungen aus echten Rennen, die keine Simulation liefert.</span></li>
+        <li><span class="dank-wer" data-i18n-skip>gnen54</span>
+          <span class="muted">F&uuml;r das Finden und Berichten zahlreicher Bugs.</span></li>
       </ul>
 
       <h3 style="font-size:14px; margin:18px 0 6px 0">Woher die Kl&auml;nge kommen</h3>
@@ -6629,7 +6631,7 @@
         <label class="small" style="flex:1 1 200px">Host-Adresse
           <input type="text" id="mp-host" placeholder="http://192.168.1.50:8080"></label>
         <label class="small" style="flex:1 1 140px">Mein Name
-          <input type="text" id="mp-name" maxlength="40" placeholder="z. B. Lukas"></label>
+          <input type="text" id="mp-name" maxlength="40" placeholder="z. B. Luuke"></label>
         <button class="primary" id="mp-join">Mitmachen</button>
         <button id="mp-leave" class="warn">Verlassen</button>
       </div>
@@ -8313,11 +8315,11 @@
       <div class="opt-row"><div class="opt-label">Strecke beim Fahren lernen
           <small>Setzt das Layout aus den gemeldeten Kacheln zusammen und &uuml;bernimmt es
           nach der ersten geschlossenen Runde, nur wenn noch keine Strecke liegt.</small></div>
-        <label class="tgl"><input type="checkbox" id="ghost-learn" checked><span></span></label></div>
+        <label class="tgl"><input type="checkbox" id="ghost-learn"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Ghost braucht Streckencode
           <small>Aus: f&auml;hrt auch ohne gedruckte Strecke. An: nur mit gelesenem
           Muster.</small></div>
-        <label class="tgl"><input type="checkbox" id="ghost-needcode"><span></span></label></div>
+        <label class="tgl"><input type="checkbox" id="ghost-needcode" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Ghost: Feld zusammenhalten<small>Gestaffelt &uuml;ber den ganzen Platz: der Erste f&auml;hrt um den Abschlag langsamer, der Letzte um denselben Betrag schneller, die Feldmitte unver&auml;ndert. Damit bleibt das mittlere Tempo gleich &ndash; w&uuml;rde nur gebremst, w&auml;re dies in Wahrheit ein Schalter, der alle langsamer macht. Vorher wirkte es nur auf den Erstplatzierten, und dann waren die ersten beiden beieinander und der Rest blieb, wo er war. Wirkt auch ohne Rennen, aber erst ab zwei Ghosts: mit einem einzigen ist dieser eine gleichzeitig Erster und Letzter.</small></div>
         <label class="tgl"><input type="checkbox" id="ghost-leader" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Ghost: St&auml;rke der Staffel
@@ -8465,7 +8467,7 @@
       <h2>2&nbsp;Spieler</h2>
       <div class="opt-head">Der Modus</div>
       <div class="opt-row"><div class="opt-label">2-Spieler-Modus<span
-          class="wip-tag">experimentell</span><small>Zwei Autos, zwei Controller, ein
+          class="wip-tag">WIP</span><small>Zwei Autos, zwei Controller, ein
           Rennen auf derselben Strecke. Angeschaltet bekommt jede Zeile in der Garage einen
           vierten Knopf &bdquo;Spieler&nbsp;2&ldquo;, und im Cockpit kommt ein vierter Schirm
           &bdquo;Beide&ldquo; dazu, der Tempo, Drehzahl, Tank, Zustand, Reifen, Bremse und
@@ -10694,6 +10696,8 @@
       "For sharing his knowledge of the Bluetooth protocols.",
     "Den Testern dort, für Rückmeldungen aus echten Rennen, die keine Simulation liefert.":
       "To the testers there, for reports from real races that no simulation provides.",
+    "Für das Finden und Berichten zahlreicher Bugs.":
+      "For finding and reporting numerous bugs.",
     "Woher die Klänge kommen":
       "Where the sounds come from",
     "Der allergrößte Teil der Klänge ist gerechnet und nicht aufgenommen: alle fünfundzwanzig Motoren mit ihren 132 Schleifen, dazu Bremsen- und Reifenquietschen, die Crash-Varianten, Schlagschrauber, Tankgeräusch, Karosseriereparatur und der Motorstart. Dort wird nichts abgespielt, sondern aus Zylinderzahl, Zündfolge und Krümmerlänge erzeugt.":
@@ -31215,13 +31219,15 @@
     // der Streckenscan von Hand macht, nur nebenbei. Sobald eine Runde geschlossen ist, wird
     // sie als Strecke uebernommen, wenn noch keine da ist, und ab dann hat der Ghost seinen
     // Vorausblick und bremst vor Kurven.
-    learn: true,
-    // Standard AUS. Anders herum war es die haeufigste Ursache fuer "ich starte das Rennen
-    // und nichts passiert": ohne gedrucktes Muster meldet das Auto nie einen Code, und dann
-    // stand der Ghost. Vorsicht, die nichts faehrt, ist keine Vorsicht. Wer gedruckte
-    // Strecke liegen hat, kann es einschalten - dann haelt sich das Auto selbst auf der Bahn
-    // und faehrt nur dort, wo es weiss, wo es ist.
-    needCode: false,
+    // BESTELLT: Standard jetzt AUS (vorher AN) - wer needCode nicht eigens einschaltet (siehe
+    // direkt darunter), hat ohnehin keinen Streckencode zum Lernen, und automatisches Lernen
+    // ohne dessen Wissen ueberraschte mit einer Strecke, die niemand angefordert hatte.
+    learn: false,
+    // BESTELLT: Standard jetzt AN (vorher AUS). Die fruehere Begruendung fuer AUS -
+    // "ich starte das Rennen und nichts passiert", weil ein Ghost ohne Streckencode stand -
+    // gilt unveraendert; die Abwaegung fiel jetzt andersherum aus. Wer KEINE gedruckte
+    // Strecke hat, muss es jetzt selbst ausschalten.
+    needCode: true,
     // BESTELLT (Phase 12, Punkt 8): "Recovery-Funktion... aber mach einen Schalter, wo
     // ich es abschalten kann." Standard AUS, wie wuerzeVerteidigen/wuerzeBlau: ein
     // missglueckter Rueckweg waere schlimmer als der bisherige, sichere Halt (siehe die

@@ -1711,6 +1711,8 @@
       "For sharing his knowledge of the Bluetooth protocols.",
     "Den Testern dort, für Rückmeldungen aus echten Rennen, die keine Simulation liefert.":
       "To the testers there, for reports from real races that no simulation provides.",
+    "Für das Finden und Berichten zahlreicher Bugs.":
+      "For finding and reporting numerous bugs.",
     "Woher die Klänge kommen":
       "Where the sounds come from",
     "Der allergrößte Teil der Klänge ist gerechnet und nicht aufgenommen: alle fünfundzwanzig Motoren mit ihren 132 Schleifen, dazu Bremsen- und Reifenquietschen, die Crash-Varianten, Schlagschrauber, Tankgeräusch, Karosseriereparatur und der Motorstart. Dort wird nichts abgespielt, sondern aus Zylinderzahl, Zündfolge und Krümmerlänge erzeugt.":
