@@ -2061,6 +2061,10 @@
     "Tankmenge weiter": "Next fuel amount",
     "L3 (linken Stick drücken)": "L3 (press left stick)",
     "Erklärung anzeigen": "Show explanation",
+    "Maus-Steuerung": "Mouse control",
+    "Aufnahme-Modus": "Recording mode",
+    "Eine echte Fahrt aufzeichnen, exakt nachfahren, und daraus eine Streckenzeichnung ableiten.": "Record a real drive, replay it exactly, and derive a track drawing from it.",
+    "Fahr die Strecke einmal manuell (Tab \"Fahren\", Joystick/Gas oder Pfeiltasten). Während der Aufnahme werden Lenk- und Gaswerte mit Zeitstempel mitgeschrieben. Bei der Wiedergabe sendet die App exakt dieselbe Sequenz erneut an die Ziel-Characteristic - egal ob dabei eine echte CH-Bahn oder nur ein Ausdruck unter dem Auto liegt.": "Drive the track once by hand (the \"Drive\" tab, joystick/throttle or arrow keys). During recording, steering and throttle values are written down with timestamps. On replay the app sends exactly the same sequence again to the target characteristic - whether a real CH track or just a printout is under the car.",
   };
 
   // ============================================================================

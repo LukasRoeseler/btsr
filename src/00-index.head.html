@@ -3119,6 +3119,7 @@
   <button class="tab-btn" data-tab="selftest" data-parent="misc" hidden style="display:none">Selbsttest</button>
   <button class="tab-btn" data-tab="probe" data-parent="misc" hidden style="display:none">Code-Sonde</button>
   <button class="tab-btn" data-tab="numtrain" data-parent="misc" hidden style="display:none">Zahlensysteme</button>
+  <button class="tab-btn" data-tab="record" data-parent="misc" hidden style="display:none">Aufnahme-Modus</button>
   </nav>
   </div>
 </header>
@@ -3153,7 +3154,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.7.29</span></span>
+        <span class="foot-ver">v<span id="app-version">0.7.30</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -4079,6 +4080,16 @@
           <span>Bin&auml;r- und Hex-Trainer: eine vierstellige Zahl, du &uuml;bersetzt
             sie in Dezimal.</span>
         </button>
+        <button class="misc-tile goto-tab" data-tab="record">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="24" cy="24" r="17" stroke-width="2.8"/>
+            <circle cx="24" cy="24" r="8" fill="var(--bad)" stroke="none"/>
+          </svg>
+          <b>Aufnahme-Modus <span class="wip-tag">WIP</span></b>
+          <span>Eine echte Fahrt aufzeichnen, exakt nachfahren, und daraus eine
+            Streckenzeichnung ableiten.</span>
+        </button>
       </div>
     </div>
   </section>
@@ -4123,6 +4134,66 @@
         <p class="numtrain-feedback" id="nt-hex-feedback">&nbsp;</p>
         <p class="numtrain-score" id="nt-hex-score">Noch keine Antwort.</p>
       </div>
+    </div>
+  </section>
+
+  <section class="tabpage" id="tab-record">
+    <button class="misc-back goto-tab" data-tab="misc">&larr; Entwicklertools</button>
+    <div class="card">
+      <h2>Aufnahme-Modus <span class="wip-tag">WIP</span></h2>
+      <p class="muted">
+        Fahr die Strecke einmal manuell (Tab "Fahren", Joystick/Gas oder Pfeiltasten). Während der Aufnahme
+        werden Lenk- und Gaswerte mit Zeitstempel mitgeschrieben. Bei der Wiedergabe sendet die App exakt
+        dieselbe Sequenz erneut an die Ziel-Characteristic - egal ob dabei eine echte CH-Bahn oder nur ein
+        Ausdruck unter dem Auto liegt.
+      </p>
+      <div class="row">
+        <button class="primary" id="btn-record">Aufnahme starten</button>
+        <button id="btn-play" disabled>Wiedergabe</button>
+        <button id="btn-stop-play" disabled>Stop</button>
+        <label style="display:flex;align-items:center;gap:6px" class="muted">
+          <input type="checkbox" id="chk-loop"> Endlosschleife
+        </label>
+        <span class="muted" id="record-status">bereit</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Gespeicherte Fahrten</h2>
+      <div class="row">
+        <input type="text" id="macro-name" placeholder="Name der Aufnahme">
+        <button id="btn-save-macro">Aktuelle Aufnahme speichern</button>
+        <select id="macro-list"><option value="">-- gespeicherte Fahrten --</option></select>
+        <button id="btn-load-macro">Laden</button>
+        <button id="btn-delete-macro">Löschen</button>
+        <button id="btn-export-macro">Export (JSON)</button>
+        <input type="file" id="macro-import" accept="application/json" style="display:none">
+        <button id="btn-import-macro">Import (JSON)</button>
+      </div>
+      <p class="muted" style="margin-top:8px">Aufnahmen werden lokal im Browser gespeichert (localStorage).</p>
+    </div>
+
+    <div class="card">
+      <h2>Wiedergabe-Log</h2>
+      <div id="play-log" class="muted" style="font-family:monospace;font-size:12px;min-height:20px">noch keine Wiedergabe.</div>
+    </div>
+
+    <div class="card">
+      <h2>Strecke aus der Aufnahme lernen <span class="wip-tag">WIP</span></h2>
+      <p class="muted">
+        Fährst du mehrere Runden in einer Aufnahme, kann die App daraus das
+        Streckenlayout ableiten &ndash; derselbe Weg, den &bdquo;Strecke beim Fahren
+        lernen&ldquo; sonst live geht, nur diesmal aus der Wiedergabe statt aus der
+        eigenen Hand. Braucht ein verbundenes Auto in der Rolle &bdquo;Steuern&ldquo;:
+        die Wiedergabe f&auml;hrt wirklich, das Auto meldet seine echten Streckencodes,
+        und daraus entsteht die Karte unten. Ohne geschlossene Runde in der Aufnahme
+        bleibt sie leer.
+      </p>
+      <div class="row">
+        <button id="btn-macro-learn-track" disabled>Strecke aus dieser Aufnahme lernen</button>
+        <span class="muted" id="macro-learn-status"></span>
+      </div>
+      <div id="macro-learn-karte" class="tp-karte-halter" style="margin-top:10px"></div>
     </div>
   </section>
 
@@ -5856,7 +5927,7 @@
     <nav class="subtabs">
       <button class="subtab-btn active" data-subtab="explore">BLE-Explorer</button>
       <button class="subtab-btn" data-subtab="calib">Kalibrierung</button>
-      <button class="subtab-btn" data-subtab="macros">Makros</button>
+      <button class="subtab-btn" data-subtab="macros">Maus-Steuerung</button>
       <button class="subtab-btn" data-subtab="targets">Targets lesen</button>
     </nav>
 
@@ -6226,61 +6297,6 @@
       </div>
     </div>
 
-    <div class="card">
-      <h2>Autonomes Fahren: Aufnahme &amp; Wiedergabe</h2>
-      <p class="muted">
-        Fahr die Strecke einmal manuell (Tab "Fahren", Joystick/Gas oder Pfeiltasten). Während der Aufnahme
-        werden Lenk- und Gaswerte mit Zeitstempel mitgeschrieben. Bei der Wiedergabe sendet die App exakt
-        dieselbe Sequenz erneut an die Ziel-Characteristic.
-      </p>
-      <div class="row">
-        <button class="primary" id="btn-record">Aufnahme starten</button>
-        <button id="btn-play" disabled>Wiedergabe</button>
-        <button id="btn-stop-play" disabled>Stop</button>
-        <label style="display:flex;align-items:center;gap:6px" class="muted">
-          <input type="checkbox" id="chk-loop"> Endlosschleife
-        </label>
-        <span class="muted" id="record-status">bereit</span>
-      </div>
-    </div>
-
-    <div class="card">
-      <h2>Gespeicherte Fahrten</h2>
-      <div class="row">
-        <input type="text" id="macro-name" placeholder="Name der Aufnahme">
-        <button id="btn-save-macro">Aktuelle Aufnahme speichern</button>
-        <select id="macro-list"><option value="">-- gespeicherte Fahrten --</option></select>
-        <button id="btn-load-macro">Laden</button>
-        <button id="btn-delete-macro">Löschen</button>
-        <button id="btn-export-macro">Export (JSON)</button>
-        <input type="file" id="macro-import" accept="application/json" style="display:none">
-        <button id="btn-import-macro">Import (JSON)</button>
-      </div>
-      <p class="muted" style="margin-top:8px">Aufnahmen werden lokal im Browser gespeichert (localStorage).</p>
-    </div>
-
-    <div class="card">
-      <h2>Wiedergabe-Log</h2>
-      <div id="play-log" class="muted" style="font-family:monospace;font-size:12px;min-height:20px">noch keine Wiedergabe.</div>
-    </div>
-
-    <div class="card">
-      <h2>Strecke aus der Aufnahme lernen <span class="wip-tag">WIP</span></h2>
-      <p class="muted">
-        Fährst du mehrere Runden in einer Aufnahme, kann die App daraus das
-        Streckenlayout ableiten &ndash; derselbe Weg, den &bdquo;Strecke beim Fahren
-        lernen&ldquo; sonst live geht, nur diesmal aus der Wiedergabe statt aus der
-        eigenen Hand. Braucht ein verbundenes Auto in der Rolle &bdquo;Steuern&ldquo;:
-        die Wiedergabe f&auml;hrt wirklich, das Auto meldet seine echten Streckencodes,
-        und daraus entsteht die Karte unten. Ohne geschlossene Runde in der Aufnahme
-        bleibt sie leer.
-      </p>
-      <div class="row">
-        <button id="btn-macro-learn-track" disabled>Strecke aus dieser Aufnahme lernen</button>
-        <span class="muted" id="macro-learn-status"></span>
-      </div>
-      <div id="macro-learn-karte" class="tp-karte-halter" style="margin-top:10px"></div>
-    </div>
     </div>
 
     <div class="subtabpage" id="subtab-targets">
