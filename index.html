@@ -295,9 +295,17 @@
     vertical-align: top; color: var(--accent, #5aa9ff); }
   /* Controller-Grafik. Die Farben kommen aus dem Vorbild-SVG, sind aber auf die
      Projektvariablen gezogen, damit sie bei einer Themenaenderung mitgehen. */
+  /* BESTELLT: "von der Breite und Hoehe her aufs Handy passen." Die feste min-width von
+     620px erzwang auf jedem Schirm unter 620px waagrechten Bildlauf - genau das war der
+     Fehler, seit die Grafik in die Garage gewandert ist und nicht mehr im engen Cockpit
+     um Platz konkurriert. Ohne min-width skaliert das SVG ueber sein viewBox frei nach
+     unten: Breite bestimmt die Groesse, height:auto haelt das Seitenverhaeltnis, und damit
+     passt auch die Hoehe von selbst - Text und Symbole schrumpfen zusammen mit dem Rahmen,
+     bleiben also im Verhaeltnis zueinander lesbar. */
   .pad-wrap { overflow-x: auto; margin-top: 10px; }
-  .pad-svg { width: 100%; min-width: 620px; height: auto; display: block;
-    background: #0f141c; border: 1px solid var(--border); border-radius: 10px; }
+  .pad-svg { width: 100%; max-width: 620px; height: auto; display: block;
+    margin: 0 auto; background: #0f141c; border: 1px solid var(--border);
+    border-radius: 10px; }
   .pad-shell { fill: #181f2a; stroke: #3b485d; stroke-width: 2.5; }
   .pad-fill1 { fill: #222c3d; stroke: #485873; stroke-width: 1.5; }
   .pad-fill2 { fill: #1b2432; stroke: #485873; stroke-width: 1.5; }
@@ -3125,7 +3133,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.7.34</span></span>
+        <span class="foot-ver">v<span id="app-version">0.7.35</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -3775,157 +3783,6 @@
       <div class="gt3-banner" id="hud-toast-wrap"><span id="hud-toast"></span></div>
     </div>
 
-    <!-- CONTROLLER-BELEGUNG. Sie steht hier und nicht in den Optionen, weil man sie beim
-         FAHREN braucht: wer wissen will, was L1 tut, will nicht den Tab wechseln.
-         Zugewiesen wird weiter in den Optionen; diese Grafik zeigt nur.
-
-         Die Beschriftungen sind LEER im Markup und werden von padDiagramRender() gefuellt.
-         Das ist Absicht: eine feste Beschriftung im SVG waere eine zweite Wahrheit neben
-         den Bindungen, und die zwei laufen beim ersten Umbelegen auseinander. -->
-    <div class="card">
-      <h2>Controller-Belegung</h2>
-      <p class="muted" style="font-size:11.5px">
-        Was gerade auf welcher Taste liegt. Zuweisen l&auml;sst sich das in den Optionen
-        unter &bdquo;Gamepad&ldquo;; die Grafik zieht sofort nach.
-      </p>
-      <p class="muted" style="font-size:11.5px">
-        Wei&szlig; ist zuweisbar, gedecktes Grau ist festverdrahtet und nicht zuweisbar
-        (das Steuerkreuz), kursives Grau hei&szlig;t &bdquo;nicht belegt&ldquo;. Touchpad
-        und PS-Taste bleiben ab Werk frei, weil das System beide selbst abgreift: ein
-        Tippen aufs Touchpad l&ouml;st zugleich einen Klick in der Seite aus. Im
-        Streckeneditor und auf dem Boxenschirm bedient das Steuerkreuz erst diese, danach
-        gilt wieder das Gezeigte. Dasselbe gilt f&uuml;r die Flaggentaste: auf dem
-        Boxenschirm w&auml;hlt sie dort aus, und die gelbe Flagge gibt es nach dem
-        Zur&uuml;ckbl&auml;ttern.
-      </p>
-      <div class="pad-wrap">
-      <svg viewBox="0 0 1000 660" class="pad-svg" role="img"
-           aria-label="Controller mit der aktuellen Tastenbelegung">
-        <g class="pad-body" transform="translate(0, 20)">
-          <!-- L2 und R2 liegen HINTEN, also gezeichnet vor L1/R1 und etwas hoeher. -->
-          <path d="M 318 148 C 312 108, 352 103, 382 113 L 386 137 Z" class="pad-fill2"/>
-          <path d="M 682 148 C 688 108, 648 103, 618 113 L 614 137 Z" class="pad-fill2"/>
-          <path d="M 320 162 C 316 138, 354 133, 384 141 L 386 158 Z" class="pad-fill1"/>
-          <path d="M 680 162 C 684 138, 646 133, 616 141 L 614 158 Z" class="pad-fill1"/>
-          <path d="M 380 155 L 620 155 C 655 155, 680 170, 710 200
-                   C 745 235, 785 300, 755 450 C 740 500, 685 495, 650 455
-                   C 620 420, 595 385, 570 385 C 545 385, 530 405, 500 405
-                   C 470 405, 455 385, 430 385 C 405 385, 380 420, 350 455
-                   C 315 495, 260 500, 245 450 C 215 300, 255 235, 290 200
-                   C 320 170, 345 155, 380 155 Z" class="pad-shell"/>
-          <path d="M 385 160 L 615 160 C 622 160, 628 165, 625 175 L 610 260
-                   C 608 268, 600 272, 590 272 L 410 272 C 400 272, 392 268, 390 260
-                   L 375 175 C 372 165, 378 160, 385 160 Z" class="pad-fill1"/>
-          <rect x="350" y="180" width="16" height="28" rx="5"
-                transform="rotate(-12 358 194)" class="pad-btn"/>
-          <rect x="634" y="180" width="16" height="28" rx="5"
-                transform="rotate(12 642 194)" class="pad-btn"/>
-          <g transform="translate(320, 275)">
-            <circle cx="0" cy="0" r="48" class="pad-fill1" opacity="0.4"/>
-            <path d="M -11 -42 L 11 -42 C 14 -42, 15 -39, 15 -36 L 15 -15 L -15 -15
-                     L -15 -36 C -15 -39, -12 -42, -11 -42 Z" class="pad-btn"/>
-            <path d="M -11 42 L 11 42 C 14 42, 15 39, 15 36 L 15 15 L -15 15
-                     L -15 36 C -15 39, -12 42, -11 42 Z" class="pad-btn"/>
-            <path d="M -42 -11 L -42 11 C -42 14, -39 15, -36 15 L -15 15 L -15 -15
-                     L -36 -15 C -39 -15, -42 -12, -42 -11 Z" class="pad-btn"/>
-            <path d="M 42 -11 L 42 11 C 42 14, 39 15, 36 15 L 15 15 L 15 -15 L 36 -15
-                     C 39 -15, 42 -12, 42 -11 Z" class="pad-btn"/>
-            <circle cx="0" cy="0" r="12" class="pad-hole"/>
-          </g>
-          <g transform="translate(680, 275)">
-            <circle cx="0" cy="0" r="48" class="pad-fill1" opacity="0.4"/>
-            <circle cx="0" cy="-30" r="14" class="pad-btn"/>
-            <polygon points="0,-36 -6,-25 6,-25" class="pad-mark" stroke="#00ffcc"/>
-            <circle cx="-30" cy="0" r="14" class="pad-btn"/>
-            <rect x="-35" y="-5" width="10" height="10" class="pad-mark" stroke="#ff77c6"/>
-            <circle cx="30" cy="0" r="14" class="pad-btn"/>
-            <circle cx="30" cy="0" r="5" class="pad-mark" stroke="#ff5555"/>
-            <circle cx="0" cy="30" r="14" class="pad-btn"/>
-            <path d="M -4 26 L 4 34 M 4 26 L -4 34" class="pad-mark" stroke="#7799ff"/>
-          </g>
-          <g transform="translate(425, 365)">
-            <circle cx="0" cy="0" r="42" class="pad-fill1"/>
-            <circle cx="0" cy="0" r="32" class="pad-btn"/>
-            <circle cx="0" cy="0" r="24" fill="none" class="pad-ring"/>
-          </g>
-          <g transform="translate(575, 365)">
-            <circle cx="0" cy="0" r="42" class="pad-fill1"/>
-            <circle cx="0" cy="0" r="32" class="pad-btn"/>
-            <circle cx="0" cy="0" r="24" fill="none" class="pad-ring"/>
-          </g>
-          <g transform="translate(500, 355)">
-            <circle cx="0" cy="0" r="15" class="pad-btn"/>
-            <path d="M -5 2 C -5 -3, 0 -5, 0 -5 C 0 -5, 4 -3, 3 0 C 2 3, -3 3, -3 6
-                     C -3 8, 2 8, 4 6" fill="none" class="pad-mark" stroke="#8a99ad"/>
-          </g>
-        </g>
-        <g>
-      <polyline points="348,126 255,126 255,62" class="pad-line"/>
-      <circle cx="348" cy="126" r="3.5" class="pad-dot"/>
-      <text x="225" y="66" text-anchor="end" class="pad-key">L2 &middot; LT</text>
-      <text x="225" y="83" text-anchor="end" class="pad-act" id="pad-a-l2">&ndash;</text>
-      <polyline points="352,156 255,156 255,122" class="pad-line"/>
-      <circle cx="352" cy="156" r="3.5" class="pad-dot"/>
-      <text x="225" y="126" text-anchor="end" class="pad-key">L1 &middot; LB</text>
-      <text x="225" y="143" text-anchor="end" class="pad-act" id="pad-a-l1">&ndash;</text>
-      <polyline points="356,212 255,212 255,182" class="pad-line"/>
-      <circle cx="356" cy="212" r="3.5" class="pad-dot"/>
-      <text x="225" y="186" text-anchor="end" class="pad-key">Select &middot; Share</text>
-      <text x="225" y="203" text-anchor="end" class="pad-act" id="pad-a-select">&ndash;</text>
-      <polyline points="425,385 255,385 255,426" class="pad-line"/>
-      <circle cx="425" cy="385" r="3.5" class="pad-dot"/>
-      <text x="225" y="430" text-anchor="end" class="pad-key">Linker Stick</text>
-      <text x="225" y="447" text-anchor="end" class="pad-act" id="pad-a-lstick">&ndash;</text>
-      <polyline points="425,408 255,408 255,474" class="pad-line"/>
-      <circle cx="425" cy="408" r="3.5" class="pad-dot"/>
-      <text x="225" y="478" text-anchor="end" class="pad-key">L3 &middot; Stick dr&uuml;cken</text>
-      <text x="225" y="495" text-anchor="end" class="pad-act" id="pad-a-l3">&ndash;</text>
-      <polyline points="652,126 745,126 745,62" class="pad-line"/>
-      <circle cx="652" cy="126" r="3.5" class="pad-dot"/>
-      <text x="775" y="66" text-anchor="start" class="pad-key">R2 &middot; RT</text>
-      <text x="775" y="83" text-anchor="start" class="pad-act" id="pad-a-r2">&ndash;</text>
-      <polyline points="648,156 745,156 745,122" class="pad-line"/>
-      <circle cx="648" cy="156" r="3.5" class="pad-dot"/>
-      <text x="775" y="126" text-anchor="start" class="pad-key">R1 &middot; RB</text>
-      <text x="775" y="143" text-anchor="start" class="pad-act" id="pad-a-r1">&ndash;</text>
-      <polyline points="644,212 745,212 745,182" class="pad-line"/>
-      <circle cx="644" cy="212" r="3.5" class="pad-dot"/>
-      <text x="775" y="186" text-anchor="start" class="pad-key">Options &middot; Start</text>
-      <text x="775" y="203" text-anchor="start" class="pad-act" id="pad-a-options">&ndash;</text>
-      <polyline points="575,385 745,385 745,426" class="pad-line"/>
-      <circle cx="575" cy="385" r="3.5" class="pad-dot"/>
-      <text x="775" y="430" text-anchor="start" class="pad-key">Rechter Stick</text>
-      <text x="775" y="447" text-anchor="start" class="pad-act" id="pad-a-rstick">&ndash;</text>
-      <polyline points="575,408 745,408 745,474" class="pad-line"/>
-      <circle cx="575" cy="408" r="3.5" class="pad-dot"/>
-      <text x="775" y="478" text-anchor="start" class="pad-key">R3 &middot; Stick dr&uuml;cken</text>
-      <text x="775" y="495" text-anchor="start" class="pad-act" id="pad-a-r3">&ndash;</text>
-      <polyline points="500,200 500,564 390,564" class="pad-line"/>
-      <circle cx="500" cy="200" r="3.5" class="pad-dot"/>
-      <text x="390" y="604" text-anchor="middle" class="pad-key">Touchpad</text>
-      <text x="390" y="621" text-anchor="middle" class="pad-act" id="pad-a-touchpad">&ndash;</text>
-      <polyline points="500,375 500,564 610,564" class="pad-line"/>
-      <circle cx="500" cy="375" r="3.5" class="pad-dot"/>
-      <text x="610" y="604" text-anchor="middle" class="pad-key">PS-Taste</text>
-      <text x="610" y="621" text-anchor="middle" class="pad-act" id="pad-a-ps">&ndash;</text>
-      <polyline points="272,295 232,295 232,238" class="pad-line"/>
-      <circle cx="272" cy="295" r="3.5" class="pad-dot"/>
-      <text x="225" y="246" text-anchor="end" class="pad-key">Steuerkreuz</text>
-      <text x="225" y="268" text-anchor="end" class="pad-row"><tspan class="pad-sym">&uarr;</tspan> <tspan class="pad-act" id="pad-a-dup">&ndash;</tspan></text>
-      <text x="225" y="289" text-anchor="end" class="pad-row"><tspan class="pad-sym">&darr;</tspan> <tspan class="pad-act" id="pad-a-ddown">&ndash;</tspan></text>
-      <text x="225" y="310" text-anchor="end" class="pad-row"><tspan class="pad-sym">&larr;</tspan> <tspan class="pad-act" id="pad-a-dleft">&ndash;</tspan></text>
-      <text x="225" y="331" text-anchor="end" class="pad-row"><tspan class="pad-sym">&rarr;</tspan> <tspan class="pad-act" id="pad-a-dright">&ndash;</tspan></text>
-      <polyline points="728,295 768,295 768,238" class="pad-line"/>
-      <circle cx="728" cy="295" r="3.5" class="pad-dot"/>
-      <text x="775" y="246" text-anchor="start" class="pad-key">Tasten</text>
-      <text x="775" y="268" text-anchor="start" class="pad-row"><tspan class="pad-sym">&#9651;</tspan> <tspan class="pad-act" id="pad-a-tri">&ndash;</tspan></text>
-      <text x="775" y="289" text-anchor="start" class="pad-row"><tspan class="pad-sym">&#9711;</tspan> <tspan class="pad-act" id="pad-a-circ">&ndash;</tspan></text>
-      <text x="775" y="310" text-anchor="start" class="pad-row"><tspan class="pad-sym">&#10005;</tspan> <tspan class="pad-act" id="pad-a-cross">&ndash;</tspan></text>
-      <text x="775" y="331" text-anchor="start" class="pad-row"><tspan class="pad-sym">&#9633;</tspan> <tspan class="pad-act" id="pad-a-sq">&ndash;</tspan></text>
-        </g>
-      </svg>
-      </div>
-    </div>
   </section>
 
   <!-- PROGRAMMIERSCHULE -->
@@ -6509,6 +6366,159 @@
         R&uuml;ckversicherung. Laden f&uuml;hrt zusammen statt zu ersetzen: nichts Neueres
         geht verloren, auch eine &auml;ltere Sicherung l&auml;dt noch.
       </p>
+    </div>
+
+    <!-- CONTROLLER-BELEGUNG. BESTELLT: aus dem Cockpit in die Garage verschoben. Sie stand
+         vorher im Cockpit, "weil man sie beim FAHREN braucht" - das gilt nicht mehr: wer
+         wissen will, was L1 tut, schaut jetzt vor dem Losfahren nach, nicht mehr mitten in
+         der Runde. Zugewiesen wird weiter in den Optionen; diese Grafik zeigt nur.
+
+         Die Beschriftungen sind LEER im Markup und werden von padDiagramRender() gefuellt.
+         Das ist Absicht: eine feste Beschriftung im SVG waere eine zweite Wahrheit neben
+         den Bindungen, und die zwei laufen beim ersten Umbelegen auseinander. -->
+    <div class="card">
+      <h2>Controller-Belegung</h2>
+      <p class="muted" style="font-size:11.5px">
+        Was gerade auf welcher Taste liegt. Zuweisen l&auml;sst sich das in den Optionen
+        unter &bdquo;Gamepad&ldquo;; die Grafik zieht sofort nach.
+      </p>
+      <p class="muted" style="font-size:11.5px">
+        Wei&szlig; ist zuweisbar, gedecktes Grau ist festverdrahtet und nicht zuweisbar
+        (das Steuerkreuz), kursives Grau hei&szlig;t &bdquo;nicht belegt&ldquo;. Touchpad
+        und PS-Taste bleiben ab Werk frei, weil das System beide selbst abgreift: ein
+        Tippen aufs Touchpad l&ouml;st zugleich einen Klick in der Seite aus. Im
+        Streckeneditor und auf dem Boxenschirm bedient das Steuerkreuz erst diese, danach
+        gilt wieder das Gezeigte. Dasselbe gilt f&uuml;r die Flaggentaste: auf dem
+        Boxenschirm w&auml;hlt sie dort aus, und die gelbe Flagge gibt es nach dem
+        Zur&uuml;ckbl&auml;ttern.
+      </p>
+      <div class="pad-wrap">
+      <svg viewBox="0 0 1000 660" class="pad-svg" role="img"
+           aria-label="Controller mit der aktuellen Tastenbelegung">
+        <g class="pad-body" transform="translate(0, 20)">
+          <!-- L2 und R2 liegen HINTEN, also gezeichnet vor L1/R1 und etwas hoeher. -->
+          <path d="M 318 148 C 312 108, 352 103, 382 113 L 386 137 Z" class="pad-fill2"/>
+          <path d="M 682 148 C 688 108, 648 103, 618 113 L 614 137 Z" class="pad-fill2"/>
+          <path d="M 320 162 C 316 138, 354 133, 384 141 L 386 158 Z" class="pad-fill1"/>
+          <path d="M 680 162 C 684 138, 646 133, 616 141 L 614 158 Z" class="pad-fill1"/>
+          <path d="M 380 155 L 620 155 C 655 155, 680 170, 710 200
+                   C 745 235, 785 300, 755 450 C 740 500, 685 495, 650 455
+                   C 620 420, 595 385, 570 385 C 545 385, 530 405, 500 405
+                   C 470 405, 455 385, 430 385 C 405 385, 380 420, 350 455
+                   C 315 495, 260 500, 245 450 C 215 300, 255 235, 290 200
+                   C 320 170, 345 155, 380 155 Z" class="pad-shell"/>
+          <path d="M 385 160 L 615 160 C 622 160, 628 165, 625 175 L 610 260
+                   C 608 268, 600 272, 590 272 L 410 272 C 400 272, 392 268, 390 260
+                   L 375 175 C 372 165, 378 160, 385 160 Z" class="pad-fill1"/>
+          <rect x="350" y="180" width="16" height="28" rx="5"
+                transform="rotate(-12 358 194)" class="pad-btn"/>
+          <rect x="634" y="180" width="16" height="28" rx="5"
+                transform="rotate(12 642 194)" class="pad-btn"/>
+          <g transform="translate(320, 275)">
+            <circle cx="0" cy="0" r="48" class="pad-fill1" opacity="0.4"/>
+            <path d="M -11 -42 L 11 -42 C 14 -42, 15 -39, 15 -36 L 15 -15 L -15 -15
+                     L -15 -36 C -15 -39, -12 -42, -11 -42 Z" class="pad-btn"/>
+            <path d="M -11 42 L 11 42 C 14 42, 15 39, 15 36 L 15 15 L -15 15
+                     L -15 36 C -15 39, -12 42, -11 42 Z" class="pad-btn"/>
+            <path d="M -42 -11 L -42 11 C -42 14, -39 15, -36 15 L -15 15 L -15 -15
+                     L -36 -15 C -39 -15, -42 -12, -42 -11 Z" class="pad-btn"/>
+            <path d="M 42 -11 L 42 11 C 42 14, 39 15, 36 15 L 15 15 L 15 -15 L 36 -15
+                     C 39 -15, 42 -12, 42 -11 Z" class="pad-btn"/>
+            <circle cx="0" cy="0" r="12" class="pad-hole"/>
+          </g>
+          <g transform="translate(680, 275)">
+            <circle cx="0" cy="0" r="48" class="pad-fill1" opacity="0.4"/>
+            <circle cx="0" cy="-30" r="14" class="pad-btn"/>
+            <polygon points="0,-36 -6,-25 6,-25" class="pad-mark" stroke="#00ffcc"/>
+            <circle cx="-30" cy="0" r="14" class="pad-btn"/>
+            <rect x="-35" y="-5" width="10" height="10" class="pad-mark" stroke="#ff77c6"/>
+            <circle cx="30" cy="0" r="14" class="pad-btn"/>
+            <circle cx="30" cy="0" r="5" class="pad-mark" stroke="#ff5555"/>
+            <circle cx="0" cy="30" r="14" class="pad-btn"/>
+            <path d="M -4 26 L 4 34 M 4 26 L -4 34" class="pad-mark" stroke="#7799ff"/>
+          </g>
+          <g transform="translate(425, 365)">
+            <circle cx="0" cy="0" r="42" class="pad-fill1"/>
+            <circle cx="0" cy="0" r="32" class="pad-btn"/>
+            <circle cx="0" cy="0" r="24" fill="none" class="pad-ring"/>
+          </g>
+          <g transform="translate(575, 365)">
+            <circle cx="0" cy="0" r="42" class="pad-fill1"/>
+            <circle cx="0" cy="0" r="32" class="pad-btn"/>
+            <circle cx="0" cy="0" r="24" fill="none" class="pad-ring"/>
+          </g>
+          <g transform="translate(500, 355)">
+            <circle cx="0" cy="0" r="15" class="pad-btn"/>
+            <path d="M -5 2 C -5 -3, 0 -5, 0 -5 C 0 -5, 4 -3, 3 0 C 2 3, -3 3, -3 6
+                     C -3 8, 2 8, 4 6" fill="none" class="pad-mark" stroke="#8a99ad"/>
+          </g>
+        </g>
+        <g>
+      <polyline points="348,126 255,126 255,62" class="pad-line"/>
+      <circle cx="348" cy="126" r="3.5" class="pad-dot"/>
+      <text x="225" y="66" text-anchor="end" class="pad-key">L2 &middot; LT</text>
+      <text x="225" y="83" text-anchor="end" class="pad-act" id="pad-a-l2">&ndash;</text>
+      <polyline points="352,156 255,156 255,122" class="pad-line"/>
+      <circle cx="352" cy="156" r="3.5" class="pad-dot"/>
+      <text x="225" y="126" text-anchor="end" class="pad-key">L1 &middot; LB</text>
+      <text x="225" y="143" text-anchor="end" class="pad-act" id="pad-a-l1">&ndash;</text>
+      <polyline points="356,212 255,212 255,182" class="pad-line"/>
+      <circle cx="356" cy="212" r="3.5" class="pad-dot"/>
+      <text x="225" y="186" text-anchor="end" class="pad-key">Select &middot; Share</text>
+      <text x="225" y="203" text-anchor="end" class="pad-act" id="pad-a-select">&ndash;</text>
+      <polyline points="425,385 255,385 255,426" class="pad-line"/>
+      <circle cx="425" cy="385" r="3.5" class="pad-dot"/>
+      <text x="225" y="430" text-anchor="end" class="pad-key">Linker Stick</text>
+      <text x="225" y="447" text-anchor="end" class="pad-act" id="pad-a-lstick">&ndash;</text>
+      <polyline points="425,408 255,408 255,474" class="pad-line"/>
+      <circle cx="425" cy="408" r="3.5" class="pad-dot"/>
+      <text x="225" y="478" text-anchor="end" class="pad-key">L3 &middot; Stick dr&uuml;cken</text>
+      <text x="225" y="495" text-anchor="end" class="pad-act" id="pad-a-l3">&ndash;</text>
+      <polyline points="652,126 745,126 745,62" class="pad-line"/>
+      <circle cx="652" cy="126" r="3.5" class="pad-dot"/>
+      <text x="775" y="66" text-anchor="start" class="pad-key">R2 &middot; RT</text>
+      <text x="775" y="83" text-anchor="start" class="pad-act" id="pad-a-r2">&ndash;</text>
+      <polyline points="648,156 745,156 745,122" class="pad-line"/>
+      <circle cx="648" cy="156" r="3.5" class="pad-dot"/>
+      <text x="775" y="126" text-anchor="start" class="pad-key">R1 &middot; RB</text>
+      <text x="775" y="143" text-anchor="start" class="pad-act" id="pad-a-r1">&ndash;</text>
+      <polyline points="644,212 745,212 745,182" class="pad-line"/>
+      <circle cx="644" cy="212" r="3.5" class="pad-dot"/>
+      <text x="775" y="186" text-anchor="start" class="pad-key">Options &middot; Start</text>
+      <text x="775" y="203" text-anchor="start" class="pad-act" id="pad-a-options">&ndash;</text>
+      <polyline points="575,385 745,385 745,426" class="pad-line"/>
+      <circle cx="575" cy="385" r="3.5" class="pad-dot"/>
+      <text x="775" y="430" text-anchor="start" class="pad-key">Rechter Stick</text>
+      <text x="775" y="447" text-anchor="start" class="pad-act" id="pad-a-rstick">&ndash;</text>
+      <polyline points="575,408 745,408 745,474" class="pad-line"/>
+      <circle cx="575" cy="408" r="3.5" class="pad-dot"/>
+      <text x="775" y="478" text-anchor="start" class="pad-key">R3 &middot; Stick dr&uuml;cken</text>
+      <text x="775" y="495" text-anchor="start" class="pad-act" id="pad-a-r3">&ndash;</text>
+      <polyline points="500,200 500,564 390,564" class="pad-line"/>
+      <circle cx="500" cy="200" r="3.5" class="pad-dot"/>
+      <text x="390" y="604" text-anchor="middle" class="pad-key">Touchpad</text>
+      <text x="390" y="621" text-anchor="middle" class="pad-act" id="pad-a-touchpad">&ndash;</text>
+      <polyline points="500,375 500,564 610,564" class="pad-line"/>
+      <circle cx="500" cy="375" r="3.5" class="pad-dot"/>
+      <text x="610" y="604" text-anchor="middle" class="pad-key">PS-Taste</text>
+      <text x="610" y="621" text-anchor="middle" class="pad-act" id="pad-a-ps">&ndash;</text>
+      <polyline points="272,295 232,295 232,238" class="pad-line"/>
+      <circle cx="272" cy="295" r="3.5" class="pad-dot"/>
+      <text x="225" y="246" text-anchor="end" class="pad-key">Steuerkreuz</text>
+      <text x="225" y="268" text-anchor="end" class="pad-row"><tspan class="pad-sym">&uarr;</tspan> <tspan class="pad-act" id="pad-a-dup">&ndash;</tspan></text>
+      <text x="225" y="289" text-anchor="end" class="pad-row"><tspan class="pad-sym">&darr;</tspan> <tspan class="pad-act" id="pad-a-ddown">&ndash;</tspan></text>
+      <text x="225" y="310" text-anchor="end" class="pad-row"><tspan class="pad-sym">&larr;</tspan> <tspan class="pad-act" id="pad-a-dleft">&ndash;</tspan></text>
+      <text x="225" y="331" text-anchor="end" class="pad-row"><tspan class="pad-sym">&rarr;</tspan> <tspan class="pad-act" id="pad-a-dright">&ndash;</tspan></text>
+      <polyline points="728,295 768,295 768,238" class="pad-line"/>
+      <circle cx="728" cy="295" r="3.5" class="pad-dot"/>
+      <text x="775" y="246" text-anchor="start" class="pad-key">Tasten</text>
+      <text x="775" y="268" text-anchor="start" class="pad-row"><tspan class="pad-sym">&#9651;</tspan> <tspan class="pad-act" id="pad-a-tri">&ndash;</tspan></text>
+      <text x="775" y="289" text-anchor="start" class="pad-row"><tspan class="pad-sym">&#9711;</tspan> <tspan class="pad-act" id="pad-a-circ">&ndash;</tspan></text>
+      <text x="775" y="310" text-anchor="start" class="pad-row"><tspan class="pad-sym">&#10005;</tspan> <tspan class="pad-act" id="pad-a-cross">&ndash;</tspan></text>
+      <text x="775" y="331" text-anchor="start" class="pad-row"><tspan class="pad-sym">&#9633;</tspan> <tspan class="pad-act" id="pad-a-sq">&ndash;</tspan></text>
+        </g>
+      </svg>
+      </div>
     </div>
   </section>
 
