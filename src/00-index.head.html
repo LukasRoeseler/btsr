@@ -1051,7 +1051,7 @@
     gap: clamp(4px, .8vw, 9px);
     grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr) minmax(0, 1.15fr);
     grid-template-areas: "flag flag flag" "shift shift shift" "left gear right"
-                         "gyro gyro gyro" "strip strip strip" "banner banner banner"
+                         "strip strip strip" "banner banner banner"
                          "foot foot foot" "toast toast toast" "marke marke marke"; }
 
   /* DAS DECKGLAS. Drei Dinge, die eine Anzeige von einer Farbflaeche unterscheiden, und
@@ -1637,10 +1637,15 @@
     gap: clamp(3px, .7vw, 8px); }
   .vgl-werte .gt3-val.sm { font-size: clamp(12px, 2.1vw, 18px); }
   .vgl-werte .gt3-box { padding: clamp(2px, .5vw, 5px) clamp(3px, .6vw, 6px); }
-  .vgl-box { margin-top: auto; }
-  .vgl-fuss { display: flex; align-items: center; gap: clamp(8px, 1.6vw, 14px);
-    min-width: 0; }
-  .vgl-fuss .gt3-act { flex: none; }
+  /* BESTELLT: der Motorklang-Knopf war als einzelner, breiter Knopf unter beiden Spalten
+     zusammen zu breit - jetzt einer je Spalte, direkt unter ihrem Boxenstopp-Knopf.
+     .vgl-aktionen buendelt beide und traegt das margin-top: auto, das vorher am
+     Boxenstopp-Knopf selbst stand - so ruecken sie als Gruppe ans Ende der Spalte, statt
+     dass der Motorklang-Knopf allein absackt. */
+  .vgl-aktionen { display: flex; flex-direction: column; gap: clamp(3px, .6vw, 7px);
+    margin-top: auto; }
+  .vgl-box { margin-top: 0; }
+  .vgl-fuss { min-width: 0; }
   /* ---- EINE ZEILE, UND SIE MUSS ES AUCH BLEIBEN -----------------------------------
      Hier stand `min-width: 0; overflow: hidden; text-overflow: ellipsis` OHNE
      `white-space: nowrap`, und damit tut das Ellipsis nichts: der Text bricht weiter um.
@@ -1882,19 +1887,6 @@
   .gt3-wx .gt3-ico { width: clamp(24px, 4.4vw, 44px); }
   .gt3-gplot svg { width: 100%; max-width: clamp(44px, 7vw, 72px); height: auto;
     display: block; margin: 0 auto; }
-  /* Eigene, zentrale Kachel statt einer von acht schmalen in .gt3-strip. grid-area: gyro
-     (siehe .gt3 grid-template-areas) traegt sie als volle Zeile.
-     BESTELLT (Korrektur): die erste Fassung machte den Kreis so gross, dass die Zeile den
-     Rest der Anzeige verdraengte - bei einer insgesamt fest eingepassten Cockpithoehe
-     (cockpitPassung() skaliert alles gemeinsam) drueckt eine hohe Gyro-Zeile jede andere
-     Zeile kleiner. Deutlich zurueckgenommen, kleiner als die urspruengliche Fassung, aber
-     immer noch eine eigene, gut lesbare Zeile statt der alten 40-px-Streifenkachel. */
-  .gt3-gyro-tile { grid-area: gyro; display: flex; align-items: center;
-    justify-content: center; gap: clamp(4px, .9vw, 8px);
-    padding: 0; margin: clamp(-12px, -1.6vw, -7px) 0; }
-  .gt3-gyro-tile svg { max-width: clamp(20px, 3.6vw, 30px); flex: none; }
-  .gt3-gyro-text { display: grid; gap: 1px; justify-items: start; }
-  .gt3-gyro-tile .gt3-val { font-size: clamp(9px, 1.4vw, 12px); }
 
   /* Full-width banner. Amber, wide, unmissable: the pit limiter is the one state where
      not noticing costs a penalty. */
@@ -3142,7 +3134,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.7.38</span></span>
+        <span class="foot-ver">v<span id="app-version">0.7.39</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -3421,7 +3413,7 @@
           <span class="act-pfeil rechts" aria-hidden="true" data-i18n-skip>&rsaquo;</span>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.2L12 5.5v13l-4.8-4H4z"/><path d="M16 9a4.2 4.2 0 0 1 0 6" stroke="var(--bad)"/><path d="M18.6 6.4a7.8 7.8 0 0 1 0 11.2" stroke="var(--bad)"/></svg>
-          <span id="race-act-sound-txt">Motor</span></button>
+          <span id="race-act-sound-txt" data-i18n-skip>Motor</span></button>
       </div>
 
       <div class="gt3-strip">
@@ -3526,34 +3518,26 @@
                  stroke-linecap="round" stroke-linejoin="round" aria-label="Tankmenge"><path d="M4 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16"/><path d="M3 21h13"/><path d="M4 10h10"/><path d="M18 21v-9a3 3 0 0 0-3-3"/><path d="M18 12h2a1 1 0 0 0 1-1V8l-3-3"/></svg>
             <b id="race-pit-fuel" data-i18n-skip>&ndash;</b>
           </div></div>
+        <!-- BESTELLT (zurueckgenommen): "Gyro hat jetzt eine eigene Zeile und zerschiesst
+             alles [...]. Mach es wie vorher, in der unteren rechten Ecke, ohne die
+             Sim/Roh-Beschriftung." Zurueck als letzte Kachel im Streifen, wie vor dem
+             Umbau - keine eigene Zeile mehr, kein Label mehr, nur Kreis und Zahl. -->
+        <div class="gt3-box gt3-gplot" id="race-gplot">
+          <svg viewBox="0 0 100 100" aria-label="Querkraft und L&auml;ngskraft">
+            <circle cx="50" cy="50" r="46" fill="#04060b" stroke="#2a3346"/>
+            <circle cx="50" cy="50" r="31" fill="none" stroke="#1e2634"/>
+            <circle cx="50" cy="50" r="16" fill="none" stroke="#1e2634"/>
+            <path d="M50 4V96M4 50H96" stroke="#1e2634"/>
+            <circle id="race-g-real" cx="50" cy="50" r="4.5" fill="#2ee06a" opacity=".85"/>
+            <circle id="race-g-sim" cx="50" cy="50" r="5" fill="#ff4d4d"/>
+          </svg>
+          <!-- Das Einspurmodell in ZWEI Zahlen, und beide sind Instrument: keine davon
+               stellt die Lenkung. Gierrate ist, wie schnell das Auto sich dreht;
+               Ausnutzung ist, wieviel von der verf&uuml;gbaren Haftung das Man&ouml;ver
+               verlangt. &Uuml;ber 100 Prozent hei&szlig;t: so f&auml;hrt kein Auto durch
+               diese Kurve. -->
+          <div class="gt3-val sm" id="race-yaw">&ndash;</div></div>
       </div>
-
-      <!-- BESTELLT: "Gyro soll zentral auf einer eigenen Kachel angezeigt werden" - vorher
-           war er eine Kachel unter acht schmalen in .gt3-strip, genauso gequetscht wie Tank
-           oder Akku. Jetzt eine eigene volle Zeile zwischen dem Hauptblock und der
-           Streifen-Zeile.
-           BESTELLT (Korrektur): Kreis, Beschriftung und Zahl standen zunaechst UNTEREINANDER
-           (drei Zeilen in einer Spalte) - das kostete mehr Hoehe als noetig und drueckte den
-           Rest der Anzeige klein. Jetzt NEBENEINANDER (Kreis links, Beschriftung+Zahl in
-           einer schmalen Spalte rechts), die ganze Kachel ist also nur noch eine Zeile hoch. -->
-      <div class="gt3-box gt3-gplot gt3-gyro-tile" id="race-gplot">
-        <svg viewBox="0 0 100 100" aria-label="Querkraft und L&auml;ngskraft">
-          <circle cx="50" cy="50" r="46" fill="#04060b" stroke="#2a3346"/>
-          <circle cx="50" cy="50" r="31" fill="none" stroke="#1e2634"/>
-          <circle cx="50" cy="50" r="16" fill="none" stroke="#1e2634"/>
-          <path d="M50 4V96M4 50H96" stroke="#1e2634"/>
-          <circle id="race-g-real" cx="50" cy="50" r="4.5" fill="#2ee06a" opacity=".85"/>
-          <circle id="race-g-sim" cx="50" cy="50" r="5" fill="#ff4d4d"/>
-        </svg>
-        <div class="gt3-gyro-text">
-        <div class="gt3-lbl"><span style="color:#ff4d4d">Sim</span> &middot; <span style="color:#2ee06a">Roh</span></div>
-        <!-- Das Einspurmodell in ZWEI Zahlen, und beide sind Instrument: keine davon
-             stellt die Lenkung. Gierrate ist, wie schnell das Auto sich dreht;
-             Ausnutzung ist, wieviel von der verf&uuml;gbaren Haftung das Man&ouml;ver
-             verlangt. &Uuml;ber 100 Prozent hei&szlig;t: so f&auml;hrt kein Auto durch
-             diese Kurve. -->
-        <div class="gt3-val" id="race-yaw">&ndash;</div>
-        </div></div>
 
       <div class="gt3-banner" id="gt3-flag"><span id="race-flag"></span></div>
       <!-- Ein Auto, das von selbst langsamer wird und im Controller brummt, sieht ohne
@@ -3714,9 +3698,11 @@
            Symmetrie um ihrer selbst willen: beim Vergleichen springt das Auge waagerecht,
            und eine Spalte mit anderer Reihenfolge macht daraus ein Suchen.
 
-           Der Motorklang steht UNTEN und EINMAL: beide Autos fahren dasselbe Modell. Ein
-           zweiter Klangknopf waere ein Bedienelement, das nichts anderes tut als der
-           erste. -->
+           BESTELLT (zurueckgenommen): "Der Motorsound-Knopf ist zu breit, es sollte zwei
+           Knoepfe nebeneinander geben, genau wie bei Boxenstopp." Der Motorklang steht
+           jetzt je EINEN Knopf pro Auto, direkt unter dessen Boxenstopp-Knopf in seiner
+           eigenen Spalte - dieselbe Anordnung wie die zwei Boxenstopp-Knoepfe, die dadurch
+           nebeneinander stehen. -->
       <div class="gt3-schirm" id="race-p2screen">
         <div class="schirm-kopf"><b>Beide Autos</b><span class="wip-tag">experimentell</span>
           <span id="p2s-kopf-lage" data-i18n-skip>&ndash;</span>
@@ -3742,13 +3728,28 @@
                 <div class="gt3-val sm" id="vgl1-cond" data-i18n-skip>100&nbsp;%</div>
                 <div class="gt3-bar"><i id="vgl1-cond-bar"></i></div></div>
               <div class="gt3-box"><div class="gt3-lbl">Reifen</div>
-                <div class="gt3-val sm" id="vgl1-tyre" data-i18n-skip>20&deg;</div></div>
+                <div class="gt3-val sm" id="vgl1-tyre" data-i18n-skip>20&deg;</div>
+                <!-- BESTELLT: "Balken fuer die Reifensimulation, um zu sehen, ob die
+                     Reifen verschlissen sind." Restprofil und nicht Temperatur - dieselbe
+                     Groesse, die auch die vier Reifenfelder im Hauptcockpit fuellen
+                     (1 - tyreWear). -->
+                <div class="gt3-bar"><i id="vgl1-tyre-bar"></i></div></div>
               <div class="gt3-box"><div class="gt3-lbl">Bremse</div>
                 <div class="gt3-val sm" id="vgl1-brake" data-i18n-skip>20&deg;</div></div>
               <div class="gt3-box"><div class="gt3-lbl">Akku</div>
                 <div class="gt3-val sm" id="vgl1-batt" data-i18n-skip>&ndash;</div></div>
             </div>
-            <button type="button" class="gt3-act vgl-box" id="vgl1-act-pit">Boxenstopp</button>
+            <div class="vgl-aktionen">
+              <button type="button" class="gt3-act vgl-box" id="vgl1-act-pit">Boxenstopp</button>
+              <button type="button" class="gt3-act gt3-act-ico gt3-act-zwei vgl-box"
+                      id="vgl1-act-sound"
+                      title="Motorklang Auto 1: rechte H&auml;lfte weiter, linke zur&uuml;ck">
+                <span class="act-pfeil links" aria-hidden="true" data-i18n-skip>&lsaquo;</span>
+                <span class="act-pfeil rechts" aria-hidden="true" data-i18n-skip>&rsaquo;</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.2L12 5.5v13l-4.8-4H4z"/><path d="M16 9a4.2 4.2 0 0 1 0 6" stroke="var(--bad)"/><path d="M18.6 6.4a7.8 7.8 0 0 1 0 11.2" stroke="var(--bad)"/></svg>
+                <span id="vgl1-act-sound-txt" data-i18n-skip>Motor</span></button>
+            </div>
           </div>
 
           <!-- ---- AUTO 2 ---- -->
@@ -3770,27 +3771,28 @@
                 <div class="gt3-val sm" id="vgl2-cond" data-i18n-skip>100&nbsp;%</div>
                 <div class="gt3-bar"><i id="vgl2-cond-bar"></i></div></div>
               <div class="gt3-box"><div class="gt3-lbl">Reifen</div>
-                <div class="gt3-val sm" id="vgl2-tyre" data-i18n-skip>20&deg;</div></div>
+                <div class="gt3-val sm" id="vgl2-tyre" data-i18n-skip>20&deg;</div>
+                <div class="gt3-bar"><i id="vgl2-tyre-bar"></i></div></div>
               <div class="gt3-box"><div class="gt3-lbl">Bremse</div>
                 <div class="gt3-val sm" id="vgl2-brake" data-i18n-skip>20&deg;</div></div>
               <div class="gt3-box"><div class="gt3-lbl">Akku</div>
                 <div class="gt3-val sm" id="vgl2-batt" data-i18n-skip>&ndash;</div></div>
             </div>
-            <button type="button" class="gt3-act vgl-box" id="p2s-act-pit">Boxenstopp</button>
+            <div class="vgl-aktionen">
+              <button type="button" class="gt3-act vgl-box" id="p2s-act-pit">Boxenstopp</button>
+              <button type="button" class="gt3-act gt3-act-ico gt3-act-zwei vgl-box"
+                      id="vgl-act-sound"
+                      title="Motorklang Auto 2: rechte H&auml;lfte weiter, linke zur&uuml;ck">
+                <span class="act-pfeil links" aria-hidden="true" data-i18n-skip>&lsaquo;</span>
+                <span class="act-pfeil rechts" aria-hidden="true" data-i18n-skip>&rsaquo;</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.2L12 5.5v13l-4.8-4H4z"/><path d="M16 9a4.2 4.2 0 0 1 0 6" stroke="var(--bad)"/><path d="M18.6 6.4a7.8 7.8 0 0 1 0 11.2" stroke="var(--bad)"/></svg>
+                <span id="vgl-act-sound-txt" data-i18n-skip>Motor</span></button>
+            </div>
           </div>
         </div>
 
         <div class="vgl-fuss">
-          <!-- Der Motorklang gilt fuer beide: dasselbe Modell, zwei Stimmen auf zwei
-               Stereoseiten. Derselbe Knopf wie im Hauptschirm, damit man ihn auch hier
-               erreicht - wer vergleicht, probiert. -->
-          <button type="button" class="gt3-act gt3-act-ico gt3-act-zwei" id="vgl-act-sound"
-                  title="Motorklang f&uuml;r beide Autos: rechte H&auml;lfte weiter, linke zur&uuml;ck">
-            <span class="act-pfeil links" aria-hidden="true" data-i18n-skip>&lsaquo;</span>
-            <span class="act-pfeil rechts" aria-hidden="true" data-i18n-skip>&rsaquo;</span>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
-                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.2L12 5.5v13l-4.8-4H4z"/><path d="M16 9a4.2 4.2 0 0 1 0 6" stroke="var(--bad)"/><path d="M18.6 6.4a7.8 7.8 0 0 1 0 11.2" stroke="var(--bad)"/></svg>
-            <span id="vgl-act-sound-txt" data-i18n-skip>Motor</span></button>
           <div class="schirm-fuss" id="p2s-fuss" data-i18n-skip></div>
         </div>
       </div>

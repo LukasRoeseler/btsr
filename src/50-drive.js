@@ -1520,6 +1520,15 @@
     const bremse = mittel(st.brakeTemp4) !== null ? mittel(st.brakeTemp4)
       : ((st.brakeTempF || 0) + (st.brakeTempR || 0)) / 2;
     schreibeWert($(pre + '-tyre'), Math.round(reifen) + '\u00b0');
+    // BESTELLT: "Balken fuer die Reifensimulation, um zu sehen, ob die Reifen verschlissen
+    // sind." Restprofil und nicht Temperatur, dieselbe Groesse wie in den vier
+    // Reifenfeldern des Hauptcockpits (1 - tyreWear), 100 % heisst neu.
+    const tyb = $(pre + '-tyre-bar');
+    if (tyb) {
+      const rest = Math.max(0, Math.min(1, 1 - (typeof st.tyreWear === 'number' ? st.tyreWear : 0))) * 100;
+      tyb.style.width = rest + '%';
+      tyb.style.background = rest < 30 ? '#ff5252' : rest < 60 ? '#ffb02e' : '#2ee06a';
+    }
     schreibeWert($(pre + '-brake'), Math.round(bremse) + '\u00b0');
     // Der Akku kommt aus Byte 10 des Autos (car.battery, in 90-ghosts.js je Auto gesetzt) -
     // eine gemessene Groesse und keine gerechnete. Ohne Auto oder ohne Meldung: ein Strich,
@@ -1600,9 +1609,13 @@
         typeof pitState !== 'undefined' && pitState !== 'off');
     }
     // BESTELLT: "Spieler 1 und Spieler 2 sollen verschiedene Motorsounds haben duerfen."
-    // Der Knopf zeigte hier bisher nur ab, was #race-act-sound (Auto 1) gerade anzeigt -
-    // seit Auto 2 seine eigene Auswahl in #sound-profile-2 hat (siehe deren Erzeugung
-    // weiter unten), zeigt er DIESE an.
+    // Zwei Knoepfe statt einem - je einer zeigt SEIN EIGENES Auswahlfeld an.
+    const ton1 = $('vgl1-act-sound-txt');
+    if (ton1) {
+      const sel1 = $('sound-profile');
+      const opt1 = sel1 ? sel1.options[sel1.selectedIndex] : null;
+      ton1.textContent = opt1 ? motorNamen(opt1) : 'Motor';
+    }
     const ton = $('vgl-act-sound-txt');
     if (ton) {
       const sel2 = $('sound-profile-2');
@@ -1625,6 +1638,23 @@
     $('vgl1-act-pit').addEventListener('click', () => {
       const q = $('race-act-pit');
       if (q) q.click();
+      p2ScreenRender();
+    });
+  }
+  // BESTELLT: eigener Motor-Knopf fuer Auto 1 auf dem Vergleichsschirm, neben dem fuer
+  // Auto 2 - genau wie die zwei Boxenstopp-Knoepfe. Leitet weiter wie beim Boxenstopp-
+  // Knopf: derselbe Klick-Ort (links/rechts) geht an #race-act-sound, damit es EINEN Weg
+  // durch Auto 1s Motorliste gibt statt die Zaehllogik zweimal zu pflegen.
+  if ($('vgl1-act-sound')) {
+    $('vgl1-act-sound').addEventListener('click', (e) => {
+      const q = $('race-act-sound');
+      if (!q) return;
+      const r = e.currentTarget.getBoundingClientRect();
+      const links = (e.clientX - r.left) < r.width / 2;
+      const ev = new MouseEvent('click', { bubbles: true, clientX:
+        links ? q.getBoundingClientRect().left + 4
+              : q.getBoundingClientRect().right - 4 });
+      q.dispatchEvent(ev);
       p2ScreenRender();
     });
   }
