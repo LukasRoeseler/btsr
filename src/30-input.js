@@ -386,7 +386,6 @@
     if (k === 'escape') {
       if (optInfoOffen()) optInfoSchliessen();
       toggleHelp(false);
-      hideRaceSummary();
     }
   });
   window.addEventListener('keydown', (e) => {

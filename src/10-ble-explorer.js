@@ -2124,7 +2124,7 @@
     // blinder Fleck, der sich selbst versteckt. Gefunden hat es ein Abzug ueber das ganze
     // body, nicht ueber diese Liste.
     return [document.querySelector('header'), document.querySelector('main'),
-            $('race-summary'), $('lb-wrap')].filter(Boolean);
+            $('lb-wrap')].filter(Boolean);
   }
 
   // Einen Teilbaum in die aktuelle Sprache bringen. Wird beim Umschalten fuer alles und

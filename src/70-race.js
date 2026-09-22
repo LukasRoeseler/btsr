@@ -1267,7 +1267,11 @@
     // Und einmal sichtbar dort, wo gerade gedrueckt wurde. Ohne das erschien das Ergebnis
     // nur im Tab "Renneinstellungen" - wer im Cockpit auf Stopp drueckt, sah nichts, und
     // beim freien Training sah es deshalb aus, als gebe es ueberhaupt keine Ergebnisse.
-    showRaceSummary();
+    // BESTELLT: kein eigenes Ueberlagerungsfenster mehr - stattdessen ins Cockpit zum
+    // Schirm "Rennen" springen, der die Tabelle ohnehin schon zeigt (ovScreenRender()
+    // laeuft im 120-ms-Takt weiter und malt die Endstaende sofort).
+    if (typeof showTab === 'function') showTab('race');
+    if (typeof cockpitScreenZu === 'function') cockpitScreenZu('uebersicht');
     // Und ablegen. Hier, weil dies die eine Stelle ist, an der ein Rennen wirklich vorbei
     // ist - und nach showRaceSummary(), damit ein Fehlschlag beim Speichern das Ergebnis
     // nicht verdeckt.
@@ -1307,87 +1311,6 @@
       renderPositionPlot();
     }
   }, 1000);
-
-  // ---- Ergebnisfenster ----
-  // Eigener, kleiner Aufbau statt eines Klons der grossen Tabelle: die traegt IDs, und
-  // dieselbe ID zweimal im Dokument bricht jeden Zugriff darauf. Gerechnet wird mit
-  // denselben Funktionen, raceAllCars() und raceStats(), damit hier keine zweite Wahrheit
-  // entsteht.
-  function showRaceSummary() {
-    const cars = raceAllCars().filter(c => c.laps.length);
-    const label = (RACE_MODES[raceMode] && RACE_MODES[raceMode].label) || 'Rennen';
-    $('sum-title').textContent = label + ' beendet';
-    const missed = Math.max(0, racePitRequired - racePitDone);
-    const teile = [];
-    if (racePartialMs !== null) {
-      teile.push('letzte Runde unvollendet nach ' + formatLapTime(racePartialMs)
-                 + ', z\u00e4hlt nicht');
-    }
-    if (missed > 0) {
-      teile.push(missed + ' Pflichtstopp' + (missed === 1 ? '' : 's') + ' verpasst, +'
-                 + (missed * racePitPenaltyS) + ' s Strafe');
-    }
-    $('sum-sub').textContent = teile.join(' \u00b7 ');
-
-    if (!cars.length) {
-      $('sum-body').innerHTML = '<p class="muted" style="margin-top:12px">Keine Runden '
-        + 'aufgezeichnet. Ohne Streckencode gibt es keine Rundenzeit, Schalter '
-        + '<b>Auf der Bahn</b> in den Optionen pr\u00fcfen, oder Runden mit <kbd>Q</kbd> '
-        + 'z\u00e4hlen, um die Anzeige zu pr\u00fcfen.</p>';
-      $('race-summary').classList.add('on');
-      return;
-    }
-
-    const scored = cars.map(c => ({ c, st: raceStats(c.laps) }));
-    scored.sort((a, b) => raceMode === 'qualifying'
-      ? a.st.best - b.st.best
-      : (b.st.n - a.st.n) || (a.st.total - b.st.total));
-    const fastest = Math.min(...scored.map(x => x.st.best));
-
-    // Abgaenge je Runde stehen NEBEN der Rundenzeit, nicht darin verrechnet. Eine schnelle
-    // Runde mit drei Abgaengen ist kein Fortschritt, und ein Mittelwert wuerde das verdecken.
-    const offOf = (c) => c.laps.reduce((a, l) => a + (l.off || 0), 0);
-    let html = '<table class="sum-tab"><tr><th>#</th><th>Auto</th><th>Runden</th>'
-      + '<th>Beste</th><th>Mittel</th><th>Abg&auml;nge</th></tr>';
-    scored.forEach((x, i) => {
-      html += '<tr><td>' + (i + 1) + '</td><td>' + ergDot(x.c) + x.c.name
-        + (x.c.role === 'ghost' ? ' <span class="muted">(Ghost)</span>' : '') + '</td>'
-        + '<td class="num">' + x.st.n + '</td>'
-        + '<td class="num' + (x.st.best === fastest ? ' sum-best' : '') + '">'
-        + formatLapTime(x.st.best) + '</td>'
-        + '<td class="num">' + formatLapTime(Math.round(x.st.mean)) + '</td>'
-        + '<td class="num">' + offOf(x.c) + '</td></tr>';
-    });
-    html += '</table>';
-
-    // Jede einzelne Runde darunter, damit nichts hinter einem Mittelwert verschwindet -
-    // beim freien Training ist das ohnehin das Einzige, was interessiert.
-    const maxLaps = Math.max(...cars.map(c => c.laps.length));
-    html += '<p class="muted" style="font-size:11px; margin:12px 0 0 0">Zahl in Klammern: '
-      + 'Abg\u00e4nge in dieser Runde.</p>';
-    html += '<table class="sum-tab" style="margin-top:6px"><tr><th>Runde</th>'
-      + cars.map(c => '<th style="text-align:right">' + c.name + '</th>').join('') + '</tr>';
-    for (let k = 0; k < maxLaps; k++) {
-      html += '<tr><td>' + (k + 1) + '</td>'
-        + cars.map(c => '<td class="num">'
-            + (c.laps[k] ? formatLapTime(c.laps[k].ms)
-                           + (c.laps[k].off ? ' <span class="muted">(' + c.laps[k].off + ')</span>' : '')
-                         : '\u2013') + '</td>').join('')
-        + '</tr>';
-    }
-    html += '</table>';
-    $('sum-body').innerHTML = html;
-    $('race-summary').classList.add('on');
-  }
-
-  function hideRaceSummary() { $('race-summary').classList.remove('on'); }
-  $('sum-close').onclick = hideRaceSummary;
-  // Der Knopf "Alle Rundenzeiten" traegt schon .goto-tab und wechselt den Tab; hier muss
-  // nur noch der Vorhang weg, sonst liegt er ueber dem Ziel.
-  $('sum-details').addEventListener('click', hideRaceSummary);
-  $('race-summary').addEventListener('click', (e) => {
-    if (e.target === $('race-summary')) hideRaceSummary();
-  });
 
   // ---- Race mode selector ----
   function applyRaceModeUi() {

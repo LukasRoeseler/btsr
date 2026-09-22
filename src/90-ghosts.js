@@ -1390,7 +1390,9 @@
     const player = garage.find(c => c.role === 'player');
     const ghosts = garage.filter(c => c.role === 'ghost');
     if (!player && !ghosts.length) return;
-    showTab('race');
+    // KEIN showTab('race') mehr - BESTELLT: wer "Losfahren" drueckt, soll dort bleiben,
+    // wo er gerade ist (z.B. um noch weitere Autos einzurichten), nicht automatisch ins
+    // Cockpit springen. Wer fahren will, wechselt selbst in den Tab.
     // The ghosts are started here rather than left to the race start, because "Losfahren"
     // from the Garage is also the way to drive WITHOUT arming a race - free practice with
     // company. Pressing it again RESTARTS them: startGhost begins with stopGhost, so a
@@ -8300,9 +8302,18 @@
       // Rechter Stick hoch/runter: Bildlauf auf jeder Seite, ausser im Vollbild (Cockpit
       // oder Streckeneditor) - dort soll der Stick nichts tun, weder verstellen noch
       // scrollen. Achse 3 ist im Standard-Mapping die Y-Achse des rechten Sticks.
-      // BESTELLT.
+      // BESTELLT. Ausnahme: der Rennen-Uebersichtsschirm im Cockpit-Vollbild - dort landet
+      // seit Kurzem das Rennergebnis statt in einem eigenen Fenster, und mit vielen Autos/
+      // Runden reicht die Kachel nicht mehr aus. Dort scrollt der Stick #ov-tab statt der
+      // Seite.
       const rechtsY = applyDeadzone((pad.axes || [])[3] || 0);
-      if (rechtsY && !document.body.classList.contains('race-fs')
+      const imUebersichtsVollbild = document.body.classList.contains('race-fs')
+        && typeof cockpitScreenIst === 'function'
+        && cockpitScreenIst() && cockpitScreenIst().id === 'uebersicht';
+      if (rechtsY && imUebersichtsVollbild) {
+        const ovTab = $('ov-tab');
+        if (ovTab) ovTab.scrollTop += rechtsY * PAD_SCROLL_SPEED;
+      } else if (rechtsY && !document.body.classList.contains('race-fs')
           && !document.body.classList.contains('track-fs')) {
         document.body.scrollTop += rechtsY * PAD_SCROLL_SPEED;
       }
