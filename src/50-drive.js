@@ -1599,10 +1599,15 @@
       knopf1.classList.toggle('warn',
         typeof pitState !== 'undefined' && pitState !== 'off');
     }
+    // BESTELLT: "Spieler 1 und Spieler 2 sollen verschiedene Motorsounds haben duerfen."
+    // Der Knopf zeigte hier bisher nur ab, was #race-act-sound (Auto 1) gerade anzeigt -
+    // seit Auto 2 seine eigene Auswahl in #sound-profile-2 hat (siehe deren Erzeugung
+    // weiter unten), zeigt er DIESE an.
     const ton = $('vgl-act-sound-txt');
     if (ton) {
-      const q = $('race-act-sound-txt');
-      ton.textContent = q ? q.textContent : 'Motor';
+      const sel2 = $('sound-profile-2');
+      const opt = sel2 ? sel2.options[sel2.selectedIndex] : null;
+      ton.textContent = opt ? motorNamen(opt) : 'Motor';
     }
   }
 
@@ -1623,20 +1628,35 @@
       p2ScreenRender();
     });
   }
+  // BESTELLT: "Spieler 1 und Spieler 2 sollen verschiedene Motorsounds haben duerfen."
+  // Auto 1 hat seine Auswahl schon (#sound-profile, Kachel "Ton"/"Motorwerkstatt") -
+  // Auto 2 braucht eine EIGENE, ohne die Motorliste ein zweites Mal von Hand im Markup zu
+  // pflegen (drei Orte fuer eine Liste sind schon zwei zu viel, siehe 95-selftest.js).
+  // Ein Klon von #sound-profile ist deshalb die ganze Datenhaltung: unsichtbar im DOM,
+  // aber mit denselben <option>-Eintraegen und derselben Vorgabe wie Auto 1s Regler, bis
+  // der Nutzer hier zum ersten Mal etwas anderes waehlt.
+  if ($('sound-profile') && $('sound-profile-2') && !$('sound-profile-2').options.length) {
+    $('sound-profile-2').innerHTML = $('sound-profile').innerHTML;
+    $('sound-profile-2').value = $('sound-profile').value;
+  }
   if ($('vgl-act-sound')) {
     $('vgl-act-sound').addEventListener('click', (e) => {
-      // Die Haelfte des Knopfes entscheidet ueber die Richtung - dieselbe Bedienung wie im
-      // Hauptschirm. Weitergereicht wird an den dortigen Knopf, damit es EINEN Weg durch
-      // die Motorliste gibt.
-      const q = $('race-act-sound');
-      if (!q) return;
-      const r = e.currentTarget.getBoundingClientRect();
-      const links = (e.clientX - r.left) < r.width / 2;
-      const ev = new MouseEvent('click', { bubbles: true, clientX:
-        links ? q.getBoundingClientRect().left + 4
-              : q.getBoundingClientRect().right - 4 });
-      q.dispatchEvent(ev);
+      // Dieselbe Bedienung wie beim Hauptschirm-Knopf (#race-act-sound): linke Haelfte
+      // zurueck, rechte vor - aber auf der EIGENEN Liste fuer Auto 2, nicht auf Auto 1s.
+      const sel = $('sound-profile-2');
+      if (!sel) return;
+      const brauchbar = Array.prototype.filter.call(sel.options, o => !o.disabled && !o.hidden);
+      if (!brauchbar.length) return;
+      const kasten = e.currentTarget.getBoundingClientRect();
+      const hatOrt = typeof e.clientX === 'number' && (e.clientX > 0 || e.clientY > 0);
+      const richtung = (hatOrt && e.clientX < kasten.left + kasten.width / 2) ? -1 : 1;
+      const jetzt = brauchbar.findIndex(o => o.value === sel.value);
+      const n = brauchbar.length;
+      const naechste = brauchbar[(((jetzt + richtung) % n) + n) % n];
+      sel.value = naechste.value;
+      sel.dispatchEvent(new Event('change', { bubbles: true }));
       p2ScreenRender();
+      showHudToast('AUTO 2: ' + motorNamen(naechste).toUpperCase());
     });
   }
   // setzen. 80 ms, dann zurueck: eine Anzeige mit Masse setzt sich kurz, ein Textfeld nicht.

@@ -3133,7 +3133,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.7.36</span></span>
+        <span class="foot-ver">v<span id="app-version">0.7.37</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -7771,6 +7771,13 @@
           <option value="kaefer1300">VW K&auml;fer 1300: Boxer-4, luftgek&uuml;hlt</option>
           </optgroup>
         </select></div>
+      <!-- BESTELLT: "Spieler 1 und Spieler 2 sollen verschiedene Motorsounds haben
+           duerfen." Auto 2s eigene Motorwahl - unsichtbar und LEER im Markup, damit die
+           lange Motorliste nicht ein zweites Mal von Hand gepflegt werden muss: 50-drive.js
+           kopiert #sound-profile hinein, sobald die Seite laedt (klont die <option>-
+           Eintraege, nicht das Element selbst). Das leere <select> hier ist nur der
+           Ankerpunkt, den der statische Verweis-Check von build.py braucht. -->
+      <select id="sound-profile-2" style="display:none" aria-hidden="true"></select>
       <div class="opt-row"><div class="opt-label">Motorlautstärke</div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>

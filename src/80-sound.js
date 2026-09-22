@@ -203,8 +203,12 @@
   // Aufbauzeit von dort traefe die temporale Todeszone und nimmt die ganze IIFE mit. Die
   // Funktionsdeklaration selbst ist hochgezogen und damit von ueberall erreichbar; der
   // Rumpf braucht nur, dass der Aufbau durch ist. Aus einer Anzeigeschleife ist er das.
-  function motorDrehzahl(st) {
-    const b = sampleEngine.band[sampleEngine.car || $('sound-profile').value];
+  // `modell` optional: ohne ihn gilt Auto 1s Motor, wie schon immer. Auto 2s eigener Ton
+  // (updateEngineSound2()) uebergibt stimmeZwei.car, seit Auto 2 einen ANDEREN Motor als
+  // Auto 1 spielen darf - sonst wuerde seine Drehzahl auf Auto 1s Leerlauf/Begrenzer-Band
+  // abgebildet und nicht auf ihr eigenes.
+  function motorDrehzahl(st, modell) {
+    const b = sampleEngine.band[modell || sampleEngine.car || $('sound-profile').value];
     if (!b || !(b.limiter > b.idle)) return st.rpm;
     const f = Math.max(0, Math.min(1, st.rpmFrac || 0));
     return b.idle + f * (b.limiter - b.idle);
@@ -1043,10 +1047,11 @@
     // beide neutral - derselbe Weg, keine Wirkung.
     if (!startSampleEngineIn(sampleEngine, car, stimmeEinsAusgang)) return false;
     if (engineGain) engineGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.05); // hush the oscillator
-    // Auto 2 faehrt dasselbe Motormodell: die Wahl steht im Cockpit und gilt fuer das
-    // Rennen. Ein eigenes Menue fuer Auto 2 waere ein zweiter Regler und eine zweite
-    // Ablage - und zwei verschiedene Motoren zugleich sind aus einem Lautsprecher ohnehin
-    // schwer zu trennen.
+    // BESTELLT: "Spieler 1 und Spieler 2 sollen verschiedene Motorsounds haben duerfen."
+    // stimmeZweiStarten() liest seither #sound-profile-2 (ein Klon von #sound-profile,
+    // erzeugt in 50-drive.js) statt zwingend sampleEngine.car - Auto 2 DARF also
+    // abweichen, faehrt aber ohne eigene Wahl weiter denselben Motor wie Auto 1, weil der
+    // Klon mit derselben Vorgabe startet.
     if (typeof zweiSpieler !== 'undefined' && zweiSpieler) stimmeZweiStarten();
     return true;
   }
@@ -1063,7 +1068,11 @@
 
   function stimmeZweiStarten() {
     if (!audioCtx || !sampleEngine.car) return false;
-    return startSampleEngineIn(stimmeZwei, sampleEngine.car, stimmeZweiAusgang);
+    // #sound-profile-2, wenn vorhanden (siehe 50-drive.js), sonst Auto 1s Motor - so
+    // faehrt Auto 2 ohne eigene Wahl weiter denselben Motor, statt stumm zu bleiben.
+    const sel2 = typeof $ === 'function' ? $('sound-profile-2') : null;
+    const modell = (sel2 && sampleEngine.buffers[sel2.value]) ? sel2.value : sampleEngine.car;
+    return startSampleEngineIn(stimmeZwei, modell, stimmeZweiAusgang);
   }
 
   function stimmeZweiStoppen() { if (audioCtx) stopSampleEngineIn(stimmeZwei); }
@@ -1196,7 +1205,7 @@
     const load = Math.max(0, Math.min(1, st.engineLoad || 0));
     const leise = load <= 0.01 && (st.virtualSpeed || 0) <= 0.01
                   && Math.abs(st.speedKmh || 0) < 0.05;
-    updateSampleEngineIn(stimmeZwei, motorDrehzahl(st), load, leise, physEngine2, 1);
+    updateSampleEngineIn(stimmeZwei, motorDrehzahl(st, stimmeZwei.car), load, leise, physEngine2, 1);
   }
 
   // An- und abschalten, gerufen aus zweiSpielerSetzen(). Zwei Wege und nicht einer mit
@@ -1239,6 +1248,19 @@
     log('Motorprofil "' + v + '" hat keine Schleifen, Ersatzmotor laeuft. Das ist ein '
         + 'Fehler, wenn der Eintrag im Menue steht.', 'warn');
   });
+
+  // BESTELLT: "Spieler 1 und Spieler 2 sollen verschiedene Motorsounds haben duerfen."
+  // #sound-profile-2 existiert erst, sobald 50-drive.js ihn geklont hat - dieselbe
+  // Absicherung wie ueberall, wo eine Datei auf eine andere angewiesen ist.
+  if ($('sound-profile-2')) {
+    $('sound-profile-2').addEventListener('change', () => {
+      // Nur neu starten, wenn Auto 2 gerade wirklich spielt - sonst greift die naechste
+      // stimmeZweiStarten() (beim naechsten Motorwechsel oder Anschalten) von selbst zu.
+      if (typeof zweiSpieler !== 'undefined' && zweiSpieler && stimmeZwei.nodes) {
+        stimmeZweiStarten();
+      }
+    });
+  }
 
   $('cm-start').addEventListener('click', () => {
     cmOn = !cmOn;

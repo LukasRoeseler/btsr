@@ -10772,6 +10772,57 @@
                  + (maengel.length ? ' | ' + maengel.join(', ') : '') };
   });
 
+  // ---- Zwei Spieler DUERFEN verschiedene Motoren fahren ----------------------------
+  //
+  // BESTELLT: "Spieler 1 und Spieler 2 sollen verschiedene Motorsounds haben duerfen."
+  // Vorher zwang startSampleEngine() Auto 2 ausdruecklich auf Auto 1s Modell
+  // (stimmeZweiStarten() las sampleEngine.car). Jetzt liest sie #sound-profile-2, einen
+  // Klon von #sound-profile (50-drive.js) - und motorDrehzahl() bekommt fuer Auto 2
+  // dessen EIGENES Modell uebergeben (stimmeZwei.car), sonst wuerde seine Drehzahl auf
+  // Auto 1s Leerlauf/Begrenzer-Band abgebildet.
+  stAdd('Zwei Spieler: verschiedene Motoren gleichzeitig', async () => {
+    if (!window.OMEGA_TEST || !audioCtx || !sampleEngine.ready) {
+      return { skip: true, mass: 'kein Tonkontext oder Schleifen noch nicht geladen' };
+    }
+    const s1 = $('sound-profile'), s2 = $('sound-profile-2');
+    if (!s1 || !s2) return { skip: true, mass: 'sound-profile(-2) nicht vorhanden' };
+    // Zwei WIRKLICH verschiedene, garantiert geladene Motoren - die ersten zwei Eintraege
+    // aus SAMPLE_CARS selbst, nicht per Namen geraten, die es vielleicht nicht mehr gibt.
+    const geladen = SAMPLE_CARS.filter((c) => sampleEngine.buffers[c]);
+    if (geladen.length < 2) return { skip: true, mass: 'weniger als zwei Motoren geladen' };
+    const [modellA, modellB] = geladen;
+    const vorher = { s1: s1.value, s2: s2.value, zwei: zweiSpieler };
+    try {
+      s1.value = modellA; s1.dispatchEvent(new Event('change', { bubbles: true }));
+      s2.value = modellB; s2.dispatchEvent(new Event('change', { bubbles: true }));
+      zweiSpieler = true;
+      if (typeof stimmeZweiSetzen === 'function') stimmeZweiSetzen(true);
+      const einsModell = stimmeEinsLage().modell;
+      const zweiModell = stimmeZweiLage().modell;
+      // Und die Drehzahl-Abbildung: motorDrehzahl() mit Auto 2s Modell darf sich vom
+      // selben Aufruf mit Auto 1s Modell unterscheiden, sobald die Baender verschieden
+      // liegen - sonst waere die Trennung nur an der Klangfarbe sichtbar, nicht am Ton.
+      const bA = sampleEngine.band[modellA], bB = sampleEngine.band[modellB];
+      const stFake = { rpm: 4000, rpmFrac: 0.5 };
+      const drehA = motorDrehzahl(stFake, modellA);
+      const drehB = motorDrehzahl(stFake, modellB);
+      const baenderUnterscheidenSich = !!bA && !!bB
+        && (bA.idle !== bB.idle || bA.limiter !== bB.limiter);
+      return {
+        ok: einsModell === modellA && zweiModell === modellB
+          && (!baenderUnterscheidenSich || drehA !== drehB),
+        mass: 'Auto 1: ' + einsModell + ', Auto 2: ' + zweiModell
+          + ' | Drehzahl bei rpmFrac 0.5: ' + drehA.toFixed(0) + ' / ' + drehB.toFixed(0)
+          + (baenderUnterscheidenSich ? ' (Baender verschieden)' : ' (Baender gleich)'),
+      };
+    } finally {
+      if (typeof stimmeZweiSetzen === 'function') stimmeZweiSetzen(vorher.zwei);
+      zweiSpieler = vorher.zwei;
+      s1.value = vorher.s1; s1.dispatchEvent(new Event('change', { bubbles: true }));
+      s2.value = vorher.s2; s2.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+  });
+
   // ---- Auto 2 verbraucht Sprit, und ein leerer Tank kostet ihn Leistung ------------
   //
   // VIER AUSSAGEN, und die vierte ist ein Fehler, den dieser Prueflauf gefunden hat.

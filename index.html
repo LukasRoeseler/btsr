@@ -3133,7 +3133,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.7.36</span></span>
+        <span class="foot-ver">v<span id="app-version">0.7.37</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -7771,6 +7771,13 @@
           <option value="kaefer1300">VW K&auml;fer 1300: Boxer-4, luftgek&uuml;hlt</option>
           </optgroup>
         </select></div>
+      <!-- BESTELLT: "Spieler 1 und Spieler 2 sollen verschiedene Motorsounds haben
+           duerfen." Auto 2s eigene Motorwahl - unsichtbar und LEER im Markup, damit die
+           lange Motorliste nicht ein zweites Mal von Hand gepflegt werden muss: 50-drive.js
+           kopiert #sound-profile hinein, sobald die Seite laedt (klont die <option>-
+           Eintraege, nicht das Element selbst). Das leere <select> hier ist nur der
+           Ankerpunkt, den der statische Verweis-Check von build.py braucht. -->
+      <select id="sound-profile-2" style="display:none" aria-hidden="true"></select>
       <div class="opt-row"><div class="opt-label">Motorlautstärke</div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
@@ -16442,10 +16449,15 @@
       knopf1.classList.toggle('warn',
         typeof pitState !== 'undefined' && pitState !== 'off');
     }
+    // BESTELLT: "Spieler 1 und Spieler 2 sollen verschiedene Motorsounds haben duerfen."
+    // Der Knopf zeigte hier bisher nur ab, was #race-act-sound (Auto 1) gerade anzeigt -
+    // seit Auto 2 seine eigene Auswahl in #sound-profile-2 hat (siehe deren Erzeugung
+    // weiter unten), zeigt er DIESE an.
     const ton = $('vgl-act-sound-txt');
     if (ton) {
-      const q = $('race-act-sound-txt');
-      ton.textContent = q ? q.textContent : 'Motor';
+      const sel2 = $('sound-profile-2');
+      const opt = sel2 ? sel2.options[sel2.selectedIndex] : null;
+      ton.textContent = opt ? motorNamen(opt) : 'Motor';
     }
   }
 
@@ -16466,20 +16478,35 @@
       p2ScreenRender();
     });
   }
+  // BESTELLT: "Spieler 1 und Spieler 2 sollen verschiedene Motorsounds haben duerfen."
+  // Auto 1 hat seine Auswahl schon (#sound-profile, Kachel "Ton"/"Motorwerkstatt") -
+  // Auto 2 braucht eine EIGENE, ohne die Motorliste ein zweites Mal von Hand im Markup zu
+  // pflegen (drei Orte fuer eine Liste sind schon zwei zu viel, siehe 95-selftest.js).
+  // Ein Klon von #sound-profile ist deshalb die ganze Datenhaltung: unsichtbar im DOM,
+  // aber mit denselben <option>-Eintraegen und derselben Vorgabe wie Auto 1s Regler, bis
+  // der Nutzer hier zum ersten Mal etwas anderes waehlt.
+  if ($('sound-profile') && $('sound-profile-2') && !$('sound-profile-2').options.length) {
+    $('sound-profile-2').innerHTML = $('sound-profile').innerHTML;
+    $('sound-profile-2').value = $('sound-profile').value;
+  }
   if ($('vgl-act-sound')) {
     $('vgl-act-sound').addEventListener('click', (e) => {
-      // Die Haelfte des Knopfes entscheidet ueber die Richtung - dieselbe Bedienung wie im
-      // Hauptschirm. Weitergereicht wird an den dortigen Knopf, damit es EINEN Weg durch
-      // die Motorliste gibt.
-      const q = $('race-act-sound');
-      if (!q) return;
-      const r = e.currentTarget.getBoundingClientRect();
-      const links = (e.clientX - r.left) < r.width / 2;
-      const ev = new MouseEvent('click', { bubbles: true, clientX:
-        links ? q.getBoundingClientRect().left + 4
-              : q.getBoundingClientRect().right - 4 });
-      q.dispatchEvent(ev);
+      // Dieselbe Bedienung wie beim Hauptschirm-Knopf (#race-act-sound): linke Haelfte
+      // zurueck, rechte vor - aber auf der EIGENEN Liste fuer Auto 2, nicht auf Auto 1s.
+      const sel = $('sound-profile-2');
+      if (!sel) return;
+      const brauchbar = Array.prototype.filter.call(sel.options, o => !o.disabled && !o.hidden);
+      if (!brauchbar.length) return;
+      const kasten = e.currentTarget.getBoundingClientRect();
+      const hatOrt = typeof e.clientX === 'number' && (e.clientX > 0 || e.clientY > 0);
+      const richtung = (hatOrt && e.clientX < kasten.left + kasten.width / 2) ? -1 : 1;
+      const jetzt = brauchbar.findIndex(o => o.value === sel.value);
+      const n = brauchbar.length;
+      const naechste = brauchbar[(((jetzt + richtung) % n) + n) % n];
+      sel.value = naechste.value;
+      sel.dispatchEvent(new Event('change', { bubbles: true }));
       p2ScreenRender();
+      showHudToast('AUTO 2: ' + motorNamen(naechste).toUpperCase());
     });
   }
   // setzen. 80 ms, dann zurueck: eine Anzeige mit Masse setzt sich kurz, ein Textfeld nicht.
@@ -27514,8 +27541,12 @@
   // Aufbauzeit von dort traefe die temporale Todeszone und nimmt die ganze IIFE mit. Die
   // Funktionsdeklaration selbst ist hochgezogen und damit von ueberall erreichbar; der
   // Rumpf braucht nur, dass der Aufbau durch ist. Aus einer Anzeigeschleife ist er das.
-  function motorDrehzahl(st) {
-    const b = sampleEngine.band[sampleEngine.car || $('sound-profile').value];
+  // `modell` optional: ohne ihn gilt Auto 1s Motor, wie schon immer. Auto 2s eigener Ton
+  // (updateEngineSound2()) uebergibt stimmeZwei.car, seit Auto 2 einen ANDEREN Motor als
+  // Auto 1 spielen darf - sonst wuerde seine Drehzahl auf Auto 1s Leerlauf/Begrenzer-Band
+  // abgebildet und nicht auf ihr eigenes.
+  function motorDrehzahl(st, modell) {
+    const b = sampleEngine.band[modell || sampleEngine.car || $('sound-profile').value];
     if (!b || !(b.limiter > b.idle)) return st.rpm;
     const f = Math.max(0, Math.min(1, st.rpmFrac || 0));
     return b.idle + f * (b.limiter - b.idle);
@@ -28354,10 +28385,11 @@
     // beide neutral - derselbe Weg, keine Wirkung.
     if (!startSampleEngineIn(sampleEngine, car, stimmeEinsAusgang)) return false;
     if (engineGain) engineGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.05); // hush the oscillator
-    // Auto 2 faehrt dasselbe Motormodell: die Wahl steht im Cockpit und gilt fuer das
-    // Rennen. Ein eigenes Menue fuer Auto 2 waere ein zweiter Regler und eine zweite
-    // Ablage - und zwei verschiedene Motoren zugleich sind aus einem Lautsprecher ohnehin
-    // schwer zu trennen.
+    // BESTELLT: "Spieler 1 und Spieler 2 sollen verschiedene Motorsounds haben duerfen."
+    // stimmeZweiStarten() liest seither #sound-profile-2 (ein Klon von #sound-profile,
+    // erzeugt in 50-drive.js) statt zwingend sampleEngine.car - Auto 2 DARF also
+    // abweichen, faehrt aber ohne eigene Wahl weiter denselben Motor wie Auto 1, weil der
+    // Klon mit derselben Vorgabe startet.
     if (typeof zweiSpieler !== 'undefined' && zweiSpieler) stimmeZweiStarten();
     return true;
   }
@@ -28374,7 +28406,11 @@
 
   function stimmeZweiStarten() {
     if (!audioCtx || !sampleEngine.car) return false;
-    return startSampleEngineIn(stimmeZwei, sampleEngine.car, stimmeZweiAusgang);
+    // #sound-profile-2, wenn vorhanden (siehe 50-drive.js), sonst Auto 1s Motor - so
+    // faehrt Auto 2 ohne eigene Wahl weiter denselben Motor, statt stumm zu bleiben.
+    const sel2 = typeof $ === 'function' ? $('sound-profile-2') : null;
+    const modell = (sel2 && sampleEngine.buffers[sel2.value]) ? sel2.value : sampleEngine.car;
+    return startSampleEngineIn(stimmeZwei, modell, stimmeZweiAusgang);
   }
 
   function stimmeZweiStoppen() { if (audioCtx) stopSampleEngineIn(stimmeZwei); }
@@ -28507,7 +28543,7 @@
     const load = Math.max(0, Math.min(1, st.engineLoad || 0));
     const leise = load <= 0.01 && (st.virtualSpeed || 0) <= 0.01
                   && Math.abs(st.speedKmh || 0) < 0.05;
-    updateSampleEngineIn(stimmeZwei, motorDrehzahl(st), load, leise, physEngine2, 1);
+    updateSampleEngineIn(stimmeZwei, motorDrehzahl(st, stimmeZwei.car), load, leise, physEngine2, 1);
   }
 
   // An- und abschalten, gerufen aus zweiSpielerSetzen(). Zwei Wege und nicht einer mit
@@ -28550,6 +28586,19 @@
     log('Motorprofil "' + v + '" hat keine Schleifen, Ersatzmotor laeuft. Das ist ein '
         + 'Fehler, wenn der Eintrag im Menue steht.', 'warn');
   });
+
+  // BESTELLT: "Spieler 1 und Spieler 2 sollen verschiedene Motorsounds haben duerfen."
+  // #sound-profile-2 existiert erst, sobald 50-drive.js ihn geklont hat - dieselbe
+  // Absicherung wie ueberall, wo eine Datei auf eine andere angewiesen ist.
+  if ($('sound-profile-2')) {
+    $('sound-profile-2').addEventListener('change', () => {
+      // Nur neu starten, wenn Auto 2 gerade wirklich spielt - sonst greift die naechste
+      // stimmeZweiStarten() (beim naechsten Motorwechsel oder Anschalten) von selbst zu.
+      if (typeof zweiSpieler !== 'undefined' && zweiSpieler && stimmeZwei.nodes) {
+        stimmeZweiStarten();
+      }
+    });
+  }
 
   $('cm-start').addEventListener('click', () => {
     cmOn = !cmOn;
@@ -58646,6 +58695,57 @@
                  + ' | Seite ' + r.einsSeite + ' gegen ' + r.zweiSeite
                  + ' | still ' + r.still
                  + (maengel.length ? ' | ' + maengel.join(', ') : '') };
+  });
+
+  // ---- Zwei Spieler DUERFEN verschiedene Motoren fahren ----------------------------
+  //
+  // BESTELLT: "Spieler 1 und Spieler 2 sollen verschiedene Motorsounds haben duerfen."
+  // Vorher zwang startSampleEngine() Auto 2 ausdruecklich auf Auto 1s Modell
+  // (stimmeZweiStarten() las sampleEngine.car). Jetzt liest sie #sound-profile-2, einen
+  // Klon von #sound-profile (50-drive.js) - und motorDrehzahl() bekommt fuer Auto 2
+  // dessen EIGENES Modell uebergeben (stimmeZwei.car), sonst wuerde seine Drehzahl auf
+  // Auto 1s Leerlauf/Begrenzer-Band abgebildet.
+  stAdd('Zwei Spieler: verschiedene Motoren gleichzeitig', async () => {
+    if (!window.OMEGA_TEST || !audioCtx || !sampleEngine.ready) {
+      return { skip: true, mass: 'kein Tonkontext oder Schleifen noch nicht geladen' };
+    }
+    const s1 = $('sound-profile'), s2 = $('sound-profile-2');
+    if (!s1 || !s2) return { skip: true, mass: 'sound-profile(-2) nicht vorhanden' };
+    // Zwei WIRKLICH verschiedene, garantiert geladene Motoren - die ersten zwei Eintraege
+    // aus SAMPLE_CARS selbst, nicht per Namen geraten, die es vielleicht nicht mehr gibt.
+    const geladen = SAMPLE_CARS.filter((c) => sampleEngine.buffers[c]);
+    if (geladen.length < 2) return { skip: true, mass: 'weniger als zwei Motoren geladen' };
+    const [modellA, modellB] = geladen;
+    const vorher = { s1: s1.value, s2: s2.value, zwei: zweiSpieler };
+    try {
+      s1.value = modellA; s1.dispatchEvent(new Event('change', { bubbles: true }));
+      s2.value = modellB; s2.dispatchEvent(new Event('change', { bubbles: true }));
+      zweiSpieler = true;
+      if (typeof stimmeZweiSetzen === 'function') stimmeZweiSetzen(true);
+      const einsModell = stimmeEinsLage().modell;
+      const zweiModell = stimmeZweiLage().modell;
+      // Und die Drehzahl-Abbildung: motorDrehzahl() mit Auto 2s Modell darf sich vom
+      // selben Aufruf mit Auto 1s Modell unterscheiden, sobald die Baender verschieden
+      // liegen - sonst waere die Trennung nur an der Klangfarbe sichtbar, nicht am Ton.
+      const bA = sampleEngine.band[modellA], bB = sampleEngine.band[modellB];
+      const stFake = { rpm: 4000, rpmFrac: 0.5 };
+      const drehA = motorDrehzahl(stFake, modellA);
+      const drehB = motorDrehzahl(stFake, modellB);
+      const baenderUnterscheidenSich = !!bA && !!bB
+        && (bA.idle !== bB.idle || bA.limiter !== bB.limiter);
+      return {
+        ok: einsModell === modellA && zweiModell === modellB
+          && (!baenderUnterscheidenSich || drehA !== drehB),
+        mass: 'Auto 1: ' + einsModell + ', Auto 2: ' + zweiModell
+          + ' | Drehzahl bei rpmFrac 0.5: ' + drehA.toFixed(0) + ' / ' + drehB.toFixed(0)
+          + (baenderUnterscheidenSich ? ' (Baender verschieden)' : ' (Baender gleich)'),
+      };
+    } finally {
+      if (typeof stimmeZweiSetzen === 'function') stimmeZweiSetzen(vorher.zwei);
+      zweiSpieler = vorher.zwei;
+      s1.value = vorher.s1; s1.dispatchEvent(new Event('change', { bubbles: true }));
+      s2.value = vorher.s2; s2.dispatchEvent(new Event('change', { bubbles: true }));
+    }
   });
 
   // ---- Auto 2 verbraucht Sprit, und ein leerer Tank kostet ihn Leistung ------------
