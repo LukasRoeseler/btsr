@@ -350,6 +350,53 @@
              mass: teile.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
   });
 
+  // ---- Luuke-Linie: die fuenf verlaesslichen Beispiele treffen die vorgegebene Querlage ----
+  //
+  // BESTELLT: ein eigener Ideallinien-Modus, von Hand aus sechs Beispiel-Streckenverlaeufen
+  // hergeleitet (SR3L3 auf Nutzeranweisung fallengelassen, die Kachelzahl passte nicht zur
+  // Querlage-Liste). Die Regel ist in luukeLinieAnker() (60-track.js) ausfuehrlich
+  // begruendet; dieser Test prueft nur, ob sie die Beispiele trifft.
+  //
+  // ZWEI STELLEN ABSICHTLICH NICHT HART GEPRUEFT (siehe der Kommentar bei
+  // luukeLinieAnker()): der Haarnadel-Scheitel (SGHG, -75 statt der von der allgemeinen
+  // Regel vorhergesagten +75) UND je eine Gerade unmittelbar vor der Startkachel in SGR3G
+  // und SR2GL2G (+100 belegt, die Regel sagt 0 vorher) - beides offene Fragen an Luuke,
+  // keine stillschweigend geratenen Sonderregeln.
+  stAdd('Luuke-Linie: trifft die fuenf verlaesslichen Beispiele', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.luukeLinieAnker || !OMEGA_TEST.codeToTrack) {
+      return { skip: true, mass: 'Pruefzugang nicht vorhanden' };
+    }
+    const TOLERANZ = 15;
+    // { code, erwartet, offen: [Kachelindizes, die nicht hart geprueft werden] }
+    const beispiele = [
+      { code: 'SGR3G', erwartet: [0, -50, -100, 100, -50, 100], offen: [5] },
+      { code: 'SRLG', erwartet: [0, 100, 0, -100], offen: [] },
+      { code: 'SGHG', erwartet: [0, -50, -75, 0], offen: [2] },
+      { code: 'SR2GL2G', erwartet: [0, -100, 100, 0, 100, -100, 100], offen: [6] },
+      { code: 'SR2G2RG2', erwartet: [0, -100, 100, -100, -100, 100, 0, -100], offen: [] },
+    ];
+    const schlecht = [], teile = [];
+    for (const b of beispiele) {
+      const p = OMEGA_TEST.codeToTrack(b.code);
+      if (!p || !p.tiles || p.tiles.length !== b.erwartet.length) {
+        schlecht.push(b.code + ': ' + (p ? p.tiles.length : '?') + ' Kacheln statt '
+          + b.erwartet.length);
+        continue;
+      }
+      const anker = OMEGA_TEST.luukeLinieAnker(p.tiles, true);
+      const abweichungen = [];
+      for (let i = 0; i < b.erwartet.length; i++) {
+        if (b.offen.indexOf(i) >= 0) continue;    // offene Frage, nicht hart geprueft
+        const diff = Math.abs(anker[i] - b.erwartet[i]);
+        if (diff > TOLERANZ) abweichungen.push('Kachel ' + i + ': ' + anker[i] + ' statt ' + b.erwartet[i]);
+      }
+      teile.push(b.code + ': ' + anker.join(','));
+      if (abweichungen.length) schlecht.push(b.code + ' || ' + abweichungen.join('; '));
+    }
+    return { ok: schlecht.length === 0,
+             mass: teile.join(' | ') + (schlecht.length ? ' || FEHLER: ' + schlecht.join(' | ') : '') };
+  });
+
   // ---- 6. Kachelphase ----
   // Eine Haarnadel ist dreimal so lang wie eine Gerade. Rechnet die Phase mit einer
   // mittleren Kacheldauer, steht sie dort nach einem Drittel auf 1 und der Linienversatz

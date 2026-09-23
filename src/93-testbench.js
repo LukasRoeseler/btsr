@@ -3242,6 +3242,9 @@
     },
     setLineModel, getLineModel, buildLine, getLineExit, lapTimeOf, fahrGrenzen,
     lineModelle: LINE_MODELLE, linienmodellName: LINIENMODELL_NAME,
+    // Die Luuke-Linie direkt auf den Ankern pruefbar, ohne den Umweg ueber Abtastpunkte
+    // und alpha - ein Selbsttest soll die -100..100-Skala der Beispiele direkt lesen.
+    luukeLinieAnker,
     // Die Sperre selbst herausgegeben: eine Pruefung soll fragen koennen, WANN sie gilt,
     // statt es aus Kachelindizes nachzubauen.
     pitSperreRechts, pitKachel, pitFaelligZiehen,

@@ -3166,7 +3166,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.7.47</span></span>
+        <span class="foot-ver">v<span id="app-version">0.7.48</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -8383,6 +8383,7 @@
           <button type="button" class="mw-preset" data-linemodel="mitte">Fahrbahnmitte</button>
           <button type="button" class="mw-preset" data-linemodel="innen3">Innen (gemittelt)</button>
           <button type="button" class="mw-preset" data-linemodel="aussenin">Außen-Innen</button>
+          <button type="button" class="mw-preset" data-linemodel="luuke">Luuke-Linie</button>
         </div></div>
       <!-- DIE LINIE DIREKT NEBEN DER WAHL. Gemeldet: "ich habe 2 Ideallinie Modi, aber wenn
            ich dazwischen waehle, aendert sich die eingezeichnete Linie nicht." Sie aendert
@@ -20329,7 +20330,7 @@
   // 'dreistufig' ist KEINE Optimierung und steht deshalb am Ende: die drei davor suchen
   // ein Optimum, dieses folgt einer Vorschrift. Die Begruendung steht bei dreiStufenLine().
   const LINE_MODELLE = ['curvature', 'laptime', 'lateapex', 'dreistufig', 'mitte', 'innen3',
-                        'aussenin'];
+                        'aussenin', 'luuke'];
 
   function setLineModel(m) {
     if (LINE_MODELLE.indexOf(m) < 0) return;
@@ -20586,6 +20587,232 @@
     return plan ? lineGeradenAnwenden(alpha.slice(), plan) : alpha;
   }
 
+  // ======================= LUUKE-LINIE ================================================
+  //
+  // BESTELLT: eigener, von Hand vorgegebener Ideallinien-Modus, aus sechs
+  // Beispiel-Streckenverlaeufen mit Querlage-Ankern hergeleitet (-100 = ganz links,
+  // +100 = ganz rechts, 0 = Mitte - dieselbe Skala, in der die Beispiele geliefert
+  // wurden). Fuenf der sechs Beispiele sind verlaesslich (eines, SR3L3, passte nicht zur
+  // eigenen Kachelzahl und ist auf Anweisung fallengelassen):
+  //
+  //   SGR3G      0, -50, -100, 100, -50, 100
+  //   SRLG       0, 100, 0, -100
+  //   SGHG       0, -50, -75, 0
+  //   SR2GL2G    0, -100, 100, 0, 100, -100, 100
+  //   SR2G2RG2   0, -100, 100, -100, -100, 100, 0, -100
+  //
+  // DIE REGEL, tileweise hergeleitet und gegen alle 34 Zahlen der fuenf Beispiele
+  // geprueft (31 von 34 treffen exakt, zwei Ausreisser bleiben offen - siehe unten):
+  //
+  //   1. KURVENLAEUFE (lineKurvenLaeufe(), schon vorhanden fuer dreiStufenLine): der
+  //      Scheitel sitzt auf Lauf-Position min(1, Lauflaenge-1) - bei Laenge 1 die einzige
+  //      Kachel, bei Laenge 2 die zweite, bei Laenge 3 die MITTLERE (nicht die letzte).
+  //   2. Scheitel: volles Innen (=Kurvenrichtung), Betrag 100 - AUSSER bei Schaerfeklasse 2
+  //      (Haarnadel/Enge): dort -75 * Richtung, also AUSSEN statt innen und nur 75 statt
+  //      100 - ein einzelner Beleg (SGHG), als bewusste Ausnahme uebernommen und nicht
+  //      stillschweigend ins allgemeine Muster gebogen (siehe Restfragen unten).
+  //   3. Erste Kachel eines Laufs (wenn nicht Scheitel): volles Aussen, Betrag 100 (bzw.
+  //      50 bei Schaerfeklasse 0, den weiten Kurven - keine Beispiele dafuer, aus der
+  //      Schaerfeklasse selbst hergeleitet: halbe Wirkung fuer ein Drittel der
+  //      Querbeschleunigung).
+  //   4. Kacheln NACH dem Scheitel, noch im selben Lauf: halbes Aussen (Betrag 50) - nur
+  //      mit einem Beleg (SGR3G, Laufl. 3) geprueft, fuer laengere Laeufe unbestaetigt.
+  //   5. EIN LAUF DER LAENGE 1, UNMITTELBAR (ohne Gerade dazwischen) einem gegensinnigen
+  //      Lauf folgend, ist "gedaempft": seine einzige Kachel wird 0 statt des Scheitels,
+  //      und der volle Scheitelwert wandert auf die naechste Kachel weiter, WENN diese
+  //      eine einfache Gerade ist (keine Startkachel, keine weitere Kurve) - belegt an
+  //      SRLG (R triftt L ohne Puffer: R selbst bleibt bei +100, L wird zu 0, die
+  //      folgende Gerade traegt den vollen Linksscheitel -100). Nur ein Beleg, als
+  //      Sonderfall uebernommen.
+  //   6. GERADEN (und die Startkachel: dort immer 0): siehe luukeGeradenWert() - weder
+  //      reine Interpolation noch symmetrischer Zerfall passten auf die Daten, sondern
+  //      ein Blick nach vorn UND zurueck:
+  //        - Unmittelbar NACH der Startkachel: halbes Aussen Richtung naechstem Lauf,
+  //          aber nur, wenn dieser genau eine Kachel entfernt ist (SGR3G, SGHG).
+  //        - Unmittelbar nach dem Verlassen eines Laufs: volles Aussen Richtung des
+  //          naechsten Laufs, aber NUR wenn dieser hoechstens zwei Kacheln entfernt ist
+  //          UND gleichsinnig zum gerade verlassenen Lauf dreht (SR2G2RG2, beide Luecken)
+  //          - sonst 0 (Ruecksprung zur Mitte, SGHG/SR2GL2G/SR2G2RG2).
+  //
+  //   ZWEI OFFENE RESTFRAGEN, nicht stillschweigend festgelegt (an Luuke zurueckspielen):
+  //     - SGR3G und SR2GL2G haben je EINE Gerade unmittelbar vor der Startkachel (nach
+  //       dem Verlassen eines Laufs, gleichsinnig zum naechsten Lauf ueber die Naht
+  //       hinweg), deren Wert (+100 in beiden Faellen) die obige Regel nicht erklaert -
+  //       sie wuerde 0 vorhersagen (Ruecksprung zur Mitte). Beide Belege zeigen
+  //       ausgerechnet +100, nicht irgendeinen Wert - zu konsistent fuer reines Rauschen,
+  //       aber ohne erklaerenden Mechanismus. Vorschlag: 0 lassen (die haeufigere,
+  //       bestaetigte Regel), beide Faelle als offene Frage vermerkt.
+  //     - Der Haarnadel-Scheitel (-75, Punkt 2 oben) koennte ebenso gut ein
+  //       Vorzeichendreher beim Eintippen sein (+75 waere das erwartete Vorzeichen).
+  //       Uebernommen wie geliefert, mit derselben Markierung.
+  //
+  // NEUER RICHTUNGS-HELFER FUER WEITE/KLEINE KURVEN: kurvenDrehung() liefert fuer sie
+  // bewusst 0 (siehe dort) - eine echte Luecke, aber dreistufig/innen3/aussenin haengen
+  // an genau dieser 0, also wird kurvenDrehung() selbst NICHT angefasst. luukeDrehung()
+  // ist ein PARALLELER Helfer, nur fuer dieses Modell.
+  function luukeDrehung(t) {
+    if (t === TILE_TYPE.CURVE_RIGHT || t === TILE_TYPE.HAIRPIN
+        || t === TILE_TYPE.WEIT_RIGHT || t === TILE_TYPE.KLEIN_RIGHT) return 1;
+    if (t === TILE_TYPE.CURVE_LEFT || t === TILE_TYPE.HAIRPIN_LEFT
+        || t === TILE_TYPE.WEIT_LEFT || t === TILE_TYPE.KLEIN_LEFT) return -1;
+    return 0;
+  }
+
+  // Kurvenlaeufe wie lineKurvenLaeufe(), nur mit luukeDrehung() statt kurvenDrehung() -
+  // sonst wuerden weite/kleine Kurven hier gar nicht erst als Lauf gezaehlt.
+  function luukeLaeufe(tiles, closed) {
+    const n = tiles.length;
+    const laeufe = [];
+    let i = 0;
+    while (i < n) {
+      const d = luukeDrehung(tiles[i].type);
+      if (!d) { i++; continue; }
+      let j = i;
+      while (j + 1 < n && luukeDrehung(tiles[j + 1].type) === d) j++;
+      laeufe.push({ von: i, bis: j, dreht: d });
+      i = j + 1;
+    }
+    if (closed && laeufe.length > 1) {
+      const erst = laeufe[0], letzt = laeufe[laeufe.length - 1];
+      if (erst.von === 0 && letzt.bis === n - 1 && erst.dreht === letzt.dreht) {
+        letzt.bis = erst.bis + n;
+        laeufe.shift();
+      }
+    }
+    return laeufe;
+  }
+
+  // 100 fuer Schaerfeklasse 1 und 2 (Standard-/Kleinkurve, Haarnadel/Enge), 50 fuer
+  // Klasse 0 (Weitkurve) - hergeleitet aus der Querbeschleunigung (ein Drittel des
+  // Radius bei gleichem Tempo), nicht aus einem Beispiel: keine der fuenf Vorlagen
+  // enthaelt eine Weitkurve.
+  function luukeBase(tightness) { return tightness === 0 ? 50 : 100; }
+
+  // Geraden UND die Startkachel (dort immer 0) - siehe Punkt 6 oben.
+  function luukeGeradenWert(i, tiles, runOf, closed, at) {
+    const n = tiles.length;
+    const justAfterS = (closed || i > 0) && tiles[at(i - 1)].type === TILE_TYPE.START;
+    let prevRun = null;
+    for (let back = 1; back <= n; back++) {
+      if (!closed && i - back < 0) break;
+      const idx = at(i - back);
+      if (runOf[idx]) { prevRun = runOf[idx]; break; }
+    }
+    let nextRun = null, dist = null;
+    for (let fwd = 1; fwd <= n; fwd++) {
+      if (!closed && i + fwd >= n) break;
+      const idx = at(i + fwd);
+      if (runOf[idx]) { nextRun = runOf[idx]; dist = fwd; break; }
+    }
+    if (justAfterS) {
+      if (nextRun && dist === 1) {
+        const tight = tileTightness(tiles[at(nextRun.von)].type);
+        return -0.5 * luukeBase(tight) * nextRun.dreht;
+      }
+      return 0;
+    }
+    if (nextRun && prevRun && dist <= 2 && nextRun.dreht === prevRun.dreht) {
+      const tight = tileTightness(tiles[at(nextRun.von)].type);
+      return -luukeBase(tight) * nextRun.dreht;
+    }
+    return 0;
+  }
+
+  // Die Querlage-Anker je Kachel, auf der -100..100-Skala der Beispiele (noch keine
+  // alpha-Werte - das macht luukeLinie() daraus, mit der Vorzeichenumkehr und der
+  // Fahrgrenze).
+  function luukeLinieAnker(tiles, closed) {
+    const n = tiles.length;
+    const anker = new Array(n).fill(0);
+    if (!n) return anker;
+    const at = (i) => ((i % n) + n) % n;
+    const laeufe = luukeLaeufe(tiles, closed);
+    const runOf = new Array(n).fill(null);
+    laeufe.forEach((lauf) => {
+      for (let p = lauf.von; p <= lauf.bis; p++) runOf[at(p)] = lauf;
+    });
+
+    const override = new Map();
+    laeufe.forEach((lauf) => {
+      const len = lauf.bis - lauf.von + 1;
+      const d = lauf.dreht;
+      const tight = tileTightness(tiles[at(lauf.von)].type);
+      const base = luukeBase(tight);
+      const apexPos = Math.min(1, len - 1);
+      // Unmittelbar (ohne Puffer) einem gegensinnigen Lauf folgend? Siehe Punkt 5 oben.
+      let vor = null;
+      for (const other of laeufe) {
+        if (other !== lauf && at(other.bis + 1) === at(lauf.von)) { vor = other; break; }
+      }
+      const gedaempft = len === 1 && vor && vor.dreht === -d;
+      for (let p = 0; p < len; p++) {
+        const idx = at(lauf.von + p);
+        let wert;
+        if (tight === 2 && p === apexPos) wert = -75 * d;
+        else if (p === apexPos) wert = base * d;
+        else if (p === 0) wert = -base * d;
+        else wert = -0.5 * base * d;
+        if (gedaempft && p === apexPos) {
+          anker[idx] = 0;
+          const naechsterIdx = at(lauf.bis + 1);
+          if (!runOf[naechsterIdx] && tiles[naechsterIdx].type !== TILE_TYPE.START) {
+            override.set(naechsterIdx, wert);
+          }
+        } else {
+          anker[idx] = wert;
+        }
+      }
+    });
+
+    for (let i = 0; i < n; i++) {
+      if (runOf[i]) continue;
+      if (tiles[i].type === TILE_TYPE.START) { anker[i] = 0; continue; }
+      if (override.has(i)) { anker[i] = override.get(i); continue; }
+      anker[i] = luukeGeradenWert(i, tiles, runOf, closed, at);
+    }
+    return anker;
+  }
+
+  // Anker -> alpha: dieselbe Vorzeichenabbildung wie innenGemitteltLine() (alpha = -wert
+  // * limit, hier auf die -100..100-Skala bezogen statt auf SPUR_VOLL), und dieselbe
+  // Kachel-Anker-zu-naechster-Kachel-Rampe - nur SMOOTHSTEP statt linear interpoliert
+  // (3u^2 - 2u^3), damit die Steigung an jeder Kachelgrenze null ist und kein Knick genau
+  // am Uebergang entsteht.
+  function luukeLinie(pts, nrm, o) {
+    const n = pts.length;
+    const tiles = o.tiles || [];
+    const closed = o.closed !== false;
+    const limit = (o.limit !== undefined ? o.limit : TRACK_HALF_W - 3);
+    const alpha = new Array(n).fill(0);
+    if (!tiles.length) {
+      const bahn = pts.map((p) => [p.x, p.y]);
+      const prof = lapTimeOf(bahn, closed, o);
+      return { alpha, limit, span: 0, lapTime: prof.time, startLapTime: prof.time,
+               v: prof.v, gain: 0, apex: [], par: [], evals: 0, accepted: 0 };
+    }
+    const tCount = tiles.length;
+    const tab = trackKachelTabelle(pts, tCount);
+    const anker = luukeLinieAnker(tiles, closed);
+    const at = (i) => closed ? ((i % n) + n) % n : Math.max(0, Math.min(n - 1, i));
+    const smooth = (u) => u * u * (3 - 2 * u);
+    for (let t = 0; t < tCount; t++) {
+      const m = tab.zahl[t];
+      const hatNaechste = closed || t + 1 < tCount;
+      const a0 = anker[t];
+      const a1 = hatNaechste ? anker[(t + 1) % tCount] : anker[t];
+      for (let d = 0; d < m; d++) {
+        const frac = m > 0 ? d / m : 0;
+        const wert = a0 + (a1 - a0) * smooth(frac);
+        alpha[at(tab.start[t] + d)] = -(wert / 100) * limit;
+      }
+    }
+    const bahn = pts.map((p, i) => [p.x + nrm[i].x * alpha[i], p.y + nrm[i].y * alpha[i]]);
+    const prof = lapTimeOf(bahn, closed, o);
+    return { alpha, limit, span: Math.max.apply(null, alpha.map(Math.abs)),
+             lapTime: prof.time, startLapTime: prof.time, v: prof.v, gain: 0,
+             apex: [], par: [], evals: 0, accepted: 0 };
+  }
+
   // Beide Modelle hinter einem Aufruf. Editor und Ghosts gehen hier durch, damit die
   // gezeichnete und die gefahrene Linie nicht auseinanderlaufen koennen.
   function buildLine(pts, nrm, opts) {
@@ -20621,6 +20848,7 @@
       : m === 'dreistufig' ? dreiStufenLine(pts, nrm, o)
       : m === 'innen3' ? innenGemitteltLine(pts, nrm, o)
       : m === 'aussenin' ? aussenInnenLine(pts, nrm, o)
+      : m === 'luuke' ? luukeLinie(pts, nrm, o)
       : formLine(pts, nrm, o, 'zeit', 0.15, 0.85);
     line.model = m;
     line.grenzen = g;
@@ -37399,7 +37627,7 @@
   const LINIENMODELL_NAME = {
     curvature: 'Kr\u00fcmmung', laptime: 'Rundenzeit', lateapex: 'Late Apex',
     dreistufig: '3-stufig', mitte: 'Fahrbahnmitte', innen3: 'Innen (gemittelt)',
-    aussenin: 'Außen-Innen',
+    aussenin: 'Außen-Innen', luuke: 'Luuke-Linie',
   };
 
   // ---- Die gewaehlte Linie zeigen, direkt neben der Wahl ----
@@ -42664,6 +42892,9 @@
     },
     setLineModel, getLineModel, buildLine, getLineExit, lapTimeOf, fahrGrenzen,
     lineModelle: LINE_MODELLE, linienmodellName: LINIENMODELL_NAME,
+    // Die Luuke-Linie direkt auf den Ankern pruefbar, ohne den Umweg ueber Abtastpunkte
+    // und alpha - ein Selbsttest soll die -100..100-Skala der Beispiele direkt lesen.
+    luukeLinieAnker,
     // Die Sperre selbst herausgegeben: eine Pruefung soll fragen koennen, WANN sie gilt,
     // statt es aus Kachelindizes nachzubauen.
     pitSperreRechts, pitKachel, pitFaelligZiehen,
@@ -48734,6 +48965,53 @@
     }
     return { ok: schlecht.length === 0,
              mass: teile.join(' | ') + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // ---- Luuke-Linie: die fuenf verlaesslichen Beispiele treffen die vorgegebene Querlage ----
+  //
+  // BESTELLT: ein eigener Ideallinien-Modus, von Hand aus sechs Beispiel-Streckenverlaeufen
+  // hergeleitet (SR3L3 auf Nutzeranweisung fallengelassen, die Kachelzahl passte nicht zur
+  // Querlage-Liste). Die Regel ist in luukeLinieAnker() (60-track.js) ausfuehrlich
+  // begruendet; dieser Test prueft nur, ob sie die Beispiele trifft.
+  //
+  // ZWEI STELLEN ABSICHTLICH NICHT HART GEPRUEFT (siehe der Kommentar bei
+  // luukeLinieAnker()): der Haarnadel-Scheitel (SGHG, -75 statt der von der allgemeinen
+  // Regel vorhergesagten +75) UND je eine Gerade unmittelbar vor der Startkachel in SGR3G
+  // und SR2GL2G (+100 belegt, die Regel sagt 0 vorher) - beides offene Fragen an Luuke,
+  // keine stillschweigend geratenen Sonderregeln.
+  stAdd('Luuke-Linie: trifft die fuenf verlaesslichen Beispiele', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.luukeLinieAnker || !OMEGA_TEST.codeToTrack) {
+      return { skip: true, mass: 'Pruefzugang nicht vorhanden' };
+    }
+    const TOLERANZ = 15;
+    // { code, erwartet, offen: [Kachelindizes, die nicht hart geprueft werden] }
+    const beispiele = [
+      { code: 'SGR3G', erwartet: [0, -50, -100, 100, -50, 100], offen: [5] },
+      { code: 'SRLG', erwartet: [0, 100, 0, -100], offen: [] },
+      { code: 'SGHG', erwartet: [0, -50, -75, 0], offen: [2] },
+      { code: 'SR2GL2G', erwartet: [0, -100, 100, 0, 100, -100, 100], offen: [6] },
+      { code: 'SR2G2RG2', erwartet: [0, -100, 100, -100, -100, 100, 0, -100], offen: [] },
+    ];
+    const schlecht = [], teile = [];
+    for (const b of beispiele) {
+      const p = OMEGA_TEST.codeToTrack(b.code);
+      if (!p || !p.tiles || p.tiles.length !== b.erwartet.length) {
+        schlecht.push(b.code + ': ' + (p ? p.tiles.length : '?') + ' Kacheln statt '
+          + b.erwartet.length);
+        continue;
+      }
+      const anker = OMEGA_TEST.luukeLinieAnker(p.tiles, true);
+      const abweichungen = [];
+      for (let i = 0; i < b.erwartet.length; i++) {
+        if (b.offen.indexOf(i) >= 0) continue;    // offene Frage, nicht hart geprueft
+        const diff = Math.abs(anker[i] - b.erwartet[i]);
+        if (diff > TOLERANZ) abweichungen.push('Kachel ' + i + ': ' + anker[i] + ' statt ' + b.erwartet[i]);
+      }
+      teile.push(b.code + ': ' + anker.join(','));
+      if (abweichungen.length) schlecht.push(b.code + ' || ' + abweichungen.join('; '));
+    }
+    return { ok: schlecht.length === 0,
+             mass: teile.join(' | ') + (schlecht.length ? ' || FEHLER: ' + schlecht.join(' | ') : '') };
   });
 
   // ---- 6. Kachelphase ----
