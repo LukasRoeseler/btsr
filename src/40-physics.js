@@ -141,11 +141,15 @@
         // Lenkansprechen 2,0 sind 12 Anschlaege je Sekunde, also 83 ms. Damit faehrt die
         // App mit der Vorgabe genauso wie vorher.
         steerDaempfungMs: Math.round(1000 / (STEER_RATE_REF * STEER_RESP_REF)),
-        // BESTELLT: "Standard beim lenken etwas unempfindlicher bei wenig input." Von
-        // 1.15 auf 1.3 angehoben - deutlich unter der 1.5, die sich "unwillig" anfuehlte
-        // (siehe der alte Kommentar hier), aber ueber der bisherigen Vorgabe. Jetzt ueber
-        // #setting-steer-expo einstellbar, dieser Wert ist nur noch der Anfangswert.
-        steerExpo: 1.3,
+        // v0.7.9 hatte dies BESTELLT: "Standard beim lenken etwas unempfindlicher bei
+        // wenig input", und hob die Vorgabe von 1.15 auf 1.3 an. GEMELDET danach:
+        // "beim gas geben ist die Lenkung jetzt extrem schwach... mach es so wie in
+        // v0.6.xx" - genau der Bereich, den ein hoeherer Exponent am staerksten trifft,
+        // ist KLEINER Lenkausschlag (bei x=0,2 kostet 1.3 statt 1.15 rund ein Viertel
+        // Ausschlag, bei vollem Lock 1 kein Unterschied), und kleine Korrekturen beim
+        // Herausbeschleunigen sind genau das. Zurueckgesetzt auf 1.15, wie vor v0.7.9 -
+        // der Regler #setting-steer-expo bleibt, wer will, stellt haerter selbst ein.
+        steerExpo: 1.15,
         // Der volle Lenkausschlag ist MECHANISCH 45 Grad. Das stand nirgends, und damit
         // war steerResponse eine Zahl ohne Einheit: der Regler ging von 0,5 bis 3,0, und
         // was 2,0 bedeutete, wusste nur die Kalibrierung. Jetzt ist die Groesse im Modell,
