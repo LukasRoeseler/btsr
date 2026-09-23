@@ -2345,7 +2345,12 @@
       regler.at = Date.now();
       // formationPace(): dasselbe Mindesttempo wie die Einfuehrungsrunde - hoch genug,
       // um die Streckencodes zuverlaessig zu lesen (siehe GHOST_READ_MIN dort).
-      const geregelt = ghostSpeedControl(regler, formationPace(), v, dt);
+      // BESTELLT: "Scan-Modus [...] das Auto faehrt so schnell, dass es aus der
+      // Haarnadelkurve rausfaehrt -> drosseln." Insgesamt 85 % der Einfuehrungsrunde, in
+      // einer gemeldeten Haarnadel 65 %. Die Leseschwelle 0,35 (GHOST_READ_MIN) ist am
+      // GEDRUCKTEN Muster gemessen; der Scan laeuft auf der Bahn (trackMode 'on').
+      const ziel = formationPace() * (scanInHaarnadel(meinAuto) ? 0.65 : 0.85);
+      const geregelt = ghostSpeedControl(regler, ziel, v, dt);
       return { grund: 'scan', throttle: geregelt.throttle, brake: geregelt.brake,
                steer: 0, lenkt: !abseitsJetztFuer(zwei ? 2 : 1) };
     }

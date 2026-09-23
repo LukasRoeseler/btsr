@@ -4478,12 +4478,11 @@
   // Als let und nicht const, damit eine Messreihe ihn durchfahren kann - der Wert ist eine
   // Abwaegung zwischen Beruehrungen und dichtem Fahren, und die entscheidet eine Reihe und
   // nicht ein Kommentar. Der Fahrbetrieb aendert ihn nicht.
-  // BESTELLT (diese Runde): "ghosts etwas mehr abstand, damit sie sich nicht anschieben
-  // (lateral ist gut, aber hintereinander zu wenig)." Ausdruecklich nur DIESE beiden Werte,
-  // nicht ghostCfg.lateral (das seitliche Nebeneinander bleibt wie gemessen gut). Von 1,2
-  // auf 1,5 angehoben - "etwas mehr", nicht bis an 1,8/2,5, wo die Messreihe oben zeigt,
-  // dass es wieder schlechter wird.
-  let SPICE_GAP_MIN = 1.5;      // Kacheln, ab hier wird gelupft (nur noch Rueckfall)
+  // v0.7.57 hob diesen Wert und SPICE_LUECKE_MIN_S auf 1,5 an ("ghosts etwas mehr
+  // abstand"). GEMELDET danach: "danach haben sie sich geschoben (zu geringer Abstand) und
+  // sind tuer an tuer gefahren" - also schlechter, genau wie die Messreihe unten es fuer
+  // groessere Soll-Luecken zeigt (mehr Bremsen, dann Auflaufen). ZURUECK auf 1,2.
+  let SPICE_GAP_MIN = 1.2;      // Kacheln, ab hier wird gelupft (nur noch Rueckfall)
   // ---- DIE ZEITLUECKE IN SEKUNDEN --------------------------------------------------
   //
   // ABGELEITET UND NICHT GEWAEHLT, aus der Fahrzeuglaenge und dem Tempo. Ein Auto ist 9,5 cm
@@ -4527,9 +4526,8 @@
   // WARUM NICHT MEHR: darueber wird es wieder schlechter (1,8 und 2,5 liegen hoeher). Das
   // ist plausibel und kein Messfehler - eine sehr grosse Sollluecke laesst die Autos
   // staerker bremsen, und dann laufen sie wieder auf.
-  // Von 1,2 auf 1,5 angehoben, siehe die Begruendung bei SPICE_GAP_MIN direkt darueber -
-  // dieselbe Bestellung, derselbe Grund.
-  let SPICE_LUECKE_MIN_S = 1.5;
+  // In v0.7.57 kurz auf 1,5, wieder zurueck auf 1,2 - siehe SPICE_GAP_MIN darueber.
+  let SPICE_LUECKE_MIN_S = 1.2;
   const SPICE_LUECKE_PER_CLOSING = 0.30;
   function lueckeMinSetzen(v) { SPICE_LUECKE_MIN_S = v; }
   function lueckeMinLesen() { return SPICE_LUECKE_MIN_S; }
@@ -4566,13 +4564,11 @@
     const von = 1.5 - i;        // 1.5..0.5, 1 bei 50 % - fuer Luecken/Reichweite
     attackPSetzen(0.45 * zu);
     attackArmMsSetzen(900 * von);
-    // Anker von 1,2 auf 1,5 angehoben (BESTELLT: "ghosts etwas mehr abstand"), damit 50 %
-    // weiter genau den neuen Vorgabewert trifft - siehe SPICE_GAP_MIN/SPICE_LUECKE_MIN_S
-    // oben. ATTACK_RANGE im selben Verhaeltnis mitgezogen (1,3/1,2 = 1,625/1,5), damit
-    // RANGE > GAP_MIN bei jeder Reglerstellung erhalten bleibt.
-    lueckeMinSetzen(1.5 * von);
-    gapMinSetzen(1.5 * von);
-    attackRangeSetzen(1.625 * von);
+    // Anker wieder 1,2/1,2/1,3 (v0.7.57 hatte 1,5/1,5/1,625, zurueckgenommen - siehe
+    // SPICE_GAP_MIN oben).
+    lueckeMinSetzen(1.2 * von);
+    gapMinSetzen(1.2 * von);
+    attackRangeSetzen(1.3 * von);
   }
 
   // Fortschritt in Kacheln seit dem Start, mit Bruchteil. Absichtlich NICHT ueber den
@@ -4649,6 +4645,18 @@
     return c.ghost.nurOrt ? c.ghost : null;
   }
 
+  // Der zuletzt gemeldete Kachelcode als Vorausblick-Byte, nur die bekannten Drahtcodes;
+  // alles andere (0x00 beim Stillstand, 0xff neben der Bahn) als Gerade.
+  function scanLiveCode(code) {
+    const bekannt = [TILE_TYPE.START, TILE_TYPE.STRAIGHT, TILE_TYPE.CURVE_LEFT,
+                     TILE_TYPE.CURVE_RIGHT, TILE_TYPE.HAIRPIN_LEFT, TILE_TYPE.HAIRPIN];
+    return bekannt.indexOf(code) >= 0 ? code : 0x02;
+  }
+  function scanInHaarnadel(car) {
+    const code = car ? car.tileCode : null;
+    return code === TILE_TYPE.HAIRPIN || code === TILE_TYPE.HAIRPIN_LEFT;
+  }
+
   function spielerOrtTick(auto) {
     // `auto` ist das gemeinte Auto. Ohne Argument ist es das Fahrerauto, damit jeder
     // vorhandene Aufruf unveraendert gueltig bleibt.
@@ -4682,8 +4690,13 @@
                      && garageScan.car === c;
     if (scanAktiv) {
       const wer = (typeof playerCar2 !== 'undefined' && c === playerCar2) ? 2 : 1;
+      // Byte 16 ist die AKTUELLE Kachel (siehe ghostLookahead(): at(0)). Die kennt das Auto
+      // auch ohne Streckenwissen - es hat sie gerade selbst gemeldet. GEMELDET: "das Auto
+      // faehrt so schnell, dass es aus der Haarnadelkurve rausfaehrt" - mit "Gerade" als
+      // Ansage mitten in einer Haarnadel bereitet sich das Auto auf nichts vor.
+      const jetzt = scanLiveCode(c.tileCode);
       c.modeBytes = (trackMode === 'on' && !abseitsJetztFuer(wer))
-        ? { 10: AUTO_MODE.b10, 15: AUTO_MODE.b15, 16: 0x02, 17: 0x02, 18: 0x02 }
+        ? { 10: AUTO_MODE.b10, 15: AUTO_MODE.b15, 16: jetzt, 17: 0x02, 18: 0x02 }
         : null;
     } else if (!currentTrackTiles || currentTrackTiles.length < 3) {
       // KEIN Scan, und die Strecke ist (noch) nicht bekannt genug fuer den normalen

@@ -1597,13 +1597,13 @@
   // Die drei anderen bleiben waehlbar - sie sind als OPTIMIERUNG richtig und zeigen, wo eine
   // schnellste Linie laege. Sie sind nur nicht das, was dieses Fahrzeug fahren kann.
   //
-  // ---- INNEN (GEMITTELT) IST WIEDER DIE VORGABE -------------------------------------
+  // ---- LUUKE-LINIE IST DIE VORGABE ------------------------------------------------------
   //
-  // v0.7.50 hatte Luuke-Linie zur Vorgabe gemacht ("mach Luuke-Linie den Standard").
-  // BESTELLT (spaeter, diese Runde): "ideallinie standard: innen" - zurueckgedreht.
-  // Luuke-Linie bleibt waehlbar und wird weiter an den fuenf Beispielen geprueft, sie ist
-  // nur nicht mehr die Vorgabe fuer neue/zurueckgesetzte Profile.
-  let lineModel = 'innen3';
+  // v0.7.57 stellte auf "Innen (gemittelt)" um ("ideallinie standard: innen"). GEMELDET
+  // danach: die Ghosts "sind tuer an tuer gefahren" - innen3 kommt nie auf die Aussenseite
+  // (siehe dort), alle Ghosts draengen sich also auf dieselbe Bahnhaelfte. Und: "Luuke-
+  // Modus ist gut". Zurueck auf Luuke - Innen bleibt waehlbar.
+  let lineModel = 'luuke';
 
   // Die gueltigen Modellnamen an EINER Stelle. Vorher stand die Liste als zwei
   // Vergleiche in setLineModel und ein weiteres Mal als Bedingung in buildLine - beim
@@ -2165,40 +2165,29 @@
       const aNach = hatNaechste ? anker[(t + 1) % tCount] : anker[t];
       // Grenzwerte: der MITTELWERT zu jeder Nachbarkachel, nicht deren voller Wert -
       // dieselbe Zahl, die die Nachbarkachel an ihrer Seite derselben Grenze ansteuert.
-      const grenzeVorn = (aVor + aHier) / 2;
-      const grenzeHinten = (aHier + aNach) / 2;
+      //
+      // HAARNADEL: BESTELLT (Korrektur der vorigen Runde): "Haarnadel muss insgesamt enger
+      // werden (mittig rein und raus und dazwischen so weit innen wie moeglich)." Jede
+      // Grenze, an der eine Haarnadel liegt, sitzt deshalb auf der MITTE (0) - fuer die
+      // Haarnadel selbst UND fuer ihre Nachbarkachel, die an derselben Grenze denselben
+      // Wert ansteuern muss (sonst springt alpha dort, siehe "voellig wirr" oben).
+      const hp = (i) => tileTightness(tiles[((i % tCount) + tCount) % tCount].type) === 2;
+      const istHaarnadel = hp(t);
+      const grenzeVorn = (hatVorherige && (istHaarnadel || hp(t - 1))) ? 0 : (aVor + aHier) / 2;
+      const grenzeHinten = (hatNaechste && (istHaarnadel || hp(t + 1))) ? 0 : (aHier + aNach) / 2;
       if (t === 0) grenzeStart = grenzeVorn;
-      // HAARNADEL: EIGENES DREI-PHASEN-PROFIL statt der normalen Zwei-Halbrampen-Form.
-      //
-      // BESTELLT (diese Runde): "luuke linie anpassen: in haarnadel weiter innen (am
-      // anfang kurz außen, danach sofort nach innen)." luukeLinieAnker() gibt der
-      // Haarnadel jetzt einen staerkeren Innen-Wert (siehe dort), aber die normale Form
-      // haelt aHier erst an der KACHELMITTE (u=0,5) - fuer eine 49 Abtastpunkte lange
-      // Haarnadel waere "kurz aussen am Anfang, dann SOFORT innen" damit nicht abbildbar:
-      // die erste Halbrampe liefe die ganze erste Haelfte lang nur in EINE Richtung.
-      //
-      // Drei Phasen statt zwei: ein kurzer Touch nach aussen (bis ENTRY_U), dann ein
-      // schneller Wechsel nach innen bis aHier erreicht ist (bis HOLD_U, deutlich vor der
-      // Kachelmitte), dann HALTEN bei aHier bis EXIT_U, danach wie gewohnt zur naechsten
-      // Kachelgrenze. Nicht an eigenen Beispieldaten gemessen (anders als der Rest dieser
-      // Datei) - eine begruendete Umsetzung der Bestellung, keine zweite Messung.
-      const istHaarnadel = tileTightness(tiles[at(t)].type) === 2;
-      const ENTRY_U = 0.12, HOLD_U = 0.35, EXIT_U = 0.85;
-      // Der Aussen-Touch spiegelt aHier (Vorzeichen umgedreht, gedaempft auf 35%) - so
-      // bleibt er automatisch auf der richtigen Seite, egal ob die Haarnadel links- oder
-      // rechtsherum dreht.
-      const entryWert = -0.35 * aHier;
+      // In der Haarnadel: von der Mitte schnell auf volles Innen (bis HOLD_U), halten bis
+      // EXIT_U, dann zurueck zur Mitte. Der kurze Aussen-Touch der vorigen Fassung ist weg.
+      const HOLD_U = 0.2, EXIT_U = 0.8;
       for (let d = 0; d < m; d++) {
         const u = m > 0 ? (d + 0.5) / m : 0.5;
         let wert;
         if (istHaarnadel) {
-          wert = u < ENTRY_U
-            ? grenzeVorn + (entryWert - grenzeVorn) * smooth(u / ENTRY_U)
-            : u < HOLD_U
-              ? entryWert + (aHier - entryWert) * smooth((u - ENTRY_U) / (HOLD_U - ENTRY_U))
-              : u < EXIT_U
-                ? aHier
-                : aHier + (grenzeHinten - aHier) * smooth((u - EXIT_U) / (1 - EXIT_U));
+          wert = u < HOLD_U
+            ? grenzeVorn + (aHier - grenzeVorn) * smooth(u / HOLD_U)
+            : u < EXIT_U
+              ? aHier
+              : aHier + (grenzeHinten - aHier) * smooth((u - EXIT_U) / (1 - EXIT_U));
         } else {
           wert = u < 0.5
             ? grenzeVorn + (aHier - grenzeVorn) * smooth(u / 0.5)

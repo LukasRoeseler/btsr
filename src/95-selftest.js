@@ -443,13 +443,12 @@
                  + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
   });
 
-  // ---- Luuke-Linie: Haarnadel hat einen eigenen Aussen-Touch am Einstieg ----------------
+  // ---- Luuke-Linie: Haarnadel mittig rein, ganz innen, mittig raus ------------------
   //
-  // BESTELLT: "luuke linie anpassen: in haarnadel weiter innen (am anfang kurz außen,
-  // danach sofort nach innen)." Prueft das Drei-Phasen-Profil aus luukeLinie() direkt an
-  // den rohen alpha-Werten (nicht am Anker, der ist ja jetzt einfach +100 wie jede andere
-  // Kurve) - SGHG hat genau eine Haarnadel, Kachel 2.
-  stAdd('Luuke-Linie: Haarnadel kurz aussen, dann sofort innen', () => {
+  // BESTELLT: "Haarnadel muss insgesamt enger werden (mittig rein und raus und dazwischen
+  // so weit innen wie moeglich)." Prueft das Profil aus luukeLinie() an den rohen
+  // alpha-Werten - SGHG hat genau eine Haarnadel, Kachel 2.
+  stAdd('Luuke-Linie: Haarnadel mittig rein, ganz innen, mittig raus', () => {
     if (!window.OMEGA_TEST || !OMEGA_TEST.codeToTrack || !OMEGA_TEST.trackCenterline
         || !OMEGA_TEST.trackNormals || !OMEGA_TEST.buildLine) {
       return { skip: true, mass: 'Pruefzugang nicht vorhanden' };
@@ -466,18 +465,18 @@
     if (idxHaarnadel.length < 10) return { skip: true, mass: 'Haarnadel nicht gefunden' };
     const a0 = idxHaarnadel[0], m = idxHaarnadel.length;
     const bei = (u) => line.alpha[a0 + Math.round(u * (m - 1))];
-    const einstieg = bei(0.06);   // kurz nach dem Einstieg: der Aussen-Touch
-    const mitte = bei(0.5);       // gehalten bei aHier, jetzt volles Innen
-    // alpha ist mit umgekehrtem Vorzeichen zur Querlage (siehe buildLine()-Kommentar
-    // "Vorsicht mit dem Vorzeichen") - hier zaehlt nur, dass beide Phasen GEGENSAETZLICHE
-    // Vorzeichen haben und die Mitte deutlich staerker ausschlaegt als der kurze Touch.
-    const gegensinnig = Math.sign(einstieg) !== 0 && Math.sign(mitte) !== 0
-                        && Math.sign(einstieg) !== Math.sign(mitte);
-    const mitteStaerker = Math.abs(mitte) > Math.abs(einstieg);
-    return { ok: gegensinnig && mitteStaerker,
+    const einstieg = line.alpha[a0];           // erster Punkt: an der Mitte
+    const aus = line.alpha[a0 + m - 1];        // letzter Punkt: an der Mitte
+    const mitte = bei(0.5);                    // gehalten: ganz innen
+    const L = line.limit;
+    const schlecht = [];
+    if (Math.abs(einstieg) > 0.15 * L) schlecht.push('Einstieg nicht mittig');
+    if (Math.abs(aus) > 0.15 * L) schlecht.push('Ausgang nicht mittig');
+    if (Math.abs(mitte) < 0.95 * L) schlecht.push('Mitte nicht ganz innen');
+    return { ok: !schlecht.length,
              mass: 'Einstieg ' + einstieg.toFixed(2) + ', Mitte ' + mitte.toFixed(2)
-                 + (gegensinnig ? '' : ' || NICHT GEGENSINNIG')
-                 + (mitteStaerker ? '' : ' || MITTE NICHT STAERKER') };
+                 + ', Ausgang ' + aus.toFixed(2) + ' (Grenze ' + L.toFixed(2) + ')'
+                 + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
   });
 
   // ---- 6. Kachelphase ----
@@ -5866,7 +5865,7 @@
       // ghostRennhaerteAnwenden() von 1,2/1,2/1,3 auf 1,5/1,5/1,625 angehoben, das
       // Verhaeltnis (RANGE > GAP_MIN) bleibt gleich. Diese Erwartung ist mitgezogen.
       OMEGA_TEST.ghostRennhaerteAnwenden(0.5);
-      const soll = { p: 0.45, arm: 900, luecke: 1.5, gap: 1.5, range: 1.625 };
+      const soll = { p: 0.45, arm: 900, luecke: 1.2, gap: 1.2, range: 1.3 };
       const ist50 = { p: OMEGA_TEST.attackPLesen(), arm: OMEGA_TEST.attackArmMsLesen(),
                       luecke: OMEGA_TEST.lueckeMinLesen(), gap: OMEGA_TEST.gapMinLesen(),
                       range: OMEGA_TEST.attackRangeLesen() };
