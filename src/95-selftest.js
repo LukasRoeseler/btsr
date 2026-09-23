@@ -357,23 +357,28 @@
   // Querlage-Liste). Die Regel ist in luukeLinieAnker() (60-track.js) ausfuehrlich
   // begruendet; dieser Test prueft nur, ob sie die Beispiele trifft.
   //
-  // ZWEI STELLEN ABSICHTLICH NICHT HART GEPRUEFT (siehe der Kommentar bei
+  // DREI STELLEN ABSICHTLICH NICHT HART GEPRUEFT (siehe der Kommentar bei
   // luukeLinieAnker()): der Haarnadel-Scheitel (SGHG, -75 statt der von der allgemeinen
-  // Regel vorhergesagten +75) UND je eine Gerade unmittelbar vor der Startkachel in SGR3G
+  // Regel vorhergesagten +75), je eine Gerade unmittelbar vor der Startkachel in SGR3G
   // und SR2GL2G (+100 belegt, die Regel sagt 0 vorher) - beides offene Fragen an Luuke,
-  // keine stillschweigend geratenen Sonderregeln.
+  // keine stillschweigend geratenen Sonderregeln - UND die Startkachel selbst (Index 0):
+  // ihr Anker wird seit "nicht bei Start immer in der Mitte, sondern so, dass man von der
+  // Schiene davor und danach moeglichst wenig lenken muss" BERECHNET (Mittelwert der
+  // Nachbarn), nicht mehr aus den Beispielen abgeschrieben - dort stand zufaellig immer 0,
+  // weil niemand sie absichtlich anders vorgegeben hatte.
   stAdd('Luuke-Linie: trifft die fuenf verlaesslichen Beispiele', () => {
     if (!window.OMEGA_TEST || !OMEGA_TEST.luukeLinieAnker || !OMEGA_TEST.codeToTrack) {
       return { skip: true, mass: 'Pruefzugang nicht vorhanden' };
     }
     const TOLERANZ = 15;
-    // { code, erwartet, offen: [Kachelindizes, die nicht hart geprueft werden] }
+    // { code, erwartet, offen: [Kachelindizes, die nicht hart geprueft werden] } - Index 0
+    // (Startkachel) steht in jedem Beispiel mit in "offen", aus dem oben genannten Grund.
     const beispiele = [
-      { code: 'SGR3G', erwartet: [0, -50, -100, 100, -50, 100], offen: [5] },
-      { code: 'SRLG', erwartet: [0, 100, 0, -100], offen: [] },
-      { code: 'SGHG', erwartet: [0, -50, -75, 0], offen: [2] },
-      { code: 'SR2GL2G', erwartet: [0, -100, 100, 0, 100, -100, 100], offen: [6] },
-      { code: 'SR2G2RG2', erwartet: [0, -100, 100, -100, -100, 100, 0, -100], offen: [] },
+      { code: 'SGR3G', erwartet: [0, -50, -100, 100, -50, 100], offen: [0, 5] },
+      { code: 'SRLG', erwartet: [0, 100, 0, -100], offen: [0] },
+      { code: 'SGHG', erwartet: [0, -50, -75, 0], offen: [0, 2] },
+      { code: 'SR2GL2G', erwartet: [0, -100, 100, 0, 100, -100, 100], offen: [0, 6] },
+      { code: 'SR2G2RG2', erwartet: [0, -100, 100, -100, -100, 100, 0, -100], offen: [0] },
     ];
     const schlecht = [], teile = [];
     for (const b of beispiele) {
@@ -389,6 +394,14 @@
         if (b.offen.indexOf(i) >= 0) continue;    // offene Frage, nicht hart geprueft
         const diff = Math.abs(anker[i] - b.erwartet[i]);
         if (diff > TOLERANZ) abweichungen.push('Kachel ' + i + ': ' + anker[i] + ' statt ' + b.erwartet[i]);
+      }
+      // Die Startkachel selbst NICHT gegen die (zufaellige) Beispielzahl gepruft,
+      // sondern gegen die eigentliche Vorschrift: Mittelwert der beiden Nachbarn -
+      // "moeglichst wenig lenken" ist damit eine echte Rechnung und keine Behauptung.
+      const erwarteterStart = (anker[anker.length - 1] + anker[1]) / 2;
+      if (Math.abs(anker[0] - erwarteterStart) > 0.01) {
+        abweichungen.push('Startkachel: ' + anker[0] + ' statt Mittelwert ' + erwarteterStart
+          + ' aus Nachbarn ' + anker[anker.length - 1] + '/' + anker[1]);
       }
       teile.push(b.code + ': ' + anker.join(','));
       if (abweichungen.length) schlecht.push(b.code + ' || ' + abweichungen.join('; '));

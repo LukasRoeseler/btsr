@@ -3166,7 +3166,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.7.48</span></span>
+        <span class="foot-ver">v<span id="app-version">0.7.49</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -3947,8 +3947,22 @@
     <div class="card subpage" id="sub-patchnotes">
       <button class="misc-back subpage-back" data-sub="">&larr; Info</button>
       <h2>Patchnotes</h2>
-      <p class="muted"><span class="dank-wer" data-i18n-skip>0.7</span>
-        <span class="muted">Navigation aufger&auml;umt (Startseite, feste Kopfzeile), Auto-Verwaltung in der Garage. Zwei-Spieler-Modus: Licht, Boxensound und Tastenbelegung jetzt wirklich unabh&auml;ngig. Renneinstellungen als eigene Kachel mit eigenem Cockpit-Screen, dazu ein Regler f&uuml;r Rennh&auml;rte und eine Recovery-Funktion nach einem Abgang. Cockpit-Balken (Tank/Schaden/Akku) jetzt vertikal, Gyro-Anzeige verbessert. Lenkkennlinie einstellbar, neuer GT7-Fahrmodus, zwei neue Motoren (Ford Tudor 1937, VW K&auml;fer 1300) und ein neues Vergleichsprofil mit echter Anlasser-Aufnahme f&uuml;r den Porsche. F&uuml;nf neue Ghost-Ideallinien-Modi, Ghost-Verhalten in der Einf&uuml;hrungsrunde und beim &Uuml;berholen verfeinert. Men&uuml;s komplett mit Gamepad/Tastatur navigierbar, inklusive Info-Popups und mehreren Feinschliffen an der Tastenbelegung (D-Pad-Fixes, Select schaltet jetzt den Bahn-Lesemodus). Streckenscan &uuml;berarbeitet, neu: Strecke aus einer Aufnahme lernen. Motorsound ist jetzt pro Auto einzeln w&auml;hlbar, Funk-Ansagen haben Vorrang vor der Live-Stimme. Neu in den Entwicklertools: Bin&auml;r-/Hex-Trainer.</span></p>
+      <p class="muted"><b><span data-i18n-skip>0.7</span></b></p>
+      <ul class="muted" style="padding-left:20px; line-height:1.7">
+        <li>Navigation aufger&auml;umt (Startseite, feste Kopfzeile), Auto-Verwaltung in der Garage.</li>
+        <li>Zwei-Spieler-Modus: Licht, Boxensound und Tastenbelegung jetzt wirklich unabh&auml;ngig.</li>
+        <li>Renneinstellungen als eigene Kachel mit eigenem Cockpit-Screen, dazu ein Regler f&uuml;r Rennh&auml;rte und eine Recovery-Funktion nach einem Abgang.</li>
+        <li>Cockpit-Balken (Tank/Schaden/Akku) jetzt vertikal, Gyro-Anzeige verbessert.</li>
+        <li>Lenkkennlinie einstellbar, neuer GT7-Fahrmodus, zwei neue Motoren (Ford Tudor 1937, VW K&auml;fer 1300) und ein Vergleichsprofil mit echter Anlasser-Aufnahme f&uuml;r den Porsche.</li>
+        <li>F&uuml;nf neue Ghost-Ideallinien-Modi, dazu die Luuke-Linie: ein neuer Modus, von Hand aus Beispiel-Streckenverl&auml;ufen hergeleitet. Ghost-Verhalten in der Einf&uuml;hrungsrunde und beim &Uuml;berholen verfeinert.</li>
+        <li>Men&uuml;s komplett mit Gamepad/Tastatur navigierbar, inklusive Info-Popups und mehreren Feinschliffen an der Tastenbelegung (D-Pad-Fixes, Select schaltet jetzt den Bahn-Lesemodus).</li>
+        <li>Info-Tab jetzt als Kacheln (Wozu, Danksagungen, Patchnotes).</li>
+        <li>Regen-&Uuml;bergang nachgemessen: kein Griff-Sprung, auch nicht beim erneuten Regenbeginn.</li>
+        <li>Gedruckte Streckenmuster zum Auslegen (Gerade, 60&#176;-Kurve in zwei Gr&ouml;&szlig;en) - rein visuell, ohne Strichcode-Anspruch.</li>
+        <li>Streckenscan &uuml;berarbeitet, neu: Strecke aus einer Aufnahme lernen.</li>
+        <li>Motorsound ist jetzt pro Auto einzeln w&auml;hlbar, Funk-Ansagen haben Vorrang vor der Live-Stimme.</li>
+        <li>Neu in den Entwicklertools: Bin&auml;r-/Hex-Trainer.</li>
+      </ul>
     </div>
   </section>
 
@@ -9049,19 +9063,38 @@
           </a>
         </div>
         <div style="flex:1 1 260px; min-width:240px">
-          <img src="muster-kurve-60grad-a4.svg" alt="Vorschau Trapez-Muster Rechtskurve 60 Grad"
+          <img src="muster-kurve-60grad-a4.svg" alt="Vorschau Trapez-Muster Rechtskurve 60 Grad, Version A"
                style="width:100%; max-width:300px; border:1px solid var(--border);
                       border-radius:4px; display:block">
-          <p style="margin:8px 0 4px 0"><b>Rechtskurve, 60&#176;</b></p>
+          <p style="margin:8px 0 4px 0"><b>Rechtskurve, 60&#176; &ndash; Version A</b></p>
           <p class="muted" style="font-size:11.5px; margin:0 0 8px 0">
             8 radiale Trapez-Keile, randlos &uuml;ber die ganze Seite (Aussenradius so
-            gew&auml;hlt, dass der Sektor die Blattbreite genau ausf&uuml;llt), innen
-            5&nbsp;mm und aussen 20&nbsp;mm breit - dieselben zwei Zahlen wie bei der
-            Geraden, unabh&auml;ngig voneinander getroffen statt aus dem
-            Radienverh&auml;ltnis errechnet.
+            gew&auml;hlt, dass der Sektor die Blattbreite genau ausf&uuml;llt, OHNE
+            &uuml;ber sie hinauszugehen), innen 5&nbsp;mm und aussen 20&nbsp;mm breit.
           </p>
           <a href="muster-kurve-60grad-a4.svg" download="muster-kurve-60grad-a4.svg">
-            <button class="primary">Kurve herunterladen (SVG)</button>
+            <button class="primary">Kurve A herunterladen (SVG)</button>
+          </a>
+        </div>
+        <!-- BESTELLT: "Mach bei der Rechtskurve mit Trapezen es so, dass sie bis an den
+             Rand des Blattes gehen als Rechtskurve, 60° Version B. Ich weiß, dass sie
+             dadurch abgeschnitten werden." Echter Radius/echte Breite aus 60-track.js
+             (370/250 mm), UNSKALIERT - deutlich groesser als A4 quer, das Blatt zeigt nur
+             den Ausschnitt, der hineinpasst, der Rest ist absichtlich abgeschnitten. -->
+        <div style="flex:1 1 260px; min-width:240px">
+          <img src="muster-kurve-60grad-versionb-a4.svg"
+               alt="Vorschau Trapez-Muster Rechtskurve 60 Grad, Version B, echte Groesse"
+               style="width:100%; max-width:300px; border:1px solid var(--border);
+                      border-radius:4px; display:block">
+          <p style="margin:8px 0 4px 0"><b>Rechtskurve, 60&#176; &ndash; Version B (echte Gr&ouml;&szlig;e)</b></p>
+          <p class="muted" style="font-size:11.5px; margin:0 0 8px 0">
+            Echter Radius (370&nbsp;mm) und echte Breite (250&nbsp;mm) aus 60-track.js,
+            unskaliert - deutlich gr&ouml;&szlig;er als A4 quer. Das Blatt zeigt nur den
+            Ausschnitt, der hineinpasst; der Rest ist absichtlich abgeschnitten, nicht
+            verkleinert wie in Version A.
+          </p>
+          <a href="muster-kurve-60grad-versionb-a4.svg" download="muster-kurve-60grad-versionb-a4.svg">
+            <button class="primary">Kurve B herunterladen (SVG)</button>
           </a>
         </div>
       </div>
@@ -10819,8 +10852,32 @@
       "Who helped, and where the sounds come from.",
     "Was sich je Wochenversion geändert hat, kurz zusammengefasst.":
       "What changed in each weekly version, summarised briefly.",
-    "Navigation aufgeräumt (Startseite, feste Kopfzeile), Auto-Verwaltung in der Garage. Zwei-Spieler-Modus: Licht, Boxensound und Tastenbelegung jetzt wirklich unabhängig. Renneinstellungen als eigene Kachel mit eigenem Cockpit-Screen, dazu ein Regler für Rennhärte und eine Recovery-Funktion nach einem Abgang. Cockpit-Balken (Tank/Schaden/Akku) jetzt vertikal, Gyro-Anzeige verbessert. Lenkkennlinie einstellbar, neuer GT7-Fahrmodus, zwei neue Motoren (Ford Tudor 1937, VW Käfer 1300) und ein neues Vergleichsprofil mit echter Anlasser-Aufnahme für den Porsche. Fünf neue Ghost-Ideallinien-Modi, Ghost-Verhalten in der Einführungsrunde und beim Überholen verfeinert. Menüs komplett mit Gamepad/Tastatur navigierbar, inklusive Info-Popups und mehreren Feinschliffen an der Tastenbelegung (D-Pad-Fixes, Select schaltet jetzt den Bahn-Lesemodus). Streckenscan überarbeitet, neu: Strecke aus einer Aufnahme lernen. Motorsound ist jetzt pro Auto einzeln wählbar, Funk-Ansagen haben Vorrang vor der Live-Stimme. Neu in den Entwicklertools: Binär-/Hex-Trainer.":
-      "Navigation cleaned up (home page, fixed header), car management in the garage. Two-player mode: lights, pit sound and key bindings now genuinely independent. Race settings as their own tile with their own cockpit screen, plus a race-hardness slider and a recovery function after going off track. Cockpit bars (fuel/damage/battery) now vertical, gyro display improved. Steering curve adjustable, new GT7 driving mode, two new engines (Ford Tudor 1937, VW Beetle 1300) and a new comparison profile with a real starter recording for the Porsche. Five new ghost ideal-line modes, ghost behaviour on the formation lap and while overtaking refined. Menus fully navigable with gamepad/keyboard, including info popups and several refinements to the key bindings (D-pad fixes, Select now toggles the track-read mode). Track scan reworked, new: learn a track from a recording. Engine sound is now selectable per car, radio announcements now take priority over the live voice. New in the developer tools: binary/hex trainer.",
+    "Navigation aufgeräumt (Startseite, feste Kopfzeile), Auto-Verwaltung in der Garage.":
+      "Navigation cleaned up (home page, fixed header), car management in the garage.",
+    "Zwei-Spieler-Modus: Licht, Boxensound und Tastenbelegung jetzt wirklich unabhängig.":
+      "Two-player mode: lights, pit sound and key bindings now genuinely independent.",
+    "Renneinstellungen als eigene Kachel mit eigenem Cockpit-Screen, dazu ein Regler für Rennhärte und eine Recovery-Funktion nach einem Abgang.":
+      "Race settings as their own tile with their own cockpit screen, plus a race-hardness slider and a recovery function after going off track.",
+    "Cockpit-Balken (Tank/Schaden/Akku) jetzt vertikal, Gyro-Anzeige verbessert.":
+      "Cockpit bars (fuel/damage/battery) now vertical, gyro display improved.",
+    "Lenkkennlinie einstellbar, neuer GT7-Fahrmodus, zwei neue Motoren (Ford Tudor 1937, VW Käfer 1300) und ein Vergleichsprofil mit echter Anlasser-Aufnahme für den Porsche.":
+      "Steering curve adjustable, new GT7 driving mode, two new engines (Ford Tudor 1937, VW Beetle 1300) and a comparison profile with a real starter recording for the Porsche.",
+    "Fünf neue Ghost-Ideallinien-Modi, dazu die Luuke-Linie: ein neuer Modus, von Hand aus Beispiel-Streckenverläufen hergeleitet. Ghost-Verhalten in der Einführungsrunde und beim Überholen verfeinert.":
+      "Five new ghost ideal-line modes, plus the Luuke line: a new mode derived by hand from example track layouts. Ghost behaviour on the formation lap and while overtaking refined.",
+    "Menüs komplett mit Gamepad/Tastatur navigierbar, inklusive Info-Popups und mehreren Feinschliffen an der Tastenbelegung (D-Pad-Fixes, Select schaltet jetzt den Bahn-Lesemodus).":
+      "Menus fully navigable with gamepad/keyboard, including info popups and several refinements to the key bindings (D-pad fixes, Select now toggles the track-read mode).",
+    "Info-Tab jetzt als Kacheln (Wozu, Danksagungen, Patchnotes).":
+      "Info tab now as tiles (What for, Acknowledgements, Patchnotes).",
+    "Regen-Übergang nachgemessen: kein Griff-Sprung, auch nicht beim erneuten Regenbeginn.":
+      "Rain transition measured: no grip jump, not even when rain starts again.",
+    "Gedruckte Streckenmuster zum Auslegen (Gerade, 60°-Kurve in zwei Größen) - rein visuell, ohne Strichcode-Anspruch.":
+      "Printed track patterns to lay out (straight, 60° curve in two sizes) - purely visual, no barcode claim.",
+    "Streckenscan überarbeitet, neu: Strecke aus einer Aufnahme lernen.":
+      "Track scan reworked, new: learn a track from a recording.",
+    "Motorsound ist jetzt pro Auto einzeln wählbar, Funk-Ansagen haben Vorrang vor der Live-Stimme.":
+      "Engine sound is now selectable per car, radio announcements now take priority over the live voice.",
+    "Neu in den Entwicklertools: Binär-/Hex-Trainer.":
+      "New in the developer tools: binary/hex trainer.",
     "Die Hardware ist gekauft, die Software bestimmt jemand anders. Dieses Projekt dreht das um: es steuert ein Carrera-Hybrid-Auto mit eigenem Code über dieselbe Bluetooth-Schnittstelle, die die Hersteller-App benutzt. Damit läuft auf der Hardware, was man selbst darauf laufen lassen will – unabhängig davon, ob ein Anbieter eine Funktion vorsieht, eine App weiter pflegt oder einen Server abschaltet.": "The hardware is bought and paid for; what runs on it is somebody else’s decision. This project turns that around: it drives a Carrera Hybrid car with its own code over the same Bluetooth interface the manufacturer’s app uses. What runs on the hardware is then what you want to run on it – regardless of whether a vendor provides a feature, keeps an app maintained, or switches off a server.",
     "Der zweite Punkt ist die Gemeinschaft. Ein offengelegtes Protokoll kann jeder weiterverwenden: für Funktionen, die der Hersteller nicht baut, für eine andere Bedienung, für Unterricht. Das hier ist bewusst als Beispiel gebaut und nicht als Produkt: alles, was herausgefunden wurde, steht in der Doku, samt der Stellen, an denen wir uns geirrt haben.": "The second point is the community. A documented protocol is something anyone can build on: for features the manufacturer does not build, for a different way of controlling things, for teaching. This is deliberately built as an example and not as a product: everything that was found out is written down in the documentation, including the places where we got it wrong.",
     "Offene Software als Teil offener Wissenschaft": "Open software as part of open science",
@@ -10857,10 +10914,14 @@
     "12 Trapeze nebeneinander, randlos über die ganze Seite, oben 5 mm und unten 20 mm breit.":
       "12 trapezoids side by side, borderless across the whole sheet, 5 mm wide at the top and 20 mm at the bottom.",
     "Gerade herunterladen (SVG)": "Download straight (SVG)",
-    "Rechtskurve, 60°": "Right curve, 60°",
-    "8 radiale Trapez-Keile, randlos über die ganze Seite (Aussenradius so gewählt, dass der Sektor die Blattbreite genau ausfüllt), innen 5 mm und aussen 20 mm breit - dieselben zwei Zahlen wie bei der Geraden, unabhängig voneinander getroffen statt aus dem Radienverhältnis errechnet.":
-      "8 radial trapezoid wedges, borderless across the whole sheet (outer radius chosen so the sector exactly fills the sheet width), 5 mm wide at the inner edge and 20 mm at the outer edge - the same two numbers as on the straight, chosen independently rather than computed from the radius ratio.",
-    "Kurve herunterladen (SVG)": "Download curve (SVG)",
+    "Rechtskurve, 60° – Version A": "Right curve, 60° – version A",
+    "8 radiale Trapez-Keile, randlos über die ganze Seite (Aussenradius so gewählt, dass der Sektor die Blattbreite genau ausfüllt, OHNE über sie hinauszugehen), innen 5 mm und aussen 20 mm breit.":
+      "8 radial trapezoid wedges, borderless across the whole sheet (outer radius chosen so the sector exactly fills the sheet width, WITHOUT going beyond it), 5 mm wide at the inner edge and 20 mm at the outer edge.",
+    "Kurve A herunterladen (SVG)": "Download curve A (SVG)",
+    "Rechtskurve, 60° – Version B (echte Größe)": "Right curve, 60° – version B (real size)",
+    "Echter Radius (370 mm) und echte Breite (250 mm) aus 60-track.js, unskaliert - deutlich größer als A4 quer. Das Blatt zeigt nur den Ausschnitt, der hineinpasst; der Rest ist absichtlich abgeschnitten, nicht verkleinert wie in Version A.":
+      "Real radius (370 mm) and real width (250 mm) from 60-track.js, unscaled - noticeably bigger than A4 landscape. The sheet shows only the section that fits; the rest is cut off on purpose, not shrunk down as in version A.",
+    "Kurve B herunterladen (SVG)": "Download curve B (SVG)",
     "Zwei benachbarte Plätze fahren in der Einführungsrunde versetzt, also als Zweierkolonne. Die Runde läuft mit Boxengassen-Tempo; sobald das erste Auto Start/Ziel zum zweiten Mal überfährt, ist das Limit weg. Aufstellen musst du von Hand – ein Auto auf die Bahn setzen kann die App nicht. Dein eigenes Auto steht mit in der Liste und verschiebt damit, auf welche Seite die Ghosts hinter dir gehen.": "Two adjacent grid slots drive offset from each other on the formation lap, so as a double column. The lap runs at pit-lane pace; as soon as the first car crosses start/finish for the SECOND time the limit is gone. Lining up is your job – the app cannot place a car on the track. Your own car is in the list too and therefore shifts which side the ghosts behind you take.",
     "Diese Seite zählt Aufrufe mit GoatCounter, damit ich weiß, ob das Projekt jemand benutzt. Ohne Cookies, ohne Werbung und ohne personenbezogene Daten; wer den Zähler blockiert, verliert keine Funktion. Alles andere – Abstimmungen, Rundenzeiten, Streckenpläne – bleibt im Browser und wird nirgends hingeschickt.": "This page counts visits with GoatCounter so I know whether anyone uses the project. No cookies, no advertising and no personal data; blocking the counter costs you no function. Everything else – setups, lap times, track plans – stays in the browser and is not sent anywhere.",
     "Gänge": "gears",
@@ -20601,6 +20662,10 @@
   //   SR2GL2G    0, -100, 100, 0, 100, -100, 100
   //   SR2G2RG2   0, -100, 100, -100, -100, 100, 0, -100
   //
+  // DIE FUEHRENDE 0 JE ZEILE IST DIE STARTKACHEL - in allen fuenf Beispielen zufaellig 0,
+  // aber NICHT als eigene Vorgabe zu lesen (siehe Punkt 7 unten: ihr Anker wird
+  // inzwischen berechnet, nicht mehr aus den Beispielen abgeschrieben).
+  //
   // DIE REGEL, tileweise hergeleitet und gegen alle 34 Zahlen der fuenf Beispiele
   // geprueft (31 von 34 treffen exakt, zwei Ausreisser bleiben offen - siehe unten):
   //
@@ -20624,7 +20689,7 @@
   //      SRLG (R triftt L ohne Puffer: R selbst bleibt bei +100, L wird zu 0, die
   //      folgende Gerade traegt den vollen Linksscheitel -100). Nur ein Beleg, als
   //      Sonderfall uebernommen.
-  //   6. GERADEN (und die Startkachel: dort immer 0): siehe luukeGeradenWert() - weder
+  //   6. GERADEN (nicht die Startkachel, siehe Punkt 7): siehe luukeGeradenWert() - weder
   //      reine Interpolation noch symmetrischer Zerfall passten auf die Daten, sondern
   //      ein Blick nach vorn UND zurueck:
   //        - Unmittelbar NACH der Startkachel: halbes Aussen Richtung naechstem Lauf,
@@ -20633,15 +20698,26 @@
   //          naechsten Laufs, aber NUR wenn dieser hoechstens zwei Kacheln entfernt ist
   //          UND gleichsinnig zum gerade verlassenen Lauf dreht (SR2G2RG2, beide Luecken)
   //          - sonst 0 (Ruecksprung zur Mitte, SGHG/SR2GL2G/SR2G2RG2).
+  //   7. DIE STARTKACHEL selbst steht NICHT fest auf 0 (anders als in den fuenf
+  //      Beispielen, wo sie es zufaellig immer war). BESTELLT (Korrektur, nachdem Punkt
+  //      6 oben schon stand): "nicht bei Start immer in der Mitte, sondern so, dass man
+  //      von der Schiene davor und danach moeglichst wenig lenken muss." Ihr Anker ist
+  //      deshalb der MITTELWERT der beiden Nachbarkacheln (davor und danach je einmal um
+  //      die Naht herum) - das teilt die noetige Lenkbewegung gleichmaessig auf beide
+  //      Rampen auf, statt zusaetzlich ueber die Mitte zu erzwingen. Berechnet NACH allen
+  //      anderen Ankern; siehe der Kommentar an der Berechnung selbst, warum das keine
+  //      Ringabhaengigkeit ist.
   //
   //   ZWEI OFFENE RESTFRAGEN, nicht stillschweigend festgelegt (an Luuke zurueckspielen):
   //     - SGR3G und SR2GL2G haben je EINE Gerade unmittelbar vor der Startkachel (nach
   //       dem Verlassen eines Laufs, gleichsinnig zum naechsten Lauf ueber die Naht
-  //       hinweg), deren Wert (+100 in beiden Faellen) die obige Regel nicht erklaert -
-  //       sie wuerde 0 vorhersagen (Ruecksprung zur Mitte). Beide Belege zeigen
+  //       hinweg), deren Wert (+100 in beiden Faellen) die Geraden-Regel (Punkt 6) nicht
+  //       erklaert - sie wuerde 0 vorhersagen (Ruecksprung zur Mitte). Beide Belege zeigen
   //       ausgerechnet +100, nicht irgendeinen Wert - zu konsistent fuer reines Rauschen,
   //       aber ohne erklaerenden Mechanismus. Vorschlag: 0 lassen (die haeufigere,
-  //       bestaetigte Regel), beide Faelle als offene Frage vermerkt.
+  //       bestaetigte Regel), beide Faelle als offene Frage vermerkt. Punkt 7 (Startkachel
+  //       nicht mehr fest auf 0) aendert daran nichts: die Restfrage betrifft die Gerade
+  //       VOR der Startkachel, nicht die Startkachel selbst.
   //     - Der Haarnadel-Scheitel (-75, Punkt 2 oben) koennte ebenso gut ein
   //       Vorzeichendreher beim Eintippen sein (+75 waere das erwartete Vorzeichen).
   //       Uebernommen wie geliefert, mit derselben Markierung.
@@ -20688,7 +20764,8 @@
   // enthaelt eine Weitkurve.
   function luukeBase(tightness) { return tightness === 0 ? 50 : 100; }
 
-  // Geraden UND die Startkachel (dort immer 0) - siehe Punkt 6 oben.
+  // Geraden - NICHT die Startkachel, die bekommt ihren eigenen Anker separat (Punkt 7
+  // oben) - siehe Punkt 6 oben.
   function luukeGeradenWert(i, tiles, runOf, closed, at) {
     const n = tiles.length;
     const justAfterS = (closed || i > 0) && tiles[at(i - 1)].type === TILE_TYPE.START;
@@ -20764,11 +20841,23 @@
       }
     });
 
+    let startIdx = -1;
     for (let i = 0; i < n; i++) {
       if (runOf[i]) continue;
-      if (tiles[i].type === TILE_TYPE.START) { anker[i] = 0; continue; }
+      if (tiles[i].type === TILE_TYPE.START) { startIdx = i; continue; }
       if (override.has(i)) { anker[i] = override.get(i); continue; }
       anker[i] = luukeGeradenWert(i, tiles, runOf, closed, at);
+    }
+    // DIE STARTKACHEL NICHT MEHR FEST AUF 0: BESTELLT, "nicht bei Start immer in der
+    // Mitte, sondern so, dass man von der Schiene davor und danach moeglichst wenig
+    // lenken muss." Der Mittelwert der beiden Nachbarn teilt die noetige Lenkbewegung
+    // gleichmaessig auf die Rampe davor UND danach auf, statt zusaetzlich ueber die
+    // Mitte zu erzwingen - eine dritte, unnoetige Wende. Erst NACH allen anderen Ankern
+    // berechnet: luukeGeradenWert() und die gedaempfte Uebergabe oben pruefen nur den
+    // TYP der Startkachel (TILE_TYPE.START), nie ihren Zahlenwert - keine Ringabhaengigkeit.
+    if (startIdx >= 0 && n > 1) {
+      const vorIdx = at(startIdx - 1), nachIdx = at(startIdx + 1);
+      anker[startIdx] = (anker[vorIdx] + anker[nachIdx]) / 2;
     }
     return anker;
   }
@@ -48974,23 +49063,28 @@
   // Querlage-Liste). Die Regel ist in luukeLinieAnker() (60-track.js) ausfuehrlich
   // begruendet; dieser Test prueft nur, ob sie die Beispiele trifft.
   //
-  // ZWEI STELLEN ABSICHTLICH NICHT HART GEPRUEFT (siehe der Kommentar bei
+  // DREI STELLEN ABSICHTLICH NICHT HART GEPRUEFT (siehe der Kommentar bei
   // luukeLinieAnker()): der Haarnadel-Scheitel (SGHG, -75 statt der von der allgemeinen
-  // Regel vorhergesagten +75) UND je eine Gerade unmittelbar vor der Startkachel in SGR3G
+  // Regel vorhergesagten +75), je eine Gerade unmittelbar vor der Startkachel in SGR3G
   // und SR2GL2G (+100 belegt, die Regel sagt 0 vorher) - beides offene Fragen an Luuke,
-  // keine stillschweigend geratenen Sonderregeln.
+  // keine stillschweigend geratenen Sonderregeln - UND die Startkachel selbst (Index 0):
+  // ihr Anker wird seit "nicht bei Start immer in der Mitte, sondern so, dass man von der
+  // Schiene davor und danach moeglichst wenig lenken muss" BERECHNET (Mittelwert der
+  // Nachbarn), nicht mehr aus den Beispielen abgeschrieben - dort stand zufaellig immer 0,
+  // weil niemand sie absichtlich anders vorgegeben hatte.
   stAdd('Luuke-Linie: trifft die fuenf verlaesslichen Beispiele', () => {
     if (!window.OMEGA_TEST || !OMEGA_TEST.luukeLinieAnker || !OMEGA_TEST.codeToTrack) {
       return { skip: true, mass: 'Pruefzugang nicht vorhanden' };
     }
     const TOLERANZ = 15;
-    // { code, erwartet, offen: [Kachelindizes, die nicht hart geprueft werden] }
+    // { code, erwartet, offen: [Kachelindizes, die nicht hart geprueft werden] } - Index 0
+    // (Startkachel) steht in jedem Beispiel mit in "offen", aus dem oben genannten Grund.
     const beispiele = [
-      { code: 'SGR3G', erwartet: [0, -50, -100, 100, -50, 100], offen: [5] },
-      { code: 'SRLG', erwartet: [0, 100, 0, -100], offen: [] },
-      { code: 'SGHG', erwartet: [0, -50, -75, 0], offen: [2] },
-      { code: 'SR2GL2G', erwartet: [0, -100, 100, 0, 100, -100, 100], offen: [6] },
-      { code: 'SR2G2RG2', erwartet: [0, -100, 100, -100, -100, 100, 0, -100], offen: [] },
+      { code: 'SGR3G', erwartet: [0, -50, -100, 100, -50, 100], offen: [0, 5] },
+      { code: 'SRLG', erwartet: [0, 100, 0, -100], offen: [0] },
+      { code: 'SGHG', erwartet: [0, -50, -75, 0], offen: [0, 2] },
+      { code: 'SR2GL2G', erwartet: [0, -100, 100, 0, 100, -100, 100], offen: [0, 6] },
+      { code: 'SR2G2RG2', erwartet: [0, -100, 100, -100, -100, 100, 0, -100], offen: [0] },
     ];
     const schlecht = [], teile = [];
     for (const b of beispiele) {
@@ -49006,6 +49100,14 @@
         if (b.offen.indexOf(i) >= 0) continue;    // offene Frage, nicht hart geprueft
         const diff = Math.abs(anker[i] - b.erwartet[i]);
         if (diff > TOLERANZ) abweichungen.push('Kachel ' + i + ': ' + anker[i] + ' statt ' + b.erwartet[i]);
+      }
+      // Die Startkachel selbst NICHT gegen die (zufaellige) Beispielzahl gepruft,
+      // sondern gegen die eigentliche Vorschrift: Mittelwert der beiden Nachbarn -
+      // "moeglichst wenig lenken" ist damit eine echte Rechnung und keine Behauptung.
+      const erwarteterStart = (anker[anker.length - 1] + anker[1]) / 2;
+      if (Math.abs(anker[0] - erwarteterStart) > 0.01) {
+        abweichungen.push('Startkachel: ' + anker[0] + ' statt Mittelwert ' + erwarteterStart
+          + ' aus Nachbarn ' + anker[anker.length - 1] + '/' + anker[1]);
       }
       teile.push(b.code + ': ' + anker.join(','));
       if (abweichungen.length) schlecht.push(b.code + ' || ' + abweichungen.join('; '));

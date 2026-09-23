@@ -3166,7 +3166,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.7.48</span></span>
+        <span class="foot-ver">v<span id="app-version">0.7.49</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -3947,8 +3947,22 @@
     <div class="card subpage" id="sub-patchnotes">
       <button class="misc-back subpage-back" data-sub="">&larr; Info</button>
       <h2>Patchnotes</h2>
-      <p class="muted"><span class="dank-wer" data-i18n-skip>0.7</span>
-        <span class="muted">Navigation aufger&auml;umt (Startseite, feste Kopfzeile), Auto-Verwaltung in der Garage. Zwei-Spieler-Modus: Licht, Boxensound und Tastenbelegung jetzt wirklich unabh&auml;ngig. Renneinstellungen als eigene Kachel mit eigenem Cockpit-Screen, dazu ein Regler f&uuml;r Rennh&auml;rte und eine Recovery-Funktion nach einem Abgang. Cockpit-Balken (Tank/Schaden/Akku) jetzt vertikal, Gyro-Anzeige verbessert. Lenkkennlinie einstellbar, neuer GT7-Fahrmodus, zwei neue Motoren (Ford Tudor 1937, VW K&auml;fer 1300) und ein neues Vergleichsprofil mit echter Anlasser-Aufnahme f&uuml;r den Porsche. F&uuml;nf neue Ghost-Ideallinien-Modi, Ghost-Verhalten in der Einf&uuml;hrungsrunde und beim &Uuml;berholen verfeinert. Men&uuml;s komplett mit Gamepad/Tastatur navigierbar, inklusive Info-Popups und mehreren Feinschliffen an der Tastenbelegung (D-Pad-Fixes, Select schaltet jetzt den Bahn-Lesemodus). Streckenscan &uuml;berarbeitet, neu: Strecke aus einer Aufnahme lernen. Motorsound ist jetzt pro Auto einzeln w&auml;hlbar, Funk-Ansagen haben Vorrang vor der Live-Stimme. Neu in den Entwicklertools: Bin&auml;r-/Hex-Trainer.</span></p>
+      <p class="muted"><b><span data-i18n-skip>0.7</span></b></p>
+      <ul class="muted" style="padding-left:20px; line-height:1.7">
+        <li>Navigation aufger&auml;umt (Startseite, feste Kopfzeile), Auto-Verwaltung in der Garage.</li>
+        <li>Zwei-Spieler-Modus: Licht, Boxensound und Tastenbelegung jetzt wirklich unabh&auml;ngig.</li>
+        <li>Renneinstellungen als eigene Kachel mit eigenem Cockpit-Screen, dazu ein Regler f&uuml;r Rennh&auml;rte und eine Recovery-Funktion nach einem Abgang.</li>
+        <li>Cockpit-Balken (Tank/Schaden/Akku) jetzt vertikal, Gyro-Anzeige verbessert.</li>
+        <li>Lenkkennlinie einstellbar, neuer GT7-Fahrmodus, zwei neue Motoren (Ford Tudor 1937, VW K&auml;fer 1300) und ein Vergleichsprofil mit echter Anlasser-Aufnahme f&uuml;r den Porsche.</li>
+        <li>F&uuml;nf neue Ghost-Ideallinien-Modi, dazu die Luuke-Linie: ein neuer Modus, von Hand aus Beispiel-Streckenverl&auml;ufen hergeleitet. Ghost-Verhalten in der Einf&uuml;hrungsrunde und beim &Uuml;berholen verfeinert.</li>
+        <li>Men&uuml;s komplett mit Gamepad/Tastatur navigierbar, inklusive Info-Popups und mehreren Feinschliffen an der Tastenbelegung (D-Pad-Fixes, Select schaltet jetzt den Bahn-Lesemodus).</li>
+        <li>Info-Tab jetzt als Kacheln (Wozu, Danksagungen, Patchnotes).</li>
+        <li>Regen-&Uuml;bergang nachgemessen: kein Griff-Sprung, auch nicht beim erneuten Regenbeginn.</li>
+        <li>Gedruckte Streckenmuster zum Auslegen (Gerade, 60&#176;-Kurve in zwei Gr&ouml;&szlig;en) - rein visuell, ohne Strichcode-Anspruch.</li>
+        <li>Streckenscan &uuml;berarbeitet, neu: Strecke aus einer Aufnahme lernen.</li>
+        <li>Motorsound ist jetzt pro Auto einzeln w&auml;hlbar, Funk-Ansagen haben Vorrang vor der Live-Stimme.</li>
+        <li>Neu in den Entwicklertools: Bin&auml;r-/Hex-Trainer.</li>
+      </ul>
     </div>
   </section>
 
@@ -9049,19 +9063,38 @@
           </a>
         </div>
         <div style="flex:1 1 260px; min-width:240px">
-          <img src="muster-kurve-60grad-a4.svg" alt="Vorschau Trapez-Muster Rechtskurve 60 Grad"
+          <img src="muster-kurve-60grad-a4.svg" alt="Vorschau Trapez-Muster Rechtskurve 60 Grad, Version A"
                style="width:100%; max-width:300px; border:1px solid var(--border);
                       border-radius:4px; display:block">
-          <p style="margin:8px 0 4px 0"><b>Rechtskurve, 60&#176;</b></p>
+          <p style="margin:8px 0 4px 0"><b>Rechtskurve, 60&#176; &ndash; Version A</b></p>
           <p class="muted" style="font-size:11.5px; margin:0 0 8px 0">
             8 radiale Trapez-Keile, randlos &uuml;ber die ganze Seite (Aussenradius so
-            gew&auml;hlt, dass der Sektor die Blattbreite genau ausf&uuml;llt), innen
-            5&nbsp;mm und aussen 20&nbsp;mm breit - dieselben zwei Zahlen wie bei der
-            Geraden, unabh&auml;ngig voneinander getroffen statt aus dem
-            Radienverh&auml;ltnis errechnet.
+            gew&auml;hlt, dass der Sektor die Blattbreite genau ausf&uuml;llt, OHNE
+            &uuml;ber sie hinauszugehen), innen 5&nbsp;mm und aussen 20&nbsp;mm breit.
           </p>
           <a href="muster-kurve-60grad-a4.svg" download="muster-kurve-60grad-a4.svg">
-            <button class="primary">Kurve herunterladen (SVG)</button>
+            <button class="primary">Kurve A herunterladen (SVG)</button>
+          </a>
+        </div>
+        <!-- BESTELLT: "Mach bei der Rechtskurve mit Trapezen es so, dass sie bis an den
+             Rand des Blattes gehen als Rechtskurve, 60° Version B. Ich weiß, dass sie
+             dadurch abgeschnitten werden." Echter Radius/echte Breite aus 60-track.js
+             (370/250 mm), UNSKALIERT - deutlich groesser als A4 quer, das Blatt zeigt nur
+             den Ausschnitt, der hineinpasst, der Rest ist absichtlich abgeschnitten. -->
+        <div style="flex:1 1 260px; min-width:240px">
+          <img src="muster-kurve-60grad-versionb-a4.svg"
+               alt="Vorschau Trapez-Muster Rechtskurve 60 Grad, Version B, echte Groesse"
+               style="width:100%; max-width:300px; border:1px solid var(--border);
+                      border-radius:4px; display:block">
+          <p style="margin:8px 0 4px 0"><b>Rechtskurve, 60&#176; &ndash; Version B (echte Gr&ouml;&szlig;e)</b></p>
+          <p class="muted" style="font-size:11.5px; margin:0 0 8px 0">
+            Echter Radius (370&nbsp;mm) und echte Breite (250&nbsp;mm) aus 60-track.js,
+            unskaliert - deutlich gr&ouml;&szlig;er als A4 quer. Das Blatt zeigt nur den
+            Ausschnitt, der hineinpasst; der Rest ist absichtlich abgeschnitten, nicht
+            verkleinert wie in Version A.
+          </p>
+          <a href="muster-kurve-60grad-versionb-a4.svg" download="muster-kurve-60grad-versionb-a4.svg">
+            <button class="primary">Kurve B herunterladen (SVG)</button>
           </a>
         </div>
       </div>

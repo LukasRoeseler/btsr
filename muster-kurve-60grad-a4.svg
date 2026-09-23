@@ -1,14 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg"
      width="297.01mm" height="210.02mm" viewBox="0 0 297.01 210.02">
   <!--
-    RECHTSKURVE, 60 GRAD, RADIALE TRAPEZ-KEILE, RANDLOS, KEIN
-    STRICHCODE-ANSPRUCH. A4 QUER, 1 SVG-Einheit = 1 mm. Experimentell,
-    zum Auslegen und Vergleichen mit einer Infrarot-Aufnahme.
+    RECHTSKURVE, 60 GRAD, RADIALE TRAPEZ-KEILE, KEIN STRICHCODE-ANSPRUCH.
+    A4 QUER, 1 SVG-Einheit = 1 mm. Experimentell, zum Auslegen und
+    Vergleichen mit einer Infrarot-Aufnahme.
 
-    RANDLOS: Aussenradius 297.0 mm, sodass die Sehne ueber den vollen
-    60-Grad-Winkel genau die Blattbreite (297.0 mm) ergibt; Innenradius
-    100.4 mm, sodass die Innenkante ebenfalls die Blattoberkante beruehrt.
-    Der Sektor fuellt damit die ganze Seite.
+        Version A, randlos: Aussenradius so gewaehlt, dass die Sehne ueber den
+    vollen 60-Grad-Winkel genau die Blattbreite ergibt; Innenradius so, dass
+    die Innenkante ebenfalls die Blattoberkante beruehrt. Der Sektor fuellt
+    damit die ganze Seite, OHNE ueber sie hinauszugehen.
+    Aussenradius 297.0 mm, Innenradius 100.4 mm.
 
     8 Keile, jeder ein TRAPEZ mit unabhaengig vorgegebener Innenbreite
     (5 mm) und Aussenbreite (20 mm) - dieselben zwei Zahlen wie bei

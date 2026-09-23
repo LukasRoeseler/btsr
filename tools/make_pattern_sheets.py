@@ -101,25 +101,33 @@ def kachel_gerade(oben_mm=5.0, unten_mm=20.0):
 
 
 # ---- 2. 60-Grad-Rechtskurve, radiale Trapez-Keile, randlos --------------------------
-def kachel_kurve(innen_mm=5.0, aussen_mm=20.0, grad_gesamt=60.0):
-    """Randlos: ra = W (die Sehne des Sektors beruehrt beide Seitenraender), ri so
+def kurve_radien_randlos(grad_gesamt=60.0):
+    """Version A: ra = W (die Sehne des Sektors beruehrt beide Seitenraender), ri so
     gewaehlt, dass die Innenkante ebenfalls die Blattoberkante beruehrt - der Sektor
-    fuellt damit die ganze Seite, statt wie zuvor mittig mit Rand zu stehen.
+    fuellt die ganze Seite, ohne ueber sie hinauszugehen."""
+    halb = math.radians(grad_gesamt / 2.0)
+    ra = W / 2.0 / math.sin(halb)
+    ri = (ra - H) / math.cos(halb)
+    return ri, ra
 
-    JEDER KEIL EIN TRAPEZ MIT UNABHAENGIG VORGEGEBENER INNEN-/AUSSENBREITE (nicht mehr
-    ein Kreissektor bei konstantem Winkel wie in der Vorfassung): ring_sektor()s
-    konstanter Winkel haette Innen- und Aussenbreite nicht unabhaengig treffen koennen,
-    weil ihr Verhaeltnis vom Radienverhaeltnis abhaengt. Hier werden Innen- und
-    Aussenbreite UNABHAENGIG als Winkel eingesetzt (Sehne statt Bogen an der Innen-/
-    Aussenkante) - dieselben zwei Zahlen wie bei der Geraden (5/20 mm), nur radial
-    statt geradlinig."""
+
+def kachel_kurve(ri, ra, innen_mm=5.0, aussen_mm=20.0, grad_gesamt=60.0, versionshinweis=''):
+    """JEDER KEIL EIN TRAPEZ MIT UNABHAENGIG VORGEGEBENER INNEN-/AUSSENBREITE (nicht ein
+    Kreissektor bei konstantem Winkel wie in einer Vorfassung): ring_sektor()s konstanter
+    Winkel haette Innen- und Aussenbreite nicht unabhaengig treffen koennen, weil ihr
+    Verhaeltnis vom Radienverhaeltnis abhaengt. Hier werden Innen- und Aussenbreite
+    UNABHAENGIG als Winkel eingesetzt (Sehne statt Bogen an der Innen-/Aussenkante) -
+    dieselben zwei Zahlen wie bei der Geraden (5/20 mm), nur radial statt geradlinig.
+
+    ri/ra werden von aussen vorgegeben (siehe kurve_radien_randlos() fuer die randlos
+    passende Fassung, und main() fuer die echte, ueberstehende Fassung B)."""
     halb_deg = grad_gesamt / 2.0
-    halb = math.radians(halb_deg)
-    ra = W / 2.0 / math.sin(halb)   # Sehne bei Radius ra ueber den vollen Winkel = W
-    ri = (ra - H) / math.cos(halb)  # Innenkante beruehrt y=0, wenn die Aussenkante y=H beruehrt
 
     cx = W / 2.0
-    cy = H - ra   # Aussenkante (Winkel 90 Grad, gerade nach unten) beruehrt y=H
+    cy = H - ra   # Aussenkante (Winkel 90 Grad, gerade nach unten) beruehrt y=H (Fassung A) -
+                  # bei groesserem ra als in kurve_radien_randlos() liegt y=H dann NICHT mehr
+                  # auf der Aussenkante, sondern mittendrin: das Blatt zeigt nur einen
+                  # Ausschnitt, der Rest ist wie vorgesehen abgeschnitten.
 
     # winkel_deg=0 zeigt hier gerade nach unten (+90 Grad im math. Standardwinkel) -
     # dieselbe Konvention wie ring_sektor()/bogen_kurve() in make_track_sheets.py.
@@ -132,14 +140,12 @@ def kachel_kurve(innen_mm=5.0, aussen_mm=20.0, grad_gesamt=60.0):
     theta_periode = theta_innen + theta_aussen
     n = max(1, int(grad_gesamt / theta_periode))
 
-    komm = ('    RECHTSKURVE, 60 GRAD, RADIALE TRAPEZ-KEILE, RANDLOS, KEIN\n'
-            '    STRICHCODE-ANSPRUCH. A4 QUER, 1 SVG-Einheit = 1 mm. Experimentell,\n'
-            '    zum Auslegen und Vergleichen mit einer Infrarot-Aufnahme.\n'
+    komm = ('    RECHTSKURVE, 60 GRAD, RADIALE TRAPEZ-KEILE, KEIN STRICHCODE-ANSPRUCH.\n'
+            '    A4 QUER, 1 SVG-Einheit = 1 mm. Experimentell, zum Auslegen und\n'
+            '    Vergleichen mit einer Infrarot-Aufnahme.\n'
             '\n'
-            '    RANDLOS: Aussenradius %.1f mm, sodass die Sehne ueber den vollen\n'
-            '    60-Grad-Winkel genau die Blattbreite (%.1f mm) ergibt; Innenradius\n'
-            '    %.1f mm, sodass die Innenkante ebenfalls die Blattoberkante beruehrt.\n'
-            '    Der Sektor fuellt damit die ganze Seite.\n'
+            '    %s'
+            '    Aussenradius %.1f mm, Innenradius %.1f mm.\n'
             '\n'
             '    %d Keile, jeder ein TRAPEZ mit unabhaengig vorgegebener Innenbreite\n'
             '    (%.0f mm) und Aussenbreite (%.0f mm) - dieselben zwei Zahlen wie bei\n'
@@ -150,7 +156,7 @@ def kachel_kurve(innen_mm=5.0, aussen_mm=20.0, grad_gesamt=60.0):
             '    rechnerisch aus dem Radienverhaeltnis.\n'
             '\n'
             '    DRUCKEN: 100 %% / "Tatsaechliche Groesse", NICHT "an Seite anpassen".'
-            % (ra, W, ri, n, innen_mm, aussen_mm))
+            % (versionshinweis, ra, ri, n, innen_mm, aussen_mm))
 
     teile = [kopf(komm), '  <g fill="#000000">\n']
     for k in range(n):
@@ -163,7 +169,7 @@ def kachel_kurve(innen_mm=5.0, aussen_mm=20.0, grad_gesamt=60.0):
                      % (p1[0], p1[1], p2[0], p2[1], p3[0], p3[1], p4[0], p4[1]))
     teile.append('  </g>\n')
     teile.append('</svg>\n')
-    return ''.join(teile), n, ri, ra
+    return ''.join(teile), n
 
 
 def main():
@@ -173,11 +179,38 @@ def main():
     io.open(p, 'w', encoding='utf-8', newline='\n').write(svg)
     print('  muster-gerade-a4.svg (%d Zeichen)' % len(svg))
 
-    svg, n, ri, ra = kachel_kurve()
-    print('Kurve: %d Keile, randlos, Innenradius %.1f mm, Aussenradius %.1f mm' % (n, ri, ra))
+    ri, ra = kurve_radien_randlos()
+    svg, n = kachel_kurve(ri, ra, versionshinweis=(
+        '    Version A, randlos: Aussenradius so gewaehlt, dass die Sehne ueber den\n'
+        '    vollen 60-Grad-Winkel genau die Blattbreite ergibt; Innenradius so, dass\n'
+        '    die Innenkante ebenfalls die Blattoberkante beruehrt. Der Sektor fuellt\n'
+        '    damit die ganze Seite, OHNE ueber sie hinauszugehen.\n'))
+    print('Kurve A: %d Keile, randlos passend, Innenradius %.1f mm, Aussenradius %.1f mm'
+          % (n, ri, ra))
     p = os.path.join(REPO, 'muster-kurve-60grad-a4.svg')
     io.open(p, 'w', encoding='utf-8', newline='\n').write(svg)
     print('  muster-kurve-60grad-a4.svg (%d Zeichen)' % len(svg))
+
+    # ---- Version B: echte Groesse, bewusst ueberstehend -----------------------------
+    #
+    # BESTELLT: "Mach bei der Rechtskurve mit Trapezen es so, dass sie bis an den Rand
+    # des Blattes gehen als Rechtskurve, 60° Version B. Ich weiß, dass sie dadurch
+    # abgeschnitten werden." Kein Faktor, keine Anpassung an die Seite: der echte Radius
+    # und die echte Breite aus 60-track.js (370/250 mm), unskaliert. Ein 60-Grad-Sektor
+    # bei dieser Groesse ist deutlich groesser als A4 quer - das Blatt zeigt nur den
+    # Ausschnitt, der hineinpasst, der Rest ist abgeschnitten, absichtlich.
+    real_radius_mm, real_breite_mm = 370.0, 250.0
+    ri_b, ra_b = real_radius_mm - real_breite_mm / 2, real_radius_mm + real_breite_mm / 2
+    svg, n = kachel_kurve(ri_b, ra_b, versionshinweis=(
+        '    Version B, echte Groesse (Radius %.0f mm, Breite %.0f mm aus 60-track.js,\n'
+        '    UNSKALIERT) - deutlich groesser als A4 quer, das Blatt zeigt nur den\n'
+        '    Ausschnitt, der hineinpasst. Der Rest ist ABSICHTLICH abgeschnitten, nicht\n'
+        '    verkleinert wie in Version A.\n' % (real_radius_mm, real_breite_mm)))
+    print('Kurve B: %d Keile, echte Groesse (abgeschnitten), Innenradius %.1f mm, Aussenradius %.1f mm'
+          % (n, ri_b, ra_b))
+    p = os.path.join(REPO, 'muster-kurve-60grad-versionb-a4.svg')
+    io.open(p, 'w', encoding='utf-8', newline='\n').write(svg)
+    print('  muster-kurve-60grad-versionb-a4.svg (%d Zeichen)' % len(svg))
 
 
 if __name__ == '__main__':

@@ -1875,6 +1875,10 @@
   //   SR2GL2G    0, -100, 100, 0, 100, -100, 100
   //   SR2G2RG2   0, -100, 100, -100, -100, 100, 0, -100
   //
+  // DIE FUEHRENDE 0 JE ZEILE IST DIE STARTKACHEL - in allen fuenf Beispielen zufaellig 0,
+  // aber NICHT als eigene Vorgabe zu lesen (siehe Punkt 7 unten: ihr Anker wird
+  // inzwischen berechnet, nicht mehr aus den Beispielen abgeschrieben).
+  //
   // DIE REGEL, tileweise hergeleitet und gegen alle 34 Zahlen der fuenf Beispiele
   // geprueft (31 von 34 treffen exakt, zwei Ausreisser bleiben offen - siehe unten):
   //
@@ -1898,7 +1902,7 @@
   //      SRLG (R triftt L ohne Puffer: R selbst bleibt bei +100, L wird zu 0, die
   //      folgende Gerade traegt den vollen Linksscheitel -100). Nur ein Beleg, als
   //      Sonderfall uebernommen.
-  //   6. GERADEN (und die Startkachel: dort immer 0): siehe luukeGeradenWert() - weder
+  //   6. GERADEN (nicht die Startkachel, siehe Punkt 7): siehe luukeGeradenWert() - weder
   //      reine Interpolation noch symmetrischer Zerfall passten auf die Daten, sondern
   //      ein Blick nach vorn UND zurueck:
   //        - Unmittelbar NACH der Startkachel: halbes Aussen Richtung naechstem Lauf,
@@ -1907,15 +1911,26 @@
   //          naechsten Laufs, aber NUR wenn dieser hoechstens zwei Kacheln entfernt ist
   //          UND gleichsinnig zum gerade verlassenen Lauf dreht (SR2G2RG2, beide Luecken)
   //          - sonst 0 (Ruecksprung zur Mitte, SGHG/SR2GL2G/SR2G2RG2).
+  //   7. DIE STARTKACHEL selbst steht NICHT fest auf 0 (anders als in den fuenf
+  //      Beispielen, wo sie es zufaellig immer war). BESTELLT (Korrektur, nachdem Punkt
+  //      6 oben schon stand): "nicht bei Start immer in der Mitte, sondern so, dass man
+  //      von der Schiene davor und danach moeglichst wenig lenken muss." Ihr Anker ist
+  //      deshalb der MITTELWERT der beiden Nachbarkacheln (davor und danach je einmal um
+  //      die Naht herum) - das teilt die noetige Lenkbewegung gleichmaessig auf beide
+  //      Rampen auf, statt zusaetzlich ueber die Mitte zu erzwingen. Berechnet NACH allen
+  //      anderen Ankern; siehe der Kommentar an der Berechnung selbst, warum das keine
+  //      Ringabhaengigkeit ist.
   //
   //   ZWEI OFFENE RESTFRAGEN, nicht stillschweigend festgelegt (an Luuke zurueckspielen):
   //     - SGR3G und SR2GL2G haben je EINE Gerade unmittelbar vor der Startkachel (nach
   //       dem Verlassen eines Laufs, gleichsinnig zum naechsten Lauf ueber die Naht
-  //       hinweg), deren Wert (+100 in beiden Faellen) die obige Regel nicht erklaert -
-  //       sie wuerde 0 vorhersagen (Ruecksprung zur Mitte). Beide Belege zeigen
+  //       hinweg), deren Wert (+100 in beiden Faellen) die Geraden-Regel (Punkt 6) nicht
+  //       erklaert - sie wuerde 0 vorhersagen (Ruecksprung zur Mitte). Beide Belege zeigen
   //       ausgerechnet +100, nicht irgendeinen Wert - zu konsistent fuer reines Rauschen,
   //       aber ohne erklaerenden Mechanismus. Vorschlag: 0 lassen (die haeufigere,
-  //       bestaetigte Regel), beide Faelle als offene Frage vermerkt.
+  //       bestaetigte Regel), beide Faelle als offene Frage vermerkt. Punkt 7 (Startkachel
+  //       nicht mehr fest auf 0) aendert daran nichts: die Restfrage betrifft die Gerade
+  //       VOR der Startkachel, nicht die Startkachel selbst.
   //     - Der Haarnadel-Scheitel (-75, Punkt 2 oben) koennte ebenso gut ein
   //       Vorzeichendreher beim Eintippen sein (+75 waere das erwartete Vorzeichen).
   //       Uebernommen wie geliefert, mit derselben Markierung.
@@ -1962,7 +1977,8 @@
   // enthaelt eine Weitkurve.
   function luukeBase(tightness) { return tightness === 0 ? 50 : 100; }
 
-  // Geraden UND die Startkachel (dort immer 0) - siehe Punkt 6 oben.
+  // Geraden - NICHT die Startkachel, die bekommt ihren eigenen Anker separat (Punkt 7
+  // oben) - siehe Punkt 6 oben.
   function luukeGeradenWert(i, tiles, runOf, closed, at) {
     const n = tiles.length;
     const justAfterS = (closed || i > 0) && tiles[at(i - 1)].type === TILE_TYPE.START;
@@ -2038,11 +2054,23 @@
       }
     });
 
+    let startIdx = -1;
     for (let i = 0; i < n; i++) {
       if (runOf[i]) continue;
-      if (tiles[i].type === TILE_TYPE.START) { anker[i] = 0; continue; }
+      if (tiles[i].type === TILE_TYPE.START) { startIdx = i; continue; }
       if (override.has(i)) { anker[i] = override.get(i); continue; }
       anker[i] = luukeGeradenWert(i, tiles, runOf, closed, at);
+    }
+    // DIE STARTKACHEL NICHT MEHR FEST AUF 0: BESTELLT, "nicht bei Start immer in der
+    // Mitte, sondern so, dass man von der Schiene davor und danach moeglichst wenig
+    // lenken muss." Der Mittelwert der beiden Nachbarn teilt die noetige Lenkbewegung
+    // gleichmaessig auf die Rampe davor UND danach auf, statt zusaetzlich ueber die
+    // Mitte zu erzwingen - eine dritte, unnoetige Wende. Erst NACH allen anderen Ankern
+    // berechnet: luukeGeradenWert() und die gedaempfte Uebergabe oben pruefen nur den
+    // TYP der Startkachel (TILE_TYPE.START), nie ihren Zahlenwert - keine Ringabhaengigkeit.
+    if (startIdx >= 0 && n > 1) {
+      const vorIdx = at(startIdx - 1), nachIdx = at(startIdx + 1);
+      anker[startIdx] = (anker[vorIdx] + anker[nachIdx]) / 2;
     }
     return anker;
   }

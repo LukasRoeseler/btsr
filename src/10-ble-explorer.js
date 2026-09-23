@@ -1649,8 +1649,32 @@
       "Who helped, and where the sounds come from.",
     "Was sich je Wochenversion geändert hat, kurz zusammengefasst.":
       "What changed in each weekly version, summarised briefly.",
-    "Navigation aufgeräumt (Startseite, feste Kopfzeile), Auto-Verwaltung in der Garage. Zwei-Spieler-Modus: Licht, Boxensound und Tastenbelegung jetzt wirklich unabhängig. Renneinstellungen als eigene Kachel mit eigenem Cockpit-Screen, dazu ein Regler für Rennhärte und eine Recovery-Funktion nach einem Abgang. Cockpit-Balken (Tank/Schaden/Akku) jetzt vertikal, Gyro-Anzeige verbessert. Lenkkennlinie einstellbar, neuer GT7-Fahrmodus, zwei neue Motoren (Ford Tudor 1937, VW Käfer 1300) und ein neues Vergleichsprofil mit echter Anlasser-Aufnahme für den Porsche. Fünf neue Ghost-Ideallinien-Modi, Ghost-Verhalten in der Einführungsrunde und beim Überholen verfeinert. Menüs komplett mit Gamepad/Tastatur navigierbar, inklusive Info-Popups und mehreren Feinschliffen an der Tastenbelegung (D-Pad-Fixes, Select schaltet jetzt den Bahn-Lesemodus). Streckenscan überarbeitet, neu: Strecke aus einer Aufnahme lernen. Motorsound ist jetzt pro Auto einzeln wählbar, Funk-Ansagen haben Vorrang vor der Live-Stimme. Neu in den Entwicklertools: Binär-/Hex-Trainer.":
-      "Navigation cleaned up (home page, fixed header), car management in the garage. Two-player mode: lights, pit sound and key bindings now genuinely independent. Race settings as their own tile with their own cockpit screen, plus a race-hardness slider and a recovery function after going off track. Cockpit bars (fuel/damage/battery) now vertical, gyro display improved. Steering curve adjustable, new GT7 driving mode, two new engines (Ford Tudor 1937, VW Beetle 1300) and a new comparison profile with a real starter recording for the Porsche. Five new ghost ideal-line modes, ghost behaviour on the formation lap and while overtaking refined. Menus fully navigable with gamepad/keyboard, including info popups and several refinements to the key bindings (D-pad fixes, Select now toggles the track-read mode). Track scan reworked, new: learn a track from a recording. Engine sound is now selectable per car, radio announcements now take priority over the live voice. New in the developer tools: binary/hex trainer.",
+    "Navigation aufgeräumt (Startseite, feste Kopfzeile), Auto-Verwaltung in der Garage.":
+      "Navigation cleaned up (home page, fixed header), car management in the garage.",
+    "Zwei-Spieler-Modus: Licht, Boxensound und Tastenbelegung jetzt wirklich unabhängig.":
+      "Two-player mode: lights, pit sound and key bindings now genuinely independent.",
+    "Renneinstellungen als eigene Kachel mit eigenem Cockpit-Screen, dazu ein Regler für Rennhärte und eine Recovery-Funktion nach einem Abgang.":
+      "Race settings as their own tile with their own cockpit screen, plus a race-hardness slider and a recovery function after going off track.",
+    "Cockpit-Balken (Tank/Schaden/Akku) jetzt vertikal, Gyro-Anzeige verbessert.":
+      "Cockpit bars (fuel/damage/battery) now vertical, gyro display improved.",
+    "Lenkkennlinie einstellbar, neuer GT7-Fahrmodus, zwei neue Motoren (Ford Tudor 1937, VW Käfer 1300) und ein Vergleichsprofil mit echter Anlasser-Aufnahme für den Porsche.":
+      "Steering curve adjustable, new GT7 driving mode, two new engines (Ford Tudor 1937, VW Beetle 1300) and a comparison profile with a real starter recording for the Porsche.",
+    "Fünf neue Ghost-Ideallinien-Modi, dazu die Luuke-Linie: ein neuer Modus, von Hand aus Beispiel-Streckenverläufen hergeleitet. Ghost-Verhalten in der Einführungsrunde und beim Überholen verfeinert.":
+      "Five new ghost ideal-line modes, plus the Luuke line: a new mode derived by hand from example track layouts. Ghost behaviour on the formation lap and while overtaking refined.",
+    "Menüs komplett mit Gamepad/Tastatur navigierbar, inklusive Info-Popups und mehreren Feinschliffen an der Tastenbelegung (D-Pad-Fixes, Select schaltet jetzt den Bahn-Lesemodus).":
+      "Menus fully navigable with gamepad/keyboard, including info popups and several refinements to the key bindings (D-pad fixes, Select now toggles the track-read mode).",
+    "Info-Tab jetzt als Kacheln (Wozu, Danksagungen, Patchnotes).":
+      "Info tab now as tiles (What for, Acknowledgements, Patchnotes).",
+    "Regen-Übergang nachgemessen: kein Griff-Sprung, auch nicht beim erneuten Regenbeginn.":
+      "Rain transition measured: no grip jump, not even when rain starts again.",
+    "Gedruckte Streckenmuster zum Auslegen (Gerade, 60°-Kurve in zwei Größen) - rein visuell, ohne Strichcode-Anspruch.":
+      "Printed track patterns to lay out (straight, 60° curve in two sizes) - purely visual, no barcode claim.",
+    "Streckenscan überarbeitet, neu: Strecke aus einer Aufnahme lernen.":
+      "Track scan reworked, new: learn a track from a recording.",
+    "Motorsound ist jetzt pro Auto einzeln wählbar, Funk-Ansagen haben Vorrang vor der Live-Stimme.":
+      "Engine sound is now selectable per car, radio announcements now take priority over the live voice.",
+    "Neu in den Entwicklertools: Binär-/Hex-Trainer.":
+      "New in the developer tools: binary/hex trainer.",
     "Die Hardware ist gekauft, die Software bestimmt jemand anders. Dieses Projekt dreht das um: es steuert ein Carrera-Hybrid-Auto mit eigenem Code über dieselbe Bluetooth-Schnittstelle, die die Hersteller-App benutzt. Damit läuft auf der Hardware, was man selbst darauf laufen lassen will – unabhängig davon, ob ein Anbieter eine Funktion vorsieht, eine App weiter pflegt oder einen Server abschaltet.": "The hardware is bought and paid for; what runs on it is somebody else’s decision. This project turns that around: it drives a Carrera Hybrid car with its own code over the same Bluetooth interface the manufacturer’s app uses. What runs on the hardware is then what you want to run on it – regardless of whether a vendor provides a feature, keeps an app maintained, or switches off a server.",
     "Der zweite Punkt ist die Gemeinschaft. Ein offengelegtes Protokoll kann jeder weiterverwenden: für Funktionen, die der Hersteller nicht baut, für eine andere Bedienung, für Unterricht. Das hier ist bewusst als Beispiel gebaut und nicht als Produkt: alles, was herausgefunden wurde, steht in der Doku, samt der Stellen, an denen wir uns geirrt haben.": "The second point is the community. A documented protocol is something anyone can build on: for features the manufacturer does not build, for a different way of controlling things, for teaching. This is deliberately built as an example and not as a product: everything that was found out is written down in the documentation, including the places where we got it wrong.",
     "Offene Software als Teil offener Wissenschaft": "Open software as part of open science",
@@ -1687,10 +1711,14 @@
     "12 Trapeze nebeneinander, randlos über die ganze Seite, oben 5 mm und unten 20 mm breit.":
       "12 trapezoids side by side, borderless across the whole sheet, 5 mm wide at the top and 20 mm at the bottom.",
     "Gerade herunterladen (SVG)": "Download straight (SVG)",
-    "Rechtskurve, 60°": "Right curve, 60°",
-    "8 radiale Trapez-Keile, randlos über die ganze Seite (Aussenradius so gewählt, dass der Sektor die Blattbreite genau ausfüllt), innen 5 mm und aussen 20 mm breit - dieselben zwei Zahlen wie bei der Geraden, unabhängig voneinander getroffen statt aus dem Radienverhältnis errechnet.":
-      "8 radial trapezoid wedges, borderless across the whole sheet (outer radius chosen so the sector exactly fills the sheet width), 5 mm wide at the inner edge and 20 mm at the outer edge - the same two numbers as on the straight, chosen independently rather than computed from the radius ratio.",
-    "Kurve herunterladen (SVG)": "Download curve (SVG)",
+    "Rechtskurve, 60° – Version A": "Right curve, 60° – version A",
+    "8 radiale Trapez-Keile, randlos über die ganze Seite (Aussenradius so gewählt, dass der Sektor die Blattbreite genau ausfüllt, OHNE über sie hinauszugehen), innen 5 mm und aussen 20 mm breit.":
+      "8 radial trapezoid wedges, borderless across the whole sheet (outer radius chosen so the sector exactly fills the sheet width, WITHOUT going beyond it), 5 mm wide at the inner edge and 20 mm at the outer edge.",
+    "Kurve A herunterladen (SVG)": "Download curve A (SVG)",
+    "Rechtskurve, 60° – Version B (echte Größe)": "Right curve, 60° – version B (real size)",
+    "Echter Radius (370 mm) und echte Breite (250 mm) aus 60-track.js, unskaliert - deutlich größer als A4 quer. Das Blatt zeigt nur den Ausschnitt, der hineinpasst; der Rest ist absichtlich abgeschnitten, nicht verkleinert wie in Version A.":
+      "Real radius (370 mm) and real width (250 mm) from 60-track.js, unscaled - noticeably bigger than A4 landscape. The sheet shows only the section that fits; the rest is cut off on purpose, not shrunk down as in version A.",
+    "Kurve B herunterladen (SVG)": "Download curve B (SVG)",
     "Zwei benachbarte Plätze fahren in der Einführungsrunde versetzt, also als Zweierkolonne. Die Runde läuft mit Boxengassen-Tempo; sobald das erste Auto Start/Ziel zum zweiten Mal überfährt, ist das Limit weg. Aufstellen musst du von Hand – ein Auto auf die Bahn setzen kann die App nicht. Dein eigenes Auto steht mit in der Liste und verschiebt damit, auf welche Seite die Ghosts hinter dir gehen.": "Two adjacent grid slots drive offset from each other on the formation lap, so as a double column. The lap runs at pit-lane pace; as soon as the first car crosses start/finish for the SECOND time the limit is gone. Lining up is your job – the app cannot place a car on the track. Your own car is in the list too and therefore shifts which side the ghosts behind you take.",
     "Diese Seite zählt Aufrufe mit GoatCounter, damit ich weiß, ob das Projekt jemand benutzt. Ohne Cookies, ohne Werbung und ohne personenbezogene Daten; wer den Zähler blockiert, verliert keine Funktion. Alles andere – Abstimmungen, Rundenzeiten, Streckenpläne – bleibt im Browser und wird nirgends hingeschickt.": "This page counts visits with GoatCounter so I know whether anyone uses the project. No cookies, no advertising and no personal data; blocking the counter costs you no function. Everything else – setups, lap times, track plans – stays in the browser and is not sent anywhere.",
     "Gänge": "gears",
