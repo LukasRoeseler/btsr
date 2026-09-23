@@ -3166,7 +3166,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.7.44</span></span>
+        <span class="foot-ver">v<span id="app-version">0.7.45</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -3849,7 +3849,44 @@
        mit halb uebersetztem Fliesstext waere schlechter als einer mit einem
        ehrlichen Hinweis darauf, dass er nur deutsch vorliegt. -->
   <section class="tabpage" id="tab-info">
-    <div class="card">
+    <!-- BESTELLT: "die abschnitte unter Info als eigene Kacheln wie bei den Optionen und
+         Entwicklertools. (Wozu, danksagungen, und neu: patchnotes)." Dasselbe
+         subpage-home/subpage-Muster wie #tab-options (sub-home-options oben) - drei
+         Kacheln, jede fuehrt auf eine Karte weiter unten in diesem Abschnitt. -->
+    <div class="card subpage-home" id="sub-home-info">
+      <h2>Info</h2>
+      <div class="misc-grid">
+        <button class="misc-tile subpage-open" data-sub="wozu">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M24 6a12 12 0 0 0-7 21c2 1.5 3 3 3 5h8c0-2 1-3.5 3-5a12 12 0 0 0-7-21z"/>
+            <path d="M20 38h8M21 42h6" stroke="var(--bad)"/>
+          </svg>
+          <b>Wozu?</b>
+          <span>Warum dieses Projekt existiert, und was offene Software damit zu tun hat.</span>
+        </button>
+        <button class="misc-tile subpage-open" data-sub="dank">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M24 40C10 30 6 22 6 15a9 9 0 0 1 18-2 9 9 0 0 1 18 2c0 7-4 15-18 25z"/>
+          </svg>
+          <b>Danksagungen</b>
+          <span>Wer geholfen hat, und woher die Kl&auml;nge kommen.</span>
+        </button>
+        <button class="misc-tile subpage-open" data-sub="patchnotes">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="24" cy="26" r="16"/>
+            <path d="M24 26V16M24 26l8 5" stroke="var(--bad)"/>
+            <path d="M17 6h14M24 6v4"/>
+          </svg>
+          <b>Patchnotes</b>
+          <span>Was sich je Wochenversion ge&auml;ndert hat, kurz zusammengefasst.</span>
+        </button>
+      </div>
+    </div>
+    <div class="card subpage" id="sub-wozu">
+      <button class="misc-back subpage-back" data-sub="">&larr; Info</button>
       <h2>Wozu dient dieses Projekt?</h2>
       <p class="muted">Die Hardware ist gekauft, die Software bestimmt jemand anders. Dieses Projekt dreht das um: es steuert ein Carrera-Hybrid-Auto mit eigenem Code &uuml;ber dieselbe Bluetooth-Schnittstelle, die die Hersteller-App benutzt. Damit l&auml;uft auf der Hardware, was man selbst darauf laufen lassen will &ndash; unabh&auml;ngig davon, ob ein Anbieter eine Funktion vorsieht, eine App weiter pflegt oder einen Server abschaltet.</p>
       <p class="muted">Der zweite Punkt ist die Gemeinschaft. Ein offengelegtes Protokoll kann jeder weiterverwenden: f&uuml;r Funktionen, die der Hersteller nicht baut, f&uuml;r eine andere Bedienung, f&uuml;r Unterricht. Das hier ist bewusst als Beispiel gebaut und nicht als Produkt: alles, was herausgefunden wurde, steht in der Doku, samt der Stellen, an denen wir uns geirrt haben.</p>
@@ -3862,7 +3899,8 @@
       <p class="muted">Und praktisch: die Programmierschule unter Entwicklertools l&auml;sst dich Beschleunigungs- und Lenkkurven mit der Hand ziehen und sofort sehen, was das Auto daraus macht. Das ist der k&uuml;rzeste Weg von &bdquo;Programmieren ist abstrakt&ldquo; zu &bdquo;eine eckige Kurve f&auml;hrt schlechter als eine geschmeidige&ldquo;.</p>
     </div>
 
-    <div class="card">
+    <div class="card subpage" id="sub-dank">
+      <button class="misc-back subpage-back" data-sub="">&larr; Info</button>
       <h2>Danksagungen</h2>
       <!-- ---- KEINE AUSZEICHNUNG MITTEN IM SATZ ----------------------------------
            Ein <b> oder <code> innerhalb eines Satzes ZERLEGT den Textknoten, und die
@@ -3899,6 +3937,18 @@
       </ul>
       <p class="muted">Das Motormodell folgt dem Ansatz von engine-sim unter der MIT-Lizenz; Zylinderzahlen, Drehzahlgrenzen und Kurbelwellenwinkel stammen aus dessen Motordefinitionen. Die vollst&auml;ndige Aufstellung mit allen Messwerten steht in der Datei CREDITS im Audio-Ordner.</p>
       <p class="dank-quelle" data-i18n-skip>ange-yaghi/engine-sim &middot; audio/CREDITS.md</p>
+    </div>
+    <!-- BESTELLT: "alle neuerungen je wochen-version 0.X.0 (ab 0.7) im infotab unter
+         kachel 'Patchnotes' sammeln und auch in zukunft aktuell halten; kann allgemein
+         und kurz bleiben." Ein Absatz je WOCHEN-Version (die MITTLERE Zahl aus
+         tools/bump_version.py, nicht die letzte Ziffer) - bei jedem Sprung dieser Zahl
+         kommt ein neuer Absatz oben oder unten dazu, siehe die allgemeine Verifikation
+         im Session-Plan. -->
+    <div class="card subpage" id="sub-patchnotes">
+      <button class="misc-back subpage-back" data-sub="">&larr; Info</button>
+      <h2>Patchnotes</h2>
+      <p class="muted"><span class="dank-wer" data-i18n-skip>0.7</span>
+        <span class="muted">Navigation aufger&auml;umt (Startseite, feste Kopfzeile), Auto-Verwaltung in der Garage. Zwei-Spieler-Modus: Licht, Boxensound und Tastenbelegung jetzt wirklich unabh&auml;ngig. Renneinstellungen als eigene Kachel mit eigenem Cockpit-Screen, dazu ein Regler f&uuml;r Rennh&auml;rte und eine Recovery-Funktion nach einem Abgang. Cockpit-Balken (Tank/Schaden/Akku) jetzt vertikal, Gyro-Anzeige verbessert. Lenkkennlinie einstellbar, neuer GT7-Fahrmodus, zwei neue Motoren (Ford Tudor 1937, VW K&auml;fer 1300) und ein neues Vergleichsprofil mit echter Anlasser-Aufnahme f&uuml;r den Porsche. F&uuml;nf neue Ghost-Ideallinien-Modi, Ghost-Verhalten in der Einf&uuml;hrungsrunde und beim &Uuml;berholen verfeinert. Men&uuml;s komplett mit Gamepad/Tastatur navigierbar, inklusive Info-Popups und mehreren Feinschliffen an der Tastenbelegung (D-Pad-Fixes, Select schaltet jetzt den Bahn-Lesemodus). Streckenscan &uuml;berarbeitet, neu: Strecke aus einer Aufnahme lernen. Motorsound ist jetzt pro Auto einzeln w&auml;hlbar, Funk-Ansagen haben Vorrang vor der Live-Stimme. Neu in den Entwicklertools: Bin&auml;r-/Hex-Trainer.</span></p>
     </div>
   </section>
 
@@ -10702,6 +10752,15 @@
     "Was das Auto gerade unter sich liest, ungefiltert – mit Zeitleiste der Codewechsel.": "What the car is reading beneath itself right now, unfiltered – with a timeline of the code changes.",
     "Was das Auto gerade unter sich liest, ungefiltert. Die Anzeige zeigt den ROHEN Code und nicht das, was die Rundenlogik daraus macht – genau darin liegt ihr Zweck: sie soll die Fehler sichtbar machen, die jene Logik verdeckt.": "What the car is reading beneath itself right now, unfiltered. The readout shows the RAW code and not what the lap logic makes of it – which is precisely its purpose: it is meant to show the errors that logic hides.",
     "Wozu dient dieses Projekt?": "What is this project for?",
+    "Wozu?": "What for?",
+    "Warum dieses Projekt existiert, und was offene Software damit zu tun hat.":
+      "Why this project exists, and what open software has to do with it.",
+    "Wer geholfen hat, und woher die Klänge kommen.":
+      "Who helped, and where the sounds come from.",
+    "Was sich je Wochenversion geändert hat, kurz zusammengefasst.":
+      "What changed in each weekly version, summarised briefly.",
+    "Navigation aufgeräumt (Startseite, feste Kopfzeile), Auto-Verwaltung in der Garage. Zwei-Spieler-Modus: Licht, Boxensound und Tastenbelegung jetzt wirklich unabhängig. Renneinstellungen als eigene Kachel mit eigenem Cockpit-Screen, dazu ein Regler für Rennhärte und eine Recovery-Funktion nach einem Abgang. Cockpit-Balken (Tank/Schaden/Akku) jetzt vertikal, Gyro-Anzeige verbessert. Lenkkennlinie einstellbar, neuer GT7-Fahrmodus, zwei neue Motoren (Ford Tudor 1937, VW Käfer 1300) und ein neues Vergleichsprofil mit echter Anlasser-Aufnahme für den Porsche. Fünf neue Ghost-Ideallinien-Modi, Ghost-Verhalten in der Einführungsrunde und beim Überholen verfeinert. Menüs komplett mit Gamepad/Tastatur navigierbar, inklusive Info-Popups und mehreren Feinschliffen an der Tastenbelegung (D-Pad-Fixes, Select schaltet jetzt den Bahn-Lesemodus). Streckenscan überarbeitet, neu: Strecke aus einer Aufnahme lernen. Motorsound ist jetzt pro Auto einzeln wählbar, Funk-Ansagen haben Vorrang vor der Live-Stimme. Neu in den Entwicklertools: Binär-/Hex-Trainer.":
+      "Navigation cleaned up (home page, fixed header), car management in the garage. Two-player mode: lights, pit sound and key bindings now genuinely independent. Race settings as their own tile with their own cockpit screen, plus a race-hardness slider and a recovery function after going off track. Cockpit bars (fuel/damage/battery) now vertical, gyro display improved. Steering curve adjustable, new GT7 driving mode, two new engines (Ford Tudor 1937, VW Beetle 1300) and a new comparison profile with a real starter recording for the Porsche. Five new ghost ideal-line modes, ghost behaviour on the formation lap and while overtaking refined. Menus fully navigable with gamepad/keyboard, including info popups and several refinements to the key bindings (D-pad fixes, Select now toggles the track-read mode). Track scan reworked, new: learn a track from a recording. Engine sound is now selectable per car, radio announcements now take priority over the live voice. New in the developer tools: binary/hex trainer.",
     "Die Hardware ist gekauft, die Software bestimmt jemand anders. Dieses Projekt dreht das um: es steuert ein Carrera-Hybrid-Auto mit eigenem Code über dieselbe Bluetooth-Schnittstelle, die die Hersteller-App benutzt. Damit läuft auf der Hardware, was man selbst darauf laufen lassen will – unabhängig davon, ob ein Anbieter eine Funktion vorsieht, eine App weiter pflegt oder einen Server abschaltet.": "The hardware is bought and paid for; what runs on it is somebody else’s decision. This project turns that around: it drives a Carrera Hybrid car with its own code over the same Bluetooth interface the manufacturer’s app uses. What runs on the hardware is then what you want to run on it – regardless of whether a vendor provides a feature, keeps an app maintained, or switches off a server.",
     "Der zweite Punkt ist die Gemeinschaft. Ein offengelegtes Protokoll kann jeder weiterverwenden: für Funktionen, die der Hersteller nicht baut, für eine andere Bedienung, für Unterricht. Das hier ist bewusst als Beispiel gebaut und nicht als Produkt: alles, was herausgefunden wurde, steht in der Doku, samt der Stellen, an denen wir uns geirrt haben.": "The second point is the community. A documented protocol is something anyone can build on: for features the manufacturer does not build, for a different way of controlling things, for teaching. This is deliberately built as an example and not as a product: everything that was found out is written down in the documentation, including the places where we got it wrong.",
     "Offene Software als Teil offener Wissenschaft": "Open software as part of open science",
