@@ -231,7 +231,18 @@
       const res = await fetch('audio/loops.json', { cache: 'reload' });
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const manifest = await res.json();
-      for (const car of Object.keys(manifest)) {
+      // BESTELLT: "sounds brauchen sehr lange zum laden. Wenigstens den porsche sound
+      // irgendwie schneller verfuegbar machen." sampleEngine.ready war bisher EIN Schalter
+      // fuer alle ~27 Autos zusammen - er kippte erst, NACHDEM die letzte Schleife des
+      // letzten Autos geladen war, auch wenn das gewaehlte Auto (Vorgabe: Porsche) laengst
+      // fertig war. Jetzt zuerst das GEWAEHLTE Auto laden, und sampleEngine.ready faellt
+      // schon nach IHM, nicht erst nach allen 27 - der Rest laedt im selben Durchlauf
+      // weiter, nur eben im Hintergrund, waehrend das gewaehlte Auto schon spielt.
+      const vorrang = $('sound-profile') ? $('sound-profile').value : null;
+      const reihenfolge = vorrang && manifest[vorrang]
+        ? [vorrang, ...Object.keys(manifest).filter(c => c !== vorrang)]
+        : Object.keys(manifest);
+      for (const car of reihenfolge) {
         sampleEngine.buffers[car] = {};
         // Optional per-car transposition. Needed for the sampled cars: the Corvette
         // recording only reaches about 4500/min, while the app revs to 9000, so without a
@@ -268,11 +279,16 @@
             baseRpm: loop.baseRpm,
           };
         }
+        // Nach dem ERSTEN Auto (per reihenfolge das gewaehlte, siehe oben) faellt der
+        // Schalter schon - die uebrigen laden im selben Durchlauf weiter, aber niemand
+        // muss mehr auf sie warten, um ueberhaupt Sample-Ton zu hoeren.
+        if (!sampleEngine.ready) {
+          sampleEngine.ready = true;
+          const selFrueh = $('sound-profile').value;
+          if (SAMPLE_CARS.includes(selFrueh)) startSampleEngine(selFrueh);
+        }
       }
-      sampleEngine.ready = true;
       log('Motorsamples geladen: ' + Object.keys(manifest).join(', '), 'info');
-      const sel = $('sound-profile').value;
-      if (SAMPLE_CARS.includes(sel)) startSampleEngine(sel);
     } catch (err) {
       // Entirely expected wherever audio/ is not deployed. The synthesized engine keeps
       // working, so this must NOT surface as an error the user has to react to.
@@ -298,6 +314,15 @@
         if (!r.ok) throw new Error(file);
         return audioCtx.decodeAudioData(await r.arrayBuffer());
       };
+      // BESTELLT: "Wenigstens den porsche sound irgendwie schneller verfuegbar machen."
+      // Der Zuendton des gewaehlten Autos stand bisher HINTER Crash/Bremse/Reifen/Box/
+      // Hupen/Schaltton und ALLEN anderen ~27 Zuendtoenen in dieser einen sequenziellen
+      // Kette - das gewaehlte Auto wartete auf jede fremde Datei mit. Jetzt zuerst er,
+      // der Rest bleibt unveraendert (die spaetere Schleife ueberspringt ihn einfach).
+      const vorrangAuto = $('sound-profile') ? $('sound-profile').value : null;
+      if (fx.start && vorrangAuto && fx.start[vorrangAuto]) {
+        fxBuffers.start[vorrangAuto] = await grab(fx.start[vorrangAuto].file);
+      }
       fxBuffers.crash = await Promise.all(fx.crash.map(c => grab(c.file)));
       fxBuffers.brake = await grab(fx.brake.file);
       // Duldsam gegenueber einem aelteren audio/: fehlt der Eintrag, bleibt der Ton weg und
@@ -319,7 +344,10 @@
       if (fx.shift) {
         for (const dir of Object.keys(fx.shift)) fxBuffers.shift[dir] = await grab(fx.shift[dir].file);
       }
-      for (const car of Object.keys(fx.start)) fxBuffers.start[car] = await grab(fx.start[car].file);
+      for (const car of Object.keys(fx.start)) {
+        if (car === vorrangAuto) continue; // schon oben geladen, siehe dort
+        fxBuffers.start[car] = await grab(fx.start[car].file);
+      }
       log('Effektsounds geladen (' + fxBuffers.crash.length + ' Crash-Varianten).', 'info');
     } catch (err) {
       log('Keine Effektsounds gefunden, synthetische Töne bleiben aktiv.', 'info');
