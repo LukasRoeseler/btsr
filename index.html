@@ -3166,7 +3166,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.7.53</span></span>
+        <span class="foot-ver">v<span id="app-version">0.7.54</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -38359,8 +38359,17 @@
         }
       }
       if (upshiftNow && !prevUpshift) {
+        // BESTELLT: "erlaube mir Kreistaste zu druecken, um aus den sub-menues
+        // zurueckzugehen, aktuell bleibe ich dabei manchmal stecken." showSubpage('') ist
+        // dieselbe Funktion, die auch der sichtbare .subpage-back-Knopf ruft - Kreis tut
+        // das jetzt direkt, wozu man sonst erst zur ersten Zeile hochnavigieren und
+        // "Waehlen" druecken musste. Nach demselben Muster wie optInfoOffen() oben: erst
+        // pruefen (kein Tab-race-Sonderfall noetig, dort gibt es nie ein offenes .subpage).
+        const offenerSub = document.querySelector('.tabpage.active .subpage.on');
         if (optInfoOffen()) {
           optInfoSchliessen();
+        } else if (offenerSub) {
+          showSubpage('');
         } else if (!trackEditorPad('undo') && physicsEnabled && !physEngine.state.isShifting) {
           physEngine.triggerShift(1);
         }

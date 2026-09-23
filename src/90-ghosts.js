@@ -8386,8 +8386,17 @@
         }
       }
       if (upshiftNow && !prevUpshift) {
+        // BESTELLT: "erlaube mir Kreistaste zu druecken, um aus den sub-menues
+        // zurueckzugehen, aktuell bleibe ich dabei manchmal stecken." showSubpage('') ist
+        // dieselbe Funktion, die auch der sichtbare .subpage-back-Knopf ruft - Kreis tut
+        // das jetzt direkt, wozu man sonst erst zur ersten Zeile hochnavigieren und
+        // "Waehlen" druecken musste. Nach demselben Muster wie optInfoOffen() oben: erst
+        // pruefen (kein Tab-race-Sonderfall noetig, dort gibt es nie ein offenes .subpage).
+        const offenerSub = document.querySelector('.tabpage.active .subpage.on');
         if (optInfoOffen()) {
           optInfoSchliessen();
+        } else if (offenerSub) {
+          showSubpage('');
         } else if (!trackEditorPad('undo') && physicsEnabled && !physEngine.state.isShifting) {
           physEngine.triggerShift(1);
         }
