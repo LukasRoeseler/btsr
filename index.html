@@ -3166,7 +3166,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.7.45</span></span>
+        <span class="foot-ver">v<span id="app-version">0.7.46</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -35910,9 +35910,9 @@
     }
     const e = g.engine, cfg = e.config;
     // Die Oberflaeche aus Wetter und aufgezogenem Reifen, JEDEN TAKT. Nicht nur beim
-    // Wetterwechsel: wxRainLevel() ist eine Rampe ueber fuenf Sekunden, ein einmaliges
-    // Setzen wuerde also einen von hundert Zwischenwerten festhalten. Kostet zwei
-    // Multiplikationen.
+    // Wetterwechsel: wxRainLevel() ist eine Rampe ueber zehn Sekunden (WX_RAMP_S), ein
+    // einmaliges Setzen wuerde also einen von hundert Zwischenwerten festhalten. Kostet
+    // zwei Multiplikationen.
     ghostOberflaecheSetzen(car);
 
     // Follow the tile counter so we know where on the layout we are.
@@ -47285,6 +47285,117 @@
       return this.wxProbe();
     },
 
+    // ---- Phase E: der Regen-Griff wirklich GEMESSEN, nicht nur aus dem Code gelesen ----
+    //
+    // BESTELLT (Korrektur an einer frueheren Planfassung): "hier geht es explizit ums
+    // Handling, der Uebergang in der Animation und den Wolken ist ja schon perfekt da" -
+    // also der tatsaechlich gefahrene physEngine.config.gripScale ueber die Zeit, nicht die
+    // Regenformen/das Radarbild (die bleiben unangetastet, siehe wxSchritt/wxProbe daneben).
+    //
+    // GEFAELSCHTE UHR UND ECHTES wxTick(), nicht wxSet(): wxSet()/wetterSetzen() springen
+    // sofort zum Endwert und ueberspringen damit genau die Rampe, die hier geprueft werden
+    // soll - ein Test, der eine Schwelle ueberspringt, prueft sie nicht (derselbe Grundsatz
+    // wie bei wxSchritt() daneben). Das Muster (Date.now faelschen, echte Tick-Funktion
+    // manuell aufrufen) ist dasselbe wie bei pitKnopfProbe() und den anderen *Probe()
+    // weiter oben.
+    //
+    // DER SONDERFALL: setWeather() setzt bei einem ZWEITEN Regenbeginn, nachdem die vorige
+    // Regenfront schon komplett durchgezogen ist (wxFront >= 0,999), wxFront SPRUNGHAFT auf
+    // -1 zurueck (70-race.js:2699) - eine echte Ausnahme von "nur das Ziel aendert sich,
+    // wxTick macht den Weg". sprungSelbst misst genau diesen einen Schritt.
+    regenRampeProbe(o) {
+      if (typeof wxTick !== 'function' || typeof setWeather !== 'function') return null;
+      const opt = o || {};
+      const schrittMs = opt.schrittMs || 250;
+      // Eine Sekunde mehr als WX_RAMP_S (10 s), damit das Ende der Rampe sicher erfasst ist,
+      // nicht nur ihr Anfang.
+      const dauerS = opt.dauerS || 11;
+      const echtNow = Date.now;
+      const merk = { weather, wxFront, wxFrontTo, tyres, wxTickAt };
+      // GEFUNDEN BEIM BAUEN: setWeather() ruft nebenbei wxRegenLosschicken()/-Abbestellen()
+      // auf, die Formen im Radar starten/entlassen. Ohne diese Sicherung blieb nach dem
+      // Sonderfall-Durchlauf (dritter setWeather('rain')-Aufruf, nur elf statt zwanzig noch
+      // gebrauchten Sekunden bis zum Bildrand) mindestens eine Form "aktiv" haengen und liess
+      // den NAECHSTEN Test ("Regenformen: von aussen, mit Nachschub") mit einer Form im
+      // angeblich trockenen Bild fehlschlagen - eine Sonde darf nur MESSEN, nicht den
+      // Zustand fuer den naechsten Test veraendern. Volle Wiederherstellung statt eines
+      // einzelnen wxRegenAbbestellen()-Aufrufs, weil auch quer/wellen/weg je Form vom
+      // Durchlauf verstellt sein koennen.
+      const wxBlobsSnapshot = typeof wxBlobs !== 'undefined' ? JSON.parse(JSON.stringify(wxBlobs)) : null;
+      try {
+        let uhr = 8000000;
+        Date.now = () => uhr;
+        // wxTickAt SOFORT auf die gefaelschte Uhr, sonst rechnet der erste Tick mit der
+        // alten, echten Zeitmarke gegen die winzige gefaelschte - ein riesiger, negativer
+        // dt und ein Sprung in die falsche Richtung schon vor dem ersten Messpunkt.
+        wxTickAt = uhr;
+        tyres = 'mittel';           // derselbe bekannte, symmetrische Ausgangswert wie tyreSet()
+        weather = 'dry'; wxFront = -1; wxFrontTo = -1;
+        applySurface();
+
+        const lauf = () => {
+          const werte = [];
+          const n = Math.round(dauerS * 1000 / schrittMs);
+          for (let i = 0; i < n; i++) {
+            uhr += schrittMs;
+            wxTick();
+            werte.push(+physEngine.config.gripScale.toFixed(6));
+          }
+          return werte;
+        };
+        const maxSchrittIn = (folgen) => {
+          let max = 0, bei = null;
+          folgen.forEach((folge, fi) => {
+            for (let i = 1; i < folge.length; i++) {
+              const d = Math.abs(folge[i] - folge[i - 1]);
+              if (d > max) { max = d; bei = [fi, i]; }
+            }
+          });
+          return { max: +max.toFixed(6), bei };
+        };
+
+        // 1: Regen setzt ein, Front zieht von -1 auf 0.
+        setWeather('rain');
+        const rampeAn = lauf();
+
+        // 2: Regen hoert wieder auf, waehrend die Front noch unterwegs ist (bei 0).
+        setWeather('dry');
+        const rampeAus = lauf();
+
+        // 3: Von Hand an den Rand bringen (Front komplett durch, weather bleibt 'dry') -
+        // und dann der Sonderfall: Regen setzt ERNEUT ein.
+        wxFront = 0.9; wxFrontTo = 1;
+        for (let i = 0; i < 4; i++) { uhr += schrittMs; wxTick(); }
+        const frontVorSprung = +wxFront.toFixed(4);
+        const griffVorSprung = +physEngine.config.gripScale.toFixed(6);
+        setWeather('rain');                 // hier greift wxFront>=0.999 -> wxFront=-1
+        const griffNachSprung = +physEngine.config.gripScale.toFixed(6);
+        const rampeNachSprung = lauf();
+
+        const sonstwo = maxSchrittIn([rampeAn, rampeAus, rampeNachSprung]);
+        return {
+          schrittMs, dauerS,
+          frontVorSprung, griffVorSprung, griffNachSprung,
+          sprungSelbst: +Math.abs(griffNachSprung - griffVorSprung).toFixed(6),
+          maxSchrittSonstwo: sonstwo.max, maxSchrittSonstwoBei: sonstwo.bei,
+          endeAn: rampeAn[rampeAn.length - 1], endeAus: rampeAus[rampeAus.length - 1],
+          endeNachSprung: rampeNachSprung[rampeNachSprung.length - 1],
+        };
+      } finally {
+        Date.now = echtNow;
+        weather = merk.weather; wxFront = merk.wxFront; wxFrontTo = merk.wxFrontTo;
+        tyres = merk.tyres;
+        // ECHTE Zeit, nicht die alte Marke: der naechste reale wxTick() (setInterval laeuft
+        // unabhaengig weiter) rechnete sonst gegen die gefaelschte kleine Uhr von eben und
+        // saehe einen riesigen dt.
+        wxTickAt = Date.now();
+        // Formen ZURUECK auf den Stand vor der Messung, nicht nur "irgendwie beendet" -
+        // siehe die Begruendung bei wxBlobsSnapshot oben.
+        if (wxBlobsSnapshot) { wxBlobs.length = 0; wxBlobs.push(...wxBlobsSnapshot); }
+        applySurface();
+      }
+    },
+
     sampleLine(tiles, steps) {
       const keep = currentTrackTiles;
       currentTrackTiles = tiles;
@@ -54692,9 +54803,10 @@
     const MIT_SCHALTER = [['setting-brake-fade-strength', 'setting-brake-fade'],
                           ['setting-dirtyair-strength', 'setting-dirtyair']];
     // UND EINER WIRKT UEBER EINE RAMPE. Der Regenschalter setzt seit v0.4.50 nur das ZIEL
-    // der Wetterfront; gripScale wandert ueber fuenf Sekunden dorthin. Unmittelbar nach dem
-    // Umlegen ist deshalb nichts zu sehen, und der Test hat ihn richtigerweise als stumm
-    // gemeldet.
+    // der Wetterfront; gripScale wandert ueber zehn Sekunden dorthin (WX_RAMP_S, seit
+    // Phase E/v0.7 zehn statt fuenf - "der Umschwung ist gefahren angenehmer, wenn er nicht
+    // hetzt"). Unmittelbar nach dem Umlegen ist deshalb nichts zu sehen, und der Test hat
+    // ihn richtigerweise als stumm gemeldet.
     //
     // Die Antwort ist nicht, den Test nachsichtiger zu machen, sondern die Front
     // nachzuziehen - dann prueft er den GANZEN Weg: Schalter, Ziel, applySurface,
@@ -60667,10 +60779,10 @@
   // erschienen. Jetzt zieht eine Front, und ihre Lage ist die EINE Zahl, aus der Ton, Griff,
   // Tropfen und das Radarbild kommen.
   //
-  // GEPRUEFT WIRD DIE ORDNUNG, nicht die Zahl fuenf. Die Sekunden stehen in einer
-  // Konstanten, und ein Test, der sie abschreibt, prueft die Konstante. Was er pruefen
-  // soll: dass der Ton VOR dem Griff kommt. Genau das war der Wunsch - erst hoert und sieht
-  // man Regen, dann faehrt man ihn.
+  // GEPRUEFT WIRD DIE ORDNUNG, nicht die Zahl zehn (WX_RAMP_S, vormals fuenf). Die
+  // Sekunden stehen in einer Konstanten, und ein Test, der sie abschreibt, prueft die
+  // Konstante. Was er pruefen soll: dass der Ton VOR dem Griff kommt. Genau das war der
+  // Wunsch - erst hoert und sieht man Regen, dann faehrt man ihn.
   stAdd('Wetterfront: Ton vor Griff, und beides stetig', () => {
     if (!window.OMEGA_TEST || !OMEGA_TEST.wxSet) {
       return { skip: true, mass: 'wxSet nicht vorhanden' };
@@ -60716,6 +60828,45 @@
       // Zuruecklegen, sonst faehrt der Nutzer nach einem Testlauf im Regen.
       OMEGA_TEST.wxSet(merk.front);
     }
+  });
+
+  // ---- Phase E: der Regen-Griff GEMESSEN ueber die echte Zeit, nicht nur den Zustand ----
+  //
+  // DIE OBIGE PRUEFUNG ("Ton vor Griff, und beides stetig") faehrt wxFront per wxSet() in
+  // festen Schritten ab - eine Momentaufnahme je Wert, kein tatsaechlicher Ablauf durch
+  // wxTick(). Sie deckt darum NICHT den einen Sonderfall ab, der eine echte Zeitreihe
+  // braucht: setWeather() setzt wxFront bei einem ZWEITEN Regenbeginn, nachdem die vorige
+  // Front schon komplett durchgezogen war (wxFront >= 0,999), SPRUNGHAFT auf -1 zurueck
+  // (70-race.js, in setWeather()) - eine echte Ausnahme von "nur das Ziel aendert sich, den
+  // Weg macht wxTick". GEMESSEN (nicht nur gelesen, nach einer fruehen Plan-Korrektur:
+  // "hier geht es explizit ums Handling"): der Sprung selbst ist 0, weil wxRainLevel() bei
+  // wxFront=+1 und wxFront=-1 gleichermassen 0 ist (beides bedeutet "kein Regen ueber uns") -
+  // aber das ist jetzt eine MESSUNG und keine Lektuere mehr.
+  stAdd('Regen-Rampe: kein Sprung, auch nicht beim zweiten Regenbeginn', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.regenRampeProbe) {
+      return { skip: true, mass: 'regenRampeProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.regenRampeProbe();
+    if (!r) return { skip: true, mass: 'keine Messung moeglich' };
+    const fehler = [];
+    // 1. Der Sonderfall selbst: kein spuerbarer Griffsprung am setWeather()-Aufruf.
+    if (!(r.sprungSelbst < 0.01)) fehler.push('Sprung bei erneutem Regenbeginn: ' + r.sprungSelbst);
+    // 2. Sonst nirgendwo in den drei gefahrenen Rampen (an/aus/nach dem Sonderfall) ein
+    //    Schritt, der groesser ist als plausibel fuer 250-ms-Schritte einer zehn Sekunden
+    //    langen, quadratischen Rampe - probehalber bei 250 ms gemessen 0,027, reichlich
+    //    Abstand zu dieser Schranke.
+    if (!(r.maxSchrittSonstwo < 0.08)) fehler.push('Schritt sonstwo: ' + r.maxSchrittSonstwo);
+    // 3. Und die Rampe erreicht wirklich beide Enden - trocken (1) und nass (deutlich
+    //    darunter) -, sonst waere "kein Sprung" nur, weil sich nichts bewegt hat.
+    if (!(r.endeAus > 0.999)) fehler.push('am Ende nicht trocken: ' + r.endeAus);
+    if (!(r.endeAn < 0.9 && r.endeNachSprung < 0.9)) {
+      fehler.push('am Ende nicht nass genug: ' + r.endeAn + ' / ' + r.endeNachSprung);
+    }
+    return { ok: !fehler.length,
+             mass: 'Sprung beim Sonderfall ' + r.sprungSelbst + ', groesster Schritt sonstwo '
+                 + r.maxSchrittSonstwo + ', Ende trocken/nass/nass-nach-Sonderfall '
+                 + r.endeAus + '/' + r.endeAn + '/' + r.endeNachSprung
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
   // ---- Die Regenformen kommen von aussen und hoeren nicht auf ----

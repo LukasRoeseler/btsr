@@ -7932,6 +7932,117 @@
       return this.wxProbe();
     },
 
+    // ---- Phase E: der Regen-Griff wirklich GEMESSEN, nicht nur aus dem Code gelesen ----
+    //
+    // BESTELLT (Korrektur an einer frueheren Planfassung): "hier geht es explizit ums
+    // Handling, der Uebergang in der Animation und den Wolken ist ja schon perfekt da" -
+    // also der tatsaechlich gefahrene physEngine.config.gripScale ueber die Zeit, nicht die
+    // Regenformen/das Radarbild (die bleiben unangetastet, siehe wxSchritt/wxProbe daneben).
+    //
+    // GEFAELSCHTE UHR UND ECHTES wxTick(), nicht wxSet(): wxSet()/wetterSetzen() springen
+    // sofort zum Endwert und ueberspringen damit genau die Rampe, die hier geprueft werden
+    // soll - ein Test, der eine Schwelle ueberspringt, prueft sie nicht (derselbe Grundsatz
+    // wie bei wxSchritt() daneben). Das Muster (Date.now faelschen, echte Tick-Funktion
+    // manuell aufrufen) ist dasselbe wie bei pitKnopfProbe() und den anderen *Probe()
+    // weiter oben.
+    //
+    // DER SONDERFALL: setWeather() setzt bei einem ZWEITEN Regenbeginn, nachdem die vorige
+    // Regenfront schon komplett durchgezogen ist (wxFront >= 0,999), wxFront SPRUNGHAFT auf
+    // -1 zurueck (70-race.js:2699) - eine echte Ausnahme von "nur das Ziel aendert sich,
+    // wxTick macht den Weg". sprungSelbst misst genau diesen einen Schritt.
+    regenRampeProbe(o) {
+      if (typeof wxTick !== 'function' || typeof setWeather !== 'function') return null;
+      const opt = o || {};
+      const schrittMs = opt.schrittMs || 250;
+      // Eine Sekunde mehr als WX_RAMP_S (10 s), damit das Ende der Rampe sicher erfasst ist,
+      // nicht nur ihr Anfang.
+      const dauerS = opt.dauerS || 11;
+      const echtNow = Date.now;
+      const merk = { weather, wxFront, wxFrontTo, tyres, wxTickAt };
+      // GEFUNDEN BEIM BAUEN: setWeather() ruft nebenbei wxRegenLosschicken()/-Abbestellen()
+      // auf, die Formen im Radar starten/entlassen. Ohne diese Sicherung blieb nach dem
+      // Sonderfall-Durchlauf (dritter setWeather('rain')-Aufruf, nur elf statt zwanzig noch
+      // gebrauchten Sekunden bis zum Bildrand) mindestens eine Form "aktiv" haengen und liess
+      // den NAECHSTEN Test ("Regenformen: von aussen, mit Nachschub") mit einer Form im
+      // angeblich trockenen Bild fehlschlagen - eine Sonde darf nur MESSEN, nicht den
+      // Zustand fuer den naechsten Test veraendern. Volle Wiederherstellung statt eines
+      // einzelnen wxRegenAbbestellen()-Aufrufs, weil auch quer/wellen/weg je Form vom
+      // Durchlauf verstellt sein koennen.
+      const wxBlobsSnapshot = typeof wxBlobs !== 'undefined' ? JSON.parse(JSON.stringify(wxBlobs)) : null;
+      try {
+        let uhr = 8000000;
+        Date.now = () => uhr;
+        // wxTickAt SOFORT auf die gefaelschte Uhr, sonst rechnet der erste Tick mit der
+        // alten, echten Zeitmarke gegen die winzige gefaelschte - ein riesiger, negativer
+        // dt und ein Sprung in die falsche Richtung schon vor dem ersten Messpunkt.
+        wxTickAt = uhr;
+        tyres = 'mittel';           // derselbe bekannte, symmetrische Ausgangswert wie tyreSet()
+        weather = 'dry'; wxFront = -1; wxFrontTo = -1;
+        applySurface();
+
+        const lauf = () => {
+          const werte = [];
+          const n = Math.round(dauerS * 1000 / schrittMs);
+          for (let i = 0; i < n; i++) {
+            uhr += schrittMs;
+            wxTick();
+            werte.push(+physEngine.config.gripScale.toFixed(6));
+          }
+          return werte;
+        };
+        const maxSchrittIn = (folgen) => {
+          let max = 0, bei = null;
+          folgen.forEach((folge, fi) => {
+            for (let i = 1; i < folge.length; i++) {
+              const d = Math.abs(folge[i] - folge[i - 1]);
+              if (d > max) { max = d; bei = [fi, i]; }
+            }
+          });
+          return { max: +max.toFixed(6), bei };
+        };
+
+        // 1: Regen setzt ein, Front zieht von -1 auf 0.
+        setWeather('rain');
+        const rampeAn = lauf();
+
+        // 2: Regen hoert wieder auf, waehrend die Front noch unterwegs ist (bei 0).
+        setWeather('dry');
+        const rampeAus = lauf();
+
+        // 3: Von Hand an den Rand bringen (Front komplett durch, weather bleibt 'dry') -
+        // und dann der Sonderfall: Regen setzt ERNEUT ein.
+        wxFront = 0.9; wxFrontTo = 1;
+        for (let i = 0; i < 4; i++) { uhr += schrittMs; wxTick(); }
+        const frontVorSprung = +wxFront.toFixed(4);
+        const griffVorSprung = +physEngine.config.gripScale.toFixed(6);
+        setWeather('rain');                 // hier greift wxFront>=0.999 -> wxFront=-1
+        const griffNachSprung = +physEngine.config.gripScale.toFixed(6);
+        const rampeNachSprung = lauf();
+
+        const sonstwo = maxSchrittIn([rampeAn, rampeAus, rampeNachSprung]);
+        return {
+          schrittMs, dauerS,
+          frontVorSprung, griffVorSprung, griffNachSprung,
+          sprungSelbst: +Math.abs(griffNachSprung - griffVorSprung).toFixed(6),
+          maxSchrittSonstwo: sonstwo.max, maxSchrittSonstwoBei: sonstwo.bei,
+          endeAn: rampeAn[rampeAn.length - 1], endeAus: rampeAus[rampeAus.length - 1],
+          endeNachSprung: rampeNachSprung[rampeNachSprung.length - 1],
+        };
+      } finally {
+        Date.now = echtNow;
+        weather = merk.weather; wxFront = merk.wxFront; wxFrontTo = merk.wxFrontTo;
+        tyres = merk.tyres;
+        // ECHTE Zeit, nicht die alte Marke: der naechste reale wxTick() (setInterval laeuft
+        // unabhaengig weiter) rechnete sonst gegen die gefaelschte kleine Uhr von eben und
+        // saehe einen riesigen dt.
+        wxTickAt = Date.now();
+        // Formen ZURUECK auf den Stand vor der Messung, nicht nur "irgendwie beendet" -
+        // siehe die Begruendung bei wxBlobsSnapshot oben.
+        if (wxBlobsSnapshot) { wxBlobs.length = 0; wxBlobs.push(...wxBlobsSnapshot); }
+        applySurface();
+      }
+    },
+
     sampleLine(tiles, steps) {
       const keep = currentTrackTiles;
       currentTrackTiles = tiles;

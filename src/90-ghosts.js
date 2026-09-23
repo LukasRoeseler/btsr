@@ -6419,9 +6419,9 @@
     }
     const e = g.engine, cfg = e.config;
     // Die Oberflaeche aus Wetter und aufgezogenem Reifen, JEDEN TAKT. Nicht nur beim
-    // Wetterwechsel: wxRainLevel() ist eine Rampe ueber fuenf Sekunden, ein einmaliges
-    // Setzen wuerde also einen von hundert Zwischenwerten festhalten. Kostet zwei
-    // Multiplikationen.
+    // Wetterwechsel: wxRainLevel() ist eine Rampe ueber zehn Sekunden (WX_RAMP_S), ein
+    // einmaliges Setzen wuerde also einen von hundert Zwischenwerten festhalten. Kostet
+    // zwei Multiplikationen.
     ghostOberflaecheSetzen(car);
 
     // Follow the tile counter so we know where on the layout we are.

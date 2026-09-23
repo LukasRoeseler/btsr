@@ -6486,9 +6486,10 @@
     const MIT_SCHALTER = [['setting-brake-fade-strength', 'setting-brake-fade'],
                           ['setting-dirtyair-strength', 'setting-dirtyair']];
     // UND EINER WIRKT UEBER EINE RAMPE. Der Regenschalter setzt seit v0.4.50 nur das ZIEL
-    // der Wetterfront; gripScale wandert ueber fuenf Sekunden dorthin. Unmittelbar nach dem
-    // Umlegen ist deshalb nichts zu sehen, und der Test hat ihn richtigerweise als stumm
-    // gemeldet.
+    // der Wetterfront; gripScale wandert ueber zehn Sekunden dorthin (WX_RAMP_S, seit
+    // Phase E/v0.7 zehn statt fuenf - "der Umschwung ist gefahren angenehmer, wenn er nicht
+    // hetzt"). Unmittelbar nach dem Umlegen ist deshalb nichts zu sehen, und der Test hat
+    // ihn richtigerweise als stumm gemeldet.
     //
     // Die Antwort ist nicht, den Test nachsichtiger zu machen, sondern die Front
     // nachzuziehen - dann prueft er den GANZEN Weg: Schalter, Ziel, applySurface,
@@ -12461,10 +12462,10 @@
   // erschienen. Jetzt zieht eine Front, und ihre Lage ist die EINE Zahl, aus der Ton, Griff,
   // Tropfen und das Radarbild kommen.
   //
-  // GEPRUEFT WIRD DIE ORDNUNG, nicht die Zahl fuenf. Die Sekunden stehen in einer
-  // Konstanten, und ein Test, der sie abschreibt, prueft die Konstante. Was er pruefen
-  // soll: dass der Ton VOR dem Griff kommt. Genau das war der Wunsch - erst hoert und sieht
-  // man Regen, dann faehrt man ihn.
+  // GEPRUEFT WIRD DIE ORDNUNG, nicht die Zahl zehn (WX_RAMP_S, vormals fuenf). Die
+  // Sekunden stehen in einer Konstanten, und ein Test, der sie abschreibt, prueft die
+  // Konstante. Was er pruefen soll: dass der Ton VOR dem Griff kommt. Genau das war der
+  // Wunsch - erst hoert und sieht man Regen, dann faehrt man ihn.
   stAdd('Wetterfront: Ton vor Griff, und beides stetig', () => {
     if (!window.OMEGA_TEST || !OMEGA_TEST.wxSet) {
       return { skip: true, mass: 'wxSet nicht vorhanden' };
@@ -12510,6 +12511,45 @@
       // Zuruecklegen, sonst faehrt der Nutzer nach einem Testlauf im Regen.
       OMEGA_TEST.wxSet(merk.front);
     }
+  });
+
+  // ---- Phase E: der Regen-Griff GEMESSEN ueber die echte Zeit, nicht nur den Zustand ----
+  //
+  // DIE OBIGE PRUEFUNG ("Ton vor Griff, und beides stetig") faehrt wxFront per wxSet() in
+  // festen Schritten ab - eine Momentaufnahme je Wert, kein tatsaechlicher Ablauf durch
+  // wxTick(). Sie deckt darum NICHT den einen Sonderfall ab, der eine echte Zeitreihe
+  // braucht: setWeather() setzt wxFront bei einem ZWEITEN Regenbeginn, nachdem die vorige
+  // Front schon komplett durchgezogen war (wxFront >= 0,999), SPRUNGHAFT auf -1 zurueck
+  // (70-race.js, in setWeather()) - eine echte Ausnahme von "nur das Ziel aendert sich, den
+  // Weg macht wxTick". GEMESSEN (nicht nur gelesen, nach einer fruehen Plan-Korrektur:
+  // "hier geht es explizit ums Handling"): der Sprung selbst ist 0, weil wxRainLevel() bei
+  // wxFront=+1 und wxFront=-1 gleichermassen 0 ist (beides bedeutet "kein Regen ueber uns") -
+  // aber das ist jetzt eine MESSUNG und keine Lektuere mehr.
+  stAdd('Regen-Rampe: kein Sprung, auch nicht beim zweiten Regenbeginn', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.regenRampeProbe) {
+      return { skip: true, mass: 'regenRampeProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.regenRampeProbe();
+    if (!r) return { skip: true, mass: 'keine Messung moeglich' };
+    const fehler = [];
+    // 1. Der Sonderfall selbst: kein spuerbarer Griffsprung am setWeather()-Aufruf.
+    if (!(r.sprungSelbst < 0.01)) fehler.push('Sprung bei erneutem Regenbeginn: ' + r.sprungSelbst);
+    // 2. Sonst nirgendwo in den drei gefahrenen Rampen (an/aus/nach dem Sonderfall) ein
+    //    Schritt, der groesser ist als plausibel fuer 250-ms-Schritte einer zehn Sekunden
+    //    langen, quadratischen Rampe - probehalber bei 250 ms gemessen 0,027, reichlich
+    //    Abstand zu dieser Schranke.
+    if (!(r.maxSchrittSonstwo < 0.08)) fehler.push('Schritt sonstwo: ' + r.maxSchrittSonstwo);
+    // 3. Und die Rampe erreicht wirklich beide Enden - trocken (1) und nass (deutlich
+    //    darunter) -, sonst waere "kein Sprung" nur, weil sich nichts bewegt hat.
+    if (!(r.endeAus > 0.999)) fehler.push('am Ende nicht trocken: ' + r.endeAus);
+    if (!(r.endeAn < 0.9 && r.endeNachSprung < 0.9)) {
+      fehler.push('am Ende nicht nass genug: ' + r.endeAn + ' / ' + r.endeNachSprung);
+    }
+    return { ok: !fehler.length,
+             mass: 'Sprung beim Sonderfall ' + r.sprungSelbst + ', groesster Schritt sonstwo '
+                 + r.maxSchrittSonstwo + ', Ende trocken/nass/nass-nach-Sonderfall '
+                 + r.endeAus + '/' + r.endeAn + '/' + r.endeNachSprung
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
   // ---- Die Regenformen kommen von aussen und hoeren nicht auf ----
