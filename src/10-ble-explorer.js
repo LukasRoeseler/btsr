@@ -639,6 +639,9 @@
       "Setup for the car you drive – the same five as in the options; the sliders there follow along.",
     "Oder auf diesem Gerät ablegen. Bleibt im Browser, wird nicht mitgeschickt.":
       "Or store it on this device. Stays in the browser, is not sent anywhere.",
+    "Eigene Abstimmung: aktuelle Reglerwerte unter einem Namen ablegen, später wieder laden. Bleibt im Browser, wird nicht mitgeschickt.":
+      "Custom setup: store the current slider values under a name, load them again later. Stays in the browser, is not sent anywhere.",
+    "Name der Abstimmung": "Setup name",
     "– abgelegt –": "– stored –",
     "Vibration": "Vibration",
     "R\u00fcckmeldung im Controller bei Gangwechsel, ABS, Aufprall und im Boxenstopp. Das Handy vibriert nicht mit, das Protokoll kennt daf\u00fcr nichts.":

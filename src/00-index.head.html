@@ -3166,7 +3166,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.7.52</span></span>
+        <span class="foot-ver">v<span id="app-version">0.7.53</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -6412,6 +6412,25 @@
              Hersteller ausgelieferten Wert statt auf eine der fuenf Abstimmungen. -->
         <div class="row" style="gap:8px; margin-top:8px">
           <button id="gar-restore-defaults">Standard wiederherstellen</button>
+        </div>
+        <!-- BESTELLT: "auch in garage erlauben, standardeinstellungen zu machen." Die
+             eigenen, benannten Abstimmungen (#preset-store-* in den Optionen, Ablage
+             chc.presets.v1) gab es bisher NUR dort - hier derselbe Speicher, nur zweite
+             Bedienstelle: presetStoreList() fuellt jetzt beide Auswahllisten, und
+             Ablegen/Laden/Loeschen wirken auf denselben Datensatz, egal von wo aus. Eine
+             hier abgelegte Abstimmung taucht also auch drueben in den Optionen auf, und
+             umgekehrt. -->
+        <p class="muted" style="font-size:11px; margin:10px 0 4px 0">
+          Eigene Abstimmung: aktuelle Reglerwerte unter einem Namen ablegen, sp&auml;ter
+          wieder laden. Bleibt im Browser, wird nicht mitgeschickt.
+        </p>
+        <div class="row" style="gap:8px; flex-wrap:wrap">
+          <input type="text" id="gar-preset-store-name" placeholder="Name der Abstimmung"
+                 maxlength="40" style="min-width:150px">
+          <button id="gar-preset-store-save">Ablegen</button>
+          <select id="gar-preset-store-list"><option value="">&ndash; abgelegt &ndash;</option></select>
+          <button id="gar-preset-store-load">Laden</button>
+          <button id="gar-preset-store-del">L&ouml;schen</button>
         </div>
       </div>
     </div>

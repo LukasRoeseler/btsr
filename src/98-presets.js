@@ -544,30 +544,44 @@
     try { localStorage.setItem(PRESET_STORE, JSON.stringify(o)); }
     catch (e) { presetSay('Konnte nicht ablegen: ' + e.message); }
   }
+  // MEHRERE BEDIENSTELLEN, EIN SPEICHER: BESTELLT: "auch in garage erlauben,
+  // standardeinstellungen zu machen" - die Ablage gibt es seit v0.7.x nur in den
+  // Optionen. presetStoreList() fuellt jetzt ALLE registrierten Auswahllisten
+  // (PRESET_STORE_SELECTS), und wirePresetStore() haengt dieselben drei Handlungen
+  // (ablegen/laden/loeschen) an ein beliebiges Set von Bedienelementen - beide Stellen
+  // lesen/schreiben denselben Schluessel PRESET_STORE, eine hier abgelegte Abstimmung
+  // erscheint also sofort auch drueben.
+  const PRESET_STORE_SELECTS = [];
+
   function presetStoreList() {
-    const sel = $('preset-store-list');
-    if (!sel) return;
     const namen = Object.keys(presetStoreRead()).sort();
-    sel.innerHTML = '<option value="">\u2013 abgelegt \u2013</option>'
+    const optionsHtml = '<option value="">\u2013 abgelegt \u2013</option>'
       + namen.map(n => '<option>' + n.replace(/</g, '&lt;') + '</option>').join('');
+    for (const selId of PRESET_STORE_SELECTS) {
+      const sel = $(selId);
+      if (sel) sel.innerHTML = optionsHtml;
+    }
   }
 
-  if ($('preset-store-save')) {
-    $('preset-store-save').addEventListener('click', () => {
-      const name = $('preset-store-name').value.trim();
+  function wirePresetStore(nameId, saveId, listId, loadId, delId) {
+    if (!$(saveId)) return;
+    PRESET_STORE_SELECTS.push(listId);
+
+    $(saveId).addEventListener('click', () => {
+      const name = $(nameId).value.trim();
       if (!name) { presetSay('Erst einen Namen eingeben.'); return; }
       const o = presetStoreRead();
       const neu = !(name in o);
       o[name] = presetRead();
       presetStoreWrite(o);
       presetStoreList();
-      $('preset-store-list').value = name;
+      $(listId).value = name;
       presetSay('"' + name + '" ' + (neu ? 'abgelegt' : 'überschrieben')
                 + ', ' + Object.keys(o[name]).length + ' Regler.');
     });
 
-    $('preset-store-load').addEventListener('click', () => {
-      const name = $('preset-store-list').value;
+    $(loadId).addEventListener('click', () => {
+      const name = $(listId).value;
       if (!name) { presetSay('Nichts ausgewählt.'); return; }
       const cfg = presetStoreRead()[name];
       if (!cfg) { presetSay('"' + name + '" ist nicht mehr da.'); return; }
@@ -577,11 +591,11 @@
       // Fall, fuer den die Pruefung gebaut wurde - sie hier zu umgehen waere absurd.
       $('preset-json').value = JSON.stringify(cfg);
       $('preset-import').click();
-      $('preset-store-name').value = name;
+      $(nameId).value = name;
     });
 
-    $('preset-store-del').addEventListener('click', () => {
-      const name = $('preset-store-list').value;
+    $(delId).addEventListener('click', () => {
+      const name = $(listId).value;
       if (!name) { presetSay('Nichts ausgewählt.'); return; }
       const o = presetStoreRead();
       delete o[name];
@@ -589,9 +603,13 @@
       presetStoreList();
       presetSay('"' + name + '" gelöscht.');
     });
-
-    presetStoreList();
   }
+
+  wirePresetStore('preset-store-name', 'preset-store-save', 'preset-store-list',
+                   'preset-store-load', 'preset-store-del');
+  wirePresetStore('gar-preset-store-name', 'gar-preset-store-save', 'gar-preset-store-list',
+                   'gar-preset-store-load', 'gar-preset-store-del');
+  presetStoreList();
 
   // ---- Die Knopfleiste in der Garage --------------------------------------------------
   // Sie ruft applyPreset(), also DIESELBE Funktion wie in den Optionen. presetSet() feuert
