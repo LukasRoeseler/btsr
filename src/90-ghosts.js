@@ -85,10 +85,12 @@
     // wo die Hand ihn im Vorbeigehen trifft. Ueber die Oberflaeche ist er zwei Klicks weit
     // weg, und frei zuweisbar bleibt er.
     racestart: { type: 'none', index: -1, label: 'nicht belegt' },
-    // Auf Select. Das Wetter umzuschalten ist harmlos und rueckgaengig machbar - genau die
-    // Sorte Sache, die auf eine Menuetaste gehoert, die man beim Fahren trifft. Es hat
-    // vorher der Rennstart getragen; siehe dort, warum er umgezogen ist.
-    weather: { type: 'button', index: 8, label: 'Select / Share (PS) / Back (Xbox)' },
+    // Auf Select. BESTELLT (v0.7): "Select Taste fuers Aendern des Bahn-Lesemodus statt
+    // des Wetters." Bis dahin lag hier "Wetter umschalten" - siehe audio/CREDITS.md-Stil
+    // Kommentar an der Handlerstelle (pollGamepad) fuer die Geschichte davor. Wetter
+    // schalten bleibt nur noch per Tipp/Klick auf #race-wx-box erreichbar, ohne
+    // Gamepad-Taste (ersatzlos, keine neue Zuweisungsmoeglichkeit).
+    trackReadMode: { type: 'button', index: 8, label: 'Select / Share (PS) / Back (Xbox)' },
     // UNBELEGT ab Werk, ausdruecklich: der linke Stick soll nichts ausloesen, wenn man ihn
     // beim Lenken drueckt. Und die Streckenansicht verlaesst das Cockpit - genau der
     // Grund, aus dem L1 sie nicht mehr traegt.
@@ -114,7 +116,7 @@
     tyreSelect: 'Reifenwahl weiter',
     fuelSelect: 'Tankmenge weiter',
     yellowflag: 'Gelbe Flagge (1 s halten)',
-    weather: 'Wetter umschalten',
+    trackReadMode: 'Bahn-Lesemodus umschalten',
     trackview: 'Streckenansicht',
     fullscreenToggle: 'Vollbild umschalten',
     resetcar: 'Auto zurücksetzen',
@@ -152,7 +154,7 @@
     // Verschoben wird nur, wer noch auf SEINER alten Vorgabe liegt. Wer selbst zugewiesen
     // hat, behaelt seine Zuweisung, und der Kollisionsaufloeser faengt, was dabei doppelt
     // liegen bleibt.
-    const ALT = { yellowflag: 2, racestart: 0, trackview: 10, weather: 8 };
+    const ALT = { yellowflag: 2, racestart: 0, trackview: 10 };
     for (const n of Object.keys(ALT)) {
       if (ist(b[n], ALT[n])) {
         b[n] = { ...DEFAULT_BINDINGS[n] };
@@ -163,17 +165,13 @@
     //
     // JE AKTION UNABHAENGIG, wie darueber, und aus demselben Grund: die gekoppelte Fassung
     // ist in diesem Projekt zweimal danebengegangen. Wer racestart noch auf Select hat, wird
-    // entlastet; wer weather selbst zugewiesen hat, behaelt es.
-    //
-    // Die Reihenfolge ist wichtig: ZUERST racestart raeumen, DANN weather setzen. Anders
-    // herum liegen beide einen Moment auf Knopf 8, und der Kollisionsaufloeser wuerde eines
-    // von beiden verschieben - ausgerechnet das, was gerade richtig gesetzt wurde.
+    // entlastet - Select traegt seit v0.7 den Bahn-Lesemodus (trackReadMode), nicht mehr
+    // das Wetter; ein gespeichertes altes "weather" bleibt als toter Schluessel liegen
+    // (die Aktion gibt es nicht mehr, resolveBindingCollisions() liest nur Namen aus
+    // DEFAULT_BINDINGS und sieht ihn deshalb gar nicht).
     if (ist(b.racestart, 8)) {
       b.racestart = { ...DEFAULT_BINDINGS.racestart };
       b.__migrated4 = true;
-    }
-    if (b.weather && b.weather.type === 'none' && b.__migrated4) {
-      b.weather = { ...DEFAULT_BINDINGS.weather };
     }
     return b;
   }
@@ -719,7 +717,7 @@
   // left/right = steering damping (left = direct, right = sluggish).
   const DPAD = { up: 12, down: 13, left: 14, right: 15 };
   const prevDpad = { up: false, down: false, left: false, right: false };
-  let prevLightFlash = false, prevPitstop = false, prevWeather = false;
+  let prevLightFlash = false, prevPitstop = false, prevTrackReadMode = false;
   let prevRaceStart = false, prevTrackView = false, prevResetCar = false;
 
   function padButtonPressed(pad, index) {
@@ -8245,24 +8243,42 @@
       // Headlights on/off, edge-triggered. Drives the same checkbox the options menu uses
       // so the two can never disagree.
       const headNow = readBindingValue(pad, bindings.headlights) > BUTTON_CAPTURE_THRESHOLD;
-      // Dreieck: dreht im Streckeneditor die Strecke, sonst das Licht. BESTELLT (Phase
+      // Dreieck: dreht im Streckeneditor die Strecke, im Cockpit das Licht, ausserhalb des
+      // Cockpits (B2, v0.7) die Erklaerung der fokussierten Menuezeile. BESTELLT (Phase
       // 13, Playstation-Belegung): "Dreieck zum Drehen." Reset (die ganze Strecke
       // loeschen) hat seitdem keine eigene Gamepad-Taste mehr - nur noch per Klick auf
       // "Leeren", ausdruecklich: eine so folgenreiche Aktion muss niemand versehentlich
       // mit dem Steuerkreuz-Nachbarn treffen.
+      //
+      // BESTELLT: "außerhalb des cockpit screens die tastenbelegung so anpassen, dass
+      // Dreieck die Infos öffnet". Der Info-Knopf ist seit B2 kein eigener
+      // Navigationsschritt mehr (50b-menu-nav.js) - Dreieck oeffnet ihn jetzt direkt.
       if (headNow && !prevHeadlights && trackEditorPad('rotate')) {
         // consumed by the editor
-      } else if (headNow && !prevHeadlights) {
+      } else if (headNow && !prevHeadlights
+                 && document.querySelector('.tabpage.active') === $('tab-race')) {
         headlightsOn = !headlightsOn;
         const cb = $('dash-head-toggle');
         if (cb) cb.checked = headlightsOn;
         showHudToast(headlightsOn ? 'Licht an' : 'Licht aus');
+      } else if (headNow && !prevHeadlights) {
+        menuNavOpenInfo();
       }
       prevHeadlights = headNow;
 
-      const wxNow = readBindingValue(pad, bindings.weather) > BUTTON_CAPTURE_THRESHOLD;
-      if (wxNow && !prevWeather) setWeather(weather === 'rain' ? 'dry' : 'rain');
-      prevWeather = wxNow;
+      // BESTELLT (v0.7): "Select Taste fuers Aendern des Bahn-Lesemodus statt des
+      // Wetters." Bis dahin schaltete dieselbe Taste das Wetter um - siehe
+      // audio/CREDITS.md-Stil-Historie in der Bindungsdefinition oben (trackReadMode).
+      // Wetter bleibt erreichbar, nur nicht mehr hier: Tipp/Klick auf #race-wx-box.
+      // Dieselben zwei Funktionen wie #race-act-scan's Klick-Handler (50-drive.js) -
+      // #setting-ontrack umschalten und ein change-Ereignis feuern, keine zweite Fassung
+      // der Umschalt-Logik.
+      const trmNow = readBindingValue(pad, bindings.trackReadMode) > BUTTON_CAPTURE_THRESHOLD;
+      if (trmNow && !prevTrackReadMode) {
+        const sw = $('setting-ontrack');
+        if (sw) { sw.checked = !sw.checked; sw.dispatchEvent(new Event('change', { bubbles: true })); }
+      }
+      prevTrackReadMode = trmNow;
 
       // Pit stop only from a standstill — a real crew does not service a moving car.
       // LB und RB machen nur noch Autodinge. Sie blaetterten ausserhalb des Cockpits durch
@@ -8357,13 +8373,24 @@
       // Editor - Bestaetigen liegt jetzt auf Kreuz/X (siehe oben). Kreis/Circle bleibt
       // Hochschalten UND Rueckgaengig im Editor, wie bestellt ("Kreis zum Rueckgaengig
       // ist super").
-      if (downshiftNow && !prevDownshift
-          && physicsEnabled && !physEngine.state.isShifting) {
-        physEngine.triggerShift(-1);
+      //
+      // BESTELLT: "verschiedene Tasten (kreis, x, dreieck, quadrat) die infobox wieder
+      // schließen." Waehrend das Info-Popup offen ist, schliessen Kreis und Quadrat NUR
+      // ihn - kein Schalten, kein Rueckgaengig im Editor - genau wie X das schon ueber
+      // flagTasteTick() tut (98c-opt-info.js).
+      if (downshiftNow && !prevDownshift) {
+        if (optInfoOffen()) {
+          optInfoSchliessen();
+        } else if (physicsEnabled && !physEngine.state.isShifting) {
+          physEngine.triggerShift(-1);
+        }
       }
-      if (upshiftNow && !prevUpshift && !trackEditorPad('undo')
-          && physicsEnabled && !physEngine.state.isShifting) {
-        physEngine.triggerShift(1);
+      if (upshiftNow && !prevUpshift) {
+        if (optInfoOffen()) {
+          optInfoSchliessen();
+        } else if (!trackEditorPad('undo') && physicsEnabled && !physEngine.state.isShifting) {
+          physEngine.triggerShift(1);
+        }
       }
       prevDownshift = downshiftNow;
       prevUpshift = upshiftNow;

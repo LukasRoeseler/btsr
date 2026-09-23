@@ -2124,7 +2124,13 @@
        also 264 px, und der Regler lief 3 px ueber den Bildschirmrand hinaus.
        Die Regel eine Bildschirmhoehe weiter oben macht es fuer breite Schirme schon richtig;
        hier war sie ueberschrieben. */
-    .opt-row { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+    /* BESTELLT: "höhe der optionen in den Menüs geringer machen, damit auf mobile nicht
+       immer nur 1-2 Zeilen angezeigt werden." Gemessen VOR dieser Aenderung: die
+       Erklaerungen sind laengst hinter dem "i"-Knopf verschwunden (98c-opt-info.js,
+       Phase 13) - eine Zeile ohne sichtbaren Fliesstext war schon 5 bis 8 Zeilen pro
+       Bildschirm hoch (375x812 bzw. 375x600), nicht 1-2. Das urspruengliche Problem war
+       also schon behoben; dieser Rest ist ein kleiner Nachschlag, kein Ersatz. */
+    .opt-row { grid-template-columns: minmax(0, 1fr); gap: 8px; padding: 8px 12px; }
     .opt-row > :last-child { justify-self: start; }
     /* Und der Inhalt muss dann auch WIRKLICH schrumpfen. Ein Flex-Element schrumpft nicht
        unter seine eigene Mindestbreite, also bekommen die drei Teile hier die Erlaubnis:
@@ -2776,6 +2782,12 @@
     border: 1px solid var(--border); border-radius: 50%; background: var(--panel);
     color: var(--muted); font: italic 11px/1 Georgia, serif; cursor: pointer; }
   .opt-info-btn:hover, .opt-info-btn:focus-visible { color: var(--ink); border-color: var(--muted); }
+  /* Dieselbe Falle wie beim Farbklecks oben (.car-chip): button { min-height: 44px } auf
+     grobem Zeiger macht aus 16x16 ein 16x44, und mit border-radius 50 % eine Ellipse statt
+     eines Punkts. Anders als beim Farbklecks bleibt die Groesse hier klein: der Knopf ist
+     seit B2 nicht mehr die einzige Zugangsweise (Dreieck oeffnet ihn ausserhalb des
+     Cockpits per D-Pad), also braucht es kein 44px-Fingerziel. */
+  @media (pointer: coarse) { .opt-info-btn { min-height: 16px; } }
   .opt-info-versteckt { display: none !important; }
   /* Der Hinweis, dass ein Bild anklickbar ist. Ohne ihn probiert es niemand aus. */
   .mw-chart { position: relative; }
@@ -3154,7 +3166,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.7.43</span></span>
+        <span class="foot-ver">v<span id="app-version">0.7.44</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>

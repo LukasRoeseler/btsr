@@ -158,12 +158,11 @@
       optRows.forEach((row) => {
         const control = menuNavControlFor(row);
         if (control) rows.push({ el: row, kind: menuNavKindOf(control), control });
-        // Der Info-Knopf (98c-opt-info.js) bekommt einen EIGENEN Eintrag, direkt nach
-        // der Zeile, die er erklaert - er kann nicht dasselbe Element wie oben sein,
-        // sonst waere er hinter dem Regler/Kontrollkaestchen nie erreichbar (siehe die
-        // Rangfolge in menuNavControlFor()).
-        const info = row.querySelector('.opt-info-btn');
-        if (info && menuNavSichtbar(info)) rows.push({ el: info, kind: 'button', control: info });
+        // KEIN EIGENER ZEILENEINTRAG MEHR fuer den Info-Knopf (bis B2/Phase-B-Feinschliff):
+        // jede erklaerte Zeile brauchte damit zwei Tastendruecke, um vorbeizukommen. Der
+        // Knopf bleibt im DOM (98c-opt-info.js braucht ihn fuers Antippen), aber
+        // menuNavRows() ueberspringt ihn - Dreieck oeffnet ihn jetzt direkt ueber
+        // menuNavOpenInfo(), ohne ihn erst anzuwaehlen.
       });
       return rows;
     }
@@ -264,6 +263,23 @@
     menuNavRender();
   }
 
+  // Dreieck ausserhalb des Cockpits (90-ghosts.js): oeffnet die Erklaerung der GERADE
+  // fokussierten Zeile, ohne sie erst per Waehltaste anzusteuern - der Info-Knopf ist
+  // seit B2 kein eigener Navigationsschritt mehr (siehe menuNavRows() oben). Gibt zurueck,
+  // ob eine Erklaerung gefunden und geoeffnet wurde, damit der Aufrufer weiss, ob er noch
+  // etwas anderes mit demselben Tastendruck tun soll (z. B. weiterhin das Licht schalten,
+  // wenn die fokussierte Zeile keine Erklaerung hat).
+  function menuNavOpenInfo() {
+    menuNavEnsureContext();
+    const rows = menuNavRows();
+    if (!rows.length) return false;
+    const row = rows[menuNavIndex];
+    const info = row.el.querySelector ? row.el.querySelector('.opt-info-btn') : null;
+    if (!info) return false;
+    info.click();
+    return true;
+  }
+
   // links/rechts auf einer ANGEWAEHLTEN Zeile. Gibt zurueck, ob sie das gebraucht hat -
   // false heisst "nichts angewaehlt", und dann darf der Aufrufer die Taste fuer etwas
   // anderes nehmen (Tabwechsel, Cockpit-Schirm blaettern). `gross` multipliziert die
@@ -345,6 +361,12 @@
     // Kein Tabwechsel hinter einem offenen Info-Popup - sonst landet man beim
     // Schliessen ueberraschend auf einem anderen Tab, als man verlassen hatte.
     if (optInfoOffen()) return;
+    // BESTELLT: "im submenü soll dpad linksrechts nicht den tab ändern, da will ich erst
+    // Kreis drücken müssen, um das submenü zu verlassen (oder den zurückpfeil oben)."
+    // Dasselbe Element, das menuNavContainer() schon fuer ein offenes Submenu sucht (oben,
+    // .subpage.on) - keine neue Zustandsvariable noetig, nur dieselbe Frage noch einmal
+    // gestellt.
+    if (document.querySelector('.tabpage.active .subpage.on')) return;
     const buttons = [...document.querySelectorAll('.tab-btn')].filter((b) => b.offsetParent !== null);
     if (!buttons.length) return;
     const now = buttons.findIndex((b) => b.classList.contains('active'));

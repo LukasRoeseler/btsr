@@ -1436,6 +1436,12 @@
     catch (e) { /* never locked */ }
     document.body.classList.remove('race-fs', 'race-turn');
     $('race-fs').hidden = false; $('race-fs-exit').hidden = true;
+    // GEFUNDEN: cockpitScreen blieb sonst auf 'pit'/'renneinstellungen' stehen, auch nach
+    // dem Verlassen des Vollbilds. pitScreenOffen()/raceScreenOffen() (70-race.js) pruefen
+    // NUR cockpitScreenIst().id, nicht ob tab-race ueberhaupt noch aktiv/im Vollbild ist -
+    // ein Wechsel auf einen anderen Tab liess das D-Pad dort also weiter "essen", bevor
+    // menuNavMove() es je sah. cockpitScreenZu('main') hier behebt das an der Quelle.
+    cockpitScreenZu('main');
     cockpitPassung();
     setTimeout(() => cockpitPassung(), 120);
   }

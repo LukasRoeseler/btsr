@@ -2124,7 +2124,13 @@
        also 264 px, und der Regler lief 3 px ueber den Bildschirmrand hinaus.
        Die Regel eine Bildschirmhoehe weiter oben macht es fuer breite Schirme schon richtig;
        hier war sie ueberschrieben. */
-    .opt-row { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+    /* BESTELLT: "höhe der optionen in den Menüs geringer machen, damit auf mobile nicht
+       immer nur 1-2 Zeilen angezeigt werden." Gemessen VOR dieser Aenderung: die
+       Erklaerungen sind laengst hinter dem "i"-Knopf verschwunden (98c-opt-info.js,
+       Phase 13) - eine Zeile ohne sichtbaren Fliesstext war schon 5 bis 8 Zeilen pro
+       Bildschirm hoch (375x812 bzw. 375x600), nicht 1-2. Das urspruengliche Problem war
+       also schon behoben; dieser Rest ist ein kleiner Nachschlag, kein Ersatz. */
+    .opt-row { grid-template-columns: minmax(0, 1fr); gap: 8px; padding: 8px 12px; }
     .opt-row > :last-child { justify-self: start; }
     /* Und der Inhalt muss dann auch WIRKLICH schrumpfen. Ein Flex-Element schrumpft nicht
        unter seine eigene Mindestbreite, also bekommen die drei Teile hier die Erlaubnis:
@@ -2776,6 +2782,12 @@
     border: 1px solid var(--border); border-radius: 50%; background: var(--panel);
     color: var(--muted); font: italic 11px/1 Georgia, serif; cursor: pointer; }
   .opt-info-btn:hover, .opt-info-btn:focus-visible { color: var(--ink); border-color: var(--muted); }
+  /* Dieselbe Falle wie beim Farbklecks oben (.car-chip): button { min-height: 44px } auf
+     grobem Zeiger macht aus 16x16 ein 16x44, und mit border-radius 50 % eine Ellipse statt
+     eines Punkts. Anders als beim Farbklecks bleibt die Groesse hier klein: der Knopf ist
+     seit B2 nicht mehr die einzige Zugangsweise (Dreieck oeffnet ihn ausserhalb des
+     Cockpits per D-Pad), also braucht es kein 44px-Fingerziel. */
+  @media (pointer: coarse) { .opt-info-btn { min-height: 16px; } }
   .opt-info-versteckt { display: none !important; }
   /* Der Hinweis, dass ein Bild anklickbar ist. Ohne ihn probiert es niemand aus. */
   .mw-chart { position: relative; }
@@ -3154,7 +3166,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.7.43</span></span>
+        <span class="foot-ver">v<span id="app-version">0.7.44</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -12423,6 +12435,14 @@
     }
     if (k === 'l' && !e.repeat) triggerHeadlightFlash();
     if (k === 'w' && !e.repeat) setWeather(weather === 'rain' ? 'dry' : 'rain');
+    // Tastatur-Gegenstueck zu Dreieck ausserhalb des Cockpits (90-ghosts.js): oeffnet die
+    // Erklaerung der fokussierten Menuezeile. Noetig, seit der Info-Knopf (B2) keinen
+    // eigenen Navigationsschritt mehr hat - "alles, was das Pad kann, muss auch von der
+    // Tastatur aus erreichbar sein" (siehe der Kommentar bei den Testtasten unten), und
+    // dafuer gab es bisher gar keine Taste, nur den anwaehlbaren Knopf selbst.
+    if (k === 'o' && !e.repeat) {
+      if (optInfoOffen()) optInfoSchliessen(); else menuNavOpenInfo();
+    }
     // Test keys. Everything the pad can do should be reachable from a keyboard, otherwise
     // half the app can only be exercised with a controller plugged in.
     if (k === 'p' && !e.repeat) requestPitStop();
@@ -16336,6 +16356,12 @@
     catch (e) { /* never locked */ }
     document.body.classList.remove('race-fs', 'race-turn');
     $('race-fs').hidden = false; $('race-fs-exit').hidden = true;
+    // GEFUNDEN: cockpitScreen blieb sonst auf 'pit'/'renneinstellungen' stehen, auch nach
+    // dem Verlassen des Vollbilds. pitScreenOffen()/raceScreenOffen() (70-race.js) pruefen
+    // NUR cockpitScreenIst().id, nicht ob tab-race ueberhaupt noch aktiv/im Vollbild ist -
+    // ein Wechsel auf einen anderen Tab liess das D-Pad dort also weiter "essen", bevor
+    // menuNavMove() es je sah. cockpitScreenZu('main') hier behebt das an der Quelle.
+    cockpitScreenZu('main');
     cockpitPassung();
     setTimeout(() => cockpitPassung(), 120);
   }
@@ -18353,12 +18379,11 @@
       optRows.forEach((row) => {
         const control = menuNavControlFor(row);
         if (control) rows.push({ el: row, kind: menuNavKindOf(control), control });
-        // Der Info-Knopf (98c-opt-info.js) bekommt einen EIGENEN Eintrag, direkt nach
-        // der Zeile, die er erklaert - er kann nicht dasselbe Element wie oben sein,
-        // sonst waere er hinter dem Regler/Kontrollkaestchen nie erreichbar (siehe die
-        // Rangfolge in menuNavControlFor()).
-        const info = row.querySelector('.opt-info-btn');
-        if (info && menuNavSichtbar(info)) rows.push({ el: info, kind: 'button', control: info });
+        // KEIN EIGENER ZEILENEINTRAG MEHR fuer den Info-Knopf (bis B2/Phase-B-Feinschliff):
+        // jede erklaerte Zeile brauchte damit zwei Tastendruecke, um vorbeizukommen. Der
+        // Knopf bleibt im DOM (98c-opt-info.js braucht ihn fuers Antippen), aber
+        // menuNavRows() ueberspringt ihn - Dreieck oeffnet ihn jetzt direkt ueber
+        // menuNavOpenInfo(), ohne ihn erst anzuwaehlen.
       });
       return rows;
     }
@@ -18459,6 +18484,23 @@
     menuNavRender();
   }
 
+  // Dreieck ausserhalb des Cockpits (90-ghosts.js): oeffnet die Erklaerung der GERADE
+  // fokussierten Zeile, ohne sie erst per Waehltaste anzusteuern - der Info-Knopf ist
+  // seit B2 kein eigener Navigationsschritt mehr (siehe menuNavRows() oben). Gibt zurueck,
+  // ob eine Erklaerung gefunden und geoeffnet wurde, damit der Aufrufer weiss, ob er noch
+  // etwas anderes mit demselben Tastendruck tun soll (z. B. weiterhin das Licht schalten,
+  // wenn die fokussierte Zeile keine Erklaerung hat).
+  function menuNavOpenInfo() {
+    menuNavEnsureContext();
+    const rows = menuNavRows();
+    if (!rows.length) return false;
+    const row = rows[menuNavIndex];
+    const info = row.el.querySelector ? row.el.querySelector('.opt-info-btn') : null;
+    if (!info) return false;
+    info.click();
+    return true;
+  }
+
   // links/rechts auf einer ANGEWAEHLTEN Zeile. Gibt zurueck, ob sie das gebraucht hat -
   // false heisst "nichts angewaehlt", und dann darf der Aufrufer die Taste fuer etwas
   // anderes nehmen (Tabwechsel, Cockpit-Schirm blaettern). `gross` multipliziert die
@@ -18540,6 +18582,12 @@
     // Kein Tabwechsel hinter einem offenen Info-Popup - sonst landet man beim
     // Schliessen ueberraschend auf einem anderen Tab, als man verlassen hatte.
     if (optInfoOffen()) return;
+    // BESTELLT: "im submenü soll dpad linksrechts nicht den tab ändern, da will ich erst
+    // Kreis drücken müssen, um das submenü zu verlassen (oder den zurückpfeil oben)."
+    // Dasselbe Element, das menuNavContainer() schon fuer ein offenes Submenu sucht (oben,
+    // .subpage.on) - keine neue Zustandsvariable noetig, nur dieselbe Frage noch einmal
+    // gestellt.
+    if (document.querySelector('.tabpage.active .subpage.on')) return;
     const buttons = [...document.querySelectorAll('.tab-btn')].filter((b) => b.offsetParent !== null);
     if (!buttons.length) return;
     const now = buttons.findIndex((b) => b.classList.contains('active'));
@@ -29469,10 +29517,12 @@
     // wo die Hand ihn im Vorbeigehen trifft. Ueber die Oberflaeche ist er zwei Klicks weit
     // weg, und frei zuweisbar bleibt er.
     racestart: { type: 'none', index: -1, label: 'nicht belegt' },
-    // Auf Select. Das Wetter umzuschalten ist harmlos und rueckgaengig machbar - genau die
-    // Sorte Sache, die auf eine Menuetaste gehoert, die man beim Fahren trifft. Es hat
-    // vorher der Rennstart getragen; siehe dort, warum er umgezogen ist.
-    weather: { type: 'button', index: 8, label: 'Select / Share (PS) / Back (Xbox)' },
+    // Auf Select. BESTELLT (v0.7): "Select Taste fuers Aendern des Bahn-Lesemodus statt
+    // des Wetters." Bis dahin lag hier "Wetter umschalten" - siehe audio/CREDITS.md-Stil
+    // Kommentar an der Handlerstelle (pollGamepad) fuer die Geschichte davor. Wetter
+    // schalten bleibt nur noch per Tipp/Klick auf #race-wx-box erreichbar, ohne
+    // Gamepad-Taste (ersatzlos, keine neue Zuweisungsmoeglichkeit).
+    trackReadMode: { type: 'button', index: 8, label: 'Select / Share (PS) / Back (Xbox)' },
     // UNBELEGT ab Werk, ausdruecklich: der linke Stick soll nichts ausloesen, wenn man ihn
     // beim Lenken drueckt. Und die Streckenansicht verlaesst das Cockpit - genau der
     // Grund, aus dem L1 sie nicht mehr traegt.
@@ -29498,7 +29548,7 @@
     tyreSelect: 'Reifenwahl weiter',
     fuelSelect: 'Tankmenge weiter',
     yellowflag: 'Gelbe Flagge (1 s halten)',
-    weather: 'Wetter umschalten',
+    trackReadMode: 'Bahn-Lesemodus umschalten',
     trackview: 'Streckenansicht',
     fullscreenToggle: 'Vollbild umschalten',
     resetcar: 'Auto zurücksetzen',
@@ -29536,7 +29586,7 @@
     // Verschoben wird nur, wer noch auf SEINER alten Vorgabe liegt. Wer selbst zugewiesen
     // hat, behaelt seine Zuweisung, und der Kollisionsaufloeser faengt, was dabei doppelt
     // liegen bleibt.
-    const ALT = { yellowflag: 2, racestart: 0, trackview: 10, weather: 8 };
+    const ALT = { yellowflag: 2, racestart: 0, trackview: 10 };
     for (const n of Object.keys(ALT)) {
       if (ist(b[n], ALT[n])) {
         b[n] = { ...DEFAULT_BINDINGS[n] };
@@ -29547,17 +29597,13 @@
     //
     // JE AKTION UNABHAENGIG, wie darueber, und aus demselben Grund: die gekoppelte Fassung
     // ist in diesem Projekt zweimal danebengegangen. Wer racestart noch auf Select hat, wird
-    // entlastet; wer weather selbst zugewiesen hat, behaelt es.
-    //
-    // Die Reihenfolge ist wichtig: ZUERST racestart raeumen, DANN weather setzen. Anders
-    // herum liegen beide einen Moment auf Knopf 8, und der Kollisionsaufloeser wuerde eines
-    // von beiden verschieben - ausgerechnet das, was gerade richtig gesetzt wurde.
+    // entlastet - Select traegt seit v0.7 den Bahn-Lesemodus (trackReadMode), nicht mehr
+    // das Wetter; ein gespeichertes altes "weather" bleibt als toter Schluessel liegen
+    // (die Aktion gibt es nicht mehr, resolveBindingCollisions() liest nur Namen aus
+    // DEFAULT_BINDINGS und sieht ihn deshalb gar nicht).
     if (ist(b.racestart, 8)) {
       b.racestart = { ...DEFAULT_BINDINGS.racestart };
       b.__migrated4 = true;
-    }
-    if (b.weather && b.weather.type === 'none' && b.__migrated4) {
-      b.weather = { ...DEFAULT_BINDINGS.weather };
     }
     return b;
   }
@@ -30103,7 +30149,7 @@
   // left/right = steering damping (left = direct, right = sluggish).
   const DPAD = { up: 12, down: 13, left: 14, right: 15 };
   const prevDpad = { up: false, down: false, left: false, right: false };
-  let prevLightFlash = false, prevPitstop = false, prevWeather = false;
+  let prevLightFlash = false, prevPitstop = false, prevTrackReadMode = false;
   let prevRaceStart = false, prevTrackView = false, prevResetCar = false;
 
   function padButtonPressed(pad, index) {
@@ -37629,24 +37675,42 @@
       // Headlights on/off, edge-triggered. Drives the same checkbox the options menu uses
       // so the two can never disagree.
       const headNow = readBindingValue(pad, bindings.headlights) > BUTTON_CAPTURE_THRESHOLD;
-      // Dreieck: dreht im Streckeneditor die Strecke, sonst das Licht. BESTELLT (Phase
+      // Dreieck: dreht im Streckeneditor die Strecke, im Cockpit das Licht, ausserhalb des
+      // Cockpits (B2, v0.7) die Erklaerung der fokussierten Menuezeile. BESTELLT (Phase
       // 13, Playstation-Belegung): "Dreieck zum Drehen." Reset (die ganze Strecke
       // loeschen) hat seitdem keine eigene Gamepad-Taste mehr - nur noch per Klick auf
       // "Leeren", ausdruecklich: eine so folgenreiche Aktion muss niemand versehentlich
       // mit dem Steuerkreuz-Nachbarn treffen.
+      //
+      // BESTELLT: "außerhalb des cockpit screens die tastenbelegung so anpassen, dass
+      // Dreieck die Infos öffnet". Der Info-Knopf ist seit B2 kein eigener
+      // Navigationsschritt mehr (50b-menu-nav.js) - Dreieck oeffnet ihn jetzt direkt.
       if (headNow && !prevHeadlights && trackEditorPad('rotate')) {
         // consumed by the editor
-      } else if (headNow && !prevHeadlights) {
+      } else if (headNow && !prevHeadlights
+                 && document.querySelector('.tabpage.active') === $('tab-race')) {
         headlightsOn = !headlightsOn;
         const cb = $('dash-head-toggle');
         if (cb) cb.checked = headlightsOn;
         showHudToast(headlightsOn ? 'Licht an' : 'Licht aus');
+      } else if (headNow && !prevHeadlights) {
+        menuNavOpenInfo();
       }
       prevHeadlights = headNow;
 
-      const wxNow = readBindingValue(pad, bindings.weather) > BUTTON_CAPTURE_THRESHOLD;
-      if (wxNow && !prevWeather) setWeather(weather === 'rain' ? 'dry' : 'rain');
-      prevWeather = wxNow;
+      // BESTELLT (v0.7): "Select Taste fuers Aendern des Bahn-Lesemodus statt des
+      // Wetters." Bis dahin schaltete dieselbe Taste das Wetter um - siehe
+      // audio/CREDITS.md-Stil-Historie in der Bindungsdefinition oben (trackReadMode).
+      // Wetter bleibt erreichbar, nur nicht mehr hier: Tipp/Klick auf #race-wx-box.
+      // Dieselben zwei Funktionen wie #race-act-scan's Klick-Handler (50-drive.js) -
+      // #setting-ontrack umschalten und ein change-Ereignis feuern, keine zweite Fassung
+      // der Umschalt-Logik.
+      const trmNow = readBindingValue(pad, bindings.trackReadMode) > BUTTON_CAPTURE_THRESHOLD;
+      if (trmNow && !prevTrackReadMode) {
+        const sw = $('setting-ontrack');
+        if (sw) { sw.checked = !sw.checked; sw.dispatchEvent(new Event('change', { bubbles: true })); }
+      }
+      prevTrackReadMode = trmNow;
 
       // Pit stop only from a standstill — a real crew does not service a moving car.
       // LB und RB machen nur noch Autodinge. Sie blaetterten ausserhalb des Cockpits durch
@@ -37741,13 +37805,24 @@
       // Editor - Bestaetigen liegt jetzt auf Kreuz/X (siehe oben). Kreis/Circle bleibt
       // Hochschalten UND Rueckgaengig im Editor, wie bestellt ("Kreis zum Rueckgaengig
       // ist super").
-      if (downshiftNow && !prevDownshift
-          && physicsEnabled && !physEngine.state.isShifting) {
-        physEngine.triggerShift(-1);
+      //
+      // BESTELLT: "verschiedene Tasten (kreis, x, dreieck, quadrat) die infobox wieder
+      // schließen." Waehrend das Info-Popup offen ist, schliessen Kreis und Quadrat NUR
+      // ihn - kein Schalten, kein Rueckgaengig im Editor - genau wie X das schon ueber
+      // flagTasteTick() tut (98c-opt-info.js).
+      if (downshiftNow && !prevDownshift) {
+        if (optInfoOffen()) {
+          optInfoSchliessen();
+        } else if (physicsEnabled && !physEngine.state.isShifting) {
+          physEngine.triggerShift(-1);
+        }
       }
-      if (upshiftNow && !prevUpshift && !trackEditorPad('undo')
-          && physicsEnabled && !physEngine.state.isShifting) {
-        physEngine.triggerShift(1);
+      if (upshiftNow && !prevUpshift) {
+        if (optInfoOffen()) {
+          optInfoSchliessen();
+        } else if (!trackEditorPad('undo') && physicsEnabled && !physEngine.state.isShifting) {
+          physEngine.triggerShift(1);
+        }
       }
       prevDownshift = downshiftNow;
       prevUpshift = upshiftNow;

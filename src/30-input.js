@@ -342,6 +342,14 @@
     }
     if (k === 'l' && !e.repeat) triggerHeadlightFlash();
     if (k === 'w' && !e.repeat) setWeather(weather === 'rain' ? 'dry' : 'rain');
+    // Tastatur-Gegenstueck zu Dreieck ausserhalb des Cockpits (90-ghosts.js): oeffnet die
+    // Erklaerung der fokussierten Menuezeile. Noetig, seit der Info-Knopf (B2) keinen
+    // eigenen Navigationsschritt mehr hat - "alles, was das Pad kann, muss auch von der
+    // Tastatur aus erreichbar sein" (siehe der Kommentar bei den Testtasten unten), und
+    // dafuer gab es bisher gar keine Taste, nur den anwaehlbaren Knopf selbst.
+    if (k === 'o' && !e.repeat) {
+      if (optInfoOffen()) optInfoSchliessen(); else menuNavOpenInfo();
+    }
     // Test keys. Everything the pad can do should be reachable from a keyboard, otherwise
     // half the app can only be exercised with a controller plugged in.
     if (k === 'p' && !e.repeat) requestPitStop();
