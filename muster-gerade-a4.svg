@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="297.01mm" height="210.02mm" viewBox="0 0 297.01 210.02">
+  <!--
+    GERADE, SENKRECHTE TRAPEZ-BALKEN, RANDLOS, KEIN STRICHCODE-ANSPRUCH.
+    A4 QUER, 1 SVG-Einheit = 1 mm. Experimentell, zum Auslegen und
+    Vergleichen mit einer Infrarot-Aufnahme der echten Bahn.
+
+    12 Trapeze nebeneinander, randlos ueber die volle Blattbreite/-hoehe,
+    jedes oben (Blattoberkante) 5 mm und unten (Blattunterkante) 20 mm
+    breit - eine ERFUNDENE Folge, das echte Wort der Geraden (Byte 12 =
+    0x02) ist nicht entziffert (CARRERA_HYBRID.md, gescheiterter
+    Messversuch vom 31.08.). Balken + Luecke ist bei jeder Hoehe konstant
+    25 mm, die Luecke ist deshalb von selbst dieselbe Form kopfueber.
+
+    DRUCKEN: 100 % / "Tatsaechliche Groesse", NICHT "an Seite anpassen".
+    Randlos: ein Drucker ohne echten Randlos-Druck schneidet aussen etwas ab.
+  -->
+  <rect x="0" y="0" width="297.01" height="210.02" fill="#ffffff"/>
+  <g fill="#000000">
+    <path d="M 8.505 0.000 L 13.505 0.000 L 21.005 210.020 L 1.005 210.020 Z"/>
+    <path d="M 33.505 0.000 L 38.505 0.000 L 46.005 210.020 L 26.005 210.020 Z"/>
+    <path d="M 58.505 0.000 L 63.505 0.000 L 71.005 210.020 L 51.005 210.020 Z"/>
+    <path d="M 83.505 0.000 L 88.505 0.000 L 96.005 210.020 L 76.005 210.020 Z"/>
+    <path d="M 108.505 0.000 L 113.505 0.000 L 121.005 210.020 L 101.005 210.020 Z"/>
+    <path d="M 133.505 0.000 L 138.505 0.000 L 146.005 210.020 L 126.005 210.020 Z"/>
+    <path d="M 158.505 0.000 L 163.505 0.000 L 171.005 210.020 L 151.005 210.020 Z"/>
+    <path d="M 183.505 0.000 L 188.505 0.000 L 196.005 210.020 L 176.005 210.020 Z"/>
+    <path d="M 208.505 0.000 L 213.505 0.000 L 221.005 210.020 L 201.005 210.020 Z"/>
+    <path d="M 233.505 0.000 L 238.505 0.000 L 246.005 210.020 L 226.005 210.020 Z"/>
+    <path d="M 258.505 0.000 L 263.505 0.000 L 271.005 210.020 L 251.005 210.020 Z"/>
+    <path d="M 283.505 0.000 L 288.505 0.000 L 296.005 210.020 L 276.005 210.020 Z"/>
+  </g>
+</svg>

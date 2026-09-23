@@ -3166,7 +3166,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.7.46</span></span>
+        <span class="foot-ver">v<span id="app-version">0.7.47</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -9004,6 +9004,65 @@
           <button>Kurve, Blatt 1</button></a>
         <a href="spur-kurve-2-a4.svg" download="spur-kurve-2-a4.svg">
           <button>Kurve, Blatt 2</button></a>
+      </div>
+
+      <!-- BESTELLT (Verlauf): "ausdrucke für geraden und kurven machen nur mit
+           kachelmuster, ohne strichcodes experimentell" -> nach Ansicht von fuenf
+           Infrarot-Fotos (app_screenshots/) und einer Referenzzeichnung des Nutzers
+           korrigiert zu Trapezen ("die Trapeze sind oben ~5mm und unten ~20mm breit.
+           Die weißen Lücken sollen genau dieselben Maße nur eben kopfüber haben"),
+           zuletzt randlos gemacht ("make it so they run to the border of the pages").
+           Erzeugt von tools/make_pattern_sheets.py - bewusst als EIGENES Skript und
+           eigene Karte, nicht als weiterer Absatz bei "Bahn zum Auslegen" oben: jene
+           Blaetter tragen trotz allem noch ein Strichcode-Wort (das falsche, siehe der
+           Warnhinweis dort), diese hier erheben gar keinen Anspruch auf
+           Maschinenlesbarkeit. -->
+      <h3 style="font-size:14px; margin:22px 0 6px 0; padding-top:16px;
+                 border-top:1px solid var(--line)">Trapez-Muster, randlos, ohne Strichcode
+        <span class="wip-tag">experimentell</span></h3>
+      <p class="muted" style="font-size:11.5px">
+        Zum Auslegen und Fotografieren, ohne jede Behauptung, maschinenlesbar zu sein -
+        anders als die Bl&auml;tter oben, die trotz ihrer Warnung noch ein (falsches)
+        Strichcode-Wort tragen. Senkrechte Trapez-Balken, randlos bis zum Blattrand:
+        oben (bzw. innen in der Kurve) schmal, unten (aussen) breit, mit einer L&uuml;cke
+        dazwischen, die genau dieselbe Form kopfueber hat. Die genaue Folge ist ERFUNDEN
+        - das echte Wort ist weder f&uuml;r die Gerade (Byte 12 = 0x02) noch die
+        Rechtskurve (0x04) entziffert, und ein bereits gemachter Messversuch an
+        Infrarot-Fotos wie diesen ist dokumentiert gescheitert (CARRERA_HYBRID.md,
+        Fluchtpunkt-Fit, 31.08.) - nur ein Flachbett-Scan g&auml;be echte Millimeter. Die
+        Zahlen hier (5/20&nbsp;mm) sind daher eine grobe Ausseneinsch&auml;tzung, direkt
+        &uuml;bernommen, keine Messung.
+      </p>
+      <div class="row" style="gap:22px; align-items:flex-start; flex-wrap:wrap">
+        <div style="flex:1 1 260px; min-width:240px">
+          <img src="muster-gerade-a4.svg" alt="Vorschau Trapez-Muster Gerade"
+               style="width:100%; max-width:300px; border:1px solid var(--border);
+                      border-radius:4px; display:block">
+          <p style="margin:8px 0 4px 0"><b>Gerade</b></p>
+          <p class="muted" style="font-size:11.5px; margin:0 0 8px 0">
+            12 Trapeze nebeneinander, randlos &uuml;ber die ganze Seite, oben
+            5&nbsp;mm und unten 20&nbsp;mm breit.
+          </p>
+          <a href="muster-gerade-a4.svg" download="muster-gerade-a4.svg">
+            <button class="primary">Gerade herunterladen (SVG)</button>
+          </a>
+        </div>
+        <div style="flex:1 1 260px; min-width:240px">
+          <img src="muster-kurve-60grad-a4.svg" alt="Vorschau Trapez-Muster Rechtskurve 60 Grad"
+               style="width:100%; max-width:300px; border:1px solid var(--border);
+                      border-radius:4px; display:block">
+          <p style="margin:8px 0 4px 0"><b>Rechtskurve, 60&#176;</b></p>
+          <p class="muted" style="font-size:11.5px; margin:0 0 8px 0">
+            8 radiale Trapez-Keile, randlos &uuml;ber die ganze Seite (Aussenradius so
+            gew&auml;hlt, dass der Sektor die Blattbreite genau ausf&uuml;llt), innen
+            5&nbsp;mm und aussen 20&nbsp;mm breit - dieselben zwei Zahlen wie bei der
+            Geraden, unabh&auml;ngig voneinander getroffen statt aus dem
+            Radienverh&auml;ltnis errechnet.
+          </p>
+          <a href="muster-kurve-60grad-a4.svg" download="muster-kurve-60grad-a4.svg">
+            <button class="primary">Kurve herunterladen (SVG)</button>
+          </a>
+        </div>
       </div>
 
       <!-- Boxengasse, vorlaeufig auskommentiert. Das Blatt wurde nicht erkannt, und die

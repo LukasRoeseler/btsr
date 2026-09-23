@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="297.01mm" height="210.02mm" viewBox="0 0 297.01 210.02">
+  <!--
+    RECHTSKURVE, 60 GRAD, RADIALE TRAPEZ-KEILE, RANDLOS, KEIN
+    STRICHCODE-ANSPRUCH. A4 QUER, 1 SVG-Einheit = 1 mm. Experimentell,
+    zum Auslegen und Vergleichen mit einer Infrarot-Aufnahme.
+
+    RANDLOS: Aussenradius 297.0 mm, sodass die Sehne ueber den vollen
+    60-Grad-Winkel genau die Blattbreite (297.0 mm) ergibt; Innenradius
+    100.4 mm, sodass die Innenkante ebenfalls die Blattoberkante beruehrt.
+    Der Sektor fuellt damit die ganze Seite.
+
+    8 Keile, jeder ein TRAPEZ mit unabhaengig vorgegebener Innenbreite
+    (5 mm) und Aussenbreite (20 mm) - dieselben zwei Zahlen wie bei
+    der Geraden (5/20 mm), grob am Foto geschaetzt (CARRERA_HYBRID.md:
+    eine genauere Herleitung ist dort bereits gescheitert dokumentiert,
+    31.08.). Anders als ein Kreissektor bei konstantem Winkel trifft das
+    beide Breiten unabhaengig, nicht nur die eine mit der anderen
+    rechnerisch aus dem Radienverhaeltnis.
+
+    DRUCKEN: 100 % / "Tatsaechliche Groesse", NICHT "an Seite anpassen".
+  -->
+  <rect x="0" y="0" width="297.01" height="210.02" fill="#ffffff"/>
+  <g fill="#000000">
+    <path d="M 195.772 1.641 L 191.303 3.883 L 272.690 182.812 L 290.563 173.844 Z"/>
+    <path d="M 185.092 6.557 L 180.392 8.262 L 240.314 195.474 L 259.112 188.657 Z"/>
+    <path d="M 173.910 10.192 L 169.043 11.335 L 206.680 204.267 L 226.146 199.693 Z"/>
+    <path d="M 162.381 12.494 L 157.414 13.062 L 172.248 209.069 L 192.116 206.801 Z"/>
+    <path d="M 150.661 13.434 L 145.662 13.417 L 137.492 209.816 L 157.488 209.884 Z"/>
+    <path d="M 138.912 12.998 L 133.949 12.397 L 102.886 206.496 L 122.738 208.900 Z"/>
+    <path d="M 127.295 11.192 L 122.436 10.016 L 68.906 199.155 L 88.340 203.862 Z"/>
+    <path d="M 115.968 8.042 L 111.279 6.305 L 36.016 187.894 L 54.767 194.840 Z"/>
+  </g>
+</svg>
