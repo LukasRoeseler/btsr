@@ -410,6 +410,36 @@
              mass: teile.join(' | ') + (schlecht.length ? ' || FEHLER: ' + schlecht.join(' | ') : '') };
   });
 
+  // ---- Luuke-Linie: laengerer Kurvenlauf haelt den Scheitel, driftet erst am Ende ----
+  //
+  // BESTELLT (Korrektur, an einem Foto von vier Rechtskurven hintereinander beobachtet):
+  // "sollte das Auto erst ab der letzten oder vorletzten Kurve nach aussen driften, um
+  // herauszubeschleunigen." Die einzige Messung dazu (SGR3G, Lauflaenge 3) konnte
+  // "sofort nach dem Scheitel" nicht von "an der letzten Kachel" unterscheiden - bei
+  // Lauflaenge 4 schon. SR4G: Lauf aus vier R, Scheitel auf der zweiten Kachel des
+  // Laufs (Index 2), danach haelt Kachel 3 (Index 3) noch fast den Scheitel (nur ein
+  // kleiner Schritt Richtung aussen), und erst die letzte Kachel des Laufs (Index 4)
+  // erreicht den an SGR3G bestaetigten Aussenwert.
+  stAdd('Luuke-Linie: haelt den Scheitel in einem langen Lauf, driftet erst am Ende', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.luukeLinieAnker || !OMEGA_TEST.codeToTrack) {
+      return { skip: true, mass: 'Pruefzugang nicht vorhanden' };
+    }
+    const p = OMEGA_TEST.codeToTrack('SR4G');
+    const anker = OMEGA_TEST.luukeLinieAnker(p.tiles, true);
+    const schlecht = [];
+    // Kachel 2 (Index 2): Scheitel, volles Innen.
+    if (Math.abs(anker[2] - 100) > 1) schlecht.push('Scheitel (Kachel 2): ' + anker[2] + ' statt 100');
+    // Kachel 3: noch fast am Scheitel - deutlich naeher an 100 als an 0, jedenfalls
+    // nicht schon auf halbem Weg nach aussen.
+    if (!(anker[3] > 0)) schlecht.push('Kachel 3 schon aussen statt noch innen: ' + anker[3]);
+    if (anker[3] >= anker[2]) schlecht.push('Kachel 3 nicht kleiner als der Scheitel: ' + anker[3]);
+    // Kachel 4 (letzte des Laufs): der an SGR3G bestaetigte Aussenwert, -50.
+    if (Math.abs(anker[4] - (-50)) > 15) schlecht.push('letzte Kachel (4): ' + anker[4] + ' statt -50');
+    return { ok: schlecht.length === 0,
+             mass: 'SR4G: ' + anker.join(',')
+                 + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
   // ---- 6. Kachelphase ----
   // Eine Haarnadel ist dreimal so lang wie eine Gerade. Rechnet die Phase mit einer
   // mittleren Kacheldauer, steht sie dort nach einem Drittel auf 1 und der Linienversatz

@@ -1596,7 +1596,14 @@
   //
   // Die drei anderen bleiben waehlbar - sie sind als OPTIMIERUNG richtig und zeigen, wo eine
   // schnellste Linie laege. Sie sind nur nicht das, was dieses Fahrzeug fahren kann.
-  let lineModel = 'dreistufig';
+  //
+  // ---- LUUKE-LINIE IST JETZT DIE VORGABE, statt 3-stufig ----------------------------
+  //
+  // BESTELLT: "mach Luuke-Linie den Standard." Sie ist wie 3-stufig eine VORSCHRIFT und
+  // keine Optimierung (haelt also denselben Vorteil: ein Ghost auf der Schiene folgt
+  // einem gehaltenen Befehl, keinem schwingenden), nur von Hand aus Luukes eigenen
+  // Beispielen abgeleitet statt aus einer allgemeinen Kurvenoeffnung.
+  let lineModel = 'luuke';
 
   // Die gueltigen Modellnamen an EINER Stelle. Vorher stand die Liste als zwei
   // Vergleiche in setLineModel und ein weiteres Mal als Bedingung in buildLine - beim
@@ -2041,7 +2048,24 @@
         if (tight === 2 && p === apexPos) wert = -75 * d;
         else if (p === apexPos) wert = base * d;
         else if (p === 0) wert = -base * d;
-        else wert = -0.5 * base * d;
+        else {
+          // NACH DEM SCHEITEL: BESTELLT (Korrektur), an einem Lauf von vier Rechtskurven
+          // beobachtet - "sollte das Auto erst ab der letzten oder vorletzten Kurve nach
+          // aussen driften, um herauszubeschleunigen." Die alte Fassung liess JEDE Kachel
+          // nach dem Scheitel sofort auf halbes Aussen fallen (-0,5*base*d) - das war nur
+          // an einem LAUF DER LAENGE 3 belegt (SGR3G), wo "sofort nach dem Scheitel" und
+          // "die letzte Kachel des Laufs" dieselbe Kachel sind und sich nicht
+          // unterscheiden liessen. Ab Lauflaenge 4 zeigt sich der Unterschied: die
+          // Kacheln VOR den letzten beiden halten jetzt den Scheitel (volles Innen),
+          // die vorletzte beginnt den Wechsel, und erst die letzte erreicht den
+          // bestaetigten Wert -0,5*base*d. Nur die letzte Kachel ist an Daten (SGR3G)
+          // belegt; die vorletzte (0,25*base*d) und "davor voll halten" sind eine
+          // Erweiterung nach der obigen Beobachtung, keine zweite Messung.
+          const distZumEnde = (len - 1) - p;
+          if (distZumEnde >= 2) wert = base * d;
+          else if (distZumEnde === 1) wert = 0.25 * base * d;
+          else wert = -0.5 * base * d;
+        }
         if (gedaempft && p === apexPos) {
           anker[idx] = 0;
           const naechsterIdx = at(lauf.bis + 1);
@@ -2076,10 +2100,21 @@
   }
 
   // Anker -> alpha: dieselbe Vorzeichenabbildung wie innenGemitteltLine() (alpha = -wert
-  // * limit, hier auf die -100..100-Skala bezogen statt auf SPUR_VOLL), und dieselbe
-  // Kachel-Anker-zu-naechster-Kachel-Rampe - nur SMOOTHSTEP statt linear interpoliert
-  // (3u^2 - 2u^3), damit die Steigung an jeder Kachelgrenze null ist und kein Knick genau
-  // am Uebergang entsteht.
+  // * limit, hier auf die -100..100-Skala bezogen statt auf SPUR_VOLL).
+  //
+  // DER ANKER GILT AN DER KACHELMITTE, nicht am Kachelanfang - BESTELLT (Korrektur,
+  // Bild einer Haarnadel mit einem Buckel am Innenrand): die vorige Fassung rampte von
+  // "diese Kachel" (bei Abtastpunkt 0) zu "naechste Kachel" (beim ERSTEN Punkt der
+  // naechsten Kachel) UEBER DIE GANZE Kachel hinweg - der eigentliche Kachelwert (z. B.
+  // der Scheitel einer Haarnadel) war damit nur fuer einen einzigen Abtastpunkt am
+  // Kachelanfang wahr und danach sofort wieder auf dem Weg zum naechsten Wert. Bei einer
+  // langen Kachel (eine Haarnadel hat 49 statt 14 Abtastpunkte) heisst das: der Scheitel
+  // wird nie wirklich GEFAHREN, nur gestreift. Jetzt zwei Halbrampen je Kachel: von der
+  // VORHERIGEN Kachel zu DIESER (erste Haelfte), dann von DIESER zur NAECHSTEN (zweite
+  // Haelfte) - der eigene Wert sitzt an der Kachelmitte, wo beide Rampen mit Steigung
+  // null aufeinandertreffen, und haelt sich ueber den ganzen mittleren Abschnitt der
+  // Kachel nahe an ihm, statt ihn nur zu streifen. SMOOTHSTEP (3u^2 - 2u^3) je
+  // Halbrampe, damit auch an den Kachelgrenzen die Steigung null bleibt.
   function luukeLinie(pts, nrm, o) {
     const n = pts.length;
     const tiles = o.tiles || [];
@@ -2099,12 +2134,16 @@
     const smooth = (u) => u * u * (3 - 2 * u);
     for (let t = 0; t < tCount; t++) {
       const m = tab.zahl[t];
+      const hatVorherige = closed || t > 0;
       const hatNaechste = closed || t + 1 < tCount;
-      const a0 = anker[t];
-      const a1 = hatNaechste ? anker[(t + 1) % tCount] : anker[t];
+      const aVor = hatVorherige ? anker[(t - 1 + tCount) % tCount] : anker[t];
+      const aHier = anker[t];
+      const aNach = hatNaechste ? anker[(t + 1) % tCount] : anker[t];
       for (let d = 0; d < m; d++) {
-        const frac = m > 0 ? d / m : 0;
-        const wert = a0 + (a1 - a0) * smooth(frac);
+        const u = m > 0 ? (d + 0.5) / m : 0.5;
+        const wert = u < 0.5
+          ? aVor + (aHier - aVor) * smooth(u / 0.5)
+          : aHier + (aNach - aHier) * smooth((u - 0.5) / 0.5);
         alpha[at(tab.start[t] + d)] = -(wert / 100) * limit;
       }
     }
