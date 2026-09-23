@@ -177,8 +177,11 @@
       log(`Gerät ausgewählt: ${device.name} (${device.id})`, 'info');
       device.addEventListener('gattserverdisconnected', onDisconnected);
       server = await device.gatt.connect();
-      // Exactly one starter sound per successful connection.
-      playFx(fxBuffers.start[$('sound-profile').value] || fxBuffers.start.porsche, 0.85);
+      // Exactly one starter sound per successful connection. Fallback key updated to
+      // match fx.json's real car keys (p992gt3r, not the old 'porsche') - see
+      // tools/engine_fx.py, wo die Datei jetzt fuer alle Autos statt nur drei alte
+      // Namen erzeugt wird.
+      playFx(fxBuffers.start[$('sound-profile').value] || fxBuffers.start.p992gt3r, 0.85);
       log('GATT-Server verbunden.', 'info');
       await exploreServices();
     } catch (err) {

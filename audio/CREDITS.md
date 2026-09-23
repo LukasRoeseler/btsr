@@ -25,7 +25,9 @@ neuen Faellen: gehoeren sollte - siehe der WIP-Abschnitt weiter unten):
 Sie und alle
 Effekte (Bremsenquietschen, Reifenquietschen, Crash-Varianten, Schlagschrauber,
 Tankgeraeusch, Karosseriereparatur, Motorstart) sind von Grund auf gerechnet. Es wird nichts aus einer
-Aufnahme abgespielt.
+Aufnahme abgespielt. **Eine Ausnahme**: die Zuendung des `p992gt3r`-Motorstarts
+enthaelt seit v0.7 eine echte Aufnahme, siehe der eigene Abschnitt weiter unten
+unter "Aus Pixabay-Aufnahmen geschnitten".
 
 Jeder der urspruenglichen 25 Motoren klingt seit v0.6.35 ungleichmaessiger und mechanischer als in
 seiner ersten Fassung: staerker gestreute Zuendungleichheit von Takt zu Takt
@@ -358,6 +360,26 @@ liefert.
   `pwlpl-heavy-thunderstorm-sound-effect-473418.mp3`, nach demselben Verfahren.
 
 Die unbearbeiteten Quelldateien sind nicht Teil dieses Repos.
+
+### Motorstart, echte Zuendung gespleisst mit synthetischem Motor (`p992gt3r`)
+
+BESTELLT: "Added 3 sounds from pixabay... one more sound for a car (ideally
+the porsche) but with the new and better method."
+
+- **Porsche 911 GT3 R, Zuendung** (`p992gt3r_start.ogg`) — aus
+  `freesound_community-car-engine-start-44357.mp3` (freesound community ueber
+  Pixabay, dieselbe Lizenz wie bei `horn_fart2` oben). Anders als bei
+  Corvette/Porsche oben wird hier NICHT die ganze Schleife ersetzt, sondern
+  nur der Anlasser-Teil des rein synthetischen `engine_start()`
+  (`tools/engine_fx.py`): die Aufnahme wird auf `SR=22050` resampelt, auf die
+  ersten 0,95 s zugeschnitten (gemessen per RMS-Huellkurve: Anstieg ab 0,15 s,
+  Spitze bei 0,85 s, eingeschwungen bis ~1,0 s - das trifft fast genau den
+  bestehenden `crank_end=0,95`-Wert des synthetischen Modells), beidseitig mit
+  ~60 ms linear ein-/ausgeblendet und auf Vollausschlag normalisiert. Diese
+  Aufnahme ersetzt darin nur die reine Sinuswellen-Anlasserimitation; der
+  synthetische Motor AB dem Fang (Hochjaulen, Standgas) bleibt unveraendert,
+  damit der Uebergang zum Zylinderzahl-/Zuendfolge-Modell des Porsche passt.
+  Alle anderen 26 Autos bleiben bei der reinen Sinuswellen-Anlasserimitation.
 
 ### Boxenstopp-Schleifen (`pit_wrench`, `pit_fuel`, `pit_repair`)
 

@@ -370,7 +370,7 @@
  "p992gt3r": {
   "label": "Porsche 911 GT3 R (4.2 Boxer-6, Einzeldrosseln)",
   "cylinders": 6,
-  "source": "vollst\u00e4ndig synthetisiert (Modell nach engine-sim, MIT)",
+  "source": "Motor (idle/mid/high) vollst\u00e4ndig synthetisiert (Modell nach engine-sim, MIT); Motorstart (fx.json) seit v0.7 gemischt: echte Z\u00fcndungsaufnahme + synthetischer \u00dcbergang, siehe audio/CREDITS.md",
   "crackle": 0.55,
   "turbo": false,
   "loops": {

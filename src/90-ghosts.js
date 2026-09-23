@@ -1482,7 +1482,7 @@
       if (!playerCar) setCarRole(car, 'player');
       else setCarRole(car, 'ghost');
       log(`${garageLabel(car)} verbunden (${garage.length} insgesamt).`, 'info');
-      playFx(fxBuffers.start[$('sound-profile').value] || fxBuffers.start.porsche, 0.85);
+      playFx(fxBuffers.start[$('sound-profile').value] || fxBuffers.start.p992gt3r, 0.85);
     } catch (err) {
       if (err && err.name === 'NotFoundError') log('Keine Auswahl getroffen.', 'info');
       else log('Verbinden fehlgeschlagen: ' + (err && err.message), 'err');
