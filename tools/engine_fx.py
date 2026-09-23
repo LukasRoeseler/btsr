@@ -8,10 +8,15 @@ Mostly synthetic. Two synthesis styles are used:
     acceleration demos. The circular trick cannot work there, so crank angle is integrated
     sample by sample and a pulse is placed each time a cylinder's firing angle is crossed.
 
-BESTELLT: one car's engine_start() gets a REAL recorded starter/crank instead of the sine
-"whine" every other car uses (see real_crank_from_recording() and the p992gt3r special case
-in main()) — a real ignition sample from sounds/, layered under the SAME synthesized engine
-body every other car gets. Everything else here is still synthetic, no recorded material.
+BESTELLT: an extra, directly comparable engine_start() variant for one car, using a REAL
+recorded starter/crank instead of the sine "whine" every other car uses (see
+real_crank_from_recording() and the '<key>_rec' companion entries in main()) — a real
+ignition sample from sounds/, layered under the SAME synthesized engine body every other
+car gets. It ships ALONGSIDE the plain synthetic p992gt3r, as its own selectable
+'p992gt3r_rec' sound profile, not in place of it: a user comparing them side by side
+found no audible difference in the earlier version that silently replaced p992gt3r's own
+start sound, so the two now sit next to each other for a direct A/B instead. Everything
+else here is still synthetic, no recorded material.
 
 Usage:  python engine_fx.py
 """
@@ -624,15 +629,9 @@ def main():
     meta['start'] = {}
     meta['accel'] = {}
     for key, cfg in CARS.items():
-        real_crank = None
-        if key in real_start_recordings:
-            real_crank = real_crank_from_recording(
-                os.path.join(SOUNDS, real_start_recordings[key]), crank_end=0.95)
-        sz = to_ogg(engine_start(cfg, seed=seed_for('start', key), real_crank=real_crank),
-                    '%s_start' % key)
+        sz = to_ogg(engine_start(cfg, seed=seed_for('start', key)), '%s_start' % key)
         meta['start'][key] = {'file': '%s_start.ogg' % key, 'seconds': 2.6}
-        print('%-8s start     %d KB%s' % (key, sz // 1024,
-              '  (echte Zuendung)' if real_crank is not None else ''))
+        print('%-8s start     %d KB' % (key, sz // 1024))
         x, ts, rs, ls, gs, vs = full_demo(cfg, seed=seed_for('demo', key))
         sz = to_ogg(x, '%s_demo' % key, q='5')
         ups = int(np.sum(np.diff(gs) > 0)); downs = int(np.sum(np.diff(gs) < 0))
@@ -640,6 +639,21 @@ def main():
                               'upshifts': ups, 'downshifts': downs}
         print('%-8s demo      %d KB  %.1fs  %d hoch / %d runter  0-%.1f km/h  Drehzahl %d-%d'
               % (key, sz // 1024, ts[-1], ups, downs, vs.max(), rs.min(), rs.max()))
+
+    # '<key>_rec'-Begleiteintraege: dieselbe Motorkonfiguration wie ihr synthetisches
+    # Original, aber mit einer echten Aufnahme unter der Zuendung, als EIGENES, direkt daneben
+    # waehlbares Profil in #sound-profile (audio/loops.json traegt den passenden Loop-Eintrag
+    # von Hand nach, mit denselben .ogg-Dateien wie das Original - nur die Zuendung
+    # unterscheidet sich). Nicht als Ersatz des Originals, damit ein direkter A/B-Vergleich
+    # moeglich ist statt einer stillen, schwer nachpruefbaren Aenderung.
+    for key, fname in real_start_recordings.items():
+        real_crank = real_crank_from_recording(os.path.join(SOUNDS, fname), crank_end=0.95)
+        rec_key = key + '_rec'
+        sz = to_ogg(engine_start(CARS[key], seed=seed_for('start', key), real_crank=real_crank),
+                    '%s_start' % rec_key)
+        meta['start'][rec_key] = {'file': '%s_start.ogg' % rec_key, 'seconds': 2.6}
+        print('%-8s start     %d KB  (echte Zuendung, Vergleichseintrag neben %s)'
+              % (rec_key, sz // 1024, key))
 
     # The curve data the documentation charts are drawn from, so the picture and the audio
     # come from the same simulation run.

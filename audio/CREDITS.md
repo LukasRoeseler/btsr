@@ -25,9 +25,11 @@ neuen Faellen: gehoeren sollte - siehe der WIP-Abschnitt weiter unten):
 Sie und alle
 Effekte (Bremsenquietschen, Reifenquietschen, Crash-Varianten, Schlagschrauber,
 Tankgeraeusch, Karosseriereparatur, Motorstart) sind von Grund auf gerechnet. Es wird nichts aus einer
-Aufnahme abgespielt. **Eine Ausnahme**: die Zuendung des `p992gt3r`-Motorstarts
-enthaelt seit v0.7 eine echte Aufnahme, siehe der eigene Abschnitt weiter unten
-unter "Aus Pixabay-Aufnahmen geschnitten".
+Aufnahme abgespielt. **Eine Ausnahme, als eigenes Profil und nicht als Ersatz**: seit
+v0.7 gibt es `p992gt3r_rec`, ein direkt neben dem synthetischen `p992gt3r` waehlbares
+Zweitprofil mit derselben Motorkonfiguration, dessen Zuendung eine echte Aufnahme
+enthaelt, siehe der eigene Abschnitt weiter unten unter "Aus Pixabay-Aufnahmen
+geschnitten".
 
 Jeder der urspruenglichen 25 Motoren klingt seit v0.6.35 ungleichmaessiger und mechanischer als in
 seiner ersten Fassung: staerker gestreute Zuendungleichheit von Takt zu Takt
@@ -361,16 +363,23 @@ liefert.
 
 Die unbearbeiteten Quelldateien sind nicht Teil dieses Repos.
 
-### Motorstart, echte Zuendung gespleisst mit synthetischem Motor (`p992gt3r`)
+### Motorstart, echte Zuendung als eigenes Vergleichsprofil (`p992gt3r_rec`)
 
 BESTELLT: "Added 3 sounds from pixabay... one more sound for a car (ideally
-the porsche) but with the new and better method."
+the porsche) but with the new and better method." Ein erster Versuch ersetzte
+damit still die Zuendung des normalen `p992gt3r`-Profils - Rueckmeldung danach:
+"Ich höre keinen Unterschied... Warum ist das nicht ein extra Sound direkt
+neben dem existierenden?" Seitdem bleibt `p992gt3r` unveraendert rein
+synthetisch, und die Aufnahme steht als eigenes, direkt daneben waehlbares
+Profil `p992gt3r_rec` in `#sound-profile` - derselbe Kniff wie beim
+historischen `porsche_rec` weiter unten in diesem Dokument, nur fuer die
+Zuendung statt die ganze Schleife.
 
-- **Porsche 911 GT3 R, Zuendung** (`p992gt3r_start.ogg`) — aus
+- **Porsche 911 GT3 R, Zuendung** (`p992gt3r_rec_start.ogg`) — aus
   `freesound_community-car-engine-start-44357.mp3` (freesound community ueber
   Pixabay, dieselbe Lizenz wie bei `horn_fart2` oben). Anders als bei
-  Corvette/Porsche oben wird hier NICHT die ganze Schleife ersetzt, sondern
-  nur der Anlasser-Teil des rein synthetischen `engine_start()`
+  Corvette/Porsche weiter unten wird hier NICHT die ganze Schleife ersetzt,
+  sondern nur der Anlasser-Teil des rein synthetischen `engine_start()`
   (`tools/engine_fx.py`): die Aufnahme wird auf `SR=22050` resampelt, auf die
   ersten 0,95 s zugeschnitten (gemessen per RMS-Huellkurve: Anstieg ab 0,15 s,
   Spitze bei 0,85 s, eingeschwungen bis ~1,0 s - das trifft fast genau den
@@ -379,6 +388,9 @@ the porsche) but with the new and better method."
   Aufnahme ersetzt darin nur die reine Sinuswellen-Anlasserimitation; der
   synthetische Motor AB dem Fang (Hochjaulen, Standgas) bleibt unveraendert,
   damit der Uebergang zum Zylinderzahl-/Zuendfolge-Modell des Porsche passt.
+  Die uebrigen Loops (`idle`/`mid`/`high`/`over`/`low`) sind mit dem
+  normalen `p992gt3r`-Profil IDENTISCH (dieselben `.ogg`-Dateien, doppelt im
+  Manifest verweisen) - nur die Zuendung unterscheidet die beiden Profile.
   Alle anderen 26 Autos bleiben bei der reinen Sinuswellen-Anlasserimitation.
 
 ### Boxenstopp-Schleifen (`pit_wrench`, `pit_fuel`, `pit_repair`)

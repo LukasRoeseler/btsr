@@ -2713,9 +2713,16 @@
       for (const k of menue) if (SAMPLE_CARS.indexOf(k) < 0) schlecht.push(k + ' fehlt in SAMPLE_CARS');
       for (const k of SAMPLE_CARS) if (menue.indexOf(k) < 0) schlecht.push(k + ' steht nur in SAMPLE_CARS');
     }
-    // Und die Dokutabelle: so viele Motorzeilen wie Schleifen. Sie ist von Hand gepflegt,
-    // also ist das die einzige Stelle, an der ein Vergessen auffaellt.
-    const schleifen = imManifest.reduce((a, k) => a + Object.keys(man[k].loops).length, 0);
+    // Und die Dokutabelle: so viele Motorzeilen wie Schleifen-DATEIEN. Nach Dateien gezaehlt,
+    // nicht nach Manifest-Eintraegen, seit p992gt3r_rec (v0.7): ein Vergleichsprofil, das
+    // dieselben fuenf .ogg-Dateien wie sein synthetisches Original zweitverwendet, statt
+    // eigene zu haben - ein Motorschluessel mehr im Manifest ohne eine einzige neue Datei.
+    // Nach Manifest-EINTRAEGEN gezaehlt haette das jedes Mal einen Fehlalarm gegeben, den ein
+    // zweites Vergleichsprofil (mit denselben Dateien) nie wirklich war. Sie ist von Hand
+    // gepflegt, also ist das die einzige Stelle, an der ein Vergessen auffaellt.
+    const dateien = new Set();
+    for (const k of imManifest) for (const b of Object.keys(man[k].loops)) dateien.add(man[k].loops[b].file);
+    const schleifen = dateien.size;
     const zeilen = document.querySelectorAll('.snd-row audio[src*="_idle.ogg"], '
       + '.snd-row audio[src*="_low.ogg"], .snd-row audio[src*="_low2.ogg"], '
       + '.snd-row audio[src*="_low3.ogg"], .snd-row audio[src*="_mid.ogg"], '
