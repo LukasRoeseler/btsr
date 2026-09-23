@@ -1447,6 +1447,10 @@
     // Die Versuchsgrenze aus 60-track.js, damit ein Test sie nicht als eigene Zahl
     // abschreiben muss - zwei Orte fuer dieselbe Zahl laufen sonst auseinander.
     garageScanVersucheMax: GARAGE_SCAN_VERSUCHE_MAX,
+    // Die rohe Ablage selbst, EIN const-Objekt (siehe dort) - Mutationen daran (z. B.
+    // .aktiv/.car von Hand setzen, ohne den echten garageScanStart() durchlaufen zu
+    // muessen) wirken direkt, weil hier keine Kopie herausgeht.
+    garageScan,
 
     // ---- GARAGENSCAN: SCHLIESST DIE RUNDE, UND WENN NICHT, WIRD ES NOCHMAL VERSUCHT ---
     //
@@ -4558,6 +4562,52 @@
         if (merkAssist !== null) fahrhilfeModus = merkAssist;
         flagState = merkFlag;
         raceFormationLap = merkFormation;
+        lineCache = null;
+      }
+    },
+
+    // ---- STRECKENSCAN: modeBytes MUESSEN AUCH OHNE BEKANNTE STRECKE HINAUSGEHEN --------
+    //
+    // BESTELLT: "Wenn ich Strecke scannen druecke, muss sich mein Auto wie ein Ghost mit
+    // vorgeschriebener Querlage = 0 verhalten." garageScan.aktiv laeuft AUSSERHALB von
+    // driverAssistAktiv() (ein Scan betrifft nur ein Auto, siehe autopilot() in
+    // 50-drive.js) - spielerOrtProbe() daneben prueft genau DIESEN Pfad nicht, weil sie
+    // immer eine volle, bekannte Strecke einsetzt (ghostLookahead() faende dort also
+    // ohnehin einen Vorausblick, scan hin oder her). Diese Sonde testet den eigentlich
+    // kritischen Fall: waehrend eines Scans ist die Strecke per Definition NICHT bekannt
+    // (currentTrackTiles leer), und trotzdem muessen modeBytes hinausgehen (neutraler
+    // Vorausblick, siehe die Begruendung in spielerOrtTick()).
+    garageScanRailProbe() {
+      const merkPlayer = playerCar;
+      const merkTiles = currentTrackTiles;
+      const merkMode = trackMode;
+      const merkAssist = (typeof fahrhilfeModus !== 'undefined') ? fahrhilfeModus : null;
+      const merkAktiv = garageScan.aktiv, merkCar = garageScan.car;
+      try {
+        currentTrackTiles = [];   // UNBEKANNTE Strecke, wie waehrend eines echten Scans
+        lineCache = null;
+        trackMode = 'on';
+        fahrhilfeModus = 'aus';   // Fahrhilfe AUS - der Scan allein muss genuegen
+        playerCar = { role: 'steuern', alias: 'Fahrer', tileCount: 0, tileCode: 0x02,
+                      modeBytes: null, ghost: null };
+        garageScan.aktiv = true;
+        garageScan.car = playerCar;
+        playerCar.tileCount = 1;
+        playerCar.tileCode = 0x02;
+        spielerOrtTick();
+        const mitScan = playerCar.modeBytes ? Object.assign({}, playerCar.modeBytes) : null;
+        garageScan.aktiv = false;
+        garageScan.car = null;
+        spielerOrtTick();
+        const ohneScan = playerCar.modeBytes;
+        return { mitScan, ohneScan };
+      } finally {
+        playerCar = merkPlayer;
+        currentTrackTiles = merkTiles;
+        trackMode = merkMode;
+        if (merkAssist !== null) fahrhilfeModus = merkAssist;
+        garageScan.aktiv = merkAktiv;
+        garageScan.car = merkCar;
         lineCache = null;
       }
     },

@@ -4654,6 +4654,47 @@
     // vorhandene Aufruf unveraendert gueltig bleibt.
     const c = auto || playerCar;
     if (!c) return;
+    // ---- STRECKENSCAN: VOR DEM GATE, weil die Strecke waehrend eines Scans per
+    // Definition NICHT bekannt ist ---------------------------------------------------
+    //
+    // BESTELLT: "Wenn ich Strecke scannen druecke, muss sich mein Auto wie ein Ghost mit
+    // vorgeschriebener Querlage = 0 verhalten. Aktuell faehrt das Auto einfach geradeaus."
+    //
+    // GEFUNDEN: garageScan.aktiv laeuft AUSSERHALB von autopilotGrund()/
+    // driverAssistAktiv() (ein Scan betrifft genau EIN Auto, eine globale Bedingung
+    // wuerde das andere mit hineinziehen, siehe autopilot() in 50-drive.js - dort sendet
+    // sie bereits steer:0). Byte 7 = 0 OHNE modeBytes liest das Auto aber als
+    // RADSTELLUNG, nicht als "Bahnmitte" (siehe die Warnung bei fahrhilfeVollGilt()) -
+    // das allein waere schon der gemeldete Fehler. Der zweite, tiefere Grund: currentTrack-
+    // Tiles bleibt waehrend des GANZEN Scans leer (garageScanTick() in 60-track.js
+    // schreibt sie erst in dem einen Takt, in dem die Runde als geschlossen erkannt und
+    // der Scan sofort beendet wird, siehe dort) - das Gate zwei Zeilen weiter unten
+    // (currentTrackTiles.length < 3) haette also JEDEN modeBytes-Versuch fuer die
+    // GESAMTE Scandauer abgefangen, waere dieser Zweig nach dem Gate geblieben.
+    //
+    // Deshalb HIER, vor dem Gate, und OHNE ghostLookahead() (das braucht genau die
+    // Kachelkenntnis, die hier fehlt): ein neutraler Vorausblick (Gerade auf allen drei
+    // Feldern). Die Bytes 10/15 schalten die Selbstzentrierung ein, 16-18 sind nur die
+    // Ansage "was als naechstes kommt" - ohne bekannte Strecke ist "Gerade" die
+    // sicherste Annahme (keine Vorausbremsung vor einer Kurve, aber die Bahnmitte stimmt
+    // trotzdem), keine Ansage waere schlimmer als eine neutrale.
+    const scanAktiv = typeof garageScan !== 'undefined' && garageScan.aktiv
+                     && garageScan.car === c;
+    if (scanAktiv) {
+      const wer = (typeof playerCar2 !== 'undefined' && c === playerCar2) ? 2 : 1;
+      c.modeBytes = (trackMode === 'on' && !abseitsJetztFuer(wer))
+        ? { 10: AUTO_MODE.b10, 15: AUTO_MODE.b15, 16: 0x02, 17: 0x02, 18: 0x02 }
+        : null;
+    } else if (!currentTrackTiles || currentTrackTiles.length < 3) {
+      // KEIN Scan, und die Strecke ist (noch) nicht bekannt genug fuer den normalen
+      // Zweig unten - das Gate zwei Zeilen weiter unten wuerde ihn ohnehin nie
+      // erreichen, liesse dabei aber einen zuvor gesetzten modeBytes-Wert stehen (zum
+      // Beispiel von einem gerade abgebrochenen Scan, dessen Strecke nie geschlossen
+      // wurde) - das Auto bliebe dann dauerhaft im Scan-Modus haengen, obwohl der
+      // Nutzer die Kontrolle zurueckhaben sollte. Ausdruecklich geloescht statt
+      // stillschweigend liegengelassen.
+      c.modeBytes = null;
+    }
     const g = spielerOrt(c);
     if (!g || !currentTrackTiles || currentTrackTiles.length < 3) return;
     const now = Date.now();

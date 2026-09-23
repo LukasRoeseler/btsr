@@ -8685,6 +8685,46 @@
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
+  // ---- Streckenscan: Querlage 0 auch OHNE bekannte Strecke, und sauber abgeraeumt ----
+  //
+  // BESTELLT: "Wenn ich Strecke scannen druecke, muss sich mein Auto wie ein Ghost mit
+  // vorgeschriebener Querlage = 0 verhalten. Aktuell faehrt das Auto einfach geradeaus.
+  // Nach einem erfolgreichen Scan [...] muss es anhalten und ich kriege die Kontrolle
+  // zurueck."
+  //
+  // GEFUNDEN: garageScan.aktiv laeuft ausserhalb von driverAssistAktiv() (ein Scan
+  // betrifft nur ein Auto), und currentTrackTiles bleibt waehrend des GANZEN Scans leer
+  // (garageScanTick() fuellt sie erst im Moment des Erfolgs) - das Gate in
+  // spielerOrtTick() (currentTrackTiles.length < 3) haette modeBytes fuer die gesamte
+  // Scandauer verhindert, waere die Bestellung nach dem Gate umgesetzt worden statt
+  // davor. Zweiter Fund beim Testen: OHNE den zweiten Zweig unten haette ein
+  // abgebrochener Scan (Strecke bleibt unbekannt) einen zuvor gesetzten modeBytes-Wert
+  // stehen lassen - das Auto waere im Scan-Modus haengen geblieben.
+  stAdd('Streckenscan: Querlage 0 ohne bekannte Strecke, sauber abgeraeumt', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.garageScanRailProbe) {
+      return { skip: true, mass: 'garageScanRailProbe nicht vorhanden' };
+    }
+    const r = OMEGA_TEST.garageScanRailProbe();
+    const fehler = [];
+    if (!r.mitScan) fehler.push('waehrend des Scans keine modeBytes - faehrt geradeaus');
+    else {
+      if (r.mitScan[16] !== 0x02 || r.mitScan[17] !== 0x02 || r.mitScan[18] !== 0x02) {
+        fehler.push('Vorausblick waehrend des Scans nicht neutral: '
+                    + JSON.stringify(r.mitScan));
+      }
+      if (r.mitScan[10] === undefined || r.mitScan[15] === undefined) {
+        fehler.push('Selbstzentrierung (Byte 10/15) fehlt waehrend des Scans');
+      }
+    }
+    if (r.ohneScan) {
+      fehler.push('nach Scan-Ende haengen noch modeBytes: ' + JSON.stringify(r.ohneScan));
+    }
+    return { ok: !fehler.length,
+             mass: 'mit Scan: ' + JSON.stringify(r.mitScan) + ' | danach: '
+                 + JSON.stringify(r.ohneScan)
+                 + (fehler.length ? ' || ' + fehler.join('; ') : '') };
+  });
+
   // ---- Fahrhilfe: drei Modi, und der Standard bleibt der Standard ----
   //
   // BESTELLT: "Bei Einstellungen -> Fahrgefuehl -> Fahrhilfe: mach 3 Modi draus: aus
