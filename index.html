@@ -3166,7 +3166,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.7.50</span></span>
+        <span class="foot-ver">v<span id="app-version">0.7.51</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -20896,12 +20896,22 @@
   // der Scheitel einer Haarnadel) war damit nur fuer einen einzigen Abtastpunkt am
   // Kachelanfang wahr und danach sofort wieder auf dem Weg zum naechsten Wert. Bei einer
   // langen Kachel (eine Haarnadel hat 49 statt 14 Abtastpunkte) heisst das: der Scheitel
-  // wird nie wirklich GEFAHREN, nur gestreift. Jetzt zwei Halbrampen je Kachel: von der
-  // VORHERIGEN Kachel zu DIESER (erste Haelfte), dann von DIESER zur NAECHSTEN (zweite
-  // Haelfte) - der eigene Wert sitzt an der Kachelmitte, wo beide Rampen mit Steigung
-  // null aufeinandertreffen, und haelt sich ueber den ganzen mittleren Abschnitt der
-  // Kachel nahe an ihm, statt ihn nur zu streifen. SMOOTHSTEP (3u^2 - 2u^3) je
-  // Halbrampe, damit auch an den Kachelgrenzen die Steigung null bleibt.
+  // wird nie wirklich GEFAHREN, nur gestreift. Jetzt zwei Halbrampen je Kachel, von der
+  // eigenen Mitte zu den GRENZEN (nicht zu den fremden Mitten) - der eigene Wert sitzt an
+  // der Kachelmitte, jede Grenze zur Nachbarkachel am MITTELWERT der beiden angrenzenden
+  // Kachelwerte.
+  //
+  // GEFUNDEN BEIM BAUEN, und zwar an einem echten Sprung, nicht nur einem Verdacht: eine
+  // erste Fassung liess die zweite Haelfte einer Kachel bis zum vollen Wert der NAECHSTEN
+  // Kachel rampen (und die erste Haelfte der naechsten Kachel wieder zurueck bis zum
+  // vollen Wert DIESER Kachel) - an der gemeinsamen Grenze trafen sich damit zwei
+  // GEGENSAETZLICHE Ziele (der Wert der jeweils ANDEREN Kachel) statt desselben Werts,
+  // und alpha sprang dort um bis zu 194 % der gesamten Fahrgrenze in einem einzigen
+  // Abtastschritt (gemessen an SR3GLR2GR2G2, Kachel 1/2: Sprung 16,75 bei einer Grenze
+  // von 8,63). Der Bericht dazu: "die luuke linie ist nun voellig wirr". Jetzt endet jede
+  // Halbrampe am MITTELWERT der eigenen und der Nachbarkachel - denselben Wert, den die
+  // Nachbarkachel an IHRER Seite derselben Grenze auch ansteuert. SMOOTHSTEP (3u^2 - 2u^3)
+  // je Halbrampe, Steigung null an Kachelmitte UND Kachelgrenze.
   function luukeLinie(pts, nrm, o) {
     const n = pts.length;
     const tiles = o.tiles || [];
@@ -20919,6 +20929,7 @@
     const anker = luukeLinieAnker(tiles, closed);
     const at = (i) => closed ? ((i % n) + n) % n : Math.max(0, Math.min(n - 1, i));
     const smooth = (u) => u * u * (3 - 2 * u);
+    let grenzeStart = 0;
     for (let t = 0; t < tCount; t++) {
       const m = tab.zahl[t];
       const hatVorherige = closed || t > 0;
@@ -20926,14 +20937,31 @@
       const aVor = hatVorherige ? anker[(t - 1 + tCount) % tCount] : anker[t];
       const aHier = anker[t];
       const aNach = hatNaechste ? anker[(t + 1) % tCount] : anker[t];
+      // Grenzwerte: der MITTELWERT zu jeder Nachbarkachel, nicht deren voller Wert -
+      // dieselbe Zahl, die die Nachbarkachel an ihrer Seite derselben Grenze ansteuert.
+      const grenzeVorn = (aVor + aHier) / 2;
+      const grenzeHinten = (aHier + aNach) / 2;
+      if (t === 0) grenzeStart = grenzeVorn;
       for (let d = 0; d < m; d++) {
         const u = m > 0 ? (d + 0.5) / m : 0.5;
         const wert = u < 0.5
-          ? aVor + (aHier - aVor) * smooth(u / 0.5)
-          : aHier + (aNach - aHier) * smooth((u - 0.5) / 0.5);
+          ? grenzeVorn + (aHier - grenzeVorn) * smooth(u / 0.5)
+          : aHier + (grenzeHinten - aHier) * smooth((u - 0.5) / 0.5);
         alpha[at(tab.start[t] + d)] = -(wert / 100) * limit;
       }
     }
+    // DER VORPUNKT (tile: -1, trackCenterline() haengt ihn vor Kachel 0 an, siehe dort)
+    // bekommt NIE einen Anker aus der obigen Schleife - trackKachelTabelle() ueberspringt
+    // ihn ausdruecklich. alpha[0] blieb dadurch auf dem Fuellwert 0 stehen, waehrend
+    // alpha[1] (der erste echte Punkt der Start-Kachel) jetzt einen echten Ankerwert
+    // tragen kann, seit Start ihren Anker aus den Nachbarn mittelt statt fest 0 zu sein.
+    // Gemessen an SR4G/SR2G2RG2/SR3GLR2GR2G2: genau dort sprang alpha um den VOLLEN
+    // Lenkausschlag zwischen den ersten zwei Punkten - eine Nadel exakt auf der Start/
+    // Ziel-Linie, spuerbar als Ruck genau dort. pts[0] liegt geometrisch unmittelbar vor
+    // pts[1] (ein Abtastschritt Abstand), bekommt also densselben Grenzwert, den Kachel 0
+    // an ihrem eigenen Anfang ansteuert (grenzeStart) - keinen Sprung mehr, weil beide
+    // Punkte dann zur selben Grenze zeigen.
+    if (n > 0) alpha[0] = -(grenzeStart / 100) * limit;
     const bahn = pts.map((p, i) => [p.x + nrm[i].x * alpha[i], p.y + nrm[i].y * alpha[i]]);
     const prof = lapTimeOf(bahn, closed, o);
     return { alpha, limit, span: Math.max.apply(null, alpha.map(Math.abs)),
