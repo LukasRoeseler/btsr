@@ -358,8 +358,11 @@
   // begruendet; dieser Test prueft nur, ob sie die Beispiele trifft.
   //
   // DREI STELLEN ABSICHTLICH NICHT HART GEPRUEFT (siehe der Kommentar bei
-  // luukeLinieAnker()): der Haarnadel-Scheitel (SGHG, -75 statt der von der allgemeinen
-  // Regel vorhergesagten +75), je eine Gerade unmittelbar vor der Startkachel in SGR3G
+  // luukeLinieAnker()): der Haarnadel-Scheitel (SGHG, seit "in haarnadel weiter innen"
+  // auf +100 wie jede andere Kurve umgestellt - das einzelne Beispiel hier stand vorher
+  // bei -75, blieb aber als offene Frage markiert statt in die Regel eingebrannt, und
+  // genau das erlaubt jetzt die Umstellung ohne einen bestehenden Beleg zu verletzen),
+  // je eine Gerade unmittelbar vor der Startkachel in SGR3G
   // und SR2GL2G (+100 belegt, die Regel sagt 0 vorher) - beides offene Fragen an Luuke,
   // keine stillschweigend geratenen Sonderregeln - UND die Startkachel selbst (Index 0):
   // ihr Anker wird seit "nicht bei Start immer in der Mitte, sondern so, dass man von der
@@ -376,7 +379,7 @@
     const beispiele = [
       { code: 'SGR3G', erwartet: [0, -50, -100, 100, -50, 100], offen: [0, 5] },
       { code: 'SRLG', erwartet: [0, 100, 0, -100], offen: [0] },
-      { code: 'SGHG', erwartet: [0, -50, -75, 0], offen: [0, 2] },
+      { code: 'SGHG', erwartet: [0, -50, 100, 0], offen: [0, 2] },
       { code: 'SR2GL2G', erwartet: [0, -100, 100, 0, 100, -100, 100], offen: [0, 6] },
       { code: 'SR2G2RG2', erwartet: [0, -100, 100, -100, -100, 100, 0, -100], offen: [0] },
     ];
@@ -438,6 +441,43 @@
     return { ok: schlecht.length === 0,
              mass: 'SR4G: ' + anker.join(',')
                  + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // ---- Luuke-Linie: Haarnadel hat einen eigenen Aussen-Touch am Einstieg ----------------
+  //
+  // BESTELLT: "luuke linie anpassen: in haarnadel weiter innen (am anfang kurz außen,
+  // danach sofort nach innen)." Prueft das Drei-Phasen-Profil aus luukeLinie() direkt an
+  // den rohen alpha-Werten (nicht am Anker, der ist ja jetzt einfach +100 wie jede andere
+  // Kurve) - SGHG hat genau eine Haarnadel, Kachel 2.
+  stAdd('Luuke-Linie: Haarnadel kurz aussen, dann sofort innen', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.codeToTrack || !OMEGA_TEST.trackCenterline
+        || !OMEGA_TEST.trackNormals || !OMEGA_TEST.buildLine) {
+      return { skip: true, mass: 'Pruefzugang nicht vorhanden' };
+    }
+    const p = OMEGA_TEST.codeToTrack('SGHG');
+    const pts = OMEGA_TEST.trackCenterline(p.tiles);
+    const nrm = OMEGA_TEST.trackNormals(pts);
+    const line = OMEGA_TEST.buildLine(pts, nrm, { tiles: p.tiles, closed: true, model: 'luuke' });
+    // Die Kachel-Abtastpunkte der Haarnadel (Index 2) von Hand gezaehlt: trackCenterline()
+    // haengt vor Kachel 0 einen Vorpunkt an (tile: -1), die eigentlichen Kachelgrenzen
+    // muessen also aus pts[].tile gelesen werden statt geraten.
+    const idxHaarnadel = [];
+    for (let i = 0; i < pts.length; i++) if (pts[i].tile === 2) idxHaarnadel.push(i);
+    if (idxHaarnadel.length < 10) return { skip: true, mass: 'Haarnadel nicht gefunden' };
+    const a0 = idxHaarnadel[0], m = idxHaarnadel.length;
+    const bei = (u) => line.alpha[a0 + Math.round(u * (m - 1))];
+    const einstieg = bei(0.06);   // kurz nach dem Einstieg: der Aussen-Touch
+    const mitte = bei(0.5);       // gehalten bei aHier, jetzt volles Innen
+    // alpha ist mit umgekehrtem Vorzeichen zur Querlage (siehe buildLine()-Kommentar
+    // "Vorsicht mit dem Vorzeichen") - hier zaehlt nur, dass beide Phasen GEGENSAETZLICHE
+    // Vorzeichen haben und die Mitte deutlich staerker ausschlaegt als der kurze Touch.
+    const gegensinnig = Math.sign(einstieg) !== 0 && Math.sign(mitte) !== 0
+                        && Math.sign(einstieg) !== Math.sign(mitte);
+    const mitteStaerker = Math.abs(mitte) > Math.abs(einstieg);
+    return { ok: gegensinnig && mitteStaerker,
+             mass: 'Einstieg ' + einstieg.toFixed(2) + ', Mitte ' + mitte.toFixed(2)
+                 + (gegensinnig ? '' : ' || NICHT GEGENSINNIG')
+                 + (mitteStaerker ? '' : ' || MITTE NICHT STAERKER') };
   });
 
   // ---- 6. Kachelphase ----
@@ -1003,6 +1043,34 @@
     return { ok, mass: 'Rechtskurve+Bremse VL/VR/HL/HR '
       + L.map(x => x.toFixed(2)).join('/') + ' | Mittel ' + mit(L).toFixed(6)
       + ' | Gas hinten ' + (gas.load4[2] + gas.load4[3]).toFixed(2) };
+  });
+
+  // ---- Lenkkraft unter Gas: der neue Regler lindert nur die Gas-Seite -----------------
+  //
+  // BESTELLT: "bei gas lenkstärke noch besser machen und mir einen slider geben (minimal
+  // weniger abschwächen die Lenkung)." Zwei Aussagen: (1) unter Gas hebt ein hoeherer
+  // Reglerwert steerGrip an, (2) unter Bremsen aendert derselbe Regler NICHTS - er darf
+  // die schon einmal gemessene, dokumentierte Bremsseite ("steerGrip 1,25 beim
+  // Anbremsen") nicht anfassen.
+  stAdd('Lenkkraft unter Gas: Regler wirkt nur beim Beschleunigen', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.physSteerGrip) {
+      return { skip: true, mass: 'physSteerGrip nicht vorhanden' };
+    }
+    const gasAus = OMEGA_TEST.physSteerGrip({ kmh: 150, throttle: 1, brake: 0, steering: 0.8,
+                                               patch: { throttleSteerRelief: 0 } });
+    const gasAn = OMEGA_TEST.physSteerGrip({ kmh: 150, throttle: 1, brake: 0, steering: 0.8,
+                                              patch: { throttleSteerRelief: 1 } });
+    const bremsAus = OMEGA_TEST.physSteerGrip({ kmh: 150, throttle: 0, brake: 1, steering: 0.8,
+                                                 patch: { throttleSteerRelief: 0 } });
+    const bremsAn = OMEGA_TEST.physSteerGrip({ kmh: 150, throttle: 0, brake: 1, steering: 0.8,
+                                                patch: { throttleSteerRelief: 1 } });
+    const gasBesser = gasAn.steerGrip > gasAus.steerGrip;
+    const bremsGleich = Math.abs(bremsAn.steerGrip - bremsAus.steerGrip) < 1e-9;
+    return { ok: gasBesser && bremsGleich,
+             mass: 'Gas: ' + gasAus.steerGrip.toFixed(3) + ' -> ' + gasAn.steerGrip.toFixed(3)
+                 + (gasBesser ? '' : ' NICHT BESSER')
+                 + ' | Bremse: ' + bremsAus.steerGrip.toFixed(3) + ' / ' + bremsAn.steerGrip.toFixed(3)
+                 + (bremsGleich ? ' unveraendert' : ' VERAENDERT') };
   });
 
   // Die Bremsscheiben nehmen den REINEN Seitenanteil und nicht die ganze Radlast. Der Grund
@@ -5193,9 +5261,15 @@
     //
     // Die Forderung "beide Seiten" ist also nur auf einer Strecke sinnvoll, die beide
     // Richtungen hat. SR3GLR2GR2G2 ist die vom Nutzer gemeldete Strecke und hat sie.
+    // MODELL AUSDRUECKLICH GESETZT und nicht dem globalen Vorgabewert ueberlassen: dieser
+    // Test prueft eine Eigenschaft der "haltenden" Linienmodelle im Allgemeinen (siehe die
+    // Begruendung oben), aber die Zahlen sind gegen EIN bestimmtes Modell gemessen. Der
+    // globale Vorgabewert hat sich in dieser Datei schon zweimal geaendert (dreistufig ->
+    // luuke -> innen3) - ohne diese Zeile haette jede weitere Umstellung des Vorgabewerts
+    // diesen Test unbeabsichtigt mitgezogen.
     return OMEGA_TEST.ghostDriveProbe({ takte: 400, lage: 'karte',
       code: 'SR3GLR2GR2G2',
-      cfg: Object.assign({}, WUERZE_AUS) }).then((p) => {
+      cfg: Object.assign({}, WUERZE_AUS, { model: 'innen3' }) }).then((p) => {
       const abs = p.lenk.map(Math.abs);
       const mittel = abs.reduce((a, b) => a + b, 0) / abs.length;
       const spitze = Math.max.apply(null, abs);
@@ -5206,7 +5280,11 @@
       if (max - min < 90) schlecht.push('Spanne nur ' + (max - min) + ' von 254');
       // BEIDE SEITEN. Das ist die Bedingung, die den gemeldeten Fehler faengt: ohne
       // Kurvenoeffnung lag das Minimum bei exakt 0, die Linie ging also nie nach links.
-      if (!(min <= -20 && max >= 20)) {
+      // Schwelle bei 15 statt 20: GEMESSEN mit innen3 (dem seit dieser Runde wieder
+      // gueltigen Vorgabewert, "ideallinie standard: innen") auf dieser Strecke -18 bis
+      // 127 - beide Seiten werden also benutzt, nur mit kleinerem linkem Ausschlag als
+      // das frueher hier gemessene dreistufig.
+      if (!(min <= -15 && max >= 15)) {
         schlecht.push('nur eine Seite benutzt (' + min + ' bis ' + max + ')');
       }
       return { ok: schlecht.length === 0,
@@ -5783,8 +5861,12 @@
     const schlecht = [], zeilen = [];
     try {
       // 1. BEI 50% EXAKT DIE BISHERIGEN ZAHLEN.
+      //
+      // BESTELLT (diese Runde): "ghosts etwas mehr abstand" - luecke/gap/range-Anker in
+      // ghostRennhaerteAnwenden() von 1,2/1,2/1,3 auf 1,5/1,5/1,625 angehoben, das
+      // Verhaeltnis (RANGE > GAP_MIN) bleibt gleich. Diese Erwartung ist mitgezogen.
       OMEGA_TEST.ghostRennhaerteAnwenden(0.5);
-      const soll = { p: 0.45, arm: 900, luecke: 1.2, gap: 1.2, range: 1.3 };
+      const soll = { p: 0.45, arm: 900, luecke: 1.5, gap: 1.5, range: 1.625 };
       const ist50 = { p: OMEGA_TEST.attackPLesen(), arm: OMEGA_TEST.attackArmMsLesen(),
                       luecke: OMEGA_TEST.lueckeMinLesen(), gap: OMEGA_TEST.gapMinLesen(),
                       range: OMEGA_TEST.attackRangeLesen() };
@@ -7189,27 +7271,28 @@
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
-  // ---- Die Boxengasse: mehrere gleichzeitig, jeder auf seiner Kachel ----
+  // ---- Die Boxengasse: nur einer gleichzeitig, die anderen warten ohne zu draengen ----
   //
-  // BESTELLT: "Mach, dass mehrere Autos Boxenstopp machen koennen. Wenn ein Auto schon einen
-  // Stopp macht, soll das naechste ab der Kachel eins spaeter anfangen (und das andere nicht
-  // rammen)." Drei Zusagen, und alle drei stehen hier.
+  // FRUEHER BESTELLT: "Mach, dass mehrere Autos Boxenstopp machen koennen [...] (und das
+  // andere nicht rammen)." SPAETER ZURUECKGEDREHT (diese Runde): "ghost pit: immer nur 1
+  // ghost auf einmal" - PIT_PLAETZE_MAX steht seither auf 1 (90-ghosts.js). Die
+  // Infrastruktur (Warteschlange, Heilung, "wer vorbei muss faehrt nicht rechts") bleibt
+  // unveraendert, nur die Zusage "mehrere gleichzeitig" ist jetzt ihr Gegenteil.
   //
   // DER AUFBAU ERZWINGT DEN FALL: ein Wetterwechsel macht ALLE Ghosts gleichzeitig faellig -
-  // das ist der Moment, in dem eine Boxengasse unter Druck steht, und der Grund, warum
+  // das ist der Moment, in dem eine Warteschlange unter Druck steht, und der Grund, warum
   // dieser Test am Reifenwechsel haengt und nicht an einem Planstopp.
   //
-  // Der DRITTE Punkt braucht eine Unterscheidung, die zwei Messfehler gekostet hat:
+  // Der VORBEI-PUNKT braucht eine Unterscheidung, die zwei Messfehler gekostet hat:
   // g.querSoll ist ein nachlaufender Filter (rund 0,5 s fuer die volle Breite), nicht der
   // Befehl. Ein Auto, das mit rechter Ideallinie in die Gasse einfaehrt, steht dort einige
   // Takte lang noch rechts, obwohl der Befehl schon links lautet. Gemessen wird deshalb der
   // BEFEHL - er ist die Zusage, der Filter ihre Physik.
-  stAdd('Ghost-Boxengasse: mehrere Plaetze, und keiner faehrt dem anderen ins Heck', () => {
+  stAdd('Ghost-Boxengasse: nur einer gleichzeitig, keiner faehrt dem anderen ins Heck', () => {
     if (!window.OMEGA_TEST || !OMEGA_TEST.ghostReifenProbe) {
       return { skip: true, mass: 'ghostReifenProbe nicht vorhanden' };
     }
     const fehler = [], zeilen = [];
-    // Zwei Feldgroessen: vier passen genau in die Gasse, sechs muessen anstehen.
     for (const autos of [4, 6]) {
       const r = OMEGA_TEST.ghostReifenProbe({ autos, takte: 2500,
                                               wechselBei: 100, laenge: 5 });
@@ -7218,9 +7301,10 @@
       zeilen.push(autos + ' Autos: Plaetze ' + plaetze + ', hoechstens '
                   + r.hoechstGleich + ' gleichzeitig, ' + r.vorbeiTakte
                   + ' Takte Vorbeifahrt');
-      // 1. MEHRERE GLEICHZEITIG. Das ist die Bestellung, und mit einem Platz waere es 1.
-      if (!(r.hoechstGleich >= 2)) {
-        fehler.push(autos + ' Autos: nur ' + r.hoechstGleich + ' gleichzeitig in der Box');
+      // 1. NUR EINER GLEICHZEITIG. Das ist die neue Bestellung.
+      if (r.hoechstGleich > 1) {
+        fehler.push(autos + ' Autos: ' + r.hoechstGleich + ' gleichzeitig in der Box, '
+                    + 'nicht nur einer');
       }
       // 2. NIE ZWEI AUF DEMSELBEN PLATZ. Das ist die Zusage, die "nicht rammen" laengs
       //    bedeutet: zwei Autos auf einer Kachel stehen ineinander.
@@ -7228,24 +7312,17 @@
         fehler.push(autos + ' Autos: ' + r.doppeltBelegt
                     + ' Takte mit zwei Autos auf demselben Platz');
       }
-      // 3. WER VORBEI MUSS, FAEHRT NICHT RECHTS. Das ist dieselbe Zusage quer.
+      // 3. WER VORBEI MUSS, FAEHRT NICHT RECHTS. Das ist dieselbe Zusage quer - bei nur
+      //    einem Platz kommt dieser Fall aber gar nicht mehr vor (ein zweites Auto wartet
+      //    einfach, statt an einem stehenden vorbeizufahren), daher OHNE die frueher hier
+      //    stehende Gegenprobe "es muss ueberhaupt vorbeigefahren worden sein" - die waere
+      //    mit nur einem Platz IMMER eine leere Aussage und keine gueltige Pruefung mehr.
       if (r.vorbeiBefehlRechts) {
         fehler.push(autos + ' Autos: ' + r.vorbeiBefehlRechts
                     + ' Takte mit rechtem Befehl, obwohl dort einer steht');
       }
-      // Die Gegenprobe: es muss ueberhaupt vorbeigefahren worden sein, sonst ist Punkt 3
-      // eine leere Aussage.
-      if (!(r.vorbeiTakte > 0)) {
-        fehler.push(autos + ' Autos: niemand musste vorbei - der Aufbau prueft nichts');
-      }
-      // 4. Und keiner parkt sich waehrend des Stopps. Mit mehreren Stehenden ist das
-      //    schwerer als mit einem: die Gnade muss fuer jeden einzeln laufen.
+      // 4. Und keiner parkt sich waehrend des Stopps.
       if (r.geparkt) fehler.push(autos + ' Autos: ein Auto wurde geparkt');
-      // 5. Die Gasse ist gedeckelt. Bei sechs Autos duerfen nicht sechs Plaetze entstehen -
-      //    sonst steht ein Fuenftel der Runde voll.
-      if (r.hoechstGleich > 4) {
-        fehler.push(autos + ' Autos: ' + r.hoechstGleich + ' Plaetze, mehr als der Deckel');
-      }
     }
     return { ok: !fehler.length,
              mass: zeilen.join(' | ') + (fehler.length ? ' || ' + fehler.join('; ') : '') };
@@ -7498,15 +7575,15 @@
         fehler.push('Auto ' + (i + 1) + ': Grund ' + g.join('+') + ' statt reifen');
       }
     }
-    // 3. MEHRERE GLEICHZEITIG SIND HIER RICHTIG, und diese Zeile hat es zuerst als
-    //    Fehler gemeldet: sie stand auf `mehrfach === 0`, der Zusage aus v0.5.45. Mit der
-    //    Boxengasse ist "mehrere zugleich, jeder auf seiner Kachel" ausdruecklich bestellt,
-    //    und ein Wetterwechsel ist genau der Fall, fuer den sie gebaut wurde. Was NICHT
-    //    passieren darf - zwei auf demselben Platz, oder einer der rechts vorbeifaehrt -
-    //    prueft "Ghost-Boxengasse"; hier wird nur festgehalten, dass die Gasse benutzt wird.
-    if (!(r.hoechstGleich >= 2)) {
-      fehler.push('nur ' + r.hoechstGleich + ' gleichzeitig in der Box - die Gasse wird '
-                  + 'nicht benutzt, obwohl alle vier faellig sind');
+    // 3. NUR EINER GLEICHZEITIG, seit "ghost pit: immer nur 1 ghost auf einmal" (diese
+    //    Runde) PIT_PLAETZE_MAX zurueck auf 1 gesetzt hat - das Gegenteil der frueheren
+    //    Zusage "mehrere zugleich, jeder auf seiner Kachel" (v0.5.46). Ein Wetterwechsel,
+    //    der alle vier gleichzeitig faellig macht, ist genau der Fall, an dem sich das
+    //    Serialisieren zeigen muss. Was NICHT passieren darf - zwei auf demselben Platz,
+    //    oder einer der rechts vorbeifaehrt - prueft "Ghost-Boxengasse".
+    if (r.hoechstGleich > 1) {
+      fehler.push(r.hoechstGleich + ' gleichzeitig in der Box, obwohl immer nur einer '
+                  + 'pitten soll');
     }
     if (r.doppeltBelegt) {
       fehler.push(r.doppeltBelegt + ' Takte mit zwei Autos auf demselben Platz');

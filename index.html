@@ -3166,7 +3166,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.7.56</span></span>
+        <span class="foot-ver">v<span id="app-version">0.7.57</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -7649,6 +7649,22 @@
           <path class="curve-diag" d="M0,60 L100,0"/>
           <path id="setting-steer-expo-plot" class="curve-line" d=""/>
         </svg></div>
+      <!-- BESTELLT: "bei gas lenkstärke noch besser machen und mir einen slider geben
+           (minimal weniger abschwächen die Lenkung)." Betrifft NUR die Gas-Seite des
+           Reibkreises (capRaw in 40-physics.js, wirkt nur bei uF < 1, also beim
+           Beschleunigen) - beim Bremsen aendert dieser Regler nichts. 0 % ist das bisher
+           gemessene Verhalten, 100 % hebt die Abschwaechung unter Gas ganz auf. -->
+      <div class="opt-row"><div class="opt-label">Lenkkraft unter Gas <span class="wip-tag">WIP</span>
+          <small>Wie stark die Lastverlagerung beim Beschleunigen die Lenkung schwaecht.
+          0&nbsp;% ist unveraendert (die Vorderachse entlastet sich normal), 100&nbsp;%
+          hebt die Abschwaechung unter Gas ganz auf - unabhaengig vom Bremsverhalten,
+          das ruehrt dieser Regler nicht an.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="setting-throttle-steer-relief" min="0" max="1" step="0.05" value="0.25">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-throttle-steer-relief-val">25%</span>
+        </div></div>
       <div class="opt-row"><div class="opt-label">Lenkd&auml;mpfung
           <span class="wip-tag">WIP</span>
           <small>Wie lange das Servo von der Mittelstellung bis zum vollen aktuell
@@ -8417,9 +8433,9 @@
           <button type="button" class="mw-preset" data-linemodel="lateapex">Late Apex</button>
           <button type="button" class="mw-preset" data-linemodel="dreistufig">3-stufig</button>
           <button type="button" class="mw-preset" data-linemodel="mitte">Fahrbahnmitte</button>
-          <button type="button" class="mw-preset" data-linemodel="innen3">Innen (gemittelt)</button>
+          <button type="button" class="mw-preset sel" data-linemodel="innen3">Innen (gemittelt)</button>
           <button type="button" class="mw-preset" data-linemodel="aussenin">Außen-Innen</button>
-          <button type="button" class="mw-preset sel" data-linemodel="luuke">Luuke-Linie</button>
+          <button type="button" class="mw-preset" data-linemodel="luuke">Luuke-Linie</button>
         </div></div>
       <!-- DIE LINIE DIREKT NEBEN DER WAHL. Gemeldet: "ich habe 2 Ideallinie Modi, aber wenn
            ich dazwischen waehle, aendert sich die eingezeichnete Linie nicht." Sie aendert
@@ -9638,6 +9654,9 @@
     "Wenn es anfängt zu regnen und wenn es aufhört. Beim Laden wird nichts gesagt, erst beim Wechsel.": "When it starts raining and when it stops. Nothing is said on load, only on a change.",
     "Gaskennlinie": "Throttle curve",
     "Lenkkennlinie": "Steering curve",
+    "Lenkkraft unter Gas": "Steering force under throttle",
+    "Wie stark die Lastverlagerung beim Beschleunigen die Lenkung schwaecht. 0 % ist unveraendert (die Vorderachse entlastet sich normal), 100 % hebt die Abschwaechung unter Gas ganz auf - unabhaengig vom Bremsverhalten, das ruehrt dieser Regler nicht an.":
+      "How much weight transfer under acceleration weakens the steering. 0% is unchanged (the front axle unloads normally), 100% cancels the weakening under throttle entirely - independent of braking behaviour, which this slider does not touch.",
     "Gewichtsverlagerung": "Weight transfer",
     "Wieviel Radlast beim vollen Bremsen oder Beschleunigen von einer Achse zur anderen wandert. Mehr fühlt sich nach einem schwereren Auto an - mehr Last auf der Vorderachse beim Bremsen, mehr auf der Hinterachse beim Gas.":
       "How much wheel load shifts from one axle to the other under full braking or acceleration. More feels like a heavier car - more load on the front axle under braking, more on the rear under throttle.",
@@ -10811,10 +10830,6 @@
     "Am Grenzbereich, im Stil von Gran Turismo: Lautstärke und Tonhöhe laufen stetig mit der Querausnutzung des Reibkreises, Einsatz ab 60 Prozent – also ab etwa 98 km/h bei vollem Lenkausschlag, ab 197 km/h bei halbem, und bei einem Viertel Ausschlag nie. Eine Haarnadel quietscht, eine lange schnelle Kurve nicht. Bis v0.4.55 stand die Schwelle bei 85 Prozent und war damit unerreichbar: gemessen kommt die Querausnutzung erst bei 265 km/h dorthin, weil der Lenkausschlag mit dem Tempo beschnitten wird. Es hat deshalb nie gequietscht.": "At the limit, in the style of Gran Turismo: volume and pitch run continuously with the lateral use of the friction circle, starting at 60 per cent – so from about 98 km/h at full lock, from 197 km/h at half, and at a quarter of lock never. A hairpin squeals, a long fast corner does not. Up to v0.4.55 the threshold sat at 85 per cent and was therefore unreachable: measured, the lateral use only gets there at 265 km/h, because the steering lock is cut back with speed. It therefore never squealed.",
     "Mehrspieler": "Multiplayer",
     "Sportlich, mit Simulationstiefe": "Sporty, with simulation depth",
-    "Sportwagen-Gefühl statt Rennwagen: mehr Gewicht, weichere Bremse":
-      "Sports car feel instead of a race car: more weight, softer brakes",
-    "Automatik, 3,3 s auf 100, voller Grip – kein zusätzlicher Reifenschlupf, sondern mehr Gewichtsverlagerung (40 % statt 30 %) und träges Einschwingen (160 statt 80 ms): das Auto lädt sich beim Bremsen und Gasgeben spürbar um, wie ein Sportwagen mit echtem Gewicht statt ein Rennwagen mit Abtrieb. Die Bremse ist deutlich weicher als GT3, dafür länger im Bremsweg.":
-      "Automatic, 3.3 s to 100, full grip – no extra tyre slip, but more weight transfer (40% instead of 30%) and a sluggish settle (160 instead of 80 ms): the car noticeably shifts its weight under braking and throttle, like a sports car with real weight instead of a race car with downforce. The brake is distinctly softer than GT3, with a longer stopping distance in exchange.",
     "Von Hand schalten, 2,9 s auf 100, Reifenverschleiß und Tankgewicht knapp zur Hälfte. Bremsfading, Windschatten und ungleicher Verschleiß sind voll an. Die harte, gegen echte Werte kalibrierte Fassung steht daneben als Realismus GT3.": "Shift by hand, 2.9 s to 100, tyre wear and fuel weight at just under half. Brake fade, dirty air and uneven wear are fully on. The hard version, calibrated against real figures, sits next to it as Realism GT3.",
     "Das schärfste der fahrbaren": "The sharpest of the driveable ones",
     "Von Hand schalten, 2,5 s auf 100, stärkster Reifenverschleiß der drei Klassen und die kürzeste Bremse. Die am feinsten dosierbare Lenkung, langes Ausrollen, und Windschatten wirkt am stärksten. Reifenwärmer an.": "Shift by hand, 2.5 s to 100, the strongest tyre wear of the three classes and the shortest brake. The most finely metered steering, long coasting, and dirty air bites hardest. Tyre blankets on.",
@@ -13391,6 +13406,12 @@
         // Sie ersetzt das lineare loadGain: eine hoeher belastete Achse gewinnt Haftung,
         // aber unterproportional, und genau diese Kruemmung fehlte vorher.
         tyreLoadSens: 0.25,
+        // BESTELLT: "bei gas lenkstärke noch besser machen und mir einen slider geben
+        // (minimal weniger abschwächen die Lenkung)." Lindert NUR die Gas-Seite von
+        // capRaw (siehe dort) - 0 ist unveraendert, 1 hebt die Abschwaechung unter Gas
+        // ganz auf. 0,25 als Vorgabe: eine kleine, spuerbare Verbesserung ("noch besser
+        // machen"), kein voller Wegfall.
+        throttleSteerRelief: 0.25,
         transferK: 0.30,      // share of the load that moves at 1g
         loadTau: 0.08,        // body pitch (squat and dive): fast
         useTau: 0.45,         // longitudinal tyre force build-up: distinctly slower
@@ -14251,6 +14272,18 @@
       // Autos. Genau das ist die Eigenart eines Heckmotors: er taucht relativ tiefer ein.
       const uF = st.loadFront / Math.max(0.05, cfg.loadFrontStatic);
       const capRaw = uF * (1 - cfg.tyreLoadSens * (uF - 1));
+      // BESTELLT (diese Runde): "bei gas lenkstärke noch besser machen und mir einen
+      // slider geben (minimal weniger abschwächen die Lenkung)." NUR die Gas-Seite
+      // (uF < 1, die Vorderachse entlaedt sich beim Beschleunigen) wird gelindert - die
+      // Brems-Seite (uF >= 1) bleibt unberuehrt, siehe die eigene, bereits gemessene
+      // Begruendung ("steerGrip 1,25 beim Anbremsen") zwei Absaetze weiter unten: dort
+      // deckelt der Deckel bei 1 ohnehin schon, ein Eingriff dort waere wirkungslos oder
+      // faelsche genau die Messung, die den Deckel begruendet.
+      //
+      // cfg.throttleSteerRelief (0..1) schiebt capRaw NUR im Gas-Fall von seinem Rohwert
+      // Richtung 1 (voller Ausschlag): 0 = unveraendert wie bisher, 1 = unter Gas keine
+      // Abschwaechung mehr, egal wie stark die Vorderachse entlastet ist.
+      const capRaw2 = uF < 1 ? capRaw + cfg.throttleSteerRelief * (1 - capRaw) : capRaw;
       // Der Deckel bei 1 bleibt, und er ist eine Aussage ueber das SERVO: steerGrip
       // skaliert den ausgegebenen Lenkwinkel, und ueber Vollausschlag hinaus gibt es dort
       // nichts zu holen. Ohne ihn waere der Reibkreis beim Bremsen groesser als im Rollen,
@@ -14279,7 +14312,7 @@
       // Bauform darf eine Messung nicht verschieben.
       const frontAxle = 1 - cfg.frontAxleEffect
                             * (1 - cfg.loadFrontStatic / FRONT_AXLE_REF);
-      const frontCap = Math.min(1, Math.max(0.15, capRaw)) * frontAxle * surfSteer * luft;
+      const frontCap = Math.min(1, Math.max(0.15, capRaw2)) * frontAxle * surfSteer * luft;
       // Die Anforderung skaliert mit der Fahrt, und zwar aus demselben Grund wie beim
       // Regen ein paar Zeilen weiter oben: bei 20 km/h braucht eine Vollbremsung einen
       // Bruchteil der verfuegbaren Haftung, das Auto steht nach zwei Metern; bei 250 km/h
@@ -16417,7 +16450,8 @@
     steerDaempfungSetzen(parseFloat($('phys-steerdamp').value), false);
   }
 
-  ['phys-steerresp', 'phys-accel', 'setting-steer-calib', 'setting-brake-steal'].forEach(id => {
+  ['phys-steerresp', 'phys-accel', 'setting-steer-calib', 'setting-brake-steal',
+   'setting-throttle-steer-relief'].forEach(id => {
     const input = $(id);
     const readout = $(id + '-val');
     const apply = () => {
@@ -16443,6 +16477,10 @@
         // Als Prozent, weil der Wert ein Faktor auf eine Anforderung ist und kein Winkel.
         // Ein Grad-Wert waere hier die falsche Einheit und die naechste Verwechslung: der
         // Winkel ist immer auf 45 Grad gedeckelt, egal was hier steht.
+        readout.textContent = Math.round(v * 100) + '%';
+      }
+      if (id === 'setting-throttle-steer-relief') {
+        physEngine.config.throttleSteerRelief = v;
         readout.textContent = Math.round(v * 100) + '%';
       }
       markDrivetrainChartsDirty();
@@ -20413,13 +20451,13 @@
   // Die drei anderen bleiben waehlbar - sie sind als OPTIMIERUNG richtig und zeigen, wo eine
   // schnellste Linie laege. Sie sind nur nicht das, was dieses Fahrzeug fahren kann.
   //
-  // ---- LUUKE-LINIE IST JETZT DIE VORGABE, statt 3-stufig ----------------------------
+  // ---- INNEN (GEMITTELT) IST WIEDER DIE VORGABE -------------------------------------
   //
-  // BESTELLT: "mach Luuke-Linie den Standard." Sie ist wie 3-stufig eine VORSCHRIFT und
-  // keine Optimierung (haelt also denselben Vorteil: ein Ghost auf der Schiene folgt
-  // einem gehaltenen Befehl, keinem schwingenden), nur von Hand aus Luukes eigenen
-  // Beispielen abgeleitet statt aus einer allgemeinen Kurvenoeffnung.
-  let lineModel = 'luuke';
+  // v0.7.50 hatte Luuke-Linie zur Vorgabe gemacht ("mach Luuke-Linie den Standard").
+  // BESTELLT (spaeter, diese Runde): "ideallinie standard: innen" - zurueckgedreht.
+  // Luuke-Linie bleibt waehlbar und wird weiter an den fuenf Beispielen geprueft, sie ist
+  // nur nicht mehr die Vorgabe fuer neue/zurueckgesetzte Profile.
+  let lineModel = 'innen3';
 
   // Die gueltigen Modellnamen an EINER Stelle. Vorher stand die Liste als zwei
   // Vergleiche in setLineModel und ein weiteres Mal als Bedingung in buildLine - beim
@@ -20708,10 +20746,14 @@
   //   1. KURVENLAEUFE (lineKurvenLaeufe(), schon vorhanden fuer dreiStufenLine): der
   //      Scheitel sitzt auf Lauf-Position min(1, Lauflaenge-1) - bei Laenge 1 die einzige
   //      Kachel, bei Laenge 2 die zweite, bei Laenge 3 die MITTLERE (nicht die letzte).
-  //   2. Scheitel: volles Innen (=Kurvenrichtung), Betrag 100 - AUSSER bei Schaerfeklasse 2
-  //      (Haarnadel/Enge): dort -75 * Richtung, also AUSSEN statt innen und nur 75 statt
-  //      100 - ein einzelner Beleg (SGHG), als bewusste Ausnahme uebernommen und nicht
-  //      stillschweigend ins allgemeine Muster gebogen (siehe Restfragen unten).
+  //   2. Scheitel: volles Innen (=Kurvenrichtung), Betrag 100 - AUCH bei Schaerfeklasse 2
+  //      (Haarnadel/Enge). Stand hier frueher als Ausnahme bei -75 * Richtung (Aussen,
+  //      nur 75), belegt an einem einzelnen Beispiel (SGHG) und als offene Frage markiert
+  //      ("Vorzeichen-Dreher oder bewusstes Aussenfahren?"). BESTELLT (Antwort): "in
+  //      haarnadel weiter innen" - kein bewusstes Aussenfahren, die Ausnahme ist
+  //      aufgehoben. Den kurzen Aussen-Touch am Einstieg einer Haarnadel bildet seither
+  //      luukeLinie() selbst ab (eigenes Drei-Phasen-Profil je Kachel statt der
+  //      allgemeinen Zwei-Halbrampen-Form, siehe dort), nicht mehr der Anker selbst.
   //   3. Erste Kachel eines Laufs (wenn nicht Scheitel): volles Aussen, Betrag 100 (bzw.
   //      50 bei Schaerfeklasse 0, den weiten Kurven - keine Beispiele dafuer, aus der
   //      Schaerfeklasse selbst hergeleitet: halbe Wirkung fuer ein Drittel der
@@ -20861,8 +20903,17 @@
       for (let p = 0; p < len; p++) {
         const idx = at(lauf.von + p);
         let wert;
-        if (tight === 2 && p === apexPos) wert = -75 * d;
-        else if (p === apexPos) wert = base * d;
+        // HAARNADEL-SCHEITEL: FRUEHERE SONDERREGEL AUFGEGEBEN. Stand bisher bei -75 * d
+        // (AUSSEN statt innen, nur 75 statt 100) - der einzige Beleg dafuer war ein
+        // einzelnes Beispiel (SGHG), als offene Frage an Luuke dokumentiert ("entweder
+        // Haarnadeln werden bewusst zur Aussenseite hin gefahren, oder es ist ein
+        // Vorzeichen-Dreher"). BESTELLT (Antwort, diese Runde): "in haarnadel weiter
+        // innen (am anfang kurz aussen, danach sofort nach innen)" - die Frage ist damit
+        // beantwortet: Vorzeichen-Dreher, kein bewusstes Aussenfahren. Der Scheitel folgt
+        // jetzt derselben allgemeinen Regel wie jede andere Kurve (Betrag 100, volles
+        // Innen); den kurzen Aussen-Touch am Anfang bildet stattdessen luukeLinie() selbst
+        // ab (das Drei-Phasen-Profil dort, siehe die Begruendung an ihrer eigenen Stelle).
+        if (p === apexPos) wert = base * d;
         else if (p === 0) wert = -base * d;
         else {
           // NACH DEM SCHEITEL: BESTELLT (Korrektur), an einem Lauf von vier Rechtskurven
@@ -20971,11 +21022,42 @@
       const grenzeVorn = (aVor + aHier) / 2;
       const grenzeHinten = (aHier + aNach) / 2;
       if (t === 0) grenzeStart = grenzeVorn;
+      // HAARNADEL: EIGENES DREI-PHASEN-PROFIL statt der normalen Zwei-Halbrampen-Form.
+      //
+      // BESTELLT (diese Runde): "luuke linie anpassen: in haarnadel weiter innen (am
+      // anfang kurz außen, danach sofort nach innen)." luukeLinieAnker() gibt der
+      // Haarnadel jetzt einen staerkeren Innen-Wert (siehe dort), aber die normale Form
+      // haelt aHier erst an der KACHELMITTE (u=0,5) - fuer eine 49 Abtastpunkte lange
+      // Haarnadel waere "kurz aussen am Anfang, dann SOFORT innen" damit nicht abbildbar:
+      // die erste Halbrampe liefe die ganze erste Haelfte lang nur in EINE Richtung.
+      //
+      // Drei Phasen statt zwei: ein kurzer Touch nach aussen (bis ENTRY_U), dann ein
+      // schneller Wechsel nach innen bis aHier erreicht ist (bis HOLD_U, deutlich vor der
+      // Kachelmitte), dann HALTEN bei aHier bis EXIT_U, danach wie gewohnt zur naechsten
+      // Kachelgrenze. Nicht an eigenen Beispieldaten gemessen (anders als der Rest dieser
+      // Datei) - eine begruendete Umsetzung der Bestellung, keine zweite Messung.
+      const istHaarnadel = tileTightness(tiles[at(t)].type) === 2;
+      const ENTRY_U = 0.12, HOLD_U = 0.35, EXIT_U = 0.85;
+      // Der Aussen-Touch spiegelt aHier (Vorzeichen umgedreht, gedaempft auf 35%) - so
+      // bleibt er automatisch auf der richtigen Seite, egal ob die Haarnadel links- oder
+      // rechtsherum dreht.
+      const entryWert = -0.35 * aHier;
       for (let d = 0; d < m; d++) {
         const u = m > 0 ? (d + 0.5) / m : 0.5;
-        const wert = u < 0.5
-          ? grenzeVorn + (aHier - grenzeVorn) * smooth(u / 0.5)
-          : aHier + (grenzeHinten - aHier) * smooth((u - 0.5) / 0.5);
+        let wert;
+        if (istHaarnadel) {
+          wert = u < ENTRY_U
+            ? grenzeVorn + (entryWert - grenzeVorn) * smooth(u / ENTRY_U)
+            : u < HOLD_U
+              ? entryWert + (aHier - entryWert) * smooth((u - ENTRY_U) / (HOLD_U - ENTRY_U))
+              : u < EXIT_U
+                ? aHier
+                : aHier + (grenzeHinten - aHier) * smooth((u - EXIT_U) / (1 - EXIT_U));
+        } else {
+          wert = u < 0.5
+            ? grenzeVorn + (aHier - grenzeVorn) * smooth(u / 0.5)
+            : aHier + (grenzeHinten - aHier) * smooth((u - 0.5) / 0.5);
+        }
         alpha[at(tab.start[t] + d)] = -(wert / 100) * limit;
       }
     }
@@ -23232,6 +23314,17 @@
     // ersten Runde die Reihenfolge der GARAGE, weil alle Rundenzahlen und Summen null waren
     // und die Sortierung stabil ist. Eine Uebersicht, die eine ganze Runde lang eine
     // erfundene Reihenfolge zeigt, ist schlechter als keine.
+    // BESTELLT (diese Runde): "renn ende wird nicht richtig getriggert, es geht für immer
+    // weiter bei Rundenrennen." raceLimitReached() (siehe dort) prueft im Rundenmodus
+    // c.laps.length gegen raceLimit fuer JEDES Auto aus dieser Liste - und fuer das
+    // Spielerauto stand hier immer c.race.laps, ein Zaehler, der von carLapCrossed()/
+    // carRaceNotify() gefuellt wird (byte-genaue Sperre/Kachel-Erkennung). Der TATSAECHLICH
+    // fahrende Rundenzaehler des Spielers ist aber raceLapTimes, gefuellt von
+    // playerLapCrossed() - dieselbe Zweiteilung, die weiter oben schon fuer `ort`
+    // beruecksichtigt wird (spielerOrtGes() statt ghostOrtGes() fuer den Spieler). Ohne
+    // diesen Fix blieb c.race.laps beim Spieler auf 0 stehen, raceLimitReached() konnte nur
+    // ueber einen GHOST ausloesen, und ein Rundenrennen ohne (oder mit zu langsamen) Ghosts
+    // endete nie.
     const out = garage.map(c => ({ name: garageLabel(c), role: c.role,
                                    farbe: carColor(c).hex, kennung: c.tag,
                                    // Der Ort auf der Schiene. Auto 2 geht ueber
@@ -23242,7 +23335,9 @@
                                    ort: (c.role === 'player'
                                      ? spielerOrtGes()
                                      : (typeof ghostOrtGes === 'function' ? ghostOrtGes(c) : null)),
-                                   laps: (c.race && c.race.laps) || [] }));
+                                   laps: (c.role === 'player' && raceLapTimes.length)
+                                     ? raceLapTimes
+                                     : (c.race && c.race.laps) || [] }));
     if (!garage.some(c => c === playerCar) && raceLapTimes.length) {
       // Ohne Garage gibt es kein Geraet und damit keine Farbe: dann bleibt das Feld leer,
       // statt eine zu erfinden.
@@ -33163,7 +33258,13 @@
   //
   // Zusaetzlich gedeckelt auf n-2: eine Gasse, die laenger ist als das Layout, waere ein
   // Ring aus stehenden Autos.
-  const PIT_PLAETZE_MAX = 4;
+  //
+  // ZURUECKGEDREHT (diese Runde): BESTELLT "ghost pit: immer nur 1 ghost auf einmal" -
+  // das Gegenteil der obigen Bestellung. pitPlaetzeZahl() (siehe unten) faengt das
+  // automatisch mit ab: Math.min(PIT_PLAETZE_MAX, n-2) wird bei 1 immer 1, die
+  // Gassen-Infrastruktur (Heilung, Warteschlange) bleibt unveraendert, sie serialisiert
+  // jetzt nur auf einen Platz statt vier.
+  const PIT_PLAETZE_MAX = 1;
   // Wieviel Querlage ein Auto benutzt, das noch an einem stehenden vorbei muss. Der
   // Gegenrand, also NEGATIV - der Stopp haelt rechts.
   const PIT_VORBEI = -1.0;
@@ -34473,7 +34574,12 @@
   // Als let und nicht const, damit eine Messreihe ihn durchfahren kann - der Wert ist eine
   // Abwaegung zwischen Beruehrungen und dichtem Fahren, und die entscheidet eine Reihe und
   // nicht ein Kommentar. Der Fahrbetrieb aendert ihn nicht.
-  let SPICE_GAP_MIN = 1.2;      // Kacheln, ab hier wird gelupft (nur noch Rueckfall)
+  // BESTELLT (diese Runde): "ghosts etwas mehr abstand, damit sie sich nicht anschieben
+  // (lateral ist gut, aber hintereinander zu wenig)." Ausdruecklich nur DIESE beiden Werte,
+  // nicht ghostCfg.lateral (das seitliche Nebeneinander bleibt wie gemessen gut). Von 1,2
+  // auf 1,5 angehoben - "etwas mehr", nicht bis an 1,8/2,5, wo die Messreihe oben zeigt,
+  // dass es wieder schlechter wird.
+  let SPICE_GAP_MIN = 1.5;      // Kacheln, ab hier wird gelupft (nur noch Rueckfall)
   // ---- DIE ZEITLUECKE IN SEKUNDEN --------------------------------------------------
   //
   // ABGELEITET UND NICHT GEWAEHLT, aus der Fahrzeuglaenge und dem Tempo. Ein Auto ist 9,5 cm
@@ -34517,7 +34623,9 @@
   // WARUM NICHT MEHR: darueber wird es wieder schlechter (1,8 und 2,5 liegen hoeher). Das
   // ist plausibel und kein Messfehler - eine sehr grosse Sollluecke laesst die Autos
   // staerker bremsen, und dann laufen sie wieder auf.
-  let SPICE_LUECKE_MIN_S = 1.2;
+  // Von 1,2 auf 1,5 angehoben, siehe die Begruendung bei SPICE_GAP_MIN direkt darueber -
+  // dieselbe Bestellung, derselbe Grund.
+  let SPICE_LUECKE_MIN_S = 1.5;
   const SPICE_LUECKE_PER_CLOSING = 0.30;
   function lueckeMinSetzen(v) { SPICE_LUECKE_MIN_S = v; }
   function lueckeMinLesen() { return SPICE_LUECKE_MIN_S; }
@@ -34554,9 +34662,13 @@
     const von = 1.5 - i;        // 1.5..0.5, 1 bei 50 % - fuer Luecken/Reichweite
     attackPSetzen(0.45 * zu);
     attackArmMsSetzen(900 * von);
-    lueckeMinSetzen(1.2 * von);
-    gapMinSetzen(1.2 * von);
-    attackRangeSetzen(1.3 * von);
+    // Anker von 1,2 auf 1,5 angehoben (BESTELLT: "ghosts etwas mehr abstand"), damit 50 %
+    // weiter genau den neuen Vorgabewert trifft - siehe SPICE_GAP_MIN/SPICE_LUECKE_MIN_S
+    // oben. ATTACK_RANGE im selben Verhaeltnis mitgezogen (1,3/1,2 = 1,625/1,5), damit
+    // RANGE > GAP_MIN bei jeder Reglerstellung erhalten bleibt.
+    lueckeMinSetzen(1.5 * von);
+    gapMinSetzen(1.5 * von);
+    attackRangeSetzen(1.625 * von);
   }
 
   // Fortschritt in Kacheln seit dem Start, mit Bruchteil. Absichtlich NICHT ueber den
@@ -37154,11 +37266,18 @@
           : underYellow ? 0
           : passSeite !== 0 ? passSeite * passAussen()
           : ghostLineOffset(car) * ghostCfg.line * GHOST_LINE_STEER * linieGewicht;
-        const querRohSumme = quer
+        // BESTELLT (diese Runde): "querlage bei boxenstopps klappt nicht, die autos
+        // bleiben mitten auf der strecke stehen." Der Kommentar zwei Absaetze ueber pq
+        // sagt es schon: "waehrend eines Stopps gibt es keine Linie, keine Wuerze und
+        // keine Spur - nur den Rand" - aber quer OBEN wurde zwar korrekt auf pq gesetzt,
+        // die Summe hier addierte Spur/Ueberhol-Bias/Verbremser-Fehler trotzdem noch
+        // OBENDRAUF und zog das Auto von seinem Randwert wieder Richtung Mitte. Jetzt
+        // haelt ein Boxenstopp (pq !== null) exakt den Randwert, ohne Zusatz.
+        const querRohSumme = pq !== null ? quer : (quer
               + g.bias * ghostCfg.lateral * 0.25
               + ghostLane(car) * ghostCfg.lanes * GHOST_LANE_STEER * spurGewicht
               // Der Querausschlag eines Verbremsers, additiv - siehe SPICE_FEHLER_QUER.
-              + (spice.fehlerQuer || 0);
+              + (spice.fehlerQuer || 0));
         // ---- QUERTRAEGHEIT: eine RATENBEGRENZUNG und kein Tiefpass ------------------
         //
         // Der Unterschied ist wichtig. Ein Tiefpass (neu = alt + (soll-alt) * k) naehert sich
@@ -37259,6 +37378,18 @@
         const querSollFaktor = (1 - Math.pow(0.75, dt / (CONTROL_SEND_INTERVAL_MS / 1000)))
                               * tempoAnteil;
         g.querSoll = (g.querSoll || 0) + (querRoh - (g.querSoll || 0)) * querSollFaktor;
+        // BESTELLT (diese Runde): "querlage bei boxenstopps klappt nicht, die autos
+        // bleiben mitten auf der strecke stehen." Gefunden bei der Umstellung des
+        // Ideallinien-Vorgabewerts auf innen3: die Klemme oben (steer = min(steer, 0))
+        // wirkt auf den ROHEN Befehl, aber g.querSoll folgt ihm nur mit querSollFaktor -
+        // und der friert bei v nahe 0 komplett ein (siehe die Begruendung zwei Absaetze
+        // ueber diesem Block, "bei v = 0 friert er komplett ein"). Ein Auto, das GENAU IN
+        // DEM MOMENT langsam wird, in dem die Sperre beginnt, behaelt seinen alten,
+        // ungeklemmten querSoll fuer die ganze Standzeit - gemessen mit innen3 als
+        // Ideallinie auf SR3GLR2GR2G2 (+0,385 statt eines negativen Werts, 36 Takte lang).
+        // g.querSoll ist aber genau die Groesse, die Karte UND Test lesen - die Klemme
+        // muss also auch SIE direkt treffen, nicht nur den rohen Befehl.
+        if (pitSperreRechts(car)) g.querSoll = Math.min(g.querSoll, 0);
       } else {
         // Fallback for cars not in guard-rail mode: the old layout-plus-yaw controller.
         const dir = ghostTurnDir(car, 0);
@@ -49197,8 +49328,11 @@
   // begruendet; dieser Test prueft nur, ob sie die Beispiele trifft.
   //
   // DREI STELLEN ABSICHTLICH NICHT HART GEPRUEFT (siehe der Kommentar bei
-  // luukeLinieAnker()): der Haarnadel-Scheitel (SGHG, -75 statt der von der allgemeinen
-  // Regel vorhergesagten +75), je eine Gerade unmittelbar vor der Startkachel in SGR3G
+  // luukeLinieAnker()): der Haarnadel-Scheitel (SGHG, seit "in haarnadel weiter innen"
+  // auf +100 wie jede andere Kurve umgestellt - das einzelne Beispiel hier stand vorher
+  // bei -75, blieb aber als offene Frage markiert statt in die Regel eingebrannt, und
+  // genau das erlaubt jetzt die Umstellung ohne einen bestehenden Beleg zu verletzen),
+  // je eine Gerade unmittelbar vor der Startkachel in SGR3G
   // und SR2GL2G (+100 belegt, die Regel sagt 0 vorher) - beides offene Fragen an Luuke,
   // keine stillschweigend geratenen Sonderregeln - UND die Startkachel selbst (Index 0):
   // ihr Anker wird seit "nicht bei Start immer in der Mitte, sondern so, dass man von der
@@ -49215,7 +49349,7 @@
     const beispiele = [
       { code: 'SGR3G', erwartet: [0, -50, -100, 100, -50, 100], offen: [0, 5] },
       { code: 'SRLG', erwartet: [0, 100, 0, -100], offen: [0] },
-      { code: 'SGHG', erwartet: [0, -50, -75, 0], offen: [0, 2] },
+      { code: 'SGHG', erwartet: [0, -50, 100, 0], offen: [0, 2] },
       { code: 'SR2GL2G', erwartet: [0, -100, 100, 0, 100, -100, 100], offen: [0, 6] },
       { code: 'SR2G2RG2', erwartet: [0, -100, 100, -100, -100, 100, 0, -100], offen: [0] },
     ];
@@ -49277,6 +49411,43 @@
     return { ok: schlecht.length === 0,
              mass: 'SR4G: ' + anker.join(',')
                  + (schlecht.length ? ' || ' + schlecht.join('; ') : '') };
+  });
+
+  // ---- Luuke-Linie: Haarnadel hat einen eigenen Aussen-Touch am Einstieg ----------------
+  //
+  // BESTELLT: "luuke linie anpassen: in haarnadel weiter innen (am anfang kurz außen,
+  // danach sofort nach innen)." Prueft das Drei-Phasen-Profil aus luukeLinie() direkt an
+  // den rohen alpha-Werten (nicht am Anker, der ist ja jetzt einfach +100 wie jede andere
+  // Kurve) - SGHG hat genau eine Haarnadel, Kachel 2.
+  stAdd('Luuke-Linie: Haarnadel kurz aussen, dann sofort innen', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.codeToTrack || !OMEGA_TEST.trackCenterline
+        || !OMEGA_TEST.trackNormals || !OMEGA_TEST.buildLine) {
+      return { skip: true, mass: 'Pruefzugang nicht vorhanden' };
+    }
+    const p = OMEGA_TEST.codeToTrack('SGHG');
+    const pts = OMEGA_TEST.trackCenterline(p.tiles);
+    const nrm = OMEGA_TEST.trackNormals(pts);
+    const line = OMEGA_TEST.buildLine(pts, nrm, { tiles: p.tiles, closed: true, model: 'luuke' });
+    // Die Kachel-Abtastpunkte der Haarnadel (Index 2) von Hand gezaehlt: trackCenterline()
+    // haengt vor Kachel 0 einen Vorpunkt an (tile: -1), die eigentlichen Kachelgrenzen
+    // muessen also aus pts[].tile gelesen werden statt geraten.
+    const idxHaarnadel = [];
+    for (let i = 0; i < pts.length; i++) if (pts[i].tile === 2) idxHaarnadel.push(i);
+    if (idxHaarnadel.length < 10) return { skip: true, mass: 'Haarnadel nicht gefunden' };
+    const a0 = idxHaarnadel[0], m = idxHaarnadel.length;
+    const bei = (u) => line.alpha[a0 + Math.round(u * (m - 1))];
+    const einstieg = bei(0.06);   // kurz nach dem Einstieg: der Aussen-Touch
+    const mitte = bei(0.5);       // gehalten bei aHier, jetzt volles Innen
+    // alpha ist mit umgekehrtem Vorzeichen zur Querlage (siehe buildLine()-Kommentar
+    // "Vorsicht mit dem Vorzeichen") - hier zaehlt nur, dass beide Phasen GEGENSAETZLICHE
+    // Vorzeichen haben und die Mitte deutlich staerker ausschlaegt als der kurze Touch.
+    const gegensinnig = Math.sign(einstieg) !== 0 && Math.sign(mitte) !== 0
+                        && Math.sign(einstieg) !== Math.sign(mitte);
+    const mitteStaerker = Math.abs(mitte) > Math.abs(einstieg);
+    return { ok: gegensinnig && mitteStaerker,
+             mass: 'Einstieg ' + einstieg.toFixed(2) + ', Mitte ' + mitte.toFixed(2)
+                 + (gegensinnig ? '' : ' || NICHT GEGENSINNIG')
+                 + (mitteStaerker ? '' : ' || MITTE NICHT STAERKER') };
   });
 
   // ---- 6. Kachelphase ----
@@ -49842,6 +50013,34 @@
     return { ok, mass: 'Rechtskurve+Bremse VL/VR/HL/HR '
       + L.map(x => x.toFixed(2)).join('/') + ' | Mittel ' + mit(L).toFixed(6)
       + ' | Gas hinten ' + (gas.load4[2] + gas.load4[3]).toFixed(2) };
+  });
+
+  // ---- Lenkkraft unter Gas: der neue Regler lindert nur die Gas-Seite -----------------
+  //
+  // BESTELLT: "bei gas lenkstärke noch besser machen und mir einen slider geben (minimal
+  // weniger abschwächen die Lenkung)." Zwei Aussagen: (1) unter Gas hebt ein hoeherer
+  // Reglerwert steerGrip an, (2) unter Bremsen aendert derselbe Regler NICHTS - er darf
+  // die schon einmal gemessene, dokumentierte Bremsseite ("steerGrip 1,25 beim
+  // Anbremsen") nicht anfassen.
+  stAdd('Lenkkraft unter Gas: Regler wirkt nur beim Beschleunigen', () => {
+    if (!window.OMEGA_TEST || !OMEGA_TEST.physSteerGrip) {
+      return { skip: true, mass: 'physSteerGrip nicht vorhanden' };
+    }
+    const gasAus = OMEGA_TEST.physSteerGrip({ kmh: 150, throttle: 1, brake: 0, steering: 0.8,
+                                               patch: { throttleSteerRelief: 0 } });
+    const gasAn = OMEGA_TEST.physSteerGrip({ kmh: 150, throttle: 1, brake: 0, steering: 0.8,
+                                              patch: { throttleSteerRelief: 1 } });
+    const bremsAus = OMEGA_TEST.physSteerGrip({ kmh: 150, throttle: 0, brake: 1, steering: 0.8,
+                                                 patch: { throttleSteerRelief: 0 } });
+    const bremsAn = OMEGA_TEST.physSteerGrip({ kmh: 150, throttle: 0, brake: 1, steering: 0.8,
+                                                patch: { throttleSteerRelief: 1 } });
+    const gasBesser = gasAn.steerGrip > gasAus.steerGrip;
+    const bremsGleich = Math.abs(bremsAn.steerGrip - bremsAus.steerGrip) < 1e-9;
+    return { ok: gasBesser && bremsGleich,
+             mass: 'Gas: ' + gasAus.steerGrip.toFixed(3) + ' -> ' + gasAn.steerGrip.toFixed(3)
+                 + (gasBesser ? '' : ' NICHT BESSER')
+                 + ' | Bremse: ' + bremsAus.steerGrip.toFixed(3) + ' / ' + bremsAn.steerGrip.toFixed(3)
+                 + (bremsGleich ? ' unveraendert' : ' VERAENDERT') };
   });
 
   // Die Bremsscheiben nehmen den REINEN Seitenanteil und nicht die ganze Radlast. Der Grund
@@ -54032,9 +54231,15 @@
     //
     // Die Forderung "beide Seiten" ist also nur auf einer Strecke sinnvoll, die beide
     // Richtungen hat. SR3GLR2GR2G2 ist die vom Nutzer gemeldete Strecke und hat sie.
+    // MODELL AUSDRUECKLICH GESETZT und nicht dem globalen Vorgabewert ueberlassen: dieser
+    // Test prueft eine Eigenschaft der "haltenden" Linienmodelle im Allgemeinen (siehe die
+    // Begruendung oben), aber die Zahlen sind gegen EIN bestimmtes Modell gemessen. Der
+    // globale Vorgabewert hat sich in dieser Datei schon zweimal geaendert (dreistufig ->
+    // luuke -> innen3) - ohne diese Zeile haette jede weitere Umstellung des Vorgabewerts
+    // diesen Test unbeabsichtigt mitgezogen.
     return OMEGA_TEST.ghostDriveProbe({ takte: 400, lage: 'karte',
       code: 'SR3GLR2GR2G2',
-      cfg: Object.assign({}, WUERZE_AUS) }).then((p) => {
+      cfg: Object.assign({}, WUERZE_AUS, { model: 'innen3' }) }).then((p) => {
       const abs = p.lenk.map(Math.abs);
       const mittel = abs.reduce((a, b) => a + b, 0) / abs.length;
       const spitze = Math.max.apply(null, abs);
@@ -54045,7 +54250,11 @@
       if (max - min < 90) schlecht.push('Spanne nur ' + (max - min) + ' von 254');
       // BEIDE SEITEN. Das ist die Bedingung, die den gemeldeten Fehler faengt: ohne
       // Kurvenoeffnung lag das Minimum bei exakt 0, die Linie ging also nie nach links.
-      if (!(min <= -20 && max >= 20)) {
+      // Schwelle bei 15 statt 20: GEMESSEN mit innen3 (dem seit dieser Runde wieder
+      // gueltigen Vorgabewert, "ideallinie standard: innen") auf dieser Strecke -18 bis
+      // 127 - beide Seiten werden also benutzt, nur mit kleinerem linkem Ausschlag als
+      // das frueher hier gemessene dreistufig.
+      if (!(min <= -15 && max >= 15)) {
         schlecht.push('nur eine Seite benutzt (' + min + ' bis ' + max + ')');
       }
       return { ok: schlecht.length === 0,
@@ -54622,8 +54831,12 @@
     const schlecht = [], zeilen = [];
     try {
       // 1. BEI 50% EXAKT DIE BISHERIGEN ZAHLEN.
+      //
+      // BESTELLT (diese Runde): "ghosts etwas mehr abstand" - luecke/gap/range-Anker in
+      // ghostRennhaerteAnwenden() von 1,2/1,2/1,3 auf 1,5/1,5/1,625 angehoben, das
+      // Verhaeltnis (RANGE > GAP_MIN) bleibt gleich. Diese Erwartung ist mitgezogen.
       OMEGA_TEST.ghostRennhaerteAnwenden(0.5);
-      const soll = { p: 0.45, arm: 900, luecke: 1.2, gap: 1.2, range: 1.3 };
+      const soll = { p: 0.45, arm: 900, luecke: 1.5, gap: 1.5, range: 1.625 };
       const ist50 = { p: OMEGA_TEST.attackPLesen(), arm: OMEGA_TEST.attackArmMsLesen(),
                       luecke: OMEGA_TEST.lueckeMinLesen(), gap: OMEGA_TEST.gapMinLesen(),
                       range: OMEGA_TEST.attackRangeLesen() };
@@ -56028,27 +56241,28 @@
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
-  // ---- Die Boxengasse: mehrere gleichzeitig, jeder auf seiner Kachel ----
+  // ---- Die Boxengasse: nur einer gleichzeitig, die anderen warten ohne zu draengen ----
   //
-  // BESTELLT: "Mach, dass mehrere Autos Boxenstopp machen koennen. Wenn ein Auto schon einen
-  // Stopp macht, soll das naechste ab der Kachel eins spaeter anfangen (und das andere nicht
-  // rammen)." Drei Zusagen, und alle drei stehen hier.
+  // FRUEHER BESTELLT: "Mach, dass mehrere Autos Boxenstopp machen koennen [...] (und das
+  // andere nicht rammen)." SPAETER ZURUECKGEDREHT (diese Runde): "ghost pit: immer nur 1
+  // ghost auf einmal" - PIT_PLAETZE_MAX steht seither auf 1 (90-ghosts.js). Die
+  // Infrastruktur (Warteschlange, Heilung, "wer vorbei muss faehrt nicht rechts") bleibt
+  // unveraendert, nur die Zusage "mehrere gleichzeitig" ist jetzt ihr Gegenteil.
   //
   // DER AUFBAU ERZWINGT DEN FALL: ein Wetterwechsel macht ALLE Ghosts gleichzeitig faellig -
-  // das ist der Moment, in dem eine Boxengasse unter Druck steht, und der Grund, warum
+  // das ist der Moment, in dem eine Warteschlange unter Druck steht, und der Grund, warum
   // dieser Test am Reifenwechsel haengt und nicht an einem Planstopp.
   //
-  // Der DRITTE Punkt braucht eine Unterscheidung, die zwei Messfehler gekostet hat:
+  // Der VORBEI-PUNKT braucht eine Unterscheidung, die zwei Messfehler gekostet hat:
   // g.querSoll ist ein nachlaufender Filter (rund 0,5 s fuer die volle Breite), nicht der
   // Befehl. Ein Auto, das mit rechter Ideallinie in die Gasse einfaehrt, steht dort einige
   // Takte lang noch rechts, obwohl der Befehl schon links lautet. Gemessen wird deshalb der
   // BEFEHL - er ist die Zusage, der Filter ihre Physik.
-  stAdd('Ghost-Boxengasse: mehrere Plaetze, und keiner faehrt dem anderen ins Heck', () => {
+  stAdd('Ghost-Boxengasse: nur einer gleichzeitig, keiner faehrt dem anderen ins Heck', () => {
     if (!window.OMEGA_TEST || !OMEGA_TEST.ghostReifenProbe) {
       return { skip: true, mass: 'ghostReifenProbe nicht vorhanden' };
     }
     const fehler = [], zeilen = [];
-    // Zwei Feldgroessen: vier passen genau in die Gasse, sechs muessen anstehen.
     for (const autos of [4, 6]) {
       const r = OMEGA_TEST.ghostReifenProbe({ autos, takte: 2500,
                                               wechselBei: 100, laenge: 5 });
@@ -56057,9 +56271,10 @@
       zeilen.push(autos + ' Autos: Plaetze ' + plaetze + ', hoechstens '
                   + r.hoechstGleich + ' gleichzeitig, ' + r.vorbeiTakte
                   + ' Takte Vorbeifahrt');
-      // 1. MEHRERE GLEICHZEITIG. Das ist die Bestellung, und mit einem Platz waere es 1.
-      if (!(r.hoechstGleich >= 2)) {
-        fehler.push(autos + ' Autos: nur ' + r.hoechstGleich + ' gleichzeitig in der Box');
+      // 1. NUR EINER GLEICHZEITIG. Das ist die neue Bestellung.
+      if (r.hoechstGleich > 1) {
+        fehler.push(autos + ' Autos: ' + r.hoechstGleich + ' gleichzeitig in der Box, '
+                    + 'nicht nur einer');
       }
       // 2. NIE ZWEI AUF DEMSELBEN PLATZ. Das ist die Zusage, die "nicht rammen" laengs
       //    bedeutet: zwei Autos auf einer Kachel stehen ineinander.
@@ -56067,24 +56282,17 @@
         fehler.push(autos + ' Autos: ' + r.doppeltBelegt
                     + ' Takte mit zwei Autos auf demselben Platz');
       }
-      // 3. WER VORBEI MUSS, FAEHRT NICHT RECHTS. Das ist dieselbe Zusage quer.
+      // 3. WER VORBEI MUSS, FAEHRT NICHT RECHTS. Das ist dieselbe Zusage quer - bei nur
+      //    einem Platz kommt dieser Fall aber gar nicht mehr vor (ein zweites Auto wartet
+      //    einfach, statt an einem stehenden vorbeizufahren), daher OHNE die frueher hier
+      //    stehende Gegenprobe "es muss ueberhaupt vorbeigefahren worden sein" - die waere
+      //    mit nur einem Platz IMMER eine leere Aussage und keine gueltige Pruefung mehr.
       if (r.vorbeiBefehlRechts) {
         fehler.push(autos + ' Autos: ' + r.vorbeiBefehlRechts
                     + ' Takte mit rechtem Befehl, obwohl dort einer steht');
       }
-      // Die Gegenprobe: es muss ueberhaupt vorbeigefahren worden sein, sonst ist Punkt 3
-      // eine leere Aussage.
-      if (!(r.vorbeiTakte > 0)) {
-        fehler.push(autos + ' Autos: niemand musste vorbei - der Aufbau prueft nichts');
-      }
-      // 4. Und keiner parkt sich waehrend des Stopps. Mit mehreren Stehenden ist das
-      //    schwerer als mit einem: die Gnade muss fuer jeden einzeln laufen.
+      // 4. Und keiner parkt sich waehrend des Stopps.
       if (r.geparkt) fehler.push(autos + ' Autos: ein Auto wurde geparkt');
-      // 5. Die Gasse ist gedeckelt. Bei sechs Autos duerfen nicht sechs Plaetze entstehen -
-      //    sonst steht ein Fuenftel der Runde voll.
-      if (r.hoechstGleich > 4) {
-        fehler.push(autos + ' Autos: ' + r.hoechstGleich + ' Plaetze, mehr als der Deckel');
-      }
     }
     return { ok: !fehler.length,
              mass: zeilen.join(' | ') + (fehler.length ? ' || ' + fehler.join('; ') : '') };
@@ -56337,15 +56545,15 @@
         fehler.push('Auto ' + (i + 1) + ': Grund ' + g.join('+') + ' statt reifen');
       }
     }
-    // 3. MEHRERE GLEICHZEITIG SIND HIER RICHTIG, und diese Zeile hat es zuerst als
-    //    Fehler gemeldet: sie stand auf `mehrfach === 0`, der Zusage aus v0.5.45. Mit der
-    //    Boxengasse ist "mehrere zugleich, jeder auf seiner Kachel" ausdruecklich bestellt,
-    //    und ein Wetterwechsel ist genau der Fall, fuer den sie gebaut wurde. Was NICHT
-    //    passieren darf - zwei auf demselben Platz, oder einer der rechts vorbeifaehrt -
-    //    prueft "Ghost-Boxengasse"; hier wird nur festgehalten, dass die Gasse benutzt wird.
-    if (!(r.hoechstGleich >= 2)) {
-      fehler.push('nur ' + r.hoechstGleich + ' gleichzeitig in der Box - die Gasse wird '
-                  + 'nicht benutzt, obwohl alle vier faellig sind');
+    // 3. NUR EINER GLEICHZEITIG, seit "ghost pit: immer nur 1 ghost auf einmal" (diese
+    //    Runde) PIT_PLAETZE_MAX zurueck auf 1 gesetzt hat - das Gegenteil der frueheren
+    //    Zusage "mehrere zugleich, jeder auf seiner Kachel" (v0.5.46). Ein Wetterwechsel,
+    //    der alle vier gleichzeitig faellig macht, ist genau der Fall, an dem sich das
+    //    Serialisieren zeigen muss. Was NICHT passieren darf - zwei auf demselben Platz,
+    //    oder einer der rechts vorbeifaehrt - prueft "Ghost-Boxengasse".
+    if (r.hoechstGleich > 1) {
+      fehler.push(r.hoechstGleich + ' gleichzeitig in der Box, obwohl immer nur einer '
+                  + 'pitten soll');
     }
     if (r.doppeltBelegt) {
       fehler.push(r.doppeltBelegt + ' Takte mit zwei Autos auf demselben Platz');
@@ -64167,60 +64375,18 @@
            // das Byte genau proportional zum Tacho, also die kalibrierte Fassung.
            'setting-topspeed': 2.0 },
     },
-    // ---- GT7 / SPORT: SPORTWAGEN-GEFUEHL STATT RENNWAGEN ----------------------------
+    // ---- GT7 / SPORT WURDE ENTFERNT ---------------------------------------------------
     //
-    // BESTELLT: "weiterer handling modus: es soll sich so anfuehlen, wie wenn ich einen
-    // Sportwagen in Gran Turismo 7 steuere (statt gt3 auto), also mit Gewicht." Geklaert
-    // mit dem Nutzer: "mehr Traegheit/Gewichtsverlagerung, weicheres Bremsgefuehl" -
-    // AUSDRUECKLICH NICHT mehr Reifenschlupf (setting-grip bleibt auf 1,0, wie Arcade
-    // und Pro).
-    //
-    // BESTELLT (spaeter): "GT7 Modus umbenennen zu 'Sport'". Der Objektschluessel bleibt
-    // gt7 (nirgends sonst im Code referenziert, siehe presetControls()/PRESET_ALIAS -
-    // eine Umbenennung dort haette nichts eingespart), nur das sichtbare label aendert
-    // sich. Ausserdem an die zweite Stelle geruckt (Voreinstellungsreihenfolge: Arcade,
-    // Sport, Pro, GT3, F1, Realismus GT3), direkt hinter Arcade.
-    //
-    // DIE BEIDEN NEUEN REGLER TRAGEN DEN UNTERSCHIED: phys-transfer-k (Gewichtsverlagerung,
-    // 30 % -> 40 %) und phys-load-tau (Traegheit dabei, 80 -> 160 ms) sind die einzigen
-    // Werte hier, die es vor diesem Preset im Markup noch gar nicht gab - siehe die
-    // Begruendung bei ihren opt-rows im Fahrgefuehl-Tab. Alles andere sind vorhandene
-    // Regler, auf einen Sportwagen statt einen Rennwagen hin gestimmt: langsamer auf
-    // Tempo (3,3 s statt Pros 2,6), weniger Abtrieb-Ausrollen, weichere Bremse (0,95
-    // statt GT3s 1,15) und ein etwas nachsichtigerer Reibkreis - ein Sportwagen bestraft
-    // Bremsen-und-Lenken-zugleich weniger hart als ein Rennwagen mit Slicks.
-    gt7: {
-      label: 'Sport',
-      kurz: 'Sportwagen-Gefühl statt Rennwagen: mehr Gewicht, weichere Bremse',
-      text: 'Automatik, 3,3 s auf 100, voller Grip – kein zusätzlicher Reifenschlupf, '
-          + 'sondern mehr Gewichtsverlagerung (40 % statt 30 %) und träges Einschwingen '
-          + '(160 statt 80 ms): das Auto lädt sich beim Bremsen und Gasgeben spürbar um, '
-          + 'wie ein Sportwagen mit echtem Gewicht statt ein Rennwagen mit Abtrieb. Die '
-          + 'Bremse ist deutlich weicher als GT3, dafür länger im Bremsweg.',
-      v: { 'setting-grip': 1.0, 'setting-brakepower': 0.95, 'setting-autoshift': true,
-           'setting-zero-to-top': 3.3, 'setting-coast-drag': 0.7, 'setting-fuelweight': 0.5,
-           'setting-tyres': 1.0, 'phys-steerresp': 2.0, 'setting-brakebias': 58,
-           'setting-steer-calib': 2.0,
-           'phys-accel': 1.0,
-           'setting-crash-threshold': 45,
-           // Nachsichtiger als jede Rennklasse: ein Sportwagen mit Strassenreifen
-           // verliert beim gleichzeitigen Bremsen und Lenken weniger, weil er ohnehin
-           // nicht am Limit eines Rennreifens faehrt.
-           'setting-brake-steal': 0.9,
-           'setting-tyre-blankets': true,
-           'setting-fuel-drain': 0.8, 'setting-crash-count': 4,
-           'setting-crash-damage': false,
-           'setting-repair-time': 6,
-           'setting-brake-fade': false,
-           'setting-brake-fade-strength': 1.0,
-           'setting-dirtyair': false,
-           'setting-dirtyair-strength': 1.0,
-           'setting-tyre-asym': false,
-           'setting-tyre-pressure': 1.8,
-           'setting-topspeed': 1.7,
-           // DER EIGENTLICHE UNTERSCHIED: siehe die Begruendung am Kopf dieses Presets.
-           'phys-transfer-k': 0.4, 'phys-load-tau': 160 },
-    },
+    // War hier: ein "Sport"-Preset (Objektschluessel gt7), das mehr Gewichtsverlagerung
+    // (phys-transfer-k 30->40 %) und traegeres Einschwingen (phys-load-tau 80->160 ms)
+    // simulierte. BESTELLT (diese Runde): "sport modus wieder raus (seit dem ist die
+    // lenkung auch so extrem schwach beim gas geben)" - genau die zwei erhoehten Werte
+    // verstaerken den Lastwechsel unter Gas (st.loadFront faellt staerker und traeger, siehe
+    // 40-physics.js), und darueber haengt exakt derselbe Reibkreis-Mechanismus, der schon
+    // einmal (steerExpo) als "Lenkung schwach beim Gas geben" gemeldet wurde. Die zwei
+    // Regler phys-transfer-k/phys-load-tau bleiben im Markup (ihre Vorgabewerte entsprechen
+    // dem Basismodell, 30 %/80 ms, und beeinflussen nichts, solange niemand sie von Hand
+    // hochstellt) - nur das Preset, das sie automatisch hochzog, ist weg.
     pro: {
       label: 'Pro',
       kurz: 'Halb so weit zwischen Arcade und Realismus GT3',

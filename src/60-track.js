@@ -1597,13 +1597,13 @@
   // Die drei anderen bleiben waehlbar - sie sind als OPTIMIERUNG richtig und zeigen, wo eine
   // schnellste Linie laege. Sie sind nur nicht das, was dieses Fahrzeug fahren kann.
   //
-  // ---- LUUKE-LINIE IST JETZT DIE VORGABE, statt 3-stufig ----------------------------
+  // ---- INNEN (GEMITTELT) IST WIEDER DIE VORGABE -------------------------------------
   //
-  // BESTELLT: "mach Luuke-Linie den Standard." Sie ist wie 3-stufig eine VORSCHRIFT und
-  // keine Optimierung (haelt also denselben Vorteil: ein Ghost auf der Schiene folgt
-  // einem gehaltenen Befehl, keinem schwingenden), nur von Hand aus Luukes eigenen
-  // Beispielen abgeleitet statt aus einer allgemeinen Kurvenoeffnung.
-  let lineModel = 'luuke';
+  // v0.7.50 hatte Luuke-Linie zur Vorgabe gemacht ("mach Luuke-Linie den Standard").
+  // BESTELLT (spaeter, diese Runde): "ideallinie standard: innen" - zurueckgedreht.
+  // Luuke-Linie bleibt waehlbar und wird weiter an den fuenf Beispielen geprueft, sie ist
+  // nur nicht mehr die Vorgabe fuer neue/zurueckgesetzte Profile.
+  let lineModel = 'innen3';
 
   // Die gueltigen Modellnamen an EINER Stelle. Vorher stand die Liste als zwei
   // Vergleiche in setLineModel und ein weiteres Mal als Bedingung in buildLine - beim
@@ -1892,10 +1892,14 @@
   //   1. KURVENLAEUFE (lineKurvenLaeufe(), schon vorhanden fuer dreiStufenLine): der
   //      Scheitel sitzt auf Lauf-Position min(1, Lauflaenge-1) - bei Laenge 1 die einzige
   //      Kachel, bei Laenge 2 die zweite, bei Laenge 3 die MITTLERE (nicht die letzte).
-  //   2. Scheitel: volles Innen (=Kurvenrichtung), Betrag 100 - AUSSER bei Schaerfeklasse 2
-  //      (Haarnadel/Enge): dort -75 * Richtung, also AUSSEN statt innen und nur 75 statt
-  //      100 - ein einzelner Beleg (SGHG), als bewusste Ausnahme uebernommen und nicht
-  //      stillschweigend ins allgemeine Muster gebogen (siehe Restfragen unten).
+  //   2. Scheitel: volles Innen (=Kurvenrichtung), Betrag 100 - AUCH bei Schaerfeklasse 2
+  //      (Haarnadel/Enge). Stand hier frueher als Ausnahme bei -75 * Richtung (Aussen,
+  //      nur 75), belegt an einem einzelnen Beispiel (SGHG) und als offene Frage markiert
+  //      ("Vorzeichen-Dreher oder bewusstes Aussenfahren?"). BESTELLT (Antwort): "in
+  //      haarnadel weiter innen" - kein bewusstes Aussenfahren, die Ausnahme ist
+  //      aufgehoben. Den kurzen Aussen-Touch am Einstieg einer Haarnadel bildet seither
+  //      luukeLinie() selbst ab (eigenes Drei-Phasen-Profil je Kachel statt der
+  //      allgemeinen Zwei-Halbrampen-Form, siehe dort), nicht mehr der Anker selbst.
   //   3. Erste Kachel eines Laufs (wenn nicht Scheitel): volles Aussen, Betrag 100 (bzw.
   //      50 bei Schaerfeklasse 0, den weiten Kurven - keine Beispiele dafuer, aus der
   //      Schaerfeklasse selbst hergeleitet: halbe Wirkung fuer ein Drittel der
@@ -2045,8 +2049,17 @@
       for (let p = 0; p < len; p++) {
         const idx = at(lauf.von + p);
         let wert;
-        if (tight === 2 && p === apexPos) wert = -75 * d;
-        else if (p === apexPos) wert = base * d;
+        // HAARNADEL-SCHEITEL: FRUEHERE SONDERREGEL AUFGEGEBEN. Stand bisher bei -75 * d
+        // (AUSSEN statt innen, nur 75 statt 100) - der einzige Beleg dafuer war ein
+        // einzelnes Beispiel (SGHG), als offene Frage an Luuke dokumentiert ("entweder
+        // Haarnadeln werden bewusst zur Aussenseite hin gefahren, oder es ist ein
+        // Vorzeichen-Dreher"). BESTELLT (Antwort, diese Runde): "in haarnadel weiter
+        // innen (am anfang kurz aussen, danach sofort nach innen)" - die Frage ist damit
+        // beantwortet: Vorzeichen-Dreher, kein bewusstes Aussenfahren. Der Scheitel folgt
+        // jetzt derselben allgemeinen Regel wie jede andere Kurve (Betrag 100, volles
+        // Innen); den kurzen Aussen-Touch am Anfang bildet stattdessen luukeLinie() selbst
+        // ab (das Drei-Phasen-Profil dort, siehe die Begruendung an ihrer eigenen Stelle).
+        if (p === apexPos) wert = base * d;
         else if (p === 0) wert = -base * d;
         else {
           // NACH DEM SCHEITEL: BESTELLT (Korrektur), an einem Lauf von vier Rechtskurven
@@ -2155,11 +2168,42 @@
       const grenzeVorn = (aVor + aHier) / 2;
       const grenzeHinten = (aHier + aNach) / 2;
       if (t === 0) grenzeStart = grenzeVorn;
+      // HAARNADEL: EIGENES DREI-PHASEN-PROFIL statt der normalen Zwei-Halbrampen-Form.
+      //
+      // BESTELLT (diese Runde): "luuke linie anpassen: in haarnadel weiter innen (am
+      // anfang kurz außen, danach sofort nach innen)." luukeLinieAnker() gibt der
+      // Haarnadel jetzt einen staerkeren Innen-Wert (siehe dort), aber die normale Form
+      // haelt aHier erst an der KACHELMITTE (u=0,5) - fuer eine 49 Abtastpunkte lange
+      // Haarnadel waere "kurz aussen am Anfang, dann SOFORT innen" damit nicht abbildbar:
+      // die erste Halbrampe liefe die ganze erste Haelfte lang nur in EINE Richtung.
+      //
+      // Drei Phasen statt zwei: ein kurzer Touch nach aussen (bis ENTRY_U), dann ein
+      // schneller Wechsel nach innen bis aHier erreicht ist (bis HOLD_U, deutlich vor der
+      // Kachelmitte), dann HALTEN bei aHier bis EXIT_U, danach wie gewohnt zur naechsten
+      // Kachelgrenze. Nicht an eigenen Beispieldaten gemessen (anders als der Rest dieser
+      // Datei) - eine begruendete Umsetzung der Bestellung, keine zweite Messung.
+      const istHaarnadel = tileTightness(tiles[at(t)].type) === 2;
+      const ENTRY_U = 0.12, HOLD_U = 0.35, EXIT_U = 0.85;
+      // Der Aussen-Touch spiegelt aHier (Vorzeichen umgedreht, gedaempft auf 35%) - so
+      // bleibt er automatisch auf der richtigen Seite, egal ob die Haarnadel links- oder
+      // rechtsherum dreht.
+      const entryWert = -0.35 * aHier;
       for (let d = 0; d < m; d++) {
         const u = m > 0 ? (d + 0.5) / m : 0.5;
-        const wert = u < 0.5
-          ? grenzeVorn + (aHier - grenzeVorn) * smooth(u / 0.5)
-          : aHier + (grenzeHinten - aHier) * smooth((u - 0.5) / 0.5);
+        let wert;
+        if (istHaarnadel) {
+          wert = u < ENTRY_U
+            ? grenzeVorn + (entryWert - grenzeVorn) * smooth(u / ENTRY_U)
+            : u < HOLD_U
+              ? entryWert + (aHier - entryWert) * smooth((u - ENTRY_U) / (HOLD_U - ENTRY_U))
+              : u < EXIT_U
+                ? aHier
+                : aHier + (grenzeHinten - aHier) * smooth((u - EXIT_U) / (1 - EXIT_U));
+        } else {
+          wert = u < 0.5
+            ? grenzeVorn + (aHier - grenzeVorn) * smooth(u / 0.5)
+            : aHier + (grenzeHinten - aHier) * smooth((u - 0.5) / 0.5);
+        }
         alpha[at(tab.start[t] + d)] = -(wert / 100) * limit;
       }
     }

@@ -3162,7 +3162,13 @@
   //
   // Zusaetzlich gedeckelt auf n-2: eine Gasse, die laenger ist als das Layout, waere ein
   // Ring aus stehenden Autos.
-  const PIT_PLAETZE_MAX = 4;
+  //
+  // ZURUECKGEDREHT (diese Runde): BESTELLT "ghost pit: immer nur 1 ghost auf einmal" -
+  // das Gegenteil der obigen Bestellung. pitPlaetzeZahl() (siehe unten) faengt das
+  // automatisch mit ab: Math.min(PIT_PLAETZE_MAX, n-2) wird bei 1 immer 1, die
+  // Gassen-Infrastruktur (Heilung, Warteschlange) bleibt unveraendert, sie serialisiert
+  // jetzt nur auf einen Platz statt vier.
+  const PIT_PLAETZE_MAX = 1;
   // Wieviel Querlage ein Auto benutzt, das noch an einem stehenden vorbei muss. Der
   // Gegenrand, also NEGATIV - der Stopp haelt rechts.
   const PIT_VORBEI = -1.0;
@@ -4472,7 +4478,12 @@
   // Als let und nicht const, damit eine Messreihe ihn durchfahren kann - der Wert ist eine
   // Abwaegung zwischen Beruehrungen und dichtem Fahren, und die entscheidet eine Reihe und
   // nicht ein Kommentar. Der Fahrbetrieb aendert ihn nicht.
-  let SPICE_GAP_MIN = 1.2;      // Kacheln, ab hier wird gelupft (nur noch Rueckfall)
+  // BESTELLT (diese Runde): "ghosts etwas mehr abstand, damit sie sich nicht anschieben
+  // (lateral ist gut, aber hintereinander zu wenig)." Ausdruecklich nur DIESE beiden Werte,
+  // nicht ghostCfg.lateral (das seitliche Nebeneinander bleibt wie gemessen gut). Von 1,2
+  // auf 1,5 angehoben - "etwas mehr", nicht bis an 1,8/2,5, wo die Messreihe oben zeigt,
+  // dass es wieder schlechter wird.
+  let SPICE_GAP_MIN = 1.5;      // Kacheln, ab hier wird gelupft (nur noch Rueckfall)
   // ---- DIE ZEITLUECKE IN SEKUNDEN --------------------------------------------------
   //
   // ABGELEITET UND NICHT GEWAEHLT, aus der Fahrzeuglaenge und dem Tempo. Ein Auto ist 9,5 cm
@@ -4516,7 +4527,9 @@
   // WARUM NICHT MEHR: darueber wird es wieder schlechter (1,8 und 2,5 liegen hoeher). Das
   // ist plausibel und kein Messfehler - eine sehr grosse Sollluecke laesst die Autos
   // staerker bremsen, und dann laufen sie wieder auf.
-  let SPICE_LUECKE_MIN_S = 1.2;
+  // Von 1,2 auf 1,5 angehoben, siehe die Begruendung bei SPICE_GAP_MIN direkt darueber -
+  // dieselbe Bestellung, derselbe Grund.
+  let SPICE_LUECKE_MIN_S = 1.5;
   const SPICE_LUECKE_PER_CLOSING = 0.30;
   function lueckeMinSetzen(v) { SPICE_LUECKE_MIN_S = v; }
   function lueckeMinLesen() { return SPICE_LUECKE_MIN_S; }
@@ -4553,9 +4566,13 @@
     const von = 1.5 - i;        // 1.5..0.5, 1 bei 50 % - fuer Luecken/Reichweite
     attackPSetzen(0.45 * zu);
     attackArmMsSetzen(900 * von);
-    lueckeMinSetzen(1.2 * von);
-    gapMinSetzen(1.2 * von);
-    attackRangeSetzen(1.3 * von);
+    // Anker von 1,2 auf 1,5 angehoben (BESTELLT: "ghosts etwas mehr abstand"), damit 50 %
+    // weiter genau den neuen Vorgabewert trifft - siehe SPICE_GAP_MIN/SPICE_LUECKE_MIN_S
+    // oben. ATTACK_RANGE im selben Verhaeltnis mitgezogen (1,3/1,2 = 1,625/1,5), damit
+    // RANGE > GAP_MIN bei jeder Reglerstellung erhalten bleibt.
+    lueckeMinSetzen(1.5 * von);
+    gapMinSetzen(1.5 * von);
+    attackRangeSetzen(1.625 * von);
   }
 
   // Fortschritt in Kacheln seit dem Start, mit Bruchteil. Absichtlich NICHT ueber den
@@ -7153,11 +7170,18 @@
           : underYellow ? 0
           : passSeite !== 0 ? passSeite * passAussen()
           : ghostLineOffset(car) * ghostCfg.line * GHOST_LINE_STEER * linieGewicht;
-        const querRohSumme = quer
+        // BESTELLT (diese Runde): "querlage bei boxenstopps klappt nicht, die autos
+        // bleiben mitten auf der strecke stehen." Der Kommentar zwei Absaetze ueber pq
+        // sagt es schon: "waehrend eines Stopps gibt es keine Linie, keine Wuerze und
+        // keine Spur - nur den Rand" - aber quer OBEN wurde zwar korrekt auf pq gesetzt,
+        // die Summe hier addierte Spur/Ueberhol-Bias/Verbremser-Fehler trotzdem noch
+        // OBENDRAUF und zog das Auto von seinem Randwert wieder Richtung Mitte. Jetzt
+        // haelt ein Boxenstopp (pq !== null) exakt den Randwert, ohne Zusatz.
+        const querRohSumme = pq !== null ? quer : (quer
               + g.bias * ghostCfg.lateral * 0.25
               + ghostLane(car) * ghostCfg.lanes * GHOST_LANE_STEER * spurGewicht
               // Der Querausschlag eines Verbremsers, additiv - siehe SPICE_FEHLER_QUER.
-              + (spice.fehlerQuer || 0);
+              + (spice.fehlerQuer || 0));
         // ---- QUERTRAEGHEIT: eine RATENBEGRENZUNG und kein Tiefpass ------------------
         //
         // Der Unterschied ist wichtig. Ein Tiefpass (neu = alt + (soll-alt) * k) naehert sich
@@ -7258,6 +7282,18 @@
         const querSollFaktor = (1 - Math.pow(0.75, dt / (CONTROL_SEND_INTERVAL_MS / 1000)))
                               * tempoAnteil;
         g.querSoll = (g.querSoll || 0) + (querRoh - (g.querSoll || 0)) * querSollFaktor;
+        // BESTELLT (diese Runde): "querlage bei boxenstopps klappt nicht, die autos
+        // bleiben mitten auf der strecke stehen." Gefunden bei der Umstellung des
+        // Ideallinien-Vorgabewerts auf innen3: die Klemme oben (steer = min(steer, 0))
+        // wirkt auf den ROHEN Befehl, aber g.querSoll folgt ihm nur mit querSollFaktor -
+        // und der friert bei v nahe 0 komplett ein (siehe die Begruendung zwei Absaetze
+        // ueber diesem Block, "bei v = 0 friert er komplett ein"). Ein Auto, das GENAU IN
+        // DEM MOMENT langsam wird, in dem die Sperre beginnt, behaelt seinen alten,
+        // ungeklemmten querSoll fuer die ganze Standzeit - gemessen mit innen3 als
+        // Ideallinie auf SR3GLR2GR2G2 (+0,385 statt eines negativen Werts, 36 Takte lang).
+        // g.querSoll ist aber genau die Groesse, die Karte UND Test lesen - die Klemme
+        // muss also auch SIE direkt treffen, nicht nur den rohen Befehl.
+        if (pitSperreRechts(car)) g.querSoll = Math.min(g.querSoll, 0);
       } else {
         // Fallback for cars not in guard-rail mode: the old layout-plus-yaw controller.
         const dir = ghostTurnDir(car, 0);

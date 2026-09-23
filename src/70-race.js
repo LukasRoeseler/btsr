@@ -397,6 +397,17 @@
     // ersten Runde die Reihenfolge der GARAGE, weil alle Rundenzahlen und Summen null waren
     // und die Sortierung stabil ist. Eine Uebersicht, die eine ganze Runde lang eine
     // erfundene Reihenfolge zeigt, ist schlechter als keine.
+    // BESTELLT (diese Runde): "renn ende wird nicht richtig getriggert, es geht für immer
+    // weiter bei Rundenrennen." raceLimitReached() (siehe dort) prueft im Rundenmodus
+    // c.laps.length gegen raceLimit fuer JEDES Auto aus dieser Liste - und fuer das
+    // Spielerauto stand hier immer c.race.laps, ein Zaehler, der von carLapCrossed()/
+    // carRaceNotify() gefuellt wird (byte-genaue Sperre/Kachel-Erkennung). Der TATSAECHLICH
+    // fahrende Rundenzaehler des Spielers ist aber raceLapTimes, gefuellt von
+    // playerLapCrossed() - dieselbe Zweiteilung, die weiter oben schon fuer `ort`
+    // beruecksichtigt wird (spielerOrtGes() statt ghostOrtGes() fuer den Spieler). Ohne
+    // diesen Fix blieb c.race.laps beim Spieler auf 0 stehen, raceLimitReached() konnte nur
+    // ueber einen GHOST ausloesen, und ein Rundenrennen ohne (oder mit zu langsamen) Ghosts
+    // endete nie.
     const out = garage.map(c => ({ name: garageLabel(c), role: c.role,
                                    farbe: carColor(c).hex, kennung: c.tag,
                                    // Der Ort auf der Schiene. Auto 2 geht ueber
@@ -407,7 +418,9 @@
                                    ort: (c.role === 'player'
                                      ? spielerOrtGes()
                                      : (typeof ghostOrtGes === 'function' ? ghostOrtGes(c) : null)),
-                                   laps: (c.race && c.race.laps) || [] }));
+                                   laps: (c.role === 'player' && raceLapTimes.length)
+                                     ? raceLapTimes
+                                     : (c.race && c.race.laps) || [] }));
     if (!garage.some(c => c === playerCar) && raceLapTimes.length) {
       // Ohne Garage gibt es kein Geraet und damit keine Farbe: dann bleibt das Feld leer,
       // statt eine zu erfinden.

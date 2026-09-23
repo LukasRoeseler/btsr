@@ -1278,7 +1278,8 @@
     steerDaempfungSetzen(parseFloat($('phys-steerdamp').value), false);
   }
 
-  ['phys-steerresp', 'phys-accel', 'setting-steer-calib', 'setting-brake-steal'].forEach(id => {
+  ['phys-steerresp', 'phys-accel', 'setting-steer-calib', 'setting-brake-steal',
+   'setting-throttle-steer-relief'].forEach(id => {
     const input = $(id);
     const readout = $(id + '-val');
     const apply = () => {
@@ -1304,6 +1305,10 @@
         // Als Prozent, weil der Wert ein Faktor auf eine Anforderung ist und kein Winkel.
         // Ein Grad-Wert waere hier die falsche Einheit und die naechste Verwechslung: der
         // Winkel ist immer auf 45 Grad gedeckelt, egal was hier steht.
+        readout.textContent = Math.round(v * 100) + '%';
+      }
+      if (id === 'setting-throttle-steer-relief') {
+        physEngine.config.throttleSteerRelief = v;
         readout.textContent = Math.round(v * 100) + '%';
       }
       markDrivetrainChartsDirty();
