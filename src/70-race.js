@@ -1256,6 +1256,10 @@
         c.ghost.auslauf = true;
         return;
       }
+      // ABBRUCH VON HAND: sofort anhalten, wie der Knopf "Ghosts anhalten". Kein
+      // Ausrollen - wer abbricht, will, dass es aufhoert. Vorher stand hier finishGhost()
+      // auch fuer den Abbruch, und die Ghosts rollten noch ein paar Kacheln weiter.
+      if (!willAuslaufen) { stopGhost(c); return; }
       finishGhost(c);
     });
     if (willAuslaufen && garage.some(c => c.role === 'ghost' && c.ghost && c.ghost.auslauf)) {
@@ -4776,6 +4780,11 @@
     { id: 'go', el: 'rs-row-go', wert: 'rs-wert-go' },
   ];
   let raceScreenSel = 0;
+  // Dauer/Runden ist seit dieser Fassung anwaehlbar: erst die Waehltaste, dann stellt
+  // links/rechts exakt ein. So laesst sich die Rundenzahl auch verringern und nicht nur
+  // erhoehen - und links/rechts kann den Schirm weiterblaettern, solange nichts angewaehlt
+  // ist.
+  let raceScreenLimitArmed = false;
   const RACE_MODE_ORDER = ['practice', 'endurance', 'qualifying', 'laps'];
 
   function raceScreenOffen() {
@@ -4783,15 +4792,38 @@
            && cockpitScreenIst().id === 'renneinstellungen';
   }
 
-  // Hoch/runter bewegt die Auswahl, wie beim Boxenschirm - links/rechts bleibt frei, damit
-  // der Schirm die Taste nicht frisst, mit der man ihn verlaesst.
+  // Hoch/runter bewegt die Auswahl, wie beim Boxenschirm. Links/rechts verstellt nur die
+  // ANGEWAEHLTE Dauer/Runden-Zeile; ohne Anwahl bleibt die Taste frei, damit der Schirm
+  // sie nicht frisst, mit der man ihn verlaesst (Schirmblaettern).
   function raceScreenPad(dir) {
     if (!raceScreenOffen()) return false;
-    if (dir !== 'up' && dir !== 'down') return false;
-    const n = RACE_SETTINGS_ROWS.length;
-    raceScreenSel = ((raceScreenSel + (dir === 'up' ? -1 : 1)) % n + n) % n;
-    raceScreenRender();
-    return true;
+    if (dir === 'up' || dir === 'down') {
+      const n = RACE_SETTINGS_ROWS.length;
+      raceScreenSel = ((raceScreenSel + (dir === 'up' ? -1 : 1)) % n + n) % n;
+      // Wegbewegen gibt die Anwahl auf - sonst verstellt links/rechts an einer Stelle,
+      // die man gar nicht mehr im Blick hat.
+      raceScreenLimitArmed = false;
+      raceScreenRender();
+      return true;
+    }
+    if (dir === 'left' || dir === 'right') {
+      if (!raceScreenLimitArmed) return false;
+      const zeile = RACE_SETTINGS_ROWS[raceScreenSel];
+      if (zeile.id !== 'limit') return false;
+      // Deaktiviert bei freiem Training, genau wie das Feld im Tab - eine Zahl, die dort
+      // ohne Bedeutung ist, soll es hier auch bleiben.
+      if ($('race-limit').disabled) return false;
+      const max = parseInt($('race-limit').max, 10) || 120;
+      const min = parseInt($('race-limit').min, 10) || 1;
+      let neu = raceLimit + (dir === 'right' ? 1 : -1);
+      if (neu > max) neu = min;
+      if (neu < min) neu = max;
+      $('race-limit').value = neu;
+      $('race-limit').dispatchEvent(new Event('input', { bubbles: true }));
+      raceScreenRender();
+      return true;
+    }
+    return false;
   }
 
   // idVorgabe: derselbe Kunstgriff wie bei pitScreenSelect(idVorgabe) - ein Pruefstand
@@ -4804,22 +4836,23 @@
       : RACE_SETTINGS_ROWS[raceScreenSel];
     if (!zeile) return false;
     if (zeile.id === 'mode') {
+      raceScreenLimitArmed = false;
       const i = RACE_MODE_ORDER.indexOf(raceMode);
       const naechster = RACE_MODE_ORDER[(i + 1) % RACE_MODE_ORDER.length];
       $('race-mode').value = naechster;
       $('race-mode').dispatchEvent(new Event('change', { bubbles: true }));
     } else if (zeile.id === 'limit') {
-      // Deaktiviert bei freiem Training, genau wie das Feld im Tab - eine Zahl, die dort
-      // ohne Bedeutung ist, soll es hier auch bleiben.
+      // An- und abwaehlen statt "jeder Druck erhoeht um eins": erst anwaehlen, dann
+      // links/rechts verstellt exakt (siehe raceScreenPad). So laesst sich die Rundenzahl
+      // auch herunterstellen.
       if (!$('race-limit').disabled) {
-        const max = parseInt($('race-limit').max, 10) || 120;
-        const min = parseInt($('race-limit').min, 10) || 1;
-        let neu = raceLimit + 1;
-        if (neu > max) neu = min;
-        $('race-limit').value = neu;
-        $('race-limit').dispatchEvent(new Event('input', { bubbles: true }));
+        raceScreenLimitArmed = !raceScreenLimitArmed;
+        showHudToast(raceScreenLimitArmed
+          ? t('Rundenzahl: links/rechts einstellen')
+          : t('Rundenzahl: Anwahl beendet'));
       }
     } else if (zeile.id === 'go') {
+      raceScreenLimitArmed = false;
       toggleRace();
     }
     raceScreenRender();
@@ -4833,7 +4866,10 @@
     for (let i = 0; i < RACE_SETTINGS_ROWS.length; i++) {
       const z = RACE_SETTINGS_ROWS[i];
       const el = $(z.el);
-      if (el) el.classList.toggle('pr-sel', i === raceScreenSel);
+      if (el) {
+        el.classList.toggle('pr-sel', i === raceScreenSel);
+        el.classList.toggle('pr-armed', i === raceScreenSel && raceScreenLimitArmed);
+      }
       const w = $(z.wert);
       if (!w) continue;
       let text = '';
@@ -4851,7 +4887,8 @@
     if (fuss) {
       const b = (typeof bindings === 'object' && bindings && bindings.yellowflag)
         ? bindingDescription(bindings.yellowflag) : 'nicht belegt';
-      fuss.textContent = 'Steuerkreuz hoch/runter waehlt · ' + b + ' schaltet';
+      fuss.textContent = 'Steuerkreuz hoch/runter waehlt · ' + b + ' schaltet'
+        + (raceScreenLimitArmed ? ' · links/rechts einstellen' : '');
     }
   }
 

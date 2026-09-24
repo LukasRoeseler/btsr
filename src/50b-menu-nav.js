@@ -302,9 +302,14 @@
       row.control.dispatchEvent(new Event('input', { bubbles: true }));
       row.control.dispatchEvent(new Event('change', { bubbles: true }));
     } else if (row.kind === 'select') {
+      // Ein Auswahlfeld schaltet IMMER eine Option weiter, auch beim Beschleunigen. Der
+      // grosse Schritt (MENU_NAV_STEP_BIG) ist fuer Skalen gedacht; bei einem Menue mit
+      // wenigen Eintraegen ueberspringt er sonst die Haelfte - gemeldet als "manche Menues
+      // schalten mehrere optionen auf einmal durch, sodass ich nicht nur eins weiterschalten
+      // kann, sondern direkt viele".
       const n = row.control.options.length;
       const i0 = row.control.selectedIndex;
-      const roh = i0 + (dir === 'left' ? -schritte : schritte);
+      const roh = i0 + (dir === 'left' ? -1 : 1);
       const i1 = Math.max(0, Math.min(n - 1, roh));
       if (i1 !== i0) {
         row.control.selectedIndex = i1;

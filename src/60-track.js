@@ -123,6 +123,10 @@
   // Je Leseart einer, benannt statt aufgezaehlt: wer das liest, sieht sofort, welcher wo
   // gilt. Die Liste darueber bleibt als Rueckfall und fuer isStartCode() ohne Leseart.
   const START_CODE_RAIL = 0x01;    // Kunststoffschiene, Bahn-Modus (seVen, bestaetigt)
+  // Im Ausdruck-Modus melden je nach Vorlage BEIDE Werte das Start/Ziel-Blatt: das
+  // Original meldet 0x0a (gemessen 25.08.), die App-Blaetter (startziel-a4.svg, muster-*,
+  // spur-*) tragen das Wort, das 0x01 ergibt (siehe tools/make_track_sheets.py und
+  // make_pattern_sheets.py). Deshalb zaehlt isStartCode() im Ausdruck-Modus beide.
   const START_CODE_PRINT = 0x0a;   // gedrucktes Blatt, Ausdruck-Modus (gemessen 25.08.)
   // AUS DER LISTE GELESEN und nicht daneben aufgezaehlt. Vorher stand hier
   // "c === 0x0a || c === START_CODE_LEGACY", und damit gab es die Tatsache "was gilt als
@@ -139,7 +143,10 @@
   // stand es hier vorher schon.
   function isStartCode(c) {
     if (typeof trackMode === 'string') {
-      return trackMode === 'on' ? c === START_CODE_RAIL : c === START_CODE_PRINT;
+      if (trackMode === 'on') return c === START_CODE_RAIL;
+      // Ausdruck: beide Werte. Auf der Schiene bleibt es strikt 0x01, damit die Engstelle
+      // (0x0a) keine Phantomrunde zaehlt - der Grund, aus dem v0.6.14 die Leseart einzog.
+      return c === START_CODE_PRINT || c === START_CODE_RAIL;
     }
     return START_CODES.indexOf(c) >= 0;
   }

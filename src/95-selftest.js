@@ -2871,12 +2871,12 @@
       for (const k of SAMPLE_CARS) if (menue.indexOf(k) < 0) schlecht.push(k + ' steht nur in SAMPLE_CARS');
     }
     // Und die Dokutabelle: so viele Motorzeilen wie Schleifen-DATEIEN. Nach Dateien gezaehlt,
-    // nicht nach Manifest-Eintraegen, seit p992gt3r_rec (v0.7): ein Vergleichsprofil, das
-    // dieselben fuenf .ogg-Dateien wie sein synthetisches Original zweitverwendet, statt
-    // eigene zu haben - ein Motorschluessel mehr im Manifest ohne eine einzige neue Datei.
-    // Nach Manifest-EINTRAEGEN gezaehlt haette das jedes Mal einen Fehlalarm gegeben, den ein
-    // zweites Vergleichsprofil (mit denselben Dateien) nie wirklich war. Sie ist von Hand
-    // gepflegt, also ist das die einzige Stelle, an der ein Vergessen auffaellt.
+    // nicht nach Manifest-Eintraegen: ein Vergleichsprofil kann dieselben .ogg-Dateien wie
+    // sein synthetisches Original zweitverwenden, statt eigene zu haben - ein Motorschluessel
+    // mehr im Manifest ohne eine einzige neue Datei. Nach Manifest-EINTRAEGEN gezaehlt haette
+    // das jedes Mal einen Fehlalarm gegeben, den ein zweites Vergleichsprofil (mit denselben
+    // Dateien) nie wirklich war. Sie ist von Hand gepflegt, also ist das die einzige Stelle,
+    // an der ein Vergessen auffaellt.
     const dateien = new Set();
     for (const k of imManifest) for (const b of Object.keys(man[k].loops)) dateien.add(man[k].loops[b].file);
     const schleifen = dateien.size;
@@ -5129,7 +5129,9 @@
   // DIE SECHS FAELLE hier sind keine erfundenen Zahlen, sondern jede 0x00-Strecke ab 300 ms,
   // die in den Aufzeichnungen ueberhaupt vorkommt - mit der Kachelrate, die dabei gemessen
   // wurde. Der Zaehler lief in 6 von 6 Faellen weiter, das blosse Zaehlen taugt also nicht
-  // als Unterscheider; die RATE taugt.
+  // als Unterscheider. BESTELLT "stumpf, keine Querlage, bleiben einfach stehen": ein Ghost
+  // soll anhalten, sobald die 0x00-Strecke ueber der Schwelle steht - die Kachelrate ist
+  // dabei egal. Deshalb parken jetzt auch die Faelle mit laufendem Zaehler.
   stAdd('Ghost haelt nur an, wenn es wirklich vorbei ist', () => {
     if (!window.OMEGA_TEST || !OMEGA_TEST.ghostParkProbe) {
       return { skip: true, mass: 'ghostParkProbe nicht vorhanden' };
@@ -5137,8 +5139,8 @@
     // nullMs, kachelMs, soll geparkt sein
     const faelle = [
       [840, 420, false, 'faehrt, 420 ms je Kachel'],
-      [5845, 490, false, 'faehrt, 490 ms je Kachel'],
-      [13580, 438, false, 'faehrt, 438 ms je Kachel'],
+      [5845, 490, true, 'steht, 490 ms je Kachel'],
+      [13580, 438, true, 'steht, 438 ms je Kachel'],
       [1013, 92, true, 'Abflug, Zaehler rast mit 92 ms'],
       [12806, 12806, true, 'steht, eine Kachel in 12,8 s'],
     ];
@@ -9551,9 +9553,11 @@
     if (r.ausdruck[i(0x0a)] !== r.typen.START) {
       fehler.push('Ausdruck 0x0a -> ' + r.ausdruck[i(0x0a)] + ', erwartet Start');
     }
-    // 2. 0x01 umgekehrt.
+    // 2. 0x01 umgekehrt. Auf der Schiene ist 0x01 Start; auf Papier kommt es je nach Vorlage
+    //    ebenfalls vor (die App-Blaetter tragen das 0x01-Wort, siehe make_track_sheets.py),
+    //    also zaehlt es dort als Start. Nur die SCHIENE bleibt strikt.
     if (r.bahn[i(0x01)] !== r.typen.START) fehler.push('Bahn 0x01 ist nicht Start');
-    if (r.ausdruck[i(0x01)] === r.typen.START) fehler.push('Ausdruck 0x01 gilt als Start');
+    if (r.ausdruck[i(0x01)] !== r.typen.START) fehler.push('Ausdruck 0x01 ist nicht Start');
     // 3. DIE BOXENGASSE hat einen kuenstlichen Typ, weil die Karte sie schon kannte.
     if (r.bahn[i(0x07)] !== r.typen.PIT) fehler.push('0x07 ist nicht die Boxengasse');
     // 4. UND DIE VIER 30-GRAD-KURVEN GEHEN UNVERAENDERT DURCH - sie kollidieren mit nichts.
@@ -13562,7 +13566,7 @@
       const bahn0a = zaehle(0x0a);
       const bahn03 = zaehle(0x03);
       const bahn02 = zaehle(0x02);
-      // ---- AUSDRUCK: umgekehrt ----
+      // ---- AUSDRUCK: 0x0a und 0x01 zaehlen beide (je nach Vorlage) ----
       trackMode = 'off';
       const pap0a = zaehle(0x0a);
       const pap01 = zaehle(0x01);
@@ -13574,7 +13578,9 @@
       if (bahn03 !== 0) fehler.push('Bahn: 0x03 Linkskurve zaehlt ' + bahn03);
       if (bahn02 !== 0) fehler.push('Bahn: 0x02 Gerade zaehlt ' + bahn02);
       if (!(pap0a >= 1)) fehler.push('Ausdruck: 0x0a zaehlt nicht');
-      if (pap01 !== 0) fehler.push('Ausdruck: 0x01 zaehlt ' + pap01);
+      // Auch das 0x01-Wort kommt auf Papier vor (die App-Blaetter tragen es, siehe
+      // make_track_sheets.py) - es muss zaehlen, sonst tut die eigene Ausdruck-Schleife nichts.
+      if (!(pap01 >= 1)) fehler.push('Ausdruck: 0x01 zaehlt nicht');
       return { ok: !fehler.length,
                mass: 'Bahn: 0x01 -> ' + bahn01 + ', 0x0a -> ' + bahn0a
                      + ', 0x03 -> ' + bahn03 + ', 0x02 -> ' + bahn02

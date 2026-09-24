@@ -302,7 +302,11 @@
      unten: Breite bestimmt die Groesse, height:auto haelt das Seitenverhaeltnis, und damit
      passt auch die Hoehe von selbst - Text und Symbole schrumpfen zusammen mit dem Rahmen,
      bleiben also im Verhaeltnis zueinander lesbar. */
-  .pad-wrap { overflow-x: auto; margin-top: 10px; }
+  .pad-wrap { overflow-x: auto; margin-top: 10px; cursor: zoom-in; }
+  .pad-wrap:focus-visible { outline: 2px solid var(--good); outline-offset: 2px;
+    border-radius: 10px; }
+  .pad-zoom-hint { display: block; font-size: 10.5px; color: var(--muted);
+    margin-top: 6px; text-align: center; }
   .pad-svg { width: 100%; max-width: 620px; height: auto; display: block;
     margin: 0 auto; background: #0f141c; border: 1px solid var(--border);
     border-radius: 10px; }
@@ -1805,6 +1809,11 @@
   }
   .pit-row.pr-sel { outline: 2px solid var(--gt3-tile-ink); outline-offset: -2px; }
   .pit-row.pr-sel > .pr-pfeil { opacity: 1; }
+  /* Angewaehlte Zeile (Rundenzahl im Renneinstellungen-Schirm): der Fokus ist da, und
+     links/rechts verstellt. Ein deutlicheres Signal als die blosse Auswahl, damit klar ist,
+     dass die Taste jetzt den Wert und nicht den Schirm bewegt. */
+  .pit-row.pr-armed { background: var(--gt3-tile-ink); color: var(--gt3-tile); }
+  .pit-row.pr-armed > .pr-pfeil { opacity: 1; }
 
   /* ---- Der Rennuebersichts-Schirm ----------------------------------------------------- */
   /* ZWEI SPALTEN: Tabelle links, Strecke rechts. Das Cockpit ist breit und flach -
@@ -3166,7 +3175,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.7.59</span></span>
+        <span class="foot-ver">v<span id="app-version">0.7.60</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -6526,7 +6535,8 @@
         Boxenschirm w&auml;hlt sie dort aus, und die gelbe Flagge gibt es nach dem
         Zur&uuml;ckbl&auml;ttern.
       </p>
-      <div class="pad-wrap">
+      <div class="pad-wrap" id="pad-zoom" tabindex="0" role="button"
+           aria-label="Controller-Belegung vergrößern">
       <svg viewBox="0 0 1000 660" class="pad-svg" role="img"
            aria-label="Controller mit der aktuellen Tastenbelegung">
         <g class="pad-body" transform="translate(0, 20)">
@@ -6652,6 +6662,7 @@
       <text x="775" y="331" text-anchor="start" class="pad-row"><tspan class="pad-sym">&#9633;</tspan> <tspan class="pad-act" id="pad-a-sq">&ndash;</tspan></text>
         </g>
       </svg>
+      <span class="pad-zoom-hint">&#8599; Vergr&ouml;&szlig;ern</span>
       </div>
     </div>
   </section>
@@ -7852,17 +7863,14 @@
           <span class="opt-val" id="brake-volume-val">30%</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Motorsound-Profil<small>Alle sind aus
-          Zylinderzahl, Kurbelwelle, Bankaufteilung und Z&uuml;ndfolge gerechnet &ndash; bis auf
-          eine Ausnahme keine Aufnahme. Die Anlasser-Aufnahme des Porsche steht als eigenes
-          Profil direkt neben dem synthetischen Original, zum Vergleich, nicht als dessen
-          Ersatz. Bei den aufgeladenen Originalen fehlt der Lader. Die
-          sechs mit WIP sind noch nicht nach Geh&ouml;r gepr&uuml;ft; beim Maserati kommt
-          dazu, dass dieses Modell den Bankwinkel gar nicht darstellt, weshalb er sich vom
-          Ferrari-V12 nur in Drehzahl und Rohrl&auml;nge unterscheidet. Der Boxer-Rumpel des
-          Subaru kommt aus ungleich langen Kr&uuml;mmerrohren; das Modell tr&auml;gt feste
-          Zeitversätze je Zylinder und damit die richtige Art von Unregelm&auml;&szlig;igkeit,
-          aber ihr genaues Muster ist gew&auml;hlt und nicht aus Rohrl&auml;ngen
-          gerechnet.</small></div>
+          Zylinderzahl, Kurbelwelle, Bankaufteilung und Z&uuml;ndfolge gerechnet &ndash; keine
+          Aufnahme. Bei den aufgeladenen Originalen fehlt der Lader. Die sechs mit WIP sind
+          noch nicht nach Geh&ouml;r gepr&uuml;ft; beim Maserati kommt dazu, dass dieses Modell
+          den Bankwinkel gar nicht darstellt, weshalb er sich vom Ferrari-V12 nur in Drehzahl
+          und Rohrl&auml;nge unterscheidet. Der Boxer-Rumpel des Subaru kommt aus ungleich
+          langen Kr&uuml;mmerrohren; das Modell tr&auml;gt feste Zeitversätze je Zylinder und
+          damit die richtige Art von Unregelm&auml;&szlig;igkeit, aber ihr genaues Muster ist
+          gew&auml;hlt und nicht aus Rohrl&auml;ngen gerechnet.</small></div>
         <select id="sound-profile">
           <!-- REIHENFOLGE AUF WUNSCH: die drei meistgefahrenen zuerst, dann der Rest.
                Alphabetisch waere ordentlicher und beim Fahren nutzlos - man sucht hier
@@ -7873,7 +7881,6 @@
                zwei Listen zusammengehalten werden muessen. -->
           <optgroup label="GT3 und GT-Rennmotoren">
           <option value="p992gt3r" selected>Porsche 911 GT3 R: Boxer-6, Einzeldrosseln</option>
-          <option value="p992gt3r_rec">Porsche 911 GT3 R: Anlasser als echte Aufnahme</option>
           <option value="m4gt3">BMW M4 GT3: Reihen-6</option>
           <option value="mustang">Ford Mustang GT3: V8, Cross-Plane</option>
           <option value="f296gt3">Ferrari 296 GT3: V6, 120 Grad</option>
@@ -8965,10 +8972,11 @@
       </p>
       <p class="muted" style="font-size:11.5px; border-left:3px solid var(--good);
          padding-left:9px; margin-top:0">
-        Im Ausdruck-Modus meldet das Start/Ziel-Blatt 0x01. Im Bahn-Modus melden die
-        Schienen 0x02 Gerade, 0x03 Linkskurve, 0x04 Rechtskurve, 0x05 und 0x06 Haarnadel,
-        0x0a Start/Ziel, 0x00 abseits der Bahn. Dieselbe Zahl bedeutet je Modus etwas
-        anderes &ndash; wer Codes vergleicht, muss den Modus mitnennen.
+        Im Ausdruck-Modus meldet das Start/Ziel-Blatt je nach Vorlage 0x01 oder 0x0a. Im
+        Bahn-Modus melden die Schienen 0x02 Gerade, 0x03 Linkskurve, 0x04 Rechtskurve,
+        0x05 und 0x06 Haarnadel, 0x01 Start/Ziel, 0x0a Engstelle, 0x00 abseits der Bahn.
+        Dieselbe Zahl bedeutet je Modus etwas anderes &ndash; wer Codes vergleicht, muss
+        den Modus mitnennen.
       </p>
       <p class="muted" style="font-size:11.5px; border-left:3px solid var(--good);
          padding-left:9px; margin-top:0">
@@ -9091,7 +9099,8 @@
           <img src="muster-gerade-a4.svg" alt="Vorschau Trapez-Muster Gerade"
                style="width:100%; max-width:300px; border:1px solid var(--border);
                       border-radius:4px; display:block">
-          <p style="margin:8px 0 4px 0"><b>Gerade</b></p>
+          <p style="margin:8px 0 4px 0"><b>Gerade</b>
+            <span class="wip-tag">experimentell</span></p>
           <p class="muted" style="font-size:11.5px; margin:0 0 8px 0">
             12 Trapeze nebeneinander, randlos &uuml;ber die ganze Seite, oben
             5&nbsp;mm und unten 20&nbsp;mm breit.
@@ -9104,7 +9113,8 @@
           <img src="muster-kurve-60grad-a4.svg" alt="Vorschau Trapez-Muster Rechtskurve 60 Grad, Version A"
                style="width:100%; max-width:300px; border:1px solid var(--border);
                       border-radius:4px; display:block">
-          <p style="margin:8px 0 4px 0"><b>Rechtskurve, 60&#176; &ndash; Version A</b></p>
+          <p style="margin:8px 0 4px 0"><b>Rechtskurve, 60&#176; &ndash; Version A</b>
+            <span class="wip-tag">experimentell</span></p>
           <p class="muted" style="font-size:11.5px; margin:0 0 8px 0">
             8 radiale Trapez-Keile, randlos &uuml;ber die ganze Seite (Aussenradius so
             gew&auml;hlt, dass der Sektor die Blattbreite genau ausf&uuml;llt, OHNE
@@ -9124,7 +9134,8 @@
                alt="Vorschau Trapez-Muster Rechtskurve 60 Grad, Version B, echte Groesse"
                style="width:100%; max-width:300px; border:1px solid var(--border);
                       border-radius:4px; display:block">
-          <p style="margin:8px 0 4px 0"><b>Rechtskurve, 60&#176; &ndash; Version B (echte Gr&ouml;&szlig;e)</b></p>
+          <p style="margin:8px 0 4px 0"><b>Rechtskurve, 60&#176; &ndash; Version B (echte Gr&ouml;&szlig;e)</b>
+            <span class="wip-tag">experimentell</span></p>
           <p class="muted" style="font-size:11.5px; margin:0 0 8px 0">
             Echter Radius (370&nbsp;mm) und echte Breite (250&nbsp;mm) aus 60-track.js,
             unskaliert - deutlich gr&ouml;&szlig;er als A4 quer. Das Blatt zeigt nur den

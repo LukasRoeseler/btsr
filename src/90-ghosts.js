@@ -434,6 +434,38 @@
   // gebaut wurde.
   if (typeof i18nOnLangChange === 'function') i18nOnLangChange(padDiagramRender);
 
+  // ---- CONTROLLER-GRAFIK VERGROESSERN (Lightbox) -------------------------------------
+  //
+  // BESTELLT: "Erlaube mir, per Klick (oder auswaehlen mit X) auf das Controllerbild in der
+  // Garage, das Bild zu vergroessern (Vollbild auf Handy und PC)." Dieselbe Lightbox wie die
+  // grossen Diagramme (94-engine-workshop.js): der Knoten wird GEKLONT, nicht neu gezeichnet -
+  // was gross zu sehen ist, ist damit garantiert dasselbe wie klein.
+  function padZoomOpen() {
+    const svg = document.querySelector('.pad-wrap .pad-svg');
+    if (!svg) return;
+    $('lb-title').textContent = t('Controller-Belegung');
+    $('lb-note').textContent = t('Antippen oder Klick schließt die Ansicht.');
+    const body = $('lb-body');
+    body.innerHTML = '';
+    const gross = svg.cloneNode(true);
+    gross.removeAttribute('style');
+    gross.setAttribute('width', '100%');
+    body.appendChild(gross);
+    $('lb-wrap').classList.add('on');
+  }
+  const padZoomEl = $('pad-zoom');
+  if (padZoomEl) {
+    padZoomEl.addEventListener('click', padZoomOpen);
+    padZoomEl.addEventListener('keydown', (e) => {
+      // Enter, Leertaste oder X - die beiden ersten sind die uebliche Tastatur-Belegung fuer
+      // ein role="button", X ist die vom Nutzer gewuenschte Abkuerzung.
+      if (e.key === 'Enter' || e.key === ' ' || e.key === 'x' || e.key === 'X') {
+        e.preventDefault();
+        padZoomOpen();
+      }
+    });
+  }
+
   // ---- DER SPIELER-UMSCHALTER UEBER DER TABELLE -------------------------------------
   //
   // Nur sichtbar, wenn der Zwei-Spieler-Modus an ist - ohne ihn gibt es nichts zum
@@ -6668,19 +6700,26 @@
     //     1013 ms 0x00,  92 ms je Kachel   Abflug, der Zaehler rast
     //    12806 ms 0x00, eine Kachel        steht
     //
-    // Also zwei Fragen statt einer: kam ueberhaupt noch ein Wechsel (sonst steht es), und
-    // kamen die letzten Wechsel in einem Abstand, den ein fahrendes Auto haben kann.
-    // GHOST_TILE_MS_MIN = 250 steht seit jeher im Code mit der Begruendung "schneller ist
-    // keine Kachel je gefahren worden" - es hatte hier nur noch keinen Leser.
+    // GEMELDET danach: "stelle sicher, dass Ghosts nach Verlassen der Strecke zuegig
+    // anhalten und nicht bis in die staubigste Ecke im Raum fahren, gegen die Wand, und
+    // dann immernoch Gas geben." Die drei "faehrt"-Faelle mit langem 0x00 sind eben keine
+    // Bahn-Lesungen, sondern ein Auto, das neben der Bahn auf dem Teppich weiterfaehrt -
+    // und der Kachelzaehler zaehlt dort weiter, weil die Firmware ihn nicht anhaelt. Wer
+    // auf diesen Zaehler hoert, laesst den Ghost genau so weiterfahren, wie gemeldet.
+    // Ein bestaetigter Abgang (0x00 steht 900 ms) stellt deshalb jetzt OHNE das Zaehler-
+    // Veto ab: eine einzelne 0x00-Luecke zwischen zwei Kacheln dauert im Median 32 ms und
+    // reicht nie an die Bestaetigung heran.
     const zaehlerFrisch = g.tileStart && (now - g.tileStart) < GHOST_ZAEHLER_FRISCH_MS;
     const ring = g.tileRing || [];
     const zaehlerPlausibel = ring.length > 0
       && (ring.reduce((a, b) => a + b, 0) / ring.length) >= GHOST_TILE_MS_MIN;
     const zaehlerLaeuft = !!(zaehlerFrisch && zaehlerPlausibel);
-    // UND DAS GILT JETZT FUER BEIDE ZWEIGE. Vorher hielt offConfirmed allein an, ohne den
-    // Zaehler zu fragen - und vier der sechs gemessenen 0x00-Strecken sind laenger als die
-    // 900 ms Bestaetigung. Genau so bleibt ein fahrendes Auto stehen und blinkt.
-    const offConfirmed = offSteht && !zaehlerLaeuft;
+    // offConfirmed steht jetzt ALLEIN, ohne das Zaehler-Veto. Das Veto war die Gegenprobe
+    // gegen "ein fahrendes Auto steht und blinkt" - aber ein Auto, das 900 ms lang 0x00
+    // liest, ist nicht auf der Bahn, sondern neben ihr (eine einzelne 0x00-Luecke zwischen
+    // zwei Kacheln dauert im Median 32 ms). Der Kachelzaehler laeuft neben der Bahn weiter,
+    // weil die Firmware ihn nicht anhaelt, und taugt deshalb nicht als Unterscheider.
+    const offConfirmed = offSteht;
     // DIE BEWEISLAGE ENTSCHEIDET, und bis v0.4.55 tat sie es nicht - der Ghost blieb neben
     // der Bahn nicht stehen. Zwei Vetos konnten den Halt verhindern, und mindestens eines
     // griff immer:
@@ -8559,10 +8598,16 @@
         const raceFs = document.body.classList.contains('race-fs');
         const schirmZ = readBindingValue(pad, bindings.schirmZurueck) > BUTTON_CAPTURE_THRESHOLD;
         const schirmV = readBindingValue(pad, bindings.schirmVor) > BUTTON_CAPTURE_THRESHOLD;
+        // ANGEWAEHLTE RUNDENZAHL (Renneinstellungen-Schirm) geht VOR dem Schirmblaettern:
+        // erst die Waehltaste an der Dauer/Runden-Zeile, dann verstellt links/rechts exakt.
+        // raceScreenPad() gibt nur dann true zurueck, wenn wirklich verstellt wurde - ohne
+        // Anwahl bleibt die Taste beim Blaettern/Tabwechsel wie bisher.
         if (dLeft && !prevDpad.left && trackEditorPad('left')) { /* Editor hat sie */ }
+        else if (dLeft && !prevDpad.left && raceScreenPad('left')) { /* Rundenzahl */ }
         else if (raceFs && schirmZ && !prevDpad.left) cockpitScreenStep(-1);
         else if (!raceFs && dLeft && !prevDpad.left) menuNavTabWechsel(-1);
         if (dRight && !prevDpad.right && trackEditorPad('right')) { /* Editor hat sie */ }
+        else if (dRight && !prevDpad.right && raceScreenPad('right')) { /* Rundenzahl */ }
         else if (raceFs && schirmV && !prevDpad.right) cockpitScreenStep(+1);
         else if (!raceFs && dRight && !prevDpad.right) menuNavTabWechsel(+1);
         // Die Flanken der BELEGUNG merken, nicht die des Kreuzes - sonst feuert ein

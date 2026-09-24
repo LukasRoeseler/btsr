@@ -302,7 +302,11 @@
      unten: Breite bestimmt die Groesse, height:auto haelt das Seitenverhaeltnis, und damit
      passt auch die Hoehe von selbst - Text und Symbole schrumpfen zusammen mit dem Rahmen,
      bleiben also im Verhaeltnis zueinander lesbar. */
-  .pad-wrap { overflow-x: auto; margin-top: 10px; }
+  .pad-wrap { overflow-x: auto; margin-top: 10px; cursor: zoom-in; }
+  .pad-wrap:focus-visible { outline: 2px solid var(--good); outline-offset: 2px;
+    border-radius: 10px; }
+  .pad-zoom-hint { display: block; font-size: 10.5px; color: var(--muted);
+    margin-top: 6px; text-align: center; }
   .pad-svg { width: 100%; max-width: 620px; height: auto; display: block;
     margin: 0 auto; background: #0f141c; border: 1px solid var(--border);
     border-radius: 10px; }
@@ -1805,6 +1809,11 @@
   }
   .pit-row.pr-sel { outline: 2px solid var(--gt3-tile-ink); outline-offset: -2px; }
   .pit-row.pr-sel > .pr-pfeil { opacity: 1; }
+  /* Angewaehlte Zeile (Rundenzahl im Renneinstellungen-Schirm): der Fokus ist da, und
+     links/rechts verstellt. Ein deutlicheres Signal als die blosse Auswahl, damit klar ist,
+     dass die Taste jetzt den Wert und nicht den Schirm bewegt. */
+  .pit-row.pr-armed { background: var(--gt3-tile-ink); color: var(--gt3-tile); }
+  .pit-row.pr-armed > .pr-pfeil { opacity: 1; }
 
   /* ---- Der Rennuebersichts-Schirm ----------------------------------------------------- */
   /* ZWEI SPALTEN: Tabelle links, Strecke rechts. Das Cockpit ist breit und flach -
@@ -3166,7 +3175,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.7.59</span></span>
+        <span class="foot-ver">v<span id="app-version">0.7.60</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -6526,7 +6535,8 @@
         Boxenschirm w&auml;hlt sie dort aus, und die gelbe Flagge gibt es nach dem
         Zur&uuml;ckbl&auml;ttern.
       </p>
-      <div class="pad-wrap">
+      <div class="pad-wrap" id="pad-zoom" tabindex="0" role="button"
+           aria-label="Controller-Belegung vergrößern">
       <svg viewBox="0 0 1000 660" class="pad-svg" role="img"
            aria-label="Controller mit der aktuellen Tastenbelegung">
         <g class="pad-body" transform="translate(0, 20)">
@@ -6652,6 +6662,7 @@
       <text x="775" y="331" text-anchor="start" class="pad-row"><tspan class="pad-sym">&#9633;</tspan> <tspan class="pad-act" id="pad-a-sq">&ndash;</tspan></text>
         </g>
       </svg>
+      <span class="pad-zoom-hint">&#8599; Vergr&ouml;&szlig;ern</span>
       </div>
     </div>
   </section>
@@ -7852,17 +7863,14 @@
           <span class="opt-val" id="brake-volume-val">30%</span>
         </div></div>
       <div class="opt-row"><div class="opt-label">Motorsound-Profil<small>Alle sind aus
-          Zylinderzahl, Kurbelwelle, Bankaufteilung und Z&uuml;ndfolge gerechnet &ndash; bis auf
-          eine Ausnahme keine Aufnahme. Die Anlasser-Aufnahme des Porsche steht als eigenes
-          Profil direkt neben dem synthetischen Original, zum Vergleich, nicht als dessen
-          Ersatz. Bei den aufgeladenen Originalen fehlt der Lader. Die
-          sechs mit WIP sind noch nicht nach Geh&ouml;r gepr&uuml;ft; beim Maserati kommt
-          dazu, dass dieses Modell den Bankwinkel gar nicht darstellt, weshalb er sich vom
-          Ferrari-V12 nur in Drehzahl und Rohrl&auml;nge unterscheidet. Der Boxer-Rumpel des
-          Subaru kommt aus ungleich langen Kr&uuml;mmerrohren; das Modell tr&auml;gt feste
-          Zeitversätze je Zylinder und damit die richtige Art von Unregelm&auml;&szlig;igkeit,
-          aber ihr genaues Muster ist gew&auml;hlt und nicht aus Rohrl&auml;ngen
-          gerechnet.</small></div>
+          Zylinderzahl, Kurbelwelle, Bankaufteilung und Z&uuml;ndfolge gerechnet &ndash; keine
+          Aufnahme. Bei den aufgeladenen Originalen fehlt der Lader. Die sechs mit WIP sind
+          noch nicht nach Geh&ouml;r gepr&uuml;ft; beim Maserati kommt dazu, dass dieses Modell
+          den Bankwinkel gar nicht darstellt, weshalb er sich vom Ferrari-V12 nur in Drehzahl
+          und Rohrl&auml;nge unterscheidet. Der Boxer-Rumpel des Subaru kommt aus ungleich
+          langen Kr&uuml;mmerrohren; das Modell tr&auml;gt feste Zeitversätze je Zylinder und
+          damit die richtige Art von Unregelm&auml;&szlig;igkeit, aber ihr genaues Muster ist
+          gew&auml;hlt und nicht aus Rohrl&auml;ngen gerechnet.</small></div>
         <select id="sound-profile">
           <!-- REIHENFOLGE AUF WUNSCH: die drei meistgefahrenen zuerst, dann der Rest.
                Alphabetisch waere ordentlicher und beim Fahren nutzlos - man sucht hier
@@ -7873,7 +7881,6 @@
                zwei Listen zusammengehalten werden muessen. -->
           <optgroup label="GT3 und GT-Rennmotoren">
           <option value="p992gt3r" selected>Porsche 911 GT3 R: Boxer-6, Einzeldrosseln</option>
-          <option value="p992gt3r_rec">Porsche 911 GT3 R: Anlasser als echte Aufnahme</option>
           <option value="m4gt3">BMW M4 GT3: Reihen-6</option>
           <option value="mustang">Ford Mustang GT3: V8, Cross-Plane</option>
           <option value="f296gt3">Ferrari 296 GT3: V6, 120 Grad</option>
@@ -8965,10 +8972,11 @@
       </p>
       <p class="muted" style="font-size:11.5px; border-left:3px solid var(--good);
          padding-left:9px; margin-top:0">
-        Im Ausdruck-Modus meldet das Start/Ziel-Blatt 0x01. Im Bahn-Modus melden die
-        Schienen 0x02 Gerade, 0x03 Linkskurve, 0x04 Rechtskurve, 0x05 und 0x06 Haarnadel,
-        0x0a Start/Ziel, 0x00 abseits der Bahn. Dieselbe Zahl bedeutet je Modus etwas
-        anderes &ndash; wer Codes vergleicht, muss den Modus mitnennen.
+        Im Ausdruck-Modus meldet das Start/Ziel-Blatt je nach Vorlage 0x01 oder 0x0a. Im
+        Bahn-Modus melden die Schienen 0x02 Gerade, 0x03 Linkskurve, 0x04 Rechtskurve,
+        0x05 und 0x06 Haarnadel, 0x01 Start/Ziel, 0x0a Engstelle, 0x00 abseits der Bahn.
+        Dieselbe Zahl bedeutet je Modus etwas anderes &ndash; wer Codes vergleicht, muss
+        den Modus mitnennen.
       </p>
       <p class="muted" style="font-size:11.5px; border-left:3px solid var(--good);
          padding-left:9px; margin-top:0">
@@ -9091,7 +9099,8 @@
           <img src="muster-gerade-a4.svg" alt="Vorschau Trapez-Muster Gerade"
                style="width:100%; max-width:300px; border:1px solid var(--border);
                       border-radius:4px; display:block">
-          <p style="margin:8px 0 4px 0"><b>Gerade</b></p>
+          <p style="margin:8px 0 4px 0"><b>Gerade</b>
+            <span class="wip-tag">experimentell</span></p>
           <p class="muted" style="font-size:11.5px; margin:0 0 8px 0">
             12 Trapeze nebeneinander, randlos &uuml;ber die ganze Seite, oben
             5&nbsp;mm und unten 20&nbsp;mm breit.
@@ -9104,7 +9113,8 @@
           <img src="muster-kurve-60grad-a4.svg" alt="Vorschau Trapez-Muster Rechtskurve 60 Grad, Version A"
                style="width:100%; max-width:300px; border:1px solid var(--border);
                       border-radius:4px; display:block">
-          <p style="margin:8px 0 4px 0"><b>Rechtskurve, 60&#176; &ndash; Version A</b></p>
+          <p style="margin:8px 0 4px 0"><b>Rechtskurve, 60&#176; &ndash; Version A</b>
+            <span class="wip-tag">experimentell</span></p>
           <p class="muted" style="font-size:11.5px; margin:0 0 8px 0">
             8 radiale Trapez-Keile, randlos &uuml;ber die ganze Seite (Aussenradius so
             gew&auml;hlt, dass der Sektor die Blattbreite genau ausf&uuml;llt, OHNE
@@ -9124,7 +9134,8 @@
                alt="Vorschau Trapez-Muster Rechtskurve 60 Grad, Version B, echte Groesse"
                style="width:100%; max-width:300px; border:1px solid var(--border);
                       border-radius:4px; display:block">
-          <p style="margin:8px 0 4px 0"><b>Rechtskurve, 60&#176; &ndash; Version B (echte Gr&ouml;&szlig;e)</b></p>
+          <p style="margin:8px 0 4px 0"><b>Rechtskurve, 60&#176; &ndash; Version B (echte Gr&ouml;&szlig;e)</b>
+            <span class="wip-tag">experimentell</span></p>
           <p class="muted" style="font-size:11.5px; margin:0 0 8px 0">
             Echter Radius (370&nbsp;mm) und echte Breite (250&nbsp;mm) aus 60-track.js,
             unskaliert - deutlich gr&ouml;&szlig;er als A4 quer. Das Blatt zeigt nur den
@@ -9741,6 +9752,8 @@
     "Spieler 2": "Player 2",
     "Alle löschen": "Delete all",
     "ohne Bedeutung": "no effect",
+    "Rundenzahl: links/rechts einstellen": "Lap count: adjust with left/right",
+    "Rundenzahl: Anwahl beendet": "Lap count: selection ended",
     "starten": "start",
     "abbrechen": "cancel",
     "wartet auf die erste Bewegung": "waiting for the first movement",
@@ -10784,8 +10797,8 @@
     // geglaettet worden; diese Schluessel sind aus ihm gerechnet und nicht abgetippt.
     "Aufnahmen werden lokal im Browser gespeichert (localStorage).": "Recordings are stored locally in the browser (localStorage).",
     "Strecken werden lokal im Browser gespeichert (localStorage).": "Tracks are stored locally in the browser (localStorage).",
-    "Im Ausdruck-Modus meldet das Start/Ziel-Blatt 0x01. Im Bahn-Modus melden die Schienen 0x02 Gerade, 0x03 Linkskurve, 0x04 Rechtskurve, 0x05 und 0x06 Haarnadel, 0x0a Start/Ziel, 0x00 abseits der Bahn. Dieselbe Zahl bedeutet je Modus etwas anderes – wer Codes vergleicht, muss den Modus mitnennen.": "In printed-pattern mode the start/finish sheet reports 0x01. In rail mode the rails report 0x02 straight, 0x03 left-hand corner, 0x04 right-hand corner, 0x05 and 0x06 hairpin, 0x0a start/finish, 0x00 off the track. The same number means something different in each mode – whoever compares codes has to name the mode as well.",
-    "fahr über ein beliebiges ausgedrucktes Muster, hier steht sofort, welchen Code das Auto meldet. Achtung auf den Modus: ein Ausdruck meldet aus der Ausdruck-Tabelle, dort ist 0x01 Start/Ziel. Die Werte 0x0a Start/Ziel, 0x02 Gerade, 0x03 Linkskurve, 0x04 Rechtskurve, 0x05 und 0x06 Haarnadel gehören zur Bahn-Tabelle; alles andere ist unbestätigt. Trag hier den Code ein, den dein gedrucktes Boxen-Muster tatsächlich auslöst – 0x08 war nie ein reales Signal und ist deshalb nicht mehr die Vorgabe.": "drive over any printed pattern and it says right here which code the car reports. Mind the mode: a printout reports from the printed-pattern table, where 0x01 is start/finish. The values 0x0a start/finish, 0x02 straight, 0x03 left-hand corner, 0x04 right-hand corner, 0x05 and 0x06 hairpin belong to the rail table; everything else is unconfirmed. Enter the code your printed pit pattern actually triggers here – 0x08 was never a real signal and is therefore no longer the default.",
+    "Im Ausdruck-Modus meldet das Start/Ziel-Blatt je nach Vorlage 0x01 oder 0x0a. Im Bahn-Modus melden die Schienen 0x02 Gerade, 0x03 Linkskurve, 0x04 Rechtskurve, 0x05 und 0x06 Haarnadel, 0x01 Start/Ziel, 0x0a Engstelle, 0x00 abseits der Bahn. Dieselbe Zahl bedeutet je Modus etwas anderes – wer Codes vergleicht, muss den Modus mitnennen.": "In printed-pattern mode the start/finish sheet reports 0x01 or 0x0a depending on the template. In rail mode the rails report 0x02 straight, 0x03 left-hand corner, 0x04 right-hand corner, 0x05 and 0x06 hairpin, 0x01 start/finish, 0x0a narrow section, 0x00 off the track. The same number means something different in each mode – whoever compares codes has to name the mode as well.",
+    "fahr über ein beliebiges ausgedrucktes Muster, hier steht sofort, welchen Code das Auto meldet. Achtung auf den Modus: ein Ausdruck meldet aus der Ausdruck-Tabelle, dort sind 0x01 und 0x0a Start/Ziel. Die Werte 0x02 Gerade, 0x03 Linkskurve, 0x04 Rechtskurve, 0x05 und 0x06 Haarnadel gehören zur Bahn-Tabelle; alles andere ist unbestätigt. Trag hier den Code ein, den dein gedrucktes Boxen-Muster tatsächlich auslöst – 0x08 war nie ein reales Signal und ist deshalb nicht mehr die Vorgabe.": "drive over any printed pattern and it says right here which code the car reports. Mind the mode: a printout reports from the printed-pattern table, where 0x01 and 0x0a are start/finish. The values 0x02 straight, 0x03 left-hand corner, 0x04 right-hand corner, 0x05 and 0x06 hairpin belong to the rail table; everything else is unconfirmed. Enter the code your printed pit pattern actually triggers here – 0x08 was never a real signal and is therefore no longer the default.",
     "Lenkwinkel-Kalibrierung": "Steering angle calibration",
     "Für enge Strecken. Der Regler sitzt hinter dem Reibkreis: beim Anbremsen einer Kurve beschneidet der die Lenkung auf etwa 60 Prozent, und bei 200 Prozent erreicht dieser beschnittene Wunsch wieder den vollen Anschlag. Weiter als 45 Grad kann kein Wert lenken, das ist die Mechanik des Autos und nicht die App. Der Preis ist Feingefühl: je höher, desto früher liegt der Anschlag an und desto weniger sagt der letzte Teil des Sticks.": "For tight tracks. The slider sits behind the friction circle: braking into a corner cuts steering to about 60 percent, and at 200 percent that cut request reaches full lock again. No value can steer further than 45 degrees – that is the mechanics of the car, not the app. The price is finesse: the higher it goes, the earlier full lock is reached and the less the last part of the stick says.",
     "Ghost: eigene Spuren": "Ghosts: own lanes",
@@ -10871,6 +10884,8 @@
     "Schirm zurück": "Previous screen",
     "Schirm vor": "Next screen",
     "Controller-Belegung": "Controller mapping",
+    "Antippen oder Klick schlie\u00dft die Ansicht.": "Tap or click to close the view.",
+    "\u2197 Vergr\u00f6\u00dfern": "\u2197 Enlarge",
     "Was gerade auf welcher Taste liegt. Zuweisen lässt sich das in den Optionen unter „Gamepad“; die Grafik zieht sofort nach.": "What currently sits on which button. It can be reassigned in the options under “Gamepad”; the diagram follows immediately.",
     "Weiß ist zuweisbar, gedecktes Grau ist festverdrahtet und nicht zuweisbar (das Steuerkreuz), kursives Grau heißt „nicht belegt“. Touchpad und PS-Taste bleiben ab Werk frei, weil das System beide selbst abgreift: ein Tippen aufs Touchpad löst zugleich einen Klick in der Seite aus. Im Streckeneditor und auf dem Boxenschirm bedient das Steuerkreuz erst diese, danach gilt wieder das Gezeigte. Dasselbe gilt für die Flaggentaste: auf dem Boxenschirm wählt sie dort aus, und die gelbe Flagge gibt es nach dem Zurückblättern.": "White is assignable, muted grey is hard-wired and not assignable (the D-pad), italic grey means “not assigned”. Touchpad and PS button stay free out of the box because the system claims both itself: a tap on the touchpad also fires a click somewhere in the page. In the track editor and on the pit screen the D-pad serves those first, after which what is shown here applies again. The same goes for the flag button: on the pit screen it selects there, and the yellow flag is available once you page back.",
     "L3 · Stick drücken": "L3 · press the stick",
@@ -10946,7 +10961,7 @@
     "Bis zu welchem Tempo jeder Gang reicht. Gerechnet aus den Übersetzungen und der Höchstgeschwindigkeit, nicht eingetippt.": "How fast each gear reaches. Calculated from the ratios and the top speed, not typed in.",
     "Rundenzeiten ansagen": "Announce lap times",
     "Nach jeder Runde die Zeit, und bei einer eigenen Bestzeit ein Wort dazu. Gesprochen von der eingebauten Stimme des Browsers – kein Dienst, kein Netz, nichts verlässt das Gerät. Absichtlich kurz gehalten, damit die Ansage vor der nächsten Kurve fertig ist. Kommt eine zweite Runde herein, während noch geredet wird, bricht die alte Ansage ab: die Zeit der Gegenwart ist wichtiger. Ob es überhaupt spricht, hängt an den Stimmen des Systems – unter Windows sind sie lokal vorhanden, auf Android können sie fehlen. Fehlt eine, steht das einmal im Protokoll und nicht bei jeder Runde.": "The time after every lap, and a word with it on a personal best. Spoken by the browser’s built-in voice – no service, no network, nothing leaves the device. Deliberately kept short so the announcement is finished before the next corner. If a second lap comes in while it is still talking, the old announcement is cut off: the time of the present matters more. Whether it speaks at all depends on the voices of the system – under Windows they are installed locally, on Android they can be missing. If one is missing, that goes into the log once and not on every lap.",
-    "Alle sind aus Zylinderzahl, Kurbelwelle, Bankaufteilung und Zündfolge gerechnet – bis auf eine Ausnahme keine Aufnahme. Die Anlasser-Aufnahme des Porsche steht als eigenes Profil direkt neben dem synthetischen Original, zum Vergleich, nicht als dessen Ersatz. Bei den aufgeladenen Originalen fehlt der Lader. Die sechs mit WIP sind noch nicht nach Gehör geprüft; beim Maserati kommt dazu, dass dieses Modell den Bankwinkel gar nicht darstellt, weshalb er sich vom Ferrari-V12 nur in Drehzahl und Rohrlänge unterscheidet. Der Boxer-Rumpel des Subaru kommt aus ungleich langen Krümmerrohren; das Modell trägt feste Zeitversätze je Zylinder und damit die richtige Art von Unregelmäßigkeit, aber ihr genaues Muster ist gewählt und nicht aus Rohrlängen gerechnet.": "All of them are computed from cylinder count, crankshaft, bank split and firing order – with one exception, none is a recording. The Porsche's starter recording stands as its own profile right next to the synthetic original, for comparison, not as its replacement. The forced-induction originals are missing their turbo. The six marked WIP have not been judged by ear; with the Maserati there is the added point that this model cannot represent bank angle at all, so it differs from the Ferrari V12 only in revs and pipe length. The Subaru boxer rumble comes from unequal-length headers; the model carries fixed per-cylinder timing offsets and therefore the right KIND of irregularity, but their exact pattern is chosen, not computed from pipe lengths.",
+    "Alle sind aus Zylinderzahl, Kurbelwelle, Bankaufteilung und Zündfolge gerechnet – keine Aufnahme. Bei den aufgeladenen Originalen fehlt der Lader. Die sechs mit WIP sind noch nicht nach Gehör geprüft; beim Maserati kommt dazu, dass dieses Modell den Bankwinkel gar nicht darstellt, weshalb er sich vom Ferrari-V12 nur in Drehzahl und Rohrlänge unterscheidet. Der Boxer-Rumpel des Subaru kommt aus ungleich langen Krümmerrohren; das Modell trägt feste Zeitversätze je Zylinder und damit die richtige Art von Unregelmäßigkeit, aber ihr genaues Muster ist gewählt und nicht aus Rohrlängen gerechnet.": "All of them are computed from cylinder count, crankshaft, bank split and firing order – none is a recording. The forced-induction originals are missing their turbo. The six marked WIP have not been judged by ear; with the Maserati there is the added point that this model cannot represent bank angle at all, so it differs from the Ferrari V12 only in revs and pipe length. The Subaru boxer rumble comes from unequal-length headers; the model carries fixed per-cylinder timing offsets and therefore the right KIND of irregularity, but their exact pattern is chosen, not computed from pipe lengths.",
     "Porsche 911 GT3 R: Anlasser als echte Aufnahme": "Porsche 911 GT3 R: starter as a real recording",
     "Trapez-Muster, randlos, ohne Strichcode": "Trapezoid pattern, borderless, no barcode",
     "Zum Auslegen und Fotografieren, ohne jede Behauptung, maschinenlesbar zu sein - anders als die Blätter oben, die trotz ihrer Warnung noch ein (falsches) Strichcode-Wort tragen. Senkrechte Trapez-Balken, randlos bis zum Blattrand: oben (bzw. innen in der Kurve) schmal, unten (aussen) breit, mit einer Lücke dazwischen, die genau dieselbe Form kopfueber hat. Die genaue Folge ist ERFUNDEN - das echte Wort ist weder für die Gerade (Byte 12 = 0x02) noch die Rechtskurve (0x04) entziffert, und ein bereits gemachter Messversuch an Infrarot-Fotos wie diesen ist dokumentiert gescheitert (CARRERA_HYBRID.md, Fluchtpunkt-Fit, 31.08.) - nur ein Flachbett-Scan gäbe echte Millimeter. Die Zahlen hier (5/20 mm) sind daher eine grobe Ausseneinschätzung, direkt übernommen, keine Messung.":
@@ -12738,6 +12753,16 @@
       } else if (e.key === 'ArrowRight') {
         if (menuNavArmed) menuNavAdjustGehalten('right', true); else menuNavTabWechsel(1);
       }
+      return;
+    }
+    // Cockpit-Renneinstellungen: dort lenken die Pfeiltasten die Zeilenauswahl, nicht das
+    // Auto. raceScreenPad() prueft selbst, ob der Schirm offen ist, und verstellt bei der
+    // angewaehlten Dauer/Runden-Zeile - sonst bleibt links/rechts beim Schirmblaettern.
+    if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)
+        && typeof raceScreenOffen === 'function' && raceScreenOffen()) {
+      const dir = e.key === 'ArrowUp' ? 'up' : e.key === 'ArrowDown' ? 'down'
+                : e.key === 'ArrowLeft' ? 'left' : 'right';
+      raceScreenPad(dir);
       return;
     }
     keys.add(e.key);
@@ -18785,9 +18810,14 @@
       row.control.dispatchEvent(new Event('input', { bubbles: true }));
       row.control.dispatchEvent(new Event('change', { bubbles: true }));
     } else if (row.kind === 'select') {
+      // Ein Auswahlfeld schaltet IMMER eine Option weiter, auch beim Beschleunigen. Der
+      // grosse Schritt (MENU_NAV_STEP_BIG) ist fuer Skalen gedacht; bei einem Menue mit
+      // wenigen Eintraegen ueberspringt er sonst die Haelfte - gemeldet als "manche Menues
+      // schalten mehrere optionen auf einmal durch, sodass ich nicht nur eins weiterschalten
+      // kann, sondern direkt viele".
       const n = row.control.options.length;
       const i0 = row.control.selectedIndex;
-      const roh = i0 + (dir === 'left' ? -schritte : schritte);
+      const roh = i0 + (dir === 'left' ? -1 : 1);
       const i1 = Math.max(0, Math.min(n - 1, roh));
       if (i1 !== i0) {
         row.control.selectedIndex = i1;
@@ -18982,6 +19012,10 @@
   // Je Leseart einer, benannt statt aufgezaehlt: wer das liest, sieht sofort, welcher wo
   // gilt. Die Liste darueber bleibt als Rueckfall und fuer isStartCode() ohne Leseart.
   const START_CODE_RAIL = 0x01;    // Kunststoffschiene, Bahn-Modus (seVen, bestaetigt)
+  // Im Ausdruck-Modus melden je nach Vorlage BEIDE Werte das Start/Ziel-Blatt: das
+  // Original meldet 0x0a (gemessen 25.08.), die App-Blaetter (startziel-a4.svg, muster-*,
+  // spur-*) tragen das Wort, das 0x01 ergibt (siehe tools/make_track_sheets.py und
+  // make_pattern_sheets.py). Deshalb zaehlt isStartCode() im Ausdruck-Modus beide.
   const START_CODE_PRINT = 0x0a;   // gedrucktes Blatt, Ausdruck-Modus (gemessen 25.08.)
   // AUS DER LISTE GELESEN und nicht daneben aufgezaehlt. Vorher stand hier
   // "c === 0x0a || c === START_CODE_LEGACY", und damit gab es die Tatsache "was gilt als
@@ -18998,7 +19032,10 @@
   // stand es hier vorher schon.
   function isStartCode(c) {
     if (typeof trackMode === 'string') {
-      return trackMode === 'on' ? c === START_CODE_RAIL : c === START_CODE_PRINT;
+      if (trackMode === 'on') return c === START_CODE_RAIL;
+      // Ausdruck: beide Werte. Auf der Schiene bleibt es strikt 0x01, damit die Engstelle
+      // (0x0a) keine Phantomrunde zaehlt - der Grund, aus dem v0.6.14 die Leseart einzog.
+      return c === START_CODE_PRINT || c === START_CODE_RAIL;
     }
     return START_CODES.indexOf(c) >= 0;
   }
@@ -24167,6 +24204,10 @@
         c.ghost.auslauf = true;
         return;
       }
+      // ABBRUCH VON HAND: sofort anhalten, wie der Knopf "Ghosts anhalten". Kein
+      // Ausrollen - wer abbricht, will, dass es aufhoert. Vorher stand hier finishGhost()
+      // auch fuer den Abbruch, und die Ghosts rollten noch ein paar Kacheln weiter.
+      if (!willAuslaufen) { stopGhost(c); return; }
       finishGhost(c);
     });
     if (willAuslaufen && garage.some(c => c.role === 'ghost' && c.ghost && c.ghost.auslauf)) {
@@ -27687,6 +27728,11 @@
     { id: 'go', el: 'rs-row-go', wert: 'rs-wert-go' },
   ];
   let raceScreenSel = 0;
+  // Dauer/Runden ist seit dieser Fassung anwaehlbar: erst die Waehltaste, dann stellt
+  // links/rechts exakt ein. So laesst sich die Rundenzahl auch verringern und nicht nur
+  // erhoehen - und links/rechts kann den Schirm weiterblaettern, solange nichts angewaehlt
+  // ist.
+  let raceScreenLimitArmed = false;
   const RACE_MODE_ORDER = ['practice', 'endurance', 'qualifying', 'laps'];
 
   function raceScreenOffen() {
@@ -27694,15 +27740,38 @@
            && cockpitScreenIst().id === 'renneinstellungen';
   }
 
-  // Hoch/runter bewegt die Auswahl, wie beim Boxenschirm - links/rechts bleibt frei, damit
-  // der Schirm die Taste nicht frisst, mit der man ihn verlaesst.
+  // Hoch/runter bewegt die Auswahl, wie beim Boxenschirm. Links/rechts verstellt nur die
+  // ANGEWAEHLTE Dauer/Runden-Zeile; ohne Anwahl bleibt die Taste frei, damit der Schirm
+  // sie nicht frisst, mit der man ihn verlaesst (Schirmblaettern).
   function raceScreenPad(dir) {
     if (!raceScreenOffen()) return false;
-    if (dir !== 'up' && dir !== 'down') return false;
-    const n = RACE_SETTINGS_ROWS.length;
-    raceScreenSel = ((raceScreenSel + (dir === 'up' ? -1 : 1)) % n + n) % n;
-    raceScreenRender();
-    return true;
+    if (dir === 'up' || dir === 'down') {
+      const n = RACE_SETTINGS_ROWS.length;
+      raceScreenSel = ((raceScreenSel + (dir === 'up' ? -1 : 1)) % n + n) % n;
+      // Wegbewegen gibt die Anwahl auf - sonst verstellt links/rechts an einer Stelle,
+      // die man gar nicht mehr im Blick hat.
+      raceScreenLimitArmed = false;
+      raceScreenRender();
+      return true;
+    }
+    if (dir === 'left' || dir === 'right') {
+      if (!raceScreenLimitArmed) return false;
+      const zeile = RACE_SETTINGS_ROWS[raceScreenSel];
+      if (zeile.id !== 'limit') return false;
+      // Deaktiviert bei freiem Training, genau wie das Feld im Tab - eine Zahl, die dort
+      // ohne Bedeutung ist, soll es hier auch bleiben.
+      if ($('race-limit').disabled) return false;
+      const max = parseInt($('race-limit').max, 10) || 120;
+      const min = parseInt($('race-limit').min, 10) || 1;
+      let neu = raceLimit + (dir === 'right' ? 1 : -1);
+      if (neu > max) neu = min;
+      if (neu < min) neu = max;
+      $('race-limit').value = neu;
+      $('race-limit').dispatchEvent(new Event('input', { bubbles: true }));
+      raceScreenRender();
+      return true;
+    }
+    return false;
   }
 
   // idVorgabe: derselbe Kunstgriff wie bei pitScreenSelect(idVorgabe) - ein Pruefstand
@@ -27715,22 +27784,23 @@
       : RACE_SETTINGS_ROWS[raceScreenSel];
     if (!zeile) return false;
     if (zeile.id === 'mode') {
+      raceScreenLimitArmed = false;
       const i = RACE_MODE_ORDER.indexOf(raceMode);
       const naechster = RACE_MODE_ORDER[(i + 1) % RACE_MODE_ORDER.length];
       $('race-mode').value = naechster;
       $('race-mode').dispatchEvent(new Event('change', { bubbles: true }));
     } else if (zeile.id === 'limit') {
-      // Deaktiviert bei freiem Training, genau wie das Feld im Tab - eine Zahl, die dort
-      // ohne Bedeutung ist, soll es hier auch bleiben.
+      // An- und abwaehlen statt "jeder Druck erhoeht um eins": erst anwaehlen, dann
+      // links/rechts verstellt exakt (siehe raceScreenPad). So laesst sich die Rundenzahl
+      // auch herunterstellen.
       if (!$('race-limit').disabled) {
-        const max = parseInt($('race-limit').max, 10) || 120;
-        const min = parseInt($('race-limit').min, 10) || 1;
-        let neu = raceLimit + 1;
-        if (neu > max) neu = min;
-        $('race-limit').value = neu;
-        $('race-limit').dispatchEvent(new Event('input', { bubbles: true }));
+        raceScreenLimitArmed = !raceScreenLimitArmed;
+        showHudToast(raceScreenLimitArmed
+          ? t('Rundenzahl: links/rechts einstellen')
+          : t('Rundenzahl: Anwahl beendet'));
       }
     } else if (zeile.id === 'go') {
+      raceScreenLimitArmed = false;
       toggleRace();
     }
     raceScreenRender();
@@ -27744,7 +27814,10 @@
     for (let i = 0; i < RACE_SETTINGS_ROWS.length; i++) {
       const z = RACE_SETTINGS_ROWS[i];
       const el = $(z.el);
-      if (el) el.classList.toggle('pr-sel', i === raceScreenSel);
+      if (el) {
+        el.classList.toggle('pr-sel', i === raceScreenSel);
+        el.classList.toggle('pr-armed', i === raceScreenSel && raceScreenLimitArmed);
+      }
       const w = $(z.wert);
       if (!w) continue;
       let text = '';
@@ -27762,7 +27835,8 @@
     if (fuss) {
       const b = (typeof bindings === 'object' && bindings && bindings.yellowflag)
         ? bindingDescription(bindings.yellowflag) : 'nicht belegt';
-      fuss.textContent = 'Steuerkreuz hoch/runter waehlt · ' + b + ' schaltet';
+      fuss.textContent = 'Steuerkreuz hoch/runter waehlt · ' + b + ' schaltet'
+        + (raceScreenLimitArmed ? ' · links/rechts einstellen' : '');
     }
   }
 
@@ -28191,10 +28265,6 @@
     // ist nur eine Mitgliedschaftspruefung -, aber zwei Listen derselben Sache in
     // unterschiedlicher Ordnung sind die naechste Verwechslung.
     'p992gt3r',
-    // Zusaetzlich, seit v0.7: dieselbe Motorkonfiguration wie p992gt3r, aber mit einer
-    // echten Aufnahme unter der Zuendung statt der reinen Sinuswelle - ein eigenes Profil
-    // direkt daneben, zum A/B-Vergleich, nicht dessen Ersatz. Siehe audio/CREDITS.md.
-    'p992gt3r_rec',
     'm4gt3', 'mustang', 'f296gt3',
     'amggt3', 'c6r', 'c5r', 'z06gt3r', 'vantagegt3', 'huracan', 'f1_2026',
     // Vier historische Rennwagen, dazugekommen in v0.4.54 und als WIP gekennzeichnet: nach
@@ -30523,6 +30593,38 @@
   // stehen, in der sie zuletzt gezeichnet wurde - genau der Fall, fuer den die Anmeldung
   // gebaut wurde.
   if (typeof i18nOnLangChange === 'function') i18nOnLangChange(padDiagramRender);
+
+  // ---- CONTROLLER-GRAFIK VERGROESSERN (Lightbox) -------------------------------------
+  //
+  // BESTELLT: "Erlaube mir, per Klick (oder auswaehlen mit X) auf das Controllerbild in der
+  // Garage, das Bild zu vergroessern (Vollbild auf Handy und PC)." Dieselbe Lightbox wie die
+  // grossen Diagramme (94-engine-workshop.js): der Knoten wird GEKLONT, nicht neu gezeichnet -
+  // was gross zu sehen ist, ist damit garantiert dasselbe wie klein.
+  function padZoomOpen() {
+    const svg = document.querySelector('.pad-wrap .pad-svg');
+    if (!svg) return;
+    $('lb-title').textContent = t('Controller-Belegung');
+    $('lb-note').textContent = t('Antippen oder Klick schließt die Ansicht.');
+    const body = $('lb-body');
+    body.innerHTML = '';
+    const gross = svg.cloneNode(true);
+    gross.removeAttribute('style');
+    gross.setAttribute('width', '100%');
+    body.appendChild(gross);
+    $('lb-wrap').classList.add('on');
+  }
+  const padZoomEl = $('pad-zoom');
+  if (padZoomEl) {
+    padZoomEl.addEventListener('click', padZoomOpen);
+    padZoomEl.addEventListener('keydown', (e) => {
+      // Enter, Leertaste oder X - die beiden ersten sind die uebliche Tastatur-Belegung fuer
+      // ein role="button", X ist die vom Nutzer gewuenschte Abkuerzung.
+      if (e.key === 'Enter' || e.key === ' ' || e.key === 'x' || e.key === 'X') {
+        e.preventDefault();
+        padZoomOpen();
+      }
+    });
+  }
 
   // ---- DER SPIELER-UMSCHALTER UEBER DER TABELLE -------------------------------------
   //
@@ -36758,19 +36860,26 @@
     //     1013 ms 0x00,  92 ms je Kachel   Abflug, der Zaehler rast
     //    12806 ms 0x00, eine Kachel        steht
     //
-    // Also zwei Fragen statt einer: kam ueberhaupt noch ein Wechsel (sonst steht es), und
-    // kamen die letzten Wechsel in einem Abstand, den ein fahrendes Auto haben kann.
-    // GHOST_TILE_MS_MIN = 250 steht seit jeher im Code mit der Begruendung "schneller ist
-    // keine Kachel je gefahren worden" - es hatte hier nur noch keinen Leser.
+    // GEMELDET danach: "stelle sicher, dass Ghosts nach Verlassen der Strecke zuegig
+    // anhalten und nicht bis in die staubigste Ecke im Raum fahren, gegen die Wand, und
+    // dann immernoch Gas geben." Die drei "faehrt"-Faelle mit langem 0x00 sind eben keine
+    // Bahn-Lesungen, sondern ein Auto, das neben der Bahn auf dem Teppich weiterfaehrt -
+    // und der Kachelzaehler zaehlt dort weiter, weil die Firmware ihn nicht anhaelt. Wer
+    // auf diesen Zaehler hoert, laesst den Ghost genau so weiterfahren, wie gemeldet.
+    // Ein bestaetigter Abgang (0x00 steht 900 ms) stellt deshalb jetzt OHNE das Zaehler-
+    // Veto ab: eine einzelne 0x00-Luecke zwischen zwei Kacheln dauert im Median 32 ms und
+    // reicht nie an die Bestaetigung heran.
     const zaehlerFrisch = g.tileStart && (now - g.tileStart) < GHOST_ZAEHLER_FRISCH_MS;
     const ring = g.tileRing || [];
     const zaehlerPlausibel = ring.length > 0
       && (ring.reduce((a, b) => a + b, 0) / ring.length) >= GHOST_TILE_MS_MIN;
     const zaehlerLaeuft = !!(zaehlerFrisch && zaehlerPlausibel);
-    // UND DAS GILT JETZT FUER BEIDE ZWEIGE. Vorher hielt offConfirmed allein an, ohne den
-    // Zaehler zu fragen - und vier der sechs gemessenen 0x00-Strecken sind laenger als die
-    // 900 ms Bestaetigung. Genau so bleibt ein fahrendes Auto stehen und blinkt.
-    const offConfirmed = offSteht && !zaehlerLaeuft;
+    // offConfirmed steht jetzt ALLEIN, ohne das Zaehler-Veto. Das Veto war die Gegenprobe
+    // gegen "ein fahrendes Auto steht und blinkt" - aber ein Auto, das 900 ms lang 0x00
+    // liest, ist nicht auf der Bahn, sondern neben ihr (eine einzelne 0x00-Luecke zwischen
+    // zwei Kacheln dauert im Median 32 ms). Der Kachelzaehler laeuft neben der Bahn weiter,
+    // weil die Firmware ihn nicht anhaelt, und taugt deshalb nicht als Unterscheider.
+    const offConfirmed = offSteht;
     // DIE BEWEISLAGE ENTSCHEIDET, und bis v0.4.55 tat sie es nicht - der Ghost blieb neben
     // der Bahn nicht stehen. Zwei Vetos konnten den Halt verhindern, und mindestens eines
     // griff immer:
@@ -38649,10 +38758,16 @@
         const raceFs = document.body.classList.contains('race-fs');
         const schirmZ = readBindingValue(pad, bindings.schirmZurueck) > BUTTON_CAPTURE_THRESHOLD;
         const schirmV = readBindingValue(pad, bindings.schirmVor) > BUTTON_CAPTURE_THRESHOLD;
+        // ANGEWAEHLTE RUNDENZAHL (Renneinstellungen-Schirm) geht VOR dem Schirmblaettern:
+        // erst die Waehltaste an der Dauer/Runden-Zeile, dann verstellt links/rechts exakt.
+        // raceScreenPad() gibt nur dann true zurueck, wenn wirklich verstellt wurde - ohne
+        // Anwahl bleibt die Taste beim Blaettern/Tabwechsel wie bisher.
         if (dLeft && !prevDpad.left && trackEditorPad('left')) { /* Editor hat sie */ }
+        else if (dLeft && !prevDpad.left && raceScreenPad('left')) { /* Rundenzahl */ }
         else if (raceFs && schirmZ && !prevDpad.left) cockpitScreenStep(-1);
         else if (!raceFs && dLeft && !prevDpad.left) menuNavTabWechsel(-1);
         if (dRight && !prevDpad.right && trackEditorPad('right')) { /* Editor hat sie */ }
+        else if (dRight && !prevDpad.right && raceScreenPad('right')) { /* Rundenzahl */ }
         else if (raceFs && schirmV && !prevDpad.right) cockpitScreenStep(+1);
         else if (!raceFs && dRight && !prevDpad.right) menuNavTabWechsel(+1);
         // Die Flanken der BELEGUNG merken, nicht die des Kreuzes - sonst feuert ein
@@ -51939,12 +52054,12 @@
       for (const k of SAMPLE_CARS) if (menue.indexOf(k) < 0) schlecht.push(k + ' steht nur in SAMPLE_CARS');
     }
     // Und die Dokutabelle: so viele Motorzeilen wie Schleifen-DATEIEN. Nach Dateien gezaehlt,
-    // nicht nach Manifest-Eintraegen, seit p992gt3r_rec (v0.7): ein Vergleichsprofil, das
-    // dieselben fuenf .ogg-Dateien wie sein synthetisches Original zweitverwendet, statt
-    // eigene zu haben - ein Motorschluessel mehr im Manifest ohne eine einzige neue Datei.
-    // Nach Manifest-EINTRAEGEN gezaehlt haette das jedes Mal einen Fehlalarm gegeben, den ein
-    // zweites Vergleichsprofil (mit denselben Dateien) nie wirklich war. Sie ist von Hand
-    // gepflegt, also ist das die einzige Stelle, an der ein Vergessen auffaellt.
+    // nicht nach Manifest-Eintraegen: ein Vergleichsprofil kann dieselben .ogg-Dateien wie
+    // sein synthetisches Original zweitverwenden, statt eigene zu haben - ein Motorschluessel
+    // mehr im Manifest ohne eine einzige neue Datei. Nach Manifest-EINTRAEGEN gezaehlt haette
+    // das jedes Mal einen Fehlalarm gegeben, den ein zweites Vergleichsprofil (mit denselben
+    // Dateien) nie wirklich war. Sie ist von Hand gepflegt, also ist das die einzige Stelle,
+    // an der ein Vergessen auffaellt.
     const dateien = new Set();
     for (const k of imManifest) for (const b of Object.keys(man[k].loops)) dateien.add(man[k].loops[b].file);
     const schleifen = dateien.size;
@@ -54197,7 +54312,9 @@
   // DIE SECHS FAELLE hier sind keine erfundenen Zahlen, sondern jede 0x00-Strecke ab 300 ms,
   // die in den Aufzeichnungen ueberhaupt vorkommt - mit der Kachelrate, die dabei gemessen
   // wurde. Der Zaehler lief in 6 von 6 Faellen weiter, das blosse Zaehlen taugt also nicht
-  // als Unterscheider; die RATE taugt.
+  // als Unterscheider. BESTELLT "stumpf, keine Querlage, bleiben einfach stehen": ein Ghost
+  // soll anhalten, sobald die 0x00-Strecke ueber der Schwelle steht - die Kachelrate ist
+  // dabei egal. Deshalb parken jetzt auch die Faelle mit laufendem Zaehler.
   stAdd('Ghost haelt nur an, wenn es wirklich vorbei ist', () => {
     if (!window.OMEGA_TEST || !OMEGA_TEST.ghostParkProbe) {
       return { skip: true, mass: 'ghostParkProbe nicht vorhanden' };
@@ -54205,8 +54322,8 @@
     // nullMs, kachelMs, soll geparkt sein
     const faelle = [
       [840, 420, false, 'faehrt, 420 ms je Kachel'],
-      [5845, 490, false, 'faehrt, 490 ms je Kachel'],
-      [13580, 438, false, 'faehrt, 438 ms je Kachel'],
+      [5845, 490, true, 'steht, 490 ms je Kachel'],
+      [13580, 438, true, 'steht, 438 ms je Kachel'],
       [1013, 92, true, 'Abflug, Zaehler rast mit 92 ms'],
       [12806, 12806, true, 'steht, eine Kachel in 12,8 s'],
     ];
@@ -58619,9 +58736,11 @@
     if (r.ausdruck[i(0x0a)] !== r.typen.START) {
       fehler.push('Ausdruck 0x0a -> ' + r.ausdruck[i(0x0a)] + ', erwartet Start');
     }
-    // 2. 0x01 umgekehrt.
+    // 2. 0x01 umgekehrt. Auf der Schiene ist 0x01 Start; auf Papier kommt es je nach Vorlage
+    //    ebenfalls vor (die App-Blaetter tragen das 0x01-Wort, siehe make_track_sheets.py),
+    //    also zaehlt es dort als Start. Nur die SCHIENE bleibt strikt.
     if (r.bahn[i(0x01)] !== r.typen.START) fehler.push('Bahn 0x01 ist nicht Start');
-    if (r.ausdruck[i(0x01)] === r.typen.START) fehler.push('Ausdruck 0x01 gilt als Start');
+    if (r.ausdruck[i(0x01)] !== r.typen.START) fehler.push('Ausdruck 0x01 ist nicht Start');
     // 3. DIE BOXENGASSE hat einen kuenstlichen Typ, weil die Karte sie schon kannte.
     if (r.bahn[i(0x07)] !== r.typen.PIT) fehler.push('0x07 ist nicht die Boxengasse');
     // 4. UND DIE VIER 30-GRAD-KURVEN GEHEN UNVERAENDERT DURCH - sie kollidieren mit nichts.
@@ -62630,7 +62749,7 @@
       const bahn0a = zaehle(0x0a);
       const bahn03 = zaehle(0x03);
       const bahn02 = zaehle(0x02);
-      // ---- AUSDRUCK: umgekehrt ----
+      // ---- AUSDRUCK: 0x0a und 0x01 zaehlen beide (je nach Vorlage) ----
       trackMode = 'off';
       const pap0a = zaehle(0x0a);
       const pap01 = zaehle(0x01);
@@ -62642,7 +62761,9 @@
       if (bahn03 !== 0) fehler.push('Bahn: 0x03 Linkskurve zaehlt ' + bahn03);
       if (bahn02 !== 0) fehler.push('Bahn: 0x02 Gerade zaehlt ' + bahn02);
       if (!(pap0a >= 1)) fehler.push('Ausdruck: 0x0a zaehlt nicht');
-      if (pap01 !== 0) fehler.push('Ausdruck: 0x01 zaehlt ' + pap01);
+      // Auch das 0x01-Wort kommt auf Papier vor (die App-Blaetter tragen es, siehe
+      // make_track_sheets.py) - es muss zaehlen, sonst tut die eigene Ausdruck-Schleife nichts.
+      if (!(pap01 >= 1)) fehler.push('Ausdruck: 0x01 zaehlt nicht');
       return { ok: !fehler.length,
                mass: 'Bahn: 0x01 -> ' + bahn01 + ', 0x0a -> ' + bahn0a
                      + ', 0x03 -> ' + bahn03 + ', 0x02 -> ' + bahn02

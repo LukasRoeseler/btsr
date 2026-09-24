@@ -417,6 +417,16 @@
       }
       return;
     }
+    // Cockpit-Renneinstellungen: dort lenken die Pfeiltasten die Zeilenauswahl, nicht das
+    // Auto. raceScreenPad() prueft selbst, ob der Schirm offen ist, und verstellt bei der
+    // angewaehlten Dauer/Runden-Zeile - sonst bleibt links/rechts beim Schirmblaettern.
+    if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)
+        && typeof raceScreenOffen === 'function' && raceScreenOffen()) {
+      const dir = e.key === 'ArrowUp' ? 'up' : e.key === 'ArrowDown' ? 'down'
+                : e.key === 'ArrowLeft' ? 'left' : 'right';
+      raceScreenPad(dir);
+      return;
+    }
     keys.add(e.key);
   });
   window.addEventListener('keyup', (e) => {

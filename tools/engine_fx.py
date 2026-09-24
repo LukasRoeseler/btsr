@@ -12,11 +12,10 @@ BESTELLT: an extra, directly comparable engine_start() variant for one car, usin
 recorded starter/crank instead of the sine "whine" every other car uses (see
 real_crank_from_recording() and the '<key>_rec' companion entries in main()) — a real
 ignition sample from sounds/, layered under the SAME synthesized engine body every other
-car gets. It ships ALONGSIDE the plain synthetic p992gt3r, as its own selectable
-'p992gt3r_rec' sound profile, not in place of it: a user comparing them side by side
-found no audible difference in the earlier version that silently replaced p992gt3r's own
-start sound, so the two now sit next to each other for a direct A/B instead. Everything
-else here is still synthetic, no recorded material.
+car gets. It shipped for a time as its own selectable 'p992gt3r_rec' sound profile
+alongside the plain synthetic p992gt3r; the profile was later removed again (the two
+sounded alike to the user), so the generated '_rec' files are currently not wired to any
+shipped profile. Everything else here is still synthetic, no recorded material.
 
 Usage:  python engine_fx.py
 """

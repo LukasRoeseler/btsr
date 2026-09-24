@@ -94,10 +94,6 @@
     // ist nur eine Mitgliedschaftspruefung -, aber zwei Listen derselben Sache in
     // unterschiedlicher Ordnung sind die naechste Verwechslung.
     'p992gt3r',
-    // Zusaetzlich, seit v0.7: dieselbe Motorkonfiguration wie p992gt3r, aber mit einer
-    // echten Aufnahme unter der Zuendung statt der reinen Sinuswelle - ein eigenes Profil
-    // direkt daneben, zum A/B-Vergleich, nicht dessen Ersatz. Siehe audio/CREDITS.md.
-    'p992gt3r_rec',
     'm4gt3', 'mustang', 'f296gt3',
     'amggt3', 'c6r', 'c5r', 'z06gt3r', 'vantagegt3', 'huracan', 'f1_2026',
     // Vier historische Rennwagen, dazugekommen in v0.4.54 und als WIP gekennzeichnet: nach
