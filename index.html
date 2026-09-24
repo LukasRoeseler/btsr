@@ -3175,7 +3175,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.7.60</span></span>
+        <span class="foot-ver">v<span id="app-version">0.7.61</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -12064,7 +12064,13 @@
     if (typeof playerCar !== 'undefined' && playerCar && playerCar.ghost) {
       const pg = playerCar.ghost;
       const roh = Math.max(-1, Math.min(1, steer));
-      pg.querSoll = (pg.querSoll || 0) + (roh - (pg.querSoll || 0)) * 0.25;
+      // NUR IN FAHRT nachfuehren. Die Ghosts regeln das ueber tempoAnteil in ghostTick
+      // (bei v = 0 friert g.querSoll ein); hier ist das Signal ein stehendes Auto, das
+      // 0x00 liest. Ohne das wandert der Kartenpunkt mit dem Lenkbefehl, obwohl das Auto
+      // auf der Schiene steht und sich nicht zur Seite bewegen kann.
+      if (playerCar.tileCode !== 0x00) {
+        pg.querSoll = (pg.querSoll || 0) + (roh - (pg.querSoll || 0)) * 0.25;
+      }
     }
     const payload = buildCommandPacket(steer, throttle, undefined, modeBytes);
     recWrite(payload);
@@ -12241,7 +12247,11 @@
     if (playerCar2.ghost) {
       const pg = playerCar2.ghost;
       const roh = Math.max(-1, Math.min(1, steer));
-      pg.querSoll = (pg.querSoll || 0) + (roh - (pg.querSoll || 0)) * 0.25;
+      // Dieselbe Fahrt-Bedingung wie bei Auto 1: ein stehendes Auto liest 0x00 und kann
+      // sich nicht zur Seite bewegen, sein Kartenpunkt soll dann auch nicht wandern.
+      if (playerCar2.tileCode !== 0x00) {
+        pg.querSoll = (pg.querSoll || 0) + (roh - (pg.querSoll || 0)) * 0.25;
+      }
     }
     // Die Lichthupe von Auto 2 legt sich UEBER headlightsOn2 (Auto 2s EIGENES Dauerlicht,
     // seit die beiden Autos unabhaengig voneinander schalten), genau wie resolveLights()
@@ -33311,7 +33321,18 @@
   // steht. Genau das war "mitten auf der Strecke".
   //
   // Also eine eigene Phase, in der GEFAHREN wird - am Rand, mit Boxentempo.
+  //
+  // BESTELLT (diese Runde): "so weit wie es geht am rechten Streckenrand stehen." Die
+  // feste PIT_RAND_MS reicht nur, wenn das Auto die Bahnbreite in dieser Zeit schafft.
+  // Die Querbewegung laeuft ueber querMax * tempoAnteil (ghostTick): ein langsames Auto
+  // hat ein kleines tempoAnteil, also einen kleinen querMax - es schafft den Rand nicht in
+  // 1000 ms, und die Haltephase bremst es dann mitten auf der Strecke. Deshalb ist die
+  // Mindestzeit mit einer RAND-BEDINGUNG verknuepft: die Phase endet erst, wenn die
+  // Querlage wirklich am Rand steht (fruehestens nach PIT_RAND_MS), und notfalls nach
+  // PIT_RAND_MAX_MS, damit ein Auto, das nie an den Rand kommt, nicht ewig faehrt.
   const PIT_RAND_MS = 1000;
+  const PIT_RAND_MAX_MS = 2500;    // Sicherheitsgrenze, sonst fuehrt ein Hänger ewig
+  const PIT_RAND_TARGET = 0.95;    // Querlage, ab der "am Rand" gilt (Test verlangt 0.95)
   // Und die Bremse laeuft hoch statt zu schlagen. Bestellt: "relativ abrupt bremsen [...]
   // nicht direkt auf 0, dann rutscht es vll und steht zu schraeg." 350 ms sind rund ein
   // Drittel der Haltephase - deutlich kuerzer als die 460 ms Zeitkonstante des Reglers
@@ -33715,7 +33736,12 @@
       return true;
     }
     if (p.phase === 'rand') {
-      if (now - p.at >= PIT_RAND_MS) {
+      // BIS AN DEN RAND, und erst dann abbremsen - nicht blind nach PIT_RAND_MS. Ein
+      // langsames Auto (kleines tempoAnteil) erreicht die Breite erst spaeter; ein
+      // schnelles faehrt nach dem Erreichen die restliche Mindestzeit am Rand weiter.
+      const seit = now - p.at;
+      const amRand = (g.querSoll || 0) >= PIT_RAND_TARGET;
+      if ((seit >= PIT_RAND_MS && amRand) || seit >= PIT_RAND_MAX_MS) {
         p.phase = 'halt'; p.at = now;
         log(garageLabel(car) + ': am Rand, bremst ab.', 'info');
       }

@@ -3151,7 +3151,18 @@
   // steht. Genau das war "mitten auf der Strecke".
   //
   // Also eine eigene Phase, in der GEFAHREN wird - am Rand, mit Boxentempo.
+  //
+  // BESTELLT (diese Runde): "so weit wie es geht am rechten Streckenrand stehen." Die
+  // feste PIT_RAND_MS reicht nur, wenn das Auto die Bahnbreite in dieser Zeit schafft.
+  // Die Querbewegung laeuft ueber querMax * tempoAnteil (ghostTick): ein langsames Auto
+  // hat ein kleines tempoAnteil, also einen kleinen querMax - es schafft den Rand nicht in
+  // 1000 ms, und die Haltephase bremst es dann mitten auf der Strecke. Deshalb ist die
+  // Mindestzeit mit einer RAND-BEDINGUNG verknuepft: die Phase endet erst, wenn die
+  // Querlage wirklich am Rand steht (fruehestens nach PIT_RAND_MS), und notfalls nach
+  // PIT_RAND_MAX_MS, damit ein Auto, das nie an den Rand kommt, nicht ewig faehrt.
   const PIT_RAND_MS = 1000;
+  const PIT_RAND_MAX_MS = 2500;    // Sicherheitsgrenze, sonst fuehrt ein Hänger ewig
+  const PIT_RAND_TARGET = 0.95;    // Querlage, ab der "am Rand" gilt (Test verlangt 0.95)
   // Und die Bremse laeuft hoch statt zu schlagen. Bestellt: "relativ abrupt bremsen [...]
   // nicht direkt auf 0, dann rutscht es vll und steht zu schraeg." 350 ms sind rund ein
   // Drittel der Haltephase - deutlich kuerzer als die 460 ms Zeitkonstante des Reglers
@@ -3555,7 +3566,12 @@
       return true;
     }
     if (p.phase === 'rand') {
-      if (now - p.at >= PIT_RAND_MS) {
+      // BIS AN DEN RAND, und erst dann abbremsen - nicht blind nach PIT_RAND_MS. Ein
+      // langsames Auto (kleines tempoAnteil) erreicht die Breite erst spaeter; ein
+      // schnelles faehrt nach dem Erreichen die restliche Mindestzeit am Rand weiter.
+      const seit = now - p.at;
+      const amRand = (g.querSoll || 0) >= PIT_RAND_TARGET;
+      if ((seit >= PIT_RAND_MS && amRand) || seit >= PIT_RAND_MAX_MS) {
         p.phase = 'halt'; p.at = now;
         log(garageLabel(car) + ': am Rand, bremst ab.', 'info');
       }

@@ -269,7 +269,13 @@
     if (typeof playerCar !== 'undefined' && playerCar && playerCar.ghost) {
       const pg = playerCar.ghost;
       const roh = Math.max(-1, Math.min(1, steer));
-      pg.querSoll = (pg.querSoll || 0) + (roh - (pg.querSoll || 0)) * 0.25;
+      // NUR IN FAHRT nachfuehren. Die Ghosts regeln das ueber tempoAnteil in ghostTick
+      // (bei v = 0 friert g.querSoll ein); hier ist das Signal ein stehendes Auto, das
+      // 0x00 liest. Ohne das wandert der Kartenpunkt mit dem Lenkbefehl, obwohl das Auto
+      // auf der Schiene steht und sich nicht zur Seite bewegen kann.
+      if (playerCar.tileCode !== 0x00) {
+        pg.querSoll = (pg.querSoll || 0) + (roh - (pg.querSoll || 0)) * 0.25;
+      }
     }
     const payload = buildCommandPacket(steer, throttle, undefined, modeBytes);
     recWrite(payload);
@@ -446,7 +452,11 @@
     if (playerCar2.ghost) {
       const pg = playerCar2.ghost;
       const roh = Math.max(-1, Math.min(1, steer));
-      pg.querSoll = (pg.querSoll || 0) + (roh - (pg.querSoll || 0)) * 0.25;
+      // Dieselbe Fahrt-Bedingung wie bei Auto 1: ein stehendes Auto liest 0x00 und kann
+      // sich nicht zur Seite bewegen, sein Kartenpunkt soll dann auch nicht wandern.
+      if (playerCar2.tileCode !== 0x00) {
+        pg.querSoll = (pg.querSoll || 0) + (roh - (pg.querSoll || 0)) * 0.25;
+      }
     }
     // Die Lichthupe von Auto 2 legt sich UEBER headlightsOn2 (Auto 2s EIGENES Dauerlicht,
     // seit die beiden Autos unabhaengig voneinander schalten), genau wie resolveLights()
