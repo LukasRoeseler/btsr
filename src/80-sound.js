@@ -517,9 +517,9 @@
 
   // ============================ ANSAGEN =============================================
   //
-  // FUENF MELDUNGEN AN FUENF SCHALTERN, dazu ein Funkfilter. Sie teilen sich einen Kern:
-  // eine Stimme, eine Abbruchregel, eine Fehlerzeile. Fuenf eigene Sprechfunktionen waeren
-  // fuenf Orte, an denen der naechste Schalter vergessen wird.
+  // SECHS MELDUNGEN AN SECHS SCHALTERN, dazu ein Funkfilter. Sie teilen sich einen Kern:
+  // eine Stimme, eine Abbruchregel, eine Fehlerzeile. Sechs eigene Sprechfunktionen waeren
+  // sechs Orte, an denen der naechste Schalter vergessen wird.
   //
   // JEDE MELDUNG IST EINE FLANKE, kein Zustand. Ein Tank unter 10 % bleibt minutenlang
   // unter 10 %, und eine Ansage je Takt waere unbenutzbar. Gemeldet wird deshalb der
@@ -527,7 +527,7 @@
   // steigt - beim Tank also nach dem Tanken, beim Schaden nach der Reparatur.
   const ANSAGE_SCHWELLE = 0.10;   // 10 %, wie in der Aufgabe
   const ANSAGE_HYSTERESE = 0.18;  // erst darueber ist die Meldung wieder scharf
-  const ansageAn = { lap: true, damage: false, fuel: false, tyre: false, rain: false };
+  const ansageAn = { lap: true, damage: false, fuel: false, tyre: false, rain: false, pit: true };
   const ansageLatch = { damage: false, fuel: false, tyre: false, rain: null };
 
   // HIER STAND DER FUNKFILTER als Live-Effekt auf der Browserstimme, und er ist auf Bitte
@@ -650,7 +650,7 @@
   // toten Schalter ergeben hat.
   const ANSAGE_KAESTCHEN = { 'setting-announce': 'lap', 'setting-announce-damage': 'damage',
                              'setting-announce-fuel': 'fuel', 'setting-announce-tyre': 'tyre',
-                             'setting-announce-rain': 'rain' };
+                             'setting-announce-rain': 'rain', 'setting-announce-pit': 'pit' };
   Object.keys(ANSAGE_KAESTCHEN).forEach((id) => {
     const el = $(id);
     if (!el) return;

@@ -2846,10 +2846,11 @@
   // keine Runde. Wer die Zaehlung lieber durchlaufen laesst, kann es umstellen.
   let pitDoubleCountsLap = false;
 
-  // Zwei Kontakte innerhalb von 3 s bei mindestens 1 s Abstand. Die untere Grenze ist der
-  // wichtigere Teil: ein einzelner Ausdruck haelt bei Fahrt etwa eine Sekunde Kontakt, und
-  // ohne Mindestabstand wuerde das Flattern EINES Musters als Paar gelesen.
-  const PIT_DOUBLE_WINDOW_MS = 3000;
+  // Zwei Kontakte innerhalb des eingestellten Zeitfensters (Slider, 3-10 s, Vorgabe 3 s)
+  // bei mindestens 1 s Abstand. Die untere Grenze ist der wichtigere Teil: ein einzelner
+  // Ausdruck haelt bei Fahrt etwa eine Sekunde Kontakt, und ohne Mindestabstand wuerde das
+  // Flattern EINES Musters als Paar gelesen.
+  let PIT_DOUBLE_WINDOW_MS = 3000;
   const PIT_DOUBLE_MIN_MS = 1000;
   // Danach 4 s Tempolimit. Haelt das Auto in dieser Zeit, beginnt der Service von selbst.
   const PIT_DOUBLE_LIMIT_MS = 4000;
@@ -2982,6 +2983,14 @@
       if (!pitDoubleCountsLap) retractLap('doppelter Start-Ausdruck, Boxeneinfahrt');
       pitDoubleArmedUntil = jetzt + PIT_DOUBLE_LIMIT_MS;
       setPitState('limited');
+      // Die Ansage: "Boxenstopp eingeleitet" erst beim zweiten Muster. Die Rundenzeit, die
+      // playerLapCrossed() gerade fuer diese Ueberfahrt angesagt hat, ist eine Falschmeldung -
+      // die Runde wird zurueckgenommen. Bevor die Stimme sie sagt, abbrechen; das Abbrechen
+      // gehoert zur Ruecknahme und nicht zur Ansage, sonst redet es auch weiter, wenn der
+      // neue Schalter aus ist. Der Knopf sagt hier nichts: er loest im Doppelausdruck-Modus
+      // gar nicht aus (requestPitStop lehnt ab).
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+      ansage('pit', lang === 'de' ? 'Boxenstopp eingeleitet' : 'Pit stop initiated');
       // Das Piepen: dasselbe wie die Boxengassen-Meldung, damit es nicht ein weiterer Ton
       // ist, den man lernen muss.
       playTone(880, 0.12, 'square', 0.16);
@@ -3154,10 +3163,12 @@
     // Ankreuzfeld, das in der gewaehlten Variante nichts bedeutet, ist eine Frage ohne
     // Antwort.
     const wrap = $('pit-double-lap-wrap');
+    const wrapW = $('pit-double-window-wrap');
     // '' und nicht 'flex': die Zeile ist jetzt eine .opt-row und traegt ihr display
     // aus dem Stilblock. Ein festes 'flex' waere die dritte Stelle, an der dieses
     // Layout steht.
     if (wrap) wrap.style.display = pitTrigger === 'double' ? '' : 'none';
+    if (wrapW) wrapW.style.display = pitTrigger === 'double' ? '' : 'none';
     log('Boxengasse: ' + (pitTrigger === 'anywhere' ? 'ueberall halten'
         : pitTrigger === 'offtrack' ? 'neben der Strecke (Byte 12 = 0x00)'
         : 'doppelter Start-Ausdruck, 2 Kontakte in ' + (PIT_DOUBLE_WINDOW_MS / 1000)
@@ -3166,8 +3177,26 @@
   $('pit-double-lap').addEventListener('change', (e) => {
     pitDoubleCountsLap = e.target.checked;
   });
+  // Das Fenster des doppelten Ausdrucks: der Slider steht in Sekunden, das Paar rechnet in
+  // Millisekunden. Anfangs- und Laufzeitwert aus dem Markup, wie bei den anderen Schaltern.
+  const pwd = $('setting-pit-double-window');
+  if (pwd) {
+    const pwdVal = $('setting-pit-double-window-val');
+    const pwdAnwenden = () => {
+      PIT_DOUBLE_WINDOW_MS = Math.round(parseFloat(pwd.value)) * 1000;
+      if (pwdVal) pwdVal.textContent = pwd.value + ' s';
+      const t1 = $('pit-double-window-text');
+      if (t1) t1.textContent = pwd.value;
+      const t2 = $('pit-double-window-text2');
+      if (t2) t2.textContent = pwd.value;
+    };
+    pwdAnwenden();
+    pwd.addEventListener('input', pwdAnwenden);
+    pwd.addEventListener('change', pwdAnwenden);
+  }
   // Beim Laden verstecken, weil die Vorgabe 'anywhere' ist.
   if ($('pit-double-lap-wrap')) $('pit-double-lap-wrap').style.display = 'none';
+  if ($('pit-double-window-wrap')) $('pit-double-window-wrap').style.display = 'none';
 
   // HIER STAND DER LESER FUER pit-marker-code, das Eingabefeld des Boxengassen-Ausloesecodes.
   // Er ist mit der Karte heraus (siehe den auskommentierten Block in 00-index.head.html),

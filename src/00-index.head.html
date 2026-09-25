@@ -3185,7 +3185,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.7.64</span></span>
+        <span class="foot-ver">v<span id="app-version">0.7.65</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -7341,9 +7341,9 @@
           CH-Schiene sinnvoll &ndash; ohne Schiene meldet das Auto st&auml;ndig
           &bdquo;abseits&ldquo;.<br>
           <b>Doppelter Start-Ausdruck</b>: zwei Ausdrucke im Abstand von 50&nbsp;cm. Zwei
-          Musterkontakte innerhalb von 3&nbsp;s bei mindestens 1&nbsp;s Abstand sind eine
-          Boxeneinfahrt und keine Runde. Danach piept es, das Tempolimit von 60&nbsp;km/h
-          gilt 4&nbsp;s, und ein Anhalten in dieser Zeit startet den Service. Der
+          Musterkontakte zwischen 1&nbsp;s und <span id="pit-double-window-text2">3</span>&nbsp;s
+          Abstand sind eine Boxeneinfahrt und keine Runde. Danach piept es, das Tempolimit von
+          60&nbsp;km/h gilt 4&nbsp;s, und ein Anhalten in dieser Zeit startet den Service. Der
           Mindestabstand ist der wichtigere Teil der Bedingung: ein einzelner Ausdruck
           h&auml;lt bei Fahrt etwa eine Sekunde Kontakt, und ohne ihn w&uuml;rde das
           Flattern <em>eines</em> Musters als Paar gelesen.</small></div>
@@ -7357,6 +7357,17 @@
           <small>Sinnvoll, wenn die Boxengasse parallel zu Start/Ziel liegt. Nur bei
           &bdquo;Doppelter Start-Ausdruck&ldquo;.</small></div>
         <label class="tgl"><input type="checkbox" id="pit-double-lap"><span></span></label></div>
+      <div class="opt-row" id="pit-double-window-wrap"><div class="opt-label">Zeitfenster des
+          Doppel-Ausdrucks
+          <small>Das zweite Muster muss zwischen 1&nbsp;s und <span
+          id="pit-double-window-text">3</span>&nbsp;s nach dem ersten &uuml;berfahren werden.
+          Nur bei &bdquo;Doppelter Start-Ausdruck&ldquo;.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="setting-pit-double-window" min="3" max="10" step="1" value="3">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-pit-double-window-val">3 s</span>
+        </div></div>
       <div class="opt-row"><div class="opt-label">Crashs, bis Fahrzeug ruckelt</div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
@@ -7842,6 +7853,8 @@
         <label class="tgl"><input type="checkbox" id="setting-announce-tyre" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Regen ansagen<small>Wenn es anf&auml;ngt zu regnen und wenn es aufh&ouml;rt. Beim Laden wird nichts gesagt, erst beim Wechsel.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-announce-rain" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Boxenstopp ansagen<small>Wenn der Stopp &uuml;ber den doppelten Start-Ausdruck ausgel&ouml;st wird: &bdquo;Boxenstopp eingeleitet&ldquo;. Nicht beim Knopf.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-announce-pit" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Regen<small>Select oder W. Reifen kommen beim Boxenstopp passend.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-rain"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Strecken-Ambience<small>Vorbeifahrten, Regen, Donner.</small></div>

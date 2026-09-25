@@ -3185,7 +3185,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.7.64</span></span>
+        <span class="foot-ver">v<span id="app-version">0.7.65</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -7341,9 +7341,9 @@
           CH-Schiene sinnvoll &ndash; ohne Schiene meldet das Auto st&auml;ndig
           &bdquo;abseits&ldquo;.<br>
           <b>Doppelter Start-Ausdruck</b>: zwei Ausdrucke im Abstand von 50&nbsp;cm. Zwei
-          Musterkontakte innerhalb von 3&nbsp;s bei mindestens 1&nbsp;s Abstand sind eine
-          Boxeneinfahrt und keine Runde. Danach piept es, das Tempolimit von 60&nbsp;km/h
-          gilt 4&nbsp;s, und ein Anhalten in dieser Zeit startet den Service. Der
+          Musterkontakte zwischen 1&nbsp;s und <span id="pit-double-window-text2">3</span>&nbsp;s
+          Abstand sind eine Boxeneinfahrt und keine Runde. Danach piept es, das Tempolimit von
+          60&nbsp;km/h gilt 4&nbsp;s, und ein Anhalten in dieser Zeit startet den Service. Der
           Mindestabstand ist der wichtigere Teil der Bedingung: ein einzelner Ausdruck
           h&auml;lt bei Fahrt etwa eine Sekunde Kontakt, und ohne ihn w&uuml;rde das
           Flattern <em>eines</em> Musters als Paar gelesen.</small></div>
@@ -7357,6 +7357,17 @@
           <small>Sinnvoll, wenn die Boxengasse parallel zu Start/Ziel liegt. Nur bei
           &bdquo;Doppelter Start-Ausdruck&ldquo;.</small></div>
         <label class="tgl"><input type="checkbox" id="pit-double-lap"><span></span></label></div>
+      <div class="opt-row" id="pit-double-window-wrap"><div class="opt-label">Zeitfenster des
+          Doppel-Ausdrucks
+          <small>Das zweite Muster muss zwischen 1&nbsp;s und <span
+          id="pit-double-window-text">3</span>&nbsp;s nach dem ersten &uuml;berfahren werden.
+          Nur bei &bdquo;Doppelter Start-Ausdruck&ldquo;.</small></div>
+        <div class="opt-slider">
+          <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
+          <input type="range" id="setting-pit-double-window" min="3" max="10" step="1" value="3">
+          <button type="button" data-step="1" aria-label="mehr">+</button>
+          <span class="opt-val" id="setting-pit-double-window-val">3 s</span>
+        </div></div>
       <div class="opt-row"><div class="opt-label">Crashs, bis Fahrzeug ruckelt</div>
         <div class="opt-slider">
           <button type="button" data-step="-1" aria-label="weniger">&minus;</button>
@@ -7842,6 +7853,8 @@
         <label class="tgl"><input type="checkbox" id="setting-announce-tyre" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Regen ansagen<small>Wenn es anf&auml;ngt zu regnen und wenn es aufh&ouml;rt. Beim Laden wird nichts gesagt, erst beim Wechsel.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-announce-rain" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Boxenstopp ansagen<small>Wenn der Stopp &uuml;ber den doppelten Start-Ausdruck ausgel&ouml;st wird: &bdquo;Boxenstopp eingeleitet&ldquo;. Nicht beim Knopf.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-announce-pit" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Regen<small>Select oder W. Reifen kommen beim Boxenstopp passend.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-rain"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Strecken-Ambience<small>Vorbeifahrten, Regen, Donner.</small></div>
@@ -25818,10 +25831,11 @@
   // keine Runde. Wer die Zaehlung lieber durchlaufen laesst, kann es umstellen.
   let pitDoubleCountsLap = false;
 
-  // Zwei Kontakte innerhalb von 3 s bei mindestens 1 s Abstand. Die untere Grenze ist der
-  // wichtigere Teil: ein einzelner Ausdruck haelt bei Fahrt etwa eine Sekunde Kontakt, und
-  // ohne Mindestabstand wuerde das Flattern EINES Musters als Paar gelesen.
-  const PIT_DOUBLE_WINDOW_MS = 3000;
+  // Zwei Kontakte innerhalb des eingestellten Zeitfensters (Slider, 3-10 s, Vorgabe 3 s)
+  // bei mindestens 1 s Abstand. Die untere Grenze ist der wichtigere Teil: ein einzelner
+  // Ausdruck haelt bei Fahrt etwa eine Sekunde Kontakt, und ohne Mindestabstand wuerde das
+  // Flattern EINES Musters als Paar gelesen.
+  let PIT_DOUBLE_WINDOW_MS = 3000;
   const PIT_DOUBLE_MIN_MS = 1000;
   // Danach 4 s Tempolimit. Haelt das Auto in dieser Zeit, beginnt der Service von selbst.
   const PIT_DOUBLE_LIMIT_MS = 4000;
@@ -25954,6 +25968,14 @@
       if (!pitDoubleCountsLap) retractLap('doppelter Start-Ausdruck, Boxeneinfahrt');
       pitDoubleArmedUntil = jetzt + PIT_DOUBLE_LIMIT_MS;
       setPitState('limited');
+      // Die Ansage: "Boxenstopp eingeleitet" erst beim zweiten Muster. Die Rundenzeit, die
+      // playerLapCrossed() gerade fuer diese Ueberfahrt angesagt hat, ist eine Falschmeldung -
+      // die Runde wird zurueckgenommen. Bevor die Stimme sie sagt, abbrechen; das Abbrechen
+      // gehoert zur Ruecknahme und nicht zur Ansage, sonst redet es auch weiter, wenn der
+      // neue Schalter aus ist. Der Knopf sagt hier nichts: er loest im Doppelausdruck-Modus
+      // gar nicht aus (requestPitStop lehnt ab).
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+      ansage('pit', lang === 'de' ? 'Boxenstopp eingeleitet' : 'Pit stop initiated');
       // Das Piepen: dasselbe wie die Boxengassen-Meldung, damit es nicht ein weiterer Ton
       // ist, den man lernen muss.
       playTone(880, 0.12, 'square', 0.16);
@@ -26126,10 +26148,12 @@
     // Ankreuzfeld, das in der gewaehlten Variante nichts bedeutet, ist eine Frage ohne
     // Antwort.
     const wrap = $('pit-double-lap-wrap');
+    const wrapW = $('pit-double-window-wrap');
     // '' und nicht 'flex': die Zeile ist jetzt eine .opt-row und traegt ihr display
     // aus dem Stilblock. Ein festes 'flex' waere die dritte Stelle, an der dieses
     // Layout steht.
     if (wrap) wrap.style.display = pitTrigger === 'double' ? '' : 'none';
+    if (wrapW) wrapW.style.display = pitTrigger === 'double' ? '' : 'none';
     log('Boxengasse: ' + (pitTrigger === 'anywhere' ? 'ueberall halten'
         : pitTrigger === 'offtrack' ? 'neben der Strecke (Byte 12 = 0x00)'
         : 'doppelter Start-Ausdruck, 2 Kontakte in ' + (PIT_DOUBLE_WINDOW_MS / 1000)
@@ -26138,8 +26162,26 @@
   $('pit-double-lap').addEventListener('change', (e) => {
     pitDoubleCountsLap = e.target.checked;
   });
+  // Das Fenster des doppelten Ausdrucks: der Slider steht in Sekunden, das Paar rechnet in
+  // Millisekunden. Anfangs- und Laufzeitwert aus dem Markup, wie bei den anderen Schaltern.
+  const pwd = $('setting-pit-double-window');
+  if (pwd) {
+    const pwdVal = $('setting-pit-double-window-val');
+    const pwdAnwenden = () => {
+      PIT_DOUBLE_WINDOW_MS = Math.round(parseFloat(pwd.value)) * 1000;
+      if (pwdVal) pwdVal.textContent = pwd.value + ' s';
+      const t1 = $('pit-double-window-text');
+      if (t1) t1.textContent = pwd.value;
+      const t2 = $('pit-double-window-text2');
+      if (t2) t2.textContent = pwd.value;
+    };
+    pwdAnwenden();
+    pwd.addEventListener('input', pwdAnwenden);
+    pwd.addEventListener('change', pwdAnwenden);
+  }
   // Beim Laden verstecken, weil die Vorgabe 'anywhere' ist.
   if ($('pit-double-lap-wrap')) $('pit-double-lap-wrap').style.display = 'none';
+  if ($('pit-double-window-wrap')) $('pit-double-window-wrap').style.display = 'none';
 
   // HIER STAND DER LESER FUER pit-marker-code, das Eingabefeld des Boxengassen-Ausloesecodes.
   // Er ist mit der Karte heraus (siehe den auskommentierten Block in 00-index.head.html),
@@ -28712,9 +28754,9 @@
 
   // ============================ ANSAGEN =============================================
   //
-  // FUENF MELDUNGEN AN FUENF SCHALTERN, dazu ein Funkfilter. Sie teilen sich einen Kern:
-  // eine Stimme, eine Abbruchregel, eine Fehlerzeile. Fuenf eigene Sprechfunktionen waeren
-  // fuenf Orte, an denen der naechste Schalter vergessen wird.
+  // SECHS MELDUNGEN AN SECHS SCHALTERN, dazu ein Funkfilter. Sie teilen sich einen Kern:
+  // eine Stimme, eine Abbruchregel, eine Fehlerzeile. Sechs eigene Sprechfunktionen waeren
+  // sechs Orte, an denen der naechste Schalter vergessen wird.
   //
   // JEDE MELDUNG IST EINE FLANKE, kein Zustand. Ein Tank unter 10 % bleibt minutenlang
   // unter 10 %, und eine Ansage je Takt waere unbenutzbar. Gemeldet wird deshalb der
@@ -28722,7 +28764,7 @@
   // steigt - beim Tank also nach dem Tanken, beim Schaden nach der Reparatur.
   const ANSAGE_SCHWELLE = 0.10;   // 10 %, wie in der Aufgabe
   const ANSAGE_HYSTERESE = 0.18;  // erst darueber ist die Meldung wieder scharf
-  const ansageAn = { lap: true, damage: false, fuel: false, tyre: false, rain: false };
+  const ansageAn = { lap: true, damage: false, fuel: false, tyre: false, rain: false, pit: true };
   const ansageLatch = { damage: false, fuel: false, tyre: false, rain: null };
 
   // HIER STAND DER FUNKFILTER als Live-Effekt auf der Browserstimme, und er ist auf Bitte
@@ -28845,7 +28887,7 @@
   // toten Schalter ergeben hat.
   const ANSAGE_KAESTCHEN = { 'setting-announce': 'lap', 'setting-announce-damage': 'damage',
                              'setting-announce-fuel': 'fuel', 'setting-announce-tyre': 'tyre',
-                             'setting-announce-rain': 'rain' };
+                             'setting-announce-rain': 'rain', 'setting-announce-pit': 'pit' };
   Object.keys(ANSAGE_KAESTCHEN).forEach((id) => {
     const el = $(id);
     if (!el) return;
@@ -63478,7 +63520,7 @@
     }
     const merk = { sp: playerCar, tm: trackMode, pt: pitTrigger, ps: pitState,
                    rs: raceState, lt: raceLapTimes.slice(), ls: raceLapStart,
-                   ple: pitLaneEnabled, pdf: pitDoubleFirstAt,
+                   ple: pitLaneEnabled, pdf: pitDoubleFirstAt, pwi: PIT_DOUBLE_WINDOW_MS,
                    ac: dashLastActedCode, aa: dashLastActedAt };
     try {
       const attrappe = { device: { id: 'st-pit', name: 'Pruefwagen' }, role: 'player',
@@ -63488,6 +63530,9 @@
       trackMode = 'off';
       pitLaneEnabled = true;
       pitTrigger = 'double';
+      // Das Fenster ist seit v0.7.65 einstellbar; fuer die Pruefung fest auf 3 s, damit der
+      // 1,5-s-Abstand sicher im Fenster liegt und die Pruefung nicht an der Vorgabe haengt.
+      PIT_DOUBLE_WINDOW_MS = 3000;
       raceState = 'racing';
 
       const paket = (marker) => {
@@ -63562,6 +63607,7 @@
     } finally {
       playerCar = merk.sp; trackMode = merk.tm; pitTrigger = merk.pt;
       pitLaneEnabled = merk.ple; pitDoubleFirstAt = merk.pdf;
+      PIT_DOUBLE_WINDOW_MS = merk.pwi;
       raceState = merk.rs; raceLapStart = merk.ls;
       raceLapTimes.length = 0;
       merk.lt.forEach(l => raceLapTimes.push(l));
@@ -63587,6 +63633,7 @@
     const merk = { sp: playerCar, tm: trackMode, pt: pitTrigger, ps: pitState,
                    rs: raceState, lt: raceLapTimes.slice(), ls: raceLapStart,
                    ple: pitLaneEnabled, pdf: pitDoubleFirstAt, pdc: pitDoubleCountsLap,
+                   pwi: PIT_DOUBLE_WINDOW_MS,
                    ac: dashLastActedCode, aa: dashLastActedAt,
                    pc: dashPendingCode, pv: dashPendingSeen, tc: dashLastTileCounter };
     try {
@@ -63598,6 +63645,8 @@
       pitLaneEnabled = true;
       pitTrigger = 'double';
       pitDoubleCountsLap = false;
+      // Fenster fest auf 3 s, siehe die andere Doppelausdruck-Pruefung.
+      PIT_DOUBLE_WINDOW_MS = 3000;
       raceState = 'racing';
 
       // Byte 14 = 0x22: Bit 5 gesetzt, also BAHN-Modus - der Weg mit Kachelzaehler.
@@ -63653,6 +63702,7 @@
       playerCar = merk.sp; trackMode = merk.tm; pitTrigger = merk.pt;
       pitLaneEnabled = merk.ple; pitDoubleFirstAt = merk.pdf;
       pitDoubleCountsLap = merk.pdc;
+      PIT_DOUBLE_WINDOW_MS = merk.pwi;
       raceState = merk.rs; raceLapStart = merk.ls;
       raceLapTimes.length = 0;
       merk.lt.forEach(l => raceLapTimes.push(l));

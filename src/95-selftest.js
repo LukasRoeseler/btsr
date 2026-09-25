@@ -14255,7 +14255,7 @@
     }
     const merk = { sp: playerCar, tm: trackMode, pt: pitTrigger, ps: pitState,
                    rs: raceState, lt: raceLapTimes.slice(), ls: raceLapStart,
-                   ple: pitLaneEnabled, pdf: pitDoubleFirstAt,
+                   ple: pitLaneEnabled, pdf: pitDoubleFirstAt, pwi: PIT_DOUBLE_WINDOW_MS,
                    ac: dashLastActedCode, aa: dashLastActedAt };
     try {
       const attrappe = { device: { id: 'st-pit', name: 'Pruefwagen' }, role: 'player',
@@ -14265,6 +14265,9 @@
       trackMode = 'off';
       pitLaneEnabled = true;
       pitTrigger = 'double';
+      // Das Fenster ist seit v0.7.65 einstellbar; fuer die Pruefung fest auf 3 s, damit der
+      // 1,5-s-Abstand sicher im Fenster liegt und die Pruefung nicht an der Vorgabe haengt.
+      PIT_DOUBLE_WINDOW_MS = 3000;
       raceState = 'racing';
 
       const paket = (marker) => {
@@ -14339,6 +14342,7 @@
     } finally {
       playerCar = merk.sp; trackMode = merk.tm; pitTrigger = merk.pt;
       pitLaneEnabled = merk.ple; pitDoubleFirstAt = merk.pdf;
+      PIT_DOUBLE_WINDOW_MS = merk.pwi;
       raceState = merk.rs; raceLapStart = merk.ls;
       raceLapTimes.length = 0;
       merk.lt.forEach(l => raceLapTimes.push(l));
@@ -14364,6 +14368,7 @@
     const merk = { sp: playerCar, tm: trackMode, pt: pitTrigger, ps: pitState,
                    rs: raceState, lt: raceLapTimes.slice(), ls: raceLapStart,
                    ple: pitLaneEnabled, pdf: pitDoubleFirstAt, pdc: pitDoubleCountsLap,
+                   pwi: PIT_DOUBLE_WINDOW_MS,
                    ac: dashLastActedCode, aa: dashLastActedAt,
                    pc: dashPendingCode, pv: dashPendingSeen, tc: dashLastTileCounter };
     try {
@@ -14375,6 +14380,8 @@
       pitLaneEnabled = true;
       pitTrigger = 'double';
       pitDoubleCountsLap = false;
+      // Fenster fest auf 3 s, siehe die andere Doppelausdruck-Pruefung.
+      PIT_DOUBLE_WINDOW_MS = 3000;
       raceState = 'racing';
 
       // Byte 14 = 0x22: Bit 5 gesetzt, also BAHN-Modus - der Weg mit Kachelzaehler.
@@ -14430,6 +14437,7 @@
       playerCar = merk.sp; trackMode = merk.tm; pitTrigger = merk.pt;
       pitLaneEnabled = merk.ple; pitDoubleFirstAt = merk.pdf;
       pitDoubleCountsLap = merk.pdc;
+      PIT_DOUBLE_WINDOW_MS = merk.pwi;
       raceState = merk.rs; raceLapStart = merk.ls;
       raceLapTimes.length = 0;
       merk.lt.forEach(l => raceLapTimes.push(l));
