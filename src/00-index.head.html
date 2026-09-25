@@ -416,6 +416,16 @@
     text-shadow: 1px 0 0 var(--glitch-r), -1px 0 0 var(--glitch-c);
   }
   .misc-tile span { font-size: 12.5px; color: var(--muted); font-weight: 400; }
+  /* Kacheln der Unterseiten auf dem Handy schmaler: die 150-px-Mindesthoehe und das grosse
+     Polster machen aus einer Menuezeile eine Karte, und auf einem 360-px-Schirm passt dann
+     nur eine Kachel auf den Bildschirm - Navigieren wird zum Scrollen. Kompakter werden
+     mehrere sichtbar, und das D-Pad (50b-menu-nav.js) kommt schneller von Kachel zu Kachel. */
+  @media (max-width: 560px) {
+    .misc-tile { min-height: 0; padding: 12px 14px; gap: 7px; }
+    .misc-tile svg { width: 30px; height: 30px; }
+    .misc-tile b { font-size: 12px; }
+    .misc-tile span { font-size: 11.5px; }
+  }
   /* Unterseiten innerhalb eines Tabs: eine Kachelseite, und je Kachel eine Karte.
      Dasselbe Muster wie "Sonstige", nur innerhalb eines Tabs statt zwischen Tabs - der
      Streckentab hatte sechs Karten untereinander, und man musste an fuenf vorbeiscrollen,
@@ -3175,7 +3185,7 @@
          bei .home-topbar in der Kopfzeilen-CSS). -->
     <div class="home-topbar">
       <span class="foot-left">
-        <span class="foot-ver">v<span id="app-version">0.7.61</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.1</span></span>
         <span class="foot-dim foot-brand" data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -3292,6 +3302,10 @@
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="8" width="20" height="10" rx="4"/><path d="M7 13h2M8 12v2M16 13h.01"/></svg><span>Gamepad-Vibration</span></div>
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 11V8a5 5 0 0 1 9-3"/><rect x="5" y="11" width="14" height="9" rx="2"/></svg><span>Open Source, offene Lizenz</span></div>
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 14c0-3 2-5 5-5h2l4-4v14l-4-4H9c-3 0-5-1-5-3z"/><path d="M18 9c1.5 1.5 1.5 4.5 0 6"/></svg><span>Zwei verschiedene Pups-Hupen</span></div>
+        <div><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="7.5" cy="7.5" r="2.5"/><path d="M2.5 19c0-2.8 2.2-5 5-5s5 2.2 5 5"/><circle cx="16.5" cy="7.5" r="2.5"/><path d="M11.5 19c0-2.8 2.2-5 5-5s5 2.2 5 5"/></svg><span>2-Spieler-Modus</span></div>
+        <div><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="8" width="20" height="10" rx="4"/><path d="M7.5 11.5v3M6 13h3"/><circle cx="16.5" cy="12.5" r="1"/><circle cx="18.5" cy="14.5" r="1"/></svg><span>Gamepad-Men&uuml;-Steuerung</span></div>
+        <div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3v18"/><path d="M5 4h12l-3 4 3 4H5z"/></svg><span>Verschiedene Rennmodi</span></div>
+        <div><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17h8l2-2h5"/><path d="M16 9l4 4-4 4"/></svg><span>KI-&Uuml;berholman&ouml;ver</span></div>
         <div><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg><span class="feat-1line"><b>Und vieles mehr &hellip;</b></span></div>
     </div>
   </section>
