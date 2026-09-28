@@ -258,24 +258,6 @@
         } catch (e) { /* privater Modus oder voll - dann eben nur fuer diese Sitzung */ }
       }
     }
-    // ---- EINMALIG: REGENANSAGE AUS --------------------------------------------------
-    //
-    // BESTELLT: "Ich hoere dauernd 'der Regen hoert auf' usw. Mach, dass das aufhoert."
-    // Der neue Vorgabewert (aus) aendert an einer vorhandenen Selbstsicherung nichts - sie
-    // traegt das alte 'an' und ueberschreibt ihn. Also einmal umstellen, markiert, damit ein
-    // spaeter bewusst wieder eingeschalteter Schalter an bleibt. Dasselbe Muster wie oben.
-    if (cfg['setting-announce-rain'] === true) {
-      let erledigt = false;
-      try { erledigt = localStorage.getItem('chc.migrate.regenansage.v1') === '1'; }
-      catch (e) { /* privater Modus */ }
-      if (!erledigt) {
-        cfg['setting-announce-rain'] = false;
-        try {
-          localStorage.setItem('chc.migrate.regenansage.v1', '1');
-          localStorage.setItem(AUTO_STORE, JSON.stringify(cfg));
-        } catch (e) { /* dann nur fuer diese Sitzung */ }
-      }
-    }
     // AUCH HIER GEPRUEFT. Die eigene Ablage ist nicht vertrauenswuerdiger als eine Datei:
     // sie kann aus einer aelteren Fassung stammen, in der ein Regler andere Grenzen hatte.
     const { bad } = presetPruefen(cfg);

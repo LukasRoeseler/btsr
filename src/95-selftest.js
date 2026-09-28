@@ -10396,15 +10396,10 @@
   // ---- Alle fuenf Ansagen stehen ab Werk an ----
   //
   // BESTELLT: "ton standardwerte: alle ansagen an." Vier der fuenf standen aus.
-  // SPAETER BESTELLT, und das geht vor: "Ich hoere dauernd 'der Regen hoert auf' usw. Mach,
-  // dass das aufhoert." Die Regenansage steht deshalb ab Werk AUS, die anderen vier an.
-  stAdd('Ton: vier Ansagen ab Werk an, die Regenansage aus', () => {
+  stAdd('Ton: alle fuenf Ansagen stehen ab Werk an', () => {
     const IDS = ['setting-announce', 'setting-announce-damage', 'setting-announce-fuel',
-                 'setting-announce-tyre'];
+                 'setting-announce-tyre', 'setting-announce-rain'];
     const aus = [], fehlt = [];
-    const regen = $('setting-announce-rain');
-    if (!regen) fehlt.push('setting-announce-rain');
-    else if (regen.defaultChecked) aus.push('Regenansage steht ab Werk AN');
     for (const id of IDS) {
       const el = $(id);
       if (!el) { fehlt.push(id); continue; }
