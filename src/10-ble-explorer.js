@@ -757,6 +757,89 @@
     "Der Modus": "The mode",
     "2-Spieler-Modus": "Two-player mode",
     "Gamepad-Menü-Steuerung": "Gamepad menu control",
+    "Neues Menü im Stil von Assetto Corsa Competizione (WIP): Titelbildschirm, Hauptmenü, Fahren-Schirm mit Auto, Rennoptionen und Strecke, PS5-Tasten (Kreuz, Kreis, L1/R1), Cockpit-Menü über Options halten.": "New menu in the style of Assetto Corsa Competizione (WIP): title screen, main menu, drive screen with car, race options and track, PS5 buttons (cross, circle, L1/R1), cockpit menu by holding Options.",
+    "Nur in der Android-App: Version, Updates ohne neue APK.": "Android app only: version, updates without a new APK.",
+    "Titel": "Title",
+    "Hauptmenü": "Main menu",
+    "Fahren": "Drive",
+    "BLE-Werkbank": "BLE workbench",
+    "Ergebnisse": "Results",
+    "Sitzungen": "Sessions",
+    "Autos": "cars",
+    "kein Auto": "no car",
+    "Neues Menü": "New menu",
+    "Leer": "Space",
+    "Bestätigen": "Confirm",
+    "Navigieren": "Navigate",
+    "Wert ändern": "Change value",
+    "Wechseln": "Switch",
+    "Reiter": "Tabs",
+    "keines": "none",
+    "Bahn": "Track",
+    "Frei": "Free",
+    "Teile": "pieces",
+    "Bestzeit": "Best lap",
+    "Abstimmung": "Setup",
+    "Status": "Status",
+    "Bluetooth-Auswahl öffnen": "open Bluetooth chooser",
+    "Ghost": "Ghost",
+    "Wetter": "Weather",
+    "Ausdruck, ohne Bahn": "Printout, no track",
+    "Härte": "Hardness",
+    "Training starten": "Start practice",
+    "frei": "free",
+    "Öffnet die Garage: Rollen, Namen, Farben, Ghost-Tempo, weitere Autos.": "Opens the garage: roles, names, colours, ghost pace, more cars.",
+    "Öffnet sofort die Bluetooth-Auswahl. Das erste Auto steuerst du, weitere werden Ghosts.": "Opens the Bluetooth chooser right away. You drive the first car, further ones become ghosts.",
+    "Öffnet sofort die Bluetooth-Auswahl.": "Opens the Bluetooth chooser right away.",
+    "Auto verbinden, Rennen einstellen, Strecke wählen und losfahren – alles auf einem Schirm.": "Connect a car, set up the race, choose the track and go – all on one screen.",
+    "Ein Telefon oder PC ist Host, die anderen treten bei; ein Tablet wird Info-Screen.": "One phone or PC hosts, the others join; a tablet becomes the info screen.",
+    "Allgemein, Fahrgefühl, Rennen, Ton, Gegner, Controller, 2 Spieler, System.": "General, handling, race, sound, opponents, controller, 2 players, system.",
+    "Warum dieses Projekt existiert, was du brauchst, Funktionen, Danksagungen, Rechtliches.": "Why this project exists, what you need, features, credits, legal.",
+    "Was sich je Wochenversion geändert hat.": "What changed in each weekly version.",
+    "Doku, Programmierschule, BLE-Werkbank, Selbsttest, Code-Sonde, Zahlensysteme, Aufnahme-Modus.": "Docs, coding school, BLE workbench, self-test, code probe, number systems, recording mode.",
+    "Quadrat wechselt den Renntyp direkt hier, Kreuz öffnet alle Renneinstellungen, Ergebnisse und Sitzungen.": "Square changes the race type right here, cross opens all race settings, results and sessions.",
+    "Quadrat schaltet zwischen Auf der Bahn und Frei. Auf der Bahn: Streckenscan, Editor, Strecke laden. Frei: Druckvorlagen und Editor.": "Square switches between on the track and free. On the track: track scan, editor, load a track. Free: print templates and editor.",
+    "Quadrat blättert die Abstimmungen durch, Kreuz öffnet Optionen, Fahrgefühl.": "Square cycles the setups, cross opens Options, handling.",
+    "Quadrat stellt die Rennhärte der Ghosts, Kreuz öffnet Optionen, Autonome Gegner.": "Square sets the ghosts' race hardness, cross opens Options, autonomous opponents.",
+    "Ins Cockpit, und die Startampel läuft. Fehlt noch ein Auto, kommt zuerst die Bluetooth-Auswahl.": "Into the cockpit, and the start lights begin. Without a car, the Bluetooth chooser comes first.",
+    "Auto · Rennen · Strecke": "Car · race · track",
+    "Im WLAN": "On Wi-Fi",
+    "Alle Einstellungen": "All settings",
+    "Wozu · Danksagungen · Rechtliches": "Why · credits · legal",
+    "Je Wochenversion": "Per weekly version",
+    "Werkbank": "Workbench",
+    "Rennoptionen": "Race options",
+    "Gegner": "Opponents",
+    "Scan": "Scan",
+    "Editor": "Editor",
+    "Beliebige Taste drücken": "Press any button",
+    "Menü": "Menu",
+    "Gas ist aus, solange das Menü offen ist – das Auto rollt aus. Ghosts fahren im Rennen weiter.": "Throttle is off while the menu is open – the car rolls out. Ghosts keep racing.",
+    "Weiterfahren": "Continue",
+    "Rennübersicht": "Race overview",
+    "Zum Fahren-Menü": "To the drive menu",
+    "Zum Hauptmenü": "To the main menu",
+    "Menü (Options 1 s halten, Esc)": "Menu (hold Options 1 s, Esc)",
+    "Was du brauchst": "What you need",
+    "Browser, Firmware, Controller – und was optional dazukommt.": "Browser, firmware, controller – and what is optional.",
+    "Funktionen": "Features",
+    "Was OmegaSim alles kann, auf einen Blick.": "Everything OmegaSim can do, at a glance.",
+    "Rechtliches": "Legal",
+    "Unabhängig, offen, ohne Gewähr – und was gezählt wird.": "Independent, open, without warranty – and what is counted.",
+    "System": "System",
+    "Sprache, Sicherung, gemerkte Autos, App und Entwicklertools.": "Language, backup, remembered cars, app and developer tools.",
+    "Sprache": "Language",
+    "Dieselbe Wahl wie auf dem Titelbildschirm.": "The same choice as on the title screen.",
+    "Entwicklertools zeigen": "Show developer tools",
+    "Blendet im Hauptmenü die Kachel Entwickler ein: Doku, Programmierschule, BLE-Werkbank, Selbsttest, Code-Sonde, Zahlensysteme, Aufnahme-Modus. Auch mit ?dev in der Adresse.": "Shows the Developer tile in the main menu: docs, coding school, BLE workbench, self-test, code probe, number systems, recording mode. Also with ?dev in the address.",
+    "Öffnen": "Open",
+    "Deutsch": "Deutsch",
+    "English": "English",
+    "Das Auto fährt eine Runde und liest dabei die Teile ein.": "The car drives a lap and reads the pieces.",
+    "Strecke laden": "Load track",
+    "Eine gespeicherte Strecke laden, speichern oder löschen.": "Load, save or delete a saved track.",
+    "Das Auto fährt mit mittlerem Tempo über die Bahn und hält an, sobald ein geschlossener Rundkurs gemessen ist. Die Strecke steht danach im Editor.": "The car drives over the track at medium pace and stops as soon as a closed circuit is measured. The track is then in the editor.",
+    "Live mitlesen, während du selbst fährst: im Streckeneditor, „Live-Scan starten“.": "To read along live while you drive yourself: in the track editor, “Start live scan”.",
     "Android-App (experimentell): dieselbe App als APK, mit Bluetooth-Brücke, Host ohne PC und Updates ohne Neuinstallation.": "Android app (experimental): the same app as an APK, with a Bluetooth bridge, a host without a PC and updates without reinstalling.",
     "Info-Screen: ein Tablet oder Fernseher zeigt Strecke, alle Autos und die Rangliste, ohne eigenes Auto.": "Info screen: a tablet or TV shows the track, all cars and the standings, without a car of its own.",
     "Neue APK nötig für Fassung": "New APK needed for version",
@@ -2273,8 +2356,10 @@
     // und der Selbsttest konnte es nicht melden, weil er dieselbe Liste benutzt: ein
     // blinder Fleck, der sich selbst versteckt. Gefunden hat es ein Abzug ueber das ganze
     // body, nicht ueber diese Liste.
+    // #k-unten: Beschreibung und Fussleiste des ACC-Menues (51-konsole.js) stehen hinter
+    // main, damit sie am unteren Rand kleben - und muessen deshalb eigens mit hinein.
     return [document.querySelector('header'), document.querySelector('main'),
-            $('lb-wrap')].filter(Boolean);
+            $('lb-wrap'), $('k-unten')].filter(Boolean);
   }
 
   // Einen Teilbaum in die aktuelle Sprache bringen. Wird beim Umschalten fuer alles und
@@ -2483,6 +2568,7 @@
       zweiSpielerKachelZeichnen();
     }
     window.scrollTo(0, 0);
+    if (typeof konsoleNachSubpage === 'function') konsoleNachSubpage(key);
   }
   document.querySelectorAll('.subpage-open').forEach(el => {
     el.addEventListener('click', () => showSubpage(el.dataset.sub));
@@ -2499,6 +2585,8 @@
 
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.onclick = () => {
+      // Fuer den Rueckweg (Kreis) des ACC-Menues: welcher Tab war vorher offen?
+      const vorher = document.querySelector('.tabpage.active');
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       document.querySelectorAll('.tabpage').forEach(p => p.classList.remove('active'));
       btn.classList.add('active');
@@ -2530,6 +2618,9 @@
       // neuen Scrollstand braucht.
       scrollTabIntoView(btn.dataset.tab);
       refreshTabScrollHint();
+      if (typeof konsoleNachTab === 'function') {
+        konsoleNachTab(btn.dataset.tab, vorher ? vorher.id.replace(/^tab-/, '') : null);
+      }
     };
   });
 

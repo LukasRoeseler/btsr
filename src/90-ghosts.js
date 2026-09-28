@@ -8490,6 +8490,10 @@
     }
     padConnected = true;
     padLastPollTime = performance.now();
+    // TITELBILDSCHIRM (ACC-Menue): jede Taste fuehrt ins Hauptmenue, links/rechts wechselt die
+    // Sprache. Solange danach noch eine Taste gehalten wird, tut dieser Takt nichts weiter -
+    // sonst oeffnete dasselbe gehaltene Kreuz im Hauptmenue gleich die naechste Kachel.
+    if (typeof konsolePadTitel === 'function' && konsolePadTitel(pad)) return;
 
     // Nur abfangen, wenn hier auch wirklich Spieler 1s Belegung dran ist - waehrend
     // Spieler 2s Tabelle bearbeitet wird (bindEditSpieler === 2), soll Spieler 1
@@ -8519,7 +8523,10 @@
       // applyDeadzone already returns exactly 0 inside the deadzone, so a pad at rest is
       // silent here and no longer overwrites whatever the keyboard is holding.
       applySteerInput(SRC.PAD, steerRaw);
-      applyThrottleInput(SRC.PAD, throttleRaw - brakeRaw);
+      // Cockpit-Menue offen: Gas zu, Bremse bleibt (das Auto rollt aus, siehe 51-konsole.js).
+      const gasWunsch = throttleRaw - brakeRaw;
+      applyThrottleInput(SRC.PAD, (typeof konsolePauseOffen === 'function' && konsolePauseOffen())
+        ? Math.min(0, gasWunsch) : gasWunsch);
 
       // Headlight flash, edge-triggered: one press = one three-blink burst, the way GT3
       // drivers signal a pass. The handbrake that used to sit on this button is gone, and
@@ -8572,8 +8579,10 @@
       // LB und RB machen nur noch Autodinge. Sie blaetterten ausserhalb des Cockpits durch
       // die Tabs, und das war eine der Quellen der Fehlbedienungen: ein Griff zum
       // Boxenstopp-Knopf im falschen Moment sprang in einen anderen Tab.
+      // ACC-MENUE (Nutzerentscheid "Options lang halten"): kurz = Boxenstopp beim LOSLASSEN,
+      // 1 s halten = Cockpit-Menue. Ausserhalb des Cockpits tut die Taste nichts.
       const pitstopNow = readBindingValue(pad, bindings.pitstop) > BUTTON_CAPTURE_THRESHOLD;
-      if (pitstopNow && !prevPitstop) requestPitStop();
+      konsoleOptionsTaste(pitstopNow);
       prevPitstop = pitstopNow;
 
       // One button, both directions: start when idle, abort when running.
@@ -8587,12 +8596,14 @@
 
       // LB/RB: Reifenwahl und Tankvorwahl, dieselben Funktionen, die vorher am
       // Steuerkreuz hoch/runter hingen (siehe die Begruendung bei den Bindings oben).
+      // BESTELLT (ACC-Menue): "schultertasten zum tab wechseln" - in den Menues wechseln
+      // L1/R1 die Reiter der innersten Ebene, im Cockpit bleiben sie Reifen- und Tankvorwahl.
       const tyreNow = readBindingValue(pad, bindings.tyreSelect) > BUTTON_CAPTURE_THRESHOLD;
-      if (tyreNow && !prevTyreSelect) pitMischungWeiter();
+      if (tyreNow && !prevTyreSelect) { if (konsoleMenue()) konsoleReiterSchritt(-1); else pitMischungWeiter(); }
       prevTyreSelect = tyreNow;
 
       const fuelNow = readBindingValue(pad, bindings.fuelSelect) > BUTTON_CAPTURE_THRESHOLD;
-      if (fuelNow && !prevFuelSelect) pitVorwahlSchalten('refuel');
+      if (fuelNow && !prevFuelSelect) { if (konsoleMenue()) konsoleReiterSchritt(1); else pitVorwahlSchalten('refuel'); }
       prevFuelSelect = fuelNow;
 
       // L3: Vollbild umschalten - im Cockpit race-fs, im Streckeneditor track-fs. Nach
@@ -8669,6 +8680,9 @@
       if (downshiftNow && !prevDownshift) {
         if (optInfoOffen()) {
           optInfoSchliessen();
+        } else if (konsoleMenue()) {
+          // Quadrat im Menue: schneller Wechsel auf einer Kachel (Renntyp, Bahn/Frei, ...).
+          konsoleQuadrat();
         } else if (physicsEnabled && !physEngine.state.isShifting) {
           physEngine.triggerShift(-1);
         }
@@ -8680,12 +8694,15 @@
         // das jetzt direkt, wozu man sonst erst zur ersten Zeile hochnavigieren und
         // "Waehlen" druecken musste. Nach demselben Muster wie optInfoOffen() oben: erst
         // pruefen (kein Tab-race-Sonderfall noetig, dort gibt es nie ein offenes .subpage).
-        const offenerSub = document.querySelector('.tabpage.active .subpage.on');
+        // ACC-Menue: Kreis ist in jedem Menue "zurueck", eine Ebene (Unterseite, Stapel,
+        // Eltern). Im Streckeneditor-Vollbild bleibt er Rueckgaengig, im Cockpit Hochschalten.
         if (optInfoOffen()) {
           optInfoSchliessen();
-        } else if (offenerSub) {
-          showSubpage('');
-        } else if (!trackEditorPad('undo') && physicsEnabled && !physEngine.state.isShifting) {
+        } else if (trackEditorPad('undo')) {
+          /* vom Editor verbraucht */
+        } else if (konsoleMenue()) {
+          konsoleZurueck();
+        } else if (physicsEnabled && !physEngine.state.isShifting) {
           physEngine.triggerShift(1);
         }
       }
@@ -8720,57 +8737,47 @@
       // Boxen- oder Renneinstellungen-Schirm gilt weiter ihre eigene, laengst gemessene
       // Zeilenauswahl - menuNavMove() greift nur, wenn beide ablehnen (auf dem
       // Optionen-Tab tun sie das immer, weil dort keiner der beiden Schirme aktiv ist).
-      if (dUp && !prevDpad.up && !trackEditorPad('up') && !pitScreenPad('up')
-          && !raceScreenPad('up')) {
-        menuNavMove('up');
-      }
-      if (dDown && !prevDpad.down && !trackEditorPad('down') && !pitScreenPad('down')
-          && !raceScreenPad('down')) {
-        menuNavMove('down');
-      }
-      // ---- LINKS/RECHTS: REGLER, VOLLBILD-SCHIRME, ODER TABS -------------------------
+      // ---- ACC-MENUE: Steuerkreuz in den Menues ------------------------------------------
       //
-      // BESTELLT: "D-Pad links/rechts wechselt TABS - ausser bei einem angewaehlten
-      // Regler (dort verstellt es den Wert; gedrueckt halten beschleunigt) und ausser im
-      // Cockpit-Vollbild, wo es weiterhin die Cockpit-Schirme durchblaettert wie heute."
+      // Kacheln RAEUMLICH, Einstellungszeilen hoch/runter, und links/rechts verstellt die
+      // angewaehlte Zeile DIREKT (die Tabs wechseln jetzt L1/R1). Gehalten wiederholt es.
       //
-      // ANGEWAEHLTER REGLER GEHT JEDEM TAKT, nicht nur auf der steigenden Flanke - genau
-      // das ist die bestellte Wiederholung beim Halten. menuNavAdjustPad() fuehrt ihren
-      // eigenen kleinen Zeitgeber (erste Stufe sofort, danach alle 120 ms) und ist damit
-      // der EINZIGE Verbraucher, solange etwas angewaehlt ist: der Streckeneditor, das
-      // Blaettern der Cockpit-Schirme und der neue Tabwechsel bekommen die Taste gar
-      // nicht erst angeboten - ein angewaehlter Regler darf durch nichts anderes
-      // unterbrochen werden.
-      if (menuNavArmed) {
-        menuNavAdjustPad('left', dLeft);
-        menuNavAdjustPad('right', dRight);
-        // Auch hier merken, sonst sieht der andere Zweig beim Loslassen des Reglers eine
-        // veraltete Flanke und feuert einmal ins Leere (Editor/Tabwechsel), obwohl das
-        // Kreuz in Wahrheit schon laenger gehalten wird.
+      // Links/rechts wird NUR in der gedrueckten Richtung gerufen. Hier stand vorher
+      // menuNavAdjustPad('left', dLeft); menuNavAdjustPad('right', dRight) - der Aufruf mit
+      // false setzte den Haltezustand in JEDEM Takt zurueck, und die gedrueckte Richtung galt
+      // dadurch jeden Takt als neuer Druck: ein Auswahlfeld sprang so mehrere Optionen weit.
+      // Das war die Ursache von "manche Menues schalten mehrere Optionen auf einmal durch".
+      const imEditorVollbild = document.body.classList.contains('track-fs');
+      if (konsoleMenue() && !imEditorVollbild) {
+        if (konsoleWdh('up', dUp)) menuNavMove('up');
+        if (konsoleWdh('down', dDown)) menuNavMove('down');
+        if (menuNavIstRaum()) {
+          if (konsoleWdh('left', dLeft)) menuNavRaum('left');
+          if (konsoleWdh('right', dRight)) menuNavRaum('right');
+        } else if (dLeft) menuNavSeitwaerts('left', true);
+        else if (dRight) menuNavSeitwaerts('right', true);
+        else menuNavAdjustPad('left', false);
         prevDpad.left = dLeft; prevDpad.right = dRight;
       } else {
-        // schirmZurueck/schirmVor bleiben die belegbare Aktion, aber NUR NOCH im
-        // Cockpit-Vollbild wirksam - ausserhalb ist sie durch den neuen Tabwechsel
-        // ersetzt, der das rohe Steuerkreuz liest (dieselbe Begruendung wie beim alten
-        // "festverdrahtet vs. belegbar": der Tabwechsel ist keine Fahrentscheidung, die
-        // man umlegen wollen wuerde).
-        const raceFs = document.body.classList.contains('race-fs');
+        if (dUp && !prevDpad.up && !trackEditorPad('up') && !pitScreenPad('up')
+            && !raceScreenPad('up')) {
+          /* im Cockpit ohne eigene Zeilenauswahl: nichts */
+        }
+        if (dDown && !prevDpad.down && !trackEditorPad('down') && !pitScreenPad('down')
+            && !raceScreenPad('down')) {
+          /* dito */
+        }
         const schirmZ = readBindingValue(pad, bindings.schirmZurueck) > BUTTON_CAPTURE_THRESHOLD;
         const schirmV = readBindingValue(pad, bindings.schirmVor) > BUTTON_CAPTURE_THRESHOLD;
-        // ANGEWAEHLTE RUNDENZAHL (Renneinstellungen-Schirm) geht VOR dem Schirmblaettern:
-        // erst die Waehltaste an der Dauer/Runden-Zeile, dann verstellt links/rechts exakt.
-        // raceScreenPad() gibt nur dann true zurueck, wenn wirklich verstellt wurde - ohne
-        // Anwahl bleibt die Taste beim Blaettern/Tabwechsel wie bisher.
+        // Cockpit: links/rechts blaettert die Cockpit-Schirme, mit und ohne Vollbild (die
+        // Tabs wechseln nicht mehr mit dem Steuerkreuz). Die angewaehlte Rundenzahl auf dem
+        // Renneinstellungen-Schirm und der Streckeneditor gehen vor.
         if (dLeft && !prevDpad.left && trackEditorPad('left')) { /* Editor hat sie */ }
         else if (dLeft && !prevDpad.left && raceScreenPad('left')) { /* Rundenzahl */ }
-        else if (raceFs && schirmZ && !prevDpad.left) cockpitScreenStep(-1);
-        else if (!raceFs && dLeft && !prevDpad.left) menuNavTabWechsel(-1);
+        else if (schirmZ && !prevDpad.left && !imEditorVollbild) cockpitScreenStep(-1);
         if (dRight && !prevDpad.right && trackEditorPad('right')) { /* Editor hat sie */ }
         else if (dRight && !prevDpad.right && raceScreenPad('right')) { /* Rundenzahl */ }
-        else if (raceFs && schirmV && !prevDpad.right) cockpitScreenStep(+1);
-        else if (!raceFs && dRight && !prevDpad.right) menuNavTabWechsel(+1);
-        // Die Flanken der BELEGUNG merken, nicht die des Kreuzes - sonst feuert ein
-        // umgelegter Knopf in jedem Takt, weil seine Flanke nie als verbraucht gilt.
+        else if (schirmV && !prevDpad.right && !imEditorVollbild) cockpitScreenStep(+1);
         prevDpad.left = schirmZ || dLeft; prevDpad.right = schirmV || dRight;
       }
       prevDpad.up = dUp; prevDpad.down = dDown;

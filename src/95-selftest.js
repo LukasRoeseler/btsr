@@ -9597,6 +9597,143 @@
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
+  // ---- ACC-MENUE (51-konsole.js) ----
+  //
+  // BESTELLT: "menüführung soll stark wie assetto corsa competizione aussehen ... Alle
+  // existierenden Sachen sollen dort wieder vorkommen, aber gut sortiert." Der erste Test
+  // haelt genau das fest: jede Seite und jede Unterseite ist vom Titel aus erreichbar.
+  stAdd('ACC-Menü: jede Seite und Unterseite ist erreichbar', () => {
+    // Kanten: Kacheln mit data-tab (goto-tab), Unterseiten-Kacheln (data-sub), die Reiter der
+    // Ebene 1 und die Kacheln des Fahren-Schirms (JS-Knoepfe, hier von Hand genannt).
+    const kanten = { home: ['haupt'], haupt: [], fahren: ['garage', 'control', 'track', 'race'] };
+    K_EBENE1.forEach((x) => { kanten.haupt.push(x); });
+    const tabs = [...document.querySelectorAll('.tabpage')].map((t) => t.id.replace(/^tab-/, ''));
+    tabs.forEach((t) => {
+      kanten[t] = kanten[t] || [];
+      document.querySelectorAll('#tab-' + t + ' [data-tab]').forEach((e) => kanten[t].push(e.dataset.tab));
+    });
+    const erreicht = new Set(['home']);
+    const warte = ['home'];
+    while (warte.length) {
+      const t = warte.shift();
+      for (const z of kanten[t] || []) if (!erreicht.has(z)) { erreicht.add(z); warte.push(z); }
+    }
+    const fehlt = tabs.filter((t) => !erreicht.has(t));
+    // Unterseiten: jede braucht eine Kachel oder einen Knopf, der sie oeffnet.
+    const subs = [...document.querySelectorAll('.subpage[id^="sub-"]')].map((e) => e.id.slice(4));
+    const oeffner = new Set([...document.querySelectorAll('[data-sub], [data-k-sub]')]
+      .map((e) => e.dataset.sub || e.dataset.kSub));
+    const ohne = subs.filter((x) => !oeffner.has(x));
+    return { ok: !fehlt.length && !ohne.length,
+             mass: tabs.length + ' Seiten, ' + subs.length + ' Unterseiten'
+               + (fehlt.length ? ' | nicht erreichbar: ' + fehlt.join(', ') : '')
+               + (ohne.length ? ' | Unterseite ohne Oeffner: ' + ohne.join(', ') : '') };
+  });
+
+  stAdd('ACC-Menü: Titel, Reiter und Kreis führen die richtigen Wege', () => {
+    const merk = kAktiverTab();
+    const merkStapel = kStapel.slice();
+    const f = [];
+    try {
+      kStapel = [];
+      showTab('home');
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'x', bubbles: true }));
+      if (kAktiverTab() !== 'haupt') f.push('Taste auf dem Titel fuehrt nach ' + kAktiverTab());
+      showTab('fahren');
+      konsoleReiterSchritt(1);
+      if (kAktiverTab() !== 'mp') f.push('R1 im Fahren-Schirm fuehrt nach ' + kAktiverTab());
+      konsoleZurueck();
+      if (kAktiverTab() !== 'haupt') f.push('Kreis nach dem Reiterwechsel fuehrt nach ' + kAktiverTab() + ' statt ins Hauptmenue');
+      konsoleZurueck();
+      if (kAktiverTab() !== 'home') f.push('Kreis im Hauptmenue fuehrt nach ' + kAktiverTab() + ' statt zum Titel');
+      showTab('options');
+      showSubpage('opt-feel');
+      konsoleReiterSchritt(1);
+      const offen = document.querySelector('#tab-options .subpage.on');
+      if (!offen || offen.id === 'sub-opt-feel') f.push('R1 in einer Optionen-Kategorie wechselt nicht die Kategorie');
+      konsoleZurueck();
+      if (document.querySelector('#tab-options .subpage.on')) f.push('Kreis schliesst die Kategorie nicht');
+      if (kAktiverTab() !== 'options') f.push('Kreis in der Kategorie verlaesst die Optionen');
+    } finally {
+      showSubpage('');
+      kStapel = merkStapel;
+      if (merk) showTab(merk);
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Titel -> Hauptmenue, R1 ersetzt, Kreis eine Ebene, Kategorien mit R1' };
+  });
+
+  stAdd('ACC-Menü: Steuerkreuz springt räumlich zur Nachbarkachel', () => {
+    // Raeumlich heisst: gemessen. Im verborgenen Vorschaufenster haben alle Kacheln die
+    // Groesse null - dort ist nichts zu messen, wie bei den Cockpit-Passungstests.
+    if (!innerWidth || !innerHeight) return { skip: true, mass: 'Fenster ist 0 x 0 - im verborgenen Bereich nicht messbar' };
+    const merk = kAktiverTab();
+    const f = [];
+    const weg = [];
+    try {
+      showTab('fahren');
+      menuNavEnsureContext();
+      konsoleFokusAuf('fa-auto');
+      const schritt = (d) => { menuNavRaum(d); const r = menuNavRows()[menuNavIndex]; weg.push(d + ':' + (r && r.el.id)); return r && r.el.id; };
+      if (schritt('right') !== 'fa-renn') f.push('rechts von AUTO ist nicht RENNOPTIONEN');
+      if (schritt('right') !== 'fa-strecke') f.push('rechts von RENNOPTIONEN ist nicht STRECKE');
+      konsoleFokusAuf('fa-start');
+      if (schritt('right') !== 'fa-start') f.push('rechts am Rand springt weg');
+      konsoleFokusAuf('fa-auto');
+      if (schritt('down') !== 'fa-profil') f.push('unter AUTO ist nicht FAHRGEFUEHL');
+    } finally { if (merk) showTab(merk); }
+    return { ok: !f.length, mass: f.length ? f.join('; ') + ' | ' + weg.join(' ') : weg.join(' ') };
+  });
+
+  stAdd('ACC-Menü: Cockpit-Menü nimmt das Gas, Options kurz = Box, lang = Menü', () => {
+    const merk = kAktiverTab();
+    const f = [];
+    const echtNow = performance.now;
+    const echtBox = requestPitStop;
+    let boxen = 0, uhr = 1000;
+    try {
+      showTab('race');
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      if (!konsolePauseOffen() || $('k-pause').hidden) f.push('Esc im Cockpit oeffnet das Menue nicht');
+      if (menuNavContainer() !== $('k-pause')) f.push('die Menuezeilen gelten nicht fuer das Cockpit-Menue');
+      if (!konsoleMenue()) f.push('mit offenem Menue sind die Tasten noch Fahrtasten');
+      konsolePauseZu();
+      // Options: die Uhr wird gefaelscht, damit "1 s halten" ohne Warten pruefbar ist.
+      performance.now = () => uhr;
+      requestPitStop = () => { boxen++; };
+      konsoleOptionsTaste(true); uhr += 200; konsoleOptionsTaste(true); konsoleOptionsTaste(false);
+      if (boxen !== 1) f.push('kurzes Options gibt ' + boxen + ' Boxenstopps statt 1');
+      if (konsolePauseOffen()) f.push('kurzes Options oeffnet das Menue');
+      konsoleOptionsTaste(true); uhr += 1100; konsoleOptionsTaste(true);
+      if (!konsolePauseOffen()) f.push('1 s Options oeffnet das Menue nicht');
+      konsoleOptionsTaste(false);
+      if (boxen !== 1) f.push('langes Options loest zusaetzlich einen Boxenstopp aus');
+    } finally {
+      performance.now = echtNow;
+      requestPitStop = echtBox;
+      konsolePauseZu();
+      konsoleOptionsTaste.vorher = false;
+      if (merk) showTab(merk);
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Esc und 1 s Options oeffnen, kurz = ein Boxenstopp, Gas zu' };
+  });
+
+  stAdd('ACC-Menü: Entwicklertools versteckt, Schalter blendet sie ein', () => {
+    const cb = $('setting-dev');
+    if (!cb) return { ok: false, mass: '#setting-dev fehlt' };
+    const merk = cb.checked;
+    const f = [];
+    try {
+      if (cb.defaultChecked) f.push('ab Werk sichtbar');
+      cb.checked = false; cb.dispatchEvent(new Event('change', { bubbles: true })); konsoleZeichnen();
+      if (!/[?&]dev\b/.test(location.search) && !$('haupt-dev').hidden) f.push('aus, aber die Kachel ist da');
+      cb.checked = true; cb.dispatchEvent(new Event('change', { bubbles: true })); konsoleZeichnen();
+      if ($('haupt-dev').hidden) f.push('an, aber die Kachel fehlt');
+    } finally {
+      cb.checked = merk; cb.dispatchEvent(new Event('change', { bubbles: true })); konsoleZeichnen();
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'ab Werk versteckt, Schalter wirkt in beide Richtungen' };
+  });
+
   // ---- ANDROID-APP UND INFO-SCREEN ----
   //
   // BESTELLT: "Setze den Android-App Plan um", mit Updates ohne neue APK und einem Geraet,
@@ -9659,6 +9796,7 @@
     const ix = (d.dateien || []).find((e) => e.p === 'index.html');
     if (!ix || !/^[0-9a-f]{64}$/.test(ix.h)) f.push('index.html fehlt oder ohne SHA-256');
     if (!(d.dateien || []).some((e) => /^audio\//.test(e.p))) f.push('keine Tondateien');
+    if (!(d.dateien || []).some((e) => /^img\//.test(e.p))) f.push('keine Menuebilder (img/)');
     return { ok: !f.length, mass: f.length ? f.join('; ') : v + ', ' + d.dateien.length + ' Dateien' };
   });
 
@@ -12518,28 +12656,21 @@
         return ziel;
       };
 
-      // 3. Regler: erst anwaehlen (Fokus allein darf NICHTS aendern), dann verstellen,
-      //    dann wieder zurueck - das ist die ganze Absicherung gegen die Fehlbedienung,
-      //    wegen der die alte Menuenavigation einmal ausgebaut wurde (siehe 50b-menu-nav.js).
+      // 3. Regler. SEIT DEM ACC-MENUE (BESTELLT: "dpad richtungen zum wählen", Tabs auf
+      //    L1/R1) verstellt links/rechts die angewaehlte Zeile DIREKT, ohne vorheriges
+      //    Anwaehlen mit X. Was bleibt, ist die eigentliche Absicherung: der FOKUS allein
+      //    (hoch/runter) aendert nichts - nur ein bewusstes links/rechts.
       springeZu('range');
       const rangeEl = document.querySelector('.menu-nav-sel input[type="range"]');
       const vorRegler = rangeEl.value;
-      if (OMEGA_TEST.menuNavArmedLesen()) fehler.push('Regler ist schon angewaehlt, ohne X');
-      const stummVerstellt = OMEGA_TEST.menuNavVerstellen('right');
-      if (stummVerstellt || rangeEl.value !== vorRegler) {
-        fehler.push('Fokus allein hat den Regler schon veraendert');
-      }
-      OMEGA_TEST.menuNavAusloesen(); // anwaehlen
-      if (!OMEGA_TEST.menuNavArmedLesen()) fehler.push('X hat den Regler nicht angewaehlt');
-      if (!OMEGA_TEST.menuNavVerstellen('right')) fehler.push('rechts hat den angewaehlten Regler nicht verstellt');
+      if (rangeEl.value !== vorRegler) fehler.push('Fokus allein hat den Regler schon veraendert');
+      if (!OMEGA_TEST.menuNavVerstellen('right')) fehler.push('rechts hat den Regler nicht verstellt');
       if (rangeEl.value === vorRegler) fehler.push('Reglerwert nach rechts unveraendert');
       OMEGA_TEST.menuNavVerstellen('left'); // zurueck auf den Ausgangswert
       if (rangeEl.value !== vorRegler) {
         fehler.push('Regler nach rechts+links nicht wieder bei ' + vorRegler + ' (ist ' + rangeEl.value + ')');
       }
-      OMEGA_TEST.menuNavAusloesen(); // abwaehlen
-      if (OMEGA_TEST.menuNavArmedLesen()) fehler.push('zweites X hat den Regler nicht abgewaehlt');
-      teile.push('Regler ' + vorRegler + ': unveraendert bei blossem Fokus, hin und zurueck bei An-/Verstellen');
+      teile.push('Regler ' + vorRegler + ': unveraendert bei blossem Fokus, rechts/links direkt hin und zurueck');
 
       // 4. Kontrollkaestchen umschalten und zuruecksetzen.
       springeZu('toggle');

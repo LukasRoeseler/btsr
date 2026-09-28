@@ -30,7 +30,7 @@ OUT = os.path.join(REPO, 'app-update.json')
 # Was die Web-App zur Laufzeit laedt. sw.js fehlt absichtlich: in der App meldet 91-pwa.js
 # keinen Service Worker an, er wuerde dort nur eine zweite, veraltende Ablage bilden.
 EINZELN = ['index.html', 'mp-overview.html', 'manifest.webmanifest', 'favicon.svg']
-ORDNER = ['icons', 'audio']
+ORDNER = ['icons', 'audio', 'img']
 TEXT = ('.html', '.json', '.webmanifest', '.svg', '.js', '.css', '.txt', '.md')
 
 # Die Fassung der NATIVEN Schicht (Plugins, Rechte), die diese Web-App mindestens braucht.
@@ -50,7 +50,11 @@ def inhalt(pfad):
 def dateien():
     liste = list(EINZELN)
     try:
-        roh = subprocess.check_output(['git', 'ls-files'] + ORDNER, cwd=REPO, text=True)
+        # --others --exclude-standard: auch NEUE Dateien, die erst mit diesem Commit ins Repo
+        # kommen (bump_version laeuft vor dem Commit), aber nichts, was .gitignore ausschliesst
+        # - das stuende nicht auf GitHub Pages, und jede Aktualisierung liefe in ein 404.
+        roh = subprocess.check_output(['git', 'ls-files', '--cached', '--others', '--exclude-standard'] + ORDNER,
+                                      cwd=REPO, text=True)
         spur = [z.strip() for z in roh.splitlines() if z.strip()]
     except Exception:
         spur = []
