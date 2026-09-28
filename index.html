@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>OmegaSim</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <!-- ALS APP INSTALLIERBAR. Rein zusaetzlich: im Browser laeuft alles unveraendert weiter.
@@ -2152,31 +2152,28 @@
   #glitch-bands { display: none; }
 
   /* Kopfzeile */
-  header#k-kopf { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px;
-    padding: 8px clamp(10px, 2.4vw, 32px) 6px; z-index: 60; font-family: var(--k-font);
-    background: linear-gradient(rgba(5,7,12,.94), rgba(5,7,12,.72)); border-bottom: 1px solid rgba(255,255,255,.12); }
+  header#k-kopf { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px;
+    padding: max(5px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) 5px max(12px, env(safe-area-inset-left));
+    z-index: 60; font-family: var(--k-font);
+    /* Deckend: die Seite rollt unter dem Kopf durch, und durchscheinender Text stoerte. */
+    background: #05070c; border-bottom: 1px solid rgba(255,255,255,.12); }
   header#k-kopf::after { display: none; }
   #k-kopf .hdr-logo { border: 0; padding: 4px 6px; gap: 8px; background: transparent; }
   #k-kopf .hdr-logo:hover { background: transparent; }
   .k-logo { font-weight: 900; letter-spacing: .16em; font-size: clamp(14px, 1.6vw, 22px); color: #fff;
     text-shadow: 2px 0 0 var(--glitch-r), -2px 0 0 var(--glitch-c); white-space: nowrap; }
-  .k-pfad { text-align: center; font-size: clamp(14px, 1.7vw, 26px); letter-spacing: .04em; min-width: 0;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .k-pfad span { color: var(--k-dim); } .k-pfad b { font-weight: 700; color: #fff; }
-  #k-pfad { text-transform: uppercase; }
-  #k-zurueck { background: transparent; border: 0; color: var(--k-dim); font-size: 26px; line-height: 1;
-    padding: 0 10px 0 0; vertical-align: -2px; }
-  #k-zurueck:hover { color: #fff; background: transparent; }
-  body.k-titel-an #k-zurueck { visibility: hidden; }
   .k-status { font-size: 12px; color: var(--k-dim); text-align: right; display: flex; gap: 8px; align-items: center; }
   .k-status .k-an { color: var(--good); }
-  .k-leiste { grid-column: 1 / -1; display: flex; align-items: stretch; margin-top: 2px; }
+  .k-leiste { display: flex; align-items: stretch; min-width: 0; }
+  .k-leiste2 { grid-column: 1 / -1; margin-top: 3px; }
+  /* Die L1/R1-Hinweise nur an der Leiste, auf die die Schultertasten gerade wirken. */
+  .k-leiste:not(.k-l1r1) .k-sh { visibility: hidden; }
   .k-leiste[hidden] { display: none !important; }
   .k-sh { display: flex; align-items: center; padding: 0 10px; font-size: 11px; color: var(--k-dim);
     background: rgba(0,0,0,.55); border: 1px solid rgba(255,255,255,.2); border-radius: 4px; margin: 3px 4px; }
   .k-reiter { flex: 1; display: flex; background: rgba(12,14,20,.72); overflow: hidden; min-width: 0; }
   .k-reiter button { flex: 1; min-width: 0; background: transparent; border: 0; border-radius: 0; color: var(--k-dim);
-    font-family: var(--k-font); font-size: clamp(11px, 1.15vw, 16px); letter-spacing: .08em; padding: 9px 6px;
+    font-family: var(--k-font); font-size: clamp(11px, 1.1vw, 15px); letter-spacing: .08em; padding: 6px 6px;
     text-transform: uppercase; clip-path: polygon(6% 0, 100% 0, 94% 100%, 0 100%); white-space: nowrap;
     overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
   .k-reiter button.an { background: var(--k-weiss); color: var(--k-tinte); font-weight: 800; }
@@ -2191,7 +2188,8 @@
   .card .card { background: rgba(255,255,255,.035); }
 
   /* Beschreibung und Fussleiste */
-  #k-unten { position: sticky; bottom: 0; z-index: 55; padding: 0 clamp(10px, 2.4vw, 32px);
+  #k-unten { position: sticky; bottom: 0; z-index: 55;
+    padding: 0 max(clamp(10px, 2.4vw, 32px), env(safe-area-inset-right)) 0 max(clamp(10px, 2.4vw, 32px), env(safe-area-inset-left));
     font-family: var(--k-font); background: linear-gradient(rgba(5,7,12,0), rgba(5,7,12,.94) 22%); }
   body.race-mode #k-unten { display: none; }
   #k-beschr { max-width: 1320px; margin: 0 auto 4px; background: rgba(10,12,18,.9); border-left: 4px solid var(--k-rot);
@@ -2247,8 +2245,6 @@
   .k-kachel[data-quad] .k-kt::before { content: '◀'; color: var(--k-rot); margin-right: 10px; font-size: .8em; }
   .k-kachel[data-quad] .k-kt::after { content: '▶'; color: var(--k-rot); margin-left: 10px; font-size: .8em; }
 
-  .k-haupt { grid-template-columns: 1.6fr 1fr 1fr; grid-template-rows: minmax(260px, 52vh) auto; }
-  .k-haupt .k-klein-reihe { grid-column: 1 / -1; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
   .k-fahren { grid-template-columns: repeat(3, 1fr); grid-template-rows: minmax(300px, 56vh) minmax(96px, 20vh); }
   .k-fahren-unten { grid-column: 1 / -1; grid-template-columns: 1fr 1fr 2fr; }
   .k-start { justify-content: center; align-items: center; min-height: 96px; text-transform: uppercase;
@@ -2293,6 +2289,14 @@
   .k-pause-dialog button { text-align: left; font-size: 17px; letter-spacing: .1em; text-transform: uppercase;
     background: var(--k-grau); color: #fff; border: 2px solid transparent; border-radius: 0; padding: 11px 16px; }
   .k-pause-dialog button.menu-nav-sel, .k-pause-dialog button:hover { outline: 0; border-color: #fff; background: var(--k-rot); }
+  .k-frage-knoepfe { display: flex; flex-direction: column; gap: 6px; }
+  /* Der Grund bleibt auch auf dem niedrigen Telefon sichtbar (dort blendet .k-pause-dialog p
+     die Erklaerzeilen des Cockpit-Menues aus). */
+  .k-pause-dialog .k-frage-text { display: block; white-space: pre-line; font-size: clamp(11px, 2.6vh, 13.5px); margin: 0 0 4px; line-height: 1.4; }
+  body > main { padding-left: max(24px, env(safe-area-inset-left)); padding-right: max(24px, env(safe-area-inset-right)); }
+  #mp-gemeinsam { margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.14); }
+  .mp-gemeinsam-h { font-size: 14px; letter-spacing: .08em; text-transform: uppercase; margin: 0 0 8px; }
+  .subpage:not(.on) #mp-gemeinsam, #tab-mp > #mp-gemeinsam { display: none; }
   /* Deckend: das Cockpit "Modern" ist hell, und ein halbdurchsichtiges Feld mit hellem
      Zeichen darauf verschwindet dort (Kontrasttest der Cockpit-Ansichten: 1,47:1). */
   .race-corner button#race-menue { font-size: 18px; background: #0a0e16; color: #fff; border-color: #0a0e16; }
@@ -2314,19 +2318,19 @@
     body.k-kacheln > main { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column;
       padding: clamp(6px, 1.6vh, 22px) clamp(8px, 2vw, 28px); }
     body.k-kacheln .tabpage.active { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; }
-    body.k-kacheln .k-haupt, body.k-kacheln .k-fahren { flex: 1 1 0; min-height: 0; }
-    .k-haupt { grid-template-rows: minmax(0, 1fr) auto; }
+    body.k-kacheln .k-fahren { flex: 1 1 0; min-height: 0; }
     .k-fahren { grid-template-rows: minmax(0, 1fr) minmax(40px, 21%); }
     .k-fahren-unten { min-height: 0; }
     .k-kachel { min-height: 0; overflow: hidden; }
     .k-kb { min-height: 0; }
-    .k-kk { font-size: clamp(10px, 1.9vh, 15px); padding: clamp(3px, .8vh, 7px) 8px; }
-    .k-kt { font-size: clamp(11px, 2.7vh, 20px); padding: clamp(3px, 1vh, 9px) 8px; }
-    .k-ki { font-size: clamp(9.5px, 1.75vh, 13px); padding: clamp(3px, .9vh, 8px) 10px clamp(6px, 1.6vh, 14px); line-height: 1.45; }
+    /* BESTELLT: "Schriftgröße etwas kleiner". */
+    .k-kk { font-size: clamp(9.5px, 1.7vh, 13px); padding: clamp(2px, .7vh, 6px) 8px; }
+    .k-kt { font-size: clamp(10.5px, 2.3vh, 17px); padding: clamp(3px, .9vh, 8px) 8px; }
+    .k-ki { font-size: clamp(9px, 1.6vh, 12px); padding: clamp(3px, .8vh, 7px) 10px clamp(6px, 1.5vh, 13px); line-height: 1.4; }
     .k-knopfreihe { padding: 0 10px clamp(5px, 1.3vh, 12px); }
     .k-knopf { padding: clamp(3px, .8vh, 7px) 10px; font-size: clamp(10px, 1.7vh, 12px); }
     .k-start { min-height: 0; }
-    .k-start-innen b { font-size: clamp(16px, 5.2vh, 50px); }
+    .k-start-innen b { font-size: clamp(15px, 4.6vh, 44px); }
     .k-start-innen small { font-size: clamp(9px, 1.6vh, 12px); }
     .k-start::before, .k-start::after { height: clamp(18px, 5vh, 54px); width: clamp(26px, 7vh, 80px); }
     .k-gitter { gap: clamp(5px, 1.3vh, 14px); }
@@ -2334,14 +2338,12 @@
   /* NIEDRIG (Telefon quer, bis 520 px Hoehe): Kopf in einer Zeile, Reiterleiste, eine Zeile
      Beschreibung und eine knappe Fussleiste - zusammen rund 110 px statt 190. */
   @media (max-height: 520px) {
-    header#k-kopf { padding: 3px 10px 2px; gap: 8px; }
+    header#k-kopf { padding: max(3px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) 3px max(10px, env(safe-area-inset-left)); gap: 8px; }
     #k-kopf .hdr-logo svg { width: 16px; height: 16px; }
     .k-logo { font-size: 13px; letter-spacing: .12em; }
-    .k-pfad { font-size: 13px; }
-    #k-zurueck { font-size: 18px; padding-right: 6px; }
     .k-status { font-size: 10px; } .k-status .wip-tag { display: none; }
     .k-sh { font-size: 9.5px; padding: 0 6px; margin: 2px 3px; }
-    .k-reiter button { padding: 4px 4px; font-size: 11px; }
+    .k-reiter button { padding: 3px 4px; font-size: 10.5px; }
     #k-unten { padding: 0 10px; }
     #k-beschr { padding: 3px 10px; font-size: 11px; line-height: 1.35; margin-bottom: 2px;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-left-width: 3px; }
@@ -2353,8 +2355,9 @@
     .misc-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
     .misc-tile b { font-size: 11px; padding: 4px 6px; }
     .misc-tile svg { width: 22px; height: 22px; margin: 5px auto 6px; }
-    /* Die Ueberschrift der Kachelseiten steht schon im Pfad der Kopfzeile. */
-    .subpage-home > h2 { display: none; }
+    /* Die Ueberschrift der Kachelseiten steht schon als hervorgehobener Reiter oben, die einer
+       offenen Unterseite in der zweiten Leiste. */
+    .subpage-home > h2, body.k-innen .subpage.on > h2 { display: none; }
     main { padding: 8px 10px; }
     .card { padding: 10px 12px; margin-bottom: 10px; }
     .k-pause-dialog { max-height: 94vh; overflow-y: auto; padding: 8px 12px 10px; gap: 4px; }
@@ -2376,9 +2379,9 @@
   /* HOCHFORMAT, schmal (Telefon im Browser): untereinander, mit Bildlauf. */
   @media (max-width: 760px) and (orientation: portrait) {
     header#k-kopf { grid-template-columns: 1fr auto; }
-    .k-pfad { grid-column: 1 / -1; order: 3; text-align: left; }
-    .k-haupt, .k-fahren, .k-fahren-unten, .k-haupt .k-klein-reihe { grid-template-columns: 1fr; grid-template-rows: none; }
-    .k-haupt > *, .k-fahren > * { grid-column: auto; }
+    #k-leiste { grid-column: 1 / -1; order: 3; }
+    .k-fahren, .k-fahren-unten { grid-template-columns: 1fr; grid-template-rows: none; }
+    .k-fahren > * { grid-column: auto; }
     .k-kb { min-height: 110px; max-height: 24vh; }
   }
   .menu-nav-sel { outline: 3px solid var(--bad); outline-offset: -2px; }
@@ -3487,16 +3490,21 @@
      Reiterleiste fuer L1/R1. Die alte Reiterleiste nav.tabs bleibt im DOM, verborgen:
      showTab() klickt genau diese Knoepfe, und viele Stellen rufen showTab(). -->
 <header id="k-kopf">
-  <button class="hdr-logo goto-tab" data-tab="haupt" title="Zum Hauptmenü" aria-label="Zum Hauptmenü">
+  <button class="hdr-logo goto-tab" data-tab="fahren" title="Fahren" aria-label="Fahren">
     <svg viewBox="0 0 512 512" aria-hidden="true"><use href="#om"/></svg>
     <span class="k-logo" data-i18n-skip>OMEGA SIM</span>
   </button>
-  <div class="k-pfad"><button type="button" id="k-zurueck" aria-label="Zurück">&lsaquo;</button><span id="k-pfad"></span></div>
+  <!-- BESTELLT: "Tabs nach ganz oben und 'Hauptmenü' Zurückpfeil wegtun ... Oben links nur
+       logo und rechts daneben alle tabs; ganz rechts oben Verbindungsstatus". -->
+  <nav class="k-leiste" id="k-leiste">
+    <span class="k-sh" aria-hidden="true" data-i18n-skip>L1</span>
+    <div class="k-reiter" id="k-reiter"></div>
+    <span class="k-sh" aria-hidden="true" data-i18n-skip>R1</span>
+  </nav>
   <div class="k-status" id="k-status"></div>
   <div class="tabs-wrap" id="tabs-wrap" hidden>
   <nav class="tabs">
   <button class="tab-btn active" data-tab="home" hidden style="display:none">Home</button>
-  <button class="tab-btn" data-tab="haupt" hidden style="display:none">Hauptmenü</button>
   <button class="tab-btn" data-tab="fahren" hidden style="display:none">Fahren</button>
   <button class="tab-btn" data-tab="garage">Garage</button>
   <button class="tab-btn" data-tab="race">Cockpit</button>
@@ -3524,9 +3532,11 @@
   <button class="tab-btn" data-tab="record" data-parent="misc" hidden style="display:none">Aufnahme-Modus</button>
   </nav>
   </div>
-  <nav class="k-leiste" id="k-leiste" hidden>
+  <!-- Die INNEREN Reiter (Optionen-Kategorien, Mehrspieler-Modi, BLE-Werkbank, ...) in einer
+       zweiten, flachen Zeile; L1/R1 wirken auf die innerste sichtbare Leiste. -->
+  <nav class="k-leiste k-leiste2" id="k-leiste2" hidden>
     <span class="k-sh" aria-hidden="true" data-i18n-skip>L1</span>
-    <div class="k-reiter" id="k-reiter"></div>
+    <div class="k-reiter" id="k-reiter2"></div>
     <span class="k-sh" aria-hidden="true" data-i18n-skip>R1</span>
   </nav>
 </header>
@@ -3569,60 +3579,11 @@
       <div class="app-fortschritt" id="app-update-balken" hidden><i></i></div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.8.19</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.20</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
         <button id="home-install" hidden>Als App installieren</button>
-      </div>
-    </div>
-  </section>
-
-  <!-- HAUPTMENUE. BESTELLT: "Ebene 1: Fahren, Optionen, Entwickler" - mit Nutzerentscheid:
-       FAHREN, MEHRSPIELER, OPTIONEN gross, darunter flach INFO, PATCHNOTES und ENTWICKLER
-       (nur mit Optionen -> System -> Entwicklertools zeigen oder ?dev). -->
-  <section class="tabpage k-schirm" id="tab-haupt">
-    <div class="k-gitter k-haupt">
-      <div class="k-kachel goto-tab k-gross" id="haupt-fahren" role="button" tabindex="0" data-d="Auto verbinden, Rennen einstellen, Strecke wählen und losfahren – alles auf einem Schirm." data-tab="fahren">
-        <span class="k-kk">Fahren</span>
-        <span class="k-kt">Auto &middot; Rennen &middot; Strecke</span>
-        <span class="k-kb" style="background-image:url(img/fahren.jpg)"></span>
-        <span class="k-ki" id="haupt-fahren-info"></span>
-        <span class="k-streifen" aria-hidden="true"></span>
-      </div>
-      <div class="k-kachel goto-tab" id="haupt-mp" role="button" tabindex="0" data-d="Ein Telefon oder PC ist Host, die anderen treten bei; ein Tablet wird Info-Screen." data-tab="mp">
-        <span class="k-kk">Mehrspieler</span>
-        <span class="k-kt">Im WLAN</span>
-        <span class="k-kb" style="background-image:url(img/mehrspieler.jpg)"></span>
-        <span class="k-ki" id="haupt-mp-info"></span>
-        <span class="k-streifen" aria-hidden="true"></span>
-      </div>
-      <div class="k-kachel goto-tab" id="haupt-opt" role="button" tabindex="0" data-d="Allgemein, Fahrgefühl, Rennen, Ton, Gegner, Controller, 2 Spieler, System." data-tab="options">
-        <span class="k-kk">Optionen</span>
-        <span class="k-kt">Alle Einstellungen</span>
-        <span class="k-kb" style="background-image:url(img/optionen.jpg)"></span>
-        <span class="k-ki" id="haupt-opt-info"></span>
-        <span class="k-streifen" aria-hidden="true"></span>
-      </div>
-      <div class="k-gitter k-klein-reihe">
-      <div class="k-kachel goto-tab k-klein" id="haupt-info" role="button" tabindex="0" data-d="Warum dieses Projekt existiert, was du brauchst, Funktionen, Danksagungen, Rechtliches." data-tab="info">
-        <span class="k-kk">Info</span>
-        <span class="k-kt">Wozu &middot; Danksagungen &middot; Rechtliches</span>
-        <span class="k-ki"></span>
-        <span class="k-streifen" aria-hidden="true"></span>
-      </div>
-      <div class="k-kachel goto-tab k-klein" id="haupt-patch" role="button" tabindex="0" data-d="Was sich je Wochenversion geändert hat." data-tab="info" data-k-sub="patchnotes">
-        <span class="k-kk">Patchnotes</span>
-        <span class="k-kt">Je Wochenversion</span>
-        <span class="k-ki"></span>
-        <span class="k-streifen" aria-hidden="true"></span>
-      </div>
-      <div class="k-kachel goto-tab k-klein" id="haupt-dev" role="button" tabindex="0" data-d="Doku, Programmierschule, BLE-Werkbank, Selbsttest, Code-Sonde, Zahlensysteme, Aufnahme-Modus." data-tab="misc" hidden>
-        <span class="k-kk">Entwickler</span>
-        <span class="k-kt">Werkbank</span>
-        <span class="k-ki"></span>
-        <span class="k-streifen" aria-hidden="true"></span>
-      </div>
       </div>
     </div>
   </section>
@@ -3635,17 +3596,10 @@
   <section class="tabpage k-schirm" id="tab-fahren">
     <div class="k-gitter k-fahren">
       <div class="k-kachel " id="fa-auto" role="button" tabindex="0" data-d="Öffnet sofort die Bluetooth-Auswahl.">
-        <span class="k-kk">Auto</span>
+        <span class="k-kk">Autos</span>
         <span class="k-kt" id="fa-auto-titel"></span>
         <span class="k-kb" style="background-image:url(img/auto.jpg)"></span>
         <span class="k-ki" id="fa-auto-info"></span>
-        <span class="k-streifen" aria-hidden="true"></span>
-      </div>
-      <div class="k-kachel " id="fa-renn" role="button" tabindex="0" data-d="Quadrat wechselt den Renntyp direkt hier, Kreuz öffnet alle Renneinstellungen, Ergebnisse und Sitzungen." data-quad="renntyp">
-        <span class="k-kk">Rennoptionen</span>
-        <span class="k-kt" id="fa-renn-titel"></span>
-        <span class="k-kb" style="background-image:url(img/rennen.jpg)"></span>
-        <span class="k-ki" id="fa-renn-info"></span>
         <span class="k-streifen" aria-hidden="true"></span>
       </div>
       <div class="k-kachel " id="fa-strecke" role="button" tabindex="0" data-d="Quadrat schaltet zwischen Auf der Bahn und Frei. Auf der Bahn: Streckenscan, Editor, Strecke laden. Frei: Druckvorlagen und Editor." data-quad="bahn">
@@ -3659,6 +3613,13 @@
           <button type="button" class="k-knopf" id="fa-laden">Laden</button>
           <button type="button" class="k-knopf" id="fa-druck" hidden>Druckvorlagen</button>
         </span>
+        <span class="k-streifen" aria-hidden="true"></span>
+      </div>
+      <div class="k-kachel " id="fa-renn" role="button" tabindex="0" data-d="Quadrat wechselt den Renntyp direkt hier, Kreuz öffnet alle Renneinstellungen, Ergebnisse und Sitzungen." data-quad="renntyp">
+        <span class="k-kk">Rennoptionen</span>
+        <span class="k-kt" id="fa-renn-titel"></span>
+        <span class="k-kb" style="background-image:url(img/rennen.jpg)"></span>
+        <span class="k-ki" id="fa-renn-info"></span>
         <span class="k-streifen" aria-hidden="true"></span>
       </div>
       <div class="k-gitter k-fahren-unten">
@@ -4499,8 +4460,9 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>0.8</span></b></p>
       <ul class="muted" id="patchnotes-08" style="padding-left:20px; line-height:1.7">
+        <li>Android-App im Vollbild ohne Status- und Navigationsleiste. Reiter oben neben dem Logo statt Hauptmen&uuml;, Mehrspieler mit den Wegen PC und Android-App, &bdquo;Trotzdem starten&ldquo; ohne Auto zum Ausprobieren (experimentell), rechter Stick rollt die Seite.</li>
         <li>Neues Men&uuml; passt sich jeder Bildschirmgr&ouml;&szlig;e an und f&uuml;llt am Telefon quer genau den Schirm; die Android-App bleibt im Querformat.</li>
-        <li>Neues Men&uuml; im Stil von Assetto Corsa Competizione (WIP): Titelbildschirm, Hauptmen&uuml;, Fahren-Schirm mit Auto, Rennoptionen und Strecke, PS5-Tasten (Kreuz, Kreis, L1/R1), Cockpit-Men&uuml; &uuml;ber Options halten.</li>
+        <li>Neues Men&uuml; im Stil von Assetto Corsa Competizione (WIP): Titelbildschirm, Fahren-Schirm mit Autos, Strecke und Rennoptionen, PS5-Tasten (Kreuz, Kreis, L1/R1), Cockpit-Men&uuml; &uuml;ber Options halten.</li>
         <li>Android-App (experimentell): dieselbe App als APK, mit Bluetooth-Br&uuml;cke, Host ohne PC und Updates ohne Neuinstallation.</li>
         <li>Info-Screen: ein Tablet oder Fernseher zeigt Strecke, alle Autos und die Rangliste, ohne eigenes Auto.</li>
         <li>Neuer Steuerungsmodus Pacejka (experimentell): Reifen mit Haftgrenze, am Limit Unter- und &Uuml;bersteuern mit Vibration.</li>
@@ -7077,13 +7039,33 @@
        mitfaehrt und ueber welche Leitung. Als erste Karte in den Renneinstellungen
        schob er ausserdem Rennmodus, Rundenlogik und Ergebnisse unter den Rand. -->
   <section class="tabpage" id="tab-mp">
-    <div class="card">
+    <!-- BESTELLT: "In Mehrspieler Menü: erstmal weitere Kacheln für die Modi: Über PC mit
+         Python, Über Android App, und dann darunter jeweils die Einstellungen". Beitreten,
+         Status und Rangliste gehoeren zu beiden Wegen: der Block #mp-gemeinsam wandert beim
+         Oeffnen in die jeweilige Unterseite (51-konsole.js) - so gibt es jede id nur einmal. -->
+    <div class="card subpage-home" id="sub-home-mp">
       <h2>Mehrspieler im WLAN <span class="wip-tag">experimentell</span></h2>
       <p class="muted">
-        Mehrere Telefone, jedes mit eigenem Auto, eine gemeinsame Rangliste. Auf dem PC
-        l&auml;uft dazu ein kleines Programm.
+        Mehrere Telefone, jedes mit eigenem Auto, eine gemeinsame Rangliste. Host ist entweder
+        ein PC mit einem kleinen Python-Programm oder ein Telefon mit der Android-App.
       </p>
 
+      <div class="misc-grid">
+        <button class="misc-tile subpage-open" data-sub="mp-pc">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="9" width="36" height="23" rx="2"/><path d="M18 40h12M24 32v8" stroke="var(--bad)"/></svg>
+          <b>&Uuml;ber PC mit Python</b>
+          <span>Der PC tr&auml;gt die Rangliste, die Telefone treten im WLAN bei.</span>
+        </button>
+        <button class="misc-tile subpage-open" data-sub="mp-app">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="15" y="4" width="18" height="40" rx="3"/><path d="M21 38h6" stroke="var(--bad)"/></svg>
+          <b>&Uuml;ber Android-App</b>
+          <span>Ein Telefon mit der App ist Host, ganz ohne PC.</span>
+        </button>
+      </div>
+    </div>
+    <div class="card subpage" id="sub-mp-pc">
+      <button class="misc-back subpage-back" data-sub="">&larr; Mehrspieler</button>
+      <h2>&Uuml;ber PC mit Python</h2>
       <!-- ---- DIE ANLEITUNG, UND WARUM SIE HIER STEHT --------------------------------
            Das Skript war bisher nur als Fliesstext erwaehnt: kein Link, nichts zum
            Kopieren, keine Reihenfolge. Wer es zum ersten Mal aufsetzt, braucht genau drei
@@ -7118,7 +7100,7 @@
           <a href="tools/omegasim_host.py" target="_blank" rel="noopener noreferrer"
              class="mp-datei" data-i18n-skip>tools/omegasim_host.py</a></li>
         <li><b>Die Adresse an die Telefone geben.</b>
-          Sie geh&ouml;rt oben in das Feld &bdquo;Host-Adresse&ldquo; und hat die Form, die
+          Sie geh&ouml;rt unten in das Feld &bdquo;Host-Adresse&ldquo; und hat die Form, die
           dort als Beispiel steht. Alle Ger&auml;te m&uuml;ssen im selben WLAN sein.</li>
         <li><b>Namen eintragen und auf Mitmachen dr&uuml;cken.</b>
           Der Name steht danach in der Rangliste. Jedes Telefon beh&auml;lt seinen eigenen
@@ -7164,17 +7146,6 @@
         Herkunft: Mitmachen ging nur, wenn die App vom Host kam. Wer eine &auml;ltere
         Fassung des Programms laufen hat, holt sie neu.
       </p>
-      <p class="muted" style="font-size:11.5px">
-        Ueber die Leitung gehen Rundenzahl, Rundenzeiten und Abgaenge. Keine Physik, keine
-        Lenkwerte: jedes Telefon rechnet seine eigene Physik und haelt seine eigene
-        Bluetooth-Verbindung. Reisst das WLAN ab, faehrt jeder weiter, nur die Rangliste
-        steht still.
-      </p>
-      <p class="muted" style="font-size:11.5px">
-        Gezaehlt werden GEMESSENE Runden, genau wie in der Rundenliste im Cockpit: die erste
-        Ueberfahrt startet die Uhr, erst die zweite ergibt eine Zeit. Nach drei Ueberfahrten
-        stehen also zwei Runden da. Bei Gleichstand fuehrt, wer zuerst dort war.
-      </p>
       <p class="muted" style="font-size:11.5px; border-left:3px solid var(--warn);
          padding-left:9px">
         Warum es experimentell ist, und der Grund ist eine Browserregel und kein Wackeln im
@@ -7187,6 +7158,17 @@
         vertretbar, aber es ist eine Ausnahme von einer Sicherheitsregel und keine
         Einstellung.
       </p>
+      <p class="muted" style="font-size:11.5px">
+        Der Ueberblicksschirm fuer den PC liegt beim Host unter /mp-overview.html. Er braucht
+        kein Bluetooth und deshalb auch keine Freigabe: auf http://localhost ist er ohnehin
+        ein secure context.
+      </p>
+      <div class="mp-platz"></div>
+    </div>
+    <div class="card subpage" id="sub-mp-app">
+      <button class="misc-back subpage-back" data-sub="">&larr; Mehrspieler</button>
+      <h2>&Uuml;ber Android-App</h2>
+      <p class="muted" id="mp-app-hinweis">Nur in der Android-App: dieses Telefon wird Host, die anderen finden es im WLAN. Im Browser geht das nicht &ndash; dort den Weg &uuml;ber den PC nehmen.</p>
       <!-- NUR IN DER ANDROID-APP: dieses Telefon wird Host, ohne PC. -->
       <div class="mp-app" id="mp-app" hidden>
         <p class="muted"><span class="wip-tag">experimentell</span> <b>Ohne PC: ein Telefon ist Host.</b> Die anderen Telefone suchen ihn im WLAN oder tragen die Adresse ein. Ein Tablet oder Fernseher &ouml;ffnet die Adresse mit /?info im Browser und wird Info-Screen, ganz ohne App.</p>
@@ -7198,6 +7180,11 @@
         <div id="mp-app-info" class="muted" data-i18n-skip></div>
         <div id="mp-gefunden" class="mp-gefunden"></div>
       </div>
+      <div class="mp-platz"></div>
+    </div>
+    <!-- Gemeinsam fuer beide Wege: beitreten, Status, Rangliste. -->
+    <div id="mp-gemeinsam">
+      <h3 class="mp-gemeinsam-h">Beitreten und Rangliste</h3>
       <div class="row" style="gap:10px; flex-wrap:wrap; align-items:flex-end">
         <label class="small" style="flex:1 1 200px">Host-Adresse
           <input type="text" id="mp-host" placeholder="http://192.168.1.50:8080"></label>
@@ -7214,9 +7201,15 @@
         <tr><td colspan="5" class="muted">keine Daten</td></tr>
       </tbody></table>
       <p class="muted" style="font-size:11.5px">
-        Der Ueberblicksschirm fuer den PC liegt beim Host unter /mp-overview.html. Er braucht
-        kein Bluetooth und deshalb auch keine Freigabe: auf http://localhost ist er ohnehin
-        ein secure context.
+        Ueber die Leitung gehen Rundenzahl, Rundenzeiten und Abgaenge. Keine Physik, keine
+        Lenkwerte: jedes Telefon rechnet seine eigene Physik und haelt seine eigene
+        Bluetooth-Verbindung. Reisst das WLAN ab, faehrt jeder weiter, nur die Rangliste
+        steht still.
+      </p>
+      <p class="muted" style="font-size:11.5px">
+        Gezaehlt werden GEMESSENE Runden, genau wie in der Rundenliste im Cockpit: die erste
+        Ueberfahrt startet die Uhr, erst die zweite ergibt eine Zeit. Nach drei Ueberfahrten
+        stehen also zwei Runden da. Bei Gleichstand fuehrt, wer zuerst dort war.
       </p>
     </div>
   </section>
@@ -7245,7 +7238,7 @@
   </div>
 
   <section class="tabpage" id="tab-control">
-    <button class="misc-back goto-tab" data-tab="options">&larr; Einstellungen</button>
+    <button class="misc-back goto-tab" data-tab="options">&larr; Optionen</button>
     <div class="card" id="race-card">
       <h2>Rennmodus <span class="wip-tag">WIP</span></h2>
       <!-- BESTELLT: "Renneinstellungen: ganz oben die knoepfe zum Rennen starten
@@ -7572,7 +7565,7 @@
       </div>
     </div>
     <div class="card subpage" id="sub-opt-general">
-      <button class="misc-back subpage-back" data-sub="">&larr; Einstellungen</button>
+      <button class="misc-back subpage-back" data-sub="">&larr; Optionen</button>
       <h2>Allgemein</h2>
 <div class="opt-head">Allgemein</div>
       <div class="opt-row"><div class="opt-label">Cockpit-Ansicht<small>Nur das Aussehen des
@@ -7864,7 +7857,7 @@
     </div>
     </div>
     <div class="card subpage" id="sub-opt-feel">
-      <button class="misc-back subpage-back" data-sub="">&larr; Einstellungen</button>
+      <button class="misc-back subpage-back" data-sub="">&larr; Optionen</button>
       <h2>Fahrgef&uuml;hl</h2>
       <div class="opt-head" style="margin-top:0">Fahrhilfe
         <span class="wip-tag">experimentell</span></div>
@@ -8304,7 +8297,7 @@
 
     </div>
     <div class="card subpage" id="sub-opt-sound">
-      <button class="misc-back subpage-back" data-sub="">&larr; Einstellungen</button>
+      <button class="misc-back subpage-back" data-sub="">&larr; Optionen</button>
       <h2>Ton</h2>
 <div class="opt-head">Ton</div>
       <div class="opt-row"><div class="opt-label">Motorsound</div><label class="tgl"><input type="checkbox" id="sound-enable" checked><span></span></label></div>
@@ -8629,7 +8622,7 @@
     </div>
     </div>
     <div class="card subpage" id="sub-opt-ghosts">
-      <button class="misc-back subpage-back" data-sub="">&larr; Einstellungen</button>
+      <button class="misc-back subpage-back" data-sub="">&larr; Optionen</button>
       <h2>Autonome Gegner</h2>
       <!-- BESTELLT: "tu die Labels weg bei den anderen Ghost Reglern ausser Boxenstopp."
            Die WIP-Kennzeichnung selbst ist raus (Kurvendrosselung/Ideallinie/
@@ -9079,7 +9072,7 @@
 
     </div>
     <div class="card subpage" id="sub-opt-pad">
-      <button class="misc-back subpage-back" data-sub="">&larr; Einstellungen</button>
+      <button class="misc-back subpage-back" data-sub="">&larr; Optionen</button>
       <h2>Controller</h2>
       <p class="muted">
         Verbinde einen Controller per USB/Bluetooth und drücke einen Knopf, damit der Browser ihn erkennt
@@ -9316,7 +9309,7 @@
     <!-- SYSTEM. Neu mit dem ACC-Menue: was vorher in der Garage (Sicherung, gemerkte Autos)
          und auf der Startseite (Sprache) stand, und der Schalter fuer die Entwicklertools. -->
     <div class="card subpage" id="sub-opt-system">
-      <button class="misc-back subpage-back" data-sub="">&larr; Einstellungen</button>
+      <button class="misc-back subpage-back" data-sub="">&larr; Optionen</button>
       <h2>System</h2>
       <div class="opt-row"><div class="opt-label">Sprache
           <small>Dieselbe Wahl wie auf dem Titelbildschirm.</small></div>
@@ -9384,7 +9377,7 @@
 
     </div>
     <div class="card subpage" id="sub-opt-zwei">
-      <button class="misc-back subpage-back" data-sub="">&larr; Einstellungen</button>
+      <button class="misc-back subpage-back" data-sub="">&larr; Optionen</button>
       <h2>2&nbsp;Spieler</h2>
       <div class="opt-head">Der Modus</div>
       <div class="opt-row"><div class="opt-label">2-Spieler-Modus<span
@@ -10009,7 +10002,15 @@
       <button type="button" data-pause="abbrechen">Rennen abbrechen</button>
       <button type="button" data-pause="optionen">Optionen</button>
       <button type="button" data-pause="fahren">Zum Fahren-Men&uuml;</button>
-      <button type="button" data-pause="haupt">Zum Hauptmen&uuml;</button>
+    </div>
+  </div>
+  <!-- FRAGE-DIALOG (51-konsole.js, konsoleFrage). Zuerst fuer "trotzdem starten": BESTELLT
+       "erlaube mir zum Debuggen auch auf Starten zu drücken, wenn kein Auto verbunden ist". -->
+  <div class="k-pause" id="k-frage" hidden>
+    <div class="k-pause-dialog">
+      <h2 id="k-frage-titel"></h2>
+      <p class="muted k-frage-text" id="k-frage-text"></p>
+      <div class="k-frage-knoepfe" id="k-frage-knoepfe"></div>
     </div>
   </div>
 </main>
@@ -11043,8 +11044,24 @@
     "Der Modus": "The mode",
     "2-Spieler-Modus": "Two-player mode",
     "Gamepad-Menü-Steuerung": "Gamepad menu control",
+    "← Optionen": "← Options",
+    "Autos verbinden": "Connect cars",
+    "Über PC mit Python": "Via PC with Python",
+    "Der PC trägt die Rangliste, die Telefone treten im WLAN bei.": "The PC holds the leaderboard, the phones join over Wi-Fi.",
+    "Über Android-App": "Via Android app",
+    "Ein Telefon mit der App ist Host, ganz ohne PC.": "A phone with the app is the host, no PC needed.",
+    "← Mehrspieler": "← Multiplayer",
+    "Nur in der Android-App: dieses Telefon wird Host, die anderen finden es im WLAN. Im Browser geht das nicht – dort den Weg über den PC nehmen.": "Only in the Android app: this phone becomes the host, the others find it over Wi-Fi. This does not work in the browser – use the PC route there.",
+    "Beitreten und Rangliste": "Join and leaderboard",
+    "Bluetooth nicht bereit": "Bluetooth not ready",
+    "Nochmal verbinden": "Connect again",
+    "Kein Auto verbunden": "No car connected",
+    "Trotzdem starten": "Start anyway",
+    "Die Bluetooth-Auswahl wurde ohne Auto geschlossen.": "The Bluetooth picker was closed without a car.",
+    "Zum Ausprobieren geht es trotzdem ins Cockpit: Anzeigen, Menüs, Ampel und Ton laufen, an ein Auto wird nichts gesendet.": "For trying things out you can still go to the cockpit: displays, menus, start lights and sound run, nothing is sent to a car.",
     "Neues Menü passt sich jeder Bildschirmgröße an und füllt am Telefon quer genau den Schirm; die Android-App bleibt im Querformat.": "The new menu adapts to every screen size and exactly fills a phone held sideways; the Android app stays in landscape.",
-    "Neues Menü im Stil von Assetto Corsa Competizione (WIP): Titelbildschirm, Hauptmenü, Fahren-Schirm mit Auto, Rennoptionen und Strecke, PS5-Tasten (Kreuz, Kreis, L1/R1), Cockpit-Menü über Options halten.": "New menu in the style of Assetto Corsa Competizione (WIP): title screen, main menu, drive screen with car, race options and track, PS5 buttons (cross, circle, L1/R1), cockpit menu by holding Options.",
+    "Android-App im Vollbild ohne Status- und Navigationsleiste. Reiter oben neben dem Logo statt Hauptmenü, Mehrspieler mit den Wegen PC und Android-App, „Trotzdem starten“ ohne Auto zum Ausprobieren (experimentell), rechter Stick rollt die Seite.": "Android app in full screen without status and navigation bar. Tabs at the top next to the logo instead of a main menu, multiplayer with the PC and Android app routes, “Start anyway” without a car for trying things out (experimental), the right stick scrolls the page.",
+    "Neues Menü im Stil von Assetto Corsa Competizione (WIP): Titelbildschirm, Fahren-Schirm mit Autos, Strecke und Rennoptionen, PS5-Tasten (Kreuz, Kreis, L1/R1), Cockpit-Menü über Options halten.": "New menu in the style of Assetto Corsa Competizione (WIP): title screen, drive screen with cars, track and race options, PS5 buttons (cross, circle, L1/R1), cockpit menu by holding Options.",
     "Nur in der Android-App: Version, Updates ohne neue APK.": "Android app only: version, updates without a new APK.",
     "Titel": "Title",
     "Hauptmenü": "Main menu",
@@ -12485,14 +12502,13 @@
     "Eine Webseite darf kein Programm auf dem Rechner starten. Das ist keine fehlende Schnittstelle, sondern die Grenze, auf der die Sicherheit des Browsers beruht, und sie fällt auch dann nicht, wenn man die App installiert: eine installierte App bekommt Dateizugriff und Offline-Betrieb, aber niemals das Recht, ein beliebiges Programm auszuführen. Die Startdatei oben ist das Nächste, was daran herankommt – einmal herunterladen, danach genügt ein Doppelklick.":
       "A web page may not start a program on the computer. This is not a missing interface but the boundary the browser's security rests on, and it does not fall when the app is installed either: an installed app gets file access and offline operation, but never the right to run an arbitrary program. The launcher file above is the closest thing to it – download it once, after that a double-click is enough.",
     "Ueber die Leitung gehen Rundenzahl, Rundenzeiten und Abgaenge. Keine Physik, keine Lenkwerte: jedes Telefon rechnet seine eigene Physik und haelt seine eigene Bluetooth-Verbindung. Reisst das WLAN ab, faehrt jeder weiter, nur die Rangliste steht still.": "What goes over the wire: lap count, lap times and departures. No physics, no steering values – each phone computes its own physics and holds its own Bluetooth connection. If the Wi-Fi drops, everyone keeps driving; only the leaderboard stands still.",
-    "Mehrere Telefone, jedes mit eigenem Auto, eine gemeinsame Rangliste. Auf dem PC läuft dazu ein kleines Programm.":
-      "Several phones, each with its own car, one shared leaderboard. A small program runs on the PC for this.",
+    "Mehrere Telefone, jedes mit eigenem Auto, eine gemeinsame Rangliste. Host ist entweder ein PC mit einem kleinen Python-Programm oder ein Telefon mit der Android-App.": "Several phones, each with its own car, one shared leaderboard. The host is either a PC with a small Python program or a phone with the Android app.",
     "Auf dem PC starten.":
       "Start it on the PC.",
     "Die Adresse an die Telefone geben.":
       "Give the address to the phones.",
-    "Sie gehört oben in das Feld „Host-Adresse“ und hat die Form, die dort als Beispiel steht. Alle Geräte müssen im selben WLAN sein.":
-      "It goes into the “Host address” field above and has the form shown there as an example. All devices must be on the same Wi-Fi.",
+    "Sie gehört unten in das Feld „Host-Adresse“ und hat die Form, die dort als Beispiel steht. Alle Geräte müssen im selben WLAN sein.":
+      "It goes into the “Host address” field below and has the form shown there as an example. All devices must be on the same Wi-Fi.",
     "Namen eintragen und auf Mitmachen drücken.":
       "Enter a name and press Join.",
     "Der Name steht danach in der Rangliste. Jedes Telefon behält seinen eigenen Namen und seine eigene Kennung, auch nach einem Neuladen.":
@@ -20084,10 +20100,11 @@
   function menuNavContainer() {
     // Das Cockpit-Menue (Options 1 s halten, 51-konsole.js) liegt ueber allem und hat
     // Vorrang - auch im Cockpit, das sonst keine generische Zeilenliste bekommt.
+    if (typeof konsoleFrageOffen === 'function' && konsoleFrageOffen()) return $('k-frage');
     if (typeof konsolePauseOffen === 'function' && konsolePauseOffen()) return $('k-pause');
     const tab = document.querySelector('.tabpage.active');
     if (!tab || tab.id === 'tab-race') return null;
-    // Der TITELBILDSCHIRM hat keine Zeilen: jede Taste fuehrt ins Hauptmenue (51-konsole.js).
+    // Der TITELBILDSCHIRM hat keine Zeilen: jede Taste fuehrt nach Fahren (51-konsole.js).
     // Als Zeilenliste waere #lang-toggle die erste - und die Waehltaste schaltete die Sprache
     // um, statt weiterzugehen. So im Selbsttest passiert: der Rest der Suite lief englisch.
     if (tab.id === 'tab-home') return null;
@@ -20470,8 +20487,13 @@
   // DIE MECHANIK DARUNTER BLEIBT: showTab() und showSubpage() (10-ble-explorer.js), die
   // Zeilenliste von menuNav (50b-menu-nav.js) und jede Element-id. Diese Schicht legt
   // Kopfzeile, Pfad, Reiterleiste (L1/R1), Rueckweg (Kreis) mit Stapel, Beschreibung und
-  // Fussleiste darueber und baut die drei neuen Schirme (#tab-home als Titel, #tab-haupt,
-  // #tab-fahren) sowie das Cockpit-Menue (#k-pause, Options 1 s halten).
+  // Fussleiste darueber und baut die neuen Schirme (#tab-home als Titel, #tab-fahren) sowie
+  // das Cockpit-Menue (#k-pause, Options 1 s halten) und den Frage-Dialog (#k-frage).
+  //
+  // KEIN HAUPTMENUE MEHR. BESTELLT: "Tabs nach ganz oben und 'Hauptmenü' Zurückpfeil wegtun,
+  // zur Landing page muss ich nicht zurück, dafür kann ich die App gerne neu starten; dann
+  // wie vorher: Oben links nur logo und rechts daneben alle tabs". Der Titel fuehrt direkt
+  // nach FAHREN; die Ebene 1 ist die Wurzel, Kreis tut dort nichts.
   //
   // BEIM LADEN NICHTS AUSFUEHREN, was spaetere Dateien braucht: garage, currentTrackTiles,
   // raceState stehen als const/let weiter unten und liegen hier noch in der temporalen
@@ -20480,22 +20502,21 @@
 
   const K_EBENE1 = ['fahren', 'mp', 'options', 'info', 'misc'];
   const K_NAME = {
-    home: 'Titel', haupt: 'Hauptmenü', fahren: 'Fahren', garage: 'Garage', race: 'Cockpit',
+    home: 'Titel', fahren: 'Fahren', garage: 'Garage', race: 'Cockpit',
     options: 'Optionen', control: 'Renneinstellungen', track: 'Strecke', mp: 'Mehrspieler',
     info: 'Info', misc: 'Entwickler', doc: 'Doku', school: 'Programmierschule',
     dev: 'BLE-Werkbank', selftest: 'Selbsttest', probe: 'Code-Sonde', numtrain: 'Zahlensysteme',
     record: 'Aufnahme-Modus',
   };
-  // Der Pfad in der Kopfzeile: woher man kommt. Der Stapel sagt, wohin Kreis fuehrt; das
-  // hier ist nur die Anzeige, damit man weiss, wo man steht.
+  // Zu welchem Reiter der Ebene 1 eine tiefe Seite gehoert: der Reiter bleibt hervorgehoben,
+  // und Kreis fuehrt dorthin, wenn der Stapel leer ist.
   const K_ELTERN = {
-    fahren: 'haupt', mp: 'haupt', options: 'haupt', info: 'haupt', misc: 'haupt',
     garage: 'fahren', control: 'fahren', track: 'fahren',
     doc: 'misc', school: 'misc', dev: 'misc', selftest: 'misc', probe: 'misc',
     numtrain: 'misc', record: 'misc',
   };
   const K_BILD = {
-    home: 'titel', haupt: 'haupt', fahren: 'fahren', garage: 'garage', control: 'rennen',
+    home: 'titel', fahren: 'fahren', garage: 'garage', control: 'rennen',
     mp: 'mehrspieler', options: 'optionen', info: 'garage', misc: 'mehrspieler',
   };
 
@@ -20503,6 +20524,7 @@
   let kZurueckLaeuft = false;
   let kEingabe = 'maus';            // 'pad' | 'tasten' | 'maus' - fuer die Tastensymbole
   let kPauseOffen = false;
+  let kFrageOffen = false;
   let kLetzterTab = 'home';
 
   function kAktiverTab() {
@@ -20511,8 +20533,9 @@
   }
   // MENUE statt FAHREN: ueberall ausser im Cockpit, und im Cockpit, solange dessen Menue
   // offen ist. Daran haengt, ob Kreuz/Kreis/Quadrat/L1/R1/Options Menue- oder Fahrtasten sind.
-  function konsoleMenue() { return kAktiverTab() !== 'race' || kPauseOffen; }
+  function konsoleMenue() { return kAktiverTab() !== 'race' || kPauseOffen || kFrageOffen; }
   function konsolePauseOffen() { return kPauseOffen; }
+  function konsoleFrageOffen() { return kFrageOffen; }
   function konsoleDev() {
     const cb = $('setting-dev');
     return !!(cb && cb.checked) || /[?&]dev\b/.test(location.search);
@@ -20520,7 +20543,10 @@
 
   // ---- Wechsel verfolgen: aus dem .tab-btn-Klick gerufen (10-ble-explorer.js) --------
   function konsoleNachTab(neu, alt) {
-    if (!kZurueckLaeuft && alt && alt !== neu) {
+    // Die Ebene 1 ist die Wurzel: wer dort ankommt, hat keinen Rueckweg mehr (Kreis tut
+    // dort nichts), also auch keinen Stapel. Der Titel kommt nie auf den Stapel.
+    if (K_EBENE1.includes(neu)) kStapel = [];
+    else if (!kZurueckLaeuft && alt && alt !== neu && alt !== 'home') {
       kStapel.push(alt);
       if (kStapel.length > 40) kStapel.shift();
     }
@@ -20529,18 +20555,26 @@
     // Nach dem Umschalten zeichnen, nicht davor: der neue Tab ist erst danach .active.
     setTimeout(() => {
       konsoleZeichnen();
-      // Auf den Kachelschirmen des ACC-Menues ist die Auswahl von Anfang an sichtbar: FAHREN
-      // im Hauptmenue, im Fahren-Schirm AUTO ohne Auto und RENNEN STARTEN mit Auto.
-      if (neu === 'haupt' || neu === 'fahren') {
+      // Die Beschreibung gehoerte zur Auswahl der vorigen Seite (gesehen: im Mehrspieler stand
+      // noch "AUTOS - Öffnet sofort die Bluetooth-Auswahl").
+      if (!menuNavGezeigt) konsoleFokus(null);
+      // Auf dem Fahren-Schirm ist die Auswahl von Anfang an sichtbar: AUTO ohne Auto und
+      // RENNEN STARTEN mit Auto.
+      if (neu === 'fahren') {
         menuNavEnsureContext();
-        if (!menuNavGezeigt) {
-          const ziel = neu === 'haupt' ? 'haupt-fahren' : (playerCar ? 'fa-start' : 'fa-auto');
-          konsoleFokusAuf(ziel);
-        }
+        if (!menuNavGezeigt) konsoleFokusAuf(playerCar ? 'fa-start' : 'fa-auto');
       }
     }, 0);
   }
-  function konsoleNachSubpage() { setTimeout(konsoleZeichnen, 0); }
+  function konsoleNachSubpage(key) {
+    // Mehrspieler: Beitreten, Status und Rangliste gehoeren zu beiden Wegen (PC und App) und
+    // wandern in die Unterseite, die gerade aufgeht - sofort, damit die Zeilenliste von
+    // menuNav sie schon beim ersten Druck sieht.
+    const mpg = $('mp-gemeinsam');
+    const platz = key && document.querySelector('#sub-' + key + ' .mp-platz');
+    if (mpg && platz && mpg.parentNode !== platz) platz.appendChild(mpg);
+    setTimeout(konsoleZeichnen, 0);
+  }
 
   function konsoleZeige(tab, sub) {
     showTab(tab);
@@ -20553,30 +20587,33 @@
   // Unterseite), dann der Stapel, zuletzt die Eltern-Ebene.
   function konsoleZurueck() {
     if (typeof optInfoOffen === 'function' && optInfoOffen()) { optInfoSchliessen(); return true; }
+    if (kFrageOffen) { konsoleFrageZu(); return true; }
     const lb = $('lb-wrap');
     if (lb && lb.classList.contains('on') && $('lb-close')) { $('lb-close').click(); return true; }
     if (kPauseOffen) { konsolePauseZu(); return true; }
     const tab = kAktiverTab();
     if (document.querySelector('.tabpage.active .subpage.on')) { showSubpage(''); return true; }
-    if (tab === 'home') return false;
+    if (tab === 'home' || K_EBENE1.includes(tab)) return false;
     let ziel = null;
     while (kStapel.length && !ziel) {
       const z = kStapel.pop();
-      if (z !== tab) ziel = z;
+      if (z !== tab && z !== 'home') ziel = z;
     }
-    if (!ziel) ziel = K_ELTERN[tab] || (tab === 'haupt' ? 'home' : 'haupt');
+    if (!ziel) ziel = K_ELTERN[tab] || 'fahren';
     kZurueckLaeuft = true;
     try { showTab(ziel); } finally { kZurueckLaeuft = false; }
     menuNavTonAbwaehlen();
     return true;
   }
 
-  // ---- Reiterleiste (L1/R1) ---------------------------------------------------------
+  // ---- Reiterleisten (L1/R1) --------------------------------------------------------
   //
-  // Die INNERSTE Ebene bekommt die Schultertasten: in einer offenen Optionen-Kategorie die
-  // Kategorien, in der BLE-Werkbank ihre Unterreiter, in den Renneinstellungen die drei
-  // Karten, auf Ebene 1 die fuenf Hauptbereiche.
-  function konsoleReiter() {
+  // OBEN, neben dem Logo, immer die Ebene 1. Darunter, nur wenn es sie gibt, eine flache
+  // zweite Leiste mit der inneren Ebene: in einer offenen Unterseite ihre Geschwister (die
+  // Optionen-Kategorien, die Mehrspieler-Wege), in der BLE-Werkbank ihre Unterreiter, in den
+  // Renneinstellungen die drei Karten. Die Schultertasten wirken auf die innerste.
+  function konsoleReiter() { return konsoleReiterInnen() || konsoleReiterEbene1(); }
+  function konsoleReiterInnen() {
     const tab = kAktiverTab();
     const tp = document.querySelector('.tabpage.active');
     if (!tp || tab === 'home' || tab === 'race') return null;
@@ -20611,21 +20648,27 @@
         },
       }));
     }
-    if (tab === 'haupt' || K_EBENE1.includes(tab)) {
-      // Reiterwechsel auf Ebene 1 ERSETZT den Schirm und legt nichts auf den Stapel: Kreis
-      // fuehrt von jedem der Hauptbereiche direkt ins Hauptmenue, nicht durch alle Reiter,
-      // die man unterwegs angesehen hat.
-      return K_EBENE1.filter((x) => x !== 'misc' || konsoleDev()).map((x) => ({
-        text: t(K_NAME[x]), an: x === tab,
-        wahl: () => {
-          if (x === tab) return;
-          const vomHaupt = tab === 'haupt';
-          kZurueckLaeuft = !vomHaupt;
-          try { konsoleZeige(x); } finally { kZurueckLaeuft = false; }
-        },
-      }));
-    }
     return null;
+  }
+  // Die Ebene 1 ist die Wurzel: ein Wechsel dort leert den Stapel (konsoleNachTab). Auf einer
+  // tiefen Seite (Garage, Strecke, Doku, ...) bleibt ihr Reiter hervorgehoben. Ein Klick auf
+  // den schon gewaehlten Reiter schliesst eine offene Unterseite - fuer Maus und Touch der
+  // Weg zurueck zu den Kacheln, jetzt wo der Zurueckpfeil oben fehlt.
+  function konsoleReiterEbene1() {
+    const tab = kAktiverTab();
+    if (!tab || tab === 'home' || tab === 'race') return null;
+    let wurzel = tab;
+    while (K_ELTERN[wurzel]) wurzel = K_ELTERN[wurzel];
+    return K_EBENE1.filter((x) => x !== 'misc' || konsoleDev()).map((x) => ({
+      text: t(K_NAME[x]), an: x === wurzel,
+      wahl: () => {
+        if (x === tab) {
+          if (document.querySelector('.tabpage.active .subpage.on')) showSubpage('');
+          return;
+        }
+        konsoleZeige(x);
+      },
+    }));
   }
   function konsoleReiterSchritt(d) {
     const r = konsoleReiter();
@@ -20670,18 +20713,25 @@
     return true;
   }
 
-  // ---- Titel: jede Taste fuehrt ins Hauptmenue ---------------------------------------
+  // ---- Titel: jede Taste fuehrt nach FAHREN ------------------------------------------
+  // BESTELLT: "Standardmäßig komme ich danach in den Tab, der 'FAHREN' heißt."
   function konsoleTitelWeiter() {
     if (kAktiverTab() !== 'home') return false;
-    konsoleZeige('haupt');
+    kStapel = [];
+    konsoleZeige('fahren');
     return true;
   }
 
   // ---- Fahren: Start und Auto --------------------------------------------------------
   async function konsoleAuto() {
     if (!playerCar && !garage.some((c) => c.device)) {
-      await garageConnect();
+      const lage = await garageConnect({ stumm: true });
       konsoleFahrenZeichnen();
+      if (lage) {
+        konsoleFrage(t('Bluetooth nicht bereit'), t(bluetoothLageText(lage)),
+          [[t('Nochmal verbinden'), () => konsoleAuto()], [t('Schließen'), null]]);
+        return;
+      }
       // Nach dem Verbinden auf RENNEN STARTEN, wie bestellt: wenige Klicks bis zum Fahren.
       if (playerCar) konsoleFokusAuf('fa-start');
       return;
@@ -20690,13 +20740,93 @@
   }
   // RENNEN STARTEN: fehlt das Auto, erst die Bluetooth-Auswahl, dann ins Cockpit und die
   // Startampel. Freies Training startet genauso (die Ampel gibt den Beginn der Sitzung).
-  async function konsoleLosfahren() {
-    if (!playerCar) {
-      await garageConnect();
-      if (!playerCar) { konsoleFahrenZeichnen(); return; }
+  //
+  // TROTZDEM STARTEN. BESTELLT: "erlaube mir zum Debuggen auch auf Starten zu drücken, wenn
+  // kein Auto verbunden ist. Aktuell kommt 'Bluetooth Adapter ist aus...'. Das ist ok, aber
+  // ich will eine Option 'trotzdem starten', damit ich dann sehen kann, ob das Cockpit da ist
+  // und noch gut funktioniert." Statt alert() ein Dialog, der mit dem Pad bedienbar ist.
+  async function konsoleLosfahren(ohneAuto) {
+    if (!playerCar && !ohneAuto) {
+      const lage = await garageConnect({ stumm: true });
+      if (!playerCar) {
+        konsoleFahrenZeichnen();
+        const grund = lage ? t(bluetoothLageText(lage)) : t('Die Bluetooth-Auswahl wurde ohne Auto geschlossen.');
+        konsoleFrage(t('Kein Auto verbunden'),
+          grund + '\n\n' + t('Zum Ausprobieren geht es trotzdem ins Cockpit: Anzeigen, Menüs, Ampel und Ton laufen, an ein Auto wird nichts gesendet.'),
+          [[t('Trotzdem starten'), () => konsoleLosfahren(true)],
+           [t('Nochmal verbinden'), () => konsoleLosfahren()],
+           [t('Abbrechen'), null]], true);
+        return;
+      }
     }
     showTab('race');
     if (raceState === 'idle' || raceState === 'finished') toggleRace();
+  }
+
+  // ---- Frage-Dialog (#k-frage): wie das Cockpit-Menue, mit dem Pad bedienbar ----------
+  // knoepfe: [[Text, Funktion oder null], ...]; der erste ist vorgewaehlt.
+  function konsoleFrage(titel, text, knoepfe, wip) {
+    const d = $('k-frage');
+    if (!d) return;
+    $('k-frage-titel').textContent = titel;
+    if (wip) {
+      const w = document.createElement('span');
+      w.className = 'wip-tag';
+      w.textContent = t('experimentell');
+      $('k-frage-titel').appendChild(document.createTextNode(' '));
+      $('k-frage-titel').appendChild(w);
+    }
+    $('k-frage-text').textContent = text || '';
+    const host = $('k-frage-knoepfe');
+    host.innerHTML = '';
+    knoepfe.forEach(([tx, fn]) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = tx;
+      b.addEventListener('click', () => { konsoleFrageZu(); if (fn) fn(); });
+      host.appendChild(b);
+    });
+    kFrageOffen = true;
+    d.hidden = false;
+    menuNavEnsureContext();
+    menuNavIndex = 0; menuNavGezeigt = true;
+    menuNavRender();
+    konsoleZeichnen();
+  }
+  function konsoleFrageZu() {
+    const d = $('k-frage');
+    kFrageOffen = false;
+    if (d) d.hidden = true;
+    document.querySelectorAll('.menu-nav-sel').forEach((el) => el.classList.remove('menu-nav-sel'));
+    menuNavEnsureContext();
+    if (kAktiverTab() === 'fahren') konsoleFokusAuf(playerCar ? 'fa-start' : 'fa-auto');
+    konsoleZeichnen();
+  }
+
+  // ---- Rechter Stick: Bildlauf (aus pollGamepad) --------------------------------------
+  // BESTELLT: "rechter Stick soll scrollen können". Vorher stand dort document.body.scrollTop
+  // - im Standardmodus rollt der body aber nicht, das Dokument tut es (scrollingElement), und
+  // der Stick blieb wirkungslos. Jetzt: zuerst ein offener Dialog, dann die Seite. Die
+  // Bruchteile werden gesammelt, sonst verschluckt das Runden auf ganze Pixel einen leicht
+  // geneigten Stick.
+  let kRollRest = 0;
+  function konsoleBildlauf(dy) {
+    kRollRest += dy;
+    const ganz = Math.trunc(kRollRest);
+    if (!ganz) return false;
+    kRollRest -= ganz;
+    const ziele = [
+      kFrageOffen && document.querySelector('#k-frage .k-pause-dialog'),
+      kPauseOffen && document.querySelector('#k-pause .k-pause-dialog'),
+      document.scrollingElement, document.body,
+    ];
+    for (const el of ziele) {
+      if (!el) continue;
+      const vor = el.scrollTop;
+      el.scrollTop = vor + ganz;
+      if (el.scrollTop !== vor) return true;
+    }
+    return false;
   }
   function konsoleFokusAuf(id) {
     const rows = menuNavRows();
@@ -20739,15 +20869,14 @@
     if (document.body.classList.contains('race-fs')) exitRaceFullscreen();
     if (was === 'optionen') konsoleZeige('options');
     else if (was === 'fahren') konsoleZeige('fahren');
-    else if (was === 'haupt') konsoleZeige('haupt');
   }
 
   // ---- Zeichnen: Kopf, Reiter, Beschreibung, Fuss, Hintergrund -----------------------
   function konsoleZeichnen() {
     const tab = kAktiverTab();
     document.body.classList.toggle('k-titel-an', tab === 'home');
-    // Die zwei Kachelschirme fuellen genau den Bildschirm (CSS: body.k-kacheln).
-    document.body.classList.toggle('k-kacheln', tab === 'haupt' || tab === 'fahren');
+    // Der Fahren-Schirm fuellt genau den Bildschirm (CSS: body.k-kacheln).
+    document.body.classList.toggle('k-kacheln', tab === 'fahren');
     // Hintergrund
     const bg = $('k-bg');
     if (bg) {
@@ -20755,22 +20884,6 @@
       if (tab === 'track') name = ($('setting-ontrack') || {}).checked ? 'strecke-bahn' : 'strecke-frei';
       const url = 'url(img/' + name + '-bg.jpg)';
       if (bg.dataset.bild !== name) { bg.style.backgroundImage = url; bg.dataset.bild = name; }
-    }
-    // Pfad
-    const pfad = [];
-    for (let x = tab; x && pfad.length < 4; x = K_ELTERN[x]) pfad.unshift(t(K_NAME[x] || x));
-    const offen = document.querySelector('.tabpage.active .subpage.on h2');
-    if (offen) pfad.push(offen.textContent.replace(/\s+/g, ' ').trim());
-    const pEl = $('k-pfad');
-    if (pEl) {
-      pEl.innerHTML = '';
-      pfad.forEach((p, i) => {
-        const s = document.createElement(i === pfad.length - 1 ? 'b' : 'span');
-        // Grossbuchstaben macht das CSS (.k-pfad): der Text selbst bleibt der Woerterbuch-
-        // schluessel, falls ihn der Textknoten-Uebersetzer spaeter noch einmal sieht.
-        s.textContent = (i ? ' / ' : '') + p;
-        pEl.appendChild(s);
-      });
     }
     // Status
     const st = $('k-status');
@@ -20787,28 +20900,28 @@
       w.textContent = t('Neues Menü');
       st.appendChild(w);
     }
-    // Reiter
-    const leiste = $('k-leiste');
-    const r = konsoleReiter();
-    if (leiste) {
+    // Reiter: oben die Ebene 1, darunter die innere Leiste, falls es eine gibt. Die L1/R1-
+    // Hinweise stehen an der Leiste, auf die die Schultertasten gerade wirken.
+    const r1 = konsoleReiterEbene1();
+    const r2 = konsoleReiterInnen();
+    const fuell = (leiste, host, r, schulter) => {
+      if (!leiste) return;
       leiste.hidden = !r;
-      const innen = $('k-reiter');
-      if (r && innen) {
-        innen.innerHTML = '';
-        r.forEach((x) => {
-          const b = document.createElement('button');
-          b.type = 'button';
-          b.textContent = x.text;
-          if (x.an) b.className = 'an';
-          b.addEventListener('click', () => x.wahl());
-          innen.appendChild(b);
-        });
-      }
-    }
-    // Entwickler ein-/ausblenden
-    const dev = konsoleDev();
-    if ($('haupt-dev')) $('haupt-dev').hidden = !dev;
-    if (tab === 'haupt') konsoleHauptZeichnen();
+      leiste.classList.toggle('k-l1r1', !!(r && schulter));
+      if (!r || !host) return;
+      host.innerHTML = '';
+      r.forEach((x) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.textContent = x.text;
+        if (x.an) b.className = 'an';
+        b.addEventListener('click', () => x.wahl());
+        host.appendChild(b);
+      });
+    };
+    fuell($('k-leiste'), $('k-reiter'), r1, !r2);
+    fuell($('k-leiste2'), $('k-reiter2'), r2, true);
+    document.body.classList.toggle('k-innen', !!r2);
     if (tab === 'fahren') konsoleFahrenZeichnen();
     if (tab === 'track') konsoleStreckeModus();
     konsoleFussZeichnen();
@@ -20860,7 +20973,9 @@
     const f = $('k-fuss');
     if (!f) return;
     const row = rowArg || (menuNavRows()[menuNavIndex]);
-    const teile = [[konsoleSymbol('ok'), t('Bestätigen')], [konsoleSymbol('zurueck'), t('Zurück')],
+    // "Zurück" steht im Woerterbuch als "Undo" (der Knopf im Streckeneditor nimmt einen Schritt
+    // zurueck) - hier ist es der Rueckweg, deshalb ein eigenes Wort statt t().
+    const teile = [[konsoleSymbol('ok'), t('Bestätigen')], [konsoleSymbol('zurueck'), lang === 'en' ? 'Back' : 'Zurück'],
       [konsoleSymbol('nav'), t('Navigieren')]];
     if (row && (row.kind === 'range' || row.kind === 'select' || row.kind === 'toggle')) teile.push([konsoleSymbol('lr'), t('Wert ändern')]);
     if (row && row.el && row.el.dataset && row.el.dataset.quad) teile.push([konsoleSymbol('quad'), t('Wechseln')]);
@@ -20869,7 +20984,7 @@
     f.innerHTML = teile.map(([g, tx]) => '<span class="k-h">' + g + '<span>' + tx + '</span></span>').join('');
   }
 
-  // ---- Hauptmenue und Fahren: die Info-Zeilen aus dem echten Zustand ------------------
+  // ---- Fahren: die Info-Zeilen aus dem echten Zustand ---------------------------------
   function kZeilen(host, paare) {
     if (!host) return;
     host.innerHTML = '';
@@ -20897,27 +21012,10 @@
     try { return currentTrackTiles.length > 1 ? trackToCode(currentTrackTiles) : ''; } catch (e) { return ''; }
   }
 
-  function konsoleHauptZeichnen() {
-    const autos = kAutos();
-    const bahn = ($('setting-ontrack') || {}).checked;
-    let beste = '–';
-    try { if (dashLapTimes.length) beste = (Math.min.apply(null, dashLapTimes) / 1000).toFixed(2).replace('.', ',') + ' s'; } catch (e) { /* noch nichts */ }
-    kZeilen($('haupt-fahren-info'), [
-      [t('Auto'), autos.length ? autos.map((c) => garageLabel(c)).join(' · ') : t('keines')],
-      [t('Strecke'), (bahn ? t('Bahn') : t('Frei')) + ' · ' + kTeile() + ' ' + t('Teile')],
-      [t('Bestzeit'), beste],
-    ]);
-    let host = '–';
-    try { host = mp.an ? mp.host.replace(/^https?:\/\//, '') : t('nicht verbunden'); } catch (e) { /* ohne Mehrspieler */ }
-    kZeilen($('haupt-mp-info'), [['Host', host]]);
-    kZeilen($('haupt-opt-info'), [[t('Abstimmung'), ($('race-act-mode-txt') || {}).textContent || '–'],
-      [t('Steuerungsmodus'), (($('phys-mode') || {}).selectedOptions || [{}])[0].textContent || '–']]);
-  }
-
   function konsoleFahrenZeichnen() {
     if (!$('fa-auto')) return;
     const autos = kAutos();
-    $('fa-auto-titel').textContent = autos.length ? autos.length + ' ' + t('verbunden') : t('Auto verbinden');
+    $('fa-auto-titel').textContent = autos.length ? autos.length + ' ' + t('verbunden') : t('Autos verbinden');
     kZeilen($('fa-auto-info'), autos.length
       ? autos.map((c) => [kPunkt(carColor(c).hex, garageLabel(c)), t(K_ROLLE[c.role] || c.role)])
       : [[t('Status'), t('nicht verbunden')], ['✕', t('Bluetooth-Auswahl öffnen')]]);
@@ -21088,7 +21186,6 @@
     kn('fa-profil', () => konsoleZeige('options', 'opt-feel'));
     kn('fa-gegner', () => konsoleZeige('options', 'opt-ghosts'));
     kn('race-menue', () => konsolePauseAuf());
-    kn('k-zurueck', () => konsoleZurueck());
     document.querySelectorAll('#k-pause [data-pause]').forEach((b) => {
       b.addEventListener('click', () => konsolePauseWahl(b.dataset.pause));
     });
@@ -21103,8 +21200,11 @@
     // Der Status (Autos) und die Fahren-Kacheln aendern sich auch ohne Tab-Wechsel.
     setInterval(() => {
       const tab = kAktiverTab();
-      if (tab === 'fahren' || tab === 'haupt') konsoleZeichnen();
+      if (tab === 'fahren') konsoleZeichnen();
     }, 1500);
+    // Der gemeinsame Mehrspieler-Block steht zuerst beim Weg ueber den PC.
+    const mpg = $('mp-gemeinsam'), platz = document.querySelector('#sub-mp-pc .mp-platz');
+    if (mpg && platz) platz.appendChild(mpg);
     konsoleZeichnen();
   }
   setTimeout(konsoleEinrichten, 0);
@@ -34273,10 +34373,13 @@
   // Bitte des Nutzers wieder heraus. Der eigentliche Fund von v0.5.16 bleibt: der Filter
   // darunter ist ODER-verknuepft und nimmt ersatzweise den Nordic-UART-Dienst, ein Auto
   // ohne Namen in der Werbung faellt damit nicht mehr durch.
-  async function garageConnect() {
+  // opt.stumm: kein alert(), sondern die Lage zurueckgeben - das ACC-Menue zeigt sie in
+  // seinem eigenen, mit dem Pad bedienbaren Dialog (samt "Trotzdem starten", 51-konsole.js).
+  async function garageConnect(opt) {
     const lage = await bluetoothLageGenau();
     if (lage !== 'ok') {
       garageLageZeigen();
+      if (opt && opt.stumm) return lage;
       alert(bluetoothLageText(lage));
       return;
     }
@@ -41316,7 +41419,7 @@
         if (ovTab) ovTab.scrollTop += rechtsY * PAD_SCROLL_SPEED;
       } else if (rechtsY && !document.body.classList.contains('race-fs')
           && !document.body.classList.contains('track-fs')) {
-        document.body.scrollTop += rechtsY * PAD_SCROLL_SPEED;
+        konsoleBildlauf(rechtsY * PAD_SCROLL_SPEED);
       }
 
       // Gelbe Flagge auf HALTEN, aber im Streckeneditor-Vollbild bestaetigt dieselbe
@@ -61693,9 +61796,10 @@
   // haelt genau das fest: jede Seite und jede Unterseite ist vom Titel aus erreichbar.
   stAdd('ACC-Menü: jede Seite und Unterseite ist erreichbar', () => {
     // Kanten: Kacheln mit data-tab (goto-tab), Unterseiten-Kacheln (data-sub), die Reiter der
-    // Ebene 1 und die Kacheln des Fahren-Schirms (JS-Knoepfe, hier von Hand genannt).
-    const kanten = { home: ['haupt'], haupt: [], fahren: ['garage', 'control', 'track', 'race'] };
-    K_EBENE1.forEach((x) => { kanten.haupt.push(x); });
+    // Ebene 1 (oben neben dem Logo, von jeder Seite aus) und die Kacheln des Fahren-Schirms
+    // (JS-Knoepfe, hier von Hand genannt). Der Titel fuehrt nach Fahren.
+    const kanten = { home: ['fahren'], fahren: ['garage', 'control', 'track', 'race'] };
+    K_EBENE1.forEach((x) => { kanten.fahren.push(x); });
     const tabs = [...document.querySelectorAll('.tabpage')].map((t) => t.id.replace(/^tab-/, ''));
     tabs.forEach((t) => {
       kanten[t] = kanten[t] || [];
@@ -61727,28 +61831,110 @@
       kStapel = [];
       showTab('home');
       window.dispatchEvent(new KeyboardEvent('keydown', { key: 'x', bubbles: true }));
-      if (kAktiverTab() !== 'haupt') f.push('Taste auf dem Titel fuehrt nach ' + kAktiverTab());
-      showTab('fahren');
+      if (kAktiverTab() !== 'fahren') f.push('Taste auf dem Titel fuehrt nach ' + kAktiverTab() + ' statt nach Fahren');
       konsoleReiterSchritt(1);
       if (kAktiverTab() !== 'mp') f.push('R1 im Fahren-Schirm fuehrt nach ' + kAktiverTab());
+      if (konsoleZurueck() || kAktiverTab() !== 'mp') f.push('Kreis auf der Ebene 1 tut etwas (' + kAktiverTab() + ')');
+      showTab('fahren');
+      showTab('garage');
       konsoleZurueck();
-      if (kAktiverTab() !== 'haupt') f.push('Kreis nach dem Reiterwechsel fuehrt nach ' + kAktiverTab() + ' statt ins Hauptmenue');
-      konsoleZurueck();
-      if (kAktiverTab() !== 'home') f.push('Kreis im Hauptmenue fuehrt nach ' + kAktiverTab() + ' statt zum Titel');
+      if (kAktiverTab() !== 'fahren') f.push('Kreis in der Garage fuehrt nach ' + kAktiverTab() + ' statt nach Fahren');
+      showTab('garage');
+      const r1 = konsoleReiterEbene1() || [];
+      if (!r1.some((x) => x.an && x.text === t('Fahren'))) f.push('in der Garage ist oben nicht FAHREN hervorgehoben');
+      if (konsoleReiterInnen()) f.push('die Garage hat eine zweite Leiste');
       showTab('options');
       showSubpage('opt-feel');
+      konsoleZeichnen();
+      if ($('k-leiste2').hidden) f.push('in einer Kategorie fehlt die zweite Leiste');
       konsoleReiterSchritt(1);
       const offen = document.querySelector('#tab-options .subpage.on');
       if (!offen || offen.id === 'sub-opt-feel') f.push('R1 in einer Optionen-Kategorie wechselt nicht die Kategorie');
       konsoleZurueck();
       if (document.querySelector('#tab-options .subpage.on')) f.push('Kreis schliesst die Kategorie nicht');
       if (kAktiverTab() !== 'options') f.push('Kreis in der Kategorie verlaesst die Optionen');
+      // Mehrspieler: zwei Wege, der gemeinsame Block wandert mit.
+      showTab('mp');
+      showSubpage('mp-app');
+      if (!$('sub-mp-app').contains($('mp-host'))) f.push('Beitreten fehlt beim Weg ueber die App');
+      showSubpage('mp-pc');
+      if (!$('sub-mp-pc').contains($('mp-rows'))) f.push('Rangliste fehlt beim Weg ueber den PC');
+      if ((konsoleReiterInnen() || []).length !== 2) f.push('Mehrspieler: zweite Leiste hat nicht 2 Wege');
     } finally {
       showSubpage('');
       kStapel = merkStapel;
       if (merk) showTab(merk);
     }
-    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Titel -> Hauptmenue, R1 ersetzt, Kreis eine Ebene, Kategorien mit R1' };
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Titel -> Fahren, Ebene 1 ist Wurzel, Kreis eine Ebene, Kategorien und Mehrspieler-Wege mit R1' };
+  });
+
+  stAdd('ACC-Menü: ohne Auto fragt Starten, "Trotzdem starten" öffnet das Cockpit', async () => {
+    if (playerCar) return { skip: true, mass: 'ein Auto ist verbunden' };
+    const merk = kAktiverTab();
+    const f = [];
+    const echtVerb = garageConnect, echtRennen = toggleRace;
+    let rennen = 0;
+    try {
+      garageConnect = async () => 'aus';
+      toggleRace = () => { rennen++; };
+      showTab('fahren');
+      await konsoleLosfahren();
+      if (!konsoleFrageOffen() || $('k-frage').hidden) f.push('kein Dialog');
+      if (menuNavContainer() !== $('k-frage')) f.push('die Menuezeilen gelten nicht fuer den Dialog');
+      const kn = [...$('k-frage-knoepfe').querySelectorAll('button')];
+      if (kn.length !== 3) f.push(kn.length + ' Knoepfe statt 3');
+      if (!/Bluetooth/.test($('k-frage-text').textContent)) f.push('der Grund fehlt im Text');
+      if (kAktiverTab() !== 'fahren') f.push('ohne Wahl schon nach ' + kAktiverTab());
+      konsoleZurueck();
+      if (konsoleFrageOffen()) f.push('Kreis schliesst den Dialog nicht');
+      await konsoleLosfahren();
+      $('k-frage-knoepfe').querySelector('button').click();
+      await new Promise((r) => setTimeout(r, 0));
+      if (konsoleFrageOffen()) f.push('Dialog bleibt nach der Wahl offen');
+      if (kAktiverTab() !== 'race') f.push('Trotzdem starten fuehrt nach ' + kAktiverTab());
+      if (rennen !== 1) f.push('Startampel ' + rennen + ' mal statt 1');
+    } finally {
+      garageConnect = echtVerb; toggleRace = echtRennen;
+      if (konsoleFrageOffen()) konsoleFrageZu();
+      if (merk) showTab(merk);
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Dialog mit 3 Knoepfen, Kreis schliesst, Trotzdem -> Cockpit und Ampel' };
+  });
+
+  // BESTELLT: "rechter Stick soll scrollen können und alles gut bedienbar machen". Der Takt
+  // laeuft ueber requestAnimationFrame und steht im verborgenen Vorschaufenster - deshalb
+  // ruft der Test pollGamepad() selbst, mit einem gefaelschten Pad.
+  stAdd('ACC-Menü: rechter Stick rollt die Seite', () => {
+    if (!innerWidth || !innerHeight) return { skip: true, mass: 'Fenster ist 0 x 0 - im verborgenen Bereich nicht messbar' };
+    const merk = kAktiverTab();
+    const echt = navigator.getGamepads;
+    const f = [];
+    let weit = 0;
+    try {
+      showTab('mp');
+      showSubpage('mp-pc');
+      const el = [document.scrollingElement, document.body].find((e) => e && e.scrollHeight > e.clientHeight + 60);
+      if (!el) return { skip: true, mass: 'die Seite ist zu kurz zum Rollen' };
+      el.scrollTop = 0;
+      const pad = { id: 'Selbsttest (STANDARD GAMEPAD)', index: 0, connected: true, mapping: 'standard',
+        timestamp: performance.now(), axes: [0, 0, 0, 0.8],
+        buttons: Array.from({ length: 17 }, () => ({ pressed: false, touched: false, value: 0 })) };
+      navigator.getGamepads = () => [pad, null, null, null];
+      for (let i = 0; i < 12; i++) pollGamepad();
+      weit = el.scrollTop;
+      if (weit < 40) f.push('nach 12 Takten nur ' + weit + ' px gerollt');
+      pad.axes[3] = -0.8;
+      for (let i = 0; i < 12; i++) pollGamepad();
+      if (el.scrollTop > weit - 40) f.push('zurueck nach oben rollt nicht');
+      pad.axes[3] = 0;
+      pollGamepad();
+    } finally {
+      navigator.getGamepads = echt;
+      try { pollGamepad(); } catch (e) { /* ohne Pad */ }
+      showSubpage('');
+      if (merk) showTab(merk);
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : weit + ' px in 12 Takten, und zurueck' };
   });
 
   stAdd('ACC-Menü: Steuerkreuz springt räumlich zur Nachbarkachel', () => {
@@ -61763,8 +61949,8 @@
       menuNavEnsureContext();
       konsoleFokusAuf('fa-auto');
       const schritt = (d) => { menuNavRaum(d); const r = menuNavRows()[menuNavIndex]; weg.push(d + ':' + (r && r.el.id)); return r && r.el.id; };
-      if (schritt('right') !== 'fa-renn') f.push('rechts von AUTO ist nicht RENNOPTIONEN');
-      if (schritt('right') !== 'fa-strecke') f.push('rechts von RENNOPTIONEN ist nicht STRECKE');
+      if (schritt('right') !== 'fa-strecke') f.push('rechts von AUTO ist nicht STRECKE');
+      if (schritt('right') !== 'fa-renn') f.push('rechts von STRECKE ist nicht RENNOPTIONEN');
       konsoleFokusAuf('fa-start');
       if (schritt('right') !== 'fa-start') f.push('rechts am Rand springt weg');
       konsoleFokusAuf('fa-auto');
@@ -61810,15 +61996,21 @@
     const cb = $('setting-dev');
     if (!cb) return { ok: false, mass: '#setting-dev fehlt' };
     const merk = cb.checked;
+    let merkTab = '';
     const f = [];
     try {
       if (cb.defaultChecked) f.push('ab Werk sichtbar');
       cb.checked = false; cb.dispatchEvent(new Event('change', { bubbles: true })); konsoleZeichnen();
-      if (!/[?&]dev\b/.test(location.search) && !$('haupt-dev').hidden) f.push('aus, aber die Kachel ist da');
+      // Auf einer Menueseite pruefen: im Cockpit gibt es oben keine Reiter.
+      merkTab = kAktiverTab();
+      showTab('options');
+      const mitDev = () => (konsoleReiterEbene1() || []).some((x) => x.text === t('Entwickler'));
+      if (!/[?&]dev\b/.test(location.search) && mitDev()) f.push('aus, aber der Reiter ist da');
       cb.checked = true; cb.dispatchEvent(new Event('change', { bubbles: true })); konsoleZeichnen();
-      if ($('haupt-dev').hidden) f.push('an, aber die Kachel fehlt');
+      if (!mitDev()) f.push('an, aber der Reiter fehlt');
     } finally {
       cb.checked = merk; cb.dispatchEvent(new Event('change', { bubbles: true })); konsoleZeichnen();
+      if (merkTab) showTab(merkTab);
     }
     return { ok: !f.length, mass: f.length ? f.join('; ') : 'ab Werk versteckt, Schalter wirkt in beide Richtungen' };
   });
@@ -68065,6 +68257,7 @@
     const merken = () => { try { localStorage.setItem(APP_STORE, JSON.stringify(einstellung)); } catch (e) { /* privat */ } };
 
     ['info-app-kachel', 'mp-app'].forEach((id) => { if ($(id)) $(id).hidden = false; });
+    if ($('mp-app-hinweis')) $('mp-app-hinweis').hidden = true;
 
     // Die laufende Fassung ist hochgekommen: das ist die Bestaetigung, auf die der Wachhund
     // wartet. So frueh wie moeglich und doch erst, wenn der ganze Code gelaufen ist - diese

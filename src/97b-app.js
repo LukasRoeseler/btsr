@@ -23,6 +23,7 @@
     const merken = () => { try { localStorage.setItem(APP_STORE, JSON.stringify(einstellung)); } catch (e) { /* privat */ } };
 
     ['info-app-kachel', 'mp-app'].forEach((id) => { if ($(id)) $(id).hidden = false; });
+    if ($('mp-app-hinweis')) $('mp-app-hinweis').hidden = true;
 
     // Die laufende Fassung ist hochgekommen: das ist die Bestaetigung, auf die der Wachhund
     // wartet. So frueh wie moeglich und doch erst, wenn der ganze Code gelaufen ist - diese

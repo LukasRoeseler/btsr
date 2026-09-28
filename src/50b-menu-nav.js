@@ -89,10 +89,11 @@
   function menuNavContainer() {
     // Das Cockpit-Menue (Options 1 s halten, 51-konsole.js) liegt ueber allem und hat
     // Vorrang - auch im Cockpit, das sonst keine generische Zeilenliste bekommt.
+    if (typeof konsoleFrageOffen === 'function' && konsoleFrageOffen()) return $('k-frage');
     if (typeof konsolePauseOffen === 'function' && konsolePauseOffen()) return $('k-pause');
     const tab = document.querySelector('.tabpage.active');
     if (!tab || tab.id === 'tab-race') return null;
-    // Der TITELBILDSCHIRM hat keine Zeilen: jede Taste fuehrt ins Hauptmenue (51-konsole.js).
+    // Der TITELBILDSCHIRM hat keine Zeilen: jede Taste fuehrt nach Fahren (51-konsole.js).
     // Als Zeilenliste waere #lang-toggle die erste - und die Waehltaste schaltete die Sprache
     // um, statt weiterzugehen. So im Selbsttest passiert: der Rest der Suite lief englisch.
     if (tab.id === 'tab-home') return null;

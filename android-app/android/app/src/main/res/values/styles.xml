@@ -13,6 +13,8 @@
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
         <item name="android:background">@null</item>
+        <!-- Schwarz statt Grau: falls irgendwo doch ein Rand bleibt, faellt er nicht auf. -->
+        <item name="android:windowBackground">@android:color/black</item>
     </style>
 
 

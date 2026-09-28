@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>OmegaSim</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <!-- ALS APP INSTALLIERBAR. Rein zusaetzlich: im Browser laeuft alles unveraendert weiter.
@@ -2152,31 +2152,28 @@
   #glitch-bands { display: none; }
 
   /* Kopfzeile */
-  header#k-kopf { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px;
-    padding: 8px clamp(10px, 2.4vw, 32px) 6px; z-index: 60; font-family: var(--k-font);
-    background: linear-gradient(rgba(5,7,12,.94), rgba(5,7,12,.72)); border-bottom: 1px solid rgba(255,255,255,.12); }
+  header#k-kopf { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px;
+    padding: max(5px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) 5px max(12px, env(safe-area-inset-left));
+    z-index: 60; font-family: var(--k-font);
+    /* Deckend: die Seite rollt unter dem Kopf durch, und durchscheinender Text stoerte. */
+    background: #05070c; border-bottom: 1px solid rgba(255,255,255,.12); }
   header#k-kopf::after { display: none; }
   #k-kopf .hdr-logo { border: 0; padding: 4px 6px; gap: 8px; background: transparent; }
   #k-kopf .hdr-logo:hover { background: transparent; }
   .k-logo { font-weight: 900; letter-spacing: .16em; font-size: clamp(14px, 1.6vw, 22px); color: #fff;
     text-shadow: 2px 0 0 var(--glitch-r), -2px 0 0 var(--glitch-c); white-space: nowrap; }
-  .k-pfad { text-align: center; font-size: clamp(14px, 1.7vw, 26px); letter-spacing: .04em; min-width: 0;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .k-pfad span { color: var(--k-dim); } .k-pfad b { font-weight: 700; color: #fff; }
-  #k-pfad { text-transform: uppercase; }
-  #k-zurueck { background: transparent; border: 0; color: var(--k-dim); font-size: 26px; line-height: 1;
-    padding: 0 10px 0 0; vertical-align: -2px; }
-  #k-zurueck:hover { color: #fff; background: transparent; }
-  body.k-titel-an #k-zurueck { visibility: hidden; }
   .k-status { font-size: 12px; color: var(--k-dim); text-align: right; display: flex; gap: 8px; align-items: center; }
   .k-status .k-an { color: var(--good); }
-  .k-leiste { grid-column: 1 / -1; display: flex; align-items: stretch; margin-top: 2px; }
+  .k-leiste { display: flex; align-items: stretch; min-width: 0; }
+  .k-leiste2 { grid-column: 1 / -1; margin-top: 3px; }
+  /* Die L1/R1-Hinweise nur an der Leiste, auf die die Schultertasten gerade wirken. */
+  .k-leiste:not(.k-l1r1) .k-sh { visibility: hidden; }
   .k-leiste[hidden] { display: none !important; }
   .k-sh { display: flex; align-items: center; padding: 0 10px; font-size: 11px; color: var(--k-dim);
     background: rgba(0,0,0,.55); border: 1px solid rgba(255,255,255,.2); border-radius: 4px; margin: 3px 4px; }
   .k-reiter { flex: 1; display: flex; background: rgba(12,14,20,.72); overflow: hidden; min-width: 0; }
   .k-reiter button { flex: 1; min-width: 0; background: transparent; border: 0; border-radius: 0; color: var(--k-dim);
-    font-family: var(--k-font); font-size: clamp(11px, 1.15vw, 16px); letter-spacing: .08em; padding: 9px 6px;
+    font-family: var(--k-font); font-size: clamp(11px, 1.1vw, 15px); letter-spacing: .08em; padding: 6px 6px;
     text-transform: uppercase; clip-path: polygon(6% 0, 100% 0, 94% 100%, 0 100%); white-space: nowrap;
     overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
   .k-reiter button.an { background: var(--k-weiss); color: var(--k-tinte); font-weight: 800; }
@@ -2191,7 +2188,8 @@
   .card .card { background: rgba(255,255,255,.035); }
 
   /* Beschreibung und Fussleiste */
-  #k-unten { position: sticky; bottom: 0; z-index: 55; padding: 0 clamp(10px, 2.4vw, 32px);
+  #k-unten { position: sticky; bottom: 0; z-index: 55;
+    padding: 0 max(clamp(10px, 2.4vw, 32px), env(safe-area-inset-right)) 0 max(clamp(10px, 2.4vw, 32px), env(safe-area-inset-left));
     font-family: var(--k-font); background: linear-gradient(rgba(5,7,12,0), rgba(5,7,12,.94) 22%); }
   body.race-mode #k-unten { display: none; }
   #k-beschr { max-width: 1320px; margin: 0 auto 4px; background: rgba(10,12,18,.9); border-left: 4px solid var(--k-rot);
@@ -2247,8 +2245,6 @@
   .k-kachel[data-quad] .k-kt::before { content: '◀'; color: var(--k-rot); margin-right: 10px; font-size: .8em; }
   .k-kachel[data-quad] .k-kt::after { content: '▶'; color: var(--k-rot); margin-left: 10px; font-size: .8em; }
 
-  .k-haupt { grid-template-columns: 1.6fr 1fr 1fr; grid-template-rows: minmax(260px, 52vh) auto; }
-  .k-haupt .k-klein-reihe { grid-column: 1 / -1; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
   .k-fahren { grid-template-columns: repeat(3, 1fr); grid-template-rows: minmax(300px, 56vh) minmax(96px, 20vh); }
   .k-fahren-unten { grid-column: 1 / -1; grid-template-columns: 1fr 1fr 2fr; }
   .k-start { justify-content: center; align-items: center; min-height: 96px; text-transform: uppercase;
@@ -2293,6 +2289,14 @@
   .k-pause-dialog button { text-align: left; font-size: 17px; letter-spacing: .1em; text-transform: uppercase;
     background: var(--k-grau); color: #fff; border: 2px solid transparent; border-radius: 0; padding: 11px 16px; }
   .k-pause-dialog button.menu-nav-sel, .k-pause-dialog button:hover { outline: 0; border-color: #fff; background: var(--k-rot); }
+  .k-frage-knoepfe { display: flex; flex-direction: column; gap: 6px; }
+  /* Der Grund bleibt auch auf dem niedrigen Telefon sichtbar (dort blendet .k-pause-dialog p
+     die Erklaerzeilen des Cockpit-Menues aus). */
+  .k-pause-dialog .k-frage-text { display: block; white-space: pre-line; font-size: clamp(11px, 2.6vh, 13.5px); margin: 0 0 4px; line-height: 1.4; }
+  body > main { padding-left: max(24px, env(safe-area-inset-left)); padding-right: max(24px, env(safe-area-inset-right)); }
+  #mp-gemeinsam { margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.14); }
+  .mp-gemeinsam-h { font-size: 14px; letter-spacing: .08em; text-transform: uppercase; margin: 0 0 8px; }
+  .subpage:not(.on) #mp-gemeinsam, #tab-mp > #mp-gemeinsam { display: none; }
   /* Deckend: das Cockpit "Modern" ist hell, und ein halbdurchsichtiges Feld mit hellem
      Zeichen darauf verschwindet dort (Kontrasttest der Cockpit-Ansichten: 1,47:1). */
   .race-corner button#race-menue { font-size: 18px; background: #0a0e16; color: #fff; border-color: #0a0e16; }
@@ -2314,19 +2318,19 @@
     body.k-kacheln > main { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column;
       padding: clamp(6px, 1.6vh, 22px) clamp(8px, 2vw, 28px); }
     body.k-kacheln .tabpage.active { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; }
-    body.k-kacheln .k-haupt, body.k-kacheln .k-fahren { flex: 1 1 0; min-height: 0; }
-    .k-haupt { grid-template-rows: minmax(0, 1fr) auto; }
+    body.k-kacheln .k-fahren { flex: 1 1 0; min-height: 0; }
     .k-fahren { grid-template-rows: minmax(0, 1fr) minmax(40px, 21%); }
     .k-fahren-unten { min-height: 0; }
     .k-kachel { min-height: 0; overflow: hidden; }
     .k-kb { min-height: 0; }
-    .k-kk { font-size: clamp(10px, 1.9vh, 15px); padding: clamp(3px, .8vh, 7px) 8px; }
-    .k-kt { font-size: clamp(11px, 2.7vh, 20px); padding: clamp(3px, 1vh, 9px) 8px; }
-    .k-ki { font-size: clamp(9.5px, 1.75vh, 13px); padding: clamp(3px, .9vh, 8px) 10px clamp(6px, 1.6vh, 14px); line-height: 1.45; }
+    /* BESTELLT: "Schriftgröße etwas kleiner". */
+    .k-kk { font-size: clamp(9.5px, 1.7vh, 13px); padding: clamp(2px, .7vh, 6px) 8px; }
+    .k-kt { font-size: clamp(10.5px, 2.3vh, 17px); padding: clamp(3px, .9vh, 8px) 8px; }
+    .k-ki { font-size: clamp(9px, 1.6vh, 12px); padding: clamp(3px, .8vh, 7px) 10px clamp(6px, 1.5vh, 13px); line-height: 1.4; }
     .k-knopfreihe { padding: 0 10px clamp(5px, 1.3vh, 12px); }
     .k-knopf { padding: clamp(3px, .8vh, 7px) 10px; font-size: clamp(10px, 1.7vh, 12px); }
     .k-start { min-height: 0; }
-    .k-start-innen b { font-size: clamp(16px, 5.2vh, 50px); }
+    .k-start-innen b { font-size: clamp(15px, 4.6vh, 44px); }
     .k-start-innen small { font-size: clamp(9px, 1.6vh, 12px); }
     .k-start::before, .k-start::after { height: clamp(18px, 5vh, 54px); width: clamp(26px, 7vh, 80px); }
     .k-gitter { gap: clamp(5px, 1.3vh, 14px); }
@@ -2334,14 +2338,12 @@
   /* NIEDRIG (Telefon quer, bis 520 px Hoehe): Kopf in einer Zeile, Reiterleiste, eine Zeile
      Beschreibung und eine knappe Fussleiste - zusammen rund 110 px statt 190. */
   @media (max-height: 520px) {
-    header#k-kopf { padding: 3px 10px 2px; gap: 8px; }
+    header#k-kopf { padding: max(3px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) 3px max(10px, env(safe-area-inset-left)); gap: 8px; }
     #k-kopf .hdr-logo svg { width: 16px; height: 16px; }
     .k-logo { font-size: 13px; letter-spacing: .12em; }
-    .k-pfad { font-size: 13px; }
-    #k-zurueck { font-size: 18px; padding-right: 6px; }
     .k-status { font-size: 10px; } .k-status .wip-tag { display: none; }
     .k-sh { font-size: 9.5px; padding: 0 6px; margin: 2px 3px; }
-    .k-reiter button { padding: 4px 4px; font-size: 11px; }
+    .k-reiter button { padding: 3px 4px; font-size: 10.5px; }
     #k-unten { padding: 0 10px; }
     #k-beschr { padding: 3px 10px; font-size: 11px; line-height: 1.35; margin-bottom: 2px;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-left-width: 3px; }
@@ -2353,8 +2355,9 @@
     .misc-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
     .misc-tile b { font-size: 11px; padding: 4px 6px; }
     .misc-tile svg { width: 22px; height: 22px; margin: 5px auto 6px; }
-    /* Die Ueberschrift der Kachelseiten steht schon im Pfad der Kopfzeile. */
-    .subpage-home > h2 { display: none; }
+    /* Die Ueberschrift der Kachelseiten steht schon als hervorgehobener Reiter oben, die einer
+       offenen Unterseite in der zweiten Leiste. */
+    .subpage-home > h2, body.k-innen .subpage.on > h2 { display: none; }
     main { padding: 8px 10px; }
     .card { padding: 10px 12px; margin-bottom: 10px; }
     .k-pause-dialog { max-height: 94vh; overflow-y: auto; padding: 8px 12px 10px; gap: 4px; }
@@ -2376,9 +2379,9 @@
   /* HOCHFORMAT, schmal (Telefon im Browser): untereinander, mit Bildlauf. */
   @media (max-width: 760px) and (orientation: portrait) {
     header#k-kopf { grid-template-columns: 1fr auto; }
-    .k-pfad { grid-column: 1 / -1; order: 3; text-align: left; }
-    .k-haupt, .k-fahren, .k-fahren-unten, .k-haupt .k-klein-reihe { grid-template-columns: 1fr; grid-template-rows: none; }
-    .k-haupt > *, .k-fahren > * { grid-column: auto; }
+    #k-leiste { grid-column: 1 / -1; order: 3; }
+    .k-fahren, .k-fahren-unten { grid-template-columns: 1fr; grid-template-rows: none; }
+    .k-fahren > * { grid-column: auto; }
     .k-kb { min-height: 110px; max-height: 24vh; }
   }
   .menu-nav-sel { outline: 3px solid var(--bad); outline-offset: -2px; }
@@ -3487,16 +3490,21 @@
      Reiterleiste fuer L1/R1. Die alte Reiterleiste nav.tabs bleibt im DOM, verborgen:
      showTab() klickt genau diese Knoepfe, und viele Stellen rufen showTab(). -->
 <header id="k-kopf">
-  <button class="hdr-logo goto-tab" data-tab="haupt" title="Zum Hauptmenü" aria-label="Zum Hauptmenü">
+  <button class="hdr-logo goto-tab" data-tab="fahren" title="Fahren" aria-label="Fahren">
     <svg viewBox="0 0 512 512" aria-hidden="true"><use href="#om"/></svg>
     <span class="k-logo" data-i18n-skip>OMEGA SIM</span>
   </button>
-  <div class="k-pfad"><button type="button" id="k-zurueck" aria-label="Zurück">&lsaquo;</button><span id="k-pfad"></span></div>
+  <!-- BESTELLT: "Tabs nach ganz oben und 'Hauptmenü' Zurückpfeil wegtun ... Oben links nur
+       logo und rechts daneben alle tabs; ganz rechts oben Verbindungsstatus". -->
+  <nav class="k-leiste" id="k-leiste">
+    <span class="k-sh" aria-hidden="true" data-i18n-skip>L1</span>
+    <div class="k-reiter" id="k-reiter"></div>
+    <span class="k-sh" aria-hidden="true" data-i18n-skip>R1</span>
+  </nav>
   <div class="k-status" id="k-status"></div>
   <div class="tabs-wrap" id="tabs-wrap" hidden>
   <nav class="tabs">
   <button class="tab-btn active" data-tab="home" hidden style="display:none">Home</button>
-  <button class="tab-btn" data-tab="haupt" hidden style="display:none">Hauptmenü</button>
   <button class="tab-btn" data-tab="fahren" hidden style="display:none">Fahren</button>
   <button class="tab-btn" data-tab="garage">Garage</button>
   <button class="tab-btn" data-tab="race">Cockpit</button>
@@ -3524,9 +3532,11 @@
   <button class="tab-btn" data-tab="record" data-parent="misc" hidden style="display:none">Aufnahme-Modus</button>
   </nav>
   </div>
-  <nav class="k-leiste" id="k-leiste" hidden>
+  <!-- Die INNEREN Reiter (Optionen-Kategorien, Mehrspieler-Modi, BLE-Werkbank, ...) in einer
+       zweiten, flachen Zeile; L1/R1 wirken auf die innerste sichtbare Leiste. -->
+  <nav class="k-leiste k-leiste2" id="k-leiste2" hidden>
     <span class="k-sh" aria-hidden="true" data-i18n-skip>L1</span>
-    <div class="k-reiter" id="k-reiter"></div>
+    <div class="k-reiter" id="k-reiter2"></div>
     <span class="k-sh" aria-hidden="true" data-i18n-skip>R1</span>
   </nav>
 </header>
@@ -3569,60 +3579,11 @@
       <div class="app-fortschritt" id="app-update-balken" hidden><i></i></div>
     </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">0.8.19</span></span>
+        <span class="foot-ver">v<span id="app-version">0.8.20</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
         <button id="home-install" hidden>Als App installieren</button>
-      </div>
-    </div>
-  </section>
-
-  <!-- HAUPTMENUE. BESTELLT: "Ebene 1: Fahren, Optionen, Entwickler" - mit Nutzerentscheid:
-       FAHREN, MEHRSPIELER, OPTIONEN gross, darunter flach INFO, PATCHNOTES und ENTWICKLER
-       (nur mit Optionen -> System -> Entwicklertools zeigen oder ?dev). -->
-  <section class="tabpage k-schirm" id="tab-haupt">
-    <div class="k-gitter k-haupt">
-      <div class="k-kachel goto-tab k-gross" id="haupt-fahren" role="button" tabindex="0" data-d="Auto verbinden, Rennen einstellen, Strecke wählen und losfahren – alles auf einem Schirm." data-tab="fahren">
-        <span class="k-kk">Fahren</span>
-        <span class="k-kt">Auto &middot; Rennen &middot; Strecke</span>
-        <span class="k-kb" style="background-image:url(img/fahren.jpg)"></span>
-        <span class="k-ki" id="haupt-fahren-info"></span>
-        <span class="k-streifen" aria-hidden="true"></span>
-      </div>
-      <div class="k-kachel goto-tab" id="haupt-mp" role="button" tabindex="0" data-d="Ein Telefon oder PC ist Host, die anderen treten bei; ein Tablet wird Info-Screen." data-tab="mp">
-        <span class="k-kk">Mehrspieler</span>
-        <span class="k-kt">Im WLAN</span>
-        <span class="k-kb" style="background-image:url(img/mehrspieler.jpg)"></span>
-        <span class="k-ki" id="haupt-mp-info"></span>
-        <span class="k-streifen" aria-hidden="true"></span>
-      </div>
-      <div class="k-kachel goto-tab" id="haupt-opt" role="button" tabindex="0" data-d="Allgemein, Fahrgefühl, Rennen, Ton, Gegner, Controller, 2 Spieler, System." data-tab="options">
-        <span class="k-kk">Optionen</span>
-        <span class="k-kt">Alle Einstellungen</span>
-        <span class="k-kb" style="background-image:url(img/optionen.jpg)"></span>
-        <span class="k-ki" id="haupt-opt-info"></span>
-        <span class="k-streifen" aria-hidden="true"></span>
-      </div>
-      <div class="k-gitter k-klein-reihe">
-      <div class="k-kachel goto-tab k-klein" id="haupt-info" role="button" tabindex="0" data-d="Warum dieses Projekt existiert, was du brauchst, Funktionen, Danksagungen, Rechtliches." data-tab="info">
-        <span class="k-kk">Info</span>
-        <span class="k-kt">Wozu &middot; Danksagungen &middot; Rechtliches</span>
-        <span class="k-ki"></span>
-        <span class="k-streifen" aria-hidden="true"></span>
-      </div>
-      <div class="k-kachel goto-tab k-klein" id="haupt-patch" role="button" tabindex="0" data-d="Was sich je Wochenversion geändert hat." data-tab="info" data-k-sub="patchnotes">
-        <span class="k-kk">Patchnotes</span>
-        <span class="k-kt">Je Wochenversion</span>
-        <span class="k-ki"></span>
-        <span class="k-streifen" aria-hidden="true"></span>
-      </div>
-      <div class="k-kachel goto-tab k-klein" id="haupt-dev" role="button" tabindex="0" data-d="Doku, Programmierschule, BLE-Werkbank, Selbsttest, Code-Sonde, Zahlensysteme, Aufnahme-Modus." data-tab="misc" hidden>
-        <span class="k-kk">Entwickler</span>
-        <span class="k-kt">Werkbank</span>
-        <span class="k-ki"></span>
-        <span class="k-streifen" aria-hidden="true"></span>
-      </div>
       </div>
     </div>
   </section>
@@ -3635,17 +3596,10 @@
   <section class="tabpage k-schirm" id="tab-fahren">
     <div class="k-gitter k-fahren">
       <div class="k-kachel " id="fa-auto" role="button" tabindex="0" data-d="Öffnet sofort die Bluetooth-Auswahl.">
-        <span class="k-kk">Auto</span>
+        <span class="k-kk">Autos</span>
         <span class="k-kt" id="fa-auto-titel"></span>
         <span class="k-kb" style="background-image:url(img/auto.jpg)"></span>
         <span class="k-ki" id="fa-auto-info"></span>
-        <span class="k-streifen" aria-hidden="true"></span>
-      </div>
-      <div class="k-kachel " id="fa-renn" role="button" tabindex="0" data-d="Quadrat wechselt den Renntyp direkt hier, Kreuz öffnet alle Renneinstellungen, Ergebnisse und Sitzungen." data-quad="renntyp">
-        <span class="k-kk">Rennoptionen</span>
-        <span class="k-kt" id="fa-renn-titel"></span>
-        <span class="k-kb" style="background-image:url(img/rennen.jpg)"></span>
-        <span class="k-ki" id="fa-renn-info"></span>
         <span class="k-streifen" aria-hidden="true"></span>
       </div>
       <div class="k-kachel " id="fa-strecke" role="button" tabindex="0" data-d="Quadrat schaltet zwischen Auf der Bahn und Frei. Auf der Bahn: Streckenscan, Editor, Strecke laden. Frei: Druckvorlagen und Editor." data-quad="bahn">
@@ -3659,6 +3613,13 @@
           <button type="button" class="k-knopf" id="fa-laden">Laden</button>
           <button type="button" class="k-knopf" id="fa-druck" hidden>Druckvorlagen</button>
         </span>
+        <span class="k-streifen" aria-hidden="true"></span>
+      </div>
+      <div class="k-kachel " id="fa-renn" role="button" tabindex="0" data-d="Quadrat wechselt den Renntyp direkt hier, Kreuz öffnet alle Renneinstellungen, Ergebnisse und Sitzungen." data-quad="renntyp">
+        <span class="k-kk">Rennoptionen</span>
+        <span class="k-kt" id="fa-renn-titel"></span>
+        <span class="k-kb" style="background-image:url(img/rennen.jpg)"></span>
+        <span class="k-ki" id="fa-renn-info"></span>
         <span class="k-streifen" aria-hidden="true"></span>
       </div>
       <div class="k-gitter k-fahren-unten">
@@ -4499,8 +4460,9 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>0.8</span></b></p>
       <ul class="muted" id="patchnotes-08" style="padding-left:20px; line-height:1.7">
+        <li>Android-App im Vollbild ohne Status- und Navigationsleiste. Reiter oben neben dem Logo statt Hauptmen&uuml;, Mehrspieler mit den Wegen PC und Android-App, &bdquo;Trotzdem starten&ldquo; ohne Auto zum Ausprobieren (experimentell), rechter Stick rollt die Seite.</li>
         <li>Neues Men&uuml; passt sich jeder Bildschirmgr&ouml;&szlig;e an und f&uuml;llt am Telefon quer genau den Schirm; die Android-App bleibt im Querformat.</li>
-        <li>Neues Men&uuml; im Stil von Assetto Corsa Competizione (WIP): Titelbildschirm, Hauptmen&uuml;, Fahren-Schirm mit Auto, Rennoptionen und Strecke, PS5-Tasten (Kreuz, Kreis, L1/R1), Cockpit-Men&uuml; &uuml;ber Options halten.</li>
+        <li>Neues Men&uuml; im Stil von Assetto Corsa Competizione (WIP): Titelbildschirm, Fahren-Schirm mit Autos, Strecke und Rennoptionen, PS5-Tasten (Kreuz, Kreis, L1/R1), Cockpit-Men&uuml; &uuml;ber Options halten.</li>
         <li>Android-App (experimentell): dieselbe App als APK, mit Bluetooth-Br&uuml;cke, Host ohne PC und Updates ohne Neuinstallation.</li>
         <li>Info-Screen: ein Tablet oder Fernseher zeigt Strecke, alle Autos und die Rangliste, ohne eigenes Auto.</li>
         <li>Neuer Steuerungsmodus Pacejka (experimentell): Reifen mit Haftgrenze, am Limit Unter- und &Uuml;bersteuern mit Vibration.</li>
@@ -7077,13 +7039,33 @@
        mitfaehrt und ueber welche Leitung. Als erste Karte in den Renneinstellungen
        schob er ausserdem Rennmodus, Rundenlogik und Ergebnisse unter den Rand. -->
   <section class="tabpage" id="tab-mp">
-    <div class="card">
+    <!-- BESTELLT: "In Mehrspieler Menü: erstmal weitere Kacheln für die Modi: Über PC mit
+         Python, Über Android App, und dann darunter jeweils die Einstellungen". Beitreten,
+         Status und Rangliste gehoeren zu beiden Wegen: der Block #mp-gemeinsam wandert beim
+         Oeffnen in die jeweilige Unterseite (51-konsole.js) - so gibt es jede id nur einmal. -->
+    <div class="card subpage-home" id="sub-home-mp">
       <h2>Mehrspieler im WLAN <span class="wip-tag">experimentell</span></h2>
       <p class="muted">
-        Mehrere Telefone, jedes mit eigenem Auto, eine gemeinsame Rangliste. Auf dem PC
-        l&auml;uft dazu ein kleines Programm.
+        Mehrere Telefone, jedes mit eigenem Auto, eine gemeinsame Rangliste. Host ist entweder
+        ein PC mit einem kleinen Python-Programm oder ein Telefon mit der Android-App.
       </p>
 
+      <div class="misc-grid">
+        <button class="misc-tile subpage-open" data-sub="mp-pc">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="9" width="36" height="23" rx="2"/><path d="M18 40h12M24 32v8" stroke="var(--bad)"/></svg>
+          <b>&Uuml;ber PC mit Python</b>
+          <span>Der PC tr&auml;gt die Rangliste, die Telefone treten im WLAN bei.</span>
+        </button>
+        <button class="misc-tile subpage-open" data-sub="mp-app">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="15" y="4" width="18" height="40" rx="3"/><path d="M21 38h6" stroke="var(--bad)"/></svg>
+          <b>&Uuml;ber Android-App</b>
+          <span>Ein Telefon mit der App ist Host, ganz ohne PC.</span>
+        </button>
+      </div>
+    </div>
+    <div class="card subpage" id="sub-mp-pc">
+      <button class="misc-back subpage-back" data-sub="">&larr; Mehrspieler</button>
+      <h2>&Uuml;ber PC mit Python</h2>
       <!-- ---- DIE ANLEITUNG, UND WARUM SIE HIER STEHT --------------------------------
            Das Skript war bisher nur als Fliesstext erwaehnt: kein Link, nichts zum
            Kopieren, keine Reihenfolge. Wer es zum ersten Mal aufsetzt, braucht genau drei
@@ -7118,7 +7100,7 @@
           <a href="tools/omegasim_host.py" target="_blank" rel="noopener noreferrer"
              class="mp-datei" data-i18n-skip>tools/omegasim_host.py</a></li>
         <li><b>Die Adresse an die Telefone geben.</b>
-          Sie geh&ouml;rt oben in das Feld &bdquo;Host-Adresse&ldquo; und hat die Form, die
+          Sie geh&ouml;rt unten in das Feld &bdquo;Host-Adresse&ldquo; und hat die Form, die
           dort als Beispiel steht. Alle Ger&auml;te m&uuml;ssen im selben WLAN sein.</li>
         <li><b>Namen eintragen und auf Mitmachen dr&uuml;cken.</b>
           Der Name steht danach in der Rangliste. Jedes Telefon beh&auml;lt seinen eigenen
@@ -7164,17 +7146,6 @@
         Herkunft: Mitmachen ging nur, wenn die App vom Host kam. Wer eine &auml;ltere
         Fassung des Programms laufen hat, holt sie neu.
       </p>
-      <p class="muted" style="font-size:11.5px">
-        Ueber die Leitung gehen Rundenzahl, Rundenzeiten und Abgaenge. Keine Physik, keine
-        Lenkwerte: jedes Telefon rechnet seine eigene Physik und haelt seine eigene
-        Bluetooth-Verbindung. Reisst das WLAN ab, faehrt jeder weiter, nur die Rangliste
-        steht still.
-      </p>
-      <p class="muted" style="font-size:11.5px">
-        Gezaehlt werden GEMESSENE Runden, genau wie in der Rundenliste im Cockpit: die erste
-        Ueberfahrt startet die Uhr, erst die zweite ergibt eine Zeit. Nach drei Ueberfahrten
-        stehen also zwei Runden da. Bei Gleichstand fuehrt, wer zuerst dort war.
-      </p>
       <p class="muted" style="font-size:11.5px; border-left:3px solid var(--warn);
          padding-left:9px">
         Warum es experimentell ist, und der Grund ist eine Browserregel und kein Wackeln im
@@ -7187,6 +7158,17 @@
         vertretbar, aber es ist eine Ausnahme von einer Sicherheitsregel und keine
         Einstellung.
       </p>
+      <p class="muted" style="font-size:11.5px">
+        Der Ueberblicksschirm fuer den PC liegt beim Host unter /mp-overview.html. Er braucht
+        kein Bluetooth und deshalb auch keine Freigabe: auf http://localhost ist er ohnehin
+        ein secure context.
+      </p>
+      <div class="mp-platz"></div>
+    </div>
+    <div class="card subpage" id="sub-mp-app">
+      <button class="misc-back subpage-back" data-sub="">&larr; Mehrspieler</button>
+      <h2>&Uuml;ber Android-App</h2>
+      <p class="muted" id="mp-app-hinweis">Nur in der Android-App: dieses Telefon wird Host, die anderen finden es im WLAN. Im Browser geht das nicht &ndash; dort den Weg &uuml;ber den PC nehmen.</p>
       <!-- NUR IN DER ANDROID-APP: dieses Telefon wird Host, ohne PC. -->
       <div class="mp-app" id="mp-app" hidden>
         <p class="muted"><span class="wip-tag">experimentell</span> <b>Ohne PC: ein Telefon ist Host.</b> Die anderen Telefone suchen ihn im WLAN oder tragen die Adresse ein. Ein Tablet oder Fernseher &ouml;ffnet die Adresse mit /?info im Browser und wird Info-Screen, ganz ohne App.</p>
@@ -7198,6 +7180,11 @@
         <div id="mp-app-info" class="muted" data-i18n-skip></div>
         <div id="mp-gefunden" class="mp-gefunden"></div>
       </div>
+      <div class="mp-platz"></div>
+    </div>
+    <!-- Gemeinsam fuer beide Wege: beitreten, Status, Rangliste. -->
+    <div id="mp-gemeinsam">
+      <h3 class="mp-gemeinsam-h">Beitreten und Rangliste</h3>
       <div class="row" style="gap:10px; flex-wrap:wrap; align-items:flex-end">
         <label class="small" style="flex:1 1 200px">Host-Adresse
           <input type="text" id="mp-host" placeholder="http://192.168.1.50:8080"></label>
@@ -7214,9 +7201,15 @@
         <tr><td colspan="5" class="muted">keine Daten</td></tr>
       </tbody></table>
       <p class="muted" style="font-size:11.5px">
-        Der Ueberblicksschirm fuer den PC liegt beim Host unter /mp-overview.html. Er braucht
-        kein Bluetooth und deshalb auch keine Freigabe: auf http://localhost ist er ohnehin
-        ein secure context.
+        Ueber die Leitung gehen Rundenzahl, Rundenzeiten und Abgaenge. Keine Physik, keine
+        Lenkwerte: jedes Telefon rechnet seine eigene Physik und haelt seine eigene
+        Bluetooth-Verbindung. Reisst das WLAN ab, faehrt jeder weiter, nur die Rangliste
+        steht still.
+      </p>
+      <p class="muted" style="font-size:11.5px">
+        Gezaehlt werden GEMESSENE Runden, genau wie in der Rundenliste im Cockpit: die erste
+        Ueberfahrt startet die Uhr, erst die zweite ergibt eine Zeit. Nach drei Ueberfahrten
+        stehen also zwei Runden da. Bei Gleichstand fuehrt, wer zuerst dort war.
       </p>
     </div>
   </section>
@@ -7245,7 +7238,7 @@
   </div>
 
   <section class="tabpage" id="tab-control">
-    <button class="misc-back goto-tab" data-tab="options">&larr; Einstellungen</button>
+    <button class="misc-back goto-tab" data-tab="options">&larr; Optionen</button>
     <div class="card" id="race-card">
       <h2>Rennmodus <span class="wip-tag">WIP</span></h2>
       <!-- BESTELLT: "Renneinstellungen: ganz oben die knoepfe zum Rennen starten
@@ -7572,7 +7565,7 @@
       </div>
     </div>
     <div class="card subpage" id="sub-opt-general">
-      <button class="misc-back subpage-back" data-sub="">&larr; Einstellungen</button>
+      <button class="misc-back subpage-back" data-sub="">&larr; Optionen</button>
       <h2>Allgemein</h2>
 <div class="opt-head">Allgemein</div>
       <div class="opt-row"><div class="opt-label">Cockpit-Ansicht<small>Nur das Aussehen des
@@ -7864,7 +7857,7 @@
     </div>
     </div>
     <div class="card subpage" id="sub-opt-feel">
-      <button class="misc-back subpage-back" data-sub="">&larr; Einstellungen</button>
+      <button class="misc-back subpage-back" data-sub="">&larr; Optionen</button>
       <h2>Fahrgef&uuml;hl</h2>
       <div class="opt-head" style="margin-top:0">Fahrhilfe
         <span class="wip-tag">experimentell</span></div>
@@ -8304,7 +8297,7 @@
 
     </div>
     <div class="card subpage" id="sub-opt-sound">
-      <button class="misc-back subpage-back" data-sub="">&larr; Einstellungen</button>
+      <button class="misc-back subpage-back" data-sub="">&larr; Optionen</button>
       <h2>Ton</h2>
 <div class="opt-head">Ton</div>
       <div class="opt-row"><div class="opt-label">Motorsound</div><label class="tgl"><input type="checkbox" id="sound-enable" checked><span></span></label></div>
@@ -8629,7 +8622,7 @@
     </div>
     </div>
     <div class="card subpage" id="sub-opt-ghosts">
-      <button class="misc-back subpage-back" data-sub="">&larr; Einstellungen</button>
+      <button class="misc-back subpage-back" data-sub="">&larr; Optionen</button>
       <h2>Autonome Gegner</h2>
       <!-- BESTELLT: "tu die Labels weg bei den anderen Ghost Reglern ausser Boxenstopp."
            Die WIP-Kennzeichnung selbst ist raus (Kurvendrosselung/Ideallinie/
@@ -9079,7 +9072,7 @@
 
     </div>
     <div class="card subpage" id="sub-opt-pad">
-      <button class="misc-back subpage-back" data-sub="">&larr; Einstellungen</button>
+      <button class="misc-back subpage-back" data-sub="">&larr; Optionen</button>
       <h2>Controller</h2>
       <p class="muted">
         Verbinde einen Controller per USB/Bluetooth und drücke einen Knopf, damit der Browser ihn erkennt
@@ -9316,7 +9309,7 @@
     <!-- SYSTEM. Neu mit dem ACC-Menue: was vorher in der Garage (Sicherung, gemerkte Autos)
          und auf der Startseite (Sprache) stand, und der Schalter fuer die Entwicklertools. -->
     <div class="card subpage" id="sub-opt-system">
-      <button class="misc-back subpage-back" data-sub="">&larr; Einstellungen</button>
+      <button class="misc-back subpage-back" data-sub="">&larr; Optionen</button>
       <h2>System</h2>
       <div class="opt-row"><div class="opt-label">Sprache
           <small>Dieselbe Wahl wie auf dem Titelbildschirm.</small></div>
@@ -9384,7 +9377,7 @@
 
     </div>
     <div class="card subpage" id="sub-opt-zwei">
-      <button class="misc-back subpage-back" data-sub="">&larr; Einstellungen</button>
+      <button class="misc-back subpage-back" data-sub="">&larr; Optionen</button>
       <h2>2&nbsp;Spieler</h2>
       <div class="opt-head">Der Modus</div>
       <div class="opt-row"><div class="opt-label">2-Spieler-Modus<span
@@ -10009,7 +10002,15 @@
       <button type="button" data-pause="abbrechen">Rennen abbrechen</button>
       <button type="button" data-pause="optionen">Optionen</button>
       <button type="button" data-pause="fahren">Zum Fahren-Men&uuml;</button>
-      <button type="button" data-pause="haupt">Zum Hauptmen&uuml;</button>
+    </div>
+  </div>
+  <!-- FRAGE-DIALOG (51-konsole.js, konsoleFrage). Zuerst fuer "trotzdem starten": BESTELLT
+       "erlaube mir zum Debuggen auch auf Starten zu drücken, wenn kein Auto verbunden ist". -->
+  <div class="k-pause" id="k-frage" hidden>
+    <div class="k-pause-dialog">
+      <h2 id="k-frage-titel"></h2>
+      <p class="muted k-frage-text" id="k-frage-text"></p>
+      <div class="k-frage-knoepfe" id="k-frage-knoepfe"></div>
     </div>
   </div>
 </main>

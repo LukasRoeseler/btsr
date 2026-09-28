@@ -13,8 +13,13 @@
   // DIE MECHANIK DARUNTER BLEIBT: showTab() und showSubpage() (10-ble-explorer.js), die
   // Zeilenliste von menuNav (50b-menu-nav.js) und jede Element-id. Diese Schicht legt
   // Kopfzeile, Pfad, Reiterleiste (L1/R1), Rueckweg (Kreis) mit Stapel, Beschreibung und
-  // Fussleiste darueber und baut die drei neuen Schirme (#tab-home als Titel, #tab-haupt,
-  // #tab-fahren) sowie das Cockpit-Menue (#k-pause, Options 1 s halten).
+  // Fussleiste darueber und baut die neuen Schirme (#tab-home als Titel, #tab-fahren) sowie
+  // das Cockpit-Menue (#k-pause, Options 1 s halten) und den Frage-Dialog (#k-frage).
+  //
+  // KEIN HAUPTMENUE MEHR. BESTELLT: "Tabs nach ganz oben und 'Hauptmenü' Zurückpfeil wegtun,
+  // zur Landing page muss ich nicht zurück, dafür kann ich die App gerne neu starten; dann
+  // wie vorher: Oben links nur logo und rechts daneben alle tabs". Der Titel fuehrt direkt
+  // nach FAHREN; die Ebene 1 ist die Wurzel, Kreis tut dort nichts.
   //
   // BEIM LADEN NICHTS AUSFUEHREN, was spaetere Dateien braucht: garage, currentTrackTiles,
   // raceState stehen als const/let weiter unten und liegen hier noch in der temporalen
@@ -23,22 +28,21 @@
 
   const K_EBENE1 = ['fahren', 'mp', 'options', 'info', 'misc'];
   const K_NAME = {
-    home: 'Titel', haupt: 'Hauptmenü', fahren: 'Fahren', garage: 'Garage', race: 'Cockpit',
+    home: 'Titel', fahren: 'Fahren', garage: 'Garage', race: 'Cockpit',
     options: 'Optionen', control: 'Renneinstellungen', track: 'Strecke', mp: 'Mehrspieler',
     info: 'Info', misc: 'Entwickler', doc: 'Doku', school: 'Programmierschule',
     dev: 'BLE-Werkbank', selftest: 'Selbsttest', probe: 'Code-Sonde', numtrain: 'Zahlensysteme',
     record: 'Aufnahme-Modus',
   };
-  // Der Pfad in der Kopfzeile: woher man kommt. Der Stapel sagt, wohin Kreis fuehrt; das
-  // hier ist nur die Anzeige, damit man weiss, wo man steht.
+  // Zu welchem Reiter der Ebene 1 eine tiefe Seite gehoert: der Reiter bleibt hervorgehoben,
+  // und Kreis fuehrt dorthin, wenn der Stapel leer ist.
   const K_ELTERN = {
-    fahren: 'haupt', mp: 'haupt', options: 'haupt', info: 'haupt', misc: 'haupt',
     garage: 'fahren', control: 'fahren', track: 'fahren',
     doc: 'misc', school: 'misc', dev: 'misc', selftest: 'misc', probe: 'misc',
     numtrain: 'misc', record: 'misc',
   };
   const K_BILD = {
-    home: 'titel', haupt: 'haupt', fahren: 'fahren', garage: 'garage', control: 'rennen',
+    home: 'titel', fahren: 'fahren', garage: 'garage', control: 'rennen',
     mp: 'mehrspieler', options: 'optionen', info: 'garage', misc: 'mehrspieler',
   };
 
@@ -46,6 +50,7 @@
   let kZurueckLaeuft = false;
   let kEingabe = 'maus';            // 'pad' | 'tasten' | 'maus' - fuer die Tastensymbole
   let kPauseOffen = false;
+  let kFrageOffen = false;
   let kLetzterTab = 'home';
 
   function kAktiverTab() {
@@ -54,8 +59,9 @@
   }
   // MENUE statt FAHREN: ueberall ausser im Cockpit, und im Cockpit, solange dessen Menue
   // offen ist. Daran haengt, ob Kreuz/Kreis/Quadrat/L1/R1/Options Menue- oder Fahrtasten sind.
-  function konsoleMenue() { return kAktiverTab() !== 'race' || kPauseOffen; }
+  function konsoleMenue() { return kAktiverTab() !== 'race' || kPauseOffen || kFrageOffen; }
   function konsolePauseOffen() { return kPauseOffen; }
+  function konsoleFrageOffen() { return kFrageOffen; }
   function konsoleDev() {
     const cb = $('setting-dev');
     return !!(cb && cb.checked) || /[?&]dev\b/.test(location.search);
@@ -63,7 +69,10 @@
 
   // ---- Wechsel verfolgen: aus dem .tab-btn-Klick gerufen (10-ble-explorer.js) --------
   function konsoleNachTab(neu, alt) {
-    if (!kZurueckLaeuft && alt && alt !== neu) {
+    // Die Ebene 1 ist die Wurzel: wer dort ankommt, hat keinen Rueckweg mehr (Kreis tut
+    // dort nichts), also auch keinen Stapel. Der Titel kommt nie auf den Stapel.
+    if (K_EBENE1.includes(neu)) kStapel = [];
+    else if (!kZurueckLaeuft && alt && alt !== neu && alt !== 'home') {
       kStapel.push(alt);
       if (kStapel.length > 40) kStapel.shift();
     }
@@ -72,18 +81,26 @@
     // Nach dem Umschalten zeichnen, nicht davor: der neue Tab ist erst danach .active.
     setTimeout(() => {
       konsoleZeichnen();
-      // Auf den Kachelschirmen des ACC-Menues ist die Auswahl von Anfang an sichtbar: FAHREN
-      // im Hauptmenue, im Fahren-Schirm AUTO ohne Auto und RENNEN STARTEN mit Auto.
-      if (neu === 'haupt' || neu === 'fahren') {
+      // Die Beschreibung gehoerte zur Auswahl der vorigen Seite (gesehen: im Mehrspieler stand
+      // noch "AUTOS - Öffnet sofort die Bluetooth-Auswahl").
+      if (!menuNavGezeigt) konsoleFokus(null);
+      // Auf dem Fahren-Schirm ist die Auswahl von Anfang an sichtbar: AUTO ohne Auto und
+      // RENNEN STARTEN mit Auto.
+      if (neu === 'fahren') {
         menuNavEnsureContext();
-        if (!menuNavGezeigt) {
-          const ziel = neu === 'haupt' ? 'haupt-fahren' : (playerCar ? 'fa-start' : 'fa-auto');
-          konsoleFokusAuf(ziel);
-        }
+        if (!menuNavGezeigt) konsoleFokusAuf(playerCar ? 'fa-start' : 'fa-auto');
       }
     }, 0);
   }
-  function konsoleNachSubpage() { setTimeout(konsoleZeichnen, 0); }
+  function konsoleNachSubpage(key) {
+    // Mehrspieler: Beitreten, Status und Rangliste gehoeren zu beiden Wegen (PC und App) und
+    // wandern in die Unterseite, die gerade aufgeht - sofort, damit die Zeilenliste von
+    // menuNav sie schon beim ersten Druck sieht.
+    const mpg = $('mp-gemeinsam');
+    const platz = key && document.querySelector('#sub-' + key + ' .mp-platz');
+    if (mpg && platz && mpg.parentNode !== platz) platz.appendChild(mpg);
+    setTimeout(konsoleZeichnen, 0);
+  }
 
   function konsoleZeige(tab, sub) {
     showTab(tab);
@@ -96,30 +113,33 @@
   // Unterseite), dann der Stapel, zuletzt die Eltern-Ebene.
   function konsoleZurueck() {
     if (typeof optInfoOffen === 'function' && optInfoOffen()) { optInfoSchliessen(); return true; }
+    if (kFrageOffen) { konsoleFrageZu(); return true; }
     const lb = $('lb-wrap');
     if (lb && lb.classList.contains('on') && $('lb-close')) { $('lb-close').click(); return true; }
     if (kPauseOffen) { konsolePauseZu(); return true; }
     const tab = kAktiverTab();
     if (document.querySelector('.tabpage.active .subpage.on')) { showSubpage(''); return true; }
-    if (tab === 'home') return false;
+    if (tab === 'home' || K_EBENE1.includes(tab)) return false;
     let ziel = null;
     while (kStapel.length && !ziel) {
       const z = kStapel.pop();
-      if (z !== tab) ziel = z;
+      if (z !== tab && z !== 'home') ziel = z;
     }
-    if (!ziel) ziel = K_ELTERN[tab] || (tab === 'haupt' ? 'home' : 'haupt');
+    if (!ziel) ziel = K_ELTERN[tab] || 'fahren';
     kZurueckLaeuft = true;
     try { showTab(ziel); } finally { kZurueckLaeuft = false; }
     menuNavTonAbwaehlen();
     return true;
   }
 
-  // ---- Reiterleiste (L1/R1) ---------------------------------------------------------
+  // ---- Reiterleisten (L1/R1) --------------------------------------------------------
   //
-  // Die INNERSTE Ebene bekommt die Schultertasten: in einer offenen Optionen-Kategorie die
-  // Kategorien, in der BLE-Werkbank ihre Unterreiter, in den Renneinstellungen die drei
-  // Karten, auf Ebene 1 die fuenf Hauptbereiche.
-  function konsoleReiter() {
+  // OBEN, neben dem Logo, immer die Ebene 1. Darunter, nur wenn es sie gibt, eine flache
+  // zweite Leiste mit der inneren Ebene: in einer offenen Unterseite ihre Geschwister (die
+  // Optionen-Kategorien, die Mehrspieler-Wege), in der BLE-Werkbank ihre Unterreiter, in den
+  // Renneinstellungen die drei Karten. Die Schultertasten wirken auf die innerste.
+  function konsoleReiter() { return konsoleReiterInnen() || konsoleReiterEbene1(); }
+  function konsoleReiterInnen() {
     const tab = kAktiverTab();
     const tp = document.querySelector('.tabpage.active');
     if (!tp || tab === 'home' || tab === 'race') return null;
@@ -154,21 +174,27 @@
         },
       }));
     }
-    if (tab === 'haupt' || K_EBENE1.includes(tab)) {
-      // Reiterwechsel auf Ebene 1 ERSETZT den Schirm und legt nichts auf den Stapel: Kreis
-      // fuehrt von jedem der Hauptbereiche direkt ins Hauptmenue, nicht durch alle Reiter,
-      // die man unterwegs angesehen hat.
-      return K_EBENE1.filter((x) => x !== 'misc' || konsoleDev()).map((x) => ({
-        text: t(K_NAME[x]), an: x === tab,
-        wahl: () => {
-          if (x === tab) return;
-          const vomHaupt = tab === 'haupt';
-          kZurueckLaeuft = !vomHaupt;
-          try { konsoleZeige(x); } finally { kZurueckLaeuft = false; }
-        },
-      }));
-    }
     return null;
+  }
+  // Die Ebene 1 ist die Wurzel: ein Wechsel dort leert den Stapel (konsoleNachTab). Auf einer
+  // tiefen Seite (Garage, Strecke, Doku, ...) bleibt ihr Reiter hervorgehoben. Ein Klick auf
+  // den schon gewaehlten Reiter schliesst eine offene Unterseite - fuer Maus und Touch der
+  // Weg zurueck zu den Kacheln, jetzt wo der Zurueckpfeil oben fehlt.
+  function konsoleReiterEbene1() {
+    const tab = kAktiverTab();
+    if (!tab || tab === 'home' || tab === 'race') return null;
+    let wurzel = tab;
+    while (K_ELTERN[wurzel]) wurzel = K_ELTERN[wurzel];
+    return K_EBENE1.filter((x) => x !== 'misc' || konsoleDev()).map((x) => ({
+      text: t(K_NAME[x]), an: x === wurzel,
+      wahl: () => {
+        if (x === tab) {
+          if (document.querySelector('.tabpage.active .subpage.on')) showSubpage('');
+          return;
+        }
+        konsoleZeige(x);
+      },
+    }));
   }
   function konsoleReiterSchritt(d) {
     const r = konsoleReiter();
@@ -213,18 +239,25 @@
     return true;
   }
 
-  // ---- Titel: jede Taste fuehrt ins Hauptmenue ---------------------------------------
+  // ---- Titel: jede Taste fuehrt nach FAHREN ------------------------------------------
+  // BESTELLT: "Standardmäßig komme ich danach in den Tab, der 'FAHREN' heißt."
   function konsoleTitelWeiter() {
     if (kAktiverTab() !== 'home') return false;
-    konsoleZeige('haupt');
+    kStapel = [];
+    konsoleZeige('fahren');
     return true;
   }
 
   // ---- Fahren: Start und Auto --------------------------------------------------------
   async function konsoleAuto() {
     if (!playerCar && !garage.some((c) => c.device)) {
-      await garageConnect();
+      const lage = await garageConnect({ stumm: true });
       konsoleFahrenZeichnen();
+      if (lage) {
+        konsoleFrage(t('Bluetooth nicht bereit'), t(bluetoothLageText(lage)),
+          [[t('Nochmal verbinden'), () => konsoleAuto()], [t('Schließen'), null]]);
+        return;
+      }
       // Nach dem Verbinden auf RENNEN STARTEN, wie bestellt: wenige Klicks bis zum Fahren.
       if (playerCar) konsoleFokusAuf('fa-start');
       return;
@@ -233,13 +266,93 @@
   }
   // RENNEN STARTEN: fehlt das Auto, erst die Bluetooth-Auswahl, dann ins Cockpit und die
   // Startampel. Freies Training startet genauso (die Ampel gibt den Beginn der Sitzung).
-  async function konsoleLosfahren() {
-    if (!playerCar) {
-      await garageConnect();
-      if (!playerCar) { konsoleFahrenZeichnen(); return; }
+  //
+  // TROTZDEM STARTEN. BESTELLT: "erlaube mir zum Debuggen auch auf Starten zu drücken, wenn
+  // kein Auto verbunden ist. Aktuell kommt 'Bluetooth Adapter ist aus...'. Das ist ok, aber
+  // ich will eine Option 'trotzdem starten', damit ich dann sehen kann, ob das Cockpit da ist
+  // und noch gut funktioniert." Statt alert() ein Dialog, der mit dem Pad bedienbar ist.
+  async function konsoleLosfahren(ohneAuto) {
+    if (!playerCar && !ohneAuto) {
+      const lage = await garageConnect({ stumm: true });
+      if (!playerCar) {
+        konsoleFahrenZeichnen();
+        const grund = lage ? t(bluetoothLageText(lage)) : t('Die Bluetooth-Auswahl wurde ohne Auto geschlossen.');
+        konsoleFrage(t('Kein Auto verbunden'),
+          grund + '\n\n' + t('Zum Ausprobieren geht es trotzdem ins Cockpit: Anzeigen, Menüs, Ampel und Ton laufen, an ein Auto wird nichts gesendet.'),
+          [[t('Trotzdem starten'), () => konsoleLosfahren(true)],
+           [t('Nochmal verbinden'), () => konsoleLosfahren()],
+           [t('Abbrechen'), null]], true);
+        return;
+      }
     }
     showTab('race');
     if (raceState === 'idle' || raceState === 'finished') toggleRace();
+  }
+
+  // ---- Frage-Dialog (#k-frage): wie das Cockpit-Menue, mit dem Pad bedienbar ----------
+  // knoepfe: [[Text, Funktion oder null], ...]; der erste ist vorgewaehlt.
+  function konsoleFrage(titel, text, knoepfe, wip) {
+    const d = $('k-frage');
+    if (!d) return;
+    $('k-frage-titel').textContent = titel;
+    if (wip) {
+      const w = document.createElement('span');
+      w.className = 'wip-tag';
+      w.textContent = t('experimentell');
+      $('k-frage-titel').appendChild(document.createTextNode(' '));
+      $('k-frage-titel').appendChild(w);
+    }
+    $('k-frage-text').textContent = text || '';
+    const host = $('k-frage-knoepfe');
+    host.innerHTML = '';
+    knoepfe.forEach(([tx, fn]) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = tx;
+      b.addEventListener('click', () => { konsoleFrageZu(); if (fn) fn(); });
+      host.appendChild(b);
+    });
+    kFrageOffen = true;
+    d.hidden = false;
+    menuNavEnsureContext();
+    menuNavIndex = 0; menuNavGezeigt = true;
+    menuNavRender();
+    konsoleZeichnen();
+  }
+  function konsoleFrageZu() {
+    const d = $('k-frage');
+    kFrageOffen = false;
+    if (d) d.hidden = true;
+    document.querySelectorAll('.menu-nav-sel').forEach((el) => el.classList.remove('menu-nav-sel'));
+    menuNavEnsureContext();
+    if (kAktiverTab() === 'fahren') konsoleFokusAuf(playerCar ? 'fa-start' : 'fa-auto');
+    konsoleZeichnen();
+  }
+
+  // ---- Rechter Stick: Bildlauf (aus pollGamepad) --------------------------------------
+  // BESTELLT: "rechter Stick soll scrollen können". Vorher stand dort document.body.scrollTop
+  // - im Standardmodus rollt der body aber nicht, das Dokument tut es (scrollingElement), und
+  // der Stick blieb wirkungslos. Jetzt: zuerst ein offener Dialog, dann die Seite. Die
+  // Bruchteile werden gesammelt, sonst verschluckt das Runden auf ganze Pixel einen leicht
+  // geneigten Stick.
+  let kRollRest = 0;
+  function konsoleBildlauf(dy) {
+    kRollRest += dy;
+    const ganz = Math.trunc(kRollRest);
+    if (!ganz) return false;
+    kRollRest -= ganz;
+    const ziele = [
+      kFrageOffen && document.querySelector('#k-frage .k-pause-dialog'),
+      kPauseOffen && document.querySelector('#k-pause .k-pause-dialog'),
+      document.scrollingElement, document.body,
+    ];
+    for (const el of ziele) {
+      if (!el) continue;
+      const vor = el.scrollTop;
+      el.scrollTop = vor + ganz;
+      if (el.scrollTop !== vor) return true;
+    }
+    return false;
   }
   function konsoleFokusAuf(id) {
     const rows = menuNavRows();
@@ -282,15 +395,14 @@
     if (document.body.classList.contains('race-fs')) exitRaceFullscreen();
     if (was === 'optionen') konsoleZeige('options');
     else if (was === 'fahren') konsoleZeige('fahren');
-    else if (was === 'haupt') konsoleZeige('haupt');
   }
 
   // ---- Zeichnen: Kopf, Reiter, Beschreibung, Fuss, Hintergrund -----------------------
   function konsoleZeichnen() {
     const tab = kAktiverTab();
     document.body.classList.toggle('k-titel-an', tab === 'home');
-    // Die zwei Kachelschirme fuellen genau den Bildschirm (CSS: body.k-kacheln).
-    document.body.classList.toggle('k-kacheln', tab === 'haupt' || tab === 'fahren');
+    // Der Fahren-Schirm fuellt genau den Bildschirm (CSS: body.k-kacheln).
+    document.body.classList.toggle('k-kacheln', tab === 'fahren');
     // Hintergrund
     const bg = $('k-bg');
     if (bg) {
@@ -298,22 +410,6 @@
       if (tab === 'track') name = ($('setting-ontrack') || {}).checked ? 'strecke-bahn' : 'strecke-frei';
       const url = 'url(img/' + name + '-bg.jpg)';
       if (bg.dataset.bild !== name) { bg.style.backgroundImage = url; bg.dataset.bild = name; }
-    }
-    // Pfad
-    const pfad = [];
-    for (let x = tab; x && pfad.length < 4; x = K_ELTERN[x]) pfad.unshift(t(K_NAME[x] || x));
-    const offen = document.querySelector('.tabpage.active .subpage.on h2');
-    if (offen) pfad.push(offen.textContent.replace(/\s+/g, ' ').trim());
-    const pEl = $('k-pfad');
-    if (pEl) {
-      pEl.innerHTML = '';
-      pfad.forEach((p, i) => {
-        const s = document.createElement(i === pfad.length - 1 ? 'b' : 'span');
-        // Grossbuchstaben macht das CSS (.k-pfad): der Text selbst bleibt der Woerterbuch-
-        // schluessel, falls ihn der Textknoten-Uebersetzer spaeter noch einmal sieht.
-        s.textContent = (i ? ' / ' : '') + p;
-        pEl.appendChild(s);
-      });
     }
     // Status
     const st = $('k-status');
@@ -330,28 +426,28 @@
       w.textContent = t('Neues Menü');
       st.appendChild(w);
     }
-    // Reiter
-    const leiste = $('k-leiste');
-    const r = konsoleReiter();
-    if (leiste) {
+    // Reiter: oben die Ebene 1, darunter die innere Leiste, falls es eine gibt. Die L1/R1-
+    // Hinweise stehen an der Leiste, auf die die Schultertasten gerade wirken.
+    const r1 = konsoleReiterEbene1();
+    const r2 = konsoleReiterInnen();
+    const fuell = (leiste, host, r, schulter) => {
+      if (!leiste) return;
       leiste.hidden = !r;
-      const innen = $('k-reiter');
-      if (r && innen) {
-        innen.innerHTML = '';
-        r.forEach((x) => {
-          const b = document.createElement('button');
-          b.type = 'button';
-          b.textContent = x.text;
-          if (x.an) b.className = 'an';
-          b.addEventListener('click', () => x.wahl());
-          innen.appendChild(b);
-        });
-      }
-    }
-    // Entwickler ein-/ausblenden
-    const dev = konsoleDev();
-    if ($('haupt-dev')) $('haupt-dev').hidden = !dev;
-    if (tab === 'haupt') konsoleHauptZeichnen();
+      leiste.classList.toggle('k-l1r1', !!(r && schulter));
+      if (!r || !host) return;
+      host.innerHTML = '';
+      r.forEach((x) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.textContent = x.text;
+        if (x.an) b.className = 'an';
+        b.addEventListener('click', () => x.wahl());
+        host.appendChild(b);
+      });
+    };
+    fuell($('k-leiste'), $('k-reiter'), r1, !r2);
+    fuell($('k-leiste2'), $('k-reiter2'), r2, true);
+    document.body.classList.toggle('k-innen', !!r2);
     if (tab === 'fahren') konsoleFahrenZeichnen();
     if (tab === 'track') konsoleStreckeModus();
     konsoleFussZeichnen();
@@ -403,7 +499,9 @@
     const f = $('k-fuss');
     if (!f) return;
     const row = rowArg || (menuNavRows()[menuNavIndex]);
-    const teile = [[konsoleSymbol('ok'), t('Bestätigen')], [konsoleSymbol('zurueck'), t('Zurück')],
+    // "Zurück" steht im Woerterbuch als "Undo" (der Knopf im Streckeneditor nimmt einen Schritt
+    // zurueck) - hier ist es der Rueckweg, deshalb ein eigenes Wort statt t().
+    const teile = [[konsoleSymbol('ok'), t('Bestätigen')], [konsoleSymbol('zurueck'), lang === 'en' ? 'Back' : 'Zurück'],
       [konsoleSymbol('nav'), t('Navigieren')]];
     if (row && (row.kind === 'range' || row.kind === 'select' || row.kind === 'toggle')) teile.push([konsoleSymbol('lr'), t('Wert ändern')]);
     if (row && row.el && row.el.dataset && row.el.dataset.quad) teile.push([konsoleSymbol('quad'), t('Wechseln')]);
@@ -412,7 +510,7 @@
     f.innerHTML = teile.map(([g, tx]) => '<span class="k-h">' + g + '<span>' + tx + '</span></span>').join('');
   }
 
-  // ---- Hauptmenue und Fahren: die Info-Zeilen aus dem echten Zustand ------------------
+  // ---- Fahren: die Info-Zeilen aus dem echten Zustand ---------------------------------
   function kZeilen(host, paare) {
     if (!host) return;
     host.innerHTML = '';
@@ -440,27 +538,10 @@
     try { return currentTrackTiles.length > 1 ? trackToCode(currentTrackTiles) : ''; } catch (e) { return ''; }
   }
 
-  function konsoleHauptZeichnen() {
-    const autos = kAutos();
-    const bahn = ($('setting-ontrack') || {}).checked;
-    let beste = '–';
-    try { if (dashLapTimes.length) beste = (Math.min.apply(null, dashLapTimes) / 1000).toFixed(2).replace('.', ',') + ' s'; } catch (e) { /* noch nichts */ }
-    kZeilen($('haupt-fahren-info'), [
-      [t('Auto'), autos.length ? autos.map((c) => garageLabel(c)).join(' · ') : t('keines')],
-      [t('Strecke'), (bahn ? t('Bahn') : t('Frei')) + ' · ' + kTeile() + ' ' + t('Teile')],
-      [t('Bestzeit'), beste],
-    ]);
-    let host = '–';
-    try { host = mp.an ? mp.host.replace(/^https?:\/\//, '') : t('nicht verbunden'); } catch (e) { /* ohne Mehrspieler */ }
-    kZeilen($('haupt-mp-info'), [['Host', host]]);
-    kZeilen($('haupt-opt-info'), [[t('Abstimmung'), ($('race-act-mode-txt') || {}).textContent || '–'],
-      [t('Steuerungsmodus'), (($('phys-mode') || {}).selectedOptions || [{}])[0].textContent || '–']]);
-  }
-
   function konsoleFahrenZeichnen() {
     if (!$('fa-auto')) return;
     const autos = kAutos();
-    $('fa-auto-titel').textContent = autos.length ? autos.length + ' ' + t('verbunden') : t('Auto verbinden');
+    $('fa-auto-titel').textContent = autos.length ? autos.length + ' ' + t('verbunden') : t('Autos verbinden');
     kZeilen($('fa-auto-info'), autos.length
       ? autos.map((c) => [kPunkt(carColor(c).hex, garageLabel(c)), t(K_ROLLE[c.role] || c.role)])
       : [[t('Status'), t('nicht verbunden')], ['✕', t('Bluetooth-Auswahl öffnen')]]);
@@ -631,7 +712,6 @@
     kn('fa-profil', () => konsoleZeige('options', 'opt-feel'));
     kn('fa-gegner', () => konsoleZeige('options', 'opt-ghosts'));
     kn('race-menue', () => konsolePauseAuf());
-    kn('k-zurueck', () => konsoleZurueck());
     document.querySelectorAll('#k-pause [data-pause]').forEach((b) => {
       b.addEventListener('click', () => konsolePauseWahl(b.dataset.pause));
     });
@@ -646,8 +726,11 @@
     // Der Status (Autos) und die Fahren-Kacheln aendern sich auch ohne Tab-Wechsel.
     setInterval(() => {
       const tab = kAktiverTab();
-      if (tab === 'fahren' || tab === 'haupt') konsoleZeichnen();
+      if (tab === 'fahren') konsoleZeichnen();
     }, 1500);
+    // Der gemeinsame Mehrspieler-Block steht zuerst beim Weg ueber den PC.
+    const mpg = $('mp-gemeinsam'), platz = document.querySelector('#sub-mp-pc .mp-platz');
+    if (mpg && platz) platz.appendChild(mpg);
     konsoleZeichnen();
   }
   setTimeout(konsoleEinrichten, 0);

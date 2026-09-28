@@ -9604,9 +9604,10 @@
   // haelt genau das fest: jede Seite und jede Unterseite ist vom Titel aus erreichbar.
   stAdd('ACC-Menü: jede Seite und Unterseite ist erreichbar', () => {
     // Kanten: Kacheln mit data-tab (goto-tab), Unterseiten-Kacheln (data-sub), die Reiter der
-    // Ebene 1 und die Kacheln des Fahren-Schirms (JS-Knoepfe, hier von Hand genannt).
-    const kanten = { home: ['haupt'], haupt: [], fahren: ['garage', 'control', 'track', 'race'] };
-    K_EBENE1.forEach((x) => { kanten.haupt.push(x); });
+    // Ebene 1 (oben neben dem Logo, von jeder Seite aus) und die Kacheln des Fahren-Schirms
+    // (JS-Knoepfe, hier von Hand genannt). Der Titel fuehrt nach Fahren.
+    const kanten = { home: ['fahren'], fahren: ['garage', 'control', 'track', 'race'] };
+    K_EBENE1.forEach((x) => { kanten.fahren.push(x); });
     const tabs = [...document.querySelectorAll('.tabpage')].map((t) => t.id.replace(/^tab-/, ''));
     tabs.forEach((t) => {
       kanten[t] = kanten[t] || [];
@@ -9638,28 +9639,110 @@
       kStapel = [];
       showTab('home');
       window.dispatchEvent(new KeyboardEvent('keydown', { key: 'x', bubbles: true }));
-      if (kAktiverTab() !== 'haupt') f.push('Taste auf dem Titel fuehrt nach ' + kAktiverTab());
-      showTab('fahren');
+      if (kAktiverTab() !== 'fahren') f.push('Taste auf dem Titel fuehrt nach ' + kAktiverTab() + ' statt nach Fahren');
       konsoleReiterSchritt(1);
       if (kAktiverTab() !== 'mp') f.push('R1 im Fahren-Schirm fuehrt nach ' + kAktiverTab());
+      if (konsoleZurueck() || kAktiverTab() !== 'mp') f.push('Kreis auf der Ebene 1 tut etwas (' + kAktiverTab() + ')');
+      showTab('fahren');
+      showTab('garage');
       konsoleZurueck();
-      if (kAktiverTab() !== 'haupt') f.push('Kreis nach dem Reiterwechsel fuehrt nach ' + kAktiverTab() + ' statt ins Hauptmenue');
-      konsoleZurueck();
-      if (kAktiverTab() !== 'home') f.push('Kreis im Hauptmenue fuehrt nach ' + kAktiverTab() + ' statt zum Titel');
+      if (kAktiverTab() !== 'fahren') f.push('Kreis in der Garage fuehrt nach ' + kAktiverTab() + ' statt nach Fahren');
+      showTab('garage');
+      const r1 = konsoleReiterEbene1() || [];
+      if (!r1.some((x) => x.an && x.text === t('Fahren'))) f.push('in der Garage ist oben nicht FAHREN hervorgehoben');
+      if (konsoleReiterInnen()) f.push('die Garage hat eine zweite Leiste');
       showTab('options');
       showSubpage('opt-feel');
+      konsoleZeichnen();
+      if ($('k-leiste2').hidden) f.push('in einer Kategorie fehlt die zweite Leiste');
       konsoleReiterSchritt(1);
       const offen = document.querySelector('#tab-options .subpage.on');
       if (!offen || offen.id === 'sub-opt-feel') f.push('R1 in einer Optionen-Kategorie wechselt nicht die Kategorie');
       konsoleZurueck();
       if (document.querySelector('#tab-options .subpage.on')) f.push('Kreis schliesst die Kategorie nicht');
       if (kAktiverTab() !== 'options') f.push('Kreis in der Kategorie verlaesst die Optionen');
+      // Mehrspieler: zwei Wege, der gemeinsame Block wandert mit.
+      showTab('mp');
+      showSubpage('mp-app');
+      if (!$('sub-mp-app').contains($('mp-host'))) f.push('Beitreten fehlt beim Weg ueber die App');
+      showSubpage('mp-pc');
+      if (!$('sub-mp-pc').contains($('mp-rows'))) f.push('Rangliste fehlt beim Weg ueber den PC');
+      if ((konsoleReiterInnen() || []).length !== 2) f.push('Mehrspieler: zweite Leiste hat nicht 2 Wege');
     } finally {
       showSubpage('');
       kStapel = merkStapel;
       if (merk) showTab(merk);
     }
-    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Titel -> Hauptmenue, R1 ersetzt, Kreis eine Ebene, Kategorien mit R1' };
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Titel -> Fahren, Ebene 1 ist Wurzel, Kreis eine Ebene, Kategorien und Mehrspieler-Wege mit R1' };
+  });
+
+  stAdd('ACC-Menü: ohne Auto fragt Starten, "Trotzdem starten" öffnet das Cockpit', async () => {
+    if (playerCar) return { skip: true, mass: 'ein Auto ist verbunden' };
+    const merk = kAktiverTab();
+    const f = [];
+    const echtVerb = garageConnect, echtRennen = toggleRace;
+    let rennen = 0;
+    try {
+      garageConnect = async () => 'aus';
+      toggleRace = () => { rennen++; };
+      showTab('fahren');
+      await konsoleLosfahren();
+      if (!konsoleFrageOffen() || $('k-frage').hidden) f.push('kein Dialog');
+      if (menuNavContainer() !== $('k-frage')) f.push('die Menuezeilen gelten nicht fuer den Dialog');
+      const kn = [...$('k-frage-knoepfe').querySelectorAll('button')];
+      if (kn.length !== 3) f.push(kn.length + ' Knoepfe statt 3');
+      if (!/Bluetooth/.test($('k-frage-text').textContent)) f.push('der Grund fehlt im Text');
+      if (kAktiverTab() !== 'fahren') f.push('ohne Wahl schon nach ' + kAktiverTab());
+      konsoleZurueck();
+      if (konsoleFrageOffen()) f.push('Kreis schliesst den Dialog nicht');
+      await konsoleLosfahren();
+      $('k-frage-knoepfe').querySelector('button').click();
+      await new Promise((r) => setTimeout(r, 0));
+      if (konsoleFrageOffen()) f.push('Dialog bleibt nach der Wahl offen');
+      if (kAktiverTab() !== 'race') f.push('Trotzdem starten fuehrt nach ' + kAktiverTab());
+      if (rennen !== 1) f.push('Startampel ' + rennen + ' mal statt 1');
+    } finally {
+      garageConnect = echtVerb; toggleRace = echtRennen;
+      if (konsoleFrageOffen()) konsoleFrageZu();
+      if (merk) showTab(merk);
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Dialog mit 3 Knoepfen, Kreis schliesst, Trotzdem -> Cockpit und Ampel' };
+  });
+
+  // BESTELLT: "rechter Stick soll scrollen können und alles gut bedienbar machen". Der Takt
+  // laeuft ueber requestAnimationFrame und steht im verborgenen Vorschaufenster - deshalb
+  // ruft der Test pollGamepad() selbst, mit einem gefaelschten Pad.
+  stAdd('ACC-Menü: rechter Stick rollt die Seite', () => {
+    if (!innerWidth || !innerHeight) return { skip: true, mass: 'Fenster ist 0 x 0 - im verborgenen Bereich nicht messbar' };
+    const merk = kAktiverTab();
+    const echt = navigator.getGamepads;
+    const f = [];
+    let weit = 0;
+    try {
+      showTab('mp');
+      showSubpage('mp-pc');
+      const el = [document.scrollingElement, document.body].find((e) => e && e.scrollHeight > e.clientHeight + 60);
+      if (!el) return { skip: true, mass: 'die Seite ist zu kurz zum Rollen' };
+      el.scrollTop = 0;
+      const pad = { id: 'Selbsttest (STANDARD GAMEPAD)', index: 0, connected: true, mapping: 'standard',
+        timestamp: performance.now(), axes: [0, 0, 0, 0.8],
+        buttons: Array.from({ length: 17 }, () => ({ pressed: false, touched: false, value: 0 })) };
+      navigator.getGamepads = () => [pad, null, null, null];
+      for (let i = 0; i < 12; i++) pollGamepad();
+      weit = el.scrollTop;
+      if (weit < 40) f.push('nach 12 Takten nur ' + weit + ' px gerollt');
+      pad.axes[3] = -0.8;
+      for (let i = 0; i < 12; i++) pollGamepad();
+      if (el.scrollTop > weit - 40) f.push('zurueck nach oben rollt nicht');
+      pad.axes[3] = 0;
+      pollGamepad();
+    } finally {
+      navigator.getGamepads = echt;
+      try { pollGamepad(); } catch (e) { /* ohne Pad */ }
+      showSubpage('');
+      if (merk) showTab(merk);
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : weit + ' px in 12 Takten, und zurueck' };
   });
 
   stAdd('ACC-Menü: Steuerkreuz springt räumlich zur Nachbarkachel', () => {
@@ -9674,8 +9757,8 @@
       menuNavEnsureContext();
       konsoleFokusAuf('fa-auto');
       const schritt = (d) => { menuNavRaum(d); const r = menuNavRows()[menuNavIndex]; weg.push(d + ':' + (r && r.el.id)); return r && r.el.id; };
-      if (schritt('right') !== 'fa-renn') f.push('rechts von AUTO ist nicht RENNOPTIONEN');
-      if (schritt('right') !== 'fa-strecke') f.push('rechts von RENNOPTIONEN ist nicht STRECKE');
+      if (schritt('right') !== 'fa-strecke') f.push('rechts von AUTO ist nicht STRECKE');
+      if (schritt('right') !== 'fa-renn') f.push('rechts von STRECKE ist nicht RENNOPTIONEN');
       konsoleFokusAuf('fa-start');
       if (schritt('right') !== 'fa-start') f.push('rechts am Rand springt weg');
       konsoleFokusAuf('fa-auto');
@@ -9721,15 +9804,21 @@
     const cb = $('setting-dev');
     if (!cb) return { ok: false, mass: '#setting-dev fehlt' };
     const merk = cb.checked;
+    let merkTab = '';
     const f = [];
     try {
       if (cb.defaultChecked) f.push('ab Werk sichtbar');
       cb.checked = false; cb.dispatchEvent(new Event('change', { bubbles: true })); konsoleZeichnen();
-      if (!/[?&]dev\b/.test(location.search) && !$('haupt-dev').hidden) f.push('aus, aber die Kachel ist da');
+      // Auf einer Menueseite pruefen: im Cockpit gibt es oben keine Reiter.
+      merkTab = kAktiverTab();
+      showTab('options');
+      const mitDev = () => (konsoleReiterEbene1() || []).some((x) => x.text === t('Entwickler'));
+      if (!/[?&]dev\b/.test(location.search) && mitDev()) f.push('aus, aber der Reiter ist da');
       cb.checked = true; cb.dispatchEvent(new Event('change', { bubbles: true })); konsoleZeichnen();
-      if ($('haupt-dev').hidden) f.push('an, aber die Kachel fehlt');
+      if (!mitDev()) f.push('an, aber der Reiter fehlt');
     } finally {
       cb.checked = merk; cb.dispatchEvent(new Event('change', { bubbles: true })); konsoleZeichnen();
+      if (merkTab) showTab(merkTab);
     }
     return { ok: !f.length, mass: f.length ? f.join('; ') : 'ab Werk versteckt, Schalter wirkt in beide Richtungen' };
   });

@@ -1596,10 +1596,13 @@
   // Bitte des Nutzers wieder heraus. Der eigentliche Fund von v0.5.16 bleibt: der Filter
   // darunter ist ODER-verknuepft und nimmt ersatzweise den Nordic-UART-Dienst, ein Auto
   // ohne Namen in der Werbung faellt damit nicht mehr durch.
-  async function garageConnect() {
+  // opt.stumm: kein alert(), sondern die Lage zurueckgeben - das ACC-Menue zeigt sie in
+  // seinem eigenen, mit dem Pad bedienbaren Dialog (samt "Trotzdem starten", 51-konsole.js).
+  async function garageConnect(opt) {
     const lage = await bluetoothLageGenau();
     if (lage !== 'ok') {
       garageLageZeigen();
+      if (opt && opt.stumm) return lage;
       alert(bluetoothLageText(lage));
       return;
     }
@@ -8639,7 +8642,7 @@
         if (ovTab) ovTab.scrollTop += rechtsY * PAD_SCROLL_SPEED;
       } else if (rechtsY && !document.body.classList.contains('race-fs')
           && !document.body.classList.contains('track-fs')) {
-        document.body.scrollTop += rechtsY * PAD_SCROLL_SPEED;
+        konsoleBildlauf(rechtsY * PAD_SCROLL_SPEED);
       }
 
       // Gelbe Flagge auf HALTEN, aber im Streckeneditor-Vollbild bestaetigt dieselbe

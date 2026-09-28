@@ -16,6 +16,10 @@
         "availableDevices": "Gefundene Autos",
         "noDeviceFound": "Kein Auto gefunden"
       }
+    },
+    "SystemBars": {
+      "hidden": true,
+      "insetsHandling": "css"
     }
   }
 }

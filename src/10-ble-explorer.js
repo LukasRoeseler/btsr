@@ -757,8 +757,24 @@
     "Der Modus": "The mode",
     "2-Spieler-Modus": "Two-player mode",
     "Gamepad-Menü-Steuerung": "Gamepad menu control",
+    "← Optionen": "← Options",
+    "Autos verbinden": "Connect cars",
+    "Über PC mit Python": "Via PC with Python",
+    "Der PC trägt die Rangliste, die Telefone treten im WLAN bei.": "The PC holds the leaderboard, the phones join over Wi-Fi.",
+    "Über Android-App": "Via Android app",
+    "Ein Telefon mit der App ist Host, ganz ohne PC.": "A phone with the app is the host, no PC needed.",
+    "← Mehrspieler": "← Multiplayer",
+    "Nur in der Android-App: dieses Telefon wird Host, die anderen finden es im WLAN. Im Browser geht das nicht – dort den Weg über den PC nehmen.": "Only in the Android app: this phone becomes the host, the others find it over Wi-Fi. This does not work in the browser – use the PC route there.",
+    "Beitreten und Rangliste": "Join and leaderboard",
+    "Bluetooth nicht bereit": "Bluetooth not ready",
+    "Nochmal verbinden": "Connect again",
+    "Kein Auto verbunden": "No car connected",
+    "Trotzdem starten": "Start anyway",
+    "Die Bluetooth-Auswahl wurde ohne Auto geschlossen.": "The Bluetooth picker was closed without a car.",
+    "Zum Ausprobieren geht es trotzdem ins Cockpit: Anzeigen, Menüs, Ampel und Ton laufen, an ein Auto wird nichts gesendet.": "For trying things out you can still go to the cockpit: displays, menus, start lights and sound run, nothing is sent to a car.",
     "Neues Menü passt sich jeder Bildschirmgröße an und füllt am Telefon quer genau den Schirm; die Android-App bleibt im Querformat.": "The new menu adapts to every screen size and exactly fills a phone held sideways; the Android app stays in landscape.",
-    "Neues Menü im Stil von Assetto Corsa Competizione (WIP): Titelbildschirm, Hauptmenü, Fahren-Schirm mit Auto, Rennoptionen und Strecke, PS5-Tasten (Kreuz, Kreis, L1/R1), Cockpit-Menü über Options halten.": "New menu in the style of Assetto Corsa Competizione (WIP): title screen, main menu, drive screen with car, race options and track, PS5 buttons (cross, circle, L1/R1), cockpit menu by holding Options.",
+    "Android-App im Vollbild ohne Status- und Navigationsleiste. Reiter oben neben dem Logo statt Hauptmenü, Mehrspieler mit den Wegen PC und Android-App, „Trotzdem starten“ ohne Auto zum Ausprobieren (experimentell), rechter Stick rollt die Seite.": "Android app in full screen without status and navigation bar. Tabs at the top next to the logo instead of a main menu, multiplayer with the PC and Android app routes, “Start anyway” without a car for trying things out (experimental), the right stick scrolls the page.",
+    "Neues Menü im Stil von Assetto Corsa Competizione (WIP): Titelbildschirm, Fahren-Schirm mit Autos, Strecke und Rennoptionen, PS5-Tasten (Kreuz, Kreis, L1/R1), Cockpit-Menü über Options halten.": "New menu in the style of Assetto Corsa Competizione (WIP): title screen, drive screen with cars, track and race options, PS5 buttons (cross, circle, L1/R1), cockpit menu by holding Options.",
     "Nur in der Android-App: Version, Updates ohne neue APK.": "Android app only: version, updates without a new APK.",
     "Titel": "Title",
     "Hauptmenü": "Main menu",
@@ -2199,14 +2215,13 @@
     "Eine Webseite darf kein Programm auf dem Rechner starten. Das ist keine fehlende Schnittstelle, sondern die Grenze, auf der die Sicherheit des Browsers beruht, und sie fällt auch dann nicht, wenn man die App installiert: eine installierte App bekommt Dateizugriff und Offline-Betrieb, aber niemals das Recht, ein beliebiges Programm auszuführen. Die Startdatei oben ist das Nächste, was daran herankommt – einmal herunterladen, danach genügt ein Doppelklick.":
       "A web page may not start a program on the computer. This is not a missing interface but the boundary the browser's security rests on, and it does not fall when the app is installed either: an installed app gets file access and offline operation, but never the right to run an arbitrary program. The launcher file above is the closest thing to it – download it once, after that a double-click is enough.",
     "Ueber die Leitung gehen Rundenzahl, Rundenzeiten und Abgaenge. Keine Physik, keine Lenkwerte: jedes Telefon rechnet seine eigene Physik und haelt seine eigene Bluetooth-Verbindung. Reisst das WLAN ab, faehrt jeder weiter, nur die Rangliste steht still.": "What goes over the wire: lap count, lap times and departures. No physics, no steering values – each phone computes its own physics and holds its own Bluetooth connection. If the Wi-Fi drops, everyone keeps driving; only the leaderboard stands still.",
-    "Mehrere Telefone, jedes mit eigenem Auto, eine gemeinsame Rangliste. Auf dem PC läuft dazu ein kleines Programm.":
-      "Several phones, each with its own car, one shared leaderboard. A small program runs on the PC for this.",
+    "Mehrere Telefone, jedes mit eigenem Auto, eine gemeinsame Rangliste. Host ist entweder ein PC mit einem kleinen Python-Programm oder ein Telefon mit der Android-App.": "Several phones, each with its own car, one shared leaderboard. The host is either a PC with a small Python program or a phone with the Android app.",
     "Auf dem PC starten.":
       "Start it on the PC.",
     "Die Adresse an die Telefone geben.":
       "Give the address to the phones.",
-    "Sie gehört oben in das Feld „Host-Adresse“ und hat die Form, die dort als Beispiel steht. Alle Geräte müssen im selben WLAN sein.":
-      "It goes into the “Host address” field above and has the form shown there as an example. All devices must be on the same Wi-Fi.",
+    "Sie gehört unten in das Feld „Host-Adresse“ und hat die Form, die dort als Beispiel steht. Alle Geräte müssen im selben WLAN sein.":
+      "It goes into the “Host address” field below and has the form shown there as an example. All devices must be on the same Wi-Fi.",
     "Namen eintragen und auf Mitmachen drücken.":
       "Enter a name and press Join.",
     "Der Name steht danach in der Rangliste. Jedes Telefon behält seinen eigenen Namen und seine eigene Kennung, auch nach einem Neuladen.":
